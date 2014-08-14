@@ -1,5 +1,6 @@
 #![cfg(target_os = "linux")]
 
+use std::fmt;
 use std::os::errno;
 use std::num::from_int;
 use libc::c_int;
@@ -25,6 +26,12 @@ impl SysError {
             kind: kind,
             desc: desc(kind)
         }
+    }
+}
+
+impl fmt::Show for SysError {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        write!(fmt, "Errno {} - {}", self.kind as int, self.desc)
     }
 }
 

@@ -1,4 +1,6 @@
+use std::c_str::CString;
 use std::ptr;
+use std::path::Path;
 use libc::{c_ulong, c_int, c_void};
 use errno::{SysResult, from_ffi};
 
@@ -66,23 +68,21 @@ mod ffi {
     }
 }
 
-pub fn mount<S1: ToCStr, S2: ToCStr, S3: ToCStr, S4: ToCStr>(
-        source: Option<S1>,
-        target: S2,
-        fstype: Option<S3>,
+pub fn mount(
+        source: Option<&Path>,
+        target: &Path,
+        fstype: Option<&CString>,
         flags: MsFlags,
-        data: Option<S4>) -> SysResult<()> {
+        data: Option<&CString>) -> SysResult<()> {
 
     let source = source.map(|s| s.to_c_str());
     let target = target.to_c_str();
-    let fstype = fstype.map(|s| s.to_c_str());
-    let data = data.map(|s| s.to_c_str());
 
     let res = unsafe {
         ffi::mount(
-            source.map(|s| s.as_ptr()).unwrap_or(ptr::null()),
+            source.as_ref().map(|s| s.as_ptr()).unwrap_or(ptr::null()),
             target.as_ptr(),
-            fstype.map(|s| s.as_ptr()).unwrap_or(ptr::null()),
+            fstype.as_ref().map(|s| s.as_ptr()).unwrap_or(ptr::null()),
             flags.bits,
             data.map(|s| s.as_ptr() as *const c_void).unwrap_or(ptr::null()))
     };
@@ -90,7 +90,7 @@ pub fn mount<S1: ToCStr, S2: ToCStr, S3: ToCStr, S4: ToCStr>(
     from_ffi(res)
 }
 
-pub fn umount<S: ToCStr>(target: S) -> SysResult<()> {
+pub fn umount(target: &Path) -> SysResult<()> {
     let target = target.to_c_str();
 
     let res = unsafe { ffi::umount(target.as_ptr()) };
@@ -98,7 +98,7 @@ pub fn umount<S: ToCStr>(target: S) -> SysResult<()> {
     from_ffi(res)
 }
 
-pub fn umount2<S: ToCStr>(target: S, flags: MntFlags) -> SysResult<()> {
+pub fn umount2(target: &Path, flags: MntFlags) -> SysResult<()> {
     let target = target.to_c_str();
 
     let res = unsafe { ffi::umount2(target.as_ptr(), flags.bits) };

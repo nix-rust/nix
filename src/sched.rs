@@ -46,7 +46,8 @@ mod ffi {
             arg: *mut super::CloneCb,
             ...) -> c_int;
 
-        //
+        // disassociate parts of the process execution context
+        // doc: http://man7.org/linux/man-pages/man2/unshare.2.html
         pub fn unshare(flags: super::CloneFlags) -> c_int;
     }
 }

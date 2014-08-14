@@ -1,5 +1,6 @@
 use std::ptr;
 use std::c_str::{CString, ToCStr};
+use std::path::Path;
 use libc::{c_char};
 use syscall::{syscall, SysPivotRoot};
 use {SysResult, SysError};
@@ -29,12 +30,7 @@ pub fn chdir<S: ToCStr>(path: S) -> SysResult<()> {
     return Ok(())
 }
 
-pub fn execve<S: ToCStr, S1: ToCStr, I1: Iterator<S1>, S2: ToCStr, I2: Iterator<S2>>(
-        filename: S, args: I1, env: I2) -> SysResult<()> {
-
-    let args: Vec<CString> = args.map(|s| s.to_c_str()).collect();
-    let env: Vec<CString> = env.map(|s| s.to_c_str()).collect();
-
+pub fn execve(filename: CString, args: &[CString], env: &[CString]) -> SysResult<()> {
     let mut args_p: Vec<*const c_char> = args.iter().map(|s| s.as_ptr()).collect();
     args_p.push(ptr::null());
 
@@ -42,7 +38,7 @@ pub fn execve<S: ToCStr, S1: ToCStr, I1: Iterator<S1>, S2: ToCStr, I2: Iterator<
     env_p.push(ptr::null());
 
     let res = unsafe {
-        ffi::execve(filename.to_c_str().as_ptr(), args_p.as_ptr(), env_p.as_ptr())
+        ffi::execve(filename.as_ptr(), args_p.as_ptr(), env_p.as_ptr())
     };
 
     if res != 0 {
@@ -53,7 +49,7 @@ pub fn execve<S: ToCStr, S1: ToCStr, I1: Iterator<S1>, S2: ToCStr, I2: Iterator<
     Ok(())
 }
 
-pub fn pivot_root<S1: ToCStr, S2: ToCStr>(new_root: S1, put_old: S2) -> SysResult<()> {
+pub fn pivot_root(new_root: &Path, put_old: &Path) -> SysResult<()> {
     let new_root = new_root.to_c_str();
     let put_old = put_old.to_c_str();
 
@@ -61,7 +57,7 @@ pub fn pivot_root<S1: ToCStr, S2: ToCStr>(new_root: S1, put_old: S2) -> SysResul
         syscall(SysPivotRoot, new_root.as_ptr(), put_old.as_ptr())
     };
 
-    if res == 0 {
+    if res != 0 {
         return Err(SysError::last());
     }
 
