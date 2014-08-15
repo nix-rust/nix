@@ -71,12 +71,14 @@ mod ffi {
 pub fn mount(
         source: Option<&Path>,
         target: &Path,
-        fstype: Option<&CString>,
+        fstype: Option<&str>,
         flags: MsFlags,
-        data: Option<&CString>) -> SysResult<()> {
+        data: Option<&str>) -> SysResult<()> {
 
     let source = source.map(|s| s.to_c_str());
     let target = target.to_c_str();
+    let fstype = fstype.map(|s| s.to_c_str());
+    let data = data.map(|s| s.to_c_str());
 
     let res = unsafe {
         ffi::mount(

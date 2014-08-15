@@ -9,5 +9,6 @@ pub mod errno;
 pub mod fcntl;
 pub mod mount;
 pub mod sched;
+pub mod sys;
 pub mod syscall;
 pub mod unistd;
