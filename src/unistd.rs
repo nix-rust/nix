@@ -2,6 +2,7 @@ use std::ptr;
 use std::c_str::{CString, ToCStr};
 use std::path::Path;
 use libc::{c_char};
+use fcntl::{Fd, OFlag};
 use syscall::{syscall, SysPivotRoot};
 use {SysResult, SysError};
 
@@ -9,6 +10,12 @@ mod ffi {
     use libc::{c_char, c_int};
 
     extern {
+        pub fn dup(oldfd: c_int) -> c_int;
+
+        pub fn dup2(oldfd: c_int, newfd: c_int) -> c_int;
+
+        pub fn dup3(oldfd: c_int, newfd: c_int, flags: c_int) -> c_int;
+
         // change working directory
         // doc: http://man7.org/linux/man-pages/man2/chdir.2.html
         pub fn chdir(path: *const c_char) -> c_int;
@@ -19,6 +26,40 @@ mod ffi {
     }
 }
 
+#[inline]
+pub fn dup(oldfd: Fd) -> SysResult<Fd> {
+    let res = unsafe { ffi::dup(oldfd) };
+
+    if res < 0 {
+        return Err(SysError::last());
+    }
+
+    Ok(res)
+}
+
+#[inline]
+pub fn dup2(oldfd: Fd, newfd: Fd) -> SysResult<Fd> {
+    let res = unsafe { ffi::dup2(oldfd, newfd) };
+
+    if res < 0 {
+        return Err(SysError::last());
+    }
+
+    Ok(res)
+}
+
+#[inline]
+pub fn dup3(oldfd: Fd, newfd: Fd, flags: OFlag) -> SysResult<Fd> {
+    let res = unsafe { ffi::dup3(oldfd, newfd, flags.bits()) };
+
+    if res < 0 {
+        return Err(SysError::last());
+    }
+
+    Ok(res)
+}
+
+#[inline]
 pub fn chdir<S: ToCStr>(path: S) -> SysResult<()> {
     let path = path.to_c_str();
     let res = unsafe { ffi::chdir(path.as_ptr()) };
@@ -30,6 +71,7 @@ pub fn chdir<S: ToCStr>(path: S) -> SysResult<()> {
     return Ok(())
 }
 
+#[inline]
 pub fn execve(filename: CString, args: &[CString], env: &[CString]) -> SysResult<()> {
     let mut args_p: Vec<*const c_char> = args.iter().map(|s| s.as_ptr()).collect();
     args_p.push(ptr::null());

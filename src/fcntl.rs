@@ -1,4 +1,5 @@
 use std::c_str::CString;
+use std::path::Path;
 use std::io::FilePermission;
 use libc::{mode_t, c_int};
 use errno::{SysResult, SysError, from_ffi};
@@ -6,7 +7,7 @@ use errno::{SysResult, SysError, from_ffi};
 pub type Fd = c_int;
 
 bitflags!(
-    flags OFlag: mode_t {
+    flags OFlag: c_int {
         static O_ACCMODE   = 0o00000003,
         static O_RDONLY    = 0o00000000,
         static O_WRONLY    = 0o00000001,
@@ -35,8 +36,8 @@ mod ffi {
     pub use libc::{open, close};
 }
 
-pub fn open(path: &CString, oflag: OFlag, mode: FilePermission) -> SysResult<Fd> {
-    let fd = unsafe { ffi::open(path.as_ptr(), oflag.bits as i32, mode.bits()) };
+pub fn open(path: &Path, oflag: OFlag, mode: FilePermission) -> SysResult<Fd> {
+    let fd = unsafe { ffi::open(path.to_c_str().as_ptr(), oflag.bits, mode.bits()) };
 
     if fd < 0 {
         return Err(SysError::last());
