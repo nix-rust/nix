@@ -3,19 +3,20 @@
 use std::ptr;
 use std::c_str::{CString, ToCStr};
 use std::path::Path;
-use libc::{c_char};
+use libc::{c_char, c_void, size_t};
 use fcntl::{Fd, OFlag};
 use syscall::{syscall, SysPivotRoot};
-use {SysResult, SysError};
+use errno::{SysResult, SysError, from_ffi};
 
 mod ffi {
     use libc::{c_char, c_int};
+    pub use libc::{close, read, write};
 
     extern {
+        // duplicate a file descriptor
+        // doc: http://man7.org/linux/man-pages/man2/dup.2.html
         pub fn dup(oldfd: c_int) -> c_int;
-
         pub fn dup2(oldfd: c_int, newfd: c_int) -> c_int;
-
         pub fn dup3(oldfd: c_int, newfd: c_int, flags: c_int) -> c_int;
 
         // change working directory
@@ -106,4 +107,29 @@ pub fn pivot_root(new_root: &Path, put_old: &Path) -> SysResult<()> {
     }
 
     Ok(())
+}
+
+pub fn close(fd: Fd) -> SysResult<()> {
+    let res = unsafe { ffi::close(fd) };
+    from_ffi(res)
+}
+
+pub fn read(fd: Fd, buf: &mut [u8]) -> SysResult<uint> {
+    let res = unsafe { ffi::read(fd, buf.as_mut_ptr() as *mut c_void, buf.len() as size_t) };
+
+    if res < 0 {
+        return Err(SysError::last());
+    }
+
+    return Ok(res as uint)
+}
+
+pub fn write(fd: Fd, buf: &[u8]) -> SysResult<uint> {
+    let res = unsafe { ffi::write(fd, buf.as_ptr() as *const c_void, buf.len() as size_t) };
+
+    if res < 0 {
+        return Err(SysError::last());
+    }
+
+    return Ok(res as uint)
 }

@@ -34,7 +34,7 @@ bitflags!(
 )
 
 mod ffi {
-    pub use libc::{open, close};
+    pub use libc::open;
 }
 
 pub fn open(path: &Path, oflag: OFlag, mode: FilePermission) -> SysResult<Fd> {
@@ -45,9 +45,4 @@ pub fn open(path: &Path, oflag: OFlag, mode: FilePermission) -> SysResult<Fd> {
     }
 
     Ok(fd)
-}
-
-pub fn close(fd: Fd) -> SysResult<()> {
-    let res = unsafe { ffi::close(fd) };
-    from_ffi(res)
 }
