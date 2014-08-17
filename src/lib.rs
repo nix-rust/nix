@@ -1,4 +1,4 @@
-#![crate_name = "linux"]
+#![crate_name = "nix"]
 #![feature(globs)]
 
 extern crate libc;

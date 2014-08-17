@@ -1,7 +1,8 @@
-use std::c_str::CString;
+#![cfg(target_os = "linux")]
+
 use std::path::Path;
 use std::io::FilePermission;
-use libc::{mode_t, c_int};
+use libc::c_int;
 use errno::{SysResult, SysError, from_ffi};
 
 pub type Fd = c_int;

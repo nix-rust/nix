@@ -1,5 +1,5 @@
 [package]
 
-name = "linux"
+name = "nix"
 version = "0.0.1"
 authors = ["Carl Lerche <me@carllerche.com>"]

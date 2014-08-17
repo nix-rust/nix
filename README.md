@@ -1,8 +1,11 @@
-# Rust bindings to Linux APIs
+# Rust bindings to *nix APIs
 
-The goal is to provide rust friendly bindings to Linux APIs. This is
-very much a work and progress and I am treating it as where I put
-bindings that I need vs. spreading them around the various libs that I
-work on.
+Rust friendly bindings to various *nix platform APIs (Linux, Darwin,
+...). The goal is to not provide a 100% unified interface, but try as
+possible as well as providing platform specific APIs. It is up to the
+consumer of this library to decide how portable they want to be.
+
+This is very much a work in progress and I'm mostly just adding bindings
+as I need them.
 
 Of course, PRs welcome :)

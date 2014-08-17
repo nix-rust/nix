@@ -1,3 +1,5 @@
+#![cfg(target_os = "linux")]
+
 use std::ptr;
 use std::c_str::{CString, ToCStr};
 use std::path::Path;
