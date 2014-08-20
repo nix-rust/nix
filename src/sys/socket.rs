@@ -1,28 +1,20 @@
 #![cfg(target_os = "linux")]
 
 use std::{mem, ptr};
-use libc::{c_int, sockaddr, sockaddr_in, sockaddr_in6, sockaddr_un, socklen_t};
+use libc::{c_int, sockaddr, socklen_t};
 use fcntl::Fd;
 use errno::{SysResult, SysError, from_ffi};
 
+pub use libc::{in_addr, sockaddr_in, sockaddr_in6, sockaddr_un, sa_family_t};
+
 mod ffi {
     use libc::{c_int, sockaddr, socklen_t};
+    pub use libc::{socket, listen, bind, accept, connect};
 
     extern {
-        pub fn socket(domain: c_int, ty: c_int, proto: c_int) -> c_int;
-
-        pub fn listen(sockfd: c_int, backlog: c_int) -> c_int;
-
-        pub fn bind(sockfd: c_int, addr: *const sockaddr, addrlen: socklen_t) -> c_int;
-
-        pub fn accept(
-            sockfd: c_int,
-            addr: *const sockaddr,
-            addrlen: *mut socklen_t) -> c_int;
-
         pub fn accept4(
             sockfd: c_int,
-            addr: *const sockaddr,
+            addr: *mut sockaddr,
             addrlen: *mut socklen_t,
             flags: c_int) -> c_int;
     }
@@ -67,18 +59,18 @@ pub fn listen(sockfd: Fd, backlog: uint) -> SysResult<()> {
     from_ffi(res)
 }
 
-pub enum BindAddr<'a> {
-    BindIpV4(&'a sockaddr_in),
-    BindIpV6(&'a sockaddr_in6),
-    BindUnix(&'a sockaddr_un)
+pub enum SockAddr {
+    SockIpV4(sockaddr_in),
+    SockIpV6(sockaddr_in6),
+    SockUnix(sockaddr_un)
 }
 
-pub fn bind(sockfd: Fd, addr: BindAddr) -> SysResult<()> {
+pub fn bind(sockfd: Fd, addr: &SockAddr) -> SysResult<()> {
     let res = unsafe {
-        match addr {
-            BindIpV4(addr) => ffi::bind(sockfd, mem::transmute(addr), mem::size_of::<sockaddr_in>() as socklen_t),
-            BindIpV6(addr) => ffi::bind(sockfd, mem::transmute(addr), mem::size_of::<sockaddr_in6>() as socklen_t),
-            BindUnix(addr) => ffi::bind(sockfd, mem::transmute(addr), mem::size_of::<sockaddr_un>() as socklen_t)
+        match *addr {
+            SockIpV4(ref addr) => ffi::bind(sockfd, mem::transmute(addr), mem::size_of::<sockaddr_in>() as socklen_t),
+            SockIpV6(ref addr) => ffi::bind(sockfd, mem::transmute(addr), mem::size_of::<sockaddr_in6>() as socklen_t),
+            SockUnix(ref addr) => ffi::bind(sockfd, mem::transmute(addr), mem::size_of::<sockaddr_un>() as socklen_t)
         }
     };
 
@@ -86,7 +78,7 @@ pub fn bind(sockfd: Fd, addr: BindAddr) -> SysResult<()> {
 }
 
 pub fn accept(sockfd: Fd) -> SysResult<Fd> {
-    let res = unsafe { ffi::accept(sockfd, ptr::null(), ptr::mut_null()) };
+    let res = unsafe { ffi::accept(sockfd, ptr::mut_null(), ptr::mut_null()) };
 
     if res < 0 {
         return Err(SysError::last());
@@ -97,7 +89,7 @@ pub fn accept(sockfd: Fd) -> SysResult<Fd> {
 
 pub fn accept4(sockfd: Fd, flags: SockFlag) -> SysResult<Fd> {
     // TODO: Check the kernel version
-    let res = unsafe { ffi::accept4(sockfd, ptr::null(), ptr::mut_null(), flags.bits) };
+    let res = unsafe { ffi::accept4(sockfd, ptr::mut_null(), ptr::mut_null(), flags.bits) };
 
     if res < 0 {
         return Err(SysError::last());
@@ -105,3 +97,48 @@ pub fn accept4(sockfd: Fd, flags: SockFlag) -> SysResult<Fd> {
 
     Ok(res)
 }
+
+pub fn connect(sockfd: Fd, addr: &SockAddr) -> SysResult<()> {
+    let res = unsafe {
+        match *addr {
+            SockIpV4(ref addr) => ffi::connect(sockfd, mem::transmute(addr), mem::size_of::<sockaddr_in>() as socklen_t),
+            SockIpV6(ref addr) => ffi::connect(sockfd, mem::transmute(addr), mem::size_of::<sockaddr_in6>() as socklen_t),
+            SockUnix(ref addr) => ffi::connect(sockfd, mem::transmute(addr), mem::size_of::<sockaddr_un>() as socklen_t)
+        }
+    };
+
+    from_ffi(res)
+}
+
+pub type SockOpt = c_int;
+
+pub static SO_ACCEPTCONN: SockOpt = 30;
+pub static SO_BINDTODEVICE: SockOpt = 25;
+pub static SO_BROADCAST: SockOpt = 6;
+pub static SO_BSDCOMPAT: SockOpt = 14;
+pub static SO_DEBUG: SockOpt = 1;
+pub static SO_DOMAIN: SockOpt = 39;
+pub static SO_ERROR: SockOpt = 4;
+pub static SO_DONTROUTE: SockOpt = 5;
+pub static SO_KEEPALIVE: SockOpt = 9;
+pub static SO_LINGER: SockOpt = 13;
+pub static SO_MARK: SockOpt = 36;
+pub static SO_OOBINLINE: SockOpt = 10;
+pub static SO_PASSCRED: SockOpt = 16;
+pub static SO_PEEK_OFF: SockOpt = 42;
+pub static SO_PEERCRED: SockOpt = 17;
+pub static SO_PRIORITY: SockOpt = 12;
+pub static SO_PROTOCOL: SockOpt = 38;
+pub static SO_RCVBUF: SockOpt = 8;
+pub static SO_RCVBUFFORCE: SockOpt = 33;
+pub static SO_RCVLOWAT: SockOpt = 18;
+pub static SO_SNDLOWAT: SockOpt = 19;
+pub static SO_RCVTIMEO: SockOpt = 20;
+pub static SO_SNDTIMEO: SockOpt = 21;
+pub static SO_REUSEADDR: SockOpt = 2;
+pub static SO_RXQ_OVFL: SockOpt = 40;
+pub static SO_SNDBUF: SockOpt = 7;
+pub static SO_SNDBUFFORCE: SockOpt = 32;
+pub static SO_TIMESTAMP: SockOpt = 29;
+pub static SO_TYPE: SockOpt = 3;
+pub static SO_BUSY_POLL: SockOpt = 46;

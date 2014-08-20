@@ -31,7 +31,7 @@ impl SysError {
 
 impl fmt::Show for SysError {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        write!(fmt, "Errno {} - {}", self.kind as int, self.desc)
+        write!(fmt, "{} - {}", self.kind, self.desc)
     }
 }
 
