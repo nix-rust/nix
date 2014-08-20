@@ -1,15 +1,15 @@
 #![cfg(target_os = "linux")]
 
 use std::{mem, ptr};
-use libc::{c_int, sockaddr, socklen_t};
+use libc::{c_int, c_void, sockaddr, socklen_t};
 use fcntl::Fd;
 use errno::{SysResult, SysError, from_ffi};
 
 pub use libc::{in_addr, sockaddr_in, sockaddr_in6, sockaddr_un, sa_family_t};
 
 mod ffi {
-    use libc::{c_int, sockaddr, socklen_t};
-    pub use libc::{socket, listen, bind, accept, connect};
+    use libc::{c_int, c_void, sockaddr, socklen_t};
+    pub use libc::{socket, listen, bind, accept, connect, setsockopt};
 
     extern {
         pub fn accept4(
@@ -17,6 +17,13 @@ mod ffi {
             addr: *mut sockaddr,
             addrlen: *mut socklen_t,
             flags: c_int) -> c_int;
+
+        pub fn getsockopt(
+            sockfd: c_int,
+            level: c_int,
+            optname: c_int,
+            optval: *mut c_void,
+            optlen: *mut socklen_t) -> c_int;
     }
 }
 
@@ -110,6 +117,14 @@ pub fn connect(sockfd: Fd, addr: &SockAddr) -> SysResult<()> {
     from_ffi(res)
 }
 
+pub type SockLevel = c_int;
+
+pub static SOL_IP: SockLevel     = 0;
+pub static SOL_SOCKET: SockLevel = 1;
+pub static SOL_TCP: SockLevel    = 6;
+pub static SOL_UDP: SockLevel    = 17;
+pub static SOL_IPV6: SockLevel   = 41;
+
 pub type SockOpt = c_int;
 
 pub static SO_ACCEPTCONN: SockOpt = 30;
@@ -142,3 +157,33 @@ pub static SO_SNDBUFFORCE: SockOpt = 32;
 pub static SO_TIMESTAMP: SockOpt = 29;
 pub static SO_TYPE: SockOpt = 3;
 pub static SO_BUSY_POLL: SockOpt = 46;
+
+pub fn getsockopt<T>(fd: Fd, level: SockLevel, opt: SockOpt, val: &mut T) -> SysResult<uint> {
+    let mut len = mem::size_of::<T>() as socklen_t;
+
+    let res = unsafe {
+        ffi::getsockopt(
+            fd, level, opt,
+            mem::transmute(val),
+            &mut len as *mut socklen_t)
+    };
+
+    if res < 0 {
+        return Err(SysError::last());
+    }
+
+    Ok(len as uint)
+}
+
+pub fn setsockopt<T>(fd: Fd, level: SockLevel, opt: SockOpt, val: &T) -> SysResult<()> {
+    let len = mem::size_of::<T>() as socklen_t;
+
+    let res = unsafe {
+            ffi::setsockopt(
+            fd, level, opt,
+            mem::transmute(val),
+            len)
+    };
+
+    from_ffi(res)
+}
