@@ -1,7 +1,8 @@
 use std::{mem, ptr};
 use libc::{c_int, socklen_t};
-use fcntl::Fd;
+use fcntl::{Fd, fcntl, F_SETFL, F_SETFD, FD_CLOEXEC, O_NONBLOCK};
 use errno::{SysResult, SysError, from_ffi};
+use features;
 
 pub use libc::{in_addr, sockaddr_in, sockaddr_in6, sockaddr_un, sa_family_t};
 
@@ -167,12 +168,23 @@ mod consts {
     pub static SO_RESTRICT_DENYSET: SockOpt    = 0x80000000;
 }
 
-pub fn socket(domain: AddressFamily, ty: SockType, flags: SockFlag) -> SysResult<Fd> {
+pub fn socket(domain: AddressFamily, mut ty: SockType, flags: SockFlag) -> SysResult<Fd> {
+    let feat_atomic = features::atomic_cloexec(); // TODO: detect
+
+    if feat_atomic {
+        ty = ty | flags.bits();
+    }
+
     // TODO: Check the kernel version
-    let res = unsafe { ffi::socket(domain, ty | flags.bits(), 0) };
+    let res = unsafe { ffi::socket(domain, ty, 0) };
 
     if res < 0 {
         return Err(SysError::last());
+    }
+
+    if !feat_atomic {
+        try!(fcntl(res, F_SETFD(FD_CLOEXEC)));
+        try!(fcntl(res, F_SETFL(O_NONBLOCK)));
     }
 
     Ok(res)

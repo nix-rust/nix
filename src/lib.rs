@@ -1,5 +1,6 @@
 #![crate_name = "nix"]
 #![feature(globs)]
+#![allow(non_camel_case_types)]
 
 extern crate libc;
 
@@ -11,6 +12,8 @@ pub use errno::{SysResult, SysError};
 pub mod errno;
 
 #[cfg(target_os = "linux")]
+#[cfg(target_os = "macos")]
+#[cfg(target_os = "ios")]
 pub mod features;
 
 #[cfg(target_os = "linux")]
