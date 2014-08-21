@@ -1,5 +1,3 @@
-#![cfg(target_os = "linux")]
-
 use std::ptr;
 use std::path::Path;
 use libc::{c_ulong, c_int, c_void};

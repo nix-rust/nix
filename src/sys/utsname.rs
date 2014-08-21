@@ -1,5 +1,3 @@
-#![cfg(target_os = "linux")]
-
 use std::mem;
 use std::c_str::CString;
 use libc::{c_char};
@@ -24,6 +22,7 @@ pub struct UtsName {
     version: [c_char, ..UTSNAME_LEN],
     machine: [c_char, ..UTSNAME_LEN],
     // ifdef _GNU_SOURCE
+    #[allow(dead_code)]
     domainname: [c_char, ..UTSNAME_LEN]
 }
 

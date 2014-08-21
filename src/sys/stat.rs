@@ -1,5 +1,3 @@
-#![cfg(target_os = "linux")]
-
 pub use libc::dev_t;
 
 use std::fmt;

@@ -1,5 +1,3 @@
-#![cfg(target_os = "linux")]
-
 use libc::c_int;
 use fcntl::Fd;
 use errno::{SysResult, SysError, from_ffi};

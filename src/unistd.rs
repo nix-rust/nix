@@ -1,12 +1,11 @@
-#![cfg(target_os = "linux")]
-
 use std::ptr;
 use std::c_str::{CString, ToCStr};
-use std::path::Path;
 use libc::{c_char, c_void, size_t};
 use fcntl::{Fd, OFlag};
-use syscall::{syscall, SysPivotRoot};
 use errno::{SysResult, SysError, from_ffi};
+
+#[cfg(target_os = "linux")]
+pub use self::linux::*;
 
 mod ffi {
     use libc::{c_char, c_int};
@@ -94,21 +93,6 @@ pub fn execve(filename: CString, args: &[CString], env: &[CString]) -> SysResult
     Ok(())
 }
 
-pub fn pivot_root(new_root: &Path, put_old: &Path) -> SysResult<()> {
-    let new_root = new_root.to_c_str();
-    let put_old = put_old.to_c_str();
-
-    let res = unsafe {
-        syscall(SysPivotRoot, new_root.as_ptr(), put_old.as_ptr())
-    };
-
-    if res != 0 {
-        return Err(SysError::last());
-    }
-
-    Ok(())
-}
-
 pub fn close(fd: Fd) -> SysResult<()> {
     let res = unsafe { ffi::close(fd) };
     from_ffi(res)
@@ -132,4 +116,26 @@ pub fn write(fd: Fd, buf: &[u8]) -> SysResult<uint> {
     }
 
     return Ok(res as uint)
+}
+
+#[cfg(target_os = "linux")]
+mod linux {
+    use std::path::Path;
+    use syscall::{syscall, SysPivotRoot};
+    use errno::{SysResult, SysError};
+
+    pub fn pivot_root(new_root: &Path, put_old: &Path) -> SysResult<()> {
+        let new_root = new_root.to_c_str();
+        let put_old = put_old.to_c_str();
+
+        let res = unsafe {
+            syscall(SysPivotRoot, new_root.as_ptr(), put_old.as_ptr())
+        };
+
+        if res != 0 {
+            return Err(SysError::last());
+        }
+
+        Ok(())
+    }
 }
