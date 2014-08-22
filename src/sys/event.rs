@@ -1,20 +1,21 @@
-use libc::{timespec, time_t, c_int, c_long};
+use libc::{timespec, time_t, c_int, c_long, c_void};
 use errno::{SysResult, SysError};
 use fcntl::Fd;
 
 pub use self::ffi::kevent as KEvent;
 
 mod ffi {
-    pub use libc::{c_int, c_void, timespec};
+    pub use libc::{c_int, c_void, uintptr_t, intptr_t, timespec};
+    use super::{EventFilter, EventFlag, FilterFlag};
 
     // Packed to 32 bytes
     pub struct kevent {
-        pub ident: uint,        // 8
-        pub filter: i16,        // 2
-        pub flags: u16,         // 2
-        pub fflags: u32,        // 4
-        pub data: int,          // 8
-        pub udata: *mut c_void  // 8
+        pub ident: uintptr_t,       // 8
+        pub filter: EventFilter,    // 2
+        pub flags: EventFlag,       // 2
+        pub fflags: FilterFlag,     // 4
+        pub data: intptr_t,         // 8
+        pub udata: *mut c_void      // 8
     }
 
     extern {
@@ -30,7 +31,8 @@ mod ffi {
     }
 }
 
-#[repr(C)]
+#[repr(i16)]
+#[deriving(Show, PartialEq)]
 pub enum EventFilter {
     EVFILT_READ = -1,
     EVFILT_WRITE = -2,
@@ -115,8 +117,14 @@ bitflags!(
 pub static EV_POLL: EventFlag = EV_FLAG0;
 pub static EV_OOBAND: EventFlag = EV_FLAG1;
 
-pub fn kqueue() -> Fd {
-    unsafe { ffi::kqueue() }
+pub fn kqueue() -> SysResult<Fd> {
+    let res = unsafe { ffi::kqueue() };
+
+    if res < 0 {
+        return Err(SysError::last());
+    }
+
+    Ok(res)
 }
 
 pub fn kevent(kq: Fd,
@@ -145,4 +153,32 @@ pub fn kevent(kq: Fd,
     }
 
     return Ok(res as uint)
+}
+
+/*
+    // Packed to 32 bytes
+    pub struct kevent {
+        pub ident: uintptr_t,   // 8
+        pub filter: i16,        // 2
+        pub flags: u16,         // 2
+        pub fflags: u32,        // 4
+        pub data: intptr_t,     // 8
+        pub udata: *mut c_void  // 8
+    }
+ */
+
+#[inline]
+pub fn ev_set(ev: &mut KEvent,
+              ident: uint,
+              filter: EventFilter,
+              flags: EventFlag,
+              fflags: FilterFlag,
+              udata: *mut c_void) {
+
+    ev.ident  = ident;
+    ev.filter = filter;
+    ev.flags  = flags;
+    ev.fflags = fflags;
+    ev.data   = 0;
+    ev.udata  = udata;
 }

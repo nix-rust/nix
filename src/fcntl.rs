@@ -157,27 +157,23 @@ mod consts {
 
     bitflags!(
         flags OFlag: c_int {
-            static O_ACCMODE   = 0o00000003,
-            static O_RDONLY    = 0o00000000,
-            static O_WRONLY    = 0o00000001,
-            static O_RDWR      = 0o00000002,
-            static O_CREAT     = 0o00000100,
-            static O_EXCL      = 0o00000200,
-            static O_NOCTTY    = 0o00000400,
-            static O_TRUNC     = 0o00001000,
-            static O_APPEND    = 0o00002000,
-            static O_NONBLOCK  = 0o00004000,
-            static O_DSYNC     = 0o00010000,
-            static O_DIRECT    = 0o00040000,
-            static O_LARGEFILE = 0o00100000,
-            static O_DIRECTORY = 0o00200000,
-            static O_NOFOLLOW  = 0o00400000,
-            static O_NOATIME   = 0o01000000,
-            static O_CLOEXEC   = 0o02000000,
-            static O_SYNC      = 0o04000000,
-            static O_PATH      = 0o10000000,
-            static O_TMPFILE   = 0o20000000,
-            static O_NDELAY    = O_NONBLOCK.bits
+            static O_ACCMODE   = 0x0000003,
+            static O_RDONLY    = 0x0000000,
+            static O_WRONLY    = 0x0000001,
+            static O_RDWR      = 0x0000002,
+            static O_CREAT     = 0x0000200,
+            static O_EXCL      = 0x0000800,
+            static O_NOCTTY    = 0x0020000,
+            static O_TRUNC     = 0x0000400,
+            static O_APPEND    = 0x0000008,
+            static O_NONBLOCK  = 0x0000004,
+            static O_DSYNC     = 0x0400000,
+            static O_DIRECTORY = 0x0100000,
+            static O_NOFOLLOW  = 0x0000100,
+            static O_CLOEXEC   = 0x1000000,
+            static O_SYNC      = 0x0000080,
+            static O_NDELAY    = O_NONBLOCK.bits,
+            static O_FSYNC     = O_SYNC.bits
         }
     )
 
