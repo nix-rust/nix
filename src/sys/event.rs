@@ -15,7 +15,7 @@ mod ffi {
         pub flags: EventFlag,       // 2
         pub fflags: FilterFlag,     // 4
         pub data: intptr_t,         // 8
-        pub udata: *mut c_void      // 8
+        pub udata: u64              // 8
     }
 
     extern {
@@ -155,27 +155,15 @@ pub fn kevent(kq: Fd,
     return Ok(res as uint)
 }
 
-/*
-    // Packed to 32 bytes
-    pub struct kevent {
-        pub ident: uintptr_t,   // 8
-        pub filter: i16,        // 2
-        pub flags: u16,         // 2
-        pub fflags: u32,        // 4
-        pub data: intptr_t,     // 8
-        pub udata: *mut c_void  // 8
-    }
- */
-
 #[inline]
 pub fn ev_set(ev: &mut KEvent,
               ident: uint,
               filter: EventFilter,
               flags: EventFlag,
               fflags: FilterFlag,
-              udata: *mut c_void) {
+              udata: u64) {
 
-    ev.ident  = ident;
+    ev.ident  = ident as u64;
     ev.filter = filter;
     ev.flags  = flags;
     ev.fflags = fflags;

@@ -7,10 +7,9 @@ pub use self::consts::*;
 
 pub type SysResult<T> = Result<T, SysError>;
 
-#[deriving(Clone)]
+#[deriving(Clone, PartialEq)]
 pub struct SysError {
     pub kind: Errno,
-    pub desc: &'static str
 }
 
 impl SysError {
@@ -22,16 +21,422 @@ impl SysError {
     }
 
     pub fn new(kind: Errno) -> SysError {
-        SysError {
-            kind: kind,
-            desc: desc(kind)
+        SysError { kind: kind }
+    }
+
+    pub fn desc(&self) -> &'static str {
+        match self.kind {
+            UnknownErrno    => "Unknown errno",
+            EPERM           => "Operation not permitted",
+            ENOENT          => "No such file or directory",
+            ESRCH           => "No such process",
+            EINTR           => "Interrupted system call",
+            EIO             => "I/O error",
+            ENXIO           => "No such device or address",
+            E2BIG           => "Argument list too long",
+            ENOEXEC         => "Exec format error",
+            EBADF           => "Bad file number",
+            ECHILD          => "No child processes",
+            EAGAIN          => "Try again",
+            ENOMEM          => "Out of memory",
+            EACCES          => "Permission denied",
+            EFAULT          => "Bad address",
+            ENOTBLK         => "Block device required",
+            EBUSY           => "Device or resource busy",
+            EEXIST          => "File exists",
+            EXDEV           => "Cross-device link",
+            ENODEV          => "No such device",
+            ENOTDIR         => "Not a directory",
+            EISDIR          => "Is a directory",
+            EINVAL          => "Invalid argument",
+            ENFILE          => "File table overflow",
+            EMFILE          => "Too many open files",
+            ENOTTY          => "Not a typewriter",
+            ETXTBSY         => "Text file busy",
+            EFBIG           => "File too large",
+            ENOSPC          => "No space left on device",
+            ESPIPE          => "Illegal seek",
+            EROFS           => "Read-only file system",
+            EMLINK          => "Too many links",
+            EPIPE           => "Broken pipe",
+            EDOM            => "Math argument out of domain of func",
+            ERANGE          => "Math result not representable",
+            EDEADLK         => "Resource deadlock would occur",
+            ENAMETOOLONG    => "File name too long",
+            ENOLCK          => "No record locks available",
+            ENOSYS          => "Function not implemented",
+            ENOTEMPTY       => "Directory not empty",
+            ELOOP           => "Too many symbolic links encountered",
+            ENOMSG          => "No message of desired type",
+            EIDRM           => "Identifier removed",
+            EINPROGRESS     => "Operation now in progress",
+            EALREADY        => "Operation already in progress",
+            ENOTSOCK        => "Socket operation on non-socket",
+            EDESTADDRREQ    => "Destination address required",
+            EMSGSIZE        => "Message too long",
+            EPROTOTYPE      => "Protocol wrong type for socket",
+            ENOPROTOOPT     => "Protocol not available",
+            EPROTONOSUPPORT => "Protocol not supported",
+            ESOCKTNOSUPPORT => "Socket type not supported",
+            EPFNOSUPPORT    => "Protocol family not supported",
+            EAFNOSUPPORT    => "Address family not supported by protocol",
+            EADDRINUSE      => "Address already in use",
+            EADDRNOTAVAIL   => "Cannot assign requested address",
+            ENETDOWN        => "Network is down",
+            ENETUNREACH     => "Network is unreachable",
+            ENETRESET       => "Network dropped connection because of reset",
+            ECONNABORTED    => "Software caused connection abort",
+            ECONNRESET      => "Connection reset by peer",
+            ENOBUFS         => "No buffer space available",
+            EISCONN         => "Transport endpoint is already connected",
+            ENOTCONN        => "Transport endpoint is not connected",
+            ESHUTDOWN       => "Cannot send after transport endpoint shutdown",
+            ETOOMANYREFS    => "Too many references: cannot splice",
+            ETIMEDOUT       => "Connection timed out",
+            ECONNREFUSED    => "Connection refused",
+            EHOSTDOWN       => "Host is down",
+            EHOSTUNREACH    => "No route to host",
+
+            #[cfg(target_os = "linux")]
+            ECHRNG          => "Channel number out of range",
+
+            #[cfg(target_os = "linux")]
+            EL2NSYNC        => "Level 2 not synchronized",
+
+            #[cfg(target_os = "linux")]
+            EL3HLT          => "Level 3 halted",
+
+            #[cfg(target_os = "linux")]
+            EL3RST          => "Level 3 reset",
+
+            #[cfg(target_os = "linux")]
+            ELNRNG          => "Link number out of range",
+
+            #[cfg(target_os = "linux")]
+            EUNATCH         => "Protocol driver not attached",
+
+            #[cfg(target_os = "linux")]
+            ENOCSI          => "No CSI structure available",
+
+            #[cfg(target_os = "linux")]
+            EL2HLT          => "Level 2 halted",
+
+            #[cfg(target_os = "linux")]
+            EBADE           => "Invalid exchange",
+
+            #[cfg(target_os = "linux")]
+            EBADR           => "Invalid request descriptor",
+
+            #[cfg(target_os = "linux")]
+            EXFULL          => "Exchange full",
+
+            #[cfg(target_os = "linux")]
+            ENOANO          => "No anode",
+
+            #[cfg(target_os = "linux")]
+            EBADRQC         => "Invalid request code",
+
+            #[cfg(target_os = "linux")]
+            EBADSLT         => "Invalid slot",
+
+            #[cfg(target_os = "linux")]
+            EBFONT          => "Bad font file format",
+
+            #[cfg(target_os = "linux")]
+            ENOSTR          => "Device not a stream",
+
+            #[cfg(target_os = "linux")]
+            ENODATA         => "No data available",
+
+            #[cfg(target_os = "linux")]
+            ETIME           => "Timer expired",
+
+            #[cfg(target_os = "linux")]
+            ENOSR           => "Out of streams resources",
+
+            #[cfg(target_os = "linux")]
+            ENONET          => "Machine is not on the network",
+
+            #[cfg(target_os = "linux")]
+            ENOPKG          => "Package not installed",
+
+            #[cfg(target_os = "linux")]
+            EREMOTE         => "Object is remote",
+
+            #[cfg(target_os = "linux")]
+            ENOLINK         => "Link has been severed",
+
+            #[cfg(target_os = "linux")]
+            EADV            => "Advertise error",
+
+            #[cfg(target_os = "linux")]
+            ESRMNT          => "Srmount error",
+
+            #[cfg(target_os = "linux")]
+            ECOMM           => "Communication error on send",
+
+            #[cfg(target_os = "linux")]
+            EPROTO          => "Protocol error",
+
+            #[cfg(target_os = "linux")]
+            EMULTIHOP       => "Multihop attempted",
+
+            #[cfg(target_os = "linux")]
+            EDOTDOT         => "RFS specific error",
+
+            #[cfg(target_os = "linux")]
+            EBADMSG         => "Not a data message",
+
+            #[cfg(target_os = "linux")]
+            EOVERFLOW       => "Value too large for defined data type",
+
+            #[cfg(target_os = "linux")]
+            ENOTUNIQ        => "Name not unique on network",
+
+            #[cfg(target_os = "linux")]
+            EBADFD          => "File descriptor in bad state",
+
+            #[cfg(target_os = "linux")]
+            EREMCHG         => "Remote address changed",
+
+            #[cfg(target_os = "linux")]
+            ELIBACC         => "Can not acces a needed shared library",
+
+            #[cfg(target_os = "linux")]
+            ELIBBAD         => "Accessing a corrupted shared library",
+
+            #[cfg(target_os = "linux")]
+            ELIBSCN         => ".lib section in a.out corrupted",
+
+            #[cfg(target_os = "linux")]
+            ELIBMAX         => "Attempting to link in too many shared libraries",
+
+            #[cfg(target_os = "linux")]
+            ELIBEXEC        => "Cannot exec a shared library directly",
+
+            #[cfg(target_os = "linux")]
+            EILSEQ          => "Illegal byte sequence",
+
+            #[cfg(target_os = "linux")]
+            ERESTART        => "Interrupted system call should be restarted",
+
+            #[cfg(target_os = "linux")]
+            ESTRPIPE        => "Streams pipe error",
+
+            #[cfg(target_os = "linux")]
+            EUSERS          => "Too many users",
+
+            #[cfg(target_os = "linux")]
+            EOPNOTSUPP      => "Operation not supported on transport endpoint",
+
+            #[cfg(target_os = "linux")]
+            ESTALE          => "Stale file handle",
+
+            #[cfg(target_os = "linux")]
+            EUCLEAN         => "Structure needs cleaning",
+
+            #[cfg(target_os = "linux")]
+            ENOTNAM         => "Not a XENIX named type file",
+
+            #[cfg(target_os = "linux")]
+            ENAVAIL         => "No XENIX semaphores available",
+
+            #[cfg(target_os = "linux")]
+            EISNAM          => "Is a named type file",
+
+            #[cfg(target_os = "linux")]
+            EREMOTEIO       => "Remote I/O error",
+
+            #[cfg(target_os = "linux")]
+            EDQUOT          => "Quota exceeded",
+
+            #[cfg(target_os = "linux")]
+            ENOMEDIUM       => "No medium found",
+
+            #[cfg(target_os = "linux")]
+            EMEDIUMTYPE     => "Wrong medium type",
+
+            #[cfg(target_os = "linux")]
+            ECANCELED       => "Operation canceled",
+
+            #[cfg(target_os = "linux")]
+            ENOKEY          => "Required key not available",
+
+            #[cfg(target_os = "linux")]
+            EKEYEXPIRED     => "Key has expired",
+
+            #[cfg(target_os = "linux")]
+            EKEYREVOKED     => "Key has been revoked",
+
+            #[cfg(target_os = "linux")]
+            EKEYREJECTED    => "Key was rejected by service",
+
+            #[cfg(target_os = "linux")]
+            EOWNERDEAD      => "Owner died",
+
+            #[cfg(target_os = "linux")]
+            ENOTRECOVERABLE => "State not recoverable",
+
+            #[cfg(target_os = "linux")]
+            ERFKILL         => "Operation not possible due to RF-kill",
+
+            #[cfg(target_os = "linux")]
+            EHWPOISON       => "Memory page has hardware error",
+
+            #[cfg(target_os = "macos")]
+            #[cfg(target_os = "ios")]
+            ENOTSUP         => "Operation not supported",
+
+            #[cfg(target_os = "macos")]
+            #[cfg(target_os = "ios")]
+            EPROCLIM        => "Too many processes",
+
+            #[cfg(target_os = "macos")]
+            #[cfg(target_os = "ios")]
+            EUSERS          => "Too many users",
+
+            #[cfg(target_os = "macos")]
+            #[cfg(target_os = "ios")]
+            EDQUOT          => "Disc quota exceeded",
+
+            #[cfg(target_os = "macos")]
+            #[cfg(target_os = "ios")]
+            ESTALE          => "Stale NFS file handle",
+
+            #[cfg(target_os = "macos")]
+            #[cfg(target_os = "ios")]
+            EREMOTE         => "Stale NFS file handle",
+
+            #[cfg(target_os = "macos")]
+            #[cfg(target_os = "ios")]
+            EBADRPC         => "RPC struct is bad",
+
+            #[cfg(target_os = "macos")]
+            #[cfg(target_os = "ios")]
+            ERPCMISMATCH    => "RPC version wrong",
+
+            #[cfg(target_os = "macos")]
+            #[cfg(target_os = "ios")]
+            EPROGUNAVAIL    => "RPC prog. not avail",
+
+            #[cfg(target_os = "macos")]
+            #[cfg(target_os = "ios")]
+            EPROGMISMATCH   => "Program version wrong",
+
+            #[cfg(target_os = "macos")]
+            #[cfg(target_os = "ios")]
+            EPROCUNAVAIL    => "Bad procedure for program",
+
+            #[cfg(target_os = "macos")]
+            #[cfg(target_os = "ios")]
+            EFTYPE          => "Inappropriate file type or format",
+
+            #[cfg(target_os = "macos")]
+            #[cfg(target_os = "ios")]
+            EAUTH           => "Authentication error",
+
+            #[cfg(target_os = "macos")]
+            #[cfg(target_os = "ios")]
+            ENEEDAUTH       => "Need authenticator",
+
+            #[cfg(target_os = "macos")]
+            #[cfg(target_os = "ios")]
+            EPWROFF         => "Device power is off",
+
+            #[cfg(target_os = "macos")]
+            #[cfg(target_os = "ios")]
+            EDEVERR         => "Device error, e.g. paper out",
+
+            #[cfg(target_os = "macos")]
+            #[cfg(target_os = "ios")]
+            EOVERFLOW       => "Value too large to be stored in data type",
+
+            #[cfg(target_os = "macos")]
+            #[cfg(target_os = "ios")]
+            EBADEXEC        => "Bad executable",
+
+            #[cfg(target_os = "macos")]
+            #[cfg(target_os = "ios")]
+            EBADARCH        => "Bad CPU type in executable",
+
+            #[cfg(target_os = "macos")]
+            #[cfg(target_os = "ios")]
+            ESHLIBVERS      => "Shared library version mismatch",
+
+            #[cfg(target_os = "macos")]
+            #[cfg(target_os = "ios")]
+            EBADMACHO       => "Malformed Macho file",
+
+            #[cfg(target_os = "macos")]
+            #[cfg(target_os = "ios")]
+            ECANCELED       => "Operation canceled",
+
+            #[cfg(target_os = "macos")]
+            #[cfg(target_os = "ios")]
+            EILSEQ          => "Illegal byte sequence",
+
+            #[cfg(target_os = "macos")]
+            #[cfg(target_os = "ios")]
+            ENOATTR         => "Attribute not found",
+
+            #[cfg(target_os = "macos")]
+            #[cfg(target_os = "ios")]
+            EBADMSG         => "Bad message",
+
+            #[cfg(target_os = "macos")]
+            #[cfg(target_os = "ios")]
+            EMULTIHOP       => "Reserved",
+
+            #[cfg(target_os = "macos")]
+            #[cfg(target_os = "ios")]
+            ENODATA         => "No message available on STREAM",
+
+            #[cfg(target_os = "macos")]
+            #[cfg(target_os = "ios")]
+            ENOLINK         => "Reserved",
+
+            #[cfg(target_os = "macos")]
+            #[cfg(target_os = "ios")]
+            ENOSR           => "No STREAM resources",
+
+            #[cfg(target_os = "macos")]
+            #[cfg(target_os = "ios")]
+            ENOSTR          => "Not a STREAM",
+
+            #[cfg(target_os = "macos")]
+            #[cfg(target_os = "ios")]
+            EPROTO          => "Protocol error",
+
+            #[cfg(target_os = "macos")]
+            #[cfg(target_os = "ios")]
+            ETIME           => "STREAM ioctl timeout",
+
+            #[cfg(target_os = "macos")]
+            #[cfg(target_os = "ios")]
+            EOPNOTSUPP      => "Operation not supported on socket",
+
+            #[cfg(target_os = "macos")]
+            #[cfg(target_os = "ios")]
+            ENOPOLICY       => "No such policy registered",
+
+            #[cfg(target_os = "macos")]
+            #[cfg(target_os = "ios")]
+            ENOTRECOVERABLE => "State not recoverable",
+
+            #[cfg(target_os = "macos")]
+            #[cfg(target_os = "ios")]
+            EOWNERDEAD      => "Previous owner died",
+
+            #[cfg(target_os = "macos")]
+            #[cfg(target_os = "ios")]
+            EQFULL          => "Interface output queue is full",
         }
     }
 }
 
 impl fmt::Show for SysError {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        write!(fmt, "{} - {}", self.kind, self.desc)
+        write!(fmt, "{} - {}", self.kind, self.desc())
     }
 }
 
@@ -44,414 +449,6 @@ pub fn from_ffi(res: c_int) -> SysResult<()> {
     Ok(())
 }
 
-fn desc(kind: Errno) -> &'static str {
-    match kind {
-        UnknownErrno    => "Unknown errno",
-        EPERM           => "Operation not permitted",
-        ENOENT          => "No such file or directory",
-        ESRCH           => "No such process",
-        EINTR           => "Interrupted system call",
-        EIO             => "I/O error",
-        ENXIO           => "No such device or address",
-        E2BIG           => "Argument list too long",
-        ENOEXEC         => "Exec format error",
-        EBADF           => "Bad file number",
-        ECHILD          => "No child processes",
-        EAGAIN          => "Try again",
-        ENOMEM          => "Out of memory",
-        EACCES          => "Permission denied",
-        EFAULT          => "Bad address",
-        ENOTBLK         => "Block device required",
-        EBUSY           => "Device or resource busy",
-        EEXIST          => "File exists",
-        EXDEV           => "Cross-device link",
-        ENODEV          => "No such device",
-        ENOTDIR         => "Not a directory",
-        EISDIR          => "Is a directory",
-        EINVAL          => "Invalid argument",
-        ENFILE          => "File table overflow",
-        EMFILE          => "Too many open files",
-        ENOTTY          => "Not a typewriter",
-        ETXTBSY         => "Text file busy",
-        EFBIG           => "File too large",
-        ENOSPC          => "No space left on device",
-        ESPIPE          => "Illegal seek",
-        EROFS           => "Read-only file system",
-        EMLINK          => "Too many links",
-        EPIPE           => "Broken pipe",
-        EDOM            => "Math argument out of domain of func",
-        ERANGE          => "Math result not representable",
-        EDEADLK         => "Resource deadlock would occur",
-        ENAMETOOLONG    => "File name too long",
-        ENOLCK          => "No record locks available",
-        ENOSYS          => "Function not implemented",
-        ENOTEMPTY       => "Directory not empty",
-        ELOOP           => "Too many symbolic links encountered",
-        ENOMSG          => "No message of desired type",
-        EIDRM           => "Identifier removed",
-        EINPROGRESS     => "Operation now in progress",
-        EALREADY        => "Operation already in progress",
-        ENOTSOCK        => "Socket operation on non-socket",
-        EDESTADDRREQ    => "Destination address required",
-        EMSGSIZE        => "Message too long",
-        EPROTOTYPE      => "Protocol wrong type for socket",
-        ENOPROTOOPT     => "Protocol not available",
-        EPROTONOSUPPORT => "Protocol not supported",
-        ESOCKTNOSUPPORT => "Socket type not supported",
-        EPFNOSUPPORT    => "Protocol family not supported",
-        EAFNOSUPPORT    => "Address family not supported by protocol",
-        EADDRINUSE      => "Address already in use",
-        EADDRNOTAVAIL   => "Cannot assign requested address",
-        ENETDOWN        => "Network is down",
-        ENETUNREACH     => "Network is unreachable",
-        ENETRESET       => "Network dropped connection because of reset",
-        ECONNABORTED    => "Software caused connection abort",
-        ECONNRESET      => "Connection reset by peer",
-        ENOBUFS         => "No buffer space available",
-        EISCONN         => "Transport endpoint is already connected",
-        ENOTCONN        => "Transport endpoint is not connected",
-        ESHUTDOWN       => "Cannot send after transport endpoint shutdown",
-        ETOOMANYREFS    => "Too many references: cannot splice",
-        ETIMEDOUT       => "Connection timed out",
-        ECONNREFUSED    => "Connection refused",
-        EHOSTDOWN       => "Host is down",
-        EHOSTUNREACH    => "No route to host",
-
-        #[cfg(target_os = "linux")]
-        ECHRNG          => "Channel number out of range",
-
-        #[cfg(target_os = "linux")]
-        EL2NSYNC        => "Level 2 not synchronized",
-
-        #[cfg(target_os = "linux")]
-        EL3HLT          => "Level 3 halted",
-
-        #[cfg(target_os = "linux")]
-        EL3RST          => "Level 3 reset",
-
-        #[cfg(target_os = "linux")]
-        ELNRNG          => "Link number out of range",
-
-        #[cfg(target_os = "linux")]
-        EUNATCH         => "Protocol driver not attached",
-
-        #[cfg(target_os = "linux")]
-        ENOCSI          => "No CSI structure available",
-
-        #[cfg(target_os = "linux")]
-        EL2HLT          => "Level 2 halted",
-
-        #[cfg(target_os = "linux")]
-        EBADE           => "Invalid exchange",
-
-        #[cfg(target_os = "linux")]
-        EBADR           => "Invalid request descriptor",
-
-        #[cfg(target_os = "linux")]
-        EXFULL          => "Exchange full",
-
-        #[cfg(target_os = "linux")]
-        ENOANO          => "No anode",
-
-        #[cfg(target_os = "linux")]
-        EBADRQC         => "Invalid request code",
-
-        #[cfg(target_os = "linux")]
-        EBADSLT         => "Invalid slot",
-
-        #[cfg(target_os = "linux")]
-        EBFONT          => "Bad font file format",
-
-        #[cfg(target_os = "linux")]
-        ENOSTR          => "Device not a stream",
-
-        #[cfg(target_os = "linux")]
-        ENODATA         => "No data available",
-
-        #[cfg(target_os = "linux")]
-        ETIME           => "Timer expired",
-
-        #[cfg(target_os = "linux")]
-        ENOSR           => "Out of streams resources",
-
-        #[cfg(target_os = "linux")]
-        ENONET          => "Machine is not on the network",
-
-        #[cfg(target_os = "linux")]
-        ENOPKG          => "Package not installed",
-
-        #[cfg(target_os = "linux")]
-        EREMOTE         => "Object is remote",
-
-        #[cfg(target_os = "linux")]
-        ENOLINK         => "Link has been severed",
-
-        #[cfg(target_os = "linux")]
-        EADV            => "Advertise error",
-
-        #[cfg(target_os = "linux")]
-        ESRMNT          => "Srmount error",
-
-        #[cfg(target_os = "linux")]
-        ECOMM           => "Communication error on send",
-
-        #[cfg(target_os = "linux")]
-        EPROTO          => "Protocol error",
-
-        #[cfg(target_os = "linux")]
-        EMULTIHOP       => "Multihop attempted",
-
-        #[cfg(target_os = "linux")]
-        EDOTDOT         => "RFS specific error",
-
-        #[cfg(target_os = "linux")]
-        EBADMSG         => "Not a data message",
-
-        #[cfg(target_os = "linux")]
-        EOVERFLOW       => "Value too large for defined data type",
-
-        #[cfg(target_os = "linux")]
-        ENOTUNIQ        => "Name not unique on network",
-
-        #[cfg(target_os = "linux")]
-        EBADFD          => "File descriptor in bad state",
-
-        #[cfg(target_os = "linux")]
-        EREMCHG         => "Remote address changed",
-
-        #[cfg(target_os = "linux")]
-        ELIBACC         => "Can not acces a needed shared library",
-
-        #[cfg(target_os = "linux")]
-        ELIBBAD         => "Accessing a corrupted shared library",
-
-        #[cfg(target_os = "linux")]
-        ELIBSCN         => ".lib section in a.out corrupted",
-
-        #[cfg(target_os = "linux")]
-        ELIBMAX         => "Attempting to link in too many shared libraries",
-
-        #[cfg(target_os = "linux")]
-        ELIBEXEC        => "Cannot exec a shared library directly",
-
-        #[cfg(target_os = "linux")]
-        EILSEQ          => "Illegal byte sequence",
-
-        #[cfg(target_os = "linux")]
-        ERESTART        => "Interrupted system call should be restarted",
-
-        #[cfg(target_os = "linux")]
-        ESTRPIPE        => "Streams pipe error",
-
-        #[cfg(target_os = "linux")]
-        EUSERS          => "Too many users",
-
-        #[cfg(target_os = "linux")]
-        EOPNOTSUPP      => "Operation not supported on transport endpoint",
-
-        #[cfg(target_os = "linux")]
-        ESTALE          => "Stale file handle",
-
-        #[cfg(target_os = "linux")]
-        EUCLEAN         => "Structure needs cleaning",
-
-        #[cfg(target_os = "linux")]
-        ENOTNAM         => "Not a XENIX named type file",
-
-        #[cfg(target_os = "linux")]
-        ENAVAIL         => "No XENIX semaphores available",
-
-        #[cfg(target_os = "linux")]
-        EISNAM          => "Is a named type file",
-
-        #[cfg(target_os = "linux")]
-        EREMOTEIO       => "Remote I/O error",
-
-        #[cfg(target_os = "linux")]
-        EDQUOT          => "Quota exceeded",
-
-        #[cfg(target_os = "linux")]
-        ENOMEDIUM       => "No medium found",
-
-        #[cfg(target_os = "linux")]
-        EMEDIUMTYPE     => "Wrong medium type",
-
-        #[cfg(target_os = "linux")]
-        ECANCELED       => "Operation canceled",
-
-        #[cfg(target_os = "linux")]
-        ENOKEY          => "Required key not available",
-
-        #[cfg(target_os = "linux")]
-        EKEYEXPIRED     => "Key has expired",
-
-        #[cfg(target_os = "linux")]
-        EKEYREVOKED     => "Key has been revoked",
-
-        #[cfg(target_os = "linux")]
-        EKEYREJECTED    => "Key was rejected by service",
-
-        #[cfg(target_os = "linux")]
-        EOWNERDEAD      => "Owner died",
-
-        #[cfg(target_os = "linux")]
-        ENOTRECOVERABLE => "State not recoverable",
-
-        #[cfg(target_os = "linux")]
-        ERFKILL         => "Operation not possible due to RF-kill",
-
-        #[cfg(target_os = "linux")]
-        EHWPOISON       => "Memory page has hardware error",
-
-        #[cfg(target_os = "macos")]
-        #[cfg(target_os = "ios")]
-        ENOTSUP         => "Operation not supported",
-
-        #[cfg(target_os = "macos")]
-        #[cfg(target_os = "ios")]
-        EPROCLIM        => "Too many processes",
-
-        #[cfg(target_os = "macos")]
-        #[cfg(target_os = "ios")]
-        EUSERS          => "Too many users",
-
-        #[cfg(target_os = "macos")]
-        #[cfg(target_os = "ios")]
-        EDQUOT          => "Disc quota exceeded",
-
-        #[cfg(target_os = "macos")]
-        #[cfg(target_os = "ios")]
-        ESTALE          => "Stale NFS file handle",
-
-        #[cfg(target_os = "macos")]
-        #[cfg(target_os = "ios")]
-        EREMOTE         => "Stale NFS file handle",
-
-        #[cfg(target_os = "macos")]
-        #[cfg(target_os = "ios")]
-        EBADRPC         => "RPC struct is bad",
-
-        #[cfg(target_os = "macos")]
-        #[cfg(target_os = "ios")]
-        ERPCMISMATCH    => "RPC version wrong",
-
-        #[cfg(target_os = "macos")]
-        #[cfg(target_os = "ios")]
-        EPROGUNAVAIL    => "RPC prog. not avail",
-
-        #[cfg(target_os = "macos")]
-        #[cfg(target_os = "ios")]
-        EPROGMISMATCH   => "Program version wrong",
-
-        #[cfg(target_os = "macos")]
-        #[cfg(target_os = "ios")]
-        EPROCUNAVAIL    => "Bad procedure for program",
-
-        #[cfg(target_os = "macos")]
-        #[cfg(target_os = "ios")]
-        EFTYPE          => "Inappropriate file type or format",
-
-        #[cfg(target_os = "macos")]
-        #[cfg(target_os = "ios")]
-        EAUTH           => "Authentication error",
-
-        #[cfg(target_os = "macos")]
-        #[cfg(target_os = "ios")]
-        ENEEDAUTH       => "Need authenticator",
-
-        #[cfg(target_os = "macos")]
-        #[cfg(target_os = "ios")]
-        EPWROFF         => "Device power is off",
-
-        #[cfg(target_os = "macos")]
-        #[cfg(target_os = "ios")]
-        EDEVERR         => "Device error, e.g. paper out",
-
-        #[cfg(target_os = "macos")]
-        #[cfg(target_os = "ios")]
-        EOVERFLOW       => "Value too large to be stored in data type",
-
-        #[cfg(target_os = "macos")]
-        #[cfg(target_os = "ios")]
-        EBADEXEC        => "Bad executable",
-
-        #[cfg(target_os = "macos")]
-        #[cfg(target_os = "ios")]
-        EBADARCH        => "Bad CPU type in executable",
-
-        #[cfg(target_os = "macos")]
-        #[cfg(target_os = "ios")]
-        ESHLIBVERS      => "Shared library version mismatch",
-
-        #[cfg(target_os = "macos")]
-        #[cfg(target_os = "ios")]
-        EBADMACHO       => "Malformed Macho file",
-
-        #[cfg(target_os = "macos")]
-        #[cfg(target_os = "ios")]
-        ECANCELED       => "Operation canceled",
-
-        #[cfg(target_os = "macos")]
-        #[cfg(target_os = "ios")]
-        EILSEQ          => "Illegal byte sequence",
-
-        #[cfg(target_os = "macos")]
-        #[cfg(target_os = "ios")]
-        ENOATTR         => "Attribute not found",
-
-        #[cfg(target_os = "macos")]
-        #[cfg(target_os = "ios")]
-        EBADMSG         => "Bad message",
-
-        #[cfg(target_os = "macos")]
-        #[cfg(target_os = "ios")]
-        EMULTIHOP       => "Reserved",
-
-        #[cfg(target_os = "macos")]
-        #[cfg(target_os = "ios")]
-        ENODATA         => "No message available on STREAM",
-
-        #[cfg(target_os = "macos")]
-        #[cfg(target_os = "ios")]
-        ENOLINK         => "Reserved",
-
-        #[cfg(target_os = "macos")]
-        #[cfg(target_os = "ios")]
-        ENOSR           => "No STREAM resources",
-
-        #[cfg(target_os = "macos")]
-        #[cfg(target_os = "ios")]
-        ENOSTR          => "Not a STREAM",
-
-        #[cfg(target_os = "macos")]
-        #[cfg(target_os = "ios")]
-        EPROTO          => "Protocol error",
-
-        #[cfg(target_os = "macos")]
-        #[cfg(target_os = "ios")]
-        ETIME           => "STREAM ioctl timeout",
-
-        #[cfg(target_os = "macos")]
-        #[cfg(target_os = "ios")]
-        EOPNOTSUPP      => "Operation not supported on socket",
-
-        #[cfg(target_os = "macos")]
-        #[cfg(target_os = "ios")]
-        ENOPOLICY       => "No such policy registered",
-
-        #[cfg(target_os = "macos")]
-        #[cfg(target_os = "ios")]
-        ENOTRECOVERABLE => "State not recoverable",
-
-        #[cfg(target_os = "macos")]
-        #[cfg(target_os = "ios")]
-        EOWNERDEAD      => "Previous owner died",
-
-        #[cfg(target_os = "macos")]
-        #[cfg(target_os = "ios")]
-        EQFULL          => "Interface output queue is full",
-    }
-}
 
 #[cfg(target_os = "linux")]
 mod consts {
