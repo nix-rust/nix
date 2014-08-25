@@ -1,3 +1,4 @@
+use std::fmt;
 use libc::c_int;
 use fcntl::Fd;
 use errno::{SysResult, SysError, from_ffi};
@@ -32,6 +33,41 @@ bitflags!(
     }
 )
 
+impl fmt::Show for EpollEventKind {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        let variants = [
+            (EPOLLIN,       "EPOLLIN"),
+            (EPOLLPRI,      "EPOLLPRI"),
+            (EPOLLOUT,      "EPOLLOUT"),
+            (EPOLLRDNORM,   "EPOLLRDNORM"),
+            (EPOLLRDBAND,   "EPOLLRDBAND"),
+            (EPOLLWRNORM,   "EPOLLWRNORM"),
+            (EPOLLWRBAND,   "EPOLLWRBAND"),
+            (EPOLLMSG,      "EPOLLMSG"),
+            (EPOLLERR,      "EPOLLERR"),
+            (EPOLLHUP,      "EPOLLHUP"),
+            (EPOLLRDHUP,    "EPOLLRDHUP"),
+            (EPOLLWAKEUP,   "EPOLLWAKEUP"),
+            (EPOLLONESHOT,  "EPOLLONESHOT"),
+            (EPOLLET,       "EPOLLET")];
+
+        let mut first = true;
+
+        for &(val, name) in variants.iter() {
+            if self.contains(val) {
+                if first {
+                    first = false;
+                    try!(write!(fmt, "{}", name));
+                } else {
+                    try!(write!(fmt, "|{}", name));
+                }
+            }
+        }
+
+        Ok(())
+    }
+}
+
 #[repr(C)]
 pub enum EpollOp {
     EpollCtlAdd = 1,
@@ -39,6 +75,7 @@ pub enum EpollOp {
     EpollCtlMod = 3
 }
 
+#[repr(C)]
 pub struct EpollEvent {
     pub events: EpollEventKind,
     pub data: u64

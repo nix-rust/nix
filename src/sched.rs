@@ -34,7 +34,7 @@ pub type CloneCb<'a> = ||:'a -> int;
 mod ffi {
     use libc::{c_void, c_int};
 
-    type CloneCb = extern fn (data: *const super::CloneCb) -> c_int;
+    type CloneCb = extern "C" fn (data: *const super::CloneCb) -> c_int;
 
     extern {
         // create a child process

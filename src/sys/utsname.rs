@@ -15,6 +15,7 @@ mod ffi {
 #[cfg(target_arch = "x86_64")]
 static UTSNAME_LEN: uint = 65;
 
+#[repr(C)]
 pub struct UtsName {
     sysname: [c_char, ..UTSNAME_LEN],
     nodename: [c_char, ..UTSNAME_LEN],
