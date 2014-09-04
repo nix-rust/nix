@@ -288,6 +288,12 @@ pub fn connect(sockfd: Fd, addr: &SockAddr) -> SysResult<()> {
     from_ffi(res)
 }
 
+#[repr(C)]
+pub struct linger {
+    pub l_onoff: c_int,
+    pub l_linger: c_int
+}
+
 pub fn getsockopt<T>(fd: Fd, level: SockLevel, opt: SockOpt, val: &mut T) -> SysResult<uint> {
     let mut len = mem::size_of::<T>() as socklen_t;
 

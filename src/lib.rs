@@ -5,6 +5,9 @@
 
 extern crate libc;
 
+// Re-export some libc constants
+pub use libc::{c_int, c_void};
+
 pub use errno::{SysResult, SysError};
 
 #[cfg(target_os = "linux")]
