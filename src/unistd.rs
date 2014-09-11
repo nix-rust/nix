@@ -1,6 +1,6 @@
 use std::ptr;
 use std::c_str::{CString, ToCStr};
-use libc::{c_char, c_void, size_t};
+use libc::{c_char, c_void, c_int, size_t};
 use fcntl::{Fd, OFlag};
 use errno::{SysResult, SysError, from_ffi};
 
@@ -25,6 +25,10 @@ mod ffi {
         // execute program
         // doc: http://man7.org/linux/man-pages/man2/execve.2.html
         pub fn execve(filename: *const c_char, argv: *const *const c_char, envp: *const *const c_char) -> c_int;
+
+        // run the current process in the background
+        // doc: http://man7.org/linux/man-pages/man3/daemon.3.html
+        pub fn daemon(nochdir: c_int, noclose: c_int) -> c_int;
     }
 }
 
@@ -91,6 +95,11 @@ pub fn execve(filename: CString, args: &[CString], env: &[CString]) -> SysResult
 
     // Should never reach here
     Ok(())
+}
+
+pub fn daemon(nochdir: bool, noclose: bool) -> SysResult<()> {
+    let res = unsafe { ffi::daemon(nochdir as c_int, noclose as c_int) };
+    from_ffi(res)
 }
 
 pub fn close(fd: Fd) -> SysResult<()> {
