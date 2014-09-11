@@ -8,7 +8,7 @@ use errno::{SysResult, SysError, from_ffi};
 pub use self::linux::*;
 
 mod ffi {
-    use libc::{c_char, c_int};
+    use libc::{c_char, c_int, size_t};
     pub use libc::{close, read, write};
 
     extern {
@@ -29,6 +29,14 @@ mod ffi {
         // run the current process in the background
         // doc: http://man7.org/linux/man-pages/man3/daemon.3.html
         pub fn daemon(nochdir: c_int, noclose: c_int) -> c_int;
+
+        // sets the hostname to the value given
+        // doc: http://man7.org/linux/man-pages/man2/gethostname.2.html
+        pub fn gethostname(name: *mut c_char, len: size_t) -> c_int;
+
+        // gets the hostname
+        // doc: http://man7.org/linux/man-pages/man2/gethostname.2.html
+        pub fn sethostname(name: *const c_char, len: size_t) -> c_int;
     }
 }
 
@@ -99,6 +107,22 @@ pub fn execve(filename: CString, args: &[CString], env: &[CString]) -> SysResult
 
 pub fn daemon(nochdir: bool, noclose: bool) -> SysResult<()> {
     let res = unsafe { ffi::daemon(nochdir as c_int, noclose as c_int) };
+    from_ffi(res)
+}
+
+pub fn sethostname(name: &[u8]) -> SysResult<()> {
+    let ptr = name.as_ptr() as *const c_char;
+    let len = name.len() as u64;
+
+    let res = unsafe { ffi::sethostname(ptr, len) };
+    from_ffi(res)
+}
+
+pub fn gethostname(name: &mut [u8]) -> SysResult<()> {
+    let ptr = name.as_mut_ptr() as *mut c_char;
+    let len = name.len() as u64;
+
+    let res = unsafe { ffi::gethostname(ptr, len) };
     from_ffi(res)
 }
 
