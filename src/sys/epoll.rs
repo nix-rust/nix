@@ -75,7 +75,7 @@ pub enum EpollOp {
     EpollCtlMod = 3
 }
 
-#[repr(C)]
+#[repr(C, packed)]
 pub struct EpollEvent {
     pub events: EpollEventKind,
     pub data: u64
