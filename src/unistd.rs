@@ -1,7 +1,7 @@
-use std::ptr;
+use std::{mem, ptr};
 use std::c_str::{CString, ToCStr};
 use libc::{c_char, c_void, c_int, size_t};
-use fcntl::{Fd, OFlag};
+use fcntl::{fcntl, Fd, OFlag, O_NONBLOCK, O_CLOEXEC, FD_CLOEXEC, F_SETFD, F_SETFL};
 use errno::{SysResult, SysError, from_ffi};
 
 #[cfg(target_os = "linux")]
@@ -9,7 +9,7 @@ pub use self::linux::*;
 
 mod ffi {
     use libc::{c_char, c_int, size_t};
-    pub use libc::{close, read, write};
+    pub use libc::{close, read, write, pipe};
 
     extern {
         // duplicate a file descriptor
@@ -149,6 +149,99 @@ pub fn write(fd: Fd, buf: &[u8]) -> SysResult<uint> {
     }
 
     return Ok(res as uint)
+}
+
+pub fn pipe() -> SysResult<(Fd, Fd)> {
+    unsafe {
+        let mut res;
+        let mut fds: [c_int, ..2] = mem::uninitialized();
+
+        res = ffi::pipe(fds.as_mut_ptr());
+
+        if res < 0 {
+            return Err(SysError::last());
+        }
+
+        Ok((fds[0], fds[1]))
+    }
+}
+
+#[cfg(target_os = "linux")]
+pub fn pipe2(flags: OFlag) -> SysResult<(Fd, Fd)> {
+    type F = unsafe extern "C" fn(fds: *mut c_int, flags: c_int) -> c_int;
+
+    extern {
+        #[linkage = "extern_weak"]
+        static pipe2: *const ();
+    }
+
+    let feat_atomic = !pipe2.is_null();
+
+    unsafe {
+        let mut res;
+        let mut fds: [c_int, ..2] = mem::uninitialized();
+
+        if feat_atomic {
+            res = mem::transmute::<*const (), F>(pipe2)(
+                fds.as_mut_ptr(), flags.bits());
+        } else {
+            res = ffi::pipe(fds.as_mut_ptr());
+        }
+
+        if res < 0 {
+            return Err(SysError::last());
+        }
+
+        if !feat_atomic {
+            try!(pipe2_setflags(fds[0], fds[1], flags));
+        }
+
+        Ok((fds[0], fds[1]))
+    }
+}
+
+#[cfg(target_os = "macos")]
+#[cfg(target_os = "ios")]
+pub fn pipe2(flags: OFlag) -> SysResult<(Fd, Fd)> {
+    unsafe {
+        let mut res;
+        let mut fds: [c_int, ..2] = mem::uninitialized();
+
+        res = ffi::pipe(fds.as_mut_ptr());
+
+        if res < 0 {
+            return Err(SysError::last());
+        }
+
+        try!(pipe2_setflags(fds[0], fds[1], flags));
+
+        Ok((fds[0], fds[1]))
+    }
+}
+
+fn pipe2_setflags(fd1: Fd, fd2: Fd, flags: OFlag) -> SysResult<()> {
+    let mut res = Ok(());
+
+    if flags.contains(O_CLOEXEC) {
+        res = res
+            .and_then(|_| fcntl(fd1, F_SETFD(FD_CLOEXEC)))
+            .and_then(|_| fcntl(fd2, F_SETFD(FD_CLOEXEC)));
+    }
+
+    if flags.contains(O_NONBLOCK) {
+        res = res
+            .and_then(|_| fcntl(fd1, F_SETFL(O_NONBLOCK)))
+            .and_then(|_| fcntl(fd2, F_SETFL(O_NONBLOCK)));
+    }
+
+    match res {
+        Ok(_) => Ok(()),
+        Err(e) => {
+            let _ = close(fd1);
+            let _ = close(fd2);
+            return Err(e);
+        }
+    }
 }
 
 #[cfg(target_os = "linux")]
