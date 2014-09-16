@@ -125,7 +125,7 @@ pub fn chdir<S: ToCStr>(path: S) -> SysResult<()> {
 }
 
 #[inline]
-pub fn execve(filename: CString, args: &[CString], env: &[CString]) -> SysResult<()> {
+pub fn execve(filename: &CString, args: &[CString], env: &[CString]) -> SysResult<()> {
     let mut args_p: Vec<*const c_char> = args.iter().map(|s| s.as_ptr()).collect();
     args_p.push(ptr::null());
 
@@ -140,8 +140,7 @@ pub fn execve(filename: CString, args: &[CString], env: &[CString]) -> SysResult
         return Err(SysError::last());
     }
 
-    // Should never reach here
-    Ok(())
+    unreachable!()
 }
 
 pub fn daemon(nochdir: bool, noclose: bool) -> SysResult<()> {
