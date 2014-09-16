@@ -16,7 +16,9 @@ mod ffi {
         // doc: http://man7.org/linux/man-pages/man2/dup.2.html
         pub fn dup(oldfd: c_int) -> c_int;
         pub fn dup2(oldfd: c_int, newfd: c_int) -> c_int;
-        pub fn dup3(oldfd: c_int, newfd: c_int, flags: c_int) -> c_int;
+
+        // TODO: dup3 is only available in newer linux kernels and possibly a few *bsds
+        // pub fn dup3(oldfd: c_int, newfd: c_int, flags: c_int) -> c_int;
 
         // change working directory
         // doc: http://man7.org/linux/man-pages/man2/chdir.2.html
@@ -62,6 +64,8 @@ pub fn dup2(oldfd: Fd, newfd: Fd) -> SysResult<Fd> {
     Ok(res)
 }
 
+/*
+Same TODO as above
 #[inline]
 pub fn dup3(oldfd: Fd, newfd: Fd, flags: OFlag) -> SysResult<Fd> {
     let res = unsafe { ffi::dup3(oldfd, newfd, flags.bits()) };
@@ -72,6 +76,7 @@ pub fn dup3(oldfd: Fd, newfd: Fd, flags: OFlag) -> SysResult<Fd> {
 
     Ok(res)
 }
+*/
 
 #[inline]
 pub fn chdir<S: ToCStr>(path: S) -> SysResult<()> {
