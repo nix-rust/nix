@@ -24,6 +24,10 @@ impl SysError {
         SysError { kind: kind }
     }
 
+    pub fn errno(&self) -> uint {
+        self.kind as uint
+    }
+
     pub fn desc(&self) -> &'static str {
         match self.kind {
             UnknownErrno    => "Unknown errno",

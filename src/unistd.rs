@@ -1,6 +1,6 @@
 use std::{mem, ptr};
 use std::c_str::{CString, ToCStr};
-use libc::{c_char, c_void, c_int, size_t};
+use libc::{c_char, c_void, c_int, size_t, pid_t};
 use fcntl::{fcntl, Fd, OFlag, O_NONBLOCK, O_CLOEXEC, FD_CLOEXEC, F_SETFD, F_SETFL};
 use errno::{SysResult, SysError, from_ffi};
 
@@ -10,6 +10,7 @@ pub use self::linux::*;
 mod ffi {
     use libc::{c_char, c_int, size_t};
     pub use libc::{close, read, write, pipe};
+    pub use libc::funcs::posix88::unistd::fork;
 
     extern {
         // duplicate a file descriptor
@@ -39,6 +40,39 @@ mod ffi {
         // gets the hostname
         // doc: http://man7.org/linux/man-pages/man2/gethostname.2.html
         pub fn sethostname(name: *const c_char, len: size_t) -> c_int;
+    }
+}
+
+pub enum Fork {
+    Parent(pid_t),
+    Child
+}
+
+impl Fork {
+    pub fn is_child(&self) -> bool {
+        match *self {
+            Child => true,
+            _ => false
+        }
+    }
+
+    pub fn is_parent(&self) -> bool {
+        match *self {
+            Parent(_) => true,
+            _ => false
+        }
+    }
+}
+
+pub fn fork() -> SysResult<Fork> {
+    let res = unsafe { ffi::fork() };
+
+    if res < 0 {
+        return Err(SysError::last());
+    } else if res == 0 {
+        Ok(Child)
+    } else {
+        Ok(Parent(res))
     }
 }
 
