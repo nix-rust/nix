@@ -207,7 +207,7 @@ pub fn bind(sockfd: Fd, addr: &SockAddr) -> SysResult<()> {
 }
 
 pub fn accept(sockfd: Fd) -> SysResult<Fd> {
-    let res = unsafe { ffi::accept(sockfd, ptr::mut_null(), ptr::mut_null()) };
+    let res = unsafe { ffi::accept(sockfd, ptr::null_mut(), ptr::null_mut()) };
 
     if res < 0 {
         return Err(SysError::last());
@@ -232,10 +232,10 @@ pub fn accept4(sockfd: Fd, flags: SockFlag) -> SysResult<Fd> {
     let res = if feat_atomic {
         unsafe {
             mem::transmute::<*const (), F>(accept4)(
-                sockfd, ptr::mut_null(), ptr::mut_null(), flags.bits)
+                sockfd, ptr::null_mut(), ptr::null_mut(), flags.bits)
         }
     } else {
-        unsafe { ffi::accept(sockfd, ptr::mut_null(), ptr::mut_null()) }
+        unsafe { ffi::accept(sockfd, ptr::null_mut(), ptr::null_mut()) }
     };
 
     if res < 0 {
@@ -258,7 +258,7 @@ pub fn accept4(sockfd: Fd, flags: SockFlag) -> SysResult<Fd> {
 #[cfg(target_os = "macos")]
 #[cfg(target_os = "ios")]
 pub fn accept4(sockfd: Fd, flags: SockFlag) -> SysResult<Fd> {
-    let res = unsafe { ffi::accept(sockfd, ptr::mut_null(), ptr::mut_null()) };
+    let res = unsafe { ffi::accept(sockfd, ptr::null_mut(), ptr::null_mut()) };
 
     if res < 0 {
         return Err(SysError::last());

@@ -18,6 +18,8 @@ mod ffi {
         pub udata: u64              // 8
     }
 
+    // Bug in rustc, cannot determine that kevent is #[repr(C)]
+    #[allow(ctypes)]
     extern {
         pub fn kqueue() -> c_int;
 

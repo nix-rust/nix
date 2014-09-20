@@ -8,6 +8,7 @@ pub use self::ffi::flock;
 
 pub type Fd = c_int;
 
+#[allow(dead_code)]
 mod ffi {
     pub use libc::{open, fcntl};
     pub use self::os::*;
