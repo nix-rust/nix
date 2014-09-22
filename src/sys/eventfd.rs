@@ -1,14 +1,7 @@
+use std::mem;
 use libc::{c_int, c_uint};
 use fcntl::Fd;
 use errno::{SysResult, SysError, from_ffi};
-
-mod ffi {
-    use libc::{c_int, c_uint};
-
-    extern {
-        pub fn eventfd(initval: c_uint, flags: c_int) -> c_int;
-    }
-}
 
 bitflags!(
     flags EventFdFlag: c_int {
@@ -19,7 +12,21 @@ bitflags!(
 )
 
 pub fn eventfd(initval: uint, flags: EventFdFlag) -> SysResult<Fd> {
-    let res = unsafe { ffi::eventfd(initval as c_uint, flags.bits()) };
+    type F = unsafe extern "C" fn(initval: c_uint, flags: c_int) -> c_int;
+
+    extern {
+        #[linkage = "extern_weak"]
+        static eventfd: *const ();
+    }
+
+    if eventfd.is_null() {
+        fail!("eventfd unsupported on this platform");
+    }
+
+    let res = unsafe {
+        mem::transmute::<*const (), F>(eventfd)(
+            initval as c_uint, flags.bits())
+    };
 
     if res < 0 {
         return Err(SysError::last());
