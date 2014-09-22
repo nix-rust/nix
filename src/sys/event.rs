@@ -15,9 +15,11 @@ mod ffi {
         pub flags: EventFlag,       // 2
         pub fflags: FilterFlag,     // 4
         pub data: intptr_t,         // 8
-        pub udata: u64              // 8
+        pub udata: uint             // 8
     }
 
+    // Bug in rustc, cannot determine that kevent is #[repr(C)]
+    #[allow(ctypes)]
     extern {
         pub fn kqueue() -> c_int;
 
@@ -161,7 +163,7 @@ pub fn ev_set(ev: &mut KEvent,
               filter: EventFilter,
               flags: EventFlag,
               fflags: FilterFlag,
-              udata: u64) {
+              udata: uint) {
 
     ev.ident  = ident as u64;
     ev.filter = filter;
