@@ -238,8 +238,7 @@ pub fn pipe2(flags: OFlag) -> SysResult<(Fd, Fd)> {
     }
 }
 
-#[cfg(target_os = "macos")]
-#[cfg(target_os = "ios")]
+#[cfg(any(target_os = "macos", target_os = "ios"))]
 pub fn pipe2(flags: OFlag) -> SysResult<(Fd, Fd)> {
     unsafe {
         let mut res;

@@ -97,8 +97,7 @@ mod consts {
     pub static SO_BUSY_POLL: SockOpt = 46;
 }
 
-#[cfg(target_os = "macos")]
-#[cfg(target_os = "ios")]
+#[cfg(any(target_os = "macos", target_os = "ios"))]
 mod consts {
     use libc::{c_int};
 
@@ -255,8 +254,7 @@ pub fn accept4(sockfd: Fd, flags: SockFlag) -> SysResult<Fd> {
     Ok(res)
 }
 
-#[cfg(target_os = "macos")]
-#[cfg(target_os = "ios")]
+#[cfg(any(target_os = "macos", target_os = "ios"))]
 pub fn accept4(sockfd: Fd, flags: SockFlag) -> SysResult<Fd> {
     let res = unsafe { ffi::accept(sockfd, ptr::null_mut(), ptr::null_mut()) };
 

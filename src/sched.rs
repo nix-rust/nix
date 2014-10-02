@@ -1,5 +1,3 @@
-#![cfg(target_os = "linux")]
-
 use std::mem;
 use libc::{c_int, c_uint, c_void};
 use super::{SysResult, SysError};

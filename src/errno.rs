@@ -287,152 +287,115 @@ impl SysError {
             #[cfg(target_os = "linux")]
             EHWPOISON       => "Memory page has hardware error",
 
-            #[cfg(target_os = "macos")]
-            #[cfg(target_os = "ios")]
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
             ENOTSUP         => "Operation not supported",
 
-            #[cfg(target_os = "macos")]
-            #[cfg(target_os = "ios")]
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
             EPROCLIM        => "Too many processes",
 
-            #[cfg(target_os = "macos")]
-            #[cfg(target_os = "ios")]
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
             EUSERS          => "Too many users",
 
-            #[cfg(target_os = "macos")]
-            #[cfg(target_os = "ios")]
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
             EDQUOT          => "Disc quota exceeded",
 
-            #[cfg(target_os = "macos")]
-            #[cfg(target_os = "ios")]
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
             ESTALE          => "Stale NFS file handle",
 
-            #[cfg(target_os = "macos")]
-            #[cfg(target_os = "ios")]
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
             EREMOTE         => "Stale NFS file handle",
 
-            #[cfg(target_os = "macos")]
-            #[cfg(target_os = "ios")]
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
             EBADRPC         => "RPC struct is bad",
 
-            #[cfg(target_os = "macos")]
-            #[cfg(target_os = "ios")]
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
             ERPCMISMATCH    => "RPC version wrong",
 
-            #[cfg(target_os = "macos")]
-            #[cfg(target_os = "ios")]
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
             EPROGUNAVAIL    => "RPC prog. not avail",
 
-            #[cfg(target_os = "macos")]
-            #[cfg(target_os = "ios")]
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
             EPROGMISMATCH   => "Program version wrong",
 
-            #[cfg(target_os = "macos")]
-            #[cfg(target_os = "ios")]
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
             EPROCUNAVAIL    => "Bad procedure for program",
 
-            #[cfg(target_os = "macos")]
-            #[cfg(target_os = "ios")]
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
             EFTYPE          => "Inappropriate file type or format",
 
-            #[cfg(target_os = "macos")]
-            #[cfg(target_os = "ios")]
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
             EAUTH           => "Authentication error",
 
-            #[cfg(target_os = "macos")]
-            #[cfg(target_os = "ios")]
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
             ENEEDAUTH       => "Need authenticator",
 
-            #[cfg(target_os = "macos")]
-            #[cfg(target_os = "ios")]
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
             EPWROFF         => "Device power is off",
 
-            #[cfg(target_os = "macos")]
-            #[cfg(target_os = "ios")]
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
             EDEVERR         => "Device error, e.g. paper out",
 
-            #[cfg(target_os = "macos")]
-            #[cfg(target_os = "ios")]
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
             EOVERFLOW       => "Value too large to be stored in data type",
 
-            #[cfg(target_os = "macos")]
-            #[cfg(target_os = "ios")]
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
             EBADEXEC        => "Bad executable",
 
-            #[cfg(target_os = "macos")]
-            #[cfg(target_os = "ios")]
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
             EBADARCH        => "Bad CPU type in executable",
 
-            #[cfg(target_os = "macos")]
-            #[cfg(target_os = "ios")]
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
             ESHLIBVERS      => "Shared library version mismatch",
 
-            #[cfg(target_os = "macos")]
-            #[cfg(target_os = "ios")]
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
             EBADMACHO       => "Malformed Macho file",
 
-            #[cfg(target_os = "macos")]
-            #[cfg(target_os = "ios")]
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
             ECANCELED       => "Operation canceled",
 
-            #[cfg(target_os = "macos")]
-            #[cfg(target_os = "ios")]
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
             EILSEQ          => "Illegal byte sequence",
 
-            #[cfg(target_os = "macos")]
-            #[cfg(target_os = "ios")]
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
             ENOATTR         => "Attribute not found",
 
-            #[cfg(target_os = "macos")]
-            #[cfg(target_os = "ios")]
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
             EBADMSG         => "Bad message",
 
-            #[cfg(target_os = "macos")]
-            #[cfg(target_os = "ios")]
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
             EMULTIHOP       => "Reserved",
 
-            #[cfg(target_os = "macos")]
-            #[cfg(target_os = "ios")]
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
             ENODATA         => "No message available on STREAM",
 
-            #[cfg(target_os = "macos")]
-            #[cfg(target_os = "ios")]
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
             ENOLINK         => "Reserved",
 
-            #[cfg(target_os = "macos")]
-            #[cfg(target_os = "ios")]
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
             ENOSR           => "No STREAM resources",
 
-            #[cfg(target_os = "macos")]
-            #[cfg(target_os = "ios")]
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
             ENOSTR          => "Not a STREAM",
 
-            #[cfg(target_os = "macos")]
-            #[cfg(target_os = "ios")]
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
             EPROTO          => "Protocol error",
 
-            #[cfg(target_os = "macos")]
-            #[cfg(target_os = "ios")]
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
             ETIME           => "STREAM ioctl timeout",
 
-            #[cfg(target_os = "macos")]
-            #[cfg(target_os = "ios")]
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
             EOPNOTSUPP      => "Operation not supported on socket",
 
-            #[cfg(target_os = "macos")]
-            #[cfg(target_os = "ios")]
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
             ENOPOLICY       => "No such policy registered",
 
-            #[cfg(target_os = "macos")]
-            #[cfg(target_os = "ios")]
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
             ENOTRECOVERABLE => "State not recoverable",
 
-            #[cfg(target_os = "macos")]
-            #[cfg(target_os = "ios")]
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
             EOWNERDEAD      => "Previous owner died",
 
-            #[cfg(target_os = "macos")]
-            #[cfg(target_os = "ios")]
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
             EQFULL          => "Interface output queue is full",
         }
     }
@@ -596,8 +559,7 @@ mod consts {
     pub static EDEADLOCK:   Errno = EDEADLK;
 }
 
-#[cfg(target_os = "macos")]
-#[cfg(target_os = "ios")]
+#[cfg(any(target_os = "macos", target_os = "ios"))]
 mod consts {
     #[deriving(Show, Clone, PartialEq, FromPrimitive)]
     pub enum Errno {

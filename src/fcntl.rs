@@ -40,8 +40,7 @@ mod ffi {
         pub static F_GETLK:         c_int = 5;
     }
 
-    #[cfg(target_os = "macos")]
-    #[cfg(target_os = "ios")]
+    #[cfg(any(target_os = "macos", target_os = "ios"))]
     mod os {
         use libc::{c_int, c_short, off_t, pid_t};
 
@@ -153,8 +152,7 @@ mod consts {
     )
 }
 
-#[cfg(target_os = "macos")]
-#[cfg(target_os = "ios")]
+#[cfg(any(target_os = "macos", target_os = "ios"))]
 mod consts {
     use libc::c_int;
 

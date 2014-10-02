@@ -1,5 +1,3 @@
-#![cfg(target_os = "linux")]
-
 use libc::c_int;
 
 pub use self::arch::*;
