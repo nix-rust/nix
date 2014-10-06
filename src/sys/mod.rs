@@ -10,7 +10,6 @@ pub mod eventfd;
 
 pub mod socket;
 
-#[cfg(target_os = "linux")]
 pub mod stat;
 
 #[cfg(target_os = "linux")]
