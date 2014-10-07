@@ -2,6 +2,7 @@
 
 #![feature(globs)]
 #![feature(linkage)]
+#![feature(if_let)]
 #![allow(non_camel_case_types)]
 
 extern crate libc;

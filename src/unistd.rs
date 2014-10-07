@@ -18,9 +18,6 @@ mod ffi {
         pub fn dup(oldfd: c_int) -> c_int;
         pub fn dup2(oldfd: c_int, newfd: c_int) -> c_int;
 
-        // TODO: dup3 is only available in newer linux kernels and possibly a few *bsds
-        // pub fn dup3(oldfd: c_int, newfd: c_int, flags: c_int) -> c_int;
-
         // change working directory
         // doc: http://man7.org/linux/man-pages/man2/chdir.2.html
         pub fn chdir(path: *const c_char) -> c_int;
@@ -98,19 +95,44 @@ pub fn dup2(oldfd: Fd, newfd: Fd) -> SysResult<Fd> {
     Ok(res)
 }
 
-/*
-Same TODO as above
-#[inline]
 pub fn dup3(oldfd: Fd, newfd: Fd, flags: OFlag) -> SysResult<Fd> {
-    let res = unsafe { ffi::dup3(oldfd, newfd, flags.bits()) };
+    use errno::EINVAL;
 
-    if res < 0 {
-        return Err(SysError::last());
+    type F = unsafe extern "C" fn(c_int, c_int, c_int) -> c_int;
+
+    extern {
+        #[linkage = "extern_weak"]
+        static dup3: *const ();
     }
 
-    Ok(res)
+    if !dup3.is_null() {
+        let res = unsafe {
+            mem::transmute::<*const (), F>(dup3)(
+                oldfd, newfd, flags.bits())
+        };
+
+        if res < 0 {
+            return Err(SysError::last());
+        }
+
+        Ok(res)
+    } else {
+        if oldfd == newfd {
+            return Err(SysError { kind: EINVAL });
+        }
+
+        let fd = try!(dup2(oldfd, newfd));
+
+        if flags.contains(O_CLOEXEC) {
+            if let Err(e) = fcntl(fd, F_SETFD(FD_CLOEXEC)) {
+                let _ = close(fd);
+                return Err(e);
+            }
+        }
+
+        Ok(fd)
+    }
 }
-*/
 
 #[inline]
 pub fn chdir<S: ToCStr>(path: S) -> SysResult<()> {
