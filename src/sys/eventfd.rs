@@ -1,7 +1,7 @@
 use std::mem;
 use libc::{c_int, c_uint};
 use fcntl::Fd;
-use errno::{SysResult, SysError, from_ffi};
+use errno::{SysResult, SysError};
 
 bitflags!(
     flags EventFdFlag: c_int {

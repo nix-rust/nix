@@ -8,7 +8,7 @@ mod arch {
 
     pub type Syscall = c_long;
 
-    pub static SysPivotRoot: Syscall = 155;
+    pub static SYSPIVOTROOT: Syscall = 155;
 }
 
 extern {

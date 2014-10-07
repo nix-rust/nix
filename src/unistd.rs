@@ -306,7 +306,7 @@ fn pipe2_setflags(fd1: Fd, fd2: Fd, flags: OFlag) -> SysResult<()> {
 #[cfg(target_os = "linux")]
 mod linux {
     use std::path::Path;
-    use syscall::{syscall, SysPivotRoot};
+    use syscall::{syscall, SYSPIVOTROOT};
     use errno::{SysResult, SysError};
 
     pub fn pivot_root(new_root: &Path, put_old: &Path) -> SysResult<()> {
@@ -314,7 +314,7 @@ mod linux {
         let put_old = put_old.to_c_str();
 
         let res = unsafe {
-            syscall(SysPivotRoot, new_root.as_ptr(), put_old.as_ptr())
+            syscall(SYSPIVOTROOT, new_root.as_ptr(), put_old.as_ptr())
         };
 
         if res != 0 {

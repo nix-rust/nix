@@ -40,8 +40,8 @@ pub fn mknod(path: &Path, kind: SFlag, perm: FilePermission, dev: dev_t) -> SysR
     from_ffi(res)
 }
 
+#[cfg(target_os = "linux")]
 static MINORBITS: uint = 20;
-// static MINORMASK: dev_t = ((1 << MINORBITS) - 1);
 
 #[cfg(target_os = "linux")]
 pub fn mkdev(major: u64, minor: u64) -> dev_t {
