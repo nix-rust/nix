@@ -215,6 +215,7 @@ pub fn accept(sockfd: Fd) -> SysResult<Fd> {
     Ok(res)
 }
 
+#[cfg(not(any(target_os = "macos", target_os = "ios")))]
 pub fn accept4(sockfd: Fd, flags: SockFlag) -> SysResult<Fd> {
     use libc::sockaddr;
 
@@ -225,34 +226,45 @@ pub fn accept4(sockfd: Fd, flags: SockFlag) -> SysResult<Fd> {
         static accept4: *const ();
     }
 
-    let feat_atomic = !accept4.is_null();
-
-    let res = if feat_atomic {
-        unsafe {
+    if !accept4.is_null() {
+        let res = unsafe {
             mem::transmute::<*const (), F>(accept4)(
                 sockfd, ptr::null_mut(), ptr::null_mut(), flags.bits)
+        };
+
+        if res < 0 {
+            return Err(SysError::last());
         }
+
+        Ok(res)
     } else {
-        unsafe { ffi::accept(sockfd, ptr::null_mut(), ptr::null_mut()) }
-    };
+        accept4_polyfill(sockfd, flags)
+    }
+}
+
+#[cfg(any(target_os = "macos", target_os = "ios"))]
+fn accept4(sockfd: Fd, flags: SockFlag) -> SysResult<Fd> {
+    accept4_polyfill(sockfd, flags)
+}
+
+#[inline]
+fn accept4_polyfill(sockfd: Fd, flags: SockFlag) -> SysResult<Fd> {
+    let res =  unsafe { ffi::accept(sockfd, ptr::null_mut(), ptr::null_mut()) };
 
     if res < 0 {
         return Err(SysError::last());
     }
 
-    if !feat_atomic {
-        if flags.contains(SOCK_CLOEXEC) {
-            try!(fcntl(res, F_SETFD(FD_CLOEXEC)));
-        }
+    if flags.contains(SOCK_CLOEXEC) {
+        try!(fcntl(res, F_SETFD(FD_CLOEXEC)));
+    }
 
-        if flags.contains(SOCK_NONBLOCK) {
-            try!(fcntl(res, F_SETFL(O_NONBLOCK)));
-        }
+    if flags.contains(SOCK_NONBLOCK) {
+        try!(fcntl(res, F_SETFL(O_NONBLOCK)));
     }
 
     Ok(res)
 }
-
 
 pub fn connect(sockfd: Fd, addr: &SockAddr) -> SysResult<()> {
     let res = unsafe {

@@ -95,9 +95,8 @@ pub fn dup2(oldfd: Fd, newfd: Fd) -> SysResult<Fd> {
     Ok(res)
 }
 
+#[cfg(not(any(target_os = "macos", target_os = "ios")))]
 pub fn dup3(oldfd: Fd, newfd: Fd, flags: OFlag) -> SysResult<Fd> {
-    use errno::EINVAL;
-
     type F = unsafe extern "C" fn(c_int, c_int, c_int) -> c_int;
 
     extern {
@@ -117,21 +116,33 @@ pub fn dup3(oldfd: Fd, newfd: Fd, flags: OFlag) -> SysResult<Fd> {
 
         Ok(res)
     } else {
-        if oldfd == newfd {
-            return Err(SysError { kind: EINVAL });
-        }
-
-        let fd = try!(dup2(oldfd, newfd));
-
-        if flags.contains(O_CLOEXEC) {
-            if let Err(e) = fcntl(fd, F_SETFD(FD_CLOEXEC)) {
-                let _ = close(fd);
-                return Err(e);
-            }
-        }
-
-        Ok(fd)
+        dup3_polyfill(oldfd, newfd, flags)
     }
+}
+
+#[cfg(any(target_os = "macos", target_os = "ios"))]
+pub fn dup3(oldfd: Fd, newfd: Fd, flags: OFlag) -> SysResult<Fd> {
+    dup3_polyfill(oldfd, newfd, flags)
+}
+
+#[inline]
+fn dup3_polyfill(oldfd: Fd, newfd: Fd, flags: OFlag) -> SysResult<Fd> {
+    use errno::EINVAL;
+
+    if oldfd == newfd {
+        return Err(SysError { kind: EINVAL });
+    }
+
+    let fd = try!(dup2(oldfd, newfd));
+
+    if flags.contains(O_CLOEXEC) {
+        if let Err(e) = fcntl(fd, F_SETFD(FD_CLOEXEC)) {
+            let _ = close(fd);
+            return Err(e);
+        }
+    }
+
+    Ok(fd)
 }
 
 #[inline]
