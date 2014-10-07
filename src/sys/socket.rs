@@ -162,7 +162,7 @@ mod consts {
 }
 
 pub fn socket(domain: AddressFamily, mut ty: SockType, flags: SockFlag) -> SysResult<Fd> {
-    let feat_atomic = features::atomic_cloexec();
+    let feat_atomic = features::socket_atomic_cloexec();
 
     if feat_atomic {
         ty = ty | flags.bits();
