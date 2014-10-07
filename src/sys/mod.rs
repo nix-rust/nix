@@ -14,3 +14,5 @@ pub mod stat;
 
 #[cfg(target_os = "linux")]
 pub mod utsname;
+
+pub mod wait;
