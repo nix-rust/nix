@@ -215,7 +215,6 @@ pub fn accept(sockfd: Fd) -> SysResult<Fd> {
     Ok(res)
 }
 
-#[cfg(target_os = "linux")]
 pub fn accept4(sockfd: Fd, flags: SockFlag) -> SysResult<Fd> {
     use libc::sockaddr;
 
@@ -249,25 +248,6 @@ pub fn accept4(sockfd: Fd, flags: SockFlag) -> SysResult<Fd> {
         if flags.contains(SOCK_NONBLOCK) {
             try!(fcntl(res, F_SETFL(O_NONBLOCK)));
         }
-    }
-
-    Ok(res)
-}
-
-#[cfg(any(target_os = "macos", target_os = "ios"))]
-pub fn accept4(sockfd: Fd, flags: SockFlag) -> SysResult<Fd> {
-    let res = unsafe { ffi::accept(sockfd, ptr::null_mut(), ptr::null_mut()) };
-
-    if res < 0 {
-        return Err(SysError::last());
-    }
-
-    if flags.contains(SOCK_CLOEXEC) {
-        try!(fcntl(res, F_SETFD(FD_CLOEXEC)));
-    }
-
-    if flags.contains(SOCK_NONBLOCK) {
-        try!(fcntl(res, F_SETFL(O_NONBLOCK)));
     }
 
     Ok(res)
