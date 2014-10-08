@@ -38,7 +38,7 @@ pub enum SockAddr {
 
 #[cfg(target_os = "linux")]
 mod consts {
-    use libc::{c_int};
+    use libc::{c_int, uint8_t};
 
     pub type AddressFamily = c_int;
 
@@ -106,6 +106,9 @@ mod consts {
 
     // Socket options for the IP layer of the socket
     pub const IP_MULTICAST_IF: SockOpt = 32;
+
+    pub type IpMulticastTtl = uint8_t;
+
     pub const IP_MULTICAST_TTL: SockOpt = 33;
     pub const IP_MULTICAST_LOOP: SockOpt = 34;
     pub const IP_ADD_MEMBERSHIP: SockOpt = 35;
