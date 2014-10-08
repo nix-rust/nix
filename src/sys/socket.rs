@@ -60,12 +60,12 @@ mod consts {
     pub const SOL_IP: SockLevel     = 0;
     pub const SOL_SOCKET: SockLevel = 1;
     pub const SOL_TCP: SockLevel    = 6;
+    pub static IPPROTO_TCP: SockLevel = SOL_TCP;
     pub const SOL_UDP: SockLevel    = 17;
     pub const SOL_IPV6: SockLevel   = 41;
 
     pub type SockOpt = c_int;
 
-<<<<<<< HEAD
     pub const SO_ACCEPTCONN: SockOpt = 30;
     pub const SO_BINDTODEVICE: SockOpt = 25;
     pub const SO_BROADCAST: SockOpt = 6;
@@ -97,6 +97,11 @@ mod consts {
     pub const SO_TIMESTAMP: SockOpt = 29;
     pub const SO_TYPE: SockOpt = 3;
     pub const SO_BUSY_POLL: SockOpt = 46;
+
+    // Socket options for TCP sockets
+    pub const TCP_NODELAY: SockOpt = 1;
+    pub const TCP_MAXSEG: SockOpt = 2;
+    pub const TCP_CORK: SockOpt = 3;
 }
 
 #[cfg(any(target_os = "macos", target_os = "ios"))]
