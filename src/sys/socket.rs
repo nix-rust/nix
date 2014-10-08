@@ -4,7 +4,7 @@ use fcntl::{Fd, fcntl, F_SETFL, F_SETFD, FD_CLOEXEC, O_NONBLOCK};
 use errno::{SysResult, SysError, from_ffi};
 use features;
 
-pub use libc::{in_addr, sockaddr_in, sockaddr_in6, sockaddr_un, sa_family_t};
+pub use libc::{in_addr, sockaddr_in, sockaddr_in6, sockaddr_un, sa_family_t, ip_mreq};
 
 pub use self::consts::*;
 
@@ -102,6 +102,13 @@ mod consts {
     pub const TCP_NODELAY: SockOpt = 1;
     pub const TCP_MAXSEG: SockOpt = 2;
     pub const TCP_CORK: SockOpt = 3;
+
+    // Socket options for the IP layer of the socket
+    pub const IP_MULTICAST_IF: SockOpt = 32;
+    pub const IP_MULTICAST_TTL: SockOpt = 33;
+    pub const IP_MULTICAST_LOOP: SockOpt = 34;
+    pub const IP_ADD_MEMBERSHIP: SockOpt = 35;
+    pub const IP_DROP_MEMBERSHIP: SockOpt = 36;
 }
 
 #[cfg(any(target_os = "macos", target_os = "ios"))]
