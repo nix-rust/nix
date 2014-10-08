@@ -65,6 +65,7 @@ mod consts {
 
     pub type SockOpt = c_int;
 
+<<<<<<< HEAD
     pub const SO_ACCEPTCONN: SockOpt = 30;
     pub const SO_BINDTODEVICE: SockOpt = 25;
     pub const SO_BROADCAST: SockOpt = 6;
@@ -89,6 +90,7 @@ mod consts {
     pub const SO_RCVTIMEO: SockOpt = 20;
     pub const SO_SNDTIMEO: SockOpt = 21;
     pub const SO_REUSEADDR: SockOpt = 2;
+    pub const SO_REUSEPORT: SockOpt = 15;
     pub const SO_RXQ_OVFL: SockOpt = 40;
     pub const SO_SNDBUF: SockOpt = 7;
     pub const SO_SNDBUFFORCE: SockOpt = 32;
