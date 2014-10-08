@@ -58,9 +58,10 @@ mod consts {
     pub type SockLevel = c_int;
 
     pub const SOL_IP: SockLevel     = 0;
+    pub const IPPROTO_IP: SockLevel = SOL_IP;
     pub const SOL_SOCKET: SockLevel = 1;
     pub const SOL_TCP: SockLevel    = 6;
-    pub static IPPROTO_TCP: SockLevel = SOL_TCP;
+    pub const IPPROTO_TCP: SockLevel = SOL_TCP;
     pub const SOL_UDP: SockLevel    = 17;
     pub const SOL_IPV6: SockLevel   = 41;
 
