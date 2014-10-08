@@ -113,6 +113,13 @@ mod consts {
     pub const IP_MULTICAST_LOOP: SockOpt = 34;
     pub const IP_ADD_MEMBERSHIP: SockOpt = 35;
     pub const IP_DROP_MEMBERSHIP: SockOpt = 36;
+
+    pub type InAddrT = u32;
+
+    // Declarations of special addresses
+    pub const INADDR_ANY: InAddrT = 0;
+    pub const INADDR_NONE: InAddrT = 0xffffffff;
+    pub const INADDR_BROADCAST: InAddrT = 0xffffffff;
 }
 
 #[cfg(any(target_os = "macos", target_os = "ios"))]
