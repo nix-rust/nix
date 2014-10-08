@@ -183,7 +183,7 @@ pub fn daemon(nochdir: bool, noclose: bool) -> SysResult<()> {
 
 pub fn sethostname(name: &[u8]) -> SysResult<()> {
     let ptr = name.as_ptr() as *const c_char;
-    let len = name.len() as u64;
+    let len = name.len() as size_t;
 
     let res = unsafe { ffi::sethostname(ptr, len) };
     from_ffi(res)
@@ -191,7 +191,7 @@ pub fn sethostname(name: &[u8]) -> SysResult<()> {
 
 pub fn gethostname(name: &mut [u8]) -> SysResult<()> {
     let ptr = name.as_mut_ptr() as *mut c_char;
-    let len = name.len() as u64;
+    let len = name.len() as size_t;
 
     let res = unsafe { ffi::gethostname(ptr, len) };
     from_ffi(res)

@@ -12,7 +12,6 @@ mod ffi {
 }
 
 
-#[cfg(target_arch = "x86_64")]
 static UTSNAME_LEN: uint = 65;
 
 #[repr(C)]
