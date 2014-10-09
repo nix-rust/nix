@@ -243,7 +243,7 @@ pub fn accept4(sockfd: Fd, flags: SockFlag) -> SysResult<Fd> {
 }
 
 #[cfg(any(target_os = "macos", target_os = "ios"))]
-fn accept4(sockfd: Fd, flags: SockFlag) -> SysResult<Fd> {
+pub fn accept4(sockfd: Fd, flags: SockFlag) -> SysResult<Fd> {
     accept4_polyfill(sockfd, flags)
 }
 
