@@ -21,11 +21,11 @@ mod ffi {
 
 bitflags!(
     flags SFlag: mode_t {
-        static S_IFREG  = 0o100000,
-        static S_IFCHR  = 0o020000,
-        static S_IFBLK  = 0o060000,
-        static S_IFIFO  = 0o010000,
-        static S_IFSOCK = 0o140000
+        const S_IFREG  = 0o100000,
+        const S_IFCHR  = 0o020000,
+        const S_IFBLK  = 0o060000,
+        const S_IFIFO  = 0o010000,
+        const S_IFSOCK = 0o140000
     }
 )
 
@@ -41,7 +41,7 @@ pub fn mknod(path: &Path, kind: SFlag, perm: FilePermission, dev: dev_t) -> SysR
 }
 
 #[cfg(target_os = "linux")]
-static MINORBITS: uint = 20;
+const MINORBITS: uint = 20;
 
 #[cfg(target_os = "linux")]
 pub fn mkdev(major: u64, minor: u64) -> dev_t {

@@ -25,8 +25,8 @@ mod ffi {
 // Extra flags - Supported by Linux 2.6.27, normalized on other platforms
 bitflags!(
     flags SockFlag: c_int {
-        static SOCK_NONBLOCK = 0o0004000,
-        static SOCK_CLOEXEC  = 0o2000000
+        const SOCK_NONBLOCK = 0o0004000,
+        const SOCK_CLOEXEC  = 0o2000000
     }
 )
 
@@ -42,59 +42,59 @@ mod consts {
 
     pub type AddressFamily = c_int;
 
-    pub static AF_UNIX: AddressFamily  = 1;
-    pub static AF_LOCAL: AddressFamily = AF_UNIX;
-    pub static AF_INET: AddressFamily  = 2;
-    pub static AF_INET6: AddressFamily = 10;
+    pub const AF_UNIX: AddressFamily  = 1;
+    pub const AF_LOCAL: AddressFamily = AF_UNIX;
+    pub const AF_INET: AddressFamily  = 2;
+    pub const AF_INET6: AddressFamily = 10;
 
     pub type SockType = c_int;
 
-    pub static SOCK_STREAM: SockType = 1;
-    pub static SOCK_DGRAM: SockType = 2;
-    pub static SOCK_SEQPACKET: SockType = 5;
-    pub static SOCK_RAW: SockType = 3;
-    pub static SOCK_RDM: SockType = 4;
+    pub const SOCK_STREAM: SockType = 1;
+    pub const SOCK_DGRAM: SockType = 2;
+    pub const SOCK_SEQPACKET: SockType = 5;
+    pub const SOCK_RAW: SockType = 3;
+    pub const SOCK_RDM: SockType = 4;
 
     pub type SockLevel = c_int;
 
-    pub static SOL_IP: SockLevel     = 0;
-    pub static SOL_SOCKET: SockLevel = 1;
-    pub static SOL_TCP: SockLevel    = 6;
-    pub static SOL_UDP: SockLevel    = 17;
-    pub static SOL_IPV6: SockLevel   = 41;
+    pub const SOL_IP: SockLevel     = 0;
+    pub const SOL_SOCKET: SockLevel = 1;
+    pub const SOL_TCP: SockLevel    = 6;
+    pub const SOL_UDP: SockLevel    = 17;
+    pub const SOL_IPV6: SockLevel   = 41;
 
     pub type SockOpt = c_int;
 
-    pub static SO_ACCEPTCONN: SockOpt = 30;
-    pub static SO_BINDTODEVICE: SockOpt = 25;
-    pub static SO_BROADCAST: SockOpt = 6;
-    pub static SO_BSDCOMPAT: SockOpt = 14;
-    pub static SO_DEBUG: SockOpt = 1;
-    pub static SO_DOMAIN: SockOpt = 39;
-    pub static SO_ERROR: SockOpt = 4;
-    pub static SO_DONTROUTE: SockOpt = 5;
-    pub static SO_KEEPALIVE: SockOpt = 9;
-    pub static SO_LINGER: SockOpt = 13;
-    pub static SO_MARK: SockOpt = 36;
-    pub static SO_OOBINLINE: SockOpt = 10;
-    pub static SO_PASSCRED: SockOpt = 16;
-    pub static SO_PEEK_OFF: SockOpt = 42;
-    pub static SO_PEERCRED: SockOpt = 17;
-    pub static SO_PRIORITY: SockOpt = 12;
-    pub static SO_PROTOCOL: SockOpt = 38;
-    pub static SO_RCVBUF: SockOpt = 8;
-    pub static SO_RCVBUFFORCE: SockOpt = 33;
-    pub static SO_RCVLOWAT: SockOpt = 18;
-    pub static SO_SNDLOWAT: SockOpt = 19;
-    pub static SO_RCVTIMEO: SockOpt = 20;
-    pub static SO_SNDTIMEO: SockOpt = 21;
-    pub static SO_REUSEADDR: SockOpt = 2;
-    pub static SO_RXQ_OVFL: SockOpt = 40;
-    pub static SO_SNDBUF: SockOpt = 7;
-    pub static SO_SNDBUFFORCE: SockOpt = 32;
-    pub static SO_TIMESTAMP: SockOpt = 29;
-    pub static SO_TYPE: SockOpt = 3;
-    pub static SO_BUSY_POLL: SockOpt = 46;
+    pub const SO_ACCEPTCONN: SockOpt = 30;
+    pub const SO_BINDTODEVICE: SockOpt = 25;
+    pub const SO_BROADCAST: SockOpt = 6;
+    pub const SO_BSDCOMPAT: SockOpt = 14;
+    pub const SO_DEBUG: SockOpt = 1;
+    pub const SO_DOMAIN: SockOpt = 39;
+    pub const SO_ERROR: SockOpt = 4;
+    pub const SO_DONTROUTE: SockOpt = 5;
+    pub const SO_KEEPALIVE: SockOpt = 9;
+    pub const SO_LINGER: SockOpt = 13;
+    pub const SO_MARK: SockOpt = 36;
+    pub const SO_OOBINLINE: SockOpt = 10;
+    pub const SO_PASSCRED: SockOpt = 16;
+    pub const SO_PEEK_OFF: SockOpt = 42;
+    pub const SO_PEERCRED: SockOpt = 17;
+    pub const SO_PRIORITY: SockOpt = 12;
+    pub const SO_PROTOCOL: SockOpt = 38;
+    pub const SO_RCVBUF: SockOpt = 8;
+    pub const SO_RCVBUFFORCE: SockOpt = 33;
+    pub const SO_RCVLOWAT: SockOpt = 18;
+    pub const SO_SNDLOWAT: SockOpt = 19;
+    pub const SO_RCVTIMEO: SockOpt = 20;
+    pub const SO_SNDTIMEO: SockOpt = 21;
+    pub const SO_REUSEADDR: SockOpt = 2;
+    pub const SO_RXQ_OVFL: SockOpt = 40;
+    pub const SO_SNDBUF: SockOpt = 7;
+    pub const SO_SNDBUFFORCE: SockOpt = 32;
+    pub const SO_TIMESTAMP: SockOpt = 29;
+    pub const SO_TYPE: SockOpt = 3;
+    pub const SO_BUSY_POLL: SockOpt = 46;
 }
 
 #[cfg(any(target_os = "macos", target_os = "ios"))]
@@ -103,62 +103,62 @@ mod consts {
 
     pub type AddressFamily = c_int;
 
-    pub static AF_UNIX: AddressFamily  = 1;
-    pub static AF_LOCAL: AddressFamily = AF_UNIX;
-    pub static AF_INET: AddressFamily  = 2;
-    pub static AF_INET6: AddressFamily = 30;
+    pub const AF_UNIX: AddressFamily  = 1;
+    pub const AF_LOCAL: AddressFamily = AF_UNIX;
+    pub const AF_INET: AddressFamily  = 2;
+    pub const AF_INET6: AddressFamily = 30;
 
     pub type SockType = c_int;
 
-    pub static SOCK_STREAM: SockType = 1;
-    pub static SOCK_DGRAM: SockType = 2;
-    pub static SOCK_SEQPACKET: SockType = 5;
-    pub static SOCK_RAW: SockType = 3;
-    pub static SOCK_RDM: SockType = 4;
+    pub const SOCK_STREAM: SockType = 1;
+    pub const SOCK_DGRAM: SockType = 2;
+    pub const SOCK_SEQPACKET: SockType = 5;
+    pub const SOCK_RAW: SockType = 3;
+    pub const SOCK_RDM: SockType = 4;
 
     pub type SockLevel = c_int;
 
-    pub static SOL_SOCKET: SockLevel = 0xffff;
+    pub const SOL_SOCKET: SockLevel = 0xffff;
 
     pub type SockOpt = c_int;
 
-    pub static SO_ACCEPTCONN: SockOpt          = 0x0002;
-    pub static SO_BROADCAST: SockOpt           = 0x0020;
-    pub static SO_DEBUG: SockOpt               = 0x0001;
-    pub static SO_DONTTRUNC: SockOpt           = 0x2000;
-    pub static SO_ERROR: SockOpt               = 0x1007;
-    pub static SO_DONTROUTE: SockOpt           = 0x0010;
-    pub static SO_KEEPALIVE: SockOpt           = 0x0008;
-    pub static SO_LABEL: SockOpt               = 0x1010;
-    pub static SO_LINGER: SockOpt              = 0x0080;
-    pub static SO_NREAD: SockOpt               = 0x1020;
-    pub static SO_NKE: SockOpt                 = 0x1021;
-    pub static SO_NOSIGPIPE: SockOpt           = 0x1022;
-    pub static SO_NOADDRERR: SockOpt           = 0x1023;
-    pub static SO_NOTIFYCONFLICT: SockOpt      = 0x1026;
-    pub static SO_NP_EXTENSIONS: SockOpt       = 0x1083;
-    pub static SO_NWRITE: SockOpt              = 0x1024;
-    pub static SO_OOBINLINE: SockOpt           = 0x0100;
-    pub static SO_PEERLABEL: SockOpt           = 0x1011;
-    pub static SO_RCVBUF: SockOpt              = 0x1002;
-    pub static SO_RCVLOWAT: SockOpt            = 0x1004;
-    pub static SO_SNDLOWAT: SockOpt            = 0x1003;
-    pub static SO_RCVTIMEO: SockOpt            = 0x1006;
-    pub static SO_SNDTIMEO: SockOpt            = 0x1005;
-    pub static SO_RANDOMPORT: SockOpt          = 0x1082;
-    pub static SO_RESTRICTIONS: SockOpt        = 0x1081;
-    pub static SO_RESTRICT_DENYIN: SockOpt     = 0x00000001;
-    pub static SO_RESTRICT_DENYOUT: SockOpt    = 0x00000002;
-    pub static SO_REUSEADDR: SockOpt           = 0x0004;
-    pub static SO_REUSESHAREUID: SockOpt       = 0x1025;
-    pub static SO_SNDBUF: SockOpt              = 0x1001;
-    pub static SO_TIMESTAMP: SockOpt           = 0x0400;
-    pub static SO_TIMESTAMP_MONOTONIC: SockOpt = 0x0800;
-    pub static SO_TYPE: SockOpt                = 0x1008;
-    pub static SO_WANTMORE: SockOpt            = 0x4000;
-    pub static SO_WANTOOBFLAG: SockOpt         = 0x8000;
+    pub const SO_ACCEPTCONN: SockOpt          = 0x0002;
+    pub const SO_BROADCAST: SockOpt           = 0x0020;
+    pub const SO_DEBUG: SockOpt               = 0x0001;
+    pub const SO_DONTTRUNC: SockOpt           = 0x2000;
+    pub const SO_ERROR: SockOpt               = 0x1007;
+    pub const SO_DONTROUTE: SockOpt           = 0x0010;
+    pub const SO_KEEPALIVE: SockOpt           = 0x0008;
+    pub const SO_LABEL: SockOpt               = 0x1010;
+    pub const SO_LINGER: SockOpt              = 0x0080;
+    pub const SO_NREAD: SockOpt               = 0x1020;
+    pub const SO_NKE: SockOpt                 = 0x1021;
+    pub const SO_NOSIGPIPE: SockOpt           = 0x1022;
+    pub const SO_NOADDRERR: SockOpt           = 0x1023;
+    pub const SO_NOTIFYCONFLICT: SockOpt      = 0x1026;
+    pub const SO_NP_EXTENSIONS: SockOpt       = 0x1083;
+    pub const SO_NWRITE: SockOpt              = 0x1024;
+    pub const SO_OOBINLINE: SockOpt           = 0x0100;
+    pub const SO_PEERLABEL: SockOpt           = 0x1011;
+    pub const SO_RCVBUF: SockOpt              = 0x1002;
+    pub const SO_RCVLOWAT: SockOpt            = 0x1004;
+    pub const SO_SNDLOWAT: SockOpt            = 0x1003;
+    pub const SO_RCVTIMEO: SockOpt            = 0x1006;
+    pub const SO_SNDTIMEO: SockOpt            = 0x1005;
+    pub const SO_RANDOMPORT: SockOpt          = 0x1082;
+    pub const SO_RESTRICTIONS: SockOpt        = 0x1081;
+    pub const SO_RESTRICT_DENYIN: SockOpt     = 0x00000001;
+    pub const SO_RESTRICT_DENYOUT: SockOpt    = 0x00000002;
+    pub const SO_REUSEADDR: SockOpt           = 0x0004;
+    pub const SO_REUSESHAREUID: SockOpt       = 0x1025;
+    pub const SO_SNDBUF: SockOpt              = 0x1001;
+    pub const SO_TIMESTAMP: SockOpt           = 0x0400;
+    pub const SO_TIMESTAMP_MONOTONIC: SockOpt = 0x0800;
+    pub const SO_TYPE: SockOpt                = 0x1008;
+    pub const SO_WANTMORE: SockOpt            = 0x4000;
+    pub const SO_WANTOOBFLAG: SockOpt         = 0x8000;
     #[allow(type_overflow)]
-    pub static SO_RESTRICT_DENYSET: SockOpt    = 0x80000000;
+    pub const SO_RESTRICT_DENYSET: SockOpt    = 0x80000000;
 }
 
 pub fn socket(domain: AddressFamily, mut ty: SockType, flags: SockFlag) -> SysResult<Fd> {
