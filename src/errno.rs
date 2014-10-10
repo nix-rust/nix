@@ -555,8 +555,8 @@ mod consts {
         EHWPOISON       = 133,
     }
 
-    pub static EWOULDBLOCK: Errno = EAGAIN;
-    pub static EDEADLOCK:   Errno = EDEADLK;
+    pub const EWOULDBLOCK: Errno = EAGAIN;
+    pub const EDEADLOCK:   Errno = EDEADLK;
 }
 
 #[cfg(any(target_os = "macos", target_os = "ios"))]
@@ -672,9 +672,9 @@ mod consts {
         EQFULL          = 106,
     }
 
-    pub static ELAST: Errno       = EQFULL;
-    pub static EWOULDBLOCK: Errno = EAGAIN;
-    pub static EDEADLOCK:   Errno = EDEADLK;
+    pub const ELAST: Errno       = EQFULL;
+    pub const EWOULDBLOCK: Errno = EAGAIN;
+    pub const EDEADLOCK:   Errno = EDEADLK;
 
-    pub static EL2NSYNC: Errno = UnknownErrno;
+    pub const EL2NSYNC: Errno = UnknownErrno;
 }

@@ -16,20 +16,20 @@ mod ffi {
 
 bitflags!(
     flags EpollEventKind: u32 {
-        static EPOLLIN = 0x001,
-        static EPOLLPRI = 0x002,
-        static EPOLLOUT = 0x004,
-        static EPOLLRDNORM = 0x040,
-        static EPOLLRDBAND = 0x080,
-        static EPOLLWRNORM = 0x100,
-        static EPOLLWRBAND = 0x200,
-        static EPOLLMSG = 0x400,
-        static EPOLLERR = 0x008,
-        static EPOLLHUP = 0x010,
-        static EPOLLRDHUP = 0x2000,
-        static EPOLLWAKEUP = 1 << 29,
-        static EPOLLONESHOT = 1 << 30,
-        static EPOLLET = 1 << 31
+        const EPOLLIN = 0x001,
+        const EPOLLPRI = 0x002,
+        const EPOLLOUT = 0x004,
+        const EPOLLRDNORM = 0x040,
+        const EPOLLRDBAND = 0x080,
+        const EPOLLWRNORM = 0x100,
+        const EPOLLWRBAND = 0x200,
+        const EPOLLMSG = 0x400,
+        const EPOLLERR = 0x008,
+        const EPOLLHUP = 0x010,
+        const EPOLLRDHUP = 0x2000,
+        const EPOLLWAKEUP = 1 << 29,
+        const EPOLLONESHOT = 1 << 30,
+        const EPOLLET = 1 << 31
     }
 )
 

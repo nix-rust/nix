@@ -12,7 +12,7 @@ mod ffi {
 }
 
 
-static UTSNAME_LEN: uint = 65;
+const UTSNAME_LEN: uint = 65;
 
 #[repr(C)]
 pub struct UtsName {

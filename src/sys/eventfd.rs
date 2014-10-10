@@ -5,9 +5,9 @@ use errno::{SysResult, SysError};
 
 bitflags!(
     flags EventFdFlag: c_int {
-        static EFD_CLOEXEC   = 0o2000000, // Since Linux 2.6.27
-        static EFD_NONBLOCK  = 0o0004000, // Since Linux 2.6.27
-        static EFD_SEMAPHORE = 0o0000001, // Since Linux 2.6.30
+        const EFD_CLOEXEC   = 0o2000000, // Since Linux 2.6.27
+        const EFD_NONBLOCK  = 0o0004000, // Since Linux 2.6.27
+        const EFD_SEMAPHORE = 0o0000001, // Since Linux 2.6.30
     }
 )
 
