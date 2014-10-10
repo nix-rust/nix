@@ -3,14 +3,17 @@ use std::c_str::{CString, ToCStr};
 use libc::{c_char, c_void, c_int, size_t, pid_t};
 use fcntl::{fcntl, Fd, OFlag, O_NONBLOCK, O_CLOEXEC, FD_CLOEXEC, F_SETFD, F_SETFL};
 use errno::{SysResult, SysError, from_ffi};
+use core::raw::Slice as RawSlice;
 
 #[cfg(target_os = "linux")]
 pub use self::linux::*;
 
 mod ffi {
-    use libc::{c_char, c_int, size_t};
+    use super::{IovecR,IovecW};
+    use libc::{c_char, c_int, size_t, ssize_t};
     pub use libc::{close, read, write, pipe};
     pub use libc::funcs::posix88::unistd::fork;
+    use fcntl::Fd;
 
     extern {
         // duplicate a file descriptor
@@ -37,6 +40,14 @@ mod ffi {
         // gets the hostname
         // doc: http://man7.org/linux/man-pages/man2/gethostname.2.html
         pub fn sethostname(name: *const c_char, len: size_t) -> c_int;
+
+        // vectorized version of write
+        // doc: http://man7.org/linux/man-pages/man2/writev.2.html
+        pub fn writev(fd: Fd, iov: *const IovecW, iovcnt: c_int) -> ssize_t;
+
+        // vectorized version of read
+        // doc: http://man7.org/linux/man-pages/man2/readv.2.html
+        pub fn readv(fd: Fd, iov: *const IovecR, iovcnt: c_int) -> ssize_t;
     }
 }
 
@@ -72,6 +83,56 @@ pub fn fork() -> SysResult<Fork> {
         Ok(Parent(res))
     }
 }
+
+// We use phantom types to maintain memory safety.
+// If readv/writev were using simple &[Iovec] we could initialize
+// Iovec with immutable slice and then pass it to readv, overwriting content
+// we dont have write access to:
+// let mut v = Vec::new();
+// let iov = Iovec::from_slice(immutable_vec.as_slice());
+// v.push(iov);
+// let _:SysResult<uint> = readv(fd, v.as_slice());
+
+// We do not want <T> to appear in ffi functions, so we provide this aliases.
+type IovecR = Iovec<ToRead>;
+type IovecW = Iovec<ToWrite>;
+
+pub struct ToRead;
+pub struct ToWrite;
+
+#[repr(C)]
+pub struct Iovec<T> {
+    iov_base: *mut c_void,
+    iov_len: size_t,
+}
+
+impl <T> Iovec<T> {
+    #[inline]
+    pub fn as_slice<'a>(&'a self) -> &'a [u8] {
+        unsafe { mem::transmute(RawSlice { data: self.iov_base as *const u8, len: self.iov_len as uint }) }
+    }
+}
+
+impl Iovec<ToWrite> {
+    #[inline]
+    pub fn from_slice(buf: &[u8]) -> Iovec<ToWrite> {
+        Iovec {
+            iov_base: buf.as_ptr() as *mut c_void,
+            iov_len: buf.len() as size_t
+        }
+    }
+}
+
+impl Iovec<ToRead> {
+    #[inline]
+    pub fn from_mut_slice(buf: &mut [u8]) -> Iovec<ToRead> {
+        Iovec {
+            iov_base: buf.as_ptr() as *mut c_void,
+            iov_len: buf.len() as size_t
+        }
+    }
+}
+
 
 #[inline]
 pub fn dup(oldfd: Fd) -> SysResult<Fd> {
@@ -221,6 +282,25 @@ pub fn write(fd: Fd, buf: &[u8]) -> SysResult<uint> {
 
     return Ok(res as uint)
 }
+
+pub fn writev(fd: Fd, iov: &[Iovec<ToWrite>]) -> SysResult<uint> {
+    let res = unsafe { ffi::writev(fd, iov.as_ptr(), iov.len() as c_int) };
+    if res < 0 {
+        return Err(SysError::last());
+    }
+
+    return Ok(res as uint)
+}
+
+pub fn readv(fd: Fd, iov: &mut [Iovec<ToRead>]) -> SysResult<uint> {
+    let res = unsafe { ffi::readv(fd, iov.as_ptr(), iov.len() as c_int) };
+    if res < 0 {
+        return Err(SysError::last());
+    }
+
+    return Ok(res as uint)
+}
+
 
 pub fn pipe() -> SysResult<(Fd, Fd)> {
     unsafe {
