@@ -6,6 +6,7 @@
 #![allow(non_camel_case_types)]
 
 extern crate libc;
+extern crate core;
 
 // Re-export some libc constants
 pub use libc::{c_int, c_void};
