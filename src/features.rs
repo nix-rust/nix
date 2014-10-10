@@ -9,11 +9,11 @@ mod os {
     // * pipe2: 2.6.27
     // * accept4: 2.6.28
 
-    static VERS_UNKNOWN: uint = 1;
-    static VERS_2_6_18:  uint = 2;
-    static VERS_2_6_27:  uint = 3;
-    static VERS_2_6_28:  uint = 4;
-    static VERS_3:       uint = 5;
+    const VERS_UNKNOWN: uint = 1;
+    const VERS_2_6_18:  uint = 2;
+    const VERS_2_6_27:  uint = 3;
+    const VERS_2_6_28:  uint = 4;
+    const VERS_3:       uint = 5;
 
     fn parse_kernel_version() -> uint {
         let u = uname();
