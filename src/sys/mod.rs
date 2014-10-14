@@ -8,6 +8,8 @@ pub mod event;
 #[cfg(target_os = "linux")]
 pub mod eventfd;
 
+pub mod signal;
+
 pub mod socket;
 
 pub mod stat;
