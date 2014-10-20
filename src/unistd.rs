@@ -301,7 +301,6 @@ pub fn readv(fd: Fd, iov: &mut [Iovec<ToRead>]) -> SysResult<uint> {
     return Ok(res as uint)
 }
 
-
 pub fn pipe() -> SysResult<(Fd, Fd)> {
     unsafe {
         let mut res;

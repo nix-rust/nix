@@ -1,16 +1,16 @@
 use std::{mem, ptr};
-use libc::{c_int, socklen_t};
+use libc::{c_void, c_int, socklen_t, size_t};
 use fcntl::{Fd, fcntl, F_SETFL, F_SETFD, FD_CLOEXEC, O_NONBLOCK};
 use errno::{SysResult, SysError, from_ffi};
 use features;
 
-pub use libc::{in_addr, sockaddr_in, sockaddr_in6, sockaddr_un, sa_family_t, ip_mreq};
+pub use libc::{in_addr, sockaddr, sockaddr_in, sockaddr_in6, sockaddr_un, sa_family_t, ip_mreq};
 
 pub use self::consts::*;
 
 mod ffi {
     use libc::{c_int, c_void, socklen_t};
-    pub use libc::{socket, listen, bind, accept, connect, setsockopt};
+    pub use libc::{socket, listen, bind, accept, connect, setsockopt, sendto, recvfrom};
 
     extern {
         pub fn getsockopt(
@@ -301,6 +301,67 @@ pub fn connect(sockfd: Fd, addr: &SockAddr) -> SysResult<()> {
     };
 
     from_ffi(res)
+}
+
+mod sa_helpers {
+    use std::mem;
+    use libc::{sockaddr_storage, sockaddr_in, sockaddr_in6, sockaddr_un};
+    use super::{SockAddr, SockIpV6, SockIpV4, SockUnix};
+
+    pub fn to_sockaddr_ipv4(addr: &sockaddr_storage) -> SockAddr {
+        let sin : &sockaddr_in = unsafe { mem::transmute(addr) };
+        SockIpV4( *sin )
+    }
+
+    pub fn to_sockaddr_ipv6(addr: &sockaddr_storage) -> SockAddr {
+        let sin6 : &sockaddr_in6 = unsafe { mem::transmute(addr) };
+        SockIpV6( *sin6 )
+    }
+
+    pub fn to_sockaddr_unix(addr: &sockaddr_storage) -> SockAddr {
+        let sun : &sockaddr_un = unsafe { mem::transmute(addr) };
+        SockUnix( *sun )
+    }
+}
+
+pub fn recvfrom(sockfd: Fd, buf: &mut [u8], addr: &mut SockAddr) -> SysResult<uint> {
+    use libc::sockaddr_storage;
+
+    let mut saddr : sockaddr_storage = unsafe { mem::zeroed() };
+    let mut len = mem::size_of::<sockaddr_storage>() as socklen_t;
+
+    let ret = unsafe {
+        ffi::recvfrom(sockfd, buf.as_ptr() as *mut c_void, buf.len() as size_t, 0, mem::transmute(&saddr), &mut len as *mut socklen_t)
+    };
+
+    if ret < 0 {
+        return Err(SysError::last());
+    }
+
+    match saddr.ss_family as i32 {
+        AF_INET => { *addr = sa_helpers::to_sockaddr_ipv4(&saddr); },
+        AF_INET6 => { *addr = sa_helpers::to_sockaddr_ipv6(&saddr); },
+        AF_UNIX => { *addr = sa_helpers::to_sockaddr_unix(&saddr); },
+        _ => unimplemented!()
+    }
+
+    Ok(ret as uint)
+}
+
+pub fn sendto(sockfd: Fd, buf: &[u8], addr: &SockAddr) -> SysResult<()> {
+    let len = match *addr {
+        SockIpV4(_) => mem::size_of::<sockaddr_in>(),
+        SockIpV6(_) => mem::size_of::<sockaddr_in6>(),
+        SockUnix(_) => mem::size_of::<sockaddr_un>(),
+    } as socklen_t;
+
+    let ret = unsafe { ffi::sendto(sockfd, buf.as_ptr() as *const c_void, buf.len() as size_t, 0, mem::transmute(addr), len as socklen_t) };
+
+    if ret < 0 {
+        return Err(SysError::last());
+    }
+
+    Ok(())
 }
 
 #[repr(C)]
