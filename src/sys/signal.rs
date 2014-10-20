@@ -284,6 +284,8 @@ mod ffi {
         pub fn sigaddset(set: *mut sigset_t, signum: libc::c_int) -> libc::c_int;
         pub fn sigdelset(set: *mut sigset_t, signum: libc::c_int) -> libc::c_int;
         pub fn sigemptyset(set: *mut sigset_t) -> libc::c_int;
+
+        pub fn kill(pid: libc::pid_t, signum: libc::c_int) -> libc::c_int;
     }
 }
 
@@ -351,4 +353,14 @@ pub fn sigaction(signum: SigNum, sigaction: &SigAction) -> SysResult<SigAction> 
     }
 
     Ok(SigAction { sigaction: oldact })
+}
+
+pub fn kill(pid: libc::pid_t, signum: SigNum) -> SysResult<()> {
+    let res = unsafe { ffi::kill(pid, signum) };
+
+    if res < 0 {
+        return Err(SysError::last());
+    }
+
+    Ok(())
 }
