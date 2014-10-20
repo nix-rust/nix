@@ -150,6 +150,13 @@ mod consts {
             const FD_CLOEXEC = 1
         }
     )
+
+    bitflags!(
+        flags SfdFlag: c_int {
+            const SFD_CLOEXEC = FD_CLOEXEC.bits,
+            const SFD_NONBLOCK = O_NONBLOCK.bits
+        }
+    )
 }
 
 #[cfg(any(target_os = "macos", target_os = "ios"))]

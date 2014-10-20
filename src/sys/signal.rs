@@ -303,6 +303,10 @@ impl SigSet {
         SigSet { sigset: sigset }
     }
 
+    pub fn inner(&self) -> &sigset_t {
+        &self.sigset
+    }
+
     pub fn add(&mut self, signum: SigNum) -> SysResult<()> {
         let res = unsafe { ffi::sigaddset(&mut self.sigset as *mut sigset_t, signum) };
 
