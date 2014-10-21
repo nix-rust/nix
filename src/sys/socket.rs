@@ -348,7 +348,7 @@ pub fn recvfrom(sockfd: Fd, buf: &mut [u8], addr: &mut SockAddr) -> SysResult<ui
     Ok(ret as uint)
 }
 
-pub fn sendto(sockfd: Fd, buf: &[u8], addr: &SockAddr) -> SysResult<()> {
+pub fn sendto(sockfd: Fd, buf: &[u8], addr: &SockAddr) -> SysResult<uint> {
     let len = match *addr {
         SockIpV4(_) => mem::size_of::<sockaddr_in>(),
         SockIpV6(_) => mem::size_of::<sockaddr_in6>(),
@@ -358,10 +358,10 @@ pub fn sendto(sockfd: Fd, buf: &[u8], addr: &SockAddr) -> SysResult<()> {
     let ret = unsafe { ffi::sendto(sockfd, buf.as_ptr() as *const c_void, buf.len() as size_t, 0, mem::transmute(addr), len as socklen_t) };
 
     if ret < 0 {
-        return Err(SysError::last());
+        Err(SysError::last())
+    } else {
+        Ok(ret as uint)
     }
-
-    Ok(())
 }
 
 #[repr(C)]
