@@ -130,7 +130,7 @@ mod consts {
 
 #[cfg(any(target_os = "macos", target_os = "ios"))]
 mod consts {
-    use libc::{c_int};
+    use libc::{c_int, uint8_t};
 
     pub type AddressFamily = c_int;
 
@@ -150,6 +150,9 @@ mod consts {
     pub type SockLevel = c_int;
 
     pub const SOL_SOCKET: SockLevel = 0xffff;
+    pub const IPPROTO_IP: SockLevel = 0;
+    pub const IPPROTO_TCP: SockLevel = 6;
+    pub const IPPROTO_UDP: SockLevel = 17;
 
     pub type SockOpt = c_int;
 
@@ -190,6 +193,33 @@ mod consts {
     pub const SO_WANTOOBFLAG: SockOpt         = 0x8000;
     #[allow(type_overflow)]
     pub const SO_RESTRICT_DENYSET: SockOpt    = 0x80000000;
+
+    // Socket options for TCP sockets
+    pub const TCP_NODELAY: SockOpt = 1;
+    pub const TCP_MAXSEG: SockOpt = 2;
+
+    // Socket options for the IP layer of the socket
+    pub const IP_MULTICAST_IF: SockOpt = 9;
+
+    pub type IpMulticastTtl = uint8_t;
+
+    pub const IP_MULTICAST_TTL: SockOpt = 10;
+    pub const IP_MULTICAST_LOOP: SockOpt = 11;
+    pub const IP_ADD_MEMBERSHIP: SockOpt = 12;
+    pub const IP_DROP_MEMBERSHIP: SockOpt = 13;
+
+    pub type InAddrT = u32;
+
+    // Declarations of special addresses
+    pub const INADDR_ANY: InAddrT = 0;
+    pub const INADDR_NONE: InAddrT = 0xffffffff;
+    pub const INADDR_BROADCAST: InAddrT = 0xffffffff;
+
+    pub type SockMessageFlags = i32;
+    // Flags for send/recv and their relatives
+    pub const MSG_OOB: SockMessageFlags = 0x1;
+    pub const MSG_PEEK: SockMessageFlags = 0x2;
+    pub const MSG_DONTWAIT: SockMessageFlags = 0x80;
 }
 
 pub fn socket(domain: AddressFamily, mut ty: SockType, flags: SockFlag) -> SysResult<Fd> {
