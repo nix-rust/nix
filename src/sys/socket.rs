@@ -1,10 +1,10 @@
-use std::{mem, ptr};
+use std::{mem, ptr, fmt};
 use libc::{c_void, c_int, socklen_t, size_t};
 use fcntl::{Fd, fcntl, F_SETFL, F_SETFD, FD_CLOEXEC, O_NONBLOCK};
 use errno::{SysResult, SysError, from_ffi};
 use features;
 
-pub use libc::{in_addr, sockaddr, sockaddr_in, sockaddr_in6, sockaddr_un, sa_family_t, ip_mreq};
+pub use libc::{in_addr, sockaddr, sockaddr_storage, sockaddr_in, sockaddr_in6, sockaddr_un, sa_family_t, ip_mreq};
 
 pub use self::consts::*;
 
@@ -120,6 +120,12 @@ mod consts {
     pub const INADDR_ANY: InAddrT = 0;
     pub const INADDR_NONE: InAddrT = 0xffffffff;
     pub const INADDR_BROADCAST: InAddrT = 0xffffffff;
+
+    pub type SockMessageFlags = i32;
+    // Flags for send/recv and their relatives
+    pub const MSG_OOB: SockMessageFlags = 0x1;
+    pub const MSG_PEEK: SockMessageFlags = 0x2;
+    pub const MSG_DONTWAIT: SockMessageFlags = 0x40;
 }
 
 #[cfg(any(target_os = "macos", target_os = "ios"))]
@@ -324,9 +330,7 @@ mod sa_helpers {
     }
 }
 
-pub fn recvfrom(sockfd: Fd, buf: &mut [u8], addr: &mut SockAddr) -> SysResult<uint> {
-    use libc::sockaddr_storage;
-
+pub fn recvfrom(sockfd: Fd, buf: &mut [u8]) -> SysResult<(uint, SockAddr)> {
     let mut saddr : sockaddr_storage = unsafe { mem::zeroed() };
     let mut len = mem::size_of::<sockaddr_storage>() as socklen_t;
 
@@ -338,24 +342,51 @@ pub fn recvfrom(sockfd: Fd, buf: &mut [u8], addr: &mut SockAddr) -> SysResult<ui
         return Err(SysError::last());
     }
 
-    match saddr.ss_family as i32 {
-        AF_INET => { *addr = sa_helpers::to_sockaddr_ipv4(&saddr); },
-        AF_INET6 => { *addr = sa_helpers::to_sockaddr_ipv6(&saddr); },
-        AF_UNIX => { *addr = sa_helpers::to_sockaddr_unix(&saddr); },
-        _ => unimplemented!()
-    }
-
-    Ok(ret as uint)
+    Ok((ret as uint,
+            match saddr.ss_family as i32 {
+                AF_INET => { sa_helpers::to_sockaddr_ipv4(&saddr) },
+                AF_INET6 => { sa_helpers::to_sockaddr_ipv6(&saddr) },
+                AF_UNIX => { sa_helpers::to_sockaddr_unix(&saddr) },
+                _ => unimplemented!()
+            }
+        ))
 }
 
-pub fn sendto(sockfd: Fd, buf: &[u8], addr: &SockAddr) -> SysResult<uint> {
-    let len = match *addr {
-        SockIpV4(_) => mem::size_of::<sockaddr_in>(),
-        SockIpV6(_) => mem::size_of::<sockaddr_in6>(),
-        SockUnix(_) => mem::size_of::<sockaddr_un>(),
-    } as socklen_t;
+fn print_ipv4_addr(sin: &sockaddr_in, f: &mut fmt::Formatter) -> fmt::Result {
+    let ip_addr = Int::from_be(sin.sin_addr.s_addr);
+    let port = Int::from_be(sin.sin_port);
 
-    let ret = unsafe { ffi::sendto(sockfd, buf.as_ptr() as *const c_void, buf.len() as size_t, 0, mem::transmute(addr), len as socklen_t) };
+    write!(f, "{}.{}.{}.{}:{}",
+           (ip_addr >> 24) & 0xff,
+           (ip_addr >> 16) & 0xff,
+           (ip_addr >> 8) & 0xff,
+           (ip_addr) & 0xff,
+           port)
+}
+
+impl fmt::Show for SockAddr {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            SockIpV4(sin) => print_ipv4_addr(&sin, f),
+            _ => unimplemented!()
+        }
+    }
+}
+
+///
+/// Generic wrapper around sendto
+fn sendto_sockaddr<T>(sockfd: Fd, buf: &[u8], flags: SockMessageFlags, addr: &T) -> i64 {
+    unsafe {
+        ffi::sendto(sockfd, buf.as_ptr() as *const c_void, buf.len() as size_t, flags, mem::transmute(addr), mem::size_of::<T>() as socklen_t)
+    }
+}
+
+pub fn sendto(sockfd: Fd, buf: &[u8], addr: &SockAddr, flags: SockMessageFlags) -> SysResult<uint> {
+    let ret = match *addr {
+        SockIpV4(ref addr) => sendto_sockaddr(sockfd, buf, flags, addr),
+        SockIpV6(ref addr) => sendto_sockaddr(sockfd, buf, flags, addr),
+        SockUnix(ref addr) => sendto_sockaddr(sockfd, buf, flags, addr),
+    };
 
     if ret < 0 {
         Err(SysError::last())
