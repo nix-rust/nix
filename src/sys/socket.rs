@@ -1,5 +1,5 @@
 use std::{mem, ptr, fmt};
-use libc::{c_void, c_int, socklen_t, size_t};
+use libc::{c_void, c_int, socklen_t, size_t, ssize_t};
 use fcntl::{Fd, fcntl, F_SETFL, F_SETFD, FD_CLOEXEC, O_NONBLOCK};
 use errno::{SysResult, SysError, from_ffi};
 use features;
@@ -405,9 +405,15 @@ impl fmt::Show for SockAddr {
 
 ///
 /// Generic wrapper around sendto
-fn sendto_sockaddr<T>(sockfd: Fd, buf: &[u8], flags: SockMessageFlags, addr: &T) -> i64 {
+fn sendto_sockaddr<T>(sockfd: Fd, buf: &[u8], flags: SockMessageFlags, addr: &T) -> ssize_t {
     unsafe {
-        ffi::sendto(sockfd, buf.as_ptr() as *const c_void, buf.len() as size_t, flags, mem::transmute(addr), mem::size_of::<T>() as socklen_t)
+        ffi::sendto(
+            sockfd,
+            buf.as_ptr() as *const c_void,
+            buf.len() as size_t,
+            flags,
+            mem::transmute(addr),
+            mem::size_of::<T>() as socklen_t)
     }
 }
 
