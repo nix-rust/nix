@@ -1,6 +1,6 @@
 use std::{mem, ptr};
 use std::c_str::{CString, ToCStr};
-use libc::{c_char, c_void, c_int, size_t, pid_t};
+use libc::{c_char, c_void, c_int, size_t, pid_t, off_t};
 use fcntl::{fcntl, Fd, OFlag, O_NONBLOCK, O_CLOEXEC, FD_CLOEXEC, F_SETFD, F_SETFL};
 use errno::{SysResult, SysError, from_ffi};
 use core::raw::Slice as RawSlice;
@@ -11,7 +11,7 @@ pub use self::linux::*;
 mod ffi {
     use super::{IovecR,IovecW};
     use libc::{c_char, c_int, size_t, ssize_t};
-    pub use libc::{close, read, write, pipe};
+    pub use libc::{close, read, write, pipe, ftruncate};
     pub use libc::funcs::posix88::unistd::fork;
     use fcntl::Fd;
 
@@ -390,6 +390,14 @@ fn pipe2_setflags(fd1: Fd, fd2: Fd, flags: OFlag) -> SysResult<()> {
             let _ = close(fd2);
             return Err(e);
         }
+    }
+}
+
+pub fn ftruncate(fd: Fd, len: off_t) -> SysResult<()> {
+    if unsafe { ffi::ftruncate(fd, len) } < 0 {
+        Err(SysError::last())
+    } else {
+        Ok(())
     }
 }
 

@@ -1,5 +1,5 @@
 use std::mem;
-use libc::{c_int, c_uint, c_void};
+use libc::{c_int, c_uint, c_void, c_ulong};
 use super::{SysResult, SysError};
 
 pub type CloneFlags = c_uint;
@@ -27,10 +27,77 @@ pub static CLONE_NEWPID:         CloneFlags = 0x20000000;
 pub static CLONE_NEWNET:         CloneFlags = 0x40000000;
 pub static CLONE_IO:             CloneFlags = 0x80000000;
 
+// Support a maximum CPU set of 1024 nodes
+#[cfg(target_arch = "x86_64")]
+mod cpuset_attribs {
+    use super::CpuMask;
+    pub const CPU_SETSIZE:           uint = 1024u;
+    pub const CPU_MASK_BITS:         uint = 64u;
+
+    #[inline]
+    pub fn set_cpu_mask_flag(cur: CpuMask, bit: uint) -> CpuMask {
+        cur | (1u64 << bit)
+    }
+
+    #[inline]
+    pub fn clear_cpu_mask_flag(cur: CpuMask, bit: uint) -> CpuMask {
+        cur & !(1u64 << bit)
+    }
+}
+
+#[cfg(target_arch = "x86")]
+mod cpuset_attribs {
+    use super::CpuMask;
+    pub const CPU_SETSIZE:           uint = 1024u;
+    pub const CPU_MASK_BITS:         uint = 32u;
+
+    #[inline]
+    pub fn set_cpu_mask_flag(cur: CpuMask, bit: uint) -> CpuMask {
+        cur | (1u32 << bit)
+    }
+
+    #[inline]
+    pub fn clear_cpu_mask_flag(cur: CpuMask, bit: uint) -> CpuMask {
+        cur & !(1u32 << bit)
+    }
+}
+
 pub type CloneCb<'a> = ||:'a -> int;
 
+// A single CPU mask word
+pub type CpuMask = c_ulong;
+
+// Structure representing the CPU set to apply
+#[repr(C)]
+pub struct CpuSet {
+    cpu_mask: [CpuMask, ..cpuset_attribs::CPU_SETSIZE/cpuset_attribs::CPU_MASK_BITS]
+}
+
+impl CpuSet {
+    pub fn new() -> CpuSet {
+        CpuSet {
+            cpu_mask: unsafe { mem::zeroed() }
+        }
+    }
+
+    pub fn set(&mut self, field: uint) {
+        let word = field / cpuset_attribs::CPU_MASK_BITS;
+        let bit = field % cpuset_attribs::CPU_MASK_BITS;
+
+        self.cpu_mask[word] = cpuset_attribs::set_cpu_mask_flag(self.cpu_mask[word], bit);
+    }
+
+    pub fn unset(&mut self, field: uint) {
+        let word = field / cpuset_attribs::CPU_MASK_BITS;
+        let bit = field % cpuset_attribs::CPU_MASK_BITS;
+
+        self.cpu_mask[word] = cpuset_attribs::clear_cpu_mask_flag(self.cpu_mask[word], bit);
+    }
+}
+
 mod ffi {
-    use libc::{c_void, c_int};
+    use libc::{c_void, c_int, pid_t, size_t};
+    use super::CpuSet;
 
     type CloneCb = extern "C" fn (data: *const super::CloneCb) -> c_int;
 
@@ -47,6 +114,23 @@ mod ffi {
         // disassociate parts of the process execution context
         // doc: http://man7.org/linux/man-pages/man2/unshare.2.html
         pub fn unshare(flags: super::CloneFlags) -> c_int;
+
+        // Set the current CPU set that a task is allowed to run on
+        pub fn sched_setaffinity(__pid: pid_t, __cpusetsize: size_t, __cpuset: *const CpuSet) -> c_int;
+    }
+}
+
+pub fn sched_setaffinity(pid: int, cpuset: &CpuSet) -> SysResult<()> {
+    use libc::{pid_t, size_t};
+
+    let res = unsafe {
+        ffi::sched_setaffinity(pid as pid_t, mem::size_of::<CpuSet>() as size_t, mem::transmute(cpuset))
+    };
+
+    if res != 0 {
+        Err(SysError::last())
+    } else {
+        Ok(())
     }
 }
 
