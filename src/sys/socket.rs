@@ -184,6 +184,7 @@ mod consts {
     pub const SO_RESTRICT_DENYIN: SockOpt     = 0x00000001;
     pub const SO_RESTRICT_DENYOUT: SockOpt    = 0x00000002;
     pub const SO_REUSEADDR: SockOpt           = 0x0004;
+    pub const SO_REUSEPORT: SockOpt           = 0x0200;
     pub const SO_REUSESHAREUID: SockOpt       = 0x1025;
     pub const SO_SNDBUF: SockOpt              = 0x1001;
     pub const SO_TIMESTAMP: SockOpt           = 0x0400;
