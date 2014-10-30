@@ -10,7 +10,7 @@ pub use self::consts::*;
 
 mod ffi {
     use libc::{c_int, c_void, socklen_t};
-    pub use libc::{socket, listen, bind, accept, connect, setsockopt, sendto, recvfrom};
+    pub use libc::{socket, listen, bind, accept, connect, setsockopt, sendto, recvfrom, getsockname};
 
     extern {
         pub fn getsockopt(
@@ -466,4 +466,24 @@ pub fn setsockopt<T>(fd: Fd, level: SockLevel, opt: SockOpt, val: &T) -> SysResu
     };
 
     from_ffi(res)
+}
+
+fn getsockname_sockaddr<T>(sockfd: Fd, addr: &T) -> SysResult<bool> {
+    let addrlen_expected = mem::size_of::<T>() as socklen_t;
+    let mut addrlen = addrlen_expected;
+
+    let ret = unsafe { ffi::getsockname(sockfd, mem::transmute(addr), &mut addrlen) };
+    if ret < 0 {
+        return Err(SysError::last());
+    }
+
+    Ok(addrlen == addrlen_expected)
+}
+
+pub fn getsockname(sockfd: Fd, addr: &mut SockAddr) -> SysResult<bool> {
+    match *addr {
+        SockIpV4(ref addr) => getsockname_sockaddr(sockfd, addr),
+        SockIpV6(ref addr) => getsockname_sockaddr(sockfd, addr),
+        SockUnix(ref addr) => getsockname_sockaddr(sockfd, addr)
+    }
 }
