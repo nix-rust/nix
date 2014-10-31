@@ -19,7 +19,7 @@ mod ffi {
     }
 
     // Bug in rustc, cannot determine that kevent is #[repr(C)]
-    #[allow(ctypes)]
+    #[allow(improper_ctypes)]
     extern {
         pub fn kqueue() -> c_int;
 

@@ -20,7 +20,7 @@ pub fn eventfd(initval: uint, flags: EventFdFlag) -> SysResult<Fd> {
     }
 
     if eventfd.is_null() {
-        fail!("eventfd unsupported on this platform");
+        panic!("eventfd unsupported on this platform");
     }
 
     let res = unsafe {

@@ -276,6 +276,7 @@ mod ffi {
     use libc;
     use super::signal::{sigaction, sigset_t};
 
+    #[allow(improper_ctypes)]
     extern {
         pub fn sigaction(signum: libc::c_int,
                          act: *const sigaction,

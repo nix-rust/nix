@@ -192,7 +192,7 @@ mod consts {
     pub const SO_TYPE: SockOpt                = 0x1008;
     pub const SO_WANTMORE: SockOpt            = 0x4000;
     pub const SO_WANTOOBFLAG: SockOpt         = 0x8000;
-    #[allow(type_overflow)]
+    #[allow(overflowing_literals)]
     pub const SO_RESTRICT_DENYSET: SockOpt    = 0x80000000;
 
     // Socket options for TCP sockets
@@ -362,7 +362,7 @@ mod sa_helpers {
 }
 
 pub fn recvfrom(sockfd: Fd, buf: &mut [u8]) -> SysResult<(uint, SockAddr)> {
-    let mut saddr : sockaddr_storage = unsafe { mem::zeroed() };
+    let saddr : sockaddr_storage = unsafe { mem::zeroed() };
     let mut len = mem::size_of::<sockaddr_storage>() as socklen_t;
 
     let ret = unsafe {
