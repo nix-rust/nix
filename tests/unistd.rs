@@ -1,12 +1,9 @@
 
 extern crate nix;
-extern crate native;
 
 #[cfg(test)]
 mod test {
-    use nix::unistd::{writev, readv, Iovec, pipe, close};
-    use native::io::FileDesc;
-    use std::rt::rtio::RtioFileStream;
+    use nix::unistd::{writev, readv, Iovec, pipe, close, read, write};
     use std::rand::{task_rng, Rng};
     use std::cmp::min;
 
@@ -32,7 +29,6 @@ mod test {
         assert!(pipe_res.is_ok());
         let (reader, writer) = pipe_res.ok().unwrap();
         // FileDesc will close its filedesc (reader).
-        let mut reader = FileDesc::new(reader, true);
         let mut read_buf = Vec::from_elem(128 * 16, 0u8);
         // Blocking io, should write all data.
         let write_res = writev(writer, iovecs.as_slice());
@@ -41,7 +37,7 @@ mod test {
         let written = write_res.ok().unwrap();
         // Check whether we written all data
         assert_eq!(to_write.len(), written);
-        let read_res = reader.read(read_buf.as_mut_slice());
+        let read_res = read(reader, read_buf.as_mut_slice());
         // Successful read
         assert!(read_res.is_ok());
         let read = read_res.ok().unwrap() as uint;
@@ -50,6 +46,8 @@ mod test {
         // Check equality of written and read data
         assert_eq!(to_write.as_slice(), read_buf.as_slice());
         let close_res = close(writer);
+        assert!(close_res.is_ok());
+        let close_res = close(reader);
         assert!(close_res.is_ok());
     }
 
@@ -73,10 +71,8 @@ mod test {
         let pipe_res = pipe();
         assert!(pipe_res.is_ok());
         let (reader, writer) = pipe_res.ok().unwrap();
-        // FileDesc will close its filedesc (writer).
-        let mut writer = FileDesc::new(writer, true);
         // Blocking io, should write all data.
-        let write_res = writer.write(to_write.as_slice());
+        let write_res = write(writer, to_write.as_slice());
         // Successful write
         assert!(write_res.is_ok());
         let read_res = readv(reader, iovecs.as_mut_slice());
@@ -94,6 +90,8 @@ mod test {
         // Check equality of written and read data
         assert_eq!(read_buf.as_slice(), to_write.as_slice());
         let close_res = close(reader);
+        assert!(close_res.is_ok());
+        let close_res = close(writer);
         assert!(close_res.is_ok());
     }
 
