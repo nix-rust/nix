@@ -1,4 +1,5 @@
 use std::{mem, ptr, fmt};
+use std::num::Int;
 use libc::{c_void, c_int, socklen_t, size_t, ssize_t};
 use fcntl::{Fd, fcntl, F_SETFL, F_SETFD, FD_CLOEXEC, O_NONBLOCK};
 use errno::{SysResult, SysError, from_ffi};
