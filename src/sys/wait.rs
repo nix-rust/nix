@@ -21,6 +21,8 @@ pub enum WaitStatus {
 }
 
 pub fn waitpid(pid: pid_t, options: WaitPidFlag) -> SysResult<WaitStatus> {
+    use self::WaitStatus::*;
+
     let mut status: i32 = 0;
 
     let res = unsafe { ffi::waitpid(pid as pid_t, &mut status as *mut c_int, options.bits()) };

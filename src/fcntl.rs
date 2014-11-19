@@ -100,6 +100,8 @@ pub enum FcntlArg<'a> {
 
 // TODO: Figure out how to handle value fcntl returns
 pub fn fcntl(fd: Fd, arg: FcntlArg) -> SysResult<()> {
+    use self::FcntlArg::*;
+
     let res = unsafe {
         match arg {
             F_SETFD(flag) => ffi::fcntl(fd, ffi::F_SETFD, flag.bits()),

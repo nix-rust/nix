@@ -1,7 +1,7 @@
 use std::{mem, ptr, fmt};
-use std::num::Int;
 use libc::{c_void, c_int, socklen_t, size_t, ssize_t};
-use fcntl::{Fd, fcntl, F_SETFL, F_SETFD, FD_CLOEXEC, O_NONBLOCK};
+use fcntl::{Fd, fcntl, FD_CLOEXEC, O_NONBLOCK};
+use fcntl::FcntlArg::{F_SETFD, F_SETFL};
 use errno::{SysResult, SysError, from_ffi};
 use features;
 
@@ -257,6 +257,8 @@ pub fn listen(sockfd: Fd, backlog: uint) -> SysResult<()> {
 }
 
 pub fn bind(sockfd: Fd, addr: &SockAddr) -> SysResult<()> {
+    use self::SockAddr::*;
+
     let res = unsafe {
         match *addr {
             SockIpV4(ref addr) => ffi::bind(sockfd, mem::transmute(addr), mem::size_of::<sockaddr_in>() as socklen_t),
@@ -330,6 +332,8 @@ fn accept4_polyfill(sockfd: Fd, flags: SockFlag) -> SysResult<Fd> {
 }
 
 pub fn connect(sockfd: Fd, addr: &SockAddr) -> SysResult<()> {
+    use self::SockAddr::*;
+
     let res = unsafe {
         match *addr {
             SockIpV4(ref addr) => ffi::connect(sockfd, mem::transmute(addr), mem::size_of::<sockaddr_in>() as socklen_t),
@@ -344,7 +348,8 @@ pub fn connect(sockfd: Fd, addr: &SockAddr) -> SysResult<()> {
 mod sa_helpers {
     use std::mem;
     use libc::{sockaddr_storage, sockaddr_in, sockaddr_in6, sockaddr_un};
-    use super::{SockAddr, SockIpV6, SockIpV4, SockUnix};
+    use super::SockAddr;
+    use super::SockAddr::*;
 
     pub fn to_sockaddr_ipv4(addr: &sockaddr_storage) -> SockAddr {
         let sin : &sockaddr_in = unsafe { mem::transmute(addr) };
@@ -385,6 +390,8 @@ pub fn recvfrom(sockfd: Fd, buf: &mut [u8]) -> SysResult<(uint, SockAddr)> {
 }
 
 fn print_ipv4_addr(sin: &sockaddr_in, f: &mut fmt::Formatter) -> fmt::Result {
+    use std::num::Int;
+
     let ip_addr = Int::from_be(sin.sin_addr.s_addr);
     let port = Int::from_be(sin.sin_port);
 
@@ -399,7 +406,7 @@ fn print_ipv4_addr(sin: &sockaddr_in, f: &mut fmt::Formatter) -> fmt::Result {
 impl fmt::Show for SockAddr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            SockIpV4(sin) => print_ipv4_addr(&sin, f),
+            SockAddr::SockIpV4(sin) => print_ipv4_addr(&sin, f),
             _ => unimplemented!()
         }
     }
@@ -420,6 +427,8 @@ fn sendto_sockaddr<T>(sockfd: Fd, buf: &[u8], flags: SockMessageFlags, addr: &T)
 }
 
 pub fn sendto(sockfd: Fd, buf: &[u8], addr: &SockAddr, flags: SockMessageFlags) -> SysResult<uint> {
+    use self::SockAddr::*;
+
     let ret = match *addr {
         SockIpV4(ref addr) => sendto_sockaddr(sockfd, buf, flags, addr),
         SockIpV6(ref addr) => sendto_sockaddr(sockfd, buf, flags, addr),
@@ -482,6 +491,8 @@ fn getsockname_sockaddr<T>(sockfd: Fd, addr: &T) -> SysResult<bool> {
 }
 
 pub fn getsockname(sockfd: Fd, addr: &mut SockAddr) -> SysResult<bool> {
+    use self::SockAddr::*;
+
     match *addr {
         SockIpV4(ref addr) => getsockname_sockaddr(sockfd, addr),
         SockIpV6(ref addr) => getsockname_sockaddr(sockfd, addr),

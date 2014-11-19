@@ -4,6 +4,7 @@ use std::num::from_uint;
 use libc::c_int;
 
 pub use self::consts::*;
+pub use self::consts::Errno::*;
 
 pub type SysResult<T> = Result<T, SysError>;
 
@@ -672,9 +673,9 @@ mod consts {
         EQFULL          = 106,
     }
 
-    pub const ELAST: Errno       = EQFULL;
-    pub const EWOULDBLOCK: Errno = EAGAIN;
-    pub const EDEADLOCK:   Errno = EDEADLK;
+    pub const ELAST: Errno       = Errno::EQFULL;
+    pub const EWOULDBLOCK: Errno = Errno::EAGAIN;
+    pub const EDEADLOCK:   Errno = Errno::EDEADLK;
 
-    pub const EL2NSYNC: Errno = UnknownErrno;
+    pub const EL2NSYNC: Errno = Errno::UnknownErrno;
 }

@@ -1,7 +1,9 @@
 use std::{mem, ptr};
 use std::c_str::{CString, ToCStr};
 use libc::{c_char, c_void, c_int, size_t, pid_t, off_t};
-use fcntl::{fcntl, Fd, OFlag, O_NONBLOCK, O_CLOEXEC, FD_CLOEXEC, F_SETFD, F_SETFL};
+use fcntl::{fcntl, Fd, OFlag, O_NONBLOCK, O_CLOEXEC, FD_CLOEXEC};
+use fcntl::FcntlArg::{F_SETFD, F_SETFL};
+
 use errno::{SysResult, SysError, from_ffi};
 use core::raw::Slice as RawSlice;
 
@@ -59,20 +61,22 @@ pub enum Fork {
 impl Fork {
     pub fn is_child(&self) -> bool {
         match *self {
-            Child => true,
+            Fork::Child => true,
             _ => false
         }
     }
 
     pub fn is_parent(&self) -> bool {
         match *self {
-            Parent(_) => true,
+            Fork::Parent(_) => true,
             _ => false
         }
     }
 }
 
 pub fn fork() -> SysResult<Fork> {
+    use self::Fork::*;
+
     let res = unsafe { ffi::fork() };
 
     if res < 0 {
