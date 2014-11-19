@@ -556,8 +556,8 @@ mod consts {
         EHWPOISON       = 133,
     }
 
-    pub const EWOULDBLOCK: Errno = EAGAIN;
-    pub const EDEADLOCK:   Errno = EDEADLK;
+    pub const EWOULDBLOCK: Errno = Errno::EAGAIN;
+    pub const EDEADLOCK:   Errno = Errno::EDEADLK;
 }
 
 #[cfg(any(target_os = "macos", target_os = "ios"))]
