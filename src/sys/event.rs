@@ -1,6 +1,10 @@
-use libc::{timespec, time_t, c_int, c_long};
+/* TOOD: Implement for other kqueue based systems
+ */
+
+use libc::{timespec, time_t, c_int, c_long, c_short};
 use errno::{SysResult, SysError};
 use fcntl::Fd;
+use std::fmt;
 
 pub use self::ffi::kevent as KEvent;
 
@@ -68,6 +72,40 @@ bitflags!(
         const EV_ERROR     = 0x4000
     }
 )
+
+impl fmt::Show for EventFlag {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        let mut one = false;
+        let flags = [
+            (EV_ADD, "EV_ADD"),
+            (EV_DELETE, "EV_DELETE"),
+            (EV_ENABLE, "EV_ENABLE"),
+            (EV_DISABLE, "EV_DISABLE"),
+            (EV_RECEIPT, "EV_RECEIPT"),
+            (EV_ONESHOT, "EV_ONESHOT"),
+            (EV_CLEAR, "EV_CLEAR"),
+            (EV_DISPATCH, "EV_DISPATCH"),
+            (EV_SYSFLAGS, "EV_SYSFLAGS"),
+            (EV_FLAG0, "EV_FLAG0"),
+            (EV_FLAG1, "EV_FLAG1"),
+            (EV_EOF, "EV_EOF")];
+
+        for &(flag, msg) in flags.iter() {
+            if self.contains(flag) {
+                if one { try!(write!(fmt, " | ")) }
+                try!(write!(fmt, "{}", msg));
+
+                one = true
+            }
+        }
+
+        if !one {
+            try!(write!(fmt, "<None>"));
+        }
+
+        Ok(())
+    }
+}
 
 bitflags!(
     flags FilterFlag: u32 {
