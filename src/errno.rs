@@ -8,7 +8,7 @@ pub use self::consts::Errno::*;
 
 pub type SysResult<T> = Result<T, SysError>;
 
-#[deriving(Clone, PartialEq)]
+#[deriving(Clone, PartialEq, Copy)]
 pub struct SysError {
     pub kind: Errno,
 }
@@ -420,7 +420,7 @@ pub fn from_ffi(res: c_int) -> SysResult<()> {
 
 #[cfg(target_os = "linux")]
 mod consts {
-    #[deriving(Show, Clone, PartialEq, FromPrimitive)]
+    #[deriving(Show, Clone, PartialEq, FromPrimitive, Copy)]
     pub enum Errno {
         UnknownErrno    = 0,
         EPERM           = 1,
