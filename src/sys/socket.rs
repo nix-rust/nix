@@ -25,12 +25,14 @@ mod ffi {
 
 // Extra flags - Supported by Linux 2.6.27, normalized on other platforms
 bitflags!(
+    #[deriving(Copy)]
     flags SockFlag: c_int {
         const SOCK_NONBLOCK = 0o0004000,
         const SOCK_CLOEXEC  = 0o2000000
     }
 )
 
+#[deriving(Copy)]
 pub enum SockAddr {
     SockIpV4(sockaddr_in),
     SockIpV6(sockaddr_in6),
@@ -443,6 +445,7 @@ pub fn sendto(sockfd: Fd, buf: &[u8], addr: &SockAddr, flags: SockMessageFlags) 
 }
 
 #[repr(C)]
+#[deriving(Copy)]
 pub struct linger {
     pub l_onoff: c_int,
     pub l_linger: c_int

@@ -4,6 +4,7 @@ use fcntl::Fd;
 use errno::{SysResult, SysError};
 
 bitflags!(
+    #[deriving(Copy)]
     flags EventFdFlag: c_int {
         const EFD_CLOEXEC   = 0o2000000, // Since Linux 2.6.27
         const EFD_NONBLOCK  = 0o0004000, // Since Linux 2.6.27

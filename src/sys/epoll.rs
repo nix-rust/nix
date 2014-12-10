@@ -16,6 +16,7 @@ mod ffi {
 
 bitflags!(
     #[repr(C)]
+    #[deriving(Copy)]
     flags EpollEventKind: u32 {
         const EPOLLIN = 0x001,
         const EPOLLPRI = 0x002,
@@ -69,6 +70,7 @@ impl fmt::Show for EpollEventKind {
     }
 }
 
+#[deriving(Copy)]
 #[repr(C)]
 pub enum EpollOp {
     EpollCtlAdd = 1,
@@ -76,6 +78,7 @@ pub enum EpollOp {
     EpollCtlMod = 3
 }
 
+#[deriving(Copy)]
 #[repr(C, packed)]
 pub struct EpollEvent {
     pub events: EpollEventKind,

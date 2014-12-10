@@ -53,6 +53,7 @@ mod ffi {
     }
 }
 
+#[deriving(Copy)]
 pub enum Fork {
     Parent(pid_t),
     Child
@@ -101,7 +102,9 @@ pub fn fork() -> SysResult<Fork> {
 type IovecR = Iovec<ToRead>;
 type IovecW = Iovec<ToWrite>;
 
+#[deriving(Copy)]
 pub struct ToRead;
+#[deriving(Copy)]
 pub struct ToWrite;
 
 #[repr(C)]
