@@ -15,6 +15,7 @@ mod ffi {
 }
 
 bitflags!(
+    #[repr(C)]
     flags EpollEventKind: u32 {
         const EPOLLIN = 0x001,
         const EPOLLPRI = 0x002,
