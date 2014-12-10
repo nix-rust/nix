@@ -101,6 +101,8 @@ mod ffi {
 
     type CloneCb = extern "C" fn (data: *const super::CloneCb) -> c_int;
 
+    // We cannot give a proper #[repr(C)] to super::CloneCb
+    #[allow(improper_ctypes)]
     extern {
         // create a child process
         // doc: http://man7.org/linux/man-pages/man2/clone.2.html
