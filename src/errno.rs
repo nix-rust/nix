@@ -562,7 +562,7 @@ mod consts {
 
 #[cfg(any(target_os = "macos", target_os = "ios"))]
 mod consts {
-    #[deriving(Show, Clone, PartialEq, FromPrimitive)]
+    #[deriving(Copy, Show, Clone, PartialEq, FromPrimitive)]
     pub enum Errno {
         UnknownErrno    = 0,
         EPERM           = 1,

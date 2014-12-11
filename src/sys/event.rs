@@ -1,7 +1,7 @@
 /* TOOD: Implement for other kqueue based systems
  */
 
-use libc::{timespec, time_t, c_int, c_long, c_short};
+use libc::{timespec, time_t, c_int, c_long};
 use errno::{SysResult, SysError};
 use fcntl::Fd;
 use std::fmt;
@@ -12,6 +12,7 @@ mod ffi {
     pub use libc::{c_int, c_void, uintptr_t, intptr_t, timespec};
     use super::{EventFilter, EventFlag, FilterFlag};
 
+    #[deriving(Copy)]
     #[repr(C)]
     pub struct kevent {
         pub ident: uintptr_t,       // 8
@@ -38,7 +39,7 @@ mod ffi {
 }
 
 #[repr(i16)]
-#[deriving(Show, PartialEq)]
+#[deriving(Copy, Show, PartialEq)]
 pub enum EventFilter {
     EVFILT_READ = -1,
     EVFILT_WRITE = -2,
@@ -56,6 +57,7 @@ pub enum EventFilter {
 }
 
 bitflags!(
+    #[deriving(Copy)]
     flags EventFlag: u16 {
         const EV_ADD       = 0x0001,
         const EV_DELETE    = 0x0002,
@@ -108,6 +110,7 @@ impl fmt::Show for EventFlag {
 }
 
 bitflags!(
+    #[deriving(Copy)]
     flags FilterFlag: u32 {
         const NOTE_TRIGGER                         = 0x01000000,
         const NOTE_FFNOP                           = 0x00000000,
