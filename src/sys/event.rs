@@ -1,7 +1,7 @@
 /* TOOD: Implement for other kqueue based systems
  */
 
-use libc::{timespec, time_t, c_int, c_long};
+use libc::{timespec, time_t, c_int, c_long, uintptr_t};
 use errno::{SysResult, SysError};
 use fcntl::Fd;
 use std::fmt;
@@ -204,7 +204,7 @@ pub fn ev_set(ev: &mut KEvent,
               fflags: FilterFlag,
               udata: uint) {
 
-    ev.ident  = ident as u64;
+    ev.ident  = ident as uintptr_t;
     ev.filter = filter;
     ev.flags  = flags;
     ev.fflags = fflags;
