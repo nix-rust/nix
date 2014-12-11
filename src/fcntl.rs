@@ -46,6 +46,7 @@ mod ffi {
         use libc::{c_int, c_short, off_t, pid_t};
 
         #[repr(C)]
+        #[deriving(Copy)]
         pub struct flock {
             pub l_start: off_t,
             pub l_len: off_t,
@@ -162,6 +163,7 @@ mod consts {
     use libc::c_int;
 
     bitflags!(
+        #[deriving(Copy)]
         flags OFlag: c_int {
             const O_ACCMODE   = 0x0000003,
             const O_RDONLY    = 0x0000000,
@@ -184,6 +186,7 @@ mod consts {
     )
 
     bitflags!(
+        #[deriving(Copy)]
         flags FdFlag: c_int {
             const FD_CLOEXEC = 1
         }
