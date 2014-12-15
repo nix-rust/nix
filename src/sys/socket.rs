@@ -25,7 +25,6 @@ mod ffi {
 
 // Extra flags - Supported by Linux 2.6.27, normalized on other platforms
 bitflags!(
-    #[deriving(Copy)]
     flags SockFlag: c_int {
         const SOCK_NONBLOCK = 0o0004000,
         const SOCK_CLOEXEC  = 0o2000000
