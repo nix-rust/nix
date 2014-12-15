@@ -10,7 +10,6 @@ mod ffi {
 }
 
 bitflags!(
-    #[deriving(Copy)]
     flags WaitPidFlag: c_int {
         const WNOHANG = 0x00000001,
     }
