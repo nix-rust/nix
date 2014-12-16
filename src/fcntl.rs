@@ -163,7 +163,6 @@ mod consts {
     use libc::c_int;
 
     bitflags!(
-        #[deriving(Copy)]
         flags OFlag: c_int {
             const O_ACCMODE   = 0x0000003,
             const O_RDONLY    = 0x0000000,
@@ -186,7 +185,6 @@ mod consts {
     )
 
     bitflags!(
-        #[deriving(Copy)]
         flags FdFlag: c_int {
             const FD_CLOEXEC = 1
         }

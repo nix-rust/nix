@@ -12,8 +12,8 @@ mod ffi {
     pub use libc::{c_int, c_void, uintptr_t, intptr_t, timespec};
     use super::{EventFilter, EventFlag, FilterFlag};
 
-    #[deriving(Copy)]
     #[repr(C)]
+    #[deriving(Copy)]
     pub struct kevent {
         pub ident: uintptr_t,       // 8
         pub filter: EventFilter,    // 2
@@ -57,7 +57,6 @@ pub enum EventFilter {
 }
 
 bitflags!(
-    #[deriving(Copy)]
     flags EventFlag: u16 {
         const EV_ADD       = 0x0001,
         const EV_DELETE    = 0x0002,
@@ -110,7 +109,6 @@ impl fmt::Show for EventFlag {
 }
 
 bitflags!(
-    #[deriving(Copy)]
     flags FilterFlag: u32 {
         const NOTE_TRIGGER                         = 0x01000000,
         const NOTE_FFNOP                           = 0x00000000,
