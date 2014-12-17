@@ -39,6 +39,30 @@ mod consts {
     pub const PROT_GROWSDOWN: MmapProt      = 0x01000000;
     pub const PROT_GROWSUP: MmapProt        = 0x02000000;
 
+    pub type MmapAdvise = c_int;
+
+    pub const MADV_NORMAL     : MmapAdvise  = 0; /* No further special treatment.  */
+    pub const MADV_RANDOM     : MmapAdvise  = 1; /* Expect random page references.  */
+    pub const MADV_SEQUENTIAL : MmapAdvise  = 2; /* Expect sequential page references.  */
+    pub const MADV_WILLNEED   : MmapAdvise  = 3; /* Will need these pages.  */
+    pub const MADV_DONTNEED   : MmapAdvise  = 4; /* Don't need these pages.  */
+    pub const MADV_REMOVE     : MmapAdvise  = 9; /* Remove these pages and resources.  */
+    pub const MADV_DONTFORK   : MmapAdvise  = 10; /* Do not inherit across fork.  */
+    pub const MADV_DOFORK     : MmapAdvise  = 11; /* Do inherit across fork.  */
+    pub const MADV_MERGEABLE  : MmapAdvise  = 12; /* KSM may merge identical pages.  */
+    pub const MADV_UNMERGEABLE: MmapAdvise  = 13; /* KSM may not merge identical pages.  */
+    pub const MADV_HUGEPAGE   : MmapAdvise  = 14; /* Worth backing with hugepages.  */
+    pub const MADV_NOHUGEPAGE : MmapAdvise  = 15; /* Not worth backing with hugepages.  */
+    pub const MADV_DONTDUMP   : MmapAdvise  = 16; /* Explicity exclude from the core dump, overrides the coredump filter bits.  */
+    pub const MADV_DODUMP     : MmapAdvise  = 17; /* Clear the MADV_DONTDUMP flag.  */
+    pub const MADV_HWPOISON   : MmapAdvise  = 100; /* Poison a page for testing.  */
+
+    pub type MmapSync = c_int;
+
+    pub const MS_ASYNC : MmapSync           = 1;
+    pub const MS_SYNC  : MmapSync           = 4;
+    pub const MS_INVALIDATE : MmapSync      = 2;
+
     pub const MAP_FAILED: int               = -1;
 }
 
@@ -61,6 +85,27 @@ mod consts {
     pub const PROT_WRITE: MmapProt          = 0x2;
     pub const PROT_EXEC: MmapProt           = 0x4;
     pub const PROT_NONE: MmapProt           = 0x0;
+    
+    pub type MmapAdvise = c_int;
+    
+    pub const MADV_NORMAL     : MmapAdvise      = 0; /* No further special treatment.  */
+    pub const MADV_RANDOM     : MmapAdvise      = 1; /* Expect random page references.  */
+    pub const MADV_SEQUENTIAL : MmapAdvise      = 2; /* Expect sequential page references.  */
+    pub const MADV_WILLNEED   : MmapAdvise      = 3; /* Will need these pages.  */
+    pub const MADV_DONTNEED   : MmapAdvise      = 4; /* Don't need these pages.  */
+    pub const MADV_FREE       : MmapAdvise      = 5; /* pages unneeded, discard contents */
+    pub const MADV_ZERO_WIRED_PAGES: MmapAdvise = 6; /* zero the wired pages that have not been unwired before the entry is deleted */
+    pub const MADV_FREE_REUSABLE : MmapAdvise   = 7; /* pages can be reused (by anyone) */
+    pub const MADV_FREE_REUSE : MmapAdvise      = 8; /* caller wants to reuse those pages */
+    pub const MADV_CAN_REUSE : MmapAdvise       = 9; 
+
+    pub type MmapSync = c_int;
+
+    pub const MS_ASYNC      : MmapSync          = 0x0001; /* [MF|SIO] return immediately */
+    pub const MS_INVALIDATE	: MmapSync          = 0x0002; /* [MF|SIO] invalidate all cached data */
+    pub const MS_SYNC		: MmapSync          = 0x0010; /* [MF|SIO] msync synchronously */
+    pub const MS_KILLPAGES  : MmapSync          = 0x0004; /* invalidate pages, leave mapped */
+    pub const MS_DEACTIVATE : MmapSync          = 0x0008; /* deactivate pages, leave mapped */
 
     pub const MAP_FAILED: int               = -1;
 }
@@ -76,6 +121,8 @@ mod ffi {
         pub fn shm_unlink(name: *const c_char) -> c_int;
         pub fn mlock(addr: *const c_void, len: size_t) -> c_int;
         pub fn munlock(addr: *const c_void, len: size_t) -> c_int;
+        pub fn madvise (addr: *const c_void, len: size_t, advice: c_int) -> c_int;
+        pub fn msync (addr: *const c_void, len: size_t, flags: c_int) -> c_int;
     }
 }
 
@@ -107,6 +154,20 @@ pub fn mmap(addr: *mut c_void, length: size_t, prot: MmapProt, flags: MmapFlag, 
 
 pub fn munmap(addr: *mut c_void, len: size_t) -> SysResult<()> {
     match unsafe { ffi::munmap(addr, len) } {
+        0 => Ok(()),
+        _ => Err(SysError::last())
+    }
+}
+
+pub fn madvise(addr: *const c_void, length: size_t, advise: MmapAdvise) -> SysResult<()> {
+    match unsafe { ffi::madvise(addr, length, advise) } {
+        0 => Ok(()),
+        _ => Err(SysError::last())
+    }
+}
+
+pub fn msync(addr: *const c_void, length: size_t, flags: MmapSync) -> SysResult<()> {
+    match unsafe { ffi::msync(addr, length, flags) } {
         0 => Ok(()),
         _ => Err(SysError::last())
     }
