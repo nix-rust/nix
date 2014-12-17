@@ -18,7 +18,6 @@ mod ffi {
         use libc::{c_int, c_short, off_t, pid_t};
 
         #[repr(C)]
-        #[deriving(Copy)]
         pub struct flock {
             pub l_type: c_short,
             pub l_whence: c_short,

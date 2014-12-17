@@ -12,8 +12,8 @@ mod ffi {
     pub use libc::{c_int, c_void, uintptr_t, intptr_t, timespec};
     use super::{EventFilter, EventFlag, FilterFlag};
 
-    #[deriving(Copy)]
     #[repr(C)]
+    #[deriving(Copy)]
     pub struct kevent {
         pub ident: uintptr_t,       // 8
         pub filter: EventFilter,    // 2
