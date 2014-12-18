@@ -147,13 +147,13 @@ mod consts {
             const O_TMPFILE   = 0o20000000,
             const O_NDELAY    = O_NONBLOCK.bits
         }
-    )
+    );
 
     bitflags!(
         flags FdFlag: c_int {
             const FD_CLOEXEC = 1
         }
-    )
+    );
 }
 
 #[cfg(any(target_os = "macos", target_os = "ios"))]
@@ -180,11 +180,11 @@ mod consts {
             const O_NDELAY    = O_NONBLOCK.bits,
             const O_FSYNC     = O_SYNC.bits
         }
-    )
+    );
 
     bitflags!(
         flags FdFlag: c_int {
             const FD_CLOEXEC = 1
         }
-    )
+    );
 }

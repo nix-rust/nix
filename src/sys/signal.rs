@@ -65,7 +65,7 @@ pub mod signal {
             const SA_RESTART   = 0x10000000,
             const SA_SIGINFO   = 0x00000004,
         }
-    )
+    );
 
     pub const SIGTRAP:      libc::c_int = 5;
     pub const SIGIOT:       libc::c_int = 6;
@@ -144,7 +144,7 @@ pub mod signal {
             const SA_RESTART   = 0x10000000,
             const SA_SIGINFO   = 0x00000008,
         }
-    )
+    );
 
     pub const SIGTRAP:      libc::c_int = 5;
     pub const SIGIOT:       libc::c_int = 6;
@@ -214,7 +214,7 @@ pub mod signal {
             const SA_RESTART   = 0x0002,
             const SA_SIGINFO   = 0x0040,
         }
-    )
+    );
 
     pub const SIGTRAP:      libc::c_int = 5;
     pub const SIGIOT:       libc::c_int = 6;

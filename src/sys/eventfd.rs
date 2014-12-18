@@ -9,7 +9,7 @@ bitflags!(
         const EFD_NONBLOCK  = 0o0004000, // Since Linux 2.6.27
         const EFD_SEMAPHORE = 0o0000001, // Since Linux 2.6.30
     }
-)
+);
 
 pub fn eventfd(initval: uint, flags: EventFdFlag) -> SysResult<Fd> {
     type F = unsafe extern "C" fn(initval: c_uint, flags: c_int) -> c_int;
