@@ -72,7 +72,7 @@ bitflags!(
         const EV_EOF       = 0x8000,
         const EV_ERROR     = 0x4000
     }
-)
+);
 
 impl fmt::Show for EventFlag {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
@@ -153,7 +153,7 @@ bitflags!(
         const NOTE_TRACKERR                        = 0x00000002,
         const NOTE_CHILD                           = 0x00000004
     }
-)
+);
 
 pub const EV_POLL: EventFlag = EV_FLAG0;
 pub const EV_OOBAND: EventFlag = EV_FLAG1;

@@ -29,7 +29,7 @@ bitflags!(
         const SOCK_NONBLOCK = 0o0004000,
         const SOCK_CLOEXEC  = 0o2000000
     }
-)
+);
 
 #[deriving(Copy)]
 pub enum SockAddr {
