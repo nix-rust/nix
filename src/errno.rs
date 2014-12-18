@@ -205,7 +205,7 @@ impl SysError {
             EREMCHG         => "Remote address changed",
 
             #[cfg(target_os = "linux")]
-            ELIBACC         => "Can not acces a needed shared library",
+            ELIBACC         => "Can not access a needed shared library",
 
             #[cfg(target_os = "linux")]
             ELIBBAD         => "Accessing a corrupted shared library",
