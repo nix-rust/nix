@@ -40,7 +40,7 @@ bitflags!(
         const MS_MGC_VAL     = 0xC0ED0000,
         const MS_MGC_MSK     = 0xffff0000
     }
-)
+);
 
 bitflags!(
     flags MntFlags: c_int {
@@ -48,7 +48,7 @@ bitflags!(
         const MNT_DETATCH = 1 << 1,
         const MNT_EXPIRE  = 1 << 2
     }
-)
+);
 
 mod ffi {
     use libc::{c_char, c_int, c_void, c_ulong};
