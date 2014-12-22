@@ -123,7 +123,7 @@ pub fn fcntl(fd: Fd, arg: FcntlArg) -> SysResult<()> {
 mod consts {
     use libc::c_int;
 
-    bitflags!(
+    bitflags! {
         flags OFlag: c_int {
             const O_ACCMODE   = 0o00000003,
             const O_RDONLY    = 0o00000000,
@@ -147,20 +147,20 @@ mod consts {
             const O_TMPFILE   = 0o20000000,
             const O_NDELAY    = O_NONBLOCK.bits
         }
-    )
+    }
 
-    bitflags!(
+    bitflags! {
         flags FdFlag: c_int {
             const FD_CLOEXEC = 1
         }
-    )
+    }
 }
 
 #[cfg(any(target_os = "macos", target_os = "ios"))]
 mod consts {
     use libc::c_int;
 
-    bitflags!(
+    bitflags! {
         flags OFlag: c_int {
             const O_ACCMODE   = 0x0000003,
             const O_RDONLY    = 0x0000000,
@@ -180,11 +180,11 @@ mod consts {
             const O_NDELAY    = O_NONBLOCK.bits,
             const O_FSYNC     = O_SYNC.bits
         }
-    )
+    }
 
-    bitflags!(
+    bitflags! {
         flags FdFlag: c_int {
             const FD_CLOEXEC = 1
         }
-    )
+    }
 }

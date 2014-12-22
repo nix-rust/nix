@@ -3,7 +3,7 @@ use std::path::Path;
 use libc::{c_ulong, c_int, c_void};
 use errno::{SysResult, from_ffi};
 
-bitflags!(
+bitflags! {
     flags MsFlags: c_ulong {
         const MS_RDONLY      = 1 << 0,  // Mount read-only
         const MS_NOSUID      = 1 << 1,  // Ignore suid and sgid bits
@@ -40,15 +40,15 @@ bitflags!(
         const MS_MGC_VAL     = 0xC0ED0000,
         const MS_MGC_MSK     = 0xffff0000
     }
-)
+}
 
-bitflags!(
+bitflags! {
     flags MntFlags: c_int {
         const MNT_FORCE   = 1 << 0,
         const MNT_DETATCH = 1 << 1,
         const MNT_EXPIRE  = 1 << 2
     }
-)
+}
 
 mod ffi {
     use libc::{c_char, c_int, c_void, c_ulong};

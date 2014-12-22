@@ -55,7 +55,7 @@ pub const SIGEMT: libc::c_int = 7;
 pub mod signal {
     use libc;
 
-    bitflags!(
+    bitflags! {
         flags SockFlag: libc::c_ulong {
             const SA_NOCLDSTOP = 0x00000001,
             const SA_NOCLDWAIT = 0x00000002,
@@ -65,7 +65,7 @@ pub mod signal {
             const SA_RESTART   = 0x10000000,
             const SA_SIGINFO   = 0x00000004,
         }
-    )
+    }
 
     pub const SIGTRAP:      libc::c_int = 5;
     pub const SIGIOT:       libc::c_int = 6;
@@ -134,7 +134,7 @@ pub mod signal {
 pub mod signal {
     use libc;
 
-    bitflags!(
+    bitflags! {
         flags SockFlag: libc::c_uint {
             const SA_NOCLDSTOP = 0x00000001,
             const SA_NOCLDWAIT = 0x00001000,
@@ -144,7 +144,7 @@ pub mod signal {
             const SA_RESTART   = 0x10000000,
             const SA_SIGINFO   = 0x00000008,
         }
-    )
+    }
 
     pub const SIGTRAP:      libc::c_int = 5;
     pub const SIGIOT:       libc::c_int = 6;
@@ -204,7 +204,7 @@ pub mod signal {
 pub mod signal {
     use libc;
 
-    bitflags!(
+    bitflags! {
         flags SockFlag: libc::c_int {
             const SA_NOCLDSTOP = 0x0008,
             const SA_NOCLDWAIT = 0x0020,
@@ -214,7 +214,7 @@ pub mod signal {
             const SA_RESTART   = 0x0002,
             const SA_SIGINFO   = 0x0040,
         }
-    )
+    }
 
     pub const SIGTRAP:      libc::c_int = 5;
     pub const SIGIOT:       libc::c_int = 6;

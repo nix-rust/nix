@@ -56,7 +56,7 @@ pub enum EventFilter {
     EVFILT_SYSCOUNT = 13
 }
 
-bitflags!(
+bitflags! {
     flags EventFlag: u16 {
         const EV_ADD       = 0x0001,
         const EV_DELETE    = 0x0002,
@@ -72,7 +72,7 @@ bitflags!(
         const EV_EOF       = 0x8000,
         const EV_ERROR     = 0x4000
     }
-)
+}
 
 impl fmt::Show for EventFlag {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
@@ -108,7 +108,7 @@ impl fmt::Show for EventFlag {
     }
 }
 
-bitflags!(
+bitflags! {
     flags FilterFlag: u32 {
         const NOTE_TRIGGER                         = 0x01000000,
         const NOTE_FFNOP                           = 0x00000000,
@@ -153,7 +153,7 @@ bitflags!(
         const NOTE_TRACKERR                        = 0x00000002,
         const NOTE_CHILD                           = 0x00000004
     }
-)
+}
 
 pub const EV_POLL: EventFlag = EV_FLAG0;
 pub const EV_OOBAND: EventFlag = EV_FLAG1;

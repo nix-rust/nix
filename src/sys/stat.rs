@@ -19,7 +19,7 @@ mod ffi {
     }
 }
 
-bitflags!(
+bitflags! {
     flags SFlag: mode_t {
         const S_IFREG  = 0o100000,
         const S_IFCHR  = 0o020000,
@@ -27,7 +27,7 @@ bitflags!(
         const S_IFIFO  = 0o010000,
         const S_IFSOCK = 0o140000
     }
-)
+}
 
 impl fmt::Show for SFlag {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
