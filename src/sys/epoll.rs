@@ -14,7 +14,7 @@ mod ffi {
     }
 }
 
-bitflags!(
+bitflags! {
     #[repr(C)]
     flags EpollEventKind: u32 {
         const EPOLLIN = 0x001,
@@ -32,7 +32,7 @@ bitflags!(
         const EPOLLONESHOT = 1 << 30,
         const EPOLLET = 1 << 31
     }
-)
+}
 
 impl fmt::Show for EpollEventKind {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
