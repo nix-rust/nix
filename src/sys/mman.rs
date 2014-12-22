@@ -66,7 +66,8 @@ mod consts {
     pub const MAP_FAILED: int               = -1;
 }
 
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos",
+          target_os = "ios"))]
 mod consts {
     use libc::c_int;
 
@@ -192,4 +193,3 @@ pub fn shm_unlink(name: &String) -> SysResult<()> {
         Ok(())
     }
 }
-
