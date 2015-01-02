@@ -17,14 +17,14 @@ const UTSNAME_LEN: uint = 65;
 #[repr(C)]
 #[deriving(Copy)]
 pub struct UtsName {
-    sysname: [c_char, ..UTSNAME_LEN],
-    nodename: [c_char, ..UTSNAME_LEN],
-    release: [c_char, ..UTSNAME_LEN],
-    version: [c_char, ..UTSNAME_LEN],
-    machine: [c_char, ..UTSNAME_LEN],
+    sysname: [c_char; UTSNAME_LEN],
+    nodename: [c_char; UTSNAME_LEN],
+    release: [c_char; UTSNAME_LEN],
+    version: [c_char; UTSNAME_LEN],
+    machine: [c_char; UTSNAME_LEN],
     // ifdef _GNU_SOURCE
     #[allow(dead_code)]
-    domainname: [c_char, ..UTSNAME_LEN]
+    domainname: [c_char; UTSNAME_LEN]
 }
 
 impl UtsName {
