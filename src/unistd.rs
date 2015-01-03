@@ -53,7 +53,7 @@ mod ffi {
     }
 }
 
-#[deriving(Copy)]
+#[derive(Copy)]
 pub enum Fork {
     Parent(pid_t),
     Child
@@ -102,9 +102,9 @@ pub fn fork() -> SysResult<Fork> {
 type IovecR = Iovec<ToRead>;
 type IovecW = Iovec<ToWrite>;
 
-#[deriving(Copy)]
+#[derive(Copy)]
 pub struct ToRead;
-#[deriving(Copy)]
+#[derive(Copy)]
 pub struct ToWrite;
 
 #[repr(C)]
@@ -410,6 +410,7 @@ pub fn ftruncate(fd: Fd, len: off_t) -> SysResult<()> {
 
 #[cfg(target_os = "linux")]
 mod linux {
+    use std::c_str::ToCStr;
     use std::path::Path;
     use syscall::{syscall, SYSPIVOTROOT};
     use errno::{SysResult, SysError};
