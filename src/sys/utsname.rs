@@ -15,7 +15,7 @@ mod ffi {
 const UTSNAME_LEN: uint = 65;
 
 #[repr(C)]
-#[deriving(Copy)]
+#[derive(Copy)]
 pub struct UtsName {
     sysname: [c_char; UTSNAME_LEN],
     nodename: [c_char; UTSNAME_LEN],

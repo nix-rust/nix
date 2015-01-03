@@ -5,6 +5,7 @@ use std::fmt;
 use std::io::FilePermission;
 use std::mem;
 use std::path::Path;
+use std::c_str::ToCStr;
 use libc::mode_t;
 use errno::{SysResult, SysError, from_ffi};
 use fcntl::Fd;
