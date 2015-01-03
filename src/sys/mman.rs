@@ -1,5 +1,6 @@
 use errno::{SysResult, SysError};
 use std::io::FilePermission;
+use std::c_str::ToCStr;
 use fcntl::{Fd, OFlag};
 use libc::{c_void, size_t, off_t, mode_t};
 
@@ -86,9 +87,9 @@ mod consts {
     pub const PROT_WRITE: MmapProt          = 0x2;
     pub const PROT_EXEC: MmapProt           = 0x4;
     pub const PROT_NONE: MmapProt           = 0x0;
-    
+
     pub type MmapAdvise = c_int;
-    
+
     pub const MADV_NORMAL     : MmapAdvise      = 0; /* No further special treatment.  */
     pub const MADV_RANDOM     : MmapAdvise      = 1; /* Expect random page references.  */
     pub const MADV_SEQUENTIAL : MmapAdvise      = 2; /* Expect sequential page references.  */
@@ -98,7 +99,7 @@ mod consts {
     pub const MADV_ZERO_WIRED_PAGES: MmapAdvise = 6; /* zero the wired pages that have not been unwired before the entry is deleted */
     pub const MADV_FREE_REUSABLE : MmapAdvise   = 7; /* pages can be reused (by anyone) */
     pub const MADV_FREE_REUSE : MmapAdvise      = 8; /* caller wants to reuse those pages */
-    pub const MADV_CAN_REUSE : MmapAdvise       = 9; 
+    pub const MADV_CAN_REUSE : MmapAdvise       = 9;
 
     pub type MmapSync = c_int;
 
