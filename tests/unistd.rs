@@ -4,6 +4,7 @@ extern crate nix;
 mod test {
     use nix::unistd::{writev, readv, Iovec, pipe, close, read, write};
     use std::rand::{thread_rng, Rng};
+    use std::iter::repeat;
     use std::cmp::min;
 
     #[test]
@@ -28,7 +29,7 @@ mod test {
         assert!(pipe_res.is_ok());
         let (reader, writer) = pipe_res.ok().unwrap();
         // FileDesc will close its filedesc (reader).
-        let mut read_buf = Vec::from_elem(128 * 16, 0u8);
+        let mut read_buf = repeat(0).take(128 * 16).collect::<Vec<u8>>();
         // Blocking io, should write all data.
         let write_res = writev(writer, iovecs.as_slice());
         // Successful write
@@ -59,7 +60,7 @@ mod test {
         while allocated < to_write.len() {
             let left = to_write.len() - allocated;
             let vec_len = if left < 64 { left } else { thread_rng().gen_range(64, min(256, left)) };
-            let v = Vec::from_elem(vec_len, 0u8);
+            let v = repeat(0).take(vec_len).collect::<Vec<u8>>();
             storage.push(v);
             allocated += vec_len;
         }

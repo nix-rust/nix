@@ -69,7 +69,7 @@ impl fmt::Show for EpollEventKind {
     }
 }
 
-#[deriving(Copy)]
+#[derive(Copy)]
 #[repr(C)]
 pub enum EpollOp {
     EpollCtlAdd = 1,
@@ -77,7 +77,7 @@ pub enum EpollOp {
     EpollCtlMod = 3
 }
 
-#[deriving(Copy)]
+#[derive(Copy)]
 #[repr(C, packed)]
 pub struct EpollEvent {
     pub events: EpollEventKind,

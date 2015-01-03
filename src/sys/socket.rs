@@ -31,7 +31,7 @@ bitflags!(
     }
 );
 
-#[deriving(Copy)]
+#[derive(Copy)]
 pub enum SockAddr {
     SockIpV4(sockaddr_in),
     SockIpV6(sockaddr_in6),
@@ -444,7 +444,7 @@ pub fn sendto(sockfd: Fd, buf: &[u8], addr: &SockAddr, flags: SockMessageFlags) 
 }
 
 #[repr(C)]
-#[deriving(Copy)]
+#[derive(Copy)]
 pub struct linger {
     pub l_onoff: c_int,
     pub l_linger: c_int
