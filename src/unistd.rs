@@ -414,6 +414,7 @@ mod linux {
     use std::path::Path;
     use syscall::{syscall, SYSPIVOTROOT};
     use errno::{SysResult, SysError};
+    use std::c_str::ToCStr;
 
     pub fn pivot_root(new_root: &Path, put_old: &Path) -> SysResult<()> {
         let new_root = new_root.to_c_str();

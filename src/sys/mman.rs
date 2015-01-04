@@ -1,6 +1,7 @@
 use errno::{SysResult, SysError};
 use std::c_str::ToCStr;
 use std::io::FilePermission;
+use std::c_str::ToCStr;
 use fcntl::{Fd, OFlag};
 use libc::{c_void, size_t, off_t, mode_t};
 
