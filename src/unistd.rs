@@ -53,7 +53,7 @@ mod ffi {
     }
 }
 
-#[deriving(Copy)]
+#[derive(Copy)]
 pub enum Fork {
     Parent(pid_t),
     Child
@@ -102,9 +102,9 @@ pub fn fork() -> SysResult<Fork> {
 type IovecR = Iovec<ToRead>;
 type IovecW = Iovec<ToWrite>;
 
-#[deriving(Copy)]
+#[derive(Copy)]
 pub struct ToRead;
-#[deriving(Copy)]
+#[derive(Copy)]
 pub struct ToWrite;
 
 #[repr(C)]
@@ -413,6 +413,7 @@ mod linux {
     use std::path::Path;
     use syscall::{syscall, SYSPIVOTROOT};
     use errno::{SysResult, SysError};
+    use std::c_str::ToCStr;
 
     pub fn pivot_root(new_root: &Path, put_old: &Path) -> SysResult<()> {
         let new_root = new_root.to_c_str();
