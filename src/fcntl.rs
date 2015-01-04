@@ -1,5 +1,6 @@
 use std::c_str::ToCStr;
 use std::path::Path;
+use std::c_str::ToCStr;
 use std::io::FilePermission;
 use libc::{c_int, mode_t};
 use errno::{SysResult, SysError};

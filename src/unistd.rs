@@ -412,6 +412,7 @@ pub fn ftruncate(fd: Fd, len: off_t) -> SysResult<()> {
 mod linux {
     use std::c_str::ToCStr;
     use std::path::Path;
+    use std::c_str::ToCStr;
     use syscall::{syscall, SYSPIVOTROOT};
     use errno::{SysResult, SysError};
 
