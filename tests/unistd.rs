@@ -1,17 +1,17 @@
-
 extern crate nix;
 
 #[cfg(test)]
 mod test {
     use nix::unistd::{writev, readv, Iovec, pipe, close, read, write};
-    use std::rand::{task_rng, Rng};
     use std::cmp::min;
+    use std::iter::repeat;
+    use std::rand::{thread_rng, Rng};
 
     #[test]
     fn test_writev() {
         let mut to_write = Vec::with_capacity(16 * 128);
         for _ in range(0u, 16) {
-            let s:String = task_rng().gen_ascii_chars().take(128).collect();
+            let s:String = thread_rng().gen_ascii_chars().take(128).collect();
             let b = s.as_bytes();
             to_write.extend(b.iter().map(|x| x.clone()));
         }
@@ -20,7 +20,7 @@ mod test {
         let mut consumed = 0;
         while consumed < to_write.len() {
             let left = to_write.len() - consumed;
-            let slice_len = if left < 64 { left } else { task_rng().gen_range(64, min(256, left)) };
+            let slice_len = if left < 64 { left } else { thread_rng().gen_range(64, min(256, left)) };
             let b = to_write.slice(consumed, consumed + slice_len);
             iovecs.push(Iovec::from_slice(b));
             consumed += slice_len;
@@ -29,7 +29,7 @@ mod test {
         assert!(pipe_res.is_ok());
         let (reader, writer) = pipe_res.ok().unwrap();
         // FileDesc will close its filedesc (reader).
-        let mut read_buf = Vec::from_elem(128 * 16, 0u8);
+        let mut read_buf: Vec<u8> = repeat(0u8).take(128 * 16).collect();
         // Blocking io, should write all data.
         let write_res = writev(writer, iovecs.as_slice());
         // Successful write
@@ -53,14 +53,14 @@ mod test {
 
     #[test]
     fn test_readv() {
-        let s:String = task_rng().gen_ascii_chars().take(128).collect();
+        let s:String = thread_rng().gen_ascii_chars().take(128).collect();
         let to_write = s.as_bytes().to_vec();
         let mut storage = Vec::new();
         let mut allocated = 0;
         while allocated < to_write.len() {
             let left = to_write.len() - allocated;
-            let vec_len = if left < 64 { left } else { task_rng().gen_range(64, min(256, left)) };
-            let v = Vec::from_elem(vec_len, 0u8);
+            let vec_len = if left < 64 { left } else { thread_rng().gen_range(64, min(256, left)) };
+            let v: Vec<u8> = repeat(0u8).take(vec_len).collect();
             storage.push(v);
             allocated += vec_len;
         }

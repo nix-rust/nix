@@ -53,7 +53,7 @@ mod ffi {
     }
 }
 
-#[deriving(Copy)]
+#[derive(Copy)]
 pub enum Fork {
     Parent(pid_t),
     Child
@@ -102,9 +102,9 @@ pub fn fork() -> SysResult<Fork> {
 type IovecR = Iovec<ToRead>;
 type IovecW = Iovec<ToWrite>;
 
-#[deriving(Copy)]
+#[derive(Copy)]
 pub struct ToRead;
-#[deriving(Copy)]
+#[derive(Copy)]
 pub struct ToWrite;
 
 #[repr(C)]
@@ -311,7 +311,7 @@ pub fn readv(fd: Fd, iov: &mut [Iovec<ToRead>]) -> SysResult<uint> {
 pub fn pipe() -> SysResult<(Fd, Fd)> {
     unsafe {
         let mut res;
-        let mut fds: [c_int, ..2] = mem::uninitialized();
+        let mut fds: [c_int; 2] = mem::uninitialized();
 
         res = ffi::pipe(fds.as_mut_ptr());
 
@@ -336,7 +336,7 @@ pub fn pipe2(flags: OFlag) -> SysResult<(Fd, Fd)> {
 
     unsafe {
         let mut res;
-        let mut fds: [c_int, ..2] = mem::uninitialized();
+        let mut fds: [c_int; 2] = mem::uninitialized();
 
         if feat_atomic {
             res = mem::transmute::<*const (), F>(pipe2)(
@@ -361,7 +361,7 @@ pub fn pipe2(flags: OFlag) -> SysResult<(Fd, Fd)> {
 pub fn pipe2(flags: OFlag) -> SysResult<(Fd, Fd)> {
     unsafe {
         let mut res;
-        let mut fds: [c_int, ..2] = mem::uninitialized();
+        let mut fds: [c_int; 2] = mem::uninitialized();
 
         res = ffi::pipe(fds.as_mut_ptr());
 
@@ -410,6 +410,7 @@ pub fn ftruncate(fd: Fd, len: off_t) -> SysResult<()> {
 
 #[cfg(target_os = "linux")]
 mod linux {
+    use std::c_str::ToCStr;
     use std::path::Path;
     use syscall::{syscall, SYSPIVOTROOT};
     use errno::{SysResult, SysError};

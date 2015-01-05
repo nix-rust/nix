@@ -11,7 +11,7 @@ pub use self::consts::*;
 
 mod ffi {
     use libc::{c_int, c_void, socklen_t};
-    pub use libc::{socket, listen, bind, accept, connect, setsockopt, sendto, recvfrom, getsockname};
+    pub use libc::{socket, listen, bind, accept, connect, setsockopt, sendto, recvfrom, getsockname, getpeername};
 
     extern {
         pub fn getsockopt(
@@ -31,7 +31,7 @@ bitflags!(
     }
 );
 
-#[deriving(Copy)]
+#[derive(Copy)]
 pub enum SockAddr {
     SockIpV4(sockaddr_in),
     SockIpV6(sockaddr_in6),
@@ -444,7 +444,7 @@ pub fn sendto(sockfd: Fd, buf: &[u8], addr: &SockAddr, flags: SockMessageFlags) 
 }
 
 #[repr(C)]
-#[deriving(Copy)]
+#[derive(Copy)]
 pub struct linger {
     pub l_onoff: c_int,
     pub l_linger: c_int
@@ -478,6 +478,28 @@ pub fn setsockopt<T>(fd: Fd, level: SockLevel, opt: SockOpt, val: &T) -> SysResu
     };
 
     from_ffi(res)
+}
+
+fn getpeername_sockaddr<T>(sockfd: Fd, addr: &T) -> SysResult<bool> {
+    let addrlen_expected = mem::size_of::<T>() as socklen_t;
+    let mut addrlen = addrlen_expected;
+
+    let ret = unsafe { ffi::getpeername(sockfd, mem::transmute(addr), &mut addrlen) };
+    if ret < 0 {
+        return Err(SysError::last());
+    }
+
+    Ok(addrlen == addrlen_expected)
+}
+
+pub fn getpeername(sockfd: Fd, addr: &mut SockAddr) -> SysResult<bool> {
+    use self::SockAddr::*;
+
+    match *addr {
+        SockIpV4(ref addr) => getpeername_sockaddr(sockfd, addr),
+        SockIpV6(ref addr) => getpeername_sockaddr(sockfd, addr),
+        SockUnix(ref addr) => getpeername_sockaddr(sockfd, addr)
+    }
 }
 
 fn getsockname_sockaddr<T>(sockfd: Fd, addr: &T) -> SysResult<bool> {
