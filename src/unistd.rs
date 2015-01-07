@@ -1,11 +1,12 @@
+use std::ffi::CString;
 use std::{mem, ptr};
-use std::c_str::{CString, ToCStr};
 use libc::{c_char, c_void, c_int, size_t, pid_t, off_t};
 use fcntl::{fcntl, Fd, OFlag, O_NONBLOCK, O_CLOEXEC, FD_CLOEXEC};
 use fcntl::FcntlArg::{F_SETFD, F_SETFL};
 
 use errno::{SysResult, SysError, from_ffi};
 use core::raw::Slice as RawSlice;
+use utils::ToCStr;
 
 #[cfg(target_os = "linux")]
 pub use self::linux::*;

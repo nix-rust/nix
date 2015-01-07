@@ -1,8 +1,8 @@
-use std::c_str::ToCStr;
 use std::path::Path;
 use std::io::FilePermission;
 use libc::{c_int, mode_t};
 use errno::{SysResult, SysError};
+use utils::ToCStr;
 
 pub use self::consts::*;
 pub use self::ffi::flock;
