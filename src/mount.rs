@@ -1,8 +1,8 @@
-use std::c_str::ToCStr;
 use std::ptr;
 use std::path::Path;
 use libc::{c_ulong, c_int, c_void};
 use errno::{SysResult, from_ffi};
+use utils::ToCStr;
 
 bitflags!(
     flags MsFlags: c_ulong {

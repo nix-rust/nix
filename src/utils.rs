@@ -11,6 +11,13 @@ impl ToCStr for Path {
     }
 }
 
+impl<'a> ToCStr for &'a str {
+    fn to_c_str(&self) -> CString {
+        CString::from_slice(self.as_bytes())
+    }
+}
+
+
 impl ToCStr for String {
     fn to_c_str(&self) -> CString {
         CString::from_slice(self.as_bytes())

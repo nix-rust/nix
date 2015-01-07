@@ -1,4 +1,3 @@
-use std::ffi::CString;
 use std::{mem, ptr};
 use libc::{c_char, c_void, c_int, size_t, pid_t, off_t};
 use fcntl::{fcntl, Fd, OFlag, O_NONBLOCK, O_CLOEXEC, FD_CLOEXEC};
@@ -7,6 +6,7 @@ use fcntl::FcntlArg::{F_SETFD, F_SETFL};
 use errno::{SysResult, SysError, from_ffi};
 use core::raw::Slice as RawSlice;
 use utils::ToCStr;
+use std::ffi::CString; 
 
 #[cfg(target_os = "linux")]
 pub use self::linux::*;
@@ -411,10 +411,10 @@ pub fn ftruncate(fd: Fd, len: off_t) -> SysResult<()> {
 
 #[cfg(target_os = "linux")]
 mod linux {
-    use std::c_str::ToCStr;
     use std::path::Path;
     use syscall::{syscall, SYSPIVOTROOT};
     use errno::{SysResult, SysError};
+    use utils::ToCStr;
 
     pub fn pivot_root(new_root: &Path, put_old: &Path) -> SysResult<()> {
         let new_root = new_root.to_c_str();
