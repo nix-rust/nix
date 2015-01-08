@@ -62,7 +62,7 @@ mod cpuset_attribs {
     }
 }
 
-pub type CloneCb<'a> = ||:'a -> int;
+pub type CloneCb<'a> = Box<FnMut() -> int + 'a>;
 
 // A single CPU mask word
 pub type CpuMask = c_ulong;

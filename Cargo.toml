@@ -1,5 +1,8 @@
 [package]
 
-name = "nix"
-version = "0.1.0"
-authors = ["Carl Lerche <me@carllerche.com>"]
+name        = "nix"
+description = "Rust friendly bindings to Posix APIs"
+version     = "0.1.1"
+authors     = ["Carl Lerche <me@carllerche.com>"]
+homepage    = "https://github.com/carllerche/nix-rust"
+license     = "MIT"
