@@ -1,6 +1,5 @@
 #![crate_name = "nix"]
 
-#![feature(globs)]
 #![feature(linkage)]
 #![allow(non_camel_case_types)]
 
@@ -36,3 +35,5 @@ pub mod syscall;
 
 #[cfg(unix)]
 pub mod unistd;
+
+mod utils;

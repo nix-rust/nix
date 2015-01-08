@@ -1,7 +1,6 @@
 pub use libc::dev_t;
 pub use libc::stat as FileStat;
 
-use std::c_str::ToCStr;
 use std::fmt;
 use std::io::FilePermission;
 use std::mem;
@@ -9,6 +8,7 @@ use std::path::Path;
 use libc::mode_t;
 use errno::{SysResult, SysError, from_ffi};
 use fcntl::Fd;
+use utils::ToCStr;
 
 mod ffi {
     use libc::{c_char, c_int, mode_t, dev_t};

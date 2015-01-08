@@ -1,8 +1,8 @@
 use errno::{SysResult, SysError};
-use std::c_str::ToCStr;
 use std::io::FilePermission;
 use fcntl::{Fd, OFlag};
 use libc::{c_void, size_t, off_t, mode_t};
+use utils::ToCStr;
 
 pub use self::consts::*;
 

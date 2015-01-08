@@ -404,7 +404,7 @@ impl SysError {
 
 impl fmt::Show for SysError {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        write!(fmt, "{} - {}", self.kind, self.desc())
+        write!(fmt, "{:?} - {:?}", self.kind, self.desc())
     }
 }
 
