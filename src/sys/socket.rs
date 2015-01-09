@@ -132,7 +132,7 @@ mod consts {
 
 #[cfg(any(target_os = "macos", target_os = "ios"))]
 mod consts {
-    use libc::{c_int, uint8_t};
+    use libc::{c_int, usize8_t};
 
     pub type AddressFamily = c_int;
 
@@ -204,7 +204,7 @@ mod consts {
     // Socket options for the IP layer of the socket
     pub const IP_MULTICAST_IF: SockOpt = 9;
 
-    pub type IpMulticastTtl = uint8_t;
+    pub type IpMulticastTtl = usize8_t;
 
     pub const IP_MULTICAST_TTL: SockOpt = 10;
     pub const IP_MULTICAST_LOOP: SockOpt = 11;
@@ -252,7 +252,7 @@ pub fn socket(domain: AddressFamily, mut ty: SockType, flags: SockFlag) -> SysRe
     Ok(res)
 }
 
-pub fn listen(sockfd: Fd, backlog: uint) -> SysResult<()> {
+pub fn listen(sockfd: Fd, backlog: usize) -> SysResult<()> {
     let res = unsafe { ffi::listen(sockfd, backlog as c_int) };
     from_ffi(res)
 }
@@ -368,7 +368,7 @@ mod sa_helpers {
     }
 }
 
-pub fn recvfrom(sockfd: Fd, buf: &mut [u8]) -> SysResult<(uint, SockAddr)> {
+pub fn recvfrom(sockfd: Fd, buf: &mut [u8]) -> SysResult<(usize, SockAddr)> {
     let saddr : sockaddr_storage = unsafe { mem::zeroed() };
     let mut len = mem::size_of::<sockaddr_storage>() as socklen_t;
 
@@ -380,7 +380,7 @@ pub fn recvfrom(sockfd: Fd, buf: &mut [u8]) -> SysResult<(uint, SockAddr)> {
         return Err(SysError::last());
     }
 
-    Ok((ret as uint,
+    Ok((ret as usize,
             match saddr.ss_family as i32 {
                 AF_INET => { sa_helpers::to_sockaddr_ipv4(&saddr) },
                 AF_INET6 => { sa_helpers::to_sockaddr_ipv6(&saddr) },
@@ -390,7 +390,7 @@ pub fn recvfrom(sockfd: Fd, buf: &mut [u8]) -> SysResult<(uint, SockAddr)> {
         ))
 }
 
-fn print_ipv4_addr(sin: &sockaddr_in, f: &mut fmt::Formatter) -> fmt::Result {
+fn prisize_ipv4_addr(sin: &sockaddr_in, f: &mut fmt::Formatter) -> fmt::Result {
     use std::num::Int;
 
     let ip_addr = Int::from_be(sin.sin_addr.s_addr);
@@ -407,7 +407,7 @@ fn print_ipv4_addr(sin: &sockaddr_in, f: &mut fmt::Formatter) -> fmt::Result {
 impl fmt::Show for SockAddr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            SockAddr::SockIpV4(sin) => print_ipv4_addr(&sin, f),
+            SockAddr::SockIpV4(sin) => prisize_ipv4_addr(&sin, f),
             _ => unimplemented!()
         }
     }
@@ -427,7 +427,7 @@ fn sendto_sockaddr<T>(sockfd: Fd, buf: &[u8], flags: SockMessageFlags, addr: &T)
     }
 }
 
-pub fn sendto(sockfd: Fd, buf: &[u8], addr: &SockAddr, flags: SockMessageFlags) -> SysResult<uint> {
+pub fn sendto(sockfd: Fd, buf: &[u8], addr: &SockAddr, flags: SockMessageFlags) -> SysResult<usize> {
     use self::SockAddr::*;
 
     let ret = match *addr {
@@ -439,7 +439,7 @@ pub fn sendto(sockfd: Fd, buf: &[u8], addr: &SockAddr, flags: SockMessageFlags) 
     if ret < 0 {
         Err(SysError::last())
     } else {
-        Ok(ret as uint)
+        Ok(ret as usize)
     }
 }
 
@@ -450,7 +450,7 @@ pub struct linger {
     pub l_linger: c_int
 }
 
-pub fn getsockopt<T>(fd: Fd, level: SockLevel, opt: SockOpt, val: &mut T) -> SysResult<uint> {
+pub fn getsockopt<T>(fd: Fd, level: SockLevel, opt: SockOpt, val: &mut T) -> SysResult<usize> {
     let mut len = mem::size_of::<T>() as socklen_t;
 
     let res = unsafe {
@@ -464,7 +464,7 @@ pub fn getsockopt<T>(fd: Fd, level: SockLevel, opt: SockOpt, val: &mut T) -> Sys
         return Err(SysError::last());
     }
 
-    Ok(len as uint)
+    Ok(len as usize)
 }
 
 pub fn setsockopt<T>(fd: Fd, level: SockLevel, opt: SockOpt, val: &T) -> SysResult<()> {

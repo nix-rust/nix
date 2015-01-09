@@ -1,7 +1,7 @@
 #![crate_name = "nix"]
 
 #![feature(linkage)]
-#![allow(non_camel_case_types)]
+#![allow(non_camel_case_types, unstable)]
 
 extern crate libc;
 extern crate core;
