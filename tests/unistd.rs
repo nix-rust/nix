@@ -40,7 +40,7 @@ mod test {
         let read_res = read(reader, read_buf.as_mut_slice());
         // Successful read
         assert!(read_res.is_ok());
-        let read = read_res.ok().unwrap() as uint;
+        let read = read_res.ok().unwrap() as usize;
         // Check we have read as much as we written
         assert_eq!(read, written);
         // Check equality of written and read data

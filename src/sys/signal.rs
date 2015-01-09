@@ -92,7 +92,7 @@ pub mod signal {
     pub const SIGUNUSED:    libc::c_int = 31;
 
     // This definition is not as accurate as it could be, {pid, uid, status} is
-    // actually a giant union. Currently we're only interested in these fields,
+    // actually a giant union. Currently we're only isizeerested in these fields,
     // however.
     #[repr(C)]
     #[derive(Copy)]
@@ -115,14 +115,14 @@ pub mod signal {
     }
 
     #[repr(C)]
-    #[cfg(target_word_size = "32")]
+    #[cfg(target_pointer_width = "32")]
     #[derive(Copy)]
     pub struct sigset_t {
         __val: [libc::c_ulong; 32],
     }
 
     #[repr(C)]
-    #[cfg(target_word_size = "64")]
+    #[cfg(target_pointer_width = "64")]
     #[derive(Copy)]
     pub struct sigset_t {
         __val: [libc::c_ulong; 16],
@@ -170,7 +170,7 @@ pub mod signal {
     pub const SIGFSZ:       libc::c_int = 31;
 
     // This definition is not as accurate as it could be, {pid, uid, status} is
-    // actually a giant union. Currently we're only interested in these fields,
+    // actually a giant union. Currently we're only isizeerested in these fields,
     // however.
     #[repr(C)]
     pub struct siginfo {
@@ -245,7 +245,7 @@ pub mod signal {
         bits: [u32; 4],
     }
 
-    // This structure has more fields, but we're not all that interested in
+    // This structure has more fields, but we're not all that isizeerested in
     // them.
     #[repr(C)]
     #[derive(Copy)]

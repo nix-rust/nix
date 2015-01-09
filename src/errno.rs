@@ -25,8 +25,8 @@ impl SysError {
         SysError { kind: kind }
     }
 
-    pub fn errno(&self) -> uint {
-        self.kind as uint
+    pub fn errno(&self) -> usize {
+        self.kind as usize
     }
 
     pub fn desc(&self) -> &'static str {
@@ -93,9 +93,9 @@ impl SysError {
             ECONNABORTED    => "Software caused connection abort",
             ECONNRESET      => "Connection reset by peer",
             ENOBUFS         => "No buffer space available",
-            EISCONN         => "Transport endpoint is already connected",
-            ENOTCONN        => "Transport endpoint is not connected",
-            ESHUTDOWN       => "Cannot send after transport endpoint shutdown",
+            EISCONN         => "Transport endpoisize is already connected",
+            ENOTCONN        => "Transport endpoisize is not connected",
+            ESHUTDOWN       => "Cannot send after transport endpoisize shutdown",
             ETOOMANYREFS    => "Too many references: cannot splice",
             ETIMEDOUT       => "Connection timed out",
             ECONNREFUSED    => "Connection refused",
@@ -232,7 +232,7 @@ impl SysError {
             EUSERS          => "Too many users",
 
             #[cfg(target_os = "linux")]
-            EOPNOTSUPP      => "Operation not supported on transport endpoint",
+            EOPNOTSUPP      => "Operation not supported on transport endpoisize",
 
             #[cfg(target_os = "linux")]
             ESTALE          => "Stale file handle",

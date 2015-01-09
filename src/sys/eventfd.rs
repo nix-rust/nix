@@ -11,7 +11,7 @@ bitflags!(
     }
 );
 
-pub fn eventfd(initval: uint, flags: EventFdFlag) -> SysResult<Fd> {
+pub fn eventfd(initval: usize, flags: EventFdFlag) -> SysResult<Fd> {
     type F = unsafe extern "C" fn(initval: c_uint, flags: c_int) -> c_int;
 
     extern {

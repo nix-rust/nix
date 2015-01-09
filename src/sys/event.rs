@@ -1,7 +1,7 @@
 /* TOOD: Implement for other kqueue based systems
  */
 
-use libc::{timespec, time_t, c_int, c_long, uintptr_t};
+use libc::{timespec, time_t, c_int, c_long, usizeptr_t};
 use errno::{SysResult, SysError};
 use fcntl::Fd;
 use std::fmt;
@@ -9,18 +9,18 @@ use std::fmt;
 pub use self::ffi::kevent as KEvent;
 
 mod ffi {
-    pub use libc::{c_int, c_void, uintptr_t, intptr_t, timespec};
+    pub use libc::{c_int, c_void, usizeptr_t, isizeptr_t, timespec};
     use super::{EventFilter, EventFlag, FilterFlag};
 
     #[derive(Copy)]
     #[repr(C)]
     pub struct kevent {
-        pub ident: uintptr_t,       // 8
+        pub ident: usizeptr_t,       // 8
         pub filter: EventFilter,    // 2
         pub flags: EventFlag,       // 2
         pub fflags: FilterFlag,     // 4
-        pub data: intptr_t,         // 8
-        pub udata: uint             // 8
+        pub data: isizeptr_t,         // 8
+        pub udata: usize             // 8
     }
 
     // Bug in rustc, cannot determine that kevent is #[repr(C)]
@@ -171,7 +171,7 @@ pub fn kqueue() -> SysResult<Fd> {
 pub fn kevent(kq: Fd,
               changelist: &[KEvent],
               eventlist: &mut [KEvent],
-              timeout_ms: uint) -> SysResult<uint> {
+              timeout_ms: usize) -> SysResult<usize> {
 
     // Convert ms to timespec
     let timeout = timespec {
@@ -193,18 +193,18 @@ pub fn kevent(kq: Fd,
         return Err(SysError::last());
     }
 
-    return Ok(res as uint)
+    return Ok(res as usize)
 }
 
 #[inline]
 pub fn ev_set(ev: &mut KEvent,
-              ident: uint,
+              ident: usize,
               filter: EventFilter,
               flags: EventFlag,
               fflags: FilterFlag,
-              udata: uint) {
+              udata: usize) {
 
-    ev.ident  = ident as uintptr_t;
+    ev.ident  = ident as usizeptr_t;
     ev.filter = filter;
     ev.flags  = flags;
     ev.fflags = fflags;
