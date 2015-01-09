@@ -1,3 +1,6 @@
+#![allow(unstable)]
+#![feature(int_uint)]
+
 extern crate nix;
 
 #[cfg(test)]
@@ -10,7 +13,7 @@ mod test {
     #[test]
     fn test_writev() {
         let mut to_write = Vec::with_capacity(16 * 128);
-        for _ in range(0u, 16) {
+        for _ in range(0, 16) {
             let s:String = thread_rng().gen_ascii_chars().take(128).collect();
             let b = s.as_bytes();
             to_write.extend(b.iter().map(|x| x.clone()));
