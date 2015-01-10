@@ -115,14 +115,14 @@ pub mod signal {
     }
 
     #[repr(C)]
-    #[cfg(target_word_size = "32")]
+    #[cfg(target_pointer_width = "32")]
     #[derive(Copy)]
     pub struct sigset_t {
         __val: [libc::c_ulong; 32],
     }
 
     #[repr(C)]
-    #[cfg(target_word_size = "64")]
+    #[cfg(target_pointer_width = "64")]
     #[derive(Copy)]
     pub struct sigset_t {
         __val: [libc::c_ulong; 16],
