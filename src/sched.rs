@@ -31,16 +31,16 @@ pub static CLONE_IO:             CloneFlags = 0x80000000;
 #[cfg(target_arch = "x86_64")]
 mod cpuset_attribs {
     use super::CpuMask;
-    pub const CPU_SETSIZE:           uint = 1024u;
-    pub const CPU_MASK_BITS:         uint = 64u;
+    pub const CPU_SETSIZE:           usize = 1024us;
+    pub const CPU_MASK_BITS:         usize = 64us;
 
     #[inline]
-    pub fn set_cpu_mask_flag(cur: CpuMask, bit: uint) -> CpuMask {
+    pub fn set_cpu_mask_flag(cur: CpuMask, bit: usize) -> CpuMask {
         cur | (1u64 << bit)
     }
 
     #[inline]
-    pub fn clear_cpu_mask_flag(cur: CpuMask, bit: uint) -> CpuMask {
+    pub fn clear_cpu_mask_flag(cur: CpuMask, bit: usize) -> CpuMask {
         cur & !(1u64 << bit)
     }
 }
@@ -48,21 +48,21 @@ mod cpuset_attribs {
 #[cfg(target_arch = "x86")]
 mod cpuset_attribs {
     use super::CpuMask;
-    pub const CPU_SETSIZE:           uint = 1024u;
-    pub const CPU_MASK_BITS:         uint = 32u;
+    pub const CPU_SETSIZE:           usize = 1024us;
+    pub const CPU_MASK_BITS:         usize = 32us;
 
     #[inline]
-    pub fn set_cpu_mask_flag(cur: CpuMask, bit: uint) -> CpuMask {
+    pub fn set_cpu_mask_flag(cur: CpuMask, bit: usize) -> CpuMask {
         cur | (1u32 << bit)
     }
 
     #[inline]
-    pub fn clear_cpu_mask_flag(cur: CpuMask, bit: uint) -> CpuMask {
+    pub fn clear_cpu_mask_flag(cur: CpuMask, bit: usize) -> CpuMask {
         cur & !(1u32 << bit)
     }
 }
 
-pub type CloneCb<'a> = Box<FnMut() -> int + 'a>;
+pub type CloneCb<'a> = Box<FnMut() -> isize + 'a>;
 
 // A single CPU mask word
 pub type CpuMask = c_ulong;
@@ -81,14 +81,14 @@ impl CpuSet {
         }
     }
 
-    pub fn set(&mut self, field: uint) {
+    pub fn set(&mut self, field: usize) {
         let word = field / cpuset_attribs::CPU_MASK_BITS;
         let bit = field % cpuset_attribs::CPU_MASK_BITS;
 
         self.cpu_mask[word] = cpuset_attribs::set_cpu_mask_flag(self.cpu_mask[word], bit);
     }
 
-    pub fn unset(&mut self, field: uint) {
+    pub fn unset(&mut self, field: usize) {
         let word = field / cpuset_attribs::CPU_MASK_BITS;
         let bit = field % cpuset_attribs::CPU_MASK_BITS;
 
@@ -123,7 +123,7 @@ mod ffi {
     }
 }
 
-pub fn sched_setaffinity(pid: int, cpuset: &CpuSet) -> SysResult<()> {
+pub fn sched_setaffinity(pid: isize, cpuset: &CpuSet) -> SysResult<()> {
     use libc::{pid_t, size_t};
 
     let res = unsafe {
@@ -144,7 +144,7 @@ pub fn clone(mut cb: CloneCb, stack: &mut [u8], flags: CloneFlags) -> SysResult<
     }
 
     let res = unsafe {
-        let ptr = stack.as_mut_ptr().offset(stack.len() as int);
+        let ptr = stack.as_mut_ptr().offset(stack.len() as isize);
         ffi::clone(mem::transmute(callback), ptr as *mut c_void, flags, &mut cb)
     };
 

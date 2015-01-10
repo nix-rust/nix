@@ -97,7 +97,7 @@ pub fn fork() -> SysResult<Fork> {
 // let mut v = Vec::new();
 // let iov = Iovec::from_slice(immutable_vec.as_slice());
 // v.push(iov);
-// let _:SysResult<uint> = readv(fd, v.as_slice());
+// let _:SysResult<usize> = readv(fd, v.as_slice());
 
 // We do not want <T> to appear in ffi functions, so we provide this aliases.
 type IovecR = Iovec<ToRead>;
@@ -117,7 +117,7 @@ pub struct Iovec<T> {
 impl <T> Iovec<T> {
     #[inline]
     pub fn as_slice<'a>(&'a self) -> &'a [u8] {
-        unsafe { mem::transmute(RawSlice { data: self.iov_base as *const u8, len: self.iov_len as uint }) }
+        unsafe { mem::transmute(RawSlice { data: self.iov_base as *const u8, len: self.iov_len as usize }) }
     }
 }
 
@@ -271,42 +271,42 @@ pub fn close(fd: Fd) -> SysResult<()> {
     from_ffi(res)
 }
 
-pub fn read(fd: Fd, buf: &mut [u8]) -> SysResult<uint> {
+pub fn read(fd: Fd, buf: &mut [u8]) -> SysResult<usize> {
     let res = unsafe { ffi::read(fd, buf.as_mut_ptr() as *mut c_void, buf.len() as size_t) };
 
     if res < 0 {
         return Err(SysError::last());
     }
 
-    return Ok(res as uint)
+    return Ok(res as usize)
 }
 
-pub fn write(fd: Fd, buf: &[u8]) -> SysResult<uint> {
+pub fn write(fd: Fd, buf: &[u8]) -> SysResult<usize> {
     let res = unsafe { ffi::write(fd, buf.as_ptr() as *const c_void, buf.len() as size_t) };
 
     if res < 0 {
         return Err(SysError::last());
     }
 
-    return Ok(res as uint)
+    return Ok(res as usize)
 }
 
-pub fn writev(fd: Fd, iov: &[Iovec<ToWrite>]) -> SysResult<uint> {
+pub fn writev(fd: Fd, iov: &[Iovec<ToWrite>]) -> SysResult<usize> {
     let res = unsafe { ffi::writev(fd, iov.as_ptr(), iov.len() as c_int) };
     if res < 0 {
         return Err(SysError::last());
     }
 
-    return Ok(res as uint)
+    return Ok(res as usize)
 }
 
-pub fn readv(fd: Fd, iov: &mut [Iovec<ToRead>]) -> SysResult<uint> {
+pub fn readv(fd: Fd, iov: &mut [Iovec<ToRead>]) -> SysResult<usize> {
     let res = unsafe { ffi::readv(fd, iov.as_ptr(), iov.len() as c_int) };
     if res < 0 {
         return Err(SysError::last());
     }
 
-    return Ok(res as uint)
+    return Ok(res as usize)
 }
 
 pub fn pipe() -> SysResult<(Fd, Fd)> {

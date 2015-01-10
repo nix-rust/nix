@@ -42,7 +42,7 @@ pub fn mknod(path: &Path, kind: SFlag, perm: FilePermission, dev: dev_t) -> SysR
 }
 
 #[cfg(target_os = "linux")]
-const MINORBITS: uint = 20;
+const MINORBITS: usize = 20;
 
 #[cfg(target_os = "linux")]
 pub fn mkdev(major: u64, minor: u64) -> dev_t {
