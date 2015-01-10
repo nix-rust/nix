@@ -9,22 +9,22 @@ mod os {
     // * pipe2: 2.6.27
     // * accept4: 2.6.28
 
-    static VERS_UNKNOWN: uint = 1;
-    static VERS_2_6_18:  uint = 2;
-    static VERS_2_6_27:  uint = 3;
-    static VERS_2_6_28:  uint = 4;
-    static VERS_3:       uint = 5;
+    static VERS_UNKNOWN: usize = 1;
+    static VERS_2_6_18:  usize = 2;
+    static VERS_2_6_27:  usize = 3;
+    static VERS_2_6_28:  usize = 4;
+    static VERS_3:       usize = 5;
 
-    fn parse_kernel_version() -> uint {
+    fn parse_kernel_version() -> usize {
         let u = uname();
 
         #[inline]
-        fn digit(dst: &mut uint, b: u8) {
+        fn digit(dst: &mut usize, b: u8) {
             *dst *= 10;
-            *dst += (b - b'0') as uint;
+            *dst += (b - b'0') as usize;
         }
 
-        let mut curr = 0u;
+        let mut curr = 0us;
         let mut major = 0;
         let mut minor = 0;
         let mut patch = 0;
@@ -70,8 +70,8 @@ mod os {
         }
     }
 
-    fn kernel_version() -> uint {
-        static mut KERNEL_VERS: uint = 0;
+    fn kernel_version() -> usize {
+        static mut KERNEL_VERS: usize = 0;
 
         unsafe {
             if KERNEL_VERS == 0 {

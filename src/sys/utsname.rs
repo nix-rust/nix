@@ -13,7 +13,7 @@ mod ffi {
 }
 
 
-const UTSNAME_LEN: uint = 65;
+const UTSNAME_LEN: usize = 65;
 
 #[repr(C)]
 #[derive(Copy)]

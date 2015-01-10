@@ -25,8 +25,8 @@ impl SysError {
         SysError { kind: kind }
     }
 
-    pub fn errno(&self) -> uint {
-        self.kind as uint
+    pub fn errno(&self) -> usize {
+        self.kind as usize
     }
 
     pub fn desc(&self) -> &'static str {
