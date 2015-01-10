@@ -64,7 +64,7 @@ mod consts {
     pub const MS_SYNC  : MmapSync           = 4;
     pub const MS_INVALIDATE : MmapSync      = 2;
 
-    pub const MAP_FAILED: int               = -1;
+    pub const MAP_FAILED: isize               = -1;
 }
 
 #[cfg(any(target_os = "macos",
@@ -109,7 +109,7 @@ mod consts {
     pub const MS_KILLPAGES  : MmapSync          = 0x0004; /* invalidate pages, leave mapped */
     pub const MS_DEACTIVATE : MmapSync          = 0x0008; /* deactivate pages, leave mapped */
 
-    pub const MAP_FAILED: int               = -1;
+    pub const MAP_FAILED: isize               = -1;
 }
 
 mod ffi {
@@ -147,7 +147,7 @@ pub fn munlock(addr: *const c_void, length: size_t) -> SysResult<()> {
 pub fn mmap(addr: *mut c_void, length: size_t, prot: MmapProt, flags: MmapFlag, fd: Fd, offset: off_t) -> SysResult<*mut c_void> {
     let ret = unsafe { ffi::mmap(addr, length, prot, flags, fd, offset) };
 
-    if ret as int == MAP_FAILED  {
+    if ret as isize == MAP_FAILED  {
         Err(SysError::last())
     } else {
         Ok(ret)

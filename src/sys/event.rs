@@ -20,7 +20,7 @@ mod ffi {
         pub flags: EventFlag,       // 2
         pub fflags: FilterFlag,     // 4
         pub data: intptr_t,         // 8
-        pub udata: uint             // 8
+        pub udata: usize             // 8
     }
 
     // Bug in rustc, cannot determine that kevent is #[repr(C)]
@@ -171,7 +171,7 @@ pub fn kqueue() -> SysResult<Fd> {
 pub fn kevent(kq: Fd,
               changelist: &[KEvent],
               eventlist: &mut [KEvent],
-              timeout_ms: uint) -> SysResult<uint> {
+              timeout_ms: usize) -> SysResult<usize> {
 
     // Convert ms to timespec
     let timeout = timespec {
@@ -193,16 +193,16 @@ pub fn kevent(kq: Fd,
         return Err(SysError::last());
     }
 
-    return Ok(res as uint)
+    return Ok(res as usize)
 }
 
 #[inline]
 pub fn ev_set(ev: &mut KEvent,
-              ident: uint,
+              ident: usize,
               filter: EventFilter,
               flags: EventFlag,
               fflags: FilterFlag,
-              udata: uint) {
+              udata: usize) {
 
     ev.ident  = ident as uintptr_t;
     ev.filter = filter;
