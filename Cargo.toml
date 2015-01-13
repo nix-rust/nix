@@ -2,7 +2,8 @@
 
 name        = "nix"
 description = "Rust friendly bindings to Posix APIs"
-version     = "0.1.1"
+version     = "0.1.2"
 authors     = ["Carl Lerche <me@carllerche.com>"]
 homepage    = "https://github.com/carllerche/nix-rust"
 license     = "MIT"
+exclude     = [".gitignore", ".travis.yml", "tests/**/*"]
