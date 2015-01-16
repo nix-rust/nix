@@ -3,6 +3,9 @@ use fcntl::Fd;
 use libc::c_int;
 
 pub use self::ffi::consts::*;
+pub use self::ffi::consts::SetArg::*;
+pub use self::ffi::consts::FlushArg::*;
+pub use self::ffi::consts::FlowArg::*;
 
 mod ffi {
     use libc::c_int;
