@@ -7,3 +7,6 @@ authors     = ["Carl Lerche <me@carllerche.com>"]
 homepage    = "https://github.com/carllerche/nix-rust"
 license     = "MIT"
 exclude     = [".gitignore", ".travis.yml", "tests/**/*"]
+
+[dependencies]
+bitflags = "0.1"
