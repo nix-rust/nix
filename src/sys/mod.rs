@@ -14,6 +14,8 @@ pub mod socket;
 
 pub mod stat;
 
+pub mod termios;
+
 #[cfg(target_os = "linux")]
 pub mod utsname;
 
