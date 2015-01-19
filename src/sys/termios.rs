@@ -1,6 +1,7 @@
-use errno::{SysResult, from_ffi};
+use errno::{SysError, SysResult, from_ffi};
 use fcntl::Fd;
 use libc::c_int;
+use std::mem;
 
 pub use self::ffi::consts::*;
 pub use self::ffi::consts::SetArg::*;
@@ -372,10 +373,18 @@ pub fn cfsetospeed(termios: &mut Termios, speed: speed_t) -> SysResult<()> {
     })
 }
 
-pub fn tcgetattr(fd: Fd, termios: &mut Termios) -> SysResult<()> {
-    from_ffi(unsafe {
-        ffi::tcgetattr(fd, termios)
-    })
+pub fn tcgetattr(fd: Fd) -> SysResult<Termios> {
+    let mut termios = unsafe { mem::uninitialized() };
+
+    let res = unsafe {
+        ffi::tcgetattr(fd, &mut termios)
+    };
+
+    if res < 0 {
+        return Err(SysError::last());
+    }
+
+    Ok(termios)
 }
 
 pub fn tcsetattr(fd: Fd,
