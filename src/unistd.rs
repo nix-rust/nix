@@ -409,6 +409,21 @@ pub fn ftruncate(fd: Fd, len: off_t) -> SysResult<()> {
     }
 }
 
+pub fn isatty(fd: Fd) -> SysResult<bool> {
+    use {errno, libc};
+
+    if unsafe { libc::isatty(fd) } == 1 {
+        Ok(true)
+    } else {
+        match SysError::last() {
+            // ENOTTY means `fd` is a valid file descriptor, but not a TTY, so
+            // we return `Ok(false)`
+            SysError { kind: errno::ENOTTY } => Ok(false),
+            err => Err(err)
+        }
+    }
+}
+
 #[cfg(target_os = "linux")]
 mod linux {
     use std::path::Path;
