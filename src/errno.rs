@@ -402,7 +402,7 @@ impl SysError {
     }
 }
 
-impl fmt::Show for SysError {
+impl fmt::Debug for SysError {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         write!(fmt, "{:?} - {:?}", self.kind, self.desc())
     }
@@ -420,7 +420,7 @@ pub fn from_ffi(res: c_int) -> SysResult<()> {
 
 #[cfg(target_os = "linux")]
 mod consts {
-    #[derive(Show, Clone, PartialEq, FromPrimitive, Copy)]
+    #[derive(Debug, Clone, PartialEq, FromPrimitive, Copy)]
     pub enum Errno {
         UnknownErrno    = 0,
         EPERM           = 1,
@@ -562,7 +562,7 @@ mod consts {
 
 #[cfg(any(target_os = "macos", target_os = "ios"))]
 mod consts {
-    #[derive(Copy, Show, Clone, PartialEq, FromPrimitive)]
+    #[derive(Copy, Debug, Clone, PartialEq, FromPrimitive)]
     pub enum Errno {
         UnknownErrno    = 0,
         EPERM           = 1,

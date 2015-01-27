@@ -34,7 +34,7 @@ bitflags!(
     }
 );
 
-impl fmt::Show for EpollEventKind {
+impl fmt::Debug for EpollEventKind {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         let variants = [
             (EPOLLIN,       "EPOLLIN"),

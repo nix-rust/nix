@@ -23,7 +23,7 @@ mod test {
         while consumed < to_write.len() {
             let left = to_write.len() - consumed;
             let slice_len = if left < 64 { left } else { thread_rng().gen_range(64, min(256, left)) };
-            let b = to_write.slice(consumed, consumed + slice_len);
+            let b = &to_write[consumed..consumed+slice_len];
             iovecs.push(Iovec::from_slice(b));
             consumed += slice_len;
         }

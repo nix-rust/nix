@@ -404,7 +404,7 @@ fn print_ipv4_addr(sin: &sockaddr_in, f: &mut fmt::Formatter) -> fmt::Result {
            port)
 }
 
-impl fmt::Show for SockAddr {
+impl fmt::Debug for SockAddr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             SockAddr::SockIpV4(sin) => print_ipv4_addr(&sin, f),
