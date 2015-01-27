@@ -2,7 +2,6 @@ pub use libc::dev_t;
 pub use libc::stat as FileStat;
 
 use std::fmt;
-use std::io::FilePermission;
 use std::mem;
 use std::path::Path;
 use libc::mode_t;
@@ -30,13 +29,36 @@ bitflags!(
     }
 );
 
+bitflags! {
+    flags Mode: mode_t {
+        const S_IRWXU = 0o0700,
+        const S_IRUSR = 0o0400,
+        const S_IWUSR = 0o0200,
+        const S_IXUSR = 0o0100,
+
+        const S_IRWXG = 0o0070,
+        const S_IRGRP = 0o0040,
+        const S_IWGRP = 0o0020,
+        const S_IXGRP = 0o0010,
+
+        const S_IRWXO = 0o0007,
+        const S_IROTH = 0o0004,
+        const S_IWOTH = 0o0002,
+        const S_IXOTH = 0o0001,
+
+        const S_ISUID = 0o4000,
+        const S_ISGID = 0o2000,
+        const S_ISVTX = 0o1000,
+    }
+}
+
 impl fmt::Show for SFlag {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         write!(fmt, "SFlag {{ bits: {} }}", self.bits())
     }
 }
 
-pub fn mknod(path: &Path, kind: SFlag, perm: FilePermission, dev: dev_t) -> SysResult<()> {
+pub fn mknod(path: &Path, kind: SFlag, perm: Mode, dev: dev_t) -> SysResult<()> {
     let res = unsafe { ffi::mknod(path.to_c_str().as_ptr(), kind.bits | perm.bits() as mode_t, dev) };
     from_ffi(res)
 }
@@ -49,9 +71,9 @@ pub fn mkdev(major: u64, minor: u64) -> dev_t {
     (major << MINORBITS) | minor
 }
 
-pub fn umask(mode: FilePermission) -> FilePermission {
+pub fn umask(mode: Mode) -> Mode {
     let prev = unsafe { ffi::umask(mode.bits() as mode_t) };
-    FilePermission::from_bits(prev as u32).expect("[BUG] umask returned invalid FilePermission")
+    Mode::from_bits(prev).expect("[BUG] umask returned invalid Mode")
 }
 
 pub fn stat(path: &Path) -> SysResult<FileStat> {

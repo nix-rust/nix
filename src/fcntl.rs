@@ -1,7 +1,7 @@
 use std::path::Path;
-use std::io::FilePermission;
 use libc::{c_int, mode_t};
 use errno::{SysResult, SysError};
+use sys::stat::Mode;
 use utils::ToCStr;
 
 pub use self::consts::*;
@@ -71,7 +71,7 @@ mod ffi {
     }
 }
 
-pub fn open(path: &Path, oflag: OFlag, mode: FilePermission) -> SysResult<Fd> {
+pub fn open(path: &Path, oflag: OFlag, mode: Mode) -> SysResult<Fd> {
     let fd = unsafe { ffi::open(path.to_c_str().as_ptr(), oflag.bits(), mode.bits() as mode_t) };
 
     if fd < 0 {
