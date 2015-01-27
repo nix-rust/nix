@@ -52,7 +52,7 @@ bitflags! {
     }
 }
 
-impl fmt::Show for SFlag {
+impl fmt::Debug for SFlag {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         write!(fmt, "SFlag {{ bits: {} }}", self.bits())
     }

@@ -39,7 +39,7 @@ mod ffi {
 }
 
 #[repr(i16)]
-#[derive(Copy, Show, PartialEq)]
+#[derive(Copy, Debug, PartialEq)]
 pub enum EventFilter {
     EVFILT_READ = -1,
     EVFILT_WRITE = -2,
@@ -74,7 +74,7 @@ bitflags!(
     }
 );
 
-impl fmt::Show for EventFlag {
+impl fmt::Debug for EventFlag {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         let mut one = false;
         let flags = [
