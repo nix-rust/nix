@@ -1,8 +1,8 @@
 use errno::{SysResult, SysError};
 use fcntl::{Fd, OFlag};
 use libc::{c_void, size_t, off_t, mode_t};
+use std::ffi::CString;
 use sys::stat::Mode;
-use utils::ToCStr;
 
 pub use self::consts::*;
 
@@ -175,8 +175,8 @@ pub fn msync(addr: *const c_void, length: size_t, flags: MmapSync) -> SysResult<
     }
 }
 
-pub fn shm_open(name: &String, flag: OFlag, mode: Mode) -> SysResult<Fd> {
-    let ret = unsafe { ffi::shm_open(name.to_c_str().as_ptr(), flag.bits(), mode.bits() as mode_t) };
+pub fn shm_open(name: &CString, flag: OFlag, mode: Mode) -> SysResult<Fd> {
+    let ret = unsafe { ffi::shm_open(name.as_ptr(), flag.bits(), mode.bits() as mode_t) };
 
     if ret < 0 {
         Err(SysError::last())
@@ -185,8 +185,8 @@ pub fn shm_open(name: &String, flag: OFlag, mode: Mode) -> SysResult<Fd> {
     }
 }
 
-pub fn shm_unlink(name: &String) -> SysResult<()> {
-    let ret = unsafe { ffi::shm_unlink(name.to_c_str().as_ptr()) };
+pub fn shm_unlink(name: &CString) -> SysResult<()> {
+    let ret = unsafe { ffi::shm_unlink(name.as_ptr()) };
 
     if ret < 0 {
         Err(SysError::last())

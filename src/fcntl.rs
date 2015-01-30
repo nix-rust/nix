@@ -1,8 +1,7 @@
-use std::path::Path;
 use libc::{c_int, mode_t};
+use std::ffi::CString;
 use errno::{SysResult, SysError};
 use sys::stat::Mode;
-use utils::ToCStr;
 
 pub use self::consts::*;
 pub use self::ffi::flock;
@@ -71,8 +70,8 @@ mod ffi {
     }
 }
 
-pub fn open(path: &Path, oflag: OFlag, mode: Mode) -> SysResult<Fd> {
-    let fd = unsafe { ffi::open(path.to_c_str().as_ptr(), oflag.bits(), mode.bits() as mode_t) };
+pub fn open(path: &CString, oflag: OFlag, mode: Mode) -> SysResult<Fd> {
+    let fd = unsafe { ffi::open(path.as_ptr(), oflag.bits(), mode.bits() as mode_t) };
 
     if fd < 0 {
         return Err(SysError::last());
