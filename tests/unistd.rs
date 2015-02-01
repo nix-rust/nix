@@ -10,7 +10,7 @@ mod test {
     use std::rand::{thread_rng, Rng};
 
     use nix::unistd::{fork};
-    use nix::sys::wait::{waitpid, NONE, WaitStatus};
+    use nix::sys::wait::{waitpid, WaitStatus};
     use nix::unistd::Fork::{Parent, Child};
 
     #[test]
@@ -110,7 +110,7 @@ mod test {
           Ok(Parent(child_pid)) => {
               // assert that child was created and pid > 0
               assert!(child_pid > 0);
-              let wait_status = waitpid(child_pid, NONE);
+              let wait_status = waitpid(child_pid, None);
               match wait_status {
                   // assert that waitpid returned correct status and the pid is the one of the child
                   Ok(WaitStatus::Exited(pid_t)) =>  assert!(pid_t == child_pid),
