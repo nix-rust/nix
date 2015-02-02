@@ -37,5 +37,3 @@ pub mod syscall;
 
 #[cfg(unix)]
 pub mod unistd;
-
-mod utils;

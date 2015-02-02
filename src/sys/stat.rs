@@ -1,13 +1,12 @@
 pub use libc::dev_t;
 pub use libc::stat as FileStat;
 
+use std::ffi::CString;
 use std::fmt;
 use std::mem;
-use std::path::Path;
 use libc::mode_t;
 use errno::{SysResult, SysError, from_ffi};
 use fcntl::Fd;
-use utils::ToCStr;
 
 mod ffi {
     use libc::{c_char, c_int, mode_t, dev_t};
@@ -58,8 +57,8 @@ impl fmt::Debug for SFlag {
     }
 }
 
-pub fn mknod(path: &Path, kind: SFlag, perm: Mode, dev: dev_t) -> SysResult<()> {
-    let res = unsafe { ffi::mknod(path.to_c_str().as_ptr(), kind.bits | perm.bits() as mode_t, dev) };
+pub fn mknod(path: &CString, kind: SFlag, perm: Mode, dev: dev_t) -> SysResult<()> {
+    let res = unsafe { ffi::mknod(path.as_ptr(), kind.bits | perm.bits() as mode_t, dev) };
     from_ffi(res)
 }
 
@@ -76,9 +75,9 @@ pub fn umask(mode: Mode) -> Mode {
     Mode::from_bits(prev).expect("[BUG] umask returned invalid Mode")
 }
 
-pub fn stat(path: &Path) -> SysResult<FileStat> {
+pub fn stat(path: &CString) -> SysResult<FileStat> {
     let mut dst = unsafe { mem::uninitialized() };
-    let res = unsafe { ffi::stat(path.to_c_str().as_ptr(), &mut dst as *mut FileStat) };
+    let res = unsafe { ffi::stat(path.as_ptr(), &mut dst as *mut FileStat) };
 
     if res < 0 {
         return Err(SysError::last());

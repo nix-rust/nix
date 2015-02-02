@@ -5,8 +5,7 @@ use fcntl::FcntlArg::{F_SETFD, F_SETFL};
 
 use errno::{SysResult, SysError, from_ffi};
 use core::raw::Slice as RawSlice;
-use utils::ToCStr;
-use std::ffi::CString; 
+use std::ffi::CString;
 
 #[cfg(target_os = "linux")]
 pub use self::linux::*;
@@ -215,8 +214,7 @@ fn dup3_polyfill(oldfd: Fd, newfd: Fd, flags: OFlag) -> SysResult<Fd> {
 }
 
 #[inline]
-pub fn chdir<S: ToCStr>(path: S) -> SysResult<()> {
-    let path = path.to_c_str();
+pub fn chdir(path: &CString) -> SysResult<()> {
     let res = unsafe { ffi::chdir(path.as_ptr()) };
 
     if res != 0 {
@@ -426,15 +424,11 @@ pub fn isatty(fd: Fd) -> SysResult<bool> {
 
 #[cfg(target_os = "linux")]
 mod linux {
-    use std::path::Path;
+    use std::ffi::CString;
     use syscall::{syscall, SYSPIVOTROOT};
     use errno::{SysResult, SysError};
-    use utils::ToCStr;
 
-    pub fn pivot_root(new_root: &Path, put_old: &Path) -> SysResult<()> {
-        let new_root = new_root.to_c_str();
-        let put_old = put_old.to_c_str();
-
+    pub fn pivot_root(new_root: &CString, put_old: &CString) -> SysResult<()> {
         let res = unsafe {
             syscall(SYSPIVOTROOT, new_root.as_ptr(), put_old.as_ptr())
         };

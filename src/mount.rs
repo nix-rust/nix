@@ -1,8 +1,7 @@
 use std::ptr;
-use std::path::Path;
+use std::ffi::CString;
 use libc::{c_ulong, c_int, c_void};
 use errno::{SysResult, from_ffi};
-use utils::ToCStr;
 
 bitflags!(
     flags MsFlags: c_ulong {
@@ -69,22 +68,16 @@ mod ffi {
 }
 
 pub fn mount(
-        source: Option<&Path>,
-        target: &Path,
-        fstype: Option<&str>,
+        source: Option<&CString>,
+        target: &CString,
+        fstype: Option<&CString>,
         flags: MsFlags,
-        data: Option<&str>) -> SysResult<()> {
-
-    let source = source.map(|s| s.to_c_str());
-    let target = target.to_c_str();
-    let fstype = fstype.map(|s| s.to_c_str());
-    let data = data.map(|s| s.to_c_str());
-
+        data: Option<&CString>) -> SysResult<()> {
     let res = unsafe {
         ffi::mount(
-            source.as_ref().map(|s| s.as_ptr()).unwrap_or(ptr::null()),
+            source.map(|s| s.as_ptr()).unwrap_or(ptr::null()),
             target.as_ptr(),
-            fstype.as_ref().map(|s| s.as_ptr()).unwrap_or(ptr::null()),
+            fstype.map(|s| s.as_ptr()).unwrap_or(ptr::null()),
             flags.bits,
             data.map(|s| s.as_ptr() as *const c_void).unwrap_or(ptr::null()))
     };
@@ -92,17 +85,13 @@ pub fn mount(
     from_ffi(res)
 }
 
-pub fn umount(target: &Path) -> SysResult<()> {
-    let target = target.to_c_str();
-
+pub fn umount(target: &CString) -> SysResult<()> {
     let res = unsafe { ffi::umount(target.as_ptr()) };
 
     from_ffi(res)
 }
 
-pub fn umount2(target: &Path, flags: MntFlags) -> SysResult<()> {
-    let target = target.to_c_str();
-
+pub fn umount2(target: &CString, flags: MntFlags) -> SysResult<()> {
     let res = unsafe { ffi::umount2(target.as_ptr(), flags.bits) };
 
     from_ffi(res)
