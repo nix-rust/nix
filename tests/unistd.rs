@@ -9,6 +9,10 @@ mod test {
     use std::iter::repeat;
     use std::rand::{thread_rng, Rng};
 
+    use nix::unistd::{fork};
+    use nix::sys::wait::{waitpid, WaitStatus};
+    use nix::unistd::Fork::{Parent, Child};
+
     #[test]
     fn test_writev() {
         let mut to_write = Vec::with_capacity(16 * 128);
@@ -98,4 +102,29 @@ mod test {
     }
 
 
+    #[test]
+    fn test_fork_and_waitpid() {
+        let pid = fork();
+        match pid {
+          Ok(Child) => {} // ignore child here
+          Ok(Parent(child_pid)) => {
+              // assert that child was created and pid > 0
+              assert!(child_pid > 0);
+              let wait_status = waitpid(child_pid, None);
+              match wait_status {
+                  // assert that waitpid returned correct status and the pid is the one of the child
+                  Ok(WaitStatus::Exited(pid_t)) =>  assert!(pid_t == child_pid),
+
+                  // panic, must never happen
+                  Ok(WaitStatus::StillAlive) => panic!("Child still alive, should never happen"),
+
+                  // panic, waitpid should never fail
+                  Err(_) => panic!("Error: waitpid Failed")
+              }
+
+          },
+          // panic, fork should never fail unless there is a serious problem with the OS
+          Err(_) => panic!("Error: Fork Failed")
+        }
+    }
 }

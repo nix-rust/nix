@@ -21,12 +21,17 @@ pub enum WaitStatus {
     StillAlive
 }
 
-pub fn waitpid(pid: pid_t, options: WaitPidFlag) -> SysResult<WaitStatus> {
+pub fn waitpid(pid: pid_t, options: Option<WaitPidFlag>) -> SysResult<WaitStatus> {
     use self::WaitStatus::*;
 
     let mut status: i32 = 0;
 
-    let res = unsafe { ffi::waitpid(pid as pid_t, &mut status as *mut c_int, options.bits()) };
+    let option_bits = match options {
+        Some(bits) => bits.bits(),
+        None => 0
+    };
+
+    let res = unsafe { ffi::waitpid(pid as pid_t, &mut status as *mut c_int, option_bits) };
 
     if res < 0 {
         Err(SysError::last())
