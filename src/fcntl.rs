@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::old_path::Path;
 use libc::{c_int, mode_t};
 use errno::{SysResult, SysError};
 use sys::stat::Mode;

@@ -3,7 +3,7 @@ pub use libc::stat as FileStat;
 
 use std::fmt;
 use std::mem;
-use std::path::Path;
+use std::old_path::Path;
 use libc::mode_t;
 use errno::{SysResult, SysError, from_ffi};
 use fcntl::Fd;
