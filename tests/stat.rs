@@ -6,10 +6,12 @@ extern crate nix;
 mod test {
     use nix::sys::stat::{stat, fstat};
 
+
     #[test]
     fn test_stat() {
 
         use std::old_io::{File, Open, ReadWrite};
+        use std::old_io::fs::{unlink};
         use std::old_path::posix::Path as OldPath; // temporary until new File type is available that takes std::path::Path
         use std::path::Path as NewPath;
 
@@ -36,5 +38,7 @@ mod test {
             }
             Err(_) => panic!("stat call failed") // if stats system call fails, something is seriously wrong on that machine
         }
+
+        unlink(&old_io_path);
     }
 }
