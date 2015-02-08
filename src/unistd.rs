@@ -426,7 +426,7 @@ pub fn isatty(fd: Fd) -> SysResult<bool> {
 
 #[cfg(target_os = "linux")]
 mod linux {
-    use std::path::Path;
+    use std::old_path::Path;
     use syscall::{syscall, SYSPIVOTROOT};
     use errno::{SysResult, SysError};
     use utils::ToCStr;
