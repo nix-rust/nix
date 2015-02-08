@@ -1,5 +1,5 @@
 use std::ffi::CString;
-use std::path::Path;
+use std::old_path::Path;
 
 pub trait ToCStr {
     fn to_c_str(&self) -> CString;
