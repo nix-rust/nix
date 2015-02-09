@@ -1,5 +1,5 @@
 use std::ptr;
-use std::path::Path;
+use std::old_path::Path;
 use libc::{c_ulong, c_int, c_void};
 use errno::{SysResult, from_ffi};
 use utils::ToCStr;
