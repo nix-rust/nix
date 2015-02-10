@@ -1,6 +1,6 @@
 #![crate_name = "nix"]
 
-#![feature(core, linkage, libc, hash, os, path, std_misc)]
+#![feature(collections, core, linkage, libc, hash, os)]
 #![allow(non_camel_case_types)]
 
 #[macro_use]
@@ -12,8 +12,8 @@ extern crate core;
 // Re-export some libc constants
 pub use libc::{c_int, c_void};
 
-#[cfg(unix)]
-pub use errno::{SysResult, SysError};
+mod nix;
+pub use nix::{NixResult, NixError, NixPath, from_ffi};
 
 #[cfg(unix)]
 pub mod errno;
@@ -38,5 +38,3 @@ pub mod syscall;
 
 #[cfg(unix)]
 pub mod unistd;
-
-mod utils;
