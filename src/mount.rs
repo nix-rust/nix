@@ -1,8 +1,5 @@
-use std::ptr;
-use std::old_path::Path;
 use libc::{c_ulong, c_int, c_void};
-use errno::{SysResult, from_ffi};
-use utils::ToCStr;
+use {NixResult, NixPath, from_ffi};
 
 bitflags!(
     flags MsFlags: c_ulong {
@@ -68,42 +65,47 @@ mod ffi {
     }
 }
 
-pub fn mount(
-        source: Option<&Path>,
-        target: &Path,
-        fstype: Option<&str>,
+// XXX: Should `data` be a `NixPath` here?
+pub fn mount<P1: NixPath, P2: NixPath, P3: NixPath, P4: NixPath>(
+        source: Option<P1>,
+        target: P2,
+        fstype: Option<P3>,
         flags: MsFlags,
-        data: Option<&str>) -> SysResult<()> {
+        data: Option<P4>) -> NixResult<()> {
+    use libc;
 
-    let source = source.map(|s| s.to_c_str());
-    let target = target.to_c_str();
-    let fstype = fstype.map(|s| s.to_c_str());
-    let data = data.map(|s| s.to_c_str());
+    let res = try!(try!(try!(try!(
+        source.with_nix_path(|source| {
+            target.with_nix_path(|target| {
+                fstype.with_nix_path(|fstype| {
+                    data.with_nix_path(|data| {
+                        unsafe {
+                            ffi::mount(source,
+                                       target,
+                                       fstype,
+                                       flags.bits,
+                                       data as *const libc::c_void)
+                        }
+                    })
+                })
+            })
+        })))));
 
-    let res = unsafe {
-        ffi::mount(
-            source.as_ref().map(|s| s.as_ptr()).unwrap_or(ptr::null()),
-            target.as_ptr(),
-            fstype.as_ref().map(|s| s.as_ptr()).unwrap_or(ptr::null()),
-            flags.bits,
-            data.map(|s| s.as_ptr() as *const c_void).unwrap_or(ptr::null()))
-    };
+    return from_ffi(res);
+}
+
+pub fn umount<P: NixPath>(target: P) -> NixResult<()> {
+    let res = try!(target.with_nix_path(|ptr| {
+        unsafe { ffi::umount(ptr) }
+    }));
 
     from_ffi(res)
 }
 
-pub fn umount(target: &Path) -> SysResult<()> {
-    let target = target.to_c_str();
-
-    let res = unsafe { ffi::umount(target.as_ptr()) };
-
-    from_ffi(res)
-}
-
-pub fn umount2(target: &Path, flags: MntFlags) -> SysResult<()> {
-    let target = target.to_c_str();
-
-    let res = unsafe { ffi::umount2(target.as_ptr(), flags.bits) };
+pub fn umount2<P: NixPath>(target: P, flags: MntFlags) -> NixResult<()> {
+    let res = try!(target.with_nix_path(|ptr| {
+        unsafe { ffi::umount2(ptr, flags.bits) }
+    }));
 
     from_ffi(res)
 }
