@@ -2,8 +2,9 @@
 // See http://rust-lang.org/COPYRIGHT.
 
 use libc;
+use errno::Errno;
 use core::mem;
-use errno::{SysError, SysResult};
+use {NixError, NixResult};
 
 pub use libc::consts::os::posix88::{
     SIGHUP,   // 1
@@ -311,21 +312,21 @@ impl SigSet {
         SigSet { sigset: sigset }
     }
 
-    pub fn add(&mut self, signum: SigNum) -> SysResult<()> {
+    pub fn add(&mut self, signum: SigNum) -> NixResult<()> {
         let res = unsafe { ffi::sigaddset(&mut self.sigset as *mut sigset_t, signum) };
 
         if res < 0 {
-            return Err(SysError::last());
+            return Err(NixError::Sys(Errno::last()));
         }
 
         Ok(())
     }
 
-    pub fn remove(&mut self, signum: SigNum) -> SysResult<()> {
+    pub fn remove(&mut self, signum: SigNum) -> NixResult<()> {
         let res = unsafe { ffi::sigdelset(&mut self.sigset as *mut sigset_t, signum) };
 
         if res < 0 {
-            return Err(SysError::last());
+            return Err(NixError::Sys(Errno::last()));
         }
 
         Ok(())
@@ -349,7 +350,7 @@ impl SigAction {
     }
 }
 
-pub fn sigaction(signum: SigNum, sigaction: &SigAction) -> SysResult<SigAction> {
+pub fn sigaction(signum: SigNum, sigaction: &SigAction) -> NixResult<SigAction> {
     let mut oldact = unsafe { mem::uninitialized::<sigaction_t>() };
 
     let res = unsafe {
@@ -357,17 +358,17 @@ pub fn sigaction(signum: SigNum, sigaction: &SigAction) -> SysResult<SigAction> 
     };
 
     if res < 0 {
-        return Err(SysError::last());
+        return Err(NixError::Sys(Errno::last()));
     }
 
     Ok(SigAction { sigaction: oldact })
 }
 
-pub fn kill(pid: libc::pid_t, signum: SigNum) -> SysResult<()> {
+pub fn kill(pid: libc::pid_t, signum: SigNum) -> NixResult<()> {
     let res = unsafe { ffi::kill(pid, signum) };
 
     if res < 0 {
-        return Err(SysError::last());
+        return Err(NixError::Sys(Errno::last()));
     }
 
     Ok(())

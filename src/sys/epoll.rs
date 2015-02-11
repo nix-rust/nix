@@ -1,7 +1,8 @@
 use std::fmt;
 use libc::c_int;
+use errno::Errno;
+use {NixError, NixResult, from_ffi};
 use fcntl::Fd;
-use errno::{SysResult, SysError, from_ffi};
 
 mod ffi {
     use libc::{c_int};
@@ -85,30 +86,30 @@ pub struct EpollEvent {
 }
 
 #[inline]
-pub fn epoll_create() -> SysResult<Fd> {
+pub fn epoll_create() -> NixResult<Fd> {
     let res = unsafe { ffi::epoll_create(1024) };
 
     if res < 0 {
-        return Err(SysError::last());
+        return Err(NixError::Sys(Errno::last()));
     }
 
     Ok(res)
 }
 
 #[inline]
-pub fn epoll_ctl(epfd: Fd, op: EpollOp, fd: Fd, event: &EpollEvent) -> SysResult<()> {
+pub fn epoll_ctl(epfd: Fd, op: EpollOp, fd: Fd, event: &EpollEvent) -> NixResult<()> {
     let res = unsafe { ffi::epoll_ctl(epfd, op as c_int, fd, event as *const EpollEvent) };
     from_ffi(res)
 }
 
 #[inline]
-pub fn epoll_wait(epfd: Fd, events: &mut [EpollEvent], timeout_ms: usize) -> SysResult<usize> {
+pub fn epoll_wait(epfd: Fd, events: &mut [EpollEvent], timeout_ms: usize) -> NixResult<usize> {
     let res = unsafe {
         ffi::epoll_wait(epfd, events.as_mut_ptr(), events.len() as c_int, timeout_ms as c_int)
     };
 
     if res < 0 {
-        return Err(SysError::last());
+        return Err(NixError::Sys(Errno::last()));
     }
 
     Ok(res as usize)

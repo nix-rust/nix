@@ -1,13 +1,14 @@
-#![allow(unstable)]
+#![feature(core)]
 
 extern crate nix;
+extern crate rand;
 
 #[cfg(test)]
 mod test {
     use nix::unistd::{writev, readv, Iovec, pipe, close, read, write};
     use std::cmp::min;
     use std::iter::repeat;
-    use std::rand::{thread_rng, Rng};
+    use rand::{thread_rng, Rng};
 
     use nix::unistd::{fork};
     use nix::sys::wait::{waitpid, WaitStatus};
@@ -16,8 +17,8 @@ mod test {
     #[test]
     fn test_writev() {
         let mut to_write = Vec::with_capacity(16 * 128);
-        for _ in range(0, 16) {
-            let s:String = thread_rng().gen_ascii_chars().take(128).collect();
+        for _ in 0..16 {
+            let s: String = thread_rng().gen_ascii_chars().take(128).collect();
             let b = s.as_bytes();
             to_write.extend(b.iter().map(|x| x.clone()));
         }

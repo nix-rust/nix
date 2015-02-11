@@ -1,8 +1,8 @@
-use errno::{SysResult, SysError};
+use errno::Errno;
 use fcntl::{Fd, OFlag};
 use libc::{c_void, size_t, off_t, mode_t};
 use sys::stat::Mode;
-use utils::ToCStr;
+use {NixError, NixResult, NixPath};
 
 pub use self::consts::*;
 
@@ -128,68 +128,74 @@ mod ffi {
     }
 }
 
-pub unsafe fn mlock(addr: *const c_void, length: size_t) -> SysResult<()> {
+pub unsafe fn mlock(addr: *const c_void, length: size_t) -> NixResult<()> {
     match ffi::mlock(addr, length) {
         0 => Ok(()),
-        _ => Err(SysError::last())
+        _ => Err(NixError::Sys(Errno::last()))
     }
 }
 
-pub fn munlock(addr: *const c_void, length: size_t) -> SysResult<()> {
+pub fn munlock(addr: *const c_void, length: size_t) -> NixResult<()> {
     match unsafe { ffi::munlock(addr, length) } {
         0 => Ok(()),
-        _ => Err(SysError::last())
+        _ => Err(NixError::Sys(Errno::last()))
     }
 }
 
 /// Calls to mmap are inherently unsafe, so they must be made in an unsafe block. Typically
 /// a higher-level abstraction will hide the unsafe interactions with the mmap'd region.
-pub fn mmap(addr: *mut c_void, length: size_t, prot: MmapProt, flags: MmapFlag, fd: Fd, offset: off_t) -> SysResult<*mut c_void> {
+pub fn mmap(addr: *mut c_void, length: size_t, prot: MmapProt, flags: MmapFlag, fd: Fd, offset: off_t) -> NixResult<*mut c_void> {
     let ret = unsafe { ffi::mmap(addr, length, prot, flags, fd, offset) };
 
     if ret as isize == MAP_FAILED  {
-        Err(SysError::last())
+        Err(NixError::Sys(Errno::last()))
     } else {
         Ok(ret)
     }
 }
 
-pub fn munmap(addr: *mut c_void, len: size_t) -> SysResult<()> {
+pub fn munmap(addr: *mut c_void, len: size_t) -> NixResult<()> {
     match unsafe { ffi::munmap(addr, len) } {
         0 => Ok(()),
-        _ => Err(SysError::last())
+        _ => Err(NixError::Sys(Errno::last()))
     }
 }
 
-pub fn madvise(addr: *const c_void, length: size_t, advise: MmapAdvise) -> SysResult<()> {
+pub fn madvise(addr: *const c_void, length: size_t, advise: MmapAdvise) -> NixResult<()> {
     match unsafe { ffi::madvise(addr, length, advise) } {
         0 => Ok(()),
-        _ => Err(SysError::last())
+        _ => Err(NixError::Sys(Errno::last()))
     }
 }
 
-pub fn msync(addr: *const c_void, length: size_t, flags: MmapSync) -> SysResult<()> {
+pub fn msync(addr: *const c_void, length: size_t, flags: MmapSync) -> NixResult<()> {
     match unsafe { ffi::msync(addr, length, flags) } {
         0 => Ok(()),
-        _ => Err(SysError::last())
+        _ => Err(NixError::Sys(Errno::last()))
     }
 }
 
-pub fn shm_open(name: &String, flag: OFlag, mode: Mode) -> SysResult<Fd> {
-    let ret = unsafe { ffi::shm_open(name.to_c_str().as_ptr(), flag.bits(), mode.bits() as mode_t) };
+pub fn shm_open<P: NixPath>(name: P, flag: OFlag, mode: Mode) -> NixResult<Fd> {
+    let ret = try!(name.with_nix_path(|ptr| {
+        unsafe {
+            ffi::shm_open(ptr, flag.bits(), mode.bits() as mode_t)
+        }
+    }));
 
     if ret < 0 {
-        Err(SysError::last())
+        Err(NixError::Sys(Errno::last()))
     } else {
         Ok(ret)
     }
 }
 
-pub fn shm_unlink(name: &String) -> SysResult<()> {
-    let ret = unsafe { ffi::shm_unlink(name.to_c_str().as_ptr()) };
+pub fn shm_unlink<P: NixPath>(name: P) -> NixResult<()> {
+    let ret = try!(name.with_nix_path(|ptr| {
+        unsafe { ffi::shm_unlink(ptr) }
+    }));
 
     if ret < 0 {
-        Err(SysError::last())
+        Err(NixError::Sys(Errno::last()))
     } else {
         Ok(())
     }

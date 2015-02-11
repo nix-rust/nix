@@ -1,6 +1,7 @@
 use std::mem;
 use libc::{c_int, c_uint, c_void, c_ulong};
-use super::{SysResult, SysError};
+use errno::Errno;
+use {NixResult, NixError};
 
 pub type CloneFlags = c_uint;
 
@@ -123,7 +124,7 @@ mod ffi {
     }
 }
 
-pub fn sched_setaffinity(pid: isize, cpuset: &CpuSet) -> SysResult<()> {
+pub fn sched_setaffinity(pid: isize, cpuset: &CpuSet) -> NixResult<()> {
     use libc::{pid_t, size_t};
 
     let res = unsafe {
@@ -131,13 +132,13 @@ pub fn sched_setaffinity(pid: isize, cpuset: &CpuSet) -> SysResult<()> {
     };
 
     if res != 0 {
-        Err(SysError::last())
+        Err(NixError::Sys(Errno::last()))
     } else {
         Ok(())
     }
 }
 
-pub fn clone(mut cb: CloneCb, stack: &mut [u8], flags: CloneFlags) -> SysResult<()> {
+pub fn clone(mut cb: CloneCb, stack: &mut [u8], flags: CloneFlags) -> NixResult<()> {
     extern "C" fn callback(data: *mut CloneCb) -> c_int {
         let cb: &mut CloneCb = unsafe { &mut *data };
         (*cb)() as c_int
@@ -149,17 +150,17 @@ pub fn clone(mut cb: CloneCb, stack: &mut [u8], flags: CloneFlags) -> SysResult<
     };
 
     if res != 0 {
-        return Err(SysError::last());
+        return Err(NixError::Sys(Errno::last()));
     }
 
     Ok(())
 }
 
-pub fn unshare(flags: CloneFlags) -> SysResult<()> {
+pub fn unshare(flags: CloneFlags) -> NixResult<()> {
     let res = unsafe { ffi::unshare(flags) };
 
     if res != 0 {
-        return Err(SysError::last());
+        return Err(NixError::Sys(Errno::last()));
     }
 
     Ok(())
