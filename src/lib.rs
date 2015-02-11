@@ -1,9 +1,10 @@
 #![crate_name = "nix"]
 
-#![feature(linkage)]
-#![allow(unstable)]
+#![feature(core, linkage, libc, hash, os, path, std_misc)]
 #![allow(non_camel_case_types)]
-#[macro_use] extern crate bitflags;
+
+#[macro_use]
+extern crate bitflags;
 
 extern crate libc;
 extern crate core;
