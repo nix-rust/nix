@@ -14,7 +14,7 @@ pub use self::linux::*;
 mod ffi {
     use super::{IovecR,IovecW};
     use libc::{c_char, c_int, size_t, ssize_t};
-    pub use libc::{close, read, write, pipe, ftruncate};
+    pub use libc::{close, read, write, pipe, ftruncate, unlink};
     pub use libc::funcs::posix88::unistd::fork;
     use fcntl::Fd;
 
@@ -423,6 +423,15 @@ pub fn isatty(fd: Fd) -> NixResult<bool> {
             err => Err(NixError::Sys(err))
         }
     }
+}
+
+pub fn unlink<P: NixPath>(path: P) -> NixResult<()> {
+    let res = try!(path.with_nix_path(|ptr| {
+    unsafe {
+        ffi::unlink(ptr)
+    }
+    }));
+    from_ffi(res)
 }
 
 #[cfg(target_os = "linux")]
