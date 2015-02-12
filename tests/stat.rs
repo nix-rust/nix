@@ -1,27 +1,24 @@
-#![allow(unstable)]
-
 extern crate nix;
 
 #[cfg(test)]
 mod test {
-    use nix::sys::stat::{stat, fstat};
+    use nix::sys::stat::stat;
 
 
     #[test]
     fn test_stat() {
 
-        use std::old_io::{File, Open, ReadWrite};
-        use std::old_io::fs::{unlink};
-        use std::old_path::posix::Path as OldPath; // temporary until new File type is available that takes std::path::Path
-        use std::path::Path as NewPath;
+        use nix::fcntl::open;
+        use nix::unistd::{close, unlink};
+        use nix::fcntl::O_CREAT;
+        use nix::sys::stat::S_IWUSR;
 
-        let filename = "target/foo.txt";
-        let old_io_path = OldPath::new(filename);  // for creating File
-
-        let test_file = File::create(&old_io_path);
-
-
-        let stat_result = stat(NewPath::new(filename));
+        let filename = b"target/foo.txt";
+        let fd_res = open(filename, O_CREAT, S_IWUSR);
+        assert!(fd_res.is_ok()); // creating a file in "target" should always work
+        let close_res = close(fd_res.ok().unwrap()); // close right here. We use the file only for the stat test
+        assert!(close_res.is_ok());
+        let stat_result = stat(filename);
 
         match stat_result {
             Ok(stats) => {
@@ -39,6 +36,8 @@ mod test {
             Err(_) => panic!("stat call failed") // if stats system call fails, something is seriously wrong on that machine
         }
 
-        unlink(&old_io_path);
+        let unlink_res = unlink(filename);
+        assert!(unlink_res.is_ok());
+
     }
 }
