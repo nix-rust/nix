@@ -14,10 +14,8 @@ mod test {
         use nix::sys::stat::S_IWUSR;
 
         let filename = b"target/foo.txt";
-        let fd_res = open(filename, O_CREAT, S_IWUSR);
-        assert!(fd_res.is_ok()); // creating a file in "target" should always work
-        let close_res = close(fd_res.ok().unwrap()); // close right here. We use the file only for the stat test
-        assert!(close_res.is_ok());
+        let fd_res = open(filename, O_CREAT, S_IWUSR).unwrap();
+        close(fd_res).unwrap(); //.ok().unwrap()); // close right here. We use the file only for the stat test
         let stat_result = stat(filename);
 
         match stat_result {
@@ -35,9 +33,6 @@ mod test {
             }
             Err(_) => panic!("stat call failed") // if stats system call fails, something is seriously wrong on that machine
         }
-
-        let unlink_res = unlink(filename);
-        assert!(unlink_res.is_ok());
-
+        unlink(filename).unwrap();
     }
 }
