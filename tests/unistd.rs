@@ -1,13 +1,16 @@
-#![allow(unstable)]
+#![feature(core, std_misc)]
 
 extern crate nix;
+extern crate rand;
 
 #[cfg(test)]
 mod test {
-    use nix::unistd::{writev, readv, Iovec, pipe, close, read, write};
+    use nix::unistd::{writev, readv, Iovec, pipe, close, read, write, dup,
+                      execve};
     use std::cmp::min;
+    use std::ffi::CString;
     use std::iter::repeat;
-    use std::rand::{thread_rng, Rng};
+    use rand::{thread_rng, Rng};
 
     use nix::unistd::{fork};
     use nix::sys::wait::{waitpid, WaitStatus};
@@ -16,8 +19,8 @@ mod test {
     #[test]
     fn test_writev() {
         let mut to_write = Vec::with_capacity(16 * 128);
-        for _ in range(0, 16) {
-            let s:String = thread_rng().gen_ascii_chars().take(128).collect();
+        for _ in 0..16 {
+            let s: String = thread_rng().gen_ascii_chars().take(128).collect();
             let b = s.as_bytes();
             to_write.extend(b.iter().map(|x| x.clone()));
         }
@@ -125,6 +128,41 @@ mod test {
           },
           // panic, fork should never fail unless there is a serious problem with the OS
           Err(_) => panic!("Error: Fork Failed")
+        }
+    }
+
+    #[test]
+    fn test_execve() {
+        // The `exec`d process will write to `writer`, and we'll read that
+        // data from `reader`.
+        let (reader, writer) = pipe().unwrap();
+
+        match fork().unwrap() {
+            Child => {
+                // Close stdout.
+                close(1).unwrap();
+                // Make `writer` be the stdout of the new process.
+                dup(writer).unwrap();
+                // exec!
+                execve(&CString::from_slice(b"/bin/sh"),
+                       &[CString::from_slice(b""),
+                         CString::from_slice(b"-c"),
+                         CString::from_slice(b"echo nix!!! && env")],
+                       &[CString::from_slice(b"foo=bar"),
+                         CString::from_slice(b"baz=quux")]).unwrap();
+            },
+            Parent(child_pid) => {
+                // Wait for the child to exit.
+                waitpid(child_pid, None).unwrap();
+                // Read 1024 bytes.
+                let mut buf = [0u8; 1024];
+                read(reader, &mut buf).unwrap();
+                // It should contain the things we printed using `/bin/sh`.
+                let string = String::from_utf8_lossy(&buf);
+                assert!(string.contains("nix!!!"));
+                assert!(string.contains("foo=bar"));
+                assert!(string.contains("baz=quux"));
+            }
         }
     }
 }
