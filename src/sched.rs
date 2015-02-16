@@ -1,32 +1,33 @@
 use std::mem;
-use libc::{c_int, c_uint, c_void, c_ulong};
+use libc::{c_int, c_void, c_ulong};
 use errno::Errno;
 use {NixResult, NixError};
 
-pub type CloneFlags = c_uint;
+pub type CloneFlags = c_int;
 
-pub static CLONE_VM:             CloneFlags = 0x00000100;
-pub static CLONE_FS:             CloneFlags = 0x00000200;
-pub static CLONE_FILES:          CloneFlags = 0x00000400;
-pub static CLONE_SIGHAND:        CloneFlags = 0x00000800;
-pub static CLONE_PTRACE:         CloneFlags = 0x00002000;
-pub static CLONE_VFORK:          CloneFlags = 0x00004000;
-pub static CLONE_PARENT:         CloneFlags = 0x00008000;
-pub static CLONE_THREAD:         CloneFlags = 0x00010000;
-pub static CLONE_NEWNS:          CloneFlags = 0x00020000;
-pub static CLONE_SYSVSEM:        CloneFlags = 0x00040000;
-pub static CLONE_SETTLS:         CloneFlags = 0x00080000;
-pub static CLONE_PARENT_SETTID:  CloneFlags = 0x00100000;
-pub static CLONE_CHILD_CLEARTID: CloneFlags = 0x00200000;
-pub static CLONE_DETACHED:       CloneFlags = 0x00400000;
-pub static CLONE_UNTRACED:       CloneFlags = 0x00800000;
-pub static CLONE_CHILD_SETTID:   CloneFlags = 0x01000000;
-pub static CLONE_NEWUTS:         CloneFlags = 0x04000000;
-pub static CLONE_NEWIPC:         CloneFlags = 0x08000000;
-pub static CLONE_NEWUSER:        CloneFlags = 0x10000000;
-pub static CLONE_NEWPID:         CloneFlags = 0x20000000;
-pub static CLONE_NEWNET:         CloneFlags = 0x40000000;
-pub static CLONE_IO:             CloneFlags = 0x80000000;
+pub const CLONE_VM:             CloneFlags = 0x00000100;
+pub const CLONE_FS:             CloneFlags = 0x00000200;
+pub const CLONE_FILES:          CloneFlags = 0x00000400;
+pub const CLONE_SIGHAND:        CloneFlags = 0x00000800;
+pub const CLONE_PTRACE:         CloneFlags = 0x00002000;
+pub const CLONE_VFORK:          CloneFlags = 0x00004000;
+pub const CLONE_PARENT:         CloneFlags = 0x00008000;
+pub const CLONE_THREAD:         CloneFlags = 0x00010000;
+pub const CLONE_NEWNS:          CloneFlags = 0x00020000;
+pub const CLONE_SYSVSEM:        CloneFlags = 0x00040000;
+pub const CLONE_SETTLS:         CloneFlags = 0x00080000;
+pub const CLONE_PARENT_SETTID:  CloneFlags = 0x00100000;
+pub const CLONE_CHILD_CLEARTID: CloneFlags = 0x00200000;
+pub const CLONE_DETACHED:       CloneFlags = 0x00400000;
+pub const CLONE_UNTRACED:       CloneFlags = 0x00800000;
+pub const CLONE_CHILD_SETTID:   CloneFlags = 0x01000000;
+
+pub const CLONE_NEWUTS:         CloneFlags = 0x04000000;
+pub const CLONE_NEWIPC:         CloneFlags = 0x08000000;
+pub const CLONE_NEWUSER:        CloneFlags = 0x10000000;
+pub const CLONE_NEWPID:         CloneFlags = 0x20000000;
+pub const CLONE_NEWNET:         CloneFlags = 0x40000000;
+pub const CLONE_IO:             CloneFlags = 0x80000000;
 
 // Support a maximum CPU set of 1024 nodes
 #[cfg(target_arch = "x86_64")]
