@@ -8,6 +8,9 @@ pub mod event;
 #[cfg(target_os = "linux")]
 pub mod eventfd;
 
+#[cfg(target_os = "linux")]
+pub mod inotify;
+
 pub mod ioctl;
 
 pub mod signal;
