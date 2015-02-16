@@ -1,5 +1,6 @@
 use std::mem;
 use libc::{c_int, c_void, c_ulong};
+use fcntl::Fd;
 use errno::Errno;
 use {NixResult, NixError};
 
@@ -122,6 +123,10 @@ mod ffi {
 
         // Set the current CPU set that a task is allowed to run on
         pub fn sched_setaffinity(__pid: pid_t, __cpusetsize: size_t, __cpuset: *const CpuSet) -> c_int;
+        
+        // reassociate thread with a namespace
+        #[cfg(target_os = "linux")]
+        pub fn setns(fd: c_int, nstype: c_int) -> c_int;
     }
 }
 
@@ -164,5 +169,17 @@ pub fn unshare(flags: CloneFlags) -> NixResult<()> {
         return Err(NixError::Sys(Errno::last()));
     }
 
+    Ok(())
+}
+
+#[cfg(target_os = "linux")]
+#[inline]
+pub fn setns(fd: Fd, nstype: CloneFlags) -> NixResult<()> {
+	let res = unsafe { ffi::setns(fd, nstype) };
+
+	if res != 0 {
+        return Err(NixError::Sys(Errno::last()));
+    }
+    
     Ok(())
 }
