@@ -1,5 +1,5 @@
 use std::os::errno;
-use std::num::from_uint;
+use std::num::from_i32;
 
 pub use self::consts::*;
 pub use self::consts::Errno::*;
@@ -19,7 +19,7 @@ macro_rules! impl_errno {
 }
 
 fn last() -> Errno {
-    from_uint(errno()).unwrap_or(UnknownErrno)
+    from_i32(errno()).unwrap_or(UnknownErrno)
 }
 
 fn desc(errno: Errno) -> &'static str {
