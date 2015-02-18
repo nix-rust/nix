@@ -13,7 +13,7 @@ extern crate core;
 pub use libc::{c_int, c_void};
 
 mod nix;
-pub use nix::{NixResult, NixError, NixPath, from_ffi};
+pub use nix::{NixResult, NixError, NixPath, from_ffi, AsCString};
 
 #[cfg(unix)]
 pub mod errno;
