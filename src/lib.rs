@@ -9,6 +9,9 @@ extern crate bitflags;
 extern crate libc;
 extern crate core;
 
+#[cfg(test)]
+extern crate "nix-test" as nixtest;
+
 // Re-export some libc constants
 pub use libc::{c_int, c_void};
 
