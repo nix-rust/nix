@@ -24,10 +24,10 @@ mod os {
             *dst += (b - b'0') as usize;
         }
 
-        let mut curr = 0us;
-        let mut major = 0;
-        let mut minor = 0;
-        let mut patch = 0;
+        let mut curr:  usize = 0;
+        let mut major: usize = 0;
+        let mut minor: usize = 0;
+        let mut patch: usize = 0;
 
         for b in u.release().bytes() {
             if curr >= 3 {
