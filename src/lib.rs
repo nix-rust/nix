@@ -1,6 +1,6 @@
 #![crate_name = "nix"]
 
-#![feature(collections, core, linkage, libc, hash, os, std_misc)]
+#![feature(collections, core, linkage, libc, os, std_misc)]
 #![allow(non_camel_case_types)]
 
 #[macro_use]
