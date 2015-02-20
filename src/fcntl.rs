@@ -1,4 +1,4 @@
-use libc::{c_int, mode_t};
+use libc::mode_t;
 use errno::Errno;
 use {NixError, NixResult, NixPath};
 use sys::stat::Mode;
@@ -6,7 +6,8 @@ use sys::stat::Mode;
 pub use self::consts::*;
 pub use self::ffi::flock;
 
-pub type Fd = c_int;
+// Re-export Fd defined in std
+pub type Fd = ::std::os::unix::Fd;
 
 #[allow(dead_code)]
 mod ffi {
