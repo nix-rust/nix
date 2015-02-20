@@ -1,4 +1,5 @@
 use std::{mem, ptr};
+use std::marker::PhantomData;
 use libc::{c_char, c_void, c_int, size_t, pid_t, off_t};
 use errno::Errno;
 use fcntl::{fcntl, Fd, OFlag, O_NONBLOCK, O_CLOEXEC, FD_CLOEXEC};
@@ -112,6 +113,7 @@ pub struct ToWrite;
 pub struct Iovec<T> {
     iov_base: *mut c_void,
     iov_len: size_t,
+    phantom: PhantomData<T>
 }
 
 impl <T> Iovec<T> {
@@ -126,7 +128,8 @@ impl Iovec<ToWrite> {
     pub fn from_slice(buf: &[u8]) -> Iovec<ToWrite> {
         Iovec {
             iov_base: buf.as_ptr() as *mut c_void,
-            iov_len: buf.len() as size_t
+            iov_len: buf.len() as size_t,
+            phantom: PhantomData
         }
     }
 }
@@ -136,7 +139,8 @@ impl Iovec<ToRead> {
     pub fn from_mut_slice(buf: &mut [u8]) -> Iovec<ToRead> {
         Iovec {
             iov_base: buf.as_ptr() as *mut c_void,
-            iov_len: buf.len() as size_t
+            iov_len: buf.len() as size_t,
+            phantom: PhantomData
         }
     }
 }
