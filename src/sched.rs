@@ -32,8 +32,8 @@ pub static CLONE_IO:             CloneFlags = 0x80000000;
 #[cfg(target_arch = "x86_64")]
 mod cpuset_attribs {
     use super::CpuMask;
-    pub const CPU_SETSIZE:           usize = 1024us;
-    pub const CPU_MASK_BITS:         usize = 64us;
+    pub const CPU_SETSIZE:           usize = 1024;
+    pub const CPU_MASK_BITS:         usize = 64;
 
     #[inline]
     pub fn set_cpu_mask_flag(cur: CpuMask, bit: usize) -> CpuMask {
