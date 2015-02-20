@@ -61,7 +61,17 @@ pub fn uname() -> UtsName {
 #[inline]
 fn to_str<'a>(s: *const *const c_char) -> &'a str {
     unsafe {
-        let res = CStr::from_ptr(*s).to_bytes_with_nul();
+        let res = CStr::from_ptr(*s).to_bytes();
         from_utf8_unchecked(res)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::uname;
+
+    #[test]
+    pub fn test_uname() {
+        assert_eq!(uname().sysname(), "Linux");
     }
 }
