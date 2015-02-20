@@ -1,6 +1,6 @@
 use std::mem;
 use libc::{c_char};
-use std::ffi::{c_str_to_bytes_with_nul};
+use std::ffi::CStr;
 use std::str::from_utf8_unchecked; 
 
 mod ffi {
@@ -61,7 +61,7 @@ pub fn uname() -> UtsName {
 #[inline]
 fn to_str<'a>(s: *const *const c_char) -> &'a str {
     unsafe {
-        let res = c_str_to_bytes_with_nul(mem::transmute(s));
+        let res = CStr::from_ptr(*s).to_bytes_with_nul();
         from_utf8_unchecked(res)
     }
 }
