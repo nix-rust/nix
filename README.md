@@ -4,6 +4,8 @@ Rust friendly bindings to various *nix platform APIs (Linux, Darwin,
 ...). The goal is to not provide a 100% unified interface, but to unify
 what can be while still providing platform specific APIs.
 
+- [API documentation](https://carllerche.github.io/nix-rust/nix/)
+
 [![Build Status](https://travis-ci.org/carllerche/nix-rust.svg?branch=master)](https://travis-ci.org/carllerche/nix-rust)
 
 ## Usage
