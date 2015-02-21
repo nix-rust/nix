@@ -144,12 +144,12 @@ mod test {
                 // Make `writer` be the stdout of the new process.
                 dup(writer).unwrap();
                 // exec!
-                execve(&CString::from_slice(b"/bin/sh"),
-                       &[CString::from_slice(b""),
-                         CString::from_slice(b"-c"),
-                         CString::from_slice(b"echo nix!!! && env")],
-                       &[CString::from_slice(b"foo=bar"),
-                         CString::from_slice(b"baz=quux")]).unwrap();
+                execve(&CString::new(b"/bin/sh").unwrap(),
+                       &[CString::new(b"").unwrap(),
+                         CString::new(b"-c").unwrap(),
+                         CString::new(b"echo nix!!! && env").unwrap()],
+                       &[CString::new(b"foo=bar").unwrap(),
+                         CString::new(b"baz=quux").unwrap()]).unwrap();
             },
             Parent(child_pid) => {
                 // Wait for the child to exit.

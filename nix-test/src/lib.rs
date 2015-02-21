@@ -16,7 +16,7 @@ mod ffi {
 
 pub fn assert_errno_eq(err: &str, val: c_int) {
     unsafe {
-        let name = CString::from_slice(err.as_bytes());
+        let name = CString::new(err).unwrap();
         let actual = ffi::assert_errno_eq(name.as_ptr());
 
         assert!(actual > 0);
