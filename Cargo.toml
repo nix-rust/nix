@@ -1,12 +1,17 @@
 [package]
 
 name        = "nix"
-description = "Rust friendly bindings to Posix APIs"
+description = "Rust friendly bindings to *nix APIs"
 version     = "0.2.3"
 authors     = ["Carl Lerche <me@carllerche.com>"]
 homepage    = "https://github.com/carllerche/nix-rust"
 license     = "MIT"
-exclude     = [".gitignore", ".travis.yml", "tests/**/*"]
+exclude     = [
+  ".gitignore",
+  ".travis.yml",
+  "deploy.sh",
+  "tests/**/*"
+]
 
 [dependencies]
 bitflags = "0.1"

@@ -6,3 +6,4 @@ version     = "0.0.1"
 authors     = ["Carl Lerche <me@carllerche.com>"]
 homepage    = "https://github.com/carllerche/nix-rust"
 build       = "build.rs"
+license     = "MIT"
