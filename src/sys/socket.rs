@@ -6,7 +6,7 @@ use fcntl::FcntlArg::{F_SETFD, F_SETFL};
 use features;
 use {NixError, NixResult, from_ffi};
 
-pub use libc::{in_addr, sockaddr, sockaddr_storage, sockaddr_in, sockaddr_in6, sockaddr_un, sa_family_t, ip_mreq};
+pub use libc::{in_addr, in6_addr, sockaddr, sockaddr_storage, sockaddr_in, sockaddr_in6, sockaddr_un, sa_family_t, ip_mreq};
 
 pub use self::consts::*;
 
