@@ -1,11 +1,22 @@
 # Rust bindings to *nix APIs
 
 Rust friendly bindings to various *nix platform APIs (Linux, Darwin,
-...). The goal is to not provide a 100% unified interface, but try as
-possible as well as providing platform specific APIs. It is up to the
-consumer of this library to decide how portable they want to be.
+...). The goal is to not provide a 100% unified interface, but to unify
+what can be while still providing platform specific APIs.
 
-This is very much a work in progress and I'm mostly just adding bindings
-as I need them.
+[![Build Status](https://travis-ci.org/carllerche/nix-rust.svg?branch=master)](https://travis-ci.org/carllerche/nix-rust)
 
-Of course, PRs welcome :)
+## Usage
+
+To use `nix`, first add this to your `Cargo.toml`:
+
+```toml
+[dependencies]
+nix = "*"
+```
+
+Then, add this to your crate root:
+
+```rust
+extern crate nix;
+```
