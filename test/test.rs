@@ -1,7 +1,12 @@
-#![feature(core, libc)]
+#![feature(core, libc, std_misc)]
 
 extern crate nix;
 extern crate libc;
+extern crate rand;
+
+mod sys;
+mod test_stat;
+mod test_unistd;
 
 use nix::NixPath;
 

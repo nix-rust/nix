@@ -1,23 +1,18 @@
-use std::{mem, ptr};
-use std::marker::PhantomData;
-use libc::{c_char, c_void, c_int, size_t, pid_t, off_t};
+use {NixError, NixResult, NixPath, from_ffi};
 use errno::Errno;
 use fcntl::{fcntl, Fd, OFlag, O_NONBLOCK, O_CLOEXEC, FD_CLOEXEC};
 use fcntl::FcntlArg::{F_SETFD, F_SETFL};
-use {NixError, NixResult, NixPath, from_ffi};
-
-use core::raw::Slice as RawSlice;
+use libc::{c_char, c_void, c_int, size_t, pid_t, off_t};
+use std::{mem, ptr};
 use std::ffi::CString;
 
 #[cfg(target_os = "linux")]
 pub use self::linux::*;
 
 mod ffi {
-    use super::{IovecR,IovecW};
-    use libc::{c_char, c_int, size_t, ssize_t};
+    use libc::{c_char, c_int, size_t};
     pub use libc::{close, read, write, pipe, ftruncate, unlink};
     pub use libc::funcs::posix88::unistd::fork;
-    use fcntl::Fd;
 
     extern {
         // duplicate a file descriptor
@@ -44,14 +39,6 @@ mod ffi {
         // gets the hostname
         // doc: http://man7.org/linux/man-pages/man2/gethostname.2.html
         pub fn sethostname(name: *const c_char, len: size_t) -> c_int;
-
-        // vectorized version of write
-        // doc: http://man7.org/linux/man-pages/man2/writev.2.html
-        pub fn writev(fd: Fd, iov: *const IovecW, iovcnt: c_int) -> ssize_t;
-
-        // vectorized version of read
-        // doc: http://man7.org/linux/man-pages/man2/readv.2.html
-        pub fn readv(fd: Fd, iov: *const IovecR, iovcnt: c_int) -> ssize_t;
     }
 }
 
@@ -90,61 +77,6 @@ pub fn fork() -> NixResult<Fork> {
         Ok(Parent(res))
     }
 }
-
-// We use phantom types to maintain memory safety.
-// If readv/writev were using simple &[Iovec] we could initialize
-// Iovec with immutable slice and then pass it to readv, overwriting content
-// we dont have write access to:
-// let mut v = Vec::new();
-// let iov = Iovec::from_slice(immutable_vec.as_slice());
-// v.push(iov);
-// let _:NixResult<usize> = readv(fd, v.as_slice());
-
-// We do not want <T> to appear in ffi functions, so we provide this aliases.
-type IovecR = Iovec<ToRead>;
-type IovecW = Iovec<ToWrite>;
-
-#[derive(Copy)]
-pub struct ToRead;
-#[derive(Copy)]
-pub struct ToWrite;
-
-#[repr(C)]
-pub struct Iovec<T> {
-    iov_base: *mut c_void,
-    iov_len: size_t,
-    phantom: PhantomData<T>
-}
-
-impl <T> Iovec<T> {
-    #[inline]
-    pub fn as_slice<'a>(&'a self) -> &'a [u8] {
-        unsafe { mem::transmute(RawSlice { data: self.iov_base as *const u8, len: self.iov_len as usize }) }
-    }
-}
-
-impl Iovec<ToWrite> {
-    #[inline]
-    pub fn from_slice(buf: &[u8]) -> Iovec<ToWrite> {
-        Iovec {
-            iov_base: buf.as_ptr() as *mut c_void,
-            iov_len: buf.len() as size_t,
-            phantom: PhantomData
-        }
-    }
-}
-
-impl Iovec<ToRead> {
-    #[inline]
-    pub fn from_mut_slice(buf: &mut [u8]) -> Iovec<ToRead> {
-        Iovec {
-            iov_base: buf.as_ptr() as *mut c_void,
-            iov_len: buf.len() as size_t,
-            phantom: PhantomData
-        }
-    }
-}
-
 
 #[inline]
 pub fn dup(oldfd: Fd) -> NixResult<Fd> {
@@ -289,24 +221,6 @@ pub fn read(fd: Fd, buf: &mut [u8]) -> NixResult<usize> {
 pub fn write(fd: Fd, buf: &[u8]) -> NixResult<usize> {
     let res = unsafe { ffi::write(fd, buf.as_ptr() as *const c_void, buf.len() as size_t) };
 
-    if res < 0 {
-        return Err(NixError::Sys(Errno::last()));
-    }
-
-    return Ok(res as usize)
-}
-
-pub fn writev(fd: Fd, iov: &[Iovec<ToWrite>]) -> NixResult<usize> {
-    let res = unsafe { ffi::writev(fd, iov.as_ptr(), iov.len() as c_int) };
-    if res < 0 {
-        return Err(NixError::Sys(Errno::last()));
-    }
-
-    return Ok(res as usize)
-}
-
-pub fn readv(fd: Fd, iov: &mut [Iovec<ToRead>]) -> NixResult<usize> {
-    let res = unsafe { ffi::readv(fd, iov.as_ptr(), iov.len() as c_int) };
     if res < 0 {
         return Err(NixError::Sys(Errno::last()));
     }

@@ -22,3 +22,8 @@ rand = "0.1.2"
 [dev-dependencies.nix-test]
 path    = "nix-test"
 version = "*"
+
+[[test]]
+
+name = "test"
+path = "test/test.rs"
