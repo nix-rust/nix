@@ -16,7 +16,7 @@ extern crate "nix-test" as nixtest;
 pub use libc::{c_int, c_void};
 
 mod nix;
-pub use nix::{NixResult, NixError, NixPath, from_ffi};
+pub use nix::{Result, Error, NixPath, from_ffi};
 
 #[cfg(unix)]
 pub mod errno;

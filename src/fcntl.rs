@@ -1,6 +1,6 @@
 use libc::mode_t;
 use errno::Errno;
-use {NixError, NixResult, NixPath};
+use {Error, Result, NixPath};
 use sys::stat::Mode;
 
 pub use self::consts::*;
@@ -71,7 +71,7 @@ mod ffi {
     }
 }
 
-pub fn open<P: NixPath>(path: P, oflag: OFlag, mode: Mode) -> NixResult<Fd> {
+pub fn open<P: NixPath>(path: P, oflag: OFlag, mode: Mode) -> Result<Fd> {
     let fd = try!(path.with_nix_path(|ptr| {
         unsafe {
             ffi::open(ptr, oflag.bits(), mode.bits() as mode_t)
@@ -79,7 +79,7 @@ pub fn open<P: NixPath>(path: P, oflag: OFlag, mode: Mode) -> NixResult<Fd> {
     }));
 
     if fd < 0 {
-        return Err(NixError::Sys(Errno::last()));
+        return Err(Error::Sys(Errno::last()));
     }
 
     Ok(fd)
@@ -106,7 +106,7 @@ pub enum FcntlArg<'a> {
 }
 
 // TODO: Figure out how to handle value fcntl returns
-pub fn fcntl(fd: Fd, arg: FcntlArg) -> NixResult<()> {
+pub fn fcntl(fd: Fd, arg: FcntlArg) -> Result<()> {
     use self::FcntlArg::*;
 
     let res = unsafe {
@@ -118,7 +118,7 @@ pub fn fcntl(fd: Fd, arg: FcntlArg) -> NixResult<()> {
     };
 
     if res < 0 {
-        return Err(NixError::Sys(Errno::last()));
+        return Err(Error::Sys(Errno::last()));
     }
 
     Ok(())

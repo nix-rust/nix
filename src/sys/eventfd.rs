@@ -2,7 +2,7 @@ use std::mem;
 use libc::{c_int, c_uint};
 use errno::Errno;
 use fcntl::Fd;
-use {NixError, NixResult};
+use {Error, Result};
 
 bitflags!(
     flags EventFdFlag: c_int {
@@ -12,7 +12,7 @@ bitflags!(
     }
 );
 
-pub fn eventfd(initval: usize, flags: EventFdFlag) -> NixResult<Fd> {
+pub fn eventfd(initval: usize, flags: EventFdFlag) -> Result<Fd> {
     type F = unsafe extern "C" fn(initval: c_uint, flags: c_int) -> c_int;
 
     extern {
@@ -30,7 +30,7 @@ pub fn eventfd(initval: usize, flags: EventFdFlag) -> NixResult<Fd> {
     };
 
     if res < 0 {
-        return Err(NixError::Sys(Errno::last()));
+        return Err(Error::Sys(Errno::last()));
     }
 
     Ok(res)
