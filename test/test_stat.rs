@@ -1,17 +1,12 @@
-use nix::sys::stat::stat;
+use nix::sys::stat::{stat, fstat};
 
-#[test]
-fn test_stat() {
-    use nix::fcntl::open;
-    use nix::unistd::{close, unlink};
-    use nix::fcntl::O_CREAT;
-    use nix::sys::stat::S_IWUSR;
+use nix::fcntl::open;
+use nix::unistd::{close, unlink};
+use nix::fcntl::O_CREAT;
+use nix::sys::stat::{FileStat, S_IWUSR};
+use nix::NixResult;
 
-    let filename = b"target/foo.txt";
-    let fd_res = open(filename, O_CREAT, S_IWUSR).unwrap();
-    close(fd_res).unwrap(); //.ok().unwrap()); // close right here. We use the file only for the stat test
-    let stat_result = stat(filename);
-
+fn assert_stat_results(stat_result: NixResult<FileStat>) {
     match stat_result {
         Ok(stats) => {
             assert!(stats.st_dev > 0);      // must be positive integer, exact number machine dependent
@@ -27,5 +22,20 @@ fn test_stat() {
         }
         Err(_) => panic!("stat call failed") // if stats system call fails, something is seriously wrong on that machine
     }
+}
+
+
+#[test]
+fn test_stat_and_fstat() {
+    let filename = b"target/foo.txt";
+    let fd = open(filename, O_CREAT, S_IWUSR).unwrap();  // create empty file
+
+    let stat_result = stat(filename);
+    assert_stat_results(stat_result);
+
+    let fstat_result = fstat(fd);
+    assert_stat_results(fstat_result);
+
+    close(fd).unwrap();
     unlink(filename).unwrap();
 }
