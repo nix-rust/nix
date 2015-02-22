@@ -4,7 +4,7 @@ use errno::Errno;
 use fcntl::{Fd, fcntl, FD_CLOEXEC, O_NONBLOCK};
 use fcntl::FcntlArg::{F_SETFD, F_SETFL};
 use features;
-use {NixError, NixResult, from_ffi};
+use {Error, Result, from_ffi};
 
 pub use libc::{in_addr, sockaddr, sockaddr_storage, sockaddr_in, sockaddr_in6, sockaddr_un, sa_family_t, ip_mreq};
 
@@ -226,7 +226,7 @@ mod consts {
     pub const MSG_DONTWAIT: SockMessageFlags = 0x80;
 }
 
-pub fn socket(domain: AddressFamily, mut ty: SockType, flags: SockFlag) -> NixResult<Fd> {
+pub fn socket(domain: AddressFamily, mut ty: SockType, flags: SockFlag) -> Result<Fd> {
     let feat_atomic = features::socket_atomic_cloexec();
 
     if feat_atomic {
@@ -237,7 +237,7 @@ pub fn socket(domain: AddressFamily, mut ty: SockType, flags: SockFlag) -> NixRe
     let res = unsafe { ffi::socket(domain, ty, 0) };
 
     if res < 0 {
-        return Err(NixError::Sys(Errno::last()));
+        return Err(Error::Sys(Errno::last()));
     }
 
     if !feat_atomic {
@@ -253,12 +253,12 @@ pub fn socket(domain: AddressFamily, mut ty: SockType, flags: SockFlag) -> NixRe
     Ok(res)
 }
 
-pub fn listen(sockfd: Fd, backlog: usize) -> NixResult<()> {
+pub fn listen(sockfd: Fd, backlog: usize) -> Result<()> {
     let res = unsafe { ffi::listen(sockfd, backlog as c_int) };
     from_ffi(res)
 }
 
-pub fn bind(sockfd: Fd, addr: &SockAddr) -> NixResult<()> {
+pub fn bind(sockfd: Fd, addr: &SockAddr) -> Result<()> {
     use self::SockAddr::*;
 
     let res = unsafe {
@@ -272,18 +272,18 @@ pub fn bind(sockfd: Fd, addr: &SockAddr) -> NixResult<()> {
     from_ffi(res)
 }
 
-pub fn accept(sockfd: Fd) -> NixResult<Fd> {
+pub fn accept(sockfd: Fd) -> Result<Fd> {
     let res = unsafe { ffi::accept(sockfd, ptr::null_mut(), ptr::null_mut()) };
 
     if res < 0 {
-        return Err(NixError::Sys(Errno::last()));
+        return Err(Error::Sys(Errno::last()));
     }
 
     Ok(res)
 }
 
 #[cfg(not(any(target_os = "macos", target_os = "ios")))]
-pub fn accept4(sockfd: Fd, flags: SockFlag) -> NixResult<Fd> {
+pub fn accept4(sockfd: Fd, flags: SockFlag) -> Result<Fd> {
     use libc::sockaddr;
 
     type F = unsafe extern "C" fn(c_int, *mut sockaddr, *mut socklen_t, c_int) -> c_int;
@@ -300,7 +300,7 @@ pub fn accept4(sockfd: Fd, flags: SockFlag) -> NixResult<Fd> {
         };
 
         if res < 0 {
-            return Err(NixError::Sys(Errno::last()));
+            return Err(Error::Sys(Errno::last()));
         }
 
         Ok(res)
@@ -310,16 +310,16 @@ pub fn accept4(sockfd: Fd, flags: SockFlag) -> NixResult<Fd> {
 }
 
 #[cfg(any(target_os = "macos", target_os = "ios"))]
-pub fn accept4(sockfd: Fd, flags: SockFlag) -> NixResult<Fd> {
+pub fn accept4(sockfd: Fd, flags: SockFlag) -> Result<Fd> {
     accept4_polyfill(sockfd, flags)
 }
 
 #[inline]
-fn accept4_polyfill(sockfd: Fd, flags: SockFlag) -> NixResult<Fd> {
+fn accept4_polyfill(sockfd: Fd, flags: SockFlag) -> Result<Fd> {
     let res =  unsafe { ffi::accept(sockfd, ptr::null_mut(), ptr::null_mut()) };
 
     if res < 0 {
-        return Err(NixError::Sys(Errno::last()));
+        return Err(Error::Sys(Errno::last()));
     }
 
     if flags.contains(SOCK_CLOEXEC) {
@@ -333,7 +333,7 @@ fn accept4_polyfill(sockfd: Fd, flags: SockFlag) -> NixResult<Fd> {
     Ok(res)
 }
 
-pub fn connect(sockfd: Fd, addr: &SockAddr) -> NixResult<()> {
+pub fn connect(sockfd: Fd, addr: &SockAddr) -> Result<()> {
     use self::SockAddr::*;
 
     let res = unsafe {
@@ -369,7 +369,7 @@ mod sa_helpers {
     }
 }
 
-pub fn recvfrom(sockfd: Fd, buf: &mut [u8]) -> NixResult<(usize, SockAddr)> {
+pub fn recvfrom(sockfd: Fd, buf: &mut [u8]) -> Result<(usize, SockAddr)> {
     let saddr : sockaddr_storage = unsafe { mem::zeroed() };
     let mut len = mem::size_of::<sockaddr_storage>() as socklen_t;
 
@@ -378,7 +378,7 @@ pub fn recvfrom(sockfd: Fd, buf: &mut [u8]) -> NixResult<(usize, SockAddr)> {
     };
 
     if ret < 0 {
-        return Err(NixError::Sys(Errno::last()));
+        return Err(Error::Sys(Errno::last()));
     }
 
     Ok((ret as usize,
@@ -428,7 +428,7 @@ fn sendto_sockaddr<T>(sockfd: Fd, buf: &[u8], flags: SockMessageFlags, addr: &T)
     }
 }
 
-pub fn sendto(sockfd: Fd, buf: &[u8], addr: &SockAddr, flags: SockMessageFlags) -> NixResult<usize> {
+pub fn sendto(sockfd: Fd, buf: &[u8], addr: &SockAddr, flags: SockMessageFlags) -> Result<usize> {
     use self::SockAddr::*;
 
     let ret = match *addr {
@@ -438,7 +438,7 @@ pub fn sendto(sockfd: Fd, buf: &[u8], addr: &SockAddr, flags: SockMessageFlags) 
     };
 
     if ret < 0 {
-        Err(NixError::Sys(Errno::last()))
+        Err(Error::Sys(Errno::last()))
     } else {
         Ok(ret as usize)
     }
@@ -451,7 +451,7 @@ pub struct linger {
     pub l_linger: c_int
 }
 
-pub fn getsockopt<T>(fd: Fd, level: SockLevel, opt: SockOpt, val: &mut T) -> NixResult<usize> {
+pub fn getsockopt<T>(fd: Fd, level: SockLevel, opt: SockOpt, val: &mut T) -> Result<usize> {
     let mut len = mem::size_of::<T>() as socklen_t;
 
     let res = unsafe {
@@ -462,13 +462,13 @@ pub fn getsockopt<T>(fd: Fd, level: SockLevel, opt: SockOpt, val: &mut T) -> Nix
     };
 
     if res < 0 {
-        return Err(NixError::Sys(Errno::last()));
+        return Err(Error::Sys(Errno::last()));
     }
 
     Ok(len as usize)
 }
 
-pub fn setsockopt<T>(fd: Fd, level: SockLevel, opt: SockOpt, val: &T) -> NixResult<()> {
+pub fn setsockopt<T>(fd: Fd, level: SockLevel, opt: SockOpt, val: &T) -> Result<()> {
     let len = mem::size_of::<T>() as socklen_t;
 
     let res = unsafe {
@@ -481,19 +481,19 @@ pub fn setsockopt<T>(fd: Fd, level: SockLevel, opt: SockOpt, val: &T) -> NixResu
     from_ffi(res)
 }
 
-fn getpeername_sockaddr<T>(sockfd: Fd, addr: &T) -> NixResult<bool> {
+fn getpeername_sockaddr<T>(sockfd: Fd, addr: &T) -> Result<bool> {
     let addrlen_expected = mem::size_of::<T>() as socklen_t;
     let mut addrlen = addrlen_expected;
 
     let ret = unsafe { ffi::getpeername(sockfd, mem::transmute(addr), &mut addrlen) };
     if ret < 0 {
-        return Err(NixError::Sys(Errno::last()));
+        return Err(Error::Sys(Errno::last()));
     }
 
     Ok(addrlen == addrlen_expected)
 }
 
-pub fn getpeername(sockfd: Fd, addr: &mut SockAddr) -> NixResult<bool> {
+pub fn getpeername(sockfd: Fd, addr: &mut SockAddr) -> Result<bool> {
     use self::SockAddr::*;
 
     match *addr {
@@ -503,19 +503,19 @@ pub fn getpeername(sockfd: Fd, addr: &mut SockAddr) -> NixResult<bool> {
     }
 }
 
-fn getsockname_sockaddr<T>(sockfd: Fd, addr: &T) -> NixResult<bool> {
+fn getsockname_sockaddr<T>(sockfd: Fd, addr: &T) -> Result<bool> {
     let addrlen_expected = mem::size_of::<T>() as socklen_t;
     let mut addrlen = addrlen_expected;
 
     let ret = unsafe { ffi::getsockname(sockfd, mem::transmute(addr), &mut addrlen) };
     if ret < 0 {
-        return Err(NixError::Sys(Errno::last()));
+        return Err(Error::Sys(Errno::last()));
     }
 
     Ok(addrlen == addrlen_expected)
 }
 
-pub fn getsockname(sockfd: Fd, addr: &mut SockAddr) -> NixResult<bool> {
+pub fn getsockname(sockfd: Fd, addr: &mut SockAddr) -> Result<bool> {
     use self::SockAddr::*;
 
     match *addr {

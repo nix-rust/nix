@@ -2,7 +2,7 @@ use errno::Errno;
 use fcntl::Fd;
 use libc::c_int;
 use std::mem;
-use {NixError, NixResult, from_ffi};
+use {Error, Result, from_ffi};
 
 pub use self::ffi::consts::*;
 pub use self::ffi::consts::SetArg::*;
@@ -362,19 +362,19 @@ pub fn cfgetospeed(termios: &Termios) -> speed_t {
     }
 }
 
-pub fn cfsetispeed(termios: &mut Termios, speed: speed_t) -> NixResult<()> {
+pub fn cfsetispeed(termios: &mut Termios, speed: speed_t) -> Result<()> {
     from_ffi(unsafe {
         ffi::cfsetispeed(termios, speed)
     })
 }
 
-pub fn cfsetospeed(termios: &mut Termios, speed: speed_t) -> NixResult<()> {
+pub fn cfsetospeed(termios: &mut Termios, speed: speed_t) -> Result<()> {
     from_ffi(unsafe {
         ffi::cfsetospeed(termios, speed)
     })
 }
 
-pub fn tcgetattr(fd: Fd) -> NixResult<Termios> {
+pub fn tcgetattr(fd: Fd) -> Result<Termios> {
     let mut termios = unsafe { mem::uninitialized() };
 
     let res = unsafe {
@@ -382,7 +382,7 @@ pub fn tcgetattr(fd: Fd) -> NixResult<Termios> {
     };
 
     if res < 0 {
-        return Err(NixError::Sys(Errno::last()));
+        return Err(Error::Sys(Errno::last()));
     }
 
     Ok(termios)
@@ -390,31 +390,31 @@ pub fn tcgetattr(fd: Fd) -> NixResult<Termios> {
 
 pub fn tcsetattr(fd: Fd,
                  actions: SetArg,
-                 termios: &Termios) -> NixResult<()> {
+                 termios: &Termios) -> Result<()> {
     from_ffi(unsafe {
         ffi::tcsetattr(fd, actions as c_int, termios)
     })
 }
 
-pub fn tcdrain(fd: Fd) -> NixResult<()> {
+pub fn tcdrain(fd: Fd) -> Result<()> {
     from_ffi(unsafe {
         ffi::tcdrain(fd)
     })
 }
 
-pub fn tcflow(fd: Fd, action: FlowArg) -> NixResult<()> {
+pub fn tcflow(fd: Fd, action: FlowArg) -> Result<()> {
     from_ffi(unsafe {
         ffi::tcflow(fd, action as c_int)
     })
 }
 
-pub fn tcflush(fd: Fd, action: FlushArg) -> NixResult<()> {
+pub fn tcflush(fd: Fd, action: FlushArg) -> Result<()> {
     from_ffi(unsafe {
         ffi::tcflush(fd, action as c_int)
     })
 }
 
-pub fn tcsendbreak(fd: Fd, action: c_int) -> NixResult<()> {
+pub fn tcsendbreak(fd: Fd, action: c_int) -> Result<()> {
     from_ffi(unsafe {
         ffi::tcsendbreak(fd, action)
     })

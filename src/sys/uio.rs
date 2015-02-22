@@ -12,20 +12,20 @@ mod ffi {
     pub fn readv(fd: Fd, iov: *const IoVec<&mut [u8]>, iovcnt: c_int) -> ssize_t;
 }
 
-pub fn writev(fd: Fd, iov: &[IoVec<&[u8]>]) -> NixResult<usize> {
+pub fn writev(fd: Fd, iov: &[IoVec<&[u8]>]) -> Result<usize> {
     let res = unsafe { ffi::writev(fd, iov.as_ptr(), iov.len() as c_int) };
 
     if res < 0 {
-        return Err(NixError::Sys(Errno::last()));
+        return Err(Error::Sys(Errno::last()));
     }
 
     return Ok(res as usize)
 }
 
-pub fn readv(fd: Fd, iov: &mut [IoVec<&mut [u8]>]) -> NixResult<usize> {
+pub fn readv(fd: Fd, iov: &mut [IoVec<&mut [u8]>]) -> Result<usize> {
     let res = unsafe { ffi::readv(fd, iov.as_ptr(), iov.len() as c_int) };
     if res < 0 {
-        return Err(NixError::Sys(Errno::last()));
+        return Err(Error::Sys(Errno::last()));
     }
 
     return Ok(res as usize)
