@@ -5,7 +5,7 @@ use fcntl::{fcntl, FD_CLOEXEC, O_NONBLOCK};
 use fcntl::FcntlArg::{F_SETFD, F_SETFL};
 use libc::{c_void, c_int, socklen_t, size_t, ssize_t};
 use std::{fmt, mem, net, ptr, path};
-use std::ffi::AsOsStr;
+use std::ffi::{AsOsStr, CStr, OsStr};
 use std::os::unix::prelude::*;
 
 /*
@@ -63,14 +63,30 @@ pub enum SockAddr {
     SockUnix(sockaddr_un)
 }
 
-/// Convert a value into a socket address
-pub trait AsSockAddr {
-    fn as_sock_addr(&self) -> NixResult<SockAddr>;
+/// A trait for values which can be converted or resolved to a SockAddr.
+pub trait ToSockAddr {
+    /// Converts the value to a SockAddr
+    fn to_sock_addr(&self) -> NixResult<SockAddr>;
+
+    /// Converts and yields the value as a SockAddr
+    fn with_sock_addr<T, F: FnOnce(&SockAddr) -> T>(&self, action: F) -> NixResult<T> {
+        Ok(action(&try!(self.to_sock_addr())))
+    }
+}
+
+impl ToSockAddr for SockAddr {
+    fn to_sock_addr(&self) -> NixResult<SockAddr> {
+        Ok(*self)
+    }
+
+    fn with_sock_addr<T, F: FnOnce(&SockAddr) -> T>(&self, action: F) -> NixResult<T> {
+        Ok(action(self))
+    }
 }
 
 /// Convert a path into a unix domain socket address
-impl AsSockAddr for path::Path {
-    fn as_sock_addr(&self) -> NixResult<SockAddr> {
+impl ToSockAddr for path::Path {
+    fn to_sock_addr(&self) -> NixResult<SockAddr> {
         let bytes = self.as_os_str().as_bytes();
 
         Ok(SockAddr::SockUnix(unsafe {
@@ -96,8 +112,8 @@ impl AsSockAddr for path::Path {
 }
 
 /// Convert an inet address into a socket address
-impl AsSockAddr for net::SocketAddr {
-    fn as_sock_addr(&self) -> NixResult<SockAddr> {
+impl ToSockAddr for net::SocketAddr {
+    fn to_sock_addr(&self) -> NixResult<SockAddr> {
         use std::net::IpAddr;
         use std::num::Int;
 
@@ -119,6 +135,47 @@ impl AsSockAddr for net::SocketAddr {
             }
             _ => unimplemented!()
         }
+    }
+}
+
+/// Convert from a socket address
+pub trait FromSockAddr {
+    fn from_sock_addr(addr: &SockAddr) -> Option<Self>;
+}
+
+impl FromSockAddr for net::SocketAddr {
+    fn from_sock_addr(addr: &SockAddr) -> Option<net::SocketAddr> {
+        use std::net::{IpAddr, Ipv4Addr};
+        use std::num::Int;
+
+        match *addr {
+            SockAddr::SockIpV4(ref addr) => {
+                let ip = Int::from_be(addr.sin_addr.s_addr);
+                let ip = Ipv4Addr::new(
+                    ((ip >> 24) as u8) & 0xff,
+                    ((ip >> 16) as u8) & 0xff,
+                    ((ip >>  8) as u8) & 0xff,
+                    ((ip >>  0) as u8) & 0xff);
+
+                Some(net::SocketAddr::new(IpAddr::V4(ip), addr.sin_port))
+            }
+            SockAddr::SockIpV6(_) => unimplemented!(),
+            _ =>  None,
+        }
+    }
+}
+
+impl FromSockAddr for path::PathBuf {
+    fn from_sock_addr(addr: &SockAddr) -> Option<path::PathBuf> {
+        if let SockAddr::SockUnix(ref addr) = *addr {
+            unsafe {
+                let bytes = CStr::from_ptr(addr.sun_path.as_ptr()).to_bytes();
+                let osstr = <OsStr as OsStrExt>::from_bytes(bytes);
+                return Some(path::PathBuf::new(osstr));
+            }
+        }
+
+        None
     }
 }
 
@@ -347,15 +404,17 @@ pub fn listen(sockfd: Fd, backlog: usize) -> NixResult<()> {
     from_ffi(res)
 }
 
-pub fn bind(sockfd: Fd, addr: &SockAddr) -> NixResult<()> {
+pub fn bind<A: ToSockAddr>(sockfd: Fd, addr: &A) -> NixResult<()> {
     use self::SockAddr::*;
 
     let res = unsafe {
-        match *addr {
-            SockIpV4(ref addr) => ffi::bind(sockfd, mem::transmute(addr), mem::size_of::<sockaddr_in>() as socklen_t),
-            SockIpV6(ref addr) => ffi::bind(sockfd, mem::transmute(addr), mem::size_of::<sockaddr_in6>() as socklen_t),
-            SockUnix(ref addr) => ffi::bind(sockfd, mem::transmute(addr), mem::size_of::<sockaddr_un>() as socklen_t)
-        }
+        try!(addr.with_sock_addr(|addr| {
+            match *addr {
+                SockIpV4(ref addr) => ffi::bind(sockfd, mem::transmute(addr), mem::size_of::<sockaddr_in>() as socklen_t),
+                SockIpV6(ref addr) => ffi::bind(sockfd, mem::transmute(addr), mem::size_of::<sockaddr_in6>() as socklen_t),
+                SockUnix(ref addr) => ffi::bind(sockfd, mem::transmute(addr), mem::size_of::<sockaddr_un>() as socklen_t)
+            }
+        }))
     };
 
     from_ffi(res)
@@ -422,15 +481,17 @@ fn accept4_polyfill(sockfd: Fd, flags: SockFlag) -> NixResult<Fd> {
     Ok(res)
 }
 
-pub fn connect(sockfd: Fd, addr: &SockAddr) -> NixResult<()> {
+pub fn connect<A: ToSockAddr>(sockfd: Fd, addr: &A) -> NixResult<()> {
     use self::SockAddr::*;
 
     let res = unsafe {
-        match *addr {
-            SockIpV4(ref addr) => ffi::connect(sockfd, mem::transmute(addr), mem::size_of::<sockaddr_in>() as socklen_t),
-            SockIpV6(ref addr) => ffi::connect(sockfd, mem::transmute(addr), mem::size_of::<sockaddr_in6>() as socklen_t),
-            SockUnix(ref addr) => ffi::connect(sockfd, mem::transmute(addr), mem::size_of::<sockaddr_un>() as socklen_t)
-        }
+        try!(addr.with_sock_addr(|addr| {
+            match *addr {
+                SockIpV4(ref addr) => ffi::connect(sockfd, mem::transmute(addr), mem::size_of::<sockaddr_in>() as socklen_t),
+                SockIpV6(ref addr) => ffi::connect(sockfd, mem::transmute(addr), mem::size_of::<sockaddr_in6>() as socklen_t),
+                SockUnix(ref addr) => ffi::connect(sockfd, mem::transmute(addr), mem::size_of::<sockaddr_un>() as socklen_t)
+            }
+        }))
     };
 
     from_ffi(res)
