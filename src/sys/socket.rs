@@ -1,13 +1,29 @@
-use std::{mem, ptr, fmt};
-use libc::{c_void, c_int, socklen_t, size_t, ssize_t};
-use errno::Errno;
-use fcntl::{Fd, fcntl, FD_CLOEXEC, O_NONBLOCK};
-use fcntl::FcntlArg::{F_SETFD, F_SETFL};
-use features;
 use {NixError, NixResult, from_ffi};
+use errno::Errno;
+use features;
+use fcntl::{fcntl, FD_CLOEXEC, O_NONBLOCK};
+use fcntl::FcntlArg::{F_SETFD, F_SETFL};
+use libc::{c_void, c_int, socklen_t, size_t, ssize_t};
+use std::{fmt, mem, net, ptr, path};
+use std::ffi::AsOsStr;
+use std::os::unix::prelude::*;
 
-pub use libc::{in_addr, sockaddr, sockaddr_storage, sockaddr_in, sockaddr_in6, sockaddr_un, sa_family_t, ip_mreq};
+/*
+ *
+ * ===== Re-exports =====
+ *
+ */
 
+pub use libc::{
+    in_addr,
+    sockaddr,
+    sockaddr_storage,
+    sockaddr_in,
+    sockaddr_in6,
+    sockaddr_un,
+    sa_family_t,
+    ip_mreq
+};
 pub use self::consts::*;
 
 mod ffi {
@@ -32,12 +48,85 @@ bitflags!(
     }
 );
 
+/*
+ *
+ * ===== SockAddr =====
+ *
+ */
+
+/// Represents a socket address
 #[derive(Copy)]
 pub enum SockAddr {
+    // TODO: Rename these variants IpV4, IpV6, Unix
     SockIpV4(sockaddr_in),
     SockIpV6(sockaddr_in6),
     SockUnix(sockaddr_un)
 }
+
+/// Convert a value into a socket address
+pub trait AsSockAddr {
+    fn as_sock_addr(&self) -> NixResult<SockAddr>;
+}
+
+/// Convert a path into a unix domain socket address
+impl AsSockAddr for path::Path {
+    fn as_sock_addr(&self) -> NixResult<SockAddr> {
+        let bytes = self.as_os_str().as_bytes();
+
+        Ok(SockAddr::SockUnix(unsafe {
+            let mut ret = sockaddr_un {
+                sun_family: AF_UNIX as sa_family_t,
+                .. mem::zeroed()
+            };
+
+            // Make sure the destination has enough capacity
+            if bytes.len() >= ret.sun_path.len() {
+                return Err(NixError::Sys(Errno::ENAMETOOLONG));
+            }
+
+            // Copy the path
+            ptr::copy_memory(
+                ret.sun_path.as_mut_ptr(),
+                bytes.as_ptr() as *const i8,
+                bytes.len());
+
+            ret
+        }))
+    }
+}
+
+/// Convert an inet address into a socket address
+impl AsSockAddr for net::SocketAddr {
+    fn as_sock_addr(&self) -> NixResult<SockAddr> {
+        use std::net::IpAddr;
+        use std::num::Int;
+
+        match self.ip() {
+            IpAddr::V4(ip) => {
+                let addr = ip.octets();
+                Ok(SockAddr::SockIpV4(sockaddr_in {
+                    sin_family: AF_INET as sa_family_t,
+                    sin_port: self.port(),
+                    sin_addr: in_addr {
+                        s_addr: Int::from_be(
+                            ((addr[0] as u32) << 24) |
+                            ((addr[1] as u32) << 16) |
+                            ((addr[2] as u32) <<  8) |
+                            ((addr[3] as u32) <<  0))
+                    },
+                    .. unsafe { mem::zeroed() }
+                }))
+            }
+            _ => unimplemented!()
+        }
+    }
+}
+
+/*
+ *
+ * ===== Consts =====
+ *
+ */
 
 #[cfg(target_os = "linux")]
 mod consts {

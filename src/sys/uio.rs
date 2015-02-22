@@ -1,15 +1,23 @@
+use {NixResult, NixError};
+use errno::Errno;
+use fcntl::Fd;
+use libc::{c_int, c_void, size_t};
+use std::marker::PhantomData;
 
 mod ffi {
     use super::IoVec;
-    use libc::{ssize_t];
+    use libc::{ssize_t, c_int};
+    use fcntl::Fd;
 
-    // vectorized version of write
-    // doc: http://man7.org/linux/man-pages/man2/writev.2.html
-    pub fn writev(fd: Fd, iov: *const IoVec<&[u8]>, iovcnt: c_int) -> ssize_t;
+    extern {
+        // vectorized version of write
+        // doc: http://man7.org/linux/man-pages/man2/writev.2.html
+        pub fn writev(fd: Fd, iov: *const IoVec<&[u8]>, iovcnt: c_int) -> ssize_t;
 
-    // vectorized version of read
-    // doc: http://man7.org/linux/man-pages/man2/readv.2.html
-    pub fn readv(fd: Fd, iov: *const IoVec<&mut [u8]>, iovcnt: c_int) -> ssize_t;
+        // vectorized version of read
+        // doc: http://man7.org/linux/man-pages/man2/readv.2.html
+        pub fn readv(fd: Fd, iov: *const IoVec<&mut [u8]>, iovcnt: c_int) -> ssize_t;
+    }
 }
 
 pub fn writev(fd: Fd, iov: &[IoVec<&[u8]>]) -> NixResult<usize> {

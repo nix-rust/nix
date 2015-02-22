@@ -26,3 +26,5 @@ pub mod utsname;
 pub mod wait;
 
 pub mod mman;
+
+pub mod uio;
