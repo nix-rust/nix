@@ -75,14 +75,12 @@ pub fn listen(sockfd: Fd, backlog: usize) -> NixResult<()> {
 }
 
 pub fn bind<A: ToSockAddr>(sockfd: Fd, addr: &A) -> NixResult<()> {
-    use self::addr::SockAddr::*;
-
     let res = unsafe {
         try!(addr.with_sock_addr(|addr| {
             match *addr {
-                SockIpV4(ref addr) => ffi::bind(sockfd, mem::transmute(addr), mem::size_of::<sockaddr_in>() as socklen_t),
-                SockIpV6(ref addr) => ffi::bind(sockfd, mem::transmute(addr), mem::size_of::<sockaddr_in6>() as socklen_t),
-                SockUnix(ref addr) => ffi::bind(sockfd, mem::transmute(addr), mem::size_of::<sockaddr_un>() as socklen_t)
+                SockAddr::IpV4(ref addr) => ffi::bind(sockfd, mem::transmute(addr), mem::size_of::<sockaddr_in>() as socklen_t),
+                SockAddr::IpV6(ref addr) => ffi::bind(sockfd, mem::transmute(addr), mem::size_of::<sockaddr_in6>() as socklen_t),
+                SockAddr::Unix(ref addr) => ffi::bind(sockfd, mem::transmute(addr), mem::size_of::<sockaddr_un>() as socklen_t)
             }
         }))
     };
@@ -152,14 +150,12 @@ fn accept4_polyfill(sockfd: Fd, flags: SockFlag) -> NixResult<Fd> {
 }
 
 pub fn connect<A: ToSockAddr>(sockfd: Fd, addr: &A) -> NixResult<()> {
-    use self::addr::SockAddr::*;
-
     let res = unsafe {
         try!(addr.with_sock_addr(|addr| {
             match *addr {
-                SockIpV4(ref addr) => ffi::connect(sockfd, mem::transmute(addr), mem::size_of::<sockaddr_in>() as socklen_t),
-                SockIpV6(ref addr) => ffi::connect(sockfd, mem::transmute(addr), mem::size_of::<sockaddr_in6>() as socklen_t),
-                SockUnix(ref addr) => ffi::connect(sockfd, mem::transmute(addr), mem::size_of::<sockaddr_un>() as socklen_t)
+                SockAddr::IpV4(ref addr) => ffi::connect(sockfd, mem::transmute(addr), mem::size_of::<sockaddr_in>() as socklen_t),
+                SockAddr::IpV6(ref addr) => ffi::connect(sockfd, mem::transmute(addr), mem::size_of::<sockaddr_in6>() as socklen_t),
+                SockAddr::Unix(ref addr) => ffi::connect(sockfd, mem::transmute(addr), mem::size_of::<sockaddr_un>() as socklen_t)
             }
         }))
     };
@@ -171,21 +167,20 @@ mod sa_helpers {
     use std::mem;
     use libc::{sockaddr_storage, sockaddr_in, sockaddr_in6, sockaddr_un};
     use super::SockAddr;
-    use super::SockAddr::*;
 
     pub fn to_sockaddr_ipv4(addr: &sockaddr_storage) -> SockAddr {
         let sin : &sockaddr_in = unsafe { mem::transmute(addr) };
-        SockIpV4( *sin )
+        SockAddr::IpV4( *sin )
     }
 
     pub fn to_sockaddr_ipv6(addr: &sockaddr_storage) -> SockAddr {
         let sin6 : &sockaddr_in6 = unsafe { mem::transmute(addr) };
-        SockIpV6( *sin6 )
+        SockAddr::IpV6( *sin6 )
     }
 
     pub fn to_sockaddr_unix(addr: &sockaddr_storage) -> SockAddr {
         let sun : &sockaddr_un = unsafe { mem::transmute(addr) };
-        SockUnix( *sun )
+        SockAddr::Unix( *sun )
     }
 }
 
@@ -228,7 +223,7 @@ fn print_ipv4_addr(sin: &sockaddr_in, f: &mut fmt::Formatter) -> fmt::Result {
 impl fmt::Debug for SockAddr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            SockAddr::SockIpV4(sin) => print_ipv4_addr(&sin, f),
+            SockAddr::IpV4(sin) => print_ipv4_addr(&sin, f),
             _ => unimplemented!()
         }
     }
@@ -249,12 +244,10 @@ fn sendto_sockaddr<T>(sockfd: Fd, buf: &[u8], flags: SockMessageFlags, addr: &T)
 }
 
 pub fn sendto(sockfd: Fd, buf: &[u8], addr: &SockAddr, flags: SockMessageFlags) -> NixResult<usize> {
-    use self::addr::SockAddr::*;
-
     let ret = match *addr {
-        SockIpV4(ref addr) => sendto_sockaddr(sockfd, buf, flags, addr),
-        SockIpV6(ref addr) => sendto_sockaddr(sockfd, buf, flags, addr),
-        SockUnix(ref addr) => sendto_sockaddr(sockfd, buf, flags, addr),
+        SockAddr::IpV4(ref addr) => sendto_sockaddr(sockfd, buf, flags, addr),
+        SockAddr::IpV6(ref addr) => sendto_sockaddr(sockfd, buf, flags, addr),
+        SockAddr::Unix(ref addr) => sendto_sockaddr(sockfd, buf, flags, addr),
     };
 
     if ret < 0 {
@@ -314,12 +307,10 @@ fn getpeername_sockaddr<T>(sockfd: Fd, addr: &T) -> NixResult<bool> {
 }
 
 pub fn getpeername(sockfd: Fd, addr: &mut SockAddr) -> NixResult<bool> {
-    use self::addr::SockAddr::*;
-
     match *addr {
-        SockIpV4(ref addr) => getpeername_sockaddr(sockfd, addr),
-        SockIpV6(ref addr) => getpeername_sockaddr(sockfd, addr),
-        SockUnix(ref addr) => getpeername_sockaddr(sockfd, addr)
+        SockAddr::IpV4(ref addr) => getpeername_sockaddr(sockfd, addr),
+        SockAddr::IpV6(ref addr) => getpeername_sockaddr(sockfd, addr),
+        SockAddr::Unix(ref addr) => getpeername_sockaddr(sockfd, addr)
     }
 }
 
@@ -336,11 +327,9 @@ fn getsockname_sockaddr<T>(sockfd: Fd, addr: &T) -> NixResult<bool> {
 }
 
 pub fn getsockname(sockfd: Fd, addr: &mut SockAddr) -> NixResult<bool> {
-    use self::addr::SockAddr::*;
-
     match *addr {
-        SockIpV4(ref addr) => getsockname_sockaddr(sockfd, addr),
-        SockIpV6(ref addr) => getsockname_sockaddr(sockfd, addr),
-        SockUnix(ref addr) => getsockname_sockaddr(sockfd, addr)
+        SockAddr::IpV4(ref addr) => getsockname_sockaddr(sockfd, addr),
+        SockAddr::IpV6(ref addr) => getsockname_sockaddr(sockfd, addr),
+        SockAddr::Unix(ref addr) => getsockname_sockaddr(sockfd, addr)
     }
 }

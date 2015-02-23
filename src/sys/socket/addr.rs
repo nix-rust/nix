@@ -9,9 +9,9 @@ use std::os::unix::OsStrExt;
 #[derive(Copy)]
 pub enum SockAddr {
     // TODO: Rename these variants IpV4, IpV6, Unix
-    SockIpV4(sockaddr_in),
-    SockIpV6(sockaddr_in6),
-    SockUnix(sockaddr_un)
+    IpV4(sockaddr_in),
+    IpV6(sockaddr_in6),
+    Unix(sockaddr_un)
 }
 
 /// A trait for values which can be converted or resolved to a SockAddr.
@@ -40,7 +40,7 @@ impl ToSockAddr for path::Path {
     fn to_sock_addr(&self) -> NixResult<SockAddr> {
         let bytes = self.as_os_str().as_bytes();
 
-        Ok(SockAddr::SockUnix(unsafe {
+        Ok(SockAddr::Unix(unsafe {
             let mut ret = sockaddr_un {
                 sun_family: AF_UNIX as sa_family_t,
                 .. mem::zeroed()
@@ -71,7 +71,7 @@ impl ToSockAddr for net::SocketAddr {
         match self.ip() {
             IpAddr::V4(ip) => {
                 let addr = ip.octets();
-                Ok(SockAddr::SockIpV4(sockaddr_in {
+                Ok(SockAddr::IpV4(sockaddr_in {
                     sin_family: AF_INET as sa_family_t,
                     sin_port: self.port(),
                     sin_addr: in_addr {
@@ -100,7 +100,7 @@ impl FromSockAddr for net::SocketAddr {
         use std::num::Int;
 
         match *addr {
-            SockAddr::SockIpV4(ref addr) => {
+            SockAddr::IpV4(ref addr) => {
                 let ip = Int::from_be(addr.sin_addr.s_addr);
                 let ip = Ipv4Addr::new(
                     ((ip >> 24) as u8) & 0xff,
@@ -110,7 +110,7 @@ impl FromSockAddr for net::SocketAddr {
 
                 Some(net::SocketAddr::new(IpAddr::V4(ip), addr.sin_port))
             }
-            SockAddr::SockIpV6(_) => unimplemented!(),
+            SockAddr::IpV6(_) => unimplemented!(),
             _ =>  None,
         }
     }
@@ -118,7 +118,7 @@ impl FromSockAddr for net::SocketAddr {
 
 impl FromSockAddr for path::PathBuf {
     fn from_sock_addr(addr: &SockAddr) -> Option<path::PathBuf> {
-        if let SockAddr::SockUnix(ref addr) = *addr {
+        if let SockAddr::Unix(ref addr) = *addr {
             unsafe {
                 let bytes = CStr::from_ptr(addr.sun_path.as_ptr()).to_bytes();
                 let osstr = <OsStr as OsStrExt>::from_bytes(bytes);

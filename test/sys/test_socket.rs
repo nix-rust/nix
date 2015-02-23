@@ -10,7 +10,7 @@ pub fn test_inetv4_addr_to_sock_addr() {
     let addr = actual.to_sock_addr().unwrap();
 
     match addr {
-        SockAddr::SockIpV4(addr) => {
+        SockAddr::IpV4(addr) => {
             assert_eq!(addr.sin_addr.s_addr, Int::from_be(2130706433));
             assert_eq!(addr.sin_port, 3000);
         }
@@ -27,7 +27,7 @@ pub fn test_path_to_sock_addr() {
     let addr = actual.to_sock_addr().unwrap();
 
     match addr {
-        SockAddr::SockUnix(addr) => {
+        SockAddr::Unix(addr) => {
             let expect: &'static [i8] = unsafe { mem::transmute(b"/foo/bar") };
             assert_eq!(&addr.sun_path[..8], expect);
         }
