@@ -10,6 +10,7 @@ use std::os::unix::prelude::*;
 mod addr;
 mod consts;
 mod ffi;
+pub mod sockopt;
 
 /*
  *
@@ -264,34 +265,62 @@ pub struct linger {
     pub l_linger: c_int
 }
 
-pub fn getsockopt<T>(fd: Fd, level: SockLevel, opt: SockOpt, val: &mut T) -> NixResult<usize> {
-    let mut len = mem::size_of::<T>() as socklen_t;
+/*
+ *
+ * ===== Socket Options =====
+ *
+ */
 
-    let res = unsafe {
-        ffi::getsockopt(
-            fd, level, opt,
-            mem::transmute(val),
-            &mut len as *mut socklen_t)
-    };
+/// Represents a socket option that can be accessed or set
+pub trait SockOpt : Copy + fmt::Debug {
+    /// Type of `getsockopt` return value
+    type Get;
 
-    if res < 0 {
-        return Err(NixError::Sys(Errno::last()));
-    }
+    /// Type of value used to set the socket option. Used as the argument to
+    /// `setsockopt`.
+    type Set;
 
-    Ok(len as usize)
+    #[doc(hidden)]
+    fn get(&self, fd: Fd, level: c_int) -> NixResult<Self::Get>;
+
+    #[doc(hidden)]
+    fn set(&self, fd: Fd, level: c_int, val: Self::Set) -> NixResult<()>;
 }
 
-pub fn setsockopt<T>(fd: Fd, level: SockLevel, opt: SockOpt, val: &T) -> NixResult<()> {
-    let len = mem::size_of::<T>() as socklen_t;
+pub enum SockLevel {
+    Socket,
+    Tcp,
+    Ip,
+    Ipv6,
+    Udp
+}
 
-    let res = unsafe {
-            ffi::setsockopt(
-            fd, level, opt,
-            mem::transmute(val),
-            len)
-    };
+impl SockLevel {
+    fn as_cint(&self) -> c_int {
+        use self::SockLevel::*;
 
-    from_ffi(res)
+        match *self {
+            Socket => consts::SOL_SOCKET,
+            Tcp    => consts::IPPROTO_TCP,
+            Ip     => consts::IPPROTO_IP,
+            Ipv6   => consts::IPPROTO_IPV6,
+            Udp    => consts::IPPROTO_UDP,
+        }
+    }
+}
+
+/// Get the current value for the requested socket option
+///
+/// [Further reading](http://man7.org/linux/man-pages/man2/setsockopt.2.html)
+pub fn getsockopt<O: SockOpt>(fd: Fd, level: SockLevel, opt: O) -> NixResult<O::Get> {
+    opt.get(fd, level.as_cint())
+}
+
+/// Sets the value for the requested socket option
+///
+/// [Further reading](http://man7.org/linux/man-pages/man2/setsockopt.2.html)
+pub fn setsockopt<O: SockOpt>(fd: Fd, level: SockLevel, opt: O, val: O::Set) -> NixResult<()> {
+    opt.set(fd, level.as_cint(), val)
 }
 
 fn getpeername_sockaddr<T>(sockfd: Fd, addr: &T) -> NixResult<bool> {
