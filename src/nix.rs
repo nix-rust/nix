@@ -1,5 +1,7 @@
 use libc;
+use libc::{c_char};
 use std;
+use std::ffi::CString;
 
 use errno::Errno;
 
@@ -54,4 +56,20 @@ pub fn from_ffi(res: libc::c_int) -> NixResult<()> {
         return Err(NixError::Sys(Errno::last()));
     }
     Ok(())
+}
+
+pub trait AsCString {
+    fn as_c_char(&self) -> *const c_char;
+}
+
+impl<'a> AsCString for &'a str {
+    fn as_c_char(&self) -> *const c_char {
+        CString::from_slice(self.as_bytes()).as_ptr()
+    }
+}
+
+impl AsCString for String {
+    fn as_c_char(&self) -> *const c_char {
+        CString::from_slice(self.as_slice().as_bytes()).as_ptr()
+    }
 }
