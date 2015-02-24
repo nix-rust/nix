@@ -1,9 +1,16 @@
 use {NixResult, NixError};
 use super::{sa_family_t, in_addr, sockaddr_in, sockaddr_in6, sockaddr_un, AF_UNIX, AF_INET};
 use errno::Errno;
+use libc;
 use std::{mem, net, path, ptr};
 use std::ffi::{AsOsStr, CStr, OsStr};
 use std::os::unix::OsStrExt;
+
+/*
+ *
+ * ===== Sock addr =====
+ *
+ */
 
 /// Represents a socket address
 #[derive(Copy)]
@@ -66,21 +73,16 @@ impl ToSockAddr for path::Path {
 impl ToSockAddr for net::SocketAddr {
     fn to_sock_addr(&self) -> NixResult<SockAddr> {
         use std::net::IpAddr;
-        use std::num::Int;
 
         match self.ip() {
             IpAddr::V4(ip) => {
-                let addr = ip.octets();
+                let addr = ip.to_in_addr()
+                    .expect("in_addr conversion expected to be successful");
+
                 Ok(SockAddr::IpV4(sockaddr_in {
                     sin_family: AF_INET as sa_family_t,
                     sin_port: self.port(),
-                    sin_addr: in_addr {
-                        s_addr: Int::from_be(
-                            ((addr[0] as u32) << 24) |
-                            ((addr[1] as u32) << 16) |
-                            ((addr[2] as u32) <<  8) |
-                            ((addr[3] as u32) <<  0))
-                    },
+                    sin_addr: addr,
                     .. unsafe { mem::zeroed() }
                 }))
             }
@@ -127,5 +129,72 @@ impl FromSockAddr for path::PathBuf {
         }
 
         None
+    }
+}
+
+/*
+ *
+ * ===== InAddr =====
+ *
+ */
+
+pub trait ToInAddr {
+    fn to_in_addr(self) -> Option<libc::in_addr>;
+}
+
+impl ToInAddr for SockAddr {
+    fn to_in_addr(self) -> Option<libc::in_addr> {
+        match self {
+            SockAddr::IpV4(sock) => Some(sock.sin_addr),
+            _ => None,
+        }
+    }
+}
+
+impl<'a> ToInAddr for &'a SockAddr {
+    fn to_in_addr(self) -> Option<libc::in_addr> {
+        match *self {
+            SockAddr::IpV4(ref sock) => Some(sock.sin_addr),
+            _ => None,
+        }
+    }
+}
+
+impl ToInAddr for net::IpAddr {
+    fn to_in_addr(self) -> Option<libc::in_addr> {
+        match self {
+            net::IpAddr::V4(addr) => addr.to_in_addr(),
+            _ => None,
+        }
+    }
+}
+
+impl<'a> ToInAddr for &'a net::IpAddr {
+    fn to_in_addr(self) -> Option<libc::in_addr> {
+        match *self {
+            net::IpAddr::V4(addr) => addr.to_in_addr(),
+            _ => None,
+        }
+    }
+}
+
+impl ToInAddr for net::Ipv4Addr {
+    fn to_in_addr(self) -> Option<libc::in_addr> {
+        use std::num::Int;
+
+        let addr = self.octets();
+        Some(in_addr {
+            s_addr: Int::from_be(
+                        ((addr[0] as u32) << 24) |
+                        ((addr[1] as u32) << 16) |
+                        ((addr[2] as u32) <<  8) |
+                        ((addr[3] as u32) <<  0))
+        })
+    }
+}
+
+impl<'a> ToInAddr for &'a net::Ipv4Addr {
+    fn to_in_addr(self) -> Option<libc::in_addr> {
+        (*self).to_in_addr()
     }
 }

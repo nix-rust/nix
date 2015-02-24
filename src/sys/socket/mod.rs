@@ -10,6 +10,7 @@ use std::os::unix::prelude::*;
 mod addr;
 mod consts;
 mod ffi;
+mod multicast;
 pub mod sockopt;
 
 /*
@@ -21,7 +22,8 @@ pub mod sockopt;
 pub use self::addr::{
     SockAddr,
     ToSockAddr,
-    FromSockAddr
+    FromSockAddr,
+    ToInAddr,
 };
 pub use libc::{
     in_addr,
@@ -31,7 +33,10 @@ pub use libc::{
     sockaddr_in6,
     sockaddr_un,
     sa_family_t,
-    ip_mreq
+};
+
+pub use self::multicast::{
+    ip_mreq,
 };
 pub use self::consts::*;
 

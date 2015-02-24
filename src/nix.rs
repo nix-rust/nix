@@ -1,7 +1,7 @@
 use libc;
 use std;
 
-use errno::Errno;
+use errno::{Errno, EINVAL};
 
 pub type NixResult<T> = Result<T, NixError>;
 
@@ -9,6 +9,12 @@ pub type NixResult<T> = Result<T, NixError>;
 pub enum NixError {
     Sys(Errno),
     InvalidPath
+}
+
+impl NixError {
+    pub fn invalid_argument() -> NixError {
+        NixError::Sys(EINVAL)
+    }
 }
 
 pub trait NixPath {

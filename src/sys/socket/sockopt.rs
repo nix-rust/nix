@@ -72,6 +72,7 @@ sockopt_impl!(ReusePort, consts::SO_REUSEPORT, bool);
 sockopt_impl!(TcpNoDelay, consts::TCP_NODELAY, bool);
 sockopt_impl!(Linger, consts::SO_LINGER, super::linger);
 sockopt_impl!(IpAddMembership, consts::IP_ADD_MEMBERSHIP, super::ip_mreq);
+sockopt_impl!(IpDropMembership, consts::IP_DROP_MEMBERSHIP, super::ip_mreq);
 sockopt_impl!(IpMulticastTtl, consts::IP_MULTICAST_TTL, u8);
 
 /*
