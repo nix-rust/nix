@@ -1,3 +1,7 @@
+//! Rust friendly bindings to the various *nix system functions.
+//!
+//! Modules are structured according to the C header file that they would be
+//! defined in.
 #![crate_name = "nix"]
 
 #![feature(collections, core, net, linkage, libc, os, path, std_misc)]
@@ -18,6 +22,7 @@ pub use libc::{c_int, c_void};
 mod nix;
 pub use nix::{NixResult, NixError, NixPath, from_ffi};
 
+
 #[cfg(unix)]
 pub mod errno;
 
@@ -35,9 +40,6 @@ pub mod sched;
 
 #[cfg(unix)]
 pub mod sys;
-
-#[cfg(target_os = "linux")]
-pub mod syscall;
 
 #[cfg(unix)]
 pub mod unistd;

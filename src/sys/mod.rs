@@ -17,6 +17,9 @@ pub mod socket;
 
 pub mod stat;
 
+#[cfg(target_os = "linux")]
+pub mod syscall;
+
 #[cfg(not(target_os = "ios"))]
 pub mod termios;
 

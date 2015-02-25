@@ -1,3 +1,4 @@
+#include "sys/socket.h"
 #include "sys/uio.h"
 
 #define SIZE_OF_T(TYPE)                   \
@@ -16,6 +17,9 @@
 
 size_t
 size_of(const char* type) {
+    // sys/socket
+    SIZE_OF_S(sockaddr_storage);
+
     // sys/uio
     SIZE_OF_S(iovec);
 

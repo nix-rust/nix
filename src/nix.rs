@@ -12,6 +12,10 @@ pub enum NixError {
 }
 
 impl NixError {
+    pub fn last() -> NixError {
+        NixError::Sys(Errno::last())
+    }
+
     pub fn invalid_argument() -> NixError {
         NixError::Sys(EINVAL)
     }

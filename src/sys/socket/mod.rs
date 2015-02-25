@@ -1,3 +1,6 @@
+//! Socket interface functions
+//!
+//! [Further reading](http://man7.org/linux/man-pages/man7/socket.7.html)
 use {NixError, NixResult, from_ffi};
 use errno::Errno;
 use features;
@@ -23,6 +26,8 @@ pub use self::addr::{
     SockAddr,
     ToSockAddr,
     FromSockAddr,
+    AddressFamily,
+    ToIpAddr,
     ToInAddr,
 };
 pub use libc::{
@@ -40,6 +45,16 @@ pub use self::multicast::{
 };
 pub use self::consts::*;
 
+#[derive(Copy, PartialEq, Eq, Debug)]
+#[repr(i32)]
+pub enum SockType {
+    Stream = consts::SOCK_STREAM,
+    Datagram = consts::SOCK_DGRAM,
+    SeqPacket = consts::SOCK_SEQPACKET,
+    Raw = consts::SOCK_RAW,
+    Rdm = consts::SOCK_RDM,
+}
+
 // Extra flags - Supported by Linux 2.6.27, normalized on other platforms
 bitflags!(
     flags SockFlag: c_int {
@@ -48,7 +63,11 @@ bitflags!(
     }
 );
 
-pub fn socket(domain: AddressFamily, mut ty: SockType, flags: SockFlag) -> NixResult<Fd> {
+/// Create an endpoint for communication
+///
+/// [Further reading](http://man7.org/linux/man-pages/man2/socket.2.html)
+pub fn socket(domain: AddressFamily, ty: SockType, flags: SockFlag) -> NixResult<Fd> {
+    let mut ty = ty as c_int;
     let feat_atomic = features::socket_atomic_cloexec();
 
     if feat_atomic {
@@ -56,7 +75,7 @@ pub fn socket(domain: AddressFamily, mut ty: SockType, flags: SockFlag) -> NixRe
     }
 
     // TODO: Check the kernel version
-    let res = unsafe { ffi::socket(domain, ty, 0) };
+    let res = unsafe { ffi::socket(domain as c_int, ty, 0) };
 
     if res < 0 {
         return Err(NixError::Sys(Errno::last()));
@@ -75,11 +94,17 @@ pub fn socket(domain: AddressFamily, mut ty: SockType, flags: SockFlag) -> NixRe
     Ok(res)
 }
 
+/// Listen for connections on a socket
+///
+/// [Further reading](http://man7.org/linux/man-pages/man2/listen.2.html)
 pub fn listen(sockfd: Fd, backlog: usize) -> NixResult<()> {
     let res = unsafe { ffi::listen(sockfd, backlog as c_int) };
     from_ffi(res)
 }
 
+/// Bind a name to a socket
+///
+/// [Further reading](http://man7.org/linux/man-pages/man2/bind.2.html)
 pub fn bind<A: ToSockAddr>(sockfd: Fd, addr: &A) -> NixResult<()> {
     let res = unsafe {
         try!(addr.with_sock_addr(|addr| {
@@ -94,6 +119,9 @@ pub fn bind<A: ToSockAddr>(sockfd: Fd, addr: &A) -> NixResult<()> {
     from_ffi(res)
 }
 
+/// Accept a connection on a socket
+///
+/// [Further reading](http://man7.org/linux/man-pages/man2/accept.2.html)
 pub fn accept(sockfd: Fd) -> NixResult<Fd> {
     let res = unsafe { ffi::accept(sockfd, ptr::null_mut(), ptr::null_mut()) };
 
@@ -104,6 +132,9 @@ pub fn accept(sockfd: Fd) -> NixResult<Fd> {
     Ok(res)
 }
 
+/// Accept a connection on a socket
+///
+/// [Further reading](http://man7.org/linux/man-pages/man2/accept.2.html)
 #[cfg(not(any(target_os = "macos", target_os = "ios")))]
 pub fn accept4(sockfd: Fd, flags: SockFlag) -> NixResult<Fd> {
     use libc::sockaddr;
@@ -131,6 +162,9 @@ pub fn accept4(sockfd: Fd, flags: SockFlag) -> NixResult<Fd> {
     }
 }
 
+/// Accept a connection on a socket
+///
+/// [Further reading](http://man7.org/linux/man-pages/man2/accept.2.html)
 #[cfg(any(target_os = "macos", target_os = "ios"))]
 pub fn accept4(sockfd: Fd, flags: SockFlag) -> NixResult<Fd> {
     accept4_polyfill(sockfd, flags)
@@ -155,6 +189,9 @@ fn accept4_polyfill(sockfd: Fd, flags: SockFlag) -> NixResult<Fd> {
     Ok(res)
 }
 
+/// Initiate a connection on a socket
+///
+/// [Further reading](http://man7.org/linux/man-pages/man2/connect.2.html)
 pub fn connect<A: ToSockAddr>(sockfd: Fd, addr: &A) -> NixResult<()> {
     let res = unsafe {
         try!(addr.with_sock_addr(|addr| {
@@ -169,69 +206,29 @@ pub fn connect<A: ToSockAddr>(sockfd: Fd, addr: &A) -> NixResult<()> {
     from_ffi(res)
 }
 
-mod sa_helpers {
-    use std::mem;
-    use libc::{sockaddr_storage, sockaddr_in, sockaddr_in6, sockaddr_un};
-    use super::SockAddr;
-
-    pub fn to_sockaddr_ipv4(addr: &sockaddr_storage) -> SockAddr {
-        let sin : &sockaddr_in = unsafe { mem::transmute(addr) };
-        SockAddr::IpV4( *sin )
-    }
-
-    pub fn to_sockaddr_ipv6(addr: &sockaddr_storage) -> SockAddr {
-        let sin6 : &sockaddr_in6 = unsafe { mem::transmute(addr) };
-        SockAddr::IpV6( *sin6 )
-    }
-
-    pub fn to_sockaddr_unix(addr: &sockaddr_storage) -> SockAddr {
-        let sun : &sockaddr_un = unsafe { mem::transmute(addr) };
-        SockAddr::Unix( *sun )
-    }
-}
-
+/// Receive data from a connectionless or connection-oriented socket. Returns
+/// the number of bytes read and the socket address of the sender.
+///
+/// [Further reading](http://man7.org/linux/man-pages/man2/recvmsg.2.html)
 pub fn recvfrom(sockfd: Fd, buf: &mut [u8]) -> NixResult<(usize, SockAddr)> {
-    let saddr : sockaddr_storage = unsafe { mem::zeroed() };
-    let mut len = mem::size_of::<sockaddr_storage>() as socklen_t;
+    unsafe {
+        let addr: sockaddr_storage = mem::zeroed();
+        let mut len = mem::size_of::<sockaddr_storage>() as socklen_t;
 
-    let ret = unsafe {
-        ffi::recvfrom(sockfd, buf.as_ptr() as *mut c_void, buf.len() as size_t, 0, mem::transmute(&saddr), &mut len as *mut socklen_t)
-    };
+        let ret = ffi::recvfrom(
+            sockfd,
+            buf.as_ptr() as *mut c_void,
+            buf.len() as size_t,
+            0,
+            mem::transmute(&addr),
+            &mut len as *mut socklen_t);
 
-    if ret < 0 {
-        return Err(NixError::Sys(Errno::last()));
-    }
-
-    Ok((ret as usize,
-            match saddr.ss_family as i32 {
-                AF_INET => { sa_helpers::to_sockaddr_ipv4(&saddr) },
-                AF_INET6 => { sa_helpers::to_sockaddr_ipv6(&saddr) },
-                AF_UNIX => { sa_helpers::to_sockaddr_unix(&saddr) },
-                _ => unimplemented!()
-            }
-        ))
-}
-
-fn print_ipv4_addr(sin: &sockaddr_in, f: &mut fmt::Formatter) -> fmt::Result {
-    use std::num::Int;
-
-    let ip_addr = Int::from_be(sin.sin_addr.s_addr);
-    let port = Int::from_be(sin.sin_port);
-
-    write!(f, "{}.{}.{}.{}:{}",
-           (ip_addr >> 24) & 0xff,
-           (ip_addr >> 16) & 0xff,
-           (ip_addr >> 8) & 0xff,
-           (ip_addr) & 0xff,
-           port)
-}
-
-impl fmt::Debug for SockAddr {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            SockAddr::IpV4(sin) => print_ipv4_addr(&sin, f),
-            _ => unimplemented!()
+        if ret < 0 {
+            return Err(NixError::last());
         }
+
+        sockaddr_storage_to_addr(&addr, len as usize)
+            .map(|addr| (ret as usize, addr))
     }
 }
 
@@ -249,12 +246,14 @@ fn sendto_sockaddr<T>(sockfd: Fd, buf: &[u8], flags: SockMessageFlags, addr: &T)
     }
 }
 
-pub fn sendto(sockfd: Fd, buf: &[u8], addr: &SockAddr, flags: SockMessageFlags) -> NixResult<usize> {
-    let ret = match *addr {
-        SockAddr::IpV4(ref addr) => sendto_sockaddr(sockfd, buf, flags, addr),
-        SockAddr::IpV6(ref addr) => sendto_sockaddr(sockfd, buf, flags, addr),
-        SockAddr::Unix(ref addr) => sendto_sockaddr(sockfd, buf, flags, addr),
-    };
+pub fn sendto<A: ToSockAddr>(sockfd: Fd, buf: &[u8], addr: &A, flags: SockMessageFlags) -> NixResult<usize> {
+    let ret = try!(addr.with_sock_addr(|addr| {
+        match *addr {
+            SockAddr::IpV4(ref addr) => sendto_sockaddr(sockfd, buf, flags, addr),
+            SockAddr::IpV6(ref addr) => sendto_sockaddr(sockfd, buf, flags, addr),
+            SockAddr::Unix(ref addr) => sendto_sockaddr(sockfd, buf, flags, addr),
+        }
+    }));
 
     if ret < 0 {
         Err(NixError::Sys(Errno::last()))
@@ -264,7 +263,7 @@ pub fn sendto(sockfd: Fd, buf: &[u8], addr: &SockAddr, flags: SockMessageFlags) 
 }
 
 #[repr(C)]
-#[derive(Copy)]
+#[derive(Copy, Debug)]
 pub struct linger {
     pub l_onoff: c_int,
     pub l_linger: c_int
@@ -276,7 +275,21 @@ pub struct linger {
  *
  */
 
-/// Represents a socket option that can be accessed or set
+/// The protocol level at which to get / set socket options. Used as an
+/// argument to `getsockopt` and `setsockopt`.
+///
+/// [Further reading](http://man7.org/linux/man-pages/man2/setsockopt.2.html)
+#[repr(i32)]
+pub enum SockLevel {
+    Socket = SOL_SOCKET,
+    Tcp = IPPROTO_TCP,
+    Ip = IPPROTO_IP,
+    Ipv6 = IPPROTO_IPV6,
+    Udp = IPPROTO_UDP,
+}
+
+/// Represents a socket option that can be accessed or set. Used as an argument
+/// to `getsockopt` and `setsockopt`.
 pub trait SockOpt : Copy + fmt::Debug {
     /// Type of `getsockopt` return value
     type Get;
@@ -292,78 +305,80 @@ pub trait SockOpt : Copy + fmt::Debug {
     fn set(&self, fd: Fd, level: c_int, val: Self::Set) -> NixResult<()>;
 }
 
-pub enum SockLevel {
-    Socket,
-    Tcp,
-    Ip,
-    Ipv6,
-    Udp
-}
-
-impl SockLevel {
-    fn as_cint(&self) -> c_int {
-        use self::SockLevel::*;
-
-        match *self {
-            Socket => consts::SOL_SOCKET,
-            Tcp    => consts::IPPROTO_TCP,
-            Ip     => consts::IPPROTO_IP,
-            Ipv6   => consts::IPPROTO_IPV6,
-            Udp    => consts::IPPROTO_UDP,
-        }
-    }
-}
-
 /// Get the current value for the requested socket option
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/setsockopt.2.html)
 pub fn getsockopt<O: SockOpt>(fd: Fd, level: SockLevel, opt: O) -> NixResult<O::Get> {
-    opt.get(fd, level.as_cint())
+    opt.get(fd, level as c_int)
 }
 
 /// Sets the value for the requested socket option
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/setsockopt.2.html)
 pub fn setsockopt<O: SockOpt>(fd: Fd, level: SockLevel, opt: O, val: O::Set) -> NixResult<()> {
-    opt.set(fd, level.as_cint(), val)
+    opt.set(fd, level as c_int, val)
 }
 
-fn getpeername_sockaddr<T>(sockfd: Fd, addr: &T) -> NixResult<bool> {
-    let addrlen_expected = mem::size_of::<T>() as socklen_t;
-    let mut addrlen = addrlen_expected;
+/// Get the address of the peer connected to the socket `fd`.
+///
+/// [Further reading](http://man7.org/linux/man-pages/man2/getpeername.2.html)
+pub fn getpeername(fd: Fd) -> NixResult<SockAddr> {
+    unsafe {
+        let addr: sockaddr_storage = mem::uninitialized();
+        let mut len = mem::size_of::<sockaddr_storage>() as socklen_t;
 
-    let ret = unsafe { ffi::getpeername(sockfd, mem::transmute(addr), &mut addrlen) };
-    if ret < 0 {
-        return Err(NixError::Sys(Errno::last()));
-    }
+        let ret = ffi::getpeername(fd, mem::transmute(&addr), &mut len);
 
-    Ok(addrlen == addrlen_expected)
-}
+        if ret < 0 {
+            return Err(NixError::last());
+        }
 
-pub fn getpeername(sockfd: Fd, addr: &mut SockAddr) -> NixResult<bool> {
-    match *addr {
-        SockAddr::IpV4(ref addr) => getpeername_sockaddr(sockfd, addr),
-        SockAddr::IpV6(ref addr) => getpeername_sockaddr(sockfd, addr),
-        SockAddr::Unix(ref addr) => getpeername_sockaddr(sockfd, addr)
+        sockaddr_storage_to_addr(&addr, len as usize)
     }
 }
 
-fn getsockname_sockaddr<T>(sockfd: Fd, addr: &T) -> NixResult<bool> {
-    let addrlen_expected = mem::size_of::<T>() as socklen_t;
-    let mut addrlen = addrlen_expected;
+/// Get the current address to which the socket `fd` is bound.
+///
+/// [Further reading](http://man7.org/linux/man-pages/man2/getsockname.2.html)
+pub fn getsockname(fd: Fd) -> NixResult<SockAddr> {
+    unsafe {
+        let addr: sockaddr_storage = mem::uninitialized();
+        let mut len = mem::size_of::<sockaddr_storage>() as socklen_t;
 
-    let ret = unsafe { ffi::getsockname(sockfd, mem::transmute(addr), &mut addrlen) };
-    if ret < 0 {
-        return Err(NixError::Sys(Errno::last()));
+        let ret = ffi::getsockname(fd, mem::transmute(&addr), &mut len);
+
+        if ret < 0 {
+            return Err(NixError::last());
+        }
+
+        sockaddr_storage_to_addr(&addr, len as usize)
     }
-
-    Ok(addrlen == addrlen_expected)
 }
 
-pub fn getsockname(sockfd: Fd, addr: &mut SockAddr) -> NixResult<bool> {
-    match *addr {
-        SockAddr::IpV4(ref addr) => getsockname_sockaddr(sockfd, addr),
-        SockAddr::IpV6(ref addr) => getsockname_sockaddr(sockfd, addr),
-        SockAddr::Unix(ref addr) => getsockname_sockaddr(sockfd, addr)
+unsafe fn sockaddr_storage_to_addr(
+    addr: &sockaddr_storage,
+    len: usize) -> NixResult<SockAddr> {
+
+    match addr.ss_family as c_int {
+        consts::AF_INET => {
+            assert!(len as usize == mem::size_of::<sockaddr_in>());
+            let ret = *(addr as *const _ as *const sockaddr_in);
+            Ok(SockAddr::IpV4(ret))
+        }
+        consts::AF_INET6 => {
+            assert!(len as usize == mem::size_of::<sockaddr_in6>());
+            Ok(SockAddr::IpV6(*(addr as *const _ as *const sockaddr_in6)))
+        }
+        consts::AF_UNIX => {
+            assert!(len as usize == mem::size_of::<sockaddr_un>());
+            Ok(SockAddr::Unix(*(addr as *const _ as *const sockaddr_un)))
+        }
+        af => panic!("unexpected address family {}", af),
     }
+}
+
+#[test]
+pub fn test_struct_sizes() {
+    use nixtest;
+    nixtest::assert_size_of::<sockaddr_storage>("sockaddr_storage");
 }

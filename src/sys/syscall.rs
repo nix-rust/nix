@@ -1,3 +1,5 @@
+//! Indirect system call
+//!
 use libc::c_int;
 
 pub use self::arch::*;

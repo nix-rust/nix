@@ -5,27 +5,30 @@ extern crate libc;
 extern crate rand;
 
 mod sys;
+mod test_nix_path;
 mod test_stat;
 mod test_unistd;
 
-use nix::NixPath;
+mod ports {
+    use std::sync::atomic::{AtomicUsize, ATOMIC_USIZE_INIT};
+    use std::sync::atomic::Ordering::SeqCst;
 
-#[test]
-fn test_nix_path() {
-    fn cstr_to_bytes(cstr: &*const libc::c_char, len: usize) -> &[u8] {
+    // Helper for getting a unique port for the task run
+    // TODO: Reuse ports to not spam the system
+    static mut NEXT_PORT: AtomicUsize = ATOMIC_USIZE_INIT;
+    const FIRST_PORT: usize = 18080;
+
+    pub fn next_port() -> usize {
         unsafe {
-            let cstr = cstr as *const _ as *const *const u8;
-            std::slice::from_raw_parts(*cstr, len)
+            // If the atomic was never used, set it to the initial port
+            NEXT_PORT.compare_and_swap(0, FIRST_PORT, SeqCst);
+
+            // Get and increment the port list
+            NEXT_PORT.fetch_add(1, SeqCst)
         }
     }
 
-    let bytes = b"abcd";
-    let ok = bytes.with_nix_path(|cstr| {
-        assert_eq!(b"abcd\0", cstr_to_bytes(&cstr, 5));
-    });
-    assert!(ok.is_ok());
-
-    let bytes = b"ab\0cd";
-    let err = bytes.with_nix_path(|_| {});
-    assert!(err.is_err());
+    pub fn localhost() -> String {
+        format!("127.0.0.1:{}", next_port())
+    }
 }

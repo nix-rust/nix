@@ -1,10 +1,24 @@
 use {NixResult, NixError};
-use super::{sa_family_t, in_addr, sockaddr_in, sockaddr_in6, sockaddr_un, AF_UNIX, AF_INET};
+use super::{consts, sa_family_t, in_addr, sockaddr_in, sockaddr_in6, sockaddr_un, AF_UNIX, AF_INET};
 use errno::Errno;
 use libc;
-use std::{mem, net, path, ptr};
+use std::{fmt, mem, net, path, ptr};
 use std::ffi::{AsOsStr, CStr, OsStr};
 use std::os::unix::OsStrExt;
+
+/*
+ *
+ * ===== AddressFamily =====
+ *
+ */
+
+#[repr(i32)]
+#[derive(Copy, PartialEq, Eq, Debug)]
+pub enum AddressFamily {
+    Unix = consts::AF_UNIX,
+    Inet = consts::AF_INET,
+    Inet6 = consts::AF_INET6,
+}
 
 /*
  *
@@ -15,10 +29,44 @@ use std::os::unix::OsStrExt;
 /// Represents a socket address
 #[derive(Copy)]
 pub enum SockAddr {
-    // TODO: Rename these variants IpV4, IpV6, Unix
     IpV4(sockaddr_in),
     IpV6(sockaddr_in6),
     Unix(sockaddr_un)
+}
+
+impl SockAddr {
+    pub fn family(&self) -> AddressFamily {
+        match *self {
+            SockAddr::IpV4(..) => AddressFamily::Inet,
+            SockAddr::IpV6(..) => AddressFamily::Inet6,
+            SockAddr::Unix(..) => AddressFamily::Unix,
+        }
+    }
+
+    pub fn to_str(&self) -> String {
+        format!("{}", self)
+    }
+}
+
+impl fmt::Display for SockAddr {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        use std::num::Int;
+
+        match *self {
+            SockAddr::IpV4(sin) => {
+                let ip = Int::from_be(sin.sin_addr.s_addr);
+                let port = Int::from_be(sin.sin_port);
+
+                write!(f, "{}.{}.{}.{}:{}",
+                       (ip >> 24) & 0xff,
+                       (ip >> 16) & 0xff,
+                       (ip >> 8) & 0xff,
+                       (ip) & 0xff,
+                       port)
+            }
+            _ => write!(f, "[some sock addr type... Debug is not implemented :(]"),
+        }
+    }
 }
 
 /// A trait for values which can be converted or resolved to a SockAddr.
@@ -69,10 +117,18 @@ impl ToSockAddr for path::Path {
     }
 }
 
+/// Convert a path buf into a unix domain socket address
+impl ToSockAddr for path::PathBuf {
+    fn to_sock_addr(&self) -> NixResult<SockAddr> {
+        (**self).to_sock_addr()
+    }
+}
+
 /// Convert an inet address into a socket address
 impl ToSockAddr for net::SocketAddr {
     fn to_sock_addr(&self) -> NixResult<SockAddr> {
         use std::net::IpAddr;
+        use std::num::Int;
 
         match self.ip() {
             IpAddr::V4(ip) => {
@@ -81,7 +137,7 @@ impl ToSockAddr for net::SocketAddr {
 
                 Ok(SockAddr::IpV4(sockaddr_in {
                     sin_family: AF_INET as sa_family_t,
-                    sin_port: self.port(),
+                    sin_port: self.port().to_be(),
                     sin_addr: addr,
                     .. unsafe { mem::zeroed() }
                 }))
@@ -110,7 +166,7 @@ impl FromSockAddr for net::SocketAddr {
                     ((ip >>  8) as u8) & 0xff,
                     ((ip >>  0) as u8) & 0xff);
 
-                Some(net::SocketAddr::new(IpAddr::V4(ip), addr.sin_port))
+                Some(net::SocketAddr::new(IpAddr::V4(ip), Int::from_be(addr.sin_port)))
             }
             SockAddr::IpV6(_) => unimplemented!(),
             _ =>  None,
@@ -134,10 +190,58 @@ impl FromSockAddr for path::PathBuf {
 
 /*
  *
+ * ===== IpAddr =====
+ *
+ */
+
+/// Convert to an IpAddr
+pub trait ToIpAddr {
+    fn to_ip_addr(self) -> Option<net::IpAddr>;
+}
+
+impl ToIpAddr for net::IpAddr {
+    fn to_ip_addr(self) -> Option<net::IpAddr> {
+        Some(self)
+    }
+}
+
+impl<'a> ToIpAddr for &'a net::IpAddr {
+    fn to_ip_addr(self) -> Option<net::IpAddr> {
+        Some(*self)
+    }
+}
+
+impl ToIpAddr for net::Ipv4Addr {
+    fn to_ip_addr(self) -> Option<net::IpAddr> {
+        Some(net::IpAddr::V4(self))
+    }
+}
+
+impl<'a> ToIpAddr for &'a net::Ipv4Addr {
+    fn to_ip_addr(self) -> Option<net::IpAddr> {
+        (*self).to_ip_addr()
+    }
+}
+
+impl ToIpAddr for net::Ipv6Addr {
+    fn to_ip_addr(self) -> Option<net::IpAddr> {
+        Some(net::IpAddr::V6(self))
+    }
+}
+
+impl<'a> ToIpAddr for &'a net::Ipv6Addr {
+    fn to_ip_addr(self) -> Option<net::IpAddr> {
+        (*self).to_ip_addr()
+    }
+}
+
+/*
+ *
  * ===== InAddr =====
  *
  */
 
+/// Convert to an in_addr
 pub trait ToInAddr {
     fn to_in_addr(self) -> Option<libc::in_addr>;
 }
@@ -183,13 +287,12 @@ impl ToInAddr for net::Ipv4Addr {
         use std::num::Int;
 
         let addr = self.octets();
-        Some(in_addr {
-            s_addr: Int::from_be(
-                        ((addr[0] as u32) << 24) |
-                        ((addr[1] as u32) << 16) |
-                        ((addr[2] as u32) <<  8) |
-                        ((addr[3] as u32) <<  0))
-        })
+        let ip = (((addr[0] as u32) << 24) |
+                  ((addr[1] as u32) << 16) |
+                  ((addr[2] as u32) <<  8) |
+                  ((addr[3] as u32) <<  0)).to_be();
+
+        Some(in_addr { s_addr: ip })
     }
 }
 

@@ -1,3 +1,6 @@
+// Silence invalid warnings due to rust-lang/rust#16719
+#![allow(improper_ctypes)]
+
 use {NixResult, NixError};
 use errno::Errno;
 use fcntl::Fd;

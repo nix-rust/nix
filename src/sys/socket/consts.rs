@@ -4,20 +4,16 @@ pub use self::os::*;
 mod os {
     use libc::{c_int, uint8_t};
 
-    pub type AddressFamily = c_int;
+    pub const AF_UNIX: c_int  = 1;
+    pub const AF_LOCAL: c_int = AF_UNIX;
+    pub const AF_INET: c_int  = 2;
+    pub const AF_INET6: c_int = 10;
 
-    pub const AF_UNIX: AddressFamily  = 1;
-    pub const AF_LOCAL: AddressFamily = AF_UNIX;
-    pub const AF_INET: AddressFamily  = 2;
-    pub const AF_INET6: AddressFamily = 10;
-
-    pub type SockType = c_int;
-
-    pub const SOCK_STREAM: SockType = 1;
-    pub const SOCK_DGRAM: SockType = 2;
-    pub const SOCK_SEQPACKET: SockType = 5;
-    pub const SOCK_RAW: SockType = 3;
-    pub const SOCK_RDM: SockType = 4;
+    pub const SOCK_STREAM: c_int = 1;
+    pub const SOCK_DGRAM: c_int = 2;
+    pub const SOCK_SEQPACKET: c_int = 5;
+    pub const SOCK_RAW: c_int = 3;
+    pub const SOCK_RDM: c_int = 4;
 
     pub const SOL_IP: c_int     = 0;
     pub const SOL_SOCKET: c_int = 1;
@@ -94,20 +90,16 @@ mod os {
 mod os {
     use libc::{c_int, uint8_t};
 
-    pub type AddressFamily = c_int;
+    pub const AF_UNIX: c_int  = 1;
+    pub const AF_LOCAL: c_int = AF_UNIX;
+    pub const AF_INET: c_int  = 2;
+    pub const AF_INET6: c_int = 30;
 
-    pub const AF_UNIX: AddressFamily  = 1;
-    pub const AF_LOCAL: AddressFamily = AF_UNIX;
-    pub const AF_INET: AddressFamily  = 2;
-    pub const AF_INET6: AddressFamily = 30;
-
-    pub type SockType = c_int;
-
-    pub const SOCK_STREAM: SockType = 1;
-    pub const SOCK_DGRAM: SockType = 2;
-    pub const SOCK_SEQPACKET: SockType = 5;
-    pub const SOCK_RAW: SockType = 3;
-    pub const SOCK_RDM: SockType = 4;
+    pub const SOCK_STREAM: c_int = 1;
+    pub const SOCK_DGRAM: c_int = 2;
+    pub const SOCK_SEQPACKET: c_int = 5;
+    pub const SOCK_RAW: c_int = 3;
+    pub const SOCK_RDM: c_int = 4;
 
     pub const SOL_SOCKET: c_int = 0xffff;
     pub const IPPROTO_IP: c_int = 0;

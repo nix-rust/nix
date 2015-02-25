@@ -1,3 +1,5 @@
+//! Standard symbolic constants and types
+//!
 use {NixError, NixResult, NixPath, from_ffi};
 use errno::Errno;
 use fcntl::{fcntl, Fd, OFlag, O_NONBLOCK, O_CLOEXEC, FD_CLOEXEC};
@@ -354,7 +356,7 @@ pub fn unlink<P: NixPath>(path: P) -> NixResult<()> {
 
 #[cfg(target_os = "linux")]
 mod linux {
-    use syscall::{syscall, SYSPIVOTROOT};
+    use sys::syscall::{syscall, SYSPIVOTROOT};
     use errno::Errno;
     use {NixError, NixResult, NixPath};
 
