@@ -1,6 +1,6 @@
 //! Standard symbolic constants and types
 //!
-use {NixError, NixResult, NixPath, from_ffi};
+use {NixError, NixResult, NixPath, AsExtStr, from_ffi};
 use errno::Errno;
 use fcntl::{fcntl, Fd, OFlag, O_NONBLOCK, O_CLOEXEC, FD_CLOEXEC};
 use fcntl::FcntlArg::{F_SETFD, F_SETFL};
@@ -153,9 +153,9 @@ fn dup3_polyfill(oldfd: Fd, newfd: Fd, flags: OFlag) -> NixResult<Fd> {
 }
 
 #[inline]
-pub fn chdir<P: NixPath>(path: P) -> NixResult<()> {
-    let res = try!(path.with_nix_path(|ptr| {
-        unsafe { ffi::chdir(ptr) }
+pub fn chdir<P: ?Sized + NixPath>(path: &P) -> NixResult<()> {
+    let res = try!(path.with_nix_path(|osstr| {
+        unsafe { ffi::chdir(osstr.as_ext_str()) }
     }));
 
     if res != 0 {
@@ -345,10 +345,10 @@ pub fn isatty(fd: Fd) -> NixResult<bool> {
     }
 }
 
-pub fn unlink<P: NixPath>(path: P) -> NixResult<()> {
-    let res = try!(path.with_nix_path(|ptr| {
+pub fn unlink<P: ?Sized + NixPath>(path: &P) -> NixResult<()> {
+    let res = try!(path.with_nix_path(|osstr| {
     unsafe {
-        ffi::unlink(ptr)
+        ffi::unlink(osstr.as_ext_str())
     }
     }));
     from_ffi(res)
@@ -360,8 +360,8 @@ mod linux {
     use errno::Errno;
     use {NixError, NixResult, NixPath};
 
-    pub fn pivot_root<P1: NixPath, P2: NixPath>(new_root: P1,
-                                                put_old: P2) -> NixResult<()> {
+    pub fn pivot_root<P1: ?Sized + NixPath, P2: ?Sized + NixPath>(
+            new_root: P1, put_old: P2) -> NixResult<()> {
         let res = try!(try!(new_root.with_nix_path(|new_root| {
             put_old.with_nix_path(|put_old| {
                 unsafe {

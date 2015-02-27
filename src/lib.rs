@@ -43,3 +43,23 @@ pub mod sys;
 
 #[cfg(unix)]
 pub mod unistd;
+
+/*
+ *
+ * ===== Impl utilities =====
+ *
+ */
+
+use std::ffi::OsStr;
+use std::os::unix::OsStrExt;
+
+/// Converts a value to an external (FFI) string representation
+trait AsExtStr {
+    fn as_ext_str(&self) -> *const libc::c_char;
+}
+
+impl AsExtStr for OsStr {
+    fn as_ext_str(&self) -> *const libc::c_char {
+        self.as_bytes().as_ptr() as *const libc::c_char
+    }
+}

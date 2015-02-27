@@ -66,7 +66,7 @@ mod ffi {
 }
 
 // XXX: Should `data` be a `NixPath` here?
-pub fn mount<P1: NixPath, P2: NixPath, P3: NixPath, P4: NixPath>(
+pub fn mount<P1: ?Sized + NixPath, P2: ?Sized + NixPath, P3: ?Sized + NixPath, P4: ?Sized + NixPath>(
         source: Option<P1>,
         target: P2,
         fstype: Option<P3>,
@@ -94,7 +94,7 @@ pub fn mount<P1: NixPath, P2: NixPath, P3: NixPath, P4: NixPath>(
     return from_ffi(res);
 }
 
-pub fn umount<P: NixPath>(target: P) -> NixResult<()> {
+pub fn umount<P: ?Sized + NixPath>(target: P) -> NixResult<()> {
     let res = try!(target.with_nix_path(|ptr| {
         unsafe { ffi::umount(ptr) }
     }));
@@ -102,7 +102,7 @@ pub fn umount<P: NixPath>(target: P) -> NixResult<()> {
     from_ffi(res)
 }
 
-pub fn umount2<P: NixPath>(target: P, flags: MntFlags) -> NixResult<()> {
+pub fn umount2<P: ?Sized + NixPath>(target: P, flags: MntFlags) -> NixResult<()> {
     let res = try!(target.with_nix_path(|ptr| {
         unsafe { ffi::umount2(ptr, flags.bits) }
     }));

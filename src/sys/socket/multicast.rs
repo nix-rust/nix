@@ -1,7 +1,4 @@
-
-use {NixResult, NixError};
-use super::addr::ToInAddr;
-use super::consts;
+use super::addr::Ipv4Addr;
 use libc::in_addr;
 use std::fmt;
 
@@ -20,25 +17,10 @@ impl fmt::Debug for ip_mreq {
 }
 
 impl ip_mreq {
-    pub fn new<T: ToInAddr, U: ToInAddr>(group: T, interface: Option<U>) -> NixResult<ip_mreq> {
-        let group = match group.to_in_addr() {
-            Some(group) => group,
-            None => return Err(NixError::invalid_argument()),
-        };
-
-        let interface = match interface {
-            Some(interface) => {
-                match interface.to_in_addr() {
-                    Some(interface) => interface,
-                    None => return Err(NixError::invalid_argument()),
-                }
-            }
-            None => in_addr { s_addr: consts::INADDR_ANY },
-        };
-
-        Ok(ip_mreq {
-            imr_multiaddr: group,
-            imr_interface: interface,
-        })
+    pub fn new(group: Ipv4Addr, interface: Option<Ipv4Addr>) -> ip_mreq {
+        ip_mreq {
+            imr_multiaddr: group.0,
+            imr_interface: interface.unwrap_or(Ipv4Addr::any()).0
+        }
     }
 }

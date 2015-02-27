@@ -1,7 +1,7 @@
-use nix::sys::socket::{SockAddr, ToSockAddr, FromSockAddr, getsockname};
+use nix::sys::socket::{InetAddr, UnixAddr, getsockname};
 use std::{mem, net};
 use std::num::Int;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::str::FromStr;
 use std::os::unix::AsRawFd;
 use ports::localhost;
@@ -9,10 +9,10 @@ use ports::localhost;
 #[test]
 pub fn test_inetv4_addr_to_sock_addr() {
     let actual: net::SocketAddr = FromStr::from_str("127.0.0.1:3000").unwrap();
-    let addr = actual.to_sock_addr().unwrap();
+    let addr = InetAddr::from_std(&actual);
 
     match addr {
-        SockAddr::IpV4(addr) => {
+        InetAddr::V4(addr) => {
             assert_eq!(addr.sin_addr.s_addr, 0x7f000001.to_be());
             assert_eq!(addr.sin_port, 3000.to_be());
         }
@@ -21,25 +21,19 @@ pub fn test_inetv4_addr_to_sock_addr() {
 
     assert_eq!(addr.to_str(), "127.0.0.1:3000");
 
-    let inet = FromSockAddr::from_sock_addr(&addr).unwrap();
+    let inet = addr.to_std();
     assert_eq!(actual, inet);
 }
 
 #[test]
 pub fn test_path_to_sock_addr() {
     let actual = Path::new("/foo/bar");
-    let addr = actual.to_sock_addr().unwrap();
+    let addr = UnixAddr::new(actual).unwrap();
 
-    match addr {
-        SockAddr::Unix(addr) => {
-            let expect: &'static [i8] = unsafe { mem::transmute(b"/foo/bar") };
-            assert_eq!(&addr.sun_path[..8], expect);
-        }
-        _ => panic!("nope"),
-    }
+    let expect: &'static [i8] = unsafe { mem::transmute(b"/foo/bar") };
+    assert_eq!(&addr.0.sun_path[..8], expect);
 
-    let path: PathBuf = FromSockAddr::from_sock_addr(&addr).unwrap();
-    assert_eq!(actual, &*path);
+    assert_eq!(addr.path(), actual);
 }
 
 #[test]

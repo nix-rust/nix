@@ -1,5 +1,8 @@
 use libc;
-use std;
+use std::ffi::{OsStr, AsOsStr};
+use std::os::unix::OsStrExt;
+use std::path::{Path, PathBuf};
+use std::slice::bytes;
 
 use errno::{Errno, EINVAL};
 
@@ -23,13 +26,12 @@ impl NixError {
 
 pub trait NixPath {
     fn with_nix_path<T, F>(&self, f: F) -> Result<T, NixError>
-        where F: FnOnce(*const libc::c_char) -> T;
+        where F: FnOnce(&OsStr) -> T;
 }
 
-impl<'a> NixPath for &'a [u8] {
+impl NixPath for [u8] {
     fn with_nix_path<T, F>(&self, f: F) -> Result<T, NixError>
-        where F: FnOnce(*const libc::c_char) -> T
-    {
+            where F: FnOnce(&OsStr) -> T {
         // TODO: Extract this size as a const
         let mut buf = [0u8; 4096];
 
@@ -40,21 +42,24 @@ impl<'a> NixPath for &'a [u8] {
         match self.position_elem(&0) {
             Some(_) => Err(NixError::InvalidPath),
             None => {
-                std::slice::bytes::copy_memory(&mut buf, self);
-                Ok(f(buf.as_ptr() as *const libc::c_char))
+                bytes::copy_memory(&mut buf, self);
+                Ok(f(<OsStr as OsStrExt>::from_bytes(&buf[..self.len()])))
             }
         }
     }
 }
 
-impl<P: NixPath> NixPath for Option<P> {
+impl NixPath for Path {
     fn with_nix_path<T, F>(&self, f: F) -> Result<T, NixError>
-        where F: FnOnce(*const libc::c_char) -> T
-    {
-        match *self {
-            Some(ref some) => some.with_nix_path(f),
-            None           => b"".with_nix_path(f)
-        }
+            where F: FnOnce(&OsStr) -> T {
+        Ok(f(self.as_os_str()))
+    }
+}
+
+impl NixPath for PathBuf {
+    fn with_nix_path<T, F>(&self, f: F) -> Result<T, NixError>
+            where F: FnOnce(&OsStr) -> T {
+        Ok(f(self.as_os_str()))
     }
 }
 
@@ -63,5 +68,6 @@ pub fn from_ffi(res: libc::c_int) -> NixResult<()> {
     if res != 0 {
         return Err(NixError::Sys(Errno::last()));
     }
+
     Ok(())
 }

@@ -1,6 +1,6 @@
-use libc::mode_t;
+use {NixError, NixResult, NixPath, AsExtStr};
 use errno::Errno;
-use {NixError, NixResult, NixPath};
+use libc::mode_t;
 use sys::stat::Mode;
 
 pub use self::consts::*;
@@ -71,11 +71,9 @@ mod ffi {
     }
 }
 
-pub fn open<P: NixPath>(path: P, oflag: OFlag, mode: Mode) -> NixResult<Fd> {
-    let fd = try!(path.with_nix_path(|ptr| {
-        unsafe {
-            ffi::open(ptr, oflag.bits(), mode.bits() as mode_t)
-        }
+pub fn open<P: ?Sized + NixPath>(path: &P, oflag: OFlag, mode: Mode) -> NixResult<Fd> {
+    let fd = try!(path.with_nix_path(|osstr| {
+        unsafe { ffi::open(osstr.as_ext_str(), oflag.bits(), mode.bits() as mode_t) }
     }));
 
     if fd < 0 {

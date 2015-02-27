@@ -6,7 +6,7 @@ use errno::Errno;
 use features;
 use fcntl::{fcntl, FD_CLOEXEC, O_NONBLOCK};
 use fcntl::FcntlArg::{F_SETFD, F_SETFL};
-use libc::{c_void, c_int, socklen_t, size_t, ssize_t};
+use libc::{c_void, c_int, socklen_t, size_t};
 use std::{fmt, mem, ptr};
 use std::os::unix::prelude::*;
 
@@ -23,15 +23,17 @@ pub mod sockopt;
  */
 
 pub use self::addr::{
-    SockAddr,
-    ToSockAddr,
-    FromSockAddr,
     AddressFamily,
-    ToIpAddr,
-    ToInAddr,
+    SockAddr,
+    InetAddr,
+    UnixAddr,
+    IpAddr,
+    Ipv4Addr,
+    Ipv6Addr,
 };
 pub use libc::{
     in_addr,
+    in6_addr,
     sockaddr,
     sockaddr_storage,
     sockaddr_in,
@@ -105,15 +107,10 @@ pub fn listen(sockfd: Fd, backlog: usize) -> NixResult<()> {
 /// Bind a name to a socket
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/bind.2.html)
-pub fn bind<A: ToSockAddr>(sockfd: Fd, addr: &A) -> NixResult<()> {
+pub fn bind(fd: Fd, addr: &SockAddr) -> NixResult<()> {
     let res = unsafe {
-        try!(addr.with_sock_addr(|addr| {
-            match *addr {
-                SockAddr::IpV4(ref addr) => ffi::bind(sockfd, mem::transmute(addr), mem::size_of::<sockaddr_in>() as socklen_t),
-                SockAddr::IpV6(ref addr) => ffi::bind(sockfd, mem::transmute(addr), mem::size_of::<sockaddr_in6>() as socklen_t),
-                SockAddr::Unix(ref addr) => ffi::bind(sockfd, mem::transmute(addr), mem::size_of::<sockaddr_un>() as socklen_t)
-            }
-        }))
+        let (ptr, len) = addr.as_ffi_pair();
+        ffi::bind(fd, ptr, len)
     };
 
     from_ffi(res)
@@ -192,15 +189,10 @@ fn accept4_polyfill(sockfd: Fd, flags: SockFlag) -> NixResult<Fd> {
 /// Initiate a connection on a socket
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/connect.2.html)
-pub fn connect<A: ToSockAddr>(sockfd: Fd, addr: &A) -> NixResult<()> {
+pub fn connect(fd: Fd, addr: &SockAddr) -> NixResult<()> {
     let res = unsafe {
-        try!(addr.with_sock_addr(|addr| {
-            match *addr {
-                SockAddr::IpV4(ref addr) => ffi::connect(sockfd, mem::transmute(addr), mem::size_of::<sockaddr_in>() as socklen_t),
-                SockAddr::IpV6(ref addr) => ffi::connect(sockfd, mem::transmute(addr), mem::size_of::<sockaddr_in6>() as socklen_t),
-                SockAddr::Unix(ref addr) => ffi::connect(sockfd, mem::transmute(addr), mem::size_of::<sockaddr_un>() as socklen_t)
-            }
-        }))
+        let (ptr, len) = addr.as_ffi_pair();
+        ffi::connect(fd, ptr, len)
     };
 
     from_ffi(res)
@@ -232,28 +224,11 @@ pub fn recvfrom(sockfd: Fd, buf: &mut [u8]) -> NixResult<(usize, SockAddr)> {
     }
 }
 
-///
-/// Generic wrapper around sendto
-fn sendto_sockaddr<T>(sockfd: Fd, buf: &[u8], flags: SockMessageFlags, addr: &T) -> ssize_t {
-    unsafe {
-        ffi::sendto(
-            sockfd,
-            buf.as_ptr() as *const c_void,
-            buf.len() as size_t,
-            flags,
-            mem::transmute(addr),
-            mem::size_of::<T>() as socklen_t)
-    }
-}
-
-pub fn sendto<A: ToSockAddr>(sockfd: Fd, buf: &[u8], addr: &A, flags: SockMessageFlags) -> NixResult<usize> {
-    let ret = try!(addr.with_sock_addr(|addr| {
-        match *addr {
-            SockAddr::IpV4(ref addr) => sendto_sockaddr(sockfd, buf, flags, addr),
-            SockAddr::IpV6(ref addr) => sendto_sockaddr(sockfd, buf, flags, addr),
-            SockAddr::Unix(ref addr) => sendto_sockaddr(sockfd, buf, flags, addr),
-        }
-    }));
+pub fn sendto(fd: Fd, buf: &[u8], addr: &SockAddr, flags: SockMessageFlags) -> NixResult<usize> {
+    let ret = unsafe {
+        let (ptr, len) = addr.as_ffi_pair();
+        ffi::sendto(fd, buf.as_ptr() as *const c_void, buf.len() as size_t, flags, ptr, len)
+    };
 
     if ret < 0 {
         Err(NixError::Sys(Errno::last()))
@@ -363,15 +338,15 @@ unsafe fn sockaddr_storage_to_addr(
         consts::AF_INET => {
             assert!(len as usize == mem::size_of::<sockaddr_in>());
             let ret = *(addr as *const _ as *const sockaddr_in);
-            Ok(SockAddr::IpV4(ret))
+            Ok(SockAddr::Inet(InetAddr::V4(ret)))
         }
         consts::AF_INET6 => {
             assert!(len as usize == mem::size_of::<sockaddr_in6>());
-            Ok(SockAddr::IpV6(*(addr as *const _ as *const sockaddr_in6)))
+            Ok(SockAddr::Inet(InetAddr::V6((*(addr as *const _ as *const sockaddr_in6)))))
         }
         consts::AF_UNIX => {
             assert!(len as usize == mem::size_of::<sockaddr_un>());
-            Ok(SockAddr::Unix(*(addr as *const _ as *const sockaddr_un)))
+            Ok(SockAddr::Unix(UnixAddr(*(addr as *const _ as *const sockaddr_un))))
         }
         af => panic!("unexpected address family {}", af),
     }

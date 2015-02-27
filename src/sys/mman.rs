@@ -1,8 +1,8 @@
+use {NixError, NixResult, NixPath, AsExtStr};
 use errno::Errno;
 use fcntl::{Fd, OFlag};
 use libc::{c_void, size_t, off_t, mode_t};
 use sys::stat::Mode;
-use {NixError, NixResult, NixPath};
 
 pub use self::consts::*;
 
@@ -175,10 +175,10 @@ pub fn msync(addr: *const c_void, length: size_t, flags: MmapSync) -> NixResult<
     }
 }
 
-pub fn shm_open<P: NixPath>(name: P, flag: OFlag, mode: Mode) -> NixResult<Fd> {
-    let ret = try!(name.with_nix_path(|ptr| {
+pub fn shm_open<P: ?Sized + NixPath>(name: &P, flag: OFlag, mode: Mode) -> NixResult<Fd> {
+    let ret = try!(name.with_nix_path(|osstr| {
         unsafe {
-            ffi::shm_open(ptr, flag.bits(), mode.bits() as mode_t)
+            ffi::shm_open(osstr.as_ext_str(), flag.bits(), mode.bits() as mode_t)
         }
     }));
 
@@ -189,9 +189,9 @@ pub fn shm_open<P: NixPath>(name: P, flag: OFlag, mode: Mode) -> NixResult<Fd> {
     }
 }
 
-pub fn shm_unlink<P: NixPath>(name: P) -> NixResult<()> {
-    let ret = try!(name.with_nix_path(|ptr| {
-        unsafe { ffi::shm_unlink(ptr) }
+pub fn shm_unlink<P: ?Sized + NixPath>(name: &P) -> NixResult<()> {
+    let ret = try!(name.with_nix_path(|osstr| {
+        unsafe { ffi::shm_unlink(osstr.as_ext_str()) }
     }));
 
     if ret < 0 {
