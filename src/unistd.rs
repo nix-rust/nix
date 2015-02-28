@@ -361,7 +361,7 @@ mod linux {
     use {NixError, NixResult, NixPath};
 
     pub fn pivot_root<P1: ?Sized + NixPath, P2: ?Sized + NixPath>(
-            new_root: P1, put_old: P2) -> NixResult<()> {
+            new_root: &P1, put_old: &P2) -> NixResult<()> {
         let res = try!(try!(new_root.with_nix_path(|new_root| {
             put_old.with_nix_path(|put_old| {
                 unsafe {

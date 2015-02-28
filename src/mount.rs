@@ -1,5 +1,5 @@
-use libc::{c_ulong, c_int, c_void};
-use {NixResult, NixPath, from_ffi};
+use libc::{c_ulong, c_int};
+use {NixResult, NixPath, AsExtStr, from_ffi};
 
 bitflags!(
     flags MsFlags: c_ulong {
@@ -49,15 +49,18 @@ bitflags!(
 );
 
 mod ffi {
-    use libc::{c_char, c_int, c_void, c_ulong};
+    use libc::{c_char, c_int};
 
     extern {
+        /*
+         * TODO: Bring back
         pub fn mount(
                 source: *const c_char,
                 target: *const c_char,
                 fstype: *const c_char,
                 flags: c_ulong,
                 data: *const c_void) -> c_int;
+                */
 
         pub fn umount(target: *const c_char) -> c_int;
 
@@ -65,13 +68,15 @@ mod ffi {
     }
 }
 
-// XXX: Should `data` be a `NixPath` here?
+/*
+ * TODO: Bring this back with a test
+ *
 pub fn mount<P1: ?Sized + NixPath, P2: ?Sized + NixPath, P3: ?Sized + NixPath, P4: ?Sized + NixPath>(
-        source: Option<P1>,
+        source: Option<&P1>,
         target: P2,
-        fstype: Option<P3>,
+        fstype: Option<&P3>,
         flags: MsFlags,
-        data: Option<P4>) -> NixResult<()> {
+        data: Option<&P4>) -> NixResult<()> {
     use libc;
 
     let res = try!(try!(try!(try!(
@@ -80,8 +85,8 @@ pub fn mount<P1: ?Sized + NixPath, P2: ?Sized + NixPath, P3: ?Sized + NixPath, P
                 fstype.with_nix_path(|fstype| {
                     data.with_nix_path(|data| {
                         unsafe {
-                            ffi::mount(source,
-                                       target,
+                            ffi::mount(source.as_ext_str(),
+                                       target.as_ext_str(),
                                        fstype,
                                        flags.bits,
                                        data as *const libc::c_void)
@@ -93,18 +98,19 @@ pub fn mount<P1: ?Sized + NixPath, P2: ?Sized + NixPath, P3: ?Sized + NixPath, P
 
     return from_ffi(res);
 }
+*/
 
-pub fn umount<P: ?Sized + NixPath>(target: P) -> NixResult<()> {
+pub fn umount<P: ?Sized + NixPath>(target: &P) -> NixResult<()> {
     let res = try!(target.with_nix_path(|ptr| {
-        unsafe { ffi::umount(ptr) }
+        unsafe { ffi::umount(ptr.as_ext_str()) }
     }));
 
     from_ffi(res)
 }
 
-pub fn umount2<P: ?Sized + NixPath>(target: P, flags: MntFlags) -> NixResult<()> {
+pub fn umount2<P: ?Sized + NixPath>(target: &P, flags: MntFlags) -> NixResult<()> {
     let res = try!(target.with_nix_path(|ptr| {
-        unsafe { ffi::umount2(ptr, flags.bits) }
+        unsafe { ffi::umount2(ptr.as_ext_str(), flags.bits) }
     }));
 
     from_ffi(res)
