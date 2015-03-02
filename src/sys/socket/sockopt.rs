@@ -74,6 +74,7 @@ sockopt_impl!(Linger, consts::SO_LINGER, super::linger);
 sockopt_impl!(IpAddMembership, consts::IP_ADD_MEMBERSHIP, super::ip_mreq);
 sockopt_impl!(IpDropMembership, consts::IP_DROP_MEMBERSHIP, super::ip_mreq);
 sockopt_impl!(IpMulticastTtl, consts::IP_MULTICAST_TTL, u8);
+sockopt_impl!(Broadcast, consts::SO_BROADCAST, bool);
 
 /*
  *
