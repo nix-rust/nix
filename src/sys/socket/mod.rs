@@ -330,7 +330,7 @@ pub fn getsockname(fd: Fd) -> NixResult<SockAddr> {
     }
 }
 
-unsafe fn sockaddr_storage_to_addr(
+pub unsafe fn sockaddr_storage_to_addr(
     addr: &sockaddr_storage,
     len: usize) -> NixResult<SockAddr> {
 
