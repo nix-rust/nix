@@ -47,7 +47,7 @@ pub use self::multicast::{
 };
 pub use self::consts::*;
 
-#[derive(Copy, PartialEq, Eq, Debug)]
+#[derive(Copy, PartialEq, Eq, Debug, FromPrimitive)]
 #[repr(i32)]
 pub enum SockType {
     Stream = consts::SOCK_STREAM,
