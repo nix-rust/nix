@@ -329,7 +329,7 @@ impl UnixAddr {
                     return Err(NixError::Sys(Errno::ENAMETOOLONG));
                 }
 
-                ptr::copy_memory(
+                ptr::copy(
                     ret.sun_path.as_mut_ptr(),
                     bytes.as_ptr() as *const i8,
                     bytes.len());
