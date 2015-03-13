@@ -142,8 +142,10 @@ assert_errno_eq(const char* err) {
     ERRNO_EQ(EKEYREJECTED);
     ERRNO_EQ(EOWNERDEAD);
     ERRNO_EQ(ENOTRECOVERABLE);
+#ifndef __ANDROID__
     ERRNO_EQ(ERFKILL);
     ERRNO_EQ(EHWPOISON);
+#endif
 #endif
 
 #ifdef DARWIN

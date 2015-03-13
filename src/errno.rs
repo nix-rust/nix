@@ -95,184 +95,184 @@ fn desc(errno: Errno) -> &'static str {
         EHOSTDOWN       => "Host is down",
         EHOSTUNREACH    => "No route to host",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         ECHRNG          => "Channel number out of range",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         EL2NSYNC        => "Level 2 not synchronized",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         EL3HLT          => "Level 3 halted",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         EL3RST          => "Level 3 reset",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         ELNRNG          => "Link number out of range",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         EUNATCH         => "Protocol driver not attached",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         ENOCSI          => "No CSI structure available",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         EL2HLT          => "Level 2 halted",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         EBADE           => "Invalid exchange",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         EBADR           => "Invalid request descriptor",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         EXFULL          => "Exchange full",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         ENOANO          => "No anode",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         EBADRQC         => "Invalid request code",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         EBADSLT         => "Invalid slot",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         EBFONT          => "Bad font file format",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         ENOSTR          => "Device not a stream",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         ENODATA         => "No data available",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         ETIME           => "Timer expired",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         ENOSR           => "Out of streams resources",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         ENONET          => "Machine is not on the network",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         ENOPKG          => "Package not installed",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         EREMOTE         => "Object is remote",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         ENOLINK         => "Link has been severed",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         EADV            => "Advertise error",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         ESRMNT          => "Srmount error",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         ECOMM           => "Communication error on send",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         EPROTO          => "Protocol error",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         EMULTIHOP       => "Multihop attempted",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         EDOTDOT         => "RFS specific error",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         EBADMSG         => "Not a data message",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         EOVERFLOW       => "Value too large for defined data type",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         ENOTUNIQ        => "Name not unique on network",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         EBADFD          => "File descriptor in bad state",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         EREMCHG         => "Remote address changed",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         ELIBACC         => "Can not acces a needed shared library",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         ELIBBAD         => "Accessing a corrupted shared library",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         ELIBSCN         => ".lib section in a.out corrupted",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         ELIBMAX         => "Attempting to link in too many shared libraries",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         ELIBEXEC        => "Cannot exec a shared library directly",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         EILSEQ          => "Illegal byte sequence",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         ERESTART        => "Interrupted system call should be restarted",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         ESTRPIPE        => "Streams pipe error",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         EUSERS          => "Too many users",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         EOPNOTSUPP      => "Operation not supported on transport endpoint",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         ESTALE          => "Stale file handle",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         EUCLEAN         => "Structure needs cleaning",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         ENOTNAM         => "Not a XENIX named type file",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         ENAVAIL         => "No XENIX semaphores available",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         EISNAM          => "Is a named type file",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         EREMOTEIO       => "Remote I/O error",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         EDQUOT          => "Quota exceeded",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         ENOMEDIUM       => "No medium found",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         EMEDIUMTYPE     => "Wrong medium type",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         ECANCELED       => "Operation canceled",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         ENOKEY          => "Required key not available",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         EKEYEXPIRED     => "Key has expired",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         EKEYREVOKED     => "Key has been revoked",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         EKEYREJECTED    => "Key was rejected by service",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         EOWNERDEAD      => "Owner died",
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         ENOTRECOVERABLE => "State not recoverable",
 
         #[cfg(target_os = "linux")]
@@ -394,7 +394,7 @@ fn desc(errno: Errno) -> &'static str {
     }
 }
 
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "android"))]
 mod consts {
     #[derive(Debug, Clone, PartialEq, FromPrimitive, Copy)]
     pub enum Errno {
@@ -528,7 +528,10 @@ mod consts {
         EKEYREJECTED    = 129,
         EOWNERDEAD      = 130,
         ENOTRECOVERABLE = 131,
+
+        #[cfg(not(target_os = "android"))]
         ERFKILL         = 132,
+        #[cfg(not(target_os = "android"))]
         EHWPOISON       = 133,
     }
 
@@ -667,13 +670,8 @@ mod test {
     use libc::c_int;
 
     macro_rules! check_errno {
-        ($errno:ident) => {{
-            assert_errno_eq(stringify!($errno), $errno as c_int);
-        }};
-
-        ($errno:ident, $($rest:ident),+) => {{
-            check_errno!($errno);
-            check_errno!($($rest),*);
+        ($($errno:ident),+) => {{
+            $(assert_errno_eq(stringify!($errno), $errno as c_int);)+
         }};
     }
 
@@ -754,7 +752,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(target_os = "linux")]
+    #[cfg(any(target_os = "linux", target_os = "android"))]
     pub fn test_linux_errnos() {
         check_errno!(
             ECHRNG,
@@ -816,14 +814,19 @@ mod test {
             EKEYREVOKED,
             EKEYREJECTED,
             EOWNERDEAD,
-            ENOTRECOVERABLE,
+            ENOTRECOVERABLE);
+    }
+
+    #[test]
+    #[cfg(target_os = "linux")]
+    pub fn test_linux_not_android_errnos() {
+        check_errno!(
             ERFKILL,
             EHWPOISON);
     }
 
-
     #[test]
-    #[cfg(target_os = "macos")]
+    #[cfg(any(target_os = "macos", target_os = "ios"))]
     pub fn test_darwin_errnos() {
         check_errno!(
             ENOTSUP,

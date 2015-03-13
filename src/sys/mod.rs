@@ -1,11 +1,11 @@
 
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "android"))]
 pub mod epoll;
 
 #[cfg(any(target_os = "macos", target_os = "ios"))]
 pub mod event;
 
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "android"))]
 pub mod eventfd;
 
 #[cfg(not(target_os = "ios"))]
@@ -17,13 +17,13 @@ pub mod socket;
 
 pub mod stat;
 
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "android"))]
 pub mod syscall;
 
 #[cfg(not(target_os = "ios"))]
 pub mod termios;
 
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "android"))]
 pub mod utsname;
 
 pub mod wait;

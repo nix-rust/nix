@@ -29,6 +29,7 @@ fn test_fork_and_waitpid() {
     }
 }
 
+
 #[test]
 fn test_execve() {
     // The `exec`d process will write to `writer`, and we'll read that
@@ -37,15 +38,21 @@ fn test_execve() {
 
     match fork().unwrap() {
         Child => {
+            #[cfg(not(target_os = "android"))]
+            const SH_PATH: &'static [u8] = b"/bin/sh";
+
+            #[cfg(target_os = "android")]
+            const SH_PATH: &'static [u8] = b"/system/bin/sh";
+
             // Close stdout.
             close(1).unwrap();
             // Make `writer` be the stdout of the new process.
             dup(writer).unwrap();
             // exec!
-            execve(&CString::new(b"/bin/sh").unwrap(),
+            execve(&CString::new(SH_PATH).unwrap(),
                    &[CString::new(b"").unwrap(),
                      CString::new(b"-c").unwrap(),
-                     CString::new(b"echo nix!!! && env").unwrap()],
+                     CString::new(b"echo nix!!! && echo foo=$foo && echo baz=$baz").unwrap()],
                    &[CString::new(b"foo=bar").unwrap(),
                      CString::new(b"baz=quux").unwrap()]).unwrap();
         },

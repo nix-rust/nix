@@ -1,6 +1,6 @@
 pub use self::os::*;
 
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "android"))]
 mod os {
     use sys::utsname::uname;
 

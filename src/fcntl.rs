@@ -14,7 +14,7 @@ mod ffi {
     pub use libc::{open, fcntl};
     pub use self::os::*;
 
-    #[cfg(target_os = "linux")]
+    #[cfg(any(target_os = "linux", target_os = "android"))]
     mod os {
         use libc::{c_int, c_short, off_t, pid_t};
 
@@ -93,11 +93,11 @@ pub enum FcntlArg<'a> {
     F_SETLK(&'a flock),
     F_SETLKW(&'a flock),
     F_GETLK(&'a mut flock),
-    #[cfg(target_os = "linux")]
+    #[cfg(any(target_os = "linux", target_os = "android"))]
     F_OFD_SETLK(&'a flock),
-    #[cfg(target_os = "linux")]
+    #[cfg(any(target_os = "linux", target_os = "android"))]
     F_OFD_SETLKW(&'a flock),
-    #[cfg(target_os = "linux")]
+    #[cfg(any(target_os = "linux", target_os = "android"))]
     F_OFD_GETLK(&'a mut flock)
 
     // TODO: Rest of flags
@@ -122,7 +122,7 @@ pub fn fcntl(fd: Fd, arg: FcntlArg) -> NixResult<()> {
     Ok(())
 }
 
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "android"))]
 mod consts {
     use libc::c_int;
 

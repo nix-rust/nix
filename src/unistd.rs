@@ -8,7 +8,7 @@ use libc::{c_char, c_void, c_int, size_t, pid_t, off_t};
 use std::{mem, ptr};
 use std::ffi::CString;
 
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "android"))]
 pub use self::linux::*;
 
 mod ffi {
@@ -245,7 +245,7 @@ pub fn pipe() -> NixResult<(Fd, Fd)> {
     }
 }
 
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "android"))]
 pub fn pipe2(flags: OFlag) -> NixResult<(Fd, Fd)> {
     type F = unsafe extern "C" fn(fds: *mut c_int, flags: c_int) -> c_int;
 
@@ -354,7 +354,7 @@ pub fn unlink<P: ?Sized + NixPath>(path: &P) -> NixResult<()> {
     from_ffi(res)
 }
 
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "android"))]
 mod linux {
     use sys::syscall::{syscall, SYSPIVOTROOT};
     use errno::Errno;

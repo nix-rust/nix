@@ -6,7 +6,7 @@ use sys::stat::Mode;
 
 pub use self::consts::*;
 
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "android"))]
 mod consts {
     use libc::c_int;
 
