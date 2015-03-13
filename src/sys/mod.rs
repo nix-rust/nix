@@ -31,3 +31,5 @@ pub mod wait;
 pub mod mman;
 
 pub mod uio;
+
+pub mod time;
