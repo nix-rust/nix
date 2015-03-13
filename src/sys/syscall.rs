@@ -22,6 +22,16 @@ mod arch {
     pub static SYSPIVOTROOT: Syscall = 217;
 }
 
+#[cfg(target_arch = "arm")]
+mod arch {
+    use libc::c_long;
+
+    pub type Syscall = c_long;
+
+    pub static SYSPIVOTROOT: Syscall = 218;
+}
+
+
 extern {
     pub fn syscall(num: Syscall, ...) -> c_int;
 }

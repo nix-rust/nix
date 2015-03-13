@@ -29,7 +29,7 @@ pub static CLONE_NEWNET:         CloneFlags = 0x40000000;
 pub static CLONE_IO:             CloneFlags = 0x80000000;
 
 // Support a maximum CPU set of 1024 nodes
-#[cfg(target_arch = "x86_64")]
+#[cfg(all(target_arch = "x86_64", target_os = "linux"))]
 mod cpuset_attribs {
     use super::CpuMask;
     pub const CPU_SETSIZE:           usize = 1024;
@@ -46,7 +46,7 @@ mod cpuset_attribs {
     }
 }
 
-#[cfg(target_arch = "x86")]
+#[cfg(all(target_arch = "x86", target_os = "linux"))]
 mod cpuset_attribs {
     use super::CpuMask;
     pub const CPU_SETSIZE:           usize = 1024us;
@@ -62,6 +62,25 @@ mod cpuset_attribs {
         cur & !(1u32 << bit)
     }
 }
+
+#[cfg(all(target_arch = "arm", target_os = "android"))]
+mod cpuset_attribs {
+    use super::CpuMask;
+    // bionic only supports up to 32 independent CPUs, instead of 1024.
+    pub const CPU_SETSIZE:          usize = 32;
+    pub const CPU_MASK_BITS:        usize = 32;
+
+    #[inline]
+    pub fn set_cpu_mask_flag(cur: CpuMask, bit: usize) -> CpuMask {
+        cur | (1u32 << bit)
+    }
+
+    #[inline]
+    pub fn clear_cpu_mask_flag(cur: CpuMask, bit: usize) -> CpuMask {
+        cur & !(1u32 << bit)
+    }
+}
+
 
 pub type CloneCb<'a> = Box<FnMut() -> isize + 'a>;
 

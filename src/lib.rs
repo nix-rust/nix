@@ -32,10 +32,10 @@ pub mod features;
 #[cfg(unix)]
 pub mod fcntl;
 
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "android"))]
 pub mod mount;
 
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "android"))]
 pub mod sched;
 
 #[cfg(unix)]

@@ -22,7 +22,8 @@ mod ffi {
         pub const TIOCGWINSZ: c_ulong = 0x40087468;
     }
 
-    #[cfg(target_os = "linux")]
+    #[cfg(any(target_os = "linux",
+              all(target_os = "android", not(target_arch = "mips"))))]
     pub mod os {
         use libc::c_int;
         pub const TIOCGWINSZ: c_int = 0x5413;

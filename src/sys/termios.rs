@@ -17,6 +17,7 @@ mod ffi {
     // `Termios` contains bitflags which are not considered
     // `foreign-function-safe` by the compiler.
     #[allow(improper_ctypes)]
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
     extern {
         pub fn cfgetispeed(termios: *const Termios) -> speed_t;
         pub fn cfgetospeed(termios: *const Termios) -> speed_t;
@@ -31,6 +32,62 @@ mod ffi {
         pub fn tcflush(fd: c_int, action: c_int) -> c_int;
         pub fn tcsendbreak(fd: c_int, duration: c_int) -> c_int;
     }
+
+    // On Android before 5.0, Bionic directly inline these to ioctl() calls.
+    #[inline]
+    #[cfg(all(target_os = "android", not(target_arch = "mips")))]
+    mod android {
+        use libc::funcs::bsd44::ioctl;
+        use libc::c_int;
+        use super::consts::*;
+
+        const TCGETS: c_int = 0x5401;
+        const TCSBRK: c_int = 0x5409;
+        const TCXONC: c_int = 0x540a;
+        const TCFLSH: c_int = 0x540b;
+        const TCSBRKP: c_int = 0x5425;
+
+        pub unsafe fn cfgetispeed(termios: *const Termios) -> speed_t {
+            ((*termios).c_cflag & CBAUD).bits() as speed_t
+        }
+        pub unsafe fn cfgetospeed(termios: *const Termios) -> speed_t {
+            ((*termios).c_cflag & CBAUD).bits() as speed_t
+        }
+        pub unsafe fn cfsetispeed(termios: *mut Termios, speed: speed_t) -> c_int {
+            (*termios).c_cflag.remove(CBAUD);
+            (*termios).c_cflag.insert(ControlFlags::from_bits_truncate(speed) & CBAUD);
+            0
+        }
+        pub unsafe fn cfsetospeed(termios: *mut Termios, speed: speed_t) -> c_int {
+            (*termios).c_cflag.remove(CBAUD);
+            (*termios).c_cflag.insert(ControlFlags::from_bits_truncate(speed) & CBAUD);
+            0
+        }
+        pub unsafe fn tcgetattr(fd: c_int, termios: *mut Termios) -> c_int {
+            ioctl(fd, TCGETS, termios)
+        }
+        pub unsafe fn tcsetattr(fd: c_int,
+                                optional_actions: c_int,
+                                termios: *const Termios) -> c_int {
+            ioctl(fd, optional_actions, termios)
+        }
+        pub unsafe fn tcdrain(fd: c_int) -> c_int {
+            ioctl(fd, TCSBRK, 1)
+        }
+        pub unsafe fn tcflow(fd: c_int, action: c_int) -> c_int {
+            ioctl(fd, TCXONC, action)
+        }
+        pub unsafe fn tcflush(fd: c_int, action: c_int) -> c_int {
+            ioctl(fd, TCFLSH, action)
+        }
+        pub unsafe fn tcsendbreak(fd: c_int, duration: c_int) -> c_int {
+            ioctl(fd, TCSBRKP, duration)
+        }
+    }
+
+    #[cfg(target_os = "android")]
+    pub use self::android::*;
+
 
     #[cfg(target_os = "macos")]
     pub mod consts {
@@ -198,7 +255,7 @@ mod ffi {
         }
     }
 
-    #[cfg(target_os = "linux")]
+    #[cfg(any(target_os = "linux", target_os = "android"))]
     pub mod consts {
         use libc::{c_int, c_uint, c_uchar};
 
@@ -277,6 +334,8 @@ mod ffi {
                 const HUPCL      = 0x00000400,
                 const CLOCAL     = 0x00000800,
                 const CRTSCTS    = 0x80000000,
+                #[cfg(target_os = "android")]
+                const CBAUD      = 0o0010017,
             }
         }
 
