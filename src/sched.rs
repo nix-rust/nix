@@ -49,8 +49,8 @@ mod cpuset_attribs {
 #[cfg(all(target_arch = "x86", target_os = "linux"))]
 mod cpuset_attribs {
     use super::CpuMask;
-    pub const CPU_SETSIZE:           usize = 1024us;
-    pub const CPU_MASK_BITS:         usize = 32us;
+    pub const CPU_SETSIZE:           usize = 1024;
+    pub const CPU_MASK_BITS:         usize = 32;
 
     #[inline]
     pub fn set_cpu_mask_flag(cur: CpuMask, bit: usize) -> CpuMask {

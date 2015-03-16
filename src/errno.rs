@@ -1,8 +1,51 @@
-use std::os::errno;
+use libc::c_int;
 use std::num::from_i32;
 
 pub use self::consts::*;
 pub use self::consts::Errno::*;
+
+/// Returns the platform-specific value of errno
+pub fn errno() -> i32 {
+    #[cfg(any(target_os = "macos",
+              target_os = "ios",
+              target_os = "freebsd"))]
+    unsafe fn errno_location() -> *const c_int {
+        extern { fn __error() -> *const c_int; }
+        __error()
+    }
+
+    #[cfg(target_os = "bitrig")]
+    fn errno_location() -> *const c_int {
+        extern {
+            fn __errno() -> *const c_int;
+        }
+        unsafe {
+            __errno()
+        }
+    }
+
+    #[cfg(target_os = "dragonfly")]
+    unsafe fn errno_location() -> *const c_int {
+        extern { fn __dfly_error() -> *const c_int; }
+        __dfly_error()
+    }
+
+    #[cfg(target_os = "openbsd")]
+    unsafe fn errno_location() -> *const c_int {
+        extern { fn __errno() -> *const c_int; }
+        __errno()
+    }
+
+    #[cfg(any(target_os = "linux", target_os = "android"))]
+    unsafe fn errno_location() -> *const c_int {
+        extern { fn __errno_location() -> *const c_int; }
+        __errno_location()
+    }
+
+    unsafe {
+        (*errno_location()) as i32
+    }
+}
 
 macro_rules! impl_errno {
     ($errno:ty) => {
