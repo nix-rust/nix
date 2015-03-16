@@ -35,7 +35,6 @@ pub use libc::{
     in_addr,
     in6_addr,
     sockaddr,
-    sockaddr_storage,
     sockaddr_in,
     sockaddr_in6,
     sockaddr_un,
@@ -46,6 +45,17 @@ pub use self::multicast::{
     ip_mreq,
 };
 pub use self::consts::*;
+
+#[cfg(any(not(target_os = "linux"), not(target_arch = "x86")))]
+pub use libc::sockaddr_storage;
+
+// Working around rust-lang/rust#23425
+#[cfg(all(target_os = "linux", target_arch = "x86"))]
+pub struct sockaddr_storage {
+    pub ss_family: sa_family_t,
+    pub __ss_align: u32,
+    pub __ss_pad2: [u8; 120],
+}
 
 #[derive(Copy, PartialEq, Eq, Debug, FromPrimitive)]
 #[repr(i32)]

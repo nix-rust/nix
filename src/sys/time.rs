@@ -1,6 +1,5 @@
 use std::{fmt, ops};
 use std::num::Int;
-use std::i64;
 use libc::{time_t, suseconds_t};
 
 #[repr(C)]
@@ -14,15 +13,13 @@ const MICROS_PER_SEC: i64 = 1_000_000;
 const SECS_PER_MINUTE: i64 = 60;
 const SECS_PER_HOUR: i64 = 3600;
 
-const MIN: TimeVal = TimeVal {
-    tv_sec: -(i64::MAX / MICROS_PER_SEC - 1),
-    tv_usec: (-(MICROS_PER_SEC - 1)) as suseconds_t,
-};
+#[cfg(target_pointer_width = "64")]
+const MAX_SECONDS: i64 = (::std::i64::MAX / MICROS_PER_SEC) - 1;
 
-const MAX: TimeVal = TimeVal {
-    tv_sec: i64::MAX / MICROS_PER_SEC - 1,
-    tv_usec: (MICROS_PER_SEC - 1) as suseconds_t,
-};
+#[cfg(target_pointer_width = "32")]
+const MAX_SECONDS: i64 = ::std::isize::MAX as i64;
+
+const MIN_SECONDS: i64 = -MAX_SECONDS;
 
 impl TimeVal {
     #[inline]
@@ -48,9 +45,8 @@ impl TimeVal {
 
     #[inline]
     pub fn seconds(seconds: i64) -> TimeVal {
-        let ret = TimeVal { tv_sec: seconds, tv_usec: 0 };
-        assert!(ret >= MIN && ret <= MAX, "TimeVal out of bounds");
-        ret
+        assert!(seconds >= MIN_SECONDS && seconds <= MAX_SECONDS, "TimeVal out of bounds; seconds={}", seconds);
+        TimeVal { tv_sec: seconds as time_t, tv_usec: 0 }
     }
 
     #[inline]
@@ -66,9 +62,8 @@ impl TimeVal {
     #[unstable(feature = "std_misc")]
     pub fn microseconds(microseconds: i64) -> TimeVal {
         let (secs, micros) = div_mod_floor_64(microseconds, MICROS_PER_SEC);
-        let ret = TimeVal { tv_sec: secs, tv_usec: micros as suseconds_t };
-        assert!(ret >= MIN && ret <= MAX, "TimeVal out of bounds");
-        ret
+        assert!(secs >= MIN_SECONDS && secs <= MAX_SECONDS, "TimeVal out of bounds");
+        TimeVal { tv_sec: secs as time_t, tv_usec: micros as suseconds_t }
     }
 
     pub fn num_hours(&self) -> i64 {
@@ -81,9 +76,9 @@ impl TimeVal {
 
     pub fn num_seconds(&self) -> i64 {
         if self.tv_sec < 0 && self.tv_usec > 0 {
-            self.tv_sec + 1
+            (self.tv_sec + 1) as i64
         } else {
-            self.tv_sec
+            self.tv_sec as i64
         }
     }
 
