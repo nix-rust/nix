@@ -22,6 +22,13 @@ impl NixError {
     pub fn invalid_argument() -> NixError {
         NixError::Sys(EINVAL)
     }
+
+    pub fn errno(&self) -> Errno {
+        match *self {
+            NixError::Sys(errno) => errno,
+            NixError::InvalidPath => Errno::EINVAL,
+        }
+    }
 }
 
 pub trait NixPath {
