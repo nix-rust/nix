@@ -7,7 +7,7 @@ pub use self::consts::*;
 pub use self::ffi::flock;
 
 // Re-export Fd defined in std
-pub type Fd = ::std::os::unix::Fd;
+pub type Fd = ::std::os::unix::io::Fd;
 
 #[allow(dead_code)]
 mod ffi {

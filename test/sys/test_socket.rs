@@ -3,7 +3,7 @@ use std::{mem, net};
 use std::num::Int;
 use std::path::Path;
 use std::str::FromStr;
-use std::os::unix::AsRawFd;
+use std::os::unix::io::AsRawFd;
 use ports::localhost;
 
 #[test]

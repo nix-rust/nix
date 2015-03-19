@@ -6,7 +6,9 @@ use std::{fmt, hash, mem, net, ptr};
 use std::ffi::{CStr, OsStr};
 use std::num::Int;
 use std::path::Path;
-use std::os::unix::OsStrExt;
+use std::os::unix::ffi::OsStrExt;
+
+// TODO: uncomment out IpAddr functions: rust-lang/rfcs#988
 
 /*
  *
@@ -30,7 +32,12 @@ pub enum InetAddr {
 
 impl InetAddr {
     pub fn from_std(std: &net::SocketAddr) -> InetAddr {
-        InetAddr::new(IpAddr::from_std(&std.ip()), std.port())
+        let ip = match *std {
+            net::SocketAddr::V4(ref addr) => IpAddr::V4(Ipv4Addr::from_std(&addr.ip())),
+            net::SocketAddr::V6(ref addr) => IpAddr::V6(Ipv6Addr::from_std(&addr.ip())),
+        };
+
+        InetAddr::new(ip, std.port())
     }
 
     pub fn new(ip: IpAddr, port: u16) -> InetAddr {
@@ -53,7 +60,6 @@ impl InetAddr {
             }
         }
     }
-
     /// Gets the IP address associated with this socket address.
     pub fn ip(&self) -> IpAddr {
         match *self {
@@ -71,7 +77,18 @@ impl InetAddr {
     }
 
     pub fn to_std(&self) -> net::SocketAddr {
-        net::SocketAddr::new(self.ip().to_std(), self.port())
+        match *self {
+            InetAddr::V4(ref sa) => net::SocketAddr::V4(
+                net::SocketAddrV4::new(
+                    Ipv4Addr(sa.sin_addr).to_std(),
+                    self.port())),
+            InetAddr::V6(ref sa) => net::SocketAddr::V6(
+                net::SocketAddrV6::new(
+                    Ipv6Addr(sa.sin6_addr).to_std(),
+                    self.port(),
+                    sa.sin6_flowinfo,
+                    sa.sin6_scope_id)),
+        }
     }
 
     pub fn to_str(&self) -> String {
@@ -160,6 +177,7 @@ impl IpAddr {
         IpAddr::V6(Ipv6Addr::new(a, b, c, d, e, f, g, h))
     }
 
+    /*
     pub fn from_std(std: &net::IpAddr) -> IpAddr {
         match *std {
             net::IpAddr::V4(ref std) => IpAddr::V4(Ipv4Addr::from_std(std)),
@@ -173,6 +191,7 @@ impl IpAddr {
             IpAddr::V6(ref ip) => net::IpAddr::V6(ip.to_std()),
         }
     }
+    */
 }
 
 impl fmt::Display for IpAddr {

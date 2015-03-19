@@ -4,7 +4,7 @@ use errno::Errno;
 use sys::time::TimeVal;
 use libc::{c_int, uint8_t, c_void, socklen_t};
 use std::mem;
-use std::os::unix::Fd;
+use std::os::unix::io::Fd;
 
 // Helper to generate the sockopt accessors
 // TODO: Figure out how to ommit gets when not supported by opt
