@@ -10,7 +10,7 @@ exclude     = [
   ".gitignore",
   ".travis.yml",
   "deploy.sh",
-  "tests/**/*"
+  "test/**/*"
 ]
 
 [dependencies]
