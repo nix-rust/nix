@@ -17,7 +17,7 @@ exclude     = [
 bitflags = "0.1"
 
 [dev-dependencies]
-rand = "0.1.2"
+rand = "0.3.0"
 
 [dev-dependencies.nix-test]
 path    = "nix-test"
