@@ -2,7 +2,7 @@
 
 name        = "nix"
 description = "Rust friendly bindings to *nix APIs"
-version     = "0.3.0"
+version     = "0.3.1"
 authors     = ["Carl Lerche <me@carllerche.com>"]
 homepage    = "https://github.com/carllerche/nix-rust"
 license     = "MIT"
