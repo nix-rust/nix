@@ -27,7 +27,7 @@ fn assert_stat_results(stat_result: Result<FileStat>) {
 
 #[test]
 fn test_stat_and_fstat() {
-    let filename = b"target/foo.txt".as_slice();
+    let filename = b"target/foo.txt".as_ref();
     let fd = open(filename, O_CREAT, S_IWUSR).unwrap();  // create empty file
 
     let stat_result = stat(filename);
