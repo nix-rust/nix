@@ -1,7 +1,7 @@
 //! Socket interface functions
 //!
 //! [Further reading](http://man7.org/linux/man-pages/man7/socket.7.html)
-use {NixError, NixResult, from_ffi};
+use {Error, Result, from_ffi};
 use errno::Errno;
 use features;
 use fcntl::{fcntl, FD_CLOEXEC, O_NONBLOCK};
@@ -78,7 +78,7 @@ bitflags!(
 /// Create an endpoint for communication
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/socket.2.html)
-pub fn socket(domain: AddressFamily, ty: SockType, flags: SockFlag) -> NixResult<Fd> {
+pub fn socket(domain: AddressFamily, ty: SockType, flags: SockFlag) -> Result<Fd> {
     let mut ty = ty as c_int;
     let feat_atomic = features::socket_atomic_cloexec();
 
@@ -90,7 +90,7 @@ pub fn socket(domain: AddressFamily, ty: SockType, flags: SockFlag) -> NixResult
     let res = unsafe { ffi::socket(domain as c_int, ty, 0) };
 
     if res < 0 {
-        return Err(NixError::Sys(Errno::last()));
+        return Err(Error::Sys(Errno::last()));
     }
 
     if !feat_atomic {
@@ -109,7 +109,7 @@ pub fn socket(domain: AddressFamily, ty: SockType, flags: SockFlag) -> NixResult
 /// Listen for connections on a socket
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/listen.2.html)
-pub fn listen(sockfd: Fd, backlog: usize) -> NixResult<()> {
+pub fn listen(sockfd: Fd, backlog: usize) -> Result<()> {
     let res = unsafe { ffi::listen(sockfd, backlog as c_int) };
     from_ffi(res)
 }
@@ -117,7 +117,7 @@ pub fn listen(sockfd: Fd, backlog: usize) -> NixResult<()> {
 /// Bind a name to a socket
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/bind.2.html)
-pub fn bind(fd: Fd, addr: &SockAddr) -> NixResult<()> {
+pub fn bind(fd: Fd, addr: &SockAddr) -> Result<()> {
     let res = unsafe {
         let (ptr, len) = addr.as_ffi_pair();
         ffi::bind(fd, ptr, len)
@@ -129,11 +129,11 @@ pub fn bind(fd: Fd, addr: &SockAddr) -> NixResult<()> {
 /// Accept a connection on a socket
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/accept.2.html)
-pub fn accept(sockfd: Fd) -> NixResult<Fd> {
+pub fn accept(sockfd: Fd) -> Result<Fd> {
     let res = unsafe { ffi::accept(sockfd, ptr::null_mut(), ptr::null_mut()) };
 
     if res < 0 {
-        return Err(NixError::Sys(Errno::last()));
+        return Err(Error::Sys(Errno::last()));
     }
 
     Ok(res)
@@ -143,7 +143,7 @@ pub fn accept(sockfd: Fd) -> NixResult<Fd> {
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/accept.2.html)
 #[cfg(not(any(target_os = "macos", target_os = "ios", target_os = "android")))]
-pub fn accept4(sockfd: Fd, flags: SockFlag) -> NixResult<Fd> {
+pub fn accept4(sockfd: Fd, flags: SockFlag) -> Result<Fd> {
     use libc::sockaddr;
 
     type F = unsafe extern "C" fn(c_int, *mut sockaddr, *mut socklen_t, c_int) -> c_int;
@@ -160,7 +160,7 @@ pub fn accept4(sockfd: Fd, flags: SockFlag) -> NixResult<Fd> {
         };
 
         if res < 0 {
-            return Err(NixError::Sys(Errno::last()));
+            return Err(Error::Sys(Errno::last()));
         }
 
         Ok(res)
@@ -173,16 +173,16 @@ pub fn accept4(sockfd: Fd, flags: SockFlag) -> NixResult<Fd> {
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/accept.2.html)
 #[cfg(any(target_os = "macos", target_os = "ios", target_os = "android"))]
-pub fn accept4(sockfd: Fd, flags: SockFlag) -> NixResult<Fd> {
+pub fn accept4(sockfd: Fd, flags: SockFlag) -> Result<Fd> {
     accept4_polyfill(sockfd, flags)
 }
 
 #[inline]
-fn accept4_polyfill(sockfd: Fd, flags: SockFlag) -> NixResult<Fd> {
+fn accept4_polyfill(sockfd: Fd, flags: SockFlag) -> Result<Fd> {
     let res =  unsafe { ffi::accept(sockfd, ptr::null_mut(), ptr::null_mut()) };
 
     if res < 0 {
-        return Err(NixError::Sys(Errno::last()));
+        return Err(Error::Sys(Errno::last()));
     }
 
     if flags.contains(SOCK_CLOEXEC) {
@@ -199,7 +199,7 @@ fn accept4_polyfill(sockfd: Fd, flags: SockFlag) -> NixResult<Fd> {
 /// Initiate a connection on a socket
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/connect.2.html)
-pub fn connect(fd: Fd, addr: &SockAddr) -> NixResult<()> {
+pub fn connect(fd: Fd, addr: &SockAddr) -> Result<()> {
     let res = unsafe {
         let (ptr, len) = addr.as_ffi_pair();
         ffi::connect(fd, ptr, len)
@@ -212,7 +212,7 @@ pub fn connect(fd: Fd, addr: &SockAddr) -> NixResult<()> {
 /// the number of bytes read and the socket address of the sender.
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/recvmsg.2.html)
-pub fn recvfrom(sockfd: Fd, buf: &mut [u8]) -> NixResult<(usize, SockAddr)> {
+pub fn recvfrom(sockfd: Fd, buf: &mut [u8]) -> Result<(usize, SockAddr)> {
     unsafe {
         let addr: sockaddr_storage = mem::zeroed();
         let mut len = mem::size_of::<sockaddr_storage>() as socklen_t;
@@ -226,7 +226,7 @@ pub fn recvfrom(sockfd: Fd, buf: &mut [u8]) -> NixResult<(usize, SockAddr)> {
             &mut len as *mut socklen_t);
 
         if ret < 0 {
-            return Err(NixError::last());
+            return Err(Error::last());
         }
 
         sockaddr_storage_to_addr(&addr, len as usize)
@@ -234,14 +234,14 @@ pub fn recvfrom(sockfd: Fd, buf: &mut [u8]) -> NixResult<(usize, SockAddr)> {
     }
 }
 
-pub fn sendto(fd: Fd, buf: &[u8], addr: &SockAddr, flags: SockMessageFlags) -> NixResult<usize> {
+pub fn sendto(fd: Fd, buf: &[u8], addr: &SockAddr, flags: SockMessageFlags) -> Result<usize> {
     let ret = unsafe {
         let (ptr, len) = addr.as_ffi_pair();
         ffi::sendto(fd, buf.as_ptr() as *const c_void, buf.len() as size_t, flags, ptr, len)
     };
 
     if ret < 0 {
-        Err(NixError::Sys(Errno::last()))
+        Err(Error::Sys(Errno::last()))
     } else {
         Ok(ret as usize)
     }
@@ -284,30 +284,30 @@ pub trait SockOpt : Copy + fmt::Debug {
     type Set;
 
     #[doc(hidden)]
-    fn get(&self, fd: Fd, level: c_int) -> NixResult<Self::Get>;
+    fn get(&self, fd: Fd, level: c_int) -> Result<Self::Get>;
 
     #[doc(hidden)]
-    fn set(&self, fd: Fd, level: c_int, val: Self::Set) -> NixResult<()>;
+    fn set(&self, fd: Fd, level: c_int, val: Self::Set) -> Result<()>;
 }
 
 /// Get the current value for the requested socket option
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/setsockopt.2.html)
-pub fn getsockopt<O: SockOpt>(fd: Fd, level: SockLevel, opt: O) -> NixResult<O::Get> {
+pub fn getsockopt<O: SockOpt>(fd: Fd, level: SockLevel, opt: O) -> Result<O::Get> {
     opt.get(fd, level as c_int)
 }
 
 /// Sets the value for the requested socket option
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/setsockopt.2.html)
-pub fn setsockopt<O: SockOpt>(fd: Fd, level: SockLevel, opt: O, val: O::Set) -> NixResult<()> {
+pub fn setsockopt<O: SockOpt>(fd: Fd, level: SockLevel, opt: O, val: O::Set) -> Result<()> {
     opt.set(fd, level as c_int, val)
 }
 
 /// Get the address of the peer connected to the socket `fd`.
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/getpeername.2.html)
-pub fn getpeername(fd: Fd) -> NixResult<SockAddr> {
+pub fn getpeername(fd: Fd) -> Result<SockAddr> {
     unsafe {
         let addr: sockaddr_storage = mem::uninitialized();
         let mut len = mem::size_of::<sockaddr_storage>() as socklen_t;
@@ -315,7 +315,7 @@ pub fn getpeername(fd: Fd) -> NixResult<SockAddr> {
         let ret = ffi::getpeername(fd, mem::transmute(&addr), &mut len);
 
         if ret < 0 {
-            return Err(NixError::last());
+            return Err(Error::last());
         }
 
         sockaddr_storage_to_addr(&addr, len as usize)
@@ -325,7 +325,7 @@ pub fn getpeername(fd: Fd) -> NixResult<SockAddr> {
 /// Get the current address to which the socket `fd` is bound.
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/getsockname.2.html)
-pub fn getsockname(fd: Fd) -> NixResult<SockAddr> {
+pub fn getsockname(fd: Fd) -> Result<SockAddr> {
     unsafe {
         let addr: sockaddr_storage = mem::uninitialized();
         let mut len = mem::size_of::<sockaddr_storage>() as socklen_t;
@@ -333,7 +333,7 @@ pub fn getsockname(fd: Fd) -> NixResult<SockAddr> {
         let ret = ffi::getsockname(fd, mem::transmute(&addr), &mut len);
 
         if ret < 0 {
-            return Err(NixError::last());
+            return Err(Error::last());
         }
 
         sockaddr_storage_to_addr(&addr, len as usize)
@@ -342,7 +342,7 @@ pub fn getsockname(fd: Fd) -> NixResult<SockAddr> {
 
 pub unsafe fn sockaddr_storage_to_addr(
     addr: &sockaddr_storage,
-    len: usize) -> NixResult<SockAddr> {
+    len: usize) -> Result<SockAddr> {
 
     match addr.ss_family as c_int {
         consts::AF_INET => {

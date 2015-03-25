@@ -5,7 +5,7 @@ use libc::{timespec, time_t, c_int, c_long, uintptr_t};
 use errno::Errno;
 use fcntl::Fd;
 use std::fmt;
-use {NixError, NixResult};
+use {Error, Result};
 
 pub use self::ffi::kevent as KEvent;
 
@@ -159,11 +159,11 @@ bitflags!(
 pub const EV_POLL: EventFlag = EV_FLAG0;
 pub const EV_OOBAND: EventFlag = EV_FLAG1;
 
-pub fn kqueue() -> NixResult<Fd> {
+pub fn kqueue() -> Result<Fd> {
     let res = unsafe { ffi::kqueue() };
 
     if res < 0 {
-        return Err(NixError::Sys(Errno::last()));
+        return Err(Error::Sys(Errno::last()));
     }
 
     Ok(res)
@@ -172,7 +172,7 @@ pub fn kqueue() -> NixResult<Fd> {
 pub fn kevent(kq: Fd,
               changelist: &[KEvent],
               eventlist: &mut [KEvent],
-              timeout_ms: usize) -> NixResult<usize> {
+              timeout_ms: usize) -> Result<usize> {
 
     // Convert ms to timespec
     let timeout = timespec {
@@ -191,7 +191,7 @@ pub fn kevent(kq: Fd,
     };
 
     if res < 0 {
-        return Err(NixError::Sys(Errno::last()));
+        return Err(Error::Sys(Errno::last()));
     }
 
     return Ok(res as usize)

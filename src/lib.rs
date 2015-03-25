@@ -19,10 +19,6 @@ extern crate "nix-test" as nixtest;
 // Re-export some libc constants
 pub use libc::{c_int, c_void};
 
-mod nix;
-pub use nix::{NixResult, NixError, NixPath, from_ffi};
-
-
 #[cfg(unix)]
 pub mod errno;
 
@@ -43,6 +39,90 @@ pub mod sys;
 
 #[cfg(unix)]
 pub mod unistd;
+
+/*
+ *
+ * ===== Result / Error =====
+ *
+ */
+
+use std::result;
+use std::ffi::AsOsStr;
+use std::path::{Path, PathBuf};
+use std::slice::bytes;
+
+pub type Result<T> = result::Result<T, Error>;
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum Error {
+    Sys(errno::Errno),
+    InvalidPath,
+}
+
+impl Error {
+    pub fn last() -> Error {
+        Error::Sys(errno::Errno::last())
+    }
+
+    pub fn invalid_argument() -> Error {
+        Error::Sys(errno::EINVAL)
+    }
+
+    pub fn errno(&self) -> errno::Errno {
+        match *self {
+            Error::Sys(errno) => errno,
+            Error::InvalidPath => errno::Errno::EINVAL,
+        }
+    }
+}
+
+pub trait NixPath {
+    fn with_nix_path<T, F>(&self, f: F) -> Result<T>
+        where F: FnOnce(&OsStr) -> T;
+}
+
+impl NixPath for [u8] {
+    fn with_nix_path<T, F>(&self, f: F) -> Result<T>
+            where F: FnOnce(&OsStr) -> T {
+        // TODO: Extract this size as a const
+        let mut buf = [0u8; 4096];
+
+        if self.len() >= 4096 {
+            return Err(Error::InvalidPath);
+        }
+
+        match self.position_elem(&0) {
+            Some(_) => Err(Error::InvalidPath),
+            None => {
+                bytes::copy_memory(&mut buf, self);
+                Ok(f(<OsStr as OsStrExt>::from_bytes(&buf[..self.len()])))
+            }
+        }
+    }
+}
+
+impl NixPath for Path {
+    fn with_nix_path<T, F>(&self, f: F) -> Result<T>
+            where F: FnOnce(&OsStr) -> T {
+        Ok(f(self.as_os_str()))
+    }
+}
+
+impl NixPath for PathBuf {
+    fn with_nix_path<T, F>(&self, f: F) -> Result<T>
+            where F: FnOnce(&OsStr) -> T {
+        Ok(f(self.as_os_str()))
+    }
+}
+
+#[inline]
+pub fn from_ffi(res: libc::c_int) -> Result<()> {
+    if res != 0 {
+        return Err(Error::Sys(errno::Errno::last()));
+    }
+
+    Ok(())
+}
 
 /*
  *

@@ -1,4 +1,4 @@
-use {NixResult, NixError, from_ffi};
+use {Result, Error, from_ffi};
 use super::{ffi, consts, SockOpt};
 use errno::Errno;
 use sys::time::TimeVal;
@@ -29,7 +29,7 @@ macro_rules! sockopt_impl {
             type Get = $get_ty;
             type Set = $set_ty;
 
-            fn get(&self, fd: Fd, level: c_int) -> NixResult<$get_ty> {
+            fn get(&self, fd: Fd, level: c_int) -> Result<$get_ty> {
                 unsafe {
                     let mut getter: $getter = Get::blank();
 
@@ -39,14 +39,14 @@ macro_rules! sockopt_impl {
                         getter.ffi_len());
 
                     if res < 0 {
-                        return Err(NixError::Sys(Errno::last()));
+                        return Err(Error::Sys(Errno::last()));
                     }
 
                     Ok(getter.unwrap())
                 }
             }
 
-            fn set(&self, fd: Fd, level: c_int, val: $set_ty) -> NixResult<()> {
+            fn set(&self, fd: Fd, level: c_int, val: $set_ty) -> Result<()> {
                 unsafe {
                     let setter: $setter = Set::new(val);
 

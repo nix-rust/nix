@@ -1,6 +1,6 @@
 use libc::{pid_t, c_int};
 use errno::Errno;
-use {NixError, NixResult};
+use {Error, Result};
 
 mod ffi {
     use libc::{pid_t, c_int};
@@ -22,7 +22,7 @@ pub enum WaitStatus {
     StillAlive
 }
 
-pub fn waitpid(pid: pid_t, options: Option<WaitPidFlag>) -> NixResult<WaitStatus> {
+pub fn waitpid(pid: pid_t, options: Option<WaitPidFlag>) -> Result<WaitStatus> {
     use self::WaitStatus::*;
 
     let mut status: i32 = 0;
@@ -35,7 +35,7 @@ pub fn waitpid(pid: pid_t, options: Option<WaitPidFlag>) -> NixResult<WaitStatus
     let res = unsafe { ffi::waitpid(pid as pid_t, &mut status as *mut c_int, option_bits) };
 
     if res < 0 {
-        Err(NixError::Sys(Errno::last()))
+        Err(Error::Sys(Errno::last()))
     } else if res == 0 {
         Ok(StillAlive)
     } else {

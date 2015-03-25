@@ -1,4 +1,4 @@
-use {NixResult, NixError, NixPath};
+use {Result, Error, NixPath};
 use super::{consts, sa_family_t};
 use errno::Errno;
 use libc;
@@ -334,7 +334,7 @@ impl fmt::Display for Ipv6Addr {
 pub struct UnixAddr(pub libc::sockaddr_un);
 
 impl UnixAddr {
-    pub fn new<P: ?Sized + NixPath>(path: &P) -> NixResult<UnixAddr> {
+    pub fn new<P: ?Sized + NixPath>(path: &P) -> Result<UnixAddr> {
         try!(path.with_nix_path(|osstr| {
             unsafe {
                 let bytes = osstr.as_bytes();
@@ -345,7 +345,7 @@ impl UnixAddr {
                 };
 
                 if bytes.len() >= ret.sun_path.len() {
-                    return Err(NixError::Sys(Errno::ENAMETOOLONG));
+                    return Err(Error::Sys(Errno::ENAMETOOLONG));
                 }
 
                 ptr::copy(
@@ -413,7 +413,7 @@ impl SockAddr {
         SockAddr::Inet(addr)
     }
 
-    pub fn new_unix<P: ?Sized + NixPath>(path: &P) -> NixResult<SockAddr> {
+    pub fn new_unix<P: ?Sized + NixPath>(path: &P) -> Result<SockAddr> {
         Ok(SockAddr::Unix(try!(UnixAddr::new(path))))
     }
 

@@ -4,9 +4,9 @@ use nix::fcntl::open;
 use nix::unistd::{close, unlink};
 use nix::fcntl::O_CREAT;
 use nix::sys::stat::{FileStat, S_IWUSR};
-use nix::NixResult;
+use nix::Result;
 
-fn assert_stat_results(stat_result: NixResult<FileStat>) {
+fn assert_stat_results(stat_result: Result<FileStat>) {
     match stat_result {
         Ok(stats) => {
             assert!(stats.st_dev > 0);      // must be positive integer, exact number machine dependent
@@ -27,7 +27,7 @@ fn assert_stat_results(stat_result: NixResult<FileStat>) {
 
 #[test]
 fn test_stat_and_fstat() {
-    let filename = b"target/foo.txt";
+    let filename = b"target/foo.txt".as_slice();
     let fd = open(filename, O_CREAT, S_IWUSR).unwrap();  // create empty file
 
     let stat_result = stat(filename);

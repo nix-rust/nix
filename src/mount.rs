@@ -1,5 +1,5 @@
 use libc::{c_ulong, c_int};
-use {NixResult, NixPath, AsExtStr, from_ffi};
+use {Result, NixPath, AsExtStr, from_ffi};
 
 bitflags!(
     flags MsFlags: c_ulong {
@@ -76,7 +76,7 @@ pub fn mount<P1: ?Sized + NixPath, P2: ?Sized + NixPath, P3: ?Sized + NixPath, P
         target: P2,
         fstype: Option<&P3>,
         flags: MsFlags,
-        data: Option<&P4>) -> NixResult<()> {
+        data: Option<&P4>) -> Result<()> {
     use libc;
 
     let res = try!(try!(try!(try!(
@@ -100,7 +100,7 @@ pub fn mount<P1: ?Sized + NixPath, P2: ?Sized + NixPath, P3: ?Sized + NixPath, P
 }
 */
 
-pub fn umount<P: ?Sized + NixPath>(target: &P) -> NixResult<()> {
+pub fn umount<P: ?Sized + NixPath>(target: &P) -> Result<()> {
     let res = try!(target.with_nix_path(|ptr| {
         unsafe { ffi::umount(ptr.as_ext_str()) }
     }));
@@ -108,7 +108,7 @@ pub fn umount<P: ?Sized + NixPath>(target: &P) -> NixResult<()> {
     from_ffi(res)
 }
 
-pub fn umount2<P: ?Sized + NixPath>(target: &P, flags: MntFlags) -> NixResult<()> {
+pub fn umount2<P: ?Sized + NixPath>(target: &P, flags: MntFlags) -> Result<()> {
     let res = try!(target.with_nix_path(|ptr| {
         unsafe { ffi::umount2(ptr.as_ext_str(), flags.bits) }
     }));
