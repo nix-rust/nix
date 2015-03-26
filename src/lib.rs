@@ -4,7 +4,7 @@
 //! defined in.
 #![crate_name = "nix"]
 
-#![feature(collections, core, io_ext, linkage, libc, std_misc)]
+#![feature(collections, core, io_ext, linkage, std_misc)]
 #![allow(non_camel_case_types)]
 
 #[macro_use]
