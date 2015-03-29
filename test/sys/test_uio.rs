@@ -33,7 +33,7 @@ fn test_writev() {
     let written = write_res.ok().unwrap();
     // Check whether we written all data
     assert_eq!(to_write.len(), written);
-    let read_res = read(reader, read_buf.as_mut_slice());
+    let read_res = read(reader, &mut read_buf[..]);
     // Successful read
     assert!(read_res.is_ok());
     let read = read_res.ok().unwrap() as usize;
@@ -62,7 +62,7 @@ fn test_readv() {
     }
     let mut iovecs = Vec::with_capacity(storage.len());
     for v in storage.iter_mut() {
-        iovecs.push(IoVec::from_mut_slice(v.as_mut_slice()));
+        iovecs.push(IoVec::from_mut_slice(&mut v[..]));
     }
     let pipe_res = pipe();
     assert!(pipe_res.is_ok());
@@ -71,7 +71,7 @@ fn test_readv() {
     let write_res = write(writer, &to_write);
     // Successful write
     assert!(write_res.is_ok());
-    let read_res = readv(reader, iovecs.as_mut_slice());
+    let read_res = readv(reader, &mut iovecs[..]);
     assert!(read_res.is_ok());
     let read = read_res.ok().unwrap();
     // Check whether we've read all data
