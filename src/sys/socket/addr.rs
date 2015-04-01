@@ -349,8 +349,8 @@ impl UnixAddr {
                 }
 
                 ptr::copy(
-                    ret.sun_path.as_mut_ptr(),
                     bytes.as_ptr() as *const i8,
+                    ret.sun_path.as_mut_ptr(),
                     bytes.len());
 
                 Ok(UnixAddr(ret))

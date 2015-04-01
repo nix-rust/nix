@@ -94,7 +94,7 @@ impl NixPath for [u8] {
         match self.position_elem(&0) {
             Some(_) => Err(Error::InvalidPath),
             None => {
-                bytes::copy_memory(&mut buf, self);
+                bytes::copy_memory(self, &mut buf);
                 Ok(f(<OsStr as OsStrExt>::from_bytes(&buf[..self.len()])))
             }
         }
