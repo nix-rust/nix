@@ -1,5 +1,4 @@
 use std::{fmt, ops};
-use std::num::Int;
 use libc::{time_t, suseconds_t};
 
 #[repr(C)]

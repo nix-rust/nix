@@ -1,6 +1,5 @@
 use nix::sys::socket::{InetAddr, UnixAddr, getsockname};
 use std::{mem, net};
-use std::num::Int;
 use std::path::Path;
 use std::str::FromStr;
 use std::os::unix::io::AsRawFd;
@@ -13,8 +12,11 @@ pub fn test_inetv4_addr_to_sock_addr() {
 
     match addr {
         InetAddr::V4(addr) => {
-            assert_eq!(addr.sin_addr.s_addr, 0x7f000001.to_be());
-            assert_eq!(addr.sin_port, 3000.to_be());
+            let ip: u32 = 0x7f000001;
+            let port: u16 = 3000;
+
+            assert_eq!(addr.sin_addr.s_addr, ip.to_be());
+            assert_eq!(addr.sin_port, port.to_be());
         }
         _ => panic!("nope"),
     }
