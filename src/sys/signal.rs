@@ -3,7 +3,7 @@
 
 use libc;
 use errno::Errno;
-use core::mem;
+use std::mem;
 use {Error, Result};
 
 pub use libc::consts::os::posix88::{

@@ -102,32 +102,6 @@ pub fn dup2(oldfd: Fd, newfd: Fd) -> Result<Fd> {
     Ok(res)
 }
 
-#[cfg(not(any(target_os = "macos", target_os = "ios")))]
-pub fn dup3(oldfd: Fd, newfd: Fd, flags: OFlag) -> Result<Fd> {
-    type F = unsafe extern "C" fn(c_int, c_int, c_int) -> c_int;
-
-    extern {
-        #[linkage = "extern_weak"]
-        static dup3: *const ();
-    }
-
-    if !dup3.is_null() {
-        let res = unsafe {
-            mem::transmute::<*const (), F>(dup3)(
-                oldfd, newfd, flags.bits())
-        };
-
-        if res < 0 {
-            return Err(Error::Sys(Errno::last()));
-        }
-
-        Ok(res)
-    } else {
-        dup3_polyfill(oldfd, newfd, flags)
-    }
-}
-
-#[cfg(any(target_os = "macos", target_os = "ios"))]
 pub fn dup3(oldfd: Fd, newfd: Fd, flags: OFlag) -> Result<Fd> {
     dup3_polyfill(oldfd, newfd, flags)
 }
@@ -245,41 +219,6 @@ pub fn pipe() -> Result<(Fd, Fd)> {
     }
 }
 
-#[cfg(any(target_os = "linux", target_os = "android"))]
-pub fn pipe2(flags: OFlag) -> Result<(Fd, Fd)> {
-    type F = unsafe extern "C" fn(fds: *mut c_int, flags: c_int) -> c_int;
-
-    extern {
-        #[linkage = "extern_weak"]
-        static pipe2: *const ();
-    }
-
-    let feat_atomic = !pipe2.is_null();
-
-    unsafe {
-        let mut res;
-        let mut fds: [c_int; 2] = mem::uninitialized();
-
-        if feat_atomic {
-            res = mem::transmute::<*const (), F>(pipe2)(
-                fds.as_mut_ptr(), flags.bits());
-        } else {
-            res = ffi::pipe(fds.as_mut_ptr());
-        }
-
-        if res < 0 {
-            return Err(Error::Sys(Errno::last()));
-        }
-
-        if !feat_atomic {
-            try!(pipe2_setflags(fds[0], fds[1], flags));
-        }
-
-        Ok((fds[0], fds[1]))
-    }
-}
-
-#[cfg(any(target_os = "macos", target_os = "ios"))]
 pub fn pipe2(flags: OFlag) -> Result<(Fd, Fd)> {
     unsafe {
         let mut res;

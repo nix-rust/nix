@@ -16,7 +16,7 @@ pub fn eventfd(initval: usize, flags: EventFdFlag) -> Result<Fd> {
     type F = unsafe extern "C" fn(initval: c_uint, flags: c_int) -> c_int;
 
     extern {
-        #[linkage = "extern_weak"]
+        // #[linkage = "extern_weak"]
         static eventfd: *const ();
     }
 

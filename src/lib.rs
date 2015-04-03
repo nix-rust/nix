@@ -3,15 +3,12 @@
 //! Modules are structured according to the C header file that they would be
 //! defined in.
 #![crate_name = "nix"]
-
-#![feature(collections, core, linkage, std_misc)]
 #![allow(non_camel_case_types)]
 
 #[macro_use]
 extern crate bitflags;
 
 extern crate libc;
-extern crate core;
 
 #[cfg(test)]
 extern crate nix_test as nixtest;
@@ -46,10 +43,8 @@ pub mod unistd;
  *
  */
 
-use std::result;
-use std::ffi::AsOsStr;
+use std::{ptr, result};
 use std::path::{Path, PathBuf};
-use std::slice::bytes;
 
 pub type Result<T> = result::Result<T, Error>;
 
@@ -91,10 +86,14 @@ impl NixPath for [u8] {
             return Err(Error::InvalidPath);
         }
 
-        match self.position_elem(&0) {
+        match self.iter().position(|b| *b == 0) {
             Some(_) => Err(Error::InvalidPath),
             None => {
-                bytes::copy_memory(self, &mut buf);
+                unsafe {
+                    // TODO: Replace with bytes::copy_memory. rust-lang/rust#24028
+                    ptr::copy_nonoverlapping(self.as_ptr(), buf.as_mut_ptr(), self.len());
+                }
+
                 Ok(f(<OsStr as OsStrExt>::from_bytes(&buf[..self.len()])))
             }
         }

@@ -7,3 +7,6 @@ authors     = ["Carl Lerche <me@carllerche.com>"]
 homepage    = "https://github.com/carllerche/nix-rust"
 build       = "build.rs"
 license     = "MIT"
+
+[dependencies]
+libc = "*"

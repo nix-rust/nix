@@ -142,37 +142,6 @@ pub fn accept(sockfd: RawFd) -> Result<RawFd> {
 /// Accept a connection on a socket
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/accept.2.html)
-#[cfg(not(any(target_os = "macos", target_os = "ios", target_os = "android")))]
-pub fn accept4(sockfd: RawFd, flags: SockFlag) -> Result<RawFd> {
-    use libc::sockaddr;
-
-    type F = unsafe extern "C" fn(c_int, *mut sockaddr, *mut socklen_t, c_int) -> c_int;
-
-    extern {
-        #[linkage = "extern_weak"]
-        static accept4: *const ();
-    }
-
-    if !accept4.is_null() {
-        let res = unsafe {
-            mem::transmute::<*const (), F>(accept4)(
-                sockfd, ptr::null_mut(), ptr::null_mut(), flags.bits)
-        };
-
-        if res < 0 {
-            return Err(Error::Sys(Errno::last()));
-        }
-
-        Ok(res)
-    } else {
-        accept4_polyfill(sockfd, flags)
-    }
-}
-
-/// Accept a connection on a socket
-///
-/// [Further reading](http://man7.org/linux/man-pages/man2/accept.2.html)
-#[cfg(any(target_os = "macos", target_os = "ios", target_os = "android"))]
 pub fn accept4(sockfd: RawFd, flags: SockFlag) -> Result<RawFd> {
     accept4_polyfill(sockfd, flags)
 }
