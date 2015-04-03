@@ -28,6 +28,9 @@ pub struct UtsName {
     domainname: [c_char; UTSNAME_LEN]
 }
 
+// workaround for `derive(Clone)` not working for fixed-length arrays
+impl Clone for UtsName { fn clone(&self) -> UtsName { *self } }
+
 impl UtsName {
     pub fn sysname<'a>(&'a self) -> &'a str {
         to_str(&(&self.sysname as *const c_char ) as *const *const c_char)

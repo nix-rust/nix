@@ -98,7 +98,7 @@ mod ffi {
         pub type speed_t = c_ulong;
 
         #[repr(C)]
-        #[derive(Copy)]
+        #[derive(Clone, Copy)]
         pub struct Termios {
             pub c_iflag: InputFlags,
             pub c_oflag: OutputFlags,
@@ -224,7 +224,7 @@ mod ffi {
 
         // XXX: We're using `repr(C)` because `c_int` doesn't work here.
         // See https://github.com/rust-lang/rust/issues/10374.
-        #[derive(Copy)]
+        #[derive(Clone, Copy)]
         #[repr(C)]
         pub enum SetArg {
             TCSANOW   = 0,
@@ -235,7 +235,7 @@ mod ffi {
 
         // XXX: We're using `repr(C)` because `c_int` doesn't work here.
         // See https://github.com/rust-lang/rust/issues/10374.
-        #[derive(Copy)]
+        #[derive(Clone, Copy)]
         #[repr(C)]
         pub enum FlushArg {
             TCIFLUSH  = 1,
@@ -245,7 +245,7 @@ mod ffi {
 
         // XXX: We're using `repr(C)` because `c_int` doesn't work here.
         // See https://github.com/rust-lang/rust/issues/10374.
-        #[derive(Copy)]
+        #[derive(Clone, Copy)]
         #[repr(C)]
         pub enum FlowArg {
             TCOOFF = 1,
@@ -264,7 +264,7 @@ mod ffi {
         pub type speed_t = c_uint;
 
         #[repr(C)]
-        #[derive(Copy)]
+        #[derive(Clone, Copy)]
         pub struct Termios {
             pub c_iflag: InputFlags,
             pub c_oflag: OutputFlags,
@@ -378,7 +378,7 @@ mod ffi {
 
         // XXX: We're using `repr(C)` because `c_int` doesn't work here.
         // See https://github.com/rust-lang/rust/issues/10374.
-        #[derive(Copy)]
+        #[derive(Clone, Copy)]
         #[repr(C)]
         pub enum SetArg {
             TCSANOW   = 0,
@@ -388,7 +388,7 @@ mod ffi {
 
         // XXX: We're using `repr(C)` because `c_int` doesn't work here.
         // See https://github.com/rust-lang/rust/issues/10374.
-        #[derive(Copy)]
+        #[derive(Clone, Copy)]
         #[repr(C)]
         pub enum FlushArg {
             TCIFLUSH  = 0,
@@ -398,7 +398,7 @@ mod ffi {
 
         // XXX: We're using `repr(C)` because `c_int` doesn't work here.
         // See https://github.com/rust-lang/rust/issues/10374.
-        #[derive(Copy)]
+        #[derive(Clone, Copy)]
         #[repr(C)]
         pub enum FlowArg {
             TCOOFF = 0,

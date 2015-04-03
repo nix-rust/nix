@@ -8,7 +8,7 @@ pub use self::IoctlArg::*;
 mod ffi {
     use libc::c_ushort;
 
-    #[derive(Copy, Debug)]
+    #[derive(Clone, Copy, Debug)]
     pub struct Winsize {
         pub ws_row: c_ushort,
         pub ws_col: c_ushort,

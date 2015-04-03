@@ -57,7 +57,7 @@ pub struct sockaddr_storage {
     pub __ss_pad2: [u8; 120],
 }
 
-#[derive(Copy, PartialEq, Eq, Debug, FromPrimitive)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, FromPrimitive)]
 #[repr(i32)]
 pub enum SockType {
     Stream = consts::SOCK_STREAM,
@@ -248,7 +248,7 @@ pub fn sendto(fd: RawFd, buf: &[u8], addr: &SockAddr, flags: SockMessageFlags) -
 }
 
 #[repr(C)]
-#[derive(Copy, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct linger {
     pub l_onoff: c_int,
     pub l_linger: c_int

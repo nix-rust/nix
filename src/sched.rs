@@ -89,7 +89,7 @@ pub type CpuMask = c_ulong;
 
 // Structure representing the CPU set to apply
 #[repr(C)]
-#[derive(Copy)]
+#[derive(Clone, Copy)]
 pub struct CpuSet {
     cpu_mask: [CpuMask; cpuset_attribs::CPU_SETSIZE/cpuset_attribs::CPU_MASK_BITS]
 }

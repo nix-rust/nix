@@ -1,5 +1,3 @@
-#![feature(convert, io_ext)]
-
 extern crate nix;
 extern crate libc;
 extern crate rand;

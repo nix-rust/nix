@@ -70,7 +70,7 @@ impl fmt::Debug for EpollEventKind {
     }
 }
 
-#[derive(Copy)]
+#[derive(Clone, Copy)]
 #[repr(C)]
 pub enum EpollOp {
     EpollCtlAdd = 1,
@@ -94,7 +94,7 @@ fn test_epoll_event_size() {
 }
 
 #[cfg(any(not(target_os = "android"), target_arch = "x86_64"))]
-#[derive(Copy)]
+#[derive(Clone, Copy)]
 #[repr(C, packed)]
 pub struct EpollEvent {
     pub events: EpollEventKind,

@@ -44,7 +44,7 @@ mod ffi {
     }
 }
 
-#[derive(Copy)]
+#[derive(Clone, Copy)]
 pub enum Fork {
     Parent(pid_t),
     Child

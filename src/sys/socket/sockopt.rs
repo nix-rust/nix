@@ -22,7 +22,7 @@ macro_rules! sockopt_impl {
     };
 
     ($name:ident, $flag:path, $get_ty:ty, $getter:ty, $set_ty:ty, $setter:ty) => {
-        #[derive(Copy, Debug)]
+        #[derive(Clone, Copy, Debug)]
         pub struct $name;
 
         impl<'a> SockOpt for $name {
