@@ -1,5 +1,5 @@
 use errno::Errno;
-use fcntl::Fd;
+use fcntl::RawFd;
 use libc::c_int;
 use std::mem;
 use {Error, Result, from_ffi};
@@ -264,7 +264,7 @@ mod ffi {
         pub type speed_t = c_uint;
 
         #[repr(C)]
-        #[derive(Copy)]
+        #[derive(Clone, Copy)]
         pub struct Termios {
             pub c_iflag: InputFlags,
             pub c_oflag: OutputFlags,
@@ -378,7 +378,7 @@ mod ffi {
 
         // XXX: We're using `repr(C)` because `c_int` doesn't work here.
         // See https://github.com/rust-lang/rust/issues/10374.
-        #[derive(Copy)]
+        #[derive(Clone, Copy)]
         #[repr(C)]
         pub enum SetArg {
             TCSANOW   = 0,
@@ -388,7 +388,7 @@ mod ffi {
 
         // XXX: We're using `repr(C)` because `c_int` doesn't work here.
         // See https://github.com/rust-lang/rust/issues/10374.
-        #[derive(Copy)]
+        #[derive(Clone, Copy)]
         #[repr(C)]
         pub enum FlushArg {
             TCIFLUSH  = 0,
@@ -398,7 +398,7 @@ mod ffi {
 
         // XXX: We're using `repr(C)` because `c_int` doesn't work here.
         // See https://github.com/rust-lang/rust/issues/10374.
-        #[derive(Copy)]
+        #[derive(Clone, Copy)]
         #[repr(C)]
         pub enum FlowArg {
             TCOOFF = 0,
@@ -433,7 +433,7 @@ pub fn cfsetospeed(termios: &mut Termios, speed: speed_t) -> Result<()> {
     })
 }
 
-pub fn tcgetattr(fd: Fd) -> Result<Termios> {
+pub fn tcgetattr(fd: RawFd) -> Result<Termios> {
     let mut termios = unsafe { mem::uninitialized() };
 
     let res = unsafe {
@@ -447,7 +447,7 @@ pub fn tcgetattr(fd: Fd) -> Result<Termios> {
     Ok(termios)
 }
 
-pub fn tcsetattr(fd: Fd,
+pub fn tcsetattr(fd: RawFd,
                  actions: SetArg,
                  termios: &Termios) -> Result<()> {
     from_ffi(unsafe {
@@ -455,25 +455,25 @@ pub fn tcsetattr(fd: Fd,
     })
 }
 
-pub fn tcdrain(fd: Fd) -> Result<()> {
+pub fn tcdrain(fd: RawFd) -> Result<()> {
     from_ffi(unsafe {
         ffi::tcdrain(fd)
     })
 }
 
-pub fn tcflow(fd: Fd, action: FlowArg) -> Result<()> {
+pub fn tcflow(fd: RawFd, action: FlowArg) -> Result<()> {
     from_ffi(unsafe {
         ffi::tcflow(fd, action as c_int)
     })
 }
 
-pub fn tcflush(fd: Fd, action: FlushArg) -> Result<()> {
+pub fn tcflush(fd: RawFd, action: FlushArg) -> Result<()> {
     from_ffi(unsafe {
         ffi::tcflush(fd, action as c_int)
     })
 }
 
-pub fn tcsendbreak(fd: Fd, action: c_int) -> Result<()> {
+pub fn tcsendbreak(fd: RawFd, action: c_int) -> Result<()> {
     from_ffi(unsafe {
         ffi::tcsendbreak(fd, action)
     })

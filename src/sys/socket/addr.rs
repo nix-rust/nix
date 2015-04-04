@@ -275,7 +275,7 @@ impl fmt::Display for Ipv4Addr {
  *
  */
 
-#[derive(Copy)]
+#[derive(Clone, Copy)]
 pub struct Ipv6Addr(pub libc::in6_addr);
 
 impl Ipv6Addr {

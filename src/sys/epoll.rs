@@ -2,7 +2,7 @@ use std::fmt;
 use libc::c_int;
 use errno::Errno;
 use {Error, Result, from_ffi};
-use fcntl::Fd;
+use fcntl::RawFd;
 
 mod ffi {
     use libc::{c_int};
@@ -70,7 +70,7 @@ impl fmt::Debug for EpollEventKind {
     }
 }
 
-#[derive(Copy)]
+#[derive(Clone, Copy)]
 #[repr(C)]
 pub enum EpollOp {
     EpollCtlAdd = 1,
@@ -79,7 +79,7 @@ pub enum EpollOp {
 }
 
 #[cfg(all(target_os = "android", not(target_arch = "x86_64")))]
-#[derive(Copy)]
+#[derive(Clone, Copy)]
 #[repr(C)]
 pub struct EpollEvent {
     pub events: EpollEventKind,
@@ -94,7 +94,7 @@ fn test_epoll_event_size() {
 }
 
 #[cfg(any(not(target_os = "android"), target_arch = "x86_64"))]
-#[derive(Copy)]
+#[derive(Clone, Copy)]
 #[repr(C, packed)]
 pub struct EpollEvent {
     pub events: EpollEventKind,
@@ -102,7 +102,7 @@ pub struct EpollEvent {
 }
 
 #[inline]
-pub fn epoll_create() -> Result<Fd> {
+pub fn epoll_create() -> Result<RawFd> {
     let res = unsafe { ffi::epoll_create(1024) };
 
     if res < 0 {
@@ -113,13 +113,13 @@ pub fn epoll_create() -> Result<Fd> {
 }
 
 #[inline]
-pub fn epoll_ctl(epfd: Fd, op: EpollOp, fd: Fd, event: &EpollEvent) -> Result<()> {
+pub fn epoll_ctl(epfd: RawFd, op: EpollOp, fd: RawFd, event: &EpollEvent) -> Result<()> {
     let res = unsafe { ffi::epoll_ctl(epfd, op as c_int, fd, event as *const EpollEvent) };
     from_ffi(res)
 }
 
 #[inline]
-pub fn epoll_wait(epfd: Fd, events: &mut [EpollEvent], timeout_ms: usize) -> Result<usize> {
+pub fn epoll_wait(epfd: RawFd, events: &mut [EpollEvent], timeout_ms: usize) -> Result<usize> {
     let res = unsafe {
         ffi::epoll_wait(epfd, events.as_mut_ptr(), events.len() as c_int, timeout_ms as c_int)
     };

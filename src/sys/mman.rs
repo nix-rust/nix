@@ -1,6 +1,6 @@
 use {Error, Result, NixPath, AsExtStr};
 use errno::Errno;
-use fcntl::{Fd, OFlag};
+use fcntl::{RawFd, OFlag};
 use libc::{c_void, size_t, off_t, mode_t};
 use sys::stat::Mode;
 
@@ -144,7 +144,7 @@ pub fn munlock(addr: *const c_void, length: size_t) -> Result<()> {
 
 /// Calls to mmap are inherently unsafe, so they must be made in an unsafe block. Typically
 /// a higher-level abstraction will hide the unsafe interactions with the mmap'd region.
-pub fn mmap(addr: *mut c_void, length: size_t, prot: MmapProt, flags: MmapFlag, fd: Fd, offset: off_t) -> Result<*mut c_void> {
+pub fn mmap(addr: *mut c_void, length: size_t, prot: MmapProt, flags: MmapFlag, fd: RawFd, offset: off_t) -> Result<*mut c_void> {
     let ret = unsafe { ffi::mmap(addr, length, prot, flags, fd, offset) };
 
     if ret as isize == MAP_FAILED  {
@@ -175,7 +175,7 @@ pub fn msync(addr: *const c_void, length: size_t, flags: MmapSync) -> Result<()>
     }
 }
 
-pub fn shm_open<P: ?Sized + NixPath>(name: &P, flag: OFlag, mode: Mode) -> Result<Fd> {
+pub fn shm_open<P: ?Sized + NixPath>(name: &P, flag: OFlag, mode: Mode) -> Result<RawFd> {
     let ret = try!(name.with_nix_path(|osstr| {
         unsafe {
             ffi::shm_open(osstr.as_ext_str(), flag.bits(), mode.bits() as mode_t)

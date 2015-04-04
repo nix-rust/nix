@@ -1,7 +1,7 @@
 use std::mem;
 use libc::{c_int, c_uint};
 use errno::Errno;
-use fcntl::Fd;
+use fcntl::RawFd;
 use {Error, Result};
 
 bitflags!(
@@ -12,7 +12,7 @@ bitflags!(
     }
 );
 
-pub fn eventfd(initval: usize, flags: EventFdFlag) -> Result<Fd> {
+pub fn eventfd(initval: usize, flags: EventFdFlag) -> Result<RawFd> {
     type F = unsafe extern "C" fn(initval: c_uint, flags: c_int) -> c_int;
 
     extern {

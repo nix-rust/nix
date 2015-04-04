@@ -57,7 +57,7 @@ pub struct sockaddr_storage {
     pub __ss_pad2: [u8; 120],
 }
 
-#[derive(Copy, PartialEq, Eq, Debug, FromPrimitive)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, FromPrimitive)]
 #[repr(i32)]
 pub enum SockType {
     Stream = consts::SOCK_STREAM,
@@ -78,7 +78,7 @@ bitflags!(
 /// Create an endpoint for communication
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/socket.2.html)
-pub fn socket(domain: AddressFamily, ty: SockType, flags: SockFlag) -> Result<Fd> {
+pub fn socket(domain: AddressFamily, ty: SockType, flags: SockFlag) -> Result<RawFd> {
     let mut ty = ty as c_int;
     let feat_atomic = features::socket_atomic_cloexec();
 
@@ -109,7 +109,7 @@ pub fn socket(domain: AddressFamily, ty: SockType, flags: SockFlag) -> Result<Fd
 /// Listen for connections on a socket
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/listen.2.html)
-pub fn listen(sockfd: Fd, backlog: usize) -> Result<()> {
+pub fn listen(sockfd: RawFd, backlog: usize) -> Result<()> {
     let res = unsafe { ffi::listen(sockfd, backlog as c_int) };
     from_ffi(res)
 }
@@ -117,7 +117,7 @@ pub fn listen(sockfd: Fd, backlog: usize) -> Result<()> {
 /// Bind a name to a socket
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/bind.2.html)
-pub fn bind(fd: Fd, addr: &SockAddr) -> Result<()> {
+pub fn bind(fd: RawFd, addr: &SockAddr) -> Result<()> {
     let res = unsafe {
         let (ptr, len) = addr.as_ffi_pair();
         ffi::bind(fd, ptr, len)
@@ -129,7 +129,7 @@ pub fn bind(fd: Fd, addr: &SockAddr) -> Result<()> {
 /// Accept a connection on a socket
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/accept.2.html)
-pub fn accept(sockfd: Fd) -> Result<Fd> {
+pub fn accept(sockfd: RawFd) -> Result<RawFd> {
     let res = unsafe { ffi::accept(sockfd, ptr::null_mut(), ptr::null_mut()) };
 
     if res < 0 {
@@ -143,7 +143,7 @@ pub fn accept(sockfd: Fd) -> Result<Fd> {
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/accept.2.html)
 #[cfg(not(any(target_os = "macos", target_os = "ios", target_os = "android")))]
-pub fn accept4(sockfd: Fd, flags: SockFlag) -> Result<Fd> {
+pub fn accept4(sockfd: RawFd, flags: SockFlag) -> Result<RawFd> {
     use libc::sockaddr;
 
     type F = unsafe extern "C" fn(c_int, *mut sockaddr, *mut socklen_t, c_int) -> c_int;
@@ -173,12 +173,12 @@ pub fn accept4(sockfd: Fd, flags: SockFlag) -> Result<Fd> {
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/accept.2.html)
 #[cfg(any(target_os = "macos", target_os = "ios", target_os = "android"))]
-pub fn accept4(sockfd: Fd, flags: SockFlag) -> Result<Fd> {
+pub fn accept4(sockfd: RawFd, flags: SockFlag) -> Result<RawFd> {
     accept4_polyfill(sockfd, flags)
 }
 
 #[inline]
-fn accept4_polyfill(sockfd: Fd, flags: SockFlag) -> Result<Fd> {
+fn accept4_polyfill(sockfd: RawFd, flags: SockFlag) -> Result<RawFd> {
     let res =  unsafe { ffi::accept(sockfd, ptr::null_mut(), ptr::null_mut()) };
 
     if res < 0 {
@@ -199,7 +199,7 @@ fn accept4_polyfill(sockfd: Fd, flags: SockFlag) -> Result<Fd> {
 /// Initiate a connection on a socket
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/connect.2.html)
-pub fn connect(fd: Fd, addr: &SockAddr) -> Result<()> {
+pub fn connect(fd: RawFd, addr: &SockAddr) -> Result<()> {
     let res = unsafe {
         let (ptr, len) = addr.as_ffi_pair();
         ffi::connect(fd, ptr, len)
@@ -212,7 +212,7 @@ pub fn connect(fd: Fd, addr: &SockAddr) -> Result<()> {
 /// the number of bytes read and the socket address of the sender.
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/recvmsg.2.html)
-pub fn recvfrom(sockfd: Fd, buf: &mut [u8]) -> Result<(usize, SockAddr)> {
+pub fn recvfrom(sockfd: RawFd, buf: &mut [u8]) -> Result<(usize, SockAddr)> {
     unsafe {
         let addr: sockaddr_storage = mem::zeroed();
         let mut len = mem::size_of::<sockaddr_storage>() as socklen_t;
@@ -234,7 +234,7 @@ pub fn recvfrom(sockfd: Fd, buf: &mut [u8]) -> Result<(usize, SockAddr)> {
     }
 }
 
-pub fn sendto(fd: Fd, buf: &[u8], addr: &SockAddr, flags: SockMessageFlags) -> Result<usize> {
+pub fn sendto(fd: RawFd, buf: &[u8], addr: &SockAddr, flags: SockMessageFlags) -> Result<usize> {
     let ret = unsafe {
         let (ptr, len) = addr.as_ffi_pair();
         ffi::sendto(fd, buf.as_ptr() as *const c_void, buf.len() as size_t, flags, ptr, len)
@@ -248,7 +248,7 @@ pub fn sendto(fd: Fd, buf: &[u8], addr: &SockAddr, flags: SockMessageFlags) -> R
 }
 
 #[repr(C)]
-#[derive(Copy, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct linger {
     pub l_onoff: c_int,
     pub l_linger: c_int
@@ -284,30 +284,30 @@ pub trait SockOpt : Copy + fmt::Debug {
     type Set;
 
     #[doc(hidden)]
-    fn get(&self, fd: Fd, level: c_int) -> Result<Self::Get>;
+    fn get(&self, fd: RawFd, level: c_int) -> Result<Self::Get>;
 
     #[doc(hidden)]
-    fn set(&self, fd: Fd, level: c_int, val: Self::Set) -> Result<()>;
+    fn set(&self, fd: RawFd, level: c_int, val: Self::Set) -> Result<()>;
 }
 
 /// Get the current value for the requested socket option
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/setsockopt.2.html)
-pub fn getsockopt<O: SockOpt>(fd: Fd, level: SockLevel, opt: O) -> Result<O::Get> {
+pub fn getsockopt<O: SockOpt>(fd: RawFd, level: SockLevel, opt: O) -> Result<O::Get> {
     opt.get(fd, level as c_int)
 }
 
 /// Sets the value for the requested socket option
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/setsockopt.2.html)
-pub fn setsockopt<O: SockOpt>(fd: Fd, level: SockLevel, opt: O, val: O::Set) -> Result<()> {
+pub fn setsockopt<O: SockOpt>(fd: RawFd, level: SockLevel, opt: O, val: O::Set) -> Result<()> {
     opt.set(fd, level as c_int, val)
 }
 
 /// Get the address of the peer connected to the socket `fd`.
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/getpeername.2.html)
-pub fn getpeername(fd: Fd) -> Result<SockAddr> {
+pub fn getpeername(fd: RawFd) -> Result<SockAddr> {
     unsafe {
         let addr: sockaddr_storage = mem::uninitialized();
         let mut len = mem::size_of::<sockaddr_storage>() as socklen_t;
@@ -325,7 +325,7 @@ pub fn getpeername(fd: Fd) -> Result<SockAddr> {
 /// Get the current address to which the socket `fd` is bound.
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/getsockname.2.html)
-pub fn getsockname(fd: Fd) -> Result<SockAddr> {
+pub fn getsockname(fd: RawFd) -> Result<SockAddr> {
     unsafe {
         let addr: sockaddr_storage = mem::uninitialized();
         let mut len = mem::size_of::<sockaddr_storage>() as socklen_t;
