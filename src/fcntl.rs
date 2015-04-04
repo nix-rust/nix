@@ -6,8 +6,8 @@ use sys::stat::Mode;
 pub use self::consts::*;
 pub use self::ffi::flock;
 
-// Re-export Fd defined in std
-pub type Fd = ::std::os::unix::io::Fd;
+// Re-export RawFd defined in std
+pub type RawFd = ::std::os::unix::io::RawFd;
 
 #[allow(dead_code)]
 mod ffi {
@@ -19,7 +19,7 @@ mod ffi {
         use libc::{c_int, c_short, off_t, pid_t};
 
         #[repr(C)]
-        #[derive(Copy)]
+        #[derive(Clone,Copy)]
         pub struct flock {
             pub l_type: c_short,
             pub l_whence: c_short,
@@ -71,7 +71,7 @@ mod ffi {
     }
 }
 
-pub fn open<P: ?Sized + NixPath>(path: &P, oflag: OFlag, mode: Mode) -> Result<Fd> {
+pub fn open<P: ?Sized + NixPath>(path: &P, oflag: OFlag, mode: Mode) -> Result<RawFd> {
     let fd = try!(path.with_nix_path(|osstr| {
         unsafe { ffi::open(osstr.as_ext_str(), oflag.bits(), mode.bits() as mode_t) }
     }));
@@ -84,8 +84,8 @@ pub fn open<P: ?Sized + NixPath>(path: &P, oflag: OFlag, mode: Mode) -> Result<F
 }
 
 pub enum FcntlArg<'a> {
-    F_DUPFD(Fd),
-    F_DUPFD_CLOEXEC(Fd),
+    F_DUPFD(RawFd),
+    F_DUPFD_CLOEXEC(RawFd),
     F_GETFD,
     F_SETFD(FdFlag), // FD_FLAGS
     F_GETFL,
@@ -104,7 +104,7 @@ pub enum FcntlArg<'a> {
 }
 
 // TODO: Figure out how to handle value fcntl returns
-pub fn fcntl(fd: Fd, arg: FcntlArg) -> Result<()> {
+pub fn fcntl(fd: RawFd, arg: FcntlArg) -> Result<()> {
     use self::FcntlArg::*;
 
     let res = unsafe {

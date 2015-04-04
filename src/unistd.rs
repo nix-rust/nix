@@ -2,7 +2,7 @@
 //!
 use {Error, Result, NixPath, AsExtStr, from_ffi};
 use errno::Errno;
-use fcntl::{fcntl, Fd, OFlag, O_NONBLOCK, O_CLOEXEC, FD_CLOEXEC};
+use fcntl::{fcntl, RawFd, OFlag, O_NONBLOCK, O_CLOEXEC, FD_CLOEXEC};
 use fcntl::FcntlArg::{F_SETFD, F_SETFL};
 use libc::{c_char, c_void, c_int, size_t, pid_t, off_t};
 use std::{mem, ptr};
@@ -44,7 +44,7 @@ mod ffi {
     }
 }
 
-#[derive(Copy)]
+#[derive(Clone, Copy)]
 pub enum Fork {
     Parent(pid_t),
     Child
@@ -81,7 +81,7 @@ pub fn fork() -> Result<Fork> {
 }
 
 #[inline]
-pub fn dup(oldfd: Fd) -> Result<Fd> {
+pub fn dup(oldfd: RawFd) -> Result<RawFd> {
     let res = unsafe { ffi::dup(oldfd) };
 
     if res < 0 {
@@ -92,7 +92,7 @@ pub fn dup(oldfd: Fd) -> Result<Fd> {
 }
 
 #[inline]
-pub fn dup2(oldfd: Fd, newfd: Fd) -> Result<Fd> {
+pub fn dup2(oldfd: RawFd, newfd: RawFd) -> Result<RawFd> {
     let res = unsafe { ffi::dup2(oldfd, newfd) };
 
     if res < 0 {
@@ -103,7 +103,7 @@ pub fn dup2(oldfd: Fd, newfd: Fd) -> Result<Fd> {
 }
 
 #[cfg(not(any(target_os = "macos", target_os = "ios")))]
-pub fn dup3(oldfd: Fd, newfd: Fd, flags: OFlag) -> Result<Fd> {
+pub fn dup3(oldfd: RawFd, newfd: RawFd, flags: OFlag) -> Result<RawFd> {
     type F = unsafe extern "C" fn(c_int, c_int, c_int) -> c_int;
 
     extern {
@@ -128,12 +128,12 @@ pub fn dup3(oldfd: Fd, newfd: Fd, flags: OFlag) -> Result<Fd> {
 }
 
 #[cfg(any(target_os = "macos", target_os = "ios"))]
-pub fn dup3(oldfd: Fd, newfd: Fd, flags: OFlag) -> Result<Fd> {
+pub fn dup3(oldfd: RawFd, newfd: RawFd, flags: OFlag) -> Result<RawFd> {
     dup3_polyfill(oldfd, newfd, flags)
 }
 
 #[inline]
-fn dup3_polyfill(oldfd: Fd, newfd: Fd, flags: OFlag) -> Result<Fd> {
+fn dup3_polyfill(oldfd: RawFd, newfd: RawFd, flags: OFlag) -> Result<RawFd> {
     use errno::EINVAL;
 
     if oldfd == newfd {
@@ -205,12 +205,12 @@ pub fn gethostname(name: &mut [u8]) -> Result<()> {
     from_ffi(res)
 }
 
-pub fn close(fd: Fd) -> Result<()> {
+pub fn close(fd: RawFd) -> Result<()> {
     let res = unsafe { ffi::close(fd) };
     from_ffi(res)
 }
 
-pub fn read(fd: Fd, buf: &mut [u8]) -> Result<usize> {
+pub fn read(fd: RawFd, buf: &mut [u8]) -> Result<usize> {
     let res = unsafe { ffi::read(fd, buf.as_mut_ptr() as *mut c_void, buf.len() as size_t) };
 
     if res < 0 {
@@ -220,7 +220,7 @@ pub fn read(fd: Fd, buf: &mut [u8]) -> Result<usize> {
     return Ok(res as usize)
 }
 
-pub fn write(fd: Fd, buf: &[u8]) -> Result<usize> {
+pub fn write(fd: RawFd, buf: &[u8]) -> Result<usize> {
     let res = unsafe { ffi::write(fd, buf.as_ptr() as *const c_void, buf.len() as size_t) };
 
     if res < 0 {
@@ -230,7 +230,7 @@ pub fn write(fd: Fd, buf: &[u8]) -> Result<usize> {
     return Ok(res as usize)
 }
 
-pub fn pipe() -> Result<(Fd, Fd)> {
+pub fn pipe() -> Result<(RawFd, RawFd)> {
     unsafe {
         let mut res;
         let mut fds: [c_int; 2] = mem::uninitialized();
@@ -246,7 +246,7 @@ pub fn pipe() -> Result<(Fd, Fd)> {
 }
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
-pub fn pipe2(flags: OFlag) -> Result<(Fd, Fd)> {
+pub fn pipe2(flags: OFlag) -> Result<(RawFd, RawFd)> {
     type F = unsafe extern "C" fn(fds: *mut c_int, flags: c_int) -> c_int;
 
     extern {
@@ -280,7 +280,7 @@ pub fn pipe2(flags: OFlag) -> Result<(Fd, Fd)> {
 }
 
 #[cfg(any(target_os = "macos", target_os = "ios"))]
-pub fn pipe2(flags: OFlag) -> Result<(Fd, Fd)> {
+pub fn pipe2(flags: OFlag) -> Result<(RawFd, RawFd)> {
     unsafe {
         let mut res;
         let mut fds: [c_int; 2] = mem::uninitialized();
@@ -297,7 +297,7 @@ pub fn pipe2(flags: OFlag) -> Result<(Fd, Fd)> {
     }
 }
 
-fn pipe2_setflags(fd1: Fd, fd2: Fd, flags: OFlag) -> Result<()> {
+fn pipe2_setflags(fd1: RawFd, fd2: RawFd, flags: OFlag) -> Result<()> {
     let mut res = Ok(());
 
     if flags.contains(O_CLOEXEC) {
@@ -322,7 +322,7 @@ fn pipe2_setflags(fd1: Fd, fd2: Fd, flags: OFlag) -> Result<()> {
     }
 }
 
-pub fn ftruncate(fd: Fd, len: off_t) -> Result<()> {
+pub fn ftruncate(fd: RawFd, len: off_t) -> Result<()> {
     if unsafe { ffi::ftruncate(fd, len) } < 0 {
         Err(Error::Sys(Errno::last()))
     } else {
@@ -330,7 +330,7 @@ pub fn ftruncate(fd: Fd, len: off_t) -> Result<()> {
     }
 }
 
-pub fn isatty(fd: Fd) -> Result<bool> {
+pub fn isatty(fd: RawFd) -> Result<bool> {
     use libc;
 
     if unsafe { libc::isatty(fd) } == 1 {

@@ -4,7 +4,7 @@ use errno::Errno;
 use sys::time::TimeVal;
 use libc::{c_int, uint8_t, c_void, socklen_t};
 use std::mem;
-use std::os::unix::io::Fd;
+use std::os::unix::io::RawFd;
 
 // Helper to generate the sockopt accessors
 // TODO: Figure out how to ommit gets when not supported by opt
@@ -22,14 +22,14 @@ macro_rules! sockopt_impl {
     };
 
     ($name:ident, $flag:path, $get_ty:ty, $getter:ty, $set_ty:ty, $setter:ty) => {
-        #[derive(Copy, Debug)]
+        #[derive(Clone, Copy, Debug)]
         pub struct $name;
 
         impl<'a> SockOpt for $name {
             type Get = $get_ty;
             type Set = $set_ty;
 
-            fn get(&self, fd: Fd, level: c_int) -> Result<$get_ty> {
+            fn get(&self, fd: RawFd, level: c_int) -> Result<$get_ty> {
                 unsafe {
                     let mut getter: $getter = Get::blank();
 
@@ -46,7 +46,7 @@ macro_rules! sockopt_impl {
                 }
             }
 
-            fn set(&self, fd: Fd, level: c_int, val: $set_ty) -> Result<()> {
+            fn set(&self, fd: RawFd, level: c_int, val: $set_ty) -> Result<()> {
                 unsafe {
                     let setter: $setter = Set::new(val);
 

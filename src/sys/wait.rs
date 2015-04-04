@@ -16,7 +16,7 @@ bitflags!(
     }
 );
 
-#[derive(Copy)]
+#[derive(Clone, Copy)]
 pub enum WaitStatus {
     Exited(pid_t),
     StillAlive

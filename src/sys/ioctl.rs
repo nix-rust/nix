@@ -1,5 +1,5 @@
 use libc;
-use fcntl::Fd;
+use fcntl::RawFd;
 use {Result, from_ffi};
 
 pub use self::ffi::Winsize;
@@ -8,7 +8,7 @@ pub use self::IoctlArg::*;
 mod ffi {
     use libc::c_ushort;
 
-    #[derive(Copy, Debug)]
+    #[derive(Clone, Copy, Debug)]
     pub struct Winsize {
         pub ws_row: c_ushort,
         pub ws_col: c_ushort,
@@ -34,7 +34,7 @@ pub enum IoctlArg<'a> {
     TIOCGWINSZ(&'a mut Winsize)
 }
 
-pub fn ioctl(fd: Fd, arg: IoctlArg) -> Result<()> {
+pub fn ioctl(fd: RawFd, arg: IoctlArg) -> Result<()> {
     match arg {
         TIOCGWINSZ(&mut ref winsize) => {
             from_ffi(unsafe {

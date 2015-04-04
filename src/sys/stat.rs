@@ -3,7 +3,7 @@ pub use libc::stat as FileStat;
 
 use {Error, Result, NixPath, AsExtStr,from_ffi};
 use errno::Errno;
-use fcntl::Fd;
+use fcntl::RawFd;
 use libc::mode_t;
 use std::fmt;
 use std::mem;
@@ -94,7 +94,7 @@ pub fn stat<P: ?Sized + NixPath>(path: &P) -> Result<FileStat> {
     Ok(dst)
 }
 
-pub fn fstat(fd: Fd) -> Result<FileStat> {
+pub fn fstat(fd: RawFd) -> Result<FileStat> {
     let mut dst = unsafe { mem::uninitialized() };
     let res = unsafe { ffi::fstat(fd, &mut dst as *mut FileStat) };
 

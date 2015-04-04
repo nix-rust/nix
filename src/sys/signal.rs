@@ -96,7 +96,7 @@ pub mod signal {
     // actually a giant union. Currently we're only interested in these fields,
     // however.
     #[repr(C)]
-    #[derive(Copy)]
+    #[derive(Clone, Copy)]
     pub struct siginfo {
         si_signo: libc::c_int,
         si_errno: libc::c_int,
@@ -117,14 +117,14 @@ pub mod signal {
 
     #[repr(C)]
     #[cfg(target_pointer_width = "32")]
-    #[derive(Copy)]
+    #[derive(Clone, Copy)]
     pub struct sigset_t {
         __val: [libc::c_ulong; 32],
     }
 
     #[repr(C)]
     #[cfg(target_pointer_width = "64")]
-    #[derive(Copy)]
+    #[derive(Clone, Copy)]
     pub struct sigset_t {
         __val: [libc::c_ulong; 16],
     }
@@ -249,7 +249,7 @@ pub mod signal {
     // This structure has more fields, but we're not all that interested in
     // them.
     #[repr(C)]
-    #[derive(Copy)]
+    #[derive(Clone, Copy)]
     pub struct siginfo {
         pub si_signo: libc::c_int,
         pub si_errno: libc::c_int,
@@ -297,7 +297,7 @@ mod ffi {
     }
 }
 
-#[derive(Copy)]
+#[derive(Clone, Copy)]
 pub struct SigSet {
     sigset: sigset_t
 }

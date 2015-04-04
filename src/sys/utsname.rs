@@ -28,6 +28,18 @@ pub struct UtsName {
     domainname: [c_char; UTSNAME_LEN]
 }
 
+impl Clone for UtsName {
+    fn clone(&self) -> UtsName {
+        unsafe {
+            use std::ptr::copy_nonoverlapping;
+            use std::mem;
+            let mut ret:UtsName = mem::uninitialized();
+            copy_nonoverlapping(self, &mut ret, mem::size_of::<UtsName>());
+            return ret
+        }
+    }
+}
+
 impl UtsName {
     pub fn sysname<'a>(&'a self) -> &'a str {
         to_str(&(&self.sysname as *const c_char ) as *const *const c_char)
