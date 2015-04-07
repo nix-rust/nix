@@ -55,6 +55,10 @@ pub enum Error {
 }
 
 impl Error {
+    pub fn from_errno(errno: errno::Errno) -> Error {
+        Error::Sys(errno)
+    }
+
     pub fn last() -> Error {
         Error::Sys(errno::Errno::last())
     }
