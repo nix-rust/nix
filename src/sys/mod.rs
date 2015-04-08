@@ -5,9 +5,9 @@ pub mod epoll;
 #[cfg(any(target_os = "macos", target_os = "ios"))]
 pub mod event;
 
-// Dont' support eventfd for now
-// #[cfg(any(target_os = "linux", target_os = "android"))]
-// pub mod eventfd;
+// TODO: switch from feature flags to conditional builds
+#[cfg(feature = "eventfd")]
+pub mod eventfd;
 
 #[cfg(not(target_os = "ios"))]
 pub mod ioctl;

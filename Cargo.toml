@@ -13,6 +13,10 @@ exclude     = [
   "test/**/*"
 ]
 
+[features]
+
+eventfd = []
+
 [dependencies]
 libc     = "0.1.4"
 bitflags = "0.1.1"
