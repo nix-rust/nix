@@ -48,3 +48,18 @@ pub fn test_getsockname() {
 
     assert_eq!(addr, res.to_str());
 }
+
+#[test]
+pub fn test_socketpair() {
+    use nix::unistd::{read, write};
+    use nix::sys::socket::{socketpair, AddressFamily, SockType, SockFlag};
+
+    let (fd1, fd2) = socketpair(AddressFamily::Unix, SockType::Stream, 0,
+                                SockFlag::empty())
+                     .unwrap();
+    write(fd1, b"hello").unwrap();
+    let mut buf = [0;5];
+    read(fd2, &mut buf).unwrap();
+
+    assert_eq!(&buf[..], b"hello");
+}

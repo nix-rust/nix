@@ -8,4 +8,11 @@ extern {
         optname: c_int,
         optval: *mut c_void,
         optlen: *mut socklen_t) -> c_int;
+
+    pub fn socketpair(
+        domain:     c_int,
+        typ:        c_int,
+        protocol:   c_int,
+        sv:         *mut c_int
+    ) -> c_int;
 }
