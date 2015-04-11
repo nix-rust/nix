@@ -6,6 +6,7 @@ mod sys;
 mod test_nix_path;
 mod test_stat;
 mod test_unistd;
+mod test_mq;
 
 mod ports {
     use std::sync::atomic::{AtomicUsize, ATOMIC_USIZE_INIT};
