@@ -350,12 +350,11 @@ impl SigAction {
     }
 }
 
-pub fn sigaction(signum: SigNum, sigaction: &SigAction) -> Result<SigAction> {
-    let mut oldact = unsafe { mem::uninitialized::<sigaction_t>() };
+pub unsafe fn sigaction(signum: SigNum, sigaction: &SigAction) -> Result<SigAction> {
+    let mut oldact = mem::uninitialized::<sigaction_t>();
 
-    let res = unsafe {
-        ffi::sigaction(signum, &sigaction.sigaction as *const sigaction_t, &mut oldact as *mut sigaction_t)
-    };
+    let res =
+        ffi::sigaction(signum, &sigaction.sigaction as *const sigaction_t, &mut oldact as *mut sigaction_t);
 
     if res < 0 {
         return Err(Error::Sys(Errno::last()));
