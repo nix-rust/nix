@@ -78,6 +78,7 @@ sockopt_impl!(IpMulticastTtl, consts::IP_MULTICAST_TTL, u8);
 sockopt_impl!(ReceiveTimeout, consts::SO_RCVTIMEO, TimeVal);
 sockopt_impl!(SendTimeout, consts::SO_SNDTIMEO, TimeVal);
 sockopt_impl!(Broadcast, consts::SO_BROADCAST, bool);
+sockopt_impl!(OobInline, consts::SO_OOBINLINE, bool);
 
 /*
  *
