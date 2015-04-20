@@ -10,26 +10,25 @@ use std::mem;
 // TODO: Figure out how to ommit gets when not supported by opt
 macro_rules! sockopt_impl {
     ($name:ident, $flag:path, bool) => {
-        sockopt_impl!($name, $flag, bool, GetBool, bool, SetBool);
+        sockopt_impl!($name, $flag, bool, GetBool, SetBool);
     };
 
     ($name:ident, $flag:path, u8) => {
-        sockopt_impl!($name, $flag, u8, GetU8, u8, SetU8);
+        sockopt_impl!($name, $flag, u8, GetU8, SetU8);
     };
 
     ($name:ident, $flag:path, $ty:ty) => {
-        sockopt_impl!($name, $flag, $ty, GetStruct<$ty>, &'a $ty, SetStruct<$ty>);
+        sockopt_impl!($name, $flag, $ty, GetStruct<$ty>, SetStruct<$ty>);
     };
 
-    ($name:ident, $flag:path, $get_ty:ty, $getter:ty, $set_ty:ty, $setter:ty) => {
+    ($name:ident, $flag:path, $ty:ty, $getter:ty, $setter:ty) => {
         #[derive(Clone, Copy, Debug)]
         pub struct $name;
 
-        impl<'a> SockOpt for $name {
-            type Get = $get_ty;
-            type Set = $set_ty;
+        impl SockOpt for $name {
+            type Val = $ty;
 
-            fn get(&self, fd: Fd, level: c_int) -> Result<$get_ty> {
+            fn get(&self, fd: Fd, level: c_int) -> Result<$ty> {
                 unsafe {
                     let mut getter: $getter = Get::blank();
 
@@ -46,7 +45,7 @@ macro_rules! sockopt_impl {
                 }
             }
 
-            fn set(&self, fd: Fd, level: c_int, val: $set_ty) -> Result<()> {
+            fn set(&self, fd: Fd, level: c_int, val: &$ty) -> Result<()> {
                 unsafe {
                     let setter: $setter = Set::new(val);
 
@@ -93,8 +92,8 @@ trait Get<T> {
     unsafe fn unwrap(self) -> T;
 }
 
-trait Set<T> {
-    fn new(val: T) -> Self;
+trait Set<'a, T> {
+    fn new(val: &'a T) -> Self;
     unsafe fn ffi_ptr(&self) -> *const c_void;
     unsafe fn ffi_len(&self) -> socklen_t;
 }
@@ -127,7 +126,7 @@ struct SetStruct<'a, T: 'static> {
     ptr: &'a T,
 }
 
-impl<'a, T> Set<&'a T> for SetStruct<'a, T> {
+impl<'a, T> Set<'a, T> for SetStruct<'a, T> {
     fn new(ptr: &'a T) -> SetStruct<'a, T> {
         SetStruct { ptr: ptr }
     }
@@ -169,9 +168,9 @@ struct SetBool {
     val: c_int,
 }
 
-impl Set<bool> for SetBool {
-    fn new(val: bool) -> SetBool {
-        SetBool { val: if val { 1 } else { 0 } }
+impl<'a> Set<'a, bool> for SetBool {
+    fn new(val: &'a bool) -> SetBool {
+        SetBool { val: if *val { 1 } else { 0 } }
     }
 
     unsafe fn ffi_ptr(&self) -> *const c_void {
@@ -211,9 +210,9 @@ struct SetU8 {
     val: uint8_t,
 }
 
-impl Set<u8> for SetU8 {
-    fn new(val: u8) -> SetU8 {
-        SetU8 { val: val as uint8_t }
+impl<'a> Set<'a, u8> for SetU8 {
+    fn new(val: &'a u8) -> SetU8 {
+        SetU8 { val: *val as uint8_t }
     }
 
     unsafe fn ffi_ptr(&self) -> *const c_void {

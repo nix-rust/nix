@@ -278,31 +278,26 @@ pub enum SockLevel {
 /// Represents a socket option that can be accessed or set. Used as an argument
 /// to `getsockopt` and `setsockopt`.
 pub trait SockOpt : Copy + fmt::Debug {
-    /// Type of `getsockopt` return value
-    type Get;
-
-    /// Type of value used to set the socket option. Used as the argument to
-    /// `setsockopt`.
-    type Set;
+    type Val;
 
     #[doc(hidden)]
-    fn get(&self, fd: Fd, level: c_int) -> Result<Self::Get>;
+    fn get(&self, fd: Fd, level: c_int) -> Result<Self::Val>;
 
     #[doc(hidden)]
-    fn set(&self, fd: Fd, level: c_int, val: Self::Set) -> Result<()>;
+    fn set(&self, fd: Fd, level: c_int, val: &Self::Val) -> Result<()>;
 }
 
 /// Get the current value for the requested socket option
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/setsockopt.2.html)
-pub fn getsockopt<O: SockOpt>(fd: Fd, level: SockLevel, opt: O) -> Result<O::Get> {
+pub fn getsockopt<O: SockOpt>(fd: Fd, level: SockLevel, opt: O) -> Result<O::Val> {
     opt.get(fd, level as c_int)
 }
 
 /// Sets the value for the requested socket option
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/setsockopt.2.html)
-pub fn setsockopt<O: SockOpt>(fd: Fd, level: SockLevel, opt: O, val: O::Set) -> Result<()> {
+pub fn setsockopt<O: SockOpt>(fd: Fd, level: SockLevel, opt: O, val: &O::Val) -> Result<()> {
     opt.set(fd, level as c_int, val)
 }
 
