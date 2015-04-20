@@ -25,9 +25,8 @@ macro_rules! sockopt_impl {
         #[derive(Clone, Copy, Debug)]
         pub struct $name;
 
-        impl<'a> SockOpt for $name {
+        impl <'a> SockOpt<$set_ty> for $name {
             type Get = $get_ty;
-            type Set = $set_ty;
 
             fn get(&self, fd: Fd, level: c_int) -> Result<$get_ty> {
                 unsafe {
