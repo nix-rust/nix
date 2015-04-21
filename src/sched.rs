@@ -63,7 +63,7 @@ mod cpuset_attribs {
     }
 }
 
-#[cfg(all(target_arch = "arm", target_os = "android"))]
+#[cfg(all(target_arch = "arm", any(target_os = "linux", target_os = "android")))]
 mod cpuset_attribs {
     use super::CpuMask;
     // bionic only supports up to 32 independent CPUs, instead of 1024.
