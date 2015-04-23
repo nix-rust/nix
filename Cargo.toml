@@ -22,7 +22,7 @@ libc     = "0.1.4"
 bitflags = "0.1.1"
 
 [dev-dependencies]
-rand = "0.3.5"
+rand = "0.3.8"
 
 [dev-dependencies.nix-test]
 path    = "nix-test"
