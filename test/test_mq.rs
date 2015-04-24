@@ -5,8 +5,10 @@ use nix::sys::stat::{S_IWUSR, S_IRUSR, S_IRGRP, S_IROTH};
 use std::ffi::CString;
 use libc::{c_long, strlen};
 
-use nix::unistd::fork;
+use nix::unistd::{fork, read, write, pipe};
 use nix::unistd::Fork::{Child, Parent};
+use nix::sys::wait::*;
+
 
 #[test]
 fn mq_send_and_receive() {
@@ -21,6 +23,8 @@ fn mq_send_and_receive() {
 
     mq_send(mqd_in_parent, msg_to_send, 1).unwrap();
 
+    let (reader, writer) = pipe().unwrap();
+
     let pid = fork();
     match pid {
         Ok(Child) => {
@@ -32,10 +36,19 @@ fn mq_send_and_receive() {
             let message_str = String::from_utf8_lossy(&buf[0 .. len]);
             let expected_str = String::from_utf8_lossy(msg_to_send.as_bytes());
             assert!(message_str == expected_str);
+            write(writer, &buf).unwrap();  // pipe result to parent process. Otherwise cargo does not report test failures correctly
             mq_close(mqd_in_child).unwrap();
       }
-      Ok(Parent(_)) => {
+      Ok(Parent(child_pid)) => {
           mq_close(mqd_in_parent).unwrap();
+
+          // Wait for the child to exit.
+          waitpid(child_pid, None).unwrap();
+          // Read 1024 bytes.
+          let mut read_buf = [0u8; 32];
+          read(reader, &mut read_buf).unwrap();
+          let message_str = String::from_utf8_lossy(&read_buf);
+          assert!(message_str.contains("msg_1"));
       },
       // panic, fork should never fail unless there is a serious problem with the OS
       Err(_) => panic!("Error: Fork Failed")
