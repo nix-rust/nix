@@ -58,7 +58,6 @@ impl TimeVal {
 
     /// Makes a new `TimeVal` with given number of microseconds.
     #[inline]
-    #[unstable(feature = "std_misc")]
     pub fn microseconds(microseconds: i64) -> TimeVal {
         let (secs, micros) = div_mod_floor_64(microseconds, MICROS_PER_SEC);
         assert!(secs >= MIN_SECONDS && secs <= MAX_SECONDS, "TimeVal out of bounds");

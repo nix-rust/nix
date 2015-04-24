@@ -105,6 +105,40 @@ pub fn socket(domain: AddressFamily, ty: SockType, flags: SockFlag) -> Result<Fd
     Ok(res)
 }
 
+/// Create a pair of connected sockets
+///
+/// [Further reading](http://man7.org/linux/man-pages/man2/socketpair.2.html)
+pub fn socketpair(domain: AddressFamily, ty: SockType, protocol: c_int,
+                  flags: SockFlag) -> Result<(Fd, Fd)> {
+    let mut ty = ty as c_int;
+    let feat_atomic = features::socket_atomic_cloexec();
+
+    if feat_atomic {
+        ty = ty | flags.bits();
+    }
+    let mut fds = [-1, -1];
+    let res = unsafe {
+        ffi::socketpair(domain as c_int, ty, protocol, fds.as_mut_ptr())
+    };
+
+    if res < 0 {
+        return Err(Error::Sys(Errno::last()));
+    }
+
+    if !feat_atomic {
+        if flags.contains(SOCK_CLOEXEC) {
+            try!(fcntl(fds[0], F_SETFD(FD_CLOEXEC)));
+            try!(fcntl(fds[1], F_SETFD(FD_CLOEXEC)));
+        }
+
+        if flags.contains(SOCK_NONBLOCK) {
+            try!(fcntl(fds[0], F_SETFL(O_NONBLOCK)));
+            try!(fcntl(fds[1], F_SETFL(O_NONBLOCK)));
+        }
+    }
+    Ok((fds[0], fds[1]))
+}
+
 /// Listen for connections on a socket
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/listen.2.html)
@@ -244,31 +278,26 @@ pub enum SockLevel {
 /// Represents a socket option that can be accessed or set. Used as an argument
 /// to `getsockopt` and `setsockopt`.
 pub trait SockOpt : Copy + fmt::Debug {
-    /// Type of `getsockopt` return value
-    type Get;
-
-    /// Type of value used to set the socket option. Used as the argument to
-    /// `setsockopt`.
-    type Set;
+    type Val;
 
     #[doc(hidden)]
-    fn get(&self, fd: Fd, level: c_int) -> Result<Self::Get>;
+    fn get(&self, fd: Fd, level: c_int) -> Result<Self::Val>;
 
     #[doc(hidden)]
-    fn set(&self, fd: Fd, level: c_int, val: Self::Set) -> Result<()>;
+    fn set(&self, fd: Fd, level: c_int, val: &Self::Val) -> Result<()>;
 }
 
 /// Get the current value for the requested socket option
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/setsockopt.2.html)
-pub fn getsockopt<O: SockOpt>(fd: Fd, level: SockLevel, opt: O) -> Result<O::Get> {
+pub fn getsockopt<O: SockOpt>(fd: Fd, level: SockLevel, opt: O) -> Result<O::Val> {
     opt.get(fd, level as c_int)
 }
 
 /// Sets the value for the requested socket option
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/setsockopt.2.html)
-pub fn setsockopt<O: SockOpt>(fd: Fd, level: SockLevel, opt: O, val: O::Set) -> Result<()> {
+pub fn setsockopt<O: SockOpt>(fd: Fd, level: SockLevel, opt: O, val: &O::Val) -> Result<()> {
     opt.set(fd, level as c_int, val)
 }
 
