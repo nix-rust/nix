@@ -56,7 +56,7 @@ pub struct sockaddr_storage {
     pub __ss_pad2: [u8; 120],
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Debug, FromPrimitive)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 #[repr(i32)]
 pub enum SockType {
     Stream = consts::SOCK_STREAM,

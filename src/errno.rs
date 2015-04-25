@@ -442,7 +442,7 @@ fn desc(errno: Errno) -> &'static str {
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 mod consts {
-    #[derive(Debug, Clone, PartialEq, FromPrimitive, Copy)]
+    #[derive(Debug, Clone, PartialEq, Copy)]
     pub enum Errno {
         UnknownErrno    = 0,
         EPERM           = 1,
@@ -732,7 +732,7 @@ mod consts {
 
 #[cfg(any(target_os = "macos", target_os = "ios"))]
 mod consts {
-    #[derive(Copy, Debug, Clone, PartialEq, FromPrimitive)]
+    #[derive(Copy, Debug, Clone, PartialEq)]
     pub enum Errno {
         UnknownErrno    = 0,
         EPERM           = 1,
