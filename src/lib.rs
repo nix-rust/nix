@@ -29,14 +29,17 @@ pub mod fcntl;
 #[cfg(any(target_os = "linux", target_os = "android"))]
 pub mod mount;
 
+#[cfg(any(target_os = "linux"))]
+pub mod mq;
+
 #[cfg(any(target_os = "linux", target_os = "android"))]
 pub mod sched;
-
 #[cfg(unix)]
 pub mod sys;
 
 #[cfg(unix)]
 pub mod unistd;
+
 
 /*
  *
