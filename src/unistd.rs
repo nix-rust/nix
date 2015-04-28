@@ -41,6 +41,10 @@ mod ffi {
         // gets the hostname
         // doc: http://man7.org/linux/man-pages/man2/gethostname.2.html
         pub fn sethostname(name: *const c_char, len: size_t) -> c_int;
+
+        // change root directory
+        // doc: http://man7.org/linux/man-pages/man2/gethostname.2.html
+        pub fn chroot(path: *const c_char) -> c_int;
     }
 }
 
@@ -291,6 +295,19 @@ pub fn unlink<P: ?Sized + NixPath>(path: &P) -> Result<()> {
     }
     }));
     from_ffi(res)
+}
+
+#[inline]
+pub fn chroot<P: ?Sized + NixPath>(path: &P) -> Result<()> {
+    let res = try!(path.with_nix_path(|osstr| {
+        unsafe { ffi::chroot(osstr.as_ext_str()) }
+    }));
+
+    if res != 0 {
+        return Err(Error::Sys(Errno::last()));
+    }
+
+    Ok(())
 }
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
