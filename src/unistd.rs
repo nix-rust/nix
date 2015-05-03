@@ -29,6 +29,9 @@ mod ffi {
         // execute program
         // doc: http://man7.org/linux/man-pages/man2/execve.2.html
         pub fn execve(filename: *const c_char, argv: *const *const c_char, envp: *const *const c_char) -> c_int;
+        // doc: http://man7.org/linux/man-pages/man3/exec.3.html
+        #[cfg(any(target_os = "linux", target_os = "android"))]
+        pub fn execvpe(filename: *const c_char, argv: *const *const c_char, envp: *const *const c_char) -> c_int;
 
         // run the current process in the background
         // doc: http://man7.org/linux/man-pages/man3/daemon.3.html
@@ -312,9 +315,12 @@ pub fn chroot<P: ?Sized + NixPath>(path: &P) -> Result<()> {
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 mod linux {
+    use std::ptr;
     use sys::syscall::{syscall, SYSPIVOTROOT};
     use errno::Errno;
     use {Error, Result, NixPath};
+    use std::ffi::CString;
+    use libc::c_char;
 
     pub fn pivot_root<P1: ?Sized + NixPath, P2: ?Sized + NixPath>(
             new_root: &P1, put_old: &P2) -> Result<()> {
@@ -331,5 +337,24 @@ mod linux {
         }
 
         Ok(())
+    }
+
+    #[inline]
+    pub fn execvpe(filename: &CString, args: &[CString], env: &[CString]) -> Result<()> {
+        let mut args_p: Vec<*const c_char> = args.iter().map(|s| s.as_ptr()).collect();
+        args_p.push(ptr::null());
+
+        let mut env_p: Vec<*const c_char> = env.iter().map(|s| s.as_ptr()).collect();
+        env_p.push(ptr::null());
+
+        let res = unsafe {
+            super::ffi::execvpe(filename.as_ptr(), args_p.as_ptr(), env_p.as_ptr())
+        };
+
+        if res != 0 {
+            return Err(Error::Sys(Errno::last()));
+        }
+
+        unreachable!()
     }
 }

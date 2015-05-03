@@ -12,7 +12,7 @@ fn test_tcgetattr() {
             // If it's an invalid file descriptor, tcgetattr should also return
             // the same error
             Err(Error::Sys(Errno::EBADF)) => {
-                assert!(termios.err() == Some(Error::Sys(Errno::EBADF)));
+                assert_eq!(termios.err(), Some(Error::Sys(Errno::EBADF)));
             },
             // Otherwise it should return any error
             _ => assert!(termios.is_err())
