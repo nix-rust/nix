@@ -29,44 +29,51 @@ fn test_fork_and_waitpid() {
     }
 }
 
+macro_rules! exec_test_factory(
+    ($test_name:ident, $unix_sh:expr, $android_sh:expr) => (
+    #[test]
+    fn $test_name() {
+        // The `exec`d process will write to `writer`, and we'll read that
+        // data from `reader`.
+        let (reader, writer) = pipe().unwrap();
 
-#[test]
-fn test_execve() {
-    // The `exec`d process will write to `writer`, and we'll read that
-    // data from `reader`.
-    let (reader, writer) = pipe().unwrap();
+        match fork().unwrap() {
+            Child => {
+                #[cfg(not(target_os = "android"))]
+                const SH_PATH: &'static [u8] = $unix_sh;
 
-    match fork().unwrap() {
-        Child => {
-            #[cfg(not(target_os = "android"))]
-            const SH_PATH: &'static [u8] = b"/bin/sh";
+                #[cfg(target_os = "android")]
+                const SH_PATH: &'static [u8] = $android_sh;
 
-            #[cfg(target_os = "android")]
-            const SH_PATH: &'static [u8] = b"/system/bin/sh";
-
-            // Close stdout.
-            close(1).unwrap();
-            // Make `writer` be the stdout of the new process.
-            dup(writer).unwrap();
-            // exec!
-            execve(&CString::new(SH_PATH).unwrap(),
-                   &[CString::new(b"".as_ref()).unwrap(),
-                     CString::new(b"-c".as_ref()).unwrap(),
-                     CString::new(b"echo nix!!! && echo foo=$foo && echo baz=$baz".as_ref()).unwrap()],
-                   &[CString::new(b"foo=bar".as_ref()).unwrap(),
-                     CString::new(b"baz=quux".as_ref()).unwrap()]).unwrap();
-        },
-        Parent(child_pid) => {
-            // Wait for the child to exit.
-            waitpid(child_pid, None).unwrap();
-            // Read 1024 bytes.
-            let mut buf = [0u8; 1024];
-            read(reader, &mut buf).unwrap();
-            // It should contain the things we printed using `/bin/sh`.
-            let string = String::from_utf8_lossy(&buf);
-            assert!(string.contains("nix!!!"));
-            assert!(string.contains("foo=bar"));
-            assert!(string.contains("baz=quux"));
+                // Close stdout.
+                close(1).unwrap();
+                // Make `writer` be the stdout of the new process.
+                dup(writer).unwrap();
+                // exec!
+                execvpe(&CString::new(SH_PATH).unwrap(),
+                        &[CString::new(b"".as_ref()).unwrap(),
+                          CString::new(b"-c".as_ref()).unwrap(),
+                          CString::new(b"echo nix!!! && echo foo=$foo && echo baz=$baz"
+                                       .as_ref()).unwrap()],
+                        &[CString::new(b"foo=bar".as_ref()).unwrap(),
+                          CString::new(b"baz=quux".as_ref()).unwrap()]).unwrap();
+            },
+            Parent(child_pid) => {
+                // Wait for the child to exit.
+                waitpid(child_pid, None).unwrap();
+                // Read 1024 bytes.
+                let mut buf = [0u8; 1024];
+                read(reader, &mut buf).unwrap();
+                // It should contain the things we printed using `/bin/sh`.
+                let string = String::from_utf8_lossy(&buf);
+                assert!(string.contains("nix!!!"));
+                assert!(string.contains("foo=bar"));
+                assert!(string.contains("baz=quux"));
+            }
         }
     }
-}
+    )
+);
+
+exec_test_factory!(test_execve, b"/bin/sh", b"/system/bin/sh");
+exec_test_factory!(test_execvpe, b"sh", b"sh");

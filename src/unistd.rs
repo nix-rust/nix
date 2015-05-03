@@ -29,6 +29,8 @@ mod ffi {
         // execute program
         // doc: http://man7.org/linux/man-pages/man2/execve.2.html
         pub fn execve(filename: *const c_char, argv: *const *const c_char, envp: *const *const c_char) -> c_int;
+        // doc: http://man7.org/linux/man-pages/man3/exec.3.html
+        pub fn execvpe(filename: *const c_char, argv: *const *const c_char, envp: *const *const c_char) -> c_int;
 
         // run the current process in the background
         // doc: http://man7.org/linux/man-pages/man3/daemon.3.html
@@ -161,6 +163,26 @@ pub fn execve(filename: &CString, args: &[CString], env: &[CString]) -> Result<(
 
     unreachable!()
 }
+
+#[inline]
+pub fn execvpe(filename: &CString, args: &[CString], env: &[CString]) -> Result<()> {
+    let mut args_p: Vec<*const c_char> = args.iter().map(|s| s.as_ptr()).collect();
+    args_p.push(ptr::null());
+
+    let mut env_p: Vec<*const c_char> = env.iter().map(|s| s.as_ptr()).collect();
+    env_p.push(ptr::null());
+
+    let res = unsafe {
+        ffi::execvpe(filename.as_ptr(), args_p.as_ptr(), env_p.as_ptr())
+    };
+
+    if res != 0 {
+        return Err(Error::Sys(Errno::last()));
+    }
+
+    unreachable!()
+}
+
 
 pub fn daemon(nochdir: bool, noclose: bool) -> Result<()> {
     let res = unsafe { ffi::daemon(nochdir as c_int, noclose as c_int) };
