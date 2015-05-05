@@ -1,7 +1,7 @@
 pub use libc::dev_t;
 pub use libc::stat as FileStat;
 
-use {Error, Result, NixPath, AsExtStr,from_ffi};
+use {Error, Result, NixPath, AsExtStr, from_ffi};
 use errno::Errno;
 use fcntl::Fd;
 use libc::mode_t;
@@ -10,7 +10,7 @@ use std::mem;
 
 mod ffi {
     use libc::{c_char, c_int, mode_t, dev_t};
-    pub use libc::{stat, fstat};
+    pub use libc::{stat, fstat, lstat};
 
     extern {
         pub fn mknod(pathname: *const c_char, mode: mode_t, dev: dev_t) -> c_int;
@@ -84,6 +84,21 @@ pub fn stat<P: ?Sized + NixPath>(path: &P) -> Result<FileStat> {
     let res = try!(path.with_nix_path(|osstr| {
         unsafe {
             ffi::stat(osstr.as_ext_str(), &mut dst as *mut FileStat)
+        }
+    }));
+
+    if res < 0 {
+        return Err(Error::Sys(Errno::last()));
+    }
+
+    Ok(dst)
+}
+
+pub fn lstat<P: ?Sized + NixPath>(path: &P) -> Result<FileStat> {
+    let mut dst = unsafe { mem::uninitialized() };
+    let res = try!(path.with_nix_path(|osstr| {
+        unsafe {
+            ffi::lstat(osstr.as_ext_str(), &mut dst as *mut FileStat)
         }
     }));
 
