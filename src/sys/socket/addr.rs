@@ -16,7 +16,7 @@ use std::os::unix::ffi::OsStrExt;
  */
 
 #[repr(i32)]
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Hash, FromPrimitive)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, Hash)]
 pub enum AddressFamily {
     Unix = consts::AF_UNIX,
     Inet = consts::AF_INET,

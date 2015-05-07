@@ -7,6 +7,9 @@ mod test_nix_path;
 mod test_stat;
 mod test_unistd;
 
+#[cfg(any(target_os = "linux"))]
+mod test_mq;
+
 mod ports {
     use std::sync::atomic::{AtomicUsize, ATOMIC_USIZE_INIT};
     use std::sync::atomic::Ordering::SeqCst;
