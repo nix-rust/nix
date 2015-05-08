@@ -86,7 +86,8 @@ mod os {
     pub const MSG_DONTWAIT: SockMessageFlags = 0x40;
 }
 
-#[cfg(any(target_os = "macos", target_os = "ios"))]
+// Not all of these constants exist on freebsd
+#[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "ios"))]
 mod os {
     use libc::{c_int, uint8_t};
 

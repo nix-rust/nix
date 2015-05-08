@@ -112,6 +112,55 @@ mod consts {
     pub const MAP_FAILED: isize               = -1;
 }
 
+#[cfg(target_os = "freebsd")]
+mod consts {
+    use libc::c_int;
+
+    pub type MmapFlag = c_int;
+
+    pub const MAP_SHARED: MmapFlag          = 0x00001;
+    pub const MAP_PRIVATE: MmapFlag         = 0x00002;
+    pub const MAP_FIXED: MmapFlag           = 0x00010;
+
+    pub const MAP_RENAME: MmapFlag          = 0x00020;
+    pub const MAP_NORESERVE: MmapFlag       = 0x00040;
+    pub const MAP_HASSEMAPHORE: MmapFlag    = 0x00200;
+    pub const MAP_STACK: MmapFlag           = 0x00400;
+    pub const MAP_NOSYNC: MmapFlag          = 0x00800;
+    pub const MAP_FILE: MmapFlag            = 0x00000;
+    pub const MAP_ANON: MmapFlag            = 0x01000;
+
+    pub type MmapProt = c_int;
+
+    pub const PROT_READ: MmapProt           = 0x1;
+    pub const PROT_WRITE: MmapProt          = 0x2;
+    pub const PROT_EXEC: MmapProt           = 0x4;
+    pub const PROT_NONE: MmapProt           = 0x0;
+
+    pub type MmapAdvise = c_int;
+
+    pub const MADV_NORMAL     : MmapAdvise      = 0; /* No further special treatment.  */
+    pub const MADV_RANDOM     : MmapAdvise      = 1; /* Expect random page references.  */
+    pub const MADV_SEQUENTIAL : MmapAdvise      = 2; /* Expect sequential page references.  */
+    pub const MADV_WILLNEED   : MmapAdvise      = 3; /* Will need these pages.  */
+    pub const MADV_DONTNEED   : MmapAdvise      = 4; /* Don't need these pages.  */
+    pub const MADV_FREE       : MmapAdvise      = 5; /* pages unneeded, discard contents */
+    pub const MADV_NOSYNC     : MmapAdvise      = 6; /* try to avoid flushes to physical media*/
+    pub const MADV_AUTOSYNC   : MmapAdvise      = 7; /* refert to default flushing strategy */
+    pub const MADV_NOCORE     : MmapAdvise      = 8; /* do not include these pages in a core file */
+    pub const MADV_CORE       : MmapAdvise      = 9; /* revert to including pages in a core file */
+    pub const MADV_PROTECT    : MmapAdvise      = 10; /* protect process from pageout kill */
+
+    pub type MmapSync = c_int;
+
+    pub const MS_ASYNC      : MmapSync          = 0x0001; /* [MF|SIO] return immediately */
+    pub const MS_INVALIDATE : MmapSync          = 0x0002; /* [MF|SIO] invalidate all cached data */
+    pub const MS_SYNC       : MmapSync          = 0x0010; /* [MF|SIO] msync synchronously */
+    pub const MS_KILLPAGES  : MmapSync          = 0x0004; /* invalidate pages, leave mapped */
+    pub const MS_DEACTIVATE : MmapSync          = 0x0008; /* deactivate pages, leave mapped */
+
+    pub const MAP_FAILED: isize                 = -1;
+}
 mod ffi {
     use libc::{c_void, size_t, c_int, c_char, mode_t};
 

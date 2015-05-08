@@ -42,7 +42,7 @@ mod ffi {
         pub const F_GETLK:         c_int = 5;
     }
 
-    #[cfg(any(target_os = "macos", target_os = "ios"))]
+    #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "ios"))]
     mod os {
         use libc::{c_int, c_short, off_t, pid_t};
 
@@ -182,6 +182,43 @@ mod consts {
             const O_SYNC      = 0x0000080,
             const O_NDELAY    = O_NONBLOCK.bits,
             const O_FSYNC     = O_SYNC.bits
+        }
+    );
+
+    bitflags!(
+        flags FdFlag: c_int {
+            const FD_CLOEXEC = 1
+        }
+    );
+}
+
+#[cfg(target_os = "freebsd")]
+mod consts {
+    use libc::c_int;
+
+    bitflags!(
+        flags OFlag: c_int {
+            const O_ACCMODE   = 0x0000003,
+            const O_RDONLY    = 0x0000000,
+            const O_WRONLY    = 0x0000001,
+            const O_RDWR      = 0x0000002,
+            const O_CREAT     = 0x0000200,
+            const O_EXCL      = 0x0000800,
+            const O_NOCTTY    = 0x0008000,
+            const O_TRUNC     = 0x0000400,
+            const O_APPEND    = 0x0000008,
+            const O_NONBLOCK  = 0x0000004,
+            const O_DIRECTORY = 0x0020000,
+            const O_NOFOLLOW  = 0x0000100,
+            const O_CLOEXEC   = 0x0100000,
+            const O_SYNC      = 0x0000080,
+            const O_NDELAY    = O_NONBLOCK.bits,
+            const O_FSYNC     = O_SYNC.bits,
+            const O_SHLOCK    = 0x0000080,
+            const O_EXLOCK    = 0x0000020,
+            const O_DIRECT    = 0x0010000,
+            const O_EXEC      = 0x0040000,
+            const O_TTY_INIT  = 0x0080000
         }
     );
 
