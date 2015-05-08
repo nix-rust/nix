@@ -242,6 +242,7 @@ pub mod signal {
     pub type sigset_t = u32;
     #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
     #[repr(C)]
+    #[derive(Clone, Copy)]
     pub struct sigset_t {
         bits: [u32; 4],
     }
