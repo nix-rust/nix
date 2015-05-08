@@ -1,4 +1,8 @@
+use libc::{self, c_int};
 pub use self::os::*;
+
+pub const IPV6_ADD_MEMBERSHIP: c_int = libc::IPV6_ADD_MEMBERSHIP;
+pub const IPV6_DROP_MEMBERSHIP: c_int = libc::IPV6_DROP_MEMBERSHIP;
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 mod os {

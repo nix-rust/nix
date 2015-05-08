@@ -1,5 +1,5 @@
-use super::addr::Ipv4Addr;
-use libc::in_addr;
+use super::addr::{Ipv4Addr, Ipv6Addr};
+use libc::{in_addr, in6_addr, c_uint};
 use std::fmt;
 
 #[repr(C)]
@@ -21,6 +21,20 @@ impl ip_mreq {
         ip_mreq {
             imr_multiaddr: group.0,
             imr_interface: interface.unwrap_or(Ipv4Addr::any()).0
+        }
+    }
+}
+
+pub struct ipv6_mreq {
+    pub ipv6mr_multiaddr: in6_addr,
+    pub ipv6mr_interface: c_uint,
+}
+
+impl ipv6_mreq {
+    pub fn new(group: Ipv6Addr) -> ipv6_mreq {
+        ipv6_mreq {
+            ipv6mr_multiaddr: group.0,
+            ipv6mr_interface: 0,
         }
     }
 }

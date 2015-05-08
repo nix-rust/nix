@@ -42,6 +42,7 @@ pub use libc::{
 
 pub use self::multicast::{
     ip_mreq,
+    ipv6_mreq,
 };
 pub use self::consts::*;
 
