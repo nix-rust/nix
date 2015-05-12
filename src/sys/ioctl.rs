@@ -68,12 +68,23 @@
 ///! necessary for cases (notably slices) where a reference cannot
 ///! be generically cast to a pointer.
 
+use libc::{c_int, c_ulong};
 use libc::funcs::bsd44::ioctl as libc_ioctl;
 use std::mem;
 use fcntl::Fd;
 use {Error, Result, errno};
 
-pub type ioctl_op_t = u32;
+pub type ioctl_op_t = c_ulong;
+
+// the libc definiton of the 'op' type is platform dependent
+#[cfg(any(target_os = "macos",
+          target_os = "ios",
+          target_os = "freebsd",
+          target_os = "dragonfly"))]
+type os_ioctl_op_t = c_ulong;
+
+#[cfg(any(target_os = "linux", target_os = "android"))]
+type os_ioctl_op_t = c_int;
 
 // low-level ioctl functions and definitions matching the
 // macros provided in ioctl.h from the kernel
@@ -152,7 +163,7 @@ pub fn op_read_write(ioctl_type: u8, nr: u8, size: usize) -> ioctl_op_t {
     op(IOC_WRITE | IOC_READ, ioctl_type, nr, size)
 }
 
-fn convert_ioctl_res(res: i32) -> Result<i32> {
+fn convert_ioctl_res(res: c_int) -> Result<c_int> {
     if res < 0 {
         return Err(Error::Sys(errno::Errno::last()))
     }
@@ -177,7 +188,7 @@ pub unsafe fn read<T>(fd: Fd, op: ioctl_op_t) -> Result<T> {
 ///
 /// The refernced data may also contain information that will be consumed
 /// by the kernel.
-pub unsafe fn read_into<T>(fd: Fd, op: ioctl_op_t, data: &mut T) -> Result<i32> {
+pub unsafe fn read_into<T>(fd: Fd, op: ioctl_op_t, data: &mut T) -> Result<c_int> {
     read_into_ptr(fd, op, data as *mut T)
 }
 
@@ -186,25 +197,25 @@ pub unsafe fn read_into<T>(fd: Fd, op: ioctl_op_t, data: &mut T) -> Result<i32> 
 ///
 /// The refernced data may also contain information that will be consumed
 /// by the kernel.
-pub unsafe fn read_into_ptr<T>(fd: Fd, op: ioctl_op_t, data_ptr: *mut T) -> Result<i32> {
-    convert_ioctl_res(libc_ioctl(fd, op as i32, data_ptr))
+pub unsafe fn read_into_ptr<T>(fd: Fd, op: ioctl_op_t, data_ptr: *mut T) -> Result<c_int> {
+    convert_ioctl_res(libc_ioctl(fd, op as os_ioctl_op_t, data_ptr))
 }
 
 /// Ioctl call that sends a value to the kernel but
 /// does not return anything (pure side effect).
-pub unsafe fn write<T>(fd: Fd, op: ioctl_op_t, data: &T) -> Result<i32> {
+pub unsafe fn write<T>(fd: Fd, op: ioctl_op_t, data: &T) -> Result<c_int> {
     write_ptr(fd, op, data as *const T)
 }
 
 /// Ioctl call that sends a value to the kernel but
 /// does not return anything (pure side effect).
-pub unsafe fn write_ptr<T>(fd: Fd, op: ioctl_op_t, data: *const T) -> Result<i32> {
-    convert_ioctl_res(libc_ioctl(fd, op as i32, data as *const T))
+pub unsafe fn write_ptr<T>(fd: Fd, op: ioctl_op_t, data: *const T) -> Result<c_int> {
+    convert_ioctl_res(libc_ioctl(fd, op as os_ioctl_op_t, data as *const T))
 }
 
 /// Ioctl call for which no data pointer is provided to the kernel.
 /// That is, the kernel has sufficient information about what to
 /// do based on the op alone.
-pub fn execute(fd: Fd, op: ioctl_op_t) -> Result<i32> {
-    convert_ioctl_res(unsafe { libc_ioctl(fd, op as i32) })
+pub fn execute(fd: Fd, op: ioctl_op_t) -> Result<c_int> {
+    convert_ioctl_res(unsafe { libc_ioctl(fd, op as os_ioctl_op_t) })
 }
