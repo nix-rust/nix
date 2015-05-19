@@ -29,6 +29,14 @@ fn test_fork_and_waitpid() {
     }
 }
 
+#[test]
+fn test_getpid() {
+    let pid = getpid();
+    let ppid = getppid();
+    assert!(pid > 0);
+    assert!(ppid > 0);
+}
+
 macro_rules! execve_test_factory(
     ($test_name:ident, $syscall:ident, $unix_sh:expr, $android_sh:expr) => (
     #[test]

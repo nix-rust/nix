@@ -14,7 +14,7 @@ pub use self::linux::*;
 mod ffi {
     use libc::{c_char, c_int, size_t};
     pub use libc::{close, read, write, pipe, ftruncate, unlink};
-    pub use libc::funcs::posix88::unistd::fork;
+    pub use libc::funcs::posix88::unistd::{fork, getpid, getppid};
 
     extern {
         // duplicate a file descriptor
@@ -85,6 +85,15 @@ pub fn fork() -> Result<Fork> {
     } else {
         Ok(Parent(res))
     }
+}
+
+#[inline]
+pub fn getpid() -> pid_t {
+    unsafe { ffi::getpid() } // no error handling, according to man page: "These functions are always successful."
+}
+#[inline]
+pub fn getppid() -> pid_t {
+    unsafe { ffi::getppid() } // no error handling, according to man page: "These functions are always successful."
 }
 
 #[inline]
