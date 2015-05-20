@@ -48,14 +48,17 @@ pub mod unistd;
  *
  */
 
+use std::convert;
 use std::{ptr, result};
 use std::path::{Path, PathBuf};
+use std::ffi;
 
 pub type Result<T> = result::Result<T, Error>;
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Error {
     Sys(errno::Errno),
+    NulError(ffi::NulError),
     InvalidPath,
 }
 
@@ -76,18 +79,25 @@ impl Error {
         match *self {
             Error::Sys(errno) => errno,
             Error::InvalidPath => errno::Errno::EINVAL,
+            Error::NulError(_) => errno::Errno::EINVAL,
         }
+    }
+}
+
+impl convert::From<ffi::NulError> for Error {
+    fn from(nul_error : ffi::NulError) -> Self {
+        Error::NulError(nul_error)
     }
 }
 
 pub trait NixPath {
     fn with_nix_path<T, F>(&self, f: F) -> Result<T>
-        where F: FnOnce(&OsStr) -> T;
+        where F: FnOnce(&OsStr) -> Result<T>;
 }
 
 impl NixPath for [u8] {
     fn with_nix_path<T, F>(&self, f: F) -> Result<T>
-            where F: FnOnce(&OsStr) -> T {
+            where F: FnOnce(&OsStr) -> Result<T> {
         // TODO: Extract this size as a const
         let mut buf = [0u8; 4096];
 
@@ -103,7 +113,7 @@ impl NixPath for [u8] {
                     ptr::copy_nonoverlapping(self.as_ptr(), buf.as_mut_ptr(), self.len());
                 }
 
-                Ok(f(<OsStr as OsStrExt>::from_bytes(&buf[..self.len()])))
+                f(<OsStr as OsStrExt>::from_bytes(&buf[..self.len()]))
             }
         }
     }
@@ -111,15 +121,15 @@ impl NixPath for [u8] {
 
 impl NixPath for Path {
     fn with_nix_path<T, F>(&self, f: F) -> Result<T>
-            where F: FnOnce(&OsStr) -> T {
-        Ok(f(self.as_os_str()))
+            where F: FnOnce(&OsStr) -> Result<T> {
+        f(self.as_os_str())
     }
 }
 
 impl NixPath for PathBuf {
     fn with_nix_path<T, F>(&self, f: F) -> Result<T>
-            where F: FnOnce(&OsStr) -> T {
-        Ok(f(self.as_os_str()))
+            where F: FnOnce(&OsStr) -> Result<T> {
+        f(self.as_os_str())
     }
 }
 
@@ -138,16 +148,29 @@ pub fn from_ffi(res: libc::c_int) -> Result<()> {
  *
  */
 
-use std::ffi::OsStr;
+use std::ffi::{CString, OsStr, NulError};
 use std::os::unix::ffi::OsStrExt;
 
 /// Converts a value to an external (FFI) string representation
 trait AsExtStr {
-    fn as_ext_str(&self) -> *const libc::c_char;
+    fn as_ext_str(&self) -> Result<CString>;
 }
 
 impl AsExtStr for OsStr {
-    fn as_ext_str(&self) -> *const libc::c_char {
-        self.as_bytes().as_ptr() as *const libc::c_char
+    fn as_ext_str(&self) -> Result<CString> {
+        Ok(try!(CString::new(self.as_bytes())))
     }
+}
+
+#[cfg(test)] use std::ffi::CStr;
+#[test]
+#[allow(unused_variables)]
+fn test_as_ext_str() {
+    let foo_str = "foo";
+    let bar_str = "bar";
+    let s = Path::new(foo_str).as_os_str();
+    let ext_str = s.as_ext_str().unwrap();
+    let cstr = unsafe { CStr::from_ptr(ext_str.as_ptr()) };
+    let back_to_str = std::str::from_utf8(cstr.to_bytes()).unwrap();
+    assert_eq!(foo_str, back_to_str);
 }

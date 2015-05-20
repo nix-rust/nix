@@ -145,7 +145,8 @@ fn dup3_polyfill(oldfd: Fd, newfd: Fd, flags: OFlag) -> Result<Fd> {
 #[inline]
 pub fn chdir<P: ?Sized + NixPath>(path: &P) -> Result<()> {
     let res = try!(path.with_nix_path(|osstr| {
-        unsafe { ffi::chdir(osstr.as_ext_str()) }
+        let cstr = try!(osstr.as_ext_str());
+        Ok(unsafe { ffi::chdir(cstr.as_ptr()) })
     }));
 
     if res != 0 {
@@ -302,9 +303,8 @@ pub fn isatty(fd: Fd) -> Result<bool> {
 
 pub fn unlink<P: ?Sized + NixPath>(path: &P) -> Result<()> {
     let res = try!(path.with_nix_path(|osstr| {
-    unsafe {
-        ffi::unlink(osstr.as_ext_str())
-    }
+        let cstr = try!(osstr.as_ext_str());
+        Ok(unsafe { ffi::unlink(cstr.as_ptr()) })
     }));
     from_ffi(res)
 }
@@ -312,7 +312,8 @@ pub fn unlink<P: ?Sized + NixPath>(path: &P) -> Result<()> {
 #[inline]
 pub fn chroot<P: ?Sized + NixPath>(path: &P) -> Result<()> {
     let res = try!(path.with_nix_path(|osstr| {
-        unsafe { ffi::chroot(osstr.as_ext_str()) }
+        let cstr = try!(osstr.as_ext_str());
+        Ok(unsafe { ffi::chroot(cstr.as_ptr()) })
     }));
 
     if res != 0 {
@@ -327,19 +328,21 @@ mod linux {
     use std::ptr;
     use sys::syscall::{syscall, SYSPIVOTROOT};
     use errno::Errno;
-    use {Error, Result, NixPath};
+    use {Error, Result, NixPath, AsExtStr};
     use std::ffi::CString;
     use libc::c_char;
 
     pub fn pivot_root<P1: ?Sized + NixPath, P2: ?Sized + NixPath>(
             new_root: &P1, put_old: &P2) -> Result<()> {
-        let res = try!(try!(new_root.with_nix_path(|new_root| {
+        let res = try!(new_root.with_nix_path(|new_root| {
+            let new_root_cstr = try!(new_root.as_ext_str());
             put_old.with_nix_path(|put_old| {
-                unsafe {
-                    syscall(SYSPIVOTROOT, new_root, put_old)
-                }
+                let put_old_cstr = try!(put_old.as_ext_str());
+                Ok(unsafe {
+                    syscall(SYSPIVOTROOT, new_root_cstr.as_ptr(), put_old_cstr.as_ptr())
+                })
             })
-        })));
+        }));
 
         if res != 0 {
             return Err(Error::Sys(Errno::last()));
