@@ -188,3 +188,96 @@ mod os {
     pub const SHUT_WR: c_int   = 1;
     pub const SHUT_RDWR: c_int = 2;
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use nixtest::assert_const_eq;
+    use libc::c_int;
+
+    macro_rules! check_const {
+        ($($konst:ident),+) => {{
+            $(assert_const_eq(stringify!($konst), $konst as c_int);)+
+        }};
+    }
+
+    #[test]
+    pub fn test_const_values() {
+        check_const!(
+            AF_UNIX,
+            AF_LOCAL,
+            AF_INET,
+            AF_INET6,
+            SOCK_STREAM,
+            SOCK_DGRAM,
+            SOCK_SEQPACKET,
+            SOCK_RAW,
+            SOCK_RDM,
+            SOL_SOCKET,
+            IPPROTO_IP,
+            IPPROTO_IPV6,
+            IPPROTO_TCP,
+            IPPROTO_UDP,
+            SO_ACCEPTCONN,
+            SO_BROADCAST,
+            SO_DEBUG,
+            SO_ERROR,
+            SO_DONTROUTE,
+            SO_KEEPALIVE,
+            SO_LINGER,
+            SO_OOBINLINE,
+            SO_RCVBUF,
+            SO_RCVLOWAT,
+            SO_SNDLOWAT,
+            SO_RCVTIMEO,
+            SO_SNDTIMEO,
+            SO_REUSEADDR,
+            SO_REUSEPORT,
+            SO_SNDBUF,
+            SO_TIMESTAMP,
+            SO_TYPE,
+            TCP_NODELAY,
+            TCP_MAXSEG,
+            IP_MULTICAST_IF,
+            IP_MULTICAST_TTL,
+            IP_MULTICAST_LOOP,
+            IP_ADD_MEMBERSHIP,
+            IP_DROP_MEMBERSHIP,
+            INADDR_ANY,
+            INADDR_NONE,
+            INADDR_BROADCAST,
+            MSG_OOB,
+            MSG_PEEK,
+            MSG_DONTWAIT,
+            SHUT_RD,
+            SHUT_WR,
+            SHUT_RDWR
+            );
+
+
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    pub fn test_linux_consts() {
+        check_const!(
+            SOL_IP,
+            SOL_TCP,
+            SOL_UDP,
+            SOL_IPV6,
+            SO_BINDTODEVICE,
+            SO_BSDCOMPAT,
+            SO_DOMAIN,
+            SO_MARK,
+            TCP_CORK,
+            SO_BUSY_POLL,
+            SO_RXQ_OVFL,
+            SO_PASSCRED,
+            SO_PRIORITY,
+            SO_PROTOCOL,
+            SO_RCVBUFFORCE,
+            SO_PEEK_OFF,
+            SO_PEERCRED,
+            SO_SNDBUFFORCE);
+    }
+}

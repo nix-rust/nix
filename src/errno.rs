@@ -1204,12 +1204,12 @@ mod consts {
 #[cfg(test)]
 mod test {
     use super::*;
-    use nixtest::assert_errno_eq;
+    use nixtest::assert_const_eq;
     use libc::c_int;
 
     macro_rules! check_errno {
         ($($errno:ident),+) => {{
-            $(assert_errno_eq(stringify!($errno), $errno as c_int);)+
+            $(assert_const_eq(stringify!($errno), $errno as c_int);)+
         }};
     }
 

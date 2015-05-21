@@ -1,24 +1,23 @@
 extern crate libc;
 
+use std::fmt;
 use std::ffi::CString;
-use libc::{c_int};
+use libc::{c_int, c_char};
 
 mod ffi {
     use libc::{c_int, c_char, size_t};
 
     #[link(name = "nixtest", kind = "static")]
     extern {
-        pub fn assert_errno_eq(errno: *const c_char) -> c_int;
+        pub fn get_int_const(errno: *const c_char) -> c_int;
         pub fn size_of(ty: *const c_char) -> size_t;
     }
 }
 
-pub fn assert_errno_eq(name: &str, actual: c_int) {
+pub fn assert_const_eq<T: GetConst>(name: &str, actual: T) {
     unsafe {
         let cstr = CString::new(name).unwrap();
-        let expect = ffi::assert_errno_eq(cstr.as_ptr());
-
-        assert!(expect > 0, "undefined errno {}", name);
+        let expect = GetConst::get_const(cstr.as_ptr());
 
         if actual != expect {
             panic!("incorrect value for errno {}; expect={}; actual={}",
@@ -40,5 +39,15 @@ pub fn assert_size_of<T>(name: &str) {
             panic!("incorrectly sized type; expect={}; actual={}",
                    expect, mem::size_of::<T>());
         }
+    }
+}
+
+pub trait GetConst : PartialEq<Self> + fmt::Display {
+    unsafe fn get_const(name: *const c_char) -> Self;
+}
+
+impl GetConst for c_int {
+    unsafe fn get_const(name: *const c_char) -> c_int {
+        ffi::get_int_const(name)
     }
 }
