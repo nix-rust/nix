@@ -334,7 +334,7 @@ pub struct UnixAddr(pub libc::sockaddr_un);
 
 impl UnixAddr {
     pub fn new<P: ?Sized + NixPath>(path: &P) -> Result<UnixAddr> {
-        try!(path.with_nix_path(|osstr| {
+        path.with_nix_path(|osstr| {
             unsafe {
                 let bytes = osstr.as_bytes();
 
@@ -354,7 +354,7 @@ impl UnixAddr {
 
                 Ok(UnixAddr(ret))
             }
-        }))
+        })
     }
 
     pub fn path(&self) -> &Path {
