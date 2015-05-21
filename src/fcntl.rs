@@ -1,4 +1,4 @@
-use {Error, Result, NixPath, AsExtStr};
+use {Error, Result, NixPath};
 use errno::Errno;
 use libc::mode_t;
 use sys::stat::Mode;
@@ -72,8 +72,8 @@ mod ffi {
 }
 
 pub fn open<P: ?Sized + NixPath>(path: &P, oflag: OFlag, mode: Mode) -> Result<Fd> {
-    let fd = try!(path.with_nix_path(|osstr| {
-        unsafe { ffi::open(osstr.as_ext_str(), oflag.bits(), mode.bits() as mode_t) }
+    let fd = try!(path.with_nix_path(|cstr| {
+        unsafe { ffi::open(cstr.as_ptr(), oflag.bits(), mode.bits() as mode_t) }
     }));
 
     if fd < 0 {

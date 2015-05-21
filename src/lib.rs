@@ -48,8 +48,11 @@ pub mod unistd;
  *
  */
 
+use libc::c_char;
 use std::{ptr, result};
+use std::ffi::CStr;
 use std::path::{Path, PathBuf};
+use std::os::unix::ffi::OsStrExt;
 
 pub type Result<T> = result::Result<T, Error>;
 
@@ -81,13 +84,19 @@ impl Error {
 }
 
 pub trait NixPath {
+    fn len(&self) -> usize;
+
     fn with_nix_path<T, F>(&self, f: F) -> Result<T>
-        where F: FnOnce(&OsStr) -> T;
+        where F: FnOnce(&CStr) -> T;
 }
 
 impl NixPath for [u8] {
+    fn len(&self) -> usize {
+        self.len()
+    }
+
     fn with_nix_path<T, F>(&self, f: F) -> Result<T>
-            where F: FnOnce(&OsStr) -> T {
+            where F: FnOnce(&CStr) -> T {
         // TODO: Extract this size as a const
         let mut buf = [0u8; 4096];
 
@@ -101,25 +110,31 @@ impl NixPath for [u8] {
                 unsafe {
                     // TODO: Replace with bytes::copy_memory. rust-lang/rust#24028
                     ptr::copy_nonoverlapping(self.as_ptr(), buf.as_mut_ptr(), self.len());
+                    Ok(f(CStr::from_ptr(buf.as_ptr() as *const c_char)))
                 }
 
-                Ok(f(<OsStr as OsStrExt>::from_bytes(&buf[..self.len()])))
             }
         }
     }
 }
 
 impl NixPath for Path {
-    fn with_nix_path<T, F>(&self, f: F) -> Result<T>
-            where F: FnOnce(&OsStr) -> T {
-        Ok(f(self.as_os_str()))
+    fn len(&self) -> usize {
+        self.as_os_str().as_bytes().len()
+    }
+
+    fn with_nix_path<T, F>(&self, f: F) -> Result<T> where F: FnOnce(&CStr) -> T {
+        self.as_os_str().as_bytes().with_nix_path(f)
     }
 }
 
 impl NixPath for PathBuf {
-    fn with_nix_path<T, F>(&self, f: F) -> Result<T>
-            where F: FnOnce(&OsStr) -> T {
-        Ok(f(self.as_os_str()))
+    fn len(&self) -> usize {
+        self.as_os_str().as_bytes().len()
+    }
+
+    fn with_nix_path<T, F>(&self, f: F) -> Result<T> where F: FnOnce(&CStr) -> T {
+        self.as_os_str().as_bytes().with_nix_path(f)
     }
 }
 
@@ -130,24 +145,4 @@ pub fn from_ffi(res: libc::c_int) -> Result<()> {
     }
 
     Ok(())
-}
-
-/*
- *
- * ===== Impl utilities =====
- *
- */
-
-use std::ffi::OsStr;
-use std::os::unix::ffi::OsStrExt;
-
-/// Converts a value to an external (FFI) string representation
-trait AsExtStr {
-    fn as_ext_str(&self) -> *const libc::c_char;
-}
-
-impl AsExtStr for OsStr {
-    fn as_ext_str(&self) -> *const libc::c_char {
-        self.as_bytes().as_ptr() as *const libc::c_char
-    }
 }

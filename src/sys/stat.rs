@@ -1,7 +1,7 @@
 pub use libc::dev_t;
 pub use libc::stat as FileStat;
 
-use {Error, Result, NixPath, AsExtStr, from_ffi};
+use {Error, Result, NixPath, from_ffi};
 use errno::Errno;
 use fcntl::Fd;
 use libc::mode_t;
@@ -58,9 +58,9 @@ impl fmt::Debug for SFlag {
 }
 
 pub fn mknod<P: ?Sized + NixPath>(path: &P, kind: SFlag, perm: Mode, dev: dev_t) -> Result<()> {
-    let res = try!(path.with_nix_path(|osstr| {
+    let res = try!(path.with_nix_path(|cstr| {
         unsafe {
-            ffi::mknod(osstr.as_ext_str(), kind.bits | perm.bits() as mode_t, dev)
+            ffi::mknod(cstr.as_ptr(), kind.bits | perm.bits() as mode_t, dev)
         }
     }));
     from_ffi(res)
@@ -81,9 +81,9 @@ pub fn umask(mode: Mode) -> Mode {
 
 pub fn stat<P: ?Sized + NixPath>(path: &P) -> Result<FileStat> {
     let mut dst = unsafe { mem::uninitialized() };
-    let res = try!(path.with_nix_path(|osstr| {
+    let res = try!(path.with_nix_path(|cstr| {
         unsafe {
-            ffi::stat(osstr.as_ext_str(), &mut dst as *mut FileStat)
+            ffi::stat(cstr.as_ptr(), &mut dst as *mut FileStat)
         }
     }));
 
@@ -96,9 +96,9 @@ pub fn stat<P: ?Sized + NixPath>(path: &P) -> Result<FileStat> {
 
 pub fn lstat<P: ?Sized + NixPath>(path: &P) -> Result<FileStat> {
     let mut dst = unsafe { mem::uninitialized() };
-    let res = try!(path.with_nix_path(|osstr| {
+    let res = try!(path.with_nix_path(|cstr| {
         unsafe {
-            ffi::lstat(osstr.as_ext_str(), &mut dst as *mut FileStat)
+            ffi::lstat(cstr.as_ptr(), &mut dst as *mut FileStat)
         }
     }));
 

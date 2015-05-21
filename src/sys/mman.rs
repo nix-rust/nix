@@ -1,4 +1,4 @@
-use {Error, Result, NixPath, AsExtStr};
+use {Error, Result, NixPath};
 use errno::Errno;
 use fcntl::{Fd, OFlag};
 use libc::{c_void, size_t, off_t, mode_t};
@@ -225,9 +225,9 @@ pub fn msync(addr: *const c_void, length: size_t, flags: MmapSync) -> Result<()>
 }
 
 pub fn shm_open<P: ?Sized + NixPath>(name: &P, flag: OFlag, mode: Mode) -> Result<Fd> {
-    let ret = try!(name.with_nix_path(|osstr| {
+    let ret = try!(name.with_nix_path(|cstr| {
         unsafe {
-            ffi::shm_open(osstr.as_ext_str(), flag.bits(), mode.bits() as mode_t)
+            ffi::shm_open(cstr.as_ptr(), flag.bits(), mode.bits() as mode_t)
         }
     }));
 
@@ -239,8 +239,8 @@ pub fn shm_open<P: ?Sized + NixPath>(name: &P, flag: OFlag, mode: Mode) -> Resul
 }
 
 pub fn shm_unlink<P: ?Sized + NixPath>(name: &P) -> Result<()> {
-    let ret = try!(name.with_nix_path(|osstr| {
-        unsafe { ffi::shm_unlink(osstr.as_ext_str()) }
+    let ret = try!(name.with_nix_path(|cstr| {
+        unsafe { ffi::shm_unlink(cstr.as_ptr()) }
     }));
 
     if ret < 0 {

@@ -1,6 +1,6 @@
 //! Standard symbolic constants and types
 //!
-use {Error, Result, NixPath, AsExtStr, from_ffi};
+use {Error, Result, NixPath, from_ffi};
 use errno::Errno;
 use fcntl::{fcntl, Fd, OFlag, O_NONBLOCK, O_CLOEXEC, FD_CLOEXEC};
 use fcntl::FcntlArg::{F_SETFD, F_SETFL};
@@ -144,8 +144,8 @@ fn dup3_polyfill(oldfd: Fd, newfd: Fd, flags: OFlag) -> Result<Fd> {
 
 #[inline]
 pub fn chdir<P: ?Sized + NixPath>(path: &P) -> Result<()> {
-    let res = try!(path.with_nix_path(|osstr| {
-        unsafe { ffi::chdir(osstr.as_ext_str()) }
+    let res = try!(path.with_nix_path(|cstr| {
+        unsafe { ffi::chdir(cstr.as_ptr()) }
     }));
 
     if res != 0 {
@@ -301,9 +301,9 @@ pub fn isatty(fd: Fd) -> Result<bool> {
 }
 
 pub fn unlink<P: ?Sized + NixPath>(path: &P) -> Result<()> {
-    let res = try!(path.with_nix_path(|osstr| {
+    let res = try!(path.with_nix_path(|cstr| {
     unsafe {
-        ffi::unlink(osstr.as_ext_str())
+        ffi::unlink(cstr.as_ptr())
     }
     }));
     from_ffi(res)
@@ -311,8 +311,8 @@ pub fn unlink<P: ?Sized + NixPath>(path: &P) -> Result<()> {
 
 #[inline]
 pub fn chroot<P: ?Sized + NixPath>(path: &P) -> Result<()> {
-    let res = try!(path.with_nix_path(|osstr| {
-        unsafe { ffi::chroot(osstr.as_ext_str()) }
+    let res = try!(path.with_nix_path(|cstr| {
+        unsafe { ffi::chroot(cstr.as_ptr()) }
     }));
 
     if res != 0 {
@@ -336,7 +336,7 @@ mod linux {
         let res = try!(try!(new_root.with_nix_path(|new_root| {
             put_old.with_nix_path(|put_old| {
                 unsafe {
-                    syscall(SYSPIVOTROOT, new_root, put_old)
+                    syscall(SYSPIVOTROOT, new_root.as_ptr(), put_old.as_ptr())
                 }
             })
         })));

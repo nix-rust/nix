@@ -2,7 +2,7 @@ use {Result, Error, NixPath};
 use super::{consts, sa_family_t};
 use errno::Errno;
 use libc;
-use std::{fmt, hash, mem, net, ptr};
+use std::{fmt, hash, mem, net};
 use std::ffi::{CStr, OsStr};
 use std::path::Path;
 use std::os::unix::ffi::OsStrExt;
@@ -334,23 +334,21 @@ pub struct UnixAddr(pub libc::sockaddr_un);
 
 impl UnixAddr {
     pub fn new<P: ?Sized + NixPath>(path: &P) -> Result<UnixAddr> {
-        try!(path.with_nix_path(|osstr| {
-            unsafe {
-                let bytes = osstr.as_bytes();
+        use libc::strcpy;
 
+        try!(path.with_nix_path(|cstr| {
+            unsafe {
                 let mut ret = libc::sockaddr_un {
                     sun_family: AddressFamily::Unix as sa_family_t,
                     .. mem::zeroed()
                 };
 
-                if bytes.len() >= ret.sun_path.len() {
+                // Must be smaller to account for the null byte
+                if path.len() >= ret.sun_path.len() {
                     return Err(Error::Sys(Errno::ENAMETOOLONG));
                 }
 
-                ptr::copy(
-                    bytes.as_ptr() as *const i8,
-                    ret.sun_path.as_mut_ptr(),
-                    bytes.len());
+                strcpy(ret.sun_path.as_mut_ptr(), cstr.as_ptr());
 
                 Ok(UnixAddr(ret))
             }
