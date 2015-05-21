@@ -88,6 +88,11 @@ mod os {
     pub const MSG_OOB: SockMessageFlags = 0x1;
     pub const MSG_PEEK: SockMessageFlags = 0x2;
     pub const MSG_DONTWAIT: SockMessageFlags = 0x40;
+
+    // shutdown flags
+    pub const SHUT_RD: c_int   = 0;
+    pub const SHUT_WR: c_int   = 1;
+    pub const SHUT_RDWR: c_int = 2;
 }
 
 // Not all of these constants exist on freebsd
@@ -177,4 +182,9 @@ mod os {
     pub const MSG_OOB: SockMessageFlags = 0x1;
     pub const MSG_PEEK: SockMessageFlags = 0x2;
     pub const MSG_DONTWAIT: SockMessageFlags = 0x80;
+
+    // shutdown flags
+    pub const SHUT_RD: c_int   = 0;
+    pub const SHUT_WR: c_int   = 1;
+    pub const SHUT_RDWR: c_int = 2;
 }

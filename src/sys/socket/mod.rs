@@ -360,6 +360,36 @@ pub unsafe fn sockaddr_storage_to_addr(
     }
 }
 
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Shutdown {
+    /// Further receptions will be disallowed.
+    Read,
+    /// Further  transmissions will be disallowed.
+    Write,
+    /// Further receptions and transmissions will be disallowed.
+    Both,
+}
+
+/// Shut down part of a full-duplex connection.
+///
+/// [Further reading](http://man7.org/linux/man-pages/man2/shutdown.2.html)
+pub fn shutdown(df: Fd, how: &Shutdown) -> Result<()> {
+    unsafe {
+        use libc::shutdown;
+        let how = match how {
+            &Shutdown::Read  => consts::SHUT_RD,
+            &Shutdown::Write => consts::SHUT_WR,
+            &Shutdown::Both  => consts::SHUT_RDWR,
+        };
+        let ret = shutdown(df, how);
+        if ret < 0 {
+            return Err(Error::last());
+        }
+    }
+    Ok(())
+}
+
 #[test]
 pub fn test_struct_sizes() {
     use nixtest;
