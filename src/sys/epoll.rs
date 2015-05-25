@@ -119,7 +119,7 @@ pub fn epoll_ctl(epfd: Fd, op: EpollOp, fd: Fd, event: &EpollEvent) -> Result<()
 }
 
 #[inline]
-pub fn epoll_wait(epfd: Fd, events: &mut [EpollEvent], timeout_ms: usize) -> Result<usize> {
+pub fn epoll_wait(epfd: Fd, events: &mut [EpollEvent], timeout_ms: isize) -> Result<usize> {
     let res = unsafe {
         ffi::epoll_wait(epfd, events.as_mut_ptr(), events.len() as c_int, timeout_ms as c_int)
     };
