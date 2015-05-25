@@ -1,5 +1,5 @@
 use libc::{c_int, c_void, socklen_t};
-pub use libc::{socket, listen, bind, accept, connect, setsockopt, sendto, recvfrom, getsockname, getpeername};
+pub use libc::{socket, listen, bind, accept, connect, setsockopt, sendto, recvfrom, getsockname, getpeername, recv, send};
 
 extern {
     pub fn getsockopt(
