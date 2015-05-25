@@ -211,6 +211,26 @@ pub fn connect(fd: Fd, addr: &SockAddr) -> Result<()> {
     from_ffi(res)
 }
 
+/// Receive data from a connection-oriented socket. Returns the number of
+/// bytes read
+///
+/// [Further reading](http://man7.org/linux/man-pages/man2/recv.2.html)
+pub fn recv(sockfd: Fd, buf: &mut [u8], flags: SockMessageFlags) -> Result<usize> {
+    unsafe {
+        let ret = ffi::recv(
+            sockfd,
+            buf.as_ptr() as *mut c_void,
+            buf.len() as size_t,
+            flags);
+
+        if ret < 0 {
+            Err(Error::last())
+        } else {
+            Ok(ret as usize)
+        }
+    }
+}
+
 /// Receive data from a connectionless or connection-oriented socket. Returns
 /// the number of bytes read and the socket address of the sender.
 ///
@@ -245,6 +265,21 @@ pub fn sendto(fd: Fd, buf: &[u8], addr: &SockAddr, flags: SockMessageFlags) -> R
 
     if ret < 0 {
         Err(Error::Sys(Errno::last()))
+    } else {
+        Ok(ret as usize)
+    }
+}
+
+/// Send data to a connection-oriented socket. Returns the number of bytes read 
+///
+/// [Further reading](http://man7.org/linux/man-pages/man2/send.2.html)
+pub fn send(fd: Fd, buf: &[u8], flags: SockMessageFlags) -> Result<usize> {
+    let ret = unsafe {
+        ffi::send(fd, buf.as_ptr() as *const c_void, buf.len() as size_t, flags)
+    };
+
+    if ret < 0 {
+        Err(Error::last())
     } else {
         Ok(ret as usize)
     }
