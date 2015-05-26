@@ -1,3 +1,154 @@
+//! Linux epoll binding for Rust.
+//!
+//! Example:
+//!
+//!     extern crate nix;
+//!     use nix::sys::epoll;
+//!     use nix::sys::epoll::EpollOp;
+//!     use nix::sys::socket;
+//!     use std::ascii::AsciiExt;
+//!     use std::net;
+//!
+//!     fn main() {
+//!         let addrs = vec!(
+//!             socket::InetAddr::from_std(&net::SocketAddr::V4(
+//!                     net::SocketAddrV4::new(net::Ipv4Addr::new(173,194,122,196), 80))),
+//!             socket::InetAddr::from_std(&net::SocketAddr::V4(
+//!                     net::SocketAddrV4::new(net::Ipv4Addr::new(173,194,122,195), 80))),
+//!         );
+//!         let epollfd = match epoll::epoll_create() {
+//!             Ok(fd) => fd,
+//!             Err(e) => {
+//!                 println!("Errro calling epoll_create(): {:?}", e);
+//!                 return;
+//!             }
+//!         };
+//!         for i in 0..addrs.len() {
+//!             let sock = match socket::socket(socket::AddressFamily::Inet,
+//!                                            socket::SockType::Stream,
+//!                                            socket::SOCK_NONBLOCK) {
+//!                 Ok(fd) => fd,
+//!                 Err(e) => {
+//!                     println!("Error calling socket. {:?}", e);
+//!                     continue;
+//!                 }
+//!             };
+//!             match socket::connect(sock, &socket::SockAddr::Inet(addrs[i])) {
+//!                 Ok(()) => (),
+//!                 Err(e) if e == nix::Error::Sys(nix::errno::Errno::EINPROGRESS) => (),
+//!                 Err(e) => {
+//!                     println!("Error connecting: {:?}", e);
+//!                     continue;
+//!                 }
+//!             }
+//!             let event = epoll::EpollEvent {
+//!                 events: epoll::EPOLLOUT
+//!                       | epoll::EPOLLERR
+//!                       | epoll::EPOLLHUP,
+//!                 data: sock as u64
+//!             };
+//!             match epoll::epoll_ctl(epollfd, EpollOp::EpollCtlAdd, sock, &event) {
+//!                 Ok(()) => (),
+//!                 Err(e) => {
+//!                     println!("Error calling epoll_ctl: {:?}", e);
+//!                     continue;
+//!                 }
+//!             }
+//!         }
+//!         loop {
+//!             let mut events = [epoll::EpollEvent {events: epoll::EPOLLERR, data: 0}; 2];
+//!             let nfds = match epoll::epoll_wait(epollfd, &mut events, 1000) {
+//!                 Ok(n) if n == 0 => {
+//!                     println!("Timeout.");
+//!                     continue;
+//!                 }
+//!                 Ok(n) => n,
+//!                 Err(e) => {
+//!                     println!("Error calling epoll_wait: {:?}", e);
+//!                     break;
+//!                 }
+//!             };
+//!             for i in 0..nfds {
+//!                 let fd = events[i].data as nix::fcntl::Fd;
+//!                 if (events[i].events & epoll::EPOLLERR) == epoll::EPOLLERR
+//!                 || (events[i].events & epoll::EPOLLHUP) == epoll::EPOLLHUP {
+//!                     match epoll::epoll_ctl(epollfd, EpollOp::EpollCtlDel, fd, &events[i]) {
+//!                         Ok(()) => (),
+//!                         Err(e) => {
+//!                             println!("Error calling epoll_ctl: {:?}", e);
+//!                             continue;
+//!                         }
+//!                     }
+//!                     println!("Error on socket.");
+//!                 }
+//!                 if (events[i].events & epoll::EPOLLOUT) == epoll::EPOLLOUT{
+//!                     let data =
+//!                         b"GET / HTTP/1.1\r\n\
+//!                         Host: http://google.com\r\n\
+//!                         User-Agent: Mozilla/5.0 (Windows NT 6.1)\r\n\r\n";
+//!                     match nix::unistd::write(events[i].data as nix::fcntl::Fd, data) {
+//!                         Ok(n) if n == data.len() => {
+//!                             println!("Request sent.");
+//!                             let event = epoll::EpollEvent {
+//!                                 events: epoll::EPOLLIN
+//!                                       | epoll::EPOLLPRI
+//!                                       | epoll::EPOLLERR
+//!                                       | epoll::EPOLLHUP,
+//!                                 data: fd as u64
+//!                             };
+//!                             match epoll::epoll_ctl(epollfd, EpollOp::EpollCtlMod, fd, &event) {
+//!                                 Ok(()) => (),
+//!                                 Err(e) => {
+//!                                     println!("Error calling epoll_ctl: {:?}", e);
+//!                                     continue;
+//!                                 }
+//!                             }
+//!                             continue;
+//!                         }
+//!                         _ => {
+//!                             println!("Error calling write.");
+//!                             match epoll::epoll_ctl(epollfd, EpollOp::EpollCtlDel, fd, &events[i]){
+//!                                 Ok(()) => (),
+//!                                 Err(e) => {
+//!                                     println!("Error calling epoll_ctl: {:?}", e);
+//!                                     continue;
+//!                                 }
+//!                             }
+//!                             continue;
+//!                         }
+//!                     }
+//!                 }
+//!                 if (events[i].events & epoll::EPOLLIN) == epoll::EPOLLIN {
+//!                     let mut data: [u8; 2048] = [0; 2048];
+//!                     match nix::unistd::read(fd, &mut data) {
+//!                         Ok(n) => {
+//!                             let mut out: String = String::new();
+//!                             for i in 0..n {
+//!                                 if data[i].is_ascii() {
+//!                                     out.push(data[i] as char);
+//!                                 }
+//!                             }
+//!                             println!("Response: {}", out);
+//!                         },
+//!                         Err(e) => {
+//!                             println!("Error calling read: {:?}", e);
+//!                             continue;
+//!                         }
+//!                     }
+//!                     match epoll::epoll_ctl(epollfd, EpollOp::EpollCtlDel, fd, &events[i]) {
+//!                         Ok(()) => (),
+//!                         Err(e) => {
+//!                             println!("Error calling epoll_ctl: {:?}", e);
+//!                             continue;
+//!                         }
+//!                     }
+//!                 }
+//!             }
+//!         }
+//!     }
+
+
+
 use std::fmt;
 use libc::c_int;
 use errno::Errno;
