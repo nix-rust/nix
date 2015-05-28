@@ -409,19 +409,23 @@ pub enum Shutdown {
 /// Shut down part of a full-duplex connection.
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/shutdown.2.html)
-pub fn shutdown(df: Fd, how: &Shutdown) -> Result<()> {
+pub fn shutdown(df: Fd, how: Shutdown) -> Result<()> {
     unsafe {
         use libc::shutdown;
+
         let how = match how {
-            &Shutdown::Read  => consts::SHUT_RD,
-            &Shutdown::Write => consts::SHUT_WR,
-            &Shutdown::Both  => consts::SHUT_RDWR,
+            Shutdown::Read  => consts::SHUT_RD,
+            Shutdown::Write => consts::SHUT_WR,
+            Shutdown::Both  => consts::SHUT_RDWR,
         };
+
         let ret = shutdown(df, how);
+
         if ret < 0 {
             return Err(Error::last());
         }
     }
+
     Ok(())
 }
 
