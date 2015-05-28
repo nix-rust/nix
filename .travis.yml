@@ -5,6 +5,10 @@ rust:
   - nightly
   - beta
 
+os:
+  - linux
+  - osx
+
 script:
   - cargo test
   - cargo doc --no-deps
