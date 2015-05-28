@@ -3,7 +3,7 @@ sudo: false
 language: rust
 rust:
   - nightly
-  - beta
+  - 1.0.0
 
 os:
   - linux
@@ -13,9 +13,22 @@ script:
   - cargo test
   - cargo doc --no-deps
 
-after_success:
-  - test $TRAVIS_PULL_REQUEST == "false" && test $TRAVIS_BRANCH == "master" && bash deploy.sh
-
-env:
-  global:
-    secure: "Ox2NrSoMKHBNlUqPayqqCxOYy7SlM+uBPsJQ32q4eFhk0Z1ciyWAvt77WrUBSGbvKtpmDXJasN9ldhScSsWHBxzTfGIRBw0ZT5vkKnvWk01o58aBdxtdb2wDDMBlDUrMc6ccK95e6qff+TGR4zqwMFCPlsu5bKzAiVBONtgOnhk="
+# Deploy documentation to S3 for specific branches. At some
+# point, it would be nice to also support building docs for
+# a specific tag
+deploy:
+  provider: s3
+  access_key_id: AKIAIGFX36YKEFRZJAXA
+  secret_access_key:
+    secure: Q10KEdtBoYxaGXtt23L00J0obv9fpVWtao8YKFEroZMOmvu8Sq2+9aTNGEQRp2OojOxuu+DjZInJlUDFhq6trmV3kpZH2BF7cNRxiZQpQ2FEmlr6ZpYN38GhcIUKdxXqVwXiASJi6j+vz6QdpaOGCs5lQC3VhM5sn49MFXNUrFU=
+  bucket: rustdoc
+  endpoint: "rustdoc.s3-website-us-east-1.amazonaws.com"
+  skip_cleanup: true
+  local-dir: target/doc
+  upload-dir: nix/${TRAVIS_BRANCH}/${TRAVIS_OS_NAME}
+  acl: public_read
+  on:
+    condition: $TRAVIS_RUST_VERSION == "1.0.0"
+    repo: carllerche/nix-rust
+    branch:
+      - master
