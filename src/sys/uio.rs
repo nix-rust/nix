@@ -3,27 +3,27 @@
 
 use {Result, Error};
 use errno::Errno;
-use fcntl::Fd;
 use libc::{c_int, c_void, size_t};
 use std::marker::PhantomData;
+use std::os::unix::io::RawFd;
 
 mod ffi {
     use super::IoVec;
     use libc::{ssize_t, c_int};
-    use fcntl::Fd;
+    use std::os::unix::io::RawFd;
 
     extern {
         // vectorized version of write
         // doc: http://man7.org/linux/man-pages/man2/writev.2.html
-        pub fn writev(fd: Fd, iov: *const IoVec<&[u8]>, iovcnt: c_int) -> ssize_t;
+        pub fn writev(fd: RawFd, iov: *const IoVec<&[u8]>, iovcnt: c_int) -> ssize_t;
 
         // vectorized version of read
         // doc: http://man7.org/linux/man-pages/man2/readv.2.html
-        pub fn readv(fd: Fd, iov: *const IoVec<&mut [u8]>, iovcnt: c_int) -> ssize_t;
+        pub fn readv(fd: RawFd, iov: *const IoVec<&mut [u8]>, iovcnt: c_int) -> ssize_t;
     }
 }
 
-pub fn writev(fd: Fd, iov: &[IoVec<&[u8]>]) -> Result<usize> {
+pub fn writev(fd: RawFd, iov: &[IoVec<&[u8]>]) -> Result<usize> {
     let res = unsafe { ffi::writev(fd, iov.as_ptr(), iov.len() as c_int) };
 
     if res < 0 {
@@ -33,7 +33,7 @@ pub fn writev(fd: Fd, iov: &[IoVec<&[u8]>]) -> Result<usize> {
     return Ok(res as usize)
 }
 
-pub fn readv(fd: Fd, iov: &mut [IoVec<&mut [u8]>]) -> Result<usize> {
+pub fn readv(fd: RawFd, iov: &mut [IoVec<&mut [u8]>]) -> Result<usize> {
     let res = unsafe { ffi::readv(fd, iov.as_ptr(), iov.len() as c_int) };
     if res < 0 {
         return Err(Error::Sys(Errno::last()));

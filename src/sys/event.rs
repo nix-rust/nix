@@ -1,11 +1,11 @@
 /* TOOD: Implement for other kqueue based systems
  */
 
-use libc::{timespec, time_t, c_int, c_long, uintptr_t};
-use errno::Errno;
-use fcntl::Fd;
-use std::fmt;
 use {Error, Result};
+use errno::Errno;
+use libc::{timespec, time_t, c_int, c_long, uintptr_t};
+use std::fmt;
+use std::os::unix::io::RawFd;
 
 pub use self::ffi::kevent as KEvent;
 
@@ -159,7 +159,7 @@ bitflags!(
 pub const EV_POLL: EventFlag = EV_FLAG0;
 pub const EV_OOBAND: EventFlag = EV_FLAG1;
 
-pub fn kqueue() -> Result<Fd> {
+pub fn kqueue() -> Result<RawFd> {
     let res = unsafe { ffi::kqueue() };
 
     if res < 0 {
@@ -169,7 +169,7 @@ pub fn kqueue() -> Result<Fd> {
     Ok(res)
 }
 
-pub fn kevent(kq: Fd,
+pub fn kevent(kq: RawFd,
               changelist: &[KEvent],
               eventlist: &mut [KEvent],
               timeout_ms: usize) -> Result<usize> {

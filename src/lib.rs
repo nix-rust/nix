@@ -18,13 +18,8 @@ extern crate nix_test as nixtest;
 // Re-export some libc constants
 pub use libc::{c_int, c_void};
 
-#[cfg(unix)]
 pub mod errno;
-
-#[cfg(unix)]
 pub mod features;
-
-#[cfg(unix)]
 pub mod fcntl;
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
@@ -36,10 +31,7 @@ pub mod mqueue;
 #[cfg(any(target_os = "linux", target_os = "android"))]
 pub mod sched;
 
-#[cfg(unix)]
 pub mod sys;
-
-#[cfg(unix)]
 pub mod unistd;
 
 /*

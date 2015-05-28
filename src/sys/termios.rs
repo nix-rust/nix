@@ -1,8 +1,8 @@
+use {Error, Result, from_ffi};
 use errno::Errno;
-use fcntl::Fd;
 use libc::c_int;
 use std::mem;
-use {Error, Result, from_ffi};
+use std::os::unix::io::RawFd;
 
 pub use self::ffi::consts::*;
 pub use self::ffi::consts::SetArg::*;
@@ -433,7 +433,7 @@ pub fn cfsetospeed(termios: &mut Termios, speed: speed_t) -> Result<()> {
     })
 }
 
-pub fn tcgetattr(fd: Fd) -> Result<Termios> {
+pub fn tcgetattr(fd: RawFd) -> Result<Termios> {
     let mut termios = unsafe { mem::uninitialized() };
 
     let res = unsafe {
@@ -447,7 +447,7 @@ pub fn tcgetattr(fd: Fd) -> Result<Termios> {
     Ok(termios)
 }
 
-pub fn tcsetattr(fd: Fd,
+pub fn tcsetattr(fd: RawFd,
                  actions: SetArg,
                  termios: &Termios) -> Result<()> {
     from_ffi(unsafe {
@@ -455,25 +455,25 @@ pub fn tcsetattr(fd: Fd,
     })
 }
 
-pub fn tcdrain(fd: Fd) -> Result<()> {
+pub fn tcdrain(fd: RawFd) -> Result<()> {
     from_ffi(unsafe {
         ffi::tcdrain(fd)
     })
 }
 
-pub fn tcflow(fd: Fd, action: FlowArg) -> Result<()> {
+pub fn tcflow(fd: RawFd, action: FlowArg) -> Result<()> {
     from_ffi(unsafe {
         ffi::tcflow(fd, action as c_int)
     })
 }
 
-pub fn tcflush(fd: Fd, action: FlushArg) -> Result<()> {
+pub fn tcflush(fd: RawFd, action: FlushArg) -> Result<()> {
     from_ffi(unsafe {
         ffi::tcflush(fd, action as c_int)
     })
 }
 
-pub fn tcsendbreak(fd: Fd, action: c_int) -> Result<()> {
+pub fn tcsendbreak(fd: RawFd, action: c_int) -> Result<()> {
     from_ffi(unsafe {
         ffi::tcsendbreak(fd, action)
     })

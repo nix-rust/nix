@@ -1,10 +1,10 @@
 use {Result, Error, from_ffi};
 use super::{ffi, consts, SockOpt};
 use errno::Errno;
-use fcntl::Fd;
 use sys::time::TimeVal;
 use libc::{c_int, uint8_t, c_void, socklen_t};
 use std::mem;
+use std::os::unix::io::RawFd;
 
 // Helper to generate the sockopt accessors
 // TODO: Figure out how to ommit gets when not supported by opt
@@ -28,7 +28,7 @@ macro_rules! sockopt_impl {
         impl SockOpt for $name {
             type Val = $ty;
 
-            fn get(&self, fd: Fd, level: c_int) -> Result<$ty> {
+            fn get(&self, fd: RawFd, level: c_int) -> Result<$ty> {
                 unsafe {
                     let mut getter: $getter = Get::blank();
 
@@ -45,7 +45,7 @@ macro_rules! sockopt_impl {
                 }
             }
 
-            fn set(&self, fd: Fd, level: c_int, val: &$ty) -> Result<()> {
+            fn set(&self, fd: RawFd, level: c_int, val: &$ty) -> Result<()> {
                 unsafe {
                     let setter: $setter = Set::new(val);
 

@@ -4,10 +4,11 @@
 use {Error, Result, from_ffi};
 use errno::Errno;
 use features;
-use fcntl::{fcntl, Fd, FD_CLOEXEC, O_NONBLOCK};
+use fcntl::{fcntl, FD_CLOEXEC, O_NONBLOCK};
 use fcntl::FcntlArg::{F_SETFD, F_SETFL};
 use libc::{c_void, c_int, socklen_t, size_t};
 use std::{fmt, mem, ptr};
+use std::os::unix::io::RawFd;
 
 mod addr;
 mod consts;
@@ -78,7 +79,7 @@ bitflags!(
 /// Create an endpoint for communication
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/socket.2.html)
-pub fn socket(domain: AddressFamily, ty: SockType, flags: SockFlag) -> Result<Fd> {
+pub fn socket(domain: AddressFamily, ty: SockType, flags: SockFlag) -> Result<RawFd> {
     let mut ty = ty as c_int;
     let feat_atomic = features::socket_atomic_cloexec();
 
@@ -110,7 +111,7 @@ pub fn socket(domain: AddressFamily, ty: SockType, flags: SockFlag) -> Result<Fd
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/socketpair.2.html)
 pub fn socketpair(domain: AddressFamily, ty: SockType, protocol: c_int,
-                  flags: SockFlag) -> Result<(Fd, Fd)> {
+                  flags: SockFlag) -> Result<(RawFd, RawFd)> {
     let mut ty = ty as c_int;
     let feat_atomic = features::socket_atomic_cloexec();
 
@@ -143,7 +144,7 @@ pub fn socketpair(domain: AddressFamily, ty: SockType, protocol: c_int,
 /// Listen for connections on a socket
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/listen.2.html)
-pub fn listen(sockfd: Fd, backlog: usize) -> Result<()> {
+pub fn listen(sockfd: RawFd, backlog: usize) -> Result<()> {
     let res = unsafe { ffi::listen(sockfd, backlog as c_int) };
     from_ffi(res)
 }
@@ -151,7 +152,7 @@ pub fn listen(sockfd: Fd, backlog: usize) -> Result<()> {
 /// Bind a name to a socket
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/bind.2.html)
-pub fn bind(fd: Fd, addr: &SockAddr) -> Result<()> {
+pub fn bind(fd: RawFd, addr: &SockAddr) -> Result<()> {
     let res = unsafe {
         let (ptr, len) = addr.as_ffi_pair();
         ffi::bind(fd, ptr, len)
@@ -163,7 +164,7 @@ pub fn bind(fd: Fd, addr: &SockAddr) -> Result<()> {
 /// Accept a connection on a socket
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/accept.2.html)
-pub fn accept(sockfd: Fd) -> Result<Fd> {
+pub fn accept(sockfd: RawFd) -> Result<RawFd> {
     let res = unsafe { ffi::accept(sockfd, ptr::null_mut(), ptr::null_mut()) };
 
     if res < 0 {
@@ -176,12 +177,12 @@ pub fn accept(sockfd: Fd) -> Result<Fd> {
 /// Accept a connection on a socket
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/accept.2.html)
-pub fn accept4(sockfd: Fd, flags: SockFlag) -> Result<Fd> {
+pub fn accept4(sockfd: RawFd, flags: SockFlag) -> Result<RawFd> {
     accept4_polyfill(sockfd, flags)
 }
 
 #[inline]
-fn accept4_polyfill(sockfd: Fd, flags: SockFlag) -> Result<Fd> {
+fn accept4_polyfill(sockfd: RawFd, flags: SockFlag) -> Result<RawFd> {
     let res =  unsafe { ffi::accept(sockfd, ptr::null_mut(), ptr::null_mut()) };
 
     if res < 0 {
@@ -202,7 +203,7 @@ fn accept4_polyfill(sockfd: Fd, flags: SockFlag) -> Result<Fd> {
 /// Initiate a connection on a socket
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/connect.2.html)
-pub fn connect(fd: Fd, addr: &SockAddr) -> Result<()> {
+pub fn connect(fd: RawFd, addr: &SockAddr) -> Result<()> {
     let res = unsafe {
         let (ptr, len) = addr.as_ffi_pair();
         ffi::connect(fd, ptr, len)
@@ -215,7 +216,7 @@ pub fn connect(fd: Fd, addr: &SockAddr) -> Result<()> {
 /// bytes read
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/recv.2.html)
-pub fn recv(sockfd: Fd, buf: &mut [u8], flags: SockMessageFlags) -> Result<usize> {
+pub fn recv(sockfd: RawFd, buf: &mut [u8], flags: SockMessageFlags) -> Result<usize> {
     unsafe {
         let ret = ffi::recv(
             sockfd,
@@ -235,7 +236,7 @@ pub fn recv(sockfd: Fd, buf: &mut [u8], flags: SockMessageFlags) -> Result<usize
 /// the number of bytes read and the socket address of the sender.
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/recvmsg.2.html)
-pub fn recvfrom(sockfd: Fd, buf: &mut [u8]) -> Result<(usize, SockAddr)> {
+pub fn recvfrom(sockfd: RawFd, buf: &mut [u8]) -> Result<(usize, SockAddr)> {
     unsafe {
         let addr: sockaddr_storage = mem::zeroed();
         let mut len = mem::size_of::<sockaddr_storage>() as socklen_t;
@@ -257,7 +258,7 @@ pub fn recvfrom(sockfd: Fd, buf: &mut [u8]) -> Result<(usize, SockAddr)> {
     }
 }
 
-pub fn sendto(fd: Fd, buf: &[u8], addr: &SockAddr, flags: SockMessageFlags) -> Result<usize> {
+pub fn sendto(fd: RawFd, buf: &[u8], addr: &SockAddr, flags: SockMessageFlags) -> Result<usize> {
     let ret = unsafe {
         let (ptr, len) = addr.as_ffi_pair();
         ffi::sendto(fd, buf.as_ptr() as *const c_void, buf.len() as size_t, flags, ptr, len)
@@ -273,7 +274,7 @@ pub fn sendto(fd: Fd, buf: &[u8], addr: &SockAddr, flags: SockMessageFlags) -> R
 /// Send data to a connection-oriented socket. Returns the number of bytes read 
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/send.2.html)
-pub fn send(fd: Fd, buf: &[u8], flags: SockMessageFlags) -> Result<usize> {
+pub fn send(fd: RawFd, buf: &[u8], flags: SockMessageFlags) -> Result<usize> {
     let ret = unsafe {
         ffi::send(fd, buf.as_ptr() as *const c_void, buf.len() as size_t, flags)
     };
@@ -317,30 +318,30 @@ pub trait SockOpt : Copy + fmt::Debug {
     type Val;
 
     #[doc(hidden)]
-    fn get(&self, fd: Fd, level: c_int) -> Result<Self::Val>;
+    fn get(&self, fd: RawFd, level: c_int) -> Result<Self::Val>;
 
     #[doc(hidden)]
-    fn set(&self, fd: Fd, level: c_int, val: &Self::Val) -> Result<()>;
+    fn set(&self, fd: RawFd, level: c_int, val: &Self::Val) -> Result<()>;
 }
 
 /// Get the current value for the requested socket option
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/setsockopt.2.html)
-pub fn getsockopt<O: SockOpt>(fd: Fd, level: SockLevel, opt: O) -> Result<O::Val> {
+pub fn getsockopt<O: SockOpt>(fd: RawFd, level: SockLevel, opt: O) -> Result<O::Val> {
     opt.get(fd, level as c_int)
 }
 
 /// Sets the value for the requested socket option
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/setsockopt.2.html)
-pub fn setsockopt<O: SockOpt>(fd: Fd, level: SockLevel, opt: O, val: &O::Val) -> Result<()> {
+pub fn setsockopt<O: SockOpt>(fd: RawFd, level: SockLevel, opt: O, val: &O::Val) -> Result<()> {
     opt.set(fd, level as c_int, val)
 }
 
 /// Get the address of the peer connected to the socket `fd`.
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/getpeername.2.html)
-pub fn getpeername(fd: Fd) -> Result<SockAddr> {
+pub fn getpeername(fd: RawFd) -> Result<SockAddr> {
     unsafe {
         let addr: sockaddr_storage = mem::uninitialized();
         let mut len = mem::size_of::<sockaddr_storage>() as socklen_t;
@@ -358,7 +359,7 @@ pub fn getpeername(fd: Fd) -> Result<SockAddr> {
 /// Get the current address to which the socket `fd` is bound.
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/getsockname.2.html)
-pub fn getsockname(fd: Fd) -> Result<SockAddr> {
+pub fn getsockname(fd: RawFd) -> Result<SockAddr> {
     unsafe {
         let addr: sockaddr_storage = mem::uninitialized();
         let mut len = mem::size_of::<sockaddr_storage>() as socklen_t;
@@ -409,7 +410,7 @@ pub enum Shutdown {
 /// Shut down part of a full-duplex connection.
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/shutdown.2.html)
-pub fn shutdown(df: Fd, how: Shutdown) -> Result<()> {
+pub fn shutdown(df: RawFd, how: Shutdown) -> Result<()> {
     unsafe {
         use libc::shutdown;
 

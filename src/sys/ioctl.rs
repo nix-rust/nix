@@ -70,11 +70,11 @@
 //! necessary for cases (notably slices) where a reference cannot
 //! be generically cast to a pointer.
 
+use {Error, Result, errno};
 use libc::{c_int, c_ulong};
 use libc::funcs::bsd44::ioctl as libc_ioctl;
 use std::mem;
-use fcntl::Fd;
-use {Error, Result, errno};
+use std::os::unix::io::RawFd;
 
 pub type ioctl_op_t = c_ulong;
 
@@ -177,7 +177,7 @@ fn convert_ioctl_res(res: c_int) -> Result<c_int> {
 ///
 /// This function will allocate allocate space for and returned an owned
 /// reference to the result.
-pub unsafe fn read<T>(fd: Fd, op: ioctl_op_t) -> Result<T> {
+pub unsafe fn read<T>(fd: RawFd, op: ioctl_op_t) -> Result<T> {
     // allocate memory for the result (should get a value from kernel)
     let mut dst: T = mem::zeroed();
     let dst_ptr: *mut T = &mut dst;
@@ -190,7 +190,7 @@ pub unsafe fn read<T>(fd: Fd, op: ioctl_op_t) -> Result<T> {
 ///
 /// The refernced data may also contain information that will be consumed
 /// by the kernel.
-pub unsafe fn read_into<T>(fd: Fd, op: ioctl_op_t, data: &mut T) -> Result<c_int> {
+pub unsafe fn read_into<T>(fd: RawFd, op: ioctl_op_t, data: &mut T) -> Result<c_int> {
     read_into_ptr(fd, op, data as *mut T)
 }
 
@@ -199,25 +199,25 @@ pub unsafe fn read_into<T>(fd: Fd, op: ioctl_op_t, data: &mut T) -> Result<c_int
 ///
 /// The refernced data may also contain information that will be consumed
 /// by the kernel.
-pub unsafe fn read_into_ptr<T>(fd: Fd, op: ioctl_op_t, data_ptr: *mut T) -> Result<c_int> {
+pub unsafe fn read_into_ptr<T>(fd: RawFd, op: ioctl_op_t, data_ptr: *mut T) -> Result<c_int> {
     convert_ioctl_res(libc_ioctl(fd, op as os_ioctl_op_t, data_ptr))
 }
 
 /// Ioctl call that sends a value to the kernel but
 /// does not return anything (pure side effect).
-pub unsafe fn write<T>(fd: Fd, op: ioctl_op_t, data: &T) -> Result<c_int> {
+pub unsafe fn write<T>(fd: RawFd, op: ioctl_op_t, data: &T) -> Result<c_int> {
     write_ptr(fd, op, data as *const T)
 }
 
 /// Ioctl call that sends a value to the kernel but
 /// does not return anything (pure side effect).
-pub unsafe fn write_ptr<T>(fd: Fd, op: ioctl_op_t, data: *const T) -> Result<c_int> {
+pub unsafe fn write_ptr<T>(fd: RawFd, op: ioctl_op_t, data: *const T) -> Result<c_int> {
     convert_ioctl_res(libc_ioctl(fd, op as os_ioctl_op_t, data as *const T))
 }
 
 /// Ioctl call for which no data pointer is provided to the kernel.
 /// That is, the kernel has sufficient information about what to
 /// do based on the op alone.
-pub fn execute(fd: Fd, op: ioctl_op_t) -> Result<c_int> {
+pub fn execute(fd: RawFd, op: ioctl_op_t) -> Result<c_int> {
     convert_ioctl_res(unsafe { libc_ioctl(fd, op as os_ioctl_op_t) })
 }

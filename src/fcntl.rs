@@ -2,12 +2,10 @@ use {Error, Result, NixPath};
 use errno::Errno;
 use libc::mode_t;
 use sys::stat::Mode;
+use std::os::unix::io::RawFd;
 
 pub use self::consts::*;
 pub use self::ffi::flock;
-
-// Re-export Fd defined in std
-pub type Fd = ::std::os::unix::io::RawFd;
 
 #[allow(dead_code)]
 mod ffi {
@@ -71,7 +69,7 @@ mod ffi {
     }
 }
 
-pub fn open<P: ?Sized + NixPath>(path: &P, oflag: OFlag, mode: Mode) -> Result<Fd> {
+pub fn open<P: ?Sized + NixPath>(path: &P, oflag: OFlag, mode: Mode) -> Result<RawFd> {
     let fd = try!(path.with_nix_path(|cstr| {
         unsafe { ffi::open(cstr.as_ptr(), oflag.bits(), mode.bits() as mode_t) }
     }));
@@ -84,8 +82,8 @@ pub fn open<P: ?Sized + NixPath>(path: &P, oflag: OFlag, mode: Mode) -> Result<F
 }
 
 pub enum FcntlArg<'a> {
-    F_DUPFD(Fd),
-    F_DUPFD_CLOEXEC(Fd),
+    F_DUPFD(RawFd),
+    F_DUPFD_CLOEXEC(RawFd),
     F_GETFD,
     F_SETFD(FdFlag), // FD_FLAGS
     F_GETFL,
@@ -104,7 +102,7 @@ pub enum FcntlArg<'a> {
 }
 
 // TODO: Figure out how to handle value fcntl returns
-pub fn fcntl(fd: Fd, arg: FcntlArg) -> Result<()> {
+pub fn fcntl(fd: RawFd, arg: FcntlArg) -> Result<()> {
     use self::FcntlArg::*;
 
     let res = unsafe {

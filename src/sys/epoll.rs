@@ -1,8 +1,8 @@
-use std::fmt;
-use libc::c_int;
-use errno::Errno;
 use {Error, Result, from_ffi};
-use fcntl::Fd;
+use errno::Errno;
+use libc::c_int;
+use std::fmt;
+use std::os::unix::io::RawFd;
 
 mod ffi {
     use libc::{c_int};
@@ -102,7 +102,7 @@ pub struct EpollEvent {
 }
 
 #[inline]
-pub fn epoll_create() -> Result<Fd> {
+pub fn epoll_create() -> Result<RawFd> {
     let res = unsafe { ffi::epoll_create(1024) };
 
     if res < 0 {
@@ -113,13 +113,13 @@ pub fn epoll_create() -> Result<Fd> {
 }
 
 #[inline]
-pub fn epoll_ctl(epfd: Fd, op: EpollOp, fd: Fd, event: &EpollEvent) -> Result<()> {
+pub fn epoll_ctl(epfd: RawFd, op: EpollOp, fd: RawFd, event: &EpollEvent) -> Result<()> {
     let res = unsafe { ffi::epoll_ctl(epfd, op as c_int, fd, event as *const EpollEvent) };
     from_ffi(res)
 }
 
 #[inline]
-pub fn epoll_wait(epfd: Fd, events: &mut [EpollEvent], timeout_ms: isize) -> Result<usize> {
+pub fn epoll_wait(epfd: RawFd, events: &mut [EpollEvent], timeout_ms: isize) -> Result<usize> {
     let res = unsafe {
         ffi::epoll_wait(epfd, events.as_mut_ptr(), events.len() as c_int, timeout_ms as c_int)
     };
