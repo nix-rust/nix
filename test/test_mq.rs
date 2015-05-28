@@ -1,6 +1,6 @@
-use nix::mq::{mq_open, mq_close, mq_send, mq_receive};
-use nix::mq::{O_CREAT, O_WRONLY, O_RDONLY};
-use nix::mq::MqAttr;
+use nix::mqueue::{mq_open, mq_close, mq_send, mq_receive};
+use nix::mqueue::{O_CREAT, O_WRONLY, O_RDONLY};
+use nix::mqueue::MqAttr;
 use nix::sys::stat::{S_IWUSR, S_IRUSR, S_IRGRP, S_IROTH};
 use std::ffi::CString;
 use std::str;
