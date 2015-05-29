@@ -113,7 +113,7 @@ mod consts {
     pub const MAP_FAILED: isize               = -1;
 }
 
-#[cfg(target_os = "freebsd")]
+#[cfg(any(target_os = "freebsd", target_os = "openbsd"))]
 mod consts {
     use libc::c_int;
 

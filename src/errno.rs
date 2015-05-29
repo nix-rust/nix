@@ -258,7 +258,7 @@ fn desc(errno: Errno) -> &'static str {
         #[cfg(any(target_os = "linux", target_os = "android"))]
         ELIBEXEC        => "Cannot exec a shared library directly",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android", target_os = "openbsd"))]
         EILSEQ          => "Illegal byte sequence",
 
         #[cfg(any(target_os = "linux", target_os = "android"))]
@@ -294,10 +294,10 @@ fn desc(errno: Errno) -> &'static str {
         #[cfg(any(target_os = "linux", target_os = "android"))]
         EDQUOT          => "Quota exceeded",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android", target_os = "openbsd"))]
         ENOMEDIUM       => "No medium found",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android", target_os = "openbsd"))]
         EMEDIUMTYPE     => "Wrong medium type",
 
         #[cfg(any(target_os = "linux", target_os = "android"))]
@@ -342,16 +342,16 @@ fn desc(errno: Errno) -> &'static str {
         #[cfg(target_os = "freebsd")]
         ECAPMODE        => "Not permitted in capability mode",
 
-        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "ios"))]
+        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "ios", target_os = "openbsd"))]
         ENEEDAUTH       => "Need authenticator",
 
-        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "ios"))]
+        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "ios", target_os = "openbsd"))]
         EOVERFLOW       => "Value too large to be stored in data type",
 
         #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "ios"))]
         EILSEQ          => "Illegal byte sequence",
 
-        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "ios"))]
+        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "ios", target_os = "openbsd"))]
         ENOATTR         => "Attribute not found",
 
         #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "ios"))]
@@ -366,46 +366,46 @@ fn desc(errno: Errno) -> &'static str {
         #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "ios"))]
         EOWNERDEAD      => "Previous owner died",
 
-        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "ios"))]
+        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "ios", target_os = "openbsd"))]
         ENOTSUP         => "Operation not supported",
 
-        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "ios"))]
+        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "ios", target_os = "openbsd"))]
         EPROCLIM        => "Too many processes",
 
-        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "ios"))]
+        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "ios", target_os = "openbsd"))]
         EUSERS          => "Too many users",
 
-        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "ios"))]
+        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "ios", target_os = "openbsd"))]
         EDQUOT          => "Disc quota exceeded",
 
-        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "ios"))]
+        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "ios", target_os = "openbsd"))]
         ESTALE          => "Stale NFS file handle",
 
-        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "ios"))]
+        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "ios", target_os = "openbsd"))]
         EREMOTE         => "Too many levels of remote in path",
 
-        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "ios"))]
+        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "ios", target_os = "openbsd"))]
         EBADRPC         => "RPC struct is bad",
 
-        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "ios"))]
+        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "ios", target_os = "openbsd"))]
         ERPCMISMATCH    => "RPC version wrong",
 
-        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "ios"))]
+        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "ios", target_os = "openbsd"))]
         EPROGUNAVAIL    => "RPC prog. not avail",
 
-        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "ios"))]
+        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "ios", target_os = "openbsd"))]
         EPROGMISMATCH   => "Program version wrong",
 
-        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "ios"))]
+        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "ios", target_os = "openbsd"))]
         EPROCUNAVAIL    => "Bad procedure for program",
 
-        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "ios"))]
+        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "ios", target_os = "openbsd"))]
         EFTYPE          => "Inappropriate file type or format",
 
-        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "ios"))]
+        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "ios", target_os = "openbsd"))]
         EAUTH           => "Authentication error",
 
-        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "ios"))]
+        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "ios", target_os = "openbsd"))]
         ECANCELED       => "Operation canceled",
 
         #[cfg(any(target_os = "macos", target_os = "ios"))]
@@ -452,6 +452,12 @@ fn desc(errno: Errno) -> &'static str {
 
         #[cfg(any(target_os = "macos", target_os = "ios"))]
         EQFULL          => "Interface output queue is full",
+
+        #[cfg(target_os = "openbsd")]
+        EOPNOTSUPP      => "Operation not supported",
+
+        #[cfg(target_os = "openbsd")]
+        EIPSEC          => "IPsec processing failure",
     }
 }
 
@@ -1201,6 +1207,213 @@ mod consts {
 }
 
 
+#[cfg(target_os = "openbsd")]
+mod consts {
+    #[derive(Copy, Debug, Clone, PartialEq)]
+    pub enum Errno {
+        UnknownErrno    = 0,
+        EPERM           = 1,
+        ENOENT          = 2,
+        ESRCH           = 3,
+        EINTR           = 4,
+        EIO             = 5,
+        ENXIO           = 6,
+        E2BIG           = 7,
+        ENOEXEC         = 8,
+        EBADF           = 9,
+        ECHILD          = 10,
+        EDEADLK         = 11,
+        ENOMEM          = 12,
+        EACCES          = 13,
+        EFAULT          = 14,
+        ENOTBLK         = 15,
+        EBUSY           = 16,
+        EEXIST          = 17,
+        EXDEV           = 18,
+        ENODEV          = 19,
+        ENOTDIR         = 20,
+        EISDIR          = 21,
+        EINVAL          = 22,
+        ENFILE          = 23,
+        EMFILE          = 24,
+        ENOTTY          = 25,
+        ETXTBSY         = 26,
+        EFBIG           = 27,
+        ENOSPC          = 28,
+        ESPIPE          = 29,
+        EROFS           = 30,
+        EMLINK          = 31,
+        EPIPE           = 32,
+        EDOM            = 33,
+        ERANGE          = 34,
+        EAGAIN          = 35,
+        EINPROGRESS     = 36,
+        EALREADY        = 37,
+        ENOTSOCK        = 38,
+        EDESTADDRREQ    = 39,
+        EMSGSIZE        = 40,
+        EPROTOTYPE      = 41,
+        ENOPROTOOPT     = 42,
+        EPROTONOSUPPORT = 43,
+        ESOCKTNOSUPPORT = 44,
+        EOPNOTSUPP      = 45,
+        EPFNOSUPPORT    = 46,
+        EAFNOSUPPORT    = 47,
+        EADDRINUSE      = 48,
+        EADDRNOTAVAIL   = 49,
+        ENETDOWN        = 50,
+        ENETUNREACH     = 51,
+        ENETRESET       = 52,
+        ECONNABORTED    = 53,
+        ECONNRESET      = 54,
+        ENOBUFS         = 55,
+        EISCONN         = 56,
+        ENOTCONN        = 57,
+        ESHUTDOWN       = 58,
+        ETOOMANYREFS    = 59,
+        ETIMEDOUT       = 60,
+        ECONNREFUSED    = 61,
+        ELOOP           = 62,
+        ENAMETOOLONG    = 63,
+        EHOSTDOWN       = 64,
+        EHOSTUNREACH    = 65,
+        ENOTEMPTY       = 66,
+        EPROCLIM        = 67,
+        EUSERS          = 68,
+        EDQUOT          = 69,
+        ESTALE          = 70,
+        EREMOTE         = 71,
+        EBADRPC         = 72,
+        ERPCMISMATCH    = 73,
+        EPROGUNAVAIL    = 74,
+        EPROGMISMATCH   = 75,
+        EPROCUNAVAIL    = 76,
+        ENOLCK          = 77,
+        ENOSYS          = 78,
+        EFTYPE          = 79,
+        EAUTH           = 80,
+        ENEEDAUTH       = 81,
+        EIPSEC          = 82,
+        ENOATTR         = 83,
+        EILSEQ          = 84,
+        ENOMEDIUM       = 85,
+        EMEDIUMTYPE     = 86,
+        EOVERFLOW       = 87,
+        ECANCELED       = 88,
+        EIDRM           = 89,
+        ENOMSG          = 90,
+        ENOTSUP         = 91,
+    }
+
+    impl_errno!(Errno);
+
+    pub const ELAST: Errno       = Errno::ENOTSUP;
+    pub const EWOULDBLOCK: Errno = Errno::EAGAIN;
+
+    pub const EL2NSYNC: Errno = Errno::UnknownErrno;
+
+    pub fn from_i32(e: i32) -> Errno {
+        use self::Errno::*;
+
+        match e {
+            0   => UnknownErrno,
+            1   => EPERM,
+            2   => ENOENT,
+            3   => ESRCH,
+            4   => EINTR,
+            5   => EIO,
+            6   => ENXIO,
+            7   => E2BIG,
+            8   => ENOEXEC,
+            9   => EBADF,
+            10  => ECHILD,
+            11  => EDEADLK,
+            12  => ENOMEM,
+            13  => EACCES,
+            14  => EFAULT,
+            15  => ENOTBLK,
+            16  => EBUSY,
+            17  => EEXIST,
+            18  => EXDEV,
+            19  => ENODEV,
+            20  => ENOTDIR,
+            21  => EISDIR,
+            22  => EINVAL,
+            23  => ENFILE,
+            24  => EMFILE,
+            25  => ENOTTY,
+            26  => ETXTBSY,
+            27  => EFBIG,
+            28  => ENOSPC,
+            29  => ESPIPE,
+            30  => EROFS,
+            31  => EMLINK,
+            32  => EPIPE,
+            33  => EDOM,
+            34  => ERANGE,
+            35  => EAGAIN,
+            36  => EINPROGRESS,
+            37  => EALREADY,
+            38  => ENOTSOCK,
+            39  => EDESTADDRREQ,
+            40  => EMSGSIZE,
+            41  => EPROTOTYPE,
+            42  => ENOPROTOOPT,
+            43  => EPROTONOSUPPORT,
+            44  => ESOCKTNOSUPPORT,
+            45  => EOPNOTSUPP,
+            46  => EPFNOSUPPORT,
+            47  => EAFNOSUPPORT,
+            48  => EADDRINUSE,
+            49  => EADDRNOTAVAIL,
+            50  => ENETDOWN,
+            51  => ENETUNREACH,
+            52  => ENETRESET,
+            53  => ECONNABORTED,
+            54  => ECONNRESET,
+            55  => ENOBUFS,
+            56  => EISCONN,
+            57  => ENOTCONN,
+            58  => ESHUTDOWN,
+            59  => ETOOMANYREFS,
+            60  => ETIMEDOUT,
+            61  => ECONNREFUSED,
+            62  => ELOOP,
+            63  => ENAMETOOLONG,
+            64  => EHOSTDOWN,
+            65  => EHOSTUNREACH,
+            66  => ENOTEMPTY,
+            67  => EPROCLIM,
+            68  => EUSERS,
+            69  => EDQUOT,
+            70  => ESTALE,
+            71  => EREMOTE,
+            72  => EBADRPC,
+            73  => ERPCMISMATCH,
+            74  => EPROGUNAVAIL,
+            75  => EPROGMISMATCH,
+            76  => EPROCUNAVAIL,
+            77  => ENOLCK,
+            78  => ENOSYS,
+            79  => EFTYPE,
+            80  => EAUTH,
+            81  => ENEEDAUTH,
+            82  => EIPSEC,
+            83  => ENOATTR,
+            84  => EILSEQ,
+            85  => ENOMEDIUM,
+            86  => EMEDIUMTYPE,
+            87  => EOVERFLOW,
+            88  => ECANCELED,
+            89  => EIDRM,
+            90  => ENOMSG,
+            91  => ENOTSUP,
+            _   => UnknownErrno,
+        }
+    }
+}
+
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -1393,6 +1606,60 @@ mod test {
             EPROCUNAVAIL,
             ETYPE,
             EAUTH);
+    }
+
+    #[test]
+    #[cfg(target_os = "openbsd")]
+    pub fn test_openbsd_errnos() {
+        check_errno!(
+            EADDRINUSE,
+            EADDRNOTAVAIL,
+            EAFNOSUPPORT,
+            EALREADY,
+            EAUTH,
+            EBADRPC,
+            ECANCELED,
+            ECONNABORTED,
+            ECONNREFUSED,
+            ECONNRESET,
+            EDESTADDRREQ,
+            EDQUOT,
+            EFTYPE,
+            EHOSTDOWN,
+            EHOSTUNREACH,
+            EILSEQ,
+            EINPROGRESS,
+            EIPSEC,
+            EISCONN,
+            EMEDIUMTYPE,
+            EMSGSIZE,
+            ENEEDAUTH,
+            ENETDOWN,
+            ENETRESET,
+            ENETUNREACH,
+            ENOATTR,
+            ENOBUFS,
+            ENOMEDIUM,
+            ENOPROTOOPT,
+            ENOTCONN,
+            ENOTSOCK,
+            ENOTSUP,
+            EOPNOTSUPP,
+            EOVERFLOW,
+            EPFNOSUPPORT,
+            EPROCLIM,
+            EPROCUNAVAIL,
+            EPROGMISMATCH,
+            EPROGUNAVAIL,
+            EPROTONOSUPPORT,
+            EPROTOTYPE,
+            EREMOTE,
+            ESHUTDOWN,
+            ESOCKTNOSUPPORT,
+            ESTALE,
+            ETIMEDOUT,
+            ETOOMANYREFS,
+            EUSERS);
     }
 
     #[test]

@@ -201,6 +201,7 @@ pub mod signal {
 #[cfg(any(target_os = "macos",
           target_os = "ios",
           target_os = "freebsd",
+          target_os = "openbsd",
           target_os = "dragonfly"))]
 pub mod signal {
     use libc;
@@ -238,7 +239,7 @@ pub mod signal {
     pub const SIGUSR1:      libc::c_int = 30;
     pub const SIGUSR2:      libc::c_int = 31;
 
-    #[cfg(any(target_os = "macos", target_os = "ios"))]
+    #[cfg(any(target_os = "macos", target_os = "ios", target_os = "openbsd"))]
     pub type sigset_t = u32;
     #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
     #[repr(C)]
@@ -278,6 +279,13 @@ pub mod signal {
         pub sa_mask: sigset_t,
     }
 
+    #[cfg(target_os = "openbsd")]
+    #[repr(C)]
+    pub struct sigaction {
+        pub sa_handler: extern fn(libc::c_int),
+        pub sa_mask: sigset_t,
+        pub sa_flags: SockFlag,
+    }
 }
 
 mod ffi {

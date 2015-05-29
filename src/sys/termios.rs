@@ -17,7 +17,7 @@ mod ffi {
     // `Termios` contains bitflags which are not considered
     // `foreign-function-safe` by the compiler.
     #[allow(improper_ctypes)]
-    #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "linux"))]
+    #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "openbsd", target_os = "linux"))]
     extern {
         pub fn cfgetispeed(termios: *const Termios) -> speed_t;
         pub fn cfgetospeed(termios: *const Termios) -> speed_t;
@@ -89,7 +89,7 @@ mod ffi {
     pub use self::android::*;
 
 
-    #[cfg(any(target_os = "macos", target_os = "freebsd"))]
+    #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "openbsd"))]
     pub mod consts {
         use libc::{c_int, c_ulong, c_uchar};
 

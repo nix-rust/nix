@@ -96,7 +96,7 @@ mod os {
 }
 
 // Not all of these constants exist on freebsd
-#[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "ios"))]
+#[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "ios", target_os = "openbsd"))]
 mod os {
     use libc::{c_int, uint8_t};
 
