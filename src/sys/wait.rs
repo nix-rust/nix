@@ -16,7 +16,7 @@ bitflags!(
     }
 );
 
-#[derive(Clone, Copy)]
+#[derive(Eq, PartialEq, Clone, Copy, Debug)]
 pub enum WaitStatus {
     Exited(pid_t),
     StillAlive
@@ -41,4 +41,8 @@ pub fn waitpid(pid: pid_t, options: Option<WaitPidFlag>) -> Result<WaitStatus> {
     } else {
         Ok(Exited(res))
     }
+}
+
+pub fn wait() -> Result<WaitStatus> {
+    waitpid(-1, None)
 }

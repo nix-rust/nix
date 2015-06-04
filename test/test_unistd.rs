@@ -30,6 +30,23 @@ fn test_fork_and_waitpid() {
 }
 
 #[test]
+fn test_wait() {
+    let pid = fork();
+    match pid {
+      Ok(Child) => {} // ignore child here
+      Ok(Parent(child_pid)) => {
+          let wait_status = wait();
+
+          // just assert that (any) one child returns with WaitStatus::Exited
+          assert_eq!(wait_status, Ok(WaitStatus::Exited(child_pid)));
+      },
+      // panic, fork should never fail unless there is a serious problem with the OS
+      Err(_) => panic!("Error: Fork Failed")
+    }
+}
+
+
+#[test]
 fn test_getpid() {
     let pid = getpid();
     let ppid = getppid();
