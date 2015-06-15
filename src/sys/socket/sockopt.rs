@@ -1,42 +1,42 @@
 use {Result, Error, from_ffi};
-use super::{ffi, consts, SockOpt};
+use super::{ffi, consts, GetSockOpt, SetSockOpt};
 use errno::Errno;
 use sys::time::TimeVal;
 use libc::{c_int, uint8_t, c_void, socklen_t};
 use std::mem;
 use std::os::unix::io::RawFd;
 
-// Helper to generate the sockopt accessors
-// TODO: Figure out how to ommit gets when not supported by opt
-macro_rules! sockopt_impl {
-    ($name:ident, $flag:path, bool) => {
-        sockopt_impl!($name, $flag, bool, GetBool, SetBool);
-    };
-
-    ($name:ident, $flag:path, u8) => {
-        sockopt_impl!($name, $flag, u8, GetU8, SetU8);
-    };
-
-    ($name:ident, $flag:path, $ty:ty) => {
-        sockopt_impl!($name, $flag, $ty, GetStruct<$ty>, SetStruct<$ty>);
-    };
-
-    ($name:ident, $flag:path, $ty:ty, $getter:ty, $setter:ty) => {
-        #[derive(Clone, Copy, Debug)]
-        pub struct $name;
-
-        impl SockOpt for $name {
+macro_rules! setsockopt_impl {
+    ($name:ident, $level:path, $flag:path, $ty:ty, $setter:ty) => {
+        impl SetSockOpt for $name {
             type Val = $ty;
 
-            fn get(&self, fd: RawFd, level: c_int) -> Result<$ty> {
+            fn set(&self, fd: RawFd, val: &$ty) -> Result<()> {
+                unsafe {
+                    let setter: $setter = Set::new(val);
+
+                    let res = ffi::setsockopt(fd, $level, $flag,
+                                              setter.ffi_ptr(),
+                                              setter.ffi_len());
+                    from_ffi(res)
+                }
+            }
+        }
+    }
+}
+
+macro_rules! getsockopt_impl {
+    ($name:ident, $level:path, $flag:path, $ty:ty, $getter:ty) => {
+        impl GetSockOpt for $name {
+            type Val = $ty;
+
+            fn get(&self, fd: RawFd) -> Result<$ty> {
                 unsafe {
                     let mut getter: $getter = Get::blank();
 
-                    let res = ffi::getsockopt(
-                        fd, level, $flag,
-                        getter.ffi_ptr(),
-                        getter.ffi_len());
-
+                    let res = ffi::getsockopt(fd, $level, $flag,
+                                              getter.ffi_ptr(),
+                                              getter.ffi_len());
                     if res < 0 {
                         return Err(Error::Sys(Errno::last()));
                     }
@@ -44,20 +44,68 @@ macro_rules! sockopt_impl {
                     Ok(getter.unwrap())
                 }
             }
-
-            fn set(&self, fd: RawFd, level: c_int, val: &$ty) -> Result<()> {
-                unsafe {
-                    let setter: $setter = Set::new(val);
-
-                    let res = ffi::setsockopt(
-                        fd, level, $flag,
-                        setter.ffi_ptr(),
-                        setter.ffi_len());
-
-                    from_ffi(res)
-                }
-            }
         }
+    }
+}
+
+// Helper to generate the sockopt accessors
+macro_rules! sockopt_impl {
+    (GetOnly, $name:ident, $level:path, $flag:path, $ty:ty) => {
+        sockopt_impl!(GetOnly, $name, $level, $flag, $ty, GetStruct<$ty>);
+    };
+
+    (GetOnly, $name:ident, $level:path, $flag:path, bool) => {
+        sockopt_impl!(GetOnly, $name, $level, $flag, bool, GetBool);
+    };
+
+    (GetOnly, $name:ident, $level:path, $flag:path, u8) => {
+        sockopt_impl!(GetOnly, $name, $level, $flag, u8, GetU8);
+    };
+
+    (GetOnly, $name:ident, $level:path, $flag:path, $ty:ty, $getter:ty) => {
+        #[derive(Copy, Clone, Debug)]
+        pub struct $name;
+
+        getsockopt_impl!($name, $level, $flag, $ty, $getter);
+    };
+
+    (SetOnly, $name:ident, $level:path, $flag:path, $ty:ty) => {
+        sockopt_impl!(SetOnly, $name, $level, $flag, $ty, SetStruct<$ty>);
+    };
+
+    (SetOnly, $name:ident, $level:path, $flag:path, bool) => {
+        sockopt_impl!(SetOnly, $name, $level, $flag, bool, SetBool);
+    };
+
+    (SetOnly, $name:ident, $level:path, $flag:path, u8) => {
+        sockopt_impl!(SetOnly, $name, $level, $flag, u8, SetU8);
+    };
+
+    (SetOnly, $name:ident, $level:path, $flag:path, $ty:ty, $setter:ty) => {
+        #[derive(Copy, Clone, Debug)]
+        pub struct $name;
+
+        setsockopt_impl!($name, $level, $flag, $ty, $setter);
+    };
+
+    (Both, $name:ident, $level:path, $flag:path, $ty:ty, $getter:ty, $setter:ty) => {
+        #[derive(Copy, Clone, Debug)]
+        pub struct $name;
+
+        setsockopt_impl!($name, $level, $flag, $ty, $setter);
+        getsockopt_impl!($name, $level, $flag, $ty, $getter);
+    };
+
+    (Both, $name:ident, $level:path, $flag:path, bool) => {
+        sockopt_impl!(Both, $name, $level, $flag, bool, GetBool, SetBool);
+    };
+
+    (Both, $name:ident, $level:path, $flag:path, u8) => {
+        sockopt_impl!(Both, $name, $level, $flag, u8, GetU8, SetU8);
+    };
+
+    (Both, $name:ident, $level:path, $flag:path, $ty:ty) => {
+        sockopt_impl!(Both, $name, $level, $flag, $ty, GetStruct<$ty>, SetStruct<$ty>);
     };
 }
 
@@ -67,20 +115,31 @@ macro_rules! sockopt_impl {
  *
  */
 
-sockopt_impl!(ReuseAddr, consts::SO_REUSEADDR, bool);
-sockopt_impl!(ReusePort, consts::SO_REUSEPORT, bool);
-sockopt_impl!(TcpNoDelay, consts::TCP_NODELAY, bool);
-sockopt_impl!(Linger, consts::SO_LINGER, super::linger);
-sockopt_impl!(IpAddMembership, consts::IP_ADD_MEMBERSHIP, super::ip_mreq);
-sockopt_impl!(IpDropMembership, consts::IP_DROP_MEMBERSHIP, super::ip_mreq);
-sockopt_impl!(Ipv6AddMembership, consts::IPV6_ADD_MEMBERSHIP, super::ipv6_mreq);
-sockopt_impl!(Ipv6DropMembership, consts::IPV6_DROP_MEMBERSHIP, super::ipv6_mreq);
-sockopt_impl!(IpMulticastTtl, consts::IP_MULTICAST_TTL, u8);
-sockopt_impl!(IpMulticastLoop, consts::IP_MULTICAST_LOOP, bool);
-sockopt_impl!(ReceiveTimeout, consts::SO_RCVTIMEO, TimeVal);
-sockopt_impl!(SendTimeout, consts::SO_SNDTIMEO, TimeVal);
-sockopt_impl!(Broadcast, consts::SO_BROADCAST, bool);
-sockopt_impl!(OobInline, consts::SO_OOBINLINE, bool);
+sockopt_impl!(Both, ReuseAddr, consts::SOL_SOCKET, consts::SO_REUSEADDR, bool);
+sockopt_impl!(Both, ReusePort, consts::SOL_SOCKET, consts::SO_REUSEPORT, bool);
+sockopt_impl!(Both, TcpNoDelay, consts::SOL_SOCKET, consts::TCP_NODELAY, bool);
+sockopt_impl!(Both, Linger, consts::SOL_SOCKET, consts::SO_LINGER, super::linger);
+sockopt_impl!(SetOnly, IpAddMembership, consts::IPPROTO_IP, consts::IP_ADD_MEMBERSHIP, super::ip_mreq);
+sockopt_impl!(SetOnly, IpDropMembership, consts::IPPROTO_IP, consts::IP_DROP_MEMBERSHIP, super::ip_mreq);
+sockopt_impl!(SetOnly, Ipv6AddMembership, consts::IPPROTO_IPV6, consts::IPV6_ADD_MEMBERSHIP, super::ipv6_mreq);
+sockopt_impl!(SetOnly, Ipv6DropMembership, consts::IPPROTO_IPV6, consts::IPV6_DROP_MEMBERSHIP, super::ipv6_mreq);
+sockopt_impl!(Both, IpMulticastTtl, consts::IPPROTO_IP, consts::IP_MULTICAST_TTL, u8);
+sockopt_impl!(Both, IpMulticastLoop, consts::IPPROTO_IP, consts::IP_MULTICAST_LOOP, bool);
+sockopt_impl!(Both, ReceiveTimeout, consts::SOL_SOCKET, consts::SO_RCVTIMEO, TimeVal);
+sockopt_impl!(Both, SendTimeout, consts::SOL_SOCKET, consts::SO_SNDTIMEO, TimeVal);
+sockopt_impl!(Both, Broadcast, consts::SOL_SOCKET, consts::SO_BROADCAST, bool);
+sockopt_impl!(Both, OobInline, consts::SOL_SOCKET, consts::SO_OOBINLINE, bool);
+sockopt_impl!(GetOnly, SocketError, consts::SOL_SOCKET, consts::SO_ERROR, i32);
+sockopt_impl!(Both, KeepAlive, consts::SOL_SOCKET, consts::SO_KEEPALIVE, bool);
+#[cfg(any(target_os = "macos",
+          target_os = "ios"))]
+sockopt_impl!(Both, TcpKeepAlive, consts::IPPROTO_TCP, consts::TCP_KEEPALIVE, u32);
+#[cfg(any(target_os = "freebsd",
+          target_os = "dragonfly",
+          target_os = "linux",
+          target_os = "android",
+          target_os = "nacl"))]
+sockopt_impl!(Both, TcpKeepIdle, consts::IPPROTO_TCP, consts::TCP_KEEPIDLE, u32);
 
 /*
  *
@@ -108,7 +167,10 @@ struct GetStruct<T> {
 
 impl<T> Get<T> for GetStruct<T> {
     unsafe fn blank() -> Self {
-        mem::zeroed()
+        GetStruct {
+            len: mem::size_of::<T>() as socklen_t,
+            val: mem::zeroed(),
+        }
     }
 
     unsafe fn ffi_ptr(&mut self) -> *mut c_void {
@@ -150,7 +212,10 @@ struct GetBool {
 
 impl Get<bool> for GetBool {
     unsafe fn blank() -> Self {
-        mem::zeroed()
+        GetBool {
+            len: mem::size_of::<c_int>() as socklen_t,
+            val: mem::zeroed(),
+        }
     }
 
     unsafe fn ffi_ptr(&mut self) -> *mut c_void {
@@ -192,7 +257,10 @@ struct GetU8 {
 
 impl Get<u8> for GetU8 {
     unsafe fn blank() -> Self {
-        mem::zeroed()
+        GetU8 {
+            len: mem::size_of::<uint8_t>() as socklen_t,
+            val: mem::zeroed(),
+        }
     }
 
     unsafe fn ffi_ptr(&mut self) -> *mut c_void {
