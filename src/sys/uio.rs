@@ -3,7 +3,7 @@
 
 use {Result, Error};
 use errno::Errno;
-use libc::{c_int, c_void, size_t};
+use libc::{c_int, c_void, size_t, off_t};
 use std::marker::PhantomData;
 use std::os::unix::io::RawFd;
 
@@ -55,7 +55,7 @@ pub fn readv(fd: RawFd, iov: &mut [IoVec<&mut [u8]>]) -> Result<usize> {
 pub fn pwrite(fd: RawFd, buf: &[u8], offset: i64) -> Result<usize> {
     let res = unsafe {
         ffi::pwrite(fd, buf.as_ptr() as *const c_void, buf.len() as size_t,
-                    offset)
+                    offset as off_t)
     };
     if res < 0 {
         Err(Error::Sys(Errno::last()))
@@ -67,7 +67,7 @@ pub fn pwrite(fd: RawFd, buf: &[u8], offset: i64) -> Result<usize> {
 pub fn pread(fd: RawFd, buf: &mut [u8], offset: i64) -> Result<usize>{
     let res = unsafe {
         ffi::pread(fd, buf.as_mut_ptr() as *mut c_void, buf.len() as size_t,
-                   offset)
+                   offset as off_t)
     };
     if res < 0 {
         Err(Error::Sys(Errno::last()))
