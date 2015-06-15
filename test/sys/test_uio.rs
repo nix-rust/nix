@@ -2,6 +2,8 @@ use nix::sys::uio::*;
 use nix::unistd::*;
 use rand::{thread_rng, Rng};
 use std::{cmp, iter};
+use std::fs::{OpenOptions, remove_file};
+use std::os::unix::io::AsRawFd;
 
 #[test]
 fn test_writev() {
@@ -89,4 +91,40 @@ fn test_readv() {
     assert!(close_res.is_ok());
     let close_res = close(writer);
     assert!(close_res.is_ok());
+}
+
+#[test]
+fn test_pwrite() {
+    use std::io::Read;
+
+    let path = "pwrite_test_file";
+    let mut file = OpenOptions::new().write(true).read(true).create(true)
+                                    .truncate(true).open(path).unwrap();
+    let buf = [1u8;8];
+    assert_eq!(Ok(8), pwrite(file.as_raw_fd(), &buf, 8));
+    let mut file_content = Vec::new();
+    file.read_to_end(&mut file_content).unwrap();
+    let mut expected = vec![0u8;8];
+    expected.extend(vec![1;8]);
+    assert_eq!(file_content, expected);
+
+    remove_file(path).unwrap();
+}
+
+#[test]
+fn test_pread() {
+    use std::io::Write;
+
+    let path = "pread_test_file";
+    let mut file = OpenOptions::new().write(true).read(true).create(true)
+                                    .truncate(true).open(path).unwrap();
+    let file_content: Vec<u8> = (0..64).collect();
+    file.write_all(&file_content).unwrap();
+
+    let mut buf = [0u8;16];
+    assert_eq!(Ok(16), pread(file.as_raw_fd(), &mut buf, 16));
+    let expected: Vec<_> = (16..32).collect();
+    assert_eq!(&buf[..], &expected[..]);
+
+    remove_file(path).unwrap();
 }
