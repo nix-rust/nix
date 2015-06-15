@@ -144,7 +144,7 @@ trait Set<'a, T> {
     unsafe fn ffi_len(&self) -> socklen_t;
 }
 
-pub struct GetStruct<T> {
+struct GetStruct<T> {
     len: socklen_t,
     val: T,
 }
@@ -171,7 +171,7 @@ impl<T> Get<T> for GetStruct<T> {
     }
 }
 
-pub struct SetStruct<'a, T: 'static> {
+struct SetStruct<'a, T: 'static> {
     ptr: &'a T,
 }
 
@@ -189,7 +189,7 @@ impl<'a, T> Set<'a, T> for SetStruct<'a, T> {
     }
 }
 
-pub struct GetBool {
+struct GetBool {
     len: socklen_t,
     val: c_int,
 }
@@ -216,7 +216,7 @@ impl Get<bool> for GetBool {
     }
 }
 
-pub struct SetBool {
+struct SetBool {
     val: c_int,
 }
 
