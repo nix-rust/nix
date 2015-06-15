@@ -54,6 +54,14 @@ macro_rules! sockopt_impl {
         sockopt_impl!(GetOnly, $name, $level, $flag, $ty, GetStruct<$ty>);
     };
 
+    (GetOnly, $name:ident, $level:path, $flag:path, bool) => {
+        sockopt_impl!(GetOnly, $name, $level, $flag, bool, GetBool);
+    };
+
+    (GetOnly, $name:ident, $level:path, $flag:path, u8) => {
+        sockopt_impl!(GetOnly, $name, $level, $flag, u8, GetU8);
+    };
+
     (GetOnly, $name:ident, $level:path, $flag:path, $ty:ty, $getter:ty) => {
         #[derive(Copy, Clone, Debug)]
         pub struct $name;
@@ -63,6 +71,14 @@ macro_rules! sockopt_impl {
 
     (SetOnly, $name:ident, $level:path, $flag:path, $ty:ty) => {
         sockopt_impl!(SetOnly, $name, $level, $flag, $ty, SetStruct<$ty>);
+    };
+
+    (SetOnly, $name:ident, $level:path, $flag:path, bool) => {
+        sockopt_impl!(SetOnly, $name, $level, $flag, bool, SetBool);
+    };
+
+    (SetOnly, $name:ident, $level:path, $flag:path, u8) => {
+        sockopt_impl!(SetOnly, $name, $level, $flag, u8, SetU8);
     };
 
     (SetOnly, $name:ident, $level:path, $flag:path, $ty:ty, $setter:ty) => {
