@@ -52,10 +52,10 @@ pub fn readv(fd: RawFd, iov: &mut [IoVec<&mut [u8]>]) -> Result<usize> {
     return Ok(res as usize)
 }
 
-pub fn pwrite(fd: RawFd, buf: &[u8], offset: i64) -> Result<usize> {
+pub fn pwrite(fd: RawFd, buf: &[u8], offset: off_t) -> Result<usize> {
     let res = unsafe {
         ffi::pwrite(fd, buf.as_ptr() as *const c_void, buf.len() as size_t,
-                    offset as off_t)
+                    offset)
     };
     if res < 0 {
         Err(Error::Sys(Errno::last()))
@@ -64,10 +64,10 @@ pub fn pwrite(fd: RawFd, buf: &[u8], offset: i64) -> Result<usize> {
     }
 }
 
-pub fn pread(fd: RawFd, buf: &mut [u8], offset: i64) -> Result<usize>{
+pub fn pread(fd: RawFd, buf: &mut [u8], offset: off_t) -> Result<usize>{
     let res = unsafe {
         ffi::pread(fd, buf.as_mut_ptr() as *mut c_void, buf.len() as size_t,
-                   offset as off_t)
+                   offset)
     };
     if res < 0 {
         Err(Error::Sys(Errno::last()))
