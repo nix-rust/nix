@@ -117,7 +117,7 @@ macro_rules! sockopt_impl {
 
 sockopt_impl!(Both, ReuseAddr, consts::SOL_SOCKET, consts::SO_REUSEADDR, bool);
 sockopt_impl!(Both, ReusePort, consts::SOL_SOCKET, consts::SO_REUSEPORT, bool);
-sockopt_impl!(Both, TcpNoDelay, consts::SOL_SOCKET, consts::TCP_NODELAY, bool);
+sockopt_impl!(Both, TcpNoDelay, consts::IPPROTO_TCP, consts::TCP_NODELAY, bool);
 sockopt_impl!(Both, Linger, consts::SOL_SOCKET, consts::SO_LINGER, super::linger);
 sockopt_impl!(SetOnly, IpAddMembership, consts::IPPROTO_IP, consts::IP_ADD_MEMBERSHIP, super::ip_mreq);
 sockopt_impl!(SetOnly, IpDropMembership, consts::IPPROTO_IP, consts::IP_DROP_MEMBERSHIP, super::ip_mreq);
