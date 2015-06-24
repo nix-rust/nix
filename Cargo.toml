@@ -18,7 +18,7 @@ exclude     = [
 eventfd = []
 
 [dependencies]
-libc     = "0.1.4"
+libc     = "0.1.8"
 bitflags = "0.1.1"
 
 [dev-dependencies]
