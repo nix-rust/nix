@@ -3,13 +3,13 @@
 
 use {Result, Error};
 use errno::Errno;
-use libc::{c_int, c_void, size_t};
+use libc::{c_int, c_void, size_t, off_t};
 use std::marker::PhantomData;
 use std::os::unix::io::RawFd;
 
 mod ffi {
     use super::IoVec;
-    use libc::{ssize_t, c_int};
+    use libc::{ssize_t, c_int, size_t, off_t, c_void};
     use std::os::unix::io::RawFd;
 
     extern {
@@ -20,6 +20,16 @@ mod ffi {
         // vectorized version of read
         // doc: http://man7.org/linux/man-pages/man2/readv.2.html
         pub fn readv(fd: RawFd, iov: *const IoVec<&mut [u8]>, iovcnt: c_int) -> ssize_t;
+
+        // write to a file at a specified offset
+        // doc: http://man7.org/linux/man-pages/man2/pwrite.2.html
+        pub fn pwrite(fd: RawFd, buf: *const c_void, nbyte: size_t,
+                      offset: off_t) -> ssize_t;
+
+        // read from a file at a specified offset
+        // doc: http://man7.org/linux/man-pages/man2/pread.2.html
+        pub fn pread(fd: RawFd, buf: *mut c_void, nbyte: size_t, offset: off_t)
+                     -> ssize_t;
     }
 }
 
@@ -40,6 +50,30 @@ pub fn readv(fd: RawFd, iov: &mut [IoVec<&mut [u8]>]) -> Result<usize> {
     }
 
     return Ok(res as usize)
+}
+
+pub fn pwrite(fd: RawFd, buf: &[u8], offset: off_t) -> Result<usize> {
+    let res = unsafe {
+        ffi::pwrite(fd, buf.as_ptr() as *const c_void, buf.len() as size_t,
+                    offset)
+    };
+    if res < 0 {
+        Err(Error::Sys(Errno::last()))
+    } else {
+        Ok(res as usize)
+    }
+}
+
+pub fn pread(fd: RawFd, buf: &mut [u8], offset: off_t) -> Result<usize>{
+    let res = unsafe {
+        ffi::pread(fd, buf.as_mut_ptr() as *mut c_void, buf.len() as size_t,
+                   offset)
+    };
+    if res < 0 {
+        Err(Error::Sys(Errno::last()))
+    } else {
+        Ok(res as usize)
+    }
 }
 
 #[repr(C)]

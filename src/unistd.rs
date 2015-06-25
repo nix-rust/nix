@@ -254,7 +254,7 @@ pub fn pipe2(flags: OFlag) -> Result<(RawFd, RawFd)> {
 }
 
 fn pipe2_setflags(fd1: RawFd, fd2: RawFd, flags: OFlag) -> Result<()> {
-    let mut res = Ok(());
+    let mut res = Ok(0);
 
     if flags.contains(O_CLOEXEC) {
         res = res

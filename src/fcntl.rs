@@ -1,6 +1,6 @@
 use {Error, Result, NixPath};
 use errno::Errno;
-use libc::mode_t;
+use libc::{mode_t, c_int};
 use sys::stat::Mode;
 use std::os::unix::io::RawFd;
 
@@ -17,7 +17,7 @@ mod ffi {
         use libc::{c_int, c_short, off_t, pid_t};
 
         #[repr(C)]
-        #[derive(Clone, Copy)]
+        #[derive(Clone, Copy, Default, Debug)]
         pub struct flock {
             pub l_type: c_short,
             pub l_whence: c_short,
@@ -45,7 +45,7 @@ mod ffi {
         use libc::{c_int, c_short, off_t, pid_t};
 
         #[repr(C)]
-        #[derive(Clone, Copy)]
+        #[derive(Clone, Copy, Default, Debug)]
         pub struct flock {
             pub l_start: off_t,
             pub l_len: off_t,
@@ -102,13 +102,21 @@ pub enum FcntlArg<'a> {
 }
 
 // TODO: Figure out how to handle value fcntl returns
-pub fn fcntl(fd: RawFd, arg: FcntlArg) -> Result<()> {
+pub fn fcntl(fd: RawFd, arg: FcntlArg) -> Result<c_int> {
     use self::FcntlArg::*;
 
     let res = unsafe {
         match arg {
+            F_DUPFD(rawfd) => ffi::fcntl(fd, ffi::F_DUPFD, rawfd),
+            F_DUPFD_CLOEXEC(rawfd) => ffi::fcntl(fd, ffi::F_DUPFD_CLOEXEC, rawfd),
+            F_GETFD => ffi::fcntl(fd, ffi::F_GETFD),
             F_SETFD(flag) => ffi::fcntl(fd, ffi::F_SETFD, flag.bits()),
+            F_GETFL => ffi::fcntl(fd, ffi::F_GETFL),
             F_SETFL(flag) => ffi::fcntl(fd, ffi::F_SETFL, flag.bits()),
+            F_SETLK(flock) => ffi::fcntl(fd, ffi::F_SETLK, flock),
+            F_SETLKW(flock) => ffi::fcntl(fd, ffi::F_SETLKW, flock),
+            F_GETLK(flock) => ffi::fcntl(fd, ffi::F_GETLK, flock),
+            #[cfg(any(target_os = "linux", target_os = "android"))]
             _ => unimplemented!()
         }
     };
@@ -117,7 +125,7 @@ pub fn fcntl(fd: RawFd, arg: FcntlArg) -> Result<()> {
         return Err(Error::Sys(Errno::last()));
     }
 
-    Ok(())
+    Ok(res)
 }
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
