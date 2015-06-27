@@ -34,3 +34,5 @@ pub mod mman;
 pub mod uio;
 
 pub mod time;
+
+pub mod ptrace;
