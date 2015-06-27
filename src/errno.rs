@@ -3,44 +3,50 @@ use libc::c_int;
 pub use self::consts::*;
 pub use self::consts::Errno::*;
 
-/// Returns the platform-specific value of errno
-pub fn errno() -> i32 {
-    #[cfg(any(target_os = "macos",
-              target_os = "ios",
-              target_os = "freebsd"))]
-    unsafe fn errno_location() -> *const c_int {
-        extern { fn __error() -> *const c_int; }
-        __error()
-    }
 
-    #[cfg(target_os = "bitrig")]
-    fn errno_location() -> *const c_int {
-        extern {
-            fn __errno() -> *const c_int;
-        }
-        unsafe {
-            __errno()
-        }
-    }
+#[cfg(any(target_os = "macos",
+          target_os = "ios",
+          target_os = "freebsd"))]
+unsafe fn errno_location() -> *mut c_int {
+    extern { fn __error() -> *mut c_int; }
+    __error()
+}
 
-    #[cfg(target_os = "dragonfly")]
-    unsafe fn errno_location() -> *const c_int {
-        extern { fn __dfly_error() -> *const c_int; }
-        __dfly_error()
+#[cfg(target_os = "bitrig")]
+fn errno_location() -> *mut c_int {
+    extern {
+        fn __errno() -> *mut c_int;
     }
-
-    #[cfg(target_os = "openbsd")]
-    unsafe fn errno_location() -> *const c_int {
-        extern { fn __errno() -> *const c_int; }
+    unsafe {
         __errno()
     }
+}
 
-    #[cfg(any(target_os = "linux", target_os = "android"))]
-    unsafe fn errno_location() -> *const c_int {
-        extern { fn __errno_location() -> *const c_int; }
-        __errno_location()
-    }
+#[cfg(target_os = "dragonfly")]
+unsafe fn errno_location() -> *mut c_int {
+    extern { fn __dfly_error() -> *mut c_int; }
+    __dfly_error()
+}
 
+#[cfg(target_os = "openbsd")]
+unsafe fn errno_location() -> *mut c_int {
+    extern { fn __errno() -> *mut c_int; }
+    __errno()
+}
+
+#[cfg(any(target_os = "linux", target_os = "android"))]
+unsafe fn errno_location() -> *mut c_int {
+    extern { fn __errno_location() -> *mut c_int; }
+    __errno_location()
+}
+
+/// Sets the platform-specific errno to no-error
+unsafe fn clear() -> () {
+    *errno_location() = 0;
+}
+
+/// Returns the platform-specific value of errno
+pub fn errno() -> i32 {
     unsafe {
         (*errno_location()) as i32
     }
@@ -59,6 +65,10 @@ macro_rules! impl_errno {
 
             pub fn from_i32(err: i32) -> Errno {
                 from_i32(err)
+            }
+
+            pub unsafe fn clear() -> () {
+                super::clear()
             }
         }
     }
