@@ -60,8 +60,11 @@ pub fn ptrace(request: ptrace::PtraceRequest, pid: pid_t, addr: *mut c_void, dat
 }
 
 fn ptrace_peek(request: ptrace::PtraceRequest, pid: pid_t, addr: *mut c_void, data: *mut c_void) -> Result<i64> {
-    let ret = unsafe { ffi::ptrace(request, pid, addr, data) };
-    if ret == -1 {
+    let ret = unsafe {
+        Errno::clear();
+        ffi::ptrace(request, pid, addr, data)
+    };
+    if ret == -1 && Errno::last() != Errno::UnknownErrno {
         return Err(Error::Sys(Errno::last()));
     }
     Ok::<i64, Error>(ret)
