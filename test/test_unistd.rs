@@ -14,10 +14,10 @@ fn test_fork_and_waitpid() {
           let wait_status = waitpid(child_pid, None);
           match wait_status {
               // assert that waitpid returned correct status and the pid is the one of the child
-              Ok(WaitStatus::Exited(pid_t)) =>  assert!(pid_t == child_pid),
+              Ok(WaitStatus::Exited(pid_t, _)) =>  assert!(pid_t == child_pid),
 
               // panic, must never happen
-              Ok(WaitStatus::StillAlive) => panic!("Child still alive, should never happen"),
+              Ok(_) => panic!("Child still alive, should never happen"),
 
               // panic, waitpid should never fail
               Err(_) => panic!("Error: waitpid Failed")
@@ -38,7 +38,7 @@ fn test_wait() {
           let wait_status = wait();
 
           // just assert that (any) one child returns with WaitStatus::Exited
-          assert_eq!(wait_status, Ok(WaitStatus::Exited(child_pid)));
+          assert_eq!(wait_status, Ok(WaitStatus::Exited(child_pid, 0)));
       },
       // panic, fork should never fail unless there is a serious problem with the OS
       Err(_) => panic!("Error: Fork Failed")
