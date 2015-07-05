@@ -4,7 +4,7 @@ pub use libc::stat as FileStat;
 use {Error, Result, NixPath, from_ffi};
 use errno::Errno;
 use libc::mode_t;
-use std::{fmt, mem};
+use std::mem;
 use std::os::unix::io::RawFd;
 
 mod ffi {
@@ -47,12 +47,6 @@ bitflags! {
         const S_ISUID = 0o4000,
         const S_ISGID = 0o2000,
         const S_ISVTX = 0o1000,
-    }
-}
-
-impl fmt::Debug for SFlag {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        write!(fmt, "SFlag {{ bits: {} }}", self.bits())
     }
 }
 

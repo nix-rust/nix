@@ -19,7 +19,7 @@ eventfd = []
 
 [dependencies]
 libc     = "0.1.8"
-bitflags = "0.1.1"
+bitflags = "0.3.2"
 
 [dev-dependencies]
 rand = "0.3.8"

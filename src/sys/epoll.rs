@@ -1,7 +1,6 @@
 use {Error, Result, from_ffi};
 use errno::Errno;
 use libc::c_int;
-use std::fmt;
 use std::os::unix::io::RawFd;
 
 mod ffi {
@@ -34,41 +33,6 @@ bitflags!(
         const EPOLLET = 1 << 31
     }
 );
-
-impl fmt::Debug for EpollEventKind {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        let variants = [
-            (EPOLLIN,       "EPOLLIN"),
-            (EPOLLPRI,      "EPOLLPRI"),
-            (EPOLLOUT,      "EPOLLOUT"),
-            (EPOLLRDNORM,   "EPOLLRDNORM"),
-            (EPOLLRDBAND,   "EPOLLRDBAND"),
-            (EPOLLWRNORM,   "EPOLLWRNORM"),
-            (EPOLLWRBAND,   "EPOLLWRBAND"),
-            (EPOLLMSG,      "EPOLLMSG"),
-            (EPOLLERR,      "EPOLLERR"),
-            (EPOLLHUP,      "EPOLLHUP"),
-            (EPOLLRDHUP,    "EPOLLRDHUP"),
-            (EPOLLWAKEUP,   "EPOLLWAKEUP"),
-            (EPOLLONESHOT,  "EPOLLONESHOT"),
-            (EPOLLET,       "EPOLLET")];
-
-        let mut first = true;
-
-        for &(val, name) in variants.iter() {
-            if self.contains(val) {
-                if first {
-                    first = false;
-                    try!(write!(fmt, "{}", name));
-                } else {
-                    try!(write!(fmt, "|{}", name));
-                }
-            }
-        }
-
-        Ok(())
-    }
-}
 
 #[derive(Clone, Copy)]
 #[repr(C)]
