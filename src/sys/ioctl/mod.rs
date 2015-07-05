@@ -1,12 +1,18 @@
 //! Provide helpers for making ioctl system calls
 //!
-//! # Overview of IOCTLs
+//! Currently supports Linux on all architectures. Other platforms welcome!
 //!
-//! The `ioctl` system call is a widely support system
-//! call on *nix systems providing access to functions
-//! and data that do not fit nicely into the standard
-//! read and write operations on a file itself.  It is
-//! common to see ioctls used for the following purposes:
+//! This library is pretty low-level and messy. `ioctl` is not fun.
+//!
+//! What is an `ioctl`?
+//! ===================
+//!
+//! The `ioctl` syscall is the grab-bag syscall on POSIX systems. Don't want
+//! to add a new syscall? Make it an `ioctl`! `ioctl` refers to both the syscall,
+//! and the commands that can be send with it. `ioctl` stands for "IO control",
+//! and the commands are always sent to a file descriptor.
+//!
+//! It is common to see `ioctl`s used for the following purposes:
 //!
 //! * Provide read/write access to out-of-band data related
 //!   to a device such as configuration (for instance, setting
@@ -18,40 +24,36 @@
 //!   to the CDROM device.
 //! * Do whatever else the device driver creator thought made most sense.
 //!
-//! Ioctls are synchronous system calls and are similar to read and
+//! `ioctl`s are synchronous system calls and are similar to read and
 //! write calls in that regard.
 //!
-//! The prototype for the ioctl system call in libc is as follows:
+//! What does this module support?
+//! ===============================
 //!
-//! ```c
-//! int ioctl(int fd, unsigned long request, ...);
-//! ```
+//! This library provides the `ioctl!` macro, for binding `ioctl`s. It also tries
+//! to bind every `ioctl` supported by the system with said macro, but
+//! some `ioctl`s requires some amount of manual work (usually by
+//! providing `struct` declaration) that this library does not support yet.
 //!
-//! Typically, an ioctl takes 3 parameters as arguments:
+//! Additionally, in `etc`, there are scripts for scraping system headers for
+//! `ioctl` definitions, and generating calls to `ioctl!` corresponding to them.
 //!
-//! 1. An open file descriptor, `fd`.
-//! 2. An device-dependennt request code or operation.  This request
-//!    code is referred to as `op` in this module.
-//! 3. Either a pointer to a location in memory or an integer.  This
-//!    number of pointer may either be used by the kernel or written
-//!    to by the kernel depending on how the operation is documented
-//!    to work.
+//! How do I get the magic numbers?
+//! ===============================
 //!
-//! The `op` request code is essentially an arbitrary integer having
-//! a device-driver specific meaning.  Over time, it proved difficult
-//! for various driver implementors to use this field sanely, so a
-//! convention with macros was introduced to the Linux Kernel that
-//! is used by most newer drivers.  See
-//! https://github.com/torvalds/linux/blob/master/Documentation/ioctl/ioctl-number.txt
-//! for additional details.  The macros exposed by the kernel for
-//! consumers are implemented in this module and may be used to
-//! instead of calls like `_IOC`, `_IO`, `_IOR`, and `_IOW`.
+//! For Linux, look at your system's headers. For example, `/usr/include/linxu/input.h` has a lot
+//! of lines defining macros which use `_IOR`, `_IOW`, `_IOC`, and `_IORW`.  These macros
+//! correspond to the `ior!`, `iow!`, `ioc!`, and `iorw!` macros defined in this crate.
+//! Additionally, there is the `ioctl!` macro for creating a wrapper around `ioctl` that is
+//! somewhat more type-safe.
+//!
+//! Most `ioctl`s have no or little documentation. You'll need to scrounge through
+//! the source to figure out what they do and how they should be used.
 //!
 //! # Interface Overview
 //!
-//! This ioctl module seeks to tame the ioctl beast by providing
-//! a set of safer (although not safe) functions
-//! implementing the most common ioctl access patterns.
+//! This ioctl module seeks to tame the ioctl beast by providing a set of safer (although not safe)
+//! functions implementing the most common ioctl access patterns.
 //!
 //! The most common access patterns for ioctls are as follows:
 //!
