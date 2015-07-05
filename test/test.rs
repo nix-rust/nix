@@ -1,3 +1,4 @@
+#[macro_use]
 extern crate nix;
 extern crate libc;
 extern crate rand;
