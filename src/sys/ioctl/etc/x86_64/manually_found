@@ -1,0 +1,5 @@
+['CZ_NBOARDS', '(', 'CZIOC', '|', '0xfa', ')', '#']
+['CZ_BOOT_START', '(', 'CZIOC', '|', '0xfb', ')', '#']
+['CZ_BOOT_DATA', '(', 'CZIOC', '|', '0xfc', ')', '#']
+['CZ_BOOT_END', '(', 'CZIOC', '|', '0xfd', ')', '#']
+['CZ_TEST', '(', 'CZIOC', '|', '0xfe', ')', '#']
