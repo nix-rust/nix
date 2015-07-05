@@ -1,3 +1,4 @@
+#![cfg(target_os = "linux")] // no ioctl support for osx yet
 use nix::sys::ioctl::*;
 
 // See C code for source of values for op calculations:
