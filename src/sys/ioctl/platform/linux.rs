@@ -3,20 +3,7 @@ pub const NRBITS: u32 = 8;
 #[doc(hidden)]
 pub const TYPEBITS: u32 = 8;
 
-#[cfg(target_arch = "mips")]
-mod consts {
-    #[doc(hidden)]
-    pub const NONE: u8 = 1;
-    #[doc(hidden)]
-    pub const READ: u8 = 2;
-    #[doc(hidden)]
-    pub const WRITE: u8 = 4;
-    #[doc(hidden)]
-    pub const SIZEBITS: u8 = 13;
-    #[doc(hidden)]
-    pub const DIRBITS: u8 = 3;
-}
-#[cfg(target_arch = "powerpc")]
+#[cfg(any(target_arch = "mips", target_arch = "powerpc"))]
 mod consts {
     #[doc(hidden)]
     pub const NONE: u8 = 1;
@@ -241,12 +228,12 @@ pub struct ff_effect {
     pub direction: u16,
     pub trigger: ff_trigger,
     pub replay: ff_replay,
-    pub u: Union_Unnamed16,
+    pub u: ff_effect_data,
 }
 
 #[repr(C)]
 #[derive(Copy, Clone)]
-pub struct Union_Unnamed16 {
+pub struct ff_effect_data {
     pub _bindgen_data_: [u64; 4usize],
 }
 impl Union_Unnamed16 {
@@ -272,7 +259,7 @@ impl Union_Unnamed16 {
         ::std::mem::transmute(raw.offset(0))
     }
 }
-impl ::std::default::Default for Union_Unnamed16 {
+impl ::std::default::Default for ff_effect_data {
     fn default() -> Self { unsafe { ::std::mem::zeroed() } }
 }
 
