@@ -1582,8 +1582,8 @@ mod test {
     #[cfg(target_os = "linux")]
     pub fn test_linux_not_android_errnos() {
         check_errno!(
-            ERFKILL,
-            EHWPOISON);
+            ERFKILL /*,
+            EHWPOISON */);
     }
 
     #[test]
