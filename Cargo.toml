@@ -16,6 +16,7 @@ exclude     = [
 [features]
 
 eventfd = []
+execvpe = []
 
 [dependencies]
 libc     = "0.1.8"
