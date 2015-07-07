@@ -224,10 +224,9 @@ pub fn write(fd: RawFd, buf: &[u8]) -> Result<usize> {
 
 pub fn pipe() -> Result<(RawFd, RawFd)> {
     unsafe {
-        let mut res;
         let mut fds: [c_int; 2] = mem::uninitialized();
 
-        res = ffi::pipe(fds.as_mut_ptr());
+        let res = ffi::pipe(fds.as_mut_ptr());
 
         if res < 0 {
             return Err(Error::Sys(Errno::last()));
@@ -239,10 +238,9 @@ pub fn pipe() -> Result<(RawFd, RawFd)> {
 
 pub fn pipe2(flags: OFlag) -> Result<(RawFd, RawFd)> {
     unsafe {
-        let mut res;
         let mut fds: [c_int; 2] = mem::uninitialized();
 
-        res = ffi::pipe(fds.as_mut_ptr());
+        let res = ffi::pipe(fds.as_mut_ptr());
 
         if res < 0 {
             return Err(Error::Sys(Errno::last()));
