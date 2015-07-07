@@ -104,4 +104,5 @@ macro_rules! execve_test_factory(
 execve_test_factory!(test_execve, execve, b"/bin/sh", b"/system/bin/sh");
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
+#[cfg(feature = "execvpe")]
 execve_test_factory!(test_execvpe, execvpe, b"sh", b"sh");
