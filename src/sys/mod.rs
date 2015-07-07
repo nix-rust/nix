@@ -34,3 +34,10 @@ pub mod mman;
 pub mod uio;
 
 pub mod time;
+
+#[cfg(all(target_os = "linux",
+          any(target_arch = "x86",
+              target_arch = "x86_64",
+              target_arch = "arm")),
+          )]
+pub mod ptrace;

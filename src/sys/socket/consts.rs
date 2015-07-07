@@ -6,7 +6,7 @@ pub const IPV6_DROP_MEMBERSHIP: c_int = libc::IPV6_DROP_MEMBERSHIP;
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 mod os {
-    use libc::{c_int, uint8_t};
+    use libc::{self, c_int, uint8_t};
 
     pub const AF_UNIX: c_int  = 1;
     pub const AF_LOCAL: c_int = AF_UNIX;
@@ -65,6 +65,7 @@ mod os {
     pub const TCP_NODELAY: c_int = 1;
     pub const TCP_MAXSEG: c_int = 2;
     pub const TCP_CORK: c_int = 3;
+    pub const TCP_KEEPIDLE: c_int = libc::TCP_KEEPIDLE;
 
     // Socket options for the IP layer of the socket
     pub const IP_MULTICAST_IF: c_int = 32;
@@ -98,7 +99,7 @@ mod os {
 // Not all of these constants exist on freebsd
 #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "ios", target_os = "openbsd"))]
 mod os {
-    use libc::{c_int, uint8_t};
+    use libc::{self, c_int, uint8_t};
 
     pub const AF_UNIX: c_int  = 1;
     pub const AF_LOCAL: c_int = AF_UNIX;
@@ -159,6 +160,11 @@ mod os {
     // Socket options for TCP sockets
     pub const TCP_NODELAY: c_int = 1;
     pub const TCP_MAXSEG: c_int = 2;
+    #[cfg(any(target_os = "macos",
+              target_os = "ios"))]
+    pub const TCP_KEEPALIVE: c_int = libc::TCP_KEEPALIVE;
+    #[cfg(target_os = "freebsd")]
+    pub const TCP_KEEPIDLE: c_int = libc::TCP_KEEPIDLE;
 
     // Socket options for the IP layer of the socket
     pub const IP_MULTICAST_IF: c_int = 9;
@@ -268,14 +274,14 @@ mod test {
             SOL_IPV6,
             SO_BINDTODEVICE,
             SO_BSDCOMPAT,
-            SO_DOMAIN,
-            SO_MARK,
+            // SO_DOMAIN,
+            // SO_MARK,
             TCP_CORK,
             // SO_BUSY_POLL,
-            SO_RXQ_OVFL,
+            // SO_RXQ_OVFL,
             SO_PASSCRED,
             SO_PRIORITY,
-            SO_PROTOCOL,
+            // SO_PROTOCOL,
             SO_RCVBUFFORCE,
             // SO_PEEK_OFF,
             SO_PEERCRED,

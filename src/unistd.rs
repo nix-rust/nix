@@ -32,6 +32,7 @@ mod ffi {
         pub fn execve(filename: *const c_char, argv: *const *const c_char, envp: *const *const c_char) -> c_int;
         // doc: http://man7.org/linux/man-pages/man3/exec.3.html
         #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(feature = "execvpe")]
         pub fn execvpe(filename: *const c_char, argv: *const *const c_char, envp: *const *const c_char) -> c_int;
 
         // run the current process in the background
@@ -254,7 +255,7 @@ pub fn pipe2(flags: OFlag) -> Result<(RawFd, RawFd)> {
 }
 
 fn pipe2_setflags(fd1: RawFd, fd2: RawFd, flags: OFlag) -> Result<()> {
-    let mut res = Ok(());
+    let mut res = Ok(0);
 
     if flags.contains(O_CLOEXEC) {
         res = res
@@ -325,12 +326,12 @@ pub fn chroot<P: ?Sized + NixPath>(path: &P) -> Result<()> {
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 mod linux {
-    use std::ptr;
     use sys::syscall::{syscall, SYSPIVOTROOT};
     use errno::Errno;
     use {Error, Result, NixPath};
+
+    #[cfg(feature = "execvpe")]
     use std::ffi::CString;
-    use libc::c_char;
 
     pub fn pivot_root<P1: ?Sized + NixPath, P2: ?Sized + NixPath>(
             new_root: &P1, put_old: &P2) -> Result<()> {
@@ -350,7 +351,11 @@ mod linux {
     }
 
     #[inline]
+    #[cfg(feature = "execvpe")]
     pub fn execvpe(filename: &CString, args: &[CString], env: &[CString]) -> Result<()> {
+        use std::ptr;
+        use libc::c_char;
+
         let mut args_p: Vec<*const c_char> = args.iter().map(|s| s.as_ptr()).collect();
         args_p.push(ptr::null());
 

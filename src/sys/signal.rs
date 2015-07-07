@@ -266,7 +266,6 @@ pub mod signal {
     #[allow(missing_copy_implementations)]
     pub struct sigaction {
         pub sa_handler: extern fn(libc::c_int),
-        sa_tramp: *mut libc::c_void,
         pub sa_mask: sigset_t,
         pub sa_flags: SockFlag,
     }

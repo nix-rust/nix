@@ -7,7 +7,7 @@ use features;
 use fcntl::{fcntl, FD_CLOEXEC, O_NONBLOCK};
 use fcntl::FcntlArg::{F_SETFD, F_SETFL};
 use libc::{c_void, c_int, socklen_t, size_t};
-use std::{fmt, mem, ptr};
+use std::{mem, ptr};
 use std::os::unix::io::RawFd;
 
 mod addr;
@@ -271,7 +271,7 @@ pub fn sendto(fd: RawFd, buf: &[u8], addr: &SockAddr, flags: SockMessageFlags) -
     }
 }
 
-/// Send data to a connection-oriented socket. Returns the number of bytes read 
+/// Send data to a connection-oriented socket. Returns the number of bytes read
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/send.2.html)
 pub fn send(fd: RawFd, buf: &[u8], flags: SockMessageFlags) -> Result<usize> {
@@ -313,29 +313,35 @@ pub enum SockLevel {
 }
 
 /// Represents a socket option that can be accessed or set. Used as an argument
-/// to `getsockopt` and `setsockopt`.
-pub trait SockOpt : Copy + fmt::Debug {
+/// to `getsockopt`
+pub trait GetSockOpt : Copy {
     type Val;
 
     #[doc(hidden)]
-    fn get(&self, fd: RawFd, level: c_int) -> Result<Self::Val>;
+    fn get(&self, fd: RawFd) -> Result<Self::Val>;
+}
+
+/// Represents a socket option that can be accessed or set. Used as an argument
+/// to `setsockopt`
+pub trait SetSockOpt : Copy {
+    type Val;
 
     #[doc(hidden)]
-    fn set(&self, fd: RawFd, level: c_int, val: &Self::Val) -> Result<()>;
+    fn set(&self, fd: RawFd, val: &Self::Val) -> Result<()>;
 }
 
 /// Get the current value for the requested socket option
 ///
-/// [Further reading](http://man7.org/linux/man-pages/man2/setsockopt.2.html)
-pub fn getsockopt<O: SockOpt>(fd: RawFd, level: SockLevel, opt: O) -> Result<O::Val> {
-    opt.get(fd, level as c_int)
+/// [Further reading](http://man7.org/linux/man-pages/man2/getsockopt.2.html)
+pub fn getsockopt<O: GetSockOpt>(fd: RawFd, opt: O) -> Result<O::Val> {
+    opt.get(fd)
 }
 
 /// Sets the value for the requested socket option
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/setsockopt.2.html)
-pub fn setsockopt<O: SockOpt>(fd: RawFd, level: SockLevel, opt: O, val: &O::Val) -> Result<()> {
-    opt.set(fd, level as c_int, val)
+pub fn setsockopt<O: SetSockOpt>(fd: RawFd, opt: O, val: &O::Val) -> Result<()> {
+    opt.set(fd, val)
 }
 
 /// Get the address of the peer connected to the socket `fd`.
