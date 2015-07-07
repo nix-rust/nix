@@ -1,6 +1,6 @@
 use {Error, Result};
 use errno::Errno;
-use libc::{pid_t, c_void};
+use libc::{pid_t, c_void, c_long};
 
 #[cfg(all(target_os = "linux",
           any(target_arch = "x86",
@@ -51,7 +51,7 @@ mod ffi {
     }
 }
 
-pub fn ptrace(request: ptrace::PtraceRequest, pid: pid_t, addr: *mut c_void, data: *mut c_void) -> Result<i64> {
+pub fn ptrace(request: ptrace::PtraceRequest, pid: pid_t, addr: *mut c_void, data: *mut c_void) -> Result<c_long> {
     use self::ptrace::*;
 
     match request {
@@ -60,7 +60,7 @@ pub fn ptrace(request: ptrace::PtraceRequest, pid: pid_t, addr: *mut c_void, dat
     }
 }
 
-fn ptrace_peek(request: ptrace::PtraceRequest, pid: pid_t, addr: *mut c_void, data: *mut c_void) -> Result<i64> {
+fn ptrace_peek(request: ptrace::PtraceRequest, pid: pid_t, addr: *mut c_void, data: *mut c_void) -> Result<c_long> {
     let ret = unsafe {
         Errno::clear();
         ffi::ptrace(request, pid, addr, data)
@@ -68,10 +68,10 @@ fn ptrace_peek(request: ptrace::PtraceRequest, pid: pid_t, addr: *mut c_void, da
     if ret == -1 && Errno::last() != Errno::UnknownErrno {
         return Err(Error::Sys(Errno::last()));
     }
-    Ok::<i64, Error>(ret)
+    Ok::<c_long, Error>(ret)
 }
 
-fn ptrace_other(request: ptrace::PtraceRequest, pid: pid_t, addr: *mut c_void, data: *mut c_void) -> Result<i64> {
+fn ptrace_other(request: ptrace::PtraceRequest, pid: pid_t, addr: *mut c_void, data: *mut c_void) -> Result<c_long> {
     match unsafe { ffi::ptrace(request, pid, addr, data) } {
         -1 => Err(Error::Sys(Errno::last())),
         _  => Ok(0)
