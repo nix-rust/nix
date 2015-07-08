@@ -128,3 +128,66 @@ fn test_pread() {
 
     remove_file(path).unwrap();
 }
+
+#[test]
+#[cfg(any(target_os = "linux", target_os = "android"))]
+fn test_pwritev() {
+    use std::io::Read;
+
+    let to_write: Vec<u8> = (0..128).collect();
+    let expected: Vec<u8> = [vec![0;100], to_write.clone()].concat();
+
+    let iovecs = [
+        IoVec::from_slice(&to_write[0..17]),
+        IoVec::from_slice(&to_write[17..64]),
+        IoVec::from_slice(&to_write[64..128]),
+    ];
+
+    // pwritev them into a temporary file
+    let path = "pwritev_test_file";
+    let mut file = OpenOptions::new().write(true).read(true).create(true)
+                                    .truncate(true).open(path).unwrap();
+
+    let written = pwritev(file.as_raw_fd(), &iovecs, 100).ok().unwrap();
+    assert_eq!(written, to_write.len());
+
+    // Read the data back and make sure it matches
+    let mut contents = Vec::new();
+    file.read_to_end(&mut contents).unwrap();
+    assert_eq!(contents, expected);
+
+    remove_file(path).unwrap();
+}
+
+#[test]
+#[cfg(any(target_os = "linux", target_os = "android"))]
+fn test_preadv() {
+    use std::io::Write;
+
+    let to_write: Vec<u8> = (0..200).collect();
+    let expected: Vec<u8> = (100..200).collect();
+
+    let path = "preadv_test_file";
+
+    let mut file = OpenOptions::new().read(true).write(true).create(true)
+                                    .truncate(true).open(path).unwrap();
+    file.write_all(&to_write).unwrap();
+
+    let mut buffers: Vec<Vec<u8>> = vec![
+        vec![0; 24],
+        vec![0; 1],
+        vec![0; 75],
+    ];
+
+    {
+        // Borrow the buffers into IoVecs and preadv into them
+        let mut iovecs: Vec<_> = buffers.iter_mut().map(
+            |buf| IoVec::from_mut_slice(&mut buf[..])).collect();
+        assert_eq!(Ok(100), preadv(file.as_raw_fd(), &mut iovecs, 100));
+    }
+
+    let all = buffers.concat();
+    assert_eq!(all, expected);
+
+    remove_file(path).unwrap();
+}

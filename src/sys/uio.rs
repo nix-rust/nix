@@ -21,6 +21,18 @@ mod ffi {
         // doc: http://man7.org/linux/man-pages/man2/readv.2.html
         pub fn readv(fd: RawFd, iov: *const IoVec<&mut [u8]>, iovcnt: c_int) -> ssize_t;
 
+        // vectorized write at a specified offset
+        // doc: http://man7.org/linux/man-pages/man2/pwritev.2.html
+        #[cfg(any(target_os = "linux", target_os = "android"))]
+        pub fn pwritev(fd: RawFd, iov: *const IoVec<&[u8]>, iovcnt: c_int,
+                       offset: off_t) -> ssize_t;
+
+        // vectorized read at a specified offset
+        // doc: http://man7.org/linux/man-pages/man2/preadv.2.html
+        #[cfg(any(target_os = "linux", target_os = "android"))]
+        pub fn preadv(fd: RawFd, iov: *const IoVec<&mut [u8]>, iovcnt: c_int,
+                      offset: off_t) -> ssize_t;
+
         // write to a file at a specified offset
         // doc: http://man7.org/linux/man-pages/man2/pwrite.2.html
         pub fn pwrite(fd: RawFd, buf: *const c_void, nbyte: size_t,
@@ -50,6 +62,32 @@ pub fn readv(fd: RawFd, iov: &mut [IoVec<&mut [u8]>]) -> Result<usize> {
     }
 
     return Ok(res as usize)
+}
+
+#[cfg(any(target_os = "linux", target_os = "android"))]
+pub fn pwritev(fd: RawFd, iov: &[IoVec<&[u8]>],
+               offset: off_t) -> Result<usize> {
+    let res = unsafe {
+        ffi::pwritev(fd, iov.as_ptr(), iov.len() as c_int, offset)
+    };
+    if res < 0 {
+        Err(Error::Sys(Errno::last()))
+    } else {
+        Ok(res as usize)
+    }
+}
+
+#[cfg(any(target_os = "linux", target_os = "android"))]
+pub fn preadv(fd: RawFd, iov: &mut [IoVec<&mut [u8]>],
+              offset: off_t) -> Result<usize> {
+    let res = unsafe {
+        ffi::preadv(fd, iov.as_ptr(), iov.len() as c_int, offset)
+    };
+    if res < 0 {
+        Err(Error::Sys(Errno::last()))
+    } else {
+        Ok(res as usize)
+    }
 }
 
 pub fn pwrite(fd: RawFd, buf: &[u8], offset: off_t) -> Result<usize> {
