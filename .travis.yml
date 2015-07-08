@@ -10,7 +10,7 @@ os:
   - osx
 
 script:
-  - cargo test --features execvpe
+  - RUST_TEST_THREADS=1 cargo test --features execvpe
   - cargo doc --no-deps
 
 # Deploy documentation to S3 for specific branches. At some
