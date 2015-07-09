@@ -15,6 +15,7 @@ env:
 
 script:
   - curl -sSL https://raw.githubusercontent.com/carllerche/travis-rust-matrix/master/test | RUST_TEST_THREADS=1 bash
+  - cargo doc --no-deps
 
 addons:
   apt:
