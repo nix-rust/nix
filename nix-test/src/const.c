@@ -275,8 +275,8 @@ get_int_const(const char* err) {
     // GET_CONST(SO_PEEK_OFF);
     GET_CONST(SO_PEERCRED);
     GET_CONST(SO_SNDBUFFORCE);
+#endif
 
     return -1;
 
-#endif
 }

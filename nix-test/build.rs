@@ -1,3 +1,30 @@
+extern crate gcc;
+
+use std::env;
+
+pub fn main() {
+    let target = env::var("TARGET").unwrap();
+
+    let os = if target.contains("linux") {
+        "LINUX"
+    } else if target.contains("darwin") {
+        "DARWIN"
+    } else {
+        "UNKNOWN"
+    };
+
+    let mut config = gcc::Config::new();
+
+    for file in &["src/const.c", "src/sizes.c"] {
+        config.file(file);
+    }
+
+    config.define(os, None);
+
+    config.compile("libnixtest.a");
+}
+
+/*
 use std::env;
 use std::process::Command;
 
@@ -28,3 +55,4 @@ pub fn main() {
 
     println!("cargo:rustc-flags=-L {}/", out);
 }
+*/

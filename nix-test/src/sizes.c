@@ -17,6 +17,9 @@
 
 size_t
 size_of(const char* type) {
+    // Builtin
+    SIZE_OF_T(long);
+
     // sys/socket
     SIZE_OF_S(sockaddr_storage);
 

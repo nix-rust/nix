@@ -2,6 +2,8 @@ extern crate nix;
 extern crate libc;
 extern crate rand;
 
+extern crate nix_test as nixtest;
+
 mod sys;
 mod test_nix_path;
 mod test_stat;
@@ -32,4 +34,13 @@ mod ports {
     pub fn localhost() -> String {
         format!("127.0.0.1:{}", next_port())
     }
+}
+
+use nixtest::assert_size_of;
+
+#[test]
+pub fn test_size_of_long() {
+    // This test is mostly here to ensure that 32bit CI is correctly
+    // functioning
+    assert_size_of::<usize>("long");
 }

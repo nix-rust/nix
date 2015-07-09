@@ -9,9 +9,17 @@ os:
   - linux
   - osx
 
+env:
+  - ARCH=x86_64
+  - ARCH=i686
+
 script:
-  - RUST_TEST_THREADS=1 cargo test --features execvpe
-  - cargo doc --no-deps
+  - curl -sSL https://raw.githubusercontent.com/carllerche/travis-rust-matrix/master/test | RUST_TEST_THREADS=1 bash
+
+addons:
+  apt:
+    packages:
+      - gcc-multilib
 
 # Deploy documentation to S3 for specific branches. At some
 # point, it would be nice to also support building docs for
@@ -28,7 +36,7 @@ deploy:
   upload-dir: nix/${TRAVIS_BRANCH}/${TRAVIS_OS_NAME}
   acl: public_read
   on:
-    condition: $TRAVIS_RUST_VERSION == "1.0.0"
+    condition: "\"$TRAVIS_RUST_VERSION/$ARCH\" == \"1.0.0/x86_64\""
     repo: carllerche/nix-rust
     branch:
       - master
