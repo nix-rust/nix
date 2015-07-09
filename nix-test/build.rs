@@ -16,11 +16,20 @@ pub fn main() {
         "UNKNOWN"
     };
 
+    let arch = if target.contains("i686") || target.contains("i386") || target.contains("arm") || target.contains("mips") || target.contains("powerpc") {
+        "32"
+    } else if target.contains("x86_64") || target.contains("aarch64") {
+        "64"
+    } else {
+        "64" // TODO decide a better strategy
+    };
+
     let res = Command::new("make")
         .arg("-f").arg(&make)
         .current_dir(&out)
         .env("VPATH", &src)
         .env("OS", os)
+        .env("ARCH", arch)
         .spawn().unwrap()
         .wait().unwrap();
 
