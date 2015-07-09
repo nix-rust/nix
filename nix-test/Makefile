@@ -1,5 +1,5 @@
 OUT    = libnixtest.a
-CFLAGS = -fPIC -D$(OS)
+CFLAGS = -fPIC -D$(OS) -m$(ARCH)
 OBJS   = const.o \
 		 sizes.o
 
