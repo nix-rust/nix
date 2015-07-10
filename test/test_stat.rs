@@ -23,7 +23,7 @@ fn assert_stat_results(stat_result: Result<FileStat>) {
             assert!(stats.st_rdev == 0);    // no special device
             assert!(stats.st_size == 0);    // size is 0 because we did not write anything to the file
             assert!(stats.st_blksize > 0);  // must be positive integer, exact number machine dependent
-            assert!(stats.st_blocks >= 16);  // Up to 16 blocks can be allocated for a blank file
+            assert!(stats.st_blocks <= 16);  // Up to 16 blocks can be allocated for a blank file
         }
         Err(_) => panic!("stat call failed") // if stats system call fails, something is seriously wrong on that machine
     }
