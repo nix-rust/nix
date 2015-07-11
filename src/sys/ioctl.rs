@@ -78,17 +78,6 @@ use std::os::unix::io::RawFd;
 
 pub type ioctl_op_t = c_ulong;
 
-// the libc definiton of the 'op' type is platform dependent
-#[cfg(any(target_os = "macos",
-          target_os = "ios",
-          target_os = "freebsd",
-          target_os = "openbsd",
-          target_os = "dragonfly"))]
-type os_ioctl_op_t = c_ulong;
-
-#[cfg(any(target_os = "linux", target_os = "android"))]
-type os_ioctl_op_t = c_int;
-
 // low-level ioctl functions and definitions matching the
 // macros provided in ioctl.h from the kernel
 const IOC_NRBITS: u32 = 8;
@@ -201,7 +190,7 @@ pub unsafe fn read_into<T>(fd: RawFd, op: ioctl_op_t, data: &mut T) -> Result<c_
 /// The refernced data may also contain information that will be consumed
 /// by the kernel.
 pub unsafe fn read_into_ptr<T>(fd: RawFd, op: ioctl_op_t, data_ptr: *mut T) -> Result<c_int> {
-    convert_ioctl_res(libc_ioctl(fd, op as os_ioctl_op_t, data_ptr))
+    convert_ioctl_res(libc_ioctl(fd, op, data_ptr))
 }
 
 /// Ioctl call that sends a value to the kernel but
@@ -213,12 +202,12 @@ pub unsafe fn write<T>(fd: RawFd, op: ioctl_op_t, data: &T) -> Result<c_int> {
 /// Ioctl call that sends a value to the kernel but
 /// does not return anything (pure side effect).
 pub unsafe fn write_ptr<T>(fd: RawFd, op: ioctl_op_t, data: *const T) -> Result<c_int> {
-    convert_ioctl_res(libc_ioctl(fd, op as os_ioctl_op_t, data as *const T))
+    convert_ioctl_res(libc_ioctl(fd, op, data as *const T))
 }
 
 /// Ioctl call for which no data pointer is provided to the kernel.
 /// That is, the kernel has sufficient information about what to
 /// do based on the op alone.
 pub fn execute(fd: RawFd, op: ioctl_op_t) -> Result<c_int> {
-    convert_ioctl_res(unsafe { libc_ioctl(fd, op as os_ioctl_op_t) })
+    convert_ioctl_res(unsafe { libc_ioctl(fd, op) })
 }
