@@ -99,7 +99,12 @@ mod os {
 // Not all of these constants exist on freebsd
 #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "ios", target_os = "openbsd"))]
 mod os {
+    #[cfg(any(target_os = "macos",
+              target_os = "ios",
+              target_os = "freebsd"))]
     use libc::{self, c_int, uint8_t};
+    #[cfg(any(target_os = "openbsd"))]
+    use libc::{c_int, uint8_t};
 
     pub const AF_UNIX: c_int  = 1;
     pub const AF_LOCAL: c_int = AF_UNIX;
