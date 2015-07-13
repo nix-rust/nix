@@ -33,23 +33,25 @@ mod consts {
 }
 
 mod ffi {
-    use libc::{c_char, size_t, ssize_t, c_uint, c_int, mode_t};
+    use libc::{c_char, size_t, ssize_t, c_uint, c_int};
     use super::MQd;
     use super::MqAttr;
 
-    extern {
-        pub fn mq_open(name: *const c_char, oflag: c_int, mode: mode_t, attr: *const MqAttr) -> MQd;
+    extern "C" {
+        pub fn mq_open(name: *const c_char, oflag: c_int, ...) -> MQd;
 
-        pub fn mq_close (mqdes: MQd) -> c_int;
+        pub fn mq_close (mqd: MQd) -> c_int;
 
-        pub fn mq_receive (mqdes: MQd, msg_ptr: *const c_char, msg_len: size_t, msq_prio: *const c_uint) -> ssize_t;
+        pub fn mq_receive (mqd: MQd, msg_ptr: *const c_char, msg_len: size_t, msq_prio: *const c_uint) -> ssize_t;
 
-        pub fn mq_send (mqdes: MQd, msg_ptr: *const c_char, msg_len: size_t, msq_prio: c_uint) -> c_int;
+        pub fn mq_send (mqd: MQd, msg_ptr: *const c_char, msg_len: size_t, msq_prio: c_uint) -> c_int;
+
+        pub fn mq_getattr(mqd: MQd, attr: *mut MqAttr) -> c_int;
     }
 }
 
 #[repr(C)]
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct MqAttr {
     pub mq_flags: c_long,
     pub mq_maxmsg: c_long,
@@ -94,4 +96,13 @@ pub fn mq_send(mqdes: MQd, message: &CString, msq_prio: u32) -> Result<usize> {
     }
 
     Ok(res as usize)
+}
+
+pub fn mq_getattr(mqd: MQd) -> Result<MqAttr> {
+    let mut attr = Box::new(MqAttr { mq_flags: 0, mq_maxmsg: 0, mq_msgsize: 0, mq_curmsgs: 0 });
+    let res = unsafe { ffi::mq_getattr(mqd, &mut *attr) };
+    if res < 0 {
+        return Err(Error::Sys(Errno::last()));
+    }
+    Ok(*attr)
 }
