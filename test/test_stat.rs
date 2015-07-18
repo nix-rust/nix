@@ -1,4 +1,4 @@
-use std::fs;
+use std::os::unix::fs;
 use std::str;
 
 use libc::consts::os::posix88;
@@ -73,7 +73,7 @@ fn test_stat_fstat_lstat() {
     let linkname = b"target/barlink".as_ref();
 
     open(filename, O_CREAT, S_IWUSR | S_IRUSR).unwrap();  // create empty file
-    fs::soft_link("bar.txt", str::from_utf8(linkname).unwrap()).unwrap();
+    fs::symlink("bar.txt", str::from_utf8(linkname).unwrap()).unwrap();
     let fd = open(linkname, O_RDONLY, S_IRUSR).unwrap();
 
     // should be the same result as calling stat,
