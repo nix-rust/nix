@@ -1,4 +1,4 @@
-use nix::mqueue::{mq_open, mq_close, mq_send, mq_receive};
+use nix::mqueue::{mq_open, mq_close, mq_send, mq_receive, mq_getattr};
 use nix::mqueue::{O_CREAT, O_WRONLY, O_RDONLY};
 use nix::mqueue::MqAttr;
 use nix::sys::stat::{S_IWUSR, S_IRUSR, S_IRGRP, S_IROTH};
@@ -16,8 +16,7 @@ use nix::sys::wait::*;
 fn mq_send_and_receive() {
 
     const MSG_SIZE: c_long =  32;
-
-    let attr =  MqAttr { mq_flags: 0, mq_maxmsg: 10, mq_msgsize: MSG_SIZE, mq_curmsgs: 0 };
+    let attr =  MqAttr::new(0, 10, MSG_SIZE, 0);
     let mq_name_in_parent = &CString::new(b"/a_nix_test_queue".as_ref()).unwrap();
     let mqd_in_parent = mq_open(mq_name_in_parent, O_CREAT | O_WRONLY, S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH, &attr).unwrap();
     let msg_to_send = &CString::new("msg_1").unwrap();
@@ -50,4 +49,16 @@ fn mq_send_and_receive() {
       // panic, fork should never fail unless there is a serious problem with the OS
       Err(_) => panic!("Error: Fork Failed")
     }
+}
+
+
+#[test]
+fn mq_get_attr() {
+    const MSG_SIZE: c_long =  32;
+    let initial_attr =  MqAttr::new(0, 10, MSG_SIZE, 0);
+    let mq_name = &CString::new("/attr_test_get_attr".as_bytes().as_ref()).unwrap();
+    let mqd = mq_open(mq_name, O_CREAT | O_WRONLY, S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH, &initial_attr).unwrap();
+    let read_attr = mq_getattr(mqd);
+    assert!(read_attr.unwrap() == initial_attr);
+    mq_close(mqd).unwrap();
 }
