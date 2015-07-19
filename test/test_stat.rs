@@ -1,4 +1,9 @@
-use std::os::unix::fs;
+#[cfg(feature = "1_0")]
+use std::fs::soft_link as symlink;
+
+#[cfg(not(feature = "1_0"))]
+use std::os::unix::fs::symlink;
+
 use std::str;
 
 use libc::consts::os::posix88;
@@ -73,7 +78,7 @@ fn test_stat_fstat_lstat() {
     let linkname = b"target/barlink".as_ref();
 
     open(filename, O_CREAT, S_IWUSR | S_IRUSR).unwrap();  // create empty file
-    fs::symlink("bar.txt", str::from_utf8(linkname).unwrap()).unwrap();
+    symlink("bar.txt", str::from_utf8(linkname).unwrap()).unwrap();
     let fd = open(linkname, O_RDONLY, S_IRUSR).unwrap();
 
     // should be the same result as calling stat,
