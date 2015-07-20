@@ -79,7 +79,7 @@ pub enum EpollOp {
 }
 
 #[cfg(all(target_os = "android", not(target_arch = "x86_64")))]
-#[derive(Copy)]
+#[derive(Clone, Copy)]
 #[repr(C)]
 pub struct EpollEvent {
     pub events: EpollEventKind,
