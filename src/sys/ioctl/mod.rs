@@ -104,15 +104,8 @@ mod platform;
 
 pub use self::platform::*;
 
-// liblibc has the wrong decl for linux :| hack until #26809 lands.
-extern "C" {
-    #[doc(hidden)]
-    pub fn ioctl(fd: libc::c_int, req: libc::c_ulong, ...) -> libc::c_int;
-}
-
 /// A hack to get the macros to work nicely.
 #[doc(hidden)]
 pub use ::libc as libc;
-
-//#[cfg(not(target_os = "linux"))]
-//use platform_not_supported;
+#[doc(hidden)]
+pub use ::libc::funcs::bsd44::ioctl;
