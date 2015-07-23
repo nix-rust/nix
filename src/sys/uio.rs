@@ -23,13 +23,13 @@ mod ffi {
 
         // vectorized write at a specified offset
         // doc: http://man7.org/linux/man-pages/man2/pwritev.2.html
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(target_os = "linux")]
         pub fn pwritev(fd: RawFd, iov: *const IoVec<&[u8]>, iovcnt: c_int,
                        offset: off_t) -> ssize_t;
 
         // vectorized read at a specified offset
         // doc: http://man7.org/linux/man-pages/man2/preadv.2.html
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(target_os = "linux")]
         pub fn preadv(fd: RawFd, iov: *const IoVec<&mut [u8]>, iovcnt: c_int,
                       offset: off_t) -> ssize_t;
 
@@ -64,7 +64,7 @@ pub fn readv(fd: RawFd, iov: &mut [IoVec<&mut [u8]>]) -> Result<usize> {
     return Ok(res as usize)
 }
 
-#[cfg(any(target_os = "linux", target_os = "android"))]
+#[cfg(target_os = "linux")]
 pub fn pwritev(fd: RawFd, iov: &[IoVec<&[u8]>],
                offset: off_t) -> Result<usize> {
     let res = unsafe {
@@ -77,7 +77,7 @@ pub fn pwritev(fd: RawFd, iov: &[IoVec<&[u8]>],
     }
 }
 
-#[cfg(any(target_os = "linux", target_os = "android"))]
+#[cfg(target_os = "linux")]
 pub fn preadv(fd: RawFd, iov: &mut [IoVec<&mut [u8]>],
               offset: off_t) -> Result<usize> {
     let res = unsafe {
