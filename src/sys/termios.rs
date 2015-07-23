@@ -10,28 +10,34 @@ pub use self::ffi::consts::FlushArg::*;
 pub use self::ffi::consts::FlowArg::*;
 
 mod ffi {
-    use libc::c_int;
-
     pub use self::consts::*;
 
-    // `Termios` contains bitflags which are not considered
-    // `foreign-function-safe` by the compiler.
-    #[allow(improper_ctypes)]
     #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "openbsd", target_os = "linux"))]
-    extern {
-        pub fn cfgetispeed(termios: *const Termios) -> speed_t;
-        pub fn cfgetospeed(termios: *const Termios) -> speed_t;
-        pub fn cfsetispeed(termios: *mut Termios, speed: speed_t) -> c_int;
-        pub fn cfsetospeed(termios: *mut Termios, speed: speed_t) -> c_int;
-        pub fn tcgetattr(fd: c_int, termios: *mut Termios) -> c_int;
-        pub fn tcsetattr(fd: c_int,
-                         optional_actions: c_int,
-                         termios: *const Termios) -> c_int;
-        pub fn tcdrain(fd: c_int) -> c_int;
-        pub fn tcflow(fd: c_int, action: c_int) -> c_int;
-        pub fn tcflush(fd: c_int, action: c_int) -> c_int;
-        pub fn tcsendbreak(fd: c_int, duration: c_int) -> c_int;
+    mod non_android {
+        use super::consts::*;
+        use libc::c_int;
+
+        // `Termios` contains bitflags which are not considered
+        // `foreign-function-safe` by the compiler.
+        #[allow(improper_ctypes)]
+        extern {
+            pub fn cfgetispeed(termios: *const Termios) -> speed_t;
+            pub fn cfgetospeed(termios: *const Termios) -> speed_t;
+            pub fn cfsetispeed(termios: *mut Termios, speed: speed_t) -> c_int;
+            pub fn cfsetospeed(termios: *mut Termios, speed: speed_t) -> c_int;
+            pub fn tcgetattr(fd: c_int, termios: *mut Termios) -> c_int;
+            pub fn tcsetattr(fd: c_int,
+                             optional_actions: c_int,
+                             termios: *const Termios) -> c_int;
+            pub fn tcdrain(fd: c_int) -> c_int;
+            pub fn tcflow(fd: c_int, action: c_int) -> c_int;
+            pub fn tcflush(fd: c_int, action: c_int) -> c_int;
+            pub fn tcsendbreak(fd: c_int, duration: c_int) -> c_int;
+        }
     }
+
+    #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "openbsd", target_os = "linux"))]
+    pub use self::non_android::*;
 
     // On Android before 5.0, Bionic directly inline these to ioctl() calls.
     #[inline]

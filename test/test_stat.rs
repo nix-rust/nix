@@ -18,8 +18,10 @@ fn assert_stat_results(stat_result: Result<FileStat>) {
             assert!(stats.st_ino > 0);      // inode is positive integer, exact number machine dependent
             assert!(stats.st_mode > 0);     // must be positive integer
             assert!(stats.st_nlink == 1);   // there links created, must be 1
-            assert!(stats.st_uid > 0);      // must be positive integer
-            assert!(stats.st_gid > 0);      // must be positive integer
+            // uid could be 0 for the `root` user. This quite possible when
+            // the tests are being run on a rooted Android device.
+            assert!(stats.st_uid >= 0);      // must be positive integer
+            assert!(stats.st_gid >= 0);      // must be positive integer
             assert!(stats.st_rdev == 0);    // no special device
             assert!(stats.st_size == 0);    // size is 0 because we did not write anything to the file
             assert!(stats.st_blksize > 0);  // must be positive integer, exact number machine dependent
@@ -35,17 +37,24 @@ fn assert_lstat_results(stat_result: Result<FileStat>) {
             assert!(stats.st_dev > 0);      // must be positive integer, exact number machine dependent
             assert!(stats.st_ino > 0);      // inode is positive integer, exact number machine dependent
             assert!(stats.st_mode > 0);     // must be positive integer
-            assert!(stats.st_mode & posix88::S_IFMT
-                    == posix88::S_IFLNK); // should be a link
+
+            // st_mode is c_uint (u32 on Android) while S_IFMT is mode_t
+            // (u16 on Android), and that will be a compile error.
+            // On other platforms they are the same (either both are u16 or u32).
+            assert!((stats.st_mode as usize) & (posix88::S_IFMT as usize)
+                    == posix88::S_IFLNK as usize); // should be a link
             assert!(stats.st_nlink == 1);   // there links created, must be 1
-            assert!(stats.st_uid > 0);      // must be positive integer
-            assert!(stats.st_gid > 0);      // must be positive integer
+            // uid could be 0 for the `root` user. This quite possible when
+            // the tests are being run on a rooted Android device.
+            assert!(stats.st_uid >= 0);      // must be positive integer
+            assert!(stats.st_gid >= 0);      // must be positive integer
             assert!(stats.st_rdev == 0);    // no special device
             assert!(stats.st_size > 0);    // size is > 0 because it points to another file
             assert!(stats.st_blksize > 0);  // must be positive integer, exact number machine dependent
 
             // st_blocks depends on whether the machine's file system uses fast
             // or slow symlinks, so just make sure it's not negative
+            // (Android's st_blocks is ulonglong which is always non-negative.)
             assert!(stats.st_blocks >= 0);
         }
         Err(_) => panic!("stat call failed") // if stats system call fails, something is seriously wrong on that machine
