@@ -42,6 +42,8 @@ mod ffi {
 
         pub fn mq_close (mqd: MQd) -> c_int;
 
+        pub fn mq_unlink(name: *const c_char) -> c_int;
+
         pub fn mq_receive (mqd: MQd, msg_ptr: *const c_char, msg_len: size_t, msq_prio: *const c_uint) -> ssize_t;
 
         pub fn mq_send (mqd: MQd, msg_ptr: *const c_char, msg_len: size_t, msq_prio: c_uint) -> c_int;
@@ -76,6 +78,11 @@ pub fn mq_open(name: &CString, oflag: MQ_OFlag, mode: Mode, attr: &MqAttr) -> Re
     }
 
     Ok(res)
+}
+
+pub fn mq_unlink(name: &CString) -> Result<()> {
+    let res = unsafe { ffi::mq_unlink(name.as_ptr()) };
+    from_ffi(res)
 }
 
 pub fn mq_close(mqdes: MQd) -> Result<()>  {

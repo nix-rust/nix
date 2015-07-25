@@ -1,4 +1,4 @@
-use nix::mqueue::{mq_open, mq_close, mq_send, mq_receive, mq_getattr};
+use nix::mqueue::{mq_open, mq_close, mq_send, mq_receive, mq_getattr, mq_unlink};
 use nix::mqueue::{O_CREAT, O_WRONLY, O_RDONLY};
 use nix::mqueue::MqAttr;
 use nix::sys::stat::{S_IWUSR, S_IRUSR, S_IRGRP, S_IROTH};
@@ -9,11 +9,11 @@ use libc::c_long;
 use nix::unistd::{fork, read, write, pipe};
 use nix::unistd::Fork::{Child, Parent};
 use nix::sys::wait::*;
-
-
+use nix::errno::Errno::*;
+use nix::Error::Sys;
 
 #[test]
-fn mq_send_and_receive() {
+fn test_mq_send_and_receive() {
 
     const MSG_SIZE: c_long =  32;
     let attr =  MqAttr::new(0, 10, MSG_SIZE, 0);
@@ -53,7 +53,7 @@ fn mq_send_and_receive() {
 
 
 #[test]
-fn mq_get_attr() {
+fn test_mq_get_attr() {
     const MSG_SIZE: c_long =  32;
     let initial_attr =  MqAttr::new(0, 10, MSG_SIZE, 0);
     let mq_name = &CString::new("/attr_test_get_attr".as_bytes().as_ref()).unwrap();
@@ -61,4 +61,24 @@ fn mq_get_attr() {
     let read_attr = mq_getattr(mqd);
     assert!(read_attr.unwrap() == initial_attr);
     mq_close(mqd).unwrap();
+}
+
+#[test]
+fn test_mq_unlink() {
+    const MSG_SIZE: c_long =  32;
+    let initial_attr =  MqAttr::new(0, 10, MSG_SIZE, 0);
+    let mq_name_opened = &CString::new("/mq_unlink_test".as_bytes().as_ref()).unwrap();
+    let mq_name_not_opened = &CString::new("/mq_unlink_test".as_bytes().as_ref()).unwrap();
+    let mqd = mq_open(mq_name_opened, O_CREAT | O_WRONLY, S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH, &initial_attr).unwrap();
+
+    let res_unlink = mq_unlink(mq_name_opened);
+    assert!(res_unlink == Ok(()) );
+
+    let res_unlink_not_opened = mq_unlink(mq_name_not_opened);
+    assert!(res_unlink_not_opened == Err(Sys(ENOENT)) );
+
+    mq_close(mqd).unwrap();
+    let res_unlink_after_close = mq_unlink(mq_name_opened);
+    assert!(res_unlink_after_close == Err(Sys(ENOENT)) );
+
 }
