@@ -1,5 +1,5 @@
 use libc;
-use fcntl::Fd;
+use std::os::unix::io::RawFd;
 use {Error, Result};
 
 bitflags!(
@@ -18,7 +18,7 @@ mod ffi {
     }
 }
 
-pub fn eventfd(initval: usize, flags: EventFdFlag) -> Result<Fd> {
+pub fn eventfd(initval: usize, flags: EventFdFlag) -> Result<RawFd> {
     unsafe {
         let res = ffi::eventfd(initval as libc::c_uint, flags.bits());
 
@@ -26,6 +26,6 @@ pub fn eventfd(initval: usize, flags: EventFdFlag) -> Result<Fd> {
             return Err(Error::last());
         }
 
-        Ok(res as Fd)
+        Ok(res as RawFd)
     }
 }
