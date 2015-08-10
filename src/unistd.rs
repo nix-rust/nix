@@ -5,7 +5,7 @@ use errno::Errno;
 use fcntl::{fcntl, OFlag, O_NONBLOCK, O_CLOEXEC, FD_CLOEXEC};
 use fcntl::FcntlArg::{F_SETFD, F_SETFL};
 use libc::{c_char, c_void, c_int, size_t, pid_t, off_t};
-use std::{mem, ptr};
+use std::mem;
 use std::ffi::CString;
 use std::os::unix::io::RawFd;
 
@@ -27,9 +27,19 @@ mod ffi {
         // doc: http://man7.org/linux/man-pages/man2/chdir.2.html
         pub fn chdir(path: *const c_char) -> c_int;
 
+        // Execute PATH with arguments ARGV and environment from `environ'.
+        // doc: http://man7.org/linux/man-pages/man3/execv.3.html
+        pub fn execv (path: *const c_char, argv: *const *const c_char) -> c_int;
+
         // execute program
         // doc: http://man7.org/linux/man-pages/man2/execve.2.html
-        pub fn execve(filename: *const c_char, argv: *const *const c_char, envp: *const *const c_char) -> c_int;
+        pub fn execve(path: *const c_char, argv: *const *const c_char, envp: *const *const c_char) -> c_int;
+
+        // Execute FILE, searching in the `PATH' environment variable if it contains
+        // no slashes, with arguments ARGV and environment from `environ'.
+        // doc: http://man7.org/linux/man-pages/man3/execvp.3.html
+        pub fn execvp(filename: *const c_char, argv: *const *const c_char) -> c_int;
+
         // doc: http://man7.org/linux/man-pages/man3/exec.3.html
         #[cfg(any(target_os = "linux", target_os = "android"))]
         #[cfg(feature = "execvpe")]
@@ -157,23 +167,47 @@ pub fn chdir<P: ?Sized + NixPath>(path: &P) -> Result<()> {
     return Ok(())
 }
 
-#[inline]
-pub fn execve(filename: &CString, args: &[CString], env: &[CString]) -> Result<()> {
+fn to_exec_array(args: &[CString]) -> *const *const c_char {
+    use std::ptr;
+    use libc::c_char;
+
     let mut args_p: Vec<*const c_char> = args.iter().map(|s| s.as_ptr()).collect();
     args_p.push(ptr::null());
+    args_p.as_ptr()
+}
 
-    let mut env_p: Vec<*const c_char> = env.iter().map(|s| s.as_ptr()).collect();
-    env_p.push(ptr::null());
+#[inline]
+pub fn execv(path: &CString, argv: &[CString]) -> Result<()> {
+    let args_p = to_exec_array(argv);
 
-    let res = unsafe {
-        ffi::execve(filename.as_ptr(), args_p.as_ptr(), env_p.as_ptr())
+    unsafe {
+        ffi::execv(path.as_ptr(), args_p)
     };
 
-    if res != 0 {
-        return Err(Error::Sys(Errno::last()));
-    }
+    Err(Error::Sys(Errno::last()))
+}
 
-    unreachable!()
+#[inline]
+pub fn execve(path: &CString, args: &[CString], env: &[CString]) -> Result<()> {
+    let args_p = to_exec_array(args);
+    let env_p = to_exec_array(env);
+
+    unsafe {
+        ffi::execve(path.as_ptr(), args_p, env_p)
+    };
+
+    Err(Error::Sys(Errno::last()))
+}
+
+#[inline]
+pub fn execvp(filename: &CString, args: &[CString]) -> Result<()> {
+    let args_p = to_exec_array(args);
+
+    unsafe {
+        ffi::execvp(filename.as_ptr(), args_p)
+    };
+
+    Err(Error::Sys(Errno::last()))
 }
 
 pub fn daemon(nochdir: bool, noclose: bool) -> Result<()> {
@@ -360,14 +394,10 @@ mod linux {
         let mut env_p: Vec<*const c_char> = env.iter().map(|s| s.as_ptr()).collect();
         env_p.push(ptr::null());
 
-        let res = unsafe {
+        unsafe {
             super::ffi::execvpe(filename.as_ptr(), args_p.as_ptr(), env_p.as_ptr())
         };
 
-        if res != 0 {
-            return Err(Error::Sys(Errno::last()));
-        }
-
-        unreachable!()
+        Err(Error::Sys(Errno::last()))
     }
 }
