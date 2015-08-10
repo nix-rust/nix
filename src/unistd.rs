@@ -358,7 +358,6 @@ pub fn chroot<P: ?Sized + NixPath>(path: &P) -> Result<()> {
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 mod linux {
-    use super::to_exec_array;
     use sys::syscall::{syscall, SYSPIVOTROOT};
     use errno::Errno;
     use {Error, Result, NixPath};
