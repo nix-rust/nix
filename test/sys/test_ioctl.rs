@@ -1,5 +1,16 @@
+#![allow(dead_code)]
+
 #![cfg(target_os = "linux")] // no ioctl support for osx yet
-use nix::sys::ioctl::*;
+
+// Simple tests to ensure macro generated fns compile
+ioctl!(bad do_bad with 0x1234);
+ioctl!(none do_none with 0, 0);
+ioctl!(read read_test with 0, 0; u32);
+ioctl!(write write_test with 0, 0; u64);
+ioctl!(readwrite readwrite_test with 0, 0; u64);
+ioctl!(read buf readbuf_test with 0, 0; u32);
+ioctl!(write buf writebuf_test with 0, 0; u32);
+ioctl!(readwrite buf readwritebuf_test with 0, 0; u32);
 
 // See C code for source of values for op calculations:
 // https://gist.github.com/posborne/83ea6880770a1aef332e
