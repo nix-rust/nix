@@ -11,6 +11,8 @@ pub use self::ffi::flock;
 mod ffi {
     pub use libc::{open, fcntl};
     pub use self::os::*;
+    pub use libc::funcs::bsd44::flock as libc_flock;
+    pub use libc::consts::os::bsd44::{LOCK_SH, LOCK_EX, LOCK_NB, LOCK_UN};
 
     #[cfg(any(target_os = "linux", target_os = "android"))]
     mod os {
@@ -126,6 +128,36 @@ pub fn fcntl(fd: RawFd, arg: FcntlArg) -> Result<c_int> {
     }
 
     Ok(res)
+}
+
+pub enum FlockArg {
+    LockShared,
+    LockExclusive,
+    Unlock,
+    LockSharedNonblock,
+    LockExclusiveNonblock,
+    UnlockNonblock,
+}
+
+pub fn flock(fd: RawFd, arg: FlockArg) -> Result<()> {
+    use self::FlockArg::*;
+
+    let res = unsafe {
+        match arg {
+            LockShared => ffi::libc_flock(fd, ffi::LOCK_SH),
+            LockExclusive => ffi::libc_flock(fd, ffi::LOCK_EX),
+            Unlock => ffi::libc_flock(fd, ffi::LOCK_UN),
+            LockSharedNonblock => ffi::libc_flock(fd, ffi::LOCK_SH | ffi::LOCK_NB),
+            LockExclusiveNonblock => ffi::libc_flock(fd, ffi::LOCK_EX | ffi::LOCK_NB),
+            UnlockNonblock => ffi::libc_flock(fd, ffi::LOCK_UN | ffi::LOCK_NB),
+        }
+    };
+
+    if res < 0 {
+        return Err(Error::Sys(Errno::last()));
+    }
+
+    Ok(())
 }
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
