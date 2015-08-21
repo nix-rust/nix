@@ -5,6 +5,9 @@
 #![crate_name = "nix"]
 #![cfg(unix)]
 #![allow(non_camel_case_types)]
+// latest bitflags triggers a rustc bug with cross-crate macro expansions causing dead_code
+// warnings even though the macro expands into something with allow(dead_code)
+#![allow(dead_code)]
 #![deny(warnings)]
 
 #[macro_use]

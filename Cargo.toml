@@ -2,7 +2,7 @@
 
 name        = "nix"
 description = "Rust friendly bindings to *nix APIs"
-version     = "0.3.9"
+version     = "0.4.0"
 authors     = ["Carl Lerche <me@carllerche.com>"]
 homepage    = "https://github.com/carllerche/nix-rust"
 license     = "MIT"
@@ -20,7 +20,7 @@ execvpe = []
 
 [dependencies]
 libc     = "0.1.10"
-bitflags = "0.1.1"
+bitflags = "0.3.2"
 
 [dev-dependencies]
 rand = "0.3.8"
