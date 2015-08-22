@@ -1,5 +1,5 @@
 use std::mem;
-use libc::{c_int, c_uint, c_void, c_ulong};
+use libc::{c_int, c_uint, c_void, c_ulong, pid_t};
 use errno::Errno;
 use {Result, Error};
 
@@ -157,7 +157,7 @@ pub fn sched_setaffinity(pid: isize, cpuset: &CpuSet) -> Result<()> {
     }
 }
 
-pub fn clone(mut cb: CloneCb, stack: &mut [u8], flags: CloneFlags) -> Result<()> {
+pub fn clone(mut cb: CloneCb, stack: &mut [u8], flags: CloneFlags) -> Result<pid_t> {
     extern "C" fn callback(data: *mut CloneCb) -> c_int {
         let cb: &mut CloneCb = unsafe { &mut *data };
         (*cb)() as c_int
@@ -168,11 +168,11 @@ pub fn clone(mut cb: CloneCb, stack: &mut [u8], flags: CloneFlags) -> Result<()>
         ffi::clone(mem::transmute(callback), ptr as *mut c_void, flags, &mut cb)
     };
 
-    if res != 0 {
+    if res < 0 {
         return Err(Error::Sys(Errno::last()));
     }
 
-    Ok(())
+    Ok(res)
 }
 
 pub fn unshare(flags: CloneFlags) -> Result<()> {
