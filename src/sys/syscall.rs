@@ -11,6 +11,7 @@ mod arch {
     pub type Syscall = c_long;
 
     pub static SYSPIVOTROOT: Syscall = 155;
+    pub static MEMFD_CREATE: Syscall = 319;
 }
 
 #[cfg(target_arch = "x86")]
@@ -20,6 +21,7 @@ mod arch {
     pub type Syscall = c_long;
 
     pub static SYSPIVOTROOT: Syscall = 217;
+    pub static MEMFD_CREATE: Syscall = 356;
 }
 
 #[cfg(target_arch = "arm")]
@@ -29,6 +31,7 @@ mod arch {
     pub type Syscall = c_long;
 
     pub static SYSPIVOTROOT: Syscall = 218;
+    pub static MEMFD_CREATE: Syscall = 385;
 }
 
 

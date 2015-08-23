@@ -9,6 +9,9 @@ pub mod event;
 #[cfg(feature = "eventfd")]
 pub mod eventfd;
 
+#[cfg(target_os = "linux")]
+pub mod memfd;
+
 #[cfg(not(any(target_os = "ios", target_os = "freebsd")))]
 pub mod ioctl;
 
