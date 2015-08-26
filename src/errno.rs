@@ -1614,7 +1614,6 @@ mod test {
             EPROGUNAVAIL,
             EPROGMISMATCH,
             EPROCUNAVAIL,
-            ETYPE,
             EAUTH);
     }
 
