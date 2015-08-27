@@ -109,6 +109,11 @@ mod os {
     pub const AF_UNIX: c_int  = 1;
     pub const AF_LOCAL: c_int = AF_UNIX;
     pub const AF_INET: c_int  = 2;
+    #[cfg(target_os = "openbsd")]
+    pub const AF_INET6: c_int = 26;
+    #[cfg(target_os = "freebsd")]
+    pub const AF_INET6: c_int = 28;
+    #[cfg(any(target_os = "macos", target_os = "ios"))]
     pub const AF_INET6: c_int = 30;
 
     pub const SOCK_STREAM: c_int = 1;
