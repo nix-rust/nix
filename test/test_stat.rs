@@ -22,7 +22,6 @@ fn assert_stat_results(stat_result: Result<FileStat>) {
             // the tests are being run on a rooted Android device.
             assert!(stats.st_uid >= 0);      // must be positive integer
             assert!(stats.st_gid >= 0);      // must be positive integer
-            assert!(stats.st_rdev == 0);    // no special device
             assert!(stats.st_size == 0);    // size is 0 because we did not write anything to the file
             assert!(stats.st_blksize > 0);  // must be positive integer, exact number machine dependent
             assert!(stats.st_blocks <= 16);  // Up to 16 blocks can be allocated for a blank file
@@ -48,7 +47,6 @@ fn assert_lstat_results(stat_result: Result<FileStat>) {
             // the tests are being run on a rooted Android device.
             assert!(stats.st_uid >= 0);      // must be positive integer
             assert!(stats.st_gid >= 0);      // must be positive integer
-            assert!(stats.st_rdev == 0);    // no special device
             assert!(stats.st_size > 0);    // size is > 0 because it points to another file
             assert!(stats.st_blksize > 0);  // must be positive integer, exact number machine dependent
 
