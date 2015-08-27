@@ -42,7 +42,7 @@ pub enum EpollOp {
     EpollCtlMod = 3
 }
 
-#[cfg(all(target_os = "android", not(target_arch = "x86_64")))]
+#[cfg(not(target_arch = "x86_64"))]
 #[derive(Clone, Copy)]
 #[repr(C)]
 pub struct EpollEvent {
@@ -50,14 +50,14 @@ pub struct EpollEvent {
     pub data: u64
 }
 
-#[cfg(all(target_os = "android", not(target_arch = "x86_64")))]
+#[cfg(not(target_arch = "x86_64"))]
 #[test]
 fn test_epoll_event_size() {
     use std::mem::size_of;
     assert_eq!(size_of::<EpollEvent>(), 16);
 }
 
-#[cfg(any(not(target_os = "android"), target_arch = "x86_64"))]
+#[cfg(target_arch = "x86_64")]
 #[derive(Clone, Copy)]
 #[repr(C, packed)]
 pub struct EpollEvent {
