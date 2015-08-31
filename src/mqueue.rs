@@ -49,6 +49,8 @@ mod ffi {
         pub fn mq_send (mqd: MQd, msg_ptr: *const c_char, msg_len: size_t, msq_prio: c_uint) -> c_int;
 
         pub fn mq_getattr(mqd: MQd, attr: *mut MqAttr) -> c_int;
+
+        pub fn mq_setattr(mqd: MQd, newattr: *const MqAttr, oldattr: *mut MqAttr) -> c_int;
     }
 }
 
@@ -116,6 +118,16 @@ pub fn mq_send(mqdes: MQd, message: &CString, msq_prio: u32) -> Result<usize> {
 pub fn mq_getattr(mqd: MQd) -> Result<MqAttr> {
     let mut attr = MqAttr::new(0, 0, 0, 0);
     let res = unsafe { ffi::mq_getattr(mqd, &mut attr) };
+    if res < 0 {
+        return Err(Error::Sys(Errno::last()));
+    }
+    Ok(attr)
+}
+
+
+pub fn mq_setattr(mqd: MQd, newattr: &MqAttr) -> Result<MqAttr> {
+    let mut attr = MqAttr::new(0, 0, 0, 0);
+    let res = unsafe { ffi::mq_setattr(mqd, newattr as *const MqAttr, &mut attr) };
     if res < 0 {
         return Err(Error::Sys(Errno::last()));
     }
