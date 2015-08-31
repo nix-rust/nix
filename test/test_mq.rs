@@ -1,5 +1,7 @@
-use nix::mqueue::{mq_open, mq_close, mq_send, mq_receive, mq_getattr, mq_unlink};
-use nix::mqueue::{O_CREAT, O_WRONLY, O_RDONLY};
+use nix::mqueue::{mq_open, mq_close, mq_send, mq_receive, mq_getattr, mq_setattr, mq_unlink};
+use nix::mqueue::{O_CREAT, O_WRONLY, O_RDONLY, O_NONBLOCK};
+
+
 use nix::mqueue::MqAttr;
 use nix::sys::stat::{S_IWUSR, S_IRUSR, S_IRGRP, S_IROTH};
 use std::ffi::CString;
@@ -62,6 +64,34 @@ fn test_mq_get_attr() {
     assert!(read_attr.unwrap() == initial_attr);
     mq_close(mqd).unwrap();
 }
+
+#[test]
+fn test_mq_set_attr() {
+    const MSG_SIZE: c_long =  32;
+    let initial_attr =  MqAttr::new(0, 10, MSG_SIZE, 0);
+    let mq_name = &CString::new("/attr_test_get_attr".as_bytes().as_ref()).unwrap();
+    let mqd = mq_open(mq_name, O_CREAT | O_WRONLY, S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH, &initial_attr).unwrap();
+
+    let new_attr =  MqAttr::new(0, 20, MSG_SIZE * 2, 100);
+    let old_attr = mq_setattr(mqd, &new_attr);
+    assert!(old_attr.unwrap() == initial_attr);
+
+    let new_attr_get = mq_getattr(mqd);
+    // The following tests make sense. No changes here because according to the Linux man page only
+    // O_NONBLOCK can be set (see tests below)
+    assert!(new_attr_get.unwrap() != new_attr);
+
+    let new_attr_non_blocking =  MqAttr::new(O_NONBLOCK.bits() as i64, 10, MSG_SIZE, 0);
+    mq_setattr(mqd, &new_attr_non_blocking).unwrap();
+    let new_attr_get = mq_getattr(mqd);
+
+    // now the O_NONBLOCK flag has been set
+    assert!(new_attr_get.unwrap() != initial_attr);
+    assert!(new_attr_get.unwrap() == new_attr_non_blocking);
+    mq_close(mqd).unwrap();
+}
+
+
 
 #[test]
 fn test_mq_unlink() {
