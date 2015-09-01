@@ -81,7 +81,7 @@ fn test_mq_set_attr() {
     // O_NONBLOCK can be set (see tests below)
     assert!(new_attr_get.unwrap() != new_attr);
 
-    let new_attr_non_blocking =  MqAttr::new(O_NONBLOCK.bits() as i64, 10, MSG_SIZE, 0);
+    let new_attr_non_blocking =  MqAttr::new(O_NONBLOCK.bits() as c_long, 10, MSG_SIZE, 0);
     mq_setattr(mqd, &new_attr_non_blocking).unwrap();
     let new_attr_get = mq_getattr(mqd);
 
