@@ -30,6 +30,9 @@ pub const CREATE_NEW_FD: RawFd = -1;
 ///
 /// The `mask` parameter specifies the set of signals that can be accepted via this file descriptor.
 ///
+/// A signal must be blocked on every thread in a process, otherwise it won't be visible from
+/// signalfd (the default handler will be invoked instead).
+///
 /// See [the signalfd man page for more information](http://man7.org/linux/man-pages/man2/signalfd.2.html)
 pub fn signalfd(fd: RawFd, mask: &SigSet, flags: SfdFlags) -> Result<RawFd> {
     unsafe {
@@ -40,6 +43,31 @@ pub fn signalfd(fd: RawFd, mask: &SigSet, flags: SfdFlags) -> Result<RawFd> {
     }
 }
 
+/// # Examples
+///
+/// ```
+/// use nix::sys::signalfd::*;
+///
+/// let mut mask = SigSet::empty();
+/// mask.add(signal::SIGUSR1).unwrap();
+///
+/// // Block the signal, otherwise the default handler will be invoked instead.
+/// mask.thread_block().unwrap();
+///
+/// // Signals are queued up on the file descriptor
+/// let mut sfd = SignalFd::with_flags(&mask, SFD_NONBLOCK).unwrap();
+///
+/// match sfd.read_signal() {
+///     // we caught a signal
+///     Ok(Some(sig)) => (),
+///
+///     // there were no signals waiting (only happens when the SFD_NONBLOCK flag is set,
+///     // otherwise the read_signal call blocks)
+///     Ok(None) => (),
+///
+///     Err(err) => (), // some error happend
+/// }
+/// ```
 #[derive(Debug)]
 pub struct SignalFd(RawFd);
 
