@@ -3,7 +3,7 @@ sudo: false
 language: rust
 rust:
   - nightly
-  - 1.0.0
+  - 1.1.0
 
 os:
   - linux
@@ -37,7 +37,7 @@ deploy:
   upload-dir: nix/${TRAVIS_BRANCH}/${TRAVIS_OS_NAME}
   acl: public_read
   on:
-    condition: "\"$TRAVIS_RUST_VERSION/$ARCH\" == \"1.0.0/x86_64\""
+    condition: "\"$TRAVIS_RUST_VERSION/$ARCH\" == \"1.1.0/x86_64\""
     repo: carllerche/nix-rust
     branch:
       - master
