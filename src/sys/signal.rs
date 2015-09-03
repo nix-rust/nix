@@ -288,20 +288,22 @@ pub mod signal {
 }
 
 mod ffi {
-    use libc;
+    use libc::{c_int, pid_t};
     use super::signal::{sigaction, sigset_t};
 
     #[allow(improper_ctypes)]
     extern {
-        pub fn sigaction(signum: libc::c_int,
+        pub fn sigaction(signum: c_int,
                          act: *const sigaction,
-                         oldact: *mut sigaction) -> libc::c_int;
+                         oldact: *mut sigaction) -> c_int;
 
-        pub fn sigaddset(set: *mut sigset_t, signum: libc::c_int) -> libc::c_int;
-        pub fn sigdelset(set: *mut sigset_t, signum: libc::c_int) -> libc::c_int;
-        pub fn sigemptyset(set: *mut sigset_t) -> libc::c_int;
+        pub fn sigaddset(set: *mut sigset_t, signum: c_int) -> c_int;
+        pub fn sigdelset(set: *mut sigset_t, signum: c_int) -> c_int;
+        pub fn sigemptyset(set: *mut sigset_t) -> c_int;
+        pub fn sigfillset(set: *mut sigset_t) -> c_int;
+        pub fn sigismember(set: *const sigset_t, signum: c_int) -> c_int;
 
-        pub fn kill(pid: libc::pid_t, signum: libc::c_int) -> libc::c_int;
+        pub fn kill(pid: pid_t, signum: c_int) -> c_int;
     }
 }
 
@@ -313,8 +315,15 @@ pub struct SigSet {
 pub type SigNum = libc::c_int;
 
 impl SigSet {
+    pub fn all() -> SigSet {
+        let mut sigset: sigset_t = unsafe { mem::uninitialized() };
+        let _ = unsafe { ffi::sigfillset(&mut sigset as *mut sigset_t) };
+
+        SigSet { sigset: sigset }
+    }
+
     pub fn empty() -> SigSet {
-        let mut sigset = unsafe { mem::uninitialized::<sigset_t>() };
+        let mut sigset: sigset_t = unsafe { mem::uninitialized() };
         let _ = unsafe { ffi::sigemptyset(&mut sigset as *mut sigset_t) };
 
         SigSet { sigset: sigset }
@@ -338,6 +347,16 @@ impl SigSet {
         }
 
         Ok(())
+    }
+
+    pub fn contains(&self, signum: SigNum) -> Result<bool> {
+        let res = unsafe { ffi::sigismember(&self.sigset as *const sigset_t, signum) };
+
+        match res {
+            1 => Ok(true),
+            0 => Ok(false),
+            _ => Err(Error::Sys(Errno::last()))
+        }
     }
 }
 
@@ -379,4 +398,22 @@ pub fn kill(pid: libc::pid_t, signum: SigNum) -> Result<()> {
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_contains() {
+        let mut mask = SigSet::empty();
+        mask.add(signal::SIGUSR1).unwrap();
+
+        assert_eq!(mask.contains(signal::SIGUSR1), Ok(true));
+        assert_eq!(mask.contains(signal::SIGUSR2), Ok(false));
+
+        let all = SigSet::all();
+        assert_eq!(all.contains(signal::SIGUSR1), Ok(true));
+        assert_eq!(all.contains(signal::SIGUSR2), Ok(true));
+    }
 }
