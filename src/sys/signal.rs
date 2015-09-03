@@ -158,7 +158,7 @@ pub mod signal {
     );
 
     bitflags!{
-        flags HowFlag: libc:c_int {
+        flags HowFlag: libc::c_int {
             const SIG_BLOCK   = 1,
             const SIG_UNBLOCK = 2,
             const SIG_SETMASK = 3,
@@ -237,7 +237,7 @@ pub mod signal {
     );
 
     bitflags!{
-        flags HowFlag: libc:c_int {
+        flags HowFlag: libc::c_int {
             const SIG_BLOCK   = 1,
             const SIG_UNBLOCK = 2,
             const SIG_SETMASK = 3,
