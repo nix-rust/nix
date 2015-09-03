@@ -108,9 +108,9 @@ pub mod signal {
     #[repr(C)]
     #[derive(Clone, Copy)]
     pub struct siginfo {
-        si_signo: libc::c_int,
-        si_errno: libc::c_int,
-        si_code: libc::c_int,
+        pub si_signo: libc::c_int,
+        pub si_errno: libc::c_int,
+        pub si_code: libc::c_int,
         pub pid: libc::pid_t,
         pub uid: libc::uid_t,
         pub status: libc::c_int,
@@ -193,9 +193,9 @@ pub mod signal {
     // however.
     #[repr(C)]
     pub struct siginfo {
-        si_signo: libc::c_int,
-        si_code: libc::c_int,
-        si_errno: libc::c_int,
+        pub si_signo: libc::c_int,
+        pub si_code: libc::c_int,
+        pub si_errno: libc::c_int,
         pub pid: libc::pid_t,
         pub uid: libc::uid_t,
         pub status: libc::c_int,
