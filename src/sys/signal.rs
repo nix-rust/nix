@@ -4,6 +4,7 @@
 use libc;
 use errno::Errno;
 use std::mem;
+use std::ptr;
 use {Error, Result};
 
 pub use libc::consts::os::posix88::{
@@ -43,6 +44,7 @@ pub use self::signal::{
 };
 
 pub use self::signal::SockFlag;
+pub use self::signal::{HowFlag, SIG_BLOCK, SIG_UNBLOCK, SIG_SETMASK};
 pub use self::signal::sigset_t;
 
 // This doesn't always exist, but when it does, it's 7
@@ -67,6 +69,14 @@ pub mod signal {
             const SA_SIGINFO   = 0x00000004,
         }
     );
+
+    bitflags!{
+        flags HowFlag: libc::c_int {
+            const SIG_BLOCK   = 0,
+            const SIG_UNBLOCK = 1,
+            const SIG_SETMASK = 2,
+        }
+    }
 
     pub const SIGTRAP:      libc::c_int = 5;
     pub const SIGIOT:       libc::c_int = 6;
@@ -147,6 +157,14 @@ pub mod signal {
         }
     );
 
+    bitflags!{
+        flags HowFlag: libc:c_int {
+            const SIG_BLOCK   = 1,
+            const SIG_UNBLOCK = 2,
+            const SIG_SETMASK = 3,
+        }
+    }
+
     pub const SIGTRAP:      libc::c_int = 5;
     pub const SIGIOT:       libc::c_int = 6;
     pub const SIGBUS:       libc::c_int = 10;
@@ -217,6 +235,14 @@ pub mod signal {
             const SA_SIGINFO   = 0x0040,
         }
     );
+
+    bitflags!{
+        flags HowFlag: libc:c_int {
+            const SIG_BLOCK   = 1,
+            const SIG_UNBLOCK = 2,
+            const SIG_SETMASK = 3,
+        }
+    }
 
     pub const SIGTRAP:      libc::c_int = 5;
     pub const SIGIOT:       libc::c_int = 6;
@@ -303,6 +329,8 @@ mod ffi {
         pub fn sigfillset(set: *mut sigset_t) -> c_int;
         pub fn sigismember(set: *const sigset_t, signum: c_int) -> c_int;
 
+        pub fn pthread_sigmask(how: c_int, set: *const sigset_t, oldset: *mut sigset_t) -> c_int;
+
         pub fn kill(pid: pid_t, signum: c_int) -> c_int;
     }
 }
@@ -388,6 +416,44 @@ pub unsafe fn sigaction(signum: SigNum, sigaction: &SigAction) -> Result<SigActi
     }
 
     Ok(SigAction { sigaction: oldact })
+}
+
+/// Manages the signal mask (set of blocked signals) for the calling thread.
+///
+/// If the `set` parameter is `Some(..)`, then the signal mask will be updated with the signal set.
+/// The `how` flag decides the type of update. If `set` is `None`, `how` will be ignored,
+/// and no modification will take place.
+///
+/// If the 'oldset' parameter is `Some(..)` then the current signal mask will be written into it.
+///
+/// If both `set` and `oldset` is `Some(..)`, the current signal mask will be written into oldset,
+/// and then it will be updated with `set`.
+///
+/// If both `set` and `oldset` is None, this function is a no-op.
+///
+/// For more information, visit the [pthread_sigmask](http://man7.org/linux/man-pages/man3/pthread_sigmask.3.html),
+/// or [sigprocmask](http://man7.org/linux/man-pages/man2/sigprocmask.2.html) man pages.
+pub fn pthread_sigmask(how: HowFlag,
+                       set: Option<&SigSet>,
+                       oldset: Option<&mut SigSet>) -> Result<()> {
+    if set.is_none() && oldset.is_none() {
+        return Ok(())
+    }
+
+    let res = unsafe {
+        // if set or oldset is None, pass in null pointers instead
+        ffi::pthread_sigmask(how.bits(),
+                             set.map_or_else(|| ptr::null::<sigset_t>(),
+                                             |s| &s.sigset as *const sigset_t),
+                             oldset.map_or_else(|| ptr::null_mut::<sigset_t>(),
+                                                |os| &mut os.sigset as *mut sigset_t))
+    };
+
+    if res != 0 {
+        return Err(Error::Sys(Errno::last()));
+    }
+
+    Ok(())
 }
 
 pub fn kill(pid: libc::pid_t, signum: SigNum) -> Result<()> {
