@@ -17,6 +17,9 @@ pub mod ioctl;
 
 pub mod signal;
 
+#[cfg(any(target_os = "linux", target_os = "android"))]
+pub mod signalfd;
+
 pub mod socket;
 
 pub mod stat;
