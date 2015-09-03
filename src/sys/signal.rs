@@ -417,6 +417,12 @@ impl SigSet {
     }
 }
 
+impl AsRef<sigset_t> for SigSet {
+    fn as_ref(&self) -> &sigset_t {
+        &self.sigset
+    }
+}
+
 type sigaction_t = self::signal::sigaction;
 
 pub struct SigAction {
