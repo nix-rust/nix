@@ -386,6 +386,35 @@ impl SigSet {
             _ => Err(Error::Sys(Errno::last()))
         }
     }
+
+    /// Gets the currently blocked (masked) set of signals for the calling thread.
+    pub fn thread_get_mask() -> Result<SigSet> {
+        let mut oldmask: SigSet = unsafe { mem::uninitialized() };
+        try!(pthread_sigmask(HowFlag::empty(), None, Some(&mut oldmask)));
+        Ok(oldmask)
+    }
+
+    /// Sets the set of signals as the signal mask for the calling thread.
+    pub fn thread_set_mask(&self) -> Result<()> {
+        pthread_sigmask(SIG_SETMASK, Some(self), None)
+    }
+
+    /// Adds the set of signals to the signal mask for the calling thread.
+    pub fn thread_block(&self) -> Result<()> {
+        pthread_sigmask(SIG_BLOCK, Some(self), None)
+    }
+
+    /// Removes the set of signals from the signal mask for the calling thread.
+    pub fn thread_unblock(&self) -> Result<()> {
+        pthread_sigmask(SIG_UNBLOCK, Some(self), None)
+    }
+
+    /// Sets the set of signals as the signal mask, and returns the old mask.
+    pub fn thread_swap_mask(&self, how: HowFlag) -> Result<SigSet> {
+        let mut oldmask: SigSet = unsafe { mem::uninitialized() };
+        try!(pthread_sigmask(how, Some(self), Some(&mut oldmask)));
+        Ok(oldmask)
+    }
 }
 
 type sigaction_t = self::signal::sigaction;
@@ -481,5 +510,30 @@ mod tests {
         let all = SigSet::all();
         assert_eq!(all.contains(signal::SIGUSR1), Ok(true));
         assert_eq!(all.contains(signal::SIGUSR2), Ok(true));
+    }
+
+    #[test]
+    fn test_thread_signal_block() {
+        let mut mask = SigSet::empty();
+        mask.add(signal::SIGUSR1).unwrap();
+
+        assert!(mask.thread_block().is_ok());
+    }
+
+    #[test]
+    fn test_thread_signal_swap() {
+        let mut mask = SigSet::empty();
+        mask.add(signal::SIGUSR1).unwrap();
+        mask.thread_block().unwrap();
+
+        assert!(SigSet::thread_get_mask().unwrap().contains(SIGUSR1).unwrap());
+
+        let mask2 = SigSet::empty();
+        mask.add(signal::SIGUSR2).unwrap();
+
+        let oldmask = mask2.thread_swap_mask(signal::SIG_SETMASK).unwrap();
+
+        assert!(oldmask.contains(signal::SIGUSR1).unwrap());
+        assert!(!oldmask.contains(signal::SIGUSR2).unwrap());
     }
 }
