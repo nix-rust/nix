@@ -1,3 +1,20 @@
+//! Interface for the `signalfd` syscall.
+//!
+//! # Signal discarding
+//! When a signal can't be delivered to a process (or thread), it will become a pending signal.
+//! Failure to deliver could happen if the signal is blocked by every thread in the process or if
+//! the signal handler is still handling a previous signal.
+//!
+//! If a signal is sent to a process (or thread) that already has a pending signal of the same
+//! type, it will be discarded. This means that if signals of the same type are received faster than
+//! they are processed, some of those signals will be dropped. Because of this limitation,
+//! `signalfd` in itself cannot be used for reliable communication between processes or threads.
+//!
+//! Once the signal is unblocked, or the signal handler is finished, and a signal is still pending
+//! (ie. not consumed from a signalfd) it will be delivered to the signal handler.
+//!
+//! Please note that signal discarding is not specific to `signalfd`, but also happens with regular
+//! signal handlers.
 use libc::{c_int, pid_t, uid_t};
 use {Error, Result};
 use unistd;
@@ -28,6 +45,9 @@ pub const CREATE_NEW_FD: RawFd = -1;
 
 /// Creates a new file descriptor for reading signals.
 ///
+/// **Important:** please read the module level documentation about signal discarding before using
+/// this function!
+///
 /// The `mask` parameter specifies the set of signals that can be accepted via this file descriptor.
 ///
 /// A signal must be blocked on every thread in a process, otherwise it won't be visible from
@@ -43,6 +63,11 @@ pub fn signalfd(fd: RawFd, mask: &SigSet, flags: SfdFlags) -> Result<RawFd> {
     }
 }
 
+/// A helper struct for creating, reading and closing a `signalfd` instance.
+///
+/// **Important:** please read the module level documentation about signal discarding before using
+/// this struct!
+///
 /// # Examples
 ///
 /// ```
