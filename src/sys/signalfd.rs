@@ -22,7 +22,7 @@ use errno::Errno;
 use sys::signal::signal::siginfo as signal_siginfo;
 pub use sys::signal::{self, SigSet};
 
-use std::os::unix::io::{RawFd, AsRawFd, FromRawFd};
+use std::os::unix::io::{RawFd, AsRawFd};
 use std::mem;
 
 mod ffi {
