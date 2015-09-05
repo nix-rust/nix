@@ -22,7 +22,7 @@ use errno::Errno;
 use sys::signal::signal::siginfo as signal_siginfo;
 pub use sys::signal::{self, SigSet};
 
-use std::os::unix::io::RawFd;
+use std::os::unix::io::{RawFd, AsRawFd, FromRawFd};
 use std::mem;
 
 mod ffi {
@@ -126,6 +126,18 @@ impl SignalFd {
 impl Drop for SignalFd {
     fn drop(&mut self) {
         let _ = unistd::close(self.0);
+    }
+}
+
+impl AsRawFd for SignalFd {
+    fn as_raw_fd(&self) -> RawFd {
+        self.0
+    }
+}
+
+impl FromRawFd for SignalFd {
+    unsafe fn from_raw_fd(fd: RawFd) -> Self {
+        SignalFd(fd)
     }
 }
 
