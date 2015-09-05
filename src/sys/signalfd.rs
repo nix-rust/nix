@@ -135,12 +135,6 @@ impl AsRawFd for SignalFd {
     }
 }
 
-impl FromRawFd for SignalFd {
-    unsafe fn from_raw_fd(fd: RawFd) -> Self {
-        SignalFd(fd)
-    }
-}
-
 impl Iterator for SignalFd {
     type Item = siginfo;
 
