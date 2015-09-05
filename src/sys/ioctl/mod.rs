@@ -51,6 +51,7 @@
 //!     pub pad: u32,
 //! }
 //!
+//! #[cfg(linux)]
 //! mod ioctl {
 //!     use super::*;
 //!
