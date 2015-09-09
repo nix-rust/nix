@@ -113,7 +113,7 @@ mod consts {
     pub const MAP_FAILED: isize               = -1;
 }
 
-#[cfg(any(target_os = "freebsd", target_os = "openbsd"))]
+#[cfg(any(target_os = "freebsd", target_os = "dragonfly", target_os = "openbsd"))]
 mod consts {
     use libc::c_int;
 
@@ -150,14 +150,24 @@ mod consts {
     pub const MADV_AUTOSYNC   : MmapAdvise      = 7; /* refert to default flushing strategy */
     pub const MADV_NOCORE     : MmapAdvise      = 8; /* do not include these pages in a core file */
     pub const MADV_CORE       : MmapAdvise      = 9; /* revert to including pages in a core file */
+    #[cfg(not(target_os = "dragonfly"))]
     pub const MADV_PROTECT    : MmapAdvise      = 10; /* protect process from pageout kill */
+    #[cfg(target_os = "dragonfly")]
+    pub const MADV_INVAL      : MmapAdvise      = 10; /* virt page tables have changed, inval pmap */
+    #[cfg(target_os = "dragonfly")]
+    pub const MADV_SETMAP     : MmapAdvise      = 11; /* set page table directory page for map */
 
     pub type MmapSync = c_int;
 
     pub const MS_ASYNC      : MmapSync          = 0x0001; /* [MF|SIO] return immediately */
     pub const MS_INVALIDATE : MmapSync          = 0x0002; /* [MF|SIO] invalidate all cached data */
+    #[cfg(not(target_os = "dragonfly"))]
     pub const MS_SYNC       : MmapSync          = 0x0010; /* [MF|SIO] msync synchronously */
+    #[cfg(target_os = "dragonfly")]
+    pub const MS_SYNC       : MmapSync          = 0x0000; /* [MF|SIO] msync synchronously */
+    #[cfg(not(target_os = "dragonfly"))]
     pub const MS_KILLPAGES  : MmapSync          = 0x0004; /* invalidate pages, leave mapped */
+    #[cfg(not(target_os = "dragonfly"))]
     pub const MS_DEACTIVATE : MmapSync          = 0x0008; /* deactivate pages, leave mapped */
 
     pub const MAP_FAILED: isize                 = -1;

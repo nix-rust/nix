@@ -241,15 +241,22 @@ pub mod signal {
 
     #[cfg(any(target_os = "macos", target_os = "ios", target_os = "openbsd"))]
     pub type sigset_t = u32;
-    #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
+    #[cfg(target_os = "freebsd")]
     #[repr(C)]
     #[derive(Clone, Copy)]
     pub struct sigset_t {
         bits: [u32; 4],
     }
+    #[cfg(target_os = "dragonfly")]
+    #[repr(C)]
+    #[derive(Clone, Copy)]
+    pub struct sigset_t {
+        bits: [libc::c_uint; 4],
+    }
 
     // This structure has more fields, but we're not all that interested in
     // them.
+    #[cfg(not(target_os = "dragonfly"))]
     #[repr(C)]
     #[derive(Clone, Copy)]
     pub struct siginfo {
@@ -258,6 +265,18 @@ pub mod signal {
         pub si_code: libc::c_int,
         pub pid: libc::pid_t,
         pub uid: libc::uid_t,
+        pub status: libc::c_int,
+    }
+
+    #[cfg(target_os = "dragonfly")]
+    #[repr(C)]
+    #[derive(Clone, Copy)]
+    pub struct siginfo {
+        pub si_signo: libc::c_int,
+        pub si_errno: libc::c_int,
+        pub si_code: libc::c_int,
+        pub pid: libc::c_int,
+        pub uid: libc::c_uint,
         pub status: libc::c_int,
     }
 

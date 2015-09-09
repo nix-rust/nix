@@ -50,7 +50,7 @@ mod ffi {
         pub const F_SEAL_WRITE:    c_int = 8;
     }
 
-    #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "ios", target_os = "openbsd"))]
+    #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "dragonfly", target_os = "ios", target_os = "openbsd"))]
     mod os {
         use libc::{c_int, c_short, off_t, pid_t};
 
@@ -68,7 +68,10 @@ mod ffi {
         }
 
         pub const F_DUPFD:         c_int = 0;
+        #[cfg(not(target_os = "dragonfly"))]
         pub const F_DUPFD_CLOEXEC: c_int = 67;
+        #[cfg(target_os = "dragonfly")]
+        pub const F_DUPFD_CLOEXEC: c_int = 17;
         pub const F_GETFD:         c_int = 1;
         pub const F_SETFD:         c_int = 2;
         pub const F_GETFL:         c_int = 3;
@@ -283,6 +286,41 @@ mod consts {
             const O_DIRECT    = 0x0010000,
             const O_EXEC      = 0x0040000,
             const O_TTY_INIT  = 0x0080000
+        }
+    );
+
+    bitflags!(
+        flags FdFlag: c_int {
+            const FD_CLOEXEC = 1
+        }
+    );
+}
+
+#[cfg(target_os = "dragonfly")]
+mod consts {
+    use libc::c_int;
+
+    bitflags!(
+        flags OFlag: c_int {
+            const O_ACCMODE   = 0x0000003,
+            const O_RDONLY    = 0x0000000,
+            const O_WRONLY    = 0x0000001,
+            const O_RDWR      = 0x0000002,
+            const O_CREAT     = 0x0000200,
+            const O_EXCL      = 0x0000800,
+            const O_NOCTTY    = 0x0008000,
+            const O_TRUNC     = 0x0000400,
+            const O_APPEND    = 0x0000008,
+            const O_NONBLOCK  = 0x0000004,
+            const O_DIRECTORY = 0x8000000, // different from FreeBSD!
+            const O_NOFOLLOW  = 0x0000100,
+            const O_CLOEXEC   = 0x0020000, // different from FreeBSD!
+            const O_SYNC      = 0x0000080,
+            const O_NDELAY    = O_NONBLOCK.bits,
+            const O_FSYNC     = O_SYNC.bits,
+            const O_SHLOCK    = 0x0000010, // different from FreeBSD!
+            const O_EXLOCK    = 0x0000020,
+            const O_DIRECT    = 0x0010000,
         }
     );
 

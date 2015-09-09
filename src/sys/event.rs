@@ -38,6 +38,7 @@ mod ffi {
     }
 }
 
+#[cfg(not(target_os = "dragonfly"))]
 #[repr(i16)]
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum EventFilter {
@@ -56,6 +57,22 @@ pub enum EventFilter {
     EVFILT_SYSCOUNT = 13
 }
 
+#[cfg(target_os = "dragonfly")]
+#[repr(i16)] // u_short
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum EventFilter {
+    EVFILT_READ = -1,
+    EVFILT_WRITE = -2,
+    EVFILT_AIO = -3,
+    EVFILT_VNODE = -4,
+    EVFILT_PROC = -5,
+    EVFILT_SIGNAL = -6,
+    EVFILT_TIMER = -7,
+    EVFILT_EXCEPT = -8,
+    EVFILT_USER = -9,
+}
+
+#[cfg(not(target_os = "dragonfly"))]
 bitflags!(
     flags EventFlag: u16 {
         const EV_ADD       = 0x0001,
@@ -74,6 +91,25 @@ bitflags!(
     }
 );
 
+#[cfg(target_os = "dragonfly")]
+bitflags!(
+    flags EventFlag: u16 {
+        const EV_ADD       = 0x0001,
+        const EV_DELETE    = 0x0002,
+        const EV_ENABLE    = 0x0004,
+        const EV_DISABLE   = 0x0008,
+        const EV_RECEIPT   = 0x0040,
+        const EV_ONESHOT   = 0x0010,
+        const EV_CLEAR     = 0x0020,
+        const EV_SYSFLAGS  = 0xF000,
+        const EV_NODATA    = 0x1000,
+        const EV_FLAG1     = 0x2000,
+        const EV_EOF       = 0x8000,
+        const EV_ERROR     = 0x4000
+    }
+);
+
+#[cfg(not(target_os = "dragonfly"))]
 bitflags!(
     flags FilterFlag: u32 {
         const NOTE_TRIGGER                         = 0x01000000,
@@ -121,7 +157,40 @@ bitflags!(
     }
 );
 
+#[cfg(target_os = "dragonfly")]
+bitflags!(
+    flags FilterFlag: u32 {
+        const NOTE_TRIGGER                         = 0x01000000,
+        const NOTE_FFNOP                           = 0x00000000,
+        const NOTE_FFAND                           = 0x40000000,
+        const NOTE_FFOR                            = 0x80000000,
+        const NOTE_FFCOPY                          = 0xc0000000,
+        const NOTE_FFCTRLMASK                      = 0xc0000000,
+        const NOTE_FFLAGSMASK                      = 0x00ffffff,
+        const NOTE_LOWAT                           = 0x00000001,
+        const NOTE_DELETE                          = 0x00000001,
+        const NOTE_WRITE                           = 0x00000002,
+        const NOTE_EXTEND                          = 0x00000004,
+        const NOTE_ATTRIB                          = 0x00000008,
+        const NOTE_LINK                            = 0x00000010,
+        const NOTE_RENAME                          = 0x00000020,
+        const NOTE_REVOKE                          = 0x00000040,
+        const NOTE_EXIT                            = 0x80000000,
+        const NOTE_FORK                            = 0x40000000,
+        const NOTE_EXEC                            = 0x20000000,
+        const NOTE_SIGNAL                          = 0x08000000,
+        const NOTE_PDATAMASK                       = 0x000fffff,
+        const NOTE_PCTRLMASK                       = 0xf0000000, // NOTE: FreeBSD uses 0xfff00000,
+        const NOTE_TRACK                           = 0x00000001,
+        const NOTE_TRACKERR                        = 0x00000002,
+        const NOTE_CHILD                           = 0x00000004
+    }
+);
+
+#[cfg(not(target_os = "dragonfly"))]
 pub const EV_POLL: EventFlag = EV_FLAG0;
+
+#[cfg(not(target_os = "dragonfly"))]
 pub const EV_OOBAND: EventFlag = EV_FLAG1;
 
 pub fn kqueue() -> Result<RawFd> {

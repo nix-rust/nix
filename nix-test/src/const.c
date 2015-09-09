@@ -186,6 +186,29 @@ get_int_const(const char* err) {
     GET_CONST(ECANCELED);
 #endif
 
+#if defined(__DragonFly__)
+    GET_CONST(ENEEDAUTH);
+    GET_CONST(EOVERFLOW);
+    GET_CONST(EILSEQ);
+    GET_CONST(ENOATTR);
+    GET_CONST(EBADMSG);
+    GET_CONST(EPROTO);
+    GET_CONST(ENOTSUP);
+    GET_CONST(EPROCLIM);
+    GET_CONST(EUSERS);
+    GET_CONST(EDQUOT);
+    GET_CONST(ESTALE);
+    GET_CONST(EREMOTE);
+    GET_CONST(EBADRPC);
+    GET_CONST(ERPCMISMATCH);
+    GET_CONST(EPROGUNAVAIL);
+    GET_CONST(EPROGMISMATCH);
+    GET_CONST(EPROCUNAVAIL);
+    GET_CONST(EFTYPE);
+    GET_CONST(EAUTH);
+    GET_CONST(ECANCELED);
+#endif
+
 #ifdef DARWIN
     GET_CONST(EPWROFF);
     GET_CONST(EDEVERR);
@@ -204,10 +227,13 @@ get_int_const(const char* err) {
     GET_CONST(EQFULL);
 #endif
 
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__) || defined(__DragonFly__)
     GET_CONST(EDOOFUS);
     GET_CONST(EMULTIHOP);
     GET_CONST(ENOLINK);
+#endif
+
+#ifdef __FreeBSD__
     GET_CONST(ENOTCAPABLE);
     GET_CONST(ECAPMODE);
 #endif
