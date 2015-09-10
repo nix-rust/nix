@@ -4,6 +4,7 @@
 use libc;
 use errno::Errno;
 use std::mem;
+use std::ptr;
 use {Error, Result};
 
 pub use libc::consts::os::posix88::{
@@ -43,6 +44,7 @@ pub use self::signal::{
 };
 
 pub use self::signal::SockFlag;
+pub use self::signal::{HowFlag, SIG_BLOCK, SIG_UNBLOCK, SIG_SETMASK};
 pub use self::signal::sigset_t;
 
 // This doesn't always exist, but when it does, it's 7
@@ -67,6 +69,14 @@ pub mod signal {
             const SA_SIGINFO   = 0x00000004,
         }
     );
+
+    bitflags!{
+        flags HowFlag: libc::c_int {
+            const SIG_BLOCK   = 0,
+            const SIG_UNBLOCK = 1,
+            const SIG_SETMASK = 2,
+        }
+    }
 
     pub const SIGTRAP:      libc::c_int = 5;
     pub const SIGIOT:       libc::c_int = 6;
@@ -98,9 +108,9 @@ pub mod signal {
     #[repr(C)]
     #[derive(Clone, Copy)]
     pub struct siginfo {
-        si_signo: libc::c_int,
-        si_errno: libc::c_int,
-        si_code: libc::c_int,
+        pub si_signo: libc::c_int,
+        pub si_errno: libc::c_int,
+        pub si_code: libc::c_int,
         pub pid: libc::pid_t,
         pub uid: libc::uid_t,
         pub status: libc::c_int,
@@ -147,6 +157,14 @@ pub mod signal {
         }
     );
 
+    bitflags!{
+        flags HowFlag: libc::c_int {
+            const SIG_BLOCK   = 1,
+            const SIG_UNBLOCK = 2,
+            const SIG_SETMASK = 3,
+        }
+    }
+
     pub const SIGTRAP:      libc::c_int = 5;
     pub const SIGIOT:       libc::c_int = 6;
     pub const SIGBUS:       libc::c_int = 10;
@@ -175,9 +193,9 @@ pub mod signal {
     // however.
     #[repr(C)]
     pub struct siginfo {
-        si_signo: libc::c_int,
-        si_code: libc::c_int,
-        si_errno: libc::c_int,
+        pub si_signo: libc::c_int,
+        pub si_code: libc::c_int,
+        pub si_errno: libc::c_int,
         pub pid: libc::pid_t,
         pub uid: libc::uid_t,
         pub status: libc::c_int,
@@ -217,6 +235,14 @@ pub mod signal {
             const SA_SIGINFO   = 0x0040,
         }
     );
+
+    bitflags!{
+        flags HowFlag: libc::c_int {
+            const SIG_BLOCK   = 1,
+            const SIG_UNBLOCK = 2,
+            const SIG_SETMASK = 3,
+        }
+    }
 
     pub const SIGTRAP:      libc::c_int = 5;
     pub const SIGIOT:       libc::c_int = 6;
@@ -307,20 +333,24 @@ pub mod signal {
 }
 
 mod ffi {
-    use libc;
+    use libc::{c_int, pid_t};
     use super::signal::{sigaction, sigset_t};
 
     #[allow(improper_ctypes)]
     extern {
-        pub fn sigaction(signum: libc::c_int,
+        pub fn sigaction(signum: c_int,
                          act: *const sigaction,
-                         oldact: *mut sigaction) -> libc::c_int;
+                         oldact: *mut sigaction) -> c_int;
 
-        pub fn sigaddset(set: *mut sigset_t, signum: libc::c_int) -> libc::c_int;
-        pub fn sigdelset(set: *mut sigset_t, signum: libc::c_int) -> libc::c_int;
-        pub fn sigemptyset(set: *mut sigset_t) -> libc::c_int;
+        pub fn sigaddset(set: *mut sigset_t, signum: c_int) -> c_int;
+        pub fn sigdelset(set: *mut sigset_t, signum: c_int) -> c_int;
+        pub fn sigemptyset(set: *mut sigset_t) -> c_int;
+        pub fn sigfillset(set: *mut sigset_t) -> c_int;
+        pub fn sigismember(set: *const sigset_t, signum: c_int) -> c_int;
 
-        pub fn kill(pid: libc::pid_t, signum: libc::c_int) -> libc::c_int;
+        pub fn pthread_sigmask(how: c_int, set: *const sigset_t, oldset: *mut sigset_t) -> c_int;
+
+        pub fn kill(pid: pid_t, signum: c_int) -> c_int;
     }
 }
 
@@ -332,8 +362,15 @@ pub struct SigSet {
 pub type SigNum = libc::c_int;
 
 impl SigSet {
+    pub fn all() -> SigSet {
+        let mut sigset: sigset_t = unsafe { mem::uninitialized() };
+        let _ = unsafe { ffi::sigfillset(&mut sigset as *mut sigset_t) };
+
+        SigSet { sigset: sigset }
+    }
+
     pub fn empty() -> SigSet {
-        let mut sigset = unsafe { mem::uninitialized::<sigset_t>() };
+        let mut sigset: sigset_t = unsafe { mem::uninitialized() };
         let _ = unsafe { ffi::sigemptyset(&mut sigset as *mut sigset_t) };
 
         SigSet { sigset: sigset }
@@ -357,6 +394,51 @@ impl SigSet {
         }
 
         Ok(())
+    }
+
+    pub fn contains(&self, signum: SigNum) -> Result<bool> {
+        let res = unsafe { ffi::sigismember(&self.sigset as *const sigset_t, signum) };
+
+        match res {
+            1 => Ok(true),
+            0 => Ok(false),
+            _ => Err(Error::Sys(Errno::last()))
+        }
+    }
+
+    /// Gets the currently blocked (masked) set of signals for the calling thread.
+    pub fn thread_get_mask() -> Result<SigSet> {
+        let mut oldmask: SigSet = unsafe { mem::uninitialized() };
+        try!(pthread_sigmask(HowFlag::empty(), None, Some(&mut oldmask)));
+        Ok(oldmask)
+    }
+
+    /// Sets the set of signals as the signal mask for the calling thread.
+    pub fn thread_set_mask(&self) -> Result<()> {
+        pthread_sigmask(SIG_SETMASK, Some(self), None)
+    }
+
+    /// Adds the set of signals to the signal mask for the calling thread.
+    pub fn thread_block(&self) -> Result<()> {
+        pthread_sigmask(SIG_BLOCK, Some(self), None)
+    }
+
+    /// Removes the set of signals from the signal mask for the calling thread.
+    pub fn thread_unblock(&self) -> Result<()> {
+        pthread_sigmask(SIG_UNBLOCK, Some(self), None)
+    }
+
+    /// Sets the set of signals as the signal mask, and returns the old mask.
+    pub fn thread_swap_mask(&self, how: HowFlag) -> Result<SigSet> {
+        let mut oldmask: SigSet = unsafe { mem::uninitialized() };
+        try!(pthread_sigmask(how, Some(self), Some(&mut oldmask)));
+        Ok(oldmask)
+    }
+}
+
+impl AsRef<sigset_t> for SigSet {
+    fn as_ref(&self) -> &sigset_t {
+        &self.sigset
     }
 }
 
@@ -390,6 +472,44 @@ pub unsafe fn sigaction(signum: SigNum, sigaction: &SigAction) -> Result<SigActi
     Ok(SigAction { sigaction: oldact })
 }
 
+/// Manages the signal mask (set of blocked signals) for the calling thread.
+///
+/// If the `set` parameter is `Some(..)`, then the signal mask will be updated with the signal set.
+/// The `how` flag decides the type of update. If `set` is `None`, `how` will be ignored,
+/// and no modification will take place.
+///
+/// If the 'oldset' parameter is `Some(..)` then the current signal mask will be written into it.
+///
+/// If both `set` and `oldset` is `Some(..)`, the current signal mask will be written into oldset,
+/// and then it will be updated with `set`.
+///
+/// If both `set` and `oldset` is None, this function is a no-op.
+///
+/// For more information, visit the [pthread_sigmask](http://man7.org/linux/man-pages/man3/pthread_sigmask.3.html),
+/// or [sigprocmask](http://man7.org/linux/man-pages/man2/sigprocmask.2.html) man pages.
+pub fn pthread_sigmask(how: HowFlag,
+                       set: Option<&SigSet>,
+                       oldset: Option<&mut SigSet>) -> Result<()> {
+    if set.is_none() && oldset.is_none() {
+        return Ok(())
+    }
+
+    let res = unsafe {
+        // if set or oldset is None, pass in null pointers instead
+        ffi::pthread_sigmask(how.bits(),
+                             set.map_or_else(|| ptr::null::<sigset_t>(),
+                                             |s| &s.sigset as *const sigset_t),
+                             oldset.map_or_else(|| ptr::null_mut::<sigset_t>(),
+                                                |os| &mut os.sigset as *mut sigset_t))
+    };
+
+    if res != 0 {
+        return Err(Error::Sys(Errno::last()));
+    }
+
+    Ok(())
+}
+
 pub fn kill(pid: libc::pid_t, signum: SigNum) -> Result<()> {
     let res = unsafe { ffi::kill(pid, signum) };
 
@@ -398,4 +518,47 @@ pub fn kill(pid: libc::pid_t, signum: SigNum) -> Result<()> {
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_contains() {
+        let mut mask = SigSet::empty();
+        mask.add(signal::SIGUSR1).unwrap();
+
+        assert_eq!(mask.contains(signal::SIGUSR1), Ok(true));
+        assert_eq!(mask.contains(signal::SIGUSR2), Ok(false));
+
+        let all = SigSet::all();
+        assert_eq!(all.contains(signal::SIGUSR1), Ok(true));
+        assert_eq!(all.contains(signal::SIGUSR2), Ok(true));
+    }
+
+    #[test]
+    fn test_thread_signal_block() {
+        let mut mask = SigSet::empty();
+        mask.add(signal::SIGUSR1).unwrap();
+
+        assert!(mask.thread_block().is_ok());
+    }
+
+    #[test]
+    fn test_thread_signal_swap() {
+        let mut mask = SigSet::empty();
+        mask.add(signal::SIGUSR1).unwrap();
+        mask.thread_block().unwrap();
+
+        assert!(SigSet::thread_get_mask().unwrap().contains(SIGUSR1).unwrap());
+
+        let mask2 = SigSet::empty();
+        mask.add(signal::SIGUSR2).unwrap();
+
+        let oldmask = mask2.thread_swap_mask(signal::SIG_SETMASK).unwrap();
+
+        assert!(oldmask.contains(signal::SIGUSR1).unwrap());
+        assert!(!oldmask.contains(signal::SIGUSR2).unwrap());
+    }
 }
