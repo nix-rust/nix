@@ -47,3 +47,5 @@ pub mod time;
               target_arch = "arm")),
           )]
 pub mod ptrace;
+
+pub mod select;
