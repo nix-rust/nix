@@ -49,3 +49,10 @@ pub mod time;
 pub mod ptrace;
 
 pub mod select;
+
+#[cfg(all(target_os = "linux",
+          any(target_arch = "x86",
+              target_arch = "x86_64",
+              target_arch = "arm")),
+          )]
+pub mod quota;
