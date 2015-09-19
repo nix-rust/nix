@@ -1,4 +1,4 @@
-use nix::mqueue::{mq_open, mq_close, mq_send, mq_receive, mq_getattr, mq_setattr, mq_unlink};
+use nix::mqueue::{mq_open, mq_close, mq_send, mq_receive, mq_getattr, mq_setattr, mq_unlink, mq_set_nonblock, mq_remove_nonblock};
 use nix::mqueue::{O_CREAT, O_WRONLY, O_RDONLY, O_NONBLOCK};
 
 
@@ -55,7 +55,7 @@ fn test_mq_send_and_receive() {
 
 
 #[test]
-fn test_mq_get_attr() {
+fn test_mq_getattr() {
     const MSG_SIZE: c_long =  32;
     let initial_attr =  MqAttr::new(0, 10, MSG_SIZE, 0);
     let mq_name = &CString::new("/attr_test_get_attr".as_bytes().as_ref()).unwrap();
@@ -66,7 +66,7 @@ fn test_mq_get_attr() {
 }
 
 #[test]
-fn test_mq_set_attr() {
+fn test_mq_setattr() {
     const MSG_SIZE: c_long =  32;
     let initial_attr =  MqAttr::new(0, 10, MSG_SIZE, 0);
     let mq_name = &CString::new("/attr_test_get_attr".as_bytes().as_ref()).unwrap();
@@ -91,7 +91,20 @@ fn test_mq_set_attr() {
     mq_close(mqd).unwrap();
 }
 
-
+#[test]
+fn test_mq_set_nonblocking() {
+    const MSG_SIZE: c_long =  32;
+    let initial_attr =  MqAttr::new(0, 10, MSG_SIZE, 0);
+    let mq_name = &CString::new("/attr_test_get_attr".as_bytes().as_ref()).unwrap();
+    let mqd = mq_open(mq_name, O_CREAT | O_WRONLY, S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH, &initial_attr).unwrap();
+    mq_set_nonblock(mqd).unwrap();
+    let new_attr = mq_getattr(mqd);
+    assert!(new_attr.unwrap().mq_flags == O_NONBLOCK.bits() as c_long);
+    mq_remove_nonblock(mqd).unwrap();
+    let new_attr = mq_getattr(mqd);
+    assert!(new_attr.unwrap().mq_flags == 0);
+    mq_close(mqd).unwrap();
+}
 
 #[test]
 fn test_mq_unlink() {

@@ -1,3 +1,7 @@
+//! Posis Message Queue functions
+//!
+//! [Further reading and details on the C API](http://man7.org/linux/man-pages/man7/mq_overview.7.html)
+
 use {Error, Result, from_ffi};
 use errno::Errno;
 
@@ -124,7 +128,11 @@ pub fn mq_getattr(mqd: MQd) -> Result<MqAttr> {
     Ok(attr)
 }
 
-
+/// Set the attributes of the message queue. Only O_NONBLOCK can be set, everything else will be ignored
+/// Returns the old attributes
+/// It is recommend to use the mq_set_nonblock() and mq_remove_nonblock() convenience functions as they are easier to use
+///
+/// [Further reading](http://man7.org/linux/man-pages/man3/mq_setattr.3.html)
 pub fn mq_setattr(mqd: MQd, newattr: &MqAttr) -> Result<MqAttr> {
     let mut attr = MqAttr::new(0, 0, 0, 0);
     let res = unsafe { ffi::mq_setattr(mqd, newattr as *const MqAttr, &mut attr) };
@@ -132,4 +140,22 @@ pub fn mq_setattr(mqd: MQd, newattr: &MqAttr) -> Result<MqAttr> {
         return Err(Error::Sys(Errno::last()));
     }
     Ok(attr)
+}
+
+/// Convenience function.
+/// Sets the O_NONBLOCK attribute for a given message queue descriptor
+/// Returns the old attributes
+pub fn mq_set_nonblock(mqd: MQd) -> Result<(MqAttr)> {
+    let oldattr = try!(mq_getattr(mqd));
+    let newattr = MqAttr::new(O_NONBLOCK.bits() as c_long, oldattr.mq_maxmsg, oldattr.mq_msgsize, oldattr.mq_curmsgs);
+    mq_setattr(mqd, &newattr)
+}
+
+/// Convenience function.
+/// Removes O_NONBLOCK attribute for a given message queue descriptor
+/// Returns the old attributes
+pub fn mq_remove_nonblock(mqd: MQd) -> Result<(MqAttr)> {
+    let oldattr = try!(mq_getattr(mqd));
+    let newattr = MqAttr::new(0, oldattr.mq_maxmsg, oldattr.mq_msgsize, oldattr.mq_curmsgs);
+    mq_setattr(mqd, &newattr)
 }
