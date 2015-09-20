@@ -5,6 +5,7 @@ use {Error, Result};
 use errno::Errno;
 use libc::{timespec, time_t, c_int, c_long, uintptr_t};
 use std::os::unix::io::RawFd;
+use std::ptr;
 
 pub use self::ffi::kevent as KEvent;
 
@@ -214,6 +215,13 @@ pub fn kevent(kq: RawFd,
         tv_nsec: ((timeout_ms % 1000) * 1_000_000) as c_long
     };
 
+    kevent_ts(kq, changelist, eventlist, Some(timeout))
+}
+
+pub fn kevent_ts(kq: RawFd,
+              changelist: &[KEvent],
+              eventlist: &mut [KEvent],
+              timeout_opt: Option<timespec>) -> Result<usize> {
     let res = unsafe {
         ffi::kevent(
             kq,
@@ -221,7 +229,7 @@ pub fn kevent(kq: RawFd,
             changelist.len() as c_int,
             eventlist.as_mut_ptr(),
             eventlist.len() as c_int,
-            &timeout as *const timespec)
+            if let Some(ref timeout) = timeout_opt {timeout as *const timespec} else {ptr::null()})
     };
 
     if res < 0 {
