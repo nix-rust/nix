@@ -1,9 +1,5 @@
-// Silence invalid warnings due to rust-lang/rust#16719
-#![allow(improper_ctypes)]
-
-use libc::{c_int, c_void, socklen_t, ssize_t};
+use libc::{c_int, c_void, socklen_t};
 pub use libc::{socket, listen, bind, accept, connect, setsockopt, sendto, recvfrom, getsockname, getpeername, recv, send};
-use super::msghdr;
 
 extern {
     pub fn getsockopt(
@@ -19,7 +15,4 @@ extern {
         protocol:   c_int,
         sv:         *mut c_int
     ) -> c_int;
-
-    pub fn sendmsg(sockfd: c_int, msg: *const msghdr, flags: c_int) -> ssize_t;
-    pub fn recvmsg(sockfd: c_int, msg: *mut msghdr, flags: c_int) -> ssize_t;
 }

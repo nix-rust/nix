@@ -84,23 +84,16 @@ mod os {
     pub const INADDR_NONE: InAddrT = 0xffffffff;
     pub const INADDR_BROADCAST: InAddrT = 0xffffffff;
 
-    pub type SockMessageFlags = c_int;
+    pub type SockMessageFlags = i32;
     // Flags for send/recv and their relatives
     pub const MSG_OOB: SockMessageFlags = 0x1;
     pub const MSG_PEEK: SockMessageFlags = 0x2;
-    pub const MSG_CTRUNC: SockMessageFlags = 0x08;
-    pub const MSG_TRUNC: SockMessageFlags = 0x20;
     pub const MSG_DONTWAIT: SockMessageFlags = 0x40;
-    pub const MSG_EOR: SockMessageFlags = 0x80;
-    pub const MSG_ERRQUEUE: SockMessageFlags = 0x2000;
 
     // shutdown flags
     pub const SHUT_RD: c_int   = 0;
     pub const SHUT_WR: c_int   = 1;
     pub const SHUT_RDWR: c_int = 2;
-
-    // Ancillary message types
-    pub const SCM_RIGHTS: c_int = 1;
 }
 
 // Not all of these constants exist on freebsd
@@ -204,18 +197,12 @@ mod os {
     // Flags for send/recv and their relatives
     pub const MSG_OOB: SockMessageFlags = 0x1;
     pub const MSG_PEEK: SockMessageFlags = 0x2;
-    pub const MSG_EOR: SockMessageFlags = 0x8;
-    pub const MSG_TRUNC: SockMessageFlags = 0x10;
-    pub const MSG_CTRUNC: SockMessageFlags = 0x20;
     pub const MSG_DONTWAIT: SockMessageFlags = 0x80;
 
     // shutdown flags
     pub const SHUT_RD: c_int   = 0;
     pub const SHUT_WR: c_int   = 1;
     pub const SHUT_RDWR: c_int = 2;
-
-    // Ancillary message types
-    pub const SCM_RIGHTS: c_int = 1;
 }
 
 #[cfg(target_os = "dragonfly")]
@@ -353,9 +340,6 @@ mod test {
             MSG_OOB,
             MSG_PEEK,
             MSG_DONTWAIT,
-            MSG_EOR,
-            MSG_TRUNC,
-            MSG_CTRUNC,
             SHUT_RD,
             SHUT_WR,
             SHUT_RDWR
@@ -386,7 +370,6 @@ mod test {
             SO_RCVBUFFORCE,
             // SO_PEEK_OFF,
             SO_PEERCRED,
-            SO_SNDBUFFORCE,
-            MSG_ERRQUEUE);
+            SO_SNDBUFFORCE);
     }
 }

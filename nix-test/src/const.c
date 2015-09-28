@@ -289,9 +289,6 @@ get_int_const(const char* err) {
     GET_CONST(MSG_OOB);
     GET_CONST(MSG_PEEK);
     GET_CONST(MSG_DONTWAIT);
-    GET_CONST(MSG_EOR);
-    GET_CONST(MSG_TRUNC);
-    GET_CONST(MSG_CTRUNC);
     GET_CONST(SHUT_RD);
     GET_CONST(SHUT_WR);
     GET_CONST(SHUT_RDWR);
@@ -315,7 +312,6 @@ get_int_const(const char* err) {
     // GET_CONST(SO_PEEK_OFF);
     GET_CONST(SO_PEERCRED);
     GET_CONST(SO_SNDBUFFORCE);
-    GET_CONST(MSG_ERRQUEUE);
 #endif
 
     return -1;
