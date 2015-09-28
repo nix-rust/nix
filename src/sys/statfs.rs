@@ -5,12 +5,12 @@ use std::os::unix::io::AsRawFd;
 pub mod vfs {
 	#[cfg(target_pointer_width = "32")]
         pub mod hwdep {
-		use libc::{c_int};
-		pub type FsType = c_int;
-		pub type BlockSize = c_int;
-		pub type NameLen = c_int;
-		pub type FragmentSize = c_int;
-		pub type SwordType = c_int;
+		use libc::{c_uint};
+		pub type FsType = c_uint;
+		pub type BlockSize = c_uint;
+		pub type NameLen = c_uint;
+		pub type FragmentSize = c_uint;
+		pub type SwordType = c_uint;
 	}
 
 	#[cfg(target_pointer_width = "64")]
