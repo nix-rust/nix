@@ -19,6 +19,16 @@ fn test_fdset() {
     for i in 0..FD_SETSIZE {
         assert!(!fd_set.contains(i));
     }
+
+    fd_set.insert(1);
+    fd_set.insert(FD_SETSIZE / 2);
+    fd_set.insert(FD_SETSIZE - 1);
+
+    fd_set.clear();
+
+    for i in 0..FD_SETSIZE {
+        assert!(!fd_set.contains(i));
+    }
 }
 
 #[test]
