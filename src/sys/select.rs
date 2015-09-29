@@ -46,6 +46,12 @@ impl FdSet {
         let fd = fd as usize;
         self.bits[fd / BITS] & (1 << (fd % BITS)) > 0
     }
+
+    pub fn clear(&mut self) {
+        for bits in &mut self.bits {
+            *bits = 0
+        }
+    }
 }
 
 mod ffi {
@@ -78,7 +84,7 @@ pub fn select(nfds: c_int,
 
     if res == -1 {
         Err(Error::Sys(Errno::last()))
-    } else {   
+    } else {
         Ok(res)
-    } 
+    }
 }
