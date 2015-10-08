@@ -35,7 +35,7 @@ pub fn test_path_to_sock_addr() {
     let expect: &'static [i8] = unsafe { mem::transmute(&b"/foo/bar"[..]) };
     assert_eq!(&addr.0.sun_path[..8], expect);
 
-    assert_eq!(addr.path(), actual);
+    assert_eq!(addr.path(), Some(actual));
 }
 
 #[test]

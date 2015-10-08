@@ -2,8 +2,8 @@ use {Result, Error, NixPath};
 use super::{consts, sa_family_t};
 use errno::Errno;
 use libc;
-use std::{fmt, hash, mem, net};
-use std::ffi::{CStr, OsStr};
+use std::{fmt, hash, mem, net, ptr};
+use std::ffi::OsStr;
 use std::path::Path;
 use std::os::unix::ffi::OsStrExt;
 
@@ -329,13 +329,16 @@ impl fmt::Display for Ipv6Addr {
  *
  */
 
+/// A wrapper around sockaddr_un. We track the length of sun_path,
+/// because it may not be null-terminated (unconnected and abstract
+/// sockets). Note that the actual sockaddr length is greater by
+/// size_of::<sa_family_t>().
 #[derive(Copy)]
-pub struct UnixAddr(pub libc::sockaddr_un);
+pub struct UnixAddr(pub libc::sockaddr_un, pub usize);
 
 impl UnixAddr {
+    /// Create a new sockaddr_un representing a filesystem path.
     pub fn new<P: ?Sized + NixPath>(path: &P) -> Result<UnixAddr> {
-        use libc::strcpy;
-
         try!(path.with_nix_path(|cstr| {
             unsafe {
                 let mut ret = libc::sockaddr_un {
@@ -343,31 +346,65 @@ impl UnixAddr {
                     .. mem::zeroed()
                 };
 
-                // Must be smaller to account for the null byte
-                if path.len() >= ret.sun_path.len() {
+                let bytes = cstr.to_bytes_with_nul();
+
+                if bytes.len() > ret.sun_path.len() {
                     return Err(Error::Sys(Errno::ENAMETOOLONG));
                 }
 
-                strcpy(ret.sun_path.as_mut_ptr(), cstr.as_ptr());
+                ptr::copy_nonoverlapping(bytes.as_ptr(),
+                                         ret.sun_path.as_mut_ptr() as *mut u8,
+                                         bytes.len());
 
-                Ok(UnixAddr(ret))
+                Ok(UnixAddr(ret, bytes.len()))
             }
         }))
     }
 
-    pub fn path(&self) -> &Path {
+    /// Create a new sockaddr_un representing an address in the
+    /// "abstract namespace". This is a Linux-specific extension,
+    /// primarily used to allow chrooted processes to communicate with
+    /// specific daemons.
+    pub fn new_abstract(path: &[u8]) -> Result<UnixAddr> {
         unsafe {
-            let bytes = CStr::from_ptr(self.0.sun_path.as_ptr()).to_bytes();
-            Path::new(<OsStr as OsStrExt>::from_bytes(bytes))
+            let mut ret = libc::sockaddr_un {
+                sun_family: AddressFamily::Unix as sa_family_t,
+                .. mem::zeroed()
+            };
+
+            if path.len() > ret.sun_path.len() {
+                return Err(Error::Sys(Errno::ENAMETOOLONG));
+            }
+
+            // Abstract addresses are represented by sun_path[0] ==
+            // b'\0', so copy starting one byte in.
+            ptr::copy_nonoverlapping(path.as_ptr(),
+                                     ret.sun_path.as_mut_ptr().offset(1) as *mut u8,
+                                     path.len());
+
+            Ok(UnixAddr(ret, path.len()))
+        }
+    }
+
+    fn sun_path(&self) -> &[u8] {
+        unsafe { mem::transmute(&self.0.sun_path[..self.1]) }
+    }
+
+    /// If this address represents a filesystem path, return that path.
+    pub fn path(&self) -> Option<&Path> {
+        if self.1 == 0 || self.0.sun_path[0] == 0 {
+            // unbound or abstract
+            None
+        } else {
+            let p = self.sun_path();
+            Some(Path::new(<OsStr as OsStrExt>::from_bytes(&p[..p.len()-1])))
         }
     }
 }
 
 impl PartialEq for UnixAddr {
     fn eq(&self, other: &UnixAddr) -> bool {
-        unsafe {
-            0 == libc::strcmp(self.0.sun_path.as_ptr(), other.0.sun_path.as_ptr())
-        }
+        self.sun_path() == other.sun_path()
     }
 }
 
@@ -376,7 +413,7 @@ impl Eq for UnixAddr {
 
 impl hash::Hash for UnixAddr {
     fn hash<H: hash::Hasher>(&self, s: &mut H) {
-        ( self.0.sun_family, self.path() ).hash(s)
+        ( self.0.sun_family, self.sun_path() ).hash(s)
     }
 }
 
@@ -388,7 +425,14 @@ impl Clone for UnixAddr {
 
 impl fmt::Display for UnixAddr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.path().display().fmt(f)
+        if self.1 == 0 {
+            f.write_str("<unbound UNIX socket>")
+        } else if let Some(path) = self.path() {
+            path.display().fmt(f)
+        } else {
+            let display = String::from_utf8_lossy(&self.sun_path()[1..]);
+            write!(f, "@{}", display)
+        }
     }
 }
 
@@ -430,7 +474,7 @@ impl SockAddr {
         match *self {
             SockAddr::Inet(InetAddr::V4(ref addr)) => (mem::transmute(addr), mem::size_of::<libc::sockaddr_in>() as libc::socklen_t),
             SockAddr::Inet(InetAddr::V6(ref addr)) => (mem::transmute(addr), mem::size_of::<libc::sockaddr_in6>() as libc::socklen_t),
-            SockAddr::Unix(UnixAddr(ref addr)) => (mem::transmute(addr), mem::size_of::<libc::sockaddr_un>() as libc::socklen_t),
+            SockAddr::Unix(UnixAddr(ref addr, len)) => (mem::transmute(addr), (len + mem::size_of::<libc::sa_family_t>()) as libc::socklen_t),
         }
     }
 }
