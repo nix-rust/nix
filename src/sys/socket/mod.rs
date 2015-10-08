@@ -687,8 +687,7 @@ pub unsafe fn sockaddr_storage_to_addr(
             Ok(SockAddr::Inet(InetAddr::V6((*(addr as *const _ as *const sockaddr_in6)))))
         }
         consts::AF_UNIX => {
-            assert!(len as usize == mem::size_of::<sockaddr_un>());
-            Ok(SockAddr::Unix(UnixAddr(*(addr as *const _ as *const sockaddr_un))))
+            Ok(SockAddr::Unix(UnixAddr(*(addr as *const _ as *const sockaddr_un), len)))
         }
         af => panic!("unexpected address family {}", af),
     }
