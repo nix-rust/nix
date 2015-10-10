@@ -60,6 +60,11 @@ mod ffi {
         // change root directory
         // doc: http://man7.org/linux/man-pages/man2/chroot.2.html
         pub fn chroot(path: *const c_char) -> c_int;
+
+        // synchronize a file's in-core state with storage device
+        // doc: http://man7.org/linux/man-pages/man2/fsync.2.html
+        pub fn fsync(fd: c_int) -> c_int;
+        pub fn fdatasync(fd: c_int) -> c_int;
     }
 }
 
@@ -350,6 +355,28 @@ pub fn chroot<P: ?Sized + NixPath>(path: &P) -> Result<()> {
     }));
 
     if res != 0 {
+        return Err(Error::Sys(Errno::last()));
+    }
+
+    Ok(())
+}
+
+#[inline]
+pub fn fsync(fd: RawFd) -> Result<()> {
+    let res = unsafe { ffi::fsync(fd) };
+
+    if res < 0 {
+        return Err(Error::Sys(Errno::last()));
+    }
+
+    Ok(())
+}
+
+#[inline]
+pub fn fdatasync(fd: RawFd) -> Result<()> {
+    let res = unsafe { ffi::fdatasync(fd) };
+
+    if res < 0 {
         return Err(Error::Sys(Errno::last()));
     }
 
