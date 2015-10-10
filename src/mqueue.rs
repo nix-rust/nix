@@ -1,4 +1,4 @@
-//! Posis Message Queue functions
+//! Posix Message Queue functions
 //!
 //! [Further reading and details on the C API](http://man7.org/linux/man-pages/man7/mq_overview.7.html)
 

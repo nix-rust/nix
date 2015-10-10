@@ -54,11 +54,11 @@ mod ffi {
         pub fn gethostname(name: *mut c_char, len: size_t) -> c_int;
 
         // gets the hostname
-        // doc: http://man7.org/linux/man-pages/man2/gethostname.2.html
+        // doc: http://man7.org/linux/man-pages/man2/sethostname.2.html
         pub fn sethostname(name: *const c_char, len: size_t) -> c_int;
 
         // change root directory
-        // doc: http://man7.org/linux/man-pages/man2/gethostname.2.html
+        // doc: http://man7.org/linux/man-pages/man2/chroot.2.html
         pub fn chroot(path: *const c_char) -> c_int;
     }
 }
