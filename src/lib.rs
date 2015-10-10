@@ -48,6 +48,9 @@ use std::{ptr, result};
 use std::ffi::CStr;
 use std::path::{Path, PathBuf};
 use std::os::unix::ffi::OsStrExt;
+use std::io;
+use std::fmt;
+use std::error;
 
 pub type Result<T> = result::Result<T, Error>;
 
@@ -74,6 +77,37 @@ impl Error {
         match *self {
             Error::Sys(errno) => errno,
             Error::InvalidPath => errno::Errno::EINVAL,
+        }
+    }
+}
+
+impl From<errno::Errno> for Error {
+    fn from(errno: errno::Errno) -> Error { Error::from_errno(errno) }
+}
+
+impl error::Error for Error {
+    fn description(&self) -> &str {
+        match self {
+            &Error::InvalidPath => "Invalid path",
+            &Error::Sys(ref errno) => errno.desc(),
+        }
+    }
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            &Error::InvalidPath => write!(f, "Invalid path"),
+            &Error::Sys(errno) => write!(f, "{:?}: {}", errno, errno.desc()),
+        }
+    }
+}
+
+impl From<Error> for io::Error {
+    fn from(err: Error) -> Self {
+        match err {
+            Error::InvalidPath => io::Error::new(io::ErrorKind::InvalidInput, err),
+            Error::Sys(errno) => io::Error::from_raw_os_error(errno as i32),
         }
     }
 }
