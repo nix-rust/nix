@@ -167,13 +167,13 @@ pub fn chdir<P: ?Sized + NixPath>(path: &P) -> Result<()> {
     return Ok(())
 }
 
-fn to_exec_array(args: &[CString]) -> *const *const c_char {
+fn to_exec_array(args: &[CString]) -> Vec<*const c_char> {
     use std::ptr;
     use libc::c_char;
 
     let mut args_p: Vec<*const c_char> = args.iter().map(|s| s.as_ptr()).collect();
     args_p.push(ptr::null());
-    args_p.as_ptr()
+    args_p
 }
 
 #[inline]
@@ -181,7 +181,7 @@ pub fn execv(path: &CString, argv: &[CString]) -> Result<()> {
     let args_p = to_exec_array(argv);
 
     unsafe {
-        ffi::execv(path.as_ptr(), args_p)
+        ffi::execv(path.as_ptr(), args_p.as_ptr())
     };
 
     Err(Error::Sys(Errno::last()))
@@ -193,7 +193,7 @@ pub fn execve(path: &CString, args: &[CString], env: &[CString]) -> Result<()> {
     let env_p = to_exec_array(env);
 
     unsafe {
-        ffi::execve(path.as_ptr(), args_p, env_p)
+        ffi::execve(path.as_ptr(), args_p.as_ptr(), env_p.as_ptr())
     };
 
     Err(Error::Sys(Errno::last()))
@@ -204,7 +204,7 @@ pub fn execvp(filename: &CString, args: &[CString]) -> Result<()> {
     let args_p = to_exec_array(args);
 
     unsafe {
-        ffi::execvp(filename.as_ptr(), args_p)
+        ffi::execvp(filename.as_ptr(), args_p.as_ptr())
     };
 
     Err(Error::Sys(Errno::last()))
