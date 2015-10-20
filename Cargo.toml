@@ -16,6 +16,8 @@ exclude     = [
 [features]
 eventfd = []
 execvpe = []
+preadv_pwritev = []
+signalfd = []
 
 [dependencies]
 libc     = "0.1.10"
