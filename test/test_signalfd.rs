@@ -1,3 +1,5 @@
+#![cfg(feature = "signalfd")]
+
 extern crate nix;
 
 use nix::unistd;
