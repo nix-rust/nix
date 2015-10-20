@@ -1,13 +1,12 @@
-#![cfg(feature = "signalfd")]
-
 extern crate nix;
 
 use nix::unistd;
 
-#[cfg(any(target_os = "linux", target_os = "android"))]
+#[cfg(feature = "signalfd")]
+
 use nix::sys::signalfd::*;
 
-#[cfg(any(target_os = "linux", target_os = "android"))]
+#[cfg(feature = "signalfd")]
 fn main() {
     let mut mask = SigSet::empty();
     mask.add(signal::SIGUSR1).unwrap();
@@ -28,5 +27,5 @@ fn main() {
     assert_eq!(info.ssi_signo as i32, signal::SIGUSR1);
 }
 
-#[cfg(not(any(target_os = "linux", target_os = "android")))]
+#[cfg(not(feature = "signalfd"))]
 fn main() {}
