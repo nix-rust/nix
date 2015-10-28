@@ -43,7 +43,7 @@ pub mod unistd;
  *
  */
 
-use libc::c_char;
+use libc::{c_char, PATH_MAX};
 use std::{ptr, result};
 use std::ffi::CStr;
 use std::path::{Path, PathBuf};
@@ -126,10 +126,9 @@ impl NixPath for [u8] {
 
     fn with_nix_path<T, F>(&self, f: F) -> Result<T>
             where F: FnOnce(&CStr) -> T {
-        // TODO: Extract this size as a const
-        let mut buf = [0u8; 4096];
+        let mut buf = [0u8; PATH_MAX as usize];
 
-        if self.len() >= 4096 {
+        if self.len() >= PATH_MAX as usize {
             return Err(Error::InvalidPath);
         }
 
