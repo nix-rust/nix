@@ -18,7 +18,7 @@ eventfd = []
 execvpe = []
 
 [dependencies]
-libc     = "0.1.10"
+libc     = "0.1.12"
 bitflags = "0.3.2"
 
 [dev-dependencies]
