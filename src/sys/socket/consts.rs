@@ -8,6 +8,7 @@ mod os {
     pub const AF_LOCAL: c_int = AF_UNIX;
     pub const AF_INET: c_int  = 2;
     pub const AF_INET6: c_int = 10;
+    pub const AF_NETLINK: c_int = 16;
 
     pub const SOCK_STREAM: c_int = 1;
     pub const SOCK_DGRAM: c_int = 2;
@@ -20,6 +21,7 @@ mod os {
     pub const SOL_TCP: c_int    = 6;
     pub const SOL_UDP: c_int    = 17;
     pub const SOL_IPV6: c_int   = 41;
+    pub const SOL_NETLINK: c_int = 270;
     pub const IPPROTO_IP: c_int = SOL_IP;
     pub const IPPROTO_IPV6: c_int = SOL_IPV6;
     pub const IPPROTO_TCP: c_int = SOL_TCP;
