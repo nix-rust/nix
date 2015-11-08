@@ -32,6 +32,9 @@ pub use self::addr::{
     Ipv4Addr,
     Ipv6Addr,
 };
+#[cfg(any(target_os = "linux", target_os = "android"))]
+pub use ::sys::socket::addr::netlink::NetlinkAddr;
+
 pub use libc::{
     in_addr,
     in6_addr,
@@ -577,6 +580,8 @@ pub enum SockLevel {
     Ip = IPPROTO_IP,
     Ipv6 = IPPROTO_IPV6,
     Udp = IPPROTO_UDP,
+#[cfg(any(target_os = "linux", target_os = "android"))]
+    Netlink = SOL_NETLINK,
 }
 
 /// Represents a socket option that can be accessed or set. Used as an argument
