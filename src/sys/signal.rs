@@ -220,7 +220,8 @@ pub mod signal {
           target_os = "ios",
           target_os = "freebsd",
           target_os = "openbsd",
-          target_os = "dragonfly"))]
+          target_os = "dragonfly",
+          target_os = "netbsd"))]
 pub mod signal {
     use libc;
 
@@ -273,7 +274,7 @@ pub mod signal {
     pub struct sigset_t {
         bits: [u32; 4],
     }
-    #[cfg(target_os = "dragonfly")]
+    #[cfg(any(target_os = "dragonfly", target_os = "netbsd"))]
     #[repr(C)]
     #[derive(Clone, Copy)]
     pub struct sigset_t {
@@ -323,7 +324,7 @@ pub mod signal {
         pub sa_mask: sigset_t,
     }
 
-    #[cfg(target_os = "openbsd")]
+    #[cfg(any(target_os = "openbsd", target_os = "netbsd"))]
     #[repr(C)]
     pub struct sigaction {
         pub sa_handler: extern fn(libc::c_int),

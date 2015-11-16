@@ -1,8 +1,4 @@
-use libc::{self, c_int};
 pub use self::os::*;
-
-pub const IPV6_ADD_MEMBERSHIP: c_int = libc::IPV6_ADD_MEMBERSHIP;
-pub const IPV6_DROP_MEMBERSHIP: c_int = libc::IPV6_DROP_MEMBERSHIP;
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 mod os {
@@ -77,6 +73,9 @@ mod os {
     pub const IP_ADD_MEMBERSHIP: c_int = 35;
     pub const IP_DROP_MEMBERSHIP: c_int = 36;
 
+    pub const IPV6_ADD_MEMBERSHIP: c_int = libc::IPV6_ADD_MEMBERSHIP;
+    pub const IPV6_DROP_MEMBERSHIP: c_int = libc::IPV6_DROP_MEMBERSHIP;
+
     pub type InAddrT = u32;
 
     // Declarations of special addresses
@@ -104,18 +103,20 @@ mod os {
 }
 
 // Not all of these constants exist on freebsd
-#[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "ios", target_os = "openbsd"))]
+#[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "ios", target_os = "openbsd", target_os = "netbsd"))]
 mod os {
     #[cfg(any(target_os = "macos",
               target_os = "ios",
               target_os = "freebsd"))]
     use libc::{self, c_int, uint8_t};
-    #[cfg(any(target_os = "openbsd"))]
+    #[cfg(any(target_os = "openbsd", target_os = "netbsd"))]
     use libc::{c_int, uint8_t};
 
     pub const AF_UNIX: c_int  = 1;
     pub const AF_LOCAL: c_int = AF_UNIX;
     pub const AF_INET: c_int  = 2;
+    #[cfg(target_os = "netbsd")]
+    pub const AF_INET6: c_int = 24;
     #[cfg(target_os = "openbsd")]
     pub const AF_INET6: c_int = 26;
     #[cfg(target_os = "freebsd")]
@@ -138,7 +139,10 @@ mod os {
     pub const SO_ACCEPTCONN: c_int          = 0x0002;
     pub const SO_BROADCAST: c_int           = 0x0020;
     pub const SO_DEBUG: c_int               = 0x0001;
+    #[cfg(not(target_os = "netbsd"))]
     pub const SO_DONTTRUNC: c_int           = 0x2000;
+    #[cfg(target_os = "netbsd")]
+    pub const SO_USELOOPBACK: c_int         = 0x0040;
     pub const SO_ERROR: c_int               = 0x1007;
     pub const SO_DONTROUTE: c_int           = 0x0010;
     pub const SO_KEEPALIVE: c_int           = 0x0008;
@@ -166,9 +170,14 @@ mod os {
     pub const SO_REUSEPORT: c_int           = 0x0200;
     pub const SO_REUSESHAREUID: c_int       = 0x1025;
     pub const SO_SNDBUF: c_int              = 0x1001;
+    #[cfg(not(target_os = "netbsd"))]
     pub const SO_TIMESTAMP: c_int           = 0x0400;
+    #[cfg(not(target_os = "netbsd"))]
     pub const SO_TIMESTAMP_MONOTONIC: c_int = 0x0800;
+    #[cfg(target_os = "netbsd")]
+    pub const SO_TIMESTAMP: c_int           = 0x2000;
     pub const SO_TYPE: c_int                = 0x1008;
+    #[cfg(not(target_os = "netbsd"))]
     pub const SO_WANTMORE: c_int            = 0x4000;
     pub const SO_WANTOOBFLAG: c_int         = 0x8000;
     #[allow(overflowing_literals)]
@@ -182,6 +191,8 @@ mod os {
     pub const TCP_KEEPALIVE: c_int = libc::TCP_KEEPALIVE;
     #[cfg(target_os = "freebsd")]
     pub const TCP_KEEPIDLE: c_int = libc::TCP_KEEPIDLE;
+    #[cfg(target_os = "netbsd")]
+    pub const TCP_KEEPIDLE: c_int = 3;
 
     // Socket options for the IP layer of the socket
     pub const IP_MULTICAST_IF: c_int = 9;
@@ -193,6 +204,11 @@ mod os {
     pub const IP_ADD_MEMBERSHIP: c_int = 12;
     pub const IP_DROP_MEMBERSHIP: c_int = 13;
 
+    #[cfg(not(target_os = "netbsd"))]
+    pub const IPV6_ADD_MEMBERSHIP: c_int = libc::IPV6_ADD_MEMBERSHIP;
+    #[cfg(not(target_os = "netbsd"))]
+    pub const IPV6_DROP_MEMBERSHIP: c_int = libc::IPV6_DROP_MEMBERSHIP;
+    
     pub type InAddrT = u32;
 
     // Declarations of special addresses
