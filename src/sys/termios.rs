@@ -12,7 +12,7 @@ pub use self::ffi::consts::FlowArg::*;
 mod ffi {
     pub use self::consts::*;
 
-    #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "dragonfly", target_os = "openbsd", target_os = "linux"))]
+    #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "dragonfly", target_os = "openbsd", target_os = "netbsd", target_os = "linux"))]
     mod non_android {
         use super::consts::*;
         use libc::c_int;
@@ -36,7 +36,7 @@ mod ffi {
         }
     }
 
-    #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "dragonfly", target_os = "openbsd", target_os = "linux"))]
+    #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "dragonfly", target_os = "openbsd", target_os = "netbsd", target_os = "linux"))]
     pub use self::non_android::*;
 
     // On Android before 5.0, Bionic directly inline these to ioctl() calls.
@@ -95,23 +95,23 @@ mod ffi {
     pub use self::android::*;
 
 
-    #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "dragonfly", target_os = "openbsd"))]
+    #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "dragonfly", target_os = "openbsd", target_os = "netbsd"))]
     pub mod consts {
-        #[cfg(not(target_os = "dragonfly"))]
+        #[cfg(not(any(target_os = "dragonfly", target_os = "netbsd")))]
         use libc::{c_int, c_ulong, c_uchar};
-        #[cfg(target_os = "dragonfly")]
+        #[cfg(any(target_os = "dragonfly", target_os = "netbsd"))]
         use libc::{c_int, c_uint, c_uchar};
 
-        #[cfg(not(target_os = "dragonfly"))]
+        #[cfg(not(any(target_os = "dragonfly", target_os = "netbsd")))]
         pub type tcflag_t = c_ulong;
-        #[cfg(target_os = "dragonfly")]
+        #[cfg(any(target_os = "dragonfly", target_os = "netbsd"))]
         pub type tcflag_t = c_uint;
 
         pub type cc_t = c_uchar;
 
-        #[cfg(not(target_os = "dragonfly"))]
+        #[cfg(not(any(target_os = "dragonfly", target_os = "netbsd")))]
         pub type speed_t = c_ulong;
-        #[cfg(target_os = "dragonfly")]
+        #[cfg(any(target_os = "dragonfly", target_os = "netbsd"))]
         pub type speed_t = c_uint;
 
         #[repr(C)]

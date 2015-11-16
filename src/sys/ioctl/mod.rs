@@ -119,6 +119,11 @@ mod platform;
 #[macro_use]
 mod platform;
 
+#[cfg(target_os = "netbsd")]
+#[path = "platform/netbsd.rs"]
+#[macro_use]
+mod platform;
+
 #[cfg(target_os = "openbsd")]
 #[path = "platform/openbsd.rs"]
 #[macro_use]

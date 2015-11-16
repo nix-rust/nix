@@ -92,7 +92,7 @@ mod os {
     }
 }
 
-#[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "dragonfly", target_os = "ios", target_os = "openbsd"))]
+#[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "dragonfly", target_os = "ios", target_os = "openbsd", target_os = "netbsd"))]
 mod os {
     pub fn socket_atomic_cloexec() -> bool {
         false

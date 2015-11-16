@@ -50,7 +50,7 @@ mod ffi {
         pub const F_SEAL_WRITE:    c_int = 8;
     }
 
-    #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "dragonfly", target_os = "ios", target_os = "openbsd"))]
+    #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "dragonfly", target_os = "ios", target_os = "openbsd", target_os = "netbsd"))]
     mod os {
         use libc::{c_int, c_short, off_t, pid_t};
 
@@ -68,17 +68,32 @@ mod ffi {
         }
 
         pub const F_DUPFD:         c_int = 0;
-        #[cfg(not(target_os = "dragonfly"))]
+        #[cfg(not(any(target_os = "dragonfly", target_os = "netbsd")))]
         pub const F_DUPFD_CLOEXEC: c_int = 67;
         #[cfg(target_os = "dragonfly")]
         pub const F_DUPFD_CLOEXEC: c_int = 17;
+        #[cfg(target_os = "netbsd")]
+        pub const F_DUPFD_CLOEXEC: c_int = 12;
         pub const F_GETFD:         c_int = 1;
         pub const F_SETFD:         c_int = 2;
         pub const F_GETFL:         c_int = 3;
         pub const F_SETFL:         c_int = 4;
+        #[cfg(target_os = "netbsd")]
+        pub const F_GETOWN:        c_int = 5;
+        #[cfg(target_os = "netbsd")]
+        pub const F_SETOWN:        c_int = 6;
+        pub const F_GETLK:         c_int = 7;
         pub const F_SETLK:         c_int = 8;
         pub const F_SETLKW:        c_int = 9;
-        pub const F_GETLK:         c_int = 7;
+
+        #[cfg(target_os = "netbsd")]
+        pub const F_CLOSEM:        c_int = 10;
+        #[cfg(target_os = "netbsd")]
+        pub const F_MAXFD:         c_int = 11;
+        #[cfg(target_os = "netbsd")]
+        pub const F_GETNOSIGPIPE:  c_int = 13;
+        #[cfg(target_os = "netbsd")]
+        pub const F_SETNOSIGPIPE:  c_int = 14;
     }
 }
 
@@ -286,6 +301,47 @@ mod consts {
             const O_DIRECT    = 0x0010000,
             const O_EXEC      = 0x0040000,
             const O_TTY_INIT  = 0x0080000
+        }
+    );
+
+    bitflags!(
+        flags FdFlag: c_int {
+            const FD_CLOEXEC = 1
+        }
+    );
+}
+
+#[cfg(target_os = "netbsd")]
+mod consts {
+    use libc::c_int;
+
+    bitflags!(
+        flags OFlag: c_int {
+            const O_ACCMODE   = 0x0000003,
+            const O_RDONLY    = 0x0000000,
+            const O_WRONLY    = 0x0000001,
+            const O_RDWR      = 0x0000002,
+            const O_NONBLOCK  = 0x0000004,
+            const O_APPEND    = 0x0000008,
+            const O_SHLOCK    = 0x0000010,
+            const O_EXLOCK    = 0x0000020,
+            const O_ASYNC     = 0x0000040,
+            const O_SYNC      = 0x0000080,
+            const O_NOFOLLOW  = 0x0000100,
+            const O_CREAT     = 0x0000200,
+            const O_TRUNC     = 0x0000400,
+            const O_EXCL      = 0x0000800,
+            const O_NOCTTY    = 0x0008000,
+            const O_DSYNC     = 0x0010000,
+            const O_RSYNC     = 0x0020000,
+            const O_ALT_IO    = 0x0040000,
+            const O_DIRECT    = 0x0080000,
+            const O_NOSIGPIPE = 0x0100000,
+            const O_DIRECTORY = 0x0200000,
+            const O_CLOEXEC   = 0x0400000,
+            const O_SEARCH    = 0x0800000,
+            const O_FSYNC     = O_SYNC.bits,
+            const O_NDELAY    = O_NONBLOCK.bits,
         }
     );
 

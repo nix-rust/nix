@@ -112,7 +112,8 @@ mod status {
 
 #[cfg(any(target_os = "freebsd",
           target_os = "openbsd",
-          target_os = "dragonfly"))]
+          target_os = "dragonfly",
+          target_os = "netbsd"))]
 mod status {
     use sys::signal;
 

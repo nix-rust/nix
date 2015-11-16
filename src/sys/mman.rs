@@ -113,7 +113,7 @@ mod consts {
     pub const MAP_FAILED: isize               = -1;
 }
 
-#[cfg(any(target_os = "freebsd", target_os = "dragonfly", target_os = "openbsd"))]
+#[cfg(any(target_os = "freebsd", target_os = "dragonfly", target_os = "openbsd", target_os = "netbsd"))]
 mod consts {
     use libc::c_int;
 
@@ -127,6 +127,8 @@ mod consts {
     pub const MAP_NORESERVE: MmapFlag       = 0x00040;
     pub const MAP_HASSEMAPHORE: MmapFlag    = 0x00200;
     pub const MAP_STACK: MmapFlag           = 0x00400;
+    #[cfg(target_os = "netbsd")]
+    pub const MAP_WIRED: MmapFlag           = 0x00800;
     pub const MAP_NOSYNC: MmapFlag          = 0x00800;
     pub const MAP_FILE: MmapFlag            = 0x00000;
     pub const MAP_ANON: MmapFlag            = 0x01000;
