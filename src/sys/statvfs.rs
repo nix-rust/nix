@@ -19,38 +19,66 @@ pub mod vfs {
 	use super::{statvfs, fstatvfs};
 
 	bitflags!(
+		/// Mount Flags
 		#[repr(C)]
 		#[derive(Default)]
 		flags FsFlags: c_ulong {
+			/// Read Only
 			const RDONLY = 1,
+			/// Do not allow the set-uid bits to have an effect
 			const NOSUID = 2,
+			/// Do not interpret character or block-special devices
 			const NODEV  = 4,
+			/// Do not allow execution of binaries on the filesystem
 			const NOEXEC = 8,
+			/// All IO should be done synchronously
 			const SYNCHRONOUS  = 16,
+			/// Allow mandatory locks on the filesystem
 			const MANDLOCK = 64,
 			const WRITE = 128,
 			const APPEND = 256,
 			const IMMUTABLE = 512,
+			/// Do not update access times on files
 			const NOATIME = 1024,
+			/// Do not update access times on files
 			const NODIRATIME = 2048,
+			/// Update access time relative to modify/change time
 			const RELATIME = 4096,
 		}
 	);
 
+	/// The posix statvfs struct
+	///
+	/// http://linux.die.net/man/2/statvfs
 	#[repr(C)]
 	#[derive(Debug,Default,Copy,Clone)]
 	pub struct Statvfs {
+		/// Filesystem block size. This is the value that will lead to
+		/// most efficient use of the filesystem
 		pub f_bsize: c_ulong,
+		/// Fragment Size -- actual minimum unit of allocation on this
+		/// filesystem
 		pub f_frsize: c_ulong,
+		/// Total number of blocks on the filesystem
 		pub f_blocks: u64,
+		/// Number of unused blocks on the filesystem, including those
+		/// reserved for root
 		pub f_bfree: u64,
+		/// Number of blocks available to non-root users
 		pub f_bavail: u64,
+		/// Total number of inodes available on the filesystem
 		pub f_files: u64,
+		/// Number of inodes available on the filesystem
 		pub f_ffree: u64,
+		/// Number of inodes available to non-root users
 		pub f_favail: u64,
+		/// File System ID
 		pub f_fsid: c_ulong,
+		/// Mount Flags
 		pub f_flag: FsFlags,
+		/// Maximum filename length
 		pub f_namemax: c_ulong,
+		/// Reserved extra space, OS-dependent
 		f_spare: [c_int; 6],
 	}
 
@@ -92,6 +120,7 @@ mod ffi {
 	}
 }
 
+/// Fill an existing `Statvfs` object with information about the `path`
 pub fn statvfs<P: ?Sized + NixPath>(path: &P, stat: &mut vfs::Statvfs) -> Result<()> {
 	unsafe {
 		Errno::clear();
@@ -102,6 +131,7 @@ pub fn statvfs<P: ?Sized + NixPath>(path: &P, stat: &mut vfs::Statvfs) -> Result
 	}
 }
 
+/// Fill an existing `Statvfs` object with information about `fd`
 pub fn fstatvfs<T: AsRawFd>(fd: &T, stat: &mut vfs::Statvfs) -> Result<()> {
 	unsafe {
 		Errno::clear();
