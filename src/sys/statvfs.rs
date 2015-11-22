@@ -1,9 +1,22 @@
+//! FFI for statvfs functions
+//!
+//! See the `vfs::Statvfs` struct for some rusty wrappers
+
 use {Result, NixPath, from_ffi};
 use errno::Errno;
 use std::os::unix::io::AsRawFd;
 
 pub mod vfs {
+	//! Structs related to the `statvfs` and `fstatvfs` functions
+	//!
+	//! The `Statvfs` struct has some wrappers methods around the `statvfs` and
+	//! `fstatvfs` calls.
+
 	use libc::{c_ulong,c_int};
+	use std::os::unix::io::AsRawFd;
+	use {Result, NixPath};
+
+	use super::{statvfs, fstatvfs};
 
 	bitflags!(
 		#[repr(C)]
@@ -39,6 +52,33 @@ pub mod vfs {
 		pub f_flag: FsFlags,
 		pub f_namemax: c_ulong,
 		f_spare: [c_int; 6],
+	}
+
+	impl Statvfs {
+		/// Create a new `Statvfs` object and fill it with information about
+		/// the mount that contains `path`
+		pub fn for_path<P: ?Sized + NixPath>(path: &P) -> Result<Statvfs> {
+			let mut stat = Statvfs::default();
+			let res = statvfs(path, &mut stat);
+			res.map(|_| stat)
+		}
+
+		/// Replace information in this struct with information about `path`
+		pub fn update_with_path<P: ?Sized + NixPath>(&mut self, path: &P) -> Result<()> {
+			statvfs(path, self)
+		}
+
+		/// Create a new `Statvfs` object and fill it with information from fd
+		pub fn for_fd<T: AsRawFd>(fd: &T) -> Result<Statvfs> {
+			let mut stat = Statvfs::default();
+			let res = fstatvfs(fd, &mut stat);
+			res.map(|_| stat)
+		}
+
+		/// Replace information in this struct with information about `fd`
+		pub fn update_with_fd<T: AsRawFd>(&mut self, fd: &T) -> Result<()> {
+			fstatvfs(fd, self)
+		}
 	}
 }
 
