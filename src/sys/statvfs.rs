@@ -25,7 +25,7 @@ pub mod vfs {
 	);
 
 	#[repr(C)]
-	#[derive(Debug,Copy,Clone)]
+	#[derive(Debug,Default,Copy,Clone)]
 	pub struct Statvfs {
 		pub f_bsize: c_ulong,
 		pub f_frsize: c_ulong,
