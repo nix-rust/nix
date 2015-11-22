@@ -2,7 +2,8 @@
 #[cfg(any(target_os = "linux", target_os = "android"))]
 pub mod epoll;
 
-#[cfg(any(target_os = "macos", target_os = "ios", target_os = "freebsd", target_os = "dragonfly", target_os = "openbsd"))]
+#[cfg(any(target_os = "macos", target_os = "ios", target_os = "freebsd",
+    target_os = "dragonfly", target_os = "openbsd", target_os = "netbsd"))]
 pub mod event;
 
 // TODO: switch from feature flags to conditional builds

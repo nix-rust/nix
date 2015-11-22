@@ -125,6 +125,10 @@ sockopt_impl!(SetOnly, IpDropMembership, consts::IPPROTO_IP, consts::IP_DROP_MEM
 sockopt_impl!(SetOnly, Ipv6AddMembership, consts::IPPROTO_IPV6, consts::IPV6_ADD_MEMBERSHIP, super::ipv6_mreq);
 #[cfg(not(target_os = "netbsd"))]
 sockopt_impl!(SetOnly, Ipv6DropMembership, consts::IPPROTO_IPV6, consts::IPV6_DROP_MEMBERSHIP, super::ipv6_mreq);
+#[cfg(target_os = "netbsd")]
+sockopt_impl!(SetOnly, Ipv6AddMembership, consts::IPPROTO_IPV6, consts::IPV6_JOIN_GROUP, super::ipv6_mreq);
+#[cfg(target_os = "netbsd")]
+sockopt_impl!(SetOnly, Ipv6DropMembership, consts::IPPROTO_IPV6, consts::IPV6_LEAVE_GROUP, super::ipv6_mreq);
 sockopt_impl!(Both, IpMulticastTtl, consts::IPPROTO_IP, consts::IP_MULTICAST_TTL, u8);
 sockopt_impl!(Both, IpMulticastLoop, consts::IPPROTO_IP, consts::IP_MULTICAST_LOOP, bool);
 sockopt_impl!(Both, ReceiveTimeout, consts::SOL_SOCKET, consts::SO_RCVTIMEO, TimeVal);
