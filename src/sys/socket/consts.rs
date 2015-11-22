@@ -208,7 +208,13 @@ mod os {
     pub const IPV6_ADD_MEMBERSHIP: c_int = libc::IPV6_ADD_MEMBERSHIP;
     #[cfg(not(target_os = "netbsd"))]
     pub const IPV6_DROP_MEMBERSHIP: c_int = libc::IPV6_DROP_MEMBERSHIP;
-    
+
+    #[cfg(target_os = "netbsd")]
+    pub const IPV6_JOIN_GROUP: c_int = 12;
+
+    #[cfg(target_os = "netbsd")]
+    pub const IPV6_LEAVE_GROUP: c_int = 13;
+
     pub type InAddrT = u32;
 
     // Declarations of special addresses
