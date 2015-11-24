@@ -138,3 +138,22 @@ pub fn fstatvfs<T: AsRawFd>(fd: &T, stat: &mut vfs::Statvfs) -> Result<()> {
 		from_ffi(ffi::fstatvfs(fd.as_raw_fd(), stat))
 	}
 }
+
+#[cfg(test)]
+mod test {
+    use std::fs::File;
+    use sys::statvfs::*;
+
+    #[test]
+    fn statvfs_call() {
+        let mut stat = vfs::Statvfs::default();
+        statvfs("/".as_bytes(), &mut stat).unwrap()
+    }
+
+    #[test]
+    fn fstatvfs_call() {
+        let mut stat = vfs::Statvfs::default();
+        let root = File::open("/").unwrap();
+        fstatvfs(&root, &mut stat).unwrap()
+    }
+}

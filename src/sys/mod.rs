@@ -67,7 +67,8 @@ pub mod quota;
 pub mod statfs;
 
 
-#[cfg(all(target_os = "linux",
+#[cfg(all(any(target_os = "linux",
+              target_os = "macos"),
           any(target_arch = "x86",
               target_arch = "x86_64",
               target_arch = "arm")),
