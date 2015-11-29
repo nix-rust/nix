@@ -51,7 +51,7 @@ pub mod vfs {
 	///
 	/// http://linux.die.net/man/2/statvfs
 	#[repr(C)]
-	#[derive(Debug,Default,Copy,Clone)]
+	#[derive(Debug,Copy,Clone)]
 	pub struct Statvfs {
 		/// Filesystem block size. This is the value that will lead to
 		/// most efficient use of the filesystem
@@ -106,6 +106,26 @@ pub mod vfs {
 		/// Replace information in this struct with information about `fd`
 		pub fn update_with_fd<T: AsRawFd>(&mut self, fd: &T) -> Result<()> {
 			fstatvfs(fd, self)
+		}
+	}
+
+	impl Default for Statvfs {
+		/// Create a statvfs object initialized to all zeros
+		fn default() -> Self {
+			Statvfs {
+				f_bsize: 0,
+				f_frsize: 0,
+				f_blocks: 0,
+				f_bfree: 0,
+				f_bavail: 0,
+				f_files: 0,
+				f_ffree: 0,
+				f_favail: 0,
+				f_fsid: 0,
+				f_flag: FsFlags::default(),
+				f_namemax: 0,
+				f_spare: [0, 0, 0, 0, 0, 0],
+			}
 		}
 	}
 }
