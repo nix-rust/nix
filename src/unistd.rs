@@ -14,7 +14,7 @@ pub use self::linux::*;
 
 mod ffi {
     use libc::{c_char, c_int, size_t};
-    pub use libc::{close, read, write, pipe, ftruncate, unlink};
+    pub use libc::{close, read, write, pipe, ftruncate, unlink, setpgid};
     pub use libc::funcs::posix88::unistd::{fork, getpid, getppid};
 
     extern {
@@ -111,6 +111,14 @@ pub fn getpid() -> pid_t {
 #[inline]
 pub fn getppid() -> pid_t {
     unsafe { ffi::getppid() } // no error handling, according to man page: "These functions are always successful."
+}
+#[inline]
+pub fn setpgid(pid: pid_t, pgid: pid_t) -> Result<()> {
+    let res = unsafe { ffi::setpgid(pid, pgid) };
+    if res < 0 {
+        return Err(Error::Sys(Errno::last()));
+    }
+    Ok(())
 }
 
 #[inline]
