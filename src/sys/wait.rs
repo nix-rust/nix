@@ -12,11 +12,32 @@ mod ffi {
     }
 }
 
+#[cfg(not(any(target_os = "linux",
+              target_os = "android")))]
 bitflags!(
     flags WaitPidFlag: c_int {
-        const WNOHANG = 0x00000001,
+        const WNOHANG     = 0x00000001,
     }
 );
+
+#[cfg(any(target_os = "linux",
+          target_os = "android"))]
+bitflags!(
+    flags WaitPidFlag: c_int {
+        const WNOHANG     = 0x00000001,
+        const WUNTRACED   = 0x00000002,
+        const WEXITED     = 0x00000004,
+        const WCONTINUED  = 0x00000008,
+        const WNOWAIT     = 0x01000000, // Don't reap, just poll status.
+        const __WNOTHREAD = 0x20000000, // Don't wait on children of other threads in this group
+        const __WALL      = 0x40000000, // Wait on all children, regardless of type
+        // const __WCLONE    = 0x80000000,
+    }
+);
+
+#[cfg(any(target_os = "linux",
+          target_os = "android"))]
+const WSTOPPED: WaitPidFlag = WUNTRACED;
 
 #[derive(Eq, PartialEq, Clone, Copy, Debug)]
 pub enum WaitStatus {
