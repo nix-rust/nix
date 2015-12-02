@@ -43,7 +43,7 @@ pub mod unistd;
  *
  */
 
-use libc::{c_char, PATH_MAX};
+use libc::c_char;
 use std::{ptr, result};
 use std::ffi::CStr;
 use std::path::{Path, PathBuf};
@@ -51,6 +51,14 @@ use std::os::unix::ffi::OsStrExt;
 use std::io;
 use std::fmt;
 use std::error;
+
+#[cfg(any(target_os = "openbsd", target_os = "netbsd", target_os = "bitrig", target_os = "macos", target_os = "ios"))]
+use libc::PATH_MAX;
+#[cfg(not(any(target_os = "openbsd", target_os = "netbsd", target_os = "bitrig", target_os = "macos", target_os = "ios")))]
+const PATH_MAX: c_int = 1024;
+
+
+
 
 pub type Result<T> = result::Result<T, Error>;
 
