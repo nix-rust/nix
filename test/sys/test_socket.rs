@@ -4,6 +4,7 @@ use std::path::Path;
 use std::str::FromStr;
 use std::os::unix::io::{AsRawFd, RawFd};
 use ports::localhost;
+use libc::c_char;
 
 #[test]
 pub fn test_inetv4_addr_to_sock_addr() {
@@ -32,7 +33,7 @@ pub fn test_path_to_sock_addr() {
     let actual = Path::new("/foo/bar");
     let addr = UnixAddr::new(actual).unwrap();
 
-    let expect: &'static [i8] = unsafe { mem::transmute(&b"/foo/bar"[..]) };
+    let expect: &'static [c_char] = unsafe { mem::transmute(&b"/foo/bar"[..]) };
     assert_eq!(&addr.0.sun_path[..8], expect);
 
     assert_eq!(addr.path(), Some(actual));
