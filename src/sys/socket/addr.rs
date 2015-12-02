@@ -278,20 +278,31 @@ impl fmt::Display for Ipv4Addr {
 #[derive(Clone, Copy)]
 pub struct Ipv6Addr(pub libc::in6_addr);
 
+macro_rules! to_u8_array {
+    ($($num:ident),*) => {
+        if cfg!(target_endian = "big") {
+            [ $(($num>>8) as u8, ($num&0xff) as u8,)* ]
+        } else {
+            [ $(($num&0xff) as u8, ($num>>8) as u8,)* ]
+        }
+    }
+}
+
+macro_rules! to_u16_array {
+    ($slf:ident, $($first:expr, $second:expr),*) => {
+        if cfg!(target_endian = "big") {
+            [$( (($slf.0.s6_addr[$first] as u16) << 8) + $slf.0.s6_addr[$second] as u16,)*]
+        } else {
+            [$( (($slf.0.s6_addr[$second] as u16) << 8) + $slf.0.s6_addr[$first] as u16,)*]
+        }
+    }
+}
+
 impl Ipv6Addr {
     pub fn new(a: u16, b: u16, c: u16, d: u16, e: u16, f: u16, g: u16, h: u16) -> Ipv6Addr {
-        Ipv6Addr(libc::in6_addr {
-            s6_addr: [
-                a.to_be(),
-                b.to_be(),
-                c.to_be(),
-                d.to_be(),
-                e.to_be(),
-                f.to_be(),
-                g.to_be(),
-                h.to_be(),
-            ]
-        })
+        let mut in6_addr_var: libc::in6_addr = unsafe{mem::uninitialized()};
+        in6_addr_var.s6_addr = to_u8_array!(a,b,c,d,e,f,g,h);
+        Ipv6Addr(in6_addr_var)
     }
 
     pub fn from_std(std: &net::Ipv6Addr) -> Ipv6Addr {
@@ -301,14 +312,7 @@ impl Ipv6Addr {
 
     /// Return the eight 16-bit segments that make up this address
     pub fn segments(&self) -> [u16; 8] {
-        [u16::from_be(self.0.s6_addr[0]),
-         u16::from_be(self.0.s6_addr[1]),
-         u16::from_be(self.0.s6_addr[2]),
-         u16::from_be(self.0.s6_addr[3]),
-         u16::from_be(self.0.s6_addr[4]),
-         u16::from_be(self.0.s6_addr[5]),
-         u16::from_be(self.0.s6_addr[6]),
-         u16::from_be(self.0.s6_addr[7])]
+        to_u16_array!(self, 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15)
     }
 
     pub fn to_std(&self) -> net::Ipv6Addr {

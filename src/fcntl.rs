@@ -11,8 +11,8 @@ pub use self::ffi::flock;
 mod ffi {
     pub use libc::{open, fcntl};
     pub use self::os::*;
-    pub use libc::funcs::bsd44::flock as libc_flock;
-    pub use libc::consts::os::bsd44::{LOCK_SH, LOCK_EX, LOCK_NB, LOCK_UN};
+    pub use libc::flock as libc_flock;
+    pub use libc::{LOCK_SH, LOCK_EX, LOCK_NB, LOCK_UN};
 
     #[cfg(any(target_os = "linux", target_os = "android"))]
     mod os {

@@ -14,8 +14,7 @@ pub use self::linux::*;
 
 mod ffi {
     use libc::{c_char, c_int, size_t};
-    pub use libc::{close, read, write, pipe, ftruncate, unlink, setpgid};
-    pub use libc::funcs::posix88::unistd::{fork, getegid, geteuid, getgid, getpid, getppid, getuid};
+    pub use libc::{fork, close, read, write, pipe, ftruncate, unlink, setpgid, getegid, geteuid, getgid, getpid, getppid, getuid};
 
     extern {
         // duplicate a file descriptor

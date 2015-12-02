@@ -2,7 +2,7 @@ use nix::unistd::*;
 use nix::unistd::Fork::*;
 use nix::sys::signal::*;
 use nix::sys::wait::*;
-use libc::funcs::c95::stdlib::exit;
+use libc::exit;
 
 #[test]
 fn test_wait_signal() {
