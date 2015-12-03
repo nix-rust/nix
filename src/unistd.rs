@@ -16,6 +16,7 @@ mod ffi {
     use libc::{c_char, c_int, size_t};
     pub use libc::{close, read, write, pipe, ftruncate, unlink, setpgid, fork, getpid, getppid};
 
+    #[allow(improper_ctypes)]
     extern {
         // duplicate a file descriptor
         // doc: http://man7.org/linux/man-pages/man2/dup.2.html
