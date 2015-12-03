@@ -367,7 +367,7 @@ pub fn recvmsg<'a, T>(fd: RawFd, iov: &[IoVec<&mut [u8]>], cmsg_buffer: Option<&
 /// Create an endpoint for communication
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/socket.2.html)
-pub fn socket(domain: AddressFamily, ty: SockType, flags: SockFlag) -> Result<RawFd> {
+pub fn socket(domain: AddressFamily, ty: SockType, flags: SockFlag, protocol: c_int) -> Result<RawFd> {
     let mut ty = ty as c_int;
     let feat_atomic = features::socket_atomic_cloexec();
 
@@ -376,7 +376,7 @@ pub fn socket(domain: AddressFamily, ty: SockType, flags: SockFlag) -> Result<Ra
     }
 
     // TODO: Check the kernel version
-    let res = unsafe { ffi::socket(domain as c_int, ty, 0) };
+    let res = unsafe { ffi::socket(domain as c_int, ty, protocol) };
 
     if res < 0 {
         return Err(Error::Sys(Errno::last()));
