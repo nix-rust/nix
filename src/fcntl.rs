@@ -1,6 +1,6 @@
 use {Error, Result, NixPath};
 use errno::Errno;
-use libc::{mode_t, c_int};
+use libc::{c_int, c_uint};
 use sys::stat::Mode;
 use std::os::unix::io::RawFd;
 
@@ -99,7 +99,7 @@ mod ffi {
 
 pub fn open<P: ?Sized + NixPath>(path: &P, oflag: OFlag, mode: Mode) -> Result<RawFd> {
     let fd = try!(path.with_nix_path(|cstr| {
-        unsafe { ffi::open(cstr.as_ptr(), oflag.bits(), mode.bits() as mode_t) }
+        unsafe { ffi::open(cstr.as_ptr(), oflag.bits(), mode.bits() as c_uint) }
     }));
 
     if fd < 0 {
