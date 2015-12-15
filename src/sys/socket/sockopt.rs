@@ -137,6 +137,8 @@ sockopt_impl!(Both, Broadcast, consts::SOL_SOCKET, consts::SO_BROADCAST, bool);
 sockopt_impl!(Both, OobInline, consts::SOL_SOCKET, consts::SO_OOBINLINE, bool);
 sockopt_impl!(GetOnly, SocketError, consts::SOL_SOCKET, consts::SO_ERROR, i32);
 sockopt_impl!(Both, KeepAlive, consts::SOL_SOCKET, consts::SO_KEEPALIVE, bool);
+#[cfg(target_os = "linux")]
+sockopt_impl!(GetOnly, PeerCredentials, consts::SOL_SOCKET, consts::SO_PEERCRED, super::ucred);
 #[cfg(any(target_os = "macos",
           target_os = "ios"))]
 sockopt_impl!(Both, TcpKeepAlive, consts::IPPROTO_TCP, consts::TCP_KEEPALIVE, u32);
@@ -298,5 +300,21 @@ impl<'a> Set<'a, u8> for SetU8 {
 
     unsafe fn ffi_len(&self) -> socklen_t {
         mem::size_of::<c_int>() as socklen_t
+    }
+}
+
+
+#[cfg(test)]
+mod test {
+    use super::super::*;
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn can_get_peercred_on_unix_socket() {
+        let (a, b) = socketpair(AddressFamily::Unix, SockType::Stream, 0, SockFlag::empty()).unwrap();
+        let a_cred = getsockopt(a, super::PeerCredentials).unwrap();
+        let b_cred = getsockopt(b, super::PeerCredentials).unwrap();
+        assert_eq!(a_cred, b_cred);
+        assert!(a_cred.pid != 0);
     }
 }
