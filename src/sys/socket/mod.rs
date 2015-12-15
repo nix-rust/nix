@@ -6,7 +6,7 @@ use errno::Errno;
 use features;
 use fcntl::{fcntl, FD_CLOEXEC, O_NONBLOCK};
 use fcntl::FcntlArg::{F_SETFD, F_SETFL};
-use libc::{c_void, c_int, socklen_t, size_t};
+use libc::{c_void, c_int, socklen_t, size_t, pid_t, uid_t, gid_t};
 use std::{mem, ptr, slice};
 use std::os::unix::io::RawFd;
 use sys::uio::IoVec;
@@ -579,6 +579,14 @@ pub fn send(fd: RawFd, buf: &[u8], flags: SockMessageFlags) -> Result<usize> {
 pub struct linger {
     pub l_onoff: c_int,
     pub l_linger: c_int
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub struct ucred {
+    pid: pid_t,
+    uid: uid_t,
+    gid: gid_t,
 }
 
 /*
