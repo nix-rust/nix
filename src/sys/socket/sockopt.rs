@@ -306,11 +306,11 @@ impl<'a> Set<'a, u8> for SetU8 {
 
 #[cfg(test)]
 mod test {
-    use super::super::*;
-
     #[cfg(target_os = "linux")]
     #[test]
     fn can_get_peercred_on_unix_socket() {
+        use super::super::*;
+
         let (a, b) = socketpair(AddressFamily::Unix, SockType::Stream, 0, SockFlag::empty()).unwrap();
         let a_cred = getsockopt(a, super::PeerCredentials).unwrap();
         let b_cred = getsockopt(b, super::PeerCredentials).unwrap();
