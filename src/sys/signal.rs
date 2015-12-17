@@ -41,6 +41,8 @@ pub use self::signal::{
     SIGWINCH,
     SIGUSR1,
     SIGUSR2,
+
+    NSIG,
 };
 
 pub use self::signal::SockFlag;
@@ -101,6 +103,8 @@ pub mod signal {
     pub const SIGPWR:       libc::c_int = 30;
     pub const SIGSYS:       libc::c_int = 31;
     pub const SIGUNUSED:    libc::c_int = 31;
+
+    pub const NSIG:         libc::c_int = 32;
 
     // This definition is not as accurate as it could be, {pid, uid, status} is
     // actually a giant union. Currently we're only interested in these fields,
@@ -187,6 +191,8 @@ pub mod signal {
     pub const SIGPROF:      libc::c_int = 29;
     pub const SIGXCPU:      libc::c_int = 30;
     pub const SIGFSZ:       libc::c_int = 31;
+
+    pub const NSIG:         libc::c_int = 32;
 
     // This definition is not as accurate as it could be, {pid, uid, status} is
     // actually a giant union. Currently we're only interested in these fields,
