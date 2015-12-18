@@ -204,9 +204,9 @@ mod os {
     pub const IP_ADD_MEMBERSHIP: c_int = 12;
     pub const IP_DROP_MEMBERSHIP: c_int = 13;
 
-    #[cfg(not(any(target_os = "macos", target_os = "ios", target_os = "netbsd", target_os = "dragonfly")))]
+    #[cfg(not(any(target_os = "macos", target_os = "ios", target_os = "netbsd", target_os = "dragonfly", target_os = "freebsd")))]
     pub const IPV6_ADD_MEMBERSHIP: c_int = libc::IPV6_ADD_MEMBERSHIP;
-    #[cfg(not(any(target_os = "macos", target_os = "ios", target_os = "netbsd", target_os = "dragonfly")))]
+    #[cfg(not(any(target_os = "macos", target_os = "ios", target_os = "netbsd", target_os = "dragonfly", target_os = "freebsd")))]
     pub const IPV6_DROP_MEMBERSHIP: c_int = libc::IPV6_DROP_MEMBERSHIP;
 
     #[cfg(target_os = "netbsd")]
