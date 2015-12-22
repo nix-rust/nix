@@ -120,7 +120,7 @@ mod ffi {
     use libc::{c_void, c_int, pid_t, size_t};
     use super::CpuSet;
 
-    type CloneCb = extern "C" fn (data: *const super::CloneCb) -> c_int;
+    pub type CloneCb = extern "C" fn (data: *const super::CloneCb) -> c_int;
 
     // We cannot give a proper #[repr(C)] to super::CloneCb
     #[allow(improper_ctypes)]
