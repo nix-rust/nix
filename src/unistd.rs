@@ -149,8 +149,6 @@ pub fn dup3(oldfd: RawFd, newfd: RawFd, flags: OFlag) -> Result<RawFd> {
 
 #[inline]
 fn dup3_polyfill(oldfd: RawFd, newfd: RawFd, flags: OFlag) -> Result<RawFd> {
-    use errno::EINVAL;
-
     if oldfd == newfd {
         return Err(Error::Sys(Errno::EINVAL));
     }

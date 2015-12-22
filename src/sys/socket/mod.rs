@@ -91,37 +91,8 @@ unsafe fn copy_bytes<'a, 'b, T: ?Sized>(src: &T, dst: &'a mut &'b mut [u8]) {
     mem::swap(dst, &mut remainder);
 }
 
-// Private because we don't expose any external functions that operate
-// directly on this type; we just use it internally at FFI boundaries.
-// Note that in some cases we store pointers in *const fields that the
-// kernel will proceed to mutate, so users should be careful about the
-// actual mutability of data pointed to by this structure.
-#[repr(C)]
-struct msghdr<'a> {
-    msg_name: *const c_void,
-    msg_namelen: socklen_t,
-    msg_iov: *const IoVec<&'a [u8]>,
-    msg_iovlen: size_t,
-    msg_control: *const c_void,
-    msg_controllen: size_t,
-    msg_flags: c_int,
-}
 
-#[cfg(target_os = "linux")]
-type type_of_cmsg_len = size_t;
-#[cfg(not(target_os = "linux"))]
-type type_of_cmsg_len = socklen_t;
-
-// As above, private because we don't expose any external functions that
-// operate directly on this type, or any external types with a public
-// cmsghdr member.
-#[repr(C)]
-struct cmsghdr {
-    pub cmsg_len: type_of_cmsg_len,
-    pub cmsg_level: c_int,
-    pub cmsg_type: c_int,
-    cmsg_data: [type_of_cmsg_len; 0]
-}
+use self::ffi::{cmsghdr, msghdr, type_of_cmsg_len};
 
 /// A structure used to make room in a cmsghdr passed to recvmsg. The
 /// size and alignment match that of a cmsghdr followed by a T, but the
