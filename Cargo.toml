@@ -20,8 +20,8 @@ preadv_pwritev = []
 signalfd = []
 
 [dependencies]
-libc     = "0.1.12"
-bitflags = "0.3.2"
+libc     = "0.2.2"
+bitflags = "0.3.3"
 
 [dev-dependencies]
 rand = "0.3.8"

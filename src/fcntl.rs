@@ -1,6 +1,6 @@
 use {Error, Result, NixPath};
 use errno::Errno;
-use libc::{mode_t, c_int};
+use libc::{c_int, c_uint};
 use sys::stat::Mode;
 use std::os::unix::io::RawFd;
 
@@ -11,8 +11,8 @@ pub use self::ffi::flock;
 mod ffi {
     pub use libc::{open, fcntl};
     pub use self::os::*;
-    pub use libc::funcs::bsd44::flock as libc_flock;
-    pub use libc::consts::os::bsd44::{LOCK_SH, LOCK_EX, LOCK_NB, LOCK_UN};
+    pub use libc::flock as libc_flock;
+    pub use libc::{LOCK_SH, LOCK_EX, LOCK_NB, LOCK_UN};
 
     #[cfg(any(target_os = "linux", target_os = "android"))]
     mod os {
@@ -99,7 +99,7 @@ mod ffi {
 
 pub fn open<P: ?Sized + NixPath>(path: &P, oflag: OFlag, mode: Mode) -> Result<RawFd> {
     let fd = try!(path.with_nix_path(|cstr| {
-        unsafe { ffi::open(cstr.as_ptr(), oflag.bits(), mode.bits() as mode_t) }
+        unsafe { ffi::open(cstr.as_ptr(), oflag.bits(), mode.bits() as c_uint) }
     }));
 
     if fd < 0 {
