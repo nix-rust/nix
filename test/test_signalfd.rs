@@ -1,7 +1,5 @@
 extern crate nix;
 
-use nix::unistd;
-
 #[cfg(feature = "signalfd")]
 
 use nix::sys::signalfd::*;

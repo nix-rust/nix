@@ -1,4 +1,4 @@
-use std::fs;
+use std::os::unix::fs::symlink;
 use std::str;
 
 use libc::consts::os::posix88;
@@ -11,6 +11,16 @@ use nix::fcntl::{O_CREAT, O_RDONLY};
 use nix::sys::stat::{FileStat, S_IWUSR, S_IRUSR};
 use nix::Result;
 
+#[allow(unused_comparisons)]
+// uid and gid are signed on Windows, but not on other platforms. This function
+// allows warning free compiles on all platforms, and can be removed when
+// expression-level #[allow] is available.
+fn valid_uid_gid(stat: FileStat) -> bool {
+    // uid could be 0 for the `root` user. This quite possible when
+    // the tests are being run on a rooted Android device.
+    stat.st_uid >= 0 && stat.st_gid >= 0
+}
+
 fn assert_stat_results(stat_result: Result<FileStat>) {
     match stat_result {
         Ok(stats) => {
@@ -18,10 +28,7 @@ fn assert_stat_results(stat_result: Result<FileStat>) {
             assert!(stats.st_ino > 0);      // inode is positive integer, exact number machine dependent
             assert!(stats.st_mode > 0);     // must be positive integer
             assert!(stats.st_nlink == 1);   // there links created, must be 1
-            // uid could be 0 for the `root` user. This quite possible when
-            // the tests are being run on a rooted Android device.
-            assert!(stats.st_uid >= 0);      // must be positive integer
-            assert!(stats.st_gid >= 0);      // must be positive integer
+            assert!(valid_uid_gid(stats));  // must be positive integers
             assert!(stats.st_size == 0);    // size is 0 because we did not write anything to the file
             assert!(stats.st_blksize > 0);  // must be positive integer, exact number machine dependent
             assert!(stats.st_blocks <= 16);  // Up to 16 blocks can be allocated for a blank file
@@ -43,10 +50,7 @@ fn assert_lstat_results(stat_result: Result<FileStat>) {
             assert!((stats.st_mode as usize) & (posix88::S_IFMT as usize)
                     == posix88::S_IFLNK as usize); // should be a link
             assert!(stats.st_nlink == 1);   // there links created, must be 1
-            // uid could be 0 for the `root` user. This quite possible when
-            // the tests are being run on a rooted Android device.
-            assert!(stats.st_uid >= 0);      // must be positive integer
-            assert!(stats.st_gid >= 0);      // must be positive integer
+            assert!(valid_uid_gid(stats));  // must be positive integers
             assert!(stats.st_size > 0);    // size is > 0 because it points to another file
             assert!(stats.st_blksize > 0);  // must be positive integer, exact number machine dependent
 
@@ -80,7 +84,7 @@ fn test_stat_fstat_lstat() {
     let linkname = b"target/barlink".as_ref();
 
     open(filename, O_CREAT, S_IWUSR | S_IRUSR).unwrap();  // create empty file
-    fs::soft_link("bar.txt", str::from_utf8(linkname).unwrap()).unwrap();
+    symlink("bar.txt", str::from_utf8(linkname).unwrap()).unwrap();
     let fd = open(linkname, O_RDONLY, S_IRUSR).unwrap();
 
     // should be the same result as calling stat,
