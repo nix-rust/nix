@@ -5,6 +5,8 @@ use std::{cmp, iter};
 use std::fs::{OpenOptions, remove_file};
 use std::os::unix::io::AsRawFd;
 
+use tempdir::TempDir;
+
 #[test]
 fn test_writev() {
     let mut to_write = Vec::with_capacity(16 * 128);
@@ -115,7 +117,9 @@ fn test_pwrite() {
 fn test_pread() {
     use std::io::Write;
 
-    let path = "pread_test_file";
+    let tempdir = TempDir::new("nix-test_pread").unwrap();
+
+    let path = tempdir.path().join("pread_test_file");
     let mut file = OpenOptions::new().write(true).read(true).create(true)
                                     .truncate(true).open(path).unwrap();
     let file_content: Vec<u8> = (0..64).collect();
@@ -125,8 +129,6 @@ fn test_pread() {
     assert_eq!(Ok(16), pread(file.as_raw_fd(), &mut buf, 16));
     let expected: Vec<_> = (16..32).collect();
     assert_eq!(&buf[..], &expected[..]);
-
-    remove_file(path).unwrap();
 }
 
 #[test]
@@ -143,8 +145,10 @@ fn test_pwritev() {
         IoVec::from_slice(&to_write[64..128]),
     ];
 
+    let tempdir = TempDir::new("nix-test_pwritev").unwrap();
+
     // pwritev them into a temporary file
-    let path = "pwritev_test_file";
+    let path = tempdir.path().join("pwritev_test_file");
     let mut file = OpenOptions::new().write(true).read(true).create(true)
                                     .truncate(true).open(path).unwrap();
 
@@ -155,8 +159,6 @@ fn test_pwritev() {
     let mut contents = Vec::new();
     file.read_to_end(&mut contents).unwrap();
     assert_eq!(contents, expected);
-
-    remove_file(path).unwrap();
 }
 
 #[test]
@@ -167,7 +169,9 @@ fn test_preadv() {
     let to_write: Vec<u8> = (0..200).collect();
     let expected: Vec<u8> = (100..200).collect();
 
-    let path = "preadv_test_file";
+    let tempdir = TempDir::new("nix-test_preadv").unwrap();
+
+    let path = tempdir.path().join("preadv_test_file");
 
     let mut file = OpenOptions::new().read(true).write(true).create(true)
                                     .truncate(true).open(path).unwrap();
@@ -188,6 +192,4 @@ fn test_preadv() {
 
     let all = buffers.concat();
     assert_eq!(all, expected);
-
-    remove_file(path).unwrap();
 }
