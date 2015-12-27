@@ -2,6 +2,7 @@
 extern crate nix;
 extern crate libc;
 extern crate rand;
+extern crate tempdir;
 
 extern crate nix_test as nixtest;
 

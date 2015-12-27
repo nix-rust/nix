@@ -1,15 +1,14 @@
+use std::fs::File;
 use std::os::unix::fs::symlink;
-use std::str;
+use std::os::unix::prelude::AsRawFd;
 
 use libc::consts::os::posix88;
 
 use nix::sys::stat::{stat, fstat, lstat};
 
-use nix::fcntl::open;
-use nix::unistd::{close, unlink};
-use nix::fcntl::{O_CREAT, O_RDONLY};
-use nix::sys::stat::{FileStat, S_IWUSR, S_IRUSR};
+use nix::sys::stat::FileStat;
 use nix::Result;
+use tempdir::TempDir;
 
 #[allow(unused_comparisons)]
 // uid and gid are signed on Windows, but not on other platforms. This function
@@ -65,40 +64,35 @@ fn assert_lstat_results(stat_result: Result<FileStat>) {
 
 #[test]
 fn test_stat_and_fstat() {
-    let filename = b"target/foo.txt".as_ref();
-    let fd = open(filename, O_CREAT, S_IWUSR).unwrap();  // create empty file
+    let tempdir = TempDir::new("nix-test_stat_and_fstat").unwrap();
+    let filename = tempdir.path().join("foo.txt");
+    let file = File::create(&filename).unwrap();
 
-    let stat_result = stat(filename);
+    let stat_result = stat(&filename);
     assert_stat_results(stat_result);
 
-    let fstat_result = fstat(fd);
+    let fstat_result = fstat(file.as_raw_fd());
     assert_stat_results(fstat_result);
-
-    close(fd).unwrap();
-    unlink(filename).unwrap();
 }
 
 #[test]
 fn test_stat_fstat_lstat() {
-    let filename = b"target/bar.txt".as_ref();
-    let linkname = b"target/barlink".as_ref();
+    let tempdir = TempDir::new("nix-test_stat_fstat_lstat").unwrap();
+    let filename = tempdir.path().join("bar.txt");
+    let linkname = tempdir.path().join("barlink");
 
-    open(filename, O_CREAT, S_IWUSR | S_IRUSR).unwrap();  // create empty file
-    symlink("bar.txt", str::from_utf8(linkname).unwrap()).unwrap();
-    let fd = open(linkname, O_RDONLY, S_IRUSR).unwrap();
+    File::create(&filename).unwrap();
+    symlink("bar.txt", &linkname).unwrap();
+    let link = File::open(&linkname).unwrap();
 
     // should be the same result as calling stat,
     // since it's a regular file
-    let stat_result = lstat(filename);
+    let stat_result = lstat(&filename);
     assert_stat_results(stat_result);
 
-    let lstat_result = lstat(linkname);
+    let lstat_result = lstat(&linkname);
     assert_lstat_results(lstat_result);
 
-    let fstat_result = fstat(fd);
+    let fstat_result = fstat(link.as_raw_fd());
     assert_stat_results(fstat_result);
-
-    close(fd).unwrap();
-    unlink(linkname).unwrap();
-    unlink(filename).unwrap();
 }
