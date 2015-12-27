@@ -4,7 +4,7 @@ use {Error, Result, NixPath, from_ffi};
 use errno::Errno;
 use fcntl::{fcntl, OFlag, O_NONBLOCK, O_CLOEXEC, FD_CLOEXEC};
 use fcntl::FcntlArg::{F_SETFD, F_SETFL};
-use libc::{c_char, c_void, c_int, size_t, pid_t, off_t};
+use libc::{c_char, c_void, c_int, size_t, pid_t, off_t, uid_t, gid_t};
 use std::mem;
 use std::ffi::CString;
 use std::os::unix::io::RawFd;
@@ -15,7 +15,7 @@ pub use self::linux::*;
 mod ffi {
     use libc::{c_char, c_int, size_t};
     pub use libc::{close, read, write, pipe, ftruncate, unlink, setpgid};
-    pub use libc::funcs::posix88::unistd::{fork, getpid, getppid};
+    pub use libc::funcs::posix88::unistd::{fork, getegid, geteuid, getgid, getpid, getppid, getuid};
 
     extern {
         // duplicate a file descriptor
@@ -387,6 +387,32 @@ pub fn fdatasync(fd: RawFd) -> Result<()> {
     }
 
     Ok(())
+}
+
+// POSIX requires that getuid, geteuid, getgid, getegid are always successful,
+// so no need to check return value or errno. See:
+//   - http://pubs.opengroup.org/onlinepubs/9699919799/functions/getuid.html
+//   - http://pubs.opengroup.org/onlinepubs/9699919799/functions/geteuid.html
+//   - http://pubs.opengroup.org/onlinepubs/9699919799/functions/getgid.html
+//   - http://pubs.opengroup.org/onlinepubs/9699919799/functions/geteuid.html
+#[inline]
+pub fn getuid() -> uid_t {
+    unsafe { ffi::getuid() }
+}
+
+#[inline]
+pub fn geteuid() -> uid_t {
+    unsafe { ffi::geteuid() }
+}
+
+#[inline]
+pub fn getgid() -> gid_t {
+    unsafe { ffi::getgid() }
+}
+
+#[inline]
+pub fn getegid() -> gid_t {
+    unsafe { ffi::getegid() }
 }
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
