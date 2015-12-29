@@ -163,6 +163,7 @@ sockopt_impl!(Both, SndBuf, consts::SOL_SOCKET, consts::SO_SNDBUF, usize);
 sockopt_impl!(SetOnly, RcvBufForce, consts::SOL_SOCKET, consts::SO_RCVBUFFORCE, usize);
 #[cfg(target_os = "linux")]
 sockopt_impl!(SetOnly, SndBufForce, consts::SOL_SOCKET, consts::SO_SNDBUFFORCE, usize);
+sockopt_impl!(GetOnly, SockType, consts::SOL_SOCKET, consts::SO_TYPE, super::SockType);
 
 /*
  *
@@ -375,5 +376,28 @@ mod test {
         let b_cred = getsockopt(b, super::PeerCredentials).unwrap();
         assert_eq!(a_cred, b_cred);
         assert!(a_cred.pid != 0);
+    }
+
+    #[test]
+    fn is_socket_type_unix() {
+        use super::super::*;
+        use ::unistd::close;
+
+        let (a, b) = socketpair(AddressFamily::Unix, SockType::Stream, 0, SockFlag::empty()).unwrap();
+        let a_type = getsockopt(a, super::SockType).unwrap();
+        assert!(a_type == SockType::Stream);
+        close(a).unwrap();
+        close(b).unwrap();
+    }
+
+    #[test]
+    fn is_socket_type_dgram() {
+        use super::super::*;
+        use ::unistd::close;
+
+        let s = socket(AddressFamily::Inet, SockType::Datagram, SockFlag::empty(), 0).unwrap();
+        let s_type = getsockopt(s, super::SockType).unwrap();
+        assert!(s_type == SockType::Datagram);
+        close(s).unwrap();
     }
 }
