@@ -164,6 +164,10 @@ sockopt_impl!(SetOnly, RcvBufForce, consts::SOL_SOCKET, consts::SO_RCVBUFFORCE, 
 #[cfg(target_os = "linux")]
 sockopt_impl!(SetOnly, SndBufForce, consts::SOL_SOCKET, consts::SO_SNDBUFFORCE, usize);
 sockopt_impl!(GetOnly, SockType, consts::SOL_SOCKET, consts::SO_TYPE, super::SockType);
+#[cfg(any(target_os = "freebsd",
+          target_os = "linux",
+          target_os = "nacl"))]
+sockopt_impl!(GetOnly, AcceptConn, consts::SOL_SOCKET, consts::SO_ACCEPTCONN, bool);
 
 /*
  *
@@ -398,6 +402,23 @@ mod test {
         let s = socket(AddressFamily::Inet, SockType::Datagram, SockFlag::empty(), 0).unwrap();
         let s_type = getsockopt(s, super::SockType).unwrap();
         assert!(s_type == SockType::Datagram);
+        close(s).unwrap();
+    }
+
+    #[cfg(any(target_os = "freebsd",
+              target_os = "linux",
+              target_os = "nacl"))]
+    #[test]
+    fn can_get_listen_on_tcp_socket() {
+        use super::super::*;
+        use ::unistd::close;
+
+        let s = socket(AddressFamily::Inet, SockType::Stream, SockFlag::empty(), 0).unwrap();
+        let s_listening = getsockopt(s, super::AcceptConn).unwrap();
+        assert!(!s_listening);
+        listen(s, 10).unwrap();
+        let s_listening2 = getsockopt(s, super::AcceptConn).unwrap();
+        assert!(s_listening2);
         close(s).unwrap();
     }
 }
