@@ -123,6 +123,22 @@ pub trait NixPath {
         where F: FnOnce(&CStr) -> T;
 }
 
+impl NixPath for CStr {
+    fn len(&self) -> usize {
+        self.to_bytes().len()
+    }
+
+    fn with_nix_path<T, F>(&self, f: F) -> Result<T>
+            where F: FnOnce(&CStr) -> T {
+        // Equivalence with the [u8] impl.
+        if self.len() >= PATH_MAX as usize {
+            return Err(Error::InvalidPath);
+        }
+
+        Ok(f(self))
+    }
+}
+
 impl NixPath for [u8] {
     fn len(&self) -> usize {
         self.len()
