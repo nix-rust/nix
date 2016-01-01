@@ -49,18 +49,15 @@ bitflags!(
 );
 
 mod ffi {
-    use libc::{c_char, c_int};
+    use libc::{c_char, c_int, c_ulong, c_void};
 
     extern {
-        /*
-         * TODO: Bring back
         pub fn mount(
                 source: *const c_char,
                 target: *const c_char,
                 fstype: *const c_char,
                 flags: c_ulong,
                 data: *const c_void) -> c_int;
-                */
 
         pub fn umount(target: *const c_char) -> c_int;
 
@@ -68,12 +65,9 @@ mod ffi {
     }
 }
 
-/*
- * TODO: Bring this back with a test
- *
 pub fn mount<P1: ?Sized + NixPath, P2: ?Sized + NixPath, P3: ?Sized + NixPath, P4: ?Sized + NixPath>(
         source: Option<&P1>,
-        target: P2,
+        target: &P2,
         fstype: Option<&P3>,
         flags: MsFlags,
         data: Option<&P4>) -> Result<()> {
@@ -85,20 +79,19 @@ pub fn mount<P1: ?Sized + NixPath, P2: ?Sized + NixPath, P3: ?Sized + NixPath, P
                 fstype.with_nix_path(|fstype| {
                     data.with_nix_path(|data| {
                         unsafe {
-                            ffi::mount(source.as_ext_str(),
-                                       target.as_ext_str(),
-                                       fstype,
+                            ffi::mount(source.as_ptr(),
+                                       target.as_ptr(),
+                                       fstype.as_ptr(),
                                        flags.bits,
-                                       data as *const libc::c_void)
+                                       data.as_ptr() as *const libc::c_void)
                         }
                     })
                 })
             })
         })))));
 
-    return from_ffi(res);
+    from_ffi(res)
 }
-*/
 
 pub fn umount<P: ?Sized + NixPath>(target: &P) -> Result<()> {
     let res = try!(target.with_nix_path(|cstr| {

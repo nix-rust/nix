@@ -40,3 +40,8 @@ name = "test-signalfd"
 path = "test/test_signalfd.rs"
 harness = false
 test = true
+
+[[test]]
+name = "test-mount"
+path = "test/test_mount.rs"
+harness = false
