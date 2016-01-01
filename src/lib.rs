@@ -210,6 +210,23 @@ impl NixPath for PathBuf {
     }
 }
 
+/// Treats `None` as an empty string.
+impl<'a, NP: ?Sized + NixPath>  NixPath for Option<&'a NP> {
+    fn len(&self) -> usize {
+        self.map_or(0, NixPath::len)
+    }
+
+    fn with_nix_path<T, F>(&self, f: F) -> Result<T> where F: FnOnce(&CStr) -> T {
+        if let Some(nix_path) = *self {
+            nix_path.with_nix_path(f)
+        } else {
+            // TODO(#229): avoid extra stack allocation from [u8] impl by
+            // replacing with empty CStr.
+            b"".with_nix_path(f)
+        }
+    }
+}
+
 #[inline]
 pub fn from_ffi(res: libc::c_int) -> Result<()> {
     if res != 0 {
