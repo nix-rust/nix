@@ -1,7 +1,7 @@
 use nix::sys::socket::{InetAddr, UnixAddr, getsockname};
-use std::{mem, net};
 use std::path::Path;
-use std::str::FromStr;
+use std::{mem, net};
+use std::str::{self, FromStr};
 use std::os::unix::io::{AsRawFd, RawFd};
 use ports::localhost;
 use libc::c_char;
@@ -30,13 +30,14 @@ pub fn test_inetv4_addr_to_sock_addr() {
 
 #[test]
 pub fn test_path_to_sock_addr() {
-    let actual = Path::new("/foo/bar");
+    let actual = cstr!("/foo/bar");
     let addr = UnixAddr::new(actual).unwrap();
 
     let expect: &'static [c_char] = unsafe { mem::transmute(&b"/foo/bar"[..]) };
     assert_eq!(&addr.0.sun_path[..8], expect);
 
-    assert_eq!(addr.path(), Some(actual));
+    let actual = str::from_utf8(actual.to_bytes()).unwrap();
+    assert_eq!(addr.path(), Some(Path::new(actual)));
 }
 
 #[test]

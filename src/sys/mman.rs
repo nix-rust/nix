@@ -1,4 +1,4 @@
-use {Errno, Error, Result, NixPath};
+use {Errno, Result, NixString};
 use fcntl::OFlag;
 use libc::{c_void, size_t, off_t, mode_t};
 use sys::stat::Mode;
@@ -203,7 +203,7 @@ pub fn mmap(addr: *mut c_void, length: size_t, prot: MmapProt, flags: MmapFlag, 
     let ret = unsafe { ffi::mmap(addr, length, prot, flags, fd, offset) };
 
     if ret as isize == MAP_FAILED  {
-        Err(Error::Sys(Errno::last()))
+        Err(Errno::last())
     } else {
         Ok(ret)
     }
@@ -221,20 +221,14 @@ pub fn msync(addr: *const c_void, length: size_t, flags: MmapSync) -> Result<()>
     Errno::result(unsafe { ffi::msync(addr, length, flags) }).map(drop)
 }
 
-pub fn shm_open<P: ?Sized + NixPath>(name: &P, flag: OFlag, mode: Mode) -> Result<RawFd> {
-    let ret = try!(name.with_nix_path(|cstr| {
-        unsafe {
-            ffi::shm_open(cstr.as_ptr(), flag.bits(), mode.bits() as mode_t)
-        }
-    }));
-
-    Errno::result(ret)
+pub fn shm_open<P: NixString>(name: P, flag: OFlag, mode: Mode) -> Result<RawFd> {
+    unsafe {
+        Errno::result(ffi::shm_open(name.as_ref().as_ptr(), flag.bits(), mode.bits() as mode_t))
+    }
 }
 
-pub fn shm_unlink<P: ?Sized + NixPath>(name: &P) -> Result<()> {
-    let ret = try!(name.with_nix_path(|cstr| {
-        unsafe { ffi::shm_unlink(cstr.as_ptr()) }
-    }));
-
-    Errno::result(ret).map(drop)
+pub fn shm_unlink<P: NixString>(name: P) -> Result<()> {
+    unsafe {
+        Errno::result(ffi::shm_unlink(name.as_ref().as_ptr())).map(drop)
+    }
 }

@@ -1,7 +1,7 @@
 //! Socket interface functions
 //!
 //! [Further reading](http://man7.org/linux/man-pages/man7/socket.7.html)
-use {Error, Errno, Result};
+use {Errno, Result};
 use features;
 use fcntl::{fcntl, FD_CLOEXEC, O_NONBLOCK};
 use fcntl::FcntlArg::{F_SETFD, F_SETFL};
@@ -614,7 +614,7 @@ pub unsafe fn sockaddr_storage_to_addr(
     len: usize) -> Result<SockAddr> {
 
     if len < mem::size_of_val(&addr.ss_family) {
-        return Err(Error::Sys(Errno::ENOTCONN));
+        return Err(Errno::ENOTCONN);
     }
 
     match addr.ss_family as c_int {

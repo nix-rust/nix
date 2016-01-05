@@ -3,20 +3,23 @@
 // namespaces (Linux >= 3.8 compiled with CONFIG_USER_NS), the test should run
 // without root.
 
-extern crate libc;
+#[macro_use]
 extern crate nix;
+extern crate libc;
 extern crate tempdir;
 
 #[cfg(target_os = "linux")]
 mod test_mount {
     use std::fs::{self, File};
     use std::io::{Read, Write};
+    use std::ffi::CStr;
     use std::os::unix::fs::OpenOptionsExt;
     use std::os::unix::fs::PermissionsExt;
     use std::process::Command;
 
     use libc::{self, EACCES, EROFS};
 
+    use nix::cstr::ToCString;
     use nix::mount::{mount, umount, MsFlags, MS_BIND, MS_RDONLY, MS_NOEXEC};
     use nix::sched::{unshare, CLONE_NEWNS, CLONE_NEWUSER};
     use nix::sys::stat::{self, S_IRWXU, S_IRWXG, S_IRWXO, S_IXUSR, S_IXGRP, S_IXOTH};
@@ -28,14 +31,16 @@ exit 23";
 
     const EXPECTED_STATUS: i32 = 23;
 
-    const NONE: Option<&'static [u8]> = None;
+    const NONE: Option<&'static CStr> = None;
+
     pub fn test_mount_tmpfs_without_flags_allows_rwx() {
         let tempdir = TempDir::new("nix-test_mount")
                           .unwrap_or_else(|e| panic!("tempdir failed: {}", e));
+        let temppath = tempdir.path().to_cstring().unwrap();
 
         mount(NONE,
-              tempdir.path(),
-              Some(b"tmpfs".as_ref()),
+              &temppath,
+              Some(cstr!("tmpfs")),
               MsFlags::empty(),
               NONE)
             .unwrap_or_else(|e| panic!("mount failed: {}", e));
@@ -66,16 +71,17 @@ exit 23";
                        .code()
                        .unwrap_or_else(|| panic!("child killed by signal")));
 
-        umount(tempdir.path()).unwrap_or_else(|e| panic!("umount failed: {}", e));
+        umount(&temppath).unwrap_or_else(|e| panic!("umount failed: {}", e));
     }
 
     pub fn test_mount_rdonly_disallows_write() {
         let tempdir = TempDir::new("nix-test_mount")
                           .unwrap_or_else(|e| panic!("tempdir failed: {}", e));
+        let temppath = tempdir.path().to_cstring().unwrap();
 
         mount(NONE,
-              tempdir.path(),
-              Some(b"tmpfs".as_ref()),
+              &temppath,
+              Some(cstr!("tmpfs")),
               MS_RDONLY,
               NONE)
             .unwrap_or_else(|e| panic!("mount failed: {}", e));
@@ -84,16 +90,17 @@ exit 23";
         assert_eq!(EROFS as i32,
                    File::create(tempdir.path().join("test")).unwrap_err().raw_os_error().unwrap());
 
-        umount(tempdir.path()).unwrap_or_else(|e| panic!("umount failed: {}", e));
+        umount(&temppath).unwrap_or_else(|e| panic!("umount failed: {}", e));
     }
 
     pub fn test_mount_noexec_disallows_exec() {
         let tempdir = TempDir::new("nix-test_mount")
                           .unwrap_or_else(|e| panic!("tempdir failed: {}", e));
+        let temppath = tempdir.path().to_cstring().unwrap();
 
         mount(NONE,
-              tempdir.path(),
-              Some(b"tmpfs".as_ref()),
+              &temppath,
+              Some(cstr!("tmpfs")),
               MS_NOEXEC,
               NONE)
             .unwrap_or_else(|e| panic!("mount failed: {}", e));
@@ -123,7 +130,7 @@ exit 23";
         assert_eq!(EACCES as i32,
                    Command::new(&test_path).status().unwrap_err().raw_os_error().unwrap());
 
-        umount(tempdir.path()).unwrap_or_else(|e| panic!("umount failed: {}", e));
+        umount(&temppath).unwrap_or_else(|e| panic!("umount failed: {}", e));
     }
 
     pub fn test_mount_bind() {
@@ -135,14 +142,16 @@ exit 23";
 
         let tempdir = TempDir::new("nix-test_mount")
                           .unwrap_or_else(|e| panic!("tempdir failed: {}", e));
+        let temppath = tempdir.path().to_cstring().unwrap();
         let file_name = "test";
 
         {
             let mount_point = TempDir::new("nix-test_mount")
                                   .unwrap_or_else(|e| panic!("tempdir failed: {}", e));
+            let mount_path = mount_point.path().to_cstring().unwrap();
 
-            mount(Some(tempdir.path()),
-                  mount_point.path(),
+            mount(Some(&temppath),
+                  &mount_path,
                   NONE,
                   MS_BIND,
                   NONE)
@@ -156,7 +165,7 @@ exit 23";
                 .and_then(|mut f| f.write(SCRIPT_CONTENTS))
                 .unwrap_or_else(|e| panic!("write failed: {}", e));
 
-            umount(mount_point.path()).unwrap_or_else(|e| panic!("umount failed: {}", e));
+            umount(&mount_path).unwrap_or_else(|e| panic!("umount failed: {}", e));
         }
 
         // Verify the file written in the mount shows up in source directory, even

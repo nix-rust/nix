@@ -5,14 +5,14 @@
 
 use libc;
 use libc::c_uint;
-use {Result, Error, NixPath};
+use {Errno, Result, NixString};
 
 /// Resolve an interface into a interface number.
-pub fn if_nametoindex<P: ?Sized + NixPath>(name: &P) -> Result<c_uint> {
-    let if_index = try!(name.with_nix_path(|name| unsafe { libc::if_nametoindex(name.as_ptr()) }));
+pub fn if_nametoindex<P: NixString>(name: P) -> Result<c_uint> {
+    let if_index = unsafe { libc::if_nametoindex(name.as_ref().as_ptr()) };
 
     if if_index == 0 {
-        Err(Error::last())
+        Err(Errno::last())
     } else {
         Ok(if_index)
     }

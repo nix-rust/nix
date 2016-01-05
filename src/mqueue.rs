@@ -2,10 +2,9 @@
 //!
 //! [Further reading and details on the C API](http://man7.org/linux/man-pages/man7/mq_overview.7.html)
 
-use {Errno, Result};
+use {Errno, Result, NixString};
 
-use libc::{c_int, c_long, c_char, size_t, mode_t, strlen};
-use std::ffi::CString;
+use libc::{c_int, c_long, c_char, size_t, mode_t};
 use sys::stat::Mode;
 
 pub use self::consts::*;
@@ -76,14 +75,14 @@ impl MqAttr {
 
 
 #[inline]
-pub fn mq_open(name: &CString, oflag: MQ_OFlag, mode: Mode, attr: &MqAttr) -> Result<MQd> {
-    let res = unsafe { ffi::mq_open(name.as_ptr(), oflag.bits(), mode.bits() as mode_t, attr as *const MqAttr) };
+pub fn mq_open<S: NixString>(name: S, oflag: MQ_OFlag, mode: Mode, attr: &MqAttr) -> Result<MQd> {
+    let res = unsafe { ffi::mq_open(name.as_ref().as_ptr(), oflag.bits(), mode.bits() as mode_t, attr as *const MqAttr) };
 
     Errno::result(res)
 }
 
-pub fn mq_unlink(name: &CString) -> Result<()> {
-    let res = unsafe { ffi::mq_unlink(name.as_ptr()) };
+pub fn mq_unlink<S: NixString>(name: S) -> Result<()> {
+    let res = unsafe { ffi::mq_unlink(name.as_ref().as_ptr()) };
     Errno::result(res).map(drop)
 }
 
@@ -100,9 +99,8 @@ pub fn mq_receive(mqdes: MQd, message: &mut [u8], msq_prio: u32) -> Result<usize
     Errno::result(res).map(|r| r as usize)
 }
 
-pub fn mq_send(mqdes: MQd, message: &CString, msq_prio: u32) -> Result<usize> {
-    let len = unsafe { strlen(message.as_ptr()) as size_t };
-    let res = unsafe { ffi::mq_send(mqdes, message.as_ptr(), len, msq_prio) };
+pub fn mq_send(mqdes: MQd, message: &[u8], msq_prio: u32) -> Result<usize> {
+    let res = unsafe { ffi::mq_send(mqdes, message.as_ptr() as *const _, message.len(), msq_prio) };
 
     Errno::result(res).map(|r| r as usize)
 }

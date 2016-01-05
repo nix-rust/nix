@@ -1,4 +1,4 @@
-use {Errno, Result, NixPath};
+use {Errno, Result, NixString};
 use libc::{c_int, c_char};
 
 #[cfg(all(target_os = "linux",
@@ -79,45 +79,40 @@ mod ffi {
 }
 
 use std::ptr;
+use std::ffi::CStr;
 
-fn quotactl<P: ?Sized + NixPath>(cmd: quota::QuotaCmd, special: Option<&P>, id: c_int, addr: *mut c_char) -> Result<()> {
+fn quotactl<P: NixString>(cmd: quota::QuotaCmd, special: Option<P>, id: c_int, addr: *mut c_char) -> Result<()> {
     unsafe {
         Errno::clear();
-        let res = try!(
-            match special {
-                Some(dev) => dev.with_nix_path(|path| ffi::quotactl(cmd.as_int(), path.as_ptr(), id, addr)),
-                None => Ok(ffi::quotactl(cmd.as_int(), ptr::null(), id, addr)),
-            }
-        );
+        let special = special.as_ref().map(NixString::as_ref);
+        let res = ffi::quotactl(cmd.as_int(), special.map(CStr::as_ptr).unwrap_or(ptr::null()), id, addr);
 
         Errno::result(res).map(drop)
     }
 }
 
-pub fn quotactl_on<P: ?Sized + NixPath>(which: quota::QuotaType, special: &P, format: quota::QuotaFmt, quota_file: &P) -> Result<()> {
-    try!(quota_file.with_nix_path(|path| {
-        let mut path_copy = path.to_bytes_with_nul().to_owned();
-        let p: *mut c_char = path_copy.as_mut_ptr() as *mut c_char;
-        quotactl(quota::QuotaCmd(quota::Q_QUOTAON, which), Some(special), format as c_int, p)
-    }))
+pub fn quotactl_on<P0: NixString, P1: NixString>(which: quota::QuotaType, special: P0, format: quota::QuotaFmt, quota_file: P1) -> Result<()> {
+    let mut path_copy = quota_file.as_ref().to_bytes_with_nul().to_owned();
+    let p: *mut c_char = path_copy.as_mut_ptr() as *mut c_char;
+    quotactl(quota::QuotaCmd(quota::Q_QUOTAON, which), Some(special), format as c_int, p)
 }
 
-pub fn quotactl_off<P: ?Sized + NixPath>(which: quota::QuotaType, special: &P) -> Result<()> {
+pub fn quotactl_off<P: NixString>(which: quota::QuotaType, special: P) -> Result<()> {
     quotactl(quota::QuotaCmd(quota::Q_QUOTAOFF, which), Some(special), 0, ptr::null_mut())
 }
 
-pub fn quotactl_sync<P: ?Sized + NixPath>(which: quota::QuotaType, special: Option<&P>) -> Result<()> {
+pub fn quotactl_sync<P: NixString>(which: quota::QuotaType, special: Option<P>) -> Result<()> {
     quotactl(quota::QuotaCmd(quota::Q_SYNC, which), special, 0, ptr::null_mut())
 }
 
-pub fn quotactl_get<P: ?Sized + NixPath>(which: quota::QuotaType, special: &P, id: c_int, dqblk: &mut quota::Dqblk) -> Result<()> {
+pub fn quotactl_get<P: NixString>(which: quota::QuotaType, special: P, id: c_int, dqblk: &mut quota::Dqblk) -> Result<()> {
     use std::mem;
     unsafe {
         quotactl(quota::QuotaCmd(quota::Q_GETQUOTA, which), Some(special), id, mem::transmute(dqblk))
     }
 }
 
-pub fn quotactl_set<P: ?Sized + NixPath>(which: quota::QuotaType, special: &P, id: c_int, dqblk: &quota::Dqblk) -> Result<()> {
+pub fn quotactl_set<P: NixString>(which: quota::QuotaType, special: P, id: c_int, dqblk: &quota::Dqblk) -> Result<()> {
     use std::mem;
     let mut dqblk_copy = *dqblk;
     unsafe {

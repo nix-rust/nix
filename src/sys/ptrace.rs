@@ -1,4 +1,4 @@
-use {Errno, Error, Result};
+use {Errno, Result};
 use libc::{pid_t, c_void, c_long};
 
 #[cfg(all(target_os = "linux",
@@ -86,7 +86,7 @@ fn ptrace_peek(request: ptrace::PtraceRequest, pid: pid_t, addr: *mut c_void, da
         ffi::ptrace(request, pid, addr, data)
     };
     match Errno::result(ret) {
-        Ok(..) | Err(Error::Sys(Errno::UnknownErrno)) => Ok(ret),
+        Ok(..) | Err(Errno::UnknownErrno) => Ok(ret),
         err @ Err(..) => err,
     }
 }

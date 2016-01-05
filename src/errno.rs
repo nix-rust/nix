@@ -1,6 +1,5 @@
 use libc::c_int;
-use std::{fmt, io, error};
-use {Error, Result};
+use std::{fmt, io, error, result};
 
 pub use self::consts::*;
 pub use self::consts::Errno::*;
@@ -74,7 +73,7 @@ impl Errno {
     /// should not be used when `-1` is not the errno sentinel value.
     pub fn result<S: ErrnoSentinel + PartialEq<S>>(value: S) -> Result<S> {
         if value == S::sentinel() {
-            Err(Error::Sys(Self::last()))
+            Err(Self::last())
         } else {
             Ok(value)
         }
@@ -116,6 +115,8 @@ impl From<Errno> for io::Error {
         io::Error::from_raw_os_error(err as i32)
     }
 }
+
+pub type Result<T> = result::Result<T, Errno>;
 
 fn last() -> Errno {
     Errno::from_i32(errno())

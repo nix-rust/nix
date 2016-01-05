@@ -1,6 +1,6 @@
 //! Standard symbolic constants and types
 //!
-use {Errno, Error, Result, NixPath};
+use {Errno, Result, NixString};
 use fcntl::{fcntl, OFlag, O_NONBLOCK, O_CLOEXEC, FD_CLOEXEC};
 use fcntl::FcntlArg::{F_SETFD, F_SETFL};
 use libc::{c_char, c_void, c_int, size_t, pid_t, off_t, uid_t, gid_t};
@@ -133,7 +133,7 @@ pub fn dup3(oldfd: RawFd, newfd: RawFd, flags: OFlag) -> Result<RawFd> {
 #[inline]
 fn dup3_polyfill(oldfd: RawFd, newfd: RawFd, flags: OFlag) -> Result<RawFd> {
     if oldfd == newfd {
-        return Err(Error::Sys(Errno::EINVAL));
+        return Err(Errno::EINVAL);
     }
 
     let fd = try!(dup2(oldfd, newfd));
@@ -149,14 +149,15 @@ fn dup3_polyfill(oldfd: RawFd, newfd: RawFd, flags: OFlag) -> Result<RawFd> {
 }
 
 #[inline]
-pub fn chdir<P: ?Sized + NixPath>(path: &P) -> Result<()> {
-    let res = try!(path.with_nix_path(|cstr| {
-        unsafe { ffi::chdir(cstr.as_ptr()) }
-    }));
+pub fn chdir<P: NixString>(path: P) -> Result<()> {
+    let res = unsafe {
+        ffi::chdir(path.as_ref().as_ptr())
+    };
 
     Errno::result(res).map(drop)
 }
 
+// TODO: do this without allocations
 fn to_exec_array(args: &[CString]) -> Vec<*const c_char> {
     use std::ptr;
     use libc::c_char;
@@ -167,26 +168,26 @@ fn to_exec_array(args: &[CString]) -> Vec<*const c_char> {
 }
 
 #[inline]
-pub fn execv(path: &CString, argv: &[CString]) -> Result<()> {
+pub fn execv<P: NixString>(path: P, argv: &[CString]) -> Result<()> {
     let args_p = to_exec_array(argv);
 
     unsafe {
-        ffi::execv(path.as_ptr(), args_p.as_ptr())
+        ffi::execv(path.as_ref().as_ptr(), args_p.as_ptr())
     };
 
-    Err(Error::Sys(Errno::last()))
+    Err(Errno::last())
 }
 
 #[inline]
-pub fn execve(path: &CString, args: &[CString], env: &[CString]) -> Result<()> {
+pub fn execve<P: NixString>(path: P, args: &[CString], env: &[CString]) -> Result<()> {
     let args_p = to_exec_array(args);
     let env_p = to_exec_array(env);
 
     unsafe {
-        ffi::execve(path.as_ptr(), args_p.as_ptr(), env_p.as_ptr())
+        ffi::execve(path.as_ref().as_ptr(), args_p.as_ptr(), env_p.as_ptr())
     };
 
-    Err(Error::Sys(Errno::last()))
+    Err(Errno::last())
 }
 
 #[inline]
@@ -197,7 +198,7 @@ pub fn execvp(filename: &CString, args: &[CString]) -> Result<()> {
         ffi::execvp(filename.as_ptr(), args_p.as_ptr())
     };
 
-    Err(Error::Sys(Errno::last()))
+    Err(Errno::last())
 }
 
 pub fn daemon(nochdir: bool, noclose: bool) -> Result<()> {
@@ -304,27 +305,25 @@ pub fn isatty(fd: RawFd) -> Result<bool> {
         } else {
             match Errno::last() {
                 Errno::ENOTTY => Ok(false),
-                err => Err(Error::Sys(err)),
+                err => Err(err),
             }
         }
     }
 }
 
-pub fn unlink<P: ?Sized + NixPath>(path: &P) -> Result<()> {
-    let res = try!(path.with_nix_path(|cstr| {
-        unsafe {
-            ffi::unlink(cstr.as_ptr())
-        }
-    }));
+pub fn unlink<P: NixString>(path: P) -> Result<()> {
+    let res = unsafe {
+        ffi::unlink(path.as_ref().as_ptr())
+    };
 
     Errno::result(res).map(drop)
 }
 
 #[inline]
-pub fn chroot<P: ?Sized + NixPath>(path: &P) -> Result<()> {
-    let res = try!(path.with_nix_path(|cstr| {
-        unsafe { ffi::chroot(cstr.as_ptr()) }
-    }));
+pub fn chroot<P: NixString>(path: P) -> Result<()> {
+    let res = unsafe {
+        ffi::chroot(path.as_ref().as_ptr())
+    };
 
     Errno::result(res).map(drop)
 }
@@ -372,27 +371,23 @@ pub fn getegid() -> gid_t {
 #[cfg(any(target_os = "linux", target_os = "android"))]
 mod linux {
     use sys::syscall::{syscall, SYSPIVOTROOT};
-    use {Errno, Result, NixPath};
+    use {Errno, Result, NixString};
 
     #[cfg(feature = "execvpe")]
     use std::ffi::CString;
 
-    pub fn pivot_root<P1: ?Sized + NixPath, P2: ?Sized + NixPath>(
-            new_root: &P1, put_old: &P2) -> Result<()> {
-        let res = try!(try!(new_root.with_nix_path(|new_root| {
-            put_old.with_nix_path(|put_old| {
-                unsafe {
-                    syscall(SYSPIVOTROOT, new_root.as_ptr(), put_old.as_ptr())
-                }
-            })
-        })));
+    pub fn pivot_root<P1: NixString, P2: NixString>(
+            new_root: P1, put_old: P2) -> Result<()> {
+        let res = unsafe {
+            syscall(SYSPIVOTROOT, new_root.as_ref().as_ptr(), put_old.as_ref().as_ptr())
+        };
 
         Errno::result(res).map(drop)
     }
 
     #[inline]
     #[cfg(feature = "execvpe")]
-    pub fn execvpe(filename: &CString, args: &[CString], env: &[CString]) -> Result<()> {
+    pub fn execvpe<F: NixString>(filename: F, args: &[CString], env: &[CString]) -> Result<()> {
         use std::ptr;
         use libc::c_char;
 
@@ -403,9 +398,9 @@ mod linux {
         env_p.push(ptr::null());
 
         unsafe {
-            super::ffi::execvpe(filename.as_ptr(), args_p.as_ptr(), env_p.as_ptr())
+            super::ffi::execvpe(filename.as_ref().as_ptr(), args_p.as_ptr(), env_p.as_ptr())
         };
 
-        Err(Error::Sys(Errno::last()))
+        Err(Errno::last())
     }
 }
