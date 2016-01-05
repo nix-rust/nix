@@ -7,6 +7,7 @@ use libc::{self, c_char, c_void, c_int, c_uint, size_t, pid_t, off_t, uid_t, gid
 use std::mem;
 use std::ffi::CString;
 use std::os::unix::io::RawFd;
+use void::Void;
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 pub use self::linux::*;
@@ -130,7 +131,7 @@ fn to_exec_array(args: &[CString]) -> Vec<*const c_char> {
 }
 
 #[inline]
-pub fn execv(path: &CString, argv: &[CString]) -> Result<()> {
+pub fn execv(path: &CString, argv: &[CString]) -> Result<Void> {
     let args_p = to_exec_array(argv);
 
     unsafe {
@@ -141,7 +142,7 @@ pub fn execv(path: &CString, argv: &[CString]) -> Result<()> {
 }
 
 #[inline]
-pub fn execve(path: &CString, args: &[CString], env: &[CString]) -> Result<()> {
+pub fn execve(path: &CString, args: &[CString], env: &[CString]) -> Result<Void> {
     let args_p = to_exec_array(args);
     let env_p = to_exec_array(env);
 
@@ -153,7 +154,7 @@ pub fn execve(path: &CString, args: &[CString], env: &[CString]) -> Result<()> {
 }
 
 #[inline]
-pub fn execvp(filename: &CString, args: &[CString]) -> Result<()> {
+pub fn execvp(filename: &CString, args: &[CString]) -> Result<Void> {
     let args_p = to_exec_array(args);
 
     unsafe {

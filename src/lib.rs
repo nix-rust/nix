@@ -15,6 +15,7 @@ extern crate bitflags;
 
 #[macro_use]
 extern crate cfg_if;
+extern crate void;
 
 #[cfg(test)]
 extern crate nix_test as nixtest;

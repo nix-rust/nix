@@ -23,9 +23,10 @@ preadv_pwritev = []
 signalfd = []
 
 [dependencies]
-libc     = "0.2.8"
+libc = "0.2.8"
 bitflags = "0.4"
 cfg-if = "0.1.0"
+void = "1.0.2"
 
 [build-dependencies]
 rustc_version = "0.1.7"
