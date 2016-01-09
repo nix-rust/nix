@@ -45,7 +45,18 @@ pub use self::signal::{
     NSIG,
 };
 
-pub use self::signal::SockFlag;
+pub use self::signal::{
+    SockFlag,
+
+    SA_NOCLDSTOP,
+    SA_NOCLDWAIT,
+    SA_NODEFER,
+    SA_ONSTACK,
+    SA_RESETHAND,
+    SA_RESTART,
+    SA_SIGINFO,
+};
+
 pub use self::signal::{HowFlag, SIG_BLOCK, SIG_UNBLOCK, SIG_SETMASK};
 pub use self::signal::sigset_t;
 
