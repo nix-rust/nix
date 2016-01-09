@@ -43,7 +43,7 @@ bitflags!(
 bitflags!(
     flags MntFlags: c_int {
         const MNT_FORCE   = 1 << 0,
-        const MNT_DETATCH = 1 << 1,
+        const MNT_DETACH  = 1 << 1,
         const MNT_EXPIRE  = 1 << 2
     }
 );
