@@ -1,4 +1,5 @@
-use std::fs;
+use std;
+use std::io;
 use std::str;
 
 use libc::consts::os::posix88;
@@ -11,6 +12,7 @@ use nix::fcntl::{O_CREAT, O_RDONLY};
 use nix::sys::stat::{FileStat, S_IWUSR, S_IRUSR};
 use nix::Result;
 
+#[allow(unused_comparisons)] // certain inequalities are currently ensured by their type
 fn assert_stat_results(stat_result: Result<FileStat>) {
     match stat_result {
         Ok(stats) => {
@@ -30,6 +32,7 @@ fn assert_stat_results(stat_result: Result<FileStat>) {
     }
 }
 
+#[allow(unused_comparisons)] // certain inequalities are currently ensured by their type
 fn assert_lstat_results(stat_result: Result<FileStat>) {
     match stat_result {
         Ok(stats) => {
@@ -74,13 +77,23 @@ fn test_stat_and_fstat() {
     unlink(filename).unwrap();
 }
 
+#[cfg(windows)]
+fn symlink(src : &str, dst : &str) -> io::Result<()> {
+    std::os::windows::fs::symlinkfile(src, dst)
+}
+
+#[cfg(unix)]
+fn symlink(src : &str, dst : &str) -> io::Result<()> {
+    std::os::unix::fs::symlink(src, dst)
+}
+
 #[test]
 fn test_stat_fstat_lstat() {
     let filename = b"target/bar.txt".as_ref();
     let linkname = b"target/barlink".as_ref();
 
     open(filename, O_CREAT, S_IWUSR | S_IRUSR).unwrap();  // create empty file
-    fs::soft_link("bar.txt", str::from_utf8(linkname).unwrap()).unwrap();
+    symlink("bar.txt", str::from_utf8(linkname).unwrap()).unwrap();
     let fd = open(linkname, O_RDONLY, S_IRUSR).unwrap();
 
     // should be the same result as calling stat,
