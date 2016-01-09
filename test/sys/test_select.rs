@@ -1,6 +1,6 @@
 use nix::sys::select::{FdSet, FD_SETSIZE, select};
 use nix::sys::time::TimeVal;
-use nix::unistd::{read, write, pipe};
+use nix::unistd::{write, pipe};
 
 #[test]
 fn test_fdset() {
@@ -35,7 +35,7 @@ fn test_fdset() {
 fn test_select() {
     let (r1, w1) = pipe().unwrap();
     write(w1, b"hi!").unwrap();
-    let (r2, w2) = pipe().unwrap();
+    let (r2, _) = pipe().unwrap();
 
     let mut fd_set = FdSet::new();
     fd_set.insert(r1);
