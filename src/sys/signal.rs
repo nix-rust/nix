@@ -360,6 +360,7 @@ mod ffi {
         pub fn pthread_sigmask(how: c_int, set: *const sigset_t, oldset: *mut sigset_t) -> c_int;
 
         pub fn kill(pid: pid_t, signum: c_int) -> c_int;
+        pub fn raise(signum: c_int) -> c_int;
     }
 }
 
@@ -521,6 +522,16 @@ pub fn pthread_sigmask(how: HowFlag,
 
 pub fn kill(pid: libc::pid_t, signum: SigNum) -> Result<()> {
     let res = unsafe { ffi::kill(pid, signum) };
+
+    if res < 0 {
+        return Err(Error::Sys(Errno::last()));
+    }
+
+    Ok(())
+}
+
+pub fn raise(signum: SigNum) -> Result<()> {
+    let res = unsafe { ffi::raise(signum) };
 
     if res < 0 {
         return Err(Error::Sys(Errno::last()));
