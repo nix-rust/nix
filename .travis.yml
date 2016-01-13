@@ -2,8 +2,19 @@
 sudo: false
 language: rust
 rust:
+  - 1.1.0  # Oldest supported version
+  - 1.2.0
+  - 1.3.0
+  - 1.4.0
+  - 1.5.0
+  - stable
+  - beta
   - nightly
-  - 1.1.0
+
+# Failures on nightly shouldn't fail the overall build.
+matrix:
+  allow_failures:
+    - rust: nightly
 
 os:
   - linux
