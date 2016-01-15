@@ -63,6 +63,23 @@ mod cpuset_attribs {
     }
 }
 
+#[cfg(all(target_arch = "aarch64", any(target_os = "linux", target_os = "android")))]
+mod cpuset_attribs {
+    use super::CpuMask;
+    pub const CPU_SETSIZE:           usize = 1024;
+    pub const CPU_MASK_BITS:         usize = 64;
+
+    #[inline]
+    pub fn set_cpu_mask_flag(cur: CpuMask, bit: usize) -> CpuMask {
+        cur | (1u64 << bit)
+    }
+
+    #[inline]
+    pub fn clear_cpu_mask_flag(cur: CpuMask, bit: usize) -> CpuMask {
+        cur & !(1u64 << bit)
+    }
+}
+
 #[cfg(all(target_arch = "arm", any(target_os = "linux", target_os = "android")))]
 mod cpuset_attribs {
     use super::CpuMask;

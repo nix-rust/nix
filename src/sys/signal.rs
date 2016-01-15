@@ -55,6 +55,7 @@ pub const SIGEMT: libc::c_int = 7;
 #[cfg(any(all(target_os = "linux",
               any(target_arch = "x86",
                   target_arch = "x86_64",
+                  target_arch = "aarch64",
                   target_arch = "arm")),
           target_os = "android"))]
 pub mod signal {

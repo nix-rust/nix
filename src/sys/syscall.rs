@@ -24,6 +24,16 @@ mod arch {
     pub static MEMFD_CREATE: Syscall = 356;
 }
 
+#[cfg(target_arch = "aarch64")]
+mod arch {
+    use libc::c_long;
+
+    pub type Syscall = c_long;
+
+    pub static SYSPIVOTROOT: Syscall = 41;
+    pub static MEMFD_CREATE: Syscall = 279;
+}
+
 #[cfg(target_arch = "arm")]
 mod arch {
     use libc::c_long;
