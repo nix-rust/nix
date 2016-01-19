@@ -179,7 +179,7 @@ mod ffi {
 
     pub use libc::{mmap, munmap};
 
-
+    #[allow(improper_ctypes)]
     extern {
         pub fn shm_open(name: *const c_char, oflag: c_int, mode: mode_t) -> c_int;
         pub fn shm_unlink(name: *const c_char) -> c_int;

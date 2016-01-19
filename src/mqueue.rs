@@ -41,6 +41,7 @@ mod ffi {
     use super::MQd;
     use super::MqAttr;
 
+    #[allow(improper_ctypes)]
     extern "C" {
         pub fn mq_open(name: *const c_char, oflag: c_int, ...) -> MQd;
 

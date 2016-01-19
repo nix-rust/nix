@@ -37,6 +37,7 @@ pub mod utsname;
 
 pub mod wait;
 
+#[allow(improper_ctypes)]
 pub mod mman;
 
 pub mod uio;

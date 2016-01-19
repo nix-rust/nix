@@ -204,16 +204,10 @@ mod os {
     pub const IP_ADD_MEMBERSHIP: c_int = 12;
     pub const IP_DROP_MEMBERSHIP: c_int = 13;
 
-    #[cfg(not(target_os = "netbsd"))]
-    pub const IPV6_ADD_MEMBERSHIP: c_int = libc::IPV6_ADD_MEMBERSHIP;
-    #[cfg(not(target_os = "netbsd"))]
-    pub const IPV6_DROP_MEMBERSHIP: c_int = libc::IPV6_DROP_MEMBERSHIP;
-
-    #[cfg(target_os = "netbsd")]
-    pub const IPV6_JOIN_GROUP: c_int = 12;
-
-    #[cfg(target_os = "netbsd")]
-    pub const IPV6_LEAVE_GROUP: c_int = 13;
+    #[cfg(not(target_os = "openbsd"))]
+    pub const IPV6_JOIN_GROUP: c_int = libc::IPV6_JOIN_GROUP;
+    #[cfg(not(target_os = "openbsd"))]
+    pub const IPV6_LEAVE_GROUP: c_int = libc::IPV6_LEAVE_GROUP;
 
     pub type InAddrT = u32;
 
@@ -295,6 +289,8 @@ mod os {
     pub const IP_MULTICAST_LOOP: c_int = 11;
     pub const IP_ADD_MEMBERSHIP: c_int = 12;
     pub const IP_DROP_MEMBERSHIP: c_int = 13;
+    pub const IPV6_JOIN_GROUP: c_int = libc::IPV6_JOIN_GROUP;
+    pub const IPV6_LEAVE_GROUP: c_int = libc::IPV6_LEAVE_GROUP;
 
     pub type InAddrT = u32;
 

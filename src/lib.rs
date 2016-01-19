@@ -35,6 +35,7 @@ pub mod mqueue;
 pub mod sched;
 
 pub mod sys;
+#[allow(improper_ctypes)]
 pub mod unistd;
 
 /*
@@ -43,7 +44,7 @@ pub mod unistd;
  *
  */
 
-use libc::{c_char, PATH_MAX};
+use libc::c_char;
 use std::{ptr, result};
 use std::ffi::CStr;
 use std::path::{Path, PathBuf};
@@ -51,6 +52,7 @@ use std::os::unix::ffi::OsStrExt;
 use std::io;
 use std::fmt;
 use std::error;
+use libc::PATH_MAX;
 
 pub type Result<T> = result::Result<T, Error>;
 

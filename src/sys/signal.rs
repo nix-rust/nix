@@ -7,7 +7,7 @@ use std::mem;
 use std::ptr;
 use {Error, Result};
 
-pub use libc::consts::os::posix88::{
+pub use libc::{
     SIGHUP,   // 1
     SIGINT,   // 2
     SIGQUIT,  // 3

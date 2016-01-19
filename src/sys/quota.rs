@@ -15,7 +15,7 @@ pub mod quota {
 
 	impl QuotaCmd {
 		pub fn as_int(&self) -> c_int {
-			((self.0 << 8) | (self.1 & 0x00ff)) as c_int 
+			((self.0 << 8) | (self.1 & 0x00ff)) as c_int
 		}
 	}
 
@@ -97,7 +97,7 @@ fn quotactl<P: ?Sized + NixPath>(cmd: quota::QuotaCmd, special: Option<&P>, id: 
 pub fn quotactl_on<P: ?Sized + NixPath>(which: quota::QuotaType, special: &P, format: quota::QuotaFmt, quota_file: &P) -> Result<()> {
 	try!(quota_file.with_nix_path(|path| {
 		let mut path_copy = path.to_bytes_with_nul().to_owned();
-		let p: *mut i8 = path_copy.as_mut_ptr() as *mut i8;
+		let p: *mut c_char = path_copy.as_mut_ptr() as *mut c_char;
 		quotactl(quota::QuotaCmd(quota::Q_QUOTAON, which), Some(special), format as c_int, p)
 	}))
 }
