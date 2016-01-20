@@ -378,6 +378,15 @@ impl AsRef<sigset_t> for SigSet {
     }
 }
 
+pub use self::signal::siginfo;
+
+pub enum SigHandler {
+    SigDfl,
+    SigIgn,
+    Handler(extern fn(SigNum)),
+    SigAction(extern fn(SigNum, *mut siginfo, *mut libc::c_void))
+}
+
 type sigaction_t = self::signal::sigaction;
 
 pub struct SigAction {
@@ -385,9 +394,14 @@ pub struct SigAction {
 }
 
 impl SigAction {
-    pub fn new(handler: extern fn(libc::c_int), flags: SockFlag, mask: SigSet) -> SigAction {
+    pub fn new(handler: SigHandler, flags: SockFlag, mask: SigSet) -> SigAction {
         let mut s = unsafe { mem::uninitialized::<sigaction_t>() };
-        s.sa_handler = handler;
+        s.sa_handler = match handler {
+            SigHandler::SigDfl => unsafe { mem::transmute(libc::SIG_DFL) },
+            SigHandler::SigIgn => unsafe { mem::transmute(libc::SIG_IGN) },
+            SigHandler::Handler(f) => f,
+            SigHandler::SigAction(f) => unsafe { mem::transmute(f) },
+        };
         s.sa_flags = flags;
         s.sa_mask = mask.sigset;
 
