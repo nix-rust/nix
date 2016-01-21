@@ -62,6 +62,10 @@ macro_rules! sockopt_impl {
         sockopt_impl!(GetOnly, $name, $level, $flag, u8, GetU8);
     };
 
+    (GetOnly, $name:ident, $level:path, $flag:path, usize) => {
+        sockopt_impl!(GetOnly, $name, $level, $flag, usize, GetUsize);
+    };
+
     (GetOnly, $name:ident, $level:path, $flag:path, $ty:ty, $getter:ty) => {
         #[derive(Copy, Clone, Debug)]
         pub struct $name;
@@ -79,6 +83,10 @@ macro_rules! sockopt_impl {
 
     (SetOnly, $name:ident, $level:path, $flag:path, u8) => {
         sockopt_impl!(SetOnly, $name, $level, $flag, u8, SetU8);
+    };
+
+    (SetOnly, $name:ident, $level:path, $flag:path, usize) => {
+        sockopt_impl!(SetOnly, $name, $level, $flag, usize, SetUsize);
     };
 
     (SetOnly, $name:ident, $level:path, $flag:path, $ty:ty, $setter:ty) => {
@@ -102,6 +110,10 @@ macro_rules! sockopt_impl {
 
     (Both, $name:ident, $level:path, $flag:path, u8) => {
         sockopt_impl!(Both, $name, $level, $flag, u8, GetU8, SetU8);
+    };
+
+    (Both, $name:ident, $level:path, $flag:path, usize) => {
+        sockopt_impl!(Both, $name, $level, $flag, usize, GetUsize, SetUsize);
     };
 
     (Both, $name:ident, $level:path, $flag:path, $ty:ty) => {
@@ -148,6 +160,12 @@ sockopt_impl!(Both, TcpKeepAlive, consts::IPPROTO_TCP, consts::TCP_KEEPALIVE, u3
           target_os = "android",
           target_os = "nacl"))]
 sockopt_impl!(Both, TcpKeepIdle, consts::IPPROTO_TCP, consts::TCP_KEEPIDLE, u32);
+sockopt_impl!(Both, RcvBuf, consts::SOL_SOCKET, consts::SO_RCVBUF, usize);
+sockopt_impl!(Both, SndBuf, consts::SOL_SOCKET, consts::SO_SNDBUF, usize);
+#[cfg(target_os = "linux")]
+sockopt_impl!(SetOnly, RcvBufForce, consts::SOL_SOCKET, consts::SO_RCVBUFFORCE, usize);
+#[cfg(target_os = "linux")]
+sockopt_impl!(SetOnly, SndBufForce, consts::SOL_SOCKET, consts::SO_SNDBUFFORCE, usize);
 
 /*
  *
@@ -303,6 +321,50 @@ impl<'a> Set<'a, u8> for SetU8 {
     }
 }
 
+struct GetUsize {
+    len: socklen_t,
+    val: c_int,
+}
+
+impl Get<usize> for GetUsize {
+    unsafe fn blank() -> Self {
+        GetUsize {
+            len: mem::size_of::<c_int>() as socklen_t,
+            val: mem::zeroed(),
+        }
+    }
+
+    unsafe fn ffi_ptr(&mut self) -> *mut c_void {
+        mem::transmute(&mut self.val)
+    }
+
+    unsafe fn ffi_len(&mut self) -> *mut socklen_t {
+        mem::transmute(&mut self.len)
+    }
+
+    unsafe fn unwrap(self) -> usize {
+        assert!(self.len as usize == mem::size_of::<c_int>(), "invalid getsockopt implementation");
+        self.val as usize
+    }
+}
+
+struct SetUsize {
+    val: c_int,
+}
+
+impl<'a> Set<'a, usize> for SetUsize {
+    fn new(val: &'a usize) -> SetUsize {
+        SetUsize { val: *val as c_int }
+    }
+
+    unsafe fn ffi_ptr(&self) -> *const c_void {
+        mem::transmute(&self.val)
+    }
+
+    unsafe fn ffi_len(&self) -> socklen_t {
+        mem::size_of::<c_int>() as socklen_t
+    }
+}
 
 #[cfg(test)]
 mod test {
