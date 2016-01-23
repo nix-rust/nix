@@ -1,33 +1,40 @@
 use std::mem;
 use std::os::unix::io::RawFd;
-use libc::{c_int, c_uint, c_void, c_ulong, pid_t};
+use libc::{self, c_int, c_void, c_ulong, pid_t};
 use errno::Errno;
 use {Result, Error};
 
-pub type CloneFlags = c_uint;
-
-pub static CLONE_VM:             CloneFlags = 0x00000100;
-pub static CLONE_FS:             CloneFlags = 0x00000200;
-pub static CLONE_FILES:          CloneFlags = 0x00000400;
-pub static CLONE_SIGHAND:        CloneFlags = 0x00000800;
-pub static CLONE_PTRACE:         CloneFlags = 0x00002000;
-pub static CLONE_VFORK:          CloneFlags = 0x00004000;
-pub static CLONE_PARENT:         CloneFlags = 0x00008000;
-pub static CLONE_THREAD:         CloneFlags = 0x00010000;
-pub static CLONE_NEWNS:          CloneFlags = 0x00020000;
-pub static CLONE_SYSVSEM:        CloneFlags = 0x00040000;
-pub static CLONE_SETTLS:         CloneFlags = 0x00080000;
-pub static CLONE_PARENT_SETTID:  CloneFlags = 0x00100000;
-pub static CLONE_CHILD_CLEARTID: CloneFlags = 0x00200000;
-pub static CLONE_DETACHED:       CloneFlags = 0x00400000;
-pub static CLONE_UNTRACED:       CloneFlags = 0x00800000;
-pub static CLONE_CHILD_SETTID:   CloneFlags = 0x01000000;
-pub static CLONE_NEWUTS:         CloneFlags = 0x04000000;
-pub static CLONE_NEWIPC:         CloneFlags = 0x08000000;
-pub static CLONE_NEWUSER:        CloneFlags = 0x10000000;
-pub static CLONE_NEWPID:         CloneFlags = 0x20000000;
-pub static CLONE_NEWNET:         CloneFlags = 0x40000000;
-pub static CLONE_IO:             CloneFlags = 0x80000000;
+// For some functions taking with a parameter of type CloneFlags,
+// only a subset of these flags have an effect.
+bitflags!{
+    flags CloneFlags: c_int {
+        const CLONE_VM             = libc::CLONE_VM,
+        const CLONE_FS             = libc::CLONE_FS,
+        const CLONE_FILES          = libc::CLONE_FILES,
+        const CLONE_SIGHAND        = libc::CLONE_SIGHAND,
+        const CLONE_PTRACE         = libc::CLONE_PTRACE,
+        const CLONE_VFORK          = libc::CLONE_VFORK,
+        const CLONE_PARENT         = libc::CLONE_PARENT,
+        const CLONE_THREAD         = libc::CLONE_THREAD,
+        const CLONE_NEWNS          = libc::CLONE_NEWNS,
+        const CLONE_SYSVSEM        = libc::CLONE_SYSVSEM,
+        const CLONE_SETTLS         = libc::CLONE_SETTLS,
+        const CLONE_PARENT_SETTID  = libc::CLONE_PARENT_SETTID,
+        const CLONE_CHILD_CLEARTID = libc::CLONE_CHILD_CLEARTID,
+        const CLONE_DETACHED       = libc::CLONE_DETACHED,
+        const CLONE_UNTRACED       = libc::CLONE_UNTRACED,
+        const CLONE_CHILD_SETTID   = libc::CLONE_CHILD_SETTID,
+        // TODO: Once, we use a version containing
+        // https://github.com/rust-lang-nursery/libc/pull/147
+        // get rid of the casts.
+        const CLONE_NEWUTS         = libc::CLONE_NEWUTS as c_int,
+        const CLONE_NEWIPC         = libc::CLONE_NEWIPC as c_int,
+        const CLONE_NEWUSER        = libc::CLONE_NEWUSER as c_int,
+        const CLONE_NEWPID         = libc::CLONE_NEWPID as c_int,
+        const CLONE_NEWNET         = libc::CLONE_NEWNET as c_int,
+        const CLONE_IO             = libc::CLONE_IO as c_int,
+    }
+}
 
 // Support a maximum CPU set of 1024 nodes
 #[cfg(all(target_arch = "x86_64", target_os = "linux"))]
@@ -148,17 +155,17 @@ mod ffi {
         pub fn clone(
             cb: *const CloneCb,
             child_stack: *mut c_void,
-            flags: super::CloneFlags,
+            flags: c_int,
             arg: *mut super::CloneCb,
             ...) -> c_int;
 
         // disassociate parts of the process execution context
         // doc: http://man7.org/linux/man-pages/man2/unshare.2.html
-        pub fn unshare(flags: super::CloneFlags) -> c_int;
+        pub fn unshare(flags: c_int) -> c_int;
 
         // reassociate thread with a namespace
         // doc: http://man7.org/linux/man-pages/man2/setns.2.html
-        pub fn setns(fd: c_int, nstype: super::CloneFlags) -> c_int;
+        pub fn setns(fd: c_int, nstype: c_int) -> c_int;
 
         // Set the current CPU set that a task is allowed to run on
         pub fn sched_setaffinity(__pid: pid_t, __cpusetsize: size_t, __cpuset: *const CpuSet) -> c_int;
@@ -187,7 +194,7 @@ pub fn clone(mut cb: CloneCb, stack: &mut [u8], flags: CloneFlags) -> Result<pid
 
     let res = unsafe {
         let ptr = stack.as_mut_ptr().offset(stack.len() as isize);
-        ffi::clone(mem::transmute(callback), ptr as *mut c_void, flags, &mut cb)
+        ffi::clone(mem::transmute(callback), ptr as *mut c_void, flags.bits(), &mut cb)
     };
 
     if res < 0 {
@@ -198,7 +205,7 @@ pub fn clone(mut cb: CloneCb, stack: &mut [u8], flags: CloneFlags) -> Result<pid
 }
 
 pub fn unshare(flags: CloneFlags) -> Result<()> {
-    let res = unsafe { ffi::unshare(flags) };
+    let res = unsafe { ffi::unshare(flags.bits()) };
 
     if res != 0 {
         return Err(Error::Sys(Errno::last()));
@@ -208,7 +215,7 @@ pub fn unshare(flags: CloneFlags) -> Result<()> {
 }
 
 pub fn setns(fd: RawFd, nstype: CloneFlags) -> Result<()> {
-    let res = unsafe { ffi::setns(fd, nstype) };
+    let res = unsafe { ffi::setns(fd, nstype.bits()) };
 
     if res != 0 {
         return Err(Error::Sys(Errno::last()));
