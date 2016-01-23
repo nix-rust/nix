@@ -1,11 +1,24 @@
 use {Error, Result, NixPath};
 use errno::Errno;
 use fcntl::OFlag;
-use libc::{c_void, size_t, off_t, mode_t};
+use libc::{self, c_void, size_t, off_t, mode_t};
 use sys::stat::Mode;
 use std::os::unix::io::RawFd;
 
 pub use self::consts::*;
+
+bitflags!{
+    flags ProtFlags : libc::c_int {
+        const PROT_NONE      = libc::PROT_NONE,
+        const PROT_READ      = libc::PROT_READ,
+        const PROT_WRITE     = libc::PROT_WRITE,
+        const PROT_EXEC      = libc::PROT_EXEC,
+        #[cfg(any(target_os = "linux", target_os = "android"))]
+        const PROT_GROWSDOWN = libc::PROT_GROWSDOWN,
+        #[cfg(any(target_os = "linux", target_os = "android"))]
+        const PROT_GROWSUP   = libc::PROT_GROWSUP,
+    }
+}
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 mod consts {
@@ -31,15 +44,6 @@ mod consts {
             const MAP_HUGETLB    = libc::MAP_HUGETLB,
         }
     }
-
-    pub type MmapProt = c_int;
-
-    pub const PROT_READ: MmapProt           = 0x1;
-    pub const PROT_WRITE: MmapProt          = 0x2;
-    pub const PROT_EXEC: MmapProt           = 0x4;
-    pub const PROT_NONE: MmapProt           = 0x0;
-    pub const PROT_GROWSDOWN: MmapProt      = 0x01000000;
-    pub const PROT_GROWSUP: MmapProt        = 0x02000000;
 
     pub type MmapAdvise = c_int;
 
@@ -84,13 +88,6 @@ mod consts {
             const MAP_JIT     = libc::MAP_JIT,
         }
     }
-
-    pub type MmapProt = c_int;
-
-    pub const PROT_READ: MmapProt           = 0x1;
-    pub const PROT_WRITE: MmapProt          = 0x2;
-    pub const PROT_EXEC: MmapProt           = 0x4;
-    pub const PROT_NONE: MmapProt           = 0x0;
 
     pub type MmapAdvise = c_int;
 
@@ -138,13 +135,6 @@ mod consts {
             const MAP_ANON         = libc::MAP_ANON,
         }
     }
-
-    pub type MmapProt = c_int;
-
-    pub const PROT_READ: MmapProt           = 0x1;
-    pub const PROT_WRITE: MmapProt          = 0x2;
-    pub const PROT_EXEC: MmapProt           = 0x4;
-    pub const PROT_NONE: MmapProt           = 0x0;
 
     pub type MmapAdvise = c_int;
 
@@ -212,8 +202,8 @@ pub fn munlock(addr: *const c_void, length: size_t) -> Result<()> {
 
 /// Calls to mmap are inherently unsafe, so they must be made in an unsafe block. Typically
 /// a higher-level abstraction will hide the unsafe interactions with the mmap'd region.
-pub fn mmap(addr: *mut c_void, length: size_t, prot: MmapProt, flags: MmapFlags, fd: RawFd, offset: off_t) -> Result<*mut c_void> {
-    let ret = unsafe { ffi::mmap(addr, length, prot, flags.bits(), fd, offset) };
+pub fn mmap(addr: *mut c_void, length: size_t, prot: ProtFlags, flags: MmapFlags, fd: RawFd, offset: off_t) -> Result<*mut c_void> {
+    let ret = unsafe { ffi::mmap(addr, length, prot.bits(), flags.bits(), fd, offset) };
 
     if ret as isize == MAP_FAILED  {
         Err(Error::Sys(Errno::last()))
