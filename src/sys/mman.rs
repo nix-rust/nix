@@ -62,11 +62,14 @@ mod consts {
     pub const MADV_DODUMP     : MmapAdvise  = 17; /* Clear the MADV_DONTDUMP flag.  */
     pub const MADV_HWPOISON   : MmapAdvise  = 100; /* Poison a page for testing.  */
 
-    pub type MmapSync = c_int;
 
-    pub const MS_ASYNC : MmapSync           = 1;
-    pub const MS_SYNC  : MmapSync           = 4;
-    pub const MS_INVALIDATE : MmapSync      = 2;
+    bitflags!{
+        flags SyncFlags: c_int {
+            const MS_ASYNC      = libc::MS_ASYNC,
+            const MS_INVALIDATE = libc::MS_INVALIDATE,
+            const MS_SYNC       = libc::MS_SYNC,
+        }
+    }
 
     pub const MAP_FAILED: isize               = -1;
 }
@@ -101,13 +104,15 @@ mod consts {
     pub const MADV_FREE_REUSE : MmapAdvise      = 8; /* caller wants to reuse those pages */
     pub const MADV_CAN_REUSE : MmapAdvise       = 9;
 
-    pub type MmapSync = c_int;
-
-    pub const MS_ASYNC      : MmapSync          = 0x0001; /* [MF|SIO] return immediately */
-    pub const MS_INVALIDATE	: MmapSync          = 0x0002; /* [MF|SIO] invalidate all cached data */
-    pub const MS_SYNC		: MmapSync          = 0x0010; /* [MF|SIO] msync synchronously */
-    pub const MS_KILLPAGES  : MmapSync          = 0x0004; /* invalidate pages, leave mapped */
-    pub const MS_DEACTIVATE : MmapSync          = 0x0008; /* deactivate pages, leave mapped */
+    bitflags!{
+        flags SyncFlags: c_int {
+            const MS_ASYNC      = libc::MS_ASYNC, /* [MF|SIO] return immediately */
+            const MS_INVALIDATE = libc::MS_INVALIDATE, /* [MF|SIO] invalidate all cached data */
+            const MS_KILLPAGES  = libc::MS_KILLPAGES, /* invalidate pages, leave mapped */
+            const MS_DEACTIVATE = libc::MS_DEACTIVATE, /* deactivate pages, leave mapped */
+            const MS_SYNC       = libc::MS_SYNC, /* [MF|SIO] msync synchronously */
+        }
+    }
 
     pub const MAP_FAILED: isize               = -1;
 }
@@ -154,21 +159,21 @@ mod consts {
     #[cfg(target_os = "dragonfly")]
     pub const MADV_SETMAP     : MmapAdvise      = 11; /* set page table directory page for map */
 
-    pub type MmapSync = c_int;
-
-    pub const MS_ASYNC      : MmapSync          = 0x0001; /* [MF|SIO] return immediately */
-    pub const MS_INVALIDATE : MmapSync          = 0x0002; /* [MF|SIO] invalidate all cached data */
-    #[cfg(not(target_os = "dragonfly"))]
-    pub const MS_SYNC       : MmapSync          = 0x0010; /* [MF|SIO] msync synchronously */
-    #[cfg(target_os = "dragonfly")]
-    pub const MS_SYNC       : MmapSync          = 0x0000; /* [MF|SIO] msync synchronously */
-    #[cfg(not(target_os = "dragonfly"))]
-    pub const MS_KILLPAGES  : MmapSync          = 0x0004; /* invalidate pages, leave mapped */
-    #[cfg(not(target_os = "dragonfly"))]
-    pub const MS_DEACTIVATE : MmapSync          = 0x0008; /* deactivate pages, leave mapped */
+    bitflags!{
+        flags SyncFlags: c_int {
+            const MS_ASYNC      = libc::MS_ASYNC, /* [MF|SIO] return immediately */
+            const MS_INVALIDATE = libc::MS_INVALIDATE, /* [MF|SIO] invalidate all cached data */
+            #[cfg(not(target_os = "dragonfly"))]
+            const MS_KILLPAGES  = 0x0004, /* invalidate pages, leave mapped */
+            #[cfg(not(target_os = "dragonfly"))]
+            const MS_DEACTIVATE = 0x0004, /* deactivate pages, leave mapped */
+            const MS_SYNC       = libc::MS_SYNC, /* [MF|SIO] msync synchronously */
+        }
+    }
 
     pub const MAP_FAILED: isize                 = -1;
 }
+
 mod ffi {
     use libc::{c_void, size_t, c_int, c_char, mode_t};
 
@@ -213,8 +218,8 @@ pub fn madvise(addr: *const c_void, length: size_t, advise: MmapAdvise) -> Resul
     Errno::result(unsafe { ffi::madvise(addr, length, advise) }).map(drop)
 }
 
-pub fn msync(addr: *const c_void, length: size_t, flags: MmapSync) -> Result<()> {
-    Errno::result(unsafe { ffi::msync(addr, length, flags) }).map(drop)
+pub fn msync(addr: *const c_void, length: size_t, flags: SyncFlags) -> Result<()> {
+    Errno::result(unsafe { ffi::msync(addr, length, flags.bits()) }).map(drop)
 }
 
 pub fn shm_open<P: ?Sized + NixPath>(name: &P, flag: OFlag, mode: Mode) -> Result<RawFd> {
