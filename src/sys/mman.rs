@@ -9,28 +9,28 @@ pub use self::consts::*;
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 mod consts {
-    use libc::c_int;
+    use libc::{self, c_int};
 
-    pub type MmapFlag = c_int;
-
-    pub const MAP_SHARED: MmapFlag          = 0x00001;
-    pub const MAP_PRIVATE: MmapFlag         = 0x00002;
-    pub const MAP_FIXED: MmapFlag           = 0x00010;
-
-    pub const MAP_FILE: MmapFlag            = 0x00000;
-    pub const MAP_ANONYMOUS: MmapFlag       = 0x00020;
-    pub const MAP_ANON: MmapFlag            = MAP_ANONYMOUS;
-    pub const MAP_32BIT: MmapFlag           = 0x00040;
-
-    pub const MAP_GROWSDOWN: MmapFlag       = 0x00100;
-    pub const MAP_DENYWRITE: MmapFlag       = 0x00800;
-    pub const MAP_EXECUTABLE: MmapFlag      = 0x01000;
-    pub const MAP_LOCKED: MmapFlag          = 0x02000;
-    pub const MAP_NORESERVE: MmapFlag       = 0x04000;
-    pub const MAP_POPULATE: MmapFlag        = 0x08000;
-    pub const MAP_NONBLOCK: MmapFlag        = 0x10000;
-    pub const MAP_STACK: MmapFlag           = 0x20000;
-    pub const MAP_HUGETLB: MmapFlag         = 0x40000;
+    bitflags!{
+        flags MmapFlags: c_int {
+            const MAP_FILE       = libc::MAP_FILE,
+            const MAP_SHARED     = libc::MAP_SHARED,
+            const MAP_PRIVATE    = libc::MAP_PRIVATE,
+            const MAP_FIXED      = libc::MAP_FIXED,
+            const MAP_ANON       = libc::MAP_ANON,
+            const MAP_ANONYMOUS  = libc::MAP_ANON,
+            const MAP_32BIT      = libc::MAP_32BIT,
+            const MAP_GROWSDOWN  = libc::MAP_GROWSDOWN,
+            const MAP_DENYWRITE  = libc::MAP_DENYWRITE,
+            const MAP_EXECUTABLE = libc::MAP_EXECUTABLE,
+            const MAP_LOCKED     = libc::MAP_LOCKED,
+            const MAP_NORESERVE  = libc::MAP_NORESERVE,
+            const MAP_POPULATE   = libc::MAP_POPULATE,
+            const MAP_NONBLOCK   = libc::MAP_NONBLOCK,
+            const MAP_STACK      = libc::MAP_STACK,
+            const MAP_HUGETLB    = libc::MAP_HUGETLB,
+        }
+    }
 
     pub type MmapProt = c_int;
 
@@ -71,16 +71,19 @@ mod consts {
 #[cfg(any(target_os = "macos",
           target_os = "ios"))]
 mod consts {
-    use libc::c_int;
+    use libc::{self, c_int};
 
-    pub type MmapFlag = c_int;
-
-    pub const MAP_SHARED: MmapFlag          = 0x00001;
-    pub const MAP_PRIVATE: MmapFlag         = 0x00002;
-    pub const MAP_FIXED: MmapFlag           = 0x00010;
-
-    pub const MAP_NOCACHE: MmapFlag         = 0x00400;
-    pub const MAP_JIT: MmapFlag             = 0x00800;
+    bitflags!{
+        flags MmapFlags: c_int {
+            const MAP_FILE    = libc::MAP_FILE,
+            const MAP_SHARED  = libc::MAP_SHARED,
+            const MAP_PRIVATE = libc::MAP_PRIVATE,
+            const MAP_FIXED   = libc::MAP_FIXED,
+            const MAP_ANON    = libc::MAP_ANON,
+            const MAP_NOCACHE = libc::MAP_NOCACHE,
+            const MAP_JIT     = libc::MAP_JIT,
+        }
+    }
 
     pub type MmapProt = c_int;
 
@@ -117,21 +120,24 @@ mod consts {
 mod consts {
     use libc::c_int;
 
-    pub type MmapFlag = c_int;
+    pub type MmapFlags = c_int;
 
-    pub const MAP_SHARED: MmapFlag          = 0x00001;
-    pub const MAP_PRIVATE: MmapFlag         = 0x00002;
-    pub const MAP_FIXED: MmapFlag           = 0x00010;
-
-    pub const MAP_RENAME: MmapFlag          = 0x00020;
-    pub const MAP_NORESERVE: MmapFlag       = 0x00040;
-    pub const MAP_HASSEMAPHORE: MmapFlag    = 0x00200;
-    pub const MAP_STACK: MmapFlag           = 0x00400;
-    #[cfg(target_os = "netbsd")]
-    pub const MAP_WIRED: MmapFlag           = 0x00800;
-    pub const MAP_NOSYNC: MmapFlag          = 0x00800;
-    pub const MAP_FILE: MmapFlag            = 0x00000;
-    pub const MAP_ANON: MmapFlag            = 0x01000;
+    bitflags!{
+        flags MmapFlags: c_int {
+            const MAP_FILE         = libc::MAP_FILE,
+            const MAP_SHARED       = libc::MAP_SHARED,
+            const MAP_PRIVATE      = libc::MAP_PRIVATE,
+            const MAP_FIXED        = libc::MAP_FIXED,
+            const MAP_RENAME       = libc::MAP_RENAME,
+            const MAP_NORESERVE    = libc::MAP_NORESERVE,
+            const MAP_HASSEMAPHORE = libc::MAP_HASSEMAPHORE,
+            const MAP_STACK        = libc::MAP_STACK,
+            #[cfg(target_os = "netbsd")]
+            const MAP_WIRED        = libc::MAP_WIRED,
+            const MAP_NOSYNC       = libc::MAP_NOSYNC,
+            const MAP_ANON         = libc::MAP_ANON,
+        }
+    }
 
     pub type MmapProt = c_int;
 
@@ -206,8 +212,8 @@ pub fn munlock(addr: *const c_void, length: size_t) -> Result<()> {
 
 /// Calls to mmap are inherently unsafe, so they must be made in an unsafe block. Typically
 /// a higher-level abstraction will hide the unsafe interactions with the mmap'd region.
-pub fn mmap(addr: *mut c_void, length: size_t, prot: MmapProt, flags: MmapFlag, fd: RawFd, offset: off_t) -> Result<*mut c_void> {
-    let ret = unsafe { ffi::mmap(addr, length, prot, flags, fd, offset) };
+pub fn mmap(addr: *mut c_void, length: size_t, prot: MmapProt, flags: MmapFlags, fd: RawFd, offset: off_t) -> Result<*mut c_void> {
+    let ret = unsafe { ffi::mmap(addr, length, prot, flags.bits(), fd, offset) };
 
     if ret as isize == MAP_FAILED  {
         Err(Error::Sys(Errno::last()))
