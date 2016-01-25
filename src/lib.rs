@@ -31,6 +31,9 @@ pub mod mount;
 #[cfg(any(target_os = "linux"))]
 pub mod mqueue;
 
+#[cfg(any(target_os = "linux"))]
+pub mod net;
+
 #[cfg(any(target_os = "linux", target_os = "android"))]
 pub mod sched;
 
