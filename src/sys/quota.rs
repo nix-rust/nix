@@ -1,5 +1,5 @@
-use {Result, NixPath, from_ffi};
-use errno::Errno;
+use NixPath;
+use errno::{Errno, Result};
 use libc::{c_int, c_char};
 
 #[cfg(all(target_os = "linux",
@@ -90,7 +90,8 @@ fn quotactl<P: ?Sized + NixPath>(cmd: quota::QuotaCmd, special: Option<&P>, id: 
                 None => Ok(ffi::quotactl(cmd.as_int(), ptr::null(), id, addr)),
             }
         );
-        from_ffi(res)
+
+        Errno::result(res).map(drop)
     }
 }
 

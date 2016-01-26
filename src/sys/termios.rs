@@ -1,5 +1,4 @@
-use {Error, Result, from_ffi};
-use errno::Errno;
+use errno::{Errno, Result};
 use libc::c_int;
 use std::mem;
 use std::os::unix::io::RawFd;
@@ -440,15 +439,15 @@ pub fn cfgetospeed(termios: &Termios) -> speed_t {
 }
 
 pub fn cfsetispeed(termios: &mut Termios, speed: speed_t) -> Result<()> {
-    from_ffi(unsafe {
+    Errno::result(unsafe {
         ffi::cfsetispeed(termios, speed)
-    })
+    }).map(drop)
 }
 
 pub fn cfsetospeed(termios: &mut Termios, speed: speed_t) -> Result<()> {
-    from_ffi(unsafe {
+    Errno::result(unsafe {
         ffi::cfsetospeed(termios, speed)
-    })
+    }).map(drop)
 }
 
 pub fn tcgetattr(fd: RawFd) -> Result<Termios> {
@@ -458,9 +457,7 @@ pub fn tcgetattr(fd: RawFd) -> Result<Termios> {
         ffi::tcgetattr(fd, &mut termios)
     };
 
-    if res < 0 {
-        return Err(Error::Sys(Errno::last()));
-    }
+    try!(Errno::result(res));
 
     Ok(termios)
 }
@@ -468,31 +465,31 @@ pub fn tcgetattr(fd: RawFd) -> Result<Termios> {
 pub fn tcsetattr(fd: RawFd,
                  actions: SetArg,
                  termios: &Termios) -> Result<()> {
-    from_ffi(unsafe {
+    Errno::result(unsafe {
         ffi::tcsetattr(fd, actions as c_int, termios)
-    })
+    }).map(drop)
 }
 
 pub fn tcdrain(fd: RawFd) -> Result<()> {
-    from_ffi(unsafe {
+    Errno::result(unsafe {
         ffi::tcdrain(fd)
-    })
+    }).map(drop)
 }
 
 pub fn tcflow(fd: RawFd, action: FlowArg) -> Result<()> {
-    from_ffi(unsafe {
+    Errno::result(unsafe {
         ffi::tcflow(fd, action as c_int)
-    })
+    }).map(drop)
 }
 
 pub fn tcflush(fd: RawFd, action: FlushArg) -> Result<()> {
-    from_ffi(unsafe {
+    Errno::result(unsafe {
         ffi::tcflush(fd, action as c_int)
-    })
+    }).map(drop)
 }
 
 pub fn tcsendbreak(fd: RawFd, action: c_int) -> Result<()> {
-    from_ffi(unsafe {
+    Errno::result(unsafe {
         ffi::tcsendbreak(fd, action)
-    })
+    }).map(drop)
 }

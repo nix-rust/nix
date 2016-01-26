@@ -1,8 +1,7 @@
 /* TOOD: Implement for other kqueue based systems
  */
 
-use {Error, Result};
-use errno::Errno;
+use errno::{Errno, Result};
 #[cfg(not(target_os = "netbsd"))]
 use libc::{timespec, time_t, c_int, c_long, uintptr_t};
 #[cfg(target_os = "netbsd")]
@@ -277,11 +276,7 @@ pub const EV_OOBAND: EventFlag = EV_FLAG1;
 pub fn kqueue() -> Result<RawFd> {
     let res = unsafe { ffi::kqueue() };
 
-    if res < 0 {
-        return Err(Error::Sys(Errno::last()));
-    }
-
-    Ok(res)
+    Errno::result(res)
 }
 
 pub fn kevent(kq: RawFd,
@@ -314,11 +309,7 @@ pub fn kevent_ts(kq: RawFd,
             if let Some(ref timeout) = timeout_opt {timeout as *const timespec} else {ptr::null()})
     };
 
-    if res < 0 {
-        return Err(Error::Sys(Errno::last()));
-    }
-
-    return Ok(res as usize)
+    Errno::result(res).map(|r| r as usize)
 }
 
 #[cfg(target_os = "netbsd")]
@@ -337,11 +328,7 @@ pub fn kevent_ts(kq: RawFd,
             if let Some(ref timeout) = timeout_opt {timeout as *const timespec} else {ptr::null()})
     };
 
-    if res < 0 {
-        return Err(Error::Sys(Errno::last()));
-    }
-
-    return Ok(res as usize)
+    Errno::result(res).map(|r| r as usize)
 }
 
 #[cfg(not(target_os = "netbsd"))]

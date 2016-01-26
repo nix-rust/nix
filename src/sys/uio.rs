@@ -1,8 +1,7 @@
 // Silence invalid warnings due to rust-lang/rust#16719
 #![allow(improper_ctypes)]
 
-use {Result, Error};
-use errno::Errno;
+use errno::{Errno, Result};
 use libc::{c_int, c_void, size_t, off_t};
 use std::marker::PhantomData;
 use std::os::unix::io::RawFd;
@@ -48,20 +47,13 @@ mod ffi {
 pub fn writev(fd: RawFd, iov: &[IoVec<&[u8]>]) -> Result<usize> {
     let res = unsafe { ffi::writev(fd, iov.as_ptr(), iov.len() as c_int) };
 
-    if res < 0 {
-        return Err(Error::Sys(Errno::last()));
-    }
-
-    return Ok(res as usize)
+    Errno::result(res).map(|r| r as usize)
 }
 
 pub fn readv(fd: RawFd, iov: &mut [IoVec<&mut [u8]>]) -> Result<usize> {
     let res = unsafe { ffi::readv(fd, iov.as_ptr(), iov.len() as c_int) };
-    if res < 0 {
-        return Err(Error::Sys(Errno::last()));
-    }
 
-    return Ok(res as usize)
+    Errno::result(res).map(|r| r as usize)
 }
 
 #[cfg(feature = "preadv_pwritev")]
@@ -70,11 +62,8 @@ pub fn pwritev(fd: RawFd, iov: &[IoVec<&[u8]>],
     let res = unsafe {
         ffi::pwritev(fd, iov.as_ptr(), iov.len() as c_int, offset)
     };
-    if res < 0 {
-        Err(Error::Sys(Errno::last()))
-    } else {
-        Ok(res as usize)
-    }
+
+    Errno::result(res).map(|r| r as usize)
 }
 
 #[cfg(feature = "preadv_pwritev")]
@@ -83,11 +72,8 @@ pub fn preadv(fd: RawFd, iov: &mut [IoVec<&mut [u8]>],
     let res = unsafe {
         ffi::preadv(fd, iov.as_ptr(), iov.len() as c_int, offset)
     };
-    if res < 0 {
-        Err(Error::Sys(Errno::last()))
-    } else {
-        Ok(res as usize)
-    }
+
+    Errno::result(res).map(|r| r as usize)
 }
 
 pub fn pwrite(fd: RawFd, buf: &[u8], offset: off_t) -> Result<usize> {
@@ -95,11 +81,8 @@ pub fn pwrite(fd: RawFd, buf: &[u8], offset: off_t) -> Result<usize> {
         ffi::pwrite(fd, buf.as_ptr() as *const c_void, buf.len() as size_t,
                     offset)
     };
-    if res < 0 {
-        Err(Error::Sys(Errno::last()))
-    } else {
-        Ok(res as usize)
-    }
+
+    Errno::result(res).map(|r| r as usize)
 }
 
 pub fn pread(fd: RawFd, buf: &mut [u8], offset: off_t) -> Result<usize>{
@@ -107,11 +90,8 @@ pub fn pread(fd: RawFd, buf: &mut [u8], offset: off_t) -> Result<usize>{
         ffi::pread(fd, buf.as_mut_ptr() as *mut c_void, buf.len() as size_t,
                    offset)
     };
-    if res < 0 {
-        Err(Error::Sys(Errno::last()))
-    } else {
-        Ok(res as usize)
-    }
+
+    Errno::result(res).map(|r| r as usize)
 }
 
 #[repr(C)]

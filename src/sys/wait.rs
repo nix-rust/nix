@@ -1,6 +1,5 @@
 use libc::{pid_t, c_int};
-use errno::Errno;
-use {Error, Result};
+use errno::{Errno, Result};
 
 use sys::signal;
 
@@ -203,13 +202,10 @@ pub fn waitpid(pid: pid_t, options: Option<WaitPidFlag>) -> Result<WaitStatus> {
 
     let res = unsafe { ffi::waitpid(pid as pid_t, &mut status as *mut c_int, option_bits) };
 
-    if res < 0 {
-        Err(Error::Sys(Errno::last()))
-    } else if res == 0 {
-        Ok(StillAlive)
-    } else {
-        Ok(decode(res, status))
-    }
+    Ok(match try!(Errno::result(res)) {
+        0 => StillAlive,
+        res => decode(res, status),
+    })
 }
 
 pub fn wait() -> Result<WaitStatus> {
