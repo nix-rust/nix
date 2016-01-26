@@ -1,8 +1,7 @@
 use std::ptr::null_mut;
 use std::os::unix::io::RawFd;
 use libc::c_int;
-use {Result, Error};
-use errno::Errno;
+use errno::{Errno, Result};
 use sys::time::TimeVal;
 
 pub const FD_SETSIZE: RawFd = 1024;
@@ -82,9 +81,5 @@ pub fn select(nfds: c_int,
         ffi::select(nfds, readfds, writefds, errorfds, timeout)
     };
 
-    if res == -1 {
-        Err(Error::Sys(Errno::last()))
-    } else {
-        Ok(res)
-    }
+    Errno::result(res)
 }

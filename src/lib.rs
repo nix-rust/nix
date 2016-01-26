@@ -18,8 +18,9 @@ extern crate libc;
 #[cfg(test)]
 extern crate nix_test as nixtest;
 
-// Re-export some libc constants
+// Re-exports
 pub use libc::{c_int, c_void};
+pub use errno::{Errno, Result};
 
 pub mod errno;
 pub mod features;
@@ -44,12 +45,12 @@ pub mod unistd;
 
 /*
  *
- * ===== Result / Error =====
+ * ===== Error =====
  *
  */
 
 use libc::c_char;
-use std::{ptr, result};
+use std::ptr;
 use std::ffi::{CStr, OsStr};
 use std::path::{Path, PathBuf};
 use std::os::unix::ffi::OsStrExt;
@@ -57,8 +58,6 @@ use std::io;
 use std::fmt;
 use std::error;
 use libc::PATH_MAX;
-
-pub type Result<T> = result::Result<T, Error>;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Error {
@@ -223,13 +222,4 @@ impl<'a, NP: ?Sized + NixPath>  NixPath for Option<&'a NP> {
             unsafe { CStr::from_ptr("\0".as_ptr() as *const _).with_nix_path(f) }
         }
     }
-}
-
-#[inline]
-pub fn from_ffi(res: libc::c_int) -> Result<()> {
-    if res != 0 {
-        return Err(Error::Sys(errno::Errno::last()));
-    }
-
-    Ok(())
 }

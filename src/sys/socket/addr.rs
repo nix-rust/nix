@@ -1,6 +1,6 @@
-use {Result, Error, NixPath};
 use super::{consts, sa_family_t};
-use errno::Errno;
+use {NixPath, Error};
+use errno::{Errno, Result};
 use libc;
 use std::{fmt, hash, mem, net, ptr};
 use std::ffi::OsStr;

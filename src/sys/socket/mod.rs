@@ -1,8 +1,8 @@
 //! Socket interface functions
 //!
 //! [Further reading](http://man7.org/linux/man-pages/man7/socket.7.html)
-use {Error, Result, from_ffi};
-use errno::Errno;
+use Error;
+use errno::{Errno, Result};
 use features;
 use fcntl::{fcntl, FD_CLOEXEC, O_NONBLOCK};
 use fcntl::FcntlArg::{F_SETFD, F_SETFL};
@@ -293,11 +293,7 @@ pub fn sendmsg<'a>(fd: RawFd, iov: &[IoVec<&'a [u8]>], cmsgs: &[ControlMessage<'
     };
     let ret = unsafe { ffi::sendmsg(fd, &mhdr, flags) };
 
-    if ret < 0 {
-        Err(Error::Sys(Errno::last()))
-    } else {
-        Ok(ret as usize)
-    }
+    Errno::result(ret).map(|r| r as usize)
 }
 
 /// Receive message in scatter-gather vectors from a socket, and
@@ -320,18 +316,14 @@ pub fn recvmsg<'a, T>(fd: RawFd, iov: &[IoVec<&mut [u8]>], cmsg_buffer: Option<&
     };
     let ret = unsafe { ffi::recvmsg(fd, &mut mhdr, flags) };
 
-    if ret < 0 {
-        Err(Error::Sys(Errno::last()))
-    } else {
-        Ok(unsafe { RecvMsg {
-            bytes: ret as usize,
-            cmsg_buffer: slice::from_raw_parts(mhdr.msg_control as *const u8,
-                                               mhdr.msg_controllen as usize),
-            address: sockaddr_storage_to_addr(&address,
-                                              mhdr.msg_namelen as usize).ok(),
-            flags: mhdr.msg_flags,
-        } })
-    }
+    Ok(unsafe { RecvMsg {
+        bytes: try!(Errno::result(ret)) as usize,
+        cmsg_buffer: slice::from_raw_parts(mhdr.msg_control as *const u8,
+                                           mhdr.msg_controllen as usize),
+        address: sockaddr_storage_to_addr(&address,
+                                          mhdr.msg_namelen as usize).ok(),
+        flags: mhdr.msg_flags,
+    } })
 }
 
 
@@ -347,11 +339,7 @@ pub fn socket(domain: AddressFamily, ty: SockType, flags: SockFlag, protocol: c_
     }
 
     // TODO: Check the kernel version
-    let res = unsafe { ffi::socket(domain as c_int, ty, protocol) };
-
-    if res < 0 {
-        return Err(Error::Sys(Errno::last()));
-    }
+    let res = try!(Errno::result(unsafe { ffi::socket(domain as c_int, ty, protocol) }));
 
     if !feat_atomic {
         if flags.contains(SOCK_CLOEXEC) {
@@ -381,10 +369,7 @@ pub fn socketpair(domain: AddressFamily, ty: SockType, protocol: c_int,
     let res = unsafe {
         ffi::socketpair(domain as c_int, ty, protocol, fds.as_mut_ptr())
     };
-
-    if res < 0 {
-        return Err(Error::Sys(Errno::last()));
-    }
+    try!(Errno::result(res));
 
     if !feat_atomic {
         if flags.contains(SOCK_CLOEXEC) {
@@ -405,7 +390,8 @@ pub fn socketpair(domain: AddressFamily, ty: SockType, protocol: c_int,
 /// [Further reading](http://man7.org/linux/man-pages/man2/listen.2.html)
 pub fn listen(sockfd: RawFd, backlog: usize) -> Result<()> {
     let res = unsafe { ffi::listen(sockfd, backlog as c_int) };
-    from_ffi(res)
+
+    Errno::result(res).map(drop)
 }
 
 /// Bind a name to a socket
@@ -417,7 +403,7 @@ pub fn bind(fd: RawFd, addr: &SockAddr) -> Result<()> {
         ffi::bind(fd, ptr, len)
     };
 
-    from_ffi(res)
+    Errno::result(res).map(drop)
 }
 
 /// Accept a connection on a socket
@@ -426,11 +412,7 @@ pub fn bind(fd: RawFd, addr: &SockAddr) -> Result<()> {
 pub fn accept(sockfd: RawFd) -> Result<RawFd> {
     let res = unsafe { ffi::accept(sockfd, ptr::null_mut(), ptr::null_mut()) };
 
-    if res < 0 {
-        return Err(Error::Sys(Errno::last()));
-    }
-
-    Ok(res)
+    Errno::result(res)
 }
 
 /// Accept a connection on a socket
@@ -442,11 +424,7 @@ pub fn accept4(sockfd: RawFd, flags: SockFlag) -> Result<RawFd> {
 
 #[inline]
 fn accept4_polyfill(sockfd: RawFd, flags: SockFlag) -> Result<RawFd> {
-    let res =  unsafe { ffi::accept(sockfd, ptr::null_mut(), ptr::null_mut()) };
-
-    if res < 0 {
-        return Err(Error::Sys(Errno::last()));
-    }
+    let res = try!(Errno::result(unsafe { ffi::accept(sockfd, ptr::null_mut(), ptr::null_mut()) }));
 
     if flags.contains(SOCK_CLOEXEC) {
         try!(fcntl(res, F_SETFD(FD_CLOEXEC)));
@@ -468,7 +446,7 @@ pub fn connect(fd: RawFd, addr: &SockAddr) -> Result<()> {
         ffi::connect(fd, ptr, len)
     };
 
-    from_ffi(res)
+    Errno::result(res).map(drop)
 }
 
 /// Receive data from a connection-oriented socket. Returns the number of
@@ -483,11 +461,7 @@ pub fn recv(sockfd: RawFd, buf: &mut [u8], flags: SockMessageFlags) -> Result<us
             buf.len() as size_t,
             flags);
 
-        if ret < 0 {
-            Err(Error::last())
-        } else {
-            Ok(ret as usize)
-        }
+        Errno::result(ret).map(|r| r as usize)
     }
 }
 
@@ -500,17 +474,13 @@ pub fn recvfrom(sockfd: RawFd, buf: &mut [u8]) -> Result<(usize, SockAddr)> {
         let addr: sockaddr_storage = mem::zeroed();
         let mut len = mem::size_of::<sockaddr_storage>() as socklen_t;
 
-        let ret = ffi::recvfrom(
+        let ret = try!(Errno::result(ffi::recvfrom(
             sockfd,
             buf.as_ptr() as *mut c_void,
             buf.len() as size_t,
             0,
             mem::transmute(&addr),
-            &mut len as *mut socklen_t);
-
-        if ret < 0 {
-            return Err(Error::last());
-        }
+            &mut len as *mut socklen_t)));
 
         sockaddr_storage_to_addr(&addr, len as usize)
             .map(|addr| (ret as usize, addr))
@@ -523,11 +493,7 @@ pub fn sendto(fd: RawFd, buf: &[u8], addr: &SockAddr, flags: SockMessageFlags) -
         ffi::sendto(fd, buf.as_ptr() as *const c_void, buf.len() as size_t, flags, ptr, len)
     };
 
-    if ret < 0 {
-        Err(Error::Sys(Errno::last()))
-    } else {
-        Ok(ret as usize)
-    }
+    Errno::result(ret).map(|r| r as usize)
 }
 
 /// Send data to a connection-oriented socket. Returns the number of bytes read
@@ -538,11 +504,7 @@ pub fn send(fd: RawFd, buf: &[u8], flags: SockMessageFlags) -> Result<usize> {
         ffi::send(fd, buf.as_ptr() as *const c_void, buf.len() as size_t, flags)
     };
 
-    if ret < 0 {
-        Err(Error::last())
-    } else {
-        Ok(ret as usize)
-    }
+    Errno::result(ret).map(|r| r as usize)
 }
 
 #[repr(C)]
@@ -621,9 +583,7 @@ pub fn getpeername(fd: RawFd) -> Result<SockAddr> {
 
         let ret = ffi::getpeername(fd, mem::transmute(&addr), &mut len);
 
-        if ret < 0 {
-            return Err(Error::last());
-        }
+        try!(Errno::result(ret));
 
         sockaddr_storage_to_addr(&addr, len as usize)
     }
@@ -639,9 +599,7 @@ pub fn getsockname(fd: RawFd) -> Result<SockAddr> {
 
         let ret = ffi::getsockname(fd, mem::transmute(&addr), &mut len);
 
-        if ret < 0 {
-            return Err(Error::last());
-        }
+        try!(Errno::result(ret));
 
         sockaddr_storage_to_addr(&addr, len as usize)
     }
@@ -696,14 +654,8 @@ pub fn shutdown(df: RawFd, how: Shutdown) -> Result<()> {
             Shutdown::Both  => consts::SHUT_RDWR,
         };
 
-        let ret = shutdown(df, how);
-
-        if ret < 0 {
-            return Err(Error::last());
-        }
+        Errno::result(shutdown(df, how)).map(drop)
     }
-
-    Ok(())
 }
 
 #[test]

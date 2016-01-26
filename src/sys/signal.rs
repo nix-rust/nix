@@ -2,10 +2,9 @@
 // See http://rust-lang.org/COPYRIGHT.
 
 use libc;
-use errno::Errno;
+use errno::{Errno, Result};
 use std::mem;
 use std::ptr;
-use {Error, Result};
 
 pub use libc::{
     SIGHUP,
@@ -324,30 +323,22 @@ impl SigSet {
     pub fn add(&mut self, signum: SigNum) -> Result<()> {
         let res = unsafe { ffi::sigaddset(&mut self.sigset as *mut sigset_t, signum) };
 
-        if res < 0 {
-            return Err(Error::Sys(Errno::last()));
-        }
-
-        Ok(())
+        Errno::result(res).map(drop)
     }
 
     pub fn remove(&mut self, signum: SigNum) -> Result<()> {
         let res = unsafe { ffi::sigdelset(&mut self.sigset as *mut sigset_t, signum) };
 
-        if res < 0 {
-            return Err(Error::Sys(Errno::last()));
-        }
-
-        Ok(())
+        Errno::result(res).map(drop)
     }
 
     pub fn contains(&self, signum: SigNum) -> Result<bool> {
         let res = unsafe { ffi::sigismember(&self.sigset as *const sigset_t, signum) };
 
-        match res {
+        match try!(Errno::result(res)) {
             1 => Ok(true),
             0 => Ok(false),
-            _ => Err(Error::Sys(Errno::last()))
+            _ => unreachable!("unexpected value from sigismember"),
         }
     }
 
@@ -410,11 +401,7 @@ pub unsafe fn sigaction(signum: SigNum, sigaction: &SigAction) -> Result<SigActi
     let res =
         ffi::sigaction(signum, &sigaction.sigaction as *const sigaction_t, &mut oldact as *mut sigaction_t);
 
-    if res < 0 {
-        return Err(Error::Sys(Errno::last()));
-    }
-
-    Ok(SigAction { sigaction: oldact })
+    Errno::result(res).map(|_| SigAction { sigaction: oldact })
 }
 
 /// Manages the signal mask (set of blocked signals) for the calling thread.
@@ -448,31 +435,19 @@ pub fn pthread_sigmask(how: HowFlag,
                                                 |os| &mut os.sigset as *mut sigset_t))
     };
 
-    if res != 0 {
-        return Err(Error::Sys(Errno::last()));
-    }
-
-    Ok(())
+    Errno::result(res).map(drop)
 }
 
 pub fn kill(pid: libc::pid_t, signum: SigNum) -> Result<()> {
     let res = unsafe { ffi::kill(pid, signum) };
 
-    if res < 0 {
-        return Err(Error::Sys(Errno::last()));
-    }
-
-    Ok(())
+    Errno::result(res).map(drop)
 }
 
 pub fn raise(signum: SigNum) -> Result<()> {
     let res = unsafe { ffi::raise(signum) };
 
-    if res < 0 {
-        return Err(Error::Sys(Errno::last()));
-    }
-
-    Ok(())
+    Errno::result(res).map(drop)
 }
 
 #[cfg(test)]

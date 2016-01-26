@@ -1,6 +1,5 @@
-use {Result, Error, from_ffi};
 use super::{ffi, consts, GetSockOpt, SetSockOpt};
-use errno::Errno;
+use errno::{Errno, Result};
 use sys::time::TimeVal;
 use libc::{c_int, uint8_t, c_void, socklen_t};
 use std::mem;
@@ -18,7 +17,7 @@ macro_rules! setsockopt_impl {
                     let res = ffi::setsockopt(fd, $level, $flag,
                                               setter.ffi_ptr(),
                                               setter.ffi_len());
-                    from_ffi(res)
+                    Errno::result(res).map(drop)
                 }
             }
         }
@@ -37,9 +36,7 @@ macro_rules! getsockopt_impl {
                     let res = ffi::getsockopt(fd, $level, $flag,
                                               getter.ffi_ptr(),
                                               getter.ffi_len());
-                    if res < 0 {
-                        return Err(Error::Sys(Errno::last()));
-                    }
+                    try!(Errno::result(res));
 
                     Ok(getter.unwrap())
                 }
