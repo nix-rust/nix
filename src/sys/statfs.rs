@@ -4,7 +4,7 @@ use std::os::unix::io::AsRawFd;
 
 pub mod vfs {
     #[cfg(target_pointer_width = "32")]
-        pub mod hwdep {
+    pub mod hwdep {
         use libc::{c_uint};
         pub type FsType = c_uint;
         pub type BlockSize = c_uint;
