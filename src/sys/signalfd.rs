@@ -17,7 +17,7 @@
 //! signal handlers.
 use libc::{c_int, pid_t, uid_t};
 use unistd;
-use errno::{Errno, Result};
+use {Errno, Result};
 use sys::signal::signal::siginfo as signal_siginfo;
 pub use sys::signal::{self, SigSet};
 

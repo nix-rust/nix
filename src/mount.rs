@@ -1,6 +1,5 @@
 use libc::{c_ulong, c_int};
-use NixPath;
-use errno::{Errno, Result};
+use {Errno, Result, NixPath};
 
 bitflags!(
     flags MsFlags: c_ulong {

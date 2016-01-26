@@ -1,7 +1,7 @@
 use std::ptr::null_mut;
 use std::os::unix::io::RawFd;
 use libc::c_int;
-use errno::{Errno, Result};
+use {Errno, Result};
 use sys::time::TimeVal;
 
 pub const FD_SETSIZE: RawFd = 1024;

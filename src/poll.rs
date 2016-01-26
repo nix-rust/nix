@@ -1,5 +1,5 @@
 use libc::c_int;
-use errno::{Errno, Result};
+use {Errno, Result};
 
 pub use self::ffi::PollFd;
 pub use self::ffi::consts::*;

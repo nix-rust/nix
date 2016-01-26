@@ -1,7 +1,7 @@
 use std::mem;
 use std::os::unix::io::RawFd;
 use libc::{c_int, c_uint, c_void, c_ulong, pid_t};
-use errno::{Errno, Result};
+use {Errno, Result};
 
 pub type CloneFlags = c_uint;
 

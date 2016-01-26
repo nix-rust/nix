@@ -1,5 +1,4 @@
-use NixPath;
-use errno::{Errno, Result};
+use {Errno, Result, NixPath};
 use libc::{c_int, c_char};
 
 #[cfg(all(target_os = "linux",

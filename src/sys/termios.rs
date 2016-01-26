@@ -1,4 +1,4 @@
-use errno::{Errno, Result};
+use {Errno, Result};
 use libc::c_int;
 use std::mem;
 use std::os::unix::io::RawFd;

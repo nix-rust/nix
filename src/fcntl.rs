@@ -1,5 +1,4 @@
-use NixPath;
-use errno::{Errno, Result};
+use {Errno, Result, NixPath};
 use libc::{c_int, c_uint};
 use sys::stat::Mode;
 use std::os::unix::io::RawFd;
