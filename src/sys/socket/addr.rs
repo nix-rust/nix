@@ -17,7 +17,7 @@ use ::sys::socket::addr::netlink::NetlinkAddr;
  */
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
-#[derive(Debug,Copy,Clone)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, Hash)]
 #[repr(C)]
 pub struct sockaddr_nl {
     pub nl_family: sa_family_t,
@@ -560,9 +560,9 @@ impl fmt::Display for SockAddr {
 pub mod netlink {
     use ::sys::socket::addr::{AddressFamily,sockaddr_nl};
     use libc::sa_family_t;
-    use std::{fmt, hash};
+    use std::fmt;
 
-    #[derive(Copy)]
+    #[derive(Copy, Clone, PartialEq, Eq, Debug, Hash)]
     pub struct NetlinkAddr(pub sockaddr_nl);
 
     impl NetlinkAddr {
@@ -581,27 +581,6 @@ pub mod netlink {
 
         pub fn groups(&self) -> u32 {
             self.0.nl_groups
-        }
-    }
-
-    impl PartialEq for NetlinkAddr {
-        fn eq(&self, other: &NetlinkAddr) -> bool {
-            self.0.nl_pid == other.0.nl_pid && self.0.nl_groups == self.0.nl_groups
-        }
-    }
-
-    impl Eq for NetlinkAddr {
-    }
-
-    impl hash::Hash for NetlinkAddr {
-        fn hash<H: hash::Hasher>(&self, s: &mut H) {
-            ( self.0.nl_family, self.0.nl_pid, self.0.nl_groups).hash(s)
-        }
-    }
-
-    impl Clone for NetlinkAddr {
-        fn clone(&self) -> NetlinkAddr {
-            *self
         }
     }
 

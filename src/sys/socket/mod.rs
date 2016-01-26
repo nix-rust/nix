@@ -541,7 +541,7 @@ pub enum SockLevel {
     Ip = IPPROTO_IP,
     Ipv6 = IPPROTO_IPV6,
     Udp = IPPROTO_UDP,
-#[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(any(target_os = "linux", target_os = "android"))]
     Netlink = SOL_NETLINK,
 }
 
