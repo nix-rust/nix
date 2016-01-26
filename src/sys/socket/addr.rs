@@ -32,7 +32,7 @@ pub enum AddressFamily {
     Unix = consts::AF_UNIX,
     Inet = consts::AF_INET,
     Inet6 = consts::AF_INET6,
-#[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(any(target_os = "linux", target_os = "android"))]
     Netlink = consts::AF_NETLINK,
 }
 
@@ -464,7 +464,7 @@ impl fmt::Display for UnixAddr {
 pub enum SockAddr {
     Inet(InetAddr),
     Unix(UnixAddr),
-#[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(any(target_os = "linux", target_os = "android"))]
     Netlink(NetlinkAddr)
 }
 
@@ -477,7 +477,7 @@ impl SockAddr {
         Ok(SockAddr::Unix(try!(UnixAddr::new(path))))
     }
 
-#[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(any(target_os = "linux", target_os = "android"))]
     pub fn new_netlink(pid: u32, groups: u32) -> SockAddr {
         SockAddr::Netlink(NetlinkAddr::new(pid, groups))
     }
@@ -487,7 +487,7 @@ impl SockAddr {
             SockAddr::Inet(InetAddr::V4(..)) => AddressFamily::Inet,
             SockAddr::Inet(InetAddr::V6(..)) => AddressFamily::Inet6,
             SockAddr::Unix(..) => AddressFamily::Unix,
-#[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(any(target_os = "linux", target_os = "android"))]
             SockAddr::Netlink(..) => AddressFamily::Netlink,
         }
     }
@@ -501,7 +501,7 @@ impl SockAddr {
             SockAddr::Inet(InetAddr::V4(ref addr)) => (mem::transmute(addr), mem::size_of::<libc::sockaddr_in>() as libc::socklen_t),
             SockAddr::Inet(InetAddr::V6(ref addr)) => (mem::transmute(addr), mem::size_of::<libc::sockaddr_in6>() as libc::socklen_t),
             SockAddr::Unix(UnixAddr(ref addr, len)) => (mem::transmute(addr), (len + mem::size_of::<libc::sa_family_t>()) as libc::socklen_t),
-#[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(any(target_os = "linux", target_os = "android"))]
             SockAddr::Netlink(NetlinkAddr(ref sa)) => (mem::transmute(sa), mem::size_of::<sockaddr_nl>() as libc::socklen_t),
         }
     }
@@ -516,7 +516,7 @@ impl PartialEq for SockAddr {
             (SockAddr::Unix(ref a), SockAddr::Unix(ref b)) => {
                 a == b
             }
-#[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(any(target_os = "linux", target_os = "android"))]
             (SockAddr::Netlink(ref a), SockAddr::Netlink(ref b)) => {
                 a == b
             }
@@ -533,7 +533,7 @@ impl hash::Hash for SockAddr {
         match *self {
             SockAddr::Inet(ref a) => a.hash(s),
             SockAddr::Unix(ref a) => a.hash(s),
-#[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(any(target_os = "linux", target_os = "android"))]
             SockAddr::Netlink(ref a) => a.hash(s),
         }
     }
@@ -550,7 +550,7 @@ impl fmt::Display for SockAddr {
         match *self {
             SockAddr::Inet(ref inet) => inet.fmt(f),
             SockAddr::Unix(ref unix) => unix.fmt(f),
-#[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(any(target_os = "linux", target_os = "android"))]
             SockAddr::Netlink(ref nl) => nl.fmt(f),
         }
     }
