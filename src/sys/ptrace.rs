@@ -1,5 +1,4 @@
-use Error;
-use errno::{Errno, Result};
+use {Errno, Error, Result};
 use libc::{pid_t, c_void, c_long};
 
 #[cfg(all(target_os = "linux",

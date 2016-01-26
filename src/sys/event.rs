@@ -1,7 +1,7 @@
 /* TOOD: Implement for other kqueue based systems
  */
 
-use errno::{Errno, Result};
+use {Errno, Result};
 #[cfg(not(target_os = "netbsd"))]
 use libc::{timespec, time_t, c_int, c_long, uintptr_t};
 #[cfg(target_os = "netbsd")]

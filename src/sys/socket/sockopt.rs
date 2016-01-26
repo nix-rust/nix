@@ -1,5 +1,5 @@
 use super::{ffi, consts, GetSockOpt, SetSockOpt};
-use errno::{Errno, Result};
+use {Errno, Result};
 use sys::time::TimeVal;
 use libc::{c_int, uint8_t, c_void, socklen_t};
 use std::mem;

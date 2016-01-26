@@ -1,7 +1,6 @@
 //! Standard symbolic constants and types
 //!
-use {NixPath, Error};
-use errno::{Errno, Result};
+use {Errno, Error, Result, NixPath};
 use fcntl::{fcntl, OFlag, O_NONBLOCK, O_CLOEXEC, FD_CLOEXEC};
 use fcntl::FcntlArg::{F_SETFD, F_SETFL};
 use libc::{c_char, c_void, c_int, size_t, pid_t, off_t, uid_t, gid_t};
@@ -373,8 +372,7 @@ pub fn getegid() -> gid_t {
 #[cfg(any(target_os = "linux", target_os = "android"))]
 mod linux {
     use sys::syscall::{syscall, SYSPIVOTROOT};
-    use NixPath;
-    use errno::{Errno, Result};
+    use {Errno, Result, NixPath};
 
     #[cfg(feature = "execvpe")]
     use std::ffi::CString;

@@ -1,6 +1,6 @@
 use libc::c_int;
-use std::{fmt, io, error, result};
-use Error;
+use std::{fmt, io, error};
+use {Error, Result};
 
 pub use self::consts::*;
 pub use self::consts::Errno::*;
@@ -116,8 +116,6 @@ impl From<Errno> for io::Error {
         io::Error::from_raw_os_error(err as i32)
     }
 }
-
-pub type Result<T> = result::Result<T, Error>;
 
 fn last() -> Errno {
     Errno::from_i32(errno())

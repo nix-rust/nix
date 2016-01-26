@@ -1,6 +1,6 @@
 use libc;
 use std::os::unix::io::RawFd;
-use errno::{Errno, Result};
+use {Errno, Result};
 use std::ffi::CStr;
 
 bitflags!(

@@ -1,8 +1,7 @@
 pub use libc::dev_t;
 pub use libc::stat as FileStat;
 
-use NixPath;
-use errno::{Errno, Result};
+use {Errno, Result, NixPath};
 use libc::mode_t;
 use std::mem;
 use std::os::unix::io::RawFd;

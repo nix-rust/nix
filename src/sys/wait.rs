@@ -1,5 +1,5 @@
 use libc::{pid_t, c_int};
-use errno::{Errno, Result};
+use {Errno, Result};
 
 use sys::signal;
 

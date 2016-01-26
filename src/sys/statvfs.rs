@@ -2,8 +2,7 @@
 //!
 //! See the `vfs::Statvfs` struct for some rusty wrappers
 
-use NixPath;
-use errno::{Errno, Result};
+use {Errno, Result, NixPath};
 use std::os::unix::io::AsRawFd;
 
 pub mod vfs {

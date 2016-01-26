@@ -2,7 +2,7 @@
 // See http://rust-lang.org/COPYRIGHT.
 
 use libc;
-use errno::{Errno, Result};
+use {Errno, Result};
 use std::mem;
 use std::ptr;
 

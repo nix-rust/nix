@@ -2,7 +2,7 @@
 //!
 //! [Further reading and details on the C API](http://man7.org/linux/man-pages/man7/mq_overview.7.html)
 
-use errno::{Errno, Result};
+use {Errno, Result};
 
 use libc::{c_int, c_long, c_char, size_t, mode_t, strlen};
 use std::ffi::CString;
