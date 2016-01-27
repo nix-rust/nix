@@ -50,7 +50,7 @@ pub mod unistd;
 
 use libc::c_char;
 use std::{ptr, result};
-use std::ffi::CStr;
+use std::ffi::{CStr, OsStr};
 use std::path::{Path, PathBuf};
 use std::os::unix::ffi::OsStrExt;
 use std::io;
@@ -125,6 +125,28 @@ pub trait NixPath {
         where F: FnOnce(&CStr) -> T;
 }
 
+impl NixPath for str {
+    fn len(&self) -> usize {
+        NixPath::len(OsStr::new(self))
+    }
+
+    fn with_nix_path<T, F>(&self, f: F) -> Result<T>
+        where F: FnOnce(&CStr) -> T {
+            OsStr::new(self).with_nix_path(f)
+        }
+}
+
+impl NixPath for OsStr {
+    fn len(&self) -> usize {
+        self.as_bytes().len()
+    }
+
+    fn with_nix_path<T, F>(&self, f: F) -> Result<T>
+        where F: FnOnce(&CStr) -> T {
+            self.as_bytes().with_nix_path(f)
+        }
+}
+
 impl NixPath for CStr {
     fn len(&self) -> usize {
         self.to_bytes().len()
@@ -170,21 +192,21 @@ impl NixPath for [u8] {
 
 impl NixPath for Path {
     fn len(&self) -> usize {
-        self.as_os_str().as_bytes().len()
+        NixPath::len(self.as_os_str())
     }
 
     fn with_nix_path<T, F>(&self, f: F) -> Result<T> where F: FnOnce(&CStr) -> T {
-        self.as_os_str().as_bytes().with_nix_path(f)
+        self.as_os_str().with_nix_path(f)
     }
 }
 
 impl NixPath for PathBuf {
     fn len(&self) -> usize {
-        self.as_os_str().as_bytes().len()
+        NixPath::len(self.as_os_str())
     }
 
     fn with_nix_path<T, F>(&self, f: F) -> Result<T> where F: FnOnce(&CStr) -> T {
-        self.as_os_str().as_bytes().with_nix_path(f)
+        self.as_os_str().with_nix_path(f)
     }
 }
 
