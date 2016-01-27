@@ -5,40 +5,29 @@
 
 use libc::{c_uint, if_nametoindex};
 use std::ffi::{CString, NulError};
-use std::io;
-
-/// Error that can occur during interface name resolution.
-#[derive(Debug)]
-pub enum NameToIndexError {
-    /// Failed to allocate a C-style string to for the syscall
-    NulError,
-    IOError(io::Error),
-}
-
-impl From<NulError> for NameToIndexError {
-    fn from(_: NulError) -> NameToIndexError {
-        NameToIndexError::NulError
-    }
-}
-
-impl From<io::Error> for NameToIndexError {
-    fn from(e: io::Error) -> NameToIndexError {
-        NameToIndexError::IOError(e)
-    }
-}
+use ::Error;
 
 /// Resolve an interface into a interface number.
-pub fn name_to_index(name: &str) -> Result<c_uint, NameToIndexError> {
-    let name = try!(CString::new(name));
+pub fn name_to_index(name: &str) -> Result<c_uint, Error> {
+    let name = match CString::new(name) {
+        Err(e) => match e { NulError(..) => {
+            // A NulError indicates that a '\0' was found inside the string,
+            // making it impossible to create valid C-String. To avoid having
+            // to create a new error type for this rather rare case,
+            // nix::Error's invalid_argument() constructor is used.
+            //
+            // We match the NulError individually here to ensure to avoid
+            // accidentally returning invalid_argument() for errors other than
+            // NulError (which currently don't exist).
+            return Err(Error::invalid_argument());
+        }},
+        Ok(s) => s
+    };
 
     let if_index;
     unsafe {
         if_index = if_nametoindex(name.as_ptr());
     }
 
-    if if_index == 0 {
-        return Err(NameToIndexError::from(io::Error::last_os_error()));
-    }
-
-    Ok(if_index)
+    if if_index == 0 { Err(Error::last()) } else { Ok(if_index) }
 }
