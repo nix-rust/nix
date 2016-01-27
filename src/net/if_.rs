@@ -3,7 +3,7 @@
 //! Uses Linux and/or POSIX functions to resolve interface names like "eth0"
 //! or "socan1" into device numbers.
 
-use libc::{c_char, c_uint};
+use libc::{c_uint, if_nametoindex};
 use std::ffi::{CString, NulError};
 use std::io;
 
@@ -25,10 +25,6 @@ impl From<io::Error> for NameToIndexError {
     fn from(e: io::Error) -> NameToIndexError {
         NameToIndexError::IOError(e)
     }
-}
-
-extern {
-    fn if_nametoindex(ifname: *const c_char) -> c_uint;
 }
 
 /// Resolve an interface into a interface number.
