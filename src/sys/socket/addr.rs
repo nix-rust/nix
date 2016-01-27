@@ -283,21 +283,13 @@ pub struct Ipv6Addr(pub libc::in6_addr);
 
 macro_rules! to_u8_array {
     ($($num:ident),*) => {
-        if cfg!(target_endian = "big") {
-            [ $(($num>>8) as u8, ($num&0xff) as u8,)* ]
-        } else {
-            [ $(($num&0xff) as u8, ($num>>8) as u8,)* ]
-        }
+        [ $(($num>>8) as u8, ($num&0xff) as u8,)* ]
     }
 }
 
 macro_rules! to_u16_array {
     ($slf:ident, $($first:expr, $second:expr),*) => {
-        if cfg!(target_endian = "big") {
-            [$( (($slf.0.s6_addr[$first] as u16) << 8) + $slf.0.s6_addr[$second] as u16,)*]
-        } else {
-            [$( (($slf.0.s6_addr[$second] as u16) << 8) + $slf.0.s6_addr[$first] as u16,)*]
-        }
+        [$( (($slf.0.s6_addr[$first] as u16) << 8) + $slf.0.s6_addr[$second] as u16,)*]
     }
 }
 
