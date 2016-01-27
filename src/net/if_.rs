@@ -5,10 +5,10 @@
 
 use libc::{c_uint, if_nametoindex};
 use std::ffi::{CString, NulError};
-use ::Error;
+use ::{Result, Error};
 
 /// Resolve an interface into a interface number.
-pub fn name_to_index(name: &str) -> Result<c_uint, Error> {
+pub fn name_to_index(name: &str) -> Result<c_uint> {
     let name = match CString::new(name) {
         Err(e) => match e { NulError(..) => {
             // A NulError indicates that a '\0' was found inside the string,
