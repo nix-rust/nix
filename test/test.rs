@@ -7,6 +7,7 @@ extern crate tempdir;
 extern crate nix_test as nixtest;
 
 mod sys;
+mod test_net;
 mod test_nix_path;
 mod test_stat;
 mod test_unistd;
