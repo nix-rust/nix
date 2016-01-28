@@ -1,45 +1,49 @@
 use {Error, Result, NixPath};
 use errno::Errno;
 use fcntl::OFlag;
-use libc::{c_void, size_t, off_t, mode_t};
+use libc::{self, c_void, size_t, off_t, mode_t};
 use sys::stat::Mode;
 use std::os::unix::io::RawFd;
 
 pub use self::consts::*;
 
+bitflags!{
+    flags ProtFlags : libc::c_int {
+        const PROT_NONE      = libc::PROT_NONE,
+        const PROT_READ      = libc::PROT_READ,
+        const PROT_WRITE     = libc::PROT_WRITE,
+        const PROT_EXEC      = libc::PROT_EXEC,
+        #[cfg(any(target_os = "linux", target_os = "android"))]
+        const PROT_GROWSDOWN = libc::PROT_GROWSDOWN,
+        #[cfg(any(target_os = "linux", target_os = "android"))]
+        const PROT_GROWSUP   = libc::PROT_GROWSUP,
+    }
+}
+
 #[cfg(any(target_os = "linux", target_os = "android"))]
 mod consts {
-    use libc::c_int;
+    use libc::{self, c_int};
 
-    pub type MmapFlag = c_int;
-
-    pub const MAP_SHARED: MmapFlag          = 0x00001;
-    pub const MAP_PRIVATE: MmapFlag         = 0x00002;
-    pub const MAP_FIXED: MmapFlag           = 0x00010;
-
-    pub const MAP_FILE: MmapFlag            = 0x00000;
-    pub const MAP_ANONYMOUS: MmapFlag       = 0x00020;
-    pub const MAP_ANON: MmapFlag            = MAP_ANONYMOUS;
-    pub const MAP_32BIT: MmapFlag           = 0x00040;
-
-    pub const MAP_GROWSDOWN: MmapFlag       = 0x00100;
-    pub const MAP_DENYWRITE: MmapFlag       = 0x00800;
-    pub const MAP_EXECUTABLE: MmapFlag      = 0x01000;
-    pub const MAP_LOCKED: MmapFlag          = 0x02000;
-    pub const MAP_NORESERVE: MmapFlag       = 0x04000;
-    pub const MAP_POPULATE: MmapFlag        = 0x08000;
-    pub const MAP_NONBLOCK: MmapFlag        = 0x10000;
-    pub const MAP_STACK: MmapFlag           = 0x20000;
-    pub const MAP_HUGETLB: MmapFlag         = 0x40000;
-
-    pub type MmapProt = c_int;
-
-    pub const PROT_READ: MmapProt           = 0x1;
-    pub const PROT_WRITE: MmapProt          = 0x2;
-    pub const PROT_EXEC: MmapProt           = 0x4;
-    pub const PROT_NONE: MmapProt           = 0x0;
-    pub const PROT_GROWSDOWN: MmapProt      = 0x01000000;
-    pub const PROT_GROWSUP: MmapProt        = 0x02000000;
+    bitflags!{
+        flags MmapFlags: c_int {
+            const MAP_FILE       = libc::MAP_FILE,
+            const MAP_SHARED     = libc::MAP_SHARED,
+            const MAP_PRIVATE    = libc::MAP_PRIVATE,
+            const MAP_FIXED      = libc::MAP_FIXED,
+            const MAP_ANON       = libc::MAP_ANON,
+            const MAP_ANONYMOUS  = libc::MAP_ANON,
+            const MAP_32BIT      = libc::MAP_32BIT,
+            const MAP_GROWSDOWN  = libc::MAP_GROWSDOWN,
+            const MAP_DENYWRITE  = libc::MAP_DENYWRITE,
+            const MAP_EXECUTABLE = libc::MAP_EXECUTABLE,
+            const MAP_LOCKED     = libc::MAP_LOCKED,
+            const MAP_NORESERVE  = libc::MAP_NORESERVE,
+            const MAP_POPULATE   = libc::MAP_POPULATE,
+            const MAP_NONBLOCK   = libc::MAP_NONBLOCK,
+            const MAP_STACK      = libc::MAP_STACK,
+            const MAP_HUGETLB    = libc::MAP_HUGETLB,
+        }
+    }
 
     pub type MmapAdvise = c_int;
 
@@ -59,11 +63,14 @@ mod consts {
     pub const MADV_DODUMP     : MmapAdvise  = 17; /* Clear the MADV_DONTDUMP flag.  */
     pub const MADV_HWPOISON   : MmapAdvise  = 100; /* Poison a page for testing.  */
 
-    pub type MmapSync = c_int;
 
-    pub const MS_ASYNC : MmapSync           = 1;
-    pub const MS_SYNC  : MmapSync           = 4;
-    pub const MS_INVALIDATE : MmapSync      = 2;
+    bitflags!{
+        flags SyncFlags: c_int {
+            const MS_ASYNC      = libc::MS_ASYNC,
+            const MS_INVALIDATE = libc::MS_INVALIDATE,
+            const MS_SYNC       = libc::MS_SYNC,
+        }
+    }
 
     pub const MAP_FAILED: isize               = -1;
 }
@@ -71,23 +78,19 @@ mod consts {
 #[cfg(any(target_os = "macos",
           target_os = "ios"))]
 mod consts {
-    use libc::c_int;
+    use libc::{self, c_int};
 
-    pub type MmapFlag = c_int;
-
-    pub const MAP_SHARED: MmapFlag          = 0x00001;
-    pub const MAP_PRIVATE: MmapFlag         = 0x00002;
-    pub const MAP_FIXED: MmapFlag           = 0x00010;
-
-    pub const MAP_NOCACHE: MmapFlag         = 0x00400;
-    pub const MAP_JIT: MmapFlag             = 0x00800;
-
-    pub type MmapProt = c_int;
-
-    pub const PROT_READ: MmapProt           = 0x1;
-    pub const PROT_WRITE: MmapProt          = 0x2;
-    pub const PROT_EXEC: MmapProt           = 0x4;
-    pub const PROT_NONE: MmapProt           = 0x0;
+    bitflags!{
+        flags MmapFlags: c_int {
+            const MAP_FILE    = libc::MAP_FILE,
+            const MAP_SHARED  = libc::MAP_SHARED,
+            const MAP_PRIVATE = libc::MAP_PRIVATE,
+            const MAP_FIXED   = libc::MAP_FIXED,
+            const MAP_ANON    = libc::MAP_ANON,
+            const MAP_NOCACHE = libc::MAP_NOCACHE,
+            const MAP_JIT     = libc::MAP_JIT,
+        }
+    }
 
     pub type MmapAdvise = c_int;
 
@@ -102,13 +105,15 @@ mod consts {
     pub const MADV_FREE_REUSE : MmapAdvise      = 8; /* caller wants to reuse those pages */
     pub const MADV_CAN_REUSE : MmapAdvise       = 9;
 
-    pub type MmapSync = c_int;
-
-    pub const MS_ASYNC      : MmapSync          = 0x0001; /* [MF|SIO] return immediately */
-    pub const MS_INVALIDATE	: MmapSync          = 0x0002; /* [MF|SIO] invalidate all cached data */
-    pub const MS_SYNC		: MmapSync          = 0x0010; /* [MF|SIO] msync synchronously */
-    pub const MS_KILLPAGES  : MmapSync          = 0x0004; /* invalidate pages, leave mapped */
-    pub const MS_DEACTIVATE : MmapSync          = 0x0008; /* deactivate pages, leave mapped */
+    bitflags!{
+        flags SyncFlags: c_int {
+            const MS_ASYNC      = libc::MS_ASYNC, /* [MF|SIO] return immediately */
+            const MS_INVALIDATE = libc::MS_INVALIDATE, /* [MF|SIO] invalidate all cached data */
+            const MS_KILLPAGES  = libc::MS_KILLPAGES, /* invalidate pages, leave mapped */
+            const MS_DEACTIVATE = libc::MS_DEACTIVATE, /* deactivate pages, leave mapped */
+            const MS_SYNC       = libc::MS_SYNC, /* [MF|SIO] msync synchronously */
+        }
+    }
 
     pub const MAP_FAILED: isize               = -1;
 }
@@ -117,28 +122,24 @@ mod consts {
 mod consts {
     use libc::c_int;
 
-    pub type MmapFlag = c_int;
+    pub type MmapFlags = c_int;
 
-    pub const MAP_SHARED: MmapFlag          = 0x00001;
-    pub const MAP_PRIVATE: MmapFlag         = 0x00002;
-    pub const MAP_FIXED: MmapFlag           = 0x00010;
-
-    pub const MAP_RENAME: MmapFlag          = 0x00020;
-    pub const MAP_NORESERVE: MmapFlag       = 0x00040;
-    pub const MAP_HASSEMAPHORE: MmapFlag    = 0x00200;
-    pub const MAP_STACK: MmapFlag           = 0x00400;
-    #[cfg(target_os = "netbsd")]
-    pub const MAP_WIRED: MmapFlag           = 0x00800;
-    pub const MAP_NOSYNC: MmapFlag          = 0x00800;
-    pub const MAP_FILE: MmapFlag            = 0x00000;
-    pub const MAP_ANON: MmapFlag            = 0x01000;
-
-    pub type MmapProt = c_int;
-
-    pub const PROT_READ: MmapProt           = 0x1;
-    pub const PROT_WRITE: MmapProt          = 0x2;
-    pub const PROT_EXEC: MmapProt           = 0x4;
-    pub const PROT_NONE: MmapProt           = 0x0;
+    bitflags!{
+        flags MmapFlags: c_int {
+            const MAP_FILE         = libc::MAP_FILE,
+            const MAP_SHARED       = libc::MAP_SHARED,
+            const MAP_PRIVATE      = libc::MAP_PRIVATE,
+            const MAP_FIXED        = libc::MAP_FIXED,
+            const MAP_RENAME       = libc::MAP_RENAME,
+            const MAP_NORESERVE    = libc::MAP_NORESERVE,
+            const MAP_HASSEMAPHORE = libc::MAP_HASSEMAPHORE,
+            const MAP_STACK        = libc::MAP_STACK,
+            #[cfg(target_os = "netbsd")]
+            const MAP_WIRED        = libc::MAP_WIRED,
+            const MAP_NOSYNC       = libc::MAP_NOSYNC,
+            const MAP_ANON         = libc::MAP_ANON,
+        }
+    }
 
     pub type MmapAdvise = c_int;
 
@@ -159,21 +160,21 @@ mod consts {
     #[cfg(target_os = "dragonfly")]
     pub const MADV_SETMAP     : MmapAdvise      = 11; /* set page table directory page for map */
 
-    pub type MmapSync = c_int;
-
-    pub const MS_ASYNC      : MmapSync          = 0x0001; /* [MF|SIO] return immediately */
-    pub const MS_INVALIDATE : MmapSync          = 0x0002; /* [MF|SIO] invalidate all cached data */
-    #[cfg(not(target_os = "dragonfly"))]
-    pub const MS_SYNC       : MmapSync          = 0x0010; /* [MF|SIO] msync synchronously */
-    #[cfg(target_os = "dragonfly")]
-    pub const MS_SYNC       : MmapSync          = 0x0000; /* [MF|SIO] msync synchronously */
-    #[cfg(not(target_os = "dragonfly"))]
-    pub const MS_KILLPAGES  : MmapSync          = 0x0004; /* invalidate pages, leave mapped */
-    #[cfg(not(target_os = "dragonfly"))]
-    pub const MS_DEACTIVATE : MmapSync          = 0x0008; /* deactivate pages, leave mapped */
+    bitflags!{
+        flags SyncFlags: c_int {
+            const MS_ASYNC      = libc::MS_ASYNC, /* [MF|SIO] return immediately */
+            const MS_INVALIDATE = libc::MS_INVALIDATE, /* [MF|SIO] invalidate all cached data */
+            #[cfg(not(target_os = "dragonfly"))]
+            const MS_KILLPAGES  = 0x0004, /* invalidate pages, leave mapped */
+            #[cfg(not(target_os = "dragonfly"))]
+            const MS_DEACTIVATE = 0x0004, /* deactivate pages, leave mapped */
+            const MS_SYNC       = libc::MS_SYNC, /* [MF|SIO] msync synchronously */
+        }
+    }
 
     pub const MAP_FAILED: isize                 = -1;
 }
+
 mod ffi {
     use libc::{c_void, size_t, c_int, c_char, mode_t};
 
@@ -206,8 +207,8 @@ pub fn munlock(addr: *const c_void, length: size_t) -> Result<()> {
 
 /// Calls to mmap are inherently unsafe, so they must be made in an unsafe block. Typically
 /// a higher-level abstraction will hide the unsafe interactions with the mmap'd region.
-pub fn mmap(addr: *mut c_void, length: size_t, prot: MmapProt, flags: MmapFlag, fd: RawFd, offset: off_t) -> Result<*mut c_void> {
-    let ret = unsafe { ffi::mmap(addr, length, prot, flags, fd, offset) };
+pub fn mmap(addr: *mut c_void, length: size_t, prot: ProtFlags, flags: MmapFlags, fd: RawFd, offset: off_t) -> Result<*mut c_void> {
+    let ret = unsafe { ffi::mmap(addr, length, prot.bits(), flags.bits(), fd, offset) };
 
     if ret as isize == MAP_FAILED  {
         Err(Error::Sys(Errno::last()))
@@ -230,8 +231,8 @@ pub fn madvise(addr: *const c_void, length: size_t, advise: MmapAdvise) -> Resul
     }
 }
 
-pub fn msync(addr: *const c_void, length: size_t, flags: MmapSync) -> Result<()> {
-    match unsafe { ffi::msync(addr, length, flags) } {
+pub fn msync(addr: *const c_void, length: size_t, flags: SyncFlags) -> Result<()> {
+    match unsafe { ffi::msync(addr, length, flags.bits()) } {
         0 => Ok(()),
         _ => Err(Error::Sys(Errno::last()))
     }
