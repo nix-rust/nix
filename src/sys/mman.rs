@@ -25,7 +25,7 @@ mod consts {
     use libc::{self, c_int};
 
     bitflags!{
-        flags MmapFlags: c_int {
+        flags MapFlags: c_int {
             const MAP_FILE       = libc::MAP_FILE,
             const MAP_SHARED     = libc::MAP_SHARED,
             const MAP_PRIVATE    = libc::MAP_PRIVATE,
@@ -65,7 +65,7 @@ mod consts {
 
 
     bitflags!{
-        flags SyncFlags: c_int {
+        flags MsFlags: c_int {
             const MS_ASYNC      = libc::MS_ASYNC,
             const MS_INVALIDATE = libc::MS_INVALIDATE,
             const MS_SYNC       = libc::MS_SYNC,
@@ -81,7 +81,7 @@ mod consts {
     use libc::{self, c_int};
 
     bitflags!{
-        flags MmapFlags: c_int {
+        flags MapFlags: c_int {
             const MAP_FILE    = libc::MAP_FILE,
             const MAP_SHARED  = libc::MAP_SHARED,
             const MAP_PRIVATE = libc::MAP_PRIVATE,
@@ -106,7 +106,7 @@ mod consts {
     pub const MADV_CAN_REUSE : MmapAdvise       = 9;
 
     bitflags!{
-        flags SyncFlags: c_int {
+        flags MsFlags: c_int {
             const MS_ASYNC      = libc::MS_ASYNC, /* [MF|SIO] return immediately */
             const MS_INVALIDATE = libc::MS_INVALIDATE, /* [MF|SIO] invalidate all cached data */
             const MS_KILLPAGES  = libc::MS_KILLPAGES, /* invalidate pages, leave mapped */
@@ -122,10 +122,8 @@ mod consts {
 mod consts {
     use libc::c_int;
 
-    pub type MmapFlags = c_int;
-
     bitflags!{
-        flags MmapFlags: c_int {
+        flags MapFlags: c_int {
             const MAP_FILE         = libc::MAP_FILE,
             const MAP_SHARED       = libc::MAP_SHARED,
             const MAP_PRIVATE      = libc::MAP_PRIVATE,
@@ -161,7 +159,7 @@ mod consts {
     pub const MADV_SETMAP     : MmapAdvise      = 11; /* set page table directory page for map */
 
     bitflags!{
-        flags SyncFlags: c_int {
+        flags MsFlags: c_int {
             const MS_ASYNC      = libc::MS_ASYNC, /* [MF|SIO] return immediately */
             const MS_INVALIDATE = libc::MS_INVALIDATE, /* [MF|SIO] invalidate all cached data */
             #[cfg(not(target_os = "dragonfly"))]
@@ -207,7 +205,7 @@ pub fn munlock(addr: *const c_void, length: size_t) -> Result<()> {
 
 /// Calls to mmap are inherently unsafe, so they must be made in an unsafe block. Typically
 /// a higher-level abstraction will hide the unsafe interactions with the mmap'd region.
-pub fn mmap(addr: *mut c_void, length: size_t, prot: ProtFlags, flags: MmapFlags, fd: RawFd, offset: off_t) -> Result<*mut c_void> {
+pub fn mmap(addr: *mut c_void, length: size_t, prot: ProtFlags, flags: MapFlags, fd: RawFd, offset: off_t) -> Result<*mut c_void> {
     let ret = unsafe { ffi::mmap(addr, length, prot.bits(), flags.bits(), fd, offset) };
 
     if ret as isize == MAP_FAILED  {
@@ -231,7 +229,7 @@ pub fn madvise(addr: *const c_void, length: size_t, advise: MmapAdvise) -> Resul
     }
 }
 
-pub fn msync(addr: *const c_void, length: size_t, flags: SyncFlags) -> Result<()> {
+pub fn msync(addr: *const c_void, length: size_t, flags: MsFlags) -> Result<()> {
     match unsafe { ffi::msync(addr, length, flags.bits()) } {
         0 => Ok(()),
         _ => Err(Error::Sys(Errno::last()))
