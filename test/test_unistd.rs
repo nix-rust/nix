@@ -71,11 +71,11 @@ macro_rules! execve_test_factory(
                 // exec!
                 $syscall(
                     cstr!($sh),
-                    &[cstr!("").to_owned(),
-                      cstr!("-c").to_owned(),
-                      cstr!("echo nix!!! && echo foo=$foo && echo baz=$baz").to_owned()],
-                    &[cstr!("foo=bar").to_owned(),
-                      cstr!("baz=quux").to_owned()]).unwrap();
+                    &[CString::new(&""[..]).unwrap(),
+                      CString::new(&"-c"[..]).unwrap(),
+                      CString::new(&"echo nix!!! && echo foo=$foo && echo baz=$baz"[..]).unwrap()],
+                    &[CString::new(&"foo=bar"[..]).unwrap(),
+                      CString::new(&"baz=quux"[..]).unwrap()]).unwrap();
             },
             Parent(child_pid) => {
                 // Wait for the child to exit.

@@ -1,6 +1,5 @@
 use std::fs::File;
 use std::os::unix::fs::symlink;
-use std::os::unix::ffi::OsStrExt;
 use std::os::unix::prelude::AsRawFd;
 use libc::{S_IFMT, S_IFLNK};
 
