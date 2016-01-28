@@ -220,9 +220,7 @@ impl<'a, NP: ?Sized + NixPath>  NixPath for Option<&'a NP> {
         if let Some(nix_path) = *self {
             nix_path.with_nix_path(f)
         } else {
-            // TODO(#229): avoid extra stack allocation from [u8] impl by
-            // replacing with empty CStr.
-            b"".with_nix_path(f)
+            unsafe { CStr::from_ptr("\0".as_ptr() as *const _).with_nix_path(f) }
         }
     }
 }
