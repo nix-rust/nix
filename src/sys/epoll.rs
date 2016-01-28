@@ -1,5 +1,4 @@
-use {Error, Result, from_ffi};
-use errno::Errno;
+use {Errno, Result};
 use libc::c_int;
 use std::os::unix::io::RawFd;
 
@@ -76,17 +75,14 @@ fn test_epoll_event_size() {
 pub fn epoll_create() -> Result<RawFd> {
     let res = unsafe { ffi::epoll_create(1024) };
 
-    if res < 0 {
-        return Err(Error::Sys(Errno::last()));
-    }
-
-    Ok(res)
+    Errno::result(res)
 }
 
 #[inline]
 pub fn epoll_ctl(epfd: RawFd, op: EpollOp, fd: RawFd, event: &EpollEvent) -> Result<()> {
     let res = unsafe { ffi::epoll_ctl(epfd, op as c_int, fd, event as *const EpollEvent) };
-    from_ffi(res)
+
+    Errno::result(res).map(drop)
 }
 
 #[inline]
@@ -95,9 +91,5 @@ pub fn epoll_wait(epfd: RawFd, events: &mut [EpollEvent], timeout_ms: isize) -> 
         ffi::epoll_wait(epfd, events.as_mut_ptr(), events.len() as c_int, timeout_ms as c_int)
     };
 
-    if res < 0 {
-        return Err(Error::Sys(Errno::last()));
-    }
-
-    Ok(res as usize)
+    Errno::result(res).map(|r| r as usize)
 }

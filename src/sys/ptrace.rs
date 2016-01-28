@@ -1,5 +1,4 @@
-use {Error, Result};
-use errno::Errno;
+use {Errno, Error, Result};
 use libc::{pid_t, c_void, c_long};
 
 #[cfg(all(target_os = "linux",
@@ -86,17 +85,14 @@ fn ptrace_peek(request: ptrace::PtraceRequest, pid: pid_t, addr: *mut c_void, da
         Errno::clear();
         ffi::ptrace(request, pid, addr, data)
     };
-    if ret == -1 && Errno::last() != Errno::UnknownErrno {
-        return Err(Error::Sys(Errno::last()));
+    match Errno::result(ret) {
+        Ok(..) | Err(Error::Sys(Errno::UnknownErrno)) => Ok(ret),
+        err @ Err(..) => err,
     }
-    Ok::<c_long, Error>(ret)
 }
 
 fn ptrace_other(request: ptrace::PtraceRequest, pid: pid_t, addr: *mut c_void, data: *mut c_void) -> Result<c_long> {
-    match unsafe { ffi::ptrace(request, pid, addr, data) } {
-        -1 => Err(Error::Sys(Errno::last())),
-        _  => Ok(0)
-    }
+    Errno::result(unsafe { ffi::ptrace(request, pid, addr, data) }).map(|_| 0)
 }
 
 /// Set options, as with ptrace(PTRACE_SETOPTIONS,...).
@@ -104,7 +100,5 @@ pub fn ptrace_setoptions(pid: pid_t, options: ptrace::PtraceOptions) -> Result<(
     use self::ptrace::*;
     use std::ptr;
 
-    try!(ptrace(PTRACE_SETOPTIONS, pid, ptr::null_mut(), options as *mut c_void));
-    Ok(())
+    ptrace(PTRACE_SETOPTIONS, pid, ptr::null_mut(), options as *mut c_void).map(drop)
 }
-

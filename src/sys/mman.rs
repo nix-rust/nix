@@ -1,5 +1,4 @@
-use {Error, Result, NixPath};
-use errno::Errno;
+use {Errno, Error, Result, NixPath};
 use fcntl::OFlag;
 use libc::{c_void, size_t, off_t, mode_t};
 use sys::stat::Mode;
@@ -191,17 +190,11 @@ mod ffi {
 }
 
 pub unsafe fn mlock(addr: *const c_void, length: size_t) -> Result<()> {
-    match ffi::mlock(addr, length) {
-        0 => Ok(()),
-        _ => Err(Error::Sys(Errno::last()))
-    }
+    Errno::result(ffi::mlock(addr, length)).map(drop)
 }
 
 pub fn munlock(addr: *const c_void, length: size_t) -> Result<()> {
-    match unsafe { ffi::munlock(addr, length) } {
-        0 => Ok(()),
-        _ => Err(Error::Sys(Errno::last()))
-    }
+    Errno::result(unsafe { ffi::munlock(addr, length) }).map(drop)
 }
 
 /// Calls to mmap are inherently unsafe, so they must be made in an unsafe block. Typically
@@ -217,24 +210,15 @@ pub fn mmap(addr: *mut c_void, length: size_t, prot: MmapProt, flags: MmapFlag, 
 }
 
 pub fn munmap(addr: *mut c_void, len: size_t) -> Result<()> {
-    match unsafe { ffi::munmap(addr, len) } {
-        0 => Ok(()),
-        _ => Err(Error::Sys(Errno::last()))
-    }
+    Errno::result(unsafe { ffi::munmap(addr, len) }).map(drop)
 }
 
 pub fn madvise(addr: *const c_void, length: size_t, advise: MmapAdvise) -> Result<()> {
-    match unsafe { ffi::madvise(addr, length, advise) } {
-        0 => Ok(()),
-        _ => Err(Error::Sys(Errno::last()))
-    }
+    Errno::result(unsafe { ffi::madvise(addr, length, advise) }).map(drop)
 }
 
 pub fn msync(addr: *const c_void, length: size_t, flags: MmapSync) -> Result<()> {
-    match unsafe { ffi::msync(addr, length, flags) } {
-        0 => Ok(()),
-        _ => Err(Error::Sys(Errno::last()))
-    }
+    Errno::result(unsafe { ffi::msync(addr, length, flags) }).map(drop)
 }
 
 pub fn shm_open<P: ?Sized + NixPath>(name: &P, flag: OFlag, mode: Mode) -> Result<RawFd> {
@@ -244,11 +228,7 @@ pub fn shm_open<P: ?Sized + NixPath>(name: &P, flag: OFlag, mode: Mode) -> Resul
         }
     }));
 
-    if ret < 0 {
-        Err(Error::Sys(Errno::last()))
-    } else {
-        Ok(ret)
-    }
+    Errno::result(ret)
 }
 
 pub fn shm_unlink<P: ?Sized + NixPath>(name: &P) -> Result<()> {
@@ -256,9 +236,5 @@ pub fn shm_unlink<P: ?Sized + NixPath>(name: &P) -> Result<()> {
         unsafe { ffi::shm_unlink(cstr.as_ptr()) }
     }));
 
-    if ret < 0 {
-        Err(Error::Sys(Errno::last()))
-    } else {
-        Ok(())
-    }
+    Errno::result(ret).map(drop)
 }

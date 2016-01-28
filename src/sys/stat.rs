@@ -1,8 +1,7 @@
 pub use libc::dev_t;
 pub use libc::stat as FileStat;
 
-use {Error, Result, NixPath, from_ffi};
-use errno::Errno;
+use {Errno, Result, NixPath};
 use libc::mode_t;
 use std::mem;
 use std::os::unix::io::RawFd;
@@ -56,7 +55,8 @@ pub fn mknod<P: ?Sized + NixPath>(path: &P, kind: SFlag, perm: Mode, dev: dev_t)
             ffi::mknod(cstr.as_ptr(), kind.bits | perm.bits() as mode_t, dev)
         }
     }));
-    from_ffi(res)
+
+    Errno::result(res).map(drop)
 }
 
 #[cfg(target_os = "linux")]
@@ -80,9 +80,7 @@ pub fn stat<P: ?Sized + NixPath>(path: &P) -> Result<FileStat> {
         }
     }));
 
-    if res < 0 {
-        return Err(Error::Sys(Errno::last()));
-    }
+    try!(Errno::result(res));
 
     Ok(dst)
 }
@@ -95,9 +93,7 @@ pub fn lstat<P: ?Sized + NixPath>(path: &P) -> Result<FileStat> {
         }
     }));
 
-    if res < 0 {
-        return Err(Error::Sys(Errno::last()));
-    }
+    try!(Errno::result(res));
 
     Ok(dst)
 }
@@ -106,9 +102,7 @@ pub fn fstat(fd: RawFd) -> Result<FileStat> {
     let mut dst = unsafe { mem::uninitialized() };
     let res = unsafe { ffi::fstat(fd, &mut dst as *mut FileStat) };
 
-    if res < 0 {
-        return Err(Error::Sys(Errno::last()));
-    }
+    try!(Errno::result(res));
 
     Ok(dst)
 }

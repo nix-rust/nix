@@ -1,6 +1,5 @@
 use libc::c_int;
-use {Error, Result};
-use errno::Errno;
+use {Errno, Result};
 
 pub use self::ffi::PollFd;
 pub use self::ffi::consts::*;
@@ -72,9 +71,5 @@ pub fn poll(fds: &mut [PollFd], timeout: c_int) -> Result<c_int> {
         ffi::poll(fds.as_mut_ptr(), fds.len() as ffi::nfds_t, timeout)
     };
 
-    if res < 0 {
-        return Err(Error::Sys(Errno::last()));
-    }
-
-    Ok(res)
+    Errno::result(res)
 }

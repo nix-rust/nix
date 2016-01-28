@@ -2,8 +2,7 @@
 //!
 //! See the `vfs::Statvfs` struct for some rusty wrappers
 
-use {Result, NixPath, from_ffi};
-use errno::Errno;
+use {Errno, Result, NixPath};
 use std::os::unix::io::AsRawFd;
 
 pub mod vfs {
@@ -147,7 +146,8 @@ pub fn statvfs<P: ?Sized + NixPath>(path: &P, stat: &mut vfs::Statvfs) -> Result
         let res = try!(
             path.with_nix_path(|path| ffi::statvfs(path.as_ptr(), stat))
         );
-        from_ffi(res)
+
+        Errno::result(res).map(drop)
     }
 }
 
@@ -155,7 +155,7 @@ pub fn statvfs<P: ?Sized + NixPath>(path: &P, stat: &mut vfs::Statvfs) -> Result
 pub fn fstatvfs<T: AsRawFd>(fd: &T, stat: &mut vfs::Statvfs) -> Result<()> {
     unsafe {
         Errno::clear();
-        from_ffi(ffi::fstatvfs(fd.as_raw_fd(), stat))
+        Errno::result(ffi::fstatvfs(fd.as_raw_fd(), stat)).map(drop)
     }
 }
 

@@ -1,7 +1,6 @@
 //! Standard symbolic constants and types
 //!
-use {Error, Result, NixPath, from_ffi};
-use errno::Errno;
+use {Errno, Error, Result, NixPath};
 use fcntl::{fcntl, OFlag, O_NONBLOCK, O_CLOEXEC, FD_CLOEXEC};
 use fcntl::FcntlArg::{F_SETFD, F_SETFL};
 use libc::{c_char, c_void, c_int, size_t, pid_t, off_t, uid_t, gid_t};
@@ -91,17 +90,12 @@ impl Fork {
 }
 
 pub fn fork() -> Result<Fork> {
-    use self::Fork::*;
-
     let res = unsafe { ffi::fork() };
 
-    if res < 0 {
-        return Err(Error::Sys(Errno::last()));
-    } else if res == 0 {
-        Ok(Child)
-    } else {
-        Ok(Parent(res))
-    }
+    Errno::result(res).map(|res| match res {
+        0 => Fork::Child,
+        res => Fork::Parent(res)
+    })
 }
 
 #[inline]
@@ -115,32 +109,21 @@ pub fn getppid() -> pid_t {
 #[inline]
 pub fn setpgid(pid: pid_t, pgid: pid_t) -> Result<()> {
     let res = unsafe { ffi::setpgid(pid, pgid) };
-    if res < 0 {
-        return Err(Error::Sys(Errno::last()));
-    }
-    Ok(())
+    Errno::result(res).map(drop)
 }
 
 #[inline]
 pub fn dup(oldfd: RawFd) -> Result<RawFd> {
     let res = unsafe { ffi::dup(oldfd) };
 
-    if res < 0 {
-        return Err(Error::Sys(Errno::last()));
-    }
-
-    Ok(res)
+    Errno::result(res)
 }
 
 #[inline]
 pub fn dup2(oldfd: RawFd, newfd: RawFd) -> Result<RawFd> {
     let res = unsafe { ffi::dup2(oldfd, newfd) };
 
-    if res < 0 {
-        return Err(Error::Sys(Errno::last()));
-    }
-
-    Ok(res)
+    Errno::result(res)
 }
 
 pub fn dup3(oldfd: RawFd, newfd: RawFd, flags: OFlag) -> Result<RawFd> {
@@ -171,11 +154,7 @@ pub fn chdir<P: ?Sized + NixPath>(path: &P) -> Result<()> {
         unsafe { ffi::chdir(cstr.as_ptr()) }
     }));
 
-    if res != 0 {
-        return Err(Error::Sys(Errno::last()));
-    }
-
-    return Ok(())
+    Errno::result(res).map(drop)
 }
 
 fn to_exec_array(args: &[CString]) -> Vec<*const c_char> {
@@ -223,7 +202,7 @@ pub fn execvp(filename: &CString, args: &[CString]) -> Result<()> {
 
 pub fn daemon(nochdir: bool, noclose: bool) -> Result<()> {
     let res = unsafe { ffi::daemon(nochdir as c_int, noclose as c_int) };
-    from_ffi(res)
+    Errno::result(res).map(drop)
 }
 
 pub fn sethostname(name: &[u8]) -> Result<()> {
@@ -231,7 +210,7 @@ pub fn sethostname(name: &[u8]) -> Result<()> {
     let len = name.len() as size_t;
 
     let res = unsafe { ffi::sethostname(ptr, len) };
-    from_ffi(res)
+    Errno::result(res).map(drop)
 }
 
 pub fn gethostname(name: &mut [u8]) -> Result<()> {
@@ -239,32 +218,24 @@ pub fn gethostname(name: &mut [u8]) -> Result<()> {
     let len = name.len() as size_t;
 
     let res = unsafe { ffi::gethostname(ptr, len) };
-    from_ffi(res)
+    Errno::result(res).map(drop)
 }
 
 pub fn close(fd: RawFd) -> Result<()> {
     let res = unsafe { ffi::close(fd) };
-    from_ffi(res)
+    Errno::result(res).map(drop)
 }
 
 pub fn read(fd: RawFd, buf: &mut [u8]) -> Result<usize> {
     let res = unsafe { ffi::read(fd, buf.as_mut_ptr() as *mut c_void, buf.len() as size_t) };
 
-    if res < 0 {
-        return Err(Error::Sys(Errno::last()));
-    }
-
-    return Ok(res as usize)
+    Errno::result(res).map(|r| r as usize)
 }
 
 pub fn write(fd: RawFd, buf: &[u8]) -> Result<usize> {
     let res = unsafe { ffi::write(fd, buf.as_ptr() as *const c_void, buf.len() as size_t) };
 
-    if res < 0 {
-        return Err(Error::Sys(Errno::last()));
-    }
-
-    return Ok(res as usize)
+    Errno::result(res).map(|r| r as usize)
 }
 
 pub fn pipe() -> Result<(RawFd, RawFd)> {
@@ -273,9 +244,7 @@ pub fn pipe() -> Result<(RawFd, RawFd)> {
 
         let res = ffi::pipe(fds.as_mut_ptr());
 
-        if res < 0 {
-            return Err(Error::Sys(Errno::last()));
-        }
+        try!(Errno::result(res));
 
         Ok((fds[0], fds[1]))
     }
@@ -287,9 +256,7 @@ pub fn pipe2(flags: OFlag) -> Result<(RawFd, RawFd)> {
 
         let res = ffi::pipe(fds.as_mut_ptr());
 
-        if res < 0 {
-            return Err(Error::Sys(Errno::last()));
-        }
+        try!(Errno::result(res));
 
         try!(pipe2_setflags(fds[0], fds[1], flags));
 
@@ -323,35 +290,34 @@ fn pipe2_setflags(fd1: RawFd, fd2: RawFd, flags: OFlag) -> Result<()> {
 }
 
 pub fn ftruncate(fd: RawFd, len: off_t) -> Result<()> {
-    if unsafe { ffi::ftruncate(fd, len) } < 0 {
-        Err(Error::Sys(Errno::last()))
-    } else {
-        Ok(())
-    }
+    Errno::result(unsafe { ffi::ftruncate(fd, len) }).map(drop)
 }
 
 pub fn isatty(fd: RawFd) -> Result<bool> {
     use libc;
 
-    if unsafe { libc::isatty(fd) } == 1 {
-        Ok(true)
-    } else {
-        match Errno::last() {
-            // ENOTTY means `fd` is a valid file descriptor, but not a TTY, so
-            // we return `Ok(false)`
-            Errno::ENOTTY => Ok(false),
-            err => Err(Error::Sys(err))
+    unsafe {
+        // ENOTTY means `fd` is a valid file descriptor, but not a TTY, so
+        // we return `Ok(false)`
+        if libc::isatty(fd) == 1 {
+            Ok(true)
+        } else {
+            match Errno::last() {
+                Errno::ENOTTY => Ok(false),
+                err => Err(Error::Sys(err)),
+            }
         }
     }
 }
 
 pub fn unlink<P: ?Sized + NixPath>(path: &P) -> Result<()> {
     let res = try!(path.with_nix_path(|cstr| {
-    unsafe {
-        ffi::unlink(cstr.as_ptr())
-    }
+        unsafe {
+            ffi::unlink(cstr.as_ptr())
+        }
     }));
-    from_ffi(res)
+
+    Errno::result(res).map(drop)
 }
 
 #[inline]
@@ -360,33 +326,21 @@ pub fn chroot<P: ?Sized + NixPath>(path: &P) -> Result<()> {
         unsafe { ffi::chroot(cstr.as_ptr()) }
     }));
 
-    if res != 0 {
-        return Err(Error::Sys(Errno::last()));
-    }
-
-    Ok(())
+    Errno::result(res).map(drop)
 }
 
 #[inline]
 pub fn fsync(fd: RawFd) -> Result<()> {
     let res = unsafe { ffi::fsync(fd) };
 
-    if res < 0 {
-        return Err(Error::Sys(Errno::last()));
-    }
-
-    Ok(())
+    Errno::result(res).map(drop)
 }
 
 #[inline]
 pub fn fdatasync(fd: RawFd) -> Result<()> {
     let res = unsafe { ffi::fdatasync(fd) };
 
-    if res < 0 {
-        return Err(Error::Sys(Errno::last()));
-    }
-
-    Ok(())
+    Errno::result(res).map(drop)
 }
 
 // POSIX requires that getuid, geteuid, getgid, getegid are always successful,
@@ -418,8 +372,7 @@ pub fn getegid() -> gid_t {
 #[cfg(any(target_os = "linux", target_os = "android"))]
 mod linux {
     use sys::syscall::{syscall, SYSPIVOTROOT};
-    use errno::Errno;
-    use {Error, Result, NixPath};
+    use {Errno, Result, NixPath};
 
     #[cfg(feature = "execvpe")]
     use std::ffi::CString;
@@ -434,11 +387,7 @@ mod linux {
             })
         })));
 
-        if res != 0 {
-            return Err(Error::Sys(Errno::last()));
-        }
-
-        Ok(())
+        Errno::result(res).map(drop)
     }
 
     #[inline]

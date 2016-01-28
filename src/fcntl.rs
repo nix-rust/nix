@@ -1,5 +1,4 @@
-use {Error, Result, NixPath};
-use errno::Errno;
+use {Errno, Result, NixPath};
 use libc::{c_int, c_uint};
 use sys::stat::Mode;
 use std::os::unix::io::RawFd;
@@ -102,11 +101,7 @@ pub fn open<P: ?Sized + NixPath>(path: &P, oflag: OFlag, mode: Mode) -> Result<R
         unsafe { ffi::open(cstr.as_ptr(), oflag.bits(), mode.bits() as c_uint) }
     }));
 
-    if fd < 0 {
-        return Err(Error::Sys(Errno::last()));
-    }
-
-    Ok(fd)
+    Errno::result(fd)
 }
 
 pub enum FcntlArg<'a> {
@@ -157,11 +152,7 @@ pub fn fcntl(fd: RawFd, arg: FcntlArg) -> Result<c_int> {
         }
     };
 
-    if res < 0 {
-        return Err(Error::Sys(Errno::last()));
-    }
-
-    Ok(res)
+    Errno::result(res)
 }
 
 pub enum FlockArg {
@@ -187,11 +178,7 @@ pub fn flock(fd: RawFd, arg: FlockArg) -> Result<()> {
         }
     };
 
-    if res < 0 {
-        return Err(Error::Sys(Errno::last()));
-    }
-
-    Ok(())
+    Errno::result(res).map(drop)
 }
 
 #[cfg(any(target_os = "linux", target_os = "android"))]

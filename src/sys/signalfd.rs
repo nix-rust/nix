@@ -16,9 +16,8 @@
 //! Please note that signal discarding is not specific to `signalfd`, but also happens with regular
 //! signal handlers.
 use libc::{c_int, pid_t, uid_t};
-use {Error, Result};
 use unistd;
-use errno::Errno;
+use {Errno, Result};
 use sys::signal::signal::siginfo as signal_siginfo;
 pub use sys::signal::{self, SigSet};
 
@@ -56,10 +55,7 @@ pub const CREATE_NEW_FD: RawFd = -1;
 /// See [the signalfd man page for more information](http://man7.org/linux/man-pages/man2/signalfd.2.html)
 pub fn signalfd(fd: RawFd, mask: &SigSet, flags: SfdFlags) -> Result<RawFd> {
     unsafe {
-        match ffi::signalfd(fd as c_int, mask.as_ref(), flags.bits()) {
-            -1 => Err(Error::Sys(Errno::last())),
-            res => Ok(res as RawFd),
-        }
+        Errno::result(ffi::signalfd(fd as c_int, mask.as_ref(), flags.bits()))
     }
 }
 

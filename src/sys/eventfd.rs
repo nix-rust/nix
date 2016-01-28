@@ -1,6 +1,6 @@
 use libc;
 use std::os::unix::io::RawFd;
-use {Error, Result};
+use {Errno, Result};
 
 bitflags!(
     flags EventFdFlag: libc::c_int {
@@ -22,10 +22,6 @@ pub fn eventfd(initval: usize, flags: EventFdFlag) -> Result<RawFd> {
     unsafe {
         let res = ffi::eventfd(initval as libc::c_uint, flags.bits());
 
-        if res < 0 {
-            return Err(Error::last());
-        }
-
-        Ok(res as RawFd)
+        Errno::result(res).map(|r| r as RawFd)
     }
 }

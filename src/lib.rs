@@ -18,8 +18,9 @@ extern crate libc;
 #[cfg(test)]
 extern crate nix_test as nixtest;
 
-// Re-export some libc constants
+// Re-exports
 pub use libc::{c_int, c_void};
+pub use errno::Errno;
 
 pub mod errno;
 pub mod features;
@@ -223,13 +224,4 @@ impl<'a, NP: ?Sized + NixPath>  NixPath for Option<&'a NP> {
             unsafe { CStr::from_ptr("\0".as_ptr() as *const _).with_nix_path(f) }
         }
     }
-}
-
-#[inline]
-pub fn from_ffi(res: libc::c_int) -> Result<()> {
-    if res != 0 {
-        return Err(Error::Sys(errno::Errno::last()));
-    }
-
-    Ok(())
 }

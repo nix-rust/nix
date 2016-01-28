@@ -1,6 +1,6 @@
 use libc;
 use std::os::unix::io::RawFd;
-use {Error, Result};
+use {Errno, Result};
 use std::ffi::CStr;
 
 bitflags!(
@@ -13,6 +13,6 @@ bitflags!(
 pub fn memfd_create(name: &CStr, flags: MemFdCreateFlag) -> Result<RawFd> {
     use sys::syscall::{syscall, MEMFD_CREATE};
     let res = unsafe { syscall(MEMFD_CREATE, name.as_ptr(), flags.bits()) };
-    if res == -1 { Err(Error::last()) }
-    else { Ok(res as RawFd) }
+
+    Errno::result(res).map(|r| r as RawFd)
 }

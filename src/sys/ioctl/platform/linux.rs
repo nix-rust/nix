@@ -82,11 +82,7 @@ macro_rules! iorw {
 macro_rules! convert_ioctl_res {
     ($w:expr) => (
         {
-            let res = $w;
-            if res < 0 {
-                return Err($crate::Error::Sys($crate::errno::Errno::last()))
-            }
-            Ok(res) // res may contain useful information for user
+            $crate::Errno::result($w)
         }
     );
 }
