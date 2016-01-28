@@ -16,16 +16,6 @@ use ::sys::socket::addr::netlink::NetlinkAddr;
  *
  */
 
-#[cfg(any(target_os = "linux", target_os = "android"))]
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Hash)]
-#[repr(C)]
-pub struct sockaddr_nl {
-    pub nl_family: sa_family_t,
-    nl_pad: libc::c_ushort,
-    pub nl_pid: u32,
-    pub nl_groups: u32
-}
-
 #[repr(i32)]
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Hash)]
 pub enum AddressFamily {
@@ -502,7 +492,7 @@ impl SockAddr {
             SockAddr::Inet(InetAddr::V6(ref addr)) => (mem::transmute(addr), mem::size_of::<libc::sockaddr_in6>() as libc::socklen_t),
             SockAddr::Unix(UnixAddr(ref addr, len)) => (mem::transmute(addr), (len + mem::size_of::<libc::sa_family_t>()) as libc::socklen_t),
             #[cfg(any(target_os = "linux", target_os = "android"))]
-            SockAddr::Netlink(NetlinkAddr(ref sa)) => (mem::transmute(sa), mem::size_of::<sockaddr_nl>() as libc::socklen_t),
+            SockAddr::Netlink(NetlinkAddr(ref sa)) => (mem::transmute(sa), mem::size_of::<libc::sockaddr_nl>() as libc::socklen_t),
         }
     }
 }
@@ -558,21 +548,41 @@ impl fmt::Display for SockAddr {
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 pub mod netlink {
-    use ::sys::socket::addr::{AddressFamily,sockaddr_nl};
-    use libc::sa_family_t;
-    use std::fmt;
+    use ::sys::socket::addr::{AddressFamily};
+    use libc::{sa_family_t, sockaddr_nl};
+    use std::{fmt, mem};
+    use std::hash::{Hash, Hasher};
 
-    #[derive(Copy, Clone, PartialEq, Eq, Debug, Hash)]
+    #[derive(Copy, Clone)]
     pub struct NetlinkAddr(pub sockaddr_nl);
+
+    // , PartialEq, Eq, Debug, Hash
+    impl PartialEq for NetlinkAddr {
+        fn eq(&self, other: &Self) -> bool {
+            let (inner, other) = (self.0, other.0);
+            (inner.nl_family, inner.nl_pid, inner.nl_groups) ==
+            (other.nl_family, other.nl_pid, other.nl_groups)
+        }
+    }
+
+    impl Eq for NetlinkAddr {}
+
+    impl Hash for NetlinkAddr {
+        fn hash<H: Hasher>(&self, s: &mut H) {
+            let inner = self.0;
+            (inner.nl_family, inner.nl_pid, inner.nl_groups).hash(s);
+        }
+    }
+
 
     impl NetlinkAddr {
         pub fn new(pid: u32, groups: u32) -> NetlinkAddr {
-            NetlinkAddr(sockaddr_nl {
-                nl_family: AddressFamily::Netlink as sa_family_t,
-                nl_pad: 0,
-                nl_pid: pid,
-                nl_groups: groups,
-            })
+            let mut addr: sockaddr_nl = unsafe { mem::zeroed() };
+            addr.nl_family = AddressFamily::Netlink as sa_family_t;
+            addr.nl_pid = pid;
+            addr.nl_groups = groups;
+
+            NetlinkAddr(addr)
         }
 
         pub fn pid(&self) -> u32 {
