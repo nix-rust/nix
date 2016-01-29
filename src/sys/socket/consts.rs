@@ -85,15 +85,18 @@ mod os {
     pub const INADDR_NONE: InAddrT = 0xffffffff;
     pub const INADDR_BROADCAST: InAddrT = 0xffffffff;
 
-    pub type SockMessageFlags = c_int;
     // Flags for send/recv and their relatives
-    pub const MSG_OOB: SockMessageFlags = 0x1;
-    pub const MSG_PEEK: SockMessageFlags = 0x2;
-    pub const MSG_CTRUNC: SockMessageFlags = 0x08;
-    pub const MSG_TRUNC: SockMessageFlags = 0x20;
-    pub const MSG_DONTWAIT: SockMessageFlags = 0x40;
-    pub const MSG_EOR: SockMessageFlags = 0x80;
-    pub const MSG_ERRQUEUE: SockMessageFlags = 0x2000;
+    bitflags!{
+        flags MsgFlags : libc::c_int {
+            const MSG_OOB      = 0x0001,
+            const MSG_PEEK     = 0x0002,
+            const MSG_CTRUNC   = 0x0008,
+            const MSG_TRUNC    = 0x0020,
+            const MSG_DONTWAIT = 0x0040,
+            const MSG_EOR      = 0x0080,
+            const MSG_ERRQUEUE = 0x2000,
+        }
+    }
 
     // shutdown flags
     pub const SHUT_RD: c_int   = 0;
@@ -218,14 +221,17 @@ mod os {
     pub const INADDR_NONE: InAddrT = 0xffffffff;
     pub const INADDR_BROADCAST: InAddrT = 0xffffffff;
 
-    pub type SockMessageFlags = i32;
     // Flags for send/recv and their relatives
-    pub const MSG_OOB: SockMessageFlags = 0x1;
-    pub const MSG_PEEK: SockMessageFlags = 0x2;
-    pub const MSG_EOR: SockMessageFlags = 0x8;
-    pub const MSG_TRUNC: SockMessageFlags = 0x10;
-    pub const MSG_CTRUNC: SockMessageFlags = 0x20;
-    pub const MSG_DONTWAIT: SockMessageFlags = 0x80;
+    bitflags!{
+        flags MsgFlags : libc::c_int {
+            const MSG_OOB      = 0x01,
+            const MSG_PEEK     = 0x02,
+            const MSG_EOR      = 0x08,
+            const MSG_TRUNC    = 0x10,
+            const MSG_CTRUNC   = 0x20,
+            const MSG_DONTWAIT = 0x80,
+        }
+    }
 
     // shutdown flags
     pub const SHUT_RD: c_int   = 0;
@@ -301,11 +307,14 @@ mod os {
     pub const INADDR_NONE: InAddrT = 0xffffffff;
     pub const INADDR_BROADCAST: InAddrT = 0xffffffff;
 
-    pub type SockMessageFlags = i32;
     // Flags for send/recv and their relatives
-    pub const MSG_OOB: SockMessageFlags = 0x1;
-    pub const MSG_PEEK: SockMessageFlags = 0x2;
-    pub const MSG_DONTWAIT: SockMessageFlags = 0x80;
+    bitflags!{
+        flags MsgFlags : libc::c_int {
+            const MSG_OOB      = 0x01,
+            const MSG_PEEK     = 0x02,
+            const MSG_DONTWAIT = 0x80,
+        }
+    }
 
     // shutdown flags
     pub const SHUT_RD: c_int   = 0;
@@ -316,12 +325,25 @@ mod os {
 #[cfg(test)]
 mod test {
     use super::*;
-    use nixtest::assert_const_eq;
-    use libc::c_int;
+    use nixtest::{assert_const_eq,get_int_const,GetConst};
+    use libc::{c_char};
+    use std::fmt;
+
+    impl fmt::Display for MsgFlags {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            write!(f, "{}", self.bits())
+        }
+    }
+
+    impl GetConst for MsgFlags {
+        unsafe fn get_const(name: *const c_char) -> MsgFlags {
+            MsgFlags::from_bits_truncate(get_int_const(name))
+        }
+    }
 
     macro_rules! check_const {
         ($($konst:ident),+) => {{
-            $(assert_const_eq(stringify!($konst), $konst as c_int);)+
+            $(assert_const_eq(stringify!($konst), $konst);)+
         }};
     }
 
