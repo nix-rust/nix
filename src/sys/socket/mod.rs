@@ -123,7 +123,7 @@ pub struct RecvMsg<'a> {
     pub bytes: usize,
     cmsg_buffer: &'a [u8],
     pub address: Option<SockAddr>,
-    pub flags: SockMessageFlags,
+    pub flags: MsgFlags,
 }
 
 impl<'a> RecvMsg<'a> {
@@ -256,7 +256,7 @@ impl<'a> ControlMessage<'a> {
 /// as with sendto.
 ///
 /// Allocates if cmsgs is nonempty.
-pub fn sendmsg<'a>(fd: RawFd, iov: &[IoVec<&'a [u8]>], cmsgs: &[ControlMessage<'a>], flags: SockMessageFlags, addr: Option<&'a SockAddr>) -> Result<usize> {
+pub fn sendmsg<'a>(fd: RawFd, iov: &[IoVec<&'a [u8]>], cmsgs: &[ControlMessage<'a>], flags: MsgFlags, addr: Option<&'a SockAddr>) -> Result<usize> {
     let mut len = 0;
     let mut capacity = 0;
     for cmsg in cmsgs {
@@ -293,7 +293,7 @@ pub fn sendmsg<'a>(fd: RawFd, iov: &[IoVec<&'a [u8]>], cmsgs: &[ControlMessage<'
         msg_controllen: len as size_t,
         msg_flags: 0,
     };
-    let ret = unsafe { ffi::sendmsg(fd, &mhdr, flags) };
+    let ret = unsafe { ffi::sendmsg(fd, &mhdr, flags.bits()) };
 
     Errno::result(ret).map(|r| r as usize)
 }
@@ -301,7 +301,7 @@ pub fn sendmsg<'a>(fd: RawFd, iov: &[IoVec<&'a [u8]>], cmsgs: &[ControlMessage<'
 /// Receive message in scatter-gather vectors from a socket, and
 /// optionally receive ancillary data into the provided buffer.
 /// If no ancillary data is desired, use () as the type parameter.
-pub fn recvmsg<'a, T>(fd: RawFd, iov: &[IoVec<&mut [u8]>], cmsg_buffer: Option<&'a mut CmsgSpace<T>>, flags: SockMessageFlags) -> Result<RecvMsg<'a>> {
+pub fn recvmsg<'a, T>(fd: RawFd, iov: &[IoVec<&mut [u8]>], cmsg_buffer: Option<&'a mut CmsgSpace<T>>, flags: MsgFlags) -> Result<RecvMsg<'a>> {
     let mut address: sockaddr_storage = unsafe { mem::uninitialized() };
     let (msg_control, msg_controllen) = match cmsg_buffer {
         Some(cmsg_buffer) => (cmsg_buffer as *mut _, mem::size_of_val(cmsg_buffer)),
@@ -316,7 +316,7 @@ pub fn recvmsg<'a, T>(fd: RawFd, iov: &[IoVec<&mut [u8]>], cmsg_buffer: Option<&
         msg_controllen: msg_controllen as size_t,
         msg_flags: 0,
     };
-    let ret = unsafe { ffi::recvmsg(fd, &mut mhdr, flags) };
+    let ret = unsafe { ffi::recvmsg(fd, &mut mhdr, flags.bits()) };
 
     Ok(unsafe { RecvMsg {
         bytes: try!(Errno::result(ret)) as usize,
@@ -324,7 +324,7 @@ pub fn recvmsg<'a, T>(fd: RawFd, iov: &[IoVec<&mut [u8]>], cmsg_buffer: Option<&
                                            mhdr.msg_controllen as usize),
         address: sockaddr_storage_to_addr(&address,
                                           mhdr.msg_namelen as usize).ok(),
-        flags: mhdr.msg_flags,
+        flags: MsgFlags::from_bits_truncate(mhdr.msg_flags),
     } })
 }
 
@@ -455,13 +455,13 @@ pub fn connect(fd: RawFd, addr: &SockAddr) -> Result<()> {
 /// bytes read
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/recv.2.html)
-pub fn recv(sockfd: RawFd, buf: &mut [u8], flags: SockMessageFlags) -> Result<usize> {
+pub fn recv(sockfd: RawFd, buf: &mut [u8], flags: MsgFlags) -> Result<usize> {
     unsafe {
         let ret = ffi::recv(
             sockfd,
             buf.as_ptr() as *mut c_void,
             buf.len() as size_t,
-            flags);
+            flags.bits());
 
         Errno::result(ret).map(|r| r as usize)
     }
@@ -489,10 +489,10 @@ pub fn recvfrom(sockfd: RawFd, buf: &mut [u8]) -> Result<(usize, SockAddr)> {
     }
 }
 
-pub fn sendto(fd: RawFd, buf: &[u8], addr: &SockAddr, flags: SockMessageFlags) -> Result<usize> {
+pub fn sendto(fd: RawFd, buf: &[u8], addr: &SockAddr, flags: MsgFlags) -> Result<usize> {
     let ret = unsafe {
         let (ptr, len) = addr.as_ffi_pair();
-        ffi::sendto(fd, buf.as_ptr() as *const c_void, buf.len() as size_t, flags, ptr, len)
+        ffi::sendto(fd, buf.as_ptr() as *const c_void, buf.len() as size_t, flags.bits(), ptr, len)
     };
 
     Errno::result(ret).map(|r| r as usize)
@@ -501,9 +501,9 @@ pub fn sendto(fd: RawFd, buf: &[u8], addr: &SockAddr, flags: SockMessageFlags) -
 /// Send data to a connection-oriented socket. Returns the number of bytes read
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/send.2.html)
-pub fn send(fd: RawFd, buf: &[u8], flags: SockMessageFlags) -> Result<usize> {
+pub fn send(fd: RawFd, buf: &[u8], flags: MsgFlags) -> Result<usize> {
     let ret = unsafe {
-        ffi::send(fd, buf.as_ptr() as *const c_void, buf.len() as size_t, flags)
+        ffi::send(fd, buf.as_ptr() as *const c_void, buf.len() as size_t, flags.bits())
     };
 
     Errno::result(ret).map(|r| r as usize)

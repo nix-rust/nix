@@ -42,6 +42,8 @@ pub fn assert_size_of<T>(name: &str) {
     }
 }
 
+pub use ffi::get_int_const;
+
 pub trait GetConst : PartialEq<Self> + fmt::Display {
     unsafe fn get_const(name: *const c_char) -> Self;
 }
@@ -49,5 +51,11 @@ pub trait GetConst : PartialEq<Self> + fmt::Display {
 impl GetConst for c_int {
     unsafe fn get_const(name: *const c_char) -> c_int {
         ffi::get_int_const(name)
+    }
+}
+
+impl GetConst for u32 {
+    unsafe fn get_const(name: *const c_char) -> u32 {
+        ffi::get_int_const(name) as u32
     }
 }

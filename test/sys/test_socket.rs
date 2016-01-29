@@ -71,7 +71,7 @@ pub fn test_scm_rights() {
     use nix::unistd::{pipe, read, write, close};
     use nix::sys::socket::{socketpair, sendmsg, recvmsg,
                            AddressFamily, SockType, SockFlag,
-                           ControlMessage, CmsgSpace,
+                           ControlMessage, CmsgSpace, MsgFlags,
                            MSG_TRUNC, MSG_CTRUNC};
 
     let (fd1, fd2) = socketpair(AddressFamily::Unix, SockType::Stream, 0,
@@ -84,7 +84,7 @@ pub fn test_scm_rights() {
         let iov = [IoVec::from_slice(b"hello")];
         let fds = [r];
         let cmsg = ControlMessage::ScmRights(&fds);
-        assert_eq!(sendmsg(fd1, &iov, &[cmsg], 0, None).unwrap(), 5);
+        assert_eq!(sendmsg(fd1, &iov, &[cmsg], MsgFlags::empty(), None).unwrap(), 5);
         close(r).unwrap();
         close(fd1).unwrap();
     }
@@ -93,7 +93,7 @@ pub fn test_scm_rights() {
         let mut buf = [0u8; 5];
         let iov = [IoVec::from_mut_slice(&mut buf[..])];
         let mut cmsgspace: CmsgSpace<[RawFd; 1]> = CmsgSpace::new();
-        let msg = recvmsg(fd2, &iov, Some(&mut cmsgspace), 0).unwrap();
+        let msg = recvmsg(fd2, &iov, Some(&mut cmsgspace), MsgFlags::empty()).unwrap();
 
         for cmsg in msg.cmsgs() {
             if let ControlMessage::ScmRights(fd) = cmsg {
@@ -104,7 +104,7 @@ pub fn test_scm_rights() {
                 panic!("unexpected cmsg");
             }
         }
-        assert_eq!(msg.flags & (MSG_TRUNC | MSG_CTRUNC), 0);
+        assert_eq!(msg.flags & (MSG_TRUNC | MSG_CTRUNC), MsgFlags::empty());
         close(fd2).unwrap();
     }
 
