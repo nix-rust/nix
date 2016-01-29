@@ -31,6 +31,7 @@ mod consts {
             const MAP_FIXED      = libc::MAP_FIXED,
             const MAP_ANON       = libc::MAP_ANON,
             const MAP_ANONYMOUS  = libc::MAP_ANON,
+            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
             const MAP_32BIT      = libc::MAP_32BIT,
             const MAP_GROWSDOWN  = libc::MAP_GROWSDOWN,
             const MAP_DENYWRITE  = libc::MAP_DENYWRITE,
