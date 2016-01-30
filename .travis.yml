@@ -22,7 +22,7 @@ os:
 
 env:
   - ARCH=x86_64
-# - ARCH=i686  TODO(#252): enable after investigating i686 weirdness on linux
+  - ARCH=i686
 
 script:
   - curl -sSL https://raw.githubusercontent.com/carllerche/travis-rust-matrix/master/test | RUST_TEST_THREADS=1 bash
