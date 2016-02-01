@@ -394,6 +394,8 @@ pub struct SigAction {
 }
 
 impl SigAction {
+    /// This function will set or unset the flag `SA_SIGINFO` depending on the
+    /// type of the `handler` argument.
     pub fn new(handler: SigHandler, flags: SockFlag, mask: SigSet) -> SigAction {
         let mut s = unsafe { mem::uninitialized::<sigaction_t>() };
         s.sa_handler = match handler {
@@ -402,7 +404,10 @@ impl SigAction {
             SigHandler::Handler(f) => f,
             SigHandler::SigAction(f) => unsafe { mem::transmute(f) },
         };
-        s.sa_flags = flags;
+        s.sa_flags = match handler {
+            SigHandler::SigAction(_) => flags | SA_SIGINFO,
+            _ => flags - SA_SIGINFO,
+        };
         s.sa_mask = mask.sigset;
 
         SigAction { sigaction: s }
