@@ -281,6 +281,10 @@ impl fmt::Display for Ipv4Addr {
 #[derive(Clone, Copy)]
 pub struct Ipv6Addr(pub libc::in6_addr);
 
+// Note that IPv6 addresses are stored in big endian order on all architectures.
+// See https://tools.ietf.org/html/rfc1700 or consult your favorite search
+// engine.
+
 macro_rules! to_u8_array {
     ($($num:ident),*) => {
         [ $(($num>>8) as u8, ($num&0xff) as u8,)* ]
