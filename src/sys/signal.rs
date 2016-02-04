@@ -380,6 +380,7 @@ impl AsRef<sigset_t> for SigSet {
 
 pub use self::signal::siginfo;
 
+#[derive(Clone, Copy)]
 pub enum SigHandler {
     SigDfl,
     SigIgn,
