@@ -42,7 +42,7 @@ const WSTOPPED: WaitPidFlag = WUNTRACED;
 pub enum WaitStatus {
     Exited(pid_t, i8),
     Signaled(pid_t, signal::SigNum, bool),
-    Stopped(pid_t, signal::SigNum),
+    Stopped(pid_t, signal::SigNum, c_int),
     Continued(pid_t),
     StillAlive
 }
@@ -51,6 +51,7 @@ pub enum WaitStatus {
           target_os = "android"))]
 mod status {
     use sys::signal;
+    use libc::c_int;
 
     pub fn exited(status: i32) -> bool {
         (status & 0x7F) == 0
@@ -80,6 +81,10 @@ mod status {
         ((status & 0xFF00) >> 8) as signal::SigNum
     }
 
+    pub fn stop_additional(status: i32) -> c_int {
+        (status >> 16) as c_int
+    }
+
     pub fn continued(status: i32) -> bool {
         status == 0xFFFF
     }
@@ -89,6 +94,7 @@ mod status {
           target_os = "ios"))]
 mod status {
     use sys::signal;
+    use libc::c_int;
 
     const WCOREFLAG: i32 = 0x80;
     const WSTOPPED: i32 = 0x7f;
@@ -103,6 +109,10 @@ mod status {
 
     pub fn stop_signal(status: i32) -> signal::SigNum {
         (status >> 8) as signal::SigNum
+    }
+
+    pub fn stop_additional(status: i32) -> c_int {
+        0
     }
 
     pub fn continued(status: i32) -> bool {
@@ -136,6 +146,7 @@ mod status {
           target_os = "netbsd"))]
 mod status {
     use sys::signal;
+    use libc::c_int;
 
     const WCOREFLAG: i32 = 0x80;
     const WSTOPPED: i32 = 0x7f;
@@ -150,6 +161,10 @@ mod status {
 
     pub fn stop_signal(status: i32) -> signal::SigNum {
         (status >> 8) as signal::SigNum
+    }
+
+    pub fn stop_additional(status: i32) -> c_int {
+        0
     }
 
     pub fn signaled(status: i32) -> bool {
@@ -183,7 +198,7 @@ fn decode(pid : pid_t, status: i32) -> WaitStatus {
     } else if status::signaled(status) {
         WaitStatus::Signaled(pid, status::term_signal(status), status::dumped_core(status))
     } else if status::stopped(status) {
-        WaitStatus::Stopped(pid, status::stop_signal(status))
+        WaitStatus::Stopped(pid, status::stop_signal(status), status::stop_additional(status))
     } else {
         assert!(status::continued(status));
         WaitStatus::Continued(pid)
