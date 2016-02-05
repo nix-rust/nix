@@ -26,10 +26,7 @@ bitflags = "0.3.3"
 [dev-dependencies]
 rand = "0.3.8"
 tempdir = "0.3"
-
-[dev-dependencies.nix-test]
-path    = "nix-test"
-version = "*"
+nix-test = { path = "nix-test" }
 
 [[test]]
 name = "test"
