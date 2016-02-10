@@ -3,12 +3,15 @@ extern crate nix;
 extern crate libc;
 extern crate rand;
 extern crate tempdir;
+extern crate tempfile;
 
 extern crate nix_test as nixtest;
 
 mod sys;
 mod test_net;
 mod test_nix_path;
+#[cfg(any(target_os = "linux", target_os = "android"))]
+mod test_sendfile;
 mod test_stat;
 mod test_unistd;
 
