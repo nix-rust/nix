@@ -20,12 +20,13 @@ preadv_pwritev = []
 signalfd = []
 
 [dependencies]
-libc     = "0.2.4"
+libc     = "0.2.7"
 bitflags = "0.3.3"
 
 [dev-dependencies]
 rand = "0.3.8"
 tempdir = "0.3"
+tempfile = "2"
 nix-test = { path = "nix-test" }
 
 [[test]]
