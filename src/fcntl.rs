@@ -3,6 +3,11 @@ use libc::{c_int, c_uint};
 use sys::stat::Mode;
 use std::os::unix::io::RawFd;
 
+#[cfg(any(target_os = "linux", target_os = "android"))]
+use sys::uio::IoVec;  // For vmsplice
+#[cfg(any(target_os = "linux", target_os = "android"))]
+use libc;
+
 pub use self::consts::*;
 pub use self::ffi::flock;
 
@@ -182,8 +187,43 @@ pub fn flock(fd: RawFd, arg: FlockArg) -> Result<()> {
 }
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
+pub fn splice(fd_in: RawFd, off_in: Option<&mut libc::loff_t>,
+          fd_out: RawFd, off_out: Option<&mut libc::loff_t>,
+          len: usize, flags: SpliceFFlags) -> Result<usize> {
+    use std::ptr;
+    let off_in = off_in.map(|offset| offset as *mut _).unwrap_or(ptr::null_mut());
+    let off_out = off_out.map(|offset| offset as *mut _).unwrap_or(ptr::null_mut());
+
+    let ret = unsafe { libc::splice(fd_in, off_in, fd_out, off_out, len, flags.bits()) };
+    Errno::result(ret).map(|r| r as usize)
+}
+
+#[cfg(any(target_os = "linux", target_os = "android"))]
+pub fn tee(fd_in: RawFd, fd_out: RawFd, len: usize, flags: SpliceFFlags) -> Result<usize> {
+    let ret = unsafe { libc::tee(fd_in, fd_out, len, flags.bits()) };
+    Errno::result(ret).map(|r| r as usize)
+}
+
+#[cfg(any(target_os = "linux", target_os = "android"))]
+pub fn vmsplice(fd: RawFd, iov: &[IoVec<&[u8]>], flags: SpliceFFlags) -> Result<usize> {
+    let ret = unsafe {
+        libc::vmsplice(fd, iov.as_ptr() as *const libc::iovec, iov.len(), flags.bits())
+    };
+    Errno::result(ret).map(|r| r as usize)
+}
+
+#[cfg(any(target_os = "linux", target_os = "android"))]
 mod consts {
-    use libc::c_int;
+    use libc::{self, c_int, c_uint};
+
+    bitflags! {
+        flags SpliceFFlags: c_uint {
+            const SPLICE_F_MOVE = libc::SPLICE_F_MOVE,
+            const SPLICE_F_NONBLOCK = libc::SPLICE_F_NONBLOCK,
+            const SPLICE_F_MORE = libc::SPLICE_F_MORE,
+            const SPLICE_F_GIFT = libc::SPLICE_F_GIFT,
+        }
+    }
 
     bitflags!(
         flags OFlag: c_int {
