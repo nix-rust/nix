@@ -2,9 +2,9 @@ use std::ptr::{null, null_mut};
 use std::os::unix::io::RawFd;
 use std::mem;
 use libc;
-use libc::{fd_set, c_int, timeval};
+use libc::{fd_set, c_int, timespec, timeval, sigset_t};
 use {Errno, Result};
-use sys::time::TimeVal;
+use sys::time::{TimeVal, TimeSpec};
 use sys::signal::SigSet;
 
 pub struct FdSet {
@@ -70,6 +70,25 @@ pub fn select(nfds: c_int,
 
     let res = unsafe {
         libc::select(nfds, readfds, writefds, errorfds, timeout)
+    };
+
+    Errno::result(res)
+}
+
+pub fn pselect(nfds: c_int,
+               readfds: Option<&mut FdSet>,
+               writefds: Option<&mut FdSet>,
+               errorfds: Option<&mut FdSet>,
+               timeout: Option<&TimeSpec>,
+               sigmask: Option<&SigSet>) -> Result<c_int> {
+    let readfds = readfds.map(|set| &mut set.set as *mut fd_set).unwrap_or(null_mut());
+    let writefds = writefds.map(|set| &mut set.set as *mut fd_set).unwrap_or(null_mut());
+    let errorfds = errorfds.map(|set| &mut set.set as *mut fd_set).unwrap_or(null_mut());
+    let timeout = timeout.map(|ts| ts.as_ref() as *const timespec).unwrap_or(null());
+    let sigmask = sigmask.map(|sm| sm.as_ref() as *const sigset_t).unwrap_or(null());
+
+    let res = unsafe {
+        libc::pselect(nfds, readfds, writefds, errorfds, timeout, sigmask)
     };
 
     Errno::result(res)
