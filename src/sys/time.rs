@@ -1,24 +1,24 @@
 use std::{fmt, ops};
-use libc::{time_t, suseconds_t};
-
-#[repr(C)]
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
-pub struct TimeVal {
-    pub tv_sec: time_t,
-    pub tv_usec: suseconds_t,
-}
+use libc::{time_t, suseconds_t, timeval};
 
 const MICROS_PER_SEC: i64 = 1_000_000;
 const SECS_PER_MINUTE: i64 = 60;
 const SECS_PER_HOUR: i64 = 3600;
 
-#[cfg(target_pointer_width = "64")]
-const MAX_SECONDS: i64 = (::std::i64::MAX / MICROS_PER_SEC) - 1;
+#[derive(Clone, Copy)]
+pub struct TimeVal(pub timeval);
 
-#[cfg(target_pointer_width = "32")]
-const MAX_SECONDS: i64 = ::std::isize::MAX as i64;
+impl AsRef<timeval> for TimeVal {
+    fn as_ref(&self) -> &timeval {
+        &self.0
+    }
+}
 
-const MIN_SECONDS: i64 = -MAX_SECONDS;
+impl AsMut<timeval> for TimeVal {
+    fn as_mut(&mut self) -> &mut timeval {
+        &mut self.0
+    }
+}
 
 impl TimeVal {
     #[inline]
@@ -44,8 +44,8 @@ impl TimeVal {
 
     #[inline]
     pub fn seconds(seconds: i64) -> TimeVal {
-        assert!(seconds >= MIN_SECONDS && seconds <= MAX_SECONDS, "TimeVal out of bounds; seconds={}", seconds);
-        TimeVal { tv_sec: seconds as time_t, tv_usec: 0 }
+        assert!(seconds >= time_t::min_value() && seconds <= time_t::max_value(), "TimeVal out of bounds; seconds={}", seconds);
+        TimeVal(timeval { tv_sec: seconds as time_t, tv_usec: 0 })
     }
 
     #[inline]
@@ -60,8 +60,8 @@ impl TimeVal {
     #[inline]
     pub fn microseconds(microseconds: i64) -> TimeVal {
         let (secs, micros) = div_mod_floor_64(microseconds, MICROS_PER_SEC);
-        assert!(secs >= MIN_SECONDS && secs <= MAX_SECONDS, "TimeVal out of bounds");
-        TimeVal { tv_sec: secs as time_t, tv_usec: micros as suseconds_t }
+        assert!(secs >= time_t::min_value() && secs <= time_t::max_value(), "TimeVal out of bounds; seconds={}", secs);
+        TimeVal(timeval { tv_sec: secs as time_t, tv_usec: micros as suseconds_t })
     }
 
     pub fn num_hours(&self) -> i64 {
@@ -73,10 +73,10 @@ impl TimeVal {
     }
 
     pub fn num_seconds(&self) -> i64 {
-        if self.tv_sec < 0 && self.tv_usec > 0 {
-            (self.tv_sec + 1) as i64
+        if self.0.tv_sec < 0 && self.0.tv_usec > 0 {
+            (self.0.tv_sec + 1) as i64
         } else {
-            self.tv_sec as i64
+            self.0.tv_sec as i64
         }
     }
 
@@ -91,10 +91,10 @@ impl TimeVal {
     }
 
     fn micros_mod_sec(&self) -> suseconds_t {
-        if self.tv_sec < 0 && self.tv_usec > 0 {
-            self.tv_usec - MICROS_PER_SEC as suseconds_t
+        if self.0.tv_sec < 0 && self.0.tv_usec > 0 {
+            self.0.tv_usec - MICROS_PER_SEC as suseconds_t
         } else {
-            self.tv_usec
+            self.0.tv_usec
         }
     }
 }
@@ -147,31 +147,39 @@ impl ops::Div<i32> for TimeVal {
 
 impl fmt::Display for TimeVal {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let (abs, sign) = if self.tv_sec < 0 {
+        let (abs, sign) = if self.0.tv_sec < 0 {
             (-*self, "-")
         } else {
             (*self, "")
         };
 
-        let sec = abs.tv_sec;
+        let sec = abs.0.tv_sec;
 
         try!(write!(f, "{}", sign));
 
-        if abs.tv_usec == 0 {
-            if abs.tv_sec == 1 {
+        if abs.0.tv_usec == 0 {
+            if abs.0.tv_sec == 1 {
                 try!(write!(f, "{} second", sec));
             } else {
                 try!(write!(f, "{} seconds", sec));
             }
-        } else if abs.tv_usec % 1000 == 0 {
-            try!(write!(f, "{}.{:03} seconds", sec, abs.tv_usec / 1000));
+        } else if abs.0.tv_usec % 1_000 == 0 {
+            try!(write!(f, "{}.{:03} seconds", sec, abs.0.tv_usec / 1_000));
         } else {
-            try!(write!(f, "{}.{:06} seconds", sec, abs.tv_usec));
+            try!(write!(f, "{}.{:06} seconds", sec, abs.0.tv_usec));
         }
 
         Ok(())
     }
 }
+
+impl PartialEq for TimeVal {
+    fn eq(&self, rhs: &TimeVal) -> bool {
+        self.0.tv_sec == rhs.0.tv_sec && self.0.tv_usec == rhs.0.tv_usec
+    }
+}
+
+impl Eq for TimeVal { }
 
 #[inline]
 fn div_mod_floor_64(this: i64, other: i64) -> (i64, i64) {
@@ -208,9 +216,8 @@ mod test {
     #[test]
     pub fn test_time_val() {
         assert!(TimeVal::seconds(1) != TimeVal::zero());
-        assert_eq!(TimeVal::seconds(1) + TimeVal::seconds(2), TimeVal::seconds(3));
-        assert_eq!(TimeVal::minutes(3) + TimeVal::seconds(2),
-                   TimeVal::seconds(182));
+        assert!(TimeVal::seconds(1) + TimeVal::seconds(2) == TimeVal::seconds(3));
+        assert!(TimeVal::minutes(3) + TimeVal::seconds(2) == TimeVal::seconds(182));
     }
 
     #[test]
@@ -218,7 +225,7 @@ mod test {
         let a = TimeVal::seconds(1) + TimeVal::microseconds(123);
         let b = TimeVal::seconds(-1) + TimeVal::microseconds(-123);
 
-        assert_eq!(a, -b);
+        assert!(a == -b);
     }
 
     #[test]
