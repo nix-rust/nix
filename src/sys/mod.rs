@@ -78,3 +78,7 @@ pub mod statfs;
               target_arch = "arm")),
           )]
 pub mod statvfs;
+
+#[cfg(any(target_os = "linux",
+          target_os = "android"))]
+pub mod timerfd;
