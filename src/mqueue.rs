@@ -4,9 +4,11 @@
 
 use {Errno, Result};
 
-use libc::{c_int, c_long, c_char, size_t, mode_t, strlen};
+use libc::{c_int, c_long, c_char, size_t, mode_t};
 use std::ffi::CString;
 use sys::stat::Mode;
+use std::ptr::null;
+use std::mem::transmute;
 
 pub use self::consts::*;
 
@@ -75,9 +77,12 @@ impl MqAttr {
 }
 
 
-#[inline]
-pub fn mq_open(name: &CString, oflag: MQ_OFlag, mode: Mode, attr: &MqAttr) -> Result<MQd> {
-    let res = unsafe { ffi::mq_open(name.as_ptr(), oflag.bits(), mode.bits() as mode_t, attr as *const MqAttr) };
+pub fn mq_open(name: &CString, oflag: MQ_OFlag, mode: Mode, attr: Option<&MqAttr>) -> Result<MQd> {
+    let attr_p = match attr {
+      None => null(),
+      Some(val) => val as *const MqAttr,
+    };
+    let res = unsafe { ffi::mq_open(name.as_ptr(), oflag.bits(), mode.bits() as mode_t, attr_p) };
 
     Errno::result(res)
 }
@@ -100,11 +105,10 @@ pub fn mq_receive(mqdes: MQd, message: &mut [u8], msq_prio: u32) -> Result<usize
     Errno::result(res).map(|r| r as usize)
 }
 
-pub fn mq_send(mqdes: MQd, message: &CString, msq_prio: u32) -> Result<usize> {
-    let len = unsafe { strlen(message.as_ptr()) as size_t };
-    let res = unsafe { ffi::mq_send(mqdes, message.as_ptr(), len, msq_prio) };
+pub fn mq_send(mqdes: MQd, message: &[u8], msq_prio: u32) -> Result<()> {
+    let res = unsafe { ffi::mq_send(mqdes, transmute(message.as_ptr()), message.len(), msq_prio) };
 
-    Errno::result(res).map(|r| r as usize)
+    Errno::result(res).map(drop)
 }
 
 pub fn mq_getattr(mqd: MQd) -> Result<MqAttr> {
