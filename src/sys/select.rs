@@ -17,6 +17,7 @@ const BITS: usize = 32;
 
 #[cfg(not(any(target_os = "macos", target_os = "ios")))]
 #[repr(C)]
+#[derive(Clone)]
 pub struct FdSet {
     bits: [u64; FD_SETSIZE as usize / 64]
 }
@@ -71,11 +72,11 @@ pub fn select(nfds: c_int,
               readfds: Option<&mut FdSet>,
               writefds: Option<&mut FdSet>,
               errorfds: Option<&mut FdSet>,
-              timeout: &mut TimeVal) -> Result<c_int> {
+              timeout: Option<&mut TimeVal>) -> Result<c_int> {
     let readfds = readfds.map(|set| set as *mut FdSet).unwrap_or(null_mut());
     let writefds = writefds.map(|set| set as *mut FdSet).unwrap_or(null_mut());
     let errorfds = errorfds.map(|set| set as *mut FdSet).unwrap_or(null_mut());
-    let timeout = timeout as *mut TimeVal;
+    let timeout = timeout.map(|tv| tv as *mut TimeVal).unwrap_or(null_mut());
 
     let res = unsafe {
         ffi::select(nfds, readfds, writefds, errorfds, timeout)

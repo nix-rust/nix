@@ -46,7 +46,7 @@ fn test_select() {
                          Some(&mut fd_set),
                          None,
                          None,
-                         &mut timeout).unwrap());
+                         Some(&mut timeout)).unwrap());
     assert!(fd_set.contains(r1));
     assert!(!fd_set.contains(r2));
 }
