@@ -1,70 +1,60 @@
-use std::ptr::null_mut;
+use std::ptr::{null, null_mut};
 use std::os::unix::io::RawFd;
-use libc::c_int;
+use std::mem;
+use libc;
+use libc::{fd_set, c_int, timeval};
 use {Errno, Result};
 use sys::time::TimeVal;
+use sys::signal::SigSet;
 
-pub const FD_SETSIZE: RawFd = 1024;
-
-#[cfg(any(target_os = "macos", target_os = "ios"))]
-#[repr(C)]
 pub struct FdSet {
-    bits: [i32; FD_SETSIZE as usize / 32]
+    set: fd_set
 }
 
-#[cfg(any(target_os = "macos", target_os = "ios"))]
-const BITS: usize = 32;
-
-#[cfg(not(any(target_os = "macos", target_os = "ios")))]
-#[repr(C)]
-#[derive(Clone)]
-pub struct FdSet {
-    bits: [u64; FD_SETSIZE as usize / 64]
+impl AsRef<fd_set> for FdSet {
+    fn as_ref(&self) -> &fd_set {
+        &self.set
+    }
 }
 
-#[cfg(not(any(target_os = "macos", target_os = "ios")))]
-const BITS: usize = 64;
+pub const FD_SETSIZE: RawFd = libc::FD_SETSIZE as RawFd;
 
 impl FdSet {
     pub fn new() -> FdSet {
-        FdSet {
-            bits: [0; FD_SETSIZE as usize / BITS]
-        }
+        let mut set = FdSet {
+            set: unsafe { mem::uninitialized() }
+        };
+        set.clear();
+        set
     }
 
     pub fn insert(&mut self, fd: RawFd) {
-        let fd = fd as usize;
-        self.bits[fd / BITS] |= 1 << (fd % BITS);
+        assert!(fd >= 0 && fd < FD_SETSIZE, "RawFd out of bounds");
+        unsafe {
+            libc::FD_SET(fd, &mut self.set as *mut _);
+        }
     }
 
     pub fn remove(&mut self, fd: RawFd) {
-        let fd = fd as usize;
-        self.bits[fd / BITS] &= !(1 << (fd % BITS));
+        assert!(fd >= 0 && fd < FD_SETSIZE, "RawFd out of bounds");
+        unsafe {
+            libc::FD_CLR(fd, &mut self.set as *mut _);
+        }
     }
 
-    pub fn contains(&mut self, fd: RawFd) -> bool {
-        let fd = fd as usize;
-        self.bits[fd / BITS] & (1 << (fd % BITS)) > 0
+    pub fn contains(&self, fd: RawFd) -> bool {
+        assert!(fd >= 0 && fd < FD_SETSIZE, "RawFd out of bounds");
+        unsafe {
+            // We require `transmute` here because FD_ISSET wants a mutable pointer,
+            // when in fact it doesn't mutate.
+            libc::FD_ISSET(fd, mem::transmute(&self.set as *const fd_set))
+        }
     }
 
     pub fn clear(&mut self) {
-        for bits in &mut self.bits {
-            *bits = 0
+        unsafe {
+            libc::FD_ZERO(&mut self.set as *mut _);
         }
-    }
-}
-
-mod ffi {
-    use libc::c_int;
-    use sys::time::TimeVal;
-    use super::FdSet;
-
-    extern {
-        pub fn select(nfds: c_int,
-                      readfds: *mut FdSet,
-                      writefds: *mut FdSet,
-                      errorfds: *mut FdSet,
-                      timeout: *mut TimeVal) -> c_int;
     }
 }
 
@@ -73,13 +63,13 @@ pub fn select(nfds: c_int,
               writefds: Option<&mut FdSet>,
               errorfds: Option<&mut FdSet>,
               timeout: Option<&mut TimeVal>) -> Result<c_int> {
-    let readfds = readfds.map(|set| set as *mut FdSet).unwrap_or(null_mut());
-    let writefds = writefds.map(|set| set as *mut FdSet).unwrap_or(null_mut());
-    let errorfds = errorfds.map(|set| set as *mut FdSet).unwrap_or(null_mut());
-    let timeout = timeout.map(|tv| tv as *mut TimeVal).unwrap_or(null_mut());
+    let readfds = readfds.map(|set| &mut set.set as *mut fd_set).unwrap_or(null_mut());
+    let writefds = writefds.map(|set| &mut set.set as *mut fd_set).unwrap_or(null_mut());
+    let errorfds = errorfds.map(|set| &mut set.set as *mut fd_set).unwrap_or(null_mut());
+    let timeout = timeout.map(|tv| tv.as_mut() as *mut timeval).unwrap_or(null_mut());
 
     let res = unsafe {
-        ffi::select(nfds, readfds, writefds, errorfds, timeout)
+        libc::select(nfds, readfds, writefds, errorfds, timeout)
     };
 
     Errno::result(res)
