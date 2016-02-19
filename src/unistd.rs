@@ -13,7 +13,7 @@ pub use self::linux::*;
 
 mod ffi {
     use libc::{c_char, c_int, size_t};
-    pub use libc::{fork, close, read, write, pipe, ftruncate, unlink, setpgid, getegid, geteuid, getgid, getpid, getppid, getuid};
+    pub use libc::{fork, close, read, write, pipe, ftruncate, unlink, setpgid, getegid, geteuid, getgid, getpid, getppid, getuid, setuid, setgid};
 
     #[allow(improper_ctypes)]
     extern {
@@ -367,6 +367,20 @@ pub fn getgid() -> gid_t {
 #[inline]
 pub fn getegid() -> gid_t {
     unsafe { ffi::getegid() }
+}
+
+#[inline]
+pub fn setuid(uid: uid_t) -> Result<()> {
+    let res = unsafe { ffi::setuid(uid) };
+
+    Errno::result(res).map(drop)
+}
+
+#[inline]
+pub fn setgid(gid: gid_t) -> Result<()> {
+    let res = unsafe { ffi::setgid(gid) };
+
+    Errno::result(res).map(drop)
 }
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
