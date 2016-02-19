@@ -18,6 +18,7 @@ const BITS: usize = 32;
 
 #[cfg(not(any(target_os = "macos", target_os = "ios")))]
 #[repr(C)]
+#[derive(Clone)]
 pub struct FdSet {
     bits: [u64; FD_SETSIZE as usize / 64]
 }
