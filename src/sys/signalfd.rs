@@ -113,7 +113,7 @@ impl SignalFd {
         match unistd::read(self.0, &mut buffer) {
             Ok(SIGINFO_SIZE) => Ok(Some(unsafe { mem::transmute_copy(&buffer) })),
             Ok(_) => unreachable!("partial read on signalfd"),
-            Err(Error::Sys(Errno::EAGAIN)) => Ok(None),
+            Err(Errno::EAGAIN) => Ok(None),
             Err(error) => Err(error)
         }
     }

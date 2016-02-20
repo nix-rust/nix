@@ -1,5 +1,5 @@
 use super::{consts, sa_family_t};
-use {Errno, Error, Result, NixPath};
+use {Errno, Result, NixString};
 use libc;
 use std::{fmt, hash, mem, net, ptr};
 use std::ffi::OsStr;
@@ -341,27 +341,26 @@ pub struct UnixAddr(pub libc::sockaddr_un, pub usize);
 
 impl UnixAddr {
     /// Create a new sockaddr_un representing a filesystem path.
-    pub fn new<P: ?Sized + NixPath>(path: &P) -> Result<UnixAddr> {
-        try!(path.with_nix_path(|cstr| {
-            unsafe {
-                let mut ret = libc::sockaddr_un {
-                    sun_family: AddressFamily::Unix as sa_family_t,
-                    .. mem::zeroed()
-                };
+    pub fn new<P: NixString>(path: P) -> Result<UnixAddr> {
+        let cstr = path.as_ref();
+        unsafe {
+            let mut ret = libc::sockaddr_un {
+                sun_family: AddressFamily::Unix as sa_family_t,
+                .. mem::zeroed()
+            };
 
-                let bytes = cstr.to_bytes_with_nul();
+            let bytes = cstr.to_bytes_with_nul();
 
-                if bytes.len() > ret.sun_path.len() {
-                    return Err(Error::Sys(Errno::ENAMETOOLONG));
-                }
-
-                ptr::copy_nonoverlapping(bytes.as_ptr(),
-                                         ret.sun_path.as_mut_ptr() as *mut u8,
-                                         bytes.len());
-
-                Ok(UnixAddr(ret, bytes.len()))
+            if bytes.len() > ret.sun_path.len() {
+                return Err(Errno::ENAMETOOLONG);
             }
-        }))
+
+            ptr::copy_nonoverlapping(bytes.as_ptr(),
+                                     ret.sun_path.as_mut_ptr() as *mut u8,
+                                     bytes.len());
+
+            Ok(UnixAddr(ret, bytes.len()))
+        }
     }
 
     /// Create a new sockaddr_un representing an address in the
@@ -376,7 +375,7 @@ impl UnixAddr {
             };
 
             if path.len() > ret.sun_path.len() {
-                return Err(Error::Sys(Errno::ENAMETOOLONG));
+                return Err(Errno::ENAMETOOLONG);
             }
 
             // Abstract addresses are represented by sun_path[0] ==
@@ -459,7 +458,7 @@ impl SockAddr {
         SockAddr::Inet(addr)
     }
 
-    pub fn new_unix<P: ?Sized + NixPath>(path: &P) -> Result<SockAddr> {
+    pub fn new_unix<P: NixString>(path: P) -> Result<SockAddr> {
         Ok(SockAddr::Unix(try!(UnixAddr::new(path))))
     }
 

@@ -55,7 +55,7 @@ fn test_getpid() {
 }
 
 macro_rules! execve_test_factory(
-    ($test_name:ident, $syscall:ident, $unix_sh:expr, $android_sh:expr) => (
+    ($test_name:ident, $syscall:ident, $sh:expr) => (
     #[test]
     fn $test_name() {
         // The `exec`d process will write to `writer`, and we'll read that
@@ -64,25 +64,18 @@ macro_rules! execve_test_factory(
 
         match fork().unwrap() {
             Child => {
-                #[cfg(not(target_os = "android"))]
-                const SH_PATH: &'static [u8] = $unix_sh;
-
-                #[cfg(target_os = "android")]
-                const SH_PATH: &'static [u8] = $android_sh;
-
                 // Close stdout.
                 close(1).unwrap();
                 // Make `writer` be the stdout of the new process.
                 dup(writer).unwrap();
                 // exec!
                 $syscall(
-                    &CString::new(SH_PATH).unwrap(),
-                    &[CString::new(b"".as_ref()).unwrap(),
-                      CString::new(b"-c".as_ref()).unwrap(),
-                      CString::new(b"echo nix!!! && echo foo=$foo && echo baz=$baz"
-                                   .as_ref()).unwrap()],
-                    &[CString::new(b"foo=bar".as_ref()).unwrap(),
-                      CString::new(b"baz=quux".as_ref()).unwrap()]).unwrap();
+                    cstr!($sh),
+                    &[CString::new(&""[..]).unwrap(),
+                      CString::new(&"-c"[..]).unwrap(),
+                      CString::new(&"echo nix!!! && echo foo=$foo && echo baz=$baz"[..]).unwrap()],
+                    &[CString::new(&"foo=bar"[..]).unwrap(),
+                      CString::new(&"baz=quux"[..]).unwrap()]).unwrap();
             },
             Parent(child_pid) => {
                 // Wait for the child to exit.
@@ -101,8 +94,11 @@ macro_rules! execve_test_factory(
     )
 );
 
-execve_test_factory!(test_execve, execve, b"/bin/sh", b"/system/bin/sh");
+#[cfg(not(target_os = "android"))]
+execve_test_factory!(test_execve, execve, "/bin/sh");
+#[cfg(target_os = "android")]
+execve_test_factory!(test_execve, execve, "/system/bin/sh");
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 #[cfg(feature = "execvpe")]
-execve_test_factory!(test_execvpe, execvpe, b"sh", b"sh");
+execve_test_factory!(test_execvpe, execvpe, "sh");

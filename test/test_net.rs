@@ -1,12 +1,13 @@
 use nix::net::if_::*;
-
-#[cfg(target_os = "linux")]
-const LOOPBACK: &'static [u8] = b"lo";
-
-#[cfg(not(target_os = "linux"))]
-const LOOPBACK: &'static [u8] = b"lo0";
+use std::ffi::CStr;
 
 #[test]
 fn test_if_nametoindex() {
-    assert!(if_nametoindex(&LOOPBACK[..]).is_ok());
+    #[cfg(target_os = "linux")]
+    fn loopback_name() -> &'static CStr { cstr!("lo") }
+
+    #[cfg(not(target_os = "linux"))]
+    fn loopback_name() -> &'static CStr { cstr!("lo0") }
+
+    assert!(if_nametoindex(loopback_name()).is_ok());
 }

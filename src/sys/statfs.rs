@@ -1,4 +1,4 @@
-use {Errno, Result, NixPath};
+use {Errno, Result, NixString};
 use std::os::unix::io::AsRawFd;
 
 pub mod vfs {
@@ -97,14 +97,10 @@ mod ffi {
     }
 }
 
-pub fn statfs<P: ?Sized + NixPath>(path: &P, stat: &mut vfs::Statfs) -> Result<()> {
+pub fn statfs<P: NixString>(path: P, stat: &mut vfs::Statfs) -> Result<()> {
     unsafe {
         Errno::clear();
-        let res = try!(
-            path.with_nix_path(|path| ffi::statfs(path.as_ptr(), stat))
-        );
-
-        Errno::result(res).map(drop)
+        Errno::result(ffi::statfs(path.as_ref().as_ptr(), stat)).map(drop)
     }
 }
 

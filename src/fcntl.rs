@@ -1,4 +1,4 @@
-use {Errno, Result, NixPath};
+use {Errno, Result, NixString};
 use libc::{c_int, c_uint};
 use sys::stat::Mode;
 use std::os::unix::io::RawFd;
@@ -101,10 +101,10 @@ mod ffi {
     }
 }
 
-pub fn open<P: ?Sized + NixPath>(path: &P, oflag: OFlag, mode: Mode) -> Result<RawFd> {
-    let fd = try!(path.with_nix_path(|cstr| {
-        unsafe { ffi::open(cstr.as_ptr(), oflag.bits(), mode.bits() as c_uint) }
-    }));
+pub fn open<P: NixString>(path: P, oflag: OFlag, mode: Mode) -> Result<RawFd> {
+    let fd = unsafe {
+        ffi::open(path.as_ref().as_ptr(), oflag.bits(), mode.bits() as c_uint)
+    };
 
     Errno::result(fd)
 }
