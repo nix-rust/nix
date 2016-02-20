@@ -13,7 +13,7 @@ pub use self::linux::*;
 
 mod ffi {
     use libc::{c_char, c_int, size_t};
-    pub use libc::{fork, close, read, write, pipe, ftruncate, unlink, setpgid, getegid, geteuid, getgid, getpid, getppid, getuid};
+    pub use libc::{fork, close, read, write, pipe, ftruncate, unlink, setpgid, getegid, geteuid, getgid, getpid, getppid, getuid, setuid, setgid, chown};
 
     #[allow(improper_ctypes)]
     extern {
@@ -28,7 +28,7 @@ mod ffi {
 
         // Execute PATH with arguments ARGV and environment from `environ'.
         // doc: http://man7.org/linux/man-pages/man3/execv.3.html
-        pub fn execv (path: *const c_char, argv: *const *const c_char) -> c_int;
+        pub fn execv(path: *const c_char, argv: *const *const c_char) -> c_int;
 
         // execute program
         // doc: http://man7.org/linux/man-pages/man2/execve.2.html
@@ -152,6 +152,16 @@ fn dup3_polyfill(oldfd: RawFd, newfd: RawFd, flags: OFlag) -> Result<RawFd> {
 pub fn chdir<P: ?Sized + NixPath>(path: &P) -> Result<()> {
     let res = try!(path.with_nix_path(|cstr| {
         unsafe { ffi::chdir(cstr.as_ptr()) }
+    }));
+
+    Errno::result(res).map(drop)
+}
+
+#[inline]
+pub fn chown<P: ?Sized + NixPath>(path: &P, owner: Option<uid_t>, group: Option<gid_t>) -> Result<()> {
+    let res = try!(path.with_nix_path(|cstr| {
+        // We use `0 - 1` to get `-1 : {u,g}id_t` which is specified as the no-op value for chown(3).
+        unsafe { ffi::chown(cstr.as_ptr(), owner.unwrap_or(0 - 1), group.unwrap_or(0 - 1)) }
     }));
 
     Errno::result(res).map(drop)
@@ -367,6 +377,20 @@ pub fn getgid() -> gid_t {
 #[inline]
 pub fn getegid() -> gid_t {
     unsafe { ffi::getegid() }
+}
+
+#[inline]
+pub fn setuid(uid: uid_t) -> Result<()> {
+    let res = unsafe { ffi::setuid(uid) };
+
+    Errno::result(res).map(drop)
+}
+
+#[inline]
+pub fn setgid(gid: gid_t) -> Result<()> {
+    let res = unsafe { ffi::setgid(gid) };
+
+    Errno::result(res).map(drop)
 }
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
