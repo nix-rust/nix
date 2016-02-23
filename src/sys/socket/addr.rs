@@ -24,6 +24,8 @@ pub enum AddressFamily {
     Inet6 = consts::AF_INET6,
     #[cfg(any(target_os = "linux", target_os = "android"))]
     Netlink = consts::AF_NETLINK,
+    #[cfg(any(target_os = "linux", target_os = "android"))]
+    Packet = consts::AF_PACKET,
 }
 
 #[derive(Copy)]
