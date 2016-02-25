@@ -210,9 +210,7 @@ mod os {
     pub const IP_ADD_MEMBERSHIP: c_int = 12;
     pub const IP_DROP_MEMBERSHIP: c_int = 13;
 
-    #[cfg(not(target_os = "openbsd"))]
     pub const IPV6_JOIN_GROUP: c_int = libc::IPV6_JOIN_GROUP;
-    #[cfg(not(target_os = "openbsd"))]
     pub const IPV6_LEAVE_GROUP: c_int = libc::IPV6_LEAVE_GROUP;
 
     pub type InAddrT = u32;
