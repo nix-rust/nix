@@ -116,7 +116,7 @@ mod os {
               target_os = "freebsd"))]
     use libc::{self, c_int, uint8_t};
     #[cfg(any(target_os = "openbsd", target_os = "netbsd"))]
-    use libc::{c_int, uint8_t};
+    use libc::{self, c_int, uint8_t};
 
     pub const AF_UNIX: c_int  = 1;
     pub const AF_LOCAL: c_int = AF_UNIX;
