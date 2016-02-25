@@ -116,7 +116,7 @@ mod os {
               target_os = "freebsd"))]
     use libc::{self, c_int, uint8_t};
     #[cfg(any(target_os = "openbsd", target_os = "netbsd"))]
-    use libc::{c_int, uint8_t};
+    use libc::{self, c_int, uint8_t};
 
     pub const AF_UNIX: c_int  = 1;
     pub const AF_LOCAL: c_int = AF_UNIX;
@@ -210,9 +210,7 @@ mod os {
     pub const IP_ADD_MEMBERSHIP: c_int = 12;
     pub const IP_DROP_MEMBERSHIP: c_int = 13;
 
-    #[cfg(not(target_os = "openbsd"))]
     pub const IPV6_JOIN_GROUP: c_int = libc::IPV6_JOIN_GROUP;
-    #[cfg(not(target_os = "openbsd"))]
     pub const IPV6_LEAVE_GROUP: c_int = libc::IPV6_LEAVE_GROUP;
 
     pub type InAddrT = u32;

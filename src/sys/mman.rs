@@ -120,7 +120,7 @@ mod consts {
 
 #[cfg(any(target_os = "freebsd", target_os = "dragonfly", target_os = "openbsd", target_os = "netbsd"))]
 mod consts {
-    use libc::c_int;
+    use libc::{self, c_int};
 
     bitflags!{
         flags MapFlags: c_int {
@@ -131,9 +131,11 @@ mod consts {
             const MAP_RENAME       = libc::MAP_RENAME,
             const MAP_NORESERVE    = libc::MAP_NORESERVE,
             const MAP_HASSEMAPHORE = libc::MAP_HASSEMAPHORE,
+            #[cfg(not(target_os = "openbsd"))]
             const MAP_STACK        = libc::MAP_STACK,
             #[cfg(target_os = "netbsd")]
             const MAP_WIRED        = libc::MAP_WIRED,
+            #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
             const MAP_NOSYNC       = libc::MAP_NOSYNC,
             const MAP_ANON         = libc::MAP_ANON,
         }
