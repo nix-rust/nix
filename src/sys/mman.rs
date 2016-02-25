@@ -120,7 +120,7 @@ mod consts {
 
 #[cfg(any(target_os = "freebsd", target_os = "dragonfly", target_os = "openbsd", target_os = "netbsd"))]
 mod consts {
-    use libc::c_int;
+    use libc::{self, c_int};
 
     bitflags!{
         flags MapFlags: c_int {
