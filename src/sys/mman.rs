@@ -135,6 +135,7 @@ mod consts {
             const MAP_STACK        = libc::MAP_STACK,
             #[cfg(target_os = "netbsd")]
             const MAP_WIRED        = libc::MAP_WIRED,
+            #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
             const MAP_NOSYNC       = libc::MAP_NOSYNC,
             const MAP_ANON         = libc::MAP_ANON,
         }
