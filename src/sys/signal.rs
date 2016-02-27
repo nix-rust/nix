@@ -295,6 +295,8 @@ mod ffi {
 
         pub fn kill(pid: pid_t, signum: c_int) -> c_int;
         pub fn raise(signum: c_int) -> c_int;
+
+        pub fn sigwait(set: *const sigset_t, sig: *mut c_int) -> c_int;
     }
 }
 
@@ -369,6 +371,15 @@ impl SigSet {
         let mut oldmask: SigSet = unsafe { mem::uninitialized() };
         try!(pthread_sigmask(how, Some(self), Some(&mut oldmask)));
         Ok(oldmask)
+    }
+
+    /// Suspends execution of the calling thread until one of the signals in the
+    /// signal mask becomes pending, and returns the accepted signal.
+    pub fn wait(&self) -> Result<SigNum> {
+        let mut signum: SigNum = unsafe { mem::uninitialized() };
+        let res = unsafe { ffi::sigwait(&self.sigset as *const sigset_t, &mut signum) };
+
+        Errno::result(res).map(|_| signum)
     }
 }
 
@@ -511,5 +522,16 @@ mod tests {
 
         assert!(oldmask.contains(SIGUSR1).unwrap());
         assert!(!oldmask.contains(SIGUSR2).unwrap());
+    }
+
+    #[test]
+    fn test_sigwait() {
+        let mut mask = SigSet::empty();
+        mask.add(SIGUSR1).unwrap();
+        mask.add(SIGUSR2).unwrap();
+        mask.thread_block().unwrap();
+
+        raise(SIGUSR1).unwrap();
+        assert_eq!(mask.wait().unwrap(), SIGUSR1);
     }
 }
