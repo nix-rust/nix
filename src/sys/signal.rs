@@ -44,20 +44,28 @@ pub const SIGEMT: libc::c_int = 7;
 
 pub const NSIG: libc::c_int = 32;
 
-pub use self::signal::{
-    SockFlag,
-
-    SA_NOCLDSTOP,
-    SA_NOCLDWAIT,
-    SA_NODEFER,
-    SA_ONSTACK,
-    SA_RESETHAND,
-    SA_RESTART,
-    SA_SIGINFO,
-};
-
-pub use self::signal::{HowFlag, SIG_BLOCK, SIG_UNBLOCK, SIG_SETMASK};
 pub use self::signal::sigset_t;
+
+
+bitflags!{
+    flags SockFlag: libc::c_int {
+        const SA_NOCLDSTOP = libc::SA_NOCLDSTOP,
+        const SA_NOCLDWAIT = libc::SA_NOCLDWAIT,
+        const SA_NODEFER   = libc::SA_NODEFER,
+        const SA_ONSTACK   = libc::SA_ONSTACK,
+        const SA_RESETHAND = libc::SA_RESETHAND,
+        const SA_RESTART   = libc::SA_RESTART,
+        const SA_SIGINFO   = libc::SA_SIGINFO,
+    }
+}
+
+bitflags!{
+    flags HowFlag: libc::c_int {
+        const SIG_BLOCK   = libc::SIG_BLOCK,
+        const SIG_UNBLOCK = libc::SIG_UNBLOCK,
+        const SIG_SETMASK = libc::SIG_SETMASK,
+    }
+}
 
 #[cfg(any(all(target_os = "linux",
               any(target_arch = "x86",
@@ -66,27 +74,9 @@ pub use self::signal::sigset_t;
                   target_arch = "arm")),
           target_os = "android"))]
 pub mod signal {
+
     use libc;
-
-    bitflags!(
-        flags SockFlag: libc::c_ulong {
-            const SA_NOCLDSTOP = 0x00000001,
-            const SA_NOCLDWAIT = 0x00000002,
-            const SA_NODEFER   = 0x40000000,
-            const SA_ONSTACK   = 0x08000000,
-            const SA_RESETHAND = 0x80000000,
-            const SA_RESTART   = 0x10000000,
-            const SA_SIGINFO   = 0x00000004,
-        }
-    );
-
-    bitflags!{
-        flags HowFlag: libc::c_int {
-            const SIG_BLOCK   = 0,
-            const SIG_UNBLOCK = 1,
-            const SIG_SETMASK = 2,
-        }
-    }
+    use super::SockFlag;
 
     // This definition is not as accurate as it could be, {pid, uid, status} is
     // actually a giant union. Currently we're only interested in these fields,
@@ -130,26 +120,7 @@ pub mod signal {
           any(target_arch = "mips", target_arch = "mipsel")))]
 pub mod signal {
     use libc;
-
-    bitflags!(
-        flags SockFlag: libc::c_uint {
-            const SA_NOCLDSTOP = 0x00000001,
-            const SA_NOCLDWAIT = 0x00001000,
-            const SA_NODEFER   = 0x40000000,
-            const SA_ONSTACK   = 0x08000000,
-            const SA_RESETHAND = 0x80000000,
-            const SA_RESTART   = 0x10000000,
-            const SA_SIGINFO   = 0x00000008,
-        }
-    );
-
-    bitflags!{
-        flags HowFlag: libc::c_int {
-            const SIG_BLOCK   = 1,
-            const SIG_UNBLOCK = 2,
-            const SIG_SETMASK = 3,
-        }
-    }
+    use super::SockFlag;
 
     // This definition is not as accurate as it could be, {pid, uid, status} is
     // actually a giant union. Currently we're only interested in these fields,
@@ -187,26 +158,7 @@ pub mod signal {
           target_os = "netbsd"))]
 pub mod signal {
     use libc;
-
-    bitflags!(
-        flags SockFlag: libc::c_int {
-            const SA_NOCLDSTOP = 0x0008,
-            const SA_NOCLDWAIT = 0x0020,
-            const SA_NODEFER   = 0x0010,
-            const SA_ONSTACK   = 0x0001,
-            const SA_RESETHAND = 0x0004,
-            const SA_RESTART   = 0x0002,
-            const SA_SIGINFO   = 0x0040,
-        }
-    );
-
-    bitflags!{
-        flags HowFlag: libc::c_int {
-            const SIG_BLOCK   = 1,
-            const SIG_UNBLOCK = 2,
-            const SIG_SETMASK = 3,
-        }
-    }
+    use super::SockFlag;
 
     #[cfg(any(target_os = "macos", target_os = "ios", target_os = "openbsd"))]
     pub type sigset_t = u32;
@@ -391,6 +343,7 @@ impl AsRef<sigset_t> for SigSet {
 
 pub use self::signal::siginfo;
 
+#[allow(unknown_lints)]
 #[allow(raw_pointer_derive)]
 #[derive(Clone, Copy)]
 pub enum SigHandler {
@@ -518,7 +471,7 @@ mod tests {
         let mask2 = SigSet::empty();
         mask.add(SIGUSR2).unwrap();
 
-        let oldmask = mask2.thread_swap_mask(signal::SIG_SETMASK).unwrap();
+        let oldmask = mask2.thread_swap_mask(SIG_SETMASK).unwrap();
 
         assert!(oldmask.contains(SIGUSR1).unwrap());
         assert!(!oldmask.contains(SIGUSR2).unwrap());
