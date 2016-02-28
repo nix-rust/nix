@@ -1,7 +1,7 @@
 // Portions of this file are Copyright 2014 The Rust Project Developers.
 // See http://rust-lang.org/COPYRIGHT.
 
-use libc::{self, sigaction as sigaction_t ,siginfo_t, sigset_t};
+use libc;
 use {Errno, Result};
 use std::mem;
 use std::ptr;
@@ -73,40 +73,40 @@ mod ffi {
 
 #[derive(Clone, Copy)]
 pub struct SigSet {
-    sigset: sigset_t
+    sigset: libc::sigset_t
 }
 
 pub type SigNum = libc::c_int;
 
 impl SigSet {
     pub fn all() -> SigSet {
-        let mut sigset: sigset_t = unsafe { mem::uninitialized() };
-        let _ = unsafe { libc::sigfillset(&mut sigset as *mut sigset_t) };
+        let mut sigset: libc::sigset_t = unsafe { mem::uninitialized() };
+        let _ = unsafe { libc::sigfillset(&mut sigset as *mut libc::sigset_t) };
 
         SigSet { sigset: sigset }
     }
 
     pub fn empty() -> SigSet {
-        let mut sigset: sigset_t = unsafe { mem::uninitialized() };
-        let _ = unsafe { libc::sigemptyset(&mut sigset as *mut sigset_t) };
+        let mut sigset: libc::sigset_t = unsafe { mem::uninitialized() };
+        let _ = unsafe { libc::sigemptyset(&mut sigset as *mut libc::sigset_t) };
 
         SigSet { sigset: sigset }
     }
 
     pub fn add(&mut self, signum: SigNum) -> Result<()> {
-        let res = unsafe { libc::sigaddset(&mut self.sigset as *mut sigset_t, signum) };
+        let res = unsafe { libc::sigaddset(&mut self.sigset as *mut libc::sigset_t, signum) };
 
         Errno::result(res).map(drop)
     }
 
     pub fn remove(&mut self, signum: SigNum) -> Result<()> {
-        let res = unsafe { libc::sigdelset(&mut self.sigset as *mut sigset_t, signum) };
+        let res = unsafe { libc::sigdelset(&mut self.sigset as *mut libc::sigset_t, signum) };
 
         Errno::result(res).map(drop)
     }
 
     pub fn contains(&self, signum: SigNum) -> Result<bool> {
-        let res = unsafe { libc::sigismember(&self.sigset as *const sigset_t, signum) };
+        let res = unsafe { libc::sigismember(&self.sigset as *const libc::sigset_t, signum) };
 
         match try!(Errno::result(res)) {
             1 => Ok(true),
@@ -148,14 +148,14 @@ impl SigSet {
     /// signal mask becomes pending, and returns the accepted signal.
     pub fn wait(&self) -> Result<SigNum> {
         let mut signum: SigNum = unsafe { mem::uninitialized() };
-        let res = unsafe { ffi::sigwait(&self.sigset as *const sigset_t, &mut signum) };
+        let res = unsafe { ffi::sigwait(&self.sigset as *const libc::sigset_t, &mut signum) };
 
         Errno::result(res).map(|_| signum)
     }
 }
 
-impl AsRef<sigset_t> for SigSet {
-    fn as_ref(&self) -> &sigset_t {
+impl AsRef<libc::sigset_t> for SigSet {
+    fn as_ref(&self) -> &libc::sigset_t {
         &self.sigset
     }
 }
@@ -167,18 +167,18 @@ pub enum SigHandler {
     SigDfl,
     SigIgn,
     Handler(extern fn(SigNum)),
-    SigAction(extern fn(SigNum, *mut siginfo_t, *mut libc::c_void))
+    SigAction(extern fn(SigNum, *mut libc::siginfo_t, *mut libc::c_void))
 }
 
 pub struct SigAction {
-    sigaction: sigaction_t
+    sigaction: libc::sigaction
 }
 
 impl SigAction {
     /// This function will set or unset the flag `SA_SIGINFO` depending on the
     /// type of the `handler` argument.
     pub fn new(handler: SigHandler, flags: SockFlag, mask: SigSet) -> SigAction {
-        let mut s = unsafe { mem::uninitialized::<sigaction_t>() };
+        let mut s = unsafe { mem::uninitialized::<libc::sigaction>() };
         s.sa_sigaction = match handler {
             SigHandler::SigDfl => unsafe { mem::transmute(libc::SIG_DFL) },
             SigHandler::SigIgn => unsafe { mem::transmute(libc::SIG_IGN) },
@@ -196,10 +196,10 @@ impl SigAction {
 }
 
 pub unsafe fn sigaction(signum: SigNum, sigaction: &SigAction) -> Result<SigAction> {
-    let mut oldact = mem::uninitialized::<sigaction_t>();
+    let mut oldact = mem::uninitialized::<libc::sigaction>();
 
     let res =
-        libc::sigaction(signum, &sigaction.sigaction as *const sigaction_t, &mut oldact as *mut sigaction_t);
+        libc::sigaction(signum, &sigaction.sigaction as *const libc::sigaction, &mut oldact as *mut libc::sigaction);
 
     Errno::result(res).map(|_| SigAction { sigaction: oldact })
 }
@@ -229,10 +229,10 @@ pub fn pthread_sigmask(how: HowFlag,
     let res = unsafe {
         // if set or oldset is None, pass in null pointers instead
         libc::pthread_sigmask(how.bits(),
-                             set.map_or_else(|| ptr::null::<sigset_t>(),
-                                             |s| &s.sigset as *const sigset_t),
-                             oldset.map_or_else(|| ptr::null_mut::<sigset_t>(),
-                                                |os| &mut os.sigset as *mut sigset_t))
+                             set.map_or_else(|| ptr::null::<libc::sigset_t>(),
+                                             |s| &s.sigset as *const libc::sigset_t),
+                             oldset.map_or_else(|| ptr::null_mut::<libc::sigset_t>(),
+                                                |os| &mut os.sigset as *mut libc::sigset_t))
     };
 
     Errno::result(res).map(drop)
