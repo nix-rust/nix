@@ -65,26 +65,9 @@ bitflags!{
 }
 
 mod ffi {
-    use libc::{c_int, pid_t, sigaction as sigaction_t, sigset_t};
-
-    #[allow(improper_ctypes)]
+    use libc;
     extern {
-        pub fn sigaction(signum: c_int,
-                         act: *const sigaction_t,
-                         oldact: *mut sigaction_t) -> c_int;
-
-        pub fn sigaddset(set: *mut sigset_t, signum: c_int) -> c_int;
-        pub fn sigdelset(set: *mut sigset_t, signum: c_int) -> c_int;
-        pub fn sigemptyset(set: *mut sigset_t) -> c_int;
-        pub fn sigfillset(set: *mut sigset_t) -> c_int;
-        pub fn sigismember(set: *const sigset_t, signum: c_int) -> c_int;
-
-        pub fn pthread_sigmask(how: c_int, set: *const sigset_t, oldset: *mut sigset_t) -> c_int;
-
-        pub fn kill(pid: pid_t, signum: c_int) -> c_int;
-        pub fn raise(signum: c_int) -> c_int;
-
-        pub fn sigwait(set: *const sigset_t, sig: *mut c_int) -> c_int;
+        pub fn sigwait(set: *const libc::sigset_t, sig: *mut libc::c_int) -> libc::c_int;
     }
 }
 
@@ -98,32 +81,32 @@ pub type SigNum = libc::c_int;
 impl SigSet {
     pub fn all() -> SigSet {
         let mut sigset: sigset_t = unsafe { mem::uninitialized() };
-        let _ = unsafe { ffi::sigfillset(&mut sigset as *mut sigset_t) };
+        let _ = unsafe { libc::sigfillset(&mut sigset as *mut sigset_t) };
 
         SigSet { sigset: sigset }
     }
 
     pub fn empty() -> SigSet {
         let mut sigset: sigset_t = unsafe { mem::uninitialized() };
-        let _ = unsafe { ffi::sigemptyset(&mut sigset as *mut sigset_t) };
+        let _ = unsafe { libc::sigemptyset(&mut sigset as *mut sigset_t) };
 
         SigSet { sigset: sigset }
     }
 
     pub fn add(&mut self, signum: SigNum) -> Result<()> {
-        let res = unsafe { ffi::sigaddset(&mut self.sigset as *mut sigset_t, signum) };
+        let res = unsafe { libc::sigaddset(&mut self.sigset as *mut sigset_t, signum) };
 
         Errno::result(res).map(drop)
     }
 
     pub fn remove(&mut self, signum: SigNum) -> Result<()> {
-        let res = unsafe { ffi::sigdelset(&mut self.sigset as *mut sigset_t, signum) };
+        let res = unsafe { libc::sigdelset(&mut self.sigset as *mut sigset_t, signum) };
 
         Errno::result(res).map(drop)
     }
 
     pub fn contains(&self, signum: SigNum) -> Result<bool> {
-        let res = unsafe { ffi::sigismember(&self.sigset as *const sigset_t, signum) };
+        let res = unsafe { libc::sigismember(&self.sigset as *const sigset_t, signum) };
 
         match try!(Errno::result(res)) {
             1 => Ok(true),
@@ -216,7 +199,7 @@ pub unsafe fn sigaction(signum: SigNum, sigaction: &SigAction) -> Result<SigActi
     let mut oldact = mem::uninitialized::<sigaction_t>();
 
     let res =
-        ffi::sigaction(signum, &sigaction.sigaction as *const sigaction_t, &mut oldact as *mut sigaction_t);
+        libc::sigaction(signum, &sigaction.sigaction as *const sigaction_t, &mut oldact as *mut sigaction_t);
 
     Errno::result(res).map(|_| SigAction { sigaction: oldact })
 }
@@ -245,7 +228,7 @@ pub fn pthread_sigmask(how: HowFlag,
 
     let res = unsafe {
         // if set or oldset is None, pass in null pointers instead
-        ffi::pthread_sigmask(how.bits(),
+        libc::pthread_sigmask(how.bits(),
                              set.map_or_else(|| ptr::null::<sigset_t>(),
                                              |s| &s.sigset as *const sigset_t),
                              oldset.map_or_else(|| ptr::null_mut::<sigset_t>(),
@@ -256,13 +239,13 @@ pub fn pthread_sigmask(how: HowFlag,
 }
 
 pub fn kill(pid: libc::pid_t, signum: SigNum) -> Result<()> {
-    let res = unsafe { ffi::kill(pid, signum) };
+    let res = unsafe { libc::kill(pid, signum) };
 
     Errno::result(res).map(drop)
 }
 
 pub fn raise(signum: SigNum) -> Result<()> {
-    let res = unsafe { ffi::raise(signum) };
+    let res = unsafe { libc::raise(signum) };
 
     Errno::result(res).map(drop)
 }
