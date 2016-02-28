@@ -1,7 +1,7 @@
 // Portions of this file are Copyright 2014 The Rust Project Developers.
 // See http://rust-lang.org/COPYRIGHT.
 
-use libc;
+use libc::{self, sigaction as sigaction_t ,siginfo_t, sigset_t};
 use {Errno, Result};
 use std::mem;
 use std::ptr;
@@ -44,9 +44,6 @@ pub const SIGEMT: libc::c_int = 7;
 
 pub const NSIG: libc::c_int = 32;
 
-pub use self::signal::sigset_t;
-
-
 bitflags!{
     flags SockFlag: libc::c_int {
         const SA_NOCLDSTOP = libc::SA_NOCLDSTOP,
@@ -67,175 +64,14 @@ bitflags!{
     }
 }
 
-#[cfg(any(all(target_os = "linux",
-              any(target_arch = "x86",
-                  target_arch = "x86_64",
-                  target_arch = "aarch64",
-                  target_arch = "arm")),
-          target_os = "android"))]
-pub mod signal {
-
-    use libc;
-    use super::SockFlag;
-
-    // This definition is not as accurate as it could be, {pid, uid, status} is
-    // actually a giant union. Currently we're only interested in these fields,
-    // however.
-    #[repr(C)]
-    #[derive(Clone, Copy)]
-    pub struct siginfo {
-        pub si_signo: libc::c_int,
-        pub si_errno: libc::c_int,
-        pub si_code: libc::c_int,
-        pub pid: libc::pid_t,
-        pub uid: libc::uid_t,
-        pub status: libc::c_int,
-    }
-
-    #[repr(C)]
-    #[allow(missing_copy_implementations)]
-    pub struct sigaction {
-        pub sa_handler: extern fn(libc::c_int),
-        pub sa_mask: sigset_t,
-        pub sa_flags: SockFlag,
-        sa_restorer: *mut libc::c_void,
-    }
-
-    #[repr(C)]
-    #[cfg(target_pointer_width = "32")]
-    #[derive(Clone, Copy)]
-    pub struct sigset_t {
-        __val: [libc::c_ulong; 32],
-    }
-
-    #[repr(C)]
-    #[cfg(target_pointer_width = "64")]
-    #[derive(Clone, Copy)]
-    pub struct sigset_t {
-        __val: [libc::c_ulong; 16],
-    }
-}
-
-#[cfg(all(target_os = "linux",
-          any(target_arch = "mips", target_arch = "mipsel")))]
-pub mod signal {
-    use libc;
-    use super::SockFlag;
-
-    // This definition is not as accurate as it could be, {pid, uid, status} is
-    // actually a giant union. Currently we're only interested in these fields,
-    // however.
-    #[repr(C)]
-    pub struct siginfo {
-        pub si_signo: libc::c_int,
-        pub si_code: libc::c_int,
-        pub si_errno: libc::c_int,
-        pub pid: libc::pid_t,
-        pub uid: libc::uid_t,
-        pub status: libc::c_int,
-    }
-
-    #[repr(C)]
-    pub struct sigaction {
-        pub sa_flags: SockFlag,
-        pub sa_handler: extern fn(libc::c_int),
-        pub sa_mask: sigset_t,
-        sa_restorer: *mut libc::c_void,
-        sa_resv: [libc::c_int; 1],
-    }
-
-    #[repr(C)]
-    pub struct sigset_t {
-        __val: [libc::c_ulong; 32],
-    }
-}
-
-#[cfg(any(target_os = "macos",
-          target_os = "ios",
-          target_os = "freebsd",
-          target_os = "openbsd",
-          target_os = "dragonfly",
-          target_os = "netbsd"))]
-pub mod signal {
-    use libc;
-    use super::SockFlag;
-
-    #[cfg(any(target_os = "macos", target_os = "ios", target_os = "openbsd"))]
-    pub type sigset_t = u32;
-    #[cfg(target_os = "freebsd")]
-    #[repr(C)]
-    #[derive(Clone, Copy)]
-    pub struct sigset_t {
-        bits: [u32; 4],
-    }
-    #[cfg(any(target_os = "dragonfly", target_os = "netbsd"))]
-    #[repr(C)]
-    #[derive(Clone, Copy)]
-    pub struct sigset_t {
-        bits: [libc::c_uint; 4],
-    }
-
-    // This structure has more fields, but we're not all that interested in
-    // them.
-    #[cfg(not(target_os = "dragonfly"))]
-    #[repr(C)]
-    #[derive(Clone, Copy)]
-    pub struct siginfo {
-        pub si_signo: libc::c_int,
-        pub si_errno: libc::c_int,
-        pub si_code: libc::c_int,
-        pub pid: libc::pid_t,
-        pub uid: libc::uid_t,
-        pub status: libc::c_int,
-    }
-
-    #[cfg(target_os = "dragonfly")]
-    #[repr(C)]
-    #[derive(Clone, Copy)]
-    pub struct siginfo {
-        pub si_signo: libc::c_int,
-        pub si_errno: libc::c_int,
-        pub si_code: libc::c_int,
-        pub pid: libc::c_int,
-        pub uid: libc::c_uint,
-        pub status: libc::c_int,
-    }
-
-    #[cfg(any(target_os = "macos", target_os = "ios"))]
-    #[repr(C)]
-    #[allow(missing_copy_implementations)]
-    pub struct sigaction {
-        pub sa_handler: extern fn(libc::c_int),
-        pub sa_mask: sigset_t,
-        pub sa_flags: SockFlag,
-    }
-
-    #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
-    #[repr(C)]
-    pub struct sigaction {
-        pub sa_handler: extern fn(libc::c_int),
-        pub sa_flags: SockFlag,
-        pub sa_mask: sigset_t,
-    }
-
-    #[cfg(any(target_os = "openbsd", target_os = "netbsd"))]
-    #[repr(C)]
-    pub struct sigaction {
-        pub sa_handler: extern fn(libc::c_int),
-        pub sa_mask: sigset_t,
-        pub sa_flags: SockFlag,
-    }
-}
-
 mod ffi {
-    use libc::{c_int, pid_t};
-    use super::signal::{sigaction, sigset_t};
+    use libc::{c_int, pid_t, sigaction as sigaction_t, sigset_t};
 
     #[allow(improper_ctypes)]
     extern {
         pub fn sigaction(signum: c_int,
-                         act: *const sigaction,
-                         oldact: *mut sigaction) -> c_int;
+                         act: *const sigaction_t,
+                         oldact: *mut sigaction_t) -> c_int;
 
         pub fn sigaddset(set: *mut sigset_t, signum: c_int) -> c_int;
         pub fn sigdelset(set: *mut sigset_t, signum: c_int) -> c_int;
@@ -341,8 +177,6 @@ impl AsRef<sigset_t> for SigSet {
     }
 }
 
-pub use self::signal::siginfo;
-
 #[allow(unknown_lints)]
 #[allow(raw_pointer_derive)]
 #[derive(Clone, Copy)]
@@ -350,10 +184,8 @@ pub enum SigHandler {
     SigDfl,
     SigIgn,
     Handler(extern fn(SigNum)),
-    SigAction(extern fn(SigNum, *mut siginfo, *mut libc::c_void))
+    SigAction(extern fn(SigNum, *mut siginfo_t, *mut libc::c_void))
 }
-
-type sigaction_t = self::signal::sigaction;
 
 pub struct SigAction {
     sigaction: sigaction_t
@@ -364,15 +196,15 @@ impl SigAction {
     /// type of the `handler` argument.
     pub fn new(handler: SigHandler, flags: SockFlag, mask: SigSet) -> SigAction {
         let mut s = unsafe { mem::uninitialized::<sigaction_t>() };
-        s.sa_handler = match handler {
+        s.sa_sigaction = match handler {
             SigHandler::SigDfl => unsafe { mem::transmute(libc::SIG_DFL) },
             SigHandler::SigIgn => unsafe { mem::transmute(libc::SIG_IGN) },
-            SigHandler::Handler(f) => f,
+            SigHandler::Handler(f) => unsafe { mem::transmute(f) },
             SigHandler::SigAction(f) => unsafe { mem::transmute(f) },
         };
         s.sa_flags = match handler {
-            SigHandler::SigAction(_) => flags | SA_SIGINFO,
-            _ => flags - SA_SIGINFO,
+            SigHandler::SigAction(_) => (flags | SA_SIGINFO).bits(),
+            _ => (flags - SA_SIGINFO).bits(),
         };
         s.sa_mask = mask.sigset;
 
