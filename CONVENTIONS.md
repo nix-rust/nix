@@ -1,7 +1,44 @@
-# Bitflags
+# Conventions
+
+In order to achieve our goal of wrapping [libc][libc] code in idiomatic rust
+constructs with minimal performance overhead, we follow the following
+conventions.
+
+Note that, thus far, not all the code follows these conventions and not all
+conventions we try to follow have been documented here. If you find an instance
+of either, feel free to remedy the flaw by opening a pull request with
+appropriate changes or additions.
+
+
+## Integer Constants
+
+We do not define integer constants ourselves, but use or reexport them from the
+[libc crate][libc].
+
+
+## Bitflags
 
 We represent sets of constants that are intended to be combined using bitwise
 operations as parameters to functions by types defined using the `bitflags!`
-macro from the [bitflags crate](https://crates.io/crates/bitflags/).
-Instead of providing the concrete values ourselves, we prefer taking the
-constants  defined in [libc crate](https://crates.io/crates/libc/).
+macro from the [bitflags crate][bitflags].
+
+
+## Enumerations
+
+We represent sets of constants that are intended as mutually exclusive arguments
+to parameters of functions by [enumerations][enum].
+
+
+## Structures Initialized by libc Functions
+
+Whenever we need to use a [libc][libc] function to properly initialize a
+variable and said function allows us to use uninitialized memory, we use
+[`std::mem::uninitialized`][std_uninitialized] (or [`core::mem::uninitialized`][core_uninitialized])
+when defining the variable. This allows us to avoid the overhead incurred by
+zeroing or otherwise initializing the variable.
+
+[bitflags]: https://crates.io/crates/bitflags/
+[core_uninitialized]: https://doc.rust-lang.org/core/mem/fn.uninitialized.html
+[enum]: https://doc.rust-lang.org/reference.html#enumerations
+[libc]: https://crates.io/crates/libc/
+[std_uninitialized]: https://doc.rust-lang.org/std/mem/fn.uninitialized.html

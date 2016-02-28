@@ -28,3 +28,7 @@ Then, add this to your crate root:
 ```rust
 extern crate nix;
 ```
+
+## Contributing
+
+See [CONTRIBUTING](CONTRIBUTING.md).
