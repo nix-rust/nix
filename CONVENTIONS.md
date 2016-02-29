@@ -10,17 +10,24 @@ of either, feel free to remedy the flaw by opening a pull request with
 appropriate changes or additions.
 
 
-## Integer Constants
+## libc constants, functions and structs
 
 We do not define integer constants ourselves, but use or reexport them from the
 [libc crate][libc].
 
+We use the functions exported from [libc][libc] instead of writing our own
+`extern` declarations.
+
+We use the `struct` definitions from [libc][libc] internally instead of writing
+our own.
 
 ## Bitflags
 
 We represent sets of constants that are intended to be combined using bitwise
 operations as parameters to functions by types defined using the `bitflags!`
 macro from the [bitflags crate][bitflags].
+We name the type for a set of constants whose element's names start with `FOO_`
+`FooFlags`.
 
 
 ## Enumerations
