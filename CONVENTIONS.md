@@ -10,11 +10,16 @@ of either, feel free to remedy the flaw by opening a pull request with
 appropriate changes or additions.
 
 
-## Integer Constants
+## libc constants, functions and structs
 
 We do not define integer constants ourselves, but use or reexport them from the
 [libc crate][libc].
 
+We use the functions exported from [libc][libc] instead of writing our own
+`extern` declarations.
+
+We use the `struct` definitions from [libc][libc] internally instead of writing
+our own.
 
 ## Bitflags
 
