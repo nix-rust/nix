@@ -13,7 +13,7 @@
 #[macro_use]
 extern crate bitflags;
 
-extern crate libc;
+pub extern crate libc;
 
 #[cfg(test)]
 extern crate nix_test as nixtest;
