@@ -21,6 +21,8 @@ We do not define integer constants ourselves, but use or reexport them from the
 We represent sets of constants that are intended to be combined using bitwise
 operations as parameters to functions by types defined using the `bitflags!`
 macro from the [bitflags crate][bitflags].
+We name the type for a set of constants whose element's names start with `FOO_`
+`FooFlags`.
 
 
 ## Enumerations
