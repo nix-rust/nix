@@ -45,7 +45,7 @@ pub const SIGEMT: libc::c_int = 7;
 pub const NSIG: libc::c_int = 32;
 
 bitflags!{
-    flags SockFlag: libc::c_int {
+    flags SaFlag: libc::c_int {
         const SA_NOCLDSTOP = libc::SA_NOCLDSTOP,
         const SA_NOCLDWAIT = libc::SA_NOCLDWAIT,
         const SA_NODEFER   = libc::SA_NODEFER,
@@ -57,7 +57,7 @@ bitflags!{
 }
 
 bitflags!{
-    flags HowFlag: libc::c_int {
+    flags SigFlag: libc::c_int {
         const SIG_BLOCK   = libc::SIG_BLOCK,
         const SIG_UNBLOCK = libc::SIG_UNBLOCK,
         const SIG_SETMASK = libc::SIG_SETMASK,
@@ -118,7 +118,7 @@ impl SigSet {
     /// Gets the currently blocked (masked) set of signals for the calling thread.
     pub fn thread_get_mask() -> Result<SigSet> {
         let mut oldmask: SigSet = unsafe { mem::uninitialized() };
-        try!(pthread_sigmask(HowFlag::empty(), None, Some(&mut oldmask)));
+        try!(pthread_sigmask(SigFlag::empty(), None, Some(&mut oldmask)));
         Ok(oldmask)
     }
 
@@ -138,7 +138,7 @@ impl SigSet {
     }
 
     /// Sets the set of signals as the signal mask, and returns the old mask.
-    pub fn thread_swap_mask(&self, how: HowFlag) -> Result<SigSet> {
+    pub fn thread_swap_mask(&self, how: SigFlag) -> Result<SigSet> {
         let mut oldmask: SigSet = unsafe { mem::uninitialized() };
         try!(pthread_sigmask(how, Some(self), Some(&mut oldmask)));
         Ok(oldmask)
@@ -162,7 +162,7 @@ impl AsRef<libc::sigset_t> for SigSet {
 
 #[allow(unknown_lints)]
 #[allow(raw_pointer_derive)]
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 pub enum SigHandler {
     SigDfl,
     SigIgn,
@@ -177,7 +177,7 @@ pub struct SigAction {
 impl SigAction {
     /// This function will set or unset the flag `SA_SIGINFO` depending on the
     /// type of the `handler` argument.
-    pub fn new(handler: SigHandler, flags: SockFlag, mask: SigSet) -> SigAction {
+    pub fn new(handler: SigHandler, flags: SaFlag, mask: SigSet) -> SigAction {
         let mut s = unsafe { mem::uninitialized::<libc::sigaction>() };
         s.sa_sigaction = match handler {
             SigHandler::SigDfl => unsafe { mem::transmute(libc::SIG_DFL) },
@@ -219,7 +219,7 @@ pub unsafe fn sigaction(signum: SigNum, sigaction: &SigAction) -> Result<SigActi
 ///
 /// For more information, visit the [pthread_sigmask](http://man7.org/linux/man-pages/man3/pthread_sigmask.3.html),
 /// or [sigprocmask](http://man7.org/linux/man-pages/man2/sigprocmask.2.html) man pages.
-pub fn pthread_sigmask(how: HowFlag,
+pub fn pthread_sigmask(how: SigFlag,
                        set: Option<&SigSet>,
                        oldset: Option<&mut SigSet>) -> Result<()> {
     if set.is_none() && oldset.is_none() {
