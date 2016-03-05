@@ -13,6 +13,9 @@
 #[macro_use]
 extern crate bitflags;
 
+#[macro_use]
+extern crate cfg_if;
+
 pub extern crate libc;
 
 #[cfg(test)]
