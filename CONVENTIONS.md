@@ -19,7 +19,18 @@ We use the functions exported from [libc][libc] instead of writing our own
 `extern` declarations.
 
 We use the `struct` definitions from [libc][libc] internally instead of writing
-our own.
+our own. If we want to add methods to a libc type, we use the newtype pattern.
+For example,
+
+```rust
+pub struct SigSet(libc::sigset_t);
+
+impl SigSet {
+    ...
+}
+```
+
+When creating newtypes, we use Rust's `CamelCase` type naming convention.
 
 ## Bitflags
 
