@@ -56,6 +56,12 @@ pub fn setpgid(pid: pid_t, pgid: pid_t) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
+#[cfg(any(target_os = "linux", target_os = "android"))]
+#[inline]
+pub fn gettid() -> pid_t {
+    unsafe { libc::syscall(libc::SYS_gettid) as pid_t }    // no error handling, according to man page: "These functions are always successful."
+}
+
 #[inline]
 pub fn dup(oldfd: RawFd) -> Result<RawFd> {
     let res = unsafe { libc::dup(oldfd) };
