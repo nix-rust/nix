@@ -22,6 +22,7 @@ signalfd = []
 [dependencies]
 libc     = "0.2.7"
 bitflags = "0.4"
+cfg-if = "0.1.0"
 
 [dev-dependencies]
 rand = "0.3.8"
