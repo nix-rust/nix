@@ -43,6 +43,8 @@ We use labels to help manage issues. The structure is modeled after
 [Rust's issue labeling scheme][rust-labels]:
 - **A-**prefixed labels state which area of the project the issue
   relates to
+- **E-**prefixed labels explain the level of experience necessary to fix the
+  issue
 - **O-**prefixed labels specify the OS for issues that are OS-specific
 
 [rust-labels]: https://github.com/rust-lang/rust/blob/master/CONTRIBUTING.md#issue-triage
