@@ -1,8 +1,8 @@
 #!/bin/bash
 #
-# This is **not** meant to be run on CI, but rather locally instead. If you're
-# on a Linux machine you'll be able to run most of these, but otherwise this'll
-# just attempt to run as many platforms as possible!
+# Build nix and all tests for as many versions and platforms as can be
+# managed.  This requires docker.
+#
 
 set -e
 
@@ -26,7 +26,7 @@ RUST_TARGETS=${RUST_TARGETS:-"\
     x86_64-unknown-linux-gnu \
     x86_64-unknown-linux-musl"}
 
-DOCKER_IMAGE="rust-crossbuilder"
+DOCKER_IMAGE="posborne/rust-cross"
 
 BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
@@ -41,6 +41,10 @@ test_nix() {
            /source/ci/run.sh ${version} ${target}
 }
 
+# Ensure up to date (short compared to everything else)
+docker pull ${DOCKER_IMAGE}
+
+# Run tests for each version/target combination
 for version in ${RUST_VERSIONS}; do
     for target in ${RUST_TARGETS}; do
         test_nix $version $target
