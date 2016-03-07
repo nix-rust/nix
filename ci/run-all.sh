@@ -26,7 +26,7 @@ RUST_TARGETS=${RUST_TARGETS:-"\
     x86_64-unknown-linux-gnu \
     x86_64-unknown-linux-musl"}
 
-DOCKER_IMAGE="posborne/rust-cross"
+DOCKER_IMAGE=${DOCKER_IMAGE:-"posborne/rust-cross"}
 
 BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
