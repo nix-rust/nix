@@ -16,6 +16,15 @@ echo "======================================================="
 echo "TESTING VERSION: ${VERSION}, TARGET: ${TARGET}"
 echo "======================================================="
 
+#
+# Tell cargo what linker to use and whatever else is required
+#
+configure_cargo() {
+  rm -rf .cargo
+  mkdir .cargo
+  cp "${BASE_DIR}/ci/cargo-config" .cargo/config
+}
+
 cross_compile_tests() {
   case "$TARGET" in
     *-apple-ios)
@@ -85,6 +94,8 @@ test_binary() {
       ;;
   esac
 }
+
+configure_cargo
 
 # select the proper version
 multirust override ${VERSION}
