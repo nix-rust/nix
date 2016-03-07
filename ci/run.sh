@@ -7,6 +7,7 @@ set -e
 
 BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MANIFEST_PATH="${BASE_DIR}/Cargo.toml"
+BUILD_DIR="."
 
 VERSION="$1"
 TARGET="$2"
@@ -43,12 +44,12 @@ cross_compile_tests() {
 # ask cargo what test files it generated:
 # https://github.com/rust-lang/cargo/issues/1924
 find_binaries() {
-  target_base_dir="target/${TARGET}/debug"
+  target_base_dir="${BUILD_DIR}/${TARGET}/debug"
 
   # find [[test]] sections and print the first line and
   # hack it to what we want from there.  Also "nix" for
   # tests that are implicitly prsent
-  for test_base in $( awk '/\[\[test\]\]/{getline; print}' Cargo.toml | \
+  for test_base in $( awk '/\[\[test\]\]/{getline; print}' "${MANIFEST_PATH}" | \
                           cut -d '='  -f2 | \
                           tr -d '"' | \
                           tr '-' '_' | \
