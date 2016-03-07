@@ -27,6 +27,17 @@ configure_cargo() {
   cp "${BASE_DIR}/ci/cargo-config" .cargo/config
 }
 
+#
+# We need to export CC for the tests to build properly (some C code is
+# compiled) to work.  We already tell Cargo about the compiler in the
+# cargo config, so we just parse that info out of the cargo config
+#
+cc_for_target() {
+  awk "/\[target\.${TARGET}\]/{getline; print}" .cargo/config |
+      cut -d '=' -f2 | \
+      tr -d '"' | tr -d ' '
+}
+
 cross_compile_tests() {
   case "$TARGET" in
     *-apple-ios)
@@ -98,6 +109,8 @@ test_binary() {
 }
 
 configure_cargo
+
+export CC="$(cc_for_target)"
 
 # select the proper version
 multirust override ${VERSION}
