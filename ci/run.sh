@@ -12,6 +12,8 @@ BUILD_DIR="."
 VERSION="$1"
 TARGET="$2"
 
+export RUST_TEST_THREADS=1
+
 echo "======================================================="
 echo "TESTING VERSION: ${VERSION}, TARGET: ${TARGET}"
 echo "======================================================="
