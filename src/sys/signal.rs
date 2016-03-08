@@ -292,6 +292,8 @@ mod tests {
         assert!(!oldmask.contains(SIGUSR2).unwrap());
     }
 
+    // TODO(#251): Re-enable after figuring out flakiness.
+    #[cfg(not(any(target_os = "macos", target_os = "ios")))]
     #[test]
     fn test_sigwait() {
         let mut mask = SigSet::empty();
