@@ -54,6 +54,17 @@ fn test_getpid() {
     assert!(ppid > 0);
 }
 
+#[cfg(any(target_os = "linux", target_os = "android"))]
+mod linux_android {
+    use nix::unistd::gettid;
+
+    #[test]
+    fn test_gettid() {
+        let tid = gettid();
+        assert!(tid > 0);
+    }
+}
+
 macro_rules! execve_test_factory(
     ($test_name:ident, $syscall:ident, $unix_sh:expr, $android_sh:expr) => (
     #[test]
