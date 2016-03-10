@@ -15,32 +15,25 @@
 //!
 //! Please note that signal discarding is not specific to `signalfd`, but also happens with regular
 //! signal handlers.
-use libc::{c_int, pid_t, uid_t};
+use libc;
 use unistd;
-use {Errno, Result};
-use sys::signal::signal::siginfo as signal_siginfo;
+use {Error, Errno, Result};
 pub use sys::signal::{self, SigSet};
+pub use libc::signalfd_siginfo as siginfo;
 
 use std::os::unix::io::{RawFd, AsRawFd};
 use std::mem;
 
-mod ffi {
-    use libc::c_int;
-    use sys::signal::sigset_t;
-
-    extern {
-        pub fn signalfd(fd: c_int, mask: *const sigset_t, flags: c_int) -> c_int;
-    }
-}
 
 bitflags!{
-    flags SfdFlags: c_int {
-        const SFD_NONBLOCK  = 0o00004000, // O_NONBLOCK
-        const SFD_CLOEXEC   = 0o02000000, // O_CLOEXEC
+    flags SfdFlags: libc::c_int {
+        const SFD_NONBLOCK  = libc::SFD_NONBLOCK,
+        const SFD_CLOEXEC   = libc::SFD_CLOEXEC,
     }
 }
 
-pub const CREATE_NEW_FD: RawFd = -1;
+pub const SIGNALFD_NEW: RawFd = -1;
+pub const SIGNALFD_SIGINFO_SIZE: usize = 128;
 
 /// Creates a new file descriptor for reading signals.
 ///
@@ -55,7 +48,7 @@ pub const CREATE_NEW_FD: RawFd = -1;
 /// See [the signalfd man page for more information](http://man7.org/linux/man-pages/man2/signalfd.2.html)
 pub fn signalfd(fd: RawFd, mask: &SigSet, flags: SfdFlags) -> Result<RawFd> {
     unsafe {
-        Errno::result(ffi::signalfd(fd as c_int, mask.as_ref(), flags.bits()))
+        Errno::result(libc::signalfd(fd as libc::c_int, mask.as_ref(), flags.bits()))
     }
 }
 
@@ -98,7 +91,7 @@ impl SignalFd {
     }
 
     pub fn with_flags(mask: &SigSet, flags: SfdFlags) -> Result<SignalFd> {
-        let fd = try!(signalfd(CREATE_NEW_FD, mask, flags));
+        let fd = try!(signalfd(SIGNALFD_NEW, mask, flags));
 
         Ok(SignalFd(fd))
     }
@@ -108,10 +101,10 @@ impl SignalFd {
     }
 
     pub fn read_signal(&mut self) -> Result<Option<siginfo>> {
-        let mut buffer: [u8; SIGINFO_SIZE] = unsafe { mem::uninitialized() };
+        let mut buffer: [u8; SIGNALFD_SIGINFO_SIZE] = unsafe { mem::uninitialized() };
 
         match unistd::read(self.0, &mut buffer) {
-            Ok(SIGINFO_SIZE) => Ok(Some(unsafe { mem::transmute_copy(&buffer) })),
+            Ok(SIGNALFD_SIGINFO_SIZE) => Ok(Some(unsafe { mem::transmute(buffer) })),
             Ok(_) => unreachable!("partial read on signalfd"),
             Err(Error::Sys(Errno::EAGAIN)) => Ok(None),
             Err(error) => Err(error)
@@ -143,51 +136,17 @@ impl Iterator for SignalFd {
     }
 }
 
-pub const SIGINFO_SIZE: usize = 128;
-pub const SIGINFO_PADDING: usize = 48;
-
-#[derive(Debug, Clone, PartialEq)]
-#[repr(C, packed)]
-pub struct siginfo {
-    pub ssi_signo: u32,
-    pub ssi_errno: i32,
-    pub ssi_code: i32,
-    pub ssi_pid: u32,
-    pub ssi_uid: u32,
-    pub ssi_fd: i32,
-    pub ssi_tid: u32,
-    pub ssi_band: u32,
-    pub ssi_overrun: u32,
-    pub ssi_trapno: u32,
-    pub ssi_status: i32,
-    pub ssi_int: i32,
-    pub ssi_ptr: u64,
-    pub ssi_utime: u64,
-    pub ssi_stime: u64,
-    pub ssi_addr: u64,
-}
-
-impl Into<signal_siginfo> for siginfo {
-    fn into(self) -> signal_siginfo {
-        signal_siginfo {
-            si_signo: self.ssi_signo as c_int,
-            si_errno: self.ssi_errno as c_int,
-            si_code: self.ssi_code as c_int,
-            pid: self.ssi_pid as pid_t,
-            uid: self.ssi_uid as uid_t,
-            status: self.ssi_status as c_int,
-        }
-    }
-}
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use std::mem;
+    use libc;
+
 
     #[test]
     fn check_siginfo_size() {
-        assert_eq!(mem::size_of::<siginfo>() + SIGINFO_PADDING, SIGINFO_SIZE);
+        assert_eq!(mem::size_of::<libc::signalfd_siginfo>(), SIGNALFD_SIGINFO_SIZE);
     }
 
     #[test]
@@ -210,6 +169,6 @@ mod tests {
         let mut fd = SignalFd::with_flags(&mask, SFD_NONBLOCK).unwrap();
 
         let res = fd.read_signal();
-        assert_eq!(res, Ok(None));
+        assert!(res.unwrap().is_none());
     }
 }
