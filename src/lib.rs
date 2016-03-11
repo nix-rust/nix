@@ -49,6 +49,13 @@ pub mod net;
 pub mod sched;
 
 pub mod sys;
+
+// This can be implemented for other platforms as soon as libc
+// provides bindings for them.
+#[cfg(all(target_os = "linux",
+          any(target_arch = "x86", target_arch = "x86_64")))]
+pub mod ucontext;
+
 pub mod unistd;
 
 /*
