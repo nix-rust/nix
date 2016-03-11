@@ -64,13 +64,6 @@ bitflags!{
     }
 }
 
-mod ffi {
-    use libc;
-    extern {
-        pub fn sigwait(set: *const libc::sigset_t, sig: *mut libc::c_int) -> libc::c_int;
-    }
-}
-
 #[derive(Clone, Copy)]
 pub struct SigSet {
     sigset: libc::sigset_t
@@ -148,7 +141,7 @@ impl SigSet {
     /// signal mask becomes pending, and returns the accepted signal.
     pub fn wait(&self) -> Result<SigNum> {
         let mut signum: SigNum = unsafe { mem::uninitialized() };
-        let res = unsafe { ffi::sigwait(&self.sigset as *const libc::sigset_t, &mut signum) };
+        let res = unsafe { libc::sigwait(&self.sigset as *const libc::sigset_t, &mut signum) };
 
         Errno::result(res).map(|_| signum)
     }
