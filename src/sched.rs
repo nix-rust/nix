@@ -87,7 +87,7 @@ mod cpuset_attribs {
     }
 }
 
-#[cfg(all(target_arch = "arm", any(target_os = "linux", target_os = "android")))]
+#[cfg(all(any(target_arch = "arm", target_arch = "mips"), target_os = "android"))]
 mod cpuset_attribs {
     use super::CpuMask;
     // bionic only supports up to 32 independent CPUs, instead of 1024.
@@ -105,6 +105,22 @@ mod cpuset_attribs {
     }
 }
 
+#[cfg(all(any(target_arch = "arm", target_arch = "mips"), target_os = "linux"))]
+mod cpuset_attribs {
+    use super::CpuMask;
+    pub const CPU_SETSIZE:          usize = 1024;
+    pub const CPU_MASK_BITS:        usize = 32;
+
+    #[inline]
+    pub fn set_cpu_mask_flag(cur: CpuMask, bit: usize) -> CpuMask {
+        cur | (1u32 << bit)
+    }
+
+    #[inline]
+    pub fn clear_cpu_mask_flag(cur: CpuMask, bit: usize) -> CpuMask {
+        cur & !(1u32 << bit)
+    }
+}
 
 pub type CloneCb<'a> = Box<FnMut() -> isize + 'a>;
 

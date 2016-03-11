@@ -44,6 +44,15 @@ mod arch {
     pub static MEMFD_CREATE: Syscall = 385;
 }
 
+#[cfg(target_arch = "mips")]
+mod arch {
+    use libc::c_long;
+
+    pub type Syscall = c_long;
+
+    pub static SYSPIVOTROOT: Syscall = 216;
+    pub static MEMFD_CREATE: Syscall = 354;
+}
 
 extern {
     pub fn syscall(num: Syscall, ...) -> c_int;
