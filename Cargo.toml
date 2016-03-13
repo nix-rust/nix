@@ -20,7 +20,7 @@ preadv_pwritev = []
 signalfd = []
 
 [dependencies]
-libc     = "0.2.8"
+libc     = { git = "https://github.com/rust-lang/libc.git" }
 bitflags = "0.4"
 cfg-if = "0.1.0"
 
