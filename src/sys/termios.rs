@@ -42,7 +42,7 @@ mod ffi {
     #[inline]
     #[cfg(all(target_os = "android", not(target_arch = "mips")))]
     mod android {
-        use libc::funcs::bsd44::ioctl;
+        use libc;
         use libc::c_int;
         use super::consts::*;
 
@@ -69,24 +69,24 @@ mod ffi {
             0
         }
         pub unsafe fn tcgetattr(fd: c_int, termios: *mut Termios) -> c_int {
-            ioctl(fd, TCGETS, termios)
+            libc::ioctl(fd, TCGETS, termios)
         }
         pub unsafe fn tcsetattr(fd: c_int,
                                 optional_actions: c_int,
                                 termios: *const Termios) -> c_int {
-            ioctl(fd, optional_actions, termios)
+            libc::ioctl(fd, optional_actions, termios)
         }
         pub unsafe fn tcdrain(fd: c_int) -> c_int {
-            ioctl(fd, TCSBRK, 1)
+            libc::ioctl(fd, TCSBRK, 1)
         }
         pub unsafe fn tcflow(fd: c_int, action: c_int) -> c_int {
-            ioctl(fd, TCXONC, action)
+            libc::ioctl(fd, TCXONC, action)
         }
         pub unsafe fn tcflush(fd: c_int, action: c_int) -> c_int {
-            ioctl(fd, TCFLSH, action)
+            libc::ioctl(fd, TCFLSH, action)
         }
         pub unsafe fn tcsendbreak(fd: c_int, duration: c_int) -> c_int {
-            ioctl(fd, TCSBRKP, duration)
+            libc::ioctl(fd, TCSBRKP, duration)
         }
     }
 
