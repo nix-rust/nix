@@ -1,35 +1,35 @@
----
+language: rust
 sudo: required
+dist: trusty
 services:
   - docker
-language: rust
+
 rust:
   - 1.1.0  # Oldest supported version
-  - 1.2.0
-  - 1.3.0
-  - 1.4.0
-  - 1.5.0
-  - 1.6.0
-  - 1.7.0
   - stable
   - beta
   - nightly
 
 script:
-  - sh ci/run-travis.sh
+  - bash ci/run-travis.sh
+
+env:
+  - ARCH=x86_64
 
 os:
   - linux
   - osx
 
-env:
-  - ARCH=x86_64
-  - ARCH=i686
-
 # Failures on nightly shouldn't fail the overall build.
 matrix:
   fast_finish: true
   include:
+    - os: linux
+      env: ARCH=i686
+      rust: stable
+    - os: osx
+      env: ARCH=i686
+      rust: stable
     - os: linux
       env: TARGET=aarch64-unknown-linux-gnu DOCKER_IMAGE=posborne/rust-cross:arm
       rust: 1.7.0
