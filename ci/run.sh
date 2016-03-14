@@ -14,10 +14,6 @@ TARGET="$2"
 
 export RUST_TEST_THREADS=1
 
-echo "======================================================="
-echo "TESTING VERSION: ${VERSION}, TARGET: ${TARGET}"
-echo "======================================================="
-
 #
 # Tell cargo what linker to use and whatever else is required
 #
@@ -108,8 +104,11 @@ test_binary() {
   esac
 }
 
-configure_cargo
+echo "======================================================="
+echo "TESTING VERSION: ${VERSION}, TARGET: ${TARGET}"
+echo "======================================================="
 
+configure_cargo
 export CC="$(cc_for_target)"
 
 # select the proper version
