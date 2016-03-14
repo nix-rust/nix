@@ -31,12 +31,18 @@ The list of versions and architectures tested by this can be
 determined by looking at the contents of the script.  The docker image
 used is [posborne/rust-cross][posborne/rust-cross].
 
+[posborne/rust-cross]: https://github.com/rust-embedded/docker-rust-cross
+
 Running Test for Specific Architectures/Versions
 ------------------------------------------------
 
-Suppose we have a failing test with Rust 1.6/1.7 on the raspberry pi.  In
+Suppose we have a failing test with Rust 1.7 on the raspberry pi.  In
 that case, we can run the following:
 
-    $ RUST_VERSIONS="1.6.0 1.7.0" RUST_TARGETS="arm-unknown-linux-gnueabihf" ci/run-all.sh
+    $ DOCKER_IMAGE=posborne/rust-cross:arm \
+          RUST_VERSION=1.7.0 \
+          RUST_TARGET=arm-unknown-linux-gnueabihf ci/run-docker.sh
 
-[posborne/rust-cross]: https://github.com/posborne/docker-rust-cross
+Currently, the docker images only support Rust 1.7.  To get a better
+idea of combinations that might work, look at the contents of the
+[travis configuration](../.travis.yml) or [run-all.sh](run-all.sh).
