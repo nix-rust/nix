@@ -5,6 +5,16 @@
 
 set -e
 
+# This should only be run in a docker container, so verify that
+if [ ! -f /.dockerinit ]; then
+    echo "run.sh should only be executed in a docker container"
+    echo "and that does not appear to be the case.  Maybe you meant"
+    echo "to execute the tests via run-all.sh or run-docker.sh."
+    echo ""
+    echo "For more instructions, please refer to ci/README.md"
+    exit 1
+fi
+
 BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MANIFEST_PATH="${BASE_DIR}/Cargo.toml"
 BUILD_DIR="."
@@ -18,9 +28,8 @@ export RUST_TEST_THREADS=1
 # Tell cargo what linker to use and whatever else is required
 #
 configure_cargo() {
-  rm -rf .cargo
-  mkdir .cargo
-  cp "${BASE_DIR}/ci/cargo-config" .cargo/config
+  mkdir -p .cargo
+  cp -b "${BASE_DIR}/ci/cargo-config" .cargo/config
 }
 
 #
