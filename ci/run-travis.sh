@@ -18,8 +18,11 @@ BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 if [ "$TRAVIS_OS_NAME" = "linux" ]; then
   OS=unknown-linux-gnu
-else
+elif [ "$TRAVIS_OS_NAME" = "osx" ]; then
   OS=apple-darwin
+else
+  echo "Unexpected TRAVIS_OS_NAME: $TRAVIS_OS_NAME"
+  exit 1
 fi
 
 export HOST=$ARCH-$OS
