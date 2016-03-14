@@ -110,6 +110,9 @@ echo "======================================================="
 
 configure_cargo
 export CC="$(cc_for_target)"
+if [ "${CC}" = "" ]; then
+    unset CC
+fi
 
 # select the proper version
 multirust override ${VERSION}

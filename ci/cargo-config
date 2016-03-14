@@ -1,17 +1,4 @@
 # Configuration of which linkers to call on Travis for various architectures
-
-[target.x86_64-unknown-linux-gnu]
-linker = "gcc"
-
-[target.x86_64-unknown-linux-musl]
-linker = "gcc"
-
-[target.i686-unknown-linux-gnu]
-linker = "gcc"
-
-[target.i686-unknown-linux-musl]
-linker = "gcc"
-
 [target.arm-linux-androideabi]
 linker = "arm-linux-androideabi-gcc"
 
