@@ -1,0 +1,18 @@
+# Configuration of which linkers to call on Travis for various architectures
+[target.arm-linux-androideabi]
+linker = "arm-linux-androideabi-gcc"
+
+[target.arm-unknown-linux-gnueabihf]
+linker = "arm-linux-gnueabihf-gcc-4.7"
+
+[target.mips-unknown-linux-gnu]
+linker = "mips-linux-gnu-gcc-5"
+
+[target.mipsel-unknown-linux-gnu]
+linker = "mipsel-linux-gnu-gcc-5"
+
+[target.aarch64-unknown-linux-gnu]
+linker = "aarch64-linux-gnu-gcc-4.8"
+
+[target.powerpc-unknown-linux-gnu]
+linker = "powerpc-linux-gnu-gcc-4.8"

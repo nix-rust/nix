@@ -20,7 +20,7 @@ To use `nix`, first add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-nix = "*"
+nix = "0.5.0"
 ```
 
 Then, add this to your crate root:

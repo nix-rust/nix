@@ -72,8 +72,11 @@ environment. We also have [continuous integration set up on
 Travis-CI][travis-ci], which might find some issues on other platforms. The CI
 will run once you open a pull request.
 
-[travis-ci]: https://travis-ci.org/nix-rust/nix
+There is also infrastructure for running tests for other targets
+locally.  More information is available in the [CI Readme][ci-readme].
 
+[travis-ci]: https://travis-ci.org/nix-rust/nix
+[ci-readme]: ci/README.md
 
 ## Homu, the bot who merges all the PRs
 

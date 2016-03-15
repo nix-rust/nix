@@ -1,37 +1,57 @@
----
-sudo: false
 language: rust
+sudo: required
+dist: trusty
+services:
+  - docker
+
 rust:
   - 1.1.0  # Oldest supported version
-  - 1.2.0
-  - 1.3.0
-  - 1.4.0
-  - 1.5.0
   - stable
   - beta
   - nightly
 
-# Failures on nightly shouldn't fail the overall build.
-matrix:
-  allow_failures:
-    - rust: nightly
+script:
+  - bash ci/run-travis.sh
+
+env:
+  - ARCH=x86_64
 
 os:
   - linux
   - osx
 
-env:
-  - RUST_TEST_THREADS=1 ARCH=x86_64
-  - RUST_TEST_THREADS=1 ARCH=i686
-
-script:
-  - curl -sSL https://raw.githubusercontent.com/carllerche/travis-rust-matrix/master/test | RUST_TEST_THREADS=1 bash
-  - cargo doc --no-deps
-
-addons:
-  apt:
-    packages:
-      - gcc-multilib
+# Failures on nightly shouldn't fail the overall build.
+matrix:
+  fast_finish: true
+  include:
+    - os: linux
+      env: ARCH=i686
+      rust: stable
+    - os: osx
+      env: ARCH=i686
+      rust: stable
+    - os: linux
+      env: TARGET=aarch64-unknown-linux-gnu DOCKER_IMAGE=posborne/rust-cross:arm
+      rust: 1.7.0
+    - os: linux
+      env: TARGET=arm-unknown-linux-gnueabihf DOCKER_IMAGE=posborne/rust-cross:arm
+      rust: 1.7.0
+    - os: linux
+      env: TARGET=mips-unknown-linux-gnu DOCKER_IMAGE=posborne/rust-cross:mips
+      rust: 1.7.0
+    - os: linux
+      env: TARGET=mipsel-unknwon-linux-gnu DOCKER_IMAGE=posborne/rust-cross:mips
+      rust: 1.7.0
+    - os: linux
+      env: TARGET=arm-linux-androideabi DOCKER_IMAGE=posborne/rust-cross:android
+      rust: 1.7.0
+  allow_failures:
+    - rust: nightly
+    - env: TARGET=aarch64-unknown-linux-gnu DOCKER_IMAGE=posborne/rust-cross:arm
+    - env: TARGET=arm-unknown-linux-gnueabihf DOCKER_IMAGE=posborne/rust-cross:arm
+    - env: TARGET=mips-unknown-linux-gnu DOCKER_IMAGE=posborne/rust-cross:mips
+    - env: TARGET=mipsel-unknwon-linux-gnu DOCKER_IMAGE=posborne/rust-cross:mips
+    - env: TARGET=arm-linux-androideabi DOCKER_IMAGE=posborne/rust-cross:android
 
 # Deploy documentation to S3 for specific branches. At some
 # point, it would be nice to also support building docs for
