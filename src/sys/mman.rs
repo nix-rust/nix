@@ -6,16 +6,16 @@ use std::os::unix::io::RawFd;
 
 pub use self::consts::*;
 
-bitflags!{
-    flags ProtFlags : libc::c_int {
-        const PROT_NONE      = libc::PROT_NONE,
-        const PROT_READ      = libc::PROT_READ,
-        const PROT_WRITE     = libc::PROT_WRITE,
-        const PROT_EXEC      = libc::PROT_EXEC,
+libc_bitflags!{
+    flags ProtFlags: libc::c_int {
+        PROT_NONE,
+        PROT_READ,
+        PROT_WRITE,
+        PROT_EXEC,
         #[cfg(any(target_os = "linux", target_os = "android"))]
-        const PROT_GROWSDOWN = libc::PROT_GROWSDOWN,
+        PROT_GROWSDOWN,
         #[cfg(any(target_os = "linux", target_os = "android"))]
-        const PROT_GROWSUP   = libc::PROT_GROWSUP,
+        PROT_GROWSUP,
     }
 }
 
