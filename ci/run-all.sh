@@ -17,12 +17,12 @@ RUST_TARGET=x86_64-unknown-linux-musl ${RUN_DOCKER}
 
 export DOCKER_IMAGE=posborne/rust-cross:arm
 RUST_TARGET=aarch64-unknown-linux-gnu ${RUN_DOCKER}
-RUST_TARGET=arm-linux-gnueabi test_nix ${RUN_DOCKER}
-RUST_TARGET=arm-linux-gnueabihf test_nix ${RUN_DOCKER}
+RUST_TARGET=arm-linux-gnueabi ${RUN_DOCKER}
+RUST_TARGET=arm-linux-gnueabihf ${RUN_DOCKER}
 
 export DOCKER_IMAGE=posborne/rust-cross:mips
-RUST_TARGET=mips-unknown-linux-gnu test_nix ${RUN_DOCKER}
-RUST_TARGET=mipsel-unknown-linux-gnu test_nix ${RUN_DOCKER}
+RUST_TARGET=mips-unknown-linux-gnu ${RUN_DOCKER}
+RUST_TARGET=mipsel-unknown-linux-gnu ${RUN_DOCKER}
 
 export DOCKER_IMAGE=posborne/rust-cross:android ${RUN_DOCKER}
-RUST_TARGET=arm-linux-androideabi test_nix ${RUN_DOCKER}
+RUST_TARGET=arm-linux-androideabi ${RUN_DOCKER}
