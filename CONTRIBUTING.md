@@ -46,6 +46,8 @@ We use labels to help manage issues. The structure is modeled after
 - **E-**prefixed labels explain the level of experience necessary to fix the
   issue
 - **O-**prefixed labels specify the OS for issues that are OS-specific
+- **R-**prefixed labels specify the architecture for issues that are
+  architecture-specific
 
 [rust-labels]: https://github.com/rust-lang/rust/blob/master/CONTRIBUTING.md#issue-triage
 
