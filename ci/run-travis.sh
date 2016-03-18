@@ -30,11 +30,6 @@ if [ "$TARGET" = "" ]; then
   TARGET=$HOST
 fi
 
-if [ "$TARGET" = "i686-unknown-linux-gnu" ]; then
-    sudo apt-get -y update
-    sudo apt-get install -y gcc-multilib
-fi
-
 if [ "$DOCKER_IMAGE" = "" ]; then
   export RUST_TEST_THREADS=1
   curl -sSL "https://raw.githubusercontent.com/carllerche/travis-rust-matrix/master/test" | bash
