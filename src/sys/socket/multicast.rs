@@ -20,7 +20,7 @@ impl ip_mreq {
     pub fn new(group: Ipv4Addr, interface: Option<Ipv4Addr>) -> ip_mreq {
         ip_mreq {
             imr_multiaddr: group.0,
-            imr_interface: interface.unwrap_or(Ipv4Addr::any()).0
+            imr_interface: interface.unwrap_or(Ipv4Addr::any()).0,
         }
     }
 }
@@ -35,6 +35,12 @@ impl ipv6_mreq {
         ipv6_mreq {
             ipv6mr_multiaddr: group.0,
             ipv6mr_interface: 0,
+        }
+    }
+    pub fn new(group: Ipv6Addr, interface: c_uint) -> ipv6_mreq {
+        ipv6_mreq {
+            ipv6mr_multiaddr: group.0,
+            ipv6mr_interface: interface,
         }
     }
 }
