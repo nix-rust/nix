@@ -10,10 +10,10 @@ extern crate tempdir;
 #[cfg(target_os = "linux")]
 mod test_mount {
     use std::fs::{self, File};
-    use std::io::{Read, Write};
+    use std::io::{self, Read, Write};
     use std::os::unix::fs::OpenOptionsExt;
     use std::os::unix::fs::PermissionsExt;
-    use std::process::Command;
+    use std::process::{self, Command};
 
     use libc::{self, EACCES, EROFS};
 
@@ -174,8 +174,15 @@ exit 23";
         let uid = unsafe { libc::getuid() };
 
         unshare(CLONE_NEWNS | CLONE_NEWUSER).unwrap_or_else(|e| {
-            panic!("unshare failed: {}. Are unprivileged user namespaces available?",
-                   e)
+            let stderr = io::stderr();
+            let mut handle = stderr.lock();
+            writeln!(handle,
+                     "unshare failed: {}. Are unprivileged user namespaces available?",
+                     e);
+            writeln!(handle, "mount is not being tested");
+            // Exit with success because not all systems support unprivileged user namespaces, and
+            // that's not what we're testing for.
+            process::exit(0);
         });
 
         // Map user as uid 1000.
