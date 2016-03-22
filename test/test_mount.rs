@@ -20,6 +20,7 @@ mod test_mount {
     use nix::mount::{mount, umount, MsFlags, MS_BIND, MS_RDONLY, MS_NOEXEC};
     use nix::sched::{unshare, CLONE_NEWNS, CLONE_NEWUSER};
     use nix::sys::stat::{self, S_IRWXU, S_IRWXG, S_IRWXO, S_IXUSR, S_IXGRP, S_IXOTH};
+    use nix::unistd::getuid;
 
     use tempdir::TempDir;
 
@@ -171,7 +172,7 @@ exit 23";
 
     pub fn setup_namespaces() {
         // Hold on to the uid in the parent namespace.
-        let uid = unsafe { libc::getuid() };
+        let uid = getuid();
 
         unshare(CLONE_NEWNS | CLONE_NEWUSER).unwrap_or_else(|e| {
             let stderr = io::stderr();
