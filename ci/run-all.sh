@@ -11,7 +11,8 @@ RUN_DOCKER="${BASE_DIR}/ci/run-docker.sh"
 
 export RUST_VERSION=1.7.0
 
-export DOCKER_IMAGE=posborne/rust-cross:base
+export DOCKER_IMAGE=posborne/rust-cross:x86
+RUST_TARGET=i686-unknown-linux-gnu ${RUN_DOCKER}
 RUST_TARGET=x86_64-unknown-linux-gnu ${RUN_DOCKER}
 RUST_TARGET=x86_64-unknown-linux-musl ${RUN_DOCKER}
 

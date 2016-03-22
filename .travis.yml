@@ -70,8 +70,6 @@ matrix:
       sudo: true
   allow_failures:
     - rust: nightly
-    - env: TARGET=aarch64-unknown-linux-gnu DOCKER_IMAGE=posborne/rust-cross:arm
-    - env: TARGET=arm-unknown-linux-gnueabihf DOCKER_IMAGE=posborne/rust-cross:arm
     - env: TARGET=mips-unknown-linux-gnu DOCKER_IMAGE=posborne/rust-cross:mips
     - env: TARGET=mipsel-unknwon-linux-gnu DOCKER_IMAGE=posborne/rust-cross:mips
     - env: TARGET=arm-linux-androideabi DOCKER_IMAGE=posborne/rust-cross:android
