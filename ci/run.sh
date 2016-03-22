@@ -22,7 +22,9 @@ BUILD_DIR="."
 VERSION="$1"
 TARGET="$2"
 
+export DOCKER_ENVIRONMENT=1
 export RUST_TEST_THREADS=1
+export RUST_BACKTRACE=1
 
 #
 # Tell cargo what linker to use and whatever else is required
