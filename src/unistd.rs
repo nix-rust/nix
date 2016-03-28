@@ -12,33 +12,33 @@ use std::os::unix::io::RawFd;
 pub use self::linux::*;
 
 #[derive(Clone, Copy)]
-pub enum Fork {
-    Parent(pid_t),
+pub enum ForkResult {
+    Parent {
+        child: pid_t
+    },
     Child
 }
 
-impl Fork {
+impl ForkResult {
     pub fn is_child(&self) -> bool {
         match *self {
-            Fork::Child => true,
+            ForkResult::Child => true,
             _ => false
         }
     }
 
     pub fn is_parent(&self) -> bool {
-        match *self {
-            Fork::Parent(_) => true,
-            _ => false
-        }
+        !self.is_child()
     }
 }
 
-pub fn fork() -> Result<Fork> {
+pub fn fork() -> Result<ForkResult> {
+    use self::ForkResult::*;
     let res = unsafe { libc::fork() };
 
     Errno::result(res).map(|res| match res {
-        0 => Fork::Child,
-        res => Fork::Parent(res)
+        0 => Child,
+        res => Parent { child: res }
     })
 }
 
