@@ -27,6 +27,7 @@ bitflags!(
         const EPOLLERR = 0x008,
         const EPOLLHUP = 0x010,
         const EPOLLRDHUP = 0x2000,
+        const EPOLLEXCLUSIVE = 1 << 28,
         const EPOLLWAKEUP = 1 << 29,
         const EPOLLONESHOT = 1 << 30,
         const EPOLLET = 1 << 31
