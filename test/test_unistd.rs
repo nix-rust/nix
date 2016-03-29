@@ -5,10 +5,9 @@ use std::ffi::CString;
 
 #[test]
 fn test_fork_and_waitpid() {
-    let pid = fork();
-    match pid {
-      Ok(Child) => {} // ignore child here
-      Ok(Parent(child_pid)) => {
+    match fork().expect("fork") {
+      Child => {} // ignore child here
+      Parent(child_pid) => {
           // assert that child was created and pid > 0
           assert!(child_pid > 0);
           let wait_status = waitpid(child_pid, None);
@@ -24,24 +23,19 @@ fn test_fork_and_waitpid() {
           }
 
       },
-      // panic, fork should never fail unless there is a serious problem with the OS
-      Err(_) => panic!("Error: Fork Failed")
     }
 }
 
 #[test]
 fn test_wait() {
-    let pid = fork();
-    match pid {
-      Ok(Child) => {} // ignore child here
-      Ok(Parent(child_pid)) => {
+    match fork().expect("fork") {
+      Child => {} // ignore child here
+      Parent(child_pid) => {
           let wait_status = wait();
 
           // just assert that (any) one child returns with WaitStatus::Exited
           assert_eq!(wait_status, Ok(WaitStatus::Exited(child_pid, 0)));
       },
-      // panic, fork should never fail unless there is a serious problem with the OS
-      Err(_) => panic!("Error: Fork Failed")
     }
 }
 
