@@ -47,7 +47,7 @@ For example,
 
 ```rust
 libc_bitflags!{
-    flags ProtFlags : libc::c_int {
+    flags ProtFlags: libc::c_int {
         PROT_NONE,
         PROT_READ,
         PROT_WRITE,
