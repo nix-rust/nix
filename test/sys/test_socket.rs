@@ -1,5 +1,6 @@
 use nix::sys::socket::{InetAddr, UnixAddr, getsockname};
-use std::{mem, net};
+use std::mem;
+use std::net::{self, Ipv6Addr, SocketAddr, SocketAddrV6};
 use std::path::Path;
 use std::str::FromStr;
 use std::os::unix::io::{AsRawFd, RawFd};
@@ -26,6 +27,28 @@ pub fn test_inetv4_addr_to_sock_addr() {
 
     let inet = addr.to_std();
     assert_eq!(actual, inet);
+}
+
+#[test]
+pub fn test_inetv6_addr_to_sock_addr() {
+    let port: u16 = 3000;
+    let flowinfo: u32 = 1;
+    let scope_id: u32 = 2;
+    let ip: Ipv6Addr = "fe80::1".parse().unwrap();
+
+    let actual = SocketAddr::V6(SocketAddrV6::new(ip, port, flowinfo, scope_id));
+    let addr = InetAddr::from_std(&actual);
+
+    match addr {
+        InetAddr::V6(addr) => {
+            assert_eq!(addr.sin6_port, port.to_be());
+            assert_eq!(addr.sin6_flowinfo, flowinfo);
+            assert_eq!(addr.sin6_scope_id, scope_id);
+        }
+        _ => panic!("nope"),
+    }
+
+    assert_eq!(actual, addr.to_std());
 }
 
 #[test]
