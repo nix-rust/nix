@@ -356,6 +356,13 @@ pub fn setgid(gid: gid_t) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
+#[inline]
+pub fn pause() -> Result<()> {
+    let res = unsafe { libc::pause() };
+
+    Errno::result(res).map(drop)
+}
+
 #[cfg(any(target_os = "linux", target_os = "android"))]
 mod linux {
     use sys::syscall::{syscall, SYSPIVOTROOT};
