@@ -20,6 +20,7 @@ pub enum ForkResult {
 }
 
 impl ForkResult {
+    #[inline]
     pub fn is_child(&self) -> bool {
         match *self {
             ForkResult::Child => true,
@@ -27,11 +28,13 @@ impl ForkResult {
         }
     }
 
+    #[inline]
     pub fn is_parent(&self) -> bool {
         !self.is_child()
     }
 }
 
+#[inline]
 pub fn fork() -> Result<ForkResult> {
     use self::ForkResult::*;
     let res = unsafe { libc::fork() };
