@@ -7,7 +7,7 @@ use libc::exit;
 #[test]
 fn test_wait_signal() {
     match fork() {
-      Ok(Child) => loop { /* Wait for signal */ },
+      Ok(Child) => pause().unwrap_or(()),
       Ok(Parent(child_pid)) => {
           kill(child_pid, SIGKILL).ok().expect("Error: Kill Failed");
           assert_eq!(waitpid(child_pid, None), Ok(WaitStatus::Signaled(child_pid, SIGKILL, false)));
