@@ -1,5 +1,5 @@
 use nix::unistd::*;
-use nix::unistd::Fork::*;
+use nix::unistd::ForkResult::*;
 use nix::sys::wait::*;
 use std::ffi::CString;
 
@@ -8,13 +8,13 @@ fn test_fork_and_waitpid() {
     let pid = fork();
     match pid {
       Ok(Child) => {} // ignore child here
-      Ok(Parent(child_pid)) => {
+      Ok(Parent { child }) => {
           // assert that child was created and pid > 0
-          assert!(child_pid > 0);
-          let wait_status = waitpid(child_pid, None);
+          assert!(child > 0);
+          let wait_status = waitpid(child, None);
           match wait_status {
               // assert that waitpid returned correct status and the pid is the one of the child
-              Ok(WaitStatus::Exited(pid_t, _)) =>  assert!(pid_t == child_pid),
+              Ok(WaitStatus::Exited(pid_t, _)) =>  assert!(pid_t == child),
 
               // panic, must never happen
               Ok(_) => panic!("Child still alive, should never happen"),
@@ -34,11 +34,11 @@ fn test_wait() {
     let pid = fork();
     match pid {
       Ok(Child) => {} // ignore child here
-      Ok(Parent(child_pid)) => {
+      Ok(Parent { child }) => {
           let wait_status = wait();
 
           // just assert that (any) one child returns with WaitStatus::Exited
-          assert_eq!(wait_status, Ok(WaitStatus::Exited(child_pid, 0)));
+          assert_eq!(wait_status, Ok(WaitStatus::Exited(child, 0)));
       },
       // panic, fork should never fail unless there is a serious problem with the OS
       Err(_) => panic!("Error: Fork Failed")
@@ -95,9 +95,9 @@ macro_rules! execve_test_factory(
                     &[CString::new(b"foo=bar".as_ref()).unwrap(),
                       CString::new(b"baz=quux".as_ref()).unwrap()]).unwrap();
             },
-            Parent(child_pid) => {
+            Parent { child } => {
                 // Wait for the child to exit.
-                waitpid(child_pid, None).unwrap();
+                waitpid(child, None).unwrap();
                 // Read 1024 bytes.
                 let mut buf = [0u8; 1024];
                 read(reader, &mut buf).unwrap();

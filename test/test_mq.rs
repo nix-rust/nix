@@ -9,7 +9,7 @@ use std::str;
 use libc::c_long;
 
 use nix::unistd::{fork, read, write, pipe};
-use nix::unistd::Fork::{Child, Parent};
+use nix::unistd::ForkResult::*;
 use nix::sys::wait::*;
 use nix::errno::Errno::*;
 use nix::Error::Sys;
@@ -37,11 +37,11 @@ fn test_mq_send_and_receive() {
             write(writer, &buf).unwrap();  // pipe result to parent process. Otherwise cargo does not report test failures correctly
             mq_close(mqd_in_child).unwrap();
       }
-      Ok(Parent(child_pid)) => {
+      Ok(Parent { child }) => {
           mq_close(mqd_in_parent).unwrap();
 
           // Wait for the child to exit.
-          waitpid(child_pid, None).unwrap();
+          waitpid(child, None).unwrap();
           // Read 1024 bytes.
           let mut read_buf = [0u8; 32];
           read(reader, &mut read_buf).unwrap();
