@@ -36,12 +36,26 @@ pub enum InetAddr {
 
 impl InetAddr {
     pub fn from_std(std: &net::SocketAddr) -> InetAddr {
-        let ip = match *std {
-            net::SocketAddr::V4(ref addr) => IpAddr::V4(Ipv4Addr::from_std(&addr.ip())),
-            net::SocketAddr::V6(ref addr) => IpAddr::V6(Ipv6Addr::from_std(&addr.ip())),
-        };
-
-        InetAddr::new(ip, std.port())
+        match *std {
+            net::SocketAddr::V4(ref addr) => {
+                InetAddr::V4(libc::sockaddr_in {
+                    sin_family: AddressFamily::Inet as sa_family_t,
+                    sin_port: addr.port().to_be(),  // network byte order
+                    sin_addr: Ipv4Addr::from_std(addr.ip()).0,
+                    .. unsafe { mem::zeroed() }
+                })
+            }
+            net::SocketAddr::V6(ref addr) => {
+                InetAddr::V6(libc::sockaddr_in6 {
+                    sin6_family: AddressFamily::Inet6 as sa_family_t,
+                    sin6_port: addr.port().to_be(),  // network byte order
+                    sin6_addr: Ipv6Addr::from_std(addr.ip()).0,
+                    sin6_flowinfo: addr.flowinfo(),  // host byte order
+                    sin6_scope_id: addr.scope_id(),  // host byte order
+                    .. unsafe { mem::zeroed() }
+                })
+            }
+        }
     }
 
     pub fn new(ip: IpAddr, port: u16) -> InetAddr {
