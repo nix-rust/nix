@@ -154,7 +154,7 @@ impl AsRef<libc::sigset_t> for SigSet {
 }
 
 #[allow(unknown_lints)]
-#[allow(raw_pointer_derive)]
+#[cfg_attr(not(raw_pointer_derive_allowed), allow(raw_pointer_derive))]
 #[derive(Clone, Copy, PartialEq)]
 pub enum SigHandler {
     SigDfl,
