@@ -4,7 +4,8 @@ name        = "nix"
 description = "Rust friendly bindings to *nix APIs"
 version     = "0.5.1-pre"
 authors     = ["Carl Lerche <me@carllerche.com>"]
-homepage    = "https://github.com/carllerche/nix-rust"
+homepage    = "https://github.com/nix-rust/nix"
+repository  = "https://github.com/nix-rust/nix"
 license     = "MIT"
 exclude     = [
   ".gitignore",
