@@ -1,5 +1,6 @@
 use std::mem;
 use std::os::unix::io::RawFd;
+use std::option::Option;
 use libc::{self, c_int, c_void, c_ulong, pid_t};
 use {Errno, Result};
 
@@ -197,17 +198,18 @@ pub fn sched_setaffinity(pid: isize, cpuset: &CpuSet) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
-pub fn clone(mut cb: CloneCb, stack: &mut [u8], flags: CloneFlags) -> Result<pid_t> {
+pub fn clone(mut cb: CloneCb, stack: &mut [u8], flags: CloneFlags, signal: Option<c_int>) -> Result<pid_t> {
     extern "C" fn callback(data: *mut CloneCb) -> c_int {
         let cb: &mut CloneCb = unsafe { &mut *data };
         (*cb)() as c_int
     }
 
     let res = unsafe {
+        let combined = flags.bits() | signal.unwrap_or(0);
         let ptr = stack.as_mut_ptr().offset(stack.len() as isize);
         ffi::clone(mem::transmute(callback as extern "C" fn(*mut Box<::std::ops::FnMut() -> isize>) -> i32),
                    ptr as *mut c_void,
-                   flags.bits(),
+                   combined,
                    &mut cb)
     };
 
