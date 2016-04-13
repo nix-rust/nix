@@ -95,7 +95,7 @@ fn ptrace_other(request: ptrace::PtraceRequest, pid: pid_t, addr: *mut c_void, d
     Errno::result(unsafe { ffi::ptrace(request, pid, addr, data) }).map(|_| 0)
 }
 
-/// Set options, as with ptrace(PTRACE_SETOPTIONS,...).
+/// Set options, as with `ptrace(PTRACE_SETOPTIONS,...)`.
 pub fn ptrace_setoptions(pid: pid_t, options: ptrace::PtraceOptions) -> Result<()> {
     use self::ptrace::*;
     use std::ptr;
