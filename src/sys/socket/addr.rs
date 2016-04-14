@@ -348,10 +348,10 @@ impl fmt::Display for Ipv6Addr {
  *
  */
 
-/// A wrapper around sockaddr_un. We track the length of sun_path,
+/// A wrapper around `sockaddr_un`. We track the length of `sun_path`,
 /// because it may not be null-terminated (unconnected and abstract
 /// sockets). Note that the actual sockaddr length is greater by
-/// size_of::<sa_family_t>().
+/// `size_of::<sa_family_t>()`.
 #[derive(Copy)]
 pub struct UnixAddr(pub libc::sockaddr_un, pub usize);
 

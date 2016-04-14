@@ -15,14 +15,14 @@ mod os {
     static VERS_2_6_28:  usize = 4;
     static VERS_3:       usize = 5;
 
+    #[inline]
+    fn digit(dst: &mut usize, b: u8) {
+        *dst *= 10;
+        *dst += (b - b'0') as usize;
+    }
+
     fn parse_kernel_version() -> usize {
         let u = uname();
-
-        #[inline]
-        fn digit(dst: &mut usize, b: u8) {
-            *dst *= 10;
-            *dst += (b - b'0') as usize;
-        }
 
         let mut curr:  usize = 0;
         let mut major: usize = 0;

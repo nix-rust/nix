@@ -255,7 +255,7 @@ fn pipe2_setflags(fd1: RawFd, fd2: RawFd, flags: OFlag) -> Result<()> {
         Err(e) => {
             let _ = close(fd1);
             let _ = close(fd2);
-            return Err(e);
+            Err(e)
         }
     }
 }

@@ -114,9 +114,9 @@ pub fn mq_getattr(mqd: MQd) -> Result<MqAttr> {
     Ok(attr)
 }
 
-/// Set the attributes of the message queue. Only O_NONBLOCK can be set, everything else will be ignored
+/// Set the attributes of the message queue. Only `O_NONBLOCK` can be set, everything else will be ignored
 /// Returns the old attributes
-/// It is recommend to use the mq_set_nonblock() and mq_remove_nonblock() convenience functions as they are easier to use
+/// It is recommend to use the `mq_set_nonblock()` and `mq_remove_nonblock()` convenience functions as they are easier to use
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man3/mq_setattr.3.html)
 pub fn mq_setattr(mqd: MQd, newattr: &MqAttr) -> Result<MqAttr> {
@@ -127,7 +127,7 @@ pub fn mq_setattr(mqd: MQd, newattr: &MqAttr) -> Result<MqAttr> {
 }
 
 /// Convenience function.
-/// Sets the O_NONBLOCK attribute for a given message queue descriptor
+/// Sets the `O_NONBLOCK` attribute for a given message queue descriptor
 /// Returns the old attributes
 pub fn mq_set_nonblock(mqd: MQd) -> Result<(MqAttr)> {
     let oldattr = try!(mq_getattr(mqd));
@@ -136,7 +136,7 @@ pub fn mq_set_nonblock(mqd: MQd) -> Result<(MqAttr)> {
 }
 
 /// Convenience function.
-/// Removes O_NONBLOCK attribute for a given message queue descriptor
+/// Removes `O_NONBLOCK` attribute for a given message queue descriptor
 /// Returns the old attributes
 pub fn mq_remove_nonblock(mqd: MQd) -> Result<(MqAttr)> {
     let oldattr = try!(mq_getattr(mqd));
