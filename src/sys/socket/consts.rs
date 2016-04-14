@@ -100,6 +100,7 @@ mod os {
             const MSG_EOR              = 0x00080, /* End of record */
             const MSG_WAITALL          = 0x00100, /* Wait for a full request */
             const MSG_FIN              = 0x00200,
+            const MSG_EOF              = 0x00200,
             const MSG_SYN              = 0x00400,
             const MSG_CONFIRM          = 0x00800, /* Confirm path validity */
             const MSG_RST              = 0x01000,
@@ -109,7 +110,6 @@ mod os {
             const MSG_WAITFORONE       = 0x10000, /* recvmmsg(): block until 1+ packets avail */
             const MSG_SENDPAGE_NOTLAST = 0x20000, /* sendpage() internal : not the last page */
             const MSG_BATCH            = 0x40000, /* sendmmsg(): more messages coming */
-            const MSG_EOF              = MSG_FIN,
             const MSG_FASTOPEN         = 0x20000000, /* Send data in TCP SYN */
             const MSG_CMSG_CLOEXEC     = 0x40000000, /* Set close_on_exec for file descriptor received through SCM_RIGHTS */
             const MSG_CMSG_COMPAT    = 0x80000000, /* This message needs 32 bit fixups */
