@@ -165,7 +165,10 @@ pub fn clone(mut cb: CloneCb, stack: &mut [u8], flags: CloneFlags) -> Result<pid
 
     let res = unsafe {
         let ptr = stack.as_mut_ptr().offset(stack.len() as isize);
-        ffi::clone(mem::transmute(callback), ptr as *mut c_void, flags, &mut cb)
+        ffi::clone(mem::transmute(callback as extern "C" fn(*mut Box<::std::ops::FnMut() -> isize>) -> i32),
+                   ptr as *mut c_void,
+                   flags,
+                   &mut cb)
     };
 
     if res < 0 {
