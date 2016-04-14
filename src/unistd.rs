@@ -3,7 +3,7 @@
 use {Errno, Error, Result, NixPath};
 use fcntl::{fcntl, OFlag, O_NONBLOCK, O_CLOEXEC, FD_CLOEXEC};
 use fcntl::FcntlArg::{F_SETFD, F_SETFL};
-use libc::{self, c_char, c_void, c_int, size_t, pid_t, off_t, uid_t, gid_t};
+use libc::{self, c_char, c_void, c_int, c_uint, size_t, pid_t, off_t, uid_t, gid_t};
 use std::mem;
 use std::ffi::CString;
 use std::os::unix::io::RawFd;
@@ -364,6 +364,13 @@ pub fn pause() -> Result<()> {
     let res = unsafe { libc::pause() };
 
     Errno::result(res).map(drop)
+}
+
+#[inline]
+// Per POSIX, does not fail:
+//   http://pubs.opengroup.org/onlinepubs/009695399/functions/sleep.html#tag_03_705_05
+pub fn sleep(seconds: libc::c_uint) -> c_uint {
+    unsafe { libc::sleep(seconds) }
 }
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
