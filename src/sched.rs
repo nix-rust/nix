@@ -1,4 +1,4 @@
-use std::mem;
+use std::{mem, ops};
 use std::os::unix::io::RawFd;
 use libc::{self, c_int, c_void, c_ulong, pid_t};
 use {Errno, Result};
@@ -34,6 +34,39 @@ bitflags!{
         const CLONE_IO             = libc::CLONE_IO as c_int,
     }
 }
+
+#[derive(Clone, Copy, Debug)]
+pub struct CloneFlagsArg {
+    flags: CloneFlags,
+    signal: Option<c_int>,
+}
+
+impl CloneFlagsArg {
+    fn bits(self) -> c_int {
+        self.flags.bits() | self.signal.unwrap_or(0)
+    }
+}
+
+impl ops::BitOr<c_int> for CloneFlags {
+    type Output = CloneFlagsArg;
+    fn bitor(self, rhs: c_int) -> CloneFlagsArg {
+        CloneFlagsArg {
+            flags: self,
+            signal: Some(rhs),
+        }
+    }
+}
+
+impl From<CloneFlags> for CloneFlagsArg {
+    fn from(flags: CloneFlags) -> CloneFlagsArg {
+        CloneFlagsArg {
+            flags: flags,
+            signal: None,
+        }
+    }
+}
+
+
 
 // Support a maximum CPU set of 1024 nodes
 #[cfg(all(target_arch = "x86_64", target_os = "linux"))]
@@ -197,11 +230,31 @@ pub fn sched_setaffinity(pid: isize, cpuset: &CpuSet) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
-pub fn clone(mut cb: CloneCb, stack: &mut [u8], flags: CloneFlags) -> Result<pid_t> {
+/// The clone(2) system call.
+///
+/// # Examples
+///
+/// ```no_run
+/// use std::thread;
+/// use std::time::Duration;
+///
+/// use nix::sched::clone;
+/// use nix::sched::CLONE_NEWUTS;
+/// use nix::sys::signal::SIGCHLD;
+///
+/// let mut stack = Box::new([0u8; 1024 * 1024]);
+/// let pid = clone(Box::new(|| {
+///     thread::sleep(Duration::from_secs(5));
+///     0
+/// }), &mut stack[..], CLONE_NEWUTS | SIGCHLD).unwrap();
+/// ```
+pub fn clone<F: Into<CloneFlagsArg>>(mut cb: CloneCb, stack: &mut [u8], flags: F) -> Result<pid_t> {
     extern "C" fn callback(data: *mut CloneCb) -> c_int {
         let cb: &mut CloneCb = unsafe { &mut *data };
         (*cb)() as c_int
     }
+
+    let flags: CloneFlagsArg = flags.into();
 
     let res = unsafe {
         let ptr = stack.as_mut_ptr().offset(stack.len() as isize);
