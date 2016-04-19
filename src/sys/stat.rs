@@ -18,11 +18,14 @@ mod ffi {
 
 bitflags!(
     flags SFlag: mode_t {
-        const S_IFREG  = 0o100000,
-        const S_IFCHR  = 0o020000,
-        const S_IFBLK  = 0o060000,
         const S_IFIFO  = 0o010000,
-        const S_IFSOCK = 0o140000
+        const S_IFCHR  = 0o020000,
+        const S_IFDIR  = 0o040000,
+        const S_IFBLK  = 0o060000,
+        const S_IFREG  = 0o100000,
+        const S_IFLNK  = 0o120000,
+        const S_IFSOCK = 0o140000,
+        const S_IFMT   = 0o170000
     }
 );
 
