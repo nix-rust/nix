@@ -46,9 +46,9 @@ bitflags! {
         const S_IWOTH = libc::S_IWOTH,
         const S_IXOTH = libc::S_IXOTH,
 
-        const S_ISUID = 0o4000,
-        const S_ISGID = 0o2000,
-        const S_ISVTX = 0o1000,
+        const S_ISUID = libc::S_ISUID as mode_t,
+        const S_ISGID = libc::S_ISGID as mode_t,
+        const S_ISVTX = libc::S_ISVTX as mode_t,
     }
 }
 
