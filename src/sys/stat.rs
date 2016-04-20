@@ -2,7 +2,7 @@ pub use libc::dev_t;
 pub use libc::stat as FileStat;
 
 use {Errno, Result, NixPath};
-use libc::mode_t;
+use libc::{self, mode_t};
 use std::mem;
 use std::os::unix::io::RawFd;
 
@@ -18,34 +18,37 @@ mod ffi {
 
 bitflags!(
     flags SFlag: mode_t {
-        const S_IFREG  = 0o100000,
-        const S_IFCHR  = 0o020000,
-        const S_IFBLK  = 0o060000,
-        const S_IFIFO  = 0o010000,
-        const S_IFSOCK = 0o140000
+        const S_IFIFO = libc::S_IFIFO,
+        const S_IFCHR = libc::S_IFCHR,
+        const S_IFDIR = libc::S_IFDIR,
+        const S_IFBLK = libc::S_IFBLK,
+        const S_IFREG = libc::S_IFREG,
+        const S_IFLNK = libc::S_IFLNK,
+        const S_IFSOCK = libc::S_IFSOCK,
+        const S_IFMT = libc::S_IFMT,
     }
 );
 
 bitflags! {
     flags Mode: mode_t {
-        const S_IRWXU = 0o0700,
-        const S_IRUSR = 0o0400,
-        const S_IWUSR = 0o0200,
-        const S_IXUSR = 0o0100,
+        const S_IRWXU = libc::S_IRWXU,
+        const S_IRUSR = libc::S_IRUSR,
+        const S_IWUSR = libc::S_IWUSR,
+        const S_IXUSR = libc::S_IXUSR,
 
-        const S_IRWXG = 0o0070,
-        const S_IRGRP = 0o0040,
-        const S_IWGRP = 0o0020,
-        const S_IXGRP = 0o0010,
+        const S_IRWXG = libc::S_IRWXG,
+        const S_IRGRP = libc::S_IRGRP,
+        const S_IWGRP = libc::S_IWGRP,
+        const S_IXGRP = libc::S_IXGRP,
 
-        const S_IRWXO = 0o0007,
-        const S_IROTH = 0o0004,
-        const S_IWOTH = 0o0002,
-        const S_IXOTH = 0o0001,
+        const S_IRWXO = libc::S_IRWXO,
+        const S_IROTH = libc::S_IROTH,
+        const S_IWOTH = libc::S_IWOTH,
+        const S_IXOTH = libc::S_IXOTH,
 
-        const S_ISUID = 0o4000,
-        const S_ISGID = 0o2000,
-        const S_ISVTX = 0o1000,
+        const S_ISUID = libc::S_ISUID as mode_t,
+        const S_ISGID = libc::S_ISGID as mode_t,
+        const S_ISVTX = libc::S_ISVTX as mode_t,
     }
 }
 
