@@ -373,13 +373,37 @@ pub fn sleep(seconds: libc::c_uint) -> c_uint {
     unsafe { libc::sleep(seconds) }
 }
 
+pub fn execvpe(filename: &CString, args: &[CString], env: &[CString]) -> Result<()> {
+    use std::env;
+    use std::ffi::OsString;
+    use std::ffi::OsStr;
+    use std::os::unix::ffi::OsStrExt;
+
+    if filename.as_bytes().iter().find(|c| **c == b'/').is_some() {
+        return execve(filename, args, env);
+    }
+
+    let paths = match env::var_os("PATH") {
+        Some(val) => val,
+        None => OsString::from("/usr/local/bin:/bin:/usr/bin"),
+    };
+
+    let name = OsStr::from_bytes(&filename.as_bytes());
+    let mut res = Err(Error::Sys(Errno::ENOENT));
+    for path in env::split_paths(&paths) {
+        let p = path.with_file_name(name);
+        let p2 = &CString::new(p.as_os_str().as_bytes()).unwrap();
+        res = execve(p2, args, env);
+    }
+
+    return res;
+}
+
 #[cfg(any(target_os = "linux", target_os = "android"))]
 mod linux {
     use sys::syscall::{syscall, SYSPIVOTROOT};
     use {Errno, Result, NixPath};
 
-    #[cfg(feature = "execvpe")]
-    use std::ffi::CString;
 
     pub fn pivot_root<P1: ?Sized + NixPath, P2: ?Sized + NixPath>(
             new_root: &P1, put_old: &P2) -> Result<()> {
@@ -394,22 +418,5 @@ mod linux {
         Errno::result(res).map(drop)
     }
 
-    #[inline]
-    #[cfg(feature = "execvpe")]
-    pub fn execvpe(filename: &CString, args: &[CString], env: &[CString]) -> Result<()> {
-        use std::ptr;
-        use libc::c_char;
 
-        let mut args_p: Vec<*const c_char> = args.iter().map(|s| s.as_ptr()).collect();
-        args_p.push(ptr::null());
-
-        let mut env_p: Vec<*const c_char> = env.iter().map(|s| s.as_ptr()).collect();
-        env_p.push(ptr::null());
-
-        unsafe {
-            super::ffi::execvpe(filename.as_ptr(), args_p.as_ptr(), env_p.as_ptr())
-        };
-
-        Err(Error::Sys(Errno::last()))
-    }
 }
