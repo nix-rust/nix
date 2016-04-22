@@ -92,10 +92,25 @@ impl SigSet {
         Errno::result(res).map(drop)
     }
 
+    pub fn clear(&mut self) -> Result<()> {
+        let res = unsafe { libc::sigemptyset(&mut self.sigset as *mut libc::sigset_t) };
+
+        Errno::result(res).map(drop)
+    }
+
     pub fn remove(&mut self, signum: SigNum) -> Result<()> {
         let res = unsafe { libc::sigdelset(&mut self.sigset as *mut libc::sigset_t, signum) };
 
         Errno::result(res).map(drop)
+    }
+
+    pub fn extend(&mut self, other: &SigSet) -> Result<()> {
+        for i in 1..NSIG {
+            if try!(other.contains(i)) {
+                try!(self.add(i));
+            }
+        }
+        Ok(())
     }
 
     pub fn contains(&self, signum: SigNum) -> Result<bool> {
@@ -258,6 +273,28 @@ mod tests {
         let all = SigSet::all();
         assert_eq!(all.contains(SIGUSR1), Ok(true));
         assert_eq!(all.contains(SIGUSR2), Ok(true));
+    }
+
+    #[test]
+    fn test_clear() {
+        let mut set = SigSet::all();
+        set.clear().unwrap();
+        for i in 1..NSIG {
+            assert_eq!(set.contains(i), Ok(false));
+        }
+    }
+
+    #[test]
+    fn test_extend() {
+        let mut one_signal = SigSet::empty();
+        one_signal.add(SIGUSR1).unwrap();
+
+        let mut two_signals = SigSet::empty();
+        two_signals.add(SIGUSR2).unwrap();
+        two_signals.extend(&one_signal).unwrap();
+
+        assert_eq!(two_signals.contains(SIGUSR1), Ok(true));
+        assert_eq!(two_signals.contains(SIGUSR2), Ok(true));
     }
 
     #[test]
