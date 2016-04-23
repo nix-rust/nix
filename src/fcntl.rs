@@ -1,109 +1,26 @@
 use {Errno, Result, NixPath};
-use libc::{c_int, c_uint};
+use libc::{self, c_int, c_uint};
 use sys::stat::Mode;
 use std::os::unix::io::RawFd;
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 use sys::uio::IoVec;  // For vmsplice
-#[cfg(any(target_os = "linux", target_os = "android"))]
-use libc;
 
 pub use self::consts::*;
-pub use self::ffi::flock;
 
+// TODO: The remainder of the ffi module should be removed afer work on
+// https://github.com/rust-lang/libc/issues/235 is resolved.
 #[allow(dead_code)]
 mod ffi {
-    pub use libc::{open, fcntl};
-    pub use self::os::*;
-    pub use libc::flock as libc_flock;
-    pub use libc::{LOCK_SH, LOCK_EX, LOCK_NB, LOCK_UN};
+    use libc::c_int;
 
-    #[cfg(any(target_os = "linux", target_os = "android"))]
-    mod os {
-        use libc::{c_int, c_short, off_t, pid_t};
-
-        #[repr(C)]
-        #[derive(Clone, Copy, Default, Debug)]
-        pub struct flock {
-            pub l_type: c_short,
-            pub l_whence: c_short,
-            pub l_start: off_t,
-            pub l_len: off_t,
-            pub l_pid: pid_t,
-
-            // not actually here, but brings in line with freebsd
-            pub l_sysid: c_int,
-        }
-
-        pub const F_DUPFD:         c_int = 0;
-        pub const F_DUPFD_CLOEXEC: c_int = 1030;
-        pub const F_GETFD:         c_int = 1;
-        pub const F_SETFD:         c_int = 2;
-        pub const F_GETFL:         c_int = 3;
-        pub const F_SETFL:         c_int = 4;
-        pub const F_SETLK:         c_int = 6;
-        pub const F_SETLKW:        c_int = 7;
-        pub const F_GETLK:         c_int = 5;
-
-        pub const F_ADD_SEALS:     c_int = 1033;
-        pub const F_GET_SEALS:     c_int = 1034;
-
-        pub const F_SEAL_SEAL:     c_int = 1;
-        pub const F_SEAL_SHRINK:   c_int = 2;
-        pub const F_SEAL_GROW:     c_int = 4;
-        pub const F_SEAL_WRITE:    c_int = 8;
-    }
-
-    #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "dragonfly", target_os = "ios", target_os = "openbsd", target_os = "netbsd"))]
-    mod os {
-        use libc::{c_int, c_short, off_t, pid_t};
-
-        #[repr(C)]
-        #[derive(Clone, Copy, Default, Debug)]
-        pub struct flock {
-            pub l_start: off_t,
-            pub l_len: off_t,
-            pub l_pid: pid_t,
-            pub l_type: c_short,
-            pub l_whence: c_short,
-
-            // not actually here, but brings in line with freebsd
-            pub l_sysid: c_int,
-        }
-
-        pub const F_DUPFD:         c_int = 0;
-        #[cfg(not(any(target_os = "dragonfly", target_os = "netbsd")))]
-        pub const F_DUPFD_CLOEXEC: c_int = 67;
-        #[cfg(target_os = "dragonfly")]
-        pub const F_DUPFD_CLOEXEC: c_int = 17;
-        #[cfg(target_os = "netbsd")]
-        pub const F_DUPFD_CLOEXEC: c_int = 12;
-        pub const F_GETFD:         c_int = 1;
-        pub const F_SETFD:         c_int = 2;
-        pub const F_GETFL:         c_int = 3;
-        pub const F_SETFL:         c_int = 4;
-        #[cfg(target_os = "netbsd")]
-        pub const F_GETOWN:        c_int = 5;
-        #[cfg(target_os = "netbsd")]
-        pub const F_SETOWN:        c_int = 6;
-        pub const F_GETLK:         c_int = 7;
-        pub const F_SETLK:         c_int = 8;
-        pub const F_SETLKW:        c_int = 9;
-
-        #[cfg(target_os = "netbsd")]
-        pub const F_CLOSEM:        c_int = 10;
-        #[cfg(target_os = "netbsd")]
-        pub const F_MAXFD:         c_int = 11;
-        #[cfg(target_os = "netbsd")]
-        pub const F_GETNOSIGPIPE:  c_int = 13;
-        #[cfg(target_os = "netbsd")]
-        pub const F_SETNOSIGPIPE:  c_int = 14;
-    }
+    pub const F_ADD_SEALS: c_int = 1033;
+    pub const F_GET_SEALS: c_int = 1034;
 }
 
 pub fn open<P: ?Sized + NixPath>(path: &P, oflag: OFlag, mode: Mode) -> Result<RawFd> {
     let fd = try!(path.with_nix_path(|cstr| {
-        unsafe { ffi::open(cstr.as_ptr(), oflag.bits(), mode.bits() as c_uint) }
+        unsafe { libc::open(cstr.as_ptr(), oflag.bits(), mode.bits() as c_uint) }
     }));
 
     Errno::result(fd)
@@ -116,15 +33,15 @@ pub enum FcntlArg<'a> {
     F_SETFD(FdFlag), // FD_FLAGS
     F_GETFL,
     F_SETFL(OFlag), // O_NONBLOCK
-    F_SETLK(&'a flock),
-    F_SETLKW(&'a flock),
-    F_GETLK(&'a mut flock),
+    F_SETLK(&'a libc::flock),
+    F_SETLKW(&'a libc::flock),
+    F_GETLK(&'a mut libc::flock),
     #[cfg(any(target_os = "linux", target_os = "android"))]
-    F_OFD_SETLK(&'a flock),
+    F_OFD_SETLK(&'a libc::flock),
     #[cfg(any(target_os = "linux", target_os = "android"))]
-    F_OFD_SETLKW(&'a flock),
+    F_OFD_SETLKW(&'a libc::flock),
     #[cfg(any(target_os = "linux", target_os = "android"))]
-    F_OFD_GETLK(&'a mut flock),
+    F_OFD_GETLK(&'a mut libc::flock),
     #[cfg(target_os = "linux")]
     F_ADD_SEALS(SealFlag),
     #[cfg(target_os = "linux")]
@@ -139,19 +56,19 @@ pub fn fcntl(fd: RawFd, arg: FcntlArg) -> Result<c_int> {
 
     let res = unsafe {
         match arg {
-            F_DUPFD(rawfd) => ffi::fcntl(fd, ffi::F_DUPFD, rawfd),
-            F_DUPFD_CLOEXEC(rawfd) => ffi::fcntl(fd, ffi::F_DUPFD_CLOEXEC, rawfd),
-            F_GETFD => ffi::fcntl(fd, ffi::F_GETFD),
-            F_SETFD(flag) => ffi::fcntl(fd, ffi::F_SETFD, flag.bits()),
-            F_GETFL => ffi::fcntl(fd, ffi::F_GETFL),
-            F_SETFL(flag) => ffi::fcntl(fd, ffi::F_SETFL, flag.bits()),
-            F_SETLK(flock) => ffi::fcntl(fd, ffi::F_SETLK, flock),
-            F_SETLKW(flock) => ffi::fcntl(fd, ffi::F_SETLKW, flock),
-            F_GETLK(flock) => ffi::fcntl(fd, ffi::F_GETLK, flock),
+            F_DUPFD(rawfd) => libc::fcntl(fd, libc::F_DUPFD, rawfd),
+            F_DUPFD_CLOEXEC(rawfd) => libc::fcntl(fd, libc::F_DUPFD_CLOEXEC, rawfd),
+            F_GETFD => libc::fcntl(fd, libc::F_GETFD),
+            F_SETFD(flag) => libc::fcntl(fd, libc::F_SETFD, flag.bits()),
+            F_GETFL => libc::fcntl(fd, libc::F_GETFL),
+            F_SETFL(flag) => libc::fcntl(fd, libc::F_SETFL, flag.bits()),
+            F_SETLK(flock) => libc::fcntl(fd, libc::F_SETLK, flock),
+            F_SETLKW(flock) => libc::fcntl(fd, libc::F_SETLKW, flock),
+            F_GETLK(flock) => libc::fcntl(fd, libc::F_GETLK, flock),
             #[cfg(target_os = "linux")]
-            F_ADD_SEALS(flag) => ffi::fcntl(fd, ffi::F_ADD_SEALS, flag.bits()),
+            F_ADD_SEALS(flag) => libc::fcntl(fd, ffi::F_ADD_SEALS, flag.bits()),
             #[cfg(target_os = "linux")]
-            F_GET_SEALS => ffi::fcntl(fd, ffi::F_GET_SEALS),
+            F_GET_SEALS => libc::fcntl(fd, ffi::F_GET_SEALS),
             #[cfg(any(target_os = "linux", target_os = "android"))]
             _ => unimplemented!()
         }
@@ -174,12 +91,12 @@ pub fn flock(fd: RawFd, arg: FlockArg) -> Result<()> {
 
     let res = unsafe {
         match arg {
-            LockShared => ffi::libc_flock(fd, ffi::LOCK_SH),
-            LockExclusive => ffi::libc_flock(fd, ffi::LOCK_EX),
-            Unlock => ffi::libc_flock(fd, ffi::LOCK_UN),
-            LockSharedNonblock => ffi::libc_flock(fd, ffi::LOCK_SH | ffi::LOCK_NB),
-            LockExclusiveNonblock => ffi::libc_flock(fd, ffi::LOCK_EX | ffi::LOCK_NB),
-            UnlockNonblock => ffi::libc_flock(fd, ffi::LOCK_UN | ffi::LOCK_NB),
+            LockShared => libc::flock(fd, libc::LOCK_SH),
+            LockExclusive => libc::flock(fd, libc::LOCK_EX),
+            Unlock => libc::flock(fd, libc::LOCK_UN),
+            LockSharedNonblock => libc::flock(fd, libc::LOCK_SH | libc::LOCK_NB),
+            LockExclusiveNonblock => libc::flock(fd, libc::LOCK_EX | libc::LOCK_NB),
+            UnlockNonblock => libc::flock(fd, libc::LOCK_UN | libc::LOCK_NB),
         }
     };
 
