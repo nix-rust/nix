@@ -15,6 +15,8 @@ pub mod memfd;
 #[cfg(not(any(target_os = "ios", target_os = "freebsd", target_os = "dragonfly")))]
 pub mod ioctl;
 
+pub mod resource;
+
 #[cfg(any(target_os = "linux", target_os = "android"))]
 pub mod sendfile;
 
