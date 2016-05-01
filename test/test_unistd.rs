@@ -50,7 +50,7 @@ fn test_mkstemp() {
     let result = mkstemp("/tmp/tempfile.XXXXXXXX");
     match result {
         Ok(fd) => {
-            close(fd).expect("Couldn't close the file descriptor");
+            close(fd).unwrap();
         }
         Err(e) => panic!("mkstemp failed: {}", e)
     }
