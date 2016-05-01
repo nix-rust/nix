@@ -374,6 +374,19 @@ pub fn sleep(seconds: libc::c_uint) -> c_uint {
     unsafe { libc::sleep(seconds) }
 }
 
+#[inline]
+pub fn mkstemp<P: ?Sized + NixPath>(template: &P) -> Result<RawFd> {
+    let res = try!(template.with_nix_path(|path| {
+        let mut path_copy = path.to_bytes_with_nul().to_owned();
+        let c_template: *mut c_char = path_copy.as_mut_ptr() as *mut c_char;
+        unsafe {
+            libc::mkstemp(c_template)
+        }
+    }));
+    Errno::result(res)
+
+}
+
 #[cfg(any(target_os = "linux", target_os = "android"))]
 mod linux {
     use sys::syscall::{syscall, SYSPIVOTROOT};

@@ -45,6 +45,16 @@ fn test_wait() {
     }
 }
 
+#[test]
+fn test_mkstemp() {
+    let result = mkstemp("/tmp/tempfile.XXXXXXXX");
+    match result {
+        Ok(fd) => {
+            close(fd).expect("Couldn't close the file descriptor");
+        }
+        Err(e) => panic!("mkstemp failed: {}", e)
+    }
+}
 
 #[test]
 fn test_getpid() {
