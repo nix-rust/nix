@@ -630,6 +630,11 @@ pub unsafe fn sockaddr_storage_to_addr(
         consts::AF_UNIX => {
             Ok(SockAddr::Unix(UnixAddr(*(addr as *const _ as *const sockaddr_un), len)))
         }
+        #[cfg(any(target_os = "linux", target_os = "android"))]
+        consts::AF_NETLINK => {
+            use libc::sockaddr_nl;
+            Ok(SockAddr::Netlink(NetlinkAddr(*(addr as *const _ as *const sockaddr_nl))))
+        }
         af => panic!("unexpected address family {}", af),
     }
 }
