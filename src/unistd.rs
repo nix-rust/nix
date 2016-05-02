@@ -5,8 +5,10 @@ use fcntl::{fcntl, OFlag, O_NONBLOCK, O_CLOEXEC, FD_CLOEXEC};
 use fcntl::FcntlArg::{F_SETFD, F_SETFL};
 use libc::{self, c_char, c_void, c_int, c_uint, size_t, pid_t, off_t, uid_t, gid_t};
 use std::mem;
-use std::ffi::CString;
+use std::ffi::{CString, OsStr};
+use std::os::unix::ffi::OsStrExt;
 use std::os::unix::io::RawFd;
+use std::path::{PathBuf, Path};
 use void::Void;
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
@@ -375,16 +377,23 @@ pub fn sleep(seconds: libc::c_uint) -> c_uint {
 }
 
 #[inline]
-pub fn mkstemp<P: ?Sized + NixPath>(template: &P) -> Result<RawFd> {
-    let res = try!(template.with_nix_path(|path| {
-        let mut path_copy = path.to_bytes_with_nul().to_owned();
-        let c_template: *mut c_char = path_copy.as_mut_ptr() as *mut c_char;
+pub fn mkstemp<P: ?Sized + NixPath>(template: &P) -> Result<(RawFd, PathBuf)> {
+    let res = template.with_nix_path(|path| {
+        let owned_path = path.to_owned();
+        let path_ptr = owned_path.into_raw();
         unsafe {
-            libc::mkstemp(c_template)
+            (libc::mkstemp(path_ptr), CString::from_raw(path_ptr))
         }
-    }));
-    Errno::result(res)
-
+    });
+    match res {
+        Ok((fd, pathname)) => {
+            try!(Errno::result(fd));
+            Ok((fd, Path::new(OsStr::from_bytes(pathname.as_bytes())).to_owned()))
+        }
+        Err(e) => {
+            Err(e)
+        }
+    }
 }
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
