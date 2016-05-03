@@ -2,6 +2,8 @@ use super::{ffi, consts, GetSockOpt, SetSockOpt};
 use {Errno, Result};
 use sys::time::TimeVal;
 use libc::{c_int, uint8_t, c_void, socklen_t};
+#[cfg(target_os = "linux")]
+use libc::sockaddr_in;
 use std::mem;
 use std::os::unix::io::RawFd;
 
@@ -168,6 +170,8 @@ sockopt_impl!(GetOnly, SockType, consts::SOL_SOCKET, consts::SO_TYPE, super::Soc
           target_os = "linux",
           target_os = "nacl"))]
 sockopt_impl!(GetOnly, AcceptConn, consts::SOL_SOCKET, consts::SO_ACCEPTCONN, bool);
+#[cfg(target_os = "linux")]
+sockopt_impl!(GetOnly, OriginalDst, consts::SOL_IP, consts::SO_ORIGINAL_DST, sockaddr_in);
 
 /*
  *
