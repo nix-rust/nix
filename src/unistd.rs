@@ -114,8 +114,12 @@ pub fn chdir<P: ?Sized + NixPath>(path: &P) -> Result<()> {
 #[inline]
 pub fn chown<P: ?Sized + NixPath>(path: &P, owner: Option<uid_t>, group: Option<gid_t>) -> Result<()> {
     let res = try!(path.with_nix_path(|cstr| {
-        // We use `0 - 1` to get `-1 : {u,g}id_t` which is specified as the no-op value for chown(3).
-        unsafe { libc::chown(cstr.as_ptr(), owner.unwrap_or(0 - 1), group.unwrap_or(0 - 1)) }
+        // According to the POSIX specification, -1 is used to indicate that
+        // owner and group, respectively, are not to be changed. Since uid_t and
+        // gid_t are unsigned types, we use wrapping_sub to get '-1'.
+        unsafe { libc::chown(cstr.as_ptr(),
+                             owner.unwrap_or((0 as uid_t).wrapping_sub(1)),
+                             group.unwrap_or((0 as gid_t).wrapping_sub(1))) }
     }));
 
     Errno::result(res).map(drop)
