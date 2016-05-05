@@ -3,6 +3,7 @@ use libc;
 use {Errno, Result};
 #[cfg(not(target_env = "musl"))]
 use std::mem;
+use sys::signal::SigSet;
 
 #[derive(Clone, Copy)]
 pub struct UContext {
@@ -25,5 +26,13 @@ impl UContext {
             libc::setcontext(&self.context as *const libc::ucontext_t)
         };
         Errno::result(res).map(drop)
+    }
+
+    pub fn sigmask_mut(&mut self) -> &mut SigSet {
+        unsafe { mem::transmute(&mut self.context.uc_sigmask) }
+    }
+
+    pub fn sigmask(&self) -> &SigSet {
+        unsafe { mem::transmute(&self.context.uc_sigmask) }
     }
 }
