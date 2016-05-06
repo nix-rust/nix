@@ -11,36 +11,47 @@ pub use libc::{
     SIGINT,
     SIGQUIT,
     SIGILL,
+    SIGTRAP,
     SIGABRT,
+    SIGBUS,
     SIGFPE,
     SIGKILL,
+    SIGUSR1,
     SIGSEGV,
+    SIGUSR2,
     SIGPIPE,
     SIGALRM,
     SIGTERM,
-    SIGTRAP,
-    SIGIOT,
-    SIGBUS,
-    SIGSYS,
-    SIGURG,
+    SIGCHLD,
+    SIGCONT,
     SIGSTOP,
     SIGTSTP,
-    SIGCONT,
-    SIGCHLD,
     SIGTTIN,
     SIGTTOU,
-    SIGIO,
+    SIGURG,
     SIGXCPU,
     SIGXFSZ,
     SIGVTALRM,
     SIGPROF,
     SIGWINCH,
-    SIGUSR1,
-    SIGUSR2,
+    SIGIO,
+    SIGSYS,
 };
 
-// This doesn't always exist, but when it does, it's 7
-pub const SIGEMT: libc::c_int = 7;
+#[cfg(target_os = "macos")]
+pub use libc::{
+    SIGEMT,
+    SIGINFO,
+};
+
+#[cfg(not(target_os = "macos"))]
+pub use libc::{
+    SIGPWR,
+    SIGSTKFLT,
+    SIGIOT, // Alias for SIGABRT
+    SIGPOLL, // Alias for SIGIO
+    SIGUNUSED, // Alias for 31
+};
 
 pub const NSIG: libc::c_int = 32;
 
