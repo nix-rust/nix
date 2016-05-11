@@ -61,7 +61,7 @@ matrix:
       rust: 1.7.0
       sudo: true
     - os: linux
-      env: TARGET=mipsel-unknwon-linux-gnu DOCKER_IMAGE=posborne/rust-cross:mips
+      env: TARGET=mipsel-unknown-linux-gnu DOCKER_IMAGE=posborne/rust-cross:mips
       rust: 1.7.0
       sudo: true
     - os: linux
@@ -71,7 +71,7 @@ matrix:
   allow_failures:
     - rust: nightly
     - env: TARGET=mips-unknown-linux-gnu DOCKER_IMAGE=posborne/rust-cross:mips
-    - env: TARGET=mipsel-unknwon-linux-gnu DOCKER_IMAGE=posborne/rust-cross:mips
+    - env: TARGET=mipsel-unknown-linux-gnu DOCKER_IMAGE=posborne/rust-cross:mips
     - env: TARGET=arm-linux-androideabi DOCKER_IMAGE=posborne/rust-cross:android
 
 # Deploy documentation to S3 for specific branches. At some
