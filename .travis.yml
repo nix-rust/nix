@@ -90,6 +90,6 @@ deploy:
   acl: public_read
   on:
     condition: "\"$TRAVIS_RUST_VERSION/$ARCH\" == \"1.1.0/x86_64\""
-    repo: carllerche/nix-rust
+    repo: nix-rust/nix
     branch:
       - master
