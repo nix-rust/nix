@@ -5,7 +5,7 @@
 #![crate_name = "nix"]
 #![cfg(unix)]
 #![allow(non_camel_case_types)]
-#![deny(warnings)]
+#![cfg_attr(test, deny(warnings))]
 
 #[macro_use]
 extern crate bitflags;
