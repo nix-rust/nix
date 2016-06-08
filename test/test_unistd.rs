@@ -3,6 +3,13 @@ use nix::unistd::ForkResult::*;
 use nix::sys::wait::*;
 use std::ffi::CString;
 
+use std::io::{Write, Read};
+use tempfile::tempfile;
+use libc::off_t;
+use std::os::unix::prelude::*;
+
+
+
 #[test]
 fn test_fork_and_waitpid() {
     let pid = fork();
@@ -111,6 +118,38 @@ macro_rules! execve_test_factory(
     }
     )
 );
+
+#[test]
+fn test_lseek() {
+    const CONTENTS: &'static [u8] = b"abcdef123456";
+    let mut tmp = tempfile().unwrap();
+    tmp.write(CONTENTS).unwrap();
+
+    let offset: off_t = 5;
+    lseek(tmp.as_raw_fd(), offset, Whence::SeekSet).unwrap();
+
+    let mut buf = String::new();
+     tmp.read_to_string(&mut buf).unwrap();
+     assert_eq!(b"f123456", buf.as_bytes());
+
+     close(tmp.as_raw_fd()).unwrap();
+}
+
+#[cfg(any(target_os = "linux", target_os = "android"))]
+#[test]
+fn test_lseek64() {
+    const CONTENTS: &'static [u8] = b"abcdef123456";
+    let mut tmp = tempfile().unwrap();
+    tmp.write(CONTENTS).unwrap();
+
+    lseek64(tmp.as_raw_fd(), 5, Whence::SeekSet).unwrap();
+
+    let mut buf = String::new();
+    tmp.read_to_string(&mut buf).unwrap();
+    assert_eq!(b"f123456", buf.as_bytes());
+
+    close(tmp.as_raw_fd()).unwrap();
+}
 
 execve_test_factory!(test_execve, execve, b"/bin/sh", b"/system/bin/sh");
 
