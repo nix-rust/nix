@@ -16,6 +16,7 @@ mod ffi {
 bitflags!(
     flags WaitPidFlag: c_int {
         const WNOHANG     = 0x00000001,
+        const WUNTRACED   = 0x00000002,
     }
 );
 
