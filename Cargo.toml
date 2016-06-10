@@ -36,7 +36,7 @@ semver = "0.1.20"  # Old version for compatibility with rustc_version.
 rand = "0.3.8"
 tempdir = "0.3"
 tempfile = "2"
-nix-test = { path = "nix-test" }
+nix-test = { path = "nix-test", version = "0.0.1" }
 
 [[test]]
 name = "test"
