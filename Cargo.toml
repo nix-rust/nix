@@ -2,7 +2,7 @@
 
 name        = "nix"
 description = "Rust friendly bindings to *nix APIs"
-version     = "0.4.2"
+version     = "0.4.3"
 authors     = ["Carl Lerche <me@carllerche.com>"]
 homepage    = "https://github.com/carllerche/nix-rust"
 license     = "MIT"
@@ -28,7 +28,7 @@ rand = "0.3.8"
 
 [dev-dependencies.nix-test]
 path    = "nix-test"
-version = "*"
+version = "0.0.1"
 
 [[test]]
 name = "test"
