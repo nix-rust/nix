@@ -214,6 +214,40 @@ pub fn write(fd: RawFd, buf: &[u8]) -> Result<usize> {
     Errno::result(res).map(|r| r as usize)
 }
 
+pub enum Whence {
+    SeekSet,
+    SeekCur,
+    SeekEnd,
+    SeekData,
+    SeekHole
+}
+
+impl Whence {
+    fn to_libc_type(&self) -> c_int {
+        match self {
+            &Whence::SeekSet => libc::SEEK_SET,
+            &Whence::SeekCur => libc::SEEK_CUR,
+            &Whence::SeekEnd => libc::SEEK_END,
+            &Whence::SeekData => 3,
+            &Whence::SeekHole => 4
+        }
+    }
+
+}
+
+pub fn lseek(fd: RawFd, offset: libc::off_t, whence: Whence) -> Result<libc::off_t> {
+    let res = unsafe { libc::lseek(fd, offset, whence.to_libc_type()) };
+
+    Errno::result(res).map(|r| r as libc::off_t)
+}
+
+#[cfg(any(target_os = "linux", target_os = "android"))]
+pub fn lseek64(fd: RawFd, offset: libc::off64_t, whence: Whence) -> Result<libc::off64_t> {
+    let res = unsafe { libc::lseek64(fd, offset, whence.to_libc_type()) };
+
+    Errno::result(res).map(|r| r as libc::off64_t)
+}
+
 pub fn pipe() -> Result<(RawFd, RawFd)> {
     unsafe {
         let mut fds: [c_int; 2] = mem::uninitialized();
@@ -292,7 +326,6 @@ pub fn unlink<P: ?Sized + NixPath>(path: &P) -> Result<()> {
             libc::unlink(cstr.as_ptr())
         }
     }));
-
     Errno::result(res).map(drop)
 }
 
