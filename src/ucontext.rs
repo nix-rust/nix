@@ -1,7 +1,6 @@
 use libc;
 #[cfg(not(target_env = "musl"))]
 use {Errno, Result};
-#[cfg(not(target_env = "musl"))]
 use std::mem;
 use sys::signal::SigSet;
 
