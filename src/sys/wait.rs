@@ -1,4 +1,4 @@
-use libc::{pid_t, c_int};
+use libc::{self, pid_t, c_int};
 use {Errno, Result};
 
 use sys::signal::Signal;
@@ -15,7 +15,8 @@ mod ffi {
               target_os = "android")))]
 bitflags!(
     flags WaitPidFlag: c_int {
-        const WNOHANG     = 0x00000001,
+        const WNOHANG     = libc::WNOHANG,
+        const WUNTRACED   = libc::WUNTRACED,
     }
 );
 
@@ -23,14 +24,14 @@ bitflags!(
           target_os = "android"))]
 bitflags!(
     flags WaitPidFlag: c_int {
-        const WNOHANG     = 0x00000001,
-        const WUNTRACED   = 0x00000002,
-        const WEXITED     = 0x00000004,
-        const WCONTINUED  = 0x00000008,
-        const WNOWAIT     = 0x01000000, // Don't reap, just poll status.
-        const __WNOTHREAD = 0x20000000, // Don't wait on children of other threads in this group
-        const __WALL      = 0x40000000, // Wait on all children, regardless of type
-        // const __WCLONE    = 0x80000000,
+        const WNOHANG     = libc::WNOHANG,
+        const WUNTRACED   = libc::WUNTRACED,
+        const WEXITED     = libc::WEXITED,
+        const WCONTINUED  = libc::WCONTINUED,
+        const WNOWAIT     = libc::WNOWAIT, // Don't reap, just poll status.
+        const __WNOTHREAD = libc::__WNOTHREAD, // Don't wait on children of other threads in this group
+        const __WALL      = libc::__WALL, // Wait on all children, regardless of type
+        const __WCLONE    = libc::__WCLONE,
     }
 );
 
