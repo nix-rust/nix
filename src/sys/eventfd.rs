@@ -2,26 +2,16 @@ use libc;
 use std::os::unix::io::RawFd;
 use {Errno, Result};
 
-bitflags!(
-    flags EventFdFlag: libc::c_int {
-        const EFD_CLOEXEC   = 0o2000000, // Since Linux 2.6.27
-        const EFD_NONBLOCK  = 0o0004000, // Since Linux 2.6.27
-        const EFD_SEMAPHORE = 0o0000001, // Since Linux 2.6.30
-    }
-);
-
-mod ffi {
-    use libc;
-
-    extern {
-        pub fn eventfd(initval: libc::c_uint, flags: libc::c_int) -> libc::c_int;
+libc_bitflags! {
+    flags EfdFlags: libc::c_int {
+        const EFD_CLOEXEC, // Since Linux 2.6.27
+        const EFD_NONBLOCK, // Since Linux 2.6.27
+        const EFD_SEMAPHORE, // Since Linux 2.6.30
     }
 }
 
-pub fn eventfd(initval: usize, flags: EventFdFlag) -> Result<RawFd> {
-    unsafe {
-        let res = ffi::eventfd(initval as libc::c_uint, flags.bits());
+pub fn eventfd(initval: libc::c_uint, flags: EfdFlags) -> Result<RawFd> {
+    let res = unsafe { libc::eventfd(initval, flags.bits()) };
 
-        Errno::result(res).map(|r| r as RawFd)
-    }
+    Errno::result(res).map(|r| r as RawFd)
 }
