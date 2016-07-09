@@ -89,7 +89,7 @@ pub fn epoll_create() -> Result<RawFd> {
 
 #[inline]
 pub fn epoll_create1(flags: EpollFdFlag) -> Result<RawFd> {
-    let res = unsafe { ffi::epoll_create1(flags.bits() | EPOLL_CLOEXEC.bits) };
+    let res = unsafe { ffi::epoll_create1(flags.bits()) };
 
     Errno::result(res)
 }
