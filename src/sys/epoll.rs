@@ -8,10 +8,18 @@ mod ffi {
 
     extern {
         pub fn epoll_create(size: c_int) -> c_int;
+        pub fn epoll_create1(flags: c_int) -> c_int;
         pub fn epoll_ctl(epfd: c_int, op: c_int, fd: c_int, event: *const EpollEvent) -> c_int;
         pub fn epoll_wait(epfd: c_int, events: *mut EpollEvent, max_events: c_int, timeout: c_int) -> c_int;
     }
 }
+
+bitflags!(
+    flags EpollFdFlag: c_int {
+        const EPOLL_NONBLOCK = 0x800,
+        const EPOLL_CLOEXEC = 0x80000
+    }
+);
 
 bitflags!(
     #[repr(C)]
@@ -75,6 +83,13 @@ fn test_epoll_event_size() {
 #[inline]
 pub fn epoll_create() -> Result<RawFd> {
     let res = unsafe { ffi::epoll_create(1024) };
+
+    Errno::result(res)
+}
+
+#[inline]
+pub fn epoll_create1(flags: EpollFdFlag) -> Result<RawFd> {
+    let res = unsafe { ffi::epoll_create1(flags.bits() | EPOLL_CLOEXEC.bits) };
 
     Errno::result(res)
 }
