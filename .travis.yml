@@ -1,78 +1,107 @@
+#
+# Operating Environment
+#
 language: rust
 sudo: false
 dist: trusty
 services:
-- docker
+  - docker
 addons:
   apt:
     packages:
-    - gcc-multilib
-    - libcurl4-openssl-dev
-    - libelf-dev
-    - libdw-dev
-    - binutils-dev
+      - gcc-multilib
+      - libcurl4-openssl-dev
+      - libelf-dev
+      - libdw-dev
+      - binutils-dev
+
 rust:
-- 1.1.0
-- 1.7.0
-- 1.8.0
-- stable
-- beta
-- nightly
+  - 1.1.0  # Oldest supported version
+  - 1.7.0
+  - 1.8.0
+  - stable
+  - beta
+  - nightly
+
+#
+# Environment Variables and Build Matrix
+#
 env:
   global:
-  - PATH=$HOME/.local/bin:$PATH
-  - TRAVIS_CARGO_NIGHTLY_FEATURE=""
-  - secure: U553Lx5dnlAS4wszv3urlHpgpjo8IzquGZdLK8zO9DZTsvZaqIxPmEAcJE4gPKjmSdhfpmqcNpCnKOghM45/annRnGwKH4cZ5Uy8wPRJDjuWXQ/nFi8/15RueeYD1jBEyNn5X+n4LRTiSVqgYodEPISkMJ3t8IicNzIlYVhS1Ac=
+    - PATH=$HOME/.local/bin:$PATH
+    - TRAVIS_CARGO_NIGHTLY_FEATURE=""
   matrix:
-  - ARCH=x86_64
-  - ARCH=i686
-os:
-- linux
+    - ARCH=x86_64
+    - ARCH=i686
+
+os:  # OSX included in build matrix explicitly
+  - linux
+
+# Failures on nightly shouldn't fail the overall build.
 matrix:
   fast_finish: true
   include:
-  - os: osx
-    env: ARCH=x86_64
-    rust: stable
-  - os: osx
-    env: ARCH=i686
-    rust: stable
-  - os: osx
-    env: ARCH=x86_64
-    rust: 1.1.0
-  - os: osx
-    env: ARCH=i686
-    rust: 1.1.0
-  - os: linux
-    env: TARGET=aarch64-unknown-linux-gnu DOCKER_IMAGE=posborne/rust-cross:arm
-    rust: 1.7.0
-    sudo: true
-  - os: linux
-    env: TARGET=arm-unknown-linux-gnueabihf DOCKER_IMAGE=posborne/rust-cross:arm
-    rust: 1.7.0
-    sudo: true
-  - os: linux
-    env: TARGET=mips-unknown-linux-gnu DOCKER_IMAGE=posborne/rust-cross:mips
-    rust: 1.7.0
-    sudo: true
-  - os: linux
-    env: TARGET=mipsel-unknown-linux-gnu DOCKER_IMAGE=posborne/rust-cross:mips
-    rust: 1.7.0
-    sudo: true
-  - os: linux
-    env: TARGET=arm-linux-androideabi DOCKER_IMAGE=posborne/rust-cross:android
-    rust: 1.7.0
-    sudo: true
+    # 32-bit and 64-bit OSX builds on oldest/stable
+    - os: osx
+      env: ARCH=x86_64
+      rust: stable
+    - os: osx
+      env: ARCH=i686
+      rust: stable
+    - os: osx
+      env: ARCH=x86_64
+      rust: 1.1.0
+    - os: osx
+      env: ARCH=i686
+      rust: 1.1.0
+    # Docker builds for other targets
+    - os: linux
+      env: TARGET=aarch64-unknown-linux-gnu DOCKER_IMAGE=posborne/rust-cross:arm
+      rust: 1.7.0
+      sudo: true
+    - os: linux
+      env: TARGET=arm-unknown-linux-gnueabihf DOCKER_IMAGE=posborne/rust-cross:arm
+      rust: 1.7.0
+      sudo: true
+    - os: linux
+      env: TARGET=mips-unknown-linux-gnu DOCKER_IMAGE=posborne/rust-cross:mips
+      rust: 1.7.0
+      sudo: true
+    - os: linux
+      env: TARGET=mipsel-unknown-linux-gnu DOCKER_IMAGE=posborne/rust-cross:mips
+      rust: 1.7.0
+      sudo: true
+    - os: linux
+      env: TARGET=arm-linux-androideabi DOCKER_IMAGE=posborne/rust-cross:android
+      rust: 1.7.0
+      sudo: true
   allow_failures:
-  - rust: nightly
-  - env: TARGET=mips-unknown-linux-gnu DOCKER_IMAGE=posborne/rust-cross:mips
-  - env: TARGET=mipsel-unknown-linux-gnu DOCKER_IMAGE=posborne/rust-cross:mips
-  - env: TARGET=arm-linux-androideabi DOCKER_IMAGE=posborne/rust-cross:android
+    - rust: nightly
+    - env: TARGET=mips-unknown-linux-gnu DOCKER_IMAGE=posborne/rust-cross:mips
+    - env: TARGET=mipsel-unknown-linux-gnu DOCKER_IMAGE=posborne/rust-cross:mips
+    - env: TARGET=arm-linux-androideabi DOCKER_IMAGE=posborne/rust-cross:android
+
+
+#
+# Build/Test/Deploy Steps
+#
 before_script:
-- pip install 'travis-cargo<0.2' --user && export PATH=$HOME/.local/bin:$PATH
+  - pip install 'travis-cargo<0.2' --user
+
 script:
-- bash ci/run-travis.sh
-- travis-cargo --only stable doc
+  - bash ci/run-travis.sh
+  - |
+    if [ "$TRAVIS_OS_NAME" = "linux" ]; then
+        travis-cargo --only stable doc
+    fi
+
 after_success:
-- travis-cargo --only stable doc-upload
-- travis-cargo coveralls --no-sudo --verify
+  - |
+    if [ "$TRAVIS_OS_NAME" = "linux" ] && \
+       [ "$TRAVIS_RUST_VERSION" = "stable" ] && \
+       [ "$ARCH" = "x86_64" ]; then
+        # Upload docs for stable (on master) to gh-pages
+        travis-cargo --only stable doc-upload
+        # Measure code coverage using kcov and upload to coveralls.io
+        travis-cargo coveralls --no-sudo --verify
+    fi
