@@ -20,6 +20,10 @@ pub fn reboot(how: RebootMode) -> Result<Void> {
     Err(Error::Sys(Errno::last()))
 }
 
+
+/// Enable or disable the reboot keystroke (Ctrl-Alt-Delete).
+///
+/// Corresponds to calling `reboot(RB_ENABLE_CAD)` or `reboot(RB_DISABLE_CAD)` in C.
 #[allow(overflowing_literals)]
 pub fn set_cad_enabled(enable: bool) -> Result<()> {
     let res = unsafe {
