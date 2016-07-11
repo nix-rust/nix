@@ -3,6 +3,7 @@ use libc::c_int;
 use void::Void;
 use std::mem::drop;
 
+#[allow(overflowing_literals)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum RebootMode {
     Halt = 0xcdef0123,
