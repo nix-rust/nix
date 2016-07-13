@@ -3,7 +3,7 @@ use libc;
 use void::Void;
 use std::mem::drop;
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum RebootMode {
     Halt,
     kexec,
