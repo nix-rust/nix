@@ -1,8 +1,14 @@
+//! Reboot/shutdown or enable/disable Ctrl-Alt-Delete.
+
 use {Errno, Error, Result};
 use libc;
 use void::Void;
 use std::mem::drop;
 
+/// How exactly should the system be rebooted.
+///
+/// See [`set_cad_enabled()`](fn.set_cad_enabled.html) for
+/// enabling/disabling Ctrl-Alt-Delete.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum RebootMode {
     Halt,
