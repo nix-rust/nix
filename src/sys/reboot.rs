@@ -3,20 +3,27 @@ use libc;
 use void::Void;
 use std::mem::drop;
 
-#[repr(i32)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum RebootMode {
-    Halt = libc::RB_HALT_SYSTEM,
-    kexec = libc::RB_KEXEC,
-    PowerOff = libc::RB_POWER_OFF,
-    Restart = libc::RB_AUTOBOOT,
+    Halt,
+    kexec,
+    PowerOff,
+    Restart,
     // we do not support Restart2,
-    Suspend = libc::RB_SW_SUSPEND,
+    Suspend,
 }
 
 pub fn reboot(how: RebootMode) -> Result<Void> {
+    let cmd = match how {
+        RebootMode::Halt => libc::RB_HALT_SYSTEM,
+        RebootMode::kexec => libc::RB_KEXEC,
+        RebootMode::PowerOff => libc::RB_POWER_OFF,
+        RebootMode::Restart => libc::RB_AUTOBOOT,
+        // we do not support Restart2,
+        RebootMode::Suspend => libc::RB_SW_SUSPEND,
+    };
     unsafe {
-        libc::reboot(how as libc::c_int)
+        libc::reboot(cmd)
     };
     Err(Error::Sys(Errno::last()))
 }
