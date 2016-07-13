@@ -31,7 +31,7 @@ pub mod stat;
 #[cfg(any(target_os = "linux", target_os = "android"))]
 pub mod syscall;
 
-#[cfg(any(target_os = "linux", target_os = "android"))]
+#[cfg(any(target_os = "linux"))]
 pub mod reboot;
 
 #[cfg(not(target_os = "ios"))]
