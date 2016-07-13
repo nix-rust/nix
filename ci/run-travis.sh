@@ -33,7 +33,6 @@ fi
 if [ "$DOCKER_IMAGE" = "" ]; then
   export RUST_TEST_THREADS=1
   curl -sSL "https://raw.githubusercontent.com/carllerche/travis-rust-matrix/master/test" | bash
-  cargo doc --no-deps
 else
   export RUST_VERSION=${TRAVIS_RUST_VERSION}
   export RUST_TARGET=${TARGET}
