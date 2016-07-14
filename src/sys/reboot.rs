@@ -9,27 +9,20 @@ use std::mem::drop;
 ///
 /// See [`set_cad_enabled()`](fn.set_cad_enabled.html) for
 /// enabling/disabling Ctrl-Alt-Delete.
+#[repr(i32)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum RebootMode {
-    Halt,
-    kexec,
-    PowerOff,
-    Restart,
+    Halt = libc::RB_HALT_SYSTEM,
+    kexec = libc::RB_KEXEC,
+    PowerOff = libc::RB_POWER_OFF,
+    Restart = libc::RB_AUTOBOOT,
     // we do not support Restart2,
-    Suspend,
+    Suspend = libc::RB_SW_SUSPEND,
 }
 
 pub fn reboot(how: RebootMode) -> Result<Void> {
-    let cmd = match how {
-        RebootMode::Halt => libc::RB_HALT_SYSTEM,
-        RebootMode::kexec => libc::RB_KEXEC,
-        RebootMode::PowerOff => libc::RB_POWER_OFF,
-        RebootMode::Restart => libc::RB_AUTOBOOT,
-        // we do not support Restart2,
-        RebootMode::Suspend => libc::RB_SW_SUSPEND,
-    };
     unsafe {
-        libc::reboot(cmd)
+        libc::reboot(how as libc::c_int)
     };
     Err(Error::Sys(Errno::last()))
 }
