@@ -12,12 +12,12 @@ use std::mem::drop;
 #[repr(i32)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum RebootMode {
-    Halt = libc::RB_HALT_SYSTEM,
-    kexec = libc::RB_KEXEC,
-    PowerOff = libc::RB_POWER_OFF,
-    Restart = libc::RB_AUTOBOOT,
+    RB_HALT_SYSTEM = libc::RB_HALT_SYSTEM,
+    RB_KEXEC = libc::RB_KEXEC,
+    RB_POWER_OFF = libc::RB_POWER_OFF,
+    RB_AUTOBOOT = libc::RB_AUTOBOOT,
     // we do not support Restart2,
-    Suspend = libc::RB_SW_SUSPEND,
+    RB_SW_SUSPEND = libc::RB_SW_SUSPEND,
 }
 
 pub fn reboot(how: RebootMode) -> Result<Void> {
