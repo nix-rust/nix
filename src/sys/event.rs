@@ -355,7 +355,7 @@ pub fn ev_set(ev: &mut KEvent,
               filter: EventFilter,
               flags: EventFlag,
               fflags: FilterFlag,
-              udata: i64) {
+              udata: isize) {
 
     ev.ident  = ident as uintptr_t;
     ev.filter = filter;
