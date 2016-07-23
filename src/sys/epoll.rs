@@ -1,25 +1,6 @@
 use {Errno, Result};
-use libc::c_int;
+use libc::{self, c_int};
 use std::os::unix::io::RawFd;
-
-mod ffi {
-    use libc::{c_int};
-    use super::EpollEvent;
-
-    extern {
-        pub fn epoll_create(size: c_int) -> c_int;
-        pub fn epoll_create1(flags: c_int) -> c_int;
-        pub fn epoll_ctl(epfd: c_int, op: c_int, fd: c_int, event: *const EpollEvent) -> c_int;
-        pub fn epoll_wait(epfd: c_int, events: *mut EpollEvent, max_events: c_int, timeout: c_int) -> c_int;
-    }
-}
-
-bitflags!(
-    flags EpollFdFlag: c_int {
-        const EPOLL_NONBLOCK = 0x800,
-        const EPOLL_CLOEXEC = 0x80000
-    }
-);
 
 bitflags!(
     #[repr(C)]
@@ -50,61 +31,31 @@ pub enum EpollOp {
     EpollCtlMod = 3
 }
 
-#[cfg(not(target_arch = "x86_64"))]
-#[derive(Clone, Copy)]
-#[repr(C)]
-pub struct EpollEvent {
-    pub events: EpollEventKind,
-    pub data: u64
-}
-
-#[cfg(target_arch = "x86_64")]
-#[derive(Clone, Copy)]
-#[repr(C, packed)]
-pub struct EpollEvent {
-    pub events: EpollEventKind,
-    pub data: u64
-}
-
-#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-#[test]
-fn test_epoll_event_size() {
-    use std::mem::size_of;
-    assert_eq!(size_of::<EpollEvent>(), 12);
-}
-
-#[cfg(target_arch = "arm")]
-#[test]
-fn test_epoll_event_size() {
-    use std::mem::size_of;
-    assert_eq!(size_of::<EpollEvent>(), 16);
-}
-
 #[inline]
 pub fn epoll_create() -> Result<RawFd> {
-    let res = unsafe { ffi::epoll_create(1024) };
+    let res = unsafe { libc::epoll_create(1024) };
 
     Errno::result(res)
 }
 
 #[inline]
-pub fn epoll_create1(flags: EpollFdFlag) -> Result<RawFd> {
-    let res = unsafe { ffi::epoll_create1(flags.bits()) };
+pub fn epoll_create1(flags: c_int) -> Result<RawFd> {
+    let res = unsafe { libc::epoll_create1(flags) };
 
     Errno::result(res)
 }
 
 #[inline]
-pub fn epoll_ctl(epfd: RawFd, op: EpollOp, fd: RawFd, event: &EpollEvent) -> Result<()> {
-    let res = unsafe { ffi::epoll_ctl(epfd, op as c_int, fd, event as *const EpollEvent) };
+pub fn epoll_ctl(epfd: RawFd, op: EpollOp, fd: RawFd, event: &mut libc::epoll_event) -> Result<()> {
+    let res = unsafe { libc::epoll_ctl(epfd, op as c_int, fd, event as *mut libc::epoll_event) };
 
     Errno::result(res).map(drop)
 }
 
 #[inline]
-pub fn epoll_wait(epfd: RawFd, events: &mut [EpollEvent], timeout_ms: isize) -> Result<usize> {
+pub fn epoll_wait(epfd: RawFd, events: &mut [libc::epoll_event], timeout_ms: isize) -> Result<usize> {
     let res = unsafe {
-        ffi::epoll_wait(epfd, events.as_mut_ptr(), events.len() as c_int, timeout_ms as c_int)
+        libc::epoll_wait(epfd, events.as_mut_ptr(), events.len() as c_int, timeout_ms as c_int)
     };
 
     Errno::result(res).map(|r| r as usize)
