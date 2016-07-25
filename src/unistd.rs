@@ -176,7 +176,10 @@ pub fn daemon(nochdir: bool, noclose: bool) -> Result<()> {
 pub fn sethostname(name: &[u8]) -> Result<()> {
     // Handle some differences in type of the len arg across platforms.
     cfg_if! {
-        if #[cfg(any(target_os = "macos", target_os = "ios"))] {
+        if #[cfg(any(target_os = "dragonfly",
+                     target_os = "freebsd",
+                     target_os = "ios",
+                     target_os = "macos", ))] {
             type sethostname_len_t = c_int;
         } else {
             type sethostname_len_t = size_t;
