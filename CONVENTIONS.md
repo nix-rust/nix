@@ -9,6 +9,11 @@ conventions we try to follow have been documented here. If you find an instance
 of either, feel free to remedy the flaw by opening a pull request with
 appropriate changes or additions.
 
+## Change Log
+
+We follow the conventions laid out in [Keep A CHANGELOG][kacl].
+
+[kacl]: https://github.com/olivierlacan/keep-a-changelog/tree/18adb5f5be7a898d046f6a4acb93e39dcf40c4ad
 
 ## libc constants, functions and structs
 
