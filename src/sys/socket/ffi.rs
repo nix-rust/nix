@@ -4,14 +4,24 @@
 pub use libc::{socket, listen, bind, accept, connect, setsockopt, sendto, recvfrom, getsockname, getpeername, recv, send};
 
 use libc::{c_int, c_void, socklen_t, size_t, ssize_t};
-use sys::uio::IoVec;
 
+#[cfg(target_os = "macos")]
+use libc::c_uint;
+
+use sys::uio::IoVec;
 
 #[cfg(target_os = "linux")]
 pub type type_of_cmsg_len = size_t;
 
 #[cfg(not(target_os = "linux"))]
 pub type type_of_cmsg_len = socklen_t;
+
+// OSX always aligns struct cmsghdr as if it were a 32-bit OS
+#[cfg(target_os = "macos")]
+pub type type_of_cmsg_data = c_uint;
+
+#[cfg(not(target_os = "macos"))]
+pub type type_of_cmsg_data = size_t;
 
 // Private because we don't expose any external functions that operate
 // directly on this type; we just use it internally at FFI boundaries.
@@ -37,7 +47,7 @@ pub struct cmsghdr {
     pub cmsg_len: type_of_cmsg_len,
     pub cmsg_level: c_int,
     pub cmsg_type: c_int,
-    pub cmsg_data: [type_of_cmsg_len; 0]
+    pub cmsg_data: [type_of_cmsg_data; 0]
 }
 
 extern {
