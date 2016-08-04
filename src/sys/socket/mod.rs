@@ -94,7 +94,7 @@ unsafe fn copy_bytes<'a, 'b, T: ?Sized>(src: &T, dst: &'a mut &'b mut [u8]) {
 }
 
 
-use self::ffi::{cmsghdr, msghdr, type_of_cmsg_len};
+use self::ffi::{cmsghdr, msghdr, type_of_cmsg_len, type_of_cmsg_data};
 
 /// A structure used to make room in a cmsghdr passed to recvmsg. The
 /// size and alignment match that of a cmsghdr followed by a T, but the
@@ -169,8 +169,7 @@ impl<'a> Iterator for CmsgIterator<'a> {
             (SOL_SOCKET, SCM_RIGHTS) => unsafe {
                 Some(ControlMessage::ScmRights(
                     slice::from_raw_parts(
-                        &cmsg.cmsg_data as *const _ as *const _,
-                        len / mem::size_of::<RawFd>())))
+                        &cmsg.cmsg_data as *const _ as *const _, 1)))
             },
             (_, _) => unsafe {
                 Some(ControlMessage::Unknown(UnknownCmsg(
@@ -201,12 +200,8 @@ pub enum ControlMessage<'a> {
 pub struct UnknownCmsg<'a>(&'a cmsghdr, &'a [u8]);
 
 fn cmsg_align(len: usize) -> usize {
-    let round_to = mem::size_of::<type_of_cmsg_len>();
-    if len % round_to == 0 {
-        len
-    } else {
-        len + round_to - (len % round_to)
-    }
+    let align_bytes = mem::size_of::<type_of_cmsg_data>() - 1;
+    (len + align_bytes) & !align_bytes
 }
 
 impl<'a> ControlMessage<'a> {
@@ -217,7 +212,7 @@ impl<'a> ControlMessage<'a> {
 
     /// The value of CMSG_LEN on this message.
     fn len(&self) -> usize {
-        mem::size_of::<cmsghdr>() + match *self {
+        cmsg_align(mem::size_of::<cmsghdr>()) + match *self {
             ControlMessage::ScmRights(fds) => {
                 mem::size_of_val(fds)
             },
@@ -240,7 +235,11 @@ impl<'a> ControlMessage<'a> {
                     cmsg_data: [],
                 };
                 copy_bytes(&cmsg, buf);
-                copy_bytes(fds, buf);
+
+                let padlen = cmsg_align(mem::size_of_val(&cmsg)) -
+                    mem::size_of_val(&cmsg);
+                let buf2 = &mut &mut buf[padlen..];
+                copy_bytes(fds, buf2);
             },
             ControlMessage::Unknown(UnknownCmsg(orig_cmsg, bytes)) => {
                 copy_bytes(orig_cmsg, buf);
@@ -267,10 +266,10 @@ pub fn sendmsg<'a>(fd: RawFd, iov: &[IoVec<&'a [u8]>], cmsgs: &[ControlMessage<'
     // multiple of size_t. Note also that the resulting vector claims
     // to have length == capacity, so it's presently uninitialized.
     let mut cmsg_buffer = unsafe {
-        let mut vec = Vec::<size_t>::with_capacity(capacity / mem::size_of::<size_t>());
+        let mut vec = Vec::<u8>::with_capacity(len);
         let ptr = vec.as_mut_ptr();
         mem::forget(vec);
-        Vec::<u8>::from_raw_parts(ptr as *mut _, capacity, capacity)
+        Vec::<u8>::from_raw_parts(ptr as *mut _, len, len)
     };
     {
         let mut ptr = &mut cmsg_buffer[..];
@@ -290,7 +289,7 @@ pub fn sendmsg<'a>(fd: RawFd, iov: &[IoVec<&'a [u8]>], cmsgs: &[ControlMessage<'
         msg_iov: iov.as_ptr(),
         msg_iovlen: iov.len() as size_t,
         msg_control: cmsg_buffer.as_ptr() as *const c_void,
-        msg_controllen: len as size_t,
+        msg_controllen: capacity as size_t,
         msg_flags: 0,
     };
     let ret = unsafe { ffi::sendmsg(fd, &mhdr, flags.bits()) };
