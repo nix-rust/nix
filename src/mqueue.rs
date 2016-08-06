@@ -4,7 +4,7 @@
 
 use {Errno, Result};
 
-use libc::{self, c_char,c_long,mode_t,mqd_t,size_t};
+use libc::{self, c_char, c_long, mode_t, mqd_t, size_t};
 use std::ffi::CString;
 use sys::stat::Mode;
 use std::mem;
@@ -30,28 +30,31 @@ libc_bitflags!{
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct MqAttr {
-    mq_attr: libc::mq_attr
+    mq_attr: libc::mq_attr,
 }
 
 impl PartialEq<MqAttr> for MqAttr {
     fn eq(&self, other: &MqAttr) -> bool {
         let self_attr = self.mq_attr;
         let other_attr = other.mq_attr;
-        self_attr.mq_flags == other_attr.mq_flags &&
-            self_attr.mq_maxmsg == other_attr.mq_maxmsg &&
-            self_attr.mq_msgsize == other_attr.mq_msgsize &&
-            self_attr.mq_curmsgs == other_attr.mq_curmsgs
+        self_attr.mq_flags == other_attr.mq_flags && self_attr.mq_maxmsg == other_attr.mq_maxmsg &&
+        self_attr.mq_msgsize == other_attr.mq_msgsize &&
+        self_attr.mq_curmsgs == other_attr.mq_curmsgs
     }
 }
 
 impl MqAttr {
-    pub fn new(mq_flags: c_long, mq_maxmsg: c_long, mq_msgsize: c_long, mq_curmsgs: c_long) -> MqAttr {
+    pub fn new(mq_flags: c_long,
+               mq_maxmsg: c_long,
+               mq_msgsize: c_long,
+               mq_curmsgs: c_long)
+               -> MqAttr {
         let mut attr = unsafe { mem::uninitialized::<libc::mq_attr>() };
         attr.mq_flags = mq_flags;
         attr.mq_maxmsg = mq_maxmsg;
         attr.mq_msgsize = mq_msgsize;
         attr.mq_curmsgs = mq_curmsgs;
-        MqAttr{mq_attr: attr}
+        MqAttr { mq_attr: attr }
     }
 
     pub fn flags(&self) -> c_long {
@@ -60,14 +63,19 @@ impl MqAttr {
 }
 
 
-pub fn mq_open(name: &CString, oflag: MQ_OFlag, mode: Mode, attr: Option<&MqAttr>) -> Result<mqd_t> {
+pub fn mq_open(name: &CString,
+               oflag: MQ_OFlag,
+               mode: Mode,
+               attr: Option<&MqAttr>)
+               -> Result<mqd_t> {
     let res = match attr {
-        Some(mq_attr) => {
-            unsafe { libc::mq_open(name.as_ptr(), oflag.bits(), mode.bits() as mode_t, &mq_attr.mq_attr as *const libc::mq_attr) }
+        Some(mq_attr) => unsafe {
+            libc::mq_open(name.as_ptr(),
+                          oflag.bits(),
+                          mode.bits() as mode_t,
+                          &mq_attr.mq_attr as *const libc::mq_attr)
         },
-        None => {
-            unsafe { libc::mq_open(name.as_ptr(), oflag.bits()) }
-        }
+        None => unsafe { libc::mq_open(name.as_ptr(), oflag.bits()) },
     };
     Errno::result(res)
 }
@@ -77,19 +85,29 @@ pub fn mq_unlink(name: &CString) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
-pub fn mq_close(mqdes: mqd_t) -> Result<()>  {
+pub fn mq_close(mqdes: mqd_t) -> Result<()> {
     let res = unsafe { libc::mq_close(mqdes) };
     Errno::result(res).map(drop)
 }
 
 pub fn mq_receive(mqdes: mqd_t, message: &mut [u8], msg_prio: &mut u32) -> Result<usize> {
     let len = message.len() as size_t;
-    let res = unsafe { libc::mq_receive(mqdes, message.as_mut_ptr() as *mut c_char, len, msg_prio as *mut u32) };
+    let res = unsafe {
+        libc::mq_receive(mqdes,
+                         message.as_mut_ptr() as *mut c_char,
+                         len,
+                         msg_prio as *mut u32)
+    };
     Errno::result(res).map(|r| r as usize)
 }
 
 pub fn mq_send(mqdes: mqd_t, message: &[u8], msq_prio: u32) -> Result<()> {
-    let res = unsafe { libc::mq_send(mqdes, message.as_ptr() as *const c_char, message.len(), msq_prio) };
+    let res = unsafe {
+        libc::mq_send(mqdes,
+                      message.as_ptr() as *const c_char,
+                      message.len(),
+                      msq_prio)
+    };
     Errno::result(res).map(drop)
 }
 
@@ -115,7 +133,10 @@ pub fn mq_setattr(mqd: mqd_t, newattr: &MqAttr) -> Result<MqAttr> {
 /// Returns the old attributes
 pub fn mq_set_nonblock(mqd: mqd_t) -> Result<(MqAttr)> {
     let oldattr = try!(mq_getattr(mqd));
-    let newattr = MqAttr::new(O_NONBLOCK.bits() as c_long, oldattr.mq_attr.mq_maxmsg, oldattr.mq_attr.mq_msgsize, oldattr.mq_attr.mq_curmsgs);
+    let newattr = MqAttr::new(O_NONBLOCK.bits() as c_long,
+                              oldattr.mq_attr.mq_maxmsg,
+                              oldattr.mq_attr.mq_msgsize,
+                              oldattr.mq_attr.mq_curmsgs);
     mq_setattr(mqd, &newattr)
 }
 
@@ -124,6 +145,9 @@ pub fn mq_set_nonblock(mqd: mqd_t) -> Result<(MqAttr)> {
 /// Returns the old attributes
 pub fn mq_remove_nonblock(mqd: mqd_t) -> Result<(MqAttr)> {
     let oldattr = try!(mq_getattr(mqd));
-    let newattr = MqAttr::new(0, oldattr.mq_attr.mq_maxmsg, oldattr.mq_attr.mq_msgsize, oldattr.mq_attr.mq_curmsgs);
+    let newattr = MqAttr::new(0,
+                              oldattr.mq_attr.mq_maxmsg,
+                              oldattr.mq_attr.mq_msgsize,
+                              oldattr.mq_attr.mq_curmsgs);
     mq_setattr(mqd, &newattr)
 }
