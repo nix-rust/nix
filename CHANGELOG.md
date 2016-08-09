@@ -33,6 +33,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Fixed the build problem for NetBSD (Note, that we currently do not support
   it, so it might already be broken again).
   ([#389](https://github.com/nix-rust/nix/pull/389))
+- Fixed the build on FreeBSD, and fixed the getsockopt, sendmsg, and recvmsg
+  functions on that same OS.
+  ([#397](https://github.com/nix-rust/nix/pull/397))
 
 ## [0.6.0] 2016-06-10
 
