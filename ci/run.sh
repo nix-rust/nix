@@ -6,7 +6,7 @@
 set -e
 
 # This should only be run in a docker container, so verify that
-if [ ! -f /.dockerinit ]; then
+if [ ! $(pidof $0) = "1" ]; then
     echo "run.sh should only be executed in a docker container"
     echo "and that does not appear to be the case.  Maybe you meant"
     echo "to execute the tests via run-all.sh or run-docker.sh."
