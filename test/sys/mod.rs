@@ -1,3 +1,4 @@
+mod test_event;
 mod test_socket;
 mod test_sockopt;
 mod test_termios;

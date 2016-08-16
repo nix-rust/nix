@@ -3,278 +3,237 @@
 
 use {Errno, Result};
 #[cfg(not(target_os = "netbsd"))]
-use libc::{timespec, time_t, c_int, c_long, uintptr_t};
+use libc::{timespec, time_t, c_int, c_long, intptr_t, uintptr_t};
 #[cfg(target_os = "netbsd")]
-use libc::{timespec, time_t, c_long, uintptr_t, size_t};
+use libc::{timespec, time_t, c_long, intptr_t, uintptr_t, size_t};
+use libc;
 use std::os::unix::io::RawFd;
 use std::ptr;
 
-pub use self::ffi::kevent as KEvent;
-
-mod ffi {
-    pub use libc::{c_int, c_void, uintptr_t, intptr_t, timespec, size_t, int64_t};
-    use super::{EventFilter, EventFlag, FilterFlag};
-
-    #[cfg(not(target_os = "netbsd"))]
-    #[derive(Clone, Copy)]
-    #[repr(C)]
-    pub struct kevent {
-        pub ident: uintptr_t,       // 8
-        pub filter: EventFilter,    // 2
-        pub flags: EventFlag,       // 2
-        pub fflags: FilterFlag,     // 4
-        pub data: intptr_t,         // 8
-        pub udata: usize             // 8
-    }
-
-    #[cfg(target_os = "netbsd")]
-    #[derive(Clone, Copy)]
-    #[repr(C)]
-    pub struct kevent {
-        pub ident: uintptr_t,
-        pub filter: EventFilter,
-        pub flags: EventFlag,
-        pub fflags: FilterFlag,
-        pub data: int64_t,
-        pub udata: intptr_t
-    }
-
-    // Bug in rustc, cannot determine that kevent is #[repr(C)]
-    #[allow(improper_ctypes)]
-    extern {
-        pub fn kqueue() -> c_int;
-
-        #[cfg(not(target_os = "netbsd"))]
-        pub fn kevent(
-            kq: c_int,
-            changelist: *const kevent,
-            nchanges: c_int,
-            eventlist: *mut kevent,
-            nevents: c_int,
-            timeout: *const timespec) -> c_int;
-
-        #[cfg(target_os = "netbsd")]
-        pub fn kevent(
-            kq: c_int,
-            changelist: *const kevent,
-            nchanges: size_t,
-            eventlist: *mut kevent,
-            nevents: size_t,
-            timeout: *const timespec) -> c_int;
-    }
+// Redefine kevent in terms of programmer-friendly enums and bitfields.
+#[derive(Clone, Copy)]
+#[repr(C)]
+pub struct KEvent {
+    pub ident: uintptr_t,
+    pub filter: EventFilter,
+    pub flags: EventFlag,
+    pub fflags: FilterFlag,
+    pub data: intptr_t,
+    // libc defines udata as a pointer on most OSes.  But it's really
+    // more like an arbitrary tag
+    pub udata: uintptr_t
 }
 
-#[cfg(not(any(target_os = "dragonfly", target_os = "netbsd")))]
+#[cfg(not(target_os = "netbsd"))]
 #[repr(i16)]
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum EventFilter {
-    EVFILT_READ = -1,
-    EVFILT_WRITE = -2,
-    EVFILT_AIO = -3,
-    EVFILT_VNODE = -4,
-    EVFILT_PROC = -5,
-    EVFILT_SIGNAL = -6,
-    EVFILT_TIMER = -7,
-    EVFILT_MACHPORT = -8,
-    EVFILT_FS = -9,
-    EVFILT_USER = -10,
-    // -11: unused
-    EVFILT_VM = -12,
-    EVFILT_SYSCOUNT = 13
-}
-
-#[cfg(target_os = "dragonfly")]
-#[repr(i16)] // u_short
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub enum EventFilter {
-    EVFILT_READ = -1,
-    EVFILT_WRITE = -2,
-    EVFILT_AIO = -3,
-    EVFILT_VNODE = -4,
-    EVFILT_PROC = -5,
-    EVFILT_SIGNAL = -6,
-    EVFILT_TIMER = -7,
-    EVFILT_EXCEPT = -8,
-    EVFILT_USER = -9,
+    EVFILT_AIO = libc::EVFILT_AIO,
+    #[cfg(target_os = "dragonfly")]
+    EVFILT_EXCEPT = libc::EVFILT_EXCEPT,
+    #[cfg(any(target_os = "macos",
+              target_os = "dragonfly",
+              target_os = "freebsd"))]
+    EVFILT_FS = libc::EVFILT_FS,
+    #[cfg(target_os = "freebsd")]
+    EVFILT_LIO = libc::EVFILT_LIO,
+    #[cfg(target_os = "macos")]
+    EVFILT_MACHPORT = libc::EVFILT_MACHPORT,
+    EVFILT_PROC = libc::EVFILT_PROC,
+    #[cfg(target_os = "freebsd")]
+    EVFILT_PROCDESC = libc::EVFILT_PROCDESC,
+    EVFILT_READ = libc::EVFILT_READ,
+    #[cfg(target_os = "freebsd")]
+    EVFILT_SENDFILE = libc::EVFILT_SENDFILE,
+    EVFILT_SIGNAL = libc::EVFILT_SIGNAL,
+    EVFILT_SYSCOUNT = libc::EVFILT_SYSCOUNT,
+    EVFILT_TIMER = libc::EVFILT_TIMER,
+    #[cfg(any(target_os = "macos",
+              target_os = "dragonfly",
+              target_os = "freebsd"))]
+    EVFILT_USER = libc::EVFILT_USER,
+    #[cfg(target_os = "macos")]
+    EVFILT_VM = libc::EVFILT_VM,
+    EVFILT_VNODE = libc::EVFILT_VNODE,
+    EVFILT_WRITE = libc::EVFILT_WRITE,
 }
 
 #[cfg(target_os = "netbsd")]
 #[repr(u32)]
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum EventFilter {
-    EVFILT_READ = 0,
-    EVFILT_WRITE = 1,
-    EVFILT_AIO = 2,
-    EVFILT_VNODE = 3,
-    EVFILT_PROC = 4,
-    EVFILT_SIGNAL = 5,
-    EVFILT_TIMER = 6,
-    EVFILT_SYSCOUNT = 7
+    EVFILT_READ = libc::EVFILT_READ,
+    EVFILT_WRITE = libc::EVFILT_WRITE,
+    EVFILT_AIO = libc::EVFILT_AIO,
+    EVFILT_VNODE = libc::EVFILT_VNODE,
+    EVFILT_PROC = libc::EVFILT_PROC,
+    EVFILT_SIGNAL = libc::EVFILT_SIGNAL,
+    EVFILT_TIMER = libc::EVFILT_TIMER,
+    EVFILT_SYSCOUNT = libc::EVFILT_SYSCOUNT,
 }
 
-#[cfg(not(any(target_os = "dragonfly", target_os = "netbsd")))]
+#[cfg(any(target_os = "macos",
+          target_os = "freebsd",
+          target_os = "dragonfly"))]
 bitflags!(
     flags EventFlag: u16 {
-        const EV_ADD       = 0x0001,
-        const EV_DELETE    = 0x0002,
-        const EV_ENABLE    = 0x0004,
-        const EV_DISABLE   = 0x0008,
-        const EV_RECEIPT   = 0x0040,
-        const EV_ONESHOT   = 0x0010,
-        const EV_CLEAR     = 0x0020,
-        const EV_DISPATCH  = 0x0080,
-        const EV_SYSFLAGS  = 0xF000,
-        const EV_FLAG0     = 0x1000,
-        const EV_FLAG1     = 0x2000,
-        const EV_EOF       = 0x8000,
-        const EV_ERROR     = 0x4000
+        const EV_ADD       = libc::EV_ADD,
+        const EV_CLEAR     = libc::EV_CLEAR,
+        const EV_DELETE    = libc::EV_DELETE,
+        const EV_DISABLE   = libc::EV_DISABLE,
+        const EV_DISPATCH  = libc::EV_DISPATCH,
+        #[cfg(target_os = "freebsd")]
+        const EV_DROP      = libc::EV_DROP,
+        const EV_ENABLE    = libc::EV_ENABLE,
+        const EV_EOF       = libc::EV_EOF,
+        const EV_ERROR     = libc::EV_ERROR,
+        #[cfg(target_os = "macos")]
+        const EV_FLAG0     = libc::EV_FLAG0,
+        const EV_FLAG1     = libc::EV_FLAG1,
+        #[cfg(target_os = "freebsd")]
+        const EV_FLAG2     = libc::EV_FLAG2,
+        #[cfg(target_os = "freebsd")]
+        const EV_FORCEONESHOT = libc::EV_FORCEONESHOT,
+        #[cfg(target_os = "dragonfly")]
+        const EV_NODATA    = libc::EV_NODATA,
+        const EV_ONESHOT   = libc::EV_ONESHOT,
+        #[cfg(target_os = "macos")]
+        const EV_OOBAND    = libc::EV_OOBAND,
+        #[cfg(target_os = "macos")]
+        const EV_POLL      = libc::EV_POLL,
+        const EV_RECEIPT   = libc::EV_RECEIPT,
+        const EV_SYSFLAGS  = libc::EV_SYSFLAGS,
     }
 );
 
-#[cfg(target_os = "dragonfly")]
-bitflags!(
-    flags EventFlag: u16 {
-        const EV_ADD       = 0x0001,
-        const EV_DELETE    = 0x0002,
-        const EV_ENABLE    = 0x0004,
-        const EV_DISABLE   = 0x0008,
-        const EV_RECEIPT   = 0x0040,
-        const EV_ONESHOT   = 0x0010,
-        const EV_CLEAR     = 0x0020,
-        const EV_SYSFLAGS  = 0xF000,
-        const EV_NODATA    = 0x1000,
-        const EV_FLAG1     = 0x2000,
-        const EV_EOF       = 0x8000,
-        const EV_ERROR     = 0x4000
-    }
-);
-
-#[cfg(target_os = "netbsd")]
+#[cfg(any(target_os = "netbsd", target_os = "openbsd"))]
 bitflags!(
     flags EventFlag: u32 {
-        const EV_ADD       = 0x0001,
-        const EV_DELETE    = 0x0002,
-        const EV_ENABLE    = 0x0004,
-        const EV_DISABLE   = 0x0008,
-        const EV_ONESHOT   = 0x0010,
-        const EV_CLEAR     = 0x0020,
-        const EV_SYSFLAGS  = 0xF000,
-        const EV_NODATA    = 0x1000,
-        const EV_FLAG1     = 0x2000,
-        const EV_EOF       = 0x8000,
-        const EV_ERROR     = 0x4000
+        const EV_ADD       = libc::EV_ADD,
+        const EV_DELETE    = libc::EV_DELETE,
+        const EV_ENABLE    = libc::EV_ENABLE,
+        const EV_DISABLE   = libc::EV_DISABLE,
+        const EV_ONESHOT   = libc::EV_ONESHOT,
+        const EV_CLEAR     = libc::EV_CLEAR,
+        #[cfg(target_os = "openbsd")]
+        const EV_FLAG1     = libc::EV_FLAG1,
+        #[cfg(target_os = "netbsd")]
+        const EV_RECEIPT   = libc::EV_RECEIPT,
+        const EV_DISPATCH  = libc::EV_DISPATCH,
+        const EV_SYSFLAGS  = libc::EV_SYSFLAGS,
+        const EV_FLAG1     = libc::EV_FLAG1,
+        const EV_EOF       = libc::EV_EOF,
+        const EV_ERROR     = libc::EV_ERROR,
     }
 );
 
-#[cfg(not(any(target_os = "dragonfly", target_os="netbsd")))]
 bitflags!(
     flags FilterFlag: u32 {
-        const NOTE_TRIGGER                         = 0x01000000,
-        const NOTE_FFNOP                           = 0x00000000,
-        const NOTE_FFAND                           = 0x40000000,
-        const NOTE_FFOR                            = 0x80000000,
-        const NOTE_FFCOPY                          = 0xc0000000,
-        const NOTE_FFCTRLMASK                      = 0xc0000000,
-        const NOTE_FFLAGSMASK                      = 0x00ffffff,
-        const NOTE_LOWAT                           = 0x00000001,
-        const NOTE_DELETE                          = 0x00000001,
-        const NOTE_WRITE                           = 0x00000002,
-        const NOTE_EXTEND                          = 0x00000004,
-        const NOTE_ATTRIB                          = 0x00000008,
-        const NOTE_LINK                            = 0x00000010,
-        const NOTE_RENAME                          = 0x00000020,
-        const NOTE_REVOKE                          = 0x00000040,
-        const NOTE_NONE                            = 0x00000080,
-        const NOTE_EXIT                            = 0x80000000,
-        const NOTE_FORK                            = 0x40000000,
-        const NOTE_EXEC                            = 0x20000000,
-        const NOTE_REAP                            = 0x10000000,
-        const NOTE_SIGNAL                          = 0x08000000,
-        const NOTE_EXITSTATUS                      = 0x04000000,
-        const NOTE_RESOURCEEND                     = 0x02000000,
-        const NOTE_APPACTIVE                       = 0x00800000,
-        const NOTE_APPBACKGROUND                   = 0x00400000,
-        const NOTE_APPNONUI                        = 0x00200000,
-        const NOTE_APPINACTIVE                     = 0x00100000,
-        const NOTE_APPALLSTATES                    = 0x00f00000,
-        const NOTE_PDATAMASK                       = 0x000fffff,
-        const NOTE_PCTRLMASK                       = 0xfff00000,
-        const NOTE_EXIT_REPARENTED                 = 0x00080000,
-        const NOTE_VM_PRESSURE                     = 0x80000000,
-        const NOTE_VM_PRESSURE_TERMINATE           = 0x40000000,
-        const NOTE_VM_PRESSURE_SUDDEN_TERMINATE    = 0x20000000,
-        const NOTE_VM_ERROR                        = 0x10000000,
-        const NOTE_SECONDS                         = 0x00000001,
-        const NOTE_USECONDS                        = 0x00000002,
-        const NOTE_NSECONDS                        = 0x00000004,
-        const NOTE_ABSOLUTE                        = 0x00000008,
-        const NOTE_TRACK                           = 0x00000001,
-        const NOTE_TRACKERR                        = 0x00000002,
-        const NOTE_CHILD                           = 0x00000004
+        #[cfg(target_os = "macos")]
+        const NOTE_ABSOLUTE                        = libc::NOTE_ABSOLUTE,
+        #[cfg(target_os = "macos")]
+        const NOTE_APPACTIVE                       = libc::NOTE_APPACTIVE,
+        #[cfg(target_os = "macos")]
+        const NOTE_APPALLSTATES                    = libc::NOTE_APPALLSTATES,
+        #[cfg(target_os = "macos")]
+        const NOTE_APPBACKGROUND                   = libc::NOTE_APPBACKGROUND,
+        #[cfg(target_os = "macos")]
+        const NOTE_APPINACTIVE                     = libc::NOTE_APPINACTIVE,
+        #[cfg(target_os = "macos")]
+        const NOTE_APPNONUI                        = libc::NOTE_APPNONUI,
+        const NOTE_ATTRIB                          = libc::NOTE_ATTRIB,
+        const NOTE_CHILD                           = libc::NOTE_CHILD,
+        #[cfg(target_os = "freebsd")]
+        const NOTE_CLOSE                           = libc::NOTE_CLOSE,
+        #[cfg(target_os = "freebsd")]
+        const NOTE_CLOSE_WRITE                     = libc::NOTE_CLOSE_WRITE,
+        const NOTE_DELETE                          = libc::NOTE_DELETE,
+        #[cfg(target_os = "openbsd")]
+        const NOTE_EOF                             = libc::NOTE_EOF,
+        const NOTE_EXEC                            = libc::NOTE_EXEC,
+        const NOTE_EXIT                            = libc::NOTE_EXIT,
+        #[cfg(target_os = "macos")]
+        const NOTE_EXIT_REPARENTED                 = libc::NOTE_EXIT_REPARENTED,
+        #[cfg(target_os = "macos")]
+        const NOTE_EXITSTATUS                      = libc::NOTE_EXITSTATUS,
+        const NOTE_EXTEND                          = libc::NOTE_EXTEND,
+        #[cfg(any(target_os = "macos",
+                  target_os = "freebsd",
+                  target_os = "dragonfly"))]
+        const NOTE_FFAND                           = libc::NOTE_FFAND,
+        #[cfg(any(target_os = "macos",
+                  target_os = "freebsd",
+                  target_os = "dragonfly"))]
+        const NOTE_FFCOPY                          = libc::NOTE_FFCOPY,
+        #[cfg(any(target_os = "macos",
+                  target_os = "freebsd",
+                  target_os = "dragonfly"))]
+        const NOTE_FFCTRLMASK                      = libc::NOTE_FFCTRLMASK,
+        #[cfg(any(target_os = "macos",
+                  target_os = "freebsd",
+                  target_os = "dragonfly"))]
+        const NOTE_FFLAGSMASK                      = libc::NOTE_FFLAGSMASK,
+        #[cfg(any(target_os = "macos",
+                  target_os = "freebsd",
+                  target_os = "dragonfly"))]
+        const NOTE_FFNOP                           = libc::NOTE_FFNOP,
+        #[cfg(any(target_os = "macos",
+                  target_os = "freebsd",
+                  target_os = "dragonfly"))]
+        const NOTE_FFOR                            = libc::NOTE_FFOR,
+        #[cfg(target_os = "freebsd")]
+        const NOTE_FILE_POLL                       = libc::NOTE_FILE_POLL,
+        const NOTE_FORK                            = libc::NOTE_FORK,
+        const NOTE_LINK                            = libc::NOTE_LINK,
+        const NOTE_LOWAT                           = libc::NOTE_LOWAT,
+        #[cfg(target_os = "freebsd")]
+        const NOTE_MSECONDS                        = libc::NOTE_MSECONDS,
+        #[cfg(target_os = "macos")]
+        const NOTE_NONE                            = libc::NOTE_NONE,
+        #[cfg(any(target_os = "macos", target_os = "freebsd"))]
+        const NOTE_NSECONDS                        = libc::NOTE_NSECONDS,
+        #[cfg(target_os = "dragonfly")]
+        const NOTE_OOB                             = libc::NOTE_OOB,
+        #[cfg(target_os = "freebsd")]
+        const NOTE_OPEN                            = libc::NOTE_OPEN,
+        const NOTE_PCTRLMASK                       = libc::NOTE_PCTRLMASK,
+        const NOTE_PDATAMASK                       = libc::NOTE_PDATAMASK,
+        #[cfg(target_os = "freebsd")]
+        const NOTE_READ                            = libc::NOTE_READ,
+        #[cfg(target_os = "macos")]
+        const NOTE_REAP                            = libc::NOTE_REAP,
+        const NOTE_RENAME                          = libc::NOTE_RENAME,
+        #[cfg(target_os = "macos")]
+        const NOTE_RESOURCEEND                     = libc::NOTE_RESOURCEEND,
+        const NOTE_REVOKE                          = libc::NOTE_REVOKE,
+        #[cfg(any(target_os = "macos", target_os = "freebsd"))]
+        const NOTE_SECONDS                         = libc::NOTE_SECONDS,
+        #[cfg(target_os = "macos")]
+        const NOTE_SIGNAL                          = libc::NOTE_SIGNAL,
+        const NOTE_TRACK                           = libc::NOTE_TRACK,
+        const NOTE_TRACKERR                        = libc::NOTE_TRACKERR,
+        #[cfg(any(target_os = "macos",
+                  target_os = "freebsd",
+                  target_os = "dragonfly"))]
+        const NOTE_TRIGGER                         = libc::NOTE_TRIGGER,
+        #[cfg(target_os = "openbsd")]
+        const NOTE_TRUNCATE                        = libc::NOTE_TRUNCATE,
+        #[cfg(any(target_os = "macos", target_os = "freebsd"))]
+        const NOTE_USECONDS                        = libc::NOTE_USECONDS,
+        #[cfg(target_os = "macos")]
+        const NOTE_VM_ERROR                        = libc::NOTE_VM_ERROR,
+        #[cfg(target_os = "macos")]
+        const NOTE_VM_PRESSURE                     = libc::NOTE_VM_PRESSURE,
+        #[cfg(target_os = "macos")]
+        const NOTE_VM_PRESSURE_SUDDEN_TERMINATE    = libc::NOTE_VM_PRESSURE_SUDDEN_TERMINATE,
+        #[cfg(target_os = "macos")]
+        const NOTE_VM_PRESSURE_TERMINATE           = libc::NOTE_VM_PRESSURE_TERMINATE,
+        const NOTE_WRITE                           = libc::NOTE_WRITE,
     }
 );
-
-#[cfg(target_os = "dragonfly")]
-bitflags!(
-    flags FilterFlag: u32 {
-        const NOTE_TRIGGER                         = 0x01000000,
-        const NOTE_FFNOP                           = 0x00000000,
-        const NOTE_FFAND                           = 0x40000000,
-        const NOTE_FFOR                            = 0x80000000,
-        const NOTE_FFCOPY                          = 0xc0000000,
-        const NOTE_FFCTRLMASK                      = 0xc0000000,
-        const NOTE_FFLAGSMASK                      = 0x00ffffff,
-        const NOTE_LOWAT                           = 0x00000001,
-        const NOTE_DELETE                          = 0x00000001,
-        const NOTE_WRITE                           = 0x00000002,
-        const NOTE_EXTEND                          = 0x00000004,
-        const NOTE_ATTRIB                          = 0x00000008,
-        const NOTE_LINK                            = 0x00000010,
-        const NOTE_RENAME                          = 0x00000020,
-        const NOTE_REVOKE                          = 0x00000040,
-        const NOTE_EXIT                            = 0x80000000,
-        const NOTE_FORK                            = 0x40000000,
-        const NOTE_EXEC                            = 0x20000000,
-        const NOTE_SIGNAL                          = 0x08000000,
-        const NOTE_PDATAMASK                       = 0x000fffff,
-        const NOTE_PCTRLMASK                       = 0xf0000000, // NOTE: FreeBSD uses 0xfff00000,
-        const NOTE_TRACK                           = 0x00000001,
-        const NOTE_TRACKERR                        = 0x00000002,
-        const NOTE_CHILD                           = 0x00000004
-    }
-);
-
-#[cfg(target_os = "netbsd")]
-bitflags!(
-    flags FilterFlag: u32 {
-        const NOTE_LOWAT                           = 0x00000001,
-        const NOTE_DELETE                          = 0x00000001,
-        const NOTE_WRITE                           = 0x00000002,
-        const NOTE_EXTEND                          = 0x00000004,
-        const NOTE_ATTRIB                          = 0x00000008,
-        const NOTE_LINK                            = 0x00000010,
-        const NOTE_RENAME                          = 0x00000020,
-        const NOTE_REVOKE                          = 0x00000040,
-        const NOTE_EXIT                            = 0x80000000,
-        const NOTE_FORK                            = 0x40000000,
-        const NOTE_EXEC                            = 0x20000000,
-        const NOTE_SIGNAL                          = 0x08000000,
-        const NOTE_PDATAMASK                       = 0x000fffff,
-        const NOTE_PCTRLMASK                       = 0xf0000000, // NOTE: FreeBSD uses 0xfff00000,
-        const NOTE_TRACK                           = 0x00000001,
-        const NOTE_TRACKERR                        = 0x00000002,
-        const NOTE_CHILD                           = 0x00000004
-    }
-);
-
-#[cfg(not(any(target_os = "dragonfly", target_os = "netbsd")))]
-pub const EV_POLL: EventFlag = EV_FLAG0;
-
-#[cfg(not(any(target_os = "dragonfly", target_os = "netbsd")))]
-pub const EV_OOBAND: EventFlag = EV_FLAG1;
 
 pub fn kqueue() -> Result<RawFd> {
-    let res = unsafe { ffi::kqueue() };
+    let res = unsafe { libc::kqueue() };
 
     Errno::result(res)
 }
@@ -293,18 +252,20 @@ pub fn kevent(kq: RawFd,
     kevent_ts(kq, changelist, eventlist, Some(timeout))
 }
 
-#[cfg(not(target_os = "netbsd"))]
+#[cfg(any(target_os = "macos",
+          target_os = "freebsd",
+          target_os = "dragonfly"))]
 pub fn kevent_ts(kq: RawFd,
               changelist: &[KEvent],
               eventlist: &mut [KEvent],
               timeout_opt: Option<timespec>) -> Result<usize> {
 
     let res = unsafe {
-        ffi::kevent(
+        libc::kevent(
             kq,
-            changelist.as_ptr(),
+            changelist.as_ptr() as *const libc::kevent,
             changelist.len() as c_int,
-            eventlist.as_mut_ptr(),
+            eventlist.as_mut_ptr() as *mut libc::kevent,
             eventlist.len() as c_int,
             if let Some(ref timeout) = timeout_opt {timeout as *const timespec} else {ptr::null()})
     };
@@ -312,18 +273,18 @@ pub fn kevent_ts(kq: RawFd,
     Errno::result(res).map(|r| r as usize)
 }
 
-#[cfg(target_os = "netbsd")]
+#[cfg(any(target_os = "netbsd", target_os = "openbsd"))]
 pub fn kevent_ts(kq: RawFd,
               changelist: &[KEvent],
               eventlist: &mut [KEvent],
               timeout_opt: Option<timespec>) -> Result<usize> {
 
     let res = unsafe {
-        ffi::kevent(
+        libc::kevent(
             kq,
-            changelist.as_ptr(),
+            changelist.as_ptr() as *const libc::kevent,
             changelist.len() as size_t,
-            eventlist.as_mut_ptr(),
+            eventlist.as_mut_ptr() as *mut libc::kevent,
             eventlist.len() as size_t,
             if let Some(ref timeout) = timeout_opt {timeout as *const timespec} else {ptr::null()})
     };
@@ -331,31 +292,13 @@ pub fn kevent_ts(kq: RawFd,
     Errno::result(res).map(|r| r as usize)
 }
 
-#[cfg(not(target_os = "netbsd"))]
 #[inline]
 pub fn ev_set(ev: &mut KEvent,
               ident: usize,
               filter: EventFilter,
               flags: EventFlag,
               fflags: FilterFlag,
-              udata: usize) {
-
-    ev.ident  = ident as uintptr_t;
-    ev.filter = filter;
-    ev.flags  = flags;
-    ev.fflags = fflags;
-    ev.data   = 0;
-    ev.udata  = udata;
-}
-
-#[cfg(target_os = "netbsd")]
-#[inline]
-pub fn ev_set(ev: &mut KEvent,
-              ident: usize,
-              filter: EventFilter,
-              flags: EventFlag,
-              fflags: FilterFlag,
-              udata: isize) {
+              udata: uintptr_t) {
 
     ev.ident  = ident as uintptr_t;
     ev.filter = filter;
