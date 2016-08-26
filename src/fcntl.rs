@@ -46,6 +46,8 @@ pub enum FcntlArg<'a> {
     F_ADD_SEALS(SealFlag),
     #[cfg(target_os = "linux")]
     F_GET_SEALS,
+    #[cfg(any(target_os = "macos", target_os = "ios"))]
+    F_FULLFSYNC,
 
     // TODO: Rest of flags
 }
@@ -69,6 +71,8 @@ pub fn fcntl(fd: RawFd, arg: FcntlArg) -> Result<c_int> {
             F_ADD_SEALS(flag) => libc::fcntl(fd, ffi::F_ADD_SEALS, flag.bits()),
             #[cfg(target_os = "linux")]
             F_GET_SEALS => libc::fcntl(fd, ffi::F_GET_SEALS),
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
+            F_FULLFSYNC => libc::fcntl(fd, libc::F_FULLFSYNC),
             #[cfg(any(target_os = "linux", target_os = "android"))]
             _ => unimplemented!()
         }
