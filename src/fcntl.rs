@@ -330,3 +330,36 @@ mod consts {
         }
     );
 }
+
+#[cfg(target_os = "solaris")]
+mod consts {
+    use libc::c_int;
+
+    bitflags!(
+        flags OFlag: c_int {
+            const O_ACCMODE   = 0x00600003,
+            const O_RDONLY    = 0000000000,
+            const O_WRONLY    = 0x00000001,
+            const O_RDWR      = 0x00000002,
+            const O_NONBLOCK  = 0x00000080,
+            const O_APPEND    = 0x00000008,
+            const O_SYNC      = 0x00000010,
+            const O_NOFOLLOW  = 0x00020000,
+            const O_CREAT     = 0x00000100,
+            const O_TRUNC     = 0x00000200,
+            const O_EXCL      = 0x00000400,
+            const O_NOCTTY    = 0x00000800,
+            const O_DSYNC     = 0x00000040,
+            const O_RSYNC     = 0x00008000,
+            const O_CLOEXEC   = 0x00800000,
+            const O_SEARCH    = 0x00200000,
+            const O_NDELAY    = 0x04,
+        }
+    );
+
+    bitflags!(
+        flags FdFlag: c_int {
+            const FD_CLOEXEC = 1
+        }
+    );
+}

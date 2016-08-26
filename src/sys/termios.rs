@@ -11,7 +11,7 @@ pub use self::ffi::consts::FlowArg::*;
 mod ffi {
     pub use self::consts::*;
 
-    #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "dragonfly", target_os = "openbsd", target_os = "netbsd", target_os = "linux"))]
+    #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "dragonfly", target_os = "openbsd", target_os = "netbsd", target_os = "linux", target_os = "solaris"))]
     mod non_android {
         use super::consts::*;
         use libc::c_int;
@@ -35,7 +35,7 @@ mod ffi {
         }
     }
 
-    #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "dragonfly", target_os = "openbsd", target_os = "netbsd", target_os = "linux"))]
+    #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "dragonfly", target_os = "openbsd", target_os = "netbsd", target_os = "linux", target_os = "solaris"))]
     pub use self::non_android::*;
 
     // On Android before 5.0, Bionic directly inline these to ioctl() calls.
@@ -401,6 +401,163 @@ mod ffi {
             TCSANOW   = 0,
             TCSADRAIN = 1,
             TCSAFLUSH = 2,
+        }
+
+        // XXX: We're using `repr(C)` because `c_int` doesn't work here.
+        // See https://github.com/rust-lang/rust/issues/10374.
+        #[derive(Clone, Copy)]
+        #[repr(C)]
+        pub enum FlushArg {
+            TCIFLUSH  = 0,
+            TCOFLUSH  = 1,
+            TCIOFLUSH = 2,
+        }
+
+        // XXX: We're using `repr(C)` because `c_int` doesn't work here.
+        // See https://github.com/rust-lang/rust/issues/10374.
+        #[derive(Clone, Copy)]
+        #[repr(C)]
+        pub enum FlowArg {
+            TCOOFF = 0,
+            TCOON  = 1,
+            TCIOFF = 2,
+            TCION  = 3,
+        }
+    }
+
+    #[cfg(target_os = "solaris")]
+    pub mod consts {
+        use libc::{c_int, c_uchar, c_uint};
+
+        pub type tcflag_t = c_uint;
+        pub type cc_t = c_uchar;
+        pub type speed_t = c_uint;
+
+        #[repr(C)]
+        #[derive(Clone, Copy)]
+        pub struct Termios {
+            pub c_iflag: InputFlags,
+            pub c_oflag: OutputFlags,
+            pub c_cflag: ControlFlags,
+            pub c_lflag: LocalFlags,
+            pub c_cc: [cc_t; NCCS],
+        }
+
+        pub const VEOF: usize     = 4;
+        pub const VEOL: usize     = 5;
+        pub const VEOL2: usize    = 6;
+        pub const VERASE: usize   = 2;
+        pub const VWERASE: usize  = 14;
+        pub const VKILL: usize    = 3;
+        pub const VREPRINT: usize = 12;
+        pub const VINTR: usize    = 0;
+        pub const VQUIT: usize    = 1;
+        pub const VSUSP: usize    = 10;
+        pub const VDSUSP: usize   = 11;
+        pub const VSTART: usize   = 8;
+        pub const VSTOP: usize    = 9;
+        pub const VLNEXT: usize   = 15;
+        pub const VDISCARD: usize = 13;
+        pub const VMIN: usize     = 4;
+        pub const VTIME: usize    = 5;
+        pub const VSTATUS: usize  = 16;
+        pub const NCCS: usize     = 19;
+
+        bitflags! {
+            flags InputFlags: tcflag_t {
+                const IGNBRK  = 0x00000001,
+                const BRKINT  = 0x00000002,
+                const IGNPAR  = 0x00000004,
+                const PARMRK  = 0x00000008,
+                const INPCK   = 0x00000010,
+                const ISTRIP  = 0x00000020,
+                const INLCR   = 0x00000040,
+                const IGNCR   = 0x00000080,
+                const ICRNL   = 0x00000100,
+                const IXON    = 0x00000400,
+                const IXOFF   = 0x00001000,
+                const IXANY   = 0x00000800,
+                const IMAXBEL = 0x00002000,
+            }
+        }
+
+        bitflags! {
+            flags OutputFlags: tcflag_t {
+                const OPOST  = 0x00000001,
+                const ONLCR  = 0x00000004,
+                const OXTABS = 0x00001800,
+            }
+        }
+
+        bitflags! {
+            flags ControlFlags: tcflag_t {
+                const CSIZE      = 0x00000030,
+                const CS5        = 0x00000000,
+                const CS6        = 0x00000010,
+                const CS7        = 0x00000020,
+                const CS8        = 0x00000030,
+                const CSTOPB     = 0x00000040,
+                const CREAD      = 0x00000080,
+                const PARENB     = 0x00000100,
+                const PARODD     = 0x00000200,
+                const HUPCL      = 0x00000400,
+                const CLOCAL     = 0x00000800,
+                const CCTS_OFLOW = 0x80000000,
+                const CRTSCTS    = 0x80000000,
+                const CRTS_IFLOW = 0x40000000,
+            }
+        }
+
+        bitflags! {
+            flags LocalFlags: tcflag_t {
+                const ECHOKE     = 0x00000800,
+                const ECHOE      = 0x00000010,
+                const ECHOK      = 0x00000020,
+                const ECHO       = 0x00000008,
+                const ECHONL     = 0x00000040,
+                const ECHOPRT    = 0x00000400,
+                const ECHOCTL    = 0x00000200,
+                const ISIG       = 0x00000001,
+                const ICANON     = 0x00000002,
+                // const ALTWERASE  = 0x00000200,
+                const IEXTEN     = 0x00008000,
+                // const EXTPROC    = 0x00000800,
+                const TOSTOP     = 0x00000100,
+                const FLUSHO     = 0x00002000,
+                // const NOKERNINFO = 0x02000000,
+                const PENDIN     = 0x00004000,
+                const NOFLSH     = 0x00000080,
+            }
+        }
+
+        pub const NL0: c_int  = 0x00000000;
+        pub const NL1: c_int  = 0x00000100;
+        // pub const NL2: c_int  = 0x00000200;
+        // pub const NL3: c_int  = 0x00000300;
+        pub const TAB0: c_int = 0x00000000;
+        pub const TAB1: c_int = 0x00000400;
+        pub const TAB2: c_int = 0x00001000;
+        pub const TAB3: c_int = 0x00001800;
+        pub const CR0: c_int  = 0x00000000;
+        pub const CR1: c_int  = 0x00000200;
+        pub const CR2: c_int  = 0x00000400;
+        pub const CR3: c_int  = 0x00000600;
+        pub const FF0: c_int  = 0x00000000;
+        pub const FF1: c_int  = 0x00008000;
+        pub const BS0: c_int  = 0x00000000;
+        pub const BS1: c_int  = 0x00002000;
+        pub const VT0: c_int  = 0x00000000;
+        pub const VT1: c_int  = 0x00004000;
+
+        // XXX: We're using `repr(C)` because `c_int` doesn't work here.
+        // See https://github.com/rust-lang/rust/issues/10374.
+        #[derive(Clone, Copy)]
+        #[repr(C)]
+        pub enum SetArg {
+            TCSANOW   = 0x0000540e,
+            TCSADRAIN = 0x0000540f,
+            TCSAFLUSH = 0x00005410,
+            // TCSASOFT  = 16,
         }
 
         // XXX: We're using `repr(C)` because `c_int` doesn't work here.

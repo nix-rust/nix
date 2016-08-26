@@ -175,6 +175,50 @@ mod consts {
     pub const MAP_FAILED: isize                 = -1;
 }
 
+#[cfg(target_os = "solaris")]
+mod consts {
+    use libc::{self, c_int};
+
+    bitflags!{
+        flags MapFlags: c_int {
+            const MAP_SHARED       = libc::MAP_SHARED,
+            const MAP_PRIVATE      = libc::MAP_PRIVATE,
+            const MAP_FIXED        = libc::MAP_FIXED,
+            const MAP_RENAME       = libc::MAP_RENAME,
+            const MAP_NORESERVE    = libc::MAP_NORESERVE,
+            const MAP_ANON         = libc::MAP_ANON,
+            const MAP_ANONYMOUS    = libc::MAP_ANON,
+            const MAP_ALIGN        = libc::MAP_ALIGN,
+            const MAP_TEXT         = libc::MAP_TEXT,
+            const MAP_INITDATA     = libc::MAP_INITDATA,
+        }
+    }
+
+    pub type MmapAdvise = c_int;
+
+    pub const MADV_NORMAL     : MmapAdvise      = 0; /* No further special treatment.  */
+    pub const MADV_RANDOM     : MmapAdvise      = 1; /* Expect random page references.  */
+    pub const MADV_SEQUENTIAL : MmapAdvise      = 2; /* Expect sequential page references.  */
+    pub const MADV_WILLNEED   : MmapAdvise      = 3; /* Will need these pages.  */
+    pub const MADV_DONTNEED   : MmapAdvise      = 4; /* Don't need these pages.  */
+    pub const MADV_FREE       : MmapAdvise      = 5; /* Contents can be freed. */
+    pub const MADV_ACCESS_DEFAULT  : MmapAdvise = 6; /* Default access. */
+    pub const MADV_ACCESS_LWP      : MmapAdvise = 7; /* Next LWP to access heavily. */
+    pub const MADV_ACCESS_MANY     : MmapAdvise = 8; /* Many processes to access heavily. */
+    pub const MADV_PURGE       : MmapAdvise     = 9; /* Contents will be purged. */
+
+    bitflags!{
+        flags MsFlags: c_int {
+            const MS_ASYNC      = libc::MS_ASYNC, /* [MF|SIO] return immediately */
+            const MS_INVALIDATE = libc::MS_INVALIDATE, /* [MF|SIO] invalidate all cached data */
+            const MS_SYNC       = libc::MS_SYNC, /* [MF|SIO] msync synchronously */
+            const MS_INVALCURPROC = libc::MS_INVALCURPROC, /* [MF|SIO] invalidate cache for curproc only */
+        }
+    }
+
+    pub const MAP_FAILED: isize                 = -1;
+}
+
 mod ffi {
     use libc::{c_void, size_t, c_int, c_char, mode_t};
 

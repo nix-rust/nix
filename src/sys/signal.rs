@@ -87,7 +87,7 @@ const SIGNALS: [Signal; 31] = [
     SIGIO,
     SIGPWR,
     SIGSYS];
-#[cfg(not(any(target_os = "linux", target_os = "android", target_os = "emscripten")))]
+#[cfg(not(any(target_os = "linux", target_os = "android", target_os = "emscripten", target_os = "solaris")))]
 const SIGNALS: [Signal; 31] = [
     SIGHUP,
     SIGINT,
@@ -120,6 +120,37 @@ const SIGNALS: [Signal; 31] = [
     SIGSYS,
     SIGEMT,
     SIGINFO];
+#[cfg(target_os = "solaris")]
+const SIGNALS: [Signal; 29] = [
+    SIGHUP,
+    SIGINT,
+    SIGQUIT,
+    SIGILL,
+    SIGTRAP,
+    SIGABRT,
+    SIGBUS,
+    SIGFPE,
+    SIGKILL,
+    SIGUSR1,
+    SIGSEGV,
+    SIGUSR2,
+    SIGPIPE,
+    SIGALRM,
+    SIGTERM,
+    SIGCHLD,
+    SIGCONT,
+    SIGSTOP,
+    SIGTSTP,
+    SIGTTIN,
+    SIGTTOU,
+    SIGURG,
+    SIGXCPU,
+    SIGXFSZ,
+    SIGVTALRM,
+    SIGPROF,
+    SIGWINCH,
+    SIGIO,
+    SIGSYS];
 
 pub const NSIG: libc::c_int = 32;
 
