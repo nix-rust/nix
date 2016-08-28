@@ -17,6 +17,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Added new module `::nix::sys::reboot` with enumeration `RebootMode` and
   functions `reboot` and `set_cad_enabled`. Currently for _linux_ only.
   ([#386](https://github.com/nix-rust/nix/pull/386))
+- `FdSet` in `::nix::sys::select` now also implements `Clone`.
+  ([#405](https://github.com/nix-rust/nix/pull/405))
+- Added `F_FULLFSYNC` to `FcntlArg` in `::nix::fcntl` for _apple_ targets.
+  ([#407](https://github.com/nix-rust/nix/pull/407))
 
 ### Changed
 - Replaced the reexported integer constants for signals by the enumeration
