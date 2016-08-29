@@ -21,6 +21,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#405](https://github.com/nix-rust/nix/pull/405))
 - Added `F_FULLFSYNC` to `FcntlArg` in `::nix::fcntl` for _apple_ targets.
   ([#407](https://github.com/nix-rust/nix/pull/407))
+- Added `CpuSet::unset` in `::nix::sched`.
+  ([#402](https://github.com/nix-rust/nix/pull/402))
 
 ### Changed
 - Replaced the reexported integer constants for signals by the enumeration
@@ -28,10 +30,16 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#362](https://github.com/nix-rust/nix/pull/362))
 - Renamed `EventFdFlag` to `EfdFlags` in `::nix::sys::eventfd`.
   ([#383](https://github.com/nix-rust/nix/pull/383))
+- Changed the result types of `CpuSet::is_set` and `CpuSet::set` in
+  `::nix::sched` to `Result<bool>` and `Result<()>`, respectively. They now
+  return `EINVAL`, if an invalid argument for the `field` parameter is passed.
+  ([#402](https://github.com/nix-rust/nix/pull/402))
 
 ### Removed
 - Type alias `SigNum` from `::nix::sys::signal`.
   ([#362](https://github.com/nix-rust/nix/pull/362))
+- Type alias `CpuMask` from `::nix::shed`.
+  ([#402](https://github.com/nix-rust/nix/pull/402))
 
 ### Fixed
 - Fixed the build problem for NetBSD (Note, that we currently do not support
