@@ -23,6 +23,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#407](https://github.com/nix-rust/nix/pull/407))
 - Added `CpuSet::unset` in `::nix::sched`.
   ([#402](https://github.com/nix-rust/nix/pull/402))
+- Added constructor method `new()` to `PollFd` in `::nix::poll`, in order to
+  allow creation of objects, after removing public access to members.
+  ([#399](https://github.com/nix-rust/nix/pull/399))
+- Added method `revents()` to `PollFd` in `::nix::poll`, in order to provide
+  read access to formerly public member `revents`.
+  ([#399](https://github.com/nix-rust/nix/pull/399))
 
 ### Changed
 - Replaced the reexported integer constants for signals by the enumeration
@@ -40,6 +46,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#362](https://github.com/nix-rust/nix/pull/362))
 - Type alias `CpuMask` from `::nix::shed`.
   ([#402](https://github.com/nix-rust/nix/pull/402))
+- Removed public fields from `PollFd` in `::nix::poll`. (See also added method
+  `revents()`.
+  ([#399](https://github.com/nix-rust/nix/pull/399))
 
 ### Fixed
 - Fixed the build problem for NetBSD (Note, that we currently do not support
