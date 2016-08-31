@@ -31,6 +31,18 @@ pub enum EpollOp {
     EpollCtlMod = 3
 }
 
+#[derive(Clone, Copy)]
+#[repr(C)]
+pub struct EpollEvent {
+    event: libc::epoll_event,
+}
+
+impl EpollEvent {
+    fn new(events: EpollEventKind, data: u64) -> EpollEvent {
+        EpollEvent { event: libc::epoll_event { events: events.bits(), u64: data } }
+    }
+}
+
 #[inline]
 pub fn epoll_create() -> Result<RawFd> {
     let res = unsafe { libc::epoll_create(1024) };
@@ -46,16 +58,16 @@ pub fn epoll_create1(flags: c_int) -> Result<RawFd> {
 }
 
 #[inline]
-pub fn epoll_ctl(epfd: RawFd, op: EpollOp, fd: RawFd, event: &mut libc::epoll_event) -> Result<()> {
-    let res = unsafe { libc::epoll_ctl(epfd, op as c_int, fd, event as *mut libc::epoll_event) };
+pub fn epoll_ctl(epfd: RawFd, op: EpollOp, fd: RawFd, event: &mut EpollEvent) -> Result<()> {
+    let res = unsafe { libc::epoll_ctl(epfd, op as c_int, fd, &mut event.event) };
 
     Errno::result(res).map(drop)
 }
 
 #[inline]
-pub fn epoll_wait(epfd: RawFd, events: &mut [libc::epoll_event], timeout_ms: isize) -> Result<usize> {
+pub fn epoll_wait(epfd: RawFd, events: &mut [EpollEvent], timeout_ms: isize) -> Result<usize> {
     let res = unsafe {
-        libc::epoll_wait(epfd, events.as_mut_ptr(), events.len() as c_int, timeout_ms as c_int)
+        libc::epoll_wait(epfd, events.as_mut_ptr() as *mut libc::epoll_event, events.len() as c_int, timeout_ms as c_int)
     };
 
     Errno::result(res).map(|r| r as usize)
