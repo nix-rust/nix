@@ -5,8 +5,10 @@ use fcntl::{fcntl, OFlag, O_NONBLOCK, O_CLOEXEC, FD_CLOEXEC};
 use fcntl::FcntlArg::{F_SETFD, F_SETFL};
 use libc::{self, c_char, c_void, c_int, c_uint, size_t, pid_t, off_t, uid_t, gid_t};
 use std::mem;
-use std::ffi::CString;
+use std::ffi::{CString, OsStr};
+use std::os::unix::ffi::OsStrExt;
 use std::os::unix::io::RawFd;
+use std::path::{PathBuf, Path};
 use void::Void;
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
@@ -412,6 +414,26 @@ pub fn pause() -> Result<()> {
 //   http://pubs.opengroup.org/onlinepubs/009695399/functions/sleep.html#tag_03_705_05
 pub fn sleep(seconds: libc::c_uint) -> c_uint {
     unsafe { libc::sleep(seconds) }
+}
+
+#[inline]
+pub fn mkstemp<P: ?Sized + NixPath>(template: &P) -> Result<(RawFd, PathBuf)> {
+    let res = template.with_nix_path(|path| {
+        let owned_path = path.to_owned();
+        let path_ptr = owned_path.into_raw();
+        unsafe {
+            (libc::mkstemp(path_ptr), CString::from_raw(path_ptr))
+        }
+    });
+    match res {
+        Ok((fd, pathname)) => {
+            try!(Errno::result(fd));
+            Ok((fd, Path::new(OsStr::from_bytes(pathname.as_bytes())).to_owned()))
+        }
+        Err(e) => {
+            Err(e)
+        }
+    }
 }
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
