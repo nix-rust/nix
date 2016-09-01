@@ -134,6 +134,11 @@ mod platform;
 #[macro_use]
 mod platform;
 
+#[cfg(target_os = "solaris")]
+#[path = "platform/solaris.rs"]
+#[macro_use]
+mod platform;
+
 pub use self::platform::*;
 
 // liblibc has the wrong decl for linux :| hack until #26809 lands.

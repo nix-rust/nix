@@ -323,6 +323,94 @@ mod os {
     pub const SHUT_RDWR: c_int = 2;
 }
 
+#[cfg(target_os = "solaris")]
+mod os {
+    use libc::{self, c_int, uint8_t};
+
+    pub const AF_UNIX: c_int = 1;
+    pub const AF_LOCAL: c_int = AF_UNIX;
+    pub const AF_INET: c_int  = 2;
+    pub const AF_INET6: c_int = 26;
+
+    pub const SOCK_STREAM: c_int = 2;
+    pub const SOCK_DGRAM: c_int = 1;
+    pub const SOCK_SEQPACKET: c_int = 6;
+    pub const SOCK_RAW: c_int = 4;
+    pub const SOCK_RDM: c_int = 5;
+
+    pub const SOL_SOCKET: c_int = 0xffff;
+    pub const IPPROTO_IP: c_int = 0;
+    pub const IPPROTO_IPV6: c_int = 41;
+    pub const IPPROTO_TCP: c_int = 6;
+    pub const IPPROTO_UDP: c_int = 17;
+
+    pub const SO_ACCEPTCONN: c_int          = 0x0002;
+    pub const SO_BROADCAST: c_int           = 0x0020;
+    pub const SO_DEBUG: c_int               = 0x0001;
+    pub const SO_ERROR: c_int               = 0x1007;
+    pub const SO_DONTROUTE: c_int           = 0x0010;
+    pub const SO_KEEPALIVE: c_int           = 0x0008;
+    pub const SO_LINGER: c_int              = 0x0080;
+    pub const SO_OOBINLINE: c_int           = 0x0100;
+    pub const SO_RCVBUF: c_int              = 0x1002;
+    pub const SO_RCVLOWAT: c_int            = 0x1004;
+    pub const SO_SNDLOWAT: c_int            = 0x1003;
+    pub const SO_RCVTIMEO: c_int            = 0x1006;
+    pub const SO_SNDTIMEO: c_int            = 0x1005;
+    pub const SO_REUSEADDR: c_int           = 0x0004;
+    pub const SO_SNDBUF: c_int              = 0x1001;
+    pub const SO_TIMESTAMP: c_int           = 0x1013;
+    pub const SO_TYPE: c_int                = 0x1008;
+    // FIXME: these values isn't supported by Solaris
+    // http://stackoverflow.com/a/14388707/168853
+    // pub const SO_NOSIGPIPE: c_int           = 0x0800;
+    // pub const SO_REUSEPORT: c_int           = 0x0200;
+
+    // Socket options for TCP sockets
+    pub const TCP_NODELAY: c_int = 1;
+    pub const TCP_MAXSEG: c_int = 2;
+    pub const TCP_KEEPIDLE: c_int = 0x22;
+
+    // Socket options for the IP layer of the socket
+    pub const IP_MULTICAST_IF: c_int = 0x10;
+
+    pub type IpMulticastTtl = uint8_t;
+
+    pub const IP_MULTICAST_TTL: c_int = 0x11;
+    pub const IP_MULTICAST_LOOP: c_int = 0x12;
+    pub const IP_ADD_MEMBERSHIP: c_int = 0x13;
+    pub const IP_DROP_MEMBERSHIP: c_int = 0x14;
+    pub const IPV6_JOIN_GROUP: c_int = 0x9;
+    pub const IPV6_LEAVE_GROUP: c_int = 0xa;
+
+    pub type InAddrT = u32;
+
+    // Declarations of special addresses
+    pub const INADDR_ANY: InAddrT = 0;
+    pub const INADDR_NONE: InAddrT = 0xffffffff;
+    pub const INADDR_BROADCAST: InAddrT = 0xffffffff;
+
+    // Flags for send/recv and their relatives
+    bitflags!{
+        flags MsgFlags : libc::c_int {
+            const MSG_OOB      = 0x01,
+            const MSG_PEEK     = 0x02,
+            const MSG_EOR      = 0x08,
+            const MSG_CTRUNC   = 0x10,
+            const MSG_TRUNC    = 0x20,
+            const MSG_DONTWAIT = 0x80,
+        }
+    }
+
+    // shutdown flags
+    pub const SHUT_RD: c_int   = 0;
+    pub const SHUT_WR: c_int   = 1;
+    pub const SHUT_RDWR: c_int = 2;
+
+    // Ancillary message types
+    pub const SCM_RIGHTS: c_int = 0x1010;
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -379,7 +467,6 @@ mod test {
             SO_RCVTIMEO,
             SO_SNDTIMEO,
             SO_REUSEADDR,
-            // SO_REUSEPORT,
             SO_SNDBUF,
             SO_TIMESTAMP,
             SO_TYPE,
@@ -403,8 +490,16 @@ mod test {
             SHUT_WR,
             SHUT_RDWR
             );
+    }
 
-
+    #[cfg(not(target_os = "solaris"))]
+    #[test]
+    pub fn test_reuse_port_const() {
+        /*
+        check_const!(
+            SO_REUSEPORT
+            );
+        */
     }
 
     #[cfg(target_os = "linux")]
