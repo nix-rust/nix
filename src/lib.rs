@@ -40,7 +40,7 @@ pub mod fcntl;
 #[cfg(any(target_os = "linux", target_os = "android"))]
 pub mod mount;
 
-#[cfg(any(target_os = "linux"))]
+#[cfg(target_os = "linux")]
 pub mod mqueue;
 
 #[cfg(any(target_os = "linux", target_os = "macos"))]

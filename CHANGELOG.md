@@ -40,6 +40,18 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   `::nix::sched` to `Result<bool>` and `Result<()>`, respectively. They now
   return `EINVAL`, if an invalid argument for the `field` parameter is passed.
   ([#402](https://github.com/nix-rust/nix/pull/402))
+- `MqAttr` in `::nix::mqueue` is now an opaque proxy for `::libc::mq_attr`,
+  which has the same structure as the old `MqAttr`. The field `mq_flags` of
+  `::libc::mq_attr` is readable using the new method `flags()` of `MqAttr`.
+  `MqAttr` also no longer implements `Debug`.
+  ([#0](https://github.com/nix-rust/nix/pull/0))
+- The parameter `msq_prio` of `mq_receive` with type `u32` in `::nix::mqueue`
+  was replaced by a parameter named `msg_prio` with type `&mut u32`, so that
+  the message priority can be obtained by the caller.
+  ([#0](https://github.com/nix-rust/nix/pull/0))
+- The type alias `MQd` in `::nix::queue` was replaced by the type alias
+  `libc::mqd_t`, both of which are aliases for the same type.
+  ([#0](https://github.com/nix-rust/nix/pull/0))
 
 ### Removed
 - Type alias `SigNum` from `::nix::sys::signal`.
