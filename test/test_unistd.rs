@@ -120,6 +120,11 @@ macro_rules! execve_test_factory(
 );
 
 #[test]
+fn test_getcwd() {
+  println!("{}", getcwd().unwrap().display());
+}
+
+#[test]
 fn test_lseek() {
     const CONTENTS: &'static [u8] = b"abcdef123456";
     let mut tmp = tempfile().unwrap();

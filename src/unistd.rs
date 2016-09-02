@@ -5,9 +5,10 @@ use fcntl::{fcntl, OFlag, O_NONBLOCK, O_CLOEXEC, FD_CLOEXEC};
 use fcntl::FcntlArg::{F_SETFD, F_SETFL};
 use libc::{self, c_char, c_void, c_int, c_uint, size_t, pid_t, off_t, uid_t, gid_t};
 use std::mem;
-use std::ffi::CString;
+use std::ffi::{CString,CStr};
 use std::os::unix::io::RawFd;
 use void::Void;
+use std::path::PathBuf;
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 pub use self::linux::*;
@@ -109,6 +110,45 @@ pub fn chdir<P: ?Sized + NixPath>(path: &P) -> Result<()> {
     }));
 
     Errno::result(res).map(drop)
+}
+
+// #[inline]
+// pub fn mkdir<P: ?Sized + NixPath>(path: &P) -> Result<()> {
+//     Errno::result(0)
+// }
+
+#[inline]
+pub fn getcwd() -> Result<PathBuf> {
+    let mut buf = Vec::with_capacity(512);
+    loop {
+        unsafe {
+            let ptr = buf.as_mut_ptr() as *mut libc::c_char;
+
+            // The buffer must be large enough to store the absolute pathname plus
+            // a terminating null byte, or else null is returned.
+            // To safely handle this we start with a reasonable size (512 bytes)
+            // and double the buffer size upon every error
+            if !libc::getcwd(ptr, buf.capacity()).is_null() {
+                let len = CStr::from_ptr(ptr).to_bytes().len();
+                buf.set_len(len);
+                buf.shrink_to_fit();
+                let s = try!(CString::new(buf).map_err(|_| Error::Sys(Errno::EILSEQ)));
+                let s = try!(s.into_string().map_err(|_| Error::Sys(Errno::EILSEQ)));
+                return Ok(PathBuf::from(&s));
+            } else {
+                let error = Errno::last();
+                if error == Errno::ERANGE {
+                    return Err(Error::Sys(error));
+                }                
+            }
+
+            // Trigger the internal buffer resizing logic of `Vec` by requiring
+            // more space than the current capacity.
+            let cap = buf.capacity();
+            buf.set_len(cap);
+            buf.reserve(1);
+        }
+    }    
 }
 
 #[inline]
