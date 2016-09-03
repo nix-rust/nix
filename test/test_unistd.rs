@@ -1,3 +1,5 @@
+extern crate tempdir;
+
 use nix::unistd::*;
 use nix::unistd::ForkResult::*;
 use nix::sys::wait::*;
@@ -5,10 +7,9 @@ use std::ffi::CString;
 
 use std::io::{Write, Read};
 use tempfile::tempfile;
+use tempdir::TempDir;
 use libc::off_t;
 use std::os::unix::prelude::*;
-
-
 
 #[test]
 fn test_fork_and_waitpid() {
@@ -121,7 +122,16 @@ macro_rules! execve_test_factory(
 
 #[test]
 fn test_getcwd() {
-  println!("{}", getcwd().unwrap().display());
+  // workaround for the fact that on os x TmpDir::new returns /var/folders/... but upon
+  // chdir into that directory getcwd returns /private/var/folders/...
+  let base = if cfg!(target_os = "macos") {
+    "/private/tmp/"
+  } else {
+    "/tmp/"
+  };
+  let tmp_dir = TempDir::new_in(base, "test_getcwd").expect("create temp dir").into_path();
+  assert!(chdir(tmp_dir.as_path()).is_ok());
+  assert_eq!(getcwd().unwrap(), tmp_dir);
 }
 
 #[test]
