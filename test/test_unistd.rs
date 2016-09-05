@@ -3,6 +3,8 @@ extern crate tempdir;
 use nix::unistd::*;
 use nix::unistd::ForkResult::*;
 use nix::sys::wait::*;
+use nix::sys::stat;
+use std::iter;
 use std::ffi::CString;
 
 use std::io::{Write, Read};
@@ -129,7 +131,18 @@ fn test_getcwd() {
   } else {
     "/tmp/"
   };
-  let tmp_dir = TempDir::new_in(base, "test_getcwd").expect("create temp dir").into_path();
+  let mut tmp_dir = TempDir::new_in(base, "test_getcwd").expect("create temp dir").into_path();
+  assert!(chdir(tmp_dir.as_path()).is_ok());
+  assert_eq!(getcwd().unwrap(), tmp_dir);
+
+  // make path 500 chars longer so that buffer doubling in getcwd kicks in.
+  // Note: One path cannot be longer than 255 bytes (NAME_MAX)
+  // whole path cannot be longer than PATH_MAX (usually 4096 on linux, 1024 on macos)
+  for _ in 0..5 {
+    let newdir = iter::repeat("a").take(100).collect::<String>();
+    tmp_dir.push(newdir);
+    assert!(mkdir(tmp_dir.as_path(), stat::S_IRWXU).is_ok());
+  }
   assert!(chdir(tmp_dir.as_path()).is_ok());
   assert_eq!(getcwd().unwrap(), tmp_dir);
 }

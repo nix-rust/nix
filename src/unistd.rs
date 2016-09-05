@@ -3,12 +3,13 @@
 use {Errno, Error, Result, NixPath};
 use fcntl::{fcntl, OFlag, O_NONBLOCK, O_CLOEXEC, FD_CLOEXEC};
 use fcntl::FcntlArg::{F_SETFD, F_SETFL};
-use libc::{self, c_char, c_void, c_int, c_uint, size_t, pid_t, off_t, uid_t, gid_t};
+use libc::{self, c_char, c_void, c_int, c_uint, size_t, pid_t, off_t, uid_t, gid_t, mode_t};
 use std::mem;
 use std::ffi::{CString,CStr};
+use std::path::PathBuf;
 use std::os::unix::io::RawFd;
 use void::Void;
-use std::path::PathBuf;
+use sys::stat::Mode;
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 pub use self::linux::*;
@@ -112,10 +113,14 @@ pub fn chdir<P: ?Sized + NixPath>(path: &P) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
-// #[inline]
-// pub fn mkdir<P: ?Sized + NixPath>(path: &P) -> Result<()> {
-//     Errno::result(0)
-// }
+#[inline]
+pub fn mkdir<P: ?Sized + NixPath>(path: &P, mode: Mode) -> Result<()> {
+    let res = try!(path.with_nix_path(|cstr| {
+        unsafe { libc::mkdir(cstr.as_ptr(), mode.bits() as mode_t) }
+    }));
+
+    Errno::result(res).map(drop)
+}
 
 #[inline]
 pub fn getcwd() -> Result<PathBuf> {
@@ -137,7 +142,8 @@ pub fn getcwd() -> Result<PathBuf> {
                 return Ok(PathBuf::from(&s));
             } else {
                 let error = Errno::last();
-                if error == Errno::ERANGE {
+                // ERANGE means buffer was too small to store directory name
+                if error != Errno::ERANGE {
                     return Err(Error::Sys(error));
                 }                
             }
