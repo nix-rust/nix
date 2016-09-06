@@ -5,7 +5,8 @@ use fcntl::{fcntl, OFlag, O_NONBLOCK, O_CLOEXEC, FD_CLOEXEC};
 use fcntl::FcntlArg::{F_SETFD, F_SETFL};
 use libc::{self, c_char, c_void, c_int, c_uint, size_t, pid_t, off_t, uid_t, gid_t, mode_t};
 use std::mem;
-use std::ffi::{CString,CStr};
+use std::ffi::{CString,CStr,OsString};
+use std::os::unix::ffi::OsStringExt;
 use std::path::PathBuf;
 use std::os::unix::io::RawFd;
 use void::Void;
@@ -134,12 +135,10 @@ pub fn getcwd() -> Result<PathBuf> {
             // To safely handle this we start with a reasonable size (512 bytes)
             // and double the buffer size upon every error
             if !libc::getcwd(ptr, buf.capacity()).is_null() {
-                let len = CStr::from_ptr(ptr).to_bytes().len();
+                let len = CStr::from_ptr(buf.as_ptr() as *const libc::c_char).to_bytes().len();
                 buf.set_len(len);
                 buf.shrink_to_fit();
-                let s = try!(CString::new(buf).map_err(|_| Error::Sys(Errno::EILSEQ)));
-                let s = try!(s.into_string().map_err(|_| Error::Sys(Errno::EILSEQ)));
-                return Ok(PathBuf::from(&s));
+                return Ok(PathBuf::from(OsString::from_vec(buf)));
             } else {
                 let error = Errno::last();
                 // ERANGE means buffer was too small to store directory name

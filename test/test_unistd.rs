@@ -131,7 +131,7 @@ fn test_getcwd() {
   } else {
     "/tmp/"
   };
-  let mut tmp_dir = TempDir::new_in(base, "test_getcwd").expect("create temp dir").into_path();
+  let mut tmp_dir = TempDir::new_in(base, "test_getcwd").unwrap().into_path();
   assert!(chdir(tmp_dir.as_path()).is_ok());
   assert_eq!(getcwd().unwrap(), tmp_dir);
 
