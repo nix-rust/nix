@@ -144,7 +144,7 @@ pub fn getcwd() -> Result<PathBuf> {
                 // ERANGE means buffer was too small to store directory name
                 if error != Errno::ERANGE {
                     return Err(Error::Sys(error));
-                }                
+                }
             }
 
             // Trigger the internal buffer resizing logic of `Vec` by requiring
@@ -153,7 +153,7 @@ pub fn getcwd() -> Result<PathBuf> {
             buf.set_len(cap);
             buf.reserve(1);
         }
-    }    
+    }
 }
 
 #[inline]
