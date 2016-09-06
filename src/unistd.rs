@@ -114,6 +114,35 @@ pub fn chdir<P: ?Sized + NixPath>(path: &P) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
+/// Creates new directory `path` with access rights `mode`.
+///
+/// # Errors
+///
+/// `Err` is returned in case of an error. There are several situations where mkdir might fail.
+/// For a full list consult `man mkdir(2)`
+///
+/// - current user has insufficient rights in the parent directory
+/// - the path already exists
+/// - the path name is too long (longer than `PATH_MAX`, usually 4096 on linux, 1024 on OS X)
+///
+/// # Example
+///
+/// ```rust
+/// extern crate tempdir;
+/// extern crate nix;
+///
+/// use nix::unistd;
+/// use nix::sys::stat;
+/// use tempdir::TempDir;
+///
+/// fn main() {
+///     let mut tmp_dir = TempDir::new("test_mkdir").unwrap().into_path();
+///     tmp_dir.push("new_dir");
+///
+///     // owner has read, write and execute rights on the new directory
+///     unistd::mkdir(&tmp_dir, stat::S_IRWXU).expect("couldn't create directory");
+/// }
+/// ```
 #[inline]
 pub fn mkdir<P: ?Sized + NixPath>(path: &P, mode: Mode) -> Result<()> {
     let res = try!(path.with_nix_path(|cstr| {
@@ -123,6 +152,18 @@ pub fn mkdir<P: ?Sized + NixPath>(path: &P, mode: Mode) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
+/// Returns the current directory as a PathBuf
+///
+/// Err is returned if the current user doesn't have the permission to read or search a component of the current path.
+///
+/// # Example
+///
+/// ```rust
+/// use nix::unistd;
+///
+/// let dir = unistd::getcwd().expect("not allowed to get current directory");
+/// println!("The current directory is {:?}", dir.display());
+/// ```
 #[inline]
 pub fn getcwd() -> Result<PathBuf> {
     let mut buf = Vec::with_capacity(512);

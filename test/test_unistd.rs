@@ -6,12 +6,12 @@ use nix::sys::wait::*;
 use nix::sys::stat;
 use std::iter;
 use std::ffi::CString;
-
 use std::io::{Write, Read};
+use std::os::unix::prelude::*;
+use std::env::current_dir;
 use tempfile::tempfile;
 use tempdir::TempDir;
 use libc::off_t;
-use std::os::unix::prelude::*;
 
 #[test]
 fn test_fork_and_waitpid() {
@@ -124,16 +124,9 @@ macro_rules! execve_test_factory(
 
 #[test]
 fn test_getcwd() {
-  // workaround for the fact that on os x TmpDir::new returns /var/folders/... but upon
-  // chdir into that directory getcwd returns /private/var/folders/...
-  let base = if cfg!(target_os = "macos") {
-    "/private/tmp/"
-  } else {
-    "/tmp/"
-  };
-  let mut tmp_dir = TempDir::new_in(base, "test_getcwd").unwrap().into_path();
+  let mut tmp_dir = TempDir::new("test_getcwd").unwrap().into_path();
   assert!(chdir(tmp_dir.as_path()).is_ok());
-  assert_eq!(getcwd().unwrap(), tmp_dir);
+  assert_eq!(getcwd().unwrap(), current_dir().unwrap());
 
   // make path 500 chars longer so that buffer doubling in getcwd kicks in.
   // Note: One path cannot be longer than 255 bytes (NAME_MAX)
@@ -144,7 +137,7 @@ fn test_getcwd() {
     assert!(mkdir(tmp_dir.as_path(), stat::S_IRWXU).is_ok());
   }
   assert!(chdir(tmp_dir.as_path()).is_ok());
-  assert_eq!(getcwd().unwrap(), tmp_dir);
+  assert_eq!(getcwd().unwrap(), current_dir().unwrap());
 }
 
 #[test]
