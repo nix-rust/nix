@@ -17,25 +17,25 @@ use libc::off_t;
 fn test_fork_and_waitpid() {
     let pid = fork();
     match pid {
-      Ok(Child) => {} // ignore child here
-      Ok(Parent { child }) => {
-          // assert that child was created and pid > 0
-          assert!(child > 0);
-          let wait_status = waitpid(child, None);
-          match wait_status {
-              // assert that waitpid returned correct status and the pid is the one of the child
-              Ok(WaitStatus::Exited(pid_t, _)) =>  assert!(pid_t == child),
+        Ok(Child) => {} // ignore child here
+        Ok(Parent { child }) => {
+            // assert that child was created and pid > 0
+            assert!(child > 0);
+            let wait_status = waitpid(child, None);
+            match wait_status {
+                // assert that waitpid returned correct status and the pid is the one of the child
+                Ok(WaitStatus::Exited(pid_t, _)) =>  assert!(pid_t == child),
 
-              // panic, must never happen
-              Ok(_) => panic!("Child still alive, should never happen"),
+                // panic, must never happen
+                Ok(_) => panic!("Child still alive, should never happen"),
 
-              // panic, waitpid should never fail
-              Err(_) => panic!("Error: waitpid Failed")
-          }
+                // panic, waitpid should never fail
+                Err(_) => panic!("Error: waitpid Failed")
+            }
 
-      },
-      // panic, fork should never fail unless there is a serious problem with the OS
-      Err(_) => panic!("Error: Fork Failed")
+        },
+        // panic, fork should never fail unless there is a serious problem with the OS
+        Err(_) => panic!("Error: Fork Failed")
     }
 }
 
@@ -43,15 +43,15 @@ fn test_fork_and_waitpid() {
 fn test_wait() {
     let pid = fork();
     match pid {
-      Ok(Child) => {} // ignore child here
-      Ok(Parent { child }) => {
-          let wait_status = wait();
+        Ok(Child) => {} // ignore child here
+        Ok(Parent { child }) => {
+            let wait_status = wait();
 
-          // just assert that (any) one child returns with WaitStatus::Exited
-          assert_eq!(wait_status, Ok(WaitStatus::Exited(child, 0)));
-      },
-      // panic, fork should never fail unless there is a serious problem with the OS
-      Err(_) => panic!("Error: Fork Failed")
+            // just assert that (any) one child returns with WaitStatus::Exited
+            assert_eq!(wait_status, Ok(WaitStatus::Exited(child, 0)));
+        },
+        // panic, fork should never fail unless there is a serious problem with the OS
+        Err(_) => panic!("Error: Fork Failed")
     }
 }
 
@@ -124,20 +124,20 @@ macro_rules! execve_test_factory(
 
 #[test]
 fn test_getcwd() {
-  let mut tmp_dir = TempDir::new("test_getcwd").unwrap().into_path();
-  assert!(chdir(tmp_dir.as_path()).is_ok());
-  assert_eq!(getcwd().unwrap(), current_dir().unwrap());
+    let mut tmp_dir = TempDir::new("test_getcwd").unwrap().into_path();
+    assert!(chdir(tmp_dir.as_path()).is_ok());
+    assert_eq!(getcwd().unwrap(), current_dir().unwrap());
 
-  // make path 500 chars longer so that buffer doubling in getcwd kicks in.
-  // Note: One path cannot be longer than 255 bytes (NAME_MAX)
-  // whole path cannot be longer than PATH_MAX (usually 4096 on linux, 1024 on macos)
-  for _ in 0..5 {
-    let newdir = iter::repeat("a").take(100).collect::<String>();
-    tmp_dir.push(newdir);
-    assert!(mkdir(tmp_dir.as_path(), stat::S_IRWXU).is_ok());
-  }
-  assert!(chdir(tmp_dir.as_path()).is_ok());
-  assert_eq!(getcwd().unwrap(), current_dir().unwrap());
+    // make path 500 chars longer so that buffer doubling in getcwd kicks in.
+    // Note: One path cannot be longer than 255 bytes (NAME_MAX)
+    // whole path cannot be longer than PATH_MAX (usually 4096 on linux, 1024 on macos)
+    for _ in 0..5 {
+        let newdir = iter::repeat("a").take(100).collect::<String>();
+        tmp_dir.push(newdir);
+        assert!(mkdir(tmp_dir.as_path(), stat::S_IRWXU).is_ok());
+    }
+    assert!(chdir(tmp_dir.as_path()).is_ok());
+    assert_eq!(getcwd().unwrap(), current_dir().unwrap());
 }
 
 #[test]
@@ -150,10 +150,10 @@ fn test_lseek() {
     lseek(tmp.as_raw_fd(), offset, Whence::SeekSet).unwrap();
 
     let mut buf = String::new();
-     tmp.read_to_string(&mut buf).unwrap();
-     assert_eq!(b"f123456", buf.as_bytes());
+    tmp.read_to_string(&mut buf).unwrap();
+    assert_eq!(b"f123456", buf.as_bytes());
 
-     close(tmp.as_raw_fd()).unwrap();
+    close(tmp.as_raw_fd()).unwrap();
 }
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
