@@ -38,8 +38,16 @@ pub struct EpollEvent {
 }
 
 impl EpollEvent {
-    fn new(events: EpollEventKind, data: u64) -> EpollEvent {
+    pub fn new(events: EpollEventKind, data: u64) -> EpollEvent {
         EpollEvent { event: libc::epoll_event { events: events.bits(), u64: data } }
+    }
+
+    pub fn events(&self) -> EpollEventKind {
+        EpollEventKind::from_bits(self.event.events).unwrap()
+    }
+
+    pub fn data(&self) -> u64 {
+        self.event.u64
     }
 }
 
