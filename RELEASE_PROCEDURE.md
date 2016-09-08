@@ -9,11 +9,13 @@ some Rust versions counts as a breaking change, and requires a major bump.
 
 The release is prepared as follows:
 
+- Ask for a new libc version if, necessary. It usually is.
 - Make a commit with a message like "Release v0.8.3" with the following
   changes:
   - In `CHANGELOG.md`, rename the Unreleased section to the new version
     followed by the date of the release.
   - In `Cargo.toml`, update the version to the new version.
+  - In `Cargo.toml`, change the libc dependency to the latest version.
   - In `README.md`, update the version in the Usage section to the new
     version.
 - Make a pull request.
@@ -34,5 +36,6 @@ branch.
 - Add a new Unreleased section header to CHANGELOG.md.
 - In `Cargo.toml`, update the version to the next `-dev` version, eg
   `v0.8.4-dev`.
+- In `Cargo.tml`, revert the libc dependency to its git master branch.
 - Commit with a message like "Bump to v0.8.4-dev"
 - Make a pull request.
