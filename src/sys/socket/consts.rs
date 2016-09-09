@@ -98,6 +98,7 @@ mod os {
             const MSG_DONTWAIT = 0x0040,
             const MSG_EOR      = 0x0080,
             const MSG_ERRQUEUE = 0x2000,
+            const MSG_CMSG_CLOEXEC = 0x40000000,
         }
     }
 
