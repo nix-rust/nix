@@ -19,9 +19,9 @@ The release is prepared as follows:
   - In `README.md`, update the version in the Usage section to the new
     version.
 - Make a pull request.
-- Once the PR is merged, tag the merge commit, eg `git tag v0.8.3
+- Once the PR is merged, tag the merge commit, e.g. `git tag v0.8.3
   $MERGE_COMMIT_SHA1`.
-- Push the tag, eg `git push v0.8.3`.
+- Push the tag, e.g. `git push origin v0.8.3`.
 
 # Create Release
 
@@ -34,7 +34,7 @@ After the release a commit with the following changes is added to the master
 branch.
 
 - Add a new Unreleased section header to CHANGELOG.md.
-- In `Cargo.toml`, update the version to the next `-dev` version, eg
+- In `Cargo.toml`, update the version to the next `-dev` version, e.g.
   `v0.8.4-dev`.
 - In `Cargo.tml`, revert the libc dependency to its git master branch.
 - Commit with a message like "Bump to v0.8.4-dev"
