@@ -121,16 +121,6 @@ bitflags!(
     flags FilterFlag: u32 {
         #[cfg(target_os = "macos")]
         const NOTE_ABSOLUTE                        = libc::NOTE_ABSOLUTE,
-        #[cfg(target_os = "macos")]
-        const NOTE_APPACTIVE                       = libc::NOTE_APPACTIVE,
-        #[cfg(target_os = "macos")]
-        const NOTE_APPALLSTATES                    = libc::NOTE_APPALLSTATES,
-        #[cfg(target_os = "macos")]
-        const NOTE_APPBACKGROUND                   = libc::NOTE_APPBACKGROUND,
-        #[cfg(target_os = "macos")]
-        const NOTE_APPINACTIVE                     = libc::NOTE_APPINACTIVE,
-        #[cfg(target_os = "macos")]
-        const NOTE_APPNONUI                        = libc::NOTE_APPNONUI,
         const NOTE_ATTRIB                          = libc::NOTE_ATTRIB,
         const NOTE_CHILD                           = libc::NOTE_CHILD,
         const NOTE_DELETE                          = libc::NOTE_DELETE,
@@ -183,8 +173,6 @@ bitflags!(
         #[cfg(target_os = "macos")]
         const NOTE_REAP                            = libc::NOTE_REAP,
         const NOTE_RENAME                          = libc::NOTE_RENAME,
-        #[cfg(target_os = "macos")]
-        const NOTE_RESOURCEEND                     = libc::NOTE_RESOURCEEND,
         const NOTE_REVOKE                          = libc::NOTE_REVOKE,
         #[cfg(any(target_os = "macos", target_os = "freebsd"))]
         const NOTE_SECONDS                         = libc::NOTE_SECONDS,
