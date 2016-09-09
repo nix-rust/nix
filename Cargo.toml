@@ -2,7 +2,7 @@
 
 name        = "nix"
 description = "Rust friendly bindings to *nix APIs"
-version     = "0.6.1-pre"
+version     = "0.7.0"
 authors     = ["Carl Lerche <me@carllerche.com>"]
 homepage    = "https://github.com/nix-rust/nix"
 repository  = "https://github.com/nix-rust/nix"
@@ -23,7 +23,7 @@ preadv_pwritev = []
 signalfd = []
 
 [dependencies]
-libc = { git = "https://github.com/rust-lang/libc" }
+libc = "0.2.16"
 bitflags = "0.4"
 cfg-if = "0.1.0"
 void = "1.0.2"
