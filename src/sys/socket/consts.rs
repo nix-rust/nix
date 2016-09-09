@@ -91,13 +91,30 @@ mod os {
     // Flags for send/recv and their relatives
     bitflags!{
         flags MsgFlags : libc::c_int {
-            const MSG_OOB      = 0x0001,
-            const MSG_PEEK     = 0x0002,
-            const MSG_CTRUNC   = 0x0008,
-            const MSG_TRUNC    = 0x0020,
-            const MSG_DONTWAIT = 0x0040,
-            const MSG_EOR      = 0x0080,
-            const MSG_ERRQUEUE = 0x2000,
+            const MSG_OOB              = 0x00001,
+            const MSG_PEEK             = 0x00002,
+            const MSG_DONTROUTE        = 0x00004,
+            const MSG_TRYHARD          = 0x00004, /* Synonym for MSG_DONTROUTE for DECnet */
+            const MSG_CTRUNC           = 0x00008,
+            const MSG_PROBE            = 0x00010, /* Do not send. Only probe path f.e. for MTU */
+            const MSG_TRUNC            = 0x00020,
+            const MSG_DONTWAIT         = 0x00040, /* Nonblocking io */
+            const MSG_EOR              = 0x00080, /* End of record */
+            const MSG_WAITALL          = 0x00100, /* Wait for a full request */
+            const MSG_FIN              = 0x00200,
+            const MSG_EOF              = 0x00200,
+            const MSG_SYN              = 0x00400,
+            const MSG_CONFIRM          = 0x00800, /* Confirm path validity */
+            const MSG_RST              = 0x01000,
+            const MSG_ERRQUEUE         = 0x02000, /* Fetch message from error queue */
+            const MSG_NOSIGNAL         = 0x04000, /* Do not generate SIGPIPE */
+            const MSG_MORE             = 0x08000, /* Sender will send more */
+            const MSG_WAITFORONE       = 0x10000, /* recvmmsg(): block until 1+ packets avail */
+            const MSG_SENDPAGE_NOTLAST = 0x20000, /* sendpage() internal : not the last page */
+            const MSG_BATCH            = 0x40000, /* sendmmsg(): more messages coming */
+            const MSG_FASTOPEN         = 0x20000000, /* Send data in TCP SYN */
+            const MSG_CMSG_CLOEXEC     = 0x40000000, /* Set close_on_exec for file descriptor received through SCM_RIGHTS */
+            const MSG_CMSG_COMPAT    = 0x80000000, /* This message needs 32 bit fixups */
         }
     }
 
@@ -225,12 +242,22 @@ mod os {
     // Flags for send/recv and their relatives
     bitflags!{
         flags MsgFlags : libc::c_int {
-            const MSG_OOB      = 0x01,
-            const MSG_PEEK     = 0x02,
-            const MSG_EOR      = 0x08,
-            const MSG_TRUNC    = 0x10,
-            const MSG_CTRUNC   = 0x20,
-            const MSG_DONTWAIT = 0x80,
+            const MSG_OOB        = 0x00001, /* process out-of-band data */
+            const MSG_PEEK       = 0x00002, /* peek at incoming message */
+            const MSG_DONTROUTE  = 0x00004, /* send without using routing tables */
+            const MSG_EOR        = 0x00008, /* data completes record */
+            const MSG_TRUNC      = 0x00010, /* data discarded before delivery */
+            const MSG_CTRUNC     = 0x00020, /* control data lost before delivery */
+            const MSG_WAITALL    = 0x00040, /* wait for full request or error */
+            const MSG_DONTWAIT   = 0x00080, /* this message should be nonblocking */
+            const MSG_EOF        = 0x00100, /* data completes connection */
+            const MSG_WAITSTREAM = 0x00200, /* wait up to full request.. may return partial */
+            const MSG_FLUSH      = 0x00400, /* Start of 'hold' seq; dump so_temp */
+            const MSG_HOLD       = 0x00800, /* Hold frag in so_temp */
+            const MSG_SEND       = 0x01000, /* Send the packet in so_temp */
+            const MSG_HAVEMORE   = 0x02000, /* Data ready to be read */
+            const MSG_RCVMORE    = 0x04000, /* Data remains in current pkt */
+            const MSG_NEEDSA     = 0x10000, /* Fail receive if socket address cannot be allocated */
         }
     }
 
@@ -311,9 +338,22 @@ mod os {
     // Flags for send/recv and their relatives
     bitflags!{
         flags MsgFlags : libc::c_int {
-            const MSG_OOB      = 0x01,
-            const MSG_PEEK     = 0x02,
-            const MSG_DONTWAIT = 0x80,
+        const MSG_OOB          = 0x00000001, /* process out-of-band data */
+        const MSG_PEEK         = 0x00000002, /* peek at incoming message */
+        const MSG_DONTROUTE    = 0x00000004, /* send without using routing tables */
+        const MSG_EOR          = 0x00000008, /* data completes record */
+        const MSG_TRUNC        = 0x00000010, /* data discarded before delivery */
+        const MSG_CTRUNC       = 0x00000020, /* control data lost before delivery */
+        const MSG_WAITALL      = 0x00000040, /* wait for full request or error */
+        const MSG_DONTWAIT     = 0x00000080, /* this message should be nonblocking */
+        const MSG_EOF          = 0x00000100, /* data completes connection */
+        const MSG_UNUSED09     = 0x00000200, /* was: notification message (SCTP) */
+        const MSG_NOSIGNAL     = 0x00000400, /* No SIGPIPE to unconnected socket stream */
+        const MSG_SYNC         = 0x00000800, /* No asynchronized pru_send */
+        const MSG_CMSG_CLOEXEC = 0x00001000, /* make received fds close-on-exec */
+        const MSG_FBLOCKING    = 0x00010000, /* force blocking operation */
+        const MSG_FNONBLOCKING = 0x00020000, /* force non-blocking operation */
+        const MSG_FMASK        = 0xFFFF0000, /* force mask */
         }
     }
 
