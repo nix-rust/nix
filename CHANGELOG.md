@@ -8,6 +8,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Added `lseek` and `lseek64` in `::nix::unistd`
   ([#377](https://github.com/nix-rust/nix/pull/377))
+- Added `mkdir` and `getcwd` in `::nix::unistd`
+  ([#416](https://github.com/nix-rust/nix/pull/416))
 - Added accessors `sigmask_mut` and `sigmask` to `UContext` in
   `::nix::ucontext`.
   ([#370](https://github.com/nix-rust/nix/pull/370))
