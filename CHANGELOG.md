@@ -31,6 +31,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Added method `revents()` to `PollFd` in `::nix::poll`, in order to provide
   read access to formerly public member `revents`.
   ([#399](https://github.com/nix-rust/nix/pull/399))
+- Added `MSG_CMSG_CLOEXEC` to `MsgFlags` in `::nix::sys::socket` for _linux_ only.
+  ([#422](https://github.com/nix-rust/nix/pull/422))
 
 ### Changed
 - Replaced the reexported integer constants for signals by the enumeration
