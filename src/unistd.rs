@@ -1,8 +1,8 @@
 //! Standard symbolic constants and types
 //!
 use {Errno, Error, Result, NixPath};
-use fcntl::{fcntl, OFlag, O_NONBLOCK, O_CLOEXEC, FD_CLOEXEC};
-use fcntl::FcntlArg::{F_SETFD, F_SETFL};
+use fcntl::{fcntl, OFlag, O_CLOEXEC, FD_CLOEXEC};
+use fcntl::FcntlArg::F_SETFD;
 use libc::{self, c_char, c_void, c_int, c_uint, size_t, pid_t, off_t, uid_t, gid_t, mode_t};
 use std::mem;
 use std::ffi::{CString, CStr, OsString};
@@ -360,6 +360,25 @@ pub fn pipe() -> Result<(RawFd, RawFd)> {
     }
 }
 
+// libc only defines `pipe2` in `libc::notbsd`.
+#[cfg(any(target_os = "linux",
+          target_os = "android",
+          target_os = "emscripten"))]
+pub fn pipe2(flags: OFlag) -> Result<(RawFd, RawFd)> {
+    unsafe {
+        let mut fds: [c_int; 2] = mem::uninitialized();
+
+        let res = libc::pipe2(fds.as_mut_ptr(), flags.bits());
+
+        try!(Errno::result(res));
+
+        Ok((fds[0], fds[1]))
+    }
+}
+
+#[cfg(not(any(target_os = "linux",
+              target_os = "android",
+              target_os = "emscripten")))]
 pub fn pipe2(flags: OFlag) -> Result<(RawFd, RawFd)> {
     unsafe {
         let mut fds: [c_int; 2] = mem::uninitialized();
@@ -374,7 +393,13 @@ pub fn pipe2(flags: OFlag) -> Result<(RawFd, RawFd)> {
     }
 }
 
+#[cfg(not(any(target_os = "linux",
+              target_os = "android",
+              target_os = "emscripten")))]
 fn pipe2_setflags(fd1: RawFd, fd2: RawFd, flags: OFlag) -> Result<()> {
+    use fcntl::O_NONBLOCK;
+    use fcntl::FcntlArg::F_SETFL;
+
     let mut res = Ok(0);
 
     if flags.contains(O_CLOEXEC) {
