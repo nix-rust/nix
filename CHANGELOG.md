@@ -8,6 +8,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 - `pipe2` now calls `libc::pipe2` where available. Previously it was emulated
   using `pipe`, which meant that setting `O_CLOEXEC` was not atomic.
+  ([#427](https://github.com/nix-rust/nix/pull/427))
 
 ## [0.7.0] 2016-09-09
 
