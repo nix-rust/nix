@@ -5,6 +5,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+- `pipe2` now calls `libc::pipe2` where available. Previously it was emulated
+  using `pipe`, which meant that setting `O_CLOEXEC` was not atomic.
+
 ## [0.7.0] 2016-09-09
 
 ### Added
