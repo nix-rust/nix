@@ -365,32 +365,28 @@ pub fn pipe() -> Result<(RawFd, RawFd)> {
           target_os = "android",
           target_os = "emscripten"))]
 pub fn pipe2(flags: OFlag) -> Result<(RawFd, RawFd)> {
-    unsafe {
-        let mut fds: [c_int; 2] = mem::uninitialized();
+    let mut fds: [c_int; 2] = unsafe { mem::uninitialized() };
 
-        let res = libc::pipe2(fds.as_mut_ptr(), flags.bits());
+    let res = unsafe { libc::pipe2(fds.as_mut_ptr(), flags.bits()) };
 
-        try!(Errno::result(res));
+    try!(Errno::result(res));
 
-        Ok((fds[0], fds[1]))
-    }
+    Ok((fds[0], fds[1]))
 }
 
 #[cfg(not(any(target_os = "linux",
               target_os = "android",
               target_os = "emscripten")))]
 pub fn pipe2(flags: OFlag) -> Result<(RawFd, RawFd)> {
-    unsafe {
-        let mut fds: [c_int; 2] = mem::uninitialized();
+    let mut fds: [c_int; 2] = unsafe { mem::uninitialized() };
 
-        let res = libc::pipe(fds.as_mut_ptr());
+    let res = unsafe { libc::pipe(fds.as_mut_ptr()) };
 
-        try!(Errno::result(res));
+    try!(Errno::result(res));
 
-        try!(pipe2_setflags(fds[0], fds[1], flags));
+    try!(pipe2_setflags(fds[0], fds[1], flags));
 
-        Ok((fds[0], fds[1]))
-    }
+    Ok((fds[0], fds[1]))
 }
 
 #[cfg(not(any(target_os = "linux",
