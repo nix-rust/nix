@@ -4,7 +4,7 @@ use std::os::unix::io::RawFd;
 
 bitflags!(
     #[repr(C)]
-    flags EpollEventKind: u32 {
+    flags EpollFlags: u32 {
         const EPOLLIN = 0x001,
         const EPOLLPRI = 0x002,
         const EPOLLOUT = 0x004,
@@ -44,12 +44,12 @@ pub struct EpollEvent {
 }
 
 impl EpollEvent {
-    pub fn new(events: EpollEventKind, data: u64) -> EpollEvent {
+    pub fn new(events: EpollFlags, data: u64) -> EpollEvent {
         EpollEvent { event: libc::epoll_event { events: events.bits(), u64: data } }
     }
 
-    pub fn events(&self) -> EpollEventKind {
-        EpollEventKind::from_bits(self.event.events).unwrap()
+    pub fn events(&self) -> EpollFlags {
+        EpollFlags::from_bits(self.event.events).unwrap()
     }
 
     pub fn data(&self) -> u64 {
