@@ -60,8 +60,13 @@ pull' model described there.
 
 Please make pull requests against the `master` branch.
 
-[pr-docs]: https://help.github.com/articles/using-pull-requests/
+If you change the API by way of adding, removing or changing something or if
+you fix a bug, please add an appropriate note to the [change log][cl]. We
+follow the conventions of [Keep A CHANGELOG][kacl].
 
+[cl]: https://github.com/nix-rust/nix/blob/master/CHANGELOG.md
+[kacl]: https://github.com/olivierlacan/keep-a-changelog/tree/18adb5f5be7a898d046f6a4acb93e39dcf40c4ad
+[pr-docs]: https://help.github.com/articles/using-pull-requests/
 
 ## Testing
 

@@ -59,6 +59,8 @@ mod os {
     pub const SO_TIMESTAMP: c_int = 29;
     pub const SO_TYPE: c_int = 3;
     pub const SO_BUSY_POLL: c_int = 46;
+    #[cfg(target_os = "linux")]
+    pub const SO_ORIGINAL_DST: c_int = 80;
 
     // Socket options for TCP sockets
     pub const TCP_NODELAY: c_int = 1;
@@ -96,6 +98,7 @@ mod os {
             const MSG_DONTWAIT = 0x0040,
             const MSG_EOR      = 0x0080,
             const MSG_ERRQUEUE = 0x2000,
+            const MSG_CMSG_CLOEXEC = 0x40000000,
         }
     }
 

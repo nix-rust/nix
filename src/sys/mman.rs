@@ -131,7 +131,7 @@ mod consts {
             const MAP_RENAME       = libc::MAP_RENAME,
             const MAP_NORESERVE    = libc::MAP_NORESERVE,
             const MAP_HASSEMAPHORE = libc::MAP_HASSEMAPHORE,
-            #[cfg(not(target_os = "openbsd"))]
+            #[cfg(not(any(target_os = "openbsd", target_os = "netbsd")))]
             const MAP_STACK        = libc::MAP_STACK,
             #[cfg(target_os = "netbsd")]
             const MAP_WIRED        = libc::MAP_WIRED,

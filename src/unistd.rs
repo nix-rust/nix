@@ -3,13 +3,14 @@
 use {Errno, Error, Result, NixPath};
 use fcntl::{fcntl, OFlag, O_NONBLOCK, O_CLOEXEC, FD_CLOEXEC};
 use fcntl::FcntlArg::{F_SETFD, F_SETFL};
-use libc::{self, c_char, c_void, c_int, c_uint, size_t, pid_t, off_t, uid_t, gid_t};
+use libc::{self, c_char, c_void, c_int, c_uint, size_t, pid_t, off_t, uid_t, gid_t, mode_t};
 use std::mem;
-use std::ffi::{CString, OsStr};
-use std::os::unix::ffi::OsStrExt;
+use std::ffi::{CString, CStr, OsString, OsStr};
+use std::os::unix::ffi::{OsStringExt, OsStrExt};
 use std::os::unix::io::RawFd;
-use std::path::{PathBuf, Path};
+use std::path::{PathBuf};
 use void::Void;
+use sys::stat::Mode;
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 pub use self::linux::*;
@@ -113,11 +114,109 @@ pub fn chdir<P: ?Sized + NixPath>(path: &P) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
+/// Creates new directory `path` with access rights `mode`.
+///
+/// # Errors
+///
+/// There are several situations where mkdir might fail:
+///
+/// - current user has insufficient rights in the parent directory
+/// - the path already exists
+/// - the path name is too long (longer than `PATH_MAX`, usually 4096 on linux, 1024 on OS X)
+///
+/// For a full list consult 
+/// [man mkdir(2)](http://man7.org/linux/man-pages/man2/mkdir.2.html#ERRORS)
+///
+/// # Example
+///
+/// ```rust
+/// extern crate tempdir;
+/// extern crate nix;
+///
+/// use nix::unistd;
+/// use nix::sys::stat;
+/// use tempdir::TempDir;
+///
+/// fn main() {
+///     let mut tmp_dir = TempDir::new("test_mkdir").unwrap().into_path();
+///     tmp_dir.push("new_dir");
+///
+///     // create new directory and give read, write and execute rights to the owner
+///     match unistd::mkdir(&tmp_dir, stat::S_IRWXU) {
+///        Ok(_) => println!("created {:?}", tmp_dir),
+///        Err(err) => println!("Error creating directory: {}", err),
+///     }
+/// }
+/// ```
+#[inline]
+pub fn mkdir<P: ?Sized + NixPath>(path: &P, mode: Mode) -> Result<()> {
+    let res = try!(path.with_nix_path(|cstr| {
+        unsafe { libc::mkdir(cstr.as_ptr(), mode.bits() as mode_t) }
+    }));
+
+    Errno::result(res).map(drop)
+}
+
+/// Returns the current directory as a PathBuf
+///
+/// Err is returned if the current user doesn't have the permission to read or search a component
+/// of the current path.
+///
+/// # Example
+///
+/// ```rust
+/// extern crate nix;
+///
+/// use nix::unistd;
+///
+/// fn main() {
+///     // assume that we are allowed to get current directory
+///     let dir = unistd::getcwd().unwrap();
+///     println!("The current directory is {:?}", dir);
+/// }
+/// ```
+#[inline]
+pub fn getcwd() -> Result<PathBuf> {
+    let mut buf = Vec::with_capacity(512);
+    loop {
+        unsafe {
+            let ptr = buf.as_mut_ptr() as *mut libc::c_char;
+
+            // The buffer must be large enough to store the absolute pathname plus
+            // a terminating null byte, or else null is returned.
+            // To safely handle this we start with a reasonable size (512 bytes)
+            // and double the buffer size upon every error
+            if !libc::getcwd(ptr, buf.capacity()).is_null() {
+                let len = CStr::from_ptr(buf.as_ptr() as *const libc::c_char).to_bytes().len();
+                buf.set_len(len);
+                buf.shrink_to_fit();
+                return Ok(PathBuf::from(OsString::from_vec(buf)));
+            } else {
+                let error = Errno::last();
+                // ERANGE means buffer was too small to store directory name
+                if error != Errno::ERANGE {
+                    return Err(Error::Sys(error));
+                }
+            }
+
+            // Trigger the internal buffer resizing logic of `Vec` by requiring
+            // more space than the current capacity.
+            let cap = buf.capacity();
+            buf.set_len(cap);
+            buf.reserve(1);
+        }
+    }
+}
+
 #[inline]
 pub fn chown<P: ?Sized + NixPath>(path: &P, owner: Option<uid_t>, group: Option<gid_t>) -> Result<()> {
     let res = try!(path.with_nix_path(|cstr| {
-        // We use `0 - 1` to get `-1 : {u,g}id_t` which is specified as the no-op value for chown(3).
-        unsafe { libc::chown(cstr.as_ptr(), owner.unwrap_or(0 - 1), group.unwrap_or(0 - 1)) }
+        // According to the POSIX specification, -1 is used to indicate that
+        // owner and group, respectively, are not to be changed. Since uid_t and
+        // gid_t are unsigned types, we use wrapping_sub to get '-1'.
+        unsafe { libc::chown(cstr.as_ptr(),
+                             owner.unwrap_or((0 as uid_t).wrapping_sub(1)),
+                             group.unwrap_or((0 as gid_t).wrapping_sub(1))) }
     }));
 
     Errno::result(res).map(drop)
@@ -174,7 +273,10 @@ pub fn daemon(nochdir: bool, noclose: bool) -> Result<()> {
 pub fn sethostname(name: &[u8]) -> Result<()> {
     // Handle some differences in type of the len arg across platforms.
     cfg_if! {
-        if #[cfg(any(target_os = "macos", target_os = "ios"))] {
+        if #[cfg(any(target_os = "dragonfly",
+                     target_os = "freebsd",
+                     target_os = "ios",
+                     target_os = "macos", ))] {
             type sethostname_len_t = c_int;
         } else {
             type sethostname_len_t = size_t;
@@ -210,6 +312,40 @@ pub fn write(fd: RawFd, buf: &[u8]) -> Result<usize> {
     let res = unsafe { libc::write(fd, buf.as_ptr() as *const c_void, buf.len() as size_t) };
 
     Errno::result(res).map(|r| r as usize)
+}
+
+pub enum Whence {
+    SeekSet,
+    SeekCur,
+    SeekEnd,
+    SeekData,
+    SeekHole
+}
+
+impl Whence {
+    fn to_libc_type(&self) -> c_int {
+        match self {
+            &Whence::SeekSet => libc::SEEK_SET,
+            &Whence::SeekCur => libc::SEEK_CUR,
+            &Whence::SeekEnd => libc::SEEK_END,
+            &Whence::SeekData => 3,
+            &Whence::SeekHole => 4
+        }
+    }
+
+}
+
+pub fn lseek(fd: RawFd, offset: libc::off_t, whence: Whence) -> Result<libc::off_t> {
+    let res = unsafe { libc::lseek(fd, offset, whence.to_libc_type()) };
+
+    Errno::result(res).map(|r| r as libc::off_t)
+}
+
+#[cfg(any(target_os = "linux", target_os = "android"))]
+pub fn lseek64(fd: RawFd, offset: libc::off64_t, whence: Whence) -> Result<libc::off64_t> {
+    let res = unsafe { libc::lseek64(fd, offset, whence.to_libc_type()) };
+
+    Errno::result(res).map(|r| r as libc::off64_t)
 }
 
 pub fn pipe() -> Result<(RawFd, RawFd)> {
@@ -290,7 +426,6 @@ pub fn unlink<P: ?Sized + NixPath>(path: &P) -> Result<()> {
             libc::unlink(cstr.as_ptr())
         }
     }));
-
     Errno::result(res).map(drop)
 }
 
@@ -376,19 +511,41 @@ pub fn sleep(seconds: libc::c_uint) -> c_uint {
     unsafe { libc::sleep(seconds) }
 }
 
+/// Creates a regular file which persists even after process termination
+///
+/// * `template`: a path whose 6 rightmost characters must be X, e.g. /tmp/tmpfile_XXXXXX
+/// * returns: tuple of file descriptor and filename
+///
+/// Err is returned either if no temporary filename could be created or the template doesn't
+/// end with XXXXXX
+///
+/// # Example
+///
+/// ```rust
+/// use nix::unistd;
+///
+/// let fd = match unistd::mkstemp("/tmp/tempfile_XXXXXX") {
+///     Ok((fd, path)) => {
+///         unistd::unlink(path.as_path()).unwrap(); // flag file to be deleted at app termination
+///         fd
+///     }
+///     Err(e) => panic!("mkstemp failed: {}", e)
+/// };
+/// // do something with fd
+/// ```
 #[inline]
 pub fn mkstemp<P: ?Sized + NixPath>(template: &P) -> Result<(RawFd, PathBuf)> {
     let res = template.with_nix_path(|path| {
-        let owned_path = path.to_owned();
-        let path_ptr = owned_path.into_raw();
+        let mut path_copy = path.to_bytes_with_nul().to_owned();
+        let p: *mut i8 = path_copy.as_mut_ptr() as *mut i8;
         unsafe {
-            (libc::mkstemp(path_ptr), CString::from_raw(path_ptr))
+            (libc::mkstemp(p), OsStr::from_bytes(CStr::from_ptr(p).to_bytes()))
         }
     });
     match res {
         Ok((fd, pathname)) => {
             try!(Errno::result(fd));
-            Ok((fd, Path::new(OsStr::from_bytes(pathname.as_bytes())).to_owned()))
+            Ok((fd, PathBuf::from(pathname).to_owned()))
         }
         Err(e) => {
             Err(e)

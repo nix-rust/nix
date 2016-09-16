@@ -2,7 +2,7 @@
 
 name        = "nix"
 description = "Rust friendly bindings to *nix APIs"
-version     = "0.5.1-pre"
+version     = "0.7.1-pre"
 authors     = ["Carl Lerche <me@carllerche.com>"]
 homepage    = "https://github.com/nix-rust/nix"
 repository  = "https://github.com/nix-rust/nix"
@@ -23,7 +23,7 @@ preadv_pwritev = []
 signalfd = []
 
 [dependencies]
-libc = "0.2.8"
+libc = { git = "https://github.com/rust-lang/libc" }
 bitflags = "0.4"
 cfg-if = "0.1.0"
 void = "1.0.2"
@@ -36,7 +36,7 @@ semver = "0.1.20"  # Old version for compatibility with rustc_version.
 rand = "0.3.8"
 tempdir = "0.3"
 tempfile = "2"
-nix-test = { path = "nix-test" }
+nix-test = { path = "nix-test", version = "0.0.1" }
 
 [[test]]
 name = "test"

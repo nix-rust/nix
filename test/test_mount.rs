@@ -15,7 +15,7 @@ mod test_mount {
     use std::os::unix::fs::PermissionsExt;
     use std::process::{self, Command};
 
-    use libc::{self, EACCES, EROFS};
+    use libc::{EACCES, EROFS};
 
     use nix::mount::{mount, umount, MsFlags, MS_BIND, MS_RDONLY, MS_NOEXEC};
     use nix::sched::{unshare, CLONE_NEWNS, CLONE_NEWUSER};
@@ -179,8 +179,8 @@ exit 23";
             let mut handle = stderr.lock();
             writeln!(handle,
                      "unshare failed: {}. Are unprivileged user namespaces available?",
-                     e);
-            writeln!(handle, "mount is not being tested");
+                     e).unwrap();
+            writeln!(handle, "mount is not being tested").unwrap();
             // Exit with success because not all systems support unprivileged user namespaces, and
             // that's not what we're testing for.
             process::exit(0);

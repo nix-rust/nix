@@ -2,6 +2,8 @@ use super::{ffi, consts, GetSockOpt, SetSockOpt};
 use {Errno, Result};
 use sys::time::TimeVal;
 use libc::{c_int, uint8_t, c_void, socklen_t};
+#[cfg(target_os = "linux")]
+use libc::sockaddr_in;
 use std::mem;
 use std::os::unix::io::RawFd;
 
@@ -47,10 +49,6 @@ macro_rules! getsockopt_impl {
 
 // Helper to generate the sockopt accessors
 macro_rules! sockopt_impl {
-    (GetOnly, $name:ident, $level:path, $flag:path, $ty:ty) => {
-        sockopt_impl!(GetOnly, $name, $level, $flag, $ty, GetStruct<$ty>);
-    };
-
     (GetOnly, $name:ident, $level:path, $flag:path, bool) => {
         sockopt_impl!(GetOnly, $name, $level, $flag, bool, GetBool);
     };
@@ -63,17 +61,6 @@ macro_rules! sockopt_impl {
         sockopt_impl!(GetOnly, $name, $level, $flag, usize, GetUsize);
     };
 
-    (GetOnly, $name:ident, $level:path, $flag:path, $ty:ty, $getter:ty) => {
-        #[derive(Copy, Clone, Debug)]
-        pub struct $name;
-
-        getsockopt_impl!($name, $level, $flag, $ty, $getter);
-    };
-
-    (SetOnly, $name:ident, $level:path, $flag:path, $ty:ty) => {
-        sockopt_impl!(SetOnly, $name, $level, $flag, $ty, SetStruct<$ty>);
-    };
-
     (SetOnly, $name:ident, $level:path, $flag:path, bool) => {
         sockopt_impl!(SetOnly, $name, $level, $flag, bool, SetBool);
     };
@@ -84,6 +71,37 @@ macro_rules! sockopt_impl {
 
     (SetOnly, $name:ident, $level:path, $flag:path, usize) => {
         sockopt_impl!(SetOnly, $name, $level, $flag, usize, SetUsize);
+    };
+
+    (Both, $name:ident, $level:path, $flag:path, bool) => {
+        sockopt_impl!(Both, $name, $level, $flag, bool, GetBool, SetBool);
+    };
+
+    (Both, $name:ident, $level:path, $flag:path, u8) => {
+        sockopt_impl!(Both, $name, $level, $flag, u8, GetU8, SetU8);
+    };
+
+    (Both, $name:ident, $level:path, $flag:path, usize) => {
+        sockopt_impl!(Both, $name, $level, $flag, usize, GetUsize, SetUsize);
+    };
+
+    /*
+     * Matchers with generic getter types must be placed at the end, so
+     * they'll only match _after_ specialized matchers fail
+     */
+    (GetOnly, $name:ident, $level:path, $flag:path, $ty:ty) => {
+        sockopt_impl!(GetOnly, $name, $level, $flag, $ty, GetStruct<$ty>);
+    };
+
+    (GetOnly, $name:ident, $level:path, $flag:path, $ty:ty, $getter:ty) => {
+        #[derive(Copy, Clone, Debug)]
+        pub struct $name;
+
+        getsockopt_impl!($name, $level, $flag, $ty, $getter);
+    };
+
+    (SetOnly, $name:ident, $level:path, $flag:path, $ty:ty) => {
+        sockopt_impl!(SetOnly, $name, $level, $flag, $ty, SetStruct<$ty>);
     };
 
     (SetOnly, $name:ident, $level:path, $flag:path, $ty:ty, $setter:ty) => {
@@ -99,18 +117,6 @@ macro_rules! sockopt_impl {
 
         setsockopt_impl!($name, $level, $flag, $ty, $setter);
         getsockopt_impl!($name, $level, $flag, $ty, $getter);
-    };
-
-    (Both, $name:ident, $level:path, $flag:path, bool) => {
-        sockopt_impl!(Both, $name, $level, $flag, bool, GetBool, SetBool);
-    };
-
-    (Both, $name:ident, $level:path, $flag:path, u8) => {
-        sockopt_impl!(Both, $name, $level, $flag, u8, GetU8, SetU8);
-    };
-
-    (Both, $name:ident, $level:path, $flag:path, usize) => {
-        sockopt_impl!(Both, $name, $level, $flag, usize, GetUsize, SetUsize);
     };
 
     (Both, $name:ident, $level:path, $flag:path, $ty:ty) => {
@@ -168,6 +174,8 @@ sockopt_impl!(GetOnly, SockType, consts::SOL_SOCKET, consts::SO_TYPE, super::Soc
           target_os = "linux",
           target_os = "nacl"))]
 sockopt_impl!(GetOnly, AcceptConn, consts::SOL_SOCKET, consts::SO_ACCEPTCONN, bool);
+#[cfg(target_os = "linux")]
+sockopt_impl!(GetOnly, OriginalDst, consts::SOL_IP, consts::SO_ORIGINAL_DST, sockaddr_in);
 
 /*
  *

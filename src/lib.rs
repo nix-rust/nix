@@ -8,7 +8,7 @@
 // latest bitflags triggers a rustc bug with cross-crate macro expansions causing dead_code
 // warnings even though the macro expands into something with allow(dead_code)
 #![allow(dead_code)]
-#![deny(warnings)]
+#![cfg_attr(test, deny(warnings))]
 
 #[macro_use]
 extern crate bitflags;
@@ -40,7 +40,7 @@ pub mod fcntl;
 #[cfg(any(target_os = "linux", target_os = "android"))]
 pub mod mount;
 
-#[cfg(any(target_os = "linux"))]
+#[cfg(target_os = "linux")]
 pub mod mqueue;
 
 #[cfg(any(target_os = "linux", target_os = "macos"))]
