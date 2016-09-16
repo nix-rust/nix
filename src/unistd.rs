@@ -537,7 +537,7 @@ pub fn sleep(seconds: libc::c_uint) -> c_uint {
 pub fn mkstemp<P: ?Sized + NixPath>(template: &P) -> Result<(RawFd, PathBuf)> {
     let res = template.with_nix_path(|path| {
         let mut path_copy = path.to_bytes_with_nul().to_owned();
-        let p: *mut i8 = path_copy.as_mut_ptr() as *mut i8;
+        let p = path_copy.as_mut_ptr() as *mut _;
         unsafe {
             (libc::mkstemp(p), OsStr::from_bytes(CStr::from_ptr(p).to_bytes()))
         }
