@@ -391,7 +391,7 @@ impl UnixAddr {
                 .. mem::zeroed()
             };
 
-            if path.len() > ret.sun_path.len() {
+            if path.len() + 1 > ret.sun_path.len() {
                 return Err(Error::Sys(Errno::ENAMETOOLONG));
             }
 
@@ -401,7 +401,7 @@ impl UnixAddr {
                                      ret.sun_path.as_mut_ptr().offset(1) as *mut u8,
                                      path.len());
 
-            Ok(UnixAddr(ret, path.len()))
+            Ok(UnixAddr(ret, path.len() + 1))
         }
     }
 
