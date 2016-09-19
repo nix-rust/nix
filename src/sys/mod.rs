@@ -1,3 +1,7 @@
+#[cfg(any(target_os = "freebsd", target_os = "dragonfly", target_os = "ios",
+          target_os = "netbsd", target_os = "macos", target_os = "linux"))]
+pub mod aio;
+
 #[cfg(any(target_os = "linux", target_os = "android"))]
 pub mod epoll;
 
