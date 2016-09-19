@@ -9,21 +9,23 @@ use libc::{timespec, time_t, c_long, intptr_t, uintptr_t, size_t};
 use libc;
 use std::os::unix::io::RawFd;
 use std::ptr;
+use std::mem;
 
 // Redefine kevent in terms of programmer-friendly enums and bitfields.
 #[derive(Clone, Copy)]
 #[repr(C)]
 pub struct KEvent {
-    pub ident: uintptr_t,
-    pub filter: EventFilter,
-    pub flags: EventFlag,
-    pub fflags: FilterFlag,
-    pub data: intptr_t,
-    // libc defines udata as a pointer on most OSes.  But it's really
-    // more like an arbitrary tag
-    pub udata: uintptr_t
+    kevent: libc::kevent,
 }
 
+#[cfg(any(target_os = "openbsd", target_os = "freebsd",
+          target_os = "dragonfly", target_os = "macos"))]
+type type_of_udata = *mut ::c_void;
+#[cfg(any(target_os = "netbsd"))]
+type type_of_udata = intptr_t;
+
+#[cfg(not(target_os = "netbsd"))]
+type type_of_event_filter = i16;
 #[cfg(not(target_os = "netbsd"))]
 #[repr(i16)]
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -54,6 +56,8 @@ pub enum EventFilter {
 }
 
 #[cfg(target_os = "netbsd")]
+type type_of_event_filter = i32;
+#[cfg(target_os = "netbsd")]
 #[repr(u32)]
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum EventFilter {
@@ -66,6 +70,10 @@ pub enum EventFilter {
     EVFILT_TIMER = libc::EVFILT_TIMER,
 }
 
+#[cfg(any(target_os = "macos",
+          target_os = "freebsd",
+          target_os = "dragonfly"))]
+type type_of_event_flag = u16;
 #[cfg(any(target_os = "macos",
           target_os = "freebsd",
           target_os = "dragonfly"))]
@@ -96,6 +104,8 @@ bitflags!(
     }
 );
 
+#[cfg(any(target_os = "netbsd", target_os = "openbsd"))]
+type type_of_event_flag = u32;
 #[cfg(any(target_os = "netbsd", target_os = "openbsd"))]
 bitflags!(
     flags EventFlag: u32 {
@@ -206,6 +216,44 @@ pub fn kqueue() -> Result<RawFd> {
     Errno::result(res)
 }
 
+impl KEvent {
+    pub fn new(ident: uintptr_t, filter: EventFilter, flags: EventFlag,
+               fflags:FilterFlag, data: intptr_t, udata: uintptr_t) -> KEvent {
+        KEvent { kevent: libc::kevent {
+            ident: ident,
+            filter: filter as type_of_event_filter,
+            flags: flags.bits(),
+            fflags: fflags.bits(),
+            data: data,
+            udata: udata as type_of_udata
+        } }
+    }
+
+    pub fn ident(&self) -> uintptr_t {
+        self.kevent.ident
+    }
+
+    pub fn filter(&self) -> EventFilter {
+        unsafe { mem::transmute(self.kevent.filter as type_of_event_filter) }
+    }
+
+    pub fn flags(&self) -> EventFlag {
+        EventFlag::from_bits(self.kevent.flags).unwrap()
+    }
+
+    pub fn fflags(&self) -> FilterFlag {
+        FilterFlag::from_bits(self.kevent.fflags).unwrap()
+    }
+
+    pub fn data(&self) -> intptr_t {
+        self.kevent.data
+    }
+
+    pub fn udata(&self) -> uintptr_t {
+        self.kevent.udata as uintptr_t
+    }
+}
+
 pub fn kevent(kq: RawFd,
               changelist: &[KEvent],
               eventlist: &mut [KEvent],
@@ -224,25 +272,10 @@ pub fn kevent(kq: RawFd,
           target_os = "freebsd",
           target_os = "dragonfly",
           target_os = "openbsd"))]
-pub fn kevent_ts(kq: RawFd,
-              changelist: &[KEvent],
-              eventlist: &mut [KEvent],
-              timeout_opt: Option<timespec>) -> Result<usize> {
-
-    let res = unsafe {
-        libc::kevent(
-            kq,
-            changelist.as_ptr() as *const libc::kevent,
-            changelist.len() as c_int,
-            eventlist.as_mut_ptr() as *mut libc::kevent,
-            eventlist.len() as c_int,
-            if let Some(ref timeout) = timeout_opt {timeout as *const timespec} else {ptr::null()})
-    };
-
-    Errno::result(res).map(|r| r as usize)
-}
-
+type type_of_nchanges = c_int;
 #[cfg(target_os = "netbsd")]
+type type_of_nchanges = size_t;
+
 pub fn kevent_ts(kq: RawFd,
               changelist: &[KEvent],
               eventlist: &mut [KEvent],
@@ -252,9 +285,9 @@ pub fn kevent_ts(kq: RawFd,
         libc::kevent(
             kq,
             changelist.as_ptr() as *const libc::kevent,
-            changelist.len() as size_t,
+            changelist.len() as type_of_nchanges,
             eventlist.as_mut_ptr() as *mut libc::kevent,
-            eventlist.len() as size_t,
+            eventlist.len() as type_of_nchanges,
             if let Some(ref timeout) = timeout_opt {timeout as *const timespec} else {ptr::null()})
     };
 
@@ -269,10 +302,35 @@ pub fn ev_set(ev: &mut KEvent,
               fflags: FilterFlag,
               udata: uintptr_t) {
 
-    ev.ident  = ident as uintptr_t;
-    ev.filter = filter;
-    ev.flags  = flags;
-    ev.fflags = fflags;
-    ev.data   = 0;
-    ev.udata  = udata;
+    ev.kevent.ident  = ident as uintptr_t;
+    ev.kevent.filter = filter as type_of_event_filter;
+    ev.kevent.flags  = flags.bits();
+    ev.kevent.fflags = fflags.bits();
+    ev.kevent.data   = 0;
+    ev.kevent.udata  = udata as type_of_udata;
+}
+
+#[test]
+fn test_struct_kevent() {
+    let udata : uintptr_t = 12345;
+
+    let expected = libc::kevent{ident: 0xdeadbeef,
+                                filter: libc::EVFILT_READ,
+                                flags: libc::EV_DISPATCH | libc::EV_ADD,
+                                fflags: libc::NOTE_CHILD | libc::NOTE_EXIT,
+                                data: 0x1337,
+                                udata: udata as type_of_udata};
+    let actual = KEvent::new(0xdeadbeef,
+                             EventFilter::EVFILT_READ,
+                             EV_DISPATCH | EV_ADD,
+                             NOTE_CHILD | NOTE_EXIT,
+                             0x1337,
+                             udata);
+    assert!(expected.ident == actual.ident());
+    assert!(expected.filter == actual.filter() as type_of_event_filter);
+    assert!(expected.flags == actual.flags().bits());
+    assert!(expected.fflags == actual.fflags().bits());
+    assert!(expected.data == actual.data());
+    assert!(expected.udata == actual.udata() as type_of_udata);
+    assert!(mem::size_of::<libc::kevent>() == mem::size_of::<KEvent>());
 }
