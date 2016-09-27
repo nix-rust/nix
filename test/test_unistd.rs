@@ -57,13 +57,21 @@ fn test_wait() {
 
 #[test]
 fn test_mkstemp() {
-    let result = mkstemp("/tmp/nix_tempfile.XXXXXXXX");
+    let result = mkstemp("/tmp/nix_tempfile.XXXXXX");
     match result {
         Ok((fd, path)) => {
             close(fd).unwrap();
             unlink(path.as_path()).unwrap();
-        }
+        },
         Err(e) => panic!("mkstemp failed: {}", e)
+    }
+
+    let result = mkstemp("/tmp/nix_tempfile");
+    match result {
+        Ok(_) => {
+            panic!("mkstemp succeeded even though it should fail (no X at the end)");
+        },
+        Err(_) => {}
     }
 }
 
