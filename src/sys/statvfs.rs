@@ -21,7 +21,7 @@ pub mod vfs {
         /// Mount Flags
         #[repr(C)]
         #[derive(Default)]
-        flags FsFlags: c_ulong {
+        pub flags FsFlags: c_ulong {
             /// Read Only
             const RDONLY = 1,
             /// Do not allow the set-uid bits to have an effect

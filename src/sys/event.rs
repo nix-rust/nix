@@ -78,7 +78,7 @@ pub type type_of_event_flag = u16;
 #[cfg(any(target_os = "netbsd", target_os = "openbsd"))]
 pub type type_of_event_flag = u32;
 libc_bitflags!{
-    flags EventFlag: type_of_event_flag {
+    pub flags EventFlag: type_of_event_flag {
         EV_ADD,
         EV_CLEAR,
         EV_DELETE,
@@ -106,7 +106,7 @@ libc_bitflags!{
 }
 
 bitflags!(
-    flags FilterFlag: u32 {
+    pub flags FilterFlag: u32 {
         #[cfg(any(target_os = "macos", target_os = "ios"))]
         const NOTE_ABSOLUTE                        = libc::NOTE_ABSOLUTE,
         const NOTE_ATTRIB                          = libc::NOTE_ATTRIB,

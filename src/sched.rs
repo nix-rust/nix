@@ -7,7 +7,7 @@ use {Errno, Error, Result};
 // For some functions taking with a parameter of type CloneFlags,
 // only a subset of these flags have an effect.
 libc_bitflags!{
-    flags CloneFlags: libc::c_int {
+    pub flags CloneFlags: libc::c_int {
         CLONE_VM,
         CLONE_FS,
         CLONE_FILES,
