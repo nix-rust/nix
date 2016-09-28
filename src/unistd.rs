@@ -538,7 +538,8 @@ pub fn mkstemp<P: ?Sized + NixPath>(template: &P) -> Result<(RawFd, PathBuf)> {
     let mut path = try!(template.with_nix_path(|path| {path.to_bytes_with_nul().to_owned()}));
     let p = path.as_mut_ptr() as *mut _;
     let fd = unsafe { libc::mkstemp(p) };
-    path.pop(); // drop the trailing nul
+    let last = path.pop(); // drop the trailing nul
+    debug_assert!(last == Some(b'\0'));
     let pathname = OsString::from_vec(path);
     try!(Errno::result(fd));
     Ok((fd, PathBuf::from(pathname)))
