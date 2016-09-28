@@ -66,10 +66,10 @@ fn test_mkstemp() {
         Err(e) => panic!("mkstemp failed: {}", e)
     }
 
-    let result = mkstemp("/tmp/nix_tempfile");
+    let result = mkstemp("/tmp/");
     match result {
         Ok(_) => {
-            panic!("mkstemp succeeded even though it should fail (no X at the end)");
+            panic!("mkstemp succeeded even though it should fail (provided a directory)");
         },
         Err(_) => {}
     }
