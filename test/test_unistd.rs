@@ -55,6 +55,25 @@ fn test_wait() {
     }
 }
 
+#[test]
+fn test_mkstemp() {
+    let result = mkstemp("/tmp/nix_tempfile.XXXXXX");
+    match result {
+        Ok((fd, path)) => {
+            close(fd).unwrap();
+            unlink(path.as_path()).unwrap();
+        },
+        Err(e) => panic!("mkstemp failed: {}", e)
+    }
+
+    let result = mkstemp("/tmp/");
+    match result {
+        Ok(_) => {
+            panic!("mkstemp succeeded even though it should fail (provided a directory)");
+        },
+        Err(_) => {}
+    }
+}
 
 #[test]
 fn test_getpid() {

@@ -6,9 +6,9 @@ use fcntl::FcntlArg::F_SETFD;
 use libc::{self, c_char, c_void, c_int, c_uint, size_t, pid_t, off_t, uid_t, gid_t, mode_t};
 use std::mem;
 use std::ffi::{CString, CStr, OsString};
-use std::os::unix::ffi::OsStringExt;
-use std::path::PathBuf;
+use std::os::unix::ffi::{OsStringExt};
 use std::os::unix::io::RawFd;
+use std::path::{PathBuf};
 use void::Void;
 use sys::stat::Mode;
 
@@ -530,6 +530,40 @@ pub fn pause() -> Result<()> {
 //   http://pubs.opengroup.org/onlinepubs/009695399/functions/sleep.html#tag_03_705_05
 pub fn sleep(seconds: libc::c_uint) -> c_uint {
     unsafe { libc::sleep(seconds) }
+}
+
+/// Creates a regular file which persists even after process termination
+///
+/// * `template`: a path whose 6 rightmost characters must be X, e.g. /tmp/tmpfile_XXXXXX
+/// * returns: tuple of file descriptor and filename
+///
+/// Err is returned either if no temporary filename could be created or the template doesn't
+/// end with XXXXXX
+///
+/// # Example
+///
+/// ```rust
+/// use nix::unistd;
+///
+/// let fd = match unistd::mkstemp("/tmp/tempfile_XXXXXX") {
+///     Ok((fd, path)) => {
+///         unistd::unlink(path.as_path()).unwrap(); // flag file to be deleted at app termination
+///         fd
+///     }
+///     Err(e) => panic!("mkstemp failed: {}", e)
+/// };
+/// // do something with fd
+/// ```
+#[inline]
+pub fn mkstemp<P: ?Sized + NixPath>(template: &P) -> Result<(RawFd, PathBuf)> {
+    let mut path = try!(template.with_nix_path(|path| {path.to_bytes_with_nul().to_owned()}));
+    let p = path.as_mut_ptr() as *mut _;
+    let fd = unsafe { libc::mkstemp(p) };
+    let last = path.pop(); // drop the trailing nul
+    debug_assert!(last == Some(b'\0'));
+    let pathname = OsString::from_vec(path);
+    try!(Errno::result(fd));
+    Ok((fd, PathBuf::from(pathname)))
 }
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
