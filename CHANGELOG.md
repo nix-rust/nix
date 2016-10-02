@@ -6,6 +6,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Added complete definitions for all kqueue-related constants on all supported
+  OSes
+  ([#415](https://github.com/nix-rust/nix/pull/415))
 - Added `lseek` and `lseek64` in `::nix::unistd`
   ([#377](https://github.com/nix-rust/nix/pull/377))
 - Added accessors `sigmask_mut` and `sigmask` to `UContext` in
@@ -19,6 +22,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#386](https://github.com/nix-rust/nix/pull/386))
 
 ### Changed
+- Changed `KEvent` to an opaque structure that may only be modified by its
+  constructor and the `ev_set` method.
+  ([#415](https://github.com/nix-rust/nix/pull/415))
 - Replaced the reexported integer constants for signals by the enumeration
   `Signal` in `::nix::sys::signal`.
   ([#362](https://github.com/nix-rust/nix/pull/362))
@@ -30,6 +36,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#362](https://github.com/nix-rust/nix/pull/362))
 
 ### Fixed
+- Fixed using kqueue with `EVFILT_USER` on FreeBSD
+  ([#415](https://github.com/nix-rust/nix/pull/415))
 - Fixed the build problem for NetBSD (Note, that we currently do not support
   it, so it might already be broken again).
   ([#389](https://github.com/nix-rust/nix/pull/389))
