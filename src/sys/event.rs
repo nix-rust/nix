@@ -70,62 +70,37 @@ pub enum EventFilter {
     EVFILT_TIMER = libc::EVFILT_TIMER,
 }
 
-#[cfg(any(target_os = "macos",
-          target_os = "freebsd",
-          target_os = "dragonfly"))]
-type type_of_event_flag = u16;
-#[cfg(any(target_os = "macos",
-          target_os = "freebsd",
-          target_os = "dragonfly"))]
-bitflags!(
-    flags EventFlag: u16 {
-        const EV_ADD       = libc::EV_ADD,
-        const EV_CLEAR     = libc::EV_CLEAR,
-        const EV_DELETE    = libc::EV_DELETE,
-        const EV_DISABLE   = libc::EV_DISABLE,
-        const EV_DISPATCH  = libc::EV_DISPATCH,
+#[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "dragonfly"))]
+pub type type_of_event_flag = u16;
+#[cfg(any(target_os = "netbsd", target_os = "openbsd"))]
+pub type type_of_event_flag = u32;
+libc_bitflags!{
+    flags EventFlag: type_of_event_flag {
+        EV_ADD,
+        EV_CLEAR,
+        EV_DELETE,
+        EV_DISABLE,
+        EV_DISPATCH,
         #[cfg(target_os = "freebsd")]
-        const EV_DROP      = libc::EV_DROP,
-        const EV_ENABLE    = libc::EV_ENABLE,
-        const EV_EOF       = libc::EV_EOF,
-        const EV_ERROR     = libc::EV_ERROR,
+        EV_DROP,
+        EV_ENABLE,
+        EV_EOF,
+        EV_ERROR,
         #[cfg(target_os = "macos")]
-        const EV_FLAG0     = libc::EV_FLAG0,
-        const EV_FLAG1     = libc::EV_FLAG1,
+        EV_FLAG0,
+        EV_FLAG1,
         #[cfg(target_os = "dragonfly")]
-        const EV_NODATA    = libc::EV_NODATA,
-        const EV_ONESHOT   = libc::EV_ONESHOT,
+        EV_NODATA,
+        EV_ONESHOT,
         #[cfg(target_os = "macos")]
-        const EV_OOBAND    = libc::EV_OOBAND,
+        EV_OOBAND,
         #[cfg(target_os = "macos")]
-        const EV_POLL      = libc::EV_POLL,
-        const EV_RECEIPT   = libc::EV_RECEIPT,
-        const EV_SYSFLAGS  = libc::EV_SYSFLAGS,
+        EV_POLL,
+        #[cfg(not(target_os = "openbsd"))]
+        EV_RECEIPT,
+        EV_SYSFLAGS,
     }
-);
-
-#[cfg(any(target_os = "netbsd", target_os = "openbsd"))]
-type type_of_event_flag = u32;
-#[cfg(any(target_os = "netbsd", target_os = "openbsd"))]
-bitflags!(
-    flags EventFlag: u32 {
-        const EV_ADD       = libc::EV_ADD,
-        const EV_DELETE    = libc::EV_DELETE,
-        const EV_ENABLE    = libc::EV_ENABLE,
-        const EV_DISABLE   = libc::EV_DISABLE,
-        const EV_ONESHOT   = libc::EV_ONESHOT,
-        const EV_CLEAR     = libc::EV_CLEAR,
-        #[cfg(target_os = "openbsd")]
-        const EV_FLAG1     = libc::EV_FLAG1,
-        #[cfg(target_os = "netbsd")]
-        const EV_RECEIPT   = libc::EV_RECEIPT,
-        const EV_DISPATCH  = libc::EV_DISPATCH,
-        const EV_SYSFLAGS  = libc::EV_SYSFLAGS,
-        const EV_FLAG1     = libc::EV_FLAG1,
-        const EV_EOF       = libc::EV_EOF,
-        const EV_ERROR     = libc::EV_ERROR,
-    }
-);
+}
 
 bitflags!(
     flags FilterFlag: u32 {
