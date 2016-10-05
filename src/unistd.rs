@@ -62,6 +62,11 @@ pub fn setpgid(pid: pid_t, pgid: pid_t) -> Result<()> {
     let res = unsafe { libc::setpgid(pid, pgid) };
     Errno::result(res).map(drop)
 }
+#[inline]
+pub fn getpgid(pid: Option<pid_t>) -> Result<pid_t> {
+    let res = unsafe { libc::getpgid(pid.unwrap_or(0 as pid_t)) };
+    Errno::result(res)
+}
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 #[inline]
@@ -440,6 +445,7 @@ pub fn isatty(fd: RawFd) -> Result<bool> {
         }
     }
 }
+
 
 pub fn unlink<P: ?Sized + NixPath>(path: &P) -> Result<()> {
     let res = try!(path.with_nix_path(|cstr| {
