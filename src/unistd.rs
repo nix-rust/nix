@@ -446,7 +446,6 @@ pub fn isatty(fd: RawFd) -> Result<bool> {
     }
 }
 
-
 pub fn unlink<P: ?Sized + NixPath>(path: &P) -> Result<()> {
     let res = try!(path.with_nix_path(|cstr| {
         unsafe {
