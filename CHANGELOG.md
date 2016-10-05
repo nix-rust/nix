@@ -14,6 +14,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#410](https://github.com/nix-rust/nix/pull/410))
 - Added `setresuid` and `setresgid` for Linux in `::nix::unistd`
   ([#448](https://github.com/nix-rust/nix/pull/448))
+- Added `getpgid` in `::nix::unistd`
+  ([#433](https://github.com/nix-rust/nix/pull/433))
 
 ### Changed
 - The minimum supported version of rustc is now 1.7.0.
