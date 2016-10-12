@@ -5,10 +5,30 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- Added function `epoll_create1` and bitflags `EpollCreateFlags` in
+  `::nix::sys::epoll` in order to support `::libc::epoll_create1`.
+  ([#410](https://github.com/nix-rust/nix/pull/410))
+
 ### Changed
 - `pipe2` now calls `libc::pipe2` where available. Previously it was emulated
   using `pipe`, which meant that setting `O_CLOEXEC` was not atomic.
   ([#427](https://github.com/nix-rust/nix/pull/427))
+- Renamed `EpollEventKind` to `EpollFlags` in `::nix::sys::epoll` in order for
+  it to conform with our conventions.
+  ([#410](https://github.com/nix-rust/nix/pull/410))
+- `EpollEvent` in `::nix::sys::epoll` is now an opaque proxy for
+  `::libc::epoll_event`. The formerly public field `events` is now be read-only
+  accessible with the new method `events()` of `EpollEvent`. Instances of
+  `EpollEvent` can be constructed using the new method `new()` of EpollEvent.
+  ([#410](https://github.com/nix-rust/nix/pull/410))
+
+### Fixed
+- Fixed the build on FreeBSD, and fixed the getsockopt, sendmsg, and recvmsg
+  functions on that same OS.
+  ([#397](https://github.com/nix-rust/nix/pull/397))
+- Fixed an off-by-one bug in `UnixAddr::new_abstract` in `::nix::sys::socket`.
+  ([#429](https://github.com/nix-rust/nix/pull/429))
 
 ## [0.7.0] 2016-09-09
 
@@ -55,14 +75,14 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   which has the same structure as the old `MqAttr`. The field `mq_flags` of
   `::libc::mq_attr` is readable using the new method `flags()` of `MqAttr`.
   `MqAttr` also no longer implements `Debug`.
-  ([#0](https://github.com/nix-rust/nix/pull/0))
+  ([#392](https://github.com/nix-rust/nix/pull/392))
 - The parameter `msq_prio` of `mq_receive` with type `u32` in `::nix::mqueue`
   was replaced by a parameter named `msg_prio` with type `&mut u32`, so that
   the message priority can be obtained by the caller.
-  ([#0](https://github.com/nix-rust/nix/pull/0))
+  ([#392](https://github.com/nix-rust/nix/pull/392))
 - The type alias `MQd` in `::nix::queue` was replaced by the type alias
   `libc::mqd_t`, both of which are aliases for the same type.
-  ([#0](https://github.com/nix-rust/nix/pull/0))
+  ([#392](https://github.com/nix-rust/nix/pull/392))
 
 ### Removed
 - Type alias `SigNum` from `::nix::sys::signal`.
