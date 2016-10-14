@@ -8,6 +8,7 @@ pub const FD_SETSIZE: RawFd = 1024;
 
 #[cfg(any(target_os = "macos", target_os = "ios"))]
 #[repr(C)]
+#[derive(Clone)]
 pub struct FdSet {
     bits: [i32; FD_SETSIZE as usize / 32]
 }

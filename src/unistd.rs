@@ -1,13 +1,16 @@
 //! Standard symbolic constants and types
 //!
 use {Errno, Error, Result, NixPath};
-use fcntl::{fcntl, OFlag, O_NONBLOCK, O_CLOEXEC, FD_CLOEXEC};
-use fcntl::FcntlArg::{F_SETFD, F_SETFL};
-use libc::{self, c_char, c_void, c_int, c_uint, size_t, pid_t, off_t, uid_t, gid_t};
+use fcntl::{fcntl, OFlag, O_CLOEXEC, FD_CLOEXEC};
+use fcntl::FcntlArg::F_SETFD;
+use libc::{self, c_char, c_void, c_int, c_uint, size_t, pid_t, off_t, uid_t, gid_t, mode_t};
 use std::mem;
-use std::ffi::CString;
+use std::ffi::{CString, CStr, OsString};
+use std::os::unix::ffi::{OsStringExt};
 use std::os::unix::io::RawFd;
+use std::path::{PathBuf};
 use void::Void;
+use sys::stat::Mode;
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 pub use self::linux::*;
@@ -109,6 +112,100 @@ pub fn chdir<P: ?Sized + NixPath>(path: &P) -> Result<()> {
     }));
 
     Errno::result(res).map(drop)
+}
+
+/// Creates new directory `path` with access rights `mode`.
+///
+/// # Errors
+///
+/// There are several situations where mkdir might fail:
+///
+/// - current user has insufficient rights in the parent directory
+/// - the path already exists
+/// - the path name is too long (longer than `PATH_MAX`, usually 4096 on linux, 1024 on OS X)
+///
+/// For a full list consult 
+/// [man mkdir(2)](http://man7.org/linux/man-pages/man2/mkdir.2.html#ERRORS)
+///
+/// # Example
+///
+/// ```rust
+/// extern crate tempdir;
+/// extern crate nix;
+///
+/// use nix::unistd;
+/// use nix::sys::stat;
+/// use tempdir::TempDir;
+///
+/// fn main() {
+///     let mut tmp_dir = TempDir::new("test_mkdir").unwrap().into_path();
+///     tmp_dir.push("new_dir");
+///
+///     // create new directory and give read, write and execute rights to the owner
+///     match unistd::mkdir(&tmp_dir, stat::S_IRWXU) {
+///        Ok(_) => println!("created {:?}", tmp_dir),
+///        Err(err) => println!("Error creating directory: {}", err),
+///     }
+/// }
+/// ```
+#[inline]
+pub fn mkdir<P: ?Sized + NixPath>(path: &P, mode: Mode) -> Result<()> {
+    let res = try!(path.with_nix_path(|cstr| {
+        unsafe { libc::mkdir(cstr.as_ptr(), mode.bits() as mode_t) }
+    }));
+
+    Errno::result(res).map(drop)
+}
+
+/// Returns the current directory as a PathBuf
+///
+/// Err is returned if the current user doesn't have the permission to read or search a component
+/// of the current path.
+///
+/// # Example
+///
+/// ```rust
+/// extern crate nix;
+///
+/// use nix::unistd;
+///
+/// fn main() {
+///     // assume that we are allowed to get current directory
+///     let dir = unistd::getcwd().unwrap();
+///     println!("The current directory is {:?}", dir);
+/// }
+/// ```
+#[inline]
+pub fn getcwd() -> Result<PathBuf> {
+    let mut buf = Vec::with_capacity(512);
+    loop {
+        unsafe {
+            let ptr = buf.as_mut_ptr() as *mut libc::c_char;
+
+            // The buffer must be large enough to store the absolute pathname plus
+            // a terminating null byte, or else null is returned.
+            // To safely handle this we start with a reasonable size (512 bytes)
+            // and double the buffer size upon every error
+            if !libc::getcwd(ptr, buf.capacity()).is_null() {
+                let len = CStr::from_ptr(buf.as_ptr() as *const libc::c_char).to_bytes().len();
+                buf.set_len(len);
+                buf.shrink_to_fit();
+                return Ok(PathBuf::from(OsString::from_vec(buf)));
+            } else {
+                let error = Errno::last();
+                // ERANGE means buffer was too small to store directory name
+                if error != Errno::ERANGE {
+                    return Err(Error::Sys(error));
+                }
+            }
+
+            // Trigger the internal buffer resizing logic of `Vec` by requiring
+            // more space than the current capacity.
+            let cap = buf.capacity();
+            buf.set_len(cap);
+            buf.reserve(1);
+        }
+    }
 }
 
 #[inline]
@@ -263,21 +360,42 @@ pub fn pipe() -> Result<(RawFd, RawFd)> {
     }
 }
 
+// libc only defines `pipe2` in `libc::notbsd`.
+#[cfg(any(target_os = "linux",
+          target_os = "android",
+          target_os = "emscripten"))]
 pub fn pipe2(flags: OFlag) -> Result<(RawFd, RawFd)> {
-    unsafe {
-        let mut fds: [c_int; 2] = mem::uninitialized();
+    let mut fds: [c_int; 2] = unsafe { mem::uninitialized() };
 
-        let res = libc::pipe(fds.as_mut_ptr());
+    let res = unsafe { libc::pipe2(fds.as_mut_ptr(), flags.bits()) };
 
-        try!(Errno::result(res));
+    try!(Errno::result(res));
 
-        try!(pipe2_setflags(fds[0], fds[1], flags));
-
-        Ok((fds[0], fds[1]))
-    }
+    Ok((fds[0], fds[1]))
 }
 
+#[cfg(not(any(target_os = "linux",
+              target_os = "android",
+              target_os = "emscripten")))]
+pub fn pipe2(flags: OFlag) -> Result<(RawFd, RawFd)> {
+    let mut fds: [c_int; 2] = unsafe { mem::uninitialized() };
+
+    let res = unsafe { libc::pipe(fds.as_mut_ptr()) };
+
+    try!(Errno::result(res));
+
+    try!(pipe2_setflags(fds[0], fds[1], flags));
+
+    Ok((fds[0], fds[1]))
+}
+
+#[cfg(not(any(target_os = "linux",
+              target_os = "android",
+              target_os = "emscripten")))]
 fn pipe2_setflags(fd1: RawFd, fd2: RawFd, flags: OFlag) -> Result<()> {
+    use fcntl::O_NONBLOCK;
+    use fcntl::FcntlArg::F_SETFL;
+
     let mut res = Ok(0);
 
     if flags.contains(O_CLOEXEC) {
@@ -412,6 +530,40 @@ pub fn pause() -> Result<()> {
 //   http://pubs.opengroup.org/onlinepubs/009695399/functions/sleep.html#tag_03_705_05
 pub fn sleep(seconds: libc::c_uint) -> c_uint {
     unsafe { libc::sleep(seconds) }
+}
+
+/// Creates a regular file which persists even after process termination
+///
+/// * `template`: a path whose 6 rightmost characters must be X, e.g. /tmp/tmpfile_XXXXXX
+/// * returns: tuple of file descriptor and filename
+///
+/// Err is returned either if no temporary filename could be created or the template doesn't
+/// end with XXXXXX
+///
+/// # Example
+///
+/// ```rust
+/// use nix::unistd;
+///
+/// let fd = match unistd::mkstemp("/tmp/tempfile_XXXXXX") {
+///     Ok((fd, path)) => {
+///         unistd::unlink(path.as_path()).unwrap(); // flag file to be deleted at app termination
+///         fd
+///     }
+///     Err(e) => panic!("mkstemp failed: {}", e)
+/// };
+/// // do something with fd
+/// ```
+#[inline]
+pub fn mkstemp<P: ?Sized + NixPath>(template: &P) -> Result<(RawFd, PathBuf)> {
+    let mut path = try!(template.with_nix_path(|path| {path.to_bytes_with_nul().to_owned()}));
+    let p = path.as_mut_ptr() as *mut _;
+    let fd = unsafe { libc::mkstemp(p) };
+    let last = path.pop(); // drop the trailing nul
+    debug_assert!(last == Some(b'\0'));
+    let pathname = OsString::from_vec(path);
+    try!(Errno::result(fd));
+    Ok((fd, PathBuf::from(pathname)))
 }
 
 #[cfg(any(target_os = "linux", target_os = "android"))]

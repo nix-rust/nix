@@ -33,7 +33,9 @@ fn test_mq_send_and_receive() {
             let mq_name_in_child =  &CString::new(b"/a_nix_test_queue".as_ref()).unwrap();
             let mqd_in_child = mq_open(mq_name_in_child, O_CREAT | O_RDONLY, S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH, Some(&attr)).unwrap();
             let mut buf = [0u8; 32];
-            mq_receive(mqd_in_child, &mut buf, 1).unwrap();
+            let mut prio = 0u32;
+            mq_receive(mqd_in_child, &mut buf, &mut prio).unwrap();
+            assert!(prio == 1);
             write(writer, &buf).unwrap();  // pipe result to parent process. Otherwise cargo does not report test failures correctly
             mq_close(mqd_in_child).unwrap();
       }
@@ -99,10 +101,10 @@ fn test_mq_set_nonblocking() {
     let mqd = mq_open(mq_name, O_CREAT | O_WRONLY, S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH, Some(&initial_attr)).unwrap();
     mq_set_nonblock(mqd).unwrap();
     let new_attr = mq_getattr(mqd);
-    assert!(new_attr.unwrap().mq_flags == O_NONBLOCK.bits() as c_long);
+    assert!(new_attr.unwrap().flags() == O_NONBLOCK.bits() as c_long);
     mq_remove_nonblock(mqd).unwrap();
     let new_attr = mq_getattr(mqd);
-    assert!(new_attr.unwrap().mq_flags == 0);
+    assert!(new_attr.unwrap().flags() == 0);
     mq_close(mqd).unwrap();
 }
 

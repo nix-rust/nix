@@ -9,8 +9,42 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Added complete definitions for all kqueue-related constants on all supported
   OSes
   ([#415](https://github.com/nix-rust/nix/pull/415))
+- Added function `epoll_create1` and bitflags `EpollCreateFlags` in
+  `::nix::sys::epoll` in order to support `::libc::epoll_create1`.
+  ([#410](https://github.com/nix-rust/nix/pull/410))
+
+### Changed
+- Changed `KEvent` to an opaque structure that may only be modified by its
+  constructor and the `ev_set` method.
+  ([#415](https://github.com/nix-rust/nix/pull/415))
+- `pipe2` now calls `libc::pipe2` where available. Previously it was emulated
+  using `pipe`, which meant that setting `O_CLOEXEC` was not atomic.
+  ([#427](https://github.com/nix-rust/nix/pull/427))
+- Renamed `EpollEventKind` to `EpollFlags` in `::nix::sys::epoll` in order for
+  it to conform with our conventions.
+  ([#410](https://github.com/nix-rust/nix/pull/410))
+- `EpollEvent` in `::nix::sys::epoll` is now an opaque proxy for
+  `::libc::epoll_event`. The formerly public field `events` is now be read-only
+  accessible with the new method `events()` of `EpollEvent`. Instances of
+  `EpollEvent` can be constructed using the new method `new()` of EpollEvent.
+  ([#410](https://github.com/nix-rust/nix/pull/410))
+
+### Fixed
+- Fixed using kqueue with `EVFILT_USER` on FreeBSD
+  ([#415](https://github.com/nix-rust/nix/pull/415))
+- Fixed the build on FreeBSD, and fixed the getsockopt, sendmsg, and recvmsg
+  functions on that same OS.
+  ([#397](https://github.com/nix-rust/nix/pull/397))
+- Fixed an off-by-one bug in `UnixAddr::new_abstract` in `::nix::sys::socket`.
+  ([#429](https://github.com/nix-rust/nix/pull/429))
+
+## [0.7.0] 2016-09-09
+
+### Added
 - Added `lseek` and `lseek64` in `::nix::unistd`
   ([#377](https://github.com/nix-rust/nix/pull/377))
+- Added `mkdir` and `getcwd` in `::nix::unistd`
+  ([#416](https://github.com/nix-rust/nix/pull/416))
 - Added accessors `sigmask_mut` and `sigmask` to `UContext` in
   `::nix::ucontext`.
   ([#370](https://github.com/nix-rust/nix/pull/370))
@@ -20,24 +54,54 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Added new module `::nix::sys::reboot` with enumeration `RebootMode` and
   functions `reboot` and `set_cad_enabled`. Currently for _linux_ only.
   ([#386](https://github.com/nix-rust/nix/pull/386))
+- `FdSet` in `::nix::sys::select` now also implements `Clone`.
+  ([#405](https://github.com/nix-rust/nix/pull/405))
+- Added `F_FULLFSYNC` to `FcntlArg` in `::nix::fcntl` for _apple_ targets.
+  ([#407](https://github.com/nix-rust/nix/pull/407))
+- Added `CpuSet::unset` in `::nix::sched`.
+  ([#402](https://github.com/nix-rust/nix/pull/402))
+- Added constructor method `new()` to `PollFd` in `::nix::poll`, in order to
+  allow creation of objects, after removing public access to members.
+  ([#399](https://github.com/nix-rust/nix/pull/399))
+- Added method `revents()` to `PollFd` in `::nix::poll`, in order to provide
+  read access to formerly public member `revents`.
+  ([#399](https://github.com/nix-rust/nix/pull/399))
+- Added `MSG_CMSG_CLOEXEC` to `MsgFlags` in `::nix::sys::socket` for _linux_ only.
+  ([#422](https://github.com/nix-rust/nix/pull/422))
 
 ### Changed
-- Changed `KEvent` to an opaque structure that may only be modified by its
-  constructor and the `ev_set` method.
-  ([#415](https://github.com/nix-rust/nix/pull/415))
 - Replaced the reexported integer constants for signals by the enumeration
   `Signal` in `::nix::sys::signal`.
   ([#362](https://github.com/nix-rust/nix/pull/362))
 - Renamed `EventFdFlag` to `EfdFlags` in `::nix::sys::eventfd`.
   ([#383](https://github.com/nix-rust/nix/pull/383))
+- Changed the result types of `CpuSet::is_set` and `CpuSet::set` in
+  `::nix::sched` to `Result<bool>` and `Result<()>`, respectively. They now
+  return `EINVAL`, if an invalid argument for the `field` parameter is passed.
+  ([#402](https://github.com/nix-rust/nix/pull/402))
+- `MqAttr` in `::nix::mqueue` is now an opaque proxy for `::libc::mq_attr`,
+  which has the same structure as the old `MqAttr`. The field `mq_flags` of
+  `::libc::mq_attr` is readable using the new method `flags()` of `MqAttr`.
+  `MqAttr` also no longer implements `Debug`.
+  ([#392](https://github.com/nix-rust/nix/pull/392))
+- The parameter `msq_prio` of `mq_receive` with type `u32` in `::nix::mqueue`
+  was replaced by a parameter named `msg_prio` with type `&mut u32`, so that
+  the message priority can be obtained by the caller.
+  ([#392](https://github.com/nix-rust/nix/pull/392))
+- The type alias `MQd` in `::nix::queue` was replaced by the type alias
+  `libc::mqd_t`, both of which are aliases for the same type.
+  ([#392](https://github.com/nix-rust/nix/pull/392))
 
 ### Removed
 - Type alias `SigNum` from `::nix::sys::signal`.
   ([#362](https://github.com/nix-rust/nix/pull/362))
+- Type alias `CpuMask` from `::nix::shed`.
+  ([#402](https://github.com/nix-rust/nix/pull/402))
+- Removed public fields from `PollFd` in `::nix::poll`. (See also added method
+  `revents()`.
+  ([#399](https://github.com/nix-rust/nix/pull/399))
 
 ### Fixed
-- Fixed using kqueue with `EVFILT_USER` on FreeBSD
-  ([#415](https://github.com/nix-rust/nix/pull/415))
 - Fixed the build problem for NetBSD (Note, that we currently do not support
   it, so it might already be broken again).
   ([#389](https://github.com/nix-rust/nix/pull/389))
