@@ -191,7 +191,7 @@ fn decode(pid : pid_t, status: i32) -> WaitStatus {
     } else if status::signaled(status) {
         WaitStatus::Signaled(pid, status::term_signal(status), status::dumped_core(status))
     } else if status::stopped(status) {
-        if cfg!(any(target_os = "linux", target_os = "android")) {
+        #[cfg(any(target_os = "linux", target_os = "android"))] {
             let status_additional = status::stop_additional(status);
             if status_additional != 0 {
                 return WaitStatus::PtraceEvent(pid, status::stop_signal(status), status::stop_additional(status))
