@@ -77,6 +77,8 @@ matrix:
       sudo: true
   allow_failures:
     - rust: nightly
+    # Fail on beta failures again, when 1.13.0-beta.3 or newer is released.
+    - rust: beta
     - env: TARGET=mips-unknown-linux-gnu DOCKER_IMAGE=posborne/rust-cross:mips
     - env: TARGET=mipsel-unknown-linux-gnu DOCKER_IMAGE=posborne/rust-cross:mips
     - env: TARGET=arm-linux-androideabi DOCKER_IMAGE=posborne/rust-cross:android
