@@ -6,11 +6,17 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Added complete definitions for all kqueue-related constants on all supported
+  OSes
+  ([#415](https://github.com/nix-rust/nix/pull/415))
 - Added function `epoll_create1` and bitflags `EpollCreateFlags` in
   `::nix::sys::epoll` in order to support `::libc::epoll_create1`.
   ([#410](https://github.com/nix-rust/nix/pull/410))
 
 ### Changed
+- Changed `KEvent` to an opaque structure that may only be modified by its
+  constructor and the `ev_set` method.
+  ([#415](https://github.com/nix-rust/nix/pull/415))
 - `pipe2` now calls `libc::pipe2` where available. Previously it was emulated
   using `pipe`, which meant that setting `O_CLOEXEC` was not atomic.
   ([#427](https://github.com/nix-rust/nix/pull/427))
@@ -24,6 +30,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#410](https://github.com/nix-rust/nix/pull/410))
 
 ### Fixed
+- Fixed using kqueue with `EVFILT_USER` on FreeBSD
+  ([#415](https://github.com/nix-rust/nix/pull/415))
 - Fixed the build on FreeBSD, and fixed the getsockopt, sendmsg, and recvmsg
   functions on that same OS.
   ([#397](https://github.com/nix-rust/nix/pull/397))
