@@ -16,9 +16,7 @@ addons:
       - binutils-dev
 
 rust:
-  - 1.2.0  # Oldest supported version
-  - 1.7.0
-  - 1.8.0
+  - 1.7.0  # Oldest supported version
   - stable
   - beta
   - nightly
@@ -48,12 +46,6 @@ matrix:
     - os: osx
       env: ARCH=i686
       rust: stable
-    - os: osx
-      env: ARCH=x86_64
-      rust: 1.2.0
-    - os: osx
-      env: ARCH=i686
-      rust: 1.2.0
     # Docker builds for other targets
     - os: linux
       env: TARGET=aarch64-unknown-linux-gnu DOCKER_IMAGE=posborne/rust-cross:arm
