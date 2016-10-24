@@ -387,8 +387,12 @@ pub fn pthread_sigmask(how: SigFlags,
     Errno::result(res).map(drop)
 }
 
-pub fn kill(pid: libc::pid_t, signal: Signal) -> Result<()> {
-    let res = unsafe { libc::kill(pid, signal as libc::c_int) };
+pub fn kill<T: Into<Option<Signal>>>(pid: libc::pid_t, signal: T) -> Result<()> {
+    let res = unsafe { libc::kill(pid,
+                                  match signal.into() {
+                                      Some(s) => s as libc::c_int,
+                                      None => 0,
+                                  }) };
 
     Errno::result(res).map(drop)
 }

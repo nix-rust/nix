@@ -9,7 +9,7 @@ fn test_wait_signal() {
     match fork() {
       Ok(Child) => pause().unwrap_or(()),
       Ok(Parent { child }) => {
-          kill(child, SIGKILL).ok().expect("Error: Kill Failed");
+          kill(child, Some(SIGKILL)).ok().expect("Error: Kill Failed");
           assert_eq!(waitpid(child, None), Ok(WaitStatus::Signaled(child, SIGKILL, false)));
       },
       // panic, fork should never fail unless there is a serious problem with the OS

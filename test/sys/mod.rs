@@ -1,3 +1,4 @@
+mod test_signal;
 mod test_socket;
 mod test_sockopt;
 mod test_termios;
