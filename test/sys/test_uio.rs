@@ -6,6 +6,7 @@ use std::fs::{OpenOptions, remove_file};
 use std::os::unix::io::AsRawFd;
 
 use tempdir::TempDir;
+use tempfile::tempfile;
 
 #[test]
 fn test_writev() {
@@ -99,9 +100,7 @@ fn test_readv() {
 fn test_pwrite() {
     use std::io::Read;
 
-    let path = "pwrite_test_file";
-    let mut file = OpenOptions::new().write(true).read(true).create(true)
-                                    .truncate(true).open(path).unwrap();
+    let mut file = tempfile().unwrap();
     let buf = [1u8;8];
     assert_eq!(Ok(8), pwrite(file.as_raw_fd(), &buf, 8));
     let mut file_content = Vec::new();
@@ -109,8 +108,6 @@ fn test_pwrite() {
     let mut expected = vec![0u8;8];
     expected.extend(vec![1;8]);
     assert_eq!(file_content, expected);
-
-    remove_file(path).unwrap();
 }
 
 #[test]
