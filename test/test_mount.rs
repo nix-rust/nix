@@ -129,10 +129,6 @@ exit 23";
 
     pub fn test_mount_bind() {
         use std::env;
-        if env::var("CI").is_ok() && env::var("TRAVIS").is_ok() {
-            print!("Travis does not allow bind mounts, skipping.");
-            return;
-        }
 
         let tempdir = TempDir::new("nix-test_mount")
                           .unwrap_or_else(|e| panic!("tempdir failed: {}", e));
