@@ -568,6 +568,7 @@ pub fn mkstemp<P: ?Sized + NixPath>(template: &P) -> Result<(RawFd, PathBuf)> {
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 mod linux {
+    use libc::{self, uid_t, gid_t};
     use sys::syscall::{syscall, SYSPIVOTROOT};
     use {Errno, Result, NixPath};
 
@@ -583,6 +584,38 @@ mod linux {
                 }
             })
         })));
+
+        Errno::result(res).map(drop)
+    }
+
+    /// Sets the real, effective, and saved uid.
+    /// ([see setresuid(2)](http://man7.org/linux/man-pages/man2/setresuid.2.html))
+    ///
+    /// * `ruid`: real user id
+    /// * `euid`: effective user id
+    /// * `suid`: saved user id
+    /// * returns: Ok or libc error code.
+    ///
+    /// Err is returned if the user doesn't have permission to set this UID.
+    #[inline]
+    pub fn setresuid(ruid: uid_t, euid: uid_t, suid: uid_t) -> Result<()> {
+        let res = unsafe { libc::setresuid(ruid, euid, suid) };
+
+        Errno::result(res).map(drop)
+    }
+
+    /// Sets the real, effective, and saved gid.
+    /// ([see setresuid(2)](http://man7.org/linux/man-pages/man2/setresuid.2.html))
+    ///
+    /// * `rgid`: real user id
+    /// * `egid`: effective user id
+    /// * `sgid`: saved user id
+    /// * returns: Ok or libc error code.
+    ///
+    /// Err is returned if the user doesn't have permission to set this GID.
+    #[inline]
+    pub fn setresgid(rgid: gid_t, egid: gid_t, sgid: gid_t) -> Result<()> {
+        let res = unsafe { libc::setresgid(rgid, egid, sgid) };
 
         Errno::result(res).map(drop)
     }
