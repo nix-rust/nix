@@ -12,6 +12,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Added function `epoll_create1` and bitflags `EpollCreateFlags` in
   `::nix::sys::epoll` in order to support `::libc::epoll_create1`.
   ([#410](https://github.com/nix-rust/nix/pull/410))
+- Added `setresuid` and `setresgid` for Linux in `::nix::unistd`
+  ([#448](https://github.com/nix-rust/nix/pull/448))
 
 ### Changed
 - The minimum supported version of rustc is now 1.7.0.
