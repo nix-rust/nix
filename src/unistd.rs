@@ -15,15 +15,20 @@ use sys::stat::Mode;
 #[cfg(any(target_os = "linux", target_os = "android"))]
 pub use self::linux::*;
 
+/// Represents the successful result of calling `fork`
+///
+/// When `fork` is called, the process continues execution in the parent process
+/// and in the new child.  This return type can be examined to determine whether
+/// you are now executing in the parent process or in the child.
 #[derive(Clone, Copy)]
 pub enum ForkResult {
-    Parent {
-        child: pid_t
-    },
-    Child
+    Parent { child: pid_t },
+    Child,
 }
 
 impl ForkResult {
+
+    /// Return `true` if this is the child process of the `fork()`
     #[inline]
     pub fn is_child(&self) -> bool {
         match *self {
@@ -32,12 +37,40 @@ impl ForkResult {
         }
     }
 
+    /// Returns `true` if this is the parent process of the `fork()`
     #[inline]
     pub fn is_parent(&self) -> bool {
         !self.is_child()
     }
 }
 
+/// Create a new child process duplicating the parent process ([see
+/// fork(2)](http://man7.org/linux/man-pages/man2/fork.2.html)).
+///
+/// After calling the fork system call (successfully) two processes will
+/// be created that are identical with the exception of their pid and the
+/// return value of this function.  As an example:
+///
+/// ```no_run
+/// use nix::unistd::{fork, ForkResult};
+///
+/// match fork() {
+///    Ok(ForkResult::Parent { child, .. }) => {
+///        println!("Continuing execution in parent process, new child has pid: {}", child);
+///    }
+///    Ok(ForkResult::Child) => println!("I'm a new child process"),
+///    Err(e) => println!("Fork failed"),
+/// }
+/// ```
+///
+/// This will print something like the following (order indeterministic).  The
+/// thing to note is that you end up with two processes continuing execution
+/// immediately after the fork call but with different match arms.
+///
+/// ```text
+/// Continuing execution in parent process, new child has pid: 1234
+/// I'm a new child process
+/// ```
 #[inline]
 pub fn fork() -> Result<ForkResult> {
     use self::ForkResult::*;
@@ -45,7 +78,7 @@ pub fn fork() -> Result<ForkResult> {
 
     Errno::result(res).map(|res| match res {
         0 => Child,
-        res => Parent { child: res }
+        res => Parent { child: res },
     })
 }
 
