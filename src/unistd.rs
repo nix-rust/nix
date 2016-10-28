@@ -102,6 +102,15 @@ pub fn getppid() -> pid_t {
     unsafe { libc::getppid() } // no error handling, according to man page: "These functions are always successful."
 }
 
+/// Set a process group ID (see
+/// [setpgid(2)](http://man7.org/linux/man-pages/man2/setpgid.2.html)).
+///
+/// Set the process group id (PGID) of a particular process.  If a pid of zero
+/// is specified, then the pid of the calling process is used.  Process groups
+/// may be used to group together a set of processes in order for the OS to
+/// apply some operations across the group.
+///
+/// `setsid()` may be used to create a new process group.
 #[inline]
 pub fn setpgid(pid: pid_t, pgid: pid_t) -> Result<()> {
     let res = unsafe { libc::setpgid(pid, pgid) };
