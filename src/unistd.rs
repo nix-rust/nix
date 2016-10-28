@@ -140,6 +140,16 @@ pub fn gettid() -> pid_t {
     unsafe { libc::syscall(libc::SYS_gettid) as pid_t }
 }
 
+/// Create a copy of the specified file descriptor (see
+/// [dup(2)](http://man7.org/linux/man-pages/man2/dup.2.html)).
+///
+/// The new file descriptor will be have a new index but refer to the same
+/// resource as the old file descriptor and the old and new file descriptors may
+/// be used interchangeably.  The new and old file descriptor share the same
+/// underlying resource, offset, and file status flags.  The actual index used
+/// for the file descriptor will be the lowest fd index that is available.
+///
+/// The two file descriptors do not share file descriptor flags (e.g. `FD_CLOEXEC`).
 #[inline]
 pub fn dup(oldfd: RawFd) -> Result<RawFd> {
     let res = unsafe { libc::dup(oldfd) };
@@ -147,6 +157,12 @@ pub fn dup(oldfd: RawFd) -> Result<RawFd> {
     Errno::result(res)
 }
 
+/// Create a copy of the specified file descriptor using the specified fd (see
+/// [dup(2)](http://man7.org/linux/man-pages/man2/dup.2.html)).
+///
+/// This function behaves similar to `dup()` except that it will try to use the
+/// specified fd instead of allocating a new one.  See the man pages for more
+/// detail on the exact behavior of this function.
 #[inline]
 pub fn dup2(oldfd: RawFd, newfd: RawFd) -> Result<RawFd> {
     let res = unsafe { libc::dup2(oldfd, newfd) };
@@ -154,6 +170,11 @@ pub fn dup2(oldfd: RawFd, newfd: RawFd) -> Result<RawFd> {
     Errno::result(res)
 }
 
+/// Create a new copy of the specified file descriptor using the specified fd
+/// and flags (see [dup(2)](http://man7.org/linux/man-pages/man2/dup.2.html)).
+///
+/// This function behaves similar to `dup2()` but allows for flags to be
+/// specified.
 pub fn dup3(oldfd: RawFd, newfd: RawFd, flags: OFlag) -> Result<RawFd> {
     dup3_polyfill(oldfd, newfd, flags)
 }
