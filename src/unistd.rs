@@ -117,6 +117,13 @@ pub fn setpgid(pid: pid_t, pgid: pid_t) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
+/// Create new session and set process group id (see
+/// [setsid(2)](http://man7.org/linux/man-pages/man2/setsid.2.html)).
+#[inline]
+pub fn setsid() -> Result<pid_t> {
+    Errno::result(unsafe { libc::setsid() })
+}
+
 #[cfg(any(target_os = "linux", target_os = "android"))]
 #[inline]
 pub fn gettid() -> pid_t {
