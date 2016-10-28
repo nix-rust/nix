@@ -344,6 +344,12 @@ fn to_exec_array(args: &[CString]) -> Vec<*const c_char> {
     args_p
 }
 
+/// Replace the current process image with a new one (see
+/// [exec(3)](http://man7.org/linux/man-pages/man3/exec.3.html)).
+///
+/// See the `::nix::unistd::execve` system call for additional details.  `execv`
+/// performs the same action but does not allow for customization of the
+/// environment for the new process.
 #[inline]
 pub fn execv(path: &CString, argv: &[CString]) -> Result<Void> {
     let args_p = to_exec_array(argv);
@@ -355,6 +361,24 @@ pub fn execv(path: &CString, argv: &[CString]) -> Result<Void> {
     Err(Error::Sys(Errno::last()))
 }
 
+
+/// Replace the current process image with a new one (see
+/// [execve(2)](http://man7.org/linux/man-pages/man2/execve.2.html)).
+///
+/// The execve system call allows for another process to be "called" which will
+/// replace the current process image.  That is, this process becomes the new
+/// command that is run. On success, this function will not return. Instead,
+/// the new program will run until it exits.
+///
+/// If an error occurs, this function will return with an indication of the
+/// cause of failure.  See
+/// [execve(2)#errors](http://man7.org/linux/man-pages/man2/execve.2.html#ERRORS)
+/// for a list of potential problems that maight cause execv to fail.
+///
+/// Both `::nix::unistd::execv` and `::nix::unistd::execve` take as arguments a
+/// slice of `::std::ffi::CString`s for `args` and `env`.  Each element in
+/// the `args` list is an argument to the new process.  Each element in the
+/// `env` list should be a string in the form "key=value".
 #[inline]
 pub fn execve(path: &CString, args: &[CString], env: &[CString]) -> Result<Void> {
     let args_p = to_exec_array(args);
@@ -367,6 +391,15 @@ pub fn execve(path: &CString, args: &[CString], env: &[CString]) -> Result<Void>
     Err(Error::Sys(Errno::last()))
 }
 
+/// Replace the current process image with a new one and replicate shell `PATH`
+/// searching behavior (see
+/// [exec(3)](http://man7.org/linux/man-pages/man3/exec.3.html)).
+///
+/// See `::nix::unistd::execve` for additoinal details.  `execvp` behaves the
+/// sme as execv except that it will examine the `PATH` environment variables
+/// for file names not specified with a leading slash.  For example, `execv`
+/// would not work if I specified "bash" for the path argument, but `execvp`
+/// would assuming that I had a bash executable on my `PATH`.
 #[inline]
 pub fn execvp(filename: &CString, args: &[CString]) -> Result<Void> {
     let args_p = to_exec_array(args);
