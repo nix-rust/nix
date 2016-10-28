@@ -197,6 +197,11 @@ fn dup3_polyfill(oldfd: RawFd, newfd: RawFd, flags: OFlag) -> Result<RawFd> {
     Ok(fd)
 }
 
+/// Change the current working directory of the calling process (see
+/// [chdir(2)](http://man7.org/linux/man-pages/man2/chdir.2.html)).
+///
+/// This function may fail in a number of different scenarios.  See the man
+/// pages for additional details on possible failure cases.
 #[inline]
 pub fn chdir<P: ?Sized + NixPath>(path: &P) -> Result<()> {
     let res = try!(path.with_nix_path(|cstr| {
