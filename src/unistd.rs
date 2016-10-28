@@ -305,6 +305,17 @@ pub fn getcwd() -> Result<PathBuf> {
     }
 }
 
+/// Change the ownership of the file at `path` to be owned by the specified
+/// `owner` (user) and `group` (see
+/// [chown(2)](http://man7.org/linux/man-pages/man2/lchown.2.html)).
+///
+/// The owner/group for the provided path name will not be modified if `None` is
+/// provided for that argument.  Ownership change will be attempted for the path
+/// only if `Some` owner/group is provided.
+///
+/// This call may fail under a number of different situations.  See [the man
+/// pages](http://man7.org/linux/man-pages/man2/lchown.2.html#ERRORS) for
+/// additional details.
 #[inline]
 pub fn chown<P: ?Sized + NixPath>(path: &P, owner: Option<uid_t>, group: Option<gid_t>) -> Result<()> {
     let res = try!(path.with_nix_path(|cstr| {
