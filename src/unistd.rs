@@ -82,14 +82,26 @@ pub fn fork() -> Result<ForkResult> {
     })
 }
 
+/// Get the pid of this process (see
+/// [getpid(2)](http://man7.org/linux/man-pages/man2/getpid.2.html)).
+///
+/// Since you are running code, there is always a pid to return, so there
+/// is no error case that needs to be handled.
 #[inline]
 pub fn getpid() -> pid_t {
-    unsafe { libc::getpid() } // no error handling, according to man page: "These functions are always successful."
+    unsafe { libc::getpid() }
 }
+
+/// Get the pid of this processes' parent (see
+/// [getpid(2)](http://man7.org/linux/man-pages/man2/getpid.2.html)).
+///
+/// There is always a parent pid to return, so there is no error case that needs
+/// to be handled.
 #[inline]
 pub fn getppid() -> pid_t {
     unsafe { libc::getppid() } // no error handling, according to man page: "These functions are always successful."
 }
+
 #[inline]
 pub fn setpgid(pid: pid_t, pgid: pid_t) -> Result<()> {
     let res = unsafe { libc::setpgid(pid, pgid) };
