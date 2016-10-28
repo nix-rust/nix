@@ -68,6 +68,17 @@ pub fn getpgid(pid: Option<pid_t>) -> Result<pid_t> {
     Errno::result(res)
 }
 
+#[inline]
+pub fn tcgetgrp(fd: c_int) -> Result<pid_t> {
+    let res = unsafe { libc::tcgetpgrp(fd) };
+    Errno::result(res)
+}
+#[inline]
+pub fn tcsetpgrp(fd: c_int, pgrp: pid_t) -> Result<c_int> {
+    let res = unsafe { libc::tcsetpgrp(fd, pgrp) };
+    Errno::result(res)
+}
+
 #[cfg(any(target_os = "linux", target_os = "android"))]
 #[inline]
 pub fn gettid() -> pid_t {
