@@ -124,10 +124,20 @@ pub fn setsid() -> Result<pid_t> {
     Errno::result(unsafe { libc::setsid() })
 }
 
+/// Get the caller's thread ID (see
+/// [gettid(2)](http://man7.org/linux/man-pages/man2/gettid.2.html).
+///
+/// This function is only available on Linux based systems.  In a single
+/// threaded process, the main thread will have the same ID as the process.  In
+/// a multithreaded process, each thread will have a unique thread id but the
+/// same process ID.
+///
+/// No error handling is required as a thread id should always exist for any
+/// process, even if threads are not being used.
 #[cfg(any(target_os = "linux", target_os = "android"))]
 #[inline]
 pub fn gettid() -> pid_t {
-    unsafe { libc::syscall(libc::SYS_gettid) as pid_t }    // no error handling, according to man page: "These functions are always successful."
+    unsafe { libc::syscall(libc::SYS_gettid) as pid_t }
 }
 
 #[inline]
