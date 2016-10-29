@@ -64,6 +64,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - `SigFlags` in `::nix::sys::signal` has be renamed to `SigmaskHow` and its type
   has changed from `bitflags` to `enum` in order to conform to our conventions.
   ([#460](https://github.com/nix-rust/nix/pull/460))
+- `sethostname` now takes a `&str` instead of a `&[u8]` as this provides an API
+  that makes more sense in normal, correct usage of the API.
 
 ### Fixed
 - Fixed multiple issues with Unix domain sockets on non-Linux OSes

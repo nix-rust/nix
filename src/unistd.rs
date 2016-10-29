@@ -480,7 +480,14 @@ pub fn daemon(nochdir: bool, noclose: bool) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
-pub fn sethostname(name: &[u8]) -> Result<()> {
+/// Set the system host name (see
+/// [gethostname(2)](http://man7.org/linux/man-pages/man2/gethostname.2.html)).
+///
+/// Given a name, attempt to update the system host name to the given string.
+/// On some systems, the host name is limited to as few as 64 bytes.  An error
+/// will be return if the name is not valid or the current process does not have
+/// permissions to update the host name.
+pub fn sethostname(name: &str) -> Result<()> {
     // Handle some differences in type of the len arg across platforms.
     cfg_if! {
         if #[cfg(any(target_os = "dragonfly",
