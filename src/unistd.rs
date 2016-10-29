@@ -15,15 +15,20 @@ use sys::stat::Mode;
 #[cfg(any(target_os = "linux", target_os = "android"))]
 pub use self::linux::*;
 
+/// Represents the successful result of calling `fork`
+///
+/// When `fork` is called, the process continues execution in the parent process
+/// and in the new child.  This return type can be examined to determine whether
+/// you are now executing in the parent process or in the child.
 #[derive(Clone, Copy)]
 pub enum ForkResult {
-    Parent {
-        child: pid_t
-    },
-    Child
+    Parent { child: pid_t },
+    Child,
 }
 
 impl ForkResult {
+
+    /// Return `true` if this is the child process of the `fork()`
     #[inline]
     pub fn is_child(&self) -> bool {
         match *self {
@@ -32,12 +37,40 @@ impl ForkResult {
         }
     }
 
+    /// Returns `true` if this is the parent process of the `fork()`
     #[inline]
     pub fn is_parent(&self) -> bool {
         !self.is_child()
     }
 }
 
+/// Create a new child process duplicating the parent process ([see
+/// fork(2)](http://man7.org/linux/man-pages/man2/fork.2.html)).
+///
+/// After calling the fork system call (successfully) two processes will
+/// be created that are identical with the exception of their pid and the
+/// return value of this function.  As an example:
+///
+/// ```no_run
+/// use nix::unistd::{fork, ForkResult};
+///
+/// match fork() {
+///    Ok(ForkResult::Parent { child, .. }) => {
+///        println!("Continuing execution in parent process, new child has pid: {}", child);
+///    }
+///    Ok(ForkResult::Child) => println!("I'm a new child process"),
+///    Err(e) => println!("Fork failed"),
+/// }
+/// ```
+///
+/// This will print something like the following (order indeterministic).  The
+/// thing to note is that you end up with two processes continuing execution
+/// immediately after the fork call but with different match arms.
+///
+/// ```text
+/// Continuing execution in parent process, new child has pid: 1234
+/// I'm a new child process
+/// ```
 #[inline]
 pub fn fork() -> Result<ForkResult> {
     use self::ForkResult::*;
@@ -45,18 +78,39 @@ pub fn fork() -> Result<ForkResult> {
 
     Errno::result(res).map(|res| match res {
         0 => Child,
-        res => Parent { child: res }
+        res => Parent { child: res },
     })
 }
 
+/// Get the pid of this process (see
+/// [getpid(2)](http://man7.org/linux/man-pages/man2/getpid.2.html)).
+///
+/// Since you are running code, there is always a pid to return, so there
+/// is no error case that needs to be handled.
 #[inline]
 pub fn getpid() -> pid_t {
-    unsafe { libc::getpid() } // no error handling, according to man page: "These functions are always successful."
+    unsafe { libc::getpid() }
 }
+
+/// Get the pid of this processes' parent (see
+/// [getpid(2)](http://man7.org/linux/man-pages/man2/getpid.2.html)).
+///
+/// There is always a parent pid to return, so there is no error case that needs
+/// to be handled.
 #[inline]
 pub fn getppid() -> pid_t {
     unsafe { libc::getppid() } // no error handling, according to man page: "These functions are always successful."
 }
+
+/// Set a process group ID (see
+/// [setpgid(2)](http://man7.org/linux/man-pages/man2/setpgid.2.html)).
+///
+/// Set the process group id (PGID) of a particular process.  If a pid of zero
+/// is specified, then the pid of the calling process is used.  Process groups
+/// may be used to group together a set of processes in order for the OS to
+/// apply some operations across the group.
+///
+/// `setsid()` may be used to create a new process group.
 #[inline]
 pub fn setpgid(pid: pid_t, pgid: pid_t) -> Result<()> {
     let res = unsafe { libc::setpgid(pid, pgid) };
@@ -68,12 +122,39 @@ pub fn getpgid(pid: Option<pid_t>) -> Result<pid_t> {
     Errno::result(res)
 }
 
+/// Create new session and set process group id (see
+/// [setsid(2)](http://man7.org/linux/man-pages/man2/setsid.2.html)).
+#[inline]
+pub fn setsid() -> Result<pid_t> {
+    Errno::result(unsafe { libc::setsid() })
+}
+
+/// Get the caller's thread ID (see
+/// [gettid(2)](http://man7.org/linux/man-pages/man2/gettid.2.html).
+///
+/// This function is only available on Linux based systems.  In a single
+/// threaded process, the main thread will have the same ID as the process.  In
+/// a multithreaded process, each thread will have a unique thread id but the
+/// same process ID.
+///
+/// No error handling is required as a thread id should always exist for any
+/// process, even if threads are not being used.
 #[cfg(any(target_os = "linux", target_os = "android"))]
 #[inline]
 pub fn gettid() -> pid_t {
-    unsafe { libc::syscall(libc::SYS_gettid) as pid_t }    // no error handling, according to man page: "These functions are always successful."
+    unsafe { libc::syscall(libc::SYS_gettid) as pid_t }
 }
 
+/// Create a copy of the specified file descriptor (see
+/// [dup(2)](http://man7.org/linux/man-pages/man2/dup.2.html)).
+///
+/// The new file descriptor will be have a new index but refer to the same
+/// resource as the old file descriptor and the old and new file descriptors may
+/// be used interchangeably.  The new and old file descriptor share the same
+/// underlying resource, offset, and file status flags.  The actual index used
+/// for the file descriptor will be the lowest fd index that is available.
+///
+/// The two file descriptors do not share file descriptor flags (e.g. `FD_CLOEXEC`).
 #[inline]
 pub fn dup(oldfd: RawFd) -> Result<RawFd> {
     let res = unsafe { libc::dup(oldfd) };
@@ -81,6 +162,12 @@ pub fn dup(oldfd: RawFd) -> Result<RawFd> {
     Errno::result(res)
 }
 
+/// Create a copy of the specified file descriptor using the specified fd (see
+/// [dup(2)](http://man7.org/linux/man-pages/man2/dup.2.html)).
+///
+/// This function behaves similar to `dup()` except that it will try to use the
+/// specified fd instead of allocating a new one.  See the man pages for more
+/// detail on the exact behavior of this function.
 #[inline]
 pub fn dup2(oldfd: RawFd, newfd: RawFd) -> Result<RawFd> {
     let res = unsafe { libc::dup2(oldfd, newfd) };
@@ -88,6 +175,11 @@ pub fn dup2(oldfd: RawFd, newfd: RawFd) -> Result<RawFd> {
     Errno::result(res)
 }
 
+/// Create a new copy of the specified file descriptor using the specified fd
+/// and flags (see [dup(2)](http://man7.org/linux/man-pages/man2/dup.2.html)).
+///
+/// This function behaves similar to `dup2()` but allows for flags to be
+/// specified.
 pub fn dup3(oldfd: RawFd, newfd: RawFd, flags: OFlag) -> Result<RawFd> {
     dup3_polyfill(oldfd, newfd, flags)
 }
@@ -110,6 +202,11 @@ fn dup3_polyfill(oldfd: RawFd, newfd: RawFd, flags: OFlag) -> Result<RawFd> {
     Ok(fd)
 }
 
+/// Change the current working directory of the calling process (see
+/// [chdir(2)](http://man7.org/linux/man-pages/man2/chdir.2.html)).
+///
+/// This function may fail in a number of different scenarios.  See the man
+/// pages for additional details on possible failure cases.
 #[inline]
 pub fn chdir<P: ?Sized + NixPath>(path: &P) -> Result<()> {
     let res = try!(path.with_nix_path(|cstr| {
@@ -213,6 +310,17 @@ pub fn getcwd() -> Result<PathBuf> {
     }
 }
 
+/// Change the ownership of the file at `path` to be owned by the specified
+/// `owner` (user) and `group` (see
+/// [chown(2)](http://man7.org/linux/man-pages/man2/lchown.2.html)).
+///
+/// The owner/group for the provided path name will not be modified if `None` is
+/// provided for that argument.  Ownership change will be attempted for the path
+/// only if `Some` owner/group is provided.
+///
+/// This call may fail under a number of different situations.  See [the man
+/// pages](http://man7.org/linux/man-pages/man2/lchown.2.html#ERRORS) for
+/// additional details.
 #[inline]
 pub fn chown<P: ?Sized + NixPath>(path: &P, owner: Option<uid_t>, group: Option<gid_t>) -> Result<()> {
     let res = try!(path.with_nix_path(|cstr| {
