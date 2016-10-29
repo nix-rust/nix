@@ -411,6 +411,40 @@ pub fn execvp(filename: &CString, args: &[CString]) -> Result<Void> {
     Err(Error::Sys(Errno::last()))
 }
 
+/// Daemonize this process by detaching from the controlling terminal (see
+/// [daemon(3)](http://man7.org/linux/man-pages/man3/daemon.3.html)).
+///
+/// When a process is launched it is typically associated with a parent and it,
+/// in turn, by its controlling terminal/process.  In order for a process to run
+/// in the "background" it must daemonize itself by detaching itself.  Under
+/// posix, this is done by doing the following:
+///
+/// 1. Parent process (this one) forks
+/// 2. Parent process exits
+/// 3. Child process continues to run.
+///
+/// There are a couple options here whose names and meaning can be a bit
+/// confusing, so we'll describe the behavior for each state.
+///
+/// For `nochdir`:
+///
+/// * `nochdir = true`: The current working directory after daemonizing will
+///    be the current working directory.
+/// *  `nochdir = false`: The current working directory after daemonizing will
+///    be the root direcory, `/`.
+///
+/// For `noclose`:
+///
+/// * `noclose = true`: The process' current stdin, stdout, and stderr file
+///   descriptors will remain identical after daemonizing.
+/// * `noclose = false`: The process' stdin, stdout, and stderr will point to
+///   `/dev/null` after daemonizing.
+///
+/// The underlying implementation (in libc) calls both
+/// [fork(2)](http://man7.org/linux/man-pages/man2/fork.2.html) and
+/// [setsid(2)](http://man7.org/linux/man-pages/man2/setsid.2.html) and, as
+/// such, error that could be returned by either of those functions could also
+/// show up as errors here.
 pub fn daemon(nochdir: bool, noclose: bool) -> Result<()> {
     let res = unsafe { libc::daemon(nochdir as c_int, noclose as c_int) };
     Errno::result(res).map(drop)
