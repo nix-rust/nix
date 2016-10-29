@@ -1,5 +1,5 @@
-//! Standard symbolic constants and types
-//!
+//! Safe wrappers around functions found in libc "unistd.h" header
+
 use {Errno, Error, Result, NixPath};
 use fcntl::{fcntl, OFlag, O_CLOEXEC, FD_CLOEXEC};
 use fcntl::FcntlArg::F_SETFD;
