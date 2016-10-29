@@ -66,6 +66,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#460](https://github.com/nix-rust/nix/pull/460))
 - `sethostname` now takes a `&str` instead of a `&[u8]` as this provides an API
   that makes more sense in normal, correct usage of the API.
+- `gethostname` previously did not expose the actual length of the hostname
+  written from the underlying system call at all.  This has been updated to
+  return a `&CStr` within the provided buffer that is always properly
+  NUL-terminated (this is not guaranteed by the call with all platforms/libc
+  implementations).
 
 ### Fixed
 - Fixed multiple issues with Unix domain sockets on non-Linux OSes

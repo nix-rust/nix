@@ -506,12 +506,35 @@ pub fn sethostname(name: &str) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
-pub fn gethostname(name: &mut [u8]) -> Result<()> {
-    let ptr = name.as_mut_ptr() as *mut c_char;
-    let len = name.len() as size_t;
+/// Get the host name and store it in the provided buffer, returning a pointer
+/// the CStr in that buffer on success (see
+/// [gethostname(2)](http://man7.org/linux/man-pages/man2/gethostname.2.html)).
+///
+/// This function call attempts to get the host name for the running system and
+/// store it in a provided buffer.  The buffer will be populated with bytes up
+/// to the length of the provided slice including a NUL terminating byte.  If
+/// the hostname is longer than the length provided, no error will be provided.
+/// The posix specification does not specify whether implementations will
+/// null-terminate in this case, but the nix implementation will ensure that the
+/// buffer is null terminated in this case.
+///
+/// ```no_run
+/// use nix::unistd;
+///
+/// let mut buf = [0u8; 64];
+/// let hostname_cstr = unistd::gethostname(&mut buf).expect("Failed getting hostname");
+/// let hostname = hostname_cstr.to_str().expect("Hostname wasn't valid UTF-8");
+/// println!("Hostname: {}", hostname);
+/// ```
+pub fn gethostname<'a>(buffer: &'a mut [u8]) -> Result<&'a CStr> {
+    let ptr = buffer.as_mut_ptr() as *mut c_char;
+    let len = buffer.len() as size_t;
 
     let res = unsafe { libc::gethostname(ptr, len) };
-    Errno::result(res).map(drop)
+    Errno::result(res).map(|_| {
+        buffer[len - 1] = 0; // ensure always null-terminated
+        unsafe { CStr::from_ptr(buffer.as_ptr() as *const c_char) }
+    })
 }
 
 pub fn close(fd: RawFd) -> Result<()> {
