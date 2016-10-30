@@ -20,6 +20,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 - The minimum supported version of rustc is now 1.7.0.
   ([#444](https://github.com/nix-rust/nix/pull/444))
+- Implement `Send` for `KEvent`
+  ([#442](https://github.com/nix-rust/nix/pull/442))
 - Changed `KEvent` to an opaque structure that may only be modified by its
   constructor and the `ev_set` method.
   ([#415](https://github.com/nix-rust/nix/pull/415))
