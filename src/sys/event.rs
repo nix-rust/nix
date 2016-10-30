@@ -192,11 +192,9 @@ pub fn kqueue() -> Result<RawFd> {
 }
 
 
-/*
- * KEvent can't derive Send because on some operating systems, udata is defined
- * as a void*.  However, KEvent's public API always treats udata as a uintptr_t,
- * which is safe to Send.
- */
+// KEvent can't derive Send because on some operating systems, udata is defined
+// as a void*.  However, KEvent's public API always treats udata as a uintptr_t,
+// which is safe to Send.
 unsafe impl Send for KEvent {
 }
 
