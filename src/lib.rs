@@ -77,8 +77,16 @@ use std::fmt;
 use std::error;
 use libc::PATH_MAX;
 
+/// Nix Result Type
 pub type Result<T> = result::Result<T, Error>;
 
+/// Nix Error Type
+///
+/// The nix error type provides a common way of dealing with
+/// various system system/libc calls that might fail.  Each
+/// error has a corresponding errno (usually the one from the
+/// underlying OS) to which it can be mapped in addition to
+/// implementing other common traits.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Error {
     Sys(errno::Errno),
@@ -86,18 +94,23 @@ pub enum Error {
 }
 
 impl Error {
+
+    /// Create a nix Error from a given errno
     pub fn from_errno(errno: errno::Errno) -> Error {
         Error::Sys(errno)
     }
 
+    /// Get the current errno and convert it to a nix Error
     pub fn last() -> Error {
         Error::Sys(errno::Errno::last())
     }
 
+    /// Create a new invalid argument error (`EINVAL`)
     pub fn invalid_argument() -> Error {
         Error::Sys(errno::EINVAL)
     }
 
+    /// Get the errno associated with this error
     pub fn errno(&self) -> errno::Errno {
         match *self {
             Error::Sys(errno) => errno,
