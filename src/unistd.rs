@@ -375,9 +375,9 @@ pub fn execv(path: &CString, argv: &[CString]) -> Result<Void> {
 /// [execve(2)#errors](http://man7.org/linux/man-pages/man2/execve.2.html#ERRORS)
 /// for a list of potential problems that maight cause execv to fail.
 ///
-/// Both `::nix::unistd::execv` and `::nix::unistd::execve` take as arguments a
-/// slice of `::std::ffi::CString`s for `args` and `env`.  Each element in
-/// the `args` list is an argument to the new process.  Each element in the
+/// `::nix::unistd::execv` and `::nix::unistd::execve` take as arguments a slice
+/// of `::std::ffi::CString`s for `args` and `env` (for `execve`). Each element
+/// in the `args` list is an argument to the new process. Each element in the
 /// `env` list should be a string in the form "key=value".
 #[inline]
 pub fn execve(path: &CString, args: &[CString], env: &[CString]) -> Result<Void> {
@@ -396,10 +396,10 @@ pub fn execve(path: &CString, args: &[CString], env: &[CString]) -> Result<Void>
 /// [exec(3)](http://man7.org/linux/man-pages/man3/exec.3.html)).
 ///
 /// See `::nix::unistd::execve` for additoinal details.  `execvp` behaves the
-/// sme as execv except that it will examine the `PATH` environment variables
+/// same as execv except that it will examine the `PATH` environment variables
 /// for file names not specified with a leading slash.  For example, `execv`
-/// would not work if I specified "bash" for the path argument, but `execvp`
-/// would assuming that I had a bash executable on my `PATH`.
+/// would not work if "bash" was specified for the path argument, but `execvp`
+/// would assuming that a bash executable was on the system `PATH`.
 #[inline]
 pub fn execvp(filename: &CString, args: &[CString]) -> Result<Void> {
     let args_p = to_exec_array(args);
@@ -423,17 +423,14 @@ pub fn execvp(filename: &CString, args: &[CString]) -> Result<Void> {
 /// 2. Parent process exits
 /// 3. Child process continues to run.
 ///
-/// There are a couple options here whose names and meaning can be a bit
-/// confusing, so we'll describe the behavior for each state.
-///
-/// For `nochdir`:
+/// `nochdir`:
 ///
 /// * `nochdir = true`: The current working directory after daemonizing will
 ///    be the current working directory.
 /// *  `nochdir = false`: The current working directory after daemonizing will
 ///    be the root direcory, `/`.
 ///
-/// For `noclose`:
+/// `noclose`:
 ///
 /// * `noclose = true`: The process' current stdin, stdout, and stderr file
 ///   descriptors will remain identical after daemonizing.
