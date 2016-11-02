@@ -1,12 +1,25 @@
 //! Create master and slave virtual pseudo-terminals (PTYs)
 
+use libc;
+
+pub use libc::pid_t as SessionId;
+pub use libc::winsize as Winsize;
+
 use std::ffi::CStr;
 use std::mem;
 use std::os::unix::prelude::*;
 
-use libc;
+use sys::termios::Termios;
+use {Errno, Result, Error, fcntl};
 
-use {Error, fcntl, Result};
+/// Representation of a master/slave pty pair
+///
+/// This is returned by `openpty`
+pub struct OpenptyResult {
+    pub master: RawFd,
+    pub slave: RawFd,
+}
+
 
 /// Representation of the Master device in a master/slave pty pair
 ///
@@ -161,4 +174,43 @@ pub fn unlockpt(fd: &PtyMaster) -> Result<()> {
     }
 
     Ok(())
+}
+
+
+/// Create a new pseudoterminal, returning the slave and master file descriptors
+/// in `OpenptyResult`
+/// (see [openpty](http://man7.org/linux/man-pages/man3/openpty.3.html)). 
+///
+/// If `winsize` is not `None`, the window size of the slave will be set to
+/// the values in `winsize`. If `termios` is not `None`, the pseudoterminal's
+/// terminal settings of the slave will be set to the values in `termios`.
+#[inline]
+pub fn openpty<'a, 'b, T: Into<Option<&'a Winsize>>, U: Into<Option<&'b Termios>>>(winsize: T, termios: U) -> Result<OpenptyResult> {
+    use std::ptr;
+
+    let mut slave: libc::c_int = -1;
+    let mut master: libc::c_int = -1;
+    let c_termios = match termios.into() {
+        Some(termios) => termios as *const Termios,
+        None => ptr::null() as *const Termios,
+    };
+    let c_winsize = match winsize.into() {
+        Some(ws) => ws as *const Winsize,
+        None => ptr::null() as *const Winsize,
+    };
+    let ret = unsafe {
+        libc::openpty(
+            &mut master as *mut libc::c_int,
+            &mut slave as *mut libc::c_int,
+            ptr::null_mut(),
+            c_termios as *mut libc::termios,
+            c_winsize as *mut Winsize)
+    };
+
+    Errno::result(ret)?;
+
+    Ok(OpenptyResult {
+        master: master,
+        slave: slave,
+    })
 }

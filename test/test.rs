@@ -11,19 +11,17 @@ extern crate nix_test as nixtest;
 
 mod sys;
 mod test_fcntl;
+#[cfg(any(target_os = "linux"))]
+mod test_mq;
 mod test_net;
 mod test_nix_path;
+#[cfg(any(target_os = "linux", target_os = "macos"))]
+mod test_poll;
+mod test_pty;
 #[cfg(any(target_os = "linux", target_os = "android"))]
 mod test_sendfile;
 mod test_stat;
 mod test_unistd;
-
-#[cfg(any(target_os = "linux"))]
-mod test_mq;
-
-#[cfg(any(target_os = "linux", target_os = "macos"))]
-mod test_poll;
-mod test_pty;
 
 use nixtest::assert_size_of;
 
