@@ -191,13 +191,23 @@ fn decode(pid : pid_t, status: i32) -> WaitStatus {
     } else if status::signaled(status) {
         WaitStatus::Signaled(pid, status::term_signal(status), status::dumped_core(status))
     } else if status::stopped(status) {
-        #[cfg(any(target_os = "linux", target_os = "android"))] {
-            let status_additional = status::stop_additional(status);
-            if status_additional != 0 {
-                return WaitStatus::PtraceEvent(pid, status::stop_signal(status), status::stop_additional(status))
+        cfg_if! {
+            if #[cfg(any(target_os = "linux", target_os = "android"))] {
+                fn decode_stopped(pid: pid_t, status: i32) -> WaitStatus {
+                    let status_additional = status::stop_additional(status);
+                    if status_additional == 0 {
+                        WaitStatus::Stopped(pid, status::stop_signal(status))
+                    } else {
+                        WaitStatus::PtraceEvent(pid, status::stop_signal(status), status::stop_additional(status))
+                    }
+                }
+            } else {
+                fn decode_stopped(pid: pid_t, status: i32) -> WaitStatus {
+                    WaitStatus::Stopped(pid, status::stop_signal(status))
+                }
             }
         }
-        WaitStatus::Stopped(pid, status::stop_signal(status))
+        decode_stopped(pid, status)
     } else {
         assert!(status::continued(status));
         WaitStatus::Continued(pid)
