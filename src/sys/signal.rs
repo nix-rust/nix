@@ -438,12 +438,46 @@ mod tests {
         assert!(two_signals.contains(SIGUSR2));
     }
 
+    // This test doesn't actually test get_mask functionality, see the set_mask test for that.
+    #[test]
+    fn test_thread_signal_get_mask() {
+        assert!(SigSet::thread_get_mask().is_ok());
+    }
+
+    #[test]
+    fn test_thread_signal_set_mask() {
+        let prev_mask = SigSet::thread_get_mask().expect("Failed to get existing signal mask!");
+
+        let mut test_mask = prev_mask;
+        test_mask.add(SIGUSR1);
+
+        assert!(test_mask.thread_set_mask().is_ok());
+        let new_mask = SigSet::thread_get_mask().expect("Failed to get new mask!");
+
+        assert!(new_mask.contains(SIGUSR1));
+        assert!(!new_mask.contains(SIGUSR2));
+
+        prev_mask.thread_set_mask().expect("Failed to revert signal mask!");
+    }
+
     #[test]
     fn test_thread_signal_block() {
         let mut mask = SigSet::empty();
         mask.add(SIGUSR1);
 
         assert!(mask.thread_block().is_ok());
+
+        assert!(SigSet::thread_get_mask().unwrap().contains(SIGUSR1));
+    }
+
+    #[test]
+    fn test_thread_signal_unblock() {
+        let mut mask = SigSet::empty();
+        mask.add(SIGUSR1);
+
+        assert!(mask.thread_unblock().is_ok());
+
+        assert!(!SigSet::thread_get_mask().unwrap().contains(SIGUSR1));
     }
 
     #[test]
@@ -454,13 +488,15 @@ mod tests {
 
         assert!(SigSet::thread_get_mask().unwrap().contains(SIGUSR1));
 
-        let mask2 = SigSet::empty();
-        mask.add(SIGUSR2);
+        let mut mask2 = SigSet::empty();
+        mask2.add(SIGUSR2);
 
         let oldmask = mask2.thread_swap_mask(SigFlags::SIG_SETMASK).unwrap();
 
         assert!(oldmask.contains(SIGUSR1));
         assert!(!oldmask.contains(SIGUSR2));
+
+        assert!(SigSet::thread_get_mask().unwrap().contains(SIGUSR2));
     }
 
     // TODO(#251): Re-enable after figuring out flakiness.
