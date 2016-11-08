@@ -146,9 +146,9 @@ pub fn tcgetgrp(fd: c_int) -> Result<pid_t> {
 /// Get the group process id (PGID) to the foreground process group on the
 /// terminal associated to file descriptor (FD).
 #[inline]
-pub fn tcsetpgrp(fd: c_int, pgrp: pid_t) -> Result<c_int> {
+pub fn tcsetpgrp(fd: c_int, pgrp: pid_t) -> Result<()> {
     let res = unsafe { libc::tcsetpgrp(fd, pgrp) };
-    Errno::result(res)
+    Errno::result(res).map(drop)
 }
 
 /// Get the caller's thread ID (see
