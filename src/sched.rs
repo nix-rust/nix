@@ -24,6 +24,7 @@ libc_bitflags!{
         CLONE_DETACHED,
         CLONE_UNTRACED,
         CLONE_CHILD_SETTID,
+        CLONE_NEWCGROUP,
         CLONE_NEWUTS,
         CLONE_NEWIPC,
         CLONE_NEWUSER,

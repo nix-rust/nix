@@ -1,5 +1,5 @@
-//! Standard symbolic constants and types
-//!
+//! Safe wrappers around functions found in libc "unistd.h" header
+
 use {Errno, Error, Result, NixPath};
 use fcntl::{fcntl, OFlag, O_CLOEXEC, FD_CLOEXEC};
 use fcntl::FcntlArg::F_SETFD;
@@ -366,6 +366,12 @@ fn to_exec_array(args: &[CString]) -> Vec<*const c_char> {
     args_p
 }
 
+/// Replace the current process image with a new one (see
+/// [exec(3)](http://man7.org/linux/man-pages/man3/exec.3.html)).
+///
+/// See the `::nix::unistd::execve` system call for additional details.  `execv`
+/// performs the same action but does not allow for customization of the
+/// environment for the new process.
 #[inline]
 pub fn execv(path: &CString, argv: &[CString]) -> Result<Void> {
     let args_p = to_exec_array(argv);
@@ -377,6 +383,24 @@ pub fn execv(path: &CString, argv: &[CString]) -> Result<Void> {
     Err(Error::Sys(Errno::last()))
 }
 
+
+/// Replace the current process image with a new one (see
+/// [execve(2)](http://man7.org/linux/man-pages/man2/execve.2.html)).
+///
+/// The execve system call allows for another process to be "called" which will
+/// replace the current process image.  That is, this process becomes the new
+/// command that is run. On success, this function will not return. Instead,
+/// the new program will run until it exits.
+///
+/// If an error occurs, this function will return with an indication of the
+/// cause of failure.  See
+/// [execve(2)#errors](http://man7.org/linux/man-pages/man2/execve.2.html#ERRORS)
+/// for a list of potential problems that maight cause execv to fail.
+///
+/// `::nix::unistd::execv` and `::nix::unistd::execve` take as arguments a slice
+/// of `::std::ffi::CString`s for `args` and `env` (for `execve`). Each element
+/// in the `args` list is an argument to the new process. Each element in the
+/// `env` list should be a string in the form "key=value".
 #[inline]
 pub fn execve(path: &CString, args: &[CString], env: &[CString]) -> Result<Void> {
     let args_p = to_exec_array(args);
@@ -389,6 +413,15 @@ pub fn execve(path: &CString, args: &[CString], env: &[CString]) -> Result<Void>
     Err(Error::Sys(Errno::last()))
 }
 
+/// Replace the current process image with a new one and replicate shell `PATH`
+/// searching behavior (see
+/// [exec(3)](http://man7.org/linux/man-pages/man3/exec.3.html)).
+///
+/// See `::nix::unistd::execve` for additoinal details.  `execvp` behaves the
+/// same as execv except that it will examine the `PATH` environment variables
+/// for file names not specified with a leading slash.  For example, `execv`
+/// would not work if "bash" was specified for the path argument, but `execvp`
+/// would assuming that a bash executable was on the system `PATH`.
 #[inline]
 pub fn execvp(filename: &CString, args: &[CString]) -> Result<Void> {
     let args_p = to_exec_array(args);
@@ -400,6 +433,37 @@ pub fn execvp(filename: &CString, args: &[CString]) -> Result<Void> {
     Err(Error::Sys(Errno::last()))
 }
 
+/// Daemonize this process by detaching from the controlling terminal (see
+/// [daemon(3)](http://man7.org/linux/man-pages/man3/daemon.3.html)).
+///
+/// When a process is launched it is typically associated with a parent and it,
+/// in turn, by its controlling terminal/process.  In order for a process to run
+/// in the "background" it must daemonize itself by detaching itself.  Under
+/// posix, this is done by doing the following:
+///
+/// 1. Parent process (this one) forks
+/// 2. Parent process exits
+/// 3. Child process continues to run.
+///
+/// `nochdir`:
+///
+/// * `nochdir = true`: The current working directory after daemonizing will
+///    be the current working directory.
+/// *  `nochdir = false`: The current working directory after daemonizing will
+///    be the root direcory, `/`.
+///
+/// `noclose`:
+///
+/// * `noclose = true`: The process' current stdin, stdout, and stderr file
+///   descriptors will remain identical after daemonizing.
+/// * `noclose = false`: The process' stdin, stdout, and stderr will point to
+///   `/dev/null` after daemonizing.
+///
+/// The underlying implementation (in libc) calls both
+/// [fork(2)](http://man7.org/linux/man-pages/man2/fork.2.html) and
+/// [setsid(2)](http://man7.org/linux/man-pages/man2/setsid.2.html) and, as
+/// such, error that could be returned by either of those functions could also
+/// show up as errors here.
 pub fn daemon(nochdir: bool, noclose: bool) -> Result<()> {
     let res = unsafe { libc::daemon(nochdir as c_int, noclose as c_int) };
     Errno::result(res).map(drop)
