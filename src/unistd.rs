@@ -129,6 +129,28 @@ pub fn setsid() -> Result<pid_t> {
     Errno::result(unsafe { libc::setsid() })
 }
 
+
+/// Get the terminal foreground process group (see
+/// [tcgetpgrp(3)](http://man7.org/linux/man-pages/man3/tcgetpgrp.3.html)).
+///
+/// Get the group process id (GPID) of the foreground process group on the
+/// terminal associated to file descriptor (FD).
+#[inline]
+pub fn tcgetgrp(fd: c_int) -> Result<pid_t> {
+    let res = unsafe { libc::tcgetpgrp(fd) };
+    Errno::result(res)
+}
+/// Set the terminal foreground process group (see
+/// [tcgetpgrp(3)](http://man7.org/linux/man-pages/man3/tcgetpgrp.3.html)).
+///
+/// Get the group process id (PGID) to the foreground process group on the
+/// terminal associated to file descriptor (FD).
+#[inline]
+pub fn tcsetpgrp(fd: c_int, pgrp: pid_t) -> Result<c_int> {
+    let res = unsafe { libc::tcsetpgrp(fd, pgrp) };
+    Errno::result(res)
+}
+
 /// Get the caller's thread ID (see
 /// [gettid(2)](http://man7.org/linux/man-pages/man2/gettid.2.html).
 ///
