@@ -208,7 +208,7 @@ bitflags!{
 
 #[repr(i32)]
 #[derive(Clone, Copy, PartialEq)]
-pub enum SigFlags {
+pub enum SigmaskHow {
     SIG_BLOCK   = libc::SIG_BLOCK,
     SIG_UNBLOCK = libc::SIG_UNBLOCK,
     SIG_SETMASK = libc::SIG_SETMASK,
@@ -268,27 +268,27 @@ impl SigSet {
     /// Gets the currently blocked (masked) set of signals for the calling thread.
     pub fn thread_get_mask() -> Result<SigSet> {
         let mut oldmask: SigSet = unsafe { mem::uninitialized() };
-        try!(pthread_sigmask(SigFlags::SIG_SETMASK, None, Some(&mut oldmask)));
+        try!(pthread_sigmask(SigmaskHow::SIG_SETMASK, None, Some(&mut oldmask)));
         Ok(oldmask)
     }
 
     /// Sets the set of signals as the signal mask for the calling thread.
     pub fn thread_set_mask(&self) -> Result<()> {
-        pthread_sigmask(SigFlags::SIG_SETMASK, Some(self), None)
+        pthread_sigmask(SigmaskHow::SIG_SETMASK, Some(self), None)
     }
 
     /// Adds the set of signals to the signal mask for the calling thread.
     pub fn thread_block(&self) -> Result<()> {
-        pthread_sigmask(SigFlags::SIG_BLOCK, Some(self), None)
+        pthread_sigmask(SigmaskHow::SIG_BLOCK, Some(self), None)
     }
 
     /// Removes the set of signals from the signal mask for the calling thread.
     pub fn thread_unblock(&self) -> Result<()> {
-        pthread_sigmask(SigFlags::SIG_UNBLOCK, Some(self), None)
+        pthread_sigmask(SigmaskHow::SIG_UNBLOCK, Some(self), None)
     }
 
     /// Sets the set of signals as the signal mask, and returns the old mask.
-    pub fn thread_swap_mask(&self, how: SigFlags) -> Result<SigSet> {
+    pub fn thread_swap_mask(&self, how: SigmaskHow) -> Result<SigSet> {
         let mut oldmask: SigSet = unsafe { mem::uninitialized() };
         try!(pthread_sigmask(how, Some(self), Some(&mut oldmask)));
         Ok(oldmask)
@@ -368,7 +368,7 @@ pub unsafe fn sigaction(signal: Signal, sigaction: &SigAction) -> Result<SigActi
 ///
 /// For more information, visit the [pthread_sigmask](http://man7.org/linux/man-pages/man3/pthread_sigmask.3.html),
 /// or [sigprocmask](http://man7.org/linux/man-pages/man2/sigprocmask.2.html) man pages.
-pub fn pthread_sigmask(how: SigFlags,
+pub fn pthread_sigmask(how: SigmaskHow,
                        set: Option<&SigSet>,
                        oldset: Option<&mut SigSet>) -> Result<()> {
     if set.is_none() && oldset.is_none() {
@@ -491,7 +491,7 @@ mod tests {
         let mut mask2 = SigSet::empty();
         mask2.add(SIGUSR2);
 
-        let oldmask = mask2.thread_swap_mask(SigFlags::SIG_SETMASK).unwrap();
+        let oldmask = mask2.thread_swap_mask(SigmaskHow::SIG_SETMASK).unwrap();
 
         assert!(oldmask.contains(SIGUSR1));
         assert!(!oldmask.contains(SIGUSR2));
