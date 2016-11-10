@@ -18,6 +18,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#433](https://github.com/nix-rust/nix/pull/433))
 - Added `tcgetpgrp` and `tcsetpgrp` in `::nix::unistd`
   ([#451](https://github.com/nix-rust/nix/pull/451))
+- Added `CLONE_NEWCGROUP` in `::nix::sched`
+  ([#457](https://github.com/nix-rust/nix/pull/457))
 
 ### Changed
 - The minimum supported version of rustc is now 1.7.0.
