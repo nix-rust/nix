@@ -22,6 +22,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#457](https://github.com/nix-rust/nix/pull/457))
 
 ### Changed
+- `kill`'s signature, defined in `::nix::sys::signal`, changed, so that the
+  signal parameter has type `T: Into<Option<Signal>>`. `None` as an argument
+  for that parameter will result in a 0 passed to libc's `kill`, while a
+  `Some`-argument will result in the previous behavior for the contained
+  `Signal`.
+  ([#445](https://github.com/nix-rust/nix/pull/410))
 - The minimum supported version of rustc is now 1.7.0.
   ([#444](https://github.com/nix-rust/nix/pull/444))
 - Implement `Send` for `KEvent`
