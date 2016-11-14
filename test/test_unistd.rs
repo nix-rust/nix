@@ -143,19 +143,21 @@ macro_rules! execve_test_factory(
 
 #[test]
 fn test_getcwd() {
-    let mut tmp_dir = TempDir::new("test_getcwd").unwrap().into_path();
-    assert!(chdir(tmp_dir.as_path()).is_ok());
+    let tmp_dir = TempDir::new("test_getcwd").unwrap();
+    assert!(chdir(tmp_dir.path()).is_ok());
     assert_eq!(getcwd().unwrap(), current_dir().unwrap());
 
     // make path 500 chars longer so that buffer doubling in getcwd kicks in.
     // Note: One path cannot be longer than 255 bytes (NAME_MAX)
     // whole path cannot be longer than PATH_MAX (usually 4096 on linux, 1024 on macos)
+    let mut inner_tmp_dir = tmp_dir.path().to_path_buf();
     for _ in 0..5 {
         let newdir = iter::repeat("a").take(100).collect::<String>();
-        tmp_dir.push(newdir);
-        assert!(mkdir(tmp_dir.as_path(), stat::S_IRWXU).is_ok());
+        //inner_tmp_dir = inner_tmp_dir.join(newdir).path();
+        inner_tmp_dir.push(newdir);
+        assert!(mkdir(inner_tmp_dir.as_path(), stat::S_IRWXU).is_ok());
     }
-    assert!(chdir(tmp_dir.as_path()).is_ok());
+    assert!(chdir(inner_tmp_dir.as_path()).is_ok());
     assert_eq!(getcwd().unwrap(), current_dir().unwrap());
 }
 
