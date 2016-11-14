@@ -128,8 +128,6 @@ exit 23";
     }
 
     pub fn test_mount_bind() {
-        use std::env;
-
         let tempdir = TempDir::new("nix-test_mount")
                           .unwrap_or_else(|e| panic!("tempdir failed: {}", e));
         let file_name = "test";

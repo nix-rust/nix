@@ -2,7 +2,7 @@ use nix::sys::uio::*;
 use nix::unistd::*;
 use rand::{thread_rng, Rng};
 use std::{cmp, iter};
-use std::fs::{OpenOptions, remove_file};
+use std::fs::{OpenOptions};
 use std::os::unix::io::AsRawFd;
 
 use tempdir::TempDir;
