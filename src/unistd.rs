@@ -262,12 +262,12 @@ pub fn chdir<P: ?Sized + NixPath>(path: &P) -> Result<()> {
 /// use tempdir::TempDir;
 ///
 /// fn main() {
-///     let mut tmp_dir = TempDir::new("test_mkdir").unwrap().into_path();
-///     tmp_dir.push("new_dir");
+///     let tmp_dir1 = TempDir::new("test_mkdir").unwrap();
+///     let tmp_dir2 = tmp_dir1.path().join("new_dir");
 ///
 ///     // create new directory and give read, write and execute rights to the owner
-///     match unistd::mkdir(&tmp_dir, stat::S_IRWXU) {
-///        Ok(_) => println!("created {:?}", tmp_dir),
+///     match unistd::mkdir(&tmp_dir2, stat::S_IRWXU) {
+///        Ok(_) => println!("created {:?}", tmp_dir2),
 ///        Err(err) => println!("Error creating directory: {}", err),
 ///     }
 /// }
