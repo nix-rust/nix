@@ -24,11 +24,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 - The minimum supported version of rustc is now 1.7.0.
   ([#444](https://github.com/nix-rust/nix/pull/444))
-- Implement `Send` for `KEvent`
-  ([#442](https://github.com/nix-rust/nix/pull/442))
 - Changed `KEvent` to an opaque structure that may only be modified by its
   constructor and the `ev_set` method.
   ([#415](https://github.com/nix-rust/nix/pull/415))
+  ([#442](https://github.com/nix-rust/nix/pull/442))
+  ([#463](https://github.com/nix-rust/nix/pull/463))
 - `pipe2` now calls `libc::pipe2` where available. Previously it was emulated
   using `pipe`, which meant that setting `O_CLOEXEC` was not atomic.
   ([#427](https://github.com/nix-rust/nix/pull/427))
