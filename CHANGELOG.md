@@ -27,7 +27,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   for that parameter will result in a 0 passed to libc's `kill`, while a
   `Some`-argument will result in the previous behavior for the contained
   `Signal`.
-  ([#445](https://github.com/nix-rust/nix/pull/410))
+  ([#445](https://github.com/nix-rust/nix/pull/445))
 - The minimum supported version of rustc is now 1.7.0.
   ([#444](https://github.com/nix-rust/nix/pull/444))
 - Changed `KEvent` to an opaque structure that may only be modified by its
@@ -48,7 +48,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#410](https://github.com/nix-rust/nix/pull/410))
 - `SigFlags` in `::nix::sys::signal` has be renamed to `SigmaskHow` and its type
   has changed from `bitflags` to `enum` in order to conform to our conventions.
-  ([#410](https://github.com/nix-rust/nix/pull/460))
+  ([#460](https://github.com/nix-rust/nix/pull/460))
 
 ### Fixed
 - Fixed using kqueue with `EVFILT_USER` on FreeBSD
