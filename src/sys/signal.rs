@@ -206,12 +206,12 @@ bitflags!{
     }
 }
 
-bitflags!{
-    flags SigFlags: libc::c_int {
-        const SIG_BLOCK   = libc::SIG_BLOCK,
-        const SIG_UNBLOCK = libc::SIG_UNBLOCK,
-        const SIG_SETMASK = libc::SIG_SETMASK,
-    }
+#[repr(i32)]
+#[derive(Clone, Copy, PartialEq)]
+pub enum SigmaskHow {
+    SIG_BLOCK   = libc::SIG_BLOCK,
+    SIG_UNBLOCK = libc::SIG_UNBLOCK,
+    SIG_SETMASK = libc::SIG_SETMASK,
 }
 
 #[derive(Clone, Copy)]
@@ -268,27 +268,27 @@ impl SigSet {
     /// Gets the currently blocked (masked) set of signals for the calling thread.
     pub fn thread_get_mask() -> Result<SigSet> {
         let mut oldmask: SigSet = unsafe { mem::uninitialized() };
-        try!(pthread_sigmask(SigFlags::empty(), None, Some(&mut oldmask)));
+        try!(pthread_sigmask(SigmaskHow::SIG_SETMASK, None, Some(&mut oldmask)));
         Ok(oldmask)
     }
 
     /// Sets the set of signals as the signal mask for the calling thread.
     pub fn thread_set_mask(&self) -> Result<()> {
-        pthread_sigmask(SIG_SETMASK, Some(self), None)
+        pthread_sigmask(SigmaskHow::SIG_SETMASK, Some(self), None)
     }
 
     /// Adds the set of signals to the signal mask for the calling thread.
     pub fn thread_block(&self) -> Result<()> {
-        pthread_sigmask(SIG_BLOCK, Some(self), None)
+        pthread_sigmask(SigmaskHow::SIG_BLOCK, Some(self), None)
     }
 
     /// Removes the set of signals from the signal mask for the calling thread.
     pub fn thread_unblock(&self) -> Result<()> {
-        pthread_sigmask(SIG_UNBLOCK, Some(self), None)
+        pthread_sigmask(SigmaskHow::SIG_UNBLOCK, Some(self), None)
     }
 
     /// Sets the set of signals as the signal mask, and returns the old mask.
-    pub fn thread_swap_mask(&self, how: SigFlags) -> Result<SigSet> {
+    pub fn thread_swap_mask(&self, how: SigmaskHow) -> Result<SigSet> {
         let mut oldmask: SigSet = unsafe { mem::uninitialized() };
         try!(pthread_sigmask(how, Some(self), Some(&mut oldmask)));
         Ok(oldmask)
@@ -368,7 +368,7 @@ pub unsafe fn sigaction(signal: Signal, sigaction: &SigAction) -> Result<SigActi
 ///
 /// For more information, visit the [pthread_sigmask](http://man7.org/linux/man-pages/man3/pthread_sigmask.3.html),
 /// or [sigprocmask](http://man7.org/linux/man-pages/man2/sigprocmask.2.html) man pages.
-pub fn pthread_sigmask(how: SigFlags,
+pub fn pthread_sigmask(how: SigmaskHow,
                        set: Option<&SigSet>,
                        oldset: Option<&mut SigSet>) -> Result<()> {
     if set.is_none() && oldset.is_none() {
@@ -377,7 +377,7 @@ pub fn pthread_sigmask(how: SigFlags,
 
     let res = unsafe {
         // if set or oldset is None, pass in null pointers instead
-        libc::pthread_sigmask(how.bits(),
+        libc::pthread_sigmask(how as libc::c_int,
                              set.map_or_else(|| ptr::null::<libc::sigset_t>(),
                                              |s| &s.sigset as *const libc::sigset_t),
                              oldset.map_or_else(|| ptr::null_mut::<libc::sigset_t>(),
@@ -442,12 +442,46 @@ mod tests {
         assert!(two_signals.contains(SIGUSR2));
     }
 
+    // This test doesn't actually test get_mask functionality, see the set_mask test for that.
+    #[test]
+    fn test_thread_signal_get_mask() {
+        assert!(SigSet::thread_get_mask().is_ok());
+    }
+
+    #[test]
+    fn test_thread_signal_set_mask() {
+        let prev_mask = SigSet::thread_get_mask().expect("Failed to get existing signal mask!");
+
+        let mut test_mask = prev_mask;
+        test_mask.add(SIGUSR1);
+
+        assert!(test_mask.thread_set_mask().is_ok());
+        let new_mask = SigSet::thread_get_mask().expect("Failed to get new mask!");
+
+        assert!(new_mask.contains(SIGUSR1));
+        assert!(!new_mask.contains(SIGUSR2));
+
+        prev_mask.thread_set_mask().expect("Failed to revert signal mask!");
+    }
+
     #[test]
     fn test_thread_signal_block() {
         let mut mask = SigSet::empty();
         mask.add(SIGUSR1);
 
         assert!(mask.thread_block().is_ok());
+
+        assert!(SigSet::thread_get_mask().unwrap().contains(SIGUSR1));
+    }
+
+    #[test]
+    fn test_thread_signal_unblock() {
+        let mut mask = SigSet::empty();
+        mask.add(SIGUSR1);
+
+        assert!(mask.thread_unblock().is_ok());
+
+        assert!(!SigSet::thread_get_mask().unwrap().contains(SIGUSR1));
     }
 
     #[test]
@@ -458,13 +492,15 @@ mod tests {
 
         assert!(SigSet::thread_get_mask().unwrap().contains(SIGUSR1));
 
-        let mask2 = SigSet::empty();
-        mask.add(SIGUSR2);
+        let mut mask2 = SigSet::empty();
+        mask2.add(SIGUSR2);
 
-        let oldmask = mask2.thread_swap_mask(SIG_SETMASK).unwrap();
+        let oldmask = mask2.thread_swap_mask(SigmaskHow::SIG_SETMASK).unwrap();
 
         assert!(oldmask.contains(SIGUSR1));
         assert!(!oldmask.contains(SIGUSR2));
+
+        assert!(SigSet::thread_get_mask().unwrap().contains(SIGUSR2));
     }
 
     // TODO(#251): Re-enable after figuring out flakiness.

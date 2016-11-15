@@ -46,6 +46,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   accessible with the new method `events()` of `EpollEvent`. Instances of
   `EpollEvent` can be constructed using the new method `new()` of EpollEvent.
   ([#410](https://github.com/nix-rust/nix/pull/410))
+- `SigFlags` in `::nix::sys::signal` has be renamed to `SigmaskHow` and its type
+  has changed from `bitflags` to `enum` in order to conform to our conventions.
+  ([#410](https://github.com/nix-rust/nix/pull/460))
 
 ### Fixed
 - Fixed using kqueue with `EVFILT_USER` on FreeBSD
