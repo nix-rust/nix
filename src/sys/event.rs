@@ -193,14 +193,14 @@ pub fn kqueue() -> Result<RawFd> {
 
 
 // KEvent can't derive Send because on some operating systems, udata is defined
-// as a void*.  However, KEvent's public API always treats udata as a uintptr_t,
+// as a void*.  However, KEvent's public API always treats udata as an intptr_t,
 // which is safe to Send.
 unsafe impl Send for KEvent {
 }
 
 impl KEvent {
     pub fn new(ident: uintptr_t, filter: EventFilter, flags: EventFlag,
-               fflags:FilterFlag, data: intptr_t, udata: uintptr_t) -> KEvent {
+               fflags:FilterFlag, data: intptr_t, udata: intptr_t) -> KEvent {
         KEvent { kevent: libc::kevent {
             ident: ident,
             filter: filter as type_of_event_filter,
@@ -231,8 +231,8 @@ impl KEvent {
         self.kevent.data
     }
 
-    pub fn udata(&self) -> uintptr_t {
-        self.kevent.udata as uintptr_t
+    pub fn udata(&self) -> intptr_t {
+        self.kevent.udata as intptr_t
     }
 }
 
@@ -282,7 +282,7 @@ pub fn ev_set(ev: &mut KEvent,
               filter: EventFilter,
               flags: EventFlag,
               fflags: FilterFlag,
-              udata: uintptr_t) {
+              udata: intptr_t) {
 
     ev.kevent.ident  = ident as uintptr_t;
     ev.kevent.filter = filter as type_of_event_filter;
@@ -294,7 +294,7 @@ pub fn ev_set(ev: &mut KEvent,
 
 #[test]
 fn test_struct_kevent() {
-    let udata : uintptr_t = 12345;
+    let udata : intptr_t = 12345;
 
     let expected = libc::kevent{ident: 0xdeadbeef,
                                 filter: libc::EVFILT_READ,
