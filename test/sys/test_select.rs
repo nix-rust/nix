@@ -41,7 +41,7 @@ fn test_select() {
     fd_set.insert(r1);
     fd_set.insert(r2);
 
-    let mut timeout = TimeVal::seconds(1);
+    let mut timeout = TimeVal::seconds(10);
     assert_eq!(1, select(r2 + 1,
                          Some(&mut fd_set),
                          None,
