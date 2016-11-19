@@ -140,3 +140,39 @@ pub fn test_scm_rights() {
     close(received_r).unwrap();
     close(w).unwrap();
 }
+
+// Test creating and using named unix domain sockets
+#[test]
+pub fn test_unixdomain() {
+    use nix::sys::socket::{AddressFamily, SockType, SockFlag};
+    use nix::sys::socket::{bind, socket, connect, listen, accept, SockAddr};
+    use nix::unistd::{read, write, close};
+    use std::thread;
+    use tempdir::TempDir;
+
+    let tempdir = TempDir::new("test_unixdomain").unwrap();
+    let sockname = tempdir.path().join("sock");
+    let s1 = socket(AddressFamily::Unix, SockType::Stream,
+                    SockFlag::empty(), 0).expect("socket failed");
+    let sockaddr = SockAddr::new_unix(&sockname).unwrap();
+    bind(s1, &sockaddr).expect("bind failed");
+    listen(s1, 10).expect("listen failed");
+
+    let thr = thread::spawn(move || {
+        let s2 = socket(AddressFamily::Unix, SockType::Stream,
+                        SockFlag::empty(), 0).expect("socket failed");
+        connect(s2, &sockaddr).expect("connect failed");
+        write(s2, b"hello").expect("write failed");
+        close(s2).unwrap();
+    });
+
+    let s3 = accept(s1).expect("accept failed");
+
+    let mut buf = [0;5];
+    read(s3, &mut buf).unwrap();
+    close(s3).unwrap();
+    close(s1).unwrap();
+    thr.join().unwrap();
+
+    assert_eq!(&buf[..], b"hello");
+}

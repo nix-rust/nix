@@ -348,10 +348,12 @@ impl fmt::Display for Ipv6Addr {
  *
  */
 
-/// A wrapper around `sockaddr_un`. We track the length of `sun_path`,
-/// because it may not be null-terminated (unconnected and abstract
-/// sockets). Note that the actual sockaddr length is greater by
-/// `size_of::<sa_family_t>()`.
+/// A wrapper around `sockaddr_un`. We track the length of `sun_path` (excluding
+/// a terminating null), because it may not be null-terminated.  For example,
+/// unconnected and Linux abstract sockets are never null-terminated, and POSIX
+/// does not require that `sun_len` include the terminating null even for normal
+/// sockets.  Note that the actual sockaddr length is greater by
+/// `offset_of!(libc::sockaddr_un, sun_path)`
 #[derive(Copy)]
 pub struct UnixAddr(pub libc::sockaddr_un, pub usize);
 
@@ -365,7 +367,7 @@ impl UnixAddr {
                     .. mem::zeroed()
                 };
 
-                let bytes = cstr.to_bytes_with_nul();
+                let bytes = cstr.to_bytes();
 
                 if bytes.len() > ret.sun_path.len() {
                     return Err(Error::Sys(Errno::ENAMETOOLONG));
@@ -416,7 +418,13 @@ impl UnixAddr {
             None
         } else {
             let p = self.sun_path();
-            Some(Path::new(<OsStr as OsStrExt>::from_bytes(&p[..p.len()-1])))
+            // POSIX only requires that `sun_len` be at least long enough to
+            // contain the pathname, and it need not be null-terminated.  So we
+            // need to create a string that is the shorter of the
+            // null-terminated length or the full length.
+            let ptr = &self.0.sun_path as *const libc::c_char;
+            let reallen = unsafe { libc::strnlen(ptr, p.len()) };
+            Some(Path::new(<OsStr as OsStrExt>::from_bytes(&p[..reallen])))
         }
     }
 }
@@ -502,7 +510,7 @@ impl SockAddr {
         match *self {
             SockAddr::Inet(InetAddr::V4(ref addr)) => (mem::transmute(addr), mem::size_of::<libc::sockaddr_in>() as libc::socklen_t),
             SockAddr::Inet(InetAddr::V6(ref addr)) => (mem::transmute(addr), mem::size_of::<libc::sockaddr_in6>() as libc::socklen_t),
-            SockAddr::Unix(UnixAddr(ref addr, len)) => (mem::transmute(addr), (len + mem::size_of::<libc::sa_family_t>()) as libc::socklen_t),
+            SockAddr::Unix(UnixAddr(ref addr, len)) => (mem::transmute(addr), (len + offset_of!(libc::sockaddr_un, sun_path)) as libc::socklen_t),
             #[cfg(any(target_os = "linux", target_os = "android"))]
             SockAddr::Netlink(NetlinkAddr(ref sa)) => (mem::transmute(sa), mem::size_of::<libc::sockaddr_nl>() as libc::socklen_t),
         }
