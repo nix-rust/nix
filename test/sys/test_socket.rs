@@ -3,8 +3,7 @@ use std::mem;
 use std::net::{self, Ipv6Addr, SocketAddr, SocketAddrV6};
 use std::path::Path;
 use std::str::FromStr;
-use std::os::unix::io::{AsRawFd, RawFd};
-use ports::localhost;
+use std::os::unix::io::RawFd;
 use libc::c_char;
 
 #[test]
@@ -64,13 +63,18 @@ pub fn test_path_to_sock_addr() {
 
 #[test]
 pub fn test_getsockname() {
-    use std::net::TcpListener;
+    use nix::sys::socket::{socket, AddressFamily, SockType, SockFlag};
+    use nix::sys::socket::{bind, SockAddr};
+    use tempdir::TempDir;
 
-    let addr = localhost();
-    let sock = TcpListener::bind(&*addr).unwrap();
-    let res = getsockname(sock.as_raw_fd()).unwrap();
-
-    assert_eq!(addr, res.to_str());
+    let tempdir = TempDir::new("test_getsockname").unwrap();
+    let sockname = tempdir.path().join("sock");
+    let sock = socket(AddressFamily::Unix, SockType::Stream, SockFlag::empty(),
+                      0).expect("socket failed");
+    let sockaddr = SockAddr::new_unix(&sockname).unwrap();
+    bind(sock, &sockaddr).expect("bind failed");
+    assert_eq!(sockaddr.to_str(),
+               getsockname(sock).expect("getsockname failed").to_str());
 }
 
 #[test]
