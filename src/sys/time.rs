@@ -1,12 +1,9 @@
-use std::{fmt, ops};
-use libc::{time_t, suseconds_t};
+use std::{cmp, fmt, ops};
+use libc::{time_t, suseconds_t, timeval};
 
 #[repr(C)]
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
-pub struct TimeVal {
-    tv_sec: time_t,
-    tv_usec: suseconds_t,
-}
+#[derive(Clone, Copy)]
+pub struct TimeVal(timeval);
 
 const MICROS_PER_SEC: i64 = 1_000_000;
 const SECS_PER_MINUTE: i64 = 60;
@@ -19,6 +16,43 @@ const MAX_SECONDS: i64 = (::std::i64::MAX / MICROS_PER_SEC) - 1;
 const MAX_SECONDS: i64 = ::std::isize::MAX as i64;
 
 const MIN_SECONDS: i64 = -MAX_SECONDS;
+
+impl fmt::Debug for TimeVal {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        fmt.debug_struct("TimeVal")
+            .field("tv_sec", &self.tv_sec())
+            .field("tv_usec", &self.tv_usec())
+            .finish()
+    }
+}
+
+impl cmp::PartialEq for TimeVal {
+    // The implementation of cmp is simplified by assuming that the struct is
+    // normalized.  That is, tv_usec must always be within [0, 1_000_000)
+    fn eq(&self, other: &TimeVal) -> bool {
+        self.tv_sec() == other.tv_sec() && self.tv_usec() == other.tv_usec()
+    }
+}
+
+impl cmp::Eq for TimeVal {}
+
+impl cmp::Ord for TimeVal {
+    // The implementation of cmp is simplified by assuming that the struct is
+    // normalized.  That is, tv_usec must always be within [0, 1_000_000)
+    fn cmp(&self, other: &TimeVal) -> cmp::Ordering {
+        if self.tv_sec() == other.tv_sec() {
+            self.tv_sec().cmp(&other.tv_sec())
+        } else {
+            self.tv_usec().cmp(&other.tv_usec())
+        }
+    }
+}
+
+impl cmp::PartialOrd for TimeVal {
+    fn partial_cmp(&self, other: &TimeVal) -> Option<cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
 
 impl TimeVal {
     #[inline]
@@ -45,7 +79,7 @@ impl TimeVal {
     #[inline]
     pub fn seconds(seconds: i64) -> TimeVal {
         assert!(seconds >= MIN_SECONDS && seconds <= MAX_SECONDS, "TimeVal out of bounds; seconds={}", seconds);
-        TimeVal { tv_sec: seconds as time_t, tv_usec: 0 }
+        TimeVal(timeval {tv_sec: seconds as time_t, tv_usec: 0 })
     }
 
     #[inline]
@@ -61,7 +95,8 @@ impl TimeVal {
     pub fn microseconds(microseconds: i64) -> TimeVal {
         let (secs, micros) = div_mod_floor_64(microseconds, MICROS_PER_SEC);
         assert!(secs >= MIN_SECONDS && secs <= MAX_SECONDS, "TimeVal out of bounds");
-        TimeVal { tv_sec: secs as time_t, tv_usec: micros as suseconds_t }
+        TimeVal(timeval {tv_sec: secs as time_t,
+                           tv_usec: micros as suseconds_t })
     }
 
     pub fn num_hours(&self) -> i64 {
@@ -73,10 +108,10 @@ impl TimeVal {
     }
 
     pub fn num_seconds(&self) -> i64 {
-        if self.tv_sec < 0 && self.tv_usec > 0 {
-            (self.tv_sec + 1) as i64
+        if self.tv_sec() < 0 && self.tv_usec() > 0 {
+            (self.tv_sec() + 1) as i64
         } else {
-            self.tv_sec as i64
+            self.tv_sec() as i64
         }
     }
 
@@ -91,11 +126,23 @@ impl TimeVal {
     }
 
     fn micros_mod_sec(&self) -> suseconds_t {
-        if self.tv_sec < 0 && self.tv_usec > 0 {
-            self.tv_usec - MICROS_PER_SEC as suseconds_t
+        if self.tv_sec() < 0 && self.tv_usec() > 0 {
+            self.tv_usec() - MICROS_PER_SEC as suseconds_t
         } else {
-            self.tv_usec
+            self.tv_usec()
         }
+    }
+
+    pub fn timeval(&self) -> timeval{
+        self.0
+    }
+
+    pub fn tv_sec(&self) -> time_t {
+        self.0.tv_sec
+    }
+
+    pub fn tv_usec(&self) -> suseconds_t {
+        self.0.tv_usec
     }
 }
 
@@ -147,26 +194,26 @@ impl ops::Div<i32> for TimeVal {
 
 impl fmt::Display for TimeVal {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let (abs, sign) = if self.tv_sec < 0 {
+        let (abs, sign) = if self.tv_sec() < 0 {
             (-*self, "-")
         } else {
             (*self, "")
         };
 
-        let sec = abs.tv_sec;
+        let sec = abs.tv_sec();
 
         try!(write!(f, "{}", sign));
 
-        if abs.tv_usec == 0 {
-            if abs.tv_sec == 1 {
+        if abs.tv_usec() == 0 {
+            if abs.tv_sec() == 1 {
                 try!(write!(f, "{} second", sec));
             } else {
                 try!(write!(f, "{} seconds", sec));
             }
-        } else if abs.tv_usec % 1000 == 0 {
-            try!(write!(f, "{}.{:03} seconds", sec, abs.tv_usec / 1000));
+        } else if abs.tv_usec() % 1000 == 0 {
+            try!(write!(f, "{}.{:03} seconds", sec, abs.tv_usec() / 1000));
         } else {
-            try!(write!(f, "{}.{:06} seconds", sec, abs.tv_usec));
+            try!(write!(f, "{}.{:06} seconds", sec, abs.tv_usec()));
         }
 
         Ok(())
