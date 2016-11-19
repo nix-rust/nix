@@ -51,6 +51,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#460](https://github.com/nix-rust/nix/pull/460))
 
 ### Fixed
+- Fixed multiple issues with Unix domain sockets on non-Linux OSes
+  ([#474](https://github.com/nix-rust/nix/pull/415))
 - Fixed using kqueue with `EVFILT_USER` on FreeBSD
   ([#415](https://github.com/nix-rust/nix/pull/415))
 - Fixed the build on FreeBSD, and fixed the getsockopt, sendmsg, and recvmsg

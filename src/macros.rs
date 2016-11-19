@@ -186,3 +186,11 @@ macro_rules! libc_bitflags {
         }
     };
 }
+
+/// A Rust version of the familiar C `offset_of` macro.  It returns the byte
+/// offset of `field` within struct `ty`
+macro_rules! offset_of {
+    ($ty:ty, $field:ident) => {
+        &(*(0 as *const $ty)).$field as *const _ as usize
+    }
+}

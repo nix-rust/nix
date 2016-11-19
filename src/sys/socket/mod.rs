@@ -608,6 +608,12 @@ pub fn getsockname(fd: RawFd) -> Result<SockAddr> {
     }
 }
 
+/// Return the appropriate SockAddr type from a `sockaddr_storage` of a certain
+/// size.  In C this would usually be done by casting.  The `len` argument
+/// should be the number of bytes in the sockaddr_storage that are actually
+/// allocated and valid.  It must be at least as large as all the useful parts
+/// of the structure.  Note that in the case of a `sockaddr_un`, `len` need not
+/// include the terminating null.
 pub unsafe fn sockaddr_storage_to_addr(
     addr: &sockaddr_storage,
     len: usize) -> Result<SockAddr> {
@@ -627,7 +633,9 @@ pub unsafe fn sockaddr_storage_to_addr(
             Ok(SockAddr::Inet(InetAddr::V6((*(addr as *const _ as *const sockaddr_in6)))))
         }
         consts::AF_UNIX => {
-            Ok(SockAddr::Unix(UnixAddr(*(addr as *const _ as *const sockaddr_un), len)))
+            let sun = *(addr as *const _ as *const sockaddr_un);
+            let pathlen = len - offset_of!(sockaddr_un, sun_path);
+            Ok(SockAddr::Unix(UnixAddr(sun, pathlen)))
         }
         #[cfg(any(target_os = "linux", target_os = "android"))]
         consts::AF_NETLINK => {

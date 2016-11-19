@@ -3,8 +3,7 @@ use std::mem;
 use std::net::{self, Ipv6Addr, SocketAddr, SocketAddrV6};
 use std::path::Path;
 use std::str::FromStr;
-use std::os::unix::io::{AsRawFd, RawFd};
-use ports::localhost;
+use std::os::unix::io::RawFd;
 use libc::c_char;
 
 #[test]
@@ -64,13 +63,18 @@ pub fn test_path_to_sock_addr() {
 
 #[test]
 pub fn test_getsockname() {
-    use std::net::TcpListener;
+    use nix::sys::socket::{socket, AddressFamily, SockType, SockFlag};
+    use nix::sys::socket::{bind, SockAddr};
+    use tempdir::TempDir;
 
-    let addr = localhost();
-    let sock = TcpListener::bind(&*addr).unwrap();
-    let res = getsockname(sock.as_raw_fd()).unwrap();
-
-    assert_eq!(addr, res.to_str());
+    let tempdir = TempDir::new("test_getsockname").unwrap();
+    let sockname = tempdir.path().join("sock");
+    let sock = socket(AddressFamily::Unix, SockType::Stream, SockFlag::empty(),
+                      0).expect("socket failed");
+    let sockaddr = SockAddr::new_unix(&sockname).unwrap();
+    bind(sock, &sockaddr).expect("bind failed");
+    assert_eq!(sockaddr.to_str(),
+               getsockname(sock).expect("getsockname failed").to_str());
 }
 
 #[test]
@@ -139,4 +143,40 @@ pub fn test_scm_rights() {
     assert_eq!(&buf[..], b"world");
     close(received_r).unwrap();
     close(w).unwrap();
+}
+
+// Test creating and using named unix domain sockets
+#[test]
+pub fn test_unixdomain() {
+    use nix::sys::socket::{AddressFamily, SockType, SockFlag};
+    use nix::sys::socket::{bind, socket, connect, listen, accept, SockAddr};
+    use nix::unistd::{read, write, close};
+    use std::thread;
+    use tempdir::TempDir;
+
+    let tempdir = TempDir::new("test_unixdomain").unwrap();
+    let sockname = tempdir.path().join("sock");
+    let s1 = socket(AddressFamily::Unix, SockType::Stream,
+                    SockFlag::empty(), 0).expect("socket failed");
+    let sockaddr = SockAddr::new_unix(&sockname).unwrap();
+    bind(s1, &sockaddr).expect("bind failed");
+    listen(s1, 10).expect("listen failed");
+
+    let thr = thread::spawn(move || {
+        let s2 = socket(AddressFamily::Unix, SockType::Stream,
+                        SockFlag::empty(), 0).expect("socket failed");
+        connect(s2, &sockaddr).expect("connect failed");
+        write(s2, b"hello").expect("write failed");
+        close(s2).unwrap();
+    });
+
+    let s3 = accept(s1).expect("accept failed");
+
+    let mut buf = [0;5];
+    read(s3, &mut buf).unwrap();
+    close(s3).unwrap();
+    close(s1).unwrap();
+    thr.join().unwrap();
+
+    assert_eq!(&buf[..], b"hello");
 }
