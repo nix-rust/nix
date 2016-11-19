@@ -275,7 +275,7 @@ impl<'a> Iterator for CmsgIterator<'a> {
             (libc::SOL_SOCKET, libc::SCM_RIGHTS) => unsafe {
                 Some(ControlMessage::ScmRights(
                     slice::from_raw_parts(
-                        &cmsg.cmsg_data as *const _ as *const _, 1)))
+                        &cmsg.cmsg_data as *const _ as *const _, len / mem::size_of::<RawFd>())))
             },
             (_, _) => unsafe {
                 Some(ControlMessage::Unknown(UnknownCmsg(

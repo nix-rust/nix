@@ -236,7 +236,6 @@ pub fn test_syscontrol() {
 }
 
 #[test]
-#[ignore]
 fn test_scm_rights_multiple_fd() {
     use std::os::unix::net::UnixDatagram;
     use std::os::unix::io::{RawFd, AsRawFd};
