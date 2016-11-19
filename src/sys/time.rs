@@ -4,8 +4,8 @@ use libc::{time_t, suseconds_t};
 #[repr(C)]
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
 pub struct TimeVal {
-    pub tv_sec: time_t,
-    pub tv_usec: suseconds_t,
+    tv_sec: time_t,
+    tv_usec: suseconds_t,
 }
 
 const MICROS_PER_SEC: i64 = 1_000_000;
