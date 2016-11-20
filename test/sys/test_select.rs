@@ -1,5 +1,5 @@
 use nix::sys::select::{FdSet, FD_SETSIZE, select};
-use nix::sys::time::TimeVal;
+use nix::sys::time::{TimeVal, TimeValLike};
 use nix::unistd::{write, pipe};
 
 #[test]
