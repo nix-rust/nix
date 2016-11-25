@@ -136,7 +136,7 @@ pub fn setsid() -> Result<pid_t> {
 /// Get the group process id (GPID) of the foreground process group on the
 /// terminal associated to file descriptor (FD).
 #[inline]
-pub fn tcgetgrp(fd: c_int) -> Result<pid_t> {
+pub fn tcgetpgrp(fd: c_int) -> Result<pid_t> {
     let res = unsafe { libc::tcgetpgrp(fd) };
     Errno::result(res)
 }
