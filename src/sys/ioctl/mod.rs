@@ -90,7 +90,7 @@
 //! How do I get the magic numbers?
 //! ===============================
 //!
-//! For Linux, look at your system's headers. For example, `/usr/include/linxu/input.h` has a lot
+//! For Linux, look at your system's headers. For example, `/usr/include/linux/input.h` has a lot
 //! of lines defining macros which use `_IOR`, `_IOW`, `_IOC`, and `_IORW`.  These macros
 //! correspond to the `ior!`, `iow!`, `ioc!`, and `iorw!` macros defined in this crate.
 //! Additionally, there is the `ioctl!` macro for creating a wrapper around `ioctl` that is
