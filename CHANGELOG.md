@@ -6,6 +6,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Added support for XNU system control sockets
+  ([#478](https://github.com/nix-rust/nix/pull/478))
 - Added support for `ioctl` calls on BSD platforms
   ([#478](https://github.com/nix-rust/nix/pull/478))
 - Added struct `TimeSpec`
