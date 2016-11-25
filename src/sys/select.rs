@@ -76,7 +76,7 @@ pub fn select(nfds: c_int,
     let readfds = readfds.map(|set| set as *mut FdSet).unwrap_or(null_mut());
     let writefds = writefds.map(|set| set as *mut FdSet).unwrap_or(null_mut());
     let errorfds = errorfds.map(|set| set as *mut FdSet).unwrap_or(null_mut());
-    let timeout = timeout.map(|tv| &mut tv.timeval() as *mut timeval)
+    let timeout = timeout.map(|tv| tv as *mut TimeVal as *mut timeval)
                          .unwrap_or(null_mut());
 
     let res = unsafe {

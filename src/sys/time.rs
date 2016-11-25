@@ -10,14 +10,14 @@ pub trait TimeValLike: Sized {
     #[inline]
     fn hours(hours: i64) -> Self {
         let secs = hours.checked_mul(SECS_PER_HOUR)
-            .expect("TimeVal::hours ouf of bounds");
+            .expect("TimeValLike::hours ouf of bounds");
         Self::seconds(secs)
     }
 
     #[inline]
     fn minutes(minutes: i64) -> Self {
         let secs = minutes.checked_mul(SECS_PER_MINUTE)
-            .expect("TimeVal::minutes out of bounds");
+            .expect("TimeValLike::minutes out of bounds");
         Self::seconds(secs)
     }
 
@@ -83,9 +83,9 @@ impl cmp::Ord for TimeSpec {
     // normalized.  That is, tv_nsec must always be within [0, 1_000_000_000)
     fn cmp(&self, other: &TimeSpec) -> cmp::Ordering {
         if self.tv_sec() == other.tv_sec() {
-            self.tv_sec().cmp(&other.tv_sec())
-        } else {
             self.tv_nsec().cmp(&other.tv_nsec())
+        } else {
+            self.tv_sec().cmp(&other.tv_sec())
         }
     }
 }
@@ -99,7 +99,8 @@ impl cmp::PartialOrd for TimeSpec {
 impl TimeValLike for TimeSpec {
     #[inline]
     fn seconds(seconds: i64) -> TimeSpec {
-        assert!(seconds >= TS_MIN_SECONDS && seconds <= TS_MAX_SECONDS, "TimeSpec out of bounds; seconds={}", seconds);
+        assert!(seconds >= TS_MIN_SECONDS && seconds <= TS_MAX_SECONDS,
+                "TimeSpec out of bounds; seconds={}", seconds);
         TimeSpec(timespec {tv_sec: seconds as time_t, tv_nsec: 0 })
     }
 
@@ -124,7 +125,8 @@ impl TimeValLike for TimeSpec {
     #[inline]
     fn nanoseconds(nanoseconds: i64) -> TimeSpec {
         let (secs, nanos) = div_mod_floor_64(nanoseconds, NANOS_PER_SEC);
-        assert!(secs >= TS_MIN_SECONDS && secs <= TS_MAX_SECONDS, "TimeSpec out of bounds");
+        assert!(secs >= TS_MIN_SECONDS && secs <= TS_MAX_SECONDS,
+                "TimeSpec out of bounds");
         TimeSpec(timespec {tv_sec: secs as time_t,
                            tv_nsec: nanos as c_long })
     }
@@ -159,10 +161,6 @@ impl TimeSpec {
         } else {
             self.tv_nsec()
         }
-    }
-
-    pub fn timespec(&self) -> timespec{
-        self.0
     }
 
     pub fn tv_sec(&self) -> time_t {
@@ -290,9 +288,9 @@ impl cmp::Ord for TimeVal {
     // normalized.  That is, tv_usec must always be within [0, 1_000_000)
     fn cmp(&self, other: &TimeVal) -> cmp::Ordering {
         if self.tv_sec() == other.tv_sec() {
-            self.tv_sec().cmp(&other.tv_sec())
-        } else {
             self.tv_usec().cmp(&other.tv_usec())
+        } else {
+            self.tv_sec().cmp(&other.tv_sec())
         }
     }
 }
@@ -306,7 +304,8 @@ impl cmp::PartialOrd for TimeVal {
 impl TimeValLike for TimeVal {
     #[inline]
     fn seconds(seconds: i64) -> TimeVal {
-        assert!(seconds >= TV_MIN_SECONDS && seconds <= TV_MAX_SECONDS, "TimeVal out of bounds; seconds={}", seconds);
+        assert!(seconds >= TV_MIN_SECONDS && seconds <= TV_MAX_SECONDS,
+                "TimeVal out of bounds; seconds={}", seconds);
         TimeVal(timeval {tv_sec: seconds as time_t, tv_usec: 0 })
     }
 
@@ -322,7 +321,8 @@ impl TimeValLike for TimeVal {
     #[inline]
     fn microseconds(microseconds: i64) -> TimeVal {
         let (secs, micros) = div_mod_floor_64(microseconds, MICROS_PER_SEC);
-        assert!(secs >= TV_MIN_SECONDS && secs <= TV_MAX_SECONDS, "TimeVal out of bounds");
+        assert!(secs >= TV_MIN_SECONDS && secs <= TV_MAX_SECONDS,
+                "TimeVal out of bounds");
         TimeVal(timeval {tv_sec: secs as time_t,
                            tv_usec: micros as suseconds_t })
     }
@@ -333,7 +333,8 @@ impl TimeValLike for TimeVal {
     fn nanoseconds(nanoseconds: i64) -> TimeVal {
         let microseconds = nanoseconds / 1000;
         let (secs, micros) = div_mod_floor_64(microseconds, MICROS_PER_SEC);
-        assert!(secs >= TV_MIN_SECONDS && secs <= TV_MAX_SECONDS, "TimeVal out of bounds");
+        assert!(secs >= TV_MIN_SECONDS && secs <= TV_MAX_SECONDS,
+                "TimeVal out of bounds");
         TimeVal(timeval {tv_sec: secs as time_t,
                            tv_usec: micros as suseconds_t })
     }
@@ -368,10 +369,6 @@ impl TimeVal {
         } else {
             self.tv_usec()
         }
-    }
-
-    pub fn timeval(&self) -> timeval{
-        self.0
     }
 
     pub fn tv_sec(&self) -> time_t {
@@ -492,7 +489,8 @@ mod test {
     #[test]
     pub fn test_timespec() {
         assert!(TimeSpec::seconds(1) != TimeSpec::zero());
-        assert_eq!(TimeSpec::seconds(1) + TimeSpec::seconds(2), TimeSpec::seconds(3));
+        assert_eq!(TimeSpec::seconds(1) + TimeSpec::seconds(2),
+                   TimeSpec::seconds(3));
         assert_eq!(TimeSpec::minutes(3) + TimeSpec::seconds(2),
                    TimeSpec::seconds(182));
     }
@@ -503,6 +501,15 @@ mod test {
         let b = TimeSpec::seconds(-1) + TimeSpec::nanoseconds(-123);
 
         assert_eq!(a, -b);
+    }
+
+    #[test]
+    pub fn test_timespec_ord() {
+        assert!(TimeSpec::seconds(1) == TimeSpec::nanoseconds(1_000_000_000));
+        assert!(TimeSpec::seconds(1) < TimeSpec::nanoseconds(1_000_000_001));
+        assert!(TimeSpec::seconds(1) > TimeSpec::nanoseconds(999_999_999));
+        assert!(TimeSpec::seconds(-1) < TimeSpec::nanoseconds(-999_999_999));
+        assert!(TimeSpec::seconds(-1) > TimeSpec::nanoseconds(-1_000_000_001));
     }
 
     #[test]
@@ -518,9 +525,19 @@ mod test {
     #[test]
     pub fn test_timeval() {
         assert!(TimeVal::seconds(1) != TimeVal::zero());
-        assert_eq!(TimeVal::seconds(1) + TimeVal::seconds(2), TimeVal::seconds(3));
+        assert_eq!(TimeVal::seconds(1) + TimeVal::seconds(2),
+                   TimeVal::seconds(3));
         assert_eq!(TimeVal::minutes(3) + TimeVal::seconds(2),
                    TimeVal::seconds(182));
+    }
+
+    #[test]
+    pub fn test_timeval_ord() {
+        assert!(TimeVal::seconds(1) == TimeVal::microseconds(1_000_000));
+        assert!(TimeVal::seconds(1) < TimeVal::microseconds(1_000_001));
+        assert!(TimeVal::seconds(1) > TimeVal::microseconds(999_999));
+        assert!(TimeVal::seconds(-1) < TimeVal::microseconds(-999_999));
+        assert!(TimeVal::seconds(-1) > TimeVal::microseconds(-1_000_001));
     }
 
     #[test]
