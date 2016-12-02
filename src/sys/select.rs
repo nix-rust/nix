@@ -1,6 +1,6 @@
 use std::ptr::null_mut;
 use std::os::unix::io::RawFd;
-use libc::c_int;
+use libc::{c_int, timeval};
 use {Errno, Result};
 use sys::time::TimeVal;
 
@@ -56,8 +56,7 @@ impl FdSet {
 }
 
 mod ffi {
-    use libc::c_int;
-    use sys::time::TimeVal;
+    use libc::{c_int, timeval};
     use super::FdSet;
 
     extern {
@@ -65,7 +64,7 @@ mod ffi {
                       readfds: *mut FdSet,
                       writefds: *mut FdSet,
                       errorfds: *mut FdSet,
-                      timeout: *mut TimeVal) -> c_int;
+                      timeout: *mut timeval) -> c_int;
     }
 }
 
@@ -77,7 +76,8 @@ pub fn select(nfds: c_int,
     let readfds = readfds.map(|set| set as *mut FdSet).unwrap_or(null_mut());
     let writefds = writefds.map(|set| set as *mut FdSet).unwrap_or(null_mut());
     let errorfds = errorfds.map(|set| set as *mut FdSet).unwrap_or(null_mut());
-    let timeout = timeout.map(|tv| tv as *mut TimeVal).unwrap_or(null_mut());
+    let timeout = timeout.map(|tv| tv as *mut TimeVal as *mut timeval)
+                         .unwrap_or(null_mut());
 
     let res = unsafe {
         ffi::select(nfds, readfds, writefds, errorfds, timeout)

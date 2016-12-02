@@ -6,6 +6,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Added struct `TimeSpec`
+  ([#475](https://github.com/nix-rust/nix/pull/475))
 - Added complete definitions for all kqueue-related constants on all supported
   OSes
   ([#415](https://github.com/nix-rust/nix/pull/415))
@@ -22,6 +24,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#457](https://github.com/nix-rust/nix/pull/457))
 
 ### Changed
+- Changed `TimeVal` into an opaque Newtype
+  ([#475](https://github.com/nix-rust/nix/pull/475))
 - `kill`'s signature, defined in `::nix::sys::signal`, changed, so that the
   signal parameter has type `T: Into<Option<Signal>>`. `None` as an argument
   for that parameter will result in a 0 passed to libc's `kill`, while a
