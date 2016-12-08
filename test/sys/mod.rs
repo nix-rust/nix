@@ -6,3 +6,4 @@ mod test_ioctl;
 mod test_wait;
 mod test_select;
 mod test_uio;
+mod test_epoll;

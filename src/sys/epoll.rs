@@ -1,6 +1,7 @@
 use {Errno, Result};
 use libc::{self, c_int};
 use std::os::unix::io::RawFd;
+use std::ptr;
 
 bitflags!(
     #[repr(C)]
@@ -57,6 +58,16 @@ impl EpollEvent {
     }
 }
 
+impl<'a> Into<&'a mut EpollEvent> for Option<&'a mut EpollEvent> {
+    #[inline]
+    fn into(self) -> &'a mut EpollEvent {
+        match self {
+            Some(epoll_event) => epoll_event,
+            None => unsafe { &mut *ptr::null_mut::<EpollEvent>() }
+        }
+    }
+}
+
 #[inline]
 pub fn epoll_create() -> Result<RawFd> {
     let res = unsafe { libc::epoll_create(1024) };
@@ -72,9 +83,10 @@ pub fn epoll_create1(flags: EpollCreateFlags) -> Result<RawFd> {
 }
 
 #[inline]
-pub fn epoll_ctl(epfd: RawFd, op: EpollOp, fd: RawFd, event: &mut EpollEvent) -> Result<()> {
-    let res = unsafe { libc::epoll_ctl(epfd, op as c_int, fd, &mut event.event) };
-
+pub fn epoll_ctl<'a, T>(epfd: RawFd, op: EpollOp, fd: RawFd, event: T) -> Result<()>
+    where T: Into<&'a mut EpollEvent>
+{
+    let res = unsafe { libc::epoll_ctl(epfd, op as c_int, fd, &mut event.into().event) };
     Errno::result(res).map(drop)
 }
 
