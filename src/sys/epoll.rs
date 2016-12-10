@@ -45,8 +45,12 @@ pub struct EpollEvent {
 }
 
 impl EpollEvent {
-    pub fn new(events: EpollFlags, data: u64) -> EpollEvent {
+    pub fn new(events: EpollFlags, data: u64) -> Self {
         EpollEvent { event: libc::epoll_event { events: events.bits(), u64: data } }
+    }
+
+    pub empty() -> Self {
+        EpollEvent::new(EpollFlags::from_bits(0), 0);
     }
 
     pub fn events(&self) -> EpollFlags {
