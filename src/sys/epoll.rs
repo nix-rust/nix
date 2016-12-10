@@ -49,8 +49,8 @@ impl EpollEvent {
         EpollEvent { event: libc::epoll_event { events: events.bits(), u64: data } }
     }
 
-    pub empty() -> Self {
-        EpollEvent::new(EpollFlags::from_bits(0), 0);
+    pub fn empty() -> Self {
+        EpollEvent::new(EpollFlags::empty(), 0)
     }
 
     pub fn events(&self) -> EpollFlags {
