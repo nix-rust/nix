@@ -69,6 +69,9 @@ matrix:
       sudo: true
   allow_failures:
     - rust: nightly
+    # We need to upgrade the lowest supported version. However, the build
+    # infrastructure for arm/mips/android is not ready yet.
+    - rust: 1.7.0
     - env: TARGET=mips-unknown-linux-gnu DOCKER_IMAGE=posborne/rust-cross:mips
     - env: TARGET=mipsel-unknown-linux-gnu DOCKER_IMAGE=posborne/rust-cross:mips
     - env: TARGET=arm-linux-androideabi DOCKER_IMAGE=posborne/rust-cross:android
