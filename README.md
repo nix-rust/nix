@@ -3,7 +3,9 @@
 [![Build Status](https://travis-ci.org/nix-rust/nix.svg?branch=master)](https://travis-ci.org/nix-rust/nix)
 [![crates.io](http://meritbadge.herokuapp.com/nix)](https://crates.io/crates/nix)
 
-[Documentation](https://nix-rust.github.io/nix/nix/index.html)
+[Documentation (Releases)](https://docs.rs/nix/)
+
+[Documentation (Development)](https://nix-rust.github.io/nix/nix/index.html)
 
 Nix seeks to provide friendly bindings to various *nix platform APIs (Linux, Darwin,
 ...). The goal is to not provide a 100% unified interface, but to unify
