@@ -151,6 +151,17 @@ pub fn tcsetpgrp(fd: c_int, pgrp: pid_t) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
+
+/// Get the group id of the calling process (see
+///[getpgrp(3)](http://man7.org/linux/man-pages/man3/getpgrp.3p.html)).
+///
+/// Get the process group id (PGID) of the calling process.
+/// According to the man page it is always successful.
+#[inline]
+pub fn getpgrp() -> pid_t {
+    unsafe { libc::getpgrp() }
+}
+
 /// Get the caller's thread ID (see
 /// [gettid(2)](http://man7.org/linux/man-pages/man2/gettid.2.html).
 ///
