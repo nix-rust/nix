@@ -1,4 +1,4 @@
-use nix::sys::epoll::{EpollCreateFlags, EpollFlags, EpollOp, EpollEvent};
+use nix::sys::epoll::{EpollCreateFlags, EpollOp, EpollEvent};
 use nix::sys::epoll::{EPOLLIN, EPOLLERR};
 use nix::sys::epoll::{epoll_create1, epoll_ctl};
 use nix::{Error, Errno};

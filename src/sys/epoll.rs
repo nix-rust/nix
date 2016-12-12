@@ -2,6 +2,7 @@ use {Errno, Result};
 use libc::{self, c_int};
 use std::os::unix::io::RawFd;
 use std::ptr;
+use std::mem;
 
 bitflags!(
     #[repr(C)]
@@ -50,7 +51,7 @@ impl EpollEvent {
     }
 
     pub fn empty() -> Self {
-        EpollEvent::new(EpollFlags::empty(), 0)
+        unsafe { mem::uninitialized::<EpollEvent>() }
     }
 
     pub fn events(&self) -> EpollFlags {
