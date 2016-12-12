@@ -51,7 +51,7 @@ impl EpollEvent {
     }
 
     pub fn empty() -> Self {
-        unsafe { mem::uninitialized::<EpollEvent>() }
+        unsafe { mem::zeroed::<EpollEvent>() }
     }
 
     pub fn events(&self) -> EpollFlags {
