@@ -20,6 +20,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#451](https://github.com/nix-rust/nix/pull/451))
 - Added `CLONE_NEWCGROUP` in `::nix::sched`
   ([#457](https://github.com/nix-rust/nix/pull/457))
+- Added `getpgrp` in `::nix::unistd`
+  ([#491](https://github.com/nix-rust/nix/pull/491))
 
 ### Changed
 - `kill`'s signature, defined in `::nix::sys::signal`, changed, so that the
