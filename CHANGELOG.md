@@ -6,6 +6,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Added support for XNU system control sockets
+  ([#478](https://github.com/nix-rust/nix/pull/478))
+- Added support for `ioctl` calls on BSD platforms
+  ([#478](https://github.com/nix-rust/nix/pull/478))
 - Added struct `TimeSpec`
   ([#475](https://github.com/nix-rust/nix/pull/475))
 - Added complete definitions for all kqueue-related constants on all supported
@@ -26,6 +30,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#491](https://github.com/nix-rust/nix/pull/491))
 
 ### Changed
+- Removed the `bad` keyword from the `ioctl!` macro
+  ([#478](https://github.com/nix-rust/nix/pull/478))
 - Changed `TimeVal` into an opaque Newtype
   ([#475](https://github.com/nix-rust/nix/pull/475))
 - `kill`'s signature, defined in `::nix::sys::signal`, changed, so that the

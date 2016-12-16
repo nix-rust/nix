@@ -180,3 +180,20 @@ pub fn test_unixdomain() {
 
     assert_eq!(&buf[..], b"hello");
 }
+
+// Test creating and using named system control sockets
+#[cfg(any(target_os = "macos", target_os = "ios"))]
+#[test]
+pub fn test_syscontrol() {
+    use nix::{Errno, Error};
+    use nix::sys::socket::{AddressFamily, SockType, SockFlag};
+    use nix::sys::socket::{socket, SockAddr};
+    use nix::sys::socket::SYSPROTO_CONTROL;
+
+    let fd = socket(AddressFamily::System, SockType::Datagram, SockFlag::empty(), SYSPROTO_CONTROL).expect("socket failed");
+    let _sockaddr = SockAddr::new_sys_control(fd, "com.apple.net.utun_control", 0).expect("resolving sys_control name failed");
+    assert_eq!(SockAddr::new_sys_control(fd, "foo.bar.lol", 0).err(), Some(Error::Sys(Errno::ENOENT)));
+
+    // requires root privileges
+    // connect(fd, &sockaddr).expect("connect failed");
+}

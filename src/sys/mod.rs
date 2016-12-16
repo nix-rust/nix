@@ -12,7 +12,7 @@ pub mod eventfd;
 #[cfg(target_os = "linux")]
 pub mod memfd;
 
-#[cfg(not(any(target_os = "ios", target_os = "freebsd", target_os = "dragonfly")))]
+#[macro_use]
 pub mod ioctl;
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
