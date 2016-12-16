@@ -66,6 +66,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#397](https://github.com/nix-rust/nix/pull/397))
 - Fixed an off-by-one bug in `UnixAddr::new_abstract` in `::nix::sys::socket`.
   ([#429](https://github.com/nix-rust/nix/pull/429))
+- Fixed clone passing a potentially unaligned stack.
+  ([#490](https://github.com/nix-rust/nix/pull/490))
 
 ## [0.7.0] 2016-09-09
 
