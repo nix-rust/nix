@@ -114,8 +114,9 @@ pub fn clone(mut cb: CloneCb,
     let res = unsafe {
         let combined = flags.bits() | signal.unwrap_or(0);
         let ptr = stack.as_mut_ptr().offset(stack.len() as isize);
+        let ptr_aligned = ptr.offset((ptr as usize % 16) as isize * -1);
         ffi::clone(mem::transmute(callback as extern "C" fn(*mut Box<::std::ops::FnMut() -> isize>) -> i32),
-                   ptr as *mut c_void,
+                   ptr_aligned as *mut c_void,
                    combined,
                    &mut cb)
     };

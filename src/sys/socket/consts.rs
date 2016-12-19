@@ -132,6 +132,11 @@ mod os {
     pub const AF_INET6: c_int = 28;
     #[cfg(any(target_os = "macos", target_os = "ios"))]
     pub const AF_INET6: c_int = 30;
+    #[cfg(any(target_os = "macos", target_os = "ios"))]
+    pub const AF_SYSTEM: c_int = 32;
+    
+    #[cfg(any(target_os = "macos", target_os = "ios"))]
+    pub const AF_SYS_CONTROL: c_int = 2;
 
     pub const SOCK_STREAM: c_int = 1;
     pub const SOCK_DGRAM: c_int = 2;
@@ -144,6 +149,8 @@ mod os {
     pub const IPPROTO_IPV6: c_int = 41;
     pub const IPPROTO_TCP: c_int = 6;
     pub const IPPROTO_UDP: c_int = 17;
+    #[cfg(any(target_os = "macos", target_os = "ios"))]
+    pub const SYSPROTO_CONTROL: c_int = 2;
 
     pub const SO_ACCEPTCONN: c_int          = 0x0002;
     pub const SO_BROADCAST: c_int           = 0x0020;

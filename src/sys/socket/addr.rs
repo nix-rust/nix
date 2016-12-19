@@ -7,6 +7,10 @@ use std::path::Path;
 use std::os::unix::ffi::OsStrExt;
 #[cfg(any(target_os = "linux", target_os = "android"))]
 use ::sys::socket::addr::netlink::NetlinkAddr;
+#[cfg(any(target_os = "macos", target_os = "ios"))]
+use std::os::unix::io::RawFd;
+#[cfg(any(target_os = "macos", target_os = "ios"))]
+use ::sys::socket::addr::sys_control::SysControlAddr;
 
 // TODO: uncomment out IpAddr functions: rust-lang/rfcs#988
 
@@ -26,6 +30,8 @@ pub enum AddressFamily {
     Netlink = consts::AF_NETLINK,
     #[cfg(any(target_os = "linux", target_os = "android"))]
     Packet = consts::AF_PACKET,
+    #[cfg(any(target_os = "macos", target_os = "ios"))]
+    System = consts::AF_SYSTEM,
 }
 
 #[derive(Copy)]
@@ -475,7 +481,9 @@ pub enum SockAddr {
     Inet(InetAddr),
     Unix(UnixAddr),
     #[cfg(any(target_os = "linux", target_os = "android"))]
-    Netlink(NetlinkAddr)
+    Netlink(NetlinkAddr),
+    #[cfg(any(target_os = "macos", target_os = "ios"))]
+    SysControl(SysControlAddr),
 }
 
 impl SockAddr {
@@ -492,6 +500,11 @@ impl SockAddr {
         SockAddr::Netlink(NetlinkAddr::new(pid, groups))
     }
 
+    #[cfg(any(target_os = "macos", target_os = "ios"))]
+    pub fn new_sys_control(sockfd: RawFd, name: &str, unit: u32) -> Result<SockAddr> {
+        SysControlAddr::from_name(sockfd, name, unit).map(|a| SockAddr::SysControl(a))
+    }
+
     pub fn family(&self) -> AddressFamily {
         match *self {
             SockAddr::Inet(InetAddr::V4(..)) => AddressFamily::Inet,
@@ -499,6 +512,8 @@ impl SockAddr {
             SockAddr::Unix(..) => AddressFamily::Unix,
             #[cfg(any(target_os = "linux", target_os = "android"))]
             SockAddr::Netlink(..) => AddressFamily::Netlink,
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
+            SockAddr::SysControl(..) => AddressFamily::System,
         }
     }
 
@@ -513,6 +528,8 @@ impl SockAddr {
             SockAddr::Unix(UnixAddr(ref addr, len)) => (mem::transmute(addr), (len + offset_of!(libc::sockaddr_un, sun_path)) as libc::socklen_t),
             #[cfg(any(target_os = "linux", target_os = "android"))]
             SockAddr::Netlink(NetlinkAddr(ref sa)) => (mem::transmute(sa), mem::size_of::<libc::sockaddr_nl>() as libc::socklen_t),
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
+            SockAddr::SysControl(SysControlAddr(ref sa)) => (mem::transmute(sa), mem::size_of::<sys_control::sockaddr_ctl>() as libc::socklen_t),
         }
     }
 }
@@ -545,6 +562,8 @@ impl hash::Hash for SockAddr {
             SockAddr::Unix(ref a) => a.hash(s),
             #[cfg(any(target_os = "linux", target_os = "android"))]
             SockAddr::Netlink(ref a) => a.hash(s),
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
+            SockAddr::SysControl(ref a) => a.hash(s),
         }
     }
 }
@@ -562,6 +581,8 @@ impl fmt::Display for SockAddr {
             SockAddr::Unix(ref unix) => unix.fmt(f),
             #[cfg(any(target_os = "linux", target_os = "android"))]
             SockAddr::Netlink(ref nl) => nl.fmt(f),
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
+            SockAddr::SysControl(ref sc) => sc.fmt(f),
         }
     }
 }
@@ -617,6 +638,105 @@ pub mod netlink {
     impl fmt::Display for NetlinkAddr {
         fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
             write!(f, "pid: {} groups: {}", self.pid(), self.groups())
+        }
+    }
+}
+
+#[cfg(any(target_os = "macos", target_os = "ios"))]
+pub mod sys_control {
+    use ::sys::socket::consts;
+    use ::sys::socket::addr::{AddressFamily};
+    use libc::{c_uchar, uint16_t, uint32_t};
+    use std::{fmt, mem};
+    use std::hash::{Hash, Hasher};
+    use std::os::unix::io::RawFd;
+    use {Errno, Error, Result};
+
+    #[repr(C)]
+    pub struct ctl_ioc_info {
+        pub ctl_id: uint32_t,
+        pub ctl_name: [c_uchar; MAX_KCTL_NAME],
+    }
+
+    const CTL_IOC_MAGIC: u8 = 'N' as u8;
+    const CTL_IOC_INFO: u8 = 3;
+    const MAX_KCTL_NAME: usize = 96;
+
+    ioctl!(readwrite ctl_info with CTL_IOC_MAGIC, CTL_IOC_INFO; ctl_ioc_info);
+
+    #[repr(C)]
+    #[derive(Copy, Clone)]
+    pub struct sockaddr_ctl {
+        pub sc_len: c_uchar,
+        pub sc_family: c_uchar,
+        pub ss_sysaddr: uint16_t,
+        pub sc_id: uint32_t,
+        pub sc_unit: uint32_t,
+        pub sc_reserved: [uint32_t; 5],
+    }
+
+    #[derive(Copy, Clone)]
+    pub struct SysControlAddr(pub sockaddr_ctl);
+
+    // , PartialEq, Eq, Debug, Hash
+    impl PartialEq for SysControlAddr {
+        fn eq(&self, other: &Self) -> bool {
+            let (inner, other) = (self.0, other.0);
+            (inner.sc_id, inner.sc_unit) ==
+            (other.sc_id, other.sc_unit)
+        }
+    }
+
+    impl Eq for SysControlAddr {}
+
+    impl Hash for SysControlAddr {
+        fn hash<H: Hasher>(&self, s: &mut H) {
+            let inner = self.0;
+            (inner.sc_id, inner.sc_unit).hash(s);
+        }
+    }
+
+
+    impl SysControlAddr {
+        pub fn new(id: u32, unit: u32) -> SysControlAddr {
+            let addr = sockaddr_ctl {
+                sc_len: mem::size_of::<sockaddr_ctl>() as c_uchar,
+                sc_family: AddressFamily::System as c_uchar,
+                ss_sysaddr: consts::AF_SYS_CONTROL as uint16_t,
+                sc_id: id,
+                sc_unit: unit,
+                sc_reserved: [0; 5]
+            };
+
+            SysControlAddr(addr)
+        }
+
+        pub fn from_name(sockfd: RawFd, name: &str, unit: u32) -> Result<SysControlAddr> {
+            if name.len() > MAX_KCTL_NAME {
+                return Err(Error::Sys(Errno::ENAMETOOLONG));
+            }
+
+            let mut ctl_name = [0; MAX_KCTL_NAME];
+            ctl_name[..name.len()].clone_from_slice(name.as_bytes());
+            let mut info = ctl_ioc_info { ctl_id: 0, ctl_name: ctl_name };
+
+            unsafe { try!(ctl_info(sockfd, &mut info)); }
+
+            Ok(SysControlAddr::new(info.ctl_id, unit))
+        }
+
+        pub fn id(&self) -> u32 {
+            self.0.sc_id
+        }
+
+        pub fn unit(&self) -> u32 {
+            self.0.sc_unit
+        }
+    }
+
+    impl fmt::Display for SysControlAddr {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            write!(f, "id: {} unit: {}", self.id(), self.unit())
         }
     }
 }

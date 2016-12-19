@@ -19,7 +19,8 @@ pub struct KEvent {
 }
 
 #[cfg(any(target_os = "openbsd", target_os = "freebsd",
-          target_os = "dragonfly", target_os = "macos"))]
+          target_os = "dragonfly", target_os = "macos",
+          target_os = "ios"))]
 type type_of_udata = *mut ::c_void;
 #[cfg(any(target_os = "netbsd"))]
 type type_of_udata = intptr_t;
@@ -33,23 +34,24 @@ pub enum EventFilter {
     EVFILT_AIO = libc::EVFILT_AIO,
     #[cfg(target_os = "dragonfly")]
     EVFILT_EXCEPT = libc::EVFILT_EXCEPT,
-    #[cfg(any(target_os = "macos",
+    #[cfg(any(target_os = "macos", target_os = "ios",
               target_os = "dragonfly",
               target_os = "freebsd"))]
     EVFILT_FS = libc::EVFILT_FS,
     #[cfg(target_os = "freebsd")]
     EVFILT_LIO = libc::EVFILT_LIO,
-    #[cfg(target_os = "macos")]
+    #[cfg(any(target_os = "macos", target_os = "ios"))]
     EVFILT_MACHPORT = libc::EVFILT_MACHPORT,
     EVFILT_PROC = libc::EVFILT_PROC,
     EVFILT_READ = libc::EVFILT_READ,
     EVFILT_SIGNAL = libc::EVFILT_SIGNAL,
     EVFILT_TIMER = libc::EVFILT_TIMER,
     #[cfg(any(target_os = "macos",
+              target_os = "ios",
               target_os = "dragonfly",
               target_os = "freebsd"))]
     EVFILT_USER = libc::EVFILT_USER,
-    #[cfg(target_os = "macos")]
+    #[cfg(any(target_os = "macos", target_os = "ios"))]
     EVFILT_VM = libc::EVFILT_VM,
     EVFILT_VNODE = libc::EVFILT_VNODE,
     EVFILT_WRITE = libc::EVFILT_WRITE,
@@ -70,7 +72,8 @@ pub enum EventFilter {
     EVFILT_TIMER = libc::EVFILT_TIMER,
 }
 
-#[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "dragonfly"))]
+#[cfg(any(target_os = "macos", target_os = "ios",
+          target_os = "freebsd", target_os = "dragonfly"))]
 pub type type_of_event_flag = u16;
 #[cfg(any(target_os = "netbsd", target_os = "openbsd"))]
 pub type type_of_event_flag = u32;
@@ -86,15 +89,15 @@ libc_bitflags!{
         EV_ENABLE,
         EV_EOF,
         EV_ERROR,
-        #[cfg(target_os = "macos")]
+        #[cfg(any(target_os = "macos", target_os = "ios"))]
         EV_FLAG0,
         EV_FLAG1,
         #[cfg(target_os = "dragonfly")]
         EV_NODATA,
         EV_ONESHOT,
-        #[cfg(target_os = "macos")]
+        #[cfg(any(target_os = "macos", target_os = "ios"))]
         EV_OOBAND,
-        #[cfg(target_os = "macos")]
+        #[cfg(any(target_os = "macos", target_os = "ios"))]
         EV_POLL,
         #[cfg(not(target_os = "openbsd"))]
         EV_RECEIPT,
@@ -104,7 +107,7 @@ libc_bitflags!{
 
 bitflags!(
     flags FilterFlag: u32 {
-        #[cfg(target_os = "macos")]
+        #[cfg(any(target_os = "macos", target_os = "ios"))]
         const NOTE_ABSOLUTE                        = libc::NOTE_ABSOLUTE,
         const NOTE_ATTRIB                          = libc::NOTE_ATTRIB,
         const NOTE_CHILD                           = libc::NOTE_CHILD,
@@ -113,32 +116,38 @@ bitflags!(
         const NOTE_EOF                             = libc::NOTE_EOF,
         const NOTE_EXEC                            = libc::NOTE_EXEC,
         const NOTE_EXIT                            = libc::NOTE_EXIT,
-        #[cfg(target_os = "macos")]
+        #[cfg(any(target_os = "macos", target_os = "ios"))]
         const NOTE_EXIT_REPARENTED                 = libc::NOTE_EXIT_REPARENTED,
-        #[cfg(target_os = "macos")]
+        #[cfg(any(target_os = "macos", target_os = "ios"))]
         const NOTE_EXITSTATUS                      = libc::NOTE_EXITSTATUS,
         const NOTE_EXTEND                          = libc::NOTE_EXTEND,
-        #[cfg(any(target_os = "macos",
+        #[cfg(any(target_os = "macos", 
+                  target_os = "ios",
                   target_os = "freebsd",
                   target_os = "dragonfly"))]
         const NOTE_FFAND                           = libc::NOTE_FFAND,
         #[cfg(any(target_os = "macos",
+                  target_os = "ios",
                   target_os = "freebsd",
                   target_os = "dragonfly"))]
         const NOTE_FFCOPY                          = libc::NOTE_FFCOPY,
         #[cfg(any(target_os = "macos",
+                  target_os = "ios",
                   target_os = "freebsd",
                   target_os = "dragonfly"))]
         const NOTE_FFCTRLMASK                      = libc::NOTE_FFCTRLMASK,
         #[cfg(any(target_os = "macos",
+                  target_os = "ios",
                   target_os = "freebsd",
                   target_os = "dragonfly"))]
         const NOTE_FFLAGSMASK                      = libc::NOTE_FFLAGSMASK,
         #[cfg(any(target_os = "macos",
+                  target_os = "ios",
                   target_os = "freebsd",
                   target_os = "dragonfly"))]
         const NOTE_FFNOP                           = libc::NOTE_FFNOP,
         #[cfg(any(target_os = "macos",
+                  target_os = "ios",
                   target_os = "freebsd",
                   target_os = "dragonfly"))]
         const NOTE_FFOR                            = libc::NOTE_FFOR,
@@ -147,39 +156,40 @@ bitflags!(
         const NOTE_LOWAT                           = libc::NOTE_LOWAT,
         #[cfg(target_os = "freebsd")]
         const NOTE_MSECONDS                        = libc::NOTE_MSECONDS,
-        #[cfg(target_os = "macos")]
+        #[cfg(any(target_os = "macos", target_os = "ios"))]
         const NOTE_NONE                            = libc::NOTE_NONE,
-        #[cfg(any(target_os = "macos", target_os = "freebsd"))]
+        #[cfg(any(target_os = "macos", target_os = "ios", target_os = "freebsd"))]
         const NOTE_NSECONDS                        = libc::NOTE_NSECONDS,
         #[cfg(target_os = "dragonfly")]
         const NOTE_OOB                             = libc::NOTE_OOB,
         const NOTE_PCTRLMASK                       = libc::NOTE_PCTRLMASK,
         const NOTE_PDATAMASK                       = libc::NOTE_PDATAMASK,
-        #[cfg(target_os = "macos")]
+        #[cfg(any(target_os = "macos", target_os = "ios"))]
         const NOTE_REAP                            = libc::NOTE_REAP,
         const NOTE_RENAME                          = libc::NOTE_RENAME,
         const NOTE_REVOKE                          = libc::NOTE_REVOKE,
-        #[cfg(any(target_os = "macos", target_os = "freebsd"))]
+        #[cfg(any(target_os = "macos", target_os = "ios", target_os = "freebsd"))]
         const NOTE_SECONDS                         = libc::NOTE_SECONDS,
-        #[cfg(target_os = "macos")]
+        #[cfg(any(target_os = "macos", target_os = "ios"))]
         const NOTE_SIGNAL                          = libc::NOTE_SIGNAL,
         const NOTE_TRACK                           = libc::NOTE_TRACK,
         const NOTE_TRACKERR                        = libc::NOTE_TRACKERR,
         #[cfg(any(target_os = "macos",
+                  target_os = "ios",
                   target_os = "freebsd",
                   target_os = "dragonfly"))]
         const NOTE_TRIGGER                         = libc::NOTE_TRIGGER,
         #[cfg(target_os = "openbsd")]
         const NOTE_TRUNCATE                        = libc::NOTE_TRUNCATE,
-        #[cfg(any(target_os = "macos", target_os = "freebsd"))]
+        #[cfg(any(target_os = "macos", target_os = "ios", target_os = "freebsd"))]
         const NOTE_USECONDS                        = libc::NOTE_USECONDS,
-        #[cfg(target_os = "macos")]
+        #[cfg(any(target_os = "macos", target_os = "ios"))]
         const NOTE_VM_ERROR                        = libc::NOTE_VM_ERROR,
-        #[cfg(target_os = "macos")]
+        #[cfg(any(target_os = "macos", target_os = "ios"))]
         const NOTE_VM_PRESSURE                     = libc::NOTE_VM_PRESSURE,
-        #[cfg(target_os = "macos")]
+        #[cfg(any(target_os = "macos", target_os = "ios"))]
         const NOTE_VM_PRESSURE_SUDDEN_TERMINATE    = libc::NOTE_VM_PRESSURE_SUDDEN_TERMINATE,
-        #[cfg(target_os = "macos")]
+        #[cfg(any(target_os = "macos", target_os = "ios"))]
         const NOTE_VM_PRESSURE_TERMINATE           = libc::NOTE_VM_PRESSURE_TERMINATE,
         const NOTE_WRITE                           = libc::NOTE_WRITE,
     }
@@ -251,6 +261,7 @@ pub fn kevent(kq: RawFd,
 }
 
 #[cfg(any(target_os = "macos",
+          target_os = "ios",
           target_os = "freebsd",
           target_os = "dragonfly",
           target_os = "openbsd"))]
