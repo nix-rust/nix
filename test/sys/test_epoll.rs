@@ -9,6 +9,10 @@ pub fn test_epoll_errno() {
     let result = epoll_ctl(efd, EpollOp::EpollCtlDel, 1, None);
     assert!(result.is_err());
     assert_eq!(result.unwrap_err(), Error::Sys(Errno::ENOENT));
+
+    let result = epoll_ctl(efd, EpollOp::EpollCtlAdd, 1, None);
+    assert!(result.is_err());
+    assert_eq!(result.unwrap_err(), Error::Sys(Errno::EINVAL));
 }
 
 #[test]

@@ -3,6 +3,7 @@ use libc::{self, c_int};
 use std::os::unix::io::RawFd;
 use std::ptr;
 use std::mem;
+use ::Error;
 
 bitflags!(
     #[repr(C)]
@@ -25,7 +26,7 @@ bitflags!(
     }
 );
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Eq, PartialEq)]
 #[repr(C)]
 pub enum EpollOp {
     EpollCtlAdd = 1,
@@ -91,8 +92,13 @@ pub fn epoll_create1(flags: EpollCreateFlags) -> Result<RawFd> {
 pub fn epoll_ctl<'a, T>(epfd: RawFd, op: EpollOp, fd: RawFd, event: T) -> Result<()>
     where T: Into<&'a mut EpollEvent>
 {
-    let res = unsafe { libc::epoll_ctl(epfd, op as c_int, fd, &mut event.into().event) };
-    Errno::result(res).map(drop)
+    let event: &mut EpollEvent = event.into();
+    if event as *const EpollEvent == ptr::null() && op != EpollOp::EpollCtlDel {
+        Err(Error::Sys(Errno::EINVAL))
+    } else {
+        let res = unsafe { libc::epoll_ctl(epfd, op as c_int, fd, &mut event.event) };
+        Errno::result(res).map(drop)
+    }
 }
 
 #[inline]
