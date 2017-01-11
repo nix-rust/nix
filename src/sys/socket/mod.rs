@@ -229,8 +229,13 @@ impl<'a> ControlMessage<'a> {
 
                 let padlen = cmsg_align(mem::size_of_val(&cmsg)) -
                     mem::size_of_val(&cmsg);
-                let buf2 = &mut &mut buf[padlen..];
-                copy_bytes(fds, buf2);
+
+                let mut tmpbuf = &mut [][..];
+                mem::swap(&mut tmpbuf, buf);
+                let (_padding, mut remainder) = tmpbuf.split_at_mut(padlen);
+                mem::swap(buf, &mut remainder);
+
+                copy_bytes(fds, buf);
             },
             ControlMessage::Unknown(UnknownCmsg(orig_cmsg, bytes)) => {
                 copy_bytes(orig_cmsg, buf);
