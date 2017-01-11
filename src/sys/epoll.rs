@@ -1,6 +1,9 @@
 use {Errno, Result};
 use libc::{self, c_int};
 use std::os::unix::io::RawFd;
+use std::ptr;
+use std::mem;
+use ::Error;
 
 bitflags!(
     #[repr(C)]
@@ -23,7 +26,7 @@ bitflags!(
     }
 );
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Eq, PartialEq)]
 #[repr(C)]
 pub enum EpollOp {
     EpollCtlAdd = 1,
@@ -44,8 +47,12 @@ pub struct EpollEvent {
 }
 
 impl EpollEvent {
-    pub fn new(events: EpollFlags, data: u64) -> EpollEvent {
+    pub fn new(events: EpollFlags, data: u64) -> Self {
         EpollEvent { event: libc::epoll_event { events: events.bits(), u64: data } }
+    }
+
+    pub fn empty() -> Self {
+        unsafe { mem::zeroed::<EpollEvent>() }
     }
 
     pub fn events(&self) -> EpollFlags {
@@ -54,6 +61,16 @@ impl EpollEvent {
 
     pub fn data(&self) -> u64 {
         self.event.u64
+    }
+}
+
+impl<'a> Into<&'a mut EpollEvent> for Option<&'a mut EpollEvent> {
+    #[inline]
+    fn into(self) -> &'a mut EpollEvent {
+        match self {
+            Some(epoll_event) => epoll_event,
+            None => unsafe { &mut *ptr::null_mut::<EpollEvent>() }
+        }
     }
 }
 
@@ -72,10 +89,16 @@ pub fn epoll_create1(flags: EpollCreateFlags) -> Result<RawFd> {
 }
 
 #[inline]
-pub fn epoll_ctl(epfd: RawFd, op: EpollOp, fd: RawFd, event: &mut EpollEvent) -> Result<()> {
-    let res = unsafe { libc::epoll_ctl(epfd, op as c_int, fd, &mut event.event) };
-
-    Errno::result(res).map(drop)
+pub fn epoll_ctl<'a, T>(epfd: RawFd, op: EpollOp, fd: RawFd, event: T) -> Result<()>
+    where T: Into<&'a mut EpollEvent>
+{
+    let event: &mut EpollEvent = event.into();
+    if event as *const EpollEvent == ptr::null() && op != EpollOp::EpollCtlDel {
+        Err(Error::Sys(Errno::EINVAL))
+    } else {
+        let res = unsafe { libc::epoll_ctl(epfd, op as c_int, fd, &mut event.event) };
+        Errno::result(res).map(drop)
+    }
 }
 
 #[inline]

@@ -30,6 +30,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#491](https://github.com/nix-rust/nix/pull/491))
 
 ### Changed
+- `epoll_ctl` now could accept None as argument `event`
+  when op is `EpollOp::EpollCtlDel`.
+  ([#480](https://github.com/nix-rust/nix/pull/480))
 - Removed the `bad` keyword from the `ioctl!` macro
   ([#478](https://github.com/nix-rust/nix/pull/478))
 - Changed `TimeVal` into an opaque Newtype
