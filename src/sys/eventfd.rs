@@ -4,9 +4,9 @@ use {Errno, Result};
 
 libc_bitflags! {
     flags EfdFlags: libc::c_int {
-        const EFD_CLOEXEC, // Since Linux 2.6.27
-        const EFD_NONBLOCK, // Since Linux 2.6.27
-        const EFD_SEMAPHORE, // Since Linux 2.6.30
+        EFD_CLOEXEC, // Since Linux 2.6.27
+        EFD_NONBLOCK, // Since Linux 2.6.27
+        EFD_SEMAPHORE, // Since Linux 2.6.30
     }
 }
 
