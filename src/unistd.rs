@@ -5,8 +5,8 @@ use fcntl::{fcntl, OFlag, O_CLOEXEC, FD_CLOEXEC};
 use fcntl::FcntlArg::F_SETFD;
 use libc::{self, c_char, c_void, c_int, c_uint, size_t, pid_t, off_t, uid_t, gid_t, mode_t};
 use std::mem;
-use std::ffi::{CString, CStr, OsString};
-use std::os::unix::ffi::{OsStringExt};
+use std::ffi::{CString, CStr, OsString, OsStr};
+use std::os::unix::ffi::{OsStringExt, OsStrExt};
 use std::os::unix::io::RawFd;
 use std::path::{PathBuf};
 use void::Void;
@@ -487,7 +487,7 @@ pub fn daemon(nochdir: bool, noclose: bool) -> Result<()> {
 /// On some systems, the host name is limited to as few as 64 bytes.  An error
 /// will be return if the name is not valid or the current process does not have
 /// permissions to update the host name.
-pub fn sethostname(name: &str) -> Result<()> {
+pub fn sethostname<S: AsRef<OsStr>>(name: S) -> Result<()> {
     // Handle some differences in type of the len arg across platforms.
     cfg_if! {
         if #[cfg(any(target_os = "dragonfly",
@@ -499,8 +499,8 @@ pub fn sethostname(name: &str) -> Result<()> {
             type sethostname_len_t = size_t;
         }
     }
-    let ptr = name.as_ptr() as *const c_char;
-    let len = name.len() as sethostname_len_t;
+    let ptr = name.as_ref().as_bytes().as_ptr() as *const c_char;
+    let len = name.as_ref().len() as sethostname_len_t;
 
     let res = unsafe { libc::sethostname(ptr, len) };
     Errno::result(res).map(drop)
