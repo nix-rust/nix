@@ -5,8 +5,8 @@ use fcntl::{fcntl, OFlag, O_CLOEXEC, FD_CLOEXEC};
 use fcntl::FcntlArg::F_SETFD;
 use libc::{self, c_char, c_void, c_int, c_uint, size_t, pid_t, off_t, uid_t, gid_t, mode_t};
 use std::mem;
-use std::ffi::{CString, CStr, OsString};
-use std::os::unix::ffi::{OsStringExt};
+use std::ffi::{CString, CStr, OsString, OsStr};
+use std::os::unix::ffi::{OsStringExt, OsStrExt};
 use std::os::unix::io::RawFd;
 use std::path::{PathBuf};
 use void::Void;
@@ -480,7 +480,14 @@ pub fn daemon(nochdir: bool, noclose: bool) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
-pub fn sethostname(name: &[u8]) -> Result<()> {
+/// Set the system host name (see
+/// [gethostname(2)](http://man7.org/linux/man-pages/man2/gethostname.2.html)).
+///
+/// Given a name, attempt to update the system host name to the given string.
+/// On some systems, the host name is limited to as few as 64 bytes.  An error
+/// will be return if the name is not valid or the current process does not have
+/// permissions to update the host name.
+pub fn sethostname<S: AsRef<OsStr>>(name: S) -> Result<()> {
     // Handle some differences in type of the len arg across platforms.
     cfg_if! {
         if #[cfg(any(target_os = "dragonfly",
@@ -492,19 +499,42 @@ pub fn sethostname(name: &[u8]) -> Result<()> {
             type sethostname_len_t = size_t;
         }
     }
-    let ptr = name.as_ptr() as *const c_char;
-    let len = name.len() as sethostname_len_t;
+    let ptr = name.as_ref().as_bytes().as_ptr() as *const c_char;
+    let len = name.as_ref().len() as sethostname_len_t;
 
     let res = unsafe { libc::sethostname(ptr, len) };
     Errno::result(res).map(drop)
 }
 
-pub fn gethostname(name: &mut [u8]) -> Result<()> {
-    let ptr = name.as_mut_ptr() as *mut c_char;
-    let len = name.len() as size_t;
+/// Get the host name and store it in the provided buffer, returning a pointer
+/// the CStr in that buffer on success (see
+/// [gethostname(2)](http://man7.org/linux/man-pages/man2/gethostname.2.html)).
+///
+/// This function call attempts to get the host name for the running system and
+/// store it in a provided buffer.  The buffer will be populated with bytes up
+/// to the length of the provided slice including a NUL terminating byte.  If
+/// the hostname is longer than the length provided, no error will be provided.
+/// The posix specification does not specify whether implementations will
+/// null-terminate in this case, but the nix implementation will ensure that the
+/// buffer is null terminated in this case.
+///
+/// ```no_run
+/// use nix::unistd;
+///
+/// let mut buf = [0u8; 64];
+/// let hostname_cstr = unistd::gethostname(&mut buf).expect("Failed getting hostname");
+/// let hostname = hostname_cstr.to_str().expect("Hostname wasn't valid UTF-8");
+/// println!("Hostname: {}", hostname);
+/// ```
+pub fn gethostname<'a>(buffer: &'a mut [u8]) -> Result<&'a CStr> {
+    let ptr = buffer.as_mut_ptr() as *mut c_char;
+    let len = buffer.len() as size_t;
 
     let res = unsafe { libc::gethostname(ptr, len) };
-    Errno::result(res).map(drop)
+    Errno::result(res).map(|_| {
+        buffer[len - 1] = 0; // ensure always null-terminated
+        unsafe { CStr::from_ptr(buffer.as_ptr() as *const c_char) }
+    })
 }
 
 pub fn close(fd: RawFd) -> Result<()> {
