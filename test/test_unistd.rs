@@ -6,6 +6,7 @@ use nix::sys::wait::*;
 use nix::sys::stat;
 use std::iter;
 use std::ffi::CString;
+use std::fs::File;
 use std::io::{Write, Read};
 use std::os::unix::prelude::*;
 use std::env::current_dir;
@@ -140,6 +141,24 @@ macro_rules! execve_test_factory(
     }
     )
 );
+
+#[test]
+fn test_fchdir() {
+    let tmpdir = TempDir::new("test_fchdir").unwrap();
+    let tmpdir_path = tmpdir.path().canonicalize().unwrap();
+    let tmpdir_fd = File::open(&tmpdir_path).unwrap().into_raw_fd();
+    let olddir_path = getcwd().unwrap();
+    let olddir_fd = File::open(&olddir_path).unwrap().into_raw_fd();
+
+    assert!(fchdir(tmpdir_fd).is_ok());
+    assert_eq!(getcwd().unwrap(), tmpdir_path);
+
+    assert!(fchdir(olddir_fd).is_ok());
+    assert_eq!(getcwd().unwrap(), olddir_path);
+
+    assert!(close(olddir_fd).is_ok());
+    assert!(close(tmpdir_fd).is_ok());
+}
 
 #[test]
 fn test_getcwd() {

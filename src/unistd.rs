@@ -249,6 +249,19 @@ pub fn chdir<P: ?Sized + NixPath>(path: &P) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
+/// Change the current working directory of the process to the one
+/// given as an open file descriptor (see
+/// [fchdir(2)](http://man7.org/linux/man-pages/man2/fchdir.2.html)).
+///
+/// This function may fail in a number of different scenarios.  See the man
+/// pages for additional details on possible failure cases.
+#[inline]
+pub fn fchdir(dirfd: RawFd) -> Result<()> {
+    let res = unsafe { libc::fchdir(dirfd) };
+
+    Errno::result(res).map(drop)
+}
+
 /// Creates new directory `path` with access rights `mode`.
 ///
 /// # Errors
