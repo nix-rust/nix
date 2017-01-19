@@ -28,6 +28,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#457](https://github.com/nix-rust/nix/pull/457))
 - Added `getpgrp` in `::nix::unistd`
   ([#491](https://github.com/nix-rust/nix/pull/491))
+- Added `fchdir` in `::nix::unistd`
+  ([#497](https://github.com/nix-rust/nix/pull/497))
 
 ### Changed
 - `epoll_ctl` now could accept None as argument `event`
