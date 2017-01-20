@@ -7,6 +7,7 @@ authors     = ["The nix-rust Project Developers"]
 homepage    = "https://github.com/nix-rust/nix"
 repository  = "https://github.com/nix-rust/nix"
 license     = "MIT"
+categories  = ["os::unix-apis"]
 exclude     = [
   ".gitignore",
   ".travis.yml",
