@@ -4,6 +4,8 @@
 use libc;
 use {Errno, Error, Result};
 use std::mem;
+#[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
+use std::os::unix::io::RawFd;
 use std::ptr;
 
 // Currently there is only one definition of c_int in libc, as well as only one
@@ -402,6 +404,107 @@ pub fn raise(signal: Signal) -> Result<()> {
 
     Errno::result(res).map(drop)
 }
+
+
+#[cfg(target_os = "freebsd")]
+pub type type_of_thread_id = libc::lwpid_t;
+#[cfg(target_os = "linux")]
+pub type type_of_thread_id = libc::pid_t;
+
+/// Used to request asynchronous notification of certain events, for example,
+/// with POSIX AIO, POSIX message queues, and POSIX timers.
+// sigval is actually a union of a int and a void*.  But it's never really used
+// as a pointer, because neither libc nor the kernel ever dereference it.  nix
+// therefore presents it as an intptr_t, which is how kevent uses it.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum SigevNotify {
+    /// No notification will be delivered
+    SigevNone,
+    /// The signal given by `signal` will be delivered to the process.  The
+    /// value in `si_value` will be present in the `si_value` field of the
+    /// `siginfo_t` structure of the queued signal.
+    SigevSignal { signal: Signal, si_value: libc::intptr_t },
+    // Note: SIGEV_THREAD is not implemented because libc::sigevent does not
+    // expose a way to set the union members needed by SIGEV_THREAD.
+    /// A new `kevent` is posted to the kqueue `kq`.  The `kevent`'s `udata`
+    /// field will contain the value in `udata`.
+    #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
+    SigevKevent { kq: RawFd, udata: libc::intptr_t },
+    /// The signal `signal` is queued to the thread whose LWP ID is given in
+    /// `thread_id`.  The value stored in `si_value` will be present in the
+    /// `si_value` of the `siginfo_t` structure of the queued signal.
+    #[cfg(any(target_os = "freebsd", target_os = "linux"))]
+    SigevThreadId { signal: Signal, thread_id: type_of_thread_id,
+                    si_value: libc::intptr_t },
+}
+
+/// Used to request asynchronous notification of the completion of certain
+/// events, such as POSIX AIO and timers.
+#[repr(C)]
+pub struct SigEvent {
+    sigevent: libc::sigevent
+}
+
+impl SigEvent {
+    // Note: this constructor does not allow the user to set the
+    // sigev_notify_kevent_flags field.  That's considered ok because on FreeBSD
+    // at least those flags don't do anything useful.  That field is part of a
+    // union that shares space with the more genuinely useful
+    // Note: This constructor also doesn't allow the caller to set the
+    // sigev_notify_function or sigev_notify_attributes fields, which are
+    // required for SIGEV_THREAD.  That's considered ok because on no operating
+    // system is SIGEV_THREAD the most efficient way to deliver AIO
+    // notification.  FreeBSD and Dragonfly programs should prefer SIGEV_KEVENT.
+    // Linux, Solaris, and portable programs should prefer SIGEV_THREAD_ID or
+    // SIGEV_SIGNAL.  That field is part of a union that shares space with the
+    // more genuinely useful sigev_notify_thread_id
+    pub fn new(sigev_notify: SigevNotify) -> SigEvent {
+        let mut sev = unsafe { mem::zeroed::<libc::sigevent>()};
+        sev.sigev_notify = match sigev_notify {
+            SigevNotify::SigevNone => libc::SIGEV_NONE,
+            SigevNotify::SigevSignal{..} => libc::SIGEV_SIGNAL,
+            #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
+            SigevNotify::SigevKevent{..} => libc::SIGEV_KEVENT,
+            #[cfg(any(target_os = "linux", target_os = "freebsd"))]
+            SigevNotify::SigevThreadId{..} => libc::SIGEV_THREAD_ID
+        };
+        sev.sigev_signo = match sigev_notify {
+            SigevNotify::SigevSignal{ signal, .. } => signal as ::c_int,
+            #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
+            SigevNotify::SigevKevent{ kq, ..} => kq,
+            #[cfg(any(target_os = "linux", target_os = "freebsd"))]
+            SigevNotify::SigevThreadId{ signal, .. } => signal as ::c_int,
+            _ => 0
+        };
+        sev.sigev_value.sival_ptr = match sigev_notify {
+            SigevNotify::SigevNone => ptr::null_mut::<libc::c_void>(),
+            SigevNotify::SigevSignal{ si_value, .. } => si_value as *mut ::c_void,
+            #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
+            SigevNotify::SigevKevent{ udata, .. } => udata as *mut ::c_void,
+            #[cfg(any(target_os = "linux", target_os = "freebsd"))]
+            SigevNotify::SigevThreadId{ si_value, .. } => si_value as *mut ::c_void,
+        };
+        SigEvent::set_tid(&mut sev, &sigev_notify);
+        SigEvent{sigevent: sev}
+    }
+
+    #[cfg(any(target_os = "linux", target_os = "freebsd"))]
+    fn set_tid(sev: &mut libc::sigevent, sigev_notify: &SigevNotify) {
+        sev.sigev_notify_thread_id = match sigev_notify {
+            &SigevNotify::SigevThreadId { thread_id, .. } => thread_id,
+            _ => 0 as type_of_thread_id
+        };
+    }
+
+    #[cfg(not(any(target_os = "freebsd", target_os = "linux")))]
+    fn set_tid(_sev: &mut libc::sigevent, _sigev_notify: &SigevNotify) {
+    }
+
+    pub fn sigevent(&self) -> libc::sigevent {
+        self.sigevent
+    }
+}
+
 
 #[cfg(test)]
 mod tests {
