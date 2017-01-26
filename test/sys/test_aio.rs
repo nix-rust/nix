@@ -121,7 +121,7 @@ fn test_aio_suspend() {
     }
 
     assert!(aio_return(&mut wcb).unwrap() as usize == WBUF.len());
-    assert!(aio_return(&mut rcb).unwrap() as usize == rbuf.len());
+    assert!(aio_return(&mut rcb).unwrap() as usize == WBUF.len());
 }
 
 // Test a simple aio operation with no completion notification.  We must poll
@@ -133,17 +133,19 @@ fn test_aio_read() {
     const EXPECT: &'static [u8] = b"cdef";
     let mut f = tempfile().unwrap();
     f.write(INITIAL).unwrap();
-    let mut aiocb = AioCb::from_mut_slice( f.as_raw_fd(),
-                           2,   //offset
-                           &mut rbuf,
-                           0,   //priority
-                           SigevNotify::SigevNone,
-                           LioOpcode::LIO_NOP);
-    aio_read(&mut aiocb).unwrap();
+    {
+        let mut aiocb = AioCb::from_mut_slice( f.as_raw_fd(),
+                               2,   //offset
+                               &mut rbuf,
+                               0,   //priority
+                               SigevNotify::SigevNone,
+                               LioOpcode::LIO_NOP);
+        aio_read(&mut aiocb).unwrap();
 
-    let err = poll_aio(&mut aiocb);
-    assert!(err == Ok(()));
-    assert!(aio_return(&mut aiocb).unwrap() as usize == rbuf.len());
+        let err = poll_aio(&mut aiocb);
+        assert!(err == Ok(()));
+        assert!(aio_return(&mut aiocb).unwrap() as usize == EXPECT.len());
+    }
 
     assert!(rbuf == EXPECT);
 }
@@ -241,29 +243,28 @@ fn test_lio_listio_wait() {
 
     f.write(INITIAL).unwrap();
 
-    let mut wcb = unsafe {
-        AioCb::from_slice( f.as_raw_fd(),
-                           2,   //offset
-                           &WBUF,
-                           0,   //priority
-                           SigevNotify::SigevNone,
-                           LioOpcode::LIO_WRITE)
-    };
-
-    let mut rcb = AioCb::from_mut_slice( f.as_raw_fd(),
-                            8,   //offset
-                            &mut rbuf,
-                            0,   //priority
-                            SigevNotify::SigevNone,
-                            LioOpcode::LIO_READ);
     {
-        let cbbuf = [&mut wcb, &mut rcb];
-        let err = lio_listio(LioMode::LIO_WAIT, &cbbuf[..], SigevNotify::SigevNone);
-        err.expect("lio_listio failed");
-    }
+        let mut wcb = unsafe {
+            AioCb::from_slice( f.as_raw_fd(),
+                               2,   //offset
+                               &WBUF,
+                               0,   //priority
+                               SigevNotify::SigevNone,
+                               LioOpcode::LIO_WRITE)
+        };
 
-    assert!(aio_return(&mut wcb).unwrap() as usize == WBUF.len());
-    assert!(aio_return(&mut rcb).unwrap() as usize == rbuf.len());
+        let mut rcb = AioCb::from_mut_slice( f.as_raw_fd(),
+                                8,   //offset
+                                &mut rbuf,
+                                0,   //priority
+                                SigevNotify::SigevNone,
+                                LioOpcode::LIO_READ);
+        let err = lio_listio(LioMode::LIO_WAIT, &[&mut wcb, &mut rcb], SigevNotify::SigevNone);
+        err.expect("lio_listio failed");
+
+        assert!(aio_return(&mut wcb).unwrap() as usize == WBUF.len());
+        assert!(aio_return(&mut rcb).unwrap() as usize == WBUF.len());
+    }
     assert!(rbuf == b"3456");
 
     f.seek(SeekFrom::Start(0)).unwrap();
@@ -286,31 +287,30 @@ fn test_lio_listio_nowait() {
 
     f.write(INITIAL).unwrap();
 
-    let mut wcb = unsafe {
-        AioCb::from_slice( f.as_raw_fd(),
-                           2,   //offset
-                           &WBUF,
-                           0,   //priority
-                           SigevNotify::SigevNone,
-                           LioOpcode::LIO_WRITE)
-    };
-
-    let mut rcb = AioCb::from_mut_slice( f.as_raw_fd(),
-                            8,   //offset
-                            &mut rbuf,
-                            0,   //priority
-                            SigevNotify::SigevNone,
-                            LioOpcode::LIO_READ);
     {
-        let cbbuf = [&mut wcb, &mut rcb];
-        let err = lio_listio(LioMode::LIO_NOWAIT, &cbbuf[..], SigevNotify::SigevNone);
-        err.expect("lio_listio failed");
-    }
+        let mut wcb = unsafe {
+            AioCb::from_slice( f.as_raw_fd(),
+                               2,   //offset
+                               &WBUF,
+                               0,   //priority
+                               SigevNotify::SigevNone,
+                               LioOpcode::LIO_WRITE)
+        };
 
-    poll_aio(&mut wcb).unwrap();
-    poll_aio(&mut rcb).unwrap();
-    assert!(aio_return(&mut wcb).unwrap() as usize == WBUF.len());
-    assert!(aio_return(&mut rcb).unwrap() as usize == rbuf.len());
+        let mut rcb = AioCb::from_mut_slice( f.as_raw_fd(),
+                                8,   //offset
+                                &mut rbuf,
+                                0,   //priority
+                                SigevNotify::SigevNone,
+                                LioOpcode::LIO_READ);
+        let err = lio_listio(LioMode::LIO_NOWAIT, &[&mut wcb, &mut rcb], SigevNotify::SigevNone);
+        err.expect("lio_listio failed");
+
+        poll_aio(&mut wcb).unwrap();
+        poll_aio(&mut rcb).unwrap();
+        assert!(aio_return(&mut wcb).unwrap() as usize == WBUF.len());
+        assert!(aio_return(&mut rcb).unwrap() as usize == WBUF.len());
+    }
     assert!(rbuf == b"3456");
 
     f.seek(SeekFrom::Start(0)).unwrap();
@@ -338,34 +338,33 @@ fn test_lio_listio_signal() {
 
     f.write(INITIAL).unwrap();
 
-    let mut wcb = unsafe {
-        AioCb::from_slice( f.as_raw_fd(),
-                           2,   //offset
-                           &WBUF,
-                           0,   //priority
-                           SigevNotify::SigevNone,
-                           LioOpcode::LIO_WRITE)
-    };
-
-    let mut rcb = AioCb::from_mut_slice( f.as_raw_fd(),
-                            8,   //offset
-                            &mut rbuf,
-                            0,   //priority
-                            SigevNotify::SigevNone,
-                            LioOpcode::LIO_READ);
-    unsafe {signaled = 0 };
-    unsafe { sigaction(Signal::SIGUSR2, &sa) }.unwrap();
     {
-        let cbbuf = [&mut wcb, &mut rcb];
-        let err = lio_listio(LioMode::LIO_NOWAIT, &cbbuf[..], sigev_notify);
-        err.expect("lio_listio failed");
-    }
-    while unsafe { signaled == 0 } {
-        thread::sleep(time::Duration::from_millis(10));
-    }
+        let mut wcb = unsafe {
+            AioCb::from_slice( f.as_raw_fd(),
+                               2,   //offset
+                               &WBUF,
+                               0,   //priority
+                               SigevNotify::SigevNone,
+                               LioOpcode::LIO_WRITE)
+        };
 
-    assert!(aio_return(&mut wcb).unwrap() as usize == WBUF.len());
-    assert!(aio_return(&mut rcb).unwrap() as usize == rbuf.len());
+        let mut rcb = AioCb::from_mut_slice( f.as_raw_fd(),
+                                8,   //offset
+                                &mut rbuf,
+                                0,   //priority
+                                SigevNotify::SigevNone,
+                                LioOpcode::LIO_READ);
+        unsafe {signaled = 0 };
+        unsafe { sigaction(Signal::SIGUSR2, &sa) }.unwrap();
+        let err = lio_listio(LioMode::LIO_NOWAIT, &[&mut wcb, &mut rcb], sigev_notify);
+        err.expect("lio_listio failed");
+        while unsafe { signaled == 0 } {
+            thread::sleep(time::Duration::from_millis(10));
+        }
+
+        assert!(aio_return(&mut wcb).unwrap() as usize == WBUF.len());
+        assert!(aio_return(&mut rcb).unwrap() as usize == WBUF.len());
+    }
     assert!(rbuf == b"3456");
 
     f.seek(SeekFrom::Start(0)).unwrap();

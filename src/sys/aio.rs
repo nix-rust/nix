@@ -2,6 +2,7 @@ use {Error, Errno, Result};
 use std::os::unix::io::RawFd;
 use libc::{c_void, off_t, size_t};
 use libc;
+use std::marker::PhantomData;
 use std::mem;
 use std::ptr::{null, null_mut};
 use sys::signal::*;
@@ -59,11 +60,12 @@ pub enum AioCancelStat {
 /// The basic structure used by all aio functions.  Each `aiocb` represents one
 /// I/O request.
 #[repr(C)]
-pub struct AioCb {
-    aiocb: libc::aiocb
+pub struct AioCb<'a> {
+    aiocb: libc::aiocb,
+    phantom: PhantomData<&'a mut [u8]>
 }
 
-impl AioCb {
+impl<'a> AioCb<'a> {
     /// Constructs a new `AioCb` with no associated buffer.
     ///
     /// The resulting `AioCb` structure is suitable for use with `aio_fsync`.
@@ -73,13 +75,13 @@ impl AioCb {
     /// * `sigev_notify` Determines how you will be notified of event
     /// completion.
     pub fn from_fd(fd: RawFd, prio: ::c_int,
-                    sigev_notify: SigevNotify) -> AioCb {
+                    sigev_notify: SigevNotify) -> AioCb<'a> {
         let mut a = AioCb::common_init(fd, prio, sigev_notify);
         a.aio_offset = 0;
         a.aio_nbytes = 0;
         a.aio_buf = null_mut();
 
-        let aiocb = AioCb { aiocb: a};
+        let aiocb = AioCb { aiocb: a, phantom: PhantomData};
         aiocb
     }
 
@@ -94,7 +96,7 @@ impl AioCb {
     /// completion.
     /// * `opcode` This field is only used for `lio_listio`.  It determines
     /// which operation to use for this individual aiocb
-    pub fn from_mut_slice(fd: RawFd, offs: off_t, buf: &mut [u8],
+    pub fn from_mut_slice(fd: RawFd, offs: off_t, buf: &'a mut [u8],
                           prio: ::c_int, sigev_notify: SigevNotify,
                           opcode: LioOpcode) -> AioCb {
         let mut a = AioCb::common_init(fd, prio, sigev_notify);
@@ -103,7 +105,7 @@ impl AioCb {
         a.aio_buf = buf.as_ptr() as *mut c_void;
         a.aio_lio_opcode = opcode as ::c_int;
 
-        let aiocb = AioCb { aiocb: a};
+        let aiocb = AioCb { aiocb: a, phantom: PhantomData};
         aiocb
     }
 
@@ -121,7 +123,7 @@ impl AioCb {
     // lio_listio wouldn't work, because that function needs a slice of AioCb,
     // and they must all be the same type.  We're basically stuck with using an
     // unsafe function, since aio (as designed in C) is an unsafe API.
-    pub unsafe fn from_slice(fd: RawFd, offs: off_t, buf: &[u8],
+    pub unsafe fn from_slice(fd: RawFd, offs: off_t, buf: &'a [u8],
                              prio: ::c_int, sigev_notify: SigevNotify,
                              opcode: LioOpcode) -> AioCb {
         let mut a = AioCb::common_init(fd, prio, sigev_notify);
@@ -130,7 +132,7 @@ impl AioCb {
         a.aio_buf = buf.as_ptr() as *mut c_void;
         a.aio_lio_opcode = opcode as ::c_int;
 
-        let aiocb = AioCb { aiocb: a};
+        let aiocb = AioCb { aiocb: a, phantom: PhantomData};
         aiocb
     }
 
@@ -189,7 +191,7 @@ pub fn aio_fsync(mode: AioFsyncMode, aiocb: &mut AioCb) -> Result<()> {
     Errno::result(unsafe { libc::aio_fsync(mode as ::c_int, p) }).map(drop)
 }
 
-/// Asynchously reads from a file descriptor into a buffer
+/// Asynchronously reads from a file descriptor into a buffer
 pub fn aio_read(aiocb: &mut AioCb) -> Result<()> {
     let p: *mut libc::aiocb = &mut aiocb.aiocb;
     Errno::result(unsafe { libc::aio_read(p) }).map(drop)
