@@ -7,14 +7,14 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 - Added support for POSIX AIO
-  ([#483](https://github.com/nix-rust/nix/pull/835))
+  ([#483](https://github.com/nix-rust/nix/pull/483))
 - Added support for XNU system control sockets
   ([#478](https://github.com/nix-rust/nix/pull/478))
 - Added support for `ioctl` calls on BSD platforms
   ([#478](https://github.com/nix-rust/nix/pull/478))
 - Added struct `TimeSpec`
   ([#475](https://github.com/nix-rust/nix/pull/475))
-  ([#483](https://github.com/nix-rust/nix/pull/835))
+  ([#483](https://github.com/nix-rust/nix/pull/483))
 - Added complete definitions for all kqueue-related constants on all supported
   OSes
   ([#415](https://github.com/nix-rust/nix/pull/415))
