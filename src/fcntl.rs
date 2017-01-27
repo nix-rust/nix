@@ -167,7 +167,7 @@ mod consts {
             const O_CLOEXEC   = 0o02000000,
             const O_SYNC      = 0o04000000,
             const O_PATH      = 0o10000000,
-            const O_TMPFILE   = 0o20000000,
+            const O_TMPFILE   = 0o20000000 | O_DIRECTORY.bits,
             const O_NDELAY    = O_NONBLOCK.bits
         }
     );
