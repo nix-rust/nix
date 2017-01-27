@@ -153,56 +153,67 @@ impl<'a> AioCb<'a> {
     pub fn set_sigev_notify(&mut self, sigev_notify: SigevNotify) {
         self.aiocb.aio_sigevent = SigEvent::new(sigev_notify).sigevent();
     }
+
+    /// Cancels an outstanding AIO request.
+    pub fn cancel(&mut self) -> Result<AioCancelStat> {
+        match unsafe { libc::aio_cancel(self.aiocb.aio_fildes, &mut self.aiocb) } {
+            libc::AIO_CANCELED => Ok(AioCancelStat::AioCanceled),
+            libc::AIO_NOTCANCELED => Ok(AioCancelStat::AioNotCanceled),
+            libc::AIO_ALLDONE => Ok(AioCancelStat::AioAllDone),
+            -1 => Err(Error::last()),
+            _ => panic!("unknown aio_cancel return value")
+        }
+    }
+
+    /// Retrieve error status of an asynchronous operation.  If the request has not
+    /// yet completed, returns `EINPROGRESS`.  Otherwise, returns `Ok` or any other
+    /// error.
+    pub fn error(&mut self) -> Result<()> {
+        match unsafe { libc::aio_error(&mut self.aiocb as *mut libc::aiocb) } {
+            0 => Ok(()),
+            num if num > 0 => Err(Error::from_errno(Errno::from_i32(num))),
+            -1 => Err(Error::last()),
+            num => panic!("unknown aio_error return value {:?}", num)
+        }
+    }
+
+    /// An asynchronous version of `fsync`.
+    pub fn fsync(&mut self, mode: AioFsyncMode) -> Result<()> {
+        let p: *mut libc::aiocb = &mut self.aiocb;
+        Errno::result(unsafe { libc::aio_fsync(mode as ::c_int, p) }).map(drop)
+    }
+
+    /// Asynchronously reads from a file descriptor into a buffer
+    pub fn read(&mut self) -> Result<()> {
+        let p: *mut libc::aiocb = &mut self.aiocb;
+        Errno::result(unsafe { libc::aio_read(p) }).map(drop)
+    }
+
+    /// Retrieve return status of an asynchronous operation.  Should only be called
+    /// once for each `AioCb`, after `aio_error` indicates that it has completed.
+    /// The result the same as for `read`, `write`, of `fsync`.
+    pub fn aio_return(&mut self) -> Result<isize> {
+        let p: *mut libc::aiocb = &mut self.aiocb;
+        Errno::result(unsafe { libc::aio_return(p) })
+    }
+
+    /// Asynchronously writes from a buffer to a file descriptor
+    pub fn write(&mut self) -> Result<()> {
+        let p: *mut libc::aiocb = &mut self.aiocb;
+        Errno::result(unsafe { libc::aio_write(p) }).map(drop)
+    }
+
 }
 
-/// Cancels outstanding AIO requests.  If `aiocb` is `None`, then all requests
-/// for `fd` will be cancelled.  Otherwise, only the given `AioCb` will be
-/// cancelled.
-pub fn aio_cancel(fd: RawFd, aiocb: Option<&mut AioCb>) -> Result<AioCancelStat> {
-    let p: *mut libc::aiocb = match aiocb {
-        None => null_mut(),
-        Some(x) => &mut x.aiocb
-    };
-    match unsafe { libc::aio_cancel(fd, p) } {
+/// Cancels outstanding AIO requests.  All requests for `fd` will be cancelled.
+pub fn aio_cancel_all(fd: RawFd) -> Result<AioCancelStat> {
+    match unsafe { libc::aio_cancel(fd, null_mut()) } {
         libc::AIO_CANCELED => Ok(AioCancelStat::AioCanceled),
         libc::AIO_NOTCANCELED => Ok(AioCancelStat::AioNotCanceled),
         libc::AIO_ALLDONE => Ok(AioCancelStat::AioAllDone),
         -1 => Err(Error::last()),
         _ => panic!("unknown aio_cancel return value")
     }
-}
-
-/// Retrieve error status of an asynchronous operation.  If the request has not
-/// yet completed, returns `EINPROGRESS`.  Otherwise, returns `Ok` or any other
-/// error.
-pub fn aio_error(aiocb: &mut AioCb) -> Result<()> {
-    let p: *mut libc::aiocb = &mut aiocb.aiocb;
-    match unsafe { libc::aio_error(p) } {
-        0 => Ok(()),
-        num if num > 0 => Err(Error::from_errno(Errno::from_i32(num))),
-        -1 => Err(Error::last()),
-        num => panic!("unknown aio_error return value {:?}", num)
-    }
-}
-
-/// An asynchronous version of `fsync`.
-pub fn aio_fsync(mode: AioFsyncMode, aiocb: &mut AioCb) -> Result<()> {
-    let p: *mut libc::aiocb = &mut aiocb.aiocb;
-    Errno::result(unsafe { libc::aio_fsync(mode as ::c_int, p) }).map(drop)
-}
-
-/// Asynchronously reads from a file descriptor into a buffer
-pub fn aio_read(aiocb: &mut AioCb) -> Result<()> {
-    let p: *mut libc::aiocb = &mut aiocb.aiocb;
-    Errno::result(unsafe { libc::aio_read(p) }).map(drop)
-}
-
-/// Retrieve return status of an asynchronous operation.  Should only be called
-/// once for each `AioCb`, after `aio_error` indicates that it has completed.
-/// The result the same as for `read`, `write`, of `fsync`.
-pub fn aio_return(aiocb: &mut AioCb) -> Result<isize> {
-    let p: *mut libc::aiocb = &mut aiocb.aiocb;
-    Errno::result(unsafe { libc::aio_return(p) })
 }
 
 /// Suspends the calling process until at least one of the specified `AioCb`s
@@ -224,11 +235,6 @@ pub fn aio_suspend(list: &[&AioCb], timeout: Option<TimeSpec>) -> Result<()> {
     }).map(drop)
 }
 
-/// Asynchronously writes from a buffer to a file descriptor
-pub fn aio_write(aiocb: &mut AioCb) -> Result<()> {
-    let p: *mut libc::aiocb = &mut aiocb.aiocb;
-    Errno::result(unsafe { libc::aio_write(p) }).map(drop)
-}
 
 /// Submits multiple asynchronous I/O requests with a single system call.  The
 /// order in which the requests are carried out is not specified.

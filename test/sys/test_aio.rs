@@ -12,17 +12,17 @@ use tempfile::tempfile;
 // Helper that polls an AioCb for completion or error
 fn poll_aio(mut aiocb: &mut AioCb) -> Result<()> {
     loop {
-        let err = aio_error(&mut aiocb);
+        let err = aiocb.error();
         if err != Err(Error::from(Errno::EINPROGRESS)) { return err; };
         thread::sleep(time::Duration::from_millis(10));
     }
 }
 
-// Tests aio_cancel.  We aren't trying to test the OS's implementation, only our
-// bindings.  So it's sufficient to check that aio_cancel returned any
+// Tests AioCb.cancel.  We aren't trying to test the OS's implementation, only our
+// bindings.  So it's sufficient to check that AioCb.cancel returned any
 // AioCancelStat value.
 #[test]
-fn test_aio_cancel() {
+fn test_cancel() {
     let mut wbuf = "CDEF".to_string().into_bytes();
 
     let f = tempfile().unwrap();
@@ -32,19 +32,19 @@ fn test_aio_cancel() {
                             0,   //priority
                             SigevNotify::SigevNone,
                             LioOpcode::LIO_NOP);
-    aio_write(&mut aiocb).unwrap();
-    let err = aio_error(&mut aiocb);
+    aiocb.write().unwrap();
+    let err = aiocb.error();
     assert!(err == Ok(()) || err == Err(Error::from(Errno::EINPROGRESS)));
 
-    let cancelstat = aio_cancel(f.as_raw_fd(), Some(&mut aiocb));
+    let cancelstat = aiocb.cancel();
     assert!(cancelstat.is_ok());
 
     // Wait for aiocb to complete, but don't care whether it succeeded
     let _ = poll_aio(&mut aiocb);
-    let _ = aio_return(&mut aiocb);
+    let _ = aiocb.aio_return();
 }
 
-// Tests using aio_cancel for all outstanding IOs.
+// Tests using aio_cancel_all for all outstanding IOs.
 #[test]
 fn test_aio_cancel_all() {
     let mut wbuf = "CDEF".to_string().into_bytes();
@@ -56,30 +56,30 @@ fn test_aio_cancel_all() {
                             0,   //priority
                             SigevNotify::SigevNone,
                             LioOpcode::LIO_NOP);
-    aio_write(&mut aiocb).unwrap();
-    let err = aio_error(&mut aiocb);
+    aiocb.write().unwrap();
+    let err = aiocb.error();
     assert!(err == Ok(()) || err == Err(Error::from(Errno::EINPROGRESS)));
 
-    let cancelstat = aio_cancel(f.as_raw_fd(), None);
+    let cancelstat = aio_cancel_all(f.as_raw_fd());
     assert!(cancelstat.is_ok());
 
     // Wait for aiocb to complete, but don't care whether it succeeded
     let _ = poll_aio(&mut aiocb);
-    let _ = aio_return(&mut aiocb);
+    let _ = aiocb.aio_return();
 }
 
 #[test]
-fn test_aio_fsync() {
+fn test_fsync() {
     const INITIAL: &'static [u8] = b"abcdef123456";
     let mut f = tempfile().unwrap();
     f.write(INITIAL).unwrap();
     let mut aiocb = AioCb::from_fd( f.as_raw_fd(),
                             0,   //priority
                             SigevNotify::SigevNone);
-    let err = aio_fsync(AioFsyncMode::O_SYNC, &mut aiocb);
+    let err = aiocb.fsync(AioFsyncMode::O_SYNC);
     assert!(err.is_ok());
     poll_aio(&mut aiocb).unwrap();
-    aio_return(&mut aiocb).unwrap();
+    aiocb.aio_return().unwrap();
 }
 
 
@@ -107,27 +107,27 @@ fn test_aio_suspend() {
                             0,   //priority
                             SigevNotify::SigevNone,
                             LioOpcode::LIO_READ);
-    aio_write(&mut wcb).unwrap();
-    aio_read(&mut rcb).unwrap();
+    wcb.write().unwrap();
+    rcb.read().unwrap();
     loop {
         {
             let cbbuf = [&wcb, &rcb];
             assert!(aio_suspend(&cbbuf[..], Some(timeout)).is_ok());
         }
-        if aio_error(&mut rcb) != Err(Error::from(Errno::EINPROGRESS)) &&
-           aio_error(&mut wcb) != Err(Error::from(Errno::EINPROGRESS)) {
+        if rcb.error() != Err(Error::from(Errno::EINPROGRESS)) &&
+           wcb.error() != Err(Error::from(Errno::EINPROGRESS)) {
             break
         }
     }
 
-    assert!(aio_return(&mut wcb).unwrap() as usize == WBUF.len());
-    assert!(aio_return(&mut rcb).unwrap() as usize == WBUF.len());
+    assert!(wcb.aio_return().unwrap() as usize == WBUF.len());
+    assert!(rcb.aio_return().unwrap() as usize == WBUF.len());
 }
 
 // Test a simple aio operation with no completion notification.  We must poll
 // for completion
 #[test]
-fn test_aio_read() {
+fn test_read() {
     const INITIAL: &'static [u8] = b"abcdef123456";
     let mut rbuf = vec![0; 4];
     const EXPECT: &'static [u8] = b"cdef";
@@ -140,11 +140,11 @@ fn test_aio_read() {
                                0,   //priority
                                SigevNotify::SigevNone,
                                LioOpcode::LIO_NOP);
-        aio_read(&mut aiocb).unwrap();
+        aiocb.read().unwrap();
 
         let err = poll_aio(&mut aiocb);
         assert!(err == Ok(()));
-        assert!(aio_return(&mut aiocb).unwrap() as usize == EXPECT.len());
+        assert!(aiocb.aio_return().unwrap() as usize == EXPECT.len());
     }
 
     assert!(rbuf == EXPECT);
@@ -153,7 +153,7 @@ fn test_aio_read() {
 // Test a simple aio operation with no completion notification.  We must poll
 // for completion.  Unlike test_aio_read, this test uses AioCb::from_slice
 #[test]
-fn test_aio_write() {
+fn test_write() {
     const INITIAL: &'static [u8] = b"abcdef123456";
     const WBUF: &'static [u8] = b"CDEF"; //"CDEF".to_string().into_bytes();
     let mut rbuf = Vec::new();
@@ -169,11 +169,11 @@ fn test_aio_write() {
                            SigevNotify::SigevNone,
                            LioOpcode::LIO_NOP)
     };
-    aio_write(&mut aiocb).unwrap();
+    aiocb.write().unwrap();
 
     let err = poll_aio(&mut aiocb);
     assert!(err == Ok(()));
-    assert!(aio_return(&mut aiocb).unwrap() as usize == WBUF.len());
+    assert!(aiocb.aio_return().unwrap() as usize == WBUF.len());
 
     f.seek(SeekFrom::Start(0)).unwrap();
     let len = f.read_to_end(&mut rbuf).unwrap();
@@ -192,7 +192,7 @@ extern fn sigfunc(_: c_int) {
 
 // Test an aio operation with completion delivered by a signal
 #[test]
-fn test_aio_write_sigev_signal() {
+fn test_write_sigev_signal() {
     let sa = SigAction::new(SigHandler::Handler(sigfunc),
                             SA_RESETHAND,
                             SigSet::empty());
@@ -217,12 +217,12 @@ fn test_aio_write_sigev_signal() {
                            },
                            LioOpcode::LIO_NOP)
     };
-    aio_write(&mut aiocb).unwrap();
+    aiocb.write().unwrap();
     while unsafe { signaled == 0 } {
         thread::sleep(time::Duration::from_millis(10));
     }
 
-    assert!(aio_return(&mut aiocb).unwrap() as usize == WBUF.len());
+    assert!(aiocb.aio_return().unwrap() as usize == WBUF.len());
     f.seek(SeekFrom::Start(0)).unwrap();
     let len = f.read_to_end(&mut rbuf).unwrap();
     assert!(len == EXPECT.len());
@@ -262,8 +262,8 @@ fn test_lio_listio_wait() {
         let err = lio_listio(LioMode::LIO_WAIT, &[&mut wcb, &mut rcb], SigevNotify::SigevNone);
         err.expect("lio_listio failed");
 
-        assert!(aio_return(&mut wcb).unwrap() as usize == WBUF.len());
-        assert!(aio_return(&mut rcb).unwrap() as usize == WBUF.len());
+        assert!(wcb.aio_return().unwrap() as usize == WBUF.len());
+        assert!(rcb.aio_return().unwrap() as usize == WBUF.len());
     }
     assert!(rbuf == b"3456");
 
@@ -308,8 +308,8 @@ fn test_lio_listio_nowait() {
 
         poll_aio(&mut wcb).unwrap();
         poll_aio(&mut rcb).unwrap();
-        assert!(aio_return(&mut wcb).unwrap() as usize == WBUF.len());
-        assert!(aio_return(&mut rcb).unwrap() as usize == WBUF.len());
+        assert!(wcb.aio_return().unwrap() as usize == WBUF.len());
+        assert!(rcb.aio_return().unwrap() as usize == WBUF.len());
     }
     assert!(rbuf == b"3456");
 
@@ -362,8 +362,8 @@ fn test_lio_listio_signal() {
             thread::sleep(time::Duration::from_millis(10));
         }
 
-        assert!(aio_return(&mut wcb).unwrap() as usize == WBUF.len());
-        assert!(aio_return(&mut rcb).unwrap() as usize == WBUF.len());
+        assert!(wcb.aio_return().unwrap() as usize == WBUF.len());
+        assert!(rcb.aio_return().unwrap() as usize == WBUF.len());
     }
     assert!(rbuf == b"3456");
 
