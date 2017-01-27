@@ -1,5 +1,7 @@
-#include "sys/socket.h"
-#include "sys/uio.h"
+#include <sys/socket.h>
+#include <sys/uio.h>
+
+#include <string.h>
 
 #define SIZE_OF_T(TYPE)                   \
     do {                                  \
