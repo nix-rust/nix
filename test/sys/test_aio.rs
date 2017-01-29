@@ -92,14 +92,12 @@ fn test_aio_suspend() {
     let mut f = tempfile().unwrap();
     f.write(INITIAL).unwrap();
 
-    let mut wcb = unsafe {
-        AioCb::from_slice( f.as_raw_fd(),
+    let mut wcb = AioCb::from_slice( f.as_raw_fd(),
                            2,   //offset
                            &mut WBUF,
                            0,   //priority
                            SigevNotify::SigevNone,
-                           LioOpcode::LIO_WRITE)
-    };
+                           LioOpcode::LIO_WRITE);
 
     let mut rcb = AioCb::from_mut_slice( f.as_raw_fd(),
                             8,   //offset
@@ -150,6 +148,21 @@ fn test_read() {
     assert!(rbuf == EXPECT);
 }
 
+// Test reading into an immutable buffer.  It should fail
+#[test]
+#[should_panic(expected = "Can't read into an immutable buffer")]
+fn test_read_immutable_buffer() {
+    let rbuf = vec![0; 4];
+    let f = tempfile().unwrap();
+    let mut aiocb = AioCb::from_slice( f.as_raw_fd(),
+                           2,   //offset
+                           &rbuf,
+                           0,   //priority
+                           SigevNotify::SigevNone,
+                           LioOpcode::LIO_NOP);
+    aiocb.read().unwrap();
+}
+
 // Test a simple aio operation with no completion notification.  We must poll
 // for completion.  Unlike test_aio_read, this test uses AioCb::from_slice
 #[test]
@@ -161,14 +174,12 @@ fn test_write() {
 
     let mut f = tempfile().unwrap();
     f.write(INITIAL).unwrap();
-    let mut aiocb = unsafe {
-        AioCb::from_slice( f.as_raw_fd(),
+    let mut aiocb = AioCb::from_slice( f.as_raw_fd(),
                            2,   //offset
                            &WBUF,
                            0,   //priority
                            SigevNotify::SigevNone,
-                           LioOpcode::LIO_NOP)
-    };
+                           LioOpcode::LIO_NOP);
     aiocb.write().unwrap();
 
     let err = poll_aio(&mut aiocb);
@@ -206,8 +217,7 @@ fn test_write_sigev_signal() {
 
     let mut f = tempfile().unwrap();
     f.write(INITIAL).unwrap();
-    let mut aiocb = unsafe {
-        AioCb::from_slice( f.as_raw_fd(),
+    let mut aiocb = AioCb::from_slice( f.as_raw_fd(),
                            2,   //offset
                            &WBUF,
                            0,   //priority
@@ -215,8 +225,7 @@ fn test_write_sigev_signal() {
                                signal: Signal::SIGUSR2,
                                si_value: 0  //TODO: validate in sigfunc
                            },
-                           LioOpcode::LIO_NOP)
-    };
+                           LioOpcode::LIO_NOP);
     aiocb.write().unwrap();
     while unsafe { signaled == 0 } {
         thread::sleep(time::Duration::from_millis(10));
@@ -244,14 +253,12 @@ fn test_lio_listio_wait() {
     f.write(INITIAL).unwrap();
 
     {
-        let mut wcb = unsafe {
-            AioCb::from_slice( f.as_raw_fd(),
+        let mut wcb = AioCb::from_slice( f.as_raw_fd(),
                                2,   //offset
                                &WBUF,
                                0,   //priority
                                SigevNotify::SigevNone,
-                               LioOpcode::LIO_WRITE)
-        };
+                               LioOpcode::LIO_WRITE);
 
         let mut rcb = AioCb::from_mut_slice( f.as_raw_fd(),
                                 8,   //offset
@@ -288,14 +295,12 @@ fn test_lio_listio_nowait() {
     f.write(INITIAL).unwrap();
 
     {
-        let mut wcb = unsafe {
-            AioCb::from_slice( f.as_raw_fd(),
+        let mut wcb = AioCb::from_slice( f.as_raw_fd(),
                                2,   //offset
                                &WBUF,
                                0,   //priority
                                SigevNotify::SigevNone,
-                               LioOpcode::LIO_WRITE)
-        };
+                               LioOpcode::LIO_WRITE);
 
         let mut rcb = AioCb::from_mut_slice( f.as_raw_fd(),
                                 8,   //offset
@@ -339,14 +344,12 @@ fn test_lio_listio_signal() {
     f.write(INITIAL).unwrap();
 
     {
-        let mut wcb = unsafe {
-            AioCb::from_slice( f.as_raw_fd(),
+        let mut wcb = AioCb::from_slice( f.as_raw_fd(),
                                2,   //offset
                                &WBUF,
                                0,   //priority
                                SigevNotify::SigevNone,
-                               LioOpcode::LIO_WRITE)
-        };
+                               LioOpcode::LIO_WRITE);
 
         let mut rcb = AioCb::from_mut_slice( f.as_raw_fd(),
                                 8,   //offset
@@ -371,4 +374,22 @@ fn test_lio_listio_signal() {
     let len = f.read_to_end(&mut rbuf2).unwrap();
     assert!(len == EXPECT.len());
     assert!(rbuf2 == EXPECT);
+}
+
+// Try to use lio_listio to read into an immutable buffer.  It should fail
+#[test]
+#[cfg(not(any(target_os = "ios", target_os = "macos")))]
+#[should_panic(expected = "Can't read into an immutable buffer")]
+fn test_lio_listio_read_immutable() {
+    let rbuf = vec![0; 4];
+    let f = tempfile().unwrap();
+
+
+    let mut rcb = AioCb::from_slice( f.as_raw_fd(),
+                           2,   //offset
+                           &rbuf,
+                           0,   //priority
+                           SigevNotify::SigevNone,
+                           LioOpcode::LIO_READ);
+    let _ = lio_listio(LioMode::LIO_NOWAIT, &[&mut rcb], SigevNotify::SigevNone);
 }

@@ -62,6 +62,8 @@ pub enum AioCancelStat {
 #[repr(C)]
 pub struct AioCb<'a> {
     aiocb: libc::aiocb,
+    /// Tracks whether the buffer pointed to by aiocb.aio_buf is mutable
+    mutable: bool,
     phantom: PhantomData<&'a mut [u8]>
 }
 
@@ -81,7 +83,7 @@ impl<'a> AioCb<'a> {
         a.aio_nbytes = 0;
         a.aio_buf = null_mut();
 
-        let aiocb = AioCb { aiocb: a, phantom: PhantomData};
+        let aiocb = AioCb { aiocb: a, mutable: false, phantom: PhantomData};
         aiocb
     }
 
@@ -102,20 +104,21 @@ impl<'a> AioCb<'a> {
         let mut a = AioCb::common_init(fd, prio, sigev_notify);
         a.aio_offset = offs;
         a.aio_nbytes = buf.len() as size_t;
+        // casting an immutable buffer to a mutable pointer looks unsafe, but
+        // technically its only unsafe to dereference it, not to create it.
         a.aio_buf = buf.as_ptr() as *mut c_void;
         a.aio_lio_opcode = opcode as ::c_int;
 
-        let aiocb = AioCb { aiocb: a, phantom: PhantomData};
+        let aiocb = AioCb { aiocb: a, mutable: true, phantom: PhantomData};
         aiocb
     }
 
     /// Like `from_mut_slice`, but works on constant slices rather than
     /// mutable slices.
     ///
-    /// This is technically unsafe, but in practice it's fine
-    /// to use with any aio functions except `aio_read` and `lio_listio` (with
-    /// `opcode` set to `LIO_READ`).  This method is useful when writing a const
-    /// buffer with `aio_write`, since from_mut_slice can't work with const
+    /// An `AioCb` created this way cannot be used with `read`, and its
+    /// `LioOpcode` cannot be set to `LIO_READ`.  This method is useful when writing a
+    /// const buffer with `aio_write`, since from_mut_slice can't work with const
     /// buffers.
     // Note: another solution to the problem of writing const buffers would be
     // to genericize AioCb for both &mut [u8] and &[u8] buffers.  aio_read could
@@ -123,16 +126,17 @@ impl<'a> AioCb<'a> {
     // lio_listio wouldn't work, because that function needs a slice of AioCb,
     // and they must all be the same type.  We're basically stuck with using an
     // unsafe function, since aio (as designed in C) is an unsafe API.
-    pub unsafe fn from_slice(fd: RawFd, offs: off_t, buf: &'a [u8],
-                             prio: ::c_int, sigev_notify: SigevNotify,
-                             opcode: LioOpcode) -> AioCb {
+    pub fn from_slice(fd: RawFd, offs: off_t, buf: &'a [u8],
+                      prio: ::c_int, sigev_notify: SigevNotify,
+                      opcode: LioOpcode) -> AioCb {
         let mut a = AioCb::common_init(fd, prio, sigev_notify);
         a.aio_offset = offs;
         a.aio_nbytes = buf.len() as size_t;
         a.aio_buf = buf.as_ptr() as *mut c_void;
+        assert!(opcode != LioOpcode::LIO_READ, "Can't read into an immutable buffer");
         a.aio_lio_opcode = opcode as ::c_int;
 
-        let aiocb = AioCb { aiocb: a, phantom: PhantomData};
+        let aiocb = AioCb { aiocb: a, mutable: false, phantom: PhantomData};
         aiocb
     }
 
@@ -185,6 +189,7 @@ impl<'a> AioCb<'a> {
 
     /// Asynchronously reads from a file descriptor into a buffer
     pub fn read(&mut self) -> Result<()> {
+        assert!(self.mutable, "Can't read into an immutable buffer");
         let p: *mut libc::aiocb = &mut self.aiocb;
         Errno::result(unsafe { libc::aio_read(p) }).map(drop)
     }
@@ -192,6 +197,7 @@ impl<'a> AioCb<'a> {
     /// Retrieve return status of an asynchronous operation.  Should only be called
     /// once for each `AioCb`, after `aio_error` indicates that it has completed.
     /// The result the same as for `read`, `write`, of `fsync`.
+    // Note: this should be just `return`, but that's a reserved word
     pub fn aio_return(&mut self) -> Result<isize> {
         let p: *mut libc::aiocb = &mut self.aiocb;
         Errno::result(unsafe { libc::aio_return(p) })
