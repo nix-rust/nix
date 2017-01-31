@@ -4,48 +4,45 @@ use {Errno, Result, NixPath};
 
 bitflags!(
     pub flags MsFlags: c_ulong {
-        const MS_RDONLY      = 1 << 0,  // Mount read-only
-        const MS_NOSUID      = 1 << 1,  // Ignore suid and sgid bits
-        const MS_NODEV       = 1 << 2,  // Disallow access to device special files
-        const MS_NOEXEC      = 1 << 3,  // Disallow program execution
-        const MS_SYNCHRONOUS = 1 << 4,  // Writes are synced at once
-        const MS_REMOUNT     = 1 << 5,  // Alter flags of a mounted FS
-        const MS_MANDLOCK    = 1 << 6,  // Allow mandatory locks on a FS
-        const MS_DIRSYNC     = 1 << 7,  // Directory modifications are synchronous
-        const MS_NOATIME     = 1 << 10, // Do not update access times
-        const MS_NODIRATIME  = 1 << 11, // Do not update directory access times
-        const MS_BIND        = 1 << 12, // Linux 2.4.0 - Bind directory at different place
-        const MS_MOVE        = 1 << 13,
-        const MS_REC         = 1 << 14,
-        const MS_VERBOSE     = 1 << 15, // Deprecated
-        const MS_SILENT      = 1 << 15,
-        const MS_POSIXACL    = 1 << 16,
-        const MS_UNBINDABLE  = 1 << 17,
-        const MS_PRIVATE     = 1 << 18,
-        const MS_SLAVE       = 1 << 19,
-        const MS_SHARED      = 1 << 20,
-        const MS_RELATIME    = 1 << 21,
-        const MS_KERNMOUNT   = 1 << 22,
-        const MS_I_VERSION   = 1 << 23,
-        const MS_STRICTATIME = 1 << 24,
+        const MS_RDONLY      = libc::MS_RDONLY,      // Mount read-only
+        const MS_NOSUID      = libc::MS_NOSUID,      // Ignore suid and sgid bits
+        const MS_NODEV       = libc::MS_NODEV,       // Disallow access to device special files
+        const MS_NOEXEC      = libc::MS_NOEXEC,      // Disallow program execution
+        const MS_SYNCHRONOUS = libc::MS_SYNCHRONOUS, // Writes are synced at once
+        const MS_REMOUNT     = libc::MS_REMOUNT,     // Alter flags of a mounted FS
+        const MS_MANDLOCK    = libc::MS_MANDLOCK,    // Allow mandatory locks on a FS
+        const MS_DIRSYNC     = libc::MS_DIRSYNC,     // Directory modifications are synchronous
+        const MS_NOATIME     = libc::MS_NOATIME,     // Do not update access times
+        const MS_NODIRATIME  = libc::MS_NODIRATIME,  // Do not update directory access times
+        const MS_BIND        = libc::MS_BIND,        // Linux 2.4.0 - Bind directory at different place
+        const MS_MOVE        = libc::MS_MOVE,
+        const MS_REC         = libc::MS_REC,
+        const MS_VERBOSE     = 1 << 15,              // Deprecated
+        const MS_SILENT      = libc::MS_SILENT,
+        const MS_POSIXACL    = libc::MS_POSIXACL,
+        const MS_UNBINDABLE  = libc::MS_UNBINDABLE,
+        const MS_PRIVATE     = libc::MS_PRIVATE,
+        const MS_SLAVE       = libc::MS_SLAVE,
+        const MS_SHARED      = libc::MS_SHARED,
+        const MS_RELATIME    = libc::MS_RELATIME,
+        const MS_KERNMOUNT   = libc::MS_KERNMOUNT,
+        const MS_I_VERSION   = libc::MS_I_VERSION,
+        const MS_STRICTATIME = libc::MS_STRICTATIME,
         const MS_NOSEC       = 1 << 28,
         const MS_BORN        = 1 << 29,
-        const MS_ACTIVE      = 1 << 30,
-        const MS_NOUSER      = 1 << 31,
-        const MS_RMT_MASK    = MS_RDONLY.bits
-                              | MS_SYNCHRONOUS.bits
-                              | MS_MANDLOCK.bits
-                              | MS_I_VERSION.bits,
-        const MS_MGC_VAL     = 0xC0ED0000,
-        const MS_MGC_MSK     = 0xffff0000
+        const MS_ACTIVE      = libc::MS_ACTIVE,
+        const MS_NOUSER      = libc::MS_NOUSER,
+        const MS_RMT_MASK    = libc::MS_RMT_MASK,
+        const MS_MGC_VAL     = libc::MS_MGC_VAL,
+        const MS_MGC_MSK     = libc::MS_MGC_MSK,
     }
 );
 
-bitflags!(
+libc_bitflags!(
     pub flags MntFlags: c_int {
-        const MNT_FORCE   = 1 << 0,
-        const MNT_DETACH  = 1 << 1,
-        const MNT_EXPIRE  = 1 << 2
+        MNT_FORCE,
+        MNT_DETACH,
+        MNT_EXPIRE,
     }
 );
 

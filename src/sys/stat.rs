@@ -16,16 +16,16 @@ mod ffi {
     }
 }
 
-bitflags!(
+libc_bitflags!(
     pub flags SFlag: mode_t {
-        const S_IFIFO = libc::S_IFIFO,
-        const S_IFCHR = libc::S_IFCHR,
-        const S_IFDIR = libc::S_IFDIR,
-        const S_IFBLK = libc::S_IFBLK,
-        const S_IFREG = libc::S_IFREG,
-        const S_IFLNK = libc::S_IFLNK,
-        const S_IFSOCK = libc::S_IFSOCK,
-        const S_IFMT = libc::S_IFMT,
+        S_IFIFO,
+        S_IFCHR,
+        S_IFDIR,
+        S_IFBLK,
+        S_IFREG,
+        S_IFLNK,
+        S_IFSOCK,
+        S_IFMT,
     }
 );
 

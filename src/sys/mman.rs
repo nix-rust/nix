@@ -23,25 +23,25 @@ libc_bitflags!{
 mod consts {
     use libc::{self, c_int};
 
-    bitflags!{
+    libc_bitflags!{
         pub flags MapFlags: c_int {
-            const MAP_FILE       = libc::MAP_FILE,
-            const MAP_SHARED     = libc::MAP_SHARED,
-            const MAP_PRIVATE    = libc::MAP_PRIVATE,
-            const MAP_FIXED      = libc::MAP_FIXED,
-            const MAP_ANON       = libc::MAP_ANON,
-            const MAP_ANONYMOUS  = libc::MAP_ANON,
+            MAP_FILE,
+            MAP_SHARED,
+            MAP_PRIVATE,
+            MAP_FIXED,
+            MAP_ANON,
+            MAP_ANONYMOUS,
             #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-            const MAP_32BIT      = libc::MAP_32BIT,
-            const MAP_GROWSDOWN  = libc::MAP_GROWSDOWN,
-            const MAP_DENYWRITE  = libc::MAP_DENYWRITE,
-            const MAP_EXECUTABLE = libc::MAP_EXECUTABLE,
-            const MAP_LOCKED     = libc::MAP_LOCKED,
-            const MAP_NORESERVE  = libc::MAP_NORESERVE,
-            const MAP_POPULATE   = libc::MAP_POPULATE,
-            const MAP_NONBLOCK   = libc::MAP_NONBLOCK,
-            const MAP_STACK      = libc::MAP_STACK,
-            const MAP_HUGETLB    = libc::MAP_HUGETLB,
+            MAP_32BIT,
+            MAP_GROWSDOWN,
+            MAP_DENYWRITE,
+            MAP_EXECUTABLE,
+            MAP_LOCKED,
+            MAP_NORESERVE,
+            MAP_POPULATE,
+            MAP_NONBLOCK,
+            MAP_STACK,
+            MAP_HUGETLB,
         }
     }
 
@@ -64,11 +64,11 @@ mod consts {
     pub const MADV_HWPOISON   : MmapAdvise  = 100; /* Poison a page for testing.  */
 
 
-    bitflags!{
+    libc_bitflags!{
         pub flags MsFlags: c_int {
-            const MS_ASYNC      = libc::MS_ASYNC,
-            const MS_INVALIDATE = libc::MS_INVALIDATE,
-            const MS_SYNC       = libc::MS_SYNC,
+            MS_ASYNC,
+            MS_INVALIDATE,
+            MS_SYNC,
         }
     }
 
@@ -80,15 +80,15 @@ mod consts {
 mod consts {
     use libc::{self, c_int};
 
-    bitflags!{
+    libc_bitflags!{
         pub flags MapFlags: c_int {
-            const MAP_FILE    = libc::MAP_FILE,
-            const MAP_SHARED  = libc::MAP_SHARED,
-            const MAP_PRIVATE = libc::MAP_PRIVATE,
-            const MAP_FIXED   = libc::MAP_FIXED,
-            const MAP_ANON    = libc::MAP_ANON,
-            const MAP_NOCACHE = libc::MAP_NOCACHE,
-            const MAP_JIT     = libc::MAP_JIT,
+            MAP_FILE,
+            MAP_SHARED,
+            MAP_PRIVATE,
+            MAP_FIXED,
+            MAP_ANON,
+            MAP_NOCACHE,
+            MAP_JIT,
         }
     }
 
@@ -105,13 +105,13 @@ mod consts {
     pub const MADV_FREE_REUSE : MmapAdvise      = 8; /* caller wants to reuse those pages */
     pub const MADV_CAN_REUSE : MmapAdvise       = 9;
 
-    bitflags!{
+    libc_bitflags!{
         pub flags MsFlags: c_int {
-            const MS_ASYNC      = libc::MS_ASYNC, /* [MF|SIO] return immediately */
-            const MS_INVALIDATE = libc::MS_INVALIDATE, /* [MF|SIO] invalidate all cached data */
-            const MS_KILLPAGES  = libc::MS_KILLPAGES, /* invalidate pages, leave mapped */
-            const MS_DEACTIVATE = libc::MS_DEACTIVATE, /* deactivate pages, leave mapped */
-            const MS_SYNC       = libc::MS_SYNC, /* [MF|SIO] msync synchronously */
+            MS_ASYNC, /* [MF|SIO] return immediately */
+            MS_INVALIDATE, /* [MF|SIO] invalidate all cached data */
+            MS_KILLPAGES, /* invalidate pages, leave mapped */
+            MS_DEACTIVATE, /* deactivate pages, leave mapped */
+            MS_SYNC, /* [MF|SIO] msync synchronously */
         }
     }
 
@@ -122,22 +122,22 @@ mod consts {
 mod consts {
     use libc::{self, c_int};
 
-    bitflags!{
+    libc_bitflags!{
         pub flags MapFlags: c_int {
-            const MAP_FILE         = libc::MAP_FILE,
-            const MAP_SHARED       = libc::MAP_SHARED,
-            const MAP_PRIVATE      = libc::MAP_PRIVATE,
-            const MAP_FIXED        = libc::MAP_FIXED,
-            const MAP_RENAME       = libc::MAP_RENAME,
-            const MAP_NORESERVE    = libc::MAP_NORESERVE,
-            const MAP_HASSEMAPHORE = libc::MAP_HASSEMAPHORE,
+            MAP_FILE,
+            MAP_SHARED,
+            MAP_PRIVATE,
+            MAP_FIXED,
+            MAP_RENAME,
+            MAP_NORESERVE,
+            MAP_HASSEMAPHORE,
             #[cfg(not(any(target_os = "openbsd", target_os = "netbsd")))]
-            const MAP_STACK        = libc::MAP_STACK,
+            MAP_STACK,
             #[cfg(target_os = "netbsd")]
-            const MAP_WIRED        = libc::MAP_WIRED,
+            MAP_WIRED,
             #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
-            const MAP_NOSYNC       = libc::MAP_NOSYNC,
-            const MAP_ANON         = libc::MAP_ANON,
+            MAP_NOSYNC,
+            MAP_ANON,
         }
     }
 

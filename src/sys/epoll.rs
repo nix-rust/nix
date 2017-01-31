@@ -8,21 +8,21 @@ use ::Error;
 bitflags!(
     #[repr(C)]
     pub flags EpollFlags: u32 {
-        const EPOLLIN = 0x001,
-        const EPOLLPRI = 0x002,
-        const EPOLLOUT = 0x004,
-        const EPOLLRDNORM = 0x040,
-        const EPOLLRDBAND = 0x080,
-        const EPOLLWRNORM = 0x100,
-        const EPOLLWRBAND = 0x200,
-        const EPOLLMSG = 0x400,
-        const EPOLLERR = 0x008,
-        const EPOLLHUP = 0x010,
-        const EPOLLRDHUP = 0x2000,
+        const EPOLLIN = libc::EPOLLIN as u32,
+        const EPOLLPRI = libc::EPOLLPRI as u32,
+        const EPOLLOUT = libc::EPOLLOUT as u32,
+        const EPOLLRDNORM = libc::EPOLLRDNORM as u32,
+        const EPOLLRDBAND = libc::EPOLLRDBAND as u32,
+        const EPOLLWRNORM = libc::EPOLLWRNORM as u32,
+        const EPOLLWRBAND = libc::EPOLLWRBAND as u32,
+        const EPOLLMSG = libc::EPOLLMSG as u32,
+        const EPOLLERR = libc::EPOLLERR as u32,
+        const EPOLLHUP = libc::EPOLLHUP as u32,
+        const EPOLLRDHUP = libc::EPOLLRDHUP as u32,
         const EPOLLEXCLUSIVE = 1 << 28,
-        const EPOLLWAKEUP = 1 << 29,
-        const EPOLLONESHOT = 1 << 30,
-        const EPOLLET = 1 << 31
+        const EPOLLWAKEUP = libc::EPOLLWAKEUP as u32,
+        const EPOLLONESHOT = libc::EPOLLONESHOT as u32,
+        const EPOLLET = libc::EPOLLET as u32,
     }
 );
 

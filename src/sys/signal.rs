@@ -196,15 +196,15 @@ pub const SIGIOT : Signal = SIGABRT;
 pub const SIGPOLL : Signal = SIGIO;
 pub const SIGUNUSED : Signal = SIGSYS;
 
-bitflags!{
+libc_bitflags!{
     pub flags SaFlags: libc::c_int {
-        const SA_NOCLDSTOP = libc::SA_NOCLDSTOP,
-        const SA_NOCLDWAIT = libc::SA_NOCLDWAIT,
-        const SA_NODEFER   = libc::SA_NODEFER,
-        const SA_ONSTACK   = libc::SA_ONSTACK,
-        const SA_RESETHAND = libc::SA_RESETHAND,
-        const SA_RESTART   = libc::SA_RESTART,
-        const SA_SIGINFO   = libc::SA_SIGINFO,
+        SA_NOCLDSTOP,
+        SA_NOCLDWAIT,
+        SA_NODEFER,
+        SA_ONSTACK,
+        SA_RESETHAND,
+        SA_RESTART,
+        SA_SIGINFO,
     }
 }
 
