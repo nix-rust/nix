@@ -2,6 +2,8 @@ use {Error, Errno, Result};
 use std::os::unix::io::RawFd;
 use libc::{c_void, off_t, size_t};
 use libc;
+use std::io::Write;
+use std::io::stderr;
 use std::marker::PhantomData;
 use std::mem;
 use std::ptr::{null, null_mut};
@@ -59,11 +61,12 @@ pub enum AioCancelStat {
 
 /// The basic structure used by all aio functions.  Each `aiocb` represents one
 /// I/O request.
-#[repr(C)]
 pub struct AioCb<'a> {
     aiocb: libc::aiocb,
     /// Tracks whether the buffer pointed to by aiocb.aio_buf is mutable
     mutable: bool,
+    /// Could this `AioCb` potentially have any in-kernel state?
+    in_progress: bool,
     phantom: PhantomData<&'a mut [u8]>
 }
 
@@ -83,7 +86,8 @@ impl<'a> AioCb<'a> {
         a.aio_nbytes = 0;
         a.aio_buf = null_mut();
 
-        let aiocb = AioCb { aiocb: a, mutable: false, phantom: PhantomData};
+        let aiocb = AioCb { aiocb: a, mutable: false, in_progress: false,
+                            phantom: PhantomData};
         aiocb
     }
 
@@ -109,7 +113,8 @@ impl<'a> AioCb<'a> {
         a.aio_buf = buf.as_ptr() as *mut c_void;
         a.aio_lio_opcode = opcode as ::c_int;
 
-        let aiocb = AioCb { aiocb: a, mutable: true, phantom: PhantomData};
+        let aiocb = AioCb { aiocb: a, mutable: true, in_progress: false,
+                            phantom: PhantomData};
         aiocb
     }
 
@@ -136,7 +141,8 @@ impl<'a> AioCb<'a> {
         assert!(opcode != LioOpcode::LIO_READ, "Can't read into an immutable buffer");
         a.aio_lio_opcode = opcode as ::c_int;
 
-        let aiocb = AioCb { aiocb: a, mutable: false, phantom: PhantomData};
+        let aiocb = AioCb { aiocb: a, mutable: false, in_progress: false,
+                            phantom: PhantomData};
         aiocb
     }
 
@@ -184,6 +190,7 @@ impl<'a> AioCb<'a> {
     /// An asynchronous version of `fsync`.
     pub fn fsync(&mut self, mode: AioFsyncMode) -> Result<()> {
         let p: *mut libc::aiocb = &mut self.aiocb;
+        self.in_progress = true;
         Errno::result(unsafe { libc::aio_fsync(mode as ::c_int, p) }).map(drop)
     }
 
@@ -191,6 +198,7 @@ impl<'a> AioCb<'a> {
     pub fn read(&mut self) -> Result<()> {
         assert!(self.mutable, "Can't read into an immutable buffer");
         let p: *mut libc::aiocb = &mut self.aiocb;
+        self.in_progress = true;
         Errno::result(unsafe { libc::aio_read(p) }).map(drop)
     }
 
@@ -200,12 +208,14 @@ impl<'a> AioCb<'a> {
     // Note: this should be just `return`, but that's a reserved word
     pub fn aio_return(&mut self) -> Result<isize> {
         let p: *mut libc::aiocb = &mut self.aiocb;
+        self.in_progress = false;
         Errno::result(unsafe { libc::aio_return(p) })
     }
 
     /// Asynchronously writes from a buffer to a file descriptor
     pub fn write(&mut self) -> Result<()> {
         let p: *mut libc::aiocb = &mut self.aiocb;
+        self.in_progress = true;
         Errno::result(unsafe { libc::aio_write(p) }).map(drop)
     }
 
@@ -258,4 +268,28 @@ pub fn lio_listio(mode: LioMode, list: &[&mut AioCb],
     Errno::result(unsafe {
         libc::lio_listio(mode as i32, p, list.len() as i32, sigevp)
     }).map(drop)
+}
+
+impl<'a> Drop for AioCb<'a> {
+    /// If the `AioCb` has no remaining state in the kernel, just drop it.
+    /// Otherwise, collect its error and return values, so as not to leak
+    /// resources.
+    fn drop(&mut self) {
+        if self.in_progress {
+            // Well-written programs should never get here.  They should always
+            // wait for an AioCb to complete before dropping it
+            let _ = write!(stderr(), "WARNING: dropped an in-progress AioCb");
+            loop {
+                let ret = aio_suspend(&[&self], None);
+                match ret {
+                    Ok(()) => break,
+                    Err(Error::Sys(Errno::EINVAL)) => panic!(
+                        "Inconsistent AioCb.in_progress value"),
+                    Err(Error::Sys(Errno::EINTR)) => (),    // Retry interrupted syscall
+                    _ => panic!("Unexpected aio_suspend return value {:?}", ret)
+                };
+            }
+            let _ = self.aio_return();
+        }
+    }
 }
