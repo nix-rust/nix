@@ -63,11 +63,23 @@ pub fn mknod<P: ?Sized + NixPath>(path: &P, kind: SFlag, perm: Mode, dev: dev_t)
 }
 
 #[cfg(target_os = "linux")]
-const MINORBITS: usize = 20;
+pub fn major(dev: dev_t) -> u64 {
+    ((dev >> 32) & 0xfffff000) |
+    ((dev >>  8) & 0x00000fff)
+}
 
 #[cfg(target_os = "linux")]
-pub fn mkdev(major: u64, minor: u64) -> dev_t {
-    (major << MINORBITS) | minor
+pub fn minor(dev: dev_t) -> u64 {
+    ((dev >> 12) & 0xffffff00) |
+    ((dev      ) & 0x000000ff)
+}
+
+#[cfg(target_os = "linux")]
+pub fn makedev(major: u64, minor: u64) -> dev_t {
+    ((major & 0xfffff000) << 32) |
+    ((major & 0x00000fff) <<  8) |
+    ((minor & 0xffffff00) << 12) |
+    ((minor & 0x000000ff)      )
 }
 
 pub fn umask(mode: Mode) -> Mode {
