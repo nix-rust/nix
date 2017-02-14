@@ -6,6 +6,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Added a new `WaitStatus::PtraceEvent` to support ptrace events on Linux
+  and Android ([([#438](https://github.com/nix-rust/nix/pull/438))
 - Added support for POSIX AIO
   ([#483](https://github.com/nix-rust/nix/pull/483))
 - Added support for XNU system control sockets
