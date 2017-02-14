@@ -44,6 +44,8 @@ pub enum WaitStatus {
     Exited(pid_t, i8),
     Signaled(pid_t, Signal, bool),
     Stopped(pid_t, Signal),
+    #[cfg(any(target_os = "linux", target_os = "android"))]
+    PtraceEvent(pid_t, Signal, c_int),
     Continued(pid_t),
     StillAlive
 }
@@ -52,6 +54,7 @@ pub enum WaitStatus {
           target_os = "android"))]
 mod status {
     use sys::signal::Signal;
+    use libc::c_int;
 
     pub fn exited(status: i32) -> bool {
         (status & 0x7F) == 0
@@ -79,6 +82,10 @@ mod status {
 
     pub fn stop_signal(status: i32) -> Signal {
         Signal::from_c_int((status & 0xFF00) >> 8).unwrap()
+    }
+
+    pub fn stop_additional(status: i32) -> c_int {
+        (status >> 16) as c_int
     }
 
     pub fn continued(status: i32) -> bool {
@@ -184,7 +191,23 @@ fn decode(pid : pid_t, status: i32) -> WaitStatus {
     } else if status::signaled(status) {
         WaitStatus::Signaled(pid, status::term_signal(status), status::dumped_core(status))
     } else if status::stopped(status) {
-        WaitStatus::Stopped(pid, status::stop_signal(status))
+        cfg_if! {
+            if #[cfg(any(target_os = "linux", target_os = "android"))] {
+                fn decode_stopped(pid: pid_t, status: i32) -> WaitStatus {
+                    let status_additional = status::stop_additional(status);
+                    if status_additional == 0 {
+                        WaitStatus::Stopped(pid, status::stop_signal(status))
+                    } else {
+                        WaitStatus::PtraceEvent(pid, status::stop_signal(status), status::stop_additional(status))
+                    }
+                }
+            } else {
+                fn decode_stopped(pid: pid_t, status: i32) -> WaitStatus {
+                    WaitStatus::Stopped(pid, status::stop_signal(status))
+                }
+            }
+        }
+        decode_stopped(pid, status)
     } else {
         assert!(status::continued(status));
         WaitStatus::Continued(pid)
