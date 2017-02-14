@@ -23,7 +23,7 @@ signalfd = []
 
 [dependencies]
 libc = { git = "https://github.com/rust-lang/libc" }
-bitflags = "0.4"
+bitflags = "0.7"
 cfg-if = "0.1.0"
 void = "1.0.2"
 
