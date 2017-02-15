@@ -1,4 +1,4 @@
-use std::{cmp, fmt, ops};
+use std::{cmp, fmt, ops, time};
 use libc::{c_long, time_t, suseconds_t, timespec, timeval};
 
 pub trait TimeValLike: Sized {
@@ -157,6 +157,53 @@ impl TimeValLike for TimeSpec {
         let secs = self.num_seconds() * 1_000_000_000;
         let nsec = self.nanos_mod_sec();
         secs + nsec as i64
+    }
+}
+
+impl TimeValLike for time::Duration {
+    fn seconds(seconds: i64) -> Self {
+        time::Duration::from_secs(seconds as u64)
+    }
+
+    fn milliseconds(milliseconds: i64) -> Self {
+        time::Duration::from_millis(milliseconds as u64)
+    }
+
+    fn microseconds(microseconds: i64) -> Self {
+        let secs = microseconds / 1_000_000;
+        let nanos = (microseconds - (secs * 1_000_000)) / 1_000;
+        time::Duration::new(secs as u64, nanos as u32)
+    }
+
+    fn nanoseconds(nanoseconds: i64) -> Self {
+        let secs = nanoseconds / 1_000_000_000;
+        let nanos = nanoseconds - (secs * 1_000_000_000);
+        time::Duration::new(secs as u64, nanos as u32)
+    }
+
+    fn num_seconds(&self) -> i64 {
+        self.as_secs() as i64
+    }
+
+    fn num_milliseconds(&self) -> i64 {
+        let seconds_part: u64 = self.as_secs().checked_mul(1_000)
+            .expect("Duration::num_milliseconds out of bounds");
+        let subsecond_part: u32 = self.subsec_nanos() / 1_000_000;
+        (seconds_part + subsecond_part as u64) as i64
+    }
+
+    fn num_microseconds(&self) -> i64 {
+        let seconds_part: u64 = self.as_secs().checked_mul(1_000_000)
+            .expect("Duration::num_microseconds out of bounds");
+        let subsecond_part: u32 = self.subsec_nanos() / 1_000;
+        (seconds_part + subsecond_part as u64) as i64
+    }
+
+    fn num_nanoseconds(&self) -> i64 {
+        let seconds_part: u64 = self.as_secs().checked_mul(1_000_000_000)
+            .expect("Duration::num_nanoseconds out of bounds");
+        let subsecond_part: u32 = self.subsec_nanos();
+        (seconds_part + subsecond_part as u64) as i64
     }
 }
 
@@ -496,6 +543,7 @@ fn div_rem_64(this: i64, other: i64) -> (i64, i64) {
 
 #[cfg(test)]
 mod test {
+    use std::time::Duration;
     use super::{TimeSpec, TimeVal, TimeValLike};
 
     #[test]
@@ -568,5 +616,19 @@ mod test {
         assert_eq!(TimeVal::microseconds(42).to_string(), "0.000042 seconds");
         assert_eq!(TimeVal::nanoseconds(1402).to_string(), "0.000001 seconds");
         assert_eq!(TimeVal::seconds(-86401).to_string(), "-86401 seconds");
+    }
+
+    #[test]
+    fn test_timeval_like_duration() {
+        let large = Duration::from_secs(1_000_000_000);
+        assert_eq!(large.num_seconds(), 1_000_000_000);
+        assert_eq!(large.num_milliseconds(), 1_000_000_000_000);
+        assert_eq!(large.num_microseconds(), 1_000_000_000_000_000);
+        assert_eq!(large.num_nanoseconds(), 1_000_000_000_000_000_000);
+
+        assert_eq!(Duration::from_secs(10), Duration::seconds(10));
+
+        assert_eq!(Duration::from_secs(3600).num_minutes(), 60);
+        assert_eq!(Duration::from_secs(3600).num_hours(), 1);
     }
 }
