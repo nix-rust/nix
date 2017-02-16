@@ -465,8 +465,12 @@ impl SigEvent {
             SigevNotify::SigevSignal{..} => libc::SIGEV_SIGNAL,
             #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
             SigevNotify::SigevKevent{..} => libc::SIGEV_KEVENT,
-            #[cfg(any(target_os = "linux", target_os = "freebsd"))]
-            SigevNotify::SigevThreadId{..} => libc::SIGEV_THREAD_ID
+            #[cfg(target_os = "freebsd")]
+            SigevNotify::SigevThreadId{..} => libc::SIGEV_THREAD_ID,
+            #[cfg(all(target_os = "linux", target_env = "gnu"))]
+            SigevNotify::SigevThreadId{..} => libc::SIGEV_THREAD_ID,
+            #[cfg(all(target_os = "linux", target_env = "musl"))]
+            SigevNotify::SigevThreadId{..} => 4  // No SIGEV_THREAD_ID defined
         };
         sev.sigev_signo = match sigev_notify {
             SigevNotify::SigevSignal{ signal, .. } => signal as ::c_int,
