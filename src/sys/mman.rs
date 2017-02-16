@@ -7,7 +7,7 @@ use std::os::unix::io::RawFd;
 pub use self::consts::*;
 
 libc_bitflags!{
-    flags ProtFlags: libc::c_int {
+    pub flags ProtFlags: libc::c_int {
         PROT_NONE,
         PROT_READ,
         PROT_WRITE,
@@ -24,7 +24,7 @@ mod consts {
     use libc::{self, c_int};
 
     bitflags!{
-        flags MapFlags: c_int {
+        pub flags MapFlags: c_int {
             const MAP_FILE       = libc::MAP_FILE,
             const MAP_SHARED     = libc::MAP_SHARED,
             const MAP_PRIVATE    = libc::MAP_PRIVATE,
@@ -65,7 +65,7 @@ mod consts {
 
 
     bitflags!{
-        flags MsFlags: c_int {
+        pub flags MsFlags: c_int {
             const MS_ASYNC      = libc::MS_ASYNC,
             const MS_INVALIDATE = libc::MS_INVALIDATE,
             const MS_SYNC       = libc::MS_SYNC,
@@ -81,7 +81,7 @@ mod consts {
     use libc::{self, c_int};
 
     bitflags!{
-        flags MapFlags: c_int {
+        pub flags MapFlags: c_int {
             const MAP_FILE    = libc::MAP_FILE,
             const MAP_SHARED  = libc::MAP_SHARED,
             const MAP_PRIVATE = libc::MAP_PRIVATE,
@@ -106,7 +106,7 @@ mod consts {
     pub const MADV_CAN_REUSE : MmapAdvise       = 9;
 
     bitflags!{
-        flags MsFlags: c_int {
+        pub flags MsFlags: c_int {
             const MS_ASYNC      = libc::MS_ASYNC, /* [MF|SIO] return immediately */
             const MS_INVALIDATE = libc::MS_INVALIDATE, /* [MF|SIO] invalidate all cached data */
             const MS_KILLPAGES  = libc::MS_KILLPAGES, /* invalidate pages, leave mapped */
@@ -123,7 +123,7 @@ mod consts {
     use libc::{self, c_int};
 
     bitflags!{
-        flags MapFlags: c_int {
+        pub flags MapFlags: c_int {
             const MAP_FILE         = libc::MAP_FILE,
             const MAP_SHARED       = libc::MAP_SHARED,
             const MAP_PRIVATE      = libc::MAP_PRIVATE,
@@ -161,7 +161,7 @@ mod consts {
     pub const MADV_SETMAP     : MmapAdvise      = 11; /* set page table directory page for map */
 
     bitflags!{
-        flags MsFlags: c_int {
+        pub flags MsFlags: c_int {
             const MS_ASYNC      = libc::MS_ASYNC, /* [MF|SIO] return immediately */
             const MS_INVALIDATE = libc::MS_INVALIDATE, /* [MF|SIO] invalidate all cached data */
             #[cfg(not(target_os = "dragonfly"))]

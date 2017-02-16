@@ -7,7 +7,7 @@ use ::Error;
 
 bitflags!(
     #[repr(C)]
-    flags EpollFlags: u32 {
+    pub flags EpollFlags: u32 {
         const EPOLLIN = 0x001,
         const EPOLLPRI = 0x002,
         const EPOLLOUT = 0x004,
@@ -35,7 +35,7 @@ pub enum EpollOp {
 }
 
 libc_bitflags!{
-    flags EpollCreateFlags: c_int {
+    pub flags EpollCreateFlags: c_int {
         EPOLL_CLOEXEC,
     }
 }

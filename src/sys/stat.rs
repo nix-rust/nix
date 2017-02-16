@@ -17,7 +17,7 @@ mod ffi {
 }
 
 bitflags!(
-    flags SFlag: mode_t {
+    pub flags SFlag: mode_t {
         const S_IFIFO = libc::S_IFIFO,
         const S_IFCHR = libc::S_IFCHR,
         const S_IFDIR = libc::S_IFDIR,
@@ -30,7 +30,7 @@ bitflags!(
 );
 
 bitflags! {
-    flags Mode: mode_t {
+    pub flags Mode: mode_t {
         const S_IRWXU = libc::S_IRWXU,
         const S_IRUSR = libc::S_IRUSR,
         const S_IWUSR = libc::S_IWUSR,

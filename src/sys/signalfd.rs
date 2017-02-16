@@ -26,7 +26,7 @@ use std::mem;
 
 
 bitflags!{
-    flags SfdFlags: libc::c_int {
+    pub flags SfdFlags: libc::c_int {
         const SFD_NONBLOCK  = libc::SFD_NONBLOCK,
         const SFD_CLOEXEC   = libc::SFD_CLOEXEC,
     }

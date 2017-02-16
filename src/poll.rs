@@ -24,7 +24,7 @@ impl PollFd {
 }
 
 libc_bitflags! {
-    flags EventFlags: libc::c_short {
+    pub flags EventFlags: libc::c_short {
         POLLIN,
         POLLPRI,
         POLLOUT,
