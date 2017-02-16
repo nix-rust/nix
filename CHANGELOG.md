@@ -6,6 +6,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Added `::nix::sys::termios::BaudRate` enum to provide portable baudrate
+  values. ([#518](https://github.com/nix-rust/nix/pull/518))
 - Added a new `WaitStatus::PtraceEvent` to support ptrace events on Linux
   and Android ([([#438](https://github.com/nix-rust/nix/pull/438))
 - Added support for POSIX AIO
@@ -41,6 +43,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#503](https://github.com/nix-rust/nix/pull/503))
 
 ### Changed
+- `::nix::sys::termios::{cfgetispeed, cfsetispeed, cfgetospeed, cfsetospeed}` 
+  switched  to use `BaudRate` enum from `speed_t`. 
+  ([#518](https://github.com/nix-rust/nix/pull/518))
 - `epoll_ctl` now could accept None as argument `event`
   when op is `EpollOp::EpollCtlDel`.
   ([#480](https://github.com/nix-rust/nix/pull/480))

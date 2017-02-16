@@ -125,6 +125,72 @@ mod ffi {
             pub c_ospeed: speed_t
         }
 
+        #[derive(Clone, Copy, Debug, PartialEq)]
+        pub enum BaudRate {
+            B0,
+            B50,
+            B75,
+            B110,
+            B134,
+            B150,
+            B200,
+            B300,
+            B600,
+            B1200,
+            B1800,
+            B2400,
+            B4800,
+            B9600,
+            B19200,
+            B38400,
+            B7200,
+            B14400,
+            B28800,
+            B57600,
+            B76800,
+            B115200,
+            B230400,
+            #[cfg(any(target_os = "netbsd", target_os = "freebsd"))]
+            B460800,
+            #[cfg(any(target_os = "netbsd", target_os = "freebsd"))]
+            B921600,
+        }
+
+        impl From<speed_t> for BaudRate {
+            fn from(s: speed_t) -> BaudRate {
+                match s {
+                    0 => BaudRate::B0,
+                    50 => BaudRate::B50,
+                    75 => BaudRate::B75,
+                    110 => BaudRate::B110,
+                    134 => BaudRate::B134,
+                    150 => BaudRate::B150,
+                    200 => BaudRate::B200,
+                    300 => BaudRate::B300,
+                    600 => BaudRate::B600,
+                    1200 => BaudRate::B1200,
+                    1800 => BaudRate::B1800,
+                    2400 => BaudRate::B2400,
+                    4800 => BaudRate::B4800,
+                    9600 => BaudRate::B9600,
+                    19200 => BaudRate::B19200,
+                    38400 => BaudRate::B38400,
+                    7200 => BaudRate::B7200,
+                    14400 => BaudRate::B14400,
+                    28800 => BaudRate::B28800,
+                    57600 => BaudRate::B57600,
+                    76800 => BaudRate::B76800,
+                    115200 => BaudRate::B115200,
+                    230400 => BaudRate::B230400,
+                    #[cfg(any(target_os = "netbsd", target_os = "freebsd"))]
+                    460800 => BaudRate::B460800,
+                    #[cfg(any(target_os = "netbsd", target_os = "freebsd"))]
+                    921600 => BaudRate::B921600,
+                    b @ _ => unreachable!("Invalid baud constant: {}", b),
+                }
+            }
+        }
+
         pub const VEOF: usize     = 0;
         pub const VEOL: usize     = 1;
         pub const VEOL2: usize    = 2;
@@ -293,6 +359,82 @@ mod ffi {
             pub c_ospeed: speed_t
         }
 
+        #[derive(Clone, Copy, Debug, PartialEq)]
+        pub enum BaudRate {
+            B0,
+            B50,
+            B75,
+            B110,
+            B130,
+            B150,
+            B200,
+            B300,
+            B600,
+            B1200,
+            B1800,
+            B2400,
+            B4800,
+            B9600,
+            B19200,
+            B38400,
+            BOTHER,
+            B57600,
+            B115200,
+            B230400,
+            B460800,
+            B500000,
+            B576000,
+            B921600,
+            B1000000,
+            B1152000,
+            B1500000,
+            B2000000,
+            B2500000,
+            B3000000,
+            B3500000,
+            B4000000,
+        }
+
+        impl From<speed_t> for BaudRate {
+            fn from(s: speed_t) -> BaudRate {
+                match s {
+                    0 => BaudRate::B0,
+                    1 => BaudRate::B50,
+                    2 => BaudRate::B75,
+                    3 => BaudRate::B110,
+                    4 => BaudRate::B130,
+                    5 => BaudRate::B150,
+                    6 => BaudRate::B200,
+                    7 => BaudRate::B300,
+                    10 => BaudRate::B600,
+                    11 => BaudRate::B1200,
+                    12 => BaudRate::B1800,
+                    13 => BaudRate::B2400,
+                    14 => BaudRate::B4800,
+                    15 => BaudRate::B9600,
+                    16 => BaudRate::B19200,
+                    17 => BaudRate::B38400,
+                    10000 => BaudRate::BOTHER,
+                    10001 => BaudRate::B57600,
+                    10002 => BaudRate::B115200,
+                    10003 => BaudRate::B230400,
+                    10004 => BaudRate::B460800,
+                    10005 => BaudRate::B500000,
+                    10006 => BaudRate::B576000,
+                    10007 => BaudRate::B921600,
+                    10010 => BaudRate::B1000000,
+                    10011 => BaudRate::B1152000,
+                    10012 => BaudRate::B1500000,
+                    10013 => BaudRate::B2000000,
+                    10014 => BaudRate::B2500000,
+                    10015 => BaudRate::B3000000,
+                    10016 => BaudRate::B3500000,
+                    10017 => BaudRate::B4000000,
+                    b @ _ => unreachable!("Invalid baud constant: {}", b),
+                }
+            }
+        }
+
         pub const VEOF: usize     = 4;
         pub const VEOL: usize     = 11;
         pub const VEOL2: usize    = 16;
@@ -426,27 +568,27 @@ mod ffi {
     }
 }
 
-pub fn cfgetispeed(termios: &Termios) -> speed_t {
+pub fn cfgetispeed(termios: &Termios) -> BaudRate {
     unsafe {
-        ffi::cfgetispeed(termios)
+        ffi::cfgetispeed(termios).into()
     }
 }
 
-pub fn cfgetospeed(termios: &Termios) -> speed_t {
+pub fn cfgetospeed(termios: &Termios) -> BaudRate {
     unsafe {
-        ffi::cfgetospeed(termios)
+        ffi::cfgetospeed(termios).into()
     }
 }
 
-pub fn cfsetispeed(termios: &mut Termios, speed: speed_t) -> Result<()> {
+pub fn cfsetispeed(termios: &mut Termios, baud: BaudRate) -> Result<()> {
     Errno::result(unsafe {
-        ffi::cfsetispeed(termios, speed)
+        ffi::cfsetispeed(termios, baud as speed_t)
     }).map(drop)
 }
 
-pub fn cfsetospeed(termios: &mut Termios, speed: speed_t) -> Result<()> {
+pub fn cfsetospeed(termios: &mut Termios, baud: BaudRate) -> Result<()> {
     Errno::result(unsafe {
-        ffi::cfsetospeed(termios, speed)
+        ffi::cfsetospeed(termios, baud as speed_t)
     }).map(drop)
 }
 
