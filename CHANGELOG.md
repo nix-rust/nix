@@ -35,6 +35,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#491](https://github.com/nix-rust/nix/pull/491))
 - Added `fchdir` in `::nix::unistd`
   ([#497](https://github.com/nix-rust/nix/pull/497))
+- Added `major` and `minor` in `::nix::sys::stat` for decomposing `dev_t`
+  ([#508](https://github.com/nix-rust/nix/pull/508))
 
 ### Changed
 - `epoll_ctl` now could accept None as argument `event`
@@ -91,6 +93,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#429](https://github.com/nix-rust/nix/pull/429))
 - Fixed clone passing a potentially unaligned stack.
   ([#490](https://github.com/nix-rust/nix/pull/490))
+- Fixed mkdev not creating a `dev_t` the same way as libc.
+  ([#508](https://github.com/nix-rust/nix/pull/508))
 
 ## [0.7.0] 2016-09-09
 
