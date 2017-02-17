@@ -35,6 +35,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#491](https://github.com/nix-rust/nix/pull/491))
 - Added `fchdir` in `::nix::unistd`
   ([#497](https://github.com/nix-rust/nix/pull/497))
+- Corrected the value of `O_TMPFILE`.
+  ([#501](https://github.com/nix-rust/nix/pull/501))
 
 ### Changed
 - `epoll_ctl` now could accept None as argument `event`
