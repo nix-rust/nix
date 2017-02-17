@@ -10,7 +10,7 @@ use sys::stat::Mode;
 use std::mem;
 
 libc_bitflags!{
-    flags MQ_OFlag: libc::c_int {
+    pub flags MQ_OFlag: libc::c_int {
         O_RDONLY,
         O_WRONLY,
         O_RDWR,
@@ -22,7 +22,7 @@ libc_bitflags!{
 }
 
 libc_bitflags!{
-    flags FdFlag: libc::c_int {
+    pub flags FdFlag: libc::c_int {
         FD_CLOEXEC,
     }
 }

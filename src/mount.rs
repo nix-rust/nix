@@ -3,7 +3,7 @@ use libc;
 use {Errno, Result, NixPath};
 
 bitflags!(
-    flags MsFlags: c_ulong {
+    pub flags MsFlags: c_ulong {
         const MS_RDONLY      = 1 << 0,  // Mount read-only
         const MS_NOSUID      = 1 << 1,  // Ignore suid and sgid bits
         const MS_NODEV       = 1 << 2,  // Disallow access to device special files
@@ -42,7 +42,7 @@ bitflags!(
 );
 
 bitflags!(
-    flags MntFlags: c_int {
+    pub flags MntFlags: c_int {
         const MNT_FORCE   = 1 << 0,
         const MNT_DETACH  = 1 << 1,
         const MNT_EXPIRE  = 1 << 2

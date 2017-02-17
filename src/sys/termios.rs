@@ -146,7 +146,7 @@ mod ffi {
         pub const NCCS: usize     = 20;
 
         bitflags! {
-            flags InputFlags: tcflag_t {
+            pub flags InputFlags: tcflag_t {
                 const IGNBRK  = 0x00000001,
                 const BRKINT  = 0x00000002,
                 const IGNPAR  = 0x00000004,
@@ -166,7 +166,7 @@ mod ffi {
         }
 
         bitflags! {
-            flags OutputFlags: tcflag_t {
+            pub flags OutputFlags: tcflag_t {
                 const OPOST  = 0x00000001,
                 const ONLCR  = 0x00000002,
                 const OXTABS = 0x00000004,
@@ -175,7 +175,7 @@ mod ffi {
         }
 
         bitflags! {
-            flags ControlFlags: tcflag_t {
+            pub flags ControlFlags: tcflag_t {
                 const CIGNORE    = 0x00000001,
                 const CSIZE      = 0x00000300,
                 const CS5        = 0x00000000,
@@ -199,7 +199,7 @@ mod ffi {
         }
 
         bitflags! {
-            flags LocalFlags: tcflag_t {
+            pub flags LocalFlags: tcflag_t {
                 const ECHOKE     = 0x00000001,
                 const ECHOE      = 0x00000002,
                 const ECHOK      = 0x00000004,
@@ -312,7 +312,7 @@ mod ffi {
         pub const NCCS: usize     = 32;
 
         bitflags! {
-            flags InputFlags: tcflag_t {
+            pub flags InputFlags: tcflag_t {
                 const IGNBRK  = 0x00000001,
                 const BRKINT  = 0x00000002,
                 const IGNPAR  = 0x00000004,
@@ -331,14 +331,14 @@ mod ffi {
         }
 
         bitflags! {
-            flags OutputFlags: tcflag_t {
+            pub flags OutputFlags: tcflag_t {
                 const OPOST  = 0x00000001,
                 const ONLCR  = 0x00000004,
             }
         }
 
         bitflags! {
-            flags ControlFlags: tcflag_t {
+            pub flags ControlFlags: tcflag_t {
                 const CSIZE      = 0x00000030,
                 const CS5        = 0x00000000,
                 const CS6        = 0x00000010,
@@ -357,7 +357,7 @@ mod ffi {
         }
 
         bitflags! {
-            flags LocalFlags: tcflag_t {
+            pub flags LocalFlags: tcflag_t {
                 const ECHOKE     = 0x00000800,
                 const ECHOE      = 0x00000010,
                 const ECHOK      = 0x00000020,

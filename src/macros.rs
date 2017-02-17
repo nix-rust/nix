@@ -7,7 +7,7 @@
 /// # Example
 /// ```
 /// libc_bitflags!{
-///     flags ProtFlags: libc::c_int {
+///     pub flags ProtFlags: libc::c_int {
 ///         PROT_NONE,
 ///         PROT_READ,
 ///         PROT_WRITE,

@@ -41,7 +41,7 @@ pub mod quota {
 
     bitflags!(
         #[derive(Default)]
-        flags QuotaValidFlags: u32 {
+        pub flags QuotaValidFlags: u32 {
             const QIF_BLIMITS	 = 1,
             const QIF_SPACE		 = 2,
             const QIF_ILIMITS	 = 4,

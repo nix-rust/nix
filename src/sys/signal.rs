@@ -197,7 +197,7 @@ pub const SIGPOLL : Signal = SIGIO;
 pub const SIGUNUSED : Signal = SIGSYS;
 
 bitflags!{
-    flags SaFlags: libc::c_int {
+    pub flags SaFlags: libc::c_int {
         const SA_NOCLDSTOP = libc::SA_NOCLDSTOP,
         const SA_NOCLDWAIT = libc::SA_NOCLDWAIT,
         const SA_NODEFER   = libc::SA_NODEFER,
