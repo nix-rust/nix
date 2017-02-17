@@ -395,7 +395,8 @@ impl TimeVal {
 impl From<time::Duration> for TimeVal {
     fn from(d: time::Duration) -> Self {
         let micros = d.subsec_nanos() / 1_000;
-        TimeVal(timeval { tv_sec: d.as_secs() as i64, tv_usec: micros as i64})
+        TimeVal(timeval { tv_sec: d.as_secs() as time_t,
+                          tv_usec: micros as suseconds_t})
     }
 }
 
