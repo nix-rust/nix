@@ -10,8 +10,8 @@ use std::ptr::{null, null_mut};
 use sys::signal::*;
 use sys::time::TimeSpec;
 
-/// Mode for `aio_fsync`.  Controls whether only data or both data and metadata
-/// are synced.
+/// Mode for `AioCb::fsync`.  Controls whether only data or both data and
+/// metadata are synced.
 #[repr(i32)]
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum AioFsyncMode {
@@ -46,14 +46,14 @@ pub enum LioMode {
     LIO_NOWAIT = libc::LIO_NOWAIT,
 }
 
-/// Return values for `aio_cancel`
+/// Return values for `AioCb::cancel and aio_cancel_all`
 #[repr(i32)]
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum AioCancelStat {
     /// All outstanding requests were canceled
     AioCanceled = libc::AIO_CANCELED,
     /// Some requests were not canceled.  Their status should be checked with
-    /// `aio_error`
+    /// `AioCb::error`
     AioNotCanceled = libc::AIO_NOTCANCELED,
     /// All of the requests have already finished
     AioAllDone = libc::AIO_ALLDONE,
@@ -73,7 +73,7 @@ pub struct AioCb<'a> {
 impl<'a> AioCb<'a> {
     /// Constructs a new `AioCb` with no associated buffer.
     ///
-    /// The resulting `AioCb` structure is suitable for use with `aio_fsync`.
+    /// The resulting `AioCb` structure is suitable for use with `AioCb::fsync`.
     /// * `fd`  File descriptor.  Required for all aio functions.
     /// * `prio` If POSIX Prioritized IO is supported, then the operation will
     /// be prioritized at the process's priority level minus `prio`
@@ -122,15 +122,15 @@ impl<'a> AioCb<'a> {
     /// mutable slices.
     ///
     /// An `AioCb` created this way cannot be used with `read`, and its
-    /// `LioOpcode` cannot be set to `LIO_READ`.  This method is useful when writing a
-    /// const buffer with `aio_write`, since from_mut_slice can't work with const
-    /// buffers.
+    /// `LioOpcode` cannot be set to `LIO_READ`.  This method is useful when
+    /// writing a const buffer with `AioCb::write`, since from_mut_slice can't
+    /// work with const buffers.
     // Note: another solution to the problem of writing const buffers would be
-    // to genericize AioCb for both &mut [u8] and &[u8] buffers.  aio_read could
-    // take the former and aio_write could take the latter.  However, then
-    // lio_listio wouldn't work, because that function needs a slice of AioCb,
-    // and they must all be the same type.  We're basically stuck with using an
-    // unsafe function, since aio (as designed in C) is an unsafe API.
+    // to genericize AioCb for both &mut [u8] and &[u8] buffers.  AioCb::read
+    // could take the former and AioCb::write could take the latter.  However,
+    // then lio_listio wouldn't work, because that function needs a slice of
+    // AioCb, and they must all be the same type.  We're basically stuck with
+    // using an unsafe function, since aio (as designed in C) is an unsafe API.
     pub fn from_slice(fd: RawFd, offs: off_t, buf: &'a [u8],
                       prio: ::c_int, sigev_notify: SigevNotify,
                       opcode: LioOpcode) -> AioCb {
@@ -175,9 +175,9 @@ impl<'a> AioCb<'a> {
         }
     }
 
-    /// Retrieve error status of an asynchronous operation.  If the request has not
-    /// yet completed, returns `EINPROGRESS`.  Otherwise, returns `Ok` or any other
-    /// error.
+    /// Retrieve error status of an asynchronous operation.  If the request has
+    /// not yet completed, returns `EINPROGRESS`.  Otherwise, returns `Ok` or
+    /// any other error.
     pub fn error(&mut self) -> Result<()> {
         match unsafe { libc::aio_error(&mut self.aiocb as *mut libc::aiocb) } {
             0 => Ok(()),
@@ -202,9 +202,9 @@ impl<'a> AioCb<'a> {
         Errno::result(unsafe { libc::aio_read(p) }).map(drop)
     }
 
-    /// Retrieve return status of an asynchronous operation.  Should only be called
-    /// once for each `AioCb`, after `aio_error` indicates that it has completed.
-    /// The result the same as for `read`, `write`, of `fsync`.
+    /// Retrieve return status of an asynchronous operation.  Should only be
+    /// called once for each `AioCb`, after `AioCb::error` indicates that it has
+    /// completed.  The result is the same as for `read`, `write`, of `fsync`.
     // Note: this should be just `return`, but that's a reserved word
     pub fn aio_return(&mut self) -> Result<isize> {
         let p: *mut libc::aiocb = &mut self.aiocb;
