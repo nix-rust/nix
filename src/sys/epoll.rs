@@ -7,22 +7,22 @@ use ::Error;
 
 bitflags!(
     #[repr(C)]
-    pub flags EpollFlags: u32 {
-        const EPOLLIN = libc::EPOLLIN as u32,
-        const EPOLLPRI = libc::EPOLLPRI as u32,
-        const EPOLLOUT = libc::EPOLLOUT as u32,
-        const EPOLLRDNORM = libc::EPOLLRDNORM as u32,
-        const EPOLLRDBAND = libc::EPOLLRDBAND as u32,
-        const EPOLLWRNORM = libc::EPOLLWRNORM as u32,
-        const EPOLLWRBAND = libc::EPOLLWRBAND as u32,
-        const EPOLLMSG = libc::EPOLLMSG as u32,
-        const EPOLLERR = libc::EPOLLERR as u32,
-        const EPOLLHUP = libc::EPOLLHUP as u32,
-        const EPOLLRDHUP = libc::EPOLLRDHUP as u32,
+    pub flags EpollFlags: libc::c_int {
+        const EPOLLIN = libc::EPOLLIN,
+        const EPOLLPRI = libc::EPOLLPRI,
+        const EPOLLOUT = libc::EPOLLOUT,
+        const EPOLLRDNORM = libc::EPOLLRDNORM,
+        const EPOLLRDBAND = libc::EPOLLRDBAND,
+        const EPOLLWRNORM = libc::EPOLLWRNORM,
+        const EPOLLWRBAND = libc::EPOLLWRBAND,
+        const EPOLLMSG = libc::EPOLLMSG,
+        const EPOLLERR = libc::EPOLLERR,
+        const EPOLLHUP = libc::EPOLLHUP,
+        const EPOLLRDHUP = libc::EPOLLRDHUP,
         const EPOLLEXCLUSIVE = 1 << 28,
-        const EPOLLWAKEUP = libc::EPOLLWAKEUP as u32,
-        const EPOLLONESHOT = libc::EPOLLONESHOT as u32,
-        const EPOLLET = libc::EPOLLET as u32,
+        const EPOLLWAKEUP = libc::EPOLLWAKEUP,
+        const EPOLLONESHOT = libc::EPOLLONESHOT,
+        const EPOLLET = libc::EPOLLET,
     }
 );
 
@@ -48,7 +48,7 @@ pub struct EpollEvent {
 
 impl EpollEvent {
     pub fn new(events: EpollFlags, data: u64) -> Self {
-        EpollEvent { event: libc::epoll_event { events: events.bits(), u64: data } }
+        EpollEvent { event: libc::epoll_event { events: events.bits() as u32, u64: data } }
     }
 
     pub fn empty() -> Self {
@@ -56,7 +56,7 @@ impl EpollEvent {
     }
 
     pub fn events(&self) -> EpollFlags {
-        EpollFlags::from_bits(self.event.events).unwrap()
+        EpollFlags::from_bits(self.event.events as libc::c_int).unwrap()
     }
 
     pub fn data(&self) -> u64 {
