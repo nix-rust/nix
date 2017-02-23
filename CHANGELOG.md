@@ -39,6 +39,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#508](https://github.com/nix-rust/nix/pull/508))
 - Fixed the style of many bitflags and use `libc` in more places.
   ([#503](https://github.com/nix-rust/nix/pull/503))
+- Added `ppoll` in `::nix::poll`
+  ([#520](https://github.com/nix-rust/nix/pull/520))
 
 ### Changed
 - `epoll_ctl` now could accept None as argument `event`
