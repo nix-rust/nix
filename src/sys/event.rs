@@ -105,93 +105,93 @@ libc_bitflags!{
     }
 }
 
-bitflags!(
+libc_bitflags!(
     pub flags FilterFlag: u32 {
         #[cfg(any(target_os = "macos", target_os = "ios"))]
-        const NOTE_ABSOLUTE                        = libc::NOTE_ABSOLUTE,
-        const NOTE_ATTRIB                          = libc::NOTE_ATTRIB,
-        const NOTE_CHILD                           = libc::NOTE_CHILD,
-        const NOTE_DELETE                          = libc::NOTE_DELETE,
+        NOTE_ABSOLUTE,
+        NOTE_ATTRIB,
+        NOTE_CHILD,
+        NOTE_DELETE,
         #[cfg(target_os = "openbsd")]
-        const NOTE_EOF                             = libc::NOTE_EOF,
-        const NOTE_EXEC                            = libc::NOTE_EXEC,
-        const NOTE_EXIT                            = libc::NOTE_EXIT,
+        NOTE_EOF,
+        NOTE_EXEC,
+        NOTE_EXIT,
         #[cfg(any(target_os = "macos", target_os = "ios"))]
-        const NOTE_EXIT_REPARENTED                 = libc::NOTE_EXIT_REPARENTED,
+        NOTE_EXIT_REPARENTED,
         #[cfg(any(target_os = "macos", target_os = "ios"))]
-        const NOTE_EXITSTATUS                      = libc::NOTE_EXITSTATUS,
-        const NOTE_EXTEND                          = libc::NOTE_EXTEND,
+        NOTE_EXITSTATUS,
+        NOTE_EXTEND,
         #[cfg(any(target_os = "macos", 
                   target_os = "ios",
                   target_os = "freebsd",
                   target_os = "dragonfly"))]
-        const NOTE_FFAND                           = libc::NOTE_FFAND,
+        NOTE_FFAND,
         #[cfg(any(target_os = "macos",
                   target_os = "ios",
                   target_os = "freebsd",
                   target_os = "dragonfly"))]
-        const NOTE_FFCOPY                          = libc::NOTE_FFCOPY,
+        NOTE_FFCOPY,
         #[cfg(any(target_os = "macos",
                   target_os = "ios",
                   target_os = "freebsd",
                   target_os = "dragonfly"))]
-        const NOTE_FFCTRLMASK                      = libc::NOTE_FFCTRLMASK,
+        NOTE_FFCTRLMASK,
         #[cfg(any(target_os = "macos",
                   target_os = "ios",
                   target_os = "freebsd",
                   target_os = "dragonfly"))]
-        const NOTE_FFLAGSMASK                      = libc::NOTE_FFLAGSMASK,
+        NOTE_FFLAGSMASK,
         #[cfg(any(target_os = "macos",
                   target_os = "ios",
                   target_os = "freebsd",
                   target_os = "dragonfly"))]
-        const NOTE_FFNOP                           = libc::NOTE_FFNOP,
+        NOTE_FFNOP,
         #[cfg(any(target_os = "macos",
                   target_os = "ios",
                   target_os = "freebsd",
                   target_os = "dragonfly"))]
-        const NOTE_FFOR                            = libc::NOTE_FFOR,
-        const NOTE_FORK                            = libc::NOTE_FORK,
-        const NOTE_LINK                            = libc::NOTE_LINK,
-        const NOTE_LOWAT                           = libc::NOTE_LOWAT,
+        NOTE_FFOR,
+        NOTE_FORK,
+        NOTE_LINK,
+        NOTE_LOWAT,
         #[cfg(target_os = "freebsd")]
-        const NOTE_MSECONDS                        = libc::NOTE_MSECONDS,
+        NOTE_MSECONDS,
         #[cfg(any(target_os = "macos", target_os = "ios"))]
-        const NOTE_NONE                            = libc::NOTE_NONE,
+        NOTE_NONE,
         #[cfg(any(target_os = "macos", target_os = "ios", target_os = "freebsd"))]
-        const NOTE_NSECONDS                        = libc::NOTE_NSECONDS,
+        NOTE_NSECONDS,
         #[cfg(target_os = "dragonfly")]
-        const NOTE_OOB                             = libc::NOTE_OOB,
-        const NOTE_PCTRLMASK                       = libc::NOTE_PCTRLMASK,
-        const NOTE_PDATAMASK                       = libc::NOTE_PDATAMASK,
+        NOTE_OOB,
+        NOTE_PCTRLMASK,
+        NOTE_PDATAMASK,
         #[cfg(any(target_os = "macos", target_os = "ios"))]
-        const NOTE_REAP                            = libc::NOTE_REAP,
-        const NOTE_RENAME                          = libc::NOTE_RENAME,
-        const NOTE_REVOKE                          = libc::NOTE_REVOKE,
+        NOTE_REAP,
+        NOTE_RENAME,
+        NOTE_REVOKE,
         #[cfg(any(target_os = "macos", target_os = "ios", target_os = "freebsd"))]
-        const NOTE_SECONDS                         = libc::NOTE_SECONDS,
+        NOTE_SECONDS,
         #[cfg(any(target_os = "macos", target_os = "ios"))]
-        const NOTE_SIGNAL                          = libc::NOTE_SIGNAL,
-        const NOTE_TRACK                           = libc::NOTE_TRACK,
-        const NOTE_TRACKERR                        = libc::NOTE_TRACKERR,
+        NOTE_SIGNAL,
+        NOTE_TRACK,
+        NOTE_TRACKERR,
         #[cfg(any(target_os = "macos",
                   target_os = "ios",
                   target_os = "freebsd",
                   target_os = "dragonfly"))]
-        const NOTE_TRIGGER                         = libc::NOTE_TRIGGER,
+        NOTE_TRIGGER,
         #[cfg(target_os = "openbsd")]
-        const NOTE_TRUNCATE                        = libc::NOTE_TRUNCATE,
+        NOTE_TRUNCATE,
         #[cfg(any(target_os = "macos", target_os = "ios", target_os = "freebsd"))]
-        const NOTE_USECONDS                        = libc::NOTE_USECONDS,
+        NOTE_USECONDS,
         #[cfg(any(target_os = "macos", target_os = "ios"))]
-        const NOTE_VM_ERROR                        = libc::NOTE_VM_ERROR,
+        NOTE_VM_ERROR,
         #[cfg(any(target_os = "macos", target_os = "ios"))]
-        const NOTE_VM_PRESSURE                     = libc::NOTE_VM_PRESSURE,
+        NOTE_VM_PRESSURE,
         #[cfg(any(target_os = "macos", target_os = "ios"))]
-        const NOTE_VM_PRESSURE_SUDDEN_TERMINATE    = libc::NOTE_VM_PRESSURE_SUDDEN_TERMINATE,
+        NOTE_VM_PRESSURE_SUDDEN_TERMINATE,
         #[cfg(any(target_os = "macos", target_os = "ios"))]
-        const NOTE_VM_PRESSURE_TERMINATE           = libc::NOTE_VM_PRESSURE_TERMINATE,
-        const NOTE_WRITE                           = libc::NOTE_WRITE,
+        NOTE_VM_PRESSURE_TERMINATE,
+        NOTE_WRITE,
     }
 );
 

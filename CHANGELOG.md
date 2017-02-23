@@ -37,6 +37,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#497](https://github.com/nix-rust/nix/pull/497))
 - Added `major` and `minor` in `::nix::sys::stat` for decomposing `dev_t`
   ([#508](https://github.com/nix-rust/nix/pull/508))
+- Fixed the style of many bitflags and use `libc` in more places.
+  ([#503](https://github.com/nix-rust/nix/pull/503))
 
 ### Changed
 - `epoll_ctl` now could accept None as argument `event`

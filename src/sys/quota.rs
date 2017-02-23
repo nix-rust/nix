@@ -7,7 +7,7 @@ use libc::{c_int, c_char};
               target_arch = "arm")),
           )]
 pub mod quota {
-    use libc::c_int;
+    use libc::{self, c_int};
 
     pub struct QuotaCmd(pub QuotaSubCmd, pub QuotaType);
     pub type QuotaSubCmd = c_int;
@@ -39,19 +39,19 @@ pub mod quota {
     pub const QFMT_VFS_V0:	QuotaFmt = 2;
     pub const QFMT_VFS_V1:  QuotaFmt = 4;
 
-    bitflags!(
+    libc_bitflags!(
         #[derive(Default)]
         pub flags QuotaValidFlags: u32 {
-            const QIF_BLIMITS	 = 1,
-            const QIF_SPACE		 = 2,
-            const QIF_ILIMITS	 = 4,
-            const QIF_INODES	 = 8,
-            const QIF_BTIME 	 = 16,
-            const QIF_ITIME 	 = 32,
-            const QIF_LIMITS 	 = QIF_BLIMITS.bits | QIF_ILIMITS.bits,
-            const QIF_USAGE 	 = QIF_SPACE.bits | QIF_INODES.bits,
-            const QIF_TIMES 	 = QIF_BTIME.bits | QIF_ITIME.bits,
-            const QIF_ALL 		 = QIF_LIMITS.bits | QIF_USAGE.bits | QIF_TIMES.bits
+            QIF_BLIMITS,
+            QIF_SPACE,
+            QIF_ILIMITS,
+            QIF_INODES,
+            QIF_BTIME,
+            QIF_ITIME,
+            QIF_LIMITS,
+            QIF_USAGE,
+            QIF_TIMES,
+            QIF_ALL,
         }
     );
 

@@ -7,22 +7,22 @@ use ::Error;
 
 bitflags!(
     #[repr(C)]
-    pub flags EpollFlags: u32 {
-        const EPOLLIN = 0x001,
-        const EPOLLPRI = 0x002,
-        const EPOLLOUT = 0x004,
-        const EPOLLRDNORM = 0x040,
-        const EPOLLRDBAND = 0x080,
-        const EPOLLWRNORM = 0x100,
-        const EPOLLWRBAND = 0x200,
-        const EPOLLMSG = 0x400,
-        const EPOLLERR = 0x008,
-        const EPOLLHUP = 0x010,
-        const EPOLLRDHUP = 0x2000,
+    pub flags EpollFlags: libc::c_int {
+        const EPOLLIN = libc::EPOLLIN,
+        const EPOLLPRI = libc::EPOLLPRI,
+        const EPOLLOUT = libc::EPOLLOUT,
+        const EPOLLRDNORM = libc::EPOLLRDNORM,
+        const EPOLLRDBAND = libc::EPOLLRDBAND,
+        const EPOLLWRNORM = libc::EPOLLWRNORM,
+        const EPOLLWRBAND = libc::EPOLLWRBAND,
+        const EPOLLMSG = libc::EPOLLMSG,
+        const EPOLLERR = libc::EPOLLERR,
+        const EPOLLHUP = libc::EPOLLHUP,
+        const EPOLLRDHUP = libc::EPOLLRDHUP,
         const EPOLLEXCLUSIVE = 1 << 28,
-        const EPOLLWAKEUP = 1 << 29,
-        const EPOLLONESHOT = 1 << 30,
-        const EPOLLET = 1 << 31
+        const EPOLLWAKEUP = libc::EPOLLWAKEUP,
+        const EPOLLONESHOT = libc::EPOLLONESHOT,
+        const EPOLLET = libc::EPOLLET,
     }
 );
 
@@ -48,7 +48,7 @@ pub struct EpollEvent {
 
 impl EpollEvent {
     pub fn new(events: EpollFlags, data: u64) -> Self {
-        EpollEvent { event: libc::epoll_event { events: events.bits(), u64: data } }
+        EpollEvent { event: libc::epoll_event { events: events.bits() as u32, u64: data } }
     }
 
     pub fn empty() -> Self {
@@ -56,7 +56,7 @@ impl EpollEvent {
     }
 
     pub fn events(&self) -> EpollFlags {
-        EpollFlags::from_bits(self.event.events).unwrap()
+        EpollFlags::from_bits(self.event.events as libc::c_int).unwrap()
     }
 
     pub fn data(&self) -> u64 {

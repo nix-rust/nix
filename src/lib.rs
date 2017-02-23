@@ -9,6 +9,7 @@
 // warnings even though the macro expands into something with allow(dead_code)
 #![allow(dead_code)]
 #![cfg_attr(test, deny(warnings))]
+#![recursion_limit = "500"]
 
 #[macro_use]
 extern crate bitflags;

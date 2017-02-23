@@ -25,10 +25,10 @@ use std::os::unix::io::{RawFd, AsRawFd};
 use std::mem;
 
 
-bitflags!{
+libc_bitflags!{
     pub flags SfdFlags: libc::c_int {
-        const SFD_NONBLOCK  = libc::SFD_NONBLOCK,
-        const SFD_CLOEXEC   = libc::SFD_CLOEXEC,
+        SFD_NONBLOCK,
+        SFD_CLOEXEC,
     }
 }
 
