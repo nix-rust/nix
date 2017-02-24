@@ -193,12 +193,12 @@ fn test_write() {
 }
 
 // XXX: should be sig_atomic_t, but rust's libc doesn't define that yet
-static mut signaled: i32 = 0;
+static mut SIGNALED: i32 = 0;
 
 extern fn sigfunc(_: c_int) {
     // It's a pity that Rust can't understand that static mutable sig_atomic_t
     // variables can be safely accessed
-    unsafe { signaled = 1 };
+    unsafe { SIGNALED = 1 };
 }
 
 // Test an aio operation with completion delivered by a signal
@@ -207,7 +207,7 @@ fn test_write_sigev_signal() {
     let sa = SigAction::new(SigHandler::Handler(sigfunc),
                             SA_RESETHAND,
                             SigSet::empty());
-    unsafe {signaled = 0 };
+    unsafe {SIGNALED = 0 };
     unsafe { sigaction(Signal::SIGUSR2, &sa) }.unwrap();
 
     const INITIAL: &'static [u8] = b"abcdef123456";
@@ -227,7 +227,7 @@ fn test_write_sigev_signal() {
                            },
                            LioOpcode::LIO_NOP);
     aiocb.write().unwrap();
-    while unsafe { signaled == 0 } {
+    while unsafe { SIGNALED == 0 } {
         thread::sleep(time::Duration::from_millis(10));
     }
 
@@ -357,11 +357,11 @@ fn test_lio_listio_signal() {
                                 0,   //priority
                                 SigevNotify::SigevNone,
                                 LioOpcode::LIO_READ);
-        unsafe {signaled = 0 };
+        unsafe {SIGNALED = 0 };
         unsafe { sigaction(Signal::SIGUSR2, &sa) }.unwrap();
         let err = lio_listio(LioMode::LIO_NOWAIT, &[&mut wcb, &mut rcb], sigev_notify);
         err.expect("lio_listio failed");
-        while unsafe { signaled == 0 } {
+        while unsafe { SIGNALED == 0 } {
             thread::sleep(time::Duration::from_millis(10));
         }
 

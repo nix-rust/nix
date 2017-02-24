@@ -3,6 +3,8 @@
 
 use libc;
 use {Errno, Error, Result};
+use std::fmt;
+use std::fmt::Debug;
 use std::mem;
 #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
 use std::os::unix::io::RawFd;
@@ -505,6 +507,33 @@ impl SigEvent {
     }
 }
 
+impl Debug for SigEvent {
+    #[cfg(any(target_os = "linux", target_os = "freebsd"))]
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        fmt.debug_struct("SigEvent")
+            .field("sigev_notify", &self.sigevent.sigev_notify)
+            .field("sigev_signo", &self.sigevent.sigev_signo)
+            .field("sigev_value", &self.sigevent.sigev_value.sival_ptr)
+            .field("sigev_notify_thread_id",
+                    &self.sigevent.sigev_notify_thread_id)
+            .finish()
+    }
+
+    #[cfg(not(any(target_os = "linux", target_os = "freebsd")))]
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        fmt.debug_struct("SigEvent")
+            .field("sigev_notify", &self.sigevent.sigev_notify)
+            .field("sigev_signo", &self.sigevent.sigev_signo)
+            .field("sigev_value", &self.sigevent.sigev_value.sival_ptr)
+            .finish()
+    }
+}
+
+impl<'a> From<&'a libc::sigevent> for SigEvent {
+    fn from(sigevent: &libc::sigevent) -> Self {
+        SigEvent{ sigevent: sigevent.clone() }
+    }
+}
 
 #[cfg(test)]
 mod tests {

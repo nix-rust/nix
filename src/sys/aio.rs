@@ -2,6 +2,8 @@ use {Error, Errno, Result};
 use std::os::unix::io::RawFd;
 use libc::{c_void, off_t, size_t};
 use libc;
+use std::fmt;
+use std::fmt::Debug;
 use std::io::Write;
 use std::io::stderr;
 use std::marker::PhantomData;
@@ -268,6 +270,23 @@ pub fn lio_listio(mode: LioMode, list: &[&mut AioCb],
     Errno::result(unsafe {
         libc::lio_listio(mode as i32, p, list.len() as i32, sigevp)
     }).map(drop)
+}
+
+impl<'a> Debug for AioCb<'a> {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        fmt.debug_struct("AioCb")
+            .field("aio_fildes", &self.aiocb.aio_fildes)
+            .field("aio_offset", &self.aiocb.aio_offset)
+            .field("aio_buf", &self.aiocb.aio_buf)
+            .field("aio_nbytes", &self.aiocb.aio_nbytes)
+            .field("aio_lio_opcode", &self.aiocb.aio_lio_opcode)
+            .field("aio_reqprio", &self.aiocb.aio_reqprio)
+            .field("aio_sigevent", &SigEvent::from(&self.aiocb.aio_sigevent))
+            .field("mutable", &self.mutable)
+            .field("in_progress", &self.in_progress)
+            .field("phantom", &self.phantom)
+            .finish()
+    }
 }
 
 impl<'a> Drop for AioCb<'a> {
