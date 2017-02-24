@@ -30,6 +30,9 @@ pub unsafe extern fn gethostname(name: *mut c_char, len: size_t) -> c_int;
 pub fn gethostname(name: &mut [u8]) -> Result<()>;
 ```
 
+## Requirements
+Rust >= 1.7.0
+
 ## Usage
 
 To use `nix`, first add this to your `Cargo.toml`:
