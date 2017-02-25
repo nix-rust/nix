@@ -467,9 +467,9 @@ impl SigEvent {
             SigevNotify::SigevKevent{..} => libc::SIGEV_KEVENT,
             #[cfg(target_os = "freebsd")]
             SigevNotify::SigevThreadId{..} => libc::SIGEV_THREAD_ID,
-            #[cfg(all(target_os = "linux", target_env = "gnu"))]
+            #[cfg(all(target_os = "linux", target_env = "gnu", not(target_arch = "mips")))]
             SigevNotify::SigevThreadId{..} => libc::SIGEV_THREAD_ID,
-            #[cfg(all(target_os = "linux", target_env = "musl"))]
+            #[cfg(any(all(target_os = "linux", target_env = "musl"), target_arch = "mips"))]
             SigevNotify::SigevThreadId{..} => 4  // No SIGEV_THREAD_ID defined
         };
         sev.sigev_signo = match sigev_notify {
