@@ -34,9 +34,9 @@ matrix:
       os: osx
 
     # *BSD
-    - env: TARGET=i686-unknown-freebsd
-    - env: TARGET=x86_64-unknown-freebsd
-    - env: TARGET=x86_64-unknown-netbsd
+    - env: TARGET=i686-unknown-freebsd DISABLE_TESTS=1
+    - env: TARGET=x86_64-unknown-freebsd DISABLE_TESTS=1
+    - env: TARGET=x86_64-unknown-netbsd DISABLE_TESTS=1
 
     # Other architectures
     - env: TARGET=aarch64-unknown-linux-gnu
