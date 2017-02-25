@@ -2,8 +2,8 @@
 
 set -ex
 
-# TODO This is the "test phase", tweak it as you see fit
 main() {
+    # Build debug and release targets
     cross build --target $TARGET
     cross build --target $TARGET --release
 
@@ -11,11 +11,13 @@ main() {
         return
     fi
 
+    # Run tests on debug and release targets.
     cross test --target $TARGET
     cross test --target $TARGET --release
 
-    cross run --target $TARGET
-    cross run --target $TARGET --release
+    # nix is a library -- no run target
+    # cross run --target $TARGET
+    # cross run --target $TARGET --release
 }
 
 # we don't run the "test phase" when doing deploys
