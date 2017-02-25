@@ -6,20 +6,19 @@ language: rust
 services: docker
 sudo: required
 
-# TODO This is the Rust channel that build jobs will use by default but can be
+# This is the Rust channel that build jobs will use by default but can be
 # overridden on a case by case basis down below
 rust: stable
 
 env:
   global:
-    # TODO Update this to match the name of your project.
-    - CRATE_NAME=trust
+    - CRATE_NAME=nix
 
     # default job
     - TARGET=x86_64-unknown-linux-gnu
 
 matrix:
-  # TODO These are all the build jobs. Adjust as necessary. Comment out what you
+  # These are all the build jobs. Adjust as necessary. Comment out what you
   # don't need
   include:
     # Linux
@@ -44,12 +43,12 @@ matrix:
     - env: TARGET=armv7-unknown-linux-gnueabihf
     - env: TARGET=mips-unknown-linux-gnu
     - env: TARGET=mips64-unknown-linux-gnuabi64
-    - env: TARGET=mips64el-unknown-linux-gnuabi64
-    - env: TARGET=mipsel-unknown-linux-gnu
+    # - env: TARGET=mips64el-unknown-linux-gnuabi64
+    # - env: TARGET=mipsel-unknown-linux-gnu
     - env: TARGET=powerpc-unknown-linux-gnu
     - env: TARGET=powerpc64-unknown-linux-gnu
-    - env: TARGET=powerpc64le-unknown-linux-gnu
-    - env: TARGET=s390x-unknown-linux-gnu DISABLE_TESTS=1
+    # - env: TARGET=powerpc64le-unknown-linux-gnu
+    # - env: TARGET=s390x-unknown-linux-gnu DISABLE_TESTS=1
 
     # Testing other channels
     - env: TARGET=x86_64-unknown-linux-gnu
@@ -74,15 +73,17 @@ deploy:
   # - Encrypt it: `travis encrypt GH_TOKEN=0123456789012345678901234567890123456789`
   # - Paste the output down here
   api_key:
-    secure: A9v3PIzQQ4U08OHFmDPQzNXbNHEb7YHyLXCvMF+dXFuNSvhUNlmQYykxqUf3dvikhJL2/bsZ14umm7ni7fQh0tGwJ4+lPpNzYAcweGgNXnWvjTpY6ovuRbr3gs4/srkyxp/GBDmSW5L8wFN3hKCB+Lm0YnIPB9IA2afP8a30+8VTXT9nv7pNqGny4ilN41ycr4DZi3sQoXdbruy7ClN7gsWW/GUiudBccHVIjmTapOFKLwZHODaUl/1/RDWQzh+i+17e1ivXuJPktDSrqmHPTZ15OjklnHKd6t179ry6VkGRg4R/R/YukVIqGzeaXGWAwdAQ5gE8cjGZghJLVi2jkDBJ85z8MvT+zLZLyliiuhLc/X8y7mkE1n0FKFtXXzFVt0l7V1LaEKbIbiV6XX3jsir4qgkqWjPHBZqO5mkGNFS16Dmt30/ZtEPAzXiINFXbWuWrpQ/LZ4NSto8IMrRTcoyDbAga/KYxJiNIeVuCe1E9dbytDM7K0GLtxJTul/WnnSeI6r//EFyC4bxYjyHhCXaag4q14KM+ak4rB0QgxsYzyGuh2MqyCoVj8YJLjLdKnL/SV7W7LPD40xlxvI6VCYTVi2ILHwL6vCxpukXYteX0c5IAIWkISDKu6nNBEgmCHXXPSqYSrgE5g7/QoCQHI8++nR8iKe0s7TWxZRydby8=
+    secure: S1ktt0eqmfrEHnYPf4WO7mZtatz/FWfYWBp8nwdc0nd8H6UNZ9Dwy3tJpVe0N9rpB9vAFnkdw6R4jdkIcgxfory2F3F8k/mh8cWn0mkvh2N34YjHMYLnuVzOoFrWai7IcPfROpdlY0tGBlwNj5KMkeBnHUJzd2q4j/4j/tlrfmg=
   file_glob: true
   file: $CRATE_NAME-$TRAVIS_TAG-$TARGET.*
   on:
-    # TODO Here you can pick which targets will generate binary releases
+    # Here you can pick which targets will generate binary releases
     # In this example, there are some targets that are tested using the stable
     # and nightly channels. This condition makes sure there is only one release
     # for such targets and that's generated using the stable channel
-    condition: $TRAVIS_RUST_VERSION = stable
+    #
+    # Here we make it so we never generate binary releases
+    condition: $DEPLOY = never
     tags: true
   provider: releases
   skip_cleanup: true
