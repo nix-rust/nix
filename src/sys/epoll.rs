@@ -5,24 +5,24 @@ use std::ptr;
 use std::mem;
 use ::Error;
 
-bitflags!(
-    #[repr(C)]
+libc_bitflags!(
     pub flags EpollFlags: libc::c_int {
-        const EPOLLIN = libc::EPOLLIN,
-        const EPOLLPRI = libc::EPOLLPRI,
-        const EPOLLOUT = libc::EPOLLOUT,
-        const EPOLLRDNORM = libc::EPOLLRDNORM,
-        const EPOLLRDBAND = libc::EPOLLRDBAND,
-        const EPOLLWRNORM = libc::EPOLLWRNORM,
-        const EPOLLWRBAND = libc::EPOLLWRBAND,
-        const EPOLLMSG = libc::EPOLLMSG,
-        const EPOLLERR = libc::EPOLLERR,
-        const EPOLLHUP = libc::EPOLLHUP,
-        const EPOLLRDHUP = libc::EPOLLRDHUP,
-        const EPOLLEXCLUSIVE = 1 << 28,
-        const EPOLLWAKEUP = libc::EPOLLWAKEUP,
-        const EPOLLONESHOT = libc::EPOLLONESHOT,
-        const EPOLLET = libc::EPOLLET,
+        EPOLLIN,
+        EPOLLPRI,
+        EPOLLOUT,
+        EPOLLRDNORM,
+        EPOLLRDBAND,
+        EPOLLWRNORM,
+        EPOLLWRBAND,
+        EPOLLMSG,
+        EPOLLERR,
+        EPOLLHUP,
+        EPOLLRDHUP,
+        #[cfg(target_os = "linux")]  // Added in 4.5; not in Android.
+        EPOLLEXCLUSIVE,
+        EPOLLWAKEUP,
+        EPOLLONESHOT,
+        EPOLLET,
     }
 );
 
