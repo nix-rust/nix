@@ -14,10 +14,6 @@ main() {
     # Run tests on debug and release targets.
     cross test --target $TARGET
     cross test --target $TARGET --release
-
-    # nix is a library -- no run target
-    # cross run --target $TARGET
-    # cross run --target $TARGET --release
 }
 
 # we don't run the "test phase" when doing deploys
