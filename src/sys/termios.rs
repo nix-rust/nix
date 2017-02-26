@@ -96,22 +96,14 @@ mod ffi {
 
     #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "dragonfly", target_os = "openbsd", target_os = "netbsd"))]
     pub mod consts {
-        #[cfg(not(any(target_os = "dragonfly", target_os = "netbsd")))]
-        use libc::{c_int, c_ulong, c_uchar};
-        #[cfg(any(target_os = "dragonfly", target_os = "netbsd"))]
-        use libc::{c_int, c_uint, c_uchar};
 
-        #[cfg(not(any(target_os = "dragonfly", target_os = "netbsd")))]
-        pub type tcflag_t = c_ulong;
-        #[cfg(any(target_os = "dragonfly", target_os = "netbsd"))]
-        pub type tcflag_t = c_uint;
+        use libc;
 
-        pub type cc_t = c_uchar;
+        use libc::{c_int, c_uint, c_ulong, c_uchar};
 
-        #[cfg(not(any(target_os = "dragonfly", target_os = "netbsd")))]
-        pub type speed_t = c_ulong;
-        #[cfg(any(target_os = "dragonfly", target_os = "netbsd"))]
-        pub type speed_t = c_uint;
+        pub type tcflag_t = libc::tcflag_t;
+        pub type cc_t = libc::cc_t;
+        pub type speed_t = libc::speed_t;
 
         #[repr(C)]
         #[derive(Clone, Copy)]
