@@ -1,3 +1,8 @@
+#[cfg(any(target_os = "linux", target_os = "android"))]
+use sys::time::TimeSpec;
+#[cfg(any(target_os = "linux", target_os = "android"))]
+use sys::signal::SigSet;
+
 use libc;
 use {Errno, Result};
 
@@ -45,5 +50,18 @@ pub fn poll(fds: &mut [PollFd], timeout: libc::c_int) -> Result<libc::c_int> {
                    timeout)
     };
 
+    Errno::result(res)
+}
+
+#[cfg(any(target_os = "linux", target_os = "android"))]
+pub fn ppoll(fds: &mut [PollFd], timeout: TimeSpec, sigmask: SigSet) -> Result<libc::c_int> {
+
+
+    let res = unsafe {
+        libc::ppoll(fds.as_mut_ptr() as *mut libc::pollfd,
+                    fds.len() as libc::nfds_t,
+                    timeout.as_ref(),
+                    sigmask.as_ref())
+    };
     Errno::result(res)
 }
