@@ -158,7 +158,7 @@ mod ffi {
                     B7200, B14400, B28800, B57600,
                     B76800, B115200, B230400};
 
-                #[cfg(any(target_os = "netbsd", target_os = "freebsd"))]
+                #[cfg(target_os = "freebsd")]
                 use libc::{B460800, B921600};
 
                 match s {
@@ -185,9 +185,9 @@ mod ffi {
                     B76800 => BaudRate::B76800,
                     B115200 => BaudRate::B115200,
                     B230400 => BaudRate::B230400,
-                    #[cfg(any(target_os = "netbsd", target_os = "freebsd"))]
+                    #[cfg(target_os = "freebsd")]
                     B460800 => BaudRate::B460800,
-                    #[cfg(any(target_os = "netbsd", target_os = "freebsd"))]
+                    #[cfg(target_os = "freebsd")]
                     B921600 => BaudRate::B921600,
                     b @ _ => unreachable!("Invalid baud constant: {}", b),
                 }
