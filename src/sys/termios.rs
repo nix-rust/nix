@@ -776,6 +776,20 @@ pub fn cfgetospeed(termios: &Termios) -> BaudRate {
     unsafe { libc::cfgetospeed(&*inner_termios) }.into()
 }
 
+/// Configures the port to something like the "raw" mode of the old Version 7 terminal driver (see
+/// [termios(3)](http://man7.org/linux/man-pages/man3/termios.3.html)).
+///
+/// `cfmakeraw()` configures the termios structure such that input is available character-by-
+/// character, echoing is disabled, and all special input and output processing is disabled. Note
+/// that this is a non-standard function, but is available on Linux and BSDs.
+pub fn cfmakeraw(termios: &mut Termios) {
+    let inner_termios = unsafe { termios.get_libc_termios_mut() };
+    unsafe {
+        libc::cfmakeraw(inner_termios);
+    }
+    termios.update_wrapper();
+}
+
 /// Set input baud rate (see
 /// [cfsetispeed(3p)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/cfsetispeed.html)).
 ///
@@ -794,6 +808,18 @@ pub fn cfsetispeed(termios: &mut Termios, baud: BaudRate) -> Result<()> {
 pub fn cfsetospeed(termios: &mut Termios, baud: BaudRate) -> Result<()> {
     let inner_termios = unsafe { termios.get_libc_termios_mut() };
     let res = unsafe { libc::cfsetospeed(inner_termios, baud as libc::speed_t) };
+    termios.update_wrapper();
+    Errno::result(res).map(drop)
+}
+
+/// Set both the input and output baud rates (see
+/// [termios(3)](http://man7.org/linux/man-pages/man3/termios.3.html)).
+///
+/// `cfsetspeed()` sets the input and output baud rate in the given termios structure. Note that
+/// this is part of the 4.4BSD standard and not part of POSIX.
+pub fn cfsetspeed(termios: &mut Termios, baud: BaudRate) -> Result<()> {
+    let inner_termios = unsafe { termios.get_libc_termios_mut() };
+    let res = unsafe { libc::cfsetspeed(inner_termios, baud as libc::speed_t) };
     termios.update_wrapper();
     Errno::result(res).map(drop)
 }

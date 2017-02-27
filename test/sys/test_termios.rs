@@ -3,7 +3,7 @@ use std::os::unix::prelude::*;
 use nix::{Error, fcntl, unistd};
 use nix::errno::Errno;
 use nix::pty::openpty;
-use nix::sys::termios::{self, ECHO, OPOST, OCRNL, tcgetattr};
+use nix::sys::termios::{self, ECHO, OPOST, OCRNL, Termios, tcgetattr};
 use nix::unistd::{read, write, close};
 
 /// Helper function analogous to std::io::Write::write_all, but for `RawFd`s
@@ -103,4 +103,10 @@ fn test_local_flags() {
     let mut buf = [0u8; 10];
     let read = read(pty.master, &mut buf).unwrap_err();
     assert_eq!(read, Error::Sys(Errno::EAGAIN));
+}
+
+#[test]
+fn test_cfmakeraw() {
+    let mut termios = unsafe { Termios::default_uninit() };
+    termios::cfmakeraw(&mut termios);
 }
