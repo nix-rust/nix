@@ -22,8 +22,14 @@ pub struct KEvent {
           target_os = "dragonfly", target_os = "macos",
           target_os = "ios"))]
 type type_of_udata = *mut ::c_void;
+#[cfg(any(target_os = "openbsd", target_os = "freebsd",
+          target_os = "dragonfly", target_os = "macos",
+          target_os = "ios"))]
+type type_of_data = libc::intptr_t;
 #[cfg(any(target_os = "netbsd"))]
 type type_of_udata = intptr_t;
+#[cfg(any(target_os = "netbsd"))]
+type type_of_data = libc::int64_t;
 
 #[cfg(not(target_os = "netbsd"))]
 type type_of_event_filter = i16;
@@ -58,9 +64,9 @@ pub enum EventFilter {
 }
 
 #[cfg(target_os = "netbsd")]
-type type_of_event_filter = i32;
+type type_of_event_filter = libc::uint32_t;
 #[cfg(target_os = "netbsd")]
-#[repr(u32)]
+#[repr(i32)]
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum EventFilter {
     EVFILT_READ = libc::EVFILT_READ,
@@ -216,7 +222,7 @@ impl KEvent {
             filter: filter as type_of_event_filter,
             flags: flags.bits(),
             fflags: fflags.bits(),
-            data: data,
+            data: data as type_of_data,
             udata: udata as type_of_udata
         } }
     }
@@ -238,7 +244,7 @@ impl KEvent {
     }
 
     pub fn data(&self) -> intptr_t {
-        self.kevent.data
+        self.kevent.data as intptr_t
     }
 
     pub fn udata(&self) -> intptr_t {
