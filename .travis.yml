@@ -13,6 +13,7 @@ rust: stable
 env:
   global:
     - CRATE_NAME=nix
+    - CARGO_TEST_THREADS=1
 
     # default job
     - TARGET=x86_64-unknown-linux-gnu
