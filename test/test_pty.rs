@@ -139,7 +139,8 @@ fn test_openpty_with_termios() {
         close(pty.slave).unwrap();
         termios
     };
-    termios.c_oflag &= !ONLCR;
+    // Make sure newlines are not transformed so the data is preserved when sent.
+    termios.output_flags.remove(ONLCR);
 
     let pty = openpty(None, &termios).unwrap();
     // Must be valid file descriptors

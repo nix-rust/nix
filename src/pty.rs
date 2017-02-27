@@ -188,23 +188,57 @@ pub fn unlockpt(fd: &PtyMaster) -> Result<()> {
 pub fn openpty<'a, 'b, T: Into<Option<&'a Winsize>>, U: Into<Option<&'b Termios>>>(winsize: T, termios: U) -> Result<OpenptyResult> {
     use std::ptr;
 
-    let mut slave: libc::c_int = -1;
-    let mut master: libc::c_int = -1;
-    let c_termios = match termios.into() {
-        Some(termios) => termios as *const Termios,
-        None => ptr::null() as *const Termios,
-    };
-    let c_winsize = match winsize.into() {
-        Some(ws) => ws as *const Winsize,
-        None => ptr::null() as *const Winsize,
-    };
-    let ret = unsafe {
-        libc::openpty(
-            &mut master as *mut libc::c_int,
-            &mut slave as *mut libc::c_int,
-            ptr::null_mut(),
-            c_termios as *mut libc::termios,
-            c_winsize as *mut Winsize)
+    let mut slave: libc::c_int = unsafe { mem::uninitialized() };
+    let mut master: libc::c_int = unsafe { mem::uninitialized() };
+    let ret = {
+        match (termios.into(), winsize.into()) {
+            (Some(termios), Some(winsize)) => {
+                let inner_termios = termios.get_libc_termios();
+                unsafe {
+                    libc::openpty(
+                        &mut master,
+                        &mut slave,
+                        ptr::null_mut(),
+                        &*inner_termios as *const libc::termios as *mut _,
+                        winsize as *const Winsize as *mut _,
+                    )
+                }
+            }
+            (None, Some(winsize)) => {
+                unsafe {
+                    libc::openpty(
+                        &mut master,
+                        &mut slave,
+                        ptr::null_mut(),
+                        ptr::null_mut(),
+                        winsize as *const Winsize as *mut _,
+                    )
+                }
+            }
+            (Some(termios), None) => {
+                let inner_termios = termios.get_libc_termios();
+                unsafe {
+                    libc::openpty(
+                        &mut master,
+                        &mut slave,
+                        ptr::null_mut(),
+                        &*inner_termios as *const libc::termios as *mut _,
+                        ptr::null_mut(),
+                    )
+                }
+            }
+            (None, None) => {
+                unsafe {
+                    libc::openpty(
+                        &mut master,
+                        &mut slave,
+                        ptr::null_mut(),
+                        ptr::null_mut(),
+                        ptr::null_mut(),
+                    )
+                }
+            }
+        }
     };
 
     Errno::result(ret)?;
