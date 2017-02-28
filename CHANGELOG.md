@@ -92,6 +92,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   return a `&CStr` within the provided buffer that is always properly
   NUL-terminated (this is not guaranteed by the call with all platforms/libc
   implementations).
+- Exposed all fcntl(2) operations at the module level, so they can be
+  imported direclty instead of via `FcntlArg` enum.
+  ([#541](https://github.com/nix-rust/nix/pull/541))
 
 ### Fixed
 - Fixed multiple issues with Unix domain sockets on non-Linux OSes
