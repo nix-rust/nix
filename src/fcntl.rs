@@ -55,11 +55,10 @@ pub enum FcntlArg<'a> {
 
     // TODO: Rest of flags
 }
+pub use self::FcntlArg::*;
 
 // TODO: Figure out how to handle value fcntl returns
 pub fn fcntl(fd: RawFd, arg: FcntlArg) -> Result<c_int> {
-    use self::FcntlArg::*;
-
     let res = unsafe {
         match arg {
             F_DUPFD(rawfd) => libc::fcntl(fd, libc::F_DUPFD, rawfd),
