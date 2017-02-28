@@ -13,12 +13,12 @@ pub struct PollFd {
 }
 
 impl PollFd {
-    pub fn new(fd: libc::c_int, events: EventFlags, revents: EventFlags) -> PollFd {
+    pub fn new(fd: libc::c_int, events: EventFlags) -> PollFd {
         PollFd {
             pollfd: libc::pollfd {
                 fd: fd,
                 events: events.bits(),
-                revents: revents.bits(),
+                revents: EventFlags::empty().bits(),
             },
         }
     }

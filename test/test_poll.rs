@@ -4,7 +4,7 @@ use nix::unistd::{write, pipe};
 #[test]
 fn test_poll() {
     let (r, w) = pipe().unwrap();
-    let mut fds = [PollFd::new(r, POLLIN, EventFlags::empty())];
+    let mut fds = [PollFd::new(r, POLLIN)];
 
     let nfds = poll(&mut fds, 100).unwrap();
     assert_eq!(nfds, 0);
