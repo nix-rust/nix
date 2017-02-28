@@ -44,6 +44,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#503](https://github.com/nix-rust/nix/pull/503))
 - Added `ppoll` in `::nix::poll`
   ([#520](https://github.com/nix-rust/nix/pull/520))
+- Added support for getting and setting pipe size with fcntl(2) on Linux
+  ([#540](https://github.com/nix-rust/nix/pull/540)
 
 ### Changed
 - `::nix::sys::termios::{cfgetispeed, cfsetispeed, cfgetospeed, cfsetospeed}` 

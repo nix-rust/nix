@@ -48,6 +48,10 @@ pub enum FcntlArg<'a> {
     F_GET_SEALS,
     #[cfg(any(target_os = "macos", target_os = "ios"))]
     F_FULLFSYNC,
+    #[cfg(any(target_os = "linux", target_os = "android"))]
+    F_GETPIPE_SZ,
+    #[cfg(any(target_os = "linux", target_os = "android"))]
+    F_SETPIPE_SZ(libc::c_int),
 
     // TODO: Rest of flags
 }
@@ -73,6 +77,10 @@ pub fn fcntl(fd: RawFd, arg: FcntlArg) -> Result<c_int> {
             F_GET_SEALS => libc::fcntl(fd, ffi::F_GET_SEALS),
             #[cfg(any(target_os = "macos", target_os = "ios"))]
             F_FULLFSYNC => libc::fcntl(fd, libc::F_FULLFSYNC),
+            #[cfg(any(target_os = "linux", target_os = "android"))]
+            F_GETPIPE_SZ => libc::fcntl(fd, libc::F_GETPIPE_SZ),
+            #[cfg(any(target_os = "linux", target_os = "android"))]
+            F_SETPIPE_SZ(size) => libc::fcntl(fd, libc::F_SETPIPE_SZ, size),
             #[cfg(any(target_os = "linux", target_os = "android"))]
             _ => unimplemented!()
         }
