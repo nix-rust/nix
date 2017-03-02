@@ -10,21 +10,34 @@ ioctl!(read buf readbuf_test with 0, 0; u32);
 ioctl!(write buf writebuf_test with 0, 0; u32);
 ioctl!(readwrite buf readwritebuf_test with 0, 0; u32);
 
-// See C code for source of values for op calculations:
+// See C code for source of values for op calculations (does NOT work for mips/powerpc):
 // https://gist.github.com/posborne/83ea6880770a1aef332e
+//
+// TODO:  Need a way to compute these constants at test time.  Using precomputed
+// values is fragile and needs to be maintained.
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 mod linux {
     #[test]
     fn test_op_none() {
-        assert_eq!(io!(b'q', 10), 0x0000710A);
-        assert_eq!(io!(b'a', 255), 0x000061FF);
+        if cfg!(any(target_arch = "mips", target_arch="powerpc")){
+            assert_eq!(io!(b'q', 10), 0x2000710A);
+            assert_eq!(io!(b'a', 255), 0x200061FF);
+        } else {
+            assert_eq!(io!(b'q', 10), 0x0000710A);
+            assert_eq!(io!(b'a', 255), 0x000061FF);
+        }
     }
 
     #[test]
     fn test_op_write() {
-        assert_eq!(iow!(b'z', 10, 1), 0x40017A0A);
-        assert_eq!(iow!(b'z', 10, 512), 0x42007A0A);
+        if cfg!(any(target_arch = "mips", target_arch="powerpc")){
+            assert_eq!(iow!(b'z', 10, 1), 0x80017A0A);
+            assert_eq!(iow!(b'z', 10, 512), 0x82007A0A);
+        } else {
+            assert_eq!(iow!(b'z', 10, 1), 0x40017A0A);
+            assert_eq!(iow!(b'z', 10, 512), 0x42007A0A);
+        }
     }
 
     #[cfg(target_pointer_width = "64")]
@@ -35,8 +48,13 @@ mod linux {
 
     #[test]
     fn test_op_read() {
-        assert_eq!(ior!(b'z', 10, 1), 0x80017A0A);
-        assert_eq!(ior!(b'z', 10, 512), 0x82007A0A);
+        if cfg!(any(target_arch = "mips", target_arch="powerpc")){
+            assert_eq!(ior!(b'z', 10, 1), 0x40017A0A);
+            assert_eq!(ior!(b'z', 10, 512), 0x42007A0A);
+        } else {
+            assert_eq!(ior!(b'z', 10, 1), 0x80017A0A);
+            assert_eq!(ior!(b'z', 10, 512), 0x82007A0A);
+        }
     }
 
     #[cfg(target_pointer_width = "64")]
