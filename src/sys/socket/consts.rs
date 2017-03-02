@@ -40,8 +40,10 @@ mod os {
     pub const SO_LINGER: c_int = libc::SO_LINGER;
     pub const SO_MARK: c_int = 36;
     pub const SO_OOBINLINE: c_int = libc::SO_OOBINLINE;
+    #[cfg(not(target_arch="arm"))]
     pub const SO_PASSCRED: c_int = libc::SO_PASSCRED;
     pub const SO_PEEK_OFF: c_int = 42;
+    #[cfg(not(target_arch="arm"))]
     pub const SO_PEERCRED: c_int = libc::SO_PEERCRED;
     pub const SO_PRIORITY: c_int = 12;
     pub const SO_PROTOCOL: c_int = 38;
@@ -55,6 +57,7 @@ mod os {
     pub const SO_REUSEPORT: c_int = libc::SO_REUSEPORT;
     pub const SO_RXQ_OVFL: c_int = 40;
     pub const SO_SNDBUF: c_int = libc::SO_SNDBUF;
+    #[cfg(not(target_arch="arm"))]
     pub const SO_SNDBUFFORCE: c_int = libc::SO_SNDBUFFORCE;
     pub const SO_TIMESTAMP: c_int = 29;
     pub const SO_TYPE: c_int = libc::SO_TYPE;
