@@ -152,7 +152,7 @@ sockopt_impl!(Both, Broadcast, consts::SOL_SOCKET, consts::SO_BROADCAST, bool);
 sockopt_impl!(Both, OobInline, consts::SOL_SOCKET, consts::SO_OOBINLINE, bool);
 sockopt_impl!(GetOnly, SocketError, consts::SOL_SOCKET, consts::SO_ERROR, i32);
 sockopt_impl!(Both, KeepAlive, consts::SOL_SOCKET, consts::SO_KEEPALIVE, bool);
-#[cfg(target_os = "linux")]
+#[cfg(all(target_os = "linux", not(target_arch="arm")))]
 sockopt_impl!(GetOnly, PeerCredentials, consts::SOL_SOCKET, consts::SO_PEERCRED, super::ucred);
 #[cfg(any(target_os = "macos",
           target_os = "ios"))]
@@ -167,7 +167,7 @@ sockopt_impl!(Both, RcvBuf, consts::SOL_SOCKET, consts::SO_RCVBUF, usize);
 sockopt_impl!(Both, SndBuf, consts::SOL_SOCKET, consts::SO_SNDBUF, usize);
 #[cfg(target_os = "linux")]
 sockopt_impl!(SetOnly, RcvBufForce, consts::SOL_SOCKET, consts::SO_RCVBUFFORCE, usize);
-#[cfg(target_os = "linux")]
+#[cfg(all(target_os = "linux", not(target_arch="arm")))]
 sockopt_impl!(SetOnly, SndBufForce, consts::SOL_SOCKET, consts::SO_SNDBUFFORCE, usize);
 sockopt_impl!(GetOnly, SockType, consts::SOL_SOCKET, consts::SO_TYPE, super::SockType);
 #[cfg(any(target_os = "freebsd",
