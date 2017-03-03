@@ -97,6 +97,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Exposed all fcntl(2) operations at the module level, so they can be
   imported direclty instead of via `FcntlArg` enum.
   ([#541](https://github.com/nix-rust/nix/pull/541))
+- Removed `revents` argument from `PollFd::new()` as it's an output argument and
+  will be overwritten regardless of value.
+  ([#542](https://github.com/nix-rust/nix/pull/542)
 
 ### Fixed
 - Fixed multiple issues with Unix domain sockets on non-Linux OSes
