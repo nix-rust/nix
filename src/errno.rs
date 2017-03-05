@@ -2059,15 +2059,13 @@ mod test {
             ENOTRECOVERABLE);
     }
 
-    // This test fails because MIPS does not have
-    // ERFKILL or EHWPOISON.
-    // #[test]
-    // #[cfg(target_os = "linux")]
-    // pub fn test_linux_not_android_errnos() {
-    //     check_errno!(
-    //         ERFKILL /*,
-    //         EHWPOISON */);
-    // }
+    #[test]
+    #[cfg(all(target_os = "linux", not(target_arch = "mips")))]
+    pub fn test_linux_not_android_errnos() {
+        check_errno!(
+            ERFKILL /*,
+            EHWPOISON */);
+    }
 
     #[test]
     #[cfg(target_os = "freebsd")]
