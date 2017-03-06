@@ -81,7 +81,7 @@ mod status {
     }
 
     pub fn stop_signal(status: i32) -> Signal {
-        Signal::from_c_int((status & 0xFF00) >> 8).unwrap()
+        Signal::from_c_int((status & 0x7F00) >> 8).unwrap()
     }
 
     pub fn stop_additional(status: i32) -> c_int {
