@@ -4,8 +4,8 @@ use std::os::unix::prelude::AsRawFd;
 
 use libc::{S_IFMT, S_IFLNK};
 
-use nix::sys::stat::{stat, fstat, lstat};
-
+use nix::fcntl;
+use nix::sys::stat::{self, stat, fstat, lstat};
 use nix::sys::stat::FileStat;
 use nix::Result;
 use tempdir::TempDir;
@@ -72,6 +72,21 @@ fn test_stat_and_fstat() {
 
     let fstat_result = fstat(file.as_raw_fd());
     assert_stat_results(fstat_result);
+}
+
+#[test]
+fn test_fstatat() {
+    let tempdir = TempDir::new("nix-test_stat_and_fstat").unwrap();
+    let filename = tempdir.path().join("foo.txt");
+    File::create(&filename).unwrap();
+    let dirfd = fcntl::open(tempdir.path(),
+                            fcntl::OFlag::empty(),
+                            stat::Mode::empty());
+
+    let result = stat::fstatat(dirfd.unwrap(),
+                               &filename,
+                               fcntl::AtFlags::empty());
+    assert_stat_results(result);
 }
 
 #[test]
