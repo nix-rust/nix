@@ -378,7 +378,7 @@ impl<'a> Set<'a, usize> for SetUsize {
 
 #[cfg(test)]
 mod test {
-    #[cfg(target_os = "linux")]
+    #[cfg(all(target_os = "linux", not(target_arch = "arm")))]
     #[test]
     fn can_get_peercred_on_unix_socket() {
         use super::super::*;
