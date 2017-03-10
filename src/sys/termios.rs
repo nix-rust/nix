@@ -99,7 +99,7 @@ mod ffi {
 
         use libc;
 
-        use libc::{c_int, c_uint, c_ulong, c_uchar};
+        use libc::c_int;
 
         pub type tcflag_t = libc::tcflag_t;
         pub type cc_t = libc::cc_t;
