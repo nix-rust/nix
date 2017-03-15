@@ -23,6 +23,7 @@ mod test_mq;
 
 #[cfg(any(target_os = "linux", target_os = "macos"))]
 mod test_poll;
+mod test_pty;
 
 use nixtest::assert_size_of;
 

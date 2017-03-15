@@ -44,6 +44,8 @@ pub mod mount;
 #[cfg(target_os = "linux")]
 pub mod mqueue;
 
+pub mod pty;
+
 #[cfg(any(target_os = "linux", target_os = "macos"))]
 pub mod poll;
 
@@ -92,6 +94,9 @@ pub type Result<T> = result::Result<T, Error>;
 pub enum Error {
     Sys(errno::Errno),
     InvalidPath,
+    /// The operation involved a conversion to Rust's native String type, which failed because the
+    /// string did not contain all valid UTF-8.
+    InvalidUtf8,
 }
 
 impl Error {
@@ -114,8 +119,9 @@ impl Error {
     /// Get the errno associated with this error
     pub fn errno(&self) -> errno::Errno {
         match *self {
-            Error::Sys(errno) => errno,
             Error::InvalidPath => errno::Errno::EINVAL,
+            Error::InvalidUtf8 => errno::Errno::UnknownErrno,
+            Error::Sys(errno) => errno,
         }
     }
 }
@@ -124,10 +130,15 @@ impl From<errno::Errno> for Error {
     fn from(errno: errno::Errno) -> Error { Error::from_errno(errno) }
 }
 
+impl From<std::string::FromUtf8Error> for Error {
+    fn from(_: std::string::FromUtf8Error) -> Error { Error::InvalidUtf8 }
+}
+
 impl error::Error for Error {
     fn description(&self) -> &str {
         match self {
             &Error::InvalidPath => "Invalid path",
+            &Error::InvalidUtf8 => "Invalid UTF-8 string",
             &Error::Sys(ref errno) => errno.desc(),
         }
     }
@@ -137,6 +148,7 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             &Error::InvalidPath => write!(f, "Invalid path"),
+            &Error::InvalidUtf8 => write!(f, "Invalid UTF-8 string"),
             &Error::Sys(errno) => write!(f, "{:?}: {}", errno, errno.desc()),
         }
     }
@@ -146,6 +158,7 @@ impl From<Error> for io::Error {
     fn from(err: Error) -> Self {
         match err {
             Error::InvalidPath => io::Error::new(io::ErrorKind::InvalidInput, err),
+            Error::InvalidUtf8 => io::Error::new(io::ErrorKind::Other, err),
             Error::Sys(errno) => io::Error::from_raw_os_error(errno as i32),
         }
     }
