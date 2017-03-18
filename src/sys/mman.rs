@@ -195,14 +195,14 @@ pub unsafe fn mlock(addr: *const c_void, length: size_t) -> Result<()> {
     Errno::result(ffi::mlock(addr, length)).map(drop)
 }
 
-pub fn munlock(addr: *const c_void, length: size_t) -> Result<()> {
-    Errno::result(unsafe { ffi::munlock(addr, length) }).map(drop)
+pub unsafe fn munlock(addr: *const c_void, length: size_t) -> Result<()> {
+    Errno::result(ffi::munlock(addr, length)).map(drop)
 }
 
 /// Calls to mmap are inherently unsafe, so they must be made in an unsafe block. Typically
 /// a higher-level abstraction will hide the unsafe interactions with the mmap'd region.
-pub fn mmap(addr: *mut c_void, length: size_t, prot: ProtFlags, flags: MapFlags, fd: RawFd, offset: off_t) -> Result<*mut c_void> {
-    let ret = unsafe { ffi::mmap(addr, length, prot.bits(), flags.bits(), fd, offset) };
+pub unsafe fn mmap(addr: *mut c_void, length: size_t, prot: ProtFlags, flags: MapFlags, fd: RawFd, offset: off_t) -> Result<*mut c_void> {
+    let ret = ffi::mmap(addr, length, prot.bits(), flags.bits(), fd, offset);
 
     if ret as isize == MAP_FAILED  {
         Err(Error::Sys(Errno::last()))
@@ -211,16 +211,16 @@ pub fn mmap(addr: *mut c_void, length: size_t, prot: ProtFlags, flags: MapFlags,
     }
 }
 
-pub fn munmap(addr: *mut c_void, len: size_t) -> Result<()> {
-    Errno::result(unsafe { ffi::munmap(addr, len) }).map(drop)
+pub unsafe fn munmap(addr: *mut c_void, len: size_t) -> Result<()> {
+    Errno::result(ffi::munmap(addr, len)).map(drop)
 }
 
-pub fn madvise(addr: *const c_void, length: size_t, advise: MmapAdvise) -> Result<()> {
-    Errno::result(unsafe { ffi::madvise(addr, length, advise) }).map(drop)
+pub unsafe fn madvise(addr: *const c_void, length: size_t, advise: MmapAdvise) -> Result<()> {
+    Errno::result(ffi::madvise(addr, length, advise)).map(drop)
 }
 
-pub fn msync(addr: *const c_void, length: size_t, flags: MsFlags) -> Result<()> {
-    Errno::result(unsafe { ffi::msync(addr, length, flags.bits()) }).map(drop)
+pub unsafe fn msync(addr: *const c_void, length: size_t, flags: MsFlags) -> Result<()> {
+    Errno::result(ffi::msync(addr, length, flags.bits())).map(drop)
 }
 
 pub fn shm_open<P: ?Sized + NixPath>(name: &P, flag: OFlag, mode: Mode) -> Result<RawFd> {
