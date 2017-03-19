@@ -5,6 +5,14 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+<!--### Added-->
+
+### Changed
+- Marked `sys::mman::{ mmap, munmap, madvise, munlock, msync }` as unsafe.
+  ([#559](https://github.com/nix-rust/nix/pull/559))
+  
+<!--### Fixed-->
+
 ## [0.8.0] 2017-03-02
 
 ### Added
