@@ -1,7 +1,9 @@
-use {Errno, Result, NixPath};
-use libc::{self, c_int, c_uint};
+use {Error, Errno, Result, NixPath};
+use libc::{self, c_int, c_uint, c_char, size_t, ssize_t};
 use sys::stat::Mode;
 use std::os::unix::io::RawFd;
+use std::ffi::OsStr;
+use std::os::unix::ffi::OsStrExt;
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 use sys::uio::IoVec;  // For vmsplice
@@ -49,8 +51,38 @@ pub fn openat<P: ?Sized + NixPath>(dirfd: RawFd, path: &P, oflag: OFlag, mode: M
     let fd = try!(path.with_nix_path(|cstr| {
         unsafe { libc::openat(dirfd, cstr.as_ptr(), oflag.bits(), mode.bits() as c_uint) }
     }));
-
     Errno::result(fd)
+}
+
+fn wrap_readlink_result<'a>(buffer: &'a mut[u8], res: ssize_t) 
+  -> Result<&'a OsStr> {
+    match Errno::result(res) {
+        Err(err) => Err(err),
+        Ok(len) => {
+            if (len as usize) >= buffer.len() {
+                Err(Error::Sys(Errno::ENAMETOOLONG))
+            } else {
+                Ok(OsStr::from_bytes(&buffer[..(len as usize)]))
+            }
+        }
+    }
+}
+
+pub fn readlink<'a, P: ?Sized + NixPath>(path: &P, buffer: &'a mut [u8]) -> Result<&'a OsStr> {
+    let res = try!(path.with_nix_path(|cstr| {
+        unsafe { libc::readlink(cstr.as_ptr(), buffer.as_mut_ptr() as *mut c_char, buffer.len() as size_t) }
+    }));
+
+    wrap_readlink_result(buffer, res)
+}
+
+
+pub fn readlinkat<'a, P: ?Sized + NixPath>(dirfd: RawFd, path: &P, buffer: &'a mut [u8]) -> Result<&'a OsStr> {
+    let res = try!(path.with_nix_path(|cstr| {
+        unsafe { libc::readlinkat(dirfd, cstr.as_ptr(), buffer.as_mut_ptr() as *mut c_char, buffer.len() as size_t) }
+    }));
+
+    wrap_readlink_result(buffer, res)
 }
 
 pub enum FcntlArg<'a> {
