@@ -1,3 +1,31 @@
+use nix::fcntl::{openat, open, O_PATH, O_RDONLY};
+use nix::sys::stat::Mode;
+use nix::unistd::{close, read};
+use tempfile::NamedTempFile;
+use std::io::prelude::*;
+
+#[test]
+fn test_openat() {
+    const CONTENTS: &'static [u8] = b"abcd";
+    let mut tmp = NamedTempFile::new().unwrap();
+    tmp.write(CONTENTS).unwrap();
+
+    let dirfd = open(tmp.path().parent().unwrap(),
+                     O_PATH,
+                     Mode::empty()).unwrap();
+    let fd = openat(dirfd,
+                    tmp.path().file_name().unwrap(),
+                    O_RDONLY,
+                    Mode::empty()).unwrap();
+
+    let mut buf = [0u8; 1024];
+    assert_eq!(4, read(fd, &mut buf).unwrap());
+    assert_eq!(CONTENTS, &buf[0..4]);
+
+    close(fd).unwrap();
+    close(dirfd).unwrap();
+}
+
 #[cfg(any(target_os = "linux", target_os = "android"))]
 mod linux_android {
     use std::io::prelude::*;
