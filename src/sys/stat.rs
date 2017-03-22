@@ -7,16 +7,6 @@ use libc::{self, mode_t};
 use std::mem;
 use std::os::unix::io::RawFd;
 
-mod ffi {
-    use libc::{c_char, c_int, mode_t, dev_t};
-    pub use libc::{stat, fstat, lstat};
-
-    extern {
-        pub fn mknod(pathname: *const c_char, mode: mode_t, dev: dev_t) -> c_int;
-        pub fn umask(mask: mode_t) -> mode_t;
-    }
-}
-
 libc_bitflags!(
     pub flags SFlag: mode_t {
         S_IFIFO,
@@ -56,7 +46,7 @@ bitflags! {
 pub fn mknod<P: ?Sized + NixPath>(path: &P, kind: SFlag, perm: Mode, dev: dev_t) -> Result<()> {
     let res = try!(path.with_nix_path(|cstr| {
         unsafe {
-            ffi::mknod(cstr.as_ptr(), kind.bits | perm.bits() as mode_t, dev)
+            libc::mknod(cstr.as_ptr(), kind.bits | perm.bits() as mode_t, dev)
         }
     }));
 
@@ -84,7 +74,7 @@ pub fn makedev(major: u64, minor: u64) -> dev_t {
 }
 
 pub fn umask(mode: Mode) -> Mode {
-    let prev = unsafe { ffi::umask(mode.bits() as mode_t) };
+    let prev = unsafe { libc::umask(mode.bits() as mode_t) };
     Mode::from_bits(prev).expect("[BUG] umask returned invalid Mode")
 }
 
@@ -92,7 +82,7 @@ pub fn stat<P: ?Sized + NixPath>(path: &P) -> Result<FileStat> {
     let mut dst = unsafe { mem::uninitialized() };
     let res = try!(path.with_nix_path(|cstr| {
         unsafe {
-            ffi::stat(cstr.as_ptr(), &mut dst as *mut FileStat)
+            libc::stat(cstr.as_ptr(), &mut dst as *mut FileStat)
         }
     }));
 
@@ -105,7 +95,7 @@ pub fn lstat<P: ?Sized + NixPath>(path: &P) -> Result<FileStat> {
     let mut dst = unsafe { mem::uninitialized() };
     let res = try!(path.with_nix_path(|cstr| {
         unsafe {
-            ffi::lstat(cstr.as_ptr(), &mut dst as *mut FileStat)
+            libc::lstat(cstr.as_ptr(), &mut dst as *mut FileStat)
         }
     }));
 
@@ -116,7 +106,7 @@ pub fn lstat<P: ?Sized + NixPath>(path: &P) -> Result<FileStat> {
 
 pub fn fstat(fd: RawFd) -> Result<FileStat> {
     let mut dst = unsafe { mem::uninitialized() };
-    let res = unsafe { ffi::fstat(fd, &mut dst as *mut FileStat) };
+    let res = unsafe { libc::fstat(fd, &mut dst as *mut FileStat) };
 
     try!(Errno::result(res));
 
