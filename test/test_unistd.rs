@@ -103,6 +103,21 @@ mod linux_android {
         let tid: ::libc::pid_t = gettid().into();
         assert!(tid > 0);
     }
+
+}
+#[test]
+fn test_mkdirat() {
+    let tempdir = TempDir::new("nix-test_mkdirat").unwrap();
+    let path = tempdir.path().join("test_path");
+
+    let dirfd = fcntl::open(tempdir.path(),
+    fcntl::OFlag::empty(),
+    stat::Mode::empty());
+
+    mkdirat(dirfd.unwrap(),
+    &path.file_name(),
+    stat::Mode::empty()).unwrap();
+    assert!(path.exists());
 }
 
 macro_rules! execve_test_factory(
