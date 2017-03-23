@@ -206,6 +206,35 @@ libc_bitflags!(
     }
 );
 
+/// Change the name or location of a file
+/// ([see rename(2)](http://man7.org/linux/man-pages/man2/rename.2.html)).
+pub fn rename<P1: ?Sized + NixPath, P2: ?Sized + NixPath>(oldpath: &P1, newpath: &P2) -> Result<()> {
+    let res = try!(try!(oldpath.with_nix_path(|old|
+        newpath.with_nix_path(|new|
+            unsafe { 
+                libc::rename(old.as_ptr() as *const c_char, new.as_ptr() as *const c_char)
+            }
+        )
+    )));
+
+    Errno::result(res).map(drop)
+}
+
+/// Change the name or location of a file
+/// ([see renameat(2)](http://man7.org/linux/man-pages/man2/renameat.2.html)).
+pub fn renameat<P1: ?Sized + NixPath, P2: ?Sized + NixPath>(olddirfd: RawFd, oldpath: &P1, newdirfd: RawFd, newpath: &P2) -> Result<()> {
+    let res = try!(try!(oldpath.with_nix_path(|old|
+        newpath.with_nix_path(|new|
+            unsafe { 
+                libc::renameat(olddirfd, old.as_ptr() as *const c_char,
+                               newdirfd, new.as_ptr() as *const c_char)
+            }
+        )
+    )));
+
+    Errno::result(res).map(drop)
+}
+
 pub enum FcntlArg<'a> {
     F_DUPFD(RawFd),
     F_DUPFD_CLOEXEC(RawFd),

@@ -1,8 +1,9 @@
-use nix::fcntl::{openat, open, OFlag, O_RDONLY, readlink, readlinkat};
+use nix::fcntl::{openat, open, OFlag, O_RDONLY, readlink, readlinkat, rename, renameat};
 use nix::sys::stat::Mode;
 use nix::unistd::{close, read};
 use tempdir::TempDir;
 use tempfile::NamedTempFile;
+use std::fs::File;
 use std::io::prelude::*;
 use std::os::unix::fs;
 
@@ -45,6 +46,24 @@ fn test_readlink() {
                src.to_str().unwrap());
     assert_eq!(readlinkat(dirfd, "b", &mut buf).unwrap().to_str().unwrap(),
                src.to_str().unwrap());
+}
+
+#[test]
+fn test_rename() {
+    let tempdir = TempDir::new("nix-test_rename")
+        .unwrap_or_else(|e| panic!("tempdir failed: {}", e));
+    let src = tempdir.path().join("a");
+    let dst = tempdir.path().join("b");
+    File::create(&src).unwrap();
+
+    rename(&src, &dst).unwrap();
+    assert!(dst.exists());
+
+    let dir = open(tempdir.path(),
+                   OFlag::empty(),
+                   Mode::empty()).unwrap();
+    renameat(dir, "b", dir, "a").unwrap();
+    assert!(src.exists());
 }
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
