@@ -24,6 +24,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#739](https://github.com/nix-rust/nix/pull/739))
 - Added nix::sys::ptrace::detach. 
   ([#749](https://github.com/nix-rust/nix/pull/749))
+- Added nix::fcntl::{rename, renameat}.
+  ([#752](https://github.com/nix-rust/nix/pull/752))
+
 
 ### Changed
 - Renamed existing `ptrace` wrappers to encourage namespacing ([#692](https://github.com/nix-rust/nix/pull/692))
