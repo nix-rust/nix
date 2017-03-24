@@ -852,6 +852,39 @@ pub fn linkat<P1: ?Sized + NixPath, P2: ?Sized + NixPath>(olddirfd: RawFd, oldpa
     Errno::result(res).map(drop)
 }
 
+/// Make a new name for a file
+/// ([see symlink(2)](http://man7.org/linux/man-pages/man2/symlink.2.html)).
+pub fn symlink<P1: ?Sized + NixPath, P2: ?Sized + NixPath>(target: &P1,
+                                                           linkpath: &P2) -> Result<()> {
+    let res = try!(try!(target.with_nix_path(|t|
+        linkpath.with_nix_path(|l|
+            unsafe {
+                libc::symlink(t.as_ptr() as *const c_char, l.as_ptr() as *const c_char)
+            }
+        )
+    )));
+
+    Errno::result(res).map(drop)
+}
+
+/// Make a new name for a file
+/// ([see symlinkat(2)](http://man7.org/linux/man-pages/man2/symlinkat.2.html)).
+pub fn symlinkat<P1: ?Sized + NixPath, P2: ?Sized + NixPath>(target: &P1,
+                                                             newdirfd: RawFd,
+                                                             linkpath: &P2) -> Result<()> {
+    let res = try!(try!(target.with_nix_path(|t|
+        linkpath.with_nix_path(|l|
+            unsafe {
+                libc::symlinkat(t.as_ptr() as *const c_char,
+                                newdirfd,
+                                l.as_ptr() as *const c_char)
+            }
+        )
+    )));
+
+    Errno::result(res).map(drop)
+}
+
 pub fn pipe() -> Result<(RawFd, RawFd)> {
     unsafe {
         let mut fds: [c_int; 2] = mem::uninitialized();

@@ -1,11 +1,10 @@
 use nix::fcntl::{openat, open, OFlag, O_RDONLY, readlink, readlinkat, rename, renameat};
 use nix::sys::stat::Mode;
-use nix::unistd::{close, read};
+use nix::unistd::{close, read, symlink, symlinkat};
 use tempdir::TempDir;
 use tempfile::NamedTempFile;
 use std::fs::File;
 use std::io::prelude::*;
-use std::os::unix::fs;
 
 #[test]
 fn test_openat() {
@@ -31,19 +30,29 @@ fn test_openat() {
 
 #[test]
 fn test_readlink() {
-    let tempdir = TempDir::new("nix-test_readdir")
+    let tempdir = TempDir::new("nix-test_readdlink")
         .unwrap_or_else(|e| panic!("tempdir failed: {}", e));
     let src = tempdir.path().join("a");
     let dst = tempdir.path().join("b");
-    println!("a: {:?}, b: {:?}", &src, &dst);
-    fs::symlink(&src.as_path(), &dst.as_path()).unwrap();
-    let dirfd = open(tempdir.path(),
-                     OFlag::empty(),
-                     Mode::empty()).unwrap();
+    symlink(src.as_path(), dst.as_path()).unwrap();
 
     let mut buf = vec![0; src.to_str().unwrap().len() + 1];
     assert_eq!(readlink(&dst, &mut buf).unwrap().to_str().unwrap(),
                src.to_str().unwrap());
+}
+
+#[test]
+fn test_readlinkat() {
+    let tempdir = TempDir::new("nix-test_readlinkat")
+        .unwrap_or_else(|e| panic!("tempdir failed: {}", e));
+    let src = tempdir.path().join("a");
+    let dst = tempdir.path().join("b");
+    let dirfd = open(tempdir.path(),
+                     OFlag::empty(),
+                     Mode::empty()).unwrap();
+    symlinkat(src.as_path(), dirfd, dst.file_name().unwrap()).unwrap();
+
+    let mut buf = vec![0; src.to_str().unwrap().len() + 1];
     assert_eq!(readlinkat(dirfd, "b", &mut buf).unwrap().to_str().unwrap(),
                src.to_str().unwrap());
 }
