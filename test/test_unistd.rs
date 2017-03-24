@@ -282,6 +282,36 @@ fn test_fpathconf_limited() {
 }
 
 #[test]
+fn test_linkat() {
+    let tempdir = TempDir::new("nix-test_linkat").unwrap();
+    let src = tempdir.path().join("foo");
+    let dst = tempdir.path().join("bar");
+    File::create(&src).unwrap();
+
+    let dirfd = fcntl::open(tempdir.path(),
+                            fcntl::OFlag::empty(),
+                            stat::Mode::empty());
+    linkat(dirfd.unwrap(),
+           &src.file_name(),
+           dirfd.unwrap(),
+           &dst.file_name(),
+           fcntl::AtFlags::empty()).unwrap();
+    assert!(dst.exists());
+}
+
+#[test]
+fn test_link() {
+    let tempdir = TempDir::new("nix-test_link").unwrap();
+    let src = tempdir.path().join("foo");
+    let dst = tempdir.path().join("bar");
+    File::create(&src).unwrap();
+
+    link(&src, &dst).unwrap();
+    assert!(dst.exists());
+}
+
+
+#[test]
 fn test_pathconf_limited() {
     // AFAIK, PATH_MAX is limited on all platforms, so it makes a good test
     let path_max = pathconf("/", PathconfVar::PATH_MAX);
