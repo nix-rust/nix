@@ -2,7 +2,7 @@
 
 use errno;
 use {Errno, Error, Result, NixPath};
-use fcntl::{fcntl, OFlag, O_CLOEXEC, FD_CLOEXEC};
+use fcntl::{AtFlags, fcntl, OFlag, O_CLOEXEC, FD_CLOEXEC};
 use fcntl::FcntlArg::F_SETFD;
 use libc::{self, c_char, c_void, c_int, c_long, c_uint, size_t, pid_t, off_t,
            uid_t, gid_t, mode_t};
@@ -810,6 +810,36 @@ pub fn lseek64(fd: RawFd, offset: libc::off64_t, whence: Whence) -> Result<libc:
     let res = unsafe { libc::lseek64(fd, offset, whence as i32) };
 
     Errno::result(res).map(|r| r as libc::off64_t)
+}
+
+/// Call the link function to create a link to a file
+/// ([posix specification](http://pubs.opengroup.org/onlinepubs/9699919799/functions/link.html)).
+pub fn link<P1: ?Sized + NixPath, P2: ?Sized + NixPath>(oldpath: &P1, newpath: &P2) -> Result<()> {
+    let res = try!(try!(oldpath.with_nix_path(|old|
+        newpath.with_nix_path(|new|
+            unsafe {
+                libc::link(old.as_ptr() as *const c_char, new.as_ptr() as *const c_char)
+            }
+        )
+    )));
+
+    Errno::result(res).map(drop)
+}
+
+/// Call the link function to create a link to a file
+/// ([posix specification](http://pubs.opengroup.org/onlinepubs/9699919799/functions/linkat.html)).
+pub fn linkat<P1: ?Sized + NixPath, P2: ?Sized + NixPath>(olddirfd: RawFd, oldpath: &P1,
+                                                          newdirfd: RawFd, newpath: &P2, flags: AtFlags) -> Result<()> {
+    let res = try!(try!(oldpath.with_nix_path(|old|
+        newpath.with_nix_path(|new|
+            unsafe {
+                libc::linkat(olddirfd, old.as_ptr() as *const c_char,
+                             newdirfd, new.as_ptr() as *const c_char, flags.bits())
+            }
+        )
+    )));
+
+    Errno::result(res).map(drop)
 }
 
 pub fn pipe() -> Result<(RawFd, RawFd)> {
