@@ -43,7 +43,7 @@ impl FdSet {
         self.bits[fd / BITS] &= !(1 << (fd % BITS));
     }
 
-    pub fn contains(&mut self, fd: RawFd) -> bool {
+    pub fn contains(&self, fd: RawFd) -> bool {
         let fd = fd as usize;
         self.bits[fd / BITS] & (1 << (fd % BITS)) > 0
     }
