@@ -1,3 +1,52 @@
+use nix::fcntl::{openat, open, OFlag, O_RDONLY, readlink, readlinkat};
+use nix::sys::stat::Mode;
+use nix::unistd::{close, read};
+use tempdir::TempDir;
+use tempfile::NamedTempFile;
+use std::io::prelude::*;
+use std::os::unix::fs;
+
+#[test]
+fn test_openat() {
+    const CONTENTS: &'static [u8] = b"abcd";
+    let mut tmp = NamedTempFile::new().unwrap();
+    tmp.write(CONTENTS).unwrap();
+
+    let dirfd = open(tmp.path().parent().unwrap(),
+                     OFlag::empty(),
+                     Mode::empty()).unwrap();
+    let fd = openat(dirfd,
+                    tmp.path().file_name().unwrap(),
+                    O_RDONLY,
+                    Mode::empty()).unwrap();
+
+    let mut buf = [0u8; 1024];
+    assert_eq!(4, read(fd, &mut buf).unwrap());
+    assert_eq!(CONTENTS, &buf[0..4]);
+
+    close(fd).unwrap();
+    close(dirfd).unwrap();
+}
+
+#[test]
+fn test_readlink() {
+    let tempdir = TempDir::new("nix-test_readdir")
+        .unwrap_or_else(|e| panic!("tempdir failed: {}", e));
+    let src = tempdir.path().join("a");
+    let dst = tempdir.path().join("b");
+    println!("a: {:?}, b: {:?}", &src, &dst);
+    fs::symlink(&src.as_path(), &dst.as_path()).unwrap();
+    let dirfd = open(tempdir.path(),
+                     OFlag::empty(),
+                     Mode::empty()).unwrap();
+
+    let mut buf = vec![0; src.to_str().unwrap().len() + 1];
+    assert_eq!(readlink(&dst, &mut buf).unwrap().to_str().unwrap(),
+               src.to_str().unwrap());
+    assert_eq!(readlinkat(dirfd, "b", &mut buf).unwrap().to_str().unwrap(),
+               src.to_str().unwrap());
+}
+
 #[cfg(any(target_os = "linux", target_os = "android"))]
 mod linux_android {
     use std::io::prelude::*;

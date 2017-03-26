@@ -2,6 +2,7 @@ pub use libc::dev_t;
 pub use libc::stat as FileStat;
 
 use {Errno, Result, NixPath};
+use fcntl::AtFlags;
 use libc::{self, mode_t};
 use std::mem;
 use std::os::unix::io::RawFd;
@@ -121,3 +122,15 @@ pub fn fstat(fd: RawFd) -> Result<FileStat> {
 
     Ok(dst)
 }
+
+pub fn fstatat<P: ?Sized + NixPath>(dirfd: RawFd, pathname: &P, f: AtFlags) -> Result<FileStat> {
+    let mut dst = unsafe { mem::uninitialized() };
+    let res = try!(pathname.with_nix_path(|cstr| {
+        unsafe { libc::fstatat(dirfd, cstr.as_ptr(), &mut dst as *mut FileStat, f.bits() as libc::c_int) }
+    }));
+
+    try!(Errno::result(res));
+
+    Ok(dst)
+}
+
