@@ -47,6 +47,8 @@ pub enum WaitStatus {
     Stopped(Pid, Signal),
     #[cfg(any(target_os = "linux", target_os = "android"))]
     PtraceEvent(Pid, Signal, c_int),
+    #[cfg(any(target_os = "linux", target_os = "android"))]
+    PtraceSyscall(Pid),
     Continued(Pid),
     StillAlive
 }
@@ -56,6 +58,7 @@ pub enum WaitStatus {
 mod status {
     use sys::signal::Signal;
     use libc::c_int;
+    use libc::SIGTRAP;
 
     pub fn exited(status: i32) -> bool {
         (status & 0x7F) == 0
@@ -82,7 +85,17 @@ mod status {
     }
 
     pub fn stop_signal(status: i32) -> Signal {
-        Signal::from_c_int((status & 0xFF00) >> 8).unwrap()
+        // Keep only 7 bits of the signal: the high bit
+        // is used to indicate syscall stops, below.
+        Signal::from_c_int((status & 0x7F00) >> 8).unwrap()
+    }
+
+    pub fn syscall_stop(status: i32) -> bool {
+        // From ptrace(2), setting PTRACE_O_TRACESYSGOOD has the effect
+        // of delivering SIGTRAP | 0x80 as the signal number for syscall
+        // stops. This allows easily distinguishing syscall stops from
+        // genuine SIGTRAP signals.
+        ((status & 0xFF00) >> 8) == SIGTRAP | 0x80
     }
 
     pub fn stop_additional(status: i32) -> c_int {
@@ -196,7 +209,9 @@ fn decode(pid : Pid, status: i32) -> WaitStatus {
             if #[cfg(any(target_os = "linux", target_os = "android"))] {
                 fn decode_stopped(pid: Pid, status: i32) -> WaitStatus {
                     let status_additional = status::stop_additional(status);
-                    if status_additional == 0 {
+                    if status::syscall_stop(status) {
+                        WaitStatus::PtraceSyscall(pid)
+                    } else if status_additional == 0 {
                         WaitStatus::Stopped(pid, status::stop_signal(status))
                     } else {
                         WaitStatus::PtraceEvent(pid, status::stop_signal(status), status::stop_additional(status))

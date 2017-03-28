@@ -26,6 +26,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Added `cfmakeraw`, `cfsetspeed`, and `tcgetsid`. ([#527](https://github.com/nix-rust/nix/pull/527))
 - Added "bad none", "bad write_ptr", "bad write_int", and "bad readwrite" variants to the `ioctl!`
   macro. ([#670](https://github.com/nix-rust/nix/pull/670))
+- On Linux and Android, added support for receiving `PTRACE_O_TRACESYSGOOD`
+  events from `wait` and `waitpid` using `WaitStatus::PtraceSyscall`
+  ([#566](https://github.com/nix-rust/nix/pull/566)).
 
 ### Changed
 - Changed `ioctl!(write ...)` into `ioctl!(write_ptr ...)` and `ioctl!(write_int ..)` variants
