@@ -1,14 +1,14 @@
 use std::fs::File;
-use std::os::unix::fs::symlink;
+use std::os::unix::fs::{symlink, PermissionsExt};
 use std::os::unix::prelude::AsRawFd;
 
 use libc::{S_IFMT, S_IFLNK};
 
 use nix::fcntl;
-use nix::sys::stat::{self, stat, fstat, lstat};
-use nix::sys::stat::FileStat;
+use nix::sys::stat::*;
 use nix::Result;
 use tempdir::TempDir;
+use tempfile::NamedTempFile;
 
 #[allow(unused_comparisons)]
 // uid and gid are signed on Windows, but not on other platforms. This function
@@ -81,11 +81,11 @@ fn test_fstatat() {
     File::create(&filename).unwrap();
     let dirfd = fcntl::open(tempdir.path(),
                             fcntl::OFlag::empty(),
-                            stat::Mode::empty());
+                            Mode::empty());
 
-    let result = stat::fstatat(dirfd.unwrap(),
-                               &filename,
-                               fcntl::AtFlags::empty());
+    let result = fstatat(dirfd.unwrap(),
+                         &filename,
+                         fcntl::AtFlags::empty());
     assert_stat_results(result);
 }
 
@@ -109,4 +109,31 @@ fn test_stat_fstat_lstat() {
 
     let fstat_result = fstat(link.as_raw_fd());
     assert_stat_results(fstat_result);
+}
+
+fn assert_mode(f: &NamedTempFile, mode: u32) {
+    assert_eq!(f.metadata().unwrap().permissions().mode(), 
+               mode);
+}
+
+#[test]
+fn test_chmod() {
+    let tempfile = NamedTempFile::new().unwrap();
+    chmod(tempfile.path(),
+          Mode::from_bits(0o755).unwrap()).unwrap();
+    assert_mode(&tempfile, 0o755);
+
+    fchmod(tempfile.as_raw_fd(),
+          Mode::from_bits(0o644).unwrap()).unwrap();
+    assert_mode(&tempfile, 0o644);
+
+    let parent_dir = tempfile.path().parent().unwrap();
+    let dirfd = fcntl::open(parent_dir,
+                            fcntl::OFlag::empty(),
+                            Mode::empty()).unwrap();
+    fchmodat(dirfd,
+             tempfile.path().file_name().unwrap(),
+             Mode::from_bits(0o600).unwrap(),
+             fcntl::AtFlags::empty()).unwrap();
+    assert_mode(&tempfile, 0o600);
 }
