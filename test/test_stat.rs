@@ -110,3 +110,20 @@ fn test_stat_fstat_lstat() {
     let fstat_result = fstat(link.as_raw_fd());
     assert_stat_results(fstat_result);
 }
+
+#[test]
+#[cfg(target_os = "linux")]
+fn test_utime() {
+    use std::time::UNIX_EPOCH;
+    use nix::sys::time::{TimeSpec, TimeValLike};
+
+    let tempfile = NamedTempFile::new().unwrap();
+    utimensat(0, // is ignored, if pathname is absolute path
+              tempfile.path(),
+              &UtimeSpec::Time(TimeSpec::zero()),
+              &UtimeSpec::Time(TimeSpec::zero()),
+              fcntl::AtFlags::empty()).unwrap();
+    let mtime = tempfile.metadata().unwrap().modified().unwrap();
+
+    assert_eq!(mtime, UNIX_EPOCH);
+}
