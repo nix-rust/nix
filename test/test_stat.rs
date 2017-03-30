@@ -137,3 +137,20 @@ fn test_chmod() {
              fcntl::AtFlags::empty()).unwrap();
     assert_mode(&tempfile, 0o600);
 }
+
+#[test]
+#[cfg(target_os = "linux")]
+fn test_utime() {
+    use std::time::UNIX_EPOCH;
+    use nix::sys::time::{TimeSpec, TimeValLike};
+
+    let tempfile = NamedTempFile::new().unwrap();
+    utimensat(0, // is ignored, if pathname is absolute path
+              tempfile.path(),
+              &UtimeSpec::Time(TimeSpec::zero()),
+              &UtimeSpec::Time(TimeSpec::zero()),
+              fcntl::AtFlags::empty()).unwrap();
+    let mtime = tempfile.metadata().unwrap().modified().unwrap();
+
+    assert_eq!(mtime, UNIX_EPOCH);
+}
