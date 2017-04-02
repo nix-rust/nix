@@ -6,6 +6,7 @@ use features;
 use libc::{self, c_void, c_int, socklen_t, size_t, pid_t, uid_t, gid_t};
 use std::{mem, ptr, slice};
 use std::os::unix::io::RawFd;
+use sys::time::TimeVal;
 use sys::uio::IoVec;
 
 mod addr;
@@ -277,6 +278,10 @@ impl<'a> Iterator for CmsgIterator<'a> {
                     slice::from_raw_parts(
                         &cmsg.cmsg_data as *const _ as *const _, 1)))
             },
+            (libc::SOL_SOCKET, libc::SCM_TIMESTAMP) => unsafe {
+                Some(ControlMessage::ScmTimestamp(
+                    &*(&cmsg.cmsg_data as *const _ as *const _)))
+            },
             (_, _) => unsafe {
                 Some(ControlMessage::Unknown(UnknownCmsg(
                     &cmsg,
@@ -292,11 +297,80 @@ impl<'a> Iterator for CmsgIterator<'a> {
 /// be added to this enum; do not exhaustively pattern-match it.
 /// [Further reading](http://man7.org/linux/man-pages/man3/cmsg.3.html)
 pub enum ControlMessage<'a> {
-    /// A message of type SCM_RIGHTS, containing an array of file
-    /// descriptors passed between processes. See the description in the
-    /// "Ancillary messages" section of the
+    /// A message of type `SCM_RIGHTS`, containing an array of file
+    /// descriptors passed between processes.
+    ///
+    /// See the description in the "Ancillary messages" section of the
     /// [unix(7) man page](http://man7.org/linux/man-pages/man7/unix.7.html).
     ScmRights(&'a [RawFd]),
+    /// A message of type `SCM_TIMESTAMP`, containing the time the
+    /// packet was received by the kernel.
+    ///
+    /// See the kernel's explanation in "SO_TIMESTAMP" of
+    /// [networking/timestamping](https://www.kernel.org/doc/Documentation/networking/timestamping.txt).
+    ///
+    /// # Examples
+    ///
+    // Disable this test on FreeBSD i386
+    // https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=222039
+    #[cfg_attr(not(all(target_os = "freebsd", target_arch = "x86")), doc = " ```")]
+    #[cfg_attr(all(target_os = "freebsd", target_arch = "x86"), doc = " ```no_run")]
+    /// use nix::sys::socket::*;
+    /// use nix::sys::uio::IoVec;
+    /// use nix::sys::time::*;
+    /// use std::time::*;
+    ///
+    /// // Set up
+    /// let message1 = "Ohayō!".as_bytes();
+    /// let message2 = "Jā ne".as_bytes();
+    /// let in_socket = socket(AddressFamily::Inet, SockType::Datagram, SockFlag::empty(), None).unwrap();
+    /// setsockopt(in_socket, sockopt::ReceiveTimestamp, &true).unwrap();
+    /// bind(in_socket, &SockAddr::new_inet(InetAddr::new(IpAddr::new_v4(127, 0, 0, 1), 0))).unwrap();
+    /// let address = if let Ok(address) = getsockname(in_socket) { address } else { unreachable!() };
+    ///
+    /// // Send both
+    /// assert!(Ok(message1.len()) == sendmsg(in_socket, &[IoVec::from_slice(message1)], &[], MsgFlags::empty(), Some(&address)));
+    /// let time = SystemTime::now();
+    /// std::thread::sleep(Duration::from_millis(250));
+    /// assert!(Ok(message2.len()) == sendmsg(in_socket, &[IoVec::from_slice(message2)], &[], MsgFlags::empty(), Some(&address)));
+    /// let delay = time.elapsed().unwrap();
+    ///
+    /// // Receive the first
+    /// let mut buffer1 = vec![0u8; message1.len() + message2.len()];
+    /// let mut time1: CmsgSpace<TimeVal> = CmsgSpace::new();
+    /// let received1 = recvmsg(in_socket, &[IoVec::from_mut_slice(&mut buffer1)], Some(&mut time1), MsgFlags::empty()).unwrap();
+    /// let mut time1 = if let Some(ControlMessage::ScmTimestamp(&time1)) = received1.cmsgs().next() { time1 } else { panic!("Unexpected or no control message") };
+    ///
+    /// // Receive the second
+    /// let mut buffer2 = vec![0u8; message1.len() + message2.len()];
+    /// let mut time2: CmsgSpace<TimeVal> = CmsgSpace::new();
+    /// let received2 = recvmsg(in_socket, &[IoVec::from_mut_slice(&mut buffer2)], Some(&mut time2), MsgFlags::empty()).unwrap();
+    /// let mut time2 = if let Some(ControlMessage::ScmTimestamp(&time2)) = received2.cmsgs().next() { time2 } else { panic!("Unexpected or no control message") };
+    ///
+    /// // Swap if needed; UDP is unordered
+    /// match (received1.bytes, received2.bytes, message1.len(), message2.len()) {
+    ///     (l1, l2, m1, m2) if l1 == m1 && l2 == m2 => {},
+    ///     (l2, l1, m1, m2) if l1 == m1 && l2 == m2 => {
+    ///         std::mem::swap(&mut time1, &mut time2);
+    ///         std::mem::swap(&mut buffer1, &mut buffer2);
+    ///     },
+    ///     _ => panic!("Wrong packets"),
+    /// };
+    ///
+    /// // Compare results
+    /// println!("{:?} @ {:?}, {:?} @ {:?}, {:?}", buffer1, time1, buffer2, time2, delay);
+    /// assert!(message1 == &buffer1[0..(message1.len())], "{:?} == {:?}", message1, buffer1);
+    /// assert!(message2 == &buffer2[0..(message2.len())], "{:?} == {:?}", message2, buffer2);
+    /// let time = time2 - time1;
+    /// let time = Duration::new(time.num_seconds() as u64, time.num_nanoseconds() as u32);
+    /// let difference = if delay < time { time - delay } else { delay - time };
+    /// assert!(difference.subsec_nanos() < 5_000_000, "{}ns < 5ms", difference.subsec_nanos());
+    /// assert!(difference.as_secs() == 0);
+    ///
+    /// // Close socket
+    /// nix::unistd::close(in_socket).unwrap();
+    /// ```
+    ScmTimestamp(&'a TimeVal),
     #[doc(hidden)]
     Unknown(UnknownCmsg<'a>),
 }
@@ -321,6 +395,9 @@ impl<'a> ControlMessage<'a> {
         cmsg_align(mem::size_of::<cmsghdr>()) + match *self {
             ControlMessage::ScmRights(fds) => {
                 mem::size_of_val(fds)
+            },
+            ControlMessage::ScmTimestamp(t) => {
+                mem::size_of_val(t)
             },
             ControlMessage::Unknown(UnknownCmsg(_, bytes)) => {
                 mem::size_of_val(bytes)
@@ -351,6 +428,25 @@ impl<'a> ControlMessage<'a> {
                 mem::swap(buf, &mut remainder);
 
                 copy_bytes(fds, buf);
+            },
+            ControlMessage::ScmTimestamp(t) => {
+                let cmsg = cmsghdr {
+                    cmsg_len: self.len() as type_of_cmsg_len,
+                    cmsg_level: libc::SOL_SOCKET,
+                    cmsg_type: libc::SCM_TIMESTAMP,
+                    cmsg_data: [],
+                };
+                copy_bytes(&cmsg, buf);
+
+                let padlen = cmsg_align(mem::size_of_val(&cmsg)) -
+                    mem::size_of_val(&cmsg);
+
+                let mut tmpbuf = &mut [][..];
+                mem::swap(&mut tmpbuf, buf);
+                let (_padding, mut remainder) = tmpbuf.split_at_mut(padlen);
+                mem::swap(buf, &mut remainder);
+
+                copy_bytes(t, buf);
             },
             ControlMessage::Unknown(UnknownCmsg(orig_cmsg, bytes)) => {
                 copy_bytes(orig_cmsg, buf);
