@@ -54,6 +54,16 @@ mod arch {
     pub static MEMFD_CREATE: Syscall = 354;
 }
 
+#[cfg(target_arch = "powerpc")]
+mod arch {
+    use libc::c_long;
+
+    pub type Syscall = c_long;
+
+    pub static SYSPIVOTROOT: Syscall = 203;
+    pub static MEMFD_CREATE: Syscall = 360;
+}
+
 extern {
     pub fn syscall(num: Syscall, ...) -> c_int;
 }
