@@ -420,7 +420,7 @@ mod test {
 
     #[cfg(target_os = "linux")]
     #[test]
-    pub fn test_linux_consts() {
+    pub fn test_general_linux_consts() {
         // TODO Figure out how to test new constants
         check_const!(
             SOL_IP,
@@ -434,13 +434,21 @@ mod test {
             TCP_CORK,
             // SO_BUSY_POLL,
             // SO_RXQ_OVFL,
-            SO_PASSCRED,
             SO_PRIORITY,
             // SO_PROTOCOL,
             SO_RCVBUFFORCE,
             // SO_PEEK_OFF,
-            SO_PEERCRED,
-            SO_SNDBUFFORCE,
             MSG_ERRQUEUE);
     }
+
+    #[cfg(all(target_os = "linux", not(target_arch="arm")))]
+    #[test]
+    pub fn test_linux_not_arm_consts() {
+        // TODO Figure out how to test new constants
+        check_const!(
+            SO_PASSCRED,
+            SO_PEERCRED,
+            SO_SNDBUFFORCE);
+    }
+
 }
