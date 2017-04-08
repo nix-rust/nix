@@ -6,6 +6,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Added `AioCb::from_boxed_slice`
+  ([#582](https://github.com/nix-rust/nix/pull/582)
 - Added `nix::unistd::{openat, fstatat, readlink, readlinkat}`
   ([#551](https://github.com/nix-rust/nix/pull/551))
 

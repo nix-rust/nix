@@ -5,7 +5,9 @@ use nix::sys::aio::*;
 use nix::sys::signal::*;
 use nix::sys::time::{TimeSpec, TimeValLike};
 use std::io::{Write, Read, Seek, SeekFrom};
+use std::ops::Deref;
 use std::os::unix::io::AsRawFd;
+use std::rc::Rc;
 use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::{thread, time};
@@ -25,12 +27,12 @@ fn poll_aio(mut aiocb: &mut AioCb) -> Result<()> {
 // AioCancelStat value.
 #[test]
 fn test_cancel() {
-    let mut wbuf = "CDEF".to_string().into_bytes();
+    let wbuf: &'static [u8] = b"CDEF";
 
     let f = tempfile().unwrap();
-    let mut aiocb = AioCb::from_mut_slice( f.as_raw_fd(),
+    let mut aiocb = AioCb::from_slice( f.as_raw_fd(),
                             0,   //offset
-                            &mut wbuf,
+                            &wbuf,
                             0,   //priority
                             SigevNotify::SigevNone,
                             LioOpcode::LIO_NOP);
@@ -49,12 +51,12 @@ fn test_cancel() {
 // Tests using aio_cancel_all for all outstanding IOs.
 #[test]
 fn test_aio_cancel_all() {
-    let mut wbuf = "CDEF".to_string().into_bytes();
+    let wbuf: &'static [u8] = b"CDEF";
 
     let f = tempfile().unwrap();
-    let mut aiocb = AioCb::from_mut_slice( f.as_raw_fd(),
+    let mut aiocb = AioCb::from_slice(f.as_raw_fd(),
                             0,   //offset
-                            &mut wbuf,
+                            &wbuf,
                             0,   //priority
                             SigevNotify::SigevNone,
                             LioOpcode::LIO_NOP);
@@ -90,7 +92,7 @@ fn test_aio_suspend() {
     const INITIAL: &'static [u8] = b"abcdef123456";
     const WBUF: &'static [u8] = b"CDEF";
     let timeout = TimeSpec::seconds(10);
-    let mut rbuf = vec![0; 4];
+    let rbuf = Rc::new(vec![0; 4].into_boxed_slice());
     let mut f = tempfile().unwrap();
     f.write(INITIAL).unwrap();
 
@@ -101,9 +103,9 @@ fn test_aio_suspend() {
                            SigevNotify::SigevNone,
                            LioOpcode::LIO_WRITE);
 
-    let mut rcb = AioCb::from_mut_slice( f.as_raw_fd(),
+    let mut rcb = AioCb::from_boxed_slice( f.as_raw_fd(),
                             8,   //offset
-                            &mut rbuf,
+                            rbuf.clone(),
                             0,   //priority
                             SigevNotify::SigevNone,
                             LioOpcode::LIO_READ);
@@ -128,6 +130,31 @@ fn test_aio_suspend() {
 // for completion
 #[test]
 fn test_read() {
+    const INITIAL: &'static [u8] = b"abcdef123456";
+    let rbuf = Rc::new(vec![0; 4].into_boxed_slice());
+    const EXPECT: &'static [u8] = b"cdef";
+    let mut f = tempfile().unwrap();
+    f.write(INITIAL).unwrap();
+    {
+        let mut aiocb = AioCb::from_boxed_slice( f.as_raw_fd(),
+                               2,   //offset
+                               rbuf.clone(),
+                               0,   //priority
+                               SigevNotify::SigevNone,
+                               LioOpcode::LIO_NOP);
+        aiocb.read().unwrap();
+
+        let err = poll_aio(&mut aiocb);
+        assert!(err == Ok(()));
+        assert!(aiocb.aio_return().unwrap() as usize == EXPECT.len());
+    }
+
+    assert!(EXPECT == rbuf.deref().deref());
+}
+
+// Tests from_mut_slice
+#[test]
+fn test_read_into_mut_slice() {
     const INITIAL: &'static [u8] = b"abcdef123456";
     let mut rbuf = vec![0; 4];
     const EXPECT: &'static [u8] = b"cdef";
@@ -154,7 +181,7 @@ fn test_read() {
 #[test]
 #[should_panic(expected = "Can't read into an immutable buffer")]
 fn test_read_immutable_buffer() {
-    let rbuf = vec![0; 4];
+    let rbuf: &'static [u8] = b"CDEF";
     let f = tempfile().unwrap();
     let mut aiocb = AioCb::from_slice( f.as_raw_fd(),
                            2,   //offset
@@ -165,12 +192,13 @@ fn test_read_immutable_buffer() {
     aiocb.read().unwrap();
 }
 
+
 // Test a simple aio operation with no completion notification.  We must poll
 // for completion.  Unlike test_aio_read, this test uses AioCb::from_slice
 #[test]
 fn test_write() {
     const INITIAL: &'static [u8] = b"abcdef123456";
-    const WBUF: &'static [u8] = b"CDEF"; //"CDEF".to_string().into_bytes();
+    let wbuf = "CDEF".to_string().into_bytes();
     let mut rbuf = Vec::new();
     const EXPECT: &'static [u8] = b"abCDEF123456";
 
@@ -178,7 +206,7 @@ fn test_write() {
     f.write(INITIAL).unwrap();
     let mut aiocb = AioCb::from_slice( f.as_raw_fd(),
                            2,   //offset
-                           &WBUF,
+                           &wbuf,
                            0,   //priority
                            SigevNotify::SigevNone,
                            LioOpcode::LIO_NOP);
@@ -186,7 +214,7 @@ fn test_write() {
 
     let err = poll_aio(&mut aiocb);
     assert!(err == Ok(()));
-    assert!(aiocb.aio_return().unwrap() as usize == WBUF.len());
+    assert!(aiocb.aio_return().unwrap() as usize == wbuf.len());
 
     f.seek(SeekFrom::Start(0)).unwrap();
     let len = f.read_to_end(&mut rbuf).unwrap();
@@ -249,7 +277,7 @@ fn test_write_sigev_signal() {
 fn test_lio_listio_wait() {
     const INITIAL: &'static [u8] = b"abcdef123456";
     const WBUF: &'static [u8] = b"CDEF";
-    let mut rbuf = vec![0; 4];
+    let rbuf = Rc::new(vec![0; 4].into_boxed_slice());
     let mut rbuf2 = Vec::new();
     const EXPECT: &'static [u8] = b"abCDEF123456";
     let mut f = tempfile().unwrap();
@@ -264,9 +292,9 @@ fn test_lio_listio_wait() {
                                SigevNotify::SigevNone,
                                LioOpcode::LIO_WRITE);
 
-        let mut rcb = AioCb::from_mut_slice( f.as_raw_fd(),
+        let mut rcb = AioCb::from_boxed_slice( f.as_raw_fd(),
                                 8,   //offset
-                                &mut rbuf,
+                                rbuf.clone(),
                                 0,   //priority
                                 SigevNotify::SigevNone,
                                 LioOpcode::LIO_READ);
@@ -276,7 +304,7 @@ fn test_lio_listio_wait() {
         assert!(wcb.aio_return().unwrap() as usize == WBUF.len());
         assert!(rcb.aio_return().unwrap() as usize == WBUF.len());
     }
-    assert!(rbuf == b"3456");
+    assert!(rbuf.deref().deref() == b"3456");
 
     f.seek(SeekFrom::Start(0)).unwrap();
     let len = f.read_to_end(&mut rbuf2).unwrap();
@@ -291,7 +319,7 @@ fn test_lio_listio_wait() {
 fn test_lio_listio_nowait() {
     const INITIAL: &'static [u8] = b"abcdef123456";
     const WBUF: &'static [u8] = b"CDEF";
-    let mut rbuf = vec![0; 4];
+    let rbuf = Rc::new(vec![0; 4].into_boxed_slice());
     let mut rbuf2 = Vec::new();
     const EXPECT: &'static [u8] = b"abCDEF123456";
     let mut f = tempfile().unwrap();
@@ -306,9 +334,9 @@ fn test_lio_listio_nowait() {
                                SigevNotify::SigevNone,
                                LioOpcode::LIO_WRITE);
 
-        let mut rcb = AioCb::from_mut_slice( f.as_raw_fd(),
+        let mut rcb = AioCb::from_boxed_slice( f.as_raw_fd(),
                                 8,   //offset
-                                &mut rbuf,
+                                rbuf.clone(),
                                 0,   //priority
                                 SigevNotify::SigevNone,
                                 LioOpcode::LIO_READ);
@@ -320,7 +348,7 @@ fn test_lio_listio_nowait() {
         assert!(wcb.aio_return().unwrap() as usize == WBUF.len());
         assert!(rcb.aio_return().unwrap() as usize == WBUF.len());
     }
-    assert!(rbuf == b"3456");
+    assert!(rbuf.deref().deref() == b"3456");
 
     f.seek(SeekFrom::Start(0)).unwrap();
     let len = f.read_to_end(&mut rbuf2).unwrap();
@@ -336,7 +364,7 @@ fn test_lio_listio_signal() {
     let _ = SIGUSR2_MTX.lock().expect("Mutex got poisoned by another test");
     const INITIAL: &'static [u8] = b"abcdef123456";
     const WBUF: &'static [u8] = b"CDEF";
-    let mut rbuf = vec![0; 4];
+    let rbuf = Rc::new(vec![0; 4].into_boxed_slice());
     let mut rbuf2 = Vec::new();
     const EXPECT: &'static [u8] = b"abCDEF123456";
     let mut f = tempfile().unwrap();
@@ -356,9 +384,9 @@ fn test_lio_listio_signal() {
                                SigevNotify::SigevNone,
                                LioOpcode::LIO_WRITE);
 
-        let mut rcb = AioCb::from_mut_slice( f.as_raw_fd(),
+        let mut rcb = AioCb::from_boxed_slice( f.as_raw_fd(),
                                 8,   //offset
-                                &mut rbuf,
+                                rbuf.clone(),
                                 0,   //priority
                                 SigevNotify::SigevNone,
                                 LioOpcode::LIO_READ);
@@ -373,7 +401,7 @@ fn test_lio_listio_signal() {
         assert!(wcb.aio_return().unwrap() as usize == WBUF.len());
         assert!(rcb.aio_return().unwrap() as usize == WBUF.len());
     }
-    assert!(rbuf == b"3456");
+    assert!(rbuf.deref().deref() == b"3456");
 
     f.seek(SeekFrom::Start(0)).unwrap();
     let len = f.read_to_end(&mut rbuf2).unwrap();
@@ -386,7 +414,7 @@ fn test_lio_listio_signal() {
 #[cfg(not(any(target_os = "ios", target_os = "macos")))]
 #[should_panic(expected = "Can't read into an immutable buffer")]
 fn test_lio_listio_read_immutable() {
-    let rbuf = vec![0; 4];
+    let rbuf: &'static [u8] = b"abcd";
     let f = tempfile().unwrap();
 
 
