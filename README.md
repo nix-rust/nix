@@ -31,7 +31,7 @@ pub fn gethostname(name: &mut [u8]) -> Result<()>;
 ```
 
 ## Requirements
-Rust >= 1.9.0
+Rust >= 1.13.0
 
 ## Usage
 
