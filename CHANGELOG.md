@@ -15,14 +15,15 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Minimum supported Rust version is now 1.13
 - Removed `revents` argument from `PollFd::new()` as it's an output argument and
   will be overwritten regardless of value.
-  ([#542](https://github.com/nix-rust/nix/pull/542)
+  ([#542](https://github.com/nix-rust/nix/pull/542))
 
 ### Fixed
 - Fixed multiple issues compiling under different archetectures and OSes.
   Now compiles on Linux/MIPS ([#538](https://github.com/nix-rust/nix/pull/538)),
   `Linux/PPC` ([#553](https://github.com/nix-rust/nix/pull/553)),
-  `MacOS/x86_64,i686` ([#553](https://github.com/nix-rust/nix/pull/553),
-  and `NetBSD/x64_64` ([#538](https://github.com/nix-rust/nix/pull/538).
+  `MacOS/x86_64,i686` ([#553](https://github.com/nix-rust/nix/pull/553)),
+  `NetBSD/x64_64` ([#538](https://github.com/nix-rust/nix/pull/538)), and
+  `FreeBSD/x86_64,i686` ([#536](https://github.com/nix-rust/nix/pull/536)).
 
 ## [0.8.0] 2017-03-02
 
