@@ -96,22 +96,14 @@ mod ffi {
 
     #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "dragonfly", target_os = "openbsd", target_os = "netbsd"))]
     pub mod consts {
-        #[cfg(not(any(target_os = "dragonfly", target_os = "netbsd")))]
-        use libc::{c_int, c_ulong, c_uchar};
-        #[cfg(any(target_os = "dragonfly", target_os = "netbsd"))]
-        use libc::{c_int, c_uint, c_uchar};
 
-        #[cfg(not(any(target_os = "dragonfly", target_os = "netbsd")))]
-        pub type tcflag_t = c_ulong;
-        #[cfg(any(target_os = "dragonfly", target_os = "netbsd"))]
-        pub type tcflag_t = c_uint;
+        use libc;
 
-        pub type cc_t = c_uchar;
+        use libc::c_int;
 
-        #[cfg(not(any(target_os = "dragonfly", target_os = "netbsd")))]
-        pub type speed_t = c_ulong;
-        #[cfg(any(target_os = "dragonfly", target_os = "netbsd"))]
-        pub type speed_t = c_uint;
+        pub type tcflag_t = libc::tcflag_t;
+        pub type cc_t = libc::cc_t;
+        pub type speed_t = libc::speed_t;
 
         #[repr(C)]
         #[derive(Clone, Copy)]
@@ -166,7 +158,7 @@ mod ffi {
                     B7200, B14400, B28800, B57600,
                     B76800, B115200, B230400};
 
-                #[cfg(any(target_os = "netbsd", target_os = "freebsd"))]
+                #[cfg(target_os = "freebsd")]
                 use libc::{B460800, B921600};
 
                 match s {
@@ -193,9 +185,9 @@ mod ffi {
                     B76800 => BaudRate::B76800,
                     B115200 => BaudRate::B115200,
                     B230400 => BaudRate::B230400,
-                    #[cfg(any(target_os = "netbsd", target_os = "freebsd"))]
+                    #[cfg(target_os = "freebsd")]
                     B460800 => BaudRate::B460800,
-                    #[cfg(any(target_os = "netbsd", target_os = "freebsd"))]
+                    #[cfg(target_os = "freebsd")]
                     B921600 => BaudRate::B921600,
                     b @ _ => unreachable!("Invalid baud constant: {}", b),
                 }

@@ -30,8 +30,37 @@ pub unsafe extern fn gethostname(name: *mut c_char, len: size_t) -> c_int;
 pub fn gethostname(name: &mut [u8]) -> Result<()>;
 ```
 
-## Requirements
-Rust >= 1.9.0
+## Supported Platforms
+
+nix target support consists of three tiers:
+
+  * Tier 1 - Target is supported and CI both builds and tests
+  * Tier 2 - Target is supported and CI builds the target
+  * Tier 3 - Target is supported and CI both builds and tests but test failures
+             do not block merging code
+
+The following targets are all supported by nix on Rust 1.13.0 or newer:
+
+Tier 1:
+  * i686-unknown-linux-gnu
+  * x86_64-unknown-linux-gnu
+  * i686-apple-darwin
+  * x86_64-apple-darwin
+  * aarch64-unknown-linux-gnu
+  * armv7-unknown-linux-gnueabihf
+  * arm-unknown-linux-gnueabi
+
+Tier 2:
+  * i686-unknown-freebsd
+  * x86_64-unknown-freebsd
+  * x86_64-unknown-netbsd
+
+Tier 3:
+  * i686-unknown-linux-musl
+  * x86_64-unknown-linux-musl
+  * mips-unknown-linux-gnu
+  * mipsel-unknown-linux-gnu
+  * powerpc-unknown-linux-gnu
 
 ## Usage
 
