@@ -85,20 +85,18 @@ locally.  More information is available in the [CI Readme][ci-readme].
 [travis-ci]: https://travis-ci.org/nix-rust/nix
 [ci-readme]: ci/README.md
 
-## Homu, the bot who merges all the PRs
+## bors, the bot who merges all the PRs
 
-All pull requests are merged via [homu], an integration bot. After the
+All pull requests are merged via [bors], an integration bot. After the
 pull request has been reviewed, the reviewer will leave a comment like
 
-> @homu r+
+> bors r+
 
-to let @homu know that it was approved. Then @homu will check that it passes
-tests when merged with the latest changes in the `master` branch, and merge if
-the tests succeed. You can check out the [nix queue on homu][queue] to see the
-status of PRs and their tests.
+to let bors know that it was approved. Then bors will check that it passes
+tests when merged with the latest changes in the `master` branch, and
+merge if the tests succeed.
 
-[homu]: http://homu.io/
-[queue]: http://homu.io/q/nix-rust/nix
+[bors]: https://bors-ng.github.io/
 
 
 ## API conventions
