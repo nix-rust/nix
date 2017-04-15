@@ -5,15 +5,24 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
-<!--### Added-->
+### Added
 - Added `nix::unistd::{openat, fstatat, readlink, readlinkat}`
-  ([#497](https://github.com/nix-rust/nix/pull/551))
+  ([#551](https://github.com/nix-rust/nix/pull/551))
 
 ### Changed
 - Marked `sys::mman::{ mmap, munmap, madvise, munlock, msync }` as unsafe.
   ([#559](https://github.com/nix-rust/nix/pull/559))
-  
-<!--### Fixed-->
+- Minimum supported Rust version is now 1.13
+- Removed `revents` argument from `PollFd::new()` as it's an output argument and
+  will be overwritten regardless of value.
+  ([#542](https://github.com/nix-rust/nix/pull/542)
+
+### Fixed
+- Fixed multiple issues compiling under different archetectures and OSes.
+  Now compiles on Linux/MIPS ([#538](https://github.com/nix-rust/nix/pull/538)),
+  `Linux/PPC` ([#553](https://github.com/nix-rust/nix/pull/553)),
+  `MacOS/x86_64,i686` ([#553](https://github.com/nix-rust/nix/pull/553),
+  and `NetBSD/x64_64` ([#538](https://github.com/nix-rust/nix/pull/538).
 
 ## [0.8.0] 2017-03-02
 
@@ -60,8 +69,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#540](https://github.com/nix-rust/nix/pull/540)
 
 ### Changed
-- `::nix::sys::termios::{cfgetispeed, cfsetispeed, cfgetospeed, cfsetospeed}` 
-  switched  to use `BaudRate` enum from `speed_t`. 
+- `::nix::sys::termios::{cfgetispeed, cfsetispeed, cfgetospeed, cfsetospeed}`
+  switched  to use `BaudRate` enum from `speed_t`.
   ([#518](https://github.com/nix-rust/nix/pull/518))
 - `epoll_ctl` now could accept None as argument `event`
   when op is `EpollOp::EpollCtlDel`.
@@ -107,16 +116,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Exposed all fcntl(2) operations at the module level, so they can be
   imported direclty instead of via `FcntlArg` enum.
   ([#541](https://github.com/nix-rust/nix/pull/541))
-- Removed `revents` argument from `PollFd::new()` as it's an output argument and
-  will be overwritten regardless of value.
-  ([#542](https://github.com/nix-rust/nix/pull/542)
 
 ### Fixed
-- Fixed multiple issues compiling under different archetectures and OSes.
-  Now compiles on Linux/MIPS ([#538](https://github.com/nix-rust/nix/pull/538)),
-  `Linux/PPC` ([#553](https://github.com/nix-rust/nix/pull/553)), 
-  `MacOS/x86_64,i686` ([#553](https://github.com/nix-rust/nix/pull/553),
-  and `NetBSD/x64_64` ([#538](https://github.com/nix-rust/nix/pull/538).
 - Fixed multiple issues with Unix domain sockets on non-Linux OSes
   ([#474](https://github.com/nix-rust/nix/pull/415))
 - Fixed using kqueue with `EVFILT_USER` on FreeBSD
