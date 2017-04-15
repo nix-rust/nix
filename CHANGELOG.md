@@ -112,6 +112,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#542](https://github.com/nix-rust/nix/pull/542)
 
 ### Fixed
+- Fixed multiple issues compiling under different archetectures and OSes.
+  Now compiles on Linux/MIPS ([#538](https://github.com/nix-rust/nix/pull/538)),
+  `Linux/PPC` ([#553](https://github.com/nix-rust/nix/pull/553)), 
+  `MacOS/x86_64,i686` ([#553](https://github.com/nix-rust/nix/pull/553),
+  and `NetBSD/x64_64` ([#538](https://github.com/nix-rust/nix/pull/538).
 - Fixed multiple issues with Unix domain sockets on non-Linux OSes
   ([#474](https://github.com/nix-rust/nix/pull/415))
 - Fixed using kqueue with `EVFILT_USER` on FreeBSD
