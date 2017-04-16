@@ -6,6 +6,8 @@ use nix::sys::signal::*;
 use nix::sys::time::{TimeSpec, TimeValLike};
 use std::io::{Write, Read, Seek, SeekFrom};
 use std::os::unix::io::AsRawFd;
+use std::sync::Mutex;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::{thread, time};
 use tempfile::tempfile;
 
@@ -192,22 +194,24 @@ fn test_write() {
     assert!(rbuf == EXPECT);
 }
 
-// XXX: should be sig_atomic_t, but rust's libc doesn't define that yet
-static mut SIGNALED: i32 = 0;
+lazy_static! {
+    pub static ref SIGNALED: AtomicBool = AtomicBool::new(false);
+    // protects access to SIGUSR2 handlers, not just SIGNALED
+    pub static ref SIGUSR2_MTX: Mutex<()> = Mutex::new(());
+}
 
 extern fn sigfunc(_: c_int) {
-    // It's a pity that Rust can't understand that static mutable sig_atomic_t
-    // variables can be safely accessed
-    unsafe { SIGNALED = 1 };
+    SIGNALED.store(true, Ordering::Relaxed);
 }
 
 // Test an aio operation with completion delivered by a signal
 #[test]
 fn test_write_sigev_signal() {
+    let _ = SIGUSR2_MTX.lock().expect("Mutex got poisoned by another test");
     let sa = SigAction::new(SigHandler::Handler(sigfunc),
                             SA_RESETHAND,
                             SigSet::empty());
-    unsafe {SIGNALED = 0 };
+    SIGNALED.store(false, Ordering::Relaxed);
     unsafe { sigaction(Signal::SIGUSR2, &sa) }.unwrap();
 
     const INITIAL: &'static [u8] = b"abcdef123456";
@@ -227,7 +231,7 @@ fn test_write_sigev_signal() {
                            },
                            LioOpcode::LIO_NOP);
     aiocb.write().unwrap();
-    while unsafe { SIGNALED == 0 } {
+    while SIGNALED.load(Ordering::Relaxed) == false {
         thread::sleep(time::Duration::from_millis(10));
     }
 
@@ -329,6 +333,7 @@ fn test_lio_listio_nowait() {
 #[test]
 #[cfg(not(any(target_os = "ios", target_os = "macos")))]
 fn test_lio_listio_signal() {
+    let _ = SIGUSR2_MTX.lock().expect("Mutex got poisoned by another test");
     const INITIAL: &'static [u8] = b"abcdef123456";
     const WBUF: &'static [u8] = b"CDEF";
     let mut rbuf = vec![0; 4];
@@ -357,11 +362,11 @@ fn test_lio_listio_signal() {
                                 0,   //priority
                                 SigevNotify::SigevNone,
                                 LioOpcode::LIO_READ);
-        unsafe {SIGNALED = 0 };
+        SIGNALED.store(false, Ordering::Relaxed);
         unsafe { sigaction(Signal::SIGUSR2, &sa) }.unwrap();
         let err = lio_listio(LioMode::LIO_NOWAIT, &[&mut wcb, &mut rcb], sigev_notify);
         err.expect("lio_listio failed");
-        while unsafe { SIGNALED == 0 } {
+        while SIGNALED.load(Ordering::Relaxed) == false {
             thread::sleep(time::Duration::from_millis(10));
         }
 
