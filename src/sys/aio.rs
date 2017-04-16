@@ -8,6 +8,7 @@ use std::io::Write;
 use std::io::stderr;
 use std::marker::PhantomData;
 use std::mem;
+use std::rc::Rc;
 use std::ptr::{null, null_mut};
 use sys::signal::*;
 use sys::time::TimeSpec;
@@ -61,6 +62,17 @@ pub enum AioCancelStat {
     AioAllDone = libc::AIO_ALLDONE,
 }
 
+/// Private type used by nix to keep buffers from Drop'ing while the kernel has
+/// a pointer to them.
+#[derive(Clone, Debug)]
+enum Keeper<'a> {
+    none,
+    /// Keeps a reference to a Boxed slice
+    boxed(Rc<Box<[u8]>>),
+    /// Keeps a reference to a slice
+    phantom(PhantomData<&'a mut [u8]>)
+}
+
 /// The basic structure used by all aio functions.  Each `aiocb` represents one
 /// I/O request.
 pub struct AioCb<'a> {
@@ -69,7 +81,8 @@ pub struct AioCb<'a> {
     mutable: bool,
     /// Could this `AioCb` potentially have any in-kernel state?
     in_progress: bool,
-    phantom: PhantomData<&'a mut [u8]>
+    /// Used to keep buffers from Drop'ing
+    keeper: Keeper<'a>
 }
 
 impl<'a> AioCb<'a> {
@@ -89,7 +102,7 @@ impl<'a> AioCb<'a> {
         a.aio_buf = null_mut();
 
         let aiocb = AioCb { aiocb: a, mutable: false, in_progress: false,
-                            phantom: PhantomData};
+                            keeper: Keeper::none};
         aiocb
     }
 
@@ -106,17 +119,43 @@ impl<'a> AioCb<'a> {
     /// which operation to use for this individual aiocb
     pub fn from_mut_slice(fd: RawFd, offs: off_t, buf: &'a mut [u8],
                           prio: ::c_int, sigev_notify: SigevNotify,
-                          opcode: LioOpcode) -> AioCb {
+                          opcode: LioOpcode) -> AioCb<'a> {
         let mut a = AioCb::common_init(fd, prio, sigev_notify);
         a.aio_offset = offs;
         a.aio_nbytes = buf.len() as size_t;
-        // casting an immutable buffer to a mutable pointer looks unsafe, but
-        // technically its only unsafe to dereference it, not to create it.
         a.aio_buf = buf.as_ptr() as *mut c_void;
         a.aio_lio_opcode = opcode as ::c_int;
 
         let aiocb = AioCb { aiocb: a, mutable: true, in_progress: false,
-                            phantom: PhantomData};
+                            keeper: Keeper::phantom(PhantomData)};
+        aiocb
+    }
+
+    /// Constructs a new `AioCb`.
+    ///
+    /// Unlike `from_mut_slice`, this method returns a structure suitable for
+    /// placement on the heap.
+    ///
+    /// * `fd`  File descriptor.  Required for all aio functions.
+    /// * `offs` File offset
+    /// * `buf` A shared memory buffer on the heap
+    /// * `prio` If POSIX Prioritized IO is supported, then the operation will
+    /// be prioritized at the process's priority level minus `prio`
+    /// * `sigev_notify` Determines how you will be notified of event
+    /// completion.
+    /// * `opcode` This field is only used for `lio_listio`.  It determines
+    /// which operation to use for this individual aiocb
+    pub fn from_boxed_slice(fd: RawFd, offs: off_t, buf: Rc<Box<[u8]>>,
+                          prio: ::c_int, sigev_notify: SigevNotify,
+                          opcode: LioOpcode) -> AioCb<'a> {
+        let mut a = AioCb::common_init(fd, prio, sigev_notify);
+        a.aio_offset = offs;
+        a.aio_nbytes = buf.len() as size_t;
+        a.aio_buf = buf.as_ptr() as *mut c_void;
+        a.aio_lio_opcode = opcode as ::c_int;
+
+        let aiocb = AioCb{ aiocb: a, mutable: true, in_progress: false,
+                            keeper: Keeper::boxed(buf)};
         aiocb
     }
 
@@ -139,12 +178,15 @@ impl<'a> AioCb<'a> {
         let mut a = AioCb::common_init(fd, prio, sigev_notify);
         a.aio_offset = offs;
         a.aio_nbytes = buf.len() as size_t;
+        // casting an immutable buffer to a mutable pointer looks unsafe,
+        // but technically its only unsafe to dereference it, not to create
+        // it.
         a.aio_buf = buf.as_ptr() as *mut c_void;
         assert!(opcode != LioOpcode::LIO_READ, "Can't read into an immutable buffer");
         a.aio_lio_opcode = opcode as ::c_int;
 
         let aiocb = AioCb { aiocb: a, mutable: false, in_progress: false,
-                            phantom: PhantomData};
+                            keeper: Keeper::none};
         aiocb
     }
 
@@ -284,7 +326,6 @@ impl<'a> Debug for AioCb<'a> {
             .field("aio_sigevent", &SigEvent::from(&self.aiocb.aio_sigevent))
             .field("mutable", &self.mutable)
             .field("in_progress", &self.in_progress)
-            .field("phantom", &self.phantom)
             .finish()
     }
 }
