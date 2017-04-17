@@ -27,6 +27,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   `NetBSD/x64_64` ([#538](https://github.com/nix-rust/nix/pull/538)), and
   `FreeBSD/x86_64,i686` ([#536](https://github.com/nix-rust/nix/pull/536)).
 
+## [0.8.1] 2017-04-16
+
+### Fixed
+- Fixed build on FreeBSD. (Cherry-picked
+  [a859ee3c](https://github.com/nix-rust/nix/commit/a859ee3c9396dfdb118fcc2c8ecc697e2d303467))
+
 ## [0.8.0] 2017-03-02
 
 ### Added
