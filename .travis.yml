@@ -82,7 +82,6 @@ matrix:
     - env: TARGET=x86_64-unknown-linux-musl
     - env: TARGET=mips-unknown-linux-gnu
     - env: TARGET=mipsel-unknown-linux-gnu
-    - env: TARGET=powerpc-unknown-linux-gnu
 
 install:
   - sh ci/install.sh

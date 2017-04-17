@@ -50,6 +50,7 @@ Tier 1:
   * armv7-unknown-linux-gnueabihf
   * arm-unknown-linux-gnueabi
   * x86_64-unknown-freebsd
+  * powerpc-unknown-linux-gnu
 
 Tier 2:
   * i686-unknown-freebsd
@@ -60,7 +61,6 @@ Tier 3:
   * x86_64-unknown-linux-musl
   * mips-unknown-linux-gnu
   * mipsel-unknown-linux-gnu
-  * powerpc-unknown-linux-gnu
 
 ## Usage
 
