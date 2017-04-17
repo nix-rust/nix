@@ -78,7 +78,6 @@ matrix:
       os: osx
       rust: nightly
     # FIXME: targets that should pass but are currently failing
-    - env: TARGET=i686-unknown-linux-musl
     - env: TARGET=x86_64-unknown-linux-musl
 
 install:
