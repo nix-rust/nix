@@ -18,6 +18,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Removed `revents` argument from `PollFd::new()` as it's an output argument and
   will be overwritten regardless of value.
   ([#542](https://github.com/nix-rust/nix/pull/542))
+- Changed type signature of `sys::select::FdSet::contains` to make `self`
+  immutable ([#564](https://github.com/nix-rust/nix/pull/564))
 
 ### Fixed
 - Fixed multiple issues compiling under different archetectures and OSes.
