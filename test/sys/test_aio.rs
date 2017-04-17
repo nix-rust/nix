@@ -233,7 +233,9 @@ extern fn sigfunc(_: c_int) {
 }
 
 // Test an aio operation with completion delivered by a signal
+// FIXME: This test is ignored on mips because of failures in qemu in CI
 #[test]
+#[cfg_attr(target_arch = "mips", ignore)]
 fn test_write_sigev_signal() {
     let _ = SIGUSR2_MTX.lock().expect("Mutex got poisoned by another test");
     let sa = SigAction::new(SigHandler::Handler(sigfunc),
@@ -358,8 +360,10 @@ fn test_lio_listio_nowait() {
 
 // Test lio_listio with LIO_NOWAIT and a SigEvent to indicate when all AioCb's
 // are complete.
+// FIXME: This test is ignored on mips because of failures in qemu in CI.
 #[test]
 #[cfg(not(any(target_os = "ios", target_os = "macos")))]
+#[cfg_attr(target_arch = "mips", ignore)]
 fn test_lio_listio_signal() {
     let _ = SIGUSR2_MTX.lock().expect("Mutex got poisoned by another test");
     const INITIAL: &'static [u8] = b"abcdef123456";
