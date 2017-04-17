@@ -3,6 +3,11 @@
 set -ex
 
 main() {
+    # Add a cfg spec to allow disabling specific tests under CI.
+    if [ "$TRAVIS" = true ]; then
+        export RUSTFLAGS=--cfg=travis
+    fi
+
     # Build debug and release targets
     cross build --target $TARGET
     cross build --target $TARGET --release

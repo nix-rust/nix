@@ -85,6 +85,13 @@ locally.  More information is available in the [CI Readme][ci-readme].
 [travis-ci]: https://travis-ci.org/nix-rust/nix
 [ci-readme]: ci/README.md
 
+### Disabling a test in the CI environment
+
+Sometimes there are features that cannot be tested in the CI environment.
+To stop a test from running under CI, add `#[cfg_attr(travis, ignore)]`
+to it. Please include a comment describing the reason it shouldn't run
+under CI, and a link to an upstream issue if possible!
+
 ## bors, the bot who merges all the PRs
 
 All pull requests are merged via [bors], an integration bot. After the
