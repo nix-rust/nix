@@ -85,12 +85,16 @@ matrix:
       os: osx
       rust: nightly
 
+before_install: set -e
+
 install:
   - sh ci/install.sh
   - source ~/.cargo/env || true
 
 script:
   - bash ci/script.sh
+
+after_script: set +e
 
 before_deploy:
   - sh ci/before_deploy.sh
