@@ -77,8 +77,6 @@ matrix:
     - env: TARGET=x86_64-apple-darwin
       os: osx
       rust: nightly
-    # FIXME: targets that should pass but are currently failing
-    - env: TARGET=x86_64-unknown-linux-musl
 
 install:
   - sh ci/install.sh

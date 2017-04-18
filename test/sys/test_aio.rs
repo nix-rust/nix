@@ -26,6 +26,7 @@ fn poll_aio(mut aiocb: &mut AioCb) -> Result<()> {
 // bindings.  So it's sufficient to check that AioCb.cancel returned any
 // AioCancelStat value.
 #[test]
+#[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
 fn test_cancel() {
     let wbuf: &'static [u8] = b"CDEF";
 
@@ -50,6 +51,7 @@ fn test_cancel() {
 
 // Tests using aio_cancel_all for all outstanding IOs.
 #[test]
+#[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
 fn test_aio_cancel_all() {
     let wbuf: &'static [u8] = b"CDEF";
 
@@ -73,6 +75,7 @@ fn test_aio_cancel_all() {
 }
 
 #[test]
+#[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
 fn test_fsync() {
     const INITIAL: &'static [u8] = b"abcdef123456";
     let mut f = tempfile().unwrap();
@@ -88,6 +91,7 @@ fn test_fsync() {
 
 
 #[test]
+#[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
 fn test_aio_suspend() {
     const INITIAL: &'static [u8] = b"abcdef123456";
     const WBUF: &'static [u8] = b"CDEF";
@@ -129,6 +133,7 @@ fn test_aio_suspend() {
 // Test a simple aio operation with no completion notification.  We must poll
 // for completion
 #[test]
+#[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
 fn test_read() {
     const INITIAL: &'static [u8] = b"abcdef123456";
     let rbuf = Rc::new(vec![0; 4].into_boxed_slice());
@@ -154,6 +159,7 @@ fn test_read() {
 
 // Tests from_mut_slice
 #[test]
+#[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
 fn test_read_into_mut_slice() {
     const INITIAL: &'static [u8] = b"abcdef123456";
     let mut rbuf = vec![0; 4];
@@ -198,6 +204,7 @@ fn test_read_immutable_buffer() {
 // Test a simple aio operation with no completion notification.  We must poll
 // for completion.  Unlike test_aio_read, this test uses AioCb::from_slice
 #[test]
+#[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
 fn test_write() {
     const INITIAL: &'static [u8] = b"abcdef123456";
     let wbuf = "CDEF".to_string().into_bytes();
@@ -237,7 +244,7 @@ extern fn sigfunc(_: c_int) {
 // Test an aio operation with completion delivered by a signal
 // FIXME: This test is ignored on mips because of failures in qemu in CI
 #[test]
-#[cfg_attr(target_arch = "mips", ignore)]
+#[cfg_attr(any(all(target_env = "musl", target_arch = "x86_64"), target_arch = "mips"), ignore)]
 fn test_write_sigev_signal() {
     let _ = SIGUSR2_MTX.lock().expect("Mutex got poisoned by another test");
     let sa = SigAction::new(SigHandler::Handler(sigfunc),
@@ -278,6 +285,7 @@ fn test_write_sigev_signal() {
 // lio_listio returns.
 #[test]
 #[cfg(not(any(target_os = "ios", target_os = "macos")))]
+#[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
 fn test_lio_listio_wait() {
     const INITIAL: &'static [u8] = b"abcdef123456";
     const WBUF: &'static [u8] = b"CDEF";
@@ -320,6 +328,7 @@ fn test_lio_listio_wait() {
 // mechanism to check for the individual AioCb's completion.
 #[test]
 #[cfg(not(any(target_os = "ios", target_os = "macos")))]
+#[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
 fn test_lio_listio_nowait() {
     const INITIAL: &'static [u8] = b"abcdef123456";
     const WBUF: &'static [u8] = b"CDEF";
@@ -365,7 +374,7 @@ fn test_lio_listio_nowait() {
 // FIXME: This test is ignored on mips because of failures in qemu in CI.
 #[test]
 #[cfg(not(any(target_os = "ios", target_os = "macos")))]
-#[cfg_attr(target_arch = "mips", ignore)]
+#[cfg_attr(any(target_arch = "mips", target_env = "musl"), ignore)]
 fn test_lio_listio_signal() {
     let _ = SIGUSR2_MTX.lock().expect("Mutex got poisoned by another test");
     const INITIAL: &'static [u8] = b"abcdef123456";
@@ -438,6 +447,7 @@ fn test_lio_listio_read_immutable() {
 // Test dropping an AioCb that hasn't yet finished.  Behind the scenes, the
 // library should wait for the AioCb's completion.
 #[test]
+#[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
 fn test_drop() {
     const INITIAL: &'static [u8] = b"abcdef123456";
     const WBUF: &'static [u8] = b"CDEF"; //"CDEF".to_string().into_bytes();

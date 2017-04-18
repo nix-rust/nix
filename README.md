@@ -58,11 +58,11 @@ Tier 1:
   * mips-unknown-linux-gnu
   * mipsel-unknown-linux-gnu
   * i686-unknown-linux-musl
+  * x86_64-unknown-linux-musl
 
 Tier 2:
   * i686-unknown-freebsd
   * x86_64-unknown-netbsd
-  * x86_64-unknown-linux-musl
 
 ## Usage
 
