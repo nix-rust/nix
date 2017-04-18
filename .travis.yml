@@ -6,17 +6,10 @@ language: rust
 services: docker
 sudo: required
 
-# This is the Rust channel that build jobs will use by default but can be
-# overridden on a case by case basis down below
-rust: 1.13.0
-
 env:
   global:
     - CRATE_NAME=nix
     - CARGO_TEST_THREADS=1
-
-    # default job
-    - TARGET=x86_64-unknown-linux-gnu
 
 matrix:
   # These are all the build jobs. Adjust as necessary. Comment out what you
@@ -24,33 +17,47 @@ matrix:
   include:
     # Linux
     - env: TARGET=i686-unknown-linux-gnu
+      rust: 1.13.0
     - env: TARGET=i686-unknown-linux-musl
-    # - env: TARGET=x86_64-unknown-linux-gnu  # this is the default job
+      rust: 1.13.0
+    - env: TARGET=x86_64-unknown-linux-gnu
+      rust: 1.13.0
     - env: TARGET=x86_64-unknown-linux-musl
+      rust: 1.13.0
 
     # OSX
     - env: TARGET=i686-apple-darwin
+      rust: 1.13.0
       os: osx
     - env: TARGET=x86_64-apple-darwin
+      rust: 1.13.0
       os: osx
 
     # *BSD
     - env: TARGET=i686-unknown-freebsd DISABLE_TESTS=1
+      rust: 1.13.0
     # - env: TARGET=x86_64-unknown-freebsd DISABLE_TESTS=1 # Uses BuildBot instead
     - env: TARGET=x86_64-unknown-netbsd DISABLE_TESTS=1
+      rust: 1.13.0
 
     # Other architectures
     - env: TARGET=aarch64-unknown-linux-gnu
+      rust: 1.13.0
     - env: TARGET=armv7-unknown-linux-gnueabihf
+      rust: 1.13.0
     - env: TARGET=mips-unknown-linux-gnu
+      rust: 1.13.0
     # - env: TARGET=mips64-unknown-linux-gnuabi64
     # - env: TARGET=mips64el-unknown-linux-gnuabi64
     - env: TARGET=mipsel-unknown-linux-gnu
+      rust: 1.13.0
     - env: TARGET=powerpc-unknown-linux-gnu
+      rust: 1.13.0
     # - env: TARGET=powerpc64-unknown-linux-gnu
     # - env: TARGET=powerpc64le-unknown-linux-gnu
     # - env: TARGET=s390x-unknown-linux-gnu
     - env: TARGET=arm-unknown-linux-gnueabi
+      rust: 1.13.0
     # - env: TARGET=arm-unknown-linux-musleabi
 
     # Testing beta on main targets
