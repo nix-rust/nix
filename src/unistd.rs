@@ -59,7 +59,7 @@ impl ForkResult {
 ///        println!("Continuing execution in parent process, new child has pid: {}", child);
 ///    }
 ///    Ok(ForkResult::Child) => println!("I'm a new child process"),
-///    Err(e) => println!("Fork failed"),
+///    Err(_) => println!("Fork failed"),
 /// }
 /// ```
 ///
@@ -272,7 +272,7 @@ pub fn fchdir(dirfd: RawFd) -> Result<()> {
 /// - the path already exists
 /// - the path name is too long (longer than `PATH_MAX`, usually 4096 on linux, 1024 on OS X)
 ///
-/// For a full list consult 
+/// For a full list consult
 /// [man mkdir(2)](http://man7.org/linux/man-pages/man2/mkdir.2.html#ERRORS)
 ///
 /// # Example
@@ -798,7 +798,7 @@ pub fn sleep(seconds: libc::c_uint) -> c_uint {
 /// ```rust
 /// use nix::unistd;
 ///
-/// let fd = match unistd::mkstemp("/tmp/tempfile_XXXXXX") {
+/// let _ = match unistd::mkstemp("/tmp/tempfile_XXXXXX") {
 ///     Ok((fd, path)) => {
 ///         unistd::unlink(path.as_path()).unwrap(); // flag file to be deleted at app termination
 ///         fd

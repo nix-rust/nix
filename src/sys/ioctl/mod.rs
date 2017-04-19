@@ -35,8 +35,6 @@
 //! from [rust-spidev](https://github.com/posborne/rust-spidev).
 //!
 //! ```
-//! #[macro_use] extern crate nix;
-//!
 //! #[allow(non_camel_case_types)]
 //! pub struct spi_ioc_transfer {
 //!     pub tx_buf: u64,
