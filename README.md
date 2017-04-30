@@ -2,6 +2,7 @@
 
 [![Build Status](https://travis-ci.org/nix-rust/nix.svg?branch=master)](https://travis-ci.org/nix-rust/nix)
 [![crates.io](http://meritbadge.herokuapp.com/nix)](https://crates.io/crates/nix)
+[![Gitter chat at https://gitter.im/nix-rust/nix](https://badges.gitter.im/nix-rust/nix.svg)](https://gitter.im/nix-rust/nix)
 
 [Documentation (Releases)](https://docs.rs/nix/)
 
