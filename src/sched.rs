@@ -91,9 +91,9 @@ mod ffi {
     }
 }
 
-pub fn sched_setaffinity(pid: isize, cpuset: &CpuSet) -> Result<()> {
+pub fn sched_setaffinity(pid: pid_t, cpuset: &CpuSet) -> Result<()> {
     let res = unsafe {
-        libc::sched_setaffinity(pid as libc::pid_t,
+        libc::sched_setaffinity(pid,
                                 mem::size_of::<CpuSet>() as libc::size_t,
                                 mem::transmute(cpuset))
     };
