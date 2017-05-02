@@ -54,7 +54,7 @@ mod arch {
     pub static MEMFD_CREATE: Syscall = 354;
 }
 
-#[cfg(target_arch = "powerpc")]
+#[cfg(any(target_arch = "powerpc", target_arch = "powerpc64"))]
 mod arch {
     use libc::c_long;
 
