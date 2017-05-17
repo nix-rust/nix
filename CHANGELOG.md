@@ -10,6 +10,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#582](https://github.com/nix-rust/nix/pull/582)
 - Added `nix::unistd::{openat, fstatat, readlink, readlinkat}`
   ([#551](https://github.com/nix-rust/nix/pull/551))
+- Added `nix::pty::{grantpt, posix_openpt, ptsname/ptsname_r, unlockpt}`
+  ([#556](https://github.com/nix-rust/nix/pull/556)
 
 ### Changed
 - Marked `sys::mman::{ mmap, munmap, madvise, munlock, msync }` as unsafe.
