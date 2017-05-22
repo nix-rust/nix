@@ -3,7 +3,7 @@
 #[cfg(any(target_arch = "x86_64"))]
 use libc::{c_ushort, c_uint, c_char, c_int, c_longlong, c_ulonglong};
 #[cfg(any(target_arch = "x86"))]
-use libc::{c_ushort, c_uint, c_char, c_int, c_long, c_ulong};
+use libc::{c_ushort, c_char, c_int, c_long, c_ulong};
 
 use libc::size_t;
 

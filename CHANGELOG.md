@@ -13,7 +13,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Added `nix::pty::{grantpt, posix_openpt, ptsname/ptsname_r, unlockpt}`
   ([#556](https://github.com/nix-rust/nix/pull/556)
 - Added `nix::sys::user`
-  ([#TBD](https://github.com/nix-rust/nix/pull/)
+  ([#606](https://github.com/nix-rust/nix/pull/606)
 
 ### Changed
 - Marked `sys::mman::{ mmap, munmap, madvise, munlock, msync }` as unsafe.
