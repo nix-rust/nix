@@ -59,7 +59,9 @@ pub mod time;
           )]
 pub mod ptrace;
 
-#[cfg(all(target_os = "linux"))]
+#[cfg(any(target_arch = "x86",
+          target_arch = "x86_64"
+          )]
 pub mod user;
 
 pub mod select;
