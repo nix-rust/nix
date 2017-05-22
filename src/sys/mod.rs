@@ -59,6 +59,9 @@ pub mod time;
           )]
 pub mod ptrace;
 
+#[cfg(all(target_os = "linux"))]
+pub mod user;
+
 pub mod select;
 
 #[cfg(all(target_os = "linux",
