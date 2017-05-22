@@ -6,6 +6,28 @@ use libc::{c_ushort, c_uint, c_char, c_int, c_longlong, c_ulonglong};
 use libc::{c_ushort, c_uint, c_char, c_int, c_long, c_ulong};
 
 
+libc_bitflags! {
+    pub flags ExtendedFlags: libc::size_t{
+        EFLAG_CARRY = 1,
+        EFLAG_PARITY = 3,
+        EFLAG_AUXILIARY_CARRY = 5,
+        EFLAG_ZERO = 7,
+        EFLAG_SIGN = 8,
+        EFLAG_TRAP = 9,
+        EFLAG_INTERRUPT_ENABLE = 10,
+        EFLAG_DIRECTION = 11,
+        EFLAG_OVERFLOW = 12,
+        EFLAG_IOPRIVILEGE_1 = 13,
+        EFLAG_IOPRIVILEGE_2 = 14,
+        EFLAG_NESTEDTASK = 15,
+        EFLAG_RESUME = 17,
+        EFLAG_VIRTUAL_80086_MODE = 18,
+        EFLAG_ALIGNMENT_CHECK = 19,
+        EFLAG_VIRTUAL_INTERRUPT = 20,
+        EFLAG_VIRTUAL_INTERRUPT_PENDING = 21,
+        EFLAG_CPUID = 22
+    }
+}
 #[repr(C)]
 #[cfg(any(target_arch = "x86_64"))]
 pub struct FpRegs {
@@ -44,7 +66,7 @@ pub struct Regs {
     pub orig_rax: c_ulonglong,
     pub rip: c_ulonglong,
     pub cs: c_ulonglong,
-    pub eflags: c_ulonglong,
+    pub eflags: ExtendedFlags,
     pub rsp: c_ulonglong,
     pub ss: c_ulonglong,
     pub fs_base: c_ulonglong,
@@ -127,7 +149,7 @@ pub struct Regs {
     pub orig_eax: c_long,
     pub eip: c_long,
     pub xcs: c_long,
-    pub eflags: c_long,
+    pub eflags: ExtendedFlags,
     pub esp: c_long,
     pub xss: c_long,
 }
