@@ -3,9 +3,11 @@
 //! [Further reading](http://man7.org/linux/man-pages/man7/socket.7.html)
 use {Error, Errno, Result};
 use features;
+#[cfg(all(target_os = "linux", not(target_arch="arm")))]
+use unistd::{Pid, Uid, Gid};
 use fcntl::{fcntl, FD_CLOEXEC, O_NONBLOCK};
 use fcntl::FcntlArg::{F_SETFD, F_SETFL};
-use libc::{c_void, c_int, socklen_t, size_t, pid_t, uid_t, gid_t};
+use libc::{c_void, c_int, socklen_t, size_t};
 use std::{mem, ptr, slice};
 use std::os::unix::io::RawFd;
 use sys::uio::IoVec;
@@ -527,12 +529,36 @@ pub struct linger {
     pub l_linger: c_int
 }
 
+/// Kernel credential structure.
+///
+/// This structure is equivalent to [libc::ucred].
+///
+/// [libc::ucred]: http://www.man7.org/linux/man-pages/man7/unix.7.html
+#[cfg(all(target_os = "linux", not(target_arch="arm")))]
 #[repr(C)]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub struct ucred {
-    pid: pid_t,
-    uid: uid_t,
-    gid: gid_t,
+pub struct UserCredentials {
+    pid: Pid,
+    uid: Uid,
+    gid: Gid,
+}
+
+#[cfg(all(target_os = "linux", not(target_arch="arm")))]
+impl UserCredentials {
+    /// Get the process ID of the sending process.
+    pub fn pid(&self) -> Pid {
+        self.pid
+    }
+
+    /// Get the user ID of the sending process.
+    pub fn user(&self) -> Uid {
+        self.uid
+    }
+
+    /// Get the group ID of the sending process.
+    pub fn group(&self) -> Gid {
+        self.gid
+    }
 }
 
 /*
