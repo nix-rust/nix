@@ -18,6 +18,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#556](https://github.com/nix-rust/nix/pull/556)
 - Added `nix::ptr::openpty`
   ([#456](https://github.com/nix-rust/nix/pull/456))
+- Added `nix::ptrace::{ptrace_get_data, ptrace_getsiginfo, ptrace_setsiginfo
+  and nix::Error::UnsupportedOperation}`
+  ([#614](https://github.com/nix-rust/nix/pull/614))
 
 ### Changed
 - Marked `sys::mman::{ mmap, munmap, madvise, munlock, msync }` as unsafe.
@@ -28,6 +31,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#542](https://github.com/nix-rust/nix/pull/542))
 - Changed type signature of `sys::select::FdSet::contains` to make `self`
   immutable ([#564](https://github.com/nix-rust/nix/pull/564))
+
+### Removed
+- Removed io::Error from nix::Error and conversion from nix::Error to Errno
+  ([#614](https://github.com/nix-rust/nix/pull/614))
 
 ### Fixed
 - Fixed multiple issues compiling under different archetectures and OSes.
