@@ -315,7 +315,7 @@ impl AsRef<libc::sigset_t> for SigSet {
 }
 
 #[allow(unknown_lints)]
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum SigHandler {
     SigDfl,
     SigIgn,
@@ -345,6 +345,24 @@ impl SigAction {
         s.sa_mask = mask.sigset;
 
         SigAction { sigaction: s }
+    }
+
+    pub fn flags(&self) -> SaFlags {
+        SaFlags::from_bits(self.sigaction.sa_flags).unwrap()
+    }
+
+    pub fn mask(&self) -> SigSet {
+        SigSet { sigset: self.sigaction.sa_mask }
+    }
+
+    pub fn handler(&self) -> SigHandler {
+        match self.sigaction.sa_sigaction {
+            libc::SIG_DFL => SigHandler::SigDfl,
+            libc::SIG_IGN => SigHandler::SigIgn,
+            f if self.flags().contains(SA_SIGINFO) =>
+                SigHandler::SigAction( unsafe { mem::transmute(f) } ),
+            f => SigHandler::Handler( unsafe { mem::transmute(f) } ),
+        }
     }
 }
 
@@ -637,6 +655,41 @@ mod tests {
         assert!(!oldmask.contains(SIGUSR2));
 
         assert!(SigSet::thread_get_mask().unwrap().contains(SIGUSR2));
+    }
+
+    #[test]
+    fn test_sigaction() {
+        use libc;
+
+        extern fn test_sigaction_handler(_: libc::c_int) {}
+        extern fn test_sigaction_action(_: libc::c_int,
+            _: *mut libc::siginfo_t, _: *mut libc::c_void) {}
+
+        let handler_sig = SigHandler::Handler(test_sigaction_handler);
+
+        let flags = SA_ONSTACK | SA_RESTART | SA_SIGINFO;
+
+        let mut mask = SigSet::empty();
+        mask.add(SIGUSR1);
+
+        let action_sig = SigAction::new(handler_sig, flags, mask);
+
+        assert_eq!(action_sig.flags(), SA_ONSTACK | SA_RESTART);
+        assert_eq!(action_sig.handler(), handler_sig);
+
+        mask = action_sig.mask();
+        assert!(mask.contains(SIGUSR1));
+        assert!(!mask.contains(SIGUSR2));
+
+        let handler_act = SigHandler::SigAction(test_sigaction_action);
+        let action_act = SigAction::new(handler_act, flags, mask);
+        assert_eq!(action_act.handler(), handler_act);
+
+        let action_dfl = SigAction::new(SigHandler::SigDfl, flags, mask);
+        assert_eq!(action_dfl.handler(), SigHandler::SigDfl);
+
+        let action_ign = SigAction::new(SigHandler::SigIgn, flags, mask);
+        assert_eq!(action_ign.handler(), SigHandler::SigIgn);
     }
 
     // TODO(#251): Re-enable after figuring out flakiness.
