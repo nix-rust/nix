@@ -49,10 +49,10 @@ Tier 1:
   * aarch64-unknown-linux-gnu
   * armv7-unknown-linux-gnueabihf
   * arm-unknown-linux-gnueabi
+  * x86_64-unknown-freebsd
 
 Tier 2:
   * i686-unknown-freebsd
-  * x86_64-unknown-freebsd
   * x86_64-unknown-netbsd
 
 Tier 3:
