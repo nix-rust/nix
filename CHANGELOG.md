@@ -12,8 +12,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#591](https://github.com/nix-rust/nix/pull/591)
 - Added `AioCb::from_boxed_slice`
   ([#582](https://github.com/nix-rust/nix/pull/582)
-- Added `nix::unistd::{openat, fstatat, readlink, readlinkat}`
+- Added `nix::unistd::{openat, fstatat, readlink, readlinkat, access, faccessat}`
   ([#551](https://github.com/nix-rust/nix/pull/551))
+  ([#605](https://github.com/nix-rust/nix/pull/605))
 - Added `nix::pty::{grantpt, posix_openpt, ptsname/ptsname_r, unlockpt}`
   ([#556](https://github.com/nix-rust/nix/pull/556)
 

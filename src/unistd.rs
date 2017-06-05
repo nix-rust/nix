@@ -1,14 +1,14 @@
 //! Safe wrappers around functions found in libc "unistd.h" header
 
 use {Errno, Error, Result, NixPath};
-use fcntl::{fcntl, OFlag, O_CLOEXEC, FD_CLOEXEC};
+use fcntl::{AtFlags, fcntl, OFlag, O_CLOEXEC, FD_CLOEXEC};
 use fcntl::FcntlArg::F_SETFD;
 use libc::{self, c_char, c_void, c_int, c_uint, size_t, pid_t, off_t, uid_t, gid_t, mode_t};
 use std::mem;
 use std::ffi::{CString, CStr, OsString, OsStr};
 use std::os::unix::ffi::{OsStringExt, OsStrExt};
 use std::os::unix::io::RawFd;
-use std::path::{PathBuf};
+use std::path::PathBuf;
 use void::Void;
 use sys::stat::Mode;
 
@@ -817,6 +817,79 @@ pub fn mkstemp<P: ?Sized + NixPath>(template: &P) -> Result<(RawFd, PathBuf)> {
     let pathname = OsString::from_vec(path);
     try!(Errno::result(fd));
     Ok((fd, PathBuf::from(pathname)))
+}
+
+libc_bitflags!{
+    /// Flags that determine what permissions to check for in [`access`](fn.access.html)
+    /// and [`faccessat`](fn.faccessat.html) functions.
+    pub flags AccessFlags: c_int {
+        /// Read permission.
+        R_OK,
+        /// Write permission.
+        W_OK,
+        /// Execute permission.
+        X_OK,
+    }
+}
+
+/// Whether [`access`](fn.access.html) and [`faccessat`](fn.faccessat.html) functions
+/// should check whether a file exists or whether the current process has the requested
+/// permissions to access it.
+pub enum AccessMode {
+    /// Check whether the file exists.
+    F_OK,
+    /// Check whether the file exists and the current process has the requested
+    /// permissions to access it.
+    Flags(AccessFlags),
+}
+
+impl AccessMode {
+    /// Convert the `enum AccessMode` + `flags AccessFlags` combo to the plain
+    /// `mode: c_int` syscalls expect.
+    fn to_libc_type(&self) -> c_int {
+        match self {
+            &AccessMode::F_OK => libc::F_OK,
+            &AccessMode::Flags(flags) => flags.bits(),
+        }
+    }
+}
+
+/// Check whether a file exists or whether the current process can access a file ([see access(2)]
+/// (http://man7.org/linux/man-pages/man2/access.2.html)).
+///
+/// # Example
+/// ```
+/// use nix::unistd::*;
+///
+/// let devnull_exists = access("/dev/null", AccessMode::F_OK);
+/// assert!(devnull_exists.is_ok());
+/// ```
+pub fn access<P: ?Sized + NixPath>(path: &P, mode: AccessMode) -> Result<()> {
+    let res = try!(path.with_nix_path(|path|
+        unsafe {
+            libc::access(path.as_ptr(), mode.to_libc_type())
+        }
+    ));
+    Errno::result(res).map(drop)
+}
+
+/// Check whether a file exists or whether the current process can access a file,
+/// relative to a directory file descriptor ([see faccessat(2)]
+/// (http://man7.org/linux/man-pages/man2/faccessat.2.html)).
+pub fn faccessat<P: ?Sized + NixPath>(dirfd: RawFd,
+                                      path: &P,
+                                      mode: AccessMode,
+                                      flags: AtFlags)
+                                      -> Result<()> {
+    let res = try!(path.with_nix_path(|path|
+        unsafe {
+            libc::faccessat(dirfd,
+                            path.as_ptr(),
+                            mode.to_libc_type(),
+                            flags.bits())
+        }
+    ));
+    Errno::result(res).map(drop)
 }
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
