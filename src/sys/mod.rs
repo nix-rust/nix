@@ -84,3 +84,4 @@ pub mod statfs;
               target_arch = "arm")),
           )]
 pub mod statvfs;
+pub mod pthread;

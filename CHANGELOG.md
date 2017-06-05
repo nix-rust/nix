@@ -8,6 +8,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Added `sys::signal::SigAction::{ flags, mask, handler}`
   ([#611](https://github.com/nix-rust/nix/pull/609)
+- Added `nix::sys::pthread::pthread_self`
+  ([#591](https://github.com/nix-rust/nix/pull/591)
 - Added `AioCb::from_boxed_slice`
   ([#582](https://github.com/nix-rust/nix/pull/582)
 - Added `nix::unistd::{openat, fstatat, readlink, readlinkat}`
