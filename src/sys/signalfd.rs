@@ -60,10 +60,10 @@ pub fn signalfd<'a, T: Into<&'a SigSet>>(fd: RawFd, mask: T, flags: SfdFlags) ->
 /// # Examples
 ///
 /// ```
-/// # use nix::sys::signalfd::*;
+/// #use nix::sys::signal::*;
+/// #use nix::sys::signalfd::*;
 /// // Set the thread to block the SIGUSR1 signal, otherwise the default handler will be used
-/// let mut mask = SigSet::empty();
-/// mask.add(signal::SIGUSR1);
+/// let mask: SigSet = Signal::SIGUSR1.into();
 /// mask.thread_block().unwrap();
 ///
 /// // Signals are queued up on the file descriptor

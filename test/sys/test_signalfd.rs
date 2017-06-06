@@ -8,8 +8,7 @@ fn test_signalfd() {
     let m = ::SIGNAL_MTX.lock().expect("Mutex got poisoned by another test");
 
     // Block the SIGUSR1 signal from automatic processing for this thread
-    let mut mask = SigSet::empty();
-    mask.add(signal::SIGUSR1);
+    let mask: SigSet = SigSet::SIGUSR1.into();
     mask.thread_block().unwrap();
 
     let mut fd = SignalFd::new(&mask).unwrap();
