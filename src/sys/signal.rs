@@ -14,6 +14,19 @@ use std::ptr;
 // type for signal constants.
 // We would prefer to use the libc::c_int alias in the repr attribute. Unfortunately
 // this is not (yet) possible.
+/// `Signal` is a representation of a POSIX signal on various platforms, analogous to the
+/// `libc::SIG*` constants. In nix it is used for various operations related to signals (such as
+/// masking, sending, intercepting, etc). A related type is `SigSet`, which represents a collection
+/// (or set) of `Signal`s.
+///
+/// # Examples
+///
+/// `Into` and `From` promote a `Signal` to a `SigSet` that has only the given `Signal` inside it.
+/// ```
+/// # use ::nix::sys::signal::*;
+/// let sigset_a: SigSet = Signal::SIGTERM.into();
+/// let sigset_b = SigSet::from(Signal::SIGTERM);
+/// ```
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(i32)]
 pub enum Signal {
@@ -248,11 +261,29 @@ pub enum SigmaskHow {
     SIG_SETMASK = libc::SIG_SETMASK,
 }
 
+/// `SigSet` represents a set of `Signal`s and is a thin wrapper around the libc APIs for
+/// `sigset_t`.
+///
+/// # Examples
+///
+/// `Signal`s can be promoted to `SigSet`s through the use of `std::convert::Into`.
+/// ```
+/// # use ::nix::sys::signal::*;
+/// let sigset_a: SigSet = Signal::SIGTERM.into();
+/// let sigset_b = SigSet::from(Signal::SIGTERM);
+/// ```
 #[derive(Clone, Copy)]
 pub struct SigSet {
     sigset: libc::sigset_t
 }
 
+impl From<Signal> for SigSet {
+    fn from(s: Signal) -> SigSet {
+        let mut sigset = SigSet::empty();
+        sigset.add(s);
+        sigset
+    }
+}
 
 impl SigSet {
     pub fn all() -> SigSet {
@@ -733,5 +764,15 @@ mod tests {
 
         raise(SIGUSR1).unwrap();
         assert_eq!(mask.wait().unwrap(), SIGUSR1);
+    }
+
+    #[test]
+    fn test_sigset_into() {
+        let sigset_a: SigSet = Signal::SIGINT.into();
+        assert!(sigset_a.contains(Signal::SIGINT));
+        assert!(!sigset_a.contains(Signal::SIGTERM));
+        let sigset_b = SigSet::from(Signal::SIGTERM);
+        assert!(!sigset_b.contains(Signal::SIGINT));
+        assert!(sigset_b.contains(Signal::SIGTERM));
     }
 }
