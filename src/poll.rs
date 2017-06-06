@@ -54,14 +54,14 @@ pub fn poll(fds: &mut [PollFd], timeout: libc::c_int) -> Result<libc::c_int> {
 }
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
-pub fn ppoll(fds: &mut [PollFd], timeout: TimeSpec, sigmask: SigSet) -> Result<libc::c_int> {
+pub fn ppoll<T: Into<SigSet>>(fds: &mut [PollFd], timeout: TimeSpec, sigmask: T) -> Result<libc::c_int> {
 
 
     let res = unsafe {
         libc::ppoll(fds.as_mut_ptr() as *mut libc::pollfd,
                     fds.len() as libc::nfds_t,
                     timeout.as_ref(),
-                    sigmask.as_ref())
+                    sigmask.into().as_ref())
     };
     Errno::result(res)
 }

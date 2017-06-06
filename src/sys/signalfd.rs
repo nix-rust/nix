@@ -46,9 +46,9 @@ pub const SIGNALFD_SIGINFO_SIZE: usize = 128;
 /// signalfd (the default handler will be invoked instead).
 ///
 /// See [the signalfd man page for more information](http://man7.org/linux/man-pages/man2/signalfd.2.html)
-pub fn signalfd(fd: RawFd, mask: &SigSet, flags: SfdFlags) -> Result<RawFd> {
+pub fn signalfd<'a, T: Into<&'a SigSet>>(fd: RawFd, mask: T, flags: SfdFlags) -> Result<RawFd> {
     unsafe {
-        Errno::result(libc::signalfd(fd as libc::c_int, mask.as_ref(), flags.bits()))
+        Errno::result(libc::signalfd(fd as libc::c_int, mask.into().as_ref(), flags.bits()))
     }
 }
 

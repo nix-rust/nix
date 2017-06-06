@@ -226,39 +226,22 @@ impl Signal {
     }
 }
 
-impl BitOr for Signal {
+impl<T: Into<SigSet>> BitOr<T> for SigSet {
     type Output = SigSet;
 
-    fn bitor(self, rhs: Self) -> Self::Output {
-        let mut copy = SigSet::empty();
-        copy.add(self);
-        copy.add(rhs);
-        copy
-    }
-}
-
-impl BitOr<Signal> for SigSet {
-    type Output = SigSet;
-
-    fn bitor(self, rhs: Signal) -> Self::Output {
+    fn bitor(self, rhs: T) -> Self::Output {
         let mut copy = self;
-        copy.add(rhs);
+        copy.extend(&rhs.into());
         copy
     }
 }
 
-impl BitOr<SigSet> for Signal {
+impl<T: Into<SigSet>> BitOr<T> for Signal {
     type Output = SigSet;
 
     // bitor is commutative.
-    fn bitor(self, rhs: SigSet) -> Self::Output {
-        rhs | self
-    }
-}
-
-impl BitOrAssign<Signal> for SigSet {
-    fn bitor_assign(&mut self, rhs: Signal) {
-        self.add(rhs);
+    fn bitor(self, rhs: T) -> Self::Output {
+        rhs.into() | self
     }
 }
 
@@ -386,10 +369,10 @@ impl SigSet {
         }
     }
 
-    pub fn extend(&mut self, other: &SigSet) {
+    pub fn extend<'a, T: Copy + Into<&'a SigSet>>(&mut self, other: T) {
         for signal in Signal::iterator() {
-            if other.contains(signal) {
-                self.add(signal);
+            if other.into().contains(signal) {
+                self.add(signal.into());
             }
         }
     }
@@ -439,19 +422,9 @@ impl AsRef<libc::sigset_t> for SigSet {
     }
 }
 
-impl BitOr for SigSet {
-    type Output = Self;
-
-    fn bitor(self, rhs: Self) -> Self::Output {
-        let mut copy = self;
-        copy.extend(&rhs);
-        copy
-    }
-}
-
-impl BitOrAssign for SigSet {
-    fn bitor_assign(&mut self, rhs: Self) {
-        self.extend(&rhs);
+impl<T: Into<SigSet>> BitOrAssign<T> for SigSet {
+    fn bitor_assign(&mut self, rhs: T) {
+        self.extend(&rhs.into());
     }
 }
 
@@ -471,7 +444,7 @@ pub struct SigAction {
 impl SigAction {
     /// This function will set or unset the flag `SA_SIGINFO` depending on the
     /// type of the `handler` argument.
-    pub fn new(handler: SigHandler, flags: SaFlags, mask: SigSet) -> SigAction {
+    pub fn new<T: Into<SigSet>>(handler: SigHandler, flags: SaFlags, mask: T) -> SigAction {
         let mut s = unsafe { mem::uninitialized::<libc::sigaction>() };
         s.sa_sigaction = match handler {
             SigHandler::SigDfl => unsafe { mem::transmute(libc::SIG_DFL) },
@@ -483,7 +456,7 @@ impl SigAction {
             SigHandler::SigAction(_) => (flags | SA_SIGINFO).bits(),
             _ => (flags - SA_SIGINFO).bits(),
         };
-        s.sa_mask = mask.sigset;
+        s.sa_mask = mask.into().sigset;
 
         SigAction { sigaction: s }
     }
