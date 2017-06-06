@@ -29,6 +29,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - On Linux and Android, added support for receiving `PTRACE_O_TRACESYSGOOD`
   events from `wait` and `waitpid` using `WaitStatus::PtraceSyscall`
   ([#566](https://github.com/nix-rust/nix/pull/566)).
+- Added `nix::sys::Signal::BitOr<Into<SigSet>>`,
+  `nix::sys::SigSet::BitOr<Into<SigSet>>`, and
+  `nix::sys::SigSet::BitOrAssign<Into<SigSet>>`
+  ([#615](https://github.com/nix-rust/nix/pull/615)
 
 ### Changed
 - Changed `ioctl!(write ...)` into `ioctl!(write_ptr ...)` and `ioctl!(write_int ..)` variants
@@ -57,6 +61,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   "*_buf" variants also now calculate total array size and take slice references for improved type
   safety. The documentation has also been dramatically improved.
   ([#670](https://github.com/nix-rust/nix/pull/670))
+- Added `nix::sys::SigSet::From<Signal>` and refactored some APIs to allow
+  passing `Into<SigSet>` rather than bare `SigSet`s.
+  ([#615](https://github.com/nix-rust/nix/pull/615)
 
 ### Removed
 - Removed `io::Error` from `nix::Error` and the conversion from `nix::Error` to `Errno`
