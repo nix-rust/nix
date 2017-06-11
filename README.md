@@ -32,12 +32,16 @@ pub fn gethostname(name: &mut [u8]) -> Result<()>;
 
 ## Supported Platforms
 
-nix target support consists of three tiers:
+nix target support consists of two tiers. While nix attempts to support all
+platforms supported by [libc](https://github.com/rust-lang/libc), only some
+platforms are actively supported due to either technical or manpower
+limitations. Support for platforms is split into two tiers:
 
-  * Tier 1 - Target is supported and CI both builds and tests
-  * Tier 2 - Target is supported and CI builds the target
-  * Tier 3 - Target is supported and CI both builds and tests but test failures
-             do not block merging code
+  * Tier 1 - Builds and tests for this target are run in CI. Failures of either
+             block the inclusion of new code.
+  * Tier 2 - Builds for this target are run in CI. Failures during the build
+             blocks the inclusion of new code. Tests may be run, but failures
+             in tests don't block the inclusion of new code.
 
 The following targets are all supported by nix on Rust 1.13.0 or newer:
 
@@ -50,17 +54,15 @@ Tier 1:
   * armv7-unknown-linux-gnueabihf
   * arm-unknown-linux-gnueabi
   * x86_64-unknown-freebsd
+  * powerpc-unknown-linux-gnu
+  * mips-unknown-linux-gnu
+  * mipsel-unknown-linux-gnu
+  * i686-unknown-linux-musl
+  * x86_64-unknown-linux-musl
 
 Tier 2:
   * i686-unknown-freebsd
   * x86_64-unknown-netbsd
-
-Tier 3:
-  * i686-unknown-linux-musl
-  * x86_64-unknown-linux-musl
-  * mips-unknown-linux-gnu
-  * mipsel-unknown-linux-gnu
-  * powerpc-unknown-linux-gnu
 
 ## Usage
 
