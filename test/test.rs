@@ -13,6 +13,7 @@ mod sys;
 mod test_fcntl;
 mod test_net;
 mod test_nix_path;
+mod test_resource;
 #[cfg(any(target_os = "linux", target_os = "android"))]
 mod test_sendfile;
 mod test_stat;
