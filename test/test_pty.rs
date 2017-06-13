@@ -1,8 +1,11 @@
 use std::path::Path;
 use std::os::unix::prelude::*;
+
 use nix::fcntl::{O_RDWR, open};
 use nix::pty::*;
 use nix::sys::stat;
+use nix::sys::termios::*;
+use nix::unistd::{read, write, close};
 
 /// Test equivalence of `ptsname` and `ptsname_r`
 #[test]
@@ -89,4 +92,83 @@ fn test_open_ptty_pair() {
     // Open the slave device
     let slave_fd = open(Path::new(&slave_name), O_RDWR, stat::Mode::empty()).unwrap();
     assert!(slave_fd > 0);
+}
+
+#[test]
+fn test_openpty() {
+    let pty = openpty(None, None).unwrap();
+    assert!(pty.master > 0);
+    assert!(pty.slave > 0);
+
+    // Writing to one should be readable on the other one
+    let string = "foofoofoo\n";
+    let mut buf = [0u8; 16];
+    write(pty.master, string.as_bytes()).unwrap();
+    let len = read(pty.slave, &mut buf).unwrap();
+
+    assert_eq!(len, string.len());
+    assert_eq!(&buf[0..len], string.as_bytes());
+
+    // Read the echo as well
+    let echoed_string = "foofoofoo\r\n";
+    let len = read(pty.master, &mut buf).unwrap();
+    assert_eq!(len, echoed_string.len());
+    assert_eq!(&buf[0..len], echoed_string.as_bytes());
+
+    let string2 = "barbarbarbar\n";
+    let echoed_string2 = "barbarbarbar\r\n";
+    write(pty.slave, string2.as_bytes()).unwrap();
+    let len = read(pty.master, &mut buf).unwrap();
+
+    assert_eq!(len, echoed_string2.len());
+    assert_eq!(&buf[0..len], echoed_string2.as_bytes());
+
+    close(pty.master).unwrap();
+    close(pty.slave).unwrap();
+}
+
+#[test]
+fn test_openpty_with_termios() {
+    // Open one pty to get attributes for the second one
+    let mut termios = {
+        let pty = openpty(None, None).unwrap();
+        assert!(pty.master > 0);
+        assert!(pty.slave > 0);
+        let termios = tcgetattr(pty.master).unwrap();
+        close(pty.master).unwrap();
+        close(pty.slave).unwrap();
+        termios
+    };
+    termios.c_oflag &= !ONLCR;
+
+    let pty = openpty(None, &termios).unwrap();
+    // Must be valid file descriptors
+    assert!(pty.master > 0);
+    assert!(pty.slave > 0);
+
+    // Writing to one should be readable on the other one
+    let string = "foofoofoo\n";
+    let mut buf = [0u8; 16];
+    write(pty.master, string.as_bytes()).unwrap();
+    let len = read(pty.slave, &mut buf).unwrap();
+
+    assert_eq!(len, string.len());
+    assert_eq!(&buf[0..len], string.as_bytes());
+
+    // read the echo as well
+    let echoed_string = "foofoofoo\n";
+    let len = read(pty.master, &mut buf).unwrap();
+    assert_eq!(len, echoed_string.len());
+    assert_eq!(&buf[0..len], echoed_string.as_bytes());
+
+    let string2 = "barbarbarbar\n";
+    let echoed_string2 = "barbarbarbar\n";
+    write(pty.slave, string2.as_bytes()).unwrap();
+    let len = read(pty.master, &mut buf).unwrap();
+
+    assert_eq!(len, echoed_string2.len());
+    assert_eq!(&buf[0..len], echoed_string2.as_bytes());
+
+    close(pty.master).unwrap();
+    close(pty.slave).unwrap();
 }
