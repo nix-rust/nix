@@ -75,7 +75,6 @@ use std::{ptr, result};
 use std::ffi::{CStr, OsStr};
 use std::path::{Path, PathBuf};
 use std::os::unix::ffi::OsStrExt;
-use std::io;
 use std::fmt;
 use std::error;
 use libc::PATH_MAX;
@@ -97,6 +96,9 @@ pub enum Error {
     /// The operation involved a conversion to Rust's native String type, which failed because the
     /// string did not contain all valid UTF-8.
     InvalidUtf8,
+    /// The operation is not supported by Nix, in this instance either use the libc bindings or 
+    /// consult the module documentation to see if there is a more appropriate interface available.
+    UnsupportedOperation,
 }
 
 impl Error {
@@ -116,14 +118,6 @@ impl Error {
         Error::Sys(errno::EINVAL)
     }
 
-    /// Get the errno associated with this error
-    pub fn errno(&self) -> errno::Errno {
-        match *self {
-            Error::InvalidPath => errno::Errno::EINVAL,
-            Error::InvalidUtf8 => errno::Errno::UnknownErrno,
-            Error::Sys(errno) => errno,
-        }
-    }
 }
 
 impl From<errno::Errno> for Error {
@@ -139,6 +133,7 @@ impl error::Error for Error {
         match self {
             &Error::InvalidPath => "Invalid path",
             &Error::InvalidUtf8 => "Invalid UTF-8 string",
+            &Error::UnsupportedOperation => "Unsupported Operation",
             &Error::Sys(ref errno) => errno.desc(),
         }
     }
@@ -149,17 +144,8 @@ impl fmt::Display for Error {
         match self {
             &Error::InvalidPath => write!(f, "Invalid path"),
             &Error::InvalidUtf8 => write!(f, "Invalid UTF-8 string"),
+            &Error::UnsupportedOperation => write!(f, "Unsupported Operation"),
             &Error::Sys(errno) => write!(f, "{:?}: {}", errno, errno.desc()),
-        }
-    }
-}
-
-impl From<Error> for io::Error {
-    fn from(err: Error) -> Self {
-        match err {
-            Error::InvalidPath => io::Error::new(io::ErrorKind::InvalidInput, err),
-            Error::InvalidUtf8 => io::Error::new(io::ErrorKind::Other, err),
-            Error::Sys(errno) => io::Error::from_raw_os_error(errno as i32),
         }
     }
 }
