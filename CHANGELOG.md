@@ -31,6 +31,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#542](https://github.com/nix-rust/nix/pull/542))
 - Changed type signature of `sys::select::FdSet::contains` to make `self`
   immutable ([#564](https://github.com/nix-rust/nix/pull/564))
+- Changed type of `sched::sched_setaffinity`'s `pid` argument to `pid_t`
 
 ### Removed
 - Removed io::Error from nix::Error and conversion from nix::Error to Errno
