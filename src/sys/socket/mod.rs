@@ -64,9 +64,9 @@ pub enum SockType {
 
 // Extra flags - Supported by Linux 2.6.27, normalized on other platforms
 bitflags!(
-    pub flags SockFlag: c_int {
-        const SOCK_NONBLOCK = 0o0004000,
-        const SOCK_CLOEXEC  = 0o2000000
+    pub struct SockFlag: c_int {
+        const SOCK_NONBLOCK = 0o0004000;
+        const SOCK_CLOEXEC  = 0o2000000;
     }
 );
 

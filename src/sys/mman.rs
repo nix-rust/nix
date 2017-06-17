@@ -161,7 +161,7 @@ mod consts {
     pub const MADV_SETMAP     : MmapAdvise      = 11; /* set page table directory page for map */
 
     bitflags!{
-        pub flags MsFlags: c_int {
+        pub struct MsFlags: c_int {
             const MS_ASYNC      = libc::MS_ASYNC, /* [MF|SIO] return immediately */
             const MS_INVALIDATE = libc::MS_INVALIDATE, /* [MF|SIO] invalidate all cached data */
             #[cfg(not(target_os = "dragonfly"))]

@@ -215,77 +215,77 @@ mod ffi {
         pub const NCCS: usize     = 20;
 
         bitflags! {
-            pub flags InputFlags: tcflag_t {
-                const IGNBRK  = 0x00000001,
-                const BRKINT  = 0x00000002,
-                const IGNPAR  = 0x00000004,
-                const PARMRK  = 0x00000008,
-                const INPCK   = 0x00000010,
-                const ISTRIP  = 0x00000020,
-                const INLCR   = 0x00000040,
-                const IGNCR   = 0x00000080,
-                const ICRNL   = 0x00000100,
-                const IXON    = 0x00000200,
-                const IXOFF   = 0x00000400,
-                const IXANY   = 0x00000800,
-                const IMAXBEL = 0x00002000,
+            pub struct InputFlags: tcflag_t {
+                const IGNBRK  = 0x00000001;
+                const BRKINT  = 0x00000002;
+                const IGNPAR  = 0x00000004;
+                const PARMRK  = 0x00000008;
+                const INPCK   = 0x00000010;
+                const ISTRIP  = 0x00000020;
+                const INLCR   = 0x00000040;
+                const IGNCR   = 0x00000080;
+                const ICRNL   = 0x00000100;
+                const IXON    = 0x00000200;
+                const IXOFF   = 0x00000400;
+                const IXANY   = 0x00000800;
+                const IMAXBEL = 0x00002000;
                 #[cfg(not(target_os = "dragonfly"))]
-                const IUTF8   = 0x00004000,
+                const IUTF8   = 0x00004000;
             }
         }
 
         bitflags! {
-            pub flags OutputFlags: tcflag_t {
-                const OPOST  = 0x00000001,
-                const ONLCR  = 0x00000002,
-                const OXTABS = 0x00000004,
-                const ONOEOT = 0x00000008,
+            pub struct OutputFlags: tcflag_t {
+                const OPOST  = 0x00000001;
+                const ONLCR  = 0x00000002;
+                const OXTABS = 0x00000004;
+                const ONOEOT = 0x00000008;
             }
         }
 
         bitflags! {
-            pub flags ControlFlags: tcflag_t {
-                const CIGNORE    = 0x00000001,
-                const CSIZE      = 0x00000300,
-                const CS5        = 0x00000000,
-                const CS6        = 0x00000100,
-                const CS7        = 0x00000200,
-                const CS8        = 0x00000300,
-                const CSTOPB     = 0x00000400,
-                const CREAD      = 0x00000800,
-                const PARENB     = 0x00001000,
-                const PARODD     = 0x00002000,
-                const HUPCL      = 0x00004000,
-                const CLOCAL     = 0x00008000,
-                const CCTS_OFLOW = 0x00010000,
-                const CRTSCTS    = 0x00030000,
-                const CRTS_IFLOW = 0x00020000,
-                const CDTR_IFLOW = 0x00040000,
-                const CDSR_OFLOW = 0x00080000,
-                const CCAR_OFLOW = 0x00100000,
-                const MDMBUF     = 0x00100000,
+            pub struct ControlFlags: tcflag_t {
+                const CIGNORE    = 0x00000001;
+                const CSIZE      = 0x00000300;
+                const CS5        = 0x00000000;
+                const CS6        = 0x00000100;
+                const CS7        = 0x00000200;
+                const CS8        = 0x00000300;
+                const CSTOPB     = 0x00000400;
+                const CREAD      = 0x00000800;
+                const PARENB     = 0x00001000;
+                const PARODD     = 0x00002000;
+                const HUPCL      = 0x00004000;
+                const CLOCAL     = 0x00008000;
+                const CCTS_OFLOW = 0x00010000;
+                const CRTSCTS    = 0x00030000;
+                const CRTS_IFLOW = 0x00020000;
+                const CDTR_IFLOW = 0x00040000;
+                const CDSR_OFLOW = 0x00080000;
+                const CCAR_OFLOW = 0x00100000;
+                const MDMBUF     = 0x00100000;
             }
         }
 
         bitflags! {
-            pub flags LocalFlags: tcflag_t {
-                const ECHOKE     = 0x00000001,
-                const ECHOE      = 0x00000002,
-                const ECHOK      = 0x00000004,
-                const ECHO       = 0x00000008,
-                const ECHONL     = 0x00000010,
-                const ECHOPRT    = 0x00000020,
-                const ECHOCTL    = 0x00000040,
-                const ISIG       = 0x00000080,
-                const ICANON     = 0x00000100,
-                const ALTWERASE  = 0x00000200,
-                const IEXTEN     = 0x00000400,
-                const EXTPROC    = 0x00000800,
-                const TOSTOP     = 0x00400000,
-                const FLUSHO     = 0x00800000,
-                const NOKERNINFO = 0x02000000,
-                const PENDIN     = 0x20000000,
-                const NOFLSH     = 0x80000000,
+            pub struct LocalFlags: tcflag_t {
+                const ECHOKE     = 0x00000001;
+                const ECHOE      = 0x00000002;
+                const ECHOK      = 0x00000004;
+                const ECHO       = 0x00000008;
+                const ECHONL     = 0x00000010;
+                const ECHOPRT    = 0x00000020;
+                const ECHOCTL    = 0x00000040;
+                const ISIG       = 0x00000080;
+                const ICANON     = 0x00000100;
+                const ALTWERASE  = 0x00000200;
+                const IEXTEN     = 0x00000400;
+                const EXTPROC    = 0x00000800;
+                const TOSTOP     = 0x00400000;
+                const FLUSHO     = 0x00800000;
+                const NOKERNINFO = 0x02000000;
+                const PENDIN     = 0x20000000;
+                const NOFLSH     = 0x80000000;
             }
         }
 
@@ -465,67 +465,67 @@ mod ffi {
         pub const NCCS: usize     = 32;
 
         bitflags! {
-            pub flags InputFlags: tcflag_t {
-                const IGNBRK  = 0x00000001,
-                const BRKINT  = 0x00000002,
-                const IGNPAR  = 0x00000004,
-                const PARMRK  = 0x00000008,
-                const INPCK   = 0x00000010,
-                const ISTRIP  = 0x00000020,
-                const INLCR   = 0x00000040,
-                const IGNCR   = 0x00000080,
-                const ICRNL   = 0x00000100,
-                const IXON    = 0x00000400,
-                const IXOFF   = 0x00001000,
-                const IXANY   = 0x00000800,
-                const IMAXBEL = 0x00002000,
-                const IUTF8   = 0x00004000,
+            pub struct InputFlags: tcflag_t {
+                const IGNBRK  = 0x00000001;
+                const BRKINT  = 0x00000002;
+                const IGNPAR  = 0x00000004;
+                const PARMRK  = 0x00000008;
+                const INPCK   = 0x00000010;
+                const ISTRIP  = 0x00000020;
+                const INLCR   = 0x00000040;
+                const IGNCR   = 0x00000080;
+                const ICRNL   = 0x00000100;
+                const IXON    = 0x00000400;
+                const IXOFF   = 0x00001000;
+                const IXANY   = 0x00000800;
+                const IMAXBEL = 0x00002000;
+                const IUTF8   = 0x00004000;
             }
         }
 
         bitflags! {
-            pub flags OutputFlags: tcflag_t {
-                const OPOST  = 0x00000001,
-                const ONLCR  = 0x00000004,
+            pub struct OutputFlags: tcflag_t {
+                const OPOST  = 0x00000001;
+                const ONLCR  = 0x00000004;
             }
         }
 
         bitflags! {
-            pub flags ControlFlags: tcflag_t {
-                const CSIZE      = 0x00000030,
-                const CS5        = 0x00000000,
-                const CS6        = 0x00000010,
-                const CS7        = 0x00000020,
-                const CS8        = 0x00000030,
-                const CSTOPB     = 0x00000040,
-                const CREAD      = 0x00000080,
-                const PARENB     = 0x00000100,
-                const PARODD     = 0x00000200,
-                const HUPCL      = 0x00000400,
-                const CLOCAL     = 0x00000800,
-                const CRTSCTS    = 0x80000000,
+            pub struct ControlFlags: tcflag_t {
+                const CSIZE      = 0x00000030;
+                const CS5        = 0x00000000;
+                const CS6        = 0x00000010;
+                const CS7        = 0x00000020;
+                const CS8        = 0x00000030;
+                const CSTOPB     = 0x00000040;
+                const CREAD      = 0x00000080;
+                const PARENB     = 0x00000100;
+                const PARODD     = 0x00000200;
+                const HUPCL      = 0x00000400;
+                const CLOCAL     = 0x00000800;
+                const CRTSCTS    = 0x80000000;
                 #[cfg(target_os = "android")]
-                const CBAUD      = 0o0010017,
+                const CBAUD      = 0o0010017;
             }
         }
 
         bitflags! {
-            pub flags LocalFlags: tcflag_t {
-                const ECHOKE     = 0x00000800,
-                const ECHOE      = 0x00000010,
-                const ECHOK      = 0x00000020,
-                const ECHO       = 0x00000008,
-                const ECHONL     = 0x00000040,
-                const ECHOPRT    = 0x00000400,
-                const ECHOCTL    = 0x00000200,
-                const ISIG       = 0x00000001,
-                const ICANON     = 0x00000002,
-                const IEXTEN     = 0x00008000,
-                const EXTPROC    = 0x00010000,
-                const TOSTOP     = 0x00000100,
-                const FLUSHO     = 0x00001000,
-                const PENDIN     = 0x00004000,
-                const NOFLSH     = 0x00000080,
+            pub struct LocalFlags: tcflag_t {
+                const ECHOKE     = 0x00000800;
+                const ECHOE      = 0x00000010;
+                const ECHOK      = 0x00000020;
+                const ECHO       = 0x00000008;
+                const ECHONL     = 0x00000040;
+                const ECHOPRT    = 0x00000400;
+                const ECHOCTL    = 0x00000200;
+                const ISIG       = 0x00000001;
+                const ICANON     = 0x00000002;
+                const IEXTEN     = 0x00008000;
+                const EXTPROC    = 0x00010000;
+                const TOSTOP     = 0x00000100;
+                const FLUSHO     = 0x00001000;
+                const PENDIN     = 0x00004000;
+                const NOFLSH     = 0x00000080;
             }
         }
 

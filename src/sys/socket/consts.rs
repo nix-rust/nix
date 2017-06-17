@@ -93,15 +93,15 @@ mod os {
 
     // Flags for send/recv and their relatives
     bitflags!{
-        pub flags MsgFlags: libc::c_int {
-            const MSG_OOB      = 0x0001,
-            const MSG_PEEK     = 0x0002,
-            const MSG_CTRUNC   = 0x0008,
-            const MSG_TRUNC    = 0x0020,
-            const MSG_DONTWAIT = 0x0040,
-            const MSG_EOR      = 0x0080,
-            const MSG_ERRQUEUE = 0x2000,
-            const MSG_CMSG_CLOEXEC = 0x40000000,
+        pub struct MsgFlags: libc::c_int {
+            const MSG_OOB      = 0x0001;
+            const MSG_PEEK     = 0x0002;
+            const MSG_CTRUNC   = 0x0008;
+            const MSG_TRUNC    = 0x0020;
+            const MSG_DONTWAIT = 0x0040;
+            const MSG_EOR      = 0x0080;
+            const MSG_ERRQUEUE = 0x2000;
+            const MSG_CMSG_CLOEXEC = 0x40000000;
         }
     }
 
@@ -235,13 +235,13 @@ mod os {
 
     // Flags for send/recv and their relatives
     bitflags!{
-        pub flags MsgFlags: libc::c_int {
-            const MSG_OOB      = 0x01,
-            const MSG_PEEK     = 0x02,
-            const MSG_EOR      = 0x08,
-            const MSG_TRUNC    = 0x10,
-            const MSG_CTRUNC   = 0x20,
-            const MSG_DONTWAIT = 0x80,
+        pub struct MsgFlags: libc::c_int {
+            const MSG_OOB      = 0x01;
+            const MSG_PEEK     = 0x02;
+            const MSG_EOR      = 0x08;
+            const MSG_TRUNC    = 0x10;
+            const MSG_CTRUNC   = 0x20;
+            const MSG_DONTWAIT = 0x80;
         }
     }
 
@@ -321,10 +321,10 @@ mod os {
 
     // Flags for send/recv and their relatives
     bitflags!{
-        pub flags MsgFlags: libc::c_int {
-            const MSG_OOB      = 0x01,
-            const MSG_PEEK     = 0x02,
-            const MSG_DONTWAIT = 0x80,
+        pub struct MsgFlags: libc::c_int {
+            const MSG_OOB      = 0x01;
+            const MSG_PEEK     = 0x02;
+            const MSG_DONTWAIT = 0x80;
         }
     }
 
