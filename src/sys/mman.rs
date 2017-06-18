@@ -162,13 +162,13 @@ mod consts {
 
     bitflags!{
         pub struct MsFlags: c_int {
-            const MS_ASYNC      = libc::MS_ASYNC, /* [MF|SIO] return immediately */
-            const MS_INVALIDATE = libc::MS_INVALIDATE, /* [MF|SIO] invalidate all cached data */
+            const MS_ASYNC      = libc::MS_ASYNC; /* [MF|SIO] return immediately */
+            const MS_INVALIDATE = libc::MS_INVALIDATE; /* [MF|SIO] invalidate all cached data */
             #[cfg(not(target_os = "dragonfly"))]
-            const MS_KILLPAGES  = 0x0004, /* invalidate pages, leave mapped */
+            const MS_KILLPAGES  = 0x0004; /* invalidate pages, leave mapped */
             #[cfg(not(target_os = "dragonfly"))]
-            const MS_DEACTIVATE = 0x0004, /* deactivate pages, leave mapped */
-            const MS_SYNC       = libc::MS_SYNC, /* [MF|SIO] msync synchronously */
+            const MS_DEACTIVATE = 0x0004; /* deactivate pages, leave mapped */
+            const MS_SYNC       = libc::MS_SYNC; /* [MF|SIO] msync synchronously */
         }
     }
 
