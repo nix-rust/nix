@@ -288,7 +288,7 @@ mod consts {
     );
 }
 
-#[cfg(any(target_os = "freebsd", target_os = "openbsd"))]
+#[cfg(target_os = "freebsd")]
 mod consts {
     use libc::{self, c_int};
 
@@ -315,6 +315,40 @@ mod consts {
             const O_DIRECT    = 0x0010000,
             const O_EXEC      = 0x0040000,
             const O_TTY_INIT  = 0x0080000
+        }
+    );
+
+    bitflags!(
+        pub flags FdFlag: c_int {
+            const FD_CLOEXEC = 1
+        }
+    );
+}
+
+#[cfg(target_os = "openbsd")]
+mod consts {
+    use libc::{self, c_int};
+
+    bitflags!(
+        pub flags OFlag: c_int {
+            const O_ACCMODE   = libc::O_ACCMODE,
+            const O_RDONLY    = libc::O_RDONLY,
+            const O_WRONLY    = libc::O_WRONLY,
+            const O_RDWR      = libc::O_RDWR,
+            const O_CREAT     = libc::O_CREAT,
+            const O_EXCL      = libc::O_EXCL,
+            const O_NOCTTY    = libc::O_NOCTTY,
+            const O_TRUNC     = libc::O_TRUNC,
+            const O_APPEND    = libc::O_APPEND,
+            const O_NONBLOCK  = libc::O_NONBLOCK,
+            const O_DIRECTORY = 0x0020000,
+            const O_NOFOLLOW  = libc::O_NOFOLLOW,
+            const O_CLOEXEC   = libc::O_CLOEXEC,
+            const O_SYNC      = libc::O_SYNC,
+            const O_NDELAY    = libc::O_NDELAY,
+            const O_FSYNC     = libc::O_FSYNC,
+            const O_SHLOCK    = 0x0000080,
+            const O_EXLOCK    = 0x0000020,
         }
     );
 
