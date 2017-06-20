@@ -55,6 +55,8 @@ Tier 1:
   * arm-unknown-linux-gnueabi
   * x86_64-unknown-freebsd
   * powerpc-unknown-linux-gnu
+  * powerpc64-unknown-linux-gnu
+  * powerpc64le-unknown-linux-gnu
   * mips-unknown-linux-gnu
   * mipsel-unknown-linux-gnu
   * i686-unknown-linux-musl
