@@ -13,3 +13,5 @@ mod test_uio;
 #[cfg(target_os = "linux")]
 mod test_epoll;
 mod test_pthread;
+#[cfg(any(target_os = "linux", target_os = "android"))]
+mod test_ptrace;
