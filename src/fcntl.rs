@@ -33,9 +33,9 @@ libc_bitflags!{
 
 #[cfg(any(target_os = "ios", target_os = "macos"))]
 bitflags!(
-    pub flags AtFlags: c_int {
+    pub struct AtFlags: c_int {
         // hack because bitflags require one entry
-        const EMPTY = 0x0
+        const EMPTY = 0x0;
     }
 );
 
@@ -213,43 +213,43 @@ mod consts {
     }
 
     bitflags!(
-        pub flags OFlag: c_int {
-            const O_ACCMODE   = libc::O_ACCMODE,
-            const O_RDONLY    = libc::O_RDONLY,
-            const O_WRONLY    = libc::O_WRONLY,
-            const O_RDWR      = libc::O_RDWR,
-            const O_CREAT     = libc::O_CREAT,
-            const O_EXCL      = libc::O_EXCL,
-            const O_NOCTTY    = libc::O_NOCTTY,
-            const O_TRUNC     = libc::O_TRUNC,
-            const O_APPEND    = libc::O_APPEND,
-            const O_NONBLOCK  = libc::O_NONBLOCK,
-            const O_DSYNC     = libc::O_DSYNC,
-            const O_DIRECT    = libc::O_DIRECT,
-            const O_LARGEFILE = 0o00100000,
-            const O_DIRECTORY = libc::O_DIRECTORY,
-            const O_NOFOLLOW  = libc::O_NOFOLLOW,
-            const O_NOATIME   = 0o01000000,
-            const O_CLOEXEC   = libc::O_CLOEXEC,
-            const O_SYNC      = libc::O_SYNC,
-            const O_PATH      = 0o10000000,
-            const O_TMPFILE   = libc::O_TMPFILE,
-            const O_NDELAY    = libc::O_NDELAY,
+        pub struct OFlag: c_int {
+            const O_ACCMODE   = libc::O_ACCMODE;
+            const O_RDONLY    = libc::O_RDONLY;
+            const O_WRONLY    = libc::O_WRONLY;
+            const O_RDWR      = libc::O_RDWR;
+            const O_CREAT     = libc::O_CREAT;
+            const O_EXCL      = libc::O_EXCL;
+            const O_NOCTTY    = libc::O_NOCTTY;
+            const O_TRUNC     = libc::O_TRUNC;
+            const O_APPEND    = libc::O_APPEND;
+            const O_NONBLOCK  = libc::O_NONBLOCK;
+            const O_DSYNC     = libc::O_DSYNC;
+            const O_DIRECT    = libc::O_DIRECT;
+            const O_LARGEFILE = 0o00100000;
+            const O_DIRECTORY = libc::O_DIRECTORY;
+            const O_NOFOLLOW  = libc::O_NOFOLLOW;
+            const O_NOATIME   = 0o01000000;
+            const O_CLOEXEC   = libc::O_CLOEXEC;
+            const O_SYNC      = libc::O_SYNC;
+            const O_PATH      = 0o10000000;
+            const O_TMPFILE   = libc::O_TMPFILE;
+            const O_NDELAY    = libc::O_NDELAY;
         }
     );
 
     bitflags!(
-        pub flags FdFlag: c_int {
-            const FD_CLOEXEC = 1
+        pub struct FdFlag: c_int {
+            const FD_CLOEXEC = 1;
         }
     );
 
     bitflags!(
-        pub flags SealFlag: c_int {
-            const F_SEAL_SEAL = 1,
-            const F_SEAL_SHRINK = 2,
-            const F_SEAL_GROW = 4,
-            const F_SEAL_WRITE = 8,
+        pub struct SealFlag: c_int {
+            const F_SEAL_SEAL = 1;
+            const F_SEAL_SHRINK = 2;
+            const F_SEAL_GROW = 4;
+            const F_SEAL_WRITE = 8;
         }
     );
 
@@ -260,30 +260,30 @@ mod consts {
     use libc::{self, c_int};
 
     bitflags!(
-        pub flags OFlag: c_int {
-            const O_ACCMODE   = libc::O_ACCMODE,
-            const O_RDONLY    = libc::O_RDONLY,
-            const O_WRONLY    = libc::O_WRONLY,
-            const O_RDWR      = libc::O_RDWR,
-            const O_CREAT     = libc::O_CREAT,
-            const O_EXCL      = libc::O_EXCL,
-            const O_NOCTTY    = libc::O_NOCTTY,
-            const O_TRUNC     = libc::O_TRUNC,
-            const O_APPEND    = libc::O_APPEND,
-            const O_NONBLOCK  = libc::O_NONBLOCK,
-            const O_DSYNC     = libc::O_DSYNC,
-            const O_DIRECTORY = libc::O_DIRECTORY,
-            const O_NOFOLLOW  = libc::O_NOFOLLOW,
-            const O_CLOEXEC   = libc::O_CLOEXEC,
-            const O_SYNC      = libc::O_SYNC,
-            const O_NDELAY    = O_NONBLOCK.bits,
-            const O_FSYNC     = libc::O_FSYNC,
+        pub struct OFlag: c_int {
+            const O_ACCMODE   = libc::O_ACCMODE;
+            const O_RDONLY    = libc::O_RDONLY;
+            const O_WRONLY    = libc::O_WRONLY;
+            const O_RDWR      = libc::O_RDWR;
+            const O_CREAT     = libc::O_CREAT;
+            const O_EXCL      = libc::O_EXCL;
+            const O_NOCTTY    = libc::O_NOCTTY;
+            const O_TRUNC     = libc::O_TRUNC;
+            const O_APPEND    = libc::O_APPEND;
+            const O_NONBLOCK  = libc::O_NONBLOCK;
+            const O_DSYNC     = libc::O_DSYNC;
+            const O_DIRECTORY = libc::O_DIRECTORY;
+            const O_NOFOLLOW  = libc::O_NOFOLLOW;
+            const O_CLOEXEC   = libc::O_CLOEXEC;
+            const O_SYNC      = libc::O_SYNC;
+            const O_NDELAY    = O_NONBLOCK.bits;
+            const O_FSYNC     = libc::O_FSYNC;
         }
     );
 
     bitflags!(
-        pub flags FdFlag: c_int {
-            const FD_CLOEXEC = 1
+        pub struct FdFlag: c_int {
+            const FD_CLOEXEC = 1;
         }
     );
 }
@@ -293,34 +293,34 @@ mod consts {
     use libc::{self, c_int};
 
     bitflags!(
-        pub flags OFlag: c_int {
-            const O_ACCMODE   = libc::O_ACCMODE,
-            const O_RDONLY    = libc::O_RDONLY,
-            const O_WRONLY    = libc::O_WRONLY,
-            const O_RDWR      = libc::O_RDWR,
-            const O_CREAT     = libc::O_CREAT,
-            const O_EXCL      = libc::O_EXCL,
-            const O_NOCTTY    = libc::O_NOCTTY,
-            const O_TRUNC     = libc::O_TRUNC,
-            const O_APPEND    = libc::O_APPEND,
-            const O_NONBLOCK  = libc::O_NONBLOCK,
-            const O_DIRECTORY = 0x0020000,
-            const O_NOFOLLOW  = libc::O_NOFOLLOW,
-            const O_CLOEXEC   = libc::O_CLOEXEC,
-            const O_SYNC      = libc::O_SYNC,
-            const O_NDELAY    = libc::O_NDELAY,
-            const O_FSYNC     = libc::O_FSYNC,
-            const O_SHLOCK    = 0x0000080,
-            const O_EXLOCK    = 0x0000020,
-            const O_DIRECT    = 0x0010000,
-            const O_EXEC      = 0x0040000,
-            const O_TTY_INIT  = 0x0080000
+        pub struct OFlag: c_int {
+            const O_ACCMODE   = libc::O_ACCMODE;
+            const O_RDONLY    = libc::O_RDONLY;
+            const O_WRONLY    = libc::O_WRONLY;
+            const O_RDWR      = libc::O_RDWR;
+            const O_CREAT     = libc::O_CREAT;
+            const O_EXCL      = libc::O_EXCL;
+            const O_NOCTTY    = libc::O_NOCTTY;
+            const O_TRUNC     = libc::O_TRUNC;
+            const O_APPEND    = libc::O_APPEND;
+            const O_NONBLOCK  = libc::O_NONBLOCK;
+            const O_DIRECTORY = 0x0020000;
+            const O_NOFOLLOW  = libc::O_NOFOLLOW;
+            const O_CLOEXEC   = libc::O_CLOEXEC;
+            const O_SYNC      = libc::O_SYNC;
+            const O_NDELAY    = libc::O_NDELAY;
+            const O_FSYNC     = libc::O_FSYNC;
+            const O_SHLOCK    = 0x0000080;
+            const O_EXLOCK    = 0x0000020;
+            const O_DIRECT    = 0x0010000;
+            const O_EXEC      = 0x0040000;
+            const O_TTY_INIT  = 0x0080000;
         }
     );
 
     bitflags!(
-        pub flags FdFlag: c_int {
-            const FD_CLOEXEC = 1
+        pub struct FdFlag: c_int {
+            const FD_CLOEXEC = 1;
         }
     );
 }
@@ -330,38 +330,38 @@ mod consts {
     use libc::c_int;
 
     bitflags!(
-        pub flags OFlag: c_int {
-            const O_ACCMODE   = 0x0000003,
-            const O_RDONLY    = 0x0000000,
-            const O_WRONLY    = 0x0000001,
-            const O_RDWR      = 0x0000002,
-            const O_NONBLOCK  = 0x0000004,
-            const O_APPEND    = 0x0000008,
-            const O_SHLOCK    = 0x0000010,
-            const O_EXLOCK    = 0x0000020,
-            const O_ASYNC     = 0x0000040,
-            const O_SYNC      = 0x0000080,
-            const O_NOFOLLOW  = 0x0000100,
-            const O_CREAT     = 0x0000200,
-            const O_TRUNC     = 0x0000400,
-            const O_EXCL      = 0x0000800,
-            const O_NOCTTY    = 0x0008000,
-            const O_DSYNC     = 0x0010000,
-            const O_RSYNC     = 0x0020000,
-            const O_ALT_IO    = 0x0040000,
-            const O_DIRECT    = 0x0080000,
-            const O_NOSIGPIPE = 0x0100000,
-            const O_DIRECTORY = 0x0200000,
-            const O_CLOEXEC   = 0x0400000,
-            const O_SEARCH    = 0x0800000,
-            const O_FSYNC     = O_SYNC.bits,
-            const O_NDELAY    = O_NONBLOCK.bits,
+        pub struct OFlag: c_int {
+            const O_ACCMODE   = 0x0000003;
+            const O_RDONLY    = 0x0000000;
+            const O_WRONLY    = 0x0000001;
+            const O_RDWR      = 0x0000002;
+            const O_NONBLOCK  = 0x0000004;
+            const O_APPEND    = 0x0000008;
+            const O_SHLOCK    = 0x0000010;
+            const O_EXLOCK    = 0x0000020;
+            const O_ASYNC     = 0x0000040;
+            const O_SYNC      = 0x0000080;
+            const O_NOFOLLOW  = 0x0000100;
+            const O_CREAT     = 0x0000200;
+            const O_TRUNC     = 0x0000400;
+            const O_EXCL      = 0x0000800;
+            const O_NOCTTY    = 0x0008000;
+            const O_DSYNC     = 0x0010000;
+            const O_RSYNC     = 0x0020000;
+            const O_ALT_IO    = 0x0040000;
+            const O_DIRECT    = 0x0080000;
+            const O_NOSIGPIPE = 0x0100000;
+            const O_DIRECTORY = 0x0200000;
+            const O_CLOEXEC   = 0x0400000;
+            const O_SEARCH    = 0x0800000;
+            const O_FSYNC     = O_SYNC.bits;
+            const O_NDELAY    = O_NONBLOCK.bits;
         }
     );
 
     bitflags!(
-        pub flags FdFlag: c_int {
-            const FD_CLOEXEC = 1
+        pub struct FdFlag: c_int {
+            const FD_CLOEXEC = 1;
         }
     );
 }
@@ -371,32 +371,32 @@ mod consts {
     use libc::c_int;
 
     bitflags!(
-        pub flags OFlag: c_int {
-            const O_ACCMODE   = 0x0000003,
-            const O_RDONLY    = 0x0000000,
-            const O_WRONLY    = 0x0000001,
-            const O_RDWR      = 0x0000002,
-            const O_CREAT     = 0x0000200,
-            const O_EXCL      = 0x0000800,
-            const O_NOCTTY    = 0x0008000,
-            const O_TRUNC     = 0x0000400,
-            const O_APPEND    = 0x0000008,
-            const O_NONBLOCK  = 0x0000004,
-            const O_DIRECTORY = 0x8000000, // different from FreeBSD!
-            const O_NOFOLLOW  = 0x0000100,
-            const O_CLOEXEC   = 0x0020000, // different from FreeBSD!
-            const O_SYNC      = 0x0000080,
-            const O_NDELAY    = O_NONBLOCK.bits,
-            const O_FSYNC     = O_SYNC.bits,
-            const O_SHLOCK    = 0x0000010, // different from FreeBSD!
-            const O_EXLOCK    = 0x0000020,
-            const O_DIRECT    = 0x0010000,
+        pub struct OFlag: c_int {
+            const O_ACCMODE   = 0x0000003;
+            const O_RDONLY    = 0x0000000;
+            const O_WRONLY    = 0x0000001;
+            const O_RDWR      = 0x0000002;
+            const O_CREAT     = 0x0000200;
+            const O_EXCL      = 0x0000800;
+            const O_NOCTTY    = 0x0008000;
+            const O_TRUNC     = 0x0000400;
+            const O_APPEND    = 0x0000008;
+            const O_NONBLOCK  = 0x0000004;
+            const O_DIRECTORY = 0x8000000; // different from FreeBSD!
+            const O_NOFOLLOW  = 0x0000100;
+            const O_CLOEXEC   = 0x0020000; // different from FreeBSD!
+            const O_SYNC      = 0x0000080;
+            const O_NDELAY    = O_NONBLOCK.bits;
+            const O_FSYNC     = O_SYNC.bits;
+            const O_SHLOCK    = 0x0000010; // different from FreeBSD!
+            const O_EXLOCK    = 0x0000020;
+            const O_DIRECT    = 0x0010000;
         }
     );
 
     bitflags!(
-        pub flags FdFlag: c_int {
-            const FD_CLOEXEC = 1
+        pub struct FdFlag: c_int {
+            const FD_CLOEXEC = 1;
         }
     );
 }

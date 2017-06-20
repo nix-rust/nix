@@ -49,7 +49,7 @@ macro_rules! libc_bitflags {
     ) => {
         bitflags! {
             $($attrs)*
-            pub flags $BitFlags: $T {
+            pub struct $BitFlags: $T {
                 $($flags)*
             }
         }
@@ -125,7 +125,7 @@ macro_rules! libc_bitflags {
             $prefix,
             [
                 $($flags)*
-                const $flag = libc::$flag,
+                const $flag = libc::$flag;
             ];
         }
     };
@@ -141,7 +141,7 @@ macro_rules! libc_bitflags {
             $prefix,
             [
                 $($flags)*
-                const $flag = libc::$flag,
+                const $flag = libc::$flag;
             ];
             $($tail)*
         }

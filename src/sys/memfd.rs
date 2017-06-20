@@ -4,9 +4,9 @@ use {Errno, Result};
 use std::ffi::CStr;
 
 bitflags!(
-    pub flags MemFdCreateFlag: libc::c_uint {
-        const MFD_CLOEXEC       = 0x0001,
-        const MFD_ALLOW_SEALING = 0x0002,
+    pub struct MemFdCreateFlag: libc::c_uint {
+        const MFD_CLOEXEC       = 0x0001;
+        const MFD_ALLOW_SEALING = 0x0002;
     }
 );
 

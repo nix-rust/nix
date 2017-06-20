@@ -21,28 +21,28 @@ pub mod vfs {
         /// Mount Flags
         #[repr(C)]
         #[derive(Default)]
-        pub flags FsFlags: c_ulong {
+        pub struct FsFlags: c_ulong {
             /// Read Only
-            const RDONLY = 1,
+            const RDONLY = 1;
             /// Do not allow the set-uid bits to have an effect
-            const NOSUID = 2,
+            const NOSUID = 2;
             /// Do not interpret character or block-special devices
-            const NODEV  = 4,
+            const NODEV  = 4;
             /// Do not allow execution of binaries on the filesystem
-            const NOEXEC = 8,
+            const NOEXEC = 8;
             /// All IO should be done synchronously
-            const SYNCHRONOUS  = 16,
+            const SYNCHRONOUS  = 16;
             /// Allow mandatory locks on the filesystem
-            const MANDLOCK = 64,
-            const WRITE = 128,
-            const APPEND = 256,
-            const IMMUTABLE = 512,
+            const MANDLOCK = 64;
+            const WRITE = 128;
+            const APPEND = 256;
+            const IMMUTABLE = 512;
             /// Do not update access times on files
-            const NOATIME = 1024,
+            const NOATIME = 1024;
             /// Do not update access times on files
-            const NODIRATIME = 2048,
+            const NODIRATIME = 2048;
             /// Update access time relative to modify/change time
-            const RELATIME = 4096,
+            const RELATIME = 4096;
         }
     );
 

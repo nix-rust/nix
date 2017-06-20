@@ -31,25 +31,25 @@ libc_bitflags!(
 );
 
 bitflags! {
-    pub flags Mode: mode_t {
-        const S_IRWXU = libc::S_IRWXU,
-        const S_IRUSR = libc::S_IRUSR,
-        const S_IWUSR = libc::S_IWUSR,
-        const S_IXUSR = libc::S_IXUSR,
+    pub struct Mode: mode_t {
+        const S_IRWXU = libc::S_IRWXU;
+        const S_IRUSR = libc::S_IRUSR;
+        const S_IWUSR = libc::S_IWUSR;
+        const S_IXUSR = libc::S_IXUSR;
 
-        const S_IRWXG = libc::S_IRWXG,
-        const S_IRGRP = libc::S_IRGRP,
-        const S_IWGRP = libc::S_IWGRP,
-        const S_IXGRP = libc::S_IXGRP,
+        const S_IRWXG = libc::S_IRWXG;
+        const S_IRGRP = libc::S_IRGRP;
+        const S_IWGRP = libc::S_IWGRP;
+        const S_IXGRP = libc::S_IXGRP;
 
-        const S_IRWXO = libc::S_IRWXO,
-        const S_IROTH = libc::S_IROTH,
-        const S_IWOTH = libc::S_IWOTH,
-        const S_IXOTH = libc::S_IXOTH,
+        const S_IRWXO = libc::S_IRWXO;
+        const S_IROTH = libc::S_IROTH;
+        const S_IWOTH = libc::S_IWOTH;
+        const S_IXOTH = libc::S_IXOTH;
 
-        const S_ISUID = libc::S_ISUID as mode_t,
-        const S_ISGID = libc::S_ISGID as mode_t,
-        const S_ISVTX = libc::S_ISVTX as mode_t,
+        const S_ISUID = libc::S_ISUID as mode_t;
+        const S_ISGID = libc::S_ISGID as mode_t;
+        const S_ISVTX = libc::S_ISVTX as mode_t;
     }
 }
 
