@@ -131,7 +131,7 @@ pub fn test_scm_rights() {
                 panic!("unexpected cmsg");
             }
         }
-        assert_eq!(msg.flags & (MSG_TRUNC | MSG_CTRUNC), MsgFlags::empty());
+        assert!(!msg.flags.intersects(MSG_TRUNC | MSG_CTRUNC));
         close(fd2).unwrap();
     }
 
@@ -143,6 +143,43 @@ pub fn test_scm_rights() {
     assert_eq!(&buf[..], b"world");
     close(received_r).unwrap();
     close(w).unwrap();
+}
+
+// Verify `sendmsg` builds a valid `msghdr` when passing an empty
+// `cmsgs` argument.  This should result in a msghdr with a nullptr
+// msg_control field and a msg_controllen of 0 when calling into the
+// raw `sendmsg`.
+#[test]
+pub fn test_sendmsg_empty_cmsgs() {
+    use nix::sys::uio::IoVec;
+    use nix::unistd::close;
+    use nix::sys::socket::{socketpair, sendmsg, recvmsg,
+                           AddressFamily, SockType, SockFlag,
+                           CmsgSpace, MsgFlags,
+                           MSG_TRUNC, MSG_CTRUNC};
+
+    let (fd1, fd2) = socketpair(AddressFamily::Unix, SockType::Stream, 0,
+                                SockFlag::empty())
+                     .unwrap();
+
+    {
+        let iov = [IoVec::from_slice(b"hello")];
+        assert_eq!(sendmsg(fd1, &iov, &[], MsgFlags::empty(), None).unwrap(), 5);
+        close(fd1).unwrap();
+    }
+
+    {
+        let mut buf = [0u8; 5];
+        let iov = [IoVec::from_mut_slice(&mut buf[..])];
+        let mut cmsgspace: CmsgSpace<[RawFd; 1]> = CmsgSpace::new();
+        let msg = recvmsg(fd2, &iov, Some(&mut cmsgspace), MsgFlags::empty()).unwrap();
+
+        for _ in msg.cmsgs() {
+            panic!("unexpected cmsg");
+        }
+        assert!(!msg.flags.intersects(MSG_TRUNC | MSG_CTRUNC));
+        close(fd2).unwrap();
+    }
 }
 
 // Test creating and using named unix domain sockets

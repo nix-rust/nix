@@ -60,6 +60,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Added `nix::ptrace` on all Linux-kernel-based platforms
   [#624](https://github.com/nix-rust/nix/pull/624). Previously it was
   only available on x86, x86-64, and ARM, and also not on Android.
+- Fixed `sys::socket::sendmsg` with zero entry `cmsgs` parameter.
+  ([#623](https://github.com/nix-rust/nix/pull/623))
 
 ## [0.8.1] 2017-04-16
 

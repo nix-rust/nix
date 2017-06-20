@@ -277,12 +277,18 @@ pub fn sendmsg<'a>(fd: RawFd, iov: &[IoVec<&'a [u8]>], cmsgs: &[ControlMessage<'
         None => (0 as *const _, 0),
     };
 
+    let cmsg_ptr = if capacity > 0 {
+        cmsg_buffer.as_ptr() as *const c_void
+    } else {
+        ptr::null()
+    };
+
     let mhdr = msghdr {
         msg_name: name as *const c_void,
         msg_namelen: namelen,
         msg_iov: iov.as_ptr(),
         msg_iovlen: iov.len() as size_t,
-        msg_control: cmsg_buffer.as_ptr() as *const c_void,
+        msg_control: cmsg_ptr,
         msg_controllen: capacity as size_t,
         msg_flags: 0,
     };
