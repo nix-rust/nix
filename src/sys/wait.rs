@@ -40,16 +40,56 @@ libc_bitflags!(
           target_os = "android"))]
 const WSTOPPED: WaitPidFlag = WUNTRACED;
 
+/// Possible return values from `wait()` or `waitpid()`.
+///
+/// Each status (other than `StillAlive`) describes a state transition
+/// in a child process `Pid`, such as the process exiting or stopping,
+/// plus additional data about the transition if any.
+///
+/// Note that there are two Linux-specific enum variants, `PtraceEvent`
+/// and `PtraceSyscall`. Portable code should avoid exhaustively
+/// matching on `WaitStatus`.
 #[derive(Eq, PartialEq, Clone, Copy, Debug)]
 pub enum WaitStatus {
+    /// The process exited normally (as with `exit()` or returning from
+    /// `main`) with the given exit code. This case matches the C macro
+    /// `WIFEXITED(status)`; the second field is `WEXITSTATUS(status)`.
     Exited(Pid, i8),
+    /// The process was killed by the given signal. The third field
+    /// indicates whether the signal generated a core dump. This case
+    /// matches the C macro `WIFSIGNALED(status)`; the last two fields
+    /// correspond to `WTERMSIG(status)` and `WCOREDUMP(status)`.
     Signaled(Pid, Signal, bool),
+    /// The process is alive, but was stopped by the given signal. This
+    /// is only reported if `WaitPidFlag::WUNTRACED` was passed. This
+    /// case matches the C macro `WIFSTOPPED(status)`; the second field
+    /// is `WSTOPSIG(status)`.
     Stopped(Pid, Signal),
+    /// The traced process was stopped by a `PTRACE_EVENT_*` event. See
+    /// [`nix::sys::ptrace`] and [`ptrace`(2)] for more information. All
+    /// currently-defined events use `SIGTRAP` as the signal; the third
+    /// field is the `PTRACE_EVENT_*` value of the event.
+    ///
+    /// [`nix::sys::ptrace`]: ../ptrace/index.html
+    /// [`ptrace`(2)]: http://man7.org/linux/man-pages/man2/ptrace.2.html
     #[cfg(any(target_os = "linux", target_os = "android"))]
     PtraceEvent(Pid, Signal, c_int),
+    /// The traced process was stopped by execution of a system call,
+    /// and `PTRACE_O_TRACESYSGOOD` is in effect. See [`ptrace`(2)] for
+    /// more information.
+    ///
+    /// [`ptrace`(2)]: http://man7.org/linux/man-pages/man2/ptrace.2.html
     #[cfg(any(target_os = "linux", target_os = "android"))]
     PtraceSyscall(Pid),
+    /// The process was previously stopped but has resumed execution
+    /// after receiving a `SIGCONT` signal. This is only reported if
+    /// `WaitPidFlag::WCONTINUED` was passed. This case matches the C
+    /// macro `WIFCONTINUED(status)`.
     Continued(Pid),
+    /// There are currently no state changes to report in any awaited
+    /// child process. This is only returned if `WaitPidFlag::WNOHANG`
+    /// was used (otherwise `wait()` or `waitpid()` would block until
+    /// there was something to report).
     StillAlive
 }
 
