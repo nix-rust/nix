@@ -409,8 +409,8 @@ pub fn pthread_sigmask(how: SigmaskHow,
     Errno::result(res).map(drop)
 }
 
-pub fn kill<T: Into<Option<Signal>>>(pid: libc::pid_t, signal: T) -> Result<()> {
-    let res = unsafe { libc::kill(pid,
+pub fn kill<T: Into<Option<Signal>>>(pid: ::unistd::Pid, signal: T) -> Result<()> {
+    let res = unsafe { libc::kill(pid.into(),
                                   match signal.into() {
                                       Some(s) => s as libc::c_int,
                                       None => 0,

@@ -1,8 +1,9 @@
 use std::mem;
 use std::os::unix::io::RawFd;
 use std::option::Option;
-use libc::{self, c_int, c_void, pid_t};
+use libc::{self, c_int, c_void};
 use {Errno, Error, Result};
+use ::unistd::Pid;
 
 // For some functions taking with a parameter of type CloneFlags,
 // only a subset of these flags have an effect.
@@ -91,9 +92,9 @@ mod ffi {
     }
 }
 
-pub fn sched_setaffinity(pid: pid_t, cpuset: &CpuSet) -> Result<()> {
+pub fn sched_setaffinity(pid: Pid, cpuset: &CpuSet) -> Result<()> {
     let res = unsafe {
-        libc::sched_setaffinity(pid,
+        libc::sched_setaffinity(pid.into(),
                                 mem::size_of::<CpuSet>() as libc::size_t,
                                 mem::transmute(cpuset))
     };
@@ -105,7 +106,7 @@ pub fn clone(mut cb: CloneCb,
              stack: &mut [u8],
              flags: CloneFlags,
              signal: Option<c_int>)
-             -> Result<pid_t> {
+             -> Result<Pid> {
     extern "C" fn callback(data: *mut CloneCb) -> c_int {
         let cb: &mut CloneCb = unsafe { &mut *data };
         (*cb)() as c_int
@@ -121,7 +122,7 @@ pub fn clone(mut cb: CloneCb,
                    &mut cb)
     };
 
-    Errno::result(res)
+    Errno::result(res).map(Pid::from_raw)
 }
 
 pub fn unshare(flags: CloneFlags) -> Result<()> {

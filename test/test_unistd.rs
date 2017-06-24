@@ -21,7 +21,8 @@ fn test_fork_and_waitpid() {
         Ok(Child) => {} // ignore child here
         Ok(Parent { child }) => {
             // assert that child was created and pid > 0
-            assert!(child > 0);
+            let child_raw: ::libc::pid_t = child.into();
+            assert!(child_raw > 0);
             let wait_status = waitpid(child, None);
             match wait_status {
                 // assert that waitpid returned correct status and the pid is the one of the child
@@ -78,8 +79,8 @@ fn test_mkstemp() {
 
 #[test]
 fn test_getpid() {
-    let pid = getpid();
-    let ppid = getppid();
+    let pid: ::libc::pid_t = getpid().into();
+    let ppid: ::libc::pid_t = getppid().into();
     assert!(pid > 0);
     assert!(ppid > 0);
 }
@@ -90,7 +91,7 @@ mod linux_android {
 
     #[test]
     fn test_gettid() {
-        let tid = gettid();
+        let tid: ::libc::pid_t = gettid().into();
         assert!(tid > 0);
     }
 }
