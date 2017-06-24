@@ -217,3 +217,35 @@ execve_test_factory!(test_execve, execve, b"/bin/sh", b"/system/bin/sh");
 #[cfg(any(target_os = "linux", target_os = "android"))]
 #[cfg(feature = "execvpe")]
 execve_test_factory!(test_execvpe, execvpe, b"sh", b"sh");
+
+#[test]
+fn test_fpathconf_limited() {
+    let f = tempfile().unwrap();
+    // AFAIK, PATH_MAX is limited on all platforms, so it makes a good test
+    let path_max = fpathconf(f.as_raw_fd(), PathconfVar::PATH_MAX);
+    assert!(path_max.expect("fpathconf failed").expect("PATH_MAX is unlimited") > 0);
+}
+
+#[test]
+fn test_pathconf_limited() {
+    // AFAIK, PATH_MAX is limited on all platforms, so it makes a good test
+    let path_max = pathconf(".", PathconfVar::PATH_MAX);
+    assert!(path_max.expect("pathconf failed").expect("PATH_MAX is unlimited") > 0);
+}
+
+#[test]
+fn test_sysconf_limited() {
+    // AFAIK, OPEN_MAX is limited on all platforms, so it makes a good test
+    let open_max = sysconf(SysconfVar::OPEN_MAX);
+    assert!(open_max.expect("sysconf failed").expect("OPEN_MAX is unlimited") > 0);
+}
+
+#[cfg(target_os = "freebsd")]
+#[test]
+fn test_sysconf_unsupported() {
+    // I know of no sysconf variables that are unsupported everywhere, but
+    // _XOPEN_CRYPT is unsupported on FreeBSD 11.0, which is one of the platforms
+    // we test.
+    let open_max = sysconf(SysconfVar::_XOPEN_CRYPT);
+    assert!(open_max.expect("sysconf failed").is_none())
+}
