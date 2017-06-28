@@ -9,7 +9,7 @@ main() {
     fi
 
     # Build debug and release targets
-    rustup default 1.13.0-$TARGET
+    rustup default stable-$TARGET
     cross build --target $TARGET
     cross build --target $TARGET --release
 
