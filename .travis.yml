@@ -5,6 +5,7 @@ dist: trusty
 language: rust
 services: docker
 sudo: required
+group: deprecated-2017Q2
 
 env:
   global:
