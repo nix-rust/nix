@@ -15,6 +15,18 @@ matrix:
   # These are all the build jobs. Adjust as necessary. Comment out what you
   # don't need
   include:
+    # Android
+    - env: TARGET=aarch64-linux-android DISABLE_TESTS=1
+      rust: 1.13.0
+    - env: TARGET=arm-linux-androideabi DISABLE_TESTS=1
+      rust: 1.13.0
+    - env: TARGET=armv7-linux-androideabi DISABLE_TESTS=1
+      rust: 1.13.0
+    - env: TARGET=i686-linux-android DISABLE_TESTS=1
+      rust: 1.13.0
+    - env: TARGET=x86_64-linux-android DISABLE_TESTS=1
+      rust: 1.13.0
+
     # Linux
     - env: TARGET=aarch64-unknown-linux-gnu
       rust: 1.13.0
@@ -74,9 +86,19 @@ matrix:
       os: osx
       rust: nightly
 
-  # Testing nightlies on main targets. These might fail because of issues
-  # with the compiler, so we allow failures here.
   allow_failures:
+    # Android (in the process of fixing these, so they're allowed to fail for now)
+    - env: TARGET=aarch64-linux-android DISABLE_TESTS=1
+      rust: 1.13.0
+    - env: TARGET=arm-linux-androideabi DISABLE_TESTS=1
+      rust: 1.13.0
+    - env: TARGET=armv7-linux-androideabi DISABLE_TESTS=1
+      rust: 1.13.0
+    - env: TARGET=i686-linux-android DISABLE_TESTS=1
+      rust: 1.13.0
+    - env: TARGET=x86_64-linux-android DISABLE_TESTS=1
+      rust: 1.13.0
+
     # Failures for nightlies may be because of compiler bugs, so don't fail the
     # build if these fail.
     - env: TARGET=x86_64-unknown-linux-gnu
