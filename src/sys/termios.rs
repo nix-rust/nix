@@ -50,6 +50,8 @@ use std::convert::From;
 use std::mem;
 use std::os::unix::io::RawFd;
 
+use ::unistd::Pid;
+
 /// Stores settings for the termios API
 ///
 /// This is a wrapper around the `libc::termios` struct that provides a safe interface for the
@@ -882,4 +884,12 @@ pub fn tcflush(fd: RawFd, action: FlushArg) -> Result<()> {
 /// of zero-valued bits for an implementation-defined duration.
 pub fn tcsendbreak(fd: RawFd, duration: c_int) -> Result<()> {
     Errno::result(unsafe { libc::tcsendbreak(fd, duration) }).map(drop)
+}
+
+/// Get the session controlled by the given terminal (see
+/// [tcgetsid(3)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/tcgetsid.html)).
+pub fn tcgetsid(fd: RawFd) -> Result<Pid> {
+    let res = unsafe { libc::tcgetsid(fd) };
+
+    Errno::result(res).map(Pid::from_raw)
 }
