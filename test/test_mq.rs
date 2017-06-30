@@ -16,6 +16,8 @@ use nix::Error::Sys;
 
 #[test]
 fn test_mq_send_and_receive() {
+    #[allow(unused_variables)]
+    let m = ::FORK_MTX.lock().expect("Mutex got poisoned by another test");
 
     const MSG_SIZE: c_long =  32;
     let attr =  MqAttr::new(0, 10, MSG_SIZE, 0);
