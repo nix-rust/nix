@@ -9,6 +9,7 @@ main() {
     fi
 
     # Build debug and release targets
+    #rustup default stable-$TARGET
     cross build --target $TARGET
     cross build --target $TARGET --release
 

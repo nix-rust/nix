@@ -4,7 +4,7 @@
 dist: trusty
 language: rust
 services: docker
-sudo: required
+sudo: false
 
 env:
   global:
@@ -89,7 +89,6 @@ before_install: set -e
 
 install:
   - sh ci/install.sh
-  - source ~/.cargo/env || true
 
 script:
   - bash ci/script.sh
@@ -120,10 +119,10 @@ deploy:
   provider: releases
   skip_cleanup: true
 
-cache: cargo
-before_cache:
+#cache: cargo
+#before_cache:
   # Travis can't cache files that are not readable by "others"
-  - chmod -R a+r $HOME/.cargo
+  #- chmod -R a+r $HOME/.cargo
 
 branches:
   only:
