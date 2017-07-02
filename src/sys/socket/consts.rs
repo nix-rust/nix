@@ -112,6 +112,30 @@ mod os {
 
     // Ancillary message types
     pub const SCM_RIGHTS: c_int = 1;
+
+    // Netlink protocol types
+    pub const NETLINK_ROUTE: c_int          = 0;
+    pub const NETLINK_UNUSED: c_int         = 1;
+    pub const NETLINK_USERSOCK: c_int       = 2;
+    pub const NETLINK_FIREWALL: c_int       = 3;
+    pub const NETLINK_SOCK_DIAG: c_int      = 4;
+    pub const NETLINK_NFLOG: c_int          = 5;
+    pub const NETLINK_XFRM: c_int           = 6;
+    pub const NETLINK_SELINUX: c_int        = 7;
+    pub const NETLINK_ISCSI: c_int          = 8;
+    pub const NETLINK_AUDIT: c_int          = 9;
+    pub const NETLINK_FIB_LOOKUP: c_int     = 10;
+    pub const NETLINK_CONNECTOR: c_int      = 11;
+    pub const NETLINK_NETFILTER: c_int      = 12;
+    pub const NETLINK_IP6_FW: c_int         = 13;
+    pub const NETLINK_DNRTMSG: c_int        = 14;
+    pub const NETLINK_KOBJECT_UEVENT: c_int = 15;
+    pub const NETLINK_GENERIC: c_int        = 16;
+    pub const NETLINK_SCSITRANSPORT: c_int  = 18;
+    pub const NETLINK_ECRYPTFS: c_int       = 19;
+    pub const NETLINK_RDMA: c_int           = 20;
+    pub const NETLINK_CRYPTO: c_int         = 21;
+    pub const NETLINK_INET_DIAG: c_int      = NETLINK_SOCK_DIAG;
 }
 
 // Not all of these constants exist on freebsd
