@@ -7,6 +7,16 @@ use nix::sys::stat;
 use nix::sys::termios::*;
 use nix::unistd::{read, write, close};
 
+/// Helper function analogous to std::io::Read::read_exact, but for `RawFD`s
+fn read_exact(f: RawFd, buf: &mut  [u8]) {
+    let mut len = 0;
+    while len < buf.len() {
+        // get_mut would be better than split_at_mut, but it requires nightly
+        let (_, remaining) = buf.split_at_mut(len);
+        len += read(f, remaining).unwrap();
+    }
+}
+
 /// Test equivalence of `ptsname` and `ptsname_r`
 #[test]
 #[cfg(any(target_os = "android", target_os = "linux"))]
@@ -22,6 +32,7 @@ fn test_ptsname_equivalence() {
 }
 
 /// Test data copying of `ptsname`
+// TODO need to run in a subprocess, since ptsname is non-reentrant
 #[test]
 #[cfg(any(target_os = "android", target_os = "linux"))]
 fn test_ptsname_copy() {
@@ -102,26 +113,25 @@ fn test_openpty() {
 
     // Writing to one should be readable on the other one
     let string = "foofoofoo\n";
-    let mut buf = [0u8; 16];
+    let mut buf = [0u8; 10];
     write(pty.master, string.as_bytes()).unwrap();
-    let len = read(pty.slave, &mut buf).unwrap();
+    read_exact(pty.slave, &mut buf);
 
-    assert_eq!(len, string.len());
-    assert_eq!(&buf[0..len], string.as_bytes());
+    assert_eq!(&buf, string.as_bytes());
 
     // Read the echo as well
     let echoed_string = "foofoofoo\r\n";
-    let len = read(pty.master, &mut buf).unwrap();
-    assert_eq!(len, echoed_string.len());
-    assert_eq!(&buf[0..len], echoed_string.as_bytes());
+    let mut buf = [0u8; 11];
+    read_exact(pty.master, &mut buf);
+    assert_eq!(&buf, echoed_string.as_bytes());
 
     let string2 = "barbarbarbar\n";
     let echoed_string2 = "barbarbarbar\r\n";
+    let mut buf = [0u8; 14];
     write(pty.slave, string2.as_bytes()).unwrap();
-    let len = read(pty.master, &mut buf).unwrap();
+    read_exact(pty.master, &mut buf);
 
-    assert_eq!(len, echoed_string2.len());
-    assert_eq!(&buf[0..len], echoed_string2.as_bytes());
+    assert_eq!(&buf, echoed_string2.as_bytes());
 
     close(pty.master).unwrap();
     close(pty.slave).unwrap();
@@ -148,26 +158,24 @@ fn test_openpty_with_termios() {
 
     // Writing to one should be readable on the other one
     let string = "foofoofoo\n";
-    let mut buf = [0u8; 16];
+    let mut buf = [0u8; 10];
     write(pty.master, string.as_bytes()).unwrap();
-    let len = read(pty.slave, &mut buf).unwrap();
+    read_exact(pty.slave, &mut buf);
 
-    assert_eq!(len, string.len());
-    assert_eq!(&buf[0..len], string.as_bytes());
+    assert_eq!(&buf, string.as_bytes());
 
     // read the echo as well
     let echoed_string = "foofoofoo\n";
-    let len = read(pty.master, &mut buf).unwrap();
-    assert_eq!(len, echoed_string.len());
-    assert_eq!(&buf[0..len], echoed_string.as_bytes());
+    read_exact(pty.master, &mut buf);
+    assert_eq!(&buf, echoed_string.as_bytes());
 
     let string2 = "barbarbarbar\n";
     let echoed_string2 = "barbarbarbar\n";
+    let mut buf = [0u8; 13];
     write(pty.slave, string2.as_bytes()).unwrap();
-    let len = read(pty.master, &mut buf).unwrap();
+    read_exact(pty.master, &mut buf);
 
-    assert_eq!(len, echoed_string2.len());
-    assert_eq!(&buf[0..len], echoed_string2.as_bytes());
+    assert_eq!(&buf, echoed_string2.as_bytes());
 
     close(pty.master).unwrap();
     close(pty.slave).unwrap();
