@@ -17,6 +17,7 @@ mod test_mount {
 
     use libc::{EACCES, EROFS};
 
+    use nix::errno::Errno;
     use nix::mount::{mount, umount, MsFlags, MS_BIND, MS_RDONLY, MS_NOEXEC};
     use nix::sched::{unshare, CLONE_NEWNS, CLONE_NEWUSER};
     use nix::sys::stat::{self, S_IRWXU, S_IRWXG, S_IRWXO, S_IXUSR, S_IXGRP, S_IXOTH};
@@ -49,6 +50,23 @@ exit 23";
             .write(true)
             .mode((S_IRWXU | S_IRWXG | S_IRWXO).bits())
             .open(&test_path)
+            .or_else(|e|
+                if Errno::from_i32(e.raw_os_error().unwrap()) == Errno::EOVERFLOW {
+                    // Skip tests on certain Linux kernels which have a bug
+                    // regarding tmpfs in namespaces.
+                    // Ubuntu 14.04 and 16.04 are known to be affected; 16.10 is
+                    // not.  There is no legitimate reason for open(2) to return
+                    // EOVERFLOW here.
+                    // https://bugs.launchpad.net/ubuntu/+source/linux/+bug/1659087
+                    let stderr = io::stderr();
+                    let mut handle = stderr.lock();
+                    writeln!(handle, "Buggy Linux kernel detected.  Skipping test.")
+                    .unwrap();
+                    process::exit(0);
+               } else {
+                   panic!("open failed: {}", e);
+               }
+            )
             .and_then(|mut f| f.write(SCRIPT_CONTENTS))
             .unwrap_or_else(|e| panic!("write failed: {}", e));
 
