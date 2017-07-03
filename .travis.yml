@@ -9,7 +9,7 @@ sudo: required
 env:
   global:
     - CRATE_NAME=nix
-    - CARGO_TEST_THREADS=1
+    - RUST_TEST_THREADS=1
 
 matrix:
   # These are all the build jobs. Adjust as necessary. Comment out what you
