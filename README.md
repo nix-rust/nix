@@ -70,10 +70,15 @@ Tier 2:
   * x86_64-unknown-netbsd
 
 Tier 3:
+  * aarch64-apple-ios
   * aarch64-linux-android
   * arm-linux-androideabi
+  * armv7-apple-ios
   * armv7-linux-androideabi
+  * armv7s-apple-ios
+  * i386-apple-ios
   * i686-linux-android
+  * x86_64-apple-ios
   * x86_64-linux-android
 
 ## Usage

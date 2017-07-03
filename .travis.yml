@@ -27,6 +27,23 @@ matrix:
     - env: TARGET=x86_64-linux-android DISABLE_TESTS=1
       rust: 1.13.0
 
+    # iOS
+    - env: TARGET=aarch64-apple-ios DISABLE_TESTS=1
+      rust: 1.13.0
+      os: osx
+    - env: TARGET=armv7-apple-ios DISABLE_TESTS=1
+      rust: 1.13.0
+      os: osx
+    - env: TARGET=armv7s-apple-ios DISABLE_TESTS=1
+      rust: 1.13.0
+      os: osx
+    - env: TARGET=i386-apple-ios DISABLE_TESTS=1
+      rust: 1.13.0
+      os: osx
+    - env: TARGET=x86_64-apple-ios DISABLE_TESTS=1
+      rust: 1.13.0
+      os: osx
+
     # Linux
     - env: TARGET=aarch64-unknown-linux-gnu
       rust: 1.13.0
@@ -98,6 +115,23 @@ matrix:
       rust: 1.13.0
     - env: TARGET=x86_64-linux-android DISABLE_TESTS=1
       rust: 1.13.0
+
+    # iOS is still being worked on, so for now don't block on compilation failures
+    - env: TARGET=aarch64-apple-ios DISABLE_TESTS=1
+      rust: 1.13.0
+      os: osx
+    - env: TARGET=armv7-apple-ios DISABLE_TESTS=1
+      rust: 1.13.0
+      os: osx
+    - env: TARGET=armv7s-apple-ios DISABLE_TESTS=1
+      rust: 1.13.0
+      os: osx
+    - env: TARGET=i386-apple-ios DISABLE_TESTS=1
+      rust: 1.13.0
+      os: osx
+    - env: TARGET=x86_64-apple-ios DISABLE_TESTS=1
+      rust: 1.13.0
+      os: osx
 
     # Failures for nightlies may be because of compiler bugs, so don't fail the
     # build if these fail.
