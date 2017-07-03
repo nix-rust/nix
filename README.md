@@ -46,7 +46,8 @@ limitations. Support for platforms is split into two tiers:
              *do not* block the inclusion of new code. Testing may be run, but
              failures in tests don't block the inclusion of new code.
 
-The following targets are all supported by nix on Rust 1.13.0 or newer:
+The following targets are all supported by nix on Rust 1.13.0 or newer (unless
+otherwise noted):
 
 Tier 1:
   * i686-unknown-linux-gnu
@@ -68,18 +69,18 @@ Tier 1:
 Tier 2:
   * i686-unknown-freebsd
   * x86_64-unknown-netbsd
+  * aarch64-linux-android
+  * arm-linux-androideabi
+  * armv7-linux-androideabi
+  * i686-linux-android (requires Rust >= 1.18)
+  * x86_64-linux-android (requires Rust >= 1.18)
 
 Tier 3:
   * aarch64-apple-ios
-  * aarch64-linux-android
-  * arm-linux-androideabi
   * armv7-apple-ios
-  * armv7-linux-androideabi
   * armv7s-apple-ios
   * i386-apple-ios
-  * i686-linux-android
   * x86_64-apple-ios
-  * x86_64-linux-android
 
 ## Usage
 

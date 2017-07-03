@@ -23,9 +23,9 @@ matrix:
     - env: TARGET=armv7-linux-androideabi DISABLE_TESTS=1
       rust: 1.13.0
     - env: TARGET=i686-linux-android DISABLE_TESTS=1
-      rust: 1.13.0
+      rust: 1.18.0
     - env: TARGET=x86_64-linux-android DISABLE_TESTS=1
-      rust: 1.13.0
+      rust: 1.18.0
 
     # iOS
     - env: TARGET=aarch64-apple-ios DISABLE_TESTS=1
@@ -104,18 +104,6 @@ matrix:
       rust: nightly
 
   allow_failures:
-    # Android (in the process of fixing these, so they're allowed to fail for now)
-    - env: TARGET=aarch64-linux-android DISABLE_TESTS=1
-      rust: 1.13.0
-    - env: TARGET=arm-linux-androideabi DISABLE_TESTS=1
-      rust: 1.13.0
-    - env: TARGET=armv7-linux-androideabi DISABLE_TESTS=1
-      rust: 1.13.0
-    - env: TARGET=i686-linux-android DISABLE_TESTS=1
-      rust: 1.13.0
-    - env: TARGET=x86_64-linux-android DISABLE_TESTS=1
-      rust: 1.13.0
-
     # iOS is still being worked on, so for now don't block on compilation failures
     - env: TARGET=aarch64-apple-ios DISABLE_TESTS=1
       rust: 1.13.0

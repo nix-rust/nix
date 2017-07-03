@@ -35,6 +35,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Introduced wrapper types for gid_t, pid_t, and uid_t as Gid, Pid, and Uid
   respectively. Various functions have been changed to use these new types as
   arguments. ([#629](https://github.com/nix-rust/nix/pull/629))
+- Promoted all Android targets to Tier 2 support
 
 ### Removed
 - Removed io::Error from nix::Error and conversion from nix::Error to Errno
