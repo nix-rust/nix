@@ -4,12 +4,12 @@ pub use self::os::*;
 mod os {
     use libc::{self, c_int, uint8_t};
 
-    pub const AF_UNIX: c_int  = 1;
-    pub const AF_LOCAL: c_int = AF_UNIX;
-    pub const AF_INET: c_int  = 2;
-    pub const AF_INET6: c_int = 10;
-    pub const AF_NETLINK: c_int = 16;
-    pub const AF_PACKET: c_int = 17;
+    pub const AF_UNIX: c_int  = libc::AF_UNIX;
+    pub const AF_LOCAL: c_int = libc::AF_LOCAL;
+    pub const AF_INET: c_int  = libc::AF_INET;
+    pub const AF_INET6: c_int = libc::AF_INET6;
+    pub const AF_NETLINK: c_int = libc::AF_NETLINK;
+    pub const AF_PACKET: c_int = libc::AF_PACKET;
 
     pub const SOCK_STREAM: c_int = libc::SOCK_STREAM;
     pub const SOCK_DGRAM: c_int = libc::SOCK_DGRAM;
@@ -17,36 +17,36 @@ mod os {
     pub const SOCK_RAW: c_int = libc::SOCK_RAW;
     pub const SOCK_RDM: c_int = 4;
 
-    pub const SOL_IP: c_int     = 0;
+    pub const SOL_IP: c_int = libc::SOL_IP;
     pub const SOL_SOCKET: c_int = libc::SOL_SOCKET;
-    pub const SOL_TCP: c_int    = 6;
-    pub const SOL_UDP: c_int    = 17;
-    pub const SOL_IPV6: c_int   = 41;
-    pub const SOL_NETLINK: c_int = 270;
-    pub const IPPROTO_IP: c_int = SOL_IP;
-    pub const IPPROTO_IPV6: c_int = SOL_IPV6;
-    pub const IPPROTO_TCP: c_int = SOL_TCP;
+    pub const SOL_TCP: c_int = libc::SOL_TCP;
+    pub const SOL_UDP: c_int = 17;
+    pub const SOL_IPV6: c_int = libc::SOL_IPV6;
+    pub const SOL_NETLINK: c_int = libc::SOL_NETLINK;
+    pub const IPPROTO_IP: c_int = libc::IPPROTO_IP;
+    pub const IPPROTO_IPV6: c_int = libc::IPPROTO_IPV6;
+    pub const IPPROTO_TCP: c_int = libc::IPPROTO_TCP;
     pub const IPPROTO_UDP: c_int = SOL_UDP;
 
     pub const SO_ACCEPTCONN: c_int = libc::SO_ACCEPTCONN;
-    pub const SO_BINDTODEVICE: c_int = 25;
+    pub const SO_BINDTODEVICE: c_int = libc::SO_BINDTODEVICE;
     pub const SO_BROADCAST: c_int = libc::SO_BROADCAST;
-    pub const SO_BSDCOMPAT: c_int = 14;
-    pub const SO_DEBUG: c_int = 1;
-    pub const SO_DOMAIN: c_int = 39;
+    pub const SO_BSDCOMPAT: c_int = libc::SO_BSDCOMPAT;
+    pub const SO_DEBUG: c_int = libc::SO_DEBUG;
+    pub const SO_DOMAIN: c_int = libc::SO_DOMAIN;
     pub const SO_ERROR: c_int = libc::SO_ERROR;
     pub const SO_DONTROUTE: c_int = libc::SO_DONTROUTE;
     pub const SO_KEEPALIVE: c_int = libc::SO_KEEPALIVE;
     pub const SO_LINGER: c_int = libc::SO_LINGER;
-    pub const SO_MARK: c_int = 36;
+    pub const SO_MARK: c_int = libc::SO_MARK;
     pub const SO_OOBINLINE: c_int = libc::SO_OOBINLINE;
     #[cfg(not(target_arch="arm"))]
     pub const SO_PASSCRED: c_int = libc::SO_PASSCRED;
-    pub const SO_PEEK_OFF: c_int = 42;
+    pub const SO_PEEK_OFF: c_int = libc::SO_PEEK_OFF;
     #[cfg(not(target_arch="arm"))]
     pub const SO_PEERCRED: c_int = libc::SO_PEERCRED;
-    pub const SO_PRIORITY: c_int = 12;
-    pub const SO_PROTOCOL: c_int = 38;
+    pub const SO_PRIORITY: c_int = libc::SO_PRIORITY;
+    pub const SO_PROTOCOL: c_int = libc::SO_PROTOCOL;
     pub const SO_RCVBUF: c_int = libc::SO_RCVBUF;
     pub const SO_RCVBUFFORCE: c_int = 33;
     pub const SO_RCVLOWAT: c_int = libc::SO_RCVLOWAT;
@@ -55,20 +55,20 @@ mod os {
     pub const SO_SNDTIMEO: c_int = libc::SO_SNDTIMEO;
     pub const SO_REUSEADDR: c_int = libc::SO_REUSEADDR;
     pub const SO_REUSEPORT: c_int = libc::SO_REUSEPORT;
-    pub const SO_RXQ_OVFL: c_int = 40;
+    pub const SO_RXQ_OVFL: c_int = libc::SO_RXQ_OVFL;
     pub const SO_SNDBUF: c_int = libc::SO_SNDBUF;
     #[cfg(not(target_arch="arm"))]
     pub const SO_SNDBUFFORCE: c_int = libc::SO_SNDBUFFORCE;
-    pub const SO_TIMESTAMP: c_int = 29;
+    pub const SO_TIMESTAMP: c_int = libc::SO_TIMESTAMP;
     pub const SO_TYPE: c_int = libc::SO_TYPE;
-    pub const SO_BUSY_POLL: c_int = 46;
+    pub const SO_BUSY_POLL: c_int = libc::SO_BUSY_POLL;
     #[cfg(target_os = "linux")]
     pub const SO_ORIGINAL_DST: c_int = 80;
 
     // Socket options for TCP sockets
-    pub const TCP_NODELAY: c_int = 1;
-    pub const TCP_MAXSEG: c_int = 2;
-    pub const TCP_CORK: c_int = 3;
+    pub const TCP_NODELAY: c_int = libc::TCP_NODELAY;
+    pub const TCP_MAXSEG: c_int = libc::TCP_MAXSEG;
+    pub const TCP_CORK: c_int = libc::TCP_CORK;
     pub const TCP_KEEPIDLE: c_int = libc::TCP_KEEPIDLE;
 
     // Socket options for the IP layer of the socket
@@ -76,10 +76,10 @@ mod os {
 
     pub type IpMulticastTtl = uint8_t;
 
-    pub const IP_MULTICAST_TTL: c_int = 33;
-    pub const IP_MULTICAST_LOOP: c_int = 34;
-    pub const IP_ADD_MEMBERSHIP: c_int = 35;
-    pub const IP_DROP_MEMBERSHIP: c_int = 36;
+    pub const IP_MULTICAST_TTL: c_int = libc::IP_MULTICAST_TTL;
+    pub const IP_MULTICAST_LOOP: c_int = libc::IP_MULTICAST_LOOP;
+    pub const IP_ADD_MEMBERSHIP: c_int = libc::IP_ADD_MEMBERSHIP;
+    pub const IP_DROP_MEMBERSHIP: c_int = libc::IP_DROP_MEMBERSHIP;
 
     pub const IPV6_ADD_MEMBERSHIP: c_int = libc::IPV6_ADD_MEMBERSHIP;
     pub const IPV6_DROP_MEMBERSHIP: c_int = libc::IPV6_DROP_MEMBERSHIP;
@@ -92,26 +92,26 @@ mod os {
     pub const INADDR_BROADCAST: InAddrT = 0xffffffff;
 
     // Flags for send/recv and their relatives
-    bitflags!{
-        pub struct MsgFlags: libc::c_int {
-            const MSG_OOB      = 0x0001;
-            const MSG_PEEK     = 0x0002;
-            const MSG_CTRUNC   = 0x0008;
-            const MSG_TRUNC    = 0x0020;
-            const MSG_DONTWAIT = 0x0040;
-            const MSG_EOR      = 0x0080;
-            const MSG_ERRQUEUE = 0x2000;
-            const MSG_CMSG_CLOEXEC = 0x40000000;
+    libc_bitflags!{
+        pub flags MsgFlags: libc::c_int {
+            MSG_OOB,
+            MSG_PEEK,
+            MSG_CTRUNC,
+            MSG_TRUNC,
+            MSG_DONTWAIT,
+            MSG_EOR,
+            MSG_ERRQUEUE,
+            MSG_CMSG_CLOEXEC,
         }
     }
 
     // shutdown flags
-    pub const SHUT_RD: c_int   = 0;
-    pub const SHUT_WR: c_int   = 1;
-    pub const SHUT_RDWR: c_int = 2;
+    pub const SHUT_RD: c_int = libc::SHUT_RD;
+    pub const SHUT_WR: c_int = libc::SHUT_WR;
+    pub const SHUT_RDWR: c_int = libc::SHUT_RDWR;
 
     // Ancillary message types
-    pub const SCM_RIGHTS: c_int = 1;
+    pub const SCM_RIGHTS: c_int = libc::SCM_RIGHTS;
 }
 
 // Not all of these constants exist on freebsd
@@ -124,49 +124,41 @@ mod os {
     #[cfg(any(target_os = "openbsd", target_os = "netbsd"))]
     use libc::{self, c_int, uint8_t};
 
-    pub const AF_UNIX: c_int  = 1;
-    pub const AF_LOCAL: c_int = AF_UNIX;
-    pub const AF_INET: c_int  = 2;
-    #[cfg(target_os = "netbsd")]
-    pub const AF_INET6: c_int = 24;
-    #[cfg(target_os = "openbsd")]
-    pub const AF_INET6: c_int = 26;
-    #[cfg(target_os = "freebsd")]
-    pub const AF_INET6: c_int = 28;
+    pub const AF_UNIX: c_int  = libc::AF_UNIX;
+    pub const AF_LOCAL: c_int = libc::AF_LOCAL;
+    pub const AF_INET: c_int  = libc::AF_INET;
+    pub const AF_INET6: c_int = libc::AF_INET6;
     #[cfg(any(target_os = "macos", target_os = "ios"))]
-    pub const AF_INET6: c_int = 30;
-    #[cfg(any(target_os = "macos", target_os = "ios"))]
-    pub const AF_SYSTEM: c_int = 32;
-    
+    pub const AF_SYSTEM: c_int = libc::AF_SYSTEM;
+
     #[cfg(any(target_os = "macos", target_os = "ios"))]
     pub const AF_SYS_CONTROL: c_int = 2;
 
-    pub const SOCK_STREAM: c_int = 1;
-    pub const SOCK_DGRAM: c_int = 2;
-    pub const SOCK_SEQPACKET: c_int = 5;
-    pub const SOCK_RAW: c_int = 3;
-    pub const SOCK_RDM: c_int = 4;
+    pub const SOCK_STREAM: c_int = libc::SOCK_STREAM;
+    pub const SOCK_DGRAM: c_int = libc::SOCK_DGRAM;
+    pub const SOCK_SEQPACKET: c_int = libc::SOCK_SEQPACKET;
+    pub const SOCK_RAW: c_int = libc::SOCK_RAW;
+    pub const SOCK_RDM: c_int = libc::SOCK_RDM;
 
-    pub const SOL_SOCKET: c_int = 0xffff;
-    pub const IPPROTO_IP: c_int = 0;
-    pub const IPPROTO_IPV6: c_int = 41;
-    pub const IPPROTO_TCP: c_int = 6;
+    pub const SOL_SOCKET: c_int = libc::SOL_SOCKET;
+    pub const IPPROTO_IP: c_int = libc::IPPROTO_IP;
+    pub const IPPROTO_IPV6: c_int = libc::IPPROTO_IPV6;
+    pub const IPPROTO_TCP: c_int = libc::IPPROTO_TCP;
     pub const IPPROTO_UDP: c_int = 17;
     #[cfg(any(target_os = "macos", target_os = "ios"))]
     pub const SYSPROTO_CONTROL: c_int = 2;
 
     pub const SO_ACCEPTCONN: c_int          = libc::SO_ACCEPTCONN;
-    pub const SO_BROADCAST: c_int           = 0x0020;
-    pub const SO_DEBUG: c_int               = 0x0001;
+    pub const SO_BROADCAST: c_int           = libc::SO_BROADCAST;
+    pub const SO_DEBUG: c_int               = libc::SO_DEBUG;
     #[cfg(not(target_os = "netbsd"))]
     pub const SO_DONTTRUNC: c_int           = 0x2000;
-    #[cfg(target_os = "netbsd")]
-    pub const SO_USELOOPBACK: c_int         = 0x0040;
-    pub const SO_ERROR: c_int               = 0x1007;
-    pub const SO_DONTROUTE: c_int           = 0x0010;
-    pub const SO_KEEPALIVE: c_int           = 0x0008;
+    pub const SO_USELOOPBACK: c_int         = libc::SO_USELOOPBACK;
+    pub const SO_ERROR: c_int               = libc::SO_ERROR;
+    pub const SO_DONTROUTE: c_int           = libc::SO_DONTROUTE;
+    pub const SO_KEEPALIVE: c_int           = libc::SO_KEEPALIVE;
     pub const SO_LABEL: c_int               = 0x1010;
-    pub const SO_LINGER: c_int              = 0x0080;
+    pub const SO_LINGER: c_int              = libc::SO_LINGER;
     pub const SO_NREAD: c_int               = 0x1020;
     pub const SO_NKE: c_int                 = 0x1021;
     pub const SO_NOSIGPIPE: c_int           = 0x1022;
@@ -174,28 +166,25 @@ mod os {
     pub const SO_NOTIFYCONFLICT: c_int      = 0x1026;
     pub const SO_NP_EXTENSIONS: c_int       = 0x1083;
     pub const SO_NWRITE: c_int              = 0x1024;
-    pub const SO_OOBINLINE: c_int           = 0x0100;
+    pub const SO_OOBINLINE: c_int           = libc::SO_OOBINLINE;
     pub const SO_PEERLABEL: c_int           = 0x1011;
-    pub const SO_RCVBUF: c_int              = 0x1002;
-    pub const SO_RCVLOWAT: c_int            = 0x1004;
-    pub const SO_SNDLOWAT: c_int            = 0x1003;
-    pub const SO_RCVTIMEO: c_int            = 0x1006;
-    pub const SO_SNDTIMEO: c_int            = 0x1005;
+    pub const SO_RCVBUF: c_int              = libc::SO_RCVBUF;
+    pub const SO_RCVLOWAT: c_int            = libc::SO_RCVLOWAT;
+    pub const SO_SNDLOWAT: c_int            = libc::SO_SNDLOWAT;
+    pub const SO_RCVTIMEO: c_int            = libc::SO_RCVTIMEO;
+    pub const SO_SNDTIMEO: c_int            = libc::SO_SNDTIMEO;
     pub const SO_RANDOMPORT: c_int          = 0x1082;
     pub const SO_RESTRICTIONS: c_int        = 0x1081;
     pub const SO_RESTRICT_DENYIN: c_int     = 0x00000001;
     pub const SO_RESTRICT_DENYOUT: c_int    = 0x00000002;
-    pub const SO_REUSEADDR: c_int           = 0x0004;
-    pub const SO_REUSEPORT: c_int           = 0x0200;
+    pub const SO_REUSEADDR: c_int           = libc::SO_REUSEADDR;
+    pub const SO_REUSEPORT: c_int           = libc::SO_REUSEPORT;
     pub const SO_REUSESHAREUID: c_int       = 0x1025;
-    pub const SO_SNDBUF: c_int              = 0x1001;
-    #[cfg(not(target_os = "netbsd"))]
-    pub const SO_TIMESTAMP: c_int           = 0x0400;
+    pub const SO_SNDBUF: c_int              = libc::SO_SNDBUF;
+    pub const SO_TIMESTAMP: c_int           = libc::SO_TIMESTAMP;
     #[cfg(not(target_os = "netbsd"))]
     pub const SO_TIMESTAMP_MONOTONIC: c_int = 0x0800;
-    #[cfg(target_os = "netbsd")]
-    pub const SO_TIMESTAMP: c_int           = 0x2000;
-    pub const SO_TYPE: c_int                = 0x1008;
+    pub const SO_TYPE: c_int                = libc::SO_TYPE;
     #[cfg(not(target_os = "netbsd"))]
     pub const SO_WANTMORE: c_int            = 0x4000;
     pub const SO_WANTOOBFLAG: c_int         = 0x8000;
@@ -203,25 +192,22 @@ mod os {
     pub const SO_RESTRICT_DENYSET: c_int    = 0x80000000;
 
     // Socket options for TCP sockets
-    pub const TCP_NODELAY: c_int = 1;
+    pub const TCP_NODELAY: c_int = libc::TCP_NODELAY;
     pub const TCP_MAXSEG: c_int = 2;
-    #[cfg(any(target_os = "macos",
-              target_os = "ios"))]
+    #[cfg(any(target_os = "macos", target_os = "ios"))]
     pub const TCP_KEEPALIVE: c_int = libc::TCP_KEEPALIVE;
     #[cfg(target_os = "freebsd")]
     pub const TCP_KEEPIDLE: c_int = libc::TCP_KEEPIDLE;
-    #[cfg(target_os = "netbsd")]
-    pub const TCP_KEEPIDLE: c_int = 3;
 
     // Socket options for the IP layer of the socket
     pub const IP_MULTICAST_IF: c_int = 9;
 
     pub type IpMulticastTtl = uint8_t;
 
-    pub const IP_MULTICAST_TTL: c_int = 10;
-    pub const IP_MULTICAST_LOOP: c_int = 11;
-    pub const IP_ADD_MEMBERSHIP: c_int = 12;
-    pub const IP_DROP_MEMBERSHIP: c_int = 13;
+    pub const IP_MULTICAST_TTL: c_int = libc::IP_MULTICAST_TTL;
+    pub const IP_MULTICAST_LOOP: c_int = libc::IP_MULTICAST_LOOP;
+    pub const IP_ADD_MEMBERSHIP: c_int = libc::IP_ADD_MEMBERSHIP;
+    pub const IP_DROP_MEMBERSHIP: c_int = libc::IP_DROP_MEMBERSHIP;
 
     pub const IPV6_JOIN_GROUP: c_int = libc::IPV6_JOIN_GROUP;
     pub const IPV6_LEAVE_GROUP: c_int = libc::IPV6_LEAVE_GROUP;
@@ -234,21 +220,21 @@ mod os {
     pub const INADDR_BROADCAST: InAddrT = 0xffffffff;
 
     // Flags for send/recv and their relatives
-    bitflags!{
-        pub struct MsgFlags: libc::c_int {
-            const MSG_OOB      = 0x01;
-            const MSG_PEEK     = 0x02;
-            const MSG_EOR      = 0x08;
-            const MSG_TRUNC    = 0x10;
-            const MSG_CTRUNC   = 0x20;
-            const MSG_DONTWAIT = 0x80;
+    libc_bitflags!{
+        pub flags MsgFlags: libc::c_int {
+            MSG_OOB,
+            MSG_PEEK,
+            MSG_EOR,
+            MSG_TRUNC,
+            MSG_CTRUNC,
+            MSG_DONTWAIT,
         }
     }
 
     // shutdown flags
-    pub const SHUT_RD: c_int   = 0;
-    pub const SHUT_WR: c_int   = 1;
-    pub const SHUT_RDWR: c_int = 2;
+    pub const SHUT_RD: c_int = libc::SHUT_RD;
+    pub const SHUT_WR: c_int = libc::SHUT_WR;
+    pub const SHUT_RDWR: c_int = libc::SHUT_RDWR;
 
     // Ancillary message types
     pub const SCM_RIGHTS: c_int = 1;
@@ -258,57 +244,57 @@ mod os {
 mod os {
     use libc::{c_int, uint8_t};
 
-    pub const AF_UNIX: c_int  = 1;
-    pub const AF_LOCAL: c_int = AF_UNIX;
-    pub const AF_INET: c_int  = 2;
-    pub const AF_INET6: c_int = 28;
+    pub const AF_UNIX: c_int  = libc::AF_UNIX;
+    pub const AF_LOCAL: c_int = libc::AF_LOCAL;
+    pub const AF_INET: c_int  = libc::AF_INET;
+    pub const AF_INET6: c_int = libc::AF_INET6;
 
-    pub const SOCK_STREAM: c_int = 1;
-    pub const SOCK_DGRAM: c_int = 2;
-    pub const SOCK_SEQPACKET: c_int = 5;
-    pub const SOCK_RAW: c_int = 3;
-    pub const SOCK_RDM: c_int = 4;
+    pub const SOCK_STREAM: c_int = libc::SOCK_STREAM;
+    pub const SOCK_DGRAM: c_int = libc::SOCK_DGRAM;
+    pub const SOCK_SEQPACKET: c_int = libc::SOCK_SEQPACKET;
+    pub const SOCK_RAW: c_int = libc::SOCK_RAW;
+    pub const SOCK_RDM: c_int = libc::SOCK_RDM;
 
-    pub const SOL_SOCKET: c_int = 0xffff;
-    pub const IPPROTO_IP: c_int = 0;
-    pub const IPPROTO_IPV6: c_int = 41;
-    pub const IPPROTO_TCP: c_int = 6;
-    pub const IPPROTO_UDP: c_int = 17;
+    pub const SOL_SOCKET: c_int = libc::SOL_SOCKET;
+    pub const IPPROTO_IP: c_int = libc::IPPROTO_IP;
+    pub const IPPROTO_IPV6: c_int = libc::IPPROTO_IPV6;
+    pub const IPPROTO_TCP: c_int = libc::IPPROTO_TCP;
+    pub const IPPROTO_UDP: c_int = libc::IPPROTO_UDP;
 
-    pub const SO_ACCEPTCONN: c_int          = 0x0002;
-    pub const SO_BROADCAST: c_int           = 0x0020;
-    pub const SO_DEBUG: c_int               = 0x0001;
-    pub const SO_ERROR: c_int               = 0x1007;
-    pub const SO_DONTROUTE: c_int           = 0x0010;
-    pub const SO_KEEPALIVE: c_int           = 0x0008;
-    pub const SO_LINGER: c_int              = 0x0080;
-    pub const SO_NOSIGPIPE: c_int           = 0x0800; // different value!
-    pub const SO_OOBINLINE: c_int           = 0x0100;
-    pub const SO_RCVBUF: c_int              = 0x1002;
-    pub const SO_RCVLOWAT: c_int            = 0x1004;
-    pub const SO_SNDLOWAT: c_int            = 0x1003;
-    pub const SO_RCVTIMEO: c_int            = 0x1006;
-    pub const SO_SNDTIMEO: c_int            = 0x1005;
-    pub const SO_REUSEADDR: c_int           = 0x0004;
-    pub const SO_REUSEPORT: c_int           = 0x0200;
-    pub const SO_SNDBUF: c_int              = 0x1001;
-    pub const SO_TIMESTAMP: c_int           = 0x0400;
-    pub const SO_TYPE: c_int                = 0x1008;
+    pub const SO_ACCEPTCONN: c_int = libc::SO_ACCEPTCONN;
+    pub const SO_BROADCAST: c_int = libc::SO_BROADCAST;
+    pub const SO_DEBUG: c_int = libc::SO_DEBUG;
+    pub const SO_ERROR: c_int = libc::SO_ERROR;
+    pub const SO_DONTROUTE: c_int = libc::SO_DONTROUTE;
+    pub const SO_KEEPALIVE: c_int = libc::SO_KEEPALIVE;
+    pub const SO_LINGER: c_int = libc::SO_LINGER;
+    pub const SO_NOSIGPIPE: c_int = libc::SO_NOSIGPIPE;
+    pub const SO_OOBINLINE: c_int = libc::SO_OOBINLINE;
+    pub const SO_RCVBUF: c_int = libc::SO_RCVBUF;
+    pub const SO_RCVLOWAT: c_int = libc::RCVLOWAT;
+    pub const SO_SNDLOWAT: c_int = libc::SO_SNDLOWAT;
+    pub const SO_RCVTIMEO: c_int = libc::SO_RCVTIMEO;
+    pub const SO_SNDTIMEO: c_int = libc::SO_SNDTIMEO;
+    pub const SO_REUSEADDR: c_int = libc::SO_REUSEADDR;
+    pub const SO_REUSEPORT: c_int = libc::SO_REUSEPORT;
+    pub const SO_SNDBUF: c_int = libc::SO_SNDBUF;
+    pub const SO_TIMESTAMP: c_int = libc::SO_TIMESTAMP;
+    pub const SO_TYPE: c_int = libc::SO_TYPE;
 
     // Socket options for TCP sockets
-    pub const TCP_NODELAY: c_int = 1;
-    pub const TCP_MAXSEG: c_int = 2;
-    pub const TCP_KEEPIDLE: c_int = 0x100;
+    pub const TCP_NODELAY: c_int = libc::TCP_NODELAY;
+    pub const TCP_MAXSEG: c_int = libc::TCP_MAXSEG;
+    pub const TCP_KEEPIDLE: c_int = libc::TCP_KEEPIDLE;
 
     // Socket options for the IP layer of the socket
     pub const IP_MULTICAST_IF: c_int = 9;
 
     pub type IpMulticastTtl = uint8_t;
 
-    pub const IP_MULTICAST_TTL: c_int = 10;
-    pub const IP_MULTICAST_LOOP: c_int = 11;
-    pub const IP_ADD_MEMBERSHIP: c_int = 12;
-    pub const IP_DROP_MEMBERSHIP: c_int = 13;
+    pub const IP_MULTICAST_TTL: c_int = libc::IP_MULTICAST_TTL;
+    pub const IP_MULTICAST_LOOP: c_int = libc::IP_MULTICAST_LOOP;
+    pub const IP_ADD_MEMBERSHIP: c_int = libc::IP_ADD_MEMBERSHIP;
+    pub const IP_DROP_MEMBERSHIP: c_int = libc::IP_DROP_MEMBERSHIP;
     pub const IPV6_JOIN_GROUP: c_int = libc::IPV6_JOIN_GROUP;
     pub const IPV6_LEAVE_GROUP: c_int = libc::IPV6_LEAVE_GROUP;
 
@@ -320,18 +306,18 @@ mod os {
     pub const INADDR_BROADCAST: InAddrT = 0xffffffff;
 
     // Flags for send/recv and their relatives
-    bitflags!{
-        pub struct MsgFlags: libc::c_int {
-            const MSG_OOB      = 0x01;
-            const MSG_PEEK     = 0x02;
-            const MSG_DONTWAIT = 0x80;
+    libc_bitflags!{
+        pub flags MsgFlags: libc::c_int {
+            MSG_OOB,
+            MSG_PEEK,
+            MSG_DONTWAIT,
         }
     }
 
     // shutdown flags
-    pub const SHUT_RD: c_int   = 0;
-    pub const SHUT_WR: c_int   = 1;
-    pub const SHUT_RDWR: c_int = 2;
+    pub const SHUT_RD: c_int = libc::SHUT_RD;
+    pub const SHUT_WR: c_int = libc::SHUT_WR;
+    pub const SHUT_RDWR: c_int = libc::SHUT_RDWR;
 }
 
 #[cfg(test)]
