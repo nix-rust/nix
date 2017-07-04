@@ -1,5 +1,6 @@
-use libc::{self, pid_t, c_int};
+use libc::{self, c_int};
 use {Errno, Result};
+use unistd::Pid;
 
 use sys::signal::Signal;
 
@@ -41,12 +42,12 @@ const WSTOPPED: WaitPidFlag = WUNTRACED;
 
 #[derive(Eq, PartialEq, Clone, Copy, Debug)]
 pub enum WaitStatus {
-    Exited(pid_t, i8),
-    Signaled(pid_t, Signal, bool),
-    Stopped(pid_t, Signal),
+    Exited(Pid, i8),
+    Signaled(Pid, Signal, bool),
+    Stopped(Pid, Signal),
     #[cfg(any(target_os = "linux", target_os = "android"))]
-    PtraceEvent(pid_t, Signal, c_int),
-    Continued(pid_t),
+    PtraceEvent(Pid, Signal, c_int),
+    Continued(Pid),
     StillAlive
 }
 
@@ -185,7 +186,7 @@ mod status {
     }
 }
 
-fn decode(pid : pid_t, status: i32) -> WaitStatus {
+fn decode(pid : Pid, status: i32) -> WaitStatus {
     if status::exited(status) {
         WaitStatus::Exited(pid, status::exit_status(status))
     } else if status::signaled(status) {
@@ -193,7 +194,7 @@ fn decode(pid : pid_t, status: i32) -> WaitStatus {
     } else if status::stopped(status) {
         cfg_if! {
             if #[cfg(any(target_os = "linux", target_os = "android"))] {
-                fn decode_stopped(pid: pid_t, status: i32) -> WaitStatus {
+                fn decode_stopped(pid: Pid, status: i32) -> WaitStatus {
                     let status_additional = status::stop_additional(status);
                     if status_additional == 0 {
                         WaitStatus::Stopped(pid, status::stop_signal(status))
@@ -202,7 +203,7 @@ fn decode(pid : pid_t, status: i32) -> WaitStatus {
                     }
                 }
             } else {
-                fn decode_stopped(pid: pid_t, status: i32) -> WaitStatus {
+                fn decode_stopped(pid: Pid, status: i32) -> WaitStatus {
                     WaitStatus::Stopped(pid, status::stop_signal(status))
                 }
             }
@@ -214,7 +215,7 @@ fn decode(pid : pid_t, status: i32) -> WaitStatus {
     }
 }
 
-pub fn waitpid(pid: pid_t, options: Option<WaitPidFlag>) -> Result<WaitStatus> {
+pub fn waitpid<P: Into<Option<Pid>>>(pid: P, options: Option<WaitPidFlag>) -> Result<WaitStatus> {
     use self::WaitStatus::*;
 
     let mut status: i32 = 0;
@@ -224,14 +225,14 @@ pub fn waitpid(pid: pid_t, options: Option<WaitPidFlag>) -> Result<WaitStatus> {
         None => 0
     };
 
-    let res = unsafe { ffi::waitpid(pid as pid_t, &mut status as *mut c_int, option_bits) };
+    let res = unsafe { ffi::waitpid(pid.into().unwrap_or(Pid::from_raw(-1)).into(), &mut status as *mut c_int, option_bits) };
 
     Ok(match try!(Errno::result(res)) {
         0 => StillAlive,
-        res => decode(res, status),
+        res => decode(Pid::from_raw(res), status),
     })
 }
 
 pub fn wait() -> Result<WaitStatus> {
-    waitpid(-1, None)
+    waitpid(None, None)
 }

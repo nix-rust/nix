@@ -11,9 +11,127 @@ use std::os::unix::io::RawFd;
 use std::path::{PathBuf};
 use void::Void;
 use sys::stat::Mode;
+use std::fmt;
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 pub use self::linux::*;
+
+/// User identifier
+///
+/// Newtype pattern around `uid_t` (which is just alias). It prevents bugs caused by accidentally
+/// passing wrong value.
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+pub struct Uid(uid_t);
+
+impl Uid {
+    /// Creates `Uid` from raw `uid_t`.
+    pub fn from_raw(uid: uid_t) -> Self {
+        Uid(uid)
+    }
+
+    /// Returns Uid of calling process. This is practically a more Rusty alias for `getuid`.
+    pub fn current() -> Self {
+        getuid()
+    }
+
+    /// Returns effective Uid of calling process. This is practically a more Rusty alias for `geteuid`.
+    pub fn effective() -> Self {
+        geteuid()
+    }
+
+    /// Returns true if the `Uid` represents privileged user - root. (If it equals zero.)
+    pub fn is_root(&self) -> bool {
+        *self == ROOT
+    }
+}
+
+impl From<Uid> for uid_t {
+    fn from(uid: Uid) -> Self {
+        uid.0
+    }
+}
+
+impl fmt::Display for Uid {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Display::fmt(&self.0, f)
+    }
+}
+
+/// Constant for UID = 0
+pub const ROOT: Uid = Uid(0);
+
+/// Group identifier
+///
+/// Newtype pattern around `gid_t` (which is just alias). It prevents bugs caused by accidentally
+/// passing wrong value.
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+pub struct Gid(gid_t);
+
+impl Gid {
+    /// Creates `Gid` from raw `gid_t`.
+    pub fn from_raw(gid: gid_t) -> Self {
+        Gid(gid)
+    }
+
+    /// Returns Gid of calling process. This is practically a more Rusty alias for `getgid`.
+    pub fn current() -> Self {
+        getgid()
+    }
+
+    /// Returns effective Gid of calling process. This is practically a more Rusty alias for `getgid`.
+    pub fn effective() -> Self {
+        getegid()
+    }
+}
+
+impl From<Gid> for gid_t {
+    fn from(gid: Gid) -> Self {
+        gid.0
+    }
+}
+
+impl fmt::Display for Gid {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Display::fmt(&self.0, f)
+    }
+}
+
+/// Process identifier
+///
+/// Newtype pattern around `pid_t` (which is just alias). It prevents bugs caused by accidentally
+/// passing wrong value.
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+pub struct Pid(pid_t);
+
+impl Pid {
+    /// Creates `Pid` from raw `pid_t`.
+    pub fn from_raw(pid: pid_t) -> Self {
+        Pid(pid)
+    }
+
+    /// Returns PID of calling process
+    pub fn this() -> Self {
+        getpid()
+    }
+
+    /// Returns PID of parent of calling process
+    pub fn parent() -> Self {
+        getppid()
+    }
+}
+
+impl From<Pid> for pid_t {
+    fn from(pid: Pid) -> Self {
+        pid.0
+    }
+}
+
+impl fmt::Display for Pid {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Display::fmt(&self.0, f)
+    }
+}
+
 
 /// Represents the successful result of calling `fork`
 ///
@@ -22,7 +140,7 @@ pub use self::linux::*;
 /// you are now executing in the parent process or in the child.
 #[derive(Clone, Copy)]
 pub enum ForkResult {
-    Parent { child: pid_t },
+    Parent { child: Pid },
     Child,
 }
 
@@ -78,7 +196,7 @@ pub fn fork() -> Result<ForkResult> {
 
     Errno::result(res).map(|res| match res {
         0 => Child,
-        res => Parent { child: res },
+        res => Parent { child: Pid(res) },
     })
 }
 
@@ -88,8 +206,8 @@ pub fn fork() -> Result<ForkResult> {
 /// Since you are running code, there is always a pid to return, so there
 /// is no error case that needs to be handled.
 #[inline]
-pub fn getpid() -> pid_t {
-    unsafe { libc::getpid() }
+pub fn getpid() -> Pid {
+    Pid(unsafe { libc::getpid() })
 }
 
 /// Get the pid of this processes' parent (see
@@ -98,8 +216,8 @@ pub fn getpid() -> pid_t {
 /// There is always a parent pid to return, so there is no error case that needs
 /// to be handled.
 #[inline]
-pub fn getppid() -> pid_t {
-    unsafe { libc::getppid() } // no error handling, according to man page: "These functions are always successful."
+pub fn getppid() -> Pid {
+    Pid(unsafe { libc::getppid() }) // no error handling, according to man page: "These functions are always successful."
 }
 
 /// Set a process group ID (see
@@ -112,21 +230,21 @@ pub fn getppid() -> pid_t {
 ///
 /// `setsid()` may be used to create a new process group.
 #[inline]
-pub fn setpgid(pid: pid_t, pgid: pid_t) -> Result<()> {
-    let res = unsafe { libc::setpgid(pid, pgid) };
+pub fn setpgid(pid: Pid, pgid: Pid) -> Result<()> {
+    let res = unsafe { libc::setpgid(pid.into(), pgid.into()) };
     Errno::result(res).map(drop)
 }
 #[inline]
-pub fn getpgid(pid: Option<pid_t>) -> Result<pid_t> {
-    let res = unsafe { libc::getpgid(pid.unwrap_or(0 as pid_t)) };
-    Errno::result(res)
+pub fn getpgid(pid: Option<Pid>) -> Result<Pid> {
+    let res = unsafe { libc::getpgid(pid.unwrap_or(Pid(0)).into()) };
+    Errno::result(res).map(Pid)
 }
 
 /// Create new session and set process group id (see
 /// [setsid(2)](http://man7.org/linux/man-pages/man2/setsid.2.html)).
 #[inline]
-pub fn setsid() -> Result<pid_t> {
-    Errno::result(unsafe { libc::setsid() })
+pub fn setsid() -> Result<Pid> {
+    Errno::result(unsafe { libc::setsid() }).map(Pid)
 }
 
 
@@ -136,9 +254,9 @@ pub fn setsid() -> Result<pid_t> {
 /// Get the group process id (GPID) of the foreground process group on the
 /// terminal associated to file descriptor (FD).
 #[inline]
-pub fn tcgetpgrp(fd: c_int) -> Result<pid_t> {
+pub fn tcgetpgrp(fd: c_int) -> Result<Pid> {
     let res = unsafe { libc::tcgetpgrp(fd) };
-    Errno::result(res)
+    Errno::result(res).map(Pid)
 }
 /// Set the terminal foreground process group (see
 /// [tcgetpgrp(3)](http://man7.org/linux/man-pages/man3/tcgetpgrp.3.html)).
@@ -146,8 +264,8 @@ pub fn tcgetpgrp(fd: c_int) -> Result<pid_t> {
 /// Get the group process id (PGID) to the foreground process group on the
 /// terminal associated to file descriptor (FD).
 #[inline]
-pub fn tcsetpgrp(fd: c_int, pgrp: pid_t) -> Result<()> {
-    let res = unsafe { libc::tcsetpgrp(fd, pgrp) };
+pub fn tcsetpgrp(fd: c_int, pgrp: Pid) -> Result<()> {
+    let res = unsafe { libc::tcsetpgrp(fd, pgrp.into()) };
     Errno::result(res).map(drop)
 }
 
@@ -158,8 +276,8 @@ pub fn tcsetpgrp(fd: c_int, pgrp: pid_t) -> Result<()> {
 /// Get the process group id (PGID) of the calling process.
 /// According to the man page it is always successful.
 #[inline]
-pub fn getpgrp() -> pid_t {
-    unsafe { libc::getpgrp() }
+pub fn getpgrp() -> Pid {
+    Pid(unsafe { libc::getpgrp() })
 }
 
 /// Get the caller's thread ID (see
@@ -174,8 +292,8 @@ pub fn getpgrp() -> pid_t {
 /// process, even if threads are not being used.
 #[cfg(any(target_os = "linux", target_os = "android"))]
 #[inline]
-pub fn gettid() -> pid_t {
-    unsafe { libc::syscall(libc::SYS_gettid) as pid_t }
+pub fn gettid() -> Pid {
+    Pid(unsafe { libc::syscall(libc::SYS_gettid) as pid_t })
 }
 
 /// Create a copy of the specified file descriptor (see
@@ -368,14 +486,14 @@ pub fn getcwd() -> Result<PathBuf> {
 /// pages](http://man7.org/linux/man-pages/man2/lchown.2.html#ERRORS) for
 /// additional details.
 #[inline]
-pub fn chown<P: ?Sized + NixPath>(path: &P, owner: Option<uid_t>, group: Option<gid_t>) -> Result<()> {
+pub fn chown<P: ?Sized + NixPath>(path: &P, owner: Option<Uid>, group: Option<Gid>) -> Result<()> {
     let res = try!(path.with_nix_path(|cstr| {
         // According to the POSIX specification, -1 is used to indicate that
         // owner and group, respectively, are not to be changed. Since uid_t and
         // gid_t are unsigned types, we use wrapping_sub to get '-1'.
         unsafe { libc::chown(cstr.as_ptr(),
-                             owner.unwrap_or((0 as uid_t).wrapping_sub(1)),
-                             group.unwrap_or((0 as gid_t).wrapping_sub(1))) }
+                             owner.map(Into::into).unwrap_or((0 as uid_t).wrapping_sub(1)),
+                             group.map(Into::into).unwrap_or((0 as gid_t).wrapping_sub(1))) }
     }));
 
     Errno::result(res).map(drop)
@@ -738,35 +856,35 @@ pub fn fdatasync(fd: RawFd) -> Result<()> {
 //   - http://pubs.opengroup.org/onlinepubs/9699919799/functions/getgid.html
 //   - http://pubs.opengroup.org/onlinepubs/9699919799/functions/geteuid.html
 #[inline]
-pub fn getuid() -> uid_t {
-    unsafe { libc::getuid() }
+pub fn getuid() -> Uid {
+    Uid(unsafe { libc::getuid() })
 }
 
 #[inline]
-pub fn geteuid() -> uid_t {
-    unsafe { libc::geteuid() }
+pub fn geteuid() -> Uid {
+    Uid(unsafe { libc::geteuid() })
 }
 
 #[inline]
-pub fn getgid() -> gid_t {
-    unsafe { libc::getgid() }
+pub fn getgid() -> Gid {
+    Gid(unsafe { libc::getgid() })
 }
 
 #[inline]
-pub fn getegid() -> gid_t {
-    unsafe { libc::getegid() }
+pub fn getegid() -> Gid {
+    Gid(unsafe { libc::getegid() })
 }
 
 #[inline]
-pub fn setuid(uid: uid_t) -> Result<()> {
-    let res = unsafe { libc::setuid(uid) };
+pub fn setuid(uid: Uid) -> Result<()> {
+    let res = unsafe { libc::setuid(uid.into()) };
 
     Errno::result(res).map(drop)
 }
 
 #[inline]
-pub fn setgid(gid: gid_t) -> Result<()> {
-    let res = unsafe { libc::setgid(gid) };
+pub fn setgid(gid: Gid) -> Result<()> {
+    let res = unsafe { libc::setgid(gid.into()) };
 
     Errno::result(res).map(drop)
 }
@@ -821,9 +939,10 @@ pub fn mkstemp<P: ?Sized + NixPath>(template: &P) -> Result<(RawFd, PathBuf)> {
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 mod linux {
-    use libc::{self, uid_t, gid_t};
+    use libc;
     use sys::syscall::{syscall, SYSPIVOTROOT};
     use {Errno, Result, NixPath};
+    use super::{Uid, Gid};
 
     #[cfg(feature = "execvpe")]
     use std::ffi::CString;
@@ -851,8 +970,8 @@ mod linux {
     ///
     /// Err is returned if the user doesn't have permission to set this UID.
     #[inline]
-    pub fn setresuid(ruid: uid_t, euid: uid_t, suid: uid_t) -> Result<()> {
-        let res = unsafe { libc::setresuid(ruid, euid, suid) };
+    pub fn setresuid(ruid: Uid, euid: Uid, suid: Uid) -> Result<()> {
+        let res = unsafe { libc::setresuid(ruid.into(), euid.into(), suid.into()) };
 
         Errno::result(res).map(drop)
     }
@@ -867,8 +986,8 @@ mod linux {
     ///
     /// Err is returned if the user doesn't have permission to set this GID.
     #[inline]
-    pub fn setresgid(rgid: gid_t, egid: gid_t, sgid: gid_t) -> Result<()> {
-        let res = unsafe { libc::setresgid(rgid, egid, sgid) };
+    pub fn setresgid(rgid: Gid, egid: Gid, sgid: Gid) -> Result<()> {
+        let res = unsafe { libc::setresgid(rgid.into(), egid.into(), sgid.into()) };
 
         Errno::result(res).map(drop)
     }

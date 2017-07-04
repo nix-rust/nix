@@ -1,6 +1,7 @@
 use std::{mem, ptr};
 use {Errno, Error, Result};
-use libc::{pid_t, c_void, c_long, siginfo_t};
+use libc::{c_void, c_long, siginfo_t};
+use ::unistd::Pid;
 
 #[cfg(all(target_os = "linux",
           any(target_arch = "x86",
@@ -74,7 +75,7 @@ mod ffi {
 
 /// Performs a ptrace request. If the request in question is provided by a specialised function
 /// this function will return an unsupported operation error.
-pub fn ptrace(request: ptrace::PtraceRequest, pid: pid_t, addr: *mut c_void, data: *mut c_void) -> Result<c_long> {
+pub fn ptrace(request: ptrace::PtraceRequest, pid: Pid, addr: *mut c_void, data: *mut c_void) -> Result<c_long> {
     use self::ptrace::*;
 
     match request {
@@ -84,10 +85,10 @@ pub fn ptrace(request: ptrace::PtraceRequest, pid: pid_t, addr: *mut c_void, dat
     }
 }
 
-fn ptrace_peek(request: ptrace::PtraceRequest, pid: pid_t, addr: *mut c_void, data: *mut c_void) -> Result<c_long> {
+fn ptrace_peek(request: ptrace::PtraceRequest, pid: Pid, addr: *mut c_void, data: *mut c_void) -> Result<c_long> {
     let ret = unsafe {
         Errno::clear();
-        ffi::ptrace(request, pid, addr, data)
+        ffi::ptrace(request, pid.into(), addr, data)
     };
     match Errno::result(ret) {
         Ok(..) | Err(Error::Sys(Errno::UnknownErrno)) => Ok(ret),
@@ -99,7 +100,7 @@ fn ptrace_peek(request: ptrace::PtraceRequest, pid: pid_t, addr: *mut c_void, da
 /// Some ptrace get requests populate structs or larger elements than c_long
 /// and therefore use the data field to return values. This function handles these
 /// requests.
-fn ptrace_get_data<T>(request: ptrace::PtraceRequest, pid: pid_t) -> Result<T> {
+fn ptrace_get_data<T>(request: ptrace::PtraceRequest, pid: Pid) -> Result<T> {
     // Creates an uninitialized pointer to store result in 
     let data: Box<T> = Box::new(unsafe { mem::uninitialized() });
     let data: *mut c_void = unsafe { mem::transmute(data) };
@@ -109,12 +110,12 @@ fn ptrace_get_data<T>(request: ptrace::PtraceRequest, pid: pid_t) -> Result<T> {
     Ok(*data)
 }
 
-fn ptrace_other(request: ptrace::PtraceRequest, pid: pid_t, addr: *mut c_void, data: *mut c_void) -> Result<c_long> {
-    Errno::result(unsafe { ffi::ptrace(request, pid, addr, data) }).map(|_| 0)
+fn ptrace_other(request: ptrace::PtraceRequest, pid: Pid, addr: *mut c_void, data: *mut c_void) -> Result<c_long> {
+    Errno::result(unsafe { ffi::ptrace(request, pid.into(), addr, data) }).map(|_| 0)
 }
 
 /// Set options, as with `ptrace(PTRACE_SETOPTIONS,...)`.
-pub fn ptrace_setoptions(pid: pid_t, options: ptrace::PtraceOptions) -> Result<()> {
+pub fn ptrace_setoptions(pid: Pid, options: ptrace::PtraceOptions) -> Result<()> {
     use self::ptrace::*;
     use std::ptr;
 
@@ -122,23 +123,23 @@ pub fn ptrace_setoptions(pid: pid_t, options: ptrace::PtraceOptions) -> Result<(
 }
 
 /// Gets a ptrace event as described by `ptrace(PTRACE_GETEVENTMSG,...)`
-pub fn ptrace_getevent(pid: pid_t) -> Result<c_long> {
+pub fn ptrace_getevent(pid: Pid) -> Result<c_long> {
     use self::ptrace::*;
     ptrace_get_data::<c_long>(PTRACE_GETEVENTMSG, pid)
 }
 
 /// Get siginfo as with `ptrace(PTRACE_GETSIGINFO,...)`
-pub fn ptrace_getsiginfo(pid: pid_t) -> Result<siginfo_t> {
+pub fn ptrace_getsiginfo(pid: Pid) -> Result<siginfo_t> {
     use self::ptrace::*;
     ptrace_get_data::<siginfo_t>(PTRACE_GETSIGINFO, pid)
 }
 
 /// Set siginfo as with `ptrace(PTRACE_SETSIGINFO,...)`
-pub fn ptrace_setsiginfo(pid: pid_t, sig: &siginfo_t) -> Result<()> {
+pub fn ptrace_setsiginfo(pid: Pid, sig: &siginfo_t) -> Result<()> {
     use self::ptrace::*;
     let ret = unsafe{
         Errno::clear();
-        ffi::ptrace(PTRACE_SETSIGINFO, pid, ptr::null_mut(), sig as *const _ as *const c_void)
+        ffi::ptrace(PTRACE_SETSIGINFO, pid.into(), ptr::null_mut(), sig as *const _ as *const c_void)
     };
     match Errno::result(ret) {
         Ok(_) => Ok(()),

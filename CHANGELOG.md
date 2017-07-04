@@ -32,6 +32,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Changed type signature of `sys::select::FdSet::contains` to make `self`
   immutable ([#564](https://github.com/nix-rust/nix/pull/564))
 - Changed type of `sched::sched_setaffinity`'s `pid` argument to `pid_t`
+- Introduced wrapper types for gid_t, pid_t, and uid_t as Gid, Pid, and Uid
+  respectively. Various functions have been changed to use these new types as
+  arguments. ([#629](https://github.com/nix-rust/nix/pull/629))
 
 ### Removed
 - Removed io::Error from nix::Error and conversion from nix::Error to Errno
