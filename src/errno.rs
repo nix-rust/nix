@@ -35,10 +35,16 @@ unsafe fn errno_location() -> *mut c_int {
     __errno()
 }
 
-#[cfg(any(target_os = "linux", target_os = "android"))]
+#[cfg(target_os = "linux")]
 unsafe fn errno_location() -> *mut c_int {
     extern { fn __errno_location() -> *mut c_int; }
     __errno_location()
+}
+
+#[cfg(target_os = "android")]
+unsafe fn errno_location() -> *mut c_int {
+    extern { fn __errno() -> *mut c_int; }
+    __errno()
 }
 
 /// Sets the platform-specific errno to no-error
