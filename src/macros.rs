@@ -19,6 +19,24 @@
 ///     }
 /// }
 /// ```
+///
+/// Example with casting, due to a mistake in libc. In this example, the
+/// various flags have different types, so we cast the broken ones to the right
+/// type.
+///
+/// ```
+/// libc_bitflags!{
+///     pub flags SaFlags: libc::c_ulong {
+///         SA_NOCLDSTOP as libc::c_ulong,
+///         SA_NOCLDWAIT,
+///         SA_NODEFER as libc::c_ulong,
+///         SA_ONSTACK,
+///         SA_RESETHAND as libc::c_ulong,
+///         SA_RESTART as libc::c_ulong,
+///         SA_SIGINFO,
+///     }
+/// }
+/// ```
 macro_rules! libc_bitflags {
     // (non-pub) Exit rule.
     (@call_bitflags
@@ -130,6 +148,22 @@ macro_rules! libc_bitflags {
         }
     };
 
+    // Munch last ident and cast it to the given type.
+    (@accumulate_flags
+        $prefix:tt,
+        [$($flags:tt)*];
+        $flag:ident as $ty:ty
+    ) => {
+        libc_bitflags! {
+            @accumulate_flags
+            $prefix,
+            [
+                $($flags)*
+                const $flag = libc::$flag as $ty;
+            ];
+        }
+    };
+
     // Munch an ident; covers terminating comma case.
     (@accumulate_flags
         $prefix:tt,
@@ -142,6 +176,24 @@ macro_rules! libc_bitflags {
             [
                 $($flags)*
                 const $flag = libc::$flag;
+            ];
+            $($tail)*
+        }
+    };
+
+    // Munch an ident and cast it to the given type; covers terminating comma
+    // case.
+    (@accumulate_flags
+        $prefix:tt,
+        [$($flags:tt)*];
+        $flag:ident as $ty:ty, $($tail:tt)*
+    ) => {
+        libc_bitflags! {
+            @accumulate_flags
+            $prefix,
+            [
+                $($flags)*
+                const $flag = libc::$flag as $ty;
             ];
             $($tail)*
         }

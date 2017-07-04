@@ -35,6 +35,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Introduced wrapper types for gid_t, pid_t, and uid_t as Gid, Pid, and Uid
   respectively. Various functions have been changed to use these new types as
   arguments. ([#629](https://github.com/nix-rust/nix/pull/629))
+- Promoted all Android targets to Tier 2 support
 
 ### Removed
 - Removed io::Error from nix::Error and conversion from nix::Error to Errno
@@ -45,8 +46,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   Now compiles on Linux/MIPS ([#538](https://github.com/nix-rust/nix/pull/538)),
   `Linux/PPC` ([#553](https://github.com/nix-rust/nix/pull/553)),
   `MacOS/x86_64,i686` ([#553](https://github.com/nix-rust/nix/pull/553)),
-  `NetBSD/x64_64` ([#538](https://github.com/nix-rust/nix/pull/538)), and
-  `FreeBSD/x86_64,i686` ([#536](https://github.com/nix-rust/nix/pull/536)).
+  `NetBSD/x64_64` ([#538](https://github.com/nix-rust/nix/pull/538)),
+  `FreeBSD/x86_64,i686` ([#536](https://github.com/nix-rust/nix/pull/536)), and
+  `Android` ([#631](https://github.com/nix-rust/nix/pull/631)).
+- `bind` and `errno_location` now work correctly on `Android`
+  ([#631](https://github.com/nix-rust/nix/pull/631))
 
 ## [0.8.1] 2017-04-16
 
