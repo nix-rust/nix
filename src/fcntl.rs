@@ -361,7 +361,7 @@ mod consts {
 
 #[cfg(target_os = "netbsd")]
 mod consts {
-    use libc::c_int;
+    use libc::{self,c_int};
 
     libc_bitflags!(
         pub flags OFlag: c_int {
