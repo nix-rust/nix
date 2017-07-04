@@ -38,7 +38,6 @@ pub mod syscall;
 #[cfg(any(target_os = "linux"))]
 pub mod reboot;
 
-#[cfg(not(target_os = "ios"))]
 pub mod termios;
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
