@@ -255,7 +255,8 @@ mod consts {
 
 }
 
-#[cfg(any(target_os = "netbsd", target_os = "dragonfly", target_os = "openbsd", target_os = "freebsd", target_os = "macos", target_os = "ios"))]
+#[cfg(any(target_os = "netbsd", target_os = "dragonfly", target_os = "openbsd",
+          target_os = "freebsd", target_os = "macos", target_os = "ios"))]
 mod consts {
     use libc::{self,c_int};
 
@@ -280,7 +281,8 @@ mod consts {
             O_CLOEXEC,
             O_FSYNC,
             O_NDELAY,
-            #[cfg(any(target_os = "netbsd", target_os = "openbsd", target_os = "macos", target_os = "ios"))]
+            #[cfg(any(target_os = "netbsd", target_os = "openbsd", target_os = "macos",
+                      target_os = "ios"))]
             O_DSYNC,
             #[cfg(any(target_os = "netbsd", target_os = "dragonfly", target_os = "freebsd"))]
             O_DIRECT,
