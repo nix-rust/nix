@@ -255,111 +255,7 @@ mod consts {
 
 }
 
-#[cfg(any(target_os = "macos", target_os = "ios"))]
-mod consts {
-    use libc::{self, c_int};
-
-    libc_bitflags!(
-        pub flags OFlag: c_int {
-            O_ACCMODE,
-            O_RDONLY,
-            O_WRONLY,
-            O_RDWR,
-            O_CREAT,
-            O_EXCL,
-            O_NOCTTY,
-            O_TRUNC,
-            O_APPEND,
-            O_NONBLOCK,
-            O_DSYNC,
-            O_DIRECTORY,
-            O_NOFOLLOW,
-            O_CLOEXEC,
-            O_SYNC,
-            O_NDELAY,
-            O_FSYNC,
-        }
-    );
-
-    libc_bitflags!(
-        pub flags FdFlag: c_int {
-            FD_CLOEXEC
-        }
-    );
-}
-
-#[cfg(target_os = "freebsd")]
-mod consts {
-    use libc::{self, c_int};
-
-    libc_bitflags!(
-        pub flags OFlag: c_int {
-            O_ACCMODE,
-            O_RDONLY,
-            O_WRONLY,
-            O_RDWR,
-            O_CREAT,
-            O_EXCL,
-            O_NOCTTY,
-            O_TRUNC,
-            O_APPEND,
-            O_NONBLOCK,
-            O_DIRECTORY,
-            O_NOFOLLOW,
-            O_CLOEXEC,
-            O_SYNC,
-            O_NDELAY,
-            O_FSYNC,
-            O_SHLOCK,
-            O_EXLOCK,
-            O_DIRECT,
-            O_EXEC,
-            O_TTY_INIT,
-        }
-    );
-
-    libc_bitflags!(
-        pub flags FdFlag: c_int {
-            FD_CLOEXEC
-        }
-    );
-}
-
-#[cfg(target_os = "openbsd")]
-mod consts {
-    use libc::{self, c_int};
-
-    libc_bitflags!(
-        pub flags OFlag: c_int {
-            O_ACCMODE,
-            O_RDONLY,
-            O_WRONLY,
-            O_RDWR,
-            O_CREAT,
-            O_EXCL,
-            O_NOCTTY,
-            O_TRUNC,
-            O_APPEND,
-            O_NONBLOCK,
-            O_DIRECTORY,
-            O_NOFOLLOW,
-            O_CLOEXEC,
-            O_SYNC,
-            O_NDELAY,
-            O_FSYNC,
-            O_SHLOCK,
-            O_EXLOCK,
-        }
-    );
-
-    libc_bitflags!(
-        pub flags FdFlag: c_int {
-            FD_CLOEXEC
-        }
-    );
-}
-
-#[cfg(target_os = "netbsd")]
+#[cfg(any(target_os = "netbsd", target_os = "dragonfly", target_os = "openbsd", target_os = "freebsd", target_os = "macos", target_os = "ios"))]
 mod consts {
     use libc::{self,c_int};
 
@@ -380,51 +276,26 @@ mod consts {
             O_TRUNC,
             O_EXCL,
             O_NOCTTY,
+            O_DIRECTORY,
+            O_CLOEXEC,
+            O_FSYNC,
+            O_NDELAY,
+            #[cfg(any(target_os = "netbsd", target_os = "openbsd", target_os = "macos", target_os = "ios"))]
             O_DSYNC,
+            #[cfg(any(target_os = "netbsd", target_os = "dragonfly", target_os = "freebsd"))]
+            O_DIRECT,
+            #[cfg(any(target_os = "netbsd", target_os = "openbsd"))]
             O_RSYNC,
+            #[cfg(target_os = "freebsd")]
+            O_EXEC,
+            #[cfg(target_os = "freebsd")]
+            O_TTY_INIT,
+            #[cfg(target_os = "netbsd")]
             O_ALT_IO,
-            O_DIRECT,
+            #[cfg(target_os = "netbsd")]
             O_NOSIGPIPE,
-            O_DIRECTORY,
-            O_CLOEXEC,
+            #[cfg(target_os = "netbsd")]
             O_SEARCH,
-            O_FSYNC,
-            O_NDELAY,
-        }
-    );
-
-    libc_bitflags!(
-        pub flags FdFlag: c_int {
-            FD_CLOEXEC
-        }
-    );
-}
-
-#[cfg(target_os = "dragonfly")]
-mod consts {
-    use libc::c_int;
-
-    libc_bitflags!(
-        pub flags OFlag: c_int {
-            O_ACCMODE,
-            O_RDONLY,
-            O_WRONLY,
-            O_RDWR,
-            O_CREAT,
-            O_EXCL,
-            O_NOCTTY,
-            O_TRUNC,
-            O_APPEND,
-            O_NONBLOCK,
-            O_DIRECTORY,
-            O_NOFOLLOW,
-            O_CLOEXEC,
-            O_SYNC,
-            O_NDELAY,
-            O_FSYNC,
-            O_SHLOCK,
-            O_EXLOCK,
-            O_DIRECT,
         }
     );
 
