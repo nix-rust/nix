@@ -23,6 +23,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#614](https://github.com/nix-rust/nix/pull/614))
 
 ### Changed
+- Changed ioctl! write to take argument by value instead as pointer.
+  If you need a pointer as argument, use ioctl! write buf.
+  ([#626](https://github.com/nix-rust/nix/pull/626))
 - Marked `sys::mman::{ mmap, munmap, madvise, munlock, msync }` as unsafe.
   ([#559](https://github.com/nix-rust/nix/pull/559))
 - Minimum supported Rust version is now 1.13

@@ -158,7 +158,7 @@ macro_rules! ioctl {
         );
     (write $name:ident with $ioty:expr, $nr:expr; $ty:ty) => (
         pub unsafe fn $name(fd: $crate::sys::ioctl::libc::c_int,
-                            val: *const $ty)
+                            val: $ty)
                             -> $crate::Result<$crate::sys::ioctl::libc::c_int> {
             convert_ioctl_res!($crate::sys::ioctl::ioctl(fd, iow!($ioty, $nr, ::std::mem::size_of::<$ty>()) as $crate::sys::ioctl::libc::c_ulong, val))
         }
