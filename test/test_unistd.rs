@@ -25,7 +25,7 @@ fn test_fork_and_waitpid() {
             // assert that child was created and pid > 0
             let child_raw: ::libc::pid_t = child.into();
             assert!(child_raw > 0);
-            let wait_status = waitpid(child, None);
+            let wait_status = waitpid(child.into(), None);
             match wait_status {
                 // assert that waitpid returned correct status and the pid is the one of the child
                 Ok(WaitStatus::Exited(pid_t, _)) =>  assert!(pid_t == child),
@@ -135,7 +135,7 @@ macro_rules! execve_test_factory(
             },
             Parent { child } => {
                 // Wait for the child to exit.
-                waitpid(child, None).unwrap();
+                waitpid(child.into(), None).unwrap();
                 // Read 1024 bytes.
                 let mut buf = [0u8; 1024];
                 read(reader, &mut buf).unwrap();

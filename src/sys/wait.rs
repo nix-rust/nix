@@ -1,3 +1,5 @@
+//! This module contains the `wait()` and `waitpid()` functions, which are used
+
 use libc::{self, c_int};
 use {Errno, Result};
 use unistd::Pid;
@@ -14,40 +16,33 @@ libc_bitflags!(
         /// has not yet been reported since they stopped, shall also be reported to the requesting
         /// process
         WUNTRACED,
-        #[cfg(any(target_os = "linux",
-                  target_os = "android"))]
         /// Waits for children that have terminated.
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         WEXITED,
-        #[cfg(any(target_os = "linux",
-                  target_os = "android"))]
         /// Report the status of any continued child process specified by pid whose status has not
         /// been reported since it continued from a job control stop.
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         WCONTINUED,
-        #[cfg(any(target_os = "linux",
-                  target_os = "android"))]
         /// Leave the child in a waitable state; a later wait call can be used to again retrieve
         /// the child status information.
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         WNOWAIT,
-        #[cfg(any(target_os = "linux",
-                  target_os = "android"))]
         /// Don't wait on children of other threads in this group
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         __WNOTHREAD,
-        #[cfg(any(target_os = "linux",
-                  target_os = "android"))]
         /// Wait for all children, regardless of type (clone or non-clone)
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         __WALL,
-        #[cfg(any(target_os = "linux",
-                  target_os = "android"))]
         /// Wait for "clone" children only. If omitted then wait for "non-clone" children only.
         /// (A "clone" child is one which delivers no signal, or a signal other than `SIGCHLD` to
         /// its parent upon termination.) This option is ignored if `__WALL` is also specified.
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         __WCLONE,
 
     }
 );
 
-#[cfg(any(target_os = "linux",
-          target_os = "android"))]
+#[cfg(any(target_os = "linux",target_os = "android"))]
 const WSTOPPED: WaitPidFlag = WUNTRACED;
 
 #[derive(Eq, PartialEq, Clone, Copy, Debug)]
@@ -61,18 +56,17 @@ pub enum WaitStatus {
     /// Signifies that the process was stopped by a signal, providing the PID and associated
     /// signal.
     Stopped(Pid, Signal),
-    #[cfg(any(target_os = "linux", target_os = "android"))]
     /// Signifies that the process was stopped due to a ptrace event, providing the PID, the
     /// associated signal, and an integer that represents the status of the event.
+    #[cfg(any(target_os = "linux", target_os = "android"))]
     PtraceEvent(Pid, Signal, c_int),
     /// Signifies that the process received a `SIGCONT` signal, and thus continued.
     Continued(Pid),
-    /// if `WNOHANG` was set, this value is returned when no children have changed state.
+    /// If `WNOHANG` was set, this value is returned when no children have changed state.
     StillAlive
 }
 
-#[cfg(any(target_os = "linux",
-          target_os = "android"))]
+#[cfg(any(target_os = "linux", target_os = "android"))]
 mod status {
     use sys::signal::Signal;
     use libc::c_int;
@@ -114,8 +108,7 @@ mod status {
     }
 }
 
-#[cfg(any(target_os = "macos",
-          target_os = "ios"))]
+#[cfg(any(target_os = "macos", target_os = "ios"))]
 mod status {
     use sys::signal::{Signal,SIGCONT};
 
@@ -236,9 +229,9 @@ fn decode(pid : Pid, status: i32) -> WaitStatus {
     }
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 /// Designates whether the supplied `Pid` value is a process ID, process group ID,
 /// specifies any child of the current process's group ID, or any child of the current process.
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum PidGroup {
     ProcessID(u32),
     ProcessGroupID(u32),
