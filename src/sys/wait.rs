@@ -215,6 +215,22 @@ fn decode(pid : Pid, status: i32) -> WaitStatus {
     }
 }
 
+/// Counterpart of the POSIX `waitpid` function
+/// It's best to use `nix::unistd::Pid` for passing the PID to this function
+///
+/// # Examples
+/// ```
+/// use std::process::Command;
+/// use nix::unistd::Pid;
+/// use nix::sys::wait::{waitpid, WaitStatus};
+/// let child = Command::new("ls").spawn().unwrap();
+/// let pid = Pid::from_raw(child.id() as i32);
+/// match waitpid(pid, None) {
+///     Ok(WaitStatus::Exited(_, code)) => println!("Child exited with code {}", code),
+///     Ok(_) => println!("Other process exited, but not normally"),
+///     Err(_) => panic!("There was an error")
+/// }
+/// ```
 pub fn waitpid<P: Into<Option<Pid>>>(pid: P, options: Option<WaitPidFlag>) -> Result<WaitStatus> {
     use self::WaitStatus::*;
 
