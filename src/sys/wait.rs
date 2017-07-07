@@ -7,9 +7,12 @@ use sys::signal::Signal;
 libc_bitflags!(
     /// Defines optional flags for the `waitpid` function.
     pub flags WaitPidFlag: c_int {
-        /// Returns immediately if no child has exited
+        /// Do not suspend execution of the calling thread if the status is not immediately
+        /// available for one of the child processes specified by pid.
         WNOHANG,
-        /// Returns if a child has been stopped, but isn't being traced by ptrace.
+        /// The status of any child processes specified by pid that are stopped, and whose status
+        /// has not yet been reported since they stopped, shall also be reported to the requesting
+        /// process
         WUNTRACED,
         #[cfg(any(target_os = "linux",
                   target_os = "android"))]
@@ -17,7 +20,8 @@ libc_bitflags!(
         WEXITED,
         #[cfg(any(target_os = "linux",
                   target_os = "android"))]
-        /// Waits for previously stopped children that have been resumed with `SIGCONT`.
+        /// Report the status of any continued child process specified by pid whose status has not
+        /// been reported since it continued from a job control stop.
         WCONTINUED,
         #[cfg(any(target_os = "linux",
                   target_os = "android"))]
@@ -51,11 +55,15 @@ const WSTOPPED: WaitPidFlag = WUNTRACED;
 pub enum WaitStatus {
     /// Signifies that the process has exited, providing the PID and associated exit status.
     Exited(Pid, i8),
-    /// Signifies that the process was killed by a signal, providing the PID and associated signal.
+    /// Signifies that the process was killed by a signal, providing the PID, the associated
+    /// signal, and a boolean value that is set to `true` when a core dump was produced.
     Signaled(Pid, Signal, bool),
-    /// Signifies that the process was stopped by a signal, providing the PID and associated signal.
+    /// Signifies that the process was stopped by a signal, providing the PID and associated
+    /// signal.
     Stopped(Pid, Signal),
     #[cfg(any(target_os = "linux", target_os = "android"))]
+    /// Signifies that the process was stopped due to a ptrace event, providing the PID, the
+    /// associated signal, and an integer that represents the status of the event.
     PtraceEvent(Pid, Signal, c_int),
     /// Signifies that the process received a `SIGCONT` signal, and thus continued.
     Continued(Pid),
@@ -207,11 +215,12 @@ fn decode(pid : Pid, status: i32) -> WaitStatus {
         cfg_if! {
             if #[cfg(any(target_os = "linux", target_os = "android"))] {
                 fn decode_stopped(pid: Pid, status: i32) -> WaitStatus {
-                    let status_additional = status::stop_additional(status);
-                    if status_additional == 0 {
-                        WaitStatus::Stopped(pid, status::stop_signal(status))
+                    let status = status::stop_additional(status);
+                    let signal = status::stop_signal(status);
+                    if status == 0 {
+                        WaitStatus::Stopped(pid, signal)
                     } else {
-                        WaitStatus::PtraceEvent(pid, status::stop_signal(status), status::stop_additional(status))
+                        WaitStatus::PtraceEvent(pid, signal, status)
                     }
                 }
             } else {
