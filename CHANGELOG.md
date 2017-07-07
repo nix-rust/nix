@@ -39,6 +39,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   respectively. Various functions have been changed to use these new types as
   arguments. ([#629](https://github.com/nix-rust/nix/pull/629))
 - Promoted all Android targets to Tier 2 support
+- `nix::sys::statfs::{statfs,fstatfs}` uses statfs definition from `libc::statfs` instead of own linux specific type `nix::sys::Statfs`.
+  Also file system type constants like `nix::sys::statfs::ADFS_SUPER_MAGIC` were removed in favor of the libc equivalent.
+  ([#561](https://github.com/nix-rust/nix/pull/561))
 
 ### Removed
 - Removed io::Error from nix::Error and conversion from nix::Error to Errno
