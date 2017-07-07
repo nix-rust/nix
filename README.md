@@ -77,9 +77,13 @@ Tier 2:
 
 Tier 3:
   * aarch64-apple-ios
+  * arm-unknown-linux-musleabi
   * armv7-apple-ios
   * armv7s-apple-ios
   * i386-apple-ios
+  * mips64-unknown-linux-gnuabi64
+  * mips64el-unknown-linux-gnuabi64
+  * s390x-unknown-linux-gnu
   * x86_64-apple-ios
 
 ## Usage

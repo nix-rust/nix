@@ -49,7 +49,8 @@ matrix:
       rust: 1.13.0
     - env: TARGET=arm-unknown-linux-gnueabi
       rust: 1.13.0
-    # - env: TARGET=arm-unknown-linux-musleabi
+    - env: TARGET=arm-unknown-linux-musleabi
+      rust: 1.13.0
     - env: TARGET=armv7-unknown-linux-gnueabihf
       rust: 1.13.0
     - env: TARGET=i686-unknown-linux-gnu
@@ -58,8 +59,10 @@ matrix:
       rust: 1.13.0
     - env: TARGET=mips-unknown-linux-gnu
       rust: 1.13.0
-    # - env: TARGET=mips64-unknown-linux-gnuabi64
-    # - env: TARGET=mips64el-unknown-linux-gnuabi64
+    - env: TARGET=mips64-unknown-linux-gnuabi64
+      rust: 1.13.0
+    - env: TARGET=mips64el-unknown-linux-gnuabi64
+      rust: 1.13.0
     - env: TARGET=mipsel-unknown-linux-gnu
       rust: 1.13.0
     - env: TARGET=powerpc-unknown-linux-gnu
@@ -68,7 +71,8 @@ matrix:
       rust: 1.13.0
     - env: TARGET=powerpc64le-unknown-linux-gnu
       rust: 1.13.0
-    # - env: TARGET=s390x-unknown-linux-gnu
+    - env: TARGET=s390x-unknown-linux-gnu
+      rust: 1.13.0
     - env: TARGET=x86_64-unknown-linux-gnu
       rust: 1.13.0
     - env: TARGET=x86_64-unknown-linux-musl
@@ -120,6 +124,16 @@ matrix:
     - env: TARGET=x86_64-apple-ios DISABLE_TESTS=1
       rust: 1.13.0
       os: osx
+
+    # Planning to add these targets, but they can fail for now
+    - env: TARGET=mips64-unknown-linux-gnuabi64
+      rust: 1.13.0
+    - env: TARGET=mips64el-unknown-linux-gnuabi64
+      rust: 1.13.0
+    - env: TARGET=arm-unknown-linux-musleabi
+      rust: 1.13.0
+    - env: TARGET=s390x-unknown-linux-gnu
+      rust: 1.13.0
 
     # Failures for nightlies may be because of compiler bugs, so don't fail the
     # build if these fail.
