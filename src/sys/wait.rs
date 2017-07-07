@@ -253,18 +253,6 @@ impl From<i32> for PidGroup {
     }
 }
 
-impl Into<pid_t> for PidGroup {
-    fn into(self) -> pid_t {
-        match self {
-            PidGroup::ProcessID(pid) if pid < Pid::from_raw(-1)      => -pid_t::from(pid),
-            PidGroup::ProcessGroupID(pid) if pid > Pid::from_raw(0)  => -pid_t::from(pid),
-            PidGroup::ProcessID(pid) | PidGroup::ProcessGroupID(pid) => pid_t::from(pid),
-            PidGroup::AnyGroupChild => 0,
-            PidGroup::AnyChild      => -1,
-        }
-    }
-}
-
 /// Waits for and returns events that are received from the given supplied process or process group
 /// ID, and associated options.
 ///
@@ -294,6 +282,14 @@ pub fn waitpid<O>(pid: PidGroup, options: O) -> Result<WaitStatus>
 
     let mut status = 0;
     let options = options.into().map_or(0, |o| o.bits());
+
+    let pid = match pid {
+        PidGroup::ProcessID(pid) if pid < Pid::from_raw(-1)      => -pid_t::from(pid),
+        PidGroup::ProcessGroupID(pid) if pid > Pid::from_raw(0)  => -pid_t::from(pid),
+        PidGroup::ProcessID(pid) | PidGroup::ProcessGroupID(pid) => pid_t::from(pid),
+        PidGroup::AnyGroupChild => 0,
+        PidGroup::AnyChild      => -1,
+    };
 
     let res = unsafe { libc::waitpid(pid.into(), &mut status as *mut c_int, options) };
 
