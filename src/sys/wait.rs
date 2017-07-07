@@ -1,6 +1,6 @@
 //! This module contains the `wait()` and `waitpid()` functions, which are used
 
-use libc::{self, c_int};
+use libc::{self, c_int, pid_t};
 use {Errno, Result};
 use unistd::Pid;
 
@@ -233,32 +233,18 @@ fn decode(pid : Pid, status: i32) -> WaitStatus {
 /// specifies any child of the current process's group ID, or any child of the current process.
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum PidGroup {
-    ProcessID(u32),
-    ProcessGroupID(u32),
+    ProcessID(Pid),
+    ProcessGroupID(Pid),
     AnyGroupChild,
     AnyChild,
-}
-
-impl From<Pid> for PidGroup {
-    fn from(pid: Pid) -> PidGroup {
-        if pid > Pid::from_raw(0) {
-            PidGroup::ProcessID(i32::from(pid) as u32)
-        } else if pid < Pid::from_raw(-1) {
-            PidGroup::ProcessGroupID(-i32::from(pid) as u32)
-        } else if pid == Pid::from_raw(0) {
-            PidGroup::AnyGroupChild
-        } else {
-            PidGroup::AnyChild
-        }
-    }
 }
 
 impl From<i32> for PidGroup {
     fn from(pid: i32) -> PidGroup {
         if pid > 0 {
-            PidGroup::ProcessID(pid as u32)
+            PidGroup::ProcessID(Pid::from_raw(pid))
         } else if pid < -1 {
-            PidGroup::ProcessGroupID(-pid as u32)
+            PidGroup::ProcessGroupID(Pid::from_raw(pid))
         } else if pid == 0 {
             PidGroup::AnyGroupChild
         } else {
@@ -267,13 +253,14 @@ impl From<i32> for PidGroup {
     }
 }
 
-impl Into<i32> for PidGroup {
-    fn into(self) -> i32 {
+impl Into<pid_t> for PidGroup {
+    fn into(self) -> pid_t {
         match self {
-            PidGroup::ProcessID(pid)      => pid as i32,
-            PidGroup::ProcessGroupID(pid) => -(pid as i32),
-            PidGroup::AnyGroupChild       => 0,
-            PidGroup::AnyChild            => -1
+            PidGroup::ProcessID(pid) if pid < Pid::from_raw(-1)      => -pid_t::from(pid),
+            PidGroup::ProcessGroupID(pid) if pid > Pid::from_raw(0)  => -pid_t::from(pid),
+            PidGroup::ProcessID(pid) | PidGroup::ProcessGroupID(pid) => pid_t::from(pid),
+            PidGroup::AnyGroupChild => 0,
+            PidGroup::AnyChild      => -1,
         }
     }
 }
