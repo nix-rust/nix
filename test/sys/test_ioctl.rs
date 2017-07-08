@@ -22,6 +22,60 @@ ioctl!(write_buf writebuf_test_u32 with 0, 0; u32);
 ioctl!(write_buf writebuf_test_u64 with 0, 0; u64);
 ioctl!(readwrite_buf readwritebuf_test with 0, 0; u32);
 
+// Make sure documentation works
+ioctl! {
+    /// This documents the ioctl function
+    bad none do_bad_docs with 0x1234
+}
+ioctl! {
+    /// This documents the ioctl function
+    bad read do_bad_read_docs with 0x1234; u16
+}
+ioctl! {
+    /// This documents the ioctl function
+    bad write_int do_bad_write_int_docs with 0x1234
+}
+ioctl! {
+    /// This documents the ioctl function
+    bad write_ptr do_bad_write_ptr_docs with 0x1234; u8
+}
+ioctl! {
+    /// This documents the ioctl function
+    bad readwrite do_bad_readwrite_docs with 0x1234; u32
+}
+ioctl! {
+    /// This documents the ioctl function
+    none do_none_docs with 0, 0
+}
+ioctl! {
+    /// This documents the ioctl function
+    read do_read_docs with 0, 0; u32
+}
+ioctl! {
+    /// This documents the ioctl function
+    write_int do_write_int_docs with 0, 0
+}
+ioctl! {
+    /// This documents the ioctl function
+    write_ptr do_write_ptr_docs with 0, 0; u32
+}
+ioctl! {
+    /// This documents the ioctl function
+    readwrite do_readwrite_docs with 0, 0; u32
+}
+ioctl! {
+    /// This documents the ioctl function
+    read_buf do_read_buf_docs with 0, 0; u32
+}
+ioctl! {
+    /// This documents the ioctl function
+    write_buf do_write_buf_docs with 0, 0; u32
+}
+ioctl! {
+    /// This documents the ioctl function
+    readwrite_buf do_readwrite_buf_docs with 0, 0; u32
+}
+
 // See C code for source of values for op calculations (does NOT work for mips/powerpc):
 // https://gist.github.com/posborne/83ea6880770a1aef332e
 //
