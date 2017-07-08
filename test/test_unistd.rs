@@ -7,7 +7,7 @@ use nix::sys::stat;
 use std::iter;
 use std::ffi::CString;
 use std::fs::File;
-use std::io::{Write, Read};
+use std::io::Write;
 use std::os::unix::prelude::*;
 use std::env::current_dir;
 use tempfile::tempfile;
@@ -185,16 +185,17 @@ fn test_getcwd() {
 fn test_lseek() {
     const CONTENTS: &'static [u8] = b"abcdef123456";
     let mut tmp = tempfile().unwrap();
-    tmp.write(CONTENTS).unwrap();
+    tmp.write_all(CONTENTS).unwrap();
+    let tmpfd = tmp.into_raw_fd();
 
     let offset: off_t = 5;
-    lseek(tmp.as_raw_fd(), offset, Whence::SeekSet).unwrap();
+    lseek(tmpfd, offset, Whence::SeekSet).unwrap();
 
-    let mut buf = String::new();
-    tmp.read_to_string(&mut buf).unwrap();
-    assert_eq!(b"f123456", buf.as_bytes());
+    let mut buf = [0u8; 7];
+    ::read_exact(tmpfd, &mut buf);
+    assert_eq!(b"f123456", &buf);
 
-    close(tmp.as_raw_fd()).unwrap();
+    close(tmpfd).unwrap();
 }
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
@@ -203,14 +204,15 @@ fn test_lseek64() {
     const CONTENTS: &'static [u8] = b"abcdef123456";
     let mut tmp = tempfile().unwrap();
     tmp.write(CONTENTS).unwrap();
+    let tmpfd = tmp.into_raw_fd();
 
-    lseek64(tmp.as_raw_fd(), 5, Whence::SeekSet).unwrap();
+    lseek64(tmpfd, 5, Whence::SeekSet).unwrap();
 
-    let mut buf = String::new();
-    tmp.read_to_string(&mut buf).unwrap();
-    assert_eq!(b"f123456", buf.as_bytes());
+    let mut buf = [0u8; 7];
+    ::read_exact(tmpfd, &mut buf);
+    assert_eq!(b"f123456", &buf);
 
-    close(tmp.as_raw_fd()).unwrap();
+    close(tmpfd).unwrap();
 }
 
 execve_test_factory!(test_execve, execve, b"/bin/sh", b"/system/bin/sh");
