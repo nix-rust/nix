@@ -57,6 +57,8 @@ Tier 1:
   * i686-unknown-linux-gnu
   * i686-unknown-linux-musl
   * mips-unknown-linux-gnu
+  * mips64-unknown-linux-gnuabi64
+  * mips64el-unknown-linux-gnuabi64
   * mipsel-unknown-linux-gnu
   * powerpc64-unknown-linux-gnu
   * powerpc64le-unknown-linux-gnu
@@ -76,8 +78,6 @@ Tier 2:
   * i386-apple-ios
   * i686-linux-android (requires Rust >= 1.18)
   * i686-unknown-freebsd
-  * mips64-unknown-linux-gnuabi64
-  * mips64el-unknown-linux-gnuabi64
   * powerpc-unknown-linux-gnu
   * s390x-unknown-linux-gnu
   * x86_64-apple-ios

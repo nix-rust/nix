@@ -86,7 +86,7 @@ ioctl! {
 mod linux {
     #[test]
     fn test_op_none() {
-        if cfg!(any(target_arch = "mips", target_arch="powerpc", target_arch="powerpc64")){
+        if cfg!(any(target_arch = "mips", target_arch = "mips64", target_arch="powerpc", target_arch="powerpc64")){
             assert_eq!(io!(b'q', 10), 0x2000710A);
             assert_eq!(io!(b'a', 255), 0x200061FF);
         } else {
@@ -97,7 +97,7 @@ mod linux {
 
     #[test]
     fn test_op_write() {
-        if cfg!(any(target_arch = "mips", target_arch="powerpc", target_arch="powerpc64")){
+        if cfg!(any(target_arch = "mips", target_arch = "mips64", target_arch="powerpc", target_arch="powerpc64")){
             assert_eq!(iow!(b'z', 10, 1), 0x80017A0A);
             assert_eq!(iow!(b'z', 10, 512), 0x82007A0A);
         } else {
@@ -109,7 +109,7 @@ mod linux {
     #[cfg(target_pointer_width = "64")]
     #[test]
     fn test_op_write_64() {
-        if cfg!(any(target_arch="powerpc64")){
+        if cfg!(any(target_arch = "mips64", target_arch="powerpc64")){
             assert_eq!(iow!(b'z', 10, (1 as u64) << 32), 0x80007A0A);
         } else {
             assert_eq!(iow!(b'z', 10, (1 as u64) << 32), 0x40007A0A);
@@ -119,7 +119,7 @@ mod linux {
 
     #[test]
     fn test_op_read() {
-        if cfg!(any(target_arch = "mips", target_arch="powerpc", target_arch="powerpc64")){
+        if cfg!(any(target_arch = "mips", target_arch = "mips64", target_arch="powerpc", target_arch="powerpc64")){
             assert_eq!(ior!(b'z', 10, 1), 0x40017A0A);
             assert_eq!(ior!(b'z', 10, 512), 0x42007A0A);
         } else {
@@ -131,7 +131,7 @@ mod linux {
     #[cfg(target_pointer_width = "64")]
     #[test]
     fn test_op_read_64() {
-        if cfg!(any(target_arch="powerpc64")){
+        if cfg!(any(target_arch = "mips64", target_arch="powerpc64")){
             assert_eq!(ior!(b'z', 10, (1 as u64) << 32), 0x40007A0A);
         } else {
             assert_eq!(ior!(b'z', 10, (1 as u64) << 32), 0x80007A0A);
