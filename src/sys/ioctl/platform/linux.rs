@@ -1,7 +1,7 @@
 pub const NRBITS: u32 = 8;
 pub const TYPEBITS: u32 = 8;
 
-#[cfg(any(target_arch = "mips", target_arch = "powerpc", target_arch = "powerpc64"))]
+#[cfg(any(target_arch = "mips", target_arch = "mips64", target_arch = "powerpc", target_arch = "powerpc64"))]
 mod consts {
     pub const NONE: u8 = 1;
     pub const READ: u8 = 2;
@@ -12,16 +12,19 @@ mod consts {
 
 #[cfg(not(any(target_arch = "powerpc",
               target_arch = "mips",
+              target_arch = "mips64",
               target_arch = "x86",
               target_arch = "arm",
               target_arch = "x86_64",
               target_arch = "powerpc64",
+              target_arch = "s390x",
               target_arch = "aarch64")))]
 use this_arch_not_supported;
 
 // "Generic" ioctl protocol
 #[cfg(any(target_arch = "x86",
           target_arch = "arm",
+          target_arch = "s390x",
           target_arch = "x86_64",
           target_arch = "aarch64"))]
 mod consts {
