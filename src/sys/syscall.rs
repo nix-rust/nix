@@ -44,6 +44,7 @@ mod arch {
     pub static MEMFD_CREATE: Syscall = 385;
 }
 
+// Rust on mips uses the N32 ABI
 #[cfg(target_arch = "mips")]
 mod arch {
     use libc::c_long;
@@ -52,6 +53,17 @@ mod arch {
 
     pub static SYSPIVOTROOT: Syscall = 216;
     pub static MEMFD_CREATE: Syscall = 354;
+}
+
+// Rust on mips64 uses the N64 ABI
+#[cfg(target_arch = "mips64")]
+mod arch {
+    use libc::c_long;
+
+    pub type Syscall = c_long;
+
+    pub static SYSPIVOTROOT: Syscall = 151;
+    pub static MEMFD_CREATE: Syscall = 314;
 }
 
 #[cfg(any(target_arch = "powerpc", target_arch = "powerpc64"))]
