@@ -50,7 +50,7 @@ fn test_mq_getattr() {
 
 // FIXME: Fix failures for mips in QEMU
 #[test]
-#[cfg_attr(target_arch = "mips", ignore)]
+#[cfg_attr(any(target_arch = "mips", target_arch = "mips64"), ignore)]
 fn test_mq_setattr() {
     const MSG_SIZE: c_long =  32;
     let initial_attr =  MqAttr::new(0, 10, MSG_SIZE, 0);
@@ -78,7 +78,7 @@ fn test_mq_setattr() {
 
 // FIXME: Fix failures for mips in QEMU
 #[test]
-#[cfg_attr(target_arch = "mips", ignore)]
+#[cfg_attr(any(target_arch = "mips", target_arch = "mips64"), ignore)]
 fn test_mq_set_nonblocking() {
     const MSG_SIZE: c_long =  32;
     let initial_attr =  MqAttr::new(0, 10, MSG_SIZE, 0);
