@@ -24,6 +24,18 @@ mod test_stat;
 mod test_unistd;
 
 use nixtest::assert_size_of;
+use std::os::unix::io::RawFd;
+use nix::unistd::read;
+
+/// Helper function analogous to std::io::Read::read_exact, but for `RawFD`s
+fn read_exact(f: RawFd, buf: &mut  [u8]) {
+    let mut len = 0;
+    while len < buf.len() {
+        // get_mut would be better than split_at_mut, but it requires nightly
+        let (_, remaining) = buf.split_at_mut(len);
+        len += read(f, remaining).unwrap();
+    }
+}
 
 #[test]
 pub fn test_size_of_long() {
