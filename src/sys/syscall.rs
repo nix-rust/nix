@@ -64,6 +64,16 @@ mod arch {
     pub static MEMFD_CREATE: Syscall = 360;
 }
 
+#[cfg(target_arch = "s390x")]
+mod arch {
+    use libc::c_long;
+
+    pub type Syscall = c_long;
+
+    pub static SYSPIVOTROOT: Syscall = 217;
+    pub static MEMFD_CREATE: Syscall = 350;
+}
+
 extern {
     pub fn syscall(num: Syscall, ...) -> c_int;
 }
