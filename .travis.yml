@@ -48,7 +48,7 @@ matrix:
       rust: 1.13.0
     - env: TARGET=arm-unknown-linux-gnueabi
       rust: 1.13.0
-    - env: TARGET=arm-unknown-linux-musleabi
+    - env: TARGET=arm-unknown-linux-musleabi DISABLE_TESTS=1
       rust: 1.14.0
     - env: TARGET=armv7-unknown-linux-gnueabihf
       rust: 1.13.0
