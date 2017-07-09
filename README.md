@@ -77,7 +77,7 @@ Tier 2:
 
 Tier 3:
   * aarch64-apple-ios
-  * arm-unknown-linux-musleabi
+  * arm-unknown-linux-musleabi (requires Rust >= 1.14)
   * armv7-apple-ios
   * armv7s-apple-ios
   * i386-apple-ios

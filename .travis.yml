@@ -50,7 +50,7 @@ matrix:
     - env: TARGET=arm-unknown-linux-gnueabi
       rust: 1.13.0
     - env: TARGET=arm-unknown-linux-musleabi
-      rust: 1.13.0
+      rust: 1.14.0
     - env: TARGET=armv7-unknown-linux-gnueabihf
       rust: 1.13.0
     - env: TARGET=i686-unknown-linux-gnu
@@ -131,7 +131,7 @@ matrix:
     - env: TARGET=mips64el-unknown-linux-gnuabi64
       rust: 1.13.0
     - env: TARGET=arm-unknown-linux-musleabi
-      rust: 1.13.0
+      rust: 1.14.0
     - env: TARGET=s390x-unknown-linux-gnu
       rust: 1.13.0
 

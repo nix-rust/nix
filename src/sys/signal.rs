@@ -32,7 +32,7 @@ pub enum Signal {
     SIGPIPE = libc::SIGPIPE,
     SIGALRM = libc::SIGALRM,
     SIGTERM = libc::SIGTERM,
-    #[cfg(all(any(target_os = "linux", target_os = "android", target_os = "emscripten"), not(target_arch = "mips")))]
+    #[cfg(all(any(target_os = "linux", target_os = "android", target_os = "emscripten"), not(any(target_arch = "mips", target_arch = "mips64"))))]
     SIGSTKFLT = libc::SIGSTKFLT,
     SIGCHLD = libc::SIGCHLD,
     SIGCONT = libc::SIGCONT,
@@ -58,7 +58,7 @@ pub enum Signal {
 
 pub use self::Signal::*;
 
-#[cfg(all(any(target_os = "linux", target_os = "android", target_os = "emscripten"), not(target_arch = "mips")))]
+#[cfg(all(any(target_os = "linux", target_os = "android", target_os = "emscripten"), not(any(target_arch = "mips", target_arch = "mips64"))))]
 const SIGNALS: [Signal; 31] = [
     SIGHUP,
     SIGINT,
@@ -91,7 +91,7 @@ const SIGNALS: [Signal; 31] = [
     SIGIO,
     SIGPWR,
     SIGSYS];
-#[cfg(all(any(target_os = "linux", target_os = "android", target_os = "emscripten"), target_arch = "mips"))]
+#[cfg(all(any(target_os = "linux", target_os = "android", target_os = "emscripten"), any(target_arch = "mips", target_arch = "mips64")))]
 const SIGNALS: [Signal; 30] = [
     SIGHUP,
     SIGINT,
