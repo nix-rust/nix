@@ -3,11 +3,6 @@ use {Errno, Error, Result};
 use libc::{c_void, c_long, siginfo_t};
 use ::unistd::Pid;
 
-#[cfg(all(target_os = "linux",
-          any(target_arch = "x86",
-              target_arch = "x86_64",
-              target_arch = "arm")),
-          )]
 pub mod ptrace {
     use libc::c_int;
 
