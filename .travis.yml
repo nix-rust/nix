@@ -102,16 +102,6 @@ matrix:
     - env: TARGET=x86_64-unknown-linux-gnu
       rust: beta
 
-    # Planning to add these targets, but they can fail for now
-    - env: TARGET=mips64-unknown-linux-gnuabi64
-      rust: 1.13.0
-    - env: TARGET=mips64el-unknown-linux-gnuabi64
-      rust: 1.13.0
-    - env: TARGET=arm-unknown-linux-musleabi
-      rust: 1.14.0
-    - env: TARGET=s390x-unknown-linux-gnu
-      rust: 1.13.0
-
 before_install: set -e
 
 install:

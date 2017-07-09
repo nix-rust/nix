@@ -69,22 +69,20 @@ Tier 2:
   * aarch64-apple-ios
   * aarch64-linux-android
   * arm-linux-androideabi
+  * arm-unknown-linux-musleabi (requires Rust >= 1.14)
   * armv7-apple-ios
   * armv7-linux-androideabi
   * armv7s-apple-ios
   * i386-apple-ios
   * i686-linux-android (requires Rust >= 1.18)
   * i686-unknown-freebsd
+  * mips64-unknown-linux-gnuabi64
+  * mips64el-unknown-linux-gnuabi64
   * powerpc-unknown-linux-gnu
+  * s390x-unknown-linux-gnu
   * x86_64-apple-ios
   * x86_64-linux-android (requires Rust >= 1.18)
   * x86_64-unknown-netbsd
-
-Tier 3:
-  * arm-unknown-linux-musleabi (requires Rust >= 1.14)
-  * mips64-unknown-linux-gnuabi64
-  * mips64el-unknown-linux-gnuabi64
-  * s390x-unknown-linux-gnu
 
 ## Usage
 
