@@ -201,6 +201,26 @@ pub enum AddressFamily {
     Natm = libc::AF_NATM,
 }
 
+impl AddressFamily {
+    /// Create a new `AddressFamily` from an integer value retrieved from `libc`, usually from
+    /// the `sa_family` field of a `sockaddr`.
+    ///
+    /// Currently only supports these address families: Unix, Inet (v4 & v6), Netlink
+    /// and System. Returns None for unsupported or unknown address families.
+    pub fn from_i32(family: i32) -> Option<AddressFamily> {
+        match family {
+            libc::AF_UNIX => Some(AddressFamily::Unix),
+            libc::AF_INET => Some(AddressFamily::Inet),
+            libc::AF_INET6 => Some(AddressFamily::Inet6),
+            #[cfg(any(target_os = "android", target_os = "linux"))]
+            libc::AF_NETLINK => Some(AddressFamily::Netlink),
+            #[cfg(any(target_os = "macos", target_os = "macos"))]
+            libc::AF_SYSTEM => Some(AddressFamily::System),
+            _ => None
+        }
+    }
+}
+
 #[derive(Copy)]
 pub enum InetAddr {
     V4(libc::sockaddr_in),
@@ -705,6 +725,34 @@ impl SockAddr {
 
     pub fn to_str(&self) -> String {
         format!("{}", self)
+    }
+
+    /// Creates a `SockAddr` struct from libc's sockaddr.
+    ///
+    /// Supports only the following address families: Unix, Inet (v4 & v6), Netlink and System.
+    /// Returns None for unsupported families.
+    pub unsafe fn from_libc_sockaddr(addr: *const libc::sockaddr) -> Option<SockAddr> {
+        if addr.is_null() {
+            None
+        } else {
+            match AddressFamily::from_i32((*addr).sa_family as i32) {
+                Some(AddressFamily::Unix) => None,
+                Some(AddressFamily::Inet) => Some(SockAddr::Inet(
+                    InetAddr::V4(*(addr as *const libc::sockaddr_in)))),
+                Some(AddressFamily::Inet6) => Some(SockAddr::Inet(
+                    InetAddr::V6(*(addr as *const libc::sockaddr_in6)))),
+                #[cfg(any(target_os = "android", target_os = "linux"))]
+                Some(AddressFamily::Netlink) => Some(SockAddr::Netlink(
+                    NetlinkAddr(*(addr as *const libc::sockaddr_nl)))),
+                #[cfg(any(target_os = "ios", target_os = "macos"))]
+                Some(AddressFamily::System) => Some(SockAddr::SysControl(
+                    SysControlAddr(*(addr as *const sys_control::sockaddr_ctl)))),
+                // Other address families are currently not supported and simply yield a None
+                // entry instead of a proper conversion to a `SockAddr`.
+                Some(_) => None,
+                None => None,
+            }
+        }
     }
 
     pub unsafe fn as_ffi_pair(&self) -> (&libc::sockaddr, libc::socklen_t) {
