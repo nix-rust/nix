@@ -1,4 +1,5 @@
-use super::{ffi, consts, GetSockOpt, SetSockOpt};
+use super::{ffi, GetSockOpt, SetSockOpt};
+use libc;
 use {Errno, Result};
 use sys::time::TimeVal;
 use libc::{c_int, uint8_t, c_void, socklen_t};
@@ -130,52 +131,49 @@ macro_rules! sockopt_impl {
  *
  */
 
-sockopt_impl!(Both, ReuseAddr, consts::SOL_SOCKET, consts::SO_REUSEADDR, bool);
-sockopt_impl!(Both, ReusePort, consts::SOL_SOCKET, consts::SO_REUSEPORT, bool);
-sockopt_impl!(Both, TcpNoDelay, consts::IPPROTO_TCP, consts::TCP_NODELAY, bool);
-sockopt_impl!(Both, Linger, consts::SOL_SOCKET, consts::SO_LINGER, super::linger);
-sockopt_impl!(SetOnly, IpAddMembership, consts::IPPROTO_IP, consts::IP_ADD_MEMBERSHIP, super::ip_mreq);
-sockopt_impl!(SetOnly, IpDropMembership, consts::IPPROTO_IP, consts::IP_DROP_MEMBERSHIP, super::ip_mreq);
+sockopt_impl!(Both, ReuseAddr, libc::SOL_SOCKET, libc::SO_REUSEADDR, bool);
+sockopt_impl!(Both, ReusePort, libc::SOL_SOCKET, libc::SO_REUSEPORT, bool);
+sockopt_impl!(Both, TcpNoDelay, libc::IPPROTO_TCP, libc::TCP_NODELAY, bool);
+sockopt_impl!(Both, Linger, libc::SOL_SOCKET, libc::SO_LINGER, super::linger);
+sockopt_impl!(SetOnly, IpAddMembership, libc::IPPROTO_IP, libc::IP_ADD_MEMBERSHIP, super::ip_mreq);
+sockopt_impl!(SetOnly, IpDropMembership, libc::IPPROTO_IP, libc::IP_DROP_MEMBERSHIP, super::ip_mreq);
 #[cfg(not(any(target_os = "dragonfly", target_os = "freebsd", target_os = "ios", target_os = "macos", target_os = "netbsd", target_os = "openbsd")))]
-sockopt_impl!(SetOnly, Ipv6AddMembership, consts::IPPROTO_IPV6, consts::IPV6_ADD_MEMBERSHIP, super::ipv6_mreq);
+sockopt_impl!(SetOnly, Ipv6AddMembership, libc::IPPROTO_IPV6, libc::IPV6_ADD_MEMBERSHIP, super::ipv6_mreq);
 #[cfg(not(any(target_os = "dragonfly", target_os = "freebsd", target_os = "ios", target_os = "macos", target_os = "netbsd", target_os = "openbsd")))]
-sockopt_impl!(SetOnly, Ipv6DropMembership, consts::IPPROTO_IPV6, consts::IPV6_DROP_MEMBERSHIP, super::ipv6_mreq);
+sockopt_impl!(SetOnly, Ipv6DropMembership, libc::IPPROTO_IPV6, libc::IPV6_DROP_MEMBERSHIP, super::ipv6_mreq);
 #[cfg(any(target_os = "dragonfly", target_os = "freebsd", target_os = "ios", target_os = "macos", target_os = "netbsd", target_os = "openbsd"))]
-sockopt_impl!(SetOnly, Ipv6AddMembership, consts::IPPROTO_IPV6, consts::IPV6_JOIN_GROUP, super::ipv6_mreq);
+sockopt_impl!(SetOnly, Ipv6AddMembership, libc::IPPROTO_IPV6, libc::IPV6_JOIN_GROUP, super::ipv6_mreq);
 #[cfg(any(target_os = "dragonfly", target_os = "freebsd", target_os = "ios", target_os = "macos", target_os = "netbsd", target_os = "openbsd"))]
-sockopt_impl!(SetOnly, Ipv6DropMembership, consts::IPPROTO_IPV6, consts::IPV6_LEAVE_GROUP, super::ipv6_mreq);
-sockopt_impl!(Both, IpMulticastTtl, consts::IPPROTO_IP, consts::IP_MULTICAST_TTL, u8);
-sockopt_impl!(Both, IpMulticastLoop, consts::IPPROTO_IP, consts::IP_MULTICAST_LOOP, bool);
-sockopt_impl!(Both, ReceiveTimeout, consts::SOL_SOCKET, consts::SO_RCVTIMEO, TimeVal);
-sockopt_impl!(Both, SendTimeout, consts::SOL_SOCKET, consts::SO_SNDTIMEO, TimeVal);
-sockopt_impl!(Both, Broadcast, consts::SOL_SOCKET, consts::SO_BROADCAST, bool);
-sockopt_impl!(Both, OobInline, consts::SOL_SOCKET, consts::SO_OOBINLINE, bool);
-sockopt_impl!(GetOnly, SocketError, consts::SOL_SOCKET, consts::SO_ERROR, i32);
-sockopt_impl!(Both, KeepAlive, consts::SOL_SOCKET, consts::SO_KEEPALIVE, bool);
+sockopt_impl!(SetOnly, Ipv6DropMembership, libc::IPPROTO_IPV6, libc::IPV6_LEAVE_GROUP, super::ipv6_mreq);
+sockopt_impl!(Both, IpMulticastTtl, libc::IPPROTO_IP, libc::IP_MULTICAST_TTL, u8);
+sockopt_impl!(Both, IpMulticastLoop, libc::IPPROTO_IP, libc::IP_MULTICAST_LOOP, bool);
+sockopt_impl!(Both, ReceiveTimeout, libc::SOL_SOCKET, libc::SO_RCVTIMEO, TimeVal);
+sockopt_impl!(Both, SendTimeout, libc::SOL_SOCKET, libc::SO_SNDTIMEO, TimeVal);
+sockopt_impl!(Both, Broadcast, libc::SOL_SOCKET, libc::SO_BROADCAST, bool);
+sockopt_impl!(Both, OobInline, libc::SOL_SOCKET, libc::SO_OOBINLINE, bool);
+sockopt_impl!(GetOnly, SocketError, libc::SOL_SOCKET, libc::SO_ERROR, i32);
+sockopt_impl!(Both, KeepAlive, libc::SOL_SOCKET, libc::SO_KEEPALIVE, bool);
 #[cfg(all(target_os = "linux", not(target_arch="arm")))]
-sockopt_impl!(GetOnly, PeerCredentials, consts::SOL_SOCKET, consts::SO_PEERCRED, super::ucred);
+sockopt_impl!(GetOnly, PeerCredentials, libc::SOL_SOCKET, libc::SO_PEERCRED, super::ucred);
 #[cfg(any(target_os = "macos",
           target_os = "ios"))]
-sockopt_impl!(Both, TcpKeepAlive, consts::IPPROTO_TCP, consts::TCP_KEEPALIVE, u32);
+sockopt_impl!(Both, TcpKeepAlive, libc::IPPROTO_TCP, libc::TCP_KEEPALIVE, u32);
 #[cfg(any(target_os = "freebsd",
           target_os = "dragonfly",
           target_os = "linux",
           target_os = "android",
           target_os = "nacl"))]
-sockopt_impl!(Both, TcpKeepIdle, consts::IPPROTO_TCP, consts::TCP_KEEPIDLE, u32);
-sockopt_impl!(Both, RcvBuf, consts::SOL_SOCKET, consts::SO_RCVBUF, usize);
-sockopt_impl!(Both, SndBuf, consts::SOL_SOCKET, consts::SO_SNDBUF, usize);
-#[cfg(target_os = "linux")]
-sockopt_impl!(SetOnly, RcvBufForce, consts::SOL_SOCKET, consts::SO_RCVBUFFORCE, usize);
-#[cfg(all(target_os = "linux", not(target_arch="arm")))]
-sockopt_impl!(SetOnly, SndBufForce, consts::SOL_SOCKET, consts::SO_SNDBUFFORCE, usize);
-sockopt_impl!(GetOnly, SockType, consts::SOL_SOCKET, consts::SO_TYPE, super::SockType);
-#[cfg(any(target_os = "freebsd",
-          target_os = "linux",
-          target_os = "nacl"))]
-sockopt_impl!(GetOnly, AcceptConn, consts::SOL_SOCKET, consts::SO_ACCEPTCONN, bool);
-#[cfg(target_os = "linux")]
-sockopt_impl!(GetOnly, OriginalDst, consts::SOL_IP, consts::SO_ORIGINAL_DST, sockaddr_in);
+sockopt_impl!(Both, TcpKeepIdle, libc::IPPROTO_TCP, libc::TCP_KEEPIDLE, u32);
+sockopt_impl!(Both, RcvBuf, libc::SOL_SOCKET, libc::SO_RCVBUF, usize);
+sockopt_impl!(Both, SndBuf, libc::SOL_SOCKET, libc::SO_SNDBUF, usize);
+#[cfg(any(target_os = "linux", target_os = "android"))]
+sockopt_impl!(SetOnly, RcvBufForce, libc::SOL_SOCKET, libc::SO_RCVBUFFORCE, usize);
+#[cfg(any(target_os = "linux", target_os = "android"))]
+sockopt_impl!(SetOnly, SndBufForce, libc::SOL_SOCKET, libc::SO_SNDBUFFORCE, usize);
+sockopt_impl!(GetOnly, SockType, libc::SOL_SOCKET, libc::SO_TYPE, super::SockType);
+sockopt_impl!(GetOnly, AcceptConn, libc::SOL_SOCKET, libc::SO_ACCEPTCONN, bool);
+#[cfg(any(target_os = "linux", target_os = "android"))]
+sockopt_impl!(GetOnly, OriginalDst, libc::SOL_IP, libc::SO_ORIGINAL_DST, sockaddr_in);
 
 /*
  *

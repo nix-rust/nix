@@ -1,4 +1,4 @@
-use super::{consts, sa_family_t};
+use super::sa_family_t;
 use {Errno, Error, Result, NixPath};
 use libc;
 use std::{fmt, hash, mem, net, ptr};
@@ -23,15 +23,15 @@ use ::sys::socket::addr::sys_control::SysControlAddr;
 #[repr(i32)]
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Hash)]
 pub enum AddressFamily {
-    Unix = consts::AF_UNIX,
-    Inet = consts::AF_INET,
-    Inet6 = consts::AF_INET6,
+    Unix = libc::AF_UNIX,
+    Inet = libc::AF_INET,
+    Inet6 = libc::AF_INET6,
     #[cfg(any(target_os = "linux", target_os = "android"))]
-    Netlink = consts::AF_NETLINK,
+    Netlink = libc::AF_NETLINK,
     #[cfg(any(target_os = "linux", target_os = "android"))]
-    Packet = consts::AF_PACKET,
+    Packet = libc::AF_PACKET,
     #[cfg(any(target_os = "macos", target_os = "ios"))]
-    System = consts::AF_SYSTEM,
+    System = libc::AF_SYSTEM,
 }
 
 #[derive(Copy)]
@@ -252,7 +252,7 @@ impl Ipv4Addr {
     }
 
     pub fn any() -> Ipv4Addr {
-        Ipv4Addr(libc::in_addr { s_addr: consts::INADDR_ANY })
+        Ipv4Addr(libc::in_addr { s_addr: 0/*consts::INADDR_ANY*/ }) // TODO: define INADDR_ANY in libc
     }
 
     pub fn octets(&self) -> [u8; 4] {
@@ -644,8 +644,8 @@ pub mod netlink {
 
 #[cfg(any(target_os = "macos", target_os = "ios"))]
 pub mod sys_control {
-    use ::sys::socket::consts;
     use ::sys::socket::addr::{AddressFamily};
+    use libc;
     use libc::{c_uchar, uint16_t, uint32_t};
     use std::{fmt, mem};
     use std::hash::{Hash, Hasher};
@@ -702,7 +702,7 @@ pub mod sys_control {
             let addr = sockaddr_ctl {
                 sc_len: mem::size_of::<sockaddr_ctl>() as c_uchar,
                 sc_family: AddressFamily::System as c_uchar,
-                ss_sysaddr: consts::AF_SYS_CONTROL as uint16_t,
+                ss_sysaddr: libc::AF_SYS_CONTROL as uint16_t,
                 sc_id: id,
                 sc_unit: unit,
                 sc_reserved: [0; 5]

@@ -9,9 +9,9 @@ use libc::{c_void, c_int, socklen_t, size_t, pid_t, uid_t, gid_t};
 use std::{mem, ptr, slice};
 use std::os::unix::io::RawFd;
 use sys::uio::IoVec;
+use libc;
 
 mod addr;
-mod consts;
 mod ffi;
 mod multicast;
 pub mod sockopt;
@@ -48,18 +48,17 @@ pub use self::multicast::{
     ip_mreq,
     ipv6_mreq,
 };
-pub use self::consts::*;
 
 pub use libc::sockaddr_storage;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 #[repr(i32)]
 pub enum SockType {
-    Stream = consts::SOCK_STREAM,
-    Datagram = consts::SOCK_DGRAM,
-    SeqPacket = consts::SOCK_SEQPACKET,
-    Raw = consts::SOCK_RAW,
-    Rdm = consts::SOCK_RDM,
+    Stream = libc::SOCK_STREAM,
+    Datagram = libc::SOCK_DGRAM,
+    SeqPacket = libc::SOCK_SEQPACKET,
+    Raw = libc::SOCK_RAW,
+    Rdm = libc::SOCK_RDM,
 }
 
 // Extra flags - Supported by Linux 2.6.27, normalized on other platforms
@@ -69,6 +68,22 @@ bitflags!(
         const SOCK_CLOEXEC  = 0o2000000;
     }
 );
+
+// Flags for send/recv and their relatives
+libc_bitflags!{
+    pub flags MsgFlags: libc::c_int {
+        MSG_OOB,
+        MSG_PEEK,
+        MSG_DONTWAIT,
+        MSG_CTRUNC,
+        MSG_TRUNC,
+        MSG_EOR,
+        #[cfg(any(target_os = "linux", target_os = "android"))]
+        MSG_ERRQUEUE,
+        #[cfg(any(target_os = "linux", target_os = "android"))]
+        MSG_CMSG_CLOEXEC,
+    }
+}
 
 /// Copy the in-memory representation of src into the byte slice dst,
 /// updating the slice to point to the remainder of dst only. Unsafe
@@ -157,7 +172,7 @@ impl<'a> Iterator for CmsgIterator<'a> {
         self.0 = &buf[cmsg_align(cmsg_len)..];
 
         match (cmsg.cmsg_level, cmsg.cmsg_type) {
-            (SOL_SOCKET, SCM_RIGHTS) => unsafe {
+            (libc::SOL_SOCKET, libc::SCM_RIGHTS) => unsafe {
                 Some(ControlMessage::ScmRights(
                     slice::from_raw_parts(
                         &cmsg.cmsg_data as *const _ as *const _, 1)))
@@ -221,8 +236,8 @@ impl<'a> ControlMessage<'a> {
             ControlMessage::ScmRights(fds) => {
                 let cmsg = cmsghdr {
                     cmsg_len: self.len() as type_of_cmsg_len,
-                    cmsg_level: SOL_SOCKET,
-                    cmsg_type: SCM_RIGHTS,
+                    cmsg_level: libc::SOL_SOCKET,
+                    cmsg_type: libc::SCM_RIGHTS,
                     cmsg_data: [],
                 };
                 copy_bytes(&cmsg, buf);
@@ -551,13 +566,13 @@ pub struct ucred {
 /// [Further reading](http://man7.org/linux/man-pages/man2/setsockopt.2.html)
 #[repr(i32)]
 pub enum SockLevel {
-    Socket = SOL_SOCKET,
-    Tcp = IPPROTO_TCP,
-    Ip = IPPROTO_IP,
-    Ipv6 = IPPROTO_IPV6,
-    Udp = IPPROTO_UDP,
+    Socket = libc::SOL_SOCKET,
+    Tcp = libc::IPPROTO_TCP,
+    Ip = libc::IPPROTO_IP,
+    Ipv6 = libc::IPPROTO_IPV6,
+    Udp = libc::IPPROTO_UDP,
     #[cfg(any(target_os = "linux", target_os = "android"))]
-    Netlink = SOL_NETLINK,
+    Netlink = libc::SOL_NETLINK,
 }
 
 /// Represents a socket option that can be accessed or set. Used as an argument
@@ -639,22 +654,22 @@ pub unsafe fn sockaddr_storage_to_addr(
     }
 
     match addr.ss_family as c_int {
-        consts::AF_INET => {
+        libc::AF_INET => {
             assert!(len as usize == mem::size_of::<sockaddr_in>());
             let ret = *(addr as *const _ as *const sockaddr_in);
             Ok(SockAddr::Inet(InetAddr::V4(ret)))
         }
-        consts::AF_INET6 => {
+        libc::AF_INET6 => {
             assert!(len as usize == mem::size_of::<sockaddr_in6>());
             Ok(SockAddr::Inet(InetAddr::V6((*(addr as *const _ as *const sockaddr_in6)))))
         }
-        consts::AF_UNIX => {
+        libc::AF_UNIX => {
             let sun = *(addr as *const _ as *const sockaddr_un);
             let pathlen = len - offset_of!(sockaddr_un, sun_path);
             Ok(SockAddr::Unix(UnixAddr(sun, pathlen)))
         }
         #[cfg(any(target_os = "linux", target_os = "android"))]
-        consts::AF_NETLINK => {
+        libc::AF_NETLINK => {
             use libc::sockaddr_nl;
             Ok(SockAddr::Netlink(NetlinkAddr(*(addr as *const _ as *const sockaddr_nl))))
         }
@@ -681,9 +696,9 @@ pub fn shutdown(df: RawFd, how: Shutdown) -> Result<()> {
         use libc::shutdown;
 
         let how = match how {
-            Shutdown::Read  => consts::SHUT_RD,
-            Shutdown::Write => consts::SHUT_WR,
-            Shutdown::Both  => consts::SHUT_RDWR,
+            Shutdown::Read  => libc::SHUT_RD,
+            Shutdown::Write => libc::SHUT_WR,
+            Shutdown::Both  => libc::SHUT_RDWR,
         };
 
         Errno::result(shutdown(df, how)).map(drop)
