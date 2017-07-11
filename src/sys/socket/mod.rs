@@ -258,14 +258,12 @@ pub fn sendmsg<'a>(fd: RawFd, iov: &[IoVec<&'a [u8]>], cmsgs: &[ControlMessage<'
         len += cmsg.len();
         capacity += cmsg.space();
     }
-    // Alignment hackery. Note that capacity is guaranteed to be a
-    // multiple of size_t. Note also that the resulting vector claims
-    // to have length == capacity, so it's presently uninitialized.
+    // Note that the resulting vector claims to have length == capacity,
+    // so it's presently uninitialized.
     let mut cmsg_buffer = unsafe {
         let mut vec = Vec::<u8>::with_capacity(len);
-        let ptr = vec.as_mut_ptr();
-        mem::forget(vec);
-        Vec::<u8>::from_raw_parts(ptr as *mut _, len, len)
+        vec.set_len(len);
+        vec
     };
     {
         let mut ptr = &mut cmsg_buffer[..];
@@ -279,12 +277,18 @@ pub fn sendmsg<'a>(fd: RawFd, iov: &[IoVec<&'a [u8]>], cmsgs: &[ControlMessage<'
         None => (0 as *const _, 0),
     };
 
+    let cmsg_ptr = if capacity > 0 {
+        cmsg_buffer.as_ptr() as *const c_void
+    } else {
+        ptr::null()
+    };
+
     let mhdr = msghdr {
         msg_name: name as *const c_void,
         msg_namelen: namelen,
         msg_iov: iov.as_ptr(),
         msg_iovlen: iov.len() as size_t,
-        msg_control: cmsg_buffer.as_ptr() as *const c_void,
+        msg_control: cmsg_ptr,
         msg_controllen: capacity as size_t,
         msg_flags: 0,
     };
