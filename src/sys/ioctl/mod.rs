@@ -130,7 +130,7 @@ macro_rules! convert_ioctl_res {
 
 #[macro_export]
 macro_rules! ioctl {
-    ($name:ident with $nr:expr) => (
+    (bad $name:ident with $nr:expr) => (
         pub unsafe fn $name(fd: $crate::sys::ioctl::libc::c_int,
                             data: *mut u8)
                             -> $crate::Result<$crate::sys::ioctl::libc::c_int> {
