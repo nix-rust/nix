@@ -14,7 +14,7 @@
 //!             break
 //!         },
 //!         Ok(WaitStatus::Stopped(pid, signal)) => {
-//!             println!("Process '{}' stopped with signal '{}'", pid, signal);
+//!             println!("Process '{}' stopped with signal '{:?}'", pid, signal);
 //!         },
 //!         Ok(WaitStatus::Continued(pid)) => {
 //!             println!("Process '{}' continued", pid);
