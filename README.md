@@ -50,41 +50,41 @@ The following targets are all supported by nix on Rust 1.13.0 or newer (unless
 otherwise noted):
 
 Tier 1:
-  * i686-unknown-linux-gnu
-  * x86_64-unknown-linux-gnu
-  * i686-apple-darwin
-  * x86_64-apple-darwin
   * aarch64-unknown-linux-gnu
-  * armv7-unknown-linux-gnueabihf
   * arm-unknown-linux-gnueabi
-  * x86_64-unknown-freebsd
+  * armv7-unknown-linux-gnueabihf
+  * i686-apple-darwin
+  * i686-unknown-linux-gnu
+  * i686-unknown-linux-musl
+  * mips-unknown-linux-gnu
+  * mipsel-unknown-linux-gnu
   * powerpc-unknown-linux-gnu
   * powerpc64-unknown-linux-gnu
   * powerpc64le-unknown-linux-gnu
-  * mips-unknown-linux-gnu
-  * mipsel-unknown-linux-gnu
-  * i686-unknown-linux-musl
+  * x86_64-apple-darwin
+  * x86_64-unknown-freebsd
+  * x86_64-unknown-linux-gnu
   * x86_64-unknown-linux-musl
 
 Tier 2:
-  * i686-unknown-freebsd
-  * x86_64-unknown-netbsd
+  * aarch64-apple-ios
   * aarch64-linux-android
   * arm-linux-androideabi
-  * armv7-linux-androideabi
-  * i686-linux-android (requires Rust >= 1.18)
-  * x86_64-linux-android (requires Rust >= 1.18)
-
-Tier 3:
-  * aarch64-apple-ios
-  * arm-unknown-linux-musleabi (requires Rust >= 1.14)
   * armv7-apple-ios
+  * armv7-linux-androideabi
   * armv7s-apple-ios
   * i386-apple-ios
+  * i686-linux-android (requires Rust >= 1.18)
+  * i686-unknown-freebsd
+  * x86_64-apple-ios
+  * x86_64-linux-android (requires Rust >= 1.18)
+  * x86_64-unknown-netbsd
+
+Tier 3:
+  * arm-unknown-linux-musleabi (requires Rust >= 1.14)
   * mips64-unknown-linux-gnuabi64
   * mips64el-unknown-linux-gnuabi64
   * s390x-unknown-linux-gnu
-  * x86_64-apple-ios
 
 ## Usage
 

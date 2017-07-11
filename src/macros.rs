@@ -239,6 +239,184 @@ macro_rules! libc_bitflags {
     };
 }
 
+/// The `libc_enum!` macro helps with a common use case of defining an enum exclusively using
+/// values from the `libc` crate. This macro supports both `pub` and private `enum`s.
+///
+/// The `libc` crate must be in scope with the name `libc`.
+///
+/// # Example
+/// ```
+/// libc_enum!{
+///     pub enum ProtFlags {
+///         PROT_NONE,
+///         PROT_READ,
+///         PROT_WRITE,
+///         PROT_EXEC,
+///         #[cfg(any(target_os = "linux", target_os = "android"))]
+///         PROT_GROWSDOWN,
+///         #[cfg(any(target_os = "linux", target_os = "android"))]
+///         PROT_GROWSUP,
+///     }
+/// }
+/// ```
+macro_rules! libc_enum {
+    // (non-pub) Exit rule.
+    (@make_enum
+        {
+            name: $BitFlags:ident,
+            attrs: [$($attrs:tt)*],
+            entries: [$($entries:tt)*],
+        }
+    ) => {
+        $($attrs)*
+        #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+        enum $BitFlags {
+            $($entries)*
+        }
+    };
+
+    // (pub) Exit rule.
+    (@make_enum
+        {
+            pub,
+            name: $BitFlags:ident,
+            attrs: [$($attrs:tt)*],
+            entries: [$($entries:tt)*],
+        }
+    ) => {
+        $($attrs)*
+        #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+        pub enum $BitFlags {
+            $($entries)*
+        }
+    };
+
+    // (non-pub) Done accumulating.
+    (@accumulate_entries
+        {
+            name: $BitFlags:ident,
+            attrs: $attrs:tt,
+        },
+        $entries:tt;
+    ) => {
+        libc_enum! {
+            @make_enum
+            {
+                name: $BitFlags,
+                attrs: $attrs,
+                entries: $entries,
+            }
+        }
+    };
+
+    // (pub) Done accumulating.
+    (@accumulate_entries
+        {
+            pub,
+            name: $BitFlags:ident,
+            attrs: $attrs:tt,
+        },
+        $entries:tt;
+    ) => {
+        libc_enum! {
+            @make_enum
+            {
+                pub,
+                name: $BitFlags,
+                attrs: $attrs,
+                entries: $entries,
+            }
+        }
+    };
+
+    // Munch an attr.
+    (@accumulate_entries
+        $prefix:tt,
+        [$($entries:tt)*];
+        #[$attr:meta] $($tail:tt)*
+    ) => {
+        libc_enum! {
+            @accumulate_entries
+            $prefix,
+            [
+                $($entries)*
+                #[$attr]
+            ];
+            $($tail)*
+        }
+    };
+
+    // Munch last ident if not followed by a comma.
+    (@accumulate_entries
+        $prefix:tt,
+        [$($entries:tt)*];
+        $entry:ident
+    ) => {
+        libc_enum! {
+            @accumulate_entries
+            $prefix,
+            [
+                $($entries)*
+                $entry = libc::$entry,
+            ];
+        }
+    };
+
+    // Munch an ident; covers terminating comma case.
+    (@accumulate_entries
+        $prefix:tt,
+        [$($entries:tt)*];
+        $entry:ident, $($tail:tt)*
+    ) => {
+        libc_enum! {
+            @accumulate_entries
+            $prefix,
+            [
+                $($entries)*
+                $entry = libc::$entry,
+            ];
+            $($tail)*
+        }
+    };
+
+    // (non-pub) Entry rule.
+    (
+        $(#[$attr:meta])*
+        enum $BitFlags:ident {
+            $($vals:tt)*
+        }
+    ) => {
+        libc_enum! {
+            @accumulate_entries
+            {
+                name: $BitFlags,
+                attrs: [$(#[$attr])*],
+            },
+            [];
+            $($vals)*
+        }
+    };
+
+    // (pub) Entry rule.
+    (
+        $(#[$attr:meta])*
+        pub enum $BitFlags:ident {
+            $($vals:tt)*
+        }
+    ) => {
+        libc_enum! {
+            @accumulate_entries
+            {
+                pub,
+                name: $BitFlags,
+                attrs: [$(#[$attr])*],
+            },
+            [];
+            $($vals)*
+        }
+    };
+}
+
 /// A Rust version of the familiar C `offset_of` macro.  It returns the byte
 /// offset of `field` within struct `ty`
 macro_rules! offset_of {
