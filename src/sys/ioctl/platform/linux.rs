@@ -106,34 +106,6 @@ macro_rules! iorw {
     ($ty:expr, $nr:expr, $sz:expr) => (ioc!($crate::sys::ioctl::READ | $crate::sys::ioctl::WRITE, $ty, $nr, $sz))
 }
 
-/// Extracts the "direction" (read/write/none) from an encoded ioctl command.
-#[inline(always)]
-#[doc(hidden)]
-pub fn ioc_dir(nr: u32) -> u8 {
-    ((nr >> DIRSHIFT) & DIRMASK) as u8
-}
-
-/// Extracts the type from an encoded ioctl command.
-#[inline(always)]
-#[doc(hidden)]
-pub fn ioc_type(nr: u32) -> u32 {
-    (nr >> TYPESHIFT) & TYPEMASK
-}
-
-/// Extracts the ioctl number from an encoded ioctl command.
-#[inline(always)]
-#[doc(hidden)]
-pub fn ioc_nr(nr: u32) -> u32 {
-    (nr >> NRSHIFT) & NRMASK
-}
-
-/// Extracts the size from an encoded ioctl command.
-#[inline(always)]
-#[doc(hidden)]
-pub fn ioc_size(nr: u32) -> u32 {
-    ((nr >> SIZESHIFT) as u32) & SIZEMASK
-}
-
 #[doc(hidden)]
 pub const IN: u32 = (WRITE as u32) << DIRSHIFT;
 #[doc(hidden)]
