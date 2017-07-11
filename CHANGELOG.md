@@ -21,6 +21,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Added `nix::ptrace::{ptrace_get_data, ptrace_getsiginfo, ptrace_setsiginfo
   and nix::Error::UnsupportedOperation}`
   ([#614](https://github.com/nix-rust/nix/pull/614))
+- Added `cfmakeraw`, `cfsetspeed`, and `tcgetsid`. ([#527](https://github.com/nix-rust/nix/pull/527))
 
 ### Changed
 - Changed `ioctl!(write ...)` to take argument by value instead as pointer.
@@ -37,10 +38,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Introduced wrapper types for `gid_t`, `pid_t`, and `uid_t` as `Gid`, `Pid`, and `Uid`
   respectively. Various functions have been changed to use these new types as
   arguments. ([#629](https://github.com/nix-rust/nix/pull/629))
-- Promoted all Android targets to Tier 2 support
+- Fixed compilation on all Android and iOS targets ([#527](https://github.com/nix-rust/nix/pull/527))
+  and promoted them to Tier 2 support.
 - `nix::sys::statfs::{statfs,fstatfs}` uses statfs definition from `libc::statfs` instead of own linux specific type `nix::sys::Statfs`.
   Also file system type constants like `nix::sys::statfs::ADFS_SUPER_MAGIC` were removed in favor of the libc equivalent.
   ([#561](https://github.com/nix-rust/nix/pull/561))
+- Revised the termios API including additional tests and documentation and exposed it on iOS. ([#527](https://github.com/nix-rust/nix/pull/527))
 
 ### Removed
 - Removed `io::Error` from `nix::Error` and the conversion from `nix::Error` to `Errno`
@@ -61,6 +64,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   only available on x86, x86-64, and ARM, and also not on Android.
 - Fixed `sys::socket::sendmsg` with zero entry `cmsgs` parameter.
   ([#623](https://github.com/nix-rust/nix/pull/623))
+- Multiple constants related to the termios API have now been properly defined for
+  all supported platforms. ([#527](https://github.com/nix-rust/nix/pull/527))
 
 ## [0.8.1] 2017-04-16
 
