@@ -10,18 +10,18 @@
 //! loop {
 //!     match waitpid(PidGroup::ProcessGroupID(pid), WUNTRACED) {
 //!         Ok(WaitStatus::Exited(pid, status)) => {
-//!             eprintln!("Process '{}' exited with status '{}'", pid, status);
+//!             println!("Process '{}' exited with status '{}'", pid, status);
 //!             break
 //!         },
 //!         Ok(WaitStatus::Stopped(pid, signal)) => {
-//!             eprintln!("Process '{}' stopped with signal '{}'", pid, signal);
+//!             println!("Process '{}' stopped with signal '{}'", pid, signal);
 //!         },
 //!         Ok(WaitStatus::Continued(pid)) => {
-//!             eprintln!("Process '{}' continued", pid);
+//!             println!("Process '{}' continued", pid);
 //!         },
 //!         Ok(_) => (),
 //!         Err(why) => {
-//!             eprintln!("waitpid returned an error code: {}" why);
+//!             println!("waitpid returned an error code: {}" why);
 //!             break
 //!         }
 //!     }
@@ -319,16 +319,16 @@ pub fn waitpid<O>(pid: PidGroup, options: O) -> Result<WaitStatus>
 
     let pid = match pid {
         PidGroup::ProcessID(pid) if pid < Pid::from_raw(-1)      => -pid_t::from(pid),
-        PidGroup::ProcessGroupID(pid) if pid > Pid::from_raw(0)  => -pid_t::from(pid),
+        PidGroup::ProcessGroupID(pid) if pid > Pid::from_raw(0) => -pid_t::from(pid),
         PidGroup::ProcessID(pid) | PidGroup::ProcessGroupID(pid) => pid_t::from(pid),
         PidGroup::AnyGroupChild => 0,
-        PidGroup::AnyChild      => -1,
+        PidGroup::AnyChild => -1,
     };
 
     let res = unsafe { libc::waitpid(pid.into(), &mut status as *mut c_int, options) };
 
     Errno::result(res).map(|res| match res {
-        0   => StillAlive,
+        0 => StillAlive,
         res => decode(Pid::from_raw(res), status),
     })
 }
