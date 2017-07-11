@@ -20,6 +20,7 @@ pub use self::linux::*;
 ///
 /// Newtype pattern around `uid_t` (which is just alias). It prevents bugs caused by accidentally
 /// passing wrong value.
+#[repr(C)] // FIXME: switch to repr(transparent) once RFC 1758 hits stable
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct Uid(uid_t);
 
@@ -64,6 +65,7 @@ pub const ROOT: Uid = Uid(0);
 ///
 /// Newtype pattern around `gid_t` (which is just alias). It prevents bugs caused by accidentally
 /// passing wrong value.
+#[repr(C)] // FIXME: switch to repr(transparent) once RFC 1758 hits stable
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct Gid(gid_t);
 
@@ -100,6 +102,7 @@ impl fmt::Display for Gid {
 ///
 /// Newtype pattern around `pid_t` (which is just alias). It prevents bugs caused by accidentally
 /// passing wrong value.
+#[repr(C)] // FIXME: switch to repr(transparent) once RFC 1758 hits stable
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct Pid(pid_t);
 
