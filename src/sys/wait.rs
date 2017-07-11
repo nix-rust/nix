@@ -21,7 +21,7 @@
 //!         },
 //!         Ok(_) => (),
 //!         Err(why) => {
-//!             println!("waitpid returned an error code: {}" why);
+//!             println!("waitpid returned an error code: {}", why);
 //!             break
 //!         }
 //!     }
