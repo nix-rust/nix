@@ -13,9 +13,48 @@ mod ffi {
 }
 
 #[cfg(not(any(target_os = "linux",
-              target_os = "android")))]
+              target_os = "android",
+              target_os = "openbsd",
+              target_os = "bitrig",
+              target_os = "dragonfly",
+              target_os = "netbsd",
+              target_os = "freebsd")))]
 libc_bitflags!(
     pub flags WaitPidFlag: c_int {
+        WNOHANG,
+        WUNTRACED,
+    }
+);
+
+#[cfg(target_os = "freebsd")]
+libc_bitflags!(
+    pub flags WaitPidFlag: c_int {
+        WCONTINUED,
+        WNOHANG,
+        WUNTRACED,
+        WTRAPPED,
+        WEXITED,
+        WNOWAIT,
+    }
+);
+
+#[cfg(target_os = "netbsd")]
+libc_bitflags!(
+    pub flags WaitPidFlag: c_int {
+        WCONTINUED,
+        WEXITED,
+        WNOHANG,
+        WNOWAIT,
+        WUNTRACED,
+    }
+);
+
+#[cfg(any(target_os = "openbsd",
+          target_os = "bitrig",
+          target_os = "dragonfly"))]
+libc_bitflags!(
+    pub flags WaitPidFlag: c_int {
+        WCONTINUED,
         WNOHANG,
         WUNTRACED,
     }
@@ -37,7 +76,9 @@ libc_bitflags!(
 );
 
 #[cfg(any(target_os = "linux",
-          target_os = "android"))]
+          target_os = "android",
+          target_os = "netbsd",
+          target_os = "freebsd"))]
 const WSTOPPED: WaitPidFlag = WUNTRACED;
 
 #[derive(Eq, PartialEq, Clone, Copy, Debug)]
