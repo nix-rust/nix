@@ -1,7 +1,15 @@
+/// The datatype used for the ioctl number
+#[cfg(any(target_os = "android", target_env = "musl"))]
 #[doc(hidden)]
-pub const NRBITS: u32 = 8;
+pub type ioctl_num_type = ::libc::c_int;
+#[cfg(not(any(target_os = "android", target_env = "musl")))]
 #[doc(hidden)]
-pub const TYPEBITS: u32 = 8;
+pub type ioctl_num_type = ::libc::c_ulong;
+
+#[doc(hidden)]
+pub const NRBITS: ioctl_num_type = 8;
+#[doc(hidden)]
+pub const TYPEBITS: ioctl_num_type = 8;
 
 #[cfg(any(target_arch = "mips", target_arch = "mips64", target_arch = "powerpc", target_arch = "powerpc64"))]
 mod consts {
@@ -50,32 +58,32 @@ mod consts {
 pub use self::consts::*;
 
 #[doc(hidden)]
-pub const NRSHIFT: u32 = 0;
+pub const NRSHIFT: ioctl_num_type = 0;
 #[doc(hidden)]
-pub const TYPESHIFT: u32 = NRSHIFT + NRBITS as u32;
+pub const TYPESHIFT: ioctl_num_type = NRSHIFT + NRBITS as ioctl_num_type;
 #[doc(hidden)]
-pub const SIZESHIFT: u32 = TYPESHIFT + TYPEBITS as u32;
+pub const SIZESHIFT: ioctl_num_type = TYPESHIFT + TYPEBITS as ioctl_num_type;
 #[doc(hidden)]
-pub const DIRSHIFT: u32 = SIZESHIFT + SIZEBITS as u32;
+pub const DIRSHIFT: ioctl_num_type = SIZESHIFT + SIZEBITS as ioctl_num_type;
 
 #[doc(hidden)]
-pub const NRMASK: u32 = (1 << NRBITS) - 1;
+pub const NRMASK: ioctl_num_type = (1 << NRBITS) - 1;
 #[doc(hidden)]
-pub const TYPEMASK: u32 = (1 << TYPEBITS) - 1;
+pub const TYPEMASK: ioctl_num_type = (1 << TYPEBITS) - 1;
 #[doc(hidden)]
-pub const SIZEMASK: u32 = (1 << SIZEBITS) - 1;
+pub const SIZEMASK: ioctl_num_type = (1 << SIZEBITS) - 1;
 #[doc(hidden)]
-pub const DIRMASK: u32 = (1 << DIRBITS) - 1;
+pub const DIRMASK: ioctl_num_type = (1 << DIRBITS) - 1;
 
 /// Encode an ioctl command.
 #[macro_export]
 #[doc(hidden)]
 macro_rules! ioc {
     ($dir:expr, $ty:expr, $nr:expr, $sz:expr) => (
-        (($dir as u32) << $crate::sys::ioctl::DIRSHIFT) |
-        (($ty as u32) << $crate::sys::ioctl::TYPESHIFT) |
-        (($nr as u32) << $crate::sys::ioctl::NRSHIFT) |
-        (($sz as u32) << $crate::sys::ioctl::SIZESHIFT))
+        (($dir as $crate::sys::ioctl::ioctl_num_type & $crate::sys::ioctl::DIRMASK) << $crate::sys::ioctl::DIRSHIFT) |
+        (($ty as $crate::sys::ioctl::ioctl_num_type & $crate::sys::ioctl::TYPEMASK) << $crate::sys::ioctl::TYPESHIFT) |
+        (($nr as $crate::sys::ioctl::ioctl_num_type & $crate::sys::ioctl::NRMASK) << $crate::sys::ioctl::NRSHIFT) |
+        (($sz as $crate::sys::ioctl::ioctl_num_type & $crate::sys::ioctl::SIZEMASK) << $crate::sys::ioctl::SIZESHIFT))
 }
 
 /// Encode an ioctl command that has no associated data.
