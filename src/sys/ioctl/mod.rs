@@ -1,102 +1,144 @@
-//! Provide helpers for making ioctl system calls
-//!
-//! Currently supports Linux on all architectures. Other platforms welcome!
+//! Provide helpers for making ioctl system calls.
 //!
 //! This library is pretty low-level and messy. `ioctl` is not fun.
 //!
 //! What is an `ioctl`?
 //! ===================
 //!
-//! The `ioctl` syscall is the grab-bag syscall on POSIX systems. Don't want
-//! to add a new syscall? Make it an `ioctl`! `ioctl` refers to both the syscall,
-//! and the commands that can be send with it. `ioctl` stands for "IO control",
-//! and the commands are always sent to a file descriptor.
+//! The `ioctl` syscall is the grab-bag syscall on POSIX systems. Don't want to add a new
+//! syscall? Make it an `ioctl`! `ioctl` refers to both the syscall, and the commands that can be
+//! sent with it. `ioctl` stands for "IO control", and the commands are always sent to a file
+//! descriptor.
 //!
 //! It is common to see `ioctl`s used for the following purposes:
 //!
-//! * Provide read/write access to out-of-band data related
-//!   to a device such as configuration (for instance, setting
-//!   serial port options)
-//! * Provide a mechanism for performing full-duplex data
-//!   transfers (for instance, xfer on SPI devices).
-//! * Provide access to control functions on a device (for example,
-//!   on Linux you can send commands like pause, resume, and eject
-//!   to the CDROM device.
-//! * Do whatever else the device driver creator thought made most sense.
+//!   * Provide read/write access to out-of-band data related to a device such as configuration
+//!     (for instance, setting serial port options)
+//!   * Provide a mechanism for performing full-duplex data transfers (for instance, xfer on SPI
+//!     devices).
+//!   * Provide access to control functions on a device (for example, on Linux you can send
+//!     commands like pause, resume, and eject to the CDROM device.
+//!   * Do whatever else the device driver creator thought made most sense.
 //!
-//! `ioctl`s are synchronous system calls and are similar to read and
-//! write calls in that regard.
+//! `ioctl`s are synchronous system calls and are similar to read and write calls in that regard.
+//! They operate on file descriptors and have an identifier that specifies what the ioctl is.
+//! Additionally they may read or write data and therefore need to pass along a data pointer.
+//! Besides the semantics of the ioctls being confusing, the generation of this identifer can also
+//! be difficult.
 //!
-//! What does this module support?
-//! ===============================
+//! Historically `ioctl` numbers were arbitrary hard-coded values. In Linux (before 2.6) and some
+//! unices this has changed to a more-ordered system where the ioctl numbers are partitioned into
+//! subcomponents (For linux this is documented in
+//! [`Documentation/ioctl/ioctl-number.txt`](http://elixir.free-electrons.com/linux/latest/source/Documentation/ioctl/ioctl-number.txt)):
 //!
-//! This library provides the `ioctl!` macro, for binding `ioctl`s.
-//! Here's a few examples of how that can work for SPI under Linux
-//! from [rust-spidev](https://github.com/posborne/rust-spidev).
+//!   * Number: The actual ioctl ID
+//!   * Type: A grouping of ioctls for a common purpose or driver
+//!   * Size: The size in bytes of the data that will be transferred
+//!   * Direction: Whether there is any data and if it's read, write, or both
+//!
+//! Newer drivers should not generate complete integer identifiers for their `ioctl`s instead
+//! preferring to use the 4 components above to generate the final ioctl identifier. Because of
+//! how old `ioctl`s are, however, there are many hard-coded `ioctl` identifiers. These are
+//! commonly referred to as "bad" in `ioctl` documentation.
+//!
+//! Defining ioctls
+//! ===============
+//!
+//! This library provides the `ioctl!` macro, for binding `ioctl`s. This macro generates public
+//! unsafe functions that can then be used for calling the ioctl. This macro has a few different
+//! ways it can be used depending on the specific ioctl you're working with.
+//!
+//! A simple `ioctl` is `SPI_IOC_RD_MODE`. This ioctl works with the SPI interface on Linux. This
+//! specific `ioctl` reads the mode of the SPI device as a `u8`. It's declared in
+//! `/include/uapi/linux/spi/spidev.h` as `_IOR(SPI_IOC_MAGIC, 1, __u8)`. Since it uses the `_IOR`
+//! macro, we know it's a `read` ioctl and can use the `ioctl!` macro as follows:
 //!
 //! ```
-//! #[allow(non_camel_case_types)]
-//! pub struct spi_ioc_transfer {
-//!     pub tx_buf: u64,
-//!     pub rx_buf: u64,
-//!     pub len: u32,
-//!
-//!     // optional overrides
-//!     pub speed_hz: u32,
-//!     pub delay_usecs: u16,
-//!     pub bits_per_word: u8,
-//!     pub cs_change: u8,
-//!     pub pad: u32,
-//! }
-//!
-//! #[cfg(linux)]
-//! mod ioctl {
-//!     use super::*;
-//!
-//!     const SPI_IOC_MAGIC: u8 = 'k' as u8;
-//!     const SPI_IOC_NR_TRANSFER: u8 = 0;
-//!     const SPI_IOC_NR_MODE: u8 = 1;
-//!     const SPI_IOC_NR_LSB_FIRST: u8 = 2;
-//!     const SPI_IOC_NR_BITS_PER_WORD: u8 = 3;
-//!     const SPI_IOC_NR_MAX_SPEED_HZ: u8 = 4;
-//!     const SPI_IOC_NR_MODE32: u8 = 5;
-//!
-//!     ioctl!(read  get_mode_u8 with SPI_IOC_MAGIC, SPI_IOC_NR_MODE; u8);
-//!     ioctl!(read  get_mode_u32 with SPI_IOC_MAGIC, SPI_IOC_NR_MODE; u32);
-//!     ioctl!(write set_mode_u8 with SPI_IOC_MAGIC, SPI_IOC_NR_MODE; u8);
-//!     ioctl!(write set_mode_u32 with SPI_IOC_MAGIC, SPI_IOC_NR_MODE32; u32);
-//!     ioctl!(read  get_lsb_first with SPI_IOC_MAGIC, SPI_IOC_NR_LSB_FIRST; u8);
-//!     ioctl!(write set_lsb_first with SPI_IOC_MAGIC, SPI_IOC_NR_LSB_FIRST; u8);
-//!     ioctl!(read  get_bits_per_word with SPI_IOC_MAGIC, SPI_IOC_NR_BITS_PER_WORD; u8);
-//!     ioctl!(write set_bits_per_word with SPI_IOC_MAGIC, SPI_IOC_NR_BITS_PER_WORD; u8);
-//!     ioctl!(read  get_max_speed_hz with SPI_IOC_MAGIC, SPI_IOC_NR_MAX_SPEED_HZ; u32);
-//!     ioctl!(write set_max_speed_hz with SPI_IOC_MAGIC, SPI_IOC_NR_MAX_SPEED_HZ; u32);
-//!     ioctl!(write spidev_transfer with SPI_IOC_MAGIC, SPI_IOC_NR_TRANSFER; spi_ioc_transfer);
-//!     ioctl!(write buf spidev_transfer_buf with SPI_IOC_MAGIC, SPI_IOC_NR_TRANSFER; spi_ioc_transfer);
-//! }
-//!
-//! // doctest workaround
-//! fn main() {}
+//! # #[macro_use] extern crate nix;
+//! const SPI_IOC_MAGIC: u8 = b'k'; // Defined in linux/spi/spidev.h
+//! const SPI_IOC_TYPE_MODE: u8 = 1;
+//! ioctl!(read spi_read_mode with SPI_IOC_MAGIC, SPI_IOC_TYPE_MODE; u8);
+//! # fn main() {}
 //! ```
 //!
-//! Spidev uses the `_IOC` macros that are encouraged (as far as
-//! `ioctl` can be encouraged at all) for newer drivers.  Many
-//! drivers, however, just use magic numbers with no attached
-//! semantics.  For those, the `ioctl!(bad ...)` variant should be
-//! used (the "bad" terminology is from the Linux kernel).
+//! This generates the function:
 //!
-//! How do I get the magic numbers?
-//! ===============================
+//! ```
+//! # #[macro_use] extern crate nix;
+//! # use std::mem;
+//! # use nix::{Errno, libc, Result};
+//! # use nix::libc::c_int as c_int;
+//! # const SPI_IOC_MAGIC: u8 = b'k'; // Defined in linux/spi/spidev.h
+//! # const SPI_IOC_TYPE_MODE: u8 = 1;
+//! pub unsafe fn spi_read_mode(fd: c_int, data: *mut u8) -> Result<c_int> {
+//!     let res = libc::ioctl(fd, ior!(SPI_IOC_MAGIC, SPI_IOC_TYPE_MODE, mem::size_of::<u8>()), data);
+//!     Errno::result(res)
+//! }
+//! # fn main() {}
+//! ```
+//!
+//! The return value for `ioctl` functions generated by the `ioctl!` macro are `nix::Error`s.
+//! These are generated by assuming the return value of the ioctl is `-1` on error and everything
+//! else is a valid return value. If this is not the case, `Result::map` can be used to map some
+//! of the range of "good" values (-2..-Inf, 0..Inf) into a smaller range in a helper function.
+//!
+//! The mode for a given `ioctl` should be clear from the documentation if it has good
+//! documentation. Otherwise it will be clear based on the macro used to generate the `ioctl`
+//! number where `_IO`, `_IOR`, `_IOW`, and `_IORW` map to "none", "read", "write_*", and "readwrite"
+//! respectively. To determine the specific `write_` variant to use you'll need to find
+//! what the argument type is supposed to be. If it's an `int`, then `write_int` should be used,
+//! otherwise it should be a pointer and `write_ptr` should be used. On Linux the
+//! [`ioctl_list` man page](http://man7.org/linux/man-pages/man2/ioctl_list.2.html) describes a
+//! large number of `ioctl`s and describes their argument data type.
+//!
+//! More examples on using `ioctl!` can be found in the [rust-spidev crate](https://github.com/rust-embedded/rust-spidev).
+//!
+//! ```text
+//! pub unsafe fn $NAME(fd: c_int, val: *mut u8, len: usize) -> Result<c_int>;
+//! ```
+//!
+//! As mentioned earlier, there are many old `ioctl`s that do not use the newer method of
+//! generating `ioctl` numbers and instead use hardcoded values. These can be used with the `bad`
+//! form of the `ioctl!` macro (there is no data transfer direction used with `bad`). The naming of
+//! this comes from the Linux kernel which refers to these `ioctl`s as "bad".
+//!
+//! For example the `TCGETS` `ioctl` reads a `termios` data structure for a given file descriptor.
+//! It can be implemented as:
+//!
+//! ```
+//! # #[macro_use] extern crate nix;
+//! # #[cfg(any(target_os = "android", target_os = "linux"))]
+//! # use nix::libc::TCGETS as TCGETS;
+//! # #[cfg(any(target_os = "android", target_os = "linux"))]
+//! ioctl!(bad tcgets with TCGETS);
+//! # fn main() {}
+//! ```
+//!
+//! The generated function has the same form as that generated by `read`:
+//!
+//! ```text
+//! pub unsafe fn tcgets(fd: c_int, val: *mut u8) -> Result<c_int>;
+//! ```
+//!
+//! There is also a `bad none` form for use with hard-coded `ioctl`s that do not transfer data.
+//! The `TIOCEXCL` `ioctl` that's part of the termios API can be implemented as:
+//!
+//! ```
+//! # #[macro_use] extern crate nix;
+//! # use nix::libc::TIOCEXCL as TIOCEXCL;
+//! ioctl!(bad none tiocexcl with TIOCEXCL);
+//! # fn main() {}
+//! ```
+//!
+//! More examples on using `ioctl!` can be found in the [rust-spidev crate](https://github.com/rust-embedded/rust-spidev).
+//!
+//! Finding ioctl documentation
+//! ---------------------------
 //!
 //! For Linux, look at your system's headers. For example, `/usr/include/linux/input.h` has a lot
-//! of lines defining macros which use `_IOR`, `_IOW`, `_IOC`, and `_IORW`.  These macros
-//! correspond to the `ior!`, `iow!`, `ioc!`, and `iorw!` macros defined in this crate.
-//! Additionally, there is the `ioctl!` macro for creating a wrapper around `ioctl` that is
-//! somewhat more type-safe.
-//!
-//! Most `ioctl`s have no or little documentation. You'll need to scrounge through
-//! the source to figure out what they do and how they should be used.
-//!
+//! of lines defining macros which use `_IO`, `_IOR`, `_IOW`, `_IOC`, and `_IORW`. Some `ioctl`s are
+//! documented directly in the headers defining their constants, but others have more extensive
+//! documentation in man pages (like termios' `ioctl`s which are in `tty_ioctl(4)`).
 #[cfg(any(target_os = "linux", target_os = "android"))]
 #[path = "platform/linux.rs"]
 #[macro_use]
