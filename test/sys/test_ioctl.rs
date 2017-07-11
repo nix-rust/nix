@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 // Simple tests to ensure macro generated fns compile
-ioctl!(do_bad with 0x1234);
+ioctl!(bad do_bad with 0x1234);
 ioctl!(none do_none with 0, 0);
 ioctl!(read read_test with 0, 0; u32);
 ioctl!(write write_test with 0, 0; u64);
@@ -82,7 +82,7 @@ mod linux {
     #[test]
     fn test_op_read_write_64() {
         assert_eq!(iorw!(b'z', 10, (1 as u64) << 32), 0xC0007A0A);
-    } 
+    }
 }
 
 #[cfg(any(target_os = "macos",
@@ -132,5 +132,5 @@ mod bsd {
     #[test]
     fn test_op_read_write_64() {
         assert_eq!(iorw!(b'z', 10, (1 as u64) << 32), 0xC0007A0A);
-    } 
+    }
 }
