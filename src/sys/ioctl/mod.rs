@@ -137,6 +137,12 @@ macro_rules! ioctl {
             convert_ioctl_res!($crate::sys::ioctl::libc::ioctl(fd, $nr as $crate::sys::ioctl::libc::c_ulong, data))
         }
         );
+    (bad none $name:ident with $nr:expr) => (
+        pub unsafe fn $name(fd: $crate::sys::ioctl::libc::c_int)
+                            -> $crate::Result<$crate::sys::ioctl::libc::c_int> {
+            convert_ioctl_res!($crate::sys::ioctl::libc::ioctl(fd, $nr as $crate::sys::ioctl::libc::c_ulong))
+        }
+        );
     (none $name:ident with $ioty:expr, $nr:expr) => (
         pub unsafe fn $name(fd: $crate::sys::ioctl::libc::c_int)
                             -> $crate::Result<$crate::sys::ioctl::libc::c_int> {
