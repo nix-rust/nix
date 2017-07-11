@@ -7,6 +7,8 @@
 //!
 //! ```rust
 //! use nix::sys::wait::*;
+//! use nix::unistd::Pid;
+//!
 //! let pid = Pid::from_raw(17563);
 //! loop {
 //!     match waitpid(PidGroup::ProcessGroupID(pid), WUNTRACED) {
