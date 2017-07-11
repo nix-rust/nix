@@ -174,40 +174,40 @@ macro_rules! ioctl {
         pub unsafe fn $name(fd: $crate::libc::c_int,
                             data: *mut u8)
                             -> $crate::Result<$crate::libc::c_int> {
-            convert_ioctl_res!($crate::libc::ioctl(fd, $nr as $crate::libc::c_ulong, data))
+            convert_ioctl_res!($crate::libc::ioctl(fd, $nr as $crate::sys::ioctl::ioctl_num_type, data))
         }
         );
     (bad none $name:ident with $nr:expr) => (
         pub unsafe fn $name(fd: $crate::libc::c_int)
                             -> $crate::Result<$crate::libc::c_int> {
-            convert_ioctl_res!($crate::libc::ioctl(fd, $nr as $crate::libc::c_ulong))
+            convert_ioctl_res!($crate::libc::ioctl(fd, $nr as $crate::sys::ioctl::ioctl_num_type))
         }
         );
     (none $name:ident with $ioty:expr, $nr:expr) => (
         pub unsafe fn $name(fd: $crate::libc::c_int)
                             -> $crate::Result<$crate::libc::c_int> {
-            convert_ioctl_res!($crate::libc::ioctl(fd, io!($ioty, $nr) as $crate::libc::c_ulong))
+            convert_ioctl_res!($crate::libc::ioctl(fd, io!($ioty, $nr) as $crate::sys::ioctl::ioctl_num_type))
         }
         );
     (read $name:ident with $ioty:expr, $nr:expr; $ty:ty) => (
         pub unsafe fn $name(fd: $crate::libc::c_int,
                             val: *mut $ty)
                             -> $crate::Result<$crate::libc::c_int> {
-            convert_ioctl_res!($crate::libc::ioctl(fd, ior!($ioty, $nr, ::std::mem::size_of::<$ty>()) as $crate::libc::c_ulong, val))
+            convert_ioctl_res!($crate::libc::ioctl(fd, ior!($ioty, $nr, ::std::mem::size_of::<$ty>()) as $crate::sys::ioctl::ioctl_num_type, val))
         }
         );
     (write $name:ident with $ioty:expr, $nr:expr; $ty:ty) => (
         pub unsafe fn $name(fd: $crate::libc::c_int,
                             val: $ty)
                             -> $crate::Result<$crate::libc::c_int> {
-            convert_ioctl_res!($crate::libc::ioctl(fd, iow!($ioty, $nr, ::std::mem::size_of::<$ty>()) as $crate::libc::c_ulong, val))
+            convert_ioctl_res!($crate::libc::ioctl(fd, iow!($ioty, $nr, ::std::mem::size_of::<$ty>()) as $crate::sys::ioctl::ioctl_num_type, val))
         }
         );
     (readwrite $name:ident with $ioty:expr, $nr:expr; $ty:ty) => (
         pub unsafe fn $name(fd: $crate::libc::c_int,
                             val: *mut $ty)
                             -> $crate::Result<$crate::libc::c_int> {
-            convert_ioctl_res!($crate::libc::ioctl(fd, iorw!($ioty, $nr, ::std::mem::size_of::<$ty>()) as $crate::libc::c_ulong, val))
+            convert_ioctl_res!($crate::libc::ioctl(fd, iorw!($ioty, $nr, ::std::mem::size_of::<$ty>()) as $crate::sys::ioctl::ioctl_num_type, val))
         }
         );
     (read buf $name:ident with $ioty:expr, $nr:expr; $ty:ty) => (
@@ -215,14 +215,14 @@ macro_rules! ioctl {
                             val: *mut $ty,
                             len: usize)
                             -> $crate::Result<$crate::libc::c_int> {
-            convert_ioctl_res!($crate::libc::ioctl(fd, ior!($ioty, $nr, len) as $crate::libc::c_ulong, val))
+            convert_ioctl_res!($crate::libc::ioctl(fd, ior!($ioty, $nr, len) as $crate::sys::ioctl::ioctl_num_type, val))
         }
         );
     (write buf $name:ident with $ioty:expr, $nr:expr; $ty:ty) => (
         pub unsafe fn $name(fd: $crate::libc::c_int,
                             val: *const $ty,
                             len: usize) -> $crate::Result<$crate::libc::c_int> {
-            convert_ioctl_res!($crate::libc::ioctl(fd, iow!($ioty, $nr, len) as $crate::libc::c_ulong, val))
+            convert_ioctl_res!($crate::libc::ioctl(fd, iow!($ioty, $nr, len) as $crate::sys::ioctl::ioctl_num_type, val))
         }
         );
     (readwrite buf $name:ident with $ioty:expr, $nr:expr; $ty:ty) => (
@@ -230,7 +230,7 @@ macro_rules! ioctl {
                             val: *mut $ty,
                             len: usize)
                             -> $crate::Result<$crate::libc::c_int> {
-            convert_ioctl_res!($crate::libc::ioctl(fd, iorw!($ioty, $nr, len) as $crate::libc::c_ulong, val))
+            convert_ioctl_res!($crate::libc::ioctl(fd, iorw!($ioty, $nr, len) as $crate::sys::ioctl::ioctl_num_type, val))
         }
         );
 }
