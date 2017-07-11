@@ -48,15 +48,20 @@ libc_bitflags!(
         /// process
         WUNTRACED,
         /// Waits for children that have terminated.
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(any(target_os = "android",
+                  target_os = "freebsd",
+                  target_os = "linux",
+                  target_os = "netbsd"))]
         WEXITED,
         /// Report the status of any continued child process specified by pid whose status has not
         /// been reported since it continued from a job control stop.
-        #[cfg(any(target_os = "android", target_os = "linux"))]
         WCONTINUED,
         /// Leave the child in a waitable state; a later wait call can be used to again retrieve
         /// the child status information.
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(any(target_os = "android",
+                  target_os = "freebsd",
+                  target_os = "linux",
+                  target_os = "netbsd"))]
         WNOWAIT,
         /// Don't wait on children of other threads in this group
         #[cfg(any(target_os = "android", target_os = "linux"))]
