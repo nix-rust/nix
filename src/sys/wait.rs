@@ -70,9 +70,6 @@ libc_bitflags!(
     }
 );
 
-#[cfg(any(target_os = "android", target_os = "linux"))]
-const WSTOPPED: WaitPidFlag = WUNTRACED;
-
 #[derive(Eq, PartialEq, Clone, Copy, Debug)]
 /// Contains the status returned by the `wait` and `waitpid` functions.
 pub enum WaitStatus {
