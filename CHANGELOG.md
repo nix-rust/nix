@@ -23,19 +23,18 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#614](https://github.com/nix-rust/nix/pull/614))
 
 ### Changed
-- Changed ioctl! write to take argument by value instead as pointer.
-  If you need a pointer as argument, use ioctl! write buf.
+- Changed `ioctl!(write ...)` to take argument by value instead as pointer.
+  If you need a pointer as argument, use `ioctl!(write buf ...)`.
   ([#626](https://github.com/nix-rust/nix/pull/626))
 - Marked `sys::mman::{ mmap, munmap, madvise, munlock, msync }` as unsafe.
   ([#559](https://github.com/nix-rust/nix/pull/559))
-- Minimum supported Rust version is now 1.13
+- Minimum supported Rust version is now 1.13.
 - Removed `revents` argument from `PollFd::new()` as it's an output argument and
   will be overwritten regardless of value.
   ([#542](https://github.com/nix-rust/nix/pull/542))
 - Changed type signature of `sys::select::FdSet::contains` to make `self`
   immutable ([#564](https://github.com/nix-rust/nix/pull/564))
-- Changed type of `sched::sched_setaffinity`'s `pid` argument to `pid_t`
-- Introduced wrapper types for gid_t, pid_t, and uid_t as Gid, Pid, and Uid
+- Introduced wrapper types for `gid_t`, `pid_t`, and `uid_t` as `Gid`, `Pid`, and `Uid`
   respectively. Various functions have been changed to use these new types as
   arguments. ([#629](https://github.com/nix-rust/nix/pull/629))
 - Promoted all Android targets to Tier 2 support
@@ -44,7 +43,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#561](https://github.com/nix-rust/nix/pull/561))
 
 ### Removed
-- Removed io::Error from nix::Error and conversion from nix::Error to Errno
+- Removed `io::Error` from `nix::Error` and the conversion from `nix::Error` to `Errno`
   ([#614](https://github.com/nix-rust/nix/pull/614))
 
 ### Fixed
@@ -75,7 +74,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Added `::nix::sys::termios::BaudRate` enum to provide portable baudrate
   values. ([#518](https://github.com/nix-rust/nix/pull/518))
 - Added a new `WaitStatus::PtraceEvent` to support ptrace events on Linux
-  and Android ([([#438](https://github.com/nix-rust/nix/pull/438))
+  and Android ([#438](https://github.com/nix-rust/nix/pull/438))
 - Added support for POSIX AIO
   ([#483](https://github.com/nix-rust/nix/pull/483))
   ([#506](https://github.com/nix-rust/nix/pull/506))
@@ -111,7 +110,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Added `ppoll` in `::nix::poll`
   ([#520](https://github.com/nix-rust/nix/pull/520))
 - Added support for getting and setting pipe size with fcntl(2) on Linux
-  ([#540](https://github.com/nix-rust/nix/pull/540)
+  ([#540](https://github.com/nix-rust/nix/pull/540))
 
 ### Changed
 - `::nix::sys::termios::{cfgetispeed, cfsetispeed, cfgetospeed, cfsetospeed}`
