@@ -113,12 +113,3 @@ macro_rules! iow {
 macro_rules! iorw {
     ($ty:expr, $nr:expr, $sz:expr) => (ioc!($crate::sys::ioctl::READ | $crate::sys::ioctl::WRITE, $ty, $nr, $sz))
 }
-
-#[doc(hidden)]
-pub const IN: u32 = (WRITE as u32) << DIRSHIFT;
-#[doc(hidden)]
-pub const OUT: u32 = (READ as u32) << DIRSHIFT;
-#[doc(hidden)]
-pub const INOUT: u32 = ((READ|WRITE) as u32) << DIRSHIFT;
-#[doc(hidden)]
-pub const SIZE_MASK: u32 = SIZEMASK << SIZESHIFT;
