@@ -21,7 +21,7 @@ pub struct KEvent {
 #[cfg(any(target_os = "openbsd", target_os = "freebsd",
           target_os = "dragonfly", target_os = "macos",
           target_os = "ios"))]
-type type_of_udata = *mut ::c_void;
+type type_of_udata = *mut libc::c_void;
 #[cfg(any(target_os = "openbsd", target_os = "freebsd",
           target_os = "dragonfly", target_os = "macos",
           target_os = "ios"))]
@@ -127,7 +127,7 @@ libc_bitflags!(
         #[cfg(any(target_os = "macos", target_os = "ios"))]
         NOTE_EXITSTATUS,
         NOTE_EXTEND,
-        #[cfg(any(target_os = "macos", 
+        #[cfg(any(target_os = "macos",
                   target_os = "ios",
                   target_os = "freebsd",
                   target_os = "dragonfly"))]
