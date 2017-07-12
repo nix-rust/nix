@@ -77,6 +77,7 @@ use std::path::{Path, PathBuf};
 use std::os::unix::ffi::OsStrExt;
 use std::fmt;
 use std::error;
+use std::io::{Error as IOError, ErrorKind as IOErrorKind};
 use libc::PATH_MAX;
 
 /// Nix Result Type
@@ -92,6 +93,8 @@ pub type Result<T> = result::Result<T, Error>;
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Error {
     Sys(errno::Errno),
+    /// Error received from one of std::io's functions; it does not have a corresponding errno.
+    IOError(IOErrorKind),
     InvalidPath,
     /// The operation involved a conversion to Rust's native String type, which failed because the
     /// string did not contain all valid UTF-8.
@@ -124,6 +127,17 @@ impl From<errno::Errno> for Error {
     fn from(errno: errno::Errno) -> Error { Error::from_errno(errno) }
 }
 
+impl From<IOError> for Error {
+    fn from(io_error: IOError) -> Error {
+        match io_error.raw_os_error() {
+            // we try to convert it to an errno
+            Some(errno) => Error::Sys(Errno::from_i32(errno)),
+            // if not successful, we keep the IOError to retain the context of the error
+            None => Error::IOError(io_error.kind())
+        }
+    }
+}
+
 impl From<std::string::FromUtf8Error> for Error {
     fn from(_: std::string::FromUtf8Error) -> Error { Error::InvalidUtf8 }
 }
@@ -135,6 +149,7 @@ impl error::Error for Error {
             &Error::InvalidUtf8 => "Invalid UTF-8 string",
             &Error::UnsupportedOperation => "Unsupported Operation",
             &Error::Sys(ref errno) => errno.desc(),
+            &Error::IOError(_) => "IO Error"
         }
     }
 }
@@ -146,6 +161,7 @@ impl fmt::Display for Error {
             &Error::InvalidUtf8 => write!(f, "Invalid UTF-8 string"),
             &Error::UnsupportedOperation => write!(f, "Unsupported Operation"),
             &Error::Sys(errno) => write!(f, "{:?}: {}", errno, errno.desc()),
+            &Error::IOError(io_error_kind) => write!(f, "IO Error: {:?}", io_error_kind)
         }
     }
 }

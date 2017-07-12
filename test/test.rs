@@ -22,6 +22,7 @@ mod test_pty;
 mod test_sendfile;
 mod test_stat;
 mod test_unistd;
+mod test_errors;
 
 use nixtest::assert_size_of;
 use std::os::unix::io::RawFd;
