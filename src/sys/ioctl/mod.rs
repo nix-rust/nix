@@ -140,14 +140,55 @@
 //! There is also a `bad none`, `bad write_int`/`bad write_ptr`, and `bad readwrite` variant that work
 //! similar to the standard `none`, `write_int`/`write_ptr`, and `readwrite` variants.
 //!
+//! Working with arrays
+//! --------------------
+//!
+//! Some `ioctl`s work with entire arrays of elements. These are supported by the `*_buf` variants in
+//! the `ioctl!` macro which can be used by specifying `read_buf`, `write_buf`, and
+//! `readwrite_buf`. Note that there are no "bad" versions for working with buffers. The generated
+//! functions include a `len` argument to specify the number of elements (where the type of each
+//! element is specified in the macro).
+//!
+//! Again looking to the SPI `ioctl`s on Linux for an example, there is a `SPI_IOC_MESSAGE` `ioctl`
+//! that queues up multiple SPI messages by writing an entire array of `spi_ioc_transfer` structs.
+//! `linux/spi/spidev.h` defines a macro to calculate the `ioctl` number like:
+//!
+//! ```C
+//! #define SPI_IOC_MAGIC 'k'
+//! #define SPI_MSGSIZE(N) ...
+//! #define SPI_IOC_MESSAGE(N) _IOW(SPI_IOC_MAGIC, 0, char[SPI_MSGSIZE(N)])
+//! ```
+//!
+//! The `SPI_MSGSIZE(N)` calculation is already handled by the `ioctl!` macro, so all that's
+//! needed to define this `ioctl` is:
+//!
 //! ```
 //! # #[macro_use] extern crate nix;
-//! # use nix::libc::TIOCEXCL as TIOCEXCL;
-//! ioctl!(bad none tiocexcl with TIOCEXCL);
+//! const SPI_IOC_MAGIC: u8 = b'k'; // Defined in linux/spi/spidev.h
+//! const SPI_IOC_TYPE_MESSAGE: u8 = 0;
+//! # pub struct spi_ioc_transfer(u64);
+//! ioctl!(write_buf spi_transfer with SPI_IOC_MAGIC, SPI_IOC_TYPE_MESSAGE; spi_ioc_transfer);
 //! # fn main() {}
 //! ```
 //!
-//! More examples on using `ioctl!` can be found in the [rust-spidev crate](https://github.com/rust-embedded/rust-spidev).
+//! This generates a function like:
+//!
+//! ```
+//! # #[macro_use] extern crate nix;
+//! # use std::mem;
+//! # use nix::{Errno, libc, Result};
+//! # use nix::libc::c_int as c_int;
+//! # const SPI_IOC_MAGIC: u8 = b'k';
+//! # const SPI_IOC_TYPE_MESSAGE: u8 = 0;
+//! # pub struct spi_ioc_transfer(u64);
+//! pub unsafe fn spi_message(fd: c_int, data: &mut [spi_ioc_transfer]) -> Result<c_int> {
+//!     let res = libc::ioctl(fd,
+//!                           iow!(SPI_IOC_MAGIC, SPI_IOC_TYPE_MESSAGE, data.len() * mem::size_of::<spi_ioc_transfer>()),
+//!                           data);
+//!     Errno::result(res)
+//! }
+//! # fn main() {}
+//! ```
 //!
 //! Finding ioctl documentation
 //! ---------------------------
@@ -255,28 +296,25 @@ macro_rules! ioctl {
             convert_ioctl_res!($crate::libc::ioctl(fd, iorw!($ioty, $nr, ::std::mem::size_of::<$ty>()) as $crate::sys::ioctl::ioctl_num_type, data))
         }
         );
-    (read buf $name:ident with $ioty:expr, $nr:expr; $ty:ty) => (
+    (read_buf $name:ident with $ioty:expr, $nr:expr; $ty:ty) => (
         pub unsafe fn $name(fd: $crate::libc::c_int,
-                            data: *mut $ty,
-                            len: usize)
+                            data: &mut [$ty])
                             -> $crate::Result<$crate::libc::c_int> {
-            convert_ioctl_res!($crate::libc::ioctl(fd, ior!($ioty, $nr, len) as $crate::sys::ioctl::ioctl_num_type, data))
+            convert_ioctl_res!($crate::libc::ioctl(fd, ior!($ioty, $nr, data.len() * ::std::mem::size_of::<$ty>()) as $crate::sys::ioctl::ioctl_num_type, data))
         }
         );
-    (write buf $name:ident with $ioty:expr, $nr:expr; $ty:ty) => (
+    (write_buf $name:ident with $ioty:expr, $nr:expr; $ty:ty) => (
         pub unsafe fn $name(fd: $crate::libc::c_int,
-                            data: *const $ty,
-                            len: usize)
+                            data: &[$ty])
                             -> $crate::Result<$crate::libc::c_int> {
-            convert_ioctl_res!($crate::libc::ioctl(fd, iow!($ioty, $nr, len) as $crate::sys::ioctl::ioctl_num_type, data))
+            convert_ioctl_res!($crate::libc::ioctl(fd, iow!($ioty, $nr, data.len() * ::std::mem::size_of::<$ty>()) as $crate::sys::ioctl::ioctl_num_type, data))
         }
         );
-    (readwrite buf $name:ident with $ioty:expr, $nr:expr; $ty:ty) => (
+    (readwrite_buf $name:ident with $ioty:expr, $nr:expr; $ty:ty) => (
         pub unsafe fn $name(fd: $crate::libc::c_int,
-                            data: *mut $ty,
-                            len: usize)
+                            data: &mut [$ty])
                             -> $crate::Result<$crate::libc::c_int> {
-            convert_ioctl_res!($crate::libc::ioctl(fd, iorw!($ioty, $nr, len) as $crate::sys::ioctl::ioctl_num_type, data))
+            convert_ioctl_res!($crate::libc::ioctl(fd, iorw!($ioty, $nr, data.len() * ::std::mem::size_of::<$ty>()) as $crate::sys::ioctl::ioctl_num_type, data))
         }
         );
 }
