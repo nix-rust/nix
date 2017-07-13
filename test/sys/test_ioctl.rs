@@ -13,11 +13,14 @@ ioctl!(write_ptr write_ptr_u8 with 0, 0; u8);
 ioctl!(write_ptr write_ptr_u32 with 0, 0; u32);
 ioctl!(write_ptr write_ptr_u64 with 0, 0; u64);
 ioctl!(readwrite readwrite_test with 0, 0; u64);
-ioctl!(read buf readbuf_test with 0, 0; u32);
-ioctl!(write buf writebuf_test_u8 with 0, 0; u8);
-ioctl!(write buf writebuf_test_u32 with 0, 0; u32);
-ioctl!(write buf writebuf_test_u64 with 0, 0; u64);
-ioctl!(readwrite buf readwritebuf_test with 0, 0; u32);
+ioctl!(read_buf readbuf_test with 0, 0; u32);
+const SPI_IOC_MAGIC: u8 = b'k';
+const SPI_IOC_MESSAGE: u8 = 0;
+ioctl!(write_buf writebuf_test_consts with SPI_IOC_MAGIC, SPI_IOC_MESSAGE; u8);
+ioctl!(write_buf writebuf_test_u8 with 0, 0; u8);
+ioctl!(write_buf writebuf_test_u32 with 0, 0; u32);
+ioctl!(write_buf writebuf_test_u64 with 0, 0; u64);
+ioctl!(readwrite_buf readwritebuf_test with 0, 0; u32);
 
 // See C code for source of values for op calculations (does NOT work for mips/powerpc):
 // https://gist.github.com/posborne/83ea6880770a1aef332e
