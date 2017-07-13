@@ -1,8 +1,11 @@
 #![allow(dead_code)]
 
 // Simple tests to ensure macro generated fns compile
-ioctl!(bad do_bad with 0x1234);
-ioctl!(bad none do_bad_none with 0x1234);
+ioctl!(bad none do_bad with 0x1234);
+ioctl!(bad read do_bad_read with 0x1234; u16);
+ioctl!(bad write_int do_bad_write_int with 0x1234);
+ioctl!(bad write_ptr do_bad_write_ptr with 0x1234; u8);
+ioctl!(bad readwrite do_bad_readwrite with 0x1234; u32);
 ioctl!(none do_none with 0, 0);
 ioctl!(read read_test with 0, 0; u32);
 ioctl!(write_int write_ptr_int with 0, 0);
