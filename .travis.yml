@@ -4,7 +4,6 @@
 dist: trusty
 language: rust
 services: docker
-sudo: required
 
 env:
   global:
@@ -96,16 +95,6 @@ matrix:
     # Testing beta on main targets
     - env: TARGET=x86_64-unknown-linux-gnu
       rust: beta
-    - env: TARGET=x86_64-apple-darwin
-      os: osx
-      rust: beta
-
-    # Testing nightly on main targets (allowed to fail)
-    - env: TARGET=x86_64-unknown-linux-gnu
-      rust: nightly
-    - env: TARGET=x86_64-apple-darwin
-      os: osx
-      rust: nightly
 
   allow_failures:
     # Planning to add these targets, but they can fail for now
@@ -117,14 +106,6 @@ matrix:
       rust: 1.14.0
     - env: TARGET=s390x-unknown-linux-gnu
       rust: 1.13.0
-
-    # Failures for nightlies may be because of compiler bugs, so don't fail the
-    # build if these fail.
-    - env: TARGET=x86_64-unknown-linux-gnu
-      rust: nightly
-    - env: TARGET=x86_64-apple-darwin
-      os: osx
-      rust: nightly
 
 before_install: set -e
 
