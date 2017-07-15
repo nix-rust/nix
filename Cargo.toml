@@ -48,3 +48,7 @@ test = true
 name = "test-mount"
 path = "test/test_mount.rs"
 harness = false
+
+[[test]]
+name = "test-ptymaster-drop"
+path = "test/test_ptymaster_drop.rs"

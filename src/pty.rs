@@ -45,10 +45,17 @@ impl IntoRawFd for PtyMaster {
 
 impl Drop for PtyMaster {
     fn drop(&mut self) {
-        // Errors when closing are ignored because we don't actually know if the file descriptor
-        // was closed. If we retried, it's possible that descriptor was reallocated in the mean
-        // time and the wrong file descriptor could be closed.
-        let _ = ::unistd::close(self.0);
+        // On drop, we ignore errors like EINTR and EIO because there's no clear
+        // way to handle them, we can't return anything, and (on FreeBSD at
+        // least) the file descriptor is deallocated in these cases.  However,
+        // we must panic on EBADF, because it is always an error to close an
+        // invalid file descriptor.  That frequently indicates a double-close
+        // condition, which can cause confusing errors for future I/O
+        // operations.
+        let e = ::unistd::close(self.0);
+        if e == Err(Error::Sys(Errno::EBADF)) {
+            panic!("Closing an invalid file descriptor!");
+        };
     }
 }
 
