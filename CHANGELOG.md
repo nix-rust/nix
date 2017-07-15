@@ -6,6 +6,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Added `sysconf`, `pathconf`, and `fpathconf`
+  ([#630](https://github.com/nix-rust/nix/pull/630)
 - Added `sys::signal::SigAction::{ flags, mask, handler}`
   ([#611](https://github.com/nix-rust/nix/pull/609)
 - Added `nix::sys::pthread::pthread_self`

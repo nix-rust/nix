@@ -1,9 +1,11 @@
 //! Safe wrappers around functions found in libc "unistd.h" header
 
+use errno;
 use {Errno, Error, Result, NixPath};
 use fcntl::{fcntl, OFlag, O_CLOEXEC, FD_CLOEXEC};
 use fcntl::FcntlArg::F_SETFD;
-use libc::{self, c_char, c_void, c_int, c_uint, size_t, pid_t, off_t, uid_t, gid_t, mode_t};
+use libc::{self, c_char, c_void, c_int, c_long, c_uint, size_t, pid_t, off_t,
+           uid_t, gid_t, mode_t};
 use std::mem;
 use std::ffi::{CString, CStr, OsString, OsStr};
 use std::os::unix::ffi::{OsStringExt, OsStrExt};
@@ -935,6 +937,622 @@ pub fn mkstemp<P: ?Sized + NixPath>(template: &P) -> Result<(RawFd, PathBuf)> {
     let pathname = OsString::from_vec(path);
     try!(Errno::result(fd));
     Ok((fd, PathBuf::from(pathname)))
+}
+
+/// Variable names for `pathconf`
+///
+/// Nix uses the same naming convention for these variables as the
+/// [getconf(1)](http://pubs.opengroup.org/onlinepubs/9699919799/utilities/getconf.html) utility.
+/// That is, `PathconfVar` variables have the same name as the abstract
+/// variables  shown in the `pathconf(2)` man page.  Usually, it's the same as
+/// the C variable name without the leading `_PC_`.
+///
+/// POSIX 1003.1-2008 standardizes all of these variables, but some OSes choose
+/// not to implement variables that cannot change at runtime.
+///
+/// # References
+///
+/// - [pathconf(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/pathconf.html)
+/// - [limits.h](http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/limits.h.html)
+/// - [unistd.h](http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/unistd.h.html)
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[repr(i32)]
+pub enum PathconfVar {
+    #[cfg(any(target_os = "dragonfly", target_os = "freebsd", target_os = "linux",
+              target_os = "netbsd", target_os = "openbsd"))]
+    /// Minimum number of bits needed to represent, as a signed integer value,
+    /// the maximum size of a regular file allowed in the specified directory.
+    FILESIZEBITS = libc::_PC_FILESIZEBITS,
+    /// Maximum number of links to a single file.
+    LINK_MAX = libc::_PC_LINK_MAX,
+    /// Maximum number of bytes in a terminal canonical input line.
+    MAX_CANON = libc::_PC_MAX_CANON,
+    /// Minimum number of bytes for which space is available in a terminal input
+    /// queue; therefore, the maximum number of bytes a conforming application
+    /// may require to be typed as input before reading them.
+    MAX_INPUT = libc::_PC_MAX_INPUT,
+    /// Maximum number of bytes in a filename (not including the terminating
+    /// null of a filename string).
+    NAME_MAX = libc::_PC_NAME_MAX,
+    /// Maximum number of bytes the implementation will store as a pathname in a
+    /// user-supplied buffer of unspecified size, including the terminating null
+    /// character. Minimum number the implementation will accept as the maximum
+    /// number of bytes in a pathname.
+    PATH_MAX = libc::_PC_PATH_MAX,
+    /// Maximum number of bytes that is guaranteed to be atomic when writing to
+    /// a pipe.
+    PIPE_BUF = libc::_PC_PIPE_BUF,
+    #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "linux",
+              target_os = "netbsd", target_os = "openbsd"))]
+    /// Symbolic links can be created.
+    POSIX2_SYMLINKS = libc::_PC_2_SYMLINKS,
+    #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd",
+              target_os = "linux", target_os = "openbsd"))]
+    /// Minimum number of bytes of storage actually allocated for any portion of
+    /// a file.
+    POSIX_ALLOC_SIZE_MIN = libc::_PC_ALLOC_SIZE_MIN,
+    #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd",
+              target_os = "linux", target_os = "openbsd"))]
+    /// Recommended increment for file transfer sizes between the
+    /// `POSIX_REC_MIN_XFER_SIZE` and `POSIX_REC_MAX_XFER_SIZE` values.
+    POSIX_REC_INCR_XFER_SIZE = libc::_PC_REC_INCR_XFER_SIZE,
+    #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd",
+              target_os = "linux", target_os = "openbsd"))]
+    /// Maximum recommended file transfer size.
+    POSIX_REC_MAX_XFER_SIZE = libc::_PC_REC_MAX_XFER_SIZE,
+    #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd",
+              target_os = "linux", target_os = "openbsd"))]
+    /// Minimum recommended file transfer size.
+    POSIX_REC_MIN_XFER_SIZE = libc::_PC_REC_MIN_XFER_SIZE,
+    #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd",
+              target_os = "linux", target_os = "openbsd"))]
+    ///  Recommended file transfer buffer alignment.
+    POSIX_REC_XFER_ALIGN = libc::_PC_REC_XFER_ALIGN,
+    #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd",
+              target_os = "linux", target_os = "netbsd", target_os = "openbsd"))]
+    /// Maximum number of bytes in a symbolic link.
+    SYMLINK_MAX = libc::_PC_SYMLINK_MAX,
+    /// The use of `chown` and `fchown` is restricted to a process with
+    /// appropriate privileges, and to changing the group ID of a file only to
+    /// the effective group ID of the process or to one of its supplementary
+    /// group IDs.
+    _POSIX_CHOWN_RESTRICTED = libc::_PC_CHOWN_RESTRICTED,
+    /// Pathname components longer than {NAME_MAX} generate an error.
+    _POSIX_NO_TRUNC = libc::_PC_NO_TRUNC,
+    /// This symbol shall be defined to be the value of a character that shall
+    /// disable terminal special character handling.
+    _POSIX_VDISABLE = libc::_PC_VDISABLE,
+    #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd",
+              target_os = "linux", target_os = "openbsd"))]
+    /// Asynchronous input or output operations may be performed for the
+    /// associated file.
+    _POSIX_ASYNC_IO = libc::_PC_ASYNC_IO,
+    #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd",
+              target_os = "linux", target_os = "openbsd"))]
+    /// Prioritized input or output operations may be performed for the
+    /// associated file.
+    _POSIX_PRIO_IO = libc::_PC_PRIO_IO,
+    #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd",
+              target_os = "linux", target_os = "netbsd", target_os = "openbsd"))]
+    /// Synchronized input or output operations may be performed for the
+    /// associated file.
+    _POSIX_SYNC_IO = libc::_PC_SYNC_IO,
+    #[cfg(any(target_os = "dragonfly", target_os = "openbsd"))]
+    /// The resolution in nanoseconds for all file timestamps.
+    _POSIX_TIMESTAMP_RESOLUTION = libc::_PC_TIMESTAMP_RESOLUTION
+}
+
+/// Like `pathconf`, but works with file descriptors instead of paths (see
+/// [fpathconf(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/pathconf.html))
+///
+/// # Parameters
+///
+/// - `fd`:   The file descriptor whose variable should be interrogated
+/// - `var`:  The pathconf variable to lookup
+///
+/// # Returns
+///
+/// - `Ok(Some(x))`: the variable's limit (for limit variables) or its
+///     implementation level (for option variables).  Implementation levels are
+///     usually a decimal-coded date, such as 200112 for POSIX 2001.12
+/// - `Ok(None)`: the variable has no limit (for limit variables) or is
+///     unsupported (for option variables)
+/// - `Err(x)`: an error occurred
+pub fn fpathconf(fd: RawFd, var: PathconfVar) -> Result<Option<c_long>> {
+    let raw = unsafe {
+        Errno::clear();
+        libc::fpathconf(fd, var as c_int)
+    };
+    if raw == -1 {
+        if errno::errno() == 0 {
+            Ok(None)
+        } else {
+            Err(Error::Sys(Errno::last()))
+        }
+    } else {
+        Ok(Some(raw))
+    }
+}
+
+/// Get path-dependent configurable system variables (see
+/// [pathconf(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/pathconf.html))
+///
+/// Returns the value of a path-dependent configurable system variable.  Most
+/// supported variables also have associated compile-time constants, but POSIX
+/// allows their values to change at runtime.  There are generally two types of
+/// `pathconf` variables: options and limits.  See [pathconf(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/pathconf.html) for more details.
+///
+/// # Parameters
+///
+/// - `path`: Lookup the value of `var` for this file or directory
+/// - `var`:  The `pathconf` variable to lookup
+///
+/// # Returns
+///
+/// - `Ok(Some(x))`: the variable's limit (for limit variables) or its
+///     implementation level (for option variables).  Implementation levels are
+///     usually a decimal-coded date, such as 200112 for POSIX 2001.12
+/// - `Ok(None)`: the variable has no limit (for limit variables) or is
+///     unsupported (for option variables)
+/// - `Err(x)`: an error occurred
+pub fn pathconf<P: ?Sized + NixPath>(path: &P, var: PathconfVar) -> Result<Option<c_long>> {
+    let raw = try!(path.with_nix_path(|cstr| {
+        unsafe {
+            Errno::clear();
+            libc::pathconf(cstr.as_ptr(), var as c_int)
+        }
+    }));
+    if raw == -1 {
+        if errno::errno() == 0 {
+            Ok(None)
+        } else {
+            Err(Error::Sys(Errno::last()))
+        }
+    } else {
+        Ok(Some(raw))
+    }
+}
+
+/// Variable names for `sysconf`
+///
+/// Nix uses the same naming convention for these variables as the
+/// [getconf(1)](http://pubs.opengroup.org/onlinepubs/9699919799/utilities/getconf.html) utility.
+/// That is, `SysconfVar` variables have the same name as the abstract variables
+/// shown in the `sysconf(3)` man page.  Usually, it's the same as the C
+/// variable name without the leading `_SC_`.
+///
+/// All of these symbols are standardized by POSIX 1003.1-2008, but haven't been
+/// implemented by all platforms.
+///
+/// # References
+///
+/// - [sysconf(3)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/sysconf.html)
+/// - [unistd.h](http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/unistd.h.html)
+/// - [limits.h](http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/limits.h.html)
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[repr(i32)]
+pub enum SysconfVar {
+    /// Maximum number of I/O operations in a single list I/O call supported by
+    /// the implementation.
+    AIO_LISTIO_MAX = libc::_SC_AIO_LISTIO_MAX,
+    /// Maximum number of outstanding asynchronous I/O operations supported by
+    /// the implementation.
+    AIO_MAX = libc::_SC_AIO_MAX,
+    #[cfg(any(target_os="android", target_os="dragonfly", target_os="freebsd",
+              target_os = "ios", target_os="linux", target_os = "macos",
+              target_os="openbsd"))]
+    /// The maximum amount by which a process can decrease its asynchronous I/O
+    /// priority level from its own scheduling priority.
+    AIO_PRIO_DELTA_MAX = libc::_SC_AIO_PRIO_DELTA_MAX,
+    /// Maximum length of argument to the exec functions including environment data.
+    ARG_MAX = libc::_SC_ARG_MAX,
+    /// Maximum number of functions that may be registered with `atexit`.
+    ATEXIT_MAX = libc::_SC_ATEXIT_MAX,
+    /// Maximum obase values allowed by the bc utility.
+    BC_BASE_MAX = libc::_SC_BC_BASE_MAX,
+    /// Maximum number of elements permitted in an array by the bc utility.
+    BC_DIM_MAX = libc::_SC_BC_DIM_MAX,
+    /// Maximum scale value allowed by the bc utility.
+    BC_SCALE_MAX = libc::_SC_BC_SCALE_MAX,
+    /// Maximum length of a string constant accepted by the bc utility.
+    BC_STRING_MAX = libc::_SC_BC_STRING_MAX,
+    /// Maximum number of simultaneous processes per real user ID.
+    CHILD_MAX = libc::_SC_CHILD_MAX,
+    // _SC_CLK_TCK is obsolete
+    /// Maximum number of weights that can be assigned to an entry of the
+    /// LC_COLLATE order keyword in the locale definition file
+    COLL_WEIGHTS_MAX = libc::_SC_COLL_WEIGHTS_MAX,
+    /// Maximum number of timer expiration overruns.
+    DELAYTIMER_MAX = libc::_SC_DELAYTIMER_MAX,
+    /// Maximum number of expressions that can be nested within parentheses by
+    /// the expr utility.
+    EXPR_NEST_MAX = libc::_SC_EXPR_NEST_MAX,
+    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
+              target_os="linux", target_os = "macos", target_os="netbsd",
+              target_os="openbsd"))]
+    /// Maximum length of a host name (not including the terminating null) as
+    /// returned from the `gethostname` function
+    HOST_NAME_MAX = libc::_SC_HOST_NAME_MAX,
+    /// Maximum number of iovec structures that one process has available for
+    /// use with `readv` or `writev`.
+    IOV_MAX = libc::_SC_IOV_MAX,
+    /// Unless otherwise noted, the maximum length, in bytes, of a utility's
+    /// input line (either standard input or another file), when the utility is
+    /// described as processing text files. The length includes room for the
+    /// trailing <newline>.
+    LINE_MAX = libc::_SC_LINE_MAX,
+    /// Maximum length of a login name.
+    LOGIN_NAME_MAX = libc::_SC_LOGIN_NAME_MAX,
+    /// Maximum number of simultaneous supplementary group IDs per process.
+    NGROUPS_MAX = libc::_SC_NGROUPS_MAX,
+    /// Initial size of `getgrgid_r` and `getgrnam_r` data buffers
+    GETGR_R_SIZE_MAX = libc::_SC_GETGR_R_SIZE_MAX,
+    /// Initial size of `getpwuid_r` and `getpwnam_r` data buffers
+    GETPW_R_SIZE_MAX = libc::_SC_GETPW_R_SIZE_MAX,
+    /// The maximum number of open message queue descriptors a process may hold.
+    MQ_OPEN_MAX = libc::_SC_MQ_OPEN_MAX,
+    /// The maximum number of message priorities supported by the implementation.
+    MQ_PRIO_MAX = libc::_SC_MQ_PRIO_MAX,
+    /// A value one greater than the maximum value that the system may assign to
+    /// a newly-created file descriptor.
+    OPEN_MAX = libc::_SC_OPEN_MAX,
+    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
+              target_os="linux", target_os = "macos", target_os="openbsd"))]
+    /// The implementation supports the Advisory Information option. 
+    _POSIX_ADVISORY_INFO = libc::_SC_ADVISORY_INFO,
+    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
+              target_os="linux", target_os = "macos", target_os="netbsd",
+              target_os="openbsd"))]
+    /// The implementation supports barriers.
+    _POSIX_BARRIERS = libc::_SC_BARRIERS,
+    /// The implementation supports asynchronous input and output.
+    _POSIX_ASYNCHRONOUS_IO = libc::_SC_ASYNCHRONOUS_IO,
+    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
+              target_os="linux", target_os = "macos", target_os="netbsd",
+              target_os="openbsd"))]
+    /// The implementation supports clock selection.
+    _POSIX_CLOCK_SELECTION = libc::_SC_CLOCK_SELECTION,
+    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
+              target_os="linux", target_os = "macos", target_os="netbsd",
+              target_os="openbsd"))]
+    /// The implementation supports the Process CPU-Time Clocks option.
+    _POSIX_CPUTIME = libc::_SC_CPUTIME,
+    /// The implementation supports the File Synchronization option. 
+    _POSIX_FSYNC = libc::_SC_FSYNC,
+    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
+              target_os="linux", target_os = "macos", target_os="openbsd"))]
+    /// The implementation supports the IPv6 option.
+    _POSIX_IPV6 = libc::_SC_IPV6,
+    /// The implementation supports job control.
+    _POSIX_JOB_CONTROL = libc::_SC_JOB_CONTROL,
+    /// The implementation supports memory mapped Files.
+    _POSIX_MAPPED_FILES = libc::_SC_MAPPED_FILES,
+    /// The implementation supports the Process Memory Locking option.
+    _POSIX_MEMLOCK = libc::_SC_MEMLOCK,
+    /// The implementation supports the Range Memory Locking option.
+    _POSIX_MEMLOCK_RANGE = libc::_SC_MEMLOCK_RANGE,
+    /// The implementation supports memory protection.
+    _POSIX_MEMORY_PROTECTION = libc::_SC_MEMORY_PROTECTION,
+    /// The implementation supports the Message Passing option.
+    _POSIX_MESSAGE_PASSING = libc::_SC_MESSAGE_PASSING,
+    /// The implementation supports the Monotonic Clock option.
+    _POSIX_MONOTONIC_CLOCK = libc::_SC_MONOTONIC_CLOCK,
+    #[cfg(any(target_os="android", target_os="dragonfly", target_os="freebsd",
+              target_os = "ios", target_os="linux", target_os = "macos",
+              target_os="openbsd"))]
+    /// The implementation supports the Prioritized Input and Output option.
+    _POSIX_PRIORITIZED_IO = libc::_SC_PRIORITIZED_IO,
+    /// The implementation supports the Process Scheduling option.
+    _POSIX_PRIORITY_SCHEDULING = libc::_SC_PRIORITY_SCHEDULING,
+    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
+              target_os="linux", target_os = "macos", target_os="openbsd"))]
+    /// The implementation supports the Raw Sockets option.
+    _POSIX_RAW_SOCKETS = libc::_SC_RAW_SOCKETS,
+    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
+              target_os="linux", target_os = "macos", target_os="netbsd",
+              target_os="openbsd"))]
+    /// The implementation supports read-write locks.
+    _POSIX_READER_WRITER_LOCKS = libc::_SC_READER_WRITER_LOCKS,
+    #[cfg(any(target_os = "android", target_os="dragonfly", target_os="freebsd",
+              target_os = "ios", target_os="linux", target_os = "macos",
+              target_os = "openbsd"))]
+    /// The implementation supports realtime signals.
+    _POSIX_REALTIME_SIGNALS = libc::_SC_REALTIME_SIGNALS,
+    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
+              target_os="linux", target_os = "macos", target_os="netbsd",
+              target_os="openbsd"))]
+    /// The implementation supports the Regular Expression Handling option.
+    _POSIX_REGEXP = libc::_SC_REGEXP,
+    /// Each process has a saved set-user-ID and a saved set-group-ID.
+    _POSIX_SAVED_IDS = libc::_SC_SAVED_IDS,
+    /// The implementation supports semaphores.
+    _POSIX_SEMAPHORES = libc::_SC_SEMAPHORES,
+    /// The implementation supports the Shared Memory Objects option.
+    _POSIX_SHARED_MEMORY_OBJECTS = libc::_SC_SHARED_MEMORY_OBJECTS,
+    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
+              target_os="linux", target_os = "macos", target_os="netbsd",
+              target_os="openbsd"))]
+    /// The implementation supports the POSIX shell.
+    _POSIX_SHELL = libc::_SC_SHELL,
+    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
+              target_os="linux", target_os = "macos", target_os="netbsd",
+              target_os="openbsd"))]
+    /// The implementation supports the Spawn option.
+    _POSIX_SPAWN = libc::_SC_SPAWN,
+    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
+              target_os="linux", target_os = "macos", target_os="netbsd",
+              target_os="openbsd"))]
+    /// The implementation supports spin locks.
+    _POSIX_SPIN_LOCKS = libc::_SC_SPIN_LOCKS,
+    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
+              target_os="linux", target_os = "macos", target_os="openbsd"))]
+    /// The implementation supports the Process Sporadic Server option.
+    _POSIX_SPORADIC_SERVER = libc::_SC_SPORADIC_SERVER,
+    #[cfg(any(target_os = "ios", target_os="linux", target_os = "macos",
+              target_os="openbsd"))]
+    _POSIX_SS_REPL_MAX = libc::_SC_SS_REPL_MAX,
+    /// The implementation supports the Synchronized Input and Output option.
+    _POSIX_SYNCHRONIZED_IO = libc::_SC_SYNCHRONIZED_IO,
+    /// The implementation supports the Thread Stack Address Attribute option.
+    _POSIX_THREAD_ATTR_STACKADDR = libc::_SC_THREAD_ATTR_STACKADDR,
+    /// The implementation supports the Thread Stack Size Attribute option.
+    _POSIX_THREAD_ATTR_STACKSIZE = libc::_SC_THREAD_ATTR_STACKSIZE,
+    #[cfg(any(target_os = "ios", target_os="linux", target_os = "macos",
+              target_os="netbsd", target_os="openbsd"))]
+    /// The implementation supports the Thread CPU-Time Clocks option.
+    _POSIX_THREAD_CPUTIME = libc::_SC_THREAD_CPUTIME,
+    /// The implementation supports the Non-Robust Mutex Priority Inheritance
+    /// option.
+    _POSIX_THREAD_PRIO_INHERIT = libc::_SC_THREAD_PRIO_INHERIT,
+    /// The implementation supports the Non-Robust Mutex Priority Protection option.
+    _POSIX_THREAD_PRIO_PROTECT = libc::_SC_THREAD_PRIO_PROTECT,
+    /// The implementation supports the Thread Execution Scheduling option.
+    _POSIX_THREAD_PRIORITY_SCHEDULING = libc::_SC_THREAD_PRIORITY_SCHEDULING,
+    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
+              target_os="linux", target_os = "macos", target_os="netbsd",
+              target_os="openbsd"))]
+    /// The implementation supports the Thread Process-Shared Synchronization
+    /// option.
+    _POSIX_THREAD_PROCESS_SHARED = libc::_SC_THREAD_PROCESS_SHARED,
+    #[cfg(any(target_os="dragonfly", target_os="linux", target_os="openbsd"))]
+    /// The implementation supports the Robust Mutex Priority Inheritance option.
+    _POSIX_THREAD_ROBUST_PRIO_INHERIT = libc::_SC_THREAD_ROBUST_PRIO_INHERIT,
+    #[cfg(any(target_os="dragonfly", target_os="linux", target_os="openbsd"))]
+    /// The implementation supports the Robust Mutex Priority Protection option.
+    _POSIX_THREAD_ROBUST_PRIO_PROTECT = libc::_SC_THREAD_ROBUST_PRIO_PROTECT,
+    /// The implementation supports thread-safe functions.
+    _POSIX_THREAD_SAFE_FUNCTIONS = libc::_SC_THREAD_SAFE_FUNCTIONS,
+    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
+              target_os="linux", target_os = "macos", target_os="openbsd"))]
+    /// The implementation supports the Thread Sporadic Server option.
+    _POSIX_THREAD_SPORADIC_SERVER = libc::_SC_THREAD_SPORADIC_SERVER,
+    /// The implementation supports threads.
+    _POSIX_THREADS = libc::_SC_THREADS,
+    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
+              target_os="linux", target_os = "macos", target_os="openbsd"))]
+    /// The implementation supports timeouts.
+    _POSIX_TIMEOUTS = libc::_SC_TIMEOUTS,
+    /// The implementation supports timers. 
+    _POSIX_TIMERS = libc::_SC_TIMERS,
+    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
+              target_os="linux", target_os = "macos", target_os="openbsd"))]
+    /// The implementation supports the Trace option.
+    _POSIX_TRACE = libc::_SC_TRACE,
+    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
+              target_os="linux", target_os = "macos", target_os="openbsd"))]
+    /// The implementation supports the Trace Event Filter option.
+    _POSIX_TRACE_EVENT_FILTER = libc::_SC_TRACE_EVENT_FILTER,
+    #[cfg(any(target_os = "ios", target_os="linux", target_os = "macos",
+              target_os="openbsd"))]
+    _POSIX_TRACE_EVENT_NAME_MAX = libc::_SC_TRACE_EVENT_NAME_MAX,
+    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
+              target_os="linux", target_os = "macos", target_os="openbsd"))]
+    /// The implementation supports the Trace Inherit option.
+    _POSIX_TRACE_INHERIT = libc::_SC_TRACE_INHERIT,
+    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
+              target_os="linux", target_os = "macos", target_os="openbsd"))]
+    /// The implementation supports the Trace Log option.
+    _POSIX_TRACE_LOG = libc::_SC_TRACE_LOG,
+    #[cfg(any(target_os = "ios", target_os="linux", target_os = "macos",
+              target_os="openbsd"))]
+    _POSIX_TRACE_NAME_MAX = libc::_SC_TRACE_NAME_MAX,
+    #[cfg(any(target_os = "ios", target_os="linux", target_os = "macos",
+              target_os="openbsd"))]
+    _POSIX_TRACE_SYS_MAX = libc::_SC_TRACE_SYS_MAX,
+    #[cfg(any(target_os = "ios", target_os="linux", target_os = "macos",
+              target_os="openbsd"))]
+    _POSIX_TRACE_USER_EVENT_MAX = libc::_SC_TRACE_USER_EVENT_MAX,
+    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
+              target_os="linux", target_os = "macos", target_os="openbsd"))]
+    /// The implementation supports the Typed Memory Objects option.
+    _POSIX_TYPED_MEMORY_OBJECTS = libc::_SC_TYPED_MEMORY_OBJECTS,
+    /// Integer value indicating version of this standard (C-language binding)
+    /// to which the implementation conforms. For implementations conforming to
+    /// POSIX.1-2008, the value shall be 200809L.
+    _POSIX_VERSION = libc::_SC_VERSION,
+    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
+              target_os="linux", target_os = "macos", target_os="netbsd",
+              target_os="openbsd"))]
+    /// The implementation provides a C-language compilation environment with
+    /// 32-bit `int`, `long`, `pointer`, and `off_t` types.
+    _POSIX_V6_ILP32_OFF32 = libc::_SC_V6_ILP32_OFF32,
+    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
+              target_os="linux", target_os = "macos", target_os="netbsd",
+              target_os="openbsd"))]
+    /// The implementation provides a C-language compilation environment with
+    /// 32-bit `int`, `long`, and pointer types and an `off_t` type using at
+    /// least 64 bits.
+    _POSIX_V6_ILP32_OFFBIG = libc::_SC_V6_ILP32_OFFBIG,
+    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
+              target_os="linux", target_os = "macos", target_os="netbsd",
+              target_os="openbsd"))]
+    /// The implementation provides a C-language compilation environment with
+    /// 32-bit `int` and 64-bit `long`, `pointer`, and `off_t` types.
+    _POSIX_V6_LP64_OFF64 = libc::_SC_V6_LP64_OFF64,
+    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
+              target_os="linux", target_os = "macos", target_os="netbsd",
+              target_os="openbsd"))]
+    /// The implementation provides a C-language compilation environment with an
+    /// `int` type using at least 32 bits and `long`, pointer, and `off_t` types
+    /// using at least 64 bits.
+    _POSIX_V6_LPBIG_OFFBIG = libc::_SC_V6_LPBIG_OFFBIG,
+    /// The implementation supports the C-Language Binding option.
+    _POSIX2_C_BIND = libc::_SC_2_C_BIND,
+    /// The implementation supports the C-Language Development Utilities option.
+    _POSIX2_C_DEV = libc::_SC_2_C_DEV,
+    /// The implementation supports the Terminal Characteristics option.
+    _POSIX2_CHAR_TERM = libc::_SC_2_CHAR_TERM,
+    /// The implementation supports the FORTRAN Development Utilities option.
+    _POSIX2_FORT_DEV = libc::_SC_2_FORT_DEV,
+    /// The implementation supports the FORTRAN Runtime Utilities option.
+    _POSIX2_FORT_RUN = libc::_SC_2_FORT_RUN,
+    /// The implementation supports the creation of locales by the localedef
+    /// utility.
+    _POSIX2_LOCALEDEF = libc::_SC_2_LOCALEDEF,
+    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
+              target_os="linux", target_os = "macos", target_os="netbsd",
+              target_os="openbsd"))]
+    /// The implementation supports the Batch Environment Services and Utilities
+    /// option.
+    _POSIX2_PBS = libc::_SC_2_PBS,
+    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
+              target_os="linux", target_os = "macos", target_os="netbsd",
+              target_os="openbsd"))]
+    /// The implementation supports the Batch Accounting option.
+    _POSIX2_PBS_ACCOUNTING = libc::_SC_2_PBS_ACCOUNTING,
+    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
+              target_os="linux", target_os = "macos", target_os="netbsd",
+              target_os="openbsd"))]
+    /// The implementation supports the Batch Checkpoint/Restart option.
+    _POSIX2_PBS_CHECKPOINT = libc::_SC_2_PBS_CHECKPOINT,
+    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
+              target_os="linux", target_os = "macos", target_os="netbsd",
+              target_os="openbsd"))]
+    /// The implementation supports the Locate Batch Job Request option.
+    _POSIX2_PBS_LOCATE = libc::_SC_2_PBS_LOCATE,
+    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
+              target_os="linux", target_os = "macos", target_os="netbsd",
+              target_os="openbsd"))]
+    /// The implementation supports the Batch Job Message Request option.
+    _POSIX2_PBS_MESSAGE = libc::_SC_2_PBS_MESSAGE,
+    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
+              target_os="linux", target_os = "macos", target_os="netbsd",
+              target_os="openbsd"))]
+    /// The implementation supports the Track Batch Job Request option.
+    _POSIX2_PBS_TRACK = libc::_SC_2_PBS_TRACK,
+    /// The implementation supports the Software Development Utilities option.
+    _POSIX2_SW_DEV = libc::_SC_2_SW_DEV,
+    /// The implementation supports the User Portability Utilities option.
+    _POSIX2_UPE = libc::_SC_2_UPE,
+    /// Integer value indicating version of the Shell and Utilities volume of
+    /// POSIX.1 to which the implementation conforms.
+    _POSIX2_VERSION = libc::_SC_2_VERSION,
+    /// The size of a system page in bytes.
+    ///
+    /// POSIX also defines an alias named `PAGESIZE`, but Rust does not allow two
+    /// enum constants to have the same value, so nix omits `PAGESIZE`.
+    PAGE_SIZE = libc::_SC_PAGE_SIZE,
+    PTHREAD_DESTRUCTOR_ITERATIONS = libc::_SC_THREAD_DESTRUCTOR_ITERATIONS,
+    PTHREAD_KEYS_MAX = libc::_SC_THREAD_KEYS_MAX,
+    PTHREAD_STACK_MIN = libc::_SC_THREAD_STACK_MIN,
+    PTHREAD_THREADS_MAX = libc::_SC_THREAD_THREADS_MAX,
+    RE_DUP_MAX = libc::_SC_RE_DUP_MAX,
+    #[cfg(any(target_os="android", target_os="dragonfly", target_os="freebsd",
+              target_os = "ios", target_os="linux", target_os = "macos",
+              target_os="openbsd"))]
+    RTSIG_MAX = libc::_SC_RTSIG_MAX,
+    SEM_NSEMS_MAX = libc::_SC_SEM_NSEMS_MAX,
+    #[cfg(any(target_os="android", target_os="dragonfly", target_os="freebsd",
+              target_os = "ios", target_os="linux", target_os = "macos",
+              target_os="openbsd"))]
+    SEM_VALUE_MAX = libc::_SC_SEM_VALUE_MAX,
+    #[cfg(any(target_os = "android", target_os="dragonfly", target_os="freebsd",
+              target_os = "ios", target_os="linux", target_os = "macos",
+              target_os = "openbsd"))]
+    SIGQUEUE_MAX = libc::_SC_SIGQUEUE_MAX,
+    STREAM_MAX = libc::_SC_STREAM_MAX,
+    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
+              target_os="linux", target_os = "macos", target_os="netbsd",
+              target_os="openbsd"))]
+    SYMLOOP_MAX = libc::_SC_SYMLOOP_MAX,
+    TIMER_MAX = libc::_SC_TIMER_MAX,
+    TTY_NAME_MAX = libc::_SC_TTY_NAME_MAX,
+    TZNAME_MAX = libc::_SC_TZNAME_MAX,
+    #[cfg(any(target_os="android", target_os="dragonfly", target_os="freebsd",
+              target_os = "ios", target_os="linux", target_os = "macos",
+              target_os="openbsd"))]
+    /// The implementation supports the X/Open Encryption Option Group.
+    _XOPEN_CRYPT = libc::_SC_XOPEN_CRYPT,
+    #[cfg(any(target_os="android", target_os="dragonfly", target_os="freebsd",
+              target_os = "ios", target_os="linux", target_os = "macos",
+              target_os="openbsd"))]
+    /// The implementation supports the Issue 4, Version 2 Enhanced
+    /// Internationalization Option Group.
+    _XOPEN_ENH_I18N = libc::_SC_XOPEN_ENH_I18N,
+    #[cfg(any(target_os="android", target_os="dragonfly", target_os="freebsd",
+              target_os = "ios", target_os="linux", target_os = "macos",
+              target_os="openbsd"))]
+    _XOPEN_LEGACY = libc::_SC_XOPEN_LEGACY,
+    #[cfg(any(target_os="android", target_os="dragonfly", target_os="freebsd",
+              target_os = "ios", target_os="linux", target_os = "macos",
+              target_os="openbsd"))]
+    /// The implementation supports the X/Open Realtime Option Group.
+    _XOPEN_REALTIME = libc::_SC_XOPEN_REALTIME,
+    #[cfg(any(target_os="android", target_os="dragonfly", target_os="freebsd",
+              target_os = "ios", target_os="linux", target_os = "macos",
+              target_os="openbsd"))]
+    /// The implementation supports the X/Open Realtime Threads Option Group.
+    _XOPEN_REALTIME_THREADS = libc::_SC_XOPEN_REALTIME_THREADS,
+    /// The implementation supports the Issue 4, Version 2 Shared Memory Option
+    /// Group.
+    _XOPEN_SHM = libc::_SC_XOPEN_SHM,
+    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
+              target_os="linux", target_os = "macos", target_os="openbsd"))]
+    /// The implementation supports the XSI STREAMS Option Group.
+    _XOPEN_STREAMS = libc::_SC_XOPEN_STREAMS,
+    #[cfg(any(target_os="android", target_os="dragonfly", target_os="freebsd",
+              target_os = "ios", target_os="linux", target_os = "macos",
+              target_os="openbsd"))]
+    /// The implementation supports the XSI option
+    _XOPEN_UNIX = libc::_SC_XOPEN_UNIX,
+    #[cfg(any(target_os="android", target_os="dragonfly", target_os="freebsd",
+              target_os = "ios", target_os="linux", target_os = "macos",
+              target_os="openbsd"))]
+    /// Integer value indicating version of the X/Open Portability Guide to
+    /// which the implementation conforms.
+    _XOPEN_VERSION = libc::_SC_XOPEN_VERSION,
+}
+
+/// Get configurable system variables (see
+/// [sysconf(3)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/sysconf.html))
+///
+/// Returns the value of a configurable system variable.  Most supported
+/// variables also have associated compile-time constants, but POSIX
+/// allows their values to change at runtime.  There are generally two types of
+/// sysconf variables: options and limits.  See sysconf(3) for more details.
+///
+/// # Returns
+///
+/// - `Ok(Some(x))`: the variable's limit (for limit variables) or its
+///     implementation level (for option variables).  Implementation levels are
+///     usually a decimal-coded date, such as 200112 for POSIX 2001.12
+/// - `Ok(None)`: the variable has no limit (for limit variables) or is
+///     unsupported (for option variables)
+/// - `Err(x)`: an error occurred
+pub fn sysconf(var: SysconfVar) -> Result<Option<c_long>> {
+    let raw = unsafe {
+        Errno::clear();
+        libc::sysconf(var as c_int)
+    };
+    if raw == -1 {
+        if errno::errno() == 0 {
+            Ok(None)
+        } else {
+            Err(Error::Sys(Errno::last()))
+        }
+    } else {
+        Ok(Some(raw))
+    }
 }
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
