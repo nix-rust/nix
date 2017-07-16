@@ -1,11 +1,27 @@
+use std::io::Write;
 use std::path::Path;
 use std::os::unix::prelude::*;
+use tempfile::tempfile;
 
 use nix::fcntl::{O_RDWR, open};
 use nix::pty::*;
 use nix::sys::stat;
 use nix::sys::termios::*;
 use nix::unistd::{write, close};
+
+/// Regression test for Issue #659
+/// This is the correct way to explicitly close a PtyMaster
+#[test]
+fn test_explicit_close() {
+    let mut f = {
+        let m = posix_openpt(O_RDWR).unwrap();
+        close(m.into_raw_fd()).unwrap();
+        tempfile().unwrap()
+    };
+    // This should work.  But if there's been a double close, then it will
+    // return EBADF
+    f.write(b"whatever").unwrap();
+}
 
 /// Test equivalence of `ptsname` and `ptsname_r`
 #[test]

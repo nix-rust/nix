@@ -670,6 +670,40 @@ pub fn gethostname<'a>(buffer: &'a mut [u8]) -> Result<&'a CStr> {
     })
 }
 
+/// Close a raw file descriptor
+///
+/// Be aware that many Rust types implicitly close-on-drop, including
+/// `std::fs::File`.  Explicitly closing them with this method too can result in
+/// a double-close condition, which can cause confusing `EBADF` errors in
+/// seemingly unrelated code.  Caveat programmer.
+///
+/// # Examples
+///
+/// ```no_run
+/// extern crate tempfile;
+/// extern crate nix;
+///
+/// use std::os::unix::io::AsRawFd;
+/// use nix::unistd::close;
+///
+/// fn main() {
+///     let mut f = tempfile::tempfile().unwrap();
+///     close(f.as_raw_fd()).unwrap();   // Bad!  f will also close on drop!
+/// }
+/// ```
+///
+/// ```rust
+/// extern crate tempfile;
+/// extern crate nix;
+///
+/// use std::os::unix::io::IntoRawFd;
+/// use nix::unistd::close;
+///
+/// fn main() {
+///     let mut f = tempfile::tempfile().unwrap();
+///     close(f.into_raw_fd()).unwrap(); // Good.  into_raw_fd consumes f
+/// }
+/// ```
 pub fn close(fd: RawFd) -> Result<()> {
     let res = unsafe { libc::close(fd) };
     Errno::result(res).map(drop)
