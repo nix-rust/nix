@@ -1596,9 +1596,6 @@ mod linux {
     use {Errno, Result, NixPath};
     use super::{Uid, Gid};
 
-    #[cfg(feature = "execvpe")]
-    use std::ffi::CString;
-
     pub fn pivot_root<P1: ?Sized + NixPath, P2: ?Sized + NixPath>(
             new_root: &P1, put_old: &P2) -> Result<()> {
         let res = try!(try!(new_root.with_nix_path(|new_root| {
@@ -1642,24 +1639,5 @@ mod linux {
         let res = unsafe { libc::setresgid(rgid.into(), egid.into(), sgid.into()) };
 
         Errno::result(res).map(drop)
-    }
-
-    #[inline]
-    #[cfg(feature = "execvpe")]
-    pub fn execvpe(filename: &CString, args: &[CString], env: &[CString]) -> Result<()> {
-        use std::ptr;
-        use libc::c_char;
-
-        let mut args_p: Vec<*const c_char> = args.iter().map(|s| s.as_ptr()).collect();
-        args_p.push(ptr::null());
-
-        let mut env_p: Vec<*const c_char> = env.iter().map(|s| s.as_ptr()).collect();
-        env_p.push(ptr::null());
-
-        unsafe {
-            super::ffi::execvpe(filename.as_ptr(), args_p.as_ptr(), env_p.as_ptr())
-        };
-
-        Err(Error::Sys(Errno::last()))
     }
 }

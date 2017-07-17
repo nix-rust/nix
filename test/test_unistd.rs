@@ -227,10 +227,6 @@ fn test_lseek64() {
 
 execve_test_factory!(test_execve, execve, b"/bin/sh", b"/system/bin/sh");
 
-#[cfg(any(target_os = "linux", target_os = "android"))]
-#[cfg(feature = "execvpe")]
-execve_test_factory!(test_execvpe, execvpe, b"sh", b"sh");
-
 #[test]
 fn test_fpathconf_limited() {
     let f = tempfile().unwrap();
