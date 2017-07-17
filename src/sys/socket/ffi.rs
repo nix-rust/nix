@@ -20,7 +20,10 @@ pub type type_of_cmsg_len = socklen_t;
 #[cfg(target_os = "macos")]
 pub type type_of_cmsg_data = c_uint;
 
-#[cfg(not(target_os = "macos"))]
+#[cfg(target_os = "dragonfly")]
+pub type type_of_cmsg_data = c_int;
+
+#[cfg(not(any(target_os = "macos", target_os = "dragonfly")))]
 pub type type_of_cmsg_data = size_t;
 
 // Private because we don't expose any external functions that operate
