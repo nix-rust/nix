@@ -60,25 +60,62 @@ pub enum SockType {
     Rdm = libc::SOCK_RDM,
 }
 
-// Extra flags - Supported by Linux 2.6.27, normalized on other platforms
 bitflags!(
+    /// Extra flags - Supported by Linux 2.6.27, normalized on other platforms
     pub struct SockFlag: c_int {
         const SOCK_NONBLOCK = 0o0004000;
         const SOCK_CLOEXEC  = 0o2000000;
     }
 );
 
-// Flags for send/recv and their relatives
 libc_bitflags!{
+    /// Flags for send/recv and their relatives
     pub flags MsgFlags: libc::c_int {
+        /// Sends or requests out-of-band data on sockets that support this notion
+        /// (e.g., of type [`Stream`](enum.SockType.html)); the underlying protocol must also
+        /// support out-of-band data.
         MSG_OOB,
+        /// Peeks at an incoming message. The data is treated as unread and the next
+        /// [`recv()`](fn.recv.html)
+        /// or similar function shall still return this data.
         MSG_PEEK,
+        /// Enables nonblocking operation; if the operation would block,
+        /// `EAGAIN` or `EWOULDBLOCK` is returned.  This provides similar
+        /// behavior to setting the `O_NONBLOCK` flag
+        /// (via the [`fcntl`](../../fcntl/fn.fcntl.html)
+        /// `F_SETFL` operation), but differs in that `MSG_DONTWAIT` is a per-
+        /// call option, whereas `O_NONBLOCK` is a setting on the open file
+        /// description (see [open(2)](http://man7.org/linux/man-pages/man2/open.2.html)),
+        /// which will affect all threads in
+        /// the calling process and as well as other processes that hold
+        /// file descriptors referring to the same open file description.
         MSG_DONTWAIT,
+        /// Receive flags: Control Data was discarded (buffer too small)
         MSG_CTRUNC,
+        /// For raw ([`Packet`](addr/enum.AddressFamily.html)), Internet datagram
+        /// (since Linux 2.4.27/2.6.8),
+        /// netlink (since Linux 2.6.22) and UNIX datagram (since Linux 3.4)
+        /// sockets: return the real length of the packet or datagram, even
+        /// when it was longer than the passed buffer. Not implemented for UNIX
+        /// domain ([unix(7)](https://linux.die.net/man/7/unix)) sockets.
+        ///
+        /// For use with Internet stream sockets, see [tcp(7)](https://linux.die.net/man/7/tcp).
         MSG_TRUNC,
+        /// Terminates a record (when this notion is supported, as for
+        /// sockets of type [`SeqPacket`](enum.SockType.html)).
         MSG_EOR,
+        /// This flag specifies that queued errors should be received from
+        /// the socket error queue. (For more details, see
+        /// [recvfrom(2)](https://linux.die.net/man/2/recvfrom))
         #[cfg(any(target_os = "linux", target_os = "android"))]
         MSG_ERRQUEUE,
+        /// Set the `close-on-exec` flag for the file descriptor received via a UNIX domain
+        /// file descriptor using the `SCM_RIGHTS` operation (described in
+        /// [unix(7)](https://linux.die.net/man/7/unix)).
+        /// This flag is useful for the same reasons as the `O_CLOEXEC` flag of
+        /// [open(2)](https://linux.die.net/man/2/open).
+        ///
+        /// Only used in [`recvmsg`](fn.recvmsg.html) function.
         #[cfg(any(target_os = "linux", target_os = "android"))]
         MSG_CMSG_CLOEXEC,
     }
