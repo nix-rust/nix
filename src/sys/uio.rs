@@ -18,7 +18,7 @@ pub fn readv(fd: RawFd, iov: &mut [IoVec<&mut [u8]>]) -> Result<usize> {
     Errno::result(res).map(|r| r as usize)
 }
 
-#[cfg(feature = "preadv_pwritev")]
+#[cfg(target_os = "linux")]
 pub fn pwritev(fd: RawFd, iov: &[IoVec<&[u8]>],
                offset: off_t) -> Result<usize> {
     let res = unsafe {
@@ -28,7 +28,7 @@ pub fn pwritev(fd: RawFd, iov: &[IoVec<&[u8]>],
     Errno::result(res).map(|r| r as usize)
 }
 
-#[cfg(feature = "preadv_pwritev")]
+#[cfg(target_os = "linux")]
 pub fn preadv(fd: RawFd, iov: &mut [IoVec<&mut [u8]>],
               offset: off_t) -> Result<usize> {
     let res = unsafe {
@@ -57,7 +57,7 @@ pub fn pread(fd: RawFd, buf: &mut [u8], offset: off_t) -> Result<usize>{
 }
 
 #[repr(C)]
-pub struct IoVec<T>(libc::iovec, PhantomData<T>); 
+pub struct IoVec<T>(libc::iovec, PhantomData<T>);
 
 impl<T> IoVec<T> {
     #[inline]

@@ -129,7 +129,7 @@ fn test_pread() {
 }
 
 #[test]
-#[cfg(feature = "preadv_pwritev")]
+#[cfg(target_os = "linux")]
 fn test_pwritev() {
     use std::io::Read;
 
@@ -159,7 +159,7 @@ fn test_pwritev() {
 }
 
 #[test]
-#[cfg(feature = "preadv_pwritev")]
+#[cfg(target_os = "linux")]
 fn test_preadv() {
     use std::io::Write;
 
