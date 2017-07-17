@@ -5,11 +5,10 @@ use {Error, Errno, Result};
 use features;
 use fcntl::{fcntl, FD_CLOEXEC, O_NONBLOCK};
 use fcntl::FcntlArg::{F_SETFD, F_SETFL};
-use libc::{c_void, c_int, socklen_t, size_t, pid_t, uid_t, gid_t};
+use libc::{self, c_void, c_int, socklen_t, size_t, pid_t, uid_t, gid_t};
 use std::{mem, ptr, slice};
 use std::os::unix::io::RawFd;
 use sys::uio::IoVec;
-use libc;
 
 mod addr;
 mod ffi;

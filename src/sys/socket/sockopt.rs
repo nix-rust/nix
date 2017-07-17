@@ -1,10 +1,7 @@
 use super::{ffi, GetSockOpt, SetSockOpt};
-use libc;
 use {Errno, Result};
 use sys::time::TimeVal;
-use libc::{c_int, uint8_t, c_void, socklen_t};
-#[cfg(target_os = "linux")]
-use libc::sockaddr_in;
+use libc::{self, c_int, uint8_t, c_void, socklen_t};
 use std::mem;
 use std::os::unix::io::RawFd;
 
@@ -173,7 +170,7 @@ sockopt_impl!(SetOnly, SndBufForce, libc::SOL_SOCKET, libc::SO_SNDBUFFORCE, usiz
 sockopt_impl!(GetOnly, SockType, libc::SOL_SOCKET, libc::SO_TYPE, super::SockType);
 sockopt_impl!(GetOnly, AcceptConn, libc::SOL_SOCKET, libc::SO_ACCEPTCONN, bool);
 #[cfg(any(target_os = "linux", target_os = "android"))]
-sockopt_impl!(GetOnly, OriginalDst, libc::SOL_IP, libc::SO_ORIGINAL_DST, sockaddr_in);
+sockopt_impl!(GetOnly, OriginalDst, libc::SOL_IP, libc::SO_ORIGINAL_DST, libc::sockaddr_in);
 
 /*
  *
