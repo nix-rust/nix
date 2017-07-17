@@ -9,8 +9,7 @@ pub mod epoll;
     target_os = "dragonfly", target_os = "openbsd", target_os = "netbsd"))]
 pub mod event;
 
-// TODO: switch from feature flags to conditional builds
-#[cfg(feature = "eventfd")]
+#[cfg(target_os = "linux")]
 pub mod eventfd;
 
 #[cfg(target_os = "linux")]
