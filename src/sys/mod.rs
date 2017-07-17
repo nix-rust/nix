@@ -23,8 +23,8 @@ pub mod sendfile;
 
 pub mod signal;
 
-#[cfg(any(target_os = "linux", target_os = "android"))]
-#[cfg(feature = "signalfd")]
+// FIXME: Add to Android once libc#671 lands in a release
+#[cfg(target_os = "linux")]
 pub mod signalfd;
 
 pub mod socket;
