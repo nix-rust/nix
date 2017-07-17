@@ -46,10 +46,15 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   Also file system type constants like `nix::sys::statfs::ADFS_SUPER_MAGIC` were removed in favor of the libc equivalent.
   ([#561](https://github.com/nix-rust/nix/pull/561))
 - Revised the termios API including additional tests and documentation and exposed it on iOS. ([#527](https://github.com/nix-rust/nix/pull/527))
+- `eventfd`, `signalfd`, and `pwritev`/`preadv` functionality is now included by default for all
+  supported platforms. ([#681](https://github.com/nix-rust/nix/pull/561))
 
 ### Removed
 - Removed `io::Error` from `nix::Error` and the conversion from `nix::Error` to `Errno`
   ([#614](https://github.com/nix-rust/nix/pull/614))
+- All feature flags have been removed in favor of conditional compilation on supported platforms.
+  `execvpe` is no longer supported, but this was already broken and will be added back in the next
+  release. ([#681](https://github.com/nix-rust/nix/pull/561))
 
 ### Fixed
 - Fixed multiple issues compiling under different archetectures and OSes.
