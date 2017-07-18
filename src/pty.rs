@@ -14,7 +14,8 @@ use {Errno, Result, Error, fcntl};
 
 /// Representation of a master/slave pty pair
 ///
-/// This is returned by `openpty`
+/// This is returned by `openpty`.  Note that this type does *not* implement `Drop`, so the user
+/// must manually close the file descriptors.
 pub struct OpenptyResult {
     pub master: RawFd,
     pub slave: RawFd,

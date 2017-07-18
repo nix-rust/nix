@@ -1,6 +1,7 @@
 use std::os::unix::prelude::*;
+use tempfile::tempfile;
 
-use nix::{Error, fcntl, unistd};
+use nix::{Error, fcntl};
 use nix::errno::Errno;
 use nix::pty::openpty;
 use nix::sys::termios::{self, ECHO, OPOST, OCRNL, Termios, tcgetattr};
@@ -14,22 +15,27 @@ fn write_all(f: RawFd, buf: &[u8]) {
     }
 }
 
+// Test tcgetattr on a terminal
 #[test]
-fn test_tcgetattr() {
-    for fd in 0..5 {
-        let termios = termios::tcgetattr(fd);
-        match unistd::isatty(fd) {
-            // If `fd` is a TTY, tcgetattr must succeed.
-            Ok(true) => assert!(termios.is_ok()),
-            // If it's an invalid file descriptor, tcgetattr should also return
-            // the same error
-            Err(Error::Sys(Errno::EBADF)) => {
-                assert_eq!(termios.err(), Some(Error::Sys(Errno::EBADF)));
-            },
-            // Otherwise it should return any error
-            _ => assert!(termios.is_err())
-        }
-    }
+fn test_tcgetattr_pty() {
+    let pty = openpty(None, None).unwrap();
+    assert!(termios::tcgetattr(pty.master).is_ok());
+    close(pty.master).unwrap();
+    close(pty.slave).unwrap();
+}
+// Test tcgetattr on something that isn't a terminal
+#[test]
+fn test_tcgetattr_enotty() {
+    let file = tempfile().unwrap();
+    assert_eq!(termios::tcgetattr(file.as_raw_fd()).err(),
+               Some(Error::Sys(Errno::ENOTTY)));
+}
+
+// Test tcgetattr on an invalid file descriptor
+#[test]
+fn test_tcgetattr_ebadf() {
+    assert_eq!(termios::tcgetattr(-1).err(),
+               Some(Error::Sys(Errno::EBADF)));
 }
 
 // Test modifying output flags
@@ -41,6 +47,8 @@ fn test_output_flags() {
         assert!(pty.master > 0);
         assert!(pty.slave > 0);
         let termios = tcgetattr(pty.master).unwrap();
+        close(pty.master).unwrap();
+        close(pty.slave).unwrap();
         termios
     };
 
@@ -64,6 +72,8 @@ fn test_output_flags() {
     let mut buf = [0u8; 10];
     ::read_exact(pty.slave, &mut buf);
     let transformed_string = "foofoofoo\n";
+    close(pty.master).unwrap();
+    close(pty.slave).unwrap();
     assert_eq!(&buf, transformed_string.as_bytes());
 }
 
@@ -76,6 +86,8 @@ fn test_local_flags() {
         assert!(pty.master > 0);
         assert!(pty.slave > 0);
         let termios = tcgetattr(pty.master).unwrap();
+        close(pty.master).unwrap();
+        close(pty.slave).unwrap();
         termios
     };
 
@@ -102,6 +114,8 @@ fn test_local_flags() {
     // Try to read from the master, which should not have anything as echoing was disabled.
     let mut buf = [0u8; 10];
     let read = read(pty.master, &mut buf).unwrap_err();
+    close(pty.master).unwrap();
+    close(pty.slave).unwrap();
     assert_eq!(read, Error::Sys(Errno::EAGAIN));
 }
 
