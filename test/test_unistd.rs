@@ -244,7 +244,7 @@ fn test_fpathconf_limited() {
 #[test]
 fn test_pathconf_limited() {
     // AFAIK, PATH_MAX is limited on all platforms, so it makes a good test
-    let path_max = pathconf(".", PathconfVar::PATH_MAX);
+    let path_max = pathconf("/", PathconfVar::PATH_MAX);
     assert!(path_max.expect("pathconf failed").expect("PATH_MAX is unlimited") > 0);
 }
 

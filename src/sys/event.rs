@@ -339,7 +339,7 @@ fn test_struct_kevent() {
     assert!(expected.filter == actual.filter() as type_of_event_filter);
     assert!(expected.flags == actual.flags().bits());
     assert!(expected.fflags == actual.fflags().bits());
-    assert!(expected.data == actual.data());
+    assert!(expected.data == actual.data() as type_of_data);
     assert!(expected.udata == actual.udata() as type_of_udata);
     assert!(mem::size_of::<libc::kevent>() == mem::size_of::<KEvent>());
 }
