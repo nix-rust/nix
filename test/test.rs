@@ -25,7 +25,6 @@ mod test_unistd;
 
 use nixtest::assert_size_of;
 use std::os::unix::io::RawFd;
-use std::sync::Mutex;
 use nix::unistd::read;
 
 /// Helper function analogous to std::io::Read::read_exact, but for `RawFD`s
@@ -36,17 +35,6 @@ fn read_exact(f: RawFd, buf: &mut  [u8]) {
         let (_, remaining) = buf.split_at_mut(len);
         len += read(f, remaining).unwrap();
     }
-}
-
-lazy_static! {
-    /// Any test that changes the process's current working directory must grab
-    /// this mutex
-    pub static ref CWD_MTX: Mutex<()> = Mutex::new(());
-    /// Any test that creates child processes must grab this mutex, regardless
-    /// of what it does with those children.
-    pub static ref FORK_MTX: Mutex<()> = Mutex::new(());
-    /// Any test that registers a SIGUSR2 handler must grab this mutex
-    pub static ref SIGUSR2_MTX: Mutex<()> = Mutex::new(());
 }
 
 #[test]

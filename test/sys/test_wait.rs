@@ -6,9 +6,6 @@ use libc::exit;
 
 #[test]
 fn test_wait_signal() {
-    #[allow(unused_variables)]
-    let m = ::FORK_MTX.lock().expect("Mutex got poisoned by another test");
-
     match fork() {
       Ok(Child) => pause().unwrap_or(()),
       Ok(Parent { child }) => {
@@ -22,9 +19,6 @@ fn test_wait_signal() {
 
 #[test]
 fn test_wait_exit() {
-    #[allow(unused_variables)]
-    let m = ::FORK_MTX.lock().expect("Mutex got poisoned by another test");
-
     match fork() {
       Ok(Child) => unsafe { exit(12); },
       Ok(Parent { child }) => {
