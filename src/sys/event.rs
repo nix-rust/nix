@@ -18,17 +18,16 @@ pub struct KEvent {
     kevent: libc::kevent,
 }
 
-#[cfg(any(target_os = "openbsd", target_os = "freebsd",
-          target_os = "dragonfly", target_os = "macos",
-          target_os = "ios"))]
+#[cfg(any(target_os = "dragonfly", target_os = "freebsd",
+          target_os = "ios", target_os = "macos",
+          target_os = "openbsd"))]
 type type_of_udata = *mut libc::c_void;
-#[cfg(any(target_os = "openbsd", target_os = "freebsd",
-          target_os = "dragonfly", target_os = "macos",
-          target_os = "ios"))]
+#[cfg(any(target_os = "dragonfly", target_os = "freebsd",
+          target_os = "ios", target_os = "macos"))]
 type type_of_data = libc::intptr_t;
 #[cfg(any(target_os = "netbsd"))]
 type type_of_udata = intptr_t;
-#[cfg(any(target_os = "netbsd"))]
+#[cfg(any(target_os = "netbsd", target_os = "openbsd"))]
 type type_of_data = libc::int64_t;
 
 #[cfg(not(target_os = "netbsd"))]
@@ -78,10 +77,11 @@ pub enum EventFilter {
     EVFILT_TIMER = libc::EVFILT_TIMER,
 }
 
-#[cfg(any(target_os = "macos", target_os = "ios",
-          target_os = "freebsd", target_os = "dragonfly"))]
+#[cfg(any(target_os = "dragonfly", target_os = "freebsd",
+          target_os = "ios", target_os = "macos",
+          target_os = "openbsd"))]
 pub type type_of_event_flag = u16;
-#[cfg(any(target_os = "netbsd", target_os = "openbsd"))]
+#[cfg(any(target_os = "netbsd"))]
 pub type type_of_event_flag = u32;
 libc_bitflags!{
     pub flags EventFlag: type_of_event_flag {
@@ -89,6 +89,14 @@ libc_bitflags!{
         EV_CLEAR,
         EV_DELETE,
         EV_DISABLE,
+        // No released version of OpenBSD supports EV_DISPATCH or EV_RECEIPT.
+        // These have been commited to the -current branch though and are
+        // expected to be part of the OpenBSD 6.2 release in Nov 2017.
+        // See: https://marc.info/?l=openbsd-tech&m=149621427511219&w=2
+        // https://github.com/rust-lang/libc/pull/613
+        #[cfg(any(target_os = "dragonfly", target_os = "freebsd",
+                  target_os = "ios", target_os = "macos",
+                  target_os = "netbsd"))]
         EV_DISPATCH,
         #[cfg(target_os = "freebsd")]
         EV_DROP,
@@ -105,7 +113,9 @@ libc_bitflags!{
         EV_OOBAND,
         #[cfg(any(target_os = "macos", target_os = "ios"))]
         EV_POLL,
-        #[cfg(not(target_os = "openbsd"))]
+        #[cfg(any(target_os = "dragonfly", target_os = "freebsd",
+                  target_os = "ios", target_os = "macos",
+                  target_os = "netbsd"))]
         EV_RECEIPT,
         EV_SYSFLAGS,
     }
@@ -315,13 +325,13 @@ fn test_struct_kevent() {
 
     let expected = libc::kevent{ident: 0xdeadbeef,
                                 filter: libc::EVFILT_READ,
-                                flags: libc::EV_DISPATCH | libc::EV_ADD,
+                                flags: libc::EV_ONESHOT | libc::EV_ADD,
                                 fflags: libc::NOTE_CHILD | libc::NOTE_EXIT,
                                 data: 0x1337,
                                 udata: udata as type_of_udata};
     let actual = KEvent::new(0xdeadbeef,
                              EventFilter::EVFILT_READ,
-                             EV_DISPATCH | EV_ADD,
+                             EV_ONESHOT | EV_ADD,
                              NOTE_CHILD | NOTE_EXIT,
                              0x1337,
                              udata);
