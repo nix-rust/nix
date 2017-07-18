@@ -9,16 +9,18 @@ use std::ffi::CString;
 use std::fs::File;
 use std::io::Write;
 use std::os::unix::prelude::*;
-use std::env::current_dir;
 use tempfile::tempfile;
 use tempdir::TempDir;
 use libc::off_t;
+use std::process::exit;
 
 #[test]
 fn test_fork_and_waitpid() {
+    #[allow(unused_variables)]
+    let m = ::FORK_MTX.lock().expect("Mutex got poisoned by another test");
     let pid = fork();
     match pid {
-        Ok(Child) => {} // ignore child here
+        Ok(Child) => exit(0),
         Ok(Parent { child }) => {
             // assert that child was created and pid > 0
             let child_raw: ::libc::pid_t = child.into();
@@ -29,10 +31,10 @@ fn test_fork_and_waitpid() {
                 Ok(WaitStatus::Exited(pid_t, _)) =>  assert!(pid_t == child),
 
                 // panic, must never happen
-                Ok(_) => panic!("Child still alive, should never happen"),
+                s @ Ok(_) => panic!("Child exited {:?}, should never happen", s),
 
                 // panic, waitpid should never fail
-                Err(_) => panic!("Error: waitpid Failed")
+                Err(s) => panic!("Error: waitpid returned Err({:?}", s)
             }
 
         },
@@ -43,9 +45,12 @@ fn test_fork_and_waitpid() {
 
 #[test]
 fn test_wait() {
+    // Grab FORK_MTX so wait doesn't reap a different test's child process
+    #[allow(unused_variables)]
+    let m = ::FORK_MTX.lock().expect("Mutex got poisoned by another test");
     let pid = fork();
     match pid {
-        Ok(Child) => {} // ignore child here
+        Ok(Child) => exit(0),
         Ok(Parent { child }) => {
             let wait_status = wait();
 
@@ -100,6 +105,8 @@ macro_rules! execve_test_factory(
     ($test_name:ident, $syscall:ident, $unix_sh:expr, $android_sh:expr) => (
     #[test]
     fn $test_name() {
+        #[allow(unused_variables)]
+        let m = ::FORK_MTX.lock().expect("Mutex got poisoned by another test");
         // The `exec`d process will write to `writer`, and we'll read that
         // data from `reader`.
         let (reader, writer) = pipe().unwrap();
@@ -145,40 +152,43 @@ macro_rules! execve_test_factory(
 
 #[test]
 fn test_fchdir() {
+    // fchdir changes the process's cwd
+    #[allow(unused_variables)]
+    let m = ::CWD_MTX.lock().expect("Mutex got poisoned by another test");
+
     let tmpdir = TempDir::new("test_fchdir").unwrap();
     let tmpdir_path = tmpdir.path().canonicalize().unwrap();
     let tmpdir_fd = File::open(&tmpdir_path).unwrap().into_raw_fd();
-    let olddir_path = getcwd().unwrap();
-    let olddir_fd = File::open(&olddir_path).unwrap().into_raw_fd();
 
     assert!(fchdir(tmpdir_fd).is_ok());
     assert_eq!(getcwd().unwrap(), tmpdir_path);
 
-    assert!(fchdir(olddir_fd).is_ok());
-    assert_eq!(getcwd().unwrap(), olddir_path);
-
-    assert!(close(olddir_fd).is_ok());
     assert!(close(tmpdir_fd).is_ok());
 }
 
 #[test]
 fn test_getcwd() {
-    let tmp_dir = TempDir::new("test_getcwd").unwrap();
-    assert!(chdir(tmp_dir.path()).is_ok());
-    assert_eq!(getcwd().unwrap(), current_dir().unwrap());
+    // chdir changes the process's cwd
+    #[allow(unused_variables)]
+    let m = ::CWD_MTX.lock().expect("Mutex got poisoned by another test");
 
-    // make path 500 chars longer so that buffer doubling in getcwd kicks in.
-    // Note: One path cannot be longer than 255 bytes (NAME_MAX)
-    // whole path cannot be longer than PATH_MAX (usually 4096 on linux, 1024 on macos)
-    let mut inner_tmp_dir = tmp_dir.path().to_path_buf();
+    let tmpdir = TempDir::new("test_getcwd").unwrap();
+    let tmpdir_path = tmpdir.path().canonicalize().unwrap();
+    assert!(chdir(&tmpdir_path).is_ok());
+    assert_eq!(getcwd().unwrap(), tmpdir_path);
+
+    // make path 500 chars longer so that buffer doubling in getcwd
+    // kicks in.  Note: One path cannot be longer than 255 bytes
+    // (NAME_MAX) whole path cannot be longer than PATH_MAX (usually
+    // 4096 on linux, 1024 on macos)
+    let mut inner_tmp_dir = tmpdir_path.to_path_buf();
     for _ in 0..5 {
         let newdir = iter::repeat("a").take(100).collect::<String>();
-        //inner_tmp_dir = inner_tmp_dir.join(newdir).path();
         inner_tmp_dir.push(newdir);
         assert!(mkdir(inner_tmp_dir.as_path(), stat::S_IRWXU).is_ok());
     }
     assert!(chdir(inner_tmp_dir.as_path()).is_ok());
-    assert_eq!(getcwd().unwrap(), current_dir().unwrap());
+    assert_eq!(getcwd().unwrap(), inner_tmp_dir.as_path());
 }
 
 #[test]

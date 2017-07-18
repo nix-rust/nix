@@ -16,43 +16,27 @@ use nix::Error::Sys;
 
 #[test]
 fn test_mq_send_and_receive() {
-
     const MSG_SIZE: c_long =  32;
     let attr =  MqAttr::new(0, 10, MSG_SIZE, 0);
-    let mq_name_in_parent = &CString::new(b"/a_nix_test_queue".as_ref()).unwrap();
-    let mqd_in_parent = mq_open(mq_name_in_parent, O_CREAT | O_WRONLY, S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH, Some(&attr)).unwrap();
-    let msg_to_send = "msg_1".as_bytes();
+    let mq_name= &CString::new(b"/a_nix_test_queue".as_ref()).unwrap();
 
-    mq_send(mqd_in_parent, msg_to_send, 1).unwrap();
+    let mqd0 = mq_open(mq_name, O_CREAT | O_WRONLY,
+                       S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH,
+                       Some(&attr)).unwrap();
+    let msg_to_send = "msg_1";
+    mq_send(mqd0, msg_to_send.as_bytes(), 1).unwrap();
 
-    let (reader, writer) = pipe().unwrap();
+    let mqd1 = mq_open(mq_name, O_CREAT | O_RDONLY,
+                       S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH,
+                       Some(&attr)).unwrap();
+    let mut buf = [0u8; 32];
+    let mut prio = 0u32;
+    let len = mq_receive(mqd1, &mut buf, &mut prio).unwrap();
+    assert!(prio == 1);
 
-    let pid = fork();
-    match pid {
-        Ok(Child) => {
-            let mq_name_in_child =  &CString::new(b"/a_nix_test_queue".as_ref()).unwrap();
-            let mqd_in_child = mq_open(mq_name_in_child, O_CREAT | O_RDONLY, S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH, Some(&attr)).unwrap();
-            let mut buf = [0u8; 32];
-            let mut prio = 0u32;
-            mq_receive(mqd_in_child, &mut buf, &mut prio).unwrap();
-            assert!(prio == 1);
-            write(writer, &buf).unwrap();  // pipe result to parent process. Otherwise cargo does not report test failures correctly
-            mq_close(mqd_in_child).unwrap();
-      }
-      Ok(Parent { child }) => {
-          mq_close(mqd_in_parent).unwrap();
-
-          // Wait for the child to exit.
-          waitpid(child, None).unwrap();
-          // Read 1024 bytes.
-          let mut read_buf = [0u8; 32];
-          read(reader, &mut read_buf).unwrap();
-          let message_str = str::from_utf8(&read_buf).unwrap();
-          assert_eq!(&message_str[.. message_str.char_indices().nth(5).unwrap().0], "msg_1");
-      },
-      // panic, fork should never fail unless there is a serious problem with the OS
-      Err(_) => panic!("Error: Fork Failed")
-    }
+    mq_close(mqd1).unwrap();
+    mq_close(mqd0).unwrap();
+    assert_eq!(msg_to_send, str::from_utf8(&buf[0..len]).unwrap());
 }
 
 
