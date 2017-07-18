@@ -5,10 +5,15 @@ ioctl!(bad do_bad with 0x1234);
 ioctl!(bad none do_bad_none with 0x1234);
 ioctl!(none do_none with 0, 0);
 ioctl!(read read_test with 0, 0; u32);
-ioctl!(write write_test with 0, 0; u64);
+ioctl!(write_int write_ptr_int with 0, 0);
+ioctl!(write_ptr write_ptr_u8 with 0, 0; u8);
+ioctl!(write_ptr write_ptr_u32 with 0, 0; u32);
+ioctl!(write_ptr write_ptr_u64 with 0, 0; u64);
 ioctl!(readwrite readwrite_test with 0, 0; u64);
 ioctl!(read buf readbuf_test with 0, 0; u32);
-ioctl!(write buf writebuf_test with 0, 0; u32);
+ioctl!(write buf writebuf_test_u8 with 0, 0; u8);
+ioctl!(write buf writebuf_test_u32 with 0, 0; u32);
+ioctl!(write buf writebuf_test_u64 with 0, 0; u64);
 ioctl!(readwrite buf readwritebuf_test with 0, 0; u32);
 
 // See C code for source of values for op calculations (does NOT work for mips/powerpc):
