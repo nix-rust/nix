@@ -17,12 +17,11 @@ exclude     = [
 
 [features]
 eventfd = []
-execvpe = []
 preadv_pwritev = []
 signalfd = []
 
 [dependencies]
-libc = "0.2.25"
+libc = { git = "https://github.com/rust-lang/libc" } 
 bitflags = "0.9"
 cfg-if = "0.1.0"
 void = "1.0.2"

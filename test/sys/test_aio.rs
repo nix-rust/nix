@@ -8,6 +8,7 @@ use std::io::{Write, Read, Seek, SeekFrom};
 use std::ops::Deref;
 use std::os::unix::io::AsRawFd;
 use std::rc::Rc;
+use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::{thread, time};
 use tempfile::tempfile;
@@ -232,6 +233,8 @@ fn test_write() {
 
 lazy_static! {
     pub static ref SIGNALED: AtomicBool = AtomicBool::new(false);
+    // protects access to SIGUSR2 handlers, not just SIGNALED
+    pub static ref SIGUSR2_MTX: Mutex<()> = Mutex::new(());
 }
 
 extern fn sigfunc(_: c_int) {
@@ -243,8 +246,7 @@ extern fn sigfunc(_: c_int) {
 #[test]
 #[cfg_attr(any(all(target_env = "musl", target_arch = "x86_64"), target_arch = "mips"), ignore)]
 fn test_write_sigev_signal() {
-    #[allow(unused_variables)]
-    let m = ::SIGUSR2_MTX.lock().expect("Mutex got poisoned by another test");
+    let _ = SIGUSR2_MTX.lock().expect("Mutex got poisoned by another test");
     let sa = SigAction::new(SigHandler::Handler(sigfunc),
                             SA_RESETHAND,
                             SigSet::empty());
@@ -374,8 +376,7 @@ fn test_lio_listio_nowait() {
 #[cfg(not(any(target_os = "ios", target_os = "macos")))]
 #[cfg_attr(any(target_arch = "mips", target_env = "musl"), ignore)]
 fn test_lio_listio_signal() {
-    #[allow(unused_variables)]
-    let m = ::SIGUSR2_MTX.lock().expect("Mutex got poisoned by another test");
+    let _ = SIGUSR2_MTX.lock().expect("Mutex got poisoned by another test");
     const INITIAL: &'static [u8] = b"abcdef123456";
     const WBUF: &'static [u8] = b"CDEF";
     let rbuf = Rc::new(vec![0; 4].into_boxed_slice());

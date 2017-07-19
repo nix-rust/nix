@@ -24,6 +24,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   and nix::Error::UnsupportedOperation}`
   ([#614](https://github.com/nix-rust/nix/pull/614))
 - Added `cfmakeraw`, `cfsetspeed`, and `tcgetsid`. ([#527](https://github.com/nix-rust/nix/pull/527))
+- Readded execvpe support, conditional on platform.  libc now provides this for Haiku, Linux, and OpenBSD.
+  ([#683](https://github.com/nix-rust/nix/pull/683))
 
 ### Changed
 - Changed `ioctl!(write ...)` to take argument by value instead as pointer.

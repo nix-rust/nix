@@ -1596,7 +1596,7 @@ mod linux {
     use {Errno, Result, NixPath};
     use super::{Uid, Gid};
 
-    #[cfg(feature = "execvpe")]
+    #[cfg(any(target_os = "haiku", target_os = "linux", target_os = "openbsd"))]
     use std::ffi::CString;
 
     pub fn pivot_root<P1: ?Sized + NixPath, P2: ?Sized + NixPath>(
@@ -1644,8 +1644,14 @@ mod linux {
         Errno::result(res).map(drop)
     }
 
+    /// Replaces the current process image with a new one.
+    /// ([see exec(3)](http://man7.org/linux/man-pages/man3/exec.3.html))
+    ///
+    /// # Errors
+    /// An error is returned if the executable file does not exist, cannot be accessed, or 
+    /// could not be executed otherwise.
     #[inline]
-    #[cfg(feature = "execvpe")]
+    #[cfg(any(target_os = "haiku", target_os = "linux", target_os = "openbsd"))]
     pub fn execvpe(filename: &CString, args: &[CString], env: &[CString]) -> Result<()> {
         use std::ptr;
         use libc::c_char;
@@ -1656,10 +1662,10 @@ mod linux {
         let mut env_p: Vec<*const c_char> = env.iter().map(|s| s.as_ptr()).collect();
         env_p.push(ptr::null());
 
-        unsafe {
-            super::ffi::execvpe(filename.as_ptr(), args_p.as_ptr(), env_p.as_ptr())
+        let res = unsafe {
+            libc::execvpe(filename.as_ptr(), args_p.as_ptr(), env_p.as_ptr())
         };
 
-        Err(Error::Sys(Errno::last()))
+        Errno::result(res).map(drop)
     }
 }
