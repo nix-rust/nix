@@ -60,12 +60,10 @@ pub fn signalfd(fd: RawFd, mask: &SigSet, flags: SfdFlags) -> Result<RawFd> {
 /// # Examples
 ///
 /// ```
-/// use nix::sys::signalfd::*;
-///
+/// # use nix::sys::signalfd::*;
+/// // Set the thread to block the SIGUSR1 signal, otherwise the default handler will be used
 /// let mut mask = SigSet::empty();
-/// mask.add(signal::SIGUSR1).unwrap();
-///
-/// // Block the signal, otherwise the default handler will be invoked instead.
+/// mask.add(signal::SIGUSR1);
 /// mask.thread_block().unwrap();
 ///
 /// // Signals are queued up on the file descriptor
@@ -74,11 +72,9 @@ pub fn signalfd(fd: RawFd, mask: &SigSet, flags: SfdFlags) -> Result<RawFd> {
 /// match sfd.read_signal() {
 ///     // we caught a signal
 ///     Ok(Some(sig)) => (),
-///
 ///     // there were no signals waiting (only happens when the SFD_NONBLOCK flag is set,
 ///     // otherwise the read_signal call blocks)
 ///     Ok(None) => (),
-///
 ///     Err(err) => (), // some error happend
 /// }
 /// ```

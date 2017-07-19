@@ -11,7 +11,7 @@ extern crate nix_test as nixtest;
 
 mod sys;
 mod test_fcntl;
-#[cfg(any(target_os = "linux"))]
+#[cfg(target_os = "linux")]
 mod test_mq;
 mod test_net;
 mod test_nix_path;
@@ -45,8 +45,8 @@ lazy_static! {
     /// Any test that creates child processes must grab this mutex, regardless
     /// of what it does with those children.
     pub static ref FORK_MTX: Mutex<()> = Mutex::new(());
-    /// Any test that registers a SIGUSR2 handler must grab this mutex
-    pub static ref SIGUSR2_MTX: Mutex<()> = Mutex::new(());
+    /// Any test that alters signal handling must grab this mutex.
+    pub static ref SIGNAL_MTX: Mutex<()> = Mutex::new(());
 }
 
 #[test]

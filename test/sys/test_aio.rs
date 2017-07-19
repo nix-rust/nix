@@ -244,7 +244,7 @@ extern fn sigfunc(_: c_int) {
 #[cfg_attr(any(all(target_env = "musl", target_arch = "x86_64"), target_arch = "mips"), ignore)]
 fn test_write_sigev_signal() {
     #[allow(unused_variables)]
-    let m = ::SIGUSR2_MTX.lock().expect("Mutex got poisoned by another test");
+    let m = ::SIGNAL_MTX.lock().expect("Mutex got poisoned by another test");
     let sa = SigAction::new(SigHandler::Handler(sigfunc),
                             SA_RESETHAND,
                             SigSet::empty());
@@ -375,7 +375,7 @@ fn test_lio_listio_nowait() {
 #[cfg_attr(any(target_arch = "mips", target_env = "musl"), ignore)]
 fn test_lio_listio_signal() {
     #[allow(unused_variables)]
-    let m = ::SIGUSR2_MTX.lock().expect("Mutex got poisoned by another test");
+    let m = ::SIGNAL_MTX.lock().expect("Mutex got poisoned by another test");
     const INITIAL: &'static [u8] = b"abcdef123456";
     const WBUF: &'static [u8] = b"CDEF";
     let rbuf = Rc::new(vec![0; 4].into_boxed_slice());

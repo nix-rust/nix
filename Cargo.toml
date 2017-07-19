@@ -15,12 +15,6 @@ exclude     = [
   "test/**/*"
 ]
 
-[features]
-eventfd = []
-execvpe = []
-preadv_pwritev = []
-signalfd = []
-
 [dependencies]
 libc = "0.2.25"
 bitflags = "0.9"
@@ -37,12 +31,6 @@ nix-test = { path = "nix-test", version = "0.0.1" }
 [[test]]
 name = "test"
 path = "test/test.rs"
-
-[[test]]
-name = "test-signalfd"
-path = "test/test_signalfd.rs"
-harness = false
-test = true
 
 [[test]]
 name = "test-mount"

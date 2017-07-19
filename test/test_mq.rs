@@ -8,9 +8,6 @@ use std::ffi::CString;
 use std::str;
 use libc::c_long;
 
-use nix::unistd::{fork, read, write, pipe};
-use nix::unistd::ForkResult::*;
-use nix::sys::wait::*;
 use nix::errno::Errno::*;
 use nix::Error::Sys;
 

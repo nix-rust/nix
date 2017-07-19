@@ -9,8 +9,7 @@ pub mod epoll;
     target_os = "dragonfly", target_os = "openbsd", target_os = "netbsd"))]
 pub mod event;
 
-// TODO: switch from feature flags to conditional builds
-#[cfg(feature = "eventfd")]
+#[cfg(target_os = "linux")]
 pub mod eventfd;
 
 #[cfg(target_os = "linux")]
@@ -24,8 +23,8 @@ pub mod sendfile;
 
 pub mod signal;
 
-#[cfg(any(target_os = "linux", target_os = "android"))]
-#[cfg(feature = "signalfd")]
+// FIXME: Add to Android once libc#671 lands in a release
+#[cfg(target_os = "linux")]
 pub mod signalfd;
 
 pub mod socket;
