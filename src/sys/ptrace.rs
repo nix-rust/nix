@@ -91,18 +91,16 @@ fn ptrace_peek(request: ptrace::PtraceRequest, pid: Pid, addr: *mut c_void, data
     }
 }
 
-/// Function for ptrace requests that return values from the data field. 
+/// Function for ptrace requests that return values from the data field.
 /// Some ptrace get requests populate structs or larger elements than c_long
 /// and therefore use the data field to return values. This function handles these
 /// requests.
 fn ptrace_get_data<T>(request: ptrace::PtraceRequest, pid: Pid) -> Result<T> {
-    // Creates an uninitialized pointer to store result in 
-    let data: Box<T> = Box::new(unsafe { mem::uninitialized() });
-    let data: *mut c_void = unsafe { mem::transmute(data) };
-    ptrace(request, pid, ptr::null_mut(), data)?;
-    // Convert back into the original data format and return unboxed value
-    let data: Box<T> = unsafe { mem::transmute(data) };
-    Ok(*data)
+    // Creates an uninitialized pointer to store result in
+    let data: T = unsafe { mem::uninitialized() };
+    let res = unsafe { ffi::ptrace(request, pid.into(), ptr::null_mut(), &data as *const _ as *const c_void) };
+    Errno::result(res)?;
+    Ok(data)
 }
 
 fn ptrace_other(request: ptrace::PtraceRequest, pid: Pid, addr: *mut c_void, data: *mut c_void) -> Result<c_long> {
@@ -114,7 +112,8 @@ pub fn ptrace_setoptions(pid: Pid, options: ptrace::PtraceOptions) -> Result<()>
     use self::ptrace::*;
     use std::ptr;
 
-    ptrace(PTRACE_SETOPTIONS, pid, ptr::null_mut(), options as *mut c_void).map(drop)
+    let res = unsafe { ffi::ptrace(PTRACE_SETOPTIONS, pid.into(), ptr::null_mut(), options as *mut c_void) };
+    Errno::result(res).map(|_| ())
 }
 
 /// Gets a ptrace event as described by `ptrace(PTRACE_GETEVENTMSG,...)`
