@@ -11,16 +11,17 @@ use std::io::Write;
 use std::os::unix::prelude::*;
 use tempfile::tempfile;
 use tempdir::TempDir;
-use libc::off_t;
-use std::process::exit;
+use libc::{_exit, off_t};
 
 #[test]
 fn test_fork_and_waitpid() {
     #[allow(unused_variables)]
     let m = ::FORK_MTX.lock().expect("Mutex got poisoned by another test");
+
+    // Safe: Child only calls `_exit`, which is signal-safe
     let pid = fork();
     match pid {
-        Ok(Child) => exit(0),
+        Ok(Child) => unsafe { _exit(0) },
         Ok(Parent { child }) => {
             // assert that child was created and pid > 0
             let child_raw: ::libc::pid_t = child.into();
@@ -48,9 +49,11 @@ fn test_wait() {
     // Grab FORK_MTX so wait doesn't reap a different test's child process
     #[allow(unused_variables)]
     let m = ::FORK_MTX.lock().expect("Mutex got poisoned by another test");
+
+    // Safe: Child only calls `_exit`, which is signal-safe
     let pid = fork();
     match pid {
-        Ok(Child) => exit(0),
+        Ok(Child) => unsafe { _exit(0) },
         Ok(Parent { child }) => {
             let wait_status = wait();
 
@@ -111,6 +114,9 @@ macro_rules! execve_test_factory(
         // data from `reader`.
         let (reader, writer) = pipe().unwrap();
 
+        // Safe: Child calls `exit`, `dup`, `close` and the provided `exec*` family function.
+        // NOTE: Technically, this makes the macro unsafe to use because you could pass anything.
+        //       The tests make sure not to do that, though.
         match fork().unwrap() {
             Child => {
                 #[cfg(not(target_os = "android"))]

@@ -2,15 +2,16 @@ use nix::unistd::*;
 use nix::unistd::ForkResult::*;
 use nix::sys::signal::*;
 use nix::sys::wait::*;
-use libc::exit;
+use libc::_exit;
 
 #[test]
 fn test_wait_signal() {
     #[allow(unused_variables)]
     let m = ::FORK_MTX.lock().expect("Mutex got poisoned by another test");
 
+    // Safe: The child only calls `pause` and/or `_exit`, which are async-signal-safe.
     match fork() {
-      Ok(Child) => pause().unwrap_or(()),
+      Ok(Child) => pause().unwrap_or_else(|_| unsafe { _exit(123) }),
       Ok(Parent { child }) => {
           kill(child, Some(SIGKILL)).ok().expect("Error: Kill Failed");
           assert_eq!(waitpid(child, None), Ok(WaitStatus::Signaled(child, SIGKILL, false)));
@@ -25,8 +26,9 @@ fn test_wait_exit() {
     #[allow(unused_variables)]
     let m = ::FORK_MTX.lock().expect("Mutex got poisoned by another test");
 
+    // Safe: Child only calls `_exit`, which is async-signal-safe.
     match fork() {
-      Ok(Child) => unsafe { exit(12); },
+      Ok(Child) => unsafe { _exit(12); },
       Ok(Parent { child }) => {
           assert_eq!(waitpid(child, None), Ok(WaitStatus::Exited(child, 12)));
       },
