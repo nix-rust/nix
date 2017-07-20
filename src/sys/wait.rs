@@ -1,9 +1,12 @@
-//! This module contains the `wait()` and `waitpid()` functions, which are used to wait on and
-//! obtain status information from child processes. These provide more granular control over
-//! child management than the primitives provided by Rust's standard library, and are critical
-//! in the creation of shells and managing jobs on *nix platforms.
+//! This module contains the `wait()` and `waitpid()` functions.
 //!
-//! # Example
+//! These are used to wait on and obtain status information from child processes, which provide
+//! more granular control over child management than the primitives provided by Rust's standard
+//! library, and are critical in the creation of shells and managing jobs on *nix platforms.
+//!
+//! Manual Page: http://pubs.opengroup.org/onlinepubs/007908799/xsh/wait.html
+//!
+//! # Examples
 //!
 //! ```rust
 //! use nix::sys::wait::*;
@@ -291,8 +294,10 @@ impl From<i32> for PidGroup {
     }
 }
 
-/// Waits for and returns events that are received from the given supplied process or process group
-/// ID, and associated options.
+/// Waits for and returns events that are received, with additional options.
+///
+/// The `pid` value may indicate either a process group ID, or process ID. The options
+/// parameter controls the behavior of the function.
 ///
 /// # Usage Notes
 ///
@@ -305,9 +310,7 @@ impl From<i32> for PidGroup {
 /// - If the value of the PID is `PidGroup::AnyChild`, it will wait on any child process of the
 ///   current process.
 ///
-/// # Possible Error Values
-///
-/// If this function returns an error, the error value will be one of the following:
+/// # Errors
 ///
 /// - **ECHILD**: The process does not exist or is not a child of the current process.
 ///   - This may also happen if a child process has the `SIGCHLD` signal masked or set to
@@ -338,8 +341,16 @@ pub fn waitpid<O>(pid: PidGroup, options: O) -> Result<WaitStatus>
     })
 }
 
-/// Waits on any child of the current process, returning on events that change the status of
-/// of that child. It is directly equivalent to `waitpid(PidGroup::AnyChild, None)`.
+/// Waits for and returns events from any child of the current process.
+///
+/// While waiting on the child, this function will return on events that indicate that the status
+/// of that child has changed. It is directly equivalent to `waitpid(PidGroup::AnyChild, None)`.
+///
+/// # Errors
+///
+/// - **ECHILD**: The process does not exist or is not a child of the current process.
+///   - This may also happen if a child process has the `SIGCHLD` signal masked or set to
+///     `SIG_IGN`.
 pub fn wait() -> Result<WaitStatus> {
     waitpid(PidGroup::AnyChild, None)
 }
