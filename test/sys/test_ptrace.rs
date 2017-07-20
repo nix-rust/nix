@@ -2,22 +2,22 @@ use nix::Error;
 use nix::errno::*;
 use nix::unistd::*;
 use nix::sys::ptrace;
-use nix::sys::ptrace::*;
-use nix::sys::ptrace::ptrace::*;
 
 use std::{mem, ptr};
 
 #[test]
 fn test_ptrace() {
+    use nix::sys::ptrace::ptrace::*;
     // Just make sure ptrace can be called at all, for now.
     // FIXME: qemu-user doesn't implement ptrace on all arches, so permit ENOSYS
-    let err = ptrace(PTRACE_ATTACH, getpid(), ptr::null_mut(), ptr::null_mut()).unwrap_err();
+    let err = ptrace::ptrace(PTRACE_ATTACH, getpid(), ptr::null_mut(), ptr::null_mut()).unwrap_err();
     assert!(err == Error::Sys(Errno::EPERM) || err == Error::Sys(Errno::ENOSYS));
 }
 
 // Just make sure ptrace_setoptions can be called at all, for now.
 #[test]
 fn test_ptrace_setoptions() {
+    use nix::sys::ptrace::ptrace::*; // for PTRACE_O_TRACESYSGOOD
     let err = ptrace::setoptions(getpid(), PTRACE_O_TRACESYSGOOD).unwrap_err();
     assert!(err != Error::UnsupportedOperation);
 }
