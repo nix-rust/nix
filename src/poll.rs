@@ -5,7 +5,8 @@ use sys::signal::SigSet;
 use std::os::unix::io::RawFd;
 
 use libc;
-use {Errno, Result};
+use Result;
+use errno::Errno;
 
 /// This is a wrapper around `libc::pollfd`.
 ///

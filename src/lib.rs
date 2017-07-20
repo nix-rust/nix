@@ -25,7 +25,7 @@ extern crate nix_test as nixtest;
 
 pub extern crate libc;
 
-pub use errno::Errno;
+use errno::Errno;
 
 pub mod errno;
 pub mod features;
@@ -96,24 +96,24 @@ pub enum Error {
 impl Error {
 
     /// Create a nix Error from a given errno
-    pub fn from_errno(errno: errno::Errno) -> Error {
+    pub fn from_errno(errno: Errno) -> Error {
         Error::Sys(errno)
     }
 
     /// Get the current errno and convert it to a nix Error
     pub fn last() -> Error {
-        Error::Sys(errno::Errno::last())
+        Error::Sys(Errno::last())
     }
 
     /// Create a new invalid argument error (`EINVAL`)
     pub fn invalid_argument() -> Error {
-        Error::Sys(errno::EINVAL)
+        Error::Sys(Errno::EINVAL)
     }
 
 }
 
-impl From<errno::Errno> for Error {
-    fn from(errno: errno::Errno) -> Error { Error::from_errno(errno) }
+impl From<Errno> for Error {
+    fn from(errno: Errno) -> Error { Error::from_errno(errno) }
 }
 
 impl From<std::string::FromUtf8Error> for Error {

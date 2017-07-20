@@ -1,6 +1,7 @@
 use libc::{c_ulong, c_int};
 use libc;
-use {Errno, Result, NixPath};
+use {Result, NixPath};
+use errno::Errno;
 
 bitflags!(
     pub struct MsFlags: c_ulong {

@@ -1,6 +1,7 @@
 //! Reboot/shutdown or enable/disable Ctrl-Alt-Delete.
 
-use {Errno, Error, Result};
+use {Error, Result};
+use errno::Errno;
 use libc;
 use void::Void;
 use std::mem::drop;

@@ -1,7 +1,8 @@
 pub use libc::dev_t;
 pub use libc::stat as FileStat;
 
-use {Errno, Result, NixPath};
+use {Result, NixPath};
+use errno::Errno;
 use fcntl::AtFlags;
 use libc::{self, mode_t};
 use std::mem;

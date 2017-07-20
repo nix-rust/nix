@@ -242,7 +242,8 @@ pub fn test_unixdomain() {
 #[cfg(any(target_os = "macos", target_os = "ios"))]
 #[test]
 pub fn test_syscontrol() {
-    use nix::{Errno, Error};
+    use nix::Error;
+    use nix::errno::Errno;
     use nix::sys::socket::{AddressFamily, socket, SockAddr, SockType, SockFlag, SockProtocol};
 
     let fd = socket(AddressFamily::System, SockType::Datagram,

@@ -17,7 +17,8 @@
 //! signal handlers.
 use libc;
 use unistd;
-use {Error, Errno, Result};
+use {Error, Result};
+use errno::Errno;
 pub use sys::signal::{self, SigSet};
 pub use libc::signalfd_siginfo as siginfo;
 

@@ -1,7 +1,8 @@
 //! For detailed description of the ptrace requests, consult `man ptrace`.
 
 use std::{mem, ptr};
-use {Errno, Error, Result};
+use {Error, Result};
+use errno::Errno;
 use libc::{self, c_void, c_long, siginfo_t};
 use ::unistd::Pid;
 use sys::signal::Signal;

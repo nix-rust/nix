@@ -1,7 +1,8 @@
 //! Socket interface functions
 //!
 //! [Further reading](http://man7.org/linux/man-pages/man7/socket.7.html)
-use {Error, Errno, Result};
+use {Error, Result};
+use errno::Errno;
 use features;
 use libc::{self, c_void, c_int, socklen_t, size_t, pid_t, uid_t, gid_t};
 use std::{mem, ptr, slice};

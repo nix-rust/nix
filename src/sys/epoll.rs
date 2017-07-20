@@ -1,4 +1,5 @@
-use {Errno, Result};
+use Result;
+use errno::Errno;
 use libc::{self, c_int};
 use std::os::unix::io::RawFd;
 use std::ptr;

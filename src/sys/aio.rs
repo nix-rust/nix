@@ -1,4 +1,5 @@
-use {Error, Errno, Result};
+use {Error, Result};
+use errno::Errno;
 use std::os::unix::io::RawFd;
 use libc::{c_void, off_t, size_t};
 use libc;

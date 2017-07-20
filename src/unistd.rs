@@ -1,7 +1,7 @@
 //! Safe wrappers around functions found in libc "unistd.h" header
 
-use errno;
-use {Errno, Error, Result, NixPath};
+use errno::{self, Errno};
+use {Error, Result, NixPath};
 use fcntl::{fcntl, FdFlag, OFlag};
 use fcntl::FcntlArg::F_SETFD;
 use libc::{self, c_char, c_void, c_int, c_long, c_uint, size_t, pid_t, off_t,
@@ -1942,7 +1942,8 @@ pub fn sysconf(var: SysconfVar) -> Result<Option<c_long>> {
 #[cfg(any(target_os = "android", target_os = "linux"))]
 mod pivot_root {
     use libc;
-    use {Errno, Result, NixPath};
+    use {Result, NixPath};
+    use errno::Errno;
 
     pub fn pivot_root<P1: ?Sized + NixPath, P2: ?Sized + NixPath>(
             new_root: &P1, put_old: &P2) -> Result<()> {
@@ -1962,7 +1963,8 @@ mod pivot_root {
           target_os = "linux", target_os = "openbsd"))]
 mod setres {
     use libc;
-    use {Errno, Result};
+    use Result;
+    use errno::Errno;
     use super::{Uid, Gid};
 
     /// Sets the real, effective, and saved uid.

@@ -2,7 +2,8 @@
 // See http://rust-lang.org/COPYRIGHT.
 
 use libc;
-use {Errno, Error, Result};
+use {Error, Result};
+use errno::Errno;
 use std::mem;
 #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
 use std::os::unix::io::RawFd;

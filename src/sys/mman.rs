@@ -1,4 +1,5 @@
-use {Errno, Error, Result, NixPath};
+use {Error, Result, NixPath};
+use errno::Errno;
 use fcntl::OFlag;
 use libc::{self, c_int, c_void, size_t, off_t};
 use sys::stat::Mode;
