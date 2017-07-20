@@ -64,7 +64,12 @@ fn test_wait() {
 
 #[test]
 fn test_mkstemp() {
-    let result = mkstemp("/tmp/nix_tempfile.XXXXXX");
+    #[cfg(target_os = "android")]
+    let tmp = "/data/local/tmp/";
+    #[cfg(not(target_os = "android"))]
+    let tmp = "/tmp/";
+
+    let result = mkstemp((tmp.to_owned() + "nix_tempfile.XXXXXX").as_str());
     match result {
         Ok((fd, path)) => {
             close(fd).unwrap();
@@ -73,7 +78,7 @@ fn test_mkstemp() {
         Err(e) => panic!("mkstemp failed: {}", e)
     }
 
-    let result = mkstemp("/tmp/");
+    let result = mkstemp(tmp);
     match result {
         Ok(_) => {
             panic!("mkstemp succeeded even though it should fail (provided a directory)");
