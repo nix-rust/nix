@@ -227,7 +227,7 @@ impl<'a> Iterator for CmsgIterator<'a> {
         if self.buf.len() < sizeof_cmsghdr {
             return None;
         }
-        let cmsg: &cmsghdr = unsafe { mem::transmute(self.buf.as_ptr()) };
+        let cmsg: &'a cmsghdr = unsafe { &*(self.buf.as_ptr() as *const cmsghdr) };
 
         // This check is only in the glibc implementation of CMSG_NXTHDR
         // (although it claims the kernel header checks this), but such

@@ -1,5 +1,5 @@
 use nix::sys::socket::{InetAddr, UnixAddr, getsockname};
-use std::mem;
+use std::{mem, slice};
 use std::net::{self, Ipv6Addr, SocketAddr, SocketAddrV6};
 use std::path::Path;
 use std::str::FromStr;
@@ -52,10 +52,13 @@ pub fn test_inetv6_addr_to_sock_addr() {
 
 #[test]
 pub fn test_path_to_sock_addr() {
-    let actual = Path::new("/foo/bar");
+    let path = "/foo/bar";
+    let actual = Path::new(path);
     let addr = UnixAddr::new(actual).unwrap();
 
-    let expect: &'static [c_char] = unsafe { mem::transmute(&b"/foo/bar"[..]) };
+    let expect: &[c_char] = unsafe {
+        slice::from_raw_parts(path.as_bytes().as_ptr() as *const c_char, path.len())
+    };
     assert_eq!(&addr.0.sun_path[..8], expect);
 
     assert_eq!(addr.path(), Some(actual));

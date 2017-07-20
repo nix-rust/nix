@@ -205,11 +205,11 @@ impl<T> Get<T> for GetStruct<T> {
     }
 
     unsafe fn ffi_ptr(&mut self) -> *mut c_void {
-        mem::transmute(&mut self.val)
+        &mut self.val as *mut T as *mut c_void
     }
 
     unsafe fn ffi_len(&mut self) -> *mut socklen_t {
-        mem::transmute(&mut self.len)
+        &mut self.len
     }
 
     unsafe fn unwrap(self) -> T {
@@ -228,7 +228,7 @@ impl<'a, T> Set<'a, T> for SetStruct<'a, T> {
     }
 
     unsafe fn ffi_ptr(&self) -> *const c_void {
-        mem::transmute(self.ptr)
+        self.ptr as *const T as *const c_void
     }
 
     unsafe fn ffi_len(&self) -> socklen_t {
@@ -250,11 +250,11 @@ impl Get<bool> for GetBool {
     }
 
     unsafe fn ffi_ptr(&mut self) -> *mut c_void {
-        mem::transmute(&mut self.val)
+        &mut self.val as *mut c_int as *mut c_void
     }
 
     unsafe fn ffi_len(&mut self) -> *mut socklen_t {
-        mem::transmute(&mut self.len)
+        &mut self.len
     }
 
     unsafe fn unwrap(self) -> bool {
@@ -273,7 +273,7 @@ impl<'a> Set<'a, bool> for SetBool {
     }
 
     unsafe fn ffi_ptr(&self) -> *const c_void {
-        mem::transmute(&self.val)
+        &self.val as *const c_int as *const c_void
     }
 
     unsafe fn ffi_len(&self) -> socklen_t {
@@ -295,11 +295,11 @@ impl Get<u8> for GetU8 {
     }
 
     unsafe fn ffi_ptr(&mut self) -> *mut c_void {
-        mem::transmute(&mut self.val)
+        &mut self.val as *mut uint8_t as *mut c_void
     }
 
     unsafe fn ffi_len(&mut self) -> *mut socklen_t {
-        mem::transmute(&mut self.len)
+        &mut self.len
     }
 
     unsafe fn unwrap(self) -> u8 {
@@ -318,7 +318,7 @@ impl<'a> Set<'a, u8> for SetU8 {
     }
 
     unsafe fn ffi_ptr(&self) -> *const c_void {
-        mem::transmute(&self.val)
+        &self.val as *const uint8_t as *const c_void
     }
 
     unsafe fn ffi_len(&self) -> socklen_t {
@@ -340,11 +340,11 @@ impl Get<usize> for GetUsize {
     }
 
     unsafe fn ffi_ptr(&mut self) -> *mut c_void {
-        mem::transmute(&mut self.val)
+        &mut self.val as *mut c_int as *mut c_void
     }
 
     unsafe fn ffi_len(&mut self) -> *mut socklen_t {
-        mem::transmute(&mut self.len)
+        &mut self.len
     }
 
     unsafe fn unwrap(self) -> usize {
@@ -363,7 +363,7 @@ impl<'a> Set<'a, usize> for SetUsize {
     }
 
     unsafe fn ffi_ptr(&self) -> *const c_void {
-        mem::transmute(&self.val)
+        &self.val as *const c_int as *const c_void
     }
 
     unsafe fn ffi_len(&self) -> socklen_t {

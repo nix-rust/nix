@@ -96,7 +96,7 @@ pub fn sched_setaffinity(pid: Pid, cpuset: &CpuSet) -> Result<()> {
     let res = unsafe {
         libc::sched_setaffinity(pid.into(),
                                 mem::size_of::<CpuSet>() as libc::size_t,
-                                mem::transmute(cpuset))
+                                &cpuset.cpu_set)
     };
 
     Errno::result(res).map(drop)

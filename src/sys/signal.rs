@@ -364,10 +364,10 @@ impl SigAction {
     pub fn new(handler: SigHandler, flags: SaFlags, mask: SigSet) -> SigAction {
         let mut s = unsafe { mem::uninitialized::<libc::sigaction>() };
         s.sa_sigaction = match handler {
-            SigHandler::SigDfl => unsafe { mem::transmute(libc::SIG_DFL) },
-            SigHandler::SigIgn => unsafe { mem::transmute(libc::SIG_IGN) },
-            SigHandler::Handler(f) => unsafe { mem::transmute(f) },
-            SigHandler::SigAction(f) => unsafe { mem::transmute(f) },
+            SigHandler::SigDfl => libc::SIG_DFL,
+            SigHandler::SigIgn => libc::SIG_IGN,
+            SigHandler::Handler(f) => f as *const extern fn(libc::c_int) as usize,
+            SigHandler::SigAction(f) => f as *const extern fn(libc::c_int, *mut libc::siginfo_t, *mut libc::c_void) as usize,
         };
         s.sa_flags = match handler {
             SigHandler::SigAction(_) => (flags | SA_SIGINFO).bits(),

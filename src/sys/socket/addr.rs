@@ -1,7 +1,7 @@
 use super::sa_family_t;
 use {Errno, Error, Result, NixPath};
 use libc;
-use std::{fmt, hash, mem, net, ptr};
+use std::{fmt, hash, mem, net, ptr, slice};
 use std::ffi::OsStr;
 use std::path::Path;
 use std::os::unix::ffi::OsStrExt;
@@ -581,7 +581,7 @@ impl UnixAddr {
     }
 
     fn sun_path(&self) -> &[u8] {
-        unsafe { mem::transmute(&self.0.sun_path[..self.1]) }
+        unsafe { slice::from_raw_parts(self.0.sun_path.as_ptr() as *const u8, self.1) }
     }
 
     /// If this address represents a filesystem path, return that path.
