@@ -45,6 +45,8 @@ lazy_static! {
     /// Any test that creates child processes must grab this mutex, regardless
     /// of what it does with those children.
     pub static ref FORK_MTX: Mutex<()> = Mutex::new(());
+    /// Any test that calls ptsname(3) must grab this mutex.
+    pub static ref PTSNAME_MTX: Mutex<()> = Mutex::new(());
     /// Any test that alters signal handling must grab this mutex.
     pub static ref SIGNAL_MTX: Mutex<()> = Mutex::new(());
 }
