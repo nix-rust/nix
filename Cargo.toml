@@ -4,7 +4,6 @@ name        = "nix"
 description = "Rust friendly bindings to *nix APIs"
 version     = "0.9.0-pre"
 authors     = ["The nix-rust Project Developers"]
-homepage    = "https://github.com/nix-rust/nix"
 repository  = "https://github.com/nix-rust/nix"
 license     = "MIT"
 categories  = ["os::unix-apis"]
