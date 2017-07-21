@@ -94,7 +94,7 @@ impl<'a> AioCb<'a> {
     /// be prioritized at the process's priority level minus `prio`
     /// * `sigev_notify` Determines how you will be notified of event
     /// completion.
-    pub fn from_fd(fd: RawFd, prio: ::c_int,
+    pub fn from_fd(fd: RawFd, prio: libc::c_int,
                     sigev_notify: SigevNotify) -> AioCb<'a> {
         let mut a = AioCb::common_init(fd, prio, sigev_notify);
         a.aio_offset = 0;
@@ -118,13 +118,13 @@ impl<'a> AioCb<'a> {
     /// * `opcode` This field is only used for `lio_listio`.  It determines
     /// which operation to use for this individual aiocb
     pub fn from_mut_slice(fd: RawFd, offs: off_t, buf: &'a mut [u8],
-                          prio: ::c_int, sigev_notify: SigevNotify,
+                          prio: libc::c_int, sigev_notify: SigevNotify,
                           opcode: LioOpcode) -> AioCb<'a> {
         let mut a = AioCb::common_init(fd, prio, sigev_notify);
         a.aio_offset = offs;
         a.aio_nbytes = buf.len() as size_t;
         a.aio_buf = buf.as_ptr() as *mut c_void;
-        a.aio_lio_opcode = opcode as ::c_int;
+        a.aio_lio_opcode = opcode as libc::c_int;
 
         let aiocb = AioCb { aiocb: a, mutable: true, in_progress: false,
                             keeper: Keeper::phantom(PhantomData)};
@@ -146,13 +146,13 @@ impl<'a> AioCb<'a> {
     /// * `opcode` This field is only used for `lio_listio`.  It determines
     /// which operation to use for this individual aiocb
     pub fn from_boxed_slice(fd: RawFd, offs: off_t, buf: Rc<Box<[u8]>>,
-                          prio: ::c_int, sigev_notify: SigevNotify,
+                          prio: libc::c_int, sigev_notify: SigevNotify,
                           opcode: LioOpcode) -> AioCb<'a> {
         let mut a = AioCb::common_init(fd, prio, sigev_notify);
         a.aio_offset = offs;
         a.aio_nbytes = buf.len() as size_t;
         a.aio_buf = buf.as_ptr() as *mut c_void;
-        a.aio_lio_opcode = opcode as ::c_int;
+        a.aio_lio_opcode = opcode as libc::c_int;
 
         let aiocb = AioCb{ aiocb: a, mutable: true, in_progress: false,
                             keeper: Keeper::boxed(buf)};
@@ -173,7 +173,7 @@ impl<'a> AioCb<'a> {
     // AioCb, and they must all be the same type.  We're basically stuck with
     // using an unsafe function, since aio (as designed in C) is an unsafe API.
     pub fn from_slice(fd: RawFd, offs: off_t, buf: &'a [u8],
-                      prio: ::c_int, sigev_notify: SigevNotify,
+                      prio: libc::c_int, sigev_notify: SigevNotify,
                       opcode: LioOpcode) -> AioCb {
         let mut a = AioCb::common_init(fd, prio, sigev_notify);
         a.aio_offset = offs;
@@ -183,14 +183,14 @@ impl<'a> AioCb<'a> {
         // it.
         a.aio_buf = buf.as_ptr() as *mut c_void;
         assert!(opcode != LioOpcode::LIO_READ, "Can't read into an immutable buffer");
-        a.aio_lio_opcode = opcode as ::c_int;
+        a.aio_lio_opcode = opcode as libc::c_int;
 
         let aiocb = AioCb { aiocb: a, mutable: false, in_progress: false,
                             keeper: Keeper::none};
         aiocb
     }
 
-    fn common_init(fd: RawFd, prio: ::c_int,
+    fn common_init(fd: RawFd, prio: libc::c_int,
                    sigev_notify: SigevNotify) -> libc::aiocb {
         // Use mem::zeroed instead of explicitly zeroing each field, because the
         // number and name of reserved fields is OS-dependent.  On some OSes,
@@ -235,7 +235,7 @@ impl<'a> AioCb<'a> {
     pub fn fsync(&mut self, mode: AioFsyncMode) -> Result<()> {
         let p: *mut libc::aiocb = &mut self.aiocb;
         self.in_progress = true;
-        Errno::result(unsafe { libc::aio_fsync(mode as ::c_int, p) }).map(drop)
+        Errno::result(unsafe { libc::aio_fsync(mode as libc::c_int, p) }).map(drop)
     }
 
     /// Asynchronously reads from a file descriptor into a buffer

@@ -24,11 +24,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   and nix::Error::UnsupportedOperation}`
   ([#614](https://github.com/nix-rust/nix/pull/614))
 - Added `cfmakeraw`, `cfsetspeed`, and `tcgetsid`. ([#527](https://github.com/nix-rust/nix/pull/527))
+- Added "bad none", "bad write_ptr", "bad write_int", and "bad readwrite" variants to the `ioctl!`
+  macro. ([#670](https://github.com/nix-rust/nix/pull/670))
 
 ### Changed
-- Changed `ioctl!(write ...)` to take argument by value instead as pointer.
-  If you need a pointer as argument, use `ioctl!(write buf ...)`.
-  ([#626](https://github.com/nix-rust/nix/pull/626))
+- Changed `ioctl!(write ...)` into `ioctl!(write_ptr ...)` and `ioctl!(write_int ..)` variants
+  to more clearly separate those use cases. ([#670](https://github.com/nix-rust/nix/pull/670))
 - Marked `sys::mman::{ mmap, munmap, madvise, munlock, msync }` as unsafe.
   ([#559](https://github.com/nix-rust/nix/pull/559))
 - Minimum supported Rust version is now 1.13.
@@ -48,6 +49,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Revised the termios API including additional tests and documentation and exposed it on iOS. ([#527](https://github.com/nix-rust/nix/pull/527))
 - `eventfd`, `signalfd`, and `pwritev`/`preadv` functionality is now included by default for all
   supported platforms. ([#681](https://github.com/nix-rust/nix/pull/561))
+- The `ioctl!` macro's plain variants has been replaced with "bad read" to be consistent with
+  other variants. The generated functions also have more strict types for their arguments. The
+  "*_buf" variants also now calculate total array size and take slice references for improved type
+  safety. The documentation has also been dramatically improved.
+  ([#670](https://github.com/nix-rust/nix/pull/670))
 
 ### Removed
 - Removed `io::Error` from `nix::Error` and the conversion from `nix::Error` to `Errno`
@@ -55,6 +61,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - All feature flags have been removed in favor of conditional compilation on supported platforms.
   `execvpe` is no longer supported, but this was already broken and will be added back in the next
   release. ([#681](https://github.com/nix-rust/nix/pull/561))
+- Removed `ioc_*` functions and many helper constants and macros within the `ioctl` module. These
+  should always have been private and only the `ioctl!` should be used in public code.
+  ([#670](https://github.com/nix-rust/nix/pull/670))
 
 ### Fixed
 - Fixed multiple issues compiling under different archetectures and OSes.
@@ -73,6 +82,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#623](https://github.com/nix-rust/nix/pull/623))
 - Multiple constants related to the termios API have now been properly defined for
   all supported platforms. ([#527](https://github.com/nix-rust/nix/pull/527))
+- `ioctl!` macro now supports working with non-int datatypes and properly supports all platforms.
+  ([#670](https://github.com/nix-rust/nix/pull/670))
 
 ## [0.8.1] 2017-04-16
 
