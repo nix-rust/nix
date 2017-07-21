@@ -27,6 +27,9 @@ fn test_explicit_close() {
 #[test]
 #[cfg(any(target_os = "android", target_os = "linux"))]
 fn test_ptsname_equivalence() {
+    #[allow(unused_variables)]
+    let m = ::PTSNAME_MTX.lock().expect("Mutex got poisoned by another test");
+
     // Open a new PTTY master
     let master_fd = posix_openpt(O_RDWR).unwrap();
     assert!(master_fd.as_raw_fd() > 0);
@@ -42,6 +45,9 @@ fn test_ptsname_equivalence() {
 #[test]
 #[cfg(any(target_os = "android", target_os = "linux"))]
 fn test_ptsname_copy() {
+    #[allow(unused_variables)]
+    let m = ::PTSNAME_MTX.lock().expect("Mutex got poisoned by another test");
+
     // Open a new PTTY master
     let master_fd = posix_openpt(O_RDWR).unwrap();
     assert!(master_fd.as_raw_fd() > 0);
@@ -74,6 +80,9 @@ fn test_ptsname_r_copy() {
 #[test]
 #[cfg(any(target_os = "android", target_os = "linux"))]
 fn test_ptsname_unique() {
+    #[allow(unused_variables)]
+    let m = ::PTSNAME_MTX.lock().expect("Mutex got poisoned by another test");
+
     // Open a new PTTY master
     let master1_fd = posix_openpt(O_RDWR).unwrap();
     assert!(master1_fd.as_raw_fd() > 0);
@@ -95,16 +104,19 @@ fn test_ptsname_unique() {
 /// pair.
 #[test]
 fn test_open_ptty_pair() {
+    #[allow(unused_variables)]
+    let m = ::PTSNAME_MTX.lock().expect("Mutex got poisoned by another test");
+
     // Open a new PTTY master
-    let master_fd = posix_openpt(O_RDWR).unwrap();
+    let master_fd = posix_openpt(O_RDWR).expect("posix_openpt failed");
     assert!(master_fd.as_raw_fd() > 0);
 
     // Allow a slave to be generated for it
-    grantpt(&master_fd).unwrap();
-    unlockpt(&master_fd).unwrap();
+    grantpt(&master_fd).expect("grantpt failed");
+    unlockpt(&master_fd).expect("unlockpt failed");
 
     // Get the name of the slave
-    let slave_name = ptsname(&master_fd).unwrap();
+    let slave_name = ptsname(&master_fd).expect("ptsname failed");
 
     // Open the slave device
     let slave_fd = open(Path::new(&slave_name), O_RDWR, stat::Mode::empty()).unwrap();
@@ -113,6 +125,10 @@ fn test_open_ptty_pair() {
 
 #[test]
 fn test_openpty() {
+    // openpty uses ptname(3) internally
+    #[allow(unused_variables)]
+    let m = ::PTSNAME_MTX.lock().expect("Mutex got poisoned by another test");
+
     let pty = openpty(None, None).unwrap();
     assert!(pty.master > 0);
     assert!(pty.slave > 0);
@@ -145,6 +161,10 @@ fn test_openpty() {
 
 #[test]
 fn test_openpty_with_termios() {
+    // openpty uses ptname(3) internally
+    #[allow(unused_variables)]
+    let m = ::PTSNAME_MTX.lock().expect("Mutex got poisoned by another test");
+
     // Open one pty to get attributes for the second one
     let mut termios = {
         let pty = openpty(None, None).unwrap();
