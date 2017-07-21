@@ -69,8 +69,8 @@ pub fn test_getsockname() {
 
     let tempdir = TempDir::new("test_getsockname").unwrap();
     let sockname = tempdir.path().join("sock");
-    let sock = socket(AddressFamily::Unix, SockType::Stream, SockFlag::empty(),
-                      0).expect("socket failed");
+    let sock = socket(AddressFamily::Unix, SockType::Stream, SockFlag::empty(), None)
+               .expect("socket failed");
     let sockaddr = SockAddr::new_unix(&sockname).unwrap();
     bind(sock, &sockaddr).expect("bind failed");
     assert_eq!(sockaddr.to_str(),
@@ -82,8 +82,7 @@ pub fn test_socketpair() {
     use nix::unistd::{read, write};
     use nix::sys::socket::{socketpair, AddressFamily, SockType, SockFlag};
 
-    let (fd1, fd2) = socketpair(AddressFamily::Unix, SockType::Stream, 0,
-                                SockFlag::empty())
+    let (fd1, fd2) = socketpair(AddressFamily::Unix, SockType::Stream, None, SockFlag::empty())
                      .unwrap();
     write(fd1, b"hello").unwrap();
     let mut buf = [0;5];
@@ -101,8 +100,7 @@ pub fn test_scm_rights() {
                            ControlMessage, CmsgSpace, MsgFlags,
                            MSG_TRUNC, MSG_CTRUNC};
 
-    let (fd1, fd2) = socketpair(AddressFamily::Unix, SockType::Stream, 0,
-                                SockFlag::empty())
+    let (fd1, fd2) = socketpair(AddressFamily::Unix, SockType::Stream, None, SockFlag::empty())
                      .unwrap();
     let (r, w) = pipe().unwrap();
     let mut received_r: Option<RawFd> = None;
@@ -158,8 +156,7 @@ pub fn test_sendmsg_empty_cmsgs() {
                            CmsgSpace, MsgFlags,
                            MSG_TRUNC, MSG_CTRUNC};
 
-    let (fd1, fd2) = socketpair(AddressFamily::Unix, SockType::Stream, 0,
-                                SockFlag::empty())
+    let (fd1, fd2) = socketpair(AddressFamily::Unix, SockType::Stream, None, SockFlag::empty())
                      .unwrap();
 
     {
@@ -194,14 +191,14 @@ pub fn test_unixdomain() {
     let tempdir = TempDir::new("test_unixdomain").unwrap();
     let sockname = tempdir.path().join("sock");
     let s1 = socket(AddressFamily::Unix, SockType::Stream,
-                    SockFlag::empty(), 0).expect("socket failed");
+                    SockFlag::empty(), None).expect("socket failed");
     let sockaddr = SockAddr::new_unix(&sockname).unwrap();
     bind(s1, &sockaddr).expect("bind failed");
     listen(s1, 10).expect("listen failed");
 
     let thr = thread::spawn(move || {
-        let s2 = socket(AddressFamily::Unix, SockType::Stream,
-                        SockFlag::empty(), 0).expect("socket failed");
+        let s2 = socket(AddressFamily::Unix, SockType::Stream, SockFlag::empty(), None)
+                 .expect("socket failed");
         connect(s2, &sockaddr).expect("connect failed");
         write(s2, b"hello").expect("write failed");
         close(s2).unwrap();
@@ -223,11 +220,11 @@ pub fn test_unixdomain() {
 #[test]
 pub fn test_syscontrol() {
     use nix::{Errno, Error};
-    use nix::sys::socket::{AddressFamily, SockType, SockFlag};
-    use nix::sys::socket::{socket, SockAddr};
-    use nix::sys::socket::SYSPROTO_CONTROL;
+    use nix::sys::socket::{AddressFamily, socket, SockAddr, SockType, SockFlag, SockProtocol};
 
-    let fd = socket(AddressFamily::System, SockType::Datagram, SockFlag::empty(), SYSPROTO_CONTROL).expect("socket failed");
+    let fd = socket(AddressFamily::System, SockType::Datagram,
+                    SockFlag::empty(), SockProtocol::KextControl)
+             .expect("socket failed");
     let _sockaddr = SockAddr::new_sys_control(fd, "com.apple.net.utun_control", 0).expect("resolving sys_control name failed");
     assert_eq!(SockAddr::new_sys_control(fd, "foo.bar.lol", 0).err(), Some(Error::Sys(Errno::ENOENT)));
 

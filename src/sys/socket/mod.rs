@@ -60,6 +60,24 @@ pub enum SockType {
     Rdm = libc::SOCK_RDM,
 }
 
+/// Constants used in [`socket`](fn.socket.html) and [`socketpair`](fn.socketpair.html)
+/// to specify the protocol to use.
+#[repr(i32)]
+pub enum SockProtocol {
+    /// TCP protocol ([ip(7)](http://man7.org/linux/man-pages/man7/ip.7.html))
+    Tcp = libc::IPPROTO_TCP,
+    /// UDP protocol ([ip(7)](http://man7.org/linux/man-pages/man7/ip.7.html))
+    Udp = libc::IPPROTO_UDP,
+    /// Allows applications and other KEXTs to be notified when certain kernel events occur
+    /// ([ref](https://developer.apple.com/library/content/documentation/Darwin/Conceptual/NKEConceptual/control/control.html))
+    #[cfg(any(target_os = "ios", target_os = "macos"))]
+    KextEvent = libc::SYSPROTO_EVENT,
+    /// Allows applications to configure and control a KEXT
+    /// ([ref](https://developer.apple.com/library/content/documentation/Darwin/Conceptual/NKEConceptual/control/control.html))
+    #[cfg(any(target_os = "ios", target_os = "macos"))]
+    KextControl = libc::SYSPROTO_CONTROL,
+}
+
 bitflags!(
     /// Extra flags - Supported by Linux 2.6.27, normalized on other platforms
     pub struct SockFlag: c_int {
@@ -381,9 +399,20 @@ pub fn recvmsg<'a, T>(fd: RawFd, iov: &[IoVec<&mut [u8]>], cmsg_buffer: Option<&
 
 /// Create an endpoint for communication
 ///
+/// The `protocol` specifies a particular protocol to be used with the
+/// socket.  Normally only a single protocol exists to support a
+/// particular socket type within a given protocol family, in which case
+/// protocol can be specified as `None`.  However, it is possible that many
+/// protocols may exist, in which case a particular protocol must be
+/// specified in this manner.
+///
 /// [Further reading](http://man7.org/linux/man-pages/man2/socket.2.html)
-pub fn socket(domain: AddressFamily, ty: SockType, flags: SockFlag, protocol: c_int) -> Result<RawFd> {
+pub fn socket<T: Into<Option<SockProtocol>>>(domain: AddressFamily, ty: SockType, flags: SockFlag, protocol: T) -> Result<RawFd> {
     let mut ty = ty as c_int;
+    let protocol = match protocol.into() {
+        None => 0,
+        Some(p) => p as c_int,
+    };
     let feat_atomic = features::socket_atomic_cloexec();
 
     if feat_atomic {
@@ -409,9 +438,13 @@ pub fn socket(domain: AddressFamily, ty: SockType, flags: SockFlag, protocol: c_
 /// Create a pair of connected sockets
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/socketpair.2.html)
-pub fn socketpair(domain: AddressFamily, ty: SockType, protocol: c_int,
+pub fn socketpair<T: Into<Option<SockProtocol>>>(domain: AddressFamily, ty: SockType, protocol: T,
                   flags: SockFlag) -> Result<(RawFd, RawFd)> {
     let mut ty = ty as c_int;
+    let protocol = match protocol.into() {
+        None => 0,
+        Some(p) => p as c_int,
+    };
     let feat_atomic = features::socket_atomic_cloexec();
 
     if feat_atomic {

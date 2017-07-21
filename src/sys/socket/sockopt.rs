@@ -378,7 +378,7 @@ mod test {
     fn can_get_peercred_on_unix_socket() {
         use super::super::*;
 
-        let (a, b) = socketpair(AddressFamily::Unix, SockType::Stream, 0, SockFlag::empty()).unwrap();
+        let (a, b) = socketpair(AddressFamily::Unix, SockType::Stream, None, SockFlag::empty()).unwrap();
         let a_cred = getsockopt(a, super::PeerCredentials).unwrap();
         let b_cred = getsockopt(b, super::PeerCredentials).unwrap();
         assert_eq!(a_cred, b_cred);
@@ -390,7 +390,7 @@ mod test {
         use super::super::*;
         use ::unistd::close;
 
-        let (a, b) = socketpair(AddressFamily::Unix, SockType::Stream, 0, SockFlag::empty()).unwrap();
+        let (a, b) = socketpair(AddressFamily::Unix, SockType::Stream, None, SockFlag::empty()).unwrap();
         let a_type = getsockopt(a, super::SockType).unwrap();
         assert!(a_type == SockType::Stream);
         close(a).unwrap();
@@ -402,7 +402,7 @@ mod test {
         use super::super::*;
         use ::unistd::close;
 
-        let s = socket(AddressFamily::Inet, SockType::Datagram, SockFlag::empty(), 0).unwrap();
+        let s = socket(AddressFamily::Inet, SockType::Datagram, SockFlag::empty(), None).unwrap();
         let s_type = getsockopt(s, super::SockType).unwrap();
         assert!(s_type == SockType::Datagram);
         close(s).unwrap();
@@ -416,7 +416,7 @@ mod test {
         use super::super::*;
         use ::unistd::close;
 
-        let s = socket(AddressFamily::Inet, SockType::Stream, SockFlag::empty(), 0).unwrap();
+        let s = socket(AddressFamily::Inet, SockType::Stream, SockFlag::empty(), None).unwrap();
         let s_listening = getsockopt(s, super::AcceptConn).unwrap();
         assert!(!s_listening);
         listen(s, 10).unwrap();
