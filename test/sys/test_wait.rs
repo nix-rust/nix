@@ -48,13 +48,14 @@ mod ptrace {
     use nix::unistd::*;
     use nix::unistd::ForkResult::*;
     use std::{ptr, process};
+    use libc::_exit;
 
     fn ptrace_child() -> ! {
         let _ = ptrace(PTRACE_TRACEME, Pid::from_raw(0), ptr::null_mut(), ptr::null_mut());
         // As recommended by ptrace(2), raise SIGTRAP to pause the child
         // until the parent is ready to continue
         let _ = raise(SIGTRAP);
-        process::exit(0)
+        unsafe { _exit(0) }
     }
 
     fn ptrace_parent(child: Pid) {
