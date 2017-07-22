@@ -19,8 +19,7 @@ fn test_fork_and_waitpid() {
     let m = ::FORK_MTX.lock().expect("Mutex got poisoned by another test");
 
     // Safe: Child only calls `_exit`, which is signal-safe
-    let pid = fork();
-    match pid {
+    match fork() {
         Ok(Child) => unsafe { _exit(0) },
         Ok(Parent { child }) => {
             // assert that child was created and pid > 0
