@@ -18,10 +18,14 @@ fn write_all(f: RawFd, buf: &[u8]) {
 // Test tcgetattr on a terminal
 #[test]
 fn test_tcgetattr_pty() {
-    let pty = openpty(None, None).unwrap();
+    // openpty uses ptname(3) internally
+    #[allow(unused_variables)]
+    let m = ::PTSNAME_MTX.lock().expect("Mutex got poisoned by another test");
+
+    let pty = openpty(None, None).expect("openpty failed");
     assert!(termios::tcgetattr(pty.master).is_ok());
-    close(pty.master).unwrap();
-    close(pty.slave).unwrap();
+    close(pty.master).expect("closing the master failed");
+    close(pty.slave).expect("closing the slave failed");
 }
 // Test tcgetattr on something that isn't a terminal
 #[test]
@@ -41,12 +45,16 @@ fn test_tcgetattr_ebadf() {
 // Test modifying output flags
 #[test]
 fn test_output_flags() {
+    // openpty uses ptname(3) internally
+    #[allow(unused_variables)]
+    let m = ::PTSNAME_MTX.lock().expect("Mutex got poisoned by another test");
+
     // Open one pty to get attributes for the second one
     let mut termios = {
-        let pty = openpty(None, None).unwrap();
+        let pty = openpty(None, None).expect("openpty failed");
         assert!(pty.master > 0);
         assert!(pty.slave > 0);
-        let termios = tcgetattr(pty.master).unwrap();
+        let termios = tcgetattr(pty.master).expect("tcgetattr failed");
         close(pty.master).unwrap();
         close(pty.slave).unwrap();
         termios
@@ -80,6 +88,10 @@ fn test_output_flags() {
 // Test modifying local flags
 #[test]
 fn test_local_flags() {
+    // openpty uses ptname(3) internally
+    #[allow(unused_variables)]
+    let m = ::PTSNAME_MTX.lock().expect("Mutex got poisoned by another test");
+
     // Open one pty to get attributes for the second one
     let mut termios = {
         let pty = openpty(None, None).unwrap();

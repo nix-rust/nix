@@ -31,7 +31,6 @@ pub mod libc {
     pub use self::libc::*;
 }
 
-pub use libc::{c_int, c_void};
 pub use errno::Errno;
 
 pub mod errno;
@@ -96,7 +95,7 @@ pub enum Error {
     /// The operation involved a conversion to Rust's native String type, which failed because the
     /// string did not contain all valid UTF-8.
     InvalidUtf8,
-    /// The operation is not supported by Nix, in this instance either use the libc bindings or 
+    /// The operation is not supported by Nix, in this instance either use the libc bindings or
     /// consult the module documentation to see if there is a more appropriate interface available.
     UnsupportedOperation,
 }

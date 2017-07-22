@@ -523,20 +523,20 @@ impl SigEvent {
             SigevNotify::SigevThreadId{..} => 4  // No SIGEV_THREAD_ID defined
         };
         sev.sigev_signo = match sigev_notify {
-            SigevNotify::SigevSignal{ signal, .. } => signal as ::c_int,
+            SigevNotify::SigevSignal{ signal, .. } => signal as libc::c_int,
             #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
             SigevNotify::SigevKevent{ kq, ..} => kq,
             #[cfg(any(target_os = "linux", target_os = "freebsd"))]
-            SigevNotify::SigevThreadId{ signal, .. } => signal as ::c_int,
+            SigevNotify::SigevThreadId{ signal, .. } => signal as libc::c_int,
             _ => 0
         };
         sev.sigev_value.sival_ptr = match sigev_notify {
             SigevNotify::SigevNone => ptr::null_mut::<libc::c_void>(),
-            SigevNotify::SigevSignal{ si_value, .. } => si_value as *mut ::c_void,
+            SigevNotify::SigevSignal{ si_value, .. } => si_value as *mut libc::c_void,
             #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
-            SigevNotify::SigevKevent{ udata, .. } => udata as *mut ::c_void,
+            SigevNotify::SigevKevent{ udata, .. } => udata as *mut libc::c_void,
             #[cfg(any(target_os = "linux", target_os = "freebsd"))]
-            SigevNotify::SigevThreadId{ si_value, .. } => si_value as *mut ::c_void,
+            SigevNotify::SigevThreadId{ si_value, .. } => si_value as *mut libc::c_void,
         };
         SigEvent::set_tid(&mut sev, &sigev_notify);
         SigEvent{sigevent: sev}
