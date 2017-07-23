@@ -191,6 +191,18 @@ impl ForkResult {
 /// Continuing execution in parent process, new child has pid: 1234
 /// I'm a new child process
 /// ```
+///
+/// # Safety
+///
+/// In a multithreaded program, only [async-signal-safe] functions like `pause`
+/// and `_exit` may be called by the child (the parent isn't restricted). Note
+/// that memory allocation may **not** be async-signal-safe and thus must be
+/// prevented.
+///
+/// Those functions are only a small subset of your operating system's API, so
+/// special care must be taken to only invoke code you can control and audit.
+///
+/// [async-signal-safe]: http://man7.org/linux/man-pages/man7/signal-safety.7.html
 #[inline]
 pub fn fork() -> Result<ForkResult> {
     use self::ForkResult::*;
@@ -687,7 +699,7 @@ pub fn gethostname<'a>(buffer: &'a mut [u8]) -> Result<&'a CStr> {
 /// use nix::unistd::close;
 ///
 /// fn main() {
-///     let mut f = tempfile::tempfile().unwrap();
+///     let f = tempfile::tempfile().unwrap();
 ///     close(f.as_raw_fd()).unwrap();   // Bad!  f will also close on drop!
 /// }
 /// ```
@@ -700,7 +712,7 @@ pub fn gethostname<'a>(buffer: &'a mut [u8]) -> Result<&'a CStr> {
 /// use nix::unistd::close;
 ///
 /// fn main() {
-///     let mut f = tempfile::tempfile().unwrap();
+///     let f = tempfile::tempfile().unwrap();
 ///     close(f.into_raw_fd()).unwrap(); // Good.  into_raw_fd consumes f
 /// }
 /// ```
