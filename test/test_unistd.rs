@@ -4,7 +4,7 @@ use nix::unistd::*;
 use nix::unistd::ForkResult::*;
 use nix::sys::wait::*;
 use nix::sys::stat;
-use std::iter;
+use std::{env, iter};
 use std::ffi::CString;
 use std::fs::File;
 use std::io::Write;
@@ -66,7 +66,10 @@ fn test_wait() {
 
 #[test]
 fn test_mkstemp() {
-    let result = mkstemp("/tmp/nix_tempfile.XXXXXX");
+    let mut path = env::temp_dir();
+    path.push("nix_tempfile.XXXXXX");
+
+    let result = mkstemp(&path);
     match result {
         Ok((fd, path)) => {
             close(fd).unwrap();
@@ -74,14 +77,12 @@ fn test_mkstemp() {
         },
         Err(e) => panic!("mkstemp failed: {}", e)
     }
+}
 
-    let result = mkstemp("/tmp/");
-    match result {
-        Ok(_) => {
-            panic!("mkstemp succeeded even though it should fail (provided a directory)");
-        },
-        Err(_) => {}
-    }
+#[test]
+fn test_mkstemp_directory() {
+    // mkstemp should fail if a directory is given
+    assert!(mkstemp(&env::temp_dir()).is_err());
 }
 
 #[test]

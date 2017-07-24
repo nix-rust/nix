@@ -1,9 +1,9 @@
 use nix::net::if_::*;
 
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "android", target_os = "linux"))]
 const LOOPBACK: &'static [u8] = b"lo";
 
-#[cfg(not(target_os = "linux"))]
+#[cfg(not(any(target_os = "android", target_os = "linux")))]
 const LOOPBACK: &'static [u8] = b"lo0";
 
 #[test]
