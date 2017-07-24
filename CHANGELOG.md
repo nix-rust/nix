@@ -31,6 +31,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#566](https://github.com/nix-rust/nix/pull/566)).
 
 ### Changed
+- The `ioctl!` macro and its variants now allow the generated functions to have
+  doccomments. ([#661](https://github.com/nix-rust/nix/pull/661))
 - Changed `ioctl!(write ...)` into `ioctl!(write_ptr ...)` and `ioctl!(write_int ..)` variants
   to more clearly separate those use cases. ([#670](https://github.com/nix-rust/nix/pull/670))
 - Marked `sys::mman::{ mmap, munmap, madvise, munlock, msync }` as unsafe.
