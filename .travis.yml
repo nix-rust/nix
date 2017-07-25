@@ -48,7 +48,7 @@ matrix:
       rust: 1.13.0
     - env: TARGET=arm-unknown-linux-gnueabi
       rust: 1.13.0
-    - env: TARGET=arm-unknown-linux-musleabi
+    - env: TARGET=arm-unknown-linux-musleabi DISABLE_TESTS=1
       rust: 1.14.0
     - env: TARGET=armv7-unknown-linux-gnueabihf
       rust: 1.13.0
@@ -70,7 +70,7 @@ matrix:
       rust: 1.13.0
     - env: TARGET=powerpc64le-unknown-linux-gnu
       rust: 1.13.0
-    - env: TARGET=s390x-unknown-linux-gnu
+    - env: TARGET=s390x-unknown-linux-gnu DISABLE_TESTS=1
       rust: 1.13.0
     - env: TARGET=x86_64-unknown-linux-gnu
       rust: 1.13.0
@@ -101,16 +101,6 @@ matrix:
     # however be on the lookout for this and file those bugs with upstream.
     - env: TARGET=x86_64-unknown-linux-gnu
       rust: beta
-
-    # Planning to add these targets, but they can fail for now
-    - env: TARGET=mips64-unknown-linux-gnuabi64
-      rust: 1.13.0
-    - env: TARGET=mips64el-unknown-linux-gnuabi64
-      rust: 1.13.0
-    - env: TARGET=arm-unknown-linux-musleabi
-      rust: 1.14.0
-    - env: TARGET=s390x-unknown-linux-gnu
-      rust: 1.13.0
 
 before_install: set -e
 

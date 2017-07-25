@@ -241,7 +241,7 @@ extern fn sigfunc(_: c_int) {
 // Test an aio operation with completion delivered by a signal
 // FIXME: This test is ignored on mips because of failures in qemu in CI
 #[test]
-#[cfg_attr(any(all(target_env = "musl", target_arch = "x86_64"), target_arch = "mips"), ignore)]
+#[cfg_attr(any(all(target_env = "musl", target_arch = "x86_64"), target_arch = "mips", target_arch = "mips64"), ignore)]
 fn test_write_sigev_signal() {
     #[allow(unused_variables)]
     let m = ::SIGNAL_MTX.lock().expect("Mutex got poisoned by another test");
@@ -369,10 +369,10 @@ fn test_lio_listio_nowait() {
 
 // Test lio_listio with LIO_NOWAIT and a SigEvent to indicate when all AioCb's
 // are complete.
-// FIXME: This test is ignored on mips because of failures in qemu in CI.
+// FIXME: This test is ignored on mips/mips64 because of failures in qemu in CI.
 #[test]
 #[cfg(not(any(target_os = "ios", target_os = "macos")))]
-#[cfg_attr(any(target_arch = "mips", target_env = "musl"), ignore)]
+#[cfg_attr(any(target_arch = "mips", target_arch = "mips64", target_env = "musl"), ignore)]
 fn test_lio_listio_signal() {
     #[allow(unused_variables)]
     let m = ::SIGNAL_MTX.lock().expect("Mutex got poisoned by another test");
