@@ -51,8 +51,7 @@ mod ptrace {
     use libc::_exit;
 
     fn ptrace_child() -> ! {
-        // TODO ptrace::traceme will be added in #666
-        let _ = ptrace::ptrace(PTRACE_TRACEME, Pid::from_raw(0), ptr::null_mut(), ptr::null_mut());
+        ptrace::ptrace(PTRACE_TRACEME, Pid::from_raw(0), ptr::null_mut(), ptr::null_mut()).unwrap();
         // As recommended by ptrace(2), raise SIGTRAP to pause the child
         // until the parent is ready to continue
         let _ = raise(SIGTRAP);
@@ -66,11 +65,9 @@ mod ptrace {
         assert!(ptrace::setoptions(child, PTRACE_O_TRACESYSGOOD | PTRACE_O_TRACEEXIT).is_ok());
 
         // First, stop on the next system call, which will be exit()
-        // TODO ptrace::syscall will be added in #666
         assert!(ptrace::ptrace(PTRACE_SYSCALL, child, ptr::null_mut(), ptr::null_mut()).is_ok());
         assert_eq!(waitpid(child, None), Ok(WaitStatus::PtraceSyscall(child)));
         // Then get the ptrace event for the process exiting
-        // TODO ptrace::cont will be added in #666
         assert!(ptrace::ptrace(PTRACE_CONT, child, ptr::null_mut(), ptr::null_mut()).is_ok());
         assert_eq!(waitpid(child, None), Ok(WaitStatus::PtraceEvent(child, SIGTRAP, PTRACE_EVENT_EXIT)));
         // Finally get the normal wait() result, now that the process has exited
