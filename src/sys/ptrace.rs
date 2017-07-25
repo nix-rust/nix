@@ -108,7 +108,7 @@ fn ptrace_other(request: ptrace::PtraceRequest, pid: Pid, addr: *mut c_void, dat
 }
 
 /// Set options, as with `ptrace(PTRACE_SETOPTIONS,...)`.
-pub fn ptrace_setoptions(pid: Pid, options: ptrace::PtraceOptions) -> Result<()> {
+pub fn setoptions(pid: Pid, options: ptrace::PtraceOptions) -> Result<()> {
     use self::ptrace::*;
     use std::ptr;
 
@@ -117,19 +117,19 @@ pub fn ptrace_setoptions(pid: Pid, options: ptrace::PtraceOptions) -> Result<()>
 }
 
 /// Gets a ptrace event as described by `ptrace(PTRACE_GETEVENTMSG,...)`
-pub fn ptrace_getevent(pid: Pid) -> Result<c_long> {
+pub fn getevent(pid: Pid) -> Result<c_long> {
     use self::ptrace::*;
     ptrace_get_data::<c_long>(PTRACE_GETEVENTMSG, pid)
 }
 
 /// Get siginfo as with `ptrace(PTRACE_GETSIGINFO,...)`
-pub fn ptrace_getsiginfo(pid: Pid) -> Result<siginfo_t> {
+pub fn getsiginfo(pid: Pid) -> Result<siginfo_t> {
     use self::ptrace::*;
     ptrace_get_data::<siginfo_t>(PTRACE_GETSIGINFO, pid)
 }
 
 /// Set siginfo as with `ptrace(PTRACE_SETSIGINFO,...)`
-pub fn ptrace_setsiginfo(pid: Pid, sig: &siginfo_t) -> Result<()> {
+pub fn setsiginfo(pid: Pid, sig: &siginfo_t) -> Result<()> {
     use self::ptrace::*;
     let ret = unsafe{
         Errno::clear();
