@@ -50,13 +50,27 @@ pub use self::multicast::{
 
 pub use libc::sockaddr_storage;
 
+/// These constants are used to specify the communication semantics
+/// when creating a socket with [`socket()`](fn.socket.html)
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 #[repr(i32)]
 pub enum SockType {
+    /// Provides sequenced, reliable, two-way, connection-
+    /// based byte streams.  An out-of-band data transmission
+    /// mechanism may be supported.
     Stream = libc::SOCK_STREAM,
+    /// Supports datagrams (connectionless, unreliable
+    /// messages of a fixed maximum length).
     Datagram = libc::SOCK_DGRAM,
+    /// Provides a sequenced, reliable, two-way connection-
+    /// based data transmission path for datagrams of fixed
+    /// maximum length; a consumer is required to read an
+    /// entire packet with each input system call.
     SeqPacket = libc::SOCK_SEQPACKET,
+    /// Provides raw network protocol access.
     Raw = libc::SOCK_RAW,
+    /// Provides a reliable datagram layer that does not
+    /// guarantee ordering.
     Rdm = libc::SOCK_RDM,
 }
 

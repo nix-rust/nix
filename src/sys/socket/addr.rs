@@ -12,28 +12,41 @@ use std::os::unix::io::RawFd;
 #[cfg(any(target_os = "ios", target_os = "macos"))]
 use ::sys::socket::addr::sys_control::SysControlAddr;
 
+/// These constants specify the protocol family to be used
+/// in [`socket`](fn.socket.html) and [`socketpair`](fn.socketpair.html)
 #[repr(i32)]
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Hash)]
 pub enum AddressFamily {
+    /// Local communication (see [`unix(7)`](http://man7.org/linux/man-pages/man7/unix.7.html))
     Unix = libc::AF_UNIX,
+    /// IPv4 Internet protocols (see [`ip(7)`](http://man7.org/linux/man-pages/man7/ip.7.html))
     Inet = libc::AF_INET,
+    /// IPv6 Internet protocols (see [`ipv6(7)`](http://man7.org/linux/man-pages/man7/ipv6.7.html))
     Inet6 = libc::AF_INET6,
+    /// Kernel user interface device (see [`netlink(7)`](http://man7.org/linux/man-pages/man7/netlink.7.html))
     #[cfg(any(target_os = "android", target_os = "linux"))]
     Netlink = libc::AF_NETLINK,
+    /// Low level packet interface (see [`packet(7)`](http://man7.org/linux/man-pages/man7/packet.7.html))
     #[cfg(any(target_os = "android", target_os = "linux"))]
     Packet = libc::AF_PACKET,
+    /// KEXT Controls and Notifications
     #[cfg(any(target_os = "ios", target_os = "macos"))]
     System = libc::AF_SYSTEM,
+    /// Amateur radio AX.25 protocol
     #[cfg(any(target_os = "android", target_os = "linux"))]
     Ax25 = libc::AF_AX25,
+    /// IPX - Novell protocols
     Ipx = libc::AF_IPX,
+    /// AppleTalk
     AppleTalk = libc::AF_APPLETALK,
     #[cfg(any(target_os = "android", target_os = "linux"))]
     NetRom = libc::AF_NETROM,
     #[cfg(any(target_os = "android", target_os = "linux"))]
     Bridge = libc::AF_BRIDGE,
+    /// Access to raw ATM PVCs
     #[cfg(any(target_os = "android", target_os = "linux"))]
     AtmPvc = libc::AF_ATMPVC,
+    /// ITU-T X.25 / ISO-8208 protocol (see [`x25(7)`](http://man7.org/linux/man-pages/man7/x25.7.html))
     #[cfg(any(target_os = "android", target_os = "linux"))]
     X25 = libc::AF_X25,
     #[cfg(any(target_os = "android", target_os = "linux"))]
@@ -83,6 +96,7 @@ pub enum AddressFamily {
     Ieee802154 = libc::AF_IEEE802154,
     #[cfg(any(target_os = "android", target_os = "linux"))]
     Caif = libc::AF_CAIF,
+    /// Interface to kernel crypto API
     #[cfg(any(target_os = "android", target_os = "linux"))]
     Alg = libc::AF_ALG,
     #[cfg(target_os = "linux")]
