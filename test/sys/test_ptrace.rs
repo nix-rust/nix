@@ -3,14 +3,13 @@ use nix::errno::Errno;
 use nix::unistd::getpid;
 use nix::sys::ptrace;
 
-use std::{mem, ptr};
+use std::mem;
 
 #[test]
 fn test_ptrace() {
-    use nix::sys::ptrace::ptrace::PTRACE_ATTACH;
     // Just make sure ptrace can be called at all, for now.
     // FIXME: qemu-user doesn't implement ptrace on all arches, so permit ENOSYS
-    let err = ptrace::ptrace(PTRACE_ATTACH, getpid(), ptr::null_mut(), ptr::null_mut()).unwrap_err();
+    let err = ptrace::attach(getpid()).unwrap_err();
     assert!(err == Error::Sys(Errno::EPERM) || err == Error::Sys(Errno::ENOSYS));
 }
 

@@ -70,7 +70,7 @@ mod ffi {
 
 /// Performs a ptrace request. If the request in question is provided by a specialised function
 /// this function will return an unsupported operation error.
-pub fn ptrace(request: ptrace::PtraceRequest, pid: Pid, addr: *mut c_void, data: *mut c_void) -> Result<c_long> {
+pub unsafe fn ptrace(request: ptrace::PtraceRequest, pid: Pid, addr: *mut c_void, data: *mut c_void) -> Result<c_long> {
     use self::ptrace::*;
 
     match request {
@@ -138,5 +138,53 @@ pub fn setsiginfo(pid: Pid, sig: &siginfo_t) -> Result<()> {
     match Errno::result(ret) {
         Ok(_) => Ok(()),
         Err(e) => Err(e),
+    }
+}
+
+/// Sets the process as traceable with `PTRACE_TRACEME`
+pub fn traceme() -> Result<()> {
+    unsafe {
+        ptrace(
+            ptrace::PTRACE_TRACEME,
+            Pid::from_raw(0),
+            ptr::null_mut(),
+            ptr::null_mut(),
+        ).map(|_| ()) // ignore the useless return value
+    }
+}
+
+/// Makes the `PTRACE_SYSCALL` request to ptrace
+pub fn syscall(pid: Pid) -> Result<()> {
+    unsafe {
+        ptrace(
+            ptrace::PTRACE_SYSCALL,
+            pid,
+            ptr::null_mut(),
+            ptr::null_mut(),
+        ).map(|_| ()) // ignore the useless return value
+    }
+}
+
+/// Makes the `PTRACE_ATTACH` request to ptrace
+pub fn attach(pid: Pid) -> Result<()> {
+    unsafe {
+        ptrace(
+            ptrace::PTRACE_ATTACH,
+            pid,
+            ptr::null_mut(),
+            ptr::null_mut(),
+        ).map(|_| ()) // ignore the useless return value
+    }
+}
+
+/// Makes the `PTRACE_CONT` request to ptrace
+pub fn cont(pid: Pid) -> Result<()> {
+    unsafe {
+        ptrace(
+            ptrace::PTRACE_CONT,
+            pid,
+            ptr::null_mut(),
+            ptr::null_mut(),
+        ).map(|_| ()) // ignore the useless return value
     }
 }
