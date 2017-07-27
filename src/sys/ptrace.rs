@@ -1,3 +1,5 @@
+//! For detailed description of the ptrace requests, consult `man ptrace`.
+
 use std::{mem, ptr};
 use {Errno, Error, Result};
 use libc::{c_void, c_long, siginfo_t};
@@ -141,7 +143,10 @@ pub fn setsiginfo(pid: Pid, sig: &siginfo_t) -> Result<()> {
     }
 }
 
-/// Sets the process as traceable with `PTRACE_TRACEME`
+/// Sets the process as traceable, as with `ptrace(PTRACE_TRACEME, ...)`
+///
+/// Indicates that this process is to be traced by its parent.
+/// This is the only ptrace request to be issued by the tracee.
 pub fn traceme() -> Result<()> {
     unsafe {
         ptrace(
@@ -153,7 +158,9 @@ pub fn traceme() -> Result<()> {
     }
 }
 
-/// Makes the `PTRACE_SYSCALL` request to ptrace
+/// Ask for next syscall, as with `ptrace(PTRACE_SYSCALL, ...)`
+///
+/// Arranges for the tracee to be stopped at the next entry to or exit from a system call.
 pub fn syscall(pid: Pid) -> Result<()> {
     unsafe {
         ptrace(
@@ -165,7 +172,9 @@ pub fn syscall(pid: Pid) -> Result<()> {
     }
 }
 
-/// Makes the `PTRACE_ATTACH` request to ptrace
+/// Attach to a running process, as with `ptrace(PTRACE_ATTACH, ...)`
+///
+/// Attaches to the process specified in pid, making it a tracee of the calling process.
 pub fn attach(pid: Pid) -> Result<()> {
     unsafe {
         ptrace(
@@ -177,7 +186,10 @@ pub fn attach(pid: Pid) -> Result<()> {
     }
 }
 
-/// Makes the `PTRACE_CONT` request to ptrace
+/// Restart the stopped tracee process, as with `ptrace(PTRACE_CONT, ...)`
+///
+/// No stop request is done as a part of this call.
+/// No signal is delivered to the process.
 pub fn cont(pid: Pid) -> Result<()> {
     unsafe {
         ptrace(
