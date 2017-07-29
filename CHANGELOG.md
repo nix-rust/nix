@@ -6,6 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Changed
+- Enabled `nix::poll` for 'freebsd' and 'netbsd' targets. ([#710](https://github.com/nix-rus/nix/pull/710))
 - Renamed existing `ptrace` wrappers to encourage namespacing ([#692](https://github.com/nix-rust/nix/pull/692))
 
 ## [0.9.0] 2017-07-23
