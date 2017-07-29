@@ -39,7 +39,7 @@ pub mod mqueue;
 
 pub mod pty;
 
-#[cfg(any(target_os = "linux", target_os = "macos"))]
+#[cfg(any(target_os = "linux", target_os = "macos", target_os="freebsd", target_os="netbsd"))]
 pub mod poll;
 
 pub mod net;
