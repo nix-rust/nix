@@ -86,9 +86,11 @@ matrix:
       os: osx
 
     # *BSD
-    - env: TARGET=i686-unknown-freebsd DISABLE_TESTS=1
-      rust: 1.13.0
-    # - env: TARGET=x86_64-unknown-freebsd DISABLE_TESTS=1 # Uses BuildBot instead
+    # FreeBSD i686 and x86_64 use BuildBot instead of Travis
+    # Note that i686-unknown-freebsd is actually using stable Rust instead of
+    # 1.13.0 because rustup does not support i686-unknown-freebsd
+    # - env: TARGET=i686-unknown-freebsd DISABLE_TESTS=1
+    # - env: TARGET=x86_64-unknown-freebsd DISABLE_TESTS=1
     - env: TARGET=x86_64-unknown-netbsd DISABLE_TESTS=1
       rust: 1.13.0
 
