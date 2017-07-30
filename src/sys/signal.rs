@@ -9,11 +9,43 @@ use std::mem;
 #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
 use std::os::unix::io::RawFd;
 use std::ptr;
+use std::ops::{BitOr, BitOrAssign};
 
 // Currently there is only one definition of c_int in libc, as well as only one
 // type for signal constants.
 // We would prefer to use the libc::c_int alias in the repr attribute. Unfortunately
 // this is not (yet) possible.
+/// `Signal` is a representation of a POSIX signal on various platforms, analogous to the
+/// `libc::SIG*` constants. In nix it is used for various operations related to signals (such as
+/// masking, sending, intercepting, etc). A related type is `SigSet`, which represents a collection
+/// (or set) of `Signal`s.
+///
+/// # Examples
+///
+/// Note that any `Signal` can be promoted to a `SigSet` either through the use of the `|`
+/// (`BitOr`) operator, or through `std::convert::Into`.
+///
+/// `Into` and `From` promote a signal to a `SigSet` that has only the given `Signal` inside it.
+/// ```
+/// # use ::nix::sys::signal::*;
+/// let sigset_a: SigSet = Signal::SIGTERM.into();
+/// let sigset_b = SigSet::from(Signal::SIGTERM);
+/// ```
+///
+/// `SigSet`s of multiple `Signal`s can be created using the `|` (`BitOr`) operator.
+/// ```
+/// # use ::nix::sys::signal::*;
+/// let sigset = Signal::SIGTERM | Signal::SIGHUP;
+/// ```
+///
+/// Existing `SigSet`s can be extended using the `|` (`BitOr`) or `|=` (`BitOrAssign`) operator as
+/// well (note that it is also commutative).
+/// ```
+/// # use ::nix::sys::signal::*;
+/// let mut sigset = SigSet::empty();
+/// sigset |= Signal::SIGQUIT;
+/// sigset |= Signal::SIGHUP | Signal::SIGUSER;
+/// ```
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(i32)]
 pub enum Signal {
@@ -194,6 +226,25 @@ impl Signal {
     }
 }
 
+impl<T: Into<SigSet>> BitOr<T> for SigSet {
+    type Output = SigSet;
+
+    fn bitor(self, rhs: T) -> Self::Output {
+        let mut copy = self;
+        copy.extend(&rhs.into());
+        copy
+    }
+}
+
+impl<T: Into<SigSet>> BitOr<T> for Signal {
+    type Output = SigSet;
+
+    // bitor is commutative.
+    fn bitor(self, rhs: T) -> Self::Output {
+        rhs.into() | self
+    }
+}
+
 pub const SIGIOT : Signal = SIGABRT;
 pub const SIGPOLL : Signal = SIGIO;
 pub const SIGUNUSED : Signal = SIGSYS;
@@ -248,11 +299,38 @@ pub enum SigmaskHow {
     SIG_SETMASK = libc::SIG_SETMASK,
 }
 
+/// `SigSet` represents a set of signals and is a thin wrapper around the libc APIs for `sigset_t`.
+/// However, due to the clunky nature of the libc APIs around sigset_t (`SigSet::add`,
+/// `SigSet::extend` and so on), a more idiomatic way of constructing `SigSet`s is possible using
+/// `|` (`BitOr`) and `|=` (`BitOrAssign`).
+///
+/// # Examples
+///
+/// ```
+/// # use ::nix::sys::signal::*;
+/// let mut sigset = Signal::SIGTERM | Signal::SIGHUP;
+/// sigset |= Signal::SIGKILL;
+/// sigset |= Signal::SIGUSR1 | Signal::SIGUSR2;
+/// ```
+///
+/// In addition, `Signal`s can be promoted to `SigSet`s through the use of `std::convert::Into`.
+/// ```
+/// # use ::nix::sys::signal::*;
+/// let sigset_a: SigSet = Signal::SIGTERM.into();
+/// let sigset_b = SigSet::from(Signal::SIGTERM);
+/// ```
 #[derive(Clone, Copy)]
 pub struct SigSet {
     sigset: libc::sigset_t
 }
 
+impl From<Signal> for SigSet {
+    fn from(s: Signal) -> SigSet {
+        let mut sigset = SigSet::empty();
+        sigset.add(s);
+        sigset
+    }
+}
 
 impl SigSet {
     pub fn all() -> SigSet {
@@ -291,10 +369,10 @@ impl SigSet {
         }
     }
 
-    pub fn extend(&mut self, other: &SigSet) {
+    pub fn extend<'a, T: Copy + Into<&'a SigSet>>(&mut self, other: T) {
         for signal in Signal::iterator() {
-            if other.contains(signal) {
-                self.add(signal);
+            if other.into().contains(signal) {
+                self.add(signal.into());
             }
         }
     }
@@ -344,6 +422,12 @@ impl AsRef<libc::sigset_t> for SigSet {
     }
 }
 
+impl<T: Into<SigSet>> BitOrAssign<T> for SigSet {
+    fn bitor_assign(&mut self, rhs: T) {
+        self.extend(&rhs.into());
+    }
+}
+
 #[allow(unknown_lints)]
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum SigHandler {
@@ -360,7 +444,7 @@ pub struct SigAction {
 impl SigAction {
     /// This function will set or unset the flag `SA_SIGINFO` depending on the
     /// type of the `handler` argument.
-    pub fn new(handler: SigHandler, flags: SaFlags, mask: SigSet) -> SigAction {
+    pub fn new<T: Into<SigSet>>(handler: SigHandler, flags: SaFlags, mask: T) -> SigAction {
         let mut s = unsafe { mem::uninitialized::<libc::sigaction>() };
         s.sa_sigaction = match handler {
             SigHandler::SigDfl => unsafe { mem::transmute(libc::SIG_DFL) },
@@ -372,7 +456,7 @@ impl SigAction {
             SigHandler::SigAction(_) => (flags | SA_SIGINFO).bits(),
             _ => (flags - SA_SIGINFO).bits(),
         };
-        s.sa_mask = mask.sigset;
+        s.sa_mask = mask.into().sigset;
 
         SigAction { sigaction: s }
     }
@@ -733,5 +817,95 @@ mod tests {
 
         raise(SIGUSR1).unwrap();
         assert_eq!(mask.wait().unwrap(), SIGUSR1);
+    }
+
+    #[test]
+    fn test_sigset_into() {
+        let sigset_a: SigSet = Signal::SIGINT.into();
+        assert!(sigset_a.contains(Signal::SIGINT));
+        assert!(!sigset_a.contains(Signal::SIGTERM));
+        let sigset_b = SigSet::from(Signal::SIGTERM);
+        assert!(!sigset_b.contains(Signal::SIGINT));
+        assert!(sigset_b.contains(Signal::SIGTERM));
+    }
+
+    #[test]
+    fn test_signal_bitor() {
+        let sigset_a = Signal::SIGINT | Signal::SIGTERM;
+        assert!(sigset_a.contains(Signal::SIGINT));
+        assert!(sigset_a.contains(Signal::SIGTERM));
+        assert!(!sigset_a.contains(Signal::SIGKILL));
+        assert!(!sigset_a.contains(Signal::SIGHUP));
+
+        let sigset_b = sigset_a | Signal::SIGKILL;
+        assert!(sigset_b.contains(Signal::SIGINT));
+        assert!(sigset_b.contains(Signal::SIGTERM));
+        assert!(sigset_b.contains(Signal::SIGKILL));
+        assert!(!sigset_b.contains(Signal::SIGHUP));
+
+        let sigset_c = sigset_a | Signal::SIGHUP | sigset_b;
+        assert!(sigset_c.contains(Signal::SIGINT));
+        assert!(sigset_c.contains(Signal::SIGTERM));
+        assert!(sigset_c.contains(Signal::SIGKILL));
+        assert!(sigset_c.contains(Signal::SIGHUP));
+    }
+
+    #[test]
+    fn test_sigset_bitor() {
+        let sigempty = SigSet::empty();
+        assert!(!sigempty.contains(Signal::SIGINT));
+        assert!(!sigempty.contains(Signal::SIGTERM));
+
+        let sigset_a = Signal::SIGINT | Signal::SIGTERM;
+        assert!(sigset_a.contains(Signal::SIGINT));
+        assert!(sigset_a.contains(Signal::SIGTERM));
+        assert!(!sigset_a.contains(Signal::SIGHUP));
+
+        let sigset_b: SigSet = Signal::SIGHUP.into();
+        assert!(!sigset_b.contains(Signal::SIGINT));
+        assert!(!sigset_b.contains(Signal::SIGTERM));
+        assert!(sigset_b.contains(Signal::SIGHUP));
+
+        let sigset_c = sigset_a | sigset_b | sigempty;
+        assert!(sigset_c.contains(Signal::SIGINT));
+        assert!(sigset_c.contains(Signal::SIGTERM));
+        assert!(sigset_c.contains(Signal::SIGHUP));
+
+        let sigset_d = sigset_c | sigset_c | sigset_b | sigempty;
+        assert!(sigset_d.contains(Signal::SIGINT));
+        assert!(sigset_d.contains(Signal::SIGTERM));
+        assert!(sigset_d.contains(Signal::SIGHUP));
+    }
+
+    #[test]
+    fn test_sigset_bitor_assign() {
+        let mut sigset_a = SigSet::empty();
+        assert!(!sigset_a.contains(Signal::SIGINT));
+        assert!(!sigset_a.contains(Signal::SIGTERM));
+        assert!(!sigset_a.contains(Signal::SIGHUP));
+
+        sigset_a |= Signal::SIGINT;
+        assert!(sigset_a.contains(Signal::SIGINT));
+        assert!(!sigset_a.contains(Signal::SIGTERM));
+        assert!(!sigset_a.contains(Signal::SIGHUP));
+
+        sigset_a |= Signal::SIGTERM | Signal::SIGHUP;
+        assert!(sigset_a.contains(Signal::SIGINT));
+        assert!(sigset_a.contains(Signal::SIGTERM));
+        assert!(sigset_a.contains(Signal::SIGHUP));
+
+        let mut sigset_b: SigSet = Signal::SIGKILL.into();
+        assert!(!sigset_b.contains(Signal::SIGINT));
+        assert!(!sigset_b.contains(Signal::SIGTERM));
+        assert!(!sigset_b.contains(Signal::SIGHUP));
+        assert!(sigset_b.contains(Signal::SIGKILL));
+        assert!(!sigset_b.contains(Signal::SIGSTOP));
+
+        sigset_b |= sigset_a;
+        assert!(sigset_b.contains(Signal::SIGINT));
+        assert!(sigset_b.contains(Signal::SIGTERM));
+        assert!(sigset_b.contains(Signal::SIGHUP));
+        assert!(sigset_b.contains(Signal::SIGKILL));
+        assert!(!sigset_b.contains(Signal::SIGSTOP));
     }
 }
