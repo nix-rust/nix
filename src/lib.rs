@@ -21,6 +21,9 @@ extern crate void;
 #[cfg(test)]
 extern crate nix_test as nixtest;
 
+#[cfg(target_os = "dragonfly")]
+extern crate errno_dragonfly;
+
 #[macro_use] mod macros;
 
 pub extern crate libc;

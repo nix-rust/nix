@@ -1,9 +1,13 @@
+#[cfg(not(target_os = "dragonfly"))]
 use libc::c_int;
 use std::{fmt, io, error};
 use {Error, Result};
 
 pub use self::consts::*;
 pub use self::consts::Errno::*;
+
+#[cfg(target_os = "dragonfly")]
+use errno_dragonfly::errno_location;
 
 #[cfg(any(target_os = "macos",
           target_os = "ios",
@@ -21,12 +25,6 @@ fn errno_location() -> *mut c_int {
     unsafe {
         __errno()
     }
-}
-
-#[cfg(target_os = "dragonfly")]
-unsafe fn errno_location() -> *mut c_int {
-    extern { fn __dfly_error() -> *mut c_int; }
-    __dfly_error()
 }
 
 #[cfg(any(target_os = "openbsd", target_os = "netbsd"))]

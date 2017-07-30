@@ -198,27 +198,34 @@ mod status {
           target_os = "netbsd"))]
 mod status {
     use sys::signal::Signal;
+    use libc::c_int;
 
-    const WCOREFLAG: i32 = 0x80;
-    const WSTOPPED: i32 = 0x7f;
+    const WCOREFLAG: c_int = 0x80;
+    const WSTOPPED: c_int = 0x7f;
 
-    fn wstatus(status: i32) -> i32 {
+    fn wstatus(status: c_int) -> c_int {
         status & 0x7F
     }
 
-    pub fn stopped(status: i32) -> bool {
+    pub fn stopped(status: c_int) -> bool {
         wstatus(status) == WSTOPPED
     }
 
-    pub fn stop_signal(status: i32) -> Signal {
+    pub fn stop_signal(status: c_int) -> Signal {
         Signal::from_c_int(status >> 8).unwrap()
     }
 
-    pub fn signaled(status: i32) -> bool {
+    #[cfg(target_os = "dragonfly")]
+    pub fn signaled(status: c_int) -> bool {
+        wstatus(status) != WSTOPPED && wstatus(status) != 0
+    }
+
+    #[cfg(not(target_os = "dragonfly"))]
+    pub fn signaled(status: c_int) -> bool {
         wstatus(status) != WSTOPPED && wstatus(status) != 0 && status != 0x13
     }
 
-    pub fn term_signal(status: i32) -> Signal {
+    pub fn term_signal(status: c_int) -> Signal {
         Signal::from_c_int(wstatus(status)).unwrap()
     }
 

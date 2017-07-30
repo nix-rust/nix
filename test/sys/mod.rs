@@ -1,5 +1,11 @@
 mod test_signal;
-#[cfg(any(target_os = "freebsd", target_os = "dragonfly", target_os = "ios",
+
+// NOTE: DragonFly lacks a kernel-level implementation of Posix AIO
+// as of this writing, while there is an user-level implementation,
+// but whether aio works or not heavily depends on which pthread
+// implementation is chosen by the user at link time. For this
+// reason we do not want to run aio test cases on DragonFly.
+#[cfg(any(target_os = "freebsd", target_os = "ios",
           target_os = "netbsd", target_os = "macos", target_os = "linux"))]
 mod test_aio;
 #[cfg(target_os = "linux")]
