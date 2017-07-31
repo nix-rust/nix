@@ -53,7 +53,7 @@ mod ptrace {
         ptrace::traceme().unwrap();
         // As recommended by ptrace(2), raise SIGTRAP to pause the child
         // until the parent is ready to continue
-        let _ = raise(SIGTRAP);
+        raise(SIGTRAP).unwrap();
         unsafe { _exit(0) }
     }
 

@@ -46,3 +46,36 @@ fn test_ptrace_setsiginfo() {
         _ => (),
     }
 }
+
+
+#[test]
+fn test_ptrace_cont() {
+    use nix::sys::ptrace;
+    use nix::sys::signal::{raise, Signal};
+    use nix::sys::wait::{waitpid, WaitStatus};
+    use nix::unistd::fork;
+    use nix::unistd::ForkResult::*;
+
+    match fork() {
+        Ok(Child) => {
+            ptrace::traceme().unwrap();
+            // As recommended by ptrace(2), raise SIGTRAP to pause the child
+            // until the parent is ready to continue
+            loop {
+                raise(Signal::SIGTRAP).unwrap();
+            }
+
+        },
+        Ok(Parent { child }) => {
+            assert_eq!(waitpid(child, None), Ok(WaitStatus::Stopped(child, Signal::SIGTRAP)));
+            ptrace::cont(child, None).unwrap();
+            assert_eq!(waitpid(child, None), Ok(WaitStatus::Stopped(child, Signal::SIGTRAP)));
+            ptrace::cont(child, Signal::SIGKILL).unwrap();
+            match waitpid(child, None) {
+                Ok(WaitStatus::Signaled(pid, Signal::SIGKILL, _)) if pid == child => {}
+                _ => panic!("The process should have been killed"),
+            }
+        },
+        Err(_) => panic!("Error: Fork Failed")
+    }
+}
