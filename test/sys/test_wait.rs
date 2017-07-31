@@ -67,10 +67,10 @@ mod ptrace {
         assert!(ptrace::syscall(child).is_ok());
         assert_eq!(waitpid(child, None), Ok(WaitStatus::PtraceSyscall(child)));
         // Then get the ptrace event for the process exiting
-        assert!(ptrace::cont(child).is_ok());
+        assert!(ptrace::cont(child, None).is_ok());
         assert_eq!(waitpid(child, None), Ok(WaitStatus::PtraceEvent(child, SIGTRAP, PTRACE_EVENT_EXIT)));
         // Finally get the normal wait() result, now that the process has exited
-        assert!(ptrace::cont(child).is_ok());
+        assert!(ptrace::cont(child, None).is_ok());
         assert_eq!(waitpid(child, None), Ok(WaitStatus::Exited(child, 0)));
     }
 

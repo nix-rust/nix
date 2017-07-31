@@ -4,6 +4,7 @@ use std::{mem, ptr};
 use {Errno, Error, Result};
 use libc::{c_void, c_long, siginfo_t};
 use ::unistd::Pid;
+use sys::signal::Signal;
 
 pub mod ptrace {
     use libc::c_int;
@@ -188,15 +189,15 @@ pub fn attach(pid: Pid) -> Result<()> {
 
 /// Restart the stopped tracee process, as with `ptrace(PTRACE_CONT, ...)`
 ///
-/// No stop request is done as a part of this call.
-/// No signal is delivered to the process.
-pub fn cont(pid: Pid) -> Result<()> {
+/// Continues the execution of the process with PID `pid`, optionally
+/// delivering a signal specified by `sig`.
+pub fn cont<T: Into<Option<Signal>>>(pid: Pid, sig: T) -> Result<()> {
+    let data = match sig.into() {
+        Some(s) => s as i32 as *mut c_void,
+        None => ptr::null_mut(),
+    };
     unsafe {
-        ptrace(
-            ptrace::PTRACE_CONT,
-            pid,
-            ptr::null_mut(),
-            ptr::null_mut(),
-        ).map(|_| ()) // ignore the useless return value
+        ptrace(ptrace::PTRACE_CONT, pid, ptr::null_mut(), data).map(|_| ()) // ignore the useless return value
     }
 }
+
