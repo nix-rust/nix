@@ -58,6 +58,7 @@ fn test_ptrace_cont() {
 
     // FIXME: qemu-user doesn't implement ptrace on all arches and gives ENOSYS then.
     // use it to filter out the affected platforms
+    // on valid platforms it will return Errno::EPERM
     let err = ptrace::attach(getpid()).unwrap_err();
     if err == Error::Sys(Errno::ENOSYS) {
         return;
