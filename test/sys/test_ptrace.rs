@@ -55,6 +55,12 @@ fn test_ptrace_cont() {
     use nix::sys::wait::{waitpid, WaitStatus};
     use nix::unistd::fork;
     use nix::unistd::ForkResult::*;
+    // FIXME: qemu-user doesn't implement ptrace on all arches and gives ENOSYS then.
+    // use it to filter out the affected platforms
+    let err = ptrace::attach(getpid()).unwrap_err();
+    if err == Error::Sys(Errno::ENOSYS) {
+        return;
+    }
 
     match fork() {
         Ok(Child) => {
