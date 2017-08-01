@@ -5,13 +5,12 @@ use {Error, Errno, Result};
 use features;
 use fcntl::{fcntl, FD_CLOEXEC, O_NONBLOCK};
 use fcntl::FcntlArg::{F_SETFD, F_SETFL};
-use libc::{c_void, c_int, socklen_t, size_t, pid_t, uid_t, gid_t};
+use libc::{self, c_void, c_int, socklen_t, size_t, pid_t, uid_t, gid_t};
 use std::{mem, ptr, slice};
 use std::os::unix::io::RawFd;
 use sys::uio::IoVec;
 
 mod addr;
-mod consts;
 mod ffi;
 mod multicast;
 pub mod sockopt;
@@ -48,27 +47,111 @@ pub use self::multicast::{
     ip_mreq,
     ipv6_mreq,
 };
-pub use self::consts::*;
 
 pub use libc::sockaddr_storage;
 
+/// These constants are used to specify the communication semantics
+/// when creating a socket with [`socket()`](fn.socket.html)
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 #[repr(i32)]
 pub enum SockType {
-    Stream = consts::SOCK_STREAM,
-    Datagram = consts::SOCK_DGRAM,
-    SeqPacket = consts::SOCK_SEQPACKET,
-    Raw = consts::SOCK_RAW,
-    Rdm = consts::SOCK_RDM,
+    /// Provides sequenced, reliable, two-way, connection-
+    /// based byte streams.  An out-of-band data transmission
+    /// mechanism may be supported.
+    Stream = libc::SOCK_STREAM,
+    /// Supports datagrams (connectionless, unreliable
+    /// messages of a fixed maximum length).
+    Datagram = libc::SOCK_DGRAM,
+    /// Provides a sequenced, reliable, two-way connection-
+    /// based data transmission path for datagrams of fixed
+    /// maximum length; a consumer is required to read an
+    /// entire packet with each input system call.
+    SeqPacket = libc::SOCK_SEQPACKET,
+    /// Provides raw network protocol access.
+    Raw = libc::SOCK_RAW,
+    /// Provides a reliable datagram layer that does not
+    /// guarantee ordering.
+    Rdm = libc::SOCK_RDM,
 }
 
-// Extra flags - Supported by Linux 2.6.27, normalized on other platforms
+/// Constants used in [`socket`](fn.socket.html) and [`socketpair`](fn.socketpair.html)
+/// to specify the protocol to use.
+#[repr(i32)]
+pub enum SockProtocol {
+    /// TCP protocol ([ip(7)](http://man7.org/linux/man-pages/man7/ip.7.html))
+    Tcp = libc::IPPROTO_TCP,
+    /// UDP protocol ([ip(7)](http://man7.org/linux/man-pages/man7/ip.7.html))
+    Udp = libc::IPPROTO_UDP,
+    /// Allows applications and other KEXTs to be notified when certain kernel events occur
+    /// ([ref](https://developer.apple.com/library/content/documentation/Darwin/Conceptual/NKEConceptual/control/control.html))
+    #[cfg(any(target_os = "ios", target_os = "macos"))]
+    KextEvent = libc::SYSPROTO_EVENT,
+    /// Allows applications to configure and control a KEXT
+    /// ([ref](https://developer.apple.com/library/content/documentation/Darwin/Conceptual/NKEConceptual/control/control.html))
+    #[cfg(any(target_os = "ios", target_os = "macos"))]
+    KextControl = libc::SYSPROTO_CONTROL,
+}
+
 bitflags!(
+    /// Extra flags - Supported by Linux 2.6.27, normalized on other platforms
     pub struct SockFlag: c_int {
         const SOCK_NONBLOCK = 0o0004000;
         const SOCK_CLOEXEC  = 0o2000000;
     }
 );
+
+libc_bitflags!{
+    /// Flags for send/recv and their relatives
+    pub flags MsgFlags: libc::c_int {
+        /// Sends or requests out-of-band data on sockets that support this notion
+        /// (e.g., of type [`Stream`](enum.SockType.html)); the underlying protocol must also
+        /// support out-of-band data.
+        MSG_OOB,
+        /// Peeks at an incoming message. The data is treated as unread and the next
+        /// [`recv()`](fn.recv.html)
+        /// or similar function shall still return this data.
+        MSG_PEEK,
+        /// Enables nonblocking operation; if the operation would block,
+        /// `EAGAIN` or `EWOULDBLOCK` is returned.  This provides similar
+        /// behavior to setting the `O_NONBLOCK` flag
+        /// (via the [`fcntl`](../../fcntl/fn.fcntl.html)
+        /// `F_SETFL` operation), but differs in that `MSG_DONTWAIT` is a per-
+        /// call option, whereas `O_NONBLOCK` is a setting on the open file
+        /// description (see [open(2)](http://man7.org/linux/man-pages/man2/open.2.html)),
+        /// which will affect all threads in
+        /// the calling process and as well as other processes that hold
+        /// file descriptors referring to the same open file description.
+        MSG_DONTWAIT,
+        /// Receive flags: Control Data was discarded (buffer too small)
+        MSG_CTRUNC,
+        /// For raw ([`Packet`](addr/enum.AddressFamily.html)), Internet datagram
+        /// (since Linux 2.4.27/2.6.8),
+        /// netlink (since Linux 2.6.22) and UNIX datagram (since Linux 3.4)
+        /// sockets: return the real length of the packet or datagram, even
+        /// when it was longer than the passed buffer. Not implemented for UNIX
+        /// domain ([unix(7)](https://linux.die.net/man/7/unix)) sockets.
+        ///
+        /// For use with Internet stream sockets, see [tcp(7)](https://linux.die.net/man/7/tcp).
+        MSG_TRUNC,
+        /// Terminates a record (when this notion is supported, as for
+        /// sockets of type [`SeqPacket`](enum.SockType.html)).
+        MSG_EOR,
+        /// This flag specifies that queued errors should be received from
+        /// the socket error queue. (For more details, see
+        /// [recvfrom(2)](https://linux.die.net/man/2/recvfrom))
+        #[cfg(any(target_os = "linux", target_os = "android"))]
+        MSG_ERRQUEUE,
+        /// Set the `close-on-exec` flag for the file descriptor received via a UNIX domain
+        /// file descriptor using the `SCM_RIGHTS` operation (described in
+        /// [unix(7)](https://linux.die.net/man/7/unix)).
+        /// This flag is useful for the same reasons as the `O_CLOEXEC` flag of
+        /// [open(2)](https://linux.die.net/man/2/open).
+        ///
+        /// Only used in [`recvmsg`](fn.recvmsg.html) function.
+        #[cfg(any(target_os = "linux", target_os = "android"))]
+        MSG_CMSG_CLOEXEC,
+    }
+}
 
 /// Copy the in-memory representation of src into the byte slice dst,
 /// updating the slice to point to the remainder of dst only. Unsafe
@@ -157,7 +240,7 @@ impl<'a> Iterator for CmsgIterator<'a> {
         self.0 = &buf[cmsg_align(cmsg_len)..];
 
         match (cmsg.cmsg_level, cmsg.cmsg_type) {
-            (SOL_SOCKET, SCM_RIGHTS) => unsafe {
+            (libc::SOL_SOCKET, libc::SCM_RIGHTS) => unsafe {
                 Some(ControlMessage::ScmRights(
                     slice::from_raw_parts(
                         &cmsg.cmsg_data as *const _ as *const _, 1)))
@@ -221,8 +304,8 @@ impl<'a> ControlMessage<'a> {
             ControlMessage::ScmRights(fds) => {
                 let cmsg = cmsghdr {
                     cmsg_len: self.len() as type_of_cmsg_len,
-                    cmsg_level: SOL_SOCKET,
-                    cmsg_type: SCM_RIGHTS,
+                    cmsg_level: libc::SOL_SOCKET,
+                    cmsg_type: libc::SCM_RIGHTS,
                     cmsg_data: [],
                 };
                 copy_bytes(&cmsg, buf);
@@ -330,9 +413,20 @@ pub fn recvmsg<'a, T>(fd: RawFd, iov: &[IoVec<&mut [u8]>], cmsg_buffer: Option<&
 
 /// Create an endpoint for communication
 ///
+/// The `protocol` specifies a particular protocol to be used with the
+/// socket.  Normally only a single protocol exists to support a
+/// particular socket type within a given protocol family, in which case
+/// protocol can be specified as `None`.  However, it is possible that many
+/// protocols may exist, in which case a particular protocol must be
+/// specified in this manner.
+///
 /// [Further reading](http://man7.org/linux/man-pages/man2/socket.2.html)
-pub fn socket(domain: AddressFamily, ty: SockType, flags: SockFlag, protocol: c_int) -> Result<RawFd> {
+pub fn socket<T: Into<Option<SockProtocol>>>(domain: AddressFamily, ty: SockType, flags: SockFlag, protocol: T) -> Result<RawFd> {
     let mut ty = ty as c_int;
+    let protocol = match protocol.into() {
+        None => 0,
+        Some(p) => p as c_int,
+    };
     let feat_atomic = features::socket_atomic_cloexec();
 
     if feat_atomic {
@@ -358,9 +452,13 @@ pub fn socket(domain: AddressFamily, ty: SockType, flags: SockFlag, protocol: c_
 /// Create a pair of connected sockets
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/socketpair.2.html)
-pub fn socketpair(domain: AddressFamily, ty: SockType, protocol: c_int,
+pub fn socketpair<T: Into<Option<SockProtocol>>>(domain: AddressFamily, ty: SockType, protocol: T,
                   flags: SockFlag) -> Result<(RawFd, RawFd)> {
     let mut ty = ty as c_int;
+    let protocol = match protocol.into() {
+        None => 0,
+        Some(p) => p as c_int,
+    };
     let feat_atomic = features::socket_atomic_cloexec();
 
     if feat_atomic {
@@ -551,13 +649,13 @@ pub struct ucred {
 /// [Further reading](http://man7.org/linux/man-pages/man2/setsockopt.2.html)
 #[repr(i32)]
 pub enum SockLevel {
-    Socket = SOL_SOCKET,
-    Tcp = IPPROTO_TCP,
-    Ip = IPPROTO_IP,
-    Ipv6 = IPPROTO_IPV6,
-    Udp = IPPROTO_UDP,
+    Socket = libc::SOL_SOCKET,
+    Tcp = libc::IPPROTO_TCP,
+    Ip = libc::IPPROTO_IP,
+    Ipv6 = libc::IPPROTO_IPV6,
+    Udp = libc::IPPROTO_UDP,
     #[cfg(any(target_os = "linux", target_os = "android"))]
-    Netlink = SOL_NETLINK,
+    Netlink = libc::SOL_NETLINK,
 }
 
 /// Represents a socket option that can be accessed or set. Used as an argument
@@ -639,22 +737,22 @@ pub unsafe fn sockaddr_storage_to_addr(
     }
 
     match addr.ss_family as c_int {
-        consts::AF_INET => {
+        libc::AF_INET => {
             assert!(len as usize == mem::size_of::<sockaddr_in>());
             let ret = *(addr as *const _ as *const sockaddr_in);
             Ok(SockAddr::Inet(InetAddr::V4(ret)))
         }
-        consts::AF_INET6 => {
+        libc::AF_INET6 => {
             assert!(len as usize == mem::size_of::<sockaddr_in6>());
             Ok(SockAddr::Inet(InetAddr::V6((*(addr as *const _ as *const sockaddr_in6)))))
         }
-        consts::AF_UNIX => {
+        libc::AF_UNIX => {
             let sun = *(addr as *const _ as *const sockaddr_un);
             let pathlen = len - offset_of!(sockaddr_un, sun_path);
             Ok(SockAddr::Unix(UnixAddr(sun, pathlen)))
         }
         #[cfg(any(target_os = "linux", target_os = "android"))]
-        consts::AF_NETLINK => {
+        libc::AF_NETLINK => {
             use libc::sockaddr_nl;
             Ok(SockAddr::Netlink(NetlinkAddr(*(addr as *const _ as *const sockaddr_nl))))
         }
@@ -681,9 +779,9 @@ pub fn shutdown(df: RawFd, how: Shutdown) -> Result<()> {
         use libc::shutdown;
 
         let how = match how {
-            Shutdown::Read  => consts::SHUT_RD,
-            Shutdown::Write => consts::SHUT_WR,
-            Shutdown::Both  => consts::SHUT_RDWR,
+            Shutdown::Read  => libc::SHUT_RD,
+            Shutdown::Write => libc::SHUT_WR,
+            Shutdown::Both  => libc::SHUT_RDWR,
         };
 
         Errno::result(shutdown(df, how)).map(drop)
