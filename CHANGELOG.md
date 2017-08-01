@@ -6,6 +6,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Added `nix::poll` module for all platforms
+  ([#672](https://github.com/nix-rust/nix/pull/672))
+- Added `nix::ppoll` function for FreeBSD and DragonFly
+  ([#672](https://github.com/nix-rust/nix/pull/672))
 - Added protocol families in `AddressFamily` enum.
   ([#647](https://github.com/nix-rust/nix/pull/647))
 
@@ -42,10 +46,6 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - On Linux and Android, added support for receiving `PTRACE_O_TRACESYSGOOD`
   events from `wait` and `waitpid` using `WaitStatus::PtraceSyscall`
   ([#566](https://github.com/nix-rust/nix/pull/566)).
-- Added `nix::poll` module for all platforms
-  ([#672](https://github.com/nix-rust/nix/pull/672))
-- Added `nix::ppoll` function for FreeBSD and DragonFly
-  ([#672](https://github.com/nix-rust/nix/pull/672))
 
 ### Changed
 - The `ioctl!` macro and its variants now allow the generated functions to have
