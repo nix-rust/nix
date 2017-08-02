@@ -56,9 +56,12 @@ fn test_ptrace_cont() {
     use nix::unistd::fork;
     use nix::unistd::ForkResult::*;
 
-    // FIXME: qemu-user doesn't implement ptrace on all arches and gives ENOSYS then.
-    // use it to filter out the affected platforms
-    // on valid platforms it will return Errno::EPERM
+    // FIXME: qemu-user doesn't implement ptrace on all architectures
+    // and retunrs ENOSYS in this case.
+    // We (ab)use this behavior to detect the affected platforms
+    // and skip the test then.
+    // On valid platforms the ptrace call should return Errno::EPERM, this
+    // is already tested by `test_ptrace`.
     let err = ptrace::attach(getpid()).unwrap_err();
     if err == Error::Sys(Errno::ENOSYS) {
         return;
