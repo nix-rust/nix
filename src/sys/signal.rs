@@ -735,6 +735,22 @@ mod tests {
         assert_eq!(action_ign.handler(), SigHandler::SigIgn);
     }
 
+    #[test]
+    fn test_procalive() {
+        use unistd::fork;
+        use unistd::ForkResult::*;
+
+        match fork() {
+            Ok(Child) => loop {},
+            Ok(Parent { child }) => {
+                assert_eq!(proc_alive(child).unwrap(), true);
+                kill(child, SIGKILL);
+                assert_eq!(proc_alive(child).unwrap(), false);
+            }
+            Err(_) => panic!("Error: Fork Failed"),
+        }
+    }
+
     // TODO(#251): Re-enable after figuring out flakiness.
     #[cfg(not(any(target_os = "macos", target_os = "ios")))]
     #[test]
