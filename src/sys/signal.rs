@@ -449,6 +449,19 @@ pub fn kill<T: Into<Option<Signal>>>(pid: ::unistd::Pid, signal: T) -> Result<()
     Errno::result(res).map(drop)
 }
 
+/// Checks whether a process is alive.
+///
+/// Please remember that a `true` doesn't mean that the is alive at the moment
+/// the value is checked. It means that it was alive when the function was
+/// checking it.
+pub fn proc_alive(pid: ::unistd::Pid) -> Result<bool> {
+    match kill(pid, None) {
+        Ok(_) => Ok(true),
+        Err(Error::Sys(Errno::ESRCH)) => Ok(false),
+        Err(err) => Err(err)
+    }
+}
+
 pub fn raise(signal: Signal) -> Result<()> {
     let res = unsafe { libc::raise(signal as libc::c_int) };
 
@@ -720,6 +733,25 @@ mod tests {
 
         let action_ign = SigAction::new(SigHandler::SigIgn, flags, mask);
         assert_eq!(action_ign.handler(), SigHandler::SigIgn);
+    }
+
+    #[test]
+    fn test_procalive() {
+        use sys::wait::waitpid;
+        use unistd::fork;
+        use unistd::ForkResult::*;
+
+        match fork() {
+            Ok(Child) => loop {},
+            Ok(Parent { child }) => {
+                assert_eq!(proc_alive(child).unwrap(), true);
+                kill(child, SIGTERM).unwrap();
+                // we need to waitpid because now child is a zombie process
+                waitpid(child, None).unwrap();
+                assert_eq!(proc_alive(child).unwrap(), false);
+            }
+            Err(_) => panic!("Error: Fork Failed"),
+        }
     }
 
     // TODO(#251): Re-enable after figuring out flakiness.
