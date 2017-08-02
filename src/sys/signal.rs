@@ -449,6 +449,19 @@ pub fn kill<T: Into<Option<Signal>>>(pid: ::unistd::Pid, signal: T) -> Result<()
     Errno::result(res).map(drop)
 }
 
+/// Checks whether a process is alive.
+///
+/// Please remember that a `true` doesn't mean that the is alive at the moment
+/// the value is checked. It means that it was alive when the function was
+/// checking it.
+pub fn proc_alive(pid: ::unistd::Pid) -> Result<bool> {
+    match kill(pid, None) {
+        Ok(_) => Ok(true),
+        Err(Error::Sys(Errno::ESRCH)) => Ok(false),
+        Err(err) => Err(err)
+    }
+}
+
 pub fn raise(signal: Signal) -> Result<()> {
     let res = unsafe { libc::raise(signal as libc::c_int) };
 
