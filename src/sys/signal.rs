@@ -737,6 +737,7 @@ mod tests {
 
     #[test]
     fn test_procalive() {
+        use sys::wait::waitpid;
         use unistd::fork;
         use unistd::ForkResult::*;
 
@@ -744,7 +745,9 @@ mod tests {
             Ok(Child) => loop {},
             Ok(Parent { child }) => {
                 assert_eq!(proc_alive(child).unwrap(), true);
-                kill(child, SIGKILL);
+                kill(child, SIGTERM).unwrap();
+                // we need to waitpid because now child is a zombie process
+                waitpid(child, None).unwrap();
                 assert_eq!(proc_alive(child).unwrap(), false);
             }
             Err(_) => panic!("Error: Fork Failed"),
