@@ -7,6 +7,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 - Renamed existing `ptrace` wrappers to encourage namespacing ([#692](https://github.com/nix-rust/nix/pull/692))
+- Added specialized wrappers: `sys::ptrace::{traceme, syscall, cont, attach}`. Using the matching routines
+  with `sys::ptrace::ptrace` is now deprecated.
+- Marked `sys::ptrace::ptrace` as `unsafe`.
 
 ## [0.9.0] 2017-07-23
 
