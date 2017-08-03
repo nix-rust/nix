@@ -1,37 +1,204 @@
-use super::{consts, sa_family_t};
+use super::sa_family_t;
 use {Errno, Error, Result, NixPath};
 use libc;
 use std::{fmt, hash, mem, net, ptr};
 use std::ffi::OsStr;
 use std::path::Path;
 use std::os::unix::ffi::OsStrExt;
-#[cfg(any(target_os = "linux", target_os = "android"))]
+#[cfg(any(target_os = "android", target_os = "linux"))]
 use ::sys::socket::addr::netlink::NetlinkAddr;
-#[cfg(any(target_os = "macos", target_os = "ios"))]
+#[cfg(any(target_os = "ios", target_os = "macos"))]
 use std::os::unix::io::RawFd;
-#[cfg(any(target_os = "macos", target_os = "ios"))]
+#[cfg(any(target_os = "ios", target_os = "macos"))]
 use ::sys::socket::addr::sys_control::SysControlAddr;
 
-// TODO: uncomment out IpAddr functions: rust-lang/rfcs#988
-
-/*
- *
- * ===== AddressFamily =====
- *
- */
-
+/// These constants specify the protocol family to be used
+/// in [`socket`](fn.socket.html) and [`socketpair`](fn.socketpair.html)
 #[repr(i32)]
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Hash)]
 pub enum AddressFamily {
-    Unix = consts::AF_UNIX,
-    Inet = consts::AF_INET,
-    Inet6 = consts::AF_INET6,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
-    Netlink = consts::AF_NETLINK,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
-    Packet = consts::AF_PACKET,
-    #[cfg(any(target_os = "macos", target_os = "ios"))]
-    System = consts::AF_SYSTEM,
+    /// Local communication (see [`unix(7)`](http://man7.org/linux/man-pages/man7/unix.7.html))
+    Unix = libc::AF_UNIX,
+    /// IPv4 Internet protocols (see [`ip(7)`](http://man7.org/linux/man-pages/man7/ip.7.html))
+    Inet = libc::AF_INET,
+    /// IPv6 Internet protocols (see [`ipv6(7)`](http://man7.org/linux/man-pages/man7/ipv6.7.html))
+    Inet6 = libc::AF_INET6,
+    /// Kernel user interface device (see [`netlink(7)`](http://man7.org/linux/man-pages/man7/netlink.7.html))
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    Netlink = libc::AF_NETLINK,
+    /// Low level packet interface (see [`packet(7)`](http://man7.org/linux/man-pages/man7/packet.7.html))
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    Packet = libc::AF_PACKET,
+    /// KEXT Controls and Notifications
+    #[cfg(any(target_os = "ios", target_os = "macos"))]
+    System = libc::AF_SYSTEM,
+    /// Amateur radio AX.25 protocol
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    Ax25 = libc::AF_AX25,
+    /// IPX - Novell protocols
+    Ipx = libc::AF_IPX,
+    /// AppleTalk
+    AppleTalk = libc::AF_APPLETALK,
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    NetRom = libc::AF_NETROM,
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    Bridge = libc::AF_BRIDGE,
+    /// Access to raw ATM PVCs
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    AtmPvc = libc::AF_ATMPVC,
+    /// ITU-T X.25 / ISO-8208 protocol (see [`x25(7)`](http://man7.org/linux/man-pages/man7/x25.7.html))
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    X25 = libc::AF_X25,
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    Rose = libc::AF_ROSE,
+    Decnet = libc::AF_DECnet,
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    NetBeui = libc::AF_NETBEUI,
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    Security = libc::AF_SECURITY,
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    Key = libc::AF_KEY,
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    Ash = libc::AF_ASH,
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    Econet = libc::AF_ECONET,
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    AtmSvc = libc::AF_ATMSVC,
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    Rds = libc::AF_RDS,
+    Sna = libc::AF_SNA,
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    Irda = libc::AF_IRDA,
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    Pppox = libc::AF_PPPOX,
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    Wanpipe = libc::AF_WANPIPE,
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    Llc = libc::AF_LLC,
+    #[cfg(target_os = "linux")]
+    Ib = libc::AF_IB,
+    #[cfg(target_os = "linux")]
+    Mpls = libc::AF_MPLS,
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    Can = libc::AF_CAN,
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    Tipc = libc::AF_TIPC,
+    #[cfg(not(any(target_os = "ios", target_os = "macos")))]
+    Bluetooth = libc::AF_BLUETOOTH,
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    Iucv = libc::AF_IUCV,
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    RxRpc = libc::AF_RXRPC,
+    Isdn = libc::AF_ISDN,
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    Phonet = libc::AF_PHONET,
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    Ieee802154 = libc::AF_IEEE802154,
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    Caif = libc::AF_CAIF,
+    /// Interface to kernel crypto API
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    Alg = libc::AF_ALG,
+    #[cfg(target_os = "linux")]
+    Nfc = libc::AF_NFC,
+    #[cfg(target_os = "linux")]
+    Vsock = libc::AF_VSOCK,
+    #[cfg(any(target_os = "dragonfly",
+              target_os = "freebsd",
+              target_os = "ios",
+              target_os = "macos",
+              target_os = "netbsd",
+              target_os = "openbsd"))]
+    ImpLink = libc::AF_IMPLINK,
+    #[cfg(any(target_os = "dragonfly",
+              target_os = "freebsd",
+              target_os = "ios",
+              target_os = "macos",
+              target_os = "netbsd",
+              target_os = "openbsd"))]
+    Pup = libc::AF_PUP,
+    #[cfg(any(target_os = "dragonfly",
+              target_os = "freebsd",
+              target_os = "ios",
+              target_os = "macos",
+              target_os = "netbsd",
+              target_os = "openbsd"))]
+    Chaos = libc::AF_CHAOS,
+    #[cfg(any(target_os = "ios",
+              target_os = "macos",
+              target_os = "netbsd",
+              target_os = "openbsd"))]
+    Ns = libc::AF_NS,
+    #[cfg(any(target_os = "dragonfly",
+              target_os = "freebsd",
+              target_os = "ios",
+              target_os = "macos",
+              target_os = "netbsd",
+              target_os = "openbsd"))]
+    Iso = libc::AF_ISO,
+    #[cfg(any(target_os = "dragonfly",
+              target_os = "freebsd",
+              target_os = "ios",
+              target_os = "macos",
+              target_os = "netbsd",
+              target_os = "openbsd"))]
+    Datakit = libc::AF_DATAKIT,
+    #[cfg(any(target_os = "dragonfly",
+              target_os = "freebsd",
+              target_os = "ios",
+              target_os = "macos",
+              target_os = "netbsd",
+              target_os = "openbsd"))]
+    Ccitt = libc::AF_CCITT,
+    #[cfg(any(target_os = "dragonfly",
+              target_os = "freebsd",
+              target_os = "ios",
+              target_os = "macos",
+              target_os = "netbsd",
+              target_os = "openbsd"))]
+    Dli = libc::AF_DLI,
+    #[cfg(any(target_os = "dragonfly",
+              target_os = "freebsd",
+              target_os = "ios",
+              target_os = "macos",
+              target_os = "netbsd",
+              target_os = "openbsd"))]
+    Lat = libc::AF_LAT,
+    #[cfg(any(target_os = "dragonfly",
+              target_os = "freebsd",
+              target_os = "ios",
+              target_os = "macos",
+              target_os = "netbsd",
+              target_os = "openbsd"))]
+    Hylink = libc::AF_HYLINK,
+    #[cfg(any(target_os = "dragonfly",
+              target_os = "freebsd",
+              target_os = "ios",
+              target_os = "macos",
+              target_os = "netbsd",
+              target_os = "openbsd"))]
+    Link = libc::AF_LINK,
+    #[cfg(any(target_os = "dragonfly",
+              target_os = "freebsd",
+              target_os = "ios",
+              target_os = "macos",
+              target_os = "netbsd",
+              target_os = "openbsd"))]
+    Coip = libc::AF_COIP,
+    #[cfg(any(target_os = "dragonfly",
+              target_os = "freebsd",
+              target_os = "ios",
+              target_os = "macos",
+              target_os = "netbsd",
+              target_os = "openbsd"))]
+    Cnt = libc::AF_CNT,
+    #[cfg(any(target_os = "dragonfly",
+              target_os = "freebsd",
+              target_os = "ios",
+              target_os = "macos",
+              target_os = "netbsd",
+              target_os = "openbsd"))]
+    Natm = libc::AF_NATM,
 }
 
 #[derive(Copy)]
@@ -252,7 +419,7 @@ impl Ipv4Addr {
     }
 
     pub fn any() -> Ipv4Addr {
-        Ipv4Addr(libc::in_addr { s_addr: consts::INADDR_ANY })
+        Ipv4Addr(libc::in_addr { s_addr: libc::INADDR_ANY })
     }
 
     pub fn octets(&self) -> [u8; 4] {
@@ -480,9 +647,9 @@ impl fmt::Display for UnixAddr {
 pub enum SockAddr {
     Inet(InetAddr),
     Unix(UnixAddr),
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(any(target_os = "android", target_os = "linux"))]
     Netlink(NetlinkAddr),
-    #[cfg(any(target_os = "macos", target_os = "ios"))]
+    #[cfg(any(target_os = "ios", target_os = "macos"))]
     SysControl(SysControlAddr),
 }
 
@@ -495,12 +662,12 @@ impl SockAddr {
         Ok(SockAddr::Unix(try!(UnixAddr::new(path))))
     }
 
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(any(target_os = "android", target_os = "linux"))]
     pub fn new_netlink(pid: u32, groups: u32) -> SockAddr {
         SockAddr::Netlink(NetlinkAddr::new(pid, groups))
     }
 
-    #[cfg(any(target_os = "macos", target_os = "ios"))]
+    #[cfg(any(target_os = "ios", target_os = "macos"))]
     pub fn new_sys_control(sockfd: RawFd, name: &str, unit: u32) -> Result<SockAddr> {
         SysControlAddr::from_name(sockfd, name, unit).map(|a| SockAddr::SysControl(a))
     }
@@ -510,9 +677,9 @@ impl SockAddr {
             SockAddr::Inet(InetAddr::V4(..)) => AddressFamily::Inet,
             SockAddr::Inet(InetAddr::V6(..)) => AddressFamily::Inet6,
             SockAddr::Unix(..) => AddressFamily::Unix,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(any(target_os = "android", target_os = "linux"))]
             SockAddr::Netlink(..) => AddressFamily::Netlink,
-            #[cfg(any(target_os = "macos", target_os = "ios"))]
+            #[cfg(any(target_os = "ios", target_os = "macos"))]
             SockAddr::SysControl(..) => AddressFamily::System,
         }
     }
@@ -526,9 +693,9 @@ impl SockAddr {
             SockAddr::Inet(InetAddr::V4(ref addr)) => (mem::transmute(addr), mem::size_of::<libc::sockaddr_in>() as libc::socklen_t),
             SockAddr::Inet(InetAddr::V6(ref addr)) => (mem::transmute(addr), mem::size_of::<libc::sockaddr_in6>() as libc::socklen_t),
             SockAddr::Unix(UnixAddr(ref addr, len)) => (mem::transmute(addr), (len + offset_of!(libc::sockaddr_un, sun_path)) as libc::socklen_t),
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(any(target_os = "android", target_os = "linux"))]
             SockAddr::Netlink(NetlinkAddr(ref sa)) => (mem::transmute(sa), mem::size_of::<libc::sockaddr_nl>() as libc::socklen_t),
-            #[cfg(any(target_os = "macos", target_os = "ios"))]
+            #[cfg(any(target_os = "ios", target_os = "macos"))]
             SockAddr::SysControl(SysControlAddr(ref sa)) => (mem::transmute(sa), mem::size_of::<sys_control::sockaddr_ctl>() as libc::socklen_t),
         }
     }
@@ -543,7 +710,7 @@ impl PartialEq for SockAddr {
             (SockAddr::Unix(ref a), SockAddr::Unix(ref b)) => {
                 a == b
             }
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(any(target_os = "android", target_os = "linux"))]
             (SockAddr::Netlink(ref a), SockAddr::Netlink(ref b)) => {
                 a == b
             }
@@ -560,9 +727,9 @@ impl hash::Hash for SockAddr {
         match *self {
             SockAddr::Inet(ref a) => a.hash(s),
             SockAddr::Unix(ref a) => a.hash(s),
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(any(target_os = "android", target_os = "linux"))]
             SockAddr::Netlink(ref a) => a.hash(s),
-            #[cfg(any(target_os = "macos", target_os = "ios"))]
+            #[cfg(any(target_os = "ios", target_os = "macos"))]
             SockAddr::SysControl(ref a) => a.hash(s),
         }
     }
@@ -579,15 +746,15 @@ impl fmt::Display for SockAddr {
         match *self {
             SockAddr::Inet(ref inet) => inet.fmt(f),
             SockAddr::Unix(ref unix) => unix.fmt(f),
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(any(target_os = "android", target_os = "linux"))]
             SockAddr::Netlink(ref nl) => nl.fmt(f),
-            #[cfg(any(target_os = "macos", target_os = "ios"))]
+            #[cfg(any(target_os = "ios", target_os = "macos"))]
             SockAddr::SysControl(ref sc) => sc.fmt(f),
         }
     }
 }
 
-#[cfg(any(target_os = "linux", target_os = "android"))]
+#[cfg(any(target_os = "android", target_os = "linux"))]
 pub mod netlink {
     use ::sys::socket::addr::{AddressFamily};
     use libc::{sa_family_t, sockaddr_nl};
@@ -642,11 +809,10 @@ pub mod netlink {
     }
 }
 
-#[cfg(any(target_os = "macos", target_os = "ios"))]
+#[cfg(any(target_os = "ios", target_os = "macos"))]
 pub mod sys_control {
-    use ::sys::socket::consts;
     use ::sys::socket::addr::{AddressFamily};
-    use libc::{c_uchar, uint16_t, uint32_t};
+    use libc::{self, c_uchar, uint16_t, uint32_t};
     use std::{fmt, mem};
     use std::hash::{Hash, Hasher};
     use std::os::unix::io::RawFd;
@@ -702,7 +868,7 @@ pub mod sys_control {
             let addr = sockaddr_ctl {
                 sc_len: mem::size_of::<sockaddr_ctl>() as c_uchar,
                 sc_family: AddressFamily::System as c_uchar,
-                ss_sysaddr: consts::AF_SYS_CONTROL as uint16_t,
+                ss_sysaddr: libc::AF_SYS_CONTROL as uint16_t,
                 sc_id: id,
                 sc_unit: unit,
                 sc_reserved: [0; 5]

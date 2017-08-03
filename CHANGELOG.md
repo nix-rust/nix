@@ -8,10 +8,20 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Added specialized wrappers: `sys::ptrace::{traceme, syscall, cont, attach}`. Using the matching routines
   with `sys::ptrace::ptrace` is now deprecated.
+- Added `nix::poll` module for all platforms
+  ([#672](https://github.com/nix-rust/nix/pull/672))
+- Added `nix::ppoll` function for FreeBSD and DragonFly
+  ([#672](https://github.com/nix-rust/nix/pull/672))
+- Added protocol families in `AddressFamily` enum.
+  ([#647](https://github.com/nix-rust/nix/pull/647))
 
 ### Changed
 - Renamed existing `ptrace` wrappers to encourage namespacing ([#692](https://github.com/nix-rust/nix/pull/692))
 - Marked `sys::ptrace::ptrace` as `unsafe`.
+- Changed function signature of `socket()` and `socketpair()`. The `protocol` argument
+  has changed type from `c_int` to `SockProtocol`.
+  It accepts a `None` value for default protocol that was specified with zero using `c_int`.
+  ([#647](https://github.com/nix-rust/nix/pull/647))
 
 ## [0.9.0] 2017-07-23
 
