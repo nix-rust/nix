@@ -37,6 +37,19 @@ fn test_wait_exit() {
     }
 }
 
+#[test]
+fn test_waitstatus_pid() {
+    let _m = ::FORK_MTX.lock().expect("Mutex got poisoned by another test");
+
+    match fork().unwrap() {
+        Child => unsafe { _exit(0) },
+        Parent { child } => {
+            let status = waitpid(child, None).unwrap();
+            assert_eq!(status.pid(), Some(child));
+        }
+    }
+}
+
 #[cfg(any(target_os = "linux", target_os = "android"))]
 // FIXME: qemu-user doesn't implement ptrace on most arches
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
@@ -47,7 +60,7 @@ mod ptrace {
     use nix::sys::wait::*;
     use nix::unistd::*;
     use nix::unistd::ForkResult::*;
-    use std::{ptr, process};
+    use std::ptr;
     use libc::_exit;
 
     fn ptrace_child() -> ! {
