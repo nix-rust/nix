@@ -15,8 +15,12 @@ use void::Void;
 use sys::stat::Mode;
 use std::fmt;
 
-#[cfg(any(target_os = "linux", target_os = "android"))]
+#[cfg(any(target_os = "android", target_os = "linux"))]
 pub use self::linux::*;
+
+#[cfg(any(target_os = "android", target_os = "freebsd",
+          target_os = "linux", target_os = "openbsd"))]
+pub use self::setres::*;
 
 /// User identifier
 ///
@@ -1601,12 +1605,10 @@ pub fn sysconf(var: SysconfVar) -> Result<Option<c_long>> {
     }
 }
 
-#[cfg(any(target_os = "linux", target_os = "android"))]
+#[cfg(any(target_os = "android", target_os = "linux"))]
 mod linux {
-    use libc;
     use sys::syscall::{syscall, SYSPIVOTROOT};
     use {Errno, Result, NixPath};
-    use super::{Uid, Gid};
 
     pub fn pivot_root<P1: ?Sized + NixPath, P2: ?Sized + NixPath>(
             new_root: &P1, put_old: &P2) -> Result<()> {
@@ -1620,6 +1622,14 @@ mod linux {
 
         Errno::result(res).map(drop)
     }
+}
+
+#[cfg(any(target_os = "android", target_os = "freebsd",
+          target_os = "linux", target_os = "openbsd"))]
+mod setres {
+    use libc;
+    use {Errno, Result};
+    use super::{Uid, Gid};
 
     /// Sets the real, effective, and saved uid.
     /// ([see setresuid(2)](http://man7.org/linux/man-pages/man2/setresuid.2.html))
