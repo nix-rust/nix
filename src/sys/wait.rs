@@ -93,6 +93,25 @@ pub enum WaitStatus {
     StillAlive
 }
 
+impl WaitStatus {
+    /// Extracts the PID from the WaitStatus unless it equals StillAlive.
+    pub fn pid(&self) -> Option<Pid> {
+        use self::WaitStatus::*;
+        match *self {
+            Exited(p, _) => Some(p),
+            Signaled(p, _, _) => Some(p),
+            Stopped(p, _) => Some(p),
+            Continued(p) => Some(p),
+            StillAlive => None,
+
+            #[cfg(any(target_os = "linux", target_os = "android"))]
+            PtraceEvent(p, _, _) => Some(p),
+            #[cfg(any(target_os = "linux", target_os = "android"))]
+            PtraceSyscall(p) => Some(p),
+        }
+    }
+}
+
 #[cfg(any(target_os = "linux",
           target_os = "android"))]
 mod status {
