@@ -14,7 +14,7 @@ fn test_wait_signal() {
       Ok(Child) => pause().unwrap_or_else(|_| unsafe { _exit(123) }),
       Ok(Parent { child }) => {
           kill(child, Some(SIGKILL)).ok().expect("Error: Kill Failed");
-          assert_eq!(waitpid(child, None), Ok(WaitStatus::Signaled(child, SIGKILL, false)));
+          assert_eq!(waitpid(PidGroup::ProcessID(child), None), Ok(WaitStatus::Signaled(child, SIGKILL, false)));
       },
       // panic, fork should never fail unless there is a serious problem with the OS
       Err(_) => panic!("Error: Fork Failed")
@@ -30,7 +30,7 @@ fn test_wait_exit() {
     match fork() {
       Ok(Child) => unsafe { _exit(12); },
       Ok(Parent { child }) => {
-          assert_eq!(waitpid(child, None), Ok(WaitStatus::Exited(child, 12)));
+          assert_eq!(waitpid(PidGroup::ProcessID(child), None), Ok(WaitStatus::Exited(child, 12)));
       },
       // panic, fork should never fail unless there is a serious problem with the OS
       Err(_) => panic!("Error: Fork Failed")

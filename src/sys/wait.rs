@@ -1,38 +1,83 @@
-use libc::{self, c_int};
+//! This module contains the `wait()` and `waitpid()` functions.
+//!
+//! These are used to wait on and obtain status information from child processes, which provide
+//! more granular control over child management than the primitives provided by Rust's standard
+//! library, and are critical in the creation of shells and managing jobs on *nix platforms.
+//!
+//! Manual Page: http://pubs.opengroup.org/onlinepubs/007908799/xsh/wait.html
+//!
+//! # Examples
+//!
+//! ```rust
+//! use nix::sys::wait::*;
+//! use nix::unistd::Pid;
+//!
+//! let pid = Pid::from_raw(17563);
+//! loop {
+//!     match waitpid(PidGroup::ProcessGroupID(pid), WUNTRACED) {
+//!         Ok(WaitStatus::Exited(pid, status)) => {
+//!             println!("Process '{}' exited with status '{}'", pid, status);
+//!             break
+//!         },
+//!         Ok(WaitStatus::Stopped(pid, signal)) => {
+//!             println!("Process '{}' stopped with signal '{:?}'", pid, signal);
+//!         },
+//!         Ok(WaitStatus::Continued(pid)) => {
+//!             println!("Process '{}' continued", pid);
+//!         },
+//!         Ok(_) => (),
+//!         Err(why) => {
+//!             println!("waitpid returned an error code: {}", why);
+//!             break
+//!         }
+//!     }
+//! }
+//! ```
+
+use libc::{self, c_int, pid_t};
 use {Errno, Result};
 use unistd::Pid;
 
 use sys::signal::Signal;
 
-mod ffi {
-    use libc::{pid_t, c_int};
-
-    extern {
-        pub fn waitpid(pid: pid_t, status: *mut c_int, options: c_int) -> pid_t;
-    }
-}
-
-#[cfg(not(any(target_os = "linux",
-              target_os = "android")))]
 libc_bitflags!(
+    /// Defines optional flags for the `waitpid` function.
     pub flags WaitPidFlag: c_int {
+        /// Do not suspend execution of the calling thread if the status is not immediately
+        /// available for one of the child processes specified by pid.
         WNOHANG,
+        /// The status of any child processes specified by pid that are stopped, and whose status
+        /// has not yet been reported since they stopped, shall also be reported to the requesting
+        /// process
         WUNTRACED,
-    }
-);
-
-#[cfg(any(target_os = "linux",
-          target_os = "android"))]
-libc_bitflags!(
-    pub flags WaitPidFlag: c_int {
-        WNOHANG,
-        WUNTRACED,
+        /// Waits for children that have terminated.
+        #[cfg(any(target_os = "android",
+                  target_os = "freebsd",
+                  target_os = "linux",
+                  target_os = "netbsd"))]
         WEXITED,
+        /// Report the status of any continued child process specified by pid whose status has not
+        /// been reported since it continued from a job control stop.
         WCONTINUED,
-        WNOWAIT, // Don't reap, just poll status.
-        __WNOTHREAD, // Don't wait on children of other threads in this group
-        __WALL, // Wait on all children, regardless of type
+        /// Leave the child in a waitable state; a later wait call can be used to again retrieve
+        /// the child status information.
+        #[cfg(any(target_os = "android",
+                  target_os = "freebsd",
+                  target_os = "linux",
+                  target_os = "netbsd"))]
+        WNOWAIT,
+        /// Don't wait on children of other threads in this group
+        #[cfg(any(target_os = "android", target_os = "linux"))]
+        __WNOTHREAD,
+        /// Wait for all children, regardless of type (clone or non-clone)
+        #[cfg(any(target_os = "android", target_os = "linux"))]
+        __WALL,
+        /// Wait for "clone" children only. If omitted then wait for "non-clone" children only.
+        /// (A "clone" child is one which delivers no signal, or a signal other than `SIGCHLD` to
+        /// its parent upon termination.) This option is ignored if `__WALL` is also specified.
+        #[cfg(any(target_os = "android", target_os = "linux"))]
         __WCLONE,
+
     }
 );
 
@@ -93,8 +138,7 @@ pub enum WaitStatus {
     StillAlive
 }
 
-#[cfg(any(target_os = "linux",
-          target_os = "android"))]
+#[cfg(any(target_os = "android", target_os = "linux"))]
 mod status {
     use sys::signal::Signal;
     use libc::c_int;
@@ -147,8 +191,7 @@ mod status {
     }
 }
 
-#[cfg(any(target_os = "macos",
-          target_os = "ios"))]
+#[cfg(any(target_os = "macos", target_os = "ios"))]
 mod status {
     use sys::signal::{Signal,SIGCONT};
 
@@ -254,7 +297,7 @@ fn decode(pid : Pid, status: i32) -> WaitStatus {
                     } else if status_additional == 0 {
                         WaitStatus::Stopped(pid, status::stop_signal(status))
                     } else {
-                        WaitStatus::PtraceEvent(pid, status::stop_signal(status), status::stop_additional(status))
+                        WaitStatus::PtraceEvent(pid, status::stop_signal(status), status)
                     }
                 }
             } else {
@@ -270,24 +313,92 @@ fn decode(pid : Pid, status: i32) -> WaitStatus {
     }
 }
 
-pub fn waitpid<P: Into<Option<Pid>>>(pid: P, options: Option<WaitPidFlag>) -> Result<WaitStatus> {
+/// Designates whether the supplied `Pid` value is a process ID, process group ID,
+/// specifies any child of the current process's group ID, or any child of the current process.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum PidGroup {
+    /// Signifies that the `Pid` is supposed to represent a process ID.
+    ProcessID(Pid),
+    /// Signifies that the `Pid` is supposed to represent a process group ID.
+    ProcessGroupID(Pid),
+    /// Signifies that any child process that belongs to the process group of the current process
+    /// should be selected.
+    AnyGroupChild,
+    /// Signifies that any child process that belongs to the current process should be selected.
+    AnyChild,
+}
+
+impl From<i32> for PidGroup {
+    fn from(pid: i32) -> PidGroup {
+        if pid > 0 {
+            PidGroup::ProcessID(Pid::from_raw(pid))
+        } else if pid < -1 {
+            PidGroup::ProcessGroupID(Pid::from_raw(pid))
+        } else if pid == 0 {
+            PidGroup::AnyGroupChild
+        } else {
+            PidGroup::AnyChild
+        }
+    }
+}
+
+/// Waits for and returns events that are received, with additional options.
+///
+/// The `pid` value may indicate either a process group ID, or process ID. The options
+/// parameter controls the behavior of the function.
+///
+/// # Usage Notes
+///
+/// - If the value of the PID is `PidGroup::ProcessID(Pid)`, it will wait on the child
+///   with that has the specified process ID.
+/// - If the value of the PID is `PidGroup::ProcessGroupID(Pid)`, it will wait on any child that
+///   belongs to the specified process group ID.
+/// - If the value of the PID is `PidGroup::AnyGroupChild`, it will wait on any child process
+///   that has the same group ID as the current process.
+/// - If the value of the PID is `PidGroup::AnyChild`, it will wait on any child process of the
+///   current process.
+///
+/// # Errors
+///
+/// - **ECHILD**: The process does not exist or is not a child of the current process.
+///   - This may also happen if a child process has the `SIGCHLD` signal masked or set to
+///     `SIG_IGN`.
+/// - **EINTR**: `WNOHANG` was not set and either an unblocked signal or a `SIGCHLD` was caught.
+/// - **EINVAL**: The supplied options were invalid.
+pub fn waitpid<O>(pid: PidGroup, options: O) -> Result<WaitStatus>
+    where O: Into<Option<WaitPidFlag>>
+{
     use self::WaitStatus::*;
 
-    let mut status: i32 = 0;
+    let mut status = 0;
+    let options = options.into().map_or(0, |o| o.bits());
 
-    let option_bits = match options {
-        Some(bits) => bits.bits(),
-        None => 0
+    let pid = match pid {
+        PidGroup::ProcessID(pid) if pid < Pid::from_raw(-1)      => -pid_t::from(pid),
+        PidGroup::ProcessGroupID(pid) if pid > Pid::from_raw(0) => -pid_t::from(pid),
+        PidGroup::ProcessID(pid) | PidGroup::ProcessGroupID(pid) => pid_t::from(pid),
+        PidGroup::AnyGroupChild => 0,
+        PidGroup::AnyChild => -1,
     };
 
-    let res = unsafe { ffi::waitpid(pid.into().unwrap_or(Pid::from_raw(-1)).into(), &mut status as *mut c_int, option_bits) };
+    let res = unsafe { libc::waitpid(pid.into(), &mut status as *mut c_int, options) };
 
-    Ok(match try!(Errno::result(res)) {
+    Errno::result(res).map(|res| match res {
         0 => StillAlive,
         res => decode(Pid::from_raw(res), status),
     })
 }
 
+/// Waits for and returns events from any child of the current process.
+///
+/// While waiting on the child, this function will return on events that indicate that the status
+/// of that child has changed. It is directly equivalent to `waitpid(PidGroup::AnyChild, None)`.
+///
+/// # Errors
+///
+/// - **ECHILD**: The process does not exist or is not a child of the current process.
+///   - This may also happen if a child process has the `SIGCHLD` signal masked or set to
+///     `SIG_IGN`.
 pub fn wait() -> Result<WaitStatus> {
-    waitpid(None, None)
+    waitpid(PidGroup::AnyChild, None)
 }

@@ -106,7 +106,7 @@ impl fmt::Display for Gid {
 ///
 /// Newtype pattern around `pid_t` (which is just alias). It prevents bugs caused by accidentally
 /// passing wrong value.
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, PartialOrd)]
 pub struct Pid(pid_t);
 
 impl Pid {
@@ -252,6 +252,7 @@ pub fn setpgid(pid: Pid, pgid: Pid) -> Result<()> {
     let res = unsafe { libc::setpgid(pid.into(), pgid.into()) };
     Errno::result(res).map(drop)
 }
+
 #[inline]
 pub fn getpgid(pid: Option<Pid>) -> Result<Pid> {
     let res = unsafe { libc::getpgid(pid.unwrap_or(Pid(0)).into()) };
