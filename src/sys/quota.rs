@@ -41,17 +41,17 @@ pub mod quota {
 
     libc_bitflags!(
         #[derive(Default)]
-        pub flags QuotaValidFlags: u32 {
-            QIF_BLIMITS,
-            QIF_SPACE,
-            QIF_ILIMITS,
-            QIF_INODES,
-            QIF_BTIME,
-            QIF_ITIME,
-            QIF_LIMITS,
-            QIF_USAGE,
-            QIF_TIMES,
-            QIF_ALL,
+        pub struct QuotaValidFlags: u32 {
+            QIF_BLIMITS;
+            QIF_SPACE;
+            QIF_ILIMITS;
+            QIF_INODES;
+            QIF_BTIME;
+            QIF_ITIME;
+            QIF_LIMITS;
+            QIF_USAGE;
+            QIF_TIMES;
+            QIF_ALL;
         }
     );
 

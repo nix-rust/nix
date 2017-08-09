@@ -7,15 +7,15 @@
 /// # Example
 /// ```
 /// libc_bitflags!{
-///     pub flags ProtFlags: libc::c_int {
-///         PROT_NONE,
-///         PROT_READ,
-///         PROT_WRITE,
-///         PROT_EXEC,
+///     pub struct ProtFlags: libc::c_int {
+///         PROT_NONE;
+///         PROT_READ;
+///         PROT_WRITE;
+///         PROT_EXEC;
 ///         #[cfg(any(target_os = "linux", target_os = "android"))]
-///         PROT_GROWSDOWN,
+///         PROT_GROWSDOWN;
 ///         #[cfg(any(target_os = "linux", target_os = "android"))]
-///         PROT_GROWSUP,
+///         PROT_GROWSUP;
 ///     }
 /// }
 /// ```
@@ -26,14 +26,14 @@
 ///
 /// ```
 /// libc_bitflags!{
-///     pub flags SaFlags: libc::c_ulong {
-///         SA_NOCLDSTOP as libc::c_ulong,
-///         SA_NOCLDWAIT,
-///         SA_NODEFER as libc::c_ulong,
-///         SA_ONSTACK,
-///         SA_RESETHAND as libc::c_ulong,
-///         SA_RESTART as libc::c_ulong,
-///         SA_SIGINFO,
+///     pub struct SaFlags: libc::c_ulong {
+///         SA_NOCLDSTOP as libc::c_ulong;
+///         SA_NOCLDWAIT;
+///         SA_NODEFER as libc::c_ulong;
+///         SA_ONSTACK;
+///         SA_RESETHAND as libc::c_ulong;
+///         SA_RESTART as libc::c_ulong;
+///         SA_SIGINFO;
 ///     }
 /// }
 /// ```
@@ -49,7 +49,7 @@ macro_rules! libc_bitflags {
     ) => {
         bitflags! {
             $($attrs)*
-            flags $BitFlags: $T {
+            struct $BitFlags: $T {
                 $($flags)*
             }
         }
@@ -132,7 +132,7 @@ macro_rules! libc_bitflags {
         }
     };
 
-    // Munch last ident if not followed by a comma.
+    // Munch last ident if not followed by a semicolon.
     (@accumulate_flags
         $prefix:tt,
         [$($flags:tt)*];
@@ -164,11 +164,11 @@ macro_rules! libc_bitflags {
         }
     };
 
-    // Munch an ident; covers terminating comma case.
+    // Munch an ident; covers terminating semicolon case.
     (@accumulate_flags
         $prefix:tt,
         [$($flags:tt)*];
-        $flag:ident, $($tail:tt)*
+        $flag:ident; $($tail:tt)*
     ) => {
         libc_bitflags! {
             @accumulate_flags
@@ -181,12 +181,12 @@ macro_rules! libc_bitflags {
         }
     };
 
-    // Munch an ident and cast it to the given type; covers terminating comma
+    // Munch an ident and cast it to the given type; covers terminating semicolon
     // case.
     (@accumulate_flags
         $prefix:tt,
         [$($flags:tt)*];
-        $flag:ident as $ty:ty, $($tail:tt)*
+        $flag:ident as $ty:ty; $($tail:tt)*
     ) => {
         libc_bitflags! {
             @accumulate_flags
@@ -202,7 +202,7 @@ macro_rules! libc_bitflags {
     // (non-pub) Entry rule.
     (
         $(#[$attr:meta])*
-        flags $BitFlags:ident: $T:ty {
+        struct $BitFlags:ident: $T:ty {
             $($vals:tt)*
         }
     ) => {
@@ -221,7 +221,7 @@ macro_rules! libc_bitflags {
     // (pub) Entry rule.
     (
         $(#[$attr:meta])*
-        pub flags $BitFlags:ident: $T:ty {
+        pub struct $BitFlags:ident: $T:ty {
             $($vals:tt)*
         }
     ) => {

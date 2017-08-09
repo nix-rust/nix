@@ -42,9 +42,9 @@ impl PollFd {
 
 libc_bitflags! {
     /// These flags define the different events that can be monitored by `poll` and `ppoll`
-    pub flags EventFlags: libc::c_short {
+    pub struct EventFlags: libc::c_short {
         /// There is data to read.
-        POLLIN,
+        POLLIN;
         /// There is some exceptional condition on the file descriptor.
         ///
         /// Possibilities include:
@@ -56,25 +56,25 @@ libc_bitflags! {
         ///    [ioctl_tty(2)](http://man7.org/linux/man-pages/man2/ioctl_tty.2.html)).
         /// *  A cgroup.events file has been modified (see
         ///    [cgroups(7)](http://man7.org/linux/man-pages/man7/cgroups.7.html)).
-        POLLPRI,
+        POLLPRI;
         /// Writing is now possible, though a write larger that the
         /// available space in a socket or pipe will still block (unless
         /// `O_NONBLOCK` is set).
-        POLLOUT,
+        POLLOUT;
         /// Equivalent to [`POLLIN`](constant.POLLIN.html)
-        POLLRDNORM,
+        POLLRDNORM;
         /// Equivalent to [`POLLOUT`](constant.POLLOUT.html)
-        POLLWRNORM,
+        POLLWRNORM;
         /// Priority band data can be read (generally unused on Linux).
-        POLLRDBAND,
+        POLLRDBAND;
         /// Priority data may be written.
-        POLLWRBAND,
+        POLLWRBAND;
         /// Error condition (only returned in
         /// [`PollFd::revents`](struct.PollFd.html#method.revents);
         /// ignored in [`PollFd::new`](struct.PollFd.html#method.new)).
         /// This bit is also set for a file descriptor referring to the
         /// write end of a pipe when the read end has been closed.
-        POLLERR,
+        POLLERR;
         /// Hang up (only returned in [`PollFd::revents`](struct.PollFd.html#method.revents);
         /// ignored in [`PollFd::new`](struct.PollFd.html#method.new)).
         /// Note that when reading from a channel such as a pipe or a stream
@@ -82,11 +82,11 @@ libc_bitflags! {
         /// end of the channel.  Subsequent reads from the channel will
         /// return 0 (end of file) only after all outstanding data in the
         /// channel has been consumed.
-        POLLHUP,
+        POLLHUP;
         /// Invalid request: `fd` not open (only returned in
         /// [`PollFd::revents`](struct.PollFd.html#method.revents);
         /// ignored in [`PollFd::new`](struct.PollFd.html#method.new)).
-        POLLNVAL,
+        POLLNVAL;
     }
 }
 

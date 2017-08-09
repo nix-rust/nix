@@ -15,24 +15,24 @@ mod ffi {
 #[cfg(not(any(target_os = "linux",
               target_os = "android")))]
 libc_bitflags!(
-    pub flags WaitPidFlag: c_int {
-        WNOHANG,
-        WUNTRACED,
+    pub struct WaitPidFlag: c_int {
+        WNOHANG;
+        WUNTRACED;
     }
 );
 
 #[cfg(any(target_os = "linux",
           target_os = "android"))]
 libc_bitflags!(
-    pub flags WaitPidFlag: c_int {
-        WNOHANG,
-        WUNTRACED,
-        WEXITED,
-        WCONTINUED,
-        WNOWAIT, // Don't reap, just poll status.
-        __WNOTHREAD, // Don't wait on children of other threads in this group
-        __WALL, // Wait on all children, regardless of type
-        __WCLONE,
+    pub struct WaitPidFlag: c_int {
+        WNOHANG;
+        WUNTRACED;
+        WEXITED;
+        WCONTINUED;
+        WNOWAIT; // Don't reap, just poll status.
+        __WNOTHREAD; // Don't wait on children of other threads in this group
+        __WALL; // Wait on all children, regardless of type
+        __WCLONE;
     }
 );
 

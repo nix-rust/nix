@@ -39,10 +39,10 @@ bitflags!(
 );
 
 libc_bitflags!(
-    pub flags MntFlags: c_int {
-        MNT_FORCE,
-        MNT_DETACH,
-        MNT_EXPIRE,
+    pub struct MntFlags: c_int {
+        MNT_FORCE;
+        MNT_DETACH;
+        MNT_EXPIRE;
     }
 );
 

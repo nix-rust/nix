@@ -201,14 +201,14 @@ pub const SIGUNUSED : Signal = SIGSYS;
 
 #[cfg(not(target_os = "android"))]
 libc_bitflags!{
-    pub flags SaFlags: libc::c_int {
-        SA_NOCLDSTOP,
-        SA_NOCLDWAIT,
-        SA_NODEFER,
-        SA_ONSTACK,
-        SA_RESETHAND,
-        SA_RESTART,
-        SA_SIGINFO,
+    pub struct SaFlags: libc::c_int {
+        SA_NOCLDSTOP;
+        SA_NOCLDWAIT;
+        SA_NODEFER;
+        SA_ONSTACK;
+        SA_RESETHAND;
+        SA_RESTART;
+        SA_SIGINFO;
     }
 }
 
@@ -217,27 +217,27 @@ libc_bitflags!{
 // FIXME: https://github.com/rust-lang/libc/pull/511
 #[cfg(all(target_os = "android", target_pointer_width = "32"))]
 libc_bitflags!{
-    pub flags SaFlags: libc::c_ulong {
-        SA_NOCLDSTOP as libc::c_ulong,
-        SA_NOCLDWAIT as libc::c_ulong,
-        SA_NODEFER as libc::c_ulong,
-        SA_ONSTACK as libc::c_ulong,
-        SA_RESETHAND as libc::c_ulong,
-        SA_RESTART as libc::c_ulong,
-        SA_SIGINFO as libc::c_ulong,
+    pub struct SaFlags: libc::c_ulong {
+        SA_NOCLDSTOP as libc::c_ulong;
+        SA_NOCLDWAIT as libc::c_ulong;
+        SA_NODEFER as libc::c_ulong;
+        SA_ONSTACK as libc::c_ulong;
+        SA_RESETHAND as libc::c_ulong;
+        SA_RESTART as libc::c_ulong;
+        SA_SIGINFO as libc::c_ulong;
     }
 }
 
 #[cfg(all(target_os = "android", target_pointer_width = "64"))]
 libc_bitflags!{
-    pub flags SaFlags: libc::c_uint {
-        SA_NOCLDSTOP as libc::c_uint,
-        SA_NOCLDWAIT as libc::c_uint,
-        SA_NODEFER as libc::c_uint,
-        SA_ONSTACK as libc::c_uint,
-        SA_RESETHAND as libc::c_uint,
-        SA_RESTART as libc::c_uint,
-        SA_SIGINFO as libc::c_uint,
+    pub struct SaFlags: libc::c_uint {
+        SA_NOCLDSTOP as libc::c_uint;
+        SA_NOCLDWAIT as libc::c_uint;
+        SA_NODEFER as libc::c_uint;
+        SA_ONSTACK as libc::c_uint;
+        SA_RESETHAND as libc::c_uint;
+        SA_RESTART as libc::c_uint;
+        SA_SIGINFO as libc::c_uint;
     }
 }
 

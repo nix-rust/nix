@@ -6,94 +6,94 @@ use std::os::unix::io::RawFd;
 
 libc_bitflags!{
     /// Desired memory protection of a memory mapping.
-    pub flags ProtFlags: libc::c_int {
+    pub struct ProtFlags: libc::c_int {
         /// Pages cannot be accessed.
-        PROT_NONE,
+        PROT_NONE;
         /// Pages can be read.
-        PROT_READ,
+        PROT_READ;
         /// Pages can be written.
-        PROT_WRITE,
+        PROT_WRITE;
         /// Pages can be executed
-        PROT_EXEC,
+        PROT_EXEC;
         /// Apply protection up to the end of a mapping that grows upwards.
         #[cfg(any(target_os = "android", target_os = "linux"))]
-        PROT_GROWSDOWN,
+        PROT_GROWSDOWN;
         /// Apply protection down to the beginning of a mapping that grows downwards.
         #[cfg(any(target_os = "android", target_os = "linux"))]
-        PROT_GROWSUP,
+        PROT_GROWSUP;
     }
 }
 
 libc_bitflags!{
     /// Additional parameters for `mmap()`.
-    pub flags MapFlags: c_int {
+    pub struct MapFlags: c_int {
         /// Compatibility flag. Ignored.
-        MAP_FILE,
+        MAP_FILE;
         /// Share this mapping. Mutually exclusive with `MAP_PRIVATE`.
-        MAP_SHARED,
+        MAP_SHARED;
         /// Create a private copy-on-write mapping. Mutually exclusive with `MAP_SHARED`.
-        MAP_PRIVATE,
+        MAP_PRIVATE;
         /// Place the mapping at exactly the address specified in `addr`.
-        MAP_FIXED,
+        MAP_FIXED;
         /// Synonym for `MAP_ANONYMOUS`.
-        MAP_ANON,
+        MAP_ANON;
         /// The mapping is not backed by any file.
         #[cfg(any(target_os = "android", target_os = "linux", target_os = "freebsd"))]
-        MAP_ANONYMOUS,
+        MAP_ANONYMOUS;
         /// Put the mapping into the first 2GB of the process address space.
         #[cfg(any(all(any(target_os = "android", target_os = "linux"),
                       any(target_arch = "x86", target_arch = "x86_64")),
                   all(target_os = "linux", target_env = "musl", any(target_arch = "x86", target_pointer_width = "64")),
                   all(target_os = "freebsd", target_pointer_width = "64")))]
-        MAP_32BIT,
+        MAP_32BIT;
         /// Used for stacks; indicates to the kernel that the mapping should extend downward in memory.
         #[cfg(any(target_os = "android", target_os = "linux"))]
-        MAP_GROWSDOWN,
+        MAP_GROWSDOWN;
         /// Compatibility flag. Ignored.
         #[cfg(any(target_os = "android", target_os = "linux"))]
-        MAP_DENYWRITE,
+        MAP_DENYWRITE;
         /// Compatibility flag. Ignored.
         #[cfg(any(target_os = "android", target_os = "linux"))]
-        MAP_EXECUTABLE,
+        MAP_EXECUTABLE;
         /// Mark the mmaped region to be locked in the same way as `mlock(2)`.
         #[cfg(any(target_os = "android", target_os = "linux"))]
-        MAP_LOCKED,
+        MAP_LOCKED;
         /// Do not reserve swap space for this mapping.
         ///
         /// This was removed in FreeBSD 11.
         #[cfg(not(target_os = "freebsd"))]
-        MAP_NORESERVE,
+        MAP_NORESERVE;
         /// Populate page tables for a mapping.
         #[cfg(any(target_os = "android", target_os = "linux"))]
-        MAP_POPULATE,
+        MAP_POPULATE;
         /// Only meaningful when used with `MAP_POPULATE`. Don't perform read-ahead.
         #[cfg(any(target_os = "android", target_os = "linux"))]
-        MAP_NONBLOCK,
+        MAP_NONBLOCK;
         /// Allocate the mapping using "huge pages."
         #[cfg(any(target_os = "android", target_os = "linux"))]
-        MAP_HUGETLB,
+        MAP_HUGETLB;
         /// Lock the mapped region into memory as with `mlock(2)`.
         #[cfg(target_os = "netbsd")]
-        MAP_WIRED,
+        MAP_WIRED;
         /// Causes dirtied data in the specified range to be flushed to disk only when necessary.
         #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
-        MAP_NOSYNC,
+        MAP_NOSYNC;
         /// Rename private pages to a file.
         ///
         /// This was removed in FreeBSD 11.
         #[cfg(any(target_os = "dragonfly", target_os = "netbsd", target_os = "openbsd"))]
-        MAP_RENAME,
+        MAP_RENAME;
         /// Region may contain semaphores.
         #[cfg(any(target_os = "dragonfly", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-        MAP_HASSEMAPHORE,
+        MAP_HASSEMAPHORE;
         /// Region grows down, like a stack.
         #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd", target_os = "linux"))]
-        MAP_STACK,
+        MAP_STACK;
         /// Pages in this mapping are not retained in the kernel's memory cache.
         #[cfg(any(target_os = "ios", target_os = "macos"))]
-        MAP_NOCACHE,
+        MAP_NOCACHE;
         #[cfg(any(target_os = "ios", target_os = "macos"))]
-        MAP_JIT,
+        MAP_JIT;
     }
 }
 
@@ -185,19 +185,19 @@ libc_enum!{
 
 libc_bitflags!{
     /// Configuration flags for `msync`.
-    pub flags MsFlags: c_int {
+    pub struct MsFlags: c_int {
         /// Schedule an update but return immediately.
-        MS_ASYNC,
+        MS_ASYNC;
         /// Invalidate all cached data.
-        MS_INVALIDATE,
+        MS_INVALIDATE;
         /// Invalidate pages, but leave them mapped.
         #[cfg(any(target_os = "ios", target_os = "macos"))]
-        MS_KILLPAGES,
+        MS_KILLPAGES;
         /// Deactivate pages, but leave them mapped.
         #[cfg(any(target_os = "ios", target_os = "macos"))]
-        MS_DEACTIVATE,
+        MS_DEACTIVATE;
         /// Perform an update and wait for it to complete.
-        MS_SYNC,
+        MS_SYNC;
     }
 }
 

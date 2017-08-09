@@ -6,24 +6,24 @@ use std::mem;
 use ::Error;
 
 libc_bitflags!(
-    pub flags EpollFlags: libc::c_int {
-        EPOLLIN,
-        EPOLLPRI,
-        EPOLLOUT,
-        EPOLLRDNORM,
-        EPOLLRDBAND,
-        EPOLLWRNORM,
-        EPOLLWRBAND,
-        EPOLLMSG,
-        EPOLLERR,
-        EPOLLHUP,
-        EPOLLRDHUP,
+    pub struct EpollFlags: libc::c_int {
+        EPOLLIN;
+        EPOLLPRI;
+        EPOLLOUT;
+        EPOLLRDNORM;
+        EPOLLRDBAND;
+        EPOLLWRNORM;
+        EPOLLWRBAND;
+        EPOLLMSG;
+        EPOLLERR;
+        EPOLLHUP;
+        EPOLLRDHUP;
         #[cfg(target_os = "linux")]  // Added in 4.5; not in Android.
-        EPOLLEXCLUSIVE,
+        EPOLLEXCLUSIVE;
         #[cfg(not(target_arch = "mips"))]
-        EPOLLWAKEUP,
-        EPOLLONESHOT,
-        EPOLLET,
+        EPOLLWAKEUP;
+        EPOLLONESHOT;
+        EPOLLET;
     }
 );
 
@@ -36,8 +36,8 @@ pub enum EpollOp {
 }
 
 libc_bitflags!{
-    pub flags EpollCreateFlags: c_int {
-        EPOLL_CLOEXEC,
+    pub struct EpollCreateFlags: c_int {
+        EPOLL_CLOEXEC;
     }
 }
 

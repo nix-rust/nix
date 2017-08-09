@@ -92,7 +92,7 @@ pub enum SockProtocol {
 
 libc_bitflags!{
     /// Additional socket options
-    pub flags SockFlag: c_int {
+    pub struct SockFlag: c_int {
         /// Set non-blocking mode on the new socket
         #[cfg(any(target_os = "android",
                   target_os = "dragonfly",
@@ -100,7 +100,7 @@ libc_bitflags!{
                   target_os = "linux",
                   target_os = "netbsd",
                   target_os = "openbsd"))]
-        SOCK_NONBLOCK,
+        SOCK_NONBLOCK;
         /// Set close-on-exec on the new descriptor
         #[cfg(any(target_os = "android",
                   target_os = "dragonfly",
@@ -108,28 +108,28 @@ libc_bitflags!{
                   target_os = "linux",
                   target_os = "netbsd",
                   target_os = "openbsd"))]
-        SOCK_CLOEXEC,
+        SOCK_CLOEXEC;
         /// Return `EPIPE` instead of raising `SIGPIPE`
         #[cfg(target_os = "netbsd")]
-        SOCK_NOSIGPIPE,
+        SOCK_NOSIGPIPE;
         /// For domains `AF_INET(6)`, only allow `connect(2)`, `sendto(2)`, or `sendmsg(2)`
         /// to the DNS port (typically 53)
         #[cfg(target_os = "openbsd")]
-        SOCK_DNS,
+        SOCK_DNS;
     }
 }
 
 libc_bitflags!{
     /// Flags for send/recv and their relatives
-    pub flags MsgFlags: libc::c_int {
+    pub struct MsgFlags: libc::c_int {
         /// Sends or requests out-of-band data on sockets that support this notion
         /// (e.g., of type [`Stream`](enum.SockType.html)); the underlying protocol must also
         /// support out-of-band data.
-        MSG_OOB,
+        MSG_OOB;
         /// Peeks at an incoming message. The data is treated as unread and the next
         /// [`recv()`](fn.recv.html)
         /// or similar function shall still return this data.
-        MSG_PEEK,
+        MSG_PEEK;
         /// Enables nonblocking operation; if the operation would block,
         /// `EAGAIN` or `EWOULDBLOCK` is returned.  This provides similar
         /// behavior to setting the `O_NONBLOCK` flag
@@ -140,9 +140,9 @@ libc_bitflags!{
         /// which will affect all threads in
         /// the calling process and as well as other processes that hold
         /// file descriptors referring to the same open file description.
-        MSG_DONTWAIT,
+        MSG_DONTWAIT;
         /// Receive flags: Control Data was discarded (buffer too small)
-        MSG_CTRUNC,
+        MSG_CTRUNC;
         /// For raw ([`Packet`](addr/enum.AddressFamily.html)), Internet datagram
         /// (since Linux 2.4.27/2.6.8),
         /// netlink (since Linux 2.6.22) and UNIX datagram (since Linux 3.4)
@@ -151,15 +151,15 @@ libc_bitflags!{
         /// domain ([unix(7)](https://linux.die.net/man/7/unix)) sockets.
         ///
         /// For use with Internet stream sockets, see [tcp(7)](https://linux.die.net/man/7/tcp).
-        MSG_TRUNC,
+        MSG_TRUNC;
         /// Terminates a record (when this notion is supported, as for
         /// sockets of type [`SeqPacket`](enum.SockType.html)).
-        MSG_EOR,
+        MSG_EOR;
         /// This flag specifies that queued errors should be received from
         /// the socket error queue. (For more details, see
         /// [recvfrom(2)](https://linux.die.net/man/2/recvfrom))
         #[cfg(any(target_os = "linux", target_os = "android"))]
-        MSG_ERRQUEUE,
+        MSG_ERRQUEUE;
         /// Set the `close-on-exec` flag for the file descriptor received via a UNIX domain
         /// file descriptor using the `SCM_RIGHTS` operation (described in
         /// [unix(7)](https://linux.die.net/man/7/unix)).
@@ -168,7 +168,7 @@ libc_bitflags!{
         ///
         /// Only used in [`recvmsg`](fn.recvmsg.html) function.
         #[cfg(any(target_os = "linux", target_os = "android"))]
-        MSG_CMSG_CLOEXEC,
+        MSG_CMSG_CLOEXEC;
     }
 }
 

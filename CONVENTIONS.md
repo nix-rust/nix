@@ -52,15 +52,15 @@ For example,
 
 ```rust
 libc_bitflags!{
-    pub flags ProtFlags: libc::c_int {
-        PROT_NONE,
-        PROT_READ,
-        PROT_WRITE,
-        PROT_EXEC,
+    pub struct ProtFlags: libc::c_int {
+        PROT_NONE;
+        PROT_READ;
+        PROT_WRITE;
+        PROT_EXEC;
         #[cfg(any(target_os = "linux", target_os = "android"))]
-        PROT_GROWSDOWN,
+        PROT_GROWSDOWN;
         #[cfg(any(target_os = "linux", target_os = "android"))]
-        PROT_GROWSUP,
+        PROT_GROWSUP;
     }
 }
 ```

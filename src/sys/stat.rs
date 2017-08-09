@@ -8,15 +8,15 @@ use std::mem;
 use std::os::unix::io::RawFd;
 
 libc_bitflags!(
-    pub flags SFlag: mode_t {
-        S_IFIFO,
-        S_IFCHR,
-        S_IFDIR,
-        S_IFBLK,
-        S_IFREG,
-        S_IFLNK,
-        S_IFSOCK,
-        S_IFMT,
+    pub struct SFlag: mode_t {
+        S_IFIFO;
+        S_IFCHR;
+        S_IFDIR;
+        S_IFBLK;
+        S_IFREG;
+        S_IFLNK;
+        S_IFSOCK;
+        S_IFMT;
     }
 );
 
