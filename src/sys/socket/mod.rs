@@ -3,8 +3,6 @@
 //! [Further reading](http://man7.org/linux/man-pages/man7/socket.7.html)
 use {Error, Errno, Result};
 use features;
-use fcntl::{fcntl, FD_CLOEXEC, O_NONBLOCK};
-use fcntl::FcntlArg::{F_SETFD, F_SETFL};
 use libc::{self, c_void, c_int, socklen_t, size_t, pid_t, uid_t, gid_t};
 use std::{mem, ptr, slice};
 use std::os::unix::io::RawFd;
@@ -92,13 +90,34 @@ pub enum SockProtocol {
     KextControl = libc::SYSPROTO_CONTROL,
 }
 
-bitflags!(
-    /// Extra flags - Supported by Linux 2.6.27, normalized on other platforms
-    pub struct SockFlag: c_int {
-        const SOCK_NONBLOCK = 0o0004000;
-        const SOCK_CLOEXEC  = 0o2000000;
+libc_bitflags!{
+    /// Additional socket options
+    pub flags SockFlag: c_int {
+        /// Set non-blocking mode on the new socket
+        #[cfg(any(target_os = "android",
+                  target_os = "dragonfly",
+                  target_os = "freebsd",
+                  target_os = "linux",
+                  target_os = "netbsd",
+                  target_os = "openbsd"))]
+        SOCK_NONBLOCK,
+        /// Set close-on-exec on the new descriptor
+        #[cfg(any(target_os = "android",
+                  target_os = "dragonfly",
+                  target_os = "freebsd",
+                  target_os = "linux",
+                  target_os = "netbsd",
+                  target_os = "openbsd"))]
+        SOCK_CLOEXEC,
+        /// Return `EPIPE` instead of raising `SIGPIPE`
+        #[cfg(target_os = "netbsd")]
+        SOCK_NOSIGPIPE,
+        /// For domains `AF_INET(6)`, only allow `connect(2)`, `sendto(2)`, or `sendmsg(2)`
+        /// to the DNS port (typically 53)
+        #[cfg(target_os = "openbsd")]
+        SOCK_DNS,
     }
-);
+}
 
 libc_bitflags!{
     /// Flags for send/recv and their relatives
@@ -449,13 +468,24 @@ pub fn socket<T: Into<Option<SockProtocol>>>(domain: AddressFamily, ty: SockType
     // TODO: Check the kernel version
     let res = try!(Errno::result(unsafe { ffi::socket(domain as c_int, ty, protocol) }));
 
-    if !feat_atomic {
-        if flags.contains(SOCK_CLOEXEC) {
-            try!(fcntl(res, F_SETFD(FD_CLOEXEC)));
-        }
+    #[cfg(any(target_os = "android",
+              target_os = "dragonfly",
+              target_os = "freebsd",
+              target_os = "linux",
+              target_os = "netbsd",
+              target_os = "openbsd"))]
+    {
+        use fcntl::{fcntl, FD_CLOEXEC, O_NONBLOCK};
+        use fcntl::FcntlArg::{F_SETFD, F_SETFL};
 
-        if flags.contains(SOCK_NONBLOCK) {
-            try!(fcntl(res, F_SETFL(O_NONBLOCK)));
+        if !feat_atomic {
+            if flags.contains(SOCK_CLOEXEC) {
+                try!(fcntl(res, F_SETFD(FD_CLOEXEC)));
+            }
+
+            if flags.contains(SOCK_NONBLOCK) {
+                try!(fcntl(res, F_SETFL(O_NONBLOCK)));
+            }
         }
     }
 
@@ -483,15 +513,26 @@ pub fn socketpair<T: Into<Option<SockProtocol>>>(domain: AddressFamily, ty: Sock
     };
     try!(Errno::result(res));
 
-    if !feat_atomic {
-        if flags.contains(SOCK_CLOEXEC) {
-            try!(fcntl(fds[0], F_SETFD(FD_CLOEXEC)));
-            try!(fcntl(fds[1], F_SETFD(FD_CLOEXEC)));
-        }
+    #[cfg(any(target_os = "android",
+              target_os = "dragonfly",
+              target_os = "freebsd",
+              target_os = "linux",
+              target_os = "netbsd",
+              target_os = "openbsd"))]
+    {
+        use fcntl::{fcntl, FD_CLOEXEC, O_NONBLOCK};
+        use fcntl::FcntlArg::{F_SETFD, F_SETFL};
 
-        if flags.contains(SOCK_NONBLOCK) {
-            try!(fcntl(fds[0], F_SETFL(O_NONBLOCK)));
-            try!(fcntl(fds[1], F_SETFL(O_NONBLOCK)));
+        if !feat_atomic {
+            if flags.contains(SOCK_CLOEXEC) {
+                try!(fcntl(fds[0], F_SETFD(FD_CLOEXEC)));
+                try!(fcntl(fds[1], F_SETFD(FD_CLOEXEC)));
+            }
+
+            if flags.contains(SOCK_NONBLOCK) {
+                try!(fcntl(fds[0], F_SETFL(O_NONBLOCK)));
+                try!(fcntl(fds[1], F_SETFL(O_NONBLOCK)));
+            }
         }
     }
     Ok((fds[0], fds[1]))
@@ -554,13 +595,36 @@ pub fn accept4(sockfd: RawFd, flags: SockFlag) -> Result<RawFd> {
 fn accept4_polyfill(sockfd: RawFd, flags: SockFlag) -> Result<RawFd> {
     let res = try!(Errno::result(unsafe { ffi::accept(sockfd, ptr::null_mut(), ptr::null_mut()) }));
 
-    if flags.contains(SOCK_CLOEXEC) {
-        try!(fcntl(res, F_SETFD(FD_CLOEXEC)));
+    #[cfg(any(target_os = "android",
+              target_os = "dragonfly",
+              target_os = "freebsd",
+              target_os = "linux",
+              target_os = "netbsd",
+              target_os = "openbsd"))]
+    {
+        use fcntl::{fcntl, FD_CLOEXEC, O_NONBLOCK};
+        use fcntl::FcntlArg::{F_SETFD, F_SETFL};
+
+        if flags.contains(SOCK_CLOEXEC) {
+            try!(fcntl(res, F_SETFD(FD_CLOEXEC)));
+        }
+
+        if flags.contains(SOCK_NONBLOCK) {
+            try!(fcntl(res, F_SETFL(O_NONBLOCK)));
+        }
     }
 
-    if flags.contains(SOCK_NONBLOCK) {
-        try!(fcntl(res, F_SETFL(O_NONBLOCK)));
+    // Disable unused variable warning on some platforms
+    #[cfg(not(any(target_os = "android",
+                  target_os = "dragonfly",
+                  target_os = "freebsd",
+                  target_os = "linux",
+                  target_os = "netbsd",
+                  target_os = "openbsd")))]
+    {
+        let _ = flags;
     }
+
 
     Ok(res)
 }
