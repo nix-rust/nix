@@ -24,6 +24,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Exposed `unistd::setresuid` and `unistd::setresgid` on FreeBSD and OpenBSD
   ([#721](https://github.com/nix-rust/nix/pull/721))
 
+# Fixed
+- Fix compilation and tests for OpenBSD targets
+  ([#688](https://github.com/nix-rust/nix/pull/688))
+
 ## [0.9.0] 2017-07-23
 
 ### Added
