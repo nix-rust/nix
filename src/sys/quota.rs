@@ -1,5 +1,5 @@
 use {Errno, Result, NixPath};
-use libc::{c_int, c_char};
+use libc::{self, c_int, c_char};
 
 #[cfg(all(target_os = "linux",
           any(target_arch = "x86",
@@ -70,14 +70,6 @@ pub mod quota {
     }
 }
 
-mod ffi {
-    use libc::{c_int, c_char};
-
-    extern {
-        pub fn quotactl(cmd: c_int, special: * const c_char, id: c_int, data: *mut c_char) -> c_int;
-    }
-}
-
 use std::ptr;
 
 fn quotactl<P: ?Sized + NixPath>(cmd: quota::QuotaCmd, special: Option<&P>, id: c_int, addr: *mut c_char) -> Result<()> {
@@ -85,8 +77,8 @@ fn quotactl<P: ?Sized + NixPath>(cmd: quota::QuotaCmd, special: Option<&P>, id: 
         Errno::clear();
         let res = try!(
             match special {
-                Some(dev) => dev.with_nix_path(|path| ffi::quotactl(cmd.as_int(), path.as_ptr(), id, addr)),
-                None => Ok(ffi::quotactl(cmd.as_int(), ptr::null(), id, addr)),
+                Some(dev) => dev.with_nix_path(|path| libc::quotactl(cmd.as_int(), path.as_ptr(), id, addr)),
+                None => Ok(libc::quotactl(cmd.as_int(), ptr::null(), id, addr)),
             }
         );
 
