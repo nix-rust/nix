@@ -110,7 +110,6 @@ fn ptrace_get_data<T>(request: ptrace::PtraceRequest, pid: Pid) -> Result<T> {
     Ok(data)
 }
 
-/// Performs a general ptrace request.
 unsafe fn ptrace_other(request: ptrace::PtraceRequest, pid: Pid, addr: *mut c_void, data: *mut c_void) -> Result<c_long> {
     Errno::result(ffi::ptrace(request, pid.into(), addr, data)).map(|_| 0)
 }
