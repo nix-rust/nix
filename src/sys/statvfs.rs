@@ -1,161 +1,142 @@
-//! FFI for statvfs functions
+//! Get filesystem statistics
 //!
-//! See the `vfs::Statvfs` struct for some rusty wrappers
-
-use {Errno, Result, NixPath};
+//! See [the man pages](http://pubs.opengroup.org/onlinepubs/9699919799/functions/fstatvfs.html)
+//! for more details.
+use std::mem;
 use std::os::unix::io::AsRawFd;
 
-pub mod vfs {
-    //! Structs related to the `statvfs` and `fstatvfs` functions
-    //!
-    //! The `Statvfs` struct has some wrappers methods around the `statvfs` and
-    //! `fstatvfs` calls.
+use libc::{self, c_ulong};
 
-    use libc::{c_ulong,c_int};
-    use std::os::unix::io::AsRawFd;
-    use {Result, NixPath};
+use {Errno, Result, NixPath};
 
-    use super::{statvfs, fstatvfs};
-
-    bitflags!(
-        /// Mount Flags
-        #[repr(C)]
-        #[derive(Default)]
-        pub struct FsFlags: c_ulong {
-            /// Read Only
-            const RDONLY = 1;
-            /// Do not allow the set-uid bits to have an effect
-            const NOSUID = 2;
-            /// Do not interpret character or block-special devices
-            const NODEV  = 4;
-            /// Do not allow execution of binaries on the filesystem
-            const NOEXEC = 8;
-            /// All IO should be done synchronously
-            const SYNCHRONOUS  = 16;
-            /// Allow mandatory locks on the filesystem
-            const MANDLOCK = 64;
-            const WRITE = 128;
-            const APPEND = 256;
-            const IMMUTABLE = 512;
-            /// Do not update access times on files
-            const NOATIME = 1024;
-            /// Do not update access times on files
-            const NODIRATIME = 2048;
-            /// Update access time relative to modify/change time
-            const RELATIME = 4096;
-        }
-    );
-
-    /// The posix statvfs struct
-    ///
-    /// http://linux.die.net/man/2/statvfs
+bitflags!(
+    /// File system mount Flags
     #[repr(C)]
-    #[derive(Debug,Copy,Clone)]
-    pub struct Statvfs {
-        /// Filesystem block size. This is the value that will lead to
-        /// most efficient use of the filesystem
-        pub f_bsize: c_ulong,
-        /// Fragment Size -- actual minimum unit of allocation on this
-        /// filesystem
-        pub f_frsize: c_ulong,
-        /// Total number of blocks on the filesystem
-        pub f_blocks: u64,
-        /// Number of unused blocks on the filesystem, including those
-        /// reserved for root
-        pub f_bfree: u64,
-        /// Number of blocks available to non-root users
-        pub f_bavail: u64,
-        /// Total number of inodes available on the filesystem
-        pub f_files: u64,
-        /// Number of inodes available on the filesystem
-        pub f_ffree: u64,
-        /// Number of inodes available to non-root users
-        pub f_favail: u64,
-        /// File System ID
-        pub f_fsid: c_ulong,
-        /// Mount Flags
-        pub f_flag: FsFlags,
-        /// Maximum filename length
-        pub f_namemax: c_ulong,
-        /// Reserved extra space, OS-dependent
-        f_spare: [c_int; 6],
+    #[derive(Default)]
+    pub struct FsFlags: c_ulong {
+        /// Read Only
+        const RDONLY = libc::ST_RDONLY;
+        /// Do not allow the set-uid bits to have an effect
+        const NOSUID = libc::ST_NOSUID;
+        /// Do not interpret character or block-special devices
+        #[cfg(any(target_os = "android", target_os = "linux"))]
+        const NODEV = libc::ST_NODEV;
+        /// Do not allow execution of binaries on the filesystem
+        #[cfg(any(target_os = "android", target_os = "linux"))]
+        const NOEXEC = libc::ST_NOEXEC;
+        /// All IO should be done synchronously
+        #[cfg(any(target_os = "android", target_os = "linux"))]
+        const SYNCHRONOUS = libc::ST_SYNCHRONOUS;
+        /// Allow mandatory locks on the filesystem
+        #[cfg(any(target_os = "android", target_os = "linux"))]
+        const MANDLOCK = libc::ST_MANDLOCK;
+        /// Write on file/directory/symlink
+        #[cfg(any(target_os = "android", target_os = "linux"))]
+        const WRITE = libc::ST_WRITE;
+        /// Append-only file
+        #[cfg(any(target_os = "android", target_os = "linux"))]
+        const APPEND = libc::ST_APPEND;
+        /// Immutable file
+        #[cfg(any(target_os = "android", target_os = "linux"))]
+        const IMMUTABLE = libc::ST_IMMUTABLE;
+        /// Do not update access times on files
+        #[cfg(any(target_os = "android", target_os = "linux"))]
+        const NOATIME = libc::ST_NOATIME;
+        /// Do not update access times on files
+        #[cfg(any(target_os = "android", target_os = "linux"))]
+        const NODIRATIME = libc::ST_NODIRATIME;
+        /// Update access time relative to modify/change time
+        #[cfg(any(target_os = "android", all(target_os = "linux", not(target_env = "musl"))))]
+        const RELATIME = libc::ST_RELATIME;
+    }
+);
+
+/// Wrapper around the POSIX `statvfs` struct
+///
+/// For more information see the [`statvfs(3)` man pages](http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/sys_statvfs.h.html).
+// FIXME: Replace with repr(transparent)
+#[repr(C)]
+pub struct Statvfs(libc::statvfs);
+
+impl Statvfs {
+    /// get the file system block size
+    pub fn block_size(&self) -> libc::c_ulong {
+        self.0.f_bsize
     }
 
-    impl Statvfs {
-        /// Create a new `Statvfs` object and fill it with information about
-        /// the mount that contains `path`
-        pub fn for_path<P: ?Sized + NixPath>(path: &P) -> Result<Statvfs> {
-            let mut stat = Statvfs::default();
-            let res = statvfs(path, &mut stat);
-            res.map(|_| stat)
-        }
-
-        /// Replace information in this struct with information about `path`
-        pub fn update_with_path<P: ?Sized + NixPath>(&mut self, path: &P) -> Result<()> {
-            statvfs(path, self)
-        }
-
-        /// Create a new `Statvfs` object and fill it with information from fd
-        pub fn for_fd<T: AsRawFd>(fd: &T) -> Result<Statvfs> {
-            let mut stat = Statvfs::default();
-            let res = fstatvfs(fd, &mut stat);
-            res.map(|_| stat)
-        }
-
-        /// Replace information in this struct with information about `fd`
-        pub fn update_with_fd<T: AsRawFd>(&mut self, fd: &T) -> Result<()> {
-            fstatvfs(fd, self)
-        }
+    /// Get the fundamental file system block size
+    pub fn fragment_size(&self) -> libc::c_ulong {
+        self.0.f_frsize
     }
 
-    impl Default for Statvfs {
-        /// Create a statvfs object initialized to all zeros
-        fn default() -> Self {
-            Statvfs {
-                f_bsize: 0,
-                f_frsize: 0,
-                f_blocks: 0,
-                f_bfree: 0,
-                f_bavail: 0,
-                f_files: 0,
-                f_ffree: 0,
-                f_favail: 0,
-                f_fsid: 0,
-                f_flag: FsFlags::default(),
-                f_namemax: 0,
-                f_spare: [0, 0, 0, 0, 0, 0],
-            }
-        }
+    /// Get the number of blocks.
+    ///
+    /// Units are in units of `fragment_size()`
+    pub fn blocks(&self) -> libc::fsblkcnt_t {
+        self.0.f_blocks
     }
+
+    /// Get the number of free blocks in the file system
+    pub fn blocks_free(&self) -> libc::fsblkcnt_t {
+        self.0.f_bfree
+    }
+
+    /// Get the number of free blocks for unprivileged users
+    pub fn blocks_available(&self) -> libc::fsblkcnt_t {
+        self.0.f_bavail
+    }
+
+    /// Get the total number of file inodes
+    pub fn files(&self) -> libc::fsfilcnt_t {
+        self.0.f_files
+    }
+
+    /// Get the number of free file inodes
+    pub fn files_free(&self) -> libc::fsfilcnt_t {
+        self.0.f_ffree
+    }
+
+    /// Get the number of free file inodes for unprivileged users
+    pub fn files_available(&self) -> libc::fsfilcnt_t {
+        self.0.f_favail
+    }
+
+    /// Get the file system id
+    pub fn filesystem_id(&self) -> c_ulong {
+        self.0.f_fsid
+    }
+
+    /// Get the mount flags
+    pub fn flags(&self) -> FsFlags {
+        FsFlags::from_bits_truncate(self.0.f_flag)
+    }
+
+    /// Get the maximum filename length
+    pub fn name_max(&self) -> libc::c_ulong {
+        self.0.f_namemax
+    }
+
 }
 
-mod ffi {
-    use libc::{c_char, c_int};
-    use sys::statvfs::vfs;
-
-    extern {
-        pub fn statvfs(path: * const c_char, buf: *mut vfs::Statvfs) -> c_int;
-        pub fn fstatvfs(fd: c_int, buf: *mut vfs::Statvfs) -> c_int;
-    }
-}
-
-/// Fill an existing `Statvfs` object with information about the `path`
-pub fn statvfs<P: ?Sized + NixPath>(path: &P, stat: &mut vfs::Statvfs) -> Result<()> {
+/// Return a `Statvfs` object with information about the `path`
+pub fn statvfs<P: ?Sized + NixPath>(path: &P) -> Result<Statvfs> {
     unsafe {
         Errno::clear();
+        let mut stat: Statvfs = mem::uninitialized();
         let res = try!(
-            path.with_nix_path(|path| ffi::statvfs(path.as_ptr(), stat))
+            path.with_nix_path(|path| libc::statvfs(path.as_ptr(), &mut stat.0))
         );
 
-        Errno::result(res).map(drop)
+        Errno::result(res).map(|_| stat)
     }
 }
 
-/// Fill an existing `Statvfs` object with information about `fd`
-pub fn fstatvfs<T: AsRawFd>(fd: &T, stat: &mut vfs::Statvfs) -> Result<()> {
+/// Return a `Statvfs` object with information about `fd`
+pub fn fstatvfs<T: AsRawFd>(fd: &T) -> Result<Statvfs> {
     unsafe {
         Errno::clear();
-        Errno::result(ffi::fstatvfs(fd.as_raw_fd(), stat)).map(drop)
+        let mut stat: Statvfs = mem::uninitialized();
+        Errno::result(libc::fstatvfs(fd.as_raw_fd(), &mut stat.0)).map(|_| stat)
     }
 }
 
@@ -166,14 +147,12 @@ mod test {
 
     #[test]
     fn statvfs_call() {
-        let mut stat = vfs::Statvfs::default();
-        statvfs("/".as_bytes(), &mut stat).unwrap()
+        statvfs("/".as_bytes()).unwrap();
     }
 
     #[test]
     fn fstatvfs_call() {
-        let mut stat = vfs::Statvfs::default();
         let root = File::open("/").unwrap();
-        fstatvfs(&root, &mut stat).unwrap()
+        fstatvfs(&root).unwrap();
     }
 }
