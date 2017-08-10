@@ -168,7 +168,7 @@ unsafe fn copy_bytes<'a, 'b, T: ?Sized>(src: &T, dst: &'a mut &'b mut [u8]) {
 }
 
 
-use self::ffi::{cmsghdr, msghdr, type_of_cmsg_len, type_of_cmsg_data};
+use self::ffi::{cmsghdr, msghdr, type_of_cmsg_data, type_of_msg_iovlen, type_of_cmsg_len};
 
 /// A structure used to make room in a cmsghdr passed to recvmsg. The
 /// size and alignment match that of a cmsghdr followed by a T, but the
@@ -204,11 +204,17 @@ impl<'a> RecvMsg<'a> {
     /// Iterate over the valid control messages pointed to by this
     /// msghdr.
     pub fn cmsgs(&self) -> CmsgIterator {
-        CmsgIterator(self.cmsg_buffer)
+        CmsgIterator {
+            buf: self.cmsg_buffer,
+            next: 0
+        }
     }
 }
 
-pub struct CmsgIterator<'a>(&'a [u8]);
+pub struct CmsgIterator<'a> {
+    buf: &'a [u8],
+    next: usize,
+}
 
 impl<'a> Iterator for CmsgIterator<'a> {
     type Item = ControlMessage<'a>;
@@ -217,12 +223,11 @@ impl<'a> Iterator for CmsgIterator<'a> {
     // although we handle the invariants in slightly different places to
     // get a better iterator interface.
     fn next(&mut self) -> Option<ControlMessage<'a>> {
-        let buf = self.0;
         let sizeof_cmsghdr = mem::size_of::<cmsghdr>();
-        if buf.len() < sizeof_cmsghdr {
+        if self.buf.len() < sizeof_cmsghdr {
             return None;
         }
-        let cmsg: &cmsghdr = unsafe { mem::transmute(buf.as_ptr()) };
+        let cmsg: &cmsghdr = unsafe { mem::transmute(self.buf.as_ptr()) };
 
         // This check is only in the glibc implementation of CMSG_NXTHDR
         // (although it claims the kernel header checks this), but such
@@ -232,12 +237,20 @@ impl<'a> Iterator for CmsgIterator<'a> {
             return None;
         }
         let len = cmsg_len - sizeof_cmsghdr;
+        let aligned_cmsg_len = if self.next == 0 {
+            // CMSG_FIRSTHDR
+            cmsg_len
+        } else {
+            // CMSG_NXTHDR
+            cmsg_align(cmsg_len)
+        };
 
         // Advance our internal pointer.
-        if cmsg_align(cmsg_len) > buf.len() {
+        if aligned_cmsg_len > self.buf.len() {
             return None;
         }
-        self.0 = &buf[cmsg_align(cmsg_len)..];
+        self.buf = &self.buf[aligned_cmsg_len..];
+        self.next += 1;
 
         match (cmsg.cmsg_level, cmsg.cmsg_type) {
             (libc::SOL_SOCKET, libc::SCM_RIGHTS) => unsafe {
@@ -370,9 +383,9 @@ pub fn sendmsg<'a>(fd: RawFd, iov: &[IoVec<&'a [u8]>], cmsgs: &[ControlMessage<'
         msg_name: name as *const c_void,
         msg_namelen: namelen,
         msg_iov: iov.as_ptr(),
-        msg_iovlen: iov.len() as size_t,
+        msg_iovlen: iov.len() as type_of_msg_iovlen,
         msg_control: cmsg_ptr,
-        msg_controllen: capacity as size_t,
+        msg_controllen: capacity as type_of_cmsg_len,
         msg_flags: 0,
     };
     let ret = unsafe { ffi::sendmsg(fd, &mhdr, flags.bits()) };
@@ -393,9 +406,9 @@ pub fn recvmsg<'a, T>(fd: RawFd, iov: &[IoVec<&mut [u8]>], cmsg_buffer: Option<&
         msg_name: &mut address as *const _ as *const c_void,
         msg_namelen: mem::size_of::<sockaddr_storage>() as socklen_t,
         msg_iov: iov.as_ptr() as *const IoVec<&[u8]>, // safe cast to add const-ness
-        msg_iovlen: iov.len() as size_t,
+        msg_iovlen: iov.len() as type_of_msg_iovlen,
         msg_control: msg_control as *const c_void,
-        msg_controllen: msg_controllen as size_t,
+        msg_controllen: msg_controllen as type_of_cmsg_len,
         msg_flags: 0,
     };
     let ret = unsafe { ffi::recvmsg(fd, &mut mhdr, flags.bits()) };
