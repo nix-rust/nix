@@ -32,6 +32,13 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   `statvfs::vfs` module. Additionally  `(f)statvfs()` now return the struct
   directly. And the returned `Statvfs` struct now exposes its data through
   accessor methods. ([#729](https://github.com/nix-rust/nix/pull/729))
+- The `addr` argument to `madvise` and `msync` is now `*mut` to better match the
+  libc API. ([#731](https://github.com/nix-rust/nix/pull/731))
+- `shm_open` and `shm_unlink` are no longer exposed on Android targets, where
+  they are not officially supported. ([#731](https://github.com/nix-rust/nix/pull/731))
+- `MapFlags`, `MmapAdvise`, and `MsFlags` expose some more variants and only
+  officially-supported variants are provided for each target.
+  ([#731](https://github.com/nix-rust/nix/pull/731))
 
 # Fixed
 - Fix compilation and tests for OpenBSD targets

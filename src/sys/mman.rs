@@ -1,210 +1,220 @@
 use {Errno, Error, Result, NixPath};
 use fcntl::OFlag;
-use libc::{self, c_void, size_t, off_t, mode_t};
+use libc::{self, c_int, c_void, size_t, off_t};
 use sys::stat::Mode;
 use std::os::unix::io::RawFd;
 
-pub use self::consts::*;
-
 libc_bitflags!{
+    /// Desired memory protection of a memory mapping.
     pub flags ProtFlags: libc::c_int {
+        /// Pages cannot be accessed.
         PROT_NONE,
+        /// Pages can be read.
         PROT_READ,
+        /// Pages can be written.
         PROT_WRITE,
+        /// Pages can be executed
         PROT_EXEC,
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        /// Apply protection up to the end of a mapping that grows upwards.
+        #[cfg(any(target_os = "android", target_os = "linux"))]
         PROT_GROWSDOWN,
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        /// Apply protection down to the beginning of a mapping that grows downwards.
+        #[cfg(any(target_os = "android", target_os = "linux"))]
         PROT_GROWSUP,
     }
 }
 
-#[cfg(any(target_os = "linux", target_os = "android"))]
-mod consts {
-    use libc::{self, c_int};
-
-    libc_bitflags!{
-        pub flags MapFlags: c_int {
-            MAP_FILE,
-            MAP_SHARED,
-            MAP_PRIVATE,
-            MAP_FIXED,
-            MAP_ANON,
-            MAP_ANONYMOUS,
-            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-            MAP_32BIT,
-            MAP_GROWSDOWN,
-            MAP_DENYWRITE,
-            MAP_EXECUTABLE,
-            MAP_LOCKED,
-            MAP_NORESERVE,
-            MAP_POPULATE,
-            MAP_NONBLOCK,
-            MAP_STACK,
-            MAP_HUGETLB,
-        }
+libc_bitflags!{
+    /// Additional parameters for `mmap()`.
+    pub flags MapFlags: c_int {
+        /// Compatibility flag. Ignored.
+        MAP_FILE,
+        /// Share this mapping. Mutually exclusive with `MAP_PRIVATE`.
+        MAP_SHARED,
+        /// Create a private copy-on-write mapping. Mutually exclusive with `MAP_SHARED`.
+        MAP_PRIVATE,
+        /// Place the mapping at exactly the address specified in `addr`.
+        MAP_FIXED,
+        /// Synonym for `MAP_ANONYMOUS`.
+        MAP_ANON,
+        /// The mapping is not backed by any file.
+        #[cfg(any(target_os = "android", target_os = "linux", target_os = "freebsd"))]
+        MAP_ANONYMOUS,
+        /// Put the mapping into the first 2GB of the process address space.
+        #[cfg(any(all(any(target_os = "android", target_os = "linux"),
+                      any(target_arch = "x86", target_arch = "x86_64")),
+                  all(target_os = "linux", target_env = "musl", any(target_arch = "x86", target_pointer_width = "64")),
+                  all(target_os = "freebsd", target_pointer_width = "64")))]
+        MAP_32BIT,
+        /// Used for stacks; indicates to the kernel that the mapping should extend downward in memory.
+        #[cfg(any(target_os = "android", target_os = "linux"))]
+        MAP_GROWSDOWN,
+        /// Compatibility flag. Ignored.
+        #[cfg(any(target_os = "android", target_os = "linux"))]
+        MAP_DENYWRITE,
+        /// Compatibility flag. Ignored.
+        #[cfg(any(target_os = "android", target_os = "linux"))]
+        MAP_EXECUTABLE,
+        /// Mark the mmaped region to be locked in the same way as `mlock(2)`.
+        #[cfg(any(target_os = "android", target_os = "linux"))]
+        MAP_LOCKED,
+        /// Do not reserve swap space for this mapping.
+        ///
+        /// This was removed in FreeBSD 11.
+        #[cfg(not(target_os = "freebsd"))]
+        MAP_NORESERVE,
+        /// Populate page tables for a mapping.
+        #[cfg(any(target_os = "android", target_os = "linux"))]
+        MAP_POPULATE,
+        /// Only meaningful when used with `MAP_POPULATE`. Don't perform read-ahead.
+        #[cfg(any(target_os = "android", target_os = "linux"))]
+        MAP_NONBLOCK,
+        /// Allocate the mapping using "huge pages."
+        #[cfg(any(target_os = "android", target_os = "linux"))]
+        MAP_HUGETLB,
+        /// Lock the mapped region into memory as with `mlock(2)`.
+        #[cfg(target_os = "netbsd")]
+        MAP_WIRED,
+        /// Causes dirtied data in the specified range to be flushed to disk only when necessary.
+        #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
+        MAP_NOSYNC,
+        /// Rename private pages to a file.
+        ///
+        /// This was removed in FreeBSD 11.
+        #[cfg(any(target_os = "dragonfly", target_os = "netbsd", target_os = "openbsd"))]
+        MAP_RENAME,
+        /// Region may contain semaphores.
+        #[cfg(any(target_os = "dragonfly", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+        MAP_HASSEMAPHORE,
+        /// Region grows down, like a stack.
+        #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd", target_os = "linux"))]
+        MAP_STACK,
+        /// Pages in this mapping are not retained in the kernel's memory cache.
+        #[cfg(any(target_os = "ios", target_os = "macos"))]
+        MAP_NOCACHE,
+        #[cfg(any(target_os = "ios", target_os = "macos"))]
+        MAP_JIT,
     }
-
-    pub type MmapAdvise = c_int;
-
-    pub const MADV_NORMAL     : MmapAdvise  = 0; /* No further special treatment.  */
-    pub const MADV_RANDOM     : MmapAdvise  = 1; /* Expect random page references.  */
-    pub const MADV_SEQUENTIAL : MmapAdvise  = 2; /* Expect sequential page references.  */
-    pub const MADV_WILLNEED   : MmapAdvise  = 3; /* Will need these pages.  */
-    pub const MADV_DONTNEED   : MmapAdvise  = 4; /* Don't need these pages.  */
-    pub const MADV_REMOVE     : MmapAdvise  = 9; /* Remove these pages and resources.  */
-    pub const MADV_DONTFORK   : MmapAdvise  = 10; /* Do not inherit across fork.  */
-    pub const MADV_DOFORK     : MmapAdvise  = 11; /* Do inherit across fork.  */
-    pub const MADV_MERGEABLE  : MmapAdvise  = 12; /* KSM may merge identical pages.  */
-    pub const MADV_UNMERGEABLE: MmapAdvise  = 13; /* KSM may not merge identical pages.  */
-    pub const MADV_HUGEPAGE   : MmapAdvise  = 14; /* Worth backing with hugepages.  */
-    pub const MADV_NOHUGEPAGE : MmapAdvise  = 15; /* Not worth backing with hugepages.  */
-    pub const MADV_DONTDUMP   : MmapAdvise  = 16; /* Explicity exclude from the core dump, overrides the coredump filter bits.  */
-    pub const MADV_DODUMP     : MmapAdvise  = 17; /* Clear the MADV_DONTDUMP flag.  */
-    pub const MADV_HWPOISON   : MmapAdvise  = 100; /* Poison a page for testing.  */
-
-
-    libc_bitflags!{
-        pub flags MsFlags: c_int {
-            MS_ASYNC,
-            MS_INVALIDATE,
-            MS_SYNC,
-        }
-    }
-
-    pub const MAP_FAILED: isize               = -1;
 }
 
-#[cfg(any(target_os = "macos",
-          target_os = "ios"))]
-mod consts {
-    use libc::{self, c_int};
-
-    libc_bitflags!{
-        pub flags MapFlags: c_int {
-            MAP_FILE,
-            MAP_SHARED,
-            MAP_PRIVATE,
-            MAP_FIXED,
-            MAP_ANON,
-            MAP_NOCACHE,
-            MAP_JIT,
-        }
+libc_enum!{
+    /// Usage information for a range of memory to allow for performance optimizations by the kernel.
+    ///
+    /// Used by [`madvise`].
+    /// [`madvise`]: ./fn.madvise.html
+    #[repr(i32)]
+    pub enum MmapAdvise {
+        /// No further special treatment. This is the default.
+        MADV_NORMAL,
+        /// Expect random page references.
+        MADV_RANDOM,
+        /// Expect sequential page references.
+        MADV_SEQUENTIAL,
+        /// Expect access in the near future.
+        MADV_WILLNEED,
+        /// Do not expect access in the near future.
+        MADV_DONTNEED,
+        /// Free up a given range of pages and its associated backing store.
+        #[cfg(any(target_os = "android", target_os = "linux"))]
+        MADV_REMOVE,
+        /// Do not make pages in this range available to the child after a `fork(2)`.
+        #[cfg(any(target_os = "android", target_os = "linux"))]
+        MADV_DONTFORK,
+        /// Undo the effect of `MADV_DONTFORK`.
+        #[cfg(any(target_os = "android", target_os = "linux"))]
+        MADV_DOFORK,
+        /// Poison the given pages.
+        ///
+        /// Subsequent references to those pages are treated like hardware memory corruption.
+        #[cfg(any(target_os = "android", target_os = "linux"))]
+        MADV_HWPOISON,
+        /// Enable Kernel Samepage Merging (KSM) for the given pages.
+        #[cfg(any(target_os = "android", target_os = "linux"))]
+        MADV_MERGEABLE,
+        /// Undo the effect of `MADV_MERGEABLE`
+        #[cfg(any(target_os = "android", target_os = "linux"))]
+        MADV_UNMERGEABLE,
+        /// Preserve the memory of each page but offline the original page.
+        #[cfg(any(target_os = "android", target_os = "linux"))]
+        MADV_SOFT_OFFLINE,
+        /// Enable Transparent Huge Pages (THP) for pages in the given range.
+        #[cfg(any(target_os = "android", target_os = "linux"))]
+        MADV_HUGEPAGE,
+        /// Undo the effect of `MADV_HUGEPAGE`.
+        #[cfg(any(target_os = "android", target_os = "linux"))]
+        MADV_NOHUGEPAGE,
+        /// Exclude the given range from a core dump.
+        #[cfg(any(target_os = "android", target_os = "linux"))]
+        MADV_DONTDUMP,
+        /// Undo the effect of an earlier `MADV_DONTDUMP`.
+        #[cfg(any(target_os = "android", target_os = "linux"))]
+        MADV_DODUMP,
+        /// Specify that the application no longer needs the pages in the given range.
+        MADV_FREE,
+        /// Request that the system not flush the current range to disk unless it needs to.
+        #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
+        MADV_NOSYNC,
+        /// Undoes the effects of `MADV_NOSYNC` for any future pages dirtied within the given range.
+        #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
+        MADV_AUTOSYNC,
+        /// Region is not included in a core file.
+        #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
+        MADV_NOCORE,
+        /// Include region in a core file
+        #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
+        MADV_CORE,
+        #[cfg(any(target_os = "freebsd"))]
+        MADV_PROTECT,
+        /// Invalidate the hardware page table for the given region.
+        #[cfg(target_os = "dragonfly")]
+        MADV_INVAL,
+        /// Set the offset of the page directory page to `value` for the virtual page table.
+        #[cfg(target_os = "dragonfly")]
+        MADV_SETMAP,
+        /// Indicates that the application will not need the data in the given range.
+        #[cfg(any(target_os = "ios", target_os = "macos"))]
+        MADV_ZERO_WIRED_PAGES,
+        #[cfg(any(target_os = "ios", target_os = "macos"))]
+        MADV_FREE_REUSABLE,
+        #[cfg(any(target_os = "ios", target_os = "macos"))]
+        MADV_FREE_REUSE,
+        #[cfg(any(target_os = "ios", target_os = "macos"))]
+        MADV_CAN_REUSE,
     }
-
-    pub type MmapAdvise = c_int;
-
-    pub const MADV_NORMAL     : MmapAdvise      = 0; /* No further special treatment.  */
-    pub const MADV_RANDOM     : MmapAdvise      = 1; /* Expect random page references.  */
-    pub const MADV_SEQUENTIAL : MmapAdvise      = 2; /* Expect sequential page references.  */
-    pub const MADV_WILLNEED   : MmapAdvise      = 3; /* Will need these pages.  */
-    pub const MADV_DONTNEED   : MmapAdvise      = 4; /* Don't need these pages.  */
-    pub const MADV_FREE       : MmapAdvise      = 5; /* pages unneeded, discard contents */
-    pub const MADV_ZERO_WIRED_PAGES: MmapAdvise = 6; /* zero the wired pages that have not been unwired before the entry is deleted */
-    pub const MADV_FREE_REUSABLE : MmapAdvise   = 7; /* pages can be reused (by anyone) */
-    pub const MADV_FREE_REUSE : MmapAdvise      = 8; /* caller wants to reuse those pages */
-    pub const MADV_CAN_REUSE : MmapAdvise       = 9;
-
-    libc_bitflags!{
-        pub flags MsFlags: c_int {
-            MS_ASYNC, /* [MF|SIO] return immediately */
-            MS_INVALIDATE, /* [MF|SIO] invalidate all cached data */
-            MS_KILLPAGES, /* invalidate pages, leave mapped */
-            MS_DEACTIVATE, /* deactivate pages, leave mapped */
-            MS_SYNC, /* [MF|SIO] msync synchronously */
-        }
-    }
-
-    pub const MAP_FAILED: isize               = -1;
 }
 
-#[cfg(any(target_os = "freebsd", target_os = "dragonfly", target_os = "openbsd", target_os = "netbsd"))]
-mod consts {
-    use libc::{self, c_int};
-
-    libc_bitflags!{
-        pub flags MapFlags: c_int {
-            MAP_FILE,
-            MAP_SHARED,
-            MAP_PRIVATE,
-            MAP_FIXED,
-            MAP_RENAME,
-            MAP_NORESERVE,
-            MAP_HASSEMAPHORE,
-            #[cfg(not(any(target_os = "openbsd", target_os = "netbsd")))]
-            MAP_STACK,
-            #[cfg(target_os = "netbsd")]
-            MAP_WIRED,
-            #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
-            MAP_NOSYNC,
-            MAP_ANON,
-        }
-    }
-
-    pub type MmapAdvise = c_int;
-
-    pub const MADV_NORMAL     : MmapAdvise      = 0; /* No further special treatment.  */
-    pub const MADV_RANDOM     : MmapAdvise      = 1; /* Expect random page references.  */
-    pub const MADV_SEQUENTIAL : MmapAdvise      = 2; /* Expect sequential page references.  */
-    pub const MADV_WILLNEED   : MmapAdvise      = 3; /* Will need these pages.  */
-    pub const MADV_DONTNEED   : MmapAdvise      = 4; /* Don't need these pages.  */
-    pub const MADV_FREE       : MmapAdvise      = 5; /* pages unneeded, discard contents */
-    pub const MADV_NOSYNC     : MmapAdvise      = 6; /* try to avoid flushes to physical media*/
-    pub const MADV_AUTOSYNC   : MmapAdvise      = 7; /* refert to default flushing strategy */
-    pub const MADV_NOCORE     : MmapAdvise      = 8; /* do not include these pages in a core file */
-    pub const MADV_CORE       : MmapAdvise      = 9; /* revert to including pages in a core file */
-    #[cfg(not(target_os = "dragonfly"))]
-    pub const MADV_PROTECT    : MmapAdvise      = 10; /* protect process from pageout kill */
-    #[cfg(target_os = "dragonfly")]
-    pub const MADV_INVAL      : MmapAdvise      = 10; /* virt page tables have changed, inval pmap */
-    #[cfg(target_os = "dragonfly")]
-    pub const MADV_SETMAP     : MmapAdvise      = 11; /* set page table directory page for map */
-
-    bitflags!{
-        pub struct MsFlags: c_int {
-            const MS_ASYNC      = libc::MS_ASYNC; /* [MF|SIO] return immediately */
-            const MS_INVALIDATE = libc::MS_INVALIDATE; /* [MF|SIO] invalidate all cached data */
-            #[cfg(not(target_os = "dragonfly"))]
-            const MS_KILLPAGES  = 0x0004; /* invalidate pages, leave mapped */
-            #[cfg(not(target_os = "dragonfly"))]
-            const MS_DEACTIVATE = 0x0004; /* deactivate pages, leave mapped */
-            const MS_SYNC       = libc::MS_SYNC; /* [MF|SIO] msync synchronously */
-        }
-    }
-
-    pub const MAP_FAILED: isize                 = -1;
-}
-
-mod ffi {
-    use libc::{c_void, size_t, c_int, c_char, mode_t};
-
-    pub use libc::{mmap, munmap};
-
-    #[allow(improper_ctypes)]
-    extern {
-        pub fn shm_open(name: *const c_char, oflag: c_int, mode: mode_t) -> c_int;
-        pub fn shm_unlink(name: *const c_char) -> c_int;
-        pub fn mlock(addr: *const c_void, len: size_t) -> c_int;
-        pub fn munlock(addr: *const c_void, len: size_t) -> c_int;
-        pub fn madvise (addr: *const c_void, len: size_t, advice: c_int) -> c_int;
-        pub fn msync (addr: *const c_void, len: size_t, flags: c_int) -> c_int;
+libc_bitflags!{
+    /// Configuration flags for `msync`.
+    pub flags MsFlags: c_int {
+        /// Schedule an update but return immediately.
+        MS_ASYNC,
+        /// Invalidate all cached data.
+        MS_INVALIDATE,
+        /// Invalidate pages, but leave them mapped.
+        #[cfg(any(target_os = "ios", target_os = "macos"))]
+        MS_KILLPAGES,
+        /// Deactivate pages, but leave them mapped.
+        #[cfg(any(target_os = "ios", target_os = "macos"))]
+        MS_DEACTIVATE,
+        /// Perform an update and wait for it to complete.
+        MS_SYNC,
     }
 }
 
 pub unsafe fn mlock(addr: *const c_void, length: size_t) -> Result<()> {
-    Errno::result(ffi::mlock(addr, length)).map(drop)
+    Errno::result(libc::mlock(addr, length)).map(drop)
 }
 
 pub unsafe fn munlock(addr: *const c_void, length: size_t) -> Result<()> {
-    Errno::result(ffi::munlock(addr, length)).map(drop)
+    Errno::result(libc::munlock(addr, length)).map(drop)
 }
 
 /// Calls to mmap are inherently unsafe, so they must be made in an unsafe block. Typically
 /// a higher-level abstraction will hide the unsafe interactions with the mmap'd region.
 pub unsafe fn mmap(addr: *mut c_void, length: size_t, prot: ProtFlags, flags: MapFlags, fd: RawFd, offset: off_t) -> Result<*mut c_void> {
-    let ret = ffi::mmap(addr, length, prot.bits(), flags.bits(), fd, offset);
+    let ret = libc::mmap(addr, length, prot.bits(), flags.bits(), fd, offset);
 
-    if ret as isize == MAP_FAILED  {
+    if ret == libc::MAP_FAILED {
         Err(Error::Sys(Errno::last()))
     } else {
         Ok(ret)
@@ -212,30 +222,37 @@ pub unsafe fn mmap(addr: *mut c_void, length: size_t, prot: ProtFlags, flags: Ma
 }
 
 pub unsafe fn munmap(addr: *mut c_void, len: size_t) -> Result<()> {
-    Errno::result(ffi::munmap(addr, len)).map(drop)
+    Errno::result(libc::munmap(addr, len)).map(drop)
 }
 
-pub unsafe fn madvise(addr: *const c_void, length: size_t, advise: MmapAdvise) -> Result<()> {
-    Errno::result(ffi::madvise(addr, length, advise)).map(drop)
+pub unsafe fn madvise(addr: *mut c_void, length: size_t, advise: MmapAdvise) -> Result<()> {
+    Errno::result(libc::madvise(addr, length, advise as i32)).map(drop)
 }
 
-pub unsafe fn msync(addr: *const c_void, length: size_t, flags: MsFlags) -> Result<()> {
-    Errno::result(ffi::msync(addr, length, flags.bits())).map(drop)
+pub unsafe fn msync(addr: *mut c_void, length: size_t, flags: MsFlags) -> Result<()> {
+    Errno::result(libc::msync(addr, length, flags.bits())).map(drop)
 }
 
+#[cfg(not(target_os = "android"))]
 pub fn shm_open<P: ?Sized + NixPath>(name: &P, flag: OFlag, mode: Mode) -> Result<RawFd> {
     let ret = try!(name.with_nix_path(|cstr| {
+        #[cfg(any(target_os = "macos", target_os = "ios"))]
         unsafe {
-            ffi::shm_open(cstr.as_ptr(), flag.bits(), mode.bits() as mode_t)
+            libc::shm_open(cstr.as_ptr(), flag.bits(), mode.bits() as libc::c_uint)
+        }
+        #[cfg(not(any(target_os = "macos", target_os = "ios")))]
+        unsafe {
+            libc::shm_open(cstr.as_ptr(), flag.bits(), mode.bits() as libc::mode_t)
         }
     }));
 
     Errno::result(ret)
 }
 
+#[cfg(not(target_os = "android"))]
 pub fn shm_unlink<P: ?Sized + NixPath>(name: &P) -> Result<()> {
     let ret = try!(name.with_nix_path(|cstr| {
-        unsafe { ffi::shm_unlink(cstr.as_ptr()) }
+        unsafe { libc::shm_unlink(cstr.as_ptr()) }
     }));
 
     Errno::result(ret).map(drop)
