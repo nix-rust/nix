@@ -24,6 +24,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   has changed type from `c_int` to `SockProtocol`.
   It accepts a `None` value for default protocol that was specified with zero using `c_int`.
   ([#647](https://github.com/nix-rust/nix/pull/647))
+- Made `select` easier to use, adding the ability to automatically calculate the `nfds` parameter using the new
+  `FdSet::highest` ([#701](https://github.com/nix-rust/nix/pull/701))
 - Exposed `unistd::setresuid` and `unistd::setresgid` on FreeBSD and OpenBSD
   ([#721](https://github.com/nix-rust/nix/pull/721))
 - Refactored the `statvfs` module removing extraneous API functions and the
