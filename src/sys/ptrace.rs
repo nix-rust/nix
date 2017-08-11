@@ -1,7 +1,10 @@
+//! For detailed description of the ptrace requests, consult `man ptrace`.
+
 use std::{mem, ptr};
 use {Errno, Error, Result};
 use libc::{c_void, c_long, siginfo_t};
 use ::unistd::Pid;
+use sys::signal::Signal;
 
 pub mod ptrace {
     use libc::c_int;
@@ -70,7 +73,11 @@ mod ffi {
 
 /// Performs a ptrace request. If the request in question is provided by a specialised function
 /// this function will return an unsupported operation error.
-pub fn ptrace(request: ptrace::PtraceRequest, pid: Pid, addr: *mut c_void, data: *mut c_void) -> Result<c_long> {
+#[deprecated(
+    since="0.10.0",
+    note="usages of `ptrace()` should be replaced with the specialized helper functions instead"
+)]
+pub unsafe fn ptrace(request: ptrace::PtraceRequest, pid: Pid, addr: *mut c_void, data: *mut c_void) -> Result<c_long> {
     use self::ptrace::*;
 
     match request {
@@ -103,8 +110,8 @@ fn ptrace_get_data<T>(request: ptrace::PtraceRequest, pid: Pid) -> Result<T> {
     Ok(data)
 }
 
-fn ptrace_other(request: ptrace::PtraceRequest, pid: Pid, addr: *mut c_void, data: *mut c_void) -> Result<c_long> {
-    Errno::result(unsafe { ffi::ptrace(request, pid.into(), addr, data) }).map(|_| 0)
+unsafe fn ptrace_other(request: ptrace::PtraceRequest, pid: Pid, addr: *mut c_void, data: *mut c_void) -> Result<c_long> {
+    Errno::result(ffi::ptrace(request, pid.into(), addr, data)).map(|_| 0)
 }
 
 /// Set options, as with `ptrace(PTRACE_SETOPTIONS,...)`.
@@ -140,3 +147,61 @@ pub fn setsiginfo(pid: Pid, sig: &siginfo_t) -> Result<()> {
         Err(e) => Err(e),
     }
 }
+
+/// Sets the process as traceable, as with `ptrace(PTRACE_TRACEME, ...)`
+///
+/// Indicates that this process is to be traced by its parent.
+/// This is the only ptrace request to be issued by the tracee.
+pub fn traceme() -> Result<()> {
+    unsafe {
+        ptrace_other(
+            ptrace::PTRACE_TRACEME,
+            Pid::from_raw(0),
+            ptr::null_mut(),
+            ptr::null_mut(),
+        ).map(|_| ()) // ignore the useless return value
+    }
+}
+
+/// Ask for next syscall, as with `ptrace(PTRACE_SYSCALL, ...)`
+///
+/// Arranges for the tracee to be stopped at the next entry to or exit from a system call.
+pub fn syscall(pid: Pid) -> Result<()> {
+    unsafe {
+        ptrace_other(
+            ptrace::PTRACE_SYSCALL,
+            pid,
+            ptr::null_mut(),
+            ptr::null_mut(),
+        ).map(|_| ()) // ignore the useless return value
+    }
+}
+
+/// Attach to a running process, as with `ptrace(PTRACE_ATTACH, ...)`
+///
+/// Attaches to the process specified in pid, making it a tracee of the calling process.
+pub fn attach(pid: Pid) -> Result<()> {
+    unsafe {
+        ptrace_other(
+            ptrace::PTRACE_ATTACH,
+            pid,
+            ptr::null_mut(),
+            ptr::null_mut(),
+        ).map(|_| ()) // ignore the useless return value
+    }
+}
+
+/// Restart the stopped tracee process, as with `ptrace(PTRACE_CONT, ...)`
+///
+/// Continues the execution of the process with PID `pid`, optionally
+/// delivering a signal specified by `sig`.
+pub fn cont<T: Into<Option<Signal>>>(pid: Pid, sig: T) -> Result<()> {
+    let data = match sig.into() {
+        Some(s) => s as i32 as *mut c_void,
+        None => ptr::null_mut(),
+    };
+    unsafe {
+        ptrace_other(ptrace::PTRACE_CONT, pid, ptr::null_mut(), data).map(|_| ()) // ignore the useless return value
+    }
+}
+

@@ -3,14 +3,13 @@ use nix::errno::Errno;
 use nix::unistd::getpid;
 use nix::sys::ptrace;
 
-use std::{mem, ptr};
+use std::mem;
 
 #[test]
 fn test_ptrace() {
-    use nix::sys::ptrace::ptrace::PTRACE_ATTACH;
     // Just make sure ptrace can be called at all, for now.
     // FIXME: qemu-user doesn't implement ptrace on all arches, so permit ENOSYS
-    let err = ptrace::ptrace(PTRACE_ATTACH, getpid(), ptr::null_mut(), ptr::null_mut()).unwrap_err();
+    let err = ptrace::attach(getpid()).unwrap_err();
     assert!(err == Error::Sys(Errno::EPERM) || err == Error::Sys(Errno::ENOSYS));
 }
 
@@ -45,5 +44,49 @@ fn test_ptrace_setsiginfo() {
     match ptrace::setsiginfo(getpid(), &siginfo) {
         Err(Error::UnsupportedOperation) => panic!("ptrace_setsiginfo returns Error::UnsupportedOperation!"),
         _ => (),
+    }
+}
+
+
+#[test]
+fn test_ptrace_cont() {
+    use nix::sys::ptrace;
+    use nix::sys::signal::{raise, Signal};
+    use nix::sys::wait::{waitpid, WaitStatus};
+    use nix::unistd::fork;
+    use nix::unistd::ForkResult::*;
+
+    // FIXME: qemu-user doesn't implement ptrace on all architectures
+    // and retunrs ENOSYS in this case.
+    // We (ab)use this behavior to detect the affected platforms
+    // and skip the test then.
+    // On valid platforms the ptrace call should return Errno::EPERM, this
+    // is already tested by `test_ptrace`.
+    let err = ptrace::attach(getpid()).unwrap_err();
+    if err == Error::Sys(Errno::ENOSYS) {
+        return;
+    }
+
+    match fork() {
+        Ok(Child) => {
+            ptrace::traceme().unwrap();
+            // As recommended by ptrace(2), raise SIGTRAP to pause the child
+            // until the parent is ready to continue
+            loop {
+                raise(Signal::SIGTRAP).unwrap();
+            }
+
+        },
+        Ok(Parent { child }) => {
+            assert_eq!(waitpid(child, None), Ok(WaitStatus::Stopped(child, Signal::SIGTRAP)));
+            ptrace::cont(child, None).unwrap();
+            assert_eq!(waitpid(child, None), Ok(WaitStatus::Stopped(child, Signal::SIGTRAP)));
+            ptrace::cont(child, Signal::SIGKILL).unwrap();
+            match waitpid(child, None) {
+                Ok(WaitStatus::Signaled(pid, Signal::SIGKILL, _)) if pid == child => {}
+                _ => panic!("The process should have been killed"),
+            }
+        },
+        Err(_) => panic!("Error: Fork Failed")
     }
 }

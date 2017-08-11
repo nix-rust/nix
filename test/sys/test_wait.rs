@@ -60,14 +60,13 @@ mod ptrace {
     use nix::sys::wait::*;
     use nix::unistd::*;
     use nix::unistd::ForkResult::*;
-    use std::ptr;
     use libc::_exit;
 
     fn ptrace_child() -> ! {
-        ptrace::ptrace(PTRACE_TRACEME, Pid::from_raw(0), ptr::null_mut(), ptr::null_mut()).unwrap();
+        ptrace::traceme().unwrap();
         // As recommended by ptrace(2), raise SIGTRAP to pause the child
         // until the parent is ready to continue
-        let _ = raise(SIGTRAP);
+        raise(SIGTRAP).unwrap();
         unsafe { _exit(0) }
     }
 
@@ -78,13 +77,13 @@ mod ptrace {
         assert!(ptrace::setoptions(child, PTRACE_O_TRACESYSGOOD | PTRACE_O_TRACEEXIT).is_ok());
 
         // First, stop on the next system call, which will be exit()
-        assert!(ptrace::ptrace(PTRACE_SYSCALL, child, ptr::null_mut(), ptr::null_mut()).is_ok());
+        assert!(ptrace::syscall(child).is_ok());
         assert_eq!(waitpid(child, None), Ok(WaitStatus::PtraceSyscall(child)));
         // Then get the ptrace event for the process exiting
-        assert!(ptrace::ptrace(PTRACE_CONT, child, ptr::null_mut(), ptr::null_mut()).is_ok());
+        assert!(ptrace::cont(child, None).is_ok());
         assert_eq!(waitpid(child, None), Ok(WaitStatus::PtraceEvent(child, SIGTRAP, PTRACE_EVENT_EXIT)));
         // Finally get the normal wait() result, now that the process has exited
-        assert!(ptrace::ptrace(PTRACE_CONT, child, ptr::null_mut(), ptr::null_mut()).is_ok());
+        assert!(ptrace::cont(child, None).is_ok());
         assert_eq!(waitpid(child, None), Ok(WaitStatus::Exited(child, 0)));
     }
 
