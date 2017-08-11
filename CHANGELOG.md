@@ -23,6 +23,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#647](https://github.com/nix-rust/nix/pull/647))
 - Exposed `unistd::setresuid` and `unistd::setresgid` on FreeBSD and OpenBSD
   ([#721](https://github.com/nix-rust/nix/pull/721))
+- Refactored the `statvfs` module removing extraneous API functions and the
+  `statvfs::vfs` module. Additionally  `(f)statvfs()` now return the struct
+  directly. And the returned `Statvfs` struct now exposes its data through
+  accessor methods. ([#729](https://github.com/nix-rust/nix/pull/729))
 
 # Fixed
 - Fix compilation and tests for OpenBSD targets
