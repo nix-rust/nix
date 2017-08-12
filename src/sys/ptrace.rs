@@ -6,68 +6,117 @@ use libc::{self, c_void, c_long, siginfo_t};
 use ::unistd::Pid;
 use sys::signal::Signal;
 
-pub mod ptrace {
-    use libc::c_int;
 
-    cfg_if! {
-        if #[cfg(any(all(target_os = "linux", arch = "s390x"),
-                     all(target_os = "linux", target_env = "gnu")))] {
-            pub type PtraceRequest = ::libc::c_uint;
-        } else {
-            pub type PtraceRequest = c_int;
-        }
+cfg_if! {
+    if #[cfg(any(all(target_os = "linux", arch = "s390x"),
+                 all(target_os = "linux", target_env = "gnu")))] {
+        #[doc(hidden)]
+        pub type RequestType = ::libc::c_uint;
+    } else {
+        #[doc(hidden)]
+        pub type RequestType = ::libc::c_int;
     }
+}
 
-    pub const PTRACE_TRACEME:     PtraceRequest = 0;
-    pub const PTRACE_PEEKTEXT:    PtraceRequest = 1;
-    pub const PTRACE_PEEKDATA:    PtraceRequest = 2;
-    pub const PTRACE_PEEKUSER:    PtraceRequest = 3;
-    pub const PTRACE_POKETEXT:    PtraceRequest = 4;
-    pub const PTRACE_POKEDATA:    PtraceRequest = 5;
-    pub const PTRACE_POKEUSER:    PtraceRequest = 6;
-    pub const PTRACE_CONT:        PtraceRequest = 7;
-    pub const PTRACE_KILL:        PtraceRequest = 8;
-    pub const PTRACE_SINGLESTEP:  PtraceRequest = 9;
-    pub const PTRACE_GETREGS:     PtraceRequest = 12;
-    pub const PTRACE_SETREGS:     PtraceRequest = 13;
-    pub const PTRACE_GETFPREGS:   PtraceRequest = 14;
-    pub const PTRACE_SETFPREGS:   PtraceRequest = 15;
-    pub const PTRACE_ATTACH:      PtraceRequest = 16;
-    pub const PTRACE_DETACH:      PtraceRequest = 17;
-    pub const PTRACE_GETFPXREGS:  PtraceRequest = 18;
-    pub const PTRACE_SETFPXREGS:  PtraceRequest = 19;
-    pub const PTRACE_SYSCALL:     PtraceRequest = 24;
-    pub const PTRACE_SETOPTIONS:  PtraceRequest = 0x4200;
-    pub const PTRACE_GETEVENTMSG: PtraceRequest = 0x4201;
-    pub const PTRACE_GETSIGINFO:  PtraceRequest = 0x4202;
-    pub const PTRACE_SETSIGINFO:  PtraceRequest = 0x4203;
-    pub const PTRACE_GETREGSET:   PtraceRequest = 0x4204;
-    pub const PTRACE_SETREGSET:   PtraceRequest = 0x4205;
-    pub const PTRACE_SEIZE:       PtraceRequest = 0x4206;
-    pub const PTRACE_INTERRUPT:   PtraceRequest = 0x4207;
-    pub const PTRACE_LISTEN:      PtraceRequest = 0x4208;
-    pub const PTRACE_PEEKSIGINFO: PtraceRequest = 0x4209;
+libc_enum!{
+    #[cfg_attr(not(any(target_env = "musl", target_os = "android")), repr(u32))]
+    #[cfg_attr(any(target_env = "musl", target_os = "android"), repr(i32))]
+    /// Ptrace Request enum defining the action to be taken.
+    pub enum Request {
+        PTRACE_TRACEME,
+        PTRACE_PEEKTEXT,
+        PTRACE_PEEKDATA,
+        PTRACE_PEEKUSER,
+        PTRACE_POKETEXT,
+        PTRACE_POKEDATA,
+        PTRACE_POKEUSER,
+        PTRACE_CONT,
+        PTRACE_KILL,
+        PTRACE_SINGLESTEP,
+        #[cfg(all(any(target_env = "musl", target_arch ="x86_64", target_arch = "s390x"), not(target_os = "android")))]
+        PTRACE_GETREGS,
+        #[cfg(all(any(target_env = "musl", target_arch ="x86_64", target_arch = "s390x"), not(target_os = "android")))]
+        PTRACE_SETREGS,
+        #[cfg(all(any(target_env = "musl", target_arch ="x86_64", target_arch = "s390x"), not(target_os = "android")))]
+        PTRACE_GETFPREGS,
+        #[cfg(all(any(target_env = "musl", target_arch ="x86_64", target_arch = "s390x"), not(target_os = "android")))]
+        PTRACE_SETFPREGS,
+        PTRACE_ATTACH,
+        PTRACE_DETACH,
+        #[cfg(all(any(target_env = "musl", target_arch ="x86_64"), not(target_os = "android")))]
+        PTRACE_GETFPXREGS,
+        #[cfg(all(any(target_env = "musl", target_arch ="x86_64"), not(target_os = "android")))]
+        PTRACE_SETFPXREGS,
+        PTRACE_SYSCALL,
+        PTRACE_SETOPTIONS,
+        PTRACE_GETEVENTMSG,
+        PTRACE_GETSIGINFO,
+        PTRACE_SETSIGINFO,
+        #[cfg(all(any(target_env = "musl", target_arch ="x86_64", target_arch = "s390x"), not(target_os = "android")))]
+        PTRACE_GETREGSET,
+        #[cfg(all(any(target_env = "musl", target_arch ="x86_64", target_arch = "s390x"), not(target_os = "android")))]
+        PTRACE_SETREGSET,
+        #[cfg(not(any(target_os = "android", target_arch = "mips", target_arch = "mips64")))]
+        PTRACE_SEIZE,
+        #[cfg(not(any(target_os = "android", target_arch = "mips", target_arch = "mips64")))]
+        PTRACE_INTERRUPT,
+        #[cfg(not(any(target_os = "android", target_arch = "mips", target_arch = "mips64")))]
+        PTRACE_LISTEN,
+        #[cfg(not(any(target_os = "android", target_arch = "mips", target_arch = "mips64")))]
+        PTRACE_PEEKSIGINFO,
+    }
+}
 
-    pub type PtraceEvent = c_int;
+libc_enum!{
+    #[repr(i32)]
+    /// Using the ptrace options the tracer can configure the tracee to stop
+    /// at certain events. This enum is used to define those events as defined
+    /// in `man ptrace`.
+    pub enum Event {
+        /// Event that stops before a return from fork or clone.
+        PTRACE_EVENT_FORK,
+        /// Event that stops before a return from vfork or clone.
+        PTRACE_EVENT_VFORK,
+        /// Event that stops before a return from clone.
+        PTRACE_EVENT_CLONE,
+        /// Event that stops before a return from execve.
+        PTRACE_EVENT_EXEC,
+        /// Event for a return from vfork.
+        PTRACE_EVENT_VFORK_DONE,
+        /// Event for a stop before an exit. Unlike the waitpid Exit status program.
+        /// registers can still be examined
+        PTRACE_EVENT_EXIT,
+        /// STop triggered by a seccomp rule on a tracee.
+        PTRACE_EVENT_SECCOMP,
+        // PTRACE_EVENT_STOP not provided by libc because it's defined in glibc 2.26
+    }
+}
 
-    pub const PTRACE_EVENT_FORK:       PtraceEvent = 1;
-    pub const PTRACE_EVENT_VFORK:      PtraceEvent = 2;
-    pub const PTRACE_EVENT_CLONE:      PtraceEvent = 3;
-    pub const PTRACE_EVENT_EXEC:       PtraceEvent = 4;
-    pub const PTRACE_EVENT_VFORK_DONE: PtraceEvent = 5;
-    pub const PTRACE_EVENT_EXIT:       PtraceEvent = 6;
-    pub const PTRACE_EVENT_SECCOMP:    PtraceEvent = 6;
-    pub const PTRACE_EVENT_STOP:       PtraceEvent = 128;
-
-    pub type PtraceOptions = c_int;
-    pub const PTRACE_O_TRACESYSGOOD: PtraceOptions   = 1;
-    pub const PTRACE_O_TRACEFORK: PtraceOptions      = (1 << PTRACE_EVENT_FORK);
-    pub const PTRACE_O_TRACEVFORK: PtraceOptions     = (1 << PTRACE_EVENT_VFORK);
-    pub const PTRACE_O_TRACECLONE: PtraceOptions     = (1 << PTRACE_EVENT_CLONE);
-    pub const PTRACE_O_TRACEEXEC: PtraceOptions      = (1 << PTRACE_EVENT_EXEC);
-    pub const PTRACE_O_TRACEVFORKDONE: PtraceOptions = (1 << PTRACE_EVENT_VFORK_DONE);
-    pub const PTRACE_O_TRACEEXIT: PtraceOptions      = (1 << PTRACE_EVENT_EXIT);
-    pub const PTRACE_O_TRACESECCOMP: PtraceOptions   = (1 << PTRACE_EVENT_SECCOMP);
+libc_bitflags! {
+    /// Ptrace options used in conjunction with the PTRACE_SETOPTIONS request.
+    /// See `man ptrace` for more details.
+    pub struct Options: libc::c_int {
+        /// When delivering system call traps set a bit to allow tracer to
+        /// distinguish between normal stops or syscall stops. May not work on
+        /// all systems.
+        PTRACE_O_TRACESYSGOOD;
+        /// Stop tracee at next fork and start tracing the forked process.
+        PTRACE_O_TRACEFORK;
+        /// Stop tracee at next vfork call and trace the vforked process.
+        PTRACE_O_TRACEVFORK;
+        /// Stop tracee at next clone call and trace the cloned process.
+        PTRACE_O_TRACECLONE;
+        /// Stop tracee at next execve call.
+        PTRACE_O_TRACEEXEC;
+        /// Stop tracee at vfork completion.
+        PTRACE_O_TRACEVFORKDONE;
+        /// Stop tracee at next exit call. Stops before exit commences allowing
+        /// tracer to see location of exit and register states.
+        PTRACE_O_TRACEEXIT;
+        /// Stop tracee when a SECCOMP_RET_TRACE rule is triggered. See `man seccomp` for more
+        /// details.
+        PTRACE_O_TRACESECCOMP;
+    }
 }
 
 /// Performs a ptrace request. If the request in question is provided by a specialised function
@@ -76,9 +125,8 @@ pub mod ptrace {
     since="0.10.0",
     note="usages of `ptrace()` should be replaced with the specialized helper functions instead"
 )]
-pub unsafe fn ptrace(request: ptrace::PtraceRequest, pid: Pid, addr: *mut c_void, data: *mut c_void) -> Result<c_long> {
-    use self::ptrace::*;
-
+pub unsafe fn ptrace(request: Request, pid: Pid, addr: *mut c_void, data: *mut c_void) -> Result<c_long> {
+    use self::Request::*;
     match request {
         PTRACE_PEEKTEXT | PTRACE_PEEKDATA | PTRACE_PEEKUSER => ptrace_peek(request, pid, addr, data),
         PTRACE_GETSIGINFO | PTRACE_GETEVENTMSG | PTRACE_SETSIGINFO | PTRACE_SETOPTIONS => Err(Error::UnsupportedOperation),
@@ -86,10 +134,10 @@ pub unsafe fn ptrace(request: ptrace::PtraceRequest, pid: Pid, addr: *mut c_void
     }
 }
 
-fn ptrace_peek(request: ptrace::PtraceRequest, pid: Pid, addr: *mut c_void, data: *mut c_void) -> Result<c_long> {
+fn ptrace_peek(request: Request, pid: Pid, addr: *mut c_void, data: *mut c_void) -> Result<c_long> {
     let ret = unsafe {
         Errno::clear();
-        libc::ptrace(request, libc::pid_t::from(pid), addr, data)
+        libc::ptrace(request as RequestType, libc::pid_t::from(pid), addr, data)
     };
     match Errno::result(ret) {
         Ok(..) | Err(Error::Sys(Errno::UnknownErrno)) => Ok(ret),
@@ -101,45 +149,54 @@ fn ptrace_peek(request: ptrace::PtraceRequest, pid: Pid, addr: *mut c_void, data
 /// Some ptrace get requests populate structs or larger elements than c_long
 /// and therefore use the data field to return values. This function handles these
 /// requests.
-fn ptrace_get_data<T>(request: ptrace::PtraceRequest, pid: Pid) -> Result<T> {
+fn ptrace_get_data<T>(request: Request, pid: Pid) -> Result<T> {
     // Creates an uninitialized pointer to store result in
     let data: T = unsafe { mem::uninitialized() };
-    let res = unsafe { libc::ptrace(request, libc::pid_t::from(pid), ptr::null_mut::<T>(), &data as *const _ as *const c_void) };
+    let res = unsafe {
+        libc::ptrace(request as RequestType,
+                     libc::pid_t::from(pid),
+                     ptr::null_mut::<T>(),
+                     &data as *const _ as *const c_void)
+    };
     Errno::result(res)?;
     Ok(data)
 }
 
-unsafe fn ptrace_other(request: ptrace::PtraceRequest, pid: Pid, addr: *mut c_void, data: *mut c_void) -> Result<c_long> {
-    Errno::result(libc::ptrace(request, libc::pid_t::from(pid), addr, data)).map(|_| 0)
+unsafe fn ptrace_other(request: Request, pid: Pid, addr: *mut c_void, data: *mut c_void) -> Result<c_long> {
+    Errno::result(libc::ptrace(request as RequestType, libc::pid_t::from(pid), addr, data)).map(|_| 0)
 }
 
 /// Set options, as with `ptrace(PTRACE_SETOPTIONS,...)`.
-pub fn setoptions(pid: Pid, options: ptrace::PtraceOptions) -> Result<()> {
-    use self::ptrace::*;
+pub fn setoptions(pid: Pid, options: Options) -> Result<()> {
     use std::ptr;
 
-    let res = unsafe { libc::ptrace(PTRACE_SETOPTIONS, libc::pid_t::from(pid), ptr::null_mut::<libc::c_void>(), options as *mut c_void) };
+    let res = unsafe {
+        libc::ptrace(Request::PTRACE_SETOPTIONS as RequestType,
+                     libc::pid_t::from(pid),
+                     ptr::null_mut::<libc::c_void>(),
+                     options.bits() as *mut c_void)
+    };
     Errno::result(res).map(|_| ())
 }
 
 /// Gets a ptrace event as described by `ptrace(PTRACE_GETEVENTMSG,...)`
 pub fn getevent(pid: Pid) -> Result<c_long> {
-    use self::ptrace::*;
-    ptrace_get_data::<c_long>(PTRACE_GETEVENTMSG, pid)
+    ptrace_get_data::<c_long>(Request::PTRACE_GETEVENTMSG, pid)
 }
 
 /// Get siginfo as with `ptrace(PTRACE_GETSIGINFO,...)`
 pub fn getsiginfo(pid: Pid) -> Result<siginfo_t> {
-    use self::ptrace::*;
-    ptrace_get_data::<siginfo_t>(PTRACE_GETSIGINFO, pid)
+    ptrace_get_data::<siginfo_t>(Request::PTRACE_GETSIGINFO, pid)
 }
 
 /// Set siginfo as with `ptrace(PTRACE_SETSIGINFO,...)`
 pub fn setsiginfo(pid: Pid, sig: &siginfo_t) -> Result<()> {
-    use self::ptrace::*;
     let ret = unsafe{
         Errno::clear();
-        libc::ptrace(PTRACE_SETSIGINFO, libc::pid_t::from(pid), ptr::null_mut::<libc::c_void>(), sig as *const _ as *const c_void)
+        libc::ptrace(Request::PTRACE_SETSIGINFO as RequestType,
+                     libc::pid_t::from(pid),
+                     ptr::null_mut::<libc::c_void>(),
+                     sig as *const _ as *const c_void)
     };
     match Errno::result(ret) {
         Ok(_) => Ok(()),
@@ -154,7 +211,7 @@ pub fn setsiginfo(pid: Pid, sig: &siginfo_t) -> Result<()> {
 pub fn traceme() -> Result<()> {
     unsafe {
         ptrace_other(
-            ptrace::PTRACE_TRACEME,
+            Request::PTRACE_TRACEME,
             Pid::from_raw(0),
             ptr::null_mut(),
             ptr::null_mut(),
@@ -168,7 +225,7 @@ pub fn traceme() -> Result<()> {
 pub fn syscall(pid: Pid) -> Result<()> {
     unsafe {
         ptrace_other(
-            ptrace::PTRACE_SYSCALL,
+            Request::PTRACE_SYSCALL,
             pid,
             ptr::null_mut(),
             ptr::null_mut(),
@@ -182,7 +239,7 @@ pub fn syscall(pid: Pid) -> Result<()> {
 pub fn attach(pid: Pid) -> Result<()> {
     unsafe {
         ptrace_other(
-            ptrace::PTRACE_ATTACH,
+            Request::PTRACE_ATTACH,
             pid,
             ptr::null_mut(),
             ptr::null_mut(),
@@ -200,7 +257,7 @@ pub fn cont<T: Into<Option<Signal>>>(pid: Pid, sig: T) -> Result<()> {
         None => ptr::null_mut(),
     };
     unsafe {
-        ptrace_other(ptrace::PTRACE_CONT, pid, ptr::null_mut(), data).map(|_| ()) // ignore the useless return value
+        ptrace_other(Request::PTRACE_CONT, pid, ptr::null_mut(), data).map(|_| ()) // ignore the useless return value
     }
 }
 

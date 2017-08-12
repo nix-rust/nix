@@ -47,6 +47,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#731](https://github.com/nix-rust/nix/pull/731))
 - Marked `pty::ptsname` function as `unsafe`
   ([#744](https://github.com/nix-rust/nix/pull/744))
+- Moved constants ptrace request, event and options to enums and updated ptrace functions and argument types accordingly. 
+  ([#749](https://github.com/nix-rust/nix/pull/749))
 
 # Fixed
 - Fix compilation and tests for OpenBSD targets
