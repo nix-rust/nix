@@ -7,9 +7,10 @@
 
 [Documentation (Development)](https://nix-rust.github.io/nix/nix/index.html)
 
-Nix seeks to provide friendly bindings to various *nix platform APIs (Linux, Darwin,
-...). The goal is to not provide a 100% unified interface, but to unify
-what can be while still providing platform specific APIs.
+Nix is a crate for the Rust language that seeks to provide friendly bindings to
+various *nix platform APIs (Linux, Darwin, ...). The goal is to not provide a 
+100% unified interface, but to unify what can be while still providing platform 
+specific APIs.
 
 For many system APIs, Nix provides a safe alternative to the unsafe APIs
 exposed by the [libc crate](https://github.com/rust-lang/libc).  This is done by
@@ -29,6 +30,7 @@ pub unsafe extern fn gethostname(name: *mut c_char, len: size_t) -> c_int;
 // nix api (returns a nix::Result<CStr>)
 pub fn gethostname<'a>(buffer: &'a mut [u8]) -> Result<&'a CStr>;
 ```
+Not to be confused with the Nix package manager (https://nixos.org/nix/)
 
 ## Supported Platforms
 
