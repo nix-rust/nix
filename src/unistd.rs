@@ -737,36 +737,46 @@ pub fn write(fd: RawFd, buf: &[u8]) -> Result<usize> {
     Errno::result(res).map(|r| r as usize)
 }
 
+/// Directive that tells [`lseek`] and [`lseek64`] what the offset is relative to.
+/// [`lseek`]: ./fn.lseek.html
+/// [`lseek64`]: ./fn.lseek64.html
+#[repr(i32)]
 pub enum Whence {
-    SeekSet,
-    SeekCur,
-    SeekEnd,
-    SeekData,
-    SeekHole
-}
-
-impl Whence {
-    fn to_libc_type(&self) -> c_int {
-        match self {
-            &Whence::SeekSet => libc::SEEK_SET,
-            &Whence::SeekCur => libc::SEEK_CUR,
-            &Whence::SeekEnd => libc::SEEK_END,
-            &Whence::SeekData => 3,
-            &Whence::SeekHole => 4
-        }
-    }
-
+    /// Specify an offset relative to the start of the file.
+    SeekSet = libc::SEEK_SET,
+    /// Specify an offset relative to the current file location.
+    SeekCur = libc::SEEK_CUR,
+    /// Specify an offset relative to the end of the file.
+    SeekEnd = libc::SEEK_END,
+    /// Specify an offset relative to the next location in the file greater than or 
+    /// equal to offset that contains some data. If offset points to
+    /// some data, then the file offset is set to offset.
+    #[cfg(any(target_os = "dragonfly", target_os = "freebsd",
+          all(target_os = "linux", not(any(target_env = "musl",
+                                           target_arch = "mips",
+                                           target_arch = "mips64")))))]
+    SeekData = libc::SEEK_DATA,
+    /// Specify an offset relative to the next hole in the file greater than
+    /// or equal to offset. If offset points into the middle of a hole, then 
+    /// the file offset should be set to offset. If there is no hole past offset,
+    /// then the file offset should be adjusted to the end of the file (i.e., there
+    /// is an implicit hole at the end of any file).
+    #[cfg(any(target_os = "dragonfly", target_os = "freebsd",
+          all(target_os = "linux", not(any(target_env = "musl",
+                                           target_arch = "mips",
+                                           target_arch = "mips64")))))]
+    SeekHole = libc::SEEK_HOLE
 }
 
 pub fn lseek(fd: RawFd, offset: libc::off_t, whence: Whence) -> Result<libc::off_t> {
-    let res = unsafe { libc::lseek(fd, offset, whence.to_libc_type()) };
+    let res = unsafe { libc::lseek(fd, offset, whence as i32) };
 
     Errno::result(res).map(|r| r as libc::off_t)
 }
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 pub fn lseek64(fd: RawFd, offset: libc::off64_t, whence: Whence) -> Result<libc::off64_t> {
-    let res = unsafe { libc::lseek64(fd, offset, whence.to_libc_type()) };
+    let res = unsafe { libc::lseek64(fd, offset, whence as i32) };
 
     Errno::result(res).map(|r| r as libc::off64_t)
 }
