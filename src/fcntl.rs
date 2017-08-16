@@ -20,7 +20,6 @@ mod ffi {
     pub const F_GET_SEALS: c_int = 1034;
 }
 
-#[cfg(not(any(target_os = "ios", target_os = "macos")))]
 libc_bitflags!{
     pub struct AtFlags: c_int {
         AT_SYMLINK_NOFOLLOW;
@@ -30,14 +29,6 @@ libc_bitflags!{
         AT_EMPTY_PATH;
     }
 }
-
-#[cfg(any(target_os = "ios", target_os = "macos"))]
-bitflags!(
-    pub struct AtFlags: c_int {
-        // hack because bitflags require one entry
-        const EMPTY = 0x0;
-    }
-);
 
 pub fn open<P: ?Sized + NixPath>(path: &P, oflag: OFlag, mode: Mode) -> Result<RawFd> {
     let fd = try!(path.with_nix_path(|cstr| {
