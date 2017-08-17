@@ -111,16 +111,10 @@ pub fn quotactl_sync<P: ?Sized + NixPath>(which: quota::QuotaType, special: Opti
 }
 
 pub fn quotactl_get<P: ?Sized + NixPath>(which: quota::QuotaType, special: &P, id: c_int, dqblk: &mut quota::Dqblk) -> Result<()> {
-    use std::mem;
-    unsafe {
-        quotactl(quota::QuotaCmd(quota::Q_GETQUOTA, which), Some(special), id, mem::transmute(dqblk))
-    }
+    quotactl(quota::QuotaCmd(quota::Q_GETQUOTA, which), Some(special), id, dqblk as *mut _ as *mut c_char)
 }
 
 pub fn quotactl_set<P: ?Sized + NixPath>(which: quota::QuotaType, special: &P, id: c_int, dqblk: &quota::Dqblk) -> Result<()> {
-    use std::mem;
     let mut dqblk_copy = *dqblk;
-    unsafe {
-        quotactl(quota::QuotaCmd(quota::Q_SETQUOTA, which), Some(special), id, mem::transmute(&mut dqblk_copy))
-    }
+    quotactl(quota::QuotaCmd(quota::Q_SETQUOTA, which), Some(special), id, &mut dqblk_copy as *mut _ as *mut c_char)
 }

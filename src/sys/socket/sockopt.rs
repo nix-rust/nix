@@ -178,17 +178,17 @@ sockopt_impl!(GetOnly, OriginalDst, libc::SOL_IP, libc::SO_ORIGINAL_DST, libc::s
  *
  */
 
-trait Get<T> {
+unsafe trait Get<T> {
     unsafe fn blank() -> Self;
-    unsafe fn ffi_ptr(&mut self) -> *mut c_void;
-    unsafe fn ffi_len(&mut self) -> *mut socklen_t;
+    fn ffi_ptr(&mut self) -> *mut c_void;
+    fn ffi_len(&mut self) -> *mut socklen_t;
     unsafe fn unwrap(self) -> T;
 }
 
-trait Set<'a, T> {
+unsafe trait Set<'a, T> {
     fn new(val: &'a T) -> Self;
-    unsafe fn ffi_ptr(&self) -> *const c_void;
-    unsafe fn ffi_len(&self) -> socklen_t;
+    fn ffi_ptr(&self) -> *const c_void;
+    fn ffi_len(&self) -> socklen_t;
 }
 
 struct GetStruct<T> {
@@ -196,7 +196,7 @@ struct GetStruct<T> {
     val: T,
 }
 
-impl<T> Get<T> for GetStruct<T> {
+unsafe impl<T> Get<T> for GetStruct<T> {
     unsafe fn blank() -> Self {
         GetStruct {
             len: mem::size_of::<T>() as socklen_t,
@@ -204,12 +204,12 @@ impl<T> Get<T> for GetStruct<T> {
         }
     }
 
-    unsafe fn ffi_ptr(&mut self) -> *mut c_void {
-        mem::transmute(&mut self.val)
+    fn ffi_ptr(&mut self) -> *mut c_void {
+        &mut self.val as *mut T as *mut c_void
     }
 
-    unsafe fn ffi_len(&mut self) -> *mut socklen_t {
-        mem::transmute(&mut self.len)
+    fn ffi_len(&mut self) -> *mut socklen_t {
+        &mut self.len
     }
 
     unsafe fn unwrap(self) -> T {
@@ -222,16 +222,16 @@ struct SetStruct<'a, T: 'static> {
     ptr: &'a T,
 }
 
-impl<'a, T> Set<'a, T> for SetStruct<'a, T> {
+unsafe impl<'a, T> Set<'a, T> for SetStruct<'a, T> {
     fn new(ptr: &'a T) -> SetStruct<'a, T> {
         SetStruct { ptr: ptr }
     }
 
-    unsafe fn ffi_ptr(&self) -> *const c_void {
-        mem::transmute(self.ptr)
+    fn ffi_ptr(&self) -> *const c_void {
+        self.ptr as *const T as *const c_void
     }
 
-    unsafe fn ffi_len(&self) -> socklen_t {
+    fn ffi_len(&self) -> socklen_t {
         mem::size_of::<T>() as socklen_t
     }
 }
@@ -241,7 +241,7 @@ struct GetBool {
     val: c_int,
 }
 
-impl Get<bool> for GetBool {
+unsafe impl Get<bool> for GetBool {
     unsafe fn blank() -> Self {
         GetBool {
             len: mem::size_of::<c_int>() as socklen_t,
@@ -249,12 +249,12 @@ impl Get<bool> for GetBool {
         }
     }
 
-    unsafe fn ffi_ptr(&mut self) -> *mut c_void {
-        mem::transmute(&mut self.val)
+    fn ffi_ptr(&mut self) -> *mut c_void {
+        &mut self.val as *mut c_int as *mut c_void
     }
 
-    unsafe fn ffi_len(&mut self) -> *mut socklen_t {
-        mem::transmute(&mut self.len)
+    fn ffi_len(&mut self) -> *mut socklen_t {
+        &mut self.len
     }
 
     unsafe fn unwrap(self) -> bool {
@@ -267,16 +267,16 @@ struct SetBool {
     val: c_int,
 }
 
-impl<'a> Set<'a, bool> for SetBool {
+unsafe impl<'a> Set<'a, bool> for SetBool {
     fn new(val: &'a bool) -> SetBool {
         SetBool { val: if *val { 1 } else { 0 } }
     }
 
-    unsafe fn ffi_ptr(&self) -> *const c_void {
-        mem::transmute(&self.val)
+    fn ffi_ptr(&self) -> *const c_void {
+        &self.val as *const c_int as *const c_void
     }
 
-    unsafe fn ffi_len(&self) -> socklen_t {
+    fn ffi_len(&self) -> socklen_t {
         mem::size_of::<c_int>() as socklen_t
     }
 }
@@ -286,7 +286,7 @@ struct GetU8 {
     val: uint8_t,
 }
 
-impl Get<u8> for GetU8 {
+unsafe impl Get<u8> for GetU8 {
     unsafe fn blank() -> Self {
         GetU8 {
             len: mem::size_of::<uint8_t>() as socklen_t,
@@ -294,12 +294,12 @@ impl Get<u8> for GetU8 {
         }
     }
 
-    unsafe fn ffi_ptr(&mut self) -> *mut c_void {
-        mem::transmute(&mut self.val)
+    fn ffi_ptr(&mut self) -> *mut c_void {
+        &mut self.val as *mut uint8_t as *mut c_void
     }
 
-    unsafe fn ffi_len(&mut self) -> *mut socklen_t {
-        mem::transmute(&mut self.len)
+    fn ffi_len(&mut self) -> *mut socklen_t {
+        &mut self.len
     }
 
     unsafe fn unwrap(self) -> u8 {
@@ -312,16 +312,16 @@ struct SetU8 {
     val: uint8_t,
 }
 
-impl<'a> Set<'a, u8> for SetU8 {
+unsafe impl<'a> Set<'a, u8> for SetU8 {
     fn new(val: &'a u8) -> SetU8 {
         SetU8 { val: *val as uint8_t }
     }
 
-    unsafe fn ffi_ptr(&self) -> *const c_void {
-        mem::transmute(&self.val)
+    fn ffi_ptr(&self) -> *const c_void {
+        &self.val as *const uint8_t as *const c_void
     }
 
-    unsafe fn ffi_len(&self) -> socklen_t {
+    fn ffi_len(&self) -> socklen_t {
         mem::size_of::<c_int>() as socklen_t
     }
 }
@@ -331,7 +331,7 @@ struct GetUsize {
     val: c_int,
 }
 
-impl Get<usize> for GetUsize {
+unsafe impl Get<usize> for GetUsize {
     unsafe fn blank() -> Self {
         GetUsize {
             len: mem::size_of::<c_int>() as socklen_t,
@@ -339,12 +339,12 @@ impl Get<usize> for GetUsize {
         }
     }
 
-    unsafe fn ffi_ptr(&mut self) -> *mut c_void {
-        mem::transmute(&mut self.val)
+    fn ffi_ptr(&mut self) -> *mut c_void {
+        &mut self.val as *mut c_int as *mut c_void
     }
 
-    unsafe fn ffi_len(&mut self) -> *mut socklen_t {
-        mem::transmute(&mut self.len)
+    fn ffi_len(&mut self) -> *mut socklen_t {
+        &mut self.len
     }
 
     unsafe fn unwrap(self) -> usize {
@@ -357,16 +357,16 @@ struct SetUsize {
     val: c_int,
 }
 
-impl<'a> Set<'a, usize> for SetUsize {
+unsafe impl<'a> Set<'a, usize> for SetUsize {
     fn new(val: &'a usize) -> SetUsize {
         SetUsize { val: *val as c_int }
     }
 
-    unsafe fn ffi_ptr(&self) -> *const c_void {
-        mem::transmute(&self.val)
+    fn ffi_ptr(&self) -> *const c_void {
+        &self.val as *const c_int as *const c_void
     }
 
-    unsafe fn ffi_len(&self) -> socklen_t {
+    fn ffi_len(&self) -> socklen_t {
         mem::size_of::<c_int>() as socklen_t
     }
 }
