@@ -84,11 +84,11 @@ pub type type_of_event_flag = u16;
 #[cfg(any(target_os = "netbsd"))]
 pub type type_of_event_flag = u32;
 libc_bitflags!{
-    pub flags EventFlag: type_of_event_flag {
-        EV_ADD,
-        EV_CLEAR,
-        EV_DELETE,
-        EV_DISABLE,
+    pub struct EventFlag: type_of_event_flag {
+        EV_ADD;
+        EV_CLEAR;
+        EV_DELETE;
+        EV_DISABLE;
         // No released version of OpenBSD supports EV_DISPATCH or EV_RECEIPT.
         // These have been commited to the -current branch though and are
         // expected to be part of the OpenBSD 6.2 release in Nov 2017.
@@ -97,117 +97,117 @@ libc_bitflags!{
         #[cfg(any(target_os = "dragonfly", target_os = "freebsd",
                   target_os = "ios", target_os = "macos",
                   target_os = "netbsd"))]
-        EV_DISPATCH,
+        EV_DISPATCH;
         #[cfg(target_os = "freebsd")]
-        EV_DROP,
-        EV_ENABLE,
-        EV_EOF,
-        EV_ERROR,
+        EV_DROP;
+        EV_ENABLE;
+        EV_EOF;
+        EV_ERROR;
         #[cfg(any(target_os = "macos", target_os = "ios"))]
-        EV_FLAG0,
-        EV_FLAG1,
+        EV_FLAG0;
+        EV_FLAG1;
         #[cfg(target_os = "dragonfly")]
-        EV_NODATA,
-        EV_ONESHOT,
+        EV_NODATA;
+        EV_ONESHOT;
         #[cfg(any(target_os = "macos", target_os = "ios"))]
-        EV_OOBAND,
+        EV_OOBAND;
         #[cfg(any(target_os = "macos", target_os = "ios"))]
-        EV_POLL,
+        EV_POLL;
         #[cfg(any(target_os = "dragonfly", target_os = "freebsd",
                   target_os = "ios", target_os = "macos",
                   target_os = "netbsd"))]
-        EV_RECEIPT,
-        EV_SYSFLAGS,
+        EV_RECEIPT;
+        EV_SYSFLAGS;
     }
 }
 
 libc_bitflags!(
-    pub flags FilterFlag: u32 {
+    pub struct FilterFlag: u32 {
         #[cfg(any(target_os = "macos", target_os = "ios"))]
-        NOTE_ABSOLUTE,
-        NOTE_ATTRIB,
-        NOTE_CHILD,
-        NOTE_DELETE,
+        NOTE_ABSOLUTE;
+        NOTE_ATTRIB;
+        NOTE_CHILD;
+        NOTE_DELETE;
         #[cfg(target_os = "openbsd")]
-        NOTE_EOF,
-        NOTE_EXEC,
-        NOTE_EXIT,
+        NOTE_EOF;
+        NOTE_EXEC;
+        NOTE_EXIT;
         #[cfg(any(target_os = "macos", target_os = "ios"))]
-        NOTE_EXIT_REPARENTED,
+        NOTE_EXIT_REPARENTED;
         #[cfg(any(target_os = "macos", target_os = "ios"))]
-        NOTE_EXITSTATUS,
-        NOTE_EXTEND,
+        NOTE_EXITSTATUS;
+        NOTE_EXTEND;
         #[cfg(any(target_os = "macos",
                   target_os = "ios",
                   target_os = "freebsd",
                   target_os = "dragonfly"))]
-        NOTE_FFAND,
+        NOTE_FFAND;
         #[cfg(any(target_os = "macos",
                   target_os = "ios",
                   target_os = "freebsd",
                   target_os = "dragonfly"))]
-        NOTE_FFCOPY,
+        NOTE_FFCOPY;
         #[cfg(any(target_os = "macos",
                   target_os = "ios",
                   target_os = "freebsd",
                   target_os = "dragonfly"))]
-        NOTE_FFCTRLMASK,
+        NOTE_FFCTRLMASK;
         #[cfg(any(target_os = "macos",
                   target_os = "ios",
                   target_os = "freebsd",
                   target_os = "dragonfly"))]
-        NOTE_FFLAGSMASK,
+        NOTE_FFLAGSMASK;
         #[cfg(any(target_os = "macos",
                   target_os = "ios",
                   target_os = "freebsd",
                   target_os = "dragonfly"))]
-        NOTE_FFNOP,
+        NOTE_FFNOP;
         #[cfg(any(target_os = "macos",
                   target_os = "ios",
                   target_os = "freebsd",
                   target_os = "dragonfly"))]
-        NOTE_FFOR,
-        NOTE_FORK,
-        NOTE_LINK,
-        NOTE_LOWAT,
+        NOTE_FFOR;
+        NOTE_FORK;
+        NOTE_LINK;
+        NOTE_LOWAT;
         #[cfg(target_os = "freebsd")]
-        NOTE_MSECONDS,
+        NOTE_MSECONDS;
         #[cfg(any(target_os = "macos", target_os = "ios"))]
-        NOTE_NONE,
+        NOTE_NONE;
         #[cfg(any(target_os = "macos", target_os = "ios", target_os = "freebsd"))]
-        NOTE_NSECONDS,
+        NOTE_NSECONDS;
         #[cfg(target_os = "dragonfly")]
-        NOTE_OOB,
-        NOTE_PCTRLMASK,
-        NOTE_PDATAMASK,
+        NOTE_OOB;
+        NOTE_PCTRLMASK;
+        NOTE_PDATAMASK;
         #[cfg(any(target_os = "macos", target_os = "ios"))]
-        NOTE_REAP,
-        NOTE_RENAME,
-        NOTE_REVOKE,
+        NOTE_REAP;
+        NOTE_RENAME;
+        NOTE_REVOKE;
         #[cfg(any(target_os = "macos", target_os = "ios", target_os = "freebsd"))]
-        NOTE_SECONDS,
+        NOTE_SECONDS;
         #[cfg(any(target_os = "macos", target_os = "ios"))]
-        NOTE_SIGNAL,
-        NOTE_TRACK,
-        NOTE_TRACKERR,
+        NOTE_SIGNAL;
+        NOTE_TRACK;
+        NOTE_TRACKERR;
         #[cfg(any(target_os = "macos",
                   target_os = "ios",
                   target_os = "freebsd",
                   target_os = "dragonfly"))]
-        NOTE_TRIGGER,
+        NOTE_TRIGGER;
         #[cfg(target_os = "openbsd")]
-        NOTE_TRUNCATE,
+        NOTE_TRUNCATE;
         #[cfg(any(target_os = "macos", target_os = "ios", target_os = "freebsd"))]
-        NOTE_USECONDS,
+        NOTE_USECONDS;
         #[cfg(any(target_os = "macos", target_os = "ios"))]
-        NOTE_VM_ERROR,
+        NOTE_VM_ERROR;
         #[cfg(any(target_os = "macos", target_os = "ios"))]
-        NOTE_VM_PRESSURE,
+        NOTE_VM_PRESSURE;
         #[cfg(any(target_os = "macos", target_os = "ios"))]
-        NOTE_VM_PRESSURE_SUDDEN_TERMINATE,
+        NOTE_VM_PRESSURE_SUDDEN_TERMINATE;
         #[cfg(any(target_os = "macos", target_os = "ios"))]
-        NOTE_VM_PRESSURE_TERMINATE,
-        NOTE_WRITE,
+        NOTE_VM_PRESSURE_TERMINATE;
+        NOTE_WRITE;
     }
 );
 

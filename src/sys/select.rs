@@ -1,57 +1,37 @@
-use std::ptr::null_mut;
+use std::mem;
 use std::os::unix::io::RawFd;
-use libc::{c_int, timeval};
+use std::ptr::null_mut;
+use libc::{self, c_int};
 use {Errno, Result};
 use sys::time::TimeVal;
 
-pub const FD_SETSIZE: RawFd = 1024;
+pub use libc::FD_SETSIZE;
 
-#[cfg(any(target_os = "macos", target_os = "ios"))]
+// FIXME: Change to repr(transparent) once it's stable
 #[repr(C)]
-#[derive(Clone)]
-pub struct FdSet {
-    bits: [i32; FD_SETSIZE as usize / 32]
-}
-
-#[cfg(any(target_os = "macos", target_os = "ios"))]
-const BITS: usize = 32;
-
-#[cfg(not(any(target_os = "macos", target_os = "ios")))]
-#[repr(C)]
-#[derive(Clone)]
-pub struct FdSet {
-    bits: [u64; FD_SETSIZE as usize / 64]
-}
-
-#[cfg(not(any(target_os = "macos", target_os = "ios")))]
-const BITS: usize = 64;
+pub struct FdSet(libc::fd_set);
 
 impl FdSet {
     pub fn new() -> FdSet {
-        FdSet {
-            bits: [0; FD_SETSIZE as usize / BITS]
-        }
+        let mut fdset = unsafe { mem::uninitialized() };
+        unsafe { libc::FD_ZERO(&mut fdset) };
+        FdSet(fdset)
     }
 
     pub fn insert(&mut self, fd: RawFd) {
-        let fd = fd as usize;
-        self.bits[fd / BITS] |= 1 << (fd % BITS);
+        unsafe { libc::FD_SET(fd, &mut self.0) };
     }
 
     pub fn remove(&mut self, fd: RawFd) {
-        let fd = fd as usize;
-        self.bits[fd / BITS] &= !(1 << (fd % BITS));
+        unsafe { libc::FD_CLR(fd, &mut self.0) };
     }
 
-    pub fn contains(&self, fd: RawFd) -> bool {
-        let fd = fd as usize;
-        self.bits[fd / BITS] & (1 << (fd % BITS)) > 0
+    pub fn contains(&mut self, fd: RawFd) -> bool {
+        unsafe { libc::FD_ISSET(fd, &mut self.0) }
     }
 
     pub fn clear(&mut self) {
-        for bits in &mut self.bits {
-            *bits = 0
-        }
+        unsafe { libc::FD_ZERO(&mut self.0) };
     }
 
     /// Finds the highest file descriptor in the set.
@@ -74,33 +54,15 @@ impl FdSet {
     /// ```
     ///
     /// [`select`]: fn.select.html
-    pub fn highest(&self) -> Option<RawFd> {
-        for (i, &block) in self.bits.iter().enumerate().rev() {
-            if block != 0 {
-                // Highest bit is located at `BITS - 1 - n.leading_zeros()`. Examples:
-                // 0b00000001
-                // 7 leading zeros, result should be 0 (bit at index 0 is 1)
-                // 0b001xxxxx
-                // 2 leading zeros, result should be 5 (bit at index 5 is 1) - x may be 0 or 1
-
-                return Some((i * BITS + BITS - 1 - block.leading_zeros() as usize) as RawFd);
+    pub fn highest(&mut self) -> Option<RawFd> {
+        for i in (0..libc::FD_SETSIZE).rev() {
+            let i = i as RawFd;
+            if unsafe { libc::FD_ISSET(i, self as *mut _ as *mut libc::fd_set) } {
+                return Some(i)
             }
         }
 
         None
-    }
-}
-
-mod ffi {
-    use libc::{c_int, timeval};
-    use super::FdSet;
-
-    extern {
-        pub fn select(nfds: c_int,
-                      readfds: *mut FdSet,
-                      writefds: *mut FdSet,
-                      errorfds: *mut FdSet,
-                      timeout: *mut timeval) -> c_int;
     }
 }
 
@@ -136,28 +98,28 @@ where
     E: Into<Option<&'a mut FdSet>>,
     T: Into<Option<&'a mut TimeVal>>,
 {
-    let readfds = readfds.into();
-    let writefds = writefds.into();
-    let errorfds = errorfds.into();
+    let mut readfds = readfds.into();
+    let mut writefds = writefds.into();
+    let mut errorfds = errorfds.into();
     let timeout = timeout.into();
 
     let nfds = nfds.into().unwrap_or_else(|| {
-        readfds.iter()
-            .chain(writefds.iter())
-            .chain(errorfds.iter())
+        readfds.iter_mut()
+            .chain(writefds.iter_mut())
+            .chain(errorfds.iter_mut())
             .map(|set| set.highest().unwrap_or(-1))
             .max()
             .unwrap_or(-1) + 1
     });
 
-    let readfds = readfds.map(|set| set as *mut FdSet).unwrap_or(null_mut());
-    let writefds = writefds.map(|set| set as *mut FdSet).unwrap_or(null_mut());
-    let errorfds = errorfds.map(|set| set as *mut FdSet).unwrap_or(null_mut());
-    let timeout = timeout.map(|tv| tv as *mut TimeVal as *mut timeval)
+    let readfds = readfds.map(|set| set as *mut _ as *mut libc::fd_set).unwrap_or(null_mut());
+    let writefds = writefds.map(|set| set as *mut _ as *mut libc::fd_set).unwrap_or(null_mut());
+    let errorfds = errorfds.map(|set| set as *mut _ as *mut libc::fd_set).unwrap_or(null_mut());
+    let timeout = timeout.map(|tv| tv as *mut _ as *mut libc::timeval)
                          .unwrap_or(null_mut());
 
     let res = unsafe {
-        ffi::select(nfds, readfds, writefds, errorfds, timeout)
+        libc::select(nfds, readfds, writefds, errorfds, timeout)
     };
 
     Errno::result(res)
@@ -166,6 +128,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::os::unix::io::RawFd;
     use sys::time::{TimeVal, TimeValLike};
     use unistd::{write, pipe};
 
@@ -174,7 +137,7 @@ mod tests {
         let mut fd_set = FdSet::new();
 
         for i in 0..FD_SETSIZE {
-            assert!(!fd_set.contains(i));
+            assert!(!fd_set.contains(i as RawFd));
         }
 
         fd_set.insert(7);
@@ -187,14 +150,14 @@ mod tests {
         let mut fd_set = FdSet::new();
 
         for i in 0..FD_SETSIZE {
-            assert!(!fd_set.contains(i));
+            assert!(!fd_set.contains(i as RawFd));
         }
 
         fd_set.insert(7);
         fd_set.remove(7);
 
         for i in 0..FD_SETSIZE {
-            assert!(!fd_set.contains(i));
+            assert!(!fd_set.contains(i as RawFd));
         }
     }
 
@@ -202,13 +165,13 @@ mod tests {
     fn fdset_clear() {
         let mut fd_set = FdSet::new();
         fd_set.insert(1);
-        fd_set.insert(FD_SETSIZE / 2);
-        fd_set.insert(FD_SETSIZE - 1);
+        fd_set.insert((FD_SETSIZE / 2) as RawFd);
+        fd_set.insert((FD_SETSIZE - 1) as RawFd);
 
         fd_set.clear();
 
         for i in 0..FD_SETSIZE {
-            assert!(!fd_set.contains(i));
+            assert!(!fd_set.contains(i as RawFd));
         }
     }
 

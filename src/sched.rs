@@ -8,30 +8,30 @@ use ::unistd::Pid;
 // For some functions taking with a parameter of type CloneFlags,
 // only a subset of these flags have an effect.
 libc_bitflags!{
-    pub flags CloneFlags: libc::c_int {
-        CLONE_VM,
-        CLONE_FS,
-        CLONE_FILES,
-        CLONE_SIGHAND,
-        CLONE_PTRACE,
-        CLONE_VFORK,
-        CLONE_PARENT,
-        CLONE_THREAD,
-        CLONE_NEWNS,
-        CLONE_SYSVSEM,
-        CLONE_SETTLS,
-        CLONE_PARENT_SETTID,
-        CLONE_CHILD_CLEARTID,
-        CLONE_DETACHED,
-        CLONE_UNTRACED,
-        CLONE_CHILD_SETTID,
-        CLONE_NEWCGROUP,
-        CLONE_NEWUTS,
-        CLONE_NEWIPC,
-        CLONE_NEWUSER,
-        CLONE_NEWPID,
-        CLONE_NEWNET,
-        CLONE_IO,
+    pub struct CloneFlags: libc::c_int {
+        CLONE_VM;
+        CLONE_FS;
+        CLONE_FILES;
+        CLONE_SIGHAND;
+        CLONE_PTRACE;
+        CLONE_VFORK;
+        CLONE_PARENT;
+        CLONE_THREAD;
+        CLONE_NEWNS;
+        CLONE_SYSVSEM;
+        CLONE_SETTLS;
+        CLONE_PARENT_SETTID;
+        CLONE_CHILD_CLEARTID;
+        CLONE_DETACHED;
+        CLONE_UNTRACED;
+        CLONE_CHILD_SETTID;
+        CLONE_NEWCGROUP;
+        CLONE_NEWUTS;
+        CLONE_NEWIPC;
+        CLONE_NEWUSER;
+        CLONE_NEWPID;
+        CLONE_NEWNET;
+        CLONE_IO;
     }
 }
 

@@ -10,20 +10,20 @@ use sys::stat::Mode;
 use std::mem;
 
 libc_bitflags!{
-    pub flags MQ_OFlag: libc::c_int {
-        O_RDONLY,
-        O_WRONLY,
-        O_RDWR,
-        O_CREAT,
-        O_EXCL,
-        O_NONBLOCK,
-        O_CLOEXEC,
+    pub struct MQ_OFlag: libc::c_int {
+        O_RDONLY;
+        O_WRONLY;
+        O_RDWR;
+        O_CREAT;
+        O_EXCL;
+        O_NONBLOCK;
+        O_CLOEXEC;
     }
 }
 
 libc_bitflags!{
-    pub flags FdFlag: libc::c_int {
-        FD_CLOEXEC,
+    pub struct FdFlag: libc::c_int {
+        FD_CLOEXEC;
     }
 }
 

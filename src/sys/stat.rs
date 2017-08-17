@@ -8,38 +8,35 @@ use std::mem;
 use std::os::unix::io::RawFd;
 
 libc_bitflags!(
-    pub flags SFlag: mode_t {
-        S_IFIFO,
-        S_IFCHR,
-        S_IFDIR,
-        S_IFBLK,
-        S_IFREG,
-        S_IFLNK,
-        S_IFSOCK,
-        S_IFMT,
+    pub struct SFlag: mode_t {
+        S_IFIFO;
+        S_IFCHR;
+        S_IFDIR;
+        S_IFBLK;
+        S_IFREG;
+        S_IFLNK;
+        S_IFSOCK;
+        S_IFMT;
     }
 );
 
-bitflags! {
+libc_bitflags! {
     pub struct Mode: mode_t {
-        const S_IRWXU = libc::S_IRWXU;
-        const S_IRUSR = libc::S_IRUSR;
-        const S_IWUSR = libc::S_IWUSR;
-        const S_IXUSR = libc::S_IXUSR;
-
-        const S_IRWXG = libc::S_IRWXG;
-        const S_IRGRP = libc::S_IRGRP;
-        const S_IWGRP = libc::S_IWGRP;
-        const S_IXGRP = libc::S_IXGRP;
-
-        const S_IRWXO = libc::S_IRWXO;
-        const S_IROTH = libc::S_IROTH;
-        const S_IWOTH = libc::S_IWOTH;
-        const S_IXOTH = libc::S_IXOTH;
-
-        const S_ISUID = libc::S_ISUID as mode_t;
-        const S_ISGID = libc::S_ISGID as mode_t;
-        const S_ISVTX = libc::S_ISVTX as mode_t;
+        S_IRWXU;
+        S_IRUSR;
+        S_IWUSR;
+        S_IXUSR;
+        S_IRWXG;
+        S_IRGRP;
+        S_IWGRP;
+        S_IXGRP;
+        S_IRWXO;
+        S_IROTH;
+        S_IWOTH;
+        S_IXOTH;
+        S_ISUID as mode_t;
+        S_ISGID as mode_t;
+        S_ISVTX as mode_t;
     }
 }
 

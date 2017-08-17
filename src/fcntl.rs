@@ -20,24 +20,15 @@ mod ffi {
     pub const F_GET_SEALS: c_int = 1034;
 }
 
-#[cfg(not(any(target_os = "ios", target_os = "macos")))]
 libc_bitflags!{
-    pub flags AtFlags: c_int {
-        AT_SYMLINK_NOFOLLOW,
+    pub struct AtFlags: c_int {
+        AT_SYMLINK_NOFOLLOW;
         #[cfg(any(target_os = "linux", target_os = "android"))]
-        AT_NO_AUTOMOUNT,
+        AT_NO_AUTOMOUNT;
         #[cfg(any(target_os = "linux", target_os = "android"))]
-        AT_EMPTY_PATH
+        AT_EMPTY_PATH;
     }
 }
-
-#[cfg(any(target_os = "ios", target_os = "macos"))]
-bitflags!(
-    pub struct AtFlags: c_int {
-        // hack because bitflags require one entry
-        const EMPTY = 0x0;
-    }
-);
 
 pub fn open<P: ?Sized + NixPath>(path: &P, oflag: OFlag, mode: Mode) -> Result<RawFd> {
     let fd = try!(path.with_nix_path(|cstr| {
@@ -54,7 +45,7 @@ pub fn openat<P: ?Sized + NixPath>(dirfd: RawFd, path: &P, oflag: OFlag, mode: M
     Errno::result(fd)
 }
 
-fn wrap_readlink_result<'a>(buffer: &'a mut[u8], res: ssize_t) 
+fn wrap_readlink_result<'a>(buffer: &'a mut[u8], res: ssize_t)
   -> Result<&'a OsStr> {
     match Errno::result(res) {
         Err(err) => Err(err),
@@ -204,11 +195,11 @@ mod consts {
     use libc::{self, c_int, c_uint};
 
     libc_bitflags! {
-        pub flags SpliceFFlags: c_uint {
-            SPLICE_F_MOVE,
-            SPLICE_F_NONBLOCK,
-            SPLICE_F_MORE,
-            SPLICE_F_GIFT,
+        pub struct SpliceFFlags: c_uint {
+            SPLICE_F_MOVE;
+            SPLICE_F_NONBLOCK;
+            SPLICE_F_MORE;
+            SPLICE_F_GIFT;
         }
     }
 
@@ -239,8 +230,8 @@ mod consts {
     );
 
     libc_bitflags!(
-        pub flags FdFlag: c_int {
-            FD_CLOEXEC
+        pub struct FdFlag: c_int {
+            FD_CLOEXEC;
         }
     );
 
@@ -261,49 +252,49 @@ mod consts {
     use libc::{self,c_int};
 
     libc_bitflags!(
-        pub flags OFlag: c_int {
-            O_ACCMODE,
-            O_RDONLY,
-            O_WRONLY,
-            O_RDWR,
-            O_NONBLOCK,
-            O_APPEND,
-            O_SHLOCK,
-            O_EXLOCK,
-            O_ASYNC,
-            O_SYNC,
-            O_NOFOLLOW,
-            O_CREAT,
-            O_TRUNC,
-            O_EXCL,
-            O_NOCTTY,
-            O_DIRECTORY,
-            O_CLOEXEC,
-            O_FSYNC,
-            O_NDELAY,
+        pub struct OFlag: c_int {
+            O_ACCMODE;
+            O_RDONLY;
+            O_WRONLY;
+            O_RDWR;
+            O_NONBLOCK;
+            O_APPEND;
+            O_SHLOCK;
+            O_EXLOCK;
+            O_ASYNC;
+            O_SYNC;
+            O_NOFOLLOW;
+            O_CREAT;
+            O_TRUNC;
+            O_EXCL;
+            O_NOCTTY;
+            O_DIRECTORY;
+            O_CLOEXEC;
+            O_FSYNC;
+            O_NDELAY;
             #[cfg(any(target_os = "netbsd", target_os = "openbsd", target_os = "macos",
                       target_os = "ios"))]
-            O_DSYNC,
+            O_DSYNC;
             #[cfg(any(target_os = "netbsd", target_os = "dragonfly", target_os = "freebsd"))]
-            O_DIRECT,
+            O_DIRECT;
             #[cfg(any(target_os = "netbsd", target_os = "openbsd"))]
-            O_RSYNC,
+            O_RSYNC;
             #[cfg(target_os = "freebsd")]
-            O_EXEC,
+            O_EXEC;
             #[cfg(target_os = "freebsd")]
-            O_TTY_INIT,
+            O_TTY_INIT;
             #[cfg(target_os = "netbsd")]
-            O_ALT_IO,
+            O_ALT_IO;
             #[cfg(target_os = "netbsd")]
-            O_NOSIGPIPE,
+            O_NOSIGPIPE;
             #[cfg(target_os = "netbsd")]
-            O_SEARCH,
+            O_SEARCH;
         }
     );
 
     libc_bitflags!(
-        pub flags FdFlag: c_int {
-            FD_CLOEXEC
+        pub struct FdFlag: c_int {
+            FD_CLOEXEC;
         }
     );
 }
