@@ -18,7 +18,8 @@ pub mod memfd;
 #[macro_use]
 pub mod ioctl;
 
-#[cfg(any(target_os = "linux", target_os = "android"))]
+// TODO: Add support for dragonfly, freebsd, and ios/macos.
+#[cfg(any(target_os = "android", target_os = "linux"))]
 pub mod sendfile;
 
 pub mod signal;
