@@ -39,7 +39,6 @@ pub mod reboot;
 
 pub mod termios;
 
-#[cfg(any(target_os = "linux", target_os = "android"))]
 pub mod utsname;
 
 pub mod wait;
