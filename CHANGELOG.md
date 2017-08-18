@@ -18,6 +18,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#722](https://github.com/nix-rust/nix/pull/722))
 - Added `nix::unistd:fexecve`.
   ([#727](https://github.com/nix-rust/nix/pull/727))
+- Expose `uname()` on all platforms.
+  ([#739](https://github.com/nix-rust/nix/pull/739))
+- Expose `signalfd` module on Android as well.
+  ([#739](https://github.com/nix-rust/nix/pull/739))
 
 ### Changed
 - Renamed existing `ptrace` wrappers to encourage namespacing ([#692](https://github.com/nix-rust/nix/pull/692))
