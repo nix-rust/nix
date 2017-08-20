@@ -593,6 +593,37 @@ pub fn execvp(filename: &CString, args: &[CString]) -> Result<Void> {
     Err(Error::Sys(Errno::last()))
 }
 
+/// Replace the current process image with a new one (see
+/// [fexecve(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/fexecve.html)).
+///
+/// The `fexecve` function allows for another process to be "called" which will
+/// replace the current process image.  That is, this process becomes the new
+/// command that is run. On success, this function will not return. Instead,
+/// the new program will run until it exits.
+///
+/// This function is similar to `execve`, except that the program to be executed
+/// is referenced as a file descriptor instead of a path.
+///
+/// # Errors
+///
+/// If an error occurs, this function will return with an indication of the
+/// cause of failure.  See
+/// [fexecve(2)#errors](http://pubs.opengroup.org/onlinepubs/9699919799/functions/fexecve.html#tag_16_111_05)
+/// for a list of error conditions.
+#[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd",
+          target_os = "netbsd", target_os = "openbsd", target_os = "linux"))]
+#[inline]
+pub fn fexecve(fd: RawFd, args: &[CString], env: &[CString]) -> Result<Void> {
+    let args_p = to_exec_array(args);
+    let env_p = to_exec_array(env);
+
+    unsafe {
+        libc::fexecve(fd, args_p.as_ptr(), env_p.as_ptr())
+    };
+
+    Err(Error::Sys(Errno::last()))
+}
+
 /// Daemonize this process by detaching from the controlling terminal (see
 /// [daemon(3)](http://man7.org/linux/man-pages/man3/daemon.3.html)).
 ///

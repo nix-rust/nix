@@ -105,7 +105,7 @@ mod linux_android {
 }
 
 macro_rules! execve_test_factory(
-    ($test_name:ident, $syscall:ident, $unix_sh:expr, $android_sh:expr) => (
+    ($test_name:ident, $syscall:ident, $exe: expr) => (
     #[test]
     fn $test_name() {
         #[allow(unused_variables)]
@@ -119,19 +119,13 @@ macro_rules! execve_test_factory(
         //       The tests make sure not to do that, though.
         match fork().unwrap() {
             Child => {
-                #[cfg(not(target_os = "android"))]
-                const SH_PATH: &'static [u8] = $unix_sh;
-
-                #[cfg(target_os = "android")]
-                const SH_PATH: &'static [u8] = $android_sh;
-
                 // Close stdout.
                 close(1).unwrap();
                 // Make `writer` be the stdout of the new process.
                 dup(writer).unwrap();
                 // exec!
                 $syscall(
-                    &CString::new(SH_PATH).unwrap(),
+                    $exe,
                     &[CString::new(b"".as_ref()).unwrap(),
                       CString::new(b"-c".as_ref()).unwrap(),
                       CString::new(b"echo nix!!! && echo foo=$foo && echo baz=$baz"
@@ -155,6 +149,23 @@ macro_rules! execve_test_factory(
     }
     )
 );
+
+cfg_if!{
+    if #[cfg(target_os = "android")] {
+        execve_test_factory!(test_execve, execve, &CString::new("/system/bin/sh").unwrap());
+        execve_test_factory!(test_fexecve, fexecve, File::open("/system/bin/sh").unwrap().into_raw_fd());
+    } else if #[cfg(any(target_os = "dragonfly",
+                        target_os = "freebsd",
+                        target_os = "netbsd",
+                        target_os = "openbsd",
+                        target_os = "linux", ))] {
+        execve_test_factory!(test_execve, execve, &CString::new("/bin/sh").unwrap());
+        execve_test_factory!(test_fexecve, fexecve, File::open("/bin/sh").unwrap().into_raw_fd());
+    } else if #[cfg(any(target_os = "ios", target_os = "macos", ))] {
+        execve_test_factory!(test_execve, execve, &CString::new("/bin/sh").unwrap());
+        // No fexecve() on macos/ios.
+    }
+}
 
 #[test]
 fn test_fchdir() {
@@ -230,8 +241,6 @@ fn test_lseek64() {
 
     close(tmpfd).unwrap();
 }
-
-execve_test_factory!(test_execve, execve, b"/bin/sh", b"/system/bin/sh");
 
 #[test]
 fn test_fpathconf_limited() {
