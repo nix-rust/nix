@@ -50,10 +50,21 @@ fn to_str<'a>(s: *const *const c_char) -> &'a str {
 
 #[cfg(test)]
 mod test {
-    use super::uname;
-
+    #[cfg(target_os = "linux")]
     #[test]
-    pub fn test_uname() {
-        assert_eq!(uname().sysname(), "Linux");
+    pub fn test_uname_linux() {
+        assert_eq!(super::uname().sysname(), "Linux");
+    }
+
+    #[cfg(any(target_os = "macos", target_os = "ios"))]
+    #[test]
+    pub fn test_uname_darwin() {
+        assert_eq!(super::uname().sysname(), "Darwin");
+    }
+
+    #[cfg(target_os = "freebsd")]
+    #[test]
+    pub fn test_uname_freebsd() {
+        assert_eq!(super::uname().sysname(), "FreeBSD");
     }
 }

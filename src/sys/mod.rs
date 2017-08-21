@@ -18,13 +18,13 @@ pub mod memfd;
 #[macro_use]
 pub mod ioctl;
 
-#[cfg(any(target_os = "linux", target_os = "android"))]
+// TODO: Add support for dragonfly, freebsd, and ios/macos.
+#[cfg(any(target_os = "android", target_os = "linux"))]
 pub mod sendfile;
 
 pub mod signal;
 
-// FIXME: Add to Android once libc#671 lands in a release
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "android", target_os = "linux"))]
 pub mod signalfd;
 
 pub mod socket;
@@ -39,7 +39,6 @@ pub mod reboot;
 
 pub mod termios;
 
-#[cfg(any(target_os = "linux", target_os = "android"))]
 pub mod utsname;
 
 pub mod wait;
