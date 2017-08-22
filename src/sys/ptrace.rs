@@ -69,15 +69,15 @@ libc_enum!{
 }
 
 libc_bitflags! {
-    pub flags Options: libc::c_int {
-        PTRACE_O_TRACESYSGOOD,
-        PTRACE_O_TRACEFORK,
-        PTRACE_O_TRACEVFORK,
-        PTRACE_O_TRACECLONE,
-        PTRACE_O_TRACEEXEC,
-        PTRACE_O_TRACEVFORKDONE,
-        PTRACE_O_TRACEEXIT,
-        PTRACE_O_TRACESECCOMP,
+    pub struct Options: libc::c_int {
+        PTRACE_O_TRACESYSGOOD;
+        PTRACE_O_TRACEFORK;
+        PTRACE_O_TRACEVFORK;
+        PTRACE_O_TRACECLONE;
+        PTRACE_O_TRACEEXEC;
+        PTRACE_O_TRACEVFORKDONE;
+        PTRACE_O_TRACEEXIT;
+        PTRACE_O_TRACESECCOMP;
     }
 }
 
