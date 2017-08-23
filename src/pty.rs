@@ -188,13 +188,13 @@ pub fn ptsname_r(fd: &PtyMaster) -> Result<String> {
     // https://blog.tarq.io/ptsname-on-osx-with-rust/
     // and its derivative
     // https://github.com/philippkeller/rexpect/blob/a71dd02/src/process.rs#L67
-    use libc::{ioctl, TIOCPTYGNAME};
+    use libc::{ioctl, TIOCPTYGNAME, c_ulong};
 
     // the buffer size on OSX is 128, defined by sys/ttycom.h
     let buf: [i8; 128] = [0; 128];
 
     unsafe {
-        match ioctl(fd.as_raw_fd(), TIOCPTYGNAME as u64, &buf) {
+        match ioctl(fd.as_raw_fd(), TIOCPTYGNAME as c_ulong, &buf) {
             0 => {
                 let res = CStr::from_ptr(buf.as_ptr()).to_string_lossy().into_owned();
                 Ok(res)
