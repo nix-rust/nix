@@ -116,7 +116,7 @@ fn test_local_flags() {
 
     // Set the master is in nonblocking mode or reading will never return.
     let flags = fcntl::fcntl(pty.master, fcntl::F_GETFL).unwrap();
-    let new_flags = fcntl::OFlag::from_bits(flags).unwrap() | fcntl::O_NONBLOCK;
+    let new_flags = fcntl::OFlag::from_bits_truncate(flags) | fcntl::O_NONBLOCK;
     fcntl::fcntl(pty.master, fcntl::F_SETFL(new_flags)).unwrap();
 
     // Write into the master

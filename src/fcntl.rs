@@ -5,30 +5,137 @@ use std::os::unix::io::RawFd;
 use std::ffi::OsStr;
 use std::os::unix::ffi::OsStrExt;
 
-#[cfg(any(target_os = "linux", target_os = "android"))]
+#[cfg(any(target_os = "android", target_os = "linux"))]
 use sys::uio::IoVec;  // For vmsplice
-
-pub use self::consts::*;
-
-// TODO: The remainder of the ffi module should be removed afer work on
-// https://github.com/rust-lang/libc/issues/235 is resolved.
-#[allow(dead_code)]
-mod ffi {
-    use libc::c_int;
-
-    pub const F_ADD_SEALS: c_int = 1033;
-    pub const F_GET_SEALS: c_int = 1034;
-}
 
 libc_bitflags!{
     pub struct AtFlags: c_int {
         AT_SYMLINK_NOFOLLOW;
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "android", target_os = "linux"))]
         AT_NO_AUTOMOUNT;
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "android", target_os = "linux"))]
         AT_EMPTY_PATH;
     }
 }
+
+libc_bitflags!(
+    /// Configuration options for opened files.
+    pub struct OFlag: c_int {
+        /// Mask for the access mode of the file.
+        O_ACCMODE;
+        /// Use alternate I/O semantics.
+        #[cfg(target_os = "netbsd")]
+        O_ALT_IO;
+        /// Open the file in append-only mode.
+        O_APPEND;
+        /// Generate a signal when input or output becomes possible.
+        O_ASYNC;
+        /// Closes the file descriptor once an `execve` call is made.
+        ///
+        /// Also sets the file offset to the beginning of the file.
+        O_CLOEXEC;
+        /// Create the file if it does not exist.
+        O_CREAT;
+        /// Try to minimize cache effects of the I/O for this file.
+        #[cfg(any(target_os = "android",
+                  target_os = "dragonfly",
+                  target_os = "freebsd",
+                  target_os = "linux",
+                  target_os = "netbsd"))]
+        O_DIRECT;
+        /// If the specified path isn't a directory, fail.
+        O_DIRECTORY;
+        /// Implicitly follow each `write()` with an `fdatasync()`.
+        #[cfg(any(target_os = "android",
+                  target_os = "dragonfly",
+                  target_os = "ios",
+                  target_os = "linux",
+                  target_os = "macos",
+                  target_os = "netbsd",
+                  target_os = "openbsd"))]
+        O_DSYNC;
+        /// Error out if a file was not created.
+        O_EXCL;
+        /// Open for execute only.
+        #[cfg(target_os = "freebsd")]
+        O_EXEC;
+        /// Open with an exclusive file lock.
+        #[cfg(any(target_os = "dragonfly",
+                  target_os = "freebsd",
+                  target_os = "ios",
+                  target_os = "macos",
+                  target_os = "netbsd",
+                  target_os = "openbsd"))]
+        O_EXLOCK;
+        /// Same as `O_SYNC`.
+        #[cfg(any(target_os = "dragonfly",
+                  target_os = "freebsd",
+                  target_os = "ios",
+                  all(target_os = "linux", not(target_env = "musl")),
+                  target_os = "macos",
+                  target_os = "netbsd",
+                  target_os = "openbsd"))]
+        O_FSYNC;
+        /// Allow files whose sizes can't be represented in an `off_t` to be opened.
+        #[cfg(any(target_os = "android", target_os = "linux"))]
+        O_LARGEFILE;
+        /// Do not update the file last access time during `read(2)`s.
+        #[cfg(any(target_os = "android", target_os = "linux"))]
+        O_NOATIME;
+        /// Don't attach the device as the process' controlling terminal.
+        O_NOCTTY;
+        /// Same as `O_NONBLOCK`.
+        O_NDELAY;
+        /// `open()` will fail if the given path is a symbolic link.
+        O_NOFOLLOW;
+        /// When possible, open the file in nonblocking mode.
+        O_NONBLOCK;
+        /// Don't deliver `SIGPIPE`.
+        #[cfg(target_os = "netbsd")]
+        O_NOSIGPIPE;
+        /// Obtain a file descriptor for low-level access.
+        ///
+        /// The file itself is not opened and other file operations will fail.
+        #[cfg(any(target_os = "android", target_os = "linux"))]
+        O_PATH;
+        /// Only allow reading.
+        ///
+        /// This should not be combined with `O_WRONLY` or `O_RDWR`.
+        O_RDONLY;
+        /// Allow both reading and writing.
+        ///
+        /// This should not be combined with `O_WRONLY` or `O_RDWR`.
+        O_RDWR;
+        /// Similar to `O_DSYNC` but applies to `read`s instead.
+        #[cfg(any(target_os = "linux", target_os = "netbsd", target_os = "openbsd"))]
+        O_RSYNC;
+        /// Skip search permission checks.
+        #[cfg(target_os = "netbsd")]
+        O_SEARCH;
+        /// Open with a shared file lock.
+        #[cfg(any(target_os = "dragonfly",
+                  target_os = "freebsd",
+                  target_os = "ios",
+                  target_os = "macos",
+                  target_os = "netbsd",
+                  target_os = "openbsd"))]
+        O_SHLOCK;
+        /// Implicitly follow each `write()` with an `fsync()`.
+        O_SYNC;
+        /// Create an unnamed temporary file.
+        #[cfg(any(target_os = "android", target_os = "linux"))]
+        O_TMPFILE;
+        /// Truncate an existing regular file to 0 length if it allows writing.
+        O_TRUNC;
+        /// Restore default TTY attributes.
+        #[cfg(target_os = "freebsd")]
+        O_TTY_INIT;
+        /// Only allow writing.
+        ///
+        /// This should not be combined with `O_RDONLY` or `O_RDWR`.
+        O_WRONLY;
+    }
+);
 
 pub fn open<P: ?Sized + NixPath>(path: &P, oflag: OFlag, mode: Mode) -> Result<RawFd> {
     let fd = try!(path.with_nix_path(|cstr| {
@@ -76,6 +183,29 @@ pub fn readlinkat<'a, P: ?Sized + NixPath>(dirfd: RawFd, path: &P, buffer: &'a m
     wrap_readlink_result(buffer, res)
 }
 
+#[cfg(any(target_os = "android", target_os = "linux"))]
+libc_bitflags!(
+    /// Additional flags for file sealing, which allows for limiting operations on a file.
+    pub struct SealFlag: c_int {
+        /// Prevents further calls to `fcntl()` with `F_ADD_SEALS`.
+        F_SEAL_SEAL;
+        /// The file cannot be reduced in size.
+        F_SEAL_SHRINK;
+        /// The size of the file cannot be increased.
+        F_SEAL_GROW;
+        /// The file contents cannot be modified.
+        F_SEAL_WRITE;
+    }
+);
+
+libc_bitflags!(
+    /// Additional configuration flags for `fcntl`'s `F_SETFD`.
+    pub struct FdFlag: c_int {
+        /// The file descriptor will automatically be closed during a successful `execve(2)`.
+        FD_CLOEXEC;
+    }
+);
+
 pub enum FcntlArg<'a> {
     F_DUPFD(RawFd),
     F_DUPFD_CLOEXEC(RawFd),
@@ -92,9 +222,9 @@ pub enum FcntlArg<'a> {
     F_OFD_SETLKW(&'a libc::flock),
     #[cfg(any(target_os = "linux", target_os = "android"))]
     F_OFD_GETLK(&'a mut libc::flock),
-    #[cfg(target_os = "linux")]
+    #[cfg(any(target_os = "android", target_os = "linux"))]
     F_ADD_SEALS(SealFlag),
-    #[cfg(target_os = "linux")]
+    #[cfg(any(target_os = "android", target_os = "linux"))]
     F_GET_SEALS,
     #[cfg(any(target_os = "macos", target_os = "ios"))]
     F_FULLFSYNC,
@@ -120,10 +250,10 @@ pub fn fcntl(fd: RawFd, arg: FcntlArg) -> Result<c_int> {
             F_SETLK(flock) => libc::fcntl(fd, libc::F_SETLK, flock),
             F_SETLKW(flock) => libc::fcntl(fd, libc::F_SETLKW, flock),
             F_GETLK(flock) => libc::fcntl(fd, libc::F_GETLK, flock),
-            #[cfg(target_os = "linux")]
-            F_ADD_SEALS(flag) => libc::fcntl(fd, ffi::F_ADD_SEALS, flag.bits()),
-            #[cfg(target_os = "linux")]
-            F_GET_SEALS => libc::fcntl(fd, ffi::F_GET_SEALS),
+            #[cfg(any(target_os = "android", target_os = "linux"))]
+            F_ADD_SEALS(flag) => libc::fcntl(fd, libc::F_ADD_SEALS, flag.bits()),
+            #[cfg(any(target_os = "android", target_os = "linux"))]
+            F_GET_SEALS => libc::fcntl(fd, libc::F_GET_SEALS),
             #[cfg(any(target_os = "macos", target_os = "ios"))]
             F_FULLFSYNC => libc::fcntl(fd, libc::F_FULLFSYNC),
             #[cfg(any(target_os = "linux", target_os = "android"))]
@@ -164,6 +294,27 @@ pub fn flock(fd: RawFd, arg: FlockArg) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
+#[cfg(any(target_os = "android", target_os = "linux"))]
+libc_bitflags! {
+    /// Additional flags to `splice` and friends.
+    pub struct SpliceFFlags: c_uint {
+        /// Request that pages be moved instead of copied.
+        ///
+        /// Not applicable to `vmsplice`.
+        SPLICE_F_MOVE;
+        /// Do not block on I/O.
+        SPLICE_F_NONBLOCK;
+        /// Hint that more data will be coming in a subsequent splice.
+        ///
+        /// Not applicable to `vmsplice`.
+        SPLICE_F_MORE;
+        /// Gift the user pages to the kernel.
+        ///
+        /// Not applicable to `splice`.
+        SPLICE_F_GIFT;
+    }
+}
+
 #[cfg(any(target_os = "linux", target_os = "android"))]
 pub fn splice(fd_in: RawFd, off_in: Option<&mut libc::loff_t>,
           fd_out: RawFd, off_out: Option<&mut libc::loff_t>,
@@ -190,111 +341,3 @@ pub fn vmsplice(fd: RawFd, iov: &[IoVec<&[u8]>], flags: SpliceFFlags) -> Result<
     Errno::result(ret).map(|r| r as usize)
 }
 
-#[cfg(any(target_os = "linux", target_os = "android"))]
-mod consts {
-    use libc::{self, c_int, c_uint};
-
-    libc_bitflags! {
-        pub struct SpliceFFlags: c_uint {
-            SPLICE_F_MOVE;
-            SPLICE_F_NONBLOCK;
-            SPLICE_F_MORE;
-            SPLICE_F_GIFT;
-        }
-    }
-
-    bitflags!(
-        pub struct OFlag: c_int {
-            const O_ACCMODE   = libc::O_ACCMODE;
-            const O_RDONLY    = libc::O_RDONLY;
-            const O_WRONLY    = libc::O_WRONLY;
-            const O_RDWR      = libc::O_RDWR;
-            const O_CREAT     = libc::O_CREAT;
-            const O_EXCL      = libc::O_EXCL;
-            const O_NOCTTY    = libc::O_NOCTTY;
-            const O_TRUNC     = libc::O_TRUNC;
-            const O_APPEND    = libc::O_APPEND;
-            const O_NONBLOCK  = libc::O_NONBLOCK;
-            const O_DSYNC     = libc::O_DSYNC;
-            const O_DIRECT    = libc::O_DIRECT;
-            const O_LARGEFILE = 0o00100000;
-            const O_DIRECTORY = libc::O_DIRECTORY;
-            const O_NOFOLLOW  = libc::O_NOFOLLOW;
-            const O_NOATIME   = 0o01000000;
-            const O_CLOEXEC   = libc::O_CLOEXEC;
-            const O_SYNC      = libc::O_SYNC;
-            const O_PATH      = 0o10000000;
-            const O_TMPFILE   = libc::O_TMPFILE;
-            const O_NDELAY    = libc::O_NDELAY;
-        }
-    );
-
-    libc_bitflags!(
-        pub struct FdFlag: c_int {
-            FD_CLOEXEC;
-        }
-    );
-
-    bitflags!(
-        pub struct SealFlag: c_int {
-            const F_SEAL_SEAL = 1;
-            const F_SEAL_SHRINK = 2;
-            const F_SEAL_GROW = 4;
-            const F_SEAL_WRITE = 8;
-        }
-    );
-
-}
-
-#[cfg(any(target_os = "netbsd", target_os = "dragonfly", target_os = "openbsd",
-          target_os = "freebsd", target_os = "macos", target_os = "ios"))]
-mod consts {
-    use libc::{self,c_int};
-
-    libc_bitflags!(
-        pub struct OFlag: c_int {
-            O_ACCMODE;
-            O_RDONLY;
-            O_WRONLY;
-            O_RDWR;
-            O_NONBLOCK;
-            O_APPEND;
-            O_SHLOCK;
-            O_EXLOCK;
-            O_ASYNC;
-            O_SYNC;
-            O_NOFOLLOW;
-            O_CREAT;
-            O_TRUNC;
-            O_EXCL;
-            O_NOCTTY;
-            O_DIRECTORY;
-            O_CLOEXEC;
-            O_FSYNC;
-            O_NDELAY;
-            #[cfg(any(target_os = "netbsd", target_os = "openbsd", target_os = "macos",
-                      target_os = "ios"))]
-            O_DSYNC;
-            #[cfg(any(target_os = "netbsd", target_os = "dragonfly", target_os = "freebsd"))]
-            O_DIRECT;
-            #[cfg(any(target_os = "netbsd", target_os = "openbsd"))]
-            O_RSYNC;
-            #[cfg(target_os = "freebsd")]
-            O_EXEC;
-            #[cfg(target_os = "freebsd")]
-            O_TTY_INIT;
-            #[cfg(target_os = "netbsd")]
-            O_ALT_IO;
-            #[cfg(target_os = "netbsd")]
-            O_NOSIGPIPE;
-            #[cfg(target_os = "netbsd")]
-            O_SEARCH;
-        }
-    );
-
-    libc_bitflags!(
-        pub struct FdFlag: c_int {
-            FD_CLOEXEC;
-        }
-    );
-}
