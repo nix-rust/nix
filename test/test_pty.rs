@@ -35,7 +35,7 @@ fn test_ptsname_equivalence() {
     assert!(master_fd.as_raw_fd() > 0);
 
     // Get the name of the slave
-    let slave_name = ptsname(&master_fd).unwrap();
+    let slave_name = unsafe { ptsname(&master_fd) }.unwrap() ;
     let slave_name_r = ptsname_r(&master_fd).unwrap();
     assert_eq!(slave_name, slave_name_r);
 }
@@ -53,8 +53,8 @@ fn test_ptsname_copy() {
     assert!(master_fd.as_raw_fd() > 0);
 
     // Get the name of the slave
-    let slave_name1 = ptsname(&master_fd).unwrap();
-    let slave_name2 = ptsname(&master_fd).unwrap();
+    let slave_name1 = unsafe { ptsname(&master_fd) }.unwrap();
+    let slave_name2 = unsafe { ptsname(&master_fd) }.unwrap();
     assert!(slave_name1 == slave_name2);
     // Also make sure that the string was actually copied and they point to different parts of
     // memory.
@@ -92,8 +92,8 @@ fn test_ptsname_unique() {
     assert!(master2_fd.as_raw_fd() > 0);
 
     // Get the name of the slave
-    let slave_name1 = ptsname(&master1_fd).unwrap();
-    let slave_name2 = ptsname(&master2_fd).unwrap();
+    let slave_name1 = unsafe { ptsname(&master1_fd) }.unwrap();
+    let slave_name2 = unsafe { ptsname(&master2_fd) }.unwrap();
     assert!(slave_name1 != slave_name2);
 }
 
@@ -116,7 +116,7 @@ fn test_open_ptty_pair() {
     unlockpt(&master_fd).expect("unlockpt failed");
 
     // Get the name of the slave
-    let slave_name = ptsname(&master_fd).expect("ptsname failed");
+    let slave_name = unsafe { ptsname(&master_fd) }.expect("ptsname failed");
 
     // Open the slave device
     let slave_fd = open(Path::new(&slave_name), O_RDWR, stat::Mode::empty()).unwrap();

@@ -45,6 +45,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - `MapFlags`, `MmapAdvise`, and `MsFlags` expose some more variants and only
   officially-supported variants are provided for each target.
   ([#731](https://github.com/nix-rust/nix/pull/731))
+- Marked `pty::ptsname` function as `unsafe`
+  ([#744](https://github.com/nix-rust/nix/pull/744))
 
 # Fixed
 - Fix compilation and tests for OpenBSD targets
