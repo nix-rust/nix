@@ -100,7 +100,7 @@ pub fn grantpt(fd: &PtyMaster) -> Result<()> {
 /// unlockpt(&master_fd)?;
 ///
 /// // Get the name of the slave
-/// let slave_name = ptsname(&master_fd)?;
+/// let slave_name = unsafe { ptsname(&master_fd) }?;
 ///
 /// // Try to open the slave
 /// # #[allow(unused_variables)]
@@ -125,20 +125,26 @@ pub fn posix_openpt(flags: fcntl::OFlag) -> Result<PtyMaster> {
 /// [ptsname(3)](http://man7.org/linux/man-pages/man3/ptsname.3.html))
 ///
 /// `ptsname()` returns the name of the slave pseudoterminal device corresponding to the master
-/// referred to by `fd`. Note that this function is *not* threadsafe. For that see `ptsname_r()`.
+/// referred to by `fd`.
 ///
 /// This value is useful for opening the slave pty once the master has already been opened with
 /// `posix_openpt()`.
+///
+/// # Safety
+///
+/// `ptsname()` mutates global variables and is *not* threadsafe.
+/// Mutating global variables is always considered `unsafe` by Rust and this
+/// function is marked as `unsafe` to reflect that.
+///
+/// For a threadsafe and non-`unsafe` alternative on Linux, see `ptsname_r()`.
 #[inline]
-pub fn ptsname(fd: &PtyMaster) -> Result<String> {
-    let name_ptr = unsafe { libc::ptsname(fd.as_raw_fd()) };
+pub unsafe fn ptsname(fd: &PtyMaster) -> Result<String> {
+    let name_ptr = libc::ptsname(fd.as_raw_fd());
     if name_ptr.is_null() {
         return Err(Error::last().into());
     }
 
-    let name = unsafe {
-        CStr::from_ptr(name_ptr)
-    };
+    let name = CStr::from_ptr(name_ptr);
     Ok(name.to_string_lossy().into_owned())
 }
 
@@ -187,7 +193,7 @@ pub fn unlockpt(fd: &PtyMaster) -> Result<()> {
 
 /// Create a new pseudoterminal, returning the slave and master file descriptors
 /// in `OpenptyResult`
-/// (see [openpty](http://man7.org/linux/man-pages/man3/openpty.3.html)). 
+/// (see [openpty](http://man7.org/linux/man-pages/man3/openpty.3.html)).
 ///
 /// If `winsize` is not `None`, the window size of the slave will be set to
 /// the values in `winsize`. If `termios` is not `None`, the pseudoterminal's
