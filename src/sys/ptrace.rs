@@ -32,20 +32,28 @@ libc_enum!{
         PTRACE_CONT,
         PTRACE_KILL,
         PTRACE_SINGLESTEP,
+        #[cfg(any(target_env = "musl", target_arch ="x86_64", target_arch = "s390x"))]
         PTRACE_GETREGS,
+        #[cfg(any(target_env = "musl", target_arch ="x86_64", target_arch = "s390x"))]
         PTRACE_SETREGS,
+        #[cfg(any(target_env = "musl", target_arch ="x86_64", target_arch = "s390x"))]
         PTRACE_GETFPREGS,
+        #[cfg(any(target_env = "musl", target_arch ="x86_64", target_arch = "s390x"))]
         PTRACE_SETFPREGS,
         PTRACE_ATTACH,
         PTRACE_DETACH,
+        #[cfg(any(target_env = "musl", target_arch ="x86_64", target_arch = "s390x"))]
         PTRACE_GETFPXREGS,
+        #[cfg(any(target_env = "musl", target_arch ="x86_64", target_arch = "s390x"))]
         PTRACE_SETFPXREGS,
         PTRACE_SYSCALL,
         PTRACE_SETOPTIONS,
         PTRACE_GETEVENTMSG,
         PTRACE_GETSIGINFO,
         PTRACE_SETSIGINFO,
+        #[cfg(any(target_env = "musl", target_arch ="x86_64", target_arch = "s390x"))]
         PTRACE_GETREGSET,
+        #[cfg(any(target_env = "musl", target_arch ="x86_64", target_arch = "s390x"))]
         PTRACE_SETREGSET,
         PTRACE_SEIZE,
         PTRACE_INTERRUPT,
