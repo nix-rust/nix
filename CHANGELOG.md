@@ -22,6 +22,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#739](https://github.com/nix-rust/nix/pull/739))
 - Expose `signalfd` module on Android as well.
   ([#739](https://github.com/nix-rust/nix/pull/739))
+- Added the `ptsname_r` function for macOS and iOS that emulates Linux's `ptsname_r` behavior.
+  ([#742](https://github.com/nix-rust/nix/pull/742))
 
 ### Changed
 - Renamed existing `ptrace` wrappers to encourage namespacing ([#692](https://github.com/nix-rust/nix/pull/692))

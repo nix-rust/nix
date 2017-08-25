@@ -25,7 +25,7 @@ fn test_explicit_close() {
 
 /// Test equivalence of `ptsname` and `ptsname_r`
 #[test]
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(any(target_os = "android", target_os = "linux", target_os = "macos", target_os = "ios"))]
 fn test_ptsname_equivalence() {
     #[allow(unused_variables)]
     let m = ::PTSNAME_MTX.lock().expect("Mutex got poisoned by another test");
@@ -43,7 +43,7 @@ fn test_ptsname_equivalence() {
 /// Test data copying of `ptsname`
 // TODO need to run in a subprocess, since ptsname is non-reentrant
 #[test]
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(any(target_os = "android", target_os = "linux", target_os = "macos", target_os = "ios"))]
 fn test_ptsname_copy() {
     #[allow(unused_variables)]
     let m = ::PTSNAME_MTX.lock().expect("Mutex got poisoned by another test");
@@ -63,7 +63,7 @@ fn test_ptsname_copy() {
 
 /// Test data copying of `ptsname_r`
 #[test]
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(any(target_os = "android", target_os = "linux", target_os = "macos", target_os = "ios"))]
 fn test_ptsname_r_copy() {
     // Open a new PTTY master
     let master_fd = posix_openpt(O_RDWR).unwrap();
@@ -78,7 +78,7 @@ fn test_ptsname_r_copy() {
 
 /// Test that `ptsname` returns different names for different devices
 #[test]
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(any(target_os = "android", target_os = "linux", target_os = "macos", target_os = "ios"))]
 fn test_ptsname_unique() {
     #[allow(unused_variables)]
     let m = ::PTSNAME_MTX.lock().expect("Mutex got poisoned by another test");
