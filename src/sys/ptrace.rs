@@ -42,9 +42,9 @@ libc_enum!{
         PTRACE_SETFPREGS,
         PTRACE_ATTACH,
         PTRACE_DETACH,
-        #[cfg(any(target_env = "musl", target_arch ="x86_64", target_arch = "s390x", not(target_os = "android")))]
+        #[cfg(any(target_env = "musl", target_arch ="x86_64", not(target_os = "android")))]
         PTRACE_GETFPXREGS,
-        #[cfg(any(target_env = "musl", target_arch ="x86_64", target_arch = "s390x", not(target_os = "android")))]
+        #[cfg(any(target_env = "musl", target_arch ="x86_64", not(target_os = "android")))]
         PTRACE_SETFPXREGS,
         PTRACE_SYSCALL,
         PTRACE_SETOPTIONS,
@@ -55,9 +55,13 @@ libc_enum!{
         PTRACE_GETREGSET,
         #[cfg(any(target_env = "musl", target_arch ="x86_64", target_arch = "s390x", not(target_os = "android")))]
         PTRACE_SETREGSET,
+        #[cfg(not(target_os = "android"))]
         PTRACE_SEIZE,
+        #[cfg(not(target_os = "android"))]
         PTRACE_INTERRUPT,
+        #[cfg(not(target_os = "android"))]
         PTRACE_LISTEN,
+        #[cfg(not(target_os = "android"))]
         PTRACE_PEEKSIGINFO,
     }
 }
