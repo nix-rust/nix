@@ -55,13 +55,13 @@ libc_enum!{
         PTRACE_GETREGSET,
         #[cfg(all(any(target_env = "musl", target_arch ="x86_64", target_arch = "s390x"), not(target_os = "android")))]
         PTRACE_SETREGSET,
-        #[cfg(not(target_os = "android"))]
+        #[cfg(all(not(target_os = "android"), not(target_arch = "mips")))]
         PTRACE_SEIZE,
-        #[cfg(not(target_os = "android"))]
+        #[cfg(all(not(target_os = "android"), not(target_arch = "mips")))]
         PTRACE_INTERRUPT,
-        #[cfg(not(target_os = "android"))]
+        #[cfg(all(not(target_os = "android"), not(target_arch = "mips")))]
         PTRACE_LISTEN,
-        #[cfg(not(target_os = "android"))]
+        #[cfg(all(not(target_os = "android"), not(target_arch = "mips")))]
         PTRACE_PEEKSIGINFO,
     }
 }
