@@ -32,28 +32,28 @@ libc_enum!{
         PTRACE_CONT,
         PTRACE_KILL,
         PTRACE_SINGLESTEP,
-        #[cfg(any(target_env = "musl", target_arch ="x86_64", target_arch = "s390x", not(target_os = "android")))]
+        #[cfg(all(any(target_env = "musl", target_arch ="x86_64", target_arch = "s390x"), not(target_os = "android")))]
         PTRACE_GETREGS,
-        #[cfg(any(target_env = "musl", target_arch ="x86_64", target_arch = "s390x", not(target_os = "android")))]
+        #[cfg(all(any(target_env = "musl", target_arch ="x86_64", target_arch = "s390x"), not(target_os = "android")))]
         PTRACE_SETREGS,
-        #[cfg(any(target_env = "musl", target_arch ="x86_64", target_arch = "s390x", not(target_os = "android")))]
+        #[cfg(all(any(target_env = "musl", target_arch ="x86_64", target_arch = "s390x"), not(target_os = "android")))]
         PTRACE_GETFPREGS,
-        #[cfg(any(target_env = "musl", target_arch ="x86_64", target_arch = "s390x", not(target_os = "android")))]
+        #[cfg(all(any(target_env = "musl", target_arch ="x86_64", target_arch = "s390x"), not(target_os = "android")))]
         PTRACE_SETFPREGS,
         PTRACE_ATTACH,
         PTRACE_DETACH,
-        #[cfg(any(target_env = "musl", target_arch ="x86_64", not(target_os = "android")))]
+        #[cfg(all(any(target_env = "musl", target_arch ="x86_64", target_arch = "s390x"), not(target_os = "android")))]
         PTRACE_GETFPXREGS,
-        #[cfg(any(target_env = "musl", target_arch ="x86_64", not(target_os = "android")))]
+        #[cfg(all(any(target_env = "musl", target_arch ="x86_64", target_arch = "s390x"), not(target_os = "android")))]
         PTRACE_SETFPXREGS,
         PTRACE_SYSCALL,
         PTRACE_SETOPTIONS,
         PTRACE_GETEVENTMSG,
         PTRACE_GETSIGINFO,
         PTRACE_SETSIGINFO,
-        #[cfg(any(target_env = "musl", target_arch ="x86_64", target_arch = "s390x", not(target_os = "android")))]
+        #[cfg(all(any(target_env = "musl", target_arch ="x86_64", target_arch = "s390x"), not(target_os = "android")))]
         PTRACE_GETREGSET,
-        #[cfg(any(target_env = "musl", target_arch ="x86_64", target_arch = "s390x", not(target_os = "android")))]
+        #[cfg(all(any(target_env = "musl", target_arch ="x86_64", target_arch = "s390x"), not(target_os = "android")))]
         PTRACE_SETREGSET,
         #[cfg(not(target_os = "android"))]
         PTRACE_SEIZE,
