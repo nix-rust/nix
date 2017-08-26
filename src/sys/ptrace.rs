@@ -17,10 +17,8 @@ cfg_if! {
 }
 
 libc_enum!{
-    #[cfg_attr(any(all(target_os = "linux", arch = "s390x"),
-                   all(target_os = "linux", target_env = "gnu")), repr(u32))]
-    #[cfg_attr(not(any(all(target_os = "linux", arch = "s390x"),
-                   all(target_os = "linux", target_env = "gnu"))), repr(i32))]
+    #[cfg_attr(    any(all(target_os = "linux", arch = "s390x"), all(target_os = "linux", target_env = "gnu")),  repr(u32))]
+    #[cfg_attr(not(any(all(target_os = "linux", arch = "s390x"), all(target_os = "linux", target_env = "gnu"))), repr(i32))]
     pub enum Request {
         PTRACE_TRACEME, 
         PTRACE_PEEKTEXT,
