@@ -73,25 +73,6 @@ impl CpuSet {
     }
 }
 
-mod ffi {
-    use libc::{c_void, c_int};
-
-    pub type CloneCb = extern "C" fn(data: *const super::CloneCb) -> c_int;
-
-    // We cannot give a proper #[repr(C)] to super::CloneCb
-    #[allow(improper_ctypes)]
-    extern "C" {
-        // create a child process
-        // doc: http://man7.org/linux/man-pages/man2/clone.2.html
-        pub fn clone(cb: *const CloneCb,
-                     child_stack: *mut c_void,
-                     flags: c_int,
-                     arg: *mut super::CloneCb,
-                     ...)
-                     -> c_int;
-    }
-}
-
 pub fn sched_setaffinity(pid: Pid, cpuset: &CpuSet) -> Result<()> {
     let res = unsafe {
         libc::sched_setaffinity(pid.into(),
@@ -116,10 +97,10 @@ pub fn clone(mut cb: CloneCb,
         let combined = flags.bits() | signal.unwrap_or(0);
         let ptr = stack.as_mut_ptr().offset(stack.len() as isize);
         let ptr_aligned = ptr.offset((ptr as usize % 16) as isize * -1);
-        ffi::clone(mem::transmute(callback as extern "C" fn(*mut Box<::std::ops::FnMut() -> isize>) -> i32),
+        libc::clone(mem::transmute(callback as extern "C" fn(*mut Box<::std::ops::FnMut() -> isize>) -> i32),
                    ptr_aligned as *mut c_void,
                    combined,
-                   &mut cb)
+                   &mut cb as *mut _ as *mut c_void)
     };
 
     Errno::result(res).map(Pid::from_raw)
