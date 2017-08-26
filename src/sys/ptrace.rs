@@ -8,19 +8,16 @@ use sys::signal::Signal;
 
 
 cfg_if! {
-    if #[cfg(any(all(target_os = "linux", arch = "s390x", not(target_env = "musl")),
-                all(target_os = "linux", target_env = "gnu")))] {
-        pub type RequestType = ::libc::c_uint;
-    } else {
+    if #[cfg(any(target_os = "android", target_env = "musl"))] {
         pub type RequestType = ::libc::c_int;
+    } else {
+        pub type RequestType = ::libc::c_uint;
     }
 }
 
 libc_enum!{
-    #[cfg_attr(all(any(all(target_os = "linux", arch = "s390x", not(target_env = "musl")),  
-                       all(target_os = "linux", target_env = "gnu"))), repr(u32))] 
-    #[cfg_attr(not(any(all(target_os = "linux", arch = "s390x", not(target_env = "musl")),
-                       all(target_os = "linux", target_env = "gnu"))), repr(i32))] 
+    #[cfg_attr(all(any(target_os = "android", target_env = "musl")), repr(i32))]
+    #[cfg_attr(not(any(target_os = "android", target_env = "musl")), repr(u32))]
     pub enum Request {
         PTRACE_TRACEME, 
         PTRACE_PEEKTEXT,
