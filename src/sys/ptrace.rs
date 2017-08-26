@@ -42,9 +42,9 @@ libc_enum!{
         PTRACE_SETFPREGS,
         PTRACE_ATTACH,
         PTRACE_DETACH,
-        #[cfg(all(any(target_env = "musl", target_arch ="x86_64", target_arch = "s390x"), not(target_os = "android")))]
+        #[cfg(all(any(target_env = "musl", target_arch ="x86_64"), not(target_os = "android")))]
         PTRACE_GETFPXREGS,
-        #[cfg(all(any(target_env = "musl", target_arch ="x86_64", target_arch = "s390x"), not(target_os = "android")))]
+        #[cfg(all(any(target_env = "musl", target_arch ="x86_64"), not(target_os = "android")))]
         PTRACE_SETFPXREGS,
         PTRACE_SYSCALL,
         PTRACE_SETOPTIONS,
