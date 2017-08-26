@@ -1,5 +1,5 @@
 use nix::sys::socket::{InetAddr, UnixAddr, getsockname};
-use std::{mem, slice};
+use std::slice;
 use std::net::{self, Ipv6Addr, SocketAddr, SocketAddrV6};
 use std::path::Path;
 use std::str::FromStr;
