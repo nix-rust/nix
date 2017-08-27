@@ -1047,6 +1047,49 @@ pub fn setgid(gid: Gid) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
+/// Get the list of supplementary group IDs of the calling process.
+///
+/// *Note:* On macOS, `getgroups()` behavior differs somewhat from other Unix
+/// platforms. It returns the current group access list for the user associated
+/// with the effective user id of the process; the group access list may change
+/// over the lifetime of the process, and it is not affected by calls to
+/// `setgroups()`.
+///
+/// [Further reading](http://pubs.opengroup.org/onlinepubs/009695399/functions/getgroups.html)
+pub fn getgroups() -> Result<Vec<Gid>> {
+    // First get the number of groups so we can size our Vec
+    use std::ptr;
+    let ret = unsafe { libc::getgroups(0, ptr::null_mut()) };
+    let mut size = Errno::result(ret)?;
+
+    // Now actually get the groups. We try multiple times in case the number of
+    // groups has changed since the first call to getgroups() and the buffer is
+    // now too small
+    let mut groups = Vec::<Gid>::with_capacity(size as usize);
+    loop {
+        // FIXME: On the platforms we currently support, the `Gid` struct has
+        // the same representation in memory as a bare `gid_t`. This is not
+        // necessarily the case on all Rust platforms, though. See RFC 1785.
+        let ret = unsafe { libc::getgroups(size, groups.as_mut_ptr() as *mut gid_t) };
+
+        match Errno::result(ret) {
+            Ok(s) => {
+                unsafe { groups.set_len(s as usize) };
+                return Ok(groups);
+            },
+            Err(Error::Sys(Errno::EINVAL)) => {
+                // EINVAL indicates that size was too small, so trigger a
+                // resize of the groups Vec and try again...
+                let cap = groups.capacity();
+                unsafe { groups.set_len(cap) };
+                groups.reserve(1);
+                size = groups.capacity() as c_int;
+            },
+            Err(e) => return Err(e)
+        }
+    }
+}
+
 /// Set the list of supplementary group IDs for the calling process.
 ///
 /// *Note:* On macOS, `getgroups()` may not return the same group list set by
