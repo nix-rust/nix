@@ -11,8 +11,9 @@ bitflags!(
 );
 
 pub fn memfd_create(name: &CStr, flags: MemFdCreateFlag) -> Result<RawFd> {
-    use sys::syscall::{syscall, MEMFD_CREATE};
-    let res = unsafe { syscall(MEMFD_CREATE, name.as_ptr(), flags.bits()) };
+    let res = unsafe {
+        libc::syscall(libc::SYS_memfd_create, name.as_ptr(), flags.bits())
+    };
 
     Errno::result(res).map(|r| r as RawFd)
 }
