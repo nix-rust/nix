@@ -464,7 +464,7 @@ pub fn mkdir<P: ?Sized + NixPath>(path: &P, mode: Mode) -> Result<()> {
 /// fn main() {
 ///     let tmp_dir = TempDir::new("test_fifo").unwrap();
 ///     let fifo_path = tmp_dir.path().join("foo.pipe");
-/// 
+///
 ///     // create new fifo and give read, write and execute rights to the owner
 ///     match unistd::mkfifo(&fifo_path, stat::S_IRWXU) {
 ///        Ok(_) => println!("created {:?}", fifo_path),
@@ -1045,6 +1045,51 @@ pub fn setgid(gid: Gid) -> Result<()> {
     let res = unsafe { libc::setgid(gid.into()) };
 
     Errno::result(res).map(drop)
+}
+
+/// Set the list of supplementary group IDs for the calling process.
+///
+/// *Note:* On macOS, `getgroups()` may not return the same group list set by
+/// calling `setgroups()`. The use of `setgroups()` on macOS is 'highly
+/// discouraged' by Apple. Developers are referred to the `opendirectoryd`
+/// daemon and its set of APIs.
+///
+/// [Further reading](http://man7.org/linux/man-pages/man2/getgroups.2.html)
+///
+/// # Examples
+///
+/// `setgroups` can be used when dropping privileges from the root user to a
+/// specific user and group. For example, given the user `www-data` with UID
+/// `33` and the group `backup` with the GID `34`, one could switch user as
+/// follows:
+/// ```
+/// let uid = Uid::from_raw(33);
+/// let gid = Gid::from_raw(34);
+/// setgroups(&[gid])?;
+/// setgid(gid)?;
+/// setuid(uid)?;
+/// ```
+pub fn setgroups(groups: &[Gid]) -> Result<()> {
+    cfg_if! {
+        if #[cfg(any(target_os = "dragonfly",
+                     target_os = "freebsd",
+                     target_os = "ios",
+                     target_os = "macos",
+                     target_os = "netbsd",
+                     target_os = "openbsd"))] {
+            type setgroups_ngroups_t = c_int;
+        } else {
+            type setgroups_ngroups_t = size_t;
+        }
+    }
+    // FIXME: On the platforms we currently support, the `Gid` struct has the
+    // same representation in memory as a bare `gid_t`. This is not necessarily
+    // the case on all Rust platforms, though. See RFC 1785.
+    let res = unsafe {
+        libc::setgroups(groups.len() as setgroups_ngroups_t, groups.as_ptr() as *const gid_t)
+    };
+
+    Errno::result(res).map(|_| ())
 }
 
 /// Suspend the thread until a signal is received
