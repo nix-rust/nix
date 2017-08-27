@@ -379,6 +379,23 @@ macro_rules! libc_enum {
         }
     };
 
+    // Munch an ident and cast it to the given type; covers terminating comma.
+    (@accumulate_entries
+        $prefix:tt,
+        [$($entries:tt)*];
+        $entry:ident as $ty:ty, $($tail:tt)*
+    ) => {
+        libc_enum! {
+            @accumulate_entries
+            $prefix,
+            [
+                $($entries)*
+                $entry = libc::$entry as $ty,
+            ];
+            $($tail)*
+        }
+    };
+
     // (non-pub) Entry rule.
     (
         $(#[$attr:meta])*
