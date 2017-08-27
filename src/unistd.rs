@@ -1135,6 +1135,41 @@ pub fn setgroups(groups: &[Gid]) -> Result<()> {
     Errno::result(res).map(|_| ())
 }
 
+/// Initialize the supplementary group access list. Sets the supplementary
+/// group IDs for the calling process using all groups that `user` is a member
+/// of. The additional group `group` is also added to the list.
+///
+/// [Further reading](http://man7.org/linux/man-pages/man3/initgroups.3.html)
+///
+/// # Examples
+///
+/// `initgroups` can be used when dropping privileges from the root user to
+/// another user. For example, given the user `www-data`, we could look up the
+/// UID and GID for the user in the system's password database (usually found
+/// in `/etc/passwd`). If the `www-data` user's UID and GID were `33` and `33`,
+/// respectively, one could switch user as follows:
+/// ```
+/// let user = CString::new("www-data").unwrap();
+/// let uid = Uid::from_raw(33);
+/// let gid = Gid::from_raw(33);
+/// initgroups(&user, gid)?;
+/// setgid(gid)?;
+/// setuid(uid)?;
+/// ```
+pub fn initgroups(user: &CString, group: Gid) -> Result<()> {
+    cfg_if! {
+        if #[cfg(any(target_os = "ios", target_os = "macos"))] {
+            type initgroups_group_t = c_int;
+        } else {
+            type initgroups_group_t = gid_t;
+        }
+    }
+    let gid: gid_t = group.into();
+    let res = unsafe { libc::initgroups(user.as_ptr(), gid as initgroups_group_t) };
+
+    Errno::result(res).map(|_| ())
+}
+
 /// Suspend the thread until a signal is received
 ///
 /// See also [pause(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/pause.html)
