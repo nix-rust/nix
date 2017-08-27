@@ -804,7 +804,7 @@ pub enum Whence {
     SeekCur = libc::SEEK_CUR,
     /// Specify an offset relative to the end of the file.
     SeekEnd = libc::SEEK_END,
-    /// Specify an offset relative to the next location in the file greater than or 
+    /// Specify an offset relative to the next location in the file greater than or
     /// equal to offset that contains some data. If offset points to
     /// some data, then the file offset is set to offset.
     #[cfg(any(target_os = "dragonfly", target_os = "freebsd",
@@ -813,7 +813,7 @@ pub enum Whence {
                                            target_arch = "mips64")))))]
     SeekData = libc::SEEK_DATA,
     /// Specify an offset relative to the next hole in the file greater than
-    /// or equal to offset. If offset points into the middle of a hole, then 
+    /// or equal to offset. If offset points into the middle of a hole, then
     /// the file offset should be set to offset. If there is no hole past offset,
     /// then the file offset should be adjusted to the end of the file (i.e., there
     /// is an implicit hole at the end of any file).
@@ -1361,7 +1361,7 @@ pub enum SysconfVar {
     OPEN_MAX = libc::_SC_OPEN_MAX,
     #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
               target_os="linux", target_os = "macos", target_os="openbsd"))]
-    /// The implementation supports the Advisory Information option. 
+    /// The implementation supports the Advisory Information option.
     _POSIX_ADVISORY_INFO = libc::_SC_ADVISORY_INFO,
     #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
               target_os="linux", target_os = "macos", target_os="netbsd",
@@ -1380,7 +1380,7 @@ pub enum SysconfVar {
               target_os="openbsd"))]
     /// The implementation supports the Process CPU-Time Clocks option.
     _POSIX_CPUTIME = libc::_SC_CPUTIME,
-    /// The implementation supports the File Synchronization option. 
+    /// The implementation supports the File Synchronization option.
     _POSIX_FSYNC = libc::_SC_FSYNC,
     #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
               target_os="linux", target_os = "macos", target_os="openbsd"))]
@@ -1495,7 +1495,7 @@ pub enum SysconfVar {
               target_os="linux", target_os = "macos", target_os="openbsd"))]
     /// The implementation supports timeouts.
     _POSIX_TIMEOUTS = libc::_SC_TIMEOUTS,
-    /// The implementation supports timers. 
+    /// The implementation supports timers.
     _POSIX_TIMERS = libc::_SC_TIMERS,
     #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
               target_os="linux", target_os = "macos", target_os="openbsd"))]
