@@ -1135,6 +1135,70 @@ pub fn setgroups(groups: &[Gid]) -> Result<()> {
     Errno::result(res).map(|_| ())
 }
 
+/// Calculate the supplementary group access list. Gets the group IDs of all
+/// groups that `user` is a member of. The additional group `group` is also
+/// added to the list.
+///
+/// [Further reading](http://man7.org/linux/man-pages/man3/getgrouplist.3.html)
+///
+/// # Errors
+///
+/// Although the `getgrouplist()` call does not return any specific
+/// errors on any known platforms, this implementation will return a system
+/// error of `EINVAL` if the number of groups to be fetched exceeds the
+/// `NGROUPS_MAX` sysconf value. This mimics the behaviour of `getgroups()`
+/// and `setgroups()`. Additionally, while some implementations will return a
+/// partial list of groups when `NGROUPS_MAX` is exceeded, this implementation
+/// will only ever return the complete list or else an error.
+pub fn getgrouplist(user: &CString, group: Gid) -> Result<Vec<Gid>> {
+    let ngroups_max = match sysconf(SysconfVar::NGROUPS_MAX) {
+        Ok(Some(n)) => n as c_int,
+        Ok(None) | Err(_) => <c_int>::max_value(),
+    };
+    use std::cmp::min;
+    let mut ngroups = min(ngroups_max, 8);
+    let mut groups = Vec::<Gid>::with_capacity(ngroups as usize);
+    cfg_if! {
+        if #[cfg(any(target_os = "ios", target_os = "macos"))] {
+            type getgrouplist_group_t = c_int;
+        } else {
+            type getgrouplist_group_t = gid_t;
+        }
+    }
+    let gid: gid_t = group.into();
+    loop {
+        let ret = unsafe {
+            libc::getgrouplist(user.as_ptr(),
+                               gid as getgrouplist_group_t,
+                               groups.as_mut_ptr() as *mut getgrouplist_group_t,
+                               &mut ngroups)
+        };
+        // BSD systems only return 0 or -1, Linux returns ngroups on success.
+        if ret >= 0 {
+            unsafe { groups.set_len(ngroups as usize) };
+            return Ok(groups);
+        } else if ret == -1 {
+            // Returns -1 if ngroups is too small, but does not set errno.
+            // BSD systems will still fill the groups buffer with as many
+            // groups as possible, but Linux manpages do not mention this
+            // behavior.
+
+            let cap = groups.capacity();
+            if cap >= ngroups_max as usize {
+                // We already have the largest capacity we can, give up
+                return Err(Error::invalid_argument());
+            }
+
+            // Reserve space for at least ngroups
+            groups.reserve(ngroups as usize);
+
+            // Even if the buffer gets resized to bigger than ngroups_max,
+            // don't ever ask for more than ngroups_max groups
+            ngroups = min(ngroups_max, groups.capacity() as c_int);
+        }
+    }
+}
+
 /// Initialize the supplementary group access list. Sets the supplementary
 /// group IDs for the calling process using all groups that `user` is a member
 /// of. The additional group `group` is also added to the list.
