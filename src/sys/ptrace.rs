@@ -10,8 +10,10 @@ use sys::signal::Signal;
 cfg_if! {
     if #[cfg(any(all(target_os = "linux", arch = "s390x"),
                  all(target_os = "linux", target_env = "gnu")))] {
+        #[doc(hidden)]
         pub type RequestType = ::libc::c_uint;
     } else {
+        #[doc(hidden)]
         pub type RequestType = ::libc::c_int;
     }
 }
@@ -20,6 +22,7 @@ libc_enum!{
     
     #[cfg_attr(not(any(target_env = "musl", target_os = "android")), repr(u32))]
     #[cfg_attr(any(target_env = "musl", target_os = "android"), repr(i32))]
+    /// Ptrace Request enum defining the action to be taken.
     pub enum Request {
         PTRACE_TRACEME, 
         PTRACE_PEEKTEXT,
@@ -67,27 +70,52 @@ libc_enum!{
       
 libc_enum!{
     #[repr(i32)]
+    /// Using the ptrace options the tracer can configure the tracee to stop
+    /// at certain events. This enum is used to define those events as defined 
+    /// in `man ptrace`.
     pub enum Event {
+        /// Event that stops before a return from fork or clone.
         PTRACE_EVENT_FORK,
+        /// Event that stops before a return from vfork or clone.
         PTRACE_EVENT_VFORK,
+        /// Event that stops before a return from clone.
         PTRACE_EVENT_CLONE,
+        /// Event that stops before a return from execve.
         PTRACE_EVENT_EXEC,
+        /// Event for a return from vfork.
         PTRACE_EVENT_VFORK_DONE,
+        /// Event for a stop before an exit. Unlike the waitpid Exit status program.
+        /// registers can still be examined
         PTRACE_EVENT_EXIT,
+        /// STop triggered by a seccomp rule on a tracee.
         PTRACE_EVENT_SECCOMP,
         // PTRACE_EVENT_STOP not provided by libc because it's defined in glibc 2.26
     }
 }
 
 libc_bitflags! {
+    /// Ptrace options used in conjunction with the PTRACE_SETOPTIONS request.
+    /// See `man ptrace` for more details.
     pub struct Options: libc::c_int {
+        /// When delivering system call traps set a bit to allow tracer to 
+        /// distinguish between normal stops or syscall stops. May not work on
+        /// all systems.
         PTRACE_O_TRACESYSGOOD;
+        /// Stop tracee at next fork and start tracing the forked process.
         PTRACE_O_TRACEFORK;
+        /// Stop tracee at next vfork call and trace the vforked process.
         PTRACE_O_TRACEVFORK;
+        /// Stop tracee at next clone call and trace the cloned process.
         PTRACE_O_TRACECLONE;
+        /// Stop tracee at next execve call.
         PTRACE_O_TRACEEXEC;
+        /// Stop tracee at vfork completion.
         PTRACE_O_TRACEVFORKDONE;
+        /// Stop tracee at next exit call. Stops before exit commences allowing
+        /// tracer to see location of exit and register states.
         PTRACE_O_TRACEEXIT;
+        /// Stop tracee when a SECCOMP_RET_TRACE rule is triggered. See `man seccomp` for more
+        /// details.
         PTRACE_O_TRACESECCOMP;
     }
 }
