@@ -122,6 +122,29 @@ mod linux_android {
     }
 }
 
+#[test]
+// `getgroups()` and `setgroups()` do not behave as expected on Apple platforms
+#[cfg(not(any(target_os = "ios", target_os = "macos")))]
+fn test_setgroups() {
+    // Skip this test when not run as root as `setgroups()` requires root.
+    if !Uid::current().is_root() {
+        return
+    }
+
+    // Save the existing groups
+    let old_groups = getgroups().unwrap();
+
+    // Set some new made up groups
+    let groups = [Gid::from_raw(123), Gid::from_raw(456)];
+    setgroups(&groups).unwrap();
+
+    let new_groups = getgroups().unwrap();
+    assert_eq!(new_groups, groups);
+
+    // Revert back to the old groups
+    setgroups(&old_groups).unwrap();
+}
+
 macro_rules! execve_test_factory(
     ($test_name:ident, $syscall:ident, $exe: expr) => (
     #[test]
