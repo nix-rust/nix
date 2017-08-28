@@ -16,7 +16,7 @@ use sys::stat::Mode;
 use std::fmt;
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
-pub use self::linux::*;
+pub use self::pivot_root::*;
 
 #[cfg(any(target_os = "android", target_os = "freebsd",
           target_os = "linux", target_os = "openbsd"))]
@@ -1647,8 +1647,8 @@ pub fn sysconf(var: SysconfVar) -> Result<Option<c_long>> {
 }
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
-mod linux {
-    use sys::syscall::{syscall, SYSPIVOTROOT};
+mod pivot_root {
+    use libc;
     use {Errno, Result, NixPath};
 
     pub fn pivot_root<P1: ?Sized + NixPath, P2: ?Sized + NixPath>(
@@ -1656,7 +1656,7 @@ mod linux {
         let res = try!(try!(new_root.with_nix_path(|new_root| {
             put_old.with_nix_path(|put_old| {
                 unsafe {
-                    syscall(SYSPIVOTROOT, new_root.as_ptr(), put_old.as_ptr())
+                    libc::syscall(libc::SYS_pivot_root, new_root.as_ptr(), put_old.as_ptr())
                 }
             })
         })));

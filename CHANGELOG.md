@@ -52,6 +52,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Fix compilation and tests for OpenBSD targets
   ([#688](https://github.com/nix-rust/nix/pull/688))
 
+# Removed
+- The syscall module has been removed. This only exposed enough functionality for
+  `memfd_create()` and `pivot_root()`, which are still exposed as separate functions.
+  ([#747](https://github.com/nix-rust/nix/pull/747))
+
 ## [0.9.0] 2017-07-23
 
 ### Added

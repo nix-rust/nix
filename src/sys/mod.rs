@@ -31,9 +31,6 @@ pub mod socket;
 
 pub mod stat;
 
-#[cfg(any(target_os = "linux", target_os = "android"))]
-pub mod syscall;
-
 #[cfg(any(target_os = "linux"))]
 pub mod reboot;
 
