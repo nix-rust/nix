@@ -247,6 +247,20 @@ pub fn attach(pid: Pid) -> Result<()> {
     }
 }
 
+/// Detaches the current running process, as with `ptrace(PTRACE_DETACH, ...)`
+///
+/// Detaches from the process specified in pid allowing it to run freely
+pub fn detach(pid: Pid) -> Result<()> {
+    unsafe {
+        ptrace_other(
+            Request::PTRACE_DETACH,
+            pid,
+            ptr::null_mut(),
+            ptr::null_mut()
+        ).map(|_| ())
+    }
+}
+
 /// Restart the stopped tracee process, as with `ptrace(PTRACE_CONT, ...)`
 ///
 /// Continues the execution of the process with PID `pid`, optionally
