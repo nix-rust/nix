@@ -55,7 +55,7 @@ fn test_waitstatus_pid() {
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 mod ptrace {
     use nix::sys::ptrace;
-    use nix::sys::ptrace::ptrace::*;
+    use nix::sys::ptrace::*;
     use nix::sys::signal::*;
     use nix::sys::wait::*;
     use nix::unistd::*;
@@ -81,7 +81,7 @@ mod ptrace {
         assert_eq!(waitpid(child, None), Ok(WaitStatus::PtraceSyscall(child)));
         // Then get the ptrace event for the process exiting
         assert!(ptrace::cont(child, None).is_ok());
-        assert_eq!(waitpid(child, None), Ok(WaitStatus::PtraceEvent(child, SIGTRAP, PTRACE_EVENT_EXIT)));
+        assert_eq!(waitpid(child, None), Ok(WaitStatus::PtraceEvent(child, SIGTRAP, Event::PTRACE_EVENT_EXIT as i32)));
         // Finally get the normal wait() result, now that the process has exited
         assert!(ptrace::cont(child, None).is_ok());
         assert_eq!(waitpid(child, None), Ok(WaitStatus::Exited(child, 0)));

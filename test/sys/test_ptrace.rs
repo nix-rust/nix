@@ -16,8 +16,7 @@ fn test_ptrace() {
 // Just make sure ptrace_setoptions can be called at all, for now.
 #[test]
 fn test_ptrace_setoptions() {
-    use nix::sys::ptrace::ptrace::PTRACE_O_TRACESYSGOOD;
-    let err = ptrace::setoptions(getpid(), PTRACE_O_TRACESYSGOOD).unwrap_err();
+    let err = ptrace::setoptions(getpid(), ptrace::PTRACE_O_TRACESYSGOOD).unwrap_err();
     assert!(err != Error::UnsupportedOperation);
 }
 
