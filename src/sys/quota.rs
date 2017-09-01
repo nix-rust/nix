@@ -1,78 +1,235 @@
-use {Errno, Result, NixPath};
+//! Set and configure disk quotas for users, groups, or projects.
+//!
+//! # Examples
+//!
+//! Enabling and setting a quota:
+//!
+//! ```rust,no_run
+//! # use nix::sys::quota::*;
+//! quotactl_on(QuotaType::USRQUOTA, "/dev/sda1", QuotaFmt::QFMT_VFS_V1, "aquota.user");
+//! let mut dqblk: Dqblk = Default::default();
+//! dqblk.set_blocks_hard_limit(10000);
+//! dqblk.set_blocks_soft_limit(8000);
+//! quotactl_set(QuotaType::USRQUOTA, "/dev/sda1", 50, &dqblk, QIF_BLIMITS);
+//! ```
+use std::default::Default;
+use std::{mem, ptr};
 use libc::{self, c_int, c_char};
+use {Errno, Result, NixPath};
 
-#[cfg(all(target_os = "linux",
-          any(target_arch = "x86",
-              target_arch = "x86_64",
-              target_arch = "arm")),
-          )]
-pub mod quota {
-    use libc::{self, c_int};
+struct QuotaCmd(QuotaSubCmd, QuotaType);
 
-    pub struct QuotaCmd(pub QuotaSubCmd, pub QuotaType);
-    pub type QuotaSubCmd = c_int;
-
-    impl QuotaCmd {
-        pub fn as_int(&self) -> c_int {
-            ((self.0 << 8) | (self.1 & 0x00ff)) as c_int
-        }
-    }
-
-    // linux quota version >= 2
-    pub const Q_SYNC:	QuotaSubCmd = 0x800001;
-    pub const Q_QUOTAON:	QuotaSubCmd = 0x800002;
-    pub const Q_QUOTAOFF:	QuotaSubCmd = 0x800003;
-    pub const Q_GETFMT:	QuotaSubCmd = 0x800004;
-    pub const Q_GETINFO:	QuotaSubCmd = 0x800005;
-    pub const Q_SETINFO:	QuotaSubCmd = 0x800006;
-    pub const Q_GETQUOTA:	QuotaSubCmd = 0x800007;
-    pub const Q_SETQUOTA:	QuotaSubCmd = 0x800008;
-
-    pub type QuotaType = c_int;
-
-    pub const USRQUOTA:	QuotaType = 0;
-    pub const GRPQUOTA:	QuotaType = 1;
-
-    pub type QuotaFmt = c_int;
-
-    pub const QFMT_VFS_OLD:	QuotaFmt = 1;
-    pub const QFMT_VFS_V0:	QuotaFmt = 2;
-    pub const QFMT_VFS_V1:  QuotaFmt = 4;
-
-    libc_bitflags!(
-        #[derive(Default)]
-        pub struct QuotaValidFlags: u32 {
-            QIF_BLIMITS;
-            QIF_SPACE;
-            QIF_ILIMITS;
-            QIF_INODES;
-            QIF_BTIME;
-            QIF_ITIME;
-            QIF_LIMITS;
-            QIF_USAGE;
-            QIF_TIMES;
-            QIF_ALL;
-        }
-    );
-
-    #[repr(C)]
-    #[derive(Default,Debug,Copy,Clone)]
-    pub struct Dqblk {
-        pub bhardlimit: u64,
-        pub bsoftlimit: u64,
-        pub curspace:   u64,
-        pub ihardlimit: u64,
-        pub isoftlimit: u64,
-        pub curinodes: u64,
-        pub btime: u64,
-        pub itime: u64,
-        pub valid: QuotaValidFlags,
+impl QuotaCmd {
+    fn as_int(&self) -> c_int {
+        unsafe { libc::QCMD(self.0 as i32, self.1 as i32) }
     }
 }
 
-use std::ptr;
+// linux quota version >= 2
+libc_enum!{
+    #[repr(i32)]
+    enum QuotaSubCmd {
+        Q_SYNC,
+        Q_QUOTAON,
+        Q_QUOTAOFF,
+        Q_GETFMT,
+        Q_GETINFO,
+        Q_SETINFO,
+        Q_GETQUOTA,
+        Q_SETQUOTA,
+    }
+}
 
-fn quotactl<P: ?Sized + NixPath>(cmd: quota::QuotaCmd, special: Option<&P>, id: c_int, addr: *mut c_char) -> Result<()> {
+libc_enum!{
+    /// The scope of the quota.
+    #[repr(i32)]
+    pub enum QuotaType {
+        /// Specify a user quota
+        USRQUOTA,
+        /// Specify a group quota
+        GRPQUOTA,
+    }
+}
+
+libc_enum!{
+    /// The type of quota format to use.
+    #[repr(i32)]
+    pub enum QuotaFmt {
+        /// Use the original quota format.
+        QFMT_VFS_OLD,
+        /// Use the standard VFS v0 quota format.
+        ///
+        /// Handles 32-bit UIDs/GIDs and quota limits up to 2^42 bytes/2^32 inodes.
+        QFMT_VFS_V0,
+        /// Use the VFS v1 quota format.
+        ///
+        /// Handles 32-bit UIDs/GIDs and quota limits of 2^64 bytes/2^64 inodes.
+        QFMT_VFS_V1,
+    }
+}
+
+libc_bitflags!(
+    /// Indicates the quota fields that are valid to read from.
+    #[derive(Default)]
+    pub struct QuotaValidFlags: u32 {
+        /// The block hard & soft limit fields.
+        QIF_BLIMITS;
+        /// The current space field.
+        QIF_SPACE;
+        /// The inode hard & soft limit fields.
+        QIF_ILIMITS;
+        /// The current inodes field.
+        QIF_INODES;
+        /// The disk use time limit field.
+        QIF_BTIME;
+        /// The file quote time limit field.
+        QIF_ITIME;
+        /// All block & inode limits.
+        QIF_LIMITS;
+        /// The space & inodes usage fields.
+        QIF_USAGE;
+        /// The time limit fields.
+        QIF_TIMES;
+        /// All fields.
+        QIF_ALL;
+    }
+);
+
+/// Wrapper type for `if_dqblk`
+// FIXME: Change to repr(transparent)
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct Dqblk(libc::dqblk);
+
+impl Default for Dqblk {
+    fn default() -> Dqblk {
+        Dqblk(libc::dqblk {
+            dqb_bhardlimit: 0,
+            dqb_bsoftlimit: 0,
+            dqb_curspace: 0,
+            dqb_ihardlimit: 0,
+            dqb_isoftlimit: 0,
+            dqb_curinodes: 0,
+            dqb_btime: 0,
+            dqb_itime: 0,
+            dqb_valid: 0,
+        })
+    }
+}
+
+impl Dqblk {
+    /// The absolute limit on disk quota blocks allocated.
+    pub fn blocks_hard_limit(&self) -> Option<u64> {
+        let valid_fields = QuotaValidFlags::from_bits_truncate(self.0.dqb_valid);
+        if valid_fields.contains(QIF_BLIMITS) {
+            Some(self.0.dqb_bhardlimit)
+        } else {
+            None
+        }
+    }
+
+    /// Set the absolute limit on disk quota blocks allocated.
+    pub fn set_blocks_hard_limit(&mut self, limit: u64) {
+        self.0.dqb_bhardlimit = limit;
+    }
+
+    /// Preferred limit on disk quota blocks
+    pub fn blocks_soft_limit(&self) -> Option<u64> {
+        let valid_fields = QuotaValidFlags::from_bits_truncate(self.0.dqb_valid);
+        if valid_fields.contains(QIF_BLIMITS) {
+            Some(self.0.dqb_bsoftlimit)
+        } else {
+            None
+        }
+    }
+
+    /// Set the preferred limit on disk quota blocks allocated.
+    pub fn set_blocks_soft_limit(&mut self, limit: u64) {
+        self.0.dqb_bsoftlimit = limit;
+    }
+
+    /// Current occupied space (bytes).
+    pub fn occupied_space(&self) -> Option<u64> {
+        let valid_fields = QuotaValidFlags::from_bits_truncate(self.0.dqb_valid);
+        if valid_fields.contains(QIF_SPACE) {
+            Some(self.0.dqb_curspace)
+        } else {
+            None
+        }
+    }
+
+    /// Maximum number of allocated inodes.
+    pub fn inodes_hard_limit(&self) -> Option<u64> {
+        let valid_fields = QuotaValidFlags::from_bits_truncate(self.0.dqb_valid);
+        if valid_fields.contains(QIF_ILIMITS) {
+            Some(self.0.dqb_ihardlimit)
+        } else {
+            None
+        }
+    }
+
+    /// Set the maximum number of allocated inodes.
+    pub fn set_inodes_hard_limit(&mut self, limit: u64) {
+        self.0.dqb_ihardlimit = limit;
+    }
+
+    /// Preferred inode limit
+    pub fn inodes_soft_limit(&self) -> Option<u64> {
+        let valid_fields = QuotaValidFlags::from_bits_truncate(self.0.dqb_valid);
+        if valid_fields.contains(QIF_ILIMITS) {
+            Some(self.0.dqb_isoftlimit)
+        } else {
+            None
+        }
+    }
+
+    /// Set the preferred limit of allocated inodes.
+    pub fn set_inodes_soft_limit(&mut self, limit: u64) {
+        self.0.dqb_isoftlimit = limit;
+    }
+
+    /// Current number of allocated inodes.
+    pub fn allocated_inodes(&self) -> Option<u64> {
+        let valid_fields = QuotaValidFlags::from_bits_truncate(self.0.dqb_valid);
+        if valid_fields.contains(QIF_INODES) {
+            Some(self.0.dqb_curinodes)
+        } else {
+            None
+        }
+    }
+
+    /// Time limit for excessive disk use.
+    pub fn block_time_limit(&self) -> Option<u64> {
+        let valid_fields = QuotaValidFlags::from_bits_truncate(self.0.dqb_valid);
+        if valid_fields.contains(QIF_BTIME) {
+            Some(self.0.dqb_btime)
+        } else {
+            None
+        }
+    }
+
+    /// Set the time limit for excessive disk use.
+    pub fn set_block_time_limit(&mut self, limit: u64) {
+        self.0.dqb_btime = limit;
+    }
+
+    /// Time limit for excessive files.
+    pub fn inode_time_limit(&self) -> Option<u64> {
+        let valid_fields = QuotaValidFlags::from_bits_truncate(self.0.dqb_valid);
+        if valid_fields.contains(QIF_ITIME) {
+            Some(self.0.dqb_itime)
+        } else {
+            None
+        }
+    }
+
+    /// Set the time limit for excessive files.
+    pub fn set_inode_time_limit(&mut self, limit: u64) {
+        self.0.dqb_itime = limit;
+    }
+}
+
+fn quotactl<P: ?Sized + NixPath>(cmd: QuotaCmd, special: Option<&P>, id: c_int, addr: *mut c_char) -> Result<()> {
     unsafe {
         Errno::clear();
         let res = try!(
@@ -86,27 +243,35 @@ fn quotactl<P: ?Sized + NixPath>(cmd: quota::QuotaCmd, special: Option<&P>, id: 
     }
 }
 
-pub fn quotactl_on<P: ?Sized + NixPath>(which: quota::QuotaType, special: &P, format: quota::QuotaFmt, quota_file: &P) -> Result<()> {
+/// Turn on disk quotas for a block device.
+pub fn quotactl_on<P: ?Sized + NixPath>(which: QuotaType, special: &P, format: QuotaFmt, quota_file: &P) -> Result<()> {
     try!(quota_file.with_nix_path(|path| {
         let mut path_copy = path.to_bytes_with_nul().to_owned();
         let p: *mut c_char = path_copy.as_mut_ptr() as *mut c_char;
-        quotactl(quota::QuotaCmd(quota::Q_QUOTAON, which), Some(special), format as c_int, p)
+        quotactl(QuotaCmd(QuotaSubCmd::Q_QUOTAON, which), Some(special), format as c_int, p)
     }))
 }
 
-pub fn quotactl_off<P: ?Sized + NixPath>(which: quota::QuotaType, special: &P) -> Result<()> {
-    quotactl(quota::QuotaCmd(quota::Q_QUOTAOFF, which), Some(special), 0, ptr::null_mut())
+/// Disable disk quotas for a block device.
+pub fn quotactl_off<P: ?Sized + NixPath>(which: QuotaType, special: &P) -> Result<()> {
+    quotactl(QuotaCmd(QuotaSubCmd::Q_QUOTAOFF, which), Some(special), 0, ptr::null_mut())
 }
 
-pub fn quotactl_sync<P: ?Sized + NixPath>(which: quota::QuotaType, special: Option<&P>) -> Result<()> {
-    quotactl(quota::QuotaCmd(quota::Q_SYNC, which), special, 0, ptr::null_mut())
+/// Update the on-disk copy of quota usages for a filesystem.
+pub fn quotactl_sync<P: ?Sized + NixPath>(which: QuotaType, special: Option<&P>) -> Result<()> {
+    quotactl(QuotaCmd(QuotaSubCmd::Q_SYNC, which), special, 0, ptr::null_mut())
 }
 
-pub fn quotactl_get<P: ?Sized + NixPath>(which: quota::QuotaType, special: &P, id: c_int, dqblk: &mut quota::Dqblk) -> Result<()> {
-    quotactl(quota::QuotaCmd(quota::Q_GETQUOTA, which), Some(special), id, dqblk as *mut _ as *mut c_char)
+/// Get disk quota limits and current usage for the given user/group id.
+pub fn quotactl_get<P: ?Sized + NixPath>(which: QuotaType, special: &P, id: c_int) -> Result<Dqblk> {
+    let mut dqblk = unsafe { mem::uninitialized() };
+    quotactl(QuotaCmd(QuotaSubCmd::Q_GETQUOTA, which), Some(special), id, &mut dqblk as *mut _ as *mut c_char)?;
+    dqblk
 }
 
-pub fn quotactl_set<P: ?Sized + NixPath>(which: quota::QuotaType, special: &P, id: c_int, dqblk: &quota::Dqblk) -> Result<()> {
+/// Configure quota values for the specified fields for a given user/group id.
+pub fn quotactl_set<P: ?Sized + NixPath>(which: QuotaType, special: &P, id: c_int, dqblk: &Dqblk, fields: QuotaValidFlags) -> Result<()> {
     let mut dqblk_copy = *dqblk;
-    quotactl(quota::QuotaCmd(quota::Q_SETQUOTA, which), Some(special), id, &mut dqblk_copy as *mut _ as *mut c_char)
+    dqblk_copy.0.dqb_valid = fields.bits();
+    quotactl(QuotaCmd(QuotaSubCmd::Q_SETQUOTA, which), Some(special), id, &mut dqblk_copy as *mut _ as *mut c_char)
 }
