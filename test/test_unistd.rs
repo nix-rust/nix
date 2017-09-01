@@ -1,5 +1,6 @@
 extern crate tempdir;
 
+use nix::fcntl;
 use nix::unistd::*;
 use nix::unistd::ForkResult::*;
 use nix::sys::wait::*;
@@ -102,6 +103,39 @@ mod linux_android {
         let tid: ::libc::pid_t = gettid().into();
         assert!(tid > 0);
     }
+
+}
+#[test]
+fn test_mkdirat() {
+    let tempdir = TempDir::new("nix-test_mkdirat").unwrap();
+    let path = tempdir.path().join("test_path");
+
+    let dirfd = fcntl::open(tempdir.path(),
+                            fcntl::OFlag::empty(),
+                            stat::Mode::empty());
+
+    mkdirat(dirfd.unwrap(),
+            &path.file_name(),
+            stat::Mode::empty()).unwrap();
+    assert!(path.exists());
+}
+
+#[test]
+fn test_access() {
+    let tempdir = TempDir::new("nix-test_mkdirat").unwrap();
+
+    let dirfd = fcntl::open(tempdir.path().parent().unwrap(),
+                            fcntl::OFlag::empty(),
+                            stat::Mode::empty());
+
+    // if succeed, permissions are or ok
+    access(tempdir.path(), R_OK | X_OK | W_OK).unwrap();
+
+    faccessat(dirfd.unwrap(),
+              &tempdir.path().file_name(),
+              R_OK | X_OK | W_OK,
+              fcntl::AtFlags::empty()).unwrap();
+
 }
 
 macro_rules! execve_test_factory(
@@ -225,6 +259,21 @@ fn test_lseek() {
     close(tmpfd).unwrap();
 }
 
+#[test]
+fn test_unlinkat() {
+    let tempdir = TempDir::new("nix-test_unlinkat").unwrap();
+    let dirfd = fcntl::open(tempdir.path(),
+                            fcntl::OFlag::empty(),
+                            stat::Mode::empty());
+    let file = tempdir.path().join("foo");
+    File::create(&file).unwrap();
+
+    unlinkat(dirfd.unwrap(),
+            &file.file_name(),
+            fcntl::AtFlags::empty()).unwrap();
+    assert!(!file.exists());
+}
+
 #[cfg(any(target_os = "linux", target_os = "android"))]
 #[test]
 fn test_lseek64() {
@@ -249,6 +298,36 @@ fn test_fpathconf_limited() {
     let path_max = fpathconf(f.as_raw_fd(), PathconfVar::PATH_MAX);
     assert!(path_max.expect("fpathconf failed").expect("PATH_MAX is unlimited") > 0);
 }
+
+#[test]
+fn test_linkat() {
+    let tempdir = TempDir::new("nix-test_linkat").unwrap();
+    let src = tempdir.path().join("foo");
+    let dst = tempdir.path().join("bar");
+    File::create(&src).unwrap();
+
+    let dirfd = fcntl::open(tempdir.path(),
+                            fcntl::OFlag::empty(),
+                            stat::Mode::empty());
+    linkat(dirfd.unwrap(),
+           &src.file_name(),
+           dirfd.unwrap(),
+           &dst.file_name(),
+           fcntl::AtFlags::empty()).unwrap();
+    assert!(dst.exists());
+}
+
+#[test]
+fn test_link() {
+    let tempdir = TempDir::new("nix-test_link").unwrap();
+    let src = tempdir.path().join("foo");
+    let dst = tempdir.path().join("bar");
+    File::create(&src).unwrap();
+
+    link(&src, &dst).unwrap();
+    assert!(dst.exists());
+}
+
 
 #[test]
 fn test_pathconf_limited() {

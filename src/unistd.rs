@@ -2,7 +2,7 @@
 
 use errno;
 use {Errno, Error, Result, NixPath};
-use fcntl::{fcntl, OFlag, O_CLOEXEC, FD_CLOEXEC};
+use fcntl::{AtFlags, fcntl, OFlag, O_CLOEXEC, FD_CLOEXEC};
 use fcntl::FcntlArg::F_SETFD;
 use libc::{self, c_char, c_void, c_int, c_long, c_uint, size_t, pid_t, off_t,
            uid_t, gid_t, mode_t};
@@ -165,6 +165,15 @@ impl ForkResult {
     #[inline]
     pub fn is_parent(&self) -> bool {
         !self.is_child()
+    }
+}
+
+libc_bitflags!{
+    pub struct AccessMode: c_int {
+        R_OK;
+        W_OK;
+        X_OK;
+        F_OK
     }
 }
 
@@ -441,6 +450,16 @@ pub fn mkdir<P: ?Sized + NixPath>(path: &P, mode: Mode) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
+/// Create a directory
+/// ([see mkdirat(2)](http://man7.org/linux/man-pages/man2/mkdirat.2.html)). 
+pub fn mkdirat<P: ?Sized + NixPath>(dirfd: RawFd, pathname: &P, mode: Mode) -> Result<()> {
+    let res = try!(pathname.with_nix_path(|cstr| {
+        unsafe { libc::mkdirat(dirfd, cstr.as_ptr(), mode.bits() as mode_t) }
+    }));
+
+    Errno::result(res).map(drop)
+}
+
 /// Returns the current directory as a PathBuf
 ///
 /// Err is returned if the current user doesn't have the permission to read or search a component
@@ -492,6 +511,13 @@ pub fn getcwd() -> Result<PathBuf> {
     }
 }
 
+// According to the POSIX, -1 is used to indicate that
+// owner and group, respectively, are not to be changed. Since uid_t and
+// gid_t are unsigned types, we use wrapping_sub to get '-1'.
+fn optional_ownership(val: Option<u32>) -> u32 {
+    val.unwrap_or(0).wrapping_sub(1)
+}
+
 /// Change the ownership of the file at `path` to be owned by the specified
 /// `owner` (user) and `group` (see
 /// [chown(2)](http://man7.org/linux/man-pages/man2/lchown.2.html)).
@@ -506,12 +532,57 @@ pub fn getcwd() -> Result<PathBuf> {
 #[inline]
 pub fn chown<P: ?Sized + NixPath>(path: &P, owner: Option<Uid>, group: Option<Gid>) -> Result<()> {
     let res = try!(path.with_nix_path(|cstr| {
-        // According to the POSIX specification, -1 is used to indicate that
-        // owner and group, respectively, are not to be changed. Since uid_t and
-        // gid_t are unsigned types, we use wrapping_sub to get '-1'.
-        unsafe { libc::chown(cstr.as_ptr(),
-                             owner.map(Into::into).unwrap_or((0 as uid_t).wrapping_sub(1)),
-                             group.map(Into::into).unwrap_or((0 as gid_t).wrapping_sub(1))) }
+        unsafe {
+            libc::chown(cstr.as_ptr(),
+                        optional_ownership(owner),
+                        optional_ownership(group))
+        }
+    }));
+
+    Errno::result(res).map(drop)
+}
+
+/// Change ownership of a file
+/// (see [lchown(2)](http://man7.org/linux/man-pages/man2/lchown.2.html)).
+pub fn lchown<P: ?Sized + NixPath>(path: &P, owner: Option<uid_t>, group: Option<gid_t>) -> Result<()> {
+    let res = try!(path.with_nix_path(|cstr| {
+        unsafe {
+            libc::lchown(cstr.as_ptr(),
+                         optional_ownership(owner),
+                         optional_ownership(group))
+        }
+    }));
+
+    Errno::result(res).map(drop)
+}
+
+/// Change ownership of a file
+/// (see [fchown(2)](http://man7.org/linux/man-pages/man2/fchown.2.html)).
+pub fn fchown(fd: RawFd, owner: Option<uid_t>, group: Option<gid_t>) -> Result<()> {
+    let res = unsafe {
+        libc::fchown(fd,
+                     optional_ownership(owner),
+                     optional_ownership(group))
+    };
+
+    Errno::result(res).map(drop)
+}
+
+/// Change ownership of a file
+/// (see [fchownat(2)](http://man7.org/linux/man-pages/man2/fchownat.2.html)).
+pub fn fchownat<P: ?Sized + NixPath>(dirfd: RawFd,
+                                     pathname: &P,
+                                     owner: Option<uid_t>,
+                                     group: Option<gid_t>, 
+                                     flags: AtFlags) -> Result<()> {
+    let res = try!(pathname.with_nix_path(|cstr| {
+        unsafe {
+            libc::fchownat(dirfd,
+                           cstr.as_ptr(),
+                           optional_ownership(owner),
+                           optional_ownership(group),
+                           flags.bits())
+        }
     }));
 
     Errno::result(res).map(drop)
@@ -812,6 +883,69 @@ pub fn lseek64(fd: RawFd, offset: libc::off64_t, whence: Whence) -> Result<libc:
     Errno::result(res).map(|r| r as libc::off64_t)
 }
 
+/// Call the link function to create a link to a file
+/// ([see link(2)](http://man7.org/linux/man-pages/man2/link.2.html)).
+pub fn link<P1: ?Sized + NixPath, P2: ?Sized + NixPath>(oldpath: &P1, newpath: &P2) -> Result<()> {
+    let res = try!(try!(oldpath.with_nix_path(|old|
+        newpath.with_nix_path(|new|
+            unsafe {
+                libc::link(old.as_ptr() as *const c_char, new.as_ptr() as *const c_char)
+            }
+        )
+    )));
+
+    Errno::result(res).map(drop)
+}
+
+/// Call the link function to create a link to a file
+/// ([see linkat(2)](http://man7.org/linux/man-pages/man2/linkat.2.html)).
+pub fn linkat<P1: ?Sized + NixPath, P2: ?Sized + NixPath>(olddirfd: RawFd, oldpath: &P1,
+                                                          newdirfd: RawFd, newpath: &P2, flags: AtFlags) -> Result<()> {
+    let res = try!(try!(oldpath.with_nix_path(|old|
+        newpath.with_nix_path(|new|
+            unsafe {
+                libc::linkat(olddirfd, old.as_ptr() as *const c_char,
+                             newdirfd, new.as_ptr() as *const c_char, flags.bits())
+            }
+        )
+    )));
+
+    Errno::result(res).map(drop)
+}
+
+/// Make a new name for a file
+/// ([see symlink(2)](http://man7.org/linux/man-pages/man2/symlink.2.html)).
+pub fn symlink<P1: ?Sized + NixPath, P2: ?Sized + NixPath>(target: &P1,
+                                                           linkpath: &P2) -> Result<()> {
+    let res = try!(try!(target.with_nix_path(|t|
+        linkpath.with_nix_path(|l|
+            unsafe {
+                libc::symlink(t.as_ptr() as *const c_char, l.as_ptr() as *const c_char)
+            }
+        )
+    )));
+
+    Errno::result(res).map(drop)
+}
+
+/// Make a new name for a file
+/// ([see symlinkat(2)](http://man7.org/linux/man-pages/man2/symlinkat.2.html)).
+pub fn symlinkat<P1: ?Sized + NixPath, P2: ?Sized + NixPath>(target: &P1,
+                                                             newdirfd: RawFd,
+                                                             linkpath: &P2) -> Result<()> {
+    let res = try!(try!(target.with_nix_path(|t|
+        linkpath.with_nix_path(|l|
+            unsafe {
+                libc::symlinkat(t.as_ptr() as *const c_char,
+                                newdirfd,
+                                l.as_ptr() as *const c_char)
+            }
+        )
+    )));
+
+    Errno::result(res).map(drop)
+}
+
 pub fn pipe() -> Result<(RawFd, RawFd)> {
     unsafe {
         let mut fds: [c_int; 2] = mem::uninitialized();
@@ -910,6 +1044,35 @@ pub fn unlink<P: ?Sized + NixPath>(path: &P) -> Result<()> {
         unsafe {
             libc::unlink(cstr.as_ptr())
         }
+    }));
+    Errno::result(res).map(drop)
+}
+
+/// Delete a name and possibly the file it refers to
+/// ([see unlinkat(2)](http://man7.org/linux/man-pages/man2/unlinkat.2.html)).
+pub fn unlinkat<P: ?Sized + NixPath>(fd: RawFd, pathname: &P, flags: AtFlags) -> Result<()> {
+    let res = try!(pathname.with_nix_path(|cstr| {
+        unsafe {
+            libc::unlinkat(fd, cstr.as_ptr(), flags.bits())
+        }
+    }));
+    Errno::result(res).map(drop)
+}
+
+/// Check user's permissions for a file
+/// ([see access(2)](http://man7.org/linux/man-pages/man2/access.2.html)).
+pub fn access<P: ?Sized + NixPath>(pathname: &P, mode: AccessMode) -> Result<()> {
+    let res = try!(pathname.with_nix_path(|cstr| {
+        unsafe { libc::access(cstr.as_ptr(), mode.bits()) }
+    }));
+    Errno::result(res).map(drop)
+}
+
+/// Check user's permissions for a file
+/// ([see faccessat(2)](http://man7.org/linux/man-pages/man2/faccessat.2.html)).
+pub fn faccessat<P: ?Sized + NixPath>(dirfd: RawFd, pathname: &P, mode: AccessMode, flags: AtFlags) -> Result<()> {
+    let res = try!(pathname.with_nix_path(|cstr| {
+        unsafe { libc::faccessat(dirfd, cstr.as_ptr(), mode.bits(), flags.bits()) }
     }));
     Errno::result(res).map(drop)
 }
