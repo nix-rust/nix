@@ -51,10 +51,14 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#744](https://github.com/nix-rust/nix/pull/744))
 - Moved constants ptrace request, event and options to enums and updated ptrace functions and argument types accordingly. 
   ([#749](https://github.com/nix-rust/nix/pull/749))
+- `AioCb::Drop` will now panic if the `AioCb` is still in-progress ([#715](https://github.com/nix-rust/nix/pull/715))
 
 # Fixed
 - Fix compilation and tests for OpenBSD targets
   ([#688](https://github.com/nix-rust/nix/pull/688))
+- Fixed error handling in `AioCb::fsync`, `AioCb::read`, and `AioCb::write`.
+  It is no longer an error to drop an `AioCb` that failed to enqueue in the OS.
+  ([#715](https://github.com/nix-rust/nix/pull/715))
 
 # Removed
 - The syscall module has been removed. This only exposed enough functionality for

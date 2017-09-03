@@ -4,8 +4,6 @@ use libc::{c_void, off_t, size_t};
 use libc;
 use std::fmt;
 use std::fmt::Debug;
-use std::io::Write;
-use std::io::stderr;
 use std::marker::PhantomData;
 use std::mem;
 use std::rc::Rc;
@@ -234,16 +232,22 @@ impl<'a> AioCb<'a> {
     /// An asynchronous version of `fsync`.
     pub fn fsync(&mut self, mode: AioFsyncMode) -> Result<()> {
         let p: *mut libc::aiocb = &mut self.aiocb;
-        self.in_progress = true;
-        Errno::result(unsafe { libc::aio_fsync(mode as libc::c_int, p) }).map(drop)
+        Errno::result(unsafe {
+                libc::aio_fsync(mode as libc::c_int, p)
+        }).map(|_| {
+            self.in_progress = true;
+        })
     }
 
     /// Asynchronously reads from a file descriptor into a buffer
     pub fn read(&mut self) -> Result<()> {
         assert!(self.mutable, "Can't read into an immutable buffer");
         let p: *mut libc::aiocb = &mut self.aiocb;
-        self.in_progress = true;
-        Errno::result(unsafe { libc::aio_read(p) }).map(drop)
+        Errno::result(unsafe {
+            libc::aio_read(p)
+        }).map(|_| {
+            self.in_progress = true;
+        })
     }
 
     /// Retrieve return status of an asynchronous operation.  Should only be
@@ -259,8 +263,11 @@ impl<'a> AioCb<'a> {
     /// Asynchronously writes from a buffer to a file descriptor
     pub fn write(&mut self) -> Result<()> {
         let p: *mut libc::aiocb = &mut self.aiocb;
-        self.in_progress = true;
-        Errno::result(unsafe { libc::aio_write(p) }).map(drop)
+        Errno::result(unsafe {
+            libc::aio_write(p)
+        }).map(|_| {
+            self.in_progress = true;
+        })
     }
 
 }
@@ -332,24 +339,8 @@ impl<'a> Debug for AioCb<'a> {
 
 impl<'a> Drop for AioCb<'a> {
     /// If the `AioCb` has no remaining state in the kernel, just drop it.
-    /// Otherwise, collect its error and return values, so as not to leak
-    /// resources.
+    /// Otherwise, dropping constitutes a resource leak, which is an error
     fn drop(&mut self) {
-        if self.in_progress {
-            // Well-written programs should never get here.  They should always
-            // wait for an AioCb to complete before dropping it
-            let _ = write!(stderr(), "WARNING: dropped an in-progress AioCb");
-            loop {
-                let ret = aio_suspend(&[&self], None);
-                match ret {
-                    Ok(()) => break,
-                    Err(Error::Sys(Errno::EINVAL)) => panic!(
-                        "Inconsistent AioCb.in_progress value"),
-                    Err(Error::Sys(Errno::EINTR)) => (),    // Retry interrupted syscall
-                    _ => panic!("Unexpected aio_suspend return value {:?}", ret)
-                };
-            }
-            let _ = self.aio_return();
-        }
+        assert!(!self.in_progress, "Dropped an in-progress AioCb");
     }
 }

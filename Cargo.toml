@@ -32,6 +32,10 @@ name = "test"
 path = "test/test.rs"
 
 [[test]]
+name = "test-aio-drop"
+path = "test/sys/test_aio_drop.rs"
+
+[[test]]
 name = "test-mount"
 path = "test/test_mount.rs"
 harness = false

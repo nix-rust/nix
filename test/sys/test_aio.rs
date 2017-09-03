@@ -88,6 +88,26 @@ fn test_fsync() {
     aiocb.aio_return().unwrap();
 }
 
+/// `AioCb::fsync` should not modify the `AioCb` object if libc::aio_fsync returns
+/// an error
+// Skip on Linux, because Linux's AIO implementation can't detect errors
+// synchronously
+#[test]
+#[cfg(any(target_os = "freebsd", target_os = "macos"))]
+fn test_fsync_error() {
+    use std::mem;
+
+    const INITIAL: &'static [u8] = b"abcdef123456";
+    // Create an invalid AioFsyncMode
+    let mode = unsafe { mem::transmute(666) };
+    let mut f = tempfile().unwrap();
+    f.write(INITIAL).unwrap();
+    let mut aiocb = AioCb::from_fd( f.as_raw_fd(),
+                            0,   //priority
+                            SigevNotify::SigevNone);
+    let err = aiocb.fsync(mode);
+    assert!(err.is_err());
+}
 
 #[test]
 #[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
@@ -154,6 +174,26 @@ fn test_read() {
     }
 
     assert!(EXPECT == rbuf.deref().deref());
+}
+
+/// `AioCb::read` should not modify the `AioCb` object if libc::aio_read returns
+/// an error
+// Skip on Linux, because Linux's AIO implementation can't detect errors
+// synchronously
+#[test]
+#[cfg(any(target_os = "freebsd", target_os = "macos"))]
+fn test_read_error() {
+    const INITIAL: &'static [u8] = b"abcdef123456";
+    let rbuf = Rc::new(vec![0; 4].into_boxed_slice());
+    let mut f = tempfile().unwrap();
+    f.write(INITIAL).unwrap();
+    let mut aiocb = AioCb::from_boxed_slice( f.as_raw_fd(),
+                           -1,   //an invalid offset
+                           rbuf.clone(),
+                           0,   //priority
+                           SigevNotify::SigevNone,
+                           LioOpcode::LIO_NOP);
+    assert!(aiocb.read().is_err());
 }
 
 // Tests from_mut_slice
@@ -228,6 +268,23 @@ fn test_write() {
     let len = f.read_to_end(&mut rbuf).unwrap();
     assert!(len == EXPECT.len());
     assert!(rbuf == EXPECT);
+}
+
+/// `AioCb::write` should not modify the `AioCb` object if libc::aio_write returns
+/// an error
+// Skip on Linux, because Linux's AIO implementation can't detect errors
+// synchronously
+#[test]
+#[cfg(any(target_os = "freebsd", target_os = "macos"))]
+fn test_write_error() {
+    let wbuf = "CDEF".to_string().into_bytes();
+    let mut aiocb = AioCb::from_slice( 666, // An invalid file descriptor
+                           0,   //offset
+                           &wbuf,
+                           0,   //priority
+                           SigevNotify::SigevNone,
+                           LioOpcode::LIO_NOP);
+    assert!(aiocb.write().is_err());
 }
 
 lazy_static! {
@@ -441,32 +498,4 @@ fn test_lio_listio_read_immutable() {
                            SigevNotify::SigevNone,
                            LioOpcode::LIO_READ);
     let _ = lio_listio(LioMode::LIO_NOWAIT, &[&mut rcb], SigevNotify::SigevNone);
-}
-
-// Test dropping an AioCb that hasn't yet finished.  Behind the scenes, the
-// library should wait for the AioCb's completion.
-#[test]
-#[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
-fn test_drop() {
-    const INITIAL: &'static [u8] = b"abcdef123456";
-    const WBUF: &'static [u8] = b"CDEF"; //"CDEF".to_string().into_bytes();
-    let mut rbuf = Vec::new();
-    const EXPECT: &'static [u8] = b"abCDEF123456";
-
-    let mut f = tempfile().unwrap();
-    f.write(INITIAL).unwrap();
-    {
-        let mut aiocb = AioCb::from_slice( f.as_raw_fd(),
-                               2,   //offset
-                               &WBUF,
-                               0,   //priority
-                               SigevNotify::SigevNone,
-                               LioOpcode::LIO_NOP);
-        aiocb.write().unwrap();
-    }
-
-    f.seek(SeekFrom::Start(0)).unwrap();
-    let len = f.read_to_end(&mut rbuf).unwrap();
-    assert!(len == EXPECT.len());
-    assert!(rbuf == EXPECT);
 }
