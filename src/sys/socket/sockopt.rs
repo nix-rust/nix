@@ -1,4 +1,4 @@
-use super::{ffi, GetSockOpt, SetSockOpt};
+use super::{GetSockOpt, SetSockOpt};
 use {Errno, Result};
 use sys::time::TimeVal;
 use libc::{self, c_int, uint8_t, c_void, socklen_t};
@@ -14,9 +14,9 @@ macro_rules! setsockopt_impl {
                 unsafe {
                     let setter: $setter = Set::new(val);
 
-                    let res = ffi::setsockopt(fd, $level, $flag,
-                                              setter.ffi_ptr(),
-                                              setter.ffi_len());
+                    let res = libc::setsockopt(fd, $level, $flag,
+                                               setter.ffi_ptr(),
+                                               setter.ffi_len());
                     Errno::result(res).map(drop)
                 }
             }
@@ -33,9 +33,9 @@ macro_rules! getsockopt_impl {
                 unsafe {
                     let mut getter: $getter = Get::blank();
 
-                    let res = ffi::getsockopt(fd, $level, $flag,
-                                              getter.ffi_ptr(),
-                                              getter.ffi_len());
+                    let res = libc::getsockopt(fd, $level, $flag,
+                                               getter.ffi_ptr(),
+                                               getter.ffi_len());
                     try!(Errno::result(res));
 
                     Ok(getter.unwrap())

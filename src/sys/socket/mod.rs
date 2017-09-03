@@ -466,7 +466,7 @@ pub fn socket<T: Into<Option<SockProtocol>>>(domain: AddressFamily, ty: SockType
     }
 
     // TODO: Check the kernel version
-    let res = try!(Errno::result(unsafe { ffi::socket(domain as c_int, ty, protocol) }));
+    let res = try!(Errno::result(unsafe { libc::socket(domain as c_int, ty, protocol) }));
 
     #[cfg(any(target_os = "android",
               target_os = "dragonfly",
@@ -509,7 +509,7 @@ pub fn socketpair<T: Into<Option<SockProtocol>>>(domain: AddressFamily, ty: Sock
     }
     let mut fds = [-1, -1];
     let res = unsafe {
-        ffi::socketpair(domain as c_int, ty, protocol, fds.as_mut_ptr())
+        libc::socketpair(domain as c_int, ty, protocol, fds.as_mut_ptr())
     };
     try!(Errno::result(res));
 
@@ -542,7 +542,7 @@ pub fn socketpair<T: Into<Option<SockProtocol>>>(domain: AddressFamily, ty: Sock
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/listen.2.html)
 pub fn listen(sockfd: RawFd, backlog: usize) -> Result<()> {
-    let res = unsafe { ffi::listen(sockfd, backlog as c_int) };
+    let res = unsafe { libc::listen(sockfd, backlog as c_int) };
 
     Errno::result(res).map(drop)
 }
@@ -554,7 +554,7 @@ pub fn listen(sockfd: RawFd, backlog: usize) -> Result<()> {
 pub fn bind(fd: RawFd, addr: &SockAddr) -> Result<()> {
     let res = unsafe {
         let (ptr, len) = addr.as_ffi_pair();
-        ffi::bind(fd, ptr, len)
+        libc::bind(fd, ptr, len)
     };
 
     Errno::result(res).map(drop)
@@ -569,7 +569,7 @@ pub fn bind(fd: RawFd, addr: &SockAddr) -> Result<()> {
 pub fn bind(fd: RawFd, addr: &SockAddr) -> Result<()> {
     let res = unsafe {
         let (ptr, len) = addr.as_ffi_pair();
-        ffi::bind(fd, ptr, len as c_int)
+        libc::bind(fd, ptr, len as c_int)
     };
 
     Errno::result(res).map(drop)
@@ -579,7 +579,7 @@ pub fn bind(fd: RawFd, addr: &SockAddr) -> Result<()> {
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/accept.2.html)
 pub fn accept(sockfd: RawFd) -> Result<RawFd> {
-    let res = unsafe { ffi::accept(sockfd, ptr::null_mut(), ptr::null_mut()) };
+    let res = unsafe { libc::accept(sockfd, ptr::null_mut(), ptr::null_mut()) };
 
     Errno::result(res)
 }
@@ -593,7 +593,7 @@ pub fn accept4(sockfd: RawFd, flags: SockFlag) -> Result<RawFd> {
 
 #[inline]
 fn accept4_polyfill(sockfd: RawFd, flags: SockFlag) -> Result<RawFd> {
-    let res = try!(Errno::result(unsafe { ffi::accept(sockfd, ptr::null_mut(), ptr::null_mut()) }));
+    let res = try!(Errno::result(unsafe { libc::accept(sockfd, ptr::null_mut(), ptr::null_mut()) }));
 
     #[cfg(any(target_os = "android",
               target_os = "dragonfly",
@@ -635,7 +635,7 @@ fn accept4_polyfill(sockfd: RawFd, flags: SockFlag) -> Result<RawFd> {
 pub fn connect(fd: RawFd, addr: &SockAddr) -> Result<()> {
     let res = unsafe {
         let (ptr, len) = addr.as_ffi_pair();
-        ffi::connect(fd, ptr, len)
+        libc::connect(fd, ptr, len)
     };
 
     Errno::result(res).map(drop)
@@ -682,7 +682,7 @@ pub fn recvfrom(sockfd: RawFd, buf: &mut [u8]) -> Result<(usize, SockAddr)> {
 pub fn sendto(fd: RawFd, buf: &[u8], addr: &SockAddr, flags: MsgFlags) -> Result<usize> {
     let ret = unsafe {
         let (ptr, len) = addr.as_ffi_pair();
-        ffi::sendto(fd, buf.as_ptr() as *const c_void, buf.len() as size_t, flags.bits(), ptr, len)
+        libc::sendto(fd, buf.as_ptr() as *const c_void, buf.len() as size_t, flags.bits(), ptr, len)
     };
 
     Errno::result(ret).map(|r| r as usize)
@@ -693,7 +693,7 @@ pub fn sendto(fd: RawFd, buf: &[u8], addr: &SockAddr, flags: MsgFlags) -> Result
 /// [Further reading](http://man7.org/linux/man-pages/man2/send.2.html)
 pub fn send(fd: RawFd, buf: &[u8], flags: MsgFlags) -> Result<usize> {
     let ret = unsafe {
-        ffi::send(fd, buf.as_ptr() as *const c_void, buf.len() as size_t, flags.bits())
+        libc::send(fd, buf.as_ptr() as *const c_void, buf.len() as size_t, flags.bits())
     };
 
     Errno::result(ret).map(|r| r as usize)
@@ -775,7 +775,7 @@ pub fn getpeername(fd: RawFd) -> Result<SockAddr> {
         let addr: sockaddr_storage = mem::uninitialized();
         let mut len = mem::size_of::<sockaddr_storage>() as socklen_t;
 
-        let ret = ffi::getpeername(fd, mem::transmute(&addr), &mut len);
+        let ret = libc::getpeername(fd, mem::transmute(&addr), &mut len);
 
         try!(Errno::result(ret));
 
@@ -791,7 +791,7 @@ pub fn getsockname(fd: RawFd) -> Result<SockAddr> {
         let addr: sockaddr_storage = mem::uninitialized();
         let mut len = mem::size_of::<sockaddr_storage>() as socklen_t;
 
-        let ret = ffi::getsockname(fd, mem::transmute(&addr), &mut len);
+        let ret = libc::getsockname(fd, mem::transmute(&addr), &mut len);
 
         try!(Errno::result(ret));
 
