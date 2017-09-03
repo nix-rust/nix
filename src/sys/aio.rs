@@ -232,16 +232,22 @@ impl<'a> AioCb<'a> {
     /// An asynchronous version of `fsync`.
     pub fn fsync(&mut self, mode: AioFsyncMode) -> Result<()> {
         let p: *mut libc::aiocb = &mut self.aiocb;
-        self.in_progress = true;
-        Errno::result(unsafe { libc::aio_fsync(mode as libc::c_int, p) }).map(drop)
+        Errno::result(unsafe {
+                libc::aio_fsync(mode as libc::c_int, p)
+        }).map(|_| {
+            self.in_progress = true;
+        })
     }
 
     /// Asynchronously reads from a file descriptor into a buffer
     pub fn read(&mut self) -> Result<()> {
         assert!(self.mutable, "Can't read into an immutable buffer");
         let p: *mut libc::aiocb = &mut self.aiocb;
-        self.in_progress = true;
-        Errno::result(unsafe { libc::aio_read(p) }).map(drop)
+        Errno::result(unsafe {
+            libc::aio_read(p)
+        }).map(|_| {
+            self.in_progress = true;
+        })
     }
 
     /// Retrieve return status of an asynchronous operation.  Should only be
@@ -257,8 +263,11 @@ impl<'a> AioCb<'a> {
     /// Asynchronously writes from a buffer to a file descriptor
     pub fn write(&mut self) -> Result<()> {
         let p: *mut libc::aiocb = &mut self.aiocb;
-        self.in_progress = true;
-        Errno::result(unsafe { libc::aio_write(p) }).map(drop)
+        Errno::result(unsafe {
+            libc::aio_write(p)
+        }).map(|_| {
+            self.in_progress = true;
+        })
     }
 
 }
