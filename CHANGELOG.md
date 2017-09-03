@@ -55,6 +55,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 # Fixed
 - Fix compilation and tests for OpenBSD targets
   ([#688](https://github.com/nix-rust/nix/pull/688))
+- Fixed receiving multiple File Descriptors over a Unix Socket
+  ([#473](https://github.com/nix-rust/nix/pull/473))
 
 # Removed
 - The syscall module has been removed. This only exposed enough functionality for

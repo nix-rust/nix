@@ -234,3 +234,90 @@ pub fn test_syscontrol() {
     // requires root privileges
     // connect(fd, &sockaddr).expect("connect failed");
 }
+
+#[test]
+fn test_scm_rights_multiple_fd() {
+    use std::os::unix::net::UnixDatagram;
+    use std::os::unix::io::{RawFd, AsRawFd};
+    use std::thread;
+    use nix::sys::socket::{CmsgSpace, ControlMessage, MsgFlags, sendmsg, recvmsg};
+    use nix::sys::uio::IoVec;
+
+    let (send, receive) = UnixDatagram::pair().unwrap();
+    let thread = thread::spawn(move || {
+        let mut buf = [0u8; 8];
+        let iovec = [IoVec::from_mut_slice(&mut buf)];
+        let mut space = CmsgSpace::<[RawFd; 2]>::new();
+        let (data, fds) = match recvmsg(receive.as_raw_fd(), &iovec, Some(&mut space), MsgFlags::empty()) {
+            Ok(msg) => {
+                let mut iter = msg.cmsgs();
+                if let Some(ControlMessage::ScmRights(fds)) = iter.next() {
+                    (iovec[0].as_slice(), fds.to_vec())
+                } else {
+                    panic!();
+                }
+            },
+            Err(_) => {
+                panic!();
+            }
+        };
+        assert_eq!(data, [1u8, 2u8, 3u8, 4u8, 5u8, 6u8, 7u8, 8u8]);
+        assert_eq!(fds.len(), 2);
+    });
+
+    let slice = [1u8, 2u8, 3u8, 4u8, 5u8, 6u8, 7u8, 8u8];
+    let iov = [IoVec::from_slice(&slice)];
+    let arr = [0, 1]; // Pass stdin and stdout
+    let cmsg = [ControlMessage::ScmRights(&arr)];
+    sendmsg(send.as_raw_fd(), &iov, &cmsg, MsgFlags::empty(), None).unwrap();
+    thread.join().unwrap();
+}
+
+// Still buggy. See https://github.com/nix-rust/nix/issues/756
+#[test]
+#[ignore]
+fn test_scm_rights_multiple_cmsg() {
+    use std::os::unix::net::UnixDatagram;
+    use std::os::unix::io::{RawFd, AsRawFd};
+    use std::thread;
+    use nix::sys::socket::{CmsgSpace, ControlMessage, MsgFlags, sendmsg, recvmsg};
+    use nix::sys::uio::IoVec;
+
+    let (send, receive) = UnixDatagram::pair().unwrap();
+    let thread = thread::spawn(move || {
+        let mut buf = [0u8; 8];
+        let iovec = [IoVec::from_mut_slice(&mut buf)];
+        let mut space = CmsgSpace::<([RawFd; 1], CmsgSpace<[RawFd; 1]>)>::new();
+        let (data, fds) = match recvmsg(receive.as_raw_fd(), &iovec, Some(&mut space), MsgFlags::empty()) {
+            Ok(msg) => {
+                let mut iter = msg.cmsgs();
+                let fdone;
+                let fdtwo;
+                if let Some(ControlMessage::ScmRights(fds)) = iter.next() {
+                    fdone = fds[0];
+                } else {
+                    panic!();
+                }
+                if let Some(ControlMessage::ScmRights(fds)) = iter.next() {
+                    fdtwo = fds[0];
+                } else {
+                    panic!();
+                }
+                (iovec[0].as_slice(), [fdone, fdtwo])
+            },
+            Err(_) => {
+                panic!();
+            }
+        };
+        assert_eq!(data, [1u8, 2u8, 3u8, 4u8, 5u8, 6u8, 7u8, 8u8]);
+        assert_eq!(fds.len(), 2);
+    });
+
+    let slice = [1u8, 2u8, 3u8, 4u8, 5u8, 6u8, 7u8, 8u8];
+    let iov = [IoVec::from_slice(&slice)];
+    let arrone = [0];
+    let arrtwo = [1]; // pass stdin and stdout
+    let cmsg = [ControlMessage::ScmRights(&arrone), ControlMessage::ScmRights(&arrtwo)];
+    sendmsg(send.as_raw_fd(), &iov, &cmsg, MsgFlags::empty(), None).unwrap();
+    thread.join().unwrap();
+}
