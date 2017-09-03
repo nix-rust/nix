@@ -442,31 +442,3 @@ fn test_lio_listio_read_immutable() {
                            LioOpcode::LIO_READ);
     let _ = lio_listio(LioMode::LIO_NOWAIT, &[&mut rcb], SigevNotify::SigevNone);
 }
-
-// Test dropping an AioCb that hasn't yet finished.  Behind the scenes, the
-// library should wait for the AioCb's completion.
-#[test]
-#[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
-fn test_drop() {
-    const INITIAL: &'static [u8] = b"abcdef123456";
-    const WBUF: &'static [u8] = b"CDEF"; //"CDEF".to_string().into_bytes();
-    let mut rbuf = Vec::new();
-    const EXPECT: &'static [u8] = b"abCDEF123456";
-
-    let mut f = tempfile().unwrap();
-    f.write(INITIAL).unwrap();
-    {
-        let mut aiocb = AioCb::from_slice( f.as_raw_fd(),
-                               2,   //offset
-                               &WBUF,
-                               0,   //priority
-                               SigevNotify::SigevNone,
-                               LioOpcode::LIO_NOP);
-        aiocb.write().unwrap();
-    }
-
-    f.seek(SeekFrom::Start(0)).unwrap();
-    let len = f.read_to_end(&mut rbuf).unwrap();
-    assert!(len == EXPECT.len());
-    assert!(rbuf == EXPECT);
-}
