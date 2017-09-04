@@ -76,7 +76,7 @@ fn test_stat_and_fstat() {
 
 #[test]
 fn test_fstatat() {
-    let tempdir = TempDir::new("nix-test_stat_and_fstat").unwrap();
+    let tempdir = TempDir::new("nix-test_fstatat").unwrap();
     let filename = tempdir.path().join("foo.txt");
     File::create(&filename).unwrap();
     let dirfd = fcntl::open(tempdir.path(),
