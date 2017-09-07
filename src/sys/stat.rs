@@ -121,3 +121,35 @@ pub fn fstatat<P: ?Sized + NixPath>(dirfd: RawFd, pathname: &P, f: AtFlags) -> R
     Ok(dst)
 }
 
+/// Change permissions of a file 
+/// ([see chmod(2)](http://man7.org/linux/man-pages/man2/chmod.2.html)).
+pub fn chmod<P: ?Sized + NixPath>(pathname: &P, mode: Mode) -> Result<()> {
+    let res = try!(pathname.with_nix_path(|cstr| {
+        unsafe { libc::chmod(cstr.as_ptr(), mode.bits()) }
+    }));
+
+    Errno::result(res).map(drop)
+}
+
+/// Change permissions of a file 
+/// ([see fchmod(2)](http://man7.org/linux/man-pages/man2/fchmod.2.html)).
+pub fn fchmod(fd: RawFd, mode: Mode) -> Result<()> {
+    let res = unsafe { libc::fchmod(fd, mode.bits()) };
+
+    Errno::result(res).map(drop)
+}
+
+/// Change permissions of a file 
+/// ([see fchmodat(2)](http://man7.org/linux/man-pages/man2/fchmodat.2.html)).
+pub fn fchmodat<P: ?Sized + NixPath>(dirfd: RawFd, pathname: &P, mode: Mode, flags: AtFlags) -> Result<()> {
+    let res = try!(pathname.with_nix_path(|cstr| {
+        unsafe {
+            libc::fchmodat(dirfd,
+                           cstr.as_ptr(),
+                           mode.bits(),
+                           flags.bits())
+        }
+    }));
+
+    Errno::result(res).map(drop)
+}
