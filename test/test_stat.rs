@@ -76,7 +76,7 @@ fn test_stat_and_fstat() {
 
 #[test]
 fn test_fstatat() {
-    let tempdir = TempDir::new("nix-test_stat_and_fstat").unwrap();
+    let tempdir = TempDir::new("nix-test_fstatat").unwrap();
     let filename = tempdir.path().join("foo.txt");
     File::create(&filename).unwrap();
     let dirfd = fcntl::open(tempdir.path(),
@@ -101,7 +101,7 @@ fn test_stat_fstat_lstat() {
 
     // should be the same result as calling stat,
     // since it's a regular file
-    let stat_result = lstat(&filename);
+    let stat_result = stat(&filename);
     assert_stat_results(stat_result);
 
     let lstat_result = lstat(&linkname);
