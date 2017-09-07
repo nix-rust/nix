@@ -24,6 +24,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#739](https://github.com/nix-rust/nix/pull/739))
 - Added nix::sys::ptrace::detach. 
   ([#749](https://github.com/nix-rust/nix/pull/749))
+- Added `nix::unistd::{chown, lchown, fchown, fchownat}`
+  ([#760](https://github.com/nix-rust/nix/pull/760))
 
 ### Changed
 - Renamed existing `ptrace` wrappers to encourage namespacing ([#692](https://github.com/nix-rust/nix/pull/692))

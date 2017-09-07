@@ -492,6 +492,17 @@ pub fn getcwd() -> Result<PathBuf> {
     }
 }
 
+// According to the POSIX, -1 is used to indicate that
+// owner and group, respectively, are not to be changed. Since uid_t and
+// gid_t are unsigned types, we use wrapping_sub to get '-1'.
+fn optional_user(val: Option<Uid>) -> u32 {
+    uid_t::from(val.unwrap_or(Uid(0))).wrapping_sub(1)
+}
+
+fn optional_group(val: Option<Gid>) -> u32 {
+    gid_t::from(val.unwrap_or(Gid(0))).wrapping_sub(1)
+}
+
 /// Change the ownership of the file at `path` to be owned by the specified
 /// `owner` (user) and `group` (see
 /// [chown(2)](http://man7.org/linux/man-pages/man2/lchown.2.html)).
@@ -506,12 +517,57 @@ pub fn getcwd() -> Result<PathBuf> {
 #[inline]
 pub fn chown<P: ?Sized + NixPath>(path: &P, owner: Option<Uid>, group: Option<Gid>) -> Result<()> {
     let res = try!(path.with_nix_path(|cstr| {
-        // According to the POSIX specification, -1 is used to indicate that
-        // owner and group, respectively, are not to be changed. Since uid_t and
-        // gid_t are unsigned types, we use wrapping_sub to get '-1'.
-        unsafe { libc::chown(cstr.as_ptr(),
-                             owner.map(Into::into).unwrap_or((0 as uid_t).wrapping_sub(1)),
-                             group.map(Into::into).unwrap_or((0 as gid_t).wrapping_sub(1))) }
+        unsafe {
+            libc::chown(cstr.as_ptr(),
+                        optional_user(owner),
+                        optional_group(group))
+        }
+    }));
+
+    Errno::result(res).map(drop)
+}
+
+/// Change ownership of a file
+/// (see [lchown(2)](http://man7.org/linux/man-pages/man2/lchown.2.html)).
+pub fn lchown<P: ?Sized + NixPath>(path: &P, owner: Option<Uid>, group: Option<Gid>) -> Result<()> {
+    let res = try!(path.with_nix_path(|cstr| {
+        unsafe {
+            libc::lchown(cstr.as_ptr(),
+                         optional_user(owner),
+                         optional_group(group))
+        }
+    }));
+
+    Errno::result(res).map(drop)
+}
+
+/// Change ownership of a file
+/// (see [fchown(2)](http://man7.org/linux/man-pages/man2/fchown.2.html)).
+pub fn fchown(fd: RawFd, owner: Option<Uid>, group: Option<Gid>) -> Result<()> {
+    let res = unsafe {
+        libc::fchown(fd,
+                     optional_user(owner),
+                     optional_group(group))
+    };
+
+    Errno::result(res).map(drop)
+}
+
+/// Change ownership of a file
+/// (see [fchownat(2)](http://man7.org/linux/man-pages/man2/fchownat.2.html)).
+pub fn fchownat<P: ?Sized + NixPath>(dirfd: RawFd,
+                                     pathname: &P,
+                                     owner: Option<Uid>,
+                                     group: Option<Gid>,
+                                     flags: AtFlags) -> Result<()> {
+    let res = try!(pathname.with_nix_path(|cstr| {
+        unsafe {
+            libc::fchownat(dirfd,
+                           cstr.as_ptr(),
+                           optional_user(owner),
+                           optional_group(group),
+                           flags.bits())
+        }
     }));
 
     Errno::result(res).map(drop)
