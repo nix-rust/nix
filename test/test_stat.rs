@@ -1,11 +1,12 @@
 use std::fs::File;
 use std::os::unix::fs::symlink;
 use std::os::unix::prelude::AsRawFd;
+use std::path::Path;
 
 use libc::{S_IFMT, S_IFLNK};
 
 use nix::fcntl;
-use nix::sys::stat::{self, stat, fstat, lstat};
+use nix::sys::stat::{self, stat, fstat, lstat, mknod};
 use nix::sys::stat::FileStat;
 use nix::Result;
 use tempdir::TempDir;
@@ -109,4 +110,29 @@ fn test_stat_fstat_lstat() {
 
     let fstat_result = fstat(link.as_raw_fd());
     assert_stat_results(fstat_result);
+}
+
+fn assert_fifo(path: &Path) {
+    let stats = stat(path).unwrap();
+    let typ = stat::SFlag::from_bits_truncate(stats.st_mode);
+    assert!(typ == stat::S_IFIFO);
+}
+
+#[test]
+fn test_mknod() {
+    let tempdir = TempDir::new("nix-test_mknodat").unwrap();
+    let mknod_fifo = tempdir.path().join("mknod");
+
+    mknod(&mknod_fifo, stat::S_IFIFO, stat::S_IRUSR, 0).unwrap();
+    assert_fifo(&mknod_fifo);
+}
+
+#[test]
+#[cfg(not(any(target_os = "ios", target_os = "macos")))]
+fn test_mknod_mknodat() {
+    let tempdir = TempDir::new("nix-test_mknodat").unwrap();
+    let mknodat_fifo = tempdir.path().join("mknodat");
+
+    stat::mknodat(&0, &mknodat_fifo, stat::S_IFIFO, stat::S_IRUSR, 0).unwrap();
+    assert_fifo(&mknodat_fifo);
 }
