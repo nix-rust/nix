@@ -12,6 +12,7 @@ extern crate tempfile;
 extern crate nix_test as nixtest;
 
 mod sys;
+mod test_dirent;
 mod test_fcntl;
 #[cfg(target_os = "linux")]
 mod test_mq;
