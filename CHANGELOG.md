@@ -24,6 +24,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#739](https://github.com/nix-rust/nix/pull/739))
 - Added nix::sys::ptrace::detach. 
   ([#749](https://github.com/nix-rust/nix/pull/749))
+- Added timestamp socket control message variant:
+  `nix::sys::socket::ControlMessage::ScmTimestamp`
+  ([#663](https://github.com/nix-rust/nix/pull/663))
+- Added socket option variant that enables the timestamp socket
+  control message: `nix::sys::socket::sockopt::ReceiveTimestamp`
+  ([#663](https://github.com/nix-rust/nix/pull/663))
 
 ### Changed
 - Renamed existing `ptrace` wrappers to encourage namespacing ([#692](https://github.com/nix-rust/nix/pull/692))
