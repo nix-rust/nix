@@ -1,5 +1,6 @@
 extern crate tempdir;
 
+use nix::fcntl;
 use nix::unistd::*;
 use nix::unistd::ForkResult::*;
 use nix::sys::wait::*;
@@ -249,6 +250,36 @@ fn test_fpathconf_limited() {
     let path_max = fpathconf(f.as_raw_fd(), PathconfVar::PATH_MAX);
     assert!(path_max.expect("fpathconf failed").expect("PATH_MAX is unlimited") > 0);
 }
+
+#[test]
+fn test_linkat() {
+    let tempdir = TempDir::new("nix-test_linkat").unwrap();
+    let src = tempdir.path().join("foo");
+    let dst = tempdir.path().join("bar");
+    File::create(&src).unwrap();
+
+    let dirfd = fcntl::open(tempdir.path(),
+                            fcntl::OFlag::empty(),
+                            stat::Mode::empty());
+    linkat(dirfd.unwrap(),
+           &src.file_name(),
+           dirfd.unwrap(),
+           &dst.file_name(),
+           fcntl::AtFlags::empty()).unwrap();
+    assert!(dst.exists());
+}
+
+#[test]
+fn test_link() {
+    let tempdir = TempDir::new("nix-test_link").unwrap();
+    let src = tempdir.path().join("foo");
+    let dst = tempdir.path().join("bar");
+    File::create(&src).unwrap();
+
+    link(&src, &dst).unwrap();
+    assert!(dst.exists());
+}
+
 
 #[test]
 fn test_pathconf_limited() {
