@@ -1,0 +1,250 @@
+//! `ifaddrs` provides a safe interface for the system's network interface data.
+//!
+//! The `InterfaceAddrs` struct provides access to the system's network 
+//! interface data. You can either iterate over it or consume it and convert 
+//! it into an `InterfaceMap` (a `HashMap<String, Vec<InterfaceAddr>>`) for 
+//! more convenient access by interface name.
+//!
+//! # Examples
+//!
+//! You can access the basic information of the system in a few lines.
+//! The following program prints all the known addresses.
+//!
+//! ```
+//! use nix::net::ifaddrs::InterfaceAddrs;
+//!
+//! let addrs = InterfaceAddrs::query_system()
+//!     .expect("System has no network interfaces.");
+//!
+//! for addr in addrs {
+//!     println!("{}: {:?}", addr.name, addr.address);
+//! }
+//! ```
+//!
+//! The `InterfaceFlags` struct provides access to info about the 
+//! state of an interface. This program prints the addresses of only
+//! interfaces which are up.
+//!
+//! ```
+//! use nix::net::ifaddrs::{InterfaceAddrs, if_flags};
+//!
+//! let addrs = InterfaceAddrs::query_system()
+//!     .expect("System has no network interfaces.");
+//!
+//! for addr in addrs {
+//!     if addr.flags.contains(if_flags::IFF_UP) {
+//!         println!("{}: {:?}", addr.name, addr.address);
+//!     }
+//! }
+//! ```
+//!
+//! You can convert the `InterfaceAddrs` struct into a `HashMap` easily.
+//! `InterfaceMap` is an alias for `HashMap<String, Vec<InterfaceAddr>>` for
+//! easier reference.
+//!
+//! ```
+//! use nix::net::ifaddrs::{InterfaceAddrs, InterfaceAddr, InterfaceMap};
+//! use std::collections::HashMap;
+//!
+//! let interfaces: InterfaceMap = 
+//!     InterfaceAddrs::query_system()
+//!     .expect("System has no network interfaces.")
+//!     .into(); // Convert to a hash map
+//!
+//! // Print all the addresses of the loopback interface
+//! if let Some(addrs) = interfaces.get("lo") {
+//!    println!("Loopback addresses:");
+//!    for addr in addrs {
+//!         println!("\t{:?}", addr);
+//!    }
+//! }
+//!     
+//! ```
+//!
+
+use libc;
+use std::net::{IpAddr};
+use std::ptr::null_mut;
+use std::ffi::CStr;
+use std::collections::HashMap;
+
+pub mod if_flags;
+use self::if_flags::InterfaceFlags;
+
+mod sockaddr;
+use self::sockaddr::sockaddr_to_ipaddr;
+
+pub type InterfaceMap = HashMap<String, Vec<InterfaceAddr>>;
+
+/// Represents a handle into the operating system's knowledge about network 
+/// interfaces present on the system. Allows the user to iterate over 
+/// interface configurations.
+pub struct InterfaceAddrs {
+    inner: *mut libc::ifaddrs,
+    current: Option<&'static libc::ifaddrs>,
+}
+
+impl InterfaceAddrs {
+    /// Produce an `InterfaceAddrs` from the system's information. Returns `None`
+    /// if there are no interfaces to be inspected.
+    pub fn query_system() -> Option<Self> {
+       let mut p = null_mut();
+
+       // UNSAFETY: Calling libc FFI function, which allocates memory and
+       // fills it with info about interfaces.
+       unsafe { libc::getifaddrs(&mut p); } 
+        
+       // UNSAFETY: *mut -> &'static mut. This is known to be either in valid memory
+       // or null based on the guarantees of getifaddrs()
+       return unsafe{ p.as_ref() }
+        .and_then(|r| Some(Self { inner: p, current: Some(r) }));
+    }
+
+}
+
+impl From<InterfaceAddrs> for HashMap<String, Vec<InterfaceAddr>> {
+    /// Collect an `InterfaceAddrs` into a `HashMap<String, InterfaceAddr>`.
+    fn from(ia: InterfaceAddrs) -> HashMap<String, Vec<InterfaceAddr>> {
+        let mut m = HashMap::new();
+        for i in ia {
+            if !m.contains_key(&i.name) {
+                m.insert(i.name.clone(), Vec::new()); 
+            }
+            // Unwrap here because contains is checked above
+            m.get_mut(&i.name).unwrap().push(i); 
+        }
+
+        m
+    }
+}
+
+impl Drop for InterfaceAddrs {
+    fn drop(&mut self) {
+        // UNSAFETY: Calling libc FFI function which frees previously allocated
+        // memory.
+        unsafe {
+            // Ask the libc to drop free the memory it allocated when the struct
+            // was created.
+            libc::freeifaddrs(self.inner as *mut libc::ifaddrs);
+        }
+    }
+}
+
+
+/// Represents the configuration and state of a network interface.
+/// Interfaces are uniquely identified by name, and each interface is likely
+/// to be referred to multiple times, e.g. one for IPv4 and one for IPv6.
+#[derive(Debug, Clone)]
+pub struct InterfaceAddr {
+    /// The name of the interface
+    pub name: String,
+
+    /// The address assigned to the interface for this protocol.
+    /// A value of `None` means the libc reported a type of IP address that 
+    /// `std::net` doesn't understand.
+    pub address: Option<IpAddr>,
+
+    /// The netmasks assigned to the interface for this protocol. 
+    /// A value of `None` means the libc reported a type of IP address that 
+    /// `std::net` doesn't understand.
+    pub netmask: Option<IpAddr>,
+
+    /// The ifu assigned to the interface for this protocol. 
+    /// A value of `None` means the libc reported a type of IP address that 
+    /// `std::net` doesn't understand.
+    pub ifu: InterfaceIfu,
+
+    /// Flags regarding the interface's behaviour and state
+    pub flags: InterfaceFlags,
+}
+
+/// Represents the ifu of an interface: either its broadcast address or
+/// point-to-point destination address. 
+#[derive(Debug, Clone)]
+pub enum InterfaceIfu {
+    BroadcastAddr(Option<IpAddr>),
+    DestinationAddr(Option<IpAddr>),
+    Neither,
+}
+
+
+impl Iterator for InterfaceAddrs {
+    type Item = InterfaceAddr;
+    fn next(&mut self) -> Option<InterfaceAddr> {
+        // If the current ifaddrs is None, there are no more ifaddrs to inspect
+        if self.current.is_none() {
+            return None;
+        }
+
+        // Workaround for the borrow checker being overzealous
+        // (without ptr_temp, p would technically "still be in use" when the
+        // loop ends, meaning we couldn't advance to the next struct)
+        let ptr_temp = self.current.clone();
+        let p = ptr_temp.as_ref().unwrap();
+
+        // Get a pointer to the interface's name
+        let name_ptr = p.ifa_name;
+        // Check that name_ptr isn't null.
+        if name_ptr.is_null() {
+            panic!("getifaddrs() gave an ifaddrs struct with a null ifa_name");
+        }
+        
+        // UNSAFETY: Constructing CStr from pointer. If this pointer is
+        // null it's a libc bug; it's checked above.
+        let name = unsafe { CStr::from_ptr(name_ptr)
+            .to_string_lossy()
+            .into_owned()};
+
+        // Interpret the flags field into a typed version of those flags
+        let flags = InterfaceFlags::from_bits_truncate(p.ifa_flags);
+    
+        // Get std::net::IpAddr representations of the address and netmask
+        // UNSAFETY: sockaddr_to_ipaddr requires valid pointer.
+        let address = unsafe { sockaddr_to_ipaddr(p.ifa_addr) };
+        // UNSAFETY: sockaddr_to_ipaddr requires valid pointer.
+        let netmask = unsafe { sockaddr_to_ipaddr(p.ifa_netmask) };
+
+        // Figure out which ifu type is needed and create it
+        let ifu = if flags.contains(if_flags::IFF_POINTOPOINT) {
+            // Point to point destination address
+            // UNSAFETY: sockaddr_to_ipaddr requires valid pointer.
+            let ifu_addr = unsafe { sockaddr_to_ipaddr(p.ifa_ifu) };
+            InterfaceIfu::DestinationAddr(ifu_addr)
+        } else if flags.contains(if_flags::IFF_BROADCAST) {
+            // Broadcast address
+            // UNSAFETY: sockaddr_to_ipaddr requires valid pointer.
+            let ifu_addr = unsafe { sockaddr_to_ipaddr(p.ifa_ifu) };
+            InterfaceIfu::BroadcastAddr(ifu_addr)
+        } else { InterfaceIfu::Neither };
+
+        // Move along the list to the next ifaddrs struct
+        // UNSAFETY: *mut -> Option<&'static mut>. 
+        // This is known to be in valid memory or null.
+        self.current = unsafe { p.ifa_next.as_ref() };
+    
+        Some(InterfaceAddr {
+            name: name,
+            address: address,
+            netmask: netmask,
+            ifu: ifu,
+            flags: flags,
+        })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn tests_get_if_addrs() {
+        let ifs = super::InterfaceAddrs::query_system().unwrap();
+        for i in ifs {
+            println!("{}:", i.name);
+            println!("\tADDR {:?}, MASK {:?}, IFU {:?}\n\t{:?}", 
+                     i.address, 
+                     i.netmask, 
+                     i.ifu,
+                     i.flags);
+        }
+    }
+}
+
