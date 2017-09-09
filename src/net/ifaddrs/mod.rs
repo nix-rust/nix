@@ -14,7 +14,7 @@
 //! use nix::net::ifaddrs::InterfaceAddrs;
 //!
 //! let addrs = InterfaceAddrs::getifaddrs()
-//!     .expect("System has no network interfaces.");
+//!     .expect("Failed to enumerate network interfaces.");
 //!
 //! for addr in addrs {
 //!     println!("{}: {:?}", addr.name, addr.address);
@@ -29,7 +29,7 @@
 //! use nix::net::ifaddrs::{InterfaceAddrs, iff_flags};
 //!
 //! let addrs = InterfaceAddrs::getifaddrs()
-//!     .expect("System has no network interfaces.");
+//!     .expect("Failed to eunmerate network interfaces.");
 //!
 //! for addr in addrs {
 //!     if addr.flags.contains(iff_flags::IFF_UP) {
@@ -48,7 +48,7 @@
 //!
 //! let interfaces: InterfaceMap =
 //!     InterfaceAddrs::getifaddrs()
-//!     .expect("System has no network interfaces.")
+//!     .expect("Failed to enumerate network interfaces.")
 //!     .into(); // Convert to a hash map
 //!
 //! // Print all the addresses of the loopback interface
@@ -67,6 +67,9 @@ use std::net::IpAddr;
 use std::ptr::null_mut;
 use std::ffi::CStr;
 use std::collections::HashMap;
+use errno::{Errno, errno};
+use Error;
+use Result;
 
 pub mod iff_flags;
 use self::iff_flags::IffFlags;
@@ -85,23 +88,24 @@ pub struct InterfaceAddrs {
 }
 
 impl InterfaceAddrs {
-    /// Produce an `InterfaceAddrs` from the system's information. Returns `None`
-    /// if there are no interfaces to be inspected.
-    pub fn getifaddrs() -> Option<Self> {
+    /// Produce an `InterfaceAddrs` from the system's information.
+    pub fn getifaddrs() -> Result<Self> {
         let mut p = null_mut();
 
         unsafe {
             libc::getifaddrs(&mut p);
         }
 
-        // UNSAFETY: *mut -> &'static mut. This is known to be either in valid memory
-        // or null based on the guarantees of getifaddrs()
-        return unsafe { p.as_ref() }.and_then(|r| {
-            Some(Self {
+        // UNSAFETY: *mut -> &'static mut. This is known to be either in valid
+        // memory or null based on the guarantees of getifaddrs()
+        match unsafe { p.as_ref() } {
+            Some(r) => Ok(Self {
                 inner: p,
                 current: Some(r),
-            })
-        });
+            }),
+
+            None => Err(Error::from(Errno::from_i32(errno()))),
+        }
     }
 }
 
