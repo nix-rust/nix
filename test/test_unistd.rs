@@ -128,8 +128,15 @@ mod linux_android {
 fn test_setgroups() {
     // Skip this test when not run as root as `setgroups()` requires root.
     if !Uid::current().is_root() {
+        use std::io;
+        let stderr = io::stderr();
+        let mut handle = stderr.lock();
+        writeln!(handle, "test_setgroups requires root privileges. Skipping test.").unwrap();
         return
     }
+
+    #[allow(unused_variables)]
+    let m = ::GROUPS_MTX.lock().expect("Mutex got poisoned by another test");
 
     // Save the existing groups
     let old_groups = getgroups().unwrap();
@@ -152,8 +159,15 @@ fn test_initgroups() {
     // Skip this test when not run as root as `initgroups()` and `setgroups()`
     // require root.
     if !Uid::current().is_root() {
+        use std::io;
+        let stderr = io::stderr();
+        let mut handle = stderr.lock();
+        writeln!(handle, "test_initgroups requires root privileges. Skipping test.").unwrap();
         return
     }
+
+    #[allow(unused_variables)]
+    let m = ::GROUPS_MTX.lock().expect("Mutex got poisoned by another test");
 
     // Save the existing groups
     let old_groups = getgroups().unwrap();
