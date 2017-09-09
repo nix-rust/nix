@@ -48,4 +48,3 @@ bitflags! {
         const IFF_ECHO = 1<<18;
     }
 }
-
