@@ -2,7 +2,7 @@ use libc;
 use libc::c_uint;
 
 bitflags! {
-    pub struct InterfaceFlags: c_uint {
+    pub struct IffFlags: c_uint {
         /// Interface is running.
         const IFF_UP = libc::IFF_UP as c_uint;
         /// Valid broadcast address set.
@@ -35,10 +35,15 @@ bitflags! {
         const IFF_AUTOMEDIA = libc::IFF_AUTOMEDIA as c_uint;
         /// The addresses are lost when the interface goes down.
         const IFF_DYNAMIC = libc::IFF_DYNAMIC as c_uint;
+
+        // These flags are available on modern Linuxes
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         /// Driver signals L1 up (since Linux 2.6.17)
         const IFF_LOWER_UP = 1<<16;
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         /// Driver signals dormant (since Linux 2.6.17)
         const IFF_DORMANT = 1<<17;
+        #[cfg(any(target_os = "linux", target_os = "android"))]
         /// Echo sent packets (since Linux 2.6.25)
         const IFF_ECHO = 1<<18;
     }
