@@ -63,7 +63,6 @@
 //!
 
 use libc;
-use std::net::IpAddr;
 use std::ptr::null_mut;
 use std::ffi::CStr;
 use std::collections::HashMap;
@@ -75,7 +74,7 @@ pub mod iff_flags;
 use self::iff_flags::IffFlags;
 
 mod sockaddr;
-use self::sockaddr::sockaddr_to_ipaddr;
+use self::sockaddr::{IfAddrValue, sockaddr_to_ifaddrvalue};
 
 pub type InterfaceMap = HashMap<String, Vec<InterfaceAddr>>;
 
@@ -149,12 +148,12 @@ pub struct InterfaceAddr {
     /// The address assigned to the interface for this protocol.
     /// A value of `None` means the libc reported a type of address that
     /// `std::net` doesn't understand.
-    pub address: Option<IpAddr>,
+    pub address: Option<IfAddrValue>,
 
     /// The netmasks assigned to the interface for this protocol.
     /// A value of `None` means the libc reported a type of address that
     /// `std::net` doesn't understand.
-    pub netmask: Option<IpAddr>,
+    pub netmask: Option<IfAddrValue>,
 
     /// The ifu assigned to the interface for this protocol.
     /// A value of `{Broadcast, Destination}Addr(None)` means the libc reported
@@ -171,8 +170,8 @@ pub struct InterfaceAddr {
 /// point-to-point destination address.
 #[derive(Debug, Clone)]
 pub enum InterfaceIfu {
-    BroadcastAddr(Option<IpAddr>),
-    DestinationAddr(Option<IpAddr>),
+    BroadcastAddr(Option<IfAddrValue>),
+    DestinationAddr(Option<IfAddrValue>),
     Neither,
 }
 
@@ -208,22 +207,22 @@ impl Iterator for InterfaceAddrs {
         // Interpret the flags field into a typed version of those flags
         let flags = IffFlags::from_bits_truncate(p.ifa_flags);
 
-        // Get std::net::IpAddr representations of the address and netmask
-        // UNSAFETY: sockaddr_to_ipaddr requires valid pointer.
-        let address = unsafe { sockaddr_to_ipaddr(p.ifa_addr) };
-        // UNSAFETY: sockaddr_to_ipaddr requires valid pointer.
-        let netmask = unsafe { sockaddr_to_ipaddr(p.ifa_netmask) };
+        // Get IfAddrValue representations of the address and netmask
+        // UNSAFETY: sockaddr_to_ifaddrvalue requires valid pointer.
+        let address = unsafe { sockaddr_to_ifaddrvalue(p.ifa_addr) };
+        // UNSAFETY: sockaddr_to_ifaddrvalue requires valid pointer.
+        let netmask = unsafe { sockaddr_to_ifaddrvalue(p.ifa_netmask) };
 
         // Figure out which ifu type is needed and create it
         let ifu = if flags.contains(iff_flags::IFF_POINTOPOINT) {
             // Point to point destination address
-            // UNSAFETY: sockaddr_to_ipaddr requires valid pointer.
-            let ifu_addr = unsafe { sockaddr_to_ipaddr(p.ifa_ifu) };
+            // UNSAFETY: sockaddr_to_ifaddrvalue requires valid pointer.
+            let ifu_addr = unsafe { sockaddr_to_ifaddrvalue(p.ifa_ifu) };
             InterfaceIfu::DestinationAddr(ifu_addr)
         } else if flags.contains(iff_flags::IFF_BROADCAST) {
             // Broadcast address
-            // UNSAFETY: sockaddr_to_ipaddr requires valid pointer.
-            let ifu_addr = unsafe { sockaddr_to_ipaddr(p.ifa_ifu) };
+            // UNSAFETY: sockaddr_to_ifaddrvalue requires valid pointer.
+            let ifu_addr = unsafe { sockaddr_to_ifaddrvalue(p.ifa_ifu) };
             InterfaceIfu::BroadcastAddr(ifu_addr)
         } else {
             InterfaceIfu::Neither

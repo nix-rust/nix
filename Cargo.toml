@@ -19,6 +19,7 @@ libc = { git = "https://github.com/rust-lang/libc" }
 bitflags = "0.9"
 cfg-if = "0.1.0"
 void = "1.0.2"
+eui48 = "0.3"
 
 [dev-dependencies]
 lazy_static = "0.2"
