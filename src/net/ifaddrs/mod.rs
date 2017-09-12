@@ -76,6 +76,8 @@ use self::iff_flags::IffFlags;
 mod sockaddr;
 use self::sockaddr::{IfAddrValue, sockaddr_to_ifaddrvalue};
 
+mod tests;
+
 pub type InterfaceMap<'a> = HashMap<String, Vec<InterfaceAddr<'a>>>;
 
 /// Represents a handle into the operating system's knowledge about network
@@ -84,9 +86,33 @@ pub type InterfaceMap<'a> = HashMap<String, Vec<InterfaceAddr<'a>>>;
 pub struct InterfaceAddrs<'a> {
     inner: *mut libc::ifaddrs,
     current: Option<&'a libc::ifaddrs>,
+    do_free: bool,
 }
 
 impl<'a> InterfaceAddrs<'a> {
+    /// Creates an `InterfaceAddrs` from a raw pointer, without calling into
+    /// the `libc`.
+    ///
+    /// The destructor will not attempt to free memory on an InterfaceAddrs
+    /// created in this way.
+    ///
+    /// # Unsafety
+    /// The caller is responsible for making sure the given pointer is not
+    /// in invalid memory.
+    ///
+    /// # Errors
+    /// `Err(())` will be returned if `p` was void.
+    pub unsafe fn from_raw(p: *mut libc::ifaddrs) -> ::std::result::Result<Self, ()> {
+        match p.as_ref() {
+            Some(r) => Ok(Self {
+                inner: p,
+                current: Some(r),
+                do_free: false,
+            }),
+            None => Err(()),
+        }
+    }
+
     /// Produce an `InterfaceAddrs` from the system's information.
     pub fn getifaddrs() -> Result<Self> {
         let mut p = null_mut();
@@ -101,6 +127,7 @@ impl<'a> InterfaceAddrs<'a> {
             Some(r) => Ok(Self {
                 inner: p,
                 current: Some(r),
+                do_free: true,
             }),
 
             None => Err(Error::from(Errno::from_i32(errno()))),
@@ -126,12 +153,14 @@ impl<'a> From<InterfaceAddrs<'a>> for HashMap<String, Vec<InterfaceAddr<'a>>> {
 
 impl<'a> Drop for InterfaceAddrs<'a> {
     fn drop(&mut self) {
-        // UNSAFETY: Calling libc FFI function which frees previously allocated
-        // memory.
-        unsafe {
-            // Ask the libc to drop free the memory it allocated when the struct
-            // was created.
-            libc::freeifaddrs(self.inner as *mut libc::ifaddrs);
+        if self.do_free {
+            // UNSAFETY: Calling libc FFI function which frees previously allocated
+            // memory.
+            unsafe {
+                // Ask the libc to drop free the memory it allocated when
+                // the struct was created.
+                libc::freeifaddrs(self.inner as *mut libc::ifaddrs);
+            }
         }
     }
 }

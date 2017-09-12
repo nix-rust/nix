@@ -40,8 +40,9 @@ impl<'a> From<&'a libc::sockaddr> for IfAddrValue<'a> {
 ///
 /// The caller is responsible for guaranteeing that the provided reference
 /// refers to valid memory.
-pub unsafe fn sockaddr_to_ifaddrvalue<'a>(sockaddr_input: *mut libc::sockaddr) 
-    -> Option<IfAddrValue<'a>> {
+pub unsafe fn sockaddr_to_ifaddrvalue<'a>(
+    sockaddr_input: *mut libc::sockaddr,
+) -> Option<IfAddrValue<'a>> {
     if let Some(sa) = sockaddr_input.as_ref() {
         // Only IPv4 and IPv6 are supported.
         match sa.sa_family as i32 {
@@ -56,9 +57,7 @@ pub unsafe fn sockaddr_to_ifaddrvalue<'a>(sockaddr_input: *mut libc::sockaddr)
                 let data_v6: &libc::sockaddr_in6 = transmute(sa);
                 Some(IpAddr::V6(Ipv6Addr::from(data_v6.sin6_addr.s6_addr)).into())
             }
-            _ => {
-                Some(sa.into())
-            },
+            _ => Some(sa.into()),
         }
     } else {
         None
