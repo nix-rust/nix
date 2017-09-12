@@ -756,27 +756,29 @@ pub fn close(fd: RawFd) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
-/// reads from a raw file descriptor.
-/// reads at most as many bytes as will fit into the provided buffer
-/// 
-/// returns the number of bytes read or an error
+/// Reads from a raw file descriptor.
+/// Reads at most as many bytes as will fit into the provided buffer.
+///
+/// Returns the number of bytes successfully read.
+///
 /// For details see:
-/// [read(2)](http://man7.org/linux/man-pages/man2/read.2.html)
+/// [read(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/read.html)
 pub fn read(fd: RawFd, buf: &mut [u8]) -> Result<usize> {
     let res = unsafe { libc::read(fd, buf.as_mut_ptr() as *mut c_void, buf.len() as size_t) };
 
     Errno::result(res).map(|r| r as usize)
 }
 
-/// writes to a raw file descriptor
-/// writes at most as many bytes as there are in the provided buffer
+/// Writes to a raw file descriptor.
+/// Writes at most as many bytes as there are in the provided buffer.
 ///
-/// insufficient space on the underlying medium or settings for RLIMIT_FSIZE my limit
-/// the maximum number of bytes being written
+/// Insufficient space on the underlying medium or settings for RLIMIT_FSIZE may limit
+/// the maximum number of bytes being written.
 ///
-/// returns the number of bytes written or an error
+/// Returns the number of bytes successfully written.
+///
 /// For details see:
-/// [write(2)](http://man7.org/linux/man-pages/man2/write.2.html)
+/// [write(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/write.html)
 pub fn write(fd: RawFd, buf: &[u8]) -> Result<usize> {
     let res = unsafe { libc::write(fd, buf.as_ptr() as *const c_void, buf.len() as size_t) };
 
