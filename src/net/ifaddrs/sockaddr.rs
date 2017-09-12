@@ -1,40 +1,47 @@
 use std::net::{Ipv4Addr, Ipv6Addr, IpAddr};
 use std::mem::transmute;
+use std::fmt;
 use libc;
 
-extern crate eui48;
-use self::eui48::{MacAddress, Eui48};
-
 /// Represents the actual data of an address in use by an interface.
-#[derive(Debug, Clone, PartialEq)]
-pub enum IfAddrValue {
+#[derive(Clone)]
+pub enum IfAddrValue<'a> {
     IpAddr(IpAddr),
-    MacAddr(MacAddress),
+    Other(&'a libc::sockaddr),
 }
 
-impl From<IpAddr> for IfAddrValue {
-    fn from(ip: IpAddr) -> IfAddrValue {
+impl<'a> fmt::Debug for IfAddrValue<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            IfAddrValue::IpAddr(ref addr) => write!(f, "IfAddrValue({:?})", addr),
+            IfAddrValue::Other(_) => write!(f, "IfAddrValue(<Unknown Address Type>)"),
+        }
+    }
+}
+
+impl<'a> From<IpAddr> for IfAddrValue<'a> {
+    fn from(ip: IpAddr) -> IfAddrValue<'a> {
         IfAddrValue::IpAddr(ip)
     }
 }
 
-impl From<MacAddress> for IfAddrValue {
-    fn from(mac: MacAddress) -> IfAddrValue {
-        IfAddrValue::MacAddr(mac)
+impl<'a> From<&'a libc::sockaddr> for IfAddrValue<'a> {
+    fn from(addr: &'a libc::sockaddr) -> IfAddrValue<'a> {
+        IfAddrValue::Other(addr)
     }
 }
 
 /// Converts a `libc::sockaddr` into an `Option<IfAddrValue>`.
 ///
 /// It returns `None` if the libc reports a type of address other than
-/// IPv4, IPv6, or EUI-84 MAC, or if the given `sockaddr_input` was null.
+/// IPv4, or IPv6, or if the given `sockaddr_input` was null.
 ///
 /// # Unsafety
 ///
 /// The caller is responsible for guaranteeing that the provided reference
 /// refers to valid memory.
-pub unsafe fn sockaddr_to_ifaddrvalue(sockaddr_input: *mut libc::sockaddr) 
-    -> Option<IfAddrValue> {
+pub unsafe fn sockaddr_to_ifaddrvalue<'a>(sockaddr_input: *mut libc::sockaddr) 
+    -> Option<IfAddrValue<'a>> {
     if let Some(sa) = sockaddr_input.as_ref() {
         // Only IPv4 and IPv6 are supported.
         match sa.sa_family as i32 {
@@ -49,18 +56,9 @@ pub unsafe fn sockaddr_to_ifaddrvalue(sockaddr_input: *mut libc::sockaddr)
                 let data_v6: &libc::sockaddr_in6 = transmute(sa);
                 Some(IpAddr::V6(Ipv6Addr::from(data_v6.sin6_addr.s6_addr)).into())
             }
-            libc::AF_PACKET => {
-                let data_mac: &libc::sockaddr_ll = transmute(sa);
-                if data_mac.sll_halen != 6 {
-                    None // If the length of the hardware address (halen) isn't
-                        // 6, it's not EUI48 and we can't handle it.
-                } else {
-                    let a = data_mac.sll_addr;
-                    let eui: Eui48 = [a[0], a[1], a[2], a[3], a[4], a[5]];
-                    Some(MacAddress::new(eui).into())
-                }
-            }
-            _ => None,
+            _ => {
+                Some(sa.into())
+            },
         }
     } else {
         None

@@ -76,17 +76,17 @@ use self::iff_flags::IffFlags;
 mod sockaddr;
 use self::sockaddr::{IfAddrValue, sockaddr_to_ifaddrvalue};
 
-pub type InterfaceMap = HashMap<String, Vec<InterfaceAddr>>;
+pub type InterfaceMap<'a> = HashMap<String, Vec<InterfaceAddr<'a>>>;
 
 /// Represents a handle into the operating system's knowledge about network
 /// interfaces present on the system. Allows the user to iterate over
 /// interface configurations.
-pub struct InterfaceAddrs {
+pub struct InterfaceAddrs<'a> {
     inner: *mut libc::ifaddrs,
-    current: Option<&'static libc::ifaddrs>,
+    current: Option<&'a libc::ifaddrs>,
 }
 
-impl InterfaceAddrs {
+impl<'a> InterfaceAddrs<'a> {
     /// Produce an `InterfaceAddrs` from the system's information.
     pub fn getifaddrs() -> Result<Self> {
         let mut p = null_mut();
@@ -108,9 +108,9 @@ impl InterfaceAddrs {
     }
 }
 
-impl From<InterfaceAddrs> for HashMap<String, Vec<InterfaceAddr>> {
+impl<'a> From<InterfaceAddrs<'a>> for HashMap<String, Vec<InterfaceAddr<'a>>> {
     /// Collect an `InterfaceAddrs` into a `HashMap<String, InterfaceAddr>`.
-    fn from(ia: InterfaceAddrs) -> HashMap<String, Vec<InterfaceAddr>> {
+    fn from(ia: InterfaceAddrs<'a>) -> HashMap<String, Vec<InterfaceAddr<'a>>> {
         let mut m = HashMap::new();
         for i in ia {
             if !m.contains_key(&i.name) {
@@ -124,7 +124,7 @@ impl From<InterfaceAddrs> for HashMap<String, Vec<InterfaceAddr>> {
     }
 }
 
-impl Drop for InterfaceAddrs {
+impl<'a> Drop for InterfaceAddrs<'a> {
     fn drop(&mut self) {
         // UNSAFETY: Calling libc FFI function which frees previously allocated
         // memory.
@@ -141,26 +141,26 @@ impl Drop for InterfaceAddrs {
 /// Interfaces are uniquely identified by name, and each interface is likely
 /// to be referred to multiple times, e.g. one for IPv4 and one for IPv6.
 #[derive(Debug, Clone)]
-pub struct InterfaceAddr {
+pub struct InterfaceAddr<'a> {
     /// The name of the interface
     pub name: String,
 
     /// The address assigned to the interface for this protocol.
     /// A value of `None` means the libc reported a type of address that
     /// `std::net` doesn't understand.
-    pub address: Option<IfAddrValue>,
+    pub address: Option<IfAddrValue<'a>>,
 
     /// The netmasks assigned to the interface for this protocol.
     /// A value of `None` means the libc reported a type of address that
     /// `std::net` doesn't understand.
-    pub netmask: Option<IfAddrValue>,
+    pub netmask: Option<IfAddrValue<'a>>,
 
     /// The ifu assigned to the interface for this protocol.
     /// A value of `{Broadcast, Destination}Addr(None)` means the libc reported
     /// a type of address that `std::net` doesn't understand, while a value of
     /// `Neither` means that the interface has neither a valid broadcast address
     /// nor a point-to-point destination address.
-    pub ifu: InterfaceIfu,
+    pub ifu: InterfaceIfu<'a>,
 
     /// Flags regarding the interface's behaviour and state
     pub flags: IffFlags,
@@ -169,16 +169,16 @@ pub struct InterfaceAddr {
 /// Represents the ifu of an interface: either its broadcast address or
 /// point-to-point destination address.
 #[derive(Debug, Clone)]
-pub enum InterfaceIfu {
-    BroadcastAddr(Option<IfAddrValue>),
-    DestinationAddr(Option<IfAddrValue>),
+pub enum InterfaceIfu<'a> {
+    BroadcastAddr(Option<IfAddrValue<'a>>),
+    DestinationAddr(Option<IfAddrValue<'a>>),
     Neither,
 }
 
 
-impl Iterator for InterfaceAddrs {
-    type Item = InterfaceAddr;
-    fn next(&mut self) -> Option<InterfaceAddr> {
+impl<'a> Iterator for InterfaceAddrs<'a> {
+    type Item = InterfaceAddr<'a>;
+    fn next(&mut self) -> Option<InterfaceAddr<'a>> {
         // If the current ifaddrs is None, there are no more ifaddrs to inspect
         if self.current.is_none() {
             return None;
