@@ -102,7 +102,7 @@ impl<'a> InterfaceAddrs<'a> {
     ///
     /// # Errors
     /// `Err(())` will be returned if `p` was void.
-    pub unsafe fn from_raw(p: *mut libc::ifaddrs) -> ::std::result::Result<Self, ()> {
+    pub unsafe fn from_raw(p: *mut libc::ifaddrs) -> ::std::result::Result<InterfaceAddrs<'a>, ()> {
         match p.as_ref() {
             Some(r) => Ok(Self {
                 inner: p,
