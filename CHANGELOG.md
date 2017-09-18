@@ -22,7 +22,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#739](https://github.com/nix-rust/nix/pull/739))
 - Expose `signalfd` module on Android as well.
   ([#739](https://github.com/nix-rust/nix/pull/739))
-- Added nix::sys::ptrace::detach. 
+- Added nix::sys::ptrace::detach.
   ([#749](https://github.com/nix-rust/nix/pull/749))
 - Added timestamp socket control message variant:
   `nix::sys::socket::ControlMessage::ScmTimestamp`
@@ -30,7 +30,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Added socket option variant that enables the timestamp socket
   control message: `nix::sys::socket::sockopt::ReceiveTimestamp`
   ([#663](https://github.com/nix-rust/nix/pull/663))
-
+- Added specialized wrappers: `sys::ptrace::{peek, poke}{user, data}`
+  and macros: `syscall_arg`, `syscall_arg32` for register-to-argument
+  mappings. Using the matching routines
+  with `sys::ptrace::ptrace` is now deprecated.
+  ([#666](https://github.com/nix-rust/nix/pull/666))
 ### Changed
 - Renamed existing `ptrace` wrappers to encourage namespacing ([#692](https://github.com/nix-rust/nix/pull/692))
 - Marked `sys::ptrace::ptrace` as `unsafe`.
@@ -55,7 +59,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#731](https://github.com/nix-rust/nix/pull/731))
 - Marked `pty::ptsname` function as `unsafe`
   ([#744](https://github.com/nix-rust/nix/pull/744))
-- Moved constants ptrace request, event and options to enums and updated ptrace functions and argument types accordingly. 
+- Moved constants ptrace request, event and options to enums and updated ptrace functions and argument types accordingly.
   ([#749](https://github.com/nix-rust/nix/pull/749))
 - `AioCb::Drop` will now panic if the `AioCb` is still in-progress ([#715](https://github.com/nix-rust/nix/pull/715))
 

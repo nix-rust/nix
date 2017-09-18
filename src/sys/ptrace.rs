@@ -1,4 +1,7 @@
-//! For detailed description of the ptrace requests, consult `man ptrace`.
+//! Interface for `ptrace`
+//!
+//! For detailed description of the ptrace requests, consult [`ptrace`(2)].
+//! [`ptrace`(2)]: http://man7.org/linux/man-pages/man2/ptrace.2.html
 
 use std::{mem, ptr};
 use {Errno, Error, Result};
@@ -134,11 +137,20 @@ pub unsafe fn ptrace(request: Request, pid: Pid, addr: *mut c_void, data: *mut c
     }
 }
 
-unsafe fn ptrace_peek(request: Request, pid: Pid, addr: *mut c_void, data: *mut c_void) -> Result<c_long> {
-    let ret = {
-        Errno::clear();
-        libc::ptrace(request as RequestType, libc::pid_t::from(pid), addr, data)
-    };
+unsafe fn ptrace_peek(
+    request: Request,
+    pid: Pid,
+    addr: *mut c_void,
+    data: *mut c_void
+) -> Result<c_long> {
+
+    Errno::clear();
+    let ret = libc::ptrace(
+        request as RequestType,
+        libc::pid_t::from(pid),
+        addr,
+        data
+    );
     match Errno::result(ret) {
         Ok(..) | Err(Error::Sys(Errno::UnknownErrno)) => Ok(ret),
         err @ Err(..) => err,
@@ -168,8 +180,6 @@ unsafe fn ptrace_other(request: Request, pid: Pid, addr: *mut c_void, data: *mut
 
 /// Set options, as with `ptrace(PTRACE_SETOPTIONS,...)`.
 pub fn setoptions(pid: Pid, options: Options) -> Result<()> {
-    use std::ptr;
-
     let res = unsafe {
         libc::ptrace(Request::PTRACE_SETOPTIONS as RequestType,
                      libc::pid_t::from(pid),
@@ -238,12 +248,7 @@ pub fn syscall(pid: Pid) -> Result<()> {
 /// Attaches to the process specified in pid, making it a tracee of the calling process.
 pub fn attach(pid: Pid) -> Result<()> {
     unsafe {
-        ptrace_other(
-            Request::PTRACE_ATTACH,
-            pid,
-            ptr::null_mut(),
-            ptr::null_mut(),
-        ).map(|_| ()) // ignore the useless return value
+        ptrace_other(Request::PTRACE_ATTACH, pid, ptr::null_mut(), ptr::null_mut()).map(|_| ())
     }
 }
 
@@ -275,3 +280,209 @@ pub fn cont<T: Into<Option<Signal>>>(pid: Pid, sig: T) -> Result<()> {
     }
 }
 
+/// Represents all possible ptrace-accessible registers on x86_64
+#[cfg(target_arch = "x86_64")]
+#[allow(non_camel_case_types)]
+#[derive(Debug, PartialEq)]
+pub enum Register {
+    R15 = 8 * ::libc::R15 as isize,
+    R14 = 8 * ::libc::R14 as isize,
+    R13 = 8 * ::libc::R13 as isize,
+    R12 = 8 * ::libc::R12 as isize,
+    RBP = 8 * ::libc::RBP as isize,
+    RBX = 8 * ::libc::RBX as isize,
+    R11 = 8 * ::libc::R11 as isize,
+    R10 = 8 * ::libc::R10 as isize,
+    R9 = 8 * ::libc::R9 as isize,
+    R8 = 8 * ::libc::R8 as isize,
+    RAX = 8 * ::libc::RAX as isize,
+    RCX = 8 * ::libc::RCX as isize,
+    RDX = 8 * ::libc::RDX as isize,
+    RSI = 8 * ::libc::RSI as isize,
+    RDI = 8 * ::libc::RDI as isize,
+    ORIG_RAX = 8 * ::libc::ORIG_RAX as isize,
+    RIP = 8 * ::libc::RIP as isize,
+    CS = 8 * ::libc::CS as isize,
+    EFLAGS = 8 * ::libc::EFLAGS as isize,
+    RSP = 8 * ::libc::RSP as isize,
+    SS = 8 * ::libc::SS as isize,
+    FS_BASE = 8 * ::libc::FS_BASE as isize,
+    GS_BASE = 8 * ::libc::GS_BASE as isize,
+    DS = 8 * ::libc::DS as isize,
+    ES = 8 * ::libc::ES as isize,
+    FS = 8 * ::libc::FS as isize,
+    GS = 8 * ::libc::GS as isize,
+}
+
+/// Represents all possible ptrace-accessible registers on x86
+#[cfg(target_arch = "x86")]
+#[allow(non_camel_case_types)]
+#[derive(Debug, PartialEq)]
+pub enum Register {
+    EBX = 4 * ::libc::EBX as isize,
+    ECX = 4 * ::libc::ECX as isize,
+    EDX = 4 * ::libc::EDX as isize,
+    ESI = 4 * ::libc::ESI as isize,
+    EDI = 4 * ::libc::EDI as isize,
+    EBP = 4 * ::libc::EBP as isize,
+    EAX = 4 * ::libc::EAX as isize,
+    DS = 4 * ::libc::DS as isize,
+    ES = 4 * ::libc::ES as isize,
+    FS = 4 * ::libc::FS as isize,
+    GS = 4 * ::libc::GS as isize,
+    ORIG_EAX = 4 * ::libc::ORIG_EAX as isize,
+    EIP = 4 * ::libc::EIP as isize,
+    CS = 4 * ::libc::CS as isize,
+    EFL = 4 * ::libc::EFL as isize,
+    UESP = 4 * ::libc::UESP as isize,
+    SS = 4 * ::libc::SS as isize,
+}
+
+/// Returns the register containing nth register argument.
+///
+/// 0th argument is considered to be the syscall number.
+/// Please note that these mappings are only valid for 64-bit programs.
+/// Use [`syscall_arg32`] for tracing 32-bit programs instead.
+///
+/// [`syscall_arg32`]: macro.syscall_arg32.html
+/// # Examples
+///
+/// ```
+/// # #[macro_use] extern crate nix;
+/// # fn main() {
+/// assert_eq!(syscall_arg!(1), nix::sys::ptrace::Register::RDI);
+/// # }
+#[cfg(target_arch = "x86_64")]
+#[macro_export]
+macro_rules! syscall_arg {
+    (0) => ($crate::sys::ptrace::Register::ORIG_RAX);
+    (1) => ($crate::sys::ptrace::Register::RDI);
+    (2) => ($crate::sys::ptrace::Register::RSI);
+    (3) => ($crate::sys::ptrace::Register::RDX);
+    (4) => ($crate::sys::ptrace::Register::R10);
+    (5) => ($crate::sys::ptrace::Register::R8);
+    (6) => ($crate::sys::ptrace::Register::R9);
+}
+
+/// Returns the register containing nth register argument for 32-bit programs
+///
+/// 0th argument is considered to be the syscall number.
+/// Please note that these mappings are only valid for 32-bit programs.
+/// Use [`syscall_arg`] for tracing 64-bit programs instead.
+///
+/// [`syscall_arg`]: macro.syscall_arg.html
+/// # Examples
+///
+/// ```
+/// # #[macro_use] extern crate nix;
+/// # fn main() {
+/// assert_eq!(syscall_arg32!(1), nix::sys::ptrace::Register::RBX);
+/// # }
+#[cfg(target_arch = "x86_64")]
+#[macro_export]
+macro_rules! syscall_arg32 {
+    (0) => ($crate::sys::ptrace::Register::ORIG_RAX);
+    (1) => ($crate::sys::ptrace::Register::RBX);
+    (2) => ($crate::sys::ptrace::Register::RCX);
+    (3) => ($crate::sys::ptrace::Register::RDX);
+    (4) => ($crate::sys::ptrace::Register::RSI);
+    (5) => ($crate::sys::ptrace::Register::RDI);
+    (6) => ($crate::sys::ptrace::Register::RBP);
+}
+
+/// Returns the register containing nth register argument.
+///
+/// 0th argument is considered to be the syscall number.
+///
+/// # Examples
+///
+/// ```
+/// # #[macro_use] extern crate nix;
+/// # fn main() {
+/// assert_eq!(syscall_arg!(1), nix::sys::ptrace::Register::RDI);
+/// # }
+#[cfg(target_arch = "x86")]
+#[macro_export]
+macro_rules! syscall_arg {
+    (0) => ($crate::sys::ptrace::Register::ORIG_EAX);
+    (1) => ($crate::sys::ptrace::Register::EBX);
+    (2) => ($crate::sys::ptrace::Register::ECX);
+    (3) => ($crate::sys::ptrace::Register::EDX);
+    (4) => ($crate::sys::ptrace::Register::ESI);
+    (5) => ($crate::sys::ptrace::Register::EDI);
+    (6) => ($crate::sys::ptrace::Register::EBP);
+}
+
+/// An integer type, whose size equals a machine word
+///
+/// `ptrace` always returns a machine word. This type provides an abstraction
+/// of the fact that on *nix systems, `c_long` is always a machine word,
+/// so as to prevent the library from leaking C implementation-dependent types.
+type Word = usize;
+
+/// Peeks a user-accessible register, as with `ptrace(PTRACE_PEEKUSER, ...)`
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+pub fn peekuser(pid: Pid, reg: Register) -> Result<Word> {
+    let reg_arg = (reg as i32) as *mut c_void;
+    unsafe {
+        ptrace_peek(Request::PTRACE_PEEKUSER, pid, reg_arg, ptr::null_mut()).map(|r| r as Word)
+    }
+}
+
+/// Sets the value of a user-accessible register, as with `ptrace(PTRACE_POKEUSER, ...)`
+///
+/// # Safety
+/// When incorrectly used, may change the registers to bad values,
+/// causing e.g. memory being corrupted by a syscall, thus is marked unsafe
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+pub unsafe fn pokeuser(pid: Pid, reg: Register, val: Word) -> Result<()> {
+    let reg_arg = (reg as u64) as *mut c_void;
+    ptrace_other(Request::PTRACE_POKEUSER, pid, reg_arg, val as *mut c_void).map(|_| ()) // ignore the useless return value
+}
+
+/// Peeks the memory of a process, as with `ptrace(PTRACE_PEEKDATA, ...)`
+///
+/// A memory chunk of a size of a machine word is returned.
+/// # Safety
+/// This function allows for accessing arbitrary data in the traced process
+/// and may crash the inferior if used incorrectly and is thus marked `unsafe`.
+pub unsafe fn peekdata(pid: Pid, addr: usize) -> Result<Word> {
+    ptrace_peek(
+        Request::PTRACE_PEEKDATA,
+        pid,
+        addr as *mut c_void,
+        ptr::null_mut(),
+    ).map(|r| r as Word)
+}
+
+/// Modifies the memory of a process, as with `ptrace(PTRACE_POKEUSER, ...)`
+///
+/// A memory chunk of a size of a machine word is overwriten in the requested
+/// place in the memory of a process.
+///
+/// # Safety
+/// This function allows for accessing arbitrary data in the traced process
+/// and may crash the inferior or introduce race conditions if used
+/// incorrectly and is thus marked `unsafe`.
+pub unsafe fn pokedata(pid: Pid, addr: usize, val: Word) -> Result<()> {
+    ptrace_other(
+        Request::PTRACE_POKEDATA,
+        pid,
+        addr as *mut c_void,
+        val as *mut c_void,
+    ).map(|_| ()) // ignore the useless return value
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Word;
+    use std::mem::size_of;
+    use libc::c_long;
+
+    #[test]
+    fn test_types() {
+        // c_long is implementation defined, so make sure
+        // its width matches
+        assert_eq!(size_of::<Word>(), size_of::<c_long>());
+    }
+}
