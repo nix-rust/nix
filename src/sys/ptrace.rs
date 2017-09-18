@@ -134,8 +134,8 @@ pub unsafe fn ptrace(request: Request, pid: Pid, addr: *mut c_void, data: *mut c
     }
 }
 
-fn ptrace_peek(request: Request, pid: Pid, addr: *mut c_void, data: *mut c_void) -> Result<c_long> {
-    let ret = unsafe {
+unsafe fn ptrace_peek(request: Request, pid: Pid, addr: *mut c_void, data: *mut c_void) -> Result<c_long> {
+    let ret = {
         Errno::clear();
         libc::ptrace(request as RequestType, libc::pid_t::from(pid), addr, data)
     };
