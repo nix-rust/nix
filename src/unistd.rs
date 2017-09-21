@@ -1150,7 +1150,7 @@ pub fn setgroups(groups: &[Gid]) -> Result<()> {
 /// and `setgroups()`. Additionally, while some implementations will return a
 /// partial list of groups when `NGROUPS_MAX` is exceeded, this implementation
 /// will only ever return the complete list or else an error.
-pub fn getgrouplist(user: &CString, group: Gid) -> Result<Vec<Gid>> {
+pub fn getgrouplist(user: &CStr, group: Gid) -> Result<Vec<Gid>> {
     let ngroups_max = match sysconf(SysconfVar::NGROUPS_MAX) {
         Ok(Some(n)) => n as c_int,
         Ok(None) | Err(_) => <c_int>::max_value(),
@@ -1220,7 +1220,7 @@ pub fn getgrouplist(user: &CString, group: Gid) -> Result<Vec<Gid>> {
 /// setgid(gid)?;
 /// setuid(uid)?;
 /// ```
-pub fn initgroups(user: &CString, group: Gid) -> Result<()> {
+pub fn initgroups(user: &CStr, group: Gid) -> Result<()> {
     cfg_if! {
         if #[cfg(any(target_os = "ios", target_os = "macos"))] {
             type initgroups_group_t = c_int;
