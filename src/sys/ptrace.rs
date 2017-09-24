@@ -116,6 +116,10 @@ libc_bitflags! {
         /// Stop tracee when a SECCOMP_RET_TRACE rule is triggered. See `man seccomp` for more
         /// details.
         PTRACE_O_TRACESECCOMP;
+        /// Send a SIGKILL to the tracee if the tracer exits.  This is useful
+        /// for ptrace jailers to prevent tracees from escaping their control.
+        #[cfg(any(target_os = "android", target_os = "linux"))]
+        PTRACE_O_EXITKILL;
     }
 }
 
