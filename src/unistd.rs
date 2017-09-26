@@ -1050,7 +1050,7 @@ pub fn mkstemp<P: ?Sized + NixPath>(template: &P) -> Result<(RawFd, PathBuf)> {
 #[repr(i32)]
 pub enum PathconfVar {
     #[cfg(any(target_os = "dragonfly", target_os = "freebsd", target_os = "linux",
-              target_os = "netbsd", target_os = "openbsd"))]
+              target_os = "netbsd", target_os = "openbsd", target_os = "haiku"))]
     /// Minimum number of bits needed to represent, as a signed integer value,
     /// the maximum size of a regular file allowed in the specified directory.
     FILESIZEBITS = libc::_PC_FILESIZEBITS,
@@ -1074,33 +1074,34 @@ pub enum PathconfVar {
     /// a pipe.
     PIPE_BUF = libc::_PC_PIPE_BUF,
     #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "linux",
-              target_os = "netbsd", target_os = "openbsd"))]
+              target_os = "netbsd", target_os = "openbsd", target_os = "haiku"))]
     /// Symbolic links can be created.
     POSIX2_SYMLINKS = libc::_PC_2_SYMLINKS,
     #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd",
-              target_os = "linux", target_os = "openbsd"))]
+              target_os = "linux", target_os = "openbsd", target_os = "haiku"))]
     /// Minimum number of bytes of storage actually allocated for any portion of
     /// a file.
     POSIX_ALLOC_SIZE_MIN = libc::_PC_ALLOC_SIZE_MIN,
     #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd",
-              target_os = "linux", target_os = "openbsd"))]
+              target_os = "linux", target_os = "openbsd", target_os = "haiku"))]
     /// Recommended increment for file transfer sizes between the
     /// `POSIX_REC_MIN_XFER_SIZE` and `POSIX_REC_MAX_XFER_SIZE` values.
     POSIX_REC_INCR_XFER_SIZE = libc::_PC_REC_INCR_XFER_SIZE,
     #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd",
-              target_os = "linux", target_os = "openbsd"))]
+              target_os = "linux", target_os = "openbsd", target_os = "haiku"))]
     /// Maximum recommended file transfer size.
     POSIX_REC_MAX_XFER_SIZE = libc::_PC_REC_MAX_XFER_SIZE,
     #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd",
-              target_os = "linux", target_os = "openbsd"))]
+              target_os = "linux", target_os = "openbsd", target_os = "haiku"))]
     /// Minimum recommended file transfer size.
     POSIX_REC_MIN_XFER_SIZE = libc::_PC_REC_MIN_XFER_SIZE,
     #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd",
-              target_os = "linux", target_os = "openbsd"))]
+              target_os = "linux", target_os = "openbsd", target_os = "haiku"))]
     ///  Recommended file transfer buffer alignment.
     POSIX_REC_XFER_ALIGN = libc::_PC_REC_XFER_ALIGN,
     #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd",
-              target_os = "linux", target_os = "netbsd", target_os = "openbsd"))]
+              target_os = "linux", target_os = "netbsd", target_os = "openbsd",
+              target_os = "haiku"))]
     /// Maximum number of bytes in a symbolic link.
     SYMLINK_MAX = libc::_PC_SYMLINK_MAX,
     /// The use of `chown` and `fchown` is restricted to a process with
@@ -1114,17 +1115,18 @@ pub enum PathconfVar {
     /// disable terminal special character handling.
     _POSIX_VDISABLE = libc::_PC_VDISABLE,
     #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd",
-              target_os = "linux", target_os = "openbsd"))]
+              target_os = "linux", target_os = "openbsd", target_os = "haiku"))]
     /// Asynchronous input or output operations may be performed for the
     /// associated file.
     _POSIX_ASYNC_IO = libc::_PC_ASYNC_IO,
     #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd",
-              target_os = "linux", target_os = "openbsd"))]
+              target_os = "linux", target_os = "openbsd", target_os = "haiku"))]
     /// Prioritized input or output operations may be performed for the
     /// associated file.
     _POSIX_PRIO_IO = libc::_PC_PRIO_IO,
     #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd",
-              target_os = "linux", target_os = "netbsd", target_os = "openbsd"))]
+              target_os = "linux", target_os = "netbsd", target_os = "openbsd",
+              target_os = "haiku"))]
     /// Synchronized input or output operations may be performed for the
     /// associated file.
     _POSIX_SYNC_IO = libc::_PC_SYNC_IO,
@@ -1223,9 +1225,11 @@ pub fn pathconf<P: ?Sized + NixPath>(path: &P, var: PathconfVar) -> Result<Optio
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 #[repr(i32)]
 pub enum SysconfVar {
+    #[cfg(not(target_os="haiku"))]
     /// Maximum number of I/O operations in a single list I/O call supported by
     /// the implementation.
     AIO_LISTIO_MAX = libc::_SC_AIO_LISTIO_MAX,
+    #[cfg(not(target_os="haiku"))]
     /// Maximum number of outstanding asynchronous I/O operations supported by
     /// the implementation.
     AIO_MAX = libc::_SC_AIO_MAX,
@@ -1239,22 +1243,28 @@ pub enum SysconfVar {
     ARG_MAX = libc::_SC_ARG_MAX,
     /// Maximum number of functions that may be registered with `atexit`.
     ATEXIT_MAX = libc::_SC_ATEXIT_MAX,
+    #[cfg(not(target_os="haiku"))]
     /// Maximum obase values allowed by the bc utility.
     BC_BASE_MAX = libc::_SC_BC_BASE_MAX,
+    #[cfg(not(target_os="haiku"))]
     /// Maximum number of elements permitted in an array by the bc utility.
     BC_DIM_MAX = libc::_SC_BC_DIM_MAX,
+    #[cfg(not(target_os="haiku"))]
     /// Maximum scale value allowed by the bc utility.
     BC_SCALE_MAX = libc::_SC_BC_SCALE_MAX,
+    #[cfg(not(target_os="haiku"))]
     /// Maximum length of a string constant accepted by the bc utility.
     BC_STRING_MAX = libc::_SC_BC_STRING_MAX,
     /// Maximum number of simultaneous processes per real user ID.
     CHILD_MAX = libc::_SC_CHILD_MAX,
     // _SC_CLK_TCK is obsolete
+    #[cfg(not(target_os="haiku"))]
     /// Maximum number of weights that can be assigned to an entry of the
     /// LC_COLLATE order keyword in the locale definition file
     COLL_WEIGHTS_MAX = libc::_SC_COLL_WEIGHTS_MAX,
     /// Maximum number of timer expiration overruns.
     DELAYTIMER_MAX = libc::_SC_DELAYTIMER_MAX,
+    #[cfg(not(target_os="haiku"))]
     /// Maximum number of expressions that can be nested within parentheses by
     /// the expr utility.
     EXPR_NEST_MAX = libc::_SC_EXPR_NEST_MAX,
@@ -1267,11 +1277,13 @@ pub enum SysconfVar {
     /// Maximum number of iovec structures that one process has available for
     /// use with `readv` or `writev`.
     IOV_MAX = libc::_SC_IOV_MAX,
+    #[cfg(not(target_os="haiku"))]
     /// Unless otherwise noted, the maximum length, in bytes, of a utility's
     /// input line (either standard input or another file), when the utility is
     /// described as processing text files. The length includes room for the
     /// trailing <newline>.
     LINE_MAX = libc::_SC_LINE_MAX,
+    #[cfg(not(target_os="haiku"))]
     /// Maximum length of a login name.
     LOGIN_NAME_MAX = libc::_SC_LOGIN_NAME_MAX,
     /// Maximum number of simultaneous supplementary group IDs per process.
@@ -1280,8 +1292,10 @@ pub enum SysconfVar {
     GETGR_R_SIZE_MAX = libc::_SC_GETGR_R_SIZE_MAX,
     /// Initial size of `getpwuid_r` and `getpwnam_r` data buffers
     GETPW_R_SIZE_MAX = libc::_SC_GETPW_R_SIZE_MAX,
+    #[cfg(not(target_os="haiku"))]
     /// The maximum number of open message queue descriptors a process may hold.
     MQ_OPEN_MAX = libc::_SC_MQ_OPEN_MAX,
+    #[cfg(not(target_os="haiku"))]
     /// The maximum number of message priorities supported by the implementation.
     MQ_PRIO_MAX = libc::_SC_MQ_PRIO_MAX,
     /// A value one greater than the maximum value that the system may assign to
@@ -1296,6 +1310,7 @@ pub enum SysconfVar {
               target_os="openbsd"))]
     /// The implementation supports barriers.
     _POSIX_BARRIERS = libc::_SC_BARRIERS,
+    #[cfg(not(target_os="haiku"))]
     /// The implementation supports asynchronous input and output.
     _POSIX_ASYNCHRONOUS_IO = libc::_SC_ASYNCHRONOUS_IO,
     #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
@@ -1308,6 +1323,7 @@ pub enum SysconfVar {
               target_os="openbsd"))]
     /// The implementation supports the Process CPU-Time Clocks option.
     _POSIX_CPUTIME = libc::_SC_CPUTIME,
+    #[cfg(not(target_os="haiku"))]
     /// The implementation supports the File Synchronization option. 
     _POSIX_FSYNC = libc::_SC_FSYNC,
     #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
@@ -1318,12 +1334,16 @@ pub enum SysconfVar {
     _POSIX_JOB_CONTROL = libc::_SC_JOB_CONTROL,
     /// The implementation supports memory mapped Files.
     _POSIX_MAPPED_FILES = libc::_SC_MAPPED_FILES,
+    #[cfg(not(target_os="haiku"))]
     /// The implementation supports the Process Memory Locking option.
     _POSIX_MEMLOCK = libc::_SC_MEMLOCK,
+    #[cfg(not(target_os="haiku"))]
     /// The implementation supports the Range Memory Locking option.
     _POSIX_MEMLOCK_RANGE = libc::_SC_MEMLOCK_RANGE,
+    #[cfg(not(target_os="haiku"))]
     /// The implementation supports memory protection.
     _POSIX_MEMORY_PROTECTION = libc::_SC_MEMORY_PROTECTION,
+    #[cfg(not(target_os="haiku"))]
     /// The implementation supports the Message Passing option.
     _POSIX_MESSAGE_PASSING = libc::_SC_MESSAGE_PASSING,
     /// The implementation supports the Monotonic Clock option.
@@ -1333,6 +1353,7 @@ pub enum SysconfVar {
               target_os="openbsd"))]
     /// The implementation supports the Prioritized Input and Output option.
     _POSIX_PRIORITIZED_IO = libc::_SC_PRIORITIZED_IO,
+    #[cfg(not(target_os="haiku"))]
     /// The implementation supports the Process Scheduling option.
     _POSIX_PRIORITY_SCHEDULING = libc::_SC_PRIORITY_SCHEDULING,
     #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
@@ -1346,18 +1367,20 @@ pub enum SysconfVar {
     _POSIX_READER_WRITER_LOCKS = libc::_SC_READER_WRITER_LOCKS,
     #[cfg(any(target_os = "android", target_os="dragonfly", target_os="freebsd",
               target_os = "ios", target_os="linux", target_os = "macos",
-              target_os = "openbsd"))]
+              target_os = "openbsd", target_os="haiku"))]
     /// The implementation supports realtime signals.
     _POSIX_REALTIME_SIGNALS = libc::_SC_REALTIME_SIGNALS,
     #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
               target_os="linux", target_os = "macos", target_os="netbsd",
               target_os="openbsd"))]
+    #[cfg(not(target_os="haiku"))]
     /// The implementation supports the Regular Expression Handling option.
     _POSIX_REGEXP = libc::_SC_REGEXP,
     /// Each process has a saved set-user-ID and a saved set-group-ID.
     _POSIX_SAVED_IDS = libc::_SC_SAVED_IDS,
     /// The implementation supports semaphores.
     _POSIX_SEMAPHORES = libc::_SC_SEMAPHORES,
+    #[cfg(not(target_os="haiku"))]
     /// The implementation supports the Shared Memory Objects option.
     _POSIX_SHARED_MEMORY_OBJECTS = libc::_SC_SHARED_MEMORY_OBJECTS,
     #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
@@ -1382,6 +1405,7 @@ pub enum SysconfVar {
     #[cfg(any(target_os = "ios", target_os="linux", target_os = "macos",
               target_os="openbsd"))]
     _POSIX_SS_REPL_MAX = libc::_SC_SS_REPL_MAX,
+    #[cfg(not(target_os="haiku"))]
     /// The implementation supports the Synchronized Input and Output option.
     _POSIX_SYNCHRONIZED_IO = libc::_SC_SYNCHRONIZED_IO,
     /// The implementation supports the Thread Stack Address Attribute option.
@@ -1392,16 +1416,18 @@ pub enum SysconfVar {
               target_os="netbsd", target_os="openbsd"))]
     /// The implementation supports the Thread CPU-Time Clocks option.
     _POSIX_THREAD_CPUTIME = libc::_SC_THREAD_CPUTIME,
+    #[cfg(not(target_os="haiku"))]
     /// The implementation supports the Non-Robust Mutex Priority Inheritance
     /// option.
     _POSIX_THREAD_PRIO_INHERIT = libc::_SC_THREAD_PRIO_INHERIT,
+    #[cfg(not(target_os="haiku"))]
     /// The implementation supports the Non-Robust Mutex Priority Protection option.
     _POSIX_THREAD_PRIO_PROTECT = libc::_SC_THREAD_PRIO_PROTECT,
     /// The implementation supports the Thread Execution Scheduling option.
     _POSIX_THREAD_PRIORITY_SCHEDULING = libc::_SC_THREAD_PRIORITY_SCHEDULING,
     #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
               target_os="linux", target_os = "macos", target_os="netbsd",
-              target_os="openbsd"))]
+              target_os="openbsd", target_os="haiku"))]
     /// The implementation supports the Thread Process-Shared Synchronization
     /// option.
     _POSIX_THREAD_PROCESS_SHARED = libc::_SC_THREAD_PROCESS_SHARED,
@@ -1411,6 +1437,7 @@ pub enum SysconfVar {
     #[cfg(any(target_os="dragonfly", target_os="linux", target_os="openbsd"))]
     /// The implementation supports the Robust Mutex Priority Protection option.
     _POSIX_THREAD_ROBUST_PRIO_PROTECT = libc::_SC_THREAD_ROBUST_PRIO_PROTECT,
+    #[cfg(not(target_os="haiku"))]
     /// The implementation supports thread-safe functions.
     _POSIX_THREAD_SAFE_FUNCTIONS = libc::_SC_THREAD_SAFE_FUNCTIONS,
     #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
@@ -1423,6 +1450,7 @@ pub enum SysconfVar {
               target_os="linux", target_os = "macos", target_os="openbsd"))]
     /// The implementation supports timeouts.
     _POSIX_TIMEOUTS = libc::_SC_TIMEOUTS,
+    #[cfg(not(target_os="haiku"))]
     /// The implementation supports timers. 
     _POSIX_TIMERS = libc::_SC_TIMERS,
     #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
@@ -1487,16 +1515,22 @@ pub enum SysconfVar {
     /// `int` type using at least 32 bits and `long`, pointer, and `off_t` types
     /// using at least 64 bits.
     _POSIX_V6_LPBIG_OFFBIG = libc::_SC_V6_LPBIG_OFFBIG,
+    #[cfg(not(target_os="haiku"))]
     /// The implementation supports the C-Language Binding option.
     _POSIX2_C_BIND = libc::_SC_2_C_BIND,
+    #[cfg(not(target_os="haiku"))]
     /// The implementation supports the C-Language Development Utilities option.
     _POSIX2_C_DEV = libc::_SC_2_C_DEV,
+    #[cfg(not(target_os="haiku"))]
     /// The implementation supports the Terminal Characteristics option.
     _POSIX2_CHAR_TERM = libc::_SC_2_CHAR_TERM,
+    #[cfg(not(target_os="haiku"))]
     /// The implementation supports the FORTRAN Development Utilities option.
     _POSIX2_FORT_DEV = libc::_SC_2_FORT_DEV,
+    #[cfg(not(target_os="haiku"))]
     /// The implementation supports the FORTRAN Runtime Utilities option.
     _POSIX2_FORT_RUN = libc::_SC_2_FORT_RUN,
+    #[cfg(not(target_os="haiku"))]
     /// The implementation supports the creation of locales by the localedef
     /// utility.
     _POSIX2_LOCALEDEF = libc::_SC_2_LOCALEDEF,
@@ -1529,12 +1563,16 @@ pub enum SysconfVar {
     #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
               target_os="linux", target_os = "macos", target_os="netbsd",
               target_os="openbsd"))]
+    #[cfg(not(target_os="haiku"))]
     /// The implementation supports the Track Batch Job Request option.
     _POSIX2_PBS_TRACK = libc::_SC_2_PBS_TRACK,
+    #[cfg(not(target_os="haiku"))]
     /// The implementation supports the Software Development Utilities option.
     _POSIX2_SW_DEV = libc::_SC_2_SW_DEV,
+    #[cfg(not(target_os="haiku"))]
     /// The implementation supports the User Portability Utilities option.
     _POSIX2_UPE = libc::_SC_2_UPE,
+    #[cfg(not(target_os="haiku"))]
     /// Integer value indicating version of the Shell and Utilities volume of
     /// POSIX.1 to which the implementation conforms.
     _POSIX2_VERSION = libc::_SC_2_VERSION,
@@ -1543,23 +1581,27 @@ pub enum SysconfVar {
     /// POSIX also defines an alias named `PAGESIZE`, but Rust does not allow two
     /// enum constants to have the same value, so nix omits `PAGESIZE`.
     PAGE_SIZE = libc::_SC_PAGE_SIZE,
+    #[cfg(not(target_os="haiku"))]
     PTHREAD_DESTRUCTOR_ITERATIONS = libc::_SC_THREAD_DESTRUCTOR_ITERATIONS,
+    #[cfg(not(target_os="haiku"))]
     PTHREAD_KEYS_MAX = libc::_SC_THREAD_KEYS_MAX,
     PTHREAD_STACK_MIN = libc::_SC_THREAD_STACK_MIN,
+    #[cfg(not(target_os="haiku"))]
     PTHREAD_THREADS_MAX = libc::_SC_THREAD_THREADS_MAX,
+    #[cfg(not(target_os="haiku"))]
     RE_DUP_MAX = libc::_SC_RE_DUP_MAX,
     #[cfg(any(target_os="android", target_os="dragonfly", target_os="freebsd",
               target_os = "ios", target_os="linux", target_os = "macos",
-              target_os="openbsd"))]
+              target_os="openbsd", target_os="haiku"))]
     RTSIG_MAX = libc::_SC_RTSIG_MAX,
     SEM_NSEMS_MAX = libc::_SC_SEM_NSEMS_MAX,
     #[cfg(any(target_os="android", target_os="dragonfly", target_os="freebsd",
               target_os = "ios", target_os="linux", target_os = "macos",
-              target_os="openbsd"))]
+              target_os="openbsd", target_os="haiku"))]
     SEM_VALUE_MAX = libc::_SC_SEM_VALUE_MAX,
     #[cfg(any(target_os = "android", target_os="dragonfly", target_os="freebsd",
               target_os = "ios", target_os="linux", target_os = "macos",
-              target_os = "openbsd"))]
+              target_os = "openbsd", target_os="haiku"))]
     SIGQUEUE_MAX = libc::_SC_SIGQUEUE_MAX,
     STREAM_MAX = libc::_SC_STREAM_MAX,
     #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
@@ -1567,6 +1609,7 @@ pub enum SysconfVar {
               target_os="openbsd"))]
     SYMLOOP_MAX = libc::_SC_SYMLOOP_MAX,
     TIMER_MAX = libc::_SC_TIMER_MAX,
+    #[cfg(not(target_os="haiku"))]
     TTY_NAME_MAX = libc::_SC_TTY_NAME_MAX,
     TZNAME_MAX = libc::_SC_TZNAME_MAX,
     #[cfg(any(target_os="android", target_os="dragonfly", target_os="freebsd",
@@ -1594,6 +1637,7 @@ pub enum SysconfVar {
               target_os="openbsd"))]
     /// The implementation supports the X/Open Realtime Threads Option Group.
     _XOPEN_REALTIME_THREADS = libc::_SC_XOPEN_REALTIME_THREADS,
+    #[cfg(not(target_os="haiku"))]
     /// The implementation supports the Issue 4, Version 2 Shared Memory Option
     /// Group.
     _XOPEN_SHM = libc::_SC_XOPEN_SHM,

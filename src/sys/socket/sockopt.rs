@@ -134,9 +134,9 @@ sockopt_impl!(Both, TcpNoDelay, libc::IPPROTO_TCP, libc::TCP_NODELAY, bool);
 sockopt_impl!(Both, Linger, libc::SOL_SOCKET, libc::SO_LINGER, super::linger);
 sockopt_impl!(SetOnly, IpAddMembership, libc::IPPROTO_IP, libc::IP_ADD_MEMBERSHIP, super::ip_mreq);
 sockopt_impl!(SetOnly, IpDropMembership, libc::IPPROTO_IP, libc::IP_DROP_MEMBERSHIP, super::ip_mreq);
-#[cfg(not(any(target_os = "dragonfly", target_os = "freebsd", target_os = "ios", target_os = "macos", target_os = "netbsd", target_os = "openbsd")))]
+#[cfg(not(any(target_os = "dragonfly", target_os = "freebsd", target_os = "ios", target_os = "macos", target_os = "netbsd", target_os = "openbsd", target_os = "haiku")))]
 sockopt_impl!(SetOnly, Ipv6AddMembership, libc::IPPROTO_IPV6, libc::IPV6_ADD_MEMBERSHIP, super::ipv6_mreq);
-#[cfg(not(any(target_os = "dragonfly", target_os = "freebsd", target_os = "ios", target_os = "macos", target_os = "netbsd", target_os = "openbsd")))]
+#[cfg(not(any(target_os = "dragonfly", target_os = "freebsd", target_os = "ios", target_os = "macos", target_os = "netbsd", target_os = "openbsd", target_os = "haiku")))]
 sockopt_impl!(SetOnly, Ipv6DropMembership, libc::IPPROTO_IPV6, libc::IPV6_DROP_MEMBERSHIP, super::ipv6_mreq);
 #[cfg(any(target_os = "dragonfly", target_os = "freebsd", target_os = "ios", target_os = "macos", target_os = "netbsd", target_os = "openbsd"))]
 sockopt_impl!(SetOnly, Ipv6AddMembership, libc::IPPROTO_IPV6, libc::IPV6_JOIN_GROUP, super::ipv6_mreq);
@@ -171,6 +171,7 @@ sockopt_impl!(GetOnly, SockType, libc::SOL_SOCKET, libc::SO_TYPE, super::SockTyp
 sockopt_impl!(GetOnly, AcceptConn, libc::SOL_SOCKET, libc::SO_ACCEPTCONN, bool);
 #[cfg(any(target_os = "linux", target_os = "android"))]
 sockopt_impl!(GetOnly, OriginalDst, libc::SOL_IP, libc::SO_ORIGINAL_DST, libc::sockaddr_in);
+#[cfg(not(target_os = "haiku"))]
 sockopt_impl!(Both, ReceiveTimestamp, libc::SOL_SOCKET, libc::SO_TIMESTAMP, bool);
 
 /*

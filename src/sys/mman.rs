@@ -38,7 +38,7 @@ libc_bitflags!{
         /// Synonym for `MAP_ANONYMOUS`.
         MAP_ANON;
         /// The mapping is not backed by any file.
-        #[cfg(any(target_os = "android", target_os = "linux", target_os = "freebsd"))]
+        #[cfg(any(target_os = "android", target_os = "linux", target_os = "freebsd", target_os = "haiku"))]
         MAP_ANONYMOUS;
         /// Put the mapping into the first 2GB of the process address space.
         #[cfg(any(all(any(target_os = "android", target_os = "linux"),
@@ -61,7 +61,7 @@ libc_bitflags!{
         /// Do not reserve swap space for this mapping.
         ///
         /// This was removed in FreeBSD 11.
-        #[cfg(not(target_os = "freebsd"))]
+        #[cfg(not(any(target_os = "freebsd", target_os = "haiku")))]
         MAP_NORESERVE;
         /// Populate page tables for a mapping.
         #[cfg(any(target_os = "android", target_os = "linux"))]
@@ -150,6 +150,7 @@ libc_enum!{
         #[cfg(any(target_os = "android", target_os = "linux"))]
         MADV_DODUMP,
         /// Specify that the application no longer needs the pages in the given range.
+        #[cfg(not(target_os = "haiku"))]
         MADV_FREE,
         /// Request that the system not flush the current range to disk unless it needs to.
         #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]

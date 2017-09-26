@@ -235,7 +235,8 @@ mod platform;
           target_os = "netbsd",
           target_os = "openbsd",
           target_os = "freebsd",
-          target_os = "dragonfly"))]
+          target_os = "dragonfly",
+          target_os = "haiku"))]
 #[path = "platform/bsd.rs"]
 #[macro_use]
 mod platform;
