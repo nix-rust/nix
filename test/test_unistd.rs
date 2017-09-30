@@ -4,7 +4,7 @@ use nix::unistd::*;
 use nix::unistd::ForkResult::*;
 use nix::sys::wait::*;
 use nix::sys::stat;
-use std::{env, iter};
+use std::{self, env, iter};
 use std::ffi::CString;
 use std::fs::File;
 use std::io::Write;
@@ -128,11 +128,10 @@ mod linux_android {
 fn test_setgroups() {
     // Skip this test when not run as root as `setgroups()` requires root.
     if !Uid::current().is_root() {
-        use std::io;
-        let stderr = io::stderr();
+        let stderr = std::io::stderr();
         let mut handle = stderr.lock();
         writeln!(handle, "test_setgroups requires root privileges. Skipping test.").unwrap();
-        return
+        return;
     }
 
     #[allow(unused_variables)]
@@ -159,11 +158,10 @@ fn test_initgroups() {
     // Skip this test when not run as root as `initgroups()` and `setgroups()`
     // require root.
     if !Uid::current().is_root() {
-        use std::io;
-        let stderr = io::stderr();
+        let stderr = std::io::stderr();
         let mut handle = stderr.lock();
         writeln!(handle, "test_initgroups requires root privileges. Skipping test.").unwrap();
-        return
+        return;
     }
 
     #[allow(unused_variables)]
@@ -175,7 +173,8 @@ fn test_initgroups() {
     // It doesn't matter if the root user is not called "root" or if a user
     // called "root" doesn't exist. We are just checking that the extra,
     // made-up group, `123`, is set.
-    // FIXME: This only tests half of initgroups' functionality.
+    // FIXME: Test the other half of initgroups' functionality: whether the
+    // groups that the user belongs to are also set.
     let user = CString::new("root").unwrap();
     let group = Gid::from_raw(123);
     let group_list = getgrouplist(&user, group).unwrap();

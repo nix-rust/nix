@@ -6,14 +6,13 @@ use fcntl::{fcntl, OFlag, O_CLOEXEC, FD_CLOEXEC};
 use fcntl::FcntlArg::F_SETFD;
 use libc::{self, c_char, c_void, c_int, c_long, c_uint, size_t, pid_t, off_t,
            uid_t, gid_t, mode_t};
-use std::mem;
+use std::{self, fmt, mem};
 use std::ffi::{CString, CStr, OsString, OsStr};
 use std::os::unix::ffi::{OsStringExt, OsStrExt};
 use std::os::unix::io::RawFd;
 use std::path::{PathBuf};
 use void::Void;
 use sys::stat::Mode;
-use std::fmt;
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
 pub use self::pivot_root::*;
@@ -1058,19 +1057,19 @@ pub fn setgid(gid: Gid) -> Result<()> {
 /// [Further reading](http://pubs.opengroup.org/onlinepubs/009695399/functions/getgroups.html)
 pub fn getgroups() -> Result<Vec<Gid>> {
     // First get the number of groups so we can size our Vec
-    use std::ptr;
-    let ret = unsafe { libc::getgroups(0, ptr::null_mut()) };
-    let mut size = Errno::result(ret)?;
+    let ret = unsafe { libc::getgroups(0, std::ptr::null_mut()) };
 
     // Now actually get the groups. We try multiple times in case the number of
     // groups has changed since the first call to getgroups() and the buffer is
-    // now too small
-    let mut groups = Vec::<Gid>::with_capacity(size as usize);
+    // now too small.
+    let mut groups = Vec::<Gid>::with_capacity(Errno::result(ret)? as usize);
     loop {
         // FIXME: On the platforms we currently support, the `Gid` struct has
         // the same representation in memory as a bare `gid_t`. This is not
         // necessarily the case on all Rust platforms, though. See RFC 1785.
-        let ret = unsafe { libc::getgroups(size, groups.as_mut_ptr() as *mut gid_t) };
+        let ret = unsafe {
+            libc::getgroups(groups.capacity() as c_int, groups.as_mut_ptr() as *mut gid_t)
+        };
 
         match Errno::result(ret) {
             Ok(s) => {
@@ -1078,12 +1077,12 @@ pub fn getgroups() -> Result<Vec<Gid>> {
                 return Ok(groups);
             },
             Err(Error::Sys(Errno::EINVAL)) => {
-                // EINVAL indicates that size was too small, so trigger a
-                // resize of the groups Vec and try again...
+                // EINVAL indicates that the buffer size was too small. Trigger
+                // the internal buffer resizing logic of `Vec` by requiring
+                // more space than the current capacity.
                 let cap = groups.capacity();
                 unsafe { groups.set_len(cap) };
                 groups.reserve(1);
-                size = groups.capacity() as c_int;
             },
             Err(e) => return Err(e)
         }
@@ -1103,7 +1102,7 @@ pub fn getgroups() -> Result<Vec<Gid>> {
 ///
 /// `setgroups` can be used when dropping privileges from the root user to a
 /// specific user and group. For example, given the user `www-data` with UID
-/// `33` and the group `backup` with the GID `34`, one could switch user as
+/// `33` and the group `backup` with the GID `34`, one could switch the user as
 /// follows:
 /// ```
 /// let uid = Uid::from_raw(33);
@@ -1135,9 +1134,10 @@ pub fn setgroups(groups: &[Gid]) -> Result<()> {
     Errno::result(res).map(|_| ())
 }
 
-/// Calculate the supplementary group access list. Gets the group IDs of all
-/// groups that `user` is a member of. The additional group `group` is also
-/// added to the list.
+/// Calculate the supplementary group access list.
+///
+/// Gets the group IDs of all groups that `user` is a member of. The additional
+/// group `group` is also added to the list.
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man3/getgrouplist.3.html)
 ///
@@ -1173,6 +1173,7 @@ pub fn getgrouplist(user: &CStr, group: Gid) -> Result<Vec<Gid>> {
                                groups.as_mut_ptr() as *mut getgrouplist_group_t,
                                &mut ngroups)
         };
+
         // BSD systems only return 0 or -1, Linux returns ngroups on success.
         if ret >= 0 {
             unsafe { groups.set_len(ngroups as usize) };
@@ -1199,9 +1200,11 @@ pub fn getgrouplist(user: &CStr, group: Gid) -> Result<Vec<Gid>> {
     }
 }
 
-/// Initialize the supplementary group access list. Sets the supplementary
-/// group IDs for the calling process using all groups that `user` is a member
-/// of. The additional group `group` is also added to the list.
+/// Initialize the supplementary group access list.
+///
+/// Sets the supplementary group IDs for the calling process using all groups
+/// that `user` is a member of. The additional group `group` is also added to
+/// the list.
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man3/initgroups.3.html)
 ///
@@ -1211,7 +1214,7 @@ pub fn getgrouplist(user: &CStr, group: Gid) -> Result<Vec<Gid>> {
 /// another user. For example, given the user `www-data`, we could look up the
 /// UID and GID for the user in the system's password database (usually found
 /// in `/etc/passwd`). If the `www-data` user's UID and GID were `33` and `33`,
-/// respectively, one could switch user as follows:
+/// respectively, one could switch the user as follows:
 /// ```
 /// let user = CString::new("www-data").unwrap();
 /// let uid = Uid::from_raw(33);
