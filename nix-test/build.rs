@@ -13,7 +13,7 @@ pub fn main() {
         "UNKNOWN"
     };
 
-    gcc::Config::new()
+    gcc::Build::new()
         .file("src/const.c")
         .file("src/sizes.c")
         .define(os, None)
