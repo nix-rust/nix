@@ -13,7 +13,7 @@ use std::{thread, time};
 use tempfile::tempfile;
 
 // Helper that polls an AioCb for completion or error
-fn poll_aio(mut aiocb: &mut AioCb) -> Result<()> {
+fn poll_aio(aiocb: &mut AioCb) -> Result<()> {
     loop {
         let err = aiocb.error();
         if err != Err(Error::from(Errno::EINPROGRESS)) { return err; };
