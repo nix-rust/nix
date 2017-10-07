@@ -341,3 +341,43 @@ pub fn vmsplice(fd: RawFd, iov: &[IoVec<&[u8]>], flags: SpliceFFlags) -> Result<
     Errno::result(ret).map(|r| r as usize)
 }
 
+#[cfg(any(target_os = "linux"))]
+libc_bitflags!(
+    /// Mode argument flags for fallocate determining operation performed on a given range.
+    pub struct FallocateFlags: libc::c_int {
+        /// File size is not changed.
+        ///
+        /// offset + len can be greater than file size.
+        FALLOC_FL_KEEP_SIZE;
+        /// Deallocates space by creating a hole.
+        ///
+        /// Must be ORed with FALLOC_FL_KEEP_SIZE. Byte range starts at offset and continues for len bytes.
+        FALLOC_FL_PUNCH_HOLE;
+        /// Removes byte range from a file without leaving a hole.
+        ///
+        /// Byte range to collapse starts at offset and continues for len bytes.
+        FALLOC_FL_COLLAPSE_RANGE;
+        /// Zeroes space in specified byte range.
+        ///
+        /// Byte range starts at offset and continues for len bytes.
+        FALLOC_FL_ZERO_RANGE;
+        /// Increases file space by inserting a hole within the file size.
+        ///
+        /// Does not overwrite existing data. Hole starts at offset and continues for len bytes.
+        FALLOC_FL_INSERT_RANGE;
+        /// Shared file data extants are made private to the file.
+        ///
+        /// Gaurantees that a subsequent write will not fail due to lack of space.
+        FALLOC_FL_UNSHARE_RANGE;
+    }
+);
+
+/// Manipulates file space.
+///
+/// Allows the caller to directly manipulate the allocated disk space for the
+/// file referred to by fd.
+#[cfg(any(target_os = "linux"))]
+pub fn fallocate(fd: RawFd, mode: FallocateFlags, offset: libc::off_t, len: libc::off_t) -> Result<c_int> {
+    let res = unsafe { libc::fallocate(fd, mode.bits(), offset, len) };
+    Errno::result(res)
+}
