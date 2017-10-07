@@ -84,6 +84,11 @@ pub struct AioCb<'a> {
 }
 
 impl<'a> AioCb<'a> {
+    /// Returns the underlying file descriptor associated with the `AioCb`
+    pub fn fd(&self) -> RawFd {
+        self.aiocb.aio_fildes
+    }
+
     /// Constructs a new `AioCb` with no associated buffer.
     ///
     /// The resulting `AioCb` structure is suitable for use with `AioCb::fsync`.
@@ -239,6 +244,38 @@ impl<'a> AioCb<'a> {
         })
     }
 
+    /// Returns the `aiocb`'s `LioOpcode` field
+    ///
+    /// If the value cannot be represented as an `LioOpcode`, returns `None`
+    /// instead.
+    pub fn lio_opcode(&self) -> Option<LioOpcode> {
+        match self.aiocb.aio_lio_opcode {
+            libc::LIO_READ => Some(LioOpcode::LIO_READ),
+            libc::LIO_WRITE => Some(LioOpcode::LIO_WRITE),
+            libc::LIO_NOP => Some(LioOpcode::LIO_NOP),
+            _ => None
+        }
+    }
+
+    /// Returns the requested length of the aio operation in bytes
+    ///
+    /// This method returns the *requested* length of the operation.  To get the
+    /// number of bytes actually read or written by a completed operation, use
+    /// `aio_return` instead.
+    pub fn nbytes(&self) -> usize {
+        self.aiocb.aio_nbytes
+    }
+
+    /// Returns the file offset stored in the `AioCb`
+    pub fn offset(&self) -> off_t {
+        self.aiocb.aio_offset
+    }
+
+    /// Returns the priority of the `AioCb`
+    pub fn priority(&self) -> libc::c_int {
+        self.aiocb.aio_reqprio
+    }
+
     /// Asynchronously reads from a file descriptor into a buffer
     pub fn read(&mut self) -> Result<()> {
         assert!(self.mutable, "Can't read into an immutable buffer");
@@ -248,6 +285,11 @@ impl<'a> AioCb<'a> {
         }).map(|_| {
             self.in_progress = true;
         })
+    }
+
+    /// Returns the `SigEvent` stored in the `AioCb`
+    pub fn sigevent(&self) -> SigEvent {
+        SigEvent::from(&self.aiocb.aio_sigevent)
     }
 
     /// Retrieve return status of an asynchronous operation.  Should only be

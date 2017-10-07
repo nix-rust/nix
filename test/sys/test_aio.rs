@@ -21,6 +21,28 @@ fn poll_aio(aiocb: &mut AioCb) -> Result<()> {
     }
 }
 
+#[test]
+fn test_accessors() {
+    let mut rbuf = vec![0; 4];
+    let aiocb = AioCb::from_mut_slice( 1001,
+                           2,   //offset
+                           &mut rbuf,
+                           42,   //priority
+                           SigevNotify::SigevSignal {
+                               signal: Signal::SIGUSR2,
+                               si_value: 99
+                           },
+                           LioOpcode::LIO_NOP);
+    assert_eq!(1001, aiocb.fd());
+    assert_eq!(Some(LioOpcode::LIO_NOP), aiocb.lio_opcode());
+    assert_eq!(4, aiocb.nbytes());
+    assert_eq!(2, aiocb.offset());
+    assert_eq!(42, aiocb.priority());
+    let sev = aiocb.sigevent().sigevent();
+    assert_eq!(Signal::SIGUSR2 as i32, sev.sigev_signo);
+    assert_eq!(99, sev.sigev_value.sival_ptr as i64);
+}
+
 // Tests AioCb.cancel.  We aren't trying to test the OS's implementation, only our
 // bindings.  So it's sufficient to check that AioCb.cancel returned any
 // AioCancelStat value.

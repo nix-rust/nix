@@ -30,6 +30,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Added socket option variant that enables the timestamp socket
   control message: `nix::sys::socket::sockopt::ReceiveTimestamp`
   ([#663](https://github.com/nix-rust/nix/pull/663))
+- Added more accessor methods for `AioCb`
+  ([#773](https://github.com/nix-rust/nix/pull/773))
 
 ### Changed
 - Renamed existing `ptrace` wrappers to encourage namespacing ([#692](https://github.com/nix-rust/nix/pull/692))
