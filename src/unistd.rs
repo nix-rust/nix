@@ -876,10 +876,22 @@ pub fn pipe() -> Result<(RawFd, RawFd)> {
     }
 }
 
-// libc only defines `pipe2` in `libc::notbsd`.
-#[cfg(any(target_os = "linux",
-          target_os = "android",
-          target_os = "emscripten"))]
+/// Like `pipe`, but allows setting certain file descriptor flags.
+///
+/// The following flags are supported, and will be set atomically as the pipe is
+/// created:
+///
+/// `O_CLOEXEC`:    Set the close-on-exec flag for the new file descriptors.
+/// `O_NONBLOCK`:   Set the non-blocking flag for the ends of the pipe.
+///
+/// See also [pipe(2)](http://man7.org/linux/man-pages/man2/pipe.2.html)
+#[cfg(any(target_os = "android",
+          target_os = "dragonfly",
+          target_os = "emscripten",
+          target_os = "freebsd",
+          target_os = "linux",
+          target_os = "netbsd",
+          target_os = "openbsd"))]
 pub fn pipe2(flags: OFlag) -> Result<(RawFd, RawFd)> {
     let mut fds: [c_int; 2] = unsafe { mem::uninitialized() };
 
@@ -890,9 +902,18 @@ pub fn pipe2(flags: OFlag) -> Result<(RawFd, RawFd)> {
     Ok((fds[0], fds[1]))
 }
 
-#[cfg(not(any(target_os = "linux",
-              target_os = "android",
-              target_os = "emscripten")))]
+/// Like `pipe`, but allows setting certain file descriptor flags.
+///
+/// The following flags are supported, and will be set after the pipe is
+/// created:
+///
+/// `O_CLOEXEC`:    Set the close-on-exec flag for the new file descriptors.
+/// `O_NONBLOCK`:   Set the non-blocking flag for the ends of the pipe.
+#[cfg(any(target_os = "ios", target_os = "macos"))]
+#[deprecated(
+    since="0.10.0",
+    note="pipe2(2) is not actually atomic on these platforms.  Use pipe(2) and fcntl(2) instead"
+)]
 pub fn pipe2(flags: OFlag) -> Result<(RawFd, RawFd)> {
     let mut fds: [c_int; 2] = unsafe { mem::uninitialized() };
 
@@ -905,9 +926,7 @@ pub fn pipe2(flags: OFlag) -> Result<(RawFd, RawFd)> {
     Ok((fds[0], fds[1]))
 }
 
-#[cfg(not(any(target_os = "linux",
-              target_os = "android",
-              target_os = "emscripten")))]
+#[cfg(any(target_os = "ios", target_os = "macos"))]
 fn pipe2_setflags(fd1: RawFd, fd2: RawFd, flags: OFlag) -> Result<()> {
     use fcntl::FdFlag;
     use fcntl::FcntlArg::F_SETFL;
