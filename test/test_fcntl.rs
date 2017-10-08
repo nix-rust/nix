@@ -54,11 +54,11 @@ mod linux_android {
 
     use libc::loff_t;
 
-    use nix::fcntl::{SpliceFFlags, splice, tee, vmsplice};
+    use nix::fcntl::{SpliceFFlags, FallocateFlags, fallocate, splice, tee, vmsplice};
     use nix::sys::uio::IoVec;
     use nix::unistd::{close, pipe, read, write};
 
-    use tempfile::tempfile;
+    use tempfile::{tempfile, NamedTempFile};
 
     #[test]
     fn test_splice() {
@@ -131,4 +131,15 @@ mod linux_android {
         close(wr).unwrap();
     }
 
+    #[test]
+    fn test_fallocate() {
+        let tmp = NamedTempFile::new().unwrap();
+
+        let fd = tmp.as_raw_fd();
+        fallocate(fd, FallocateFlags::empty(), 0, 100).unwrap();
+
+        // Check if we read exactly 100 bytes
+        let mut buf = [0u8; 200];
+        assert_eq!(100, read(fd, &mut buf).unwrap());
+    }
 }
