@@ -91,7 +91,7 @@ libc_bitflags! {
 }
 
 /// `poll` waits for one of a set of file descriptors to become ready to perform I/O.
-/// ([`poll(2)`](http://man7.org/linux/man-pages/man2/poll.2.html))
+/// ([`poll(2)`](http://pubs.opengroup.org/onlinepubs/9699919799/functions/poll.html))
 ///
 /// `fds` contains all [`PollFd`](struct.PollFd.html) to poll.
 /// The function will return as soon as any event occur for any of these `PollFd`s.

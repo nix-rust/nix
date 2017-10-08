@@ -61,7 +61,7 @@ impl Drop for PtyMaster {
 }
 
 /// Grant access to a slave pseudoterminal (see
-/// [grantpt(3)](http://man7.org/linux/man-pages/man3/grantpt.3.html))
+/// [grantpt(3)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/grantpt.html))
 ///
 /// `grantpt()` changes the mode and owner of the slave pseudoterminal device corresponding to the
 /// master pseudoterminal referred to by `fd`. This is a necessary step towards opening the slave.
@@ -75,7 +75,7 @@ pub fn grantpt(fd: &PtyMaster) -> Result<()> {
 }
 
 /// Open a pseudoterminal device (see
-/// [posix_openpt(3)](http://man7.org/linux/man-pages/man3/posix_openpt.3.html))
+/// [posix_openpt(3)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/posix_openpt.html))
 ///
 /// `posix_openpt()` returns a file descriptor to an existing unused pseuterminal master device.
 ///
@@ -176,7 +176,7 @@ pub fn ptsname_r(fd: &PtyMaster) -> Result<String> {
 }
 
 /// Unlock a pseudoterminal master/slave pseudoterminal pair (see
-/// [unlockpt(3)](http://man7.org/linux/man-pages/man3/unlockpt.3.html))
+/// [unlockpt(3)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/unlockpt.html))
 ///
 /// `unlockpt()` unlocks the slave pseudoterminal device corresponding to the master pseudoterminal
 /// referred to by `fd`. This must be called before trying to open the slave side of a
