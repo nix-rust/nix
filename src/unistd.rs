@@ -438,6 +438,49 @@ pub fn mkdir<P: ?Sized + NixPath>(path: &P, mode: Mode) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
+/// Creates new fifo special file (named pipe) with path `path` and access rights `mode`.
+///
+/// # Errors
+///
+/// There are several situations where mkfifo might fail:
+///
+/// - current user has insufficient rights in the parent directory
+/// - the path already exists
+/// - the path name is too long (longer than `PATH_MAX`, usually 4096 on linux, 1024 on OS X)
+///
+/// For a full list consult
+/// [posix specification](http://pubs.opengroup.org/onlinepubs/9699919799/functions/mkfifo.html)
+///
+/// # Example
+///
+/// ```rust
+/// extern crate tempdir;
+/// extern crate nix;
+///
+/// use nix::unistd;
+/// use nix::sys::stat;
+/// use tempdir::TempDir;
+///
+/// fn main() {
+///     let tmp_dir = TempDir::new("test_fifo").unwrap();
+///     let fifo_path = tmp_dir.path().join("foo.pipe");
+/// 
+///     // create new fifo and give read, write and execute rights to the owner
+///     match unistd::mkfifo(&fifo_path, stat::S_IRWXU) {
+///        Ok(_) => println!("created {:?}", fifo_path),
+///        Err(err) => println!("Error creating fifo: {}", err),
+///     }
+/// }
+/// ```
+#[inline]
+pub fn mkfifo<P: ?Sized + NixPath>(path: &P, mode: Mode) -> Result<()> {
+    let res = try!(path.with_nix_path(|cstr| {
+        unsafe { libc::mkfifo(cstr.as_ptr(), mode.bits() as mode_t) }
+    }));
+
+    Errno::result(res).map(drop)
+}
+
 /// Returns the current directory as a PathBuf
 ///
 /// Err is returned if the current user doesn't have the permission to read or search a component
