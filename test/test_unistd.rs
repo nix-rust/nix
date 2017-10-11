@@ -86,6 +86,24 @@ fn test_mkstemp_directory() {
 }
 
 #[test]
+fn test_mkfifo() {
+    let tempdir = TempDir::new("nix-test_mkfifo").unwrap();
+    let mkfifo_fifo = tempdir.path().join("mkfifo_fifo");
+
+    mkfifo(&mkfifo_fifo, stat::S_IRUSR).unwrap();
+
+    let stats = stat::stat(&mkfifo_fifo).unwrap();
+    let typ = stat::SFlag::from_bits_truncate(stats.st_mode);
+    assert!(typ == stat::S_IFIFO); 
+}
+
+#[test]
+fn test_mkfifo_directory() {
+    // mkfifo should fail if a directory is given
+    assert!(mkfifo(&env::temp_dir(), stat::S_IRUSR).is_err());
+}
+
+#[test]
 fn test_getpid() {
     let pid: ::libc::pid_t = getpid().into();
     let ppid: ::libc::pid_t = getppid().into();
