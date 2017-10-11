@@ -66,7 +66,7 @@ impl FdSet {
     }
 }
 
-/// Monitors file descriptors for readiness (see [select(2)]).
+/// Monitors file descriptors for readiness
 ///
 /// Returns the total number of ready file descriptors in all sets. The sets are changed so that all
 /// file descriptors that are ready for the given operation are set.
@@ -84,7 +84,9 @@ impl FdSet {
 /// * `timeout`: Maximum time to wait for descriptors to become ready (`None` to block
 ///   indefinitely).
 ///
-/// [select(2)]: http://man7.org/linux/man-pages/man2/select.2.html
+/// # References
+///
+/// [select(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/select.html)
 /// [`FdSet::highest`]: struct.FdSet.html#method.highest
 pub fn select<'a, N, R, W, E, T>(nfds: N,
                                  readfds: R,
