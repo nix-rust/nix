@@ -54,6 +54,7 @@ Tier 1:
   * arm-unknown-linux-gnueabi
   * armv7-unknown-linux-gnueabihf
   * i686-apple-darwin
+  * i686-unknown-freebsd
   * i686-unknown-linux-gnu
   * i686-unknown-linux-musl
   * mips-unknown-linux-gnu
@@ -77,7 +78,6 @@ Tier 2:
   * armv7s-apple-ios
   * i386-apple-ios
   * i686-linux-android (requires Rust >= 1.18)
-  * i686-unknown-freebsd
   * powerpc-unknown-linux-gnu
   * s390x-unknown-linux-gnu
   * x86_64-apple-ios
