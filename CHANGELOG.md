@@ -65,14 +65,14 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#749](https://github.com/nix-rust/nix/pull/749))
 - `AioCb::Drop` will now panic if the `AioCb` is still in-progress ([#715](https://github.com/nix-rust/nix/pull/715))
 
-# Fixed
+### Fixed
 - Fix compilation and tests for OpenBSD targets
   ([#688](https://github.com/nix-rust/nix/pull/688))
 - Fixed error handling in `AioCb::fsync`, `AioCb::read`, and `AioCb::write`.
   It is no longer an error to drop an `AioCb` that failed to enqueue in the OS.
   ([#715](https://github.com/nix-rust/nix/pull/715))
 
-# Removed
+### Removed
 - The syscall module has been removed. This only exposed enough functionality for
   `memfd_create()` and `pivot_root()`, which are still exposed as separate functions.
   ([#747](https://github.com/nix-rust/nix/pull/747))
