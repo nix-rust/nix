@@ -51,6 +51,40 @@ pub mod vfs {
     /// http://linux.die.net/man/2/statvfs
     #[repr(C)]
     #[derive(Debug,Copy,Clone)]
+    #[cfg(target_pointer_width = "32")]
+    pub struct Statvfs {
+        /// Filesystem block size. This is the value that will lead to
+        /// most efficient use of the filesystem
+        pub f_bsize: c_ulong,
+        /// Fragment Size -- actual minimum unit of allocation on this
+        /// filesystem
+        pub f_frsize: c_ulong,
+        /// Total number of blocks on the filesystem
+        pub f_blocks: u32,
+        /// Number of unused blocks on the filesystem, including those
+        /// reserved for root
+        pub f_bfree: u32,
+        /// Number of blocks available to non-root users
+        pub f_bavail: u32,
+        /// Total number of inodes available on the filesystem
+        pub f_files: u32,
+        /// Number of inodes available on the filesystem
+        pub f_ffree: u32,
+        /// Number of inodes available to non-root users
+        pub f_favail: u32,
+        /// File System ID
+        pub f_fsid: c_ulong,
+        /// Mount Flags
+        pub f_flag: FsFlags,
+        /// Maximum filename length
+        pub f_namemax: c_ulong,
+        /// Reserved extra space, OS-dependent
+        f_spare: [c_int; 6],
+    }
+
+    #[repr(C)]
+    #[derive(Debug,Copy,Clone)]
+    #[cfg(target_pointer_width = "64")]
     pub struct Statvfs {
         /// Filesystem block size. This is the value that will lead to
         /// most efficient use of the filesystem
