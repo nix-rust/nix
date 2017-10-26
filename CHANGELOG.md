@@ -41,6 +41,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Added `nix::sys::uio::{process_vm_readv, process_vm_writev}` on Linux
   ([#568](https://github.com/nix-rust/nix/pull/568))
 - Added `nix::unistd::{getgroups, setgroups, getgrouplist, initgroups}`. ([#733](https://github.com/nix-rust/nix/pull/733))
+- Added `nix::sys::socket::UnixAddr::as_abstract` on Linux and Android.
+  ([#785](https://github.com/nix-rust/nix/pull/785))
 
 ### Changed
 - Renamed existing `ptrace` wrappers to encourage namespacing ([#692](https://github.com/nix-rust/nix/pull/692))
@@ -69,6 +71,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Moved constants ptrace request, event and options to enums and updated ptrace functions and argument types accordingly. 
   ([#749](https://github.com/nix-rust/nix/pull/749))
 - `AioCb::Drop` will now panic if the `AioCb` is still in-progress ([#715](https://github.com/nix-rust/nix/pull/715))
+- Restricted `nix::sys::socket::UnixAddr::new_abstract` to Linux and Android only.
+  ([#785](https://github.com/nix-rust/nix/pull/785))
+
 
 ### Fixed
 - Fix compilation and tests for OpenBSD targets
