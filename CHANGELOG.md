@@ -6,6 +6,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Added `AioCb::from_ptr` and `AioCb::from_mut_ptr`
+  ([#820](https://github.com/nix-rust/nix/pull/820))
 - Added specialized wrappers: `sys::ptrace::{traceme, syscall, cont, attach}`. Using the matching routines
   with `sys::ptrace::ptrace` is now deprecated.
 - Added `nix::poll` module for all platforms

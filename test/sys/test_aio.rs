@@ -1,4 +1,4 @@
-use libc::c_int;
+use libc::{c_int, c_void};
 use nix::{Error, Result};
 use nix::errno::*;
 use nix::sys::aio::*;
@@ -244,6 +244,36 @@ fn test_read_into_mut_slice() {
     assert!(rbuf == EXPECT);
 }
 
+// Tests from_ptr
+#[test]
+#[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
+fn test_read_into_pointer() {
+    const INITIAL: &'static [u8] = b"abcdef123456";
+    let mut rbuf = vec![0; 4];
+    const EXPECT: &'static [u8] = b"cdef";
+    let mut f = tempfile().unwrap();
+    f.write(INITIAL).unwrap();
+    {
+        // Safety: ok because rbuf lives until after poll_aio
+        let mut aiocb = unsafe {
+            AioCb::from_mut_ptr( f.as_raw_fd(),
+                                 2,   //offset
+                                 rbuf.as_mut_ptr() as *mut c_void,
+                                 rbuf.len(),
+                                 0,   //priority
+                                 SigevNotify::SigevNone,
+                                 LioOpcode::LIO_NOP)
+        };
+        aiocb.read().unwrap();
+
+        let err = poll_aio(&mut aiocb);
+        assert!(err == Ok(()));
+        assert!(aiocb.aio_return().unwrap() as usize == EXPECT.len());
+    }
+
+    assert!(rbuf == EXPECT);
+}
+
 // Test reading into an immutable buffer.  It should fail
 // FIXME: This test fails to panic on Linux/musl
 #[test]
@@ -280,6 +310,39 @@ fn test_write() {
                            0,   //priority
                            SigevNotify::SigevNone,
                            LioOpcode::LIO_NOP);
+    aiocb.write().unwrap();
+
+    let err = poll_aio(&mut aiocb);
+    assert!(err == Ok(()));
+    assert!(aiocb.aio_return().unwrap() as usize == wbuf.len());
+
+    f.seek(SeekFrom::Start(0)).unwrap();
+    let len = f.read_to_end(&mut rbuf).unwrap();
+    assert!(len == EXPECT.len());
+    assert!(rbuf == EXPECT);
+}
+
+// Tests `AioCb::from_ptr`
+#[test]
+#[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
+fn test_write_into_pointer() {
+    const INITIAL: &'static [u8] = b"abcdef123456";
+    let wbuf = "CDEF".to_string().into_bytes();
+    let mut rbuf = Vec::new();
+    const EXPECT: &'static [u8] = b"abCDEF123456";
+
+    let mut f = tempfile().unwrap();
+    f.write(INITIAL).unwrap();
+    // Safety: ok because aiocb outlives poll_aio
+    let mut aiocb = unsafe {
+        AioCb::from_ptr( f.as_raw_fd(),
+                         2,   //offset
+                         wbuf.as_ptr() as *const c_void,
+                         wbuf.len(),
+                         0,   //priority
+                         SigevNotify::SigevNone,
+                         LioOpcode::LIO_NOP)
+    };
     aiocb.write().unwrap();
 
     let err = poll_aio(&mut aiocb);

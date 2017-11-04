@@ -178,6 +178,73 @@ impl<'a> AioCb<'a> {
         }
     }
 
+    /// Constructs a new `AioCb` from a mutable raw pointer
+    ///
+    /// * `fd`  File descriptor.  Required for all aio functions.
+    /// * `offs` File offset
+    /// * `buf` Pointer to the memory buffer
+    /// * `len` Length of the buffer pointed to by `buf`
+    /// * `prio` If POSIX Prioritized IO is supported, then the operation will
+    /// be prioritized at the process's priority level minus `prio`
+    /// * `sigev_notify` Determines how you will be notified of event
+    /// completion.
+    /// * `opcode` This field is only used for `lio_listio`.  It determines
+    /// which operation to use for this individual aiocb
+    ///
+    /// # Safety
+    ///
+    /// Unsafe because using this `AioCb` will cause `libc::aio_read` or
+    /// `libc::aio_write` to dereference a raw pointer, without type, bounds, or
+    /// lifetime checking.
+    pub unsafe fn from_mut_ptr(fd: RawFd, offs: off_t,
+                           buf: *mut c_void, len: usize,
+                           prio: libc::c_int, sigev_notify: SigevNotify,
+                           opcode: LioOpcode) -> AioCb<'a> {
+        let mut a = AioCb::common_init(fd, prio, sigev_notify);
+        a.aio_offset = offs;
+        a.aio_nbytes = len;
+        a.aio_buf = buf;
+        a.aio_lio_opcode = opcode as libc::c_int;
+
+        let aiocb = AioCb { aiocb: a, mutable: true, in_progress: false,
+                            keeper: Keeper::none};
+        aiocb
+    }
+
+    /// Constructs a new `AioCb` from a raw pointer
+    ///
+    /// * `fd`  File descriptor.  Required for all aio functions.
+    /// * `offs` File offset
+    /// * `buf` Pointer to the memory buffer
+    /// * `len` Length of the buffer pointed to by `buf`
+    /// * `prio` If POSIX Prioritized IO is supported, then the operation will
+    /// be prioritized at the process's priority level minus `prio`
+    /// * `sigev_notify` Determines how you will be notified of event
+    /// completion.
+    /// * `opcode` This field is only used for `lio_listio`.  It determines
+    /// which operation to use for this individual aiocb
+    ///
+    /// # Safety
+    ///
+    /// Unsafe because using this `AioCb` will cause `libc::aio_write` to
+    /// dereference a raw pointer, without type, bounds, or lifetime checking.
+    pub unsafe fn from_ptr(fd: RawFd, offs: off_t,
+                           buf: *const c_void, len: usize,
+                           prio: libc::c_int, sigev_notify: SigevNotify,
+                           opcode: LioOpcode) -> AioCb<'a> {
+        let mut a = AioCb::common_init(fd, prio, sigev_notify);
+        a.aio_offset = offs;
+        a.aio_nbytes = len;
+        // casting a const ptr to a mutable ptr here is ok, because we set the
+        // AioCb's mutable field to false
+        a.aio_buf = buf as *mut c_void;
+        a.aio_lio_opcode = opcode as libc::c_int;
+
+        let aiocb = AioCb { aiocb: a, mutable: false, in_progress: false,
+                            keeper: Keeper::none};
+        aiocb
+    }
+
     /// Like `from_mut_slice`, but works on constant slices rather than
     /// mutable slices.
     ///
