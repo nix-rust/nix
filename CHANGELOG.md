@@ -105,6 +105,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#648](https://github.com/nix-rust/nix/pull/648))
 
 ### Removed
+- `AioCb::from_boxed_slice` has been removed.  It was never actually safe.  Use
+  `from_bytes` or `from_bytes_mut` instead.
+  ([#820](https://github.com/nix-rust/nix/pull/820))
 - The syscall module has been removed. This only exposed enough functionality for
   `memfd_create()` and `pivot_root()`, which are still exposed as separate functions.
   ([#747](https://github.com/nix-rust/nix/pull/747))

@@ -1,4 +1,5 @@
 use {Error, Result};
+use bytes::{Bytes, BytesMut};
 use errno::Errno;
 use std::os::unix::io::RawFd;
 use libc::{c_void, off_t, size_t};
@@ -7,7 +8,7 @@ use std::fmt;
 use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::mem;
-use std::rc::Rc;
+use std::ops::Deref;
 use std::ptr::{null, null_mut};
 use sys::signal::*;
 use sys::time::TimeSpec;
@@ -66,15 +67,50 @@ pub enum AioCancelStat {
     AioAllDone = libc::AIO_ALLDONE,
 }
 
-/// Private type used by nix to keep buffers from Drop'ing while the kernel has
-/// a pointer to them.
+/// Owns (uniquely or shared) a memory buffer to keep it from `Drop`ing while
+/// the kernel has a pointer to it.
 #[derive(Clone, Debug)]
-enum Keeper<'a> {
-    none,
-    /// Keeps a reference to a Boxed slice
-    boxed(Rc<Box<[u8]>>),
+pub enum Buffer<'a> {
+    /// No buffer to own.
+    ///
+    /// Used for operations like `aio_fsync` that have no data, or for unsafe
+    /// operations that work with raw pointers.
+    None,
+    /// Immutable shared ownership `Bytes` object
+    // Must use out-of-line allocation so the address of the data will be
+    // stable.  `Bytes` and `BytesMut` sometimes dynamically allocate a buffer,
+    // and sometimes inline the data within the struct itself.
+    Bytes(Bytes),
+    /// Mutable uniquely owned `BytesMut` object
+    BytesMut(BytesMut),
     /// Keeps a reference to a slice
-    phantom(PhantomData<&'a mut [u8]>)
+    Phantom(PhantomData<&'a mut [u8]>)
+}
+
+impl<'a> Buffer<'a> {
+    /// Return the inner `Bytes`, if any
+    pub fn bytes(&self) -> Option<&Bytes> {
+        match self {
+            &Buffer::Bytes(ref x) => Some(x),
+            _ => None
+        }
+    }
+
+    /// Return the inner `BytesMut`, if any
+    pub fn bytes_mut(&self) -> Option<&BytesMut> {
+        match self {
+            &Buffer::BytesMut(ref x) => Some(x),
+            _ => None
+        }
+    }
+
+    /// Is this `Buffer` `None`?
+    pub fn is_none(&self) -> bool {
+        match self {
+            &Buffer::None => true,
+            _ => false,
+        }
+    }
 }
 
 /// The basic structure used by all aio functions.  Each `aiocb` represents one
@@ -86,10 +122,21 @@ pub struct AioCb<'a> {
     /// Could this `AioCb` potentially have any in-kernel state?
     in_progress: bool,
     /// Used to keep buffers from Drop'ing
-    keeper: Keeper<'a>
+    buffer: Buffer<'a>
 }
 
 impl<'a> AioCb<'a> {
+    /// Remove the inner `Buffer` and return it
+    ///
+    /// It is an error to call this method while the `AioCb` is still in
+    /// progress.
+    pub fn buffer(&mut self) -> Buffer<'a> {
+        assert!(!self.in_progress);
+        let mut x = Buffer::None;
+        mem::swap(&mut self.buffer, &mut x);
+        x
+    }
+
     /// Returns the underlying file descriptor associated with the `AioCb`
     pub fn fd(&self) -> RawFd {
         self.aiocb.aio_fildes
@@ -115,7 +162,7 @@ impl<'a> AioCb<'a> {
             aiocb: a,
             mutable: false,
             in_progress: false,
-            keeper: Keeper::none
+            buffer: Buffer::None
         }
     }
 
@@ -143,38 +190,92 @@ impl<'a> AioCb<'a> {
             aiocb: a,
             mutable: true,
             in_progress: false,
-            keeper: Keeper::phantom(PhantomData)
+            buffer: Buffer::Phantom(PhantomData)
         }
     }
 
     /// Constructs a new `AioCb`.
     ///
     /// Unlike `from_mut_slice`, this method returns a structure suitable for
-    /// placement on the heap.
+    /// placement on the heap.  It may be used for write operations, but not
+    /// read operations.
     ///
     /// * `fd`  File descriptor.  Required for all aio functions.
     /// * `offs` File offset
-    /// * `buf` A shared memory buffer on the heap
+    /// * `buf` A shared memory buffer
     /// * `prio` If POSIX Prioritized IO is supported, then the operation will
     /// be prioritized at the process's priority level minus `prio`
     /// * `sigev_notify` Determines how you will be notified of event
     /// completion.
     /// * `opcode` This field is only used for `lio_listio`.  It determines
     /// which operation to use for this individual aiocb
-    pub fn from_boxed_slice(fd: RawFd, offs: off_t, buf: Rc<Box<[u8]>>,
-                          prio: libc::c_int, sigev_notify: SigevNotify,
+    pub fn from_bytes(fd: RawFd, offs: off_t, buf: Bytes,
+                      prio: libc::c_int, sigev_notify: SigevNotify,
                           opcode: LioOpcode) -> AioCb<'a> {
+        // Small BytesMuts are stored inline.  Inline storage is a no-no,
+        // because we store a pointer to the buffer in the AioCb before
+        // returning the Buffer by move.  If the buffer is too small, reallocate
+        // it to force out-of-line storage
+        // TODO: Add an is_inline() method to BytesMut, and a way to explicitly
+        // force out-of-line allocation.
+        let buf2 = if buf.len() < 64 {
+            // Reallocate to force out-of-line allocation
+            let mut ool = Bytes::with_capacity(64);
+            ool.extend_from_slice(buf.deref());
+            ool
+        } else {
+            buf
+        };
         let mut a = AioCb::common_init(fd, prio, sigev_notify);
         a.aio_offset = offs;
-        a.aio_nbytes = buf.len() as size_t;
-        a.aio_buf = buf.as_ptr() as *mut c_void;
+        a.aio_nbytes = buf2.len() as size_t;
+        a.aio_buf = buf2.as_ptr() as *mut c_void;
+        a.aio_lio_opcode = opcode as libc::c_int;
+
+        AioCb {
+            aiocb: a,
+            mutable: false,
+            in_progress: false,
+            buffer: Buffer::Bytes(buf2)
+        }
+    }
+
+    /// Constructs a new `AioCb`.
+    ///
+    /// Unlike `from_mut_slice`, this method returns a structure suitable for
+    /// placement on the heap.  It may be used for both reads and writes.
+    ///
+    /// * `fd`  File descriptor.  Required for all aio functions.
+    /// * `offs` File offset
+    /// * `buf` A shared memory buffer
+    /// * `prio` If POSIX Prioritized IO is supported, then the operation will
+    /// be prioritized at the process's priority level minus `prio`
+    /// * `sigev_notify` Determines how you will be notified of event
+    /// completion.
+    /// * `opcode` This field is only used for `lio_listio`.  It determines
+    /// which operation to use for this individual aiocb
+    pub fn from_bytes_mut(fd: RawFd, offs: off_t, buf: BytesMut,
+                          prio: libc::c_int, sigev_notify: SigevNotify,
+                          opcode: LioOpcode) -> AioCb<'a> {
+        let mut buf2 = if buf.len() < 64 {
+            // Reallocate to force out-of-line allocation
+            let mut ool = BytesMut::with_capacity(64);
+            ool.extend_from_slice(buf.deref());
+            ool
+        } else {
+            buf
+        };
+        let mut a = AioCb::common_init(fd, prio, sigev_notify);
+        a.aio_offset = offs;
+        a.aio_nbytes = buf2.len() as size_t;
+        a.aio_buf = buf2.as_mut_ptr() as *mut c_void;
         a.aio_lio_opcode = opcode as libc::c_int;
 
         AioCb {
             aiocb: a,
             mutable: true,
             in_progress: false,
-            keeper: Keeper::boxed(buf)
+            buffer: Buffer::BytesMut(buf2)
         }
     }
 
@@ -206,9 +307,12 @@ impl<'a> AioCb<'a> {
         a.aio_buf = buf;
         a.aio_lio_opcode = opcode as libc::c_int;
 
-        let aiocb = AioCb { aiocb: a, mutable: true, in_progress: false,
-                            keeper: Keeper::none};
-        aiocb
+        AioCb {
+            aiocb: a,
+            mutable: true,
+            in_progress: false,
+            buffer: Buffer::None
+        }
     }
 
     /// Constructs a new `AioCb` from a raw pointer
@@ -240,9 +344,12 @@ impl<'a> AioCb<'a> {
         a.aio_buf = buf as *mut c_void;
         a.aio_lio_opcode = opcode as libc::c_int;
 
-        let aiocb = AioCb { aiocb: a, mutable: false, in_progress: false,
-                            keeper: Keeper::none};
-        aiocb
+        AioCb {
+            aiocb: a,
+            mutable: false,
+            in_progress: false,
+            buffer: Buffer::None
+        }
     }
 
     /// Like `from_mut_slice`, but works on constant slices rather than
@@ -275,7 +382,20 @@ impl<'a> AioCb<'a> {
             aiocb: a,
             mutable: false,
             in_progress: false,
-            keeper: Keeper::none
+            buffer: Buffer::None
+        }
+    }
+
+    /// Consumes the `aiocb` and returns its inner `Buffer`, if any.
+    ///
+    /// This method is especially useful when reading into a `BytesMut`, because
+    /// that type does not support shared ownership.
+    pub fn into_buffer(mut self) -> Buffer<'static> {
+        let buf = self.buffer();
+        match buf {
+            Buffer::BytesMut(x) => Buffer::BytesMut(x),
+            Buffer::Bytes(x) => Buffer::Bytes(x),
+            _ => Buffer::None
         }
     }
 
