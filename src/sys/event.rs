@@ -59,7 +59,7 @@ libc_enum! {
                   target_os = "ios",
                   target_os = "macos"))]
         EVFILT_USER,
-        #[cfg(any(target_os = "macos", target_os = "ios"))]
+        #[cfg(any(target_os = "ios", target_os = "macos"))]
         EVFILT_VM,
         EVFILT_VNODE,
         EVFILT_WRITE,

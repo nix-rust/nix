@@ -19,9 +19,12 @@ libc_enum! {
         /// do it like `fsync`
         O_SYNC,
         /// on supported operating systems only, do it like `fdatasync`
-        #[cfg(any(target_os = "openbsd", target_os = "bitrig",
-                target_os = "netbsd", target_os = "macos", target_os = "ios",
-                target_os = "linux"))]
+        #[cfg(any(target_os = "bitrig",
+                  target_os = "ios",
+                  target_os = "linux",
+                  target_os = "macos",
+                  target_os = "netbsd",
+                  target_os = "openbsd"))]
         O_DSYNC
     }
 }

@@ -33,7 +33,8 @@ libc_enum!{
         SIGPIPE,
         SIGALRM,
         SIGTERM,
-        #[cfg(all(any(target_os = "linux", target_os = "android", target_os = "emscripten"), not(any(target_arch = "mips", target_arch = "mips64"))))]
+        #[cfg(all(any(target_os = "android", target_os = "emscripten", target_os = "linux"), 
+                  not(any(target_arch = "mips", target_arch = "mips64"))))]
         SIGSTKFLT,
         SIGCHLD,
         SIGCONT,
@@ -48,12 +49,12 @@ libc_enum!{
         SIGPROF,
         SIGWINCH,
         SIGIO,
-        #[cfg(any(target_os = "linux", target_os = "android", target_os = "emscripten"))]
+        #[cfg(any(target_os = "android", target_os = "emscripten", target_os = "linux"))]
         SIGPWR,
         SIGSYS,
-        #[cfg(not(any(target_os = "linux", target_os = "android", target_os = "emscripten")))]
+        #[cfg(not(any(target_os = "android", target_os = "emscripten", target_os = "linux")))]
         SIGEMT,
-        #[cfg(not(any(target_os = "linux", target_os = "android", target_os = "emscripten")))]
+        #[cfg(not(any(target_os = "android", target_os = "emscripten", target_os = "linux")))]
         SIGINFO,
     }
 }
