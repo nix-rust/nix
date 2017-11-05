@@ -3,10 +3,10 @@ use std::os::unix::io::RawFd;
 use {Errno, Result};
 use std::ffi::CStr;
 
-bitflags!(
+libc_bitflags!(
     pub struct MemFdCreateFlag: libc::c_uint {
-        const MFD_CLOEXEC       = 0x0001;
-        const MFD_ALLOW_SEALING = 0x0002;
+        MFD_CLOEXEC;
+        MFD_ALLOW_SEALING;
     }
 );
 
