@@ -1,5 +1,5 @@
 use libc::c_int;
-use std::{fmt, io, error};
+use std::{fmt, io, error, ptr};
 use {Error, Result};
 
 pub use self::consts::*;
@@ -103,6 +103,10 @@ impl ErrnoSentinel for i32 {
 
 impl ErrnoSentinel for i64 {
     fn sentinel() -> Self { -1 }
+}
+
+impl<T> ErrnoSentinel for *mut T {
+    fn sentinel() -> Self { ptr::null_mut() }
 }
 
 impl error::Error for Errno {

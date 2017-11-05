@@ -36,6 +36,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#768](https:://github.com/nix-rust/nix/pull/768))
 - Added `nix::unistd::mkfifo`.
   ([#602](https://github.com/nix-rust/nix/pull/774))
+- Added `nix::unistd::getlogin`.
+  ([#789](https://github.com/nix-rust/nix/pull/789))
 
 ### Changed
 - Renamed existing `ptrace` wrappers to encourage namespacing ([#692](https://github.com/nix-rust/nix/pull/692))
