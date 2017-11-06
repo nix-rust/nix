@@ -8,10 +8,31 @@ libc_bitflags!(
     pub struct WaitPidFlag: c_int {
         WNOHANG;
         WUNTRACED;
+        #[cfg(any(target_os = "android",
+                  target_os = "freebsd",
+                  target_os = "haiku",
+                  target_os = "ios",
+                  target_os = "linux",
+                  target_os = "macos",
+                  target_os = "netbsd"))]
         WEXITED;
         WCONTINUED;
+        #[cfg(any(target_os = "android",
+                  target_os = "freebsd",
+                  target_os = "haiku",
+                  target_os = "ios",
+                  target_os = "linux",
+                  target_os = "macos",
+                  target_os = "netbsd"))]
         WSTOPPED;
         /// Don't reap, just poll status.
+        #[cfg(any(target_os = "android",
+                  target_os = "freebsd",
+                  target_os = "haiku",
+                  target_os = "ios",
+                  target_os = "linux",
+                  target_os = "macos",
+                  target_os = "netbsd"))]
         WNOWAIT;
         /// Don't wait on children of other threads in this group
         #[cfg(any(target_os = "android", target_os = "linux"))]
