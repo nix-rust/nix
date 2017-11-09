@@ -68,6 +68,7 @@ pub enum SockType {
     SeqPacket = libc::SOCK_SEQPACKET,
     /// Provides raw network protocol access.
     Raw = libc::SOCK_RAW,
+    #[cfg(not(target_os = "haiku"))]
     /// Provides a reliable datagram layer that does not
     /// guarantee ordering.
     Rdm = libc::SOCK_RDM,
@@ -278,6 +279,7 @@ impl<'a> Iterator for CmsgIterator<'a> {
                     slice::from_raw_parts(
                         &cmsg.cmsg_data as *const _ as *const _, 1)))
             },
+            #[cfg(not(target_os = "haiku"))]
             (libc::SOL_SOCKET, libc::SCM_TIMESTAMP) => unsafe {
                 Some(ControlMessage::ScmTimestamp(
                     &*(&cmsg.cmsg_data as *const _ as *const _)))
@@ -315,6 +317,7 @@ pub enum ControlMessage<'a> {
     // https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=222039
     #[cfg_attr(not(all(target_os = "freebsd", target_arch = "x86")), doc = " ```")]
     #[cfg_attr(all(target_os = "freebsd", target_arch = "x86"), doc = " ```no_run")]
+    #[cfg(not(target_os = "haiku"))]
     /// use nix::sys::socket::*;
     /// use nix::sys::uio::IoVec;
     /// use nix::sys::time::*;
@@ -396,6 +399,7 @@ impl<'a> ControlMessage<'a> {
             ControlMessage::ScmRights(fds) => {
                 mem::size_of_val(fds)
             },
+            #[cfg(not(target_os = "haiku"))]
             ControlMessage::ScmTimestamp(t) => {
                 mem::size_of_val(t)
             },
@@ -429,6 +433,7 @@ impl<'a> ControlMessage<'a> {
 
                 copy_bytes(fds, buf);
             },
+            #[cfg(not(target_os = "haiku"))]
             ControlMessage::ScmTimestamp(t) => {
                 let cmsg = cmsghdr {
                     cmsg_len: self.len() as type_of_cmsg_len,

@@ -51,6 +51,7 @@ pub enum AddressFamily {
     X25 = libc::AF_X25,
     #[cfg(any(target_os = "android", target_os = "linux"))]
     Rose = libc::AF_ROSE,
+    #[cfg(not(target_os = "haiku"))]
     Decnet = libc::AF_DECnet,
     #[cfg(any(target_os = "android", target_os = "linux"))]
     NetBeui = libc::AF_NETBEUI,
@@ -66,6 +67,7 @@ pub enum AddressFamily {
     AtmSvc = libc::AF_ATMSVC,
     #[cfg(any(target_os = "android", target_os = "linux"))]
     Rds = libc::AF_RDS,
+    #[cfg(not(target_os = "haiku"))]
     Sna = libc::AF_SNA,
     #[cfg(any(target_os = "android", target_os = "linux"))]
     Irda = libc::AF_IRDA,
@@ -89,6 +91,7 @@ pub enum AddressFamily {
     Iucv = libc::AF_IUCV,
     #[cfg(any(target_os = "android", target_os = "linux"))]
     RxRpc = libc::AF_RXRPC,
+    #[cfg(not(target_os = "haiku"))]
     Isdn = libc::AF_ISDN,
     #[cfg(any(target_os = "android", target_os = "linux"))]
     Phonet = libc::AF_PHONET,
@@ -176,7 +179,8 @@ pub enum AddressFamily {
               target_os = "ios",
               target_os = "macos",
               target_os = "netbsd",
-              target_os = "openbsd"))]
+              target_os = "openbsd",
+              target_os = "haiku"))]
     Link = libc::AF_LINK,
     #[cfg(any(target_os = "dragonfly",
               target_os = "freebsd",

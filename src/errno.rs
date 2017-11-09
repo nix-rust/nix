@@ -47,6 +47,12 @@ unsafe fn errno_location() -> *mut c_int {
     __errno()
 }
 
+#[cfg(target_os = "haiku")]
+unsafe fn errno_location() -> *mut c_int {
+    extern { fn _errnop() -> *mut c_int; }
+    _errnop()
+}
+
 /// Sets the platform-specific errno to no-error
 unsafe fn clear() -> () {
     *errno_location() = 0;
@@ -144,6 +150,7 @@ fn desc(errno: Errno) -> &'static str {
         ENOMEM          => "Out of memory",
         EACCES          => "Permission denied",
         EFAULT          => "Bad address",
+        #[cfg(not(target_os = "haiku"))]
         ENOTBLK         => "Block device required",
         EBUSY           => "Device or resource busy",
         EEXIST          => "File exists",
@@ -180,6 +187,7 @@ fn desc(errno: Errno) -> &'static str {
         EPROTOTYPE      => "Protocol wrong type for socket",
         ENOPROTOOPT     => "Protocol not available",
         EPROTONOSUPPORT => "Protocol not supported",
+        #[cfg(not(target_os = "haiku"))]
         ESOCKTNOSUPPORT => "Socket type not supported",
         EPFNOSUPPORT    => "Protocol family not supported",
         EAFNOSUPPORT    => "Address family not supported by protocol",
@@ -194,6 +202,7 @@ fn desc(errno: Errno) -> &'static str {
         EISCONN         => "Transport endpoint is already connected",
         ENOTCONN        => "Transport endpoint is not connected",
         ESHUTDOWN       => "Cannot send after transport endpoint shutdown",
+        #[cfg(not(target_os = "haiku"))]
         ETOOMANYREFS    => "Too many references: cannot splice",
         ETIMEDOUT       => "Connection timed out",
         ECONNREFUSED    => "Connection refused",
@@ -389,10 +398,10 @@ fn desc(errno: Errno) -> &'static str {
         #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
         EDOOFUS         => "Programming error",
 
-        #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
+        #[cfg(any(target_os = "freebsd", target_os = "dragonfly", target_os = "haiku"))]
         EMULTIHOP       => "Multihop attempted",
 
-        #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
+        #[cfg(any(target_os = "freebsd", target_os = "dragonfly", target_os = "haiku"))]
         ENOLINK         => "Link has been severed",
 
         #[cfg(target_os = "freebsd")]
@@ -404,19 +413,19 @@ fn desc(errno: Errno) -> &'static str {
         #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "dragonfly", target_os = "ios", target_os = "openbsd", target_os = "netbsd"))]
         ENEEDAUTH       => "Need authenticator",
 
-        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "dragonfly", target_os = "ios", target_os = "openbsd", target_os = "netbsd"))]
+        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "dragonfly", target_os = "ios", target_os = "openbsd", target_os = "netbsd", target_os = "haiku"))]
         EOVERFLOW       => "Value too large to be stored in data type",
 
-        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "dragonfly", target_os = "ios", target_os = "netbsd"))]
+        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "dragonfly", target_os = "ios", target_os = "netbsd", target_os = "haiku"))]
         EILSEQ          => "Illegal byte sequence",
 
-        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "dragonfly", target_os = "ios", target_os = "openbsd", target_os = "netbsd"))]
+        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "dragonfly", target_os = "ios", target_os = "openbsd", target_os = "netbsd", target_os = "haiku"))]
         ENOATTR         => "Attribute not found",
 
-        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "dragonfly", target_os = "ios", target_os = "netbsd"))]
+        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "dragonfly", target_os = "ios", target_os = "netbsd", target_os = "haiku"))]
         EBADMSG         => "Bad message",
 
-        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "dragonfly", target_os = "ios", target_os = "netbsd"))]
+        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "dragonfly", target_os = "ios", target_os = "netbsd", target_os = "haiku"))]
         EPROTO          => "Protocol error",
 
         #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "ios"))]
@@ -425,7 +434,7 @@ fn desc(errno: Errno) -> &'static str {
         #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "ios"))]
         EOWNERDEAD      => "Previous owner died",
 
-        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "dragonfly", target_os = "ios", target_os = "openbsd", target_os = "netbsd"))]
+        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "dragonfly", target_os = "ios", target_os = "openbsd", target_os = "netbsd", target_os = "haiku"))]
         ENOTSUP         => "Operation not supported",
 
         #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "dragonfly", target_os = "ios", target_os = "openbsd", target_os = "netbsd"))]
@@ -434,10 +443,10 @@ fn desc(errno: Errno) -> &'static str {
         #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "dragonfly", target_os = "ios", target_os = "openbsd", target_os = "netbsd"))]
         EUSERS          => "Too many users",
 
-        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "dragonfly", target_os = "ios", target_os = "openbsd", target_os = "netbsd"))]
+        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "dragonfly", target_os = "ios", target_os = "openbsd", target_os = "netbsd", target_os = "haiku"))]
         EDQUOT          => "Disc quota exceeded",
 
-        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "dragonfly", target_os = "ios", target_os = "openbsd", target_os = "netbsd"))]
+        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "dragonfly", target_os = "ios", target_os = "openbsd", target_os = "netbsd", target_os = "haiku"))]
         ESTALE          => "Stale NFS file handle",
 
         #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "dragonfly", target_os = "ios", target_os = "openbsd", target_os = "netbsd"))]
@@ -464,7 +473,7 @@ fn desc(errno: Errno) -> &'static str {
         #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "dragonfly", target_os = "ios", target_os = "openbsd", target_os = "netbsd"))]
         EAUTH           => "Authentication error",
 
-        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "dragonfly", target_os = "ios", target_os = "openbsd", target_os = "netbsd"))]
+        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "dragonfly", target_os = "ios", target_os = "openbsd", target_os = "netbsd", target_os = "haiku"))]
         ECANCELED       => "Operation canceled",
 
         #[cfg(any(target_os = "macos", target_os = "ios"))]
@@ -488,19 +497,19 @@ fn desc(errno: Errno) -> &'static str {
         #[cfg(any(target_os = "macos", target_os = "ios", target_os = "netbsd"))]
         EMULTIHOP       => "Reserved",
 
-        #[cfg(any(target_os = "macos", target_os = "ios", target_os = "netbsd"))]
+        #[cfg(any(target_os = "macos", target_os = "ios", target_os = "netbsd", target_os = "haiku"))]
         ENODATA         => "No message available on STREAM",
 
         #[cfg(any(target_os = "macos", target_os = "ios", target_os = "netbsd"))]
         ENOLINK         => "Reserved",
 
-        #[cfg(any(target_os = "macos", target_os = "ios", target_os = "netbsd"))]
+        #[cfg(any(target_os = "macos", target_os = "ios", target_os = "netbsd", target_os = "haiku"))]
         ENOSR           => "No STREAM resources",
 
-        #[cfg(any(target_os = "macos", target_os = "ios", target_os = "netbsd"))]
+        #[cfg(any(target_os = "macos", target_os = "ios", target_os = "netbsd", target_os = "haiku"))]
         ENOSTR          => "Not a STREAM",
 
-        #[cfg(any(target_os = "macos", target_os = "ios", target_os = "netbsd"))]
+        #[cfg(any(target_os = "macos", target_os = "ios", target_os = "netbsd", target_os = "haiku"))]
         ETIME           => "STREAM ioctl timeout",
 
         #[cfg(any(target_os = "macos", target_os = "ios"))]
@@ -512,7 +521,7 @@ fn desc(errno: Errno) -> &'static str {
         #[cfg(any(target_os = "macos", target_os = "ios"))]
         EQFULL          => "Interface output queue is full",
 
-        #[cfg(target_os = "openbsd")]
+        #[cfg(any(target_os = "openbsd", target_os = "haiku"))]
         EOPNOTSUPP      => "Operation not supported",
 
         #[cfg(target_os = "openbsd")]
@@ -523,6 +532,12 @@ fn desc(errno: Errno) -> &'static str {
  
         #[cfg(target_os = "dragonfly")]
         EASYNC          => "Async",
+        
+        #[cfg(target_os = "haiku")]
+        EFPOS => "File position error",
+        
+        #[cfg(target_os = "haiku")]
+        ESIGPARM => "Signal error",
     }
 }
 
@@ -1910,6 +1925,172 @@ mod consts {
     }
 }
 
+#[cfg(target_os = "haiku")]
+mod consts {
+    #[derive(Copy, Debug, Clone, PartialEq)]
+    pub enum Errno {
+        UnknownErrno = 0,
+        E2BIG = -2147454975,
+        ECHILD =        -2147454974,
+        EDEADLK =       -2147454973,
+        EFBIG = -2147454972,
+        EMLINK =        -2147454971,
+        ENFILE =        -2147454970,
+        ENODEV =        -2147454969,
+        ENOLCK =        -2147454968,
+        ENOSYS =        -2147454967,
+        ENOTTY =        -2147454966,
+        ENXIO = -2147454965,
+        ESPIPE =        -2147454964,
+        ESRCH = -2147454963,
+        EFPOS = -2147457962,
+        ESIGPARM =      -2147457961,
+        EDOM =  -2147454960,
+        ERANGE =        -2147454959,
+        EPROTOTYPE =    -2147454958,
+        EPROTONOSUPPORT =       -2147454957,
+        EPFNOSUPPORT =  -2147454956,
+        EAFNOSUPPORT =  -2147454955,
+        EADDRINUSE =    -2147454954,
+        EADDRNOTAVAIL = -2147454953,
+        ENETDOWN =      -2147454952,
+        ENETUNREACH =   -2147454951,
+        ENETRESET =     -2147454950,
+        ECONNABORTED =  -2147454949,
+        ECONNRESET =    -2147454948,
+        EISCONN =       -2147454947,
+        ENOTCONN =      -2147454946,
+        ESHUTDOWN =     -2147454945,
+        ECONNREFUSED =  -2147454944,
+        EHOSTUNREACH =  -2147454943,
+        ENOPROTOOPT =   -2147454942,
+        ENOBUFS =       -2147454941,
+        EINPROGRESS =   -2147454940,
+        EALREADY =      -2147454939,
+        EILSEQ =        -2147454938,
+        ENOMSG =        -2147454937,
+        ESTALE =        -2147454936,
+        EOVERFLOW =     -2147454935,
+        EMSGSIZE =      -2147454934,
+        EOPNOTSUPP =    -2147454933,
+        ENOTSOCK =      -2147454932,
+        EHOSTDOWN =     -2147454931,
+        EBADMSG =       -2147454930,
+        ECANCELED =     -2147454929,
+        EDESTADDRREQ =  -2147454928,
+        EDQUOT =        -2147454927,
+        EIDRM = -2147454926,
+        EMULTIHOP =     -2147454925,
+        ENODATA =       -2147454924,
+        ENOLINK =       -2147454923,
+        ENOSR = -2147454922,
+        ENOSTR =        -2147454921,
+        ENOTSUP =       -2147454920,
+        EPROTO =        -2147454919,
+        ETIME = -2147454918,
+        ETXTBSY =       -2147454917,
+        ENOATTR =       -2147454916,
+        ENOMEM =        -2147454976,
+        EACCES =        -2147483646,
+        EINTR = -2147483638,
+        EIO =   -2147483647,
+        EBUSY = -2147483634,
+        EFAULT =        -2147478783,
+        ETIMEDOUT =     -2147483639,
+        EAGAIN =        -2147483637,
+        EBADF = -2147459072,
+        EEXIST =        -2147459070,
+        EINVAL =        -2147483643,
+        ENAMETOOLONG =  -2147459068,
+        ENOENT =        -2147459069,
+        EPERM = -2147483633,
+        ENOTDIR =       -2147459067,
+        EISDIR =        -2147459063,
+        ENOTEMPTY =     -2147459066,
+        ENOSPC =        -2147459065,
+        EROFS = -2147459064,
+        EMFILE =        -2147459062,
+        EXDEV = -2147459061,
+        ELOOP = -2147459060,
+        ENOEXEC =       -2147478782,
+        EPIPE = -2147459059,
+    }
+    
+    pub const ELAST: Errno	= Errno::ENOTSUP;
+    pub const EWOULDBLOCK: Errno = Errno::EAGAIN;
+
+    pub const EL2NSYC: Errno = Errno::UnknownErrno;
+
+    pub fn from_i32(e: i32) -> Errno {
+        use self::Errno::*;
+
+        match e {
+            0			=> UnknownErrno,
+            -2147454975 => E2BIG,
+            -2147454974 => ECHILD,
+            -2147454973 => EDEADLK,
+            -2147454972 => EFBIG,
+            -2147454971 => EMLINK,
+            -2147454970 => ENFILE,
+            -2147454969 => ENODEV,
+            -2147454968 => ENOLCK,
+            -2147454967 => ENOSYS,
+            -2147454966 => ENOTTY,
+            -2147454965 => ENXIO,
+            -2147454964 => ESPIPE,
+            -2147454963 => ESRCH,
+            -2147457962 => EFPOS,
+            -2147457961 => ESIGPARM,
+            -2147454960 => EDOM,
+            -2147454959 => ERANGE,
+            -2147454958 => EPROTOTYPE,
+            -2147454957 => EPROTONOSUPPORT,
+            -2147454956 => EPFNOSUPPORT,
+            -2147454955 => EAFNOSUPPORT,
+            -2147454954 => EADDRINUSE,
+            -2147454953 => EADDRNOTAVAIL,
+            -2147454952 => ENETDOWN,
+            -2147454951 => ENETUNREACH,
+            -2147454950 => ENETRESET,
+            -2147454949 => ECONNABORTED,
+            -2147454948 => ECONNRESET,
+            -2147454947 => EISCONN,
+            -2147454946 => ENOTCONN,
+            -2147454945 => ESHUTDOWN,
+            -2147454944 => ECONNREFUSED,
+            -2147454943 => EHOSTUNREACH,
+            -2147454942 => ENOPROTOOPT,
+            -2147454941 => ENOBUFS,
+            -2147454940 => EINPROGRESS,
+            -2147454939 => EALREADY,
+            -2147454938 => EILSEQ,
+            -2147454937 => ENOMSG,
+            -2147454936 => ESTALE,
+            -2147454935 => EOVERFLOW,
+            -2147454934 => EMSGSIZE,
+            -2147454933 => EOPNOTSUPP,
+            -2147454932 => ENOTSOCK,
+            -2147454931 => EHOSTDOWN,
+            -2147454930 => EBADMSG,
+            -2147454929 => ECANCELED,
+            -2147454928 => EDESTADDRREQ,
+            -2147454927 => EDQUOT,
+            -2147454926 => EIDRM,
+            -2147454925 => EMULTIHOP,
+            -2147454924 => ENODATA,
+            -2147454923 => ENOLINK,
+            -2147454922 => ENOSR,
+            -2147454921 => ENOSTR,
+            -2147454920 => ENOTSUP,
+            -2147454919 => EPROTO,
+            -2147454918 => ETIME,
+            -2147454917 => ETXTBSY,
+            -2147454916 => ENOATTR,
+            -2147454976 => ENOMEM,
+            _			=> UnknownErrno,
+        }
+    }
+}
 
 #[cfg(test)]
 mod test {

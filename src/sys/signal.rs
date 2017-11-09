@@ -47,14 +47,19 @@ pub enum Signal {
     SIGVTALRM = libc::SIGVTALRM,
     SIGPROF = libc::SIGPROF,
     SIGWINCH = libc::SIGWINCH,
+    #[cfg(not(target_os = "haiku"))]
     SIGIO = libc::SIGIO,
     #[cfg(any(target_os = "linux", target_os = "android", target_os = "emscripten"))]
     SIGPWR = libc::SIGPWR,
     SIGSYS = libc::SIGSYS,
-    #[cfg(not(any(target_os = "linux", target_os = "android", target_os = "emscripten")))]
+    #[cfg(not(any(target_os = "linux", target_os = "android", target_os = "emscripten", target_os = "haiku")))]
     SIGEMT = libc::SIGEMT,
-    #[cfg(not(any(target_os = "linux", target_os = "android", target_os = "emscripten")))]
+    #[cfg(not(any(target_os = "linux", target_os = "android", target_os = "emscripten", target_os = "haiku")))]
     SIGINFO = libc::SIGINFO,
+    #[cfg(target_os = "haiku")]
+    SIGKILLTHR = libc::SIGKILLTHR,
+    #[cfg(target_os = "haiku")]
+    SIGPOLL = libc::SIGPOLL,
 }
 
 pub use self::Signal::*;
@@ -124,7 +129,7 @@ const SIGNALS: [Signal; 30] = [
     SIGIO,
     SIGPWR,
     SIGSYS];
-#[cfg(not(any(target_os = "linux", target_os = "android", target_os = "emscripten")))]
+#[cfg(not(any(target_os = "linux", target_os = "android", target_os = "emscripten", target_os = "haiku")))]
 const SIGNALS: [Signal; 31] = [
     SIGHUP,
     SIGINT,
@@ -157,6 +162,39 @@ const SIGNALS: [Signal; 31] = [
     SIGSYS,
     SIGEMT,
     SIGINFO];
+
+#[cfg(target_os = "haiku")]
+const SIGNALS: [Signal; 30] = [
+    SIGHUP,
+    SIGINT,
+    SIGQUIT,
+    SIGILL,
+    SIGCHLD,
+    SIGABRT,
+    SIGPIPE,
+    SIGFPE,
+    SIGKILL,
+    SIGSTOP,
+    SIGSEGV,
+    SIGCONT,
+    SIGTSTP,
+    SIGALRM,
+    SIGTERM,
+    SIGTTIN,
+    SIGTTOU,
+    SIGUSR1,
+    SIGUSR2,
+    SIGWINCH,
+    SIGKILLTHR,
+    SIGTRAP,
+    SIGPOLL,
+    SIGPROF,
+    SIGSYS,
+    SIGURG,
+    SIGVTALRM,
+    SIGXCPU,
+    SIGXFSZ,
+    SIGBUS];
 
 pub const NSIG: libc::c_int = 32;
 
@@ -196,6 +234,7 @@ impl Signal {
 }
 
 pub const SIGIOT : Signal = SIGABRT;
+#[cfg(not(target_os = "haiku"))]
 pub const SIGPOLL : Signal = SIGIO;
 pub const SIGUNUSED : Signal = SIGSYS;
 

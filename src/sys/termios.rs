@@ -406,6 +406,7 @@ libc_enum! {
     /// Indices into the `termios.c_cc` array for special characters.
     #[repr(usize)]
     pub enum SpecialCharacterIndices {
+    	#[cfg(not(target_os = "haiku"))]
         VDISCARD,
         #[cfg(any(target_os = "dragonfly",
                 target_os = "freebsd",
@@ -421,9 +422,12 @@ libc_enum! {
         VERASE2,
         VINTR,
         VKILL,
+        #[cfg(not(target_os = "haiku"))]
         VLNEXT,
+        #[cfg(not(target_os = "haiku"))]
         VMIN,
         VQUIT,
+        #[cfg(not(target_os = "haiku"))]
         VREPRINT,
         VSTART,
         #[cfg(any(target_os = "dragonfly",
@@ -438,7 +442,9 @@ libc_enum! {
         VSWTC,
         #[cfg(target_os = "haiku")]
         VSWTCH,
+        #[cfg(not(target_os = "haiku"))]
         VTIME,
+        #[cfg(not(target_os = "haiku"))]
         VWERASE,
         #[cfg(target_os = "dragonfly")]
         VCHECKPT,
@@ -469,6 +475,7 @@ libc_bitflags! {
         IXON;
         IXOFF;
         IXANY;
+        #[cfg(not(target_os = "haiku"))]
         IMAXBEL;
         #[cfg(any(target_os = "android", target_os = "linux", target_os = "macos"))]
         IUTF8;
@@ -745,6 +752,7 @@ libc_bitflags! {
                   target_os = "openbsd"))]
         ALTWERASE;
         IEXTEN;
+        #[cfg(not(target_os = "haiku"))]
         EXTPROC;
         TOSTOP;
         FLUSHO;
