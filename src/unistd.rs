@@ -716,7 +716,9 @@ pub fn sethostname<S: AsRef<OsStr>>(name: S) -> Result<()> {
 /// null-terminate in this case, but the nix implementation will ensure that the
 /// buffer is null terminated in this case.
 ///
-/// ```no_run
+/// # Example
+///
+/// ```
 /// use nix::unistd;
 ///
 /// let mut buf = [0u8; 64];
@@ -735,6 +737,29 @@ pub fn gethostname<'a>(buffer: &'a mut [u8]) -> Result<&'a CStr> {
     })
 }
 
+/// Get the name of the user logged in on the controlling terminal
+/// of the process
+/// ([getlogin(3)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/getlogin.html)).
+///
+/// The posix specification says that "the string is statically
+/// allocated and might be invalidated or overwritten on subsequent
+/// calls to this function", so you may want to copy the value before
+/// using it.
+///
+/// # Example
+///
+/// ```
+/// use nix::unistd;
+///
+/// let username_cstr = unistd::getlogin().expect("Failed getting username");
+/// let username = username_cstr.to_str().expect("Username wasn't valid UTF-8");
+/// println!("Username: {}", username);
+/// ```
+pub fn getlogin() -> Result<&'static CStr> {
+    let res = unsafe { libc::getlogin() };
+    Errno::result(res).map(|ptr| unsafe { CStr::from_ptr(ptr) })
+}
+
 /// Close a raw file descriptor
 ///
 /// Be aware that many Rust types implicitly close-on-drop, including
@@ -743,7 +768,7 @@ pub fn gethostname<'a>(buffer: &'a mut [u8]) -> Result<&'a CStr> {
 /// seemingly unrelated code.  Caveat programmer.  See also
 /// [close(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/close.html).
 ///
-/// # Examples
+/// # Example
 ///
 /// ```no_run
 /// extern crate tempfile;
