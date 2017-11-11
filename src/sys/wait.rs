@@ -8,10 +8,31 @@ libc_bitflags!(
     pub struct WaitPidFlag: c_int {
         WNOHANG;
         WUNTRACED;
+        #[cfg(any(target_os = "android",
+                  target_os = "freebsd",
+                  target_os = "haiku",
+                  target_os = "ios",
+                  target_os = "linux",
+                  target_os = "macos",
+                  target_os = "netbsd"))]
         WEXITED;
         WCONTINUED;
+        #[cfg(any(target_os = "android",
+                  target_os = "freebsd",
+                  target_os = "haiku",
+                  target_os = "ios",
+                  target_os = "linux",
+                  target_os = "macos",
+                  target_os = "netbsd"))]
         WSTOPPED;
         /// Don't reap, just poll status.
+        #[cfg(any(target_os = "android",
+                  target_os = "freebsd",
+                  target_os = "haiku",
+                  target_os = "ios",
+                  target_os = "linux",
+                  target_os = "macos",
+                  target_os = "netbsd"))]
         WNOWAIT;
         /// Don't wait on children of other threads in this group
         #[cfg(any(target_os = "android", target_os = "linux"))]
@@ -74,7 +95,7 @@ pub enum WaitStatus {
     /// child process. This is only returned if `WaitPidFlag::WNOHANG`
     /// was used (otherwise `wait()` or `waitpid()` would block until
     /// there was something to report).
-    StillAlive
+    StillAlive,
 }
 
 impl WaitStatus {
@@ -140,7 +161,7 @@ fn continued(status: i32) -> bool {
     unsafe { libc::WIFCONTINUED(status) }
 }
 
-fn decode(pid : Pid, status: i32) -> WaitStatus {
+fn decode(pid: Pid, status: i32) -> WaitStatus {
     if exited(status) {
         WaitStatus::Exited(pid, exit_status(status))
     } else if signaled(status) {
@@ -178,10 +199,16 @@ pub fn waitpid<P: Into<Option<Pid>>>(pid: P, options: Option<WaitPidFlag>) -> Re
 
     let option_bits = match options {
         Some(bits) => bits.bits(),
-        None => 0
+        None => 0,
     };
 
-    let res = unsafe { libc::waitpid(pid.into().unwrap_or(Pid::from_raw(-1)).into(), &mut status as *mut c_int, option_bits) };
+    let res = unsafe {
+        libc::waitpid(
+            pid.into().unwrap_or(Pid::from_raw(-1)).into(),
+            &mut status as *mut c_int,
+            option_bits,
+        )
+    };
 
     Ok(match try!(Errno::result(res)) {
         0 => StillAlive,
