@@ -13,38 +13,44 @@ use sys::time::TimeSpec;
 
 /// Mode for `AioCb::fsync`.  Controls whether only data or both data and
 /// metadata are synced.
-#[repr(i32)]
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub enum AioFsyncMode {
-    /// do it like `fsync`
-    O_SYNC = libc::O_SYNC,
-    /// on supported operating systems only, do it like `fdatasync`
-    #[cfg(any(target_os = "openbsd", target_os = "bitrig",
-              target_os = "netbsd", target_os = "macos", target_os = "ios",
-              target_os = "linux"))]
-    O_DSYNC = libc::O_DSYNC
+libc_enum! {
+    #[repr(i32)]
+    pub enum AioFsyncMode {
+        /// do it like `fsync`
+        O_SYNC,
+        /// on supported operating systems only, do it like `fdatasync`
+        #[cfg(any(target_os = "bitrig",
+                  target_os = "ios",
+                  target_os = "linux",
+                  target_os = "macos",
+                  target_os = "netbsd",
+                  target_os = "openbsd"))]
+        O_DSYNC
+    }
 }
 
-/// When used with `lio_listio`, determines whether a given `aiocb` should be
-/// used for a read operation, a write operation, or ignored.  Has no effect for
-/// any other aio functions.
-#[repr(i32)]
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub enum LioOpcode {
-    LIO_NOP = libc::LIO_NOP,
-    LIO_WRITE = libc::LIO_WRITE,
-    LIO_READ = libc::LIO_READ
+libc_enum! {
+    /// When used with `lio_listio`, determines whether a given `aiocb` should be
+    /// used for a read operation, a write operation, or ignored.  Has no effect for
+    /// any other aio functions.
+    #[repr(i32)]
+    pub enum LioOpcode {
+        LIO_NOP,
+        LIO_WRITE,
+        LIO_READ,
+    }
 }
 
-/// Mode for `lio_listio`.
-#[repr(i32)]
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub enum LioMode {
-    /// Requests that `lio_listio` block until all requested operations have
-    /// been completed
-    LIO_WAIT = libc::LIO_WAIT,
-    /// Requests that `lio_listio` return immediately
-    LIO_NOWAIT = libc::LIO_NOWAIT,
+libc_enum! {
+    /// Mode for `lio_listio`.
+    #[repr(i32)]
+    pub enum LioMode {
+        /// Requests that `lio_listio` block until all requested operations have
+        /// been completed
+        LIO_WAIT,
+        /// Requests that `lio_listio` return immediately
+        LIO_NOWAIT,
+    }
 }
 
 /// Return values for `AioCb::cancel and aio_cancel_all`

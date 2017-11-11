@@ -11,50 +11,52 @@ use std::ptr;
 #[cfg(not(target_os = "openbsd"))]
 pub use self::sigevent::*;
 
-// Currently there is only one definition of c_int in libc, as well as only one
-// type for signal constants.
-// We would prefer to use the libc::c_int alias in the repr attribute. Unfortunately
-// this is not (yet) possible.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[repr(i32)]
-pub enum Signal {
-    SIGHUP = libc::SIGHUP,
-    SIGINT = libc::SIGINT,
-    SIGQUIT = libc::SIGQUIT,
-    SIGILL = libc::SIGILL,
-    SIGTRAP = libc::SIGTRAP,
-    SIGABRT = libc::SIGABRT,
-    SIGBUS = libc::SIGBUS,
-    SIGFPE = libc::SIGFPE,
-    SIGKILL = libc::SIGKILL,
-    SIGUSR1 = libc::SIGUSR1,
-    SIGSEGV = libc::SIGSEGV,
-    SIGUSR2 = libc::SIGUSR2,
-    SIGPIPE = libc::SIGPIPE,
-    SIGALRM = libc::SIGALRM,
-    SIGTERM = libc::SIGTERM,
-    #[cfg(all(any(target_os = "linux", target_os = "android", target_os = "emscripten"), not(any(target_arch = "mips", target_arch = "mips64"))))]
-    SIGSTKFLT = libc::SIGSTKFLT,
-    SIGCHLD = libc::SIGCHLD,
-    SIGCONT = libc::SIGCONT,
-    SIGSTOP = libc::SIGSTOP,
-    SIGTSTP = libc::SIGTSTP,
-    SIGTTIN = libc::SIGTTIN,
-    SIGTTOU = libc::SIGTTOU,
-    SIGURG = libc::SIGURG,
-    SIGXCPU = libc::SIGXCPU,
-    SIGXFSZ = libc::SIGXFSZ,
-    SIGVTALRM = libc::SIGVTALRM,
-    SIGPROF = libc::SIGPROF,
-    SIGWINCH = libc::SIGWINCH,
-    SIGIO = libc::SIGIO,
-    #[cfg(any(target_os = "linux", target_os = "android", target_os = "emscripten"))]
-    SIGPWR = libc::SIGPWR,
-    SIGSYS = libc::SIGSYS,
-    #[cfg(not(any(target_os = "linux", target_os = "android", target_os = "emscripten")))]
-    SIGEMT = libc::SIGEMT,
-    #[cfg(not(any(target_os = "linux", target_os = "android", target_os = "emscripten")))]
-    SIGINFO = libc::SIGINFO,
+libc_enum!{
+    // Currently there is only one definition of c_int in libc, as well as only one
+    // type for signal constants.
+    // We would prefer to use the libc::c_int alias in the repr attribute. Unfortunately
+    // this is not (yet) possible.
+    #[repr(i32)]
+    pub enum Signal {
+        SIGHUP,
+        SIGINT,
+        SIGQUIT,
+        SIGILL,
+        SIGTRAP,
+        SIGABRT,
+        SIGBUS,
+        SIGFPE,
+        SIGKILL,
+        SIGUSR1,
+        SIGSEGV,
+        SIGUSR2,
+        SIGPIPE,
+        SIGALRM,
+        SIGTERM,
+        #[cfg(all(any(target_os = "android", target_os = "emscripten", target_os = "linux"), 
+                  not(any(target_arch = "mips", target_arch = "mips64"))))]
+        SIGSTKFLT,
+        SIGCHLD,
+        SIGCONT,
+        SIGSTOP,
+        SIGTSTP,
+        SIGTTIN,
+        SIGTTOU,
+        SIGURG,
+        SIGXCPU,
+        SIGXFSZ,
+        SIGVTALRM,
+        SIGPROF,
+        SIGWINCH,
+        SIGIO,
+        #[cfg(any(target_os = "android", target_os = "emscripten", target_os = "linux"))]
+        SIGPWR,
+        SIGSYS,
+        #[cfg(not(any(target_os = "android", target_os = "emscripten", target_os = "linux")))]
+        SIGEMT,
+        #[cfg(not(any(target_os = "android", target_os = "emscripten", target_os = "linux")))]
+        SIGINFO,
+    }
 }
 
 pub use self::Signal::*;
@@ -241,12 +243,13 @@ libc_bitflags!{
     }
 }
 
-#[repr(i32)]
-#[derive(Clone, Copy, PartialEq)]
-pub enum SigmaskHow {
-    SIG_BLOCK   = libc::SIG_BLOCK,
-    SIG_UNBLOCK = libc::SIG_UNBLOCK,
-    SIG_SETMASK = libc::SIG_SETMASK,
+libc_enum! {
+    #[repr(i32)]
+    pub enum SigmaskHow {
+        SIG_BLOCK,
+        SIG_UNBLOCK,
+        SIG_SETMASK,
+    }
 }
 
 #[derive(Clone, Copy)]
