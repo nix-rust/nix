@@ -38,6 +38,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#602](https://github.com/nix-rust/nix/pull/774))
 - Added `ptrace::Options::PTRACE_O_EXITKILL` on Linux and Android.
   ([#771](https://github.com/nix-rust/nix/pull/771))
+- Added `nix::sys::uio::{process_vm_readv, process_vm_writev}` on Linux
+  ([#568](https://github.com/nix-rust/nix/pull/568))
 
 ### Changed
 - Renamed existing `ptrace` wrappers to encourage namespacing ([#692](https://github.com/nix-rust/nix/pull/692))
