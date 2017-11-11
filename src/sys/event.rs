@@ -30,51 +30,40 @@ type type_of_udata = intptr_t;
 #[cfg(any(target_os = "netbsd", target_os = "openbsd"))]
 type type_of_data = libc::int64_t;
 
+#[cfg(target_os = "netbsd")]
+type type_of_event_filter = u32;
 #[cfg(not(target_os = "netbsd"))]
 type type_of_event_filter = i16;
-#[cfg(not(target_os = "netbsd"))]
-#[repr(i16)]
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub enum EventFilter {
-    EVFILT_AIO = libc::EVFILT_AIO,
-    #[cfg(target_os = "dragonfly")]
-    EVFILT_EXCEPT = libc::EVFILT_EXCEPT,
-    #[cfg(any(target_os = "macos", target_os = "ios",
-              target_os = "dragonfly",
-              target_os = "freebsd"))]
-    EVFILT_FS = libc::EVFILT_FS,
-    #[cfg(target_os = "freebsd")]
-    EVFILT_LIO = libc::EVFILT_LIO,
-    #[cfg(any(target_os = "macos", target_os = "ios"))]
-    EVFILT_MACHPORT = libc::EVFILT_MACHPORT,
-    EVFILT_PROC = libc::EVFILT_PROC,
-    EVFILT_READ = libc::EVFILT_READ,
-    EVFILT_SIGNAL = libc::EVFILT_SIGNAL,
-    EVFILT_TIMER = libc::EVFILT_TIMER,
-    #[cfg(any(target_os = "macos",
-              target_os = "ios",
-              target_os = "dragonfly",
-              target_os = "freebsd"))]
-    EVFILT_USER = libc::EVFILT_USER,
-    #[cfg(any(target_os = "macos", target_os = "ios"))]
-    EVFILT_VM = libc::EVFILT_VM,
-    EVFILT_VNODE = libc::EVFILT_VNODE,
-    EVFILT_WRITE = libc::EVFILT_WRITE,
-}
-
-#[cfg(target_os = "netbsd")]
-type type_of_event_filter = libc::uint32_t;
-#[cfg(target_os = "netbsd")]
-#[repr(i32)]
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub enum EventFilter {
-    EVFILT_READ = libc::EVFILT_READ,
-    EVFILT_WRITE = libc::EVFILT_WRITE,
-    EVFILT_AIO = libc::EVFILT_AIO,
-    EVFILT_VNODE = libc::EVFILT_VNODE,
-    EVFILT_PROC = libc::EVFILT_PROC,
-    EVFILT_SIGNAL = libc::EVFILT_SIGNAL,
-    EVFILT_TIMER = libc::EVFILT_TIMER,
+libc_enum!{
+    #[cfg_attr(target_os = "netbsd", repr(u32))]
+    #[cfg_attr(not(target_os = "netbsd"), repr(i16))]
+    pub enum EventFilter {
+        EVFILT_AIO,
+        #[cfg(target_os = "dragonfly")]
+        EVFILT_EXCEPT,
+        #[cfg(any(target_os = "dragonfly",
+                  target_os = "freebsd",
+                  target_os = "ios",
+                  target_os = "macos"))]
+        EVFILT_FS,
+        #[cfg(target_os = "freebsd")]
+        EVFILT_LIO,
+        #[cfg(any(target_os = "ios", target_os = "macos"))]
+        EVFILT_MACHPORT,
+        EVFILT_PROC,
+        EVFILT_READ,
+        EVFILT_SIGNAL,
+        EVFILT_TIMER,
+        #[cfg(any(target_os = "dragonfly",
+                  target_os = "freebsd",
+                  target_os = "ios",
+                  target_os = "macos"))]
+        EVFILT_USER,
+        #[cfg(any(target_os = "ios", target_os = "macos"))]
+        EVFILT_VM,
+        EVFILT_VNODE,
+        EVFILT_WRITE,
+    }
 }
 
 #[cfg(any(target_os = "dragonfly", target_os = "freebsd",

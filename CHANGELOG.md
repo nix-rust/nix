@@ -36,6 +36,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#768](https:://github.com/nix-rust/nix/pull/768))
 - Added `nix::unistd::mkfifo`.
   ([#602](https://github.com/nix-rust/nix/pull/774))
+- Added `ptrace::Options::PTRACE_O_EXITKILL` on Linux and Android.
+  ([#771](https://github.com/nix-rust/nix/pull/771))
 - Added `nix::unistd::getlogin`.
   ([#789](https://github.com/nix-rust/nix/pull/789))
 
