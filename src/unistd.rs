@@ -6,7 +6,7 @@ use fcntl::{fcntl, OFlag, O_CLOEXEC, FD_CLOEXEC};
 use fcntl::FcntlArg::F_SETFD;
 use libc::{self, c_char, c_void, c_int, c_long, c_uint, size_t, pid_t, off_t,
            uid_t, gid_t, mode_t};
-use std::{self, fmt, mem};
+use std::{fmt, mem, ptr};
 use std::ffi::{CString, CStr, OsString, OsStr};
 use std::os::unix::ffi::{OsStringExt, OsStrExt};
 use std::os::unix::io::RawFd;
@@ -553,9 +553,6 @@ pub fn chown<P: ?Sized + NixPath>(path: &P, owner: Option<Uid>, group: Option<Gi
 }
 
 fn to_exec_array(args: &[CString]) -> Vec<*const c_char> {
-    use std::ptr;
-    use libc::c_char;
-
     let mut args_p: Vec<*const c_char> = args.iter().map(|s| s.as_ptr()).collect();
     args_p.push(ptr::null());
     args_p
@@ -1056,7 +1053,7 @@ pub fn setgid(gid: Gid) -> Result<()> {
 #[cfg(not(any(target_os = "ios", target_os = "macos")))]
 pub fn getgroups() -> Result<Vec<Gid>> {
     // First get the number of groups so we can size our Vec
-    let ret = unsafe { libc::getgroups(0, std::ptr::null_mut()) };
+    let ret = unsafe { libc::getgroups(0, ptr::null_mut()) };
 
     // Now actually get the groups. We try multiple times in case the number of
     // groups has changed since the first call to getgroups() and the buffer is
