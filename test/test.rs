@@ -43,6 +43,9 @@ lazy_static! {
     /// Any test that changes the process's current working directory must grab
     /// this mutex
     pub static ref CWD_MTX: Mutex<()> = Mutex::new(());
+    /// Any test that changes the process's supplementary groups must grab this
+    /// mutex
+    pub static ref GROUPS_MTX: Mutex<()> = Mutex::new(());
     /// Any test that creates child processes must grab this mutex, regardless
     /// of what it does with those children.
     pub static ref FORK_MTX: Mutex<()> = Mutex::new(());

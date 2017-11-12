@@ -4,7 +4,7 @@ use nix::unistd::*;
 use nix::unistd::ForkResult::*;
 use nix::sys::wait::*;
 use nix::sys::stat;
-use std::{env, iter};
+use std::{self, env, iter};
 use std::ffi::CString;
 use std::fs::File;
 use std::io::Write;
@@ -120,6 +120,73 @@ mod linux_android {
         let tid: ::libc::pid_t = gettid().into();
         assert!(tid > 0);
     }
+}
+
+#[test]
+// `getgroups()` and `setgroups()` do not behave as expected on Apple platforms
+#[cfg(not(any(target_os = "ios", target_os = "macos")))]
+fn test_setgroups() {
+    // Skip this test when not run as root as `setgroups()` requires root.
+    if !Uid::current().is_root() {
+        let stderr = std::io::stderr();
+        let mut handle = stderr.lock();
+        writeln!(handle, "test_setgroups requires root privileges. Skipping test.").unwrap();
+        return;
+    }
+
+    #[allow(unused_variables)]
+    let m = ::GROUPS_MTX.lock().expect("Mutex got poisoned by another test");
+
+    // Save the existing groups
+    let old_groups = getgroups().unwrap();
+
+    // Set some new made up groups
+    let groups = [Gid::from_raw(123), Gid::from_raw(456)];
+    setgroups(&groups).unwrap();
+
+    let new_groups = getgroups().unwrap();
+    assert_eq!(new_groups, groups);
+
+    // Revert back to the old groups
+    setgroups(&old_groups).unwrap();
+}
+
+#[test]
+// `getgroups()` and `setgroups()` do not behave as expected on Apple platforms
+#[cfg(not(any(target_os = "ios", target_os = "macos")))]
+fn test_initgroups() {
+    // Skip this test when not run as root as `initgroups()` and `setgroups()`
+    // require root.
+    if !Uid::current().is_root() {
+        let stderr = std::io::stderr();
+        let mut handle = stderr.lock();
+        writeln!(handle, "test_initgroups requires root privileges. Skipping test.").unwrap();
+        return;
+    }
+
+    #[allow(unused_variables)]
+    let m = ::GROUPS_MTX.lock().expect("Mutex got poisoned by another test");
+
+    // Save the existing groups
+    let old_groups = getgroups().unwrap();
+
+    // It doesn't matter if the root user is not called "root" or if a user
+    // called "root" doesn't exist. We are just checking that the extra,
+    // made-up group, `123`, is set.
+    // FIXME: Test the other half of initgroups' functionality: whether the
+    // groups that the user belongs to are also set.
+    let user = CString::new("root").unwrap();
+    let group = Gid::from_raw(123);
+    let group_list = getgrouplist(&user, group).unwrap();
+    assert!(group_list.contains(&group));
+
+    initgroups(&user, group).unwrap();
+
+    let new_groups = getgroups().unwrap();
+    assert_eq!(new_groups, group_list);
+
+    // Revert back to the old groups
+    setgroups(&old_groups).unwrap();
 }
 
 macro_rules! execve_test_factory(

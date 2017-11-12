@@ -6,14 +6,13 @@ use fcntl::{fcntl, OFlag, O_CLOEXEC, FD_CLOEXEC};
 use fcntl::FcntlArg::F_SETFD;
 use libc::{self, c_char, c_void, c_int, c_long, c_uint, size_t, pid_t, off_t,
            uid_t, gid_t, mode_t};
-use std::mem;
+use std::{fmt, mem, ptr};
 use std::ffi::{CString, CStr, OsString, OsStr};
 use std::os::unix::ffi::{OsStringExt, OsStrExt};
 use std::os::unix::io::RawFd;
 use std::path::{PathBuf};
 use void::Void;
 use sys::stat::Mode;
-use std::fmt;
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
 pub use self::pivot_root::*;
@@ -464,7 +463,7 @@ pub fn mkdir<P: ?Sized + NixPath>(path: &P, mode: Mode) -> Result<()> {
 /// fn main() {
 ///     let tmp_dir = TempDir::new("test_fifo").unwrap();
 ///     let fifo_path = tmp_dir.path().join("foo.pipe");
-/// 
+///
 ///     // create new fifo and give read, write and execute rights to the owner
 ///     match unistd::mkfifo(&fifo_path, stat::S_IRWXU) {
 ///        Ok(_) => println!("created {:?}", fifo_path),
@@ -554,9 +553,6 @@ pub fn chown<P: ?Sized + NixPath>(path: &P, owner: Option<Uid>, group: Option<Gi
 }
 
 fn to_exec_array(args: &[CString]) -> Vec<*const c_char> {
-    use std::ptr;
-    use libc::c_char;
-
     let mut args_p: Vec<*const c_char> = args.iter().map(|s| s.as_ptr()).collect();
     args_p.push(ptr::null());
     args_p
@@ -804,7 +800,7 @@ pub enum Whence {
     SeekCur = libc::SEEK_CUR,
     /// Specify an offset relative to the end of the file.
     SeekEnd = libc::SEEK_END,
-    /// Specify an offset relative to the next location in the file greater than or 
+    /// Specify an offset relative to the next location in the file greater than or
     /// equal to offset that contains some data. If offset points to
     /// some data, then the file offset is set to offset.
     #[cfg(any(target_os = "dragonfly", target_os = "freebsd",
@@ -813,7 +809,7 @@ pub enum Whence {
                                            target_arch = "mips64")))))]
     SeekData = libc::SEEK_DATA,
     /// Specify an offset relative to the next hole in the file greater than
-    /// or equal to offset. If offset points into the middle of a hole, then 
+    /// or equal to offset. If offset points into the middle of a hole, then
     /// the file offset should be set to offset. If there is no hole past offset,
     /// then the file offset should be adjusted to the end of the file (i.e., there
     /// is an implicit hole at the end of any file).
@@ -1045,6 +1041,206 @@ pub fn setgid(gid: Gid) -> Result<()> {
     let res = unsafe { libc::setgid(gid.into()) };
 
     Errno::result(res).map(drop)
+}
+
+/// Get the list of supplementary group IDs of the calling process.
+///
+/// [Further reading](http://pubs.opengroup.org/onlinepubs/009695399/functions/getgroups.html)
+///
+/// **Note:** This function is not available for Apple platforms. On those
+/// platforms, checking group membership should be achieved via communication
+/// with the `opendirectoryd` service.
+#[cfg(not(any(target_os = "ios", target_os = "macos")))]
+pub fn getgroups() -> Result<Vec<Gid>> {
+    // First get the number of groups so we can size our Vec
+    let ret = unsafe { libc::getgroups(0, ptr::null_mut()) };
+
+    // Now actually get the groups. We try multiple times in case the number of
+    // groups has changed since the first call to getgroups() and the buffer is
+    // now too small.
+    let mut groups = Vec::<Gid>::with_capacity(Errno::result(ret)? as usize);
+    loop {
+        // FIXME: On the platforms we currently support, the `Gid` struct has
+        // the same representation in memory as a bare `gid_t`. This is not
+        // necessarily the case on all Rust platforms, though. See RFC 1785.
+        let ret = unsafe {
+            libc::getgroups(groups.capacity() as c_int, groups.as_mut_ptr() as *mut gid_t)
+        };
+
+        match Errno::result(ret) {
+            Ok(s) => {
+                unsafe { groups.set_len(s as usize) };
+                return Ok(groups);
+            },
+            Err(Error::Sys(Errno::EINVAL)) => {
+                // EINVAL indicates that the buffer size was too small. Trigger
+                // the internal buffer resizing logic of `Vec` by requiring
+                // more space than the current capacity.
+                let cap = groups.capacity();
+                unsafe { groups.set_len(cap) };
+                groups.reserve(1);
+            },
+            Err(e) => return Err(e)
+        }
+    }
+}
+
+/// Set the list of supplementary group IDs for the calling process.
+///
+/// [Further reading](http://man7.org/linux/man-pages/man2/getgroups.2.html)
+///
+/// **Note:** This function is not available for Apple platforms. On those
+/// platforms, group membership management should be achieved via communication
+/// with the `opendirectoryd` service.
+///
+/// # Examples
+///
+/// `setgroups` can be used when dropping privileges from the root user to a
+/// specific user and group. For example, given the user `www-data` with UID
+/// `33` and the group `backup` with the GID `34`, one could switch the user as
+/// follows:
+/// ```
+/// let uid = Uid::from_raw(33);
+/// let gid = Gid::from_raw(34);
+/// setgroups(&[gid])?;
+/// setgid(gid)?;
+/// setuid(uid)?;
+/// ```
+#[cfg(not(any(target_os = "ios", target_os = "macos")))]
+pub fn setgroups(groups: &[Gid]) -> Result<()> {
+    cfg_if! {
+        if #[cfg(any(target_os = "dragonfly",
+                     target_os = "freebsd",
+                     target_os = "ios",
+                     target_os = "macos",
+                     target_os = "netbsd",
+                     target_os = "openbsd"))] {
+            type setgroups_ngroups_t = c_int;
+        } else {
+            type setgroups_ngroups_t = size_t;
+        }
+    }
+    // FIXME: On the platforms we currently support, the `Gid` struct has the
+    // same representation in memory as a bare `gid_t`. This is not necessarily
+    // the case on all Rust platforms, though. See RFC 1785.
+    let res = unsafe {
+        libc::setgroups(groups.len() as setgroups_ngroups_t, groups.as_ptr() as *const gid_t)
+    };
+
+    Errno::result(res).map(|_| ())
+}
+
+/// Calculate the supplementary group access list.
+///
+/// Gets the group IDs of all groups that `user` is a member of. The additional
+/// group `group` is also added to the list.
+///
+/// [Further reading](http://man7.org/linux/man-pages/man3/getgrouplist.3.html)
+///
+/// **Note:** This function is not available for Apple platforms. On those
+/// platforms, checking group membership should be achieved via communication
+/// with the `opendirectoryd` service.
+///
+/// # Errors
+///
+/// Although the `getgrouplist()` call does not return any specific
+/// errors on any known platforms, this implementation will return a system
+/// error of `EINVAL` if the number of groups to be fetched exceeds the
+/// `NGROUPS_MAX` sysconf value. This mimics the behaviour of `getgroups()`
+/// and `setgroups()`. Additionally, while some implementations will return a
+/// partial list of groups when `NGROUPS_MAX` is exceeded, this implementation
+/// will only ever return the complete list or else an error.
+#[cfg(not(any(target_os = "ios", target_os = "macos")))]
+pub fn getgrouplist(user: &CStr, group: Gid) -> Result<Vec<Gid>> {
+    let ngroups_max = match sysconf(SysconfVar::NGROUPS_MAX) {
+        Ok(Some(n)) => n as c_int,
+        Ok(None) | Err(_) => <c_int>::max_value(),
+    };
+    use std::cmp::min;
+    let mut ngroups = min(ngroups_max, 8);
+    let mut groups = Vec::<Gid>::with_capacity(ngroups as usize);
+    cfg_if! {
+        if #[cfg(any(target_os = "ios", target_os = "macos"))] {
+            type getgrouplist_group_t = c_int;
+        } else {
+            type getgrouplist_group_t = gid_t;
+        }
+    }
+    let gid: gid_t = group.into();
+    loop {
+        let ret = unsafe {
+            libc::getgrouplist(user.as_ptr(),
+                               gid as getgrouplist_group_t,
+                               groups.as_mut_ptr() as *mut getgrouplist_group_t,
+                               &mut ngroups)
+        };
+
+        // BSD systems only return 0 or -1, Linux returns ngroups on success.
+        if ret >= 0 {
+            unsafe { groups.set_len(ngroups as usize) };
+            return Ok(groups);
+        } else if ret == -1 {
+            // Returns -1 if ngroups is too small, but does not set errno.
+            // BSD systems will still fill the groups buffer with as many
+            // groups as possible, but Linux manpages do not mention this
+            // behavior.
+
+            let cap = groups.capacity();
+            if cap >= ngroups_max as usize {
+                // We already have the largest capacity we can, give up
+                return Err(Error::invalid_argument());
+            }
+
+            // Reserve space for at least ngroups
+            groups.reserve(ngroups as usize);
+
+            // Even if the buffer gets resized to bigger than ngroups_max,
+            // don't ever ask for more than ngroups_max groups
+            ngroups = min(ngroups_max, groups.capacity() as c_int);
+        }
+    }
+}
+
+/// Initialize the supplementary group access list.
+///
+/// Sets the supplementary group IDs for the calling process using all groups
+/// that `user` is a member of. The additional group `group` is also added to
+/// the list.
+///
+/// [Further reading](http://man7.org/linux/man-pages/man3/initgroups.3.html)
+///
+/// **Note:** This function is not available for Apple platforms. On those
+/// platforms, group membership management should be achieved via communication
+/// with the `opendirectoryd` service.
+///
+/// # Examples
+///
+/// `initgroups` can be used when dropping privileges from the root user to
+/// another user. For example, given the user `www-data`, we could look up the
+/// UID and GID for the user in the system's password database (usually found
+/// in `/etc/passwd`). If the `www-data` user's UID and GID were `33` and `33`,
+/// respectively, one could switch the user as follows:
+/// ```
+/// let user = CString::new("www-data").unwrap();
+/// let uid = Uid::from_raw(33);
+/// let gid = Gid::from_raw(33);
+/// initgroups(&user, gid)?;
+/// setgid(gid)?;
+/// setuid(uid)?;
+/// ```
+#[cfg(not(any(target_os = "ios", target_os = "macos")))]
+pub fn initgroups(user: &CStr, group: Gid) -> Result<()> {
+    cfg_if! {
+        if #[cfg(any(target_os = "ios", target_os = "macos"))] {
+            type initgroups_group_t = c_int;
+        } else {
+            type initgroups_group_t = gid_t;
+        }
+    }
+    let gid: gid_t = group.into();
+    let res = unsafe { libc::initgroups(user.as_ptr(), gid as initgroups_group_t) };
+
+    Errno::result(res).map(|_| ())
 }
 
 /// Suspend the thread until a signal is received
@@ -1361,7 +1557,7 @@ pub enum SysconfVar {
     OPEN_MAX = libc::_SC_OPEN_MAX,
     #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
               target_os="linux", target_os = "macos", target_os="openbsd"))]
-    /// The implementation supports the Advisory Information option. 
+    /// The implementation supports the Advisory Information option.
     _POSIX_ADVISORY_INFO = libc::_SC_ADVISORY_INFO,
     #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
               target_os="linux", target_os = "macos", target_os="netbsd",
@@ -1380,7 +1576,7 @@ pub enum SysconfVar {
               target_os="openbsd"))]
     /// The implementation supports the Process CPU-Time Clocks option.
     _POSIX_CPUTIME = libc::_SC_CPUTIME,
-    /// The implementation supports the File Synchronization option. 
+    /// The implementation supports the File Synchronization option.
     _POSIX_FSYNC = libc::_SC_FSYNC,
     #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
               target_os="linux", target_os = "macos", target_os="openbsd"))]
@@ -1495,7 +1691,7 @@ pub enum SysconfVar {
               target_os="linux", target_os = "macos", target_os="openbsd"))]
     /// The implementation supports timeouts.
     _POSIX_TIMEOUTS = libc::_SC_TIMEOUTS,
-    /// The implementation supports timers. 
+    /// The implementation supports timers.
     _POSIX_TIMERS = libc::_SC_TIMERS,
     #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
               target_os="linux", target_os = "macos", target_os="openbsd"))]
