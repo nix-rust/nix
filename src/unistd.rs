@@ -1048,13 +1048,12 @@ pub fn setgid(gid: Gid) -> Result<()> {
 
 /// Get the list of supplementary group IDs of the calling process.
 ///
-/// *Note:* On macOS, `getgroups()` behavior differs somewhat from other Unix
-/// platforms. It returns the current group access list for the user associated
-/// with the effective user id of the process; the group access list may change
-/// over the lifetime of the process, and it is not affected by calls to
-/// `setgroups()`.
-///
 /// [Further reading](http://pubs.opengroup.org/onlinepubs/009695399/functions/getgroups.html)
+///
+/// **Note:** This function is not available for Apple platforms. On those
+/// platforms, checking group membership should be achieved via communication
+/// with the `opendirectoryd` service.
+#[cfg(not(any(target_os = "ios", target_os = "macos")))]
 pub fn getgroups() -> Result<Vec<Gid>> {
     // First get the number of groups so we can size our Vec
     let ret = unsafe { libc::getgroups(0, std::ptr::null_mut()) };
@@ -1091,12 +1090,11 @@ pub fn getgroups() -> Result<Vec<Gid>> {
 
 /// Set the list of supplementary group IDs for the calling process.
 ///
-/// *Note:* On macOS, `getgroups()` may not return the same group list set by
-/// calling `setgroups()`. The use of `setgroups()` on macOS is 'highly
-/// discouraged' by Apple. Developers are referred to the `opendirectoryd`
-/// daemon and its set of APIs.
-///
 /// [Further reading](http://man7.org/linux/man-pages/man2/getgroups.2.html)
+///
+/// **Note:** This function is not available for Apple platforms. On those
+/// platforms, group membership management should be achieved via communication
+/// with the `opendirectoryd` service.
 ///
 /// # Examples
 ///
@@ -1111,6 +1109,7 @@ pub fn getgroups() -> Result<Vec<Gid>> {
 /// setgid(gid)?;
 /// setuid(uid)?;
 /// ```
+#[cfg(not(any(target_os = "ios", target_os = "macos")))]
 pub fn setgroups(groups: &[Gid]) -> Result<()> {
     cfg_if! {
         if #[cfg(any(target_os = "dragonfly",
@@ -1141,6 +1140,10 @@ pub fn setgroups(groups: &[Gid]) -> Result<()> {
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man3/getgrouplist.3.html)
 ///
+/// **Note:** This function is not available for Apple platforms. On those
+/// platforms, checking group membership should be achieved via communication
+/// with the `opendirectoryd` service.
+///
 /// # Errors
 ///
 /// Although the `getgrouplist()` call does not return any specific
@@ -1150,6 +1153,7 @@ pub fn setgroups(groups: &[Gid]) -> Result<()> {
 /// and `setgroups()`. Additionally, while some implementations will return a
 /// partial list of groups when `NGROUPS_MAX` is exceeded, this implementation
 /// will only ever return the complete list or else an error.
+#[cfg(not(any(target_os = "ios", target_os = "macos")))]
 pub fn getgrouplist(user: &CStr, group: Gid) -> Result<Vec<Gid>> {
     let ngroups_max = match sysconf(SysconfVar::NGROUPS_MAX) {
         Ok(Some(n)) => n as c_int,
@@ -1208,6 +1212,10 @@ pub fn getgrouplist(user: &CStr, group: Gid) -> Result<Vec<Gid>> {
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man3/initgroups.3.html)
 ///
+/// **Note:** This function is not available for Apple platforms. On those
+/// platforms, group membership management should be achieved via communication
+/// with the `opendirectoryd` service.
+///
 /// # Examples
 ///
 /// `initgroups` can be used when dropping privileges from the root user to
@@ -1223,6 +1231,7 @@ pub fn getgrouplist(user: &CStr, group: Gid) -> Result<Vec<Gid>> {
 /// setgid(gid)?;
 /// setuid(uid)?;
 /// ```
+#[cfg(not(any(target_os = "ios", target_os = "macos")))]
 pub fn initgroups(user: &CStr, group: Gid) -> Result<()> {
     cfg_if! {
         if #[cfg(any(target_os = "ios", target_os = "macos"))] {
