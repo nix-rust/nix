@@ -2,7 +2,7 @@
 
 rev=$(git rev-parse --short HEAD)
 
-cd target/doc
+cd target/doc || exit 72
 
 git init
 git config user.name "Carl Lerche"
