@@ -1,5 +1,4 @@
 [package]
-
 name        = "nix"
 description = "Rust friendly bindings to *nix APIs"
 version     = "0.10.0-pre"
@@ -10,7 +9,6 @@ categories  = ["os::unix-apis"]
 exclude     = [
   ".gitignore",
   ".travis.yml",
-  "deploy.sh",
   "test/**/*"
 ]
 
