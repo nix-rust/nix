@@ -630,8 +630,11 @@ pub fn execvp(filename: &CString, args: &[CString]) -> Result<Void> {
 ///
 /// This function is similar to `execve`, except that the program to be executed
 /// is referenced as a file descriptor instead of a path.
-#[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd",
-          target_os = "netbsd", target_os = "openbsd", target_os = "linux"))]
+#[cfg(any(target_os = "android",
+          target_os = "freebsd",
+          target_os = "linux",
+          target_os = "netbsd",
+          target_os = "openbsd"))]
 #[inline]
 pub fn fexecve(fd: RawFd, args: &[CString], env: &[CString]) -> Result<Void> {
     let args_p = to_exec_array(args);

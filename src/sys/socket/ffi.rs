@@ -5,32 +5,32 @@ pub use libc::{socket, listen, bind, accept, connect, setsockopt, sendto, recvfr
 
 use libc::{c_int, c_void, socklen_t, ssize_t};
 
-#[cfg(not(target_os = "macos"))]
-use libc::size_t;
-
-#[cfg(not(target_os = "linux"))]
-use libc::c_uint;
-
 use sys::uio::IoVec;
 
-#[cfg(target_os = "linux")]
-pub type type_of_cmsg_len = size_t;
-
-#[cfg(not(target_os = "linux"))]
-pub type type_of_cmsg_len = socklen_t;
-
-// OSX always aligns struct cmsghdr as if it were a 32-bit OS
-#[cfg(target_os = "macos")]
-pub type type_of_cmsg_data = c_uint;
-
-#[cfg(not(target_os = "macos"))]
-pub type type_of_cmsg_data = size_t;
-
-#[cfg(target_os = "linux")]
-pub type type_of_msg_iovlen = size_t;
-
-#[cfg(not(target_os = "linux"))]
-pub type type_of_msg_iovlen = c_uint;
+cfg_if! {
+    if #[cfg(target_os = "dragonfly")] {
+        use libc::c_uint;
+        pub type type_of_cmsg_len = socklen_t;
+        pub type type_of_cmsg_data = c_int;
+        pub type type_of_msg_iovlen = c_uint;
+    } else if #[cfg(target_os = "linux")] {
+        use libc::size_t;
+        pub type type_of_cmsg_len = size_t;
+        pub type type_of_cmsg_data = size_t;
+        pub type type_of_msg_iovlen = size_t;
+    } else if #[cfg(target_os = "macos")] {
+        use libc::c_uint;
+        pub type type_of_cmsg_len = socklen_t;
+        // OSX always aligns struct cmsghdr as if it were a 32-bit OS
+        pub type type_of_cmsg_data = c_uint;
+        pub type type_of_msg_iovlen = c_uint;
+    } else {
+        use libc::{c_uint, size_t};
+        pub type type_of_cmsg_len = socklen_t;
+        pub type type_of_cmsg_data = size_t;
+        pub type type_of_msg_iovlen = c_uint;
+    }
+}
 
 // Private because we don't expose any external functions that operate
 // directly on this type; we just use it internally at FFI boundaries.

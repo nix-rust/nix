@@ -1,4 +1,6 @@
-use libc::{self, c_int};
+#[cfg(not(target_os = "dragonfly"))]
+use libc;
+use libc::c_int;
 use std::{fmt, io, error};
 use {Error, Result};
 
@@ -12,11 +14,23 @@ cfg_if! {
             libc::__error()
         }
     } else if #[cfg(target_os = "dragonfly")] {
-        unsafe fn errno_location() -> *mut c_int {
-            // FIXME: Replace with errno-dragonfly crate as this is no longer the correct
-            //        implementation.
-            extern { fn __dfly_error() -> *mut c_int; }
-            __dfly_error()
+        // DragonFly uses a thread-local errno variable, but #[thread_local] is
+        // feature-gated and not available in stable Rust as of this writing
+        // (Rust 1.21.0). We have to use a C extension to access it
+        // (src/errno_dragonfly.c).
+        //
+        // Tracking issue for `thread_local` stabilization:
+        //
+        //     https://github.com/rust-lang/rust/issues/29594
+        //
+        // Once this becomes stable, we can remove build.rs,
+        // src/errno_dragonfly.c, and use:
+        //
+        //     extern { #[thread_local] static errno: c_int; }
+        //
+        #[link(name="errno_dragonfly", kind="static")]
+        extern {
+            pub fn errno_location() -> *mut c_int;
         }
     } else if #[cfg(any(target_os = "android",
                         target_os = "netbsd",
