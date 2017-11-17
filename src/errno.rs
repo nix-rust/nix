@@ -13,16 +13,6 @@ unsafe fn errno_location() -> *mut c_int {
     __error()
 }
 
-#[cfg(target_os = "bitrig")]
-fn errno_location() -> *mut c_int {
-    extern {
-        fn __errno() -> *mut c_int;
-    }
-    unsafe {
-        __errno()
-    }
-}
-
 #[cfg(target_os = "dragonfly")]
 unsafe fn errno_location() -> *mut c_int {
     extern { fn __dfly_error() -> *mut c_int; }
@@ -520,7 +510,7 @@ fn desc(errno: Errno) -> &'static str {
 
         #[cfg(target_os = "dragonfly")]
         EUNUSED94 | EUNUSED95 | EUNUSED96 | EUNUSED97 | EUNUSED98 => "Unused",
- 
+
         #[cfg(target_os = "dragonfly")]
         EASYNC          => "Async",
     }
