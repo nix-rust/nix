@@ -1,50 +1,35 @@
-use libc::c_int;
+use libc::{self, c_int};
 use std::{fmt, io, error};
 use {Error, Result};
 
 pub use self::consts::*;
 pub use self::consts::Errno::*;
 
-#[cfg(any(target_os = "macos",
-          target_os = "ios",
-          target_os = "freebsd"))]
-unsafe fn errno_location() -> *mut c_int {
-    extern { fn __error() -> *mut c_int; }
-    __error()
-}
-
-#[cfg(target_os = "bitrig")]
-fn errno_location() -> *mut c_int {
-    extern {
-        fn __errno() -> *mut c_int;
+cfg_if! {
+    if #[cfg(any(target_os = "freebsd",
+                 target_os = "ios",
+                 target_os = "macos"))] {
+        unsafe fn errno_location() -> *mut c_int {
+            libc::__error()
+        }
+    } else if #[cfg(target_os = "dragonfly")] {
+        unsafe fn errno_location() -> *mut c_int {
+            // FIXME: Replace with errno-dragonfly crate as this is no longer the correct
+            //        implementation.
+            extern { fn __dfly_error() -> *mut c_int; }
+            __dfly_error()
+        }
+    } else if #[cfg(any(target_os = "android",
+                        target_os = "netbsd",
+                        target_os = "openbsd"))] {
+        unsafe fn errno_location() -> *mut c_int {
+            libc::__errno()
+        }
+    } else if #[cfg(target_os = "linux")] {
+        unsafe fn errno_location() -> *mut c_int {
+            libc::__errno_location()
+        }
     }
-    unsafe {
-        __errno()
-    }
-}
-
-#[cfg(target_os = "dragonfly")]
-unsafe fn errno_location() -> *mut c_int {
-    extern { fn __dfly_error() -> *mut c_int; }
-    __dfly_error()
-}
-
-#[cfg(any(target_os = "openbsd", target_os = "netbsd"))]
-unsafe fn errno_location() -> *mut c_int {
-    extern { fn __errno() -> *mut c_int; }
-    __errno()
-}
-
-#[cfg(target_os = "linux")]
-unsafe fn errno_location() -> *mut c_int {
-    extern { fn __errno_location() -> *mut c_int; }
-    __errno_location()
-}
-
-#[cfg(target_os = "android")]
-unsafe fn errno_location() -> *mut c_int {
-    extern { fn __errno() -> *mut c_int; }
-    __errno()
 }
 
 /// Sets the platform-specific errno to no-error
@@ -520,7 +505,7 @@ fn desc(errno: Errno) -> &'static str {
 
         #[cfg(target_os = "dragonfly")]
         EUNUSED94 | EUNUSED95 | EUNUSED96 | EUNUSED97 | EUNUSED98 => "Unused",
- 
+
         #[cfg(target_os = "dragonfly")]
         EASYNC          => "Async",
     }
