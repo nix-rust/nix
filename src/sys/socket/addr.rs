@@ -521,7 +521,9 @@ impl fmt::Display for Ipv6Addr {
  *
  */
 
-/// A wrapper around `sockaddr_un`. We track the length of `sun_path` (excluding
+/// A wrapper around `sockaddr_un`.
+///
+/// This also tracks the length of `sun_path` address (excluding
 /// a terminating null), because it may not be null-terminated.  For example,
 /// unconnected and Linux abstract sockets are never null-terminated, and POSIX
 /// does not require that `sun_len` include the terminating null even for normal
@@ -555,10 +557,13 @@ impl UnixAddr {
         }))
     }
 
-    /// Create a new sockaddr_un representing an address in the
-    /// "abstract namespace". This is a Linux-specific extension,
-    /// primarily used to allow chrooted processes to communicate with
-    /// specific daemons.
+    /// Create a new `sockaddr_un` representing an address in the "abstract namespace".
+    ///
+    /// The leading null byte for the abstract namespace is automatically added;
+    /// thus the input `path` is expected to be the bare name, not null-prefixed.
+    /// This is a Linux-specific extension, primarily used to allow chrooted
+    /// processes to communicate with processes having a different filesystem view.
+    #[cfg(any(target_os = "android", target_os = "linux"))]
     pub fn new_abstract(path: &[u8]) -> Result<UnixAddr> {
         unsafe {
             let mut ret = libc::sockaddr_un {
@@ -587,7 +592,7 @@ impl UnixAddr {
     /// If this address represents a filesystem path, return that path.
     pub fn path(&self) -> Option<&Path> {
         if self.1 == 0 || self.0.sun_path[0] == 0 {
-            // unbound or abstract
+            // unnamed or abstract
             None
         } else {
             let p = self.sun_path();
@@ -598,6 +603,20 @@ impl UnixAddr {
             let ptr = &self.0.sun_path as *const libc::c_char;
             let reallen = unsafe { libc::strnlen(ptr, p.len()) };
             Some(Path::new(<OsStr as OsStrExt>::from_bytes(&p[..reallen])))
+        }
+    }
+
+    /// If this address represents an abstract socket, return its name.
+    ///
+    /// For abstract sockets only the bare name is returned, without the
+    /// leading null byte. `None` is returned for unnamed or path-backed sockets.
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    pub fn as_abstract(&self) -> Option<&[u8]> {
+        if self.1 >= 1 && self.0.sun_path[0] == 0 {
+            Some(&self.sun_path()[1..])
+        } else {
+            // unnamed or filesystem path
+            None
         }
     }
 }

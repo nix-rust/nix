@@ -64,6 +64,28 @@ pub fn test_path_to_sock_addr() {
     assert_eq!(addr.path(), Some(actual));
 }
 
+// Test getting/setting abstract addresses (without unix socket creation)
+#[cfg(target_os = "linux")]
+#[test]
+pub fn test_abstract_uds_addr() {
+    let empty = String::new();
+    let addr = UnixAddr::new_abstract(empty.as_bytes()).unwrap();
+    assert_eq!(addr.as_abstract(), Some(empty.as_bytes()));
+
+    let name = String::from("nix\0abstract\0test");
+    let addr = UnixAddr::new_abstract(name.as_bytes()).unwrap();
+    assert_eq!(addr.as_abstract(), Some(name.as_bytes()));
+    assert_eq!(addr.path(), None);
+
+    // Internally, name is null-prefixed (abstract namespace)
+    let internal: &[u8] = unsafe {
+        slice::from_raw_parts(addr.0.sun_path.as_ptr() as *const u8, addr.1)
+    };
+    let mut abstract_name = name.clone();
+    abstract_name.insert(0, '\0');
+    assert_eq!(internal, abstract_name.as_bytes());
+}
+
 #[test]
 pub fn test_getsockname() {
     use nix::sys::socket::{socket, AddressFamily, SockType, SockFlag};
