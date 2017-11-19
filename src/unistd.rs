@@ -644,6 +644,31 @@ pub fn fexecve(fd: RawFd, args: &[CString], env: &[CString]) -> Result<Void> {
     Err(Error::Sys(Errno::last()))
 }
 
+/// Execute program relative to a directory file descriptor (see
+/// [execveat(2)](http://man7.org/linux/man-pages/man2/execveat.2.html)).
+///
+/// The `execveat` function allows for another process to be "called" which will
+/// replace the current process image.  That is, this process becomes the new
+/// command that is run. On success, this function will not return. Instead,
+/// the new program will run until it exits.
+///
+/// This function is similar to `execve`, except that the program to be executed
+/// is referenced as a file descriptor to the base directory plus a path.
+#[cfg(any(target_os = "android", target_os = "linux"))]
+#[inline]
+pub fn execveat(dirfd: RawFd, pathname: &CString, args: &[CString],
+                env: &[CString], flags: super::fcntl::AtFlags) -> Result<Void> {
+    let args_p = to_exec_array(args);
+    let env_p = to_exec_array(env);
+
+    unsafe {
+        libc::syscall(libc::SYS_execveat, dirfd, pathname.as_ptr(),
+                      args_p.as_ptr(), env_p.as_ptr(), flags);
+    };
+
+    Err(Error::Sys(Errno::last()))
+}
+
 /// Daemonize this process by detaching from the controlling terminal (see
 /// [daemon(3)](http://man7.org/linux/man-pages/man3/daemon.3.html)).
 ///

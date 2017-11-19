@@ -43,6 +43,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Added `nix::unistd::{getgroups, setgroups, getgrouplist, initgroups}`. ([#733](https://github.com/nix-rust/nix/pull/733))
 - Added `nix::sys::socket::UnixAddr::as_abstract` on Linux and Android.
   ([#785](https://github.com/nix-rust/nix/pull/785))
+- Added `nix::unistd::execveat` on Linux and Android.
+  ([#800](https://github.com/nix-rust/nix/pull/800))
 
 ### Changed
 - Renamed existing `ptrace` wrappers to encourage namespacing ([#692](https://github.com/nix-rust/nix/pull/692))
