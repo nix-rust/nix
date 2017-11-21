@@ -1,5 +1,6 @@
 extern crate tempdir;
 
+use nix::fcntl;
 use nix::unistd::*;
 use nix::unistd::ForkResult::*;
 use nix::sys::wait::*;
@@ -190,7 +191,7 @@ fn test_initgroups() {
 }
 
 macro_rules! execve_test_factory(
-    ($test_name:ident, $syscall:ident, $exe: expr) => (
+    ($test_name:ident, $syscall:ident, $exe: expr $(, $pathname:expr, $flags:expr)*) => (
     #[test]
     fn $test_name() {
         #[allow(unused_variables)]
@@ -211,12 +212,14 @@ macro_rules! execve_test_factory(
                 // exec!
                 $syscall(
                     $exe,
+                    $(&CString::new($pathname).unwrap(), )*
                     &[CString::new(b"".as_ref()).unwrap(),
                       CString::new(b"-c".as_ref()).unwrap(),
                       CString::new(b"echo nix!!! && echo foo=$foo && echo baz=$baz"
                                    .as_ref()).unwrap()],
                     &[CString::new(b"foo=bar".as_ref()).unwrap(),
-                      CString::new(b"baz=quux".as_ref()).unwrap()]).unwrap();
+                      CString::new(b"baz=quux".as_ref()).unwrap()]
+                    $(, $flags)*).unwrap();
             },
             Parent { child } => {
                 // Wait for the child to exit.
@@ -249,6 +252,24 @@ cfg_if!{
     } else if #[cfg(any(target_os = "ios", target_os = "macos", ))] {
         execve_test_factory!(test_execve, execve, &CString::new("/bin/sh").unwrap());
         // No fexecve() on macos/ios.
+    }
+}
+
+cfg_if!{
+    if #[cfg(target_os = "android")] {
+        execve_test_factory!(test_execveat_empty, execveat, File::open("/system/bin/sh").unwrap().into_raw_fd(),
+                             "", fcntl::AT_EMPTY_PATH);
+        execve_test_factory!(test_execveat_relative, execveat, File::open("/system/bin/").unwrap().into_raw_fd(),
+                             "./sh", fcntl::AtFlags::empty());
+        execve_test_factory!(test_execveat_absolute, execveat, File::open("/").unwrap().into_raw_fd(),
+                             "/system/bin/sh", fcntl::AtFlags::empty());
+    } else if #[cfg(all(target_os = "linux"), any(target_arch ="x86_64", target_arch ="x86"))] {
+        execve_test_factory!(test_execveat_empty, execveat, File::open("/bin/sh").unwrap().into_raw_fd(),
+                             "", fcntl::AT_EMPTY_PATH);
+        execve_test_factory!(test_execveat_relative, execveat, File::open("/bin/").unwrap().into_raw_fd(),
+                             "./sh", fcntl::AtFlags::empty());
+        execve_test_factory!(test_execveat_absolute, execveat, File::open("/").unwrap().into_raw_fd(),
+                             "/bin/sh", fcntl::AtFlags::empty());
     }
 }
 
