@@ -1,10 +1,9 @@
 extern crate tempdir;
 
-use nix::fcntl;
 use nix::unistd::*;
 use nix::unistd::ForkResult::*;
 use nix::sys::wait::*;
-use nix::sys::stat;
+use nix::sys::stat::{self, Mode, SFlag};
 use std::{self, env, iter};
 use std::ffi::CString;
 use std::fs::File;
@@ -91,17 +90,17 @@ fn test_mkfifo() {
     let tempdir = TempDir::new("nix-test_mkfifo").unwrap();
     let mkfifo_fifo = tempdir.path().join("mkfifo_fifo");
 
-    mkfifo(&mkfifo_fifo, stat::S_IRUSR).unwrap();
+    mkfifo(&mkfifo_fifo, Mode::S_IRUSR).unwrap();
 
     let stats = stat::stat(&mkfifo_fifo).unwrap();
     let typ = stat::SFlag::from_bits_truncate(stats.st_mode);
-    assert!(typ == stat::S_IFIFO); 
+    assert!(typ == SFlag::S_IFIFO);
 }
 
 #[test]
 fn test_mkfifo_directory() {
     // mkfifo should fail if a directory is given
-    assert!(mkfifo(&env::temp_dir(), stat::S_IRUSR).is_err());
+    assert!(mkfifo(&env::temp_dir(), Mode::S_IRUSR).is_err());
 }
 
 #[test]
@@ -257,19 +256,21 @@ cfg_if!{
 
 cfg_if!{
     if #[cfg(target_os = "android")] {
+        use nix::fcntl::AtFlags;
         execve_test_factory!(test_execveat_empty, execveat, File::open("/system/bin/sh").unwrap().into_raw_fd(),
-                             "", fcntl::AT_EMPTY_PATH);
+                             "", AtFlags::AT_EMPTY_PATH);
         execve_test_factory!(test_execveat_relative, execveat, File::open("/system/bin/").unwrap().into_raw_fd(),
-                             "./sh", fcntl::AtFlags::empty());
+                             "./sh", AtFlags::empty());
         execve_test_factory!(test_execveat_absolute, execveat, File::open("/").unwrap().into_raw_fd(),
-                             "/system/bin/sh", fcntl::AtFlags::empty());
+                             "/system/bin/sh", AtFlags::empty());
     } else if #[cfg(all(target_os = "linux"), any(target_arch ="x86_64", target_arch ="x86"))] {
+        use nix::fcntl::AtFlags;
         execve_test_factory!(test_execveat_empty, execveat, File::open("/bin/sh").unwrap().into_raw_fd(),
-                             "", fcntl::AT_EMPTY_PATH);
+                             "", AtFlags::AT_EMPTY_PATH);
         execve_test_factory!(test_execveat_relative, execveat, File::open("/bin/").unwrap().into_raw_fd(),
-                             "./sh", fcntl::AtFlags::empty());
+                             "./sh", AtFlags::empty());
         execve_test_factory!(test_execveat_absolute, execveat, File::open("/").unwrap().into_raw_fd(),
-                             "/bin/sh", fcntl::AtFlags::empty());
+                             "/bin/sh", AtFlags::empty());
     }
 }
 
@@ -308,7 +309,7 @@ fn test_getcwd() {
     for _ in 0..5 {
         let newdir = iter::repeat("a").take(100).collect::<String>();
         inner_tmp_dir.push(newdir);
-        assert!(mkdir(inner_tmp_dir.as_path(), stat::S_IRWXU).is_ok());
+        assert!(mkdir(inner_tmp_dir.as_path(), Mode::S_IRWXU).is_ok());
     }
     assert!(chdir(inner_tmp_dir.as_path()).is_ok());
     assert_eq!(getcwd().unwrap(), inner_tmp_dir.as_path());

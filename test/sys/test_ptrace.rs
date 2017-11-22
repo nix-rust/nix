@@ -1,7 +1,7 @@
 use nix::Error;
 use nix::errno::Errno;
 use nix::unistd::getpid;
-use nix::sys::ptrace;
+use nix::sys::ptrace::{self, Options};
 
 use std::mem;
 
@@ -16,7 +16,7 @@ fn test_ptrace() {
 // Just make sure ptrace_setoptions can be called at all, for now.
 #[test]
 fn test_ptrace_setoptions() {
-    let err = ptrace::setoptions(getpid(), ptrace::PTRACE_O_TRACESYSGOOD).unwrap_err();
+    let err = ptrace::setoptions(getpid(), Options::PTRACE_O_TRACESYSGOOD).unwrap_err();
     assert!(err != Error::UnsupportedOperation);
 }
 

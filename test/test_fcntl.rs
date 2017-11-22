@@ -1,4 +1,4 @@
-use nix::fcntl::{openat, open, OFlag, O_RDONLY, readlink, readlinkat};
+use nix::fcntl::{openat, open, OFlag, readlink, readlinkat};
 use nix::sys::stat::Mode;
 use nix::unistd::{close, read};
 use tempdir::TempDir;
@@ -17,7 +17,7 @@ fn test_openat() {
                      Mode::empty()).unwrap();
     let fd = openat(dirfd,
                     tmp.path().file_name().unwrap(),
-                    O_RDONLY,
+                    OFlag::O_RDONLY,
                     Mode::empty()).unwrap();
 
     let mut buf = [0u8; 1024];

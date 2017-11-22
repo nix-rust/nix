@@ -320,8 +320,8 @@ fn test_struct_kevent() {
                                 udata: udata as type_of_udata};
     let actual = KEvent::new(0xdeadbeef,
                              EventFilter::EVFILT_READ,
-                             EV_ONESHOT | EV_ADD,
-                             NOTE_CHILD | NOTE_EXIT,
+                             EventFlag::EV_ONESHOT | EventFlag::EV_ADD,
+                             FilterFlag::NOTE_CHILD | FilterFlag::NOTE_EXIT,
                              0x1337,
                              udata);
     assert!(expected.ident == actual.ident());

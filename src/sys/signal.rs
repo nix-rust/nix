@@ -373,8 +373,8 @@ impl SigAction {
             SigHandler::SigAction(f) => f as *const extern fn(libc::c_int, *mut libc::siginfo_t, *mut libc::c_void) as usize,
         };
         s.sa_flags = match handler {
-            SigHandler::SigAction(_) => (flags | SA_SIGINFO).bits(),
-            _ => (flags - SA_SIGINFO).bits(),
+            SigHandler::SigAction(_) => (flags | SaFlags::SA_SIGINFO).bits(),
+            _ => (flags - SaFlags::SA_SIGINFO).bits(),
         };
         s.sa_mask = mask.sigset;
 
@@ -393,7 +393,7 @@ impl SigAction {
         match self.sigaction.sa_sigaction {
             libc::SIG_DFL => SigHandler::SigDfl,
             libc::SIG_IGN => SigHandler::SigIgn,
-            f if self.flags().contains(SA_SIGINFO) =>
+            f if self.flags().contains(SaFlags::SA_SIGINFO) =>
                 SigHandler::SigAction( unsafe { mem::transmute(f) } ),
             f => SigHandler::Handler( unsafe { mem::transmute(f) } ),
         }
@@ -713,14 +713,14 @@ mod tests {
 
         let handler_sig = SigHandler::Handler(test_sigaction_handler);
 
-        let flags = SA_ONSTACK | SA_RESTART | SA_SIGINFO;
+        let flags = SaFlags::SA_ONSTACK | SaFlags::SA_RESTART | SaFlags::SA_SIGINFO;
 
         let mut mask = SigSet::empty();
         mask.add(SIGUSR1);
 
         let action_sig = SigAction::new(handler_sig, flags, mask);
 
-        assert_eq!(action_sig.flags(), SA_ONSTACK | SA_RESTART);
+        assert_eq!(action_sig.flags(), SaFlags::SA_ONSTACK | SaFlags::SA_RESTART);
         assert_eq!(action_sig.handler(), handler_sig);
 
         mask = action_sig.mask();
