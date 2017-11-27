@@ -98,7 +98,10 @@ pub fn epoll_ctl<'a, T>(epfd: RawFd, op: EpollOp, fd: RawFd, event: T) -> Result
         Err(Error::Sys(Errno::EINVAL))
     } else {
         let res = unsafe { libc::epoll_ctl(epfd, op as c_int, fd, &mut event.event) };
-        Errno::result(res).map(drop)
+        println!("libc::epoll_ctl returned {:?}", res);
+        let retval = Errno::result(res).map(drop);
+        println!("in epoll_ctl, retval is {:?}", retval);
+        retval
     }
 }
 
