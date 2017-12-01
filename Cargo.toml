@@ -19,7 +19,7 @@ cfg-if = "0.1.0"
 void = "1.0.2"
 
 [dev-dependencies]
-lazy_static = "0.2"
+lazy_static = "1"
 rand = "0.3.8"
 tempdir = "0.3"
 tempfile = "2"
