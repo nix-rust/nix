@@ -93,15 +93,9 @@ matrix:
       rust: 1.13.0
       os: osx
 
-    # Testing beta on main targets
+    # Make sure stable is always working too
     - env: TARGET=x86_64-unknown-linux-gnu
-      rust: beta
-
-  allow_failures:
-    # We allow beta to fail here because a bug might crop up in rust that causes it. We will
-    # however be on the lookout for this and file those bugs with upstream.
-    - env: TARGET=x86_64-unknown-linux-gnu
-      rust: beta
+      rust: stable
 
 before_install: set -e
 
