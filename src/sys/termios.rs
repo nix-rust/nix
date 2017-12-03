@@ -37,10 +37,10 @@
 //! An example showing some of the basic operations for interacting with the control flags:
 //!
 //! ```
-//! # use self::nix::sys::termios::{CS5, CSIZE, Termios};
+//! # use self::nix::sys::termios::{ControlFlags, Termios};
 //! # let mut termios = unsafe { Termios::default_uninit() };
-//! termios.control_flags & CSIZE == CS5;
-//! termios.control_flags |= CS5;
+//! termios.control_flags & ControlFlags::CSIZE == ControlFlags::CS5;
+//! termios.control_flags |= ControlFlags::CS5;
 //! ```
 
 use {Errno, Result};

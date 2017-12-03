@@ -18,67 +18,67 @@ matrix:
   include:
     # Android
     - env: TARGET=aarch64-linux-android DISABLE_TESTS=1
-      rust: 1.13.0
+      rust: 1.20.0
     - env: TARGET=arm-linux-androideabi DISABLE_TESTS=1
-      rust: 1.13.0
+      rust: 1.20.0
     - env: TARGET=armv7-linux-androideabi DISABLE_TESTS=1
-      rust: 1.13.0
+      rust: 1.20.0
     - env: TARGET=aarch64-apple-ios DISABLE_TESTS=1
-      rust: 1.13.0
+      rust: 1.20.0
       os: osx
     - env: TARGET=i686-linux-android DISABLE_TESTS=1
-      rust: 1.18.0
+      rust: 1.20.0
     - env: TARGET=x86_64-linux-android DISABLE_TESTS=1
-      rust: 1.18.0
+      rust: 1.20.0
 
     # Linux
     - env: TARGET=aarch64-unknown-linux-gnu
-      rust: 1.13.0
+      rust: 1.20.0
     - env: TARGET=armv7-apple-ios DISABLE_TESTS=1
-      rust: 1.13.0
+      rust: 1.20.0
       os: osx
     - env: TARGET=arm-unknown-linux-gnueabi
-      rust: 1.13.0
+      rust: 1.20.0
     - env: TARGET=arm-unknown-linux-musleabi DISABLE_TESTS=1
-      rust: 1.14.0
+      rust: 1.20.0
     - env: TARGET=armv7-unknown-linux-gnueabihf
-      rust: 1.13.0
+      rust: 1.20.0
     - env: TARGET=armv7s-apple-ios DISABLE_TESTS=1
-      rust: 1.13.0
+      rust: 1.20.0
       os: osx
     - env: TARGET=i686-unknown-linux-gnu
-      rust: 1.13.0
+      rust: 1.20.0
     - env: TARGET=i686-unknown-linux-musl
-      rust: 1.13.0
+      rust: 1.20.0
     - env: TARGET=mips-unknown-linux-gnu
-      rust: 1.13.0
+      rust: 1.20.0
     - env: TARGET=i386-apple-ios DISABLE_TESTS=1
-      rust: 1.13.0
+      rust: 1.20.0
       os: osx
     - env: TARGET=mips64-unknown-linux-gnuabi64
-      rust: 1.13.0
+      rust: 1.20.0
     - env: TARGET=mips64el-unknown-linux-gnuabi64
-      rust: 1.13.0
+      rust: 1.20.0
     - env: TARGET=mipsel-unknown-linux-gnu
-      rust: 1.13.0
+      rust: 1.20.0
     - env: TARGET=x86_64-apple-ios DISABLE_TESTS=1
-      rust: 1.13.0
+      rust: 1.20.0
       os: osx
     - env: TARGET=powerpc-unknown-linux-gnu DISABLE_TESTS=1
-      rust: 1.13.0
+      rust: 1.20.0
     - env: TARGET=powerpc64-unknown-linux-gnu
-      rust: 1.13.0
+      rust: 1.20.0
     - env: TARGET=powerpc64le-unknown-linux-gnu
-      rust: 1.13.0
+      rust: 1.20.0
     - env: TARGET=i686-apple-darwin
-      rust: 1.13.0
+      rust: 1.20.0
       os: osx
     - env: TARGET=s390x-unknown-linux-gnu DISABLE_TESTS=1
-      rust: 1.13.0
+      rust: 1.20.0
     - env: TARGET=x86_64-unknown-linux-gnu
-      rust: 1.13.0
+      rust: 1.20.0
     - env: TARGET=x86_64-unknown-linux-musl
-      rust: 1.13.0
+      rust: 1.20.0
 
     # *BSD
     # FreeBSD i686 and x86_64 use BuildBot instead of Travis
@@ -87,10 +87,10 @@ matrix:
     # - env: TARGET=i686-unknown-freebsd DISABLE_TESTS=1
     # - env: TARGET=x86_64-unknown-freebsd DISABLE_TESTS=1
     - env: TARGET=x86_64-unknown-netbsd DISABLE_TESTS=1
-      rust: 1.13.0
+      rust: 1.20.0
 
     - env: TARGET=x86_64-apple-darwin
-      rust: 1.13.0
+      rust: 1.20.0
       os: osx
 
     # Make sure stable is always working too

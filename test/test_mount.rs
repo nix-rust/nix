@@ -18,9 +18,9 @@ mod test_mount {
     use libc::{EACCES, EROFS};
 
     use nix::errno::Errno;
-    use nix::mount::{mount, umount, MsFlags, MS_BIND, MS_RDONLY, MS_NOEXEC};
-    use nix::sched::{unshare, CLONE_NEWNS, CLONE_NEWUSER};
-    use nix::sys::stat::{self, S_IRWXU, S_IRWXG, S_IRWXO, S_IXUSR, S_IXGRP, S_IXOTH};
+    use nix::mount::{mount, umount, MsFlags};
+    use nix::sched::{unshare, CloneFlags};
+    use nix::sys::stat::{self, Mode};
     use nix::unistd::getuid;
 
     use tempdir::TempDir;
@@ -48,7 +48,7 @@ exit 23";
         fs::OpenOptions::new()
             .create(true)
             .write(true)
-            .mode((S_IRWXU | S_IRWXG | S_IRWXO).bits())
+            .mode((Mode::S_IRWXU | Mode::S_IRWXG | Mode::S_IRWXO).bits())
             .open(&test_path)
             .or_else(|e|
                 if Errno::from_i32(e.raw_os_error().unwrap()) == Errno::EOVERFLOW {
@@ -95,7 +95,7 @@ exit 23";
         mount(NONE,
               tempdir.path(),
               Some(b"tmpfs".as_ref()),
-              MS_RDONLY,
+              MsFlags::MS_RDONLY,
               NONE)
             .unwrap_or_else(|e| panic!("mount failed: {}", e));
 
@@ -113,7 +113,7 @@ exit 23";
         mount(NONE,
               tempdir.path(),
               Some(b"tmpfs".as_ref()),
-              MS_NOEXEC,
+              MsFlags::MS_NOEXEC,
               NONE)
             .unwrap_or_else(|e| panic!("mount failed: {}", e));
 
@@ -122,7 +122,7 @@ exit 23";
         fs::OpenOptions::new()
             .create(true)
             .write(true)
-            .mode((S_IRWXU | S_IRWXG | S_IRWXO).bits())
+            .mode((Mode::S_IRWXU | Mode::S_IRWXG | Mode::S_IRWXO).bits())
             .open(&test_path)
             .and_then(|mut f| f.write(SCRIPT_CONTENTS))
             .unwrap_or_else(|e| panic!("write failed: {}", e));
@@ -134,7 +134,7 @@ exit 23";
                                                           panic!("metadata failed: {}", e)
                                                       }));
 
-        assert!(mode.contains(S_IXUSR | S_IXGRP | S_IXOTH),
+        assert!(mode.contains(Mode::S_IXUSR | Mode::S_IXGRP | Mode::S_IXOTH),
                 "{:?} did not have execute permissions",
                 &test_path);
 
@@ -157,14 +157,14 @@ exit 23";
             mount(Some(tempdir.path()),
                   mount_point.path(),
                   NONE,
-                  MS_BIND,
+                  MsFlags::MS_BIND,
                   NONE)
                 .unwrap_or_else(|e| panic!("mount failed: {}", e));
 
             fs::OpenOptions::new()
                 .create(true)
                 .write(true)
-                .mode((S_IRWXU | S_IRWXG | S_IRWXO).bits())
+                .mode((Mode::S_IRWXU | Mode::S_IRWXG | Mode::S_IRWXO).bits())
                 .open(mount_point.path().join(file_name))
                 .and_then(|mut f| f.write(SCRIPT_CONTENTS))
                 .unwrap_or_else(|e| panic!("write failed: {}", e));
@@ -186,7 +186,7 @@ exit 23";
         // Hold on to the uid in the parent namespace.
         let uid = getuid();
 
-        unshare(CLONE_NEWNS | CLONE_NEWUSER).unwrap_or_else(|e| {
+        unshare(CloneFlags::CLONE_NEWNS | CloneFlags::CLONE_NEWUSER).unwrap_or_else(|e| {
             let stderr = io::stderr();
             let mut handle = stderr.lock();
             writeln!(handle,

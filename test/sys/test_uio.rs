@@ -199,7 +199,6 @@ fn test_process_vm_readv() {
     use nix::unistd::ForkResult::*;
     use nix::sys::signal::*;
     use nix::sys::wait::*;
-    use std::str;
 
     #[allow(unused_variables)]
     let m = ::FORK_MTX.lock().expect("Mutex got poisoned by another test");

@@ -151,7 +151,7 @@ pub fn mq_setattr(mqd: mqd_t, newattr: &MqAttr) -> Result<MqAttr> {
 /// Returns the old attributes
 pub fn mq_set_nonblock(mqd: mqd_t) -> Result<(MqAttr)> {
     let oldattr = try!(mq_getattr(mqd));
-    let newattr = MqAttr::new(O_NONBLOCK.bits() as c_long,
+    let newattr = MqAttr::new(MQ_OFlag::O_NONBLOCK.bits() as c_long,
                               oldattr.mq_attr.mq_maxmsg,
                               oldattr.mq_attr.mq_msgsize,
                               oldattr.mq_attr.mq_curmsgs);

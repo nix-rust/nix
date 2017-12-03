@@ -54,8 +54,7 @@ fn test_waitstatus_pid() {
 // FIXME: qemu-user doesn't implement ptrace on most arches
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 mod ptrace {
-    use nix::sys::ptrace;
-    use nix::sys::ptrace::*;
+    use nix::sys::ptrace::{self, Options, Event};
     use nix::sys::signal::*;
     use nix::sys::wait::*;
     use nix::unistd::*;
@@ -74,7 +73,7 @@ mod ptrace {
         // Wait for the raised SIGTRAP
         assert_eq!(waitpid(child, None), Ok(WaitStatus::Stopped(child, SIGTRAP)));
         // We want to test a syscall stop and a PTRACE_EVENT stop
-        assert!(ptrace::setoptions(child, PTRACE_O_TRACESYSGOOD | PTRACE_O_TRACEEXIT).is_ok());
+        assert!(ptrace::setoptions(child, Options::PTRACE_O_TRACESYSGOOD | Options::PTRACE_O_TRACEEXIT).is_ok());
 
         // First, stop on the next system call, which will be exit()
         assert!(ptrace::syscall(child).is_ok());

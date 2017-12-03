@@ -2,7 +2,7 @@ use libc::c_int;
 use nix::{Error, Result};
 use nix::errno::*;
 use nix::sys::aio::*;
-use nix::sys::signal::*;
+use nix::sys::signal::{SaFlags, SigAction, sigaction, SigevNotify, SigHandler, Signal, SigSet};
 use nix::sys::time::{TimeSpec, TimeValLike};
 use std::io::{Write, Read, Seek, SeekFrom};
 use std::ops::Deref;
@@ -325,7 +325,7 @@ fn test_write_sigev_signal() {
     #[allow(unused_variables)]
     let m = ::SIGNAL_MTX.lock().expect("Mutex got poisoned by another test");
     let sa = SigAction::new(SigHandler::Handler(sigfunc),
-                            SA_RESETHAND,
+                            SaFlags::SA_RESETHAND,
                             SigSet::empty());
     SIGNALED.store(false, Ordering::Relaxed);
     unsafe { sigaction(Signal::SIGUSR2, &sa) }.unwrap();
@@ -462,7 +462,7 @@ fn test_lio_listio_signal() {
     const EXPECT: &'static [u8] = b"abCDEF123456";
     let mut f = tempfile().unwrap();
     let sa = SigAction::new(SigHandler::Handler(sigfunc),
-                            SA_RESETHAND,
+                            SaFlags::SA_RESETHAND,
                             SigSet::empty());
     let sigev_notify = SigevNotify::SigevSignal { signal: Signal::SIGUSR2,
                                                   si_value: 0 };

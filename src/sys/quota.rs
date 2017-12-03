@@ -5,12 +5,12 @@
 //! Enabling and setting a quota:
 //!
 //! ```rust,no_run
-//! # use nix::sys::quota::*;
+//! # use nix::sys::quota::{Dqblk, quotactl_on, quotactl_set, QuotaFmt, QuotaType, QuotaValidFlags};
 //! quotactl_on(QuotaType::USRQUOTA, "/dev/sda1", QuotaFmt::QFMT_VFS_V1, "aquota.user");
 //! let mut dqblk: Dqblk = Default::default();
 //! dqblk.set_blocks_hard_limit(10000);
 //! dqblk.set_blocks_soft_limit(8000);
-//! quotactl_set(QuotaType::USRQUOTA, "/dev/sda1", 50, &dqblk, QIF_BLIMITS);
+//! quotactl_set(QuotaType::USRQUOTA, "/dev/sda1", 50, &dqblk, QuotaValidFlags::QIF_BLIMITS);
 //! ```
 use std::default::Default;
 use std::{mem, ptr};
@@ -121,7 +121,7 @@ impl Dqblk {
     /// The absolute limit on disk quota blocks allocated.
     pub fn blocks_hard_limit(&self) -> Option<u64> {
         let valid_fields = QuotaValidFlags::from_bits_truncate(self.0.dqb_valid);
-        if valid_fields.contains(QIF_BLIMITS) {
+        if valid_fields.contains(QuotaValidFlags::QIF_BLIMITS) {
             Some(self.0.dqb_bhardlimit)
         } else {
             None
@@ -136,7 +136,7 @@ impl Dqblk {
     /// Preferred limit on disk quota blocks
     pub fn blocks_soft_limit(&self) -> Option<u64> {
         let valid_fields = QuotaValidFlags::from_bits_truncate(self.0.dqb_valid);
-        if valid_fields.contains(QIF_BLIMITS) {
+        if valid_fields.contains(QuotaValidFlags::QIF_BLIMITS) {
             Some(self.0.dqb_bsoftlimit)
         } else {
             None
@@ -151,7 +151,7 @@ impl Dqblk {
     /// Current occupied space (bytes).
     pub fn occupied_space(&self) -> Option<u64> {
         let valid_fields = QuotaValidFlags::from_bits_truncate(self.0.dqb_valid);
-        if valid_fields.contains(QIF_SPACE) {
+        if valid_fields.contains(QuotaValidFlags::QIF_SPACE) {
             Some(self.0.dqb_curspace)
         } else {
             None
@@ -161,7 +161,7 @@ impl Dqblk {
     /// Maximum number of allocated inodes.
     pub fn inodes_hard_limit(&self) -> Option<u64> {
         let valid_fields = QuotaValidFlags::from_bits_truncate(self.0.dqb_valid);
-        if valid_fields.contains(QIF_ILIMITS) {
+        if valid_fields.contains(QuotaValidFlags::QIF_ILIMITS) {
             Some(self.0.dqb_ihardlimit)
         } else {
             None
@@ -176,7 +176,7 @@ impl Dqblk {
     /// Preferred inode limit
     pub fn inodes_soft_limit(&self) -> Option<u64> {
         let valid_fields = QuotaValidFlags::from_bits_truncate(self.0.dqb_valid);
-        if valid_fields.contains(QIF_ILIMITS) {
+        if valid_fields.contains(QuotaValidFlags::QIF_ILIMITS) {
             Some(self.0.dqb_isoftlimit)
         } else {
             None
@@ -191,7 +191,7 @@ impl Dqblk {
     /// Current number of allocated inodes.
     pub fn allocated_inodes(&self) -> Option<u64> {
         let valid_fields = QuotaValidFlags::from_bits_truncate(self.0.dqb_valid);
-        if valid_fields.contains(QIF_INODES) {
+        if valid_fields.contains(QuotaValidFlags::QIF_INODES) {
             Some(self.0.dqb_curinodes)
         } else {
             None
@@ -201,7 +201,7 @@ impl Dqblk {
     /// Time limit for excessive disk use.
     pub fn block_time_limit(&self) -> Option<u64> {
         let valid_fields = QuotaValidFlags::from_bits_truncate(self.0.dqb_valid);
-        if valid_fields.contains(QIF_BTIME) {
+        if valid_fields.contains(QuotaValidFlags::QIF_BTIME) {
             Some(self.0.dqb_btime)
         } else {
             None
@@ -216,7 +216,7 @@ impl Dqblk {
     /// Time limit for excessive files.
     pub fn inode_time_limit(&self) -> Option<u64> {
         let valid_fields = QuotaValidFlags::from_bits_truncate(self.0.dqb_valid);
-        if valid_fields.contains(QIF_ITIME) {
+        if valid_fields.contains(QuotaValidFlags::QIF_ITIME) {
             Some(self.0.dqb_itime)
         } else {
             None

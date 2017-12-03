@@ -2,7 +2,7 @@
 
 use errno;
 use {Errno, Error, Result, NixPath};
-use fcntl::{fcntl, OFlag, O_CLOEXEC, FD_CLOEXEC};
+use fcntl::{fcntl, FdFlag, OFlag};
 use fcntl::FcntlArg::F_SETFD;
 use libc::{self, c_char, c_void, c_int, c_long, c_uint, size_t, pid_t, off_t,
            uid_t, gid_t, mode_t};
@@ -322,7 +322,7 @@ pub fn gettid() -> Pid {
 /// underlying resource, offset, and file status flags.  The actual index used
 /// for the file descriptor will be the lowest fd index that is available.
 ///
-/// The two file descriptors do not share file descriptor flags (e.g. `FD_CLOEXEC`).
+/// The two file descriptors do not share file descriptor flags (e.g. `OFlag::FD_CLOEXEC`).
 #[inline]
 pub fn dup(oldfd: RawFd) -> Result<RawFd> {
     let res = unsafe { libc::dup(oldfd) };
@@ -360,8 +360,8 @@ fn dup3_polyfill(oldfd: RawFd, newfd: RawFd, flags: OFlag) -> Result<RawFd> {
 
     let fd = try!(dup2(oldfd, newfd));
 
-    if flags.contains(O_CLOEXEC) {
-        if let Err(e) = fcntl(fd, F_SETFD(FD_CLOEXEC)) {
+    if flags.contains(OFlag::O_CLOEXEC) {
+        if let Err(e) = fcntl(fd, F_SETFD(FdFlag::FD_CLOEXEC)) {
             let _ = close(fd);
             return Err(e);
         }
@@ -422,7 +422,7 @@ pub fn fchdir(dirfd: RawFd) -> Result<()> {
 ///     let tmp_dir2 = tmp_dir1.path().join("new_dir");
 ///
 ///     // create new directory and give read, write and execute rights to the owner
-///     match unistd::mkdir(&tmp_dir2, stat::S_IRWXU) {
+///     match unistd::mkdir(&tmp_dir2, stat::Mode::S_IRWXU) {
 ///        Ok(_) => println!("created {:?}", tmp_dir2),
 ///        Err(err) => println!("Error creating directory: {}", err),
 ///     }
@@ -465,7 +465,7 @@ pub fn mkdir<P: ?Sized + NixPath>(path: &P, mode: Mode) -> Result<()> {
 ///     let fifo_path = tmp_dir.path().join("foo.pipe");
 ///
 ///     // create new fifo and give read, write and execute rights to the owner
-///     match unistd::mkfifo(&fifo_path, stat::S_IRWXU) {
+///     match unistd::mkfifo(&fifo_path, stat::Mode::S_IRWXU) {
 ///        Ok(_) => println!("created {:?}", fifo_path),
 ///        Err(err) => println!("Error creating fifo: {}", err),
 ///     }
@@ -909,21 +909,21 @@ pub fn pipe2(flags: OFlag) -> Result<(RawFd, RawFd)> {
               target_os = "android",
               target_os = "emscripten")))]
 fn pipe2_setflags(fd1: RawFd, fd2: RawFd, flags: OFlag) -> Result<()> {
-    use fcntl::O_NONBLOCK;
+    use fcntl::FdFlag;
     use fcntl::FcntlArg::F_SETFL;
 
     let mut res = Ok(0);
 
-    if flags.contains(O_CLOEXEC) {
+    if flags.contains(OFlag::O_CLOEXEC) {
         res = res
-            .and_then(|_| fcntl(fd1, F_SETFD(FD_CLOEXEC)))
-            .and_then(|_| fcntl(fd2, F_SETFD(FD_CLOEXEC)));
+            .and_then(|_| fcntl(fd1, F_SETFD(FdFlag::FD_CLOEXEC)))
+            .and_then(|_| fcntl(fd2, F_SETFD(FdFlag::FD_CLOEXEC)));
     }
 
-    if flags.contains(O_NONBLOCK) {
+    if flags.contains(OFlag::O_NONBLOCK) {
         res = res
-            .and_then(|_| fcntl(fd1, F_SETFL(O_NONBLOCK)))
-            .and_then(|_| fcntl(fd2, F_SETFL(O_NONBLOCK)));
+            .and_then(|_| fcntl(fd1, F_SETFL(OFlag::O_NONBLOCK)))
+            .and_then(|_| fcntl(fd2, F_SETFL(OFlag::O_NONBLOCK)));
     }
 
     match res {

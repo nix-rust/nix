@@ -86,14 +86,14 @@ pub fn grantpt(fd: &PtyMaster) -> Result<()> {
 ///
 /// ```
 /// use std::path::Path;
-/// use nix::fcntl::{O_RDWR, open};
-/// use nix::pty::*;
-/// use nix::sys::stat;
+/// use nix::fcntl::{OFlag, open};
+/// use nix::pty::{grantpt, posix_openpt, ptsname, unlockpt};
+/// use nix::sys::stat::Mode;
 ///
 /// # #[allow(dead_code)]
 /// # fn run() -> nix::Result<()> {
 /// // Open a new PTY master
-/// let master_fd = posix_openpt(O_RDWR)?;
+/// let master_fd = posix_openpt(OFlag::O_RDWR)?;
 ///
 /// // Allow a slave to be generated for it
 /// grantpt(&master_fd)?;
@@ -104,7 +104,7 @@ pub fn grantpt(fd: &PtyMaster) -> Result<()> {
 ///
 /// // Try to open the slave
 /// # #[allow(unused_variables)]
-/// let slave_fd = open(Path::new(&slave_name), O_RDWR, stat::Mode::empty())?;
+/// let slave_fd = open(Path::new(&slave_name), OFlag::O_RDWR, Mode::empty())?;
 /// # Ok(())
 /// # }
 /// ```
