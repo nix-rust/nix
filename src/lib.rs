@@ -18,9 +18,6 @@ extern crate bitflags;
 extern crate cfg_if;
 extern crate void;
 
-#[cfg(test)]
-extern crate nix_test as nixtest;
-
 #[macro_use] mod macros;
 
 pub extern crate libc;
