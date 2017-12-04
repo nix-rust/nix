@@ -1,4 +1,4 @@
-use std::{cmp, fmt, ops};
+use std::{cmp, fmt, ops, time};
 use libc::{c_long, time_t, suseconds_t, timespec, timeval};
 
 pub trait TimeValLike: Sized {
@@ -392,6 +392,15 @@ impl TimeVal {
     }
 }
 
+impl From<time::Duration> for TimeVal {
+    fn from(d: time::Duration) -> Self {
+        let micros = d.subsec_nanos() / 1_000;
+        TimeVal(timeval { tv_sec: d.as_secs() as time_t,
+                          tv_usec: micros as suseconds_t})
+    }
+}
+
+
 impl ops::Neg for TimeVal {
     type Output = TimeVal;
 
@@ -496,6 +505,7 @@ fn div_rem_64(this: i64, other: i64) -> (i64, i64) {
 
 #[cfg(test)]
 mod test {
+    use std::time::Duration;
     use super::{TimeSpec, TimeVal, TimeValLike};
 
     #[test]
@@ -568,5 +578,10 @@ mod test {
         assert_eq!(TimeVal::microseconds(42).to_string(), "0.000042 seconds");
         assert_eq!(TimeVal::nanoseconds(1402).to_string(), "0.000001 seconds");
         assert_eq!(TimeVal::seconds(-86401).to_string(), "-86401 seconds");
+    }
+
+    #[test]
+    pub fn test_duration_to_timeval() {
+        assert_eq!(TimeVal::from(Duration::from_millis(1_000)).num_milliseconds(), 1_000);
     }
 }
