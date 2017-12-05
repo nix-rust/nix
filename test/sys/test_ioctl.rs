@@ -210,7 +210,7 @@ mod linux_ioctls {
     use libc::{TCGETS, TCSBRK, TCSETS, TIOCNXCL, termios};
 
     use nix::Error::Sys;
-    use nix::errno::{ENOTTY, ENOSYS};
+    use nix::errno::Errno::{ENOTTY, ENOSYS};
 
     ioctl!(bad none tiocnxcl with TIOCNXCL);
     #[test]
@@ -345,7 +345,7 @@ mod freebsd_ioctls {
     use libc::termios;
 
     use nix::Error::Sys;
-    use nix::errno::ENOTTY;
+    use nix::errno::Errno::ENOTTY;
 
     // From sys/sys/ttycom.h
     const TTY_IOC_MAGIC: u8 = b't';

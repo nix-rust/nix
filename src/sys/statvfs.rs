@@ -7,7 +7,8 @@ use std::os::unix::io::AsRawFd;
 
 use libc::{self, c_ulong};
 
-use {Errno, Result, NixPath};
+use {Result, NixPath};
+use errno::Errno;
 
 bitflags!(
     /// File system mount Flags

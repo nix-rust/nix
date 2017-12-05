@@ -2,7 +2,8 @@ use std::mem;
 use std::os::unix::io::RawFd;
 use std::ptr::null_mut;
 use libc::{self, c_int};
-use {Errno, Result};
+use Result;
+use errno::Errno;
 use sys::time::TimeVal;
 
 pub use libc::FD_SETSIZE;

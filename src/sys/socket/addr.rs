@@ -1,5 +1,6 @@
 use super::sa_family_t;
-use {Errno, Error, Result, NixPath};
+use {Error, Result, NixPath};
+use errno::Errno;
 use libc;
 use std::{fmt, hash, mem, net, ptr, slice};
 use std::ffi::OsStr;

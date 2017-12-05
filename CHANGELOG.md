@@ -88,6 +88,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - The syscall module has been removed. This only exposed enough functionality for
   `memfd_create()` and `pivot_root()`, which are still exposed as separate functions.
   ([#747](https://github.com/nix-rust/nix/pull/747))
+- The `Errno` variants are no longer reexported from the `errno` module. `Errno` itself is no longer reexported from the
+  crate root and instead must be accessed using the `errno` module. ([#696](https://github.com/nix-rust/nix/pull/696))
 
 ## [0.9.0] 2017-07-23
 

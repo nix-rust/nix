@@ -1,6 +1,7 @@
 use nix::sys::epoll::{EpollCreateFlags, EpollFlags, EpollOp, EpollEvent};
 use nix::sys::epoll::{epoll_create1, epoll_ctl};
-use nix::{Error, Errno};
+use nix::Error;
+use nix::errno::Errno;
 
 #[test]
 pub fn test_epoll_errno() {

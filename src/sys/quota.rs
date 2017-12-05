@@ -15,7 +15,8 @@
 use std::default::Default;
 use std::{mem, ptr};
 use libc::{self, c_int, c_char};
-use {Errno, Result, NixPath};
+use {Result, NixPath};
+use errno::Errno;
 
 struct QuotaCmd(QuotaSubCmd, QuotaType);
 

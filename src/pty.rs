@@ -10,7 +10,8 @@ use std::mem;
 use std::os::unix::prelude::*;
 
 use sys::termios::Termios;
-use {Errno, Result, Error, fcntl};
+use {Result, Error, fcntl};
+use errno::Errno;
 
 /// Representation of a master/slave pty pair
 ///

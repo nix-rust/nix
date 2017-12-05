@@ -1,5 +1,6 @@
 use super::{GetSockOpt, SetSockOpt};
-use {Errno, Result};
+use Result;
+use errno::Errno;
 use sys::time::TimeVal;
 use libc::{self, c_int, uint8_t, c_void, socklen_t};
 use std::mem;

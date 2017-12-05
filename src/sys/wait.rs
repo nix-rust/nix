@@ -1,5 +1,6 @@
 use libc::{self, c_int};
-use {Errno, Result};
+use Result;
+use errno::Errno;
 use unistd::Pid;
 
 use sys::signal::Signal;

@@ -1,7 +1,8 @@
 // Silence invalid warnings due to rust-lang/rust#16719
 #![allow(improper_ctypes)]
 
-use {Errno, Result};
+use Result;
+use errno::Errno;
 use libc::{self, c_int, c_void, size_t, off_t};
 use std::marker::PhantomData;
 use std::os::unix::io::RawFd;

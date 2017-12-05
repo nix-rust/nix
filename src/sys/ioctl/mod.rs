@@ -66,7 +66,8 @@
 //! ```
 //! # #[macro_use] extern crate nix;
 //! # use std::mem;
-//! # use nix::{Errno, libc, Result};
+//! # use nix::{libc, Result};
+//! # use nix::errno::Errno;
 //! # use nix::libc::c_int as c_int;
 //! # const SPI_IOC_MAGIC: u8 = b'k'; // Defined in linux/spi/spidev.h
 //! # const SPI_IOC_TYPE_MODE: u8 = 1;
@@ -176,7 +177,8 @@
 //! ```
 //! # #[macro_use] extern crate nix;
 //! # use std::mem;
-//! # use nix::{Errno, libc, Result};
+//! # use nix::{libc, Result};
+//! # use nix::errno::Errno;
 //! # use nix::libc::c_int as c_int;
 //! # const SPI_IOC_MAGIC: u8 = b'k';
 //! # const SPI_IOC_TYPE_MESSAGE: u8 = 0;
@@ -248,7 +250,7 @@ pub use self::platform::*;
 macro_rules! convert_ioctl_res {
     ($w:expr) => (
         {
-            $crate::Errno::result($w)
+            $crate::errno::Errno::result($w)
         }
     );
 }

@@ -3,7 +3,6 @@ use std::{fmt, io, error};
 use {Error, Result};
 
 pub use self::consts::*;
-pub use self::consts::Errno::*;
 
 cfg_if! {
     if #[cfg(any(target_os = "freebsd",
@@ -113,6 +112,7 @@ fn last() -> Errno {
 }
 
 fn desc(errno: Errno) -> &'static str {
+    use self::Errno::*;
     match errno {
         UnknownErrno    => "Unknown errno",
         EPERM           => "Operation not permitted",
@@ -1898,7 +1898,7 @@ mod consts {
 
 #[cfg(test)]
 mod test {
-    use super::*;
+    use super::Errno::*;
     use nixtest::assert_const_eq;
     use libc::c_int;
 

@@ -2,7 +2,8 @@ use std::mem;
 use std::os::unix::io::RawFd;
 use std::option::Option;
 use libc::{self, c_int, c_void};
-use {Errno, Error, Result};
+use {Error, Result};
+use errno::Errno;
 use ::unistd::Pid;
 
 // For some functions taking with a parameter of type CloneFlags,

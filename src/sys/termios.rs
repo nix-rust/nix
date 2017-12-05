@@ -43,7 +43,8 @@
 //! termios.control_flags |= ControlFlags::CS5;
 //! ```
 
-use {Errno, Result};
+use Result;
+use errno::Errno;
 use libc::{self, c_int, tcflag_t};
 use std::cell::{Ref, RefCell};
 use std::convert::From;
