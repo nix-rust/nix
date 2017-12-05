@@ -515,7 +515,7 @@ fn desc(errno: Errno) -> &'static str {
 mod consts {
     use libc;
 
-    #[derive(Debug, Clone, PartialEq, Copy)]
+    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     #[repr(i32)]
     pub enum Errno {
         UnknownErrno    = 0,
@@ -804,7 +804,7 @@ mod consts {
 mod consts {
     use libc;
 
-    #[derive(Copy, Debug, Clone, PartialEq)]
+    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     #[repr(i32)]
     pub enum Errno {
         UnknownErrno    = 0,
@@ -1042,7 +1042,7 @@ mod consts {
 mod consts {
     use libc;
 
-    #[derive(Copy, Debug, Clone, PartialEq)]
+    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     #[repr(i32)]
     pub enum Errno {
         UnknownErrno    = 0,
@@ -1261,7 +1261,7 @@ mod consts {
 mod consts {
     use libc;
 
-    #[derive(Copy, Debug, Clone, PartialEq)]
+    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     #[repr(i32)]
     pub enum Errno {
         UnknownErrno    = 0,
@@ -1487,7 +1487,7 @@ mod consts {
 mod consts {
     use libc;
 
-    #[derive(Copy, Debug, Clone, PartialEq)]
+    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     #[repr(i32)]
     pub enum Errno {
         UnknownErrno    = 0,
@@ -1694,7 +1694,7 @@ mod consts {
 mod consts {
     use libc;
 
-    #[derive(Copy, Debug, Clone, PartialEq)]
+    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     #[repr(i32)]
     pub enum Errno {
         UnknownErrno    = 0,
