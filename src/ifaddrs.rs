@@ -32,9 +32,30 @@ pub struct InterfaceAddress {
     pub destination: Option<SockAddr>,
 }
 
+// NOTE: see https://github.com/nix-rust/nix/issues/810
+//       if `SockAddr::to_str` change to `SockAddr::to_string`,
+//       here must be change to.
 impl fmt::Debug for InterfaceAddress {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "InterfaceAddress ({:?})", self.interface_name)
+        write!(f, "InterfaceAddress {{interface_name: {}, flags: {}, address: {}, netmask: {}, broadcast: {}, destination: {} }}",
+            self.interface_name,
+            self.flags,
+            self.address.map(|addr| addr.to_str()).unwrap_or("N/A".to_string()),
+            self.netmask.map(|addr| addr.to_str()).unwrap_or("N/A".to_string()),
+            self.broadcast.map(|addr| addr.to_str()).unwrap_or("N/A".to_string()),
+            self.destination.map(|addr| addr.to_str()).unwrap_or("N/A".to_string()))
+    }
+}
+
+impl fmt::Display for InterfaceAddress {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}: \n\tflags: {}\n\taddress: {}\n\tnetmask: {}\n\tbroadcast: {}\n\tdestination: {}", 
+            self.interface_name,
+            self.flags,
+            self.address.map(|addr| addr.to_str()).unwrap_or("N/A".to_string()),
+            self.netmask.map(|addr| addr.to_str()).unwrap_or("N/A".to_string()),
+            self.broadcast.map(|addr| addr.to_str()).unwrap_or("N/A".to_string()),
+            self.destination.map(|addr| addr.to_str()).unwrap_or("N/A".to_string()))
     }
 }
 
@@ -117,18 +138,14 @@ impl Iterator for InterfaceAddressIterator {
 ///
 /// # Example
 /// ```
-/// let addrs = nix::ifaddrs::getifaddrs().unwrap();
-/// for ifaddr in addrs {
-///   match ifaddr.address {
-///     Some(address) => {
-///       println!("interface {} address {}",
-///                ifaddr.interface_name, address);
-///     },
-///     None => {
-///       println!("interface {} with unsupported address family",
-///                ifaddr.interface_name);
+/// extern crate nix;
+///
+/// fn main (){
+///     let addrs = nix::ifaddrs::getifaddrs().unwrap();
+///     for ifaddr in addrs {
+///         println!("{}", ifaddr);
+///         println!("{:?}", ifaddr);
 ///     }
-///   }
 /// }
 /// ```
 pub fn getifaddrs() -> Result<InterfaceAddressIterator> {
