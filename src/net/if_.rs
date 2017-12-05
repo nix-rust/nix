@@ -258,3 +258,11 @@ libc_bitflags!(
         IFF_IPMP;
     }
 );
+
+impl ::std::fmt::Display for InterfaceFlags {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        write!(f, "{:X}<{}>",
+            self.bits(),
+            format!("{:?}", self).replace("IFF_", "").replace(" | ", ","))
+    }
+}
