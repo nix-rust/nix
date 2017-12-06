@@ -3,36 +3,47 @@ use libc;
 use {Result, NixPath};
 use errno::Errno;
 
-bitflags!(
+libc_bitflags!(
     pub struct MsFlags: c_ulong {
-        const MS_RDONLY      = libc::MS_RDONLY;      // Mount read-only
-        const MS_NOSUID      = libc::MS_NOSUID;      // Ignore suid and sgid bits
-        const MS_NODEV       = libc::MS_NODEV;       // Disallow access to device special files
-        const MS_NOEXEC      = libc::MS_NOEXEC;      // Disallow program execution
-        const MS_SYNCHRONOUS = libc::MS_SYNCHRONOUS; // Writes are synced at once
-        const MS_REMOUNT     = libc::MS_REMOUNT;     // Alter flags of a mounted FS
-        const MS_MANDLOCK    = libc::MS_MANDLOCK;    // Allow mandatory locks on a FS
-        const MS_DIRSYNC     = libc::MS_DIRSYNC;     // Directory modifications are synchronous
-        const MS_NOATIME     = libc::MS_NOATIME;     // Do not update access times
-        const MS_NODIRATIME  = libc::MS_NODIRATIME;  // Do not update directory access times
-        const MS_BIND        = libc::MS_BIND;        // Linux 2.4.0 - Bind directory at different place
-        const MS_MOVE        = libc::MS_MOVE;
-        const MS_REC         = libc::MS_REC;
-        const MS_SILENT      = libc::MS_SILENT;
-        const MS_POSIXACL    = libc::MS_POSIXACL;
-        const MS_UNBINDABLE  = libc::MS_UNBINDABLE;
-        const MS_PRIVATE     = libc::MS_PRIVATE;
-        const MS_SLAVE       = libc::MS_SLAVE;
-        const MS_SHARED      = libc::MS_SHARED;
-        const MS_RELATIME    = libc::MS_RELATIME;
-        const MS_KERNMOUNT   = libc::MS_KERNMOUNT;
-        const MS_I_VERSION   = libc::MS_I_VERSION;
-        const MS_STRICTATIME = libc::MS_STRICTATIME;
-        const MS_ACTIVE      = libc::MS_ACTIVE;
-        const MS_NOUSER      = libc::MS_NOUSER;
-        const MS_RMT_MASK    = libc::MS_RMT_MASK;
-        const MS_MGC_VAL     = libc::MS_MGC_VAL;
-        const MS_MGC_MSK     = libc::MS_MGC_MSK;
+        /// Mount read-only
+        MS_RDONLY;
+        /// Ignore suid and sgid bits
+        MS_NOSUID;
+        /// Disallow access to device special files
+        MS_NODEV;
+        /// Disallow program execution
+        MS_NOEXEC;
+        /// Writes are synced at once
+        MS_SYNCHRONOUS;
+        /// Alter flags of a mounted FS
+        MS_REMOUNT;
+        /// Allow mandatory locks on a FS
+        MS_MANDLOCK;
+        /// Directory modifications are synchronous
+        MS_DIRSYNC;
+        /// Do not update access times
+        MS_NOATIME;
+        /// Do not update directory access times
+        MS_NODIRATIME;
+        /// Linux 2.4.0 - Bind directory at different place
+        MS_BIND;
+        MS_MOVE;
+        MS_REC;
+        MS_SILENT;
+        MS_POSIXACL;
+        MS_UNBINDABLE;
+        MS_PRIVATE;
+        MS_SLAVE;
+        MS_SHARED;
+        MS_RELATIME;
+        MS_KERNMOUNT;
+        MS_I_VERSION;
+        MS_STRICTATIME;
+        MS_ACTIVE;
+        MS_NOUSER;
+        MS_RMT_MASK;
+        MS_MGC_VAL;
+        MS_MGC_MSK;
     }
 );
 
