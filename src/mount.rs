@@ -18,7 +18,6 @@ bitflags!(
         const MS_BIND        = libc::MS_BIND;        // Linux 2.4.0 - Bind directory at different place
         const MS_MOVE        = libc::MS_MOVE;
         const MS_REC         = libc::MS_REC;
-        const MS_VERBOSE     = 1 << 15;              // Deprecated
         const MS_SILENT      = libc::MS_SILENT;
         const MS_POSIXACL    = libc::MS_POSIXACL;
         const MS_UNBINDABLE  = libc::MS_UNBINDABLE;
@@ -29,8 +28,6 @@ bitflags!(
         const MS_KERNMOUNT   = libc::MS_KERNMOUNT;
         const MS_I_VERSION   = libc::MS_I_VERSION;
         const MS_STRICTATIME = libc::MS_STRICTATIME;
-        const MS_NOSEC       = 1 << 28;
-        const MS_BORN        = 1 << 29;
         const MS_ACTIVE      = libc::MS_ACTIVE;
         const MS_NOUSER      = libc::MS_NOUSER;
         const MS_RMT_MASK    = libc::MS_RMT_MASK;

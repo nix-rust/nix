@@ -97,6 +97,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#747](https://github.com/nix-rust/nix/pull/747))
 - The `Errno` variants are no longer reexported from the `errno` module. `Errno` itself is no longer reexported from the
   crate root and instead must be accessed using the `errno` module. ([#696](https://github.com/nix-rust/nix/pull/696))
+- Removed `MS_VERBOSE`, `MS_NOSEC`, and `MS_BORN` from `MsFlags`. These
+  are internal kernel flags and should never have been exposed.
+  ([#814](https://github.com/nix-rust/nix/pull/814))
+
 
 ## [0.9.0] 2017-07-23
 
