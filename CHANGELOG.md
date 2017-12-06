@@ -85,6 +85,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - The `ucred` struct has been removed in favor of a `UserCredentials` struct that
   contains only getters for its fields.
   ([#814](https://github.com/nix-rust/nix/pull/814))
+- Both `ip_mreq` and `ipv6_mreq` have been replaced with `IpMembershipRequest` and
+  `Ipv6MembershipRequest`.
+  ([#814](https://github.com/nix-rust/nix/pull/814))
 
 
 ### Fixed

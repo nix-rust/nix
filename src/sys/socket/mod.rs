@@ -5,14 +5,13 @@ use {Error, Result};
 use errno::Errno;
 use features;
 use libc::{self, c_void, c_int, socklen_t, size_t};
-use std::{mem, ptr, slice};
+use std::{fmt, mem, ptr, slice};
 use std::os::unix::io::RawFd;
 use sys::time::TimeVal;
 use sys::uio::IoVec;
 
 mod addr;
 mod ffi;
-mod multicast;
 pub mod sockopt;
 
 /*
@@ -34,21 +33,13 @@ pub use self::addr::{
 pub use ::sys::socket::addr::netlink::NetlinkAddr;
 
 pub use libc::{
-    in_addr,
-    in6_addr,
+    sa_family_t,
     sockaddr,
     sockaddr_in,
     sockaddr_in6,
+    sockaddr_storage,
     sockaddr_un,
-    sa_family_t,
 };
-
-pub use self::multicast::{
-    ip_mreq,
-    ipv6_mreq,
-};
-
-pub use libc::sockaddr_storage;
 
 /// These constants are used to specify the communication semantics
 /// when creating a socket with [`socket()`](fn.socket.html)
@@ -177,8 +168,6 @@ libc_bitflags!{
 
 cfg_if! {
     if #[cfg(all(target_os = "linux", not(target_arch = "arm")))] {
-        use std::fmt;
-
         /// Unix credentials of the sending process.
         ///
         /// This struct is used with the `SO_PEERCRED` ancillary message for UNIX sockets.
@@ -219,6 +208,76 @@ cfg_if! {
                     .finish()
             }
         }
+    }
+}
+
+/// Request for multicast socket operations
+///
+/// This is a wrapper type around `ip_mreq`.
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct IpMembershipRequest(libc::ip_mreq);
+
+impl IpMembershipRequest {
+    /// Instantiate a new `IpMembershipRequest`
+    ///
+    /// If `interface` is `None`, then `Ipv4Addr::any()` will be used for the interface.
+    pub fn new(group: Ipv4Addr, interface: Option<Ipv4Addr>) -> Self {
+        IpMembershipRequest(libc::ip_mreq {
+            imr_multiaddr: group.0,
+            imr_interface: interface.unwrap_or(Ipv4Addr::any()).0,
+        })
+    }
+}
+
+impl PartialEq for IpMembershipRequest {
+    fn eq(&self, other: &Self) -> bool {
+        self.0.imr_multiaddr.s_addr == other.0.imr_multiaddr.s_addr
+            && self.0.imr_interface.s_addr == other.0.imr_interface.s_addr
+    }
+}
+impl Eq for IpMembershipRequest {}
+
+impl fmt::Debug for IpMembershipRequest {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("IpMembershipRequest")
+            .field("imr_multiaddr", &self.0.imr_multiaddr.s_addr)
+            .field("imr_interface", &self.0.imr_interface.s_addr)
+            .finish()
+    }
+}
+
+/// Request for ipv6 multicast socket operations
+///
+/// This is a wrapper type around `ipv6_mreq`.
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct Ipv6MembershipRequest(libc::ipv6_mreq);
+
+impl Ipv6MembershipRequest {
+    /// Instantiate a new `Ipv6MembershipRequest`
+    pub fn new(group: Ipv6Addr) -> Self {
+        Ipv6MembershipRequest(libc::ipv6_mreq {
+            ipv6mr_multiaddr: group.0,
+            ipv6mr_interface: 0,
+        })
+    }
+}
+
+impl PartialEq for Ipv6MembershipRequest {
+    fn eq(&self, other: &Self) -> bool {
+        self.0.ipv6mr_multiaddr.s6_addr == other.0.ipv6mr_multiaddr.s6_addr &&
+            self.0.ipv6mr_interface == other.0.ipv6mr_interface
+    }
+}
+impl Eq for Ipv6MembershipRequest {}
+
+impl fmt::Debug for Ipv6MembershipRequest {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("Ipv6MembershipRequest")
+            .field("ipv6mr_multiaddr", &self.0.ipv6mr_multiaddr.s6_addr)
+            .field("ipv6mr_interface", &self.0.ipv6mr_interface)
+            .finish()
     }
 }
 
