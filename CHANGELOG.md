@@ -48,6 +48,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Added the `from_raw()` method to `WaitStatus` for converting raw status values
   to `WaitStatus` independent of syscalls.
   ([#741](https://github.com/nix-rust/nix/pull/741))
+- Added more standard trait implementations for various types.
+  ([#814](https://github.com/nix-rust/nix/pull/814))
 
 ### Changed
 - Use native `pipe2` on all BSD targets.  Users should notice no difference.

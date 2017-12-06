@@ -77,6 +77,7 @@ pub enum SockType {
 /// Constants used in [`socket`](fn.socket.html) and [`socketpair`](fn.socketpair.html)
 /// to specify the protocol to use.
 #[repr(i32)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum SockProtocol {
     /// TCP protocol ([ip(7)](http://man7.org/linux/man-pages/man7/ip.7.html))
     Tcp = libc::IPPROTO_TCP,
@@ -825,13 +826,14 @@ pub struct ucred {
 ///
 /// [Further reading](http://pubs.opengroup.org/onlinepubs/9699919799/functions/setsockopt.html)
 #[repr(i32)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum SockLevel {
     Socket = libc::SOL_SOCKET,
     Tcp = libc::IPPROTO_TCP,
     Ip = libc::IPPROTO_IP,
     Ipv6 = libc::IPPROTO_IPV6,
     Udp = libc::IPPROTO_UDP,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(any(target_os = "android", target_os = "linux"))]
     Netlink = libc::SOL_NETLINK,
 }
 
@@ -938,7 +940,7 @@ pub unsafe fn sockaddr_storage_to_addr(
 }
 
 
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum Shutdown {
     /// Further receptions will be disallowed.
     Read,
