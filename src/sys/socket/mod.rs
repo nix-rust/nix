@@ -801,13 +801,6 @@ pub fn send(fd: RawFd, buf: &[u8], flags: MsgFlags) -> Result<usize> {
 }
 
 #[repr(C)]
-#[derive(Clone, Copy, Debug)]
-pub struct linger {
-    pub l_onoff: c_int,
-    pub l_linger: c_int
-}
-
-#[repr(C)]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct ucred {
     pid: pid_t,

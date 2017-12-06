@@ -132,7 +132,7 @@ macro_rules! sockopt_impl {
 sockopt_impl!(Both, ReuseAddr, libc::SOL_SOCKET, libc::SO_REUSEADDR, bool);
 sockopt_impl!(Both, ReusePort, libc::SOL_SOCKET, libc::SO_REUSEPORT, bool);
 sockopt_impl!(Both, TcpNoDelay, libc::IPPROTO_TCP, libc::TCP_NODELAY, bool);
-sockopt_impl!(Both, Linger, libc::SOL_SOCKET, libc::SO_LINGER, super::linger);
+sockopt_impl!(Both, Linger, libc::SOL_SOCKET, libc::SO_LINGER, libc::linger);
 sockopt_impl!(SetOnly, IpAddMembership, libc::IPPROTO_IP, libc::IP_ADD_MEMBERSHIP, super::ip_mreq);
 sockopt_impl!(SetOnly, IpDropMembership, libc::IPPROTO_IP, libc::IP_DROP_MEMBERSHIP, super::ip_mreq);
 #[cfg(not(any(target_os = "dragonfly", target_os = "freebsd", target_os = "ios", target_os = "macos", target_os = "netbsd", target_os = "openbsd")))]
