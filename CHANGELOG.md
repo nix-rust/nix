@@ -22,7 +22,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#739](https://github.com/nix-rust/nix/pull/739))
 - Expose `signalfd` module on Android as well.
   ([#739](https://github.com/nix-rust/nix/pull/739))
-- Added nix::sys::ptrace::detach. 
+- Added nix::sys::ptrace::detach.
   ([#749](https://github.com/nix-rust/nix/pull/749))
 - Added timestamp socket control message variant:
   `nix::sys::socket::ControlMessage::ScmTimestamp`
@@ -77,11 +77,14 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#731](https://github.com/nix-rust/nix/pull/731))
 - Marked `pty::ptsname` function as `unsafe`
   ([#744](https://github.com/nix-rust/nix/pull/744))
-- Moved constants ptrace request, event and options to enums and updated ptrace functions and argument types accordingly. 
+- Moved constants ptrace request, event and options to enums and updated ptrace functions and argument types accordingly.
   ([#749](https://github.com/nix-rust/nix/pull/749))
 - `AioCb::Drop` will now panic if the `AioCb` is still in-progress ([#715](https://github.com/nix-rust/nix/pull/715))
 - Restricted `nix::sys::socket::UnixAddr::new_abstract` to Linux and Android only.
   ([#785](https://github.com/nix-rust/nix/pull/785))
+- The `ucred` struct has been removed in favor of a `UserCredentials` struct that
+  contains only getters for its fields.
+  ([#814](https://github.com/nix-rust/nix/pull/814))
 
 
 ### Fixed

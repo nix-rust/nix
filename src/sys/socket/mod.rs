@@ -4,7 +4,7 @@
 use {Error, Result};
 use errno::Errno;
 use features;
-use libc::{self, c_void, c_int, socklen_t, size_t, pid_t, uid_t, gid_t};
+use libc::{self, c_void, c_int, socklen_t, size_t};
 use std::{mem, ptr, slice};
 use std::os::unix::io::RawFd;
 use sys::time::TimeVal;
@@ -172,6 +172,53 @@ libc_bitflags!{
         /// Only used in [`recvmsg`](fn.recvmsg.html) function.
         #[cfg(any(target_os = "linux", target_os = "android"))]
         MSG_CMSG_CLOEXEC;
+    }
+}
+
+cfg_if! {
+    if #[cfg(all(target_os = "linux", not(target_arch = "arm")))] {
+        use std::fmt;
+
+        /// Unix credentials of the sending process.
+        ///
+        /// This struct is used with the `SO_PEERCRED` ancillary message for UNIX sockets.
+        #[repr(C)]
+        #[derive(Clone, Copy)]
+        pub struct UnixCredentials(libc::ucred);
+
+        impl UnixCredentials {
+            /// Returns the process identifier
+            pub fn pid(&self) -> libc::pid_t {
+                self.0.pid
+            }
+
+            /// Returns the user identifier
+            pub fn uid(&self) -> libc::uid_t {
+                self.0.uid
+            }
+
+            /// Returns the group identifier
+            pub fn gid(&self) -> libc::gid_t {
+                self.0.gid
+            }
+        }
+
+        impl PartialEq for UnixCredentials {
+            fn eq(&self, other: &Self) -> bool {
+                self.0.pid == other.0.pid && self.0.uid == other.0.uid && self.0.gid == other.0.gid
+            }
+        }
+        impl Eq for UnixCredentials {}
+
+        impl fmt::Debug for UnixCredentials {
+            fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+                f.debug_struct("UnixCredentials")
+                    .field("pid", &self.0.pid)
+                    .field("uid", &self.0.uid)
+                    .field("gid", &self.0.gid)
+                    .finish()
+            }
+        }
     }
 }
 
@@ -798,14 +845,6 @@ pub fn send(fd: RawFd, buf: &[u8], flags: MsgFlags) -> Result<usize> {
     };
 
     Errno::result(ret).map(|r| r as usize)
-}
-
-#[repr(C)]
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub struct ucred {
-    pid: pid_t,
-    uid: uid_t,
-    gid: gid_t,
 }
 
 /*

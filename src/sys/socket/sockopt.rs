@@ -152,7 +152,7 @@ sockopt_impl!(Both, OobInline, libc::SOL_SOCKET, libc::SO_OOBINLINE, bool);
 sockopt_impl!(GetOnly, SocketError, libc::SOL_SOCKET, libc::SO_ERROR, i32);
 sockopt_impl!(Both, KeepAlive, libc::SOL_SOCKET, libc::SO_KEEPALIVE, bool);
 #[cfg(all(target_os = "linux", not(target_arch="arm")))]
-sockopt_impl!(GetOnly, PeerCredentials, libc::SOL_SOCKET, libc::SO_PEERCRED, super::ucred);
+sockopt_impl!(GetOnly, PeerCredentials, libc::SOL_SOCKET, libc::SO_PEERCRED, super::UnixCredentials);
 #[cfg(any(target_os = "macos",
           target_os = "ios"))]
 sockopt_impl!(Both, TcpKeepAlive, libc::IPPROTO_TCP, libc::TCP_KEEPALIVE, u32);
@@ -384,7 +384,7 @@ mod test {
         let a_cred = getsockopt(a, super::PeerCredentials).unwrap();
         let b_cred = getsockopt(b, super::PeerCredentials).unwrap();
         assert_eq!(a_cred, b_cred);
-        assert!(a_cred.pid != 0);
+        assert!(a_cred.pid() != 0);
     }
 
     #[test]
