@@ -268,3 +268,188 @@ impl<'a, NP: ?Sized + NixPath>  NixPath for Option<&'a NP> {
         }
     }
 }
+
+/*
+ *
+ * ===== Null terminated slices for exec =====
+ *
+ */
+
+use std::ops::{Deref, DerefMut};
+use std::mem::transmute;
+use std::iter;
+
+/// A conversion trait that may borrow or allocate memory depending on the input.
+/// Used to convert between terminated slices and `Vec`s.
+pub trait IntoRef<'a, T: ?Sized> {
+    type Target: 'a + AsRef<T> + Deref<Target=T>;
+
+    fn into_ref(self) -> Self::Target;
+}
+
+/// A slice of references terminated by `None`. Used by API calls that accept
+/// null-terminated arrays such as the `exec` family of functions.
+pub struct TerminatedSlice<T> {
+    inner: [Option<T>],
+}
+
+impl<T> TerminatedSlice<T> {
+    /// Instantiate a `TerminatedSlice` from a slice ending in `None`. Returns
+    /// `None` if the provided slice is not properly terminated.
+    pub fn from_slice(slice: &[Option<T>]) -> Option<&Self> {
+        if slice.last().map(Option::is_none).unwrap_or(false) {
+            Some(unsafe { Self::from_slice_unchecked(slice) })
+        } else {
+            None
+        }
+    }
+
+    /// Instantiate a `TerminatedSlice` from a mutable slice ending in `None`.
+    /// Returns `None` if the provided slice is not properly terminated.
+    pub fn from_slice_mut(slice: &mut [Option<T>]) -> Option<&mut Self> {
+        if slice.last().map(Option::is_none).unwrap_or(false) {
+            Some(unsafe { Self::from_slice_mut_unchecked(slice) })
+        } else {
+            None
+        }
+    }
+
+    /// Instantiate a `TerminatedSlice` from a slice ending in `None`.
+    ///
+    /// ## Unsafety
+    ///
+    /// This assumes that the slice is properly terminated, and can cause
+    /// undefined behaviour if that invariant is not upheld.
+    pub unsafe fn from_slice_unchecked(slice: &[Option<T>]) -> &Self {
+        transmute(slice)
+    }
+
+    /// Instantiate a `TerminatedSlice` from a mutable slice ending in `None`.
+    ///
+    /// ## Unsafety
+    ///
+    /// This assumes that the slice is properly terminated, and can cause
+    /// undefined behaviour if that invariant is not upheld.
+    pub unsafe fn from_slice_mut_unchecked(slice: &mut [Option<T>]) -> &mut Self {
+        transmute(slice)
+    }
+}
+
+impl<'a, U: Sized> TerminatedSlice<&'a U> {
+    pub fn as_ptr(&self) -> *const *const U {
+        self.inner.as_ptr() as *const _
+    }
+}
+
+impl<T> Deref for TerminatedSlice<T> {
+    type Target = [Option<T>];
+
+    fn deref(&self) -> &Self::Target {
+        &self.inner[..self.inner.len() - 1]
+    }
+}
+
+impl<T> DerefMut for TerminatedSlice<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        let len = self.inner.len();
+        &mut self.inner[..len - 1]
+    }
+}
+
+impl<T> AsRef<TerminatedSlice<T>> for TerminatedSlice<T> {
+    fn as_ref(&self) -> &Self {
+        self
+    }
+}
+
+/// Owned variant of `TerminatedSlice`.
+pub struct TerminatedVec<T> {
+    inner: Vec<Option<T>>,
+}
+
+impl<T> TerminatedVec<T> {
+    /// Instantiates a `TerminatedVec` from a `None` terminated `Vec`. Returns
+    /// `None` if the provided `Vec` is not properly terminated.
+    pub fn from_vec(vec: Vec<Option<T>>) -> Option<Self> {
+        if vec.last().map(Option::is_none).unwrap_or(false) {
+            Some(unsafe { Self::from_vec_unchecked(vec) })
+        } else {
+            None
+        }
+    }
+
+    /// Instantiates a `TerminatedVec` from a `None` terminated `Vec`.
+    ///
+    /// ## Unsafety
+    ///
+    /// This assumes that the `Vec` is properly terminated, and can cause
+    /// undefined behaviour if that invariant is not upheld.
+    pub unsafe fn from_vec_unchecked(vec: Vec<Option<T>>) -> Self {
+        TerminatedVec {
+            inner: vec,
+        }
+    }
+
+    /// Consume `self` to return the inner wrapped `Vec`.
+    pub fn into_inner(self) -> Vec<Option<T>> {
+        self.inner
+    }
+}
+
+impl<'a> TerminatedVec<&'a c_char> {
+    fn terminate<T: AsRef<CStr> + 'a, I: IntoIterator<Item=T>>(iter: I) -> Self {
+        fn cstr_char<'a, S: AsRef<CStr> + 'a>(s: S) -> &'a c_char {
+            unsafe {
+                &*s.as_ref().as_ptr()
+            }
+        }
+
+        let terminated = iter.into_iter()
+            .map(cstr_char)
+            .map(Some).chain(iter::once(None)).collect();
+
+        unsafe {
+            TerminatedVec::from_vec_unchecked(terminated)
+        }
+    }
+}
+
+impl<T> Deref for TerminatedVec<T> {
+    type Target = TerminatedSlice<T>;
+
+    fn deref(&self) -> &Self::Target {
+        unsafe {
+            TerminatedSlice::from_slice_unchecked(&self.inner)
+        }
+    }
+}
+
+impl<T> DerefMut for TerminatedVec<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        unsafe {
+            TerminatedSlice::from_slice_mut_unchecked(&mut self.inner)
+        }
+    }
+}
+
+impl<T> AsRef<TerminatedSlice<T>> for TerminatedVec<T> {
+    fn as_ref(&self) -> &TerminatedSlice<T> {
+        self
+    }
+}
+
+impl<'a, T: 'a> IntoRef<'a, TerminatedSlice<&'a T>> for &'a TerminatedSlice<&'a T> {
+    type Target = &'a TerminatedSlice<&'a T>;
+
+    fn into_ref(self) -> Self::Target {
+        self
+    }
+}
+
+impl<'a, T: AsRef<CStr> + 'a, I: IntoIterator<Item=T>> IntoRef<'a, TerminatedSlice<&'a c_char>> for I {
+    type Target = TerminatedVec<&'a c_char>;
+
+    fn into_ref(self) -> Self::Target {
+        TerminatedVec::terminate(self)
+    }
+}
