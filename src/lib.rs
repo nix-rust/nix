@@ -73,7 +73,7 @@ pub mod unistd;
 
 use libc::c_char;
 use std::{ptr, result};
-use std::ffi::{CStr, OsStr};
+use std::ffi::{CStr, CString, OsStr};
 use std::path::{Path, PathBuf};
 use std::os::unix::ffi::OsStrExt;
 use std::fmt;
@@ -193,6 +193,17 @@ impl NixPath for CStr {
         }
 
         Ok(f(self))
+    }
+}
+
+impl NixPath for CString {
+    fn len(&self) -> usize {
+        self.to_bytes().len()
+    }
+
+    fn with_nix_path<T, F>(&self, f: F) -> Result<T>
+            where F: FnOnce(&CStr) -> T {
+        self.as_c_str().with_nix_path(f)
     }
 }
 
