@@ -1,3 +1,4 @@
+#!/bin/bash
 # This script takes care of testing your crate
 
 set -ex
@@ -8,17 +9,20 @@ main() {
         export RUSTFLAGS=--cfg=travis
     fi
 
-    # Build debug and release targets
-    cross build --target $TARGET
-    cross build --target $TARGET --release
+    IFS=';' read -ra TARGET_ARRAY <<< "$TARGET"
+    for t in "${TARGET_ARRAY[@]}"; do
+	# Build debug and release targets
+	cross build --target $t
+	cross build --target $t --release
 
-    if [ ! -z $DISABLE_TESTS ]; then
-        return
-    fi
+	if [ ! -z $DISABLE_TESTS ]; then
+	    continue
+	fi
 
-    # Run tests on debug and release targets.
-    cross test --target $TARGET
-    cross test --target $TARGET --release
+	# Run tests on debug and release targets.
+	cross test --target $t
+	cross test --target $t --release
+    done
 }
 
 # we don't run the "test phase" when doing deploys

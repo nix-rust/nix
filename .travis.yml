@@ -100,7 +100,7 @@ matrix:
 before_install: set -e
 
 install:
-  - sh ci/install.sh
+  - bash ci/install.sh
   - source ~/.cargo/env || true
 
 script:
