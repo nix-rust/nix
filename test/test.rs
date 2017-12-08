@@ -9,8 +9,6 @@ extern crate rand;
 extern crate tempdir;
 extern crate tempfile;
 
-extern crate nix_test as nixtest;
-
 mod sys;
 mod test_fcntl;
 #[cfg(target_os = "linux")]
@@ -24,7 +22,6 @@ mod test_sendfile;
 mod test_stat;
 mod test_unistd;
 
-use nixtest::assert_size_of;
 use std::os::unix::io::RawFd;
 use std::sync::Mutex;
 use nix::unistd::read;
@@ -53,11 +50,4 @@ lazy_static! {
     pub static ref PTSNAME_MTX: Mutex<()> = Mutex::new(());
     /// Any test that alters signal handling must grab this mutex.
     pub static ref SIGNAL_MTX: Mutex<()> = Mutex::new(());
-}
-
-#[test]
-pub fn test_size_of_long() {
-    // This test is mostly here to ensure that 32bit CI is correctly
-    // functioning
-    assert_size_of::<usize>("long");
 }

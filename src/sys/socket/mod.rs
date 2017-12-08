@@ -964,9 +964,3 @@ pub fn shutdown(df: RawFd, how: Shutdown) -> Result<()> {
         Errno::result(shutdown(df, how)).map(drop)
     }
 }
-
-#[test]
-pub fn test_struct_sizes() {
-    use nixtest;
-    nixtest::assert_size_of::<sockaddr_storage>("sockaddr_storage");
-}

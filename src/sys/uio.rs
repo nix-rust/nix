@@ -169,9 +169,3 @@ impl<'a> IoVec<&'a mut [u8]> {
         }, PhantomData)
     }
 }
-
-#[test]
-pub fn test_size_of_io_vec() {
-    use nixtest;
-    nixtest::assert_size_of::<IoVec<&[u8]>>("iovec");
-}

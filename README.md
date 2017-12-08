@@ -98,6 +98,7 @@ Then, add this to your crate root:
 ```rust,ignore
 extern crate nix;
 ```
+
 ## Contributing
 
 Contributions are very welcome.  Please See [CONTRIBUTING](CONTRIBUTING.md) for
