@@ -265,20 +265,26 @@ cfg_if!{
 
 cfg_if!{
     if #[cfg(target_os = "android")] {
-        use nix::fcntl::AtFlags;
-        execve_test_factory!(test_execveat_empty, execveat, exe = File::open("/system/bin/sh").unwrap() => exe.into_raw_fd(),
+        use nix::fcntl::{AtFlags, OFlag, open};
+        execve_test_factory!(test_execveat_empty, execveat, exe = CString::new("/system/bin/sh").unwrap()
+                             => open(exe.as_c_str(), OFlag::O_PATH, Mode::empty()).unwrap(),
                              path = "", AtFlags::AT_EMPTY_PATH);
-        execve_test_factory!(test_execveat_relative, execveat, exe = File::open("/system/bin/").unwrap() => exe.into_raw_fd(),
+        execve_test_factory!(test_execveat_relative, execveat, exe = CString::new("/system/bin/").unwrap()
+                             => open(exe.as_c_str(), OFlag::O_PATH, Mode::empty()).unwrap(),
                              path = "./sh", AtFlags::empty());
-        execve_test_factory!(test_execveat_absolute, execveat, exe = File::open("/").unwrap() => exe.into_raw_fd(),
+        execve_test_factory!(test_execveat_absolute, execveat, exe = CString::new("/").unwrap()
+                             => open(exe.as_c_str(), OFlag::O_PATH, Mode::empty()).unwrap(),
                              path = "/system/bin/sh", AtFlags::empty());
     } else if #[cfg(all(target_os = "linux"), any(target_arch ="x86_64", target_arch ="x86"))] {
-        use nix::fcntl::AtFlags;
-        execve_test_factory!(test_execveat_empty, execveat, exe = File::open("/bin/sh").unwrap() => exe.into_raw_fd(),
+        use nix::fcntl::{AtFlags, OFlag, open};
+        execve_test_factory!(test_execveat_empty, execveat, exe = CString::new("/bin/sh").unwrap()
+                             => open(exe.as_c_str(), OFlag::O_PATH, Mode::empty()).unwrap(),
                              path = "", AtFlags::AT_EMPTY_PATH);
-        execve_test_factory!(test_execveat_relative, execveat, exe = File::open("/bin/").unwrap() => exe.into_raw_fd(),
+        execve_test_factory!(test_execveat_relative, execveat, exe = CString::new("/bin/").unwrap()
+                             => open(exe.as_c_str(), OFlag::O_PATH, Mode::empty()).unwrap(),
                              path = "./sh", AtFlags::empty());
-        execve_test_factory!(test_execveat_absolute, execveat, exe = File::open("/").unwrap() => exe.into_raw_fd(),
+        execve_test_factory!(test_execveat_absolute, execveat, exe = CString::new("/").unwrap()
+                             => open(exe.as_c_str(), OFlag::O_PATH, Mode::empty()).unwrap(),
                              path = "/bin/sh", AtFlags::empty());
     }
 }
