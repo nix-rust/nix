@@ -277,7 +277,82 @@ impl<'a, NP: ?Sized + NixPath>  NixPath for Option<&'a NP> {
 
 use std::ops::{Deref, DerefMut};
 use std::mem::transmute;
-use std::iter;
+use std::{iter, io};
+
+/// An error returned from the [`TerminatedSlice::from_slice`] family of
+/// functions when the provided data is not terminated by `None`.
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub struct NotTerminatedError {
+    // private initializers only
+    _inner: (),
+}
+
+impl NotTerminatedError {
+    fn not_terminated() -> Self {
+        NotTerminatedError {
+            _inner: (),
+        }
+    }
+}
+
+impl error::Error for NotTerminatedError {
+    fn description(&self) -> &str { "data not terminated by None" }
+}
+
+impl fmt::Display for NotTerminatedError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", error::Error::description(self))
+    }
+}
+
+impl From<NotTerminatedError> for io::Error {
+    fn from(e: NotTerminatedError) -> io::Error {
+        io::Error::new(io::ErrorKind::InvalidInput,
+                       error::Error::description(&e))
+    }
+}
+
+/// An error returned from [`TerminatedVec::from_vec`] when the provided data is
+/// not terminated by `None`.
+#[derive(Clone, PartialEq, Eq)]
+pub struct NotTerminatedVecError<T> {
+    inner: Vec<Option<T>>,
+}
+
+impl<T> NotTerminatedVecError<T> {
+    fn not_terminated(vec: Vec<Option<T>>) -> Self {
+        NotTerminatedVecError {
+            inner: vec,
+        }
+    }
+
+    pub fn into_vec(self) -> Vec<Option<T>> {
+        self.inner
+    }
+}
+
+impl<T> fmt::Debug for NotTerminatedVecError<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("NotTerminatedVecError").finish()
+    }
+}
+
+impl<T> error::Error for NotTerminatedVecError<T> {
+    fn description(&self) -> &str { "data not terminated by None" }
+}
+
+impl<T> fmt::Display for NotTerminatedVecError<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", error::Error::description(self))
+    }
+}
+
+impl<T> From<NotTerminatedVecError<T>> for io::Error {
+    fn from(e: NotTerminatedVecError<T>) -> io::Error {
+        io::Error::new(io::ErrorKind::InvalidInput,
+                       error::Error::description(&e))
+    }
+}
 
 /// A conversion trait that may borrow or allocate memory depending on the input.
 /// Used to convert between terminated slices and `Vec`s.
@@ -294,23 +369,23 @@ pub struct TerminatedSlice<T> {
 }
 
 impl<T> TerminatedSlice<T> {
-    /// Instantiate a `TerminatedSlice` from a slice ending in `None`. Returns
-    /// `None` if the provided slice is not properly terminated.
-    pub fn from_slice(slice: &[Option<T>]) -> Option<&Self> {
+    /// Instantiate a `TerminatedSlice` from a slice ending in `None`. Fails if
+    /// the provided slice is not properly terminated.
+    pub fn from_slice(slice: &[Option<T>]) -> result::Result<&Self, NotTerminatedError> {
         if slice.last().map(Option::is_none).unwrap_or(false) {
-            Some(unsafe { Self::from_slice_unchecked(slice) })
+            Ok(unsafe { Self::from_slice_unchecked(slice) })
         } else {
-            None
+            Err(NotTerminatedError::not_terminated())
         }
     }
 
     /// Instantiate a `TerminatedSlice` from a mutable slice ending in `None`.
-    /// Returns `None` if the provided slice is not properly terminated.
-    pub fn from_slice_mut(slice: &mut [Option<T>]) -> Option<&mut Self> {
+    /// Fails if the provided slice is not properly terminated.
+    pub fn from_slice_mut(slice: &mut [Option<T>]) -> result::Result<&mut Self, NotTerminatedError> {
         if slice.last().map(Option::is_none).unwrap_or(false) {
-            Some(unsafe { Self::from_slice_mut_unchecked(slice) })
+            Ok(unsafe { Self::from_slice_mut_unchecked(slice) })
         } else {
-            None
+            Err(NotTerminatedError::not_terminated())
         }
     }
 
@@ -362,19 +437,30 @@ impl<T> AsRef<TerminatedSlice<T>> for TerminatedSlice<T> {
     }
 }
 
-/// Owned variant of `TerminatedSlice`.
+/// Coercion into an argument that can be passed to `exec`.
+impl<'a, T: 'a> IntoRef<'a, TerminatedSlice<&'a T>> for &'a TerminatedSlice<&'a T> {
+    type Target = &'a TerminatedSlice<&'a T>;
+
+    fn into_ref(self) -> Self::Target {
+        self
+    }
+}
+
+/// A `Vec` of references terminated by `None`. Used by API calls that accept
+/// null-terminated arrays such as the `exec` family of functions. Owned variant
+/// of [`TerminatedSlice`].
 pub struct TerminatedVec<T> {
     inner: Vec<Option<T>>,
 }
 
 impl<T> TerminatedVec<T> {
-    /// Instantiates a `TerminatedVec` from a `None` terminated `Vec`. Returns
-    /// `None` if the provided `Vec` is not properly terminated.
-    pub fn from_vec(vec: Vec<Option<T>>) -> Option<Self> {
+    /// Instantiates a `TerminatedVec` from a `None` terminated `Vec`. Fails if
+    /// the provided `Vec` is not properly terminated.
+    pub fn from_vec(vec: Vec<Option<T>>) -> result::Result<Self, NotTerminatedVecError<T>> {
         if vec.last().map(Option::is_none).unwrap_or(false) {
-            Some(unsafe { Self::from_vec_unchecked(vec) })
+            Ok(unsafe { Self::from_vec_unchecked(vec) })
         } else {
-            None
+            Err(NotTerminatedVecError::not_terminated(vec))
         }
     }
 
@@ -438,8 +524,16 @@ impl<T> AsRef<TerminatedSlice<T>> for TerminatedVec<T> {
     }
 }
 
-impl<'a, T: 'a> IntoRef<'a, TerminatedSlice<&'a T>> for &'a TerminatedSlice<&'a T> {
-    type Target = &'a TerminatedSlice<&'a T>;
+impl<'a, T: 'a> IntoRef<'a, TerminatedSlice<T>> for TerminatedVec<T> {
+    type Target = TerminatedVec<T>;
+
+    fn into_ref(self) -> Self::Target {
+        self
+    }
+}
+
+impl<'a, T> IntoRef<'a, TerminatedSlice<T>> for &'a TerminatedVec<T> {
+    type Target = &'a TerminatedSlice<T>;
 
     fn into_ref(self) -> Self::Target {
         self
