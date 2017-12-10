@@ -7,7 +7,7 @@ use fcntl::FcntlArg::F_SETFD;
 use libc::{self, c_char, c_void, c_int, c_long, c_uint, size_t, pid_t, off_t,
            uid_t, gid_t, mode_t};
 use std::{fmt, mem, ptr};
-use std::ffi::{CString, CStr, OsString, OsStr};
+use std::ffi::{CStr, OsString, OsStr};
 use std::os::unix::ffi::{OsStringExt, OsStrExt};
 use std::os::unix::io::RawFd;
 use std::path::{PathBuf};
@@ -652,15 +652,17 @@ pub fn fexecve<'a, 'e, A: IntoRef<'a, TerminatedSlice<&'a c_char>>, E: IntoRef<'
 /// is referenced as a file descriptor to the base directory plus a path.
 #[cfg(any(target_os = "android", target_os = "linux"))]
 #[inline]
-pub fn execveat<'a, 'e, A: IntoRef<'a, TerminatedSlice<&'a c_char>>, E: IntoRef<'e, TerminatedSlice<&'e c_char>>>(dirfd: RawFd, pathname: &CString, args: A,
+pub fn execveat<'a, 'e, A: IntoRef<'a, TerminatedSlice<&'a c_char>>, E: IntoRef<'e, TerminatedSlice<&'e c_char>>, P: ?Sized + NixPath>(dirfd: RawFd, pathname: &P, args: A,
                 env: E, flags: super::fcntl::AtFlags) -> Result<Void> {
     let args_p = args.into_ref();
     let env_p = env.into_ref();
 
-    unsafe {
-        libc::syscall(libc::SYS_execveat, dirfd, pathname.as_ptr(),
-                      args_p.as_ptr(), env_p.as_ptr(), flags);
-    };
+    pathname.with_nix_path(|cstr| {
+        unsafe {
+            libc::syscall(libc::SYS_execveat, dirfd, cstr.as_ptr(),
+                          args_p.as_ptr(), env_p.as_ptr(), flags)
+        }
+    })?;
 
     Err(Error::Sys(Errno::last()))
 }
