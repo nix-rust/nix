@@ -480,23 +480,66 @@ impl<T> TerminatedVec<T> {
     pub fn into_inner(self) -> Vec<Option<T>> {
         self.inner
     }
+
+    /// Converts an iterator into a `None` terminated `Vec`.
+    pub fn terminate<I: IntoIterator<Item=T>>(iter: I) -> Self {
+        let terminated = iter.into_iter()
+            .map(Some).chain(iter::once(None)).collect();
+
+        unsafe {
+            Self::from_vec_unchecked(terminated)
+        }
+    }
 }
 
 impl<'a> TerminatedVec<&'a c_char> {
-    fn terminate<T: AsRef<CStr> + 'a, I: IntoIterator<Item=T>>(iter: I) -> Self {
+    /// Converts an iterator of `AsRef<CStr>` into a `TerminatedVec` to
+    /// be used by the `exec` functions. This allows for preallocation of the
+    /// array when memory allocation could otherwise cause problems (such as
+    /// when combined with `fork`).
+    ///
+    /// ```
+    /// use std::iter;
+    /// use std::ffi::CString;
+    /// use nix::{TerminatedVec, unistd};
+    /// use nix::sys::wait;
+    ///
+    /// # #[cfg(target_os = "android")]
+    /// # fn exe_path() -> CString {
+    /// # CString::new("/system/bin/sh").unwrap()
+    /// # }
+    /// # #[cfg(not(target_os = "android"))]
+    /// # fn exe_path() -> CString {
+    /// let exe = CString::new("/bin/sh").unwrap();
+    /// #    exe
+    /// # }
+    /// # let exe = exe_path();
+    /// let args = [
+    ///     exe.clone(),
+    ///     CString::new("-c").unwrap(),
+    ///     CString::new("echo hi").unwrap(),
+    /// ];
+    /// let args_p = TerminatedVec::terminate_cstr(&args);
+    /// let env = TerminatedVec::terminate(iter::empty());
+    ///
+    /// match unistd::fork().unwrap() {
+    ///     unistd::ForkResult::Child => {
+    ///         unistd::execve(exe.as_c_str(), &args_p, env).unwrap();
+    ///     },
+    ///     unistd::ForkResult::Parent { child } => {
+    ///         let status = wait::waitpid(child, None).unwrap();
+    ///         assert_eq!(status, wait::WaitStatus::Exited(child, 0));
+    ///     },
+    /// }
+    /// ```
+    pub fn terminate_cstr<T: AsRef<CStr> + 'a, I: IntoIterator<Item=T>>(iter: I) -> Self {
         fn cstr_char<'a, S: AsRef<CStr> + 'a>(s: S) -> &'a c_char {
             unsafe {
                 &*s.as_ref().as_ptr()
             }
         }
 
-        let terminated = iter.into_iter()
-            .map(cstr_char)
-            .map(Some).chain(iter::once(None)).collect();
-
-        unsafe {
-            TerminatedVec::from_vec_unchecked(terminated)
-        }
+        Self::terminate(iter.into_iter().map(cstr_char))
     }
 }
 
@@ -540,10 +583,11 @@ impl<'a, T> IntoRef<'a, TerminatedSlice<T>> for &'a TerminatedVec<T> {
     }
 }
 
+/// Coercion of `CStr` iterators into an argument that can be passed to `exec`.
 impl<'a, T: AsRef<CStr> + 'a, I: IntoIterator<Item=T>> IntoRef<'a, TerminatedSlice<&'a c_char>> for I {
     type Target = TerminatedVec<&'a c_char>;
 
     fn into_ref(self) -> Self::Target {
-        TerminatedVec::terminate(self)
+        TerminatedVec::terminate_cstr(self)
     }
 }
