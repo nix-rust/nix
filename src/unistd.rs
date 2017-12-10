@@ -6,7 +6,7 @@ use fcntl::{fcntl, FdFlag, OFlag};
 use fcntl::FcntlArg::F_SETFD;
 use libc::{self, c_char, c_void, c_int, c_long, c_uint, size_t, pid_t, off_t,
            uid_t, gid_t, mode_t};
-use std::{fmt, mem, ptr};
+use std::{fmt, mem};
 use std::ffi::{CStr, OsString, OsStr};
 use std::os::unix::ffi::{OsStringExt, OsStrExt};
 use std::os::unix::io::RawFd;
@@ -1075,6 +1075,8 @@ pub fn setgid(gid: Gid) -> Result<()> {
 /// with the `opendirectoryd` service.
 #[cfg(not(any(target_os = "ios", target_os = "macos")))]
 pub fn getgroups() -> Result<Vec<Gid>> {
+    use std::ptr;
+
     // First get the number of groups so we can size our Vec
     let ret = unsafe { libc::getgroups(0, ptr::null_mut()) };
 
