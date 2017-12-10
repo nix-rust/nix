@@ -500,6 +500,7 @@ impl<'a> TerminatedVec<&'a c_char> {
     /// use std::ffi::CString;
     /// use nix::{TerminatedVec, unistd};
     /// use nix::sys::wait;
+    /// use nix::libc::_exit;
     ///
     /// # #[cfg(target_os = "android")]
     /// # fn exe_path() -> CString {
@@ -521,7 +522,14 @@ impl<'a> TerminatedVec<&'a c_char> {
     ///
     /// match unistd::fork().unwrap() {
     ///     unistd::ForkResult::Child => {
-    ///         unistd::execve(exe.as_c_str(), &args_p, env).unwrap();
+    ///         match unistd::execve(exe.as_c_str(), &args_p, &env) {
+    ///             Err(..) => {
+    ///                 // Panicking or returning will drop locals and
+    ///                 // deallocate memory, so let's avoid that here.
+    ///                 unsafe { _exit(1); }
+    ///             },
+    ///             Ok(..) => unreachable!(),
+    ///         }
     ///     },
     ///     unistd::ForkResult::Parent { child } => {
     ///         let status = wait::waitpid(child, None).unwrap();
