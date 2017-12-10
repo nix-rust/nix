@@ -45,8 +45,13 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#785](https://github.com/nix-rust/nix/pull/785))
 - Added `nix::unistd::execveat` on Linux and Android.
   ([#800](https://github.com/nix-rust/nix/pull/800))
+- Added the `from_raw()` method to `WaitStatus` for converting raw status values
+  to `WaitStatus` independent of syscalls.
+  ([#741](https://github.com/nix-rust/nix/pull/741))
 
 ### Changed
+- Use native `pipe2` on all BSD targets.  Users should notice no difference.
+  ([#777](https://github.com/nix-rust/nix/pull/777))
 - Renamed existing `ptrace` wrappers to encourage namespacing ([#692](https://github.com/nix-rust/nix/pull/692))
 - Marked `sys::ptrace::ptrace` as `unsafe`.
 - Changed function signature of `socket()` and `socketpair()`. The `protocol` argument

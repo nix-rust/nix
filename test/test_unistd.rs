@@ -1,5 +1,6 @@
 extern crate tempdir;
 
+use nix::fcntl::{fcntl, FcntlArg, FdFlag, OFlag};
 use nix::unistd::*;
 use nix::unistd::ForkResult::*;
 use nix::sys::wait::*;
@@ -394,4 +395,27 @@ fn test_sysconf_unsupported() {
     // we test.
     let open_max = sysconf(SysconfVar::_XOPEN_CRYPT);
     assert!(open_max.expect("sysconf failed").is_none())
+}
+
+// Test that we can create a pair of pipes.  No need to verify that they pass
+// data; that's the domain of the OS, not nix.
+#[test]
+fn test_pipe() {
+    let (fd0, fd1) = pipe().unwrap();
+    let m0 = stat::SFlag::from_bits_truncate(stat::fstat(fd0).unwrap().st_mode);
+    // S_IFIFO means it's a pipe
+    assert_eq!(m0, SFlag::S_IFIFO);
+    let m1 = stat::SFlag::from_bits_truncate(stat::fstat(fd1).unwrap().st_mode);
+    assert_eq!(m1, SFlag::S_IFIFO);
+}
+
+// pipe2(2) is the same as pipe(2), except it allows setting some flags.  Check
+// that we can set a flag.
+#[test]
+fn test_pipe2() {
+    let (fd0, fd1) = pipe2(OFlag::O_CLOEXEC).unwrap();
+    let f0 = FdFlag::from_bits_truncate(fcntl(fd0, FcntlArg::F_GETFD).unwrap());
+    assert!(f0.contains(FdFlag::FD_CLOEXEC));
+    let f1 = FdFlag::from_bits_truncate(fcntl(fd1, FcntlArg::F_GETFD).unwrap());
+    assert!(f1.contains(FdFlag::FD_CLOEXEC));
 }
