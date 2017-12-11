@@ -90,7 +90,7 @@ macro_rules! libc_enum {
         }
     ) => {
         $($attrs)*
-        #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+        #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
         enum $BitFlags {
             $($entries)*
         }
@@ -106,7 +106,7 @@ macro_rules! libc_enum {
         }
     ) => {
         $($attrs)*
-        #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+        #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
         pub enum $BitFlags {
             $($entries)*
         }

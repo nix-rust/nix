@@ -4,15 +4,14 @@
 use {Error, Result};
 use errno::Errno;
 use features;
-use libc::{self, c_void, c_int, socklen_t, size_t, pid_t, uid_t, gid_t};
-use std::{mem, ptr, slice};
+use libc::{self, c_void, c_int, socklen_t, size_t};
+use std::{fmt, mem, ptr, slice};
 use std::os::unix::io::RawFd;
 use sys::time::TimeVal;
 use sys::uio::IoVec;
 
 mod addr;
 mod ffi;
-mod multicast;
 pub mod sockopt;
 
 /*
@@ -34,21 +33,13 @@ pub use self::addr::{
 pub use ::sys::socket::addr::netlink::NetlinkAddr;
 
 pub use libc::{
-    in_addr,
-    in6_addr,
+    sa_family_t,
     sockaddr,
     sockaddr_in,
     sockaddr_in6,
+    sockaddr_storage,
     sockaddr_un,
-    sa_family_t,
 };
-
-pub use self::multicast::{
-    ip_mreq,
-    ipv6_mreq,
-};
-
-pub use libc::sockaddr_storage;
 
 /// These constants are used to specify the communication semantics
 /// when creating a socket with [`socket()`](fn.socket.html)
@@ -77,6 +68,7 @@ pub enum SockType {
 /// Constants used in [`socket`](fn.socket.html) and [`socketpair`](fn.socketpair.html)
 /// to specify the protocol to use.
 #[repr(i32)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum SockProtocol {
     /// TCP protocol ([ip(7)](http://man7.org/linux/man-pages/man7/ip.7.html))
     Tcp = libc::IPPROTO_TCP,
@@ -171,6 +163,121 @@ libc_bitflags!{
         /// Only used in [`recvmsg`](fn.recvmsg.html) function.
         #[cfg(any(target_os = "linux", target_os = "android"))]
         MSG_CMSG_CLOEXEC;
+    }
+}
+
+cfg_if! {
+    if #[cfg(all(target_os = "linux", not(target_arch = "arm")))] {
+        /// Unix credentials of the sending process.
+        ///
+        /// This struct is used with the `SO_PEERCRED` ancillary message for UNIX sockets.
+        #[repr(C)]
+        #[derive(Clone, Copy)]
+        pub struct UnixCredentials(libc::ucred);
+
+        impl UnixCredentials {
+            /// Returns the process identifier
+            pub fn pid(&self) -> libc::pid_t {
+                self.0.pid
+            }
+
+            /// Returns the user identifier
+            pub fn uid(&self) -> libc::uid_t {
+                self.0.uid
+            }
+
+            /// Returns the group identifier
+            pub fn gid(&self) -> libc::gid_t {
+                self.0.gid
+            }
+        }
+
+        impl PartialEq for UnixCredentials {
+            fn eq(&self, other: &Self) -> bool {
+                self.0.pid == other.0.pid && self.0.uid == other.0.uid && self.0.gid == other.0.gid
+            }
+        }
+        impl Eq for UnixCredentials {}
+
+        impl fmt::Debug for UnixCredentials {
+            fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+                f.debug_struct("UnixCredentials")
+                    .field("pid", &self.0.pid)
+                    .field("uid", &self.0.uid)
+                    .field("gid", &self.0.gid)
+                    .finish()
+            }
+        }
+    }
+}
+
+/// Request for multicast socket operations
+///
+/// This is a wrapper type around `ip_mreq`.
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct IpMembershipRequest(libc::ip_mreq);
+
+impl IpMembershipRequest {
+    /// Instantiate a new `IpMembershipRequest`
+    ///
+    /// If `interface` is `None`, then `Ipv4Addr::any()` will be used for the interface.
+    pub fn new(group: Ipv4Addr, interface: Option<Ipv4Addr>) -> Self {
+        IpMembershipRequest(libc::ip_mreq {
+            imr_multiaddr: group.0,
+            imr_interface: interface.unwrap_or(Ipv4Addr::any()).0,
+        })
+    }
+}
+
+impl PartialEq for IpMembershipRequest {
+    fn eq(&self, other: &Self) -> bool {
+        self.0.imr_multiaddr.s_addr == other.0.imr_multiaddr.s_addr
+            && self.0.imr_interface.s_addr == other.0.imr_interface.s_addr
+    }
+}
+impl Eq for IpMembershipRequest {}
+
+impl fmt::Debug for IpMembershipRequest {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("IpMembershipRequest")
+            .field("imr_multiaddr", &self.0.imr_multiaddr.s_addr)
+            .field("imr_interface", &self.0.imr_interface.s_addr)
+            .finish()
+    }
+}
+
+/// Request for ipv6 multicast socket operations
+///
+/// This is a wrapper type around `ipv6_mreq`.
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct Ipv6MembershipRequest(libc::ipv6_mreq);
+
+impl Ipv6MembershipRequest {
+    /// Instantiate a new `Ipv6MembershipRequest`
+    pub fn new(group: Ipv6Addr) -> Self {
+        Ipv6MembershipRequest(libc::ipv6_mreq {
+            ipv6mr_multiaddr: group.0,
+            ipv6mr_interface: 0,
+        })
+    }
+}
+
+impl PartialEq for Ipv6MembershipRequest {
+    fn eq(&self, other: &Self) -> bool {
+        self.0.ipv6mr_multiaddr.s6_addr == other.0.ipv6mr_multiaddr.s6_addr &&
+            self.0.ipv6mr_interface == other.0.ipv6mr_interface
+    }
+}
+impl Eq for Ipv6MembershipRequest {}
+
+impl fmt::Debug for Ipv6MembershipRequest {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("Ipv6MembershipRequest")
+            .field("ipv6mr_multiaddr", &self.0.ipv6mr_multiaddr.s6_addr)
+            .field("ipv6mr_interface", &self.0.ipv6mr_interface)
+            .finish()
     }
 }
 
@@ -799,21 +906,6 @@ pub fn send(fd: RawFd, buf: &[u8], flags: MsgFlags) -> Result<usize> {
     Errno::result(ret).map(|r| r as usize)
 }
 
-#[repr(C)]
-#[derive(Clone, Copy, Debug)]
-pub struct linger {
-    pub l_onoff: c_int,
-    pub l_linger: c_int
-}
-
-#[repr(C)]
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub struct ucred {
-    pid: pid_t,
-    uid: uid_t,
-    gid: gid_t,
-}
-
 /*
  *
  * ===== Socket Options =====
@@ -825,13 +917,14 @@ pub struct ucred {
 ///
 /// [Further reading](http://pubs.opengroup.org/onlinepubs/9699919799/functions/setsockopt.html)
 #[repr(i32)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum SockLevel {
     Socket = libc::SOL_SOCKET,
     Tcp = libc::IPPROTO_TCP,
     Ip = libc::IPPROTO_IP,
     Ipv6 = libc::IPPROTO_IPV6,
     Udp = libc::IPPROTO_UDP,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(any(target_os = "android", target_os = "linux"))]
     Netlink = libc::SOL_NETLINK,
 }
 
@@ -938,7 +1031,7 @@ pub unsafe fn sockaddr_storage_to_addr(
 }
 
 
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum Shutdown {
     /// Further receptions will be disallowed.
     Read,

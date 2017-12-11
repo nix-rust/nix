@@ -79,7 +79,7 @@ pub fn signalfd(fd: RawFd, mask: &SigSet, flags: SfdFlags) -> Result<RawFd> {
 ///     Err(err) => (), // some error happend
 /// }
 /// ```
-#[derive(Debug)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct SignalFd(RawFd);
 
 impl SignalFd {

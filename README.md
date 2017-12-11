@@ -5,8 +5,6 @@
 
 [Documentation (Releases)](https://docs.rs/nix/)
 
-[Documentation (Development)](https://nix-rust.github.io/nix/nix/index.html)
-
 Nix seeks to provide friendly bindings to various *nix platform APIs (Linux, Darwin,
 ...). The goal is to not provide a 100% unified interface, but to unify
 what can be while still providing platform specific APIs.

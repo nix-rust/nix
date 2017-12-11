@@ -22,7 +22,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#739](https://github.com/nix-rust/nix/pull/739))
 - Expose `signalfd` module on Android as well.
   ([#739](https://github.com/nix-rust/nix/pull/739))
-- Added nix::sys::ptrace::detach. 
+- Added nix::sys::ptrace::detach.
   ([#749](https://github.com/nix-rust/nix/pull/749))
 - Added timestamp socket control message variant:
   `nix::sys::socket::ControlMessage::ScmTimestamp`
@@ -48,6 +48,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Added the `from_raw()` method to `WaitStatus` for converting raw status values
   to `WaitStatus` independent of syscalls.
   ([#741](https://github.com/nix-rust/nix/pull/741))
+- Added more standard trait implementations for various types.
+  ([#814](https://github.com/nix-rust/nix/pull/814))
 
 ### Changed
 - Use native `pipe2` on all BSD targets.  Users should notice no difference.
@@ -75,11 +77,17 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#731](https://github.com/nix-rust/nix/pull/731))
 - Marked `pty::ptsname` function as `unsafe`
   ([#744](https://github.com/nix-rust/nix/pull/744))
-- Moved constants ptrace request, event and options to enums and updated ptrace functions and argument types accordingly. 
+- Moved constants ptrace request, event and options to enums and updated ptrace functions and argument types accordingly.
   ([#749](https://github.com/nix-rust/nix/pull/749))
 - `AioCb::Drop` will now panic if the `AioCb` is still in-progress ([#715](https://github.com/nix-rust/nix/pull/715))
 - Restricted `nix::sys::socket::UnixAddr::new_abstract` to Linux and Android only.
   ([#785](https://github.com/nix-rust/nix/pull/785))
+- The `ucred` struct has been removed in favor of a `UserCredentials` struct that
+  contains only getters for its fields.
+  ([#814](https://github.com/nix-rust/nix/pull/814))
+- Both `ip_mreq` and `ipv6_mreq` have been replaced with `IpMembershipRequest` and
+  `Ipv6MembershipRequest`.
+  ([#814](https://github.com/nix-rust/nix/pull/814))
 
 
 ### Fixed
@@ -95,6 +103,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#747](https://github.com/nix-rust/nix/pull/747))
 - The `Errno` variants are no longer reexported from the `errno` module. `Errno` itself is no longer reexported from the
   crate root and instead must be accessed using the `errno` module. ([#696](https://github.com/nix-rust/nix/pull/696))
+- Removed `MS_VERBOSE`, `MS_NOSEC`, and `MS_BORN` from `MsFlags`. These
+  are internal kernel flags and should never have been exposed.
+  ([#814](https://github.com/nix-rust/nix/pull/814))
+
 
 ## [0.9.0] 2017-07-23
 
