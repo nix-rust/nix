@@ -1,13 +1,13 @@
 //! Safe wrappers around functions found in libc "unistd.h" header
 
 use errno::{self, Errno};
-use {Error, Result, NixPath};
+use {Error, Result, NixPath, IntoRef, TerminatedSlice};
 use fcntl::{fcntl, FdFlag, OFlag};
 use fcntl::FcntlArg::F_SETFD;
 use libc::{self, c_char, c_void, c_int, c_long, c_uint, size_t, pid_t, off_t,
            uid_t, gid_t, mode_t};
-use std::{fmt, mem, ptr};
-use std::ffi::{CString, CStr, OsString, OsStr};
+use std::{fmt, mem};
+use std::ffi::{CStr, OsString, OsStr};
 use std::os::unix::ffi::{OsStringExt, OsStrExt};
 use std::os::unix::io::RawFd;
 use std::path::{PathBuf};
@@ -552,12 +552,6 @@ pub fn chown<P: ?Sized + NixPath>(path: &P, owner: Option<Uid>, group: Option<Gi
     Errno::result(res).map(drop)
 }
 
-fn to_exec_array(args: &[CString]) -> Vec<*const c_char> {
-    let mut args_p: Vec<*const c_char> = args.iter().map(|s| s.as_ptr()).collect();
-    args_p.push(ptr::null());
-    args_p
-}
-
 /// Replace the current process image with a new one (see
 /// [exec(3)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/exec.html)).
 ///
@@ -565,12 +559,12 @@ fn to_exec_array(args: &[CString]) -> Vec<*const c_char> {
 /// performs the same action but does not allow for customization of the
 /// environment for the new process.
 #[inline]
-pub fn execv(path: &CString, argv: &[CString]) -> Result<Void> {
-    let args_p = to_exec_array(argv);
+pub fn execv<'a, P: ?Sized + NixPath, A: IntoRef<'a, TerminatedSlice<&'a c_char>>>(path: &P, argv: A) -> Result<Void> {
+    let args_p = argv.into_ref();
 
-    unsafe {
-        libc::execv(path.as_ptr(), args_p.as_ptr())
-    };
+    try!(path.with_nix_path(|cstr| {
+        unsafe { libc::execv(cstr.as_ptr(), args_p.as_ptr()) }
+    }));
 
     Err(Error::Sys(Errno::last()))
 }
@@ -589,13 +583,13 @@ pub fn execv(path: &CString, argv: &[CString]) -> Result<Void> {
 /// in the `args` list is an argument to the new process. Each element in the
 /// `env` list should be a string in the form "key=value".
 #[inline]
-pub fn execve(path: &CString, args: &[CString], env: &[CString]) -> Result<Void> {
-    let args_p = to_exec_array(args);
-    let env_p = to_exec_array(env);
+pub fn execve<'a, 'e, P: ?Sized + NixPath, A: IntoRef<'a, TerminatedSlice<&'a c_char>>, E: IntoRef<'e, TerminatedSlice<&'e c_char>>>(path: &P, args: A, env: E) -> Result<Void> {
+    let args_p = args.into_ref();
+    let env_p = env.into_ref();
 
-    unsafe {
-        libc::execve(path.as_ptr(), args_p.as_ptr(), env_p.as_ptr())
-    };
+    try!(path.with_nix_path(|cstr| {
+        unsafe { libc::execve(cstr.as_ptr(), args_p.as_ptr(), env_p.as_ptr()) }
+    }));
 
     Err(Error::Sys(Errno::last()))
 }
@@ -610,12 +604,14 @@ pub fn execve(path: &CString, args: &[CString], env: &[CString]) -> Result<Void>
 /// would not work if "bash" was specified for the path argument, but `execvp`
 /// would assuming that a bash executable was on the system `PATH`.
 #[inline]
-pub fn execvp(filename: &CString, args: &[CString]) -> Result<Void> {
-    let args_p = to_exec_array(args);
+pub fn execvp<'a, P: ?Sized + NixPath, A: IntoRef<'a, TerminatedSlice<&'a c_char>>>(filename: &P, args: A) -> Result<Void> {
+    let args_p = args.into_ref();
 
-    unsafe {
-        libc::execvp(filename.as_ptr(), args_p.as_ptr())
-    };
+    try!(filename.with_nix_path(|cstr| {
+        unsafe {
+            libc::execvp(cstr.as_ptr(), args_p.as_ptr())
+        }
+    }));
 
     Err(Error::Sys(Errno::last()))
 }
@@ -633,9 +629,9 @@ pub fn execvp(filename: &CString, args: &[CString]) -> Result<Void> {
 #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd",
           target_os = "netbsd", target_os = "openbsd", target_os = "linux"))]
 #[inline]
-pub fn fexecve(fd: RawFd, args: &[CString], env: &[CString]) -> Result<Void> {
-    let args_p = to_exec_array(args);
-    let env_p = to_exec_array(env);
+pub fn fexecve<'a, 'e, A: IntoRef<'a, TerminatedSlice<&'a c_char>>, E: IntoRef<'e, TerminatedSlice<&'e c_char>>>(fd: RawFd, args: A, env: E) -> Result<Void> {
+    let args_p = args.into_ref();
+    let env_p = env.into_ref();
 
     unsafe {
         libc::fexecve(fd, args_p.as_ptr(), env_p.as_ptr())
@@ -656,15 +652,17 @@ pub fn fexecve(fd: RawFd, args: &[CString], env: &[CString]) -> Result<Void> {
 /// is referenced as a file descriptor to the base directory plus a path.
 #[cfg(any(target_os = "android", target_os = "linux"))]
 #[inline]
-pub fn execveat(dirfd: RawFd, pathname: &CString, args: &[CString],
-                env: &[CString], flags: super::fcntl::AtFlags) -> Result<Void> {
-    let args_p = to_exec_array(args);
-    let env_p = to_exec_array(env);
+pub fn execveat<'a, 'e, A: IntoRef<'a, TerminatedSlice<&'a c_char>>, E: IntoRef<'e, TerminatedSlice<&'e c_char>>, P: ?Sized + NixPath>(dirfd: RawFd, pathname: &P, args: A,
+                env: E, flags: super::fcntl::AtFlags) -> Result<Void> {
+    let args_p = args.into_ref();
+    let env_p = env.into_ref();
 
-    unsafe {
-        libc::syscall(libc::SYS_execveat, dirfd, pathname.as_ptr(),
-                      args_p.as_ptr(), env_p.as_ptr(), flags);
-    };
+    pathname.with_nix_path(|cstr| {
+        unsafe {
+            libc::syscall(libc::SYS_execveat, dirfd, cstr.as_ptr(),
+                          args_p.as_ptr(), env_p.as_ptr(), flags)
+        }
+    })?;
 
     Err(Error::Sys(Errno::last()))
 }
@@ -1097,6 +1095,8 @@ pub fn setgid(gid: Gid) -> Result<()> {
 /// with the `opendirectoryd` service.
 #[cfg(not(any(target_os = "ios", target_os = "macos")))]
 pub fn getgroups() -> Result<Vec<Gid>> {
+    use std::ptr;
+
     // First get the number of groups so we can size our Vec
     let ret = unsafe { libc::getgroups(0, ptr::null_mut()) };
 

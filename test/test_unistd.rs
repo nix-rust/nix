@@ -5,6 +5,7 @@ use nix::unistd::*;
 use nix::unistd::ForkResult::*;
 use nix::sys::wait::*;
 use nix::sys::stat::{self, Mode, SFlag};
+use nix::TerminatedVec;
 use std::{self, env, iter};
 use std::ffi::CString;
 use std::fs::File;
@@ -191,7 +192,7 @@ fn test_initgroups() {
 }
 
 macro_rules! execve_test_factory(
-    ($test_name:ident, $syscall:ident, $exe: expr $(, $pathname:expr, $flags:expr)*) => (
+    ($test_name:ident, $syscall:ident, $exeident:ident = $exeinit:expr => $exe:expr $(, $pathident:ident = $pathname:expr, $flags:expr)*) => (
     #[test]
     fn $test_name() {
         #[allow(unused_variables)]
@@ -199,6 +200,18 @@ macro_rules! execve_test_factory(
         // The `exec`d process will write to `writer`, and we'll read that
         // data from `reader`.
         let (reader, writer) = pipe().unwrap();
+
+        // Preallocate the `CString` arrays
+        let $exeident = $exeinit;
+        $(let $pathident = CString::new($pathname).unwrap();)*
+        let arg = [CString::new(b"".as_ref()).unwrap(),
+                   CString::new(b"-c".as_ref()).unwrap(),
+                   CString::new(b"echo nix!!! && echo foo=$foo && echo baz=$baz"
+                                .as_ref()).unwrap()];
+        let env = [CString::new(b"foo=bar".as_ref()).unwrap(),
+                   CString::new(b"baz=quux".as_ref()).unwrap()];
+        let arg_p = TerminatedVec::terminate_cstr(&arg);
+        let env_p = TerminatedVec::terminate_cstr(&env);
 
         // Safe: Child calls `exit`, `dup`, `close` and the provided `exec*` family function.
         // NOTE: Technically, this makes the macro unsafe to use because you could pass anything.
@@ -212,13 +225,9 @@ macro_rules! execve_test_factory(
                 // exec!
                 $syscall(
                     $exe,
-                    $(&CString::new($pathname).unwrap(), )*
-                    &[CString::new(b"".as_ref()).unwrap(),
-                      CString::new(b"-c".as_ref()).unwrap(),
-                      CString::new(b"echo nix!!! && echo foo=$foo && echo baz=$baz"
-                                   .as_ref()).unwrap()],
-                    &[CString::new(b"foo=bar".as_ref()).unwrap(),
-                      CString::new(b"baz=quux".as_ref()).unwrap()]
+                    $($pathident.as_c_str(), )*
+                    &arg_p,
+                    &env_p
                     $(, $flags)*).unwrap();
             },
             Parent { child } => {
@@ -240,38 +249,44 @@ macro_rules! execve_test_factory(
 
 cfg_if!{
     if #[cfg(target_os = "android")] {
-        execve_test_factory!(test_execve, execve, &CString::new("/system/bin/sh").unwrap());
-        execve_test_factory!(test_fexecve, fexecve, File::open("/system/bin/sh").unwrap().into_raw_fd());
+        execve_test_factory!(test_execve, execve, exe = CString::new("/system/bin/sh").unwrap() => exe.as_c_str());
+        execve_test_factory!(test_fexecve, fexecve, exe = File::open("/system/bin/sh").unwrap() => exe.into_raw_fd());
     } else if #[cfg(any(target_os = "dragonfly",
                         target_os = "freebsd",
                         target_os = "netbsd",
                         target_os = "openbsd",
                         target_os = "linux", ))] {
-        execve_test_factory!(test_execve, execve, &CString::new("/bin/sh").unwrap());
-        execve_test_factory!(test_fexecve, fexecve, File::open("/bin/sh").unwrap().into_raw_fd());
+        execve_test_factory!(test_execve, execve, exe = CString::new("/bin/sh").unwrap() => exe.as_c_str());
+        execve_test_factory!(test_fexecve, fexecve, exe = File::open("/bin/sh").unwrap() => exe.into_raw_fd());
     } else if #[cfg(any(target_os = "ios", target_os = "macos", ))] {
-        execve_test_factory!(test_execve, execve, &CString::new("/bin/sh").unwrap());
+        execve_test_factory!(test_execve, execve, exe = CString::new("/bin/sh").unwrap() => exe.as_c_str());
         // No fexecve() on macos/ios.
     }
 }
 
 cfg_if!{
     if #[cfg(target_os = "android")] {
-        use nix::fcntl::AtFlags;
-        execve_test_factory!(test_execveat_empty, execveat, File::open("/system/bin/sh").unwrap().into_raw_fd(),
-                             "", AtFlags::AT_EMPTY_PATH);
-        execve_test_factory!(test_execveat_relative, execveat, File::open("/system/bin/").unwrap().into_raw_fd(),
-                             "./sh", AtFlags::empty());
-        execve_test_factory!(test_execveat_absolute, execveat, File::open("/").unwrap().into_raw_fd(),
-                             "/system/bin/sh", AtFlags::empty());
+        use nix::fcntl::{AtFlags, open};
+        execve_test_factory!(test_execveat_empty, execveat, exe = CString::new("/system/bin/sh").unwrap()
+                             => open(exe.as_c_str(), OFlag::O_PATH, Mode::empty()).unwrap(),
+                             path = "", AtFlags::AT_EMPTY_PATH);
+        execve_test_factory!(test_execveat_relative, execveat, exe = CString::new("/system/bin/").unwrap()
+                             => open(exe.as_c_str(), OFlag::O_PATH, Mode::empty()).unwrap(),
+                             path = "./sh", AtFlags::empty());
+        execve_test_factory!(test_execveat_absolute, execveat, exe = CString::new("/").unwrap()
+                             => open(exe.as_c_str(), OFlag::O_PATH, Mode::empty()).unwrap(),
+                             path = "/system/bin/sh", AtFlags::empty());
     } else if #[cfg(all(target_os = "linux"), any(target_arch ="x86_64", target_arch ="x86"))] {
-        use nix::fcntl::AtFlags;
-        execve_test_factory!(test_execveat_empty, execveat, File::open("/bin/sh").unwrap().into_raw_fd(),
-                             "", AtFlags::AT_EMPTY_PATH);
-        execve_test_factory!(test_execveat_relative, execveat, File::open("/bin/").unwrap().into_raw_fd(),
-                             "./sh", AtFlags::empty());
-        execve_test_factory!(test_execveat_absolute, execveat, File::open("/").unwrap().into_raw_fd(),
-                             "/bin/sh", AtFlags::empty());
+        use nix::fcntl::{AtFlags, open};
+        execve_test_factory!(test_execveat_empty, execveat, exe = CString::new("/bin/sh").unwrap()
+                             => open(exe.as_c_str(), OFlag::O_PATH, Mode::empty()).unwrap(),
+                             path = "", AtFlags::AT_EMPTY_PATH);
+        execve_test_factory!(test_execveat_relative, execveat, exe = CString::new("/bin/").unwrap()
+                             => open(exe.as_c_str(), OFlag::O_PATH, Mode::empty()).unwrap(),
+                             path = "./sh", AtFlags::empty());
+        execve_test_factory!(test_execveat_absolute, execveat, exe = CString::new("/").unwrap()
+                             => open(exe.as_c_str(), OFlag::O_PATH, Mode::empty()).unwrap(),
+                             path = "/bin/sh", AtFlags::empty());
     }
 }
 
