@@ -1124,12 +1124,24 @@ pub fn getgroups() -> Result<Vec<Gid>> {
 /// specific user and group. For example, given the user `www-data` with UID
 /// `33` and the group `backup` with the GID `34`, one could switch the user as
 /// follows:
-/// ```
+///
+/// ```rust,no_run
+/// # use std::error::Error;
+/// # use nix::unistd::*;
+/// #
+/// # fn try_main() -> Result<(), Box<Error>> {
 /// let uid = Uid::from_raw(33);
 /// let gid = Gid::from_raw(34);
 /// setgroups(&[gid])?;
 /// setgid(gid)?;
 /// setuid(uid)?;
+/// #
+/// #     Ok(())
+/// # }
+/// #
+/// # fn main() {
+/// #     try_main().unwrap();
+/// # }
 /// ```
 #[cfg(not(any(target_os = "ios", target_os = "macos")))]
 pub fn setgroups(groups: &[Gid]) -> Result<()> {
@@ -1245,13 +1257,26 @@ pub fn getgrouplist(user: &CStr, group: Gid) -> Result<Vec<Gid>> {
 /// UID and GID for the user in the system's password database (usually found
 /// in `/etc/passwd`). If the `www-data` user's UID and GID were `33` and `33`,
 /// respectively, one could switch the user as follows:
-/// ```
+///
+/// ```rust,no_run
+/// # use std::error::Error;
+/// # use std::ffi::CString;
+/// # use nix::unistd::*;
+/// #
+/// # fn try_main() -> Result<(), Box<Error>> {
 /// let user = CString::new("www-data").unwrap();
 /// let uid = Uid::from_raw(33);
 /// let gid = Gid::from_raw(33);
 /// initgroups(&user, gid)?;
 /// setgid(gid)?;
 /// setuid(uid)?;
+/// #
+/// #     Ok(())
+/// # }
+/// #
+/// # fn main() {
+/// #     try_main().unwrap();
+/// # }
 /// ```
 #[cfg(not(any(target_os = "ios", target_os = "macos")))]
 pub fn initgroups(user: &CStr, group: Gid) -> Result<()> {
