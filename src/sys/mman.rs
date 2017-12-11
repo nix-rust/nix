@@ -101,8 +101,7 @@ libc_bitflags!{
 libc_enum!{
     /// Usage information for a range of memory to allow for performance optimizations by the kernel.
     ///
-    /// Used by [`madvise`].
-    /// [`madvise`]: ./fn.madvise.html
+    /// Used by [`madvise`](./fn.madvise.html).
     #[repr(i32)]
     pub enum MmapAdvise {
         /// No further special treatment. This is the default.

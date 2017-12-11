@@ -815,6 +815,7 @@ pub fn write(fd: RawFd, buf: &[u8]) -> Result<usize> {
 }
 
 /// Directive that tells [`lseek`] and [`lseek64`] what the offset is relative to.
+///
 /// [`lseek`]: ./fn.lseek.html
 /// [`lseek64`]: ./fn.lseek64.html
 #[repr(i32)]
@@ -847,7 +848,7 @@ pub enum Whence {
 
 /// Move the read/write file offset.
 ///
-/// See also [lseek(2)(http://pubs.opengroup.org/onlinepubs/9699919799/functions/lseek.html)
+/// See also [lseek(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/lseek.html)
 pub fn lseek(fd: RawFd, offset: libc::off_t, whence: Whence) -> Result<libc::off_t> {
     let res = unsafe { libc::lseek(fd, offset, whence as i32) };
 
@@ -1143,12 +1144,24 @@ pub fn getgroups() -> Result<Vec<Gid>> {
 /// specific user and group. For example, given the user `www-data` with UID
 /// `33` and the group `backup` with the GID `34`, one could switch the user as
 /// follows:
-/// ```
+///
+/// ```rust,no_run
+/// # use std::error::Error;
+/// # use nix::unistd::*;
+/// #
+/// # fn try_main() -> Result<(), Box<Error>> {
 /// let uid = Uid::from_raw(33);
 /// let gid = Gid::from_raw(34);
 /// setgroups(&[gid])?;
 /// setgid(gid)?;
 /// setuid(uid)?;
+/// #
+/// #     Ok(())
+/// # }
+/// #
+/// # fn main() {
+/// #     try_main().unwrap();
+/// # }
 /// ```
 #[cfg(not(any(target_os = "ios", target_os = "macos")))]
 pub fn setgroups(groups: &[Gid]) -> Result<()> {
@@ -1264,13 +1277,26 @@ pub fn getgrouplist(user: &CStr, group: Gid) -> Result<Vec<Gid>> {
 /// UID and GID for the user in the system's password database (usually found
 /// in `/etc/passwd`). If the `www-data` user's UID and GID were `33` and `33`,
 /// respectively, one could switch the user as follows:
-/// ```
+///
+/// ```rust,no_run
+/// # use std::error::Error;
+/// # use std::ffi::CString;
+/// # use nix::unistd::*;
+/// #
+/// # fn try_main() -> Result<(), Box<Error>> {
 /// let user = CString::new("www-data").unwrap();
 /// let uid = Uid::from_raw(33);
 /// let gid = Gid::from_raw(33);
 /// initgroups(&user, gid)?;
 /// setgid(gid)?;
 /// setuid(uid)?;
+/// #
+/// #     Ok(())
+/// # }
+/// #
+/// # fn main() {
+/// #     try_main().unwrap();
+/// # }
 /// ```
 #[cfg(not(any(target_os = "ios", target_os = "macos")))]
 pub fn initgroups(user: &CStr, group: Gid) -> Result<()> {
@@ -1299,7 +1325,7 @@ pub fn pause() -> Result<()> {
 
 /// Suspend execution for an interval of time
 ///
-/// See also [sleep(2)(http://pubs.opengroup.org/onlinepubs/009695399/functions/sleep.html#tag_03_705_05)
+/// See also [sleep(2)](http://pubs.opengroup.org/onlinepubs/009695399/functions/sleep.html#tag_03_705_05)
 // Per POSIX, does not fail
 #[inline]
 pub fn sleep(seconds: libc::c_uint) -> c_uint {

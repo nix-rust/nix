@@ -98,6 +98,7 @@ impl<'a> AioCb<'a> {
     /// Constructs a new `AioCb` with no associated buffer.
     ///
     /// The resulting `AioCb` structure is suitable for use with `AioCb::fsync`.
+    ///
     /// * `fd`  File descriptor.  Required for all aio functions.
     /// * `prio` If POSIX Prioritized IO is supported, then the operation will
     /// be prioritized at the process's priority level minus `prio`
