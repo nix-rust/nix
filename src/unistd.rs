@@ -739,34 +739,33 @@ pub fn sethostname<S: AsRef<OsStr>>(name: S) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
-/// Get the host name and store it in the provided buffer, returning a pointer
-/// the `CStr` in that buffer on success (see
+/// Get the host name, returning a `OsString` on success (see
 /// [gethostname(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/gethostname.html)).
 ///
-/// This function call attempts to get the host name for the running system and
-/// store it in a provided buffer.  The buffer will be populated with bytes up
-/// to the length of the provided slice including a NUL terminating byte.  If
-/// the hostname is longer than the length provided, no error will be provided.
-/// The posix specification does not specify whether implementations will
-/// null-terminate in this case, but the nix implementation will ensure that the
-/// buffer is null terminated in this case.
+/// This function call attempts to get the host name for the
+/// running system.
 ///
-/// ```no_run
+/// # Examples
+///
+/// ```
 /// use nix::unistd;
 ///
-/// let mut buf = [0u8; 64];
-/// let hostname_cstr = unistd::gethostname(&mut buf).expect("Failed getting hostname");
-/// let hostname = hostname_cstr.to_str().expect("Hostname wasn't valid UTF-8");
+/// let hostname_os = unistd::gethostname().expect("Failed getting hostname");
+/// let hostname = hostname_os.into_string().expect("Hostname wasn't valid UTF-8");
 /// println!("Hostname: {}", hostname);
 /// ```
-pub fn gethostname(buffer: &mut [u8]) -> Result<&CStr> {
-    let ptr = buffer.as_mut_ptr() as *mut c_char;
-    let len = buffer.len() as size_t;
+pub fn gethostname() -> Result<OsString> {
+    // Minimum hostname maximum length as defined by POSIX,
+    // http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/limits.h.html
+    const _POSIX_HOST_NAME_MAX: c_long = 255;
+    let buf_len = sysconf(SysconfVar::HOST_NAME_MAX)
+        .unwrap_or(None).unwrap_or(_POSIX_HOST_NAME_MAX + 1);
+    let mut buf = vec![0; buf_len as usize];
 
-    let res = unsafe { libc::gethostname(ptr, len) };
+    let res = unsafe { libc::gethostname(buf.as_mut_ptr() as *mut c_char, buf_len as usize) };
     Errno::result(res).map(|_| {
-        buffer[len - 1] = 0; // ensure always null-terminated
-        unsafe { CStr::from_ptr(buffer.as_ptr() as *const c_char) }
+        buf[(buf_len - 1) as usize] = 0;
+        OsString::from_vec(buf)
     })
 }
 
@@ -1688,9 +1687,6 @@ pub enum SysconfVar {
     /// Maximum number of expressions that can be nested within parentheses by
     /// the expr utility.
     EXPR_NEST_MAX = libc::_SC_EXPR_NEST_MAX,
-    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
-              target_os="linux", target_os = "macos", target_os="netbsd",
-              target_os="openbsd"))]
     /// Maximum length of a host name (not including the terminating null) as
     /// returned from the `gethostname` function
     HOST_NAME_MAX = libc::_SC_HOST_NAME_MAX,

@@ -49,6 +49,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#892](https://github.com/nix-rust/nix/pull/892))
 - Remove `IFF_NOTRAILERS` on OpenBSD, as it has been removed in OpenBSD 6.3
   ([#893](https://github.com/nix-rust/nix/pull/893))
+- Changed `nix::unistd::gethostname` to internally allocate its buffer.
+  ([#816](https://github.com/nix-rust/nix/pull/816))
 
 ### Fixed
 - Fixed possible panics when using `SigAction::flags` on Linux

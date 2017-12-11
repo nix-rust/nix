@@ -457,3 +457,12 @@ fn test_canceling_alarm() {
     assert_eq!(alarm::set(60), None);
     assert_eq!(alarm::cancel(), Some(60));
 }
+
+#[test]
+fn test_gethostname() {
+    let hn1 = gethostname().expect("first gethostname failed")
+        .into_string().expect("hostname contains invalid data");
+    let hn2 = gethostname().expect("second gethostname failed")
+        .into_string().expect("hostname contains invalid data");
+    assert_eq!(hn1, hn2);
+}
