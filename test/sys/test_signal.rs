@@ -1,5 +1,8 @@
-use nix::unistd::*;
+use libc;
+use nix::Error;
 use nix::sys::signal::*;
+use nix::unistd::*;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 #[test]
 fn test_kill_none() {
@@ -59,4 +62,37 @@ fn test_sigprocmask() {
     // Reset the signal.
     sigprocmask(SigmaskHow::SIG_UNBLOCK, Some(&signal_set), None)
         .expect("expect to be able to block signals");
+}
+
+lazy_static! {
+    static ref SIGNALED: AtomicBool = AtomicBool::new(false);
+}
+
+extern fn test_sigaction_handler(signal: libc::c_int) {
+    let signal = Signal::from_c_int(signal).unwrap();
+    SIGNALED.store(signal == Signal::SIGINT, Ordering::Relaxed);
+}
+
+extern fn test_sigaction_action(_: libc::c_int, _: *mut libc::siginfo_t, _: *mut libc::c_void) {
+}
+
+#[test]
+fn test_signal() {
+    let _m = ::SIGNAL_MTX.lock().expect("Mutex got poisoned by another test");
+
+    unsafe { signal(Signal::SIGINT, SigHandler::SigIgn) }.unwrap();
+    raise(Signal::SIGINT).unwrap();
+    assert_eq!(unsafe { signal(Signal::SIGINT, SigHandler::SigDfl) }.unwrap(), SigHandler::SigIgn);
+
+    let handler = SigHandler::Handler(test_sigaction_handler);
+    assert_eq!(unsafe { signal(Signal::SIGINT, handler) }.unwrap(), SigHandler::SigDfl);
+    raise(Signal::SIGINT).unwrap();
+    assert!(SIGNALED.load(Ordering::Relaxed));
+    assert_eq!(unsafe { signal(Signal::SIGINT, SigHandler::SigDfl) }.unwrap(), handler);
+
+    let action_handler = SigHandler::SigAction(test_sigaction_action);
+    assert_eq!(unsafe { signal(Signal::SIGINT, action_handler) }.unwrap_err(), Error::UnsupportedOperation);
+
+    // Restore default signal handler
+    unsafe { signal(Signal::SIGINT, SigHandler::SigDfl) }.unwrap();
 }

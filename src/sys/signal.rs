@@ -542,6 +542,79 @@ pub unsafe fn sigaction(signal: Signal, sigaction: &SigAction) -> Result<SigActi
     Errno::result(res).map(|_| SigAction { sigaction: oldact })
 }
 
+/// Signal management (see [signal(3p)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/signal.html))
+///
+/// Installs `handler` for the given `signal`, returning the previous signal
+/// handler. `signal` should only be used following another call to `signal` or
+/// if the current handler is the default. The return value of `signal` is
+/// undefined after setting the handler with [`sigaction`][SigActionFn].
+///
+/// # Safety
+///
+/// If the pointer to the previous signal handler is invalid, undefined
+/// behavior could be invoked when casting it back to a [`SigAction`][SigActionStruct].
+///
+/// # Examples
+///
+/// Ignore `SIGINT`:
+///
+/// ```no_run
+/// # use nix::sys::signal::{self, Signal, SigHandler};
+/// unsafe { signal::signal(Signal::SIGINT, SigHandler::SigIgn) }.unwrap();
+/// ```
+///
+/// Use a signal handler to set a flag variable:
+///
+/// ```no_run
+/// # #[macro_use] extern crate lazy_static;
+/// # extern crate libc;
+/// # extern crate nix;
+/// # use std::sync::atomic::{AtomicBool, Ordering};
+/// # use nix::sys::signal::{self, Signal, SigHandler};
+/// lazy_static! {
+///    static ref SIGNALED: AtomicBool = AtomicBool::new(false);
+/// }
+///
+/// extern fn handle_sigint(signal: libc::c_int) {
+///     let signal = Signal::from_c_int(signal).unwrap();
+///     SIGNALED.store(signal == Signal::SIGINT, Ordering::Relaxed);
+/// }
+///
+/// fn main() {
+///     let handler = SigHandler::Handler(handle_sigint);
+///     unsafe { signal::signal(Signal::SIGINT, handler) }.unwrap();
+/// }
+/// ```
+///
+/// # Errors
+///
+/// Returns [`Error::UnsupportedOperation`] if `handler` is
+/// [`SigAction`][SigActionStruct]. Use [`sigaction`][SigActionFn] instead.
+///
+/// `signal` also returns any error from `libc::signal`, such as when an attempt
+/// is made to catch a signal that cannot be caught or to ignore a signal that
+/// cannot be ignored.
+///
+/// [`Error::UnsupportedOperation`]: ../../enum.Error.html#variant.UnsupportedOperation
+/// [SigActionStruct]: struct.SigAction.html
+/// [sigactionFn]: fn.sigaction.html
+pub unsafe fn signal(signal: Signal, handler: SigHandler) -> Result<SigHandler> {
+    let signal = signal as libc::c_int;
+    let res = match handler {
+        SigHandler::SigDfl => libc::signal(signal, libc::SIG_DFL),
+        SigHandler::SigIgn => libc::signal(signal, libc::SIG_IGN),
+        SigHandler::Handler(handler) => libc::signal(signal, handler as libc::sighandler_t),
+        SigHandler::SigAction(_) => return Err(Error::UnsupportedOperation),
+    };
+    Errno::result(res).map(|oldhandler| {
+        match oldhandler {
+            libc::SIG_DFL => SigHandler::SigDfl,
+            libc::SIG_IGN => SigHandler::SigIgn,
+            f => SigHandler::Handler(mem::transmute(f)),
+        }
+    })
+}
+
 /// Manages the signal mask (set of blocked signals) for the calling thread.
 ///
 /// If the `set` parameter is `Some(..)`, then the signal mask will be updated with the signal set.
