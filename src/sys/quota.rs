@@ -59,11 +59,11 @@ libc_enum!{
         QFMT_VFS_OLD,
         /// Use the standard VFS v0 quota format.
         ///
-        /// Handles 32-bit UIDs/GIDs and quota limits up to 2^42 bytes/2^32 inodes.
+        /// Handles 32-bit UIDs/GIDs and quota limits up to 2<sup>32</sup> bytes/2<sup>32</sup> inodes.
         QFMT_VFS_V0,
         /// Use the VFS v1 quota format.
         ///
-        /// Handles 32-bit UIDs/GIDs and quota limits of 2^64 bytes/2^64 inodes.
+        /// Handles 32-bit UIDs/GIDs and quota limits of 2<sup>64</sup> bytes/2<sup>64</sup> inodes.
         QFMT_VFS_V1,
     }
 }

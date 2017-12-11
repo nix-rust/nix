@@ -87,6 +87,7 @@ impl FdSet {
 /// # References
 ///
 /// [select(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/select.html)
+///
 /// [`FdSet::highest`]: struct.FdSet.html#method.highest
 pub fn select<'a, N, R, W, E, T>(nfds: N,
                                  readfds: R,

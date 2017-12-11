@@ -815,6 +815,7 @@ pub fn write(fd: RawFd, buf: &[u8]) -> Result<usize> {
 }
 
 /// Directive that tells [`lseek`] and [`lseek64`] what the offset is relative to.
+///
 /// [`lseek`]: ./fn.lseek.html
 /// [`lseek64`]: ./fn.lseek64.html
 #[repr(i32)]
@@ -847,7 +848,7 @@ pub enum Whence {
 
 /// Move the read/write file offset.
 ///
-/// See also [lseek(2)(http://pubs.opengroup.org/onlinepubs/9699919799/functions/lseek.html)
+/// See also [lseek(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/lseek.html)
 pub fn lseek(fd: RawFd, offset: libc::off_t, whence: Whence) -> Result<libc::off_t> {
     let res = unsafe { libc::lseek(fd, offset, whence as i32) };
 
@@ -1305,7 +1306,7 @@ pub fn pause() -> Result<()> {
 
 /// Suspend execution for an interval of time
 ///
-/// See also [sleep(2)(http://pubs.opengroup.org/onlinepubs/009695399/functions/sleep.html#tag_03_705_05)
+/// See also [sleep(2)](http://pubs.opengroup.org/onlinepubs/009695399/functions/sleep.html#tag_03_705_05)
 // Per POSIX, does not fail
 #[inline]
 pub fn sleep(seconds: libc::c_uint) -> c_uint {
