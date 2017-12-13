@@ -52,6 +52,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#814](https://github.com/nix-rust/nix/pull/814))
 - Added `sigprocmask` to the signal module.
   ([#826](https://github.com/nix-rust/nix/pull/826))
+- Added `nix::sys::socket::LinkAddr` on Linux and all bsdlike system.
+  ([#813](https://github.com/nix-rust/nix/pull/813))
 
 ### Changed
 - Use native `pipe2` on all BSD targets.  Users should notice no difference.

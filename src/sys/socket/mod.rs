@@ -27,6 +27,7 @@ pub use self::addr::{
     IpAddr,
     Ipv4Addr,
     Ipv6Addr,
+    LinkAddr,
 };
 #[cfg(any(target_os = "linux", target_os = "android"))]
 pub use ::sys::socket::addr::netlink::NetlinkAddr;

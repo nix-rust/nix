@@ -12,6 +12,15 @@ use ::sys::socket::addr::netlink::NetlinkAddr;
 use std::os::unix::io::RawFd;
 #[cfg(any(target_os = "ios", target_os = "macos"))]
 use ::sys::socket::addr::sys_control::SysControlAddr;
+#[cfg(any(target_os = "android",
+          target_os = "dragonfly",
+          target_os = "freebsd",
+          target_os = "ios",
+          target_os = "linux",
+          target_os = "macos",
+          target_os = "netbsd",
+          target_os = "openbsd"))]
+pub use self::datalink::LinkAddr;
 
 /// These constants specify the protocol family to be used
 /// in [`socket`](fn.socket.html) and [`socketpair`](fn.socketpair.html)
@@ -206,7 +215,7 @@ impl AddressFamily {
     /// Create a new `AddressFamily` from an integer value retrieved from `libc`, usually from
     /// the `sa_family` field of a `sockaddr`.
     ///
-    /// Currently only supports these address families: Unix, Inet (v4 & v6), Netlink
+    /// Currently only supports these address families: Unix, Inet (v4 & v6), Netlink, Link/Packet 
     /// and System. Returns None for unsupported or unknown address families.
     pub fn from_i32(family: i32) -> Option<AddressFamily> {
         match family {
@@ -217,12 +226,21 @@ impl AddressFamily {
             libc::AF_NETLINK => Some(AddressFamily::Netlink),
             #[cfg(any(target_os = "macos", target_os = "macos"))]
             libc::AF_SYSTEM => Some(AddressFamily::System),
+            #[cfg(any(target_os = "android", target_os = "linux"))]
+            libc::AF_PACKET => Some(AddressFamily::Packet),
+            #[cfg(any(target_os = "dragonfly",
+                      target_os = "freebsd",
+                      target_os = "ios",
+                      target_os = "macos",
+                      target_os = "netbsd",
+                      target_os = "openbsd"))]
+            libc::AF_LINK => Some(AddressFamily::Link),
             _ => None
         }
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Copy)]
 pub enum InetAddr {
     V4(libc::sockaddr_in),
     V6(libc::sockaddr_in6),
@@ -348,6 +366,12 @@ impl hash::Hash for InetAddr {
     }
 }
 
+impl Clone for InetAddr {
+    fn clone(&self) -> InetAddr {
+        *self
+    }
+}
+
 impl fmt::Display for InetAddr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
@@ -396,7 +420,6 @@ impl IpAddr {
             net::IpAddr::V6(ref std) => IpAddr::V6(Ipv6Addr::from_std(std)),
         }
     }
-
     pub fn to_std(&self) -> net::IpAddr {
         match *self {
             IpAddr::V4(ref ip) => net::IpAddr::V4(ip.to_std()),
@@ -427,7 +450,7 @@ impl fmt::Debug for IpAddr {
  *
  */
 
-#[derive(Clone, Copy)]
+#[derive(Copy)]
 pub struct Ipv4Addr(pub libc::in_addr);
 
 impl Ipv4Addr {
@@ -472,6 +495,12 @@ impl Eq for Ipv4Addr {
 impl hash::Hash for Ipv4Addr {
     fn hash<H: hash::Hasher>(&self, s: &mut H) {
         self.0.s_addr.hash(s)
+    }
+}
+
+impl Clone for Ipv4Addr {
+    fn clone(&self) -> Ipv4Addr {
+        *self
     }
 }
 
@@ -562,7 +591,7 @@ impl fmt::Debug for Ipv6Addr {
 /// does not require that `sun_len` include the terminating null even for normal
 /// sockets.  Note that the actual sockaddr length is greater by
 /// `offset_of!(libc::sockaddr_un, sun_path)`
-#[derive(Clone, Copy)]
+#[derive(Copy)]
 pub struct UnixAddr(pub libc::sockaddr_un, pub usize);
 
 impl UnixAddr {
@@ -669,6 +698,12 @@ impl hash::Hash for UnixAddr {
     }
 }
 
+impl Clone for UnixAddr {
+    fn clone(&self) -> UnixAddr {
+        *self
+    }
+}
+
 impl fmt::Display for UnixAddr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if self.1 == 0 {
@@ -695,7 +730,7 @@ impl fmt::Debug for UnixAddr {
  */
 
 /// Represents a socket address
-#[derive(Clone, Copy)]
+#[derive(Copy, Debug)]
 pub enum SockAddr {
     Inet(InetAddr),
     Unix(UnixAddr),
@@ -703,6 +738,16 @@ pub enum SockAddr {
     Netlink(NetlinkAddr),
     #[cfg(any(target_os = "ios", target_os = "macos"))]
     SysControl(SysControlAddr),
+    /// Datalink address (MAC)
+    #[cfg(any(target_os = "android",
+              target_os = "dragonfly",
+              target_os = "freebsd",
+              target_os = "ios",
+              target_os = "linux",
+              target_os = "macos",
+              target_os = "netbsd",
+              target_os = "openbsd"))]
+    Link(LinkAddr)
 }
 
 impl SockAddr {
@@ -733,6 +778,15 @@ impl SockAddr {
             SockAddr::Netlink(..) => AddressFamily::Netlink,
             #[cfg(any(target_os = "ios", target_os = "macos"))]
             SockAddr::SysControl(..) => AddressFamily::System,
+            #[cfg(any(target_os = "android", target_os = "linux"))]
+            SockAddr::Link(..) => AddressFamily::Packet,
+            #[cfg(any(target_os = "dragonfly",
+                      target_os = "freebsd",
+                      target_os = "ios",
+                      target_os = "macos",
+                      target_os = "netbsd",
+                      target_os = "openbsd"))]
+            SockAddr::Link(..) => AddressFamily::Link
         }
     }
 
@@ -760,6 +814,23 @@ impl SockAddr {
                 #[cfg(any(target_os = "ios", target_os = "macos"))]
                 Some(AddressFamily::System) => Some(SockAddr::SysControl(
                     SysControlAddr(*(addr as *const sys_control::sockaddr_ctl)))),
+                #[cfg(any(target_os = "android", target_os = "linux"))]
+                Some(AddressFamily::Packet) => Some(SockAddr::Link(
+                    LinkAddr(*(addr as *const libc::sockaddr_ll)))),
+                #[cfg(any(target_os = "dragonfly",
+                          target_os = "freebsd",
+                          target_os = "ios",
+                          target_os = "macos",
+                          target_os = "netbsd",
+                          target_os = "openbsd"))]
+                Some(AddressFamily::Link) => {
+                    let ether_addr = LinkAddr(*(addr as *const libc::sockaddr_dl));
+                    if ether_addr.is_empty() {
+                        None
+                    } else {
+                        Some(SockAddr::Link(ether_addr))
+                    }
+                },
                 // Other address families are currently not supported and simply yield a None
                 // entry instead of a proper conversion to a `SockAddr`.
                 Some(_) | None => None,
@@ -767,6 +838,13 @@ impl SockAddr {
         }
     }
 
+    /// Conversion from nix's SockAddr type to the underlying libc sockaddr type.
+    /// 
+    /// This is useful for interfacing with other libc functions that don't yet have nix wrappers.
+    /// Returns a reference to the underlying data type (as a sockaddr reference) along 
+    /// with the size of the actual data type. sockaddr is commonly used as a proxy for 
+    /// a superclass as C doesn't support inheritance, so many functions that take 
+    /// a sockaddr * need to take the size of the underlying type as well and then internally cast it back.
     pub unsafe fn as_ffi_pair(&self) -> (&libc::sockaddr, libc::socklen_t) {
         match *self {
             SockAddr::Inet(InetAddr::V4(ref addr)) => (mem::transmute(addr), mem::size_of::<libc::sockaddr_in>() as libc::socklen_t),
@@ -776,6 +854,15 @@ impl SockAddr {
             SockAddr::Netlink(NetlinkAddr(ref sa)) => (mem::transmute(sa), mem::size_of::<libc::sockaddr_nl>() as libc::socklen_t),
             #[cfg(any(target_os = "ios", target_os = "macos"))]
             SockAddr::SysControl(SysControlAddr(ref sa)) => (mem::transmute(sa), mem::size_of::<sys_control::sockaddr_ctl>() as libc::socklen_t),
+            #[cfg(any(target_os = "android", target_os = "linux"))]
+            SockAddr::Link(LinkAddr(ref ether_addr)) => (mem::transmute(ether_addr), mem::size_of::<libc::sockaddr_ll>() as libc::socklen_t),
+            #[cfg(any(target_os = "dragonfly",
+                      target_os = "freebsd",
+                      target_os = "ios",
+                      target_os = "macos",
+                      target_os = "netbsd",
+                      target_os = "openbsd"))]
+            SockAddr::Link(LinkAddr(ref ether_addr)) => (mem::transmute(ether_addr), mem::size_of::<libc::sockaddr_dl>() as libc::socklen_t),
         }
     }
 }
@@ -791,6 +878,17 @@ impl PartialEq for SockAddr {
             }
             #[cfg(any(target_os = "android", target_os = "linux"))]
             (SockAddr::Netlink(ref a), SockAddr::Netlink(ref b)) => {
+                a == b
+            }
+            #[cfg(any(target_os = "android",
+                      target_os = "dragonfly",
+                      target_os = "freebsd",
+                      target_os = "ios",
+                      target_os = "linux",
+                      target_os = "macos",
+                      target_os = "netbsd",
+                      target_os = "openbsd"))]
+            (SockAddr::Link(ref a), SockAddr::Link(ref b)) => {
                 a == b
             }
             _ => false,
@@ -810,7 +908,22 @@ impl hash::Hash for SockAddr {
             SockAddr::Netlink(ref a) => a.hash(s),
             #[cfg(any(target_os = "ios", target_os = "macos"))]
             SockAddr::SysControl(ref a) => a.hash(s),
+            #[cfg(any(target_os = "android",
+                      target_os = "dragonfly",
+                      target_os = "freebsd",
+                      target_os = "ios",
+                      target_os = "linux",
+                      target_os = "macos",
+                      target_os = "netbsd",
+                      target_os = "openbsd"))]
+            SockAddr::Link(ref ether_addr) => ether_addr.hash(s)
         }
+    }
+}
+
+impl Clone for SockAddr {
+    fn clone(&self) -> SockAddr {
+        *self
     }
 }
 
@@ -823,6 +936,15 @@ impl fmt::Display for SockAddr {
             SockAddr::Netlink(ref nl) => nl.fmt(f),
             #[cfg(any(target_os = "ios", target_os = "macos"))]
             SockAddr::SysControl(ref sc) => sc.fmt(f),
+            #[cfg(any(target_os = "android",
+                      target_os = "dragonfly",
+                      target_os = "freebsd",
+                      target_os = "ios",
+                      target_os = "linux",
+                      target_os = "macos",
+                      target_os = "netbsd",
+                      target_os = "openbsd"))]
+            SockAddr::Link(ref ether_addr) => ether_addr.fmt(f)
         }
     }
 }
@@ -989,5 +1111,299 @@ pub mod sys_control {
         fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
             fmt::Display::fmt(self, f)
         }
+    }
+}
+
+
+#[cfg(any(target_os = "android", target_os = "linux"))]
+mod datalink {
+    use super::{libc, hash, fmt, AddressFamily};
+
+    /// Hardware Address
+    #[derive(Clone, Copy)]
+    pub struct LinkAddr(pub libc::sockaddr_ll);
+
+    impl LinkAddr {
+        /// Always AF_PACKET
+        pub fn family(&self) -> AddressFamily {
+            assert_eq!(self.0.sll_family as i32, libc::AF_PACKET);
+            AddressFamily::Packet
+        }
+
+        /// Physical-layer protocol
+        pub fn protocol(&self) -> u16 {
+            self.0.sll_protocol
+        }
+
+        /// Interface number
+        pub fn ifindex(&self) -> usize {
+            self.0.sll_ifindex as usize
+        }
+
+        /// ARP hardware type
+        pub fn hatype(&self) -> u16 {
+            self.0.sll_hatype
+        }
+
+        /// Packet type
+        pub fn pkttype(&self) -> u8 {
+            self.0.sll_pkttype
+        }
+
+        /// Length of MAC address
+        pub fn halen(&self) -> usize {
+            self.0.sll_halen as usize
+        }
+
+        /// Physical-layer address (MAC)
+        pub fn addr(&self) -> [u8; 6] {
+            let a = self.0.sll_addr[0] as u8;
+            let b = self.0.sll_addr[1] as u8;
+            let c = self.0.sll_addr[2] as u8;
+            let d = self.0.sll_addr[3] as u8;
+            let e = self.0.sll_addr[4] as u8;
+            let f = self.0.sll_addr[5] as u8;
+
+            [a, b, c, d, e, f]
+        }
+    }
+
+    impl Eq for LinkAddr {}
+
+    impl PartialEq for LinkAddr {
+        fn eq(&self, other: &Self) -> bool {
+            let (a, b) = (self.0, other.0);
+            (a.sll_family, a.sll_protocol, a.sll_ifindex, a.sll_hatype, 
+                a.sll_pkttype, a.sll_halen, a.sll_addr) ==
+            (b.sll_family, b.sll_protocol, b.sll_ifindex, b.sll_hatype, 
+                b.sll_pkttype, b.sll_halen, b.sll_addr)
+        }
+    }
+
+    impl hash::Hash for LinkAddr {
+        fn hash<H: hash::Hasher>(&self, s: &mut H) {
+            let a = self.0;
+            (a.sll_family, a.sll_protocol, a.sll_ifindex, a.sll_hatype, 
+                a.sll_pkttype, a.sll_halen, a.sll_addr).hash(s);
+        }
+    }
+
+    impl fmt::Display for LinkAddr {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            let addr = self.addr();
+            write!(f, "{:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x}",
+                addr[0],
+                addr[1],
+                addr[2],
+                addr[3],
+                addr[4],
+                addr[5])
+        }
+    }
+
+    impl fmt::Debug for LinkAddr {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            fmt::Display::fmt(self, f)
+        }
+    }
+}
+
+#[cfg(any(target_os = "dragonfly",
+          target_os = "freebsd",
+          target_os = "ios",
+          target_os = "macos",
+          target_os = "netbsd",
+          target_os = "openbsd"))]
+mod datalink {
+    use super::{libc, hash, fmt, AddressFamily};
+
+    /// Hardware Address
+    #[derive(Clone, Copy)]
+    pub struct LinkAddr(pub libc::sockaddr_dl);
+
+    impl LinkAddr {
+        /// Total length of sockaddr
+        pub fn len(&self) -> usize {
+            self.0.sdl_len as usize
+        }
+
+        /// always == AF_LINK
+        pub fn family(&self) -> AddressFamily {
+            assert_eq!(self.0.sdl_family as i32, libc::AF_LINK);
+            AddressFamily::Link
+        }
+
+        /// interface index, if != 0, system given index for interface
+        pub fn ifindex(&self) -> usize {
+            self.0.sdl_index as usize
+        }
+
+        /// Datalink type
+        pub fn datalink_type(&self) -> u8 {
+            self.0.sdl_type
+        }
+
+        // MAC address start position
+        pub fn nlen(&self) -> usize {
+            self.0.sdl_nlen as usize
+        }
+
+        /// link level address length
+        pub fn alen(&self) -> usize {
+            self.0.sdl_alen as usize
+        }
+
+        /// link layer selector length
+        pub fn slen(&self) -> usize {
+            self.0.sdl_slen as usize
+        }
+
+        /// if link level address length == 0,
+        /// or `sdl_data` not be larger.
+        pub fn is_empty(&self) -> bool {
+            let nlen = self.nlen();
+            let alen = self.alen();
+            let data_len = self.0.sdl_data.len();
+
+            if alen > 0 && nlen + alen < data_len {
+                false
+            } else {
+                true
+            }
+        }
+
+        /// Physical-layer address (MAC)
+        pub fn addr(&self) -> [u8; 6] {
+            let nlen = self.nlen();
+            let data = self.0.sdl_data;
+
+            assert!(!self.is_empty());
+
+            let a = data[nlen] as u8;
+            let b = data[nlen + 1] as u8;
+            let c = data[nlen + 2] as u8;
+            let d = data[nlen + 3] as u8;
+            let e = data[nlen + 4] as u8;
+            let f = data[nlen + 5] as u8;
+
+            [a, b, c, d, e, f]
+        }
+    }
+
+    impl Eq for LinkAddr {}
+
+    impl PartialEq for LinkAddr {
+        #[cfg(any(target_os = "freebsd",
+                  target_os = "ios",
+                  target_os = "macos",
+                  target_os = "netbsd",
+                  target_os = "openbsd"))]
+        fn eq(&self, other: &Self) -> bool {
+            let (a, b) = (self.0, other.0);
+            (a.sdl_len, a.sdl_family, a.sdl_index, a.sdl_type, 
+                a.sdl_nlen, a.sdl_alen, a.sdl_slen, &a.sdl_data[..]) ==
+            (b.sdl_len, b.sdl_family, b.sdl_index, b.sdl_type, 
+                b.sdl_nlen, b.sdl_alen, b.sdl_slen, &b.sdl_data[..])
+        }
+  
+        #[cfg(target_os = "dragonfly")]
+        fn eq(&self, other: &Self) -> bool {
+            let (a, b) = (self.0, other.0);
+            (a.sdl_len, a.sdl_family, a.sdl_index, a.sdl_type, a.sdl_nlen, 
+                a.sdl_alen, a.sdl_slen, a.sdl_data, a.sdl_rcf, a.sdl_route) ==
+            (b.sdl_len, b.sdl_family, b.sdl_index, b.sdl_type, b.sdl_nlen, 
+                b.sdl_alen, b.sdl_slen, b.sdl_data, b.sdl_rcf, b.sdl_route)
+        }
+    }
+
+    impl hash::Hash for LinkAddr {
+        #[cfg(any(target_os = "freebsd",
+                  target_os = "ios",
+                  target_os = "macos",
+                  target_os = "netbsd",
+                  target_os = "openbsd"))]
+        fn hash<H: hash::Hasher>(&self, s: &mut H) {
+            let a = self.0;
+            (a.sdl_len, a.sdl_family, a.sdl_index, a.sdl_type, 
+                a.sdl_nlen, a.sdl_alen, a.sdl_slen, &a.sdl_data[..]).hash(s);
+        }
+
+        #[cfg(target_os = "dragonfly")]
+        fn hash<H: hash::Hasher>(&self, s: &mut H) {
+            let a = self.0;
+            (a.sdl_len, a.sdl_family, a.sdl_index, a.sdl_type, a.sdl_nlen, 
+                a.sdl_alen, a.sdl_slen, a.sdl_data, a.sdl_rcf, a.sdl_route).hash(s);
+        }
+    }
+
+    impl fmt::Display for LinkAddr {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            let addr = self.addr();
+            write!(f, "{:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x}",
+                addr[0],
+                addr[1],
+                addr[2],
+                addr[3],
+                addr[4],
+                addr[5])
+        }
+    }
+
+    impl fmt::Debug for LinkAddr {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            fmt::Display::fmt(self, f)
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[cfg(any(target_os = "dragonfly",
+              target_os = "freebsd",
+              target_os = "ios",
+              target_os = "macos",
+              target_os = "netbsd",
+              target_os = "openbsd"))]
+    use super::*;
+
+    #[cfg(any(target_os = "dragonfly",
+              target_os = "freebsd",
+              target_os = "ios",
+              target_os = "macos",
+              target_os = "netbsd",
+              target_os = "openbsd"))]
+    #[test]
+    fn test_macos_loopback_datalink_addr() {
+        let bytes = [20i8, 18, 1, 0, 24, 3, 0, 0, 108, 111, 48, 0, 0, 0, 0, 0];
+        let sa = bytes.as_ptr() as *const libc::sockaddr;
+        let _sock_addr = unsafe { SockAddr::from_libc_sockaddr(sa) };
+        assert!(_sock_addr.is_none());
+    }
+
+    #[cfg(any(target_os = "dragonfly",
+              target_os = "freebsd",
+              target_os = "ios",
+              target_os = "macos",
+              target_os = "netbsd",
+              target_os = "openbsd"))]
+    #[test]
+    fn test_macos_tap_datalink_addr() {
+        let bytes = [20i8, 18, 7, 0, 6, 3, 6, 0, 101, 110, 48, 24, 101, -112, -35, 76, -80];
+        let ptr = bytes.as_ptr();
+        let sa = ptr as *const libc::sockaddr;
+        let _sock_addr = unsafe { SockAddr::from_libc_sockaddr(sa) };
+
+        assert!(_sock_addr.is_some());
+
+        let sock_addr = _sock_addr.unwrap();
+
+        assert_eq!(sock_addr.family(), AddressFamily::Link);
+        
+        match sock_addr {
+            SockAddr::Link(ether_addr) => {
+                assert_eq!(ether_addr.addr(), [24u8, 101, 144, 221, 76, 176]);
+            },
+            _ => { unreachable!() }
+        };
     }
 }
