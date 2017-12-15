@@ -339,7 +339,7 @@ fn test_lseek() {
 fn test_lseek64() {
     const CONTENTS: &'static [u8] = b"abcdef123456";
     let mut tmp = tempfile().unwrap();
-    tmp.write(CONTENTS).unwrap();
+    tmp.write_all(CONTENTS).unwrap();
     let tmpfd = tmp.into_raw_fd();
 
     lseek64(tmpfd, 5, Whence::SeekSet).unwrap();

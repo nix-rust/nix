@@ -20,7 +20,7 @@ fn test_explicit_close() {
     };
     // This should work.  But if there's been a double close, then it will
     // return EBADF
-    f.write(b"whatever").unwrap();
+    f.write_all(b"whatever").unwrap();
 }
 
 /// Test equivalence of `ptsname` and `ptsname_r`

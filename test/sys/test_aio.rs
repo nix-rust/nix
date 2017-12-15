@@ -100,7 +100,7 @@ fn test_aio_cancel_all() {
 fn test_fsync() {
     const INITIAL: &'static [u8] = b"abcdef123456";
     let mut f = tempfile().unwrap();
-    f.write(INITIAL).unwrap();
+    f.write_all(INITIAL).unwrap();
     let mut aiocb = AioCb::from_fd( f.as_raw_fd(),
                             0,   //priority
                             SigevNotify::SigevNone);
@@ -123,7 +123,7 @@ fn test_fsync_error() {
     // Create an invalid AioFsyncMode
     let mode = unsafe { mem::transmute(666) };
     let mut f = tempfile().unwrap();
-    f.write(INITIAL).unwrap();
+    f.write_all(INITIAL).unwrap();
     let mut aiocb = AioCb::from_fd( f.as_raw_fd(),
                             0,   //priority
                             SigevNotify::SigevNone);
@@ -139,7 +139,7 @@ fn test_aio_suspend() {
     let timeout = TimeSpec::seconds(10);
     let rbuf = Rc::new(vec![0; 4].into_boxed_slice());
     let mut f = tempfile().unwrap();
-    f.write(INITIAL).unwrap();
+    f.write_all(INITIAL).unwrap();
 
     let mut wcb = AioCb::from_slice( f.as_raw_fd(),
                            2,   //offset
@@ -180,7 +180,7 @@ fn test_read() {
     let rbuf = Rc::new(vec![0; 4].into_boxed_slice());
     const EXPECT: &'static [u8] = b"cdef";
     let mut f = tempfile().unwrap();
-    f.write(INITIAL).unwrap();
+    f.write_all(INITIAL).unwrap();
     {
         let mut aiocb = AioCb::from_boxed_slice( f.as_raw_fd(),
                                2,   //offset
@@ -208,7 +208,7 @@ fn test_read_error() {
     const INITIAL: &'static [u8] = b"abcdef123456";
     let rbuf = Rc::new(vec![0; 4].into_boxed_slice());
     let mut f = tempfile().unwrap();
-    f.write(INITIAL).unwrap();
+    f.write_all(INITIAL).unwrap();
     let mut aiocb = AioCb::from_boxed_slice( f.as_raw_fd(),
                            -1,   //an invalid offset
                            rbuf.clone(),
@@ -226,7 +226,7 @@ fn test_read_into_mut_slice() {
     let mut rbuf = vec![0; 4];
     const EXPECT: &'static [u8] = b"cdef";
     let mut f = tempfile().unwrap();
-    f.write(INITIAL).unwrap();
+    f.write_all(INITIAL).unwrap();
     {
         let mut aiocb = AioCb::from_mut_slice( f.as_raw_fd(),
                                2,   //offset
@@ -273,7 +273,7 @@ fn test_write() {
     const EXPECT: &'static [u8] = b"abCDEF123456";
 
     let mut f = tempfile().unwrap();
-    f.write(INITIAL).unwrap();
+    f.write_all(INITIAL).unwrap();
     let mut aiocb = AioCb::from_slice( f.as_raw_fd(),
                            2,   //offset
                            &wbuf,
@@ -336,7 +336,7 @@ fn test_write_sigev_signal() {
     const EXPECT: &'static [u8] = b"abCDEF123456";
 
     let mut f = tempfile().unwrap();
-    f.write(INITIAL).unwrap();
+    f.write_all(INITIAL).unwrap();
     let mut aiocb = AioCb::from_slice( f.as_raw_fd(),
                            2,   //offset
                            &WBUF,
@@ -371,7 +371,7 @@ fn test_lio_listio_wait() {
     const EXPECT: &'static [u8] = b"abCDEF123456";
     let mut f = tempfile().unwrap();
 
-    f.write(INITIAL).unwrap();
+    f.write_all(INITIAL).unwrap();
 
     {
         let mut wcb = AioCb::from_slice( f.as_raw_fd(),
@@ -414,7 +414,7 @@ fn test_lio_listio_nowait() {
     const EXPECT: &'static [u8] = b"abCDEF123456";
     let mut f = tempfile().unwrap();
 
-    f.write(INITIAL).unwrap();
+    f.write_all(INITIAL).unwrap();
 
     {
         let mut wcb = AioCb::from_slice( f.as_raw_fd(),
@@ -467,7 +467,7 @@ fn test_lio_listio_signal() {
     let sigev_notify = SigevNotify::SigevSignal { signal: Signal::SIGUSR2,
                                                   si_value: 0 };
 
-    f.write(INITIAL).unwrap();
+    f.write_all(INITIAL).unwrap();
 
     {
         let mut wcb = AioCb::from_slice( f.as_raw_fd(),

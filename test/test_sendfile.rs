@@ -12,7 +12,7 @@ use nix::sys::sendfile::sendfile;
 fn test_sendfile() {
     const CONTENTS: &'static [u8] = b"abcdef123456";
     let mut tmp = tempfile().unwrap();
-    tmp.write(CONTENTS).unwrap();
+    tmp.write_all(CONTENTS).unwrap();
 
     let (rd, wr) = pipe().unwrap();
     let mut offset: off_t = 5;
