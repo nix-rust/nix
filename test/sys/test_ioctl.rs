@@ -269,10 +269,10 @@ mod linux_ioctls {
     // From linux/videodev2.h
     ioctl!(write_ptr s_audio with b'V', 34; v4l2_audio);
     #[test]
-    fn test_ioctl_read() {
+    fn test_ioctl_write_ptr() {
         let file = tempfile().unwrap();
-        let data: v4l2_audio = unsafe { mem::uninitialized() };
-        let res = unsafe { g_audio(file.as_raw_fd(), &data) };
+        let data: v4l2_audio = unsafe { mem::zeroed() };
+        let res = unsafe { s_audio(file.as_raw_fd(), &data) };
         assert!(res == Err(Sys(ENOTTY)) || res == Err(Sys(ENOSYS)));
     }
 
@@ -288,9 +288,9 @@ mod linux_ioctls {
     }
 
     // From linux/videodev2.h
-    ioctl!(write_ptr g_audio with b'V', 33; v4l2_audio);
+    ioctl!(read g_audio with b'V', 33; v4l2_audio);
     #[test]
-    fn test_ioctl_write_ptr() {
+    fn test_ioctl_read() {
         let file = tempfile().unwrap();
         let mut data: v4l2_audio = unsafe { mem::uninitialized() };
         let res = unsafe { g_audio(file.as_raw_fd(), &mut data) };
