@@ -212,7 +212,7 @@ fn test_process_vm_readv() {
         Ok(Parent { child }) => {
             close(w).unwrap();
             // wait for child
-            read(r, &mut vec![0u8]).unwrap();
+            read(r, &mut [0u8]).unwrap();
             close(r).unwrap();
 
             let ptr = vector.as_ptr() as usize;
