@@ -5,11 +5,11 @@ pub type ioctl_num_type = ::libc::c_ulong;
 mod consts {
     use ::sys::ioctl::platform::ioctl_num_type;
     #[doc(hidden)]
-    pub const VOID: ioctl_num_type = 0x20000000;
+    pub const VOID: ioctl_num_type = 0x2000_0000;
     #[doc(hidden)]
-    pub const OUT: ioctl_num_type = 0x40000000;
+    pub const OUT: ioctl_num_type = 0x4000_0000;
     #[doc(hidden)]
-    pub const IN: ioctl_num_type = 0x80000000;
+    pub const IN: ioctl_num_type = 0x8000_0000;
     #[doc(hidden)]
     pub const INOUT: ioctl_num_type = (IN|OUT);
     #[doc(hidden)]
