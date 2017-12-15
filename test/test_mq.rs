@@ -39,7 +39,7 @@ fn test_mq_send_and_receive() {
 fn test_mq_getattr() {
     const MSG_SIZE: c_long =  32;
     let initial_attr =  MqAttr::new(0, 10, MSG_SIZE, 0);
-    let mq_name = &CString::new("/attr_test_get_attr".as_bytes().as_ref()).unwrap();
+    let mq_name = &CString::new(b"/attr_test_get_attr".as_ref()).unwrap();
     let mqd = mq_open(mq_name, MQ_OFlag::O_CREAT | MQ_OFlag::O_WRONLY, Mode::S_IWUSR | Mode::S_IRUSR | Mode::S_IRGRP | Mode::S_IROTH, Some(&initial_attr)).unwrap();
     let read_attr = mq_getattr(mqd);
     assert!(read_attr.unwrap() == initial_attr);
@@ -52,7 +52,7 @@ fn test_mq_getattr() {
 fn test_mq_setattr() {
     const MSG_SIZE: c_long =  32;
     let initial_attr =  MqAttr::new(0, 10, MSG_SIZE, 0);
-    let mq_name = &CString::new("/attr_test_get_attr".as_bytes().as_ref()).unwrap();
+    let mq_name = &CString::new(b"/attr_test_get_attr".as_ref()).unwrap();
     let mqd = mq_open(mq_name, MQ_OFlag::O_CREAT | MQ_OFlag::O_WRONLY, Mode::S_IWUSR | Mode::S_IRUSR | Mode::S_IRGRP | Mode::S_IROTH, Some(&initial_attr)).unwrap();
 
     let new_attr =  MqAttr::new(0, 20, MSG_SIZE * 2, 100);
@@ -80,7 +80,7 @@ fn test_mq_setattr() {
 fn test_mq_set_nonblocking() {
     const MSG_SIZE: c_long =  32;
     let initial_attr =  MqAttr::new(0, 10, MSG_SIZE, 0);
-    let mq_name = &CString::new("/attr_test_get_attr".as_bytes().as_ref()).unwrap();
+    let mq_name = &CString::new(b"/attr_test_get_attr".as_ref()).unwrap();
     let mqd = mq_open(mq_name, MQ_OFlag::O_CREAT | MQ_OFlag::O_WRONLY, Mode::S_IWUSR | Mode::S_IRUSR | Mode::S_IRGRP | Mode::S_IROTH, Some(&initial_attr)).unwrap();
     mq_set_nonblock(mqd).unwrap();
     let new_attr = mq_getattr(mqd);
@@ -95,8 +95,8 @@ fn test_mq_set_nonblocking() {
 fn test_mq_unlink() {
     const MSG_SIZE: c_long =  32;
     let initial_attr =  MqAttr::new(0, 10, MSG_SIZE, 0);
-    let mq_name_opened = &CString::new("/mq_unlink_test".as_bytes().as_ref()).unwrap();
-    let mq_name_not_opened = &CString::new("/mq_unlink_test".as_bytes().as_ref()).unwrap();
+    let mq_name_opened = &CString::new(b"/mq_unlink_test".as_ref()).unwrap();
+    let mq_name_not_opened = &CString::new(b"/mq_unlink_test".as_ref()).unwrap();
     let mqd = mq_open(mq_name_opened, MQ_OFlag::O_CREAT | MQ_OFlag::O_WRONLY, Mode::S_IWUSR | Mode::S_IRUSR | Mode::S_IRGRP | Mode::S_IROTH, Some(&initial_attr)).unwrap();
 
     let res_unlink = mq_unlink(mq_name_opened);
