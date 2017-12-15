@@ -319,7 +319,7 @@ fn test_getcwd() {
 
 #[test]
 fn test_lseek() {
-    const CONTENTS: &'static [u8] = b"abcdef123456";
+    const CONTENTS: &[u8] = b"abcdef123456";
     let mut tmp = tempfile().unwrap();
     tmp.write_all(CONTENTS).unwrap();
     let tmpfd = tmp.into_raw_fd();
@@ -337,7 +337,7 @@ fn test_lseek() {
 #[cfg(any(target_os = "linux", target_os = "android"))]
 #[test]
 fn test_lseek64() {
-    const CONTENTS: &'static [u8] = b"abcdef123456";
+    const CONTENTS: &[u8] = b"abcdef123456";
     let mut tmp = tempfile().unwrap();
     tmp.write_all(CONTENTS).unwrap();
     let tmpfd = tmp.into_raw_fd();

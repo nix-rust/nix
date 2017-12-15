@@ -8,7 +8,7 @@ use std::os::unix::fs;
 
 #[test]
 fn test_openat() {
-    const CONTENTS: &'static [u8] = b"abcd";
+    const CONTENTS: &[u8] = b"abcd";
     let mut tmp = NamedTempFile::new().unwrap();
     tmp.write_all(CONTENTS).unwrap();
 
@@ -62,7 +62,7 @@ mod linux_android {
 
     #[test]
     fn test_splice() {
-        const CONTENTS: &'static [u8] = b"abcdef123456";
+        const CONTENTS: &[u8] = b"abcdef123456";
         let mut tmp = tempfile().unwrap();
         tmp.write_all(CONTENTS).unwrap();
 

@@ -98,7 +98,7 @@ fn test_aio_cancel_all() {
 #[test]
 #[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
 fn test_fsync() {
-    const INITIAL: &'static [u8] = b"abcdef123456";
+    const INITIAL: &[u8] = b"abcdef123456";
     let mut f = tempfile().unwrap();
     f.write_all(INITIAL).unwrap();
     let mut aiocb = AioCb::from_fd( f.as_raw_fd(),
@@ -119,7 +119,7 @@ fn test_fsync() {
 fn test_fsync_error() {
     use std::mem;
 
-    const INITIAL: &'static [u8] = b"abcdef123456";
+    const INITIAL: &[u8] = b"abcdef123456";
     // Create an invalid AioFsyncMode
     let mode = unsafe { mem::transmute(666) };
     let mut f = tempfile().unwrap();
@@ -134,8 +134,8 @@ fn test_fsync_error() {
 #[test]
 #[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
 fn test_aio_suspend() {
-    const INITIAL: &'static [u8] = b"abcdef123456";
-    const WBUF: &'static [u8] = b"CDEF";
+    const INITIAL: &[u8] = b"abcdef123456";
+    const WBUF: &[u8] = b"CDEF";
     let timeout = TimeSpec::seconds(10);
     let rbuf = Rc::new(vec![0; 4].into_boxed_slice());
     let mut f = tempfile().unwrap();
@@ -176,9 +176,9 @@ fn test_aio_suspend() {
 #[test]
 #[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
 fn test_read() {
-    const INITIAL: &'static [u8] = b"abcdef123456";
+    const INITIAL: &[u8] = b"abcdef123456";
     let rbuf = Rc::new(vec![0; 4].into_boxed_slice());
-    const EXPECT: &'static [u8] = b"cdef";
+    const EXPECT: &[u8] = b"cdef";
     let mut f = tempfile().unwrap();
     f.write_all(INITIAL).unwrap();
     {
@@ -205,7 +205,7 @@ fn test_read() {
 #[test]
 #[cfg(any(target_os = "freebsd", target_os = "macos"))]
 fn test_read_error() {
-    const INITIAL: &'static [u8] = b"abcdef123456";
+    const INITIAL: &[u8] = b"abcdef123456";
     let rbuf = Rc::new(vec![0; 4].into_boxed_slice());
     let mut f = tempfile().unwrap();
     f.write_all(INITIAL).unwrap();
@@ -222,9 +222,9 @@ fn test_read_error() {
 #[test]
 #[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
 fn test_read_into_mut_slice() {
-    const INITIAL: &'static [u8] = b"abcdef123456";
+    const INITIAL: &[u8] = b"abcdef123456";
     let mut rbuf = vec![0; 4];
-    const EXPECT: &'static [u8] = b"cdef";
+    const EXPECT: &[u8] = b"cdef";
     let mut f = tempfile().unwrap();
     f.write_all(INITIAL).unwrap();
     {
@@ -267,10 +267,10 @@ fn test_read_immutable_buffer() {
 #[test]
 #[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
 fn test_write() {
-    const INITIAL: &'static [u8] = b"abcdef123456";
+    const INITIAL: &[u8] = b"abcdef123456";
     let wbuf = "CDEF".to_string().into_bytes();
     let mut rbuf = Vec::new();
-    const EXPECT: &'static [u8] = b"abCDEF123456";
+    const EXPECT: &[u8] = b"abCDEF123456";
 
     let mut f = tempfile().unwrap();
     f.write_all(INITIAL).unwrap();
@@ -330,10 +330,10 @@ fn test_write_sigev_signal() {
     SIGNALED.store(false, Ordering::Relaxed);
     unsafe { sigaction(Signal::SIGUSR2, &sa) }.unwrap();
 
-    const INITIAL: &'static [u8] = b"abcdef123456";
-    const WBUF: &'static [u8] = b"CDEF";
+    const INITIAL: &[u8] = b"abcdef123456";
+    const WBUF: &[u8] = b"CDEF";
     let mut rbuf = Vec::new();
-    const EXPECT: &'static [u8] = b"abCDEF123456";
+    const EXPECT: &[u8] = b"abCDEF123456";
 
     let mut f = tempfile().unwrap();
     f.write_all(INITIAL).unwrap();
@@ -364,11 +364,11 @@ fn test_write_sigev_signal() {
 #[cfg(not(any(target_os = "ios", target_os = "macos")))]
 #[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
 fn test_lio_listio_wait() {
-    const INITIAL: &'static [u8] = b"abcdef123456";
-    const WBUF: &'static [u8] = b"CDEF";
+    const INITIAL: &[u8] = b"abcdef123456";
+    const WBUF: &[u8] = b"CDEF";
     let rbuf = Rc::new(vec![0; 4].into_boxed_slice());
     let mut rbuf2 = Vec::new();
-    const EXPECT: &'static [u8] = b"abCDEF123456";
+    const EXPECT: &[u8] = b"abCDEF123456";
     let mut f = tempfile().unwrap();
 
     f.write_all(INITIAL).unwrap();
@@ -407,11 +407,11 @@ fn test_lio_listio_wait() {
 #[cfg(not(any(target_os = "ios", target_os = "macos")))]
 #[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
 fn test_lio_listio_nowait() {
-    const INITIAL: &'static [u8] = b"abcdef123456";
-    const WBUF: &'static [u8] = b"CDEF";
+    const INITIAL: &[u8] = b"abcdef123456";
+    const WBUF: &[u8] = b"CDEF";
     let rbuf = Rc::new(vec![0; 4].into_boxed_slice());
     let mut rbuf2 = Vec::new();
-    const EXPECT: &'static [u8] = b"abCDEF123456";
+    const EXPECT: &[u8] = b"abCDEF123456";
     let mut f = tempfile().unwrap();
 
     f.write_all(INITIAL).unwrap();
@@ -455,11 +455,11 @@ fn test_lio_listio_nowait() {
 fn test_lio_listio_signal() {
     #[allow(unused_variables)]
     let m = ::SIGNAL_MTX.lock().expect("Mutex got poisoned by another test");
-    const INITIAL: &'static [u8] = b"abcdef123456";
-    const WBUF: &'static [u8] = b"CDEF";
+    const INITIAL: &[u8] = b"abcdef123456";
+    const WBUF: &[u8] = b"CDEF";
     let rbuf = Rc::new(vec![0; 4].into_boxed_slice());
     let mut rbuf2 = Vec::new();
-    const EXPECT: &'static [u8] = b"abCDEF123456";
+    const EXPECT: &[u8] = b"abCDEF123456";
     let mut f = tempfile().unwrap();
     let sa = SigAction::new(SigHandler::Handler(sigfunc),
                             SaFlags::SA_RESETHAND,
