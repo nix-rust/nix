@@ -208,8 +208,8 @@ fn test_process_vm_readv() {
     let mut vector = vec![1u8, 2, 3, 4, 5];
 
     let (r, w) = pipe().unwrap();
-    match fork() {
-        Ok(Parent { child }) => {
+    match fork().expect("Error: Fork Failed") {
+        Parent { child } => {
             close(w).unwrap();
             // wait for child
             read(r, &mut [0u8]).unwrap();
@@ -229,7 +229,7 @@ fn test_process_vm_readv() {
             assert_eq!(Ok(5), ret);
             assert_eq!(20u8, buf.iter().sum());
         },
-        Ok(Child) => {
+        Child => {
             let _ = close(r);
             for i in vector.iter_mut() {
                 *i += 1;
@@ -238,6 +238,5 @@ fn test_process_vm_readv() {
             let _ = close(w);
             loop { let _ = pause(); }
         },
-        Err(_) => panic!("fork failed")
     }
 }

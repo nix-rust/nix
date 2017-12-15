@@ -66,8 +66,8 @@ fn test_ptrace_cont() {
         return;
     }
 
-    match fork() {
-        Ok(Child) => {
+    match fork().expect("Error: Fork Failed") {
+        Child => {
             ptrace::traceme().unwrap();
             // As recommended by ptrace(2), raise SIGTRAP to pause the child
             // until the parent is ready to continue
@@ -76,7 +76,7 @@ fn test_ptrace_cont() {
             }
 
         },
-        Ok(Parent { child }) => {
+        Parent { child } => {
             assert_eq!(waitpid(child, None), Ok(WaitStatus::Stopped(child, Signal::SIGTRAP)));
             ptrace::cont(child, None).unwrap();
             assert_eq!(waitpid(child, None), Ok(WaitStatus::Stopped(child, Signal::SIGTRAP)));
@@ -86,6 +86,5 @@ fn test_ptrace_cont() {
                 _ => panic!("The process should have been killed"),
             }
         },
-        Err(_) => panic!("Error: Fork Failed")
     }
 }

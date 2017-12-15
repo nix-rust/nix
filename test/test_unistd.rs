@@ -20,9 +20,9 @@ fn test_fork_and_waitpid() {
     let m = ::FORK_MTX.lock().expect("Mutex got poisoned by another test");
 
     // Safe: Child only calls `_exit`, which is signal-safe
-    match fork() {
-        Ok(Child) => unsafe { _exit(0) },
-        Ok(Parent { child }) => {
+    match fork().expect("Error: Fork Failed") {
+        Child => unsafe { _exit(0) },
+        Parent { child } => {
             // assert that child was created and pid > 0
             let child_raw: ::libc::pid_t = child.into();
             assert!(child_raw > 0);
@@ -39,8 +39,6 @@ fn test_fork_and_waitpid() {
             }
 
         },
-        // panic, fork should never fail unless there is a serious problem with the OS
-        Err(_) => panic!("Error: Fork Failed")
     }
 }
 
@@ -51,17 +49,14 @@ fn test_wait() {
     let m = ::FORK_MTX.lock().expect("Mutex got poisoned by another test");
 
     // Safe: Child only calls `_exit`, which is signal-safe
-    let pid = fork();
-    match pid {
-        Ok(Child) => unsafe { _exit(0) },
-        Ok(Parent { child }) => {
+    match fork().expect("Error: Fork Failed") {
+        Child => unsafe { _exit(0) },
+        Parent { child } => {
             let wait_status = wait();
 
             // just assert that (any) one child returns with WaitStatus::Exited
             assert_eq!(wait_status, Ok(WaitStatus::Exited(child, 0)));
         },
-        // panic, fork should never fail unless there is a serious problem with the OS
-        Err(_) => panic!("Error: Fork Failed")
     }
 }
 
