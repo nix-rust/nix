@@ -213,15 +213,15 @@ exit 23";
 /// Mimic normal test output (hackishly).
 macro_rules! run_tests {
     ( $($test_fn:ident),* ) => {{
-        print!("\n");
+        println!();
 
         $(
             print!("test test_mount::{} ... ", stringify!($test_fn));
             $test_fn();
-            print!("ok\n");
+            println!("ok");
         )*
 
-        print!("\n");
+        println!();
     }}
 }
 
