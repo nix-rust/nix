@@ -14,7 +14,7 @@ fn test_writev() {
     for _ in 0..16 {
         let s: String = thread_rng().gen_ascii_chars().take(128).collect();
         let b = s.as_bytes();
-        to_write.extend(b.iter().map(|x| x.clone()));
+        to_write.extend(b.iter().cloned());
     }
     // Allocate and fill iovecs
     let mut iovecs = Vec::new();
@@ -84,7 +84,7 @@ fn test_readv() {
     // Cccumulate data from iovecs
     let mut read_buf = Vec::with_capacity(to_write.len());
     for iovec in iovecs.iter() {
-        read_buf.extend(iovec.as_slice().iter().map(|x| x.clone()));
+        read_buf.extend(iovec.as_slice().iter().cloned());
     }
     // Check whether iovecs contain all written data
     assert_eq!(read_buf.len(), to_write.len());
