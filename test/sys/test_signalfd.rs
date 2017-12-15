@@ -17,7 +17,7 @@ fn test_signalfd() {
     // Send a SIGUSR1 signal to the current process. Note that this uses `raise` instead of `kill`
     // because `kill` with `getpid` isn't correct during multi-threaded execution like during a
     // cargo test session. Instead use `raise` which does the correct thing by default.
-    raise(signal::SIGUSR1).ok().expect("Error: raise(SIGUSR1) failed");
+    raise(signal::SIGUSR1).expect("Error: raise(SIGUSR1) failed");
 
     // And now catch that same signal.
     let res = fd.read_signal().unwrap().unwrap();
