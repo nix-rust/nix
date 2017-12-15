@@ -7,7 +7,7 @@ use nix::pty::openpty;
 use nix::sys::termios::{self, LocalFlags, OutputFlags, Termios, tcgetattr};
 use nix::unistd::{read, write, close};
 
-/// Helper function analogous to std::io::Write::write_all, but for `RawFd`s
+/// Helper function analogous to `std::io::Write::write_all`, but for `RawFd`s
 fn write_all(f: RawFd, buf: &[u8]) {
     let mut len = 0;
     while len < buf.len() {

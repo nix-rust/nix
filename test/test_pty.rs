@@ -10,7 +10,7 @@ use nix::sys::termios::*;
 use nix::unistd::{write, close};
 
 /// Regression test for Issue #659
-/// This is the correct way to explicitly close a PtyMaster
+/// This is the correct way to explicitly close a `PtyMaster`
 #[test]
 fn test_explicit_close() {
     let mut f = {

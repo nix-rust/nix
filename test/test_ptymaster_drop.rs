@@ -6,7 +6,7 @@ use nix::unistd::close;
 use std::os::unix::io::AsRawFd;
 
 /// Regression test for Issue #659
-/// PtyMaster should panic rather than double close the file descriptor
+/// `PtyMaster` should panic rather than double close the file descriptor
 /// This must run in its own test process because it deliberately creates a race
 /// condition.
 #[test]
