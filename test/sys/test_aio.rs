@@ -150,7 +150,7 @@ fn test_aio_suspend() {
 
     let mut rcb = AioCb::from_boxed_slice( f.as_raw_fd(),
                             8,   //offset
-                            rbuf.clone(),
+                            Rc::clone(&rbuf),
                             0,   //priority
                             SigevNotify::SigevNone,
                             LioOpcode::LIO_READ);
@@ -184,7 +184,7 @@ fn test_read() {
     {
         let mut aiocb = AioCb::from_boxed_slice( f.as_raw_fd(),
                                2,   //offset
-                               rbuf.clone(),
+                               Rc::clone(&rbuf),
                                0,   //priority
                                SigevNotify::SigevNone,
                                LioOpcode::LIO_NOP);
@@ -211,7 +211,7 @@ fn test_read_error() {
     f.write_all(INITIAL).unwrap();
     let mut aiocb = AioCb::from_boxed_slice( f.as_raw_fd(),
                            -1,   //an invalid offset
-                           rbuf.clone(),
+                           Rc::clone(&rbuf),
                            0,   //priority
                            SigevNotify::SigevNone,
                            LioOpcode::LIO_NOP);
@@ -383,7 +383,7 @@ fn test_lio_listio_wait() {
 
         let mut rcb = AioCb::from_boxed_slice( f.as_raw_fd(),
                                 8,   //offset
-                                rbuf.clone(),
+                                Rc::clone(&rbuf),
                                 0,   //priority
                                 SigevNotify::SigevNone,
                                 LioOpcode::LIO_READ);
@@ -426,7 +426,7 @@ fn test_lio_listio_nowait() {
 
         let mut rcb = AioCb::from_boxed_slice( f.as_raw_fd(),
                                 8,   //offset
-                                rbuf.clone(),
+                                Rc::clone(&rbuf),
                                 0,   //priority
                                 SigevNotify::SigevNone,
                                 LioOpcode::LIO_READ);
@@ -479,7 +479,7 @@ fn test_lio_listio_signal() {
 
         let mut rcb = AioCb::from_boxed_slice( f.as_raw_fd(),
                                 8,   //offset
-                                rbuf.clone(),
+                                Rc::clone(&rbuf),
                                 0,   //priority
                                 SigevNotify::SigevNone,
                                 LioOpcode::LIO_READ);
