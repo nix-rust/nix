@@ -66,7 +66,7 @@ fn test_readv() {
         allocated += vec_len;
     }
     let mut iovecs = Vec::with_capacity(storage.len());
-    for v in storage.iter_mut() {
+    for v in &mut storage {
         iovecs.push(IoVec::from_mut_slice(&mut v[..]));
     }
     let pipe_res = pipe();
@@ -83,7 +83,7 @@ fn test_readv() {
     assert_eq!(to_write.len(), read);
     // Cccumulate data from iovecs
     let mut read_buf = Vec::with_capacity(to_write.len());
-    for iovec in iovecs.iter() {
+    for iovec in &iovecs {
         read_buf.extend(iovec.as_slice().iter().cloned());
     }
     // Check whether iovecs contain all written data
@@ -231,7 +231,7 @@ fn test_process_vm_readv() {
         },
         Child => {
             let _ = close(r);
-            for i in vector.iter_mut() {
+            for i in &mut vector {
                 *i += 1;
             }
             let _ = write(w, b"\0");
