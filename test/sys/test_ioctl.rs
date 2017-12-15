@@ -328,8 +328,8 @@ mod linux_ioctls {
     #[test]
     fn test_ioctl_write_buf() {
         let file = tempfile().unwrap();
-        let mut data: [spi_ioc_transfer; 4] = unsafe { mem::uninitialized() };
-        let res = unsafe { spi_ioc_message(file.as_raw_fd(), &mut data[..]) };
+        let data: [spi_ioc_transfer; 4] = unsafe { mem::zeroed() };
+        let res = unsafe { spi_ioc_message(file.as_raw_fd(), &data[..]) };
         assert!(res == Err(Sys(ENOTTY)) || res == Err(Sys(ENOSYS)));
     }
 
