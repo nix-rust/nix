@@ -407,7 +407,7 @@ impl<'a> Iterator for CmsgIterator<'a> {
             },
             (_, _) => unsafe {
                 Some(ControlMessage::Unknown(UnknownCmsg(
-                    &cmsg,
+                    cmsg,
                     slice::from_raw_parts(
                         cmsg_data.as_ptr() as *const _,
                         len))))

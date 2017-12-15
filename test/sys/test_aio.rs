@@ -54,7 +54,7 @@ fn test_cancel() {
     let f = tempfile().unwrap();
     let mut aiocb = AioCb::from_slice( f.as_raw_fd(),
                             0,   //offset
-                            &wbuf,
+                            wbuf,
                             0,   //priority
                             SigevNotify::SigevNone,
                             LioOpcode::LIO_NOP);
@@ -79,7 +79,7 @@ fn test_aio_cancel_all() {
     let f = tempfile().unwrap();
     let mut aiocb = AioCb::from_slice(f.as_raw_fd(),
                             0,   //offset
-                            &wbuf,
+                            wbuf,
                             0,   //priority
                             SigevNotify::SigevNone,
                             LioOpcode::LIO_NOP);
@@ -143,7 +143,7 @@ fn test_aio_suspend() {
 
     let mut wcb = AioCb::from_slice( f.as_raw_fd(),
                            2,   //offset
-                           &mut WBUF,
+                           WBUF,
                            0,   //priority
                            SigevNotify::SigevNone,
                            LioOpcode::LIO_WRITE);
@@ -254,7 +254,7 @@ fn test_read_immutable_buffer() {
     let f = tempfile().unwrap();
     let mut aiocb = AioCb::from_slice( f.as_raw_fd(),
                            2,   //offset
-                           &rbuf,
+                           rbuf,
                            0,   //priority
                            SigevNotify::SigevNone,
                            LioOpcode::LIO_NOP);
@@ -339,7 +339,7 @@ fn test_write_sigev_signal() {
     f.write_all(INITIAL).unwrap();
     let mut aiocb = AioCb::from_slice( f.as_raw_fd(),
                            2,   //offset
-                           &WBUF,
+                           WBUF,
                            0,   //priority
                            SigevNotify::SigevSignal {
                                signal: Signal::SIGUSR2,
@@ -376,7 +376,7 @@ fn test_lio_listio_wait() {
     {
         let mut wcb = AioCb::from_slice( f.as_raw_fd(),
                                2,   //offset
-                               &WBUF,
+                               WBUF,
                                0,   //priority
                                SigevNotify::SigevNone,
                                LioOpcode::LIO_WRITE);
@@ -419,7 +419,7 @@ fn test_lio_listio_nowait() {
     {
         let mut wcb = AioCb::from_slice( f.as_raw_fd(),
                                2,   //offset
-                               &WBUF,
+                               WBUF,
                                0,   //priority
                                SigevNotify::SigevNone,
                                LioOpcode::LIO_WRITE);
@@ -472,7 +472,7 @@ fn test_lio_listio_signal() {
     {
         let mut wcb = AioCb::from_slice( f.as_raw_fd(),
                                2,   //offset
-                               &WBUF,
+                               WBUF,
                                0,   //priority
                                SigevNotify::SigevNone,
                                LioOpcode::LIO_WRITE);
@@ -515,7 +515,7 @@ fn test_lio_listio_read_immutable() {
 
     let mut rcb = AioCb::from_slice( f.as_raw_fd(),
                            2,   //offset
-                           &rbuf,
+                           rbuf,
                            0,   //priority
                            SigevNotify::SigevNone,
                            LioOpcode::LIO_READ);

@@ -19,7 +19,7 @@ fn test_drop() {
     f.set_len(6).unwrap();
     let mut aiocb = AioCb::from_slice( f.as_raw_fd(),
                            2,   //offset
-                           &WBUF,
+                           WBUF,
                            0,   //priority
                            SigevNotify::SigevNone,
                            LioOpcode::LIO_NOP);
