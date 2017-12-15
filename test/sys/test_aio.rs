@@ -49,7 +49,7 @@ fn test_accessors() {
 #[test]
 #[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
 fn test_cancel() {
-    let wbuf: &'static [u8] = b"CDEF";
+    let wbuf: &[u8] = b"CDEF";
 
     let f = tempfile().unwrap();
     let mut aiocb = AioCb::from_slice( f.as_raw_fd(),
@@ -74,7 +74,7 @@ fn test_cancel() {
 #[test]
 #[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
 fn test_aio_cancel_all() {
-    let wbuf: &'static [u8] = b"CDEF";
+    let wbuf: &[u8] = b"CDEF";
 
     let f = tempfile().unwrap();
     let mut aiocb = AioCb::from_slice(f.as_raw_fd(),
@@ -250,7 +250,7 @@ fn test_read_into_mut_slice() {
 #[should_panic(expected = "Can't read into an immutable buffer")]
 #[cfg_attr(target_env = "musl", ignore)]
 fn test_read_immutable_buffer() {
-    let rbuf: &'static [u8] = b"CDEF";
+    let rbuf: &[u8] = b"CDEF";
     let f = tempfile().unwrap();
     let mut aiocb = AioCb::from_slice( f.as_raw_fd(),
                            2,   //offset
@@ -509,7 +509,7 @@ fn test_lio_listio_signal() {
 #[should_panic(expected = "Can't read into an immutable buffer")]
 #[cfg_attr(target_env = "musl", ignore)]
 fn test_lio_listio_read_immutable() {
-    let rbuf: &'static [u8] = b"abcd";
+    let rbuf: &[u8] = b"abcd";
     let f = tempfile().unwrap();
 
 
