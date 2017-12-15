@@ -347,7 +347,7 @@ fn test_write_sigev_signal() {
                            },
                            LioOpcode::LIO_NOP);
     aiocb.write().unwrap();
-    while SIGNALED.load(Ordering::Relaxed) == false {
+    while !SIGNALED.load(Ordering::Relaxed) {
         thread::sleep(time::Duration::from_millis(10));
     }
 
@@ -487,7 +487,7 @@ fn test_lio_listio_signal() {
         unsafe { sigaction(Signal::SIGUSR2, &sa) }.unwrap();
         let err = lio_listio(LioMode::LIO_NOWAIT, &[&mut wcb, &mut rcb], sigev_notify);
         err.expect("lio_listio failed");
-        while SIGNALED.load(Ordering::Relaxed) == false {
+        while !SIGNALED.load(Ordering::Relaxed) {
             thread::sleep(time::Duration::from_millis(10));
         }
 
