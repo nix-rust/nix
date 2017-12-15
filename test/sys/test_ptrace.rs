@@ -30,9 +30,8 @@ fn test_ptrace_getevent() {
 // Just make sure ptrace_getsiginfo can be called at all, for now.
 #[test]
 fn test_ptrace_getsiginfo() {
-    match ptrace::getsiginfo(getpid()) {
-        Err(Error::UnsupportedOperation) => panic!("ptrace_getsiginfo returns Error::UnsupportedOperation!"),
-        _ => (),
+    if let Err(Error::UnsupportedOperation) = ptrace::getsiginfo(getpid()) {
+        panic!("ptrace_getsiginfo returns Error::UnsupportedOperation!");
     }
 }
 
@@ -40,9 +39,8 @@ fn test_ptrace_getsiginfo() {
 #[test]
 fn test_ptrace_setsiginfo() {
     let siginfo = unsafe { mem::uninitialized() };
-    match ptrace::setsiginfo(getpid(), &siginfo) {
-        Err(Error::UnsupportedOperation) => panic!("ptrace_setsiginfo returns Error::UnsupportedOperation!"),
-        _ => (),
+    if let Err(Error::UnsupportedOperation) = ptrace::setsiginfo(getpid(), &siginfo) {
+        panic!("ptrace_setsiginfo returns Error::UnsupportedOperation!");
     }
 }
 
