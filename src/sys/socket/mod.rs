@@ -612,7 +612,7 @@ pub fn sendmsg<'a>(fd: RawFd, iov: &[IoVec<&'a [u8]>], cmsgs: &[ControlMessage<'
 
     let (name, namelen) = match addr {
         Some(addr) => { let (x, y) = unsafe { addr.as_ffi_pair() }; (x as *const _, y) }
-        None => (0 as *const _, 0),
+        None => (ptr::null(), 0),
     };
 
     let cmsg_ptr = if capacity > 0 {
@@ -644,7 +644,7 @@ pub fn recvmsg<'a, T>(fd: RawFd, iov: &[IoVec<&mut [u8]>], cmsg_buffer: Option<&
     let mut address: sockaddr_storage = unsafe { mem::uninitialized() };
     let (msg_control, msg_controllen) = match cmsg_buffer {
         Some(cmsg_buffer) => (cmsg_buffer as *mut _, mem::size_of_val(cmsg_buffer)),
-        None => (0 as *mut _, 0),
+        None => (ptr::null_mut(), 0),
     };
     let mut mhdr = unsafe {
         let mut mhdr: msghdr = mem::uninitialized();
