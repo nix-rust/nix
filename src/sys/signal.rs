@@ -599,7 +599,7 @@ mod sigevent {
 
     impl<'a> From<&'a libc::sigevent> for SigEvent {
         fn from(sigevent: &libc::sigevent) -> Self {
-            SigEvent{ sigevent: sigevent.clone() }
+            SigEvent{ sigevent: *sigevent }
         }
     }
 }
