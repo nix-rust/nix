@@ -226,7 +226,7 @@ impl IpMembershipRequest {
     pub fn new(group: Ipv4Addr, interface: Option<Ipv4Addr>) -> Self {
         IpMembershipRequest(libc::ip_mreq {
             imr_multiaddr: group.0,
-            imr_interface: interface.unwrap_or(Ipv4Addr::any()).0,
+            imr_interface: interface.unwrap_or_else(Ipv4Addr::any).0,
         })
     }
 }
