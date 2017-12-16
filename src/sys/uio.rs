@@ -141,7 +141,7 @@ pub struct IoVec<T>(libc::iovec, PhantomData<T>);
 
 impl<T> IoVec<T> {
     #[inline]
-    pub fn as_slice<'a>(&'a self) -> &'a [u8] {
+    pub fn as_slice(&self) -> &[u8] {
         use std::slice;
 
         unsafe {

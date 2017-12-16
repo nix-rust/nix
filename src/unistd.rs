@@ -748,7 +748,7 @@ pub fn sethostname<S: AsRef<OsStr>>(name: S) -> Result<()> {
 /// let hostname = hostname_cstr.to_str().expect("Hostname wasn't valid UTF-8");
 /// println!("Hostname: {}", hostname);
 /// ```
-pub fn gethostname<'a>(buffer: &'a mut [u8]) -> Result<&'a CStr> {
+pub fn gethostname(buffer: &mut [u8]) -> Result<&CStr> {
     let ptr = buffer.as_mut_ptr() as *mut c_char;
     let len = buffer.len() as size_t;
 
