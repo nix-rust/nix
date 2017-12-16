@@ -1037,7 +1037,7 @@ pub unsafe fn sockaddr_storage_to_addr(
         }
         libc::AF_INET6 => {
             assert!(len as usize == mem::size_of::<sockaddr_in6>());
-            Ok(SockAddr::Inet(InetAddr::V6((*(addr as *const _ as *const sockaddr_in6)))))
+            Ok(SockAddr::Inet(InetAddr::V6(*(addr as *const _ as *const sockaddr_in6))))
         }
         libc::AF_UNIX => {
             let sun = *(addr as *const _ as *const sockaddr_un);
