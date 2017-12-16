@@ -191,9 +191,10 @@ impl Signal {
     // implemented, we'll replace this function.
     #[inline]
     pub fn from_c_int(signum: libc::c_int) -> Result<Signal> {
-        match 0 < signum && signum < NSIG {
-            true => Ok(unsafe { mem::transmute(signum) }),
-            false => Err(Error::invalid_argument()),
+        if 0 < signum && signum < NSIG {
+            Ok(unsafe { mem::transmute(signum) })
+        } else {
+            Err(Error::invalid_argument())
         }
     }
 }
