@@ -750,8 +750,7 @@ impl SockAddr {
                     SysControlAddr(*(addr as *const sys_control::sockaddr_ctl)))),
                 // Other address families are currently not supported and simply yield a None
                 // entry instead of a proper conversion to a `SockAddr`.
-                Some(_) => None,
-                None => None,
+                Some(_) | None => None,
             }
         }
     }

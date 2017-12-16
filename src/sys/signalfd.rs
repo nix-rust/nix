@@ -127,8 +127,7 @@ impl Iterator for SignalFd {
     fn next(&mut self) -> Option<Self::Item> {
         match self.read_signal() {
             Ok(Some(sig)) => Some(sig),
-            Ok(None) => None,
-            Err(..) => None,
+            Ok(None) | Err(_) => None,
         }
     }
 }
