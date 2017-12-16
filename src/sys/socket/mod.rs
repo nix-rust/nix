@@ -689,7 +689,7 @@ pub fn socket<T: Into<Option<SockProtocol>>>(domain: AddressFamily, ty: SockType
     let feat_atomic = features::socket_atomic_cloexec();
 
     if feat_atomic {
-        ty = ty | flags.bits();
+        ty |= flags.bits();
     }
 
     // TODO: Check the kernel version
@@ -732,7 +732,7 @@ pub fn socketpair<T: Into<Option<SockProtocol>>>(domain: AddressFamily, ty: Sock
     let feat_atomic = features::socket_atomic_cloexec();
 
     if feat_atomic {
-        ty = ty | flags.bits();
+        ty |= flags.bits();
     }
     let mut fds = [-1, -1];
     let res = unsafe {
