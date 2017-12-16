@@ -69,7 +69,7 @@ impl Drop for PtyMaster {
 #[inline]
 pub fn grantpt(fd: &PtyMaster) -> Result<()> {
     if unsafe { libc::grantpt(fd.as_raw_fd()) } < 0 {
-        return Err(Error::last().into());
+        return Err(Error::last());
     }
 
     Ok(())
@@ -116,7 +116,7 @@ pub fn posix_openpt(flags: fcntl::OFlag) -> Result<PtyMaster> {
     };
 
     if fd < 0 {
-        return Err(Error::last().into());
+        return Err(Error::last());
     }
 
     Ok(PtyMaster(fd))
@@ -142,7 +142,7 @@ pub fn posix_openpt(flags: fcntl::OFlag) -> Result<PtyMaster> {
 pub unsafe fn ptsname(fd: &PtyMaster) -> Result<String> {
     let name_ptr = libc::ptsname(fd.as_raw_fd());
     if name_ptr.is_null() {
-        return Err(Error::last().into());
+        return Err(Error::last());
     }
 
     let name = CStr::from_ptr(name_ptr);
@@ -164,7 +164,7 @@ pub fn ptsname_r(fd: &PtyMaster) -> Result<String> {
     let mut name_buf = vec![0u8; 64];
     let name_buf_ptr = name_buf.as_mut_ptr() as *mut libc::c_char;
     if unsafe { libc::ptsname_r(fd.as_raw_fd(), name_buf_ptr, name_buf.capacity()) } != 0 {
-        return Err(Error::last().into());
+        return Err(Error::last());
     }
 
     // Find the first null-character terminating this string. This is guaranteed to succeed if the
@@ -185,7 +185,7 @@ pub fn ptsname_r(fd: &PtyMaster) -> Result<String> {
 #[inline]
 pub fn unlockpt(fd: &PtyMaster) -> Result<()> {
     if unsafe { libc::unlockpt(fd.as_raw_fd()) } < 0 {
-        return Err(Error::last().into());
+        return Err(Error::last());
     }
 
     Ok(())
