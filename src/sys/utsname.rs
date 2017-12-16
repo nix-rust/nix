@@ -4,11 +4,8 @@ use std::ffi::CStr;
 use std::str::from_utf8_unchecked;
 
 #[repr(C)]
-#[derive(Copy)]
+#[derive(Clone, Copy)]
 pub struct UtsName(libc::utsname);
-
-// workaround for `derive(Clone)` not working for fixed-length arrays
-impl Clone for UtsName { fn clone(&self) -> UtsName { *self } }
 
 impl UtsName {
     pub fn sysname(&self) -> &str {
