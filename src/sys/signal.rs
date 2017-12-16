@@ -435,9 +435,9 @@ pub fn pthread_sigmask(how: SigmaskHow,
     let res = unsafe {
         // if set or oldset is None, pass in null pointers instead
         libc::pthread_sigmask(how as libc::c_int,
-                             set.map_or_else(|| ptr::null::<libc::sigset_t>(),
+                             set.map_or_else(ptr::null::<libc::sigset_t>,
                                              |s| &s.sigset as *const libc::sigset_t),
-                             oldset.map_or_else(|| ptr::null_mut::<libc::sigset_t>(),
+                             oldset.map_or_else(ptr::null_mut::<libc::sigset_t>,
                                                 |os| &mut os.sigset as *mut libc::sigset_t))
     };
 
