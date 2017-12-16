@@ -111,9 +111,12 @@ impl<'a> AioCb<'a> {
         a.aio_nbytes = 0;
         a.aio_buf = null_mut();
 
-        let aiocb = AioCb { aiocb: a, mutable: false, in_progress: false,
-                            keeper: Keeper::none};
-        aiocb
+        AioCb {
+            aiocb: a,
+            mutable: false,
+            in_progress: false,
+            keeper: Keeper::none
+        }
     }
 
     /// Constructs a new `AioCb`.
@@ -136,9 +139,12 @@ impl<'a> AioCb<'a> {
         a.aio_buf = buf.as_ptr() as *mut c_void;
         a.aio_lio_opcode = opcode as libc::c_int;
 
-        let aiocb = AioCb { aiocb: a, mutable: true, in_progress: false,
-                            keeper: Keeper::phantom(PhantomData)};
-        aiocb
+        AioCb {
+            aiocb: a,
+            mutable: true,
+            in_progress: false,
+            keeper: Keeper::phantom(PhantomData)
+        }
     }
 
     /// Constructs a new `AioCb`.
@@ -164,9 +170,12 @@ impl<'a> AioCb<'a> {
         a.aio_buf = buf.as_ptr() as *mut c_void;
         a.aio_lio_opcode = opcode as libc::c_int;
 
-        let aiocb = AioCb{ aiocb: a, mutable: true, in_progress: false,
-                            keeper: Keeper::boxed(buf)};
-        aiocb
+        AioCb {
+            aiocb: a,
+            mutable: true,
+            in_progress: false,
+            keeper: Keeper::boxed(buf)
+        }
     }
 
     /// Like `from_mut_slice`, but works on constant slices rather than
@@ -195,9 +204,12 @@ impl<'a> AioCb<'a> {
         assert!(opcode != LioOpcode::LIO_READ, "Can't read into an immutable buffer");
         a.aio_lio_opcode = opcode as libc::c_int;
 
-        let aiocb = AioCb { aiocb: a, mutable: false, in_progress: false,
-                            keeper: Keeper::none};
-        aiocb
+        AioCb {
+            aiocb: a,
+            mutable: false,
+            in_progress: false,
+            keeper: Keeper::none
+        }
     }
 
     fn common_init(fd: RawFd, prio: libc::c_int,
