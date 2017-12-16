@@ -34,7 +34,7 @@ libc_enum!{
         SIGPIPE,
         SIGALRM,
         SIGTERM,
-        #[cfg(all(any(target_os = "android", target_os = "emscripten", target_os = "linux"), 
+        #[cfg(all(any(target_os = "android", target_os = "emscripten", target_os = "linux"),
                   not(any(target_arch = "mips", target_arch = "mips64"))))]
         SIGSTKFLT,
         SIGCHLD,
@@ -560,8 +560,8 @@ mod sigevent {
 
         #[cfg(any(target_os = "freebsd", target_os = "linux"))]
         fn set_tid(sev: &mut libc::sigevent, sigev_notify: &SigevNotify) {
-            sev.sigev_notify_thread_id = match sigev_notify {
-                &SigevNotify::SigevThreadId { thread_id, .. } => thread_id,
+            sev.sigev_notify_thread_id = match *sigev_notify {
+                SigevNotify::SigevThreadId { thread_id, .. } => thread_id,
                 _ => 0 as type_of_thread_id
             };
         }
