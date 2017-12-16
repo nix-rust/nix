@@ -349,7 +349,7 @@ impl From<libc::speed_t> for BaudRate {
             B3500000 => BaudRate::B3500000,
             #[cfg(any(target_os = "android", target_os = "linux"))]
             B4000000 => BaudRate::B4000000,
-            b @ _ => unreachable!("Invalid baud constant: {}", b),
+            b => unreachable!("Invalid baud constant: {}", b),
         }
     }
 }
