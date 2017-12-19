@@ -242,16 +242,17 @@ cfg_if!{
     if #[cfg(target_os = "android")] {
         execve_test_factory!(test_execve, execve, &CString::new("/system/bin/sh").unwrap());
         execve_test_factory!(test_fexecve, fexecve, File::open("/system/bin/sh").unwrap().into_raw_fd());
-    } else if #[cfg(any(target_os = "dragonfly",
-                        target_os = "freebsd",
+    } else if #[cfg(any(target_os = "freebsd",
+                        target_os = "linux",
                         target_os = "netbsd",
-                        target_os = "openbsd",
-                        target_os = "linux", ))] {
+                        target_os = "openbsd"))] {
         execve_test_factory!(test_execve, execve, &CString::new("/bin/sh").unwrap());
         execve_test_factory!(test_fexecve, fexecve, File::open("/bin/sh").unwrap().into_raw_fd());
-    } else if #[cfg(any(target_os = "ios", target_os = "macos", ))] {
+    } else if #[cfg(any(target_os = "dragonfly",
+                        target_os = "ios",
+                        target_os = "macos"))] {
         execve_test_factory!(test_execve, execve, &CString::new("/bin/sh").unwrap());
-        // No fexecve() on macos/ios.
+        // No fexecve() on macos/ios and DragonFly.
     }
 }
 

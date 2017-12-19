@@ -48,7 +48,6 @@ libc_bitflags!(
         O_DIRECTORY;
         /// Implicitly follow each `write()` with an `fdatasync()`.
         #[cfg(any(target_os = "android",
-                  target_os = "dragonfly",
                   target_os = "ios",
                   target_os = "linux",
                   target_os = "macos",
