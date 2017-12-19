@@ -16,3 +16,5 @@ mod test_epoll;
 mod test_pthread;
 #[cfg(any(target_os = "linux", target_os = "android"))]
 mod test_ptrace;
+#[cfg(any(target_os = "linux", target_os = "android"))]
+mod test_prctl;
