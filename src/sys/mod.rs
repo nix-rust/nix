@@ -57,6 +57,9 @@ pub mod time;
 #[cfg(any(target_os = "android", target_os = "linux"))]
 pub mod ptrace;
 
+#[cfg(any(target_os = "linux", target_os = "android"))]
+pub mod prctl;
+
 pub mod select;
 
 #[cfg(target_os = "linux")]
