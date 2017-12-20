@@ -11,7 +11,6 @@ use sys::time::TimeVal;
 use sys::uio::IoVec;
 
 mod addr;
-mod ffi;
 pub mod sockopt;
 
 /*
@@ -33,6 +32,8 @@ pub use self::addr::{
 pub use ::sys::socket::addr::netlink::NetlinkAddr;
 
 pub use libc::{
+    cmsghdr,
+    msghdr,
     sa_family_t,
     sockaddr,
     sockaddr_in,
@@ -295,8 +296,14 @@ unsafe fn copy_bytes<'a, 'b, T: ?Sized>(src: &T, dst: &'a mut &'b mut [u8]) {
     mem::swap(dst, &mut remainder);
 }
 
-
-use self::ffi::{cmsghdr, msghdr, type_of_cmsg_data, type_of_msg_iovlen, type_of_cmsg_len};
+cfg_if! {
+    // Darwin and DragonFly BSD always align struct cmsghdr to 32-bit only.
+    if #[cfg(any(target_os = "dragonfly", target_os = "ios", target_os = "macos"))] {
+        type align_of_cmsg_data = u32;
+    } else {
+        type align_of_cmsg_data = size_t;
+    }
+}
 
 /// A structure used to make room in a cmsghdr passed to recvmsg. The
 /// size and alignment match that of a cmsghdr followed by a T, but the
@@ -304,10 +311,17 @@ use self::ffi::{cmsghdr, msghdr, type_of_cmsg_data, type_of_msg_iovlen, type_of_
 /// to recvmsg.
 ///
 /// To make room for multiple messages, nest the type parameter with
-/// tuples, e.g.
-/// `let cmsg: CmsgSpace<([RawFd; 3], CmsgSpace<[RawFd; 2]>)> = CmsgSpace::new();`
+/// tuples:
+///
+/// ```
+/// use std::os::unix::io::RawFd;
+/// use nix::sys::socket::CmsgSpace;
+/// let cmsg: CmsgSpace<([RawFd; 3], CmsgSpace<[RawFd; 2]>)> = CmsgSpace::new();
+/// ```
+#[repr(C)]
 pub struct CmsgSpace<T> {
     _hdr: cmsghdr,
+    _pad: [align_of_cmsg_data; 0],
     _data: T,
 }
 
@@ -377,24 +391,25 @@ impl<'a> Iterator for CmsgIterator<'a> {
         if aligned_cmsg_len > self.buf.len() {
             return None;
         }
+        let cmsg_data = &self.buf[cmsg_align(sizeof_cmsghdr)..cmsg_len];
         self.buf = &self.buf[aligned_cmsg_len..];
         self.next += 1;
 
         match (cmsg.cmsg_level, cmsg.cmsg_type) {
             (libc::SOL_SOCKET, libc::SCM_RIGHTS) => unsafe {
                 Some(ControlMessage::ScmRights(
-                    slice::from_raw_parts(
-                        &cmsg.cmsg_data as *const _ as *const _, 1)))
+                    slice::from_raw_parts(cmsg_data.as_ptr() as *const _,
+                                          cmsg_data.len() / mem::size_of::<RawFd>())))
             },
             (libc::SOL_SOCKET, libc::SCM_TIMESTAMP) => unsafe {
                 Some(ControlMessage::ScmTimestamp(
-                    &*(&cmsg.cmsg_data as *const _ as *const _)))
+                    &*(cmsg_data.as_ptr() as *const _)))
             },
             (_, _) => unsafe {
                 Some(ControlMessage::Unknown(UnknownCmsg(
                     &cmsg,
                     slice::from_raw_parts(
-                        &cmsg.cmsg_data as *const _ as *const _,
+                        cmsg_data.as_ptr() as *const _,
                         len))))
             }
         }
@@ -487,8 +502,13 @@ pub enum ControlMessage<'a> {
 #[doc(hidden)]
 pub struct UnknownCmsg<'a>(&'a cmsghdr, &'a [u8]);
 
+// Round `len` up to meet the platform's required alignment for
+// `cmsghdr`s and trailing `cmsghdr` data.  This should match the
+// behaviour of CMSG_ALIGN from the Linux headers and do the correct
+// thing on other platforms that don't usually provide CMSG_ALIGN.
+#[inline]
 fn cmsg_align(len: usize) -> usize {
-    let align_bytes = mem::size_of::<type_of_cmsg_data>() - 1;
+    let align_bytes = mem::size_of::<align_of_cmsg_data>() - 1;
     (len + align_bytes) & !align_bytes
 }
 
@@ -513,17 +533,16 @@ impl<'a> ControlMessage<'a> {
         }
     }
 
-    // Unsafe: start and end of buffer must be size_t-aligned (that is,
-    // cmsg_align'd). Updates the provided slice; panics if the buffer
-    // is too small.
+    // Unsafe: start and end of buffer must be cmsg_align'd. Updates
+    // the provided slice; panics if the buffer is too small.
     unsafe fn encode_into<'b>(&self, buf: &mut &'b mut [u8]) {
         match *self {
             ControlMessage::ScmRights(fds) => {
                 let cmsg = cmsghdr {
-                    cmsg_len: self.len() as type_of_cmsg_len,
+                    cmsg_len: self.len() as _,
                     cmsg_level: libc::SOL_SOCKET,
                     cmsg_type: libc::SCM_RIGHTS,
-                    cmsg_data: [],
+                    ..mem::uninitialized()
                 };
                 copy_bytes(&cmsg, buf);
 
@@ -539,10 +558,10 @@ impl<'a> ControlMessage<'a> {
             },
             ControlMessage::ScmTimestamp(t) => {
                 let cmsg = cmsghdr {
-                    cmsg_len: self.len() as type_of_cmsg_len,
+                    cmsg_len: self.len() as _,
                     cmsg_level: libc::SOL_SOCKET,
                     cmsg_type: libc::SCM_TIMESTAMP,
-                    cmsg_data: [],
+                    ..mem::uninitialized()
                 };
                 copy_bytes(&cmsg, buf);
 
@@ -602,16 +621,18 @@ pub fn sendmsg<'a>(fd: RawFd, iov: &[IoVec<&'a [u8]>], cmsgs: &[ControlMessage<'
         ptr::null()
     };
 
-    let mhdr = msghdr {
-        msg_name: name as *const c_void,
-        msg_namelen: namelen,
-        msg_iov: iov.as_ptr(),
-        msg_iovlen: iov.len() as type_of_msg_iovlen,
-        msg_control: cmsg_ptr,
-        msg_controllen: capacity as type_of_cmsg_len,
-        msg_flags: 0,
+    let mhdr = unsafe {
+        let mut mhdr: msghdr = mem::uninitialized();
+        mhdr.msg_name =  name as *mut _;
+        mhdr.msg_namelen =  namelen;
+        mhdr.msg_iov =  iov.as_ptr() as *mut _;
+        mhdr.msg_iovlen =  iov.len() as _;
+        mhdr.msg_control =  cmsg_ptr as *mut _;
+        mhdr.msg_controllen =  capacity as _;
+        mhdr.msg_flags =  0;
+        mhdr
     };
-    let ret = unsafe { ffi::sendmsg(fd, &mhdr, flags.bits()) };
+    let ret = unsafe { libc::sendmsg(fd, &mhdr, flags.bits()) };
 
     Errno::result(ret).map(|r| r as usize)
 }
@@ -625,16 +646,18 @@ pub fn recvmsg<'a, T>(fd: RawFd, iov: &[IoVec<&mut [u8]>], cmsg_buffer: Option<&
         Some(cmsg_buffer) => (cmsg_buffer as *mut _, mem::size_of_val(cmsg_buffer)),
         None => (0 as *mut _, 0),
     };
-    let mut mhdr = msghdr {
-        msg_name: &mut address as *const _ as *const c_void,
-        msg_namelen: mem::size_of::<sockaddr_storage>() as socklen_t,
-        msg_iov: iov.as_ptr() as *const IoVec<&[u8]>, // safe cast to add const-ness
-        msg_iovlen: iov.len() as type_of_msg_iovlen,
-        msg_control: msg_control as *const c_void,
-        msg_controllen: msg_controllen as type_of_cmsg_len,
-        msg_flags: 0,
+    let mut mhdr = unsafe {
+        let mut mhdr: msghdr = mem::uninitialized();
+        mhdr.msg_name =  &mut address as *mut _ as *mut _;
+        mhdr.msg_namelen =  mem::size_of::<sockaddr_storage>() as socklen_t;
+        mhdr.msg_iov =  iov.as_ptr() as *mut _;
+        mhdr.msg_iovlen =  iov.len() as _;
+        mhdr.msg_control =  msg_control as *mut _;
+        mhdr.msg_controllen =  msg_controllen as _;
+        mhdr.msg_flags =  0;
+        mhdr
     };
-    let ret = unsafe { ffi::recvmsg(fd, &mut mhdr, flags.bits()) };
+    let ret = unsafe { libc::recvmsg(fd, &mut mhdr, flags.bits()) };
 
     Ok(unsafe { RecvMsg {
         bytes: try!(Errno::result(ret)) as usize,
@@ -851,7 +874,7 @@ pub fn connect(fd: RawFd, addr: &SockAddr) -> Result<()> {
 /// [Further reading](http://pubs.opengroup.org/onlinepubs/9699919799/functions/recv.html)
 pub fn recv(sockfd: RawFd, buf: &mut [u8], flags: MsgFlags) -> Result<usize> {
     unsafe {
-        let ret = ffi::recv(
+        let ret = libc::recv(
             sockfd,
             buf.as_ptr() as *mut c_void,
             buf.len() as size_t,
@@ -870,7 +893,7 @@ pub fn recvfrom(sockfd: RawFd, buf: &mut [u8]) -> Result<(usize, SockAddr)> {
         let addr: sockaddr_storage = mem::zeroed();
         let mut len = mem::size_of::<sockaddr_storage>() as socklen_t;
 
-        let ret = try!(Errno::result(ffi::recvfrom(
+        let ret = try!(Errno::result(libc::recvfrom(
             sockfd,
             buf.as_ptr() as *mut c_void,
             buf.len() as size_t,

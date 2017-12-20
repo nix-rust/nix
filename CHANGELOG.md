@@ -96,6 +96,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Fixed error handling in `AioCb::fsync`, `AioCb::read`, and `AioCb::write`.
   It is no longer an error to drop an `AioCb` that failed to enqueue in the OS.
   ([#715](https://github.com/nix-rust/nix/pull/715))
+- Fix potential memory corruption on non-Linux platforms when using
+  `sendmsg`/`recvmsg`, caused by mismatched `msghdr` definition.
+  ([#648](https://github.com/nix-rust/nix/pull/648))
 
 ### Removed
 - The syscall module has been removed. This only exposed enough functionality for
