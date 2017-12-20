@@ -255,7 +255,7 @@ macro_rules! convert_ioctl_res {
     );
 }
 
-/// Generates ioctl functions. See [::sys::ioctl](sys/ioctl/index.html).
+/// Generates ioctl functions. See [`::sys::ioctl`](sys/ioctl/index.html).
 #[macro_export]
 macro_rules! ioctl {
     ($(#[$attr:meta])* bad none $name:ident with $nr:expr) => (

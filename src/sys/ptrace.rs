@@ -151,7 +151,7 @@ fn ptrace_peek(request: Request, pid: Pid, addr: *mut c_void, data: *mut c_void)
 }
 
 /// Function for ptrace requests that return values from the data field.
-/// Some ptrace get requests populate structs or larger elements than c_long
+/// Some ptrace get requests populate structs or larger elements than `c_long`
 /// and therefore use the data field to return values. This function handles these
 /// requests.
 fn ptrace_get_data<T>(request: Request, pid: Pid) -> Result<T> {

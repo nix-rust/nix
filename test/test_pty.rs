@@ -10,7 +10,7 @@ use nix::sys::termios::*;
 use nix::unistd::{write, close};
 
 /// Regression test for Issue #659
-/// This is the correct way to explicitly close a PtyMaster
+/// This is the correct way to explicitly close a `PtyMaster`
 #[test]
 fn test_explicit_close() {
     let mut f = {
@@ -20,7 +20,7 @@ fn test_explicit_close() {
     };
     // This should work.  But if there's been a double close, then it will
     // return EBADF
-    f.write(b"whatever").unwrap();
+    f.write_all(b"whatever").unwrap();
 }
 
 /// Test equivalence of `ptsname` and `ptsname_r`

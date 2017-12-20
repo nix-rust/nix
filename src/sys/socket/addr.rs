@@ -222,7 +222,7 @@ impl AddressFamily {
     }
 }
 
-#[derive(Copy)]
+#[derive(Clone, Copy)]
 pub enum InetAddr {
     V4(libc::sockaddr_in),
     V6(libc::sockaddr_in6),
@@ -348,12 +348,6 @@ impl hash::Hash for InetAddr {
     }
 }
 
-impl Clone for InetAddr {
-    fn clone(&self) -> InetAddr {
-        *self
-    }
-}
-
 impl fmt::Display for InetAddr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
@@ -421,7 +415,7 @@ impl fmt::Display for IpAddr {
  *
  */
 
-#[derive(Copy)]
+#[derive(Clone, Copy)]
 pub struct Ipv4Addr(pub libc::in_addr);
 
 impl Ipv4Addr {
@@ -466,12 +460,6 @@ impl Eq for Ipv4Addr {
 impl hash::Hash for Ipv4Addr {
     fn hash<H: hash::Hasher>(&self, s: &mut H) {
         self.0.s_addr.hash(s)
-    }
-}
-
-impl Clone for Ipv4Addr {
-    fn clone(&self) -> Ipv4Addr {
-        *self
     }
 }
 
@@ -550,7 +538,7 @@ impl fmt::Display for Ipv6Addr {
 /// does not require that `sun_len` include the terminating null even for normal
 /// sockets.  Note that the actual sockaddr length is greater by
 /// `offset_of!(libc::sockaddr_un, sun_path)`
-#[derive(Copy)]
+#[derive(Clone, Copy)]
 pub struct UnixAddr(pub libc::sockaddr_un, pub usize);
 
 impl UnixAddr {
@@ -657,12 +645,6 @@ impl hash::Hash for UnixAddr {
     }
 }
 
-impl Clone for UnixAddr {
-    fn clone(&self) -> UnixAddr {
-        *self
-    }
-}
-
 impl fmt::Display for UnixAddr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if self.1 == 0 {
@@ -683,7 +665,7 @@ impl fmt::Display for UnixAddr {
  */
 
 /// Represents a socket address
-#[derive(Copy)]
+#[derive(Clone, Copy)]
 pub enum SockAddr {
     Inet(InetAddr),
     Unix(UnixAddr),
@@ -750,8 +732,7 @@ impl SockAddr {
                     SysControlAddr(*(addr as *const sys_control::sockaddr_ctl)))),
                 // Other address families are currently not supported and simply yield a None
                 // entry instead of a proper conversion to a `SockAddr`.
-                Some(_) => None,
-                None => None,
+                Some(_) | None => None,
             }
         }
     }
@@ -800,12 +781,6 @@ impl hash::Hash for SockAddr {
             #[cfg(any(target_os = "ios", target_os = "macos"))]
             SockAddr::SysControl(ref a) => a.hash(s),
         }
-    }
-}
-
-impl Clone for SockAddr {
-    fn clone(&self) -> SockAddr {
-        *self
     }
 }
 

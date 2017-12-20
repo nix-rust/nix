@@ -87,22 +87,22 @@ mod linux {
     #[test]
     fn test_op_none() {
         if cfg!(any(target_arch = "mips", target_arch = "mips64", target_arch="powerpc", target_arch="powerpc64")){
-            assert_eq!(io!(b'q', 10), 0x2000710A);
-            assert_eq!(io!(b'a', 255), 0x200061FF);
+            assert_eq!(io!(b'q', 10), 0x2000_710A);
+            assert_eq!(io!(b'a', 255), 0x2000_61FF);
         } else {
-            assert_eq!(io!(b'q', 10), 0x0000710A);
-            assert_eq!(io!(b'a', 255), 0x000061FF);
+            assert_eq!(io!(b'q', 10), 0x0000_710A);
+            assert_eq!(io!(b'a', 255), 0x0000_61FF);
         }
     }
 
     #[test]
     fn test_op_write() {
         if cfg!(any(target_arch = "mips", target_arch = "mips64", target_arch="powerpc", target_arch="powerpc64")){
-            assert_eq!(iow!(b'z', 10, 1), 0x80017A0A);
-            assert_eq!(iow!(b'z', 10, 512), 0x82007A0A);
+            assert_eq!(iow!(b'z', 10, 1), 0x8001_7A0A);
+            assert_eq!(iow!(b'z', 10, 512), 0x8200_7A0A);
         } else {
-            assert_eq!(iow!(b'z', 10, 1), 0x40017A0A);
-            assert_eq!(iow!(b'z', 10, 512), 0x42007A0A);
+            assert_eq!(iow!(b'z', 10, 1), 0x4001_7A0A);
+            assert_eq!(iow!(b'z', 10, 512), 0x4200_7A0A);
         }
     }
 
@@ -110,9 +110,9 @@ mod linux {
     #[test]
     fn test_op_write_64() {
         if cfg!(any(target_arch = "mips64", target_arch="powerpc64")){
-            assert_eq!(iow!(b'z', 10, (1 as u64) << 32), 0x80007A0A);
+            assert_eq!(iow!(b'z', 10, (1 as u64) << 32), 0x8000_7A0A);
         } else {
-            assert_eq!(iow!(b'z', 10, (1 as u64) << 32), 0x40007A0A);
+            assert_eq!(iow!(b'z', 10, (1 as u64) << 32), 0x4000_7A0A);
         }
 
     }
@@ -120,11 +120,11 @@ mod linux {
     #[test]
     fn test_op_read() {
         if cfg!(any(target_arch = "mips", target_arch = "mips64", target_arch="powerpc", target_arch="powerpc64")){
-            assert_eq!(ior!(b'z', 10, 1), 0x40017A0A);
-            assert_eq!(ior!(b'z', 10, 512), 0x42007A0A);
+            assert_eq!(ior!(b'z', 10, 1), 0x4001_7A0A);
+            assert_eq!(ior!(b'z', 10, 512), 0x4200_7A0A);
         } else {
-            assert_eq!(ior!(b'z', 10, 1), 0x80017A0A);
-            assert_eq!(ior!(b'z', 10, 512), 0x82007A0A);
+            assert_eq!(ior!(b'z', 10, 1), 0x8001_7A0A);
+            assert_eq!(ior!(b'z', 10, 512), 0x8200_7A0A);
         }
     }
 
@@ -132,22 +132,22 @@ mod linux {
     #[test]
     fn test_op_read_64() {
         if cfg!(any(target_arch = "mips64", target_arch="powerpc64")){
-            assert_eq!(ior!(b'z', 10, (1 as u64) << 32), 0x40007A0A);
+            assert_eq!(ior!(b'z', 10, (1 as u64) << 32), 0x4000_7A0A);
         } else {
-            assert_eq!(ior!(b'z', 10, (1 as u64) << 32), 0x80007A0A);
+            assert_eq!(ior!(b'z', 10, (1 as u64) << 32), 0x8000_7A0A);
         }
     }
 
     #[test]
     fn test_op_read_write() {
-        assert_eq!(iorw!(b'z', 10, 1), 0xC0017A0A);
-        assert_eq!(iorw!(b'z', 10, 512), 0xC2007A0A);
+        assert_eq!(iorw!(b'z', 10, 1), 0xC001_7A0A);
+        assert_eq!(iorw!(b'z', 10, 512), 0xC200_7A0A);
     }
 
     #[cfg(target_pointer_width = "64")]
     #[test]
     fn test_op_read_write_64() {
-        assert_eq!(iorw!(b'z', 10, (1 as u64) << 32), 0xC0007A0A);
+        assert_eq!(iorw!(b'z', 10, (1 as u64) << 32), 0xC000_7A0A);
     }
 }
 
@@ -160,44 +160,44 @@ mod linux {
 mod bsd {
     #[test]
     fn test_op_none() {
-        assert_eq!(io!(b'q', 10), 0x2000710A);
-        assert_eq!(io!(b'a', 255), 0x200061FF);
+        assert_eq!(io!(b'q', 10), 0x2000_710A);
+        assert_eq!(io!(b'a', 255), 0x2000_61FF);
     }
 
     #[test]
     fn test_op_write() {
-        assert_eq!(iow!(b'z', 10, 1), 0x80017A0A);
-        assert_eq!(iow!(b'z', 10, 512), 0x82007A0A);
+        assert_eq!(iow!(b'z', 10, 1), 0x8001_7A0A);
+        assert_eq!(iow!(b'z', 10, 512), 0x8200_7A0A);
     }
 
     #[cfg(target_pointer_width = "64")]
     #[test]
     fn test_op_write_64() {
-        assert_eq!(iow!(b'z', 10, (1 as u64) << 32), 0x80007A0A);
+        assert_eq!(iow!(b'z', 10, (1 as u64) << 32), 0x8000_7A0A);
     }
 
     #[test]
     fn test_op_read() {
-        assert_eq!(ior!(b'z', 10, 1), 0x40017A0A);
-        assert_eq!(ior!(b'z', 10, 512), 0x42007A0A);
+        assert_eq!(ior!(b'z', 10, 1), 0x4001_7A0A);
+        assert_eq!(ior!(b'z', 10, 512), 0x4200_7A0A);
     }
 
     #[cfg(target_pointer_width = "64")]
     #[test]
     fn test_op_read_64() {
-        assert_eq!(ior!(b'z', 10, (1 as u64) << 32), 0x40007A0A);
+        assert_eq!(ior!(b'z', 10, (1 as u64) << 32), 0x4000_7A0A);
     }
 
     #[test]
     fn test_op_read_write() {
-        assert_eq!(iorw!(b'z', 10, 1), 0xC0017A0A);
-        assert_eq!(iorw!(b'z', 10, 512), 0xC2007A0A);
+        assert_eq!(iorw!(b'z', 10, 1), 0xC001_7A0A);
+        assert_eq!(iorw!(b'z', 10, 512), 0xC200_7A0A);
     }
 
     #[cfg(target_pointer_width = "64")]
     #[test]
     fn test_op_read_write_64() {
-        assert_eq!(iorw!(b'z', 10, (1 as u64) << 32), 0xC0007A0A);
+        assert_eq!(iorw!(b'z', 10, (1 as u64) << 32), 0xC000_7A0A);
     }
 }
 
@@ -269,10 +269,10 @@ mod linux_ioctls {
     // From linux/videodev2.h
     ioctl!(write_ptr s_audio with b'V', 34; v4l2_audio);
     #[test]
-    fn test_ioctl_read() {
+    fn test_ioctl_write_ptr() {
         let file = tempfile().unwrap();
-        let data: v4l2_audio = unsafe { mem::uninitialized() };
-        let res = unsafe { g_audio(file.as_raw_fd(), &data) };
+        let data: v4l2_audio = unsafe { mem::zeroed() };
+        let res = unsafe { s_audio(file.as_raw_fd(), &data) };
         assert!(res == Err(Sys(ENOTTY)) || res == Err(Sys(ENOSYS)));
     }
 
@@ -288,9 +288,9 @@ mod linux_ioctls {
     }
 
     // From linux/videodev2.h
-    ioctl!(write_ptr g_audio with b'V', 33; v4l2_audio);
+    ioctl!(read g_audio with b'V', 33; v4l2_audio);
     #[test]
-    fn test_ioctl_write_ptr() {
+    fn test_ioctl_read() {
         let file = tempfile().unwrap();
         let mut data: v4l2_audio = unsafe { mem::uninitialized() };
         let res = unsafe { g_audio(file.as_raw_fd(), &mut data) };
@@ -328,8 +328,8 @@ mod linux_ioctls {
     #[test]
     fn test_ioctl_write_buf() {
         let file = tempfile().unwrap();
-        let mut data: [spi_ioc_transfer; 4] = unsafe { mem::uninitialized() };
-        let res = unsafe { spi_ioc_message(file.as_raw_fd(), &mut data[..]) };
+        let data: [spi_ioc_transfer; 4] = unsafe { mem::zeroed() };
+        let res = unsafe { spi_ioc_message(file.as_raw_fd(), &data[..]) };
         assert!(res == Err(Sys(ENOTTY)) || res == Err(Sys(ENOSYS)));
     }
 

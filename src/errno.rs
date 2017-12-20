@@ -675,7 +675,6 @@ mod consts {
         use self::Errno::*;
 
         match e {
-            0 => UnknownErrno,
             libc::EPERM => EPERM,
             libc::ENOENT => ENOENT,
             libc::ESRCH => ESRCH,
@@ -940,7 +939,6 @@ mod consts {
         use self::Errno::*;
 
         match e {
-            0 => UnknownErrno,
             libc::EPERM => EPERM,
             libc::ENOENT => ENOENT,
             libc::ESRCH => ESRCH,
@@ -1168,7 +1166,6 @@ mod consts {
         use self::Errno::*;
 
         match e {
-            0 => UnknownErrno,
             libc::EPERM => EPERM,
             libc::ENOENT => ENOENT,
             libc::ESRCH => ESRCH,
@@ -1391,7 +1388,6 @@ mod consts {
         use self::Errno::*;
 
         match e {
-            0 => UnknownErrno,
             libc::EPERM => EPERM,
             libc::ENOENT => ENOENT,
             libc::ESRCH => ESRCH,
@@ -1607,7 +1603,6 @@ mod consts {
         use self::Errno::*;
 
         match e {
-            0 => UnknownErrno,
             libc::EPERM => EPERM,
             libc::ENOENT => ENOENT,
             libc::ESRCH => ESRCH,
@@ -1819,7 +1814,6 @@ mod consts {
         use self::Errno::*;
 
         match e {
-            0 => UnknownErrno,
             libc::EPERM => EPERM,
             libc::ENOENT => ENOENT,
             libc::ESRCH => ESRCH,

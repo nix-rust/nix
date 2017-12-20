@@ -128,22 +128,22 @@ impl From<std::string::FromUtf8Error> for Error {
 
 impl error::Error for Error {
     fn description(&self) -> &str {
-        match self {
-            &Error::InvalidPath => "Invalid path",
-            &Error::InvalidUtf8 => "Invalid UTF-8 string",
-            &Error::UnsupportedOperation => "Unsupported Operation",
-            &Error::Sys(ref errno) => errno.desc(),
+        match *self {
+            Error::InvalidPath => "Invalid path",
+            Error::InvalidUtf8 => "Invalid UTF-8 string",
+            Error::UnsupportedOperation => "Unsupported Operation",
+            Error::Sys(ref errno) => errno.desc(),
         }
     }
 }
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            &Error::InvalidPath => write!(f, "Invalid path"),
-            &Error::InvalidUtf8 => write!(f, "Invalid UTF-8 string"),
-            &Error::UnsupportedOperation => write!(f, "Unsupported Operation"),
-            &Error::Sys(errno) => write!(f, "{:?}: {}", errno, errno.desc()),
+        match *self {
+            Error::InvalidPath => write!(f, "Invalid path"),
+            Error::InvalidUtf8 => write!(f, "Invalid UTF-8 string"),
+            Error::UnsupportedOperation => write!(f, "Unsupported Operation"),
+            Error::Sys(errno) => write!(f, "{:?}: {}", errno, errno.desc()),
         }
     }
 }

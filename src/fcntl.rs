@@ -152,8 +152,7 @@ pub fn openat<P: ?Sized + NixPath>(dirfd: RawFd, path: &P, oflag: OFlag, mode: M
     Errno::result(fd)
 }
 
-fn wrap_readlink_result<'a>(buffer: &'a mut[u8], res: ssize_t)
-  -> Result<&'a OsStr> {
+fn wrap_readlink_result(buffer: &mut[u8], res: ssize_t) -> Result<&OsStr> {
     match Errno::result(res) {
         Err(err) => Err(err),
         Ok(len) => {

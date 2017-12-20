@@ -11,14 +11,12 @@ fn test_wait_signal() {
     let m = ::FORK_MTX.lock().expect("Mutex got poisoned by another test");
 
     // Safe: The child only calls `pause` and/or `_exit`, which are async-signal-safe.
-    match fork() {
-      Ok(Child) => pause().unwrap_or_else(|_| unsafe { _exit(123) }),
-      Ok(Parent { child }) => {
-          kill(child, Some(SIGKILL)).ok().expect("Error: Kill Failed");
+    match fork().expect("Error: Fork Failed") {
+      Child => pause().unwrap_or_else(|_| unsafe { _exit(123) }),
+      Parent { child } => {
+          kill(child, Some(SIGKILL)).expect("Error: Kill Failed");
           assert_eq!(waitpid(child, None), Ok(WaitStatus::Signaled(child, SIGKILL, false)));
       },
-      // panic, fork should never fail unless there is a serious problem with the OS
-      Err(_) => panic!("Error: Fork Failed")
     }
 }
 
@@ -28,13 +26,11 @@ fn test_wait_exit() {
     let m = ::FORK_MTX.lock().expect("Mutex got poisoned by another test");
 
     // Safe: Child only calls `_exit`, which is async-signal-safe.
-    match fork() {
-      Ok(Child) => unsafe { _exit(12); },
-      Ok(Parent { child }) => {
+    match fork().expect("Error: Fork Failed") {
+      Child => unsafe { _exit(12); },
+      Parent { child } => {
           assert_eq!(waitpid(child, None), Ok(WaitStatus::Exited(child, 12)));
       },
-      // panic, fork should never fail unless there is a serious problem with the OS
-      Err(_) => panic!("Error: Fork Failed")
     }
 }
 
@@ -100,10 +96,9 @@ mod ptrace {
         #[allow(unused_variables)]
         let m = ::FORK_MTX.lock().expect("Mutex got poisoned by another test");
 
-        match fork() {
-            Ok(Child) => ptrace_child(),
-            Ok(Parent { child }) => ptrace_parent(child),
-            Err(_) => panic!("Error: Fork Failed")
+        match fork().expect("Error: Fork Failed") {
+            Child => ptrace_child(),
+            Parent { child } => ptrace_parent(child),
         }
     }
 }

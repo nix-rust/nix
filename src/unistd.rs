@@ -480,7 +480,7 @@ pub fn mkfifo<P: ?Sized + NixPath>(path: &P, mode: Mode) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
-/// Returns the current directory as a PathBuf
+/// Returns the current directory as a `PathBuf`
 ///
 /// Err is returned if the current user doesn't have the permission to read or search a component
 /// of the current path.
@@ -729,7 +729,7 @@ pub fn sethostname<S: AsRef<OsStr>>(name: S) -> Result<()> {
 }
 
 /// Get the host name and store it in the provided buffer, returning a pointer
-/// the CStr in that buffer on success (see
+/// the `CStr` in that buffer on success (see
 /// [gethostname(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/gethostname.html)).
 ///
 /// This function call attempts to get the host name for the running system and
@@ -748,7 +748,7 @@ pub fn sethostname<S: AsRef<OsStr>>(name: S) -> Result<()> {
 /// let hostname = hostname_cstr.to_str().expect("Hostname wasn't valid UTF-8");
 /// println!("Hostname: {}", hostname);
 /// ```
-pub fn gethostname<'a>(buffer: &'a mut [u8]) -> Result<&'a CStr> {
+pub fn gethostname(buffer: &mut [u8]) -> Result<&CStr> {
     let ptr = buffer.as_mut_ptr() as *mut c_char;
     let len = buffer.len() as size_t;
 
@@ -1337,7 +1337,7 @@ pub fn sleep(seconds: libc::c_uint) -> c_uint {
 
 /// Creates a regular file which persists even after process termination
 ///
-/// * `template`: a path whose 6 rightmost characters must be X, e.g. /tmp/tmpfile_XXXXXX
+/// * `template`: a path whose 6 rightmost characters must be X, e.g. `/tmp/tmpfile_XXXXXX`
 /// * returns: tuple of file descriptor and filename
 ///
 /// Err is returned either if no temporary filename could be created or the template doesn't

@@ -226,7 +226,7 @@ impl IpMembershipRequest {
     pub fn new(group: Ipv4Addr, interface: Option<Ipv4Addr>) -> Self {
         IpMembershipRequest(libc::ip_mreq {
             imr_multiaddr: group.0,
-            imr_interface: interface.unwrap_or(Ipv4Addr::any()).0,
+            imr_interface: interface.unwrap_or_else(Ipv4Addr::any).0,
         })
     }
 }
@@ -407,7 +407,7 @@ impl<'a> Iterator for CmsgIterator<'a> {
             },
             (_, _) => unsafe {
                 Some(ControlMessage::Unknown(UnknownCmsg(
-                    &cmsg,
+                    cmsg,
                     slice::from_raw_parts(
                         cmsg_data.as_ptr() as *const _,
                         len))))
@@ -612,7 +612,7 @@ pub fn sendmsg<'a>(fd: RawFd, iov: &[IoVec<&'a [u8]>], cmsgs: &[ControlMessage<'
 
     let (name, namelen) = match addr {
         Some(addr) => { let (x, y) = unsafe { addr.as_ffi_pair() }; (x as *const _, y) }
-        None => (0 as *const _, 0),
+        None => (ptr::null(), 0),
     };
 
     let cmsg_ptr = if capacity > 0 {
@@ -644,7 +644,7 @@ pub fn recvmsg<'a, T>(fd: RawFd, iov: &[IoVec<&mut [u8]>], cmsg_buffer: Option<&
     let mut address: sockaddr_storage = unsafe { mem::uninitialized() };
     let (msg_control, msg_controllen) = match cmsg_buffer {
         Some(cmsg_buffer) => (cmsg_buffer as *mut _, mem::size_of_val(cmsg_buffer)),
-        None => (0 as *mut _, 0),
+        None => (ptr::null_mut(), 0),
     };
     let mut mhdr = unsafe {
         let mut mhdr: msghdr = mem::uninitialized();
@@ -689,7 +689,7 @@ pub fn socket<T: Into<Option<SockProtocol>>>(domain: AddressFamily, ty: SockType
     let feat_atomic = features::socket_atomic_cloexec();
 
     if feat_atomic {
-        ty = ty | flags.bits();
+        ty |= flags.bits();
     }
 
     // TODO: Check the kernel version
@@ -732,7 +732,7 @@ pub fn socketpair<T: Into<Option<SockProtocol>>>(domain: AddressFamily, ty: Sock
     let feat_atomic = features::socket_atomic_cloexec();
 
     if feat_atomic {
-        ty = ty | flags.bits();
+        ty |= flags.bits();
     }
     let mut fds = [-1, -1];
     let res = unsafe {
@@ -1015,9 +1015,9 @@ pub fn getsockname(fd: RawFd) -> Result<SockAddr> {
     }
 }
 
-/// Return the appropriate SockAddr type from a `sockaddr_storage` of a certain
+/// Return the appropriate `SockAddr` type from a `sockaddr_storage` of a certain
 /// size.  In C this would usually be done by casting.  The `len` argument
-/// should be the number of bytes in the sockaddr_storage that are actually
+/// should be the number of bytes in the `sockaddr_storage` that are actually
 /// allocated and valid.  It must be at least as large as all the useful parts
 /// of the structure.  Note that in the case of a `sockaddr_un`, `len` need not
 /// include the terminating null.
@@ -1037,7 +1037,7 @@ pub unsafe fn sockaddr_storage_to_addr(
         }
         libc::AF_INET6 => {
             assert!(len as usize == mem::size_of::<sockaddr_in6>());
-            Ok(SockAddr::Inet(InetAddr::V6((*(addr as *const _ as *const sockaddr_in6)))))
+            Ok(SockAddr::Inet(InetAddr::V6(*(addr as *const _ as *const sockaddr_in6))))
         }
         libc::AF_UNIX => {
             let sun = *(addr as *const _ as *const sockaddr_un);

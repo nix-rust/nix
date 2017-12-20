@@ -26,7 +26,7 @@ use std::os::unix::io::RawFd;
 use std::sync::Mutex;
 use nix::unistd::read;
 
-/// Helper function analogous to std::io::Read::read_exact, but for `RawFD`s
+/// Helper function analogous to `std::io::Read::read_exact`, but for `RawFD`s
 fn read_exact(f: RawFd, buf: &mut  [u8]) {
     let mut len = 0;
     while len < buf.len() {

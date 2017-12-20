@@ -312,13 +312,13 @@ pub fn ev_set(ev: &mut KEvent,
 fn test_struct_kevent() {
     let udata : intptr_t = 12345;
 
-    let expected = libc::kevent{ident: 0xdeadbeef,
+    let expected = libc::kevent{ident: 0xdead_beef,
                                 filter: libc::EVFILT_READ,
                                 flags: libc::EV_ONESHOT | libc::EV_ADD,
                                 fflags: libc::NOTE_CHILD | libc::NOTE_EXIT,
                                 data: 0x1337,
                                 udata: udata as type_of_udata};
-    let actual = KEvent::new(0xdeadbeef,
+    let actual = KEvent::new(0xdead_beef,
                              EventFilter::EVFILT_READ,
                              EventFlag::EV_ONESHOT | EventFlag::EV_ADD,
                              FilterFlag::NOTE_CHILD | FilterFlag::NOTE_EXIT,

@@ -14,7 +14,7 @@ fn test_writev() {
     for _ in 0..16 {
         let s: String = thread_rng().gen_ascii_chars().take(128).collect();
         let b = s.as_bytes();
-        to_write.extend(b.iter().map(|x| x.clone()));
+        to_write.extend(b.iter().cloned());
     }
     // Allocate and fill iovecs
     let mut iovecs = Vec::new();
@@ -66,7 +66,7 @@ fn test_readv() {
         allocated += vec_len;
     }
     let mut iovecs = Vec::with_capacity(storage.len());
-    for v in storage.iter_mut() {
+    for v in &mut storage {
         iovecs.push(IoVec::from_mut_slice(&mut v[..]));
     }
     let pipe_res = pipe();
@@ -83,8 +83,8 @@ fn test_readv() {
     assert_eq!(to_write.len(), read);
     // Cccumulate data from iovecs
     let mut read_buf = Vec::with_capacity(to_write.len());
-    for iovec in iovecs.iter() {
-        read_buf.extend(iovec.as_slice().iter().map(|x| x.clone()));
+    for iovec in &iovecs {
+        read_buf.extend(iovec.as_slice().iter().cloned());
     }
     // Check whether iovecs contain all written data
     assert_eq!(read_buf.len(), to_write.len());
@@ -208,11 +208,11 @@ fn test_process_vm_readv() {
     let mut vector = vec![1u8, 2, 3, 4, 5];
 
     let (r, w) = pipe().unwrap();
-    match fork() {
-        Ok(Parent { child }) => {
+    match fork().expect("Error: Fork Failed") {
+        Parent { child } => {
             close(w).unwrap();
             // wait for child
-            read(r, &mut vec![0u8]).unwrap();
+            read(r, &mut [0u8]).unwrap();
             close(r).unwrap();
 
             let ptr = vector.as_ptr() as usize;
@@ -229,15 +229,14 @@ fn test_process_vm_readv() {
             assert_eq!(Ok(5), ret);
             assert_eq!(20u8, buf.iter().sum());
         },
-        Ok(Child) => {
+        Child => {
             let _ = close(r);
-            for i in vector.iter_mut() {
+            for i in &mut vector {
                 *i += 1;
             }
             let _ = write(w, b"\0");
             let _ = close(w);
             loop { let _ = pause(); }
         },
-        Err(_) => panic!("fork failed")
     }
 }
