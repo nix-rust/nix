@@ -4,7 +4,6 @@
 //! of interfaces and their associated addresses.
 
 use std::ffi;
-use std::fmt;
 use std::iter::Iterator;
 use std::mem;
 use std::option::Option;
@@ -16,7 +15,7 @@ use sys::socket::SockAddr;
 use net::if_::*;
 
 /// Describes a single address for an interface as returned by `getifaddrs`.
-#[derive(Clone, Eq, Hash, PartialEq)]
+#[derive(Clone, Eq, Hash, PartialEq, Debug)]
 pub struct InterfaceAddress {
     /// Name of the network interface
     pub interface_name: String,
@@ -30,12 +29,6 @@ pub struct InterfaceAddress {
     pub broadcast: Option<SockAddr>,
     /// Point-to-point destination address
     pub destination: Option<SockAddr>,
-}
-
-impl fmt::Debug for InterfaceAddress {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "InterfaceAddress ({:?})", self.interface_name)
-    }
 }
 
 cfg_if! {

@@ -357,6 +357,12 @@ impl fmt::Display for InetAddr {
     }
 }
 
+impl fmt::Debug for InetAddr {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Display::fmt(self, f)
+    }
+}
+
 /*
  *
  * ===== IpAddr =====
@@ -406,6 +412,12 @@ impl fmt::Display for IpAddr {
             IpAddr::V4(ref v4) => v4.fmt(f),
             IpAddr::V6(ref v6) => v6.fmt(f)
         }
+    }
+}
+
+impl fmt::Debug for IpAddr {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Display::fmt(self, f)
     }
 }
 
@@ -470,6 +482,12 @@ impl fmt::Display for Ipv4Addr {
     }
 }
 
+impl fmt::Debug for Ipv4Addr {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Display::fmt(self, f)
+    }
+}
+
 /*
  *
  * ===== Ipv6Addr =====
@@ -521,6 +539,12 @@ impl Ipv6Addr {
 impl fmt::Display for Ipv6Addr {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         self.to_std().fmt(fmt)
+    }
+}
+
+impl fmt::Debug for Ipv6Addr {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Display::fmt(self, f)
     }
 }
 
@@ -655,6 +679,12 @@ impl fmt::Display for UnixAddr {
             let display = String::from_utf8_lossy(&self.sun_path()[1..]);
             write!(f, "@{}", display)
         }
+    }
+}
+
+impl fmt::Debug for UnixAddr {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Display::fmt(self, f)
     }
 }
 
@@ -850,6 +880,12 @@ pub mod netlink {
             write!(f, "pid: {} groups: {}", self.pid(), self.groups())
         }
     }
+
+    impl fmt::Debug for NetlinkAddr {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            fmt::Display::fmt(self, f)
+        }
+    }
 }
 
 #[cfg(any(target_os = "ios", target_os = "macos"))]
@@ -946,6 +982,12 @@ pub mod sys_control {
     impl fmt::Display for SysControlAddr {
         fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
             write!(f, "id: {} unit: {}", self.id(), self.unit())
+        }
+    }
+
+    impl fmt::Debug for SysControlAddr {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            fmt::Display::fmt(self, f)
         }
     }
 }
