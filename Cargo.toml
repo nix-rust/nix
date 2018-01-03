@@ -23,7 +23,7 @@ gcc = "0.3"
 
 [dev-dependencies]
 lazy_static = "1"
-rand = "0.3.8"
+rand = "0.4"
 tempdir = "0.3"
 tempfile = "2"
 
