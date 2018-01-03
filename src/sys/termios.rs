@@ -1023,6 +1023,19 @@ pub fn cfmakeraw(termios: &mut Termios) {
     termios.update_wrapper();
 }
 
+/// Configures the port to "sane" mode (like the configuration of a newly created terminal) (see
+/// [tcsetattr(3)](https://www.freebsd.org/cgi/man.cgi?query=tcsetattr)).
+///
+/// Note that this is a non-standard function, available on FreeBSD.
+#[cfg(target_os = "freebsd")]
+pub fn cfmakesane(termios: &mut Termios) {
+    let inner_termios = unsafe { termios.get_libc_termios_mut() };
+    unsafe {
+        libc::cfmakesane(inner_termios);
+    }
+    termios.update_wrapper();
+}
+
 /// Return the configuration of a port
 /// [tcgetattr(3p)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/tcgetattr.html)).
 ///

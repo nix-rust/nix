@@ -15,6 +15,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#832](https://github.com/nix-rust/nix/pull/832))
 - Added `EVFILT_EMPTY`, `EVFILT_PROCDESC` and `EVFILT_SENDFILE` on FreeBSD.
   ([#825](https://github.com/nix-rust/nix/pull/825))
+- Exposed `termios::cfmakesane` on FreeBSD.
+  ([#825](https://github.com/nix-rust/nix/pull/825))
 
 ### Changed
 - Display and Debug for SysControlAddr now includes all fields.
