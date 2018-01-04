@@ -45,6 +45,12 @@ impl IntoRawFd for PtyMaster {
     }
 }
 
+impl FromRawFd for PtyMaster {
+    unsafe fn from_raw_fd(fd: RawFd) -> Self {
+        PtyMaster(fd)
+    }
+}
+
 impl Drop for PtyMaster {
     fn drop(&mut self) {
         // On drop, we ignore errors like EINTR and EIO because there's no clear
