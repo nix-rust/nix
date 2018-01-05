@@ -445,6 +445,27 @@ pub fn pthread_sigmask(how: SigmaskHow,
     Errno::result(res).map(drop)
 }
 
+/// Examine and change blocked signals.
+///
+/// For more informations see the [`sigprocmask` man
+/// pages](http://pubs.opengroup.org/onlinepubs/9699919799/functions/sigprocmask.html).
+pub fn sigprocmask(how: SigmaskHow, set: Option<&SigSet>, oldset: Option<&mut SigSet>) -> Result<()> {
+    if set.is_none() && oldset.is_none() {
+        return Ok(())
+    }
+
+    let res = unsafe {
+        // if set or oldset is None, pass in null pointers instead
+        libc::sigprocmask(how as libc::c_int,
+                          set.map_or_else(ptr::null::<libc::sigset_t>,
+                                          |s| &s.sigset as *const libc::sigset_t),
+                          oldset.map_or_else(ptr::null_mut::<libc::sigset_t>,
+                                             |os| &mut os.sigset as *mut libc::sigset_t))
+    };
+
+    Errno::result(res).map(drop)
+}
+
 pub fn kill<T: Into<Option<Signal>>>(pid: ::unistd::Pid, signal: T) -> Result<()> {
     let res = unsafe { libc::kill(pid.into(),
                                   match signal.into() {
