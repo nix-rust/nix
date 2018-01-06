@@ -50,6 +50,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#741](https://github.com/nix-rust/nix/pull/741))
 - Added more standard trait implementations for various types.
   ([#814](https://github.com/nix-rust/nix/pull/814))
+- Added `sigprocmask` to the signal module.
+  ([#826](https://github.com/nix-rust/nix/pull/826))
 
 ### Changed
 - Use native `pipe2` on all BSD targets.  Users should notice no difference.
