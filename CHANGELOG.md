@@ -7,6 +7,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+- Added `alarm`. ([#830](https://github.com/nix-rust/nix/pull/830))
+
 ### Changed
 
 ### Fixed
