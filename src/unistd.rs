@@ -1316,14 +1316,12 @@ pub fn initgroups(user: &CStr, group: Gid) -> Result<()> {
     Errno::result(res).map(|_| ())
 }
 
-/// Suspend the thread until a signal is received
+/// Suspend the thread until a signal is received.
 ///
-/// See also [pause(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/pause.html)
+/// See also [pause(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/pause.html).
 #[inline]
-pub fn pause() -> Result<()> {
-    let res = unsafe { libc::pause() };
-
-    Errno::result(res).map(drop)
+pub fn pause() {
+    unsafe { libc::pause() };
 }
 
 /// Suspend execution for an interval of time
