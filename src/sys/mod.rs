@@ -54,19 +54,9 @@ pub mod socket;
 
 pub mod stat;
 
-#[cfg(all(target_os = "linux",
-          any(target_arch = "x86",
-              target_arch = "x86_64",
-              target_arch = "arm")),
-          )]
+#[cfg(any(target_os = "android", target_os = "linux", target_os = "macos"))]
 pub mod statfs;
 
-#[cfg(all(any(target_os = "linux",
-              target_os = "macos"),
-          any(target_arch = "x86",
-              target_arch = "x86_64",
-              target_arch = "arm")),
-          )]
 pub mod statvfs;
 
 pub mod termios;
