@@ -20,6 +20,14 @@ pub mod event;
 #[cfg(target_os = "linux")]
 pub mod eventfd;
 
+#[cfg(any(target_os = "android",
+          target_os = "dragonfly",
+          target_os = "freebsd",
+          target_os = "ios",
+          target_os = "linux",
+          target_os = "macos",
+          target_os = "netbsd",
+          target_os = "openbsd"))]
 #[macro_use]
 pub mod ioctl;
 

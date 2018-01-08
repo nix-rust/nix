@@ -1029,7 +1029,7 @@ pub mod sys_control {
     const CTL_IOC_INFO: u8 = 3;
     const MAX_KCTL_NAME: usize = 96;
 
-    ioctl!(readwrite ctl_info with CTL_IOC_MAGIC, CTL_IOC_INFO; ctl_ioc_info);
+    ioctl_readwrite!(ctl_info, CTL_IOC_MAGIC, CTL_IOC_INFO, ctl_ioc_info);
 
     #[derive(Copy, Clone)]
     #[repr(C)]
