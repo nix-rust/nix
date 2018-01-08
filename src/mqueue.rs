@@ -5,7 +5,7 @@
 use Result;
 use errno::Errno;
 
-use libc::{self, c_char, c_long, mode_t, mqd_t, size_t};
+use libc::{self, c_char, c_long, mqd_t, size_t};
 use std::ffi::CString;
 use sys::stat::Mode;
 use std::mem;
@@ -76,7 +76,7 @@ pub fn mq_open(name: &CString,
         Some(mq_attr) => unsafe {
             libc::mq_open(name.as_ptr(),
                           oflag.bits(),
-                          mode.bits() as mode_t,
+                          mode.bits() as libc::c_int,
                           &mq_attr.mq_attr as *const libc::mq_attr)
         },
         None => unsafe { libc::mq_open(name.as_ptr(), oflag.bits()) },
