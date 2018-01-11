@@ -12,7 +12,10 @@ fn test_wait_signal() {
 
     // Safe: The child only calls `pause` and/or `_exit`, which are async-signal-safe.
     match fork().expect("Error: Fork Failed") {
-      Child => pause().unwrap_or_else(|_| unsafe { _exit(123) }),
+      Child => {
+          pause();
+          unsafe { _exit(123) }
+      },
       Parent { child } => {
           kill(child, Some(SIGKILL)).expect("Error: Kill Failed");
           assert_eq!(waitpid(child, None), Ok(WaitStatus::Signaled(child, SIGKILL, false)));

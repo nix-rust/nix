@@ -94,7 +94,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Both `ip_mreq` and `ipv6_mreq` have been replaced with `IpMembershipRequest` and
   `Ipv6MembershipRequest`.
   ([#814](https://github.com/nix-rust/nix/pull/814))
-
+- Removed return type from `pause`.
+  ([#829](https://github.com/nix-rust/nix/pull/829))
 
 ### Fixed
 - Fix compilation and tests for OpenBSD targets
