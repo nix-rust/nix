@@ -103,6 +103,10 @@ impl ErrnoSentinel for i64 {
     fn sentinel() -> Self { -1 }
 }
 
+impl ErrnoSentinel for *mut libc::c_void {
+    fn sentinel() -> Self { (-1 as isize) as *mut libc::c_void }
+}
+
 impl error::Error for Errno {
     fn description(&self) -> &str {
         self.desc()

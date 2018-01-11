@@ -31,7 +31,11 @@ pub mod fcntl;
 #[cfg(any(target_os = "linux", target_os = "android"))]
 pub mod mount;
 
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "dragonfly",
+          target_os = "freebsd",
+          target_os = "fushsia",
+          target_os = "linux",
+          target_os = "netbsd"))]
 pub mod mqueue;
 
 pub mod pty;

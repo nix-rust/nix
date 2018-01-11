@@ -11,7 +11,11 @@ extern crate tempfile;
 
 mod sys;
 mod test_fcntl;
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "dragonfly",
+          target_os = "freebsd",
+          target_os = "fushsia",
+          target_os = "linux",
+          target_os = "netbsd"))]
 mod test_mq;
 mod test_net;
 mod test_nix_path;

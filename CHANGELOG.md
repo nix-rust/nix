@@ -56,6 +56,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#813](https://github.com/nix-rust/nix/pull/813))
 
 ### Changed
+- Exposed the `mqueue` module for all supported operating systems.
+  ([#834](https://github.com/nix-rust/nix/pull/834))
 - Use native `pipe2` on all BSD targets.  Users should notice no difference.
   ([#777](https://github.com/nix-rust/nix/pull/777))
 - Renamed existing `ptrace` wrappers to encourage namespacing ([#692](https://github.com/nix-rust/nix/pull/692))

@@ -15,15 +15,19 @@ fn test_mq_send_and_receive() {
     let attr =  MqAttr::new(0, 10, MSG_SIZE, 0);
     let mq_name= &CString::new(b"/a_nix_test_queue".as_ref()).unwrap();
 
-    let mqd0 = mq_open(mq_name, MQ_OFlag::O_CREAT | MQ_OFlag::O_WRONLY,
-                       Mode::S_IWUSR | Mode::S_IRUSR | Mode::S_IRGRP | Mode::S_IROTH,
-                       Some(&attr)).unwrap();
+    let oflag0 = MQ_OFlag::O_CREAT | MQ_OFlag::O_WRONLY;
+    let mode = Mode::S_IWUSR | Mode::S_IRUSR | Mode::S_IRGRP | Mode::S_IROTH;
+    let r0 = mq_open(mq_name, oflag0, mode, Some(&attr));
+    if let Err(Sys(ENOSYS)) = r0 {
+        println!("message queues not supported or module not loaded?");
+        return;
+    };
+    let mqd0 = r0.unwrap();
     let msg_to_send = "msg_1";
     mq_send(mqd0, msg_to_send.as_bytes(), 1).unwrap();
 
-    let mqd1 = mq_open(mq_name, MQ_OFlag::O_CREAT | MQ_OFlag::O_RDONLY,
-                       Mode::S_IWUSR | Mode::S_IRUSR | Mode::S_IRGRP | Mode::S_IROTH,
-                       Some(&attr)).unwrap();
+    let oflag1 = MQ_OFlag::O_CREAT | MQ_OFlag::O_RDONLY;
+    let mqd1 = mq_open(mq_name, oflag1, mode, Some(&attr)).unwrap();
     let mut buf = [0u8; 32];
     let mut prio = 0u32;
     let len = mq_receive(mqd1, &mut buf, &mut prio).unwrap();
@@ -40,7 +44,15 @@ fn test_mq_getattr() {
     const MSG_SIZE: c_long =  32;
     let initial_attr =  MqAttr::new(0, 10, MSG_SIZE, 0);
     let mq_name = &CString::new(b"/attr_test_get_attr".as_ref()).unwrap();
-    let mqd = mq_open(mq_name, MQ_OFlag::O_CREAT | MQ_OFlag::O_WRONLY, Mode::S_IWUSR | Mode::S_IRUSR | Mode::S_IRGRP | Mode::S_IROTH, Some(&initial_attr)).unwrap();
+    let oflag = MQ_OFlag::O_CREAT | MQ_OFlag::O_WRONLY;
+    let mode = Mode::S_IWUSR | Mode::S_IRUSR | Mode::S_IRGRP | Mode::S_IROTH;
+    let r = mq_open(mq_name, oflag, mode, Some(&initial_attr));
+    if let Err(Sys(ENOSYS)) = r {
+        println!("message queues not supported or module not loaded?");
+        return;
+    };
+    let mqd = r.unwrap();
+
     let read_attr = mq_getattr(mqd);
     assert!(read_attr.unwrap() == initial_attr);
     mq_close(mqd).unwrap();
@@ -53,7 +65,14 @@ fn test_mq_setattr() {
     const MSG_SIZE: c_long =  32;
     let initial_attr =  MqAttr::new(0, 10, MSG_SIZE, 0);
     let mq_name = &CString::new(b"/attr_test_get_attr".as_ref()).unwrap();
-    let mqd = mq_open(mq_name, MQ_OFlag::O_CREAT | MQ_OFlag::O_WRONLY, Mode::S_IWUSR | Mode::S_IRUSR | Mode::S_IRGRP | Mode::S_IROTH, Some(&initial_attr)).unwrap();
+    let oflag = MQ_OFlag::O_CREAT | MQ_OFlag::O_WRONLY;
+    let mode = Mode::S_IWUSR | Mode::S_IRUSR | Mode::S_IRGRP | Mode::S_IROTH;
+    let r = mq_open(mq_name, oflag, mode, Some(&initial_attr));
+    if let Err(Sys(ENOSYS)) = r {
+        println!("message queues not supported or module not loaded?");
+        return;
+    };
+    let mqd = r.unwrap();
 
     let new_attr =  MqAttr::new(0, 20, MSG_SIZE * 2, 100);
     let old_attr = mq_setattr(mqd, &new_attr);
@@ -81,7 +100,14 @@ fn test_mq_set_nonblocking() {
     const MSG_SIZE: c_long =  32;
     let initial_attr =  MqAttr::new(0, 10, MSG_SIZE, 0);
     let mq_name = &CString::new(b"/attr_test_get_attr".as_ref()).unwrap();
-    let mqd = mq_open(mq_name, MQ_OFlag::O_CREAT | MQ_OFlag::O_WRONLY, Mode::S_IWUSR | Mode::S_IRUSR | Mode::S_IRGRP | Mode::S_IROTH, Some(&initial_attr)).unwrap();
+    let oflag = MQ_OFlag::O_CREAT | MQ_OFlag::O_WRONLY;
+    let mode = Mode::S_IWUSR | Mode::S_IRUSR | Mode::S_IRGRP | Mode::S_IROTH;
+    let r = mq_open(mq_name, oflag, mode, Some(&initial_attr));
+    if let Err(Sys(ENOSYS)) = r {
+        println!("message queues not supported or module not loaded?");
+        return;
+    };
+    let mqd = r.unwrap();
     mq_set_nonblock(mqd).unwrap();
     let new_attr = mq_getattr(mqd);
     assert!(new_attr.unwrap().flags() == MQ_OFlag::O_NONBLOCK.bits() as c_long);
@@ -97,7 +123,14 @@ fn test_mq_unlink() {
     let initial_attr =  MqAttr::new(0, 10, MSG_SIZE, 0);
     let mq_name_opened = &CString::new(b"/mq_unlink_test".as_ref()).unwrap();
     let mq_name_not_opened = &CString::new(b"/mq_unlink_test".as_ref()).unwrap();
-    let mqd = mq_open(mq_name_opened, MQ_OFlag::O_CREAT | MQ_OFlag::O_WRONLY, Mode::S_IWUSR | Mode::S_IRUSR | Mode::S_IRGRP | Mode::S_IROTH, Some(&initial_attr)).unwrap();
+    let oflag = MQ_OFlag::O_CREAT | MQ_OFlag::O_WRONLY;
+    let mode = Mode::S_IWUSR | Mode::S_IRUSR | Mode::S_IRGRP | Mode::S_IROTH;
+    let r = mq_open(mq_name_opened, oflag, mode, Some(&initial_attr));
+    if let Err(Sys(ENOSYS)) = r {
+        println!("message queues not supported or module not loaded?");
+        return;
+    };
+    let mqd = r.unwrap();
 
     let res_unlink = mq_unlink(mq_name_opened);
     assert!(res_unlink == Ok(()) );
@@ -108,5 +141,4 @@ fn test_mq_unlink() {
     mq_close(mqd).unwrap();
     let res_unlink_after_close = mq_unlink(mq_name_opened);
     assert!(res_unlink_after_close == Err(Sys(ENOENT)) );
-
 }
