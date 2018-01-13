@@ -90,24 +90,24 @@ pub enum Buffer<'a> {
 impl<'a> Buffer<'a> {
     /// Return the inner `Bytes`, if any
     pub fn bytes(&self) -> Option<&Bytes> {
-        match self {
-            &Buffer::Bytes(ref x) => Some(x),
+        match *self {
+            Buffer::Bytes(ref x) => Some(x),
             _ => None
         }
     }
 
     /// Return the inner `BytesMut`, if any
     pub fn bytes_mut(&self) -> Option<&BytesMut> {
-        match self {
-            &Buffer::BytesMut(ref x) => Some(x),
+        match *self {
+            Buffer::BytesMut(ref x) => Some(x),
             _ => None
         }
     }
 
     /// Is this `Buffer` `None`?
     pub fn is_none(&self) -> bool {
-        match self {
-            &Buffer::None => true,
+        match *self {
+            Buffer::None => true,
             _ => false,
         }
     }
@@ -535,11 +535,7 @@ pub fn aio_cancel_all(fd: RawFd) -> Result<AioCancelStat> {
 /// has completed, a signal is delivered, or the timeout has passed.  If
 /// `timeout` is `None`, `aio_suspend` will block indefinitely.
 pub fn aio_suspend(list: &[&AioCb], timeout: Option<TimeSpec>) -> Result<()> {
-    // We must use transmute because Rust doesn't understand that a pointer to a
-    // Struct is the same as a pointer to its first element.
-    let plist = unsafe {
-        mem::transmute::<&[&AioCb], *const [*const libc::aiocb]>(list)
-    };
+    let plist = list as *const [&AioCb] as *const [*const libc::aiocb];
     let p = plist as *const *const libc::aiocb;
     let timep = match timeout {
         None    => null::<libc::timespec>(),
@@ -558,11 +554,7 @@ pub fn lio_listio(mode: LioMode, list: &[&mut AioCb],
                   sigev_notify: SigevNotify) -> Result<()> {
     let sigev = SigEvent::new(sigev_notify);
     let sigevp = &mut sigev.sigevent() as *mut libc::sigevent;
-    // We must use transmute because Rust doesn't understand that a pointer to a
-    // Struct is the same as a pointer to its first element.
-    let plist = unsafe {
-        mem::transmute::<&[&mut AioCb], *const [*mut libc::aiocb]>(list)
-    };
+    let plist = list as *const [&mut AioCb] as *const [*mut libc::aiocb];
     let p = plist as *const *mut libc::aiocb;
     Errno::result(unsafe {
         libc::lio_listio(mode as i32, p, list.len() as i32, sigevp)

@@ -110,7 +110,7 @@ fn test_fsync() {
     aiocb.aio_return().unwrap();
 }
 
-/// `AioCb::fsync` should not modify the `AioCb` object if libc::aio_fsync returns
+/// `AioCb::fsync` should not modify the `AioCb` object if `libc::aio_fsync` returns
 /// an error
 // Skip on Linux, because Linux's AIO implementation can't detect errors
 // synchronously
@@ -199,8 +199,8 @@ fn test_read() {
     assert!(EXPECT == rbuf.deref().deref());
 }
 
-/// `AioCb::read` should not modify the `AioCb` object if libc::aio_read returns
-/// an error
+/// `AioCb::read` should not modify the `AioCb` object if `libc::aio_read`
+/// returns an error
 // Skip on Linux, because Linux's AIO implementation can't detect errors
 // synchronously
 #[test]
@@ -249,11 +249,11 @@ fn test_read_into_mut_slice() {
 #[test]
 #[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
 fn test_read_into_pointer() {
-    const INITIAL: &'static [u8] = b"abcdef123456";
+    const INITIAL: &[u8] = b"abcdef123456";
     let mut rbuf = vec![0; 4];
-    const EXPECT: &'static [u8] = b"cdef";
+    const EXPECT: &[u8] = b"cdef";
     let mut f = tempfile().unwrap();
-    f.write(INITIAL).unwrap();
+    f.write_all(INITIAL).unwrap();
     {
         // Safety: ok because rbuf lives until after poll_aio
         let mut aiocb = unsafe {
@@ -333,7 +333,7 @@ fn test_write_bytes() {
     const EXPECT: &[u8] = b"abCDEF123456";
 
     let mut f = tempfile().unwrap();
-    f.write(INITIAL).unwrap();
+    f.write_all(INITIAL).unwrap();
     let mut aiocb = AioCb::from_bytes( f.as_raw_fd(),
                            2,   //offset
                            wbuf.clone(),
@@ -356,13 +356,13 @@ fn test_write_bytes() {
 #[test]
 #[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
 fn test_read_bytes_mut_big() {
-    const INITIAL: &'static [u8] = b"abcdefgh12345678abcdefgh12345678abcdefgh12345678abcdefgh12345678abcdefgh12345678";
+    const INITIAL: &[u8] = b"abcdefgh12345678abcdefgh12345678abcdefgh12345678abcdefgh12345678abcdefgh12345678";
     // rbuf needs to be larger than 32 bytes (64 on 32-bit systems) so
     // BytesMut::clone is implemented by reference.
     let rbuf = BytesMut::from(vec![0; 70]);
-    const EXPECT: &'static [u8] = b"cdefgh12345678abcdefgh12345678abcdefgh12345678abcdefgh12345678abcdefgh";
+    const EXPECT: &[u8] = b"cdefgh12345678abcdefgh12345678abcdefgh12345678abcdefgh12345678abcdefgh";
     let mut f = tempfile().unwrap();
-    f.write(INITIAL).unwrap();
+    f.write_all(INITIAL).unwrap();
 
     let mut aiocb = AioCb::from_bytes_mut( f.as_raw_fd(),
                            2,   //offset
@@ -383,13 +383,13 @@ fn test_read_bytes_mut_big() {
 #[test]
 #[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
 fn test_read_bytes_mut_small() {
-    const INITIAL: &'static [u8] = b"abcdef";
+    const INITIAL: &[u8] = b"abcdef";
     // rbuf needs to be no more than 32 bytes (64 on 32-bit systems) so
     // BytesMut::clone is implemented inline.
     let rbuf = BytesMut::from(vec![0; 4]);
-    const EXPECT: &'static [u8] = b"cdef";
+    const EXPECT: &[u8] = b"cdef";
     let mut f = tempfile().unwrap();
-    f.write(INITIAL).unwrap();
+    f.write_all(INITIAL).unwrap();
 
     let mut aiocb = AioCb::from_bytes_mut( f.as_raw_fd(),
                            2,   //offset
@@ -410,13 +410,13 @@ fn test_read_bytes_mut_small() {
 #[test]
 #[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
 fn test_write_from_pointer() {
-    const INITIAL: &'static [u8] = b"abcdef123456";
+    const INITIAL: &[u8] = b"abcdef123456";
     let wbuf = "CDEF".to_string().into_bytes();
     let mut rbuf = Vec::new();
-    const EXPECT: &'static [u8] = b"abCDEF123456";
+    const EXPECT: &[u8] = b"abCDEF123456";
 
     let mut f = tempfile().unwrap();
-    f.write(INITIAL).unwrap();
+    f.write_all(INITIAL).unwrap();
     // Safety: ok because aiocb outlives poll_aio
     let mut aiocb = unsafe {
         AioCb::from_ptr( f.as_raw_fd(),
@@ -439,8 +439,8 @@ fn test_write_from_pointer() {
     assert!(rbuf == EXPECT);
 }
 
-/// `AioCb::write` should not modify the `AioCb` object if libc::aio_write returns
-/// an error
+/// `AioCb::write` should not modify the `AioCb` object if `libc::aio_write`
+/// returns an error
 // Skip on Linux, because Linux's AIO implementation can't detect errors
 // synchronously
 #[test]
