@@ -56,7 +56,7 @@ impl FdSet {
     ///
     /// [`select`]: fn.select.html
     pub fn highest(&mut self) -> Option<RawFd> {
-        for i in (0..libc::FD_SETSIZE).rev() {
+        for i in (0..FD_SETSIZE).rev() {
             let i = i as RawFd;
             if unsafe { libc::FD_ISSET(i, self as *mut _ as *mut libc::fd_set) } {
                 return Some(i)

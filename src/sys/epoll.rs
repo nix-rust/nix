@@ -7,7 +7,7 @@ use std::mem;
 use ::Error;
 
 libc_bitflags!(
-    pub struct EpollFlags: libc::c_int {
+    pub struct EpollFlags: c_int {
         EPOLLIN;
         EPOLLPRI;
         EPOLLOUT;
@@ -58,7 +58,7 @@ impl EpollEvent {
     }
 
     pub fn events(&self) -> EpollFlags {
-        EpollFlags::from_bits(self.event.events as libc::c_int).unwrap()
+        EpollFlags::from_bits(self.event.events as c_int).unwrap()
     }
 
     pub fn data(&self) -> u64 {

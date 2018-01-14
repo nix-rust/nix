@@ -7,7 +7,7 @@ use std::os::unix::io::RawFd;
 
 libc_bitflags!{
     /// Desired memory protection of a memory mapping.
-    pub struct ProtFlags: libc::c_int {
+    pub struct ProtFlags: c_int {
         /// Pages cannot be accessed.
         PROT_NONE;
         /// Pages can be read.

@@ -74,7 +74,7 @@ impl fmt::Debug for TimeSpec {
     }
 }
 
-impl cmp::PartialEq for TimeSpec {
+impl PartialEq for TimeSpec {
     // The implementation of cmp is simplified by assuming that the struct is
     // normalized.  That is, tv_nsec must always be within [0, 1_000_000_000)
     fn eq(&self, other: &TimeSpec) -> bool {
@@ -82,9 +82,9 @@ impl cmp::PartialEq for TimeSpec {
     }
 }
 
-impl cmp::Eq for TimeSpec {}
+impl Eq for TimeSpec {}
 
-impl cmp::Ord for TimeSpec {
+impl Ord for TimeSpec {
     // The implementation of cmp is simplified by assuming that the struct is
     // normalized.  That is, tv_nsec must always be within [0, 1_000_000_000)
     fn cmp(&self, other: &TimeSpec) -> cmp::Ordering {
@@ -96,7 +96,7 @@ impl cmp::Ord for TimeSpec {
     }
 }
 
-impl cmp::PartialOrd for TimeSpec {
+impl PartialOrd for TimeSpec {
     fn partial_cmp(&self, other: &TimeSpec) -> Option<cmp::Ordering> {
         Some(self.cmp(other))
     }
@@ -285,7 +285,7 @@ impl fmt::Debug for TimeVal {
     }
 }
 
-impl cmp::PartialEq for TimeVal {
+impl PartialEq for TimeVal {
     // The implementation of cmp is simplified by assuming that the struct is
     // normalized.  That is, tv_usec must always be within [0, 1_000_000)
     fn eq(&self, other: &TimeVal) -> bool {
@@ -293,9 +293,9 @@ impl cmp::PartialEq for TimeVal {
     }
 }
 
-impl cmp::Eq for TimeVal {}
+impl Eq for TimeVal {}
 
-impl cmp::Ord for TimeVal {
+impl Ord for TimeVal {
     // The implementation of cmp is simplified by assuming that the struct is
     // normalized.  That is, tv_usec must always be within [0, 1_000_000)
     fn cmp(&self, other: &TimeVal) -> cmp::Ordering {
@@ -307,7 +307,7 @@ impl cmp::Ord for TimeVal {
     }
 }
 
-impl cmp::PartialOrd for TimeVal {
+impl PartialOrd for TimeVal {
     fn partial_cmp(&self, other: &TimeVal) -> Option<cmp::Ordering> {
         Some(self.cmp(other))
     }

@@ -10,6 +10,7 @@
 #![allow(dead_code)]
 #![cfg_attr(test, deny(warnings))]
 #![recursion_limit = "500"]
+#![deny(unused_qualifications)]
 
 extern crate bytes;
 #[macro_use]
@@ -94,7 +95,7 @@ pub type Result<T> = result::Result<T, Error>;
 /// implementing other common traits.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Error {
-    Sys(errno::Errno),
+    Sys(Errno),
     InvalidPath,
     /// The operation involved a conversion to Rust's native String type, which failed because the
     /// string did not contain all valid UTF-8.

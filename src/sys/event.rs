@@ -24,7 +24,7 @@ pub struct KEvent {
 type type_of_udata = *mut libc::c_void;
 #[cfg(any(target_os = "dragonfly", target_os = "freebsd",
           target_os = "ios", target_os = "macos"))]
-type type_of_data = libc::intptr_t;
+type type_of_data = intptr_t;
 #[cfg(any(target_os = "netbsd"))]
 type type_of_udata = intptr_t;
 #[cfg(any(target_os = "netbsd", target_os = "openbsd"))]

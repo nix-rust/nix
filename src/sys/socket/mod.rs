@@ -117,7 +117,7 @@ libc_bitflags!{
 
 libc_bitflags!{
     /// Flags for send/recv and their relatives
-    pub struct MsgFlags: libc::c_int {
+    pub struct MsgFlags: c_int {
         /// Sends or requests out-of-band data on sockets that support this notion
         /// (e.g., of type [`Stream`](enum.SockType.html)); the underlying protocol must also
         /// support out-of-band data.

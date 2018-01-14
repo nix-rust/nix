@@ -178,7 +178,7 @@ pub fn setoptions(pid: Pid, options: Options) -> Result<()> {
     let res = unsafe {
         libc::ptrace(Request::PTRACE_SETOPTIONS as RequestType,
                      libc::pid_t::from(pid),
-                     ptr::null_mut::<libc::c_void>(),
+                     ptr::null_mut::<c_void>(),
                      options.bits() as *mut c_void)
     };
     Errno::result(res).map(|_| ())
@@ -200,7 +200,7 @@ pub fn setsiginfo(pid: Pid, sig: &siginfo_t) -> Result<()> {
         Errno::clear();
         libc::ptrace(Request::PTRACE_SETSIGINFO as RequestType,
                      libc::pid_t::from(pid),
-                     ptr::null_mut::<libc::c_void>(),
+                     ptr::null_mut::<c_void>(),
                      sig as *const _ as *const c_void)
     };
     match Errno::result(ret) {

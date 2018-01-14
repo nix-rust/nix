@@ -188,7 +188,7 @@ pub struct Termios {
     /// Local mode flags (see `termios.c_lflag` documentation)
     pub local_flags: LocalFlags,
     /// Control characters (see `termios.c_cc` documentation)
-    pub control_chars: [libc::cc_t; libc::NCCS],
+    pub control_chars: [libc::cc_t; NCCS],
 }
 
 impl Termios {

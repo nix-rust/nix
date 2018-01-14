@@ -61,12 +61,12 @@ pub struct Statvfs(libc::statvfs);
 
 impl Statvfs {
     /// get the file system block size
-    pub fn block_size(&self) -> libc::c_ulong {
+    pub fn block_size(&self) -> c_ulong {
         self.0.f_bsize
     }
 
     /// Get the fundamental file system block size
-    pub fn fragment_size(&self) -> libc::c_ulong {
+    pub fn fragment_size(&self) -> c_ulong {
         self.0.f_frsize
     }
 
@@ -113,7 +113,7 @@ impl Statvfs {
     }
 
     /// Get the maximum filename length
-    pub fn name_max(&self) -> libc::c_ulong {
+    pub fn name_max(&self) -> c_ulong {
         self.0.f_namemax
     }
 
