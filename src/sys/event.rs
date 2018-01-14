@@ -14,6 +14,7 @@ use std::mem;
 // Redefine kevent in terms of programmer-friendly enums and bitfields.
 #[derive(Clone, Copy)]
 #[repr(C)]
+#[allow(missing_debug_implementations)]
 pub struct KEvent {
     kevent: libc::kevent,
 }

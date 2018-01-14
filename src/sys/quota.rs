@@ -100,6 +100,7 @@ libc_bitflags!(
 // FIXME: Change to repr(transparent)
 #[repr(C)]
 #[derive(Clone, Copy)]
+#[allow(missing_debug_implementations)]
 pub struct Dqblk(libc::dqblk);
 
 impl Default for Dqblk {

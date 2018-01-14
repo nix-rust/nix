@@ -5,6 +5,7 @@ use std::str::from_utf8_unchecked;
 
 #[repr(C)]
 #[derive(Clone, Copy)]
+#[allow(missing_debug_implementations)]
 pub struct UtsName(libc::utsname);
 
 impl UtsName {

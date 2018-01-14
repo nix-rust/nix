@@ -18,6 +18,7 @@ use errno::Errno;
 /// retrieved by calling [`revents()`](#method.revents) on the `PollFd`.
 #[repr(C)]
 #[derive(Clone, Copy)]
+#[allow(missing_debug_implementations)]
 pub struct PollFd {
     pollfd: libc::pollfd,
 }

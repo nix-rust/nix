@@ -58,6 +58,7 @@ libc_bitflags!(
 // FIXME: Replace with repr(transparent)
 #[repr(C)]
 #[derive(Clone, Copy)]
+#[allow(missing_debug_implementations)]
 pub struct Statvfs(libc::statvfs);
 
 impl Statvfs {

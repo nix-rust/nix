@@ -14,6 +14,7 @@
 #![deny(unstable_features)]
 #![deny(unused_import_braces)]
 #![deny(missing_copy_implementations)]
+#![deny(missing_debug_implementations)]
 
 extern crate bytes;
 #[macro_use]

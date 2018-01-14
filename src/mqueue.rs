@@ -30,6 +30,7 @@ libc_bitflags!{
 
 #[repr(C)]
 #[derive(Clone, Copy)]
+#[allow(missing_debug_implementations)]
 pub struct MqAttr {
     mq_attr: libc::mq_attr,
 }

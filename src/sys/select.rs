@@ -11,6 +11,7 @@ pub use libc::FD_SETSIZE;
 // FIXME: Change to repr(transparent) once it's stable
 #[repr(C)]
 #[derive(Clone, Copy)]
+#[allow(missing_debug_implementations)]
 pub struct FdSet(libc::fd_set);
 
 impl FdSet {

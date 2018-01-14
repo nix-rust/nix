@@ -143,7 +143,7 @@ impl fmt::Display for Pid {
 /// When `fork` is called, the process continues execution in the parent process
 /// and in the new child.  This return type can be examined to determine whether
 /// you are now executing in the parent process or in the child.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum ForkResult {
     Parent { child: Pid },
     Child,
@@ -822,7 +822,7 @@ pub fn write(fd: RawFd, buf: &[u8]) -> Result<usize> {
 /// [`lseek`]: ./fn.lseek.html
 /// [`lseek64`]: ./fn.lseek64.html
 #[repr(i32)]
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum Whence {
     /// Specify an offset relative to the start of the file.
     SeekSet = libc::SEEK_SET,

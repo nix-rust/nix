@@ -205,6 +205,7 @@ libc_bitflags!(
     }
 );
 
+#[allow(missing_debug_implementations)]
 pub enum FcntlArg<'a> {
     F_DUPFD(RawFd),
     F_DUPFD_CLOEXEC(RawFd),
@@ -268,6 +269,7 @@ pub fn fcntl(fd: RawFd, arg: FcntlArg) -> Result<c_int> {
 }
 
 #[derive(Clone, Copy)]
+#[allow(missing_debug_implementations)]
 pub enum FlockArg {
     LockShared,
     LockExclusive,

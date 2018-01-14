@@ -40,6 +40,7 @@ pub type CloneCb<'a> = Box<FnMut() -> isize + 'a>;
 
 #[repr(C)]
 #[derive(Clone, Copy)]
+#[allow(missing_debug_implementations)]
 pub struct CpuSet {
     cpu_set: libc::cpu_set_t,
 }
