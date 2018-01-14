@@ -47,6 +47,7 @@ pub mod mqueue;
 #[deny(missing_docs)]
 pub mod pty;
 
+#[deny(missing_docs)]
 pub mod poll;
 
 pub mod net;
