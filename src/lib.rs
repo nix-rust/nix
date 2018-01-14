@@ -31,6 +31,7 @@ pub extern crate libc;
 use errno::Errno;
 
 pub mod errno;
+#[deny(missing_docs)]
 pub mod features;
 pub mod fcntl;
 
@@ -60,6 +61,7 @@ pub mod net;
           target_os = "macos",
           target_os = "netbsd",
           target_os = "openbsd"))]
+#[deny(missing_docs)]
 pub mod ifaddrs;
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
