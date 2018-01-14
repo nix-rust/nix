@@ -10,7 +10,7 @@ use std::{fmt, mem, ptr};
 use std::ffi::{CString, CStr, OsString, OsStr};
 use std::os::unix::ffi::{OsStringExt, OsStrExt};
 use std::os::unix::io::RawFd;
-use std::path::{PathBuf};
+use std::path::PathBuf;
 use void::Void;
 use sys::stat::Mode;
 

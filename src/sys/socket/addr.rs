@@ -951,7 +951,7 @@ impl fmt::Display for SockAddr {
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
 pub mod netlink {
-    use ::sys::socket::addr::{AddressFamily};
+    use ::sys::socket::addr::AddressFamily;
     use libc::{sa_family_t, sockaddr_nl};
     use std::{fmt, mem};
     use std::hash::{Hash, Hasher};
@@ -1012,7 +1012,7 @@ pub mod netlink {
 
 #[cfg(any(target_os = "ios", target_os = "macos"))]
 pub mod sys_control {
-    use ::sys::socket::addr::{AddressFamily};
+    use ::sys::socket::addr::AddressFamily;
     use libc::{self, c_uchar, uint16_t, uint32_t};
     use std::{fmt, mem};
     use std::hash::{Hash, Hasher};

@@ -12,6 +12,7 @@
 #![recursion_limit = "500"]
 #![deny(unused_qualifications)]
 #![deny(unstable_features)]
+#![deny(unused_import_braces)]
 
 extern crate bytes;
 #[macro_use]
