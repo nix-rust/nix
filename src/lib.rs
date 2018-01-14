@@ -50,6 +50,7 @@ pub mod pty;
 #[deny(missing_docs)]
 pub mod poll;
 
+#[deny(missing_docs)]
 pub mod net;
 
 #[cfg(any(target_os = "dragonfly",
