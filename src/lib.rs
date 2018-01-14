@@ -44,6 +44,7 @@ pub mod mount;
           target_os = "netbsd"))]
 pub mod mqueue;
 
+#[deny(missing_docs)]
 pub mod pty;
 
 pub mod poll;

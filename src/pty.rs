@@ -20,7 +20,9 @@ use errno::Errno;
 #[derive(Clone, Copy)]
 #[allow(missing_debug_implementations)]
 pub struct OpenptyResult {
+    /// The master port in a virtual pty pair
     pub master: RawFd,
+    /// The slave port in a virtual pty pair
     pub slave: RawFd,
 }
 
