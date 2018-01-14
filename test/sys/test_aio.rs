@@ -43,8 +43,8 @@ fn test_accessors() {
     assert_eq!(99, sev.sigev_value.sival_ptr as i64);
 }
 
-// Tests AioCb.cancel.  We aren't trying to test the OS's implementation, only our
-// bindings.  So it's sufficient to check that AioCb.cancel returned any
+// Tests AioCb.cancel.  We aren't trying to test the OS's implementation, only
+// our bindings.  So it's sufficient to check that AioCb.cancel returned any
 // AioCancelStat value.
 #[test]
 #[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
