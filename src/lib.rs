@@ -11,6 +11,7 @@
 #![cfg_attr(test, deny(warnings))]
 #![recursion_limit = "500"]
 #![deny(unused_qualifications)]
+#![deny(unstable_features)]
 
 extern crate bytes;
 #[macro_use]
