@@ -67,6 +67,7 @@ pub fn pread(fd: RawFd, buf: &mut [u8], offset: off_t) -> Result<usize>{
 /// and [`process_vm_writev`](fn.process_vm_writev.html).
 #[cfg(target_os = "linux")]
 #[repr(C)]
+#[derive(Clone, Copy)]
 pub struct RemoteIoVec {
     /// The starting address of this slice (`iov_base`).
     pub base: usize,

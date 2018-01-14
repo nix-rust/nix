@@ -822,6 +822,7 @@ pub fn write(fd: RawFd, buf: &[u8]) -> Result<usize> {
 /// [`lseek`]: ./fn.lseek.html
 /// [`lseek64`]: ./fn.lseek64.html
 #[repr(i32)]
+#[derive(Clone, Copy)]
 pub enum Whence {
     /// Specify an offset relative to the start of the file.
     SeekSet = libc::SEEK_SET,

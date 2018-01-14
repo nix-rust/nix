@@ -392,7 +392,7 @@ impl fmt::Debug for InetAddr {
  * ===== IpAddr =====
  *
  */
-
+#[derive(Clone, Copy)]
 pub enum IpAddr {
     V4(Ipv4Addr),
     V6(Ipv6Addr),

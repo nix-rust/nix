@@ -267,6 +267,7 @@ pub fn fcntl(fd: RawFd, arg: FcntlArg) -> Result<c_int> {
     Errno::result(res)
 }
 
+#[derive(Clone, Copy)]
 pub enum FlockArg {
     LockShared,
     LockExclusive,

@@ -17,6 +17,7 @@ use errno::Errno;
 ///
 /// This is returned by `openpty`.  Note that this type does *not* implement `Drop`, so the user
 /// must manually close the file descriptors.
+#[derive(Clone, Copy)]
 pub struct OpenptyResult {
     pub master: RawFd,
     pub slave: RawFd,
