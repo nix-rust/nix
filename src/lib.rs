@@ -16,65 +16,47 @@
 #![deny(missing_copy_implementations)]
 #![deny(missing_debug_implementations)]
 
+// External crates
 extern crate bytes;
 #[macro_use]
 extern crate bitflags;
-
 #[macro_use]
 extern crate cfg_if;
 extern crate void;
 
-#[macro_use] mod macros;
-
+// Re-exported external crates
 pub extern crate libc;
 
-use errno::Errno;
+// Private internal modules
+#[macro_use] mod macros;
 
+// Public crates
 pub mod errno;
 #[deny(missing_docs)]
 pub mod features;
 pub mod fcntl;
-
 #[cfg(any(target_os = "linux", target_os = "android"))]
 pub mod mount;
-
 #[cfg(any(target_os = "dragonfly",
           target_os = "freebsd",
           target_os = "fushsia",
           target_os = "linux",
           target_os = "netbsd"))]
 pub mod mqueue;
-
-#[deny(missing_docs)]
-pub mod pty;
-
-#[deny(missing_docs)]
-pub mod poll;
-
 #[deny(missing_docs)]
 pub mod net;
-
-#[cfg(any(target_os = "dragonfly",
-          target_os = "freebsd",
-          target_os = "ios",
-          target_os = "linux",
-          target_os = "macos",
-          target_os = "netbsd",
-          target_os = "openbsd"))]
 #[deny(missing_docs)]
-pub mod ifaddrs;
-
+pub mod poll;
+#[deny(missing_docs)]
+pub mod pty;
 #[cfg(any(target_os = "linux", target_os = "android"))]
 pub mod sched;
-
 pub mod sys;
-
 // This can be implemented for other platforms as soon as libc
 // provides bindings for them.
 #[cfg(all(target_os = "linux",
           any(target_arch = "x86", target_arch = "x86_64")))]
 pub mod ucontext;
-
 pub mod unistd;
 
 /*
@@ -83,14 +65,14 @@ pub mod unistd;
  *
  */
 
-use libc::c_char;
-use std::{ptr, result};
+use libc::{c_char, PATH_MAX};
+
+use std::{error, fmt, ptr, result};
 use std::ffi::{CStr, OsStr};
-use std::path::{Path, PathBuf};
 use std::os::unix::ffi::OsStrExt;
-use std::fmt;
-use std::error;
-use libc::PATH_MAX;
+use std::path::{Path, PathBuf};
+
+use errno::Errno;
 
 /// Nix Result Type
 pub type Result<T> = result::Result<T, Error>;
