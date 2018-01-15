@@ -33,9 +33,6 @@ libc_enum!{
         Q_SYNC,
         Q_QUOTAON,
         Q_QUOTAOFF,
-        Q_GETFMT,
-        Q_GETINFO,
-        Q_SETINFO,
         Q_GETQUOTA,
         Q_SETQUOTA,
     }

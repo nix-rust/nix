@@ -10,9 +10,8 @@
 #![allow(dead_code)]
 #![cfg_attr(test, deny(warnings))]
 #![recursion_limit = "500"]
-#![deny(unused_qualifications)]
+#![deny(unused)]
 #![deny(unstable_features)]
-#![deny(unused_import_braces)]
 #![deny(missing_copy_implementations)]
 #![deny(missing_debug_implementations)]
 

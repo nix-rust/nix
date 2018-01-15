@@ -1,7 +1,11 @@
-use {Error, Result, NixPath};
+use {Error, Result};
+#[cfg(not(target_os = "android"))]
+use NixPath;
 use errno::Errno;
+#[cfg(not(target_os = "android"))]
 use fcntl::OFlag;
 use libc::{self, c_int, c_void, size_t, off_t};
+#[cfg(not(target_os = "android"))]
 use sys::stat::Mode;
 use std::os::unix::io::RawFd;
 
