@@ -345,18 +345,18 @@ libc_enum!{
         B115200,
         B230400,
         #[cfg(any(target_os = "android",
-                target_os = "freebsd",
-                target_os = "linux",
-                taget_os = "netbsd"))]
+                  target_os = "freebsd",
+                  target_os = "linux",
+                  target_os = "netbsd"))]
         B460800,
         #[cfg(any(target_os = "android", target_os = "linux"))]
         B500000,
         #[cfg(any(target_os = "android", target_os = "linux"))]
         B576000,
         #[cfg(any(target_os = "android",
-                target_os = "freebsd",
-                target_os = "linux",
-                taget_os = "netbsd"))]
+                  target_os = "freebsd",
+                  target_os = "linux",
+                  target_os = "netbsd"))]
         B921600,
         #[cfg(any(target_os = "android", target_os = "linux"))]
         B1000000,
@@ -444,7 +444,7 @@ impl From<libc::speed_t> for BaudRate {
             #[cfg(any(target_os = "android",
                       target_os = "freebsd",
                       target_os = "linux",
-                      taget_os = "netbsd"))]
+                      target_os = "netbsd"))]
             B460800 => BaudRate::B460800,
             #[cfg(any(target_os = "android", target_os = "linux"))]
             B500000 => BaudRate::B500000,
@@ -453,7 +453,7 @@ impl From<libc::speed_t> for BaudRate {
             #[cfg(any(target_os = "android",
                       target_os = "freebsd",
                       target_os = "linux",
-                      taget_os = "netbsd"))]
+                      target_os = "netbsd"))]
             B921600 => BaudRate::B921600,
             #[cfg(any(target_os = "android", target_os = "linux"))]
             B1000000 => BaudRate::B1000000,
