@@ -1,15 +1,18 @@
 /* TOOD: Implement for other kqueue based systems
  */
 
-use {Errno, Result};
+use std::mem;
+use std::os::unix::io::RawFd;
+use std::ptr;
+
 #[cfg(not(target_os = "netbsd"))]
-use libc::{timespec, time_t, c_int, c_long, intptr_t, uintptr_t};
+use libc::{timespec, c_int, intptr_t, uintptr_t};
 #[cfg(target_os = "netbsd")]
 use libc::{timespec, time_t, c_long, intptr_t, uintptr_t, size_t};
 use libc;
-use std::os::unix::io::RawFd;
-use std::ptr;
-use std::mem;
+
+use {Errno, Result};
+use sys::time::TimeSpec;
 
 // Redefine kevent in terms of programmer-friendly enums and bitfields.
 #[derive(Clone, Copy)]
@@ -251,20 +254,6 @@ impl KEvent {
     }
 }
 
-pub fn kevent(kq: RawFd,
-              changelist: &[KEvent],
-              eventlist: &mut [KEvent],
-              timeout_ms: usize) -> Result<usize> {
-
-    // Convert ms to timespec
-    let timeout = timespec {
-        tv_sec: (timeout_ms / 1000) as time_t,
-        tv_nsec: ((timeout_ms % 1000) * 1_000_000) as c_long
-    };
-
-    kevent_ts(kq, changelist, eventlist, Some(timeout))
-}
-
 #[cfg(any(target_os = "macos",
           target_os = "ios",
           target_os = "freebsd",
@@ -274,10 +263,13 @@ type type_of_nchanges = c_int;
 #[cfg(target_os = "netbsd")]
 type type_of_nchanges = size_t;
 
-pub fn kevent_ts(kq: RawFd,
-              changelist: &[KEvent],
-              eventlist: &mut [KEvent],
-              timeout_opt: Option<timespec>) -> Result<usize> {
+pub fn kevent<T: Into<TimeSpec>>(kq: RawFd, changelist: &[KEvent], eventlist: &mut [KEvent], timeout: Option<T>) -> Result<usize> {
+    let timeout = timeout.map(|t| t.into());
+    let timeout_ptr = if let Some(ref timeout) = timeout {
+        timeout.as_ref() as *const timespec
+    } else {
+        ptr::null()
+    };
 
     let res = unsafe {
         libc::kevent(
@@ -286,7 +278,8 @@ pub fn kevent_ts(kq: RawFd,
             changelist.len() as type_of_nchanges,
             eventlist.as_mut_ptr() as *mut libc::kevent,
             eventlist.len() as type_of_nchanges,
-            if let Some(ref timeout) = timeout_opt {timeout as *const timespec} else {ptr::null()})
+            timeout_ptr,
+        )
     };
 
     Errno::result(res).map(|r| r as usize)
