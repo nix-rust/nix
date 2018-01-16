@@ -59,6 +59,12 @@ const TS_MAX_SECONDS: i64 = ::std::isize::MAX as i64;
 const TS_MIN_SECONDS: i64 = -TS_MAX_SECONDS;
 
 
+impl From<timespec> for TimeSpec {
+    fn from(time: timespec) -> Self {
+        TimeSpec(time)
+    }
+}
+
 impl AsRef<timespec> for TimeSpec {
     fn as_ref(&self) -> &timespec {
         &self.0
