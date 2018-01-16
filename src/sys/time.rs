@@ -1,4 +1,6 @@
 use std::{cmp, fmt, ops};
+use std::time::Duration;
+
 use libc::{c_long, time_t, suseconds_t, timespec, timeval};
 
 pub trait TimeValLike: Sized {
@@ -58,6 +60,14 @@ const TS_MAX_SECONDS: i64 = ::std::isize::MAX as i64;
 
 const TS_MIN_SECONDS: i64 = -TS_MAX_SECONDS;
 
+impl From<Duration> for TimeSpec {
+    fn from(duration: Duration) -> Self {
+        TimeSpec(timespec{
+            tv_sec: cmp::min(duration.as_secs(), time_t::max_value() as u64) as time_t,
+            tv_nsec: c_long::from(duration.subsec_nanos()),
+        })
+    }
+}
 
 impl From<timespec> for TimeSpec {
     fn from(time: timespec) -> Self {
@@ -259,8 +269,6 @@ impl fmt::Display for TimeSpec {
         Ok(())
     }
 }
-
-
 
 #[repr(C)]
 #[derive(Clone, Copy)]
