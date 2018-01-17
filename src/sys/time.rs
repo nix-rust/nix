@@ -83,7 +83,7 @@ const TS_MIN_SECONDS: i64 = -TS_MAX_SECONDS;
 impl From<Duration> for TimeSpec {
     fn from(duration: Duration) -> Self {
         TimeSpec(timespec{
-            tv_sec: cmp::min(duration.as_secs(), time_t::max_value() as u64) as time_t,
+            tv_sec: duration.as_secs() as time_t,
             tv_nsec: c_long::from(duration.subsec_nanos()),
         })
     }
