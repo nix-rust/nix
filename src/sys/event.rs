@@ -286,13 +286,7 @@ pub fn kevent<T: Into<TimeSpec>>(kq: RawFd, changelist: &[KEvent], eventlist: &m
 }
 
 #[inline]
-pub fn ev_set(ev: &mut KEvent,
-              ident: usize,
-              filter: EventFilter,
-              flags: EventFlag,
-              fflags: FilterFlag,
-              udata: intptr_t) {
-
+pub fn ev_set(ev: &mut KEvent, ident: uintptr_t, filter: EventFilter, flags: EventFlag, fflags: FilterFlag, udata: intptr_t) {
     ev.kevent.ident  = ident as uintptr_t;
     ev.kevent.filter = filter as type_of_event_filter;
     ev.kevent.flags  = flags.bits();
