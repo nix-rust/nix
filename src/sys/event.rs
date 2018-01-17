@@ -267,6 +267,44 @@ type type_of_nchanges = c_int;
 #[cfg(target_os = "netbsd")]
 type type_of_nchanges = size_t;
 
+/// The `kevent` system call is used to register events with the queue, and
+/// return any pending events to the user.
+///
+/// For more information see [kqueue(2)].
+///
+/// [kqueue(2)]: https://www.freebsd.org/cgi/man.cgi?query=kqueue
+///
+/// # Examples
+///
+/// Using `std::time::Duration`.
+///
+/// ```
+/// use std::time::Duration;
+/// use nix::sys::event::{kqueue, kevent};
+///
+/// let kq = kqueue().unwrap();
+/// let mut events = Vec::new();
+///
+/// // With a timeout.
+/// let timeout = Duration::from_millis(100);
+/// kevent(kq, &[], &mut events, Some(timeout)).unwrap();
+///
+/// // Without a timeout.
+/// kevent::<Duration>(kq, &[], &mut events, None).unwrap();
+/// ```
+///
+/// Using `libc::timespec` directly.
+///
+/// ```
+/// use nix::libc::timespec;
+/// use nix::sys::event::{kqueue, kevent};
+///
+/// let kq = kqueue().unwrap();
+/// let mut events = Vec::new();
+///
+/// let timeout = timespec { tv_sec: 0, tv_nsec: 1000};
+/// assert_eq!(kevent(kq, &[], &mut events, Some(timeout)).unwrap(), 0);
+/// ```
 pub fn kevent<T: Into<TimeSpec>>(kq: RawFd, changelist: &[KEvent], eventlist: &mut [KEvent], timeout: Option<T>) -> Result<usize> {
     let timeout = timeout.map(|t| t.into());
     let timeout_ptr = if let Some(ref timeout) = timeout {
