@@ -203,12 +203,16 @@ libc_bitflags!(
     }
 );
 
+/// The `kqueue` system call creates a new kernel event queue and returns a
+/// descriptor.
+///
+/// For more information see [kqueue(2)].
+///
+/// [kqueue(2)]: https://www.freebsd.org/cgi/man.cgi?query=kqueue
 pub fn kqueue() -> Result<RawFd> {
     let res = unsafe { libc::kqueue() };
-
     Errno::result(res)
 }
-
 
 // KEvent can't derive Send because on some operating systems, udata is defined
 // as a void*.  However, KEvent's public API always treats udata as an intptr_t,
