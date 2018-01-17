@@ -52,6 +52,10 @@ pub trait TimeValLike: Sized {
 /// and can be used in any function accepting `Into<TimeSpec>`.
 ///
 /// ```
+/// use std::time::Duration;
+/// use nix::libc::timespec;
+/// use nix::sys::time::TimeSpec;
+///
 /// fn with_timeout<T: Into<TimeSpec>>(timeout: T) {
 /// #   drop(timeout);
 ///     // Code etc.
