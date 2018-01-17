@@ -44,6 +44,22 @@ pub trait TimeValLike: Sized {
     fn num_nanoseconds(&self) -> i64;
 }
 
+/// A wrapper around `libc::timespec`.
+///
+/// # Examples
+///
+/// Both `std::time::Duration` and `libc::timespec` implement `Into<TimeSpec>`,
+/// and can be used in any function accepting `Into<TimeSpec>`.
+///
+/// ```
+/// fn with_timeout<T: Into<TimeSpec>>(timeout: T) {
+/// #   drop(timeout);
+///     // Code etc.
+/// }
+///
+/// with_timeout(Duration::from_millis(100));
+/// with_timeout(timespec { tv_sec: 0, tv_nsec: 1000});
+/// ```
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct TimeSpec(timespec);
