@@ -23,13 +23,6 @@ mod test_uio;
 #[cfg(target_os = "linux")]
 mod test_epoll;
 
-#[cfg(any(target_os = "dragonfly",
-          target_os = "freebsd",
-          target_os = "ios",
-          target_os = "macos",
-          target_os = "netbsd",
-          target_os = "openbsd"))]
-mod test_event;
 mod test_pthread;
 #[cfg(any(target_os = "android",
           target_os = "linux"))]
