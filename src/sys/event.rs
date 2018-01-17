@@ -285,6 +285,15 @@ pub fn kevent<T: Into<TimeSpec>>(kq: RawFd, changelist: &[KEvent], eventlist: &m
     Errno::result(res).map(|r| r as usize)
 }
 
+/// Initialize a kevent structure.
+///
+/// This API matches the `EV_SET` macro, a better way to create a `KEvent` is to
+/// use [`KEvent.new`].
+///
+/// For more information see [kqueue(2)].
+///
+/// [`KEvent.new`]: struct.KEvent.html
+/// [kqueue(2)]: https://www.freebsd.org/cgi/man.cgi?query=kqueue
 #[inline]
 pub fn ev_set(ev: &mut KEvent, ident: uintptr_t, filter: EventFilter, flags: EventFlag, fflags: FilterFlag, udata: intptr_t) {
     ev.kevent.ident  = ident as uintptr_t;
