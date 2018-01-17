@@ -114,6 +114,11 @@ libc_bitflags!{
 }
 
 libc_bitflags!(
+    /// Filter-specific flags.
+    ///
+    /// See [`KEvent`].
+    ///
+    /// [`KEvent`]: struct.KEvent.html
     pub struct FilterFlag: u32 {
         #[cfg(any(target_os = "macos", target_os = "ios"))]
         NOTE_ABSOLUTE;
