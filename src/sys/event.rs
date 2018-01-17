@@ -75,7 +75,13 @@ libc_enum! {
 pub type type_of_event_flag = u16;
 #[cfg(any(target_os = "netbsd"))]
 pub type type_of_event_flag = u32;
+
 libc_bitflags!{
+    /// Actions to perform on the event.
+    ///
+    /// See [`KEvent`].
+    ///
+    /// [`KEvent`]: struct.KEvent.html
     pub struct EventFlag: type_of_event_flag {
         EV_ADD;
         EV_CLEAR;
