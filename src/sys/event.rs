@@ -14,7 +14,13 @@ use libc;
 use {Errno, Result};
 use sys::time::TimeSpec;
 
-// Redefine kevent in terms of programmer-friendly enums and bitfields.
+/// Wrapper around `libc:kevent`.
+///
+/// Redefined `kevent` in terms of programmer-friendly enums and bitfields. See
+/// [`new`] to create a new `KEvent` and [`ev_set`] to modify an existing event.
+///
+/// [`new`]: #method.new
+/// [`ev_set`]: fn.ev_set.html
 #[derive(Clone, Copy)]
 #[repr(C)]
 pub struct KEvent {
