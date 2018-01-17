@@ -1,4 +1,10 @@
-/* TOOD: Implement for other kqueue based systems
+//! Kernel event notification mechanism.
+//!
+//! For more information see [kqueue(2)].
+//!
+//! [kqueue(2)]: https://www.freebsd.org/cgi/man.cgi?query=kqueue
+
+/* TODO: Implement for other kqueue based systems
  */
 
 use std::mem;
