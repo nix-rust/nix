@@ -96,6 +96,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#814](https://github.com/nix-rust/nix/pull/814))
 - Removed return type from `pause`.
   ([#829](https://github.com/nix-rust/nix/pull/829))
+- Changed the API of `kevent` to accept `Into<TimeSpec>`.
+  ([#838](https://github.com/nix-rust/nix/pull/838))
 
 ### Fixed
 - Fix compilation and tests for OpenBSD targets
@@ -116,6 +118,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Removed `MS_VERBOSE`, `MS_NOSEC`, and `MS_BORN` from `MsFlags`. These
   are internal kernel flags and should never have been exposed.
   ([#814](https://github.com/nix-rust/nix/pull/814))
+- Removed `kevent_ts`, it was merged with `kevent`.
+  ([#838](https://github.com/nix-rust/nix/pull/838))
 
 
 ## [0.9.0] 2017-07-23
