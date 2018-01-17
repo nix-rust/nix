@@ -38,6 +38,11 @@ type type_of_event_filter = u32;
 #[cfg(not(target_os = "netbsd"))]
 type type_of_event_filter = i16;
 libc_enum! {
+    /// Identifies the kernel filter used to process this event.
+    ///
+    /// See [`KEvent`].
+    ///
+    /// [`KEvent`]: struct.KEvent.html
     #[cfg_attr(target_os = "netbsd", repr(u32))]
     #[cfg_attr(not(target_os = "netbsd"), repr(i16))]
     pub enum EventFilter {
