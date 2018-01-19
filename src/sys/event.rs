@@ -23,10 +23,9 @@ use sys::time::TimeSpec;
 /// Wrapper around `libc:kevent`.
 ///
 /// Redefined `kevent` in terms of programmer-friendly enums and bitfields. See
-/// [`new`] to create a new `KEvent` and [`ev_set`] to modify an existing event.
+/// [`new`] to create a new `KEvent`.
 ///
 /// [`new`]: #method.new
-/// [`ev_set`]: fn.ev_set.html
 #[derive(Clone, Copy)]
 #[repr(C)]
 pub struct KEvent {
@@ -354,25 +353,6 @@ pub fn kevent<T: Into<TimeSpec>>(kq: RawFd, changelist: &[KEvent], eventlist: &m
     };
 
     Errno::result(res).map(|r| r as usize)
-}
-
-/// Initialize a kevent structure.
-///
-/// This API matches the `EV_SET` macro, a better way to create a `KEvent` is to
-/// use [`KEvent.new`].
-///
-/// For more information see [kqueue(2)].
-///
-/// [`KEvent.new`]: struct.KEvent.html
-/// [kqueue(2)]: https://www.freebsd.org/cgi/man.cgi?query=kqueue
-#[inline]
-pub fn ev_set(ev: &mut KEvent, ident: uintptr_t, filter: EventFilter, flags: EventFlag, fflags: FilterFlag, udata: intptr_t) {
-    ev.kevent.ident  = ident as uintptr_t;
-    ev.kevent.filter = filter as type_of_event_filter;
-    ev.kevent.flags  = flags.bits();
-    ev.kevent.fflags = fflags.bits();
-    ev.kevent.data   = 0;
-    ev.kevent.udata  = udata as type_of_udata;
 }
 
 #[test]
