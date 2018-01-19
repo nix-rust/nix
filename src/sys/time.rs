@@ -84,7 +84,7 @@ impl From<Duration> for TimeSpec {
     fn from(duration: Duration) -> Self {
         TimeSpec(timespec{
             tv_sec: duration.as_secs() as time_t,
-            tv_nsec: c_long::from(duration.subsec_nanos()),
+            tv_nsec: duration.subsec_nanos() as c_long,
         })
     }
 }
