@@ -249,6 +249,7 @@ unsafe impl Send for KEvent {
 }
 
 impl KEvent {
+    /// Create a new `KEvent`.
     pub fn new(ident: uintptr_t, filter: EventFilter, flags: EventFlag,
                fflags:FilterFlag, data: intptr_t, udata: intptr_t) -> KEvent {
         KEvent { kevent: libc::kevent {
@@ -261,26 +262,32 @@ impl KEvent {
         } }
     }
 
+    /// Get the identifier for this event.
     pub fn ident(&self) -> uintptr_t {
         self.kevent.ident
     }
 
+    /// Get the kernal filter for this event.
     pub fn filter(&self) -> EventFilter {
         unsafe { mem::transmute(self.kevent.filter as type_of_event_filter) }
     }
 
+    /// Get the action to performan for this event.
     pub fn flags(&self) -> EventFlag {
         EventFlag::from_bits(self.kevent.flags).unwrap()
     }
 
+    /// Get the filter flags.
     pub fn fflags(&self) -> FilterFlag {
         FilterFlag::from_bits(self.kevent.fflags).unwrap()
     }
 
+    /// Get the filter data.
     pub fn data(&self) -> intptr_t {
         self.kevent.data as intptr_t
     }
 
+    /// Get the user data indentifier.
     pub fn udata(&self) -> intptr_t {
         self.kevent.udata as intptr_t
     }
