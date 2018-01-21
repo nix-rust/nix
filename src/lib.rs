@@ -11,6 +11,7 @@
 #![cfg_attr(test, deny(warnings))]
 #![recursion_limit = "500"]
 
+extern crate bytes;
 #[macro_use]
 extern crate bitflags;
 

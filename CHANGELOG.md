@@ -6,6 +6,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Added `AioCb::from_ptr` and `AioCb::from_mut_ptr`
+  ([#820](https://github.com/nix-rust/nix/pull/820))
 - Added specialized wrappers: `sys::ptrace::{traceme, syscall, cont, attach}`. Using the matching routines
   with `sys::ptrace::ptrace` is now deprecated.
 - Added `nix::poll` module for all platforms
@@ -108,6 +110,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#648](https://github.com/nix-rust/nix/pull/648))
 
 ### Removed
+- `AioCb::from_boxed_slice` has been removed.  It was never actually safe.  Use
+  `from_bytes` or `from_bytes_mut` instead.
+  ([#820](https://github.com/nix-rust/nix/pull/820))
 - The syscall module has been removed. This only exposed enough functionality for
   `memfd_create()` and `pivot_root()`, which are still exposed as separate functions.
   ([#747](https://github.com/nix-rust/nix/pull/747))
