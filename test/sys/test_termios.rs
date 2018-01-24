@@ -27,6 +27,7 @@ fn test_tcgetattr_pty() {
     close(pty.master).expect("closing the master failed");
     close(pty.slave).expect("closing the slave failed");
 }
+
 // Test tcgetattr on something that isn't a terminal
 #[test]
 fn test_tcgetattr_enotty() {
