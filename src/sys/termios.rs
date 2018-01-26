@@ -928,7 +928,7 @@ cfg_if!{
             let inner_termios = unsafe { termios.get_libc_termios_mut() };
             let res = unsafe { libc::cfsetispeed(inner_termios, baud.into() as libc::speed_t) };
             termios.update_wrapper();
-            Errno::result(res).map(drop)
+            Errno::result(res).map(|_| ())
         }
 
         /// Set output baud rate (see
@@ -939,7 +939,7 @@ cfg_if!{
             let inner_termios = unsafe { termios.get_libc_termios_mut() };
             let res = unsafe { libc::cfsetospeed(inner_termios, baud.into() as libc::speed_t) };
             termios.update_wrapper();
-            Errno::result(res).map(drop)
+            Errno::result(res).map(|_| ())
         }
 
         /// Set both the input and output baud rates (see
@@ -951,7 +951,7 @@ cfg_if!{
             let inner_termios = unsafe { termios.get_libc_termios_mut() };
             let res = unsafe { libc::cfsetspeed(inner_termios, baud.into() as libc::speed_t) };
             termios.update_wrapper();
-            Errno::result(res).map(drop)
+            Errno::result(res).map(|_| ())
         }
     } else {
         /// Get input baud rate (see
@@ -980,7 +980,7 @@ cfg_if!{
             let inner_termios = unsafe { termios.get_libc_termios_mut() };
             let res = unsafe { libc::cfsetispeed(inner_termios, baud as libc::speed_t) };
             termios.update_wrapper();
-            Errno::result(res).map(drop)
+            Errno::result(res).map(|_| ())
         }
 
         /// Set output baud rate (see
@@ -991,7 +991,7 @@ cfg_if!{
             let inner_termios = unsafe { termios.get_libc_termios_mut() };
             let res = unsafe { libc::cfsetospeed(inner_termios, baud as libc::speed_t) };
             termios.update_wrapper();
-            Errno::result(res).map(drop)
+            Errno::result(res).map(|_| ())
         }
 
         /// Set both the input and output baud rates (see
@@ -1003,7 +1003,7 @@ cfg_if!{
             let inner_termios = unsafe { termios.get_libc_termios_mut() };
             let res = unsafe { libc::cfsetspeed(inner_termios, baud as libc::speed_t) };
             termios.update_wrapper();
-            Errno::result(res).map(drop)
+            Errno::result(res).map(|_| ())
         }
     }
 }
@@ -1046,13 +1046,13 @@ pub fn tcgetattr(fd: RawFd) -> Result<Termios> {
 /// *any* of the parameters were successfully set, not only if all were set successfully.
 pub fn tcsetattr(fd: RawFd, actions: SetArg, termios: &Termios) -> Result<()> {
     let inner_termios = termios.get_libc_termios();
-    Errno::result(unsafe { libc::tcsetattr(fd, actions as c_int, &*inner_termios) }).map(drop)
+    Errno::result(unsafe { libc::tcsetattr(fd, actions as c_int, &*inner_termios) }).map(|_| ())
 }
 
 /// Block until all output data is written (see
 /// [tcdrain(3p)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/tcdrain.html)).
 pub fn tcdrain(fd: RawFd) -> Result<()> {
-    Errno::result(unsafe { libc::tcdrain(fd) }).map(drop)
+    Errno::result(unsafe { libc::tcdrain(fd) }).map(|_| ())
 }
 
 /// Suspend or resume the transmission or reception of data (see
@@ -1061,7 +1061,7 @@ pub fn tcdrain(fd: RawFd) -> Result<()> {
 /// `tcflow()` suspends of resumes the transmission or reception of data for the given port
 /// depending on the value of `action`.
 pub fn tcflow(fd: RawFd, action: FlowArg) -> Result<()> {
-    Errno::result(unsafe { libc::tcflow(fd, action as c_int) }).map(drop)
+    Errno::result(unsafe { libc::tcflow(fd, action as c_int) }).map(|_| ())
 }
 
 /// Discard data in the output or input queue (see
@@ -1070,7 +1070,7 @@ pub fn tcflow(fd: RawFd, action: FlowArg) -> Result<()> {
 /// `tcflush()` will discard data for a terminal port in the input queue, output queue, or both
 /// depending on the value of `action`.
 pub fn tcflush(fd: RawFd, action: FlushArg) -> Result<()> {
-    Errno::result(unsafe { libc::tcflush(fd, action as c_int) }).map(drop)
+    Errno::result(unsafe { libc::tcflush(fd, action as c_int) }).map(|_| ())
 }
 
 /// Send a break for a specific duration (see
@@ -1079,7 +1079,7 @@ pub fn tcflush(fd: RawFd, action: FlushArg) -> Result<()> {
 /// When using asynchronous data transmission `tcsendbreak()` will transmit a continuous stream
 /// of zero-valued bits for an implementation-defined duration.
 pub fn tcsendbreak(fd: RawFd, duration: c_int) -> Result<()> {
-    Errno::result(unsafe { libc::tcsendbreak(fd, duration) }).map(drop)
+    Errno::result(unsafe { libc::tcsendbreak(fd, duration) }).map(|_| ())
 }
 
 /// Get the session controlled by the given terminal (see
