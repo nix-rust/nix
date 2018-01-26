@@ -56,6 +56,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#826](https://github.com/nix-rust/nix/pull/826))
 - Added `nix::sys::socket::LinkAddr` on Linux and all bsdlike system.
   ([#813](https://github.com/nix-rust/nix/pull/813))
+- Add socket options for `IP_TRANSPARENT` / `BIND_ANY`.
+  ([#835](https://github.com/nix-rust/nix/pull/835))
 
 ### Changed
 - Exposed the `mqueue` module for all supported operating systems.
