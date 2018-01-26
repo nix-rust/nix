@@ -1,7 +1,7 @@
 [package]
 name        = "nix"
 description = "Rust friendly bindings to *nix APIs"
-version     = "0.10.0"
+version     = "0.11.0-pre"
 authors     = ["The nix-rust Project Developers"]
 repository  = "https://github.com/nix-rust/nix"
 license     = "MIT"
@@ -13,7 +13,7 @@ exclude     = [
 ]
 
 [dependencies]
-libc = "0.2.36"
+libc = { git = "https://github.com/rust-lang/libc" }
 bitflags = "1.0"
 cfg-if = "0.1.0"
 void = "1.0.2"
