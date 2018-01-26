@@ -100,6 +100,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#814](https://github.com/nix-rust/nix/pull/814))
 - Removed return type from `pause`.
   ([#829](https://github.com/nix-rust/nix/pull/829))
+- Changed the termios APIs to allow for using a `u32` instead of the `BaudRate`
+  enum on BSD platforms to support arbitrary baud rates. See the module docs for
+  `nix::sys::termios` for more details.
+  ([#843](https://github.com/nix-rust/nix/pull/843))
 
 ### Fixed
 - Fix compilation and tests for OpenBSD targets
