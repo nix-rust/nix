@@ -242,7 +242,7 @@ impl Termios {
         self.inner.as_ptr()
     }
 
-    /// Allows for easily creating new Termios structs that will be overwritten with real data.
+    /// Allows for easily creating new `Termios` structs that will be overwritten with real data.
     ///
     /// This should only be used when the inner libc::termios struct will be overwritten before it's
     /// read.
@@ -905,7 +905,7 @@ cfg_if!{
         /// Get input baud rate (see
         /// [cfgetispeed(3p)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/cfgetispeed.html)).
         ///
-        /// `cfgetispeed()` extracts the input baud rate from the given Termios structure.
+        /// `cfgetispeed()` extracts the input baud rate from the given `Termios` structure.
         pub fn cfgetispeed(termios: &Termios) -> u32 {
             let inner_termios = termios.get_libc_termios();
             unsafe { libc::cfgetispeed(&*inner_termios) as u32 }
@@ -914,7 +914,7 @@ cfg_if!{
         /// Get output baud rate (see
         /// [cfgetospeed(3p)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/cfgetospeed.html)).
         ///
-        /// `cfgetospeed()` extracts the output baud rate from the given Termios structure.
+        /// `cfgetospeed()` extracts the output baud rate from the given `Termios` structure.
         pub fn cfgetospeed(termios: &Termios) -> u32 {
             let inner_termios = termios.get_libc_termios();
             unsafe { libc::cfgetospeed(&*inner_termios) as u32 }
@@ -923,7 +923,7 @@ cfg_if!{
         /// Set input baud rate (see
         /// [cfsetispeed(3p)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/cfsetispeed.html)).
         ///
-        /// `cfsetispeed()` sets the intput baud rate in the given Termios structure.
+        /// `cfsetispeed()` sets the intput baud rate in the given `Termios` structure.
         pub fn cfsetispeed<T: Into<u32>>(termios: &mut Termios, baud: T) -> Result<()> {
             let inner_termios = unsafe { termios.get_libc_termios_mut() };
             let res = unsafe { libc::cfsetispeed(inner_termios, baud.into() as libc::speed_t) };
@@ -957,7 +957,7 @@ cfg_if!{
         /// Get input baud rate (see
         /// [cfgetispeed(3p)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/cfgetispeed.html)).
         ///
-        /// `cfgetispeed()` extracts the input baud rate from the given Termios structure.
+        /// `cfgetispeed()` extracts the input baud rate from the given `Termios` structure.
         pub fn cfgetispeed(termios: &Termios) -> BaudRate {
             let inner_termios = termios.get_libc_termios();
             unsafe { libc::cfgetispeed(&*inner_termios) }.into()
@@ -966,7 +966,7 @@ cfg_if!{
         /// Get output baud rate (see
         /// [cfgetospeed(3p)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/cfgetospeed.html)).
         ///
-        /// `cfgetospeed()` extracts the output baud rate from the given Termios structure.
+        /// `cfgetospeed()` extracts the output baud rate from the given `Termios` structure.
         pub fn cfgetospeed(termios: &Termios) -> BaudRate {
             let inner_termios = termios.get_libc_termios();
             unsafe { libc::cfgetospeed(&*inner_termios) }.into()
@@ -975,7 +975,7 @@ cfg_if!{
         /// Set input baud rate (see
         /// [cfsetispeed(3p)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/cfsetispeed.html)).
         ///
-        /// `cfsetispeed()` sets the intput baud rate in the given Termios structure.
+        /// `cfsetispeed()` sets the intput baud rate in the given `Termios` structure.
         pub fn cfsetispeed(termios: &mut Termios, baud: BaudRate) -> Result<()> {
             let inner_termios = unsafe { termios.get_libc_termios_mut() };
             let res = unsafe { libc::cfsetispeed(inner_termios, baud as libc::speed_t) };
@@ -986,7 +986,7 @@ cfg_if!{
         /// Set output baud rate (see
         /// [cfsetospeed(3p)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/cfsetospeed.html)).
         ///
-        /// `cfsetospeed()` sets the output baud rate in the given termios structure.
+        /// `cfsetospeed()` sets the output baud rate in the given `Termios` structure.
         pub fn cfsetospeed(termios: &mut Termios, baud: BaudRate) -> Result<()> {
             let inner_termios = unsafe { termios.get_libc_termios_mut() };
             let res = unsafe { libc::cfsetospeed(inner_termios, baud as libc::speed_t) };
@@ -997,7 +997,7 @@ cfg_if!{
         /// Set both the input and output baud rates (see
         /// [termios(3)](https://www.freebsd.org/cgi/man.cgi?query=cfsetspeed)).
         ///
-        /// `cfsetspeed()` sets the input and output baud rate in the given termios structure. Note that
+        /// `cfsetspeed()` sets the input and output baud rate in the given `Termios` structure. Note that
         /// this is part of the 4.4BSD standard and not part of POSIX.
         pub fn cfsetspeed(termios: &mut Termios, baud: BaudRate) -> Result<()> {
             let inner_termios = unsafe { termios.get_libc_termios_mut() };
@@ -1025,7 +1025,7 @@ pub fn cfmakeraw(termios: &mut Termios) {
 /// Return the configuration of a port
 /// [tcgetattr(3p)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/tcgetattr.html)).
 ///
-/// `tcgetattr()` returns a Termios structure with the current configuration for a port. Modifying
+/// `tcgetattr()` returns a `Termios` structure with the current configuration for a port. Modifying
 /// this structure *will not* reconfigure the port, instead the modifications should be done to
 /// the `Termios` structure and then the port should be reconfigured using `tcsetattr()`.
 pub fn tcgetattr(fd: RawFd) -> Result<Termios> {
