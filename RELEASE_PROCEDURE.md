@@ -36,6 +36,6 @@ branch.
 - Add a new Unreleased section header to CHANGELOG.md.
 - In `Cargo.toml`, update the version to the nextversion, e.g.
   `v0.8.4`.
-- In `Cargo.tml`, revert the libc dependency to its git master branch.
+- In `Cargo.toml`, revert the libc dependency to its git master branch.
 - Commit with a message like "Bump to v0.8.4"
 - Make a pull request.
