@@ -1,4 +1,6 @@
-use libc::{self, c_int};
+use std::convert::{From, Into};
+
+use libc::{self, c_int, pid_t};
 use Result;
 use errno::Errno;
 use unistd::Pid;
@@ -45,6 +47,30 @@ libc_bitflags!(
         __WCLONE;
     }
 );
+
+/// Possible child targets of`waitpid()`.
+///
+/// The most common variants for waiting are waiting
+/// for a specific child via `WaitPid::Child(pid)` and
+/// waiting for any child via `WaitPid::AnyChild`.
+#[derive(Eq, PartialEq, Clone, Copy, Debug)]
+pub enum WaitTarget {
+    /// Waiting for a child with `Pid` process id.
+    Child(Pid),
+    /// Waiting for a child of the same process group as the calling process.
+    ThisGroupChild,
+    /// Waiting for any child.
+    AnyChild,
+    /// Waiting for a child of process group `Pid` (NB: do not negate this value,
+    /// just use process id of the group leader).
+    ChildOfGroup(Pid),
+}
+
+impl From<Pid> for WaitTarget {
+    fn from(pid: Pid) -> WaitTarget {
+        WaitTarget::Child(pid)
+    }
+}
 
 /// Possible return values from `wait()` or `waitpid()`.
 ///
@@ -207,7 +233,7 @@ impl WaitStatus {
     }
 }
 
-pub fn waitpid<P: Into<Option<Pid>>>(pid: P, options: Option<WaitPidFlag>) -> Result<WaitStatus> {
+pub fn waitpid<P: Into<WaitTarget>>(who: P, options: Option<WaitPidFlag>) -> Result<WaitStatus> {
     use self::WaitStatus::*;
 
     let mut status: i32 = 0;
@@ -217,9 +243,17 @@ pub fn waitpid<P: Into<Option<Pid>>>(pid: P, options: Option<WaitPidFlag>) -> Re
         None => 0,
     };
 
+    let who: WaitTarget = who.into();
+    let pid: pid_t = match who {
+        WaitTarget::Child(pid) => pid.into(),
+        WaitTarget::ThisGroupChild => 0,
+        WaitTarget::AnyChild => -1,
+        WaitTarget::ChildOfGroup(pid) => { let pid: pid_t = pid.into(); -pid },
+    };
+
     let res = unsafe {
         libc::waitpid(
-            pid.into().unwrap_or(Pid::from_raw(-1)).into(),
+            pid,
             &mut status as *mut c_int,
             option_bits,
         )
@@ -232,5 +266,5 @@ pub fn waitpid<P: Into<Option<Pid>>>(pid: P, options: Option<WaitPidFlag>) -> Re
 }
 
 pub fn wait() -> Result<WaitStatus> {
-    waitpid(None, None)
+    waitpid(WaitTarget::AnyChild, None)
 }
