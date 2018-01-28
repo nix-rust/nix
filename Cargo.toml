@@ -8,8 +8,7 @@ license     = "MIT"
 categories  = ["os::unix-apis"]
 exclude     = [
   ".gitignore",
-  ".travis.yml",
-  "test/**/*"
+  ".travis.yml"
 ]
 
 [dependencies]
