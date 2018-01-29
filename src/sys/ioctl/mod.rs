@@ -489,41 +489,80 @@ macro_rules! ioctl_write_ptr_bad {
     )
 }
 
-/// Generates a wrapper function for a ioctl that writes an integer to the kernel.
-///
-/// The arguments to this macro are:
-///
-/// * The function name
-/// * The ioctl identifier
-/// * The ioctl sequence number
-///
-/// The generated function has the following signature:
-///
-/// ```rust,ignore
-/// pub unsafe fn FUNCTION_NAME(fd: libc::c_int, data: libc::c_int) -> Result<libc::c_int>
-/// ```
-///
-/// For a more in-depth explanation of ioctls, see [`::sys::ioctl`](sys/ioctl/index.html).
-///
-/// # Example
-///
-/// ```
-/// # #[macro_use] extern crate nix;
-/// const HCI_IOC_MAGIC: u8 = b'k';
-/// const HCI_IOC_HCIDEVUP: u8 = 1;
-/// ioctl_write_int!(hci_dev_up, HCI_IOC_MAGIC, HCI_IOC_HCIDEVUP);
-/// # fn main() {}
-/// ```
-#[macro_export]
-macro_rules! ioctl_write_int {
-    ($(#[$attr:meta])* $name:ident, $ioty:expr, $nr:expr) => (
-        $(#[$attr])*
-        pub unsafe fn $name(fd: $crate::libc::c_int,
-                            data: $crate::libc::c_int)
-                            -> $crate::Result<$crate::libc::c_int> {
-            convert_ioctl_res!($crate::libc::ioctl(fd, request_code_write!($ioty, $nr, ::std::mem::size_of::<$crate::libc::c_int>()) as $crate::sys::ioctl::ioctl_num_type, data))
+cfg_if!{
+    if #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))] {
+        /// Generates a wrapper function for a ioctl that writes an integer to the kernel.
+        ///
+        /// The arguments to this macro are:
+        ///
+        /// * The function name
+        /// * The ioctl identifier
+        /// * The ioctl sequence number
+        ///
+        /// The generated function has the following signature:
+        ///
+        /// ```rust,ignore
+        /// pub unsafe fn FUNCTION_NAME(fd: libc::c_int, data: libc::c_int) -> Result<libc::c_int>
+        /// ```
+        ///
+        /// For a more in-depth explanation of ioctls, see [`::sys::ioctl`](sys/ioctl/index.html).
+        ///
+        /// # Example
+        ///
+        /// ```
+        /// # #[macro_use] extern crate nix;
+        /// ioctl_write_int!(vt_activate, b'v', 4);
+        /// # fn main() {}
+        /// ```
+        #[macro_export]
+        macro_rules! ioctl_write_int {
+            ($(#[$attr:meta])* $name:ident, $ioty:expr, $nr:expr) => (
+                $(#[$attr])*
+                pub unsafe fn $name(fd: $crate::libc::c_int,
+                                    data: $crate::libc::c_int)
+                                    -> $crate::Result<$crate::libc::c_int> {
+                    convert_ioctl_res!($crate::libc::ioctl(fd, request_code_write_int!($ioty, $nr) as $crate::sys::ioctl::ioctl_num_type, data))
+                }
+            )
         }
-    )
+    } else {
+        /// Generates a wrapper function for a ioctl that writes an integer to the kernel.
+        ///
+        /// The arguments to this macro are:
+        ///
+        /// * The function name
+        /// * The ioctl identifier
+        /// * The ioctl sequence number
+        ///
+        /// The generated function has the following signature:
+        ///
+        /// ```rust,ignore
+        /// pub unsafe fn FUNCTION_NAME(fd: libc::c_int, data: libc::c_int) -> Result<libc::c_int>
+        /// ```
+        ///
+        /// For a more in-depth explanation of ioctls, see [`::sys::ioctl`](sys/ioctl/index.html).
+        ///
+        /// # Example
+        ///
+        /// ```
+        /// # #[macro_use] extern crate nix;
+        /// const HCI_IOC_MAGIC: u8 = b'k';
+        /// const HCI_IOC_HCIDEVUP: u8 = 1;
+        /// ioctl_write_int!(hci_dev_up, HCI_IOC_MAGIC, HCI_IOC_HCIDEVUP);
+        /// # fn main() {}
+        /// ```
+        #[macro_export]
+        macro_rules! ioctl_write_int {
+            ($(#[$attr:meta])* $name:ident, $ioty:expr, $nr:expr) => (
+                $(#[$attr])*
+                pub unsafe fn $name(fd: $crate::libc::c_int,
+                                    data: $crate::libc::c_int)
+                                    -> $crate::Result<$crate::libc::c_int> {
+                    convert_ioctl_res!($crate::libc::ioctl(fd, request_code_write!($ioty, $nr, ::std::mem::size_of::<$crate::libc::c_int>()) as $crate::sys::ioctl::ioctl_num_type, data))
+                }
+            )
+        }
+    }
 }
 
 /// Generates a wrapper function for a "bad" ioctl that writes an integer to the kernel.

@@ -110,6 +110,13 @@ mod bsd {
         assert_eq!(request_code_none!(b'a', 255), 0x2000_61FF);
     }
 
+    #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
+    #[test]
+    fn test_op_write_int() {
+        assert_eq!(request_code_write_int!(b'v', 4), 0x2004_7604);
+        assert_eq!(request_code_write_int!(b'p', 2), 0x2004_7002);
+    }
+
     #[test]
     fn test_op_write() {
         assert_eq!(request_code_write!(b'z', 10, 1), 0x8001_7A0A);

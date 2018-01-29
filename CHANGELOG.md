@@ -29,6 +29,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#825](https://github.com/nix-rust/nix/pull/825))
 - Added `fchmod`, `fchmodat`.
   ([#857](https://github.com/nix-rust/nix/pull/857))
+- Added `request_code_write_int!` on FreeBSD/DragonFlyBSD
+  ([#833](https://github.com/nix-rust/nix/pull/833))
 
 ### Changed
 - Display and Debug for SysControlAddr now includes all fields.
@@ -37,6 +39,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - Properly exposed 460800 and 921600 baud rates on NetBSD
   ([#837](https://github.com/nix-rust/nix/pull/837))
+- Fixed `ioctl_write_int!` on FreeBSD/DragonFlyBSD
+  ([#833](https://github.com/nix-rust/nix/pull/833))
 
 ### Removed
 - Removed explicit support for the `bytes` crate from the `sys::aio` module.
