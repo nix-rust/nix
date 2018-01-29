@@ -6,6 +6,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Added `getsid` in `::nix::unistd`
+  ([#850](https://github.com/nix-rust/nix/pull/850))
 
 ### Changed
 
