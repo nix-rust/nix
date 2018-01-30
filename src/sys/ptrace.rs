@@ -280,3 +280,17 @@ pub fn cont<T: Into<Option<Signal>>>(pid: Pid, sig: T) -> Result<()> {
     }
 }
 
+/// Move the stopped tracee process forward by a single step as with 
+/// `ptrace(PTRACE_SINGLESTEP, ...)`
+///
+/// Advances the execution of the process with PID `pid` by a single step optionally delivering a
+/// single specified by `sig`.
+pub fn step<T: Into<Option<Signal>>>(pid: Pid, sig: T) -> Result<()> {
+    let data = match sig.into() {
+        Some(s) => s as i32 as *mut c_void,
+        None => ptr::null_mut(),
+    };
+    unsafe {
+        ptrace_other(Request::PTRACE_SINGLESTEP, pid, ptr::null_mut(), data).map(|_| ())
+    }
+}
