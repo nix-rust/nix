@@ -10,7 +10,7 @@ use std::{fmt, mem, ptr};
 use std::ffi::{CString, CStr, OsString, OsStr};
 use std::os::unix::ffi::{OsStringExt, OsStrExt};
 use std::os::unix::io::RawFd;
-use std::path::{PathBuf};
+use std::path::PathBuf;
 use void::Void;
 use sys::stat::Mode;
 
@@ -143,7 +143,7 @@ impl fmt::Display for Pid {
 /// When `fork` is called, the process continues execution in the parent process
 /// and in the new child.  This return type can be examined to determine whether
 /// you are now executing in the parent process or in the child.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum ForkResult {
     Parent { child: Pid },
     Child,
@@ -503,14 +503,14 @@ pub fn getcwd() -> Result<PathBuf> {
     let mut buf = Vec::with_capacity(512);
     loop {
         unsafe {
-            let ptr = buf.as_mut_ptr() as *mut libc::c_char;
+            let ptr = buf.as_mut_ptr() as *mut c_char;
 
             // The buffer must be large enough to store the absolute pathname plus
             // a terminating null byte, or else null is returned.
             // To safely handle this we start with a reasonable size (512 bytes)
             // and double the buffer size upon every error
             if !libc::getcwd(ptr, buf.capacity()).is_null() {
-                let len = CStr::from_ptr(buf.as_ptr() as *const libc::c_char).to_bytes().len();
+                let len = CStr::from_ptr(buf.as_ptr() as *const c_char).to_bytes().len();
                 buf.set_len(len);
                 buf.shrink_to_fit();
                 return Ok(PathBuf::from(OsString::from_vec(buf)));
@@ -822,6 +822,7 @@ pub fn write(fd: RawFd, buf: &[u8]) -> Result<usize> {
 /// [`lseek`]: ./fn.lseek.html
 /// [`lseek64`]: ./fn.lseek64.html
 #[repr(i32)]
+#[derive(Clone, Copy, Debug)]
 pub enum Whence {
     /// Specify an offset relative to the start of the file.
     SeekSet = libc::SEEK_SET,
@@ -852,10 +853,10 @@ pub enum Whence {
 /// Move the read/write file offset.
 ///
 /// See also [lseek(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/lseek.html)
-pub fn lseek(fd: RawFd, offset: libc::off_t, whence: Whence) -> Result<libc::off_t> {
+pub fn lseek(fd: RawFd, offset: off_t, whence: Whence) -> Result<off_t> {
     let res = unsafe { libc::lseek(fd, offset, whence as i32) };
 
-    Errno::result(res).map(|r| r as libc::off_t)
+    Errno::result(res).map(|r| r as off_t)
 }
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
@@ -1329,7 +1330,7 @@ pub fn pause() {
 /// See also [sleep(2)](http://pubs.opengroup.org/onlinepubs/009695399/functions/sleep.html#tag_03_705_05)
 // Per POSIX, does not fail
 #[inline]
-pub fn sleep(seconds: libc::c_uint) -> c_uint {
+pub fn sleep(seconds: c_uint) -> c_uint {
     unsafe { libc::sleep(seconds) }
 }
 

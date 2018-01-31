@@ -141,6 +141,7 @@ fn stop_signal(status: i32) -> Result<Signal> {
     Signal::from_c_int(unsafe { libc::WSTOPSIG(status) })
 }
 
+#[cfg(any(target_os = "android", target_os = "linux"))]
 fn syscall_stop(status: i32) -> bool {
     // From ptrace(2), setting PTRACE_O_TRACESYSGOOD has the effect
     // of delivering SIGTRAP | 0x80 as the signal number for syscall
@@ -149,6 +150,7 @@ fn syscall_stop(status: i32) -> bool {
     unsafe { libc::WSTOPSIG(status) == libc::SIGTRAP | 0x80 }
 }
 
+#[cfg(any(target_os = "android", target_os = "linux"))]
 fn stop_additional(status: i32) -> c_int {
     (status >> 16) as c_int
 }
@@ -182,7 +184,7 @@ impl WaitStatus {
             WaitStatus::Signaled(pid, try!(term_signal(status)), dumped_core(status))
         } else if stopped(status) {
             cfg_if! {
-                if #[cfg(any(target_os = "linux", target_os = "android"))] {
+                if #[cfg(any(target_os = "android", target_os = "linux"))] {
                     fn decode_stopped(pid: Pid, status: i32) -> Result<WaitStatus> {
                         let status_additional = stop_additional(status);
                         Ok(if syscall_stop(status) {

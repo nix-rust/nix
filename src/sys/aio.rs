@@ -295,7 +295,7 @@ impl<'a> AioCb<'a> {
             aiocb: a,
             mutable: true,
             in_progress: false,
-            buffer: Buffer::Phantom(PhantomData)
+            buffer: Buffer::Phantom(PhantomData),
         }
     }
 
@@ -379,7 +379,7 @@ impl<'a> AioCb<'a> {
             aiocb: a,
             mutable: false,
             in_progress: false,
-            buffer: Buffer::Bytes(buf2)
+            buffer: Buffer::Bytes(buf2),
         }
     }
 
@@ -464,7 +464,7 @@ impl<'a> AioCb<'a> {
             aiocb: a,
             mutable: true,
             in_progress: false,
-            buffer: Buffer::BytesMut(buf2)
+            buffer: Buffer::BytesMut(buf2),
         }
     }
 
@@ -619,7 +619,7 @@ impl<'a> AioCb<'a> {
             aiocb: a,
             mutable: false,
             in_progress: false,
-            buffer: Buffer::None
+            buffer: Buffer::None,
         }
     }
 

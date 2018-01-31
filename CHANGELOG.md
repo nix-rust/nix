@@ -8,8 +8,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 
 ### Changed
+- Display and Debug for SysControlAddr now includes all fields.
+  ([#837](https://github.com/nix-rust/nix/pull/837))
 
 ### Fixed
+- Properly exposed 460800 and 921600 baud rates on NetBSD
+  ([#837](https://github.com/nix-rust/nix/pull/837))
 
 ### Removed
 

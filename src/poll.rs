@@ -1,3 +1,4 @@
+//! Wait for events to trigger on specific file descriptors
 #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd", target_os = "linux"))]
 use sys::time::TimeSpec;
 #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd", target_os = "linux"))]
@@ -18,6 +19,7 @@ use errno::Errno;
 /// retrieved by calling [`revents()`](#method.revents) on the `PollFd`.
 #[repr(C)]
 #[derive(Clone, Copy)]
+#[allow(missing_debug_implementations)]
 pub struct PollFd {
     pollfd: libc::pollfd,
 }

@@ -215,7 +215,7 @@ impl AddressFamily {
     /// Create a new `AddressFamily` from an integer value retrieved from `libc`, usually from
     /// the `sa_family` field of a `sockaddr`.
     ///
-    /// Currently only supports these address families: Unix, Inet (v4 & v6), Netlink, Link/Packet 
+    /// Currently only supports these address families: Unix, Inet (v4 & v6), Netlink, Link/Packet
     /// and System. Returns None for unsupported or unknown address families.
     pub fn from_i32(family: i32) -> Option<AddressFamily> {
         match family {
@@ -392,7 +392,7 @@ impl fmt::Debug for InetAddr {
  * ===== IpAddr =====
  *
  */
-
+#[derive(Clone, Copy)]
 pub enum IpAddr {
     V4(Ipv4Addr),
     V6(Ipv6Addr),
@@ -813,7 +813,7 @@ impl SockAddr {
                     NetlinkAddr(*(addr as *const libc::sockaddr_nl)))),
                 #[cfg(any(target_os = "ios", target_os = "macos"))]
                 Some(AddressFamily::System) => Some(SockAddr::SysControl(
-                    SysControlAddr(*(addr as *const sys_control::sockaddr_ctl)))),
+                    SysControlAddr(*(addr as *const libc::sockaddr_ctl)))),
                 #[cfg(any(target_os = "android", target_os = "linux"))]
                 Some(AddressFamily::Packet) => Some(SockAddr::Link(
                     LinkAddr(*(addr as *const libc::sockaddr_ll)))),
@@ -839,11 +839,11 @@ impl SockAddr {
     }
 
     /// Conversion from nix's SockAddr type to the underlying libc sockaddr type.
-    /// 
+    ///
     /// This is useful for interfacing with other libc functions that don't yet have nix wrappers.
-    /// Returns a reference to the underlying data type (as a sockaddr reference) along 
-    /// with the size of the actual data type. sockaddr is commonly used as a proxy for 
-    /// a superclass as C doesn't support inheritance, so many functions that take 
+    /// Returns a reference to the underlying data type (as a sockaddr reference) along
+    /// with the size of the actual data type. sockaddr is commonly used as a proxy for
+    /// a superclass as C doesn't support inheritance, so many functions that take
     /// a sockaddr * need to take the size of the underlying type as well and then internally cast it back.
     pub unsafe fn as_ffi_pair(&self) -> (&libc::sockaddr, libc::socklen_t) {
         match *self {
@@ -853,7 +853,7 @@ impl SockAddr {
             #[cfg(any(target_os = "android", target_os = "linux"))]
             SockAddr::Netlink(NetlinkAddr(ref sa)) => (mem::transmute(sa), mem::size_of::<libc::sockaddr_nl>() as libc::socklen_t),
             #[cfg(any(target_os = "ios", target_os = "macos"))]
-            SockAddr::SysControl(SysControlAddr(ref sa)) => (mem::transmute(sa), mem::size_of::<sys_control::sockaddr_ctl>() as libc::socklen_t),
+            SockAddr::SysControl(SysControlAddr(ref sa)) => (mem::transmute(sa), mem::size_of::<libc::sockaddr_ctl>() as libc::socklen_t),
             #[cfg(any(target_os = "android", target_os = "linux"))]
             SockAddr::Link(LinkAddr(ref ether_addr)) => (mem::transmute(ether_addr), mem::size_of::<libc::sockaddr_ll>() as libc::socklen_t),
             #[cfg(any(target_os = "dragonfly",
@@ -951,7 +951,7 @@ impl fmt::Display for SockAddr {
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
 pub mod netlink {
-    use ::sys::socket::addr::{AddressFamily};
+    use ::sys::socket::addr::AddressFamily;
     use libc::{sa_family_t, sockaddr_nl};
     use std::{fmt, mem};
     use std::hash::{Hash, Hasher};
@@ -1012,7 +1012,7 @@ pub mod netlink {
 
 #[cfg(any(target_os = "ios", target_os = "macos"))]
 pub mod sys_control {
-    use ::sys::socket::addr::{AddressFamily};
+    use ::sys::socket::addr::AddressFamily;
     use libc::{self, c_uchar, uint16_t, uint32_t};
     use std::{fmt, mem};
     use std::hash::{Hash, Hasher};
@@ -1031,21 +1031,10 @@ pub mod sys_control {
 
     ioctl!(readwrite ctl_info with CTL_IOC_MAGIC, CTL_IOC_INFO; ctl_ioc_info);
 
+    #[derive(Copy, Clone)]
     #[repr(C)]
-    #[derive(Copy, Clone)]
-    pub struct sockaddr_ctl {
-        pub sc_len: c_uchar,
-        pub sc_family: c_uchar,
-        pub ss_sysaddr: uint16_t,
-        pub sc_id: uint32_t,
-        pub sc_unit: uint32_t,
-        pub sc_reserved: [uint32_t; 5],
-    }
+    pub struct SysControlAddr(pub libc::sockaddr_ctl);
 
-    #[derive(Copy, Clone)]
-    pub struct SysControlAddr(pub sockaddr_ctl);
-
-    // , PartialEq, Eq, Debug, Hash
     impl PartialEq for SysControlAddr {
         fn eq(&self, other: &Self) -> bool {
             let (inner, other) = (self.0, other.0);
@@ -1066,8 +1055,8 @@ pub mod sys_control {
 
     impl SysControlAddr {
         pub fn new(id: u32, unit: u32) -> SysControlAddr {
-            let addr = sockaddr_ctl {
-                sc_len: mem::size_of::<sockaddr_ctl>() as c_uchar,
+            let addr = libc::sockaddr_ctl {
+                sc_len: mem::size_of::<libc::sockaddr_ctl>() as c_uchar,
                 sc_family: AddressFamily::System as c_uchar,
                 ss_sysaddr: libc::AF_SYS_CONTROL as uint16_t,
                 sc_id: id,
@@ -1103,13 +1092,19 @@ pub mod sys_control {
 
     impl fmt::Display for SysControlAddr {
         fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-            write!(f, "id: {} unit: {}", self.id(), self.unit())
+            fmt::Debug::fmt(self, f)
         }
     }
 
     impl fmt::Debug for SysControlAddr {
         fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-            fmt::Display::fmt(self, f)
+            f.debug_struct("SysControlAddr")
+                .field("sc_len", &self.0.sc_len)
+                .field("sc_family", &self.0.sc_family)
+                .field("ss_sysaddr", &self.0.ss_sysaddr)
+                .field("sc_id", &self.0.sc_id)
+                .field("sc_unit", &self.0.sc_unit)
+                .finish()
         }
     }
 }
@@ -1173,9 +1168,9 @@ mod datalink {
     impl PartialEq for LinkAddr {
         fn eq(&self, other: &Self) -> bool {
             let (a, b) = (self.0, other.0);
-            (a.sll_family, a.sll_protocol, a.sll_ifindex, a.sll_hatype, 
+            (a.sll_family, a.sll_protocol, a.sll_ifindex, a.sll_hatype,
                 a.sll_pkttype, a.sll_halen, a.sll_addr) ==
-            (b.sll_family, b.sll_protocol, b.sll_ifindex, b.sll_hatype, 
+            (b.sll_family, b.sll_protocol, b.sll_ifindex, b.sll_hatype,
                 b.sll_pkttype, b.sll_halen, b.sll_addr)
         }
     }
@@ -1183,7 +1178,7 @@ mod datalink {
     impl hash::Hash for LinkAddr {
         fn hash<H: hash::Hasher>(&self, s: &mut H) {
             let a = self.0;
-            (a.sll_family, a.sll_protocol, a.sll_ifindex, a.sll_hatype, 
+            (a.sll_family, a.sll_protocol, a.sll_ifindex, a.sll_hatype,
                 a.sll_pkttype, a.sll_halen, a.sll_addr).hash(s);
         }
     }
@@ -1300,18 +1295,18 @@ mod datalink {
                   target_os = "openbsd"))]
         fn eq(&self, other: &Self) -> bool {
             let (a, b) = (self.0, other.0);
-            (a.sdl_len, a.sdl_family, a.sdl_index, a.sdl_type, 
+            (a.sdl_len, a.sdl_family, a.sdl_index, a.sdl_type,
                 a.sdl_nlen, a.sdl_alen, a.sdl_slen, &a.sdl_data[..]) ==
-            (b.sdl_len, b.sdl_family, b.sdl_index, b.sdl_type, 
+            (b.sdl_len, b.sdl_family, b.sdl_index, b.sdl_type,
                 b.sdl_nlen, b.sdl_alen, b.sdl_slen, &b.sdl_data[..])
         }
-  
+
         #[cfg(target_os = "dragonfly")]
         fn eq(&self, other: &Self) -> bool {
             let (a, b) = (self.0, other.0);
-            (a.sdl_len, a.sdl_family, a.sdl_index, a.sdl_type, a.sdl_nlen, 
+            (a.sdl_len, a.sdl_family, a.sdl_index, a.sdl_type, a.sdl_nlen,
                 a.sdl_alen, a.sdl_slen, a.sdl_data, a.sdl_rcf, a.sdl_route) ==
-            (b.sdl_len, b.sdl_family, b.sdl_index, b.sdl_type, b.sdl_nlen, 
+            (b.sdl_len, b.sdl_family, b.sdl_index, b.sdl_type, b.sdl_nlen,
                 b.sdl_alen, b.sdl_slen, b.sdl_data, b.sdl_rcf, b.sdl_route)
         }
     }
@@ -1324,14 +1319,14 @@ mod datalink {
                   target_os = "openbsd"))]
         fn hash<H: hash::Hasher>(&self, s: &mut H) {
             let a = self.0;
-            (a.sdl_len, a.sdl_family, a.sdl_index, a.sdl_type, 
+            (a.sdl_len, a.sdl_family, a.sdl_index, a.sdl_type,
                 a.sdl_nlen, a.sdl_alen, a.sdl_slen, &a.sdl_data[..]).hash(s);
         }
 
         #[cfg(target_os = "dragonfly")]
         fn hash<H: hash::Hasher>(&self, s: &mut H) {
             let a = self.0;
-            (a.sdl_len, a.sdl_family, a.sdl_index, a.sdl_type, a.sdl_nlen, 
+            (a.sdl_len, a.sdl_family, a.sdl_index, a.sdl_type, a.sdl_nlen,
                 a.sdl_alen, a.sdl_slen, a.sdl_data, a.sdl_rcf, a.sdl_route).hash(s);
         }
     }
@@ -1398,7 +1393,7 @@ mod tests {
         let sock_addr = _sock_addr.unwrap();
 
         assert_eq!(sock_addr.family(), AddressFamily::Link);
-        
+
         match sock_addr {
             SockAddr::Link(ether_addr) => {
                 assert_eq!(ether_addr.addr(), [24u8, 101, 144, 221, 76, 176]);

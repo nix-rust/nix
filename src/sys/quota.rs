@@ -33,9 +33,6 @@ libc_enum!{
         Q_SYNC,
         Q_QUOTAON,
         Q_QUOTAOFF,
-        Q_GETFMT,
-        Q_GETINFO,
-        Q_SETINFO,
         Q_GETQUOTA,
         Q_SETQUOTA,
     }
@@ -100,6 +97,7 @@ libc_bitflags!(
 // FIXME: Change to repr(transparent)
 #[repr(C)]
 #[derive(Clone, Copy)]
+#[allow(missing_debug_implementations)]
 pub struct Dqblk(libc::dqblk);
 
 impl Default for Dqblk {
