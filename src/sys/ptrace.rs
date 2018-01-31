@@ -285,6 +285,19 @@ pub fn cont<T: Into<Option<Signal>>>(pid: Pid, sig: T) -> Result<()> {
 ///
 /// Advances the execution of the process with PID `pid` by a single step optionally delivering a
 /// single specified by `sig`.
+///
+/// # Example
+/// ```rust
+/// extern crate nix;
+/// use nix::sys::ptrace::step;
+/// use nix::unistd::Pid;
+/// use nix::sys::signal::Signal; 
+/// fn main() {
+///     let dummy_pid = Pid::from_raw(0); 
+///
+///     let _ = step(dummy_pid, Some(Signal::SIGSTOP));
+/// }
+/// ```
 pub fn step<T: Into<Option<Signal>>>(pid: Pid, sig: T) -> Result<()> {
     let data = match sig.into() {
         Some(s) => s as i32 as *mut c_void,
