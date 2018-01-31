@@ -41,6 +41,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#837](https://github.com/nix-rust/nix/pull/837))
 - Fixed `ioctl_write_int!` on FreeBSD/DragonFlyBSD
   ([#833](https://github.com/nix-rust/nix/pull/833))
+- `ioctl_write_int!` now properly supports passing a `c_ulong` as the parameter on Linux non-musl targets
+  ([#833](https://github.com/nix-rust/nix/pull/833))
 
 ### Removed
 - Removed explicit support for the `bytes` crate from the `sys::aio` module.

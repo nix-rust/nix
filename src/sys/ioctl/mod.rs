@@ -519,7 +519,7 @@ cfg_if!{
             ($(#[$attr:meta])* $name:ident, $ioty:expr, $nr:expr) => (
                 $(#[$attr])*
                 pub unsafe fn $name(fd: $crate::libc::c_int,
-                                    data: $crate::libc::c_int)
+                                    data: $crate::sys::ioctl::ioctl_param_type)
                                     -> $crate::Result<$crate::libc::c_int> {
                     convert_ioctl_res!($crate::libc::ioctl(fd, request_code_write_int!($ioty, $nr) as $crate::sys::ioctl::ioctl_num_type, data))
                 }
@@ -556,7 +556,7 @@ cfg_if!{
             ($(#[$attr:meta])* $name:ident, $ioty:expr, $nr:expr) => (
                 $(#[$attr])*
                 pub unsafe fn $name(fd: $crate::libc::c_int,
-                                    data: $crate::libc::c_int)
+                                    data: $crate::sys::ioctl::ioctl_param_type)
                                     -> $crate::Result<$crate::libc::c_int> {
                     convert_ioctl_res!($crate::libc::ioctl(fd, request_code_write!($ioty, $nr, ::std::mem::size_of::<$crate::libc::c_int>()) as $crate::sys::ioctl::ioctl_num_type, data))
                 }
