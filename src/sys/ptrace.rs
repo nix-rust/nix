@@ -284,7 +284,7 @@ pub fn cont<T: Into<Option<Signal>>>(pid: Pid, sig: T) -> Result<()> {
 /// `ptrace(PTRACE_SINGLESTEP, ...)`
 ///
 /// Advances the execution of the process with PID `pid` by a single step optionally delivering a
-/// single specified by `sig`.
+/// signal specified by `sig`.
 ///
 /// # Example
 /// ```rust
