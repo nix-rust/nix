@@ -292,10 +292,17 @@ pub fn cont<T: Into<Option<Signal>>>(pid: Pid, sig: T) -> Result<()> {
 /// use nix::sys::ptrace::step;
 /// use nix::unistd::Pid;
 /// use nix::sys::signal::Signal; 
+/// use nix::sys::wait::*;
 /// fn main() {
-///     let dummy_pid = Pid::from_raw(0); 
-///
-///     let _ = step(dummy_pid, Some(Signal::SIGSTOP));
+///     // If a process changes state to the stopped state because of a SIGUSR1 
+///     // signal, this will step the process forward and forward the user 
+///     // signal to the stopped process
+///     match waitpid(Pid::from_raw(-1), None) {
+///         Ok(WaitStatus::Stopped(pid, Signal::SIGUSR1)) => {
+///             let _ = step(pid, Signal::SIGUSR1);
+///         }
+///         _ => {},
+///     }
 /// }
 /// ```
 pub fn step<T: Into<Option<Signal>>>(pid: Pid, sig: T) -> Result<()> {
