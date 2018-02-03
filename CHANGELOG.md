@@ -7,6 +7,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
+- Added `alarm`. ([#830](https://github.com/nix-rust/nix/pull/830))
+
 ### Changed
 - Display and Debug for SysControlAddr now includes all fields.
   ([#837](https://github.com/nix-rust/nix/pull/837))

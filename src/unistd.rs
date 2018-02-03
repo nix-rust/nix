@@ -1325,6 +1325,85 @@ pub fn pause() {
     unsafe { libc::pause() };
 }
 
+pub mod alarm {
+    //! Alarm signal scheduling.
+    //!
+    //! Scheduling an alarm will trigger a `SIGALRM` signal when the time has
+    //! elapsed, which has to be caught, because the default action for the
+    //! signal is to terminate the program. This signal also can't be ignored
+    //! because the system calls like `pause` will not be interrupted, see the
+    //! second example below.
+    //!
+    //! # Examples
+    //!
+    //! Canceling an alarm:
+    //!
+    //! ```
+    //! use nix::unistd::alarm;
+    //!
+    //! // Set an alarm for 60 seconds from now.
+    //! alarm::set(60);
+    //!
+    //! // Cancel the above set alarm, which returns the number of seconds left
+    //! // of the previously set alarm.
+    //! assert_eq!(alarm::cancel(), Some(60));
+    //! ```
+    //!
+    //! Scheduling an alarm and waiting for the signal:
+    //!
+    //! ```
+    //! use std::time::{Duration, Instant};
+    //!
+    //! use nix::unistd::{alarm, pause};
+    //! use nix::sys::signal::*;
+    //!
+    //! // We need to setup an empty signal handler to catch the alarm signal,
+    //! // otherwise the program will be terminated once the signal is delivered.
+    //! extern fn signal_handler(_: nix::libc::c_int) { }
+    //! unsafe { sigaction(Signal::SIGALRM, &SigAction::new(SigHandler::Handler(signal_handler), SaFlags::empty(), SigSet::empty())); }
+    //!
+    //! // Set an alarm for 1 second from now.
+    //! alarm::set(1);
+    //!
+    //! let start = Instant::now();
+    //! // Pause the process until the alarm signal is received.
+    //! pause();
+    //!
+    //! assert!(start.elapsed() >= Duration::from_secs(1));
+    //! ```
+    //!
+    //! # References
+    //!
+    //! See also [alarm(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/alarm.html).
+
+    use libc;
+
+    /// Schedule an alarm signal.
+    ///
+    /// This will cause the system to generate a `SIGALRM` signal for the
+    /// process after the specified number of seconds have elapsed.
+    ///
+    /// Returns the leftover time of a previously set alarm if there was one.
+    pub fn set(secs: libc::c_uint) -> Option<libc::c_uint> {
+        assert!(secs != 0, "passing 0 to `alarm::set` is not allowed, to cancel an alarm use `alarm::cancel`");
+        alarm(secs)
+    }
+
+    /// Cancel an previously set alarm signal.
+    ///
+    /// Returns the leftover time of a previously set alarm if there was one.
+    pub fn cancel() -> Option<libc::c_uint> {
+        alarm(0)
+    }
+
+    fn alarm(secs: libc::c_uint) -> Option<libc::c_uint> {
+        match unsafe { libc::alarm(secs) } {
+            0 => None,
+            secs => Some(secs),
+        }
+    }
+}
+
 /// Suspend execution for an interval of time
 ///
 /// See also [sleep(2)](http://pubs.opengroup.org/onlinepubs/009695399/functions/sleep.html#tag_03_705_05)

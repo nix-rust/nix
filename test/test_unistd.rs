@@ -3,6 +3,7 @@ extern crate tempdir;
 use nix::fcntl::{fcntl, FcntlArg, FdFlag, OFlag};
 use nix::unistd::*;
 use nix::unistd::ForkResult::*;
+use nix::sys::signal::{SaFlags, SigAction, SigHandler, SigSet, Signal, sigaction};
 use nix::sys::wait::*;
 use nix::sys::stat::{self, Mode, SFlag};
 use std::{self, env, iter};
@@ -12,7 +13,7 @@ use std::io::Write;
 use std::os::unix::prelude::*;
 use tempfile::tempfile;
 use tempdir::TempDir;
-use libc::{_exit, off_t};
+use libc::{self, _exit, off_t};
 
 #[test]
 fn test_fork_and_waitpid() {
@@ -399,4 +400,52 @@ fn test_pipe2() {
     assert!(f0.contains(FdFlag::FD_CLOEXEC));
     let f1 = FdFlag::from_bits_truncate(fcntl(fd1, FcntlArg::F_GETFD).unwrap());
     assert!(f1.contains(FdFlag::FD_CLOEXEC));
+}
+
+// Used in `test_alarm`.
+static mut ALARM_CALLED: bool = false;
+
+// Used in `test_alarm`.
+pub extern fn alarm_signal_handler(raw_signal: libc::c_int) {
+    assert_eq!(raw_signal, libc::SIGALRM, "unexpected signal: {}", raw_signal);
+    unsafe { ALARM_CALLED = true };
+}
+
+#[test]
+fn test_alarm() {
+    let _m = ::SIGNAL_MTX.lock().expect("Mutex got poisoned by another test");
+
+    let handler = SigHandler::Handler(alarm_signal_handler);
+    let signal_action = SigAction::new(handler, SaFlags::SA_RESTART, SigSet::empty());
+    let old_handler = unsafe {
+        sigaction(Signal::SIGALRM, &signal_action)
+            .expect("unable to set signal handler for alarm")
+    };
+
+    // Set an alarm.
+    assert_eq!(alarm::set(60), None);
+
+    // Overwriting an alarm should return the old alarm.
+    assert_eq!(alarm::set(1), Some(60));
+
+    // We should be woken up after 1 second by the alarm, so we'll sleep for 2
+    // seconds to be sure.
+    sleep(2);
+    assert_eq!(unsafe { ALARM_CALLED }, true, "expected our alarm signal handler to be called");
+
+    // Reset the signal.
+    unsafe {
+        sigaction(Signal::SIGALRM, &old_handler)
+            .expect("unable to set signal handler for alarm");
+    }
+}
+
+#[test]
+fn test_canceling_alarm() {
+    let _m = ::SIGNAL_MTX.lock().expect("Mutex got poisoned by another test");
+
+    assert_eq!(alarm::cancel(), None);
+
+    assert_eq!(alarm::set(60), None);
+    assert_eq!(alarm::cancel(), Some(60));
 }
