@@ -34,6 +34,15 @@ pub mod errno;
 #[deny(missing_docs)]
 pub mod features;
 pub mod fcntl;
+#[deny(missing_docs)]
+#[cfg(any(target_os = "dragonfly",
+          target_os = "freebsd",
+          target_os = "ios",
+          target_os = "linux",
+          target_os = "macos",
+          target_os = "netbsd",
+          target_os = "openbsd"))]
+pub mod ifaddrs;
 #[cfg(any(target_os = "linux", target_os = "android"))]
 pub mod mount;
 #[cfg(any(target_os = "dragonfly",
