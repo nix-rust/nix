@@ -264,6 +264,17 @@ pub fn setsid() -> Result<Pid> {
     Errno::result(unsafe { libc::setsid() }).map(Pid)
 }
 
+/// Get the process group ID of a session leader
+/// [getsid(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/getsid.html).
+///
+/// Obtain the process group ID of the process that is the session leader of the process specified
+/// by pid. If pid is zero, it specifies the calling process.
+#[inline]
+pub fn getsid(pid: Option<Pid>) -> Result<Pid> {
+    let res = unsafe { libc::getsid(pid.unwrap_or(Pid(0)).into()) };
+    Errno::result(res).map(Pid)
+}
+
 
 /// Get the terminal foreground process group (see
 /// [tcgetpgrp(3)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/tcgetpgrp.html)).

@@ -108,6 +108,14 @@ fn test_getpid() {
     assert!(ppid > 0);
 }
 
+#[test]
+fn test_getsid() {
+    let none_sid: ::libc::pid_t = getsid(None).unwrap().into();
+    let pid_sid: ::libc::pid_t = getsid(Some(getpid())).unwrap().into();
+    assert!(none_sid > 0);
+    assert!(none_sid == pid_sid);
+}
+
 #[cfg(any(target_os = "linux", target_os = "android"))]
 mod linux_android {
     use nix::unistd::gettid;
