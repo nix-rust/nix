@@ -24,6 +24,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [0.10.0] 2018-01-26
 
 ### Added
+- Added specialized wrapper: `sys::ptrace::step` 
+  ([#852](https://github.com/nix-rust/nix/pull/852))
 - Added `AioCb::from_ptr` and `AioCb::from_mut_ptr`
   ([#820](https://github.com/nix-rust/nix/pull/820))
 - Added specialized wrappers: `sys::ptrace::{traceme, syscall, cont, attach}`. Using the matching routines
