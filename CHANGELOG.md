@@ -8,8 +8,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Added `getsid` in `::nix::unistd`
   ([#850](https://github.com/nix-rust/nix/pull/850))
-
 - Added `alarm`. ([#830](https://github.com/nix-rust/nix/pull/830))
+- Added interface flags `IFF_NO_PI, IFF_TUN, IFF_TAP` on linux-like systems.
+  ([#853](https://github.com/nix-rust/nix/pull/853))
 
 ### Changed
 - Display and Debug for SysControlAddr now includes all fields.
