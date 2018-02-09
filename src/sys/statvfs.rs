@@ -32,13 +32,13 @@ libc_bitflags!(
         #[cfg(any(target_os = "android", target_os = "linux"))]
         ST_MANDLOCK;
         /// Write on file/directory/symlink
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(target_os = "linux")]
         ST_WRITE;
         /// Append-only file
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(target_os = "linux")]
         ST_APPEND;
         /// Immutable file
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(target_os = "linux")]
         ST_IMMUTABLE;
         /// Do not update access times on files
         #[cfg(any(target_os = "android", target_os = "linux"))]
