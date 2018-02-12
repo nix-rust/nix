@@ -27,7 +27,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [0.10.0] 2018-01-26
 
 ### Added
-- Added specialized wrapper: `sys::ptrace::step` 
+- Added specialized wrapper: `sys::ptrace::step`
   ([#852](https://github.com/nix-rust/nix/pull/852))
 - Added `AioCb::from_ptr` and `AioCb::from_mut_ptr`
   ([#820](https://github.com/nix-rust/nix/pull/820))
@@ -47,7 +47,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#739](https://github.com/nix-rust/nix/pull/739))
 - Expose `signalfd` module on Android as well.
   ([#739](https://github.com/nix-rust/nix/pull/739))
-- Added nix::sys::ptrace::detach.
+- Added `nix::sys::ptrace::detach`.
   ([#749](https://github.com/nix-rust/nix/pull/749))
 - Added timestamp socket control message variant:
   `nix::sys::socket::ControlMessage::ScmTimestamp`
@@ -57,7 +57,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#663](https://github.com/nix-rust/nix/pull/663))
 - Added more accessor methods for `AioCb`
   ([#773](https://github.com/nix-rust/nix/pull/773))
-- Add nix::sys::fallocate
+- Add `nix::sys::fallocate`
   ([#768](https:://github.com/nix-rust/nix/pull/768))
 - Added `nix::unistd::mkfifo`.
   ([#602](https://github.com/nix-rust/nix/pull/774))
