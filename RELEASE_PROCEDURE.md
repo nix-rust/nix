@@ -14,6 +14,8 @@ The release is prepared as follows:
   changes:
   - In `CHANGELOG.md`, rename the Unreleased section to the new version
     followed by the date of the release.
+  - Add a new Unreleased section header to `CHANGELOG.md` with the four
+    Added, Changed, Fixed, and Removed sections added.
   - In `Cargo.toml`, update the version to the new version.
   - In `Cargo.toml`, change the libc dependency to the latest version.
   - In `README.md`, update the version in the Usage section to the new
@@ -30,11 +32,7 @@ The release is prepared as follows:
 
 # After Release
 
-After the release make a pull request with the following changes:
-
-- Add a new Unreleased section header to `CHANGELOG.md`.
-- In `Cargo.toml`, update the version to the nextversion, e.g.
-  `v0.8.4`.
-- In `Cargo.toml`, revert the libc dependency to its git master branch.
-- Make a commit of the above changes with a message like "[skip ci] Bump to v0.8.4"
-  - This skips continuous integration testing on the build bots and Travis CI
+Once a release is done, all that's left is to change the `libc` version
+back to using the version from git. So make a pull request containing a
+simple commit entitled "Start the next dev cycle" that changes the `libc`
+dependency in `Cargo.toml` to using it from git master.
