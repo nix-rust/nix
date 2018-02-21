@@ -163,7 +163,12 @@ libc_bitflags!{
         /// [open(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/open.html).
         ///
         /// Only used in [`recvmsg`](fn.recvmsg.html) function.
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "android",
+                  target_os = "dragonfly",
+                  target_os = "freebsd",
+                  target_os = "linux",
+                  target_os = "netbsd",
+                  target_os = "openbsd"))]
         MSG_CMSG_CLOEXEC;
     }
 }

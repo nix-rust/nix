@@ -13,6 +13,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#853](https://github.com/nix-rust/nix/pull/853))
 - Added `statvfs` module to all MacOS and Linux architectures.
   ([#832](https://github.com/nix-rust/nix/pull/832))
+- Added `EVFILT_EMPTY`, `EVFILT_PROCDESC` and `EVFILT_SENDFILE` on FreeBSD.
+  ([#825](https://github.com/nix-rust/nix/pull/825))
+- Exposed `termios::cfmakesane` on FreeBSD.
+  ([#825](https://github.com/nix-rust/nix/pull/825))
+- Exposed `MSG_CMSG_CLOEXEC` on *BSD.
+  ([#825](https://github.com/nix-rust/nix/pull/825))
 
 ### Changed
 - Display and Debug for SysControlAddr now includes all fields.
