@@ -353,10 +353,7 @@ impl AsRef<libc::sigset_t> for SigSet {
     }
 }
 
-/// Enum holding signal action for [`sigaction`](fn.sigaction.html) function.
-///
-/// Signal can be ignored, may have a custom handler or default one.
-///
+/// Specifies the signal action for the [`sigaction`](fn.sigaction.html) function.
 ///
 /// Custom signal handlers should follow some [rules](https://wiki.sei.cmu.edu/confluence/display/c/SIG30-C.+Call+only+asynchronous-safe+functions+within+signal+handlers)
 /// for being asynchronous-safe.
@@ -367,21 +364,20 @@ impl AsRef<libc::sigset_t> for SigSet {
 #[allow(unknown_lints)]
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum SigHandler {
-    /// Signal action should be set to a default one.
+    /// Specifies that the default action should be used.
     SigDfl,
-    /// Signal should be ignored.
+    /// Specifies that the signal should be ignored.
     SigIgn,
-    /// Custom action for signal, the only parameter is the signal number.
+    /// Set a custom action for signal, the only parameter is the signal number.
     Handler(extern fn(libc::c_int)),
-    /// Custom action for signal. It has some extra info of signal handling context.
+    /// Set a custom action for signal. It has some extra info of signal handling context.
     SigAction(extern fn(libc::c_int, *mut libc::siginfo_t, *mut libc::c_void))
 }
 
 /// Struct holding data for [`sigaction`](fn.sigaction.html) function.
 ///
-/// `SigAction` holds the signal action itself (which can be ignoring, custom handler or a default
-/// handler), flags for modifying the behavior of the signal and a mask of signals which should be
-/// blocked during execution of the signal handler.
+/// `SigAction` holds the signal action itself, flags for modifying the behavior of the signal
+/// and a mask of signals which should be blocked during execution of the signal handler.
 ///
 /// For more information see the [`sigaction` man
 /// pages](http://pubs.opengroup.org/onlinepubs/9699919799/functions/sigaction.html).
@@ -434,19 +430,21 @@ impl SigAction {
 ///
 /// This function sets a signal action and returns the previous one. Parameters are:
 ///
-/// * `signal` - signal number for which the `sigaction` is specified.
-/// * `sigaction` - description of new signal action. It is possible to ignore signal, set default
-/// or some custom handler, specifying options for handling and signal mask.
+/// * `signal` - the signal to modify.
+/// * `sigaction` - the new signal action.
 ///
-/// Some signals are cannot be handled - it is `SIGKILL` and `SIGSTOP`.
+/// Note that the `SIGKILL` and `SIGSTOP` signals are special and cannot be modified
+/// with this function.
 ///
 /// Custom signal handlers should call only
 /// [signal-safe](https://wiki.sei.cmu.edu/confluence/display/c/SIG30-C.+Call+only+asynchronous-safe+functions+within+signal+handlers)
-/// functions. Here is the [list](http://man7.org/linux/man-pages/man7/signal-safety.7.html) of
-/// signal-safe functions for Linux. Great care should be taken if the signal handler needs access
-/// to global state. Global state used in signal handler must not be protected with 
+/// functions. You should consult with a list of signal-safe functions for your system. For example,
+/// [POSIX](http://pubs.opengroup.org/onlinepubs/9699919799/functions/V2_chap02.html#tag_15_04_03_03)
+/// and [Linux](http://man7.org/linux/man-pages/man7/signal-safety.7.html) lists
+/// may serve as a good reference. Great care should be taken if the signal handler needs access
+/// to a global state. Global state used in signal handler must not be protected with
 /// [`Mutex`](https://doc.rust-lang.org/std/sync/struct.Mutex.html), it is better to stick to
-/// [`atomic`](https://doc.rust-lang.org/std/sync/atomic/index.html) module or to use
+/// [`atomic`](https://doc.rust-lang.org/std/sync/atomic/index.html)s module or to use
 /// platform-specific tools which `nix` provides (like [pipe](../../unistd/pipe.v.html)).
 ///
 /// For more information see the [`sigaction` man
@@ -462,7 +460,7 @@ impl SigAction {
 ///
 /// Here is an example of building asynchronous-safe signal handler. We're building a function that
 /// waits until `SIGINT` arrives and reports it. The problem is that reporting right from the
-/// signal handler may be unsafe if reporting code calls allocator or locking functions. This might
+/// signal handler may be unsafe if reporting code calls allocating or locking functions. This might
 /// be a problem if you're using `println!` or `sdtdout()` because there is a `lock` inside of
 /// them. So, one of the possible solutions is decoupling signal reporting and signal reaction.
 /// Signal handler should report to a signal reaction handler via write to a pipe.
@@ -484,11 +482,11 @@ impl SigAction {
 ///     static ref SIGNAL_SET_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 /// }
 /// 
-/// // The signal handler itself: it uses write() system call, which is signal-safe in Linux.
+/// // The signal handler itself: it uses the `write()` system call, which is signal-safe in Linux.
 /// extern "C" fn sighandler(_: c_int) {
 ///     let buf: [u8; 1] = [0];
 ///     unsafe {
-///         // throw-away write since it is subject to race conditions with close
+///         // Throw-away write since it is subject to race conditions with close
 ///         // or it may run into filled pipe's buffer.
 ///         let _ = nix::unistd::write(SIGNAL_FD, &buf);
 ///     }
