@@ -1,13 +1,17 @@
-use {Error, Result, NixPath};
+use {Error, Result};
+#[cfg(not(target_os = "android"))]
+use NixPath;
 use errno::Errno;
+#[cfg(not(target_os = "android"))]
 use fcntl::OFlag;
 use libc::{self, c_int, c_void, size_t, off_t};
+#[cfg(not(target_os = "android"))]
 use sys::stat::Mode;
 use std::os::unix::io::RawFd;
 
 libc_bitflags!{
     /// Desired memory protection of a memory mapping.
-    pub struct ProtFlags: libc::c_int {
+    pub struct ProtFlags: c_int {
         /// Pages cannot be accessed.
         PROT_NONE;
         /// Pages can be read.

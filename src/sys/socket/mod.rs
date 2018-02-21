@@ -117,7 +117,7 @@ libc_bitflags!{
 
 libc_bitflags!{
     /// Flags for send/recv and their relatives
-    pub struct MsgFlags: libc::c_int {
+    pub struct MsgFlags: c_int {
         /// Sends or requests out-of-band data on sockets that support this notion
         /// (e.g., of type [`Stream`](enum.SockType.html)); the underlying protocol must also
         /// support out-of-band data.
@@ -163,7 +163,12 @@ libc_bitflags!{
         /// [open(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/open.html).
         ///
         /// Only used in [`recvmsg`](fn.recvmsg.html) function.
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "android",
+                  target_os = "dragonfly",
+                  target_os = "freebsd",
+                  target_os = "linux",
+                  target_os = "netbsd",
+                  target_os = "openbsd"))]
         MSG_CMSG_CLOEXEC;
     }
 }
@@ -320,6 +325,7 @@ cfg_if! {
 /// let cmsg: CmsgSpace<([RawFd; 3], CmsgSpace<[RawFd; 2]>)> = CmsgSpace::new();
 /// ```
 #[repr(C)]
+#[allow(missing_debug_implementations)]
 pub struct CmsgSpace<T> {
     _hdr: cmsghdr,
     _pad: [align_of_cmsg_data; 0],
@@ -335,6 +341,7 @@ impl<T> CmsgSpace<T> {
     }
 }
 
+#[allow(missing_debug_implementations)]
 pub struct RecvMsg<'a> {
     // The number of bytes received.
     pub bytes: usize,
@@ -354,6 +361,7 @@ impl<'a> RecvMsg<'a> {
     }
 }
 
+#[allow(missing_debug_implementations)]
 pub struct CmsgIterator<'a> {
     buf: &'a [u8],
     next: usize,
@@ -420,6 +428,7 @@ impl<'a> Iterator for CmsgIterator<'a> {
 /// A type-safe wrapper around a single control message. More types may
 /// be added to this enum; do not exhaustively pattern-match it.
 /// [Further reading](http://man7.org/linux/man-pages/man3/cmsg.3.html)
+#[allow(missing_debug_implementations)]
 pub enum ControlMessage<'a> {
     /// A message of type `SCM_RIGHTS`, containing an array of file
     /// descriptors passed between processes.
@@ -501,6 +510,7 @@ pub enum ControlMessage<'a> {
 
 // An opaque structure used to prevent cmsghdr from being a public type
 #[doc(hidden)]
+#[allow(missing_debug_implementations)]
 pub struct UnknownCmsg<'a>(&'a cmsghdr, &'a [u8]);
 
 // Round `len` up to meet the platform's required alignment for

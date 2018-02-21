@@ -10,7 +10,7 @@ use std::{fmt, mem, ptr};
 use std::ffi::{CString, CStr, OsString, OsStr};
 use std::os::unix::ffi::{OsStringExt, OsStrExt};
 use std::os::unix::io::RawFd;
-use std::path::{PathBuf};
+use std::path::PathBuf;
 use void::Void;
 use sys::stat::Mode;
 
@@ -143,7 +143,7 @@ impl fmt::Display for Pid {
 /// When `fork` is called, the process continues execution in the parent process
 /// and in the new child.  This return type can be examined to determine whether
 /// you are now executing in the parent process or in the child.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum ForkResult {
     Parent { child: Pid },
     Child,
@@ -262,6 +262,17 @@ pub fn getpgid(pid: Option<Pid>) -> Result<Pid> {
 #[inline]
 pub fn setsid() -> Result<Pid> {
     Errno::result(unsafe { libc::setsid() }).map(Pid)
+}
+
+/// Get the process group ID of a session leader
+/// [getsid(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/getsid.html).
+///
+/// Obtain the process group ID of the process that is the session leader of the process specified
+/// by pid. If pid is zero, it specifies the calling process.
+#[inline]
+pub fn getsid(pid: Option<Pid>) -> Result<Pid> {
+    let res = unsafe { libc::getsid(pid.unwrap_or(Pid(0)).into()) };
+    Errno::result(res).map(Pid)
 }
 
 
@@ -503,14 +514,14 @@ pub fn getcwd() -> Result<PathBuf> {
     let mut buf = Vec::with_capacity(512);
     loop {
         unsafe {
-            let ptr = buf.as_mut_ptr() as *mut libc::c_char;
+            let ptr = buf.as_mut_ptr() as *mut c_char;
 
             // The buffer must be large enough to store the absolute pathname plus
             // a terminating null byte, or else null is returned.
             // To safely handle this we start with a reasonable size (512 bytes)
             // and double the buffer size upon every error
             if !libc::getcwd(ptr, buf.capacity()).is_null() {
-                let len = CStr::from_ptr(buf.as_ptr() as *const libc::c_char).to_bytes().len();
+                let len = CStr::from_ptr(buf.as_ptr() as *const c_char).to_bytes().len();
                 buf.set_len(len);
                 buf.shrink_to_fit();
                 return Ok(PathBuf::from(OsString::from_vec(buf)));
@@ -822,6 +833,7 @@ pub fn write(fd: RawFd, buf: &[u8]) -> Result<usize> {
 /// [`lseek`]: ./fn.lseek.html
 /// [`lseek64`]: ./fn.lseek64.html
 #[repr(i32)]
+#[derive(Clone, Copy, Debug)]
 pub enum Whence {
     /// Specify an offset relative to the start of the file.
     SeekSet = libc::SEEK_SET,
@@ -852,10 +864,10 @@ pub enum Whence {
 /// Move the read/write file offset.
 ///
 /// See also [lseek(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/lseek.html)
-pub fn lseek(fd: RawFd, offset: libc::off_t, whence: Whence) -> Result<libc::off_t> {
+pub fn lseek(fd: RawFd, offset: off_t, whence: Whence) -> Result<off_t> {
     let res = unsafe { libc::lseek(fd, offset, whence as i32) };
 
-    Errno::result(res).map(|r| r as libc::off_t)
+    Errno::result(res).map(|r| r as off_t)
 }
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
@@ -1324,12 +1336,91 @@ pub fn pause() {
     unsafe { libc::pause() };
 }
 
+pub mod alarm {
+    //! Alarm signal scheduling.
+    //!
+    //! Scheduling an alarm will trigger a `SIGALRM` signal when the time has
+    //! elapsed, which has to be caught, because the default action for the
+    //! signal is to terminate the program. This signal also can't be ignored
+    //! because the system calls like `pause` will not be interrupted, see the
+    //! second example below.
+    //!
+    //! # Examples
+    //!
+    //! Canceling an alarm:
+    //!
+    //! ```
+    //! use nix::unistd::alarm;
+    //!
+    //! // Set an alarm for 60 seconds from now.
+    //! alarm::set(60);
+    //!
+    //! // Cancel the above set alarm, which returns the number of seconds left
+    //! // of the previously set alarm.
+    //! assert_eq!(alarm::cancel(), Some(60));
+    //! ```
+    //!
+    //! Scheduling an alarm and waiting for the signal:
+    //!
+    //! ```
+    //! use std::time::{Duration, Instant};
+    //!
+    //! use nix::unistd::{alarm, pause};
+    //! use nix::sys::signal::*;
+    //!
+    //! // We need to setup an empty signal handler to catch the alarm signal,
+    //! // otherwise the program will be terminated once the signal is delivered.
+    //! extern fn signal_handler(_: nix::libc::c_int) { }
+    //! unsafe { sigaction(Signal::SIGALRM, &SigAction::new(SigHandler::Handler(signal_handler), SaFlags::empty(), SigSet::empty())); }
+    //!
+    //! // Set an alarm for 1 second from now.
+    //! alarm::set(1);
+    //!
+    //! let start = Instant::now();
+    //! // Pause the process until the alarm signal is received.
+    //! pause();
+    //!
+    //! assert!(start.elapsed() >= Duration::from_secs(1));
+    //! ```
+    //!
+    //! # References
+    //!
+    //! See also [alarm(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/alarm.html).
+
+    use libc;
+
+    /// Schedule an alarm signal.
+    ///
+    /// This will cause the system to generate a `SIGALRM` signal for the
+    /// process after the specified number of seconds have elapsed.
+    ///
+    /// Returns the leftover time of a previously set alarm if there was one.
+    pub fn set(secs: libc::c_uint) -> Option<libc::c_uint> {
+        assert!(secs != 0, "passing 0 to `alarm::set` is not allowed, to cancel an alarm use `alarm::cancel`");
+        alarm(secs)
+    }
+
+    /// Cancel an previously set alarm signal.
+    ///
+    /// Returns the leftover time of a previously set alarm if there was one.
+    pub fn cancel() -> Option<libc::c_uint> {
+        alarm(0)
+    }
+
+    fn alarm(secs: libc::c_uint) -> Option<libc::c_uint> {
+        match unsafe { libc::alarm(secs) } {
+            0 => None,
+            secs => Some(secs),
+        }
+    }
+}
+
 /// Suspend execution for an interval of time
 ///
 /// See also [sleep(2)](http://pubs.opengroup.org/onlinepubs/009695399/functions/sleep.html#tag_03_705_05)
 // Per POSIX, does not fail
 #[inline]
-pub fn sleep(seconds: libc::c_uint) -> c_uint {
+pub fn sleep(seconds: c_uint) -> c_uint {
     unsafe { libc::sleep(seconds) }
 }
 

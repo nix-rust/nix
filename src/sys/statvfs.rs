@@ -32,13 +32,13 @@ libc_bitflags!(
         #[cfg(any(target_os = "android", target_os = "linux"))]
         ST_MANDLOCK;
         /// Write on file/directory/symlink
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(target_os = "linux")]
         ST_WRITE;
         /// Append-only file
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(target_os = "linux")]
         ST_APPEND;
         /// Immutable file
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(target_os = "linux")]
         ST_IMMUTABLE;
         /// Do not update access times on files
         #[cfg(any(target_os = "android", target_os = "linux"))]
@@ -57,16 +57,18 @@ libc_bitflags!(
 /// For more information see the [`statvfs(3)` man pages](http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/sys_statvfs.h.html).
 // FIXME: Replace with repr(transparent)
 #[repr(C)]
+#[derive(Clone, Copy)]
+#[allow(missing_debug_implementations)]
 pub struct Statvfs(libc::statvfs);
 
 impl Statvfs {
     /// get the file system block size
-    pub fn block_size(&self) -> libc::c_ulong {
+    pub fn block_size(&self) -> c_ulong {
         self.0.f_bsize
     }
 
     /// Get the fundamental file system block size
-    pub fn fragment_size(&self) -> libc::c_ulong {
+    pub fn fragment_size(&self) -> c_ulong {
         self.0.f_frsize
     }
 
@@ -113,7 +115,7 @@ impl Statvfs {
     }
 
     /// Get the maximum filename length
-    pub fn name_max(&self) -> libc::c_ulong {
+    pub fn name_max(&self) -> c_ulong {
         self.0.f_namemax
     }
 

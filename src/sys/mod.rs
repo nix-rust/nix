@@ -20,11 +20,26 @@ pub mod event;
 #[cfg(target_os = "linux")]
 pub mod eventfd;
 
+#[macro_use]
+pub mod ioctl;
+
 #[cfg(target_os = "linux")]
 pub mod memfd;
 
-#[macro_use]
-pub mod ioctl;
+pub mod mman;
+
+pub mod pthread;
+
+#[cfg(any(target_os = "android", target_os = "linux"))]
+pub mod ptrace;
+
+#[cfg(target_os = "linux")]
+pub mod quota;
+
+#[cfg(any(target_os = "linux"))]
+pub mod reboot;
+
+pub mod select;
 
 // TODO: Add support for dragonfly, freebsd, and ios/macos.
 #[cfg(any(target_os = "android", target_os = "linux"))]
@@ -39,43 +54,17 @@ pub mod socket;
 
 pub mod stat;
 
-#[cfg(any(target_os = "linux"))]
-pub mod reboot;
+#[cfg(any(target_os = "android", target_os = "linux", target_os = "macos"))]
+pub mod statfs;
+
+pub mod statvfs;
 
 pub mod termios;
+
+pub mod time;
+
+pub mod uio;
 
 pub mod utsname;
 
 pub mod wait;
-
-pub mod mman;
-
-pub mod uio;
-
-pub mod time;
-
-#[cfg(any(target_os = "android", target_os = "linux"))]
-pub mod ptrace;
-
-pub mod select;
-
-#[cfg(target_os = "linux")]
-pub mod quota;
-
-
-#[cfg(all(target_os = "linux",
-          any(target_arch = "x86",
-              target_arch = "x86_64",
-              target_arch = "arm")),
-          )]
-pub mod statfs;
-
-
-#[cfg(all(any(target_os = "linux",
-              target_os = "macos"),
-          any(target_arch = "x86",
-              target_arch = "x86_64",
-              target_arch = "arm")),
-          )]
-pub mod statvfs;
-pub mod pthread;

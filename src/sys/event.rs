@@ -14,6 +14,7 @@ use std::mem;
 // Redefine kevent in terms of programmer-friendly enums and bitfields.
 #[derive(Clone, Copy)]
 #[repr(C)]
+#[allow(missing_debug_implementations)]
 pub struct KEvent {
     kevent: libc::kevent,
 }
@@ -24,7 +25,7 @@ pub struct KEvent {
 type type_of_udata = *mut libc::c_void;
 #[cfg(any(target_os = "dragonfly", target_os = "freebsd",
           target_os = "ios", target_os = "macos"))]
-type type_of_data = libc::intptr_t;
+type type_of_data = intptr_t;
 #[cfg(any(target_os = "netbsd"))]
 type type_of_udata = intptr_t;
 #[cfg(any(target_os = "netbsd", target_os = "openbsd"))]
@@ -39,6 +40,9 @@ libc_enum! {
     #[cfg_attr(not(target_os = "netbsd"), repr(i16))]
     pub enum EventFilter {
         EVFILT_AIO,
+        /// Returns whenever there is no remaining data in the write buffer
+        #[cfg(target_os = "freebsd")]
+        EVFILT_EMPTY,
         #[cfg(target_os = "dragonfly")]
         EVFILT_EXCEPT,
         #[cfg(any(target_os = "dragonfly",
@@ -51,7 +55,16 @@ libc_enum! {
         #[cfg(any(target_os = "ios", target_os = "macos"))]
         EVFILT_MACHPORT,
         EVFILT_PROC,
+        /// Returns events associated with the process referenced by a given
+        /// process descriptor, created by `pdfork()`. The events to monitor are:
+        ///
+        /// - NOTE_EXIT: the process has exited. The exit status will be stored in data.
+        #[cfg(target_os = "freebsd")]
+        EVFILT_PROCDESC,
         EVFILT_READ,
+        /// Returns whenever an asynchronous `sendfile()` call completes.
+        #[cfg(target_os = "freebsd")]
+        EVFILT_SENDFILE,
         EVFILT_SIGNAL,
         EVFILT_TIMER,
         #[cfg(any(target_os = "dragonfly",

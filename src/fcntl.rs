@@ -205,6 +205,7 @@ libc_bitflags!(
     }
 );
 
+#[allow(missing_debug_implementations)]
 pub enum FcntlArg<'a> {
     F_DUPFD(RawFd),
     F_DUPFD_CLOEXEC(RawFd),
@@ -230,7 +231,7 @@ pub enum FcntlArg<'a> {
     #[cfg(any(target_os = "linux", target_os = "android"))]
     F_GETPIPE_SZ,
     #[cfg(any(target_os = "linux", target_os = "android"))]
-    F_SETPIPE_SZ(libc::c_int),
+    F_SETPIPE_SZ(c_int),
 
     // TODO: Rest of flags
 }
@@ -267,6 +268,8 @@ pub fn fcntl(fd: RawFd, arg: FcntlArg) -> Result<c_int> {
     Errno::result(res)
 }
 
+#[derive(Clone, Copy)]
+#[allow(missing_debug_implementations)]
 pub enum FlockArg {
     LockShared,
     LockExclusive,
@@ -343,7 +346,7 @@ pub fn vmsplice(fd: RawFd, iov: &[IoVec<&[u8]>], flags: SpliceFFlags) -> Result<
 #[cfg(any(target_os = "linux"))]
 libc_bitflags!(
     /// Mode argument flags for fallocate determining operation performed on a given range.
-    pub struct FallocateFlags: libc::c_int {
+    pub struct FallocateFlags: c_int {
         /// File size is not changed.
         ///
         /// offset + len can be greater than file size.

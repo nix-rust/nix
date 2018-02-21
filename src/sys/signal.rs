@@ -163,6 +163,8 @@ const SIGNALS: [Signal; 31] = [
 
 pub const NSIG: libc::c_int = 32;
 
+#[derive(Clone, Copy)]
+#[allow(missing_debug_implementations)]
 pub struct SignalIterator {
     next: usize,
 }
@@ -255,6 +257,7 @@ libc_enum! {
 }
 
 #[derive(Clone, Copy)]
+#[allow(missing_debug_implementations)]
 pub struct SigSet {
     sigset: libc::sigset_t
 }
@@ -382,6 +385,8 @@ pub enum SigHandler {
 ///
 /// For more information see the [`sigaction` man
 /// pages](http://pubs.opengroup.org/onlinepubs/9699919799/functions/sigaction.html).
+#[derive(Clone, Copy)]
+#[allow(missing_debug_implementations)]
 pub struct SigAction {
     sigaction: libc::sigaction
 }
@@ -651,6 +656,7 @@ mod sigevent {
     /// Used to request asynchronous notification of the completion of certain
     /// events, such as POSIX AIO and timers.
     #[repr(C)]
+    #[derive(Clone, Copy)]
     pub struct SigEvent {
         sigevent: libc::sigevent
     }

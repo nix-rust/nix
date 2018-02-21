@@ -1,15 +1,14 @@
 [package]
 name        = "nix"
 description = "Rust friendly bindings to *nix APIs"
-version     = "0.10.0-pre"
+version     = "0.11.0-pre"
 authors     = ["The nix-rust Project Developers"]
 repository  = "https://github.com/nix-rust/nix"
 license     = "MIT"
 categories  = ["os::unix-apis"]
 exclude     = [
   ".gitignore",
-  ".travis.yml",
-  "test/**/*"
+  ".travis.yml"
 ]
 
 [dependencies]
@@ -17,6 +16,11 @@ libc = { git = "https://github.com/rust-lang/libc" }
 bitflags = "1.0"
 cfg-if = "0.1.0"
 void = "1.0.2"
+
+[dependencies.bytes]
+version = "0.4.5"
+# Don't include the optional serde feature
+default-features = false
 
 [target.'cfg(target_os = "dragonfly")'.build-dependencies]
 gcc = "0.3"

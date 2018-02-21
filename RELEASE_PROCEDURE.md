@@ -30,12 +30,11 @@ The release is prepared as follows:
 
 # After Release
 
-After the release a commit with the following changes is added to the master
-branch.
+After the release make a pull request with the following changes:
 
-- Add a new Unreleased section header to CHANGELOG.md.
+- Add a new Unreleased section header to `CHANGELOG.md`.
 - In `Cargo.toml`, update the version to the nextversion, e.g.
   `v0.8.4`.
-- In `Cargo.tml`, revert the libc dependency to its git master branch.
-- Commit with a message like "Bump to v0.8.4"
-- Make a pull request.
+- In `Cargo.toml`, revert the libc dependency to its git master branch.
+- Make a commit of the above changes with a message like "[skip ci] Bump to v0.8.4"
+  - This skips continuous integration testing on the build bots and Travis CI

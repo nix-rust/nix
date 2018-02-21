@@ -215,6 +215,15 @@ libc_bitflags!(
         /// Don't exchange routing info.
         #[cfg(any(target_os = "solaris"))]
         IFF_NORTEXCH;
+        /// Do not provide packet information
+        #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+        IFF_NO_PI as libc::c_int;
+        /// TUN device (no Ethernet headers) 
+        #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+        IFF_TUN as libc::c_int;
+        /// TAP device
+        #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+        IFF_TAP as libc::c_int;
         /// IPv4 interface.
         #[cfg(any(target_os = "solaris"))]
         IFF_IPV4;

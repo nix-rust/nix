@@ -6,6 +6,37 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Added `getsid` in `::nix::unistd`
+  ([#850](https://github.com/nix-rust/nix/pull/850))
+- Added `alarm`. ([#830](https://github.com/nix-rust/nix/pull/830))
+- Added interface flags `IFF_NO_PI, IFF_TUN, IFF_TAP` on linux-like systems.
+  ([#853](https://github.com/nix-rust/nix/pull/853))
+- Added `statvfs` module to all MacOS and Linux architectures.
+  ([#832](https://github.com/nix-rust/nix/pull/832))
+- Added `EVFILT_EMPTY`, `EVFILT_PROCDESC` and `EVFILT_SENDFILE` on FreeBSD.
+  ([#825](https://github.com/nix-rust/nix/pull/825))
+- Exposed `termios::cfmakesane` on FreeBSD.
+  ([#825](https://github.com/nix-rust/nix/pull/825))
+- Exposed `MSG_CMSG_CLOEXEC` on *BSD.
+  ([#825](https://github.com/nix-rust/nix/pull/825))
+
+### Changed
+- Display and Debug for SysControlAddr now includes all fields.
+  ([#837](https://github.com/nix-rust/nix/pull/837))
+
+### Fixed
+- Properly exposed 460800 and 921600 baud rates on NetBSD
+  ([#837](https://github.com/nix-rust/nix/pull/837))
+
+### Removed
+
+## [0.10.0] 2018-01-26
+
+### Added
+- Added specialized wrapper: `sys::ptrace::step`
+  ([#852](https://github.com/nix-rust/nix/pull/852))
+- Added `AioCb::from_ptr` and `AioCb::from_mut_ptr`
+  ([#820](https://github.com/nix-rust/nix/pull/820))
 - Added specialized wrappers: `sys::ptrace::{traceme, syscall, cont, attach}`. Using the matching routines
   with `sys::ptrace::ptrace` is now deprecated.
 - Added `nix::poll` module for all platforms
@@ -22,7 +53,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#739](https://github.com/nix-rust/nix/pull/739))
 - Expose `signalfd` module on Android as well.
   ([#739](https://github.com/nix-rust/nix/pull/739))
-- Added nix::sys::ptrace::detach.
+- Added `nix::sys::ptrace::detach`.
   ([#749](https://github.com/nix-rust/nix/pull/749))
 - Added timestamp socket control message variant:
   `nix::sys::socket::ControlMessage::ScmTimestamp`
@@ -32,7 +63,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#663](https://github.com/nix-rust/nix/pull/663))
 - Added more accessor methods for `AioCb`
   ([#773](https://github.com/nix-rust/nix/pull/773))
-- Add nix::sys::fallocate
+- Add `nix::sys::fallocate`
   ([#768](https:://github.com/nix-rust/nix/pull/768))
 - Added `nix::unistd::mkfifo`.
   ([#602](https://github.com/nix-rust/nix/pull/774))
@@ -54,6 +85,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#826](https://github.com/nix-rust/nix/pull/826))
 - Added `nix::sys::socket::LinkAddr` on Linux and all bsdlike system.
   ([#813](https://github.com/nix-rust/nix/pull/813))
+- Add socket options for `IP_TRANSPARENT` / `BIND_ANY`.
+  ([#835](https://github.com/nix-rust/nix/pull/835))
 
 ### Changed
 - Exposed the `mqueue` module for all supported operating systems.
@@ -96,6 +129,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#814](https://github.com/nix-rust/nix/pull/814))
 - Removed return type from `pause`.
   ([#829](https://github.com/nix-rust/nix/pull/829))
+- Changed the termios APIs to allow for using a `u32` instead of the `BaudRate`
+  enum on BSD platforms to support arbitrary baud rates. See the module docs for
+  `nix::sys::termios` for more details.
+  ([#843](https://github.com/nix-rust/nix/pull/843))
 
 ### Fixed
 - Fix compilation and tests for OpenBSD targets
@@ -108,6 +145,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#648](https://github.com/nix-rust/nix/pull/648))
 
 ### Removed
+- `AioCb::from_boxed_slice` has been removed.  It was never actually safe.  Use
+  `from_bytes` or `from_bytes_mut` instead.
+  ([#820](https://github.com/nix-rust/nix/pull/820))
 - The syscall module has been removed. This only exposed enough functionality for
   `memfd_create()` and `pivot_root()`, which are still exposed as separate functions.
   ([#747](https://github.com/nix-rust/nix/pull/747))
