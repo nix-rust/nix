@@ -383,3 +383,20 @@ pub fn fallocate(fd: RawFd, mode: FallocateFlags, offset: libc::off_t, len: libc
     let res = unsafe { libc::fallocate(fd, mode.bits(), offset, len) };
     Errno::result(res)
 }
+
+/// Allocate file space.
+///
+/// Ensure disk space is allocated for the file referred to by the file
+/// descriptor `fd` for the bytes in the range starting at `offset` and
+/// continuing for `len` bytes.
+///
+/// # References
+///
+/// [`posix_fallocate`](http://pubs.opengroup.org/onlinepubs/9699919799/functions/posix_fallocate.html)
+#[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
+#[inline]
+pub fn posix_fallocate(fd: RawFd, offset: libc::off_t,
+                       len: libc::off_t) -> Result<c_int> {
+    let res = unsafe { libc::posix_fallocate(fd, offset, len) };
+    Errno::result(res)
+}

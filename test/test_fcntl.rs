@@ -5,6 +5,7 @@ use tempdir::TempDir;
 use tempfile::NamedTempFile;
 use std::io::prelude::*;
 use std::os::unix::fs;
+use std::os::unix::io::AsRawFd;
 
 #[test]
 fn test_openat() {
@@ -138,6 +139,26 @@ mod linux_android {
         let fd = tmp.as_raw_fd();
         fallocate(fd, FallocateFlags::empty(), 0, 100).unwrap();
 
+        // Check if we read exactly 100 bytes
+        let mut buf = [0u8; 200];
+        assert_eq!(100, read(fd, &mut buf).unwrap());
+    }
+}
+
+#[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
+#[test]
+fn test_posix_fallocate() {
+    use nix::fcntl::posix_fallocate;
+    let tmp = NamedTempFile::new().unwrap();
+
+    let fd = tmp.as_raw_fd();
+    let ret = posix_fallocate(fd, 0, 100);
+    if ret.is_ok() {
+        // The test will fail if /tmp's filesystem doesn't support
+        // posix_fallocate. ZFS for example does not. POSIX requires
+        // that posix_fallocate return EINVAL in that case. Skip the
+        // test in this scenario.
+        //
         // Check if we read exactly 100 bytes
         let mut buf = [0u8; 200];
         assert_eq!(100, read(fd, &mut buf).unwrap());
