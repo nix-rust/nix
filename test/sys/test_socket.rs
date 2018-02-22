@@ -255,3 +255,61 @@ pub fn test_syscontrol() {
     // requires root privileges
     // connect(fd, &sockaddr).expect("connect failed");
 }
+
+/// Test non-blocking mode on new sockets via SockFlag::O_NONBLOCK
+#[cfg(any(target_os = "android",
+          target_os = "dragonfly",
+          target_os = "freebsd",
+          target_os = "ios",
+          target_os = "linux",
+          target_os = "macos",
+          target_os = "netbsd",
+          target_os = "openbsd"))]
+#[test]
+pub fn test_sockflag_nonblock() {
+    use libc;
+    use nix::fcntl::{fcntl};
+    use nix::fcntl::FcntlArg::{F_GETFL};
+    use nix::sys::socket::{socket, AddressFamily, SockType, SockFlag};
+
+    /* first, try without SockFlag::SOCK_NONBLOCK */
+    let sock = socket(AddressFamily::Unix, SockType::Stream, SockFlag::empty(), None)
+                 .expect("socket failed");
+
+    let fcntl_res = fcntl(sock, F_GETFL).expect("fcntl failed");
+
+    assert!(fcntl_res & libc::O_NONBLOCK == 0);
+
+    /* next, try with SockFlag::SOCK_NONBLOCK */
+    let sock = socket(AddressFamily::Unix, SockType::Stream, SockFlag::SOCK_NONBLOCK, None)
+                 .expect("socket failed");
+
+    let fcntl_res = fcntl(sock, F_GETFL).expect("fcntl failed");
+
+    assert!(fcntl_res & libc::O_NONBLOCK == libc::O_NONBLOCK);
+}
+
+/// Test close-on-exec on new sockets via SockFlag::SOCK_CLOEXEC
+#[test]
+pub fn test_sockflag_cloexec() {
+    use libc;
+    use nix::fcntl::{fcntl};
+    use nix::fcntl::FcntlArg::{F_GETFD};
+    use nix::sys::socket::{socket, AddressFamily, SockType, SockFlag};
+
+    /* first, test without SockFlag::SOCK_CLOEXEC */
+    let sock = socket(AddressFamily::Unix, SockType::Stream, SockFlag::empty(), None)
+                 .expect("socket failed");
+
+    let fcntl_res = fcntl(sock, F_GETFD).expect("fcntl failed");
+
+    assert!(fcntl_res & libc::FD_CLOEXEC == 0);
+
+    /* next, test without SockFlag::SOCK_CLOEXEC */
+    let sock = socket(AddressFamily::Unix, SockType::Stream, SockFlag::SOCK_CLOEXEC, None)
+                 .expect("socket failed");
+
+    let fcntl_res = fcntl(sock, F_GETFD).expect("fcntl failed");
+
+    assert!(fcntl_res & libc::FD_CLOEXEC == libc::FD_CLOEXEC);
+}
