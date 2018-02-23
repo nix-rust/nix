@@ -265,12 +265,12 @@ pub fn test_socketprotocol_htons() {
 
   /* ETH_P_ALL */
   let ntons: c_int = SockProtocol::Htons(3).into();
-  assert_eq!(ntons, 768);
+  assert_eq!(ntons, if cfg!(target_endian = "big") { 3 } else { 768 });
 
   let ntons: c_int = SockProtocol::Htons(0xFFFF).into();
   assert_eq!(ntons, 0xFFFF);
 
   let ntons: c_int = SockProtocol::Htons(0xCAFE).into();
-  assert_eq!(ntons, 0xFECA);
+  assert_eq!(ntons, if cfg!(target_endian = "big") { 0xCAFE } else { 0xFECA });
 }
 
