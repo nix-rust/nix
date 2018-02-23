@@ -70,7 +70,9 @@ pub enum SockType {
 /// Constants used in [`socket`](fn.socket.html) and [`socketpair`](fn.socketpair.html)
 /// to specify the protocol to use.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub enum SockProtocol {   
+pub enum SockProtocol {
+    /// Convert u32 from host to network byte order
+    Htonl(u32),
     /// Convert u16 from host to network byte order
     Htons(u16),
     /// Directly pass i32 to `socket(2)` (not recommended; see nix-rust/nix issue #865 for discussion)
@@ -92,6 +94,7 @@ pub enum SockProtocol {
 impl Into<i32> for SockProtocol {
     fn into(self) -> i32 {
         match self {
+            SockProtocol::Htonl(p) => p.to_be() as i32,
             SockProtocol::Htons(p) => p.to_be() as i32,
             SockProtocol::Integer(p) => p,
             #[cfg(any(target_os = "ios", target_os = "macos"))]
