@@ -69,22 +69,38 @@ pub enum SockType {
 
 /// Constants used in [`socket`](fn.socket.html) and [`socketpair`](fn.socketpair.html)
 /// to specify the protocol to use.
-#[repr(i32)]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub enum SockProtocol {
-    /// TCP protocol ([ip(7)](http://man7.org/linux/man-pages/man7/ip.7.html))
-    Tcp = libc::IPPROTO_TCP,
-    /// UDP protocol ([ip(7)](http://man7.org/linux/man-pages/man7/ip.7.html))
-    Udp = libc::IPPROTO_UDP,
-    /// Allows applications and other KEXTs to be notified when certain kernel events occur
-    /// ([ref](https://developer.apple.com/library/content/documentation/Darwin/Conceptual/NKEConceptual/control/control.html))
-    #[cfg(any(target_os = "ios", target_os = "macos"))]
-    KextEvent = libc::SYSPROTO_EVENT,
+pub enum SockProtocol {   
+    /// htons conversion for RAW type
+    Htons(u16),
     /// Allows applications to configure and control a KEXT
     /// ([ref](https://developer.apple.com/library/content/documentation/Darwin/Conceptual/NKEConceptual/control/control.html))
     #[cfg(any(target_os = "ios", target_os = "macos"))]
-    KextControl = libc::SYSPROTO_CONTROL,
+    KextControl,
+    /// Allows applications and other KEXTs to be notified when certain kernel events occur
+    /// ([ref](https://developer.apple.com/library/content/documentation/Darwin/Conceptual/NKEConceptual/control/control.html))
+    #[cfg(any(target_os = "ios", target_os = "macos"))]
+    KextEvent,
+    /// TCP protocol ([ip(7)](http://man7.org/linux/man-pages/man7/ip.7.html))
+    Tcp,
+    /// UDP protocol ([ip(7)](http://man7.org/linux/man-pages/man7/ip.7.html))
+    Udp,
 }
+
+impl Into<i32> for SockProtocol {
+    fn into(self) -> i32 {
+        match self {
+            SockProtocol::Tcp => libc::IPPROTO_TCP,
+            SockProtocol::Udp => libc::IPPROTO_UDP,
+            SockProtocol::Htons(p) => p.to_be() as i32,
+            #[cfg(any(target_os = "ios", target_os = "macos"))]
+            SockProtocol::KextEvent => libc::SYSPROTO_EVENT,
+            #[cfg(any(target_os = "ios", target_os = "macos"))]
+            SockProtocol::KextControl => libc::SYSPROTO_CONTROL,
+        }
+    }
+}
+
 
 libc_bitflags!{
     /// Additional socket options
@@ -693,9 +709,9 @@ pub fn recvmsg<'a, T>(fd: RawFd, iov: &[IoVec<&mut [u8]>], cmsg_buffer: Option<&
 /// [Further reading](http://pubs.opengroup.org/onlinepubs/9699919799/functions/socket.html)
 pub fn socket<T: Into<Option<SockProtocol>>>(domain: AddressFamily, ty: SockType, flags: SockFlag, protocol: T) -> Result<RawFd> {
     let mut ty = ty as c_int;
-    let protocol = match protocol.into() {
+    let protocol: c_int = match protocol.into() {
         None => 0,
-        Some(p) => p as c_int,
+        Some(p) => p.into(),
     };
     let feat_atomic = features::socket_atomic_cloexec();
 
@@ -736,9 +752,9 @@ pub fn socket<T: Into<Option<SockProtocol>>>(domain: AddressFamily, ty: SockType
 pub fn socketpair<T: Into<Option<SockProtocol>>>(domain: AddressFamily, ty: SockType, protocol: T,
                   flags: SockFlag) -> Result<(RawFd, RawFd)> {
     let mut ty = ty as c_int;
-    let protocol = match protocol.into() {
+    let protocol: c_int = match protocol.into() {
         None => 0,
-        Some(p) => p as c_int,
+        Some(p) => p.into(),
     };
     let feat_atomic = features::socket_atomic_cloexec();
 

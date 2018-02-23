@@ -255,3 +255,22 @@ pub fn test_syscontrol() {
     // requires root privileges
     // connect(fd, &sockaddr).expect("connect failed");
 }
+
+/// Test that SockProtocol::Htons returns htons(u16) conversion correctly
+#[cfg(any(target_os = "android", target_os = "linux"))]
+#[test]
+pub fn test_socketprotocol_htons() {
+  use libc::{c_int};
+  use nix::sys::socket::{SockProtocol};
+
+  /* ETH_P_ALL */
+  let ntons: c_int = SockProtocol::Htons(3).into();
+  assert_eq!(ntons, 768);
+
+  let ntons: c_int = SockProtocol::Htons(0xFFFF).into();
+  assert_eq!(ntons, 0xFFFF);
+
+  let ntons: c_int = SockProtocol::Htons(0xCAFE).into();
+  assert_eq!(ntons, 0xFECA);
+}
+
