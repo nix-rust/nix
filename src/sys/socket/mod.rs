@@ -71,8 +71,10 @@ pub enum SockType {
 /// to specify the protocol to use.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum SockProtocol {   
-    /// htons conversion for RAW type
+    /// Convert u16 from host to network byte order
     Htons(u16),
+    /// Directly pass i32 to `socket(2)` (not recommended; see nix-rust/nix issue #865 for discussion)
+    Integer(i32),
     /// Allows applications to configure and control a KEXT
     /// ([ref](https://developer.apple.com/library/content/documentation/Darwin/Conceptual/NKEConceptual/control/control.html))
     #[cfg(any(target_os = "ios", target_os = "macos"))]
@@ -90,13 +92,14 @@ pub enum SockProtocol {
 impl Into<i32> for SockProtocol {
     fn into(self) -> i32 {
         match self {
-            SockProtocol::Tcp => libc::IPPROTO_TCP,
-            SockProtocol::Udp => libc::IPPROTO_UDP,
             SockProtocol::Htons(p) => p.to_be() as i32,
-            #[cfg(any(target_os = "ios", target_os = "macos"))]
-            SockProtocol::KextEvent => libc::SYSPROTO_EVENT,
+            SockProtocol::Integer(p) => p,
             #[cfg(any(target_os = "ios", target_os = "macos"))]
             SockProtocol::KextControl => libc::SYSPROTO_CONTROL,
+            #[cfg(any(target_os = "ios", target_os = "macos"))]
+            SockProtocol::KextEvent => libc::SYSPROTO_EVENT,
+            SockProtocol::Tcp => libc::IPPROTO_TCP,
+            SockProtocol::Udp => libc::IPPROTO_UDP,
         }
     }
 }
