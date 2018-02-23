@@ -253,6 +253,9 @@ sockopt_impl!(Both, IpTransparent, libc::SOL_IP, libc::IP_TRANSPARENT, bool);
 sockopt_impl!(Both, BindAny, libc::SOL_SOCKET, libc::SO_BINDANY, bool);
 #[cfg(target_os = "freebsd")]
 sockopt_impl!(Both, BindAny, libc::IPPROTO_IP, libc::IP_BINDANY, bool);
+/// SO_PROTOCOL (since Linux 2.6.32)
+#[cfg(any(target_os = "android", target_os = "linux"))]
+sockopt_impl!(GetOnly, Protocol, libc::SOL_SOCKET, libc::SO_PROTOCOL, u32);
 
 /*
  *
