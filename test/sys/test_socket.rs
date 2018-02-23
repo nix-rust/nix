@@ -290,6 +290,14 @@ pub fn test_sockflag_nonblock() {
 }
 
 /// Test close-on-exec on new sockets via SockFlag::SOCK_CLOEXEC
+#[cfg(any(target_os = "android",
+          target_os = "dragonfly",
+          target_os = "freebsd",
+          target_os = "ios",
+          target_os = "linux",
+          target_os = "macos",
+          target_os = "netbsd",
+          target_os = "openbsd"))]
 #[test]
 pub fn test_sockflag_cloexec() {
     use libc;

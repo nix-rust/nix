@@ -87,6 +87,11 @@ pub enum SockProtocol {
 }
 
 cfg_if! {
+    /*
+      Because `nix` provides a new API that does not conform to
+      POSIX or BSD (or directly Linux), add virtual definitions
+      for macOS and iOS that are backed by their equivalent `fcntl` flags.
+    */
     if #[cfg(any(target_os = "macos",
                  target_os = "ios"))] {
         bitflags! {
@@ -768,7 +773,9 @@ pub fn socketpair<T: Into<Option<SockProtocol>>>(domain: AddressFamily, ty: Sock
     #[cfg(any(target_os = "android",
               target_os = "dragonfly",
               target_os = "freebsd",
+              target_os = "ios",
               target_os = "linux",
+              target_os = "macos",
               target_os = "netbsd",
               target_os = "openbsd"))]
     {
@@ -850,7 +857,9 @@ fn accept4_polyfill(sockfd: RawFd, flags: SockFlag) -> Result<RawFd> {
     #[cfg(any(target_os = "android",
               target_os = "dragonfly",
               target_os = "freebsd",
+              target_os = "ios",
               target_os = "linux",
+              target_os = "macos",
               target_os = "netbsd",
               target_os = "openbsd"))]
     {
