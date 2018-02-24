@@ -256,6 +256,18 @@ pub fn test_syscontrol() {
     // connect(fd, &sockaddr).expect("connect failed");
 }
 
+/// Test that SockProtocol::ETH_P_ALL returns htons(ETH_P_ALL) conversion correctly
+#[cfg(any(target_os = "linux", target_os = "android"))]
+#[test]
+pub fn test_socketprotocol_eth_p_all() {
+  use libc::{c_int};
+  use nix::sys::socket::{SockProtocol};
+
+  /* ETH_P_ALL */
+  let ntons: c_int = SockProtocol::ETH_P_ALL.into();
+  assert_eq!(ntons, if cfg!(target_endian = "big") { 3 } else { 768 });
+}
+
 /// Test that SockProtocol::Htons returns htons(u16) conversion correctly
 #[test]
 pub fn test_socketprotocol_htons() {
