@@ -283,6 +283,8 @@ sockopt_impl!(Both, IpTransparent, libc::SOL_IP, libc::IP_TRANSPARENT, bool);
 sockopt_impl!(Both, BindAny, libc::SOL_SOCKET, libc::SO_BINDANY, bool);
 #[cfg(target_os = "freebsd")]
 sockopt_impl!(Both, BindAny, libc::IPPROTO_IP, libc::IP_BINDANY, bool);
+#[cfg(any(target_os = "ios", target_os = "macos"))]
+sockopt_impl!(GetOnly, UTunIfname, libc::SYSPROTO_CONTROL, libc::UTUN_OPT_IFNAME, Vec<u8>, libc::IFNAMSIZ);
 
 /*
  *
