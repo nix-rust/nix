@@ -76,7 +76,7 @@ macro_rules! getsockopt_impl {
 
             fn get(&self, fd: RawFd) -> Result<$ty> {
                 unsafe {
-                    let mut getter: $getter = Get::blank();
+                    let mut getter: $getter = Get::blank(None);
 
                     let res = libc::getsockopt(fd, $level, $flag,
                                                getter.ffi_ptr(),
@@ -87,7 +87,26 @@ macro_rules! getsockopt_impl {
                 }
             }
         }
-    }
+    };
+
+    ($name:ident, $level:path, $flag:path, $ty:ty, $getter:ty, $size:path) => {
+        impl GetSockOpt for $name {
+            type Val = $ty;
+
+            fn get(&self, fd: RawFd) -> Result<$ty> {
+                unsafe {
+                    let mut getter: $getter = Get::blank(Some($size));
+
+                    let res = libc::getsockopt(fd, $level, $flag,
+                                               getter.ffi_ptr(),
+                                               getter.ffi_len());
+                    try!(Errno::result(res));
+
+                    Ok(getter.unwrap())
+                }
+            }
+        }
+    };
 }
 
 /// Helper to generate the sockopt accessors. See
@@ -128,6 +147,10 @@ macro_rules! sockopt_impl {
         sockopt_impl!(GetOnly, $name, $level, $flag, usize, GetUsize);
     };
 
+    (GetOnly, $name:ident, $level:path, $flag:path, Vec<u8>, $maxlength:path) => {
+        sockopt_impl!(GetOnly, $name, $level, $flag, Vec<u8>, GetBytes, $maxlength);
+    };
+
     (SetOnly, $name:ident, $level:path, $flag:path, bool) => {
         sockopt_impl!(SetOnly, $name, $level, $flag, bool, SetBool);
     };
@@ -165,6 +188,13 @@ macro_rules! sockopt_impl {
         pub struct $name;
 
         getsockopt_impl!($name, $level, $flag, $ty, $getter);
+    };
+
+    (GetOnly, $name:ident, $level:path, $flag:path, $ty:ty, $getter:ty, $size:path) => {
+        #[derive(Copy, Clone, Debug)]
+        pub struct $name;
+
+        getsockopt_impl!($name, $level, $flag, $ty, $getter, $size);
     };
 
     (SetOnly, $name:ident, $level:path, $flag:path, $ty:ty) => {
@@ -263,7 +293,7 @@ sockopt_impl!(Both, BindAny, libc::IPPROTO_IP, libc::IP_BINDANY, bool);
 /// Helper trait that describes what is expected from a `GetSockOpt` getter.
 unsafe trait Get<T> {
     /// Returns an empty value.
-    unsafe fn blank() -> Self;
+    unsafe fn blank(size: Option<usize>) -> Self;
     /// Returns a pointer to the stored value. This pointer will be passed to the system's
     /// `getsockopt` call (`man 3p getsockopt`, argument `option_value`).
     fn ffi_ptr(&mut self) -> *mut c_void;
@@ -293,7 +323,7 @@ struct GetStruct<T> {
 }
 
 unsafe impl<T> Get<T> for GetStruct<T> {
-    unsafe fn blank() -> Self {
+    unsafe fn blank(_: Option<usize>) -> Self {
         GetStruct {
             len: mem::size_of::<T>() as socklen_t,
             val: mem::zeroed(),
@@ -340,7 +370,7 @@ struct GetBool {
 }
 
 unsafe impl Get<bool> for GetBool {
-    unsafe fn blank() -> Self {
+    unsafe fn blank(_: Option<usize>) -> Self {
         GetBool {
             len: mem::size_of::<c_int>() as socklen_t,
             val: mem::zeroed(),
@@ -387,7 +417,7 @@ struct GetU8 {
 }
 
 unsafe impl Get<u8> for GetU8 {
-    unsafe fn blank() -> Self {
+    unsafe fn blank(_: Option<usize>) -> Self {
         GetU8 {
             len: mem::size_of::<uint8_t>() as socklen_t,
             val: mem::zeroed(),
@@ -434,7 +464,7 @@ struct GetUsize {
 }
 
 unsafe impl Get<usize> for GetUsize {
-    unsafe fn blank() -> Self {
+    unsafe fn blank(_: Option<usize>) -> Self {
         GetUsize {
             len: mem::size_of::<c_int>() as socklen_t,
             val: mem::zeroed(),
@@ -471,6 +501,36 @@ unsafe impl<'a> Set<'a, usize> for SetUsize {
 
     fn ffi_len(&self) -> socklen_t {
         mem::size_of::<c_int>() as socklen_t
+    }
+}
+
+/// Getter for a Vec<u8> value.
+struct GetBytes {
+    len: socklen_t,
+    val: Vec<u8>,
+}
+
+unsafe impl Get<Vec<u8>> for GetBytes {
+    unsafe fn blank(size: Option<usize>) -> Self {
+        let v = Vec::<u8>::with_capacity(size.unwrap());
+        GetBytes {
+            len: v.capacity() as socklen_t,
+            val: v,
+        }
+    }
+
+    fn ffi_ptr(&mut self) -> *mut c_void {
+        self.val.as_mut_ptr() as *mut c_void
+    }
+
+    fn ffi_len(&mut self) -> *mut socklen_t {
+        &mut self.len
+    }
+
+    unsafe fn unwrap(mut self) -> Vec<u8> {
+        assert!(self.len as usize <= self.val.capacity(), "invalid getsockopt implementation");
+        self.val.set_len(self.len as usize);
+        self.val
     }
 }
 
