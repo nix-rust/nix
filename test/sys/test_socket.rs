@@ -257,7 +257,7 @@ pub fn test_syscontrol() {
 }
 
 /// Test that SockProtocol::ETH_P_ALL returns htons(ETH_P_ALL) conversion correctly
-#[cfg(any(target_os = "linux", target_os = "android"))]
+#[cfg(target_os = "linux")]
 #[test]
 pub fn test_socketprotocol_eth_p_all() {
   use libc::{c_int};

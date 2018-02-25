@@ -71,161 +71,161 @@ pub enum SockType {
 /// to specify the protocol to use.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum SockProtocol {
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_1588,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_8021AD,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_8021AH,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_8021Q,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_80221,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_802_2,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_802_3,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_802_EX1,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_AARP,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_AF_IUCV,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_ALL,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_AOE,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_ARCNET,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_ARP,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_ATALK,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_ATMFATE,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_ATMMPOA,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_AX25,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_BATMAN,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_BPQ,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_CAIF,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_CANFD,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_CONTROL,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_CUST,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_DDCMP,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_DEC,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_DIAG,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_DNA_DL,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_DNA_RC,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_DNA_RT,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_DSA,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_ECONET,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_EDSA,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_FCOE,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_FIP,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_HDLC,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_IEEE802154,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_IEEEPUP,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_IEEEPUPAT,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_IP,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_IPV6,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_IPX,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_IRDA,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_LAT,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_LINK_CTL,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_LOCALTALK,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_LOOP,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_LOOPBACK,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_MACSEC,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_MOBITEX,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_MPLS_MC,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_MPLS_UC,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_MVRP,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_PAE,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_PAUSE,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_PHONET,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_PPP_DISC,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_PPP_MP,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_PPP_SES,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_PPPTALK,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_PRP,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_PUP,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_PUPAT,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_QINQ1,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_QINQ2,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_QINQ3,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_RARP,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_SCA,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_SLOW,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_SNAP,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_TDLS,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_TEB,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_TIPC,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_TR_802_2,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_TRAILER,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_WAN_PPP,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_WCCP,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(target_os = "linux")]
     ETH_P_X25,
     /// Convert u32 from host to network byte order
     Htonl(u32),
@@ -250,161 +250,161 @@ pub enum SockProtocol {
 impl Into<i32> for SockProtocol {
     fn into(self) -> i32 {
         match self {
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_1588 => (libc::ETH_P_1588 as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_8021AD => (libc::ETH_P_8021AD as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_8021AH => (libc::ETH_P_8021AH as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_8021Q => (libc::ETH_P_8021Q as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_80221 => (libc::ETH_P_80221 as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_802_2 => (libc::ETH_P_802_2 as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_802_3 => (libc::ETH_P_802_3 as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_802_EX1 => (libc::ETH_P_802_EX1 as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_AARP => (libc::ETH_P_AARP as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_AF_IUCV => (libc::ETH_P_AF_IUCV as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_ALL => (libc::ETH_P_ALL as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_AOE => (libc::ETH_P_AOE as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_ARCNET => (libc::ETH_P_ARCNET as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_ARP => (libc::ETH_P_ARP as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_ATALK => (libc::ETH_P_ATALK as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_ATMFATE => (libc::ETH_P_ATMFATE as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_ATMMPOA => (libc::ETH_P_ATMMPOA as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_AX25 => (libc::ETH_P_AX25 as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_BATMAN => (libc::ETH_P_BATMAN as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_BPQ => (libc::ETH_P_BPQ as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_CAIF => (libc::ETH_P_CAIF as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_CANFD => (libc::ETH_P_CANFD as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_CONTROL => (libc::ETH_P_CONTROL as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_CUST => (libc::ETH_P_CUST as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_DDCMP => (libc::ETH_P_DDCMP as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_DEC => (libc::ETH_P_DEC as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_DIAG => (libc::ETH_P_DIAG as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_DNA_DL => (libc::ETH_P_DNA_DL as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_DNA_RC => (libc::ETH_P_DNA_RC as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_DNA_RT => (libc::ETH_P_DNA_RT as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_DSA => (libc::ETH_P_DSA as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_ECONET => (libc::ETH_P_ECONET as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_EDSA => (libc::ETH_P_EDSA as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_FCOE => (libc::ETH_P_FCOE as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_FIP => (libc::ETH_P_FIP as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_HDLC => (libc::ETH_P_HDLC as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_IEEE802154 => (libc::ETH_P_IEEE802154 as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_IEEEPUP => (libc::ETH_P_IEEEPUP as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_IEEEPUPAT => (libc::ETH_P_IEEEPUPAT as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_IP => (libc::ETH_P_IP as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_IPV6 => (libc::ETH_P_IPV6 as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_IPX => (libc::ETH_P_IPX as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_IRDA => (libc::ETH_P_IRDA as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_LAT => (libc::ETH_P_LAT as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_LINK_CTL => (libc::ETH_P_LINK_CTL as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_LOCALTALK => (libc::ETH_P_LOCALTALK as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_LOOP => (libc::ETH_P_LOOP as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_LOOPBACK => (libc::ETH_P_LOOPBACK as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_MACSEC => (libc::ETH_P_MACSEC as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_MOBITEX => (libc::ETH_P_MOBITEX as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_MPLS_MC => (libc::ETH_P_MPLS_MC as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_MPLS_UC => (libc::ETH_P_MPLS_UC as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_MVRP => (libc::ETH_P_MVRP as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_PAE => (libc::ETH_P_PAE as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_PAUSE => (libc::ETH_P_PAUSE as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_PHONET => (libc::ETH_P_PHONET as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_PPP_DISC => (libc::ETH_P_PPP_DISC as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_PPP_MP => (libc::ETH_P_PPP_MP as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_PPP_SES => (libc::ETH_P_PPP_SES as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_PPPTALK => (libc::ETH_P_PPPTALK as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_PRP => (libc::ETH_P_PRP as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_PUP => (libc::ETH_P_PUP as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_PUPAT => (libc::ETH_P_PUPAT as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_QINQ1 => (libc::ETH_P_QINQ1 as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_QINQ2 => (libc::ETH_P_QINQ2 as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_QINQ3 => (libc::ETH_P_QINQ3 as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_RARP => (libc::ETH_P_RARP as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_SCA => (libc::ETH_P_SCA as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_SLOW => (libc::ETH_P_SLOW as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_SNAP => (libc::ETH_P_SNAP as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_TDLS => (libc::ETH_P_TDLS as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_TEB => (libc::ETH_P_TEB as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_TIPC => (libc::ETH_P_TIPC as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_TR_802_2 => (libc::ETH_P_TR_802_2 as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_TRAILER => (libc::ETH_P_TRAILER as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_WAN_PPP => (libc::ETH_P_WAN_PPP as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_WCCP => (libc::ETH_P_WCCP as u16).to_be() as i32,
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(target_os = "linux")]
             SockProtocol::ETH_P_X25 => (libc::ETH_P_X25 as u16).to_be() as i32,
             SockProtocol::Htonl(p) => p.to_be() as i32,
             SockProtocol::Htons(p) => p.to_be() as i32,
