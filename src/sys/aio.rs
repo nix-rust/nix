@@ -92,7 +92,7 @@ pub enum AioCancelStat {
 
 /// Owns (uniquely or shared) a memory buffer to keep it from `Drop`ing while
 /// the kernel has a pointer to it.
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub enum Buffer<'a> {
     /// No buffer to own.
     ///
@@ -186,7 +186,7 @@ impl<'a> AioCb<'a> {
     /// # Examples
     ///
     /// Create an `AioCb` from a raw file descriptor and use it for an
-    /// [`fsync`](#method.from_bytes_mut) operation.
+    /// [`fsync`](#method.fsync) operation.
     ///
     /// ```
     /// # extern crate tempfile;
@@ -355,11 +355,11 @@ impl<'a> AioCb<'a> {
     pub fn from_bytes(fd: RawFd, offs: off_t, buf: Bytes,
                       prio: libc::c_int, sigev_notify: SigevNotify,
                       opcode: LioOpcode) -> AioCb<'a> {
-        // Small BytesMuts are stored inline.  Inline storage is a no-no,
+        // Small Bytes are stored inline.  Inline storage is a no-no,
         // because we store a pointer to the buffer in the AioCb before
         // returning the Buffer by move.  If the buffer is too small, reallocate
         // it to force out-of-line storage
-        // TODO: Add an is_inline() method to BytesMut, and a way to explicitly
+        // TODO: Add an is_inline() method to Bytes, and a way to explicitly
         // force out-of-line allocation.
         let buf2 = if buf.len() < 64 {
             // Reallocate to force out-of-line allocation

@@ -29,6 +29,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#837](https://github.com/nix-rust/nix/pull/837))
 
 ### Removed
+- Don't derive Clone for sys::aio::buffer
+  ([#868](https://github.com/nix-rust/nix/pull/868))
 
 ## [0.10.0] 2018-01-26
 
