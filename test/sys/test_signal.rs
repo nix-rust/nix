@@ -7,6 +7,20 @@ fn test_kill_none() {
 }
 
 #[test]
+fn test_old_sigaction_flags() {
+    extern "C" fn handler(_: ::libc::c_int) {}
+    let act = SigAction::new(
+        SigHandler::Handler(handler),
+        SaFlags::empty(),
+        SigSet::empty(),
+    );
+    let oact = unsafe { sigaction(SIGINT, &act) }.unwrap();
+    let _flags = oact.flags();
+    let oact = unsafe { sigaction(SIGINT, &act) }.unwrap();
+    let _flags = oact.flags();
+}
+
+#[test]
 fn test_sigprocmask_noop() {
     sigprocmask(SigmaskHow::SIG_BLOCK, None, None)
         .expect("this should be an effective noop");

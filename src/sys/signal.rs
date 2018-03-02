@@ -389,7 +389,7 @@ impl SigAction {
     }
 
     pub fn flags(&self) -> SaFlags {
-        SaFlags::from_bits(self.sigaction.sa_flags).unwrap()
+        SaFlags::from_bits_truncate(self.sigaction.sa_flags)
     }
 
     pub fn mask(&self) -> SigSet {
