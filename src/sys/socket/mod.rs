@@ -69,22 +69,356 @@ pub enum SockType {
 
 /// Constants used in [`socket`](fn.socket.html) and [`socketpair`](fn.socketpair.html)
 /// to specify the protocol to use.
-#[repr(i32)]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum SockProtocol {
-    /// TCP protocol ([ip(7)](http://man7.org/linux/man-pages/man7/ip.7.html))
-    Tcp = libc::IPPROTO_TCP,
-    /// UDP protocol ([ip(7)](http://man7.org/linux/man-pages/man7/ip.7.html))
-    Udp = libc::IPPROTO_UDP,
-    /// Allows applications and other KEXTs to be notified when certain kernel events occur
-    /// ([ref](https://developer.apple.com/library/content/documentation/Darwin/Conceptual/NKEConceptual/control/control.html))
-    #[cfg(any(target_os = "ios", target_os = "macos"))]
-    KextEvent = libc::SYSPROTO_EVENT,
+    #[cfg(target_os = "linux")]
+    ETH_P_1588,
+    #[cfg(target_os = "linux")]
+    ETH_P_8021AD,
+    #[cfg(target_os = "linux")]
+    ETH_P_8021AH,
+    #[cfg(target_os = "linux")]
+    ETH_P_8021Q,
+    #[cfg(target_os = "linux")]
+    ETH_P_80221,
+    #[cfg(target_os = "linux")]
+    ETH_P_802_2,
+    #[cfg(target_os = "linux")]
+    ETH_P_802_3,
+    #[cfg(target_os = "linux")]
+    ETH_P_802_EX1,
+    #[cfg(target_os = "linux")]
+    ETH_P_AARP,
+    #[cfg(target_os = "linux")]
+    ETH_P_AF_IUCV,
+    #[cfg(target_os = "linux")]
+    ETH_P_ALL,
+    #[cfg(target_os = "linux")]
+    ETH_P_AOE,
+    #[cfg(target_os = "linux")]
+    ETH_P_ARCNET,
+    #[cfg(target_os = "linux")]
+    ETH_P_ARP,
+    #[cfg(target_os = "linux")]
+    ETH_P_ATALK,
+    #[cfg(target_os = "linux")]
+    ETH_P_ATMFATE,
+    #[cfg(target_os = "linux")]
+    ETH_P_ATMMPOA,
+    #[cfg(target_os = "linux")]
+    ETH_P_AX25,
+    #[cfg(target_os = "linux")]
+    ETH_P_BATMAN,
+    #[cfg(target_os = "linux")]
+    ETH_P_BPQ,
+    #[cfg(target_os = "linux")]
+    ETH_P_CAIF,
+    #[cfg(target_os = "linux")]
+    ETH_P_CANFD,
+    #[cfg(target_os = "linux")]
+    ETH_P_CONTROL,
+    #[cfg(target_os = "linux")]
+    ETH_P_CUST,
+    #[cfg(target_os = "linux")]
+    ETH_P_DDCMP,
+    #[cfg(target_os = "linux")]
+    ETH_P_DEC,
+    #[cfg(target_os = "linux")]
+    ETH_P_DIAG,
+    #[cfg(target_os = "linux")]
+    ETH_P_DNA_DL,
+    #[cfg(target_os = "linux")]
+    ETH_P_DNA_RC,
+    #[cfg(target_os = "linux")]
+    ETH_P_DNA_RT,
+    #[cfg(target_os = "linux")]
+    ETH_P_DSA,
+    #[cfg(target_os = "linux")]
+    ETH_P_ECONET,
+    #[cfg(target_os = "linux")]
+    ETH_P_EDSA,
+    #[cfg(target_os = "linux")]
+    ETH_P_FCOE,
+    #[cfg(target_os = "linux")]
+    ETH_P_FIP,
+    #[cfg(target_os = "linux")]
+    ETH_P_HDLC,
+    #[cfg(target_os = "linux")]
+    ETH_P_IEEE802154,
+    #[cfg(target_os = "linux")]
+    ETH_P_IEEEPUP,
+    #[cfg(target_os = "linux")]
+    ETH_P_IEEEPUPAT,
+    #[cfg(target_os = "linux")]
+    ETH_P_IP,
+    #[cfg(target_os = "linux")]
+    ETH_P_IPV6,
+    #[cfg(target_os = "linux")]
+    ETH_P_IPX,
+    #[cfg(target_os = "linux")]
+    ETH_P_IRDA,
+    #[cfg(target_os = "linux")]
+    ETH_P_LAT,
+    #[cfg(target_os = "linux")]
+    ETH_P_LINK_CTL,
+    #[cfg(target_os = "linux")]
+    ETH_P_LOCALTALK,
+    #[cfg(target_os = "linux")]
+    ETH_P_LOOP,
+    #[cfg(target_os = "linux")]
+    ETH_P_LOOPBACK,
+    #[cfg(target_os = "linux")]
+    ETH_P_MACSEC,
+    #[cfg(target_os = "linux")]
+    ETH_P_MOBITEX,
+    #[cfg(target_os = "linux")]
+    ETH_P_MPLS_MC,
+    #[cfg(target_os = "linux")]
+    ETH_P_MPLS_UC,
+    #[cfg(target_os = "linux")]
+    ETH_P_MVRP,
+    #[cfg(target_os = "linux")]
+    ETH_P_PAE,
+    #[cfg(target_os = "linux")]
+    ETH_P_PAUSE,
+    #[cfg(target_os = "linux")]
+    ETH_P_PHONET,
+    #[cfg(target_os = "linux")]
+    ETH_P_PPP_DISC,
+    #[cfg(target_os = "linux")]
+    ETH_P_PPP_MP,
+    #[cfg(target_os = "linux")]
+    ETH_P_PPP_SES,
+    #[cfg(target_os = "linux")]
+    ETH_P_PPPTALK,
+    #[cfg(target_os = "linux")]
+    ETH_P_PRP,
+    #[cfg(target_os = "linux")]
+    ETH_P_PUP,
+    #[cfg(target_os = "linux")]
+    ETH_P_PUPAT,
+    #[cfg(target_os = "linux")]
+    ETH_P_QINQ1,
+    #[cfg(target_os = "linux")]
+    ETH_P_QINQ2,
+    #[cfg(target_os = "linux")]
+    ETH_P_QINQ3,
+    #[cfg(target_os = "linux")]
+    ETH_P_RARP,
+    #[cfg(target_os = "linux")]
+    ETH_P_SCA,
+    #[cfg(target_os = "linux")]
+    ETH_P_SLOW,
+    #[cfg(target_os = "linux")]
+    ETH_P_SNAP,
+    #[cfg(target_os = "linux")]
+    ETH_P_TDLS,
+    #[cfg(target_os = "linux")]
+    ETH_P_TEB,
+    #[cfg(target_os = "linux")]
+    ETH_P_TIPC,
+    #[cfg(target_os = "linux")]
+    ETH_P_TR_802_2,
+    #[cfg(target_os = "linux")]
+    ETH_P_TRAILER,
+    #[cfg(target_os = "linux")]
+    ETH_P_WAN_PPP,
+    #[cfg(target_os = "linux")]
+    ETH_P_WCCP,
+    #[cfg(target_os = "linux")]
+    ETH_P_X25,
+    /// Convert u32 from host to network byte order
+    Htonl(u32),
+    /// Convert u16 from host to network byte order
+    Htons(u16),
+    /// Directly pass i32 to `socket(2)` (not recommended; see nix-rust/nix issue #865 for discussion)
+    Integer(i32),
     /// Allows applications to configure and control a KEXT
     /// ([ref](https://developer.apple.com/library/content/documentation/Darwin/Conceptual/NKEConceptual/control/control.html))
     #[cfg(any(target_os = "ios", target_os = "macos"))]
-    KextControl = libc::SYSPROTO_CONTROL,
+    KextControl,
+    /// Allows applications and other KEXTs to be notified when certain kernel events occur
+    /// ([ref](https://developer.apple.com/library/content/documentation/Darwin/Conceptual/NKEConceptual/control/control.html))
+    #[cfg(any(target_os = "ios", target_os = "macos"))]
+    KextEvent,
+    /// TCP protocol ([ip(7)](http://man7.org/linux/man-pages/man7/ip.7.html))
+    Tcp,
+    /// UDP protocol ([ip(7)](http://man7.org/linux/man-pages/man7/ip.7.html))
+    Udp,
 }
+
+impl Into<i32> for SockProtocol {
+    fn into(self) -> i32 {
+        match self {
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_1588 => (libc::ETH_P_1588 as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_8021AD => (libc::ETH_P_8021AD as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_8021AH => (libc::ETH_P_8021AH as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_8021Q => (libc::ETH_P_8021Q as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_80221 => (libc::ETH_P_80221 as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_802_2 => (libc::ETH_P_802_2 as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_802_3 => (libc::ETH_P_802_3 as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_802_EX1 => (libc::ETH_P_802_EX1 as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_AARP => (libc::ETH_P_AARP as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_AF_IUCV => (libc::ETH_P_AF_IUCV as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_ALL => (libc::ETH_P_ALL as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_AOE => (libc::ETH_P_AOE as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_ARCNET => (libc::ETH_P_ARCNET as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_ARP => (libc::ETH_P_ARP as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_ATALK => (libc::ETH_P_ATALK as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_ATMFATE => (libc::ETH_P_ATMFATE as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_ATMMPOA => (libc::ETH_P_ATMMPOA as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_AX25 => (libc::ETH_P_AX25 as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_BATMAN => (libc::ETH_P_BATMAN as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_BPQ => (libc::ETH_P_BPQ as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_CAIF => (libc::ETH_P_CAIF as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_CANFD => (libc::ETH_P_CANFD as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_CONTROL => (libc::ETH_P_CONTROL as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_CUST => (libc::ETH_P_CUST as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_DDCMP => (libc::ETH_P_DDCMP as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_DEC => (libc::ETH_P_DEC as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_DIAG => (libc::ETH_P_DIAG as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_DNA_DL => (libc::ETH_P_DNA_DL as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_DNA_RC => (libc::ETH_P_DNA_RC as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_DNA_RT => (libc::ETH_P_DNA_RT as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_DSA => (libc::ETH_P_DSA as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_ECONET => (libc::ETH_P_ECONET as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_EDSA => (libc::ETH_P_EDSA as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_FCOE => (libc::ETH_P_FCOE as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_FIP => (libc::ETH_P_FIP as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_HDLC => (libc::ETH_P_HDLC as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_IEEE802154 => (libc::ETH_P_IEEE802154 as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_IEEEPUP => (libc::ETH_P_IEEEPUP as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_IEEEPUPAT => (libc::ETH_P_IEEEPUPAT as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_IP => (libc::ETH_P_IP as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_IPV6 => (libc::ETH_P_IPV6 as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_IPX => (libc::ETH_P_IPX as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_IRDA => (libc::ETH_P_IRDA as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_LAT => (libc::ETH_P_LAT as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_LINK_CTL => (libc::ETH_P_LINK_CTL as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_LOCALTALK => (libc::ETH_P_LOCALTALK as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_LOOP => (libc::ETH_P_LOOP as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_LOOPBACK => (libc::ETH_P_LOOPBACK as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_MACSEC => (libc::ETH_P_MACSEC as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_MOBITEX => (libc::ETH_P_MOBITEX as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_MPLS_MC => (libc::ETH_P_MPLS_MC as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_MPLS_UC => (libc::ETH_P_MPLS_UC as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_MVRP => (libc::ETH_P_MVRP as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_PAE => (libc::ETH_P_PAE as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_PAUSE => (libc::ETH_P_PAUSE as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_PHONET => (libc::ETH_P_PHONET as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_PPP_DISC => (libc::ETH_P_PPP_DISC as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_PPP_MP => (libc::ETH_P_PPP_MP as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_PPP_SES => (libc::ETH_P_PPP_SES as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_PPPTALK => (libc::ETH_P_PPPTALK as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_PRP => (libc::ETH_P_PRP as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_PUP => (libc::ETH_P_PUP as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_PUPAT => (libc::ETH_P_PUPAT as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_QINQ1 => (libc::ETH_P_QINQ1 as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_QINQ2 => (libc::ETH_P_QINQ2 as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_QINQ3 => (libc::ETH_P_QINQ3 as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_RARP => (libc::ETH_P_RARP as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_SCA => (libc::ETH_P_SCA as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_SLOW => (libc::ETH_P_SLOW as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_SNAP => (libc::ETH_P_SNAP as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_TDLS => (libc::ETH_P_TDLS as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_TEB => (libc::ETH_P_TEB as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_TIPC => (libc::ETH_P_TIPC as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_TR_802_2 => (libc::ETH_P_TR_802_2 as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_TRAILER => (libc::ETH_P_TRAILER as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_WAN_PPP => (libc::ETH_P_WAN_PPP as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_WCCP => (libc::ETH_P_WCCP as u16).to_be() as i32,
+            #[cfg(target_os = "linux")]
+            SockProtocol::ETH_P_X25 => (libc::ETH_P_X25 as u16).to_be() as i32,
+            SockProtocol::Htonl(p) => p.to_be() as i32,
+            SockProtocol::Htons(p) => p.to_be() as i32,
+            SockProtocol::Integer(p) => p,
+            #[cfg(any(target_os = "ios", target_os = "macos"))]
+            SockProtocol::KextControl => libc::SYSPROTO_CONTROL,
+            #[cfg(any(target_os = "ios", target_os = "macos"))]
+            SockProtocol::KextEvent => libc::SYSPROTO_EVENT,
+            SockProtocol::Tcp => libc::IPPROTO_TCP,
+            SockProtocol::Udp => libc::IPPROTO_UDP,
+        }
+    }
+}
+
 
 libc_bitflags!{
     /// Additional socket options
@@ -693,9 +1027,9 @@ pub fn recvmsg<'a, T>(fd: RawFd, iov: &[IoVec<&mut [u8]>], cmsg_buffer: Option<&
 /// [Further reading](http://pubs.opengroup.org/onlinepubs/9699919799/functions/socket.html)
 pub fn socket<T: Into<Option<SockProtocol>>>(domain: AddressFamily, ty: SockType, flags: SockFlag, protocol: T) -> Result<RawFd> {
     let mut ty = ty as c_int;
-    let protocol = match protocol.into() {
+    let protocol: c_int = match protocol.into() {
         None => 0,
-        Some(p) => p as c_int,
+        Some(p) => p.into(),
     };
     let feat_atomic = features::socket_atomic_cloexec();
 
@@ -736,9 +1070,9 @@ pub fn socket<T: Into<Option<SockProtocol>>>(domain: AddressFamily, ty: SockType
 pub fn socketpair<T: Into<Option<SockProtocol>>>(domain: AddressFamily, ty: SockType, protocol: T,
                   flags: SockFlag) -> Result<(RawFd, RawFd)> {
     let mut ty = ty as c_int;
-    let protocol = match protocol.into() {
+    let protocol: c_int = match protocol.into() {
         None => 0,
-        Some(p) => p as c_int,
+        Some(p) => p.into(),
     };
     let feat_atomic = features::socket_atomic_cloexec();
 

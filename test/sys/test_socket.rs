@@ -255,3 +255,50 @@ pub fn test_syscontrol() {
     // requires root privileges
     // connect(fd, &sockaddr).expect("connect failed");
 }
+
+/// Test that SockProtocol::ETH_P_ALL returns htons(ETH_P_ALL) conversion correctly
+#[cfg(target_os = "linux")]
+#[test]
+pub fn test_socketprotocol_eth_p_all() {
+  use libc::{c_int};
+  use nix::sys::socket::{SockProtocol};
+
+  /* ETH_P_ALL */
+  let ntons: c_int = SockProtocol::ETH_P_ALL.into();
+  assert_eq!(ntons, if cfg!(target_endian = "big") { 3 } else { 768 });
+}
+
+/// Test that SockProtocol::Htons returns htons(u16) conversion correctly
+#[test]
+pub fn test_socketprotocol_htons() {
+  use libc::{c_int};
+  use nix::sys::socket::{SockProtocol};
+
+  /* ETH_P_ALL */
+  let ntons: c_int = SockProtocol::Htons(3).into();
+  assert_eq!(ntons, if cfg!(target_endian = "big") { 3 } else { 768 });
+
+  let ntons: c_int = SockProtocol::Htons(0xFFFF).into();
+  assert_eq!(ntons, 0xFFFF);
+
+  let ntons: c_int = SockProtocol::Htons(0xCAFE).into();
+  assert_eq!(ntons, if cfg!(target_endian = "big") { 0xCAFE } else { 0xFECA });
+}
+
+/// Test that SockProtocol::Htonl returns htonl(u32) conversion correctly
+#[test]
+pub fn test_socketprotocol_htonl() {
+  use libc::{c_int};
+  use nix::sys::socket::{SockProtocol};
+
+  /* ETH_P_ALL */
+  let ntonl: c_int = SockProtocol::Htonl(3).into();
+  assert_eq!(ntonl as u32, if cfg!(target_endian = "big") { 3 } else { 50331648 });
+
+  let ntonl: c_int = SockProtocol::Htonl(0xFFFFFFFF).into();
+  assert_eq!(ntonl as u32, 0xFFFFFFFF);
+
+  let ntonl: c_int = SockProtocol::Htonl(0xCAFEBABE).into();
+  assert_eq!(ntonl as u32, if cfg!(target_endian = "big") { 0xCAFEBABE } else { 0xBEBAFECA });
+}
+
