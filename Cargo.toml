@@ -21,16 +21,13 @@ void = "1.0.2"
 gcc = "0.3"
 
 [dev-dependencies]
-bytes = { version="0.5.0", default_features = false }
+# The examples use on a new feature of Bytes which should be available in 0.5.0
+# https://github.com/carllerche/bytes/pull/185
+bytes = { git = "https://github.com/asomers/bytes", rev = "b57934d" }
 lazy_static = "1"
 rand = "0.4"
 tempdir = "0.3"
 tempfile = "2"
-
-[patch.crates-io]
-# The examples use on a new feature of Bytes which should be available in 0.5.0
-# https://github.com/carllerche/bytes/pull/185
-bytes = { git = "https://github.com/asomers/bytes", rev = "b57934d" }
 
 [[test]]
 name = "test"
