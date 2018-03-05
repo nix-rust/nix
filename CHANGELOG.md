@@ -6,6 +6,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Added safe support for nearly any buffer type in the `sys::aio` module.
+  ([#871](https://github.com/nix-rust/nix/pull/871))
 - Added `getsid` in `::nix::unistd`
   ([#850](https://github.com/nix-rust/nix/pull/850))
 - Added `alarm`. ([#830](https://github.com/nix-rust/nix/pull/830))
@@ -29,6 +31,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#837](https://github.com/nix-rust/nix/pull/837))
 
 ### Removed
+- Removed explicit support for the `bytes` crate from the `sys::aio` module.
+  See `sys::aio::AioCb::from_boxed_slice`s examples for alternatives.
+  ([#871](https://github.com/nix-rust/nix/pull/871))
 
 ## [0.10.0] 2018-01-26
 
