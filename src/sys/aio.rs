@@ -965,63 +965,6 @@ pub fn aio_suspend(list: &[&AioCb], timeout: Option<TimeSpec>) -> Result<()> {
     }).map(drop)
 }
 
-
-/// Submits multiple asynchronous I/O requests with a single system call.
-///
-/// They are not guaranteed to complete atomically, and the order in which the
-/// requests are carried out is not specified.  Reads, writes, and fsyncs may be
-/// freely mixed.
-///
-/// This function is useful for reducing the context-switch overhead of
-/// submitting many AIO operations.  It can also be used with
-/// `LioMode::LIO_WAIT` to block on the result of several independent
-/// operations.  Used that way, it is often useful in programs that otherwise
-/// make little use of AIO.
-///
-/// # Examples
-///
-/// Use `lio_listio` to submit an aio operation and wait for its completion.  In
-/// this case, there is no need to use `aio_suspend` to wait or `AioCb#error` to
-/// poll.
-///
-/// ```
-/// # extern crate tempfile;
-/// # extern crate nix;
-/// # use nix::sys::aio::*;
-/// # use nix::sys::signal::SigevNotify;
-/// # use std::os::unix::io::AsRawFd;
-/// # use tempfile::tempfile;
-/// # fn main() {
-/// const WBUF: &[u8] = b"abcdef123456";
-/// let mut f = tempfile().unwrap();
-/// let mut aiocb = AioCb::from_slice( f.as_raw_fd(),
-///     2,   //offset
-///     WBUF,
-///     0,   //priority
-///     SigevNotify::SigevNone,
-///     LioOpcode::LIO_WRITE);
-/// lio_listio(LioMode::LIO_WAIT,
-///            &[&mut aiocb],
-///            SigevNotify::SigevNone).unwrap();
-/// assert_eq!(aiocb.aio_return().unwrap() as usize, WBUF.len());
-/// # }
-/// ```
-///
-/// # References
-///
-/// [`lio_listio`](http://pubs.opengroup.org/onlinepubs/9699919799/functions/lio_listio.html)
-#[cfg(not(any(target_os = "ios", target_os = "macos")))]
-pub fn lio_listio(mode: LioMode, list: &[&mut AioCb],
-                  sigev_notify: SigevNotify) -> Result<()> {
-    let sigev = SigEvent::new(sigev_notify);
-    let sigevp = &mut sigev.sigevent() as *mut libc::sigevent;
-    let plist = list as *const [&mut AioCb] as *const [*mut libc::aiocb];
-    let p = plist as *const *mut libc::aiocb;
-    Errno::result(unsafe {
-        libc::lio_listio(mode as i32, p, list.len() as i32, sigevp)
-    }).map(drop)
-}
-
 impl<'a> Debug for AioCb<'a> {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         fmt.debug_struct("AioCb")
@@ -1043,5 +986,114 @@ impl<'a> Drop for AioCb<'a> {
     /// Otherwise, dropping constitutes a resource leak, which is an error
     fn drop(&mut self) {
         assert!(!self.in_progress, "Dropped an in-progress AioCb");
+    }
+}
+
+/// LIO Control Block.
+///
+/// The basic structure used to issue multiple AIO operations simultaneously.
+#[cfg(not(any(target_os = "ios", target_os = "macos")))]
+pub struct LioCb<'a> {
+    /// A collection of [`AioCb`]s.  All of these will be issued simultaneously
+    /// by the [`listio`] method.
+    ///
+    /// [`AioCb`]: struct.AioCb.html
+    /// [`listio`]: #method.listio
+    pub aiocbs: Vec<AioCb<'a>>,
+
+    /// The actual list passed to `libc::lio_listio`.
+    ///
+    /// It must live for as long as any of the operations are still being
+    /// processesed, because the aio subsystem uses its address as a unique
+    /// identifier.
+    list: Vec<*mut libc::aiocb>
+}
+
+#[cfg(not(any(target_os = "ios", target_os = "macos")))]
+impl<'a> LioCb<'a> {
+    /// Initialize an empty `LioCb`
+    pub fn with_capacity(capacity: usize) -> LioCb<'a> {
+        LioCb {
+            aiocbs: Vec::with_capacity(capacity),
+            list: Vec::with_capacity(capacity)
+        }
+    }
+
+    /// Submits multiple asynchronous I/O requests with a single system call.
+    ///
+    /// They are not guaranteed to complete atomically, and the order in which
+    /// the requests are carried out is not specified.  Reads, writes, and
+    /// fsyncs may be freely mixed.
+    ///
+    /// This function is useful for reducing the context-switch overhead of
+    /// submitting many AIO operations.  It can also be used with
+    /// `LioMode::LIO_WAIT` to block on the result of several independent
+    /// operations.  Used that way, it is often useful in programs that
+    /// otherwise make little use of AIO.
+    ///
+    /// # Examples
+    ///
+    /// Use `listio` to submit an aio operation and wait for its completion.  In
+    /// this case, there is no need to use `aio_suspend` to wait or
+    /// `AioCb#error` to poll.
+    ///
+    /// ```
+    /// # extern crate tempfile;
+    /// # extern crate nix;
+    /// # use nix::sys::aio::*;
+    /// # use nix::sys::signal::SigevNotify;
+    /// # use std::os::unix::io::AsRawFd;
+    /// # use tempfile::tempfile;
+    /// # fn main() {
+    /// const WBUF: &[u8] = b"abcdef123456";
+    /// let mut f = tempfile().unwrap();
+    /// let mut liocb = LioCb::with_capacity(1);
+    /// liocb.aiocbs.push(AioCb::from_slice( f.as_raw_fd(),
+    ///     2,   //offset
+    ///     WBUF,
+    ///     0,   //priority
+    ///     SigevNotify::SigevNone,
+    ///     LioOpcode::LIO_WRITE));
+    /// liocb.listio(LioMode::LIO_WAIT,
+    ///              SigevNotify::SigevNone).unwrap();
+    /// assert_eq!(liocb.aiocbs[0].aio_return().unwrap() as usize, WBUF.len());
+    /// # }
+    /// ```
+    ///
+    /// # References
+    ///
+    /// [`lio_listio`](http://pubs.opengroup.org/onlinepubs/9699919799/functions/lio_listio.html)
+    pub fn listio(&mut self, mode: LioMode,
+                  sigev_notify: SigevNotify) -> Result<()> {
+        let sigev = SigEvent::new(sigev_notify);
+        let sigevp = &mut sigev.sigevent() as *mut libc::sigevent;
+        self.list.clear();
+        for a in self.aiocbs.iter_mut() {
+            self.list.push(a as *mut AioCb<'a>
+                             as *mut libc::aiocb);
+        }
+        let p = self.list.as_ptr();
+        Errno::result(unsafe {
+            libc::lio_listio(mode as i32, p, self.list.len() as i32, sigevp)
+        }).map(|_| ())
+    }
+}
+
+#[cfg(not(any(target_os = "ios", target_os = "macos")))]
+impl<'a> Debug for LioCb<'a> {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        fmt.debug_struct("LioCb")
+            .field("aiocbs", &self.aiocbs)
+            .finish()
+    }
+}
+
+#[cfg(not(any(target_os = "ios", target_os = "macos")))]
+impl<'a> From<Vec<AioCb<'a>>> for LioCb<'a> {
+    fn from(src: Vec<AioCb<'a>>) -> LioCb<'a> {
+        LioCb {
+            list: Vec::with_capacity(src.capacity()),
+            aiocbs: src,
+        }
     }
 }

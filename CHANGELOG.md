@@ -8,6 +8,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Added `SO_MARK` on Linux.
 - ([#873](https://github.com/nix-rust/nix/pull/873))
+- Added `sys::aio::LioCb` as a wrapper for `libc::lio_listio`.
+  ([#872](https://github.com/nix-rust/nix/pull/872))
 - Added `getsid` in `::nix::unistd`
   ([#850](https://github.com/nix-rust/nix/pull/850))
 - Added `alarm`. ([#830](https://github.com/nix-rust/nix/pull/830))
@@ -31,6 +33,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#837](https://github.com/nix-rust/nix/pull/837))
 
 ### Removed
+- Removed `sys::aio::lio_listio`.  Use `sys::aio::LioCb::listio` instead.
+  ([#872](https://github.com/nix-rust/nix/pull/872))
 
 ## [0.10.0] 2018-01-26
 
