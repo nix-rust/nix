@@ -32,6 +32,7 @@ use std::marker::PhantomData;
 use std::mem;
 use std::ops::Deref;
 use std::ptr::{null, null_mut};
+use std::thread;
 use sys::signal::*;
 use sys::time::TimeSpec;
 
@@ -985,7 +986,8 @@ impl<'a> Drop for AioCb<'a> {
     /// If the `AioCb` has no remaining state in the kernel, just drop it.
     /// Otherwise, dropping constitutes a resource leak, which is an error
     fn drop(&mut self) {
-        assert!(!self.in_progress, "Dropped an in-progress AioCb");
+        assert!(thread::panicking() || !self.in_progress,
+                "Dropped an in-progress AioCb");
     }
 }
 
