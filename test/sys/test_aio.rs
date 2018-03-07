@@ -323,20 +323,21 @@ fn test_write() {
     assert!(rbuf == EXPECT);
 }
 
-// Tests `AioCb::from_bytes`
+// Tests `AioCb::from_boxed_slice` with `Bytes`
 #[test]
 #[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
 fn test_write_bytes() {
     const INITIAL: &[u8] = b"abcdef123456";
-    let wbuf = Bytes::from(&b"CDEF"[..]);
+    let wbuf = Box::new(Bytes::from(&b"CDEF"[..]));
     let mut rbuf = Vec::new();
     const EXPECT: &[u8] = b"abCDEF123456";
+    let expected_len = wbuf.len();
 
     let mut f = tempfile().unwrap();
     f.write_all(INITIAL).unwrap();
-    let mut aiocb = AioCb::from_bytes( f.as_raw_fd(),
+    let mut aiocb = AioCb::from_boxed_slice( f.as_raw_fd(),
                            2,   //offset
-                           wbuf.clone(),
+                           wbuf,
                            0,   //priority
                            SigevNotify::SigevNone,
                            LioOpcode::LIO_NOP);
@@ -344,7 +345,7 @@ fn test_write_bytes() {
 
     let err = poll_aio(&mut aiocb);
     assert!(err == Ok(()));
-    assert!(aiocb.aio_return().unwrap() as usize == wbuf.len());
+    assert!(aiocb.aio_return().unwrap() as usize == expected_len);
 
     f.seek(SeekFrom::Start(0)).unwrap();
     let len = f.read_to_end(&mut rbuf).unwrap();
@@ -352,46 +353,17 @@ fn test_write_bytes() {
     assert!(rbuf == EXPECT);
 }
 
-// Tests `AioCb::from_bytes_mut`
-#[test]
-#[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
-fn test_read_bytes_mut_big() {
-    const INITIAL: &[u8] = b"abcdefgh12345678abcdefgh12345678abcdefgh12345678abcdefgh12345678abcdefgh12345678";
-    // rbuf needs to be larger than 32 bytes (64 on 32-bit systems) so
-    // BytesMut::clone is implemented by reference.
-    let rbuf = BytesMut::from(vec![0; 70]);
-    const EXPECT: &[u8] = b"cdefgh12345678abcdefgh12345678abcdefgh12345678abcdefgh12345678abcdefgh";
-    let mut f = tempfile().unwrap();
-    f.write_all(INITIAL).unwrap();
-
-    let mut aiocb = AioCb::from_bytes_mut( f.as_raw_fd(),
-                           2,   //offset
-                           rbuf,
-                           0,   //priority
-                           SigevNotify::SigevNone,
-                           LioOpcode::LIO_NOP);
-    aiocb.read().unwrap();
-
-    let err = poll_aio(&mut aiocb);
-    assert_eq!(err, Ok(()));
-    assert_eq!(aiocb.aio_return().unwrap() as usize, EXPECT.len());
-    let buffer = aiocb.into_buffer();
-    assert_eq!(buffer.bytes_mut().unwrap(), EXPECT);
-}
-
-// Tests reallocation in `AioCb::from_bytes_mut`
+// Tests `AioCb::from_boxed_mut_slice` with `BytesMut`
 #[test]
 #[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
 fn test_read_bytes_mut_small() {
     const INITIAL: &[u8] = b"abcdef";
-    // rbuf needs to be no more than 32 bytes (64 on 32-bit systems) so
-    // BytesMut::clone is implemented inline.
-    let rbuf = BytesMut::from(vec![0; 4]);
+    let rbuf = Box::new(BytesMut::from(vec![0; 4]));
     const EXPECT: &[u8] = b"cdef";
     let mut f = tempfile().unwrap();
     f.write_all(INITIAL).unwrap();
 
-    let mut aiocb = AioCb::from_bytes_mut( f.as_raw_fd(),
+    let mut aiocb = AioCb::from_boxed_mut_slice( f.as_raw_fd(),
                            2,   //offset
                            rbuf,
                            0,   //priority
@@ -402,8 +374,8 @@ fn test_read_bytes_mut_small() {
     let err = poll_aio(&mut aiocb);
     assert_eq!(err, Ok(()));
     assert_eq!(aiocb.aio_return().unwrap() as usize, EXPECT.len());
-    let buffer = aiocb.into_buffer();
-    assert_eq!(buffer.bytes_mut().unwrap(), EXPECT);
+    let buffer = aiocb.boxed_mut_slice().unwrap();
+    assert_eq!(buffer.borrow(), EXPECT);
 }
 
 // Tests `AioCb::from_ptr`

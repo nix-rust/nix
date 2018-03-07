@@ -16,7 +16,6 @@
 #![deny(missing_debug_implementations)]
 
 // External crates
-extern crate bytes;
 #[macro_use]
 extern crate bitflags;
 #[macro_use]
