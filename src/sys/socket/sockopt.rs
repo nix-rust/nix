@@ -253,6 +253,8 @@ sockopt_impl!(Both, IpTransparent, libc::SOL_IP, libc::IP_TRANSPARENT, bool);
 sockopt_impl!(Both, BindAny, libc::SOL_SOCKET, libc::SO_BINDANY, bool);
 #[cfg(target_os = "freebsd")]
 sockopt_impl!(Both, BindAny, libc::IPPROTO_IP, libc::IP_BINDANY, bool);
+#[cfg(target_os = "linux")]
+sockopt_impl!(Both, Mark, libc::SOL_SOCKET, libc::SO_MARK, u32);
 
 /*
  *
@@ -526,5 +528,25 @@ mod test {
         let s_listening2 = getsockopt(s, super::AcceptConn).unwrap();
         assert!(s_listening2);
         close(s).unwrap();
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn is_so_mark_functional() {
+        use super::super::*;
+        use ::unistd::Uid;
+        use ::std::io::{self, Write};
+
+        if !Uid::current().is_root() {
+            let stderr = io::stderr();
+            let mut handle = stderr.lock();
+            writeln!(handle, "SO_MARK requires root privileges. Skipping test.").unwrap();
+            return;
+        }
+
+        let s = socket(AddressFamily::Inet, SockType::Stream, SockFlag::empty(), None).unwrap();
+        setsockopt(s, super::Mark, &1337).unwrap();
+        let mark = getsockopt(s, super::Mark).unwrap();
+        assert_eq!(mark, 1337);
     }
 }
