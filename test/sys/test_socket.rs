@@ -167,6 +167,51 @@ pub fn test_scm_rights() {
     close(w).unwrap();
 }
 
+/// Tests that passing multiple fds using a single `ControlMessage` works.
+#[test]
+fn test_scm_rights_single_cmsg_multiple_fds() {
+    use std::os::unix::net::UnixDatagram;
+    use std::os::unix::io::{RawFd, AsRawFd};
+    use std::thread;
+    use nix::sys::socket::{CmsgSpace, ControlMessage, MsgFlags, sendmsg, recvmsg};
+    use nix::sys::uio::IoVec;
+    use libc;
+
+    let (send, receive) = UnixDatagram::pair().unwrap();
+    let thread = thread::spawn(move || {
+        let mut buf = [0u8; 8];
+        let iovec = [IoVec::from_mut_slice(&mut buf)];
+        let mut space = CmsgSpace::<[RawFd; 2]>::new();
+        let msg = recvmsg(
+            receive.as_raw_fd(),
+            &iovec,
+            Some(&mut space),
+            MsgFlags::empty()
+        ).unwrap();
+        assert!(!msg.flags.intersects(MsgFlags::MSG_TRUNC | MsgFlags::MSG_CTRUNC));
+
+        let mut cmsgs = msg.cmsgs();
+        match cmsgs.next() {
+            Some(ControlMessage::ScmRights(fds)) => {
+                assert_eq!(fds.len(), 2,
+                           "unexpected fd count (expected 2 fds, got {})",
+                           fds.len());
+            },
+            _ => panic!(),
+        }
+        assert!(cmsgs.next().is_none(), "unexpected control msg");
+
+        assert_eq!(iovec[0].as_slice(), [1u8, 2u8, 3u8, 4u8, 5u8, 6u8, 7u8, 8u8]);
+    });
+
+    let slice = [1u8, 2u8, 3u8, 4u8, 5u8, 6u8, 7u8, 8u8];
+    let iov = [IoVec::from_slice(&slice)];
+    let fds = [libc::STDIN_FILENO, libc::STDOUT_FILENO];    // pass stdin and stdout
+    let cmsg = [ControlMessage::ScmRights(&fds)];
+    sendmsg(send.as_raw_fd(), &iov, &cmsg, MsgFlags::empty(), None).unwrap();
+    thread.join().unwrap();
+}
+
 // Verify `sendmsg` builds a valid `msghdr` when passing an empty
 // `cmsgs` argument.  This should result in a msghdr with a nullptr
 // msg_control field and a msg_controllen of 0 when calling into the

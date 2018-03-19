@@ -12,6 +12,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - Made `preadv` take immutable slice of IoVec.
   ([#914](https://github.com/nix-rust/nix/pull/914))
+- Fixed passing multiple file descriptors over Unix Sockets.
+  ([#918](https://github.com/nix-rust/nix/pull/918))
 
 ### Removed
 
