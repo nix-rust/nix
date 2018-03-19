@@ -302,6 +302,18 @@ unsafe fn copy_bytes<'a, 'b, T: ?Sized>(src: &T, dst: &'a mut &'b mut [u8]) {
     mem::swap(dst, &mut remainder);
 }
 
+/// Pad byte slice dst with `len` zeroes, and update the slice to point to
+/// the remainder.
+fn pad_bytes(len: usize, dst: &mut &mut [u8]) {
+    let mut tmpbuf = &mut [][..];
+    mem::swap(&mut tmpbuf, dst);
+    let (padding, mut remainder) = tmpbuf.split_at_mut(len);
+    for i in padding {
+        *i = 0;
+    }
+    mem::swap(dst, &mut remainder);
+}
+
 cfg_if! {
     // Darwin and DragonFly BSD always align struct cmsghdr to 32-bit only.
     if #[cfg(any(target_os = "dragonfly", target_os = "ios", target_os = "macos"))] {
@@ -559,13 +571,12 @@ impl<'a> ControlMessage<'a> {
 
                 let padlen = cmsg_align(mem::size_of_val(&cmsg)) -
                     mem::size_of_val(&cmsg);
-
-                let mut tmpbuf = &mut [][..];
-                mem::swap(&mut tmpbuf, buf);
-                let (_padding, mut remainder) = tmpbuf.split_at_mut(padlen);
-                mem::swap(buf, &mut remainder);
+                pad_bytes(padlen, buf);
 
                 copy_bytes(fds, buf);
+
+                let padlen = self.space() - self.len();
+                pad_bytes(padlen, buf);
             },
             ControlMessage::ScmTimestamp(t) => {
                 let cmsg = cmsghdr {
@@ -578,17 +589,24 @@ impl<'a> ControlMessage<'a> {
 
                 let padlen = cmsg_align(mem::size_of_val(&cmsg)) -
                     mem::size_of_val(&cmsg);
-
-                let mut tmpbuf = &mut [][..];
-                mem::swap(&mut tmpbuf, buf);
-                let (_padding, mut remainder) = tmpbuf.split_at_mut(padlen);
-                mem::swap(buf, &mut remainder);
+                pad_bytes(padlen, buf);
 
                 copy_bytes(t, buf);
+
+                let padlen = self.space() - self.len();
+                pad_bytes(padlen, buf);
             },
             ControlMessage::Unknown(UnknownCmsg(orig_cmsg, bytes)) => {
                 copy_bytes(orig_cmsg, buf);
+
+                let padlen = cmsg_align(mem::size_of_val(&orig_cmsg)) -
+                    mem::size_of_val(&orig_cmsg);
+                pad_bytes(padlen, buf);
+
                 copy_bytes(bytes, buf);
+
+                let padlen = self.space() - self.len();
+                pad_bytes(padlen, buf);
             }
         }
     }
@@ -601,24 +619,24 @@ impl<'a> ControlMessage<'a> {
 ///
 /// Allocates if cmsgs is nonempty.
 pub fn sendmsg<'a>(fd: RawFd, iov: &[IoVec<&'a [u8]>], cmsgs: &[ControlMessage<'a>], flags: MsgFlags, addr: Option<&'a SockAddr>) -> Result<usize> {
-    let mut len = 0;
     let mut capacity = 0;
     for cmsg in cmsgs {
-        len += cmsg.len();
         capacity += cmsg.space();
     }
     // Note that the resulting vector claims to have length == capacity,
     // so it's presently uninitialized.
     let mut cmsg_buffer = unsafe {
-        let mut vec = Vec::<u8>::with_capacity(len);
-        vec.set_len(len);
+        let mut vec = Vec::<u8>::with_capacity(capacity);
+        vec.set_len(capacity);
         vec
     };
     {
+        let end = unsafe{cmsg_buffer.as_ptr().offset(capacity as isize)};
         let mut ptr = &mut cmsg_buffer[..];
         for cmsg in cmsgs {
             unsafe { cmsg.encode_into(&mut ptr) };
         }
+        assert_eq!(ptr.as_ptr(), end);
     }
 
     let (name, namelen) = match addr {
