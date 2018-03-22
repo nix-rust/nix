@@ -6,6 +6,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Added `SO_MARK` on Linux.
+- ([#873](https://github.com/nix-rust/nix/pull/873))
 - Added `getsid` in `::nix::unistd`
   ([#850](https://github.com/nix-rust/nix/pull/850))
 - Added `alarm`. ([#830](https://github.com/nix-rust/nix/pull/830))
