@@ -29,6 +29,9 @@ rand = "0.4"
 tempdir = "0.3"
 tempfile = "2"
 
+[target.'cfg(target_os = "freebsd")'.dev-dependencies]
+sysctl = "0.1"
+
 [[test]]
 name = "test"
 path = "test/test.rs"
@@ -36,6 +39,10 @@ path = "test/test.rs"
 [[test]]
 name = "test-aio-drop"
 path = "test/sys/test_aio_drop.rs"
+
+[[test]]
+name = "test-lio-listio-resubmit"
+path = "test/sys/test_lio_listio_resubmit.rs"
 
 [[test]]
 name = "test-mount"

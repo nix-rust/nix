@@ -513,8 +513,8 @@ fn test_liocb_listio_wait() {
         let err = liocb.listio(LioMode::LIO_WAIT, SigevNotify::SigevNone);
         err.expect("lio_listio");
 
-        assert!(liocb.aiocbs[0].aio_return().unwrap() as usize == WBUF.len());
-        assert!(liocb.aiocbs[1].aio_return().unwrap() as usize == rlen);
+        assert!(liocb.aio_return(0).unwrap() as usize == WBUF.len());
+        assert!(liocb.aio_return(1).unwrap() as usize == rlen);
     }
     assert!(rbuf.deref().deref() == b"3456");
 
