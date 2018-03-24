@@ -21,6 +21,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#825](https://github.com/nix-rust/nix/pull/825))
 - Exposed `MSG_CMSG_CLOEXEC` on *BSD.
   ([#825](https://github.com/nix-rust/nix/pull/825))
+- Added `fchmod`, `fchmodat`.
+  ([#857](https://github.com/nix-rust/nix/pull/857))
 
 ### Changed
 - Display and Debug for SysControlAddr now includes all fields.

@@ -5,8 +5,9 @@ use std::os::unix::prelude::AsRawFd;
 use libc::{S_IFMT, S_IFLNK};
 
 use nix::fcntl;
-use nix::sys::stat::{self, stat, fstat, lstat};
-use nix::sys::stat::FileStat;
+use nix::sys::stat::{self, fchmod, fchmodat, fstat, lstat, stat};
+use nix::sys::stat::{FileStat, Mode, FchmodatFlags};
+use nix::unistd::chdir;
 use nix::Result;
 use tempdir::TempDir;
 
@@ -101,4 +102,53 @@ fn test_stat_fstat_lstat() {
 
     let fstat_result = fstat(link.as_raw_fd());
     assert_stat_results(fstat_result);
+}
+
+#[test]
+fn test_fchmod() {
+    let tempdir = TempDir::new("nix-test_fchmod").unwrap();
+    let filename = tempdir.path().join("foo.txt");
+    let file = File::create(&filename).unwrap();
+
+    let mut mode1 = Mode::empty();
+    mode1.insert(Mode::S_IRUSR);
+    mode1.insert(Mode::S_IWUSR);
+    fchmod(file.as_raw_fd(), mode1).unwrap();
+
+    let file_stat1 = stat(&filename).unwrap();
+    assert_eq!(file_stat1.st_mode & 0o7777, mode1.bits());
+
+    let mut mode2 = Mode::empty();
+    mode2.insert(Mode::S_IROTH);
+    fchmod(file.as_raw_fd(), mode2).unwrap();
+
+    let file_stat2 = stat(&filename).unwrap();
+    assert_eq!(file_stat2.st_mode & 0o7777, mode2.bits());
+}
+
+#[test]
+fn test_fchmodat() {
+    let tempdir = TempDir::new("nix-test_fchmodat").unwrap();
+    let filename = "foo.txt";
+    let fullpath = tempdir.path().join(filename);
+    File::create(&fullpath).unwrap();
+
+    let dirfd = fcntl::open(tempdir.path(), fcntl::OFlag::empty(), stat::Mode::empty()).unwrap();
+
+    let mut mode1 = Mode::empty();
+    mode1.insert(Mode::S_IRUSR);
+    mode1.insert(Mode::S_IWUSR);
+    fchmodat(Some(dirfd), filename, mode1, FchmodatFlags::FollowSymlink).unwrap();
+
+    let file_stat1 = stat(&fullpath).unwrap();
+    assert_eq!(file_stat1.st_mode & 0o7777, mode1.bits());
+
+    chdir(tempdir.path()).unwrap();
+
+    let mut mode2 = Mode::empty();
+    mode2.insert(Mode::S_IROTH);
+    fchmodat(None, filename, mode2, FchmodatFlags::FollowSymlink).unwrap();
+
+    let file_stat2 = stat(&fullpath).unwrap();
+    assert_eq!(file_stat2.st_mode & 0o7777, mode2.bits());
 }

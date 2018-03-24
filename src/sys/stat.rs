@@ -122,3 +122,64 @@ pub fn fstatat<P: ?Sized + NixPath>(dirfd: RawFd, pathname: &P, f: AtFlags) -> R
     Ok(dst)
 }
 
+/// Change the file permission bits of the file specified by a file descriptor.
+///
+/// # References
+///
+/// [fchmod(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/fchmod.html).
+pub fn fchmod(fd: RawFd, mode: Mode) -> Result<()> {
+    let res = unsafe { libc::fchmod(fd, mode.bits() as mode_t) };
+
+    Errno::result(res).map(|_| ())
+}
+
+/// Flags for `fchmodat` function.
+#[derive(Clone, Copy, Debug)]
+pub enum FchmodatFlags {
+    FollowSymlink,
+    NoFollowSymlink,
+}
+
+/// Change the file permission bits.
+///
+/// The file to be changed is determined relative to the directory associated
+/// with the file descriptor `dirfd` or the current working directory
+/// if `dirfd` is `None`.
+///
+/// If `flag` is `FchmodatFlags::NoFollowSymlink` and `path` names a symbolic link,
+/// then the mode of the symbolic link is changed.
+///
+/// `fchmod(None, path, mode, FchmodatFlags::FollowSymlink)` is identical to
+/// a call `libc::chmod(path, mode)`. That's why `chmod` is unimplemented
+/// in the `nix` crate.
+///
+/// # References
+///
+/// [fchmodat(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/fchmodat.html).
+pub fn fchmodat<P: ?Sized + NixPath>(
+    dirfd: Option<RawFd>,
+    path: &P,
+    mode: Mode,
+    flag: FchmodatFlags,
+) -> Result<()> {
+    let actual_dirfd =
+        match dirfd {
+            None => libc::AT_FDCWD,
+            Some(fd) => fd,
+        };
+    let atflag =
+        match flag {
+            FchmodatFlags::FollowSymlink => AtFlags::empty(),
+            FchmodatFlags::NoFollowSymlink => AtFlags::AT_SYMLINK_NOFOLLOW,
+        };
+    let res = path.with_nix_path(|cstr| unsafe {
+        libc::fchmodat(
+            actual_dirfd,
+            cstr.as_ptr(),
+            mode.bits() as mode_t,
+            atflag.bits() as libc::c_int,
+        )
+    })?;
+
+    Errno::result(res).map(|_| ())
+}
