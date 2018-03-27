@@ -215,18 +215,25 @@ libc_bitflags!{
     }
 }
 
+/// Locks all memory pages that contain part of the address range with `length` bytes starting at
+/// `addr`. Locked pages never move to the swap area.
 pub unsafe fn mlock(addr: *const c_void, length: size_t) -> Result<()> {
     Errno::result(libc::mlock(addr, length)).map(drop)
 }
 
+/// Unlocks all memory pages that contain part of the address range with `length` bytes starting at
+/// `addr`.
 pub unsafe fn munlock(addr: *const c_void, length: size_t) -> Result<()> {
     Errno::result(libc::munlock(addr, length)).map(drop)
 }
 
+/// Locks all memory pages mapped into this process' address space. Locked pages never move to the
+/// swap area.
 pub fn mlockall(flags: MlockAllFlags) -> Result<()> {
     unsafe { Errno::result(libc::mlockall(flags.bits())) }.map(drop)
 }
 
+/// Unlocks all memory pages mapped into this process' address space.
 pub fn munlockall() -> Result<()> {
     unsafe { Errno::result(libc::munlockall()) }.map(drop)
 }
