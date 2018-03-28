@@ -1,9 +1,9 @@
 #[cfg(target_os = "dragonfly")]
-extern crate gcc;
+extern crate cc;
 
 #[cfg(target_os = "dragonfly")]
 fn main() {
-    gcc::Build::new()
+    cc::Build::new()
         .file("src/errno_dragonfly.c")
         .compile("liberrno_dragonfly.a");
 }
