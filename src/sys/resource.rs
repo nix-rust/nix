@@ -18,11 +18,11 @@ libc_enum!{
         RLIMIT_STACK,
 
         // BSDs and Linux
-        #[cfg(all(unix, not(target_os = "solaris")))]
+        #[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux", target_os = "openbsd"))]
         RLIMIT_MEMLOCK,
-        #[cfg(all(unix, not(target_os = "solaris")))]
+        #[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux", target_os = "openbsd"))]
         RLIMIT_NPROC,
-        #[cfg(all(unix, not(target_os = "solaris")))]
+        #[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux", target_os = "openbsd"))]
         RLIMIT_RSS,
 
         // Android and Linux only
