@@ -39,6 +39,8 @@ pub mod quota;
 #[cfg(any(target_os = "linux"))]
 pub mod reboot;
 
+pub mod resource;
+
 pub mod select;
 
 // TODO: Add support for dragonfly, freebsd, and ios/macos.
