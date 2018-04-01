@@ -114,6 +114,7 @@ mod test_kmod;
 mod test_mq;
 mod test_net;
 mod test_nix_path;
+mod test_resource;
 mod test_poll;
 mod test_pty;
 #[cfg(any(target_os = "android",

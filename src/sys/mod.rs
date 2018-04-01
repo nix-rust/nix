@@ -53,6 +53,8 @@ pub mod quota;
 #[cfg(any(target_os = "linux"))]
 pub mod reboot;
 
+pub mod resource;
+
 pub mod select;
 
 #[cfg(any(target_os = "android",
