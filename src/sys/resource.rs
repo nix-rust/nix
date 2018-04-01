@@ -38,6 +38,16 @@ libc_enum!{
         RLIMIT_RTTIME,
         #[cfg(any(target_os = "android", target_os = "linux"))]
         RLIMIT_SIGPENDING,
+
+        // Non-Linux
+        #[cfg(target_os = "freebsd")]
+        RLIMIT_KQUEUES,
+        #[cfg(target_os = "freebsd")]
+        RLIMIT_NPTS,
+        #[cfg(target_os = "freebsd")]
+        RLIMIT_SBSIZE,
+        #[cfg(target_os = "freebsd")]
+        RLIMIT_SWAP,
     }
 }
 
