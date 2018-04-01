@@ -1,3 +1,4 @@
+//! Configure the process resource limits.
 use std::mem;
 
 use libc::{self, c_int, rlimit, RLIM_INFINITY};
@@ -39,18 +40,31 @@ libc_enum!{
         #[cfg(any(target_os = "android", target_os = "linux"))]
         RLIMIT_SIGPENDING,
 
-        // Non-Linux
+        // Available on some BSD
         #[cfg(target_os = "freebsd")]
         RLIMIT_KQUEUES,
         #[cfg(target_os = "freebsd")]
         RLIMIT_NPTS,
-        #[cfg(target_os = "freebsd")]
+        #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
         RLIMIT_SBSIZE,
         #[cfg(target_os = "freebsd")]
         RLIMIT_SWAP,
     }
 }
 
+/// Get the current processes resource limits
+///
+/// A value of `None` corresponds to `RLIM_INFINITY`, which means there's no limit.
+///
+/// # Parameters
+///
+/// * `resource`: The [`Resource`] that we want to get the limits of.
+///
+/// # References
+///
+/// [getrlimit(2)](https://linux.die.net/man/2/getrlimit)
+///
+/// [`Resource`]: enum.Resource.html
 pub fn getrlimit(resource: Resource) -> Result<(Option<rlim_t>, Option<rlim_t>)> {
     let mut rlim: rlimit = unsafe { mem::uninitialized() };
     let res = unsafe { libc::getrlimit(resource as c_int, &mut rlim as *mut _) };
@@ -60,6 +74,22 @@ pub fn getrlimit(resource: Resource) -> Result<(Option<rlim_t>, Option<rlim_t>)>
     })
 }
 
+/// Set the current processes resource limits
+///
+/// A value of `None` corresponds to `RLIM_INFINITY`, which means there's no limit.
+///
+/// # Parameters
+///
+/// * `resource`: The [`Resource`] that we want to set the limits of.
+/// * `soft_limit`: The value that the kenrel enforces for the corresponding resource.
+/// * `hard_limit`: The ceiling for the soft limit. Must be lower or equal to the current hard limit
+///   for non-root users.
+///
+/// # References
+///
+/// [setrlimit(2)](https://linux.die.net/man/2/setrlimit)
+///
+/// [`Resource`]: enum.Resource.html
 pub fn setrlimit(resource: Resource, soft_limit: Option<rlim_t>, hard_limit: Option<rlim_t>) -> Result<()> {
     let mut rlim: rlimit = unsafe { mem::uninitialized() };
     rlim.rlim_cur = soft_limit.unwrap_or(RLIM_INFINITY);
