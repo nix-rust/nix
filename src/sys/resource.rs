@@ -63,13 +63,12 @@ libc_enum!{
 /// # Examples
 ///
 /// ```
-/// use nix::sys::resource::{getrlimit, Resource};
-///
-/// fn main() {
-///     let (soft_limit, hard_limit) = getrlimit(Resource::RLIMIT_NOFILE).unwrap();
-///     println!("current soft_limit: {:?}", soft_limit);
-///     println!("current hard_limit: {:?}", hard_limit);
-/// }
+/// # use nix::sys::resource::{getrlimit, Resource};
+/// # fn main() {
+/// let (soft_limit, hard_limit) = getrlimit(Resource::RLIMIT_NOFILE).unwrap();
+/// println!("current soft_limit: {:?}", soft_limit);
+/// println!("current hard_limit: {:?}", hard_limit);
+/// # }
 /// ```
 ///
 /// # References
@@ -93,20 +92,19 @@ pub fn getrlimit(resource: Resource) -> Result<(Option<rlim_t>, Option<rlim_t>)>
 /// # Parameters
 ///
 /// * `resource`: The [`Resource`] that we want to set the limits of.
-/// * `soft_limit`: The value that the kenrel enforces for the corresponding resource.
+/// * `soft_limit`: The value that the kernel enforces for the corresponding resource.
 /// * `hard_limit`: The ceiling for the soft limit. Must be lower or equal to the current hard limit
 ///   for non-root users.
 ///
 /// # Examples
 ///
 /// ```no_run
-/// use nix::sys::resource::{setrlimit, Resource};
-///
-/// fn main() {
-///     let soft_limit = Some(1024);
-///     let hard_limit = None;
-///     setrlimit(Resource::RLIMIT_NOFILE, soft_limit, hard_limit).unwrap();
-/// }
+/// # use nix::sys::resource::{setrlimit, Resource};
+/// # fn main() {
+/// let soft_limit = Some(1024);
+/// let hard_limit = None;
+/// setrlimit(Resource::RLIMIT_NOFILE, soft_limit, hard_limit).unwrap();
+/// # }
 /// ```
 ///
 /// # References
