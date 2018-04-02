@@ -12,7 +12,7 @@ pub fn test_resource_limits_nofile() {
     setrlimit(Resource::RLIMIT_NOFILE, soft_limit, hard_limit).unwrap();
 
     let (new_soft_limit, new_hard_limit) = getrlimit(Resource::RLIMIT_NOFILE).unwrap();
-    assert!(new_soft_limit != new_hard_limit);
+    assert_eq!(new_soft_limit, soft_limit);
 }
 
 #[test]
