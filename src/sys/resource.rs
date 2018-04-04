@@ -54,7 +54,7 @@ libc_enum!{
 
 /// Get the current processes resource limits
 ///
-/// A value of `None` corresponds to `RLIM_INFINITY`, which means there's no limit.
+/// A value of None indicates that there's no limit.
 ///
 /// # Parameters
 ///
@@ -64,11 +64,10 @@ libc_enum!{
 ///
 /// ```
 /// # use nix::sys::resource::{getrlimit, Resource};
-/// # fn main() {
+///
 /// let (soft_limit, hard_limit) = getrlimit(Resource::RLIMIT_NOFILE).unwrap();
 /// println!("current soft_limit: {:?}", soft_limit);
 /// println!("current hard_limit: {:?}", hard_limit);
-/// # }
 /// ```
 ///
 /// # References
@@ -79,6 +78,7 @@ libc_enum!{
 pub fn getrlimit(resource: Resource) -> Result<(Option<rlim_t>, Option<rlim_t>)> {
     let mut rlim: rlimit = unsafe { mem::uninitialized() };
     let res = unsafe { libc::getrlimit(resource as c_int, &mut rlim as *mut _) };
+    // TODO: use Option::filter after it has been stabilized
     Errno::result(res).map(|_| {
         (if rlim.rlim_cur != RLIM_INFINITY { Some(rlim.rlim_cur) } else { None },
          if rlim.rlim_max != RLIM_INFINITY { Some(rlim.rlim_max) } else { None })
@@ -87,7 +87,7 @@ pub fn getrlimit(resource: Resource) -> Result<(Option<rlim_t>, Option<rlim_t>)>
 
 /// Set the current processes resource limits
 ///
-/// A value of `None` corresponds to `RLIM_INFINITY`, which means there's no limit.
+/// A value of None indicates that there's no limit.
 ///
 /// # Parameters
 ///
@@ -100,11 +100,10 @@ pub fn getrlimit(resource: Resource) -> Result<(Option<rlim_t>, Option<rlim_t>)>
 ///
 /// ```no_run
 /// # use nix::sys::resource::{setrlimit, Resource};
-/// # fn main() {
+///
 /// let soft_limit = Some(1024);
 /// let hard_limit = None;
 /// setrlimit(Resource::RLIMIT_NOFILE, soft_limit, hard_limit).unwrap();
-/// # }
 /// ```
 ///
 /// # References
@@ -118,5 +117,5 @@ pub fn setrlimit(resource: Resource, soft_limit: Option<rlim_t>, hard_limit: Opt
     rlim.rlim_max = hard_limit.unwrap_or(RLIM_INFINITY);
 
     let res = unsafe { libc::setrlimit(resource as c_int, &rlim as *const _) };
-    Errno::result(res).map(drop)
+    Errno::result(res).map(|_| ())
 }
