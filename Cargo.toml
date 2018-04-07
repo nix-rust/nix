@@ -17,19 +17,20 @@ bitflags = "1.0"
 cfg-if = "0.1.0"
 void = "1.0.2"
 
-[dependencies.bytes]
-version = "0.4.5"
-# Don't include the optional serde feature
-default-features = false
-
 [target.'cfg(target_os = "dragonfly")'.build-dependencies]
 cc = "1"
 
 [dev-dependencies]
+# The examples use a new feature of Bytes which should be available in 0.4.7
+# https://github.com/carllerche/bytes/pull/192
+bytes = { git = "https://github.com/carllerche/bytes", rev = "ae1b454" }
 lazy_static = "1"
 rand = "0.4"
 tempdir = "0.3"
 tempfile = "2"
+
+[target.'cfg(target_os = "freebsd")'.dev-dependencies]
+sysctl = "0.1"
 
 [[test]]
 name = "test"
@@ -38,6 +39,10 @@ path = "test/test.rs"
 [[test]]
 name = "test-aio-drop"
 path = "test/sys/test_aio_drop.rs"
+
+[[test]]
+name = "test-lio-listio-resubmit"
+path = "test/sys/test_lio_listio_resubmit.rs"
 
 [[test]]
 name = "test-mount"

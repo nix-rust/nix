@@ -323,20 +323,21 @@ fn test_write() {
     assert!(rbuf == EXPECT);
 }
 
-// Tests `AioCb::from_bytes`
+// Tests `AioCb::from_boxed_slice` with `Bytes`
 #[test]
 #[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
 fn test_write_bytes() {
     const INITIAL: &[u8] = b"abcdef123456";
-    let wbuf = Bytes::from(&b"CDEF"[..]);
+    let wbuf = Box::new(Bytes::from(&b"CDEF"[..]));
     let mut rbuf = Vec::new();
     const EXPECT: &[u8] = b"abCDEF123456";
+    let expected_len = wbuf.len();
 
     let mut f = tempfile().unwrap();
     f.write_all(INITIAL).unwrap();
-    let mut aiocb = AioCb::from_bytes( f.as_raw_fd(),
+    let mut aiocb = AioCb::from_boxed_slice( f.as_raw_fd(),
                            2,   //offset
-                           wbuf.clone(),
+                           wbuf,
                            0,   //priority
                            SigevNotify::SigevNone,
                            LioOpcode::LIO_NOP);
@@ -344,7 +345,7 @@ fn test_write_bytes() {
 
     let err = poll_aio(&mut aiocb);
     assert!(err == Ok(()));
-    assert!(aiocb.aio_return().unwrap() as usize == wbuf.len());
+    assert!(aiocb.aio_return().unwrap() as usize == expected_len);
 
     f.seek(SeekFrom::Start(0)).unwrap();
     let len = f.read_to_end(&mut rbuf).unwrap();
@@ -352,46 +353,17 @@ fn test_write_bytes() {
     assert!(rbuf == EXPECT);
 }
 
-// Tests `AioCb::from_bytes_mut`
-#[test]
-#[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
-fn test_read_bytes_mut_big() {
-    const INITIAL: &[u8] = b"abcdefgh12345678abcdefgh12345678abcdefgh12345678abcdefgh12345678abcdefgh12345678";
-    // rbuf needs to be larger than 32 bytes (64 on 32-bit systems) so
-    // BytesMut::clone is implemented by reference.
-    let rbuf = BytesMut::from(vec![0; 70]);
-    const EXPECT: &[u8] = b"cdefgh12345678abcdefgh12345678abcdefgh12345678abcdefgh12345678abcdefgh";
-    let mut f = tempfile().unwrap();
-    f.write_all(INITIAL).unwrap();
-
-    let mut aiocb = AioCb::from_bytes_mut( f.as_raw_fd(),
-                           2,   //offset
-                           rbuf,
-                           0,   //priority
-                           SigevNotify::SigevNone,
-                           LioOpcode::LIO_NOP);
-    aiocb.read().unwrap();
-
-    let err = poll_aio(&mut aiocb);
-    assert_eq!(err, Ok(()));
-    assert_eq!(aiocb.aio_return().unwrap() as usize, EXPECT.len());
-    let buffer = aiocb.into_buffer();
-    assert_eq!(buffer.bytes_mut().unwrap(), EXPECT);
-}
-
-// Tests reallocation in `AioCb::from_bytes_mut`
+// Tests `AioCb::from_boxed_mut_slice` with `BytesMut`
 #[test]
 #[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
 fn test_read_bytes_mut_small() {
     const INITIAL: &[u8] = b"abcdef";
-    // rbuf needs to be no more than 32 bytes (64 on 32-bit systems) so
-    // BytesMut::clone is implemented inline.
-    let rbuf = BytesMut::from(vec![0; 4]);
+    let rbuf = Box::new(BytesMut::from(vec![0; 4]));
     const EXPECT: &[u8] = b"cdef";
     let mut f = tempfile().unwrap();
     f.write_all(INITIAL).unwrap();
 
-    let mut aiocb = AioCb::from_bytes_mut( f.as_raw_fd(),
+    let mut aiocb = AioCb::from_boxed_mut_slice( f.as_raw_fd(),
                            2,   //offset
                            rbuf,
                            0,   //priority
@@ -402,8 +374,8 @@ fn test_read_bytes_mut_small() {
     let err = poll_aio(&mut aiocb);
     assert_eq!(err, Ok(()));
     assert_eq!(aiocb.aio_return().unwrap() as usize, EXPECT.len());
-    let buffer = aiocb.into_buffer();
-    assert_eq!(buffer.bytes_mut().unwrap(), EXPECT);
+    let buffer = aiocb.boxed_mut_slice().unwrap();
+    assert_eq!(buffer.borrow(), EXPECT);
 }
 
 // Tests `AioCb::from_ptr`
@@ -505,12 +477,12 @@ fn test_write_sigev_signal() {
     assert!(rbuf == EXPECT);
 }
 
-// Test lio_listio with LIO_WAIT, so all AIO ops should be complete by the time
-// lio_listio returns.
+// Test LioCb::listio with LIO_WAIT, so all AIO ops should be complete by the
+// time listio returns.
 #[test]
 #[cfg(not(any(target_os = "ios", target_os = "macos")))]
 #[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
-fn test_lio_listio_wait() {
+fn test_liocb_listio_wait() {
     const INITIAL: &[u8] = b"abcdef123456";
     const WBUF: &[u8] = b"CDEF";
     let mut rbuf = vec![0; 4];
@@ -522,24 +494,27 @@ fn test_lio_listio_wait() {
     f.write_all(INITIAL).unwrap();
 
     {
-        let mut wcb = AioCb::from_slice( f.as_raw_fd(),
+        let wcb = AioCb::from_slice( f.as_raw_fd(),
                                2,   //offset
                                WBUF,
                                0,   //priority
                                SigevNotify::SigevNone,
                                LioOpcode::LIO_WRITE);
 
-        let mut rcb = AioCb::from_mut_slice( f.as_raw_fd(),
+        let rcb = AioCb::from_mut_slice( f.as_raw_fd(),
                                 8,   //offset
                                 &mut rbuf,
                                 0,   //priority
                                 SigevNotify::SigevNone,
                                 LioOpcode::LIO_READ);
-        let err = lio_listio(LioMode::LIO_WAIT, &[&mut wcb, &mut rcb], SigevNotify::SigevNone);
-        err.expect("lio_listio failed");
+        let mut liocb = LioCb::with_capacity(2);
+        liocb.aiocbs.push(wcb);
+        liocb.aiocbs.push(rcb);
+        let err = liocb.listio(LioMode::LIO_WAIT, SigevNotify::SigevNone);
+        err.expect("lio_listio");
 
-        assert!(wcb.aio_return().unwrap() as usize == WBUF.len());
-        assert!(rcb.aio_return().unwrap() as usize == rlen);
+        assert!(liocb.aio_return(0).unwrap() as usize == WBUF.len());
+        assert!(liocb.aio_return(1).unwrap() as usize == rlen);
     }
     assert!(rbuf.deref().deref() == b"3456");
 
@@ -549,12 +524,12 @@ fn test_lio_listio_wait() {
     assert!(rbuf2 == EXPECT);
 }
 
-// Test lio_listio with LIO_NOWAIT and no SigEvent, so we must use some other
+// Test LioCb::listio with LIO_NOWAIT and no SigEvent, so we must use some other
 // mechanism to check for the individual AioCb's completion.
 #[test]
 #[cfg(not(any(target_os = "ios", target_os = "macos")))]
 #[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
-fn test_lio_listio_nowait() {
+fn test_liocb_listio_nowait() {
     const INITIAL: &[u8] = b"abcdef123456";
     const WBUF: &[u8] = b"CDEF";
     let mut rbuf = vec![0; 4];
@@ -566,26 +541,29 @@ fn test_lio_listio_nowait() {
     f.write_all(INITIAL).unwrap();
 
     {
-        let mut wcb = AioCb::from_slice( f.as_raw_fd(),
+        let wcb = AioCb::from_slice( f.as_raw_fd(),
                                2,   //offset
                                WBUF,
                                0,   //priority
                                SigevNotify::SigevNone,
                                LioOpcode::LIO_WRITE);
 
-        let mut rcb = AioCb::from_mut_slice( f.as_raw_fd(),
+        let rcb = AioCb::from_mut_slice( f.as_raw_fd(),
                                 8,   //offset
                                 &mut rbuf,
                                 0,   //priority
                                 SigevNotify::SigevNone,
                                 LioOpcode::LIO_READ);
-        let err = lio_listio(LioMode::LIO_NOWAIT, &[&mut wcb, &mut rcb], SigevNotify::SigevNone);
-        err.expect("lio_listio failed");
+        let mut liocb = LioCb::with_capacity(2);
+        liocb.aiocbs.push(wcb);
+        liocb.aiocbs.push(rcb);
+        let err = liocb.listio(LioMode::LIO_NOWAIT, SigevNotify::SigevNone);
+        err.expect("lio_listio");
 
-        poll_aio(&mut wcb).unwrap();
-        poll_aio(&mut rcb).unwrap();
-        assert!(wcb.aio_return().unwrap() as usize == WBUF.len());
-        assert!(rcb.aio_return().unwrap() as usize == rlen);
+        poll_aio(&mut liocb.aiocbs[0]).unwrap();
+        poll_aio(&mut liocb.aiocbs[1]).unwrap();
+        assert!(liocb.aiocbs[0].aio_return().unwrap() as usize == WBUF.len());
+        assert!(liocb.aiocbs[1].aio_return().unwrap() as usize == rlen);
     }
     assert!(rbuf.deref().deref() == b"3456");
 
@@ -595,13 +573,13 @@ fn test_lio_listio_nowait() {
     assert!(rbuf2 == EXPECT);
 }
 
-// Test lio_listio with LIO_NOWAIT and a SigEvent to indicate when all AioCb's
-// are complete.
+// Test LioCb::listio with LIO_NOWAIT and a SigEvent to indicate when all
+// AioCb's are complete.
 // FIXME: This test is ignored on mips/mips64 because of failures in qemu in CI.
 #[test]
 #[cfg(not(any(target_os = "ios", target_os = "macos")))]
 #[cfg_attr(any(target_arch = "mips", target_arch = "mips64", target_env = "musl"), ignore)]
-fn test_lio_listio_signal() {
+fn test_liocb_listio_signal() {
     #[allow(unused_variables)]
     let m = ::SIGNAL_MTX.lock().expect("Mutex got poisoned by another test");
     const INITIAL: &[u8] = b"abcdef123456";
@@ -620,29 +598,32 @@ fn test_lio_listio_signal() {
     f.write_all(INITIAL).unwrap();
 
     {
-        let mut wcb = AioCb::from_slice( f.as_raw_fd(),
+        let wcb = AioCb::from_slice( f.as_raw_fd(),
                                2,   //offset
                                WBUF,
                                0,   //priority
                                SigevNotify::SigevNone,
                                LioOpcode::LIO_WRITE);
 
-        let mut rcb = AioCb::from_mut_slice( f.as_raw_fd(),
+        let rcb = AioCb::from_mut_slice( f.as_raw_fd(),
                                 8,   //offset
                                 &mut rbuf,
                                 0,   //priority
                                 SigevNotify::SigevNone,
                                 LioOpcode::LIO_READ);
+        let mut liocb = LioCb::with_capacity(2);
+        liocb.aiocbs.push(wcb);
+        liocb.aiocbs.push(rcb);
         SIGNALED.store(false, Ordering::Relaxed);
         unsafe { sigaction(Signal::SIGUSR2, &sa) }.unwrap();
-        let err = lio_listio(LioMode::LIO_NOWAIT, &[&mut wcb, &mut rcb], sigev_notify);
-        err.expect("lio_listio failed");
+        let err = liocb.listio(LioMode::LIO_NOWAIT, sigev_notify);
+        err.expect("lio_listio");
         while !SIGNALED.load(Ordering::Relaxed) {
             thread::sleep(time::Duration::from_millis(10));
         }
 
-        assert!(wcb.aio_return().unwrap() as usize == WBUF.len());
-        assert!(rcb.aio_return().unwrap() as usize == rlen);
+        assert!(liocb.aiocbs[0].aio_return().unwrap() as usize == WBUF.len());
+        assert!(liocb.aiocbs[1].aio_return().unwrap() as usize == rlen);
     }
     assert!(rbuf.deref().deref() == b"3456");
 
@@ -652,22 +633,24 @@ fn test_lio_listio_signal() {
     assert!(rbuf2 == EXPECT);
 }
 
-// Try to use lio_listio to read into an immutable buffer.  It should fail
+// Try to use LioCb::listio to read into an immutable buffer.  It should fail
 // FIXME: This test fails to panic on Linux/musl
 #[test]
 #[cfg(not(any(target_os = "ios", target_os = "macos")))]
 #[should_panic(expected = "Can't read into an immutable buffer")]
 #[cfg_attr(target_env = "musl", ignore)]
-fn test_lio_listio_read_immutable() {
+fn test_liocb_listio_read_immutable() {
     let rbuf: &[u8] = b"abcd";
     let f = tempfile().unwrap();
 
 
-    let mut rcb = AioCb::from_slice( f.as_raw_fd(),
-                           2,   //offset
-                           rbuf,
-                           0,   //priority
-                           SigevNotify::SigevNone,
-                           LioOpcode::LIO_READ);
-    let _ = lio_listio(LioMode::LIO_NOWAIT, &[&mut rcb], SigevNotify::SigevNone);
+    let mut liocb = LioCb::from(vec![
+        AioCb::from_slice( f.as_raw_fd(),
+            2,   //offset
+            rbuf,
+            0,   //priority
+            SigevNotify::SigevNone,
+            LioOpcode::LIO_READ)
+    ]);
+    let _ = liocb.listio(LioMode::LIO_NOWAIT, SigevNotify::SigevNone);
 }
