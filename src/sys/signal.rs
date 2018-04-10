@@ -353,15 +353,34 @@ impl AsRef<libc::sigset_t> for SigSet {
     }
 }
 
+/// Specifies the signal action for the [`sigaction`](fn.sigaction.html) function.
+///
+/// Custom signal handlers should follow some [rules](https://wiki.sei.cmu.edu/confluence/display/c/SIG30-C.+Call+only+asynchronous-safe+functions+within+signal+handlers)
+/// for being asynchronous-safe.
+///
+/// For more information see the [`sigaction` man
+/// pages](http://pubs.opengroup.org/onlinepubs/9699919799/functions/sigaction.html) and this
+/// crate's [`sigaction` docs](./fn.sigaction.html).
 #[allow(unknown_lints)]
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum SigHandler {
+    /// Specifies that the default action should be used.
     SigDfl,
+    /// Specifies that the signal should be ignored.
     SigIgn,
+    /// Set a custom action for signal, the only parameter is the signal number.
     Handler(extern fn(libc::c_int)),
+    /// Set a custom action for signal. It has some extra info of signal handling context.
     SigAction(extern fn(libc::c_int, *mut libc::siginfo_t, *mut libc::c_void))
 }
 
+/// Struct holding data for [`sigaction`](fn.sigaction.html) function.
+///
+/// `SigAction` holds the signal action itself, flags for modifying the behavior of the signal
+/// and a mask of signals which should be blocked during execution of the signal handler.
+///
+/// For more information see the [`sigaction` man
+/// pages](http://pubs.opengroup.org/onlinepubs/9699919799/functions/sigaction.html).
 #[derive(Clone, Copy)]
 #[allow(missing_debug_implementations)]
 pub struct SigAction {
@@ -407,6 +426,108 @@ impl SigAction {
     }
 }
 
+/// Examine and change a signal action.
+///
+/// This function sets a signal action and returns the previous one. Parameters are:
+///
+/// * `signal` - the signal to modify.
+/// * `sigaction` - the new signal action.
+///
+/// Note that the `SIGKILL` and `SIGSTOP` signals are special and cannot be modified
+/// with this function.
+///
+/// Custom signal handlers should call only
+/// [signal-safe](https://wiki.sei.cmu.edu/confluence/display/c/SIG30-C.+Call+only+asynchronous-safe+functions+within+signal+handlers)
+/// functions. You should consult with a list of signal-safe functions for your system. For example,
+/// [POSIX](http://pubs.opengroup.org/onlinepubs/9699919799/functions/V2_chap02.html#tag_15_04_03_03)
+/// and [Linux](http://man7.org/linux/man-pages/man7/signal-safety.7.html) lists
+/// may serve as a good reference. Great care should be taken if the signal handler needs access
+/// to a global state. Global state used in signal handler must not be protected with
+/// [`Mutex`](https://doc.rust-lang.org/std/sync/struct.Mutex.html), it is better to stick to
+/// [`atomic`](https://doc.rust-lang.org/std/sync/atomic/index.html)s module or to use
+/// platform-specific tools which `nix` provides (like [pipe](../../unistd/pipe.v.html)).
+///
+/// For more information see the [`sigaction` man
+/// pages](http://pubs.opengroup.org/onlinepubs/9699919799/functions/sigaction.html).
+///
+/// # Safety 
+///
+/// This function is unsafe because it changes the global state of a program (signal handler
+/// itself). Custom signal handlers should follow the [rules for signal
+/// handlers](https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152469).
+///
+/// # Examples
+///
+/// Here is an example of building asynchronous-safe signal handler. We're building a function that
+/// waits until `SIGINT` arrives and reports it. The problem is that reporting right from the
+/// signal handler may be unsafe if reporting code calls allocating or locking functions. This might
+/// be a problem if you're using `println!` or `sdtdout()` because there is a `lock` inside of
+/// them. So, one of the possible solutions is decoupling signal reporting and signal reaction.
+/// Signal handler should report to a signal reaction handler via write to a pipe.
+///
+/// ```no_run
+/// #[macro_use] extern crate lazy_static;
+/// extern crate libc;
+/// extern crate nix;
+/// 
+/// use libc::c_int;
+/// use std::os::unix::io::RawFd;
+/// 
+/// // The global state to be used in signal handler and function which will implement signal
+/// // reaction logic.
+/// static mut SIGNAL_FD: RawFd = -1;
+/// // We're not using Mutex<RawFd>, because calling lock/unlock in signal handler
+/// // is an unsafe operation, but we need a lock to set up SIGNAL_FD.
+/// lazy_static! {
+///     static ref SIGNAL_SET_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+/// }
+/// 
+/// // The signal handler itself: it uses the `write()` system call, which is signal-safe in Linux.
+/// extern "C" fn sighandler(_: c_int) {
+///     let buf: [u8; 1] = [0];
+///     unsafe {
+///         // Throw-away write since it is subject to race conditions with close
+///         // or it may run into filled pipe's buffer.
+///         let _ = nix::unistd::write(SIGNAL_FD, &buf);
+///     }
+/// }
+/// 
+/// fn setup_signal_handler() -> Result<RawFd, Box<std::error::Error>> {
+///     use nix::sys::signal;
+///     // creating a pipe.
+///     let (reader, writer) = nix::unistd::pipe()?;
+///     // setting a global SIGNAL_FD pipe end.
+///     unsafe {
+///         let _ = SIGNAL_SET_LOCK.lock();
+///         if SIGNAL_FD > 0 {
+///             nix::unistd::close(SIGNAL_FD)?;
+///         }
+///         SIGNAL_FD = writer;
+///     }
+///     // creating sigaction params.
+///     let reaction = signal::SigAction::new(
+///         signal::SigHandler::Handler(sighandler),
+///         signal::SaFlags::empty(),
+///         signal::SigSet::empty(),
+///     );
+///     // setting sigaction handler, throwing away previous handler (for this example it is
+///     // useless).
+///     unsafe {
+///         let _prev_reaction = signal::sigaction(signal::SIGINT, &reaction)?;
+///     };
+///     Ok(reader)
+/// }
+/// 
+/// fn main() {
+///     let reader = setup_signal_handler().expect("failed to setup signal handler");
+///     println!("succesfully set up signal handler, now waiting for signal to arrive");
+///     let mut buf: [u8; 1] = [0];
+///     // waiting for signal.
+///     let _ = nix::unistd::read(reader, &mut buf);
+///     // is is safe to report with println! since we're out of signal handling context.
+///     println!("got signal, exiting");
+/// }
+/// ```
 pub unsafe fn sigaction(signal: Signal, sigaction: &SigAction) -> Result<SigAction> {
     let mut oldact = mem::uninitialized::<libc::sigaction>();
 
