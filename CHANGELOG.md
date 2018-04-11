@@ -35,6 +35,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 - Display and Debug for SysControlAddr now includes all fields.
   ([#837](https://github.com/nix-rust/nix/pull/837))
+- `ioctl!` has been replaced with a family of `ioctl_*!` macros.
+  ([#833](https://github.com/nix-rust/nix/pull/833))
+- `io!`, `ior!`, `iow!`, and `iorw` has been renamed to `request_code_none!`, `request_code_read!`,
+  `request_code_write`, and `request_code_readwrite` respectively. These have also now been exposed
+  in the documentation.
+  ([#833](https://github.com/nix-rust/nix/pull/833))
 
 ### Fixed
 - Properly exposed 460800 and 921600 baud rates on NetBSD
