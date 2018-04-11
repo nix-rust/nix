@@ -5,6 +5,9 @@ pub type ioctl_num_type = ::libc::c_int;
 #[cfg(not(any(target_os = "android", target_env = "musl")))]
 #[doc(hidden)]
 pub type ioctl_num_type = ::libc::c_ulong;
+/// The datatype used for the 3rd argument
+#[doc(hidden)]
+pub type ioctl_param_type = ::libc::c_ulong;
 
 #[doc(hidden)]
 pub const NRBITS: ioctl_num_type = 8;
@@ -24,17 +27,6 @@ mod consts {
     #[doc(hidden)]
     pub const DIRBITS: u8 = 3;
 }
-
-#[cfg(not(any(target_arch = "powerpc",
-              target_arch = "mips",
-              target_arch = "mips64",
-              target_arch = "x86",
-              target_arch = "arm",
-              target_arch = "x86_64",
-              target_arch = "powerpc64",
-              target_arch = "s390x",
-              target_arch = "aarch64")))]
-use this_arch_not_supported;
 
 // "Generic" ioctl protocol
 #[cfg(any(target_arch = "x86",
@@ -86,30 +78,63 @@ macro_rules! ioc {
         (($sz as $crate::sys::ioctl::ioctl_num_type & $crate::sys::ioctl::SIZEMASK) << $crate::sys::ioctl::SIZESHIFT))
 }
 
-/// Encode an ioctl command that has no associated data.
+/// Generate an ioctl request code for a command that passes no data.
+///
+/// This is equivalent to the `_IO()` macro exposed by the C ioctl API.
+///
+/// You should only use this macro directly if the `ioctl` you're working
+/// with is "bad" and you cannot use `ioctl_none!()` directly.
+///
+/// # Example
+///
+/// ```
+/// # #[macro_use] extern crate nix;
+/// const KVMIO: u8 = 0xAE;
+/// ioctl_write_int_bad!(kvm_create_vm, request_code_none!(KVMIO, 0x03));
+/// # fn main() {}
+/// ```
 #[macro_export]
-#[doc(hidden)]
-macro_rules! io {
+macro_rules! request_code_none {
     ($ty:expr, $nr:expr) => (ioc!($crate::sys::ioctl::NONE, $ty, $nr, 0))
 }
 
-/// Encode an ioctl command that reads.
+/// Generate an ioctl request code for a command that reads.
+///
+/// This is equivalent to the `_IOR()` macro exposed by the C ioctl API.
+///
+/// You should only use this macro directly if the `ioctl` you're working
+/// with is "bad" and you cannot use `ioctl_read!()` directly.
+///
+/// The read/write direction is relative to userland, so this
+/// command would be userland is reading and the kernel is
+/// writing.
 #[macro_export]
-#[doc(hidden)]
-macro_rules! ior {
+macro_rules! request_code_read {
     ($ty:expr, $nr:expr, $sz:expr) => (ioc!($crate::sys::ioctl::READ, $ty, $nr, $sz))
 }
 
-/// Encode an ioctl command that writes.
+/// Generate an ioctl request code for a command that writes.
+///
+/// This is equivalent to the `_IOW()` macro exposed by the C ioctl API.
+///
+/// You should only use this macro directly if the `ioctl` you're working
+/// with is "bad" and you cannot use `ioctl_write!()` directly.
+///
+/// The read/write direction is relative to userland, so this
+/// command would be userland is writing and the kernel is
+/// reading.
 #[macro_export]
-#[doc(hidden)]
-macro_rules! iow {
+macro_rules! request_code_write {
     ($ty:expr, $nr:expr, $sz:expr) => (ioc!($crate::sys::ioctl::WRITE, $ty, $nr, $sz))
 }
 
-/// Encode an ioctl command that both reads and writes.
+/// Generate an ioctl request code for a command that reads and writes.
+///
+/// This is equivalent to the `_IOWR()` macro exposed by the C ioctl API.
+///
+/// You should only use this macro directly if the `ioctl` you're working
+/// with is "bad" and you cannot use `ioctl_readwrite!()` directly.
 #[macro_export]
-#[doc(hidden)]
-macro_rules! iorw {
+macro_rules! request_code_readwrite {
     ($ty:expr, $nr:expr, $sz:expr) => (ioc!($crate::sys::ioctl::READ | $crate::sys::ioctl::WRITE, $ty, $nr, $sz))
 }
