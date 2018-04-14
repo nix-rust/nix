@@ -33,6 +33,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#857](https://github.com/nix-rust/nix/pull/857))
 - Added `request_code_write_int!` on FreeBSD/DragonFlyBSD
   ([#833](https://github.com/nix-rust/nix/pull/833))
+- Added PKTINFO cmsg support on Linux/macOS/iOS.
+  ([#891](https://github.com/nix-rust/nix/pull/891))
 
 ### Changed
 - Display and Debug for SysControlAddr now includes all fields.

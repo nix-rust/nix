@@ -414,6 +414,14 @@ impl<'a> Iterator for CmsgIterator<'a> {
                 Some(ControlMessage::ScmTimestamp(
                     &*(cmsg_data.as_ptr() as *const _)))
             },
+            #[cfg(any(target_os = "linux", target_os = "android", target_os = "macos", target_os = "ios"))]
+            (libc::IPPROTO_IPV6, libc::IPV6_PKTINFO) => unsafe {
+                Some(ControlMessage::Ipv6PacketInfo(& *(cmsg_data.as_ptr() as *const _)))
+            },
+            #[cfg(any(target_os = "linux", target_os = "android", target_os = "macos", target_os = "ios"))]
+            (libc::IPPROTO_IP, libc::IP_PKTINFO) => unsafe {
+                Some(ControlMessage::Ipv4PacketInfo(& *(cmsg_data.as_ptr() as *const _)))
+            },
             (_, _) => unsafe {
                 Some(ControlMessage::Unknown(UnknownCmsg(
                     cmsg,
@@ -504,6 +512,10 @@ pub enum ControlMessage<'a> {
     /// nix::unistd::close(in_socket).unwrap();
     /// ```
     ScmTimestamp(&'a TimeVal),
+    #[cfg(any(target_os = "linux", target_os = "android", target_os = "macos", target_os = "ios"))]
+    Ipv4PacketInfo(&'a libc::in_pktinfo),
+    #[cfg(any(target_os = "linux", target_os = "android", target_os = "macos", target_os = "ios"))]
+    Ipv6PacketInfo(&'a libc::in6_pktinfo),
     #[doc(hidden)]
     Unknown(UnknownCmsg<'a>),
 }
@@ -537,6 +549,14 @@ impl<'a> ControlMessage<'a> {
             },
             ControlMessage::ScmTimestamp(t) => {
                 mem::size_of_val(t)
+            },
+            #[cfg(any(target_os = "linux", target_os = "android", target_os = "macos", target_os = "ios"))]
+            ControlMessage::Ipv4PacketInfo(pktinfo) => {
+                mem::size_of_val(pktinfo)
+            },
+            #[cfg(any(target_os = "linux", target_os = "android", target_os = "macos", target_os = "ios"))]
+            ControlMessage::Ipv6PacketInfo(pktinfo) => {
+                mem::size_of_val(pktinfo)
             },
             ControlMessage::Unknown(UnknownCmsg(_, bytes)) => {
                 mem::size_of_val(bytes)
@@ -585,6 +605,46 @@ impl<'a> ControlMessage<'a> {
                 mem::swap(buf, &mut remainder);
 
                 copy_bytes(t, buf);
+            },
+            #[cfg(any(target_os = "linux", target_os = "android", target_os = "macos", target_os = "ios"))]
+            ControlMessage::Ipv4PacketInfo(pktinfo) => {
+                let cmsg = cmsghdr {
+                    cmsg_len: self.len() as _,
+                    cmsg_level: libc::IPPROTO_IP,
+                    cmsg_type: libc::IP_PKTINFO,
+                    ..mem::uninitialized()
+                };
+                copy_bytes(&cmsg, buf);
+
+                let padlen = cmsg_align(mem::size_of_val(&cmsg)) -
+                    mem::size_of_val(&cmsg);
+
+                let mut tmpbuf = &mut [][..];
+                mem::swap(&mut tmpbuf, buf);
+                let (_padding, mut remainder) = tmpbuf.split_at_mut(padlen);
+                mem::swap(buf, &mut remainder);
+
+                copy_bytes(pktinfo, buf);
+            },
+            #[cfg(any(target_os = "linux", target_os = "android", target_os = "macos", target_os = "ios"))]
+            ControlMessage::Ipv6PacketInfo(pktinfo) => {
+                let cmsg = cmsghdr {
+                    cmsg_len: self.len() as _,
+                    cmsg_level: libc::IPPROTO_IPV6,
+                    cmsg_type: libc::IPV6_PKTINFO,
+                    ..mem::uninitialized()
+                };
+                copy_bytes(&cmsg, buf);
+
+                let padlen = cmsg_align(mem::size_of_val(&cmsg)) -
+                    mem::size_of_val(&cmsg);
+
+                let mut tmpbuf = &mut [][..];
+                mem::swap(&mut tmpbuf, buf);
+                let (_padding, mut remainder) = tmpbuf.split_at_mut(padlen);
+                mem::swap(buf, &mut remainder);
+
+                copy_bytes(pktinfo, buf);
             },
             ControlMessage::Unknown(UnknownCmsg(orig_cmsg, bytes)) => {
                 copy_bytes(orig_cmsg, buf);
