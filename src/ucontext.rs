@@ -1,10 +1,13 @@
 use libc;
 #[cfg(not(target_env = "musl"))]
-use {Errno, Result};
+use Result;
+#[cfg(not(target_env = "musl"))]
+use errno::Errno;
 use std::mem;
 use sys::signal::SigSet;
 
 #[derive(Clone, Copy)]
+#[allow(missing_debug_implementations)]
 pub struct UContext {
     context: libc::ucontext_t,
 }

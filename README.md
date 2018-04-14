@@ -5,8 +5,6 @@
 
 [Documentation (Releases)](https://docs.rs/nix/)
 
-[Documentation (Development)](https://nix-rust.github.io/nix/nix/index.html)
-
 Nix seeks to provide friendly bindings to various *nix platform APIs (Linux, Darwin,
 ...). The goal is to not provide a 100% unified interface, but to unify
 what can be while still providing platform specific APIs.
@@ -35,7 +33,7 @@ pub fn gethostname<'a>(buffer: &'a mut [u8]) -> Result<&'a CStr>;
 nix target support consists of two tiers. While nix attempts to support all
 platforms supported by [libc](https://github.com/rust-lang/libc), only some
 platforms are actively supported due to either technical or manpower
-limitations. Support for platforms is split into two tiers:
+limitations. Support for platforms is split into three tiers:
 
   * Tier 1 - Builds and tests for this target are run in CI. Failures of either
              block the inclusion of new code.
@@ -46,7 +44,7 @@ limitations. Support for platforms is split into two tiers:
              *do not* block the inclusion of new code. Testing may be run, but
              failures in tests don't block the inclusion of new code.
 
-The following targets are all supported by nix on Rust 1.13.0 or newer (unless
+The following targets are all supported by nix on Rust 1.20.0 or newer (unless
 otherwise noted):
 
 Tier 1:
@@ -54,6 +52,7 @@ Tier 1:
   * arm-unknown-linux-gnueabi
   * armv7-unknown-linux-gnueabihf
   * i686-apple-darwin
+  * i686-unknown-freebsd
   * i686-unknown-linux-gnu
   * i686-unknown-linux-musl
   * mips-unknown-linux-gnu
@@ -71,17 +70,16 @@ Tier 2:
   * aarch64-apple-ios
   * aarch64-linux-android
   * arm-linux-androideabi
-  * arm-unknown-linux-musleabi (requires Rust >= 1.14)
+  * arm-unknown-linux-musleabi
   * armv7-apple-ios
   * armv7-linux-androideabi
   * armv7s-apple-ios
   * i386-apple-ios
-  * i686-linux-android (requires Rust >= 1.18)
-  * i686-unknown-freebsd
+  * i686-linux-android
   * powerpc-unknown-linux-gnu
   * s390x-unknown-linux-gnu
   * x86_64-apple-ios
-  * x86_64-linux-android (requires Rust >= 1.18)
+  * x86_64-linux-android
   * x86_64-unknown-netbsd
 
 ## Usage
@@ -90,7 +88,7 @@ To use `nix`, first add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-nix = "0.9.0"
+nix = "0.10.0"
 ```
 
 Then, add this to your crate root:
@@ -98,6 +96,7 @@ Then, add this to your crate root:
 ```rust,ignore
 extern crate nix;
 ```
+
 ## Contributing
 
 Contributions are very welcome.  Please See [CONTRIBUTING](CONTRIBUTING.md) for

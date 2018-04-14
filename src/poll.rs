@@ -1,3 +1,4 @@
+//! Wait for events to trigger on specific file descriptors
 #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd", target_os = "linux"))]
 use sys::time::TimeSpec;
 #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd", target_os = "linux"))]
@@ -5,7 +6,8 @@ use sys::signal::SigSet;
 use std::os::unix::io::RawFd;
 
 use libc;
-use {Errno, Result};
+use Result;
+use errno::Errno;
 
 /// This is a wrapper around `libc::pollfd`.
 ///
@@ -17,6 +19,7 @@ use {Errno, Result};
 /// retrieved by calling [`revents()`](#method.revents) on the `PollFd`.
 #[repr(C)]
 #[derive(Clone, Copy)]
+#[allow(missing_debug_implementations)]
 pub struct PollFd {
     pollfd: libc::pollfd,
 }
@@ -91,7 +94,7 @@ libc_bitflags! {
 }
 
 /// `poll` waits for one of a set of file descriptors to become ready to perform I/O.
-/// ([`poll(2)`](http://man7.org/linux/man-pages/man2/poll.2.html))
+/// ([`poll(2)`](http://pubs.opengroup.org/onlinepubs/9699919799/functions/poll.html))
 ///
 /// `fds` contains all [`PollFd`](struct.PollFd.html) to poll.
 /// The function will return as soon as any event occur for any of these `PollFd`s.

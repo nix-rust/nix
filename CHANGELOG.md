@@ -6,6 +6,64 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Added `mlockall` and `munlockall`
+  ([#876](https://github.com/nix-rust/nix/pull/876))
+- Added `SO_MARK` on Linux.
+- ([#873](https://github.com/nix-rust/nix/pull/873))
+- Added safe support for nearly any buffer type in the `sys::aio` module.
+  ([#872](https://github.com/nix-rust/nix/pull/872))
+- Added `sys::aio::LioCb` as a wrapper for `libc::lio_listio`.
+  ([#872](https://github.com/nix-rust/nix/pull/872))
+- Added `getsid` in `::nix::unistd`
+  ([#850](https://github.com/nix-rust/nix/pull/850))
+- Added `alarm`. ([#830](https://github.com/nix-rust/nix/pull/830))
+- Added interface flags `IFF_NO_PI, IFF_TUN, IFF_TAP` on linux-like systems.
+  ([#853](https://github.com/nix-rust/nix/pull/853))
+- Added `statvfs` module to all MacOS and Linux architectures.
+  ([#832](https://github.com/nix-rust/nix/pull/832))
+- Added `EVFILT_EMPTY`, `EVFILT_PROCDESC` and `EVFILT_SENDFILE` on FreeBSD.
+  ([#825](https://github.com/nix-rust/nix/pull/825))
+- Exposed `termios::cfmakesane` on FreeBSD.
+  ([#825](https://github.com/nix-rust/nix/pull/825))
+- Exposed `MSG_CMSG_CLOEXEC` on *BSD.
+  ([#825](https://github.com/nix-rust/nix/pull/825))
+- Added `fchmod`, `fchmodat`.
+  ([#857](https://github.com/nix-rust/nix/pull/857))
+- Added `request_code_write_int!` on FreeBSD/DragonFlyBSD
+  ([#833](https://github.com/nix-rust/nix/pull/833))
+
+### Changed
+- Display and Debug for SysControlAddr now includes all fields.
+  ([#837](https://github.com/nix-rust/nix/pull/837))
+- `ioctl!` has been replaced with a family of `ioctl_*!` macros.
+  ([#833](https://github.com/nix-rust/nix/pull/833))
+- `io!`, `ior!`, `iow!`, and `iorw` has been renamed to `request_code_none!`, `request_code_read!`,
+  `request_code_write`, and `request_code_readwrite` respectively. These have also now been exposed
+  in the documentation.
+  ([#833](https://github.com/nix-rust/nix/pull/833))
+
+### Fixed
+- Properly exposed 460800 and 921600 baud rates on NetBSD
+  ([#837](https://github.com/nix-rust/nix/pull/837))
+- Fixed `ioctl_write_int!` on FreeBSD/DragonFlyBSD
+  ([#833](https://github.com/nix-rust/nix/pull/833))
+- `ioctl_write_int!` now properly supports passing a `c_ulong` as the parameter on Linux non-musl targets
+  ([#833](https://github.com/nix-rust/nix/pull/833))
+
+### Removed
+- Removed explicit support for the `bytes` crate from the `sys::aio` module.
+  See `sys::aio::AioCb::from_boxed_slice`s examples for alternatives.
+  ([#872](https://github.com/nix-rust/nix/pull/872))
+- Removed `sys::aio::lio_listio`.  Use `sys::aio::LioCb::listio` instead.
+  ([#872](https://github.com/nix-rust/nix/pull/872))
+
+## [0.10.0] 2018-01-26
+
+### Added
+- Added specialized wrapper: `sys::ptrace::step`
+  ([#852](https://github.com/nix-rust/nix/pull/852))
+- Added `AioCb::from_ptr` and `AioCb::from_mut_ptr`
+  ([#820](https://github.com/nix-rust/nix/pull/820))
 - Added specialized wrappers: `sys::ptrace::{traceme, syscall, cont, attach}`. Using the matching routines
   with `sys::ptrace::ptrace` is now deprecated.
 - Added `nix::poll` module for all platforms
@@ -23,6 +81,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Expose `signalfd` module on Android as well.
   ([#739](https://github.com/nix-rust/nix/pull/739))
 - Added nix::sys::ptrace::detach.
+- Added `nix::sys::ptrace::detach`.
   ([#749](https://github.com/nix-rust/nix/pull/749))
 - Added timestamp socket control message variant:
   `nix::sys::socket::ControlMessage::ScmTimestamp`
@@ -35,7 +94,38 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   mappings. Using the matching routines
   with `sys::ptrace::ptrace` is now deprecated.
   ([#666](https://github.com/nix-rust/nix/pull/666))
+- Added more accessor methods for `AioCb`
+  ([#773](https://github.com/nix-rust/nix/pull/773))
+- Add `nix::sys::fallocate`
+  ([#768](https:://github.com/nix-rust/nix/pull/768))
+- Added `nix::unistd::mkfifo`.
+  ([#602](https://github.com/nix-rust/nix/pull/774))
+- Added `ptrace::Options::PTRACE_O_EXITKILL` on Linux and Android.
+  ([#771](https://github.com/nix-rust/nix/pull/771))
+- Added `nix::sys::uio::{process_vm_readv, process_vm_writev}` on Linux
+  ([#568](https://github.com/nix-rust/nix/pull/568))
+- Added `nix::unistd::{getgroups, setgroups, getgrouplist, initgroups}`. ([#733](https://github.com/nix-rust/nix/pull/733))
+- Added `nix::sys::socket::UnixAddr::as_abstract` on Linux and Android.
+  ([#785](https://github.com/nix-rust/nix/pull/785))
+- Added `nix::unistd::execveat` on Linux and Android.
+  ([#800](https://github.com/nix-rust/nix/pull/800))
+- Added the `from_raw()` method to `WaitStatus` for converting raw status values
+  to `WaitStatus` independent of syscalls.
+  ([#741](https://github.com/nix-rust/nix/pull/741))
+- Added more standard trait implementations for various types.
+  ([#814](https://github.com/nix-rust/nix/pull/814))
+- Added `sigprocmask` to the signal module.
+  ([#826](https://github.com/nix-rust/nix/pull/826))
+- Added `nix::sys::socket::LinkAddr` on Linux and all bsdlike system.
+  ([#813](https://github.com/nix-rust/nix/pull/813))
+- Add socket options for `IP_TRANSPARENT` / `BIND_ANY`.
+  ([#835](https://github.com/nix-rust/nix/pull/835))
+
 ### Changed
+- Exposed the `mqueue` module for all supported operating systems.
+  ([#834](https://github.com/nix-rust/nix/pull/834))
+- Use native `pipe2` on all BSD targets.  Users should notice no difference.
+  ([#777](https://github.com/nix-rust/nix/pull/777))
 - Renamed existing `ptrace` wrappers to encourage namespacing ([#692](https://github.com/nix-rust/nix/pull/692))
 - Marked `sys::ptrace::ptrace` as `unsafe`.
 - Changed function signature of `socket()` and `socketpair()`. The `protocol` argument
@@ -62,18 +152,44 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Moved constants ptrace request, event and options to enums and updated ptrace functions and argument types accordingly.
   ([#749](https://github.com/nix-rust/nix/pull/749))
 - `AioCb::Drop` will now panic if the `AioCb` is still in-progress ([#715](https://github.com/nix-rust/nix/pull/715))
+- Restricted `nix::sys::socket::UnixAddr::new_abstract` to Linux and Android only.
+  ([#785](https://github.com/nix-rust/nix/pull/785))
+- The `ucred` struct has been removed in favor of a `UserCredentials` struct that
+  contains only getters for its fields.
+  ([#814](https://github.com/nix-rust/nix/pull/814))
+- Both `ip_mreq` and `ipv6_mreq` have been replaced with `IpMembershipRequest` and
+  `Ipv6MembershipRequest`.
+  ([#814](https://github.com/nix-rust/nix/pull/814))
+- Removed return type from `pause`.
+  ([#829](https://github.com/nix-rust/nix/pull/829))
+- Changed the termios APIs to allow for using a `u32` instead of the `BaudRate`
+  enum on BSD platforms to support arbitrary baud rates. See the module docs for
+  `nix::sys::termios` for more details.
+  ([#843](https://github.com/nix-rust/nix/pull/843))
 
-# Fixed
+### Fixed
 - Fix compilation and tests for OpenBSD targets
   ([#688](https://github.com/nix-rust/nix/pull/688))
 - Fixed error handling in `AioCb::fsync`, `AioCb::read`, and `AioCb::write`.
   It is no longer an error to drop an `AioCb` that failed to enqueue in the OS.
   ([#715](https://github.com/nix-rust/nix/pull/715))
+- Fix potential memory corruption on non-Linux platforms when using
+  `sendmsg`/`recvmsg`, caused by mismatched `msghdr` definition.
+  ([#648](https://github.com/nix-rust/nix/pull/648))
 
-# Removed
+### Removed
+- `AioCb::from_boxed_slice` has been removed.  It was never actually safe.  Use
+  `from_bytes` or `from_bytes_mut` instead.
+  ([#820](https://github.com/nix-rust/nix/pull/820))
 - The syscall module has been removed. This only exposed enough functionality for
   `memfd_create()` and `pivot_root()`, which are still exposed as separate functions.
   ([#747](https://github.com/nix-rust/nix/pull/747))
+- The `Errno` variants are no longer reexported from the `errno` module. `Errno` itself is no longer reexported from the
+  crate root and instead must be accessed using the `errno` module. ([#696](https://github.com/nix-rust/nix/pull/696))
+- Removed `MS_VERBOSE`, `MS_NOSEC`, and `MS_BORN` from `MsFlags`. These
+  are internal kernel flags and should never have been exposed.
+  ([#814](https://github.com/nix-rust/nix/pull/814))
+
 
 ## [0.9.0] 2017-07-23
 

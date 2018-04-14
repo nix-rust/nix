@@ -1,7 +1,8 @@
 pub use libc::dev_t;
 pub use libc::stat as FileStat;
 
-use {Errno, Result, NixPath};
+use {Result, NixPath};
+use errno::Errno;
 use fcntl::AtFlags;
 use libc::{self, mode_t};
 use std::mem;
@@ -52,22 +53,22 @@ pub fn mknod<P: ?Sized + NixPath>(path: &P, kind: SFlag, perm: Mode, dev: dev_t)
 
 #[cfg(target_os = "linux")]
 pub fn major(dev: dev_t) -> u64 {
-    ((dev >> 32) & 0xfffff000) |
-    ((dev >>  8) & 0x00000fff)
+    ((dev >> 32) & 0xffff_f000) |
+    ((dev >>  8) & 0x0000_0fff)
 }
 
 #[cfg(target_os = "linux")]
 pub fn minor(dev: dev_t) -> u64 {
-    ((dev >> 12) & 0xffffff00) |
-    ((dev      ) & 0x000000ff)
+    ((dev >> 12) & 0xffff_ff00) |
+    ((dev      ) & 0x0000_00ff)
 }
 
 #[cfg(target_os = "linux")]
 pub fn makedev(major: u64, minor: u64) -> dev_t {
-    ((major & 0xfffff000) << 32) |
-    ((major & 0x00000fff) <<  8) |
-    ((minor & 0xffffff00) << 12) |
-    ((minor & 0x000000ff)      )
+    ((major & 0xffff_f000) << 32) |
+    ((major & 0x0000_0fff) <<  8) |
+    ((minor & 0xffff_ff00) << 12) |
+     (minor & 0x0000_00ff)
 }
 
 pub fn umask(mode: Mode) -> Mode {
@@ -121,3 +122,64 @@ pub fn fstatat<P: ?Sized + NixPath>(dirfd: RawFd, pathname: &P, f: AtFlags) -> R
     Ok(dst)
 }
 
+/// Change the file permission bits of the file specified by a file descriptor.
+///
+/// # References
+///
+/// [fchmod(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/fchmod.html).
+pub fn fchmod(fd: RawFd, mode: Mode) -> Result<()> {
+    let res = unsafe { libc::fchmod(fd, mode.bits() as mode_t) };
+
+    Errno::result(res).map(|_| ())
+}
+
+/// Flags for `fchmodat` function.
+#[derive(Clone, Copy, Debug)]
+pub enum FchmodatFlags {
+    FollowSymlink,
+    NoFollowSymlink,
+}
+
+/// Change the file permission bits.
+///
+/// The file to be changed is determined relative to the directory associated
+/// with the file descriptor `dirfd` or the current working directory
+/// if `dirfd` is `None`.
+///
+/// If `flag` is `FchmodatFlags::NoFollowSymlink` and `path` names a symbolic link,
+/// then the mode of the symbolic link is changed.
+///
+/// `fchmod(None, path, mode, FchmodatFlags::FollowSymlink)` is identical to
+/// a call `libc::chmod(path, mode)`. That's why `chmod` is unimplemented
+/// in the `nix` crate.
+///
+/// # References
+///
+/// [fchmodat(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/fchmodat.html).
+pub fn fchmodat<P: ?Sized + NixPath>(
+    dirfd: Option<RawFd>,
+    path: &P,
+    mode: Mode,
+    flag: FchmodatFlags,
+) -> Result<()> {
+    let actual_dirfd =
+        match dirfd {
+            None => libc::AT_FDCWD,
+            Some(fd) => fd,
+        };
+    let atflag =
+        match flag {
+            FchmodatFlags::FollowSymlink => AtFlags::empty(),
+            FchmodatFlags::NoFollowSymlink => AtFlags::AT_SYMLINK_NOFOLLOW,
+        };
+    let res = path.with_nix_path(|cstr| unsafe {
+        libc::fchmodat(
+            actual_dirfd,
+            cstr.as_ptr(),
+            mode.bits() as mode_t,
+            atflag.bits() as libc::c_int,
+        )
+    })?;
+
+    Errno::result(res).map(|_| ())
+}

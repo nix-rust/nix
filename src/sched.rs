@@ -2,13 +2,14 @@ use std::mem;
 use std::os::unix::io::RawFd;
 use std::option::Option;
 use libc::{self, c_int, c_void};
-use {Errno, Error, Result};
+use {Error, Result};
+use errno::Errno;
 use ::unistd::Pid;
 
 // For some functions taking with a parameter of type CloneFlags,
 // only a subset of these flags have an effect.
 libc_bitflags!{
-    pub struct CloneFlags: libc::c_int {
+    pub struct CloneFlags: c_int {
         CLONE_VM;
         CLONE_FS;
         CLONE_FILES;
@@ -39,6 +40,7 @@ pub type CloneCb<'a> = Box<FnMut() -> isize + 'a>;
 
 #[repr(C)]
 #[derive(Clone, Copy)]
+#[allow(missing_debug_implementations)]
 pub struct CpuSet {
     cpu_set: libc::cpu_set_t,
 }

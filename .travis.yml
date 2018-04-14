@@ -16,69 +16,69 @@ matrix:
   # likes to have a big backlog on builds on those machines. This way at least
   # all of the other jobs can finish while waiting on those builds.
   include:
+    # iOS builds
+    # These are all done on a single machine because Travis rations their OS X
+    # builders so heavily that we otherwise can't merge PRs during the work week.
+    # Additionally they're moved to the front of the line to get them in the Travis
+    # OS X build queue first.
+    - env: TARGET="aarch64-apple-ios;armv7-apple-ios;armv7s-apple-ios;i386-apple-ios;x86_64-apple-ios" DISABLE_TESTS=1
+      rust: 1.20.0
+      os: osx
+
+    # Mac builds
+    # These are also moved to be first because they wait in a long queue with Travis
+    - env: TARGET=i686-apple-darwin
+      rust: 1.20.0
+      os: osx
+    - env: TARGET=x86_64-apple-darwin
+      rust: 1.20.0
+      os: osx
+
     # Android
     - env: TARGET=aarch64-linux-android DISABLE_TESTS=1
-      rust: 1.13.0
+      rust: 1.20.0
     - env: TARGET=arm-linux-androideabi DISABLE_TESTS=1
-      rust: 1.13.0
+      rust: 1.20.0
     - env: TARGET=armv7-linux-androideabi DISABLE_TESTS=1
-      rust: 1.13.0
-    - env: TARGET=aarch64-apple-ios DISABLE_TESTS=1
-      rust: 1.13.0
-      os: osx
+      rust: 1.20.0
     - env: TARGET=i686-linux-android DISABLE_TESTS=1
-      rust: 1.18.0
+      rust: 1.20.0
     - env: TARGET=x86_64-linux-android DISABLE_TESTS=1
-      rust: 1.18.0
+      rust: 1.20.0
 
     # Linux
     - env: TARGET=aarch64-unknown-linux-gnu
-      rust: 1.13.0
-    - env: TARGET=armv7-apple-ios DISABLE_TESTS=1
-      rust: 1.13.0
-      os: osx
+      rust: 1.20.0
     - env: TARGET=arm-unknown-linux-gnueabi
-      rust: 1.13.0
+      rust: 1.20.0
     - env: TARGET=arm-unknown-linux-musleabi DISABLE_TESTS=1
-      rust: 1.14.0
+      rust: 1.20.0
     - env: TARGET=armv7-unknown-linux-gnueabihf
-      rust: 1.13.0
-    - env: TARGET=armv7s-apple-ios DISABLE_TESTS=1
-      rust: 1.13.0
-      os: osx
+      rust: 1.20.0
     - env: TARGET=i686-unknown-linux-gnu
-      rust: 1.13.0
+      rust: 1.20.0
     - env: TARGET=i686-unknown-linux-musl
-      rust: 1.13.0
+      rust: 1.20.0
     - env: TARGET=mips-unknown-linux-gnu
-      rust: 1.13.0
-    - env: TARGET=i386-apple-ios DISABLE_TESTS=1
-      rust: 1.13.0
-      os: osx
+      rust: 1.20.0
     - env: TARGET=mips64-unknown-linux-gnuabi64
-      rust: 1.13.0
+      rust: 1.20.0
     - env: TARGET=mips64el-unknown-linux-gnuabi64
-      rust: 1.13.0
+      rust: 1.20.0
     - env: TARGET=mipsel-unknown-linux-gnu
-      rust: 1.13.0
-    - env: TARGET=x86_64-apple-ios DISABLE_TESTS=1
-      rust: 1.13.0
-      os: osx
+      rust: 1.20.0
     - env: TARGET=powerpc-unknown-linux-gnu DISABLE_TESTS=1
-      rust: 1.13.0
+      rust: 1.20.0
     - env: TARGET=powerpc64-unknown-linux-gnu
-      rust: 1.13.0
+      rust: 1.20.0
     - env: TARGET=powerpc64le-unknown-linux-gnu
-      rust: 1.13.0
-    - env: TARGET=i686-apple-darwin
-      rust: 1.13.0
-      os: osx
+      rust: 1.20.0
     - env: TARGET=s390x-unknown-linux-gnu DISABLE_TESTS=1
-      rust: 1.13.0
+      rust: 1.20.0
     - env: TARGET=x86_64-unknown-linux-gnu
-      rust: 1.13.0
+      rust: 1.20.0
     - env: TARGET=x86_64-unknown-linux-musl
-      rust: 1.13.0
+      rust: 1.20.0
 
     # *BSD
     # FreeBSD i686 and x86_64 use BuildBot instead of Travis
@@ -87,26 +87,16 @@ matrix:
     # - env: TARGET=i686-unknown-freebsd DISABLE_TESTS=1
     # - env: TARGET=x86_64-unknown-freebsd DISABLE_TESTS=1
     - env: TARGET=x86_64-unknown-netbsd DISABLE_TESTS=1
-      rust: 1.13.0
+      rust: 1.20.0
 
-    - env: TARGET=x86_64-apple-darwin
-      rust: 1.13.0
-      os: osx
-
-    # Testing beta on main targets
+    # Make sure stable is always working too
     - env: TARGET=x86_64-unknown-linux-gnu
-      rust: beta
-
-  allow_failures:
-    # We allow beta to fail here because a bug might crop up in rust that causes it. We will
-    # however be on the lookout for this and file those bugs with upstream.
-    - env: TARGET=x86_64-unknown-linux-gnu
-      rust: beta
+      rust: stable
 
 before_install: set -e
 
 install:
-  - sh ci/install.sh
+  - bash ci/install.sh
   - source ~/.cargo/env || true
 
 script:

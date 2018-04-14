@@ -1,5 +1,6 @@
 use libc::{self, c_int};
-use {Errno, Result};
+use Result;
+use errno::Errno;
 use unistd::Pid;
 
 use sys::signal::Signal;
@@ -8,10 +9,31 @@ libc_bitflags!(
     pub struct WaitPidFlag: c_int {
         WNOHANG;
         WUNTRACED;
+        #[cfg(any(target_os = "android",
+                  target_os = "freebsd",
+                  target_os = "haiku",
+                  target_os = "ios",
+                  target_os = "linux",
+                  target_os = "macos",
+                  target_os = "netbsd"))]
         WEXITED;
         WCONTINUED;
+        #[cfg(any(target_os = "android",
+                  target_os = "freebsd",
+                  target_os = "haiku",
+                  target_os = "ios",
+                  target_os = "linux",
+                  target_os = "macos",
+                  target_os = "netbsd"))]
         WSTOPPED;
         /// Don't reap, just poll status.
+        #[cfg(any(target_os = "android",
+                  target_os = "freebsd",
+                  target_os = "haiku",
+                  target_os = "ios",
+                  target_os = "linux",
+                  target_os = "macos",
+                  target_os = "netbsd"))]
         WNOWAIT;
         /// Don't wait on children of other threads in this group
         #[cfg(any(target_os = "android", target_os = "linux"))]
@@ -74,7 +96,7 @@ pub enum WaitStatus {
     /// child process. This is only returned if `WaitPidFlag::WNOHANG`
     /// was used (otherwise `wait()` or `waitpid()` would block until
     /// there was something to report).
-    StillAlive
+    StillAlive,
 }
 
 impl WaitStatus {
@@ -82,16 +104,11 @@ impl WaitStatus {
     pub fn pid(&self) -> Option<Pid> {
         use self::WaitStatus::*;
         match *self {
-            Exited(p, _) => Some(p),
-            Signaled(p, _, _) => Some(p),
-            Stopped(p, _) => Some(p),
-            Continued(p) => Some(p),
+            Exited(p, _)  | Signaled(p, _, _) |
+                Stopped(p, _) | Continued(p) => Some(p),
             StillAlive => None,
-
-            #[cfg(any(target_os = "linux", target_os = "android"))]
-            PtraceEvent(p, _, _) => Some(p),
-            #[cfg(any(target_os = "linux", target_os = "android"))]
-            PtraceSyscall(p) => Some(p),
+            #[cfg(any(target_os = "android", target_os = "linux"))]
+            PtraceEvent(p, _, _) | PtraceSyscall(p) => Some(p),
         }
     }
 }
@@ -108,8 +125,8 @@ fn signaled(status: i32) -> bool {
     unsafe { libc::WIFSIGNALED(status) }
 }
 
-fn term_signal(status: i32) -> Signal {
-    Signal::from_c_int(unsafe { libc::WTERMSIG(status) }).unwrap()
+fn term_signal(status: i32) -> Result<Signal> {
+    Signal::from_c_int(unsafe { libc::WTERMSIG(status) })
 }
 
 fn dumped_core(status: i32) -> bool {
@@ -120,10 +137,11 @@ fn stopped(status: i32) -> bool {
     unsafe { libc::WIFSTOPPED(status) }
 }
 
-fn stop_signal(status: i32) -> Signal {
-    Signal::from_c_int(unsafe { libc::WSTOPSIG(status) }).unwrap()
+fn stop_signal(status: i32) -> Result<Signal> {
+    Signal::from_c_int(unsafe { libc::WSTOPSIG(status) })
 }
 
+#[cfg(any(target_os = "android", target_os = "linux"))]
 fn syscall_stop(status: i32) -> bool {
     // From ptrace(2), setting PTRACE_O_TRACESYSGOOD has the effect
     // of delivering SIGTRAP | 0x80 as the signal number for syscall
@@ -132,6 +150,7 @@ fn syscall_stop(status: i32) -> bool {
     unsafe { libc::WSTOPSIG(status) == libc::SIGTRAP | 0x80 }
 }
 
+#[cfg(any(target_os = "android", target_os = "linux"))]
 fn stop_additional(status: i32) -> c_int {
     (status >> 16) as c_int
 }
@@ -140,34 +159,53 @@ fn continued(status: i32) -> bool {
     unsafe { libc::WIFCONTINUED(status) }
 }
 
-fn decode(pid : Pid, status: i32) -> WaitStatus {
-    if exited(status) {
-        WaitStatus::Exited(pid, exit_status(status))
-    } else if signaled(status) {
-        WaitStatus::Signaled(pid, term_signal(status), dumped_core(status))
-    } else if stopped(status) {
-        cfg_if! {
-            if #[cfg(any(target_os = "linux", target_os = "android"))] {
-                fn decode_stopped(pid: Pid, status: i32) -> WaitStatus {
-                    let status_additional = stop_additional(status);
-                    if syscall_stop(status) {
-                        WaitStatus::PtraceSyscall(pid)
-                    } else if status_additional == 0 {
-                        WaitStatus::Stopped(pid, stop_signal(status))
-                    } else {
-                        WaitStatus::PtraceEvent(pid, stop_signal(status), stop_additional(status))
+impl WaitStatus {
+    /// Convert a raw `wstatus` as returned by `waitpid`/`wait` into a `WaitStatus`
+    ///
+    /// # Errors
+    ///
+    /// Returns an `Error` corresponding to `EINVAL` for invalid status values.
+    ///
+    /// # Examples
+    ///
+    /// Convert a `wstatus` obtained from `libc::waitpid` into a `WaitStatus`:
+    ///
+    /// ```
+    /// use nix::sys::wait::WaitStatus;
+    /// use nix::sys::signal::Signal;
+    /// let pid = nix::unistd::Pid::from_raw(1);
+    /// let status = WaitStatus::from_raw(pid, 0x0002);
+    /// assert_eq!(status, Ok(WaitStatus::Signaled(pid, Signal::SIGINT, false)));
+    /// ```
+    pub fn from_raw(pid: Pid, status: i32) -> Result<WaitStatus> {
+        Ok(if exited(status) {
+            WaitStatus::Exited(pid, exit_status(status))
+        } else if signaled(status) {
+            WaitStatus::Signaled(pid, try!(term_signal(status)), dumped_core(status))
+        } else if stopped(status) {
+            cfg_if! {
+                if #[cfg(any(target_os = "android", target_os = "linux"))] {
+                    fn decode_stopped(pid: Pid, status: i32) -> Result<WaitStatus> {
+                        let status_additional = stop_additional(status);
+                        Ok(if syscall_stop(status) {
+                            WaitStatus::PtraceSyscall(pid)
+                        } else if status_additional == 0 {
+                            WaitStatus::Stopped(pid, try!(stop_signal(status)))
+                        } else {
+                            WaitStatus::PtraceEvent(pid, try!(stop_signal(status)), stop_additional(status))
+                        })
+                    }
+                } else {
+                    fn decode_stopped(pid: Pid, status: i32) -> Result<WaitStatus> {
+                        Ok(WaitStatus::Stopped(pid, try!(stop_signal(status))))
                     }
                 }
-            } else {
-                fn decode_stopped(pid: Pid, status: i32) -> WaitStatus {
-                    WaitStatus::Stopped(pid, stop_signal(status))
-                }
             }
-        }
-        decode_stopped(pid, status)
-    } else {
-        assert!(continued(status));
-        WaitStatus::Continued(pid)
+            return decode_stopped(pid, status);
+        } else {
+            assert!(continued(status));
+            WaitStatus::Continued(pid)
+        })
     }
 }
 
@@ -178,15 +216,21 @@ pub fn waitpid<P: Into<Option<Pid>>>(pid: P, options: Option<WaitPidFlag>) -> Re
 
     let option_bits = match options {
         Some(bits) => bits.bits(),
-        None => 0
+        None => 0,
     };
 
-    let res = unsafe { libc::waitpid(pid.into().unwrap_or(Pid::from_raw(-1)).into(), &mut status as *mut c_int, option_bits) };
+    let res = unsafe {
+        libc::waitpid(
+            pid.into().unwrap_or(Pid::from_raw(-1)).into(),
+            &mut status as *mut c_int,
+            option_bits,
+        )
+    };
 
-    Ok(match try!(Errno::result(res)) {
-        0 => StillAlive,
-        res => decode(Pid::from_raw(res), status),
-    })
+    match try!(Errno::result(res)) {
+        0 => Ok(StillAlive),
+        res => WaitStatus::from_raw(Pid::from_raw(res), status),
+    }
 }
 
 pub fn wait() -> Result<WaitStatus> {

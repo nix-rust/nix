@@ -1,23 +1,25 @@
 //! Reboot/shutdown or enable/disable Ctrl-Alt-Delete.
 
-use {Errno, Error, Result};
+use {Error, Result};
+use errno::Errno;
 use libc;
 use void::Void;
 use std::mem::drop;
 
-/// How exactly should the system be rebooted.
-///
-/// See [`set_cad_enabled()`](fn.set_cad_enabled.html) for
-/// enabling/disabling Ctrl-Alt-Delete.
-#[repr(i32)]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum RebootMode {
-    RB_HALT_SYSTEM = libc::RB_HALT_SYSTEM,
-    RB_KEXEC = libc::RB_KEXEC,
-    RB_POWER_OFF = libc::RB_POWER_OFF,
-    RB_AUTOBOOT = libc::RB_AUTOBOOT,
-    // we do not support Restart2,
-    RB_SW_SUSPEND = libc::RB_SW_SUSPEND,
+libc_enum! {
+    /// How exactly should the system be rebooted.
+    ///
+    /// See [`set_cad_enabled()`](fn.set_cad_enabled.html) for
+    /// enabling/disabling Ctrl-Alt-Delete.
+    #[repr(i32)]
+    pub enum RebootMode {
+        RB_HALT_SYSTEM,
+        RB_KEXEC,
+        RB_POWER_OFF,
+        RB_AUTOBOOT,
+        // we do not support Restart2,
+        RB_SW_SUSPEND,
+    }
 }
 
 pub fn reboot(how: RebootMode) -> Result<Void> {

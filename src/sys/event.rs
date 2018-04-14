@@ -14,6 +14,7 @@ use std::mem;
 // Redefine kevent in terms of programmer-friendly enums and bitfields.
 #[derive(Clone, Copy)]
 #[repr(C)]
+#[allow(missing_debug_implementations)]
 pub struct KEvent {
     kevent: libc::kevent,
 }
@@ -24,57 +25,58 @@ pub struct KEvent {
 type type_of_udata = *mut libc::c_void;
 #[cfg(any(target_os = "dragonfly", target_os = "freebsd",
           target_os = "ios", target_os = "macos"))]
-type type_of_data = libc::intptr_t;
+type type_of_data = intptr_t;
 #[cfg(any(target_os = "netbsd"))]
 type type_of_udata = intptr_t;
 #[cfg(any(target_os = "netbsd", target_os = "openbsd"))]
 type type_of_data = libc::int64_t;
 
+#[cfg(target_os = "netbsd")]
+type type_of_event_filter = u32;
 #[cfg(not(target_os = "netbsd"))]
 type type_of_event_filter = i16;
-#[cfg(not(target_os = "netbsd"))]
-#[repr(i16)]
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub enum EventFilter {
-    EVFILT_AIO = libc::EVFILT_AIO,
-    #[cfg(target_os = "dragonfly")]
-    EVFILT_EXCEPT = libc::EVFILT_EXCEPT,
-    #[cfg(any(target_os = "macos", target_os = "ios",
-              target_os = "dragonfly",
-              target_os = "freebsd"))]
-    EVFILT_FS = libc::EVFILT_FS,
-    #[cfg(target_os = "freebsd")]
-    EVFILT_LIO = libc::EVFILT_LIO,
-    #[cfg(any(target_os = "macos", target_os = "ios"))]
-    EVFILT_MACHPORT = libc::EVFILT_MACHPORT,
-    EVFILT_PROC = libc::EVFILT_PROC,
-    EVFILT_READ = libc::EVFILT_READ,
-    EVFILT_SIGNAL = libc::EVFILT_SIGNAL,
-    EVFILT_TIMER = libc::EVFILT_TIMER,
-    #[cfg(any(target_os = "macos",
-              target_os = "ios",
-              target_os = "dragonfly",
-              target_os = "freebsd"))]
-    EVFILT_USER = libc::EVFILT_USER,
-    #[cfg(any(target_os = "macos", target_os = "ios"))]
-    EVFILT_VM = libc::EVFILT_VM,
-    EVFILT_VNODE = libc::EVFILT_VNODE,
-    EVFILT_WRITE = libc::EVFILT_WRITE,
-}
-
-#[cfg(target_os = "netbsd")]
-type type_of_event_filter = libc::uint32_t;
-#[cfg(target_os = "netbsd")]
-#[repr(i32)]
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub enum EventFilter {
-    EVFILT_READ = libc::EVFILT_READ,
-    EVFILT_WRITE = libc::EVFILT_WRITE,
-    EVFILT_AIO = libc::EVFILT_AIO,
-    EVFILT_VNODE = libc::EVFILT_VNODE,
-    EVFILT_PROC = libc::EVFILT_PROC,
-    EVFILT_SIGNAL = libc::EVFILT_SIGNAL,
-    EVFILT_TIMER = libc::EVFILT_TIMER,
+libc_enum! {
+    #[cfg_attr(target_os = "netbsd", repr(u32))]
+    #[cfg_attr(not(target_os = "netbsd"), repr(i16))]
+    pub enum EventFilter {
+        EVFILT_AIO,
+        /// Returns whenever there is no remaining data in the write buffer
+        #[cfg(target_os = "freebsd")]
+        EVFILT_EMPTY,
+        #[cfg(target_os = "dragonfly")]
+        EVFILT_EXCEPT,
+        #[cfg(any(target_os = "dragonfly",
+                  target_os = "freebsd",
+                  target_os = "ios",
+                  target_os = "macos"))]
+        EVFILT_FS,
+        #[cfg(target_os = "freebsd")]
+        EVFILT_LIO,
+        #[cfg(any(target_os = "ios", target_os = "macos"))]
+        EVFILT_MACHPORT,
+        EVFILT_PROC,
+        /// Returns events associated with the process referenced by a given
+        /// process descriptor, created by `pdfork()`. The events to monitor are:
+        ///
+        /// - NOTE_EXIT: the process has exited. The exit status will be stored in data.
+        #[cfg(target_os = "freebsd")]
+        EVFILT_PROCDESC,
+        EVFILT_READ,
+        /// Returns whenever an asynchronous `sendfile()` call completes.
+        #[cfg(target_os = "freebsd")]
+        EVFILT_SENDFILE,
+        EVFILT_SIGNAL,
+        EVFILT_TIMER,
+        #[cfg(any(target_os = "dragonfly",
+                  target_os = "freebsd",
+                  target_os = "ios",
+                  target_os = "macos"))]
+        EVFILT_USER,
+        #[cfg(any(target_os = "ios", target_os = "macos"))]
+        EVFILT_VM,
+        EVFILT_VNODE,
+        EVFILT_WRITE,
+    }
 }
 
 #[cfg(any(target_os = "dragonfly", target_os = "freebsd",
@@ -323,16 +325,16 @@ pub fn ev_set(ev: &mut KEvent,
 fn test_struct_kevent() {
     let udata : intptr_t = 12345;
 
-    let expected = libc::kevent{ident: 0xdeadbeef,
+    let expected = libc::kevent{ident: 0xdead_beef,
                                 filter: libc::EVFILT_READ,
                                 flags: libc::EV_ONESHOT | libc::EV_ADD,
                                 fflags: libc::NOTE_CHILD | libc::NOTE_EXIT,
                                 data: 0x1337,
                                 udata: udata as type_of_udata};
-    let actual = KEvent::new(0xdeadbeef,
+    let actual = KEvent::new(0xdead_beef,
                              EventFilter::EVFILT_READ,
-                             EV_ONESHOT | EV_ADD,
-                             NOTE_CHILD | NOTE_EXIT,
+                             EventFlag::EV_ONESHOT | EventFlag::EV_ADD,
+                             FilterFlag::NOTE_CHILD | FilterFlag::NOTE_EXIT,
                              0x1337,
                              udata);
     assert!(expected.ident == actual.ident());

@@ -13,7 +13,7 @@ pub fn test_inetv4_addr_to_sock_addr() {
 
     match addr {
         InetAddr::V4(addr) => {
-            let ip: u32 = 0x7f000001;
+            let ip: u32 = 0x7f00_0001;
             let port: u16 = 3000;
 
             assert_eq!(addr.sin_addr.s_addr, ip.to_be());
@@ -64,6 +64,28 @@ pub fn test_path_to_sock_addr() {
     assert_eq!(addr.path(), Some(actual));
 }
 
+// Test getting/setting abstract addresses (without unix socket creation)
+#[cfg(target_os = "linux")]
+#[test]
+pub fn test_abstract_uds_addr() {
+    let empty = String::new();
+    let addr = UnixAddr::new_abstract(empty.as_bytes()).unwrap();
+    assert_eq!(addr.as_abstract(), Some(empty.as_bytes()));
+
+    let name = String::from("nix\0abstract\0test");
+    let addr = UnixAddr::new_abstract(name.as_bytes()).unwrap();
+    assert_eq!(addr.as_abstract(), Some(name.as_bytes()));
+    assert_eq!(addr.path(), None);
+
+    // Internally, name is null-prefixed (abstract namespace)
+    let internal: &[u8] = unsafe {
+        slice::from_raw_parts(addr.0.sun_path.as_ptr() as *const u8, addr.1)
+    };
+    let mut abstract_name = name.clone();
+    abstract_name.insert(0, '\0');
+    assert_eq!(internal, abstract_name.as_bytes());
+}
+
 #[test]
 pub fn test_getsockname() {
     use nix::sys::socket::{socket, AddressFamily, SockType, SockFlag};
@@ -100,8 +122,7 @@ pub fn test_scm_rights() {
     use nix::unistd::{pipe, read, write, close};
     use nix::sys::socket::{socketpair, sendmsg, recvmsg,
                            AddressFamily, SockType, SockFlag,
-                           ControlMessage, CmsgSpace, MsgFlags,
-                           MSG_TRUNC, MSG_CTRUNC};
+                           ControlMessage, CmsgSpace, MsgFlags};
 
     let (fd1, fd2) = socketpair(AddressFamily::Unix, SockType::Stream, None, SockFlag::empty())
                      .unwrap();
@@ -132,7 +153,7 @@ pub fn test_scm_rights() {
                 panic!("unexpected cmsg");
             }
         }
-        assert!(!msg.flags.intersects(MSG_TRUNC | MSG_CTRUNC));
+        assert!(!msg.flags.intersects(MsgFlags::MSG_TRUNC | MsgFlags::MSG_CTRUNC));
         close(fd2).unwrap();
     }
 
@@ -156,8 +177,7 @@ pub fn test_sendmsg_empty_cmsgs() {
     use nix::unistd::close;
     use nix::sys::socket::{socketpair, sendmsg, recvmsg,
                            AddressFamily, SockType, SockFlag,
-                           CmsgSpace, MsgFlags,
-                           MSG_TRUNC, MSG_CTRUNC};
+                           CmsgSpace, MsgFlags};
 
     let (fd1, fd2) = socketpair(AddressFamily::Unix, SockType::Stream, None, SockFlag::empty())
                      .unwrap();
@@ -177,7 +197,7 @@ pub fn test_sendmsg_empty_cmsgs() {
         for _ in msg.cmsgs() {
             panic!("unexpected cmsg");
         }
-        assert!(!msg.flags.intersects(MSG_TRUNC | MSG_CTRUNC));
+        assert!(!msg.flags.intersects(MsgFlags::MSG_TRUNC | MsgFlags::MSG_CTRUNC));
         close(fd2).unwrap();
     }
 }
@@ -222,7 +242,8 @@ pub fn test_unixdomain() {
 #[cfg(any(target_os = "macos", target_os = "ios"))]
 #[test]
 pub fn test_syscontrol() {
-    use nix::{Errno, Error};
+    use nix::Error;
+    use nix::errno::Errno;
     use nix::sys::socket::{AddressFamily, socket, SockAddr, SockType, SockFlag, SockProtocol};
 
     let fd = socket(AddressFamily::System, SockType::Datagram,

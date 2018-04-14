@@ -1,31 +1,36 @@
 [package]
-
 name        = "nix"
 description = "Rust friendly bindings to *nix APIs"
-version     = "0.10.0-pre"
+version     = "0.11.0-pre"
 authors     = ["The nix-rust Project Developers"]
 repository  = "https://github.com/nix-rust/nix"
 license     = "MIT"
 categories  = ["os::unix-apis"]
 exclude     = [
   ".gitignore",
-  ".travis.yml",
-  "deploy.sh",
-  "test/**/*"
+  ".travis.yml"
 ]
 
 [dependencies]
 libc = { git = "https://github.com/rust-lang/libc" }
-bitflags = "0.9"
+bitflags = "1.0"
 cfg-if = "0.1.0"
 void = "1.0.2"
 
+[target.'cfg(target_os = "dragonfly")'.build-dependencies]
+cc = "1"
+
 [dev-dependencies]
-lazy_static = "0.2"
-rand = "0.3.8"
+# The examples use a new feature of Bytes which should be available in 0.4.7
+# https://github.com/carllerche/bytes/pull/192
+bytes = { git = "https://github.com/carllerche/bytes", rev = "ae1b454" }
+lazy_static = "1"
+rand = "0.4"
 tempdir = "0.3"
 tempfile = "2"
-nix-test = { path = "nix-test", version = "0.0.1" }
+
+[target.'cfg(target_os = "freebsd")'.dev-dependencies]
+sysctl = "0.1"
 
 [[test]]
 name = "test"
@@ -34,6 +39,10 @@ path = "test/test.rs"
 [[test]]
 name = "test-aio-drop"
 path = "test/sys/test_aio_drop.rs"
+
+[[test]]
+name = "test-lio-listio-resubmit"
+path = "test/sys/test_lio_listio_resubmit.rs"
 
 [[test]]
 name = "test-mount"

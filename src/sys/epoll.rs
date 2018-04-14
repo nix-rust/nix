@@ -1,4 +1,5 @@
-use {Errno, Result};
+use Result;
+use errno::Errno;
 use libc::{self, c_int};
 use std::os::unix::io::RawFd;
 use std::ptr;
@@ -6,7 +7,7 @@ use std::mem;
 use ::Error;
 
 libc_bitflags!(
-    pub struct EpollFlags: libc::c_int {
+    pub struct EpollFlags: c_int {
         EPOLLIN;
         EPOLLPRI;
         EPOLLOUT;
@@ -27,7 +28,7 @@ libc_bitflags!(
     }
 );
 
-#[derive(Clone, Copy, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 #[repr(i32)]
 pub enum EpollOp {
     EpollCtlAdd = libc::EPOLL_CTL_ADD,
@@ -41,6 +42,7 @@ libc_bitflags!{
     }
 }
 
+#[allow(missing_debug_implementations)]
 #[derive(Clone, Copy)]
 #[repr(C)]
 pub struct EpollEvent {
@@ -57,21 +59,11 @@ impl EpollEvent {
     }
 
     pub fn events(&self) -> EpollFlags {
-        EpollFlags::from_bits(self.event.events as libc::c_int).unwrap()
+        EpollFlags::from_bits(self.event.events as c_int).unwrap()
     }
 
     pub fn data(&self) -> u64 {
         self.event.u64
-    }
-}
-
-impl<'a> Into<&'a mut EpollEvent> for Option<&'a mut EpollEvent> {
-    #[inline]
-    fn into(self) -> &'a mut EpollEvent {
-        match self {
-            Some(epoll_event) => epoll_event,
-            None => unsafe { &mut *ptr::null_mut::<EpollEvent>() }
-        }
     }
 }
 
@@ -91,13 +83,19 @@ pub fn epoll_create1(flags: EpollCreateFlags) -> Result<RawFd> {
 
 #[inline]
 pub fn epoll_ctl<'a, T>(epfd: RawFd, op: EpollOp, fd: RawFd, event: T) -> Result<()>
-    where T: Into<&'a mut EpollEvent>
+    where T: Into<Option<&'a mut EpollEvent>>
 {
-    let event: &mut EpollEvent = event.into();
-    if event as *const EpollEvent == ptr::null() && op != EpollOp::EpollCtlDel {
+    let mut event: Option<&mut EpollEvent> = event.into();
+    if event.is_none() && op != EpollOp::EpollCtlDel {
         Err(Error::Sys(Errno::EINVAL))
     } else {
-        let res = unsafe { libc::epoll_ctl(epfd, op as c_int, fd, &mut event.event) };
+        let res = unsafe {
+            if let Some(ref mut event) = event {
+                libc::epoll_ctl(epfd, op as c_int, fd, &mut event.event)
+            } else {
+                libc::epoll_ctl(epfd, op as c_int, fd, ptr::null_mut())
+            }
+        };
         Errno::result(res).map(drop)
     }
 }

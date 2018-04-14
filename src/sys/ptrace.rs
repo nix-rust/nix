@@ -4,7 +4,8 @@
 //! [`ptrace`(2)]: http://man7.org/linux/man-pages/man2/ptrace.2.html
 
 use std::{mem, ptr};
-use {Errno, Error, Result};
+use {Error, Result};
+use errno::Errno;
 use libc::{self, c_void, c_long, siginfo_t};
 use ::unistd::Pid;
 use sys::signal::Signal;
@@ -119,6 +120,10 @@ libc_bitflags! {
         /// Stop tracee when a SECCOMP_RET_TRACE rule is triggered. See `man seccomp` for more
         /// details.
         PTRACE_O_TRACESECCOMP;
+        /// Send a SIGKILL to the tracee if the tracer exits.  This is useful
+        /// for ptrace jailers to prevent tracees from escaping their control.
+        #[cfg(any(target_os = "android", target_os = "linux"))]
+        PTRACE_O_EXITKILL;
     }
 }
 
@@ -158,7 +163,7 @@ unsafe fn ptrace_peek(
 }
 
 /// Function for ptrace requests that return values from the data field.
-/// Some ptrace get requests populate structs or larger elements than c_long
+/// Some ptrace get requests populate structs or larger elements than `c_long`
 /// and therefore use the data field to return values. This function handles these
 /// requests.
 fn ptrace_get_data<T>(request: Request, pid: Pid) -> Result<T> {
@@ -183,7 +188,7 @@ pub fn setoptions(pid: Pid, options: Options) -> Result<()> {
     let res = unsafe {
         libc::ptrace(Request::PTRACE_SETOPTIONS as RequestType,
                      libc::pid_t::from(pid),
-                     ptr::null_mut::<libc::c_void>(),
+                     ptr::null_mut::<c_void>(),
                      options.bits() as *mut c_void)
     };
     Errno::result(res).map(|_| ())
@@ -205,7 +210,7 @@ pub fn setsiginfo(pid: Pid, sig: &siginfo_t) -> Result<()> {
         Errno::clear();
         libc::ptrace(Request::PTRACE_SETSIGINFO as RequestType,
                      libc::pid_t::from(pid),
-                     ptr::null_mut::<libc::c_void>(),
+                     ptr::null_mut::<c_void>(),
                      sig as *const _ as *const c_void)
     };
     match Errno::result(ret) {
@@ -283,7 +288,7 @@ pub fn cont<T: Into<Option<Signal>>>(pid: Pid, sig: T) -> Result<()> {
 /// Represents all possible ptrace-accessible registers on x86_64
 #[cfg(target_arch = "x86_64")]
 #[allow(non_camel_case_types)]
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Register {
     R15 = 8 * ::libc::R15 as isize,
     R14 = 8 * ::libc::R14 as isize,
@@ -317,7 +322,7 @@ pub enum Register {
 /// Represents all possible ptrace-accessible registers on x86
 #[cfg(target_arch = "x86")]
 #[allow(non_camel_case_types)]
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Register {
     EBX = 4 * ::libc::EBX as isize,
     ECX = 4 * ::libc::ECX as isize,
@@ -484,5 +489,40 @@ mod tests {
         // c_long is implementation defined, so make sure
         // its width matches
         assert_eq!(size_of::<Word>(), size_of::<c_long>());
+    }
+}
+
+/// Move the stopped tracee process forward by a single step as with
+/// `ptrace(PTRACE_SINGLESTEP, ...)`
+///
+/// Advances the execution of the process with PID `pid` by a single step optionally delivering a
+/// signal specified by `sig`.
+///
+/// # Example
+/// ```rust
+/// extern crate nix;
+/// use nix::sys::ptrace::step;
+/// use nix::unistd::Pid;
+/// use nix::sys::signal::Signal;
+/// use nix::sys::wait::*;
+/// fn main() {
+///     // If a process changes state to the stopped state because of a SIGUSR1
+///     // signal, this will step the process forward and forward the user
+///     // signal to the stopped process
+///     match waitpid(Pid::from_raw(-1), None) {
+///         Ok(WaitStatus::Stopped(pid, Signal::SIGUSR1)) => {
+///             let _ = step(pid, Signal::SIGUSR1);
+///         }
+///         _ => {},
+///     }
+/// }
+/// ```
+pub fn step<T: Into<Option<Signal>>>(pid: Pid, sig: T) -> Result<()> {
+    let data = match sig.into() {
+        Some(s) => s as i32 as *mut c_void,
+        None => ptr::null_mut(),
+    };
+    unsafe {
+        ptrace_other(Request::PTRACE_SINGLESTEP, pid, ptr::null_mut(), data).map(|_| ())
     }
 }

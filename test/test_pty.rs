@@ -3,24 +3,24 @@ use std::path::Path;
 use std::os::unix::prelude::*;
 use tempfile::tempfile;
 
-use nix::fcntl::{O_RDWR, open};
+use nix::fcntl::{OFlag, open};
 use nix::pty::*;
 use nix::sys::stat;
 use nix::sys::termios::*;
 use nix::unistd::{write, close};
 
 /// Regression test for Issue #659
-/// This is the correct way to explicitly close a PtyMaster
+/// This is the correct way to explicitly close a `PtyMaster`
 #[test]
 fn test_explicit_close() {
     let mut f = {
-        let m = posix_openpt(O_RDWR).unwrap();
+        let m = posix_openpt(OFlag::O_RDWR).unwrap();
         close(m.into_raw_fd()).unwrap();
         tempfile().unwrap()
     };
     // This should work.  But if there's been a double close, then it will
     // return EBADF
-    f.write(b"whatever").unwrap();
+    f.write_all(b"whatever").unwrap();
 }
 
 /// Test equivalence of `ptsname` and `ptsname_r`
@@ -31,7 +31,7 @@ fn test_ptsname_equivalence() {
     let m = ::PTSNAME_MTX.lock().expect("Mutex got poisoned by another test");
 
     // Open a new PTTY master
-    let master_fd = posix_openpt(O_RDWR).unwrap();
+    let master_fd = posix_openpt(OFlag::O_RDWR).unwrap();
     assert!(master_fd.as_raw_fd() > 0);
 
     // Get the name of the slave
@@ -49,7 +49,7 @@ fn test_ptsname_copy() {
     let m = ::PTSNAME_MTX.lock().expect("Mutex got poisoned by another test");
 
     // Open a new PTTY master
-    let master_fd = posix_openpt(O_RDWR).unwrap();
+    let master_fd = posix_openpt(OFlag::O_RDWR).unwrap();
     assert!(master_fd.as_raw_fd() > 0);
 
     // Get the name of the slave
@@ -66,7 +66,7 @@ fn test_ptsname_copy() {
 #[cfg(any(target_os = "android", target_os = "linux"))]
 fn test_ptsname_r_copy() {
     // Open a new PTTY master
-    let master_fd = posix_openpt(O_RDWR).unwrap();
+    let master_fd = posix_openpt(OFlag::O_RDWR).unwrap();
     assert!(master_fd.as_raw_fd() > 0);
 
     // Get the name of the slave
@@ -84,11 +84,11 @@ fn test_ptsname_unique() {
     let m = ::PTSNAME_MTX.lock().expect("Mutex got poisoned by another test");
 
     // Open a new PTTY master
-    let master1_fd = posix_openpt(O_RDWR).unwrap();
+    let master1_fd = posix_openpt(OFlag::O_RDWR).unwrap();
     assert!(master1_fd.as_raw_fd() > 0);
 
     // Open a second PTTY master
-    let master2_fd = posix_openpt(O_RDWR).unwrap();
+    let master2_fd = posix_openpt(OFlag::O_RDWR).unwrap();
     assert!(master2_fd.as_raw_fd() > 0);
 
     // Get the name of the slave
@@ -108,7 +108,7 @@ fn test_open_ptty_pair() {
     let m = ::PTSNAME_MTX.lock().expect("Mutex got poisoned by another test");
 
     // Open a new PTTY master
-    let master_fd = posix_openpt(O_RDWR).expect("posix_openpt failed");
+    let master_fd = posix_openpt(OFlag::O_RDWR).expect("posix_openpt failed");
     assert!(master_fd.as_raw_fd() > 0);
 
     // Allow a slave to be generated for it
@@ -119,7 +119,7 @@ fn test_open_ptty_pair() {
     let slave_name = unsafe { ptsname(&master_fd) }.expect("ptsname failed");
 
     // Open the slave device
-    let slave_fd = open(Path::new(&slave_name), O_RDWR, stat::Mode::empty()).unwrap();
+    let slave_fd = open(Path::new(&slave_name), OFlag::O_RDWR, stat::Mode::empty()).unwrap();
     assert!(slave_fd > 0);
 }
 
@@ -176,7 +176,7 @@ fn test_openpty_with_termios() {
         termios
     };
     // Make sure newlines are not transformed so the data is preserved when sent.
-    termios.output_flags.remove(ONLCR);
+    termios.output_flags.remove(OutputFlags::ONLCR);
 
     let pty = openpty(None, &termios).unwrap();
     // Must be valid file descriptors

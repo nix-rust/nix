@@ -17,7 +17,8 @@
 //! signal handlers.
 use libc;
 use unistd;
-use {Error, Errno, Result};
+use {Error, Result};
+use errno::Errno;
 pub use sys::signal::{self, SigSet};
 pub use libc::signalfd_siginfo as siginfo;
 
@@ -67,7 +68,7 @@ pub fn signalfd(fd: RawFd, mask: &SigSet, flags: SfdFlags) -> Result<RawFd> {
 /// mask.thread_block().unwrap();
 ///
 /// // Signals are queued up on the file descriptor
-/// let mut sfd = SignalFd::with_flags(&mask, SFD_NONBLOCK).unwrap();
+/// let mut sfd = SignalFd::with_flags(&mask, SfdFlags::SFD_NONBLOCK).unwrap();
 ///
 /// match sfd.read_signal() {
 ///     // we caught a signal
@@ -78,7 +79,7 @@ pub fn signalfd(fd: RawFd, mask: &SigSet, flags: SfdFlags) -> Result<RawFd> {
 ///     Err(err) => (), // some error happend
 /// }
 /// ```
-#[derive(Debug)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct SignalFd(RawFd);
 
 impl SignalFd {
@@ -126,8 +127,7 @@ impl Iterator for SignalFd {
     fn next(&mut self) -> Option<Self::Item> {
         match self.read_signal() {
             Ok(Some(sig)) => Some(sig),
-            Ok(None) => None,
-            Err(..) => None,
+            Ok(None) | Err(_) => None,
         }
     }
 }
@@ -155,14 +155,14 @@ mod tests {
     #[test]
     fn create_signalfd_with_opts() {
         let mask = SigSet::empty();
-        let fd = SignalFd::with_flags(&mask, SFD_CLOEXEC | SFD_NONBLOCK);
+        let fd = SignalFd::with_flags(&mask, SfdFlags::SFD_CLOEXEC | SfdFlags::SFD_NONBLOCK);
         assert!(fd.is_ok());
     }
 
     #[test]
     fn read_empty_signalfd() {
         let mask = SigSet::empty();
-        let mut fd = SignalFd::with_flags(&mask, SFD_NONBLOCK).unwrap();
+        let mut fd = SignalFd::with_flags(&mask, SfdFlags::SFD_NONBLOCK).unwrap();
 
         let res = fd.read_signal();
         assert!(res.unwrap().is_none());

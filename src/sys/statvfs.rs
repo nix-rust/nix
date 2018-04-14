@@ -7,47 +7,48 @@ use std::os::unix::io::AsRawFd;
 
 use libc::{self, c_ulong};
 
-use {Errno, Result, NixPath};
+use {Result, NixPath};
+use errno::Errno;
 
-bitflags!(
+libc_bitflags!(
     /// File system mount Flags
     #[repr(C)]
     #[derive(Default)]
     pub struct FsFlags: c_ulong {
         /// Read Only
-        const RDONLY = libc::ST_RDONLY;
+        ST_RDONLY;
         /// Do not allow the set-uid bits to have an effect
-        const NOSUID = libc::ST_NOSUID;
+        ST_NOSUID;
         /// Do not interpret character or block-special devices
         #[cfg(any(target_os = "android", target_os = "linux"))]
-        const NODEV = libc::ST_NODEV;
+        ST_NODEV;
         /// Do not allow execution of binaries on the filesystem
         #[cfg(any(target_os = "android", target_os = "linux"))]
-        const NOEXEC = libc::ST_NOEXEC;
+        ST_NOEXEC;
         /// All IO should be done synchronously
         #[cfg(any(target_os = "android", target_os = "linux"))]
-        const SYNCHRONOUS = libc::ST_SYNCHRONOUS;
+        ST_SYNCHRONOUS;
         /// Allow mandatory locks on the filesystem
         #[cfg(any(target_os = "android", target_os = "linux"))]
-        const MANDLOCK = libc::ST_MANDLOCK;
+        ST_MANDLOCK;
         /// Write on file/directory/symlink
-        #[cfg(any(target_os = "android", target_os = "linux"))]
-        const WRITE = libc::ST_WRITE;
+        #[cfg(target_os = "linux")]
+        ST_WRITE;
         /// Append-only file
-        #[cfg(any(target_os = "android", target_os = "linux"))]
-        const APPEND = libc::ST_APPEND;
+        #[cfg(target_os = "linux")]
+        ST_APPEND;
         /// Immutable file
-        #[cfg(any(target_os = "android", target_os = "linux"))]
-        const IMMUTABLE = libc::ST_IMMUTABLE;
+        #[cfg(target_os = "linux")]
+        ST_IMMUTABLE;
         /// Do not update access times on files
         #[cfg(any(target_os = "android", target_os = "linux"))]
-        const NOATIME = libc::ST_NOATIME;
+        ST_NOATIME;
         /// Do not update access times on files
         #[cfg(any(target_os = "android", target_os = "linux"))]
-        const NODIRATIME = libc::ST_NODIRATIME;
+        ST_NODIRATIME;
         /// Update access time relative to modify/change time
         #[cfg(any(target_os = "android", all(target_os = "linux", not(target_env = "musl"))))]
-        const RELATIME = libc::ST_RELATIME;
+        ST_RELATIME;
     }
 );
 
@@ -56,16 +57,18 @@ bitflags!(
 /// For more information see the [`statvfs(3)` man pages](http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/sys_statvfs.h.html).
 // FIXME: Replace with repr(transparent)
 #[repr(C)]
+#[derive(Clone, Copy)]
+#[allow(missing_debug_implementations)]
 pub struct Statvfs(libc::statvfs);
 
 impl Statvfs {
     /// get the file system block size
-    pub fn block_size(&self) -> libc::c_ulong {
+    pub fn block_size(&self) -> c_ulong {
         self.0.f_bsize
     }
 
     /// Get the fundamental file system block size
-    pub fn fragment_size(&self) -> libc::c_ulong {
+    pub fn fragment_size(&self) -> c_ulong {
         self.0.f_frsize
     }
 
@@ -112,7 +115,7 @@ impl Statvfs {
     }
 
     /// Get the maximum filename length
-    pub fn name_max(&self) -> libc::c_ulong {
+    pub fn name_max(&self) -> c_ulong {
         self.0.f_namemax
     }
 

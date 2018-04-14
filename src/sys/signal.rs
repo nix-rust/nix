@@ -2,7 +2,8 @@
 // See http://rust-lang.org/COPYRIGHT.
 
 use libc;
-use {Errno, Error, Result};
+use {Error, Result};
+use errno::Errno;
 use std::mem;
 #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
 use std::os::unix::io::RawFd;
@@ -11,50 +12,52 @@ use std::ptr;
 #[cfg(not(target_os = "openbsd"))]
 pub use self::sigevent::*;
 
-// Currently there is only one definition of c_int in libc, as well as only one
-// type for signal constants.
-// We would prefer to use the libc::c_int alias in the repr attribute. Unfortunately
-// this is not (yet) possible.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[repr(i32)]
-pub enum Signal {
-    SIGHUP = libc::SIGHUP,
-    SIGINT = libc::SIGINT,
-    SIGQUIT = libc::SIGQUIT,
-    SIGILL = libc::SIGILL,
-    SIGTRAP = libc::SIGTRAP,
-    SIGABRT = libc::SIGABRT,
-    SIGBUS = libc::SIGBUS,
-    SIGFPE = libc::SIGFPE,
-    SIGKILL = libc::SIGKILL,
-    SIGUSR1 = libc::SIGUSR1,
-    SIGSEGV = libc::SIGSEGV,
-    SIGUSR2 = libc::SIGUSR2,
-    SIGPIPE = libc::SIGPIPE,
-    SIGALRM = libc::SIGALRM,
-    SIGTERM = libc::SIGTERM,
-    #[cfg(all(any(target_os = "linux", target_os = "android", target_os = "emscripten"), not(any(target_arch = "mips", target_arch = "mips64"))))]
-    SIGSTKFLT = libc::SIGSTKFLT,
-    SIGCHLD = libc::SIGCHLD,
-    SIGCONT = libc::SIGCONT,
-    SIGSTOP = libc::SIGSTOP,
-    SIGTSTP = libc::SIGTSTP,
-    SIGTTIN = libc::SIGTTIN,
-    SIGTTOU = libc::SIGTTOU,
-    SIGURG = libc::SIGURG,
-    SIGXCPU = libc::SIGXCPU,
-    SIGXFSZ = libc::SIGXFSZ,
-    SIGVTALRM = libc::SIGVTALRM,
-    SIGPROF = libc::SIGPROF,
-    SIGWINCH = libc::SIGWINCH,
-    SIGIO = libc::SIGIO,
-    #[cfg(any(target_os = "linux", target_os = "android", target_os = "emscripten"))]
-    SIGPWR = libc::SIGPWR,
-    SIGSYS = libc::SIGSYS,
-    #[cfg(not(any(target_os = "linux", target_os = "android", target_os = "emscripten")))]
-    SIGEMT = libc::SIGEMT,
-    #[cfg(not(any(target_os = "linux", target_os = "android", target_os = "emscripten")))]
-    SIGINFO = libc::SIGINFO,
+libc_enum!{
+    // Currently there is only one definition of c_int in libc, as well as only one
+    // type for signal constants.
+    // We would prefer to use the libc::c_int alias in the repr attribute. Unfortunately
+    // this is not (yet) possible.
+    #[repr(i32)]
+    pub enum Signal {
+        SIGHUP,
+        SIGINT,
+        SIGQUIT,
+        SIGILL,
+        SIGTRAP,
+        SIGABRT,
+        SIGBUS,
+        SIGFPE,
+        SIGKILL,
+        SIGUSR1,
+        SIGSEGV,
+        SIGUSR2,
+        SIGPIPE,
+        SIGALRM,
+        SIGTERM,
+        #[cfg(all(any(target_os = "android", target_os = "emscripten", target_os = "linux"),
+                  not(any(target_arch = "mips", target_arch = "mips64"))))]
+        SIGSTKFLT,
+        SIGCHLD,
+        SIGCONT,
+        SIGSTOP,
+        SIGTSTP,
+        SIGTTIN,
+        SIGTTOU,
+        SIGURG,
+        SIGXCPU,
+        SIGXFSZ,
+        SIGVTALRM,
+        SIGPROF,
+        SIGWINCH,
+        SIGIO,
+        #[cfg(any(target_os = "android", target_os = "emscripten", target_os = "linux"))]
+        SIGPWR,
+        SIGSYS,
+        #[cfg(not(any(target_os = "android", target_os = "emscripten", target_os = "linux")))]
+        SIGEMT,
+        #[cfg(not(any(target_os = "android", target_os = "emscripten", target_os = "linux")))]
+        SIGINFO,
+    }
 }
 
 pub use self::Signal::*;
@@ -160,6 +163,8 @@ const SIGNALS: [Signal; 31] = [
 
 pub const NSIG: libc::c_int = 32;
 
+#[derive(Clone, Copy)]
+#[allow(missing_debug_implementations)]
 pub struct SignalIterator {
     next: usize,
 }
@@ -188,9 +193,10 @@ impl Signal {
     // implemented, we'll replace this function.
     #[inline]
     pub fn from_c_int(signum: libc::c_int) -> Result<Signal> {
-        match 0 < signum && signum < NSIG {
-            true => Ok(unsafe { mem::transmute(signum) }),
-            false => Err(Error::invalid_argument()),
+        if 0 < signum && signum < NSIG {
+            Ok(unsafe { mem::transmute(signum) })
+        } else {
+            Err(Error::invalid_argument())
         }
     }
 }
@@ -241,15 +247,17 @@ libc_bitflags!{
     }
 }
 
-#[repr(i32)]
-#[derive(Clone, Copy, PartialEq)]
-pub enum SigmaskHow {
-    SIG_BLOCK   = libc::SIG_BLOCK,
-    SIG_UNBLOCK = libc::SIG_UNBLOCK,
-    SIG_SETMASK = libc::SIG_SETMASK,
+libc_enum! {
+    #[repr(i32)]
+    pub enum SigmaskHow {
+        SIG_BLOCK,
+        SIG_UNBLOCK,
+        SIG_SETMASK,
+    }
 }
 
 #[derive(Clone, Copy)]
+#[allow(missing_debug_implementations)]
 pub struct SigSet {
     sigset: libc::sigset_t
 }
@@ -354,6 +362,8 @@ pub enum SigHandler {
     SigAction(extern fn(libc::c_int, *mut libc::siginfo_t, *mut libc::c_void))
 }
 
+#[derive(Clone, Copy)]
+#[allow(missing_debug_implementations)]
 pub struct SigAction {
     sigaction: libc::sigaction
 }
@@ -370,8 +380,8 @@ impl SigAction {
             SigHandler::SigAction(f) => f as *const extern fn(libc::c_int, *mut libc::siginfo_t, *mut libc::c_void) as usize,
         };
         s.sa_flags = match handler {
-            SigHandler::SigAction(_) => (flags | SA_SIGINFO).bits(),
-            _ => (flags - SA_SIGINFO).bits(),
+            SigHandler::SigAction(_) => (flags | SaFlags::SA_SIGINFO).bits(),
+            _ => (flags - SaFlags::SA_SIGINFO).bits(),
         };
         s.sa_mask = mask.sigset;
 
@@ -379,7 +389,7 @@ impl SigAction {
     }
 
     pub fn flags(&self) -> SaFlags {
-        SaFlags::from_bits(self.sigaction.sa_flags).unwrap()
+        SaFlags::from_bits_truncate(self.sigaction.sa_flags)
     }
 
     pub fn mask(&self) -> SigSet {
@@ -390,7 +400,7 @@ impl SigAction {
         match self.sigaction.sa_sigaction {
             libc::SIG_DFL => SigHandler::SigDfl,
             libc::SIG_IGN => SigHandler::SigIgn,
-            f if self.flags().contains(SA_SIGINFO) =>
+            f if self.flags().contains(SaFlags::SA_SIGINFO) =>
                 SigHandler::SigAction( unsafe { mem::transmute(f) } ),
             f => SigHandler::Handler( unsafe { mem::transmute(f) } ),
         }
@@ -419,8 +429,8 @@ pub unsafe fn sigaction(signal: Signal, sigaction: &SigAction) -> Result<SigActi
 ///
 /// If both `set` and `oldset` is None, this function is a no-op.
 ///
-/// For more information, visit the [pthread_sigmask](http://man7.org/linux/man-pages/man3/pthread_sigmask.3.html),
-/// or [sigprocmask](http://man7.org/linux/man-pages/man2/sigprocmask.2.html) man pages.
+/// For more information, visit the [`pthread_sigmask`](http://pubs.opengroup.org/onlinepubs/9699919799/functions/pthread_sigmask.html),
+/// or [`sigprocmask`](http://pubs.opengroup.org/onlinepubs/9699919799/functions/sigprocmask.html) man pages.
 pub fn pthread_sigmask(how: SigmaskHow,
                        set: Option<&SigSet>,
                        oldset: Option<&mut SigSet>) -> Result<()> {
@@ -431,10 +441,31 @@ pub fn pthread_sigmask(how: SigmaskHow,
     let res = unsafe {
         // if set or oldset is None, pass in null pointers instead
         libc::pthread_sigmask(how as libc::c_int,
-                             set.map_or_else(|| ptr::null::<libc::sigset_t>(),
+                             set.map_or_else(ptr::null::<libc::sigset_t>,
                                              |s| &s.sigset as *const libc::sigset_t),
-                             oldset.map_or_else(|| ptr::null_mut::<libc::sigset_t>(),
+                             oldset.map_or_else(ptr::null_mut::<libc::sigset_t>,
                                                 |os| &mut os.sigset as *mut libc::sigset_t))
+    };
+
+    Errno::result(res).map(drop)
+}
+
+/// Examine and change blocked signals.
+///
+/// For more informations see the [`sigprocmask` man
+/// pages](http://pubs.opengroup.org/onlinepubs/9699919799/functions/sigprocmask.html).
+pub fn sigprocmask(how: SigmaskHow, set: Option<&SigSet>, oldset: Option<&mut SigSet>) -> Result<()> {
+    if set.is_none() && oldset.is_none() {
+        return Ok(())
+    }
+
+    let res = unsafe {
+        // if set or oldset is None, pass in null pointers instead
+        libc::sigprocmask(how as libc::c_int,
+                          set.map_or_else(ptr::null::<libc::sigset_t>,
+                                          |s| &s.sigset as *const libc::sigset_t),
+                          oldset.map_or_else(ptr::null_mut::<libc::sigset_t>,
+                                             |os| &mut os.sigset as *mut libc::sigset_t))
     };
 
     Errno::result(res).map(drop)
@@ -502,6 +533,7 @@ mod sigevent {
     /// Used to request asynchronous notification of the completion of certain
     /// events, such as POSIX AIO and timers.
     #[repr(C)]
+    #[derive(Clone, Copy)]
     pub struct SigEvent {
         sigevent: libc::sigevent
     }
@@ -556,8 +588,8 @@ mod sigevent {
 
         #[cfg(any(target_os = "freebsd", target_os = "linux"))]
         fn set_tid(sev: &mut libc::sigevent, sigev_notify: &SigevNotify) {
-            sev.sigev_notify_thread_id = match sigev_notify {
-                &SigevNotify::SigevThreadId { thread_id, .. } => thread_id,
+            sev.sigev_notify_thread_id = match *sigev_notify {
+                SigevNotify::SigevThreadId { thread_id, .. } => thread_id,
                 _ => 0 as type_of_thread_id
             };
         }
@@ -595,7 +627,7 @@ mod sigevent {
 
     impl<'a> From<&'a libc::sigevent> for SigEvent {
         fn from(sigevent: &libc::sigevent) -> Self {
-            SigEvent{ sigevent: sigevent.clone() }
+            SigEvent{ sigevent: *sigevent }
         }
     }
 }
@@ -710,14 +742,14 @@ mod tests {
 
         let handler_sig = SigHandler::Handler(test_sigaction_handler);
 
-        let flags = SA_ONSTACK | SA_RESTART | SA_SIGINFO;
+        let flags = SaFlags::SA_ONSTACK | SaFlags::SA_RESTART | SaFlags::SA_SIGINFO;
 
         let mut mask = SigSet::empty();
         mask.add(SIGUSR1);
 
         let action_sig = SigAction::new(handler_sig, flags, mask);
 
-        assert_eq!(action_sig.flags(), SA_ONSTACK | SA_RESTART);
+        assert_eq!(action_sig.flags(), SaFlags::SA_ONSTACK | SaFlags::SA_RESTART);
         assert_eq!(action_sig.handler(), handler_sig);
 
         mask = action_sig.mask();

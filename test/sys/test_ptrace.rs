@@ -1,8 +1,8 @@
 use nix::Error;
 use nix::errno::Errno;
 use nix::unistd::getpid;
-use nix::sys::ptrace;
 use nix::libc;
+use nix::sys::ptrace::{self, Options};
 
 use std::{mem, ptr};
 
@@ -17,7 +17,7 @@ fn test_ptrace() {
 // Just make sure ptrace_setoptions can be called at all, for now.
 #[test]
 fn test_ptrace_setoptions() {
-    let err = ptrace::setoptions(getpid(), ptrace::PTRACE_O_TRACESYSGOOD).unwrap_err();
+    let err = ptrace::setoptions(getpid(), Options::PTRACE_O_TRACESYSGOOD).unwrap_err();
     assert!(err != Error::UnsupportedOperation);
 }
 
@@ -31,9 +31,8 @@ fn test_ptrace_getevent() {
 // Just make sure ptrace_getsiginfo can be called at all, for now.
 #[test]
 fn test_ptrace_getsiginfo() {
-    match ptrace::getsiginfo(getpid()) {
-        Err(Error::UnsupportedOperation) => panic!("ptrace_getsiginfo returns Error::UnsupportedOperation!"),
-        _ => (),
+    if let Err(Error::UnsupportedOperation) = ptrace::getsiginfo(getpid()) {
+        panic!("ptrace_getsiginfo returns Error::UnsupportedOperation!");
     }
 }
 
@@ -41,9 +40,8 @@ fn test_ptrace_getsiginfo() {
 #[test]
 fn test_ptrace_setsiginfo() {
     let siginfo = unsafe { mem::uninitialized() };
-    match ptrace::setsiginfo(getpid(), &siginfo) {
-        Err(Error::UnsupportedOperation) => panic!("ptrace_setsiginfo returns Error::UnsupportedOperation!"),
-        _ => (),
+    if let Err(Error::UnsupportedOperation) = ptrace::setsiginfo(getpid(), &siginfo) {
+        panic!("ptrace_setsiginfo returns Error::UnsupportedOperation!");
     }
 }
 
@@ -171,8 +169,8 @@ fn test_ptrace_cont() {
         return;
     }
 
-    match fork() {
-        Ok(Child) => {
+    match fork().expect("Error: Fork Failed") {
+        Child => {
             ptrace::traceme().unwrap();
             // As recommended by ptrace(2), raise SIGTRAP to pause the child
             // until the parent is ready to continue
@@ -181,7 +179,7 @@ fn test_ptrace_cont() {
             }
 
         },
-        Ok(Parent { child }) => {
+        Parent { child } => {
             assert_eq!(waitpid(child, None), Ok(WaitStatus::Stopped(child, Signal::SIGTRAP)));
             ptrace::cont(child, None).unwrap();
             assert_eq!(waitpid(child, None), Ok(WaitStatus::Stopped(child, Signal::SIGTRAP)));
@@ -191,6 +189,5 @@ fn test_ptrace_cont() {
                 _ => panic!("The process should have been killed"),
             }
         },
-        Err(_) => panic!("Error: Fork Failed")
     }
 }

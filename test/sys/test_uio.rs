@@ -14,7 +14,7 @@ fn test_writev() {
     for _ in 0..16 {
         let s: String = thread_rng().gen_ascii_chars().take(128).collect();
         let b = s.as_bytes();
-        to_write.extend(b.iter().map(|x| x.clone()));
+        to_write.extend(b.iter().cloned());
     }
     // Allocate and fill iovecs
     let mut iovecs = Vec::new();
@@ -66,7 +66,7 @@ fn test_readv() {
         allocated += vec_len;
     }
     let mut iovecs = Vec::with_capacity(storage.len());
-    for v in storage.iter_mut() {
+    for v in &mut storage {
         iovecs.push(IoVec::from_mut_slice(&mut v[..]));
     }
     let pipe_res = pipe();
@@ -83,8 +83,8 @@ fn test_readv() {
     assert_eq!(to_write.len(), read);
     // Cccumulate data from iovecs
     let mut read_buf = Vec::with_capacity(to_write.len());
-    for iovec in iovecs.iter() {
-        read_buf.extend(iovec.as_slice().iter().map(|x| x.clone()));
+    for iovec in &iovecs {
+        read_buf.extend(iovec.as_slice().iter().cloned());
     }
     // Check whether iovecs contain all written data
     assert_eq!(read_buf.len(), to_write.len());
@@ -189,4 +189,54 @@ fn test_preadv() {
 
     let all = buffers.concat();
     assert_eq!(all, expected);
+}
+
+#[test]
+#[cfg(target_os = "linux")]
+// FIXME: qemu-user doesn't implement process_vm_readv/writev on most arches
+#[cfg_attr(not(any(target_arch = "x86", target_arch = "x86_64")), ignore)]
+fn test_process_vm_readv() {
+    use nix::unistd::ForkResult::*;
+    use nix::sys::signal::*;
+    use nix::sys::wait::*;
+
+    #[allow(unused_variables)]
+    let m = ::FORK_MTX.lock().expect("Mutex got poisoned by another test");
+
+    // Pre-allocate memory in the child, since allocation isn't safe
+    // post-fork (~= async-signal-safe)
+    let mut vector = vec![1u8, 2, 3, 4, 5];
+
+    let (r, w) = pipe().unwrap();
+    match fork().expect("Error: Fork Failed") {
+        Parent { child } => {
+            close(w).unwrap();
+            // wait for child
+            read(r, &mut [0u8]).unwrap();
+            close(r).unwrap();
+
+            let ptr = vector.as_ptr() as usize;
+            let remote_iov = RemoteIoVec { base: ptr, len: 5 };
+            let mut buf = vec![0u8; 5];
+
+            let ret = process_vm_readv(child,
+                                       &[IoVec::from_mut_slice(&mut buf)],
+                                       &[remote_iov]);
+
+            kill(child, SIGTERM).unwrap();
+            waitpid(child, None).unwrap();
+
+            assert_eq!(Ok(5), ret);
+            assert_eq!(20u8, buf.iter().sum());
+        },
+        Child => {
+            let _ = close(r);
+            for i in &mut vector {
+                *i += 1;
+            }
+            let _ = write(w, b"\0");
+            let _ = close(w);
+            loop { let _ = pause(); }
+        },
+    }
 }

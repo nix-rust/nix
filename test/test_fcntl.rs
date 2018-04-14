@@ -1,4 +1,4 @@
-use nix::fcntl::{openat, open, OFlag, O_RDONLY, readlink, readlinkat};
+use nix::fcntl::{openat, open, OFlag, readlink, readlinkat};
 use nix::sys::stat::Mode;
 use nix::unistd::{close, read};
 use tempdir::TempDir;
@@ -8,16 +8,16 @@ use std::os::unix::fs;
 
 #[test]
 fn test_openat() {
-    const CONTENTS: &'static [u8] = b"abcd";
+    const CONTENTS: &[u8] = b"abcd";
     let mut tmp = NamedTempFile::new().unwrap();
-    tmp.write(CONTENTS).unwrap();
+    tmp.write_all(CONTENTS).unwrap();
 
     let dirfd = open(tmp.path().parent().unwrap(),
                      OFlag::empty(),
                      Mode::empty()).unwrap();
     let fd = openat(dirfd,
                     tmp.path().file_name().unwrap(),
-                    O_RDONLY,
+                    OFlag::O_RDONLY,
                     Mode::empty()).unwrap();
 
     let mut buf = [0u8; 1024];
@@ -54,17 +54,17 @@ mod linux_android {
 
     use libc::loff_t;
 
-    use nix::fcntl::{SpliceFFlags, splice, tee, vmsplice};
+    use nix::fcntl::{SpliceFFlags, FallocateFlags, fallocate, splice, tee, vmsplice};
     use nix::sys::uio::IoVec;
     use nix::unistd::{close, pipe, read, write};
 
-    use tempfile::tempfile;
+    use tempfile::{tempfile, NamedTempFile};
 
     #[test]
     fn test_splice() {
-        const CONTENTS: &'static [u8] = b"abcdef123456";
+        const CONTENTS: &[u8] = b"abcdef123456";
         let mut tmp = tempfile().unwrap();
-        tmp.write(CONTENTS).unwrap();
+        tmp.write_all(CONTENTS).unwrap();
 
         let (rd, wr) = pipe().unwrap();
         let mut offset: loff_t = 5;
@@ -131,4 +131,15 @@ mod linux_android {
         close(wr).unwrap();
     }
 
+    #[test]
+    fn test_fallocate() {
+        let tmp = NamedTempFile::new().unwrap();
+
+        let fd = tmp.as_raw_fd();
+        fallocate(fd, FallocateFlags::empty(), 0, 100).unwrap();
+
+        // Check if we read exactly 100 bytes
+        let mut buf = [0u8; 200];
+        assert_eq!(100, read(fd, &mut buf).unwrap());
+    }
 }

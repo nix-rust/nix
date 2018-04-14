@@ -1,19 +1,18 @@
 //! Safe wrappers around functions found in libc "unistd.h" header
 
-use errno;
-use {Errno, Error, Result, NixPath};
-use fcntl::{fcntl, OFlag, O_CLOEXEC, FD_CLOEXEC};
+use errno::{self, Errno};
+use {Error, Result, NixPath};
+use fcntl::{fcntl, FdFlag, OFlag};
 use fcntl::FcntlArg::F_SETFD;
 use libc::{self, c_char, c_void, c_int, c_long, c_uint, size_t, pid_t, off_t,
            uid_t, gid_t, mode_t};
-use std::mem;
+use std::{fmt, mem, ptr};
 use std::ffi::{CString, CStr, OsString, OsStr};
 use std::os::unix::ffi::{OsStringExt, OsStrExt};
 use std::os::unix::io::RawFd;
-use std::path::{PathBuf};
+use std::path::PathBuf;
 use void::Void;
 use sys::stat::Mode;
-use std::fmt;
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
 pub use self::pivot_root::*;
@@ -144,7 +143,7 @@ impl fmt::Display for Pid {
 /// When `fork` is called, the process continues execution in the parent process
 /// and in the new child.  This return type can be examined to determine whether
 /// you are now executing in the parent process or in the child.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum ForkResult {
     Parent { child: Pid },
     Child,
@@ -169,7 +168,7 @@ impl ForkResult {
 }
 
 /// Create a new child process duplicating the parent process ([see
-/// fork(2)](http://man7.org/linux/man-pages/man2/fork.2.html)).
+/// fork(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/fork.html)).
 ///
 /// After calling the fork system call (successfully) two processes will
 /// be created that are identical with the exception of their pid and the
@@ -219,7 +218,7 @@ pub fn fork() -> Result<ForkResult> {
 }
 
 /// Get the pid of this process (see
-/// [getpid(2)](http://man7.org/linux/man-pages/man2/getpid.2.html)).
+/// [getpid(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/getpid.html)).
 ///
 /// Since you are running code, there is always a pid to return, so there
 /// is no error case that needs to be handled.
@@ -229,7 +228,7 @@ pub fn getpid() -> Pid {
 }
 
 /// Get the pid of this processes' parent (see
-/// [getpid(2)](http://man7.org/linux/man-pages/man2/getpid.2.html)).
+/// [getpid(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/getppid.html)).
 ///
 /// There is always a parent pid to return, so there is no error case that needs
 /// to be handled.
@@ -239,7 +238,7 @@ pub fn getppid() -> Pid {
 }
 
 /// Set a process group ID (see
-/// [setpgid(2)](http://man7.org/linux/man-pages/man2/setpgid.2.html)).
+/// [setpgid(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/setpgid.html)).
 ///
 /// Set the process group id (PGID) of a particular process.  If a pid of zero
 /// is specified, then the pid of the calling process is used.  Process groups
@@ -259,15 +258,26 @@ pub fn getpgid(pid: Option<Pid>) -> Result<Pid> {
 }
 
 /// Create new session and set process group id (see
-/// [setsid(2)](http://man7.org/linux/man-pages/man2/setsid.2.html)).
+/// [setsid(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/setsid.html)).
 #[inline]
 pub fn setsid() -> Result<Pid> {
     Errno::result(unsafe { libc::setsid() }).map(Pid)
 }
 
+/// Get the process group ID of a session leader
+/// [getsid(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/getsid.html).
+///
+/// Obtain the process group ID of the process that is the session leader of the process specified
+/// by pid. If pid is zero, it specifies the calling process.
+#[inline]
+pub fn getsid(pid: Option<Pid>) -> Result<Pid> {
+    let res = unsafe { libc::getsid(pid.unwrap_or(Pid(0)).into()) };
+    Errno::result(res).map(Pid)
+}
+
 
 /// Get the terminal foreground process group (see
-/// [tcgetpgrp(3)](http://man7.org/linux/man-pages/man3/tcgetpgrp.3.html)).
+/// [tcgetpgrp(3)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/tcgetpgrp.html)).
 ///
 /// Get the group process id (GPID) of the foreground process group on the
 /// terminal associated to file descriptor (FD).
@@ -277,7 +287,7 @@ pub fn tcgetpgrp(fd: c_int) -> Result<Pid> {
     Errno::result(res).map(Pid)
 }
 /// Set the terminal foreground process group (see
-/// [tcgetpgrp(3)](http://man7.org/linux/man-pages/man3/tcgetpgrp.3.html)).
+/// [tcgetpgrp(3)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/tcsetpgrp.html)).
 ///
 /// Get the group process id (PGID) to the foreground process group on the
 /// terminal associated to file descriptor (FD).
@@ -289,7 +299,7 @@ pub fn tcsetpgrp(fd: c_int, pgrp: Pid) -> Result<()> {
 
 
 /// Get the group id of the calling process (see
-///[getpgrp(3)](http://man7.org/linux/man-pages/man3/getpgrp.3p.html)).
+///[getpgrp(3)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/getpgrp.html)).
 ///
 /// Get the process group id (PGID) of the calling process.
 /// According to the man page it is always successful.
@@ -315,7 +325,7 @@ pub fn gettid() -> Pid {
 }
 
 /// Create a copy of the specified file descriptor (see
-/// [dup(2)](http://man7.org/linux/man-pages/man2/dup.2.html)).
+/// [dup(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/dup.html)).
 ///
 /// The new file descriptor will be have a new index but refer to the same
 /// resource as the old file descriptor and the old and new file descriptors may
@@ -323,7 +333,7 @@ pub fn gettid() -> Pid {
 /// underlying resource, offset, and file status flags.  The actual index used
 /// for the file descriptor will be the lowest fd index that is available.
 ///
-/// The two file descriptors do not share file descriptor flags (e.g. `FD_CLOEXEC`).
+/// The two file descriptors do not share file descriptor flags (e.g. `OFlag::FD_CLOEXEC`).
 #[inline]
 pub fn dup(oldfd: RawFd) -> Result<RawFd> {
     let res = unsafe { libc::dup(oldfd) };
@@ -332,7 +342,7 @@ pub fn dup(oldfd: RawFd) -> Result<RawFd> {
 }
 
 /// Create a copy of the specified file descriptor using the specified fd (see
-/// [dup(2)](http://man7.org/linux/man-pages/man2/dup.2.html)).
+/// [dup(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/dup.html)).
 ///
 /// This function behaves similar to `dup()` except that it will try to use the
 /// specified fd instead of allocating a new one.  See the man pages for more
@@ -361,8 +371,8 @@ fn dup3_polyfill(oldfd: RawFd, newfd: RawFd, flags: OFlag) -> Result<RawFd> {
 
     let fd = try!(dup2(oldfd, newfd));
 
-    if flags.contains(O_CLOEXEC) {
-        if let Err(e) = fcntl(fd, F_SETFD(FD_CLOEXEC)) {
+    if flags.contains(OFlag::O_CLOEXEC) {
+        if let Err(e) = fcntl(fd, F_SETFD(FdFlag::FD_CLOEXEC)) {
             let _ = close(fd);
             return Err(e);
         }
@@ -372,7 +382,7 @@ fn dup3_polyfill(oldfd: RawFd, newfd: RawFd, flags: OFlag) -> Result<RawFd> {
 }
 
 /// Change the current working directory of the calling process (see
-/// [chdir(2)](http://man7.org/linux/man-pages/man2/chdir.2.html)).
+/// [chdir(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/chdir.html)).
 ///
 /// This function may fail in a number of different scenarios.  See the man
 /// pages for additional details on possible failure cases.
@@ -387,7 +397,7 @@ pub fn chdir<P: ?Sized + NixPath>(path: &P) -> Result<()> {
 
 /// Change the current working directory of the process to the one
 /// given as an open file descriptor (see
-/// [fchdir(2)](http://man7.org/linux/man-pages/man2/fchdir.2.html)).
+/// [fchdir(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/fchdir.html)).
 ///
 /// This function may fail in a number of different scenarios.  See the man
 /// pages for additional details on possible failure cases.
@@ -398,7 +408,7 @@ pub fn fchdir(dirfd: RawFd) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
-/// Creates new directory `path` with access rights `mode`.
+/// Creates new directory `path` with access rights `mode`.  (see [mkdir(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/mkdir.html))
 ///
 /// # Errors
 ///
@@ -407,9 +417,6 @@ pub fn fchdir(dirfd: RawFd) -> Result<()> {
 /// - current user has insufficient rights in the parent directory
 /// - the path already exists
 /// - the path name is too long (longer than `PATH_MAX`, usually 4096 on linux, 1024 on OS X)
-///
-/// For a full list consult
-/// [man mkdir(2)](http://man7.org/linux/man-pages/man2/mkdir.2.html#ERRORS)
 ///
 /// # Example
 ///
@@ -426,7 +433,7 @@ pub fn fchdir(dirfd: RawFd) -> Result<()> {
 ///     let tmp_dir2 = tmp_dir1.path().join("new_dir");
 ///
 ///     // create new directory and give read, write and execute rights to the owner
-///     match unistd::mkdir(&tmp_dir2, stat::S_IRWXU) {
+///     match unistd::mkdir(&tmp_dir2, stat::Mode::S_IRWXU) {
 ///        Ok(_) => println!("created {:?}", tmp_dir2),
 ///        Err(err) => println!("Error creating directory: {}", err),
 ///     }
@@ -441,7 +448,50 @@ pub fn mkdir<P: ?Sized + NixPath>(path: &P, mode: Mode) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
-/// Returns the current directory as a PathBuf
+/// Creates new fifo special file (named pipe) with path `path` and access rights `mode`.
+///
+/// # Errors
+///
+/// There are several situations where mkfifo might fail:
+///
+/// - current user has insufficient rights in the parent directory
+/// - the path already exists
+/// - the path name is too long (longer than `PATH_MAX`, usually 4096 on linux, 1024 on OS X)
+///
+/// For a full list consult
+/// [posix specification](http://pubs.opengroup.org/onlinepubs/9699919799/functions/mkfifo.html)
+///
+/// # Example
+///
+/// ```rust
+/// extern crate tempdir;
+/// extern crate nix;
+///
+/// use nix::unistd;
+/// use nix::sys::stat;
+/// use tempdir::TempDir;
+///
+/// fn main() {
+///     let tmp_dir = TempDir::new("test_fifo").unwrap();
+///     let fifo_path = tmp_dir.path().join("foo.pipe");
+///
+///     // create new fifo and give read, write and execute rights to the owner
+///     match unistd::mkfifo(&fifo_path, stat::Mode::S_IRWXU) {
+///        Ok(_) => println!("created {:?}", fifo_path),
+///        Err(err) => println!("Error creating fifo: {}", err),
+///     }
+/// }
+/// ```
+#[inline]
+pub fn mkfifo<P: ?Sized + NixPath>(path: &P, mode: Mode) -> Result<()> {
+    let res = try!(path.with_nix_path(|cstr| {
+        unsafe { libc::mkfifo(cstr.as_ptr(), mode.bits() as mode_t) }
+    }));
+
+    Errno::result(res).map(drop)
+}
+
+/// Returns the current directory as a `PathBuf`
 ///
 /// Err is returned if the current user doesn't have the permission to read or search a component
 /// of the current path.
@@ -464,14 +514,14 @@ pub fn getcwd() -> Result<PathBuf> {
     let mut buf = Vec::with_capacity(512);
     loop {
         unsafe {
-            let ptr = buf.as_mut_ptr() as *mut libc::c_char;
+            let ptr = buf.as_mut_ptr() as *mut c_char;
 
             // The buffer must be large enough to store the absolute pathname plus
             // a terminating null byte, or else null is returned.
             // To safely handle this we start with a reasonable size (512 bytes)
             // and double the buffer size upon every error
             if !libc::getcwd(ptr, buf.capacity()).is_null() {
-                let len = CStr::from_ptr(buf.as_ptr() as *const libc::c_char).to_bytes().len();
+                let len = CStr::from_ptr(buf.as_ptr() as *const c_char).to_bytes().len();
                 buf.set_len(len);
                 buf.shrink_to_fit();
                 return Ok(PathBuf::from(OsString::from_vec(buf)));
@@ -494,15 +544,11 @@ pub fn getcwd() -> Result<PathBuf> {
 
 /// Change the ownership of the file at `path` to be owned by the specified
 /// `owner` (user) and `group` (see
-/// [chown(2)](http://man7.org/linux/man-pages/man2/lchown.2.html)).
+/// [chown(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/chown.html)).
 ///
 /// The owner/group for the provided path name will not be modified if `None` is
 /// provided for that argument.  Ownership change will be attempted for the path
 /// only if `Some` owner/group is provided.
-///
-/// This call may fail under a number of different situations.  See [the man
-/// pages](http://man7.org/linux/man-pages/man2/lchown.2.html#ERRORS) for
-/// additional details.
 #[inline]
 pub fn chown<P: ?Sized + NixPath>(path: &P, owner: Option<Uid>, group: Option<Gid>) -> Result<()> {
     let res = try!(path.with_nix_path(|cstr| {
@@ -518,16 +564,13 @@ pub fn chown<P: ?Sized + NixPath>(path: &P, owner: Option<Uid>, group: Option<Gi
 }
 
 fn to_exec_array(args: &[CString]) -> Vec<*const c_char> {
-    use std::ptr;
-    use libc::c_char;
-
     let mut args_p: Vec<*const c_char> = args.iter().map(|s| s.as_ptr()).collect();
     args_p.push(ptr::null());
     args_p
 }
 
 /// Replace the current process image with a new one (see
-/// [exec(3)](http://man7.org/linux/man-pages/man3/exec.3.html)).
+/// [exec(3)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/exec.html)).
 ///
 /// See the `::nix::unistd::execve` system call for additional details.  `execv`
 /// performs the same action but does not allow for customization of the
@@ -545,17 +588,12 @@ pub fn execv(path: &CString, argv: &[CString]) -> Result<Void> {
 
 
 /// Replace the current process image with a new one (see
-/// [execve(2)](http://man7.org/linux/man-pages/man2/execve.2.html)).
+/// [execve(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/exec.html)).
 ///
 /// The execve system call allows for another process to be "called" which will
 /// replace the current process image.  That is, this process becomes the new
 /// command that is run. On success, this function will not return. Instead,
 /// the new program will run until it exits.
-///
-/// If an error occurs, this function will return with an indication of the
-/// cause of failure.  See
-/// [execve(2)#errors](http://man7.org/linux/man-pages/man2/execve.2.html#ERRORS)
-/// for a list of potential problems that maight cause execv to fail.
 ///
 /// `::nix::unistd::execv` and `::nix::unistd::execve` take as arguments a slice
 /// of `::std::ffi::CString`s for `args` and `env` (for `execve`). Each element
@@ -575,9 +613,9 @@ pub fn execve(path: &CString, args: &[CString], env: &[CString]) -> Result<Void>
 
 /// Replace the current process image with a new one and replicate shell `PATH`
 /// searching behavior (see
-/// [exec(3)](http://man7.org/linux/man-pages/man3/exec.3.html)).
+/// [exec(3)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/exec.html)).
 ///
-/// See `::nix::unistd::execve` for additoinal details.  `execvp` behaves the
+/// See `::nix::unistd::execve` for additional details.  `execvp` behaves the
 /// same as execv except that it will examine the `PATH` environment variables
 /// for file names not specified with a leading slash.  For example, `execv`
 /// would not work if "bash" was specified for the path argument, but `execvp`
@@ -603,15 +641,11 @@ pub fn execvp(filename: &CString, args: &[CString]) -> Result<Void> {
 ///
 /// This function is similar to `execve`, except that the program to be executed
 /// is referenced as a file descriptor instead of a path.
-///
-/// # Errors
-///
-/// If an error occurs, this function will return with an indication of the
-/// cause of failure.  See
-/// [fexecve(2)#errors](http://pubs.opengroup.org/onlinepubs/9699919799/functions/fexecve.html#tag_16_111_05)
-/// for a list of error conditions.
-#[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd",
-          target_os = "netbsd", target_os = "openbsd", target_os = "linux"))]
+#[cfg(any(target_os = "android",
+          target_os = "freebsd",
+          target_os = "linux",
+          target_os = "netbsd",
+          target_os = "openbsd"))]
 #[inline]
 pub fn fexecve(fd: RawFd, args: &[CString], env: &[CString]) -> Result<Void> {
     let args_p = to_exec_array(args);
@@ -619,6 +653,31 @@ pub fn fexecve(fd: RawFd, args: &[CString], env: &[CString]) -> Result<Void> {
 
     unsafe {
         libc::fexecve(fd, args_p.as_ptr(), env_p.as_ptr())
+    };
+
+    Err(Error::Sys(Errno::last()))
+}
+
+/// Execute program relative to a directory file descriptor (see
+/// [execveat(2)](http://man7.org/linux/man-pages/man2/execveat.2.html)).
+///
+/// The `execveat` function allows for another process to be "called" which will
+/// replace the current process image.  That is, this process becomes the new
+/// command that is run. On success, this function will not return. Instead,
+/// the new program will run until it exits.
+///
+/// This function is similar to `execve`, except that the program to be executed
+/// is referenced as a file descriptor to the base directory plus a path.
+#[cfg(any(target_os = "android", target_os = "linux"))]
+#[inline]
+pub fn execveat(dirfd: RawFd, pathname: &CString, args: &[CString],
+                env: &[CString], flags: super::fcntl::AtFlags) -> Result<Void> {
+    let args_p = to_exec_array(args);
+    let env_p = to_exec_array(env);
+
+    unsafe {
+        libc::syscall(libc::SYS_execveat, dirfd, pathname.as_ptr(),
+                      args_p.as_ptr(), env_p.as_ptr(), flags);
     };
 
     Err(Error::Sys(Errno::last()))
@@ -649,19 +708,13 @@ pub fn fexecve(fd: RawFd, args: &[CString], env: &[CString]) -> Result<Void> {
 ///   descriptors will remain identical after daemonizing.
 /// * `noclose = false`: The process' stdin, stdout, and stderr will point to
 ///   `/dev/null` after daemonizing.
-///
-/// The underlying implementation (in libc) calls both
-/// [fork(2)](http://man7.org/linux/man-pages/man2/fork.2.html) and
-/// [setsid(2)](http://man7.org/linux/man-pages/man2/setsid.2.html) and, as
-/// such, error that could be returned by either of those functions could also
-/// show up as errors here.
 pub fn daemon(nochdir: bool, noclose: bool) -> Result<()> {
     let res = unsafe { libc::daemon(nochdir as c_int, noclose as c_int) };
     Errno::result(res).map(drop)
 }
 
 /// Set the system host name (see
-/// [gethostname(2)](http://man7.org/linux/man-pages/man2/gethostname.2.html)).
+/// [sethostname(2)](http://man7.org/linux/man-pages/man2/gethostname.2.html)).
 ///
 /// Given a name, attempt to update the system host name to the given string.
 /// On some systems, the host name is limited to as few as 64 bytes.  An error
@@ -687,8 +740,8 @@ pub fn sethostname<S: AsRef<OsStr>>(name: S) -> Result<()> {
 }
 
 /// Get the host name and store it in the provided buffer, returning a pointer
-/// the CStr in that buffer on success (see
-/// [gethostname(2)](http://man7.org/linux/man-pages/man2/gethostname.2.html)).
+/// the `CStr` in that buffer on success (see
+/// [gethostname(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/gethostname.html)).
 ///
 /// This function call attempts to get the host name for the running system and
 /// store it in a provided buffer.  The buffer will be populated with bytes up
@@ -706,7 +759,7 @@ pub fn sethostname<S: AsRef<OsStr>>(name: S) -> Result<()> {
 /// let hostname = hostname_cstr.to_str().expect("Hostname wasn't valid UTF-8");
 /// println!("Hostname: {}", hostname);
 /// ```
-pub fn gethostname<'a>(buffer: &'a mut [u8]) -> Result<&'a CStr> {
+pub fn gethostname(buffer: &mut [u8]) -> Result<&CStr> {
     let ptr = buffer.as_mut_ptr() as *mut c_char;
     let len = buffer.len() as size_t;
 
@@ -722,7 +775,8 @@ pub fn gethostname<'a>(buffer: &'a mut [u8]) -> Result<&'a CStr> {
 /// Be aware that many Rust types implicitly close-on-drop, including
 /// `std::fs::File`.  Explicitly closing them with this method too can result in
 /// a double-close condition, which can cause confusing `EBADF` errors in
-/// seemingly unrelated code.  Caveat programmer.
+/// seemingly unrelated code.  Caveat programmer.  See also
+/// [close(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/close.html).
 ///
 /// # Examples
 ///
@@ -756,12 +810,18 @@ pub fn close(fd: RawFd) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
+/// Read from a raw file descriptor.
+///
+/// See also [read(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/read.html)
 pub fn read(fd: RawFd, buf: &mut [u8]) -> Result<usize> {
     let res = unsafe { libc::read(fd, buf.as_mut_ptr() as *mut c_void, buf.len() as size_t) };
 
     Errno::result(res).map(|r| r as usize)
 }
 
+/// Write to a raw file descriptor.
+///
+/// See also [write(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/write.html)
 pub fn write(fd: RawFd, buf: &[u8]) -> Result<usize> {
     let res = unsafe { libc::write(fd, buf.as_ptr() as *const c_void, buf.len() as size_t) };
 
@@ -769,9 +829,11 @@ pub fn write(fd: RawFd, buf: &[u8]) -> Result<usize> {
 }
 
 /// Directive that tells [`lseek`] and [`lseek64`] what the offset is relative to.
+///
 /// [`lseek`]: ./fn.lseek.html
 /// [`lseek64`]: ./fn.lseek64.html
 #[repr(i32)]
+#[derive(Clone, Copy, Debug)]
 pub enum Whence {
     /// Specify an offset relative to the start of the file.
     SeekSet = libc::SEEK_SET,
@@ -779,7 +841,7 @@ pub enum Whence {
     SeekCur = libc::SEEK_CUR,
     /// Specify an offset relative to the end of the file.
     SeekEnd = libc::SEEK_END,
-    /// Specify an offset relative to the next location in the file greater than or 
+    /// Specify an offset relative to the next location in the file greater than or
     /// equal to offset that contains some data. If offset points to
     /// some data, then the file offset is set to offset.
     #[cfg(any(target_os = "dragonfly", target_os = "freebsd",
@@ -788,7 +850,7 @@ pub enum Whence {
                                            target_arch = "mips64")))))]
     SeekData = libc::SEEK_DATA,
     /// Specify an offset relative to the next hole in the file greater than
-    /// or equal to offset. If offset points into the middle of a hole, then 
+    /// or equal to offset. If offset points into the middle of a hole, then
     /// the file offset should be set to offset. If there is no hole past offset,
     /// then the file offset should be adjusted to the end of the file (i.e., there
     /// is an implicit hole at the end of any file).
@@ -799,10 +861,13 @@ pub enum Whence {
     SeekHole = libc::SEEK_HOLE
 }
 
-pub fn lseek(fd: RawFd, offset: libc::off_t, whence: Whence) -> Result<libc::off_t> {
+/// Move the read/write file offset.
+///
+/// See also [lseek(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/lseek.html)
+pub fn lseek(fd: RawFd, offset: off_t, whence: Whence) -> Result<off_t> {
     let res = unsafe { libc::lseek(fd, offset, whence as i32) };
 
-    Errno::result(res).map(|r| r as libc::off_t)
+    Errno::result(res).map(|r| r as off_t)
 }
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
@@ -812,6 +877,9 @@ pub fn lseek64(fd: RawFd, offset: libc::off64_t, whence: Whence) -> Result<libc:
     Errno::result(res).map(|r| r as libc::off64_t)
 }
 
+/// Create an interprocess channel.
+///
+/// See also [pipe(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/pipe.html)
 pub fn pipe() -> Result<(RawFd, RawFd)> {
     unsafe {
         let mut fds: [c_int; 2] = mem::uninitialized();
@@ -824,10 +892,22 @@ pub fn pipe() -> Result<(RawFd, RawFd)> {
     }
 }
 
-// libc only defines `pipe2` in `libc::notbsd`.
-#[cfg(any(target_os = "linux",
-          target_os = "android",
-          target_os = "emscripten"))]
+/// Like `pipe`, but allows setting certain file descriptor flags.
+///
+/// The following flags are supported, and will be set atomically as the pipe is
+/// created:
+///
+/// `O_CLOEXEC`:    Set the close-on-exec flag for the new file descriptors.
+/// `O_NONBLOCK`:   Set the non-blocking flag for the ends of the pipe.
+///
+/// See also [pipe(2)](http://man7.org/linux/man-pages/man2/pipe.2.html)
+#[cfg(any(target_os = "android",
+          target_os = "dragonfly",
+          target_os = "emscripten",
+          target_os = "freebsd",
+          target_os = "linux",
+          target_os = "netbsd",
+          target_os = "openbsd"))]
 pub fn pipe2(flags: OFlag) -> Result<(RawFd, RawFd)> {
     let mut fds: [c_int; 2] = unsafe { mem::uninitialized() };
 
@@ -838,9 +918,18 @@ pub fn pipe2(flags: OFlag) -> Result<(RawFd, RawFd)> {
     Ok((fds[0], fds[1]))
 }
 
-#[cfg(not(any(target_os = "linux",
-              target_os = "android",
-              target_os = "emscripten")))]
+/// Like `pipe`, but allows setting certain file descriptor flags.
+///
+/// The following flags are supported, and will be set after the pipe is
+/// created:
+///
+/// `O_CLOEXEC`:    Set the close-on-exec flag for the new file descriptors.
+/// `O_NONBLOCK`:   Set the non-blocking flag for the ends of the pipe.
+#[cfg(any(target_os = "ios", target_os = "macos"))]
+#[deprecated(
+    since="0.10.0",
+    note="pipe2(2) is not actually atomic on these platforms.  Use pipe(2) and fcntl(2) instead"
+)]
 pub fn pipe2(flags: OFlag) -> Result<(RawFd, RawFd)> {
     let mut fds: [c_int; 2] = unsafe { mem::uninitialized() };
 
@@ -853,25 +942,23 @@ pub fn pipe2(flags: OFlag) -> Result<(RawFd, RawFd)> {
     Ok((fds[0], fds[1]))
 }
 
-#[cfg(not(any(target_os = "linux",
-              target_os = "android",
-              target_os = "emscripten")))]
+#[cfg(any(target_os = "ios", target_os = "macos"))]
 fn pipe2_setflags(fd1: RawFd, fd2: RawFd, flags: OFlag) -> Result<()> {
-    use fcntl::O_NONBLOCK;
+    use fcntl::FdFlag;
     use fcntl::FcntlArg::F_SETFL;
 
     let mut res = Ok(0);
 
-    if flags.contains(O_CLOEXEC) {
+    if flags.contains(OFlag::O_CLOEXEC) {
         res = res
-            .and_then(|_| fcntl(fd1, F_SETFD(FD_CLOEXEC)))
-            .and_then(|_| fcntl(fd2, F_SETFD(FD_CLOEXEC)));
+            .and_then(|_| fcntl(fd1, F_SETFD(FdFlag::FD_CLOEXEC)))
+            .and_then(|_| fcntl(fd2, F_SETFD(FdFlag::FD_CLOEXEC)));
     }
 
-    if flags.contains(O_NONBLOCK) {
+    if flags.contains(OFlag::O_NONBLOCK) {
         res = res
-            .and_then(|_| fcntl(fd1, F_SETFL(O_NONBLOCK)))
-            .and_then(|_| fcntl(fd2, F_SETFL(O_NONBLOCK)));
+            .and_then(|_| fcntl(fd1, F_SETFL(OFlag::O_NONBLOCK)))
+            .and_then(|_| fcntl(fd2, F_SETFL(OFlag::O_NONBLOCK)));
     }
 
     match res {
@@ -884,6 +971,10 @@ fn pipe2_setflags(fd1: RawFd, fd2: RawFd, flags: OFlag) -> Result<()> {
     }
 }
 
+/// Truncate a file to a specified length
+///
+/// See also
+/// [ftruncate(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/ftruncate.html)
 pub fn ftruncate(fd: RawFd, len: off_t) -> Result<()> {
     Errno::result(unsafe { libc::ftruncate(fd, len) }).map(drop)
 }
@@ -905,6 +996,9 @@ pub fn isatty(fd: RawFd) -> Result<bool> {
     }
 }
 
+/// Remove a directory entry
+///
+/// See also [unlink(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/unlink.html)
 pub fn unlink<P: ?Sized + NixPath>(path: &P) -> Result<()> {
     let res = try!(path.with_nix_path(|cstr| {
         unsafe {
@@ -923,6 +1017,9 @@ pub fn chroot<P: ?Sized + NixPath>(path: &P) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
+/// Synchronize changes to a file
+///
+/// See also [fsync(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/fsync.html)
 #[inline]
 pub fn fsync(fd: RawFd) -> Result<()> {
     let res = unsafe { libc::fsync(fd) };
@@ -930,6 +1027,10 @@ pub fn fsync(fd: RawFd) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
+/// Synchronize the data of a file
+///
+/// See also
+/// [fdatasync(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/fdatasync.html)
 // `fdatasync(2) is in POSIX, but in libc it is only defined in `libc::notbsd`.
 // TODO: exclude only Apple systems after https://github.com/rust-lang/libc/pull/211
 #[cfg(any(target_os = "linux",
@@ -942,32 +1043,49 @@ pub fn fdatasync(fd: RawFd) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
-// POSIX requires that getuid, geteuid, getgid, getegid are always successful,
-// so no need to check return value or errno. See:
-//   - http://pubs.opengroup.org/onlinepubs/9699919799/functions/getuid.html
-//   - http://pubs.opengroup.org/onlinepubs/9699919799/functions/geteuid.html
-//   - http://pubs.opengroup.org/onlinepubs/9699919799/functions/getgid.html
-//   - http://pubs.opengroup.org/onlinepubs/9699919799/functions/geteuid.html
+/// Get a real user ID
+///
+/// See also [getuid(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/getuid.html)
+// POSIX requires that getuid is always successful, so no need to check return
+// value or errno.
 #[inline]
 pub fn getuid() -> Uid {
     Uid(unsafe { libc::getuid() })
 }
 
+/// Get the effective user ID
+///
+/// See also [geteuid(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/geteuid.html)
+// POSIX requires that geteuid is always successful, so no need to check return
+// value or errno.
 #[inline]
 pub fn geteuid() -> Uid {
     Uid(unsafe { libc::geteuid() })
 }
 
+/// Get the real group ID
+///
+/// See also [getgid(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/getgid.html)
+// POSIX requires that getgid is always successful, so no need to check return
+// value or errno.
 #[inline]
 pub fn getgid() -> Gid {
     Gid(unsafe { libc::getgid() })
 }
 
+/// Get the effective group ID
+///
+/// See also [getegid(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/getegid.html)
+// POSIX requires that getegid is always successful, so no need to check return
+// value or errno.
 #[inline]
 pub fn getegid() -> Gid {
     Gid(unsafe { libc::getegid() })
 }
 
+/// Set the user ID
+///
+/// See also [setuid(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/setuid.html)
 #[inline]
 pub fn setuid(uid: Uid) -> Result<()> {
     let res = unsafe { libc::setuid(uid.into()) };
@@ -975,6 +1093,9 @@ pub fn setuid(uid: Uid) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
+/// Set the user ID
+///
+/// See also [setgid(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/setgid.html)
 #[inline]
 pub fn setgid(gid: Gid) -> Result<()> {
     let res = unsafe { libc::setgid(gid.into()) };
@@ -982,27 +1103,336 @@ pub fn setgid(gid: Gid) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
-#[inline]
-pub fn pause() -> Result<()> {
-    let res = unsafe { libc::pause() };
+/// Get the list of supplementary group IDs of the calling process.
+///
+/// [Further reading](http://pubs.opengroup.org/onlinepubs/009695399/functions/getgroups.html)
+///
+/// **Note:** This function is not available for Apple platforms. On those
+/// platforms, checking group membership should be achieved via communication
+/// with the `opendirectoryd` service.
+#[cfg(not(any(target_os = "ios", target_os = "macos")))]
+pub fn getgroups() -> Result<Vec<Gid>> {
+    // First get the number of groups so we can size our Vec
+    let ret = unsafe { libc::getgroups(0, ptr::null_mut()) };
 
-    Errno::result(res).map(drop)
+    // Now actually get the groups. We try multiple times in case the number of
+    // groups has changed since the first call to getgroups() and the buffer is
+    // now too small.
+    let mut groups = Vec::<Gid>::with_capacity(Errno::result(ret)? as usize);
+    loop {
+        // FIXME: On the platforms we currently support, the `Gid` struct has
+        // the same representation in memory as a bare `gid_t`. This is not
+        // necessarily the case on all Rust platforms, though. See RFC 1785.
+        let ret = unsafe {
+            libc::getgroups(groups.capacity() as c_int, groups.as_mut_ptr() as *mut gid_t)
+        };
+
+        match Errno::result(ret) {
+            Ok(s) => {
+                unsafe { groups.set_len(s as usize) };
+                return Ok(groups);
+            },
+            Err(Error::Sys(Errno::EINVAL)) => {
+                // EINVAL indicates that the buffer size was too small. Trigger
+                // the internal buffer resizing logic of `Vec` by requiring
+                // more space than the current capacity.
+                let cap = groups.capacity();
+                unsafe { groups.set_len(cap) };
+                groups.reserve(1);
+            },
+            Err(e) => return Err(e)
+        }
+    }
 }
 
+/// Set the list of supplementary group IDs for the calling process.
+///
+/// [Further reading](http://man7.org/linux/man-pages/man2/getgroups.2.html)
+///
+/// **Note:** This function is not available for Apple platforms. On those
+/// platforms, group membership management should be achieved via communication
+/// with the `opendirectoryd` service.
+///
+/// # Examples
+///
+/// `setgroups` can be used when dropping privileges from the root user to a
+/// specific user and group. For example, given the user `www-data` with UID
+/// `33` and the group `backup` with the GID `34`, one could switch the user as
+/// follows:
+///
+/// ```rust,no_run
+/// # use std::error::Error;
+/// # use nix::unistd::*;
+/// #
+/// # fn try_main() -> Result<(), Box<Error>> {
+/// let uid = Uid::from_raw(33);
+/// let gid = Gid::from_raw(34);
+/// setgroups(&[gid])?;
+/// setgid(gid)?;
+/// setuid(uid)?;
+/// #
+/// #     Ok(())
+/// # }
+/// #
+/// # fn main() {
+/// #     try_main().unwrap();
+/// # }
+/// ```
+#[cfg(not(any(target_os = "ios", target_os = "macos")))]
+pub fn setgroups(groups: &[Gid]) -> Result<()> {
+    cfg_if! {
+        if #[cfg(any(target_os = "dragonfly",
+                     target_os = "freebsd",
+                     target_os = "ios",
+                     target_os = "macos",
+                     target_os = "netbsd",
+                     target_os = "openbsd"))] {
+            type setgroups_ngroups_t = c_int;
+        } else {
+            type setgroups_ngroups_t = size_t;
+        }
+    }
+    // FIXME: On the platforms we currently support, the `Gid` struct has the
+    // same representation in memory as a bare `gid_t`. This is not necessarily
+    // the case on all Rust platforms, though. See RFC 1785.
+    let res = unsafe {
+        libc::setgroups(groups.len() as setgroups_ngroups_t, groups.as_ptr() as *const gid_t)
+    };
+
+    Errno::result(res).map(|_| ())
+}
+
+/// Calculate the supplementary group access list.
+///
+/// Gets the group IDs of all groups that `user` is a member of. The additional
+/// group `group` is also added to the list.
+///
+/// [Further reading](http://man7.org/linux/man-pages/man3/getgrouplist.3.html)
+///
+/// **Note:** This function is not available for Apple platforms. On those
+/// platforms, checking group membership should be achieved via communication
+/// with the `opendirectoryd` service.
+///
+/// # Errors
+///
+/// Although the `getgrouplist()` call does not return any specific
+/// errors on any known platforms, this implementation will return a system
+/// error of `EINVAL` if the number of groups to be fetched exceeds the
+/// `NGROUPS_MAX` sysconf value. This mimics the behaviour of `getgroups()`
+/// and `setgroups()`. Additionally, while some implementations will return a
+/// partial list of groups when `NGROUPS_MAX` is exceeded, this implementation
+/// will only ever return the complete list or else an error.
+#[cfg(not(any(target_os = "ios", target_os = "macos")))]
+pub fn getgrouplist(user: &CStr, group: Gid) -> Result<Vec<Gid>> {
+    let ngroups_max = match sysconf(SysconfVar::NGROUPS_MAX) {
+        Ok(Some(n)) => n as c_int,
+        Ok(None) | Err(_) => <c_int>::max_value(),
+    };
+    use std::cmp::min;
+    let mut ngroups = min(ngroups_max, 8);
+    let mut groups = Vec::<Gid>::with_capacity(ngroups as usize);
+    cfg_if! {
+        if #[cfg(any(target_os = "ios", target_os = "macos"))] {
+            type getgrouplist_group_t = c_int;
+        } else {
+            type getgrouplist_group_t = gid_t;
+        }
+    }
+    let gid: gid_t = group.into();
+    loop {
+        let ret = unsafe {
+            libc::getgrouplist(user.as_ptr(),
+                               gid as getgrouplist_group_t,
+                               groups.as_mut_ptr() as *mut getgrouplist_group_t,
+                               &mut ngroups)
+        };
+
+        // BSD systems only return 0 or -1, Linux returns ngroups on success.
+        if ret >= 0 {
+            unsafe { groups.set_len(ngroups as usize) };
+            return Ok(groups);
+        } else if ret == -1 {
+            // Returns -1 if ngroups is too small, but does not set errno.
+            // BSD systems will still fill the groups buffer with as many
+            // groups as possible, but Linux manpages do not mention this
+            // behavior.
+
+            let cap = groups.capacity();
+            if cap >= ngroups_max as usize {
+                // We already have the largest capacity we can, give up
+                return Err(Error::invalid_argument());
+            }
+
+            // Reserve space for at least ngroups
+            groups.reserve(ngroups as usize);
+
+            // Even if the buffer gets resized to bigger than ngroups_max,
+            // don't ever ask for more than ngroups_max groups
+            ngroups = min(ngroups_max, groups.capacity() as c_int);
+        }
+    }
+}
+
+/// Initialize the supplementary group access list.
+///
+/// Sets the supplementary group IDs for the calling process using all groups
+/// that `user` is a member of. The additional group `group` is also added to
+/// the list.
+///
+/// [Further reading](http://man7.org/linux/man-pages/man3/initgroups.3.html)
+///
+/// **Note:** This function is not available for Apple platforms. On those
+/// platforms, group membership management should be achieved via communication
+/// with the `opendirectoryd` service.
+///
+/// # Examples
+///
+/// `initgroups` can be used when dropping privileges from the root user to
+/// another user. For example, given the user `www-data`, we could look up the
+/// UID and GID for the user in the system's password database (usually found
+/// in `/etc/passwd`). If the `www-data` user's UID and GID were `33` and `33`,
+/// respectively, one could switch the user as follows:
+///
+/// ```rust,no_run
+/// # use std::error::Error;
+/// # use std::ffi::CString;
+/// # use nix::unistd::*;
+/// #
+/// # fn try_main() -> Result<(), Box<Error>> {
+/// let user = CString::new("www-data").unwrap();
+/// let uid = Uid::from_raw(33);
+/// let gid = Gid::from_raw(33);
+/// initgroups(&user, gid)?;
+/// setgid(gid)?;
+/// setuid(uid)?;
+/// #
+/// #     Ok(())
+/// # }
+/// #
+/// # fn main() {
+/// #     try_main().unwrap();
+/// # }
+/// ```
+#[cfg(not(any(target_os = "ios", target_os = "macos")))]
+pub fn initgroups(user: &CStr, group: Gid) -> Result<()> {
+    cfg_if! {
+        if #[cfg(any(target_os = "ios", target_os = "macos"))] {
+            type initgroups_group_t = c_int;
+        } else {
+            type initgroups_group_t = gid_t;
+        }
+    }
+    let gid: gid_t = group.into();
+    let res = unsafe { libc::initgroups(user.as_ptr(), gid as initgroups_group_t) };
+
+    Errno::result(res).map(|_| ())
+}
+
+/// Suspend the thread until a signal is received.
+///
+/// See also [pause(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/pause.html).
 #[inline]
-// Per POSIX, does not fail:
-//   http://pubs.opengroup.org/onlinepubs/009695399/functions/sleep.html#tag_03_705_05
-pub fn sleep(seconds: libc::c_uint) -> c_uint {
+pub fn pause() {
+    unsafe { libc::pause() };
+}
+
+pub mod alarm {
+    //! Alarm signal scheduling.
+    //!
+    //! Scheduling an alarm will trigger a `SIGALRM` signal when the time has
+    //! elapsed, which has to be caught, because the default action for the
+    //! signal is to terminate the program. This signal also can't be ignored
+    //! because the system calls like `pause` will not be interrupted, see the
+    //! second example below.
+    //!
+    //! # Examples
+    //!
+    //! Canceling an alarm:
+    //!
+    //! ```
+    //! use nix::unistd::alarm;
+    //!
+    //! // Set an alarm for 60 seconds from now.
+    //! alarm::set(60);
+    //!
+    //! // Cancel the above set alarm, which returns the number of seconds left
+    //! // of the previously set alarm.
+    //! assert_eq!(alarm::cancel(), Some(60));
+    //! ```
+    //!
+    //! Scheduling an alarm and waiting for the signal:
+    //!
+    //! ```
+    //! use std::time::{Duration, Instant};
+    //!
+    //! use nix::unistd::{alarm, pause};
+    //! use nix::sys::signal::*;
+    //!
+    //! // We need to setup an empty signal handler to catch the alarm signal,
+    //! // otherwise the program will be terminated once the signal is delivered.
+    //! extern fn signal_handler(_: nix::libc::c_int) { }
+    //! unsafe { sigaction(Signal::SIGALRM, &SigAction::new(SigHandler::Handler(signal_handler), SaFlags::empty(), SigSet::empty())); }
+    //!
+    //! // Set an alarm for 1 second from now.
+    //! alarm::set(1);
+    //!
+    //! let start = Instant::now();
+    //! // Pause the process until the alarm signal is received.
+    //! pause();
+    //!
+    //! assert!(start.elapsed() >= Duration::from_secs(1));
+    //! ```
+    //!
+    //! # References
+    //!
+    //! See also [alarm(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/alarm.html).
+
+    use libc;
+
+    /// Schedule an alarm signal.
+    ///
+    /// This will cause the system to generate a `SIGALRM` signal for the
+    /// process after the specified number of seconds have elapsed.
+    ///
+    /// Returns the leftover time of a previously set alarm if there was one.
+    pub fn set(secs: libc::c_uint) -> Option<libc::c_uint> {
+        assert!(secs != 0, "passing 0 to `alarm::set` is not allowed, to cancel an alarm use `alarm::cancel`");
+        alarm(secs)
+    }
+
+    /// Cancel an previously set alarm signal.
+    ///
+    /// Returns the leftover time of a previously set alarm if there was one.
+    pub fn cancel() -> Option<libc::c_uint> {
+        alarm(0)
+    }
+
+    fn alarm(secs: libc::c_uint) -> Option<libc::c_uint> {
+        match unsafe { libc::alarm(secs) } {
+            0 => None,
+            secs => Some(secs),
+        }
+    }
+}
+
+/// Suspend execution for an interval of time
+///
+/// See also [sleep(2)](http://pubs.opengroup.org/onlinepubs/009695399/functions/sleep.html#tag_03_705_05)
+// Per POSIX, does not fail
+#[inline]
+pub fn sleep(seconds: c_uint) -> c_uint {
     unsafe { libc::sleep(seconds) }
 }
 
 /// Creates a regular file which persists even after process termination
 ///
-/// * `template`: a path whose 6 rightmost characters must be X, e.g. /tmp/tmpfile_XXXXXX
+/// * `template`: a path whose 6 rightmost characters must be X, e.g. `/tmp/tmpfile_XXXXXX`
 /// * returns: tuple of file descriptor and filename
 ///
 /// Err is returned either if no temporary filename could be created or the template doesn't
 /// end with XXXXXX
+///
+/// See also [mkstemp(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/mkstemp.html)
 ///
 /// # Example
 ///
@@ -1289,7 +1719,7 @@ pub enum SysconfVar {
     OPEN_MAX = libc::_SC_OPEN_MAX,
     #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
               target_os="linux", target_os = "macos", target_os="openbsd"))]
-    /// The implementation supports the Advisory Information option. 
+    /// The implementation supports the Advisory Information option.
     _POSIX_ADVISORY_INFO = libc::_SC_ADVISORY_INFO,
     #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
               target_os="linux", target_os = "macos", target_os="netbsd",
@@ -1308,7 +1738,7 @@ pub enum SysconfVar {
               target_os="openbsd"))]
     /// The implementation supports the Process CPU-Time Clocks option.
     _POSIX_CPUTIME = libc::_SC_CPUTIME,
-    /// The implementation supports the File Synchronization option. 
+    /// The implementation supports the File Synchronization option.
     _POSIX_FSYNC = libc::_SC_FSYNC,
     #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
               target_os="linux", target_os = "macos", target_os="openbsd"))]
@@ -1423,7 +1853,7 @@ pub enum SysconfVar {
               target_os="linux", target_os = "macos", target_os="openbsd"))]
     /// The implementation supports timeouts.
     _POSIX_TIMEOUTS = libc::_SC_TIMEOUTS,
-    /// The implementation supports timers. 
+    /// The implementation supports timers.
     _POSIX_TIMERS = libc::_SC_TIMERS,
     #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
               target_os="linux", target_os = "macos", target_os="openbsd"))]
@@ -1649,7 +2079,8 @@ pub fn sysconf(var: SysconfVar) -> Result<Option<c_long>> {
 #[cfg(any(target_os = "android", target_os = "linux"))]
 mod pivot_root {
     use libc;
-    use {Errno, Result, NixPath};
+    use {Result, NixPath};
+    use errno::Errno;
 
     pub fn pivot_root<P1: ?Sized + NixPath, P2: ?Sized + NixPath>(
             new_root: &P1, put_old: &P2) -> Result<()> {
@@ -1669,7 +2100,8 @@ mod pivot_root {
           target_os = "linux", target_os = "openbsd"))]
 mod setres {
     use libc;
-    use {Errno, Result};
+    use Result;
+    use errno::Errno;
     use super::{Uid, Gid};
 
     /// Sets the real, effective, and saved uid.

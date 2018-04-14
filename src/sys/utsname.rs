@@ -4,30 +4,28 @@ use std::ffi::CStr;
 use std::str::from_utf8_unchecked;
 
 #[repr(C)]
-#[derive(Copy)]
+#[derive(Clone, Copy)]
+#[allow(missing_debug_implementations)]
 pub struct UtsName(libc::utsname);
 
-// workaround for `derive(Clone)` not working for fixed-length arrays
-impl Clone for UtsName { fn clone(&self) -> UtsName { *self } }
-
 impl UtsName {
-    pub fn sysname<'a>(&'a self) -> &'a str {
+    pub fn sysname(&self) -> &str {
         to_str(&(&self.0.sysname as *const c_char ) as *const *const c_char)
     }
 
-    pub fn nodename<'a>(&'a self) -> &'a str {
+    pub fn nodename(&self) -> &str {
         to_str(&(&self.0.nodename as *const c_char ) as *const *const c_char)
     }
 
-    pub fn release<'a>(&'a self) -> &'a str {
+    pub fn release(&self) -> &str {
         to_str(&(&self.0.release as *const c_char ) as *const *const c_char)
     }
 
-    pub fn version<'a>(&'a self) -> &'a str {
+    pub fn version(&self) -> &str {
         to_str(&(&self.0.version as *const c_char ) as *const *const c_char)
     }
 
-    pub fn machine<'a>(&'a self) -> &'a str {
+    pub fn machine(&self) -> &str {
         to_str(&(&self.0.machine as *const c_char ) as *const *const c_char)
     }
 }

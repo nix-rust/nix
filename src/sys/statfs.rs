@@ -1,4 +1,5 @@
-use {Errno, Result, NixPath};
+use {Result, NixPath};
+use errno::Errno;
 use std::os::unix::io::AsRawFd;
 use libc;
 

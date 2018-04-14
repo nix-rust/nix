@@ -10,50 +10,60 @@
 #![allow(dead_code)]
 #![cfg_attr(test, deny(warnings))]
 #![recursion_limit = "500"]
+#![deny(unused)]
+#![deny(unstable_features)]
+#![deny(missing_copy_implementations)]
+#![deny(missing_debug_implementations)]
 
+// External crates
 #[macro_use]
 extern crate bitflags;
-
 #[macro_use]
 extern crate cfg_if;
 extern crate void;
 
-#[cfg(test)]
-extern crate nix_test as nixtest;
-
-#[macro_use] mod macros;
-
+// Re-exported external crates
 pub extern crate libc;
 
-pub use errno::Errno;
+// Private internal modules
+#[macro_use] mod macros;
 
+// Public crates
 pub mod errno;
+#[deny(missing_docs)]
 pub mod features;
 pub mod fcntl;
-
+#[deny(missing_docs)]
+#[cfg(any(target_os = "dragonfly",
+          target_os = "freebsd",
+          target_os = "ios",
+          target_os = "linux",
+          target_os = "macos",
+          target_os = "netbsd",
+          target_os = "openbsd"))]
+pub mod ifaddrs;
 #[cfg(any(target_os = "linux", target_os = "android"))]
 pub mod mount;
-
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "dragonfly",
+          target_os = "freebsd",
+          target_os = "fushsia",
+          target_os = "linux",
+          target_os = "netbsd"))]
 pub mod mqueue;
-
-pub mod pty;
-
-pub mod poll;
-
+#[deny(missing_docs)]
 pub mod net;
-
+#[deny(missing_docs)]
+pub mod poll;
+#[deny(missing_docs)]
+pub mod pty;
 #[cfg(any(target_os = "linux", target_os = "android"))]
 pub mod sched;
-
 pub mod sys;
-
 // This can be implemented for other platforms as soon as libc
 // provides bindings for them.
 #[cfg(all(target_os = "linux",
           any(target_arch = "x86", target_arch = "x86_64")))]
 pub mod ucontext;
-
 pub mod unistd;
 
 /*
@@ -62,14 +72,14 @@ pub mod unistd;
  *
  */
 
-use libc::c_char;
-use std::{ptr, result};
+use libc::{c_char, PATH_MAX};
+
+use std::{error, fmt, ptr, result};
 use std::ffi::{CStr, OsStr};
-use std::path::{Path, PathBuf};
 use std::os::unix::ffi::OsStrExt;
-use std::fmt;
-use std::error;
-use libc::PATH_MAX;
+use std::path::{Path, PathBuf};
+
+use errno::Errno;
 
 /// Nix Result Type
 pub type Result<T> = result::Result<T, Error>;
@@ -83,7 +93,7 @@ pub type Result<T> = result::Result<T, Error>;
 /// implementing other common traits.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Error {
-    Sys(errno::Errno),
+    Sys(Errno),
     InvalidPath,
     /// The operation involved a conversion to Rust's native String type, which failed because the
     /// string did not contain all valid UTF-8.
@@ -96,24 +106,24 @@ pub enum Error {
 impl Error {
 
     /// Create a nix Error from a given errno
-    pub fn from_errno(errno: errno::Errno) -> Error {
+    pub fn from_errno(errno: Errno) -> Error {
         Error::Sys(errno)
     }
 
     /// Get the current errno and convert it to a nix Error
     pub fn last() -> Error {
-        Error::Sys(errno::Errno::last())
+        Error::Sys(Errno::last())
     }
 
     /// Create a new invalid argument error (`EINVAL`)
     pub fn invalid_argument() -> Error {
-        Error::Sys(errno::EINVAL)
+        Error::Sys(Errno::EINVAL)
     }
 
 }
 
-impl From<errno::Errno> for Error {
-    fn from(errno: errno::Errno) -> Error { Error::from_errno(errno) }
+impl From<Errno> for Error {
+    fn from(errno: Errno) -> Error { Error::from_errno(errno) }
 }
 
 impl From<std::string::FromUtf8Error> for Error {
@@ -122,22 +132,22 @@ impl From<std::string::FromUtf8Error> for Error {
 
 impl error::Error for Error {
     fn description(&self) -> &str {
-        match self {
-            &Error::InvalidPath => "Invalid path",
-            &Error::InvalidUtf8 => "Invalid UTF-8 string",
-            &Error::UnsupportedOperation => "Unsupported Operation",
-            &Error::Sys(ref errno) => errno.desc(),
+        match *self {
+            Error::InvalidPath => "Invalid path",
+            Error::InvalidUtf8 => "Invalid UTF-8 string",
+            Error::UnsupportedOperation => "Unsupported Operation",
+            Error::Sys(ref errno) => errno.desc(),
         }
     }
 }
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            &Error::InvalidPath => write!(f, "Invalid path"),
-            &Error::InvalidUtf8 => write!(f, "Invalid UTF-8 string"),
-            &Error::UnsupportedOperation => write!(f, "Unsupported Operation"),
-            &Error::Sys(errno) => write!(f, "{:?}: {}", errno, errno.desc()),
+        match *self {
+            Error::InvalidPath => write!(f, "Invalid path"),
+            Error::InvalidUtf8 => write!(f, "Invalid UTF-8 string"),
+            Error::UnsupportedOperation => write!(f, "Unsupported Operation"),
+            Error::Sys(errno) => write!(f, "{:?}: {}", errno, errno.desc()),
         }
     }
 }
