@@ -5,6 +5,8 @@ use libc;
 use {Error, Result};
 use errno::Errno;
 use std::mem;
+use std::fmt;
+use std::str::FromStr;
 #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
 use std::os::unix::io::RawFd;
 use std::ptr;
@@ -57,6 +59,104 @@ libc_enum!{
         SIGEMT,
         #[cfg(not(any(target_os = "android", target_os = "emscripten", target_os = "linux")))]
         SIGINFO,
+    }
+}
+
+impl FromStr for Signal {
+    type Err = Error;
+    fn from_str(s: &str) -> Result<Signal> {
+        Ok(match s {
+            "SIGHUP" => Signal::SIGHUP,
+            "SIGINT" => Signal::SIGINT,
+            "SIGQUIT" => Signal::SIGQUIT,
+            "SIGILL" => Signal::SIGILL,
+            "SIGTRAP" => Signal::SIGTRAP,
+            "SIGABRT" => Signal::SIGABRT,
+            "SIGBUS" => Signal::SIGBUS,
+            "SIGFPE" => Signal::SIGFPE,
+            "SIGKILL" => Signal::SIGKILL,
+            "SIGUSR1" => Signal::SIGUSR1,
+            "SIGSEGV" => Signal::SIGSEGV,
+            "SIGUSR2" => Signal::SIGUSR2,
+            "SIGPIPE" => Signal::SIGPIPE,
+            "SIGALRM" => Signal::SIGALRM,
+            "SIGTERM" => Signal::SIGTERM,
+            #[cfg(all(any(target_os = "android", target_os = "emscripten", target_os = "linux"),
+                      not(any(target_arch = "mips", target_arch = "mips64"))))]
+            "SIGSTKFLT" => Signal::SIGSTKFLT,
+            "SIGCHLD" => Signal::SIGCHLD,
+            "SIGCONT" => Signal::SIGCONT,
+            "SIGSTOP" => Signal::SIGSTOP,
+            "SIGTSTP" => Signal::SIGTSTP,
+            "SIGTTIN" => Signal::SIGTTIN,
+            "SIGTTOU" => Signal::SIGTTOU,
+            "SIGURG" => Signal::SIGURG,
+            "SIGXCPU" => Signal::SIGXCPU,
+            "SIGXFSZ" => Signal::SIGXFSZ,
+            "SIGVTALRM" => Signal::SIGVTALRM,
+            "SIGPROF" => Signal::SIGPROF,
+            "SIGWINCH" => Signal::SIGWINCH,
+            "SIGIO" => Signal::SIGIO,
+            #[cfg(any(target_os = "android", target_os = "emscripten", target_os = "linux"))]
+            "SIGPWR" => Signal::SIGPWR,
+            "SIGSYS" => Signal::SIGSYS,
+            #[cfg(not(any(target_os = "android", target_os = "emscripten", target_os = "linux")))]
+            "SIGEMT" => Signal::SIGEMT,
+            #[cfg(not(any(target_os = "android", target_os = "emscripten", target_os = "linux")))]
+            "SIGINFO" => Signal::SIGINFO,
+            _ => return Err(Error::invalid_argument()),
+        })
+    }
+}
+
+impl AsRef<str> for Signal {
+    fn as_ref(&self) -> &str {
+        match *self {
+            Signal::SIGHUP => "SIGHUP",
+            Signal::SIGINT => "SIGINT",
+            Signal::SIGQUIT => "SIGQUIT",
+            Signal::SIGILL => "SIGILL",
+            Signal::SIGTRAP => "SIGTRAP",
+            Signal::SIGABRT => "SIGABRT",
+            Signal::SIGBUS => "SIGBUS",
+            Signal::SIGFPE => "SIGFPE",
+            Signal::SIGKILL => "SIGKILL",
+            Signal::SIGUSR1 => "SIGUSR1",
+            Signal::SIGSEGV => "SIGSEGV",
+            Signal::SIGUSR2 => "SIGUSR2",
+            Signal::SIGPIPE => "SIGPIPE",
+            Signal::SIGALRM => "SIGALRM",
+            Signal::SIGTERM => "SIGTERM",
+            #[cfg(all(any(target_os = "android", target_os = "emscripten", target_os = "linux"),
+                      not(any(target_arch = "mips", target_arch = "mips64"))))]
+            Signal::SIGSTKFLT => "SIGSTKFLT",
+            Signal::SIGCHLD => "SIGCHLD",
+            Signal::SIGCONT => "SIGCONT",
+            Signal::SIGSTOP => "SIGSTOP",
+            Signal::SIGTSTP => "SIGTSTP",
+            Signal::SIGTTIN => "SIGTTIN",
+            Signal::SIGTTOU => "SIGTTOU",
+            Signal::SIGURG => "SIGURG",
+            Signal::SIGXCPU => "SIGXCPU",
+            Signal::SIGXFSZ => "SIGXFSZ",
+            Signal::SIGVTALRM => "SIGVTALRM",
+            Signal::SIGPROF => "SIGPROF",
+            Signal::SIGWINCH => "SIGWINCH",
+            Signal::SIGIO => "SIGIO",
+            #[cfg(any(target_os = "android", target_os = "emscripten", target_os = "linux"))]
+            Signal::SIGPWR => "SIGPWR",
+            Signal::SIGSYS => "SIGSYS",
+            #[cfg(not(any(target_os = "android", target_os = "emscripten", target_os = "linux")))]
+            Signal::SIGEMT => "SIGEMT",
+            #[cfg(not(any(target_os = "android", target_os = "emscripten", target_os = "linux")))]
+            Signal::SIGINFO => "SIGINFO",
+        }
+    }
+}
+
+impl fmt::Display for Signal {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.write_str(self.as_ref())
     }
 }
 
@@ -656,6 +756,22 @@ mod tests {
         for signal in Signal::iterator() {
             assert!(!set.contains(signal));
         }
+    }
+
+    #[test]
+    fn test_from_str_round_trips() {
+        for signal in Signal::iterator() {
+            assert_eq!(signal.as_ref().parse::<Signal>().unwrap(), signal);
+            assert_eq!(signal.to_string().parse::<Signal>().unwrap(), signal);
+        }
+    }
+
+    #[test]
+    fn test_from_str_invalid_value() {
+        let errval = Err(Error::Sys(Errno::EINVAL));
+        assert_eq!("NOSIGNAL".parse::<Signal>(), errval);
+        assert_eq!("kill".parse::<Signal>(), errval);
+        assert_eq!("9".parse::<Signal>(), errval);
     }
 
     #[test]
