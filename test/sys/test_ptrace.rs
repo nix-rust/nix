@@ -46,7 +46,7 @@ fn test_ptrace_setsiginfo() {
 }
 
 #[test]
-#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+#[cfg(target_arch = "x86_64")]
 fn test_ptrace_peekpoke() {
     use nix::sys::ptrace;
     use nix::sys::signal::{raise, Signal};
@@ -155,8 +155,6 @@ fn test_ptrace_cont() {
     use nix::sys::wait::{waitpid, WaitStatus};
     use nix::unistd::fork;
     use nix::unistd::ForkResult::*;
-
-    let _m = ::FORK_MTX.lock().expect("Mutex got poisoned by another test");
 
     // FIXME: qemu-user doesn't implement ptrace on all architectures
     // and retunrs ENOSYS in this case.
