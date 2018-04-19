@@ -19,7 +19,17 @@ pub fn readv(fd: RawFd, iov: &mut [IoVec<&mut [u8]>]) -> Result<usize> {
     Errno::result(res).map(|r| r as usize)
 }
 
-#[cfg(target_os = "linux")]
+/// Write to `fd` at `offset` from buffers in `iov`.
+///
+/// Buffers in `iov` will be written in order until all buffers have been written
+/// or an error occurs. The file offset is not changed.
+///
+/// See also: [`writev`](fn.writev.html) and [`pwrite`](fn.pwrite.html)
+#[cfg(any(target_os = "dragonfly",
+          target_os = "freebsd",
+          target_os = "linux",
+          target_os = "netbsd",
+          target_os = "openbsd"))]
 pub fn pwritev(fd: RawFd, iov: &[IoVec<&[u8]>],
                offset: off_t) -> Result<usize> {
     let res = unsafe {
@@ -29,7 +39,18 @@ pub fn pwritev(fd: RawFd, iov: &[IoVec<&[u8]>],
     Errno::result(res).map(|r| r as usize)
 }
 
-#[cfg(target_os = "linux")]
+/// Read from `fd` at `offset` filling buffers in `iov`.
+///
+/// Buffers in `iov` will be filled in order until all buffers have been filled,
+/// no more bytes are available, or an error occurs. The file offset is not
+/// changed.
+///
+/// See also: [`readv`](fn.readv.html) and [`pread`](fn.pread.html)
+#[cfg(any(target_os = "dragonfly",
+          target_os = "freebsd",
+          target_os = "linux",
+          target_os = "netbsd",
+          target_os = "openbsd"))]
 pub fn preadv(fd: RawFd, iov: &mut [IoVec<&mut [u8]>],
               offset: off_t) -> Result<usize> {
     let res = unsafe {

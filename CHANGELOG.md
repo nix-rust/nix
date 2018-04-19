@@ -6,6 +6,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Exposed `preadv` and `pwritev` on the BSDs.
+  ([#883](https://github.com/nix-rust/nix/pull/883))
 - Added `mlockall` and `munlockall`
   ([#876](https://github.com/nix-rust/nix/pull/876))
 - Added `SO_MARK` on Linux.
