@@ -43,6 +43,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   `request_code_write`, and `request_code_readwrite` respectively. These have also now been exposed
   in the documentation.
   ([#833](https://github.com/nix-rust/nix/pull/833))
+- Enabled more `ptrace::Request` definitions for uncommon Linux platforms
+  ([#892](https://github.com/nix-rust/nix/pull/892))
 
 ### Fixed
 - Properly exposed 460800 and 921600 baud rates on NetBSD
