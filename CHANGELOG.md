@@ -47,6 +47,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#833](https://github.com/nix-rust/nix/pull/833))
 - Enabled more `ptrace::Request` definitions for uncommon Linux platforms
   ([#892](https://github.com/nix-rust/nix/pull/892))
+- Remove `IFF_NOTRAILERS` on OpenBSD, as it has been removed in OpenBSD 6.3
+  ([#893](https://github.com/nix-rust/nix/pull/893))
 
 ### Fixed
 - Properly exposed 460800 and 921600 baud rates on NetBSD

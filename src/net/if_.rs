@@ -44,7 +44,6 @@ libc_bitflags!(
                   target_os = "linux",
                   target_os = "macos",
                   target_os = "netbsd",
-                  target_os = "openbsd",
                   target_os = "solaris"))]
         IFF_NOTRAILERS;
         /// Interface manages own routes.
