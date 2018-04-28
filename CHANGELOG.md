@@ -6,6 +6,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Added `pselect`
+  ([#894](https://github.com/nix-rust/nix/pull/894))
 - Exposed `preadv` and `pwritev` on the BSDs.
   ([#883](https://github.com/nix-rust/nix/pull/883))
 - Added `mlockall` and `munlockall`
