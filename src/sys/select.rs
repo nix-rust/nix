@@ -1,10 +1,11 @@
 use std::mem;
 use std::os::unix::io::RawFd;
-use std::ptr::null_mut;
+use std::ptr::{null, null_mut};
 use libc::{self, c_int};
 use Result;
 use errno::Errno;
-use sys::time::TimeVal;
+use sys::signal::SigSet;
+use sys::time::{TimeSpec, TimeVal};
 
 pub use libc::FD_SETSIZE;
 
@@ -130,6 +131,78 @@ where
 
     Errno::result(res)
 }
+
+/// Monitors file descriptors for readiness with an altered signal mask.
+///
+/// Returns the total number of ready file descriptors in all sets. The sets are changed so that all
+/// file descriptors that are ready for the given operation are set.
+///
+/// When this function returns, the original signal mask is restored.
+///
+/// Unlike [`select`](#fn.select), `pselect` does not mutate the `timeout` value.
+///
+/// # Parameters
+///
+/// * `nfds`: The highest file descriptor set in any of the passed `FdSet`s, plus 1. If `None`, this
+///   is calculated automatically by calling [`FdSet::highest`] on all descriptor sets and adding 1
+///   to the maximum of that.
+/// * `readfds`: File descriptors to check for read readiness
+/// * `writefds`: File descriptors to check for write readiness
+/// * `errorfds`: File descriptors to check for pending error conditions.
+/// * `timeout`: Maximum time to wait for descriptors to become ready (`None` to block
+///   indefinitely).
+/// * `sigmask`: Signal mask to activate while waiting for file descriptors to turn
+///    ready (`None` to set no alternative signal mask).
+///
+/// # References
+///
+/// [pselect(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/pselect.html)
+///
+/// [The new pselect() system call](https://lwn.net/Articles/176911/)
+///
+/// [`FdSet::highest`]: struct.FdSet.html#method.highest
+pub fn pselect<'a, N, R, W, E, T, S>(nfds: N,
+                                     readfds: R,
+                                     writefds: W,
+                                     errorfds: E,
+                                     timeout: T,
+                                     sigmask: S) -> Result<c_int>
+where
+    N: Into<Option<c_int>>,
+    R: Into<Option<&'a mut FdSet>>,
+    W: Into<Option<&'a mut FdSet>>,
+    E: Into<Option<&'a mut FdSet>>,
+    T: Into<Option<&'a TimeSpec>>,
+    S: Into<Option<&'a SigSet>>,
+{
+    let mut readfds = readfds.into();
+    let mut writefds = writefds.into();
+    let mut errorfds = errorfds.into();
+    let sigmask = sigmask.into();
+    let timeout = timeout.into();
+
+    let nfds = nfds.into().unwrap_or_else(|| {
+        readfds.iter_mut()
+            .chain(writefds.iter_mut())
+            .chain(errorfds.iter_mut())
+            .map(|set| set.highest().unwrap_or(-1))
+            .max()
+            .unwrap_or(-1) + 1
+    });
+
+    let readfds = readfds.map(|set| set as *mut _ as *mut libc::fd_set).unwrap_or(null_mut());
+    let writefds = writefds.map(|set| set as *mut _ as *mut libc::fd_set).unwrap_or(null_mut());
+    let errorfds = errorfds.map(|set| set as *mut _ as *mut libc::fd_set).unwrap_or(null_mut());
+    let timeout = timeout.map(|ts| ts.as_ref() as *const libc::timespec).unwrap_or(null());
+    let sigmask = sigmask.map(|sm| sm.as_ref() as *const libc::sigset_t).unwrap_or(null());
+
+    let res = unsafe {
+        libc::pselect(nfds, readfds, writefds, errorfds, timeout, sigmask)
+    };
+
+    Errno::result(res)
+}
+
 
 #[cfg(test)]
 mod tests {
