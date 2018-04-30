@@ -92,7 +92,7 @@ fn test_ptrace_peekpoke() {
             let mut getpriority_checked = false;
             let mut getcwd_checked = false;
 
-            ptrace::setoptions(child, ptrace::PTRACE_O_TRACESYSGOOD).unwrap();
+            ptrace::setoptions(child, Options::PTRACE_O_TRACESYSGOOD).unwrap();
 
             loop {
                 ptrace::syscall(child).unwrap();
