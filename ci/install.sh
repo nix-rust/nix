@@ -12,7 +12,7 @@ main() {
     fi
 
     # Builds for iOS are done on OSX, but require the specific target to be
-    # installed.
+    # installed. OpenBSD is built on Linux and also requires the target installed.
     IFS=';' read -ra TARGET_ARRAY <<< "$TARGET"
     for t in "${TARGET_ARRAY[@]}"; do
         case $t in
@@ -30,6 +30,9 @@ main() {
                     ;;
             x86_64-apple-ios)
                     rustup target install x86_64-apple-ios
+                    ;;
+            x86_64-unknown-openbsd)
+                    rustup target install x86_64-unknown-openbsd
                     ;;
         esac
     done
