@@ -37,6 +37,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#833](https://github.com/nix-rust/nix/pull/833))
 
 ### Changed
+- `setpgid`, `getpgid` and `getsid` now take `Into<Option<Pid>>`
+  arguments. It is now possible to specify these optional Pid
+  arguments as plain `Pid`s or as `None`.
+  ([#896](https://github.com/nix-rust/nix/pull/896))
 - Display and Debug for SysControlAddr now includes all fields.
   ([#837](https://github.com/nix-rust/nix/pull/837))
 - `ioctl!` has been replaced with a family of `ioctl_*!` macros.
