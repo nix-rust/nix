@@ -49,6 +49,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#892](https://github.com/nix-rust/nix/pull/892))
 
 ### Fixed
+- Fixed possible panics when using `SigAction::flags` on Linux
+  ([#869](https://github.com/nix-rust/nix/pull/869))
 - Properly exposed 460800 and 921600 baud rates on NetBSD
   ([#837](https://github.com/nix-rust/nix/pull/837))
 - Fixed `ioctl_write_int!` on FreeBSD/DragonFlyBSD
