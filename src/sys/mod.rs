@@ -49,8 +49,11 @@ pub mod reboot;
 
 pub mod select;
 
-// TODO: Add support for dragonfly, freebsd, and ios/macos.
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(any(target_os = "android",
+          target_os = "freebsd",
+          target_os = "ios",
+          target_os = "linux",
+          target_os = "macos"))]
 pub mod sendfile;
 
 pub mod signal;

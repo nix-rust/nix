@@ -22,7 +22,11 @@ mod test_net;
 mod test_nix_path;
 mod test_poll;
 mod test_pty;
-#[cfg(any(target_os = "linux", target_os = "android"))]
+#[cfg(any(target_os = "android",
+          target_os = "freebsd",
+          target_os = "ios",
+          target_os = "linux",
+          target_os = "macos"))]
 mod test_sendfile;
 mod test_stat;
 mod test_unistd;
