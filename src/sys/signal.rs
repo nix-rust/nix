@@ -1,6 +1,8 @@
 // Portions of this file are Copyright 2014 The Rust Project Developers.
 // See http://rust-lang.org/COPYRIGHT.
 
+///! Operating system signals.
+
 use libc;
 use {Error, Result};
 use errno::Errno;
@@ -353,15 +355,22 @@ impl AsRef<libc::sigset_t> for SigSet {
     }
 }
 
+/// A signal handler.
 #[allow(unknown_lints)]
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum SigHandler {
+    /// Default signal handling.
     SigDfl,
+    /// Request that the signal be ignored.
     SigIgn,
+    /// Use the given signal-catching function, which takes in the signal.
     Handler(extern fn(libc::c_int)),
+    /// Use the given signal-catching function, which takes in the signal, information about how
+    /// the signal was generated, and a pointer to the threads `ucontext_t`.
     SigAction(extern fn(libc::c_int, *mut libc::siginfo_t, *mut libc::c_void))
 }
 
+/// Action to take on receipt of a signal. Corresponds to `sigaction`.
 #[derive(Clone, Copy)]
 #[allow(missing_debug_implementations)]
 pub struct SigAction {
@@ -369,8 +378,11 @@ pub struct SigAction {
 }
 
 impl SigAction {
-    /// This function will set or unset the flag `SA_SIGINFO` depending on the
-    /// type of the `handler` argument.
+    /// Creates a new action.
+    ///
+    /// The `SA_SIGINFO` bit in the `flags` argument is ignored (it will be set only if `handler`
+    /// is the `SigAction` variant). `mask` specifies other signals to block during execution of
+    /// the signal-catching function.
     pub fn new(handler: SigHandler, flags: SaFlags, mask: SigSet) -> SigAction {
         let mut s = unsafe { mem::uninitialized::<libc::sigaction>() };
         s.sa_sigaction = match handler {
@@ -388,14 +400,18 @@ impl SigAction {
         SigAction { sigaction: s }
     }
 
+    /// Returns the flags set on the action.
     pub fn flags(&self) -> SaFlags {
         SaFlags::from_bits_truncate(self.sigaction.sa_flags)
     }
 
+    /// Returns the set of signals that are blocked during execution of the action's
+    /// signal-catching function.
     pub fn mask(&self) -> SigSet {
         SigSet { sigset: self.sigaction.sa_mask }
     }
 
+    /// Returns the action's handler.
     pub fn handler(&self) -> SigHandler {
         match self.sigaction.sa_sigaction {
             libc::SIG_DFL => SigHandler::SigDfl,
@@ -407,6 +423,16 @@ impl SigAction {
     }
 }
 
+/// Changes the action taken by a process on receipt of a specific signal.
+///
+/// `signal` can be any signal except `SIGKILL` or `SIGSTOP`. On success, it returns the previous
+/// action for the given signal. If `sigaction` fails, no new signal handler is installed.
+///
+/// # Safety
+///
+/// Signal handlers may be called at any point during execution, which limits what is safe to do in
+/// the body of the signal-catching function. Be certain to only make syscalls that are explicitly
+/// marked safe for signal handlers and only share global data using atomics.
 pub unsafe fn sigaction(signal: Signal, sigaction: &SigAction) -> Result<SigAction> {
     let mut oldact = mem::uninitialized::<libc::sigaction>();
 
