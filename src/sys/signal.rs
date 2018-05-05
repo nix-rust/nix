@@ -742,28 +742,34 @@ mod tests {
 
         let handler_sig = SigHandler::Handler(test_sigaction_handler);
 
-        let flags = SaFlags::SA_ONSTACK | SaFlags::SA_RESTART | SaFlags::SA_SIGINFO;
+        let flags_no_info = SaFlags::SA_ONSTACK | SaFlags::SA_RESTART;
+        let flags_with_info = flags_no_info | SaFlags::SA_SIGINFO;
 
         let mut mask = SigSet::empty();
         mask.add(SIGUSR1);
 
-        let action_sig = SigAction::new(handler_sig, flags, mask);
+        let action_sig1 = SigAction::new(handler_sig, flags_with_info, mask);
 
-        assert_eq!(action_sig.flags(), SaFlags::SA_ONSTACK | SaFlags::SA_RESTART);
-        assert_eq!(action_sig.handler(), handler_sig);
+        assert_eq!(action_sig1.flags(), flags_no_info);
+        assert_eq!(action_sig1.handler(), handler_sig);
 
-        mask = action_sig.mask();
+        mask = action_sig1.mask();
         assert!(mask.contains(SIGUSR1));
         assert!(!mask.contains(SIGUSR2));
 
-        let handler_act = SigHandler::SigAction(test_sigaction_action);
-        let action_act = SigAction::new(handler_act, flags, mask);
-        assert_eq!(action_act.handler(), handler_act);
+        let action_sig2 = SigAction::new(handler_sig, flags_no_info, mask);
+        assert_eq!(action_sig2.flags(), flags_no_info);
 
-        let action_dfl = SigAction::new(SigHandler::SigDfl, flags, mask);
+        let handler_act = SigHandler::SigAction(test_sigaction_action);
+        let action_act1 = SigAction::new(handler_act, flags_with_info, mask);
+        assert_eq!(action_act1.handler(), handler_act);
+        let action_act2 = SigAction::new(handler_act, flags_no_info, mask);
+        assert_eq!(action_act2.flags(), flags_with_info);
+
+        let action_dfl = SigAction::new(SigHandler::SigDfl, flags_with_info, mask);
         assert_eq!(action_dfl.handler(), SigHandler::SigDfl);
 
-        let action_ign = SigAction::new(SigHandler::SigIgn, flags, mask);
+        let action_ign = SigAction::new(SigHandler::SigIgn, flags_with_info, mask);
         assert_eq!(action_ign.handler(), SigHandler::SigIgn);
     }
 
