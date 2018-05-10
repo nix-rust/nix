@@ -436,15 +436,15 @@ pub fn fchdir(dirfd: RawFd) -> Result<()> {
 /// # Example
 ///
 /// ```rust
-/// extern crate tempdir;
+/// extern crate tempfile;
 /// extern crate nix;
 ///
 /// use nix::unistd;
 /// use nix::sys::stat;
-/// use tempdir::TempDir;
+/// use tempfile::tempdir;
 ///
 /// fn main() {
-///     let tmp_dir1 = TempDir::new("test_mkdir").unwrap();
+///     let tmp_dir1 = tempdir().unwrap();
 ///     let tmp_dir2 = tmp_dir1.path().join("new_dir");
 ///
 ///     // create new directory and give read, write and execute rights to the owner
@@ -479,15 +479,15 @@ pub fn mkdir<P: ?Sized + NixPath>(path: &P, mode: Mode) -> Result<()> {
 /// # Example
 ///
 /// ```rust
-/// extern crate tempdir;
+/// extern crate tempfile;
 /// extern crate nix;
 ///
 /// use nix::unistd;
 /// use nix::sys::stat;
-/// use tempdir::TempDir;
+/// use tempfile::tempdir;
 ///
 /// fn main() {
-///     let tmp_dir = TempDir::new("test_fifo").unwrap();
+///     let tmp_dir = tempdir().unwrap();
 ///     let fifo_path = tmp_dir.path().join("foo.pipe");
 ///
 ///     // create new fifo and give read, write and execute rights to the owner

@@ -5,7 +5,7 @@
 
 extern crate libc;
 extern crate nix;
-extern crate tempdir;
+extern crate tempfile;
 
 #[cfg(target_os = "linux")]
 mod test_mount {
@@ -23,7 +23,7 @@ mod test_mount {
     use nix::sys::stat::{self, Mode};
     use nix::unistd::getuid;
 
-    use tempdir::TempDir;
+    use tempfile;
 
     static SCRIPT_CONTENTS: &'static [u8] = b"#!/bin/sh
 exit 23";
@@ -32,8 +32,7 @@ exit 23";
 
     const NONE: Option<&'static [u8]> = None;
     pub fn test_mount_tmpfs_without_flags_allows_rwx() {
-        let tempdir = TempDir::new("nix-test_mount")
-                          .unwrap_or_else(|e| panic!("tempdir failed: {}", e));
+        let tempdir = tempfile::tempdir().unwrap();
 
         mount(NONE,
               tempdir.path(),
@@ -89,8 +88,7 @@ exit 23";
     }
 
     pub fn test_mount_rdonly_disallows_write() {
-        let tempdir = TempDir::new("nix-test_mount")
-                          .unwrap_or_else(|e| panic!("tempdir failed: {}", e));
+        let tempdir = tempfile::tempdir().unwrap();
 
         mount(NONE,
               tempdir.path(),
@@ -107,8 +105,7 @@ exit 23";
     }
 
     pub fn test_mount_noexec_disallows_exec() {
-        let tempdir = TempDir::new("nix-test_mount")
-                          .unwrap_or_else(|e| panic!("tempdir failed: {}", e));
+        let tempdir = tempfile::tempdir().unwrap();
 
         mount(NONE,
               tempdir.path(),
@@ -146,13 +143,11 @@ exit 23";
     }
 
     pub fn test_mount_bind() {
-        let tempdir = TempDir::new("nix-test_mount")
-                          .unwrap_or_else(|e| panic!("tempdir failed: {}", e));
+        let tempdir = tempfile::tempdir().unwrap();
         let file_name = "test";
 
         {
-            let mount_point = TempDir::new("nix-test_mount")
-                                  .unwrap_or_else(|e| panic!("tempdir failed: {}", e));
+            let mount_point = tempfile::tempdir().unwrap();
 
             mount(Some(tempdir.path()),
                   mount_point.path(),

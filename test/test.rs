@@ -7,7 +7,6 @@ extern crate nix;
 extern crate lazy_static;
 extern crate libc;
 extern crate rand;
-extern crate tempdir;
 extern crate tempfile;
 
 mod sys;

@@ -9,7 +9,7 @@ use nix::sys::stat::{self, fchmod, fchmodat, fstat, lstat, stat};
 use nix::sys::stat::{FileStat, Mode, FchmodatFlags};
 use nix::unistd::chdir;
 use nix::Result;
-use tempdir::TempDir;
+use tempfile;
 
 #[allow(unused_comparisons)]
 // uid and gid are signed on Windows, but not on other platforms. This function
@@ -56,7 +56,7 @@ fn assert_lstat_results(stat_result: Result<FileStat>) {
 
 #[test]
 fn test_stat_and_fstat() {
-    let tempdir = TempDir::new("nix-test_stat_and_fstat").unwrap();
+    let tempdir = tempfile::tempdir().unwrap();
     let filename = tempdir.path().join("foo.txt");
     let file = File::create(&filename).unwrap();
 
@@ -69,7 +69,7 @@ fn test_stat_and_fstat() {
 
 #[test]
 fn test_fstatat() {
-    let tempdir = TempDir::new("nix-test_fstatat").unwrap();
+    let tempdir = tempfile::tempdir().unwrap();
     let filename = tempdir.path().join("foo.txt");
     File::create(&filename).unwrap();
     let dirfd = fcntl::open(tempdir.path(),
@@ -84,7 +84,7 @@ fn test_fstatat() {
 
 #[test]
 fn test_stat_fstat_lstat() {
-    let tempdir = TempDir::new("nix-test_stat_fstat_lstat").unwrap();
+    let tempdir = tempfile::tempdir().unwrap();
     let filename = tempdir.path().join("bar.txt");
     let linkname = tempdir.path().join("barlink");
 
@@ -106,7 +106,7 @@ fn test_stat_fstat_lstat() {
 
 #[test]
 fn test_fchmod() {
-    let tempdir = TempDir::new("nix-test_fchmod").unwrap();
+    let tempdir = tempfile::tempdir().unwrap();
     let filename = tempdir.path().join("foo.txt");
     let file = File::create(&filename).unwrap();
 
@@ -128,7 +128,7 @@ fn test_fchmod() {
 
 #[test]
 fn test_fchmodat() {
-    let tempdir = TempDir::new("nix-test_fchmodat").unwrap();
+    let tempdir = tempfile::tempdir().unwrap();
     let filename = "foo.txt";
     let fullpath = tempdir.path().join(filename);
     File::create(&fullpath).unwrap();
