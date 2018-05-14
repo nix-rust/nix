@@ -8,6 +8,9 @@ use libc::{self, c_void, c_int, socklen_t, size_t};
 use std::{fmt, mem, ptr, slice};
 use std::os::unix::io::RawFd;
 use sys::time::TimeVal;
+#[cfg(target_os = "linux")]
+use sys::time::TimeSpec;
+
 use sys::uio::IoVec;
 
 mod addr;
@@ -523,7 +526,7 @@ pub enum ControlMessage<'a> {
     /// See the kernel's explanation in "SO_TIMESTAMPING" of
     /// [networking/timestamping](https://www.kernel.org/doc/Documentation/networking/timestamping.txt).
     #[cfg(target_os = "linux")]
-    ScmTimestamping(&'a [TimeVal; 3]),
+    ScmTimestamping(&'a [TimeSpec; 3]),
     #[doc(hidden)]
     Unknown(UnknownCmsg<'a>),
 }
