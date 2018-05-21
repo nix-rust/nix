@@ -35,6 +35,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#857](https://github.com/nix-rust/nix/pull/857))
 - Added `request_code_write_int!` on FreeBSD/DragonFlyBSD
   ([#833](https://github.com/nix-rust/nix/pull/833))
+- Added `nix::unistd::{getdomainname, setdomainname}` for all platforms except Android.
+  ([#816](https://github.com/nix-rust/nix/pull/816))
 
 ### Changed
 - Display and Debug for SysControlAddr now includes all fields.

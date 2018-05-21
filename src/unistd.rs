@@ -769,6 +769,60 @@ pub fn gethostname() -> Result<OsString> {
     })
 }
 
+cfg_if!{
+    if #[cfg(any(target_os = "dragonfly", target_os = "freebsd",
+                 target_os = "ios", target_os = "macos"))] {
+        type namelen_t = c_int;
+    } else if #[cfg(not(target_os = "android"))] {
+        type namelen_t = size_t;
+    }
+}
+
+/// Set the NIS domain name (see
+/// [setdomainname(2)](http://man7.org/linux/man-pages/man2/setdomainname.2.html)).
+#[cfg(any(target_os = "dragonfly", target_os = "freebsd", target_os = "ios",
+          target_os = "linux", target_os = "macos", target_os = "netbsd",
+          target_os = "openbsd"))]
+pub fn setdomainname<S: AsRef<OsStr>>(name: S) -> Result<()> {
+    let ptr = name.as_ref().as_bytes().as_ptr() as *const c_char;
+    let len = name.as_ref().as_bytes().len() as namelen_t;
+    let res = unsafe { libc::setdomainname(ptr, len) };
+    Errno::result(res).map(drop)
+}
+
+/// Get the NIS domain name, returning a `OsString` on success (see
+/// [getdomainname(2)](http://man7.org/linux/man-pages/man2/getdomainname.2.html)).
+///
+/// This function call attempts to get the NIS domain name for the
+/// running system.
+///
+/// # Examples
+///
+/// ```
+/// use nix::unistd;
+///
+/// let domainname_os = unistd::getdomainname().expect("Failed getting domain name");
+/// let domainname = domainname_os.into_string().expect("Domain name wasn't valid UTF-8");
+/// println!("Domain name: {}", domainname);
+/// ```
+#[cfg(any(target_os = "dragonfly", target_os = "freebsd", target_os = "ios",
+          target_os = "linux", target_os = "macos", target_os = "netbsd",
+          target_os = "openbsd"))]
+pub fn getdomainname() -> Result<OsString> {
+    // Minimum hostname maximum length as defined by POSIX,
+    // http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/limits.h.html
+    const _POSIX_HOST_NAME_MAX: c_long = 255;
+    let buf_len = sysconf(SysconfVar::HOST_NAME_MAX)
+        .unwrap_or(None).unwrap_or(_POSIX_HOST_NAME_MAX + 1);
+    let mut buf = vec![0; buf_len as usize];
+
+    let res = unsafe { libc::getdomainname(buf.as_mut_ptr() as *mut c_char, buf_len as namelen_t) };
+    Errno::result(res).map(|_| {
+        buf[(buf_len - 1) as usize] = 0;
+        OsString::from_vec(buf)
+    })
+}
+
 /// Close a raw file descriptor
 ///
 /// Be aware that many Rust types implicitly close-on-drop, including

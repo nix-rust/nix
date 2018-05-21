@@ -466,3 +466,15 @@ fn test_gethostname() {
         .into_string().expect("hostname contains invalid data");
     assert_eq!(hn1, hn2);
 }
+
+#[test]
+#[cfg(any(target_os = "dragonfly", target_os = "freebsd", target_os = "ios",
+          target_os = "linux", target_os = "macos", target_os = "netbsd",
+          target_os = "openbsd"))]
+fn test_getdomainname() {
+    let dn1 = getdomainname().expect("first getdomainname failed")
+        .into_string().expect("domainname contains invalid data");
+    let dn2 = getdomainname().expect("second getdomainname failed")
+        .into_string().expect("domainname contains invalid data");
+    assert_eq!(dn1, dn2);
+}
