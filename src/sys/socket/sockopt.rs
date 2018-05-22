@@ -19,7 +19,7 @@ use std::os::unix::io::RawFd;
 ///
 /// * `$name:ident`: name of the type you want to implement `SetSockOpt` for.
 /// * `$level:path` : socket layer, or a `protocol level`: could be *raw sockets*
-///    (`lic::SOL_SOCKET`), *ip protocol* (libc::IPPROTO_IP), *tcp protocol* (`libc::IPPROTO_TCP`),
+///    (`libc::SOL_SOCKET`), *ip protocol* (libc::IPPROTO_IP), *tcp protocol* (`libc::IPPROTO_TCP`),
 ///    and more. Please refer to your system manual for more options. Will be passed as the second
 ///    argument (`level`) to the `setsockopt` call.
 /// * `$flag:path`: a flag name to set. Some examples: `libc::SO_REUSEADDR`, `libc::TCP_NODELAY`,
