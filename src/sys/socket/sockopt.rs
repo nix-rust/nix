@@ -5,6 +5,7 @@ use sys::time::TimeVal;
 use libc::{self, c_int, uint8_t, c_void, socklen_t};
 use std::mem;
 use std::os::unix::io::RawFd;
+use std::ffi::CString;
 
 /// Helper for implementing `SetSockOpt` for a given socket option. See
 /// [`::sys::socket::SetSockOpt`](sys/socket/trait.SetSockOpt.html).
@@ -255,6 +256,7 @@ sockopt_impl!(Both, BindAny, libc::SOL_SOCKET, libc::SO_BINDANY, bool);
 sockopt_impl!(Both, BindAny, libc::IPPROTO_IP, libc::IP_BINDANY, bool);
 #[cfg(target_os = "linux")]
 sockopt_impl!(Both, Mark, libc::SOL_SOCKET, libc::SO_MARK, u32);
+sockopt_impl!(Both, BindToDevice, libc::SOL_SOCKET, libc::SO_BINDTODEVICE, CString);
 
 /*
  *
@@ -332,6 +334,52 @@ unsafe impl<'a, T> Set<'a, T> for SetStruct<'a, T> {
 
     fn ffi_len(&self) -> socklen_t {
         mem::size_of::<T>() as socklen_t
+    }
+}
+
+/// Getter for a C string of lentgh IFNAMSIZ.
+struct GetCstring {
+    len: socklen_t,
+    val: [u8; libc::IFNAMSIZ],
+}
+
+unsafe impl Get<CString> for GetCstring {
+    unsafe fn blank() -> Self {
+        GetCstring {
+            len: libc::IFNAMSIZ as socklen_t,
+            val: [0u8; libc::IFNAMSIZ],
+        }
+    }
+
+    fn ffi_ptr(&mut self) -> *mut c_void {
+        &mut self.val as *mut [u8] as *mut c_void
+    }
+
+    fn ffi_len(&mut self) -> *mut socklen_t {
+        &mut self.len
+    }
+
+    unsafe fn unwrap(self) -> CString {
+        CString::from_vec_unchecked(self.val.to_vec())
+    }
+}
+
+/// Setter for a C string of lentgh IFNAMSIZ.
+struct SetCstring<'a> {
+    val: &'a CString,
+}
+
+unsafe impl<'a> Set<'a, CString> for SetCstring<'a> {
+    fn new(val: &'a CString) -> SetCstring {
+        SetCstring { val: val }
+    }
+
+    fn ffi_ptr(&self) -> *const c_void {
+        self.val.as_ptr() as *const c_void
+    }
+
+    fn ffi_len(&self) -> socklen_t {
+        libc::IFNAMSIZ as socklen_t
     }
 }
 
