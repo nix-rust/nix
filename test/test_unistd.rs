@@ -457,3 +457,24 @@ fn test_canceling_alarm() {
     assert_eq!(alarm::set(60), None);
     assert_eq!(alarm::cancel(), Some(60));
 }
+
+#[test]
+fn test_gethostname() {
+    let hn1 = gethostname().expect("first gethostname failed")
+        .into_string().expect("hostname contains invalid data");
+    let hn2 = gethostname().expect("second gethostname failed")
+        .into_string().expect("hostname contains invalid data");
+    assert_eq!(hn1, hn2);
+}
+
+#[test]
+#[cfg(any(target_os = "dragonfly", target_os = "freebsd", target_os = "ios",
+          target_os = "linux", target_os = "macos", target_os = "netbsd",
+          target_os = "openbsd"))]
+fn test_getdomainname() {
+    let dn1 = getdomainname().expect("first getdomainname failed")
+        .into_string().expect("domainname contains invalid data");
+    let dn2 = getdomainname().expect("second getdomainname failed")
+        .into_string().expect("domainname contains invalid data");
+    assert_eq!(dn1, dn2);
+}
