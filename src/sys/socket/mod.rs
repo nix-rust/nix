@@ -788,26 +788,10 @@ pub fn listen(sockfd: RawFd, backlog: usize) -> Result<()> {
 /// Bind a name to a socket
 ///
 /// [Further reading](http://pubs.opengroup.org/onlinepubs/9699919799/functions/bind.html)
-#[cfg(not(all(target_os="android", target_pointer_width="64")))]
 pub fn bind(fd: RawFd, addr: &SockAddr) -> Result<()> {
     let res = unsafe {
         let (ptr, len) = addr.as_ffi_pair();
         libc::bind(fd, ptr, len)
-    };
-
-    Errno::result(res).map(drop)
-}
-
-/// Bind a name to a socket
-///
-/// [Further reading](http://man7.org/linux/man-pages/man2/bind.2.html)
-// Android has some weirdness. Its 64-bit bind takes a c_int instead of a
-// socklen_t
-#[cfg(all(target_os="android", target_pointer_width="64"))]
-pub fn bind(fd: RawFd, addr: &SockAddr) -> Result<()> {
-    let res = unsafe {
-        let (ptr, len) = addr.as_ffi_pair();
-        libc::bind(fd, ptr, len as c_int)
     };
 
     Errno::result(res).map(drop)
