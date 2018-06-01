@@ -8,7 +8,7 @@ use libc::{self, c_void, c_int, socklen_t, size_t};
 use std::{fmt, mem, ptr, slice};
 use std::os::unix::io::RawFd;
 use sys::time::TimeVal;
-#[cfg(target_os = "linux")]
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 use sys::time::TimeSpec;
 
 use sys::uio::IoVec;
@@ -417,7 +417,7 @@ impl<'a> Iterator for CmsgIterator<'a> {
                 Some(ControlMessage::ScmTimestamp(
                     &*(cmsg_data.as_ptr() as *const _)))
             },
-            #[cfg(target_os = "linux")]
+            #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
             (libc::SOL_SOCKET, libc::SCM_TIMESTAMPING) => unsafe {
                 Some(ControlMessage::ScmTimestamping(
                     &*(cmsg_data.as_ptr() as *const _)))
@@ -525,7 +525,7 @@ pub enum ControlMessage<'a> {
     ///
     /// See the kernel's explanation in "SO_TIMESTAMPING" of
     /// [networking/timestamping](https://www.kernel.org/doc/Documentation/networking/timestamping.txt).
-    #[cfg(target_os = "linux")]
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     ScmTimestamping(&'a [TimeSpec; 3]),
     #[doc(hidden)]
     Unknown(UnknownCmsg<'a>),
@@ -561,7 +561,7 @@ impl<'a> ControlMessage<'a> {
             ControlMessage::ScmTimestamp(t) => {
                 mem::size_of_val(t)
             },
-            #[cfg(target_os = "linux")]
+            #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
             ControlMessage::ScmTimestamping(t) => {
                 mem::size_of_val(t)
             }
@@ -613,7 +613,7 @@ impl<'a> ControlMessage<'a> {
 
                 copy_bytes(t, buf);
             },
-            #[cfg(target_os = "linux")]
+            #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
             ControlMessage::ScmTimestamping(t) => {
                 let cmsg = cmsghdr {
                     cmsg_len: self.len() as _,
