@@ -86,32 +86,49 @@ pub enum SockProtocol {
     KextControl = libc::SYSPROTO_CONTROL,
 }
 
-libc_bitflags!{
-    /// Additional socket options
-    pub struct SockFlag: c_int {
-        /// Set non-blocking mode on the new socket
-        #[cfg(any(target_os = "android",
-                  target_os = "dragonfly",
-                  target_os = "freebsd",
-                  target_os = "linux",
-                  target_os = "netbsd",
-                  target_os = "openbsd"))]
-        SOCK_NONBLOCK;
-        /// Set close-on-exec on the new descriptor
-        #[cfg(any(target_os = "android",
-                  target_os = "dragonfly",
-                  target_os = "freebsd",
-                  target_os = "linux",
-                  target_os = "netbsd",
-                  target_os = "openbsd"))]
-        SOCK_CLOEXEC;
-        /// Return `EPIPE` instead of raising `SIGPIPE`
-        #[cfg(target_os = "netbsd")]
-        SOCK_NOSIGPIPE;
-        /// For domains `AF_INET(6)`, only allow `connect(2)`, `sendto(2)`, or `sendmsg(2)`
-        /// to the DNS port (typically 53)
-        #[cfg(target_os = "openbsd")]
-        SOCK_DNS;
+cfg_if! {
+    /*
+      Because `nix` provides a new API that does not conform to
+      POSIX or BSD (or directly Linux), add virtual definitions
+      for macOS and iOS that are backed by their equivalent `fcntl` flags.
+    */
+    if #[cfg(any(target_os = "macos",
+                 target_os = "ios"))] {
+        bitflags! {
+            pub struct SockFlag: c_int {
+                const SOCK_NONBLOCK = libc::O_NONBLOCK;
+                const SOCK_CLOEXEC = libc::O_CLOEXEC;
+            }
+        }
+    } else {
+        libc_bitflags!{
+            /// Additional socket options
+            pub struct SockFlag: c_int {
+                /// Set non-blocking mode on the new socket
+                #[cfg(any(target_os = "android",
+                          target_os = "dragonfly",
+                          target_os = "freebsd",
+                          target_os = "linux",
+                          target_os = "netbsd",
+                          target_os = "openbsd"))]
+                SOCK_NONBLOCK;
+                /// Set close-on-exec on the new descriptor
+                #[cfg(any(target_os = "android",
+                          target_os = "dragonfly",
+                          target_os = "freebsd",
+                          target_os = "linux",
+                          target_os = "netbsd",
+                          target_os = "openbsd"))]
+                SOCK_CLOEXEC;
+                /// Return `EPIPE` instead of raising `SIGPIPE`
+                #[cfg(target_os = "netbsd")]
+                SOCK_NOSIGPIPE;
+                /// For domains `AF_INET(6)`, only allow `connect(2)`, `sendto(2)`, or `sendmsg(2)`
+                /// to the DNS port (typically 53)
+                #[cfg(target_os = "openbsd")]
+                SOCK_DNS;
+            }
+        }
     }
 }
 
@@ -709,7 +726,9 @@ pub fn socket<T: Into<Option<SockProtocol>>>(domain: AddressFamily, ty: SockType
     #[cfg(any(target_os = "android",
               target_os = "dragonfly",
               target_os = "freebsd",
+              target_os = "ios",
               target_os = "linux",
+              target_os = "macos",
               target_os = "netbsd",
               target_os = "openbsd"))]
     {
@@ -754,7 +773,9 @@ pub fn socketpair<T: Into<Option<SockProtocol>>>(domain: AddressFamily, ty: Sock
     #[cfg(any(target_os = "android",
               target_os = "dragonfly",
               target_os = "freebsd",
+              target_os = "ios",
               target_os = "linux",
+              target_os = "macos",
               target_os = "netbsd",
               target_os = "openbsd"))]
     {
@@ -820,7 +841,9 @@ fn accept4_polyfill(sockfd: RawFd, flags: SockFlag) -> Result<RawFd> {
     #[cfg(any(target_os = "android",
               target_os = "dragonfly",
               target_os = "freebsd",
+              target_os = "ios",
               target_os = "linux",
+              target_os = "macos",
               target_os = "netbsd",
               target_os = "openbsd"))]
     {
