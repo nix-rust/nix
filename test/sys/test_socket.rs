@@ -257,7 +257,7 @@ pub fn test_syscontrol() {
 }
 
 // Test creating and using named system control sockets
-#[cfg(any(target_os = "linux", target_arch = "x86_64"))]
+#[cfg(all(target_os = "linux", target_arch = "x86_64", not(target_env = "musl")))]
 #[test]
 pub fn test_scm_timestamping() {
     use nix::sys::uio::IoVec;
