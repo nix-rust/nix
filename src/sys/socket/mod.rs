@@ -616,7 +616,7 @@ impl<'a> ControlMessage<'a> {
 
                 copy_bytes(t, buf);
             },
-            #[cfg(all(target_os = "linux", target_arch = "x86_64", ))]
+            #[cfg(all(target_os = "linux", target_arch = "x86_64", not(target_env = "musl")))]
             ControlMessage::ScmTimestamping(t) => {
                 let cmsg = cmsghdr {
                     cmsg_len: self.len() as _,
