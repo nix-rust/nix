@@ -255,6 +255,11 @@ sockopt_impl!(Both, BindAny, libc::SOL_SOCKET, libc::SO_BINDANY, bool);
 sockopt_impl!(Both, BindAny, libc::IPPROTO_IP, libc::IP_BINDANY, bool);
 #[cfg(target_os = "linux")]
 sockopt_impl!(Both, Mark, libc::SOL_SOCKET, libc::SO_MARK, u32);
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+const SO_TIMESTAMPING: libc::c_int = 37;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+sockopt_impl!(Both, Timestamping, libc::SOL_SOCKET, SO_TIMESTAMPING, i32);
+
 
 /*
  *
