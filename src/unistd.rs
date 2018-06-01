@@ -240,20 +240,30 @@ pub fn getppid() -> Pid {
 /// Set a process group ID (see
 /// [setpgid(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/setpgid.html)).
 ///
-/// Set the process group id (PGID) of a particular process.  If a pid of zero
-/// is specified, then the pid of the calling process is used.  Process groups
-/// may be used to group together a set of processes in order for the OS to
-/// apply some operations across the group.
+/// Set the process group id (PGID) of a particular process.  If None
+/// or a pid of zero is specified, then the pid of the calling process
+/// is used.  Process groups may be used to group together a set of
+/// processes in order for the OS to apply some operations across the
+/// group.
 ///
 /// `setsid()` may be used to create a new process group.
 #[inline]
-pub fn setpgid(pid: Pid, pgid: Pid) -> Result<()> {
+pub fn setpgid<P: Into<Option<Pid>>>(pid: P, pgid: P) -> Result<()> {
+    let pid = pid.into().unwrap_or(Pid(0));
+    let pgid = pgid.into().unwrap_or(Pid(0));
     let res = unsafe { libc::setpgid(pid.into(), pgid.into()) };
     Errno::result(res).map(drop)
 }
+
+/// Get the process group ID for a process (see
+/// [getpgid(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/getpgid.html)).
+///
+/// Return the process group ID (PGID) of a particular process. If
+/// None or a pid of zero is specified, then the PGID of the calling
+/// process is returned.
 #[inline]
-pub fn getpgid(pid: Option<Pid>) -> Result<Pid> {
-    let res = unsafe { libc::getpgid(pid.unwrap_or(Pid(0)).into()) };
+pub fn getpgid<P: Into<Option<Pid>>>(pid: P) -> Result<Pid> {
+    let res = unsafe { libc::getpgid(pid.into().unwrap_or(Pid(0)).into()) };
     Errno::result(res).map(Pid)
 }
 
@@ -268,13 +278,12 @@ pub fn setsid() -> Result<Pid> {
 /// [getsid(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/getsid.html).
 ///
 /// Obtain the process group ID of the process that is the session leader of the process specified
-/// by pid. If pid is zero, it specifies the calling process.
+/// by pid. If passed None or pid is or zero, it specifies the calling process.
 #[inline]
-pub fn getsid(pid: Option<Pid>) -> Result<Pid> {
-    let res = unsafe { libc::getsid(pid.unwrap_or(Pid(0)).into()) };
+pub fn getsid<P: Into<Option<Pid>>>(pid: P) -> Result<Pid> {
+    let res = unsafe { libc::getsid(pid.into().unwrap_or(Pid(0)).into()) };
     Errno::result(res).map(Pid)
 }
-
 
 /// Get the terminal foreground process group (see
 /// [tcgetpgrp(3)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/tcgetpgrp.html)).

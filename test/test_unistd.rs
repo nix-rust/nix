@@ -112,8 +112,24 @@ fn test_getpid() {
 fn test_getsid() {
     let none_sid: ::libc::pid_t = getsid(None).unwrap().into();
     let pid_sid: ::libc::pid_t = getsid(Some(getpid())).unwrap().into();
+    let plain_sid: ::libc::pid_t = getsid(getpid()).unwrap().into();
+    let zero_sid: ::libc::pid_t = getsid(Pid::from_raw(0)).unwrap().into();
     assert!(none_sid > 0);
     assert!(none_sid == pid_sid);
+    assert!(none_sid == plain_sid);
+    assert!(none_sid == zero_sid);
+}
+
+#[test]
+fn test_getpgid() {
+    let none_pgid: ::libc::pid_t = getpgid(None).unwrap().into();
+    let pid_pgid: ::libc::pid_t = getpgid(Some(getpid())).unwrap().into();
+    let plain_pgid: ::libc::pid_t = getpgid(getpid()).unwrap().into();
+    let zero_pgid: ::libc::pid_t = getpgid(Pid::from_raw(0)).unwrap().into();
+    assert!(none_pgid > 0);
+    assert!(none_pgid == pid_pgid);
+    assert!(none_pgid == plain_pgid);
+    assert!(none_pgid == zero_pgid);
 }
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
