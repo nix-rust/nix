@@ -3,7 +3,6 @@
 //! [Further reading](http://man7.org/linux/man-pages/man7/socket.7.html)
 use {Error, Result};
 use errno::Errno;
-use features;
 use libc::{self, c_void, c_int, socklen_t, size_t};
 use std::{fmt, mem, ptr, slice};
 use std::os::unix::io::RawFd;
@@ -692,42 +691,20 @@ pub fn recvmsg<'a, T>(fd: RawFd, iov: &[IoVec<&mut [u8]>], cmsg_buffer: Option<&
 ///
 /// [Further reading](http://pubs.opengroup.org/onlinepubs/9699919799/functions/socket.html)
 pub fn socket<T: Into<Option<SockProtocol>>>(domain: AddressFamily, ty: SockType, flags: SockFlag, protocol: T) -> Result<RawFd> {
-    let mut ty = ty as c_int;
     let protocol = match protocol.into() {
         None => 0,
         Some(p) => p as c_int,
     };
-    let feat_atomic = features::socket_atomic_cloexec();
 
-    if feat_atomic {
-        ty |= flags.bits();
-    }
+    // SockFlags are usually embedded into `ty`, but we don't do that in `nix` because it's a
+    // little easier to understand by separating it out. So we have to merge these bitfields
+    // here.
+    let mut ty = ty as c_int;
+    ty |= flags.bits();
 
-    // TODO: Check the kernel version
-    let res = try!(Errno::result(unsafe { libc::socket(domain as c_int, ty, protocol) }));
+    let res = unsafe { libc::socket(domain as c_int, ty, protocol) };
 
-    #[cfg(any(target_os = "android",
-              target_os = "dragonfly",
-              target_os = "freebsd",
-              target_os = "linux",
-              target_os = "netbsd",
-              target_os = "openbsd"))]
-    {
-        use fcntl::{fcntl, FdFlag, OFlag};
-        use fcntl::FcntlArg::{F_SETFD, F_SETFL};
-
-        if !feat_atomic {
-            if flags.contains(SockFlag::SOCK_CLOEXEC) {
-                try!(fcntl(res, F_SETFD(FdFlag::FD_CLOEXEC)));
-            }
-
-            if flags.contains(SockFlag::SOCK_NONBLOCK) {
-                try!(fcntl(res, F_SETFL(OFlag::O_NONBLOCK)));
-            }
-        }
-    }
-
-    Ok(res)
+    Errno::result(res)
 }
 
 /// Create a pair of connected sockets
@@ -735,44 +712,22 @@ pub fn socket<T: Into<Option<SockProtocol>>>(domain: AddressFamily, ty: SockType
 /// [Further reading](http://pubs.opengroup.org/onlinepubs/9699919799/functions/socketpair.html)
 pub fn socketpair<T: Into<Option<SockProtocol>>>(domain: AddressFamily, ty: SockType, protocol: T,
                   flags: SockFlag) -> Result<(RawFd, RawFd)> {
-    let mut ty = ty as c_int;
     let protocol = match protocol.into() {
         None => 0,
         Some(p) => p as c_int,
     };
-    let feat_atomic = features::socket_atomic_cloexec();
 
-    if feat_atomic {
-        ty |= flags.bits();
-    }
+    // SockFlags are usually embedded into `ty`, but we don't do that in `nix` because it's a
+    // little easier to understand by separating it out. So we have to merge these bitfields
+    // here.
+    let mut ty = ty as c_int;
+    ty |= flags.bits();
+
     let mut fds = [-1, -1];
-    let res = unsafe {
-        libc::socketpair(domain as c_int, ty, protocol, fds.as_mut_ptr())
-    };
-    try!(Errno::result(res));
 
-    #[cfg(any(target_os = "android",
-              target_os = "dragonfly",
-              target_os = "freebsd",
-              target_os = "linux",
-              target_os = "netbsd",
-              target_os = "openbsd"))]
-    {
-        use fcntl::{fcntl, FdFlag, OFlag};
-        use fcntl::FcntlArg::{F_SETFD, F_SETFL};
+    let res = unsafe { libc::socketpair(domain as c_int, ty, protocol, fds.as_mut_ptr()) };
+    Errno::result(res)?;
 
-        if !feat_atomic {
-            if flags.contains(SockFlag::SOCK_CLOEXEC) {
-                try!(fcntl(fds[0], F_SETFD(FdFlag::FD_CLOEXEC)));
-                try!(fcntl(fds[1], F_SETFD(FdFlag::FD_CLOEXEC)));
-            }
-
-            if flags.contains(SockFlag::SOCK_NONBLOCK) {
-                try!(fcntl(fds[0], F_SETFL(OFlag::O_NONBLOCK)));
-                try!(fcntl(fds[1], F_SETFL(OFlag::O_NONBLOCK)));
-            }
-        }
-    }
     Ok((fds[0], fds[1]))
 }
 
@@ -809,46 +764,14 @@ pub fn accept(sockfd: RawFd) -> Result<RawFd> {
 /// Accept a connection on a socket
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/accept.2.html)
+#[cfg(any(target_os = "android",
+          target_os = "freebsd",
+          target_os = "linux",
+          target_os = "openbsd"))]
 pub fn accept4(sockfd: RawFd, flags: SockFlag) -> Result<RawFd> {
-    accept4_polyfill(sockfd, flags)
-}
+    let res = unsafe { libc::accept4(sockfd, ptr::null_mut(), ptr::null_mut(), flags.bits()) };
 
-#[inline]
-fn accept4_polyfill(sockfd: RawFd, flags: SockFlag) -> Result<RawFd> {
-    let res = try!(Errno::result(unsafe { libc::accept(sockfd, ptr::null_mut(), ptr::null_mut()) }));
-
-    #[cfg(any(target_os = "android",
-              target_os = "dragonfly",
-              target_os = "freebsd",
-              target_os = "linux",
-              target_os = "netbsd",
-              target_os = "openbsd"))]
-    {
-        use fcntl::{fcntl, FdFlag, OFlag};
-        use fcntl::FcntlArg::{F_SETFD, F_SETFL};
-
-        if flags.contains(SockFlag::SOCK_CLOEXEC) {
-            try!(fcntl(res, F_SETFD(FdFlag::FD_CLOEXEC)));
-        }
-
-        if flags.contains(SockFlag::SOCK_NONBLOCK) {
-            try!(fcntl(res, F_SETFL(OFlag::O_NONBLOCK)));
-        }
-    }
-
-    // Disable unused variable warning on some platforms
-    #[cfg(not(any(target_os = "android",
-                  target_os = "dragonfly",
-                  target_os = "freebsd",
-                  target_os = "linux",
-                  target_os = "netbsd",
-                  target_os = "openbsd")))]
-    {
-        let _ = flags;
-    }
-
-
-    Ok(res)
+    Errno::result(res)
 }
 
 /// Initiate a connection on a socket

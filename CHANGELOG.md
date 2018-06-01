@@ -51,6 +51,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#892](https://github.com/nix-rust/nix/pull/892))
 - Remove `IFF_NOTRAILERS` on OpenBSD, as it has been removed in OpenBSD 6.3
   ([#893](https://github.com/nix-rust/nix/pull/893))
+- Emulation of `FD_CLOEXEC` and `O_NONBLOCK` was removed from `socket()`, `accept4()`, and
+  `socketpair()`.
+  ([#907](https://github.com/nix-rust/nix/pull/907))
 
 ### Fixed
 - Fixed possible panics when using `SigAction::flags` on Linux
@@ -68,6 +71,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#872](https://github.com/nix-rust/nix/pull/872))
 - Removed `sys::aio::lio_listio`.  Use `sys::aio::LioCb::listio` instead.
   ([#872](https://github.com/nix-rust/nix/pull/872))
+- Removed emulated `accept4()` from macos, ios, and netbsd targets
+  ([#907](https://github.com/nix-rust/nix/pull/907))
 
 ## [0.10.0] 2018-01-26
 
