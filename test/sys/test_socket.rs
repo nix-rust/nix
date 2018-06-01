@@ -255,3 +255,62 @@ pub fn test_syscontrol() {
     // requires root privileges
     // connect(fd, &sockaddr).expect("connect failed");
 }
+
+// Test creating and using named system control sockets
+#[cfg(any(target_os = "linux", target_arch = "x86_64"))]
+#[test]
+pub fn test_scm_timestamping() {
+    use nix::sys::uio::IoVec;
+    use nix::unistd::close;
+    use nix::sys::socket::{socket, bind, connect, sendmsg, recvmsg, setsockopt,
+                           AddressFamily, SockType, SockFlag, SockAddr,
+                           CmsgSpace, MsgFlags, ControlMessage};
+    use nix::sys::socket::sockopt::{Timestamping};
+    use nix::sys::time::TimeVal;
+    use std::net;
+
+    let actual: net::SocketAddr = FromStr::from_str("127.0.0.1:3000").unwrap();
+    let addr = SockAddr::new_inet(InetAddr::from_std(&actual));
+
+    let fd1 = socket(AddressFamily::Inet, SockType::Datagram, SockFlag::empty(), None).expect("socket failed");
+    connect(fd1, &addr).expect("connect failed");
+
+    let fd2 = socket(AddressFamily::Inet, SockType::Datagram, SockFlag::empty(), None).expect("socket failed");
+    bind(fd2, &addr).expect("binding failed");
+
+    // Definitions from linux/net_tstamp.h
+    const SOF_TIMESTAMPING_SOFTWARE: i32 = 1 << 4;
+    const SOF_TIMESTAMPING_RX_SOFTWARE: i32 = 1 << 3;
+
+    let so_timestamping_flags: i32 = SOF_TIMESTAMPING_SOFTWARE | SOF_TIMESTAMPING_RX_SOFTWARE;
+    setsockopt(fd2, Timestamping, &so_timestamping_flags).unwrap();
+
+    {
+        let iov = [IoVec::from_slice(b"test")];
+        assert_eq!(sendmsg(fd1, &iov, &[], MsgFlags::empty(), None).unwrap(), 4);
+        close(fd1).unwrap();
+    }
+
+    {
+        let mut buf = [0u8; 4];
+        let iov = [IoVec::from_mut_slice(&mut buf[..])];
+        let mut time_rx: CmsgSpace<[TimeVal; 3]> = CmsgSpace::new();
+        let msg = recvmsg(fd2, &iov, Some(&mut time_rx), MsgFlags::empty()).unwrap();
+
+        // Check that we got a timestamp with the packet:
+        let mut ts_received = false;
+        for cmsg in msg.cmsgs() {
+            match cmsg {
+                ControlMessage::ScmTimestamping(timestamps) => {
+                    // Software timestamps are in slot 0
+                    assert!(timestamps[0].tv_nsec() > 0);
+                    assert!(timestamps[0].tv_sec() > 0);
+                    ts_received = true;
+                }
+                _ => panic!("Got Unexpected ControlMessage on RX path!"),
+            }
+        };
+        assert!(ts_received);
+        close(fd2).unwrap();
+    }
+}
