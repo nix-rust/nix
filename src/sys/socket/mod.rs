@@ -8,6 +8,9 @@ use libc::{self, c_void, c_int, socklen_t, size_t};
 use std::{fmt, mem, ptr, slice};
 use std::os::unix::io::RawFd;
 use sys::time::TimeVal;
+#[cfg(all(target_os = "linux", target_arch = "x86_64", not(target_env = "musl")))]
+use sys::time::TimeSpec;
+
 use sys::uio::IoVec;
 
 mod addr;
@@ -414,6 +417,11 @@ impl<'a> Iterator for CmsgIterator<'a> {
                 Some(ControlMessage::ScmTimestamp(
                     &*(cmsg_data.as_ptr() as *const _)))
             },
+            #[cfg(all(target_os = "linux", target_arch = "x86_64", not(target_env = "musl")))]
+            (libc::SOL_SOCKET, libc::SCM_TIMESTAMPING) => unsafe {
+                Some(ControlMessage::ScmTimestamping(
+                    &*(cmsg_data.as_ptr() as *const _)))
+            },
             (_, _) => unsafe {
                 Some(ControlMessage::Unknown(UnknownCmsg(
                     cmsg,
@@ -504,6 +512,21 @@ pub enum ControlMessage<'a> {
     /// nix::unistd::close(in_socket).unwrap();
     /// ```
     ScmTimestamp(&'a TimeVal),
+    /// A message of type `SCM_TIMESTAMPING`, containing the time the
+    /// packet was received by the kernel.
+    ///
+    /// Generates timestamps on reception, transmission or both. Supports
+    /// multiple timestamp sources, including hardware. Supports generating
+    /// timestamps for stream sockets.
+    ///
+    /// The structure can return up to three timestamps. At least one field
+    /// is non-zero at any time. Most timestamps are passed in ts[0].
+    /// Hardware timestamps are passed in ts[2].
+    ///
+    /// See the kernel's explanation in "SO_TIMESTAMPING" of
+    /// [networking/timestamping](https://www.kernel.org/doc/Documentation/networking/timestamping.txt).
+    #[cfg(all(target_os = "linux", target_arch = "x86_64", not(target_env = "musl")))]
+    ScmTimestamping(&'a [TimeSpec; 3]),
     #[doc(hidden)]
     Unknown(UnknownCmsg<'a>),
 }
@@ -538,6 +561,10 @@ impl<'a> ControlMessage<'a> {
             ControlMessage::ScmTimestamp(t) => {
                 mem::size_of_val(t)
             },
+            #[cfg(all(target_os = "linux", target_arch = "x86_64", not(target_env = "musl")))]
+            ControlMessage::ScmTimestamping(t) => {
+                mem::size_of_val(t)
+            }
             ControlMessage::Unknown(UnknownCmsg(_, bytes)) => {
                 mem::size_of_val(bytes)
             }
@@ -586,6 +613,26 @@ impl<'a> ControlMessage<'a> {
 
                 copy_bytes(t, buf);
             },
+            #[cfg(all(target_os = "linux", target_arch = "x86_64", not(target_env = "musl")))]
+            ControlMessage::ScmTimestamping(t) => {
+                let cmsg = cmsghdr {
+                    cmsg_len: self.len() as _,
+                    cmsg_level: libc::SOL_SOCKET,
+                    cmsg_type: libc::SCM_TIMESTAMPING,
+                    ..mem::uninitialized()
+                };
+                copy_bytes(&cmsg, buf);
+
+                let padlen = cmsg_align(mem::size_of_val(&cmsg)) -
+                    mem::size_of_val(&cmsg);
+
+                let mut tmpbuf = &mut [][..];
+                mem::swap(&mut tmpbuf, buf);
+                let (_padding, mut remainder) = tmpbuf.split_at_mut(padlen);
+                mem::swap(buf, &mut remainder);
+
+                copy_bytes(t, buf);
+            }
             ControlMessage::Unknown(UnknownCmsg(orig_cmsg, bytes)) => {
                 copy_bytes(orig_cmsg, buf);
                 copy_bytes(bytes, buf);
