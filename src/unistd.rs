@@ -13,6 +13,7 @@ use std::os::unix::io::RawFd;
 use std::path::PathBuf;
 use void::Void;
 use sys::stat::Mode;
+use std::str::FromStr;
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
 pub use self::pivot_root::*;
@@ -62,6 +63,14 @@ impl fmt::Display for Uid {
     }
 }
 
+impl FromStr for Uid {
+    type Err = <uid_t as FromStr>::Err;
+
+    fn from_str(s: &str) -> ::std::result::Result<Self, Self::Err> {
+        s.parse().map(Uid)
+    }
+}
+
 /// Constant for UID = 0
 pub const ROOT: Uid = Uid(0);
 
@@ -101,6 +110,14 @@ impl fmt::Display for Gid {
     }
 }
 
+impl FromStr for Gid {
+    type Err = <gid_t as FromStr>::Err;
+
+    fn from_str(s: &str) -> ::std::result::Result<Self, Self::Err> {
+        s.parse().map(Gid)
+    }
+}
+
 /// Process identifier
 ///
 /// Newtype pattern around `pid_t` (which is just alias). It prevents bugs caused by accidentally
@@ -134,6 +151,14 @@ impl From<Pid> for pid_t {
 impl fmt::Display for Pid {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Display::fmt(&self.0, f)
+    }
+}
+
+impl FromStr for Pid {
+    type Err = <pid_t as FromStr>::Err;
+
+    fn from_str(s: &str) -> ::std::result::Result<Self, Self::Err> {
+        s.parse().map(Pid)
     }
 }
 
