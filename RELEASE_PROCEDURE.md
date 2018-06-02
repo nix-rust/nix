@@ -20,6 +20,8 @@ The release is prepared as follows:
   - In `Cargo.toml`, change the libc dependency to the latest version.
   - In `README.md`, update the version in the Usage section to the new
     version.
+- Confirm that everything's ready for a release by running
+  `cargo publish --dry-run`
 - Make a pull request.
 - Once the PR is merged, tag the merge commit, e.g. `git tag v0.8.3
   $MERGE_COMMIT_SHA1`.
