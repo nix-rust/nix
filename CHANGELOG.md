@@ -6,6 +6,16 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Added
+
+### Changed
+
+### Fixed
+
+### Removed
+
+## [0.11.0] 2018-06-01
+
+### Added
 - Added `sendfile` on FreeBSD and Darwin.
   ([#901](https://github.com/nix-rust/nix/pull/901))
 - Added `pselect`
