@@ -15,19 +15,19 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Added `mlockall` and `munlockall`
   ([#876](https://github.com/nix-rust/nix/pull/876))
 - Added `SO_MARK` on Linux.
-- ([#873](https://github.com/nix-rust/nix/pull/873))
+  ([#873](https://github.com/nix-rust/nix/pull/873))
 - Added safe support for nearly any buffer type in the `sys::aio` module.
   ([#872](https://github.com/nix-rust/nix/pull/872))
 - Added `sys::aio::LioCb` as a wrapper for `libc::lio_listio`.
   ([#872](https://github.com/nix-rust/nix/pull/872))
-- Added `getsid` in `::nix::unistd`
+- Added `unistd::getsid`
   ([#850](https://github.com/nix-rust/nix/pull/850))
 - Added `alarm`. ([#830](https://github.com/nix-rust/nix/pull/830))
 - Added interface flags `IFF_NO_PI, IFF_TUN, IFF_TAP` on linux-like systems.
   ([#853](https://github.com/nix-rust/nix/pull/853))
 - Added `statvfs` module to all MacOS and Linux architectures.
   ([#832](https://github.com/nix-rust/nix/pull/832))
-- Added `EVFILT_EMPTY`, `EVFILT_PROCDESC` and `EVFILT_SENDFILE` on FreeBSD.
+- Added `EVFILT_EMPTY`, `EVFILT_PROCDESC`, and `EVFILT_SENDFILE` on FreeBSD.
   ([#825](https://github.com/nix-rust/nix/pull/825))
 - Exposed `termios::cfmakesane` on FreeBSD.
   ([#825](https://github.com/nix-rust/nix/pull/825))
@@ -39,18 +39,16 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#833](https://github.com/nix-rust/nix/pull/833))
 
 ### Changed
-- Display and Debug for SysControlAddr now includes all fields.
+- `Display` and `Debug` for `SysControlAddr` now includes all fields.
   ([#837](https://github.com/nix-rust/nix/pull/837))
 - `ioctl!` has been replaced with a family of `ioctl_*!` macros.
   ([#833](https://github.com/nix-rust/nix/pull/833))
-- `io!`, `ior!`, `iow!`, and `iorw` has been renamed to `request_code_none!`, `request_code_read!`,
-  `request_code_write`, and `request_code_readwrite` respectively. These have also now been exposed
+- `io!`, `ior!`, `iow!`, and `iorw!` has been renamed to `request_code_none!`, `request_code_read!`,
+  `request_code_write!`, and `request_code_readwrite!` respectively. These have also now been exposed
   in the documentation.
   ([#833](https://github.com/nix-rust/nix/pull/833))
 - Enabled more `ptrace::Request` definitions for uncommon Linux platforms
   ([#892](https://github.com/nix-rust/nix/pull/892))
-- Remove `IFF_NOTRAILERS` on OpenBSD, as it has been removed in OpenBSD 6.3
-  ([#893](https://github.com/nix-rust/nix/pull/893))
 - Emulation of `FD_CLOEXEC` and `O_NONBLOCK` was removed from `socket()`, `accept4()`, and
   `socketpair()`.
   ([#907](https://github.com/nix-rust/nix/pull/907))
@@ -67,12 +65,14 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Removed
 - Removed explicit support for the `bytes` crate from the `sys::aio` module.
-  See `sys::aio::AioCb::from_boxed_slice`s examples for alternatives.
+  See `sys::aio::AioCb::from_boxed_slice` examples for alternatives.
   ([#872](https://github.com/nix-rust/nix/pull/872))
 - Removed `sys::aio::lio_listio`.  Use `sys::aio::LioCb::listio` instead.
   ([#872](https://github.com/nix-rust/nix/pull/872))
 - Removed emulated `accept4()` from macos, ios, and netbsd targets
   ([#907](https://github.com/nix-rust/nix/pull/907))
+- Removed `IFF_NOTRAILERS` on OpenBSD, as it has been removed in OpenBSD 6.3
+  ([#893](https://github.com/nix-rust/nix/pull/893))
 
 ## [0.10.0] 2018-01-26
 
