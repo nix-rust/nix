@@ -21,9 +21,7 @@ void = "1.0.2"
 cc = "1"
 
 [dev-dependencies]
-# The examples use a new feature of Bytes which should be available in 0.4.7
-# https://github.com/carllerche/bytes/pull/192
-bytes = { git = "https://github.com/carllerche/bytes", rev = "ae1b454" }
+bytes = "0.4.8"
 lazy_static = "1"
 rand = "0.4"
 tempdir = "0.3"
