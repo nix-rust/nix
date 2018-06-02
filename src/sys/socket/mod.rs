@@ -520,8 +520,8 @@ pub enum ControlMessage<'a> {
     /// timestamps for stream sockets.
     ///
     /// The structure can return up to three timestamps. At least one field
-    /// is non-zero at any time. Most timestamps are passed in ts[0].
-    /// Hardware timestamps are passed in ts[2].
+    /// is non-zero at any time. Most timestamps are passed in `ts[0]`.
+    /// Hardware timestamps are passed in `ts[2]`.
     ///
     /// See the kernel's explanation in "SO_TIMESTAMPING" of
     /// [networking/timestamping](https://www.kernel.org/doc/Documentation/networking/timestamping.txt).

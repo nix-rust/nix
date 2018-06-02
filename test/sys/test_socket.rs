@@ -265,11 +265,11 @@ pub fn test_scm_timestamping() {
     use nix::sys::socket::{socket, bind, connect, sendmsg, recvmsg, setsockopt,
                            AddressFamily, SockType, SockFlag, SockAddr,
                            CmsgSpace, MsgFlags, ControlMessage};
-    use nix::sys::socket::sockopt::{Timestamping};
+    use nix::sys::socket::sockopt::Timestamping;
     use nix::sys::time::TimeVal;
     use std::net;
 
-    let actual: net::SocketAddr = FromStr::from_str("127.0.0.1:3000").unwrap();
+    let actual: net::SocketAddr = FromStr::from_str("127.0.0.1:3001").unwrap();
     let addr = SockAddr::new_inet(InetAddr::from_std(&actual));
 
     let fd1 = socket(AddressFamily::Inet, SockType::Datagram, SockFlag::empty(), None).expect("socket failed");
