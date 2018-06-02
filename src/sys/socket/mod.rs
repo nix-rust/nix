@@ -1,9 +1,6 @@
 //! Socket interface functions
 //!
 //! [Further reading](http://man7.org/linux/man-pages/man7/socket.7.html)
-
-#[cfg_attr(a, b)]
-
 use {Error, Result};
 use errno::Errno;
 use features;
