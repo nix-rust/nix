@@ -12,6 +12,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#921](https://github.com/nix-rust/nix/pull/921))
 - Added support for `SCM_CREDENTIALS`, allowing to send process credentials over Unix sockets.
   ([#923](https://github.com/nix-rust/nix/pull/923))
+- Added a `dir` module for reading directories (wraps `fdopendir`, `readdir`, and `rewinddir`).
+  ([#916](https://github.com/nix-rust/nix/pull/916))
 
 ### Changed
 - Increased required Rust version to 1.22.1/
