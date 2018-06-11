@@ -182,9 +182,9 @@ fn test_preadv() {
 
     {
         // Borrow the buffers into IoVecs and preadv into them
-        let mut iovecs: Vec<_> = buffers.iter_mut().map(
+        let iovecs: Vec<_> = buffers.iter_mut().map(
             |buf| IoVec::from_mut_slice(&mut buf[..])).collect();
-        assert_eq!(Ok(100), preadv(file.as_raw_fd(), &mut iovecs, 100));
+        assert_eq!(Ok(100), preadv(file.as_raw_fd(), &iovecs, 100));
     }
 
     let all = buffers.concat();

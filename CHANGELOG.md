@@ -10,6 +10,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 
 ### Fixed
+- Made `preadv` take immutable slice of IoVec.
+  ([#914](https://github.com/nix-rust/nix/pull/914))
 
 ### Removed
 
