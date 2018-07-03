@@ -51,7 +51,7 @@ pub fn pwritev(fd: RawFd, iov: &[IoVec<&[u8]>],
           target_os = "linux",
           target_os = "netbsd",
           target_os = "openbsd"))]
-pub fn preadv(fd: RawFd, iov: &mut [IoVec<&mut [u8]>],
+pub fn preadv(fd: RawFd, iov: &[IoVec<&mut [u8]>],
               offset: off_t) -> Result<usize> {
     let res = unsafe {
         libc::preadv(fd, iov.as_ptr() as *const libc::iovec, iov.len() as c_int, offset)
