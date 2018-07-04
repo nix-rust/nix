@@ -225,7 +225,7 @@ sockopt_impl!(Both, Broadcast, libc::SOL_SOCKET, libc::SO_BROADCAST, bool);
 sockopt_impl!(Both, OobInline, libc::SOL_SOCKET, libc::SO_OOBINLINE, bool);
 sockopt_impl!(GetOnly, SocketError, libc::SOL_SOCKET, libc::SO_ERROR, i32);
 sockopt_impl!(Both, KeepAlive, libc::SOL_SOCKET, libc::SO_KEEPALIVE, bool);
-#[cfg(all(target_os = "linux", not(target_arch="arm")))]
+#[cfg(any(target_os = "android", target_os = "linux"))]
 sockopt_impl!(GetOnly, PeerCredentials, libc::SOL_SOCKET, libc::SO_PEERCRED, super::UnixCredentials);
 #[cfg(any(target_os = "ios",
           target_os = "macos"))]
@@ -478,7 +478,7 @@ unsafe impl<'a> Set<'a, usize> for SetUsize {
 
 #[cfg(test)]
 mod test {
-    #[cfg(all(target_os = "linux", not(target_arch = "arm")))]
+    #[cfg(any(target_os = "android", target_os = "linux"))]
     #[test]
     fn can_get_peercred_on_unix_socket() {
         use super::super::*;

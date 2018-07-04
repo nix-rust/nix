@@ -173,7 +173,7 @@ libc_bitflags!{
 }
 
 cfg_if! {
-    if #[cfg(all(target_os = "linux", not(target_arch = "arm")))] {
+    if #[cfg(any(target_os = "android", target_os = "linux"))] {
         /// Unix credentials of the sending process.
         ///
         /// This struct is used with the `SO_PEERCRED` ancillary message for UNIX sockets.
