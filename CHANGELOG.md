@@ -6,6 +6,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Added a `sysinfo` wrapper.
+  ([#922](https://github.com/nix-rust/nix/pull/922))
 
 ### Changed
 

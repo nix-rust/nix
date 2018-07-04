@@ -16,6 +16,8 @@ mod test_signalfd;
 mod test_socket;
 mod test_sockopt;
 mod test_select;
+#[cfg(any(target_os = "android", target_os = "linux"))]
+mod test_sysinfo;
 mod test_termios;
 mod test_ioctl;
 mod test_wait;
