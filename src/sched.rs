@@ -99,7 +99,7 @@ pub fn clone(mut cb: CloneCb,
         let combined = flags.bits() | signal.unwrap_or(0);
         let ptr = stack.as_mut_ptr().offset(stack.len() as isize);
         let ptr_aligned = ptr.offset((ptr as usize % 16) as isize * -1);
-        libc::clone(mem::transmute(callback as extern "C" fn(*mut Box<::std::ops::FnMut() -> isize>) -> i32),
+        libc::clone(mem::transmute(callback as extern "C" fn(*mut CloneCb) -> i32),
                    ptr_aligned as *mut c_void,
                    combined,
                    &mut cb as *mut _ as *mut c_void)
