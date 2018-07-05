@@ -8,6 +8,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Added a `sysinfo` wrapper.
   ([#922](https://github.com/nix-rust/nix/pull/922))
+- Support the `SO_PEERCRED` socket option and the `UnixCredentials` type on all Linux and Android targets.
+  ([#921](https://github.com/nix-rust/nix/pull/921))
 
 ### Changed
 
