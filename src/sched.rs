@@ -36,7 +36,7 @@ libc_bitflags!{
     }
 }
 
-pub type CloneCb<'a> = Box<FnMut() -> isize + 'a>;
+pub type CloneCb = Box<FnMut() -> isize + 'static>;
 
 #[repr(C)]
 #[derive(Clone, Copy)]
@@ -105,7 +105,9 @@ pub fn clone(mut cb: CloneCb,
                    &mut cb as *mut _ as *mut c_void)
     };
 
-    Errno::result(res).map(Pid::from_raw)
+    let pid = Errno::result(res).map(Pid::from_raw)?;
+    mem::forget(cb);
+    Ok(pid)
 }
 
 pub fn unshare(flags: CloneFlags) -> Result<()> {
