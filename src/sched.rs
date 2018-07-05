@@ -36,7 +36,7 @@ libc_bitflags!{
     }
 }
 
-pub type CloneCb = Box<FnMut() -> isize + 'static>;
+pub type CloneCb = Box<FnMut() -> isize + Send + 'static>;
 
 #[repr(C)]
 #[derive(Clone, Copy)]
