@@ -127,7 +127,7 @@ mod test {
     use libc::SIGCHLD;
 
     fn clone_payload() -> Box<FnMut() -> isize + Send + 'static> {
-        let numbers: Vec<i32> = (0..=100).into_iter().collect();
+        let numbers: Vec<i32> = (0..101).into_iter().collect();
         Box::new(move || {
             assert_eq!(numbers.iter().sum::<i32>(), 5050);
             0
