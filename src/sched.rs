@@ -90,19 +90,19 @@ pub fn clone(mut cb: CloneCb,
              flags: CloneFlags,
              signal: Option<c_int>)
              -> Result<Pid> {
-    extern "C" fn callback(data: *mut CloneCb) -> c_int {
-        let cb: &mut CloneCb = unsafe { &mut *data };
-        (*cb)() as c_int
+    extern "C" fn callback(data: *mut c_void) -> c_int {
+        let mut cb: CloneCb = unsafe { *Box::from_raw(data as *mut CloneCb) };
+        cb() as c_int
     }
 
     let res = unsafe {
         let combined = flags.bits() | signal.unwrap_or(0);
         let ptr = stack.as_mut_ptr().offset(stack.len() as isize);
         let ptr_aligned = ptr.offset((ptr as usize % 16) as isize * -1);
-        libc::clone(mem::transmute(callback as extern "C" fn(*mut CloneCb) -> i32),
+        libc::clone(callback,
                    ptr_aligned as *mut c_void,
                    combined,
-                   &mut cb as *mut _ as *mut c_void)
+                   Box::into_raw(cb) as *mut c_void)
     };
 
     let pid = Errno::result(res).map(Pid::from_raw)?;
