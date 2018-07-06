@@ -105,8 +105,7 @@ pub fn clone(cb: CloneCb,
                    Box::into_raw(Box::new(cb)) as *mut c_void)
     };
 
-    let pid = Errno::result(res).map(Pid::from_raw)?;
-    Ok(pid)
+    Errno::result(res).map(Pid::from_raw)
 }
 
 pub fn unshare(flags: CloneFlags) -> Result<()> {
