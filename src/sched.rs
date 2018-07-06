@@ -120,3 +120,32 @@ pub fn setns(fd: RawFd, nstype: CloneFlags) -> Result<()> {
 
     Errno::result(res).map(drop)
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use sys::wait::{waitpid, WaitStatus};
+    use libc::SIGCHLD;
+
+    fn clone_payload() -> Box<FnMut() -> isize + Send + 'static> {
+        let numbers: Vec<i32> = (0..=100).into_iter().collect();
+        Box::new(move || {
+            assert_eq!(numbers.iter().sum::<i32>(), 5050);
+            0
+        })
+    }
+
+    #[test]
+    fn simple_clone() {
+        static mut STACK: [u8; 4096] = [0; 4096];
+        let pid = clone(
+            clone_payload(),
+            &mut STACK,
+            CloneFlags::CLONE_VM,
+            Some(SIGCHLD),
+        ).expect("Executing child");
+
+        let exit_status = waitpid(pid, None).expect("Waiting for child");
+        assert_eq!(exit_status, WaitStatus::Exited(pid, 0));
+    }
+}
