@@ -120,7 +120,7 @@ pub fn setns(fd: RawFd, nstype: CloneFlags) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
-#[cfg(test)]
+#[cfg(not)]
 mod test {
     use super::*;
     use sys::wait::{waitpid, WaitStatus};
