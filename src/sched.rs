@@ -137,10 +137,12 @@ mod test {
 
     #[test]
     fn simple_clone() {
-        static mut STACK: [u8; 4096] = [0; 4096];
+        // Stack *must* outlive the child.
+        let mut stack = Vec::new();
+        stack.resize(4096, 0u8);
         let pid = clone(
             clone_payload(),
-            &mut STACK,
+            stack.as_mut(),
             CloneFlags::CLONE_VM,
             Some(SIGCHLD),
         ).expect("Executing child");
