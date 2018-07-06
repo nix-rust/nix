@@ -85,7 +85,7 @@ pub fn sched_setaffinity(pid: Pid, cpuset: &CpuSet) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
-pub fn clone(mut cb: CloneCb,
+pub fn clone(cb: CloneCb,
              stack: &mut [u8],
              flags: CloneFlags,
              signal: Option<c_int>)
@@ -102,11 +102,10 @@ pub fn clone(mut cb: CloneCb,
         libc::clone(callback,
                    ptr_aligned as *mut c_void,
                    combined,
-                   Box::into_raw(cb) as *mut c_void)
+                   Box::into_raw(Box::new(cb)) as *mut c_void)
     };
 
     let pid = Errno::result(res).map(Pid::from_raw)?;
-    mem::forget(cb);
     Ok(pid)
 }
 
