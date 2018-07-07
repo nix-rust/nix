@@ -140,7 +140,7 @@ mod test {
         let pid = clone(
             clone_payload(),
             stack.as_mut(),
-            CloneFlags::CLONE_VM,
+            CloneFlags::empty(),
             None,
         ).expect("Executing child");
 
