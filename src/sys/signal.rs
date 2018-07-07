@@ -800,9 +800,9 @@ mod tests {
         let mut mask = SigSet::empty();
         mask.add(SIGUSR1);
         mask.add(SIGUSR2);
-        mask.thread_block().unwrap();
+        mask.thread_block().expect("Setting thread block signals");
 
-        raise(SIGUSR1).unwrap();
-        assert_eq!(mask.wait().unwrap(), SIGUSR1);
+        raise(SIGUSR1).expect("Raising SIGUSR1");
+        assert_eq!(mask.wait().expect("Waiting on signal"), SIGUSR1);
     }
 }
