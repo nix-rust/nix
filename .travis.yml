@@ -10,6 +10,7 @@ env:
     - CRATE_NAME=nix
     - RUST_TEST_THREADS=1
     - RUST_TEST_NOCAPTURE=1
+    - RUST_BACKTRACE=1
 
 matrix:
   # These are all the build jobs. Adjust as necessary. Comment out what you
