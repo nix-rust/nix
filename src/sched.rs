@@ -137,8 +137,7 @@ mod test {
     #[test]
     fn simple_clone() {
         // Stack *must* outlive the child.
-        let mut stack = Vec::new();
-        stack.resize(4096, 0u8);
+        let mut stack = vec![0u8; 4096];
         let pid = clone(
             clone_payload(),
             stack.as_mut(),
