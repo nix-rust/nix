@@ -24,6 +24,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [0.11.0] 2018-06-01
 
 ### Added
+- Changed mechanism used to send closure to child thread in `sched::clone`.
+  ([#920](https://github.com/nix-rust/nix/pull/920))
 - Added `sendfile` on FreeBSD and Darwin.
   ([#901](https://github.com/nix-rust/nix/pull/901))
 - Added `pselect`
