@@ -123,8 +123,7 @@ pub fn setns(fd: RawFd, nstype: CloneFlags) -> Result<()> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use sys::wait::{waitpid, WaitStatus};
-    use libc::SIGCHLD;
+    use sys::wait::{waitpid, WaitStatus, WaitPidFlag};
 
     fn clone_payload() -> Box<FnMut() -> isize + Send + 'static> {
         let numbers: Vec<i32> = (0..101).into_iter().collect();
@@ -142,10 +141,10 @@ mod test {
             clone_payload(),
             stack.as_mut(),
             CloneFlags::CLONE_VM,
-            Some(SIGCHLD),
+            None,
         ).expect("Executing child");
 
-        let exit_status = waitpid(pid, None).expect("Waiting for child");
+        let exit_status = waitpid(pid, Some(WaitPidFlag::__WALL)).expect("Waiting for child");
         assert_eq!(exit_status, WaitStatus::Exited(pid, 0));
     }
 }
