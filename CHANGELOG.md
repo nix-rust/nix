@@ -15,6 +15,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#1077](https://github.com/nix-rust/nix/pull/1077))
 - Minimum supported Rust version is now 1.25.0 
   ([#1035](https://github.com/nix-rust/nix/pull/1035))
+- Now functions `statfs()` and `fstatfs()` return result with `Statfs` wrapper
+  ([#928](https://github.com/nix-rust/nix/pull/928))
 
 ### Fixed
 ### Removed
