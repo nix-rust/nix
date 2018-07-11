@@ -6,7 +6,6 @@ use nix::sys::aio::*;
 use nix::sys::signal::{SaFlags, SigAction, sigaction, SigevNotify, SigHandler, Signal, SigSet};
 use nix::sys::time::{TimeSpec, TimeValLike};
 use std::io::{Write, Read, Seek, SeekFrom};
-use std::ops::Deref;
 use std::os::unix::io::AsRawFd;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::{thread, time};
@@ -168,8 +167,8 @@ fn test_aio_suspend() {
         }
     }
 
-    assert!(wcb.aio_return().unwrap() as usize == WBUF.len());
-    assert!(rcb.aio_return().unwrap() as usize == rlen);
+    assert_eq!(wcb.aio_return().unwrap() as usize, WBUF.len());
+    assert_eq!(rcb.aio_return().unwrap() as usize, rlen);
 }
 
 // Test a simple aio operation with no completion notification.  We must poll
@@ -192,11 +191,11 @@ fn test_read() {
         aiocb.read().unwrap();
 
         let err = poll_aio(&mut aiocb);
-        assert!(err == Ok(()));
-        assert!(aiocb.aio_return().unwrap() as usize == EXPECT.len());
+        assert_eq!(err, Ok(()));
+        assert_eq!(aiocb.aio_return().unwrap() as usize, EXPECT.len());
     }
 
-    assert!(EXPECT == rbuf.deref().deref());
+    assert_eq!(EXPECT, &*rbuf);
 }
 
 /// `AioCb::read` should not modify the `AioCb` object if `libc::aio_read`
@@ -238,11 +237,11 @@ fn test_read_into_mut_slice() {
         aiocb.read().unwrap();
 
         let err = poll_aio(&mut aiocb);
-        assert!(err == Ok(()));
-        assert!(aiocb.aio_return().unwrap() as usize == EXPECT.len());
+        assert_eq!(err, Ok(()));
+        assert_eq!(aiocb.aio_return().unwrap() as usize, EXPECT.len());
     }
 
-    assert!(rbuf == EXPECT);
+    assert_eq!(rbuf, EXPECT);
 }
 
 // Tests from_ptr
@@ -268,11 +267,11 @@ fn test_read_into_pointer() {
         aiocb.read().unwrap();
 
         let err = poll_aio(&mut aiocb);
-        assert!(err == Ok(()));
-        assert!(aiocb.aio_return().unwrap() as usize == EXPECT.len());
+        assert_eq!(err, Ok(()));
+        assert_eq!(aiocb.aio_return().unwrap() as usize, EXPECT.len());
     }
 
-    assert!(rbuf == EXPECT);
+    assert_eq!(rbuf, EXPECT);
 }
 
 // Test reading into an immutable buffer.  It should fail
@@ -314,13 +313,13 @@ fn test_write() {
     aiocb.write().unwrap();
 
     let err = poll_aio(&mut aiocb);
-    assert!(err == Ok(()));
-    assert!(aiocb.aio_return().unwrap() as usize == wbuf.len());
+    assert_eq!(err, Ok(()));
+    assert_eq!(aiocb.aio_return().unwrap() as usize, wbuf.len());
 
     f.seek(SeekFrom::Start(0)).unwrap();
     let len = f.read_to_end(&mut rbuf).unwrap();
-    assert!(len == EXPECT.len());
-    assert!(rbuf == EXPECT);
+    assert_eq!(len, EXPECT.len());
+    assert_eq!(rbuf, EXPECT);
 }
 
 // Tests `AioCb::from_boxed_slice` with `Bytes`
@@ -344,13 +343,13 @@ fn test_write_bytes() {
     aiocb.write().unwrap();
 
     let err = poll_aio(&mut aiocb);
-    assert!(err == Ok(()));
-    assert!(aiocb.aio_return().unwrap() as usize == expected_len);
+    assert_eq!(err, Ok(()));
+    assert_eq!(aiocb.aio_return().unwrap() as usize, expected_len);
 
     f.seek(SeekFrom::Start(0)).unwrap();
     let len = f.read_to_end(&mut rbuf).unwrap();
-    assert!(len == EXPECT.len());
-    assert!(rbuf == EXPECT);
+    assert_eq!(len, EXPECT.len());
+    assert_eq!(rbuf, EXPECT);
 }
 
 // Tests `AioCb::from_boxed_mut_slice` with `BytesMut`
@@ -402,13 +401,13 @@ fn test_write_from_pointer() {
     aiocb.write().unwrap();
 
     let err = poll_aio(&mut aiocb);
-    assert!(err == Ok(()));
-    assert!(aiocb.aio_return().unwrap() as usize == wbuf.len());
+    assert_eq!(err, Ok(()));
+    assert_eq!(aiocb.aio_return().unwrap() as usize, wbuf.len());
 
     f.seek(SeekFrom::Start(0)).unwrap();
     let len = f.read_to_end(&mut rbuf).unwrap();
-    assert!(len == EXPECT.len());
-    assert!(rbuf == EXPECT);
+    assert_eq!(len, EXPECT.len());
+    assert_eq!(rbuf, EXPECT);
 }
 
 /// `AioCb::write` should not modify the `AioCb` object if `libc::aio_write`
@@ -441,8 +440,7 @@ extern fn sigfunc(_: c_int) {
 #[test]
 #[cfg_attr(any(all(target_env = "musl", target_arch = "x86_64"), target_arch = "mips", target_arch = "mips64"), ignore)]
 fn test_write_sigev_signal() {
-    #[allow(unused_variables)]
-    let m = ::SIGNAL_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = ::SIGNAL_MTX.lock().expect("Mutex got poisoned by another test");
     let sa = SigAction::new(SigHandler::Handler(sigfunc),
                             SaFlags::SA_RESETHAND,
                             SigSet::empty());
@@ -470,11 +468,11 @@ fn test_write_sigev_signal() {
         thread::sleep(time::Duration::from_millis(10));
     }
 
-    assert!(aiocb.aio_return().unwrap() as usize == WBUF.len());
+    assert_eq!(aiocb.aio_return().unwrap() as usize, WBUF.len());
     f.seek(SeekFrom::Start(0)).unwrap();
     let len = f.read_to_end(&mut rbuf).unwrap();
-    assert!(len == EXPECT.len());
-    assert!(rbuf == EXPECT);
+    assert_eq!(len, EXPECT.len());
+    assert_eq!(rbuf, EXPECT);
 }
 
 // Test LioCb::listio with LIO_WAIT, so all AIO ops should be complete by the
@@ -513,15 +511,15 @@ fn test_liocb_listio_wait() {
         let err = liocb.listio(LioMode::LIO_WAIT, SigevNotify::SigevNone);
         err.expect("lio_listio");
 
-        assert!(liocb.aio_return(0).unwrap() as usize == WBUF.len());
-        assert!(liocb.aio_return(1).unwrap() as usize == rlen);
+        assert_eq!(liocb.aio_return(0).unwrap() as usize, WBUF.len());
+        assert_eq!(liocb.aio_return(1).unwrap() as usize, rlen);
     }
-    assert!(rbuf.deref().deref() == b"3456");
+    assert_eq!(rbuf, b"3456");
 
     f.seek(SeekFrom::Start(0)).unwrap();
     let len = f.read_to_end(&mut rbuf2).unwrap();
-    assert!(len == EXPECT.len());
-    assert!(rbuf2 == EXPECT);
+    assert_eq!(len, EXPECT.len());
+    assert_eq!(rbuf2, EXPECT);
 }
 
 // Test LioCb::listio with LIO_NOWAIT and no SigEvent, so we must use some other
@@ -562,15 +560,15 @@ fn test_liocb_listio_nowait() {
 
         poll_aio(&mut liocb.aiocbs[0]).unwrap();
         poll_aio(&mut liocb.aiocbs[1]).unwrap();
-        assert!(liocb.aiocbs[0].aio_return().unwrap() as usize == WBUF.len());
-        assert!(liocb.aiocbs[1].aio_return().unwrap() as usize == rlen);
+        assert_eq!(liocb.aiocbs[0].aio_return().unwrap() as usize, WBUF.len());
+        assert_eq!(liocb.aiocbs[1].aio_return().unwrap() as usize, rlen);
     }
-    assert!(rbuf.deref().deref() == b"3456");
+    assert_eq!(rbuf, b"3456");
 
     f.seek(SeekFrom::Start(0)).unwrap();
     let len = f.read_to_end(&mut rbuf2).unwrap();
-    assert!(len == EXPECT.len());
-    assert!(rbuf2 == EXPECT);
+    assert_eq!(len, EXPECT.len());
+    assert_eq!(rbuf2, EXPECT);
 }
 
 // Test LioCb::listio with LIO_NOWAIT and a SigEvent to indicate when all
@@ -580,8 +578,7 @@ fn test_liocb_listio_nowait() {
 #[cfg(not(any(target_os = "ios", target_os = "macos")))]
 #[cfg_attr(any(target_arch = "mips", target_arch = "mips64", target_env = "musl"), ignore)]
 fn test_liocb_listio_signal() {
-    #[allow(unused_variables)]
-    let m = ::SIGNAL_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = ::SIGNAL_MTX.lock().expect("Mutex got poisoned by another test");
     const INITIAL: &[u8] = b"abcdef123456";
     const WBUF: &[u8] = b"CDEF";
     let mut rbuf = vec![0; 4];
@@ -622,15 +619,15 @@ fn test_liocb_listio_signal() {
             thread::sleep(time::Duration::from_millis(10));
         }
 
-        assert!(liocb.aiocbs[0].aio_return().unwrap() as usize == WBUF.len());
-        assert!(liocb.aiocbs[1].aio_return().unwrap() as usize == rlen);
+        assert_eq!(liocb.aiocbs[0].aio_return().unwrap() as usize, WBUF.len());
+        assert_eq!(liocb.aiocbs[1].aio_return().unwrap() as usize, rlen);
     }
-    assert!(rbuf.deref().deref() == b"3456");
+    assert_eq!(rbuf, b"3456");
 
     f.seek(SeekFrom::Start(0)).unwrap();
     let len = f.read_to_end(&mut rbuf2).unwrap();
-    assert!(len == EXPECT.len());
-    assert!(rbuf2 == EXPECT);
+    assert_eq!(len, EXPECT.len());
+    assert_eq!(rbuf2, EXPECT);
 }
 
 // Try to use LioCb::listio to read into an immutable buffer.  It should fail
