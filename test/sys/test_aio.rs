@@ -46,7 +46,6 @@ fn test_accessors() {
 // our bindings.  So it's sufficient to check that AioCb.cancel returned any
 // AioCancelStat value.
 #[test]
-#[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
 fn test_cancel() {
     let wbuf: &[u8] = b"CDEF";
 
@@ -71,7 +70,6 @@ fn test_cancel() {
 
 // Tests using aio_cancel_all for all outstanding IOs.
 #[test]
-#[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
 fn test_aio_cancel_all() {
     let wbuf: &[u8] = b"CDEF";
 
@@ -95,7 +93,6 @@ fn test_aio_cancel_all() {
 }
 
 #[test]
-#[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
 fn test_fsync() {
     const INITIAL: &[u8] = b"abcdef123456";
     let mut f = tempfile().unwrap();
@@ -131,7 +128,6 @@ fn test_fsync_error() {
 }
 
 #[test]
-#[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
 fn test_aio_suspend() {
     const INITIAL: &[u8] = b"abcdef123456";
     const WBUF: &[u8] = b"CDEFG";
@@ -174,7 +170,6 @@ fn test_aio_suspend() {
 // Test a simple aio operation with no completion notification.  We must poll
 // for completion
 #[test]
-#[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
 fn test_read() {
     const INITIAL: &[u8] = b"abcdef123456";
     let mut rbuf = vec![0; 4];
@@ -220,7 +215,6 @@ fn test_read_error() {
 
 // Tests from_mut_slice
 #[test]
-#[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
 fn test_read_into_mut_slice() {
     const INITIAL: &[u8] = b"abcdef123456";
     let mut rbuf = vec![0; 4];
@@ -246,7 +240,6 @@ fn test_read_into_mut_slice() {
 
 // Tests from_ptr
 #[test]
-#[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
 fn test_read_into_pointer() {
     const INITIAL: &[u8] = b"abcdef123456";
     let mut rbuf = vec![0; 4];
@@ -274,11 +267,9 @@ fn test_read_into_pointer() {
     assert_eq!(rbuf, EXPECT);
 }
 
-// Test reading into an immutable buffer.  It should fail
-// FIXME: This test fails to panic on Linux/musl
+// Test reading into an immutable buffer. It should fail with a panic.
 #[test]
 #[should_panic(expected = "Can't read into an immutable buffer")]
-#[cfg_attr(target_env = "musl", ignore)]
 fn test_read_immutable_buffer() {
     let rbuf: &[u8] = b"CDEF";
     let f = tempfile().unwrap();
@@ -291,11 +282,9 @@ fn test_read_immutable_buffer() {
     aiocb.read().unwrap();
 }
 
-
 // Test a simple aio operation with no completion notification.  We must poll
 // for completion.  Unlike test_aio_read, this test uses AioCb::from_slice
 #[test]
-#[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
 fn test_write() {
     const INITIAL: &[u8] = b"abcdef123456";
     let wbuf = "CDEF".to_string().into_bytes();
@@ -324,7 +313,6 @@ fn test_write() {
 
 // Tests `AioCb::from_boxed_slice` with `Bytes`
 #[test]
-#[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
 fn test_write_bytes() {
     const INITIAL: &[u8] = b"abcdef123456";
     let wbuf = Box::new(Bytes::from(&b"CDEF"[..]));
@@ -354,7 +342,6 @@ fn test_write_bytes() {
 
 // Tests `AioCb::from_boxed_mut_slice` with `BytesMut`
 #[test]
-#[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
 fn test_read_bytes_mut_small() {
     const INITIAL: &[u8] = b"abcdef";
     let rbuf = Box::new(BytesMut::from(vec![0; 4]));
@@ -379,7 +366,6 @@ fn test_read_bytes_mut_small() {
 
 // Tests `AioCb::from_ptr`
 #[test]
-#[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
 fn test_write_from_pointer() {
     const INITIAL: &[u8] = b"abcdef123456";
     let wbuf = "CDEF".to_string().into_bytes();
@@ -479,7 +465,6 @@ fn test_write_sigev_signal() {
 // time listio returns.
 #[test]
 #[cfg(not(any(target_os = "ios", target_os = "macos")))]
-#[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
 fn test_liocb_listio_wait() {
     const INITIAL: &[u8] = b"abcdef123456";
     const WBUF: &[u8] = b"CDEF";
@@ -526,7 +511,6 @@ fn test_liocb_listio_wait() {
 // mechanism to check for the individual AioCb's completion.
 #[test]
 #[cfg(not(any(target_os = "ios", target_os = "macos")))]
-#[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
 fn test_liocb_listio_nowait() {
     const INITIAL: &[u8] = b"abcdef123456";
     const WBUF: &[u8] = b"CDEF";
@@ -631,11 +615,9 @@ fn test_liocb_listio_signal() {
 }
 
 // Try to use LioCb::listio to read into an immutable buffer.  It should fail
-// FIXME: This test fails to panic on Linux/musl
 #[test]
 #[cfg(not(any(target_os = "ios", target_os = "macos")))]
 #[should_panic(expected = "Can't read into an immutable buffer")]
-#[cfg_attr(target_env = "musl", ignore)]
 fn test_liocb_listio_read_immutable() {
     let rbuf: &[u8] = b"abcd";
     let f = tempfile().unwrap();
