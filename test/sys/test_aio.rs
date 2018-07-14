@@ -418,7 +418,7 @@ lazy_static! {
 }
 
 extern fn sigfunc(_: c_int) {
-    SIGNALED.store(true, Ordering::Relaxed);
+    SIGNALED.store(true, Ordering::SeqCst);
 }
 
 // Test an aio operation with completion delivered by a signal
@@ -430,7 +430,7 @@ fn test_write_sigev_signal() {
     let sa = SigAction::new(SigHandler::Handler(sigfunc),
                             SaFlags::SA_RESETHAND,
                             SigSet::empty());
-    SIGNALED.store(false, Ordering::Relaxed);
+    SIGNALED.store(false, Ordering::SeqCst);
     unsafe { sigaction(Signal::SIGUSR2, &sa) }.unwrap();
 
     const INITIAL: &[u8] = b"abcdef123456";
@@ -450,7 +450,7 @@ fn test_write_sigev_signal() {
                            },
                            LioOpcode::LIO_NOP);
     aiocb.write().unwrap();
-    while !SIGNALED.load(Ordering::Relaxed) {
+    while !SIGNALED.load(Ordering::SeqCst) {
         thread::sleep(time::Duration::from_millis(10));
     }
 
@@ -595,11 +595,11 @@ fn test_liocb_listio_signal() {
         let mut liocb = LioCb::with_capacity(2);
         liocb.aiocbs.push(wcb);
         liocb.aiocbs.push(rcb);
-        SIGNALED.store(false, Ordering::Relaxed);
+        SIGNALED.store(false, Ordering::SeqCst);
         unsafe { sigaction(Signal::SIGUSR2, &sa) }.unwrap();
         let err = liocb.listio(LioMode::LIO_NOWAIT, sigev_notify);
         err.expect("lio_listio");
-        while !SIGNALED.load(Ordering::Relaxed) {
+        while !SIGNALED.load(Ordering::SeqCst) {
             thread::sleep(time::Duration::from_millis(10));
         }
 
