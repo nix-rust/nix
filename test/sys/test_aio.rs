@@ -618,6 +618,8 @@ fn test_liocb_listio_signal() {
 #[test]
 #[cfg(not(any(target_os = "ios", target_os = "macos")))]
 #[should_panic(expected = "Can't read into an immutable buffer")]
+// FIXME: This test fails on Travis with "failed to initiate panic, error 5"
+#[cfg_attr(target_env = "musl", ignore)]
 fn test_liocb_listio_read_immutable() {
     let rbuf: &[u8] = b"abcd";
     let f = tempfile().unwrap();
