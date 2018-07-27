@@ -5,6 +5,8 @@ use sys::time::TimeVal;
 use libc::{self, c_int, uint8_t, c_void, socklen_t};
 use std::mem;
 use std::os::unix::io::RawFd;
+use std::ffi::CStr;
+use std::os::raw::c_char;
 
 /// Helper for implementing `SetSockOpt` for a given socket option. See
 /// [`::sys::socket::SetSockOpt`](sys/socket/trait.SetSockOpt.html).
@@ -255,6 +257,8 @@ sockopt_impl!(Both, BindAny, libc::SOL_SOCKET, libc::SO_BINDANY, bool);
 sockopt_impl!(Both, BindAny, libc::IPPROTO_IP, libc::IP_BINDANY, bool);
 #[cfg(target_os = "linux")]
 sockopt_impl!(Both, Mark, libc::SOL_SOCKET, libc::SO_MARK, u32);
+#[cfg(target_os = "linux")]
+sockopt_impl!(Both, BindToDevice, libc::SOL_SOCKET, libc::SO_BINDTODEVICE, IfName);
 
 /*
  *
@@ -332,6 +336,83 @@ unsafe impl<'a, T> Set<'a, T> for SetStruct<'a, T> {
 
     fn ffi_len(&self) -> socklen_t {
         mem::size_of::<T>() as socklen_t
+    }
+}
+
+/// Type for Interface Name
+#[derive(Copy, Clone, Debug)]
+pub struct IfName([u8; libc::IFNAMSIZ]);
+
+impl IfName {
+    fn new() -> IfName {
+        IfName([0u8; libc::IFNAMSIZ])
+    }
+    pub unsafe fn from_cstr(s: &CStr) -> IfName {
+        let mut res = IfName::new();
+        let mut len = ::std::cmp::min(res.len(), s.to_bytes().len());
+        res.0[..len].copy_from_slice(&s.to_bytes()[..len]);
+        if len == libc::IFNAMSIZ {
+            len = libc::IFNAMSIZ - 1;
+        }
+        res.0[len] = 0;
+        res
+    }
+    pub fn to_cstr<'a>(&self) -> &'a CStr {
+        unsafe {
+            CStr::from_ptr(self.0.as_ptr() as *const c_char)
+        }
+    }
+    fn as_ptr(&self) -> *const u8 {
+        self.0.as_ptr()
+    }
+    fn len(&self) -> usize {
+        libc::IFNAMSIZ
+    }
+}
+
+/// Getter for an interface name - a C string of lentgh `IFNAMSIZ`.
+struct GetIfName {
+    len: socklen_t,
+    val: IfName,
+}
+
+unsafe impl Get<IfName> for GetIfName {
+    unsafe fn blank() -> Self {
+        GetIfName {
+            len: libc::IFNAMSIZ as socklen_t,
+            val: IfName::new(),
+        }
+    }
+
+    fn ffi_ptr(&mut self) -> *mut c_void {
+        self.val.as_ptr() as *mut c_void
+    }
+
+    fn ffi_len(&mut self) -> *mut socklen_t {
+        &mut self.len
+    }
+
+    unsafe fn unwrap(self) -> IfName {
+        self.val
+    }
+}
+
+/// Setter for a C string of lentgh IFNAMSIZ.
+struct SetIfName<'a> {
+    val: &'a IfName,
+}
+
+unsafe impl<'a> Set<'a, IfName> for SetIfName<'a> {
+    fn new(val: &'a IfName) -> SetIfName {
+        SetIfName { val }
+    }
+
+    fn ffi_ptr(&self) -> *const c_void {
+        self.val.as_ptr() as *const c_void
+    }
+
+    fn ffi_len(&self) -> socklen_t {
+        self.val.len() as socklen_t
     }
 }
 
