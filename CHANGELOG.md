@@ -6,6 +6,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Change `setresuid` and `setresgid` functions to accept Option<Uid> instead of Uid
+  ([#932](https://github.com/nix-rust/nix/pull/932))
 - Added a `sysinfo` wrapper.
   ([#922](https://github.com/nix-rust/nix/pull/922))
 - Support the `SO_PEERCRED` socket option and the `UnixCredentials` type on all Linux and Android targets.

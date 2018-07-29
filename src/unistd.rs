@@ -2112,10 +2112,17 @@ mod setres {
     /// * `suid`: saved user id
     /// * returns: Ok or libc error code.
     ///
+    /// Pass None to denote no change
+    ///
     /// Err is returned if the user doesn't have permission to set this UID.
     #[inline]
-    pub fn setresuid(ruid: Uid, euid: Uid, suid: Uid) -> Result<()> {
-        let res = unsafe { libc::setresuid(ruid.into(), euid.into(), suid.into()) };
+    pub fn setresuid(ruid: Option<Uid>, euid: Option<Uid>, suid: Option<Uid>) -> Result<()> {
+        let res = unsafe {
+            libc::setresuid(
+                ruid.unwrap_or(Uid::from_raw(<u32>::max_value())).into(),
+                euid.unwrap_or(Uid::from_raw(<u32>::max_value())).into(),
+                suid.unwrap_or(Uid::from_raw(<u32>::max_value())).into())
+        };
 
         Errno::result(res).map(drop)
     }
@@ -2128,10 +2135,17 @@ mod setres {
     /// * `sgid`: saved user id
     /// * returns: Ok or libc error code.
     ///
+    /// Pass None to denote no change
+    ///
     /// Err is returned if the user doesn't have permission to set this GID.
     #[inline]
-    pub fn setresgid(rgid: Gid, egid: Gid, sgid: Gid) -> Result<()> {
-        let res = unsafe { libc::setresgid(rgid.into(), egid.into(), sgid.into()) };
+    pub fn setresgid(rgid: Option<Gid>, egid: Option<Gid>, sgid: Option<Gid>) -> Result<()> {
+        let res = unsafe {
+            libc::setresgid(
+                rgid.unwrap_or(Gid::from_raw(<u32>::max_value())).into(),
+                egid.unwrap_or(Gid::from_raw(<u32>::max_value())).into(),
+                sgid.unwrap_or(Gid::from_raw(<u32>::max_value())).into())
+        };
 
         Errno::result(res).map(drop)
     }
