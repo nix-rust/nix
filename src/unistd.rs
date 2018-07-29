@@ -2128,11 +2128,11 @@ mod setres {
     }
 
     /// Sets the real, effective, and saved gid.
-    /// ([see setresuid(2)](http://man7.org/linux/man-pages/man2/setresuid.2.html))
+    /// ([see setresgid(2)](http://man7.org/linux/man-pages/man2/setresgid.2.html))
     ///
-    /// * `rgid`: real user id
-    /// * `egid`: effective user id
-    /// * `sgid`: saved user id
+    /// * `rgid`: real group id
+    /// * `egid`: effective group id
+    /// * `sgid`: saved group id
     /// * returns: Ok or libc error code.
     ///
     /// Pass None to denote no change
@@ -2146,6 +2146,49 @@ mod setres {
                 egid.unwrap_or(Gid::from_raw(<u32>::max_value())).into(),
                 sgid.unwrap_or(Gid::from_raw(<u32>::max_value())).into())
         };
+
+        Errno::result(res).map(drop)
+    }
+
+    /// Gets the real, effective, and saved uid.
+    /// ([see getresuid(2)](http://man7.org/linux/man-pages/man2/getresuid.2.html))
+    ///
+    /// * `ruid`: mut pointer to store real user id
+    /// * `euid`: mut pointer to store effective user id
+    /// * `suid`: mut pointer to store saved user id
+    /// * returns: Ok or libc error code.
+    ///
+    /// Pass None to denote no change
+    ///
+    /// Err is returned if the user doesn't have permission to set this GID.
+    #[inline]
+    pub fn getresuid(ruid: &mut Uid, euid: &mut Uid, suid: &mut Uid) -> Result<()> {
+        let Uid(_ruid) = ruid;
+        let Uid(_euid) = euid;
+        let Uid(_suid) = suid;
+        let res = unsafe { libc::getresuid(_ruid, _euid, _suid) };
+
+        Errno::result(res).map(drop)
+    }
+
+
+    /// Gets the real, effective, and saved gid.
+    /// ([see getresgid(2)](http://man7.org/linux/man-pages/man2/getresgid.2.html))
+    ///
+    /// * `rgid`: mut pointer to store real group id
+    /// * `egid`: mut pointer to store effective group id
+    /// * `sgid`: mut pointer to store saved group id
+    /// * returns: Ok or libc error code.
+    ///
+    /// Pass None to denote no change
+    ///
+    /// Err is returned if the user doesn't have permission to set this GID.
+    #[inline]
+    pub fn getresgid(rgid: &mut Gid, egid: &mut Gid, sgid: &mut Gid) -> Result<()> {
+        let Gid(_rgid) = rgid;
+        let Gid(_egid) = egid;
+        let Gid(_sgid) = sgid;
+        let res = unsafe { libc::getresgid(_rgid, _egid, _sgid) };
 
         Errno::result(res).map(drop)
     }
