@@ -457,3 +457,45 @@ fn test_canceling_alarm() {
     assert_eq!(alarm::set(60), None);
     assert_eq!(alarm::cancel(), Some(60));
 }
+
+#[test]
+fn test_get_and_set_resuid() {
+    let mut ruid1 = Uid::from_raw(0);
+    let mut euid1 = Uid::from_raw(0);
+    let mut suid1 = Uid::from_raw(0);
+
+    let _r1 = getresuid(&mut ruid1, &mut euid1, &mut suid1);
+
+    let _r2 = setresuid(None, None, None);
+
+    let mut ruid2 = Uid::from_raw(0);
+    let mut euid2 = Uid::from_raw(0);
+    let mut suid2 = Uid::from_raw(0);
+
+    let _r3 = getresuid(&mut ruid2, &mut euid2, &mut suid2);
+
+    assert_eq!(ruid1, ruid2);
+    assert_eq!(euid1, euid2);
+    assert_eq!(suid1, suid2);
+}
+
+#[test]
+fn test_get_and_set_resgid() {
+    let mut rgid1 = Gid::from_raw(0);
+    let mut egid1 = Gid::from_raw(0);
+    let mut sgid1 = Gid::from_raw(0);
+
+    let _r1 = getresgid(&mut rgid1, &mut egid1, &mut sgid1);
+
+    let _r2 = setresgid(None, None, None);
+
+    let mut rgid2 = Gid::from_raw(0);
+    let mut egid2 = Gid::from_raw(0);
+    let mut sgid2 = Gid::from_raw(0);
+
+    let _r3 = getresgid(&mut rgid2, &mut egid2, &mut sgid2);
+
+    assert_eq!(rgid1, rgid2);
+    assert_eq!(egid1, egid2);
+    assert_eq!(sgid1, sgid2);
+}
