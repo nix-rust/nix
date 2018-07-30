@@ -6,7 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Added
-- Change `setresuid` and `setresgid` functions to accept Option<Uid> instead of Uid
+- Add `getresuid` and `getresgid` functions
   ([#932](https://github.com/nix-rust/nix/pull/932))
 - Added a `sysinfo` wrapper.
   ([#922](https://github.com/nix-rust/nix/pull/922))
@@ -14,6 +14,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#921](https://github.com/nix-rust/nix/pull/921))
 
 ### Changed
+- Change `setresuid` and `setresgid` functions to accept Option<Uid> instead of Uid
+  ([#932](https://github.com/nix-rust/nix/pull/932))
 
 ### Fixed
 - Made `preadv` take immutable slice of IoVec.
