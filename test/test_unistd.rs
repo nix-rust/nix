@@ -14,8 +14,7 @@ use libc::{self, _exit, off_t};
 
 #[test]
 fn test_fork_and_waitpid() {
-    #[allow(unused_variables)]
-    let m = ::FORK_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = ::FORK_MTX.lock().expect("Mutex got poisoned by another test");
 
     // Safe: Child only calls `_exit`, which is signal-safe
     match fork().expect("Error: Fork Failed") {
@@ -43,8 +42,7 @@ fn test_fork_and_waitpid() {
 #[test]
 fn test_wait() {
     // Grab FORK_MTX so wait doesn't reap a different test's child process
-    #[allow(unused_variables)]
-    let m = ::FORK_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = ::FORK_MTX.lock().expect("Mutex got poisoned by another test");
 
     // Safe: Child only calls `_exit`, which is signal-safe
     match fork().expect("Error: Fork Failed") {
@@ -136,8 +134,7 @@ fn test_setgroups() {
         return;
     }
 
-    #[allow(unused_variables)]
-    let m = ::GROUPS_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = ::GROUPS_MTX.lock().expect("Mutex got poisoned by another test");
 
     // Save the existing groups
     let old_groups = getgroups().unwrap();
@@ -166,8 +163,7 @@ fn test_initgroups() {
         return;
     }
 
-    #[allow(unused_variables)]
-    let m = ::GROUPS_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = ::GROUPS_MTX.lock().expect("Mutex got poisoned by another test");
 
     // Save the existing groups
     let old_groups = getgroups().unwrap();
@@ -195,8 +191,7 @@ macro_rules! execve_test_factory(
     ($test_name:ident, $syscall:ident, $exe: expr $(, $pathname:expr, $flags:expr)*) => (
     #[test]
     fn $test_name() {
-        #[allow(unused_variables)]
-        let m = ::FORK_MTX.lock().expect("Mutex got poisoned by another test");
+        let _m = ::FORK_MTX.lock().expect("Mutex got poisoned by another test");
         // The `exec`d process will write to `writer`, and we'll read that
         // data from `reader`.
         let (reader, writer) = pipe().unwrap();
@@ -280,8 +275,7 @@ cfg_if!{
 #[test]
 fn test_fchdir() {
     // fchdir changes the process's cwd
-    #[allow(unused_variables)]
-    let m = ::CWD_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = ::CWD_MTX.lock().expect("Mutex got poisoned by another test");
 
     let tmpdir = tempfile::tempdir().unwrap();
     let tmpdir_path = tmpdir.path().canonicalize().unwrap();
@@ -296,8 +290,7 @@ fn test_fchdir() {
 #[test]
 fn test_getcwd() {
     // chdir changes the process's cwd
-    #[allow(unused_variables)]
-    let m = ::CWD_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = ::CWD_MTX.lock().expect("Mutex got poisoned by another test");
 
     let tmpdir = tempfile::tempdir().unwrap();
     let tmpdir_path = tmpdir.path().canonicalize().unwrap();

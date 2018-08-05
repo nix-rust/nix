@@ -28,8 +28,7 @@ fn test_sigprocmask_noop() {
 
 #[test]
 fn test_sigprocmask() {
-    #[allow(unused_variables)]
-    let m = ::SIGNAL_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = ::SIGNAL_MTX.lock().expect("Mutex got poisoned by another test");
 
     // This needs to be a signal that rust doesn't use in the test harness.
     const SIGNAL: Signal = Signal::SIGCHLD;
