@@ -48,6 +48,11 @@ impl Uid {
     pub fn is_root(&self) -> bool {
         *self == ROOT
     }
+
+    /// Get the raw `uid_t` wrapped by `self`.
+    pub fn as_raw(&self) -> uid_t {
+        self.0
+    }
 }
 
 impl From<Uid> for uid_t {
@@ -87,6 +92,11 @@ impl Gid {
     pub fn effective() -> Self {
         getegid()
     }
+
+    /// Get the raw `gid_t` wrapped by `self`.
+    pub fn as_raw(&self) -> gid_t {
+        self.0
+    }
 }
 
 impl From<Gid> for gid_t {
@@ -122,6 +132,11 @@ impl Pid {
     /// Returns PID of parent of calling process
     pub fn parent() -> Self {
         getppid()
+    }
+
+    /// Get the raw `pid_t` wrapped by `self`.
+    pub fn as_raw(&self) -> pid_t {
+        self.0
     }
 }
 

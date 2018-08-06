@@ -247,6 +247,158 @@ pub fn test_sendmsg_empty_cmsgs() {
     }
 }
 
+#[cfg(any(target_os = "android", target_os = "linux"))]
+#[test]
+fn test_scm_credentials() {
+    use libc;
+    use nix::sys::uio::IoVec;
+    use nix::unistd::{close, getpid, getuid, getgid};
+    use nix::sys::socket::{socketpair, sendmsg, recvmsg, setsockopt,
+                           AddressFamily, SockType, SockFlag,
+                           ControlMessage, CmsgSpace, MsgFlags};
+    use nix::sys::socket::sockopt::PassCred;
+
+    let (send, recv) = socketpair(AddressFamily::Unix, SockType::Stream, None, SockFlag::empty())
+        .unwrap();
+    setsockopt(recv, PassCred, &true).unwrap();
+
+    {
+        let iov = [IoVec::from_slice(b"hello")];
+        let cred = libc::ucred {
+            pid: getpid().as_raw(),
+            uid: getuid().as_raw(),
+            gid: getgid().as_raw(),
+        };
+        let cmsg = ControlMessage::ScmCredentials(&cred);
+        assert_eq!(sendmsg(send, &iov, &[cmsg], MsgFlags::empty(), None).unwrap(), 5);
+        close(send).unwrap();
+    }
+
+    {
+        let mut buf = [0u8; 5];
+        let iov = [IoVec::from_mut_slice(&mut buf[..])];
+        let mut cmsgspace: CmsgSpace<libc::ucred> = CmsgSpace::new();
+        let msg = recvmsg(recv, &iov, Some(&mut cmsgspace), MsgFlags::empty()).unwrap();
+        let mut received_cred = None;
+
+        for cmsg in msg.cmsgs() {
+            if let ControlMessage::ScmCredentials(cred) = cmsg {
+                assert!(received_cred.is_none());
+                assert_eq!(cred.pid, getpid().as_raw());
+                assert_eq!(cred.uid, getuid().as_raw());
+                assert_eq!(cred.gid, getgid().as_raw());
+                received_cred = Some(*cred);
+            } else {
+                panic!("unexpected cmsg");
+            }
+        }
+        received_cred.expect("no creds received");
+        assert!(!msg.flags.intersects(MsgFlags::MSG_TRUNC | MsgFlags::MSG_CTRUNC));
+        close(recv).unwrap();
+    }
+}
+
+/// Ensure that we can send `SCM_CREDENTIALS` and `SCM_RIGHTS` with a single
+/// `sendmsg` call.
+#[cfg(any(target_os = "android", target_os = "linux"))]
+// qemu's handling of multiple cmsgs is bugged, ignore tests on non-x86
+// see https://bugs.launchpad.net/qemu/+bug/1781280
+#[cfg_attr(not(any(target_arch = "x86_64", target_arch = "x86")), ignore)]
+#[test]
+fn test_scm_credentials_and_rights() {
+    use nix::sys::socket::CmsgSpace;
+    use libc;
+
+    test_impl_scm_credentials_and_rights(CmsgSpace::<(libc::ucred, CmsgSpace<RawFd>)>::new());
+}
+
+/// Ensure that passing a `CmsgSpace` with too much space for the received
+/// messages still works.
+#[cfg(any(target_os = "android", target_os = "linux"))]
+// qemu's handling of multiple cmsgs is bugged, ignore tests on non-x86
+// see https://bugs.launchpad.net/qemu/+bug/1781280
+#[cfg_attr(not(any(target_arch = "x86_64", target_arch = "x86")), ignore)]
+#[test]
+fn test_too_large_cmsgspace() {
+    use nix::sys::socket::CmsgSpace;
+
+    test_impl_scm_credentials_and_rights(CmsgSpace::<[u8; 1024]>::new());
+}
+
+#[cfg(any(target_os = "android", target_os = "linux"))]
+fn test_impl_scm_credentials_and_rights<T>(mut space: ::nix::sys::socket::CmsgSpace<T>) {
+    use libc;
+    use nix::sys::uio::IoVec;
+    use nix::unistd::{pipe, read, write, close, getpid, getuid, getgid};
+    use nix::sys::socket::{socketpair, sendmsg, recvmsg, setsockopt,
+                           AddressFamily, SockType, SockFlag,
+                           ControlMessage, MsgFlags};
+    use nix::sys::socket::sockopt::PassCred;
+
+    let (send, recv) = socketpair(AddressFamily::Unix, SockType::Stream, None, SockFlag::empty())
+        .unwrap();
+    setsockopt(recv, PassCred, &true).unwrap();
+
+    let (r, w) = pipe().unwrap();
+    let mut received_r: Option<RawFd> = None;
+
+    {
+        let iov = [IoVec::from_slice(b"hello")];
+        let cred = libc::ucred {
+            pid: getpid().as_raw(),
+            uid: getuid().as_raw(),
+            gid: getgid().as_raw(),
+        };
+        let fds = [r];
+        let cmsgs = [
+            ControlMessage::ScmCredentials(&cred),
+            ControlMessage::ScmRights(&fds),
+        ];
+        assert_eq!(sendmsg(send, &iov, &cmsgs, MsgFlags::empty(), None).unwrap(), 5);
+        close(r).unwrap();
+        close(send).unwrap();
+    }
+
+    {
+        let mut buf = [0u8; 5];
+        let iov = [IoVec::from_mut_slice(&mut buf[..])];
+        let msg = recvmsg(recv, &iov, Some(&mut space), MsgFlags::empty()).unwrap();
+        let mut received_cred = None;
+
+        assert_eq!(msg.cmsgs().count(), 2, "expected 2 cmsgs");
+
+        for cmsg in msg.cmsgs() {
+            match cmsg {
+                ControlMessage::ScmRights(fds) => {
+                    assert_eq!(received_r, None, "already received fd");
+                    assert_eq!(fds.len(), 1);
+                    received_r = Some(fds[0]);
+                }
+                ControlMessage::ScmCredentials(cred) => {
+                    assert!(received_cred.is_none());
+                    assert_eq!(cred.pid, getpid().as_raw());
+                    assert_eq!(cred.uid, getuid().as_raw());
+                    assert_eq!(cred.gid, getgid().as_raw());
+                    received_cred = Some(*cred);
+                }
+                _ => panic!("unexpected cmsg"),
+            }
+        }
+        received_cred.expect("no creds received");
+        assert!(!msg.flags.intersects(MsgFlags::MSG_TRUNC | MsgFlags::MSG_CTRUNC));
+        close(recv).unwrap();
+    }
+
+    let received_r = received_r.expect("Did not receive passed fd");
+    // Ensure that the received file descriptor works
+    write(w, b"world").unwrap();
+    let mut buf = [0u8; 5];
+    read(received_r, &mut buf).unwrap();
+    assert_eq!(&buf[..], b"world");
+    close(received_r).unwrap();
+    close(w).unwrap();
+}
+
 // Test creating and using named unix domain sockets
 #[test]
 pub fn test_unixdomain() {
