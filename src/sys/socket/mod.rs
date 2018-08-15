@@ -678,7 +678,7 @@ pub fn sendmsg<'a>(fd: RawFd, iov: &[IoVec<&'a [u8]>], cmsgs: &[ControlMessage<'
     {
         let mut ofs = 0;
         for cmsg in cmsgs {
-            let mut ptr = &mut cmsg_buffer[ofs..];
+            let ptr = &mut cmsg_buffer[ofs..];
             unsafe {
                 cmsg.encode_into(ptr);
             }
