@@ -5,8 +5,7 @@ use std::{cmp, iter};
 use std::fs::{OpenOptions};
 use std::os::unix::io::AsRawFd;
 
-use tempdir::TempDir;
-use tempfile::tempfile;
+use tempfile::{tempfile, tempdir};
 
 #[test]
 fn test_writev() {
@@ -114,7 +113,7 @@ fn test_pwrite() {
 fn test_pread() {
     use std::io::Write;
 
-    let tempdir = TempDir::new("nix-test_pread").unwrap();
+    let tempdir = tempdir().unwrap();
 
     let path = tempdir.path().join("pread_test_file");
     let mut file = OpenOptions::new().write(true).read(true).create(true)
@@ -142,7 +141,7 @@ fn test_pwritev() {
         IoVec::from_slice(&to_write[64..128]),
     ];
 
-    let tempdir = TempDir::new("nix-test_pwritev").unwrap();
+    let tempdir = tempdir().unwrap();
 
     // pwritev them into a temporary file
     let path = tempdir.path().join("pwritev_test_file");
@@ -166,7 +165,7 @@ fn test_preadv() {
     let to_write: Vec<u8> = (0..200).collect();
     let expected: Vec<u8> = (100..200).collect();
 
-    let tempdir = TempDir::new("nix-test_preadv").unwrap();
+    let tempdir = tempdir().unwrap();
 
     let path = tempdir.path().join("preadv_test_file");
 

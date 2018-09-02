@@ -24,8 +24,7 @@ cc = "1"
 bytes = "0.4.8"
 lazy_static = "1"
 rand = "0.4"
-tempdir = "0.3"
-tempfile = "2"
+tempfile = "3"
 
 [target.'cfg(target_os = "freebsd")'.dev-dependencies]
 sysctl = "0.1"

@@ -1,5 +1,3 @@
-extern crate tempdir;
-
 use nix::fcntl::{fcntl, FcntlArg, FdFlag, OFlag};
 use nix::unistd::*;
 use nix::unistd::ForkResult::*;
@@ -11,8 +9,7 @@ use std::ffi::CString;
 use std::fs::File;
 use std::io::Write;
 use std::os::unix::prelude::*;
-use tempfile::tempfile;
-use tempdir::TempDir;
+use tempfile::{self, tempfile};
 use libc::{self, _exit, off_t};
 
 #[test]
@@ -84,7 +81,7 @@ fn test_mkstemp_directory() {
 
 #[test]
 fn test_mkfifo() {
-    let tempdir = TempDir::new("nix-test_mkfifo").unwrap();
+    let tempdir = tempfile::tempdir().unwrap();
     let mkfifo_fifo = tempdir.path().join("mkfifo_fifo");
 
     mkfifo(&mkfifo_fifo, Mode::S_IRUSR).unwrap();
@@ -286,7 +283,7 @@ fn test_fchdir() {
     #[allow(unused_variables)]
     let m = ::CWD_MTX.lock().expect("Mutex got poisoned by another test");
 
-    let tmpdir = TempDir::new("test_fchdir").unwrap();
+    let tmpdir = tempfile::tempdir().unwrap();
     let tmpdir_path = tmpdir.path().canonicalize().unwrap();
     let tmpdir_fd = File::open(&tmpdir_path).unwrap().into_raw_fd();
 
@@ -302,7 +299,7 @@ fn test_getcwd() {
     #[allow(unused_variables)]
     let m = ::CWD_MTX.lock().expect("Mutex got poisoned by another test");
 
-    let tmpdir = TempDir::new("test_getcwd").unwrap();
+    let tmpdir = tempfile::tempdir().unwrap();
     let tmpdir_path = tmpdir.path().canonicalize().unwrap();
     assert!(chdir(&tmpdir_path).is_ok());
     assert_eq!(getcwd().unwrap(), tmpdir_path);

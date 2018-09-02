@@ -44,7 +44,7 @@ limitations. Support for platforms is split into three tiers:
              *do not* block the inclusion of new code. Testing may be run, but
              failures in tests don't block the inclusion of new code.
 
-The following targets are all supported by nix on Rust 1.20.0 or newer (unless
+The following targets are all supported by nix on Rust 1.22.1 or newer (unless
 otherwise noted):
 
 Tier 1:

@@ -14,6 +14,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#923](https://github.com/nix-rust/nix/pull/923))
 
 ### Changed
+- Increased required Rust version to 1.22.1/
+  ([#900](https://github.com/nix-rust/nix/pull/900))
 
 ### Fixed
 - Made `preadv` take immutable slice of IoVec.

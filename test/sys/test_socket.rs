@@ -5,6 +5,7 @@ use std::path::Path;
 use std::str::FromStr;
 use std::os::unix::io::RawFd;
 use libc::c_char;
+use tempfile;
 
 #[test]
 pub fn test_inetv4_addr_to_sock_addr() {
@@ -90,9 +91,8 @@ pub fn test_abstract_uds_addr() {
 pub fn test_getsockname() {
     use nix::sys::socket::{socket, AddressFamily, SockType, SockFlag};
     use nix::sys::socket::{bind, SockAddr};
-    use tempdir::TempDir;
 
-    let tempdir = TempDir::new("test_getsockname").unwrap();
+    let tempdir = tempfile::tempdir().unwrap();
     let sockname = tempdir.path().join("sock");
     let sock = socket(AddressFamily::Unix, SockType::Stream, SockFlag::empty(), None)
                .expect("socket failed");
@@ -406,9 +406,8 @@ pub fn test_unixdomain() {
     use nix::sys::socket::{bind, socket, connect, listen, accept, SockAddr};
     use nix::unistd::{read, write, close};
     use std::thread;
-    use tempdir::TempDir;
 
-    let tempdir = TempDir::new("test_unixdomain").unwrap();
+    let tempdir = tempfile::tempdir().unwrap();
     let sockname = tempdir.path().join("sock");
     let s1 = socket(AddressFamily::Unix, SockType::Stream,
                     SockFlag::empty(), None).expect("socket failed");

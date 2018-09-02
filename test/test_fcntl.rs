@@ -1,8 +1,7 @@
 use nix::fcntl::{openat, open, OFlag, readlink, readlinkat};
 use nix::sys::stat::Mode;
 use nix::unistd::{close, read};
-use tempdir::TempDir;
-use tempfile::NamedTempFile;
+use tempfile::{self, NamedTempFile};
 use std::io::prelude::*;
 use std::os::unix::fs;
 
@@ -30,8 +29,7 @@ fn test_openat() {
 
 #[test]
 fn test_readlink() {
-    let tempdir = TempDir::new("nix-test_readdir")
-        .unwrap_or_else(|e| panic!("tempdir failed: {}", e));
+    let tempdir = tempfile::tempdir().unwrap();
     let src = tempdir.path().join("a");
     let dst = tempdir.path().join("b");
     println!("a: {:?}, b: {:?}", &src, &dst);
