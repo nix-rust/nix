@@ -4,7 +4,7 @@ use nix::unistd::ForkResult::*;
 use nix::sys::signal::{SaFlags, SigAction, SigHandler, SigSet, Signal, sigaction};
 use nix::sys::wait::*;
 use nix::sys::stat::{self, Mode, SFlag};
-use std::{self, env, iter};
+use std::{env, iter};
 use std::ffi::CString;
 use std::fs::File;
 use std::io::Write;
@@ -127,12 +127,7 @@ mod linux_android {
 #[cfg(not(any(target_os = "ios", target_os = "macos")))]
 fn test_setgroups() {
     // Skip this test when not run as root as `setgroups()` requires root.
-    if !Uid::current().is_root() {
-        let stderr = std::io::stderr();
-        let mut handle = stderr.lock();
-        writeln!(handle, "test_setgroups requires root privileges. Skipping test.").unwrap();
-        return;
-    }
+    skip_if_not_root!("test_setgroups");
 
     let _m = ::GROUPS_MTX.lock().expect("Mutex got poisoned by another test");
 
@@ -156,12 +151,7 @@ fn test_setgroups() {
 fn test_initgroups() {
     // Skip this test when not run as root as `initgroups()` and `setgroups()`
     // require root.
-    if !Uid::current().is_root() {
-        let stderr = std::io::stderr();
-        let mut handle = stderr.lock();
-        writeln!(handle, "test_initgroups requires root privileges. Skipping test.").unwrap();
-        return;
-    }
+    skip_if_not_root!("test_initgroups");
 
     let _m = ::GROUPS_MTX.lock().expect("Mutex got poisoned by another test");
 
