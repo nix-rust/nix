@@ -29,6 +29,7 @@ pub extern crate libc;
 #[macro_use] mod macros;
 
 // Public crates
+pub mod dir;
 pub mod errno;
 #[deny(missing_docs)]
 pub mod features;
