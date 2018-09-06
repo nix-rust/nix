@@ -875,38 +875,78 @@ mod tests {
     }
 
     #[test]
-    fn test_sigaction() {
+    fn test_sigaction_handler() {
         use libc;
 
-        extern fn test_sigaction_handler(_: libc::c_int) {}
-        extern fn test_sigaction_action(_: libc::c_int,
+        extern fn handler_fn(_: libc::c_int) {}
+        let flags_no_info = SaFlags::SA_ONSTACK | SaFlags::SA_RESTART;
+        let flags_with_info = flags_no_info | SaFlags::SA_SIGINFO;
+        let mut mask = SigSet::empty();
+        mask.add(SIGUSR1);
+        let handler = SigHandler::Handler(handler_fn);
+
+        let action1 = SigAction::new(handler, flags_with_info, mask);
+        assert_eq!(action1.handler(), handler);
+        assert_eq!(action1.flags(), flags_no_info);
+        assert!(action1.mask().contains(SIGUSR1));
+        assert!(!action1.mask().contains(SIGUSR2));
+
+        let action2 = SigAction::new(handler, flags_no_info, mask);
+        assert_eq!(action2.handler(), handler);
+        assert_eq!(action2.flags(), flags_no_info);
+        assert!(action2.mask().contains(SIGUSR1));
+        assert!(!action2.mask().contains(SIGUSR2));
+    }
+
+    #[test]
+    fn test_sigaction_action() {
+        use libc;
+
+        extern fn handler_fn(_: libc::c_int,
             _: *mut libc::siginfo_t, _: *mut libc::c_void) {}
+        let flags_no_info = SaFlags::SA_ONSTACK | SaFlags::SA_RESTART;
+        let flags_with_info = flags_no_info | SaFlags::SA_SIGINFO;
+        let mut mask = SigSet::empty();
+        mask.add(SIGUSR1);
+        let handler = SigHandler::SigAction(handler_fn);
 
-        let handler_sig = SigHandler::Handler(test_sigaction_handler);
+        let action1 = SigAction::new(handler, flags_with_info, mask);
+        assert_eq!(action1.handler(), handler);
+        assert_eq!(action1.flags(), flags_with_info);
+        assert!(action1.mask().contains(SIGUSR1));
+        assert!(!action1.mask().contains(SIGUSR2));
 
-        let flags = SaFlags::SA_ONSTACK | SaFlags::SA_RESTART | SaFlags::SA_SIGINFO;
+        let action2 = SigAction::new(handler, flags_no_info, mask);
+        assert_eq!(action2.handler(), handler);
+        assert_eq!(action2.flags(), flags_with_info);
+        assert!(action2.mask().contains(SIGUSR1));
+        assert!(!action2.mask().contains(SIGUSR2));
+    }
 
+    #[test]
+    fn test_sigaction_default() {
+        let flags = SaFlags::SA_ONSTACK | SaFlags::SA_RESTART;
         let mut mask = SigSet::empty();
         mask.add(SIGUSR1);
 
-        let action_sig = SigAction::new(handler_sig, flags, mask);
+        let action = SigAction::new(SigHandler::SigDfl, flags, mask);
+        assert_eq!(action.handler(), SigHandler::SigDfl);
+        assert_eq!(action.flags(), flags);
+        assert!(action.mask().contains(SIGUSR1));
+        assert!(!action.mask().contains(SIGUSR2));
+    }
 
-        assert_eq!(action_sig.flags(), SaFlags::SA_ONSTACK | SaFlags::SA_RESTART);
-        assert_eq!(action_sig.handler(), handler_sig);
+    #[test]
+    fn test_sigaction_ignore() {
+        let flags = SaFlags::SA_ONSTACK | SaFlags::SA_RESTART;
+        let mut mask = SigSet::empty();
+        mask.add(SIGUSR1);
 
-        mask = action_sig.mask();
-        assert!(mask.contains(SIGUSR1));
-        assert!(!mask.contains(SIGUSR2));
-
-        let handler_act = SigHandler::SigAction(test_sigaction_action);
-        let action_act = SigAction::new(handler_act, flags, mask);
-        assert_eq!(action_act.handler(), handler_act);
-
-        let action_dfl = SigAction::new(SigHandler::SigDfl, flags, mask);
-        assert_eq!(action_dfl.handler(), SigHandler::SigDfl);
-
-        let action_ign = SigAction::new(SigHandler::SigIgn, flags, mask);
-        assert_eq!(action_ign.handler(), SigHandler::SigIgn);
+        let action = SigAction::new(SigHandler::SigIgn, flags, mask);
+        assert_eq!(action.handler(), SigHandler::SigIgn);
+        assert_eq!(action.flags(), flags);
+        assert!(action.mask().contains(SIGUSR1));
+        assert!(!action.mask().contains(SIGUSR2));
     }
 
     // TODO(#251): Re-enable after figuring out flakiness.
