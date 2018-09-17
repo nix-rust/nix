@@ -557,6 +557,18 @@ pub fn getcwd() -> Result<PathBuf> {
     }
 }
 
+/// Change the mode of the file at `path` to have the permissions specified by
+/// `perm` (see
+/// [chmod(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/chmod.html)).
+#[inline]
+pub fn chmod<P: ?Sized + NixPath>(path: &P, perm: Mode) -> Result<()> {
+    let res = try!(path.with_nix_path(|cstr| {
+        unsafe { libc::chmod(cstr.as_ptr(), perm.bits() as mode_t) }
+    }));
+
+    Errno::result(res).map(drop)
+}
+
 /// Change the ownership of the file at `path` to be owned by the specified
 /// `owner` (user) and `group` (see
 /// [chown(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/chown.html)).

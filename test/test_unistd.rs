@@ -319,6 +319,17 @@ fn test_getcwd() {
 }
 
 #[test]
+fn test_chmod() {
+    let tempdir = tempfile::tempdir().unwrap();
+    let path = tempdir.path().join("foo.txt");
+    let file = File::create(&path).unwrap();
+
+    assert!(chmod(&path, stat::Mode::S_IRUSR).is_ok());
+    let stats = stat::stat(&path).unwrap();
+    assert_eq!(stat::Mode::S_IRUSR.bits(), stats.st_mode & & 0o7777);
+}
+
+#[test]
 fn test_lseek() {
     const CONTENTS: &[u8] = b"abcdef123456";
     let mut tmp = tempfile().unwrap();
