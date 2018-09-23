@@ -43,7 +43,11 @@ pub mod fcntl;
           target_os = "netbsd",
           target_os = "openbsd"))]
 pub mod ifaddrs;
-#[cfg(any(target_os = "linux", target_os = "android"))]
+#[cfg(any(target_os = "android",
+          target_os = "linux"))]
+pub mod kmod;
+#[cfg(any(target_os = "android",
+          target_os = "linux"))]
 pub mod mount;
 #[cfg(any(target_os = "dragonfly",
           target_os = "freebsd",
@@ -57,7 +61,8 @@ pub mod net;
 pub mod poll;
 #[deny(missing_docs)]
 pub mod pty;
-#[cfg(any(target_os = "linux", target_os = "android"))]
+#[cfg(any(target_os = "android",
+          target_os = "linux"))]
 pub mod sched;
 pub mod sys;
 // This can be implemented for other platforms as soon as libc

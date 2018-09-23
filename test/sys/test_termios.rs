@@ -19,8 +19,7 @@ fn write_all(f: RawFd, buf: &[u8]) {
 #[test]
 fn test_tcgetattr_pty() {
     // openpty uses ptname(3) internally
-    #[allow(unused_variables)]
-    let m = ::PTSNAME_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = ::PTSNAME_MTX.lock().expect("Mutex got poisoned by another test");
 
     let pty = openpty(None, None).expect("openpty failed");
     assert!(termios::tcgetattr(pty.master).is_ok());
@@ -47,8 +46,7 @@ fn test_tcgetattr_ebadf() {
 #[test]
 fn test_output_flags() {
     // openpty uses ptname(3) internally
-    #[allow(unused_variables)]
-    let m = ::PTSNAME_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = ::PTSNAME_MTX.lock().expect("Mutex got poisoned by another test");
 
     // Open one pty to get attributes for the second one
     let mut termios = {
@@ -90,8 +88,7 @@ fn test_output_flags() {
 #[test]
 fn test_local_flags() {
     // openpty uses ptname(3) internally
-    #[allow(unused_variables)]
-    let m = ::PTSNAME_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = ::PTSNAME_MTX.lock().expect("Mutex got poisoned by another test");
 
     // Open one pty to get attributes for the second one
     let mut termios = {

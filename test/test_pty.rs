@@ -27,8 +27,7 @@ fn test_explicit_close() {
 #[test]
 #[cfg(any(target_os = "android", target_os = "linux"))]
 fn test_ptsname_equivalence() {
-    #[allow(unused_variables)]
-    let m = ::PTSNAME_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = ::PTSNAME_MTX.lock().expect("Mutex got poisoned by another test");
 
     // Open a new PTTY master
     let master_fd = posix_openpt(OFlag::O_RDWR).unwrap();
@@ -45,8 +44,7 @@ fn test_ptsname_equivalence() {
 #[test]
 #[cfg(any(target_os = "android", target_os = "linux"))]
 fn test_ptsname_copy() {
-    #[allow(unused_variables)]
-    let m = ::PTSNAME_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = ::PTSNAME_MTX.lock().expect("Mutex got poisoned by another test");
 
     // Open a new PTTY master
     let master_fd = posix_openpt(OFlag::O_RDWR).unwrap();
@@ -80,8 +78,7 @@ fn test_ptsname_r_copy() {
 #[test]
 #[cfg(any(target_os = "android", target_os = "linux"))]
 fn test_ptsname_unique() {
-    #[allow(unused_variables)]
-    let m = ::PTSNAME_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = ::PTSNAME_MTX.lock().expect("Mutex got poisoned by another test");
 
     // Open a new PTTY master
     let master1_fd = posix_openpt(OFlag::O_RDWR).unwrap();
@@ -103,9 +100,8 @@ fn test_ptsname_unique() {
 /// this test we perform the basic act of getting a file handle for a connect master/slave PTTY
 /// pair.
 #[test]
-fn test_open_ptty_pair() {
-    #[allow(unused_variables)]
-    let m = ::PTSNAME_MTX.lock().expect("Mutex got poisoned by another test");
+fn test_open_ptty_pair() {    
+    let _m = ::PTSNAME_MTX.lock().expect("Mutex got poisoned by another test");
 
     // Open a new PTTY master
     let master_fd = posix_openpt(OFlag::O_RDWR).expect("posix_openpt failed");
@@ -126,8 +122,7 @@ fn test_open_ptty_pair() {
 #[test]
 fn test_openpty() {
     // openpty uses ptname(3) internally
-    #[allow(unused_variables)]
-    let m = ::PTSNAME_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = ::PTSNAME_MTX.lock().expect("Mutex got poisoned by another test");
 
     let pty = openpty(None, None).unwrap();
     assert!(pty.master > 0);
@@ -162,8 +157,7 @@ fn test_openpty() {
 #[test]
 fn test_openpty_with_termios() {
     // openpty uses ptname(3) internally
-    #[allow(unused_variables)]
-    let m = ::PTSNAME_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = ::PTSNAME_MTX.lock().expect("Mutex got poisoned by another test");
 
     // Open one pty to get attributes for the second one
     let mut termios = {

@@ -9,9 +9,27 @@ extern crate libc;
 extern crate rand;
 extern crate tempfile;
 
+macro_rules! skip_if_not_root {
+    ($name:expr) => {
+        use nix::unistd::Uid;
+        use std;
+        use std::io::Write;
+
+        if !Uid::current().is_root() {
+            let stderr = std::io::stderr();
+            let mut handle = stderr.lock();
+            writeln!(handle, "{} requires root privileges. Skipping test.", $name).unwrap();
+            return;
+        }
+    };
+}
+
 mod sys;
 mod test_dir;
 mod test_fcntl;
+#[cfg(any(target_os = "android",
+          target_os = "linux"))]
+mod test_kmod;
 #[cfg(any(target_os = "dragonfly",
           target_os = "freebsd",
           target_os = "fushsia",

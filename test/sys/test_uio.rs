@@ -1,6 +1,7 @@
 use nix::sys::uio::*;
 use nix::unistd::*;
 use rand::{thread_rng, Rng};
+use rand::distributions::Alphanumeric;
 use std::{cmp, iter};
 use std::fs::{OpenOptions};
 use std::os::unix::io::AsRawFd;
@@ -11,7 +12,7 @@ use tempfile::{tempfile, tempdir};
 fn test_writev() {
     let mut to_write = Vec::with_capacity(16 * 128);
     for _ in 0..16 {
-        let s: String = thread_rng().gen_ascii_chars().take(128).collect();
+        let s: String = thread_rng().sample_iter(&Alphanumeric).take(128).collect();
         let b = s.as_bytes();
         to_write.extend(b.iter().cloned());
     }
@@ -53,7 +54,7 @@ fn test_writev() {
 
 #[test]
 fn test_readv() {
-    let s:String = thread_rng().gen_ascii_chars().take(128).collect();
+    let s:String = thread_rng().sample_iter(&Alphanumeric).take(128).collect();
     let to_write = s.as_bytes().to_vec();
     let mut storage = Vec::new();
     let mut allocated = 0;
@@ -199,8 +200,7 @@ fn test_process_vm_readv() {
     use nix::sys::signal::*;
     use nix::sys::wait::*;
 
-    #[allow(unused_variables)]
-    let m = ::FORK_MTX.lock().expect("Mutex got poisoned by another test");
+    let _ = ::FORK_MTX.lock().expect("Mutex got poisoned by another test");
 
     // Pre-allocate memory in the child, since allocation isn't safe
     // post-fork (~= async-signal-safe)

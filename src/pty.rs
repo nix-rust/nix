@@ -108,8 +108,7 @@ pub fn grantpt(fd: &PtyMaster) -> Result<()> {
 /// let slave_name = unsafe { ptsname(&master_fd) }?;
 ///
 /// // Try to open the slave
-/// # #[allow(unused_variables)]
-/// let slave_fd = open(Path::new(&slave_name), OFlag::O_RDWR, Mode::empty())?;
+/// let _slave_fd = open(Path::new(&slave_name), OFlag::O_RDWR, Mode::empty())?;
 /// # Ok(())
 /// # }
 /// ```

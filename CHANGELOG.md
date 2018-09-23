@@ -14,6 +14,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#923](https://github.com/nix-rust/nix/pull/923))
 - Added a `dir` module for reading directories (wraps `fdopendir`, `readdir`, and `rewinddir`).
   ([#916](https://github.com/nix-rust/nix/pull/916))
+- Added `kmod` module that allows loading and unloading kernel modules on Linux.
+  ([#930](https://github.com/nix-rust/nix/pull/930))
 
 ### Changed
 - Increased required Rust version to 1.22.1/
