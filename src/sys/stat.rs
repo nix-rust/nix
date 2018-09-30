@@ -6,7 +6,9 @@ use errno::Errno;
 use fcntl::AtFlags;
 use libc::{self, mode_t};
 use std::mem;
+use std::os::raw;
 use std::os::unix::io::RawFd;
+use sys::time::TimeSpec;
 
 libc_bitflags!(
     pub struct SFlag: mode_t {
@@ -133,6 +135,15 @@ pub fn fchmod(fd: RawFd, mode: Mode) -> Result<()> {
     Errno::result(res).map(|_| ())
 }
 
+/// Computes the raw fd consumed by a function of the form `*at`.
+#[inline]
+fn actual_atfd(fd: Option<RawFd>) -> raw::c_int {
+    match fd {
+        None => libc::AT_FDCWD,
+        Some(fd) => fd,
+    }
+}
+
 /// Flags for `fchmodat` function.
 #[derive(Clone, Copy, Debug)]
 pub enum FchmodatFlags {
@@ -162,11 +173,6 @@ pub fn fchmodat<P: ?Sized + NixPath>(
     mode: Mode,
     flag: FchmodatFlags,
 ) -> Result<()> {
-    let actual_dirfd =
-        match dirfd {
-            None => libc::AT_FDCWD,
-            Some(fd) => fd,
-        };
     let atflag =
         match flag {
             FchmodatFlags::FollowSymlink => AtFlags::empty(),
@@ -174,9 +180,69 @@ pub fn fchmodat<P: ?Sized + NixPath>(
         };
     let res = path.with_nix_path(|cstr| unsafe {
         libc::fchmodat(
-            actual_dirfd,
+            actual_atfd(dirfd),
             cstr.as_ptr(),
             mode.bits() as mode_t,
+            atflag.bits() as libc::c_int,
+        )
+    })?;
+
+    Errno::result(res).map(|_| ())
+}
+
+/// Change the access and modification times of the file specified by a file descriptor.
+///
+/// # References
+///
+/// [futimens(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/futimens.html).
+#[inline]
+pub fn futimens(fd: RawFd, atime: &TimeSpec, mtime: &TimeSpec) -> Result<()> {
+    let times: [libc::timespec; 2] = [*atime.as_ref(), *mtime.as_ref()];
+    let res = unsafe { libc::futimens(fd, &times[0]) };
+
+    Errno::result(res).map(|_| ())
+}
+
+/// Flags for `utimensat` function.
+#[derive(Clone, Copy, Debug)]
+pub enum UtimensatFlags {
+    FollowSymlink,
+    NoFollowSymlink,
+}
+
+/// Change the access and modification times of a file.
+///
+/// The file to be changed is determined relative to the directory associated
+/// with the file descriptor `dirfd` or the current working directory
+/// if `dirfd` is `None`.
+///
+/// If `flag` is `UtimensatFlags::NoFollowSymlink` and `path` names a symbolic link,
+/// then the mode of the symbolic link is changed.
+///
+/// `utimensat(None, path, times, UtimensatFlags::FollowSymlink)` is identical to
+/// `libc::utimes(path, times)`. That's why `utimes` is unimplemented in the `nix` crate.
+///
+/// # References
+///
+/// [utimensat(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/utimens.html).
+pub fn utimensat<P: ?Sized + NixPath>(
+    dirfd: Option<RawFd>,
+    path: &P,
+    atime: &TimeSpec,
+    mtime: &TimeSpec,
+    flag: UtimensatFlags
+) -> Result<()> {
+    let atflag =
+        match flag {
+            UtimensatFlags::FollowSymlink => AtFlags::empty(),
+            UtimensatFlags::NoFollowSymlink => AtFlags::AT_SYMLINK_NOFOLLOW,
+        };
+    let times: [libc::timespec; 2] = [*atime.as_ref(), *mtime.as_ref()];
+    let res = path.with_nix_path(|cstr| unsafe {
+        libc::utimensat(
+            actual_atfd(dirfd),
+            cstr.as_ptr(),
+            &times[0],
             atflag.bits() as libc::c_int,
         )
     })?;

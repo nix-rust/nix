@@ -1,12 +1,14 @@
-use std::fs::File;
+use std::fs::{self, File};
 use std::os::unix::fs::symlink;
 use std::os::unix::prelude::AsRawFd;
+use std::time::{Duration, UNIX_EPOCH};
 
 use libc::{S_IFMT, S_IFLNK};
 
 use nix::fcntl;
-use nix::sys::stat::{self, fchmod, fchmodat, fstat, lstat, stat};
-use nix::sys::stat::{FileStat, Mode, FchmodatFlags};
+use nix::sys::stat::{self, fchmod, fchmodat, fstat, futimens, lstat, stat, utimensat};
+use nix::sys::stat::{FileStat, Mode, FchmodatFlags, UtimensatFlags};
+use nix::sys::time::{TimeSpec, TimeValLike};
 use nix::unistd::chdir;
 use nix::Result;
 use tempfile;
@@ -151,4 +153,49 @@ fn test_fchmodat() {
 
     let file_stat2 = stat(&fullpath).unwrap();
     assert_eq!(file_stat2.st_mode & 0o7777, mode2.bits());
+}
+
+/// Asserts that the atime and mtime in a file's metadata match expected values.
+///
+/// The atime and mtime are expressed with a resolution of seconds because some file systems
+/// (like macOS's HFS+) do not have higher granularity.
+fn assert_times_eq(exp_atime_sec: u64, exp_mtime_sec: u64, attr: &fs::Metadata) {
+    assert_eq!(
+        Duration::new(exp_atime_sec, 0),
+        attr.accessed().unwrap().duration_since(UNIX_EPOCH).unwrap());
+    assert_eq!(
+        Duration::new(exp_mtime_sec, 0),
+        attr.modified().unwrap().duration_since(UNIX_EPOCH).unwrap());
+}
+
+#[test]
+fn test_futimens() {
+    let tempdir = tempfile::tempdir().unwrap();
+    let fullpath = tempdir.path().join("file");
+    drop(File::create(&fullpath).unwrap());
+
+    let fd = fcntl::open(&fullpath, fcntl::OFlag::empty(), stat::Mode::empty()).unwrap();
+
+    futimens(fd, &TimeSpec::seconds(10), &TimeSpec::seconds(20)).unwrap();
+    assert_times_eq(10, 20, &fs::metadata(&fullpath).unwrap());
+}
+
+#[test]
+fn test_utimensat() {
+    let tempdir = tempfile::tempdir().unwrap();
+    let filename = "foo.txt";
+    let fullpath = tempdir.path().join(filename);
+    drop(File::create(&fullpath).unwrap());
+
+    let dirfd = fcntl::open(tempdir.path(), fcntl::OFlag::empty(), stat::Mode::empty()).unwrap();
+
+    utimensat(Some(dirfd), filename, &TimeSpec::seconds(12345), &TimeSpec::seconds(678),
+              UtimensatFlags::FollowSymlink).unwrap();
+    assert_times_eq(12345, 678, &fs::metadata(&fullpath).unwrap());
+
+    chdir(tempdir.path()).unwrap();
+
+    utimensat(None, filename, &TimeSpec::seconds(500), &TimeSpec::seconds(800),
+              UtimensatFlags::FollowSymlink).unwrap();
+    assert_times_eq(500, 800, &fs::metadata(&fullpath).unwrap());
 }

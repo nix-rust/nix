@@ -16,6 +16,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#916](https://github.com/nix-rust/nix/pull/916))
 - Added `kmod` module that allows loading and unloading kernel modules on Linux.
   ([#930](https://github.com/nix-rust/nix/pull/930))
+- Added `futimens` and `utimesat` wrappers.
+  ([#944](https://github.com/nix-rust/nix/pull/944))
 
 ### Changed
 - Increased required Rust version to 1.22.1/
