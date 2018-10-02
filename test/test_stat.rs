@@ -6,9 +6,9 @@ use std::time::{Duration, UNIX_EPOCH};
 use libc::{S_IFMT, S_IFLNK};
 
 use nix::fcntl;
-use nix::sys::stat::{self, fchmod, fchmodat, fstat, futimens, lstat, stat, utimensat};
+use nix::sys::stat::{self, fchmod, fchmodat, fstat, futimens, lstat, stat, utimes, utimensat};
 use nix::sys::stat::{FileStat, Mode, FchmodatFlags, UtimensatFlags};
-use nix::sys::time::{TimeSpec, TimeValLike};
+use nix::sys::time::{TimeSpec, TimeVal, TimeValLike};
 use nix::unistd::chdir;
 use nix::Result;
 use tempfile;
@@ -166,6 +166,16 @@ fn assert_times_eq(exp_atime_sec: u64, exp_mtime_sec: u64, attr: &fs::Metadata) 
     assert_eq!(
         Duration::new(exp_mtime_sec, 0),
         attr.modified().unwrap().duration_since(UNIX_EPOCH).unwrap());
+}
+
+#[test]
+fn test_utimes() {
+    let tempdir = tempfile::tempdir().unwrap();
+    let fullpath = tempdir.path().join("file");
+    drop(File::create(&fullpath).unwrap());
+
+    utimes(&fullpath, &TimeVal::seconds(9990), &TimeVal::seconds(5550));
+    assert_times_eq(9990, 5550, &fs::metadata(&fullpath).unwrap());
 }
 
 #[test]
