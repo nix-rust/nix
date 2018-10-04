@@ -8,7 +8,7 @@ use libc::{self, mode_t};
 use std::mem;
 use std::os::raw;
 use std::os::unix::io::RawFd;
-use sys::time::TimeSpec;
+use sys::time::{TimeSpec, TimeVal};
 
 libc_bitflags!(
     pub struct SFlag: mode_t {
@@ -190,6 +190,25 @@ pub fn fchmodat<P: ?Sized + NixPath>(
     Errno::result(res).map(|_| ())
 }
 
+/// Change the access and modification times of a file.
+///
+/// `utimes(path, times)` is identical to
+/// `utimensat(None, path, times, UtimensatFlags::FollowSymlink)`. The former
+/// is a deprecated API so prefer using the latter if the platforms you care
+/// about support it.
+///
+/// # References
+///
+/// [utimes(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/utimes.html).
+pub fn utimes<P: ?Sized + NixPath>(path: &P, atime: &TimeVal, mtime: &TimeVal) -> Result<()> {
+    let times: [libc::timeval; 2] = [*atime.as_ref(), *mtime.as_ref()];
+    let res = path.with_nix_path(|cstr| unsafe {
+        libc::utimes(cstr.as_ptr(), &times[0])
+    })?;
+
+    Errno::result(res).map(|_| ())
+}
+
 /// Change the access and modification times of the file specified by a file descriptor.
 ///
 /// # References
@@ -220,7 +239,8 @@ pub enum UtimensatFlags {
 /// then the mode of the symbolic link is changed.
 ///
 /// `utimensat(None, path, times, UtimensatFlags::FollowSymlink)` is identical to
-/// `libc::utimes(path, times)`. That's why `utimes` is unimplemented in the `nix` crate.
+/// `utimes(path, times)`. The latter is a deprecated API so prefer using the
+/// former if the platforms you care about support it.
 ///
 /// # References
 ///
