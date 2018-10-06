@@ -27,5 +27,10 @@ mod test_uio;
 mod test_epoll;
 mod test_pthread;
 #[cfg(any(target_os = "android",
-          target_os = "linux"))]
+          target_os = "dragonfly",
+          target_os = "freebsd",
+          target_os = "linux",
+          target_os = "macos",
+          target_os = "netbsd",
+          target_os = "openbsd"))]
 mod test_ptrace;

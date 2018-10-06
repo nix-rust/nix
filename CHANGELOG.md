@@ -25,6 +25,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#956](https://github.com/nix-rust/nix/pull/956))
 - Added a `fchownat` wrapper.
   ([#955](https://github.com/nix-rust/nix/pull/955))
+- Added support for `ptrace` on BSD operating systems ([#949](https://github.com/nix-rust/nix/pull/949))
+- Added `ptrace` functions for reads and writes to tracee memory and ptrace kill 
+  ([#949](https://github.com/nix-rust/nix/pull/949))
 
 ### Changed
 - Increased required Rust version to 1.22.1/

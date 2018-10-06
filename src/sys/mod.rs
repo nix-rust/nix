@@ -38,7 +38,13 @@ pub mod mman;
 
 pub mod pthread;
 
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(any(target_os = "android",
+          target_os = "dragonfly",
+          target_os = "freebsd",
+          target_os = "linux",
+          target_os = "macos",
+          target_os = "netbsd",
+          target_os = "openbsd"))]
 pub mod ptrace;
 
 #[cfg(target_os = "linux")]
