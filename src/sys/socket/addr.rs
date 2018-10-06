@@ -209,6 +209,9 @@ pub enum AddressFamily {
               target_os = "netbsd",
               target_os = "openbsd"))]
     Natm = libc::AF_NATM,
+    /// Unspecified address family, (see [`getaddrinfo(3)`](http://man7.org/linux/man-pages/man3/getaddrinfo.3.html))
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    Unspec = libc::AF_UNSPEC,
 }
 
 impl AddressFamily {
