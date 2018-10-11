@@ -2138,9 +2138,9 @@ mod setres {
     /// Sets the real, effective, and saved gid.
     /// ([see setresuid(2)](http://man7.org/linux/man-pages/man2/setresuid.2.html))
     ///
-    /// * `rgid`: real user id
-    /// * `egid`: effective user id
-    /// * `sgid`: saved user id
+    /// * `rgid`: real group id
+    /// * `egid`: effective group id
+    /// * `sgid`: saved group id
     /// * returns: Ok or libc error code.
     ///
     /// Err is returned if the user doesn't have permission to set this GID.
