@@ -174,7 +174,7 @@ fn test_utimes() {
     let fullpath = tempdir.path().join("file");
     drop(File::create(&fullpath).unwrap());
 
-    utimes(&fullpath, &TimeVal::seconds(9990), &TimeVal::seconds(5550));
+    utimes(&fullpath, &TimeVal::seconds(9990), &TimeVal::seconds(5550)).unwrap();
     assert_times_eq(9990, 5550, &fs::metadata(&fullpath).unwrap());
 }
 

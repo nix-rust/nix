@@ -3,6 +3,7 @@ use nix::errno::Errno;
 use nix::unistd::getpid;
 use nix::sys::ptrace::{self, Options};
 
+#[cfg(any(target_os = "android", target_os = "linux"))]
 use std::mem;
 
 #[test]
