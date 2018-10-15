@@ -206,6 +206,7 @@ exit 23";
 // Test runner
 
 /// Mimic normal test output (hackishly).
+#[cfg(target_os = "linux")]
 macro_rules! run_tests {
     ( $($test_fn:ident),* ) => {{
         println!();
