@@ -221,7 +221,6 @@
 //!
 //! # fn main() {}
 //! ```
-//!
 #[cfg(any(target_os = "android", target_os = "linux"))]
 #[macro_use]
 mod linux;
@@ -502,8 +501,12 @@ cfg_if!{
         /// The generated function has the following signature:
         ///
         /// ```rust,ignore
-        /// pub unsafe fn FUNCTION_NAME(fd: libc::c_int, data: libc::c_int) -> Result<libc::c_int>
+        /// pub unsafe fn FUNCTION_NAME(fd: libc::c_int, data: nix::sys::ioctl::ioctl_param_type) -> Result<libc::c_int>
         /// ```
+        ///
+        /// `nix::sys::ioctl::ioctl_param_type` depends on the OS:
+        /// *   BSD - `libc::c_int`
+        /// *   Linux - `libc::c_ulong`
         ///
         /// For a more in-depth explanation of ioctls, see [`::sys::ioctl`](sys/ioctl/index.html).
         ///
@@ -537,8 +540,12 @@ cfg_if!{
         /// The generated function has the following signature:
         ///
         /// ```rust,ignore
-        /// pub unsafe fn FUNCTION_NAME(fd: libc::c_int, data: libc::c_int) -> Result<libc::c_int>
+        /// pub unsafe fn FUNCTION_NAME(fd: libc::c_int, data: nix::sys::ioctl::ioctl_param_type) -> Result<libc::c_int>
         /// ```
+        ///
+        /// `nix::sys::ioctl::ioctl_param_type` depends on the OS:
+        /// *   BSD - `libc::c_int`
+        /// *   Linux - `libc::c_ulong`
         ///
         /// For a more in-depth explanation of ioctls, see [`::sys::ioctl`](sys/ioctl/index.html).
         ///
@@ -655,7 +662,7 @@ macro_rules! ioctl_readwrite {
 ///
 /// The generated function has the following signature:
 ///
-/// ```rust,ignorerust,ignore
+/// ```rust,ignore
 /// pub unsafe fn FUNCTION_NAME(fd: libc::c_int, data: *mut DATA_TYPE) -> Result<libc::c_int>
 /// ```
 ///
