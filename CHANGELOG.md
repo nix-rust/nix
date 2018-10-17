@@ -19,6 +19,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Added `futimens` and `utimesat` wrappers ([#944](https://github.com/nix-rust/nix/pull/944))
   and a `utimes` wrapper ([#946](https://github.com/nix-rust/nix/pull/946)).
 - Added `AF_UNSPEC` wrapper to `AddressFamily` ([#948](https://github.com/nix-rust/nix/pull/948))
+- Added the `mode_t` public alias within `sys::stat`.
+  ([#954](https://github.com/nix-rust/nix/pull/954))
 
 ### Changed
 - Increased required Rust version to 1.22.1/
