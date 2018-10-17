@@ -21,6 +21,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Added `AF_UNSPEC` wrapper to `AddressFamily` ([#948](https://github.com/nix-rust/nix/pull/948))
 - Added the `mode_t` public alias within `sys::stat`.
   ([#954](https://github.com/nix-rust/nix/pull/954))
+- Added a `truncate` wrapper.
+  ([#956](https://github.com/nix-rust/nix/pull/956))
 
 ### Changed
 - Increased required Rust version to 1.22.1/
