@@ -23,6 +23,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#954](https://github.com/nix-rust/nix/pull/954))
 - Added a `truncate` wrapper.
   ([#956](https://github.com/nix-rust/nix/pull/956))
+- Added a `fchownat` wrapper.
+  ([#955](https://github.com/nix-rust/nix/pull/955))
 
 ### Changed
 - Increased required Rust version to 1.22.1/

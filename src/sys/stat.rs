@@ -3,10 +3,9 @@ pub use libc::stat as FileStat;
 
 use {Result, NixPath};
 use errno::Errno;
-use fcntl::AtFlags;
+use fcntl::{AtFlags, at_rawfd};
 use libc;
 use std::mem;
-use std::os::raw;
 use std::os::unix::io::RawFd;
 use sys::time::{TimeSpec, TimeVal};
 
@@ -135,15 +134,6 @@ pub fn fchmod(fd: RawFd, mode: Mode) -> Result<()> {
     Errno::result(res).map(|_| ())
 }
 
-/// Computes the raw fd consumed by a function of the form `*at`.
-#[inline]
-fn actual_atfd(fd: Option<RawFd>) -> raw::c_int {
-    match fd {
-        None => libc::AT_FDCWD,
-        Some(fd) => fd,
-    }
-}
-
 /// Flags for `fchmodat` function.
 #[derive(Clone, Copy, Debug)]
 pub enum FchmodatFlags {
@@ -180,7 +170,7 @@ pub fn fchmodat<P: ?Sized + NixPath>(
         };
     let res = path.with_nix_path(|cstr| unsafe {
         libc::fchmodat(
-            actual_atfd(dirfd),
+            at_rawfd(dirfd),
             cstr.as_ptr(),
             mode.bits() as mode_t,
             atflag.bits() as libc::c_int,
@@ -260,7 +250,7 @@ pub fn utimensat<P: ?Sized + NixPath>(
     let times: [libc::timespec; 2] = [*atime.as_ref(), *mtime.as_ref()];
     let res = path.with_nix_path(|cstr| unsafe {
         libc::utimensat(
-            actual_atfd(dirfd),
+            at_rawfd(dirfd),
             cstr.as_ptr(),
             &times[0],
             atflag.bits() as libc::c_int,
