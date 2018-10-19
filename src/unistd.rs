@@ -989,6 +989,20 @@ fn pipe2_setflags(fd1: RawFd, fd2: RawFd, flags: OFlag) -> Result<()> {
 /// Truncate a file to a specified length
 ///
 /// See also
+/// [truncate(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/truncate.html)
+pub fn truncate<P: ?Sized + NixPath>(path: &P, len: off_t) -> Result<()> {
+    let res = try!(path.with_nix_path(|cstr| {
+        unsafe {
+            libc::truncate(cstr.as_ptr(), len)
+        }
+    }));
+
+    Errno::result(res).map(drop)
+}
+
+/// Truncate a file to a specified length
+///
+/// See also
 /// [ftruncate(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/ftruncate.html)
 pub fn ftruncate(fd: RawFd, len: off_t) -> Result<()> {
     Errno::result(unsafe { libc::ftruncate(fd, len) }).map(drop)

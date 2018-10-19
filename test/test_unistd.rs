@@ -6,7 +6,7 @@ use nix::sys::wait::*;
 use nix::sys::stat::{self, Mode, SFlag};
 use std::{env, iter};
 use std::ffi::CString;
-use std::fs::File;
+use std::fs::{self, File};
 use std::io::Write;
 use std::os::unix::prelude::*;
 use tempfile::{self, tempfile};
@@ -388,6 +388,42 @@ fn test_pipe2() {
     assert!(f0.contains(FdFlag::FD_CLOEXEC));
     let f1 = FdFlag::from_bits_truncate(fcntl(fd1, FcntlArg::F_GETFD).unwrap());
     assert!(f1.contains(FdFlag::FD_CLOEXEC));
+}
+
+#[test]
+fn test_truncate() {
+    let tempdir = tempfile::tempdir().unwrap();
+    let path = tempdir.path().join("file");
+
+    {
+        let mut tmp = File::create(&path).unwrap();
+        const CONTENTS: &[u8] = b"12345678";
+        tmp.write_all(CONTENTS).unwrap();
+    }
+
+    truncate(&path, 4).unwrap();
+
+    let metadata = fs::metadata(&path).unwrap();
+    assert_eq!(4, metadata.len());
+}
+
+#[test]
+fn test_ftruncate() {
+    let tempdir = tempfile::tempdir().unwrap();
+    let path = tempdir.path().join("file");
+
+    let tmpfd = {
+        let mut tmp = File::create(&path).unwrap();
+        const CONTENTS: &[u8] = b"12345678";
+        tmp.write_all(CONTENTS).unwrap();
+        tmp.into_raw_fd()
+    };
+
+    ftruncate(tmpfd, 2).unwrap();
+    close(tmpfd).unwrap();
+
+    let metadata = fs::metadata(&path).unwrap();
+    assert_eq!(2, metadata.len());
 }
 
 // Used in `test_alarm`.
