@@ -2,7 +2,7 @@
 
 use errno::{self, Errno};
 use {Error, Result, NixPath};
-use fcntl::{at_rawfd, FdFlag, OFlag};
+use fcntl::{AtFlags, at_rawfd, OFlag};
 use libc::{self, c_char, c_void, c_int, c_long, c_uint, size_t, pid_t, off_t,
            uid_t, gid_t, mode_t};
 use std::{fmt, mem, ptr};
