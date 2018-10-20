@@ -373,7 +373,13 @@ pub fn dup2(oldfd: RawFd, newfd: RawFd) -> Result<RawFd> {
 ///
 /// This function behaves similar to `dup2()` but allows for flags to be
 /// specified.
-#[inline]
+#[cfg(any(target_os = "fuchsia",
+          target_os = "emscripten",
+          target_os = "freebsd",
+          target_os = "linux",
+          target_os = "solaris",
+          target_os = "netbsd",
+          target_os = "openbsd"))]
 pub fn dup3(oldfd: RawFd, newfd: RawFd, flags: OFlag) -> Result<RawFd> {
     let res = unsafe { libc::dup3(oldfd, newfd, flags.bits()) };
 
@@ -562,28 +568,6 @@ pub fn chown<P: ?Sized + NixPath>(path: &P, owner: Option<Uid>, group: Option<Gi
     Errno::result(res).map(drop)
 }
 
-/// Change the ownership of the file at `path` to be owned by the specified
-/// `owner` (user) and `group` (see
-/// [lchown(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/lchown.html)).
-/// If `path` names a symbolic link, then ownership of the symbolic link file itself is changed.
-///
-/// The owner/group for the provided path name will not be modified if `None` is
-/// provided for that argument.  Ownership change will be attempted for the path
-/// only if `Some` owner/group is provided.
-#[inline]
-pub fn lchown<P: ?Sized + NixPath>(path: &P, owner: Option<Uid>, group: Option<Gid>) -> Result<()> {
-    let res = try!(path.with_nix_path(|cstr| {
-        // According to the POSIX specification, -1 is used to indicate that
-        // owner and group, respectively, are not to be changed. Since uid_t and
-        // gid_t are unsigned types, we use wrapping_sub to get '-1'.
-        unsafe { libc::lchown(cstr.as_ptr(),
-                              owner.map(Into::into).unwrap_or((0 as uid_t).wrapping_sub(1)),
-                              group.map(Into::into).unwrap_or((0 as gid_t).wrapping_sub(1))) }
-    }));
-
-    Errno::result(res).map(drop)
-}
-
 /// Change the ownership of the file specified by the file descriptor `fd` to be owned by the
 /// specified `owner` (user) and `group` (see
 /// [fchown(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/fchown.html)).
@@ -591,22 +575,10 @@ pub fn lchown<P: ?Sized + NixPath>(path: &P, owner: Option<Uid>, group: Option<G
 /// The owner/group for the provided path name will not be modified if `None` is
 /// provided for that argument.  Ownership change will be attempted for the path
 /// only if `Some` owner/group is provided.
-#[inline]
 pub fn fchown(fd: RawFd, owner: Option<Uid>, group: Option<Gid>) -> Result<()> {
     let res = unsafe { libc::fchown(fd,
                              owner.map(Into::into).unwrap_or((0 as uid_t).wrapping_sub(1)),
                              group.map(Into::into).unwrap_or((0 as gid_t).wrapping_sub(1))) };
-
-    Errno::result(res).map(drop)
-}
-
-/// Change the mode of the file at `path` (see
-/// [chmod(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/chmod.html)).
-#[inline]
-pub fn chmod<P: ?Sized + NixPath>(path: &P, mode: Mode) -> Result<()> {
-    let res = try!(path.with_nix_path(|cstr| {
-        unsafe { libc::chmod(cstr.as_ptr(), mode.bits() as mode_t) }
-    }));
 
     Errno::result(res).map(drop)
 }
