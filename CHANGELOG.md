@@ -6,6 +6,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Added a `dup3` wrapper by a direct call to the system call `dup3` instead of emulating it via
+  `dup2` and `fcntl` which could cause a race condition. The `dup3` system call is supported
+  on the following platforms: Fuchsia, Emscripten, FreeBSD, Linux, Solaris, NetBSD, OpenBSD.
+  ([#957](https://github.com/nix-rust/nix/pull/957))
+- Added a `fchown` wrapper.
+  ([#957](https://github.com/nix-rust/nix/pull/957))
 - Added a `sysinfo` wrapper.
   ([#922](https://github.com/nix-rust/nix/pull/922))
 - Support the `SO_PEERCRED` socket option and the `UnixCredentials` type on all Linux and Android targets.
