@@ -2,6 +2,7 @@ use {Error, Result, NixPath};
 use errno::Errno;
 use libc::{self, c_int, c_uint, c_char, size_t, ssize_t};
 use sys::stat::Mode;
+use std::os::raw;
 use std::os::unix::io::RawFd;
 use std::ffi::OsStr;
 use std::os::unix::ffi::OsStrExt;
@@ -180,6 +181,14 @@ pub fn readlinkat<'a, P: ?Sized + NixPath>(dirfd: RawFd, path: &P, buffer: &'a m
     }));
 
     wrap_readlink_result(buffer, res)
+}
+
+/// Computes the raw fd consumed by a function of the form `*at`.
+pub(crate) fn at_rawfd(fd: Option<RawFd>) -> raw::c_int {
+    match fd {
+        None => libc::AT_FDCWD,
+        Some(fd) => fd,
+    }
 }
 
 #[cfg(any(target_os = "android", target_os = "linux"))]

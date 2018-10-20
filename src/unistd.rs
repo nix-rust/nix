@@ -2,7 +2,7 @@
 
 use errno::{self, Errno};
 use {Error, Result, NixPath};
-use fcntl::OFlag;
+use fcntl::{at_rawfd, FdFlag, OFlag};
 use libc::{self, c_char, c_void, c_int, c_long, c_uint, size_t, pid_t, off_t,
            uid_t, gid_t, mode_t};
 use std::{fmt, mem, ptr};
@@ -547,6 +547,16 @@ pub fn getcwd() -> Result<PathBuf> {
     }
 }
 
+/// Computes the raw UID and GID values to pass to a `*chown` call.
+fn chown_raw_ids(owner: Option<Uid>, group: Option<Gid>) -> (libc::uid_t, libc::gid_t) {
+    // According to the POSIX specification, -1 is used to indicate that owner and group
+    // are not to be changed.  Since uid_t and gid_t are unsigned types, we have to wrap
+    // around to get -1.
+    let uid = owner.map(Into::into).unwrap_or((0 as uid_t).wrapping_sub(1));
+    let gid = group.map(Into::into).unwrap_or((0 as gid_t).wrapping_sub(1));
+    (uid, gid)
+}
+
 /// Change the ownership of the file at `path` to be owned by the specified
 /// `owner` (user) and `group` (see
 /// [chown(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/chown.html)).
@@ -557,15 +567,60 @@ pub fn getcwd() -> Result<PathBuf> {
 #[inline]
 pub fn chown<P: ?Sized + NixPath>(path: &P, owner: Option<Uid>, group: Option<Gid>) -> Result<()> {
     let res = try!(path.with_nix_path(|cstr| {
-        // According to the POSIX specification, -1 is used to indicate that
-        // owner and group, respectively, are not to be changed. Since uid_t and
-        // gid_t are unsigned types, we use wrapping_sub to get '-1'.
-        unsafe { libc::chown(cstr.as_ptr(),
-                             owner.map(Into::into).unwrap_or((0 as uid_t).wrapping_sub(1)),
-                             group.map(Into::into).unwrap_or((0 as gid_t).wrapping_sub(1))) }
+        let (uid, gid) = chown_raw_ids(owner, group);
+        unsafe { libc::chown(cstr.as_ptr(), uid, gid) }
     }));
 
     Errno::result(res).map(drop)
+}
+
+/// Flags for `fchownat` function.
+#[derive(Clone, Copy, Debug)]
+pub enum FchownatFlags {
+    FollowSymlink,
+    NoFollowSymlink,
+}
+
+/// Change the ownership of the file at `path` to be owned by the specified
+/// `owner` (user) and `group`.
+///
+/// The owner/group for the provided path name will not be modified if `None` is
+/// provided for that argument.  Ownership change will be attempted for the path
+/// only if `Some` owner/group is provided.
+///
+/// The file to be changed is determined relative to the directory associated
+/// with the file descriptor `dirfd` or the current working directory
+/// if `dirfd` is `None`.
+///
+/// If `flag` is `FchownatFlags::NoFollowSymlink` and `path` names a symbolic link,
+/// then the mode of the symbolic link is changed.
+///
+/// `fchownat(None, path, mode, FchownatFlags::NoFollowSymlink)` is identical to
+/// a call `libc::lchown(path, mode)`.  That's why `lchmod` is unimplemented in
+/// the `nix` crate.
+///
+/// # References
+///
+/// [fchownat(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/fchownat.html).
+pub fn fchownat<P: ?Sized + NixPath>(
+    dirfd: Option<RawFd>,
+    path: &P,
+    owner: Option<Uid>,
+    group: Option<Gid>,
+    flag: FchownatFlags,
+) -> Result<()> {
+    let atflag =
+        match flag {
+            FchownatFlags::FollowSymlink => AtFlags::empty(),
+            FchownatFlags::NoFollowSymlink => AtFlags::AT_SYMLINK_NOFOLLOW,
+        };
+    let res = path.with_nix_path(|cstr| unsafe {
+        let (uid, gid) = chown_raw_ids(owner, group);
+        libc::fchownat(at_rawfd(dirfd), cstr.as_ptr(), uid, gid,
+                       atflag.bits() as libc::c_int)
+    })?;
+
+    Errno::result(res).map(|_| ())
 }
 
 /// Change the ownership of the file specified by the file descriptor `fd` to be owned by the
@@ -576,9 +631,8 @@ pub fn chown<P: ?Sized + NixPath>(path: &P, owner: Option<Uid>, group: Option<Gi
 /// provided for that argument.  Ownership change will be attempted for the path
 /// only if `Some` owner/group is provided.
 pub fn fchown(fd: RawFd, owner: Option<Uid>, group: Option<Gid>) -> Result<()> {
-    let res = unsafe { libc::fchown(fd,
-                             owner.map(Into::into).unwrap_or((0 as uid_t).wrapping_sub(1)),
-                             group.map(Into::into).unwrap_or((0 as gid_t).wrapping_sub(1))) };
+    let (uid, gid) = chown_raw_ids(owner, group);
+    let res = unsafe { libc::fchown(fd, uid, gid) };
 
     Errno::result(res).map(drop)
 }
@@ -989,6 +1043,20 @@ fn pipe2_setflags(fd1: RawFd, fd2: RawFd, flags: OFlag) -> Result<()> {
             Err(e)
         }
     }
+}
+
+/// Truncate a file to a specified length
+///
+/// See also
+/// [truncate(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/truncate.html)
+pub fn truncate<P: ?Sized + NixPath>(path: &P, len: off_t) -> Result<()> {
+    let res = try!(path.with_nix_path(|cstr| {
+        unsafe {
+            libc::truncate(cstr.as_ptr(), len)
+        }
+    }));
+
+    Errno::result(res).map(drop)
 }
 
 /// Truncate a file to a specified length
