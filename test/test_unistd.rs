@@ -1,4 +1,4 @@
-use nix::fcntl::{fcntl, FcntlArg, FdFlag, OFlag};
+use nix::fcntl::{fcntl, FcntlArg, FdFlag, open, OFlag};
 use nix::unistd::*;
 use nix::unistd::ForkResult::*;
 use nix::sys::signal::{SaFlags, SigAction, SigHandler, SigSet, Signal, sigaction};
@@ -299,6 +299,49 @@ fn test_getcwd() {
     }
     assert!(chdir(inner_tmp_dir.as_path()).is_ok());
     assert_eq!(getcwd().unwrap(), inner_tmp_dir.as_path());
+}
+
+#[test]
+fn test_chown() {
+    // Testing for anything other than our own UID/GID is hard.
+    let uid = Some(getuid());
+    let gid = Some(getgid());
+
+    let tempdir = tempfile::tempdir().unwrap();
+    let path = tempdir.path().join("file");
+    {
+        File::create(&path).unwrap();
+    }
+
+    chown(&path, uid, gid).unwrap();
+    chown(&path, uid, None).unwrap();
+    chown(&path, None, gid).unwrap();
+
+    fs::remove_file(&path).unwrap();
+    chown(&path, uid, gid).unwrap_err();
+}
+
+#[test]
+fn test_fchownat() {
+    // Testing for anything other than our own UID/GID is hard.
+    let uid = Some(getuid());
+    let gid = Some(getgid());
+
+    let tempdir = tempfile::tempdir().unwrap();
+    let path = tempdir.path().join("file");
+    {
+        File::create(&path).unwrap();
+    }
+
+    let dirfd = open(tempdir.path(), OFlag::empty(), Mode::empty()).unwrap();
+
+    fchownat(Some(dirfd), "file", uid, gid, FchownatFlags::FollowSymlink).unwrap();
+
+    chdir(tempdir.path()).unwrap();
+    fchownat(None, "file", uid, gid, FchownatFlags::FollowSymlink).unwrap();
+
+    fs::remove_file(&path).unwrap();
+    fchownat(None, "file", uid, gid, FchownatFlags::FollowSymlink).unwrap_err();
 }
 
 #[test]
