@@ -28,6 +28,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Added support for `ptrace` on BSD operating systems ([#949](https://github.com/nix-rust/nix/pull/949))
 - Added `ptrace` functions for reads and writes to tracee memory and ptrace kill 
   ([#949](https://github.com/nix-rust/nix/pull/949))
+- Added a `acct` wrapper module for enabling and disabling process accounting
+  ([#952](https://github.com/nix-rust/nix/pull/952))
 
 ### Changed
 - Increased required Rust version to 1.22.1/

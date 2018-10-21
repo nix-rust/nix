@@ -4,12 +4,13 @@ use nix::unistd::ForkResult::*;
 use nix::sys::signal::{SaFlags, SigAction, SigHandler, SigSet, Signal, sigaction};
 use nix::sys::wait::*;
 use nix::sys::stat::{self, Mode, SFlag};
-use std::{env, iter};
+use std::{env, iter, thread, time};
 use std::ffi::CString;
-use std::fs::{self, File};
+use std::fs::{self, File, metadata};
 use std::io::Write;
 use std::os::unix::prelude::*;
-use tempfile::{self, tempfile};
+use std::process::Command;
+use tempfile::{self, tempfile, NamedTempFile};
 use libc::{self, _exit, off_t};
 
 #[test]
@@ -376,6 +377,26 @@ fn test_lseek64() {
     assert_eq!(b"f123456", &buf);
 
     close(tmpfd).unwrap();
+}
+
+// Skip on FreeBSD because FreeBSD's CI environment is jailed, and jails
+// aren't allowed to use acct(2)
+#[cfg(not(target_os = "freebsd"))]
+#[test]
+fn test_acct() {
+    skip_if_not_root!("test_acct");
+    let file = NamedTempFile::new().unwrap();
+    let path = file.path().to_str().unwrap();
+
+    acct::enable(path).unwrap();
+    Command::new("echo").arg("Hello world");
+    acct::disable().unwrap();
+
+    loop {
+        let len = metadata(path).unwrap().len();
+        if len > 0 { break; }
+        thread::sleep(time::Duration::from_millis(10));
+    }
 }
 
 #[test]
