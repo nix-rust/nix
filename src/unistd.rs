@@ -373,13 +373,13 @@ pub fn dup2(oldfd: RawFd, newfd: RawFd) -> Result<RawFd> {
 ///
 /// This function behaves similar to `dup2()` but allows for flags to be
 /// specified.
-#[cfg(any(target_os = "fuchsia",
-          target_os = "emscripten",
+#[cfg(any(target_os = "emscripten",
           target_os = "freebsd",
+          target_os = "fuchsia",
           target_os = "linux",
-          target_os = "solaris",
           target_os = "netbsd",
-          target_os = "openbsd"))]
+          target_os = "openbsd",
+          target_os = "solaris"))]
 pub fn dup3(oldfd: RawFd, newfd: RawFd, flags: OFlag) -> Result<RawFd> {
     let res = unsafe { libc::dup3(oldfd, newfd, flags.bits()) };
 
