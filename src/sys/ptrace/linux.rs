@@ -173,8 +173,10 @@ libc_bitflags! {
 pub unsafe fn ptrace(request: Request, pid: Pid, addr: *mut c_void, data: *mut c_void) -> Result<c_long> {
     use self::Request::*;
     match request {
-        PTRACE_PEEKTEXT | PTRACE_PEEKDATA | PTRACE_PEEKUSER => ptrace_peek(request, pid, addr, data),
-        PTRACE_GETSIGINFO | PTRACE_GETEVENTMSG | PTRACE_SETSIGINFO | PTRACE_SETOPTIONS => Err(Error::UnsupportedOperation),
+        PTRACE_PEEKTEXT | PTRACE_PEEKDATA | PTRACE_PEEKUSER | PTRACE_GETSIGINFO | 
+            PTRACE_GETEVENTMSG | PTRACE_SETSIGINFO | PTRACE_SETOPTIONS | 
+            PTRACE_POKETEXT | PTRACE_POKEDATA | PTRACE_POKEUSER | 
+            PTRACE_KILL => Err(Error::UnsupportedOperation),
         _ => ptrace_other(request, pid, addr, data)
     }
 }
@@ -320,6 +322,15 @@ pub fn cont<T: Into<Option<Signal>>>(pid: Pid, sig: T) -> Result<()> {
     }
 }
 
+/// Issues a kill request as with `ptrace(PTRACE_KILL, ...)`
+///
+/// This request is equivalent to `ptrace(PTRACE_CONT, ..., SIGKILL);`
+pub fn kill(pid: Pid) -> Result<()> {
+    unsafe {
+        ptrace_other(Request::PTRACE_KILL, pid, ptr::null_mut(), ptr::null_mut()).map(|_| ())
+    }
+}
+
 /// Move the stopped tracee process forward by a single step as with 
 /// `ptrace(PTRACE_SINGLESTEP, ...)`
 ///
@@ -352,5 +363,18 @@ pub fn step<T: Into<Option<Signal>>>(pid: Pid, sig: T) -> Result<()> {
     };
     unsafe {
         ptrace_other(Request::PTRACE_SINGLESTEP, pid, ptr::null_mut(), data).map(|_| ())
+    }
+}
+
+
+/// Reads a word from a processes memory at the given address
+pub fn read(pid: Pid, addr: *mut c_void) -> Result<c_long> {
+    ptrace_peek(Request::PTRACE_PEEKDATA, pid, addr, ptr::null_mut())
+}
+
+/// Writes a word into the processes memory at the given address
+pub fn write(pid: Pid, addr: *mut c_void, data: *mut c_void) -> Result<()> {
+    unsafe {
+        ptrace_other(Request::PTRACE_POKEDATA, pid, addr, data).map(|_| ())
     }
 }
