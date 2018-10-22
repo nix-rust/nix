@@ -174,10 +174,9 @@ libc_bitflags! {
 pub unsafe fn ptrace(request: Request, pid: Pid, addr: AddressType, data: *mut c_void) -> Result<c_long> {
     use self::Request::*;
     match request {
-        PTRACE_PEEKTEXT | PTRACE_PEEKDATA | PTRACE_PEEKUSER | PTRACE_GETSIGINFO | 
+        PTRACE_PEEKTEXT | PTRACE_PEEKDATA | PTRACE_GETSIGINFO | 
             PTRACE_GETEVENTMSG | PTRACE_SETSIGINFO | PTRACE_SETOPTIONS | 
-            PTRACE_POKETEXT | PTRACE_POKEDATA | PTRACE_POKEUSER | 
-            PTRACE_KILL => Err(Error::UnsupportedOperation),
+            PTRACE_POKETEXT | PTRACE_POKEDATA | PTRACE_KILL => Err(Error::UnsupportedOperation),
         _ => ptrace_other(request, pid, addr, data)
     }
 }
