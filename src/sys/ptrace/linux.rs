@@ -7,6 +7,7 @@ use libc::{self, c_void, c_long, siginfo_t};
 use ::unistd::Pid;
 use sys::signal::Signal;
 
+pub type AddressType = *mut ::libc::c_void;
 
 cfg_if! {
     if #[cfg(any(all(target_os = "linux", arch = "s390x"),
@@ -170,7 +171,7 @@ libc_bitflags! {
     since="0.10.0",
     note="usages of `ptrace()` should be replaced with the specialized helper functions instead"
 )]
-pub unsafe fn ptrace(request: Request, pid: Pid, addr: *mut c_void, data: *mut c_void) -> Result<c_long> {
+pub unsafe fn ptrace(request: Request, pid: Pid, addr: AddressType, data: *mut c_void) -> Result<c_long> {
     use self::Request::*;
     match request {
         PTRACE_PEEKTEXT | PTRACE_PEEKDATA | PTRACE_PEEKUSER | PTRACE_GETSIGINFO | 
@@ -181,7 +182,7 @@ pub unsafe fn ptrace(request: Request, pid: Pid, addr: *mut c_void, data: *mut c
     }
 }
 
-fn ptrace_peek(request: Request, pid: Pid, addr: *mut c_void, data: *mut c_void) -> Result<c_long> {
+fn ptrace_peek(request: Request, pid: Pid, addr: AddressType, data: *mut c_void) -> Result<c_long> {
     let ret = unsafe {
         Errno::clear();
         libc::ptrace(request as RequestType, libc::pid_t::from(pid), addr, data)
@@ -209,7 +210,7 @@ fn ptrace_get_data<T>(request: Request, pid: Pid) -> Result<T> {
     Ok(data)
 }
 
-unsafe fn ptrace_other(request: Request, pid: Pid, addr: *mut c_void, data: *mut c_void) -> Result<c_long> {
+unsafe fn ptrace_other(request: Request, pid: Pid, addr: AddressType, data: *mut c_void) -> Result<c_long> {
     Errno::result(libc::ptrace(request as RequestType, libc::pid_t::from(pid), addr, data)).map(|_| 0)
 }
 
@@ -368,12 +369,12 @@ pub fn step<T: Into<Option<Signal>>>(pid: Pid, sig: T) -> Result<()> {
 
 
 /// Reads a word from a processes memory at the given address
-pub fn read(pid: Pid, addr: *mut c_void) -> Result<c_long> {
+pub fn read(pid: Pid, addr: AddressType) -> Result<c_long> {
     ptrace_peek(Request::PTRACE_PEEKDATA, pid, addr, ptr::null_mut())
 }
 
 /// Writes a word into the processes memory at the given address
-pub fn write(pid: Pid, addr: *mut c_void, data: *mut c_void) -> Result<()> {
+pub fn write(pid: Pid, addr: AddressType, data: *mut c_void) -> Result<()> {
     unsafe {
         ptrace_other(Request::PTRACE_POKEDATA, pid, addr, data).map(|_| ())
     }
