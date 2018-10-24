@@ -1508,6 +1508,31 @@ pub fn sleep(seconds: c_uint) -> c_uint {
     unsafe { libc::sleep(seconds) }
 }
 
+pub mod acct {
+    use libc;
+    use {Result, NixPath};
+    use errno::Errno;
+    use std::ptr;
+
+    /// Enable process accounting
+    ///
+    /// See also [acct(2)](https://linux.die.net/man/2/acct)
+    pub fn enable<P: ?Sized + NixPath>(filename: &P) -> Result<()> {
+        let res = try!(filename.with_nix_path(|cstr| {
+            unsafe { libc::acct(cstr.as_ptr()) }
+        }));
+
+        Errno::result(res).map(drop)
+    }
+
+    /// Disable process accounting
+    pub fn disable() -> Result<()> {
+        let res = unsafe { libc::acct(ptr::null()) };
+
+        Errno::result(res).map(drop)
+    }
+}
+
 /// Creates a regular file which persists even after process termination
 ///
 /// * `template`: a path whose 6 rightmost characters must be X, e.g. `/tmp/tmpfile_XXXXXX`
