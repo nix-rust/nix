@@ -623,6 +623,20 @@ pub fn fchownat<P: ?Sized + NixPath>(
     Errno::result(res).map(|_| ())
 }
 
+/// Change the ownership of the file specified by the file descriptor `fd` to be owned by the
+/// specified `owner` (user) and `group` (see
+/// [fchown(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/fchown.html)).
+///
+/// The owner/group for the provided path name will not be modified if `None` is
+/// provided for that argument.  Ownership change will be attempted for the path
+/// only if `Some` owner/group is provided.
+pub fn fchown(fd: RawFd, owner: Option<Uid>, group: Option<Gid>) -> Result<()> {
+    let (uid, gid) = chown_raw_ids(owner, group);
+    let res = unsafe { libc::fchown(fd, uid, gid) };
+
+    Errno::result(res).map(drop)
+}
+
 fn to_exec_array(args: &[CString]) -> Vec<*const c_char> {
     let mut args_p: Vec<*const c_char> = args.iter().map(|s| s.as_ptr()).collect();
     args_p.push(ptr::null());
