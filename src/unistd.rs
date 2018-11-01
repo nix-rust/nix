@@ -1101,6 +1101,20 @@ pub fn chroot<P: ?Sized + NixPath>(path: &P) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
+/// Commit filesystem caches to disk
+///
+/// See also [sync(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/sync.html)
+#[cfg(any(
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "linux",
+    target_os = "netbsd",
+    target_os = "openbsd"
+))]
+pub fn sync() -> () {
+    unsafe { libc::sync() };
+}
+
 /// Synchronize changes to a file
 ///
 /// See also [fsync(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/fsync.html)
