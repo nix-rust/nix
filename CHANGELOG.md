@@ -34,6 +34,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 - Increased required Rust version to 1.22.1/
   ([#900](https://github.com/nix-rust/nix/pull/900))
+- Changed the `dup3` wrapper to perform a direct call to the system call `dup3` instead of
+  emulating it via `dup2` and `fcntl` which could cause a race condition. The `dup3` system call
+  is supported on the following platforms: Emscripten, FreeBSD, Fuchsia, Linux, NetBSD, OpenBSD,
+  Solaris.
 
 ### Fixed
 - Made `preadv` take immutable slice of IoVec.
@@ -42,6 +46,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#918](https://github.com/nix-rust/nix/pull/918))
 
 ### Removed
+- Removed the `dup3` wrapper on OSX, which was emulated via `dup2` and `fcntl`, which could cause
+  a race condition. The `dup3` system call is not supported on OSX.
 
 ## [0.11.0] 2018-06-01
 

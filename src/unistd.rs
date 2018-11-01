@@ -2,8 +2,7 @@
 
 use errno::{self, Errno};
 use {Error, Result, NixPath};
-use fcntl::{AtFlags, at_rawfd, fcntl, FdFlag, OFlag};
-use fcntl::FcntlArg::F_SETFD;
+use fcntl::{AtFlags, at_rawfd, OFlag};
 use libc::{self, c_char, c_void, c_int, c_long, c_uint, size_t, pid_t, off_t,
            uid_t, gid_t, mode_t};
 use std::{fmt, mem, ptr};
@@ -374,26 +373,17 @@ pub fn dup2(oldfd: RawFd, newfd: RawFd) -> Result<RawFd> {
 ///
 /// This function behaves similar to `dup2()` but allows for flags to be
 /// specified.
+#[cfg(any(target_os = "emscripten",
+          target_os = "freebsd",
+          target_os = "fuchsia",
+          target_os = "linux",
+          target_os = "netbsd",
+          target_os = "openbsd",
+          target_os = "solaris"))]
 pub fn dup3(oldfd: RawFd, newfd: RawFd, flags: OFlag) -> Result<RawFd> {
-    dup3_polyfill(oldfd, newfd, flags)
-}
+    let res = unsafe { libc::dup3(oldfd, newfd, flags.bits()) };
 
-#[inline]
-fn dup3_polyfill(oldfd: RawFd, newfd: RawFd, flags: OFlag) -> Result<RawFd> {
-    if oldfd == newfd {
-        return Err(Error::Sys(Errno::EINVAL));
-    }
-
-    let fd = try!(dup2(oldfd, newfd));
-
-    if flags.contains(OFlag::O_CLOEXEC) {
-        if let Err(e) = fcntl(fd, F_SETFD(FdFlag::FD_CLOEXEC)) {
-            let _ = close(fd);
-            return Err(e);
-        }
-    }
-
-    Ok(fd)
+    Errno::result(res)
 }
 
 /// Change the current working directory of the calling process (see
