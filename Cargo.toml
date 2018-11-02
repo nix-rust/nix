@@ -7,8 +7,12 @@ repository  = "https://github.com/nix-rust/nix"
 license     = "MIT"
 categories  = ["os::unix-apis"]
 exclude     = [
-  ".gitignore",
-  ".travis.yml"
+  "/.gitignore",
+  "/.travis.yml",
+  "/ci/*",
+  "/Cross.toml",
+  "/RELEASE_PROCEDURE.md",
+  "/bors.toml"
 ]
 
 [dependencies]
