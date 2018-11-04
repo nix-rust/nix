@@ -12,6 +12,7 @@ ioctl_write_int!(write_ptr_int, 0, 0);
 ioctl_write_ptr!(write_ptr_u8, 0, 0, u8);
 ioctl_write_ptr!(write_ptr_u32, 0, 0, u32);
 ioctl_write_ptr!(write_ptr_u64, 0, 0, u64);
+ioctl_readwrite_ptr!(readwrite_ptr_u64, 0, 0, u64);
 ioctl_readwrite!(readwrite_test, 0, 0, u64);
 ioctl_read_buf!(readbuf_test, 0, 0, u32);
 const SPI_IOC_MAGIC: u8 = b'k';
