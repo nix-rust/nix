@@ -18,7 +18,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#916](https://github.com/nix-rust/nix/pull/916))
 - Added `kmod` module that allows loading and unloading kernel modules on Linux.
   ([#930](https://github.com/nix-rust/nix/pull/930))
-- Added `futimens` and `utimesat` wrappers ([#944](https://github.com/nix-rust/nix/pull/944))
+- Added `futimens` and `utimesat` wrappers ([#944](https://github.com/nix-rust/nix/pull/944)),
+  an `lutimes` wrapper ([#967](https://github.com/nix-rust/nix/pull/967)),
   and a `utimes` wrapper ([#946](https://github.com/nix-rust/nix/pull/946)).
 - Added `AF_UNSPEC` wrapper to `AddressFamily` ([#948](https://github.com/nix-rust/nix/pull/948))
 - Added the `mode_t` public alias within `sys::stat`.

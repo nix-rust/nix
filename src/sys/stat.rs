@@ -199,6 +199,26 @@ pub fn utimes<P: ?Sized + NixPath>(path: &P, atime: &TimeVal, mtime: &TimeVal) -
     Errno::result(res).map(|_| ())
 }
 
+/// Change the access and modification times of a file without following symlinks.
+///
+/// `lutimes(path, times)` is identical to
+/// `utimensat(None, path, times, UtimensatFlags::NoFollowSymlink)`. The former
+/// is a deprecated API so prefer using the latter if the platforms you care
+/// about support it.
+///
+/// # References
+///
+/// [lutimes(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/lutimes.html).
+#[cfg(not(target_os = "android"))]
+pub fn lutimes<P: ?Sized + NixPath>(path: &P, atime: &TimeVal, mtime: &TimeVal) -> Result<()> {
+    let times: [libc::timeval; 2] = [*atime.as_ref(), *mtime.as_ref()];
+    let res = path.with_nix_path(|cstr| unsafe {
+        libc::lutimes(cstr.as_ptr(), &times[0])
+    })?;
+
+    Errno::result(res).map(|_| ())
+}
+
 /// Change the access and modification times of the file specified by a file descriptor.
 ///
 /// # References
