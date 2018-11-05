@@ -1,5 +1,6 @@
 use std::{cmp, fmt, ops};
-use libc::{c_long, time_t, suseconds_t, timespec, timeval};
+use libc::{c_long, timespec, timeval};
+pub use libc::{time_t, suseconds_t};
 
 pub trait TimeValLike: Sized {
     #[inline]

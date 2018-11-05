@@ -32,6 +32,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#949](https://github.com/nix-rust/nix/pull/949)) ([#958](https://github.com/nix-rust/nix/pull/958))
 - Added a `acct` wrapper module for enabling and disabling process accounting
   ([#952](https://github.com/nix-rust/nix/pull/952))
+- Added the `time_t` and `suseconds_t` public aliases within `sys::time`.
+  ([#968](https://github.com/nix-rust/nix/pull/968))
 
 ### Changed
 - Increased required Rust version to 1.22.1/
