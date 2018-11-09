@@ -6,6 +6,7 @@ use std::os::raw;
 use std::os::unix::io::RawFd;
 use std::ffi::OsStr;
 use std::os::unix::ffi::OsStrExt;
+use std::ptr;
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
 use sys::uio::IoVec;  // For vmsplice
@@ -305,6 +306,29 @@ pub fn flock(fd: RawFd, arg: FlockArg) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
+
+#[cfg(any(target_os = "linux", target_os = "android"))]
+bitflags! {
+    pub struct CopyFileRangeFlags: c_int {
+        const NONE = 0 as c_int;
+    }
+}
+
+/// The flags argument is currently unused, and is provided to allow for future
+/// extensions and currently must be set to `CopyFileRangeFlags::empty()`.
+#[cfg(any(target_os = "linux", target_os = "android"))]
+pub fn copy_file_range(fd_in: RawFd, off_in: Option<&mut libc::loff_t>,
+          fd_out: RawFd, off_out: Option<&mut libc::loff_t>,
+          len: usize, _flags: CopyFileRangeFlags) -> Result<usize> {
+    let off_in = off_in.map(|offset| offset as *mut _).unwrap_or(ptr::null_mut());
+    let off_out = off_out.map(|offset| offset as *mut _).unwrap_or(ptr::null_mut());
+
+    let ret = unsafe {
+        libc::syscall(libc::SYS_copy_file_range, fd_in, off_in, fd_out, off_out, len, 0 )
+    };
+    Errno::result(ret).map(|r| r as usize)
+}
+
 #[cfg(any(target_os = "android", target_os = "linux"))]
 libc_bitflags! {
     /// Additional flags to `splice` and friends.
@@ -330,7 +354,6 @@ libc_bitflags! {
 pub fn splice(fd_in: RawFd, off_in: Option<&mut libc::loff_t>,
           fd_out: RawFd, off_out: Option<&mut libc::loff_t>,
           len: usize, flags: SpliceFFlags) -> Result<usize> {
-    use std::ptr;
     let off_in = off_in.map(|offset| offset as *mut _).unwrap_or(ptr::null_mut());
     let off_out = off_out.map(|offset| offset as *mut _).unwrap_or(ptr::null_mut());
 
