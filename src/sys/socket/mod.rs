@@ -976,6 +976,20 @@ pub fn getsockopt<O: GetSockOpt>(fd: RawFd, opt: O) -> Result<O::Val> {
 /// Sets the value for the requested socket option
 ///
 /// [Further reading](http://pubs.opengroup.org/onlinepubs/9699919799/functions/setsockopt.html)
+///
+/// # Examples
+///
+/// ```
+/// use nix::sys::socket::setsockopt;
+/// use nix::sys::socket::sockopt::KeepAlive;
+/// use std::net::TcpListener;
+/// use std::os::unix::io::AsRawFd;
+///
+/// let listener = TcpListener::bind("0.0.0.0:0").unwrap();
+/// let fd = listener.as_raw_fd();
+/// let res = setsockopt(fd, KeepAlive, &true);
+/// assert!(res.is_ok());
+/// ```
 pub fn setsockopt<O: SetSockOpt>(fd: RawFd, opt: O, val: &O::Val) -> Result<()> {
     opt.set(fd, val)
 }
