@@ -17,6 +17,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#1010](https://github.com/nix-rust/nix/pull/1010))
 - Added `nix::sys::signal::signal`.
   ([#817](https://github.com/nix-rust/nix/pull/817))
+- Added `copy_file_range` wrapper
+  ([#1008](https://github.com/nix-rust/nix/pull/1008))
 
 ### Changed
 ### Fixed

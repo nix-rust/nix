@@ -246,6 +246,9 @@ pub enum FcntlArg<'a> {
 }
 pub use self::FcntlArg::*;
 
+#[cfg(any(target_os = "android", target_os = "linux"))]
+use std::ptr;
+
 // TODO: Figure out how to handle value fcntl returns
 pub fn fcntl(fd: RawFd, arg: FcntlArg) -> Result<c_int> {
     let res = unsafe {
@@ -305,6 +308,36 @@ pub fn flock(fd: RawFd, arg: FlockArg) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
+/// Copy a range of data from one file to another
+///
+/// The `copy_file_range` system call performs an in-kernel copy between
+/// file descriptor `fd_in` and `fd_out` without the additional cost of transferring data
+/// from the kernel to user space and then back into the kernel.  It
+/// copies up to `len` bytes of data from file descriptor `fd_in` to file
+/// descriptor `fd_out`, overwriting any data that exists within the
+/// requested range of the target file.
+///
+/// If the `off_in` and/or `off_out` arguments are used, the values
+/// will be mutated to reflect the new position within the file after
+/// copying. If they are not used, the relevant filedescriptors will be seeked
+/// to the new position.
+///
+/// On completion the number of bytes actually copied will be returned.
+#[cfg(any(target_os = "android", target_os = "linux"))]
+pub fn copy_file_range(
+    fd_in: RawFd, off_in: Option<&mut i64>,
+    fd_out: RawFd, off_out: Option<&mut i64>,
+    len: usize) -> Result<usize> {
+
+    let off_in = off_in.map(|offset| offset as *mut _).unwrap_or(ptr::null_mut());
+    let off_out = off_out.map(|offset| offset as *mut _).unwrap_or(ptr::null_mut());
+
+    let ret = unsafe {
+        libc::syscall(libc::SYS_copy_file_range, fd_in, off_in, fd_out, off_out, len, 0)
+    };
+    Errno::result(ret).map(|r| r as usize)
+}
+
 #[cfg(any(target_os = "android", target_os = "linux"))]
 libc_bitflags! {
     /// Additional flags to `splice` and friends.
@@ -329,8 +362,7 @@ libc_bitflags! {
 #[cfg(any(target_os = "linux", target_os = "android"))]
 pub fn splice(fd_in: RawFd, off_in: Option<&mut libc::loff_t>,
           fd_out: RawFd, off_out: Option<&mut libc::loff_t>,
-          len: usize, flags: SpliceFFlags) -> Result<usize> {
-    use std::ptr;
+              len: usize, flags: SpliceFFlags) -> Result<usize> {
     let off_in = off_in.map(|offset| offset as *mut _).unwrap_or(ptr::null_mut());
     let off_out = off_out.map(|offset| offset as *mut _).unwrap_or(ptr::null_mut());
 
