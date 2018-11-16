@@ -13,3 +13,28 @@ fn test_so_buf() {
     let actual = getsockopt(fd, sockopt::RcvBuf).unwrap();
     assert!(actual >= bufsize);
 }
+
+// The CI doesn't supported getsockopt and setsockopt on emulated processors.
+// It's beleived that a QEMU issue, the tests run ok on a fully emulated system.
+// Current CI just run the binary with QEMU but the Kernel remains the same as the host.
+// So the syscall doesn't work properly unless the kernel is also emulated.
+#[test]
+#[cfg(all(
+    any(target_arch = "x86", target_arch = "x86_64"),
+    any(target_os = "freebsd", target_os = "linux")
+))]
+fn test_tcp_congestion() {
+    use std::ffi::OsString;
+
+    let fd = socket(AddressFamily::Inet, SockType::Stream, SockFlag::empty(), None).unwrap();
+
+    let val = getsockopt(fd, sockopt::TcpCongestion).unwrap();
+    setsockopt(fd, sockopt::TcpCongestion, &val).unwrap();
+
+    setsockopt(fd, sockopt::TcpCongestion, &OsString::from("tcp_congestion_does_not_exist")).unwrap_err();
+
+    assert_eq!(
+        getsockopt(fd, sockopt::TcpCongestion).unwrap(),
+        val
+    );
+}

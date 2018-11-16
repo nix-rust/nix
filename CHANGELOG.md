@@ -5,6 +5,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 ### Added
+- Added support of CString type in `setsockopt`.
+  ([#972](https://github.com/nix-rust/nix/pull/972))
+- Added option `TCP_CONGESTION` in `setsockopt`.
+  ([#972](https://github.com/nix-rust/nix/pull/972))
+
 ### Changed
 ### Fixed
 ### Removed
