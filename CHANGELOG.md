@@ -6,6 +6,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Added `FromStr` and `Display` impls for `nix::sys::Signal`
+  ([#884](https://github.com/nix-rust/nix/pull/884))
 - Added a `sync` wrapper.
   ([#961](https://github.com/nix-rust/nix/pull/961))
 - Added a `sysinfo` wrapper.
@@ -82,8 +84,6 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#857](https://github.com/nix-rust/nix/pull/857))
 - Added `request_code_write_int!` on FreeBSD/DragonFlyBSD
   ([#833](https://github.com/nix-rust/nix/pull/833))
-- Added `FromStr` and `Display` impls for `nix::sys::Signal`
-  ([#884](https://github.com/nix-rust/nix/pull/884))
 
 ### Changed
 - `Display` and `Debug` for `SysControlAddr` now includes all fields.
