@@ -701,6 +701,27 @@ pub fn execvp(filename: &CString, args: &[CString]) -> Result<Void> {
     Err(Error::Sys(Errno::last()))
 }
 
+/// Replace the current process image with a new one and replicate shell `PATH`
+/// searching behavior (see
+/// [`execvpe(3)`](http://man7.org/linux/man-pages/man3/exec.3.html)).
+///
+/// This functions like a combination of `execvp(2)` and `execve(2)` to pass an
+/// environment and have a search path. See these two for additional
+/// information.
+#[cfg(any(target_os = "haiku",
+          target_os = "linux",
+          target_os = "openbsd"))]
+pub fn execvpe(filename: &CString, args: &[CString], env: &[CString]) -> Result<Void> {
+    let args_p = to_exec_array(args);
+    let env_p = to_exec_array(env);
+
+    unsafe {
+        libc::execvpe(filename.as_ptr(), args_p.as_ptr(), env_p.as_ptr())
+    };
+
+    Err(Error::Sys(Errno::last()))
+}
+
 /// Replace the current process image with a new one (see
 /// [fexecve(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/fexecve.html)).
 ///
