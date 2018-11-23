@@ -243,6 +243,9 @@ cfg_if!{
     }
 }
 
+#[cfg(any(target_os = "haiku", target_os = "linux", target_os = "openbsd"))]
+execve_test_factory!(test_execvpe, execvpe, &CString::new("sh").unwrap());
+
 cfg_if!{
     if #[cfg(target_os = "android")] {
         use nix::fcntl::AtFlags;

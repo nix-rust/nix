@@ -36,6 +36,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#952](https://github.com/nix-rust/nix/pull/952))
 - Added the `time_t` and `suseconds_t` public aliases within `sys::time`.
   ([#968](https://github.com/nix-rust/nix/pull/968))
+- Added `unistd::execvpe` for Haiku, Linux and OpenBSD
+  ([#975](https://github.com/nix-rust/nix/pull/975))
 
 ### Changed
 - Increased required Rust version to 1.24.1
