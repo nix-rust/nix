@@ -6,7 +6,7 @@ use std::time::{Duration, UNIX_EPOCH};
 use libc::{S_IFMT, S_IFLNK};
 
 use nix::fcntl;
-use nix::sys::stat::{self, fchmod, fchmodat, fstat, futimens, lstat, stat, utimes, utimensat};
+use nix::sys::stat::{self, fchmod, fchmodat, fstat, futimens, lstat, lutimes, stat, utimes, utimensat};
 use nix::sys::stat::{FileStat, Mode, FchmodatFlags, UtimensatFlags};
 use nix::sys::time::{TimeSpec, TimeVal, TimeValLike};
 use nix::unistd::chdir;
@@ -176,6 +176,25 @@ fn test_utimes() {
 
     utimes(&fullpath, &TimeVal::seconds(9990), &TimeVal::seconds(5550)).unwrap();
     assert_times_eq(9990, 5550, &fs::metadata(&fullpath).unwrap());
+}
+
+#[test]
+fn test_lutimes() {
+    let tempdir = tempfile::tempdir().unwrap();
+    let target = tempdir.path().join("target");
+    let fullpath = tempdir.path().join("symlink");
+    drop(File::create(&target).unwrap());
+    symlink(&target, &fullpath).unwrap();
+
+    let exp_target_metadata = fs::symlink_metadata(&target).unwrap();
+    lutimes(&fullpath, &TimeVal::seconds(4560), &TimeVal::seconds(1230)).unwrap();
+    assert_times_eq(4560, 1230, &fs::symlink_metadata(&fullpath).unwrap());
+
+    let target_metadata = fs::symlink_metadata(&target).unwrap();
+    assert_eq!(exp_target_metadata.accessed().unwrap(), target_metadata.accessed().unwrap(),
+               "atime of symlink target was unexpectedly modified");
+    assert_eq!(exp_target_metadata.modified().unwrap(), target_metadata.modified().unwrap(),
+               "mtime of symlink target was unexpectedly modified");
 }
 
 #[test]
