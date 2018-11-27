@@ -4,13 +4,12 @@ use nix::unistd::ForkResult::*;
 use nix::sys::signal::{SaFlags, SigAction, SigHandler, SigSet, Signal, sigaction};
 use nix::sys::wait::*;
 use nix::sys::stat::{self, Mode, SFlag};
-use std::{env, iter, thread, time};
+use std::{env, iter};
 use std::ffi::CString;
-use std::fs::{self, File, metadata};
+use std::fs::{self, File};
 use std::io::Write;
 use std::os::unix::prelude::*;
-use std::process::Command;
-use tempfile::{self, tempfile, NamedTempFile};
+use tempfile::{self, tempfile};
 use libc::{self, _exit, off_t};
 
 #[test]
@@ -387,6 +386,10 @@ fn test_lseek64() {
 #[cfg(not(target_os = "freebsd"))]
 #[test]
 fn test_acct() {
+    use tempfile::NamedTempFile;
+    use std::process::Command;
+    use std::{thread, time};
+
     skip_if_not_root!("test_acct");
     let file = NamedTempFile::new().unwrap();
     let path = file.path().to_str().unwrap();
@@ -396,7 +399,7 @@ fn test_acct() {
     acct::disable().unwrap();
 
     loop {
-        let len = metadata(path).unwrap().len();
+        let len = fs::metadata(path).unwrap().len();
         if len > 0 { break; }
         thread::sleep(time::Duration::from_millis(10));
     }

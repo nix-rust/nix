@@ -39,6 +39,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#968](https://github.com/nix-rust/nix/pull/968))
 - Added `unistd::execvpe` for Haiku, Linux and OpenBSD
   ([#975](https://github.com/nix-rust/nix/pull/975))
+- Added `Error::as_errno`.
+  ([#977](https://github.com/nix-rust/nix/pull/977))
 
 ### Changed
 - Increased required Rust version to 1.24.1
