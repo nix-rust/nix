@@ -94,7 +94,7 @@ impl SignalFd {
     }
 
     pub fn set_mask(&mut self, mask: &SigSet) -> Result<()> {
-        signalfd(self.0, mask, SfdFlags::empty()).map(|_| ())
+        signalfd(self.0, mask, SfdFlags::empty()).map(drop)
     }
 
     pub fn read_signal(&mut self) -> Result<Option<siginfo>> {

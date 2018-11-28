@@ -1138,7 +1138,7 @@ impl<'a> LioCb<'a> {
         let p = self.list.as_ptr();
         Errno::result(unsafe {
             libc::lio_listio(mode as i32, p, self.list.len() as i32, sigevp)
-        }).map(|_| ())
+        }).map(drop)
     }
 
     /// Resubmits any incomplete operations with [`lio_listio`].
@@ -1229,7 +1229,7 @@ impl<'a> LioCb<'a> {
         let p = self.list.as_ptr();
         Errno::result(unsafe {
             libc::lio_listio(mode as i32, p, self.list.len() as i32, sigevp)
-        }).map(|_| ())
+        }).map(drop)
     }
 
     /// Collect final status for an individual `AioCb` submitted as part of an

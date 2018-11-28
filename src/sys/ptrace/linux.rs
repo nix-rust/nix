@@ -223,7 +223,7 @@ pub fn setoptions(pid: Pid, options: Options) -> Result<()> {
                      ptr::null_mut::<c_void>(),
                      options.bits() as *mut c_void)
     };
-    Errno::result(res).map(|_| ())
+    Errno::result(res).map(drop)
 }
 
 /// Gets a ptrace event as described by `ptrace(PTRACE_GETEVENTMSG,...)`
@@ -262,7 +262,7 @@ pub fn traceme() -> Result<()> {
             Pid::from_raw(0),
             ptr::null_mut(),
             ptr::null_mut(),
-        ).map(|_| ()) // ignore the useless return value
+        ).map(drop) // ignore the useless return value
     }
 }
 
@@ -276,7 +276,7 @@ pub fn syscall(pid: Pid) -> Result<()> {
             pid,
             ptr::null_mut(),
             ptr::null_mut(),
-        ).map(|_| ()) // ignore the useless return value
+        ).map(drop) // ignore the useless return value
     }
 }
 
@@ -290,7 +290,7 @@ pub fn attach(pid: Pid) -> Result<()> {
             pid,
             ptr::null_mut(),
             ptr::null_mut(),
-        ).map(|_| ()) // ignore the useless return value
+        ).map(drop) // ignore the useless return value
     }
 }
 
@@ -304,7 +304,7 @@ pub fn detach(pid: Pid) -> Result<()> {
             pid,
             ptr::null_mut(),
             ptr::null_mut()
-        ).map(|_| ())
+        ).map(drop)
     }
 }
 
@@ -318,7 +318,7 @@ pub fn cont<T: Into<Option<Signal>>>(pid: Pid, sig: T) -> Result<()> {
         None => ptr::null_mut(),
     };
     unsafe {
-        ptrace_other(Request::PTRACE_CONT, pid, ptr::null_mut(), data).map(|_| ()) // ignore the useless return value
+        ptrace_other(Request::PTRACE_CONT, pid, ptr::null_mut(), data).map(drop) // ignore the useless return value
     }
 }
 
@@ -327,7 +327,7 @@ pub fn cont<T: Into<Option<Signal>>>(pid: Pid, sig: T) -> Result<()> {
 /// This request is equivalent to `ptrace(PTRACE_CONT, ..., SIGKILL);`
 pub fn kill(pid: Pid) -> Result<()> {
     unsafe {
-        ptrace_other(Request::PTRACE_KILL, pid, ptr::null_mut(), ptr::null_mut()).map(|_| ())
+        ptrace_other(Request::PTRACE_KILL, pid, ptr::null_mut(), ptr::null_mut()).map(drop)
     }
 }
 
@@ -362,7 +362,7 @@ pub fn step<T: Into<Option<Signal>>>(pid: Pid, sig: T) -> Result<()> {
         None => ptr::null_mut(),
     };
     unsafe {
-        ptrace_other(Request::PTRACE_SINGLESTEP, pid, ptr::null_mut(), data).map(|_| ())
+        ptrace_other(Request::PTRACE_SINGLESTEP, pid, ptr::null_mut(), data).map(drop)
     }
 }
 
@@ -375,6 +375,6 @@ pub fn read(pid: Pid, addr: AddressType) -> Result<c_long> {
 /// Writes a word into the processes memory at the given address
 pub fn write(pid: Pid, addr: AddressType, data: *mut c_void) -> Result<()> {
     unsafe {
-        ptrace_other(Request::PTRACE_POKEDATA, pid, addr, data).map(|_| ())
+        ptrace_other(Request::PTRACE_POKEDATA, pid, addr, data).map(drop)
     }
 }

@@ -630,7 +630,7 @@ pub fn fchownat<P: ?Sized + NixPath>(
                        atflag.bits() as libc::c_int)
     })?;
 
-    Errno::result(res).map(|_| ())
+    Errno::result(res).map(drop)
 }
 
 fn to_exec_array(args: &[CString]) -> Vec<*const c_char> {
@@ -1318,7 +1318,7 @@ pub fn setgroups(groups: &[Gid]) -> Result<()> {
         libc::setgroups(groups.len() as setgroups_ngroups_t, groups.as_ptr() as *const gid_t)
     };
 
-    Errno::result(res).map(|_| ())
+    Errno::result(res).map(drop)
 }
 
 /// Calculate the supplementary group access list.
@@ -1444,7 +1444,7 @@ pub fn initgroups(user: &CStr, group: Gid) -> Result<()> {
     let gid: gid_t = group.into();
     let res = unsafe { libc::initgroups(user.as_ptr(), gid as initgroups_group_t) };
 
-    Errno::result(res).map(|_| ())
+    Errno::result(res).map(drop)
 }
 
 /// Suspend the thread until a signal is received.

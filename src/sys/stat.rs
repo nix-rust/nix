@@ -131,7 +131,7 @@ pub fn fstatat<P: ?Sized + NixPath>(dirfd: RawFd, pathname: &P, f: AtFlags) -> R
 pub fn fchmod(fd: RawFd, mode: Mode) -> Result<()> {
     let res = unsafe { libc::fchmod(fd, mode.bits() as mode_t) };
 
-    Errno::result(res).map(|_| ())
+    Errno::result(res).map(drop)
 }
 
 /// Flags for `fchmodat` function.
@@ -177,7 +177,7 @@ pub fn fchmodat<P: ?Sized + NixPath>(
         )
     })?;
 
-    Errno::result(res).map(|_| ())
+    Errno::result(res).map(drop)
 }
 
 /// Change the access and modification times of a file.
@@ -196,7 +196,7 @@ pub fn utimes<P: ?Sized + NixPath>(path: &P, atime: &TimeVal, mtime: &TimeVal) -
         libc::utimes(cstr.as_ptr(), &times[0])
     })?;
 
-    Errno::result(res).map(|_| ())
+    Errno::result(res).map(drop)
 }
 
 /// Change the access and modification times of a file without following symlinks.
@@ -216,7 +216,7 @@ pub fn lutimes<P: ?Sized + NixPath>(path: &P, atime: &TimeVal, mtime: &TimeVal) 
         libc::lutimes(cstr.as_ptr(), &times[0])
     })?;
 
-    Errno::result(res).map(|_| ())
+    Errno::result(res).map(drop)
 }
 
 /// Change the access and modification times of the file specified by a file descriptor.
@@ -229,7 +229,7 @@ pub fn futimens(fd: RawFd, atime: &TimeSpec, mtime: &TimeSpec) -> Result<()> {
     let times: [libc::timespec; 2] = [*atime.as_ref(), *mtime.as_ref()];
     let res = unsafe { libc::futimens(fd, &times[0]) };
 
-    Errno::result(res).map(|_| ())
+    Errno::result(res).map(drop)
 }
 
 /// Flags for `utimensat` function.
@@ -277,5 +277,5 @@ pub fn utimensat<P: ?Sized + NixPath>(
         )
     })?;
 
-    Errno::result(res).map(|_| ())
+    Errno::result(res).map(drop)
 }
