@@ -72,21 +72,21 @@ unsafe fn ptrace_other(
 /// Indicates that this process is to be traced by its parent.
 /// This is the only ptrace request to be issued by the tracee.
 pub fn traceme() -> Result<()> {
-    unsafe { ptrace_other(Request::PT_TRACE_ME, Pid::from_raw(0), ptr::null_mut(), 0).map(|_| ()) }
+    unsafe { ptrace_other(Request::PT_TRACE_ME, Pid::from_raw(0), ptr::null_mut(), 0).map(drop) }
 }
 
 /// Attach to a running process, as with `ptrace(PT_ATTACH, ...)`
 ///
 /// Attaches to the process specified in pid, making it a tracee of the calling process.
 pub fn attach(pid: Pid) -> Result<()> {
-    unsafe { ptrace_other(Request::PT_ATTACH, pid, ptr::null_mut(), 0).map(|_| ()) }
+    unsafe { ptrace_other(Request::PT_ATTACH, pid, ptr::null_mut(), 0).map(drop) }
 }
 
 /// Detaches the current running process, as with `ptrace(PT_DETACH, ...)`
 ///
 /// Detaches from the process specified in pid allowing it to run freely
 pub fn detach(pid: Pid) -> Result<()> {
-    unsafe { ptrace_other(Request::PT_DETACH, pid, ptr::null_mut(), 0).map(|_| ()) }
+    unsafe { ptrace_other(Request::PT_DETACH, pid, ptr::null_mut(), 0).map(drop) }
 }
 
 /// Restart the stopped tracee process, as with `ptrace(PTRACE_CONT, ...)`
@@ -100,7 +100,7 @@ pub fn cont<T: Into<Option<Signal>>>(pid: Pid, sig: T) -> Result<()> {
     };
     unsafe {
         // Ignore the useless return value
-        ptrace_other(Request::PT_CONTINUE, pid, 1 as AddressType, data).map(|_| ())
+        ptrace_other(Request::PT_CONTINUE, pid, 1 as AddressType, data).map(drop)
     }
 }
 
@@ -109,7 +109,7 @@ pub fn cont<T: Into<Option<Signal>>>(pid: Pid, sig: T) -> Result<()> {
 /// This request is equivalent to `ptrace(PT_CONTINUE, ..., SIGKILL);` 
 pub fn kill(pid: Pid) -> Result<()> {
     unsafe {
-        ptrace_other(Request::PT_KILL, pid, 0 as AddressType, 0).map(|_| ())
+        ptrace_other(Request::PT_KILL, pid, 0 as AddressType, 0).map(drop)
     }
 }
 
@@ -152,7 +152,7 @@ pub fn step<T: Into<Option<Signal>>>(pid: Pid, sig: T) -> Result<()> {
         Some(s) => s as c_int,
         None => 0,
     };
-    unsafe { ptrace_other(Request::PT_STEP, pid, ptr::null_mut(), data).map(|_| ()) }
+    unsafe { ptrace_other(Request::PT_STEP, pid, ptr::null_mut(), data).map(drop) }
 }
 
 /// Reads a word from a processes memory at the given address
@@ -166,5 +166,5 @@ pub fn read(pid: Pid, addr: AddressType) -> Result<c_int> {
 
 /// Writes a word into the processes memory at the given address
 pub fn write(pid: Pid, addr: AddressType, data: c_int) -> Result<()> {
-    unsafe { ptrace_other(Request::PT_WRITE_D, pid, addr, data).map(|_| ()) }
+    unsafe { ptrace_other(Request::PT_WRITE_D, pid, addr, data).map(drop) }
 }
