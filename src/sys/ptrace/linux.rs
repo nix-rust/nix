@@ -10,7 +10,7 @@ use sys::signal::Signal;
 pub type AddressType = *mut ::libc::c_void;
 
 cfg_if! {
-    if #[cfg(any(all(target_os = "linux", arch = "s390x"),
+    if #[cfg(any(all(target_os = "linux", target_arch = "s390x"),
                  all(target_os = "linux", target_env = "gnu")))] {
         #[doc(hidden)]
         pub type RequestType = ::libc::c_uint;
