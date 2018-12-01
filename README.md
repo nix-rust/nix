@@ -82,6 +82,11 @@ Tier 2:
   * x86_64-linux-android
   * x86_64-unknown-netbsd
 
+Tier 3:
+  * aarch64-unknown-linux-musl
+  * sparc64-unknown-linux-gnu
+  * x86_64-unknown-linux-gnux32
+
 ## Usage
 
 To use `nix`, first add this to your `Cargo.toml`:

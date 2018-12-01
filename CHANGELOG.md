@@ -17,6 +17,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
   ioctl_read_bad!(tcgets, libc::TCGETS, libc::termios);
   ```
+- Added aarch64-unknown-linux-musl, sparc64-unknown-linux-gnu, x86_64-unknown-linux-gnux32
+  as Tier 3 platforms.
+
 
 ### Changed
 ### Fixed

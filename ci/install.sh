@@ -31,6 +31,15 @@ main() {
             x86_64-apple-ios)
                     rustup target install x86_64-apple-ios
                     ;;
+            sparc64-unknown-linux-gnu)
+                    rustup target install sparc64-unknown-linux-gnu
+                    ;;
+            x86_64-unknown-linux-gnux32)
+                    rustup target install x86_64-unknown-linux-gnux32
+                    ;;
+            aarch64-unknown-linux-musl)
+                    rustup target install aarch64-unknown-linux-musl
+                    ;;
         esac
     done
 
