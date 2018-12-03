@@ -165,6 +165,46 @@ libc_bitflags! {
     }
 }
 
+libc_enum! {
+    #[repr(i32)]
+    #[cfg(target_arch = "x86_64")]
+    pub enum UserDataType {
+        R15,
+        R14,
+        R13,
+        R12,
+        RBP,
+        RBX,
+        R11,
+        R10,
+        R9,
+        R8,
+        RAX,
+        RCX,
+        RDX,
+        RSI,
+        RDI,
+        ORIG_RAX,
+        RIP,
+        CS,
+        EFLAGS,
+        RSP,
+        SS,
+        FS_BASE,
+        GS_BASE,
+        DS,
+        ES,
+        FS,
+        GS,
+    }
+}
+
+impl UserDataType {
+    fn as_address(&self) -> AddressType {
+        ((*self as i32 as usize) * mem::size_of::<libc::c_long>()) as AddressType
+    }
+}
+
 /// Performs a ptrace request. If the request in question is provided by a specialised function
 /// this function will return an unsupported operation error.
 #[deprecated(
@@ -174,8 +214,8 @@ libc_bitflags! {
 pub unsafe fn ptrace(request: Request, pid: Pid, addr: AddressType, data: *mut c_void) -> Result<c_long> {
     use self::Request::*;
     match request {
-        PTRACE_PEEKTEXT | PTRACE_PEEKDATA | PTRACE_GETSIGINFO | 
-            PTRACE_GETEVENTMSG | PTRACE_SETSIGINFO | PTRACE_SETOPTIONS | 
+        PTRACE_PEEKTEXT | PTRACE_PEEKDATA | PTRACE_PEEKUSER | PTRACE_GETSIGINFO |
+            PTRACE_GETEVENTMSG | PTRACE_SETSIGINFO | PTRACE_SETOPTIONS |
             PTRACE_POKETEXT | PTRACE_POKEDATA | PTRACE_KILL => Err(Error::UnsupportedOperation),
         _ => ptrace_other(request, pid, addr, data)
     }
@@ -331,7 +371,7 @@ pub fn kill(pid: Pid) -> Result<()> {
     }
 }
 
-/// Move the stopped tracee process forward by a single step as with 
+/// Move the stopped tracee process forward by a single step as with
 /// `ptrace(PTRACE_SINGLESTEP, ...)`
 ///
 /// Advances the execution of the process with PID `pid` by a single step optionally delivering a
@@ -342,11 +382,11 @@ pub fn kill(pid: Pid) -> Result<()> {
 /// extern crate nix;
 /// use nix::sys::ptrace::step;
 /// use nix::unistd::Pid;
-/// use nix::sys::signal::Signal; 
+/// use nix::sys::signal::Signal;
 /// use nix::sys::wait::*;
 /// fn main() {
-///     // If a process changes state to the stopped state because of a SIGUSR1 
-///     // signal, this will step the process forward and forward the user 
+///     // If a process changes state to the stopped state because of a SIGUSR1
+///     // signal, this will step the process forward and forward the user
 ///     // signal to the stopped process
 ///     match waitpid(Pid::from_raw(-1), None) {
 ///         Ok(WaitStatus::Stopped(pid, Signal::SIGUSR1)) => {
@@ -370,6 +410,11 @@ pub fn step<T: Into<Option<Signal>>>(pid: Pid, sig: T) -> Result<()> {
 /// Reads a word from a processes memory at the given address
 pub fn read(pid: Pid, addr: AddressType) -> Result<c_long> {
     ptrace_peek(Request::PTRACE_PEEKDATA, pid, addr, ptr::null_mut())
+}
+
+/// Reads a word from a process's USER area.
+pub fn read_user(pid: Pid, data: UserDataType) -> Result<c_long> {
+    ptrace_peek(Request::PTRACE_PEEKUSER, pid, data.as_address(), ptr::null_mut())
 }
 
 /// Writes a word into the processes memory at the given address
