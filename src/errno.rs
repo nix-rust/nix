@@ -1,6 +1,6 @@
 #[cfg(not(target_os = "dragonfly"))]
 use libc;
-use libc::c_int;
+use libc::{c_int, c_void};
 use std::{fmt, io, error};
 use {Error, Result};
 
@@ -103,8 +103,8 @@ impl ErrnoSentinel for i64 {
     fn sentinel() -> Self { -1 }
 }
 
-impl ErrnoSentinel for *mut libc::c_void {
-    fn sentinel() -> Self { (-1 as isize) as *mut libc::c_void }
+impl ErrnoSentinel for *mut c_void {
+    fn sentinel() -> Self { (-1 as isize) as *mut c_void }
 }
 
 impl error::Error for Errno {
@@ -520,9 +520,6 @@ fn desc(errno: Errno) -> &'static str {
 
         #[cfg(target_os = "openbsd")]
         EIPSEC          => "IPsec processing failure",
-
-        #[cfg(target_os = "dragonfly")]
-        EUNUSED94 | EUNUSED95 | EUNUSED96 | EUNUSED97 | EUNUSED98 => "Unused",
 
         #[cfg(target_os = "dragonfly")]
         EASYNC          => "Async",
@@ -1373,11 +1370,6 @@ mod consts {
         ENOLINK         = libc::ENOLINK,
         EPROTO          = libc::EPROTO,
         ENOMEDIUM       = libc::ENOMEDIUM,
-        EUNUSED94       = libc::EUNUSED94,
-        EUNUSED95       = libc::EUNUSED95,
-        EUNUSED96       = libc::EUNUSED96,
-        EUNUSED97       = libc::EUNUSED97,
-        EUNUSED98       = libc::EUNUSED98,
         EASYNC          = libc::EASYNC,
     }
 
@@ -1485,11 +1477,6 @@ mod consts {
             libc::ENOLINK => ENOLINK,
             libc::EPROTO => EPROTO,
             libc::ENOMEDIUM => ENOMEDIUM,
-            libc::EUNUSED94 => EUNUSED94,
-            libc::EUNUSED95 => EUNUSED95,
-            libc::EUNUSED96 => EUNUSED96,
-            libc::EUNUSED97 => EUNUSED97,
-            libc::EUNUSED98 => EUNUSED98,
             libc::EASYNC => EASYNC,
             _   => UnknownErrno,
         }
