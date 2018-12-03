@@ -39,7 +39,7 @@ libc_enum!{
         SIGALRM,
         SIGTERM,
         #[cfg(all(any(target_os = "android", target_os = "emscripten", target_os = "linux"),
-                  not(any(target_arch = "mips", target_arch = "mips64"))))]
+                  not(any(target_arch = "mips", target_arch = "mips64", target_arch = "sparc64"))))]
         SIGSTKFLT,
         SIGCHLD,
         SIGCONT,
@@ -84,7 +84,7 @@ impl FromStr for Signal {
             "SIGALRM" => Signal::SIGALRM,
             "SIGTERM" => Signal::SIGTERM,
             #[cfg(all(any(target_os = "android", target_os = "emscripten", target_os = "linux"),
-                      not(any(target_arch = "mips", target_arch = "mips64"))))]
+                      not(any(target_arch = "mips", target_arch = "mips64", target_arch = "sparc64"))))]
             "SIGSTKFLT" => Signal::SIGSTKFLT,
             "SIGCHLD" => Signal::SIGCHLD,
             "SIGCONT" => Signal::SIGCONT,
@@ -130,7 +130,7 @@ impl AsRef<str> for Signal {
             Signal::SIGALRM => "SIGALRM",
             Signal::SIGTERM => "SIGTERM",
             #[cfg(all(any(target_os = "android", target_os = "emscripten", target_os = "linux"),
-                      not(any(target_arch = "mips", target_arch = "mips64"))))]
+                      not(any(target_arch = "mips", target_arch = "mips64", target_arch = "sparc64"))))]
             Signal::SIGSTKFLT => "SIGSTKFLT",
             Signal::SIGCHLD => "SIGCHLD",
             Signal::SIGCONT => "SIGCONT",
@@ -164,7 +164,7 @@ impl fmt::Display for Signal {
 
 pub use self::Signal::*;
 
-#[cfg(all(any(target_os = "linux", target_os = "android", target_os = "emscripten"), not(any(target_arch = "mips", target_arch = "mips64"))))]
+#[cfg(all(any(target_os = "linux", target_os = "android", target_os = "emscripten"), not(any(target_arch = "mips", target_arch = "mips64", target_arch = "sparc64"))))]
 const SIGNALS: [Signal; 31] = [
     SIGHUP,
     SIGINT,
@@ -197,7 +197,7 @@ const SIGNALS: [Signal; 31] = [
     SIGIO,
     SIGPWR,
     SIGSYS];
-#[cfg(all(any(target_os = "linux", target_os = "android", target_os = "emscripten"), any(target_arch = "mips", target_arch = "mips64")))]
+#[cfg(all(any(target_os = "linux", target_os = "android", target_os = "emscripten"), any(target_arch = "mips", target_arch = "mips64", target_arch = "sparc64")))]
 const SIGNALS: [Signal; 30] = [
     SIGHUP,
     SIGINT,

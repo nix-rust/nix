@@ -366,13 +366,13 @@ libc_enum!{
         B1500000,
         #[cfg(any(target_os = "android", target_os = "linux"))]
         B2000000,
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(any(target_os = "android", all(target_os = "linux", not(target_arch = "sparc64"))))]
         B2500000,
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(any(target_os = "android", all(target_os = "linux", not(target_arch = "sparc64"))))]
         B3000000,
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(any(target_os = "android", all(target_os = "linux", not(target_arch = "sparc64"))))]
         B3500000,
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(any(target_os = "android", all(target_os = "linux", not(target_arch = "sparc64"))))]
         B4000000,
     }
 }
@@ -383,8 +383,9 @@ impl From<libc::speed_t> for BaudRate {
         use libc::{B0, B50, B75, B110, B134, B150, B200, B300, B600, B1200, B1800, B2400, B4800,
                    B9600, B19200, B38400, B57600, B115200, B230400};
         #[cfg(any(target_os = "android", target_os = "linux"))]
-        use libc::{B500000, B576000, B1000000, B1152000, B1500000, B2000000, B2500000, B3000000,
-                   B3500000, B4000000};
+        use libc::{B500000, B576000, B1000000, B1152000, B1500000, B2000000};
+        #[cfg(any(target_os = "android", all(target_os = "linux", not(target_arch = "sparc64"))))]
+        use libc::{B2500000, B3000000, B3500000, B4000000};
         #[cfg(any(target_os = "dragonfly",
                   target_os = "freebsd",
                   target_os = "macos",
@@ -463,13 +464,13 @@ impl From<libc::speed_t> for BaudRate {
             B1500000 => BaudRate::B1500000,
             #[cfg(any(target_os = "android", target_os = "linux"))]
             B2000000 => BaudRate::B2000000,
-            #[cfg(any(target_os = "android", target_os = "linux"))]
+            #[cfg(any(target_os = "android", all(target_os = "linux", not(target_arch = "sparc64"))))]
             B2500000 => BaudRate::B2500000,
-            #[cfg(any(target_os = "android", target_os = "linux"))]
+            #[cfg(any(target_os = "android", all(target_os = "linux", not(target_arch = "sparc64"))))]
             B3000000 => BaudRate::B3000000,
-            #[cfg(any(target_os = "android", target_os = "linux"))]
+            #[cfg(any(target_os = "android", all(target_os = "linux", not(target_arch = "sparc64"))))]
             B3500000 => BaudRate::B3500000,
-            #[cfg(any(target_os = "android", target_os = "linux"))]
+            #[cfg(any(target_os = "android", all(target_os = "linux", not(target_arch = "sparc64"))))]
             B4000000 => BaudRate::B4000000,
             b => unreachable!("Invalid baud constant: {}", b),
         }
@@ -558,6 +559,7 @@ libc_enum! {
         VINTR,
         VKILL,
         VLNEXT,
+        #[cfg(not(all(target_os = "linux", target_arch = "sparc64")))]
         VMIN,
         VQUIT,
         VREPRINT,
@@ -574,6 +576,7 @@ libc_enum! {
         VSWTC,
         #[cfg(target_os = "haiku")]
         VSWTCH,
+        #[cfg(not(all(target_os = "linux", target_arch = "sparc64")))]
         VTIME,
         VWERASE,
         #[cfg(target_os = "dragonfly")]

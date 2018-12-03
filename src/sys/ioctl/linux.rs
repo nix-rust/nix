@@ -14,7 +14,7 @@ pub const NRBITS: ioctl_num_type = 8;
 #[doc(hidden)]
 pub const TYPEBITS: ioctl_num_type = 8;
 
-#[cfg(any(target_arch = "mips", target_arch = "mips64", target_arch = "powerpc", target_arch = "powerpc64"))]
+#[cfg(any(target_arch = "mips", target_arch = "mips64", target_arch = "powerpc", target_arch = "powerpc64", target_arch = "sparc64"))]
 mod consts {
     #[doc(hidden)]
     pub const NONE: u8 = 1;
