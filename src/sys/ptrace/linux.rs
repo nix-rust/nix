@@ -199,6 +199,30 @@ libc_enum! {
     }
 }
 
+libc_enum! {
+    #[repr(i32)]
+    #[cfg(target_arch = "x86")]
+    pub enum UserDataType {
+        EBX,
+        ECX,
+        ESI,
+        EDI,
+        EBP,
+        EAX,
+        DS,
+        ES,
+        FS,
+        GS,
+        ORIG_EAX,
+        EIP,
+        CS,
+        EFL,
+        UESP,
+        SS,
+    }
+}
+
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 impl UserDataType {
     fn as_address(&self) -> AddressType {
         ((*self as i32 as usize) * mem::size_of::<libc::c_long>()) as AddressType
@@ -413,6 +437,7 @@ pub fn read(pid: Pid, addr: AddressType) -> Result<c_long> {
 }
 
 /// Reads a word from a process's USER area.
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 pub fn read_user(pid: Pid, data: UserDataType) -> Result<c_long> {
     ptrace_peek(Request::PTRACE_PEEKUSER, pid, data.as_address(), ptr::null_mut())
 }
