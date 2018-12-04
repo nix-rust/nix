@@ -201,10 +201,10 @@ fn test_scm_rights_single_cmsg_multiple_fds() {
         }
         assert!(cmsgs.next().is_none(), "unexpected control msg");
 
-        assert_eq!(iovec[0].as_slice(), [1u8, 2u8, 3u8, 4u8, 5u8, 6u8, 7u8, 8u8]);
+        assert_eq!(iovec[0].as_slice(), [1u8, 2, 3, 4, 5, 6, 7, 8]);
     });
 
-    let slice = [1u8, 2u8, 3u8, 4u8, 5u8, 6u8, 7u8, 8u8];
+    let slice = [1u8, 2, 3, 4, 5, 6, 7, 8];
     let iov = [IoVec::from_slice(&slice)];
     let fds = [libc::STDIN_FILENO, libc::STDOUT_FILENO];    // pass stdin and stdout
     let cmsg = [ControlMessage::ScmRights(&fds)];
@@ -450,4 +450,235 @@ pub fn test_syscontrol() {
 
     // requires root privileges
     // connect(fd, &sockaddr).expect("connect failed");
+}
+
+#[cfg(any(
+    target_os = "android",
+    target_os = "ios",
+    target_os = "linux",
+    target_os = "macos"
+))]
+// qemu doesn't seem to be emulating this correctly in these architectures
+#[cfg_attr(any(
+    target_arch = "mips",
+    target_arch = "mips64",
+    target_arch = "powerpc64",
+), ignore)]
+#[test]
+pub fn test_recv_ipv4pktinfo() {
+    use libc;
+    use nix::ifaddrs::{getifaddrs, InterfaceAddress};
+    use nix::net::if_::*;
+    use nix::sys::socket::sockopt::Ipv4PacketInfo;
+    use nix::sys::socket::{bind, AddressFamily, SockFlag, SockType};
+    use nix::sys::socket::{getsockname, setsockopt, socket, SockAddr};
+    use nix::sys::socket::{recvmsg, sendmsg, CmsgSpace, ControlMessage, MsgFlags};
+    use nix::sys::uio::IoVec;
+    use std::io;
+    use std::io::Write;
+    use std::thread;
+
+    fn loopback_v4addr() -> Option<InterfaceAddress> {
+        let addrs = match getifaddrs() {
+            Ok(iter) => iter,
+            Err(e) => {
+                let stdioerr = io::stderr();
+                let mut handle = stdioerr.lock();
+                writeln!(handle, "getifaddrs: {:?}", e).unwrap();
+                return None;
+            },
+        };
+        for ifaddr in addrs {
+            if ifaddr.flags.contains(InterfaceFlags::IFF_LOOPBACK) {
+                match ifaddr.address {
+                    Some(SockAddr::Inet(InetAddr::V4(..))) => {
+                        return Some(ifaddr);
+                    }
+                    _ => continue,
+                }
+            }
+        }
+        None
+    }
+
+    let lo_ifaddr = loopback_v4addr();
+    let (lo_name, lo) = match lo_ifaddr {
+        Some(ifaddr) => (ifaddr.interface_name,
+                         ifaddr.address.expect("Expect IPv4 address on interface")),
+        None => return,
+    };
+    let receive = socket(
+        AddressFamily::Inet,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    ).expect("receive socket failed");
+    bind(receive, &lo).expect("bind failed");
+    let sa = getsockname(receive).expect("getsockname failed");
+    setsockopt(receive, Ipv4PacketInfo, &true).expect("setsockopt failed");
+
+    let thread = thread::spawn(move || {
+        let mut buf = [0u8; 8];
+        let iovec = [IoVec::from_mut_slice(&mut buf)];
+        let mut space = CmsgSpace::<libc::in_pktinfo>::new();
+        let msg = recvmsg(
+            receive,
+            &iovec,
+            Some(&mut space),
+            MsgFlags::empty(),
+        ).expect("recvmsg failed");
+        assert!(
+            !msg.flags
+                .intersects(MsgFlags::MSG_TRUNC | MsgFlags::MSG_CTRUNC)
+        );
+
+        let mut cmsgs = msg.cmsgs();
+        match cmsgs.next() {
+            Some(ControlMessage::Ipv4PacketInfo(pktinfo)) => {
+                let i = if_nametoindex(lo_name.as_bytes()).expect("if_nametoindex");
+                assert_eq!(
+                    pktinfo.ipi_ifindex as libc::c_uint,
+                    i,
+                    "unexpected ifindex (expected {}, got {})",
+                    i,
+                    pktinfo.ipi_ifindex
+                );
+            }
+            _ => (),
+        }
+        assert!(cmsgs.next().is_none(), "unexpected additional control msg");
+        assert_eq!(
+            iovec[0].as_slice(),
+            [1u8, 2, 3, 4, 5, 6, 7, 8]
+        );
+    });
+
+    let slice = [1u8, 2, 3, 4, 5, 6, 7, 8];
+    let iov = [IoVec::from_slice(&slice)];
+
+    let send = socket(
+        AddressFamily::Inet,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    ).expect("send socket failed");
+    sendmsg(send, &iov, &[], MsgFlags::empty(), Some(&sa)).expect("sendmsg failed");
+
+    thread.join().unwrap();
+}
+
+#[cfg(any(
+    target_os = "android",
+    target_os = "freebsd",
+    target_os = "ios",
+    target_os = "linux",
+    target_os = "macos"
+))]
+// qemu doesn't seem to be emulating this correctly in these architectures
+#[cfg_attr(any(
+    target_arch = "mips",
+    target_arch = "mips64",
+    target_arch = "powerpc64",
+), ignore)]
+#[test]
+pub fn test_recv_ipv6pktinfo() {
+    use libc;
+    use nix::ifaddrs::{getifaddrs, InterfaceAddress};
+    use nix::net::if_::*;
+    use nix::sys::socket::sockopt::Ipv6RecvPacketInfo;
+    use nix::sys::socket::{bind, AddressFamily, SockFlag, SockType};
+    use nix::sys::socket::{getsockname, setsockopt, socket, SockAddr};
+    use nix::sys::socket::{recvmsg, sendmsg, CmsgSpace, ControlMessage, MsgFlags};
+    use nix::sys::uio::IoVec;
+    use std::io;
+    use std::io::Write;
+    use std::thread;
+
+    fn loopback_v6addr() -> Option<InterfaceAddress> {
+        let addrs = match getifaddrs() {
+            Ok(iter) => iter,
+            Err(e) => {
+                let stdioerr = io::stderr();
+                let mut handle = stdioerr.lock();
+                writeln!(handle, "getifaddrs: {:?}", e).unwrap();
+                return None;
+            },
+        };
+        for ifaddr in addrs {
+            if ifaddr.flags.contains(InterfaceFlags::IFF_LOOPBACK) {
+                match ifaddr.address {
+                    Some(SockAddr::Inet(InetAddr::V6(..))) => {
+                        return Some(ifaddr);
+                    }
+                    _ => continue,
+                }
+            }
+        }
+        None
+    }
+
+    let lo_ifaddr = loopback_v6addr();
+    let (lo_name, lo) = match lo_ifaddr {
+        Some(ifaddr) => (ifaddr.interface_name,
+                         ifaddr.address.expect("Expect IPv4 address on interface")),
+        None => return,
+    };
+    let receive = socket(
+        AddressFamily::Inet6,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    ).expect("receive socket failed");
+    bind(receive, &lo).expect("bind failed");
+    let sa = getsockname(receive).expect("getsockname failed");
+    setsockopt(receive, Ipv6RecvPacketInfo, &true).expect("setsockopt failed");
+
+    let thread = thread::spawn(move || {
+        let mut buf = [0u8; 8];
+        let iovec = [IoVec::from_mut_slice(&mut buf)];
+        let mut space = CmsgSpace::<libc::in6_pktinfo>::new();
+        let msg = recvmsg(
+            receive,
+            &iovec,
+            Some(&mut space),
+            MsgFlags::empty(),
+        ).expect("recvmsg failed");
+        assert!(
+            !msg.flags
+                .intersects(MsgFlags::MSG_TRUNC | MsgFlags::MSG_CTRUNC)
+        );
+
+        let mut cmsgs = msg.cmsgs();
+        match cmsgs.next() {
+            Some(ControlMessage::Ipv6PacketInfo(pktinfo)) => {
+                let i = if_nametoindex(lo_name.as_bytes()).expect("if_nametoindex");
+                assert_eq!(
+                    pktinfo.ipi6_ifindex,
+                    i,
+                    "unexpected ifindex (expected {}, got {})",
+                    i,
+                    pktinfo.ipi6_ifindex
+                );
+            }
+            _ => (),
+        }
+        assert!(cmsgs.next().is_none(), "unexpected additional control msg");
+        assert_eq!(
+            iovec[0].as_slice(),
+            [1u8, 2, 3, 4, 5, 6, 7, 8]
+        );
+    });
+
+    let slice = [1u8, 2, 3, 4, 5, 6, 7, 8];
+    let iov = [IoVec::from_slice(&slice)];
+
+    let send = socket(
+        AddressFamily::Inet6,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    ).expect("send socket failed");
+    sendmsg(send, &iov, &[], MsgFlags::empty(), Some(&sa)).expect("sendmsg failed");
+
+    thread.join().unwrap();
 }

@@ -28,7 +28,7 @@ pub use self::addr::{
     Ipv6Addr,
     LinkAddr,
 };
-#[cfg(any(target_os = "linux", target_os = "android"))]
+#[cfg(any(target_os = "android", target_os = "linux"))]
 pub use ::sys::socket::addr::netlink::NetlinkAddr;
 
 pub use libc::{
@@ -153,7 +153,7 @@ libc_bitflags!{
         /// This flag specifies that queued errors should be received from
         /// the socket error queue. (For more details, see
         /// [recvfrom(2)](https://linux.die.net/man/2/recvfrom))
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "android", target_os = "linux"))]
         MSG_ERRQUEUE;
         /// Set the `close-on-exec` flag for the file descriptor received via a UNIX domain
         /// file descriptor using the `SCM_RIGHTS` operation (described in
@@ -526,6 +526,23 @@ pub enum ControlMessage<'a> {
     /// nix::unistd::close(in_socket).unwrap();
     /// ```
     ScmTimestamp(&'a TimeVal),
+
+    #[cfg(any(
+        target_os = "android",
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos"
+    ))]
+    Ipv4PacketInfo(&'a libc::in_pktinfo),
+    #[cfg(any(
+        target_os = "android",
+        target_os = "freebsd",
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos"
+    ))]
+    Ipv6PacketInfo(&'a libc::in6_pktinfo),
+
     /// Catch-all variant for unimplemented cmsg types.
     #[doc(hidden)]
     Unknown(UnknownCmsg<'a>),
@@ -565,9 +582,54 @@ impl<'a> ControlMessage<'a> {
             ControlMessage::ScmTimestamp(t) => {
                 mem::size_of_val(t)
             },
+            #[cfg(any(
+                target_os = "android",
+                target_os = "ios",
+                target_os = "linux",
+                target_os = "macos"
+            ))]
+            ControlMessage::Ipv4PacketInfo(pktinfo) => {
+                mem::size_of_val(pktinfo)
+            },
+            #[cfg(any(
+                target_os = "android",
+                target_os = "freebsd",
+                target_os = "ios",
+                target_os = "linux",
+                target_os = "macos"
+            ))]
+            ControlMessage::Ipv6PacketInfo(pktinfo) => {
+                mem::size_of_val(pktinfo)
+            },
             ControlMessage::Unknown(UnknownCmsg(_, bytes)) => {
                 mem::size_of_val(bytes)
             }
+        }
+    }
+
+    /// Returns the value to put into the `cmsg_level` field of the header.
+    fn cmsg_level(&self) -> libc::c_int {
+        match *self {
+            ControlMessage::ScmRights(_) => libc::SOL_SOCKET,
+            #[cfg(any(target_os = "android", target_os = "linux"))]
+            ControlMessage::ScmCredentials(_) => libc::SOL_SOCKET,
+            ControlMessage::ScmTimestamp(_) => libc::SOL_SOCKET,
+            #[cfg(any(
+                target_os = "android",
+                target_os = "ios",
+                target_os = "linux",
+                target_os = "macos"
+            ))]
+            ControlMessage::Ipv4PacketInfo(_) => libc::IPPROTO_IP,
+            #[cfg(any(
+                target_os = "android",
+                target_os = "freebsd",
+                target_os = "ios",
+                target_os = "linux",
+                target_os = "macos"
+            ))]
+            ControlMessage::Ipv6PacketInfo(_) => libc::IPPROTO_IPV6,
+            ControlMessage::Unknown(ref cmsg) => cmsg.0.cmsg_level,
         }
     }
 
@@ -578,6 +640,21 @@ impl<'a> ControlMessage<'a> {
             #[cfg(any(target_os = "android", target_os = "linux"))]
             ControlMessage::ScmCredentials(_) => libc::SCM_CREDENTIALS,
             ControlMessage::ScmTimestamp(_) => libc::SCM_TIMESTAMP,
+            #[cfg(any(
+                target_os = "android",
+                target_os = "ios",
+                target_os = "linux",
+                target_os = "macos"
+            ))]
+            ControlMessage::Ipv4PacketInfo(_) => libc::IP_PKTINFO,
+            #[cfg(any(
+                target_os = "android",
+                target_os = "freebsd",
+                target_os = "ios",
+                target_os = "linux",
+                target_os = "macos"
+            ))]
+            ControlMessage::Ipv6PacketInfo(_) => libc::IPV6_PKTINFO,
             ControlMessage::Unknown(ref cmsg) => cmsg.0.cmsg_type,
         }
     }
@@ -598,7 +675,7 @@ impl<'a> ControlMessage<'a> {
         } else {
             let cmsg = cmsghdr {
                 cmsg_len: self.len() as _,
-                cmsg_level: libc::SOL_SOCKET,
+                cmsg_level: self.cmsg_level(),
                 cmsg_type: self.cmsg_type(),
                 ..mem::zeroed() // zero out platform-dependent padding fields
             };
@@ -615,10 +692,29 @@ impl<'a> ControlMessage<'a> {
                 #[cfg(any(target_os = "android", target_os = "linux"))]
                 ControlMessage::ScmCredentials(creds) => {
                     copy_bytes(creds, buf)
-                }
+                },
                 ControlMessage::ScmTimestamp(t) => {
                     copy_bytes(t, buf)
                 },
+                #[cfg(any(
+                    target_os = "android",
+                    target_os = "ios",
+                    target_os = "linux",
+                    target_os = "macos"
+                ))]
+                ControlMessage::Ipv4PacketInfo(pktinfo) => {
+                    copy_bytes(pktinfo, buf)
+                },
+                #[cfg(any(
+                    target_os = "android",
+                    target_os = "freebsd",
+                    target_os = "ios",
+                    target_os = "linux",
+                    target_os = "macos"
+                ))]
+                ControlMessage::Ipv6PacketInfo(pktinfo) => {
+                    copy_bytes(pktinfo, buf)
+                }
                 ControlMessage::Unknown(_) => unreachable!(),
             }
         };
@@ -650,6 +746,28 @@ impl<'a> ControlMessage<'a> {
                 ControlMessage::ScmTimestamp(
                     &*(data.as_ptr() as *const _))
             },
+            #[cfg(any(
+                target_os = "android",
+                target_os = "freebsd",
+                target_os = "ios",
+                target_os = "linux",
+                target_os = "macos"
+            ))]
+            (libc::IPPROTO_IPV6, libc::IPV6_PKTINFO) => {
+                ControlMessage::Ipv6PacketInfo(
+                    &*(data.as_ptr() as *const _))
+            }
+            #[cfg(any(
+                target_os = "android",
+                target_os = "ios",
+                target_os = "linux",
+                target_os = "macos"
+            ))]
+            (libc::IPPROTO_IP, libc::IP_PKTINFO) => {
+                ControlMessage::Ipv4PacketInfo(
+                    &*(data.as_ptr() as *const _))
+            }
+
             (_, _) => {
                 ControlMessage::Unknown(UnknownCmsg(header, data))
             }
@@ -1055,7 +1173,7 @@ pub unsafe fn sockaddr_storage_to_addr(
             let pathlen = len - offset_of!(sockaddr_un, sun_path);
             Ok(SockAddr::Unix(UnixAddr(sun, pathlen)))
         }
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "android", target_os = "linux"))]
         libc::AF_NETLINK => {
             use libc::sockaddr_nl;
             Ok(SockAddr::Netlink(NetlinkAddr(*(addr as *const _ as *const sockaddr_nl))))
