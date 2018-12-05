@@ -13,6 +13,7 @@ use tempfile::{self, tempfile};
 use libc::{self, _exit, off_t};
 
 #[test]
+#[cfg(not(any(target_os = "netbsd")))]
 fn test_fork_and_waitpid() {
     let _m = ::FORK_MTX.lock().expect("Mutex got poisoned by another test");
 
@@ -230,15 +231,15 @@ cfg_if!{
         execve_test_factory!(test_fexecve, fexecve, File::open("/system/bin/sh").unwrap().into_raw_fd());
     } else if #[cfg(any(target_os = "freebsd",
                         target_os = "linux",
-                        target_os = "netbsd",
                         target_os = "openbsd"))] {
         execve_test_factory!(test_execve, execve, &CString::new("/bin/sh").unwrap());
         execve_test_factory!(test_fexecve, fexecve, File::open("/bin/sh").unwrap().into_raw_fd());
     } else if #[cfg(any(target_os = "dragonfly",
                         target_os = "ios",
-                        target_os = "macos"))] {
+                        target_os = "macos",
+                        target_os = "netbsd"))] {
         execve_test_factory!(test_execve, execve, &CString::new("/bin/sh").unwrap());
-        // No fexecve() on macos/ios and DragonFly.
+        // No fexecve() on DragonFly, ios, macos, and NetBSD.
     }
 }
 

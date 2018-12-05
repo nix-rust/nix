@@ -258,9 +258,13 @@ impl Eq for IpMembershipRequest {}
 
 impl fmt::Debug for IpMembershipRequest {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mref = &self.0.imr_multiaddr;
+        let maddr = mref.s_addr;
+        let iref = &self.0.imr_interface;
+        let ifaddr = iref.s_addr;
         f.debug_struct("IpMembershipRequest")
-            .field("imr_multiaddr", &self.0.imr_multiaddr.s_addr)
-            .field("imr_interface", &self.0.imr_interface.s_addr)
+            .field("imr_multiaddr", &maddr)
+            .field("imr_interface", &ifaddr)
             .finish()
     }
 }

@@ -5,7 +5,7 @@ use std::str;
 
 use nix::errno::Errno::*;
 use nix::Error::Sys;
-use nix::mqueue::{mq_open, mq_close, mq_send, mq_receive, mq_getattr, mq_setattr, mq_unlink, mq_set_nonblock, mq_remove_nonblock};
+use nix::mqueue::{mq_open, mq_close, mq_send, mq_receive};
 use nix::mqueue::{MqAttr, MQ_OFlag};
 use nix::sys::stat::Mode;
 
@@ -40,7 +40,9 @@ fn test_mq_send_and_receive() {
 
 
 #[test]
+#[cfg(not(any(target_os = "netbsd")))]
 fn test_mq_getattr() {
+    use nix::mqueue::mq_getattr;
     const MSG_SIZE: c_long =  32;
     let initial_attr =  MqAttr::new(0, 10, MSG_SIZE, 0);
     let mq_name = &CString::new(b"/attr_test_get_attr".as_ref()).unwrap();
@@ -60,8 +62,10 @@ fn test_mq_getattr() {
 
 // FIXME: Fix failures for mips in QEMU
 #[test]
+#[cfg(not(any(target_os = "netbsd")))]
 #[cfg_attr(any(target_arch = "mips", target_arch = "mips64"), ignore)]
 fn test_mq_setattr() {
+    use nix::mqueue::{mq_getattr, mq_setattr};
     const MSG_SIZE: c_long =  32;
     let initial_attr =  MqAttr::new(0, 10, MSG_SIZE, 0);
     let mq_name = &CString::new(b"/attr_test_get_attr".as_ref()).unwrap();
@@ -95,8 +99,10 @@ fn test_mq_setattr() {
 
 // FIXME: Fix failures for mips in QEMU
 #[test]
+#[cfg(not(any(target_os = "netbsd")))]
 #[cfg_attr(any(target_arch = "mips", target_arch = "mips64"), ignore)]
 fn test_mq_set_nonblocking() {
+    use nix::mqueue::{mq_getattr, mq_set_nonblock, mq_remove_nonblock};
     const MSG_SIZE: c_long =  32;
     let initial_attr =  MqAttr::new(0, 10, MSG_SIZE, 0);
     let mq_name = &CString::new(b"/attr_test_get_attr".as_ref()).unwrap();
@@ -118,7 +124,9 @@ fn test_mq_set_nonblocking() {
 }
 
 #[test]
+#[cfg(not(any(target_os = "netbsd")))]
 fn test_mq_unlink() {
+    use nix::mqueue::mq_unlink;
     const MSG_SIZE: c_long =  32;
     let initial_attr =  MqAttr::new(0, 10, MSG_SIZE, 0);
     let mq_name_opened = &CString::new(b"/mq_unlink_test".as_ref()).unwrap();
