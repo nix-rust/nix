@@ -413,7 +413,7 @@ impl SigSet {
     /// Gets the currently blocked (masked) set of signals for the calling thread.
     pub fn thread_get_mask() -> Result<SigSet> {
         let mut oldmask: SigSet = unsafe { mem::uninitialized() };
-        try!(pthread_sigmask(SigmaskHow::SIG_SETMASK, None, Some(&mut oldmask)));
+        pthread_sigmask(SigmaskHow::SIG_SETMASK, None, Some(&mut oldmask))?;
         Ok(oldmask)
     }
 
@@ -435,7 +435,7 @@ impl SigSet {
     /// Sets the set of signals as the signal mask, and returns the old mask.
     pub fn thread_swap_mask(&self, how: SigmaskHow) -> Result<SigSet> {
         let mut oldmask: SigSet = unsafe { mem::uninitialized() };
-        try!(pthread_sigmask(how, Some(self), Some(&mut oldmask)));
+        pthread_sigmask(how, Some(self), Some(&mut oldmask))?;
         Ok(oldmask)
     }
 

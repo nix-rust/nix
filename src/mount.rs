@@ -63,7 +63,7 @@ pub fn mount<P1: ?Sized + NixPath, P2: ?Sized + NixPath, P3: ?Sized + NixPath, P
         data: Option<&P4>) -> Result<()> {
     use libc;
 
-    let res = try!(try!(try!(try!(
+    let res =
         source.with_nix_path(|source| {
             target.with_nix_path(|target| {
                 fstype.with_nix_path(|fstype| {
@@ -78,23 +78,23 @@ pub fn mount<P1: ?Sized + NixPath, P2: ?Sized + NixPath, P3: ?Sized + NixPath, P
                     })
                 })
             })
-        })))));
+        })????;
 
     Errno::result(res).map(drop)
 }
 
 pub fn umount<P: ?Sized + NixPath>(target: &P) -> Result<()> {
-    let res = try!(target.with_nix_path(|cstr| {
+    let res = target.with_nix_path(|cstr| {
         unsafe { libc::umount(cstr.as_ptr()) }
-    }));
+    })?;
 
     Errno::result(res).map(drop)
 }
 
 pub fn umount2<P: ?Sized + NixPath>(target: &P, flags: MntFlags) -> Result<()> {
-    let res = try!(target.with_nix_path(|cstr| {
+    let res = target.with_nix_path(|cstr| {
         unsafe { libc::umount2(cstr.as_ptr(), flags.bits) }
-    }));
+    })?;
 
     Errno::result(res).map(drop)
 }

@@ -231,12 +231,10 @@ impl Dqblk {
 fn quotactl<P: ?Sized + NixPath>(cmd: QuotaCmd, special: Option<&P>, id: c_int, addr: *mut c_char) -> Result<()> {
     unsafe {
         Errno::clear();
-        let res = try!(
-            match special {
-                Some(dev) => dev.with_nix_path(|path| libc::quotactl(cmd.as_int(), path.as_ptr(), id, addr)),
-                None => Ok(libc::quotactl(cmd.as_int(), ptr::null(), id, addr)),
-            }
-        );
+        let res = match special {
+            Some(dev) => dev.with_nix_path(|path| libc::quotactl(cmd.as_int(), path.as_ptr(), id, addr)),
+            None => Ok(libc::quotactl(cmd.as_int(), ptr::null(), id, addr)),
+        }?;
 
         Errno::result(res).map(drop)
     }
@@ -244,11 +242,11 @@ fn quotactl<P: ?Sized + NixPath>(cmd: QuotaCmd, special: Option<&P>, id: c_int, 
 
 /// Turn on disk quotas for a block device.
 pub fn quotactl_on<P: ?Sized + NixPath>(which: QuotaType, special: &P, format: QuotaFmt, quota_file: &P) -> Result<()> {
-    try!(quota_file.with_nix_path(|path| {
+    quota_file.with_nix_path(|path| {
         let mut path_copy = path.to_bytes_with_nul().to_owned();
         let p: *mut c_char = path_copy.as_mut_ptr() as *mut c_char;
         quotactl(QuotaCmd(QuotaSubCmd::Q_QUOTAON, which), Some(special), format as c_int, p)
-    }))
+    })?
 }
 
 /// Disable disk quotas for a block device.

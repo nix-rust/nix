@@ -264,7 +264,7 @@ pub unsafe fn msync(addr: *mut c_void, length: size_t, flags: MsFlags) -> Result
 
 #[cfg(not(target_os = "android"))]
 pub fn shm_open<P: ?Sized + NixPath>(name: &P, flag: OFlag, mode: Mode) -> Result<RawFd> {
-    let ret = try!(name.with_nix_path(|cstr| {
+    let ret = name.with_nix_path(|cstr| {
         #[cfg(any(target_os = "macos", target_os = "ios"))]
         unsafe {
             libc::shm_open(cstr.as_ptr(), flag.bits(), mode.bits() as libc::c_uint)
@@ -273,16 +273,16 @@ pub fn shm_open<P: ?Sized + NixPath>(name: &P, flag: OFlag, mode: Mode) -> Resul
         unsafe {
             libc::shm_open(cstr.as_ptr(), flag.bits(), mode.bits() as libc::mode_t)
         }
-    }));
+    })?;
 
     Errno::result(ret)
 }
 
 #[cfg(not(target_os = "android"))]
 pub fn shm_unlink<P: ?Sized + NixPath>(name: &P) -> Result<()> {
-    let ret = try!(name.with_nix_path(|cstr| {
+    let ret = name.with_nix_path(|cstr| {
         unsafe { libc::shm_unlink(cstr.as_ptr()) }
-    }));
+    })?;
 
     Errno::result(ret).map(drop)
 }

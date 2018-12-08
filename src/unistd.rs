@@ -384,7 +384,7 @@ fn dup3_polyfill(oldfd: RawFd, newfd: RawFd, flags: OFlag) -> Result<RawFd> {
         return Err(Error::Sys(Errno::EINVAL));
     }
 
-    let fd = try!(dup2(oldfd, newfd));
+    let fd = dup2(oldfd, newfd)?;
 
     if flags.contains(OFlag::O_CLOEXEC) {
         if let Err(e) = fcntl(fd, F_SETFD(FdFlag::FD_CLOEXEC)) {
@@ -403,9 +403,9 @@ fn dup3_polyfill(oldfd: RawFd, newfd: RawFd, flags: OFlag) -> Result<RawFd> {
 /// pages for additional details on possible failure cases.
 #[inline]
 pub fn chdir<P: ?Sized + NixPath>(path: &P) -> Result<()> {
-    let res = try!(path.with_nix_path(|cstr| {
+    let res = path.with_nix_path(|cstr| {
         unsafe { libc::chdir(cstr.as_ptr()) }
-    }));
+    })?;
 
     Errno::result(res).map(drop)
 }
@@ -456,9 +456,9 @@ pub fn fchdir(dirfd: RawFd) -> Result<()> {
 /// ```
 #[inline]
 pub fn mkdir<P: ?Sized + NixPath>(path: &P, mode: Mode) -> Result<()> {
-    let res = try!(path.with_nix_path(|cstr| {
+    let res = path.with_nix_path(|cstr| {
         unsafe { libc::mkdir(cstr.as_ptr(), mode.bits() as mode_t) }
-    }));
+    })?;
 
     Errno::result(res).map(drop)
 }
@@ -499,9 +499,9 @@ pub fn mkdir<P: ?Sized + NixPath>(path: &P, mode: Mode) -> Result<()> {
 /// ```
 #[inline]
 pub fn mkfifo<P: ?Sized + NixPath>(path: &P, mode: Mode) -> Result<()> {
-    let res = try!(path.with_nix_path(|cstr| {
+    let res = path.with_nix_path(|cstr| {
         unsafe { libc::mkfifo(cstr.as_ptr(), mode.bits() as mode_t) }
-    }));
+    })?;
 
     Errno::result(res).map(drop)
 }
@@ -576,10 +576,10 @@ fn chown_raw_ids(owner: Option<Uid>, group: Option<Gid>) -> (libc::uid_t, libc::
 /// only if `Some` owner/group is provided.
 #[inline]
 pub fn chown<P: ?Sized + NixPath>(path: &P, owner: Option<Uid>, group: Option<Gid>) -> Result<()> {
-    let res = try!(path.with_nix_path(|cstr| {
+    let res = path.with_nix_path(|cstr| {
         let (uid, gid) = chown_raw_ids(owner, group);
         unsafe { libc::chown(cstr.as_ptr(), uid, gid) }
-    }));
+    })?;
 
     Errno::result(res).map(drop)
 }
@@ -977,7 +977,7 @@ pub fn pipe() -> Result<(RawFd, RawFd)> {
 
         let res = libc::pipe(fds.as_mut_ptr());
 
-        try!(Errno::result(res));
+        Errno::result(res)?;
 
         Ok((fds[0], fds[1]))
     }
@@ -1004,7 +1004,7 @@ pub fn pipe2(flags: OFlag) -> Result<(RawFd, RawFd)> {
 
     let res = unsafe { libc::pipe2(fds.as_mut_ptr(), flags.bits()) };
 
-    try!(Errno::result(res));
+    Errno::result(res)?;
 
     Ok((fds[0], fds[1]))
 }
@@ -1026,9 +1026,9 @@ pub fn pipe2(flags: OFlag) -> Result<(RawFd, RawFd)> {
 
     let res = unsafe { libc::pipe(fds.as_mut_ptr()) };
 
-    try!(Errno::result(res));
+    Errno::result(res)?;
 
-    try!(pipe2_setflags(fds[0], fds[1], flags));
+    pipe2_setflags(fds[0], fds[1], flags)?;
 
     Ok((fds[0], fds[1]))
 }
@@ -1067,11 +1067,11 @@ fn pipe2_setflags(fd1: RawFd, fd2: RawFd, flags: OFlag) -> Result<()> {
 /// See also
 /// [truncate(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/truncate.html)
 pub fn truncate<P: ?Sized + NixPath>(path: &P, len: off_t) -> Result<()> {
-    let res = try!(path.with_nix_path(|cstr| {
+    let res = path.with_nix_path(|cstr| {
         unsafe {
             libc::truncate(cstr.as_ptr(), len)
         }
-    }));
+    })?;
 
     Errno::result(res).map(drop)
 }
@@ -1105,19 +1105,19 @@ pub fn isatty(fd: RawFd) -> Result<bool> {
 ///
 /// See also [unlink(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/unlink.html)
 pub fn unlink<P: ?Sized + NixPath>(path: &P) -> Result<()> {
-    let res = try!(path.with_nix_path(|cstr| {
+    let res = path.with_nix_path(|cstr| {
         unsafe {
             libc::unlink(cstr.as_ptr())
         }
-    }));
+    })?;
     Errno::result(res).map(drop)
 }
 
 #[inline]
 pub fn chroot<P: ?Sized + NixPath>(path: &P) -> Result<()> {
-    let res = try!(path.with_nix_path(|cstr| {
+    let res = path.with_nix_path(|cstr| {
         unsafe { libc::chroot(cstr.as_ptr()) }
-    }));
+    })?;
 
     Errno::result(res).map(drop)
 }
@@ -1553,9 +1553,9 @@ pub mod acct {
     ///
     /// See also [acct(2)](https://linux.die.net/man/2/acct)
     pub fn enable<P: ?Sized + NixPath>(filename: &P) -> Result<()> {
-        let res = try!(filename.with_nix_path(|cstr| {
+        let res = filename.with_nix_path(|cstr| {
             unsafe { libc::acct(cstr.as_ptr()) }
-        }));
+        })?;
 
         Errno::result(res).map(drop)
     }
@@ -1594,13 +1594,13 @@ pub mod acct {
 /// ```
 #[inline]
 pub fn mkstemp<P: ?Sized + NixPath>(template: &P) -> Result<(RawFd, PathBuf)> {
-    let mut path = try!(template.with_nix_path(|path| {path.to_bytes_with_nul().to_owned()}));
+    let mut path = template.with_nix_path(|path| {path.to_bytes_with_nul().to_owned()})?;
     let p = path.as_mut_ptr() as *mut _;
     let fd = unsafe { libc::mkstemp(p) };
     let last = path.pop(); // drop the trailing nul
     debug_assert!(last == Some(b'\0'));
     let pathname = OsString::from_vec(path);
-    try!(Errno::result(fd));
+    Errno::result(fd)?;
     Ok((fd, PathBuf::from(pathname)))
 }
 
@@ -1761,12 +1761,12 @@ pub fn fpathconf(fd: RawFd, var: PathconfVar) -> Result<Option<c_long>> {
 ///     unsupported (for option variables)
 /// - `Err(x)`: an error occurred
 pub fn pathconf<P: ?Sized + NixPath>(path: &P, var: PathconfVar) -> Result<Option<c_long>> {
-    let raw = try!(path.with_nix_path(|cstr| {
+    let raw = path.with_nix_path(|cstr| {
         unsafe {
             Errno::clear();
             libc::pathconf(cstr.as_ptr(), var as c_int)
         }
-    }));
+    })?;
     if raw == -1 {
         if errno::errno() == 0 {
             Ok(None)
@@ -2228,13 +2228,13 @@ mod pivot_root {
 
     pub fn pivot_root<P1: ?Sized + NixPath, P2: ?Sized + NixPath>(
             new_root: &P1, put_old: &P2) -> Result<()> {
-        let res = try!(try!(new_root.with_nix_path(|new_root| {
+        let res = new_root.with_nix_path(|new_root| {
             put_old.with_nix_path(|put_old| {
                 unsafe {
                     libc::syscall(libc::SYS_pivot_root, new_root.as_ptr(), put_old.as_ptr())
                 }
             })
-        })));
+        })??;
 
         Errno::result(res).map(drop)
     }
