@@ -88,7 +88,7 @@ impl SignalFd {
     }
 
     pub fn with_flags(mask: &SigSet, flags: SfdFlags) -> Result<SignalFd> {
-        let fd = try!(signalfd(SIGNALFD_NEW, mask, flags));
+        let fd = signalfd(SIGNALFD_NEW, mask, flags)?;
 
         Ok(SignalFd(fd))
     }

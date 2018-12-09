@@ -235,20 +235,20 @@ impl fmt::Display for TimeSpec {
 
         let sec = abs.tv_sec();
 
-        try!(write!(f, "{}", sign));
+        write!(f, "{}", sign)?;
 
         if abs.tv_nsec() == 0 {
             if abs.tv_sec() == 1 {
-                try!(write!(f, "{} second", sec));
+                write!(f, "{} second", sec)?;
             } else {
-                try!(write!(f, "{} seconds", sec));
+                write!(f, "{} seconds", sec)?;
             }
         } else if abs.tv_nsec() % 1_000_000 == 0 {
-            try!(write!(f, "{}.{:03} seconds", sec, abs.tv_nsec() / 1_000_000));
+            write!(f, "{}.{:03} seconds", sec, abs.tv_nsec() / 1_000_000)?;
         } else if abs.tv_nsec() % 1_000 == 0 {
-            try!(write!(f, "{}.{:06} seconds", sec, abs.tv_nsec() / 1_000));
+            write!(f, "{}.{:06} seconds", sec, abs.tv_nsec() / 1_000)?;
         } else {
-            try!(write!(f, "{}.{:09} seconds", sec, abs.tv_nsec()));
+            write!(f, "{}.{:09} seconds", sec, abs.tv_nsec())?;
         }
 
         Ok(())
@@ -449,18 +449,18 @@ impl fmt::Display for TimeVal {
 
         let sec = abs.tv_sec();
 
-        try!(write!(f, "{}", sign));
+        write!(f, "{}", sign)?;
 
         if abs.tv_usec() == 0 {
             if abs.tv_sec() == 1 {
-                try!(write!(f, "{} second", sec));
+                write!(f, "{} second", sec)?;
             } else {
-                try!(write!(f, "{} seconds", sec));
+                write!(f, "{} seconds", sec)?;
             }
         } else if abs.tv_usec() % 1000 == 0 {
-            try!(write!(f, "{}.{:03} seconds", sec, abs.tv_usec() / 1000));
+            write!(f, "{}.{:03} seconds", sec, abs.tv_usec() / 1000)?;
         } else {
-            try!(write!(f, "{}.{:06} seconds", sec, abs.tv_usec()));
+            write!(f, "{}.{:06} seconds", sec, abs.tv_usec())?;
         }
 
         Ok(())

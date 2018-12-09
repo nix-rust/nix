@@ -89,7 +89,7 @@ macro_rules! getsockopt_impl {
                     let res = libc::getsockopt(fd, $level, $flag,
                                                getter.ffi_ptr(),
                                                getter.ffi_len());
-                    try!(Errno::result(res));
+                    Errno::result(res)?;
 
                     Ok(getter.unwrap())
                 }

@@ -1050,7 +1050,7 @@ pub fn tcgetattr(fd: RawFd) -> Result<Termios> {
 
     let res = unsafe { libc::tcgetattr(fd, &mut termios) };
 
-    try!(Errno::result(res));
+    Errno::result(res)?;
 
     Ok(termios.into())
 }

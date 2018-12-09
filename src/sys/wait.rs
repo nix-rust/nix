@@ -181,7 +181,7 @@ impl WaitStatus {
         Ok(if exited(status) {
             WaitStatus::Exited(pid, exit_status(status))
         } else if signaled(status) {
-            WaitStatus::Signaled(pid, try!(term_signal(status)), dumped_core(status))
+            WaitStatus::Signaled(pid, term_signal(status)?, dumped_core(status))
         } else if stopped(status) {
             cfg_if! {
                 if #[cfg(any(target_os = "android", target_os = "linux"))] {
@@ -190,14 +190,15 @@ impl WaitStatus {
                         Ok(if syscall_stop(status) {
                             WaitStatus::PtraceSyscall(pid)
                         } else if status_additional == 0 {
-                            WaitStatus::Stopped(pid, try!(stop_signal(status)))
+                            WaitStatus::Stopped(pid, stop_signal(status)?)
                         } else {
-                            WaitStatus::PtraceEvent(pid, try!(stop_signal(status)), stop_additional(status))
+                            WaitStatus::PtraceEvent(pid, stop_signal(status)?,
+                                                    stop_additional(status))
                         })
                     }
                 } else {
                     fn decode_stopped(pid: Pid, status: i32) -> Result<WaitStatus> {
-                        Ok(WaitStatus::Stopped(pid, try!(stop_signal(status))))
+                        Ok(WaitStatus::Stopped(pid, stop_signal(status)?))
                     }
                 }
             }
@@ -227,7 +228,7 @@ pub fn waitpid<P: Into<Option<Pid>>>(pid: P, options: Option<WaitPidFlag>) -> Re
         )
     };
 
-    match try!(Errno::result(res)) {
+    match Errno::result(res)? {
         0 => Ok(StillAlive),
         res => WaitStatus::from_raw(Pid::from_raw(res), status),
     }

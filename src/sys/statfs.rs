@@ -6,9 +6,7 @@ use libc;
 pub fn statfs<P: ?Sized + NixPath>(path: &P, stat: &mut libc::statfs) -> Result<()> {
     unsafe {
         Errno::clear();
-        let res = try!(
-            path.with_nix_path(|path| libc::statfs(path.as_ptr(), stat))
-        );
+        let res = path.with_nix_path(|path| libc::statfs(path.as_ptr(), stat))?;
 
         Errno::result(res).map(drop)
     }

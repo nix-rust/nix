@@ -152,7 +152,7 @@ pub fn mq_setattr(mqd: mqd_t, newattr: &MqAttr) -> Result<MqAttr> {
 /// Sets the `O_NONBLOCK` attribute for a given message queue descriptor
 /// Returns the old attributes
 pub fn mq_set_nonblock(mqd: mqd_t) -> Result<(MqAttr)> {
-    let oldattr = try!(mq_getattr(mqd));
+    let oldattr = mq_getattr(mqd)?;
     let newattr = MqAttr::new(MQ_OFlag::O_NONBLOCK.bits() as c_long,
                               oldattr.mq_attr.mq_maxmsg,
                               oldattr.mq_attr.mq_msgsize,
@@ -164,7 +164,7 @@ pub fn mq_set_nonblock(mqd: mqd_t) -> Result<(MqAttr)> {
 /// Removes `O_NONBLOCK` attribute for a given message queue descriptor
 /// Returns the old attributes
 pub fn mq_remove_nonblock(mqd: mqd_t) -> Result<(MqAttr)> {
-    let oldattr = try!(mq_getattr(mqd));
+    let oldattr = mq_getattr(mqd)?;
     let newattr = MqAttr::new(0,
                               oldattr.mq_attr.mq_maxmsg,
                               oldattr.mq_attr.mq_msgsize,

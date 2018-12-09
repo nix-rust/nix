@@ -750,7 +750,7 @@ pub fn recvmsg<'a, T>(fd: RawFd, iov: &[IoVec<&mut [u8]>], cmsg_buffer: Option<&
     };
 
     Ok(unsafe { RecvMsg {
-        bytes: try!(Errno::result(ret)) as usize,
+        bytes: Errno::result(ret)? as usize,
         cmsg_buffer,
         address: sockaddr_storage_to_addr(&address,
                                           mhdr.msg_namelen as usize).ok(),
@@ -890,13 +890,13 @@ pub fn recvfrom(sockfd: RawFd, buf: &mut [u8]) -> Result<(usize, SockAddr)> {
         let addr: sockaddr_storage = mem::zeroed();
         let mut len = mem::size_of::<sockaddr_storage>() as socklen_t;
 
-        let ret = try!(Errno::result(libc::recvfrom(
+        let ret = Errno::result(libc::recvfrom(
             sockfd,
             buf.as_ptr() as *mut c_void,
             buf.len() as size_t,
             0,
             mem::transmute(&addr),
-            &mut len as *mut socklen_t)));
+            &mut len as *mut socklen_t))?;
 
         sockaddr_storage_to_addr(&addr, len as usize)
             .map(|addr| (ret as usize, addr))
@@ -1004,7 +1004,7 @@ pub fn getpeername(fd: RawFd) -> Result<SockAddr> {
 
         let ret = libc::getpeername(fd, mem::transmute(&addr), &mut len);
 
-        try!(Errno::result(ret));
+        Errno::result(ret)?;
 
         sockaddr_storage_to_addr(&addr, len as usize)
     }
@@ -1020,7 +1020,7 @@ pub fn getsockname(fd: RawFd) -> Result<SockAddr> {
 
         let ret = libc::getsockname(fd, mem::transmute(&addr), &mut len);
 
-        try!(Errno::result(ret));
+        Errno::result(ret)?;
 
         sockaddr_storage_to_addr(&addr, len as usize)
     }

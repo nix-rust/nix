@@ -126,9 +126,9 @@ pub fn statvfs<P: ?Sized + NixPath>(path: &P) -> Result<Statvfs> {
     unsafe {
         Errno::clear();
         let mut stat: Statvfs = mem::uninitialized();
-        let res = try!(
-            path.with_nix_path(|path| libc::statvfs(path.as_ptr(), &mut stat.0))
-        );
+        let res = path.with_nix_path(|path|
+            libc::statvfs(path.as_ptr(), &mut stat.0)
+        )?;
 
         Errno::result(res).map(|_| stat)
     }
