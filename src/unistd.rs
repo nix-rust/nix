@@ -506,6 +506,34 @@ pub fn mkfifo<P: ?Sized + NixPath>(path: &P, mode: Mode) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
+/// Creates a symbolic link at `path2` which points to `path1`.
+///
+/// If `dirfd` has a value, then `path2` is relative to directory associated
+/// with the file descriptor.
+///
+/// If `dirfd` is `None`, then `path2` is relative to the current working
+/// directory. This is identical to `libc::symlink(path1, path2)`.
+///
+/// See also [symlinkat(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/symlinkat.html).
+pub fn symlinkat<P1: ?Sized + NixPath, P2: ?Sized + NixPath>(
+    path1: &P1,
+    dirfd: Option<RawFd>,
+    path2: &P2) -> Result<()> {
+    let res =
+        path1.with_nix_path(|path1| {
+            path2.with_nix_path(|path2| {
+                unsafe {
+                    libc::symlinkat(
+                        path1.as_ptr(),
+                        dirfd.unwrap_or(libc::AT_FDCWD),
+                        path2.as_ptr()
+                    )
+                }
+            })
+        })??;
+    Errno::result(res).map(drop)
+}
+
 /// Returns the current directory as a `PathBuf`
 ///
 /// Err is returned if the current user doesn't have the permission to read or search a component
