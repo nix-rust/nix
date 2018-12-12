@@ -9,6 +9,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#972](https://github.com/nix-rust/nix/pull/972))
 - Added option `TCP_CONGESTION` in `setsockopt`.
   ([#972](https://github.com/nix-rust/nix/pull/972))
+- Added `symlinkat` wrapper.
+  ([#997](https://github.com/nix-rust/nix/pull/997))
 
 ### Changed
 ### Fixed

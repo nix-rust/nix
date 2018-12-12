@@ -1,4 +1,4 @@
-use nix::fcntl::{fcntl, FcntlArg, FdFlag, open, OFlag};
+use nix::fcntl::{fcntl, FcntlArg, FdFlag, open, OFlag, readlink};
 use nix::unistd::*;
 use nix::unistd::ForkResult::*;
 use nix::sys::signal::{SaFlags, SigAction, SigHandler, SigSet, Signal, sigaction};
@@ -542,4 +542,30 @@ fn test_canceling_alarm() {
 
     assert_eq!(alarm::set(60), None);
     assert_eq!(alarm::cancel(), Some(60));
+}
+
+#[test]
+fn test_symlinkat() {
+    let mut buf = [0; 1024];
+    let tempdir = tempfile::tempdir().unwrap();
+
+    let target = tempdir.path().join("a");
+    let linkpath = tempdir.path().join("b");
+    symlinkat(&target, None, &linkpath).unwrap();
+    assert_eq!(
+        readlink(&linkpath, &mut buf).unwrap().to_str().unwrap(),
+        target.to_str().unwrap()
+    );
+
+    let dirfd = open(tempdir.path(), OFlag::empty(), Mode::empty()).unwrap();
+    let target = "c";
+    let linkpath = "d";
+    symlinkat(target, Some(dirfd), linkpath).unwrap();
+    assert_eq!(
+        readlink(&tempdir.path().join(linkpath), &mut buf)
+            .unwrap()
+            .to_str()
+            .unwrap(),
+        target
+    );
 }
