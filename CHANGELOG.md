@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+- Added PKTINFO(V4) & V6PKTINFO cmsg support - Android/FreeBSD/iOS/Linux/MacOS.
+  ([#990](https://github.com/nix-rust/nix/pull/990))
 ### Added
 - Added support of CString type in `setsockopt`.
   ([#972](https://github.com/nix-rust/nix/pull/972))

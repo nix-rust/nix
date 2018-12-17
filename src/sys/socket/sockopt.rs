@@ -271,6 +271,22 @@ sockopt_impl!(Both, Mark, libc::SOL_SOCKET, libc::SO_MARK, u32);
 sockopt_impl!(Both, PassCred, libc::SOL_SOCKET, libc::SO_PASSCRED, bool);
 #[cfg(any(target_os = "freebsd", target_os = "linux"))] 
 sockopt_impl!(Both, TcpCongestion, libc::IPPROTO_TCP, libc::TCP_CONGESTION, OsString<[u8; TCP_CA_NAME_MAX]>);
+#[cfg(any(
+    target_os = "android",
+    target_os = "ios",
+    target_os = "linux",
+    target_os = "macos"
+))]
+sockopt_impl!(Both, Ipv4PacketInfo, libc::IPPROTO_IP, libc::IP_PKTINFO, bool);
+#[cfg(any(
+    target_os = "android",
+    target_os = "freebsd",
+    target_os = "ios",
+    target_os = "linux",
+    target_os = "macos"
+))]
+sockopt_impl!(Both, Ipv6RecvPacketInfo, libc::IPPROTO_IPV6, libc::IPV6_RECVPKTINFO, bool);
+
 
 /*
  *
