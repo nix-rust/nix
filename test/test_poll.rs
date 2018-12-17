@@ -1,6 +1,4 @@
 use nix::poll::{EventFlags, poll, PollFd};
-use nix::sys::signal::SigSet;
-use nix::sys::time::{TimeSpec, TimeValLike};
 use nix::unistd::{write, pipe, close};
 
 #[test]
@@ -49,6 +47,9 @@ fn test_poll_debug() {
 #[test]
 fn test_ppoll() {
     use nix::poll::ppoll;
+    use nix::sys::signal::SigSet;
+    use nix::sys::time::{TimeSpec, TimeValLike};
+
     let timeout = TimeSpec::milliseconds(1);
     let (r, w) = pipe().unwrap();
     let mut fds = [PollFd::new(r, EventFlags::POLLIN)];

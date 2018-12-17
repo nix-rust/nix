@@ -16,8 +16,9 @@ pub fn test_inetv4_addr_to_sock_addr() {
         InetAddr::V4(addr) => {
             let ip: u32 = 0x7f00_0001;
             let port: u16 = 3000;
+            let saddr = addr.sin_addr.s_addr;
 
-            assert_eq!(addr.sin_addr.s_addr, ip.to_be());
+            assert_eq!(saddr, ip.to_be());
             assert_eq!(addr.sin_port, port.to_be());
         }
         _ => panic!("nope"),

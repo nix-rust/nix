@@ -497,7 +497,8 @@ impl Eq for Ipv4Addr {
 
 impl hash::Hash for Ipv4Addr {
     fn hash<H: hash::Hasher>(&self, s: &mut H) {
-        self.0.s_addr.hash(s)
+        let saddr = self.0.s_addr;
+        saddr.hash(s)
     }
 }
 

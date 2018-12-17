@@ -3,13 +3,20 @@ use std::os::unix::fs::symlink;
 use std::os::unix::prelude::AsRawFd;
 use std::time::{Duration, UNIX_EPOCH};
 
+#[cfg(not(any(target_os = "netbsd")))]
 use libc::{S_IFMT, S_IFLNK};
 
 use nix::fcntl;
-use nix::sys::stat::{self, fchmod, fchmodat, fstat, futimens, lstat, lutimes, stat, utimes, utimensat};
-use nix::sys::stat::{FileStat, Mode, FchmodatFlags, UtimensatFlags};
+use nix::sys::stat::{self, fchmod, fchmodat, futimens, lutimes, stat, utimes, utimensat};
+use nix::sys::stat::{Mode, FchmodatFlags, UtimensatFlags};
+
+#[cfg(not(any(target_os = "netbsd")))]
+use nix::sys::stat::FileStat;
+
 use nix::sys::time::{TimeSpec, TimeVal, TimeValLike};
 use nix::unistd::chdir;
+
+#[cfg(not(any(target_os = "netbsd")))]
 use nix::Result;
 use tempfile;
 
@@ -17,12 +24,14 @@ use tempfile;
 // uid and gid are signed on Windows, but not on other platforms. This function
 // allows warning free compiles on all platforms, and can be removed when
 // expression-level #[allow] is available.
+#[cfg(not(any(target_os = "netbsd")))]
 fn valid_uid_gid(stat: FileStat) -> bool {
     // uid could be 0 for the `root` user. This quite possible when
     // the tests are being run on a rooted Android device.
     stat.st_uid >= 0 && stat.st_gid >= 0
 }
 
+#[cfg(not(any(target_os = "netbsd")))]
 fn assert_stat_results(stat_result: Result<FileStat>) {
     let stats = stat_result.expect("stat call failed");
     assert!(stats.st_dev > 0);      // must be positive integer, exact number machine dependent
@@ -35,6 +44,7 @@ fn assert_stat_results(stat_result: Result<FileStat>) {
     assert!(stats.st_blocks <= 16);  // Up to 16 blocks can be allocated for a blank file
 }
 
+#[cfg(not(any(target_os = "netbsd")))]
 fn assert_lstat_results(stat_result: Result<FileStat>) {
     let stats = stat_result.expect("stat call failed");
     assert!(stats.st_dev > 0);      // must be positive integer, exact number machine dependent
@@ -57,7 +67,10 @@ fn assert_lstat_results(stat_result: Result<FileStat>) {
 }
 
 #[test]
+#[cfg(not(any(target_os = "netbsd")))]
 fn test_stat_and_fstat() {
+    use nix::sys::stat::fstat;
+
     let tempdir = tempfile::tempdir().unwrap();
     let filename = tempdir.path().join("foo.txt");
     let file = File::create(&filename).unwrap();
@@ -70,6 +83,7 @@ fn test_stat_and_fstat() {
 }
 
 #[test]
+#[cfg(not(any(target_os = "netbsd")))]
 fn test_fstatat() {
     let tempdir = tempfile::tempdir().unwrap();
     let filename = tempdir.path().join("foo.txt");
@@ -85,7 +99,10 @@ fn test_fstatat() {
 }
 
 #[test]
+#[cfg(not(any(target_os = "netbsd")))]
 fn test_stat_fstat_lstat() {
+    use nix::sys::stat::{fstat, lstat};
+
     let tempdir = tempfile::tempdir().unwrap();
     let filename = tempdir.path().join("bar.txt");
     let linkname = tempdir.path().join("barlink");
