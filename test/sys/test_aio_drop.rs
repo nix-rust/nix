@@ -1,18 +1,18 @@
 extern crate nix;
 extern crate tempfile;
 
-use nix::sys::aio::*;
-use nix::sys::signal::*;
-use std::os::unix::io::AsRawFd;
-use tempfile::tempfile;
-
 // Test dropping an AioCb that hasn't yet finished.
 // This must happen in its own process, because on OSX this test seems to hose
 // the AIO subsystem and causes subsequent tests to fail
 #[test]
 #[should_panic(expected = "Dropped an in-progress AioCb")]
-#[cfg(not(target_env = "musl"))]
+#[cfg(not(any(target_env = "musl", target_os = "openbsd")))]
 fn test_drop() {
+    use nix::sys::aio::*;
+    use nix::sys::signal::*;
+    use std::os::unix::io::AsRawFd;
+    use tempfile::tempfile;
+
     const WBUF: &[u8] = b"CDEF";
 
     let f = tempfile().unwrap();

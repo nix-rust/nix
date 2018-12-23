@@ -117,6 +117,7 @@ pub fn test_socketpair() {
     assert_eq!(&buf[..], b"hello");
 }
 
+#[cfg(not(any(target_os = "openbsd")))]
 #[test]
 pub fn test_scm_rights() {
     use nix::sys::uio::IoVec;

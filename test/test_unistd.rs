@@ -230,16 +230,16 @@ cfg_if!{
         execve_test_factory!(test_execve, execve, &CString::new("/system/bin/sh").unwrap());
         execve_test_factory!(test_fexecve, fexecve, File::open("/system/bin/sh").unwrap().into_raw_fd());
     } else if #[cfg(any(target_os = "freebsd",
-                        target_os = "linux",
-                        target_os = "openbsd"))] {
+                        target_os = "linux"))] {
         execve_test_factory!(test_execve, execve, &CString::new("/bin/sh").unwrap());
         execve_test_factory!(test_fexecve, fexecve, File::open("/bin/sh").unwrap().into_raw_fd());
     } else if #[cfg(any(target_os = "dragonfly",
                         target_os = "ios",
                         target_os = "macos",
-                        target_os = "netbsd"))] {
+                        target_os = "netbsd",
+                        target_os = "openbsd"))] {
         execve_test_factory!(test_execve, execve, &CString::new("/bin/sh").unwrap());
-        // No fexecve() on DragonFly, ios, macos, and NetBSD.
+        // No fexecve() on DragonFly, ios, macos, NetBSD or OpenBSD.
     }
 }
 
