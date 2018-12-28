@@ -535,6 +535,22 @@ pub enum ControlMessage<'a> {
         target_os = "macos"
     ))]
     Ipv6PacketInfo(&'a libc::in6_pktinfo),
+    #[cfg(any(
+        target_os = "freebsd",
+        target_os = "ios",
+        target_os = "macos",
+        target_os = "netbsd",
+        target_os = "openbsd",
+    ))]
+    Ipv4RecvIf(&'a libc::sockaddr_dl),
+    #[cfg(any(
+        target_os = "freebsd",
+        target_os = "ios",
+        target_os = "macos",
+        target_os = "netbsd",
+        target_os = "openbsd",
+    ))]
+    Ipv4RecvDstAddr(&'a libc::in_addr),
 
     /// Catch-all variant for unimplemented cmsg types.
     #[doc(hidden)]
@@ -594,6 +610,26 @@ impl<'a> ControlMessage<'a> {
             ControlMessage::Ipv6PacketInfo(pktinfo) => {
                 mem::size_of_val(pktinfo)
             },
+            #[cfg(any(
+                target_os = "freebsd",
+                target_os = "ios",
+                target_os = "macos",
+                target_os = "netbsd",
+                target_os = "openbsd",
+            ))]
+            ControlMessage::Ipv4RecvIf(dl) => {
+                mem::size_of_val(dl)
+            },
+            #[cfg(any(
+                target_os = "freebsd",
+                target_os = "ios",
+                target_os = "macos",
+                target_os = "netbsd",
+                target_os = "openbsd",
+            ))]
+            ControlMessage::Ipv4RecvDstAddr(inaddr) => {
+                mem::size_of_val(inaddr)
+            },
             ControlMessage::Unknown(UnknownCmsg(_, bytes)) => {
                 mem::size_of_val(bytes)
             }
@@ -622,6 +658,22 @@ impl<'a> ControlMessage<'a> {
                 target_os = "macos"
             ))]
             ControlMessage::Ipv6PacketInfo(_) => libc::IPPROTO_IPV6,
+            #[cfg(any(
+                target_os = "freebsd",
+                target_os = "ios",
+                target_os = "macos",
+                target_os = "netbsd",
+                target_os = "openbsd",
+            ))]
+            ControlMessage::Ipv4RecvIf(_) => libc::IPPROTO_IP,
+            #[cfg(any(
+                target_os = "freebsd",
+                target_os = "ios",
+                target_os = "macos",
+                target_os = "netbsd",
+                target_os = "openbsd",
+            ))]
+            ControlMessage::Ipv4RecvDstAddr(_) => libc::IPPROTO_IP,
             ControlMessage::Unknown(ref cmsg) => cmsg.0.cmsg_level,
         }
     }
@@ -648,6 +700,22 @@ impl<'a> ControlMessage<'a> {
                 target_os = "macos"
             ))]
             ControlMessage::Ipv6PacketInfo(_) => libc::IPV6_PKTINFO,
+            #[cfg(any(
+                target_os = "freebsd",
+                target_os = "ios",
+                target_os = "macos",
+                target_os = "netbsd",
+                target_os = "openbsd",
+            ))]
+            ControlMessage::Ipv4RecvIf(_) => libc::IP_RECVIF,
+            #[cfg(any(
+                target_os = "freebsd",
+                target_os = "ios",
+                target_os = "macos",
+                target_os = "netbsd",
+                target_os = "openbsd",
+            ))]
+            ControlMessage::Ipv4RecvDstAddr(_) => libc::IP_RECVDSTADDR,
             ControlMessage::Unknown(ref cmsg) => cmsg.0.cmsg_type,
         }
     }
@@ -708,6 +776,26 @@ impl<'a> ControlMessage<'a> {
                 ControlMessage::Ipv6PacketInfo(pktinfo) => {
                     copy_bytes(pktinfo, buf)
                 }
+                #[cfg(any(
+                    target_os = "freebsd",
+                    target_os = "ios",
+                    target_os = "macos",
+                    target_os = "netbsd",
+                    target_os = "openbsd",
+                ))]
+                ControlMessage::Ipv4RecvIf(dl) => {
+                    copy_bytes(dl, buf)
+                },
+                #[cfg(any(
+                    target_os = "freebsd",
+                    target_os = "ios",
+                    target_os = "macos",
+                    target_os = "netbsd",
+                    target_os = "openbsd",
+                ))]
+                ControlMessage::Ipv4RecvDstAddr(inaddr) => {
+                    copy_bytes(inaddr, buf)
+                },
                 ControlMessage::Unknown(_) => unreachable!(),
             }
         };
@@ -758,6 +846,28 @@ impl<'a> ControlMessage<'a> {
             ))]
             (libc::IPPROTO_IP, libc::IP_PKTINFO) => {
                 ControlMessage::Ipv4PacketInfo(
+                    &*(data.as_ptr() as *const _))
+            }
+            #[cfg(any(
+                target_os = "freebsd",
+                target_os = "ios",
+                target_os = "macos",
+                target_os = "netbsd",
+                target_os = "openbsd",
+            ))]
+            (libc::IPPROTO_IP, libc::IP_RECVIF) => {
+                ControlMessage::Ipv4RecvIf(
+                    &*(data.as_ptr() as *const _))
+            }
+            #[cfg(any(
+                target_os = "freebsd",
+                target_os = "ios",
+                target_os = "macos",
+                target_os = "netbsd",
+                target_os = "openbsd",
+            ))]
+            (libc::IPPROTO_IP, libc::IP_RECVDSTADDR) => {
+                ControlMessage::Ipv4RecvDstAddr(
                     &*(data.as_ptr() as *const _))
             }
 

@@ -275,7 +275,8 @@ sockopt_impl!(Both, TcpCongestion, libc::IPPROTO_TCP, libc::TCP_CONGESTION, OsSt
     target_os = "android",
     target_os = "ios",
     target_os = "linux",
-    target_os = "macos"
+    target_os = "macos",
+    target_os = "netbsd",
 ))]
 sockopt_impl!(Both, Ipv4PacketInfo, libc::IPPROTO_IP, libc::IP_PKTINFO, bool);
 #[cfg(any(
@@ -283,9 +284,27 @@ sockopt_impl!(Both, Ipv4PacketInfo, libc::IPPROTO_IP, libc::IP_PKTINFO, bool);
     target_os = "freebsd",
     target_os = "ios",
     target_os = "linux",
-    target_os = "macos"
+    target_os = "macos",
+    target_os = "netbsd",
+    target_os = "openbsd",
 ))]
 sockopt_impl!(Both, Ipv6RecvPacketInfo, libc::IPPROTO_IPV6, libc::IPV6_RECVPKTINFO, bool);
+#[cfg(any(
+    target_os = "freebsd",
+    target_os = "ios",
+    target_os = "macos",
+    target_os = "netbsd",
+    target_os = "openbsd",
+))]
+sockopt_impl!(Both, Ipv4RecvIf, libc::IPPROTO_IP, libc::IP_RECVIF, bool);
+#[cfg(any(
+    target_os = "freebsd",
+    target_os = "ios",
+    target_os = "macos",
+    target_os = "netbsd",
+    target_os = "openbsd",
+))]
+sockopt_impl!(Both, Ipv4RecvDstAddr, libc::IPPROTO_IP, libc::IP_RECVDSTADDR, bool);
 
 
 /*
