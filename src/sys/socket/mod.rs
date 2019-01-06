@@ -480,52 +480,41 @@ pub enum ControlMessage<'a> {
     /// use std::time::*;
     ///
     /// // Set up
-    /// let message1 = "Ohayō!".as_bytes();
-    /// let message2 = "Jā ne".as_bytes();
-    /// let in_socket = socket(AddressFamily::Inet, SockType::Datagram, SockFlag::empty(), None).unwrap();
+    /// let message = "Ohayō!".as_bytes();
+    /// let in_socket = socket(
+    ///     AddressFamily::Inet,
+    ///     SockType::Datagram,
+    ///     SockFlag::empty(),
+    ///     None).unwrap();
     /// setsockopt(in_socket, sockopt::ReceiveTimestamp, &true).unwrap();
-    /// bind(in_socket, &SockAddr::new_inet(InetAddr::new(IpAddr::new_v4(127, 0, 0, 1), 0))).unwrap();
-    /// let address = if let Ok(address) = getsockname(in_socket) { address } else { unreachable!() };
-    ///
-    /// // Send both
-    /// assert!(Ok(message1.len()) == sendmsg(in_socket, &[IoVec::from_slice(message1)], &[], MsgFlags::empty(), Some(&address)));
-    /// let time = SystemTime::now();
-    /// std::thread::sleep(Duration::from_millis(250));
-    /// assert!(Ok(message2.len()) == sendmsg(in_socket, &[IoVec::from_slice(message2)], &[], MsgFlags::empty(), Some(&address)));
-    /// let delay = time.elapsed().unwrap();
-    ///
-    /// // Receive the first
-    /// let mut buffer1 = vec![0u8; message1.len() + message2.len()];
-    /// let mut time1: CmsgSpace<TimeVal> = CmsgSpace::new();
-    /// let received1 = recvmsg(in_socket, &[IoVec::from_mut_slice(&mut buffer1)], Some(&mut time1), MsgFlags::empty()).unwrap();
-    /// let mut time1 = if let Some(ControlMessage::ScmTimestamp(&time1)) = received1.cmsgs().next() { time1 } else { panic!("Unexpected or no control message") };
-    ///
-    /// // Receive the second
-    /// let mut buffer2 = vec![0u8; message1.len() + message2.len()];
-    /// let mut time2: CmsgSpace<TimeVal> = CmsgSpace::new();
-    /// let received2 = recvmsg(in_socket, &[IoVec::from_mut_slice(&mut buffer2)], Some(&mut time2), MsgFlags::empty()).unwrap();
-    /// let mut time2 = if let Some(ControlMessage::ScmTimestamp(&time2)) = received2.cmsgs().next() { time2 } else { panic!("Unexpected or no control message") };
-    ///
-    /// // Swap if needed; UDP is unordered
-    /// match (received1.bytes, received2.bytes, message1.len(), message2.len()) {
-    ///     (l1, l2, m1, m2) if l1 == m1 && l2 == m2 => {},
-    ///     (l2, l1, m1, m2) if l1 == m1 && l2 == m2 => {
-    ///         std::mem::swap(&mut time1, &mut time2);
-    ///         std::mem::swap(&mut buffer1, &mut buffer2);
-    ///     },
-    ///     _ => panic!("Wrong packets"),
+    /// let localhost = InetAddr::new(IpAddr::new_v4(127, 0, 0, 1), 0);
+    /// bind(in_socket, &SockAddr::new_inet(localhost)).unwrap();
+    /// let address = getsockname(in_socket).unwrap();
+    /// // Get initial time
+    /// let time0 = SystemTime::now();
+    /// // Send the message
+    /// let iov = [IoVec::from_slice(message)];
+    /// let flags = MsgFlags::empty();
+    /// let l = sendmsg(in_socket, &iov, &[], flags, Some(&address)).unwrap();
+    /// assert_eq!(message.len(), l);
+    /// // Receive the message
+    /// let mut buffer = vec![0u8; message.len()];
+    /// let mut cmsgspace: CmsgSpace<TimeVal> = CmsgSpace::new();
+    /// let iov = [IoVec::from_mut_slice(&mut buffer)];
+    /// let r = recvmsg(in_socket, &iov, Some(&mut cmsgspace), flags).unwrap();
+    /// let rtime = match r.cmsgs().next() {
+    ///     Some(ControlMessage::ScmTimestamp(&rtime)) => rtime,
+    ///     Some(_) => panic!("Unexpected control message"),
+    ///     None => panic!("No control message")
     /// };
-    ///
-    /// // Compare results
-    /// println!("{:?} @ {:?}, {:?} @ {:?}, {:?}", buffer1, time1, buffer2, time2, delay);
-    /// assert!(message1 == &buffer1[0..(message1.len())], "{:?} == {:?}", message1, buffer1);
-    /// assert!(message2 == &buffer2[0..(message2.len())], "{:?} == {:?}", message2, buffer2);
-    /// let time = time2 - time1;
-    /// let time = Duration::new(time.num_seconds() as u64, time.num_nanoseconds() as u32);
-    /// let difference = if delay < time { time - delay } else { delay - time };
-    /// assert!(difference.subsec_nanos() < 5_000_000, "{}ns < 5ms", difference.subsec_nanos());
-    /// assert!(difference.as_secs() == 0);
-    ///
+    /// // Check the final time
+    /// let time1 = SystemTime::now();
+    /// // the packet's received timestamp should lie in-between the two system
+    /// // times, unless the system clock was adjusted in the meantime.
+    /// let rduration = Duration::new(rtime.tv_sec() as u64,
+    ///                               rtime.tv_usec() as u32 * 1000);
+    /// assert!(time0.duration_since(UNIX_EPOCH).unwrap() <= rduration);
+    /// assert!(rduration <= time1.duration_since(UNIX_EPOCH).unwrap());
     /// // Close socket
     /// nix::unistd::close(in_socket).unwrap();
     /// ```
