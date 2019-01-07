@@ -13,6 +13,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#972](https://github.com/nix-rust/nix/pull/972))
 - Added `symlinkat` wrapper.
   ([#997](https://github.com/nix-rust/nix/pull/997))
+- Support for no-change of parameters of `setresuid` and `setresgid` wrapper
+  ([#1009](https://github.com/nix-rust/nix/pull/1009))
 
 ### Changed
 ### Fixed

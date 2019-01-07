@@ -2286,8 +2286,11 @@ mod setres {
     ///
     /// Err is returned if the user doesn't have permission to set this UID.
     #[inline]
-    pub fn setresuid(ruid: Uid, euid: Uid, suid: Uid) -> Result<()> {
-        let res = unsafe { libc::setresuid(ruid.into(), euid.into(), suid.into()) };
+    pub fn setresuid(ruid: Option<Uid>, euid: Option<Uid>, suid: Option<Uid>) -> Result<()> {
+        let ruid = ruid.map(Into::into).unwrap_or((0 as libc::uid_t).wrapping_sub(1));
+        let euid = euid.map(Into::into).unwrap_or((0 as libc::uid_t).wrapping_sub(1));
+        let suid = suid.map(Into::into).unwrap_or((0 as libc::uid_t).wrapping_sub(1));
+        let res = unsafe { libc::setresuid(ruid, euid, suid) };
 
         Errno::result(res).map(drop)
     }
@@ -2302,8 +2305,11 @@ mod setres {
     ///
     /// Err is returned if the user doesn't have permission to set this GID.
     #[inline]
-    pub fn setresgid(rgid: Gid, egid: Gid, sgid: Gid) -> Result<()> {
-        let res = unsafe { libc::setresgid(rgid.into(), egid.into(), sgid.into()) };
+    pub fn setresgid(rgid: Option<Gid>, egid: Option<Gid>, sgid: Option<Gid>) -> Result<()> {
+        let rgid = rgid.map(Into::into).unwrap_or((0 as libc::gid_t).wrapping_sub(1));
+        let egid = egid.map(Into::into).unwrap_or((0 as libc::gid_t).wrapping_sub(1));
+        let sgid = sgid.map(Into::into).unwrap_or((0 as libc::gid_t).wrapping_sub(1));
+        let res = unsafe { libc::setresgid(rgid, egid, sgid) };
 
         Errno::result(res).map(drop)
     }

@@ -570,3 +570,19 @@ fn test_symlinkat() {
         target
     );
 }
+
+#[cfg(any(target_os = "android", target_os = "freebsd",
+target_os = "linux", target_os = "openbsd"))]
+#[test]
+fn test_setresuid() {
+    setresuid(Some(getuid()), Some(getuid()), Some(getuid())).unwrap();
+    assert_eq!(geteuid(), getuid());
+}
+
+#[cfg(any(target_os = "android", target_os = "freebsd",
+target_os = "linux", target_os = "openbsd"))]
+#[test]
+fn test_setresgid() {
+    setresgid(Some(getgid()), Some(getgid()), Some(getgid())).unwrap();
+    assert_eq!(getegid(), getgid());
+}
