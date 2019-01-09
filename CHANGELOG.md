@@ -5,6 +5,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 ### Added
+- Added `sigaltstack` and the related `SigStack` and `SigStackFlags`
+  types. ([#1018](https://github.com/nix-rust/nix/pull/1018))
+
 ### Changed
 ### Fixed
 ### Removed

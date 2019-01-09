@@ -831,6 +831,127 @@ mod sigevent {
     }
 }
 
+/// A wrapper for `stack_t`, used to represent alternate stacks for `sigaltstack`.
+///
+/// See [`sigaltstack`](http://pubs.opengroup.org/onlinepubs/9699919799/functions/sigaltstack.html)
+/// details on the requirements for an alternate signal stack.
+#[derive(Copy, Clone)]
+#[allow(missing_debug_implementations)]
+pub struct SigStack {
+    stack: libc::stack_t,
+}
+
+impl SigStack {
+    /// Define an alternate signal stack for use with `sigaction` using a raw pointer.
+    ///
+    /// The memory pointed to by `sp` must remain valid for as long as any signal handlers are
+    /// registered to use this stack.
+    ///
+    /// ```
+    /// # use nix::libc;
+    /// # use nix::sys::mman::{mmap, munmap, MapFlags, ProtFlags};
+    /// # use nix::sys::signal::{sigaltstack, SigStack, SigStackFlags};
+    /// # use std::ptr;
+    /// let stack_mem = unsafe {
+    ///     mmap(
+    ///         ptr::null_mut(),
+    ///         libc::SIGSTKSZ,
+    ///         ProtFlags::PROT_READ | ProtFlags::PROT_WRITE,
+    ///         MapFlags::MAP_ANON | MapFlags::MAP_PRIVATE,
+    ///         -1,
+    ///         0,
+    ///     )
+    ///     .unwrap()
+    /// };
+    /// let sigstack = SigStack::from_raw(stack_mem, SigStackFlags::empty(), libc::SIGSTKSZ);
+    /// unsafe {
+    ///     let old_sigstack = sigaltstack(&sigstack).unwrap();
+    ///     sigaltstack(&old_sigstack).unwrap();
+    ///     // unmap memory only after the stack is unregistered
+    ///     munmap(stack_mem, libc::SIGSTKSZ);
+    /// }
+    /// ```
+    pub fn from_raw(sp: *mut libc::c_void, flags: SigStackFlags, size: libc::size_t) -> SigStack {
+        let mut st = unsafe { mem::uninitialized::<libc::stack_t>() };
+        st.ss_sp = sp;
+        st.ss_flags = flags.bits();
+        st.ss_size = size;
+        SigStack { stack: st }
+    }
+
+    /// Define an alternate signal stack for use with `sigaction` using a mutable byte slice.
+    ///
+    /// The `stack` slice must live at least as long as any signal handlers are registered to use
+    /// this stack. Since the lifetime of `stack` is not reflected in the type of `SigStack`, this
+    /// must be manually ensured by the calling context.
+    ///
+    /// ```
+    /// # use nix::libc;
+    /// # use nix::sys::signal::{sigaltstack, SigStack, SigStackFlags};
+    /// # use std::ptr;
+    /// let mut stack_mem = vec![0; libc::SIGSTKSZ];
+    /// let sigstack = SigStack::from_slice(stack_mem.as_mut_slice(), SigStackFlags::empty());
+    /// unsafe {
+    ///     let old_sigstack = sigaltstack(&sigstack).unwrap();
+    ///     sigaltstack(&old_sigstack).unwrap();
+    /// }
+    /// // keep `stack_mem` alive until after the stack is unregistered
+    /// drop(stack_mem);
+    /// ```
+    pub fn from_slice(stack: &mut [u8], flags: SigStackFlags) -> SigStack {
+        let mut st = unsafe { mem::uninitialized::<libc::stack_t>() };
+        st.ss_sp = stack.as_mut_ptr() as *mut libc::c_void;
+        st.ss_flags = flags.bits();
+        st.ss_size = stack.len();
+        SigStack { stack: st }
+    }
+
+    pub fn flags(&self) -> SigStackFlags {
+        SigStackFlags::from_bits_truncate(self.stack.ss_flags)
+    }
+}
+
+impl AsRef<libc::stack_t> for SigStack {
+    fn as_ref(&self) -> &libc::stack_t {
+        &self.stack
+    }
+}
+
+impl AsMut<libc::stack_t> for SigStack {
+    fn as_mut(&mut self) -> &mut libc::stack_t {
+        &mut self.stack
+    }
+}
+
+libc_bitflags! {
+    pub struct SigStackFlags: libc::c_int {
+        SS_ONSTACK;
+        SS_DISABLE;
+    }
+}
+
+/// Set an alternate stack for signal handlers on this thread to optionally run on.
+///
+/// See [`sigaltstack`](http://pubs.opengroup.org/onlinepubs/9699919799/functions/sigaltstack.html)
+/// for details.
+///
+/// # Safety
+///
+/// In addition to the requirements described in the manpage, the current thread must have
+/// read/write access to the memory pointed to by the `SigStack` argument, otherwise any subsequent
+/// signal handlers configured with the `SaFlags::SA_ONSTACK` flag will cause a double fault.
+pub unsafe fn sigaltstack(ss: &SigStack) -> Result<SigStack> {
+    let mut oldstack = mem::uninitialized::<libc::stack_t>();
+
+    let res = libc::sigaltstack(
+        &ss.stack as *const libc::stack_t,
+        &mut oldstack as *mut libc::stack_t,
+    );
+
+    Errno::result(res).map(|_| SigStack { stack: oldstack })
+}
+
+
 #[cfg(test)]
 mod tests {
     use super::*;
