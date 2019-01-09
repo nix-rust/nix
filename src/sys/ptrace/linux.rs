@@ -9,6 +9,12 @@ use sys::signal::Signal;
 
 pub type AddressType = *mut ::libc::c_void;
 
+#[cfg(all(target_os = "linux",
+          any(target_arch = "x86_64",
+              target_arch = "x86"),
+          target_env = "gnu"))]
+use libc::user_regs_struct;
+
 cfg_if! {
     if #[cfg(any(all(target_os = "linux", target_arch = "s390x"),
                  all(target_os = "linux", target_env = "gnu")))] {
@@ -192,6 +198,30 @@ fn ptrace_peek(request: Request, pid: Pid, addr: AddressType, data: *mut c_void)
     }
 }
 
+/// Get user registers, as with `ptrace(PTRACE_GETREGS, ...)`
+#[cfg(all(target_os = "linux",
+          any(target_arch = "x86_64",
+              target_arch = "x86"),
+          target_env = "gnu"))]
+pub fn getregs(pid: Pid) -> Result<user_regs_struct> {
+    ptrace_get_data::<user_regs_struct>(Request::PTRACE_GETREGS, pid)
+}
+
+/// Set user registers, as with `ptrace(PTRACE_SETREGS, ...)`
+#[cfg(all(target_os = "linux",
+          any(target_arch = "x86_64",
+              target_arch = "x86"),
+          target_env = "gnu"))]
+pub fn setregs(pid: Pid, regs: user_regs_struct) -> Result<()> {
+    let res = unsafe {
+        libc::ptrace(Request::PTRACE_SETREGS as RequestType,
+                     libc::pid_t::from(pid),
+                     ptr::null_mut::<c_void>(),
+                     &regs as *const _ as *const c_void)
+    };
+    Errno::result(res).map(drop)
+}
+
 /// Function for ptrace requests that return values from the data field.
 /// Some ptrace get requests populate structs or larger elements than `c_long`
 /// and therefore use the data field to return values. This function handles these
@@ -215,8 +245,6 @@ unsafe fn ptrace_other(request: Request, pid: Pid, addr: AddressType, data: *mut
 
 /// Set options, as with `ptrace(PTRACE_SETOPTIONS,...)`.
 pub fn setoptions(pid: Pid, options: Options) -> Result<()> {
-    use std::ptr;
-
     let res = unsafe {
         libc::ptrace(Request::PTRACE_SETOPTIONS as RequestType,
                      libc::pid_t::from(pid),
