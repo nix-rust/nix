@@ -13,6 +13,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#972](https://github.com/nix-rust/nix/pull/972))
 - Added `symlinkat` wrapper.
   ([#997](https://github.com/nix-rust/nix/pull/997))
+- Added `ptrace::{getregs, setregs}`.
+  ([#1010](https://github.com/nix-rust/nix/pull/1010))
 
 ### Changed
 ### Fixed
@@ -46,7 +48,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Added a `fchownat` wrapper.
   ([#955](https://github.com/nix-rust/nix/pull/955))
 - Added support for `ptrace` on BSD operating systems ([#949](https://github.com/nix-rust/nix/pull/949))
-- Added `ptrace` functions for reads and writes to tracee memory and ptrace kill 
+- Added `ptrace` functions for reads and writes to tracee memory and ptrace kill
   ([#949](https://github.com/nix-rust/nix/pull/949)) ([#958](https://github.com/nix-rust/nix/pull/958))
 - Added a `acct` wrapper module for enabling and disabling process accounting
   ([#952](https://github.com/nix-rust/nix/pull/952))
