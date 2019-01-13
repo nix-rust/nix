@@ -15,6 +15,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#997](https://github.com/nix-rust/nix/pull/997))
 - Added `ptrace::{getregs, setregs}`.
   ([#1010](https://github.com/nix-rust/nix/pull/1010))
+- Added `nix::sys::signal::signal`.
+  ([#817](https://github.com/nix-rust/nix/pull/817))
 
 ### Changed
 ### Fixed
