@@ -7,7 +7,14 @@ use std::time::{Duration, UNIX_EPOCH};
 use libc::{S_IFMT, S_IFLNK};
 
 use nix::fcntl;
-use nix::sys::stat::{self, fchmod, fchmodat, futimens, lutimes, stat, utimes, utimensat};
+use nix::sys::stat::{self, fchmod, fchmodat, futimens, stat, utimes, utimensat};
+#[cfg(any(target_os = "linux",
+          target_os = "haiku",
+          target_os = "ios",
+          target_os = "macos",
+          target_os = "freebsd",
+          target_os = "netbsd"))]
+use nix::sys::stat::lutimes;
 use nix::sys::stat::{Mode, FchmodatFlags, UtimensatFlags};
 
 #[cfg(not(any(target_os = "netbsd")))]
@@ -196,6 +203,12 @@ fn test_utimes() {
 }
 
 #[test]
+#[cfg(any(target_os = "linux",
+          target_os = "haiku",
+          target_os = "ios",
+          target_os = "macos",
+          target_os = "freebsd",
+          target_os = "netbsd"))]
 fn test_lutimes() {
     let tempdir = tempfile::tempdir().unwrap();
     let target = tempdir.path().join("target");
