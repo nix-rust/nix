@@ -20,6 +20,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 ### Fixed
+- `lutimes` never worked on OpenBSD as it is not implemented on OpenBSD. It has
+  been removed. ([#1000](https://github.com/nix-rust/nix/pull/1000))
+- `fexecve` never worked on NetBSD or on OpenBSD as it is not implemented on
+  either OS. It has been removed. ([#1000](https://github.com/nix-rust/nix/pull/1000))
+
 ### Removed
 
 ## [0.12.0] 2018-11-28
