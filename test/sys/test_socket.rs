@@ -117,6 +117,21 @@ pub fn test_socketpair() {
     assert_eq!(&buf[..], b"hello");
 }
 
+// Test error handling of our recvmsg wrapper
+#[test]
+pub fn test_recvmsg_ebadf() {
+    use nix::Error;
+    use nix::errno::Errno;
+    use nix::sys::socket::{MsgFlags, recvmsg};
+    use nix::sys::uio::IoVec;
+
+    let mut buf = [0u8; 5];
+    let iov = [IoVec::from_mut_slice(&mut buf[..])];
+    let fd = -1;    // Bad file descriptor
+    let r = recvmsg::<()>(fd, &iov, None, MsgFlags::empty());
+    assert_eq!(r.err().unwrap(), Error::Sys(Errno::EBADF));
+}
+
 #[test]
 pub fn test_scm_rights() {
     use nix::sys::uio::IoVec;

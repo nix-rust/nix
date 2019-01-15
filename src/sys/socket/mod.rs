@@ -900,6 +900,9 @@ pub fn sendmsg(fd: RawFd, iov: &[IoVec<&[u8]>], cmsgs: &[ControlMessage],
 /// Receive message in scatter-gather vectors from a socket, and
 /// optionally receive ancillary data into the provided buffer.
 /// If no ancillary data is desired, use () as the type parameter.
+///
+/// # References
+/// [recvmsg(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/recvmsg.html)
 pub fn recvmsg<'a, T>(fd: RawFd, iov: &[IoVec<&mut [u8]>],
                       cmsg_buffer: Option<&'a mut CmsgSpace<T>>,
                       flags: MsgFlags) -> Result<RecvMsg<'a>>
@@ -923,26 +926,30 @@ pub fn recvmsg<'a, T>(fd: RawFd, iov: &[IoVec<&mut [u8]>],
         mhdr
     };
 
-    let _ret = unsafe { libc::recvmsg(fd, &mut mhdr, flags.bits()) };
+    let ret = unsafe { libc::recvmsg(fd, &mut mhdr, flags.bits()) };
 
-    let cmsghdr = unsafe {
-        if mhdr.msg_controllen > 0 {
-            // got control message(s)
-            debug_assert!(!mhdr.msg_control.is_null());
-            debug_assert!(msg_controllen >= mhdr.msg_controllen as usize);
-            CMSG_FIRSTHDR(&mhdr as *const msghdr)
-        } else {
-            ptr::null()
-        }.as_ref()
-    };
+    Errno::result(ret).map(|_| {
+        let cmsghdr = unsafe {
+            if mhdr.msg_controllen > 0 {
+                // got control message(s)
+                debug_assert!(!mhdr.msg_control.is_null());
+                debug_assert!(msg_controllen >= mhdr.msg_controllen as usize);
+                CMSG_FIRSTHDR(&mhdr as *const msghdr)
+            } else {
+                ptr::null()
+            }.as_ref()
+        };
 
-    Ok(unsafe { RecvMsg {
-        cmsghdr,
-        address: sockaddr_storage_to_addr(&address,
-                                          mhdr.msg_namelen as usize).ok(),
-        flags: MsgFlags::from_bits_truncate(mhdr.msg_flags),
-        mhdr,
-    } })
+        let address = unsafe {
+            sockaddr_storage_to_addr(&address, mhdr.msg_namelen as usize).ok()
+        };
+        RecvMsg {
+            cmsghdr,
+            address,
+            flags: MsgFlags::from_bits_truncate(mhdr.msg_flags),
+            mhdr,
+        }
+    })
 }
 
 
