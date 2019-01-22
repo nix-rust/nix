@@ -23,6 +23,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#1010](https://github.com/nix-rust/nix/pull/1010))
 - Added `nix::sys::signal::signal`.
   ([#817](https://github.com/nix-rust/nix/pull/817))
+- Added an `mprotect` wrapper.
+  ([#991](https://github.com/nix-rust/nix/pull/991))
 
 ### Changed
 ### Fixed
