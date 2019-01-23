@@ -7,8 +7,11 @@ use libc::{self, c_void, c_int, iovec, socklen_t, size_t,
         CMSG_FIRSTHDR, CMSG_NXTHDR, CMSG_DATA, CMSG_LEN};
 use std::{fmt, mem, ptr, slice};
 use std::os::unix::io::RawFd;
-use sys::time::{TimeSpec, TimeVal};
+use sys::time::TimeVal;
 use sys::uio::IoVec;
+#[cfg(target_os = "linux")]
+use sys::time::TimeSpec;
+#[cfg(target_os = "linux")]
 use std::marker::PhantomData;
 
 mod addr;
