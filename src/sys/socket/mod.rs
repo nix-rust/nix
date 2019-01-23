@@ -1355,12 +1355,12 @@ impl<'a> MMsgHdr<'a> {
         MMsgHdr (
             libc::mmsghdr {
                 msg_hdr: msghdr {
-                    msg_control: std::ptr::null_mut(),
+                    msg_control: ptr::null_mut(),
                     msg_controllen: 0,
                     msg_flags: flags.bits(),
                     msg_iov: iov.as_ptr() as *mut libc::iovec,
                     msg_iovlen: vlen,
-                    msg_name: std::ptr::null_mut(),
+                    msg_name: ptr::null_mut(),
                     msg_namelen: 0,
                 },
                 msg_len: 0,
@@ -1384,7 +1384,7 @@ pub fn recvmmsg(fd: RawFd, msgvec: &mut[MMsgHdr], flags: MsgFlags, timeout: Opti
     });
     let tptr = match t {
         Some(ref mut time) => time,
-        None => std::ptr::null_mut(),
+        None => ptr::null_mut(),
     };
     let ret = unsafe {
         libc::recvmmsg(
