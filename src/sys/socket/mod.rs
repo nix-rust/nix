@@ -1343,6 +1343,9 @@ target_os = "linux",
 #[allow(missing_debug_implementations)]
 pub struct MMsgHdr<'a>(libc::mmsghdr, PhantomData<&'a ()>);
 
+#[cfg(any(
+target_os = "linux",
+))]
 impl<'a> MMsgHdr<'a> {
     pub fn new(iov: &mut[IoVec<&'a mut [u8]>], flags: MsgFlags) -> MMsgHdr<'a> {
         let vlen = iov.len();
