@@ -1366,11 +1366,13 @@ impl<'a> MMsgHdr<'a> {
         MMsgHdr(hdr, PhantomData)
     }
 
+    /// The number of bytes actually transferred, after a call to `sendmmsg()` or `recvmmsg()`.
     pub fn msg_len(&self) -> usize {
         self.0.msg_len as usize
     }
 }
 
+/// Receive multiple messages from a socket using a single system call.
 #[cfg(any(
 target_os = "linux",
 ))]
@@ -1391,6 +1393,7 @@ pub fn recvmmsg(fd: RawFd, msgvec: &mut[MMsgHdr], flags: MsgFlags, mut timeout: 
     Ok(Errno::result(ret)? as usize)
 }
 
+/// Transmit multiple messages on a socket using a single system call.
 #[cfg(any(
 target_os = "linux",
 ))]
