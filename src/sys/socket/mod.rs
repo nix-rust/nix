@@ -1348,7 +1348,6 @@ target_os = "linux",
 ))]
 impl<'a> MMsgHdr<'a> {
     pub fn new(iov: &mut[IoVec<&'a mut [u8]>], flags: MsgFlags) -> MMsgHdr<'a> {
-        let vlen = iov.len();
         // TODO:
         //  - support 'control'
         //  - support 'name'
@@ -1357,7 +1356,7 @@ impl<'a> MMsgHdr<'a> {
         hdr.msg_hdr.msg_controllen = 0;
         hdr.msg_hdr.msg_flags = flags.bits();
         hdr.msg_hdr.msg_iov = iov.as_ptr() as *mut libc::iovec;
-        hdr.msg_hdr.msg_iovlen = vlen;
+        hdr.msg_hdr.msg_iovlen = iov.len() as _;
         hdr.msg_hdr.msg_name = ptr::null_mut();
         hdr.msg_hdr.msg_namelen = 0;
         hdr.msg_len = 0;
