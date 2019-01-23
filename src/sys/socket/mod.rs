@@ -1352,21 +1352,16 @@ impl<'a> MMsgHdr<'a> {
         // TODO:
         //  - support 'control'
         //  - support 'name'
-        MMsgHdr (
-            libc::mmsghdr {
-                msg_hdr: msghdr {
-                    msg_control: ptr::null_mut(),
-                    msg_controllen: 0,
-                    msg_flags: flags.bits(),
-                    msg_iov: iov.as_ptr() as *mut libc::iovec,
-                    msg_iovlen: vlen,
-                    msg_name: ptr::null_mut(),
-                    msg_namelen: 0,
-                },
-                msg_len: 0,
-            },
-            PhantomData,
-        )
+        let mut hdr: libc::mmsghdr = unsafe { mem::uninitialized() };
+        hdr.msg_hdr.msg_control = ptr::null_mut();
+        hdr.msg_hdr.msg_controllen = 0;
+        hdr.msg_hdr.msg_flags = flags.bits();
+        hdr.msg_hdr.msg_iov = iov.as_ptr() as *mut libc::iovec;
+        hdr.msg_hdr.msg_iovlen = vlen;
+        hdr.msg_hdr.msg_name = ptr::null_mut();
+        hdr.msg_hdr.msg_namelen = 0;
+        hdr.msg_len = 0;
+        MMsgHdr(hdr, PhantomData)
     }
 
     pub fn msg_len(&self) -> usize {
