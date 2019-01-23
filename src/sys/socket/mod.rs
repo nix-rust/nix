@@ -7,7 +7,7 @@ use libc::{self, c_void, c_int, iovec, socklen_t, size_t,
         CMSG_FIRSTHDR, CMSG_NXTHDR, CMSG_DATA, CMSG_LEN};
 use std::{fmt, mem, ptr, slice};
 use std::os::unix::io::RawFd;
-use sys::time::TimeVal;
+use sys::time::{TimeSpec, TimeVal};
 use sys::uio::IoVec;
 use std::marker::PhantomData;
 
@@ -1377,13 +1377,9 @@ impl<'a> MMsgHdr<'a> {
 #[cfg(any(
 target_os = "linux",
 ))]
-pub fn recvmmsg(fd: RawFd, msgvec: &mut[MMsgHdr], flags: MsgFlags, timeout: Option<std::time::Duration>) -> Result<usize> {
-    let mut t = timeout.map(|d| libc::timespec {
-        tv_sec: d.as_secs() as i64,
-        tv_nsec: d.subsec_nanos() as i64,
-    });
-    let tptr = match t {
-        Some(ref mut time) => time,
+pub fn recvmmsg(fd: RawFd, msgvec: &mut[MMsgHdr], flags: MsgFlags, mut timeout: Option<TimeSpec>) -> Result<usize> {
+    let tptr = match timeout {
+        Some(ref mut time) => time.as_ref() as *const libc::timespec,
         None => ptr::null_mut(),
     };
     let ret = unsafe {
@@ -1392,7 +1388,7 @@ pub fn recvmmsg(fd: RawFd, msgvec: &mut[MMsgHdr], flags: MsgFlags, timeout: Opti
             msgvec.as_mut_ptr() as *mut libc::mmsghdr,
             msgvec.len() as u32,
             flags.bits(),
-            tptr,
+            tptr as *mut libc::timespec,
         )
     };
     Ok(Errno::result(ret)? as usize)
