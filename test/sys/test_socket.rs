@@ -959,3 +959,66 @@ pub fn test_recv_ipv6pktinfo() {
         );
     }
 }
+
+#[cfg(any(
+target_os = "linux",
+))]
+#[test]
+pub fn test_mmsg() {
+    use std::thread;
+    use nix::sys::uio::IoVec;
+    use nix::sys::socket::{socket, bind, connect, recvmmsg, sendmmsg, MMsgHdr, MsgFlags, AddressFamily, SockType, SockAddr, SockFlag, InetAddr};
+    use std::time;
+
+    let sender = thread::spawn(move || {
+        let so = socket(
+            AddressFamily::Inet,
+            SockType::Datagram,
+            SockFlag::empty(),
+            None,
+        ).expect("send socket failed");
+        let sockaddr = SockAddr::new_inet(InetAddr::from_std(&SocketAddr::from_str("127.0.0.1:0").unwrap()));
+        bind(so, &sockaddr).unwrap();
+        let sockaddr = SockAddr::new_inet(InetAddr::from_std(&SocketAddr::from_str("127.0.0.1:3456").unwrap()));
+        connect(so, &sockaddr).unwrap();
+        let mut a = [b'A'; 500];
+        let mut b = [b'B'; 500];
+        let mut c = [b'C'; 500];
+        let mut iov_a = [ IoVec::from_mut_slice(&mut a[..]) ];
+        let mut iov_b = [ IoVec::from_mut_slice(&mut b[..]) ];
+        let mut iov_c = [ IoVec::from_mut_slice(&mut c[..]) ];
+        let mut msgs = [
+            MMsgHdr::new(&mut iov_a[..], MsgFlags::empty()),
+            MMsgHdr::new(&mut iov_b[..], MsgFlags::empty()),
+            MMsgHdr::new(&mut iov_c[..], MsgFlags::empty()),
+        ];
+        thread::park();
+        sendmmsg(so, &mut msgs[..]).unwrap();
+    });
+    let so = socket(
+        AddressFamily::Inet,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    ).expect("send socket failed");
+    let sockaddr = SockAddr::new_inet(InetAddr::from_std(&SocketAddr::from_str("127.0.0.1:3456").unwrap()));
+    bind(so, &sockaddr).unwrap();
+    sender.thread().unpark();
+    // this is not the proper way to coordinate with the sender thread!
+    thread::sleep(time::Duration::from_millis(200));
+    let mut a = [0u8; 1500];
+    let mut b = [0u8; 1500];
+    let mut c = [0u8; 1500];
+    let mut iov_a = [ IoVec::from_mut_slice(&mut a[..]) ];
+    let mut iov_b = [ IoVec::from_mut_slice(&mut b[..]) ];
+    let mut iov_c = [ IoVec::from_mut_slice(&mut c[..]) ];
+    let mut msgs = [
+        MMsgHdr::new(&mut iov_a[..], MsgFlags::empty()),
+        MMsgHdr::new(&mut iov_b[..], MsgFlags::empty()),
+        MMsgHdr::new(&mut iov_c[..], MsgFlags::empty()),
+    ];
+    let count = recvmmsg(so, &mut msgs[..], MsgFlags::MSG_DONTWAIT, None).unwrap();
+    assert_eq!(3, count);
+    assert_eq!(500, msgs[0].msg_len());
+    sender.join().unwrap();
+}

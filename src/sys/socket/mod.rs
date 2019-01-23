@@ -9,6 +9,7 @@ use std::{fmt, mem, ptr, slice};
 use std::os::unix::io::RawFd;
 use sys::time::TimeVal;
 use sys::uio::IoVec;
+use std::marker::PhantomData;
 
 mod addr;
 pub mod sockopt;
@@ -1333,4 +1334,78 @@ pub fn shutdown(df: RawFd, how: Shutdown) -> Result<()> {
 
         Errno::result(shutdown(df, how)).map(drop)
     }
+}
+
+#[cfg(any(
+target_os = "linux",
+))]
+#[repr(C)]
+#[allow(missing_debug_implementations)]
+pub struct MMsgHdr<'a>(libc::mmsghdr, PhantomData<&'a ()>);
+
+impl<'a> MMsgHdr<'a> {
+    pub fn new(iov: &mut[IoVec<&'a mut [u8]>], flags: MsgFlags) -> MMsgHdr<'a> {
+        let vlen = iov.len();
+        // TODO:
+        //  - support 'control'
+        //  - support 'name'
+        MMsgHdr (
+            libc::mmsghdr {
+                msg_hdr: msghdr {
+                    msg_control: std::ptr::null_mut(),
+                    msg_controllen: 0,
+                    msg_flags: flags.bits(),
+                    msg_iov: iov.as_ptr() as *mut libc::iovec,
+                    msg_iovlen: vlen,
+                    msg_name: std::ptr::null_mut(),
+                    msg_namelen: 0,
+                },
+                msg_len: 0,
+            },
+            PhantomData,
+        )
+    }
+
+    pub fn msg_len(&self) -> usize {
+        self.0.msg_len as usize
+    }
+}
+
+#[cfg(any(
+target_os = "linux",
+))]
+pub fn recvmmsg(fd: RawFd, msgvec: &mut[MMsgHdr], flags: MsgFlags, timeout: Option<std::time::Duration>) -> Result<usize> {
+    let mut t = timeout.map(|d| libc::timespec {
+        tv_sec: d.as_secs() as i64,
+        tv_nsec: d.subsec_nanos() as i64,
+    });
+    let tptr = match t {
+        Some(ref mut time) => time,
+        None => std::ptr::null_mut(),
+    };
+    let ret = unsafe {
+        libc::recvmmsg(
+            fd,
+            msgvec.as_mut_ptr() as *mut libc::mmsghdr,
+            msgvec.len() as u32,
+            flags.bits(),
+            tptr,
+        )
+    };
+    Ok(Errno::result(ret)? as usize)
+}
+
+#[cfg(any(
+target_os = "linux",
+))]
+pub fn sendmmsg(fd: RawFd, msgvec: &mut[MMsgHdr]) -> Result<usize> {
+    let ret = unsafe {
+        libc::sendmmsg(
+            fd,
+            msgvec.as_mut_ptr() as *mut libc::mmsghdr,
+            msgvec.len() as u32,
+            0,
+        )
+    };
+    Ok(Errno::result(ret)? as usize)
 }

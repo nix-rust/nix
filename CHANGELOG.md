@@ -17,6 +17,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#969](https://github.com/nix-rust/nix/pull/969))
 - Add several errno constants from OpenBSD 6.2
   ([#1036](https://github.com/nix-rust/nix/pull/1036))
+ - Added support for sendmmsg() / recvmmsg() on Linux
 
 ### Changed
 - `PollFd` event flags renamed to `PollFlags` ([#1024](https://github.com/nix-rust/nix/pull/1024/))
