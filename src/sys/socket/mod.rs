@@ -9,9 +9,17 @@ use std::{fmt, mem, ptr, slice};
 use std::os::unix::io::RawFd;
 use sys::time::TimeVal;
 use sys::uio::IoVec;
-#[cfg(target_os = "linux")]
+#[cfg(any(
+target_os = "linux",
+target_os = "freebsd",
+target_os = "netbsd",
+))]
 use sys::time::TimeSpec;
-#[cfg(target_os = "linux")]
+#[cfg(any(
+target_os = "linux",
+target_os = "freebsd",
+target_os = "netbsd",
+))]
 use std::marker::PhantomData;
 
 mod addr;
@@ -1340,14 +1348,20 @@ pub fn shutdown(df: RawFd, how: Shutdown) -> Result<()> {
 }
 
 #[cfg(any(
-target_os = "linux",
+    target_os = "android",
+    target_os = "linux",
+    target_os = "freebsd",
+    target_os = "netbsd",
 ))]
 #[repr(C)]
 #[allow(missing_debug_implementations)]
 pub struct MMsgHdr<'a>(libc::mmsghdr, PhantomData<&'a ()>);
 
 #[cfg(any(
-target_os = "linux",
+    target_os = "android",
+    target_os = "linux",
+    target_os = "freebsd",
+    target_os = "netbsd",
 ))]
 impl<'a> MMsgHdr<'a> {
     pub fn new<T>(iov: &mut[IoVec<&'a mut [u8]>],
@@ -1409,7 +1423,10 @@ impl<'a> MMsgHdr<'a> {
 
 /// Receive multiple messages from a socket using a single system call.
 #[cfg(any(
-target_os = "linux",
+    target_os = "android",
+    target_os = "linux",
+    target_os = "freebsd",
+    target_os = "netbsd",
 ))]
 pub fn recvmmsg(fd: RawFd, msgvec: &mut[MMsgHdr],
                 flags: MsgFlags,
@@ -1432,7 +1449,10 @@ pub fn recvmmsg(fd: RawFd, msgvec: &mut[MMsgHdr],
 
 /// Transmit multiple messages on a socket using a single system call.
 #[cfg(any(
-target_os = "linux",
+    target_os = "android",
+    target_os = "linux",
+    target_os = "freebsd",
+    target_os = "netbsd",
 ))]
 pub fn sendmmsg(fd: RawFd, msgvec: &mut[MMsgHdr]) -> Result<usize> {
     let ret = unsafe {
