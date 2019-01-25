@@ -882,6 +882,27 @@ impl SockAddr {
             SockAddr::Link(LinkAddr(ref ether_addr)) => (mem::transmute(ether_addr), mem::size_of::<libc::sockaddr_dl>() as libc::socklen_t),
         }
     }
+
+    pub unsafe fn as_ffi_pair_mut(&mut self) -> (&mut libc::sockaddr, libc::socklen_t) {
+        match *self {
+            SockAddr::Inet(InetAddr::V4(ref mut addr)) => (mem::transmute(addr), mem::size_of::<libc::sockaddr_in>() as libc::socklen_t),
+            SockAddr::Inet(InetAddr::V6(ref mut addr)) => (mem::transmute(addr), mem::size_of::<libc::sockaddr_in6>() as libc::socklen_t),
+            SockAddr::Unix(UnixAddr(ref mut addr, len)) => (mem::transmute(addr), (len + offset_of!(libc::sockaddr_un, sun_path)) as libc::socklen_t),
+            #[cfg(any(target_os = "android", target_os = "linux"))]
+            SockAddr::Netlink(NetlinkAddr(ref mut sa)) => (mem::transmute(sa), mem::size_of::<libc::sockaddr_nl>() as libc::socklen_t),
+            #[cfg(any(target_os = "ios", target_os = "macos"))]
+            SockAddr::SysControl(SysControlAddr(ref mut sa)) => (mem::transmute(sa), mem::size_of::<libc::sockaddr_ctl>() as libc::socklen_t),
+            #[cfg(any(target_os = "android", target_os = "linux"))]
+            SockAddr::Link(LinkAddr(ref mut ether_addr)) => (mem::transmute(ether_addr), mem::size_of::<libc::sockaddr_ll>() as libc::socklen_t),
+            #[cfg(any(target_os = "dragonfly",
+            target_os = "freebsd",
+            target_os = "ios",
+            target_os = "macos",
+            target_os = "netbsd",
+            target_os = "openbsd"))]
+            SockAddr::Link(LinkAddr(ref mut ether_addr)) => (mem::transmute(ether_addr), mem::size_of::<libc::sockaddr_dl>() as libc::socklen_t),
+        }
+    }
 }
 
 impl PartialEq for SockAddr {

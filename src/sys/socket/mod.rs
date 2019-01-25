@@ -1350,18 +1350,26 @@ pub struct MMsgHdr<'a>(libc::mmsghdr, PhantomData<&'a ()>);
 target_os = "linux",
 ))]
 impl<'a> MMsgHdr<'a> {
-    pub fn new(iov: &mut[IoVec<&'a mut [u8]>], flags: MsgFlags) -> MMsgHdr<'a> {
-        // TODO:
-        //  - support 'control'
-        //  - support 'name'
+    pub fn new<T>(iov: &mut[IoVec<&'a mut [u8]>],
+                  cmsg_buffer: Option<&'a mut CmsgSpace<T>>,
+                  flags: MsgFlags,
+                  addr: Option<&'a mut SockAddr>) -> MMsgHdr<'a> {
+        let (name, namelen) = match addr {
+            Some(addr) => { let (x, y) = unsafe { addr.as_ffi_pair_mut() }; (unsafe { mem::transmute(x) }, y) }
+            None => (ptr::null_mut(), 0),
+        };
+        let (msg_control, msg_controllen) = match cmsg_buffer {
+            Some(cmsg_buffer) => (cmsg_buffer as *mut _, mem::size_of_val(cmsg_buffer)),
+            None => (ptr::null_mut(), 0),
+        };
         let mut hdr: libc::mmsghdr = unsafe { mem::uninitialized() };
-        hdr.msg_hdr.msg_control = ptr::null_mut();
-        hdr.msg_hdr.msg_controllen = 0;
+        hdr.msg_hdr.msg_control = msg_control as *mut _;
+        hdr.msg_hdr.msg_controllen = msg_controllen;
         hdr.msg_hdr.msg_flags = flags.bits();
         hdr.msg_hdr.msg_iov = iov.as_ptr() as *mut libc::iovec;
         hdr.msg_hdr.msg_iovlen = iov.len() as _;
-        hdr.msg_hdr.msg_name = ptr::null_mut();
-        hdr.msg_hdr.msg_namelen = 0;
+        hdr.msg_hdr.msg_name = name;
+        hdr.msg_hdr.msg_namelen = namelen;
         hdr.msg_len = 0;
         MMsgHdr(hdr, PhantomData)
     }
@@ -1369,6 +1377,29 @@ impl<'a> MMsgHdr<'a> {
     /// The number of bytes actually transferred, after a call to `sendmmsg()` or `recvmmsg()`.
     pub fn msg_len(&self) -> usize {
         self.0.msg_len as usize
+    }
+
+    pub fn address(&self) -> Result<SockAddr> {
+        unsafe { sockaddr_storage_to_addr(mem::transmute(self.0.msg_hdr.msg_name),
+                                          self.0.msg_hdr.msg_namelen as usize) }
+    }
+
+    pub fn cmsgs(&self) -> CmsgIterator {
+        CmsgIterator {
+            buf: if self.0.msg_hdr.msg_controllen > 0 {
+                // got control message(s)
+                debug_assert!(!self.0.msg_hdr.msg_control.is_null());
+                unsafe {
+                    // Safe: The pointer is not null and the length is correct as part of `recvmsg`s
+                    // contract.
+                    slice::from_raw_parts(self.0.msg_hdr.msg_control as *const u8,
+                                          self.0.msg_hdr.msg_controllen as usize)
+                }
+            } else {
+                // No control message, create an empty buffer to avoid creating a slice from a null pointer
+                &[]
+            }
+        }
     }
 }
 
