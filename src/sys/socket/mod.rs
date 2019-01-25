@@ -1416,7 +1416,7 @@ pub fn recvmmsg(fd: RawFd, msgvec: &mut[MMsgHdr], flags: MsgFlags, mut timeout: 
         libc::recvmmsg(
             fd,
             msgvec.as_mut_ptr() as *mut libc::mmsghdr,
-            msgvec.len() as u32,
+            msgvec.len() as _,
             flags.bits(),
             tptr as *mut libc::timespec,
         )
@@ -1433,7 +1433,7 @@ pub fn sendmmsg(fd: RawFd, msgvec: &mut[MMsgHdr]) -> Result<usize> {
         libc::sendmmsg(
             fd,
             msgvec.as_mut_ptr() as *mut libc::mmsghdr,
-            msgvec.len() as u32,
+            msgvec.len() as _,
             0,
         )
     };
