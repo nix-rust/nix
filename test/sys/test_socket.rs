@@ -967,23 +967,12 @@ target_os = "netbsd",
 ))]
 #[test]
 pub fn test_mmsg() {
-    use std::thread;
-    use nix::sys::uio::IoVec;
     use nix::sys::socket::{
-        socket,
-        bind,
-        connect,
-        recvmmsg,
-        sendmmsg,
-        MMsgHdr,
-        MsgFlags,
-        AddressFamily,
-        SockType,
-        SockAddr,
-        SockFlag,
-        InetAddr,
-        CmsgSpace,
+        bind, connect, recvmmsg, sendmmsg, socket, AddressFamily, CmsgSpace, InetAddr, MMsgHdr,
+        MsgFlags, SockAddr, SockFlag, SockType,
     };
+    use nix::sys::uio::IoVec;
+    use std::thread;
     use std::time;
 
     let sender = thread::spawn(move || {
@@ -992,10 +981,15 @@ pub fn test_mmsg() {
             SockType::Datagram,
             SockFlag::empty(),
             None,
-        ).expect("send socket failed");
-        let sockaddr = SockAddr::new_inet(InetAddr::from_std(&SocketAddr::from_str("127.0.0.1:0").unwrap()));
+        )
+        .expect("send socket failed");
+        let sockaddr = SockAddr::new_inet(InetAddr::from_std(
+            &SocketAddr::from_str("127.0.0.1:0").unwrap(),
+        ));
         bind(so, &sockaddr).unwrap();
-        let sockaddr = SockAddr::new_inet(InetAddr::from_std(&SocketAddr::from_str("127.0.0.1:3456").unwrap()));
+        let sockaddr = SockAddr::new_inet(InetAddr::from_std(
+            &SocketAddr::from_str("127.0.0.1:3456").unwrap(),
+        ));
         connect(so, &sockaddr).unwrap();
         let mut a = [b'A'; 500];
         let mut b = [b'B'; 500];
@@ -1003,9 +997,9 @@ pub fn test_mmsg() {
         let mut cmsg_a = CmsgSpace::<libc::in_pktinfo>::new();
         let mut cmsg_b = CmsgSpace::<libc::in_pktinfo>::new();
         let mut cmsg_c = CmsgSpace::<libc::in_pktinfo>::new();
-        let mut iov_a = [ IoVec::from_mut_slice(&mut a[..]) ];
-        let mut iov_b = [ IoVec::from_mut_slice(&mut b[..]) ];
-        let mut iov_c = [ IoVec::from_mut_slice(&mut c[..]) ];
+        let mut iov_a = [IoVec::from_mut_slice(&mut a[..])];
+        let mut iov_b = [IoVec::from_mut_slice(&mut b[..])];
+        let mut iov_c = [IoVec::from_mut_slice(&mut c[..])];
         let mut msgs = [
             MMsgHdr::new(&mut iov_a[..], Some(&mut cmsg_a), MsgFlags::empty(), None),
             MMsgHdr::new(&mut iov_b[..], Some(&mut cmsg_b), MsgFlags::empty(), None),
@@ -1019,8 +1013,11 @@ pub fn test_mmsg() {
         SockType::Datagram,
         SockFlag::empty(),
         None,
-    ).expect("send socket failed");
-    let sockaddr = SockAddr::new_inet(InetAddr::from_std(&SocketAddr::from_str("127.0.0.1:3456").unwrap()));
+    )
+    .expect("recv socket failed");
+    let sockaddr = SockAddr::new_inet(InetAddr::from_std(
+        &SocketAddr::from_str("127.0.0.1:3456").unwrap(),
+    ));
     bind(so, &sockaddr).unwrap();
     sender.thread().unpark();
     // this is not the proper way to coordinate with the sender thread!
@@ -1031,16 +1028,37 @@ pub fn test_mmsg() {
     let mut cmsg_a = CmsgSpace::<libc::in_pktinfo>::new();
     let mut cmsg_b = CmsgSpace::<libc::in_pktinfo>::new();
     let mut cmsg_c = CmsgSpace::<libc::in_pktinfo>::new();
-    let mut sockaddr_a = SockAddr::Inet(InetAddr::from_std(&SocketAddr::from_str("0.0.0.0:0").unwrap()));
-    let mut sockaddr_b = SockAddr::Inet(InetAddr::from_std(&SocketAddr::from_str("0.0.0.0:0").unwrap()));
-    let mut sockaddr_c = SockAddr::Inet(InetAddr::from_std(&SocketAddr::from_str("0.0.0.0:0").unwrap()));
-    let mut iov_a = [ IoVec::from_mut_slice(&mut a[..]) ];
-    let mut iov_b = [ IoVec::from_mut_slice(&mut b[..]) ];
-    let mut iov_c = [ IoVec::from_mut_slice(&mut c[..]) ];
+    let mut sockaddr_a = SockAddr::Inet(InetAddr::from_std(
+        &SocketAddr::from_str("0.0.0.0:0").unwrap(),
+    ));
+    let mut sockaddr_b = SockAddr::Inet(InetAddr::from_std(
+        &SocketAddr::from_str("0.0.0.0:0").unwrap(),
+    ));
+    let mut sockaddr_c = SockAddr::Inet(InetAddr::from_std(
+        &SocketAddr::from_str("0.0.0.0:0").unwrap(),
+    ));
+    let mut iov_a = [IoVec::from_mut_slice(&mut a[..])];
+    let mut iov_b = [IoVec::from_mut_slice(&mut b[..])];
+    let mut iov_c = [IoVec::from_mut_slice(&mut c[..])];
     let mut msgs = [
-        MMsgHdr::new(&mut iov_a[..], Some(&mut cmsg_a), MsgFlags::empty(), Some(&mut sockaddr_a)),
-        MMsgHdr::new(&mut iov_b[..], Some(&mut cmsg_b), MsgFlags::empty(), Some(&mut sockaddr_b)),
-        MMsgHdr::new(&mut iov_c[..], Some(&mut cmsg_c), MsgFlags::empty(), Some(&mut sockaddr_c)),
+        MMsgHdr::new(
+            &mut iov_a[..],
+            Some(&mut cmsg_a),
+            MsgFlags::empty(),
+            Some(&mut sockaddr_a),
+        ),
+        MMsgHdr::new(
+            &mut iov_b[..],
+            Some(&mut cmsg_b),
+            MsgFlags::empty(),
+            Some(&mut sockaddr_b),
+        ),
+        MMsgHdr::new(
+            &mut iov_c[..],
+            Some(&mut cmsg_c),
+            MsgFlags::empty(),
+            Some(&mut sockaddr_c),
+        ),
     ];
     let count = recvmmsg(so, &mut msgs[..], MsgFlags::MSG_DONTWAIT, None).unwrap();
     assert_eq!(3, count);

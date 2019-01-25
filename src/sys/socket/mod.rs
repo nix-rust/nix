@@ -1355,7 +1355,10 @@ impl<'a> MMsgHdr<'a> {
                   flags: MsgFlags,
                   addr: Option<&'a mut SockAddr>) -> MMsgHdr<'a> {
         let (name, namelen) = match addr {
-            Some(addr) => { let (x, y) = unsafe { addr.as_ffi_pair_mut() }; (unsafe { mem::transmute(x) }, y) }
+            Some(addr) => {
+                let (x, y) = unsafe { addr.as_ffi_pair_mut() };
+                (unsafe { mem::transmute(x) }, y)
+            },
             None => (ptr::null_mut(), 0),
         };
         let (msg_control, msg_controllen) = match cmsg_buffer {
@@ -1396,7 +1399,8 @@ impl<'a> MMsgHdr<'a> {
                                           self.0.msg_hdr.msg_controllen as usize)
                 }
             } else {
-                // No control message, create an empty buffer to avoid creating a slice from a null pointer
+                // No control message, create an empty buffer to avoid creating a slice from a null
+                // pointer
                 &[]
             }
         }
@@ -1407,7 +1411,9 @@ impl<'a> MMsgHdr<'a> {
 #[cfg(any(
 target_os = "linux",
 ))]
-pub fn recvmmsg(fd: RawFd, msgvec: &mut[MMsgHdr], flags: MsgFlags, mut timeout: Option<TimeSpec>) -> Result<usize> {
+pub fn recvmmsg(fd: RawFd, msgvec: &mut[MMsgHdr],
+                flags: MsgFlags,
+                mut timeout: Option<TimeSpec>) -> Result<usize> {
     let tptr = match timeout {
         Some(ref mut time) => time.as_ref() as *const libc::timespec,
         None => ptr::null_mut(),
