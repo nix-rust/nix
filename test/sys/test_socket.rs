@@ -1007,9 +1007,6 @@ pub fn test_mmsg() {
         None,
     )
     .expect("recv socket failed");
-    let sockaddr = SockAddr::new_inet(InetAddr::from_std(
-        &SocketAddr::from_str("127.0.0.1:3456").unwrap(),
-    ));
     bind(receiver, &sockaddr).unwrap();
     setsockopt(receiver, Ipv4PacketInfo, &true).expect("setsockopt failed");
 
