@@ -1348,7 +1348,6 @@ pub fn shutdown(df: RawFd, how: Shutdown) -> Result<()> {
 }
 
 #[cfg(any(
-    target_os = "android",
     target_os = "linux",
     target_os = "freebsd",
     target_os = "netbsd",
@@ -1358,7 +1357,6 @@ pub fn shutdown(df: RawFd, how: Shutdown) -> Result<()> {
 pub struct SendMMsgHdr<'a>(libc::mmsghdr, PhantomData<&'a ()>);
 
 #[cfg(any(
-    target_os = "android",
     target_os = "linux",
     target_os = "freebsd",
     target_os = "netbsd",
@@ -1445,7 +1443,6 @@ impl<'a> SendMMsgHdr<'a> {
 }
 
 #[cfg(any(
-    target_os = "android",
     target_os = "linux",
     target_os = "freebsd",
     target_os = "netbsd",
@@ -1455,7 +1452,6 @@ impl<'a> SendMMsgHdr<'a> {
 pub struct RecvMMsgHdr<'a>(libc::mmsghdr, PhantomData<&'a ()>);
 
 #[cfg(any(
-    target_os = "android",
     target_os = "linux",
     target_os = "freebsd",
     target_os = "netbsd",
@@ -1520,7 +1516,6 @@ impl<'a> RecvMMsgHdr<'a> {
 
 /// Receive multiple messages from a socket using a single system call.
 #[cfg(any(
-    target_os = "android",
     target_os = "linux",
     target_os = "freebsd",
     target_os = "netbsd",
@@ -1546,7 +1541,6 @@ pub fn recvmmsg(fd: RawFd, msgvec: &mut[RecvMMsgHdr],
 
 /// Transmit multiple messages on a socket using a single system call.
 #[cfg(any(
-    target_os = "android",
     target_os = "linux",
     target_os = "freebsd",
     target_os = "netbsd",

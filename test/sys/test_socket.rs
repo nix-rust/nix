@@ -961,7 +961,6 @@ pub fn test_recv_ipv6pktinfo() {
 }
 
 #[cfg(any(
-    target_os = "android",
     target_os = "linux",
     target_os = "freebsd",
     target_os = "netbsd",
