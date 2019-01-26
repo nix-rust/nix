@@ -962,8 +962,6 @@ pub fn test_recv_ipv6pktinfo() {
 
 #[cfg(any(
     target_os = "linux",
-    target_os = "freebsd",
-    target_os = "netbsd",
 ))]
 #[test]
 pub fn test_mmsg() {
