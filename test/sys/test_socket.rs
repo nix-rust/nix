@@ -967,6 +967,7 @@ pub fn test_recv_ipv6pktinfo() {
 ))]
 #[test]
 pub fn test_mmsg() {
+    use libc;
     use nix::sys::socket::sockopt::Ipv4PacketInfo;
     use nix::sys::socket::{
         bind, connect, recvmmsg, sendmmsg, setsockopt, socket, AddressFamily, CmsgSpace,
