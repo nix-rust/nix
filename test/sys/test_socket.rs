@@ -977,33 +977,30 @@ pub fn test_mmsg() {
     use std::thread;
     use std::time;
 
-    let sender = thread::spawn(move || {
-        let so = socket(
-            AddressFamily::Inet,
-            SockType::Datagram,
-            SockFlag::empty(),
-            None,
-        )
-        .expect("send socket failed");
-        let sockaddr = SockAddr::new_inet(InetAddr::from_std(
-            &SocketAddr::from_str("127.0.0.1:3456").unwrap(),
-        ));
-        connect(so, &sockaddr).unwrap();
-        let mut a = [b'A'; 500];
-        let mut b = [b'B'; 500];
-        let mut c = [b'C'; 500];
-        let mut iov_a = [IoVec::from_mut_slice(&mut a[..])];
-        let mut iov_b = [IoVec::from_mut_slice(&mut b[..])];
-        let mut iov_c = [IoVec::from_mut_slice(&mut c[..])];
-        let mut msgs = [
-            SendMMsgHdr::new(&mut iov_a[..], &mut [], MsgFlags::empty(), None),
-            SendMMsgHdr::new(&mut iov_b[..], &mut [], MsgFlags::empty(), None),
-            SendMMsgHdr::new(&mut iov_c[..], &mut [], MsgFlags::empty(), None),
-        ];
-        thread::park();
-        sendmmsg(so, &mut msgs[..]).unwrap();
-    });
-    let so = socket(
+    let sender = socket(
+        AddressFamily::Inet,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )
+    .expect("send socket failed");
+    let sockaddr = SockAddr::new_inet(InetAddr::from_std(
+        &SocketAddr::from_str("127.0.0.1:3456").unwrap(),
+    ));
+    connect(sender, &sockaddr).unwrap();
+    let mut a = [b'A'; 500];
+    let mut b = [b'B'; 500];
+    let mut c = [b'C'; 500];
+    let mut iov_a = [IoVec::from_mut_slice(&mut a[..])];
+    let mut iov_b = [IoVec::from_mut_slice(&mut b[..])];
+    let mut iov_c = [IoVec::from_mut_slice(&mut c[..])];
+    let mut msgs = [
+        SendMMsgHdr::new(&mut iov_a[..], &mut [], MsgFlags::empty(), None),
+        SendMMsgHdr::new(&mut iov_b[..], &mut [], MsgFlags::empty(), None),
+        SendMMsgHdr::new(&mut iov_c[..], &mut [], MsgFlags::empty(), None),
+    ];
+
+    let receiver = socket(
         AddressFamily::Inet,
         SockType::Datagram,
         SockFlag::empty(),
@@ -1013,9 +1010,12 @@ pub fn test_mmsg() {
     let sockaddr = SockAddr::new_inet(InetAddr::from_std(
         &SocketAddr::from_str("127.0.0.1:3456").unwrap(),
     ));
-    bind(so, &sockaddr).unwrap();
-    setsockopt(so, Ipv4PacketInfo, &true).expect("setsockopt failed");
-    sender.thread().unpark();
+    bind(receiver, &sockaddr).unwrap();
+    setsockopt(receiver, Ipv4PacketInfo, &true).expect("setsockopt failed");
+
+    // now that the receiver is bond, send the messages
+    sendmmsg(sender, &mut msgs[..]).unwrap();
+
     // this is not the proper way to coordinate with the sender thread!
     thread::sleep(time::Duration::from_millis(200));
     let mut a = [0u8; 1500];
@@ -1056,8 +1056,7 @@ pub fn test_mmsg() {
             Some(&mut sockaddr_c),
         ),
     ];
-    let count = recvmmsg(so, &mut msgs[..], MsgFlags::MSG_DONTWAIT, None).unwrap();
+    let count = recvmmsg(receiver, &mut msgs[..], MsgFlags::empty(), None).unwrap();
     assert_eq!(3, count);
     assert_eq!(500, msgs[0].msg_len());
-    sender.join().unwrap();
 }
