@@ -1402,7 +1402,7 @@ impl<'a> SendMMsgHdr<'a> {
         };
         let mut hdr: libc::mmsghdr = unsafe { mem::uninitialized() };
         hdr.msg_hdr.msg_control = cmsg_ptr;
-        hdr.msg_hdr.msg_controllen = capacity;
+        hdr.msg_hdr.msg_controllen = capacity as _;
         hdr.msg_hdr.msg_flags = flags.bits();
         hdr.msg_hdr.msg_iov = iov.as_ptr() as *mut libc::iovec;
         hdr.msg_hdr.msg_iovlen = iov.len() as _;
@@ -1474,7 +1474,7 @@ impl<'a> RecvMMsgHdr<'a> {
         };
         let mut hdr: libc::mmsghdr = unsafe { mem::uninitialized() };
         hdr.msg_hdr.msg_control = msg_control as *mut _;
-        hdr.msg_hdr.msg_controllen = msg_controllen;
+        hdr.msg_hdr.msg_controllen = msg_controllen as _;
         hdr.msg_hdr.msg_flags = flags.bits();
         hdr.msg_hdr.msg_iov = iov.as_ptr() as *mut libc::iovec;
         hdr.msg_hdr.msg_iovlen = iov.len() as _;
