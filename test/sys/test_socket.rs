@@ -968,9 +968,10 @@ pub fn test_recv_ipv6pktinfo() {
 ))]
 #[test]
 pub fn test_mmsg() {
+    use nix::sys::socket::sockopt::Ipv4PacketInfo;
     use nix::sys::socket::{
-        bind, connect, recvmmsg, sendmmsg, socket, AddressFamily, CmsgSpace, InetAddr, MMsgHdr,
-        MsgFlags, SockAddr, SockFlag, SockType,
+        bind, connect, recvmmsg, sendmmsg, setsockopt, socket, AddressFamily, CmsgSpace,
+        InetAddr, MsgFlags, RecvMMsgHdr, SendMMsgHdr, SockAddr, SockFlag, SockType,
     };
     use nix::sys::uio::IoVec;
     use std::thread;
@@ -985,26 +986,19 @@ pub fn test_mmsg() {
         )
         .expect("send socket failed");
         let sockaddr = SockAddr::new_inet(InetAddr::from_std(
-            &SocketAddr::from_str("127.0.0.1:0").unwrap(),
-        ));
-        bind(so, &sockaddr).unwrap();
-        let sockaddr = SockAddr::new_inet(InetAddr::from_std(
             &SocketAddr::from_str("127.0.0.1:3456").unwrap(),
         ));
         connect(so, &sockaddr).unwrap();
         let mut a = [b'A'; 500];
         let mut b = [b'B'; 500];
         let mut c = [b'C'; 500];
-        let mut cmsg_a = CmsgSpace::<libc::in_pktinfo>::new();
-        let mut cmsg_b = CmsgSpace::<libc::in_pktinfo>::new();
-        let mut cmsg_c = CmsgSpace::<libc::in_pktinfo>::new();
         let mut iov_a = [IoVec::from_mut_slice(&mut a[..])];
         let mut iov_b = [IoVec::from_mut_slice(&mut b[..])];
         let mut iov_c = [IoVec::from_mut_slice(&mut c[..])];
         let mut msgs = [
-            MMsgHdr::new(&mut iov_a[..], Some(&mut cmsg_a), MsgFlags::empty(), None),
-            MMsgHdr::new(&mut iov_b[..], Some(&mut cmsg_b), MsgFlags::empty(), None),
-            MMsgHdr::new(&mut iov_c[..], Some(&mut cmsg_c), MsgFlags::empty(), None),
+            SendMMsgHdr::new(&mut iov_a[..], &mut [], MsgFlags::empty(), None),
+            SendMMsgHdr::new(&mut iov_b[..], &mut [], MsgFlags::empty(), None),
+            SendMMsgHdr::new(&mut iov_c[..], &mut [], MsgFlags::empty(), None),
         ];
         thread::park();
         sendmmsg(so, &mut msgs[..]).unwrap();
@@ -1020,6 +1014,7 @@ pub fn test_mmsg() {
         &SocketAddr::from_str("127.0.0.1:3456").unwrap(),
     ));
     bind(so, &sockaddr).unwrap();
+    setsockopt(so, Ipv4PacketInfo, &true).expect("setsockopt failed");
     sender.thread().unpark();
     // this is not the proper way to coordinate with the sender thread!
     thread::sleep(time::Duration::from_millis(200));
@@ -1042,19 +1037,19 @@ pub fn test_mmsg() {
     let mut iov_b = [IoVec::from_mut_slice(&mut b[..])];
     let mut iov_c = [IoVec::from_mut_slice(&mut c[..])];
     let mut msgs = [
-        MMsgHdr::new(
+        RecvMMsgHdr::new(
             &mut iov_a[..],
             Some(&mut cmsg_a),
             MsgFlags::empty(),
             Some(&mut sockaddr_a),
         ),
-        MMsgHdr::new(
+        RecvMMsgHdr::new(
             &mut iov_b[..],
             Some(&mut cmsg_b),
             MsgFlags::empty(),
             Some(&mut sockaddr_b),
         ),
-        MMsgHdr::new(
+        RecvMMsgHdr::new(
             &mut iov_c[..],
             Some(&mut cmsg_c),
             MsgFlags::empty(),

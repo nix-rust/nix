@@ -1355,7 +1355,7 @@ pub fn shutdown(df: RawFd, how: Shutdown) -> Result<()> {
 ))]
 #[repr(C)]
 #[allow(missing_debug_implementations)]
-pub struct MMsgHdr<'a>(libc::mmsghdr, PhantomData<&'a ()>);
+pub struct SendMMsgHdr<'a>(libc::mmsghdr, PhantomData<&'a ()>);
 
 #[cfg(any(
     target_os = "android",
@@ -1363,11 +1363,108 @@ pub struct MMsgHdr<'a>(libc::mmsghdr, PhantomData<&'a ()>);
     target_os = "freebsd",
     target_os = "netbsd",
 ))]
-impl<'a> MMsgHdr<'a> {
+impl<'a> SendMMsgHdr<'a> {
+    pub fn new(iov: &mut[IoVec<&'a mut [u8]>],
+                  cmsgs: &[ControlMessage<'a>],
+                  flags: MsgFlags,
+                  addr: Option<&'a mut SockAddr>) -> SendMMsgHdr<'a> {
+        let (name, namelen) = match addr {
+            Some(addr) => {
+                let (x, y) = unsafe { addr.as_ffi_pair_mut() };
+                (unsafe { mem::transmute(x) }, y)
+            },
+            None => (ptr::null_mut(), 0),
+        };
+        let mut capacity = 0;
+        for cmsg in cmsgs {
+            capacity += cmsg.space();
+        }
+        // Note that the resulting vector claims to have length == capacity,
+        // so it's presently uninitialized.
+        let mut cmsg_buffer = unsafe {
+            let mut vec = Vec::<u8>::with_capacity(capacity);
+            vec.set_len(capacity);
+            vec
+        };
+        {
+            let mut ofs = 0;
+            for cmsg in cmsgs {
+                let ptr = &mut cmsg_buffer[ofs..];
+                unsafe {
+                    cmsg.encode_into(ptr);
+                }
+                ofs += cmsg.space();
+            }
+        }
+
+        let cmsg_ptr = if capacity > 0 {
+            cmsg_buffer.as_mut_ptr() as *mut c_void
+        } else {
+            ptr::null_mut()
+        };
+        let mut hdr: libc::mmsghdr = unsafe { mem::uninitialized() };
+        hdr.msg_hdr.msg_control = cmsg_ptr;
+        hdr.msg_hdr.msg_controllen = capacity;
+        hdr.msg_hdr.msg_flags = flags.bits();
+        hdr.msg_hdr.msg_iov = iov.as_ptr() as *mut libc::iovec;
+        hdr.msg_hdr.msg_iovlen = iov.len() as _;
+        hdr.msg_hdr.msg_name = name;
+        hdr.msg_hdr.msg_namelen = namelen;
+        hdr.msg_len = 0;
+        SendMMsgHdr(hdr, PhantomData)
+    }
+
+    /// The number of bytes actually transferred, after a call to `sendmmsg()` or `recvmmsg()`.
+    pub fn msg_len(&self) -> usize {
+        self.0.msg_len as usize
+    }
+
+    pub fn address(&self) -> Result<SockAddr> {
+        unsafe { sockaddr_storage_to_addr(mem::transmute(self.0.msg_hdr.msg_name),
+                                          self.0.msg_hdr.msg_namelen as usize) }
+    }
+
+    pub fn cmsgs(&self) -> CmsgIterator {
+        CmsgIterator {
+            buf: if self.0.msg_hdr.msg_controllen > 0 {
+                // got control message(s)
+                debug_assert!(!self.0.msg_hdr.msg_control.is_null());
+                unsafe {
+                    // Safe: The pointer is not null and the length is correct as part of `recvmsg`s
+                    // contract.
+                    slice::from_raw_parts(self.0.msg_hdr.msg_control as *const u8,
+                                          self.0.msg_hdr.msg_controllen as usize)
+                }
+            } else {
+                // No control message, create an empty buffer to avoid creating a slice from a null
+                // pointer
+                &[]
+            }
+        }
+    }
+}
+
+#[cfg(any(
+    target_os = "android",
+    target_os = "linux",
+    target_os = "freebsd",
+    target_os = "netbsd",
+))]
+#[repr(C)]
+#[allow(missing_debug_implementations)]
+pub struct RecvMMsgHdr<'a>(libc::mmsghdr, PhantomData<&'a ()>);
+
+#[cfg(any(
+    target_os = "android",
+    target_os = "linux",
+    target_os = "freebsd",
+    target_os = "netbsd",
+))]
+impl<'a> RecvMMsgHdr<'a> {
     pub fn new<T>(iov: &mut[IoVec<&'a mut [u8]>],
                   cmsg_buffer: Option<&'a mut CmsgSpace<T>>,
                   flags: MsgFlags,
-                  addr: Option<&'a mut SockAddr>) -> MMsgHdr<'a> {
+                  addr: Option<&'a mut SockAddr>) -> RecvMMsgHdr<'a> {
         let (name, namelen) = match addr {
             Some(addr) => {
                 let (x, y) = unsafe { addr.as_ffi_pair_mut() };
@@ -1388,7 +1485,7 @@ impl<'a> MMsgHdr<'a> {
         hdr.msg_hdr.msg_name = name;
         hdr.msg_hdr.msg_namelen = namelen;
         hdr.msg_len = 0;
-        MMsgHdr(hdr, PhantomData)
+        RecvMMsgHdr(hdr, PhantomData)
     }
 
     /// The number of bytes actually transferred, after a call to `sendmmsg()` or `recvmmsg()`.
@@ -1428,7 +1525,7 @@ impl<'a> MMsgHdr<'a> {
     target_os = "freebsd",
     target_os = "netbsd",
 ))]
-pub fn recvmmsg(fd: RawFd, msgvec: &mut[MMsgHdr],
+pub fn recvmmsg(fd: RawFd, msgvec: &mut[RecvMMsgHdr],
                 flags: MsgFlags,
                 mut timeout: Option<TimeSpec>) -> Result<usize> {
     let tptr = match timeout {
@@ -1454,7 +1551,7 @@ pub fn recvmmsg(fd: RawFd, msgvec: &mut[MMsgHdr],
     target_os = "freebsd",
     target_os = "netbsd",
 ))]
-pub fn sendmmsg(fd: RawFd, msgvec: &mut[MMsgHdr]) -> Result<usize> {
+pub fn sendmmsg(fd: RawFd, msgvec: &mut[SendMMsgHdr]) -> Result<usize> {
     let ret = unsafe {
         libc::sendmmsg(
             fd,
