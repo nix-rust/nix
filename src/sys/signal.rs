@@ -872,11 +872,13 @@ impl SigStack {
     /// }
     /// ```
     pub fn from_raw(sp: *mut libc::c_void, flags: SigStackFlags, size: libc::size_t) -> SigStack {
-        let mut st = unsafe { mem::uninitialized::<libc::stack_t>() };
-        st.ss_sp = sp;
-        st.ss_flags = flags.bits();
-        st.ss_size = size;
-        SigStack { stack: st }
+        SigStack {
+            stack: libc::stack_t {
+                ss_sp: sp,
+                ss_flags: flags.bits(),
+                ss_size: size,
+            },
+        }
     }
 
     /// Define an alternate signal stack for use with `sigaction` using a mutable byte slice.
@@ -899,11 +901,13 @@ impl SigStack {
     /// drop(stack_mem);
     /// ```
     pub fn from_slice(stack: &mut [u8], flags: SigStackFlags) -> SigStack {
-        let mut st = unsafe { mem::uninitialized::<libc::stack_t>() };
-        st.ss_sp = stack.as_mut_ptr() as *mut libc::c_void;
-        st.ss_flags = flags.bits();
-        st.ss_size = stack.len();
-        SigStack { stack: st }
+        SigStack {
+            stack: libc::stack_t {
+                ss_sp: stack.as_mut_ptr() as *mut libc::c_void,
+                ss_flags: flags.bits(),
+                ss_size: stack.len(),
+            },
+        }
     }
 
     pub fn flags(&self) -> SigStackFlags {
