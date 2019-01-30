@@ -333,7 +333,10 @@ pub fn getpgrp() -> Pid {
 ///
 /// No error handling is required as a thread id should always exist for any
 /// process, even if threads are not being used.
-#[cfg(any(target_os = "linux", target_os = "android"))]
+#[cfg(any(any(target_os = "linux", target_os = "android"),
+          all(feature = "nightly-docs", rustdoc)))]
+#[cfg_attr(feature = "nightly-docs",
+  doc(cfg(any(target_os = "linux", target_os = "android"))))]
 #[inline]
 pub fn gettid() -> Pid {
     Pid(unsafe { libc::syscall(libc::SYS_gettid) as pid_t })
@@ -763,9 +766,14 @@ pub fn execvpe(filename: &CString, args: &[CString], env: &[CString]) -> Result<
 // Note for NetBSD and OpenBSD: although rust-lang/libc includes it (under
 // unix/bsd/netbsdlike/) fexecve is not currently implemented on NetBSD nor on
 // OpenBSD.
-#[cfg(any(target_os = "android",
-          target_os = "linux",
-          target_os = "freebsd"))]
+#[cfg(any(any(target_os = "android",
+              target_os = "linux",
+              target_os = "freebsd"),
+          all(feature = "nightly-docs", rustdoc)))]
+#[cfg_attr(feature = "nightly-docs",
+  doc(cfg(any(target_os = "android",
+              target_os = "linux",
+              target_os = "freebsd"))))]
 #[inline]
 pub fn fexecve(fd: RawFd, args: &[CString], env: &[CString]) -> Result<Void> {
     let args_p = to_exec_array(args);

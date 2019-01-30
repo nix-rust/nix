@@ -44,6 +44,20 @@ macro_rules! ioc {
 /// ioctl_write_int_bad!(kvm_create_vm, request_code_none!(KVMIO, 0x03));
 /// # fn main() {}
 /// ```
+#[cfg(any(target_os = "dragonfly",
+          target_os = "freebsd",
+          target_os = "ios",
+          target_os = "macos",
+          target_os = "netbsd",
+          target_os = "openbsd",
+          all(feature = "nightly-docs", rustdoc)))]
+#[cfg_attr(feature = "nightly-docs",
+  doc(cfg(any(target_os = "dragonfly",
+              target_os = "freebsd",
+              target_os = "ios",
+              target_os = "macos",
+              target_os = "netbsd",
+              target_os = "openbsd"))))]
 #[macro_export]
 macro_rules! request_code_none {
     ($g:expr, $n:expr) => (ioc!($crate::sys::ioctl::VOID, $g, $n, 0))

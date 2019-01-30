@@ -14,6 +14,7 @@
 #![deny(unstable_features)]
 #![deny(missing_copy_implementations)]
 #![deny(missing_debug_implementations)]
+#![cfg_attr(feature = "nightly-docs", feature(doc_cfg))]
 
 // External crates
 #[macro_use]
@@ -67,8 +68,12 @@ pub mod sched;
 pub mod sys;
 // This can be implemented for other platforms as soon as libc
 // provides bindings for them.
-#[cfg(all(target_os = "linux",
-          any(target_arch = "x86", target_arch = "x86_64")))]
+#[cfg(any(all(target_os = "linux",
+              any(target_arch = "x86", target_arch = "x86_64")),
+          all(feature = "nightly-docs", rustdoc)))]
+#[cfg_attr(feature = "nightly-docs",
+  doc(cfg(all(target_os = "linux",
+              any(target_arch = "x86", target_arch = "x86_64")))))]
 pub mod ucontext;
 pub mod unistd;
 

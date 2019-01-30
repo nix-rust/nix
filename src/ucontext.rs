@@ -9,11 +9,16 @@ use sys::signal::SigSet;
 #[derive(Clone, Copy)]
 #[allow(missing_debug_implementations)]
 pub struct UContext {
+    #[cfg(all(target_os = "linux",
+              any(target_arch = "x86", target_arch = "x86_64")))]
     context: libc::ucontext_t,
 }
 
 impl UContext {
-    #[cfg(not(target_env = "musl"))]
+    #[cfg(any(not(target_env = "musl"),
+          all(feature = "nightly-docs", rustdoc)))]
+    #[cfg_attr(feature = "nightly-docs",
+      doc(cfg(not(target_env = "musl"))))]
     pub fn get() -> Result<UContext> {
         let mut context: libc::ucontext_t = unsafe { mem::uninitialized() };
         let res = unsafe {
@@ -22,7 +27,10 @@ impl UContext {
         Errno::result(res).map(|_| UContext { context: context })
     }
 
-    #[cfg(not(target_env = "musl"))]
+    #[cfg(any(not(target_env = "musl"),
+          all(feature = "nightly-docs", rustdoc)))]
+    #[cfg_attr(feature = "nightly-docs",
+      doc(cfg(not(target_env = "musl"))))]
     pub fn set(&self) -> Result<()> {
         let res = unsafe {
             libc::setcontext(&self.context as *const libc::ucontext_t)

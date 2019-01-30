@@ -15,6 +15,13 @@ exclude     = [
   "/bors.toml"
 ]
 
+[package.metadata.docs.rs]
+features = ["nightly-docs"]
+
+[features]
+# For building documentation only; no functional change to the library.
+nightly-docs = []
+
 [dependencies]
 libc = { git = "https://github.com/rust-lang/libc" }
 bitflags = "1.0"

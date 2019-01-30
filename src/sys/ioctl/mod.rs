@@ -233,7 +233,15 @@ pub use self::linux::*;
           target_os = "ios",
           target_os = "macos",
           target_os = "netbsd",
-          target_os = "openbsd"))]
+          target_os = "openbsd",
+          all(feature = "nightly-docs", rustdoc)))]
+#[cfg_attr(feature = "nightly-docs",
+  doc(cfg(any(target_os = "dragonfly",
+              target_os = "freebsd",
+              target_os = "ios",
+              target_os = "macos",
+              target_os = "netbsd",
+              target_os = "openbsd"))))]
 #[macro_use]
 mod bsd;
 
