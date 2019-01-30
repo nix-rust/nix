@@ -9,7 +9,25 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#1002](https://github.com/nix-rust/nix/pull/1002))
 ### Changed
 - `PollFd` event flags renamed to `PollFlags` ([#1024](https://github.com/nix-rust/nix/pull/1024/))
+- `recvmsg` now returns an Iterator over `ControlMessageOwned` objects rather
+  than `ControlMessage` objects.  This is sadly not backwards-compatible.  Fix
+  code like this:
+  ```rust
+  if let ControlMessage::ScmRights(&fds) = cmsg {
+  ```
+
+  By replacing it with code like this:
+  ```rust
+  if let ControlMessageOwned::ScmRights(fds) = cmsg {
+  ```
+  ([#1020](https://github.com/nix-rust/nix/pull/1020))
+- Replaced `CmsgSpace` with the `cmsg_space` macro.
+  ([#1020](https://github.com/nix-rust/nix/pull/1020))
+
 ### Fixed
+- Fixed multiple bugs when using `sendmsg` and `recvmsg` with ancillary control messages
+  ([#1020](https://github.com/nix-rust/nix/pull/1020))
+
 ### Removed
 
 ## [0.13.0] - 2019-01-15
