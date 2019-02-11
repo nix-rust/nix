@@ -8,6 +8,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Add IP_RECVIF & IP_RECVDSTADDR. Enable IP_PKTINFO and IP6_PKTINFO on netbsd/openbsd.
   ([#1002](https://github.com/nix-rust/nix/pull/1002))
 ### Changed
+- `PollFd` event flags renamed to `PollFlags` ([#1024](https://github.com/nix-rust/nix/pull/1024/))
 ### Fixed
 ### Removed
 

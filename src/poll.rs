@@ -27,19 +27,19 @@ pub struct PollFd {
 impl PollFd {
     /// Creates a new `PollFd` specifying the events of interest
     /// for a given file descriptor.
-    pub fn new(fd: RawFd, events: EventFlags) -> PollFd {
+    pub fn new(fd: RawFd, events: PollFlags) -> PollFd {
         PollFd {
             pollfd: libc::pollfd {
                 fd: fd,
                 events: events.bits(),
-                revents: EventFlags::empty().bits(),
+                revents: PollFlags::empty().bits(),
             },
         }
     }
 
     /// Returns the events that occured in the last call to `poll` or `ppoll`.
-    pub fn revents(&self) -> Option<EventFlags> {
-        EventFlags::from_bits(self.pollfd.revents)
+    pub fn revents(&self) -> Option<PollFlags> {
+        PollFlags::from_bits(self.pollfd.revents)
     }
 }
 
@@ -48,11 +48,11 @@ impl fmt::Debug for PollFd {
         let pfd = self.pollfd;
         let mut ds = f.debug_struct("PollFd");
         ds.field("fd", &pfd.fd);
-        match EventFlags::from_bits(pfd.events) {
+        match PollFlags::from_bits(pfd.events) {
             None => ds.field("events", &pfd.events),
             Some(ef) => ds.field("events", &ef),
         };
-        match EventFlags::from_bits(pfd.revents) {
+        match PollFlags::from_bits(pfd.revents) {
             None => ds.field("revents", &pfd.revents),
             Some(ef) => ds.field("revents", &ef),
         };
@@ -62,7 +62,7 @@ impl fmt::Debug for PollFd {
 
 libc_bitflags! {
     /// These flags define the different events that can be monitored by `poll` and `ppoll`
-    pub struct EventFlags: libc::c_short {
+    pub struct PollFlags: libc::c_short {
         /// There is data to read.
         POLLIN;
         /// There is some exceptional condition on the file descriptor.
