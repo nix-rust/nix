@@ -141,7 +141,7 @@ pub fn test_scm_rights() {
     use nix::unistd::{pipe, read, write, close};
     use nix::sys::socket::{socketpair, sendmsg, recvmsg,
                            AddressFamily, SockType, SockFlag,
-                           ControlMessage, MsgFlags};
+                           ControlMessage, ControlMessageOwned, MsgFlags};
 
     let (fd1, fd2) = socketpair(AddressFamily::Unix, SockType::Stream, None, SockFlag::empty())
                      .unwrap();
@@ -164,7 +164,7 @@ pub fn test_scm_rights() {
         let msg = recvmsg(fd2, &iov, Some(&mut cmsgspace), MsgFlags::empty()).unwrap();
 
         for cmsg in msg.cmsgs() {
-            if let ControlMessage::ScmRights(fd) = cmsg {
+            if let ControlMessageOwned::ScmRights(fd) = cmsg {
                 assert_eq!(received_r, None);
                 assert_eq!(fd.len(), 1);
                 received_r = Some(fd[0]);
@@ -195,7 +195,7 @@ fn test_scm_rights_single_cmsg_multiple_fds() {
     use std::os::unix::net::UnixDatagram;
     use std::os::unix::io::{RawFd, AsRawFd};
     use std::thread;
-    use nix::sys::socket::{ControlMessage, MsgFlags,
+    use nix::sys::socket::{ControlMessage, ControlMessageOwned, MsgFlags,
         sendmsg, recvmsg};
     use nix::sys::uio::IoVec;
     use libc;
@@ -215,7 +215,7 @@ fn test_scm_rights_single_cmsg_multiple_fds() {
 
         let mut cmsgs = msg.cmsgs();
         match cmsgs.next() {
-            Some(ControlMessage::ScmRights(fds)) => {
+            Some(ControlMessageOwned::ScmRights(fds)) => {
                 assert_eq!(fds.len(), 2,
                            "unexpected fd count (expected 2 fds, got {})",
                            fds.len());
@@ -277,7 +277,7 @@ fn test_scm_credentials() {
     use nix::unistd::{close, getpid, getuid, getgid};
     use nix::sys::socket::{socketpair, sendmsg, recvmsg, setsockopt,
                            AddressFamily, SockType, SockFlag,
-                           ControlMessage, MsgFlags};
+                           ControlMessage, ControlMessageOwned, MsgFlags};
     use nix::sys::socket::sockopt::PassCred;
 
     let (send, recv) = socketpair(AddressFamily::Unix, SockType::Stream, None, SockFlag::empty())
@@ -304,7 +304,7 @@ fn test_scm_credentials() {
         let mut received_cred = None;
 
         for cmsg in msg.cmsgs() {
-            if let ControlMessage::ScmCredentials(cred) = cmsg {
+            if let ControlMessageOwned::ScmCredentials(cred) = cmsg {
                 assert!(received_cred.is_none());
                 assert_eq!(cred.pid, getpid().as_raw());
                 assert_eq!(cred.uid, getuid().as_raw());
@@ -353,7 +353,7 @@ fn test_impl_scm_credentials_and_rights(mut space: Vec<u8>) {
     use nix::unistd::{pipe, read, write, close, getpid, getuid, getgid};
     use nix::sys::socket::{socketpair, sendmsg, recvmsg, setsockopt,
                            AddressFamily, SockType, SockFlag,
-                           ControlMessage, MsgFlags};
+                           ControlMessage, ControlMessageOwned, MsgFlags};
     use nix::sys::socket::sockopt::PassCred;
 
     let (send, recv) = socketpair(AddressFamily::Unix, SockType::Stream, None, SockFlag::empty())
@@ -390,17 +390,17 @@ fn test_impl_scm_credentials_and_rights(mut space: Vec<u8>) {
 
         for cmsg in msg.cmsgs() {
             match cmsg {
-                ControlMessage::ScmRights(fds) => {
+                ControlMessageOwned::ScmRights(fds) => {
                     assert_eq!(received_r, None, "already received fd");
                     assert_eq!(fds.len(), 1);
                     received_r = Some(fds[0]);
                 }
-                ControlMessage::ScmCredentials(cred) => {
+                ControlMessageOwned::ScmCredentials(cred) => {
                     assert!(received_cred.is_none());
                     assert_eq!(cred.pid, getpid().as_raw());
                     assert_eq!(cred.uid, getuid().as_raw());
                     assert_eq!(cred.gid, getgid().as_raw());
-                    received_cred = Some(*cred);
+                    received_cred = Some(cred);
                 }
                 _ => panic!("unexpected cmsg"),
             }
@@ -542,7 +542,7 @@ pub fn test_recv_ipv4pktinfo() {
     use nix::sys::socket::sockopt::Ipv4PacketInfo;
     use nix::sys::socket::{bind, SockFlag, SockType};
     use nix::sys::socket::{getsockname, setsockopt, socket};
-    use nix::sys::socket::{recvmsg, sendmsg, ControlMessage, MsgFlags};
+    use nix::sys::socket::{recvmsg, sendmsg, ControlMessageOwned, MsgFlags};
     use nix::sys::uio::IoVec;
     use nix::net::if_::*;
 
@@ -592,7 +592,7 @@ pub fn test_recv_ipv4pktinfo() {
 
         let mut cmsgs = msg.cmsgs();
         match cmsgs.next() {
-            Some(ControlMessage::Ipv4PacketInfo(pktinfo)) => {
+            Some(ControlMessageOwned::Ipv4PacketInfo(pktinfo)) => {
                 let i = if_nametoindex(lo_name.as_bytes()).expect("if_nametoindex");
                 assert_eq!(
                     pktinfo.ipi_ifindex as libc::c_uint,
@@ -632,7 +632,7 @@ pub fn test_recvif() {
     use nix::sys::socket::sockopt::{Ipv4RecvIf, Ipv4RecvDstAddr};
     use nix::sys::socket::{bind, SockFlag, SockType};
     use nix::sys::socket::{getsockname, setsockopt, socket, SockAddr};
-    use nix::sys::socket::{recvmsg, sendmsg, ControlMessage, MsgFlags};
+    use nix::sys::socket::{recvmsg, sendmsg, ControlMessageOwned, MsgFlags};
     use nix::sys::uio::IoVec;
 
     let lo_ifaddr = loopback_address(AddressFamily::Inet);
@@ -685,7 +685,7 @@ pub fn test_recvif() {
         let mut rx_recvdstaddr = false;
         for cmsg in msg.cmsgs() {
             match cmsg {
-                ControlMessage::Ipv4RecvIf(dl) => {
+                ControlMessageOwned::Ipv4RecvIf(dl) => {
                     rx_recvif = true;
                     let i = if_nametoindex(lo_name.as_bytes()).expect("if_nametoindex");
                     assert_eq!(
@@ -696,7 +696,7 @@ pub fn test_recvif() {
                         dl.sdl_index
                     );
                 },
-                ControlMessage::Ipv4RecvDstAddr(addr) => {
+                ControlMessageOwned::Ipv4RecvDstAddr(addr) => {
                     rx_recvdstaddr = true;
                     if let SockAddr::Inet(InetAddr::V4(a)) = lo {
                         assert_eq!(a.sin_addr.s_addr,
@@ -742,7 +742,7 @@ pub fn test_recv_ipv6pktinfo() {
     use nix::sys::socket::sockopt::Ipv6RecvPacketInfo;
     use nix::sys::socket::{bind, AddressFamily, SockFlag, SockType};
     use nix::sys::socket::{getsockname, setsockopt, socket};
-    use nix::sys::socket::{recvmsg, sendmsg, ControlMessage, MsgFlags};
+    use nix::sys::socket::{recvmsg, sendmsg, ControlMessageOwned, MsgFlags};
     use nix::sys::uio::IoVec;
 
     let lo_ifaddr = loopback_address(AddressFamily::Inet6);
@@ -791,7 +791,7 @@ pub fn test_recv_ipv6pktinfo() {
 
         let mut cmsgs = msg.cmsgs();
         match cmsgs.next() {
-            Some(ControlMessage::Ipv6PacketInfo(pktinfo)) => {
+            Some(ControlMessageOwned::Ipv6PacketInfo(pktinfo)) => {
                 let i = if_nametoindex(lo_name.as_bytes()).expect("if_nametoindex");
                 assert_eq!(
                     pktinfo.ipi6_ifindex,
