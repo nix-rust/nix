@@ -3,7 +3,8 @@
 //! [Further reading](http://man7.org/linux/man-pages/man7/socket.7.html)
 use {Error, Result};
 use errno::Errno;
-use libc::{self, c_void, c_int, iovec, socklen_t, size_t};
+use libc::{self, c_void, c_int, iovec, socklen_t, size_t,
+        CMSG_FIRSTHDR, CMSG_NXTHDR, CMSG_DATA, CMSG_LEN};
 use std::{fmt, mem, ptr, slice};
 use std::os::unix::io::RawFd;
 use sys::time::TimeVal;
@@ -32,11 +33,6 @@ pub use self::addr::{
 pub use ::sys::socket::addr::netlink::NetlinkAddr;
 
 pub use libc::{
-    CMSG_FIRSTHDR,
-    CMSG_NXTHDR,
-    CMSG_DATA,
-    CMSG_SPACE,
-    CMSG_LEN,
     cmsghdr,
     msghdr,
     sa_family_t,
@@ -46,6 +42,10 @@ pub use libc::{
     sockaddr_storage,
     sockaddr_un,
 };
+
+// Needed by the cmsg_space macro
+#[doc(hidden)]
+pub use libc::{c_uint, CMSG_SPACE};
 
 /// These constants are used to specify the communication semantics
 /// when creating a socket with [`socket()`](fn.socket.html)
@@ -317,6 +317,55 @@ cfg_if! {
     }
 }
 
+/// A type that can be used to store ancillary data received by
+/// [`recvmsg`](fn.recvmsg.html)
+pub trait CmsgBuffer {
+    fn as_bytes_mut(&mut self) -> &mut [u8];
+}
+
+/// Create a buffer large enough for storing some control messages as returned
+/// by [`recvmsg`](fn.recvmsg.html).
+///
+/// # Examples
+///
+/// ```
+/// # #[macro_use] extern crate nix;
+/// # use nix::sys::time::TimeVal;
+/// # use std::os::unix::io::RawFd;
+/// # fn main() {
+/// // Create a buffer for a `ControlMessage::ScmTimestamp` message
+/// let _ = cmsg_space!(TimeVal);
+/// // Create a buffer big enough for a `ControlMessage::ScmRights` message
+/// // with two file descriptors
+/// let _ = cmsg_space!([RawFd; 2]);
+/// // Create a buffer big enough for a `ControlMessage::ScmRights` message
+/// // and a `ControlMessage::ScmTimestamp` message
+/// let _ = cmsg_space!(RawFd, TimeVal);
+/// # }
+/// ```
+// Unfortunately, CMSG_SPACE isn't a const_fn, or else we could return a
+// stack-allocated array.
+#[macro_export]
+macro_rules! cmsg_space {
+    ( $( $x:ty ),* ) => {
+        {
+            use nix::sys::socket::{c_uint, CMSG_SPACE};
+            use std::mem;
+            let mut space = 0;
+            $(
+                // CMSG_SPACE is always safe
+                space += unsafe {
+                    CMSG_SPACE(mem::size_of::<$x>() as c_uint)
+                } as usize;
+            )*
+            let mut v = Vec::<u8>::with_capacity(space);
+            // safe because any bit pattern is a valid u8
+            unsafe {v.set_len(space)};
+            v
+        }
+    }
+}
+
 /// A structure used to make room in a cmsghdr passed to recvmsg. The
 /// size and alignment match that of a cmsghdr followed by a T, but the
 /// fields are not accessible, as the actual types will change on a call
@@ -341,9 +390,26 @@ pub struct CmsgSpace<T> {
 impl<T> CmsgSpace<T> {
     /// Create a CmsgSpace<T>. The structure is used only for space, so
     /// the fields are uninitialized.
+    #[deprecated( since="0.14.0", note="Use the cmsg_space! macro instead")]
     pub fn new() -> Self {
         // Safe because the fields themselves aren't accessible.
         unsafe { mem::uninitialized() }
+    }
+}
+
+impl<T> CmsgBuffer for CmsgSpace<T> {
+    fn as_bytes_mut(&mut self) -> &mut [u8] {
+        // Safe because nothing ever attempts to access CmsgSpace's fields
+        unsafe {
+            slice::from_raw_parts_mut(self as *mut CmsgSpace<T> as *mut u8,
+                                      mem::size_of::<Self>())
+        }
+    }
+}
+
+impl CmsgBuffer for Vec<u8> {
+    fn as_bytes_mut(&mut self) -> &mut [u8] {
+        &mut self[..]
     }
 }
 
@@ -437,11 +503,12 @@ pub enum ControlMessage<'a> {
     // https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=222039
     #[cfg_attr(not(all(target_os = "freebsd", target_arch = "x86")), doc = " ```")]
     #[cfg_attr(all(target_os = "freebsd", target_arch = "x86"), doc = " ```no_run")]
-    /// use nix::sys::socket::*;
-    /// use nix::sys::uio::IoVec;
-    /// use nix::sys::time::*;
-    /// use std::time::*;
-    ///
+    /// # #[macro_use] extern crate nix;
+    /// # use nix::sys::socket::*;
+    /// # use nix::sys::uio::IoVec;
+    /// # use nix::sys::time::*;
+    /// # use std::time::*;
+    /// # fn main() {
     /// // Set up
     /// let message = "Ohayō!".as_bytes();
     /// let in_socket = socket(
@@ -462,11 +529,11 @@ pub enum ControlMessage<'a> {
     /// assert_eq!(message.len(), l);
     /// // Receive the message
     /// let mut buffer = vec![0u8; message.len()];
-    /// let mut cmsgspace: CmsgSpace<TimeVal> = CmsgSpace::new();
+    /// let mut cmsgspace = cmsg_space!(TimeVal);
     /// let iov = [IoVec::from_mut_slice(&mut buffer)];
     /// let r = recvmsg(in_socket, &iov, Some(&mut cmsgspace), flags).unwrap();
     /// let rtime = match r.cmsgs().next() {
-    ///     Some(ControlMessage::ScmTimestamp(&rtime)) => rtime,
+    ///     Some(ControlMessage::ScmTimestamp(rtime)) => rtime,
     ///     Some(_) => panic!("Unexpected control message"),
     ///     None => panic!("No control message")
     /// };
@@ -480,9 +547,9 @@ pub enum ControlMessage<'a> {
     /// assert!(rduration <= time1.duration_since(UNIX_EPOCH).unwrap());
     /// // Close socket
     /// nix::unistd::close(in_socket).unwrap();
+    /// # }
     /// ```
     ScmTimestamp(&'a TimeVal),
-
     #[cfg(any(
         target_os = "android",
         target_os = "ios",
@@ -903,13 +970,16 @@ pub fn sendmsg(fd: RawFd, iov: &[IoVec<&[u8]>], cmsgs: &[ControlMessage],
 ///
 /// # References
 /// [recvmsg(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/recvmsg.html)
-pub fn recvmsg<'a, T>(fd: RawFd, iov: &[IoVec<&mut [u8]>],
-                      cmsg_buffer: Option<&'a mut CmsgSpace<T>>,
-                      flags: MsgFlags) -> Result<RecvMsg<'a>>
+pub fn recvmsg<'a>(fd: RawFd, iov: &[IoVec<&mut [u8]>],
+                   cmsg_buffer: Option<&'a mut CmsgBuffer>,
+                   flags: MsgFlags) -> Result<RecvMsg<'a>>
 {
     let mut address: sockaddr_storage = unsafe { mem::uninitialized() };
     let (msg_control, msg_controllen) = match cmsg_buffer {
-        Some(cmsg_buffer) => (cmsg_buffer as *mut _, mem::size_of_val(cmsg_buffer)),
+        Some(cmsgspace) => {
+            let msg_buf = cmsgspace.as_bytes_mut();
+            (msg_buf.as_mut_ptr(), msg_buf.len())
+        },
         None => (ptr::null_mut(), 0),
     };
     let mut mhdr = {

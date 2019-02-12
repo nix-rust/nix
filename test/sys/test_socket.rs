@@ -128,17 +128,20 @@ pub fn test_recvmsg_ebadf() {
     let mut buf = [0u8; 5];
     let iov = [IoVec::from_mut_slice(&mut buf[..])];
     let fd = -1;    // Bad file descriptor
-    let r = recvmsg::<()>(fd, &iov, None, MsgFlags::empty());
+    let r = recvmsg(fd, &iov, None, MsgFlags::empty());
     assert_eq!(r.err().unwrap(), Error::Sys(Errno::EBADF));
 }
 
+// Disable the test on emulated platforms due to a bug in QEMU versions <
+// 2.12.0.  https://bugs.launchpad.net/qemu/+bug/1701808
+#[cfg_attr(not(any(target_arch = "x86_64", target_arch="i686")), ignore)]
 #[test]
 pub fn test_scm_rights() {
     use nix::sys::uio::IoVec;
     use nix::unistd::{pipe, read, write, close};
     use nix::sys::socket::{socketpair, sendmsg, recvmsg,
                            AddressFamily, SockType, SockFlag,
-                           ControlMessage, CmsgSpace, MsgFlags};
+                           ControlMessage, MsgFlags};
 
     let (fd1, fd2) = socketpair(AddressFamily::Unix, SockType::Stream, None, SockFlag::empty())
                      .unwrap();
@@ -157,7 +160,7 @@ pub fn test_scm_rights() {
     {
         let mut buf = [0u8; 5];
         let iov = [IoVec::from_mut_slice(&mut buf[..])];
-        let mut cmsgspace: CmsgSpace<[RawFd; 1]> = CmsgSpace::new();
+        let mut cmsgspace = cmsg_space!([RawFd; 1]);
         let msg = recvmsg(fd2, &iov, Some(&mut cmsgspace), MsgFlags::empty()).unwrap();
 
         for cmsg in msg.cmsgs() {
@@ -184,12 +187,16 @@ pub fn test_scm_rights() {
 }
 
 /// Tests that passing multiple fds using a single `ControlMessage` works.
+// Disable the test on emulated platforms due to a bug in QEMU versions <
+// 2.12.0.  https://bugs.launchpad.net/qemu/+bug/1701808
+#[cfg_attr(not(any(target_arch = "x86_64", target_arch="i686")), ignore)]
 #[test]
 fn test_scm_rights_single_cmsg_multiple_fds() {
     use std::os::unix::net::UnixDatagram;
     use std::os::unix::io::{RawFd, AsRawFd};
     use std::thread;
-    use nix::sys::socket::{CmsgSpace, ControlMessage, MsgFlags, sendmsg, recvmsg};
+    use nix::sys::socket::{ControlMessage, MsgFlags,
+        sendmsg, recvmsg};
     use nix::sys::uio::IoVec;
     use libc;
 
@@ -197,7 +204,7 @@ fn test_scm_rights_single_cmsg_multiple_fds() {
     let thread = thread::spawn(move || {
         let mut buf = [0u8; 8];
         let iovec = [IoVec::from_mut_slice(&mut buf)];
-        let mut space = CmsgSpace::<[RawFd; 2]>::new();
+        let mut space = cmsg_space!([RawFd; 2]);
         let msg = recvmsg(
             receive.as_raw_fd(),
             &iovec,
@@ -237,8 +244,7 @@ pub fn test_sendmsg_empty_cmsgs() {
     use nix::sys::uio::IoVec;
     use nix::unistd::close;
     use nix::sys::socket::{socketpair, sendmsg, recvmsg,
-                           AddressFamily, SockType, SockFlag,
-                           CmsgSpace, MsgFlags};
+                           AddressFamily, SockType, SockFlag, MsgFlags};
 
     let (fd1, fd2) = socketpair(AddressFamily::Unix, SockType::Stream, None, SockFlag::empty())
                      .unwrap();
@@ -252,7 +258,7 @@ pub fn test_sendmsg_empty_cmsgs() {
     {
         let mut buf = [0u8; 5];
         let iov = [IoVec::from_mut_slice(&mut buf[..])];
-        let mut cmsgspace: CmsgSpace<[RawFd; 1]> = CmsgSpace::new();
+        let mut cmsgspace = cmsg_space!([RawFd; 1]);
         let msg = recvmsg(fd2, &iov, Some(&mut cmsgspace), MsgFlags::empty()).unwrap();
 
         for _ in msg.cmsgs() {
@@ -271,7 +277,7 @@ fn test_scm_credentials() {
     use nix::unistd::{close, getpid, getuid, getgid};
     use nix::sys::socket::{socketpair, sendmsg, recvmsg, setsockopt,
                            AddressFamily, SockType, SockFlag,
-                           ControlMessage, CmsgSpace, MsgFlags};
+                           ControlMessage, MsgFlags};
     use nix::sys::socket::sockopt::PassCred;
 
     let (send, recv) = socketpair(AddressFamily::Unix, SockType::Stream, None, SockFlag::empty())
@@ -293,7 +299,7 @@ fn test_scm_credentials() {
     {
         let mut buf = [0u8; 5];
         let iov = [IoVec::from_mut_slice(&mut buf[..])];
-        let mut cmsgspace: CmsgSpace<libc::ucred> = CmsgSpace::new();
+        let mut cmsgspace = cmsg_space!(libc::ucred);
         let msg = recvmsg(recv, &iov, Some(&mut cmsgspace), MsgFlags::empty()).unwrap();
         let mut received_cred = None;
 
@@ -303,7 +309,7 @@ fn test_scm_credentials() {
                 assert_eq!(cred.pid, getpid().as_raw());
                 assert_eq!(cred.uid, getuid().as_raw());
                 assert_eq!(cred.gid, getgid().as_raw());
-                received_cred = Some(*cred);
+                received_cred = Some(cred);
             } else {
                 panic!("unexpected cmsg");
             }
@@ -322,27 +328,26 @@ fn test_scm_credentials() {
 #[cfg_attr(not(any(target_arch = "x86_64", target_arch = "x86")), ignore)]
 #[test]
 fn test_scm_credentials_and_rights() {
-    use nix::sys::socket::CmsgSpace;
     use libc;
 
-    test_impl_scm_credentials_and_rights(CmsgSpace::<(libc::ucred, CmsgSpace<RawFd>)>::new());
+    let space = cmsg_space!(libc::ucred, RawFd);
+    test_impl_scm_credentials_and_rights(space);
 }
 
-/// Ensure that passing a `CmsgSpace` with too much space for the received
-/// messages still works.
+/// Ensure that passing a an oversized control message buffer to recvmsg
+/// still works.
 #[cfg(any(target_os = "android", target_os = "linux"))]
 // qemu's handling of multiple cmsgs is bugged, ignore tests on non-x86
 // see https://bugs.launchpad.net/qemu/+bug/1781280
 #[cfg_attr(not(any(target_arch = "x86_64", target_arch = "x86")), ignore)]
 #[test]
 fn test_too_large_cmsgspace() {
-    use nix::sys::socket::CmsgSpace;
-
-    test_impl_scm_credentials_and_rights(CmsgSpace::<[u8; 1024]>::new());
+    let space = vec![0u8; 1024];
+    test_impl_scm_credentials_and_rights(space);
 }
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
-fn test_impl_scm_credentials_and_rights<T>(mut space: ::nix::sys::socket::CmsgSpace<T>) {
+fn test_impl_scm_credentials_and_rights(mut space: Vec<u8>) {
     use libc;
     use nix::sys::uio::IoVec;
     use nix::unistd::{pipe, read, write, close, getpid, getuid, getgid};
@@ -537,7 +542,7 @@ pub fn test_recv_ipv4pktinfo() {
     use nix::sys::socket::sockopt::Ipv4PacketInfo;
     use nix::sys::socket::{bind, SockFlag, SockType};
     use nix::sys::socket::{getsockname, setsockopt, socket};
-    use nix::sys::socket::{recvmsg, sendmsg, CmsgSpace, ControlMessage, MsgFlags};
+    use nix::sys::socket::{recvmsg, sendmsg, ControlMessage, MsgFlags};
     use nix::sys::uio::IoVec;
     use nix::net::if_::*;
 
@@ -573,7 +578,7 @@ pub fn test_recv_ipv4pktinfo() {
     {
         let mut buf = [0u8; 8];
         let iovec = [IoVec::from_mut_slice(&mut buf)];
-        let mut space = CmsgSpace::<libc::in_pktinfo>::new();
+        let mut space = cmsg_space!(libc::in_pktinfo);
         let msg = recvmsg(
             receive,
             &iovec,
@@ -627,7 +632,7 @@ pub fn test_recvif() {
     use nix::sys::socket::sockopt::{Ipv4RecvIf, Ipv4RecvDstAddr};
     use nix::sys::socket::{bind, SockFlag, SockType};
     use nix::sys::socket::{getsockname, setsockopt, socket, SockAddr};
-    use nix::sys::socket::{recvmsg, sendmsg, CmsgSpace, ControlMessage, MsgFlags};
+    use nix::sys::socket::{recvmsg, sendmsg, ControlMessage, MsgFlags};
     use nix::sys::uio::IoVec;
 
     let lo_ifaddr = loopback_address(AddressFamily::Inet);
@@ -663,7 +668,7 @@ pub fn test_recvif() {
     {
         let mut buf = [0u8; 8];
         let iovec = [IoVec::from_mut_slice(&mut buf)];
-        let mut space = CmsgSpace::<(libc::sockaddr_dl, CmsgSpace<libc::in_addr>)>::new();
+        let mut space = cmsg_space!(libc::sockaddr_dl, libc::in_addr);
         let msg = recvmsg(
             receive,
             &iovec,
@@ -737,7 +742,7 @@ pub fn test_recv_ipv6pktinfo() {
     use nix::sys::socket::sockopt::Ipv6RecvPacketInfo;
     use nix::sys::socket::{bind, AddressFamily, SockFlag, SockType};
     use nix::sys::socket::{getsockname, setsockopt, socket};
-    use nix::sys::socket::{recvmsg, sendmsg, CmsgSpace, ControlMessage, MsgFlags};
+    use nix::sys::socket::{recvmsg, sendmsg, ControlMessage, MsgFlags};
     use nix::sys::uio::IoVec;
 
     let lo_ifaddr = loopback_address(AddressFamily::Inet6);
@@ -772,7 +777,7 @@ pub fn test_recv_ipv6pktinfo() {
     {
         let mut buf = [0u8; 8];
         let iovec = [IoVec::from_mut_slice(&mut buf)];
-        let mut space = CmsgSpace::<libc::in6_pktinfo>::new();
+        let mut space = cmsg_space!(libc::in6_pktinfo);
         let msg = recvmsg(
             receive,
             &iovec,
