@@ -1,4 +1,5 @@
 use std::{cmp, fmt, ops};
+use std::convert::From;
 use libc::{c_long, timespec, timeval};
 pub use libc::{time_t, suseconds_t};
 
@@ -464,6 +465,12 @@ impl fmt::Display for TimeVal {
         }
 
         Ok(())
+    }
+}
+
+impl From<timeval> for TimeVal {
+    fn from(tv: timeval) -> Self {
+        TimeVal(tv)
     }
 }
 
