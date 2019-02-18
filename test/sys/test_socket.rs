@@ -186,6 +186,155 @@ pub fn test_scm_rights() {
     close(w).unwrap();
 }
 
+// Disable the test on emulated platforms due to not enabled support of AF_ALG in QEMU from rust cross
+#[cfg_attr(not(any(target_arch = "x86_64", target_arch = "i686")), ignore)]
+#[cfg(any(target_os = "linux", target_os= "android"))]
+#[test]
+pub fn test_af_alg_cipher() {
+    use libc;
+    use nix::sys::uio::IoVec;
+    use nix::unistd::read;
+    use nix::sys::socket::{socket, sendmsg, bind, accept, setsockopt,
+                           AddressFamily, SockType, SockFlag, SockAddr,
+                           ControlMessage, MsgFlags};
+    use nix::sys::socket::sockopt::AlgSetKey;
+
+    let alg_type = "skcipher";
+    let alg_name = "ctr(aes)";
+    // 256-bits secret key
+    let key = vec![0u8; 32];
+    // 16-bytes IV
+    let iv_len = 16;
+    let iv = vec![1u8; iv_len];
+    // 256-bytes plain payload
+    let payload_len = 256;
+    let payload = vec![2u8; payload_len];
+
+    let sock = socket(AddressFamily::Alg, SockType::SeqPacket, SockFlag::empty(), None)
+        .expect("socket failed");
+
+    let sockaddr = SockAddr::new_alg(alg_type, alg_name);
+    bind(sock, &sockaddr).expect("bind failed");
+
+    if let SockAddr::Alg(alg) = sockaddr {
+        assert_eq!(alg.alg_name().to_string_lossy(), alg_name);
+        assert_eq!(alg.alg_type().to_string_lossy(), alg_type);
+    } else {
+        panic!("unexpected SockAddr");
+    }
+
+    setsockopt(sock, AlgSetKey::default(), &key).expect("setsockopt");
+    let session_socket = accept(sock).expect("accept failed");
+
+    let msgs = [ControlMessage::AlgSetOp(&libc::ALG_OP_ENCRYPT), ControlMessage::AlgSetIv(iv.as_slice())];
+    let iov = IoVec::from_slice(&payload);
+    sendmsg(session_socket, &[iov], &msgs, MsgFlags::empty(), None).expect("sendmsg encrypt");
+
+    // allocate buffer for encrypted data
+    let mut encrypted = vec![0u8; payload_len];
+    let num_bytes = read(session_socket, &mut encrypted).expect("read encrypt");
+    assert_eq!(num_bytes, payload_len);
+
+    let iov = IoVec::from_slice(&encrypted);
+
+    let iv = vec![1u8; iv_len];
+
+    let msgs = [ControlMessage::AlgSetOp(&libc::ALG_OP_DECRYPT), ControlMessage::AlgSetIv(iv.as_slice())];
+    sendmsg(session_socket, &[iov], &msgs, MsgFlags::empty(), None).expect("sendmsg decrypt");
+
+    // allocate buffer for decrypted data
+    let mut decrypted = vec![0u8; payload_len];
+    let num_bytes = read(session_socket, &mut decrypted).expect("read decrypt");
+
+    assert_eq!(num_bytes, payload_len);
+    assert_eq!(decrypted, payload);
+}
+
+// Disable the test on emulated platforms due to not enabled support of AF_ALG in QEMU from rust cross
+#[cfg_attr(not(any(target_arch = "x86_64", target_arch = "i686")), ignore)]
+#[cfg(any(target_os = "linux", target_os= "android"))]
+#[test]
+pub fn test_af_alg_aead() {
+    use libc;
+    use nix::sys::uio::IoVec;
+    use nix::unistd::{read, close};
+    use nix::sys::socket::{socket, sendmsg, bind, accept, setsockopt,
+                           AddressFamily, SockType, SockFlag, SockAddr,
+                           ControlMessage, MsgFlags};
+    use nix::sys::socket::sockopt::{AlgSetKey, AlgSetAeadAuthSize};
+
+    let auth_size = 4usize;
+    let assoc_size = 16u32;
+
+    let alg_type = "aead";
+    let alg_name = "gcm(aes)";
+    // 256-bits secret key
+    let key = vec![0u8; 32];
+    // 12-bytes IV
+    let iv_len = 12;
+    let iv = vec![1u8; iv_len];
+    // 256-bytes plain payload
+    let payload_len = 256;
+    let mut payload = vec![2u8; payload_len + (assoc_size as usize) + auth_size];
+
+    for i in 0..assoc_size {
+        payload[i as usize] = 10;
+    }
+
+    let len = payload.len();
+
+    for i in 0..auth_size {
+        payload[len - 1 - i] = 0;
+    }
+
+    let sock = socket(AddressFamily::Alg, SockType::SeqPacket, SockFlag::empty(), None)
+        .expect("socket failed");
+
+    let sockaddr = SockAddr::new_alg(alg_type, alg_name);
+    bind(sock, &sockaddr).expect("bind failed");
+
+    setsockopt(sock, AlgSetAeadAuthSize, &auth_size).expect("setsockopt AlgSetAeadAuthSize");
+    setsockopt(sock, AlgSetKey::default(), &key).expect("setsockopt AlgSetKey");
+    let session_socket = accept(sock).expect("accept failed");
+
+    let msgs = [
+        ControlMessage::AlgSetOp(&libc::ALG_OP_ENCRYPT),
+        ControlMessage::AlgSetIv(iv.as_slice()),
+        ControlMessage::AlgSetAeadAssoclen(&assoc_size)];
+    let iov = IoVec::from_slice(&payload);
+    sendmsg(session_socket, &[iov], &msgs, MsgFlags::empty(), None).expect("sendmsg encrypt");
+
+    // allocate buffer for encrypted data
+    let mut encrypted = vec![0u8; (assoc_size as usize) + payload_len + auth_size];
+    let num_bytes = read(session_socket, &mut encrypted).expect("read encrypt");
+    assert_eq!(num_bytes, payload_len + auth_size + (assoc_size as usize));
+    close(session_socket).expect("close");
+
+    for i in 0..assoc_size {
+        encrypted[i as usize] = 10;
+    }
+
+    let iov = IoVec::from_slice(&encrypted);
+
+    let iv = vec![1u8; iv_len];
+
+    let session_socket = accept(sock).expect("accept failed");
+
+    let msgs = [
+        ControlMessage::AlgSetOp(&libc::ALG_OP_DECRYPT),
+        ControlMessage::AlgSetIv(iv.as_slice()),
+        ControlMessage::AlgSetAeadAssoclen(&assoc_size),
+    ];
+    sendmsg(session_socket, &[iov], &msgs, MsgFlags::empty(), None).expect("sendmsg decrypt");
+
+    // allocate buffer for decrypted data
+    let mut decrypted = vec![0u8; payload_len + (assoc_size as usize) + auth_size];
+    let num_bytes = read(session_socket, &mut decrypted).expect("read decrypt");
+
+    assert!(num_bytes >= payload_len + (assoc_size as usize));
+    assert_eq!(decrypted[(assoc_size as usize)..(payload_len + (assoc_size as usize))], payload[(assoc_size as usize)..payload_len + (assoc_size as usize)]);
+}
+
 /// Tests that passing multiple fds using a single `ControlMessage` works.
 // Disable the test on emulated platforms due to a bug in QEMU versions <
 // 2.12.0.  https://bugs.launchpad.net/qemu/+bug/1701808

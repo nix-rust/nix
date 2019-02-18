@@ -31,6 +31,8 @@ pub use self::addr::{
 };
 #[cfg(any(target_os = "android", target_os = "linux"))]
 pub use ::sys::socket::addr::netlink::NetlinkAddr;
+#[cfg(any(target_os = "android", target_os = "linux"))]
+pub use sys::socket::addr::alg::AlgAddr;
 
 pub use libc::{
     cmsghdr,
@@ -700,6 +702,37 @@ pub enum ControlMessage<'a> {
     // and put that in here instead of a raw ucred.
     #[cfg(any(target_os = "android", target_os = "linux"))]
     ScmCredentials(&'a libc::ucred),
+
+    /// Set IV for `AF_ALG` crypto API.
+    ///
+    /// For further information, please refer to the
+    /// [`documentation`](https://kernel.readthedocs.io/en/sphinx-samples/crypto-API.html)
+    #[cfg(any(
+        target_os = "android",
+        target_os = "linux",
+    ))]
+    AlgSetIv(&'a [u8]),
+    /// Set crypto operation for `AF_ALG` crypto API. It may be one of
+    /// `ALG_OP_ENCRYPT` or `ALG_OP_DECRYPT`
+    ///
+    /// For further information, please refer to the
+    /// [`documentation`](https://kernel.readthedocs.io/en/sphinx-samples/crypto-API.html)
+    #[cfg(any(
+        target_os = "android",
+        target_os = "linux",
+    ))]
+    AlgSetOp(&'a libc::c_int),
+    /// Set the length of associated authentication data (AAD) (applicable only to AEAD algorithms)
+    /// for `AF_ALG` crypto API.
+    ///
+    /// For further information, please refer to the
+    /// [`documentation`](https://kernel.readthedocs.io/en/sphinx-samples/crypto-API.html)
+    #[cfg(any(
+        target_os = "android",
+        target_os = "linux",
+    ))]
+    AlgSetAeadAssoclen(&'a u32),
+
 }
 
 // An opaque structure used to prevent cmsghdr from being a public type
@@ -729,8 +762,8 @@ impl<'a> ControlMessage<'a> {
     }
 
     /// Return a reference to the payload data as a byte pointer
-    fn data(&self) -> *const u8 {
-        match self {
+    fn copy_to_cmsg_data(&self, cmsg_data: *mut u8) {
+        let data_ptr = match self {
             &ControlMessage::ScmRights(fds) => {
                 fds as *const _ as *const u8
             },
@@ -738,7 +771,35 @@ impl<'a> ControlMessage<'a> {
             &ControlMessage::ScmCredentials(creds) => {
                 creds as *const libc::ucred as *const u8
             }
-        }
+            #[cfg(any(target_os = "android", target_os = "linux"))]
+            &ControlMessage::AlgSetIv(iv) => {
+                unsafe {
+                    let alg_iv = cmsg_data as *mut libc::af_alg_iv;
+                    (*alg_iv).ivlen = iv.len() as u32;
+                    ptr::copy_nonoverlapping(
+                        iv.as_ptr(),
+                        (*alg_iv).iv.as_mut_ptr(),
+                        iv.len()
+                    );
+                };
+                return
+            },
+            #[cfg(any(target_os = "android", target_os = "linux"))]
+            &ControlMessage::AlgSetOp(op) => {
+                op as *const _ as *const u8
+            },
+            #[cfg(any(target_os = "android", target_os = "linux"))]
+            &ControlMessage::AlgSetAeadAssoclen(len) => {
+                len as *const _ as *const u8
+            },
+        };
+        unsafe {
+            ptr::copy_nonoverlapping(
+                data_ptr,
+                cmsg_data,
+                self.len()
+            )
+        };
     }
 
     /// The size of the payload, excluding its cmsghdr
@@ -751,6 +812,18 @@ impl<'a> ControlMessage<'a> {
             &ControlMessage::ScmCredentials(creds) => {
                 mem::size_of_val(creds)
             }
+            #[cfg(any(target_os = "android", target_os = "linux"))]
+            &ControlMessage::AlgSetIv(iv) => {
+                mem::size_of::<libc::af_alg_iv>() + iv.len()
+            },
+            #[cfg(any(target_os = "android", target_os = "linux"))]
+            &ControlMessage::AlgSetOp(op) => {
+                mem::size_of_val(op)
+            },
+            #[cfg(any(target_os = "android", target_os = "linux"))]
+            &ControlMessage::AlgSetAeadAssoclen(len) => {
+                mem::size_of_val(len)
+            },
         }
     }
 
@@ -760,6 +833,10 @@ impl<'a> ControlMessage<'a> {
             &ControlMessage::ScmRights(_) => libc::SOL_SOCKET,
             #[cfg(any(target_os = "android", target_os = "linux"))]
             &ControlMessage::ScmCredentials(_) => libc::SOL_SOCKET,
+            #[cfg(any(target_os = "android", target_os = "linux"))]
+            &ControlMessage::AlgSetIv(_) | &ControlMessage::AlgSetOp(_) | &ControlMessage::AlgSetAeadAssoclen(_) => {
+                libc::SOL_ALG
+            },
         }
     }
 
@@ -769,6 +846,18 @@ impl<'a> ControlMessage<'a> {
             &ControlMessage::ScmRights(_) => libc::SCM_RIGHTS,
             #[cfg(any(target_os = "android", target_os = "linux"))]
             &ControlMessage::ScmCredentials(_) => libc::SCM_CREDENTIALS,
+            #[cfg(any(target_os = "android", target_os = "linux"))]
+            &ControlMessage::AlgSetIv(_) => {
+                libc::ALG_SET_IV
+            },
+            #[cfg(any(target_os = "android", target_os = "linux"))]
+            &ControlMessage::AlgSetOp(_) => {
+                libc::ALG_SET_OP
+            },
+            #[cfg(any(target_os = "android", target_os = "linux"))]
+            &ControlMessage::AlgSetAeadAssoclen(_) => {
+                libc::ALG_SET_AEAD_ASSOCLEN
+            },
         }
     }
 
@@ -778,12 +867,7 @@ impl<'a> ControlMessage<'a> {
         (*cmsg).cmsg_level = self.cmsg_level();
         (*cmsg).cmsg_type = self.cmsg_type();
         (*cmsg).cmsg_len = self.cmsg_len();
-        let data = self.data();
-        ptr::copy_nonoverlapping(
-            data,
-            CMSG_DATA(cmsg),
-            self.len()
-        );
+        self.copy_to_cmsg_data(CMSG_DATA(cmsg));
     }
 }
 
@@ -1098,6 +1182,8 @@ pub enum SockLevel {
     Udp = libc::IPPROTO_UDP,
     #[cfg(any(target_os = "android", target_os = "linux"))]
     Netlink = libc::SOL_NETLINK,
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    Alg = libc::SOL_ALG,
 }
 
 /// Represents a socket option that can be accessed or set. Used as an argument
@@ -1111,7 +1197,7 @@ pub trait GetSockOpt : Copy {
 
 /// Represents a socket option that can be accessed or set. Used as an argument
 /// to `setsockopt`
-pub trait SetSockOpt : Copy {
+pub trait SetSockOpt : Clone {
     type Val;
 
     #[doc(hidden)]
@@ -1211,6 +1297,11 @@ pub unsafe fn sockaddr_storage_to_addr(
         libc::AF_NETLINK => {
             use libc::sockaddr_nl;
             Ok(SockAddr::Netlink(NetlinkAddr(*(addr as *const _ as *const sockaddr_nl))))
+        }
+        #[cfg(any(target_os = "android", target_os = "linux"))]
+        libc::AF_ALG => {
+            use libc::sockaddr_alg;
+            Ok(SockAddr::Alg(AlgAddr(*(addr as *const _ as *const sockaddr_alg))))
         }
         af => panic!("unexpected address family {}", af),
     }

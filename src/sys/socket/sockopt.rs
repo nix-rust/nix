@@ -307,6 +307,55 @@ sockopt_impl!(Both, Ipv4RecvIf, libc::IPPROTO_IP, libc::IP_RECVIF, bool);
 sockopt_impl!(Both, Ipv4RecvDstAddr, libc::IPPROTO_IP, libc::IP_RECVDSTADDR, bool);
 
 
+#[cfg(any(target_os = "android", target_os = "linux"))]
+#[derive(Copy, Clone, Debug)]
+pub struct AlgSetAeadAuthSize;
+
+// ALG_SET_AEAD_AUTH_SIZE read the length from passed `option_len`
+// See https://elixir.bootlin.com/linux/v4.4/source/crypto/af_alg.c#L222
+#[cfg(any(target_os = "android", target_os = "linux"))]
+impl SetSockOpt for AlgSetAeadAuthSize {
+    type Val = usize;
+
+    fn set(&self, fd: RawFd, val: &usize) -> Result<()> {
+        unsafe {
+            let res = libc::setsockopt(fd,
+                                       libc::SOL_ALG,
+                                       libc::ALG_SET_AEAD_AUTHSIZE,
+                                       ::std::ptr::null(),
+                                       *val as libc::socklen_t);
+            Errno::result(res).map(drop)
+        }
+    }
+}
+
+#[cfg(any(target_os = "android", target_os = "linux"))]
+#[derive(Clone, Debug)]
+pub struct AlgSetKey<T>(::std::marker::PhantomData<T>);
+
+#[cfg(any(target_os = "android", target_os = "linux"))]
+impl<T> Default for AlgSetKey<T> {
+    fn default() -> Self {
+        AlgSetKey(Default::default())
+    }
+}
+
+#[cfg(any(target_os = "android", target_os = "linux"))]
+impl<T> SetSockOpt for AlgSetKey<T> where T: AsRef<[u8]> + Clone {
+    type Val = T;
+
+    fn set(&self, fd: RawFd, val: &T) -> Result<()> {
+        unsafe {
+            let res = libc::setsockopt(fd,
+                                       libc::SOL_ALG,
+                                       libc::ALG_SET_KEY,
+                                       val.as_ref().as_ptr() as *const _,
+                                       val.as_ref().len() as libc::socklen_t);
+            Errno::result(res).map(drop)
+        }
+    }
+}
+
 /*
  *
  * ===== Accessor helpers =====
