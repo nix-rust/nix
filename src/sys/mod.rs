@@ -88,3 +88,6 @@ pub mod uio;
 pub mod utsname;
 
 pub mod wait;
+
+#[cfg(any(target_os = "android", target_os = "linux"))]
+pub mod inotify;
