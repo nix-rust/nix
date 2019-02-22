@@ -2249,6 +2249,14 @@ pub fn sysconf(var: SysconfVar) -> Result<Option<c_long>> {
     }
 }
 
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+pub fn getpagesize() -> c_int {
+    // safe to unwrap because we known it exist
+    sysconf(SysconfVar::PAGE_SIZE)
+        .unwrap()
+        .unwrap() as c_int
+}
+
 #[cfg(any(target_os = "android", target_os = "linux"))]
 mod pivot_root {
     use libc;

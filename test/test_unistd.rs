@@ -432,6 +432,13 @@ fn test_sysconf_limited() {
     assert!(open_max.expect("sysconf failed").expect("OPEN_MAX is unlimited") > 0);
 }
 
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+#[test]
+fn test_getpagesize() {
+    // AFAIK, PAGESIZE is 4k on Linux x86_64
+    assert_eq!(getpagesize(), 4096);
+}
+
 #[cfg(target_os = "freebsd")]
 #[test]
 fn test_sysconf_unsupported() {
