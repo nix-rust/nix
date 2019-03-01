@@ -799,6 +799,11 @@ pub fn execveat(dirfd: RawFd, pathname: &CString, args: &[CString],
 ///   descriptors will remain identical after daemonizing.
 /// * `noclose = false`: The process' stdin, stdout, and stderr will point to
 ///   `/dev/null` after daemonizing.
+#[cfg_attr(any(target_os = "macos", target_os = "ios"), deprecated(
+    since="0.14.0",
+    note="Deprecated in MacOSX 10.5"
+))]
+#[cfg_attr(any(target_os = "macos", target_os = "ios"), allow(deprecated))]
 pub fn daemon(nochdir: bool, noclose: bool) -> Result<()> {
     let res = unsafe { libc::daemon(nochdir as c_int, noclose as c_int) };
     Errno::result(res).map(drop)

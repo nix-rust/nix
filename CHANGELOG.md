@@ -7,6 +7,38 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 ### Changed
 ### Fixed
+- Fixed multiple bugs when using `sendmsg` and `recvmsg` with ancillary control messages
+  ([#1020](https://github.com/nix-rust/nix/pull/1020))
+
+### Removed
+- `Daemon`, `NOTE_REAP`, and `NOTE_EXIT_REPARENTED` are now deprecated on OSX
+  and iOS.
+  ([#1033](https://github.com/nix-rust/nix/pull/1033))
+
+## [0.13.0] - 2019-01-15
+### Added
+- Added PKTINFO(V4) & V6PKTINFO cmsg support - Android/FreeBSD/iOS/Linux/MacOS.
+  ([#990](https://github.com/nix-rust/nix/pull/990))
+- Added support of CString type in `setsockopt`.
+  ([#972](https://github.com/nix-rust/nix/pull/972))
+- Added option `TCP_CONGESTION` in `setsockopt`.
+  ([#972](https://github.com/nix-rust/nix/pull/972))
+- Added `symlinkat` wrapper.
+  ([#997](https://github.com/nix-rust/nix/pull/997))
+- Added `ptrace::{getregs, setregs}`.
+  ([#1010](https://github.com/nix-rust/nix/pull/1010))
+- Added `nix::sys::signal::signal`.
+  ([#817](https://github.com/nix-rust/nix/pull/817))
+- Added an `mprotect` wrapper.
+  ([#991](https://github.com/nix-rust/nix/pull/991))
+
+### Changed
+### Fixed
+- `lutimes` never worked on OpenBSD as it is not implemented on OpenBSD. It has
+  been removed. ([#1000](https://github.com/nix-rust/nix/pull/1000))
+- `fexecve` never worked on NetBSD or on OpenBSD as it is not implemented on
+  either OS. It has been removed. ([#1000](https://github.com/nix-rust/nix/pull/1000))
+
 ### Removed
 
 ## [0.12.0] 2018-11-28
