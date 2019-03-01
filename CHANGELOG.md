@@ -29,6 +29,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#1020](https://github.com/nix-rust/nix/pull/1020))
 
 ### Removed
+- `Daemon`, `NOTE_REAP`, and `NOTE_EXIT_REPARENTED` are now deprecated on OSX
+  and iOS.
+  ([#1033](https://github.com/nix-rust/nix/pull/1033))
 
 ## [0.13.0] - 2019-01-15
 ### Added
