@@ -135,6 +135,8 @@ libc_bitflags!(
         NOTE_EXEC;
         NOTE_EXIT;
         #[cfg(any(target_os = "macos", target_os = "ios"))]
+        #[deprecated( since="0.14.0", note="Deprecated since OSX 10.9")]
+        #[allow(deprecated)]
         NOTE_EXIT_REPARENTED;
         #[cfg(any(target_os = "macos", target_os = "ios"))]
         NOTE_EXITSTATUS;
@@ -183,6 +185,9 @@ libc_bitflags!(
         NOTE_PCTRLMASK;
         NOTE_PDATAMASK;
         #[cfg(any(target_os = "macos", target_os = "ios"))]
+        #[cfg(any(target_os = "macos", target_os = "ios"))]
+        #[deprecated( since="0.14.0", note="Deprecated since OSX 10.9")]
+        #[allow(deprecated)]
         NOTE_REAP;
         NOTE_RENAME;
         NOTE_REVOKE;
