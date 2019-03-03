@@ -163,6 +163,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#907](https://github.com/nix-rust/nix/pull/907))
 
 ### Fixed
+- `sched::clone` not sending closure ownership to child thread.
+  ([#920](https://github.com/nix-rust/nix/pull/920))
 - Fixed possible panics when using `SigAction::flags` on Linux
   ([#869](https://github.com/nix-rust/nix/pull/869))
 - Properly exposed 460800 and 921600 baud rates on NetBSD

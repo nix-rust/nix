@@ -36,7 +36,7 @@ libc_bitflags!{
     }
 }
 
-pub type CloneCb<'a> = Box<FnMut() -> isize + 'a>;
+pub type CloneCb = Box<FnMut() -> isize + Send + 'static>;
 
 #[repr(C)]
 #[derive(Clone, Copy)]
@@ -85,24 +85,24 @@ pub fn sched_setaffinity(pid: Pid, cpuset: &CpuSet) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
-pub fn clone(mut cb: CloneCb,
+pub fn clone(cb: CloneCb,
              stack: &mut [u8],
              flags: CloneFlags,
              signal: Option<c_int>)
              -> Result<Pid> {
-    extern "C" fn callback(data: *mut CloneCb) -> c_int {
-        let cb: &mut CloneCb = unsafe { &mut *data };
-        (*cb)() as c_int
+    extern "C" fn callback(data: *mut c_void) -> c_int {
+        let mut cb: CloneCb = unsafe { *Box::from_raw(data as *mut CloneCb) };
+        cb() as c_int
     }
 
     let res = unsafe {
         let combined = flags.bits() | signal.unwrap_or(0);
         let ptr = stack.as_mut_ptr().offset(stack.len() as isize);
-        let ptr_aligned = ptr.offset((ptr as usize % 16) as isize * -1);
-        libc::clone(mem::transmute(callback as extern "C" fn(*mut Box<::std::ops::FnMut() -> isize>) -> i32),
+        let ptr_aligned = ptr.offset(((ptr as usize % 16) as isize).wrapping_neg());
+        libc::clone(callback,
                    ptr_aligned as *mut c_void,
                    combined,
-                   &mut cb as *mut _ as *mut c_void)
+                   Box::into_raw(Box::new(cb)) as *mut c_void)
     };
 
     Errno::result(res).map(Pid::from_raw)
@@ -118,4 +118,33 @@ pub fn setns(fd: RawFd, nstype: CloneFlags) -> Result<()> {
     let res = unsafe { libc::setns(fd, nstype.bits()) };
 
     Errno::result(res).map(drop)
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use sys::wait::{waitpid, WaitStatus, WaitPidFlag};
+
+    fn clone_payload() -> Box<FnMut() -> isize + Send + 'static> {
+        let numbers: Vec<i32> = (0..101).into_iter().collect();
+        Box::new(move || {
+            assert_eq!(numbers.iter().sum::<i32>(), 5050);
+            0
+        })
+    }
+
+    #[test]
+    fn simple_clone() {
+        // Stack *must* outlive the child.
+        let mut stack = vec![0u8; 4096];
+        let pid = clone(
+            clone_payload(),
+            stack.as_mut(),
+            CloneFlags::empty(),
+            None,
+        ).expect("Executing child");
+
+        let exit_status = waitpid(pid, Some(WaitPidFlag::__WALL)).expect("Waiting for child");
+        assert_eq!(exit_status, WaitStatus::Exited(pid, 0));
+    }
 }
