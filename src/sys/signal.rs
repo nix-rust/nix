@@ -887,12 +887,6 @@ mod tests {
         assert!(two_signals.contains(SIGUSR2));
     }
 
-    // This test doesn't actually test get_mask functionality, see the set_mask test for that.
-    #[test]
-    fn test_thread_signal_get_mask() {
-        assert!(SigSet::thread_get_mask().is_ok());
-    }
-
     #[test]
     fn test_thread_signal_set_mask() {
         thread::spawn(|| {
