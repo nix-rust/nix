@@ -760,6 +760,7 @@ mod sigevent {
 
 #[cfg(test)]
 mod tests {
+    use std::thread;
     use super::*;
 
     #[test]
@@ -821,104 +822,120 @@ mod tests {
 
     #[test]
     fn test_thread_signal_set_mask() {
-        let prev_mask = SigSet::thread_get_mask().expect("Failed to get existing signal mask!");
+        thread::spawn(|| {
+            let prev_mask = SigSet::thread_get_mask()
+                .expect("Failed to get existing signal mask!");
 
-        let mut test_mask = prev_mask;
-        test_mask.add(SIGUSR1);
+            let mut test_mask = prev_mask;
+            test_mask.add(SIGUSR1);
 
-        assert!(test_mask.thread_set_mask().is_ok());
-        let new_mask = SigSet::thread_get_mask().expect("Failed to get new mask!");
+            assert!(test_mask.thread_set_mask().is_ok());
+            let new_mask = SigSet::thread_get_mask()
+                .expect("Failed to get new mask!");
 
-        assert!(new_mask.contains(SIGUSR1));
-        assert!(!new_mask.contains(SIGUSR2));
+            assert!(new_mask.contains(SIGUSR1));
+            assert!(!new_mask.contains(SIGUSR2));
 
-        prev_mask.thread_set_mask().expect("Failed to revert signal mask!");
+            prev_mask.thread_set_mask().expect("Failed to revert signal mask!");
+        }).join().unwrap();
     }
 
     #[test]
     fn test_thread_signal_block() {
-        let mut mask = SigSet::empty();
-        mask.add(SIGUSR1);
+        thread::spawn(|| {
+            let mut mask = SigSet::empty();
+            mask.add(SIGUSR1);
 
-        assert!(mask.thread_block().is_ok());
+            assert!(mask.thread_block().is_ok());
 
-        assert!(SigSet::thread_get_mask().unwrap().contains(SIGUSR1));
+            assert!(SigSet::thread_get_mask().unwrap().contains(SIGUSR1));
+        }).join().unwrap();
     }
 
     #[test]
     fn test_thread_signal_unblock() {
-        let mut mask = SigSet::empty();
-        mask.add(SIGUSR1);
+        thread::spawn(|| {
+            let mut mask = SigSet::empty();
+            mask.add(SIGUSR1);
 
-        assert!(mask.thread_unblock().is_ok());
+            assert!(mask.thread_unblock().is_ok());
 
-        assert!(!SigSet::thread_get_mask().unwrap().contains(SIGUSR1));
+            assert!(!SigSet::thread_get_mask().unwrap().contains(SIGUSR1));
+        }).join().unwrap();
     }
 
     #[test]
     fn test_thread_signal_swap() {
-        let mut mask = SigSet::empty();
-        mask.add(SIGUSR1);
-        mask.thread_block().unwrap();
+        thread::spawn(|| {
+            let mut mask = SigSet::empty();
+            mask.add(SIGUSR1);
+            mask.thread_block().unwrap();
 
-        assert!(SigSet::thread_get_mask().unwrap().contains(SIGUSR1));
+            assert!(SigSet::thread_get_mask().unwrap().contains(SIGUSR1));
 
-        let mut mask2 = SigSet::empty();
-        mask2.add(SIGUSR2);
+            let mut mask2 = SigSet::empty();
+            mask2.add(SIGUSR2);
 
-        let oldmask = mask2.thread_swap_mask(SigmaskHow::SIG_SETMASK).unwrap();
+            let oldmask = mask2.thread_swap_mask(SigmaskHow::SIG_SETMASK)
+                .unwrap();
 
-        assert!(oldmask.contains(SIGUSR1));
-        assert!(!oldmask.contains(SIGUSR2));
+            assert!(oldmask.contains(SIGUSR1));
+            assert!(!oldmask.contains(SIGUSR2));
 
-        assert!(SigSet::thread_get_mask().unwrap().contains(SIGUSR2));
+            assert!(SigSet::thread_get_mask().unwrap().contains(SIGUSR2));
+        }).join().unwrap();
     }
 
     #[test]
     fn test_sigaction() {
         use libc;
+        thread::spawn(|| {
+            extern fn test_sigaction_handler(_: libc::c_int) {}
+            extern fn test_sigaction_action(_: libc::c_int,
+                _: *mut libc::siginfo_t, _: *mut libc::c_void) {}
 
-        extern fn test_sigaction_handler(_: libc::c_int) {}
-        extern fn test_sigaction_action(_: libc::c_int,
-            _: *mut libc::siginfo_t, _: *mut libc::c_void) {}
+            let handler_sig = SigHandler::Handler(test_sigaction_handler);
 
-        let handler_sig = SigHandler::Handler(test_sigaction_handler);
+            let flags = SaFlags::SA_ONSTACK | SaFlags::SA_RESTART |
+                        SaFlags::SA_SIGINFO;
 
-        let flags = SaFlags::SA_ONSTACK | SaFlags::SA_RESTART | SaFlags::SA_SIGINFO;
+            let mut mask = SigSet::empty();
+            mask.add(SIGUSR1);
 
-        let mut mask = SigSet::empty();
-        mask.add(SIGUSR1);
+            let action_sig = SigAction::new(handler_sig, flags, mask);
 
-        let action_sig = SigAction::new(handler_sig, flags, mask);
+            assert_eq!(action_sig.flags(),
+                       SaFlags::SA_ONSTACK | SaFlags::SA_RESTART);
+            assert_eq!(action_sig.handler(), handler_sig);
 
-        assert_eq!(action_sig.flags(), SaFlags::SA_ONSTACK | SaFlags::SA_RESTART);
-        assert_eq!(action_sig.handler(), handler_sig);
+            mask = action_sig.mask();
+            assert!(mask.contains(SIGUSR1));
+            assert!(!mask.contains(SIGUSR2));
 
-        mask = action_sig.mask();
-        assert!(mask.contains(SIGUSR1));
-        assert!(!mask.contains(SIGUSR2));
+            let handler_act = SigHandler::SigAction(test_sigaction_action);
+            let action_act = SigAction::new(handler_act, flags, mask);
+            assert_eq!(action_act.handler(), handler_act);
 
-        let handler_act = SigHandler::SigAction(test_sigaction_action);
-        let action_act = SigAction::new(handler_act, flags, mask);
-        assert_eq!(action_act.handler(), handler_act);
+            let action_dfl = SigAction::new(SigHandler::SigDfl, flags, mask);
+            assert_eq!(action_dfl.handler(), SigHandler::SigDfl);
 
-        let action_dfl = SigAction::new(SigHandler::SigDfl, flags, mask);
-        assert_eq!(action_dfl.handler(), SigHandler::SigDfl);
-
-        let action_ign = SigAction::new(SigHandler::SigIgn, flags, mask);
-        assert_eq!(action_ign.handler(), SigHandler::SigIgn);
+            let action_ign = SigAction::new(SigHandler::SigIgn, flags, mask);
+            assert_eq!(action_ign.handler(), SigHandler::SigIgn);
+        }).join().unwrap();
     }
 
     // TODO(#251): Re-enable after figuring out flakiness.
     #[cfg(not(any(target_os = "macos", target_os = "ios")))]
     #[test]
     fn test_sigwait() {
-        let mut mask = SigSet::empty();
-        mask.add(SIGUSR1);
-        mask.add(SIGUSR2);
-        mask.thread_block().unwrap();
+        thread::spawn(|| {
+            let mut mask = SigSet::empty();
+            mask.add(SIGUSR1);
+            mask.add(SIGUSR2);
+            mask.thread_block().unwrap();
 
-        raise(SIGUSR1).unwrap();
-        assert_eq!(mask.wait().unwrap(), SIGUSR1);
+            raise(SIGUSR1).unwrap();
+            assert_eq!(mask.wait().unwrap(), SIGUSR1);
+        }).join().unwrap();
     }
 }
