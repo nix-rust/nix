@@ -11,6 +11,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   Android and Linux. ([#1016](https://github.com/nix-rust/nix/pull/1016))
 - Add `ALG_SET_IV`, `ALG_SET_OP` and `ALG_SET_AEAD_ASSOCLEN` control messages and `AF_ALG`
   socket types on Linux and Android ([#1031](https://github.com/nix-rust/nix/pull/1031))
+- Add killpg
+  ([#1034](https://github.com/nix-rust/nix/pull/1034))
 
 ### Changed
 - `PollFd` event flags renamed to `PollFlags` ([#1024](https://github.com/nix-rust/nix/pull/1024/))
