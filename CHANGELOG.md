@@ -7,6 +7,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Add IP_RECVIF & IP_RECVDSTADDR. Enable IP_PKTINFO and IP6_PKTINFO on netbsd/openbsd.
   ([#1002](https://github.com/nix-rust/nix/pull/1002))
+
+- Added `inotify_init1`, `inotify_add_watch` and `inotify_rm_watch` wrappers for
+  Android and Linux. ([#1016](https://github.com/nix-rust/nix/pull/1016))
+
 ### Changed
 - `PollFd` event flags renamed to `PollFlags` ([#1024](https://github.com/nix-rust/nix/pull/1024/))
 - `recvmsg` now returns an Iterator over `ControlMessageOwned` objects rather
