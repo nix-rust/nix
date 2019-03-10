@@ -35,6 +35,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   native equivalents like `u32.`
   ([#1072](https://github.com/nix-rust/nix/pull/1072/commits))
 
+- Minimum supported Rust version is now 1.25.0 
+  ([#1035](https://github.com/nix-rust/nix/pull/1035))
 ### Fixed
 - Fix the build on Android and Linux/mips with recent versions of libc.
   ([#1072](https://github.com/nix-rust/nix/pull/1072/commits))

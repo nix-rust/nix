@@ -16,7 +16,7 @@ exclude     = [
 ]
 
 [dependencies]
-libc = { git = "https://github.com/rust-lang/libc" }
+libc = { git = "https://github.com/rust-lang/libc", features = [ "extra_traits" ] }
 bitflags = "1.0"
 cfg-if = "0.1.0"
 void = "1.0.2"
