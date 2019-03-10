@@ -173,7 +173,7 @@ macro_rules! sockopt_impl {
     };
 
     (GetOnly, $name:ident, $level:path, $flag:path, $ty:ty, $getter:ty) => {
-        #[derive(Copy, Clone, Debug)]
+        #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
         pub struct $name;
 
         getsockopt_impl!($name, $level, $flag, $ty, $getter);
@@ -184,14 +184,14 @@ macro_rules! sockopt_impl {
     };
 
     (SetOnly, $name:ident, $level:path, $flag:path, $ty:ty, $setter:ty) => {
-        #[derive(Copy, Clone, Debug)]
+        #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
         pub struct $name;
 
         setsockopt_impl!($name, $level, $flag, $ty, $setter);
     };
 
     (Both, $name:ident, $level:path, $flag:path, $ty:ty, $getter:ty, $setter:ty) => {
-        #[derive(Copy, Clone, Debug)]
+        #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
         pub struct $name;
 
         setsockopt_impl!($name, $level, $flag, $ty, $setter);

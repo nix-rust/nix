@@ -1,9 +1,11 @@
 use nix::sys::socket::{InetAddr, UnixAddr, getsockname};
-use std::slice;
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
 use std::net::{self, Ipv6Addr, SocketAddr, SocketAddrV6};
-use std::path::Path;
-use std::str::FromStr;
 use std::os::unix::io::RawFd;
+use std::path::Path;
+use std::slice;
+use std::str::FromStr;
 use libc::c_char;
 use tempfile;
 
@@ -64,6 +66,37 @@ pub fn test_path_to_sock_addr() {
     assert_eq!(&addr.0.sun_path[..8], expect);
 
     assert_eq!(addr.path(), Some(actual));
+}
+
+fn calculate_hash<T: Hash>(t: &T) -> u64 {
+    let mut s = DefaultHasher::new();
+    t.hash(&mut s);
+    s.finish()
+}
+
+#[test]
+pub fn test_addr_equality_path() {
+    let path = "/foo/bar";
+    let actual = Path::new(path);
+    let addr1 = UnixAddr::new(actual).unwrap();
+    let mut addr2 = addr1.clone();
+
+    addr2.0.sun_path[10] = 127;
+
+    assert_eq!(addr1, addr2);
+    assert_eq!(calculate_hash(&addr1), calculate_hash(&addr2));
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+pub fn test_addr_equality_abstract() {
+    let name = String::from("nix\0abstract\0test");
+    let addr1 = UnixAddr::new_abstract(name.as_bytes()).unwrap();
+    let mut addr2 = addr1.clone();
+    addr2.0.sun_path[18] = 127;
+
+    assert_eq!(addr1, addr2);
+    assert_eq!(calculate_hash(&addr1), calculate_hash(&addr2));
 }
 
 // Test getting/setting abstract addresses (without unix socket creation)

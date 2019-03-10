@@ -3,7 +3,7 @@ use errno::Errno;
 use fcntl::{self, OFlag};
 use libc;
 use std::os::unix::io::{AsRawFd, IntoRawFd, RawFd};
-use std::{ffi, fmt, ptr};
+use std::{ffi, ptr};
 use sys;
 
 #[cfg(target_os = "linux")]
@@ -25,6 +25,7 @@ use libc::{dirent, readdir_r};
 ///    * returns entries for `.` (current directory) and `..` (parent directory).
 ///    * returns entries' names as a `CStr` (no allocation or conversion beyond whatever libc
 ///      does).
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Dir(
     // This could be ptr::NonNull once nix requires Rust 1.25.
     *mut libc::DIR
@@ -82,21 +83,13 @@ impl AsRawFd for Dir {
     }
 }
 
-impl fmt::Debug for Dir {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("Dir")
-            .field("fd", &self.as_raw_fd())
-            .finish()
-    }
-}
-
 impl Drop for Dir {
     fn drop(&mut self) {
         unsafe { libc::closedir(self.0) };
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, Hash, PartialEq)]
 pub struct Iter<'d>(&'d mut Dir);
 
 impl<'d> Iterator for Iter<'d> {
@@ -132,10 +125,10 @@ impl<'d> Drop for Iter<'d> {
 /// A directory entry, similar to `std::fs::DirEntry`.
 ///
 /// Note that unlike the std version, this may represent the `.` or `..` entries.
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Entry(dirent);
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
 pub enum Type {
     Fifo,
     CharacterDevice,
@@ -196,15 +189,5 @@ impl Entry {
             libc::DT_SOCK => Some(Type::Socket),
             /* libc::DT_UNKNOWN | */ _ => None,
         }
-    }
-}
-
-impl fmt::Debug for Entry {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("Entry")
-            .field("ino", &self.ino())
-            .field("file_name", &self.file_name())
-            .field("file_type", &self.file_type())
-            .finish()
     }
 }

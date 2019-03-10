@@ -18,8 +18,7 @@ use errno::Errno;
 ///
 /// This is returned by `openpty`.  Note that this type does *not* implement `Drop`, so the user
 /// must manually close the file descriptors.
-#[derive(Clone, Copy)]
-#[allow(missing_debug_implementations)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct OpenptyResult {
     /// The master port in a virtual pty pair
     pub master: RawFd,
@@ -45,7 +44,7 @@ pub struct ForkptyResult {
 /// While this datatype is a thin wrapper around `RawFd`, it enforces that the available PTY
 /// functions are given the correct file descriptor. Additionally this type implements `Drop`,
 /// so that when it's consumed or goes out of scope, it's automatically cleaned-up.
-#[derive(Debug)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct PtyMaster(RawFd);
 
 impl AsRawFd for PtyMaster {

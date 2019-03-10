@@ -88,8 +88,7 @@ pub fn pread(fd: RawFd, buf: &mut [u8], offset: off_t) -> Result<usize>{
 /// and [`process_vm_writev`](fn.process_vm_writev.html).
 #[cfg(target_os = "linux")]
 #[repr(C)]
-#[derive(Clone, Copy)]
-#[allow(missing_debug_implementations)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct RemoteIoVec {
     /// The starting address of this slice (`iov_base`).
     pub base: usize,
@@ -160,7 +159,7 @@ pub fn process_vm_readv(pid: ::unistd::Pid, local_iov: &[IoVec<&mut [u8]>], remo
 }
 
 #[repr(C)]
-#[allow(missing_debug_implementations)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct IoVec<T>(libc::iovec, PhantomData<T>);
 
 impl<T> IoVec<T> {

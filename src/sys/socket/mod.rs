@@ -5,7 +5,7 @@ use {Error, Result};
 use errno::Errno;
 use libc::{self, c_void, c_int, iovec, socklen_t, size_t,
         CMSG_FIRSTHDR, CMSG_NXTHDR, CMSG_DATA, CMSG_LEN};
-use std::{fmt, mem, ptr, slice};
+use std::{mem, ptr, slice};
 use std::os::unix::io::RawFd;
 use sys::time::TimeVal;
 use sys::uio::IoVec;
@@ -189,7 +189,7 @@ cfg_if! {
         ///
         /// This struct is used with the `SO_PEERCRED` ancillary message for UNIX sockets.
         #[repr(C)]
-        #[derive(Clone, Copy)]
+        #[derive(Clone, Copy, Debug, Eq, PartialEq)]
         pub struct UnixCredentials(libc::ucred);
 
         impl UnixCredentials {
@@ -209,13 +209,6 @@ cfg_if! {
             }
         }
 
-        impl PartialEq for UnixCredentials {
-            fn eq(&self, other: &Self) -> bool {
-                self.0.pid == other.0.pid && self.0.uid == other.0.uid && self.0.gid == other.0.gid
-            }
-        }
-        impl Eq for UnixCredentials {}
-
         impl From<libc::ucred> for UnixCredentials {
             fn from(cred: libc::ucred) -> Self {
                 UnixCredentials(cred)
@@ -227,16 +220,6 @@ cfg_if! {
                 self.0
             }
         }
-
-        impl fmt::Debug for UnixCredentials {
-            fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-                f.debug_struct("UnixCredentials")
-                    .field("pid", &self.0.pid)
-                    .field("uid", &self.0.uid)
-                    .field("gid", &self.0.gid)
-                    .finish()
-            }
-        }
     }
 }
 
@@ -244,7 +227,7 @@ cfg_if! {
 ///
 /// This is a wrapper type around `ip_mreq`.
 #[repr(C)]
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct IpMembershipRequest(libc::ip_mreq);
 
 impl IpMembershipRequest {
@@ -259,32 +242,11 @@ impl IpMembershipRequest {
     }
 }
 
-impl PartialEq for IpMembershipRequest {
-    fn eq(&self, other: &Self) -> bool {
-        self.0.imr_multiaddr.s_addr == other.0.imr_multiaddr.s_addr
-            && self.0.imr_interface.s_addr == other.0.imr_interface.s_addr
-    }
-}
-impl Eq for IpMembershipRequest {}
-
-impl fmt::Debug for IpMembershipRequest {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let mref = &self.0.imr_multiaddr;
-        let maddr = mref.s_addr;
-        let iref = &self.0.imr_interface;
-        let ifaddr = iref.s_addr;
-        f.debug_struct("IpMembershipRequest")
-            .field("imr_multiaddr", &maddr)
-            .field("imr_interface", &ifaddr)
-            .finish()
-    }
-}
-
 /// Request for ipv6 multicast socket operations
 ///
 /// This is a wrapper type around `ipv6_mreq`.
 #[repr(C)]
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Ipv6MembershipRequest(libc::ipv6_mreq);
 
 impl Ipv6MembershipRequest {
@@ -294,23 +256,6 @@ impl Ipv6MembershipRequest {
             ipv6mr_multiaddr: group.0,
             ipv6mr_interface: 0,
         })
-    }
-}
-
-impl PartialEq for Ipv6MembershipRequest {
-    fn eq(&self, other: &Self) -> bool {
-        self.0.ipv6mr_multiaddr.s6_addr == other.0.ipv6mr_multiaddr.s6_addr &&
-            self.0.ipv6mr_interface == other.0.ipv6mr_interface
-    }
-}
-impl Eq for Ipv6MembershipRequest {}
-
-impl fmt::Debug for Ipv6MembershipRequest {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("Ipv6MembershipRequest")
-            .field("ipv6mr_multiaddr", &self.0.ipv6mr_multiaddr.s6_addr)
-            .field("ipv6mr_interface", &self.0.ipv6mr_interface)
-            .finish()
     }
 }
 
@@ -386,7 +331,7 @@ macro_rules! cmsg_space {
 /// let cmsg: CmsgSpace<([RawFd; 3], CmsgSpace<[RawFd; 2]>)> = CmsgSpace::new();
 /// ```
 #[repr(C)]
-#[allow(missing_debug_implementations)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct CmsgSpace<T> {
     _hdr: cmsghdr,
     _pad: [align_of_cmsg_data; 0],
@@ -419,7 +364,7 @@ impl CmsgBuffer for Vec<u8> {
     }
 }
 
-#[allow(missing_debug_implementations)] // msghdr isn't Debug
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct RecvMsg<'a> {
     pub bytes: usize,
     cmsghdr: Option<&'a cmsghdr>,
@@ -439,7 +384,7 @@ impl<'a> RecvMsg<'a> {
     }
 }
 
-#[allow(missing_debug_implementations)] // msghdr isn't Debug
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct CmsgIterator<'a> {
     /// Control message buffer to decode from. Must adhere to cmsg alignment.
     cmsghdr: Option<&'a cmsghdr>,
@@ -478,7 +423,7 @@ impl<'a> Iterator for CmsgIterator<'a> {
 //  alignment issues.
 //
 //  See https://github.com/nix-rust/nix/issues/999
-#[allow(missing_debug_implementations)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ControlMessageOwned {
     /// Received version of
     /// [`ControlMessage::ScmRights`][#enum.ControlMessage.html#variant.ScmRights]
@@ -679,7 +624,7 @@ impl ControlMessageOwned {
 /// exhaustively pattern-match it.
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man3/cmsg.3.html)
-#[allow(missing_debug_implementations)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ControlMessage<'a> {
     /// A message of type `SCM_RIGHTS`, containing an array of file
     /// descriptors passed between processes.
@@ -742,7 +687,7 @@ pub enum ControlMessage<'a> {
 
 // An opaque structure used to prevent cmsghdr from being a public type
 #[doc(hidden)]
-#[allow(missing_debug_implementations)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct UnknownCmsg(cmsghdr, Vec<u8>);
 
 impl<'a> ControlMessage<'a> {

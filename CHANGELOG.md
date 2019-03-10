@@ -7,10 +7,14 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Added `MSG_WAITALL` to `MsgFlags` in `sys::socket`.
   ([#1079](https://github.com/nix-rust/nix/pull/1079))
+- Implemented `Clone`, `Copy`, `Debug`, `Eq`, `Hash`, and `PartialEq` for most
+  types that support them. ([#1035](https://github.com/nix-rust/nix/pull/1035))
 
 ### Changed
 - Support for `ifaddrs` now present when building for Android.
   ([#1077](https://github.com/nix-rust/nix/pull/1077))
+- Minimum supported Rust version is now 1.25.0 
+  ([#1035](https://github.com/nix-rust/nix/pull/1035))
 
 ### Fixed
 ### Removed
@@ -35,8 +39,6 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   native equivalents like `u32.`
   ([#1072](https://github.com/nix-rust/nix/pull/1072/commits))
 
-- Minimum supported Rust version is now 1.25.0 
-  ([#1035](https://github.com/nix-rust/nix/pull/1035))
 ### Fixed
 - Fix the build on Android and Linux/mips with recent versions of libc.
   ([#1072](https://github.com/nix-rust/nix/pull/1072/commits))

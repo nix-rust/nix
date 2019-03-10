@@ -2,8 +2,9 @@ use super::sa_family_t;
 use {Error, Result, NixPath};
 use errno::Errno;
 use libc;
-use std::{fmt, hash, mem, net, ptr, slice};
+use std::{fmt, mem, net, ptr, slice};
 use std::ffi::OsStr;
+use std::hash::{Hash, Hasher};
 use std::path::Path;
 use std::os::unix::ffi::OsStrExt;
 #[cfg(any(target_os = "android", target_os = "linux"))]
@@ -245,7 +246,7 @@ impl AddressFamily {
     }
 }
 
-#[derive(Copy)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum InetAddr {
     V4(libc::sockaddr_in),
     V6(libc::sockaddr_in6),
@@ -331,52 +332,6 @@ impl InetAddr {
     }
 }
 
-impl PartialEq for InetAddr {
-    fn eq(&self, other: &InetAddr) -> bool {
-        match (*self, *other) {
-            (InetAddr::V4(ref a), InetAddr::V4(ref b)) => {
-                a.sin_port == b.sin_port &&
-                    a.sin_addr.s_addr == b.sin_addr.s_addr
-            }
-            (InetAddr::V6(ref a), InetAddr::V6(ref b)) => {
-                a.sin6_port == b.sin6_port &&
-                    a.sin6_addr.s6_addr == b.sin6_addr.s6_addr &&
-                    a.sin6_flowinfo == b.sin6_flowinfo &&
-                    a.sin6_scope_id == b.sin6_scope_id
-            }
-            _ => false,
-        }
-    }
-}
-
-impl Eq for InetAddr {
-}
-
-impl hash::Hash for InetAddr {
-    fn hash<H: hash::Hasher>(&self, s: &mut H) {
-        match *self {
-            InetAddr::V4(ref a) => {
-                ( a.sin_family,
-                  a.sin_port,
-                  a.sin_addr.s_addr ).hash(s)
-            }
-            InetAddr::V6(ref a) => {
-                ( a.sin6_family,
-                  a.sin6_port,
-                  &a.sin6_addr.s6_addr,
-                  a.sin6_flowinfo,
-                  a.sin6_scope_id ).hash(s)
-            }
-        }
-    }
-}
-
-impl Clone for InetAddr {
-    fn clone(&self) -> InetAddr {
-        *self
-    }
-}
-
 impl fmt::Display for InetAddr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
@@ -386,18 +341,12 @@ impl fmt::Display for InetAddr {
     }
 }
 
-impl fmt::Debug for InetAddr {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fmt::Display::fmt(self, f)
-    }
-}
-
 /*
  *
  * ===== IpAddr =====
  *
  */
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum IpAddr {
     V4(Ipv4Addr),
     V6(Ipv6Addr),
@@ -442,19 +391,13 @@ impl fmt::Display for IpAddr {
     }
 }
 
-impl fmt::Debug for IpAddr {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fmt::Display::fmt(self, f)
-    }
-}
-
 /*
  *
  * ===== Ipv4Addr =====
  *
  */
 
-#[derive(Copy)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct Ipv4Addr(pub libc::in_addr);
 
 impl Ipv4Addr {
@@ -487,38 +430,10 @@ impl Ipv4Addr {
     }
 }
 
-impl PartialEq for Ipv4Addr {
-    fn eq(&self, other: &Ipv4Addr) -> bool {
-        self.0.s_addr == other.0.s_addr
-    }
-}
-
-impl Eq for Ipv4Addr {
-}
-
-impl hash::Hash for Ipv4Addr {
-    fn hash<H: hash::Hasher>(&self, s: &mut H) {
-        let saddr = self.0.s_addr;
-        saddr.hash(s)
-    }
-}
-
-impl Clone for Ipv4Addr {
-    fn clone(&self) -> Ipv4Addr {
-        *self
-    }
-}
-
 impl fmt::Display for Ipv4Addr {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         let octets = self.octets();
         write!(fmt, "{}.{}.{}.{}", octets[0], octets[1], octets[2], octets[3])
-    }
-}
-
-impl fmt::Debug for Ipv4Addr {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fmt::Display::fmt(self, f)
     }
 }
 
@@ -528,7 +443,7 @@ impl fmt::Debug for Ipv4Addr {
  *
  */
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct Ipv6Addr(pub libc::in6_addr);
 
 // Note that IPv6 addresses are stored in big endian order on all architectures.
@@ -576,18 +491,6 @@ impl fmt::Display for Ipv6Addr {
     }
 }
 
-impl fmt::Debug for Ipv6Addr {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fmt::Display::fmt(self, f)
-    }
-}
-
-/*
- *
- * ===== UnixAddr =====
- *
- */
-
 /// A wrapper around `sockaddr_un`.
 ///
 /// This also tracks the length of `sun_path` address (excluding
@@ -596,7 +499,7 @@ impl fmt::Debug for Ipv6Addr {
 /// does not require that `sun_len` include the terminating null even for normal
 /// sockets.  Note that the actual sockaddr length is greater by
 /// `offset_of!(libc::sockaddr_un, sun_path)`
-#[derive(Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct UnixAddr(pub libc::sockaddr_un, pub usize);
 
 impl UnixAddr {
@@ -688,27 +591,6 @@ impl UnixAddr {
     }
 }
 
-impl PartialEq for UnixAddr {
-    fn eq(&self, other: &UnixAddr) -> bool {
-        self.sun_path() == other.sun_path()
-    }
-}
-
-impl Eq for UnixAddr {
-}
-
-impl hash::Hash for UnixAddr {
-    fn hash<H: hash::Hasher>(&self, s: &mut H) {
-        ( self.0.sun_family, self.sun_path() ).hash(s)
-    }
-}
-
-impl Clone for UnixAddr {
-    fn clone(&self) -> UnixAddr {
-        *self
-    }
-}
-
 impl fmt::Display for UnixAddr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if self.1 == 0 {
@@ -722,20 +604,22 @@ impl fmt::Display for UnixAddr {
     }
 }
 
-impl fmt::Debug for UnixAddr {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fmt::Display::fmt(self, f)
+impl PartialEq for UnixAddr {
+    fn eq(&self, other: &UnixAddr) -> bool {
+        self.sun_path() == other.sun_path()
     }
 }
 
-/*
- *
- * ===== Sock addr =====
- *
- */
+impl Eq for UnixAddr {}
+
+impl Hash for UnixAddr {
+    fn hash<H: Hasher>(&self, s: &mut H) {
+        ( self.0.sun_family, self.sun_path() ).hash(s)
+    }
+}
 
 /// Represents a socket address
-#[derive(Copy, Debug)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum SockAddr {
     Inet(InetAddr),
     Unix(UnixAddr),
@@ -883,68 +767,6 @@ impl SockAddr {
     }
 }
 
-impl PartialEq for SockAddr {
-    fn eq(&self, other: &SockAddr) -> bool {
-        match (*self, *other) {
-            (SockAddr::Inet(ref a), SockAddr::Inet(ref b)) => {
-                a == b
-            }
-            (SockAddr::Unix(ref a), SockAddr::Unix(ref b)) => {
-                a == b
-            }
-            #[cfg(any(target_os = "android", target_os = "linux"))]
-            (SockAddr::Netlink(ref a), SockAddr::Netlink(ref b)) => {
-                a == b
-            }
-            #[cfg(any(target_os = "android",
-                      target_os = "dragonfly",
-                      target_os = "freebsd",
-                      target_os = "ios",
-                      target_os = "linux",
-                      target_os = "macos",
-                      target_os = "netbsd",
-                      target_os = "openbsd"))]
-            (SockAddr::Link(ref a), SockAddr::Link(ref b)) => {
-                a == b
-            }
-            _ => false,
-        }
-    }
-}
-
-impl Eq for SockAddr {
-}
-
-impl hash::Hash for SockAddr {
-    fn hash<H: hash::Hasher>(&self, s: &mut H) {
-        match *self {
-            SockAddr::Inet(ref a) => a.hash(s),
-            SockAddr::Unix(ref a) => a.hash(s),
-            #[cfg(any(target_os = "android", target_os = "linux"))]
-            SockAddr::Netlink(ref a) => a.hash(s),
-            #[cfg(any(target_os = "android", target_os = "linux"))]
-            SockAddr::Alg(ref a) => a.hash(s),
-            #[cfg(any(target_os = "ios", target_os = "macos"))]
-            SockAddr::SysControl(ref a) => a.hash(s),
-            #[cfg(any(target_os = "android",
-                      target_os = "dragonfly",
-                      target_os = "freebsd",
-                      target_os = "ios",
-                      target_os = "linux",
-                      target_os = "macos",
-                      target_os = "netbsd",
-                      target_os = "openbsd"))]
-            SockAddr::Link(ref ether_addr) => ether_addr.hash(s)
-        }
-    }
-}
-
-impl Clone for SockAddr {
-    fn clone(&self) -> SockAddr {
-        *self
-    }
-}
-
 impl fmt::Display for SockAddr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
@@ -974,29 +796,9 @@ pub mod netlink {
     use ::sys::socket::addr::AddressFamily;
     use libc::{sa_family_t, sockaddr_nl};
     use std::{fmt, mem};
-    use std::hash::{Hash, Hasher};
 
-    #[derive(Copy, Clone)]
+    #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
     pub struct NetlinkAddr(pub sockaddr_nl);
-
-    // , PartialEq, Eq, Debug, Hash
-    impl PartialEq for NetlinkAddr {
-        fn eq(&self, other: &Self) -> bool {
-            let (inner, other) = (self.0, other.0);
-            (inner.nl_family, inner.nl_pid, inner.nl_groups) ==
-            (other.nl_family, other.nl_pid, other.nl_groups)
-        }
-    }
-
-    impl Eq for NetlinkAddr {}
-
-    impl Hash for NetlinkAddr {
-        fn hash<H: Hasher>(&self, s: &mut H) {
-            let inner = self.0;
-            (inner.nl_family, inner.nl_pid, inner.nl_groups).hash(s);
-        }
-    }
-
 
     impl NetlinkAddr {
         pub fn new(pid: u32, groups: u32) -> NetlinkAddr {
@@ -1020,12 +822,6 @@ pub mod netlink {
     impl fmt::Display for NetlinkAddr {
         fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
             write!(f, "pid: {} groups: {}", self.pid(), self.groups())
-        }
-    }
-
-    impl fmt::Debug for NetlinkAddr {
-        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-            fmt::Display::fmt(self, f)
         }
     }
 }
@@ -1098,11 +894,13 @@ pub mod sys_control {
     use ::sys::socket::addr::AddressFamily;
     use libc::{self, c_uchar};
     use std::{fmt, mem};
-    use std::hash::{Hash, Hasher};
     use std::os::unix::io::RawFd;
     use {Errno, Error, Result};
 
+    // FIXME: Move type into `libc`
     #[repr(C)]
+    #[derive(Clone, Copy)]
+    #[allow(missing_debug_implementations)]
     pub struct ctl_ioc_info {
         pub ctl_id: u32,
         pub ctl_name: [c_uchar; MAX_KCTL_NAME],
@@ -1114,27 +912,9 @@ pub mod sys_control {
 
     ioctl_readwrite!(ctl_info, CTL_IOC_MAGIC, CTL_IOC_INFO, ctl_ioc_info);
 
-    #[derive(Copy, Clone)]
     #[repr(C)]
+    #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
     pub struct SysControlAddr(pub libc::sockaddr_ctl);
-
-    impl PartialEq for SysControlAddr {
-        fn eq(&self, other: &Self) -> bool {
-            let (inner, other) = (self.0, other.0);
-            (inner.sc_id, inner.sc_unit) ==
-            (other.sc_id, other.sc_unit)
-        }
-    }
-
-    impl Eq for SysControlAddr {}
-
-    impl Hash for SysControlAddr {
-        fn hash<H: Hasher>(&self, s: &mut H) {
-            let inner = self.0;
-            (inner.sc_id, inner.sc_unit).hash(s);
-        }
-    }
-
 
     impl SysControlAddr {
         pub fn new(id: u32, unit: u32) -> SysControlAddr {
@@ -1178,27 +958,15 @@ pub mod sys_control {
             fmt::Debug::fmt(self, f)
         }
     }
-
-    impl fmt::Debug for SysControlAddr {
-        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-            f.debug_struct("SysControlAddr")
-                .field("sc_len", &self.0.sc_len)
-                .field("sc_family", &self.0.sc_family)
-                .field("ss_sysaddr", &self.0.ss_sysaddr)
-                .field("sc_id", &self.0.sc_id)
-                .field("sc_unit", &self.0.sc_unit)
-                .finish()
-        }
-    }
 }
 
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
 mod datalink {
-    use super::{libc, hash, fmt, AddressFamily};
+    use super::{libc, fmt, AddressFamily};
 
     /// Hardware Address
-    #[derive(Clone, Copy)]
+    #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
     pub struct LinkAddr(pub libc::sockaddr_ll);
 
     impl LinkAddr {
@@ -1246,26 +1014,6 @@ mod datalink {
         }
     }
 
-    impl Eq for LinkAddr {}
-
-    impl PartialEq for LinkAddr {
-        fn eq(&self, other: &Self) -> bool {
-            let (a, b) = (self.0, other.0);
-            (a.sll_family, a.sll_protocol, a.sll_ifindex, a.sll_hatype,
-                a.sll_pkttype, a.sll_halen, a.sll_addr) ==
-            (b.sll_family, b.sll_protocol, b.sll_ifindex, b.sll_hatype,
-                b.sll_pkttype, b.sll_halen, b.sll_addr)
-        }
-    }
-
-    impl hash::Hash for LinkAddr {
-        fn hash<H: hash::Hasher>(&self, s: &mut H) {
-            let a = self.0;
-            (a.sll_family, a.sll_protocol, a.sll_ifindex, a.sll_hatype,
-                a.sll_pkttype, a.sll_halen, a.sll_addr).hash(s);
-        }
-    }
-
     impl fmt::Display for LinkAddr {
         fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
             let addr = self.addr();
@@ -1278,12 +1026,6 @@ mod datalink {
                 addr[5])
         }
     }
-
-    impl fmt::Debug for LinkAddr {
-        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-            fmt::Display::fmt(self, f)
-        }
-    }
 }
 
 #[cfg(any(target_os = "dragonfly",
@@ -1293,10 +1035,10 @@ mod datalink {
           target_os = "netbsd",
           target_os = "openbsd"))]
 mod datalink {
-    use super::{libc, hash, fmt, AddressFamily};
+    use super::{libc, fmt, AddressFamily};
 
     /// Hardware Address
-    #[derive(Clone, Copy)]
+    #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
     pub struct LinkAddr(pub libc::sockaddr_dl);
 
     impl LinkAddr {
@@ -1368,52 +1110,6 @@ mod datalink {
         }
     }
 
-    impl Eq for LinkAddr {}
-
-    impl PartialEq for LinkAddr {
-        #[cfg(any(target_os = "freebsd",
-                  target_os = "ios",
-                  target_os = "macos",
-                  target_os = "netbsd",
-                  target_os = "openbsd"))]
-        fn eq(&self, other: &Self) -> bool {
-            let (a, b) = (self.0, other.0);
-            (a.sdl_len, a.sdl_family, a.sdl_index, a.sdl_type,
-                a.sdl_nlen, a.sdl_alen, a.sdl_slen, &a.sdl_data[..]) ==
-            (b.sdl_len, b.sdl_family, b.sdl_index, b.sdl_type,
-                b.sdl_nlen, b.sdl_alen, b.sdl_slen, &b.sdl_data[..])
-        }
-
-        #[cfg(target_os = "dragonfly")]
-        fn eq(&self, other: &Self) -> bool {
-            let (a, b) = (self.0, other.0);
-            (a.sdl_len, a.sdl_family, a.sdl_index, a.sdl_type, a.sdl_nlen,
-                a.sdl_alen, a.sdl_slen, a.sdl_data, a.sdl_rcf, a.sdl_route) ==
-            (b.sdl_len, b.sdl_family, b.sdl_index, b.sdl_type, b.sdl_nlen,
-                b.sdl_alen, b.sdl_slen, b.sdl_data, b.sdl_rcf, b.sdl_route)
-        }
-    }
-
-    impl hash::Hash for LinkAddr {
-        #[cfg(any(target_os = "freebsd",
-                  target_os = "ios",
-                  target_os = "macos",
-                  target_os = "netbsd",
-                  target_os = "openbsd"))]
-        fn hash<H: hash::Hasher>(&self, s: &mut H) {
-            let a = self.0;
-            (a.sdl_len, a.sdl_family, a.sdl_index, a.sdl_type,
-                a.sdl_nlen, a.sdl_alen, a.sdl_slen, &a.sdl_data[..]).hash(s);
-        }
-
-        #[cfg(target_os = "dragonfly")]
-        fn hash<H: hash::Hasher>(&self, s: &mut H) {
-            let a = self.0;
-            (a.sdl_len, a.sdl_family, a.sdl_index, a.sdl_type, a.sdl_nlen,
-                a.sdl_alen, a.sdl_slen, a.sdl_data, a.sdl_rcf, a.sdl_route).hash(s);
-        }
-    }
-
     impl fmt::Display for LinkAddr {
         fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
             let addr = self.addr();
@@ -1424,12 +1120,6 @@ mod datalink {
                 addr[3],
                 addr[4],
                 addr[5])
-        }
-    }
-
-    impl fmt::Debug for LinkAddr {
-        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-            fmt::Display::fmt(self, f)
         }
     }
 }
