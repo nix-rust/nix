@@ -8,6 +8,8 @@ use std::path::Path;
 use std::os::unix::ffi::OsStrExt;
 #[cfg(any(target_os = "android", target_os = "linux"))]
 use ::sys::socket::addr::netlink::NetlinkAddr;
+#[cfg(any(target_os = "android", target_os = "linux"))]
+use ::sys::socket::addr::alg::AlgAddr;
 #[cfg(any(target_os = "ios", target_os = "macos"))]
 use std::os::unix::io::RawFd;
 #[cfg(any(target_os = "ios", target_os = "macos"))]
@@ -740,6 +742,8 @@ pub enum SockAddr {
     Unix(UnixAddr),
     #[cfg(any(target_os = "android", target_os = "linux"))]
     Netlink(NetlinkAddr),
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    Alg(AlgAddr),
     #[cfg(any(target_os = "ios", target_os = "macos"))]
     SysControl(SysControlAddr),
     /// Datalink address (MAC)
@@ -768,6 +772,11 @@ impl SockAddr {
         SockAddr::Netlink(NetlinkAddr::new(pid, groups))
     }
 
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    pub fn new_alg(alg_type: &str, alg_name: &str) -> SockAddr {
+        SockAddr::Alg(AlgAddr::new(alg_type, alg_name))
+    }
+
     #[cfg(any(target_os = "ios", target_os = "macos"))]
     pub fn new_sys_control(sockfd: RawFd, name: &str, unit: u32) -> Result<SockAddr> {
         SysControlAddr::from_name(sockfd, name, unit).map(|a| SockAddr::SysControl(a))
@@ -780,6 +789,8 @@ impl SockAddr {
             SockAddr::Unix(..) => AddressFamily::Unix,
             #[cfg(any(target_os = "android", target_os = "linux"))]
             SockAddr::Netlink(..) => AddressFamily::Netlink,
+            #[cfg(any(target_os = "android", target_os = "linux"))]
+            SockAddr::Alg(..) => AddressFamily::Alg,
             #[cfg(any(target_os = "ios", target_os = "macos"))]
             SockAddr::SysControl(..) => AddressFamily::System,
             #[cfg(any(target_os = "android", target_os = "linux"))]
@@ -856,6 +867,8 @@ impl SockAddr {
             SockAddr::Unix(UnixAddr(ref addr, len)) => (mem::transmute(addr), (len + offset_of!(libc::sockaddr_un, sun_path)) as libc::socklen_t),
             #[cfg(any(target_os = "android", target_os = "linux"))]
             SockAddr::Netlink(NetlinkAddr(ref sa)) => (mem::transmute(sa), mem::size_of::<libc::sockaddr_nl>() as libc::socklen_t),
+            #[cfg(any(target_os = "android", target_os = "linux"))]
+            SockAddr::Alg(AlgAddr(ref sa)) => (mem::transmute(sa), mem::size_of::<libc::sockaddr_alg>() as libc::socklen_t),
             #[cfg(any(target_os = "ios", target_os = "macos"))]
             SockAddr::SysControl(SysControlAddr(ref sa)) => (mem::transmute(sa), mem::size_of::<libc::sockaddr_ctl>() as libc::socklen_t),
             #[cfg(any(target_os = "android", target_os = "linux"))]
@@ -910,6 +923,8 @@ impl hash::Hash for SockAddr {
             SockAddr::Unix(ref a) => a.hash(s),
             #[cfg(any(target_os = "android", target_os = "linux"))]
             SockAddr::Netlink(ref a) => a.hash(s),
+            #[cfg(any(target_os = "android", target_os = "linux"))]
+            SockAddr::Alg(ref a) => a.hash(s),
             #[cfg(any(target_os = "ios", target_os = "macos"))]
             SockAddr::SysControl(ref a) => a.hash(s),
             #[cfg(any(target_os = "android",
@@ -938,6 +953,8 @@ impl fmt::Display for SockAddr {
             SockAddr::Unix(ref unix) => unix.fmt(f),
             #[cfg(any(target_os = "android", target_os = "linux"))]
             SockAddr::Netlink(ref nl) => nl.fmt(f),
+            #[cfg(any(target_os = "android", target_os = "linux"))]
+            SockAddr::Alg(ref nl) => nl.fmt(f),
             #[cfg(any(target_os = "ios", target_os = "macos"))]
             SockAddr::SysControl(ref sc) => sc.fmt(f),
             #[cfg(any(target_os = "android",
@@ -1008,6 +1025,69 @@ pub mod netlink {
     }
 
     impl fmt::Debug for NetlinkAddr {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            fmt::Display::fmt(self, f)
+        }
+    }
+}
+
+#[cfg(any(target_os = "android", target_os = "linux"))]
+pub mod alg {
+    use libc::{AF_ALG, sockaddr_alg, c_char};
+    use std::{fmt, mem, str};
+    use std::hash::{Hash, Hasher};
+    use std::ffi::CStr;
+
+    #[derive(Copy, Clone)]
+    pub struct AlgAddr(pub sockaddr_alg);
+
+    // , PartialEq, Eq, Debug, Hash
+    impl PartialEq for AlgAddr {
+        fn eq(&self, other: &Self) -> bool {
+            let (inner, other) = (self.0, other.0);
+            (inner.salg_family, &inner.salg_type[..], inner.salg_feat, inner.salg_mask, &inner.salg_name[..]) ==
+            (other.salg_family, &other.salg_type[..], other.salg_feat, other.salg_mask, &other.salg_name[..])
+        }
+    }
+
+    impl Eq for AlgAddr {}
+
+    impl Hash for AlgAddr {
+        fn hash<H: Hasher>(&self, s: &mut H) {
+            let inner = self.0;
+            (inner.salg_family, &inner.salg_type[..], inner.salg_feat, inner.salg_mask, &inner.salg_name[..]).hash(s);
+        }
+    }
+
+    impl AlgAddr {
+        pub fn new(alg_type: &str, alg_name: &str) -> AlgAddr {
+            let mut addr: sockaddr_alg = unsafe { mem::zeroed() };
+            addr.salg_family = AF_ALG as u16;
+            addr.salg_type[..alg_type.len()].copy_from_slice(alg_type.to_string().as_bytes());
+            addr.salg_name[..alg_name.len()].copy_from_slice(alg_name.to_string().as_bytes());
+
+            AlgAddr(addr)
+        }
+
+
+        pub fn alg_type(&self) -> &CStr {
+            unsafe { CStr::from_ptr(self.0.salg_type.as_ptr() as *const c_char) }
+        }
+
+        pub fn alg_name(&self) -> &CStr {
+            unsafe { CStr::from_ptr(self.0.salg_name.as_ptr() as *const c_char) }
+        }
+    }
+
+    impl fmt::Display for AlgAddr {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            write!(f, "type: {} alg: {}",
+                   self.alg_name().to_string_lossy(),
+                   self.alg_type().to_string_lossy())
+        }
+    }
+
+    impl fmt::Debug for AlgAddr {
         fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
             fmt::Display::fmt(self, f)
         }
