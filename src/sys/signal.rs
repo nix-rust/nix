@@ -680,6 +680,22 @@ pub fn kill<T: Into<Option<Signal>>>(pid: ::unistd::Pid, signal: T) -> Result<()
     Errno::result(res).map(drop)
 }
 
+/// Send a signal to a process group [(see
+/// killpg(3))](http://pubs.opengroup.org/onlinepubs/9699919799/functions/killpg.html).
+///
+/// If `pgrp` less then or equal 1, the behavior is platform-specific.
+/// If `signal` is `None`, `killpg` will only preform error checking and won't
+/// send any signal.
+pub fn killpg<T: Into<Option<Signal>>>(pgrp: ::unistd::Pid, signal: T) -> Result<()> {
+    let res = unsafe { libc::killpg(pgrp.into(),
+                                  match signal.into() {
+                                      Some(s) => s as libc::c_int,
+                                      None => 0,
+                                  }) };
+
+    Errno::result(res).map(drop)
+}
+
 pub fn raise(signal: Signal) -> Result<()> {
     let res = unsafe { libc::raise(signal as libc::c_int) };
 
