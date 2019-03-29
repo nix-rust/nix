@@ -675,6 +675,7 @@ mod consts {
 
     pub const EWOULDBLOCK: Errno = Errno::EAGAIN;
     pub const EDEADLOCK:   Errno = Errno::EDEADLK;
+    pub const ENOTSUP:     Errno = Errno::EOPNOTSUPP;
 
     pub fn from_i32(e: i32) -> Errno {
         use self::Errno::*;

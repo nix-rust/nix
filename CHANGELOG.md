@@ -13,6 +13,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   socket types on Linux and Android ([#1031](https://github.com/nix-rust/nix/pull/1031))
 - Add killpg
   ([#1034](https://github.com/nix-rust/nix/pull/1034))
+- Added ENOTSUP errno support for Linux and Android.
+  ([#969](https://github.com/nix-rust/nix/pull/969))
 
 ### Changed
 - `PollFd` event flags renamed to `PollFlags` ([#1024](https://github.com/nix-rust/nix/pull/1024/))
