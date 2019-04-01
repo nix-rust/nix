@@ -968,10 +968,8 @@ pub fn test_recv_ipv6pktinfo() {
 ))]
 #[test]
 pub fn test_mmsg() {
-    use libc;
-    use nix::sys::socket::sockopt::Ipv6RecvPacketInfo;
     use nix::sys::socket::{
-        bind, connect, recvmmsg, sendmmsg, setsockopt, socket, AddressFamily,
+        bind, connect, recvmmsg, sendmmsg, socket, AddressFamily,
         InetAddr, MsgFlags, RecvMMsgHdr, SendMMsgHdr, SockAddr, SockFlag, SockType,
     };
     use nix::sys::uio::IoVec;
@@ -1009,19 +1007,14 @@ pub fn test_mmsg() {
     )
     .expect("recv socket failed");
     bind(receiver, &sockaddr).unwrap();
-    setsockopt(receiver, Ipv6RecvPacketInfo, &true).expect("setsockopt failed");
 
     // now that the receiver is bond, send the messages
     sendmmsg(sender, &mut msgs[..]).unwrap();
 
-    // this is not the proper way to coordinate with the sender thread!
     thread::sleep(time::Duration::from_millis(200));
     let mut a = [0u8; 1500];
     let mut b = [0u8; 1500];
     let mut c = [0u8; 1500];
-    let mut cmsg_a = cmsg_space!(libc::in6_pktinfo);
-    let mut cmsg_b = cmsg_space!(libc::in6_pktinfo);
-    let mut cmsg_c = cmsg_space!(libc::in6_pktinfo);
     let mut sockaddr_a = SockAddr::Inet(InetAddr::from_std(
         &SocketAddr::from_str("0.0.0.0:0").unwrap(),
     ));
@@ -1037,19 +1030,19 @@ pub fn test_mmsg() {
     let mut msgs = [
         RecvMMsgHdr::new(
             &mut iov_a[..],
-            Some(&mut cmsg_a),
+            None,
             MsgFlags::empty(),
             Some(&mut sockaddr_a),
         ),
         RecvMMsgHdr::new(
             &mut iov_b[..],
-            Some(&mut cmsg_b),
+            None,
             MsgFlags::empty(),
             Some(&mut sockaddr_b),
         ),
         RecvMMsgHdr::new(
             &mut iov_c[..],
-            Some(&mut cmsg_c),
+            None,
             MsgFlags::empty(),
             Some(&mut sockaddr_c),
         ),
