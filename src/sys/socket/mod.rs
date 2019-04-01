@@ -11,10 +11,14 @@ use sys::time::TimeVal;
 use sys::uio::IoVec;
 #[cfg(any(
 target_os = "linux",
+target_os = "freebsd",
+target_os = "netbsd",
 ))]
 use sys::time::TimeSpec;
 #[cfg(any(
 target_os = "linux",
+target_os = "freebsd",
+target_os = "netbsd",
 ))]
 use std::marker::PhantomData;
 
@@ -1345,6 +1349,8 @@ pub fn shutdown(df: RawFd, how: Shutdown) -> Result<()> {
 
 #[cfg(any(
     target_os = "linux",
+    target_os = "freebsd",
+    target_os = "netbsd",
 ))]
 #[repr(C)]
 #[allow(missing_debug_implementations)]
@@ -1352,6 +1358,8 @@ pub struct SendMMsgHdr<'a>(libc::mmsghdr, PhantomData<&'a ()>);
 
 #[cfg(any(
     target_os = "linux",
+    target_os = "freebsd",
+    target_os = "netbsd",
 ))]
 impl<'a> SendMMsgHdr<'a> {
     pub fn new(iov: &mut[IoVec<&'a mut [u8]>],
@@ -1436,6 +1444,8 @@ impl<'a> SendMMsgHdr<'a> {
 
 #[cfg(any(
     target_os = "linux",
+    target_os = "freebsd",
+    target_os = "netbsd",
 ))]
 #[repr(C)]
 #[allow(missing_debug_implementations)]
@@ -1443,6 +1453,8 @@ pub struct RecvMMsgHdr<'a>(libc::mmsghdr, PhantomData<&'a ()>);
 
 #[cfg(any(
     target_os = "linux",
+    target_os = "freebsd",
+    target_os = "netbsd",
 ))]
 impl<'a> RecvMMsgHdr<'a> {
     pub fn new<T>(iov: &mut[IoVec<&'a mut [u8]>],
@@ -1505,6 +1517,8 @@ impl<'a> RecvMMsgHdr<'a> {
 /// Receive multiple messages from a socket using a single system call.
 #[cfg(any(
     target_os = "linux",
+    target_os = "freebsd",
+    target_os = "netbsd",
 ))]
 pub fn recvmmsg(fd: RawFd, msgvec: &mut[RecvMMsgHdr],
                 flags: MsgFlags,
@@ -1528,6 +1542,8 @@ pub fn recvmmsg(fd: RawFd, msgvec: &mut[RecvMMsgHdr],
 /// Transmit multiple messages on a socket using a single system call.
 #[cfg(any(
     target_os = "linux",
+    target_os = "freebsd",
+    target_os = "netbsd",
 ))]
 pub fn sendmmsg(fd: RawFd, msgvec: &mut[SendMMsgHdr]) -> Result<usize> {
     let ret = unsafe {
