@@ -13,12 +13,14 @@ use sys::uio::IoVec;
 target_os = "linux",
 target_os = "freebsd",
 target_os = "netbsd",
+target_os = "android",
 ))]
 use sys::time::TimeSpec;
 #[cfg(any(
 target_os = "linux",
 target_os = "freebsd",
 target_os = "netbsd",
+target_os = "android",
 ))]
 use std::marker::PhantomData;
 
