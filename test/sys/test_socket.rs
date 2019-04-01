@@ -971,7 +971,7 @@ pub fn test_mmsg() {
     use libc;
     use nix::sys::socket::sockopt::Ipv4PacketInfo;
     use nix::sys::socket::{
-        bind, connect, recvmmsg, sendmmsg, setsockopt, socket, AddressFamily, CmsgSpace,
+        bind, connect, recvmmsg, sendmmsg, setsockopt, socket, AddressFamily,
         InetAddr, MsgFlags, RecvMMsgHdr, SendMMsgHdr, SockAddr, SockFlag, SockType,
     };
     use nix::sys::uio::IoVec;
@@ -1019,9 +1019,9 @@ pub fn test_mmsg() {
     let mut a = [0u8; 1500];
     let mut b = [0u8; 1500];
     let mut c = [0u8; 1500];
-    let mut cmsg_a = CmsgSpace::<libc::in_pktinfo>::new();
-    let mut cmsg_b = CmsgSpace::<libc::in_pktinfo>::new();
-    let mut cmsg_c = CmsgSpace::<libc::in_pktinfo>::new();
+    let mut cmsg_a = cmsg_space!(libc::in_pktinfo);
+    let mut cmsg_b = cmsg_space!(libc::in_pktinfo);
+    let mut cmsg_c = cmsg_space!(libc::in_pktinfo);
     let mut sockaddr_a = SockAddr::Inet(InetAddr::from_std(
         &SocketAddr::from_str("0.0.0.0:0").unwrap(),
     ));

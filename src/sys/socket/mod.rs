@@ -1365,9 +1365,16 @@ pub struct SendMMsgHdr<'a>(libc::mmsghdr, PhantomData<&'a ()>);
 ))]
 impl<'a> SendMMsgHdr<'a> {
     pub fn new(iov: &mut[IoVec<&'a mut [u8]>],
-                  cmsgs: &[ControlMessage<'a>],
+                  cmsgs: &[ControlMessage],
                   flags: MsgFlags,
                   addr: Option<&'a mut SockAddr>) -> SendMMsgHdr<'a> {
+        let capacity = cmsgs.iter().map(|c| c.space()).sum();
+
+        // First size the buffer needed to hold the cmsgs.  It must be zeroed,
+        // because subsequent code will not clear the padding bytes.
+        let cmsg_buffer = vec![0u8; capacity];
+
+        // Next encode the sending address, if provided
         let (name, namelen) = match addr {
             Some(addr) => {
                 let (x, y) = unsafe { addr.as_ffi_pair_mut() };
@@ -1375,33 +1382,43 @@ impl<'a> SendMMsgHdr<'a> {
             },
             None => (ptr::null_mut(), 0),
         };
-        let mut capacity = 0;
-        for cmsg in cmsgs {
-            capacity += cmsg.space();
-        }
-        // Note that the resulting vector claims to have length == capacity,
-        // so it's presently uninitialized.
-        let mut cmsg_buffer = unsafe {
-            let mut vec = Vec::<u8>::with_capacity(capacity);
-            vec.set_len(capacity);
-            vec
-        };
-        {
-            let mut ofs = 0;
-            for cmsg in cmsgs {
-                let ptr = &mut cmsg_buffer[ofs..];
-                unsafe {
-                    cmsg.encode_into(ptr);
-                }
-                ofs += cmsg.space();
-            }
-        }
 
+        // The message header must be initialized before the individual cmsgs.
         let cmsg_ptr = if capacity > 0 {
-            cmsg_buffer.as_mut_ptr() as *mut c_void
+            cmsg_buffer.as_ptr() as *mut c_void
         } else {
             ptr::null_mut()
         };
+
+        let mhdr = {
+            // Musl's msghdr has private fields, so this is the only way to
+            // initialize it.
+            let mut mhdr: msghdr = unsafe{mem::uninitialized()};
+            mhdr.msg_name = name as *mut _;
+            mhdr.msg_namelen = namelen;
+            // transmute iov into a mutable pointer.  sendmsg doesn't really mutate
+            // the buffer, but the standard says that it takes a mutable pointer
+            mhdr.msg_iov = iov.as_ptr() as *mut _;
+            mhdr.msg_iovlen = iov.len() as _;
+            mhdr.msg_control = cmsg_ptr;
+            mhdr.msg_controllen = capacity as _;
+            mhdr.msg_flags = 0;
+            mhdr
+        };
+
+        // Encode each cmsg.  This must happen after initializing the header because
+        // CMSG_NEXT_HDR and friends read the msg_control and msg_controllen fields.
+        // CMSG_FIRSTHDR is always safe
+        let mut pmhdr: *mut cmsghdr = unsafe{CMSG_FIRSTHDR(&mhdr as *const msghdr)};
+        for cmsg in cmsgs {
+            assert_ne!(pmhdr, ptr::null_mut());
+            // Safe because we know that pmhdr is valid, and we initialized it with
+            // sufficient space
+            unsafe { cmsg.encode_into(pmhdr) };
+            // Safe because mhdr is valid
+            pmhdr = unsafe{CMSG_NXTHDR(&mhdr as *const msghdr, pmhdr)};
+        }
+
         let mut hdr: libc::mmsghdr = unsafe { mem::uninitialized() };
         hdr.msg_hdr.msg_control = cmsg_ptr;
         hdr.msg_hdr.msg_controllen = capacity as _;
@@ -1425,21 +1442,18 @@ impl<'a> SendMMsgHdr<'a> {
     }
 
     pub fn cmsgs(&self) -> CmsgIterator {
-        CmsgIterator {
-            buf: if self.0.msg_hdr.msg_controllen > 0 {
+        let cmsghdr = unsafe {
+            if self.0.msg_hdr.msg_controllen > 0 {
                 // got control message(s)
                 debug_assert!(!self.0.msg_hdr.msg_control.is_null());
-                unsafe {
-                    // Safe: The pointer is not null and the length is correct as part of `recvmsg`s
-                    // contract.
-                    slice::from_raw_parts(self.0.msg_hdr.msg_control as *const u8,
-                                          self.0.msg_hdr.msg_controllen as usize)
-                }
+                CMSG_FIRSTHDR(&self.0.msg_hdr as *const msghdr)
             } else {
-                // No control message, create an empty buffer to avoid creating a slice from a null
-                // pointer
-                &[]
-            }
+                ptr::null()
+            }.as_ref()
+        };
+        CmsgIterator {
+            cmsghdr,
+            mhdr: &self.0.msg_hdr,
         }
     }
 }
@@ -1461,8 +1475,8 @@ pub struct RecvMMsgHdr<'a>(libc::mmsghdr, PhantomData<&'a ()>);
     target_os = "android",
 ))]
 impl<'a> RecvMMsgHdr<'a> {
-    pub fn new<T>(iov: &mut[IoVec<&'a mut [u8]>],
-                  cmsg_buffer: Option<&'a mut CmsgSpace<T>>,
+    pub fn new(iov: &mut[IoVec<&'a mut [u8]>],
+                  cmsg_buffer: Option<&'a mut CmsgBuffer>,
                   flags: MsgFlags,
                   addr: Option<&'a mut SockAddr>) -> RecvMMsgHdr<'a> {
         let (name, namelen) = match addr {
@@ -1473,7 +1487,10 @@ impl<'a> RecvMMsgHdr<'a> {
             None => (ptr::null_mut(), 0),
         };
         let (msg_control, msg_controllen) = match cmsg_buffer {
-            Some(cmsg_buffer) => (cmsg_buffer as *mut _, mem::size_of_val(cmsg_buffer)),
+            Some(cmsgspace) => {
+                let msg_buf = cmsgspace.as_bytes_mut();
+                (msg_buf.as_mut_ptr(), msg_buf.len())
+            },
             None => (ptr::null_mut(), 0),
         };
         let mut hdr: libc::mmsghdr = unsafe { mem::uninitialized() };
@@ -1499,21 +1516,18 @@ impl<'a> RecvMMsgHdr<'a> {
     }
 
     pub fn cmsgs(&self) -> CmsgIterator {
-        CmsgIterator {
-            buf: if self.0.msg_hdr.msg_controllen > 0 {
+        let cmsghdr = unsafe {
+            if self.0.msg_hdr.msg_controllen > 0 {
                 // got control message(s)
                 debug_assert!(!self.0.msg_hdr.msg_control.is_null());
-                unsafe {
-                    // Safe: The pointer is not null and the length is correct as part of `recvmsg`s
-                    // contract.
-                    slice::from_raw_parts(self.0.msg_hdr.msg_control as *const u8,
-                                          self.0.msg_hdr.msg_controllen as usize)
-                }
+                CMSG_FIRSTHDR(&self.0.msg_hdr as *const msghdr)
             } else {
-                // No control message, create an empty buffer to avoid creating a slice from a null
-                // pointer
-                &[]
-            }
+                ptr::null()
+            }.as_ref()
+        };
+        CmsgIterator {
+            cmsghdr,
+            mhdr: &self.0.msg_hdr,
         }
     }
 }

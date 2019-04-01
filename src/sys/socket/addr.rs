@@ -890,6 +890,8 @@ impl SockAddr {
             SockAddr::Unix(UnixAddr(ref mut addr, len)) => (mem::transmute(addr), (len + offset_of!(libc::sockaddr_un, sun_path)) as libc::socklen_t),
             #[cfg(any(target_os = "android", target_os = "linux"))]
             SockAddr::Netlink(NetlinkAddr(ref mut sa)) => (mem::transmute(sa), mem::size_of::<libc::sockaddr_nl>() as libc::socklen_t),
+            #[cfg(any(target_os = "android", target_os = "linux"))]
+            SockAddr::Alg(AlgAddr(ref mut sa)) => (mem::transmute(sa), mem::size_of::<libc::sockaddr_alg>() as libc::socklen_t),
             #[cfg(any(target_os = "ios", target_os = "macos"))]
             SockAddr::SysControl(SysControlAddr(ref mut sa)) => (mem::transmute(sa), mem::size_of::<libc::sockaddr_ctl>() as libc::socklen_t),
             #[cfg(any(target_os = "android", target_os = "linux"))]
