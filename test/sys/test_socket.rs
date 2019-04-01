@@ -964,6 +964,7 @@ pub fn test_recv_ipv6pktinfo() {
     target_os = "linux",
     target_os = "freebsd",
     target_os = "netbsd",
+    target_os = "android",
 ))]
 #[test]
 pub fn test_mmsg() {

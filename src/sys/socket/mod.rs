@@ -1351,6 +1351,7 @@ pub fn shutdown(df: RawFd, how: Shutdown) -> Result<()> {
     target_os = "linux",
     target_os = "freebsd",
     target_os = "netbsd",
+    target_os = "android",
 ))]
 #[repr(C)]
 #[allow(missing_debug_implementations)]
@@ -1360,6 +1361,7 @@ pub struct SendMMsgHdr<'a>(libc::mmsghdr, PhantomData<&'a ()>);
     target_os = "linux",
     target_os = "freebsd",
     target_os = "netbsd",
+    target_os = "android",
 ))]
 impl<'a> SendMMsgHdr<'a> {
     pub fn new(iov: &mut[IoVec<&'a mut [u8]>],
@@ -1446,6 +1448,7 @@ impl<'a> SendMMsgHdr<'a> {
     target_os = "linux",
     target_os = "freebsd",
     target_os = "netbsd",
+    target_os = "android",
 ))]
 #[repr(C)]
 #[allow(missing_debug_implementations)]
@@ -1455,6 +1458,7 @@ pub struct RecvMMsgHdr<'a>(libc::mmsghdr, PhantomData<&'a ()>);
     target_os = "linux",
     target_os = "freebsd",
     target_os = "netbsd",
+    target_os = "android",
 ))]
 impl<'a> RecvMMsgHdr<'a> {
     pub fn new<T>(iov: &mut[IoVec<&'a mut [u8]>],
@@ -1519,6 +1523,7 @@ impl<'a> RecvMMsgHdr<'a> {
     target_os = "linux",
     target_os = "freebsd",
     target_os = "netbsd",
+    target_os = "android",
 ))]
 pub fn recvmmsg(fd: RawFd, msgvec: &mut[RecvMMsgHdr],
                 flags: MsgFlags,
@@ -1544,6 +1549,7 @@ pub fn recvmmsg(fd: RawFd, msgvec: &mut[RecvMMsgHdr],
     target_os = "linux",
     target_os = "freebsd",
     target_os = "netbsd",
+    target_os = "android",
 ))]
 pub fn sendmmsg(fd: RawFd, msgvec: &mut[SendMMsgHdr]) -> Result<usize> {
     let ret = unsafe {
