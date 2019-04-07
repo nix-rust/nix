@@ -1477,7 +1477,7 @@ pub struct RecvMMsgHdr<'a>(libc::mmsghdr, PhantomData<&'a ()>);
     target_os = "android",
 ))]
 impl<'a> RecvMMsgHdr<'a> {
-    pub fn new(iov: &mut[IoVec<&'a mut [u8]>],
+    pub fn new(iov: &'a mut[IoVec<&'a mut [u8]>],
                   cmsg_buffer: Option<&'a mut CmsgBuffer>,
                   flags: MsgFlags,
                   addr: Option<&'a mut SockAddr>) -> RecvMMsgHdr<'a> {
