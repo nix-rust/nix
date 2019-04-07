@@ -1380,7 +1380,7 @@ impl<'a> SendMMsgHdr<'a> {
         let (name, namelen) = match addr {
             Some(addr) => {
                 let (x, y) = unsafe { addr.as_ffi_pair_mut() };
-                (unsafe { mem::transmute(x) }, y)
+                (x as *mut libc::sockaddr as *mut libc::c_void, y)
             },
             None => (ptr::null_mut(), 0),
         };
@@ -1439,7 +1439,7 @@ impl<'a> SendMMsgHdr<'a> {
     }
 
     pub fn address(&self) -> Result<SockAddr> {
-        unsafe { sockaddr_storage_to_addr(mem::transmute(self.0.msg_hdr.msg_name),
+        unsafe { sockaddr_storage_to_addr(&*(self.0.msg_hdr.msg_name as *const libc::sockaddr_storage),
                                           self.0.msg_hdr.msg_namelen as usize) }
     }
 
@@ -1484,7 +1484,7 @@ impl<'a> RecvMMsgHdr<'a> {
         let (name, namelen) = match addr {
             Some(addr) => {
                 let (x, y) = unsafe { addr.as_ffi_pair_mut() };
-                (unsafe { mem::transmute(x) }, y)
+                (x as *mut libc::sockaddr, y)
             },
             None => (ptr::null_mut(), 0),
         };
@@ -1499,9 +1499,9 @@ impl<'a> RecvMMsgHdr<'a> {
         hdr.msg_hdr.msg_control = msg_control as *mut _;
         hdr.msg_hdr.msg_controllen = msg_controllen as _;
         hdr.msg_hdr.msg_flags = flags.bits();
-        hdr.msg_hdr.msg_iov = iov.as_ptr() as *mut libc::iovec;
+        hdr.msg_hdr.msg_iov = iov.as_mut_ptr() as *mut iovec;
         hdr.msg_hdr.msg_iovlen = iov.len() as _;
-        hdr.msg_hdr.msg_name = name;
+        hdr.msg_hdr.msg_name = name as _;
         hdr.msg_hdr.msg_namelen = namelen;
         hdr.msg_len = 0;
         RecvMMsgHdr(hdr, PhantomData)
@@ -1513,7 +1513,7 @@ impl<'a> RecvMMsgHdr<'a> {
     }
 
     pub fn address(&self) -> Result<SockAddr> {
-        unsafe { sockaddr_storage_to_addr(mem::transmute(self.0.msg_hdr.msg_name),
+        unsafe { sockaddr_storage_to_addr(&*(self.0.msg_hdr.msg_name as *const libc::sockaddr_storage),
                                           self.0.msg_hdr.msg_namelen as usize) }
     }
 
