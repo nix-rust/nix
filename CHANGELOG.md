@@ -19,6 +19,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#1036](https://github.com/nix-rust/nix/pull/1036))
 - Added `from_std` and `to_std` methods for `sys::socket::IpAddr`
   ([#1043](https://github.com/nix-rust/nix/pull/1043))
+- Added `nix::unistd:seteuid` and `nix::unistd::setegid` for those platforms that do
+  not support `setresuid` nor `setresgid` respectively.
+  ([#1044](https://github.com/nix-rust/nix/pull/1044))
 
 ### Changed
 - `PollFd` event flags renamed to `PollFlags` ([#1024](https://github.com/nix-rust/nix/pull/1024/))
