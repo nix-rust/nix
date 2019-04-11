@@ -418,20 +418,19 @@ impl IpAddr {
         IpAddr::V6(Ipv6Addr::new(a, b, c, d, e, f, g, h))
     }
 
-    /*
     pub fn from_std(std: &net::IpAddr) -> IpAddr {
         match *std {
             net::IpAddr::V4(ref std) => IpAddr::V4(Ipv4Addr::from_std(std)),
             net::IpAddr::V6(ref std) => IpAddr::V6(Ipv6Addr::from_std(std)),
         }
     }
+
     pub fn to_std(&self) -> net::IpAddr {
         match *self {
             IpAddr::V4(ref ip) => net::IpAddr::V4(ip.to_std()),
             IpAddr::V6(ref ip) => net::IpAddr::V6(ip.to_std()),
         }
     }
-    */
 }
 
 impl fmt::Display for IpAddr {
