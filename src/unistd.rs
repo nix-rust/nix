@@ -2334,3 +2334,28 @@ mod setres {
         Errno::result(res).map(drop)
     }
 }
+
+libc_bitflags!{
+    /// Options for access()
+    pub struct AccessFlags : c_int {
+        /// Test for existence of file.
+        F_OK;
+        /// Test for read permission.
+        R_OK;
+        /// Test for write permission.
+        W_OK;
+        /// Test for execute (search) permission.
+        X_OK;
+    }
+}
+
+/// Checks the file named by `path` for accessibility according to the flags given by `amode`
+/// See [access(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/access.html)
+pub fn access<P: ?Sized + NixPath>(path: &P, amode: AccessFlags) -> Result<()> {
+    let res = path.with_nix_path(|cstr| {
+        unsafe {
+            libc::access(cstr.as_ptr(), amode.bits)
+        }
+    })?;
+    Errno::result(res).map(drop)
+}

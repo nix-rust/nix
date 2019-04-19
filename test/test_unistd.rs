@@ -4,6 +4,7 @@ use nix::unistd::ForkResult::*;
 use nix::sys::signal::{SaFlags, SigAction, SigHandler, SigSet, Signal, sigaction};
 use nix::sys::wait::*;
 use nix::sys::stat::{self, Mode, SFlag};
+use nix::errno::Errno;
 use std::{env, iter};
 use std::ffi::CString;
 use std::fs::{self, File};
@@ -573,4 +574,20 @@ fn test_symlinkat() {
             .unwrap(),
         target
     );
+}
+
+#[test]
+fn test_access_not_existing() {
+    let tempdir = tempfile::tempdir().unwrap();
+    let dir = tempdir.path().join("does_not_exist.txt");
+    assert_eq!(access(&dir, AccessFlags::F_OK).err().unwrap().as_errno().unwrap(),
+               Errno::ENOENT);
+}
+
+#[test]
+fn test_access_file_exists() {
+    let tempdir = tempfile::tempdir().unwrap();
+    let path  = tempdir.path().join("does_exist.txt");
+    let _file = File::create(path.clone()).unwrap();
+    assert!(access(&path, AccessFlags::R_OK | AccessFlags::W_OK).is_ok());
 }
