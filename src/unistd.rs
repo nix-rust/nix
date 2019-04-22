@@ -1069,7 +1069,6 @@ pub fn pipe2(flags: OFlag) -> Result<(RawFd, RawFd)> {
 
 #[cfg(any(target_os = "ios", target_os = "macos"))]
 fn pipe2_setflags(fd1: RawFd, fd2: RawFd, flags: OFlag) -> Result<()> {
-    use fcntl::FdFlag;
     use fcntl::FcntlArg::F_SETFL;
 
     let mut res = Ok(0);
@@ -1119,8 +1118,6 @@ pub fn ftruncate(fd: RawFd, len: off_t) -> Result<()> {
 }
 
 pub fn isatty(fd: RawFd) -> Result<bool> {
-    use libc;
-
     unsafe {
         // ENOTTY means `fd` is a valid file descriptor, but not a TTY, so
         // we return `Ok(false)`
