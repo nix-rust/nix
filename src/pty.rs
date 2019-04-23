@@ -10,6 +10,7 @@ use std::mem;
 use std::os::unix::prelude::*;
 
 use sys::termios::Termios;
+use unistd::ForkResult;
 use {Result, Error, fcntl};
 use errno::Errno;
 
@@ -24,6 +25,18 @@ pub struct OpenptyResult {
     pub master: RawFd,
     /// The slave port in a virtual pty pair
     pub slave: RawFd,
+}
+
+/// Representation of a master with a forked pty
+///
+/// This is returned by `forkpty`. Note that this type does *not* implement `Drop`, so the user
+/// must manually close the file descriptors.
+#[derive(Clone, Copy, Debug)]
+pub struct ForkptyResult {
+    /// The master port in a virtual pty pair
+    pub master: RawFd,
+    /// Metadata about forked process
+    pub fork_result: ForkResult,
 }
 
 
@@ -266,3 +279,49 @@ pub fn openpty<'a, 'b, T: Into<Option<&'a Winsize>>, U: Into<Option<&'b Termios>
         slave: slave,
     })
 }
+
+/// Create a new pseudoterminal, returning the master file descriptor and forked pid.
+/// in `ForkptyResult`
+/// (see [`forkpty`](http://man7.org/linux/man-pages/man3/forkpty.3.html)).
+///
+/// If `winsize` is not `None`, the window size of the slave will be set to
+/// the values in `winsize`. If `termios` is not `None`, the pseudoterminal's
+/// terminal settings of the slave will be set to the values in `termios`.
+pub fn forkpty<'a, 'b, T: Into<Option<&'a Winsize>>, U: Into<Option<&'b Termios>>>(
+    winsize: T,
+    termios: U,
+) -> Result<ForkptyResult> {
+    use std::ptr;
+    use unistd::Pid;
+    use unistd::ForkResult::*;
+
+    let mut master: libc::c_int = unsafe { mem::uninitialized() };
+
+    let term = match termios.into() {
+        Some(termios) => {
+            let inner_termios = termios.get_libc_termios();
+            &*inner_termios as *const libc::termios as *mut _
+        },
+        None => ptr::null_mut(),
+    };
+
+    let win = winsize
+        .into()
+        .map(|ws| ws as *const Winsize as *mut _)
+        .unwrap_or(ptr::null_mut());
+
+    let res = unsafe {
+        libc::forkpty(&mut master, ptr::null_mut(), term, win)
+    };
+
+    let fork_result = Errno::result(res).map(|res| match res {
+        0 => Child,
+        res => Parent { child: Pid::from_raw(res) },
+    })?;
+
+    Ok(ForkptyResult {
+        master: master,
+        fork_result: fork_result,
+    })
+}
+
