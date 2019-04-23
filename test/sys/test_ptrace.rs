@@ -74,7 +74,7 @@ fn test_ptrace_cont() {
         return;
     }
 
-    match fork().expect("Error: Fork Failed") {
+    match unsafe {fork()}.expect("Error: Fork Failed") {
         Child => {
             ptrace::traceme().unwrap();
             // As recommended by ptrace(2), raise SIGTRAP to pause the child

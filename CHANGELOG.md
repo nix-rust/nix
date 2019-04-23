@@ -41,7 +41,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#1020](https://github.com/nix-rust/nix/pull/1020))
 - Replaced `CmsgSpace` with the `cmsg_space` macro.
   ([#1020](https://github.com/nix-rust/nix/pull/1020))
-
+- Marked `fork` as unsafe function
+  ([#1047](https://github.com/nix-rust/nix/pull/1047))
+  
 ### Fixed
 - Fixed multiple bugs when using `sendmsg` and `recvmsg` with ancillary control messages
   ([#1020](https://github.com/nix-rust/nix/pull/1020))

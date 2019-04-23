@@ -192,7 +192,7 @@ impl ForkResult {
 /// ```no_run
 /// use nix::unistd::{fork, ForkResult};
 ///
-/// match fork() {
+/// match unsafe {fork()} {
 ///    Ok(ForkResult::Parent { child, .. }) => {
 ///        println!("Continuing execution in parent process, new child has pid: {}", child);
 ///    }
@@ -222,9 +222,9 @@ impl ForkResult {
 ///
 /// [async-signal-safe]: http://man7.org/linux/man-pages/man7/signal-safety.7.html
 #[inline]
-pub fn fork() -> Result<ForkResult> {
+pub unsafe fn fork() -> Result<ForkResult> {
     use self::ForkResult::*;
-    let res = unsafe { libc::fork() };
+    let res = libc::fork();
 
     Errno::result(res).map(|res| match res {
         0 => Child,
