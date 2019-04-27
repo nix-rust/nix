@@ -417,6 +417,7 @@ impl CmsgBuffer for Vec<u8> {
 
 #[allow(missing_debug_implementations)] // msghdr isn't Debug
 pub struct RecvMsg<'a> {
+    pub bytes: usize,
     cmsghdr: Option<&'a cmsghdr>,
     pub address: Option<SockAddr>,
     pub flags: MsgFlags,
@@ -970,7 +971,7 @@ pub fn recvmsg<'a>(fd: RawFd, iov: &[IoVec<&mut [u8]>],
 
     let ret = unsafe { libc::recvmsg(fd, &mut mhdr, flags.bits()) };
 
-    Errno::result(ret).map(|_| {
+    Errno::result(ret).map(|r| {
         let cmsghdr = unsafe {
             if mhdr.msg_controllen > 0 {
                 // got control message(s)
@@ -986,6 +987,7 @@ pub fn recvmsg<'a>(fd: RawFd, iov: &[IoVec<&mut [u8]>],
             sockaddr_storage_to_addr(&address, mhdr.msg_namelen as usize).ok()
         };
         RecvMsg {
+            bytes: r as usize,
             cmsghdr,
             address,
             flags: MsgFlags::from_bits_truncate(mhdr.msg_flags),
