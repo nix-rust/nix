@@ -185,9 +185,14 @@ impl ForkResult {
 /// Create a new child process duplicating the parent process ([see
 /// fork(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/fork.html)).
 ///
-/// After calling the fork system call (successfully) two processes will
-/// be created that are identical with the exception of their pid and the
-/// return value of this function.  As an example:
+/// After calling the fork system call (successfully) a new process (child) will
+/// be created that is a copy of the calling process (parent). If the parent process is
+/// multithreaded, only the calling thread will be cloned.
+/// The child process differs in a few aspects from the parent process, most notably the pid and the
+/// return value of this function. For a list of all differences in the child and parent
+/// see the [man page].
+///
+/// As an example:
 ///
 /// ```no_run
 /// use nix::unistd::{fork, ForkResult};
@@ -210,17 +215,22 @@ impl ForkResult {
 /// I'm a new child process
 /// ```
 ///
+///
 /// # Safety
+/// Make sure to read the [man page].
+/// Fork has some properties that can lead to unintended behavior.
+/// Especially the handling of mutexes and open files can be tricky.
 ///
 /// In a multithreaded program, only [async-signal-safe] functions like `pause`
-/// and `_exit` may be called by the child (the parent isn't restricted). Note
-/// that memory allocation may **not** be async-signal-safe and thus must be
+/// and `_exit` are safe to call by the child until it calls `execve`(the parent isn't restricted).
+/// Note that memory allocation may **not** be async-signal-safe and thus must be
 /// prevented.
 ///
 /// Those functions are only a small subset of your operating system's API, so
 /// special care must be taken to only invoke code you can control and audit.
 ///
 /// [async-signal-safe]: http://man7.org/linux/man-pages/man7/signal-safety.7.html
+/// [man page]: http://man7.org/linux/man-pages/man2/fork.2.html
 #[inline]
 pub unsafe fn fork() -> Result<ForkResult> {
     use self::ForkResult::*;
