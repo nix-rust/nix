@@ -172,6 +172,7 @@ pub fn test_scm_rights() {
                 panic!("unexpected cmsg");
             }
         }
+        assert_eq!(msg.bytes, 5);
         assert!(!msg.flags.intersects(MsgFlags::MSG_TRUNC | MsgFlags::MSG_CTRUNC));
         close(fd2).unwrap();
     }
@@ -373,6 +374,7 @@ fn test_scm_rights_single_cmsg_multiple_fds() {
         }
         assert!(cmsgs.next().is_none(), "unexpected control msg");
 
+        assert_eq!(msg.bytes, 8);
         assert_eq!(iovec[0].as_slice(), [1u8, 2, 3, 4, 5, 6, 7, 8]);
     });
 
@@ -414,6 +416,7 @@ pub fn test_sendmsg_empty_cmsgs() {
             panic!("unexpected cmsg");
         }
         assert!(!msg.flags.intersects(MsgFlags::MSG_TRUNC | MsgFlags::MSG_CTRUNC));
+        assert_eq!(msg.bytes, 5);
         close(fd2).unwrap();
     }
 }
@@ -464,6 +467,7 @@ fn test_scm_credentials() {
             }
         }
         received_cred.expect("no creds received");
+        assert_eq!(msg.bytes, 5);
         assert!(!msg.flags.intersects(MsgFlags::MSG_TRUNC | MsgFlags::MSG_CTRUNC));
         close(recv).unwrap();
     }
@@ -555,6 +559,7 @@ fn test_impl_scm_credentials_and_rights(mut space: Vec<u8>) {
             }
         }
         received_cred.expect("no creds received");
+        assert_eq!(msg.bytes, 5);
         assert!(!msg.flags.intersects(MsgFlags::MSG_TRUNC | MsgFlags::MSG_CTRUNC));
         close(recv).unwrap();
     }
@@ -754,6 +759,7 @@ pub fn test_recv_ipv4pktinfo() {
             _ => (),
         }
         assert!(cmsgs.next().is_none(), "unexpected additional control msg");
+        assert_eq!(msg.bytes, 8);
         assert_eq!(
             iovec[0].as_slice(),
             [1u8, 2, 3, 4, 5, 6, 7, 8]
@@ -862,6 +868,7 @@ pub fn test_recvif() {
         }
         assert_eq!(rx_recvif, true);
         assert_eq!(rx_recvdstaddr, true);
+        assert_eq!(msg.bytes, 8);
         assert_eq!(
             iovec[0].as_slice(),
             [1u8, 2, 3, 4, 5, 6, 7, 8]
@@ -953,6 +960,7 @@ pub fn test_recv_ipv6pktinfo() {
             _ => (),
         }
         assert!(cmsgs.next().is_none(), "unexpected additional control msg");
+        assert_eq!(msg.bytes, 8);
         assert_eq!(
             iovec[0].as_slice(),
             [1u8, 2, 3, 4, 5, 6, 7, 8]
