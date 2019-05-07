@@ -26,6 +26,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#1045](https://github.com/nix-rust/nix/pull/1045))
 - Add `forkpty`
   ([#1042](https://github.com/nix-rust/nix/pull/1042))
+- Add `sched_yield`
+  ([#1050](https://github.com/nix-rust/nix/pull/1050))
 
 ### Changed
 - `PollFd` event flags renamed to `PollFlags` ([#1024](https://github.com/nix-rust/nix/pull/1024/))
