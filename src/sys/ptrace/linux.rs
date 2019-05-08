@@ -140,6 +140,17 @@ libc_enum!{
     }
 }
 
+impl Event {
+    #[inline]
+    pub fn from_c_int(evnum: libc::c_int) -> Result<Event> {
+        if 0 < evnum && evnum < 7 {
+            Ok(unsafe { mem::transmute(evnum) })
+        } else {
+            Err(Error::invalid_argument())
+        }
+    }
+}
+
 libc_bitflags! {
     /// Ptrace options used in conjunction with the PTRACE_SETOPTIONS request.
     /// See `man ptrace` for more details.
