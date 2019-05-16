@@ -26,6 +26,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#1045](https://github.com/nix-rust/nix/pull/1045))
 - Add `forkpty`
   ([#1042](https://github.com/nix-rust/nix/pull/1042))
+- Add `unlinkat`
+  ([#TBD](https://github.com/nix-rust/nix/pull/TBD))
 
 ### Changed
 - `PollFd` event flags renamed to `PollFlags` ([#1024](https://github.com/nix-rust/nix/pull/1024/))

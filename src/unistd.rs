@@ -1144,6 +1144,35 @@ pub fn unlink<P: ?Sized + NixPath>(path: &P) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
+/// Flags for `unlinkat` function.
+#[derive(Clone, Copy, Debug)]
+pub enum UnlinkatFlags {
+    RemoveDir,
+    NoRemoveDir,
+}
+
+/// Remove a directory entry
+///
+/// See also [unlinkat(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/unlinkat.html)
+pub fn unlinkat<P: ?Sized + NixPath>(
+    dirfd: Option<RawFd>,
+    path: &P,
+    flag: UnlinkatFlags,
+) -> Result<()> {
+    let atflag =
+        match flag {
+            UnlinkatFlags::RemoveDir => AtFlags::empty(),
+            UnlinkatFlags::NoRemoveDir => AtFlags::AT_REMOVEDIR,
+        };
+    let res = path.with_nix_path(|cstr| {
+        unsafe {
+            libc::unlinkat(at_rawfd(dirfd), cstr.as_ptr(), atflag.bits() as libc::c_int)
+        }
+    })?;
+    Errno::result(res).map(drop)
+}
+
+
 #[inline]
 pub fn chroot<P: ?Sized + NixPath>(path: &P) -> Result<()> {
     let res = path.with_nix_path(|cstr| {

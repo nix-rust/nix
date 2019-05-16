@@ -12,6 +12,7 @@ use sys::uio::IoVec;  // For vmsplice
 
 libc_bitflags!{
     pub struct AtFlags: c_int {
+        AT_REMOVEDIR;
         AT_SYMLINK_NOFOLLOW;
         #[cfg(any(target_os = "android", target_os = "linux"))]
         AT_NO_AUTOMOUNT;
