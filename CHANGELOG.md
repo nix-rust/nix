@@ -17,6 +17,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#1089](https://github.com/nix-rust/nix/pull/1089))
 - Added `AF_VSOCK` to `AddressFamily`.
   ([#1091](https://github.com/nix-rust/nix/pull/1091))
+- Add `unlinkat`
+  ([#1058](https://github.com/nix-rust/nix/pull/1058))
 
 ### Changed
 - Support for `ifaddrs` now present when building for Android.
