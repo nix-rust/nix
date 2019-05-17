@@ -1,5 +1,4 @@
-use libc::{c_ulong, c_int};
-use libc;
+use libc::{self, c_ulong, c_int};
 use {Result, NixPath};
 use errno::Errno;
 
@@ -61,7 +60,6 @@ pub fn mount<P1: ?Sized + NixPath, P2: ?Sized + NixPath, P3: ?Sized + NixPath, P
         fstype: Option<&P3>,
         flags: MsFlags,
         data: Option<&P4>) -> Result<()> {
-    use libc;
 
     let res =
         source.with_nix_path(|source| {
