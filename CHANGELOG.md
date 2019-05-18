@@ -64,6 +64,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - `Daemon`, `NOTE_REAP`, and `NOTE_EXIT_REPARENTED` are now deprecated on OSX
   and iOS.
   ([#1033](https://github.com/nix-rust/nix/pull/1033))
+- `PTRACE_GETREGS`, `PTRACE_SETREGS`, `PTRACE_GETFPREGS`, and
+  `PTRACE_SETFPREGS` have been removed from some platforms where they never
+  should've been defined in the first place.
+  ([#1055](https://github.com/nix-rust/nix/pull/1055))
 
 ## [0.13.0] - 2019-01-15
 ### Added
