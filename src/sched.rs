@@ -85,6 +85,17 @@ pub fn sched_setaffinity(pid: Pid, cpuset: &CpuSet) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
+/// Explicitly yield the processor to other threads.
+///
+/// [Further reading](http://pubs.opengroup.org/onlinepubs/9699919799/functions/sched_yield.html)
+pub fn sched_yield() -> Result<()> {
+    let res = unsafe {
+        libc::sched_yield()
+    };
+
+    Errno::result(res).map(drop)
+}
+
 pub fn clone(mut cb: CloneCb,
              stack: &mut [u8],
              flags: CloneFlags,
