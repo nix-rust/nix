@@ -22,7 +22,8 @@ cc = "1"
 
 [dev-dependencies]
 bytes = "0.4.8"
-lazy_static = "1"
+# lazy_static 1.2.0 needs Rust 1.24.1 or newer
+lazy_static = ">= 1.0, < 1.2"
 rand = "0.4"
 tempdir = "0.3"
 tempfile = "2"
