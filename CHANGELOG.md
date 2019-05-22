@@ -5,6 +5,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 ### Added
+### Changed
+### Fixed
+### Removed
+
+## [0.14.0] - 2019-05-21
+### Added
 - Add IP_RECVIF & IP_RECVDSTADDR. Enable IP_PKTINFO and IP6_PKTINFO on netbsd/openbsd.
   ([#1002](https://github.com/nix-rust/nix/pull/1002))
 - Added `inotify_init1`, `inotify_add_watch` and `inotify_rm_watch` wrappers for
