@@ -13,6 +13,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Removed
 
+## [0.11.1] 2019-05-21
+### Fixed
+- Fixed build on Linux/arm and Linux/s390x with the latest Rust libc
+  ([52102cb](https://github.com/nix-rust/nix/commit/52102cb76398c4dfb9ea141b98c5b01a2e050973))
+
 ## [0.11.0] 2018-06-01
 
 ### Added
