@@ -137,6 +137,8 @@ branches:
   only:
     # release tags
     - /^v\d+\.\d+\.\d+.*$/
+    # release branches
+    - /^r\d+\.\d+\.\d+.*$/
     - master
     # bors-ng branches; see https://bors-ng.github.io/getting-started/
     - trying
