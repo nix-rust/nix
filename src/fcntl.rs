@@ -105,7 +105,7 @@ libc_bitflags!(
         O_RDONLY;
         /// Allow both reading and writing.
         ///
-        /// This should not be combined with `O_WRONLY` or `O_RDWR`.
+        /// This should not be combined with `O_WRONLY` or `O_RDONLY`.
         O_RDWR;
         /// Similar to `O_DSYNC` but applies to `read`s instead.
         #[cfg(any(target_os = "linux", target_os = "netbsd", target_os = "openbsd"))]
