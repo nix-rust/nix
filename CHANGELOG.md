@@ -5,6 +5,19 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 ### Added
+- Macros exported by `nix` may now be imported via `use` on the Rust 2018
+  edition without importing helper macros on Linux targets.
+  ([#1066](https://github.com/nix-rust/nix/pull/1066))
+
+  For example, in Rust 2018, the `ioctl_read_bad!` macro can now be imported
+  without importing the `convert_ioctl_res!` macro.
+
+  ```rust
+  use nix::ioctl_read_bad;
+
+  ioctl_read_bad!(tcgets, libc::TCGETS, libc::termios);
+  ```
+
 ### Changed
 ### Fixed
 ### Removed
@@ -56,7 +69,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Fixed multiple bugs when using `sendmsg` and `recvmsg` with ancillary control messages
   ([#1020](https://github.com/nix-rust/nix/pull/1020))
 - Macros exported by `nix` may now be imported via `use` on the Rust 2018
-  edition without importing helper macros.
+  edition without importing helper macros for BSD targets.
   ([#1041](https://github.com/nix-rust/nix/pull/1041))
 
   For example, in Rust 2018, the `ioctl_read_bad!` macro can now be imported
