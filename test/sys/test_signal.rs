@@ -3,6 +3,7 @@ use nix::Error;
 use nix::sys::signal::*;
 use nix::unistd::*;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::convert::TryInto;
 
 #[test]
 fn test_kill_none() {
@@ -75,7 +76,7 @@ lazy_static! {
 }
 
 extern fn test_sigaction_handler(signal: libc::c_int) {
-    let signal = signal.try_into().unwrap();
+    let signal: Signal = signal.try_into().unwrap();
     SIGNALED.store(signal == Signal::SIGINT, Ordering::Relaxed);
 }
 

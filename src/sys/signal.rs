@@ -571,12 +571,14 @@ pub unsafe fn sigaction(signal: Signal, sigaction: &SigAction) -> Result<SigActi
 /// # extern crate nix;
 /// # use std::sync::atomic::{AtomicBool, Ordering};
 /// # use nix::sys::signal::{self, Signal, SigHandler};
+/// # use std::convert::TryInto;
+///
 /// lazy_static! {
 ///    static ref SIGNALED: AtomicBool = AtomicBool::new(false);
 /// }
 ///
 /// extern fn handle_sigint(signal: libc::c_int) {
-///     let signal = signal.try_into().unwrap();
+///     let signal: Signal = signal.try_into().unwrap();
 ///     SIGNALED.store(signal == Signal::SIGINT, Ordering::Relaxed);
 /// }
 ///
