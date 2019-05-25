@@ -81,18 +81,39 @@ macro_rules! libc_bitflags {
 /// }
 /// ```
 macro_rules! libc_enum {
+    (@add_count
+        {
+            name: $BitFlags:ident,
+            count: $count:expr,
+        }
+    ) => {
+        impl $BitFlags {
+            #[allow(unused)]
+            const COUNT: usize = $count;
+        }
+    };
+
     // (non-pub) Exit rule.
     (@make_enum
         {
             name: $BitFlags:ident,
             attrs: [$($attrs:tt)*],
             entries: [$($entries:tt)*],
+            count: $count:tt,
         }
     ) => {
         $($attrs)*
         #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
         enum $BitFlags {
             $($entries)*
+        }
+
+        libc_enum! {
+            @add_count
+            {
+                name: $BitFlags,
+                count: $count,
+            }
         }
     };
 
@@ -103,12 +124,21 @@ macro_rules! libc_enum {
             name: $BitFlags:ident,
             attrs: [$($attrs:tt)*],
             entries: [$($entries:tt)*],
+            count: $count:tt,
         }
     ) => {
         $($attrs)*
         #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
         pub enum $BitFlags {
             $($entries)*
+        }
+
+        libc_enum! {
+            @add_count
+            {
+                name: $BitFlags,
+                count: $count,
+            }
         }
     };
 
@@ -118,6 +148,7 @@ macro_rules! libc_enum {
             name: $BitFlags:ident,
             attrs: $attrs:tt,
         },
+        $count:tt,
         $entries:tt;
     ) => {
         libc_enum! {
@@ -126,6 +157,7 @@ macro_rules! libc_enum {
                 name: $BitFlags,
                 attrs: $attrs,
                 entries: $entries,
+                count: $count,
             }
         }
     };
@@ -137,6 +169,7 @@ macro_rules! libc_enum {
             name: $BitFlags:ident,
             attrs: $attrs:tt,
         },
+        $count:tt,
         $entries:tt;
     ) => {
         libc_enum! {
@@ -146,6 +179,7 @@ macro_rules! libc_enum {
                 name: $BitFlags,
                 attrs: $attrs,
                 entries: $entries,
+                count: $count,
             }
         }
     };
@@ -153,12 +187,14 @@ macro_rules! libc_enum {
     // Munch an attr.
     (@accumulate_entries
         $prefix:tt,
+        $count:tt,
         [$($entries:tt)*];
         #[$attr:meta] $($tail:tt)*
     ) => {
         libc_enum! {
             @accumulate_entries
             $prefix,
+            $count,
             [
                 $($entries)*
                 #[$attr]
@@ -170,12 +206,14 @@ macro_rules! libc_enum {
     // Munch last ident if not followed by a comma.
     (@accumulate_entries
         $prefix:tt,
+        $count:tt,
         [$($entries:tt)*];
         $entry:ident
     ) => {
         libc_enum! {
             @accumulate_entries
             $prefix,
+            ( $count + 1usize ),
             [
                 $($entries)*
                 $entry = libc::$entry,
@@ -186,12 +224,14 @@ macro_rules! libc_enum {
     // Munch an ident; covers terminating comma case.
     (@accumulate_entries
         $prefix:tt,
+        $count:tt,
         [$($entries:tt)*];
         $entry:ident, $($tail:tt)*
     ) => {
         libc_enum! {
             @accumulate_entries
             $prefix,
+            ( $count + 1usize ),
             [
                 $($entries)*
                 $entry = libc::$entry,
@@ -203,12 +243,14 @@ macro_rules! libc_enum {
     // Munch an ident and cast it to the given type; covers terminating comma.
     (@accumulate_entries
         $prefix:tt,
+        $count:tt,
         [$($entries:tt)*];
         $entry:ident as $ty:ty, $($tail:tt)*
     ) => {
         libc_enum! {
             @accumulate_entries
             $prefix,
+            ( $count + 1usize ),
             [
                 $($entries)*
                 $entry = libc::$entry as $ty,
@@ -230,6 +272,7 @@ macro_rules! libc_enum {
                 name: $BitFlags,
                 attrs: [$(#[$attr])*],
             },
+            ( 0usize ),
             [];
             $($vals)*
         }
@@ -249,6 +292,7 @@ macro_rules! libc_enum {
                 name: $BitFlags,
                 attrs: [$(#[$attr])*],
             },
+            ( 0usize ),
             [];
             $($vals)*
         }

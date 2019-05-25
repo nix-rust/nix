@@ -143,7 +143,7 @@ libc_enum!{
 impl Event {
     #[inline]
     pub fn from_c_int(evnum: libc::c_int) -> Result<Event> {
-        if 0 < evnum && evnum < 7 {
+        if 0 < evnum && (evnum as usize) < Event::COUNT {
             Ok(unsafe { mem::transmute(evnum) })
         } else {
             Err(Error::invalid_argument())

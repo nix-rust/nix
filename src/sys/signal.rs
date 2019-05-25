@@ -263,8 +263,6 @@ const SIGNALS: [Signal; 31] = [
     SIGEMT,
     SIGINFO];
 
-pub const NSIG: libc::c_int = 32;
-
 #[derive(Clone, Copy)]
 #[allow(missing_debug_implementations)]
 pub struct SignalIterator {
@@ -295,7 +293,7 @@ impl Signal {
     // implemented, we'll replace this function.
     #[inline]
     pub fn from_c_int(signum: libc::c_int) -> Result<Signal> {
-        if 0 < signum && signum < NSIG {
+        if 0 < signum && (signum as usize) < Signal::COUNT {
             Ok(unsafe { mem::transmute(signum) })
         } else {
             Err(Error::invalid_argument())
