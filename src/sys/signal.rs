@@ -6,6 +6,7 @@
 use libc;
 use {Error, Result};
 use errno::Errno;
+use std::convert::{TryFrom, TryInto};
 use std::mem;
 use std::fmt;
 use std::str::FromStr;
@@ -287,12 +288,13 @@ impl Signal {
     pub fn iterator() -> SignalIterator {
         SignalIterator{next: 0}
     }
+}
 
-    // We do not implement the From trait, because it is supposed to be infallible.
-    // With Rust RFC 1542 comes the appropriate trait TryFrom. Once it is
-    // implemented, we'll replace this function.
+impl TryFrom<libc::c_int> for Signal {
+    type Error = Error;
+
     #[inline]
-    pub fn from_c_int(signum: libc::c_int) -> Result<Signal> {
+    fn try_from(signum: libc::c_int) -> Result<Signal> {
         if 0 < signum && (signum as usize) < Signal::COUNT {
             Ok(unsafe { mem::transmute(signum) })
         } else {
@@ -443,7 +445,7 @@ impl SigSet {
         let mut signum: libc::c_int = unsafe { mem::uninitialized() };
         let res = unsafe { libc::sigwait(&self.sigset as *const libc::sigset_t, &mut signum) };
 
-        Errno::result(res).map(|_| Signal::from_c_int(signum).unwrap())
+        Errno::result(res).map(|_| signum.try_into().unwrap())
     }
 }
 
@@ -574,7 +576,7 @@ pub unsafe fn sigaction(signal: Signal, sigaction: &SigAction) -> Result<SigActi
 /// }
 ///
 /// extern fn handle_sigint(signal: libc::c_int) {
-///     let signal = Signal::from_c_int(signal).unwrap();
+///     let signal = signal.try_into().unwrap();
 ///     SIGNALED.store(signal == Signal::SIGINT, Ordering::Relaxed);
 /// }
 ///

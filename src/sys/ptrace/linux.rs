@@ -1,6 +1,7 @@
 //! For detailed description of the ptrace requests, consult `man ptrace`.
 
 use std::{mem, ptr};
+use std::convert::TryFrom;
 use {Error, Result};
 use errno::Errno;
 use libc::{self, c_void, c_long, siginfo_t};
@@ -140,9 +141,11 @@ libc_enum!{
     }
 }
 
-impl Event {
+impl TryFrom<libc::c_int> for Event {
+    type Error = Error;
+
     #[inline]
-    pub fn from_c_int(evnum: libc::c_int) -> Result<Event> {
+    fn try_from(evnum: libc::c_int) -> Result<Event> {
         if 0 < evnum && (evnum as usize) < Event::COUNT {
             Ok(unsafe { mem::transmute(evnum) })
         } else {

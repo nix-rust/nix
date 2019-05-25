@@ -75,7 +75,7 @@ lazy_static! {
 }
 
 extern fn test_sigaction_handler(signal: libc::c_int) {
-    let signal = Signal::from_c_int(signal).unwrap();
+    let signal = signal.try_into().unwrap();
     SIGNALED.store(signal == Signal::SIGINT, Ordering::Relaxed);
 }
 
