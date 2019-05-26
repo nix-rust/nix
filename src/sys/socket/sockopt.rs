@@ -684,7 +684,7 @@ mod test {
         use ::unistd::Uid;
         use ::std::io::{self, Write};
 
-        if !Uid::current().is_root() {
+        if !Uid::effective().is_root() {
             let stderr = io::stderr();
             let mut handle = stderr.lock();
             writeln!(handle, "SO_MARK requires root privileges. Skipping test.").unwrap();
