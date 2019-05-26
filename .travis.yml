@@ -99,30 +99,6 @@ script:
 
 after_script: set +e
 
-before_deploy:
-  - sh ci/before_deploy.sh
-
-deploy:
-  # TODO update `api_key.secure`
-  # - Create a `public_repo` GitHub token. Go to: https://github.com/settings/tokens/new
-  # - Encrypt it: `travis encrypt GH_TOKEN=0123456789012345678901234567890123456789`
-  # - Paste the output down here
-  api_key:
-    secure: S1ktt0eqmfrEHnYPf4WO7mZtatz/FWfYWBp8nwdc0nd8H6UNZ9Dwy3tJpVe0N9rpB9vAFnkdw6R4jdkIcgxfory2F3F8k/mh8cWn0mkvh2N34YjHMYLnuVzOoFrWai7IcPfROpdlY0tGBlwNj5KMkeBnHUJzd2q4j/4j/tlrfmg=
-  file_glob: true
-  file: $CRATE_NAME-$TRAVIS_TAG-$TARGET.*
-  on:
-    # Here you can pick which targets will generate binary releases
-    # In this example, there are some targets that are tested using the stable
-    # and nightly channels. This condition makes sure there is only one release
-    # for such targets and that's generated using the stable channel
-    #
-    # Here we make it so we never generate binary releases
-    condition: $DEPLOY = never
-    tags: true
-  provider: releases
-  skip_cleanup: true
-
 cache: cargo
 before_cache:
   # Travis can't cache files that are not readable by "others"
