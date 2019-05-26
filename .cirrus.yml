@@ -1,6 +1,3 @@
-freebsd_instance:
-  image: freebsd-11-4-release-amd64
-
 # Test FreeBSD in a full VM on cirrus-ci.com.  Test the i686 target too, in the
 # same VM.  The binary will be built in 32-bit mode, but will execute on a
 # 64-bit kernel and in a 64-bit environment.  Our tests don't execute any of
@@ -10,6 +7,8 @@ task:
   cargo_cache:
     folder: $CARGO_HOME/registry
     fingerprint_script: cat Cargo.lock || echo ""
+  freebsd_instance:
+    image: freebsd-11-4-release-amd64
   # Install Rust
   setup_script:
     - fetch https://sh.rustup.rs -o rustup.sh
@@ -22,3 +21,22 @@ task:
     - . $HOME/.cargo/env
     - cargo test --target i686-unknown-freebsd
   before_cache_script: rm -rf $CARGO_HOME/registry/index
+
+task:
+  name: Linux/GNU x86_64
+  container:
+    matrix:
+      - image: rust:1.24.1
+      - image: rust:latest
+  cargo_cache:
+    folder: $CARGO_HOME/registry
+    fingerprint_script: cat Cargo.lock || echo ""
+  setup_script:
+    - uname -a
+    - cat /etc/debian_version
+  build_script:
+    - cargo build
+    - cargo build --release
+  test_script:
+    - cargo test
+    - cargo test --release

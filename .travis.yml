@@ -70,8 +70,7 @@ matrix:
       rust: 1.36.0
     - env: TARGET=s390x-unknown-linux-gnu DISABLE_TESTS=1
       rust: 1.36.0
-    - env: TARGET=x86_64-unknown-linux-gnu
-      rust: 1.36.0
+    # Linux/GNU x86_64 uses Cirrus instead of Travis
     - env: TARGET=x86_64-unknown-linux-musl
       rust: 1.36.0
 
