@@ -1,6 +1,27 @@
 use rand::{thread_rng, Rng};
 use nix::sys::socket::{socket, sockopt, getsockopt, setsockopt, AddressFamily, SockType, SockFlag, SockProtocol};
 
+#[cfg(target_os = "linux")]
+#[test]
+fn is_so_mark_functional() {
+    use ::caps::{Capability, CapSet, has_cap};
+    use ::std::io::{self, Write};
+    use nix::sys::socket::sockopt;
+
+    if !has_cap(None, CapSet::Effective, Capability::CAP_NET_ADMIN).unwrap() {
+        let stderr = io::stderr();
+        let mut handle = stderr.lock();
+        writeln!(handle, "SO_MARK requires CAP_NET_ADMIN. Skipping test.")
+            .unwrap();
+        return;
+    }
+
+    let s = socket(AddressFamily::Inet, SockType::Stream, SockFlag::empty(), None).unwrap();
+    setsockopt(s, sockopt::Mark, &1337).unwrap();
+    let mark = getsockopt(s, sockopt::Mark).unwrap();
+    assert_eq!(mark, 1337);
+}
+
 #[test]
 fn test_so_buf() {
     let fd = socket(AddressFamily::Inet, SockType::Datagram, SockFlag::empty(), SockProtocol::Udp)

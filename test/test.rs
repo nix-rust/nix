@@ -1,4 +1,6 @@
 extern crate bytes;
+#[cfg(target_os = "linux")]
+extern crate caps;
 #[macro_use]
 extern crate cfg_if;
 #[macro_use]

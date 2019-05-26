@@ -677,23 +677,4 @@ mod test {
         close(s).unwrap();
     }
 
-    #[cfg(target_os = "linux")]
-    #[test]
-    fn is_so_mark_functional() {
-        use super::super::*;
-        use ::unistd::Uid;
-        use ::std::io::{self, Write};
-
-        if !Uid::effective().is_root() {
-            let stderr = io::stderr();
-            let mut handle = stderr.lock();
-            writeln!(handle, "SO_MARK requires root privileges. Skipping test.").unwrap();
-            return;
-        }
-
-        let s = socket(AddressFamily::Inet, SockType::Stream, SockFlag::empty(), None).unwrap();
-        setsockopt(s, super::Mark, &1337).unwrap();
-        let mark = getsockopt(s, super::Mark).unwrap();
-        assert_eq!(mark, 1337);
-    }
 }
