@@ -274,7 +274,7 @@ cfg_if!{
 #[test]
 fn test_fchdir() {
     // fchdir changes the process's cwd
-    let _m = ::CWD_MTX.lock().expect("Mutex got poisoned by another test");
+    let _dr = ::DirRestore::new();
 
     let tmpdir = tempfile::tempdir().unwrap();
     let tmpdir_path = tmpdir.path().canonicalize().unwrap();
@@ -289,7 +289,7 @@ fn test_fchdir() {
 #[test]
 fn test_getcwd() {
     // chdir changes the process's cwd
-    let _m = ::CWD_MTX.lock().expect("Mutex got poisoned by another test");
+    let _dr = ::DirRestore::new();
 
     let tmpdir = tempfile::tempdir().unwrap();
     let tmpdir_path = tmpdir.path().canonicalize().unwrap();
@@ -332,6 +332,7 @@ fn test_chown() {
 
 #[test]
 fn test_fchownat() {
+    let _dr = ::DirRestore::new();
     // Testing for anything other than our own UID/GID is hard.
     let uid = Some(getuid());
     let gid = Some(getgid());
