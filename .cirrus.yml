@@ -34,6 +34,7 @@ task:
   setup_script:
     - uname -a
     - cat /etc/debian_version
+    - cat /proc/cpuinfo
   build_script:
     - cargo build
     - cargo build --release
