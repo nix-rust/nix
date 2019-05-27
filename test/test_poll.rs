@@ -3,6 +3,8 @@ use nix::unistd::{write, pipe};
 
 #[test]
 fn test_poll() {
+    let _m = ::SIGNAL_MTX.lock().expect("Mutex got poisoned by another test");
+
     let (r, w) = pipe().unwrap();
     let mut fds = [PollFd::new(r, PollFlags::POLLIN)];
 
