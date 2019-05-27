@@ -387,28 +387,50 @@ fn test_lseek64() {
     close(tmpfd).unwrap();
 }
 
-// Skip on FreeBSD because FreeBSD's CI environment is jailed, and jails
-// aren't allowed to use acct(2)
-#[cfg(not(target_os = "freebsd"))]
+cfg_if!{
+    if #[cfg(any(target_os = "android", target_os = "linux"))] {
+        macro_rules! require_acct{
+            () => {
+                require_capability!(CAP_SYS_PACCT);
+            }
+        }
+    } else if #[cfg(target_os = "freebsd")] {
+        macro_rules! require_acct{
+            () => {
+                skip_if_not_root!("test_acct");
+                skip_if_jailed!("test_acct");
+            }
+        }
+    } else {
+        macro_rules! require_acct{
+            () => {
+                skip_if_not_root!("test_acct");
+            }
+        }
+    }
+}
+
 #[test]
 fn test_acct() {
     use tempfile::NamedTempFile;
     use std::process::Command;
     use std::{thread, time};
 
-    skip_if_not_root!("test_acct");
+    let _m = ::FORK_MTX.lock().expect("Mutex got poisoned by another test");
+    require_acct!();
+
     let file = NamedTempFile::new().unwrap();
     let path = file.path().to_str().unwrap();
 
     acct::enable(path).unwrap();
-    Command::new("echo").arg("Hello world");
-    acct::disable().unwrap();
 
     loop {
+        Command::new("echo").arg("Hello world");
         let len = fs::metadata(path).unwrap().len();
         if len > 0 { break; }
         thread::sleep(time::Duration::from_millis(10));
     }
+    acct::disable().unwrap();
 }
 
 #[test]

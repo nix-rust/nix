@@ -9,6 +9,8 @@ extern crate nix;
 extern crate lazy_static;
 extern crate libc;
 extern crate rand;
+#[cfg(target_os = "freebsd")]
+extern crate sysctl;
 extern crate tempfile;
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
@@ -27,14 +29,31 @@ macro_rules! require_capability {
     }
 }
 
+#[cfg(target_os = "freebsd")]
+macro_rules! skip_if_jailed {
+    ($name:expr) => {
+        use ::sysctl::CtlValue;
+
+        if let CtlValue::Int(1) = ::sysctl::value("security.jail.jailed")
+            .unwrap()
+        {
+            use ::std::io::Write;
+            let stderr = ::std::io::stderr();
+            let mut handle = stderr.lock();
+            writeln!(handle, "{} cannot run in a jail. Skipping test.", $name)
+                .unwrap();
+            return;
+        }
+    }
+}
+
 macro_rules! skip_if_not_root {
     ($name:expr) => {
         use nix::unistd::Uid;
-        use std;
-        use std::io::Write;
 
         if !Uid::current().is_root() {
-            let stderr = std::io::stderr();
+            use ::std::io::Write;
+            let stderr = ::std::io::stderr();
             let mut handle = stderr.lock();
             writeln!(handle, "{} requires root privileges. Skipping test.", $name).unwrap();
             return;
