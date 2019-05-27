@@ -35,6 +35,7 @@ task:
     - uname -a
     - cat /etc/debian_version
     - cat /proc/cpuinfo
+    - cat /proc/crypto
   build_script:
     - cargo build
     - cargo build --release
