@@ -1,5 +1,5 @@
 extern crate bytes;
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "android", target_os = "linux"))]
 extern crate caps;
 #[macro_use]
 extern crate cfg_if;
@@ -10,6 +10,22 @@ extern crate lazy_static;
 extern crate libc;
 extern crate rand;
 extern crate tempfile;
+
+#[cfg(any(target_os = "android", target_os = "linux"))]
+macro_rules! require_capability {
+    ($capname:ident) => {
+        use ::caps::{Capability, CapSet, has_cap};
+        use ::std::io::{self, Write};
+
+        if !has_cap(None, CapSet::Effective, Capability::$capname).unwrap() {
+            let stderr = io::stderr();
+            let mut handle = stderr.lock();
+            writeln!(handle, "Insufficient capabilities. Skipping test.")
+                .unwrap();
+            return;
+        }
+    }
+}
 
 macro_rules! skip_if_not_root {
     ($name:expr) => {

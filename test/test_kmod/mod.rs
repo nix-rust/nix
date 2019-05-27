@@ -40,7 +40,7 @@ use std::io::Read;
 
 #[test]
 fn test_finit_and_delete_module() {
-    skip_if_not_root!("test_finit_module");
+    require_capability!(CAP_SYS_MODULE);
 
     let (kmod_path, kmod_name, _kmod_dir) = compile_kernel_module();
 
@@ -56,7 +56,7 @@ fn test_finit_and_delete_module() {
 
 #[test]
 fn test_finit_and_delete_modul_with_params() {
-    skip_if_not_root!("test_finit_module_with_params");
+    require_capability!(CAP_SYS_MODULE);
 
     let (kmod_path, kmod_name, _kmod_dir) = compile_kernel_module();
 
@@ -75,7 +75,7 @@ fn test_finit_and_delete_modul_with_params() {
 
 #[test]
 fn test_init_and_delete_module() {
-    skip_if_not_root!("test_init_module");
+    require_capability!(CAP_SYS_MODULE);
 
     let (kmod_path, kmod_name, _kmod_dir) = compile_kernel_module();
 
@@ -93,7 +93,7 @@ fn test_init_and_delete_module() {
 
 #[test]
 fn test_init_and_delete_module_with_params() {
-    skip_if_not_root!("test_init_module");
+    require_capability!(CAP_SYS_MODULE);
 
     let (kmod_path, kmod_name, _kmod_dir) = compile_kernel_module();
 
@@ -112,7 +112,7 @@ fn test_init_and_delete_module_with_params() {
 
 #[test]
 fn test_finit_module_invalid() {
-    skip_if_not_root!("test_finit_module_invalid");
+    require_capability!(CAP_SYS_MODULE);
 
     let kmod_path = "/dev/zero";
 
@@ -124,7 +124,7 @@ fn test_finit_module_invalid() {
 
 #[test]
 fn test_finit_module_twice_and_delete_module() {
-    skip_if_not_root!("test_finit_module_twice_and_delete_module");
+    require_capability!(CAP_SYS_MODULE);
 
     let (kmod_path, kmod_name, _kmod_dir) = compile_kernel_module();
 
@@ -144,7 +144,7 @@ fn test_finit_module_twice_and_delete_module() {
 
 #[test]
 fn test_delete_module_not_loaded() {
-    skip_if_not_root!("test_delete_module_not_loaded");
+    require_capability!(CAP_SYS_MODULE);
 
     let result = delete_module(&CString::new("hello").unwrap(), DeleteModuleFlags::empty());
 
