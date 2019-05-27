@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # This script takes care of testing your crate
 
 set -ex
@@ -8,24 +8,27 @@ main() {
     if [ "$TRAVIS" = true ]; then
         export RUSTFLAGS=--cfg=travis
     fi
+    if [ "$CIRRUS_CI" = true ]; then
+        export RUSTFLAGS=--cfg=cirrus
+    fi
 
     IFS=';' read -ra TARGET_ARRAY <<< "$TARGET"
     for t in "${TARGET_ARRAY[@]}"; do
-	# Build debug and release targets
-	cross build --target $t
-	cross build --target $t --release
+    # Build debug and release targets
+    cross build --target $t
+    cross build --target $t --release
 
-	if [ ! -z $DISABLE_TESTS ]; then
-	    continue
-	fi
+    if [ ! -z $DISABLE_TESTS ]; then
+        continue
+    fi
 
-	# Run tests on debug and release targets.
-	cross test --target $t
-	cross test --target $t --release
+    # Run tests on debug and release targets.
+    cross test --target $t
+    cross test --target $t --release
     done
 }
 
 # we don't run the "test phase" when doing deploys
-if [ -z $TRAVIS_TAG ]; then
+if [ -z "$TRAVIS_TAG" -a -z "$CIRRUS_TAG" ]; then
     main
 fi

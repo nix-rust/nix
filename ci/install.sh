@@ -1,14 +1,20 @@
-#!/bin/bash
+#!/bin/sh
 set -ex
 
 main() {
     local target=
-    if [ $TRAVIS_OS_NAME = linux ]; then
+    if [ `uname` = "Linux" ]; then
         target=x86_64-unknown-linux-musl
-        sort=sort
+    elif [ `uname` = "FreeBSD" ]; then
+        target=x86_64-unknown-freebsd
     else
         target=x86_64-apple-darwin
+    fi
+
+    if which -s gsort; then
         sort=gsort  # for `sort --sort-version`, from brew's coreutils.
+    else
+        sort=sort
     fi
 
     # Builds for iOS are done on OSX, but require the specific target to be
