@@ -39,5 +39,5 @@ task:
     - cargo build
     - cargo build --release
   test_script:
-    - cargo test -- --test-threads=1
-    - cargo test --release -- --test-threads=1
+    - cargo test
+    - cargo test --release
