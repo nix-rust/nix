@@ -602,6 +602,11 @@ fn chown_raw_ids(owner: Option<Uid>, group: Option<Gid>) -> (libc::uid_t, libc::
 /// The owner/group for the provided path name will not be modified if `None` is
 /// provided for that argument.  Ownership change will be attempted for the path
 /// only if `Some` owner/group is provided.
+///
+/// To change the owner and group of a symbolic link (instead of the file pointed to) use
+/// the `fchownat` function.  Note that `lchmod` is unimplemented in the `nix` crate, as
+/// `fchownat(None, path, mode, FchownatFlags::NoFollowSymlink)` is identical to
+/// a call `libc::lchown(path, mode)`.
 #[inline]
 pub fn chown<P: ?Sized + NixPath>(path: &P, owner: Option<Uid>, group: Option<Gid>) -> Result<()> {
     let res = path.with_nix_path(|cstr| {
