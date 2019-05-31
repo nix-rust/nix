@@ -1013,7 +1013,7 @@ pub mod netlink {
 #[cfg(any(target_os = "ios", target_os = "macos"))]
 pub mod sys_control {
     use ::sys::socket::addr::AddressFamily;
-    use libc::{self, c_uchar, uint16_t, uint32_t};
+    use libc::{self, c_uchar};
     use std::{fmt, mem};
     use std::hash::{Hash, Hasher};
     use std::os::unix::io::RawFd;
@@ -1021,7 +1021,7 @@ pub mod sys_control {
 
     #[repr(C)]
     pub struct ctl_ioc_info {
-        pub ctl_id: uint32_t,
+        pub ctl_id: u32,
         pub ctl_name: [c_uchar; MAX_KCTL_NAME],
     }
 
@@ -1058,7 +1058,7 @@ pub mod sys_control {
             let addr = libc::sockaddr_ctl {
                 sc_len: mem::size_of::<libc::sockaddr_ctl>() as c_uchar,
                 sc_family: AddressFamily::System as c_uchar,
-                ss_sysaddr: libc::AF_SYS_CONTROL as uint16_t,
+                ss_sysaddr: libc::AF_SYS_CONTROL as u16,
                 sc_id: id,
                 sc_unit: unit,
                 sc_reserved: [0; 5]
