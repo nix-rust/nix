@@ -284,6 +284,7 @@ fn test_read_into_pointer() {
 #[test]
 #[should_panic(expected = "Can't read into an immutable buffer")]
 #[cfg_attr(target_env = "musl", ignore)]
+#[ignore]
 fn test_read_immutable_buffer() {
     let rbuf: &[u8] = b"CDEF";
     let f = tempfile().unwrap();
@@ -641,6 +642,7 @@ fn test_liocb_listio_signal() {
 #[cfg(not(any(target_os = "ios", target_os = "macos")))]
 #[should_panic(expected = "Can't read into an immutable buffer")]
 #[cfg_attr(target_env = "musl", ignore)]
+#[ignore]
 fn test_liocb_listio_read_immutable() {
     let rbuf: &[u8] = b"abcd";
     let f = tempfile().unwrap();

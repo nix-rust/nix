@@ -650,6 +650,7 @@ pub extern fn alarm_signal_handler(raw_signal: libc::c_int) {
 
 #[test]
 #[cfg(not(target_os = "redox"))]
+#[ignore]
 fn test_alarm() {
     let _m = crate::SIGNAL_MTX.lock().expect("Mutex got poisoned by another test");
 
