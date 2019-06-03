@@ -9,6 +9,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#1079](https://github.com/nix-rust/nix/pull/1079))
 
 ### Changed
+- Support for `ifaddrs` now present when building for Android.
+  ([#1077](https://github.com/nix-rust/nix/pull/1077))
+
 ### Fixed
 ### Removed
 

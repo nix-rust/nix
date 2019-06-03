@@ -35,7 +35,8 @@ pub mod errno;
 pub mod features;
 pub mod fcntl;
 #[deny(missing_docs)]
-#[cfg(any(target_os = "dragonfly",
+#[cfg(any(target_os = "android",
+          target_os = "dragonfly",
           target_os = "freebsd",
           target_os = "ios",
           target_os = "linux",
