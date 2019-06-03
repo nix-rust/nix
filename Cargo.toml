@@ -12,7 +12,7 @@ exclude     = [
 ]
 
 [dependencies]
-libc = "0.2.42"
+libc = "0.2.57"
 bitflags = "1.0"
 cfg-if = "0.1.0"
 void = "1.0.2"
