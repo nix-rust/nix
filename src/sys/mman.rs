@@ -139,7 +139,15 @@ libc_enum!{
         #[cfg(any(target_os = "android", target_os = "linux"))]
         MADV_UNMERGEABLE,
         /// Preserve the memory of each page but offline the original page.
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(any(target_os = "android",
+            all(target_os = "linux", any(
+                target_arch = "aarch64",
+                target_arch = "arm",
+                target_arch = "ppc",
+                target_arch = "s390x",
+                target_arch = "x86",
+                target_arch = "x86_64",
+                target_arch = "sparc64"))))]
         MADV_SOFT_OFFLINE,
         /// Enable Transparent Huge Pages (THP) for pages in the given range.
         #[cfg(any(target_os = "android", target_os = "linux"))]

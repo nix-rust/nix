@@ -27,7 +27,6 @@ use libc;
 use libc::{
     c_char,
     c_int,
-    uint32_t
 };
 use std::ffi::{OsString,OsStr,CStr};
 use std::os::unix::ffi::OsStrExt;
@@ -40,7 +39,7 @@ use errno::Errno;
 
 libc_bitflags! {
     /// Configuration options for [`inotify_add_watch`](fn.inotify_add_watch.html).
-    pub struct AddWatchFlags: uint32_t {
+    pub struct AddWatchFlags: u32 {
         IN_ACCESS;
         IN_MODIFY;
         IN_ATTRIB;

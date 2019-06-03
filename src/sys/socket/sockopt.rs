@@ -2,7 +2,7 @@ use super::{GetSockOpt, SetSockOpt};
 use Result;
 use errno::Errno;
 use sys::time::TimeVal;
-use libc::{self, c_int, uint8_t, c_void, socklen_t};
+use libc::{self, c_int, c_void, socklen_t};
 use std::mem;
 use std::os::unix::io::RawFd;
 use std::ffi::{OsStr, OsString};
@@ -485,19 +485,19 @@ unsafe impl<'a> Set<'a, bool> for SetBool {
 /// Getter for an `u8` value.
 struct GetU8 {
     len: socklen_t,
-    val: uint8_t,
+    val: u8,
 }
 
 unsafe impl Get<u8> for GetU8 {
     unsafe fn blank() -> Self {
         GetU8 {
-            len: mem::size_of::<uint8_t>() as socklen_t,
+            len: mem::size_of::<u8>() as socklen_t,
             val: mem::zeroed(),
         }
     }
 
     fn ffi_ptr(&mut self) -> *mut c_void {
-        &mut self.val as *mut uint8_t as *mut c_void
+        &mut self.val as *mut u8 as *mut c_void
     }
 
     fn ffi_len(&mut self) -> *mut socklen_t {
@@ -505,23 +505,23 @@ unsafe impl Get<u8> for GetU8 {
     }
 
     unsafe fn unwrap(self) -> u8 {
-        assert!(self.len as usize == mem::size_of::<uint8_t>(), "invalid getsockopt implementation");
+        assert!(self.len as usize == mem::size_of::<u8>(), "invalid getsockopt implementation");
         self.val as u8
     }
 }
 
 /// Setter for an `u8` value.
 struct SetU8 {
-    val: uint8_t,
+    val: u8,
 }
 
 unsafe impl<'a> Set<'a, u8> for SetU8 {
     fn new(val: &'a u8) -> SetU8 {
-        SetU8 { val: *val as uint8_t }
+        SetU8 { val: *val as u8 }
     }
 
     fn ffi_ptr(&self) -> *const c_void {
-        &self.val as *const uint8_t as *const c_void
+        &self.val as *const u8 as *const c_void
     }
 
     fn ffi_len(&self) -> socklen_t {
