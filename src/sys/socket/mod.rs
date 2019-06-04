@@ -132,6 +132,10 @@ libc_bitflags!{
         /// [`recv()`](fn.recv.html)
         /// or similar function shall still return this data.
         MSG_PEEK;
+        /// Receive operation blocks until the full amount of data can be
+        /// returned. The function may return smaller amount of data if a signal
+        /// is caught, an error or disconnect occurs.
+        MSG_WAITALL;
         /// Enables nonblocking operation; if the operation would block,
         /// `EAGAIN` or `EWOULDBLOCK` is returned.  This provides similar
         /// behavior to setting the `O_NONBLOCK` flag
