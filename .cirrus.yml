@@ -7,6 +7,9 @@ freebsd_instance:
 # the system's binaries, so the environment shouldn't matter.
 task:
   name: FreeBSD 11.2
+  cargo_cache:
+    folder: $CARGO_HOME/registry
+    fingerprint_script: cat Cargo.lock || echo ""
   # Install Rust
   setup_script:
     - pkg install -y curl
@@ -19,3 +22,4 @@ task:
   i386_test_script:
     - . $HOME/.cargo/env
     - cargo test --target i686-unknown-freebsd
+  before_cache_script: rm -rf $CARGO_HOME/registry/index

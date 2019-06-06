@@ -154,6 +154,7 @@ fn test_fchmod() {
 
 #[test]
 fn test_fchmodat() {
+    let _dr = ::DirRestore::new();
     let tempdir = tempfile::tempdir().unwrap();
     let filename = "foo.txt";
     let fullpath = tempdir.path().join(filename);
@@ -241,6 +242,7 @@ fn test_futimens() {
 
 #[test]
 fn test_utimensat() {
+    let _dr = ::DirRestore::new();
     let tempdir = tempfile::tempdir().unwrap();
     let filename = "foo.txt";
     let fullpath = tempdir.path().join(filename);
