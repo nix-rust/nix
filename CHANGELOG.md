@@ -5,6 +5,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 ### Added
+### Changed
+### Fixed
+### Removed
+
+## [0.14.1] - 2019-06-06
+### Added
 - Macros exported by `nix` may now be imported via `use` on the Rust 2018
   edition without importing helper macros on Linux targets.
   ([#1066](https://github.com/nix-rust/nix/pull/1066))
