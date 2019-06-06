@@ -27,7 +27,7 @@ cc = "1"
 [dev-dependencies]
 bytes = "0.4.8"
 lazy_static = "1.2"
-rand = "0.6"
+rand = ">= 0.6, < 0.7"
 tempfile = "3.0.5"
 
 [target.'cfg(any(target_os = "android", target_os = "linux"))'.dev-dependencies]
