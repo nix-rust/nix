@@ -19,7 +19,14 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ```
 
 ### Changed
+- Changed some public types from reexports of libc types like `uint32_t` to the
+  native equivalents like `u32.`
+  ([#1072](https://github.com/nix-rust/nix/pull/1072/commits))
+
 ### Fixed
+- Fix the build on Android and Linux/mips with recent versions of libc.
+  ([#1072](https://github.com/nix-rust/nix/pull/1072/commits))
+
 ### Removed
 
 ## [0.14.0] - 2019-05-21
