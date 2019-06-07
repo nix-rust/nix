@@ -39,9 +39,10 @@ task:
     - cat /proc/cpuinfo
     - cat /proc/crypto
   test_script:
-    - sh ci/script.shtask:
+    - sh ci/script.sh
 
-name: Linux/GNU x86_64 stable
+task:
+  name: Linux/GNU x86_64 stable
   container:
     - image: rust:latest
   env:
