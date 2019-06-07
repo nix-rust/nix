@@ -734,9 +734,7 @@ pub fn execvpe(filename: &CString, args: &[CString], env: &[CString]) -> Result<
 /// is referenced as a file descriptor instead of a path.
 #[cfg(any(target_os = "android",
           target_os = "freebsd",
-          target_os = "linux",
-          target_os = "netbsd",
-          target_os = "openbsd"))]
+          target_os = "linux"))]
 #[inline]
 pub fn fexecve(fd: RawFd, args: &[CString], env: &[CString]) -> Result<Void> {
     let args_p = to_exec_array(args);
