@@ -3,6 +3,8 @@
 
 set -ex
 
+. $HOME/.cargo/env
+
 main() {
     # Add a cfg spec to allow disabling specific tests under CI.
     if [ "$TRAVIS" = true ]; then
@@ -11,9 +13,6 @@ main() {
     if [ "$CIRRUS_CI" = true ]; then
         export RUSTFLAGS=--cfg=cirrus
     fi
-
-    echo PATH is $PATH
-    ls ~/.cargo/bin
 
     for t in "$TARGET"; do
         # Build debug and release targets
