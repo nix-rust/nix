@@ -25,11 +25,11 @@ task:
 task:
   name: Linux
   container:
-    - image: rust:1.24.1
+    image: rust:1.24.1
   env:
     matrix:
-      TARGET: x86_64-unknown-linux-gnu
-      TARGET: i686-unknown-linux-gnu
+      - TARGET: x86_64-unknown-linux-gnu
+      - TARGET: i686-unknown-linux-gnu
   cargo_cache:
     folder: $CARGO_HOME/registry
     fingerprint_script: cat Cargo.lock || echo ""
@@ -44,7 +44,7 @@ task:
 task:
   name: Linux/GNU x86_64 stable
   container:
-    - image: rust:latest
+    image: rust:latest
   env:
     - TARGET:x86_64-unknown-linux-gnu
   cargo_cache:
