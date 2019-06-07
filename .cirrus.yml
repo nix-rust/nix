@@ -23,13 +23,13 @@ task:
   before_cache_script: rm -rf $CARGO_HOME/registry/index
 
 task:
-  name: Linux
+  name: Cross
   container:
     image: rust:1.24.1
   env:
     matrix:
-      - TARGET: x86_64-unknown-linux-gnu
-      - TARGET: i686-unknown-linux-gnu
+      - TARGET: "x86_64-unknown-linux-gnu i686-unknown-linux-gnu"
+      - TARGET: aarch64-unknown-linux-gnu
   cargo_cache:
     folder: $CARGO_HOME/registry
     fingerprint_script: cat Cargo.lock || echo ""
@@ -38,6 +38,7 @@ task:
     - cat /etc/debian_version
     - cat /proc/cpuinfo
     - cat /proc/crypto
+    - sh install.sh
   test_script:
     - sh ci/script.sh
 
@@ -55,5 +56,6 @@ task:
     - cat /etc/debian_version
     - cat /proc/cpuinfo
     - cat /proc/crypto
+    - sh install.sh
   test_script:
     - sh ci/script.sh
