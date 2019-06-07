@@ -28,6 +28,9 @@ task:
     matrix:
       - image: rust:1.24.1
       - image: rust:latest
+  env:
+    matrix:
+      - TARGET:x86_64-unknown-linux-gnu
   cargo_cache:
     folder: $CARGO_HOME/registry
     fingerprint_script: cat Cargo.lock || echo ""
@@ -36,9 +39,5 @@ task:
     - cat /etc/debian_version
     - cat /proc/cpuinfo
     - cat /proc/crypto
-  build_script:
-    - cargo build
-    - cargo build --release
   test_script:
-    - cargo test
-    - cargo test --release
+    - sh ci/script.sh
