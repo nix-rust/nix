@@ -3,7 +3,12 @@
 
 set -ex
 
-. $HOME/.cargo/env
+which cargo
+if [ -f $HOME/cargo/env ]; then
+    . $HOME/.cargo/env
+else
+    export PATH="$HOME/.cargo/bin:$PATH"
+fi
 
 main() {
     # Add a cfg spec to allow disabling specific tests under CI.
