@@ -12,6 +12,9 @@ main() {
         export RUSTFLAGS=--cfg=cirrus
     fi
 
+    echo PATH is $PATH
+    ls ~/.cargo/bin
+
     for t in "$TARGET"; do
         # Build debug and release targets
         cross build --target $t
