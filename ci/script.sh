@@ -12,19 +12,18 @@ main() {
         export RUSTFLAGS=--cfg=cirrus
     fi
 
-    IFS=';' read -ra TARGET_ARRAY <<< "$TARGET"
-    for t in "${TARGET_ARRAY[@]}"; do
-    # Build debug and release targets
-    cross build --target $t
-    cross build --target $t --release
+    for t in "$TARGET"; do
+        # Build debug and release targets
+        cross build --target $t
+        cross build --target $t --release
 
-    if [ ! -z $DISABLE_TESTS ]; then
-        continue
-    fi
+        if [ ! -z $DISABLE_TESTS ]; then
+            continue
+        fi
 
-    # Run tests on debug and release targets.
-    cross test --target $t
-    cross test --target $t --release
+        # Run tests on debug and release targets.
+        cross test --target $t
+        cross test --target $t --release
     done
 }
 

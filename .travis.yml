@@ -17,7 +17,7 @@ matrix:
     # builders so heavily that we otherwise can't merge PRs during the work
     # week.  Additionally they're moved to the front of the line to get them in
     # the Travis OS X build queue first.
-    - env: TARGET="aarch64-apple-ios;armv7-apple-ios;armv7s-apple-ios;i386-apple-ios;x86_64-apple-ios" DISABLE_TESTS=1
+    - env: TARGET="aarch64-apple-ios armv7-apple-ios armv7s-apple-ios i386-apple-ios x86_64-apple-ios" DISABLE_TESTS=1
       rust: 1.36.0
       os: osx
 

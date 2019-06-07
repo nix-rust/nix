@@ -19,8 +19,7 @@ main() {
 
     # Builds for iOS are done on OSX, but require the specific target to be
     # installed.
-    IFS=';' read -ra TARGET_ARRAY <<< "$TARGET"
-    for t in "${TARGET_ARRAY[@]}"; do
+    for t in "$TARGET"; do
         case $t in
             aarch64-apple-ios)
                     rustup target install aarch64-apple-ios
