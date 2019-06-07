@@ -5,6 +5,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 ### Added
+- Added `MSG_WAITALL` to `MsgFlags` in `sys::socket`.
+  ([#1079](https://github.com/nix-rust/nix/pull/1079))
+
 ### Changed
 ### Fixed
 ### Removed
