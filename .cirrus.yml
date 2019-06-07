@@ -38,7 +38,7 @@ task:
     - cat /etc/debian_version
     - cat /proc/cpuinfo
     - cat /proc/crypto
-    - sh install.sh
+    - sh ci/install.sh
   test_script:
     - sh ci/script.sh
 
@@ -56,6 +56,6 @@ task:
     - cat /etc/debian_version
     - cat /proc/cpuinfo
     - cat /proc/crypto
-    - sh install.sh
+    - sh ci/install.sh
   test_script:
     - sh ci/script.sh
