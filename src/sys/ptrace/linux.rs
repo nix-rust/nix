@@ -209,8 +209,6 @@ unsafe fn ptrace_other(request: Request, pid: Pid, addr: AddressType, data: *mut
 
 /// Set options, as with `ptrace(PTRACE_SETOPTIONS,...)`.
 pub fn setoptions(pid: Pid, options: Options) -> Result<()> {
-    use std::ptr;
-
     let res = unsafe {
         libc::ptrace(Request::PTRACE_SETOPTIONS as RequestType,
                      libc::pid_t::from(pid),
