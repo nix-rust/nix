@@ -27,8 +27,7 @@ use libc::{dirent, readdir_r};
 ///      does).
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Dir(
-    // This could be ptr::NonNull once nix requires Rust 1.25.
-    *mut libc::DIR
+    ptr::NonNull<libc::DIR>
 );
 
 impl Dir {
@@ -60,7 +59,8 @@ impl Dir {
             unsafe { libc::close(fd) };
             return Err(e);
         };
-        Ok(Dir(d))
+        // Always guaranteed to be non-null by the previous check
+        Ok(Dir(ptr::NonNull::new(d).unwrap()))
     }
 
     /// Returns an iterator of `Result<Entry>` which rewinds when finished.
@@ -79,13 +79,13 @@ unsafe impl Send for Dir {}
 
 impl AsRawFd for Dir {
     fn as_raw_fd(&self) -> RawFd {
-        unsafe { libc::dirfd(self.0) }
+        unsafe { libc::dirfd(self.0.as_ptr()) }
     }
 }
 
 impl Drop for Dir {
     fn drop(&mut self) {
-        unsafe { libc::closedir(self.0) };
+        unsafe { libc::closedir(self.0.as_ptr()) };
     }
 }
 
@@ -104,7 +104,7 @@ impl<'d> Iterator for Iter<'d> {
             // Probably fine here too then.
             let mut ent: Entry = Entry(::std::mem::uninitialized());
             let mut result = ptr::null_mut();
-            if let Err(e) = Errno::result(readdir_r((self.0).0, &mut ent.0, &mut result)) {
+            if let Err(e) = Errno::result(readdir_r((self.0).0.as_ptr(), &mut ent.0, &mut result)) {
                 return Some(Err(e));
             }
             if result == ptr::null_mut() {
@@ -118,7 +118,7 @@ impl<'d> Iterator for Iter<'d> {
 
 impl<'d> Drop for Iter<'d> {
     fn drop(&mut self) {
-        unsafe { libc::rewinddir((self.0).0) }
+        unsafe { libc::rewinddir((self.0).0.as_ptr()) }
     }
 }
 
