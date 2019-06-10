@@ -3,10 +3,19 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
+## [0.13.1] - 2019-06-10
 ### Added
 ### Changed
+- Changed some public types from reexports of libc types like `uint32_t` to the
+  native equivalents like u32.
+  ([#1072](https://github.com/nix-rust/nix/pull/1072))
+
 ### Fixed
+- Fixed the build on Android and Linux/mips with recent versions of libc.
+  ([#1072](https://github.com/nix-rust/nix/pull/1072))
+- Fixed build on Linux/arm and Linux/s390x with the latest Rust libc
+  ([52102cb](https://github.com/nix-rust/nix/commit/52102cb76398c4dfb9ea141b98c5b01a2e050973))
+
 ### Removed
 - `Daemon`, `NOTE_REAP`, and `NOTE_EXIT_REPARENTED` are now deprecated on OSX
   and iOS.
