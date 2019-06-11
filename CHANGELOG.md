@@ -9,6 +9,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#1079](https://github.com/nix-rust/nix/pull/1079))
 - Implemented `Clone`, `Copy`, `Debug`, `Eq`, `Hash`, and `PartialEq` for most
   types that support them. ([#1035](https://github.com/nix-rust/nix/pull/1035))
+- Added `copy_file_range` wrapper
+  ([#1069](https://github.com/nix-rust/nix/pull/1069))
 
 ### Changed
 - Support for `ifaddrs` now present when building for Android.
