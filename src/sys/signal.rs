@@ -265,8 +265,7 @@ const SIGNALS: [Signal; 31] = [
 
 pub const NSIG: libc::c_int = 32;
 
-#[derive(Clone, Copy)]
-#[allow(missing_debug_implementations)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct SignalIterator {
     next: usize,
 }
@@ -328,8 +327,7 @@ libc_enum! {
     }
 }
 
-#[derive(Clone, Copy)]
-#[allow(missing_debug_implementations)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct SigSet {
     sigset: libc::sigset_t
 }
@@ -427,7 +425,7 @@ impl AsRef<libc::sigset_t> for SigSet {
 
 /// A signal handler.
 #[allow(unknown_lints)]
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum SigHandler {
     /// Default signal handling.
     SigDfl,
@@ -441,8 +439,7 @@ pub enum SigHandler {
 }
 
 /// Action to take on receipt of a signal. Corresponds to `sigaction`.
-#[derive(Clone, Copy)]
-#[allow(missing_debug_implementations)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct SigAction {
     sigaction: libc::sigaction
 }
@@ -683,7 +680,7 @@ pub type type_of_thread_id = libc::pid_t;
 // sigval is actually a union of a int and a void*.  But it's never really used
 // as a pointer, because neither libc nor the kernel ever dereference it.  nix
 // therefore presents it as an intptr_t, which is how kevent uses it.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum SigevNotify {
     /// No notification will be delivered
     SigevNone,
@@ -710,7 +707,6 @@ mod sigevent {
     use libc;
     use std::mem;
     use std::ptr;
-    use std::fmt::{self, Debug};
     use super::SigevNotify;
     #[cfg(any(target_os = "freebsd", target_os = "linux"))]
     use super::type_of_thread_id;
@@ -718,7 +714,7 @@ mod sigevent {
     /// Used to request asynchronous notification of the completion of certain
     /// events, such as POSIX AIO and timers.
     #[repr(C)]
-    #[derive(Clone, Copy)]
+    #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
     pub struct SigEvent {
         sigevent: libc::sigevent
     }
@@ -785,28 +781,6 @@ mod sigevent {
 
         pub fn sigevent(&self) -> libc::sigevent {
             self.sigevent
-        }
-    }
-
-    impl Debug for SigEvent {
-        #[cfg(any(target_os = "freebsd", target_os = "linux"))]
-        fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-            fmt.debug_struct("SigEvent")
-                .field("sigev_notify", &self.sigevent.sigev_notify)
-                .field("sigev_signo", &self.sigevent.sigev_signo)
-                .field("sigev_value", &self.sigevent.sigev_value.sival_ptr)
-                .field("sigev_notify_thread_id",
-                        &self.sigevent.sigev_notify_thread_id)
-                .finish()
-        }
-
-        #[cfg(not(any(target_os = "freebsd", target_os = "linux")))]
-        fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-            fmt.debug_struct("SigEvent")
-                .field("sigev_notify", &self.sigevent.sigev_notify)
-                .field("sigev_signo", &self.sigevent.sigev_signo)
-                .field("sigev_value", &self.sigevent.sigev_value.sival_ptr)
-                .finish()
         }
     }
 

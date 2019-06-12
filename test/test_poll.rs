@@ -1,5 +1,5 @@
 use nix::poll::{PollFlags, poll, PollFd};
-use nix::unistd::{write, pipe, close};
+use nix::unistd::{write, pipe};
 
 #[test]
 fn test_poll() {
@@ -17,24 +17,6 @@ fn test_poll() {
     let nfds = poll(&mut fds, 100).unwrap();
     assert_eq!(nfds, 1);
     assert!(fds[0].revents().unwrap().contains(PollFlags::POLLIN));
-}
-
-#[test]
-fn test_poll_debug() {
-    assert_eq!(format!("{:?}", PollFd::new(0, PollFlags::empty())),
-               "PollFd { fd: 0, events: (empty), revents: (empty) }");
-    assert_eq!(format!("{:?}", PollFd::new(1, PollFlags::POLLIN)),
-               "PollFd { fd: 1, events: POLLIN, revents: (empty) }");
-
-    // Testing revents requires doing some I/O
-    let (r, w) = pipe().unwrap();
-    let mut fds = [PollFd::new(r, PollFlags::POLLIN)];
-    write(w, b" ").unwrap();
-    close(w).unwrap();
-    poll(&mut fds, -1).unwrap();
-    assert_eq!(format!("{:?}", fds[0]),
-               format!("PollFd {{ fd: {}, events: POLLIN, revents: POLLIN | POLLHUP }}", r));
-    close(r).unwrap();
 }
 
 // ppoll(2) is the same as poll except for how it handles timeouts and signals.

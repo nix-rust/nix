@@ -39,8 +39,7 @@ libc_bitflags!{
 pub type CloneCb<'a> = Box<FnMut() -> isize + 'a>;
 
 #[repr(C)]
-#[derive(Clone, Copy)]
-#[allow(missing_debug_implementations)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct CpuSet {
     cpu_set: libc::cpu_set_t,
 }

@@ -15,7 +15,7 @@ use sys::socket::SockAddr;
 use net::if_::*;
 
 /// Describes a single address for an interface as returned by `getifaddrs`.
-#[derive(Clone, Eq, Hash, PartialEq, Debug)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct InterfaceAddress {
     /// Name of the network interface
     pub interface_name: String,

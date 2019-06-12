@@ -1,9 +1,11 @@
 use nix::sys::socket::{InetAddr, UnixAddr, getsockname};
-use std::slice;
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
 use std::net::{self, Ipv6Addr, SocketAddr, SocketAddrV6};
-use std::path::Path;
-use std::str::FromStr;
 use std::os::unix::io::RawFd;
+use std::path::Path;
+use std::slice;
+use std::str::FromStr;
 use libc::c_char;
 use tempfile;
 
@@ -66,26 +68,70 @@ pub fn test_path_to_sock_addr() {
     assert_eq!(addr.path(), Some(actual));
 }
 
+fn calculate_hash<T: Hash>(t: &T) -> u64 {
+    let mut s = DefaultHasher::new();
+    t.hash(&mut s);
+    s.finish()
+}
+
+#[test]
+pub fn test_addr_equality_path() {
+    let path = "/foo/bar";
+    let actual = Path::new(path);
+    let addr1 = UnixAddr::new(actual).unwrap();
+    let mut addr2 = addr1.clone();
+
+    addr2.0.sun_path[10] = 127;
+
+    assert_eq!(addr1, addr2);
+    assert_eq!(calculate_hash(&addr1), calculate_hash(&addr2));
+}
+
+#[cfg(any(target_os = "android", target_os = "linux"))]
+#[test]
+pub fn test_abstract_sun_path_too_long() {
+    let name = String::from("nix\0abstract\0tesnix\0abstract\0tesnix\0abstract\0tesnix\0abstract\0tesnix\0abstract\0testttttnix\0abstract\0test\0make\0sure\0this\0is\0long\0enough");
+    let addr = UnixAddr::new_abstract(name.as_bytes());
+    assert!(addr.is_err());
+}
+
+#[cfg(any(target_os = "android", target_os = "linux"))]
+#[test]
+pub fn test_addr_equality_abstract() {
+    let name = String::from("nix\0abstract\0test");
+    let addr1 = UnixAddr::new_abstract(name.as_bytes()).unwrap();
+    let mut addr2 = addr1.clone();
+
+    assert_eq!(addr1, addr2);
+    assert_eq!(calculate_hash(&addr1), calculate_hash(&addr2));
+
+    addr2.0.sun_path[18] = 127;
+    assert_ne!(addr1, addr2);
+    assert_ne!(calculate_hash(&addr1), calculate_hash(&addr2));
+}
+
 // Test getting/setting abstract addresses (without unix socket creation)
 #[cfg(target_os = "linux")]
 #[test]
 pub fn test_abstract_uds_addr() {
     let empty = String::new();
     let addr = UnixAddr::new_abstract(empty.as_bytes()).unwrap();
-    assert_eq!(addr.as_abstract(), Some(empty.as_bytes()));
+    let sun_path = [0u8; 107];
+    assert_eq!(addr.as_abstract(), Some(&sun_path[..]));
 
     let name = String::from("nix\0abstract\0test");
     let addr = UnixAddr::new_abstract(name.as_bytes()).unwrap();
-    assert_eq!(addr.as_abstract(), Some(name.as_bytes()));
+    let sun_path = [
+        110u8, 105, 120, 0, 97, 98, 115, 116, 114, 97, 99, 116, 0, 116, 101, 115, 116, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    ];
+    assert_eq!(addr.as_abstract(), Some(&sun_path[..]));
     assert_eq!(addr.path(), None);
 
     // Internally, name is null-prefixed (abstract namespace)
-    let internal: &[u8] = unsafe {
-        slice::from_raw_parts(addr.0.sun_path.as_ptr() as *const u8, addr.1)
-    };
-    let mut abstract_name = name.clone();
-    abstract_name.insert(0, '\0');
-    assert_eq!(internal, abstract_name.as_bytes());
+    assert_eq!(addr.0.sun_path[0], 0);
 }
 
 #[test]

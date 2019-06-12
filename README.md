@@ -44,8 +44,7 @@ limitations. Support for platforms is split into three tiers:
              *do not* block the inclusion of new code. Testing may be run, but
              failures in tests don't block the inclusion of new code.
 
-The following targets are all supported by nix on Rust 1.24.1 or newer (unless
-otherwise noted):
+The following targets are supported by `nix`:
 
 Tier 1:
   * aarch64-unknown-linux-gnu
@@ -83,6 +82,8 @@ Tier 2:
   * x86_64-unknown-netbsd
 
 ## Usage
+
+`nix` requires Rust 1.25.0 or newer.
 
 To use `nix`, first add this to your `Cargo.toml`:
 

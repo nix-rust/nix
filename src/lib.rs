@@ -98,7 +98,7 @@ pub type Result<T> = result::Result<T, Error>;
 /// error has a corresponding errno (usually the one from the
 /// underlying OS) to which it can be mapped in addition to
 /// implementing other common traits.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Error {
     Sys(Errno),
     InvalidPath,

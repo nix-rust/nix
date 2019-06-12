@@ -14,7 +14,7 @@ task:
   setup_script:
     - pkg install -y curl
     - curl https://sh.rustup.rs -sSf --output rustup.sh
-    - sh rustup.sh -y --default-toolchain 1.24.1
+    - sh rustup.sh -y --default-toolchain 1.25.0
     - $HOME/.cargo/bin/rustup target add i686-unknown-freebsd
   amd64_test_script:
     - . $HOME/.cargo/env
