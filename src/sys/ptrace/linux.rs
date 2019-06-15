@@ -26,10 +26,14 @@ cfg_if! {
     }
 }
 
+#[cfg(not(any(target_env = "musl", target_os = "android")))]
+type type_of_request = u32;
+#[cfg(any(target_env = "musl", target_os = "android"))]
+type type_of_request = i32;
+
 libc_enum!{
-    #[cfg_attr(not(any(target_env = "musl", target_os = "android")), repr(u32))]
-    #[cfg_attr(any(target_env = "musl", target_os = "android"), repr(i32))]
     /// Ptrace Request enum defining the action to be taken.
+    #[repr(type_of_request)]
     pub enum Request {
         PTRACE_TRACEME,
         PTRACE_PEEKTEXT,
@@ -110,10 +114,10 @@ libc_enum!{
 }
 
 libc_enum!{
-    #[repr(i32)]
     /// Using the ptrace options the tracer can configure the tracee to stop
     /// at certain events. This enum is used to define those events as defined
     /// in `man ptrace`.
+    #[repr(i32)]
     pub enum Event {
         /// Event that stops before a return from fork or clone.
         PTRACE_EVENT_FORK,

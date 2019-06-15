@@ -6,7 +6,7 @@
 use libc;
 use {Error, Result};
 use errno::Errno;
-use std::convert::{TryFrom, TryInto};
+use std::convert::{TryInto};
 use std::mem;
 use std::fmt;
 use std::str::FromStr;
@@ -288,19 +288,6 @@ impl Iterator for SignalIterator {
 impl Signal {
     pub fn iterator() -> SignalIterator {
         SignalIterator{next: 0}
-    }
-}
-
-impl TryFrom<libc::c_int> for Signal {
-    type Error = Error;
-
-    #[inline]
-    fn try_from(signum: libc::c_int) -> Result<Signal> {
-        if 0 < signum && signum < NSIG {
-            Ok(unsafe { mem::transmute(signum) })
-        } else {
-            Err(Error::invalid_argument())
-        }
     }
 }
 

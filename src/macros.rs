@@ -67,7 +67,8 @@ macro_rules! libc_bitflags {
 ///
 /// # Example
 /// ```
-/// libc_enum!{
+/// libc_enum! {
+///     #[repr(c_int)]
 ///     pub enum ProtFlags {
 ///         PROT_NONE,
 ///         PROT_READ,
@@ -81,176 +82,77 @@ macro_rules! libc_bitflags {
 /// }
 /// ```
 macro_rules! libc_enum {
-    // (non-pub) Exit rule.
-    (@make_enum
-        {
-            name: $BitFlags:ident,
-            attrs: [$($attrs:tt)*],
-            entries: [$($entries:tt)*],
-        }
-    ) => {
-        $($attrs)*
-        #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
-        enum $BitFlags {
-            $($entries)*
-        }
-    };
-
-    // (pub) Exit rule.
-    (@make_enum
-        {
-            pub,
-            name: $BitFlags:ident,
-            attrs: [$($attrs:tt)*],
-            entries: [$($entries:tt)*],
-        }
-    ) => {
-        $($attrs)*
-        #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
-        pub enum $BitFlags {
-            $($entries)*
-        }
-    };
-
-    // (non-pub) Done accumulating.
-    (@accumulate_entries
-        {
-            name: $BitFlags:ident,
-            attrs: $attrs:tt,
-        },
-        $entries:tt;
+    // pub
+    (
+        $(#[doc = $doc:tt])*
+        #[repr($prim:tt)]
+        pub enum $name:ident $($def:tt)*
     ) => {
         libc_enum! {
-            @make_enum
-            {
-                name: $BitFlags,
-                attrs: $attrs,
-                entries: $entries,
+            @(pub)
+            $(#[doc = $doc])*
+            enum $name : $prim $($def)*
+        }
+    };
+
+    // non-pub
+    (
+        $(#[doc = $doc:tt])*
+        #[repr($prim:tt)]
+        enum $name:ident $($def:tt)*
+    ) => {
+        libc_enum! {
+            @()
+            $(#[doc = $doc])*
+            enum $name : $prim $($def)*
+        }
+    };
+
+    (
+        @($($vis:tt)*)
+        $(#[$enum_attr:meta])*
+        enum $enum:ident : $prim:tt {
+            $(
+                $(#[doc = $var_doc:tt])*
+                $(#[cfg($var_cfg:meta)])*
+                $entry:ident
+            ),* $(,)*
+        }
+    ) => {
+        $(#[$enum_attr])* 
+        #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+        $($vis)* enum $enum {
+            $(
+                $(#[doc = $var_doc])*
+                $(#[cfg($var_cfg)])*
+                $entry = ::libc::$entry as isize
+            ),*
+        }
+
+        impl std::convert::From<$enum> for $prim {
+            fn from(value: $enum) -> $prim {
+                match value {
+                    $(
+                        $(#[cfg($var_cfg)])*
+                        $enum::$entry => libc::$entry,
+                    )*
+                }
             }
         }
-    };
 
-    // (pub) Done accumulating.
-    (@accumulate_entries
-        {
-            pub,
-            name: $BitFlags:ident,
-            attrs: $attrs:tt,
-        },
-        $entries:tt;
-    ) => {
-        libc_enum! {
-            @make_enum
-            {
-                pub,
-                name: $BitFlags,
-                attrs: $attrs,
-                entries: $entries,
+        impl std::convert::TryFrom<$prim> for $enum {
+            type Error = ::Error;
+
+            fn try_from(value: $prim) -> std::result::Result<$enum, Self::Error> {
+                match value {
+                    $(
+                        $(#[cfg($var_cfg)])*
+                        libc::$entry => Ok($enum::$entry),
+                    )*
+                    // don't think this Error is the correct one
+                    _ => Err(::Error::invalid_argument())
+                }
             }
-        }
-    };
-
-    // Munch an attr.
-    (@accumulate_entries
-        $prefix:tt,
-        [$($entries:tt)*];
-        #[$attr:meta] $($tail:tt)*
-    ) => {
-        libc_enum! {
-            @accumulate_entries
-            $prefix,
-            [
-                $($entries)*
-                #[$attr]
-            ];
-            $($tail)*
-        }
-    };
-
-    // Munch last ident if not followed by a comma.
-    (@accumulate_entries
-        $prefix:tt,
-        [$($entries:tt)*];
-        $entry:ident
-    ) => {
-        libc_enum! {
-            @accumulate_entries
-            $prefix,
-            [
-                $($entries)*
-                $entry = libc::$entry,
-            ];
-        }
-    };
-
-    // Munch an ident; covers terminating comma case.
-    (@accumulate_entries
-        $prefix:tt,
-        [$($entries:tt)*];
-        $entry:ident, $($tail:tt)*
-    ) => {
-        libc_enum! {
-            @accumulate_entries
-            $prefix,
-            [
-                $($entries)*
-                $entry = libc::$entry,
-            ];
-            $($tail)*
-        }
-    };
-
-    // Munch an ident and cast it to the given type; covers terminating comma.
-    (@accumulate_entries
-        $prefix:tt,
-        [$($entries:tt)*];
-        $entry:ident as $ty:ty, $($tail:tt)*
-    ) => {
-        libc_enum! {
-            @accumulate_entries
-            $prefix,
-            [
-                $($entries)*
-                $entry = libc::$entry as $ty,
-            ];
-            $($tail)*
-        }
-    };
-
-    // (non-pub) Entry rule.
-    (
-        $(#[$attr:meta])*
-        enum $BitFlags:ident {
-            $($vals:tt)*
-        }
-    ) => {
-        libc_enum! {
-            @accumulate_entries
-            {
-                name: $BitFlags,
-                attrs: [$(#[$attr])*],
-            },
-            [];
-            $($vals)*
-        }
-    };
-
-    // (pub) Entry rule.
-    (
-        $(#[$attr:meta])*
-        pub enum $BitFlags:ident {
-            $($vals:tt)*
-        }
-    ) => {
-        libc_enum! {
-            @accumulate_entries
-            {
-                pub,
-                name: $BitFlags,
-                attrs: [$(#[$attr])*],
-            },
-            [];
-            $($vals)*
         }
     };
 }
