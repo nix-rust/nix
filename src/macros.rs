@@ -68,8 +68,7 @@ macro_rules! libc_bitflags {
 /// # Example
 /// ```
 /// libc_enum! {
-///     #[repr(c_int)]
-///     pub enum ProtFlags {
+///     pub enum ProtFlags: c_int {
 ///         PROT_NONE,
 ///         PROT_READ,
 ///         PROT_WRITE,
@@ -84,34 +83,32 @@ macro_rules! libc_bitflags {
 macro_rules! libc_enum {
     // pub
     (
-        $(#[doc = $doc:tt])*
-        #[repr($prim:tt)]
-        pub enum $name:ident $($def:tt)*
+        $(#[$enum_attr:meta])*
+        pub enum $($def:tt)*
     ) => {
         libc_enum! {
             @(pub)
-            $(#[doc = $doc])*
-            enum $name : $prim $($def)*
+            $(#[$enum_attr])*
+            enum $($def)*
         }
     };
 
     // non-pub
     (
-        $(#[doc = $doc:tt])*
-        #[repr($prim:tt)]
-        enum $name:ident $($def:tt)*
+        $(#[$enum_attr:meta])*
+        enum $($def:tt)*
     ) => {
         libc_enum! {
             @()
-            $(#[doc = $doc])*
-            enum $name : $prim $($def)*
+            $(#[$enum_attr])*
+            enum $($def)*
         }
     };
 
     (
         @($($vis:tt)*)
         $(#[$enum_attr:meta])*
-        enum $enum:ident : $prim:tt {
+        enum $enum:ident : $prim:ty {
             $(
                 $(#[doc = $var_doc:tt])*
                 $(#[cfg($var_cfg:meta)])*

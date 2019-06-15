@@ -39,8 +39,7 @@ use sys::time::TimeSpec;
 libc_enum! {
     /// Mode for `AioCb::fsync`.  Controls whether only data or both data and
     /// metadata are synced.
-    #[repr(i32)]
-    pub enum AioFsyncMode {
+    pub enum AioFsyncMode: i32 {
         /// do it like `fsync`
         O_SYNC,
         /// on supported operating systems only, do it like `fdatasync`
@@ -57,8 +56,7 @@ libc_enum! {
     /// When used with [`lio_listio`](fn.lio_listio.html), determines whether a
     /// given `aiocb` should be used for a read operation, a write operation, or
     /// ignored.  Has no effect for any other aio functions.
-    #[repr(i32)]
-    pub enum LioOpcode {
+    pub enum LioOpcode: i32 {
         LIO_NOP,
         LIO_WRITE,
         LIO_READ,
@@ -67,8 +65,7 @@ libc_enum! {
 
 libc_enum! {
     /// Mode for [`lio_listio`](fn.lio_listio.html)
-    #[repr(i32)]
-    pub enum LioMode {
+    pub enum LioMode: i32 {
         /// Requests that [`lio_listio`](fn.lio_listio.html) block until all
         /// requested operations have been completed
         LIO_WAIT,

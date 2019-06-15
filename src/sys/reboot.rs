@@ -11,8 +11,7 @@ libc_enum! {
     ///
     /// See [`set_cad_enabled()`](fn.set_cad_enabled.html) for
     /// enabling/disabling Ctrl-Alt-Delete.
-    #[repr(i32)]
-    pub enum RebootMode {
+    pub enum RebootMode: i32 {
         RB_HALT_SYSTEM,
         RB_KEXEC,
         RB_POWER_OFF,

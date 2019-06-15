@@ -102,12 +102,11 @@ libc_bitflags!{
     }
 }
 
-libc_enum!{
+libc_enum! {
     /// Usage information for a range of memory to allow for performance optimizations by the kernel.
     ///
     /// Used by [`madvise`](./fn.madvise.html).
-    #[repr(i32)]
-    pub enum MmapAdvise {
+    pub enum MmapAdvise: i32 {
         /// No further special treatment. This is the default.
         MADV_NORMAL,
         /// Expect random page references.

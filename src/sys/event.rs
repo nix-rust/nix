@@ -35,8 +35,7 @@ type type_of_event_filter = u32;
 #[cfg(not(target_os = "netbsd"))]
 type type_of_event_filter = i16;
 libc_enum! {
-    #[repr(type_of_event_filter)]
-    pub enum EventFilter {
+    pub enum EventFilter: type_of_event_filter {
         EVFILT_AIO,
         /// Returns whenever there is no remaining data in the write buffer
         #[cfg(target_os = "freebsd")]

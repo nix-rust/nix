@@ -27,9 +27,8 @@ impl QuotaCmd {
 }
 
 // linux quota version >= 2
-libc_enum!{
-    #[repr(i32)]
-    enum QuotaSubCmd {
+libc_enum! {
+    enum QuotaSubCmd: i32 {
         Q_SYNC,
         Q_QUOTAON,
         Q_QUOTAOFF,
@@ -38,10 +37,9 @@ libc_enum!{
     }
 }
 
-libc_enum!{
+libc_enum! {
     /// The scope of the quota.
-    #[repr(i32)]
-    pub enum QuotaType {
+    pub enum QuotaType: i32 {
         /// Specify a user quota
         USRQUOTA,
         /// Specify a group quota
@@ -49,10 +47,9 @@ libc_enum!{
     }
 }
 
-libc_enum!{
+libc_enum! {
     /// The type of quota format to use.
-    #[repr(i32)]
-    pub enum QuotaFmt {
+    pub enum QuotaFmt: i32 {
         /// Use the original quota format.
         QFMT_VFS_OLD,
         /// Use the standard VFS v0 quota format.

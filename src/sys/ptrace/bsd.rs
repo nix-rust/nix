@@ -21,9 +21,8 @@ cfg_if! {
 }
 
 libc_enum! {
-    #[repr(i32)]
     /// Ptrace Request enum defining the action to be taken.
-    pub enum Request {
+    pub enum Request: i32 {
         PT_TRACE_ME,
         PT_READ_I,
         PT_READ_D,

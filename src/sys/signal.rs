@@ -17,13 +17,8 @@ use std::ptr;
 #[cfg(not(target_os = "openbsd"))]
 pub use self::sigevent::*;
 
-libc_enum!{
-    // Currently there is only one definition of c_int in libc, as well as only one
-    // type for signal constants.
-    // We would prefer to use the libc::c_int alias in the repr attribute. Unfortunately
-    // this is not (yet) possible.
-    #[repr(i32)]
-    pub enum Signal {
+libc_enum! {
+    pub enum Signal: libc::c_int {
         SIGHUP,
         SIGINT,
         SIGQUIT,
@@ -308,8 +303,7 @@ libc_bitflags!{
 }
 
 libc_enum! {
-    #[repr(i32)]
-    pub enum SigmaskHow {
+    pub enum SigmaskHow: i32 {
         SIG_BLOCK,
         SIG_UNBLOCK,
         SIG_SETMASK,

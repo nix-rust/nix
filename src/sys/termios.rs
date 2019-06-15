@@ -295,15 +295,14 @@ type type_of_baud_rate = u64;
 #[cfg(not(all(any(target_os = "ios", target_os = "macos"), target_pointer_width = "64")))]
 type type_of_baud_rate = u32;
 
-libc_enum!{
+libc_enum! {
     /// Baud rates supported by the system.
     ///
     /// For the BSDs, arbitrary baud rates can be specified by using `u32`s directly instead of this
     /// enum.
     ///
     /// B0 is special and will disable the port.
-    #[repr(type_of_baud_rate)]
-    pub enum BaudRate {
+    pub enum BaudRate: type_of_baud_rate {
         B0,
         B50,
         B75,
@@ -385,8 +384,7 @@ libc_enum! {
     /// Specify when a port configuration change should occur.
     ///
     /// Used as an argument to `tcsetattr()`
-    #[repr(i32)]
-    pub enum SetArg {
+    pub enum SetArg: i32 {
         /// The change will occur immediately
         TCSANOW,
         /// The change occurs after all output has been written
@@ -400,8 +398,7 @@ libc_enum! {
     /// Specify a combination of the input and output buffers to flush
     ///
     /// Used as an argument to `tcflush()`.
-    #[repr(i32)]
-    pub enum FlushArg {
+    pub enum FlushArg: i32 {
         /// Flush data that was received but not read
         TCIFLUSH,
         /// Flush data written but not transmitted
@@ -415,8 +412,7 @@ libc_enum! {
     /// Specify how transmission flow should be altered
     ///
     /// Used as an argument to `tcflow()`.
-    #[repr(i32)]
-    pub enum FlowArg {
+    pub enum FlowArg: i32 {
         /// Suspend transmission
         TCOOFF,
         /// Resume transmission
@@ -431,8 +427,7 @@ libc_enum! {
 // TODO: Make this usable directly as a slice index.
 libc_enum! {
     /// Indices into the `termios.c_cc` array for special characters.
-    #[repr(usize)]
-    pub enum SpecialCharacterIndices {
+    pub enum SpecialCharacterIndices: usize {
         VDISCARD,
         #[cfg(any(target_os = "dragonfly",
                 target_os = "freebsd",
