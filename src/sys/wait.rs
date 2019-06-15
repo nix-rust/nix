@@ -2,6 +2,7 @@ use libc::{self, c_int};
 use Result;
 use errno::Errno;
 use unistd::Pid;
+use std::convert::TryInto;
 
 use sys::signal::Signal;
 
@@ -126,7 +127,7 @@ fn signaled(status: i32) -> bool {
 }
 
 fn term_signal(status: i32) -> Result<Signal> {
-    Signal::from_c_int(unsafe { libc::WTERMSIG(status) })
+    unsafe { libc::WTERMSIG(status) }.try_into()
 }
 
 fn dumped_core(status: i32) -> bool {
@@ -138,7 +139,7 @@ fn stopped(status: i32) -> bool {
 }
 
 fn stop_signal(status: i32) -> Result<Signal> {
-    Signal::from_c_int(unsafe { libc::WSTOPSIG(status) })
+    unsafe { libc::WSTOPSIG(status) }.try_into()
 }
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
