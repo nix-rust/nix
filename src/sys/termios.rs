@@ -290,11 +290,6 @@ impl From<Termios> for libc::termios {
     }
 }
 
-#[cfg(all(any(target_os = "ios", target_os = "macos"), target_pointer_width = "64"))]
-type type_of_baud_rate = u64;
-#[cfg(not(all(any(target_os = "ios", target_os = "macos"), target_pointer_width = "64")))]
-type type_of_baud_rate = u32;
-
 libc_enum! {
     /// Baud rates supported by the system.
     ///
@@ -302,7 +297,7 @@ libc_enum! {
     /// enum.
     ///
     /// B0 is special and will disable the port.
-    pub enum BaudRate: type_of_baud_rate {
+    pub enum BaudRate: libc::speed_t {
         B0,
         B50,
         B75,
@@ -815,7 +810,7 @@ cfg_if!{
         /// `cfsetispeed()` sets the intput baud rate in the given `Termios` structure.
         pub fn cfsetispeed<T: Into<u32>>(termios: &mut Termios, baud: T) -> Result<()> {
             let inner_termios = unsafe { termios.get_libc_termios_mut() };
-            let res = unsafe { libc::cfsetispeed(inner_termios, baud.into() as libc::speed_t) };
+            let res = unsafe { libc::cfsetispeed(inner_termios, baud.into()) };
             termios.update_wrapper();
             Errno::result(res).map(drop)
         }
@@ -826,7 +821,7 @@ cfg_if!{
         /// `cfsetospeed()` sets the output baud rate in the given termios structure.
         pub fn cfsetospeed<T: Into<u32>>(termios: &mut Termios, baud: T) -> Result<()> {
             let inner_termios = unsafe { termios.get_libc_termios_mut() };
-            let res = unsafe { libc::cfsetospeed(inner_termios, baud.into() as libc::speed_t) };
+            let res = unsafe { libc::cfsetospeed(inner_termios, baud.into()) };
             termios.update_wrapper();
             Errno::result(res).map(drop)
         }
@@ -838,7 +833,7 @@ cfg_if!{
         /// this is part of the 4.4BSD standard and not part of POSIX.
         pub fn cfsetspeed<T: Into<u32>>(termios: &mut Termios, baud: T) -> Result<()> {
             let inner_termios = unsafe { termios.get_libc_termios_mut() };
-            let res = unsafe { libc::cfsetspeed(inner_termios, baud.into() as libc::speed_t) };
+            let res = unsafe { libc::cfsetspeed(inner_termios, baud.into()) };
             termios.update_wrapper();
             Errno::result(res).map(drop)
         }
@@ -867,7 +862,7 @@ cfg_if!{
         /// `cfsetispeed()` sets the intput baud rate in the given `Termios` structure.
         pub fn cfsetispeed(termios: &mut Termios, baud: BaudRate) -> Result<()> {
             let inner_termios = unsafe { termios.get_libc_termios_mut() };
-            let res = unsafe { libc::cfsetispeed(inner_termios, baud as libc::speed_t) };
+            let res = unsafe { libc::cfsetispeed(inner_termios, baud.into()) };
             termios.update_wrapper();
             Errno::result(res).map(drop)
         }
@@ -878,7 +873,7 @@ cfg_if!{
         /// `cfsetospeed()` sets the output baud rate in the given `Termios` structure.
         pub fn cfsetospeed(termios: &mut Termios, baud: BaudRate) -> Result<()> {
             let inner_termios = unsafe { termios.get_libc_termios_mut() };
-            let res = unsafe { libc::cfsetospeed(inner_termios, baud as libc::speed_t) };
+            let res = unsafe { libc::cfsetospeed(inner_termios, baud.into()) };
             termios.update_wrapper();
             Errno::result(res).map(drop)
         }
@@ -890,7 +885,7 @@ cfg_if!{
         /// this is part of the 4.4BSD standard and not part of POSIX.
         pub fn cfsetspeed(termios: &mut Termios, baud: BaudRate) -> Result<()> {
             let inner_termios = unsafe { termios.get_libc_termios_mut() };
-            let res = unsafe { libc::cfsetspeed(inner_termios, baud as libc::speed_t) };
+            let res = unsafe { libc::cfsetspeed(inner_termios, baud.into()) };
             termios.update_wrapper();
             Errno::result(res).map(drop)
         }
