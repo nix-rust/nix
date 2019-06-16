@@ -2,8 +2,6 @@
 /// with values from the libc crate. It is used the same way as the `bitflags!` macro, except
 /// that only the name of the flag value has to be given.
 ///
-/// The `libc` crate must be in scope with the name `libc`.
-///
 /// # Example
 /// ```
 /// libc_bitflags!{
@@ -53,7 +51,7 @@ macro_rules! libc_bitflags {
             pub struct $BitFlags: $T {
                 $(
                     $(#[$inner $($args)*])*
-                    const $Flag = libc::$Flag $(as $cast)*;
+                    const $Flag = ::libc::$Flag $(as $cast)*;
                 )+
             }
         }
@@ -63,7 +61,6 @@ macro_rules! libc_bitflags {
 /// The `libc_enum!` macro helps with a common use case of defining an enum exclusively using
 /// values from the `libc` crate. This macro supports both `pub` and private `enum`s.
 ///
-/// The `libc` crate must be in scope with the name `libc`.
 ///
 /// # Example
 /// ```
@@ -131,7 +128,7 @@ macro_rules! libc_enum {
                 match value {
                     $(
                         $(#[cfg($var_cfg)])*
-                        $enum::$entry => libc::$entry,
+                        $enum::$entry => ::libc::$entry,
                     )*
                 }
             }
@@ -144,7 +141,7 @@ macro_rules! libc_enum {
                 match value {
                     $(
                         $(#[cfg($var_cfg)])*
-                        libc::$entry => Ok($enum::$entry),
+                        ::libc::$entry => Ok($enum::$entry),
                     )*
                     // don't think this Error is the correct one
                     _ => Err(::Error::invalid_argument())
