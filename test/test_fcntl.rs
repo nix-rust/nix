@@ -48,15 +48,54 @@ fn test_readlink() {
 #[cfg(any(target_os = "linux", target_os = "android"))]
 mod linux_android {
     use std::io::prelude::*;
+    use std::io::SeekFrom;
     use std::os::unix::prelude::*;
 
     use libc::loff_t;
 
-    use nix::fcntl::{SpliceFFlags, FallocateFlags, fallocate, splice, tee, vmsplice};
+    use nix::fcntl::*;
     use nix::sys::uio::IoVec;
     use nix::unistd::{close, pipe, read, write};
 
     use tempfile::{tempfile, NamedTempFile};
+
+    /// This test creates a temporary file containing the contents
+    /// 'foobarbaz' and uses the `copy_file_range` call to transfer
+    /// 3 bytes at offset 3 (`bar`) to another empty file at offset 0. The
+    /// resulting file is read and should contain the contents `bar`.
+    /// The from_offset should be updated by the call to reflect
+    /// the 3 bytes read (6).
+    ///
+    /// FIXME: This test is disabled for linux based builds, because Travis
+    /// Linux version is too old for `copy_file_range`.
+    #[test]
+    #[ignore]
+    fn test_copy_file_range() {
+        const CONTENTS: &[u8] = b"foobarbaz";
+
+        let mut tmp1 = tempfile().unwrap();
+        let mut tmp2 = tempfile().unwrap();
+
+        tmp1.write_all(CONTENTS).unwrap();
+        tmp1.flush().unwrap();
+
+        let mut from_offset: i64 = 3;
+        copy_file_range(
+            tmp1.as_raw_fd(),
+            Some(&mut from_offset),
+            tmp2.as_raw_fd(),
+            None,
+            3,
+        )
+        .unwrap();
+
+        let mut res: String = String::new();
+        tmp2.seek(SeekFrom::Start(0)).unwrap();
+        tmp2.read_to_string(&mut res).unwrap();
+
+        assert_eq!(res, String::from("bar"));
+        assert_eq!(from_offset, 6);
+    }
 
     #[test]
     fn test_splice() {
