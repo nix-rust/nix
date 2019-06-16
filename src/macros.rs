@@ -59,8 +59,11 @@ macro_rules! libc_bitflags {
 }
 
 /// The `libc_enum!` macro helps with a common use case of defining an enum exclusively using
-/// values from the `libc` crate. This macro supports both `pub` and private `enum`s.
+/// values from the `libc` crate. The type after the enum name specifies the type of the constants
+/// in libc. The macro will generate impls of From and TryFrom to convert between numeric and enum
+/// values.
 ///
+/// Documentation for each variant must be provided before any cfg attributes.
 ///
 /// # Example
 /// ```
@@ -70,12 +73,16 @@ macro_rules! libc_bitflags {
 ///         PROT_READ,
 ///         PROT_WRITE,
 ///         PROT_EXEC,
+///         /// Documentation before cfg attribute.
 ///         #[cfg(any(target_os = "linux", target_os = "android"))]
 ///         PROT_GROWSDOWN,
 ///         #[cfg(any(target_os = "linux", target_os = "android"))]
 ///         PROT_GROWSUP,
 ///     }
 /// }
+///
+/// let flag: c_int = ProtFlags::PROT_NONE.into();
+/// let flag: ProtFlags = ProtFlags::try_from(::libc::PROT_NONE).unwrap();
 /// ```
 macro_rules! libc_enum {
     // pub
