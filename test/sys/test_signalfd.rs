@@ -1,5 +1,3 @@
-use std::convert::TryInto;
-
 #[test]
 fn test_signalfd() {
     use nix::sys::signalfd::SignalFd;
@@ -22,6 +20,6 @@ fn test_signalfd() {
 
     // And now catch that same signal.
     let res = fd.read_signal().unwrap().unwrap();
-    let signo: Signal = (res.ssi_signo as i32).try_into().unwrap();
+    let signo: Signal = Signal::try_from(res.ssi_signo as i32).unwrap();
     assert_eq!(signo, signal::SIGUSR1);
 }

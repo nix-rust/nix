@@ -165,7 +165,7 @@ use Result;
 use errno::Errno;
 use libc::{self, c_int, tcflag_t};
 use std::cell::{Ref, RefCell};
-use std::convert::{From, TryInto};
+use std::convert::From;
 use std::mem;
 use std::os::unix::io::RawFd;
 
@@ -844,7 +844,7 @@ cfg_if!{
         /// `cfgetispeed()` extracts the input baud rate from the given `Termios` structure.
         pub fn cfgetispeed(termios: &Termios) -> BaudRate {
             let inner_termios = termios.get_libc_termios();
-            unsafe { libc::cfgetispeed(&*inner_termios) }.try_into().unwrap()
+            BaudRate::try_from(unsafe { libc::cfgetispeed(&*inner_termios) }).unwrap()
         }
 
         /// Get output baud rate (see
@@ -853,7 +853,7 @@ cfg_if!{
         /// `cfgetospeed()` extracts the output baud rate from the given `Termios` structure.
         pub fn cfgetospeed(termios: &Termios) -> BaudRate {
             let inner_termios = termios.get_libc_termios();
-            unsafe { libc::cfgetospeed(&*inner_termios) }.try_into().unwrap()
+            BaudRate::try_from(unsafe { libc::cfgetospeed(&*inner_termios) }).unwrap()
         }
 
         /// Set input baud rate (see

@@ -6,7 +6,6 @@
 use libc;
 use {Error, Result};
 use errno::Errno;
-use std::convert::{TryInto};
 use std::mem;
 use std::fmt;
 use std::str::FromStr;
@@ -396,7 +395,7 @@ impl SigSet {
         let mut signum: libc::c_int = unsafe { mem::uninitialized() };
         let res = unsafe { libc::sigwait(&self.sigset as *const libc::sigset_t, &mut signum) };
 
-        Errno::result(res).map(|_| signum.try_into().unwrap())
+        Errno::result(res).map(|_| Signal::try_from(signum).unwrap())
     }
 }
 
@@ -528,7 +527,7 @@ pub unsafe fn sigaction(signal: Signal, sigaction: &SigAction) -> Result<SigActi
 /// }
 ///
 /// extern fn handle_sigint(signal: libc::c_int) {
-///     let signal: Signal = signal.try_into().unwrap();
+///     let signal: Signal = Signal::try_from(signal).unwrap();
 ///     SIGNALED.store(signal == Signal::SIGINT, Ordering::Relaxed);
 /// }
 ///

@@ -21,6 +21,9 @@ bitflags = "1.0"
 cfg-if = "0.1.0"
 void = "1.0.2"
 
+[build-dependencies]
+version_check = "0.9.1"
+
 [target.'cfg(target_os = "dragonfly")'.build-dependencies]
 cc = "1"
 

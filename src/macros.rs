@@ -63,6 +63,11 @@ macro_rules! libc_bitflags {
 /// in libc. The macro will generate impls of From and TryFrom to convert between numeric and enum
 /// values.
 ///
+/// `TryFrom` is only implemented for Rust >= 1.34.0, where the trait is stable. An equivalent
+/// `try_from` inherent method is made available regardless of the Rust version. `TryInto` should
+/// not be used as long as the MSRV for nix is less than 1.34.0.
+/// 
+///
 /// Documentation for each variant must be provided before any cfg attributes.
 ///
 /// # Example
@@ -130,6 +135,19 @@ macro_rules! libc_enum {
             ),*
         }
 
+        impl $enum {
+            pub fn try_from(value: $prim) -> std::result::Result<$enum, ::Error> {
+                match value {
+                    $(
+                        $(#[cfg($var_cfg)])*
+                        ::libc::$entry => Ok($enum::$entry),
+                    )*
+                    // don't think this Error is the correct one
+                    _ => Err(::Error::invalid_argument())
+                }
+            }
+        }
+
         impl std::convert::From<$enum> for $prim {
             fn from(value: $enum) -> $prim {
                 match value {
@@ -141,18 +159,12 @@ macro_rules! libc_enum {
             }
         }
 
+        #[cfg(try_from)]
         impl std::convert::TryFrom<$prim> for $enum {
             type Error = ::Error;
 
             fn try_from(value: $prim) -> std::result::Result<$enum, Self::Error> {
-                match value {
-                    $(
-                        $(#[cfg($var_cfg)])*
-                        ::libc::$entry => Ok($enum::$entry),
-                    )*
-                    // don't think this Error is the correct one
-                    _ => Err(::Error::invalid_argument())
-                }
+                $enum::try_from(value)
             }
         }
     };
