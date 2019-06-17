@@ -93,10 +93,10 @@ macro_rules! libc_enum {
     // pub
     (
         $(#[$enum_attr:meta])*
-        pub enum $($def:tt)*
+        pub $(($($scope:tt)*))* enum $($def:tt)*
     ) => {
         libc_enum! {
-            @(pub)
+            @(pub $(($($scope)*))*)
             $(#[$enum_attr])*
             enum $($def)*
         }
