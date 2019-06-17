@@ -60,8 +60,8 @@ macro_rules! libc_bitflags {
 
 /// The `libc_enum!` macro helps with a common use case of defining an enum exclusively using
 /// values from the `libc` crate. The type after the enum name specifies the type of the constants
-/// in libc. The macro will generate impls of From and TryFrom to convert between numeric and enum
-/// values.
+/// in `libc`. The macro will generate impls of `From` and `TryFrom` to convert between numeric and
+/// enum values.
 ///
 /// `TryFrom` is only implemented for Rust >= 1.34.0, where the trait is stable. An equivalent
 /// `try_from` inherent method is made available regardless of the Rust version. `TryInto` should
