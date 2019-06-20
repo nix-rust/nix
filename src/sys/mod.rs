@@ -71,7 +71,14 @@ pub mod socket;
 
 pub mod stat;
 
-#[cfg(any(target_os = "android", target_os = "linux", target_os = "macos"))]
+#[cfg(any(target_os = "android",
+          target_os = "dragonfly",
+          target_os = "freebsd",
+          target_os = "ios",
+          target_os = "linux",
+          target_os = "macos",
+          target_os = "openbsd"
+))]
 pub mod statfs;
 
 pub mod statvfs;
