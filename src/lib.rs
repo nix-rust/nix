@@ -62,8 +62,6 @@ pub mod net;
 pub mod poll;
 #[deny(missing_docs)]
 pub mod pty;
-#[cfg(any(target_os = "android",
-          target_os = "linux"))]
 pub mod sched;
 pub mod sys;
 // This can be implemented for other platforms as soon as libc
