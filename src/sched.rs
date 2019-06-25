@@ -1,3 +1,6 @@
+use libc;
+use {Errno, Result};
+
 #[cfg(any(target_os = "android", target_os = "linux"))]
 pub use self::sched_linux_like::*;
 
@@ -93,15 +96,6 @@ mod sched_linux_like {
         Errno::result(res).map(drop)
     }
 
-    /// Explicitly yield the processor to other threads.
-    ///
-    /// [Further reading](http://pubs.opengroup.org/onlinepubs/9699919799/functions/sched_yield.html)
-    pub fn sched_yield() -> Result<()> {
-        let res = unsafe { libc::sched_yield() };
-
-        Errno::result(res).map(drop)
-    }
-
     pub fn clone(
         mut cb: CloneCb,
         stack: &mut [u8],
@@ -141,4 +135,13 @@ mod sched_linux_like {
 
         Errno::result(res).map(drop)
     }
+}
+
+/// Explicitly yield the processor to other threads.
+///
+/// [Further reading](http://pubs.opengroup.org/onlinepubs/9699919799/functions/sched_yield.html)
+pub fn sched_yield() -> Result<()> {
+    let res = unsafe { libc::sched_yield() };
+
+    Errno::result(res).map(drop)
 }
