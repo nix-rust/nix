@@ -24,6 +24,8 @@ use ::sys::socket::addr::sys_control::SysControlAddr;
           target_os = "netbsd",
           target_os = "openbsd"))]
 pub use self::datalink::LinkAddr;
+#[cfg(target_os = "linux")]
+pub use self::vsock::VsockAddr;
 
 /// These constants specify the protocol family to be used
 /// in [`socket`](fn.socket.html) and [`socketpair`](fn.socketpair.html)
@@ -241,6 +243,8 @@ impl AddressFamily {
                       target_os = "netbsd",
                       target_os = "openbsd"))]
             libc::AF_LINK => Some(AddressFamily::Link),
+            #[cfg(target_os = "linux")]
+            libc::AF_VSOCK => Some(AddressFamily::Vsock),
             _ => None
         }
     }
@@ -638,7 +642,9 @@ pub enum SockAddr {
               target_os = "macos",
               target_os = "netbsd",
               target_os = "openbsd"))]
-    Link(LinkAddr)
+    Link(LinkAddr),
+    #[cfg(target_os = "linux")]
+    Vsock(VsockAddr),
 }
 
 impl SockAddr {
@@ -665,6 +671,11 @@ impl SockAddr {
         SysControlAddr::from_name(sockfd, name, unit).map(|a| SockAddr::SysControl(a))
     }
 
+    #[cfg(target_os = "linux")]
+    pub fn new_vsock(cid: u32, port: u32) -> SockAddr {
+        SockAddr::Vsock(VsockAddr::new(cid, port))
+    }
+
     pub fn family(&self) -> AddressFamily {
         match *self {
             SockAddr::Inet(InetAddr::V4(..)) => AddressFamily::Inet,
@@ -684,7 +695,9 @@ impl SockAddr {
                       target_os = "macos",
                       target_os = "netbsd",
                       target_os = "openbsd"))]
-            SockAddr::Link(..) => AddressFamily::Link
+            SockAddr::Link(..) => AddressFamily::Link,
+            #[cfg(target_os = "linux")]
+            SockAddr::Vsock(..) => AddressFamily::Vsock,
         }
     }
 
@@ -729,6 +742,9 @@ impl SockAddr {
                         Some(SockAddr::Link(ether_addr))
                     }
                 },
+                #[cfg(target_os = "linux")]
+                Some(AddressFamily::Vsock) => Some(SockAddr::Vsock(
+                    VsockAddr(*(addr as *const libc::sockaddr_vm)))),
                 // Other address families are currently not supported and simply yield a None
                 // entry instead of a proper conversion to a `SockAddr`.
                 Some(_) | None => None,
@@ -763,6 +779,8 @@ impl SockAddr {
                       target_os = "netbsd",
                       target_os = "openbsd"))]
             SockAddr::Link(LinkAddr(ref ether_addr)) => (mem::transmute(ether_addr), mem::size_of::<libc::sockaddr_dl>() as libc::socklen_t),
+            #[cfg(target_os = "linux")]
+            SockAddr::Vsock(VsockAddr(ref sa)) => (mem::transmute(sa), mem::size_of::<libc::sockaddr_vm>() as libc::socklen_t),
         }
     }
 }
@@ -786,7 +804,9 @@ impl fmt::Display for SockAddr {
                       target_os = "macos",
                       target_os = "netbsd",
                       target_os = "openbsd"))]
-            SockAddr::Link(ref ether_addr) => ether_addr.fmt(f)
+            SockAddr::Link(ref ether_addr) => ether_addr.fmt(f),
+            #[cfg(target_os = "linux")]
+            SockAddr::Vsock(ref svm) => svm.fmt(f),
         }
     }
 }
@@ -1120,6 +1140,71 @@ mod datalink {
                 addr[3],
                 addr[4],
                 addr[5])
+        }
+    }
+}
+
+#[cfg(target_os = "linux")]
+pub mod vsock {
+    use ::sys::socket::addr::AddressFamily;
+    use libc::{sa_family_t, sockaddr_vm};
+    use std::{fmt, mem};
+    use std::hash::{Hash, Hasher};
+
+    #[derive(Copy, Clone)]
+    pub struct VsockAddr(pub sockaddr_vm);
+
+    impl PartialEq for VsockAddr {
+        fn eq(&self, other: &Self) -> bool {
+            let (inner, other) = (self.0, other.0);
+            (inner.svm_family, inner.svm_cid, inner.svm_port) ==
+            (other.svm_family, other.svm_cid, other.svm_port)
+        }
+    }
+
+    impl Eq for VsockAddr {}
+
+    impl Hash for VsockAddr {
+        fn hash<H: Hasher>(&self, s: &mut H) {
+            let inner = self.0;
+            (inner.svm_family, inner.svm_cid, inner.svm_port).hash(s);
+        }
+    }
+
+    /// VSOCK Address
+    ///
+    /// The address for AF_VSOCK socket is defined as a combination of a
+    /// 32-bit Context Identifier (CID) and a 32-bit port number.
+    impl VsockAddr {
+        pub fn new(cid: u32, port: u32) -> VsockAddr {
+            let mut addr: sockaddr_vm = unsafe { mem::zeroed() };
+            addr.svm_family = AddressFamily::Vsock as sa_family_t;
+            addr.svm_cid = cid;
+            addr.svm_port = port;
+
+            VsockAddr(addr)
+        }
+
+        /// Context Identifier (CID)
+        pub fn cid(&self) -> u32 {
+            self.0.svm_cid
+        }
+
+        /// Port number
+        pub fn port(&self) -> u32 {
+            self.0.svm_port
+        }
+    }
+
+    impl fmt::Display for VsockAddr {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            write!(f, "cid: {} port: {}", self.cid(), self.port())
+        }
+    }
+
+    impl fmt::Debug for VsockAddr {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            fmt::Display::fmt(self, f)
         }
     }
 }

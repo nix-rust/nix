@@ -33,6 +33,8 @@ pub use self::addr::{
 pub use ::sys::socket::addr::netlink::NetlinkAddr;
 #[cfg(any(target_os = "android", target_os = "linux"))]
 pub use sys::socket::addr::alg::AlgAddr;
+#[cfg(target_os = "linux")]
+pub use sys::socket::addr::vsock::VsockAddr;
 
 pub use libc::{
     cmsghdr,
@@ -1253,6 +1255,11 @@ pub unsafe fn sockaddr_storage_to_addr(
         libc::AF_ALG => {
             use libc::sockaddr_alg;
             Ok(SockAddr::Alg(AlgAddr(*(addr as *const _ as *const sockaddr_alg))))
+        }
+        #[cfg(target_os = "linux")]
+        libc::AF_VSOCK => {
+            use libc::sockaddr_vm;
+            Ok(SockAddr::Vsock(VsockAddr(*(addr as *const _ as *const sockaddr_vm))))
         }
         af => panic!("unexpected address family {}", af),
     }
