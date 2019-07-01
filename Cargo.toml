@@ -28,7 +28,7 @@ cc = "1"
 bytes = "0.4.8"
 lazy_static = "1.2"
 rand = ">= 0.6, < 0.7"
-tempfile = "3.0.5"
+tempfile = ">= 3.0.5, < 3.0.9"
 
 [target.'cfg(any(target_os = "android", target_os = "linux"))'.dev-dependencies]
 caps = "0.3.1"
