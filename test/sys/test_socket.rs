@@ -1013,3 +1013,55 @@ pub fn test_recv_ipv6pktinfo() {
         );
     }
 }
+
+#[cfg(target_os = "linux")]
+#[test]
+pub fn test_vsock() {
+    use libc;
+    use nix::Error;
+    use nix::errno::Errno;
+    use nix::sys::socket::{AddressFamily, socket, bind, connect, listen,
+                           SockAddr, SockType, SockFlag};
+    use nix::unistd::{close};
+    use std::thread;
+
+    let port: u32 = 3000;
+
+    let s1 = socket(AddressFamily::Vsock,  SockType::Stream,
+                    SockFlag::empty(), None)
+             .expect("socket failed");
+
+    // VMADDR_CID_HYPERVISOR and VMADDR_CID_RESERVED are reserved, so we expect
+    // an EADDRNOTAVAIL error.
+    let sockaddr = SockAddr::new_vsock(libc::VMADDR_CID_HYPERVISOR, port);
+    assert_eq!(bind(s1, &sockaddr).err(),
+               Some(Error::Sys(Errno::EADDRNOTAVAIL)));
+
+    let sockaddr = SockAddr::new_vsock(libc::VMADDR_CID_RESERVED, port);
+    assert_eq!(bind(s1, &sockaddr).err(),
+               Some(Error::Sys(Errno::EADDRNOTAVAIL)));
+
+
+    let sockaddr = SockAddr::new_vsock(libc::VMADDR_CID_ANY, port);
+    assert_eq!(bind(s1, &sockaddr), Ok(()));
+    listen(s1, 10).expect("listen failed");
+
+    let thr = thread::spawn(move || {
+        let cid: u32 = libc::VMADDR_CID_HOST;
+
+        let s2 = socket(AddressFamily::Vsock, SockType::Stream,
+                        SockFlag::empty(), None)
+                 .expect("socket failed");
+
+        let sockaddr = SockAddr::new_vsock(cid, port);
+
+        // The current implementation does not support loopback devices, so,
+        // for now, we expect a failure on the connect.
+        assert_ne!(connect(s2, &sockaddr), Ok(()));
+
+        close(s2).unwrap();
+    });
+
+    close(s1).unwrap();
+    thr.join().unwrap();
+}
