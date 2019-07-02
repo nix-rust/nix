@@ -83,7 +83,7 @@ Tier 2:
 
 ## Usage
 
-`nix` requires Rust 1.25.0 or newer.
+`nix` requires Rust 1.31.0 or newer.
 
 To use `nix`, first add this to your `Cargo.toml`:
 

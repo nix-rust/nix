@@ -1,4 +1,5 @@
-use nix::sys::socket::{InetAddr, UnixAddr, getsockname};
+use nix::ifaddrs::InterfaceAddress;
+use nix::sys::socket::{AddressFamily, InetAddr, UnixAddr, getsockname};
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::net::{self, Ipv6Addr, SocketAddr, SocketAddrV6};
@@ -302,7 +303,7 @@ pub fn test_af_alg_cipher() {
 #[cfg(any(target_os = "linux", target_os= "android"))]
 #[test]
 pub fn test_af_alg_aead() {
-    use libc;
+    use libc::{ALG_OP_DECRYPT, ALG_OP_ENCRYPT};
     use nix::sys::uio::IoVec;
     use nix::unistd::{read, close};
     use nix::sys::socket::{socket, sendmsg, bind, accept, setsockopt,
@@ -345,7 +346,7 @@ pub fn test_af_alg_aead() {
     let session_socket = accept(sock).expect("accept failed");
 
     let msgs = [
-        ControlMessage::AlgSetOp(&libc::ALG_OP_ENCRYPT),
+        ControlMessage::AlgSetOp(&ALG_OP_ENCRYPT),
         ControlMessage::AlgSetIv(iv.as_slice()),
         ControlMessage::AlgSetAeadAssoclen(&assoc_size)];
     let iov = IoVec::from_slice(&payload);
@@ -368,7 +369,7 @@ pub fn test_af_alg_aead() {
     let session_socket = accept(sock).expect("accept failed");
 
     let msgs = [
-        ControlMessage::AlgSetOp(&libc::ALG_OP_DECRYPT),
+        ControlMessage::AlgSetOp(&ALG_OP_DECRYPT),
         ControlMessage::AlgSetIv(iv.as_slice()),
         ControlMessage::AlgSetAeadAssoclen(&assoc_size),
     ];
@@ -547,11 +548,11 @@ fn test_too_large_cmsgspace() {
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
 fn test_impl_scm_credentials_and_rights(mut space: Vec<u8>) {
-    use libc;
+    use libc::ucred;
     use nix::sys::uio::IoVec;
     use nix::unistd::{pipe, read, write, close, getpid, getuid, getgid};
     use nix::sys::socket::{socketpair, sendmsg, recvmsg, setsockopt,
-                           AddressFamily, SockType, SockFlag,
+                           SockType, SockFlag,
                            ControlMessage, ControlMessageOwned, MsgFlags};
     use nix::sys::socket::sockopt::PassCred;
 
@@ -564,7 +565,7 @@ fn test_impl_scm_credentials_and_rights(mut space: Vec<u8>) {
 
     {
         let iov = [IoVec::from_slice(b"hello")];
-        let cred = libc::ucred {
+        let cred = ucred {
             pid: getpid().as_raw(),
             uid: getuid().as_raw(),
             gid: getgid().as_raw(),
@@ -623,7 +624,7 @@ fn test_impl_scm_credentials_and_rights(mut space: Vec<u8>) {
 // Test creating and using named unix domain sockets
 #[test]
 pub fn test_unixdomain() {
-    use nix::sys::socket::{AddressFamily, SockType, SockFlag};
+    use nix::sys::socket::{SockType, SockFlag};
     use nix::sys::socket::{bind, socket, connect, listen, accept, SockAddr};
     use nix::unistd::{read, write, close};
     use std::thread;
@@ -661,7 +662,7 @@ pub fn test_unixdomain() {
 pub fn test_syscontrol() {
     use nix::Error;
     use nix::errno::Errno;
-    use nix::sys::socket::{AddressFamily, socket, SockAddr, SockType, SockFlag, SockProtocol};
+    use nix::sys::socket::{socket, SockAddr, SockType, SockFlag, SockProtocol};
 
     let fd = socket(AddressFamily::System, SockType::Datagram,
                     SockFlag::empty(), SockProtocol::KextControl)
@@ -673,8 +674,6 @@ pub fn test_syscontrol() {
     // connect(fd, &sockaddr).expect("connect failed");
 }
 
-use nix::ifaddrs::InterfaceAddress;
-use nix::sys::socket::AddressFamily;
 #[cfg(any(
     target_os = "android",
     target_os = "freebsd",
@@ -942,7 +941,7 @@ pub fn test_recv_ipv6pktinfo() {
     use libc;
     use nix::net::if_::*;
     use nix::sys::socket::sockopt::Ipv6RecvPacketInfo;
-    use nix::sys::socket::{bind, AddressFamily, SockFlag, SockType};
+    use nix::sys::socket::{bind, SockFlag, SockType};
     use nix::sys::socket::{getsockname, setsockopt, socket};
     use nix::sys::socket::{recvmsg, sendmsg, ControlMessageOwned, MsgFlags};
     use nix::sys::uio::IoVec;
