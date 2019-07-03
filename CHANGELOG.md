@@ -23,6 +23,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#928](https://github.com/nix-rust/nix/pull/928))
 
 ### Fixed
+- Enabled `sched_yield` for all nix hosts.
+  ([#1090](https://github.com/nix-rust/nix/pull/1090))
+
 ### Removed
 
 ## [0.14.1] - 2019-06-06
