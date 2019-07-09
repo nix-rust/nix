@@ -88,6 +88,14 @@ matrix:
     - env: TARGET=x86_64-unknown-linux-gnu
       rust: stable
 
+    # Test that we can build with the lowest version of all dependencies.
+    # "cargo test" doesn't work because some of our dev-dependencies, like
+    # rand, can't build with thier own minimal dependencies.
+    - rust: nightly
+      script:
+        - cargo update -Zminimal-versions
+        - cargo build
+
 before_install: set -e
 
 install:
