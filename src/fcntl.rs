@@ -165,6 +165,18 @@ pub fn openat<P: ?Sized + NixPath>(dirfd: RawFd, path: &P, oflag: OFlag, mode: M
     Errno::result(fd)
 }
 
+pub fn renameat<P1: ?Sized + NixPath, P2: ?Sized + NixPath>(old_dirfd: Option<RawFd>, old_path: &P1,
+                                                            new_dirfd: Option<RawFd>, new_path: &P2)
+                                                            -> Result<()> {
+    let res = old_path.with_nix_path(|old_cstr| {
+        new_path.with_nix_path(|new_cstr| unsafe {
+            libc::renameat(at_rawfd(old_dirfd), old_cstr.as_ptr(),
+                           at_rawfd(new_dirfd), new_cstr.as_ptr())
+        })
+    })??;
+    Errno::result(res).map(drop)
+}
+
 fn wrap_readlink_result(buffer: &mut[u8], res: ssize_t) -> Result<&OsStr> {
     match Errno::result(res) {
         Err(err) => Err(err),

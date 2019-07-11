@@ -1,7 +1,10 @@
-use nix::fcntl::{openat, open, OFlag, readlink, readlinkat};
+use nix::Error;
+use nix::errno::*;
+use nix::fcntl::{openat, open, OFlag, readlink, readlinkat, renameat};
 use nix::sys::stat::Mode;
 use nix::unistd::{close, read};
 use tempfile::{self, NamedTempFile};
+use std::fs::File;
 use std::io::prelude::*;
 use std::os::unix::fs;
 
@@ -25,6 +28,22 @@ fn test_openat() {
 
     close(fd).unwrap();
     close(dirfd).unwrap();
+}
+
+#[test]
+fn test_renameat() {
+    let old_dir = tempfile::tempdir().unwrap();
+    let old_dirfd = open(old_dir.path(), OFlag::empty(), Mode::empty()).unwrap();
+    let old_path = old_dir.path().join("old");
+    File::create(&old_path).unwrap();
+    let new_dir = tempfile::tempdir().unwrap();
+    let new_dirfd = open(new_dir.path(), OFlag::empty(), Mode::empty()).unwrap();
+    renameat(Some(old_dirfd), "old", Some(new_dirfd), "new").unwrap();
+    assert_eq!(renameat(Some(old_dirfd), "old", Some(new_dirfd), "new").unwrap_err(),
+               Error::Sys(Errno::ENOENT));
+    close(old_dirfd).unwrap();
+    close(new_dirfd).unwrap();
+    assert!(new_dir.path().join("new").exists());
 }
 
 #[test]
