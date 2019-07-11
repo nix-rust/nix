@@ -13,6 +13,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#1069](https://github.com/nix-rust/nix/pull/1069))
 - Add `mkdirat`.
   ([#1084](https://github.com/nix-rust/nix/pull/1084))
+- Add `posix_fadvise`.
+  ([#1089](https://github.com/nix-rust/nix/pull/1089))
 
 ### Changed
 - Support for `ifaddrs` now present when building for Android.

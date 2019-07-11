@@ -180,3 +180,36 @@ mod linux_android {
         assert_eq!(100, read(fd, &mut buf).unwrap());
     }
 }
+
+#[cfg(any(target_os = "linux",
+          target_os = "android",
+          target_os = "emscripten",
+          target_os = "fuchsia",
+          any(target_os = "wasi", target_env = "wasi"),
+          target_env = "uclibc",
+          target_env = "freebsd"))]
+mod test_posix_fadvise {
+
+    use tempfile::NamedTempFile;
+    use std::os::unix::io::{RawFd, AsRawFd};
+    use nix::errno::Errno;
+    use nix::fcntl::*;
+    use nix::unistd::pipe;
+
+    #[test]
+    fn test_success() {
+        let tmp = NamedTempFile::new().unwrap();
+        let fd = tmp.as_raw_fd();
+        let res = posix_fadvise(fd, 0, 100, PosixFadviseAdvice::POSIX_FADV_WILLNEED).unwrap();
+
+        assert_eq!(res, 0);
+    }
+
+    #[test]
+    fn test_errno() {
+        let (rd, _wr) = pipe().unwrap();
+        let errno = posix_fadvise(rd as RawFd, 0, 100, PosixFadviseAdvice::POSIX_FADV_WILLNEED)
+                                 .unwrap();
+        assert_eq!(errno, Errno::ESPIPE as i32);
+    }
+}

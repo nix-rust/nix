@@ -12,6 +12,15 @@ use std::ptr; // For splice and copy_file_range
 #[cfg(any(target_os = "android", target_os = "linux"))]
 use sys::uio::IoVec;  // For vmsplice
 
+#[cfg(any(target_os = "linux",
+          target_os = "android",
+          target_os = "emscripten",
+          target_os = "fuchsia",
+          any(target_os = "wasi", target_env = "wasi"),
+          target_env = "uclibc",
+          target_env = "freebsd"))]
+pub use self::posix_fadvise::*;
+
 libc_bitflags!{
     pub struct AtFlags: c_int {
         AT_SYMLINK_NOFOLLOW;
@@ -447,4 +456,38 @@ libc_bitflags!(
 pub fn fallocate(fd: RawFd, mode: FallocateFlags, offset: libc::off_t, len: libc::off_t) -> Result<c_int> {
     let res = unsafe { libc::fallocate(fd, mode.bits(), offset, len) };
     Errno::result(res)
+}
+
+#[cfg(any(target_os = "linux",
+          target_os = "android",
+          target_os = "emscripten",
+          target_os = "fuchsia",
+          any(target_os = "wasi", target_env = "wasi"),
+          target_env = "uclibc",
+          target_env = "freebsd"))]
+mod posix_fadvise {
+    use Result;
+    use libc;
+    use errno::Errno;
+    use std::os::unix::io::RawFd;
+
+    libc_enum! {
+        #[repr(i32)]
+        pub enum PosixFadviseAdvice {
+            POSIX_FADV_NORMAL,
+            POSIX_FADV_SEQUENTIAL,
+            POSIX_FADV_RANDOM,
+            POSIX_FADV_NOREUSE,
+            POSIX_FADV_WILLNEED,
+            POSIX_FADV_DONTNEED,
+        }
+    }
+
+    pub fn posix_fadvise(fd: RawFd,
+                         offset: libc::off_t,
+                         len: libc::off_t,
+                         advice: PosixFadviseAdvice) -> Result<libc::c_int> {
+        let res = unsafe { libc::posix_fadvise(fd, offset, len, advice as libc::c_int) };
+        Errno::result(res)
+    }
 }
