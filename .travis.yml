@@ -94,7 +94,7 @@ matrix:
     - rust: nightly
       script:
         - cargo update -Zminimal-versions
-        - cargo build
+        - cargo check
 
 before_install: set -e
 
