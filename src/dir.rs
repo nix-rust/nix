@@ -2,7 +2,9 @@ use {Error, NixPath, Result};
 use errno::Errno;
 use fcntl::{self, OFlag};
 use libc;
-use std::os::unix::io::{AsRawFd, IntoRawFd, RawFd};
+use std::os::unix::io::{IntoRawFd, RawFd};
+#[cfg(not(target_os = "redox"))]
+use std::os::unix::io::AsRawFd;
 use std::{ffi, ptr};
 use sys;
 
@@ -77,6 +79,7 @@ impl Dir {
 // `Dir` is safe to pass from one thread to another, as it's not reference-counted.
 unsafe impl Send for Dir {}
 
+#[cfg(not(target_os = "redox"))]
 impl AsRawFd for Dir {
     fn as_raw_fd(&self) -> RawFd {
         unsafe { libc::dirfd(self.0.as_ptr()) }
@@ -152,6 +155,7 @@ impl Entry {
               target_os = "l4re",
               target_os = "linux",
               target_os = "macos",
+              target_os = "redox",
               target_os = "solaris"))]
     pub fn ino(&self) -> u64 {
         self.0.d_ino as u64
@@ -166,6 +170,7 @@ impl Entry {
                   target_os = "l4re",
                   target_os = "linux",
                   target_os = "macos",
+                  target_os = "redox",
                   target_os = "solaris")))]
     pub fn ino(&self) -> u64 {
         u64::from(self.0.d_fileno)

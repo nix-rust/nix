@@ -2,6 +2,7 @@ use {Result, NixPath};
 use errno::Errno;
 use libc::{self, c_int, c_uint, c_char, size_t, ssize_t};
 use sys::stat::Mode;
+#[cfg(not(target_os = "redox"))]
 use std::os::raw;
 use std::os::unix::io::RawFd;
 use std::ffi::OsString;
@@ -21,6 +22,7 @@ use sys::uio::IoVec;  // For vmsplice
           target_env = "freebsd"))]
 pub use self::posix_fadvise::*;
 
+#[cfg(not(target_os = "redox"))]
 libc_bitflags!{
     pub struct AtFlags: c_int {
         AT_REMOVEDIR;
@@ -79,7 +81,8 @@ libc_bitflags!(
                   target_os = "ios",
                   target_os = "macos",
                   target_os = "netbsd",
-                  target_os = "openbsd"))]
+                  target_os = "openbsd",
+                  target_os = "redox"))]
         O_EXLOCK;
         /// Same as `O_SYNC`.
         #[cfg(any(target_os = "dragonfly",
@@ -88,7 +91,8 @@ libc_bitflags!(
                   all(target_os = "linux", not(target_env = "musl")),
                   target_os = "macos",
                   target_os = "netbsd",
-                  target_os = "openbsd"))]
+                  target_os = "openbsd",
+                  target_os = "redox"))]
         O_FSYNC;
         /// Allow files whose sizes can't be represented in an `off_t` to be opened.
         #[cfg(any(target_os = "android", target_os = "linux"))]
@@ -97,8 +101,10 @@ libc_bitflags!(
         #[cfg(any(target_os = "android", target_os = "linux"))]
         O_NOATIME;
         /// Don't attach the device as the process' controlling terminal.
+        #[cfg(not(target_os = "redox"))]
         O_NOCTTY;
         /// Same as `O_NONBLOCK`.
+        #[cfg(not(target_os = "redox"))]
         O_NDELAY;
         /// `open()` will fail if the given path is a symbolic link.
         O_NOFOLLOW;
@@ -110,7 +116,7 @@ libc_bitflags!(
         /// Obtain a file descriptor for low-level access.
         ///
         /// The file itself is not opened and other file operations will fail.
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(any(target_os = "android", target_os = "linux", target_os = "redox"))]
         O_PATH;
         /// Only allow reading.
         ///
@@ -132,9 +138,11 @@ libc_bitflags!(
                   target_os = "ios",
                   target_os = "macos",
                   target_os = "netbsd",
-                  target_os = "openbsd"))]
+                  target_os = "openbsd",
+                  target_os = "redox"))]
         O_SHLOCK;
         /// Implicitly follow each `write()` with an `fsync()`.
+        #[cfg(not(target_os = "redox"))]
         O_SYNC;
         /// Create an unnamed temporary file.
         #[cfg(any(target_os = "android", target_os = "linux"))]
@@ -257,6 +265,7 @@ pub fn readlinkat<P: ?Sized + NixPath>(dirfd: RawFd, path: &P)
 }
 
 /// Computes the raw fd consumed by a function of the form `*at`.
+#[cfg(not(target_os = "redox"))]
 pub(crate) fn at_rawfd(fd: Option<RawFd>) -> raw::c_int {
     match fd {
         None => libc::AT_FDCWD,
@@ -287,6 +296,7 @@ libc_bitflags!(
     }
 );
 
+#[cfg(not(target_os = "redox"))]
 #[derive(Debug, Eq, Hash, PartialEq)]
 pub enum FcntlArg<'a> {
     F_DUPFD(RawFd),
@@ -317,6 +327,17 @@ pub enum FcntlArg<'a> {
 
     // TODO: Rest of flags
 }
+
+#[cfg(target_os = "redox")]
+#[derive(Debug, Clone, Copy, Eq, Hash, PartialEq)]
+pub enum FcntlArg {
+    F_DUPFD(RawFd),
+    F_DUPFD_CLOEXEC(RawFd),
+    F_GETFD,
+    F_SETFD(FdFlag), // FD_FLAGS
+    F_GETFL,
+    F_SETFL(OFlag), // O_NONBLOCK
+}
 pub use self::FcntlArg::*;
 
 // TODO: Figure out how to handle value fcntl returns
@@ -329,8 +350,11 @@ pub fn fcntl(fd: RawFd, arg: FcntlArg) -> Result<c_int> {
             F_SETFD(flag) => libc::fcntl(fd, libc::F_SETFD, flag.bits()),
             F_GETFL => libc::fcntl(fd, libc::F_GETFL),
             F_SETFL(flag) => libc::fcntl(fd, libc::F_SETFL, flag.bits()),
+            #[cfg(not(target_os = "redox"))]
             F_SETLK(flock) => libc::fcntl(fd, libc::F_SETLK, flock),
+            #[cfg(not(target_os = "redox"))]
             F_SETLKW(flock) => libc::fcntl(fd, libc::F_SETLKW, flock),
+            #[cfg(not(target_os = "redox"))]
             F_GETLK(flock) => libc::fcntl(fd, libc::F_GETLK, flock),
             #[cfg(any(target_os = "android", target_os = "linux"))]
             F_OFD_SETLK(flock) => libc::fcntl(fd, libc::F_OFD_SETLK, flock),
@@ -364,6 +388,7 @@ pub enum FlockArg {
     UnlockNonblock,
 }
 
+#[cfg(not(target_os = "redox"))]
 pub fn flock(fd: RawFd, arg: FlockArg) -> Result<()> {
     use self::FlockArg::*;
 

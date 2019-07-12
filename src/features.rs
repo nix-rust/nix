@@ -94,7 +94,10 @@ mod os {
     }
 }
 
-#[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "dragonfly", target_os = "ios", target_os = "openbsd", target_os = "netbsd"))]
+#[cfg(any(target_os = "macos", target_os = "freebsd",
+          target_os = "dragonfly", target_os = "ios",
+          target_os = "openbsd", target_os = "netbsd",
+          target_os = "redox"))]
 mod os {
     /// Check if the OS supports atomic close-on-exec for sockets
     pub fn socket_atomic_cloexec() -> bool {

@@ -57,10 +57,13 @@ pub mod mount;
           target_os = "netbsd"))]
 pub mod mqueue;
 #[deny(missing_docs)]
+#[cfg(not(target_os = "redox"))]
 pub mod net;
 #[deny(missing_docs)]
+#[cfg(not(target_os = "redox"))]
 pub mod poll;
 #[deny(missing_docs)]
+#[cfg(not(target_os = "redox"))]
 pub mod pty;
 pub mod sched;
 pub mod sys;

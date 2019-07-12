@@ -34,6 +34,7 @@ pub mod ioctl;
 #[cfg(target_os = "linux")]
 pub mod memfd;
 
+#[cfg(not(target_os = "redox"))]
 pub mod mman;
 
 pub mod pthread;
@@ -53,6 +54,7 @@ pub mod quota;
 #[cfg(any(target_os = "linux"))]
 pub mod reboot;
 
+#[cfg(not(target_os = "redox"))]
 pub mod select;
 
 #[cfg(any(target_os = "android",
@@ -67,6 +69,7 @@ pub mod signal;
 #[cfg(any(target_os = "android", target_os = "linux"))]
 pub mod signalfd;
 
+#[cfg(not(target_os = "redox"))]
 pub mod socket;
 
 pub mod stat;
@@ -86,6 +89,7 @@ pub mod statvfs;
 #[cfg(any(target_os = "android", target_os = "linux"))]
 pub mod sysinfo;
 
+#[cfg(not(target_os = "redox"))]
 pub mod termios;
 
 pub mod time;

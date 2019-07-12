@@ -15,6 +15,7 @@ libc_bitflags!(
                   target_os = "haiku",
                   target_os = "ios",
                   target_os = "linux",
+                  target_os = "redox",
                   target_os = "macos",
                   target_os = "netbsd"))]
         WEXITED;
@@ -24,6 +25,7 @@ libc_bitflags!(
                   target_os = "haiku",
                   target_os = "ios",
                   target_os = "linux",
+                  target_os = "redox",
                   target_os = "macos",
                   target_os = "netbsd"))]
         WSTOPPED;
@@ -33,16 +35,17 @@ libc_bitflags!(
                   target_os = "haiku",
                   target_os = "ios",
                   target_os = "linux",
+                  target_os = "redox",
                   target_os = "macos",
                   target_os = "netbsd"))]
         WNOWAIT;
         /// Don't wait on children of other threads in this group
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(any(target_os = "android", target_os = "linux", target_os = "redox"))]
         __WNOTHREAD;
         /// Wait on all children, regardless of type
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(any(target_os = "android", target_os = "linux", target_os = "redox"))]
         __WALL;
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(any(target_os = "android", target_os = "linux", target_os = "redox"))]
         __WCLONE;
     }
 );
