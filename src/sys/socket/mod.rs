@@ -895,7 +895,7 @@ pub fn sendmsg(fd: RawFd, iov: &[IoVec<&[u8]>], cmsgs: &[ControlMessage],
 /// # References
 /// [recvmsg(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/recvmsg.html)
 pub fn recvmsg<'a>(fd: RawFd, iov: &[IoVec<&mut [u8]>],
-                   cmsg_buffer: Option<&'a mut CmsgBuffer>,
+                   cmsg_buffer: Option<&'a mut dyn CmsgBuffer>,
                    flags: MsgFlags) -> Result<RecvMsg<'a>>
 {
     let mut address: sockaddr_storage = unsafe { mem::uninitialized() };

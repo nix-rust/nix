@@ -102,9 +102,9 @@ pub enum Buffer<'a> {
     /// Keeps a reference to a slice
     Phantom(PhantomData<&'a mut [u8]>),
     /// Generic thing that keeps a buffer from dropping
-    BoxedSlice(Box<Borrow<[u8]>>),
+    BoxedSlice(Box<dyn Borrow<[u8]>>),
     /// Generic thing that keeps a mutable buffer from dropping
-    BoxedMutSlice(Box<BorrowMut<[u8]>>),
+    BoxedMutSlice(Box<dyn BorrowMut<[u8]>>),
 }
 
 impl<'a> Debug for Buffer<'a> {
@@ -116,14 +116,14 @@ impl<'a> Debug for Buffer<'a> {
             Buffer::None => write!(fmt, "None"),
             Buffer::Phantom(p) => p.fmt(fmt),
             Buffer::BoxedSlice(ref bs) => {
-                let borrowed : &Borrow<[u8]> = bs.borrow();
+                let borrowed : &dyn Borrow<[u8]> = bs.borrow();
                 write!(fmt, "BoxedSlice({:?})",
-                    borrowed as *const Borrow<[u8]>)
+                    borrowed as *const dyn Borrow<[u8]>)
             },
             Buffer::BoxedMutSlice(ref bms) => {
-                let borrowed : &BorrowMut<[u8]> = bms.borrow();
+                let borrowed : &dyn BorrowMut<[u8]> = bms.borrow();
                 write!(fmt, "BoxedMutSlice({:?})",
-                    borrowed as *const BorrowMut<[u8]>)
+                    borrowed as *const dyn BorrowMut<[u8]>)
             }
         }
     }
@@ -165,7 +165,7 @@ impl<'a> AioCb<'a> {
     ///
     /// It is an error to call this method while the `AioCb` is still in
     /// progress.
-    pub fn boxed_slice(&mut self) -> Option<Box<Borrow<[u8]>>> {
+    pub fn boxed_slice(&mut self) -> Option<Box<dyn Borrow<[u8]>>> {
         assert!(!self.in_progress, "Can't remove the buffer from an AioCb that's still in-progress.  Did you forget to call aio_return?");
         if let Buffer::BoxedSlice(_) = self.buffer {
             let mut oldbuffer = Buffer::None;
@@ -187,7 +187,7 @@ impl<'a> AioCb<'a> {
     ///
     /// It is an error to call this method while the `AioCb` is still in
     /// progress.
-    pub fn boxed_mut_slice(&mut self) -> Option<Box<BorrowMut<[u8]>>> {
+    pub fn boxed_mut_slice(&mut self) -> Option<Box<dyn BorrowMut<[u8]>>> {
         assert!(!self.in_progress, "Can't remove the buffer from an AioCb that's still in-progress.  Did you forget to call aio_return?");
         if let Buffer::BoxedMutSlice(_) = self.buffer {
             let mut oldbuffer = Buffer::None;
@@ -448,12 +448,12 @@ impl<'a> AioCb<'a> {
     /// ```
     ///
     /// [`from_slice`]: #method.from_slice
-    pub fn from_boxed_slice(fd: RawFd, offs: off_t, buf: Box<Borrow<[u8]>>,
+    pub fn from_boxed_slice(fd: RawFd, offs: off_t, buf: Box<dyn Borrow<[u8]>>,
                       prio: libc::c_int, sigev_notify: SigevNotify,
                       opcode: LioOpcode) -> AioCb<'a> {
         let mut a = AioCb::common_init(fd, prio, sigev_notify);
         {
-            let borrowed : &Borrow<[u8]> = buf.borrow();
+            let borrowed : &dyn Borrow<[u8]> = buf.borrow();
             let slice : &[u8] = borrowed.borrow();
             a.aio_nbytes = slice.len() as size_t;
             a.aio_buf = slice.as_ptr() as *mut c_void;
@@ -516,12 +516,12 @@ impl<'a> AioCb<'a> {
     /// [`from_boxed_slice`]: #method.from_boxed_slice
     /// [`from_mut_slice`]: #method.from_mut_slice
     pub fn from_boxed_mut_slice(fd: RawFd, offs: off_t,
-                                mut buf: Box<BorrowMut<[u8]>>,
+                                mut buf: Box<dyn BorrowMut<[u8]>>,
                                 prio: libc::c_int, sigev_notify: SigevNotify,
                                 opcode: LioOpcode) -> AioCb<'a> {
         let mut a = AioCb::common_init(fd, prio, sigev_notify);
         {
-            let borrowed : &mut BorrowMut<[u8]> = buf.borrow_mut();
+            let borrowed : &mut dyn BorrowMut<[u8]> = buf.borrow_mut();
             let slice : &mut [u8] = borrowed.borrow_mut();
             a.aio_nbytes = slice.len() as size_t;
             a.aio_buf = slice.as_mut_ptr() as *mut c_void;

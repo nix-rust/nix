@@ -44,7 +44,7 @@ mod sched_linux_like {
         }
     }
 
-    pub type CloneCb<'a> = Box<FnMut() -> isize + 'a>;
+    pub type CloneCb<'a> = Box<dyn FnMut() -> isize + 'a>;
 
     #[repr(C)]
     #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -113,7 +113,7 @@ mod sched_linux_like {
             let ptr_aligned = ptr.offset((ptr as usize % 16) as isize * -1);
             libc::clone(
                 mem::transmute(
-                    callback as extern "C" fn(*mut Box<::std::ops::FnMut() -> isize>) -> i32,
+                    callback as extern "C" fn(*mut Box<dyn FnMut() -> isize>) -> i32,
                 ),
                 ptr_aligned as *mut c_void,
                 combined,

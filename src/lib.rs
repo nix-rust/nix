@@ -14,6 +14,8 @@
 #![deny(unstable_features)]
 #![deny(missing_copy_implementations)]
 #![deny(missing_debug_implementations)]
+// XXX Allow deprecated items until release 0.16.0.  See issue #1096.
+#![allow(deprecated)]
 
 // External crates
 #[macro_use]

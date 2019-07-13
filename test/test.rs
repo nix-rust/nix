@@ -1,3 +1,5 @@
+// XXX Allow deprecated items until release 0.16.0.  See issue #1096.
+#![allow(deprecated)]
 extern crate bytes;
 #[cfg(any(target_os = "android", target_os = "linux"))]
 extern crate caps;

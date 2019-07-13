@@ -21,8 +21,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 - Support for `ifaddrs` now present when building for Android.
   ([#1077](https://github.com/nix-rust/nix/pull/1077))
-- Minimum supported Rust version is now 1.25.0 
+- Minimum supported Rust version is now 1.31.0
   ([#1035](https://github.com/nix-rust/nix/pull/1035))
+  ([#1095](https://github.com/nix-rust/nix/pull/1095))
 - Now functions `statfs()` and `fstatfs()` return result with `Statfs` wrapper
   ([#928](https://github.com/nix-rust/nix/pull/928))
 
