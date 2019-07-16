@@ -9,7 +9,9 @@ use libc::{S_IFMT, S_IFLNK, mode_t};
 
 use nix::{fcntl, Error};
 use nix::errno::{Errno};
-use nix::sys::stat::{self, fchmod, fchmodat, futimens, stat, utimes, utimensat, mkdirat};
+use nix::sys::stat::{self, fchmod, futimens, stat, utimes};
+#[cfg(not(target_os = "redox"))]
+use nix::sys::stat::{fchmodat, utimensat, mkdirat};
 #[cfg(any(target_os = "linux",
           target_os = "haiku",
           target_os = "ios",
@@ -92,7 +94,7 @@ fn test_stat_and_fstat() {
 }
 
 #[test]
-#[cfg(not(any(target_os = "netbsd")))]
+#[cfg(not(any(target_os = "netbsd", target_os = "redox")))]
 fn test_fstatat() {
     let tempdir = tempfile::tempdir().unwrap();
     let filename = tempdir.path().join("foo.txt");
@@ -155,6 +157,7 @@ fn test_fchmod() {
 }
 
 #[test]
+#[cfg(not(target_os = "redox"))]
 fn test_fchmodat() {
     let _dr = ::DirRestore::new();
     let tempdir = tempfile::tempdir().unwrap();
@@ -243,6 +246,7 @@ fn test_futimens() {
 }
 
 #[test]
+#[cfg(not(target_os = "redox"))]
 fn test_utimensat() {
     let _dr = ::DirRestore::new();
     let tempdir = tempfile::tempdir().unwrap();
@@ -264,6 +268,7 @@ fn test_utimensat() {
 }
 
 #[test]
+#[cfg(not(target_os = "redox"))]
 fn test_mkdirat_success_path() {
     let tempdir = tempfile::tempdir().unwrap();
     let filename = "example_subdir";
@@ -273,6 +278,7 @@ fn test_mkdirat_success_path() {
 }
 
 #[test]
+#[cfg(not(target_os = "redox"))]
 fn test_mkdirat_success_mode() {
     let expected_bits = stat::SFlag::S_IFDIR.bits() | stat::Mode::S_IRWXU.bits();
     let tempdir = tempfile::tempdir().unwrap();
@@ -285,6 +291,7 @@ fn test_mkdirat_success_mode() {
 }
 
 #[test]
+#[cfg(not(target_os = "redox"))]
 fn test_mkdirat_fail() {
     let tempdir = tempfile::tempdir().unwrap();
     let not_dir_filename= "example_not_dir";

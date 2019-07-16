@@ -134,6 +134,7 @@ cfg_if! {
 }
 
 mod sys;
+#[cfg(not(target_os = "redox"))]
 mod test_dir;
 mod test_fcntl;
 #[cfg(any(target_os = "android",
@@ -145,9 +146,12 @@ mod test_kmod;
           target_os = "linux",
           target_os = "netbsd"))]
 mod test_mq;
+#[cfg(not(target_os = "redox"))]
 mod test_net;
 mod test_nix_path;
+#[cfg(not(target_os = "redox"))]
 mod test_poll;
+#[cfg(not(target_os = "redox"))]
 mod test_pty;
 #[cfg(any(target_os = "android",
           target_os = "linux"))]

@@ -157,6 +157,7 @@ fn test_getpid() {
 }
 
 #[test]
+#[cfg(not(target_os = "redox"))]
 fn test_getsid() {
     let none_sid: ::libc::pid_t = getsid(None).unwrap().into();
     let pid_sid: ::libc::pid_t = getsid(Some(getpid())).unwrap().into();
@@ -177,7 +178,7 @@ mod linux_android {
 
 #[test]
 // `getgroups()` and `setgroups()` do not behave as expected on Apple platforms
-#[cfg(not(any(target_os = "ios", target_os = "macos")))]
+#[cfg(not(any(target_os = "ios", target_os = "macos", target_os = "redox")))]
 fn test_setgroups() {
     // Skip this test when not run as root as `setgroups()` requires root.
     skip_if_not_root!("test_setgroups");
@@ -200,7 +201,7 @@ fn test_setgroups() {
 
 #[test]
 // `getgroups()` and `setgroups()` do not behave as expected on Apple platforms
-#[cfg(not(any(target_os = "ios", target_os = "macos")))]
+#[cfg(not(any(target_os = "ios", target_os = "macos", target_os = "redox")))]
 fn test_initgroups() {
     // Skip this test when not run as root as `initgroups()` and `setgroups()`
     // require root.
@@ -391,6 +392,7 @@ fn test_chown() {
 }
 
 #[test]
+#[cfg(not(target_os = "redox"))]
 fn test_fchownat() {
     let _dr = ::DirRestore::new();
     // Testing for anything other than our own UID/GID is hard.
@@ -472,6 +474,7 @@ cfg_if!{
 }
 
 #[test]
+#[cfg(not(target_os = "redox"))]
 fn test_acct() {
     use tempfile::NamedTempFile;
     use std::process::Command;
@@ -550,6 +553,7 @@ fn test_pipe2() {
 }
 
 #[test]
+#[cfg(not(target_os = "redox"))]
 fn test_truncate() {
     let tempdir = tempfile::tempdir().unwrap();
     let path = tempdir.path().join("file");
@@ -634,6 +638,7 @@ fn test_canceling_alarm() {
 }
 
 #[test]
+#[cfg(not(target_os = "redox"))]
 fn test_symlinkat() {
     let _m = ::CWD_LOCK.read().expect("Mutex got poisoned by another test");
 
@@ -801,6 +806,7 @@ fn test_linkat_follow_symlink() {
 }
 
 #[test]
+#[cfg(not(target_os = "redox"))]
 fn test_unlinkat_dir_noremovedir() {
     let tempdir = tempfile::tempdir().unwrap();
     let dirname = "foo_dir";
@@ -818,6 +824,7 @@ fn test_unlinkat_dir_noremovedir() {
  }
 
 #[test]
+#[cfg(not(target_os = "redox"))]
 fn test_unlinkat_dir_removedir() {
     let tempdir = tempfile::tempdir().unwrap();
     let dirname = "foo_dir";
@@ -835,6 +842,7 @@ fn test_unlinkat_dir_removedir() {
  }
 
 #[test]
+#[cfg(not(target_os = "redox"))]
 fn test_unlinkat_file() {
     let tempdir = tempfile::tempdir().unwrap();
     let filename = "foo.txt";

@@ -1,6 +1,8 @@
 use nix::Error;
 use nix::errno::*;
-use nix::fcntl::{openat, open, OFlag, readlink, readlinkat, renameat};
+use nix::fcntl::{open, OFlag, readlink};
+#[cfg(not(target_os = "redox"))]
+use nix::fcntl::{openat, readlinkat, renameat};
 use nix::sys::stat::Mode;
 use nix::unistd::{close, read};
 use tempfile::{self, NamedTempFile};
@@ -9,6 +11,7 @@ use std::io::prelude::*;
 use std::os::unix::fs;
 
 #[test]
+#[cfg(not(target_os = "redox"))]
 fn test_openat() {
     const CONTENTS: &[u8] = b"abcd";
     let mut tmp = NamedTempFile::new().unwrap();
@@ -31,6 +34,7 @@ fn test_openat() {
 }
 
 #[test]
+#[cfg(not(target_os = "redox"))]
 fn test_renameat() {
     let old_dir = tempfile::tempdir().unwrap();
     let old_dirfd = open(old_dir.path(), OFlag::empty(), Mode::empty()).unwrap();
@@ -47,6 +51,7 @@ fn test_renameat() {
 }
 
 #[test]
+#[cfg(not(target_os = "redox"))]
 fn test_readlink() {
     let tempdir = tempfile::tempdir().unwrap();
     let src = tempdir.path().join("a");

@@ -291,6 +291,7 @@ pub fn setsid() -> Result<Pid> {
 /// Obtain the process group ID of the process that is the session leader of the process specified
 /// by pid. If pid is zero, it specifies the calling process.
 #[inline]
+#[cfg(not(target_os = "redox"))]
 pub fn getsid(pid: Option<Pid>) -> Result<Pid> {
     let res = unsafe { libc::getsid(pid.unwrap_or(Pid(0)).into()) };
     Errno::result(res).map(Pid)
@@ -1149,6 +1150,7 @@ fn pipe2_setflags(fd1: RawFd, fd2: RawFd, flags: OFlag) -> Result<()> {
 ///
 /// See also
 /// [truncate(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/truncate.html)
+#[cfg(not(target_os = "redox"))]
 pub fn truncate<P: ?Sized + NixPath>(path: &P, len: off_t) -> Result<()> {
     let res = path.with_nix_path(|cstr| {
         unsafe {
@@ -1263,6 +1265,7 @@ pub enum UnlinkatFlags {
 ///
 /// # References
 /// See also [unlinkat(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/unlinkat.html)
+#[cfg(not(target_os = "redox"))]
 pub fn unlinkat<P: ?Sized + NixPath>(
     dirfd: Option<RawFd>,
     path: &P,
@@ -1657,6 +1660,7 @@ pub fn initgroups(user: &CStr, group: Gid) -> Result<()> {
 ///
 /// See also [pause(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/pause.html).
 #[inline]
+#[cfg(not(target_os = "redox"))]
 pub fn pause() {
     unsafe { libc::pause() };
 }

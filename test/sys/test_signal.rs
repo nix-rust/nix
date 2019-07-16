@@ -82,7 +82,16 @@ extern fn test_sigaction_handler(signal: libc::c_int) {
     SIGNALED.store(signal == Signal::SIGINT, Ordering::Relaxed);
 }
 
-extern fn test_sigaction_action(_: libc::c_int, _: *mut libc::siginfo_t, _: *mut libc::c_void) {
+#[cfg(not(target_os = "redox"))]
+extern fn test_sigaction_action(_: libc::c_int, _: *mut libc::siginfo_t, _: *mut libc::c_void) {}
+
+#[test]
+#[cfg(not(target_os = "redox"))]
+fn test_signal_sigaction() {
+    let _m = ::SIGNAL_MTX.lock().expect("Mutex got poisoned by another test");
+
+    let action_handler = SigHandler::SigAction(test_sigaction_action);
+    assert_eq!(unsafe { signal(Signal::SIGINT, action_handler) }.unwrap_err(), Error::UnsupportedOperation);
 }
 
 #[test]
@@ -98,9 +107,6 @@ fn test_signal() {
     raise(Signal::SIGINT).unwrap();
     assert!(SIGNALED.load(Ordering::Relaxed));
     assert_eq!(unsafe { signal(Signal::SIGINT, SigHandler::SigDfl) }.unwrap(), handler);
-
-    let action_handler = SigHandler::SigAction(test_sigaction_action);
-    assert_eq!(unsafe { signal(Signal::SIGINT, action_handler) }.unwrap_err(), Error::UnsupportedOperation);
 
     // Restore default signal handler
     unsafe { signal(Signal::SIGINT, SigHandler::SigDfl) }.unwrap();

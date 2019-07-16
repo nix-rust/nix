@@ -464,6 +464,7 @@ impl SigSet {
 
     /// Suspends execution of the calling thread until one of the signals in the
     /// signal mask becomes pending, and returns the accepted signal.
+    #[cfg(not(target_os = "redox"))]
     pub fn wait(&self) -> Result<Signal> {
         let mut signum = mem::MaybeUninit::uninit();
         let res = unsafe { libc::sigwait(&self.sigset as *const libc::sigset_t, signum.as_mut_ptr()) };
@@ -890,6 +891,7 @@ mod sigevent {
 
 #[cfg(test)]
 mod tests {
+    #[cfg(not(target_os = "redox"))]
     use std::thread;
     use super::*;
 
@@ -945,6 +947,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(not(target_os = "redox"))]
     fn test_thread_signal_set_mask() {
         thread::spawn(|| {
             let prev_mask = SigSet::thread_get_mask()
@@ -965,6 +968,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(not(target_os = "redox"))]
     fn test_thread_signal_block() {
         thread::spawn(|| {
             let mut mask = SigSet::empty();
@@ -977,6 +981,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(not(target_os = "redox"))]
     fn test_thread_signal_unblock() {
         thread::spawn(|| {
             let mut mask = SigSet::empty();
@@ -989,6 +994,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(not(target_os = "redox"))]
     fn test_thread_signal_swap() {
         thread::spawn(|| {
             let mut mask = SigSet::empty();
@@ -1011,22 +1017,13 @@ mod tests {
     }
 
     #[test]
+    #[cfg(not(target_os = "redox"))]
     fn test_sigaction() {
         use libc;
         thread::spawn(|| {
             extern fn test_sigaction_handler(_: libc::c_int) {}
-            #[cfg(not(target_os = "redox"))]
             extern fn test_sigaction_action(_: libc::c_int,
                 _: *mut libc::siginfo_t, _: *mut libc::c_void) {}
-
-            #[cfg(not(target_os = "redox"))]
-            fn test_sigaction_sigaction(flags: SaFlags, mask: SigSet) {
-                let handler_act = SigHandler::SigAction(test_sigaction_action);
-                let action_act = SigAction::new(handler_act, flags, mask);
-                assert_eq!(action_act.handler(), handler_act);
-            }
-            #[cfg(target_os = "redox")]
-            fn test_sigaction_sigaction() {}
 
             let handler_sig = SigHandler::Handler(test_sigaction_handler);
 
@@ -1046,7 +1043,9 @@ mod tests {
             assert!(mask.contains(SIGUSR1));
             assert!(!mask.contains(SIGUSR2));
 
-            test_sigaction_sigaction(flags, mask);
+            let handler_act = SigHandler::SigAction(test_sigaction_action);
+            let action_act = SigAction::new(handler_act, flags, mask);
+            assert_eq!(action_act.handler(), handler_act);
 
             let action_dfl = SigAction::new(SigHandler::SigDfl, flags, mask);
             assert_eq!(action_dfl.handler(), SigHandler::SigDfl);
@@ -1057,6 +1056,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(not(target_os = "redox"))]
     fn test_sigwait() {
         thread::spawn(|| {
             let mut mask = SigSet::empty();
