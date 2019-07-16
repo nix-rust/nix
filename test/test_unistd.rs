@@ -1,13 +1,14 @@
-use nix::fcntl::{fcntl, FcntlArg, FdFlag, open, OFlag, readlink};
+use nix::fcntl::{self, fcntl, FcntlArg, FdFlag, open, OFlag, readlink};
 use nix::unistd::*;
 use nix::unistd::ForkResult::*;
 use nix::sys::signal::{SaFlags, SigAction, SigHandler, SigSet, Signal, sigaction};
 use nix::sys::wait::*;
 use nix::sys::stat::{self, Mode, SFlag};
 use nix::errno::Errno;
+use nix::Error;
 use std::{env, iter};
 use std::ffi::CString;
-use std::fs::{self, File};
+use std::fs::{self, DirBuilder, File};
 use std::io::Write;
 use std::os::unix::prelude::*;
 use tempfile::{self, tempfile};
@@ -598,6 +599,58 @@ fn test_symlinkat() {
         target
     );
 }
+
+
+#[test]
+fn test_unlinkat_dir_noremovedir() {
+    let tempdir = tempfile::tempdir().unwrap();
+    let dirname = "foo_dir";
+    let dirpath = tempdir.path().join(dirname);
+
+    // Create dir
+    DirBuilder::new().recursive(true).create(&dirpath).unwrap();
+
+    // Get file descriptor for base directory
+    let dirfd = fcntl::open(tempdir.path(), fcntl::OFlag::empty(), stat::Mode::empty()).unwrap();
+
+    // Attempt unlink dir at relative path without proper flag
+    let err_result = unlinkat(Some(dirfd), dirname, UnlinkatFlags::NoRemoveDir).unwrap_err();
+    assert!(err_result == Error::Sys(Errno::EISDIR) || err_result == Error::Sys(Errno::EPERM));
+ }
+
+#[test]
+fn test_unlinkat_dir_removedir() {
+    let tempdir = tempfile::tempdir().unwrap();
+    let dirname = "foo_dir";
+    let dirpath = tempdir.path().join(dirname);
+
+    // Create dir
+    DirBuilder::new().recursive(true).create(&dirpath).unwrap();
+
+    // Get file descriptor for base directory
+    let dirfd = fcntl::open(tempdir.path(), fcntl::OFlag::empty(), stat::Mode::empty()).unwrap();
+
+    // Attempt unlink dir at relative path with proper flag
+    unlinkat(Some(dirfd), dirname, UnlinkatFlags::RemoveDir).unwrap();
+    assert!(!dirpath.exists());
+ }
+
+#[test]
+fn test_unlinkat_file() {
+    let tempdir = tempfile::tempdir().unwrap();
+    let filename = "foo.txt";
+    let filepath = tempdir.path().join(filename);
+
+    // Create file
+    File::create(&filepath).unwrap();
+
+    // Get file descriptor for base directory
+    let dirfd = fcntl::open(tempdir.path(), fcntl::OFlag::empty(), stat::Mode::empty()).unwrap();
+
+    // Attempt unlink file at relative path
+    unlinkat(Some(dirfd), filename, UnlinkatFlags::NoRemoveDir).unwrap();
+    assert!(!filepath.exists());
+ }
 
 #[test]
 fn test_access_not_existing() {

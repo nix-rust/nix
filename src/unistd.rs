@@ -1144,6 +1144,42 @@ pub fn unlink<P: ?Sized + NixPath>(path: &P) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
+/// Flags for `unlinkat` function.
+#[derive(Clone, Copy, Debug)]
+pub enum UnlinkatFlags {
+    RemoveDir,
+    NoRemoveDir,
+}
+
+/// Remove a directory entry
+///
+/// In the case of a relative path, the directory entry to be removed is determined relative to
+/// the directory associated with the file descriptor `dirfd` or the current working directory
+/// if `dirfd` is `None`. In the case of an absolute `path` `dirfd` is ignored. If `flag` is
+/// `UnlinkatFlags::RemoveDir` then removal of the directory entry specified by `dirfd` and `path`
+/// is performed.
+///
+/// # References
+/// See also [unlinkat(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/unlinkat.html)
+pub fn unlinkat<P: ?Sized + NixPath>(
+    dirfd: Option<RawFd>,
+    path: &P,
+    flag: UnlinkatFlags,
+) -> Result<()> {
+    let atflag =
+        match flag {
+            UnlinkatFlags::RemoveDir => AtFlags::AT_REMOVEDIR,
+            UnlinkatFlags::NoRemoveDir => AtFlags::empty(),
+        };
+    let res = path.with_nix_path(|cstr| {
+        unsafe {
+            libc::unlinkat(at_rawfd(dirfd), cstr.as_ptr(), atflag.bits() as libc::c_int)
+        }
+    })?;
+    Errno::result(res).map(drop)
+}
+
+
 #[inline]
 pub fn chroot<P: ?Sized + NixPath>(path: &P) -> Result<()> {
     let res = path.with_nix_path(|cstr| {
