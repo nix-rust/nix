@@ -19,6 +19,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#1091](https://github.com/nix-rust/nix/pull/1091))
 - Add `unlinkat`
   ([#1058](https://github.com/nix-rust/nix/pull/1058))
+- Add `renameat`.
+  ([#1097](https://github.com/nix-rust/nix/pull/1097))
 
 ### Changed
 - Support for `ifaddrs` now present when building for Android.
