@@ -126,6 +126,7 @@ mod test_sched;
           target_os = "macos"))]
 mod test_sendfile;
 mod test_stat;
+mod test_time;
 mod test_unistd;
 
 use std::os::unix::io::RawFd;

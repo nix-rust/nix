@@ -67,6 +67,12 @@ impl AsRef<timespec> for TimeSpec {
     }
 }
 
+impl From<timespec> for TimeSpec {
+    fn from(ts: timespec) -> Self {
+        TimeSpec(ts)
+    }
+}
+
 impl Ord for TimeSpec {
     // The implementation of cmp is simplified by assuming that the struct is
     // normalized.  That is, tv_nsec must always be within [0, 1_000_000_000)
