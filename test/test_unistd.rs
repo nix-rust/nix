@@ -660,6 +660,137 @@ fn test_symlinkat() {
     );
 }
 
+#[test]
+fn test_linkat_file() {
+    let tempdir = tempfile::tempdir().unwrap();
+    let oldfilename = "foo.txt";
+    let oldfilepath = tempdir.path().join(oldfilename);
+
+    let newfilename = "bar.txt";
+    let newfilepath = tempdir.path().join(newfilename);
+
+    // Create file
+    File::create(&oldfilepath).unwrap();
+
+    // Get file descriptor for base directory
+    let dirfd = fcntl::open(tempdir.path(), fcntl::OFlag::empty(), stat::Mode::empty()).unwrap();
+
+    // Attempt hard link file at relative path
+    linkat(Some(dirfd), oldfilename, Some(dirfd), newfilename, LinkatFlags::SymlinkFollow).unwrap();
+    assert!(newfilepath.exists());
+}
+
+#[test]
+fn test_linkat_olddirfd_none() {
+    let tempdir_oldfile = tempfile::tempdir().unwrap();
+    let oldfilename = "foo.txt";
+    let oldfilepath = tempdir_oldfile.path().join(oldfilename);
+
+    let tempdir_newfile = tempfile::tempdir().unwrap();
+    let newfilename = "bar.txt";
+    let newfilepath = tempdir_newfile.path().join(newfilename);
+
+    // Create file
+    File::create(&oldfilepath).unwrap();
+
+    // Get file descriptor for base directory of new file
+    let dirfd = fcntl::open(tempdir_newfile.path(), fcntl::OFlag::empty(), stat::Mode::empty()).unwrap();
+
+    // Attempt hard link file using curent working directory as relative path for old file path
+    chdir(tempdir_oldfile.path()).unwrap();
+    linkat(None, oldfilename, Some(dirfd), newfilename, LinkatFlags::SymlinkFollow).unwrap();
+    assert!(newfilepath.exists());
+}
+
+#[test]
+fn test_linkat_newdirfd_none() {
+    let tempdir_oldfile = tempfile::tempdir().unwrap();
+    let oldfilename = "foo.txt";
+    let oldfilepath = tempdir_oldfile.path().join(oldfilename);
+
+    let tempdir_newfile = tempfile::tempdir().unwrap();
+    let newfilename = "bar.txt";
+    let newfilepath = tempdir_newfile.path().join(newfilename);
+
+    // Create file
+    File::create(&oldfilepath).unwrap();
+
+    // Get file descriptor for base directory of old file
+    let dirfd = fcntl::open(tempdir_oldfile.path(), fcntl::OFlag::empty(), stat::Mode::empty()).unwrap();
+
+    // Attempt hard link file using current working directory as relative path for new file path
+    chdir(tempdir_newfile.path()).unwrap();
+    linkat(Some(dirfd), oldfilename, None, newfilename, LinkatFlags::SymlinkFollow).unwrap();
+    assert!(newfilepath.exists());
+}
+
+#[test]
+#[cfg(not(any(target_os = "ios", target_os = "macos")))]
+fn test_linkat_no_follow_symlink() {
+    let tempdir = tempfile::tempdir().unwrap();
+    let oldfilename = "foo.txt";
+    let oldfilepath = tempdir.path().join(oldfilename);
+
+    let symoldfilename = "symfoo.txt";
+    let symoldfilepath = tempdir.path().join(symoldfilename);
+
+    let newfilename = "nofollowsymbar.txt";
+    let newfilepath = tempdir.path().join(newfilename);
+
+    // Create file
+    File::create(&oldfilepath).unwrap();
+
+    // Create symlink to file
+    symlinkat(&oldfilepath, None, &symoldfilepath).unwrap();
+
+    // Get file descriptor for base directory
+    let dirfd = fcntl::open(tempdir.path(), fcntl::OFlag::empty(), stat::Mode::empty()).unwrap();
+
+    // Attempt link symlink of file at relative path
+    linkat(Some(dirfd), symoldfilename, Some(dirfd), newfilename, LinkatFlags::NoSymlinkFollow).unwrap();
+
+    // Assert newfile is actually a symlink to oldfile.
+    assert_eq!(
+        readlink(&newfilepath)
+            .unwrap()
+            .to_str()
+            .unwrap(),
+        oldfilepath.to_str().unwrap()
+    );
+}
+
+#[test]
+fn test_linkat_follow_symlink() {
+    let tempdir = tempfile::tempdir().unwrap();
+    let oldfilename = "foo.txt";
+    let oldfilepath = tempdir.path().join(oldfilename);
+
+    let symoldfilename = "symfoo.txt";
+    let symoldfilepath = tempdir.path().join(symoldfilename);
+
+    let newfilename = "nofollowsymbar.txt";
+    let newfilepath = tempdir.path().join(newfilename);
+
+    // Create file
+    File::create(&oldfilepath).unwrap();
+
+    // Create symlink to file
+    symlinkat(&oldfilepath, None, &symoldfilepath).unwrap();
+
+    // Get file descriptor for base directory
+    let dirfd = fcntl::open(tempdir.path(), fcntl::OFlag::empty(), stat::Mode::empty()).unwrap();
+
+    // Attempt link target of symlink of file at relative path
+    linkat(Some(dirfd), symoldfilename, Some(dirfd), newfilename, LinkatFlags::SymlinkFollow).unwrap();
+
+    let newfilestat = stat::stat(&newfilepath).unwrap();
+
+    // Check the file type of the new link
+    assert!((stat::SFlag::from_bits_truncate(newfilestat.st_mode) & SFlag::S_IFMT) ==  SFlag::S_IFREG);
+
+    // Check the number of hard links to the original file
+    assert_eq!(newfilestat.st_nlink, 2);
+}
 
 #[test]
 fn test_unlinkat_dir_noremovedir() {

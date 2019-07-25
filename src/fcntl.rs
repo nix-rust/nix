@@ -24,6 +24,7 @@ pub use self::posix_fadvise::*;
 libc_bitflags!{
     pub struct AtFlags: c_int {
         AT_REMOVEDIR;
+        AT_SYMLINK_FOLLOW;
         AT_SYMLINK_NOFOLLOW;
         #[cfg(any(target_os = "android", target_os = "linux"))]
         AT_NO_AUTOMOUNT;
