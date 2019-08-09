@@ -143,6 +143,25 @@ impl TimeValLike for TimeSpec {
     }
 }
 
+#[cfg(any(
+    target_os = "linux",
+    target_os = "android",
+    target_os = "emscripten",
+    target_os = "fuchsia",
+    target_env = "uclibc"
+))]
+impl TimeSpec {
+    /// Makes a new `TimeSpec` with the special UTIME_NOW constant
+    pub fn utime_now() -> TimeSpec {
+        TimeSpec(timespec { tv_sec: 0, tv_nsec: libc::UTIME_NOW })
+    }
+
+    /// Makes a new `TimeSpec` with the special UTIME_OMIT constant
+    pub fn utime_omit() -> TimeSpec {
+        TimeSpec(timespec { tv_sec: 0, tv_nsec: libc::UTIME_OMIT })
+    }
+}
+
 impl TimeSpec {
     fn nanos_mod_sec(&self) -> c_long {
         if self.tv_sec() < 0 && self.tv_nsec() > 0 {
@@ -483,6 +502,19 @@ mod test {
         let b = TimeSpec::seconds(-1) + TimeSpec::nanoseconds(-123);
 
         assert_eq!(a, -b);
+    }
+
+    #[test]
+    #[cfg(any(
+        target_os = "linux",
+        target_os = "android",
+        target_os = "emscripten",
+        target_os = "fuchsia",
+        target_env = "uclibc"
+    ))]
+    pub fn test_timespec_constants() {
+        assert_eq!(TimeSpec::utime_now().tv_nsec(), libc::UTIME_NOW);
+        assert_eq!(TimeSpec::utime_omit().tv_nsec(), libc::UTIME_OMIT);
     }
 
     #[test]
