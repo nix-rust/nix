@@ -3,7 +3,13 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
+## [Unreleased] - ReleaseDate
+### Added
+### Changed
+### Fixed
+### Removed
+
+## [0.15.0] - 10 August 2019
 ### Added
 - Added `MSG_WAITALL` to `MsgFlags` in `sys::socket`.
   ([#1079](https://github.com/nix-rust/nix/pull/1079))
