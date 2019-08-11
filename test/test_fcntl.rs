@@ -231,3 +231,68 @@ mod test_posix_fadvise {
         assert_eq!(errno, Errno::ESPIPE as i32);
     }
 }
+
+#[cfg(any(target_os = "linux",
+          target_os = "android",
+          target_os = "emscripten",
+          target_os = "fuchsia",
+          any(target_os = "wasi", target_env = "wasi"),
+          target_os = "freebsd"))]
+mod test_posix_fallocate {
+
+    use tempfile::NamedTempFile;
+    use std::{io::Read, os::unix::io::{RawFd, AsRawFd}};
+    use nix::errno::Errno;
+    use nix::fcntl::*;
+    use nix::unistd::pipe;
+
+    #[test]
+    fn success() {
+        const LEN: usize = 100;
+        let mut tmp = NamedTempFile::new().unwrap();
+        let fd = tmp.as_raw_fd();
+        let res = posix_fallocate(fd, 0, LEN as libc::off_t);
+        match res {
+            Ok(_) => {
+                let mut data = [1u8; LEN];
+                assert_eq!(tmp.read(&mut data).expect("read failure"), LEN);
+                assert_eq!(&data as &[u8], &[0u8; LEN] as &[u8]);
+            }
+            Err(nix::Error::Sys(Errno::EINVAL)) => {
+                // `posix_fallocate` returned EINVAL.
+                // According to POSIX.1-2008, its implementation shall
+                // return `EINVAL` if `len` is 0, `offset` is negative or
+                // the filesystem does not support this operation.
+                // According to POSIX.1-2001, its implementation shall
+                // return `EINVAL` if `len` is negative, `offset` is
+                // negative or the filesystem does not support this
+                // operation; and may return `EINVAL` if `len` is 0.
+                // However, this test is using `offset=0` and non-zero
+                // `len`.
+                // Suppose that the host platform is POSIX-compliant,
+                // then this can only be due to an underlying filesystem on
+                // `/tmp` that does not support `posix_fallocate`.
+                // This test is passing by giving it the benefit of doubt.
+            }
+            _ => res.unwrap(),
+        }
+    }
+
+    #[test]
+    fn errno() {
+        let (rd, _wr) = pipe().unwrap();
+        let err = posix_fallocate(rd as RawFd, 0, 100).unwrap_err();
+        use nix::Error::Sys;
+        match err {
+            Sys(Errno::EINVAL)
+                | Sys(Errno::ENODEV)
+                | Sys(Errno::ESPIPE)
+                | Sys(Errno::EBADF) => (),
+            errno =>
+                panic!(
+                    "errno does not match posix_fallocate spec, errno={}",
+                    errno,
+                ),
+        }
+    }
+}
