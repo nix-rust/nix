@@ -818,6 +818,7 @@ libc_bitflags! {
         PARODD;
         HUPCL;
         CLOCAL;
+        #[cfg(not(target_os = "redox"))]
         CRTSCTS;
         #[cfg(any(target_os = "android", target_os = "linux"))]
         CBAUD;
@@ -868,12 +869,15 @@ libc_bitflags! {
 libc_bitflags! {
     /// Flags for setting any local modes
     pub struct LocalFlags: tcflag_t {
+        #[cfg(not(target_os = "redox"))]
         ECHOKE;
         ECHOE;
         ECHOK;
         ECHO;
         ECHONL;
+        #[cfg(not(target_os = "redox"))]
         ECHOPRT;
+        #[cfg(not(target_os = "redox"))]
         ECHOCTL;
         ISIG;
         ICANON;
@@ -885,8 +889,10 @@ libc_bitflags! {
                   target_os = "openbsd"))]
         ALTWERASE;
         IEXTEN;
+        #[cfg(not(target_os = "redox"))]
         EXTPROC;
         TOSTOP;
+        #[cfg(not(target_os = "redox"))]
         FLUSHO;
         #[cfg(any(target_os = "freebsd",
                   target_os = "dragonfly",
@@ -895,6 +901,7 @@ libc_bitflags! {
                   target_os = "netbsd",
                   target_os = "openbsd"))]
         NOKERNINFO;
+        #[cfg(not(target_os = "redox"))]
         PENDIN;
         NOFLSH;
     }

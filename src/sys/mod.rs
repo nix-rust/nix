@@ -89,7 +89,6 @@ pub mod statvfs;
 #[cfg(any(target_os = "android", target_os = "linux"))]
 pub mod sysinfo;
 
-#[cfg(not(target_os = "redox"))]
 pub mod termios;
 
 pub mod time;
