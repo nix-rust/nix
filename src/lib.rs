@@ -60,7 +60,6 @@ pub mod mqueue;
 #[cfg(not(target_os = "redox"))]
 pub mod net;
 #[deny(missing_docs)]
-#[cfg(not(target_os = "redox"))]
 pub mod poll;
 #[deny(missing_docs)]
 #[cfg(not(target_os = "redox"))]
