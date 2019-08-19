@@ -543,6 +543,9 @@ impl ControlMessageOwned {
     ///
     /// Returns `None` if the data may be unaligned.  In that case use
     /// `ControlMessageOwned::decode_from`.
+    // Clippy complains about the pointer alignment of `p`, not understanding
+    // that it's being fed to a function that can handle that.
+    #[allow(clippy::cast_ptr_alignment)]
     unsafe fn decode_from(header: &cmsghdr) -> ControlMessageOwned
     {
         let p = CMSG_DATA(header);
