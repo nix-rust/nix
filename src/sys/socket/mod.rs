@@ -1074,7 +1074,7 @@ pub fn recv(sockfd: RawFd, buf: &mut [u8], flags: MsgFlags) -> Result<usize> {
 /// [Further reading](http://pubs.opengroup.org/onlinepubs/9699919799/functions/recvfrom.html)
 pub fn recvfrom(sockfd: RawFd, buf: &mut [u8]) -> Result<(usize, SockAddr)> {
     unsafe {
-        let addr: sockaddr_storage = mem::zeroed();
+        let mut addr: sockaddr_storage = mem::zeroed();
         let mut len = mem::size_of::<sockaddr_storage>() as socklen_t;
 
         let ret = Errno::result(libc::recvfrom(
@@ -1082,7 +1082,7 @@ pub fn recvfrom(sockfd: RawFd, buf: &mut [u8]) -> Result<(usize, SockAddr)> {
             buf.as_ptr() as *mut c_void,
             buf.len() as size_t,
             0,
-            mem::transmute(&addr),
+            &mut addr as *mut libc::sockaddr_storage as *mut libc::sockaddr,
             &mut len as *mut socklen_t))?;
 
         sockaddr_storage_to_addr(&addr, len as usize)
@@ -1188,10 +1188,14 @@ pub fn setsockopt<O: SetSockOpt>(fd: RawFd, opt: O, val: &O::Val) -> Result<()> 
 /// [Further reading](http://pubs.opengroup.org/onlinepubs/9699919799/functions/getpeername.html)
 pub fn getpeername(fd: RawFd) -> Result<SockAddr> {
     unsafe {
-        let addr: sockaddr_storage = mem::uninitialized();
+        let mut addr: sockaddr_storage = mem::uninitialized();
         let mut len = mem::size_of::<sockaddr_storage>() as socklen_t;
 
-        let ret = libc::getpeername(fd, mem::transmute(&addr), &mut len);
+        let ret = libc::getpeername(
+            fd,
+            &mut addr as *mut libc::sockaddr_storage as *mut libc::sockaddr,
+            &mut len
+        );
 
         Errno::result(ret)?;
 
@@ -1204,10 +1208,14 @@ pub fn getpeername(fd: RawFd) -> Result<SockAddr> {
 /// [Further reading](http://pubs.opengroup.org/onlinepubs/9699919799/functions/getsockname.html)
 pub fn getsockname(fd: RawFd) -> Result<SockAddr> {
     unsafe {
-        let addr: sockaddr_storage = mem::uninitialized();
+        let mut addr: sockaddr_storage = mem::uninitialized();
         let mut len = mem::size_of::<sockaddr_storage>() as socklen_t;
 
-        let ret = libc::getsockname(fd, mem::transmute(&addr), &mut len);
+        let ret = libc::getsockname(
+            fd,
+            &mut addr as *mut libc::sockaddr_storage as *mut libc::sockaddr,
+            &mut len
+        );
 
         Errno::result(ret)?;
 

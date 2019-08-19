@@ -768,26 +768,54 @@ impl SockAddr {
     /// a sockaddr * need to take the size of the underlying type as well and then internally cast it back.
     pub unsafe fn as_ffi_pair(&self) -> (&libc::sockaddr, libc::socklen_t) {
         match *self {
-            SockAddr::Inet(InetAddr::V4(ref addr)) => (mem::transmute(addr), mem::size_of::<libc::sockaddr_in>() as libc::socklen_t),
-            SockAddr::Inet(InetAddr::V6(ref addr)) => (mem::transmute(addr), mem::size_of::<libc::sockaddr_in6>() as libc::socklen_t),
-            SockAddr::Unix(UnixAddr(ref addr, len)) => (mem::transmute(addr), (len + offset_of!(libc::sockaddr_un, sun_path)) as libc::socklen_t),
+            SockAddr::Inet(InetAddr::V4(ref addr)) => (
+                &*(addr as *const libc::sockaddr_in as *const libc::sockaddr),
+                mem::size_of_val(addr) as libc::socklen_t
+            ),
+            SockAddr::Inet(InetAddr::V6(ref addr)) => (
+                &*(addr as *const libc::sockaddr_in6 as *const libc::sockaddr),
+                mem::size_of_val(addr) as libc::socklen_t
+            ),
+            SockAddr::Unix(UnixAddr(ref addr, len)) => (
+                &*(addr as *const libc::sockaddr_un as *const libc::sockaddr),
+                (len + offset_of!(libc::sockaddr_un, sun_path)) as libc::socklen_t
+            ),
             #[cfg(any(target_os = "android", target_os = "linux"))]
-            SockAddr::Netlink(NetlinkAddr(ref sa)) => (mem::transmute(sa), mem::size_of::<libc::sockaddr_nl>() as libc::socklen_t),
+            SockAddr::Netlink(NetlinkAddr(ref sa)) => (
+                &*(sa as *const libc::sockaddr_nl as *const libc::sockaddr),
+                mem::size_of_val(sa) as libc::socklen_t
+            ),
             #[cfg(any(target_os = "android", target_os = "linux"))]
-            SockAddr::Alg(AlgAddr(ref sa)) => (mem::transmute(sa), mem::size_of::<libc::sockaddr_alg>() as libc::socklen_t),
+            SockAddr::Alg(AlgAddr(ref sa)) => (
+                &*(sa as *const libc::sockaddr_alg as *const libc::sockaddr),
+                mem::size_of_val(sa) as libc::socklen_t
+            ),
             #[cfg(any(target_os = "ios", target_os = "macos"))]
-            SockAddr::SysControl(SysControlAddr(ref sa)) => (mem::transmute(sa), mem::size_of::<libc::sockaddr_ctl>() as libc::socklen_t),
+            SockAddr::SysControl(SysControlAddr(ref sa)) => (
+                &*(sa as *const libc::sockaddr_ctl as *const libc::sockaddr),
+                mem::size_of_val(sa) as libc::socklen_t
+
+            ),
             #[cfg(any(target_os = "android", target_os = "linux"))]
-            SockAddr::Link(LinkAddr(ref ether_addr)) => (mem::transmute(ether_addr), mem::size_of::<libc::sockaddr_ll>() as libc::socklen_t),
+            SockAddr::Link(LinkAddr(ref addr)) => (
+                &*(addr as *const libc::sockaddr_ll as *const libc::sockaddr),
+                mem::size_of_val(addr) as libc::socklen_t
+            ),
             #[cfg(any(target_os = "dragonfly",
                       target_os = "freebsd",
                       target_os = "ios",
                       target_os = "macos",
                       target_os = "netbsd",
                       target_os = "openbsd"))]
-            SockAddr::Link(LinkAddr(ref ether_addr)) => (mem::transmute(ether_addr), mem::size_of::<libc::sockaddr_dl>() as libc::socklen_t),
+            SockAddr::Link(LinkAddr(ref addr)) => (
+                &*(addr as *const libc::sockaddr_dl as *const libc::sockaddr),
+                mem::size_of_val(addr) as libc::socklen_t
+            ),
             #[cfg(target_os = "linux")]
-            SockAddr::Vsock(VsockAddr(ref sa)) => (mem::transmute(sa), mem::size_of::<libc::sockaddr_vm>() as libc::socklen_t),
+            SockAddr::Vsock(VsockAddr(ref sa)) => (
+                &*(sa as *const libc::sockaddr_vm as *const libc::sockaddr),
+                mem::size_of_val(sa) as libc::socklen_t
+            ),
         }
     }
 }
