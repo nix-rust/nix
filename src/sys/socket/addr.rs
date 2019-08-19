@@ -367,6 +367,8 @@ impl IpAddr {
     /// Create a new IpAddr that contains an IPv6 address.
     ///
     /// The result will represent the IP address a:b:c:d:e:f
+    #[allow(clippy::many_single_char_names)]
+    #[allow(clippy::too_many_arguments)]
     pub fn new_v6(a: u16, b: u16, c: u16, d: u16, e: u16, f: u16, g: u16, h: u16) -> IpAddr {
         IpAddr::V6(Ipv6Addr::new(a, b, c, d, e, f, g, h))
     }
@@ -405,15 +407,18 @@ impl fmt::Display for IpAddr {
 pub struct Ipv4Addr(pub libc::in_addr);
 
 impl Ipv4Addr {
+    #[allow(clippy::identity_op)]   // More readable this way
     pub fn new(a: u8, b: u8, c: u8, d: u8) -> Ipv4Addr {
-        let ip = (((a as u32) << 24) |
-                  ((b as u32) << 16) |
-                  ((c as u32) <<  8) |
-                  ((d as u32) <<  0)).to_be();
+        let ip = ((u32::from(a) << 24) |
+                  (u32::from(b) << 16) |
+                  (u32::from(c) <<  8) |
+                  (u32::from(d) <<  0)).to_be();
 
         Ipv4Addr(libc::in_addr { s_addr: ip })
     }
 
+    // Use pass by reference for symmetry with Ipv6Addr::from_std
+    #[allow(clippy::trivially_copy_pass_by_ref)]
     pub fn from_std(std: &net::Ipv4Addr) -> Ipv4Addr {
         let bits = std.octets();
         Ipv4Addr::new(bits[0], bits[1], bits[2], bits[3])
@@ -423,12 +428,12 @@ impl Ipv4Addr {
         Ipv4Addr(libc::in_addr { s_addr: libc::INADDR_ANY })
     }
 
-    pub fn octets(&self) -> [u8; 4] {
+    pub fn octets(self) -> [u8; 4] {
         let bits = u32::from_be(self.0.s_addr);
         [(bits >> 24) as u8, (bits >> 16) as u8, (bits >> 8) as u8, bits as u8]
     }
 
-    pub fn to_std(&self) -> net::Ipv4Addr {
+    pub fn to_std(self) -> net::Ipv4Addr {
         let bits = self.octets();
         net::Ipv4Addr::new(bits[0], bits[1], bits[2], bits[3])
     }
@@ -467,6 +472,8 @@ macro_rules! to_u16_array {
 }
 
 impl Ipv6Addr {
+    #[allow(clippy::many_single_char_names)]
+    #[allow(clippy::too_many_arguments)]
     pub fn new(a: u16, b: u16, c: u16, d: u16, e: u16, f: u16, g: u16, h: u16) -> Ipv6Addr {
         let mut in6_addr_var: libc::in6_addr = unsafe{mem::uninitialized()};
         in6_addr_var.s6_addr = to_u8_array!(a,b,c,d,e,f,g,h);
@@ -713,7 +720,7 @@ impl SockAddr {
         if addr.is_null() {
             None
         } else {
-            match AddressFamily::from_i32((*addr).sa_family as i32) {
+            match AddressFamily::from_i32(i32::from((*addr).sa_family)) {
                 Some(AddressFamily::Unix) => None,
                 Some(AddressFamily::Inet) => Some(SockAddr::Inet(
                     InetAddr::V4(*(addr as *const libc::sockaddr_in)))),
@@ -957,7 +964,7 @@ pub mod sys_control {
 
             let mut ctl_name = [0; MAX_KCTL_NAME];
             ctl_name[..name.len()].clone_from_slice(name.as_bytes());
-            let mut info = ctl_ioc_info { ctl_id: 0, ctl_name: ctl_name };
+            let mut info = ctl_ioc_info { ctl_id: 0, ctl_name };
 
             unsafe { ctl_info(sockfd, &mut info)?; }
 
@@ -1023,14 +1030,14 @@ mod datalink {
 
         /// Physical-layer address (MAC)
         pub fn addr(&self) -> [u8; 6] {
-            let a = self.0.sll_addr[0] as u8;
-            let b = self.0.sll_addr[1] as u8;
-            let c = self.0.sll_addr[2] as u8;
-            let d = self.0.sll_addr[3] as u8;
-            let e = self.0.sll_addr[4] as u8;
-            let f = self.0.sll_addr[5] as u8;
-
-            [a, b, c, d, e, f]
+            [
+                self.0.sll_addr[0] as u8,
+                self.0.sll_addr[1] as u8,
+                self.0.sll_addr[2] as u8,
+                self.0.sll_addr[3] as u8,
+                self.0.sll_addr[4] as u8,
+                self.0.sll_addr[5] as u8,
+            ]
         }
     }
 
@@ -1069,7 +1076,7 @@ mod datalink {
 
         /// always == AF_LINK
         pub fn family(&self) -> AddressFamily {
-            assert_eq!(self.0.sdl_family as i32, libc::AF_LINK);
+            assert_eq!(i32::from(self.0.sdl_family), libc::AF_LINK);
             AddressFamily::Link
         }
 
@@ -1105,11 +1112,7 @@ mod datalink {
             let alen = self.alen();
             let data_len = self.0.sdl_data.len();
 
-            if alen > 0 && nlen + alen < data_len {
-                false
-            } else {
-                true
-            }
+            alen == 0 || nlen + alen >= data_len
         }
 
         /// Physical-layer address (MAC)
@@ -1119,14 +1122,14 @@ mod datalink {
 
             assert!(!self.is_empty());
 
-            let a = data[nlen] as u8;
-            let b = data[nlen + 1] as u8;
-            let c = data[nlen + 2] as u8;
-            let d = data[nlen + 3] as u8;
-            let e = data[nlen + 4] as u8;
-            let f = data[nlen + 5] as u8;
-
-            [a, b, c, d, e, f]
+            [
+                data[nlen] as u8,
+                data[nlen + 1] as u8,
+                data[nlen + 2] as u8,
+                data[nlen + 3] as u8,
+                data[nlen + 4] as u8,
+                data[nlen + 5] as u8,
+            ]
         }
     }
 

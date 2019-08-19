@@ -1213,7 +1213,6 @@ impl<'a> LioCb<'a> {
                 },
                 Err(Error::Sys(Errno::EINPROGRESS)) => {
                     // aiocb is was successfully queued; no need to do anything
-                    ()
                 },
                 Err(Error::Sys(Errno::EINVAL)) => panic!(
                     "AioCb was never submitted, or already finalized"),

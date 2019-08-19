@@ -553,11 +553,10 @@ impl ControlMessageOwned {
                 let n = len / mem::size_of::<RawFd>();
                 let mut fds = Vec::with_capacity(n);
                 for i in 0..n {
-                    let fdp = (p as *const RawFd).offset(i as isize);
+                    let fdp = (p as *const RawFd).add(i);
                     fds.push(ptr::read_unaligned(fdp));
                 }
-                let cmo = ControlMessageOwned::ScmRights(fds);
-                cmo
+                ControlMessageOwned::ScmRights(fds)
             },
             #[cfg(any(target_os = "android", target_os = "linux"))]
             (libc::SOL_SOCKET, libc::SCM_CREDENTIALS) => {
@@ -715,16 +714,16 @@ impl<'a> ControlMessage<'a> {
 
     /// Return a reference to the payload data as a byte pointer
     fn copy_to_cmsg_data(&self, cmsg_data: *mut u8) {
-        let data_ptr = match self {
-            &ControlMessage::ScmRights(fds) => {
+        let data_ptr = match *self {
+            ControlMessage::ScmRights(fds) => {
                 fds as *const _ as *const u8
             },
             #[cfg(any(target_os = "android", target_os = "linux"))]
-            &ControlMessage::ScmCredentials(creds) => {
+            ControlMessage::ScmCredentials(creds) => {
                 creds as *const libc::ucred as *const u8
             }
             #[cfg(any(target_os = "android", target_os = "linux"))]
-            &ControlMessage::AlgSetIv(iv) => {
+            ControlMessage::AlgSetIv(iv) => {
                 unsafe {
                     let alg_iv = cmsg_data as *mut libc::af_alg_iv;
                     (*alg_iv).ivlen = iv.len() as u32;
@@ -737,11 +736,11 @@ impl<'a> ControlMessage<'a> {
                 return
             },
             #[cfg(any(target_os = "android", target_os = "linux"))]
-            &ControlMessage::AlgSetOp(op) => {
+            ControlMessage::AlgSetOp(op) => {
                 op as *const _ as *const u8
             },
             #[cfg(any(target_os = "android", target_os = "linux"))]
-            &ControlMessage::AlgSetAeadAssoclen(len) => {
+            ControlMessage::AlgSetAeadAssoclen(len) => {
                 len as *const _ as *const u8
             },
         };
@@ -756,24 +755,24 @@ impl<'a> ControlMessage<'a> {
 
     /// The size of the payload, excluding its cmsghdr
     fn len(&self) -> usize {
-        match self {
-            &ControlMessage::ScmRights(fds) => {
+        match *self {
+            ControlMessage::ScmRights(fds) => {
                 mem::size_of_val(fds)
             },
             #[cfg(any(target_os = "android", target_os = "linux"))]
-            &ControlMessage::ScmCredentials(creds) => {
+            ControlMessage::ScmCredentials(creds) => {
                 mem::size_of_val(creds)
             }
             #[cfg(any(target_os = "android", target_os = "linux"))]
-            &ControlMessage::AlgSetIv(iv) => {
+            ControlMessage::AlgSetIv(iv) => {
                 mem::size_of::<libc::af_alg_iv>() + iv.len()
             },
             #[cfg(any(target_os = "android", target_os = "linux"))]
-            &ControlMessage::AlgSetOp(op) => {
+            ControlMessage::AlgSetOp(op) => {
                 mem::size_of_val(op)
             },
             #[cfg(any(target_os = "android", target_os = "linux"))]
-            &ControlMessage::AlgSetAeadAssoclen(len) => {
+            ControlMessage::AlgSetAeadAssoclen(len) => {
                 mem::size_of_val(len)
             },
         }
@@ -781,33 +780,32 @@ impl<'a> ControlMessage<'a> {
 
     /// Returns the value to put into the `cmsg_level` field of the header.
     fn cmsg_level(&self) -> libc::c_int {
-        match self {
-            &ControlMessage::ScmRights(_) => libc::SOL_SOCKET,
+        match *self {
+            ControlMessage::ScmRights(_) => libc::SOL_SOCKET,
             #[cfg(any(target_os = "android", target_os = "linux"))]
-            &ControlMessage::ScmCredentials(_) => libc::SOL_SOCKET,
+            ControlMessage::ScmCredentials(_) => libc::SOL_SOCKET,
             #[cfg(any(target_os = "android", target_os = "linux"))]
-            &ControlMessage::AlgSetIv(_) | &ControlMessage::AlgSetOp(_) | &ControlMessage::AlgSetAeadAssoclen(_) => {
-                libc::SOL_ALG
-            },
+            ControlMessage::AlgSetIv(_) | ControlMessage::AlgSetOp(_) |
+                ControlMessage::AlgSetAeadAssoclen(_) => libc::SOL_ALG ,
         }
     }
 
     /// Returns the value to put into the `cmsg_type` field of the header.
     fn cmsg_type(&self) -> libc::c_int {
-        match self {
-            &ControlMessage::ScmRights(_) => libc::SCM_RIGHTS,
+        match *self {
+            ControlMessage::ScmRights(_) => libc::SCM_RIGHTS,
             #[cfg(any(target_os = "android", target_os = "linux"))]
-            &ControlMessage::ScmCredentials(_) => libc::SCM_CREDENTIALS,
+            ControlMessage::ScmCredentials(_) => libc::SCM_CREDENTIALS,
             #[cfg(any(target_os = "android", target_os = "linux"))]
-            &ControlMessage::AlgSetIv(_) => {
+            ControlMessage::AlgSetIv(_) => {
                 libc::ALG_SET_IV
             },
             #[cfg(any(target_os = "android", target_os = "linux"))]
-            &ControlMessage::AlgSetOp(_) => {
+            ControlMessage::AlgSetOp(_) => {
                 libc::ALG_SET_OP
             },
             #[cfg(any(target_os = "android", target_os = "linux"))]
-            &ControlMessage::AlgSetAeadAssoclen(_) => {
+            ControlMessage::AlgSetAeadAssoclen(_) => {
                 libc::ALG_SET_AEAD_ASSOCLEN
             },
         }
@@ -1231,7 +1229,7 @@ pub unsafe fn sockaddr_storage_to_addr(
         return Err(Error::Sys(Errno::ENOTCONN));
     }
 
-    match addr.ss_family as c_int {
+    match c_int::from(addr.ss_family) {
         libc::AF_INET => {
             assert!(len as usize == mem::size_of::<sockaddr_in>());
             let ret = *(addr as *const _ as *const sockaddr_in);

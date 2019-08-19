@@ -274,8 +274,8 @@ pub fn openpty<'a, 'b, T: Into<Option<&'a Winsize>>, U: Into<Option<&'b Termios>
     Errno::result(ret)?;
 
     Ok(OpenptyResult {
-        master: master,
-        slave: slave,
+        master,
+        slave,
     })
 }
 
@@ -319,8 +319,8 @@ pub fn forkpty<'a, 'b, T: Into<Option<&'a Winsize>>, U: Into<Option<&'b Termios>
     })?;
 
     Ok(ForkptyResult {
-        master: master,
-        fork_result: fork_result,
+        master,
+        fork_result,
     })
 }
 

@@ -52,8 +52,8 @@ impl InterfaceAddress {
         let mut addr = InterfaceAddress {
             interface_name: ifname.to_string_lossy().to_string(),
             flags: InterfaceFlags::from_bits_truncate(info.ifa_flags as i32),
-            address: address,
-            netmask: netmask,
+            address,
+            netmask,
             broadcast: None,
             destination: None,
         };

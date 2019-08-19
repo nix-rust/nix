@@ -152,7 +152,8 @@ libc_bitflags!(
 
 pub fn open<P: ?Sized + NixPath>(path: &P, oflag: OFlag, mode: Mode) -> Result<RawFd> {
     let fd = path.with_nix_path(|cstr| {
-        unsafe { libc::open(cstr.as_ptr(), oflag.bits(), mode.bits() as c_uint) }
+        let modebits = c_uint::from(mode.bits());
+        unsafe { libc::open(cstr.as_ptr(), oflag.bits(), modebits) }
     })?;
 
     Errno::result(fd)
@@ -160,7 +161,8 @@ pub fn open<P: ?Sized + NixPath>(path: &P, oflag: OFlag, mode: Mode) -> Result<R
 
 pub fn openat<P: ?Sized + NixPath>(dirfd: RawFd, path: &P, oflag: OFlag, mode: Mode) -> Result<RawFd> {
     let fd = path.with_nix_path(|cstr| {
-        unsafe { libc::openat(dirfd, cstr.as_ptr(), oflag.bits(), mode.bits() as c_uint) }
+        let modebits = c_uint::from(mode.bits());
+        unsafe { libc::openat(dirfd, cstr.as_ptr(), oflag.bits(), modebits) }
     })?;
     Errno::result(fd)
 }

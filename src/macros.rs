@@ -259,6 +259,6 @@ macro_rules! libc_enum {
 /// offset of `field` within struct `ty`
 macro_rules! offset_of {
     ($ty:ty, $field:ident) => {
-        &(*(0 as *const $ty)).$field as *const _ as usize
+        &(*(ptr::null() as *const $ty)).$field as *const _ as usize
     }
 }

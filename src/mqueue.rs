@@ -57,6 +57,8 @@ impl MqAttr {
 /// Open a message queue
 ///
 /// See also [`mq_open(2)`](http://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_open.html)
+// The mode.bits cast is only lossless on some OSes
+#[allow(clippy::cast_lossless)]
 pub fn mq_open(name: &CString,
                oflag: MQ_OFlag,
                mode: Mode,
@@ -142,7 +144,7 @@ pub fn mq_setattr(mqd: mqd_t, newattr: &MqAttr) -> Result<MqAttr> {
 /// Returns the old attributes
 pub fn mq_set_nonblock(mqd: mqd_t) -> Result<(MqAttr)> {
     let oldattr = mq_getattr(mqd)?;
-    let newattr = MqAttr::new(MQ_OFlag::O_NONBLOCK.bits() as c_long,
+    let newattr = MqAttr::new(c_long::from(MQ_OFlag::O_NONBLOCK.bits()),
                               oldattr.mq_attr.mq_maxmsg,
                               oldattr.mq_attr.mq_msgsize,
                               oldattr.mq_attr.mq_curmsgs);
