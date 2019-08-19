@@ -540,9 +540,6 @@ impl ControlMessageOwned {
     /// specified in the header. Normally, the kernel ensures that this is the
     /// case. "Correct" in this case includes correct length, alignment and
     /// actual content.
-    ///
-    /// Returns `None` if the data may be unaligned.  In that case use
-    /// `ControlMessageOwned::decode_from`.
     // Clippy complains about the pointer alignment of `p`, not understanding
     // that it's being fed to a function that can handle that.
     #[allow(clippy::cast_ptr_alignment)]
