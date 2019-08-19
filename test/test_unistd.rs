@@ -600,6 +600,62 @@ fn test_symlinkat() {
     );
 }
 
+#[test]
+fn test_getpwuid() {
+    let res = User::query( UserQuery::Uid(Uid::from_raw(1)) ).unwrap();
+    assert!(res.unwrap().uid == Uid::from_raw(1));
+}
+
+#[test]
+fn test_getgrgid() {
+    let res = Group::query( GroupQuery::Gid(Gid::from_raw(1)) ).unwrap();
+    assert!(res.unwrap().gid == Gid::from_raw(1));
+}
+
+#[cfg(not(any(target_os = "android",
+              target_os = "ios",
+              target_os = "macos",
+              target_env = "musl")))]
+
+#[test]
+fn test_users_iterator() {
+    let _m = ::USER_GRP_ITER_MTX.lock().expect("Mutex got poisoned by another test");
+
+    let entries = Users::new();
+    let users: Vec<Result<User, _>> = entries.collect();
+    let entries2 = Users::new();
+    let users2: Vec<Result<User, _>> = entries2.collect();
+    assert!(users == users2 && users.len() > 0);
+}
+
+#[cfg(not(any(target_os = "android",
+              target_os = "ios",
+              target_os = "macos",
+              target_env = "musl")))]
+
+#[test]
+fn test_groups_iterator() {
+    let _m = ::USER_GRP_ITER_MTX.lock().expect("Mutex got poisoned by another test");
+
+    let entries = Groups::new();
+    let groups: Vec<Result<Group, _>> = entries.collect();
+    let entries2 = Groups::new();
+    let groups2: Vec<Result<Group, _>> = entries2.collect();
+    assert!(groups == groups2 && groups.len() > 0);
+}
+
+#[cfg(not(any(target_os = "android",
+              target_os = "ios",
+              target_os = "macos",
+              target_env = "musl")))]
+#[test]
+/// This test sees what happens when we use a ridiculously small buffer.
+fn test_users_iterator_smallbuf() {
+    let _m = ::USER_GRP_ITER_MTX.lock().expect("Mutex got poisoned by another test");
+
+    let bufsize = 2;
+    assert!(Users::with_bufsize(bufsize).next().unwrap().is_err());
+}
 
 #[test]
 fn test_unlinkat_dir_noremovedir() {

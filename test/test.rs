@@ -120,6 +120,8 @@ lazy_static! {
     pub static ref PTSNAME_MTX: Mutex<()> = Mutex::new(());
     /// Any test that alters signal handling must grab this mutex.
     pub static ref SIGNAL_MTX: Mutex<()> = Mutex::new(());
+    /// Any test that uses the `Users` or `Groups` iterators must grab this mutex.
+    pub static ref USER_GRP_ITER_MTX: Mutex<()> = Mutex::new(());
 }
 
 /// RAII object that restores a test's original directory on drop

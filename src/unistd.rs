@@ -20,12 +20,17 @@ pub use self::pivot_root::*;
 #[cfg(any(target_os = "android", target_os = "freebsd",
           target_os = "linux", target_os = "openbsd"))]
 pub use self::setres::*;
+#[cfg(not(any(target_os = "android",
+              target_os = "ios",
+              target_os = "macos",
+              target_env = "musl")))]
+pub use self::usergroupiter::*;
 
 /// User identifier
 ///
 /// Newtype pattern around `uid_t` (which is just alias). It prevents bugs caused by accidentally
 /// passing wrong value.
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Default)]
 pub struct Uid(uid_t);
 
 impl Uid {
@@ -74,7 +79,7 @@ pub const ROOT: Uid = Uid(0);
 ///
 /// Newtype pattern around `gid_t` (which is just alias). It prevents bugs caused by accidentally
 /// passing wrong value.
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Default)]
 pub struct Gid(gid_t);
 
 impl Gid {
@@ -2391,4 +2396,426 @@ pub fn access<P: ?Sized + NixPath>(path: &P, amode: AccessFlags) -> Result<()> {
         }
     })?;
     Errno::result(res).map(drop)
+}
+
+/// Representation of a User, based on `libc::passwd`
+///
+/// The reason some fields in this struct are `String` and others are `CString` is because some
+/// fields are based on the user's locale, which could be non-UTF8, while other fields are
+/// guaranteed to conform to [NAME_REGEX](https://serverfault.com/a/73101/407341), which only
+/// contains ASCII.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct User {
+    /// Username
+    pub name: String,
+    /// User password (probably encrypted)
+    pub passwd: CString,
+    /// User ID
+    pub uid: Uid,
+    /// Group ID
+    pub gid: Gid,
+    /// User information
+    #[cfg(not(target_os = "android"))]
+    pub gecos: CString,
+    /// Home directory
+    pub dir: PathBuf,
+    /// Path to shell
+    pub shell: PathBuf,
+    /// Login class
+    #[cfg(not(any(target_os = "android", target_os = "linux")))]
+    pub class: CString,
+    /// Last password change
+    #[cfg(not(any(target_os = "android", target_os = "linux")))]
+    pub change: libc::time_t,
+    /// Expiration time of account
+    #[cfg(not(any(target_os = "android", target_os = "linux")))]
+    pub expire: libc::time_t
+}
+
+impl From<*mut libc::passwd> for User {
+    fn from(pw: *mut libc::passwd) -> User {
+        unsafe {
+            User {
+                name: CStr::from_ptr((*pw).pw_name).to_string_lossy().into_owned(),
+                passwd: CString::new(CStr::from_ptr((*pw).pw_passwd).to_bytes()).unwrap(),
+                #[cfg(not(target_os = "android"))]
+                gecos: CString::new(CStr::from_ptr((*pw).pw_gecos).to_bytes()).unwrap(),
+                dir: PathBuf::from(OsStr::from_bytes(CStr::from_ptr((*pw).pw_dir).to_bytes())),
+                shell: PathBuf::from(OsStr::from_bytes(CStr::from_ptr((*pw).pw_shell).to_bytes())),
+                uid: Uid::from_raw((*pw).pw_uid),
+                gid: Gid::from_raw((*pw).pw_gid),
+                #[cfg(not(any(target_os = "android", target_os = "linux")))]
+                class: CString::new(CStr::from_ptr((*pw).pw_class).to_bytes()).unwrap(),
+                #[cfg(not(any(target_os = "android", target_os = "linux")))]
+                change: (*pw).pw_change,
+                #[cfg(not(any(target_os = "android", target_os = "linux")))]
+                expire: (*pw).pw_expire
+            }
+        }
+    }
+}
+
+/// Representation of a Group, based on `libc::group`
+#[derive(Debug, Clone, PartialEq)]
+pub struct Group {
+    /// Group name
+    pub name: String,
+    /// Group ID
+    pub gid: Gid,
+    /// List of Group members
+    pub mem: Vec<String>
+}
+
+impl From<*mut libc::group> for Group {
+    fn from(gr: *mut libc::group) -> Group {
+        unsafe {
+            Group {
+                name: CStr::from_ptr((*gr).gr_name).to_string_lossy().into_owned(),
+                gid: Gid::from_raw((*gr).gr_gid),
+                mem: Group::members((*gr).gr_mem)
+            }
+        }
+    }
+}
+
+impl Group {
+    unsafe fn members(mem: *mut *mut c_char) -> Vec<String> {
+        let mut ret = vec![];
+
+        for i in 0.. {
+            let u = mem.offset(i);
+            if (*u).is_null() {
+                break;
+            } else {
+                let s = CStr::from_ptr(*u).to_string_lossy().into_owned();
+                ret.push(s);
+            }
+        }
+
+        ret
+    }
+}
+
+/// Query a user.
+///
+/// The buffer size variants should not be needed 99% of the time; the default buffer size of 1024
+/// should be more than adequate. Only use the buffer size variants if you receive an ERANGE error
+/// without them, or you know that you will be likely to.
+///
+/// # Examples
+///
+/// ```
+/// use nix::unistd::{User, UserQuery, Queryable};
+/// let find = String::from("root");
+/// // Returns an Option<Result<User>>, thus the double unwrap.
+/// let res = User::query( UserQuery::Name(find.clone()) ).unwrap().unwrap();
+/// assert!(res.name == find);
+/// ```
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+pub enum UserQuery {
+    /// Get a user by UID.
+    ///
+    /// Internally, this function calls
+    /// [getpwuid_r(3)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/getpwuid_r.html)
+    Uid(Uid),
+    /// Get a user by name.
+    ///
+    /// Internally, this function calls
+    /// [getpwnam_r(3)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/getpwuid_r.html)
+    Name(String),
+    UidWithBufsize(Uid, usize),
+    NameWithBufsize(String, usize)
+}
+
+/// Query a group.
+///
+/// The buffer size variants should not be needed 99% of the time; the default buffer size of 1024
+/// should be more than adequate. Only use the buffer size variants if you receive an ERANGE error
+/// without them, or you know that you will be likely to.
+///
+/// # Examples
+///
+/// ```ignore
+/// use nix::unistd::{Group, GroupQuery};
+/// // On many systems there's no `root` group; on FreeBSD for example it's known as `wheel`
+/// let find = String::from("root");
+/// // Returns an Option<Result<Group>>, thus the double unwrap. Will panic if there's no `root`
+/// // group.
+/// let res = Group::query( GroupQuery::Name(find.clone()) ).unwrap().unwrap();
+/// assert!(res.name == find);
+/// ```
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+pub enum GroupQuery {
+    /// Get a group by GID.
+    ///
+    /// Internally, this function calls
+    /// [getgrgid_r(3)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/getpwuid_r.html)
+    Gid(Gid),
+    /// Get a group by name.
+    ///
+    /// Internally, this function calls
+    /// [getgrnam_r(3)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/getpwuid_r.html)
+    Name(String),
+    /// Get a group by GID, explicitly specifying the buffer size.
+    GidWithBufsize(Gid, usize),
+    /// Get a group by name, explicitly specifying the buffer size.
+    NameWithBufsize(String, usize)
+}
+
+pub trait Queryable<Q> where Self: ::std::marker::Sized {
+    fn query(q: Q) -> Option<Result<Self>>;
+}
+
+/// Default buffer size for system user and group querying functions
+const PWGRP_BUFSIZE: usize = 1024;
+
+impl Queryable<UserQuery> for User {
+    fn query(q: UserQuery) -> Option<Result<Self>> {
+        let mut cbuf = match q {
+            UserQuery::UidWithBufsize(_, size) |
+            UserQuery::NameWithBufsize(_, size) => vec![0 as c_char; size],
+            _ => vec![0 as c_char; PWGRP_BUFSIZE],
+        };
+
+        let mut pwd: libc::passwd =  unsafe { mem::zeroed() };
+        let mut res = ptr::null_mut();
+
+        let error = {
+            unsafe { Errno::clear(); }
+
+            match q {
+                UserQuery::UidWithBufsize(Uid(uid), _) |
+                UserQuery::Uid(Uid(uid)) => {
+                    unsafe {
+                        libc::getpwuid_r(uid, &mut pwd,
+                                         cbuf.as_mut_ptr(),
+                                         cbuf.len(), &mut res)
+                    }
+                },
+                UserQuery::NameWithBufsize(name, _) |
+                UserQuery::Name(name) => {
+                    unsafe {
+                        libc::getpwnam_r(CString::new(name).unwrap().as_ptr(),
+                                         &mut pwd, cbuf.as_mut_ptr(), cbuf.len(), &mut res)
+                    }
+                },
+            }
+
+        };
+
+        if error == 0 {
+            if ! res.is_null() {
+                Some(Ok(User::from(res)))
+            } else {
+                None
+            }
+        } else {
+            Some(Err(Error::Sys(Errno::last())))
+        }
+    }
+}
+
+impl Queryable<GroupQuery> for Group {
+    fn query(q: GroupQuery) -> Option<Result<Self>> {
+        let mut cbuf = match q {
+            GroupQuery::GidWithBufsize(_, size) |
+            GroupQuery::NameWithBufsize(_, size) => {
+                vec![0 as c_char; size]
+            },
+            _ => {
+                vec![0 as c_char; PWGRP_BUFSIZE]
+            }
+        };
+
+        let mut grp: libc::group =  unsafe { mem::uninitialized() };
+        let mut res = ptr::null_mut();
+
+        let error = {
+            unsafe { Errno::clear(); }
+
+            match q {
+                GroupQuery::GidWithBufsize(Gid(gid), _) |
+                GroupQuery::Gid(Gid(gid)) => {
+                    unsafe {
+                        libc::getgrgid_r(gid, &mut grp,
+                                         cbuf.as_mut_ptr(),
+                                         cbuf.len(), &mut res)
+                    }
+                },
+                GroupQuery::NameWithBufsize(name, _) |
+                GroupQuery::Name(name) => {
+                    unsafe {
+                        libc::getgrnam_r(CString::new(name).unwrap().as_ptr(),
+                                         &mut grp, cbuf.as_mut_ptr(), cbuf.len(), &mut res)
+                    }
+                },
+            }
+
+        };
+
+        if error == 0 {
+            if !res.is_null() {
+                Some(Ok(Group::from(res)))
+            } else {
+                None
+            }
+        } else {
+            Some(Err(Error::Sys(Errno::last())))
+        }
+    }
+}
+
+#[cfg(not(any(target_os = "android",
+              target_os = "ios",
+              target_os = "macos",
+              target_env = "musl")))]
+mod usergroupiter {
+    use libc::{self, c_char};
+    use Result;
+    use errno::Errno;
+    use super::{Error, User, Group, PWGRP_BUFSIZE};
+    use std::{mem, ptr};
+
+    /// Used to get all of the users on the system.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use nix::unistd::Users;
+    /// Users::new()
+    ///     .map(|e|e.map(
+    ///         |pw| println!("{}\t{}",
+    ///                       pw.name,
+    ///                       pw.uid)))
+    ///     .collect::<Vec<_>>();
+    ///
+    /// ```
+    ///
+    /// # Safety
+    ///
+    /// This iterator should not be used in different threads without synchronization; while doing so
+    /// will not cause undefined behavior, because modern systems lack re-entrant versions of
+    /// `setpwent` and `endpwent`, it is very likely that iterators running in different threads will
+    /// yield different numbers of items.
+    #[derive(Debug, Clone, Eq, PartialEq, Hash, Default)]
+    pub struct Users(usize);
+
+    impl Users {
+        /// Create a new `Users` instance with default buffer size.
+        pub fn new() -> Self {
+            unsafe { libc::setpwent(); }
+            Users(PWGRP_BUFSIZE)
+        }
+
+        /// Create a new `Users` instance with given buffer size.
+        pub fn with_bufsize(bufsize: usize) -> Self {
+            unsafe { libc::setpwent(); }
+            Users(bufsize)
+        }
+
+        /// Get the buffer size this `Users` instance was created with.
+        pub fn bufsize(&self) -> usize {
+            self.0
+        }
+    }
+
+    impl Iterator for Users {
+        type Item = Result<User>;
+        fn next(&mut self) -> Option<Result<User>> {
+
+            let mut cbuf = vec![0 as c_char; self.0];
+            let mut pwd: libc::passwd =  unsafe { mem::zeroed() };
+            let mut res = ptr::null_mut();
+
+            let error = unsafe {
+                Errno::clear();
+                libc::getpwent_r(&mut pwd, cbuf.as_mut_ptr(), self.0, &mut res)
+            };
+
+            if error == 0 && !res.is_null() {
+                Some(Ok(User::from(res)))
+            } else if error == libc::ERANGE {
+                Some(Err(Error::Sys(Errno::last())))
+            } else {
+                None
+            }
+        }
+    }
+
+    impl Drop for Users {
+        fn drop(&mut self) {
+            unsafe { libc::endpwent() };
+        }
+    }
+
+    /// Used to get all of the groups on the system.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use nix::unistd::Groups;
+    /// Groups::new()
+    ///      .map(|e|e.map(
+    ///          |gr| println!("{}\t{}",
+    ///                        gr.name,
+    ///                        gr.gid)))
+    ///      .collect::<Vec<_>>();
+    /// ```
+    ///
+    /// # Safety
+    ///
+    /// This iterator should not be used in different threads without synchronization; while doing so
+    /// will not cause undefined behavior, because modern systems lack re-entrant versions of
+    /// `setgrent` and `endgrent`, it is very likely that iterators running in different threads will
+    /// yield different numbers of items.
+    #[derive(Debug, Clone, Eq, PartialEq, Hash, Default)]
+    pub struct Groups(usize);
+
+    impl Groups {
+        /// Create a new `Groups` instance with default buffer size.
+        pub fn new() -> Self {
+            unsafe { libc::setgrent(); }
+            Groups(PWGRP_BUFSIZE)
+        }
+
+        /// Create a new `Groups` instance with given buffer size.
+        pub fn with_bufsize(bufsize: usize) -> Self {
+            unsafe { libc::setgrent(); }
+            Groups(bufsize)
+        }
+
+        /// Get the buffer size this `Users` instance was created with.
+        pub fn bufsize(&self) -> usize {
+            self.0
+        }
+    }
+
+    impl Iterator for Groups {
+        type Item = Result<Group>;
+        fn next(&mut self) -> Option<Result<Group>> {
+
+            let mut cbuf = vec![0 as c_char; self.0];
+            let mut grp: libc::group =  unsafe { mem::zeroed() };
+            let mut res = ptr::null_mut();
+
+            let error = unsafe {
+                Errno::clear();
+                libc::getgrent_r(&mut grp, cbuf.as_mut_ptr(), self.0, &mut res)
+            };
+
+            if error == 0 && !res.is_null() {
+                Some(Ok(Group::from(res)))
+            } else if error == libc::ERANGE {
+                Some(Err(Error::Sys(Errno::last())))
+            } else {
+                None
+            }
+        }
+    }
+
+    impl Drop for Groups {
+        fn drop(&mut self) {
+            unsafe { libc::endgrent() };
+        }
+    }
 }
