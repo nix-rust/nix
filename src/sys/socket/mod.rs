@@ -344,6 +344,8 @@ impl<T> CmsgSpace<T> {
     /// Create a CmsgSpace<T>. The structure is used only for space, so
     /// the fields are uninitialized.
     #[deprecated( since="0.14.0", note="Use the cmsg_space! macro instead")]
+    // It's deprecated anyway; no sense adding Default
+    #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         // Safe because the fields themselves aren't accessible.
         unsafe { mem::uninitialized() }

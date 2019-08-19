@@ -69,6 +69,12 @@ impl FdSet {
     }
 }
 
+impl Default for FdSet {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 /// Monitors file descriptors for readiness
 ///
 /// Returns the total number of ready file descriptors in all sets. The sets are changed so that all

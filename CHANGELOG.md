@@ -6,6 +6,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased] - ReleaseDate
 ### Added
 
+- Implemented `Default` for `FdSet`
+  ([#1107](https://github.com/nix-rust/nix/pull/1107))
+
 - Added `NixPath::is_empty`.
   ([#1107](https://github.com/nix-rust/nix/pull/1107))
 
