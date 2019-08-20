@@ -602,14 +602,14 @@ fn test_symlinkat() {
 
 #[test]
 fn test_getpwuid() {
-    let res = User::query( UserQuery::Uid(Uid::from_raw(1)) ).unwrap();
-    assert!(res.unwrap().uid == Uid::from_raw(1));
+    let res = User::from_uid(Uid::from_raw(0), None).unwrap();
+    assert!(res.unwrap().uid == Uid::from_raw(0));
 }
 
 #[test]
 fn test_getgrgid() {
-    let res = Group::query( GroupQuery::Gid(Gid::from_raw(1)) ).unwrap();
-    assert!(res.unwrap().gid == Gid::from_raw(1));
+    let res = Group::from_gid(Gid::from_raw(0), None).unwrap();
+    assert!(res.unwrap().gid == Gid::from_raw(0));
 }
 
 #[cfg(not(any(target_os = "android",
@@ -621,9 +621,9 @@ fn test_getgrgid() {
 fn test_users_iterator() {
     let _m = ::USER_GRP_ITER_MTX.lock().expect("Mutex got poisoned by another test");
 
-    let entries = Users::new();
+    let entries = Users::default();
     let users: Vec<Result<User, _>> = entries.collect();
-    let entries2 = Users::new();
+    let entries2 = Users::default();
     let users2: Vec<Result<User, _>> = entries2.collect();
     assert!(users == users2 && users.len() > 0);
 }
@@ -637,9 +637,9 @@ fn test_users_iterator() {
 fn test_groups_iterator() {
     let _m = ::USER_GRP_ITER_MTX.lock().expect("Mutex got poisoned by another test");
 
-    let entries = Groups::new();
+    let entries = Groups::default();
     let groups: Vec<Result<Group, _>> = entries.collect();
-    let entries2 = Groups::new();
+    let entries2 = Groups::default();
     let groups2: Vec<Result<Group, _>> = entries2.collect();
     assert!(groups == groups2 && groups.len() > 0);
 }
@@ -654,7 +654,7 @@ fn test_users_iterator_smallbuf() {
     let _m = ::USER_GRP_ITER_MTX.lock().expect("Mutex got poisoned by another test");
 
     let bufsize = 2;
-    assert!(Users::with_bufsize(bufsize).next().unwrap().is_err());
+    assert!(Users::with_capacity(bufsize).next().unwrap().is_err());
 }
 
 #[test]

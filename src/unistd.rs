@@ -2398,11 +2398,14 @@ pub fn access<P: ?Sized + NixPath>(path: &P, amode: AccessFlags) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
+/// Default buffer size for system user and group querying functions
+const PWGRP_BUFSIZE: usize = 1024;
+
 /// Representation of a User, based on `libc::passwd`
 ///
 /// The reason some fields in this struct are `String` and others are `CString` is because some
 /// fields are based on the user's locale, which could be non-UTF8, while other fields are
-/// guaranteed to conform to [NAME_REGEX](https://serverfault.com/a/73101/407341), which only
+/// guaranteed to conform to [`NAME_REGEX`](https://serverfault.com/a/73101/407341), which only
 /// contains ASCII.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct User {
@@ -2455,6 +2458,79 @@ impl From<*mut libc::passwd> for User {
     }
 }
 
+impl User {
+    /// Get a user by UID.
+    ///
+    /// Internally, this function calls
+    /// [getpwuid_r(3)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/getpwuid_r.html)
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use nix::unistd::{Uid, User};
+    /// // Returns an Option<Result<User>>, thus the double unwrap.
+    /// let res = User::from_uid(Uid::from_raw(0), Some(2048)).unwrap().unwrap();
+    /// assert!(res.name == "root");
+    /// ```
+    pub fn from_uid(uid: Uid, bufsize: Option<usize>) -> Option<Result<Self>> {
+        let mut cbuf = vec![0 as c_char; bufsize.unwrap_or(PWGRP_BUFSIZE)];
+        let mut pwd: libc::passwd =  unsafe { mem::zeroed() };
+        let mut res = ptr::null_mut();
+
+        let error = unsafe {
+            Errno::clear();
+            libc::getpwuid_r(uid.0, &mut pwd,
+                             cbuf.as_mut_ptr(),
+                             cbuf.len(), &mut res)
+        };
+
+        if error == 0 {
+            if ! res.is_null() {
+                Some(Ok(User::from(res)))
+            } else {
+                None
+            }
+        } else {
+            Some(Err(Error::Sys(Errno::last())))
+        }
+    }
+
+    /// Get a user by name.
+    ///
+    /// Internally, this function calls
+    /// [getpwnam_r(3)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/getpwuid_r.html)
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use nix::unistd::User;
+    /// // Returns an Option<Result<User>>, thus the double unwrap.
+    /// let res = User::from_name("root", Some(2048)).unwrap().unwrap();
+    /// assert!(res.name == "root");
+    /// ```
+    pub fn from_name(name: &str, bufsize: Option<usize>) -> Option<Result<Self>> {
+        let mut cbuf = vec![0 as c_char; bufsize.unwrap_or(PWGRP_BUFSIZE)];
+        let mut pwd: libc::passwd =  unsafe { mem::zeroed() };
+        let mut res = ptr::null_mut();
+
+        let error = unsafe {
+            Errno::clear();
+            libc::getpwnam_r(CString::new(name).unwrap().as_ptr(),
+                             &mut pwd, cbuf.as_mut_ptr(), cbuf.len(), &mut res)
+        };
+
+        if error == 0 {
+            if ! res.is_null() {
+                Some(Ok(User::from(res)))
+            } else {
+                None
+            }
+        } else {
+            Some(Err(Error::Sys(Errno::last())))
+        }
+    }
+}
+
 /// Representation of a Group, based on `libc::group`
 #[derive(Debug, Clone, PartialEq)]
 pub struct Group {
@@ -2494,118 +2570,37 @@ impl Group {
 
         ret
     }
-}
 
-/// Query a user.
-///
-/// The buffer size variants should not be needed 99% of the time; the default buffer size of 1024
-/// should be more than adequate. Only use the buffer size variants if you receive an ERANGE error
-/// without them, or you know that you will be likely to.
-///
-/// # Examples
-///
-/// ```
-/// use nix::unistd::{User, UserQuery, Queryable};
-/// let find = String::from("root");
-/// // Returns an Option<Result<User>>, thus the double unwrap.
-/// let res = User::query( UserQuery::Name(find.clone()) ).unwrap().unwrap();
-/// assert!(res.name == find);
-/// ```
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub enum UserQuery {
-    /// Get a user by UID.
-    ///
-    /// Internally, this function calls
-    /// [getpwuid_r(3)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/getpwuid_r.html)
-    Uid(Uid),
-    /// Get a user by name.
-    ///
-    /// Internally, this function calls
-    /// [getpwnam_r(3)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/getpwuid_r.html)
-    Name(String),
-    UidWithBufsize(Uid, usize),
-    NameWithBufsize(String, usize)
-}
-
-/// Query a group.
-///
-/// The buffer size variants should not be needed 99% of the time; the default buffer size of 1024
-/// should be more than adequate. Only use the buffer size variants if you receive an ERANGE error
-/// without them, or you know that you will be likely to.
-///
-/// # Examples
-///
-/// ```ignore
-/// use nix::unistd::{Group, GroupQuery};
-/// // On many systems there's no `root` group; on FreeBSD for example it's known as `wheel`
-/// let find = String::from("root");
-/// // Returns an Option<Result<Group>>, thus the double unwrap. Will panic if there's no `root`
-/// // group.
-/// let res = Group::query( GroupQuery::Name(find.clone()) ).unwrap().unwrap();
-/// assert!(res.name == find);
-/// ```
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub enum GroupQuery {
     /// Get a group by GID.
     ///
     /// Internally, this function calls
     /// [getgrgid_r(3)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/getpwuid_r.html)
-    Gid(Gid),
-    /// Get a group by name.
     ///
-    /// Internally, this function calls
-    /// [getgrnam_r(3)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/getpwuid_r.html)
-    Name(String),
-    /// Get a group by GID, explicitly specifying the buffer size.
-    GidWithBufsize(Gid, usize),
-    /// Get a group by name, explicitly specifying the buffer size.
-    NameWithBufsize(String, usize)
-}
-
-pub trait Queryable<Q> where Self: ::std::marker::Sized {
-    fn query(q: Q) -> Option<Result<Self>>;
-}
-
-/// Default buffer size for system user and group querying functions
-const PWGRP_BUFSIZE: usize = 1024;
-
-impl Queryable<UserQuery> for User {
-    fn query(q: UserQuery) -> Option<Result<Self>> {
-        let mut cbuf = match q {
-            UserQuery::UidWithBufsize(_, size) |
-            UserQuery::NameWithBufsize(_, size) => vec![0 as c_char; size],
-            _ => vec![0 as c_char; PWGRP_BUFSIZE],
-        };
-
-        let mut pwd: libc::passwd =  unsafe { mem::zeroed() };
+    /// # Examples
+    ///
+    // Disable this test on all OS except Linux as root group may not exist.
+    #[cfg_attr(not(target_os = "linux"), doc = " ```no_run")]
+    #[cfg_attr(target_os = "linux", doc = " ```")]
+    /// use nix::unistd::{Gid, Group};
+    /// // Returns an Option<Result<Group>>, thus the double unwrap.
+    /// let res = Group::from_gid(Gid::from_raw(0), Some(2048)).unwrap().unwrap();
+    /// assert!(res.name == "root");
+    /// ```
+    pub fn from_gid(gid: Gid, bufsize: Option<usize>) -> Option<Result<Self>> {
+        let mut cbuf = vec![0 as c_char; bufsize.unwrap_or(PWGRP_BUFSIZE)];
+        let mut grp: libc::group =  unsafe { mem::uninitialized() };
         let mut res = ptr::null_mut();
 
-        let error = {
-            unsafe { Errno::clear(); }
-
-            match q {
-                UserQuery::UidWithBufsize(Uid(uid), _) |
-                UserQuery::Uid(Uid(uid)) => {
-                    unsafe {
-                        libc::getpwuid_r(uid, &mut pwd,
-                                         cbuf.as_mut_ptr(),
-                                         cbuf.len(), &mut res)
-                    }
-                },
-                UserQuery::NameWithBufsize(name, _) |
-                UserQuery::Name(name) => {
-                    unsafe {
-                        libc::getpwnam_r(CString::new(name).unwrap().as_ptr(),
-                                         &mut pwd, cbuf.as_mut_ptr(), cbuf.len(), &mut res)
-                    }
-                },
-            }
-
+        let error = unsafe {
+            Errno::clear();
+            libc::getgrgid_r(gid.0, &mut grp,
+                             cbuf.as_mut_ptr(),
+                             cbuf.len(), &mut res)
         };
 
         if error == 0 {
-            if ! res.is_null() {
-                Some(Ok(User::from(res)))
+            if !res.is_null() {
+                Some(Ok(Group::from(res)))
             } else {
                 None
             }
@@ -2613,44 +2608,31 @@ impl Queryable<UserQuery> for User {
             Some(Err(Error::Sys(Errno::last())))
         }
     }
-}
 
-impl Queryable<GroupQuery> for Group {
-    fn query(q: GroupQuery) -> Option<Result<Self>> {
-        let mut cbuf = match q {
-            GroupQuery::GidWithBufsize(_, size) |
-            GroupQuery::NameWithBufsize(_, size) => {
-                vec![0 as c_char; size]
-            },
-            _ => {
-                vec![0 as c_char; PWGRP_BUFSIZE]
-            }
-        };
-
+    /// Get a group by name.
+    ///
+    /// Internally, this function calls
+    /// [getgrnam_r(3)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/getpwuid_r.html)
+    ///
+    /// # Examples
+    ///
+    // Disable this test on all OS except Linux as root group may not exist.
+    #[cfg_attr(not(target_os = "linux"), doc = " ```no_run")]
+    #[cfg_attr(target_os = "linux", doc = " ```")]
+    /// use nix::unistd::Group;
+    /// // Returns an Option<Result<Group>>, thus the double unwrap.
+    /// let res = Group::from_name("root", Some(2048)).unwrap().unwrap();
+    /// assert!(res.name == "root");
+    /// ```
+    pub fn from_name(name: &str, bufsize: Option<usize>) -> Option<Result<Self>> {
+        let mut cbuf = vec![0 as c_char; bufsize.unwrap_or(PWGRP_BUFSIZE)];
         let mut grp: libc::group =  unsafe { mem::uninitialized() };
         let mut res = ptr::null_mut();
 
-        let error = {
-            unsafe { Errno::clear(); }
-
-            match q {
-                GroupQuery::GidWithBufsize(Gid(gid), _) |
-                GroupQuery::Gid(Gid(gid)) => {
-                    unsafe {
-                        libc::getgrgid_r(gid, &mut grp,
-                                         cbuf.as_mut_ptr(),
-                                         cbuf.len(), &mut res)
-                    }
-                },
-                GroupQuery::NameWithBufsize(name, _) |
-                GroupQuery::Name(name) => {
-                    unsafe {
-                        libc::getgrnam_r(CString::new(name).unwrap().as_ptr(),
-                                         &mut grp, cbuf.as_mut_ptr(), cbuf.len(), &mut res)
-                    }
-                },
-            }
-
+        let error = unsafe {
+            Errno::clear();
+            libc::getgrnam_r(CString::new(name).unwrap().as_ptr(),
+                             &mut grp, cbuf.as_mut_ptr(), cbuf.len(), &mut res)
         };
 
         if error == 0 {
@@ -2682,11 +2664,8 @@ mod usergroupiter {
     ///
     /// ```
     /// # use nix::unistd::Users;
-    /// Users::new()
-    ///     .map(|e|e.map(
-    ///         |pw| println!("{}\t{}",
-    ///                       pw.name,
-    ///                       pw.uid)))
+    /// Users::default()
+    ///     .map(|e| e.map(|pw| println!("{}\t{}", pw.name, pw.uid)))
     ///     .collect::<Vec<_>>();
     ///
     /// ```
@@ -2697,18 +2676,18 @@ mod usergroupiter {
     /// will not cause undefined behavior, because modern systems lack re-entrant versions of
     /// `setpwent` and `endpwent`, it is very likely that iterators running in different threads will
     /// yield different numbers of items.
-    #[derive(Debug, Clone, Eq, PartialEq, Hash, Default)]
+    #[derive(Debug, Clone, Eq, PartialEq, Hash)]
     pub struct Users(usize);
 
-    impl Users {
-        /// Create a new `Users` instance with default buffer size.
-        pub fn new() -> Self {
-            unsafe { libc::setpwent(); }
-            Users(PWGRP_BUFSIZE)
+    impl Default for Users {
+        fn default() -> Self {
+            Users::with_capacity(PWGRP_BUFSIZE)
         }
+    }
 
-        /// Create a new `Users` instance with given buffer size.
-        pub fn with_bufsize(bufsize: usize) -> Self {
+    impl Users {
+        /// Create a new `Users` instance with given capacity.
+        pub fn with_capacity(bufsize: usize) -> Self {
             unsafe { libc::setpwent(); }
             Users(bufsize)
         }
@@ -2724,7 +2703,7 @@ mod usergroupiter {
         fn next(&mut self) -> Option<Result<User>> {
 
             let mut cbuf = vec![0 as c_char; self.0];
-            let mut pwd: libc::passwd =  unsafe { mem::zeroed() };
+            let mut pwd: libc::passwd =  unsafe { mem::uninitialized() };
             let mut res = ptr::null_mut();
 
             let error = unsafe {
@@ -2754,11 +2733,8 @@ mod usergroupiter {
     ///
     /// ```
     /// # use nix::unistd::Groups;
-    /// Groups::new()
-    ///      .map(|e|e.map(
-    ///          |gr| println!("{}\t{}",
-    ///                        gr.name,
-    ///                        gr.gid)))
+    /// Groups::default()
+    ///      .map(|e| e.map(|gr| println!("{}\t{}", gr.name, gr.gid)))
     ///      .collect::<Vec<_>>();
     /// ```
     ///
@@ -2768,18 +2744,18 @@ mod usergroupiter {
     /// will not cause undefined behavior, because modern systems lack re-entrant versions of
     /// `setgrent` and `endgrent`, it is very likely that iterators running in different threads will
     /// yield different numbers of items.
-    #[derive(Debug, Clone, Eq, PartialEq, Hash, Default)]
+    #[derive(Debug, Clone, Eq, PartialEq, Hash)]
     pub struct Groups(usize);
 
-    impl Groups {
-        /// Create a new `Groups` instance with default buffer size.
-        pub fn new() -> Self {
-            unsafe { libc::setgrent(); }
-            Groups(PWGRP_BUFSIZE)
+    impl Default for Groups {
+        fn default() -> Self {
+            Groups::with_capacity(PWGRP_BUFSIZE)
         }
+    }
 
-        /// Create a new `Groups` instance with given buffer size.
-        pub fn with_bufsize(bufsize: usize) -> Self {
+    impl Groups {
+        /// Create a new `Groups` instance with given capacity.
+        pub fn with_capacity(bufsize: usize) -> Self {
             unsafe { libc::setgrent(); }
             Groups(bufsize)
         }
@@ -2795,7 +2771,7 @@ mod usergroupiter {
         fn next(&mut self) -> Option<Result<Group>> {
 
             let mut cbuf = vec![0 as c_char; self.0];
-            let mut grp: libc::group =  unsafe { mem::zeroed() };
+            let mut grp: libc::group =  unsafe { mem::uninitialized() };
             let mut res = ptr::null_mut();
 
             let error = unsafe {
