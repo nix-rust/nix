@@ -2473,15 +2473,14 @@ impl User {
     /// assert!(res.name == "root");
     /// ```
     pub fn from_uid(uid: Uid, bufsize: Option<usize>) -> Option<Result<Self>> {
-        let mut cbuf = vec![0 as c_char; bufsize.unwrap_or(PWGRP_BUFSIZE)];
-        let mut pwd: libc::passwd =  unsafe { mem::zeroed() };
+        let mut cbuf = Vec::with_capacity(bufsize.unwrap_or(PWGRP_BUFSIZE));
+        let mut pwd: libc::passwd =  unsafe { mem::uninitialized() };
         let mut res = ptr::null_mut();
 
         let error = unsafe {
             Errno::clear();
-            libc::getpwuid_r(uid.0, &mut pwd,
-                             cbuf.as_mut_ptr(),
-                             cbuf.len(), &mut res)
+            libc::getpwuid_r(uid.0, &mut pwd, cbuf.as_mut_ptr(),
+                             cbuf.capacity(), &mut res)
         };
 
         if error == 0 {
@@ -2509,14 +2508,14 @@ impl User {
     /// assert!(res.name == "root");
     /// ```
     pub fn from_name(name: &str, bufsize: Option<usize>) -> Option<Result<Self>> {
-        let mut cbuf = vec![0 as c_char; bufsize.unwrap_or(PWGRP_BUFSIZE)];
-        let mut pwd: libc::passwd =  unsafe { mem::zeroed() };
+        let mut cbuf = Vec::with_capacity(bufsize.unwrap_or(PWGRP_BUFSIZE));
+        let mut pwd: libc::passwd =  unsafe { mem::uninitialized() };
         let mut res = ptr::null_mut();
 
         let error = unsafe {
             Errno::clear();
-            libc::getpwnam_r(CString::new(name).unwrap().as_ptr(),
-                             &mut pwd, cbuf.as_mut_ptr(), cbuf.len(), &mut res)
+            libc::getpwnam_r(CString::new(name).unwrap().as_ptr(), &mut pwd,
+                             cbuf.as_mut_ptr(), cbuf.capacity(), &mut res)
         };
 
         if error == 0 {
@@ -2556,7 +2555,7 @@ impl From<*mut libc::group> for Group {
 
 impl Group {
     unsafe fn members(mem: *mut *mut c_char) -> Vec<String> {
-        let mut ret = vec![];
+        let mut ret = Vec::new();
 
         for i in 0.. {
             let u = mem.offset(i);
@@ -2587,15 +2586,14 @@ impl Group {
     /// assert!(res.name == "root");
     /// ```
     pub fn from_gid(gid: Gid, bufsize: Option<usize>) -> Option<Result<Self>> {
-        let mut cbuf = vec![0 as c_char; bufsize.unwrap_or(PWGRP_BUFSIZE)];
+        let mut cbuf = Vec::with_capacity(bufsize.unwrap_or(PWGRP_BUFSIZE));
         let mut grp: libc::group =  unsafe { mem::uninitialized() };
         let mut res = ptr::null_mut();
 
         let error = unsafe {
             Errno::clear();
-            libc::getgrgid_r(gid.0, &mut grp,
-                             cbuf.as_mut_ptr(),
-                             cbuf.len(), &mut res)
+            libc::getgrgid_r(gid.0, &mut grp, cbuf.as_mut_ptr(),
+                             cbuf.capacity(), &mut res)
         };
 
         if error == 0 {
@@ -2625,14 +2623,14 @@ impl Group {
     /// assert!(res.name == "root");
     /// ```
     pub fn from_name(name: &str, bufsize: Option<usize>) -> Option<Result<Self>> {
-        let mut cbuf = vec![0 as c_char; bufsize.unwrap_or(PWGRP_BUFSIZE)];
+        let mut cbuf = Vec::with_capacity(bufsize.unwrap_or(PWGRP_BUFSIZE));
         let mut grp: libc::group =  unsafe { mem::uninitialized() };
         let mut res = ptr::null_mut();
 
         let error = unsafe {
             Errno::clear();
-            libc::getgrnam_r(CString::new(name).unwrap().as_ptr(),
-                             &mut grp, cbuf.as_mut_ptr(), cbuf.len(), &mut res)
+            libc::getgrnam_r(CString::new(name).unwrap().as_ptr(), &mut grp,
+                             cbuf.as_mut_ptr(), cbuf.capacity(), &mut res)
         };
 
         if error == 0 {
