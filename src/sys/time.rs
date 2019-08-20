@@ -144,11 +144,21 @@ impl TimeValLike for TimeSpec {
 }
 
 #[cfg(any(
-    target_os = "linux",
+    target_env = "uclibc",
+    target_env = "wasi",
     target_os = "android",
     target_os = "emscripten",
+    target_os = "freebsd",
     target_os = "fuchsia",
-    target_env = "uclibc"
+    target_os = "haiku",
+    target_os = "illumos",
+    target_os = "ios",
+    target_os = "linux",
+    target_os = "macos",
+    target_os = "netbsd",
+    target_os = "openbsd",
+    target_os = "solaris",
+    target_os = "wasi",
 ))]
 impl TimeSpec {
     /// Makes a new `TimeSpec` with the special UTIME_NOW constant
@@ -506,11 +516,21 @@ mod test {
 
     #[test]
     #[cfg(any(
-        target_os = "linux",
+        target_env = "uclibc",
+        target_env = "wasi",
         target_os = "android",
         target_os = "emscripten",
+        target_os = "freebsd",
         target_os = "fuchsia",
-        target_env = "uclibc"
+        target_os = "haiku",
+        target_os = "illumos",
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "netbsd",
+        target_os = "openbsd",
+        target_os = "solaris",
+        target_os = "wasi",
     ))]
     pub fn test_timespec_constants() {
         assert_eq!(TimeSpec::utime_now().tv_nsec(), libc::UTIME_NOW);
