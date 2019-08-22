@@ -2463,7 +2463,7 @@ impl User {
                                 *mut libc::c_char,
                                 libc::size_t,
                                 *mut *mut libc::passwd) -> libc::c_int)
-       -> Option<Result<Self>>
+       -> Result<Option<Self>>
     {
         let bufsize = match sysconf(SysconfVar::GETPW_R_SIZE_MAX) {
             Ok(Some(n)) => n as usize,
@@ -2482,10 +2482,10 @@ impl User {
 
             if error == 0 {
                 if res.is_null() {
-                    return None;
+                    return Ok(None);
                 } else {
                     let pwd = unsafe { pwd.assume_init() };
-                    return Some(Ok(User::from(&pwd)));
+                    return Ok(Some(User::from(&pwd)));
                 }
             } else if Errno::last() == Errno::ERANGE {
                 // Trigger the internal buffer resizing logic of `Vec` by requiring
@@ -2493,7 +2493,7 @@ impl User {
                 unsafe { cbuf.set_len(cbuf.capacity()); }
                 cbuf.reserve(1);
             } else {
-                return Some(Err(Error::Sys(Errno::last())));
+                return Err(Error::Sys(Errno::last()));
             }
         }
     }
@@ -2507,11 +2507,11 @@ impl User {
     ///
     /// ```
     /// use nix::unistd::{Uid, User};
-    /// // Returns an Option<Result<User>>, thus the double unwrap.
+    /// // Returns an Result<Option<User>>, thus the double unwrap.
     /// let res = User::from_uid(Uid::from_raw(0)).unwrap().unwrap();
     /// assert!(res.name == "root");
     /// ```
-    pub fn from_uid(uid: Uid) -> Option<Result<Self>> {
+    pub fn from_uid(uid: Uid) -> Result<Option<Self>> {
         User::from_anything(|pwd, cbuf, cap, res| {
             unsafe { libc::getpwuid_r(uid.0, pwd, cbuf, cap, res) }
         })
@@ -2526,11 +2526,11 @@ impl User {
     ///
     /// ```
     /// use nix::unistd::User;
-    /// // Returns an Option<Result<User>>, thus the double unwrap.
+    /// // Returns an Result<Option<User>>, thus the double unwrap.
     /// let res = User::from_name("root").unwrap().unwrap();
     /// assert!(res.name == "root");
     /// ```
-    pub fn from_name(name: &str) -> Option<Result<Self>> {
+    pub fn from_name(name: &str) -> Result<Option<Self>> {
         let name = CString::new(name).unwrap();
         User::from_anything(|pwd, cbuf, cap, res| {
             unsafe { libc::getpwnam_r(name.as_ptr(), pwd, cbuf, cap, res) }
@@ -2582,7 +2582,7 @@ impl Group {
                                 *mut libc::c_char,
                                 libc::size_t,
                                 *mut *mut libc::group) -> libc::c_int)
-       -> Option<Result<Self>>
+       -> Result<Option<Self>>
     {
         let bufsize = match sysconf(SysconfVar::GETGR_R_SIZE_MAX) {
             Ok(Some(n)) => n as usize,
@@ -2601,10 +2601,10 @@ impl Group {
 
             if error == 0 {
                 if res.is_null() {
-                    return None;
+                    return Ok(None);
                 } else {
                     let grp = unsafe { grp.assume_init() };
-                    return Some(Ok(Group::from(&grp)));
+                    return Ok(Some(Group::from(&grp)));
                 }
             } else if Errno::last() == Errno::ERANGE {
                 // Trigger the internal buffer resizing logic of `Vec` by requiring
@@ -2612,7 +2612,7 @@ impl Group {
                 unsafe { cbuf.set_len(cbuf.capacity()); }
                 cbuf.reserve(1);
             } else {
-                return Some(Err(Error::Sys(Errno::last())));
+                return Err(Error::Sys(Errno::last()));
             }
         }
     }
@@ -2628,11 +2628,11 @@ impl Group {
     #[cfg_attr(not(target_os = "linux"), doc = " ```no_run")]
     #[cfg_attr(target_os = "linux", doc = " ```")]
     /// use nix::unistd::{Gid, Group};
-    /// // Returns an Option<Result<Group>>, thus the double unwrap.
+    /// // Returns an Result<Option<Group>>, thus the double unwrap.
     /// let res = Group::from_gid(Gid::from_raw(0)).unwrap().unwrap();
     /// assert!(res.name == "root");
     /// ```
-    pub fn from_gid(gid: Gid) -> Option<Result<Self>> {
+    pub fn from_gid(gid: Gid) -> Result<Option<Self>> {
         Group::from_anything(|grp, cbuf, cap, res| {
             unsafe { libc::getgrgid_r(gid.0, grp, cbuf, cap, res) }
         })
@@ -2649,11 +2649,11 @@ impl Group {
     #[cfg_attr(not(target_os = "linux"), doc = " ```no_run")]
     #[cfg_attr(target_os = "linux", doc = " ```")]
     /// use nix::unistd::Group;
-    /// // Returns an Option<Result<Group>>, thus the double unwrap.
+    /// // Returns an Result<Option<Group>>, thus the double unwrap.
     /// let res = Group::from_name("root").unwrap().unwrap();
     /// assert!(res.name == "root");
     /// ```
-    pub fn from_name(name: &str) -> Option<Result<Self>> {
+    pub fn from_name(name: &str) -> Result<Option<Self>> {
         let name = CString::new(name).unwrap();
         Group::from_anything(|grp, cbuf, cap, res| {
             unsafe { libc::getgrnam_r(name.as_ptr(), grp, cbuf, cap, res) }
