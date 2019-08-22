@@ -188,10 +188,9 @@ fn wrap_readlink_result(v: &mut Vec<u8>, res: ssize_t) -> Result<OsString> {
 }
 
 pub fn readlink<'a, P: ?Sized + NixPath>(path: &P) -> Result<OsString> {
-    let len = libc::PATH_MAX as usize;
-    let mut v = Vec::with_capacity(len);
+    let mut v = Vec::with_capacity(libc::PATH_MAX as usize);
     let res = path.with_nix_path(|cstr| {
-        unsafe { libc::readlink(cstr.as_ptr(), v.as_mut_ptr() as *mut c_char, len as size_t) }
+        unsafe { libc::readlink(cstr.as_ptr(), v.as_mut_ptr() as *mut c_char, v.capacity() as size_t) }
     })?;
 
     wrap_readlink_result(&mut v, res)
@@ -199,10 +198,9 @@ pub fn readlink<'a, P: ?Sized + NixPath>(path: &P) -> Result<OsString> {
 
 
 pub fn readlinkat<'a, P: ?Sized + NixPath>(dirfd: RawFd, path: &P) -> Result<OsString> {
-    let len = libc::PATH_MAX as usize;
-    let mut v = Vec::with_capacity(len);
+    let mut v = Vec::with_capacity(libc::PATH_MAX as usize);
     let res = path.with_nix_path(|cstr| {
-        unsafe { libc::readlinkat(dirfd, cstr.as_ptr(), v.as_mut_ptr() as *mut c_char, len as size_t) }
+        unsafe { libc::readlinkat(dirfd, cstr.as_ptr(), v.as_mut_ptr() as *mut c_char, v.capacity() as size_t) }
     })?;
 
     wrap_readlink_result(&mut v, res)
