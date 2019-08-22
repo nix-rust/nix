@@ -12,8 +12,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ```rust
   use nix::fcntl::{readlink, readlinkat};
 
-  readlink!(&path);
-  readlinkat!(dirfd, &path);
+  readlink(&path);
+  readlinkat(dirfd, &path);
   ```
 
 ### Fixed
