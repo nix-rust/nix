@@ -23,6 +23,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   let _: OsString = readlinkat(dirfd, &path);
   ```
 
+- Minimum supported Rust version is now 1.36.0.
+  ([#1108](https://github.com/nix-rust/nix/pull/1108))
 ### Fixed
 ### Removed
 
