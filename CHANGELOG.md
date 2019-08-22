@@ -6,8 +6,15 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased] - ReleaseDate
 ### Added
 ### Changed
-- Changed `readlink` and `readlinkat` to return `osString`
+- Changed `readlink` and `readlinkat` to return `OsString`
   ([#1109](https://github.com/nix-rust/nix/pull/1109))
+
+  ```rust
+  use nix::fcntl::readlink;
+
+  readlink!(&path);
+  ```
+
 ### Fixed
 ### Removed
 
