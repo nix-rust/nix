@@ -2435,8 +2435,8 @@ pub struct User {
     pub expire: libc::time_t
 }
 
-impl From<*mut libc::passwd> for User {
-    fn from(pw: *mut libc::passwd) -> User {
+impl From<&libc::passwd> for User {
+    fn from(pw: &libc::passwd) -> User {
         unsafe {
             User {
                 name: CStr::from_ptr((*pw).pw_name).to_string_lossy().into_owned(),
@@ -2488,9 +2488,11 @@ impl User {
             )
         };
 
+        let pwd = unsafe { pwd.assume_init() };
+
         if error == 0 {
             if ! res.is_null() {
-                Some(Ok(User::from(res)))
+                Some(Ok(User::from(&pwd)))
             } else {
                 None
             }
@@ -2528,9 +2530,11 @@ impl User {
             )
         };
 
+        let pwd = unsafe { pwd.assume_init() };
+
         if error == 0 {
             if ! res.is_null() {
-                Some(Ok(User::from(res)))
+                Some(Ok(User::from(&pwd)))
             } else {
                 None
             }
@@ -2551,8 +2555,8 @@ pub struct Group {
     pub mem: Vec<String>
 }
 
-impl From<*mut libc::group> for Group {
-    fn from(gr: *mut libc::group) -> Group {
+impl From<&libc::group> for Group {
+    fn from(gr: &libc::group) -> Group {
         unsafe {
             Group {
                 name: CStr::from_ptr((*gr).gr_name).to_string_lossy().into_owned(),
@@ -2611,9 +2615,11 @@ impl Group {
             )
         };
 
+        let grp = unsafe { grp.assume_init() };
+
         if error == 0 {
             if !res.is_null() {
-                Some(Ok(Group::from(res)))
+                Some(Ok(Group::from(&grp)))
             } else {
                 None
             }
@@ -2653,9 +2659,11 @@ impl Group {
             )
         };
 
+        let grp = unsafe { grp.assume_init() };
+
         if error == 0 {
             if !res.is_null() {
-                Some(Ok(Group::from(res)))
+                Some(Ok(Group::from(&grp)))
             } else {
                 None
             }
@@ -2719,18 +2727,24 @@ mod usergroupiter {
     impl Iterator for Users {
         type Item = Result<User>;
         fn next(&mut self) -> Option<Result<User>> {
-
             let mut cbuf = vec![0 as c_char; self.0];
-            let mut pwd: libc::passwd =  unsafe { mem::uninitialized() };
+            let mut pwd = mem::MaybeUninit::<libc::passwd>::uninit();
             let mut res = ptr::null_mut();
 
             let error = unsafe {
                 Errno::clear();
-                libc::getpwent_r(&mut pwd, cbuf.as_mut_ptr(), self.0, &mut res)
+                libc::getpwent_r(
+                    pwd.as_mut_ptr(),
+                    cbuf.as_mut_ptr(),
+                    self.0,
+                    &mut res
+                )
             };
 
+            let pwd = unsafe { pwd.assume_init() };
+
             if error == 0 && !res.is_null() {
-                Some(Ok(User::from(res)))
+                Some(Ok(User::from(&pwd)))
             } else if error == libc::ERANGE {
                 Some(Err(Error::Sys(Errno::last())))
             } else {
@@ -2787,18 +2801,24 @@ mod usergroupiter {
     impl Iterator for Groups {
         type Item = Result<Group>;
         fn next(&mut self) -> Option<Result<Group>> {
-
             let mut cbuf = vec![0 as c_char; self.0];
-            let mut grp: libc::group =  unsafe { mem::uninitialized() };
+            let mut grp = mem::MaybeUninit::<libc::group>::uninit();
             let mut res = ptr::null_mut();
 
             let error = unsafe {
                 Errno::clear();
-                libc::getgrent_r(&mut grp, cbuf.as_mut_ptr(), self.0, &mut res)
+                libc::getgrent_r(
+                    grp.as_mut_ptr(),
+                    cbuf.as_mut_ptr(),
+                    self.0,
+                    &mut res
+                )
             };
 
+            let grp = unsafe { grp.assume_init() };
+
             if error == 0 && !res.is_null() {
-                Some(Ok(Group::from(res)))
+                Some(Ok(Group::from(&grp)))
             } else if error == libc::ERANGE {
                 Some(Err(Error::Sys(Errno::last())))
             } else {
