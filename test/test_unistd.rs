@@ -576,14 +576,13 @@ fn test_canceling_alarm() {
 
 #[test]
 fn test_symlinkat() {
-    let mut buf = [0; 1024];
     let tempdir = tempfile::tempdir().unwrap();
 
     let target = tempdir.path().join("a");
     let linkpath = tempdir.path().join("b");
     symlinkat(&target, None, &linkpath).unwrap();
     assert_eq!(
-        readlink(&linkpath, &mut buf).unwrap().to_str().unwrap(),
+        readlink(&linkpath).unwrap().to_str().unwrap(),
         target.to_str().unwrap()
     );
 
@@ -592,7 +591,7 @@ fn test_symlinkat() {
     let linkpath = "d";
     symlinkat(target, Some(dirfd), linkpath).unwrap();
     assert_eq!(
-        readlink(&tempdir.path().join(linkpath), &mut buf)
+        readlink(&tempdir.path().join(linkpath))
             .unwrap()
             .to_str()
             .unwrap(),

@@ -56,12 +56,11 @@ fn test_readlink() {
     let dirfd = open(tempdir.path(),
                      OFlag::empty(),
                      Mode::empty()).unwrap();
+    let expected_dir = src.to_str().unwrap();
 
-    let mut buf = vec![0; src.to_str().unwrap().len() + 1];
-    assert_eq!(readlink(&dst, &mut buf).unwrap().to_str().unwrap(),
-               src.to_str().unwrap());
-    assert_eq!(readlinkat(dirfd, "b", &mut buf).unwrap().to_str().unwrap(),
-               src.to_str().unwrap());
+    assert_eq!(readlink(&dst).unwrap().to_str().unwrap(), expected_dir);
+    assert_eq!(readlinkat(dirfd, "b").unwrap().to_str().unwrap(), expected_dir);
+
 }
 
 #[cfg(any(target_os = "linux", target_os = "android"))]

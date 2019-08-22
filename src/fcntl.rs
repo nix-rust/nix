@@ -1,11 +1,11 @@
-use {Error, Result, NixPath};
+use {Result, NixPath};
 use errno::Errno;
 use libc::{self, c_int, c_uint, c_char, size_t, ssize_t};
 use sys::stat::Mode;
 use std::os::raw;
 use std::os::unix::io::RawFd;
-use std::ffi::OsStr;
-use std::os::unix::ffi::OsStrExt;
+use std::ffi::OsString;
+use std::os::unix::ffi::OsStringExt;
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
 use std::ptr; // For splice and copy_file_range
@@ -177,34 +177,33 @@ pub fn renameat<P1: ?Sized + NixPath, P2: ?Sized + NixPath>(old_dirfd: Option<Ra
     Errno::result(res).map(drop)
 }
 
-fn wrap_readlink_result(buffer: &mut[u8], res: ssize_t) -> Result<&OsStr> {
+fn wrap_readlink_result(v: &mut Vec<u8>, res: ssize_t) -> Result<OsString> {
     match Errno::result(res) {
         Err(err) => Err(err),
         Ok(len) => {
-            if (len as usize) >= buffer.len() {
-                Err(Error::Sys(Errno::ENAMETOOLONG))
-            } else {
-                Ok(OsStr::from_bytes(&buffer[..(len as usize)]))
-            }
+            unsafe { v.set_len(len as usize) }
+            Ok(OsString::from_vec(v.to_vec()))
         }
     }
 }
 
-pub fn readlink<'a, P: ?Sized + NixPath>(path: &P, buffer: &'a mut [u8]) -> Result<&'a OsStr> {
+pub fn readlink<'a, P: ?Sized + NixPath>(path: &P) -> Result<OsString> {
+    let mut v = Vec::with_capacity(libc::PATH_MAX as usize);
     let res = path.with_nix_path(|cstr| {
-        unsafe { libc::readlink(cstr.as_ptr(), buffer.as_mut_ptr() as *mut c_char, buffer.len() as size_t) }
+        unsafe { libc::readlink(cstr.as_ptr(), v.as_mut_ptr() as *mut c_char, v.capacity() as size_t) }
     })?;
 
-    wrap_readlink_result(buffer, res)
+    wrap_readlink_result(&mut v, res)
 }
 
 
-pub fn readlinkat<'a, P: ?Sized + NixPath>(dirfd: RawFd, path: &P, buffer: &'a mut [u8]) -> Result<&'a OsStr> {
+pub fn readlinkat<'a, P: ?Sized + NixPath>(dirfd: RawFd, path: &P) -> Result<OsString> {
+    let mut v = Vec::with_capacity(libc::PATH_MAX as usize);
     let res = path.with_nix_path(|cstr| {
-        unsafe { libc::readlinkat(dirfd, cstr.as_ptr(), buffer.as_mut_ptr() as *mut c_char, buffer.len() as size_t) }
+        unsafe { libc::readlinkat(dirfd, cstr.as_ptr(), v.as_mut_ptr() as *mut c_char, v.capacity() as size_t) }
     })?;
 
-    wrap_readlink_result(buffer, res)
+    wrap_readlink_result(&mut v, res)
 }
 
 /// Computes the raw fd consumed by a function of the form `*at`.
