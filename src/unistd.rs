@@ -2465,25 +2465,36 @@ impl User {
                                 *mut *mut libc::passwd) -> libc::c_int)
        -> Option<Result<Self>>
     {
-        let mut cbuf = Vec::with_capacity(PWGRP_BUFSIZE);
+        let bufsize = match sysconf(SysconfVar::GETPW_R_SIZE_MAX) {
+            Ok(Some(n)) => n as usize,
+            Ok(None) | Err(_) => 1024 as usize,
+        };
+
+        let mut cbuf = Vec::with_capacity(bufsize);
         let mut pwd = mem::MaybeUninit::<libc::passwd>::uninit();
         let mut res = ptr::null_mut();
 
-        let error = unsafe {
-            Errno::clear();
-            f(pwd.as_mut_ptr(), cbuf.as_mut_ptr(), cbuf.capacity(), &mut res)
-        };
+        loop {
+            let error = unsafe {
+                Errno::clear();
+                f(pwd.as_mut_ptr(), cbuf.as_mut_ptr(), cbuf.capacity(), &mut res)
+            };
 
-        let pwd = unsafe { pwd.assume_init() };
-
-        if error == 0 {
-            if ! res.is_null() {
-                Some(Ok(User::from(&pwd)))
+            if error == 0 {
+                if res.is_null() {
+                    return None;
+                } else {
+                    let pwd = unsafe { pwd.assume_init() };
+                    return Some(Ok(User::from(&pwd)));
+                }
+            } else if Errno::last() == Errno::ERANGE {
+                // Trigger the internal buffer resizing logic of `Vec` by requiring
+                // more space than the current capacity.
+                unsafe { cbuf.set_len(cbuf.capacity()); }
+                cbuf.reserve(1);
             } else {
-                None
+                return Some(Err(Error::Sys(Errno::last())));
             }
-        } else {
-            Some(Err(Error::Sys(Errno::last())))
         }
     }
     
@@ -2573,25 +2584,36 @@ impl Group {
                                 *mut *mut libc::group) -> libc::c_int)
        -> Option<Result<Self>>
     {
-        let mut cbuf = Vec::with_capacity(PWGRP_BUFSIZE);
+        let bufsize = match sysconf(SysconfVar::GETGR_R_SIZE_MAX) {
+            Ok(Some(n)) => n as usize,
+            Ok(None) | Err(_) => 1024 as usize,
+        };
+
+        let mut cbuf = Vec::with_capacity(bufsize);
         let mut grp = mem::MaybeUninit::<libc::group>::uninit();
         let mut res = ptr::null_mut();
 
-        let error = unsafe {
-            Errno::clear();
-            f(grp.as_mut_ptr(), cbuf.as_mut_ptr(), cbuf.capacity(), &mut res)
-        };
+        loop {
+            let error = unsafe {
+                Errno::clear();
+                f(grp.as_mut_ptr(), cbuf.as_mut_ptr(), cbuf.capacity(), &mut res)
+            };
 
-        let grp = unsafe { grp.assume_init() };
-
-        if error == 0 {
-            if !res.is_null() {
-                Some(Ok(Group::from(&grp)))
+            if error == 0 {
+                if res.is_null() {
+                    return None;
+                } else {
+                    let grp = unsafe { grp.assume_init() };
+                    return Some(Ok(Group::from(&grp)));
+                }
+            } else if Errno::last() == Errno::ERANGE {
+                // Trigger the internal buffer resizing logic of `Vec` by requiring
+                // more space than the current capacity.
+                unsafe { cbuf.set_len(cbuf.capacity()); }
+                cbuf.reserve(1);
             } else {
-                None
+                return Some(Err(Error::Sys(Errno::last())));
             }
-        } else {
-            Some(Err(Error::Sys(Errno::last())))
         }
     }
 
