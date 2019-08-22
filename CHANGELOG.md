@@ -10,9 +10,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#1109](https://github.com/nix-rust/nix/pull/1109))
 
   ```rust
-  use nix::fcntl::readlink;
+  use nix::fcntl::{readlink, readlinkat};
 
   readlink!(&path);
+  readlinkat!(dirfd, &path);
   ```
 
 ### Fixed
