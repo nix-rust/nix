@@ -58,20 +58,8 @@ fn test_readlink() {
                      Mode::empty()).unwrap();
     let expected_dir = src.to_str().unwrap();
 
-    // When the size of the buffer is bigger than the expected directory length
-    let mut buf = vec![0; src.to_str().unwrap().len() + 1];
-    assert_eq!(readlink(&dst, &mut buf).unwrap().to_str().unwrap(), expected_dir);
-    assert_eq!(readlinkat(dirfd, "b", &mut buf).unwrap().to_str().unwrap(), expected_dir);
-
-    // When the size of the buffer is equal to the expected directory length
-    let mut exact_buf = vec![0; src.to_str().unwrap().len()];
-    assert_eq!(readlink(&dst, &mut exact_buf).unwrap().to_str().unwrap(), expected_dir);
-    assert_eq!(readlinkat(dirfd, "b", &mut exact_buf).unwrap().to_str().unwrap(), expected_dir);
-
-    // When the size of the buffer is smaller than the expected directory length
-    let mut small_buf = vec![0;0];
-    assert_eq!(readlink(&dst, &mut small_buf).unwrap().to_str().unwrap(), "");
-    assert_eq!(readlinkat(dirfd, "b", &mut small_buf).unwrap().to_str().unwrap(), "");
+    assert_eq!(readlink(&dst).unwrap().to_str().unwrap(), expected_dir);
+    assert_eq!(readlinkat(dirfd, "b").unwrap().to_str().unwrap(), expected_dir);
 
 }
 
