@@ -600,18 +600,6 @@ fn test_symlinkat() {
     );
 }
 
-#[test]
-fn test_getpwuid() {
-    let res = User::from_uid(Uid::from_raw(0), None).unwrap();
-    assert!(res.unwrap().uid == Uid::from_raw(0));
-}
-
-#[test]
-fn test_getgrgid() {
-    let res = Group::from_gid(Gid::from_raw(0), None).unwrap();
-    assert!(res.unwrap().gid == Gid::from_raw(0));
-}
-
 #[cfg(not(any(target_os = "android",
               target_os = "ios",
               target_os = "macos",

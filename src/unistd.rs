@@ -2459,33 +2459,19 @@ impl From<&libc::passwd> for User {
 }
 
 impl User {
-    /// Get a user by UID.
-    ///
-    /// Internally, this function calls
-    /// [getpwuid_r(3)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/getpwuid_r.html)
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use nix::unistd::{Uid, User};
-    /// // Returns an Option<Result<User>>, thus the double unwrap.
-    /// let res = User::from_uid(Uid::from_raw(0), Some(2048)).unwrap().unwrap();
-    /// assert!(res.name == "root");
-    /// ```
-    pub fn from_uid(uid: Uid, bufsize: Option<usize>) -> Option<Result<Self>> {
-        let mut cbuf = Vec::with_capacity(bufsize.unwrap_or(PWGRP_BUFSIZE));
+    fn from_anything(f: impl Fn(*mut libc::passwd,
+                                *mut libc::c_char,
+                                libc::size_t,
+                                *mut *mut libc::passwd) -> libc::c_int)
+       -> Option<Result<Self>>
+    {
+        let mut cbuf = Vec::with_capacity(PWGRP_BUFSIZE);
         let mut pwd = mem::MaybeUninit::<libc::passwd>::uninit();
         let mut res = ptr::null_mut();
 
         let error = unsafe {
             Errno::clear();
-            libc::getpwuid_r(
-                uid.0,
-                pwd.as_mut_ptr(),
-                cbuf.as_mut_ptr(),
-                cbuf.capacity(),
-                &mut res
-            )
+            f(pwd.as_mut_ptr(), cbuf.as_mut_ptr(), cbuf.capacity(), &mut res)
         };
 
         let pwd = unsafe { pwd.assume_init() };
@@ -2500,6 +2486,25 @@ impl User {
             Some(Err(Error::Sys(Errno::last())))
         }
     }
+    
+    /// Get a user by UID.
+    ///
+    /// Internally, this function calls
+    /// [getpwuid_r(3)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/getpwuid_r.html)
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use nix::unistd::{Uid, User};
+    /// // Returns an Option<Result<User>>, thus the double unwrap.
+    /// let res = User::from_uid(Uid::from_raw(0)).unwrap().unwrap();
+    /// assert!(res.name == "root");
+    /// ```
+    pub fn from_uid(uid: Uid) -> Option<Result<Self>> {
+        User::from_anything(|pwd, cbuf, cap, res| {
+            unsafe { libc::getpwuid_r(uid.0, pwd, cbuf, cap, res) }
+        })
+    }
 
     /// Get a user by name.
     ///
@@ -2511,36 +2516,14 @@ impl User {
     /// ```
     /// use nix::unistd::User;
     /// // Returns an Option<Result<User>>, thus the double unwrap.
-    /// let res = User::from_name("root", Some(2048)).unwrap().unwrap();
+    /// let res = User::from_name("root").unwrap().unwrap();
     /// assert!(res.name == "root");
     /// ```
-    pub fn from_name(name: &str, bufsize: Option<usize>) -> Option<Result<Self>> {
-        let mut cbuf = Vec::with_capacity(bufsize.unwrap_or(PWGRP_BUFSIZE));
-        let mut pwd = mem::MaybeUninit::<libc::passwd>::uninit();
-        let mut res = ptr::null_mut();
-
-        let error = unsafe {
-            Errno::clear();
-            libc::getpwnam_r(
-                CString::new(name).unwrap().as_ptr(),
-                pwd.as_mut_ptr(),
-                cbuf.as_mut_ptr(),
-                cbuf.capacity(),
-                &mut res
-            )
-        };
-
-        let pwd = unsafe { pwd.assume_init() };
-
-        if error == 0 {
-            if ! res.is_null() {
-                Some(Ok(User::from(&pwd)))
-            } else {
-                None
-            }
-        } else {
-            Some(Err(Error::Sys(Errno::last())))
-        }
+    pub fn from_name(name: &str) -> Option<Result<Self>> {
+        let name = CString::new(name).unwrap();
+        User::from_anything(|pwd, cbuf, cap, res| {
+            unsafe { libc::getpwnam_r(name.as_ptr(), pwd, cbuf, cap, res) }
+        })
     }
 }
 
@@ -2584,35 +2567,19 @@ impl Group {
         ret
     }
 
-    /// Get a group by GID.
-    ///
-    /// Internally, this function calls
-    /// [getgrgid_r(3)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/getpwuid_r.html)
-    ///
-    /// # Examples
-    ///
-    // Disable this test on all OS except Linux as root group may not exist.
-    #[cfg_attr(not(target_os = "linux"), doc = " ```no_run")]
-    #[cfg_attr(target_os = "linux", doc = " ```")]
-    /// use nix::unistd::{Gid, Group};
-    /// // Returns an Option<Result<Group>>, thus the double unwrap.
-    /// let res = Group::from_gid(Gid::from_raw(0), Some(2048)).unwrap().unwrap();
-    /// assert!(res.name == "root");
-    /// ```
-    pub fn from_gid(gid: Gid, bufsize: Option<usize>) -> Option<Result<Self>> {
-        let mut cbuf = Vec::with_capacity(bufsize.unwrap_or(PWGRP_BUFSIZE));
+    fn from_anything(f: impl Fn(*mut libc::group,
+                                *mut libc::c_char,
+                                libc::size_t,
+                                *mut *mut libc::group) -> libc::c_int)
+       -> Option<Result<Self>>
+    {
+        let mut cbuf = Vec::with_capacity(PWGRP_BUFSIZE);
         let mut grp = mem::MaybeUninit::<libc::group>::uninit();
         let mut res = ptr::null_mut();
 
         let error = unsafe {
             Errno::clear();
-            libc::getgrgid_r(
-                gid.0,
-                grp.as_mut_ptr(),
-                cbuf.as_mut_ptr(),
-                cbuf.capacity(),
-                &mut res
-            )
+            f(grp.as_mut_ptr(), cbuf.as_mut_ptr(), cbuf.capacity(), &mut res)
         };
 
         let grp = unsafe { grp.assume_init() };
@@ -2628,6 +2595,27 @@ impl Group {
         }
     }
 
+    /// Get a group by GID.
+    ///
+    /// Internally, this function calls
+    /// [getgrgid_r(3)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/getpwuid_r.html)
+    ///
+    /// # Examples
+    ///
+    // Disable this test on all OS except Linux as root group may not exist.
+    #[cfg_attr(not(target_os = "linux"), doc = " ```no_run")]
+    #[cfg_attr(target_os = "linux", doc = " ```")]
+    /// use nix::unistd::{Gid, Group};
+    /// // Returns an Option<Result<Group>>, thus the double unwrap.
+    /// let res = Group::from_gid(Gid::from_raw(0)).unwrap().unwrap();
+    /// assert!(res.name == "root");
+    /// ```
+    pub fn from_gid(gid: Gid) -> Option<Result<Self>> {
+        Group::from_anything(|grp, cbuf, cap, res| {
+            unsafe { libc::getgrgid_r(gid.0, grp, cbuf, cap, res) }
+        })
+    }
+
     /// Get a group by name.
     ///
     /// Internally, this function calls
@@ -2640,36 +2628,14 @@ impl Group {
     #[cfg_attr(target_os = "linux", doc = " ```")]
     /// use nix::unistd::Group;
     /// // Returns an Option<Result<Group>>, thus the double unwrap.
-    /// let res = Group::from_name("root", Some(2048)).unwrap().unwrap();
+    /// let res = Group::from_name("root").unwrap().unwrap();
     /// assert!(res.name == "root");
     /// ```
-    pub fn from_name(name: &str, bufsize: Option<usize>) -> Option<Result<Self>> {
-        let mut cbuf = Vec::with_capacity(bufsize.unwrap_or(PWGRP_BUFSIZE));
-        let mut grp = mem::MaybeUninit::<libc::group>::uninit();
-        let mut res = ptr::null_mut();
-
-        let error = unsafe {
-            Errno::clear();
-            libc::getgrnam_r(
-                CString::new(name).unwrap().as_ptr(),
-                grp.as_mut_ptr(),
-                cbuf.as_mut_ptr(),
-                cbuf.capacity(),
-                &mut res
-            )
-        };
-
-        let grp = unsafe { grp.assume_init() };
-
-        if error == 0 {
-            if !res.is_null() {
-                Some(Ok(Group::from(&grp)))
-            } else {
-                None
-            }
-        } else {
-            Some(Err(Error::Sys(Errno::last())))
-        }
+    pub fn from_name(name: &str) -> Option<Result<Self>> {
+        let name = CString::new(name).unwrap();
+        Group::from_anything(|grp, cbuf, cap, res| {
+            unsafe { libc::getgrnam_r(name.as_ptr(), grp, cbuf, cap, res) }
+        })
     }
 }
 
