@@ -181,7 +181,9 @@ fn wrap_readlink_result(buffer: &mut[u8], res: ssize_t) -> Result<&OsStr> {
     match Errno::result(res) {
         Err(err) => Err(err),
         Ok(len) => {
-            if (len as usize) >= buffer.len() {
+            if len < 0 {
+                Err(Error::Sys(Errno::EINVAL))
+            } else if (len as usize) > buffer.len() {
                 Err(Error::Sys(Errno::ENAMETOOLONG))
             } else {
                 Ok(OsStr::from_bytes(&buffer[..(len as usize)]))
