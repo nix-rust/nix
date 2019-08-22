@@ -10,18 +10,17 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#1109](https://github.com/nix-rust/nix/pull/1109))
 
   ```rust
-  use nix::fcntl::{readlink, readlinkat};
-
+  # use nix::fcntl::{readlink, readlinkat};
   // the buffer argument of `readlink` and `readlinkat` has been removed,
   // and the return value is now an owned type (`OsString`).
   // Existing code can be updated by removing the buffer argument
   // and removing any clone or similar operation on the output
 
   // old code `readlink(&path, &mut buf)` can be replaced with the following
-  readlink(&path); // this returns OsString
+  let _: OsString = readlink(&path);
   
   // old code `readlinkat(dirfd, &path, &mut buf)` can be replaced with the following
-  readlinkat(dirfd, &path); // this returns OsString
+  let _: OsString = readlinkat(dirfd, &path);
   ```
 
 ### Fixed
