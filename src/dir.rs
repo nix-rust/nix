@@ -67,6 +67,46 @@ impl Dir {
     pub fn iter(&mut self) -> Iter {
         Iter(self)
     }
+
+
+    /// Set the position of the directory stream, see `seekdir(3)`.
+    #[cfg(target_os = "linux")]
+    pub fn seek(&mut self, loc: SeekLoc) {
+        // While on 32-bit systems this is formally a lossy conversion (i64 -> i32),
+        // the subtlety here is **when** it's lossy. Truncation may occur when the location
+        // reported by `d_off` doesn't fit into a long, which is i32 on 32-bit systems.
+        //
+        // But this means that the truncation would occur anyway in  equivalent C code,
+        // either inside telldir or as an implicit conversion of the argument to seekdir.
+        unsafe { libc::seekdir(self.0.as_ptr(), loc.0 as libc::c_long) }
+    }
+
+    /// Reset directory stream, see `rewinddir(3)`.
+    pub fn rewind(&mut self) {
+        unsafe { libc::rewinddir(self.0.as_ptr()) }
+    }
+
+    /// Get the current position of the directory stram
+    #[cfg(target_os = "linux")]
+    pub fn tell(&self) -> SeekLoc {
+        let loc = unsafe { libc::telldir(self.0.as_ptr()) };
+        SeekLoc(loc.into())
+    }
+}
+
+#[cfg(target_os = "linux")]
+#[derive(Clone, Copy, Debug)]
+pub struct SeekLoc(libc::off64_t);
+
+#[cfg(target_os = "linux")]
+impl SeekLoc {
+    pub unsafe fn from_raw(loc: i64) -> Self {
+        SeekLoc(loc)
+    }
+
+    pub fn to_raw(&self) -> i64 {
+        self.0
+    }
 }
 
 // `Dir` is not `Sync`. With the current implementation, it could be, but according to
@@ -118,7 +158,7 @@ impl<'d> Iterator for Iter<'d> {
 
 impl<'d> Drop for Iter<'d> {
     fn drop(&mut self) {
-        unsafe { libc::rewinddir((self.0).0.as_ptr()) }
+        self.0.rewind()
     }
 }
 
@@ -189,5 +229,14 @@ impl Entry {
             libc::DT_SOCK => Some(Type::Socket),
             /* libc::DT_UNKNOWN | */ _ => None,
         }
+    }
+
+    /// Returns the current position of the directory stream.
+    ///
+    /// If this location is given to `Iter::seek`, the entries up to the current one
+    /// will be omitted and the iteration will start from the **next** directory entry
+    #[cfg(target_os = "linux")]
+    pub fn seek_loc(&self) -> SeekLoc {
+        SeekLoc(self.0.d_off)
     }
 }
