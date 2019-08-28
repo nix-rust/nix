@@ -67,6 +67,12 @@ pub mod sys;
           any(target_arch = "x86", target_arch = "x86_64")))]
 pub mod ucontext;
 pub mod unistd;
+#[deny(missing_docs)]
+#[cfg(any(target_env = "gnu",
+          target_os = "freebsd",
+          target_os = "ios",
+          target_os = "macos"))]
+pub mod utmpx;
 
 /*
  *
