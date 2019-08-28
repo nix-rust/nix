@@ -33,22 +33,22 @@ mod linux {
     #[test]
     fn test_op_none() {
         if cfg!(any(target_arch = "mips", target_arch = "mips64", target_arch="powerpc", target_arch="powerpc64")){
-            assert_eq!(request_code_none!(b'q', 10), 0x2000_710A);
-            assert_eq!(request_code_none!(b'a', 255), 0x2000_61FF);
+            assert_eq!(request_code_none!(b'q', 10) as u32, 0x2000_710A);
+            assert_eq!(request_code_none!(b'a', 255) as u32, 0x2000_61FF);
         } else {
-            assert_eq!(request_code_none!(b'q', 10), 0x0000_710A);
-            assert_eq!(request_code_none!(b'a', 255), 0x0000_61FF);
+            assert_eq!(request_code_none!(b'q', 10) as u32, 0x0000_710A);
+            assert_eq!(request_code_none!(b'a', 255) as u32, 0x0000_61FF);
         }
     }
 
     #[test]
     fn test_op_write() {
         if cfg!(any(target_arch = "mips", target_arch = "mips64", target_arch="powerpc", target_arch="powerpc64")){
-            assert_eq!(request_code_write!(b'z', 10, 1), 0x8001_7A0A);
-            assert_eq!(request_code_write!(b'z', 10, 512), 0x8200_7A0A);
+            assert_eq!(request_code_write!(b'z', 10, 1) as u32, 0x8001_7A0A);
+            assert_eq!(request_code_write!(b'z', 10, 512) as u32, 0x8200_7A0A);
         } else {
-            assert_eq!(request_code_write!(b'z', 10, 1), 0x4001_7A0A);
-            assert_eq!(request_code_write!(b'z', 10, 512), 0x4200_7A0A);
+            assert_eq!(request_code_write!(b'z', 10, 1) as u32, 0x4001_7A0A);
+            assert_eq!(request_code_write!(b'z', 10, 512) as u32, 0x4200_7A0A);
         }
     }
 
@@ -56,9 +56,11 @@ mod linux {
     #[test]
     fn test_op_write_64() {
         if cfg!(any(target_arch = "mips64", target_arch="powerpc64")){
-            assert_eq!(request_code_write!(b'z', 10, (1 as u64) << 32), 0x8000_7A0A);
+            assert_eq!(request_code_write!(b'z', 10, (1 as u64) << 32) as u32,
+                       0x8000_7A0A);
         } else {
-            assert_eq!(request_code_write!(b'z', 10, (1 as u64) << 32), 0x4000_7A0A);
+            assert_eq!(request_code_write!(b'z', 10, (1 as u64) << 32) as u32,
+                       0x4000_7A0A);
         }
 
     }
@@ -66,11 +68,11 @@ mod linux {
     #[test]
     fn test_op_read() {
         if cfg!(any(target_arch = "mips", target_arch = "mips64", target_arch="powerpc", target_arch="powerpc64")){
-            assert_eq!(request_code_read!(b'z', 10, 1), 0x4001_7A0A);
-            assert_eq!(request_code_read!(b'z', 10, 512), 0x4200_7A0A);
+            assert_eq!(request_code_read!(b'z', 10, 1) as u32, 0x4001_7A0A);
+            assert_eq!(request_code_read!(b'z', 10, 512) as u32, 0x4200_7A0A);
         } else {
-            assert_eq!(request_code_read!(b'z', 10, 1), 0x8001_7A0A);
-            assert_eq!(request_code_read!(b'z', 10, 512), 0x8200_7A0A);
+            assert_eq!(request_code_read!(b'z', 10, 1) as u32, 0x8001_7A0A);
+            assert_eq!(request_code_read!(b'z', 10, 512) as u32, 0x8200_7A0A);
         }
     }
 
@@ -78,22 +80,25 @@ mod linux {
     #[test]
     fn test_op_read_64() {
         if cfg!(any(target_arch = "mips64", target_arch="powerpc64")){
-            assert_eq!(request_code_read!(b'z', 10, (1 as u64) << 32), 0x4000_7A0A);
+            assert_eq!(request_code_read!(b'z', 10, (1 as u64) << 32) as u32,
+                       0x4000_7A0A);
         } else {
-            assert_eq!(request_code_read!(b'z', 10, (1 as u64) << 32), 0x8000_7A0A);
+            assert_eq!(request_code_read!(b'z', 10, (1 as u64) << 32) as u32,
+                       0x8000_7A0A);
         }
     }
 
     #[test]
     fn test_op_read_write() {
-        assert_eq!(request_code_readwrite!(b'z', 10, 1), 0xC001_7A0A);
-        assert_eq!(request_code_readwrite!(b'z', 10, 512), 0xC200_7A0A);
+        assert_eq!(request_code_readwrite!(b'z', 10, 1) as u32, 0xC001_7A0A);
+        assert_eq!(request_code_readwrite!(b'z', 10, 512) as u32, 0xC200_7A0A);
     }
 
     #[cfg(target_pointer_width = "64")]
     #[test]
     fn test_op_read_write_64() {
-        assert_eq!(request_code_readwrite!(b'z', 10, (1 as u64) << 32), 0xC000_7A0A);
+        assert_eq!(request_code_readwrite!(b'z', 10, (1 as u64) << 32) as u32,
+                   0xC000_7A0A);
     }
 }
 
