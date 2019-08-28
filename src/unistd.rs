@@ -2459,11 +2459,12 @@ impl From<&libc::passwd> for User {
 }
 
 impl User {
-    fn from_anything(f: impl Fn(*mut libc::passwd,
-                                *mut libc::c_char,
-                                libc::size_t,
-                                *mut *mut libc::passwd) -> libc::c_int)
-       -> Result<Option<Self>>
+    fn from_anything<F>(f: F) -> Result<Option<Self>>
+    where
+        F: Fn(*mut libc::passwd,
+              *mut libc::c_char,
+              libc::size_t,
+              *mut *mut libc::passwd) -> libc::c_int
     {
         let bufsize = match sysconf(SysconfVar::GETPW_R_SIZE_MAX) {
             Ok(Some(n)) => n as usize,
@@ -2578,11 +2579,12 @@ impl Group {
         ret
     }
 
-    fn from_anything(f: impl Fn(*mut libc::group,
-                                *mut libc::c_char,
-                                libc::size_t,
-                                *mut *mut libc::group) -> libc::c_int)
-       -> Result<Option<Self>>
+    fn from_anything<F>(f: F) -> Result<Option<Self>>
+    where
+        F: Fn(*mut libc::group,
+              *mut libc::c_char,
+              libc::size_t,
+              *mut *mut libc::group) -> libc::c_int
     {
         let bufsize = match sysconf(SysconfVar::GETGR_R_SIZE_MAX) {
             Ok(Some(n)) => n as usize,
