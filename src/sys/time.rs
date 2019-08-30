@@ -191,7 +191,7 @@ impl ops::Mul<i32> for TimeSpec {
     type Output = TimeSpec;
 
     fn mul(self, rhs: i32) -> TimeSpec {
-        let usec = self.num_nanoseconds().checked_mul(rhs as i64)
+        let usec = self.num_nanoseconds().checked_mul(i64::from(rhs))
             .expect("TimeSpec multiply out of bounds");
 
         TimeSpec::nanoseconds(usec)
@@ -202,7 +202,7 @@ impl ops::Div<i32> for TimeSpec {
     type Output = TimeSpec;
 
     fn div(self, rhs: i32) -> TimeSpec {
-        let usec = self.num_nanoseconds() / rhs as i64;
+        let usec = self.num_nanoseconds() / i64::from(rhs);
         TimeSpec::nanoseconds(usec)
     }
 }
@@ -386,7 +386,7 @@ impl ops::Mul<i32> for TimeVal {
     type Output = TimeVal;
 
     fn mul(self, rhs: i32) -> TimeVal {
-        let usec = self.num_microseconds().checked_mul(rhs as i64)
+        let usec = self.num_microseconds().checked_mul(i64::from(rhs))
             .expect("TimeVal multiply out of bounds");
 
         TimeVal::microseconds(usec)
@@ -397,7 +397,7 @@ impl ops::Div<i32> for TimeVal {
     type Output = TimeVal;
 
     fn div(self, rhs: i32) -> TimeVal {
-        let usec = self.num_microseconds() / rhs as i64;
+        let usec = self.num_microseconds() / i64::from(rhs);
         TimeVal::microseconds(usec)
     }
 }

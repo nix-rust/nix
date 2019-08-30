@@ -338,14 +338,14 @@ impl SigSet {
         let mut sigset: libc::sigset_t = unsafe { mem::uninitialized() };
         let _ = unsafe { libc::sigfillset(&mut sigset as *mut libc::sigset_t) };
 
-        SigSet { sigset: sigset }
+        SigSet { sigset }
     }
 
     pub fn empty() -> SigSet {
         let mut sigset: libc::sigset_t = unsafe { mem::uninitialized() };
         let _ = unsafe { libc::sigemptyset(&mut sigset as *mut libc::sigset_t) };
 
-        SigSet { sigset: sigset }
+        SigSet { sigset }
     }
 
     pub fn add(&mut self, signal: Signal) {

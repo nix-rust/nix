@@ -107,11 +107,11 @@ impl<'d> Iterator for Iter<'d> {
             if let Err(e) = Errno::result(readdir_r((self.0).0.as_ptr(), &mut ent.0, &mut result)) {
                 return Some(Err(e));
             }
-            if result == ptr::null_mut() {
+            if result.is_null() {
                 return None;
             }
             assert_eq!(result, &mut ent.0 as *mut dirent);
-            return Some(Ok(ent));
+            Some(Ok(ent))
         }
     }
 }
@@ -165,7 +165,7 @@ impl Entry {
                   target_os = "macos",
                   target_os = "solaris")))]
     pub fn ino(&self) -> u64 {
-        self.0.d_fileno as u64
+        u64::from(self.0.d_fileno)
     }
 
     /// Returns the bare file name of this directory entry without any other leading path component.

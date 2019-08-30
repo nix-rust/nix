@@ -45,12 +45,12 @@ impl Uid {
     }
 
     /// Returns true if the `Uid` represents privileged user - root. (If it equals zero.)
-    pub fn is_root(&self) -> bool {
-        *self == ROOT
+    pub fn is_root(self) -> bool {
+        self == ROOT
     }
 
     /// Get the raw `uid_t` wrapped by `self`.
-    pub fn as_raw(&self) -> uid_t {
+    pub fn as_raw(self) -> uid_t {
         self.0
     }
 }
@@ -94,7 +94,7 @@ impl Gid {
     }
 
     /// Get the raw `gid_t` wrapped by `self`.
-    pub fn as_raw(&self) -> gid_t {
+    pub fn as_raw(self) -> gid_t {
         self.0
     }
 }
@@ -135,7 +135,7 @@ impl Pid {
     }
 
     /// Get the raw `pid_t` wrapped by `self`.
-    pub fn as_raw(&self) -> pid_t {
+    pub fn as_raw(self) -> pid_t {
         self.0
     }
 }
@@ -168,8 +168,8 @@ impl ForkResult {
 
     /// Return `true` if this is the child process of the `fork()`
     #[inline]
-    pub fn is_child(&self) -> bool {
-        match *self {
+    pub fn is_child(self) -> bool {
+        match self {
             ForkResult::Child => true,
             _ => false
         }
@@ -177,7 +177,7 @@ impl ForkResult {
 
     /// Returns `true` if this is the parent process of the `fork()`
     #[inline]
-    pub fn is_parent(&self) -> bool {
+    pub fn is_parent(self) -> bool {
         !self.is_child()
     }
 }
@@ -590,8 +590,10 @@ fn chown_raw_ids(owner: Option<Uid>, group: Option<Gid>) -> (libc::uid_t, libc::
     // According to the POSIX specification, -1 is used to indicate that owner and group
     // are not to be changed.  Since uid_t and gid_t are unsigned types, we have to wrap
     // around to get -1.
-    let uid = owner.map(Into::into).unwrap_or((0 as uid_t).wrapping_sub(1));
-    let gid = group.map(Into::into).unwrap_or((0 as gid_t).wrapping_sub(1));
+    let uid = owner.map(Into::into)
+        .unwrap_or_else(|| (0 as uid_t).wrapping_sub(1));
+    let gid = group.map(Into::into)
+        .unwrap_or_else(|| (0 as gid_t).wrapping_sub(1));
     (uid, gid)
 }
 
@@ -1199,7 +1201,7 @@ pub fn chroot<P: ?Sized + NixPath>(path: &P) -> Result<()> {
     target_os = "netbsd",
     target_os = "openbsd"
 ))]
-pub fn sync() -> () {
+pub fn sync() {
     unsafe { libc::sync() };
 }
 

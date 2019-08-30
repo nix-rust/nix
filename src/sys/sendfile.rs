@@ -123,6 +123,7 @@ cfg_if! {
         ///
         /// For more information, see
         /// [the sendfile(2) man page.](https://www.freebsd.org/cgi/man.cgi?query=sendfile&sektion=2)
+        #[allow(clippy::too_many_arguments)]
         pub fn sendfile(
             in_fd: RawFd,
             out_sock: RawFd,
@@ -136,7 +137,8 @@ cfg_if! {
             // Readahead goes in upper 16 bits
             // Flags goes in lower 16 bits
             // see `man 2 sendfile`
-            let flags: u32 = ((readahead as u32) << 16) | (flags.bits() as u32);
+            let ra32 = u32::from(readahead);
+            let flags: u32 = (ra32 << 16) | (flags.bits() as u32);
             let mut bytes_sent: off_t = 0;
             let hdtr = headers.or(trailers).map(|_| SendfileHeaderTrailer::new(headers, trailers));
             let hdtr_ptr = hdtr.as_ref().map_or(ptr::null(), |s| &s.0 as *const libc::sf_hdtr);

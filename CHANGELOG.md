@@ -5,6 +5,13 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - ReleaseDate
 ### Added
+
+- Implemented `Default` for `FdSet`
+  ([#1107](https://github.com/nix-rust/nix/pull/1107))
+
+- Added `NixPath::is_empty`.
+  ([#1107](https://github.com/nix-rust/nix/pull/1107))
+
 ### Changed
 - Changed `readlink` and `readlinkat` to return `OsString`
   ([#1109](https://github.com/nix-rust/nix/pull/1109))
@@ -25,6 +32,13 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 - Minimum supported Rust version is now 1.36.0.
   ([#1108](https://github.com/nix-rust/nix/pull/1108))
+
+- `Ipv4Addr::octets`, `Ipv4Addr::to_std`, `Error::as_errno`,
+  `ForkResult::is_child`, `ForkResult::is_parent`, `Gid::as_raw`,
+  `Uid::is_root`, `Uid::as_raw`, `Pid::as_raw`, and `PollFd::revents` now take
+  `self` by value.
+  ([#1107](https://github.com/nix-rust/nix/pull/1107))
+
 ### Fixed
 ### Removed
 

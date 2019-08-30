@@ -222,7 +222,7 @@ pub fn waitpid<P: Into<Option<Pid>>>(pid: P, options: Option<WaitPidFlag>) -> Re
 
     let res = unsafe {
         libc::waitpid(
-            pid.into().unwrap_or(Pid::from_raw(-1)).into(),
+            pid.into().unwrap_or_else(|| Pid::from_raw(-1)).into(),
             &mut status as *mut c_int,
             option_bits,
         )
