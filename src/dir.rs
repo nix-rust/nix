@@ -70,7 +70,6 @@ impl Dir {
 
 
     /// Set the position of the directory stream, see `seekdir(3)`.
-    #[cfg(target_os = "linux")]
     pub fn seek(&mut self, loc: SeekLoc) {
         // While on 32-bit systems this is formally a lossy conversion (i64 -> i32),
         // the subtlety here is **when** it's lossy. Truncation may occur when the location
@@ -86,19 +85,19 @@ impl Dir {
         unsafe { libc::rewinddir(self.0.as_ptr()) }
     }
 
-    /// Get the current position of the directory stram
-    #[cfg(target_os = "linux")]
+    /// Get the current position in the directory stream.
+    ///
+    /// If this location is given to `Dir::seek`, the entries up to the previously returned
+    /// will be omitted and the iteration will start from the currently pending directory entry.
     pub fn tell(&self) -> SeekLoc {
         let loc = unsafe { libc::telldir(self.0.as_ptr()) };
         SeekLoc(loc.into())
     }
 }
 
-#[cfg(target_os = "linux")]
 #[derive(Clone, Copy, Debug)]
-pub struct SeekLoc(libc::off64_t);
+pub struct SeekLoc(i64);
 
-#[cfg(target_os = "linux")]
 impl SeekLoc {
     pub unsafe fn from_raw(loc: i64) -> Self {
         SeekLoc(loc)
@@ -233,8 +232,8 @@ impl Entry {
 
     /// Returns the current position of the directory stream.
     ///
-    /// If this location is given to `Iter::seek`, the entries up to the current one
-    /// will be omitted and the iteration will start from the **next** directory entry
+    /// If this location is given to `Dir::seek`, the entries up to the current one
+    /// will be omitted and the iteration will start from the **next** directory entry.
     #[cfg(target_os = "linux")]
     pub fn seek_loc(&self) -> SeekLoc {
         SeekLoc(self.0.d_off)
