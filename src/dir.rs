@@ -71,7 +71,7 @@ impl Dir {
 
     /// Set the position of the directory stream, see `seekdir(3)`.
     #[cfg(not(target_os = "android"))]
-    pub fn seek(&mut self, loc: SeekLoc) {
+     pub fn seek(&mut self, loc: SeekLoc) {
         // While on 32-bit systems this is formally a lossy conversion (i64 -> i32),
         // the subtlety here is **when** it's lossy. Truncation may occur when the location
         // reported by `d_off` doesn't fit into a long, which is i32 on 32-bit systems.
@@ -83,7 +83,6 @@ impl Dir {
 
 
     /// Reset directory stream, see `rewinddir(3)`.
-    #[cfg(not(target_os = "android"))]
     pub fn rewind(&mut self) {
         unsafe { libc::rewinddir(self.0.as_ptr()) }
     }
