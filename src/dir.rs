@@ -70,6 +70,7 @@ impl Dir {
 
 
     /// Set the position of the directory stream, see `seekdir(3)`.
+    #[cfg(not(target_os = "android"))]
     pub fn seek(&mut self, loc: SeekLoc) {
         // While on 32-bit systems this is formally a lossy conversion (i64 -> i32),
         // the subtlety here is **when** it's lossy. Truncation may occur when the location
@@ -80,7 +81,9 @@ impl Dir {
         unsafe { libc::seekdir(self.0.as_ptr(), loc.0 as libc::c_long) }
     }
 
+
     /// Reset directory stream, see `rewinddir(3)`.
+    #[cfg(not(target_os = "android"))]
     pub fn rewind(&mut self) {
         unsafe { libc::rewinddir(self.0.as_ptr()) }
     }
@@ -89,15 +92,18 @@ impl Dir {
     ///
     /// If this location is given to `Dir::seek`, the entries up to the previously returned
     /// will be omitted and the iteration will start from the currently pending directory entry.
+    #[cfg(not(target_os = "android"))]
     pub fn tell(&self) -> SeekLoc {
         let loc = unsafe { libc::telldir(self.0.as_ptr()) };
         SeekLoc(loc.into())
     }
 }
 
+#[cfg(not(target_os = "android"))]
 #[derive(Clone, Copy, Debug)]
 pub struct SeekLoc(i64);
 
+#[cfg(not(target_os = "android"))]
 impl SeekLoc {
     pub unsafe fn from_raw(loc: i64) -> Self {
         SeekLoc(loc)
