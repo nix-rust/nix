@@ -13,6 +13,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#1107](https://github.com/nix-rust/nix/pull/1107))
 
 ### Changed
+- `Signal::from_c_int` has been replaced by `Signal::try_from`
+  ([#1113](https://github.com/nix-rust/nix/pull/1113))
+
 - Changed `readlink` and `readlinkat` to return `OsString`
   ([#1109](https://github.com/nix-rust/nix/pull/1109))
 

@@ -6,6 +6,7 @@
 use libc;
 use {Error, Result};
 use errno::Errno;
+use std::convert::TryFrom;
 use std::mem;
 use std::fmt;
 use std::str::FromStr;
@@ -288,12 +289,12 @@ impl Signal {
     pub fn iterator() -> SignalIterator {
         SignalIterator{next: 0}
     }
+}
 
-    // We do not implement the From trait, because it is supposed to be infallible.
-    // With Rust RFC 1542 comes the appropriate trait TryFrom. Once it is
-    // implemented, we'll replace this function.
-    #[inline]
-    pub fn from_c_int(signum: libc::c_int) -> Result<Signal> {
+impl TryFrom<libc::c_int> for Signal {
+    type Error = Error;
+
+    fn try_from(signum: libc::c_int) -> Result<Signal> {
         if 0 < signum && signum < NSIG {
             Ok(unsafe { mem::transmute(signum) })
         } else {
@@ -414,7 +415,7 @@ impl SigSet {
         let res = unsafe { libc::sigwait(&self.sigset as *const libc::sigset_t, signum.as_mut_ptr()) };
 
         Errno::result(res).map(|_| unsafe {
-            Signal::from_c_int(signum.assume_init()).unwrap()
+            Signal::try_from(signum.assume_init()).unwrap()
         })
     }
 }
@@ -542,6 +543,7 @@ pub unsafe fn sigaction(signal: Signal, sigaction: &SigAction) -> Result<SigActi
 /// # #[macro_use] extern crate lazy_static;
 /// # extern crate libc;
 /// # extern crate nix;
+/// # use std::convert::TryFrom;
 /// # use std::sync::atomic::{AtomicBool, Ordering};
 /// # use nix::sys::signal::{self, Signal, SigHandler};
 /// lazy_static! {
@@ -549,7 +551,7 @@ pub unsafe fn sigaction(signal: Signal, sigaction: &SigAction) -> Result<SigActi
 /// }
 ///
 /// extern fn handle_sigint(signal: libc::c_int) {
-///     let signal = Signal::from_c_int(signal).unwrap();
+///     let signal = Signal::try_from(signal).unwrap();
 ///     SIGNALED.store(signal == Signal::SIGINT, Ordering::Relaxed);
 /// }
 ///

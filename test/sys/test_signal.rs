@@ -2,6 +2,7 @@ use libc;
 use nix::Error;
 use nix::sys::signal::*;
 use nix::unistd::*;
+use std::convert::TryFrom;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 #[test]
@@ -75,7 +76,7 @@ lazy_static! {
 }
 
 extern fn test_sigaction_handler(signal: libc::c_int) {
-    let signal = Signal::from_c_int(signal).unwrap();
+    let signal = Signal::try_from(signal).unwrap();
     SIGNALED.store(signal == Signal::SIGINT, Ordering::Relaxed);
 }
 
