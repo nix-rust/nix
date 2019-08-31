@@ -85,8 +85,12 @@ matrix:
       rust: 1.36.0
 
     # Make sure stable is always working too
+    # FIXME: Travis's "stable" images are stuck on 1.35.0.  Until that's fixed,
+    # explicitly request 1.37.0, which is as of this writing the latest stable
+    # release.
+    # https://travis-ci.community/t/stable-rust-channel-outdated/4213
     - env: TARGET=x86_64-unknown-linux-gnu
-      rust: stable
+      rust: 1.37.0
 
     # Test that we can build with the lowest version of all dependencies.
     # "cargo test" doesn't work because some of our dev-dependencies, like
