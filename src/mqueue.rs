@@ -39,13 +39,17 @@ impl MqAttr {
                mq_maxmsg: c_long,
                mq_msgsize: c_long,
                mq_curmsgs: c_long)
-               -> MqAttr {
-        let mut attr = unsafe { mem::uninitialized::<libc::mq_attr>() };
-        attr.mq_flags = mq_flags;
-        attr.mq_maxmsg = mq_maxmsg;
-        attr.mq_msgsize = mq_msgsize;
-        attr.mq_curmsgs = mq_curmsgs;
-        MqAttr { mq_attr: attr }
+               -> MqAttr
+    {
+        let mut attr = mem::MaybeUninit::<libc::mq_attr>::uninit();
+        unsafe {
+            let p = attr.as_mut_ptr();
+            (*p).mq_flags = mq_flags;
+            (*p).mq_maxmsg = mq_maxmsg;
+            (*p).mq_msgsize = mq_msgsize;
+            (*p).mq_curmsgs = mq_curmsgs;
+            MqAttr { mq_attr: attr.assume_init() }
+        }
     }
 
     pub fn flags(&self) -> c_long {
@@ -123,9 +127,9 @@ pub fn mq_send(mqdes: mqd_t, message: &[u8], msq_prio: u32) -> Result<()> {
 ///
 /// See also [`mq_getattr(2)`](http://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_getattr.html)
 pub fn mq_getattr(mqd: mqd_t) -> Result<MqAttr> {
-    let mut attr = unsafe { mem::uninitialized::<libc::mq_attr>() };
-    let res = unsafe { libc::mq_getattr(mqd, &mut attr) };
-    Errno::result(res).map(|_| MqAttr { mq_attr: attr })
+    let mut attr = mem::MaybeUninit::<libc::mq_attr>::uninit();
+    let res = unsafe { libc::mq_getattr(mqd, attr.as_mut_ptr()) };
+    Errno::result(res).map(|_| unsafe{MqAttr { mq_attr: attr.assume_init() }})
 }
 
 /// Set the attributes of the message queue. Only `O_NONBLOCK` can be set, everything else will be ignored
@@ -134,9 +138,11 @@ pub fn mq_getattr(mqd: mqd_t) -> Result<MqAttr> {
 ///
 /// [Further reading](http://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_setattr.html)
 pub fn mq_setattr(mqd: mqd_t, newattr: &MqAttr) -> Result<MqAttr> {
-    let mut attr = unsafe { mem::uninitialized::<libc::mq_attr>() };
-    let res = unsafe { libc::mq_setattr(mqd, &newattr.mq_attr as *const libc::mq_attr, &mut attr) };
-    Errno::result(res).map(|_| MqAttr { mq_attr: attr })
+    let mut attr = mem::MaybeUninit::<libc::mq_attr>::uninit();
+    let res = unsafe {
+        libc::mq_setattr(mqd, &newattr.mq_attr as *const libc::mq_attr, attr.as_mut_ptr())
+    };
+    Errno::result(res).map(|_| unsafe{ MqAttr { mq_attr: attr.assume_init() }})
 }
 
 /// Convenience function.

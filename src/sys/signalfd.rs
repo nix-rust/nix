@@ -98,10 +98,15 @@ impl SignalFd {
     }
 
     pub fn read_signal(&mut self) -> Result<Option<siginfo>> {
-        let mut buffer: [u8; SIGNALFD_SIGINFO_SIZE] = unsafe { mem::uninitialized() };
+        let mut buffer = mem::MaybeUninit::<[u8; SIGNALFD_SIGINFO_SIZE]>::uninit();
 
-        match unistd::read(self.0, &mut buffer) {
-            Ok(SIGNALFD_SIGINFO_SIZE) => Ok(Some(unsafe { mem::transmute(buffer) })),
+        let res = Errno::result(unsafe {
+            libc::read(self.0,
+                       buffer.as_mut_ptr() as *mut libc::c_void,
+                       SIGNALFD_SIGINFO_SIZE as libc::size_t)
+        }).map(|r| r as usize);
+        match res {
+            Ok(SIGNALFD_SIGINFO_SIZE) => Ok(Some(unsafe { mem::transmute(buffer.assume_init()) })),
             Ok(_) => unreachable!("partial read on signalfd"),
             Err(Error::Sys(Errno::EAGAIN)) => Ok(None),
             Err(error) => Err(error)

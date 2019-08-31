@@ -854,20 +854,21 @@ pub fn sendmsg(fd: RawFd, iov: &[IoVec<&[u8]>], cmsgs: &[ControlMessage],
         ptr::null_mut()
     };
 
-    let mhdr = {
+    let mhdr = unsafe {
         // Musl's msghdr has private fields, so this is the only way to
         // initialize it.
-        let mut mhdr: msghdr = unsafe{mem::uninitialized()};
-        mhdr.msg_name = name as *mut _;
-        mhdr.msg_namelen = namelen;
+        let mut mhdr = mem::MaybeUninit::<msghdr>::uninit();
+        let p = mhdr.as_mut_ptr();
+        (*p).msg_name = name as *mut _;
+        (*p).msg_namelen = namelen;
         // transmute iov into a mutable pointer.  sendmsg doesn't really mutate
         // the buffer, but the standard says that it takes a mutable pointer
-        mhdr.msg_iov = iov.as_ptr() as *mut _;
-        mhdr.msg_iovlen = iov.len() as _;
-        mhdr.msg_control = cmsg_ptr;
-        mhdr.msg_controllen = capacity as _;
-        mhdr.msg_flags = 0;
-        mhdr
+        (*p).msg_iov = iov.as_ptr() as *mut _;
+        (*p).msg_iovlen = iov.len() as _;
+        (*p).msg_control = cmsg_ptr;
+        (*p).msg_controllen = capacity as _;
+        (*p).msg_flags = 0;
+        mhdr.assume_init()
     };
 
     // Encode each cmsg.  This must happen after initializing the header because
@@ -898,7 +899,7 @@ pub fn recvmsg<'a>(fd: RawFd, iov: &[IoVec<&mut [u8]>],
                    cmsg_buffer: Option<&'a mut dyn CmsgBuffer>,
                    flags: MsgFlags) -> Result<RecvMsg<'a>>
 {
-    let mut address: sockaddr_storage = unsafe { mem::uninitialized() };
+    let mut address = mem::MaybeUninit::uninit();
     let (msg_control, msg_controllen) = match cmsg_buffer {
         Some(cmsgspace) => {
             let msg_buf = cmsgspace.as_bytes_mut();
@@ -906,18 +907,19 @@ pub fn recvmsg<'a>(fd: RawFd, iov: &[IoVec<&mut [u8]>],
         },
         None => (ptr::null_mut(), 0),
     };
-    let mut mhdr = {
+    let mut mhdr = unsafe {
         // Musl's msghdr has private fields, so this is the only way to
         // initialize it.
-        let mut mhdr: msghdr = unsafe{mem::uninitialized()};
-        mhdr.msg_name = &mut address as *mut sockaddr_storage as *mut c_void;
-        mhdr.msg_namelen = mem::size_of::<sockaddr_storage>() as socklen_t;
-        mhdr.msg_iov = iov.as_ptr() as *mut iovec;
-        mhdr.msg_iovlen = iov.len() as _;
-        mhdr.msg_control = msg_control as *mut c_void;
-        mhdr.msg_controllen = msg_controllen as _;
-        mhdr.msg_flags = 0;
-        mhdr
+        let mut mhdr = mem::MaybeUninit::<msghdr>::uninit();
+        let p = mhdr.as_mut_ptr();
+        (*p).msg_name = address.as_mut_ptr() as *mut c_void;
+        (*p).msg_namelen = mem::size_of::<sockaddr_storage>() as socklen_t;
+        (*p).msg_iov = iov.as_ptr() as *mut iovec;
+        (*p).msg_iovlen = iov.len() as _;
+        (*p).msg_control = msg_control as *mut c_void;
+        (*p).msg_controllen = msg_controllen as _;
+        (*p).msg_flags = 0;
+        mhdr.assume_init()
     };
 
     let ret = unsafe { libc::recvmsg(fd, &mut mhdr, flags.bits()) };
@@ -935,7 +937,9 @@ pub fn recvmsg<'a>(fd: RawFd, iov: &[IoVec<&mut [u8]>],
         };
 
         let address = unsafe {
-            sockaddr_storage_to_addr(&address, mhdr.msg_namelen as usize).ok()
+            sockaddr_storage_to_addr(&address.assume_init(),
+                                     mhdr.msg_namelen as usize
+            ).ok()
         };
         RecvMsg {
             bytes: r as usize,
@@ -1190,18 +1194,18 @@ pub fn setsockopt<O: SetSockOpt>(fd: RawFd, opt: O, val: &O::Val) -> Result<()> 
 /// [Further reading](http://pubs.opengroup.org/onlinepubs/9699919799/functions/getpeername.html)
 pub fn getpeername(fd: RawFd) -> Result<SockAddr> {
     unsafe {
-        let mut addr: sockaddr_storage = mem::uninitialized();
+        let mut addr = mem::MaybeUninit::uninit();
         let mut len = mem::size_of::<sockaddr_storage>() as socklen_t;
 
         let ret = libc::getpeername(
             fd,
-            &mut addr as *mut libc::sockaddr_storage as *mut libc::sockaddr,
+            addr.as_mut_ptr() as *mut libc::sockaddr,
             &mut len
         );
 
         Errno::result(ret)?;
 
-        sockaddr_storage_to_addr(&addr, len as usize)
+        sockaddr_storage_to_addr(&addr.assume_init(), len as usize)
     }
 }
 
@@ -1210,18 +1214,18 @@ pub fn getpeername(fd: RawFd) -> Result<SockAddr> {
 /// [Further reading](http://pubs.opengroup.org/onlinepubs/9699919799/functions/getsockname.html)
 pub fn getsockname(fd: RawFd) -> Result<SockAddr> {
     unsafe {
-        let mut addr: sockaddr_storage = mem::uninitialized();
+        let mut addr = mem::MaybeUninit::uninit();
         let mut len = mem::size_of::<sockaddr_storage>() as socklen_t;
 
         let ret = libc::getsockname(
             fd,
-            &mut addr as *mut libc::sockaddr_storage as *mut libc::sockaddr,
+            addr.as_mut_ptr() as *mut libc::sockaddr,
             &mut len
         );
 
         Errno::result(ret)?;
 
-        sockaddr_storage_to_addr(&addr, len as usize)
+        sockaddr_storage_to_addr(&addr.assume_init(), len as usize)
     }
 }
 

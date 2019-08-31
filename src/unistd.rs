@@ -1009,13 +1009,13 @@ pub fn lseek64(fd: RawFd, offset: libc::off64_t, whence: Whence) -> Result<libc:
 /// See also [pipe(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/pipe.html)
 pub fn pipe() -> Result<(RawFd, RawFd)> {
     unsafe {
-        let mut fds: [c_int; 2] = mem::uninitialized();
+        let mut fds = mem::MaybeUninit::<[c_int; 2]>::uninit();
 
-        let res = libc::pipe(fds.as_mut_ptr());
+        let res = libc::pipe(fds.as_mut_ptr() as *mut c_int);
 
         Errno::result(res)?;
 
-        Ok((fds[0], fds[1]))
+        Ok((fds.assume_init()[0], fds.assume_init()[1]))
     }
 }
 
@@ -1036,13 +1036,15 @@ pub fn pipe() -> Result<(RawFd, RawFd)> {
           target_os = "netbsd",
           target_os = "openbsd"))]
 pub fn pipe2(flags: OFlag) -> Result<(RawFd, RawFd)> {
-    let mut fds: [c_int; 2] = unsafe { mem::uninitialized() };
+    let mut fds = mem::MaybeUninit::<[c_int; 2]>::uninit();
 
-    let res = unsafe { libc::pipe2(fds.as_mut_ptr(), flags.bits()) };
+    let res = unsafe {
+        libc::pipe2(fds.as_mut_ptr() as *mut c_int, flags.bits())
+    };
 
     Errno::result(res)?;
 
-    Ok((fds[0], fds[1]))
+    unsafe { Ok((fds.assume_init()[0], fds.assume_init()[1])) }
 }
 
 /// Like `pipe`, but allows setting certain file descriptor flags.
@@ -1058,15 +1060,17 @@ pub fn pipe2(flags: OFlag) -> Result<(RawFd, RawFd)> {
     note="pipe2(2) is not actually atomic on these platforms.  Use pipe(2) and fcntl(2) instead"
 )]
 pub fn pipe2(flags: OFlag) -> Result<(RawFd, RawFd)> {
-    let mut fds: [c_int; 2] = unsafe { mem::uninitialized() };
+    let mut fds = mem::MaybeUninit::<[c_int; 2]>::uninit();
 
-    let res = unsafe { libc::pipe(fds.as_mut_ptr()) };
+    let res = unsafe { libc::pipe(fds.as_mut_ptr() as *mut c_int) };
 
     Errno::result(res)?;
 
-    pipe2_setflags(fds[0], fds[1], flags)?;
+    unsafe {
+        pipe2_setflags(fds.assume_init()[0], fds.assume_init()[1], flags)?;
 
-    Ok((fds[0], fds[1]))
+        Ok((fds.assume_init()[0], fds.assume_init()[1]))
+    }
 }
 
 #[cfg(any(target_os = "ios", target_os = "macos"))]

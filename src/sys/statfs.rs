@@ -15,6 +15,7 @@ pub type fsid_t = libc::__fsid_t;
 pub type fsid_t = libc::fsid_t;
 
 #[derive(Clone, Copy)]
+#[repr(transparent)]
 pub struct Statfs(libc::statfs);
 
 #[cfg(target_os = "freebsd")]
@@ -434,16 +435,17 @@ impl Debug for Statfs {
 
 pub fn statfs<P: ?Sized + NixPath>(path: &P) -> Result<Statfs> {
     unsafe {
-        let mut stat: Statfs = mem::uninitialized();
-        let res = path.with_nix_path(|path| libc::statfs(path.as_ptr(), &mut stat.0))?;
-        Errno::result(res).map(|_| stat)
+        let mut stat = mem::MaybeUninit::<libc::statfs>::uninit();
+        let res = path.with_nix_path(|path| libc::statfs(path.as_ptr(), stat.as_mut_ptr()))?;
+        Errno::result(res).map(|_| Statfs(stat.assume_init()))
     }
 }
 
 pub fn fstatfs<T: AsRawFd>(fd: &T) -> Result<Statfs> {
     unsafe {
-        let mut stat: Statfs = mem::uninitialized();
-        Errno::result(libc::fstatfs(fd.as_raw_fd(), &mut stat.0)).map(|_| stat)
+        let mut stat = mem::MaybeUninit::<libc::statfs>::uninit();
+        Errno::result(libc::fstatfs(fd.as_raw_fd(), stat.as_mut_ptr()))
+            .map(|_| Statfs(stat.assume_init()))
     }
 }
 
