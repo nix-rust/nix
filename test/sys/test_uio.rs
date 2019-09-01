@@ -192,7 +192,7 @@ fn test_preadv() {
 }
 
 #[test]
-#[cfg(target_os = "linux")]
+#[cfg(all(target_env = "gnu", not(feature = "exclude_gnu")))]
 // FIXME: qemu-user doesn't implement process_vm_readv/writev on most arches
 #[cfg_attr(not(any(target_arch = "x86", target_arch = "x86_64")), ignore)]
 fn test_process_vm_readv() {

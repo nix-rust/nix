@@ -116,7 +116,7 @@ pub struct RemoteIoVec {
 /// [ptrace]: ../ptrace/index.html
 /// [`IoVec`]: struct.IoVec.html
 /// [`RemoteIoVec`]: struct.RemoteIoVec.html
-#[cfg(target_os = "linux")]
+#[cfg(all(target_env = "gnu", not(feature = "exclude_gnu")))]
 pub fn process_vm_writev(pid: ::unistd::Pid, local_iov: &[IoVec<&[u8]>], remote_iov: &[RemoteIoVec]) -> Result<usize> {
     let res = unsafe {
         libc::process_vm_writev(pid.into(),
@@ -147,7 +147,7 @@ pub fn process_vm_writev(pid: ::unistd::Pid, local_iov: &[IoVec<&[u8]>], remote_
 /// [`ptrace`]: ../ptrace/index.html
 /// [`IoVec`]: struct.IoVec.html
 /// [`RemoteIoVec`]: struct.RemoteIoVec.html
-#[cfg(any(target_os = "linux"))]
+#[cfg(all(target_env = "gnu", not(feature = "exclude_gnu")))]
 pub fn process_vm_readv(pid: ::unistd::Pid, local_iov: &[IoVec<&mut [u8]>], remote_iov: &[RemoteIoVec]) -> Result<usize> {
     let res = unsafe {
         libc::process_vm_readv(pid.into(),

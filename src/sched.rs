@@ -10,6 +10,7 @@ mod sched_linux_like {
     use libc::{self, c_int, c_void};
     use std::mem;
     use std::option::Option;
+    #[cfg(all(target_env = "gnu", not(feature = "exclude_gnu")))]
     use std::os::unix::io::RawFd;
     use unistd::Pid;
     use {Error, Result};
@@ -130,6 +131,7 @@ mod sched_linux_like {
         Errno::result(res).map(drop)
     }
 
+    #[cfg(all(target_env = "gnu", not(feature = "exclude_gnu")))]
     pub fn setns(fd: RawFd, nstype: CloneFlags) -> Result<()> {
         let res = unsafe { libc::setns(fd, nstype.bits()) };
 
