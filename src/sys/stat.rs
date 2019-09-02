@@ -135,6 +135,7 @@ pub fn fchmod(fd: RawFd, mode: Mode) -> Result<()> {
 }
 
 /// Flags for `fchmodat` function.
+/// Note that on linux `NoFollowSymlink` is currently not implemented.
 #[derive(Clone, Copy, Debug)]
 pub enum FchmodatFlags {
     FollowSymlink,
