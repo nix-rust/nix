@@ -78,49 +78,49 @@ pub fn umask(mode: Mode) -> Mode {
 }
 
 pub fn stat<P: ?Sized + NixPath>(path: &P) -> Result<FileStat> {
-    let mut dst = unsafe { mem::uninitialized() };
+    let mut dst = mem::MaybeUninit::uninit();
     let res = path.with_nix_path(|cstr| {
         unsafe {
-            libc::stat(cstr.as_ptr(), &mut dst as *mut FileStat)
+            libc::stat(cstr.as_ptr(), dst.as_mut_ptr())
         }
     })?;
 
     Errno::result(res)?;
 
-    Ok(dst)
+    Ok(unsafe{dst.assume_init()})
 }
 
 pub fn lstat<P: ?Sized + NixPath>(path: &P) -> Result<FileStat> {
-    let mut dst = unsafe { mem::uninitialized() };
+    let mut dst = mem::MaybeUninit::uninit();
     let res = path.with_nix_path(|cstr| {
         unsafe {
-            libc::lstat(cstr.as_ptr(), &mut dst as *mut FileStat)
+            libc::lstat(cstr.as_ptr(), dst.as_mut_ptr())
         }
     })?;
 
     Errno::result(res)?;
 
-    Ok(dst)
+    Ok(unsafe{dst.assume_init()})
 }
 
 pub fn fstat(fd: RawFd) -> Result<FileStat> {
-    let mut dst = unsafe { mem::uninitialized() };
-    let res = unsafe { libc::fstat(fd, &mut dst as *mut FileStat) };
+    let mut dst = mem::MaybeUninit::uninit();
+    let res = unsafe { libc::fstat(fd, dst.as_mut_ptr()) };
 
     Errno::result(res)?;
 
-    Ok(dst)
+    Ok(unsafe{dst.assume_init()})
 }
 
 pub fn fstatat<P: ?Sized + NixPath>(dirfd: RawFd, pathname: &P, f: AtFlags) -> Result<FileStat> {
-    let mut dst = unsafe { mem::uninitialized() };
+    let mut dst = mem::MaybeUninit::uninit();
     let res = pathname.with_nix_path(|cstr| {
-        unsafe { libc::fstatat(dirfd, cstr.as_ptr(), &mut dst as *mut FileStat, f.bits() as libc::c_int) }
+        unsafe { libc::fstatat(dirfd, cstr.as_ptr(), dst.as_mut_ptr(), f.bits() as libc::c_int) }
     })?;
 
     Errno::result(res)?;
 
-    Ok(dst)
+    Ok(unsafe{dst.assume_init()})
 }
 
 /// Change the file permission bits of the file specified by a file descriptor.

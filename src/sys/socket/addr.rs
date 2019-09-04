@@ -475,9 +475,7 @@ impl Ipv6Addr {
     #[allow(clippy::many_single_char_names)]
     #[allow(clippy::too_many_arguments)]
     pub fn new(a: u16, b: u16, c: u16, d: u16, e: u16, f: u16, g: u16, h: u16) -> Ipv6Addr {
-        let mut in6_addr_var: libc::in6_addr = unsafe{mem::uninitialized()};
-        in6_addr_var.s6_addr = to_u8_array!(a,b,c,d,e,f,g,h);
-        Ipv6Addr(in6_addr_var)
+        Ipv6Addr(libc::in6_addr{s6_addr: to_u8_array!(a,b,c,d,e,f,g,h)})
     }
 
     pub fn from_std(std: &net::Ipv6Addr) -> Ipv6Addr {

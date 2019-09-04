@@ -218,16 +218,16 @@ pub fn unlockpt(fd: &PtyMaster) -> Result<()> {
 pub fn openpty<'a, 'b, T: Into<Option<&'a Winsize>>, U: Into<Option<&'b Termios>>>(winsize: T, termios: U) -> Result<OpenptyResult> {
     use std::ptr;
 
-    let mut slave: libc::c_int = unsafe { mem::uninitialized() };
-    let mut master: libc::c_int = unsafe { mem::uninitialized() };
+    let mut slave = mem::MaybeUninit::<libc::c_int>::uninit();
+    let mut master = mem::MaybeUninit::<libc::c_int>::uninit();
     let ret = {
         match (termios.into(), winsize.into()) {
             (Some(termios), Some(winsize)) => {
                 let inner_termios = termios.get_libc_termios();
                 unsafe {
                     libc::openpty(
-                        &mut master,
-                        &mut slave,
+                        master.as_mut_ptr(),
+                        slave.as_mut_ptr(),
                         ptr::null_mut(),
                         &*inner_termios as *const libc::termios as *mut _,
                         winsize as *const Winsize as *mut _,
@@ -237,8 +237,8 @@ pub fn openpty<'a, 'b, T: Into<Option<&'a Winsize>>, U: Into<Option<&'b Termios>
             (None, Some(winsize)) => {
                 unsafe {
                     libc::openpty(
-                        &mut master,
-                        &mut slave,
+                        master.as_mut_ptr(),
+                        slave.as_mut_ptr(),
                         ptr::null_mut(),
                         ptr::null_mut(),
                         winsize as *const Winsize as *mut _,
@@ -249,8 +249,8 @@ pub fn openpty<'a, 'b, T: Into<Option<&'a Winsize>>, U: Into<Option<&'b Termios>
                 let inner_termios = termios.get_libc_termios();
                 unsafe {
                     libc::openpty(
-                        &mut master,
-                        &mut slave,
+                        master.as_mut_ptr(),
+                        slave.as_mut_ptr(),
                         ptr::null_mut(),
                         &*inner_termios as *const libc::termios as *mut _,
                         ptr::null_mut(),
@@ -260,8 +260,8 @@ pub fn openpty<'a, 'b, T: Into<Option<&'a Winsize>>, U: Into<Option<&'b Termios>
             (None, None) => {
                 unsafe {
                     libc::openpty(
-                        &mut master,
-                        &mut slave,
+                        master.as_mut_ptr(),
+                        slave.as_mut_ptr(),
                         ptr::null_mut(),
                         ptr::null_mut(),
                         ptr::null_mut(),
@@ -273,10 +273,12 @@ pub fn openpty<'a, 'b, T: Into<Option<&'a Winsize>>, U: Into<Option<&'b Termios>
 
     Errno::result(ret)?;
 
-    Ok(OpenptyResult {
-        master,
-        slave,
-    })
+    unsafe {
+        Ok(OpenptyResult {
+            master: master.assume_init(),
+            slave: slave.assume_init(),
+        })
+    }
 }
 
 /// Create a new pseudoterminal, returning the master file descriptor and forked pid.
@@ -294,7 +296,7 @@ pub fn forkpty<'a, 'b, T: Into<Option<&'a Winsize>>, U: Into<Option<&'b Termios>
     use unistd::Pid;
     use unistd::ForkResult::*;
 
-    let mut master: libc::c_int = unsafe { mem::uninitialized() };
+    let mut master = mem::MaybeUninit::<libc::c_int>::uninit();
 
     let term = match termios.into() {
         Some(termios) => {
@@ -310,7 +312,7 @@ pub fn forkpty<'a, 'b, T: Into<Option<&'a Winsize>>, U: Into<Option<&'b Termios>
         .unwrap_or(ptr::null_mut());
 
     let res = unsafe {
-        libc::forkpty(&mut master, ptr::null_mut(), term, win)
+        libc::forkpty(master.as_mut_ptr(), ptr::null_mut(), term, win)
     };
 
     let fork_result = Errno::result(res).map(|res| match res {
@@ -318,9 +320,11 @@ pub fn forkpty<'a, 'b, T: Into<Option<&'a Winsize>>, U: Into<Option<&'b Termios>
         res => Parent { child: Pid::from_raw(res) },
     })?;
 
-    Ok(ForkptyResult {
-        master,
-        fork_result,
-    })
+    unsafe {
+        Ok(ForkptyResult {
+            master: master.assume_init(),
+            fork_result,
+        })
+    }
 }
 

@@ -221,16 +221,15 @@ pub fn setregs(pid: Pid, regs: user_regs_struct) -> Result<()> {
 /// and therefore use the data field to return values. This function handles these
 /// requests.
 fn ptrace_get_data<T>(request: Request, pid: Pid) -> Result<T> {
-    // Creates an uninitialized pointer to store result in
-    let data: T = unsafe { mem::uninitialized() };
+    let mut data = mem::MaybeUninit::uninit();
     let res = unsafe {
         libc::ptrace(request as RequestType,
                      libc::pid_t::from(pid),
                      ptr::null_mut::<T>(),
-                     &data as *const _ as *const c_void)
+                     data.as_mut_ptr() as *const _ as *const c_void)
     };
     Errno::result(res)?;
-    Ok(data)
+    Ok(unsafe{ data.assume_init() })
 }
 
 unsafe fn ptrace_other(request: Request, pid: Pid, addr: AddressType, data: *mut c_void) -> Result<c_long> {

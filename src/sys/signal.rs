@@ -335,17 +335,17 @@ pub struct SigSet {
 
 impl SigSet {
     pub fn all() -> SigSet {
-        let mut sigset: libc::sigset_t = unsafe { mem::uninitialized() };
-        let _ = unsafe { libc::sigfillset(&mut sigset as *mut libc::sigset_t) };
+        let mut sigset = mem::MaybeUninit::uninit();
+        let _ = unsafe { libc::sigfillset(sigset.as_mut_ptr()) };
 
-        SigSet { sigset }
+        unsafe{ SigSet { sigset: sigset.assume_init() } }
     }
 
     pub fn empty() -> SigSet {
-        let mut sigset: libc::sigset_t = unsafe { mem::uninitialized() };
-        let _ = unsafe { libc::sigemptyset(&mut sigset as *mut libc::sigset_t) };
+        let mut sigset = mem::MaybeUninit::uninit();
+        let _ = unsafe { libc::sigemptyset(sigset.as_mut_ptr()) };
 
-        SigSet { sigset }
+        unsafe{ SigSet { sigset: sigset.assume_init() } }
     }
 
     pub fn add(&mut self, signal: Signal) {
@@ -380,9 +380,9 @@ impl SigSet {
 
     /// Gets the currently blocked (masked) set of signals for the calling thread.
     pub fn thread_get_mask() -> Result<SigSet> {
-        let mut oldmask: SigSet = unsafe { mem::uninitialized() };
-        pthread_sigmask(SigmaskHow::SIG_SETMASK, None, Some(&mut oldmask))?;
-        Ok(oldmask)
+        let mut oldmask = mem::MaybeUninit::uninit();
+        do_pthread_sigmask(SigmaskHow::SIG_SETMASK, None, Some(oldmask.as_mut_ptr()))?;
+        Ok(unsafe{ SigSet{sigset: oldmask.assume_init()}})
     }
 
     /// Sets the set of signals as the signal mask for the calling thread.
@@ -402,18 +402,20 @@ impl SigSet {
 
     /// Sets the set of signals as the signal mask, and returns the old mask.
     pub fn thread_swap_mask(&self, how: SigmaskHow) -> Result<SigSet> {
-        let mut oldmask: SigSet = unsafe { mem::uninitialized() };
-        pthread_sigmask(how, Some(self), Some(&mut oldmask))?;
-        Ok(oldmask)
+        let mut oldmask = mem::MaybeUninit::uninit();
+        do_pthread_sigmask(how, Some(self), Some(oldmask.as_mut_ptr()))?;
+        Ok(unsafe{ SigSet{sigset: oldmask.assume_init()}})
     }
 
     /// Suspends execution of the calling thread until one of the signals in the
     /// signal mask becomes pending, and returns the accepted signal.
     pub fn wait(&self) -> Result<Signal> {
-        let mut signum: libc::c_int = unsafe { mem::uninitialized() };
-        let res = unsafe { libc::sigwait(&self.sigset as *const libc::sigset_t, &mut signum) };
+        let mut signum = mem::MaybeUninit::uninit();
+        let res = unsafe { libc::sigwait(&self.sigset as *const libc::sigset_t, signum.as_mut_ptr()) };
 
-        Errno::result(res).map(|_| Signal::from_c_int(signum).unwrap())
+        Errno::result(res).map(|_| unsafe {
+            Signal::from_c_int(signum.assume_init()).unwrap()
+        })
     }
 }
 
@@ -451,20 +453,23 @@ impl SigAction {
     /// is the `SigAction` variant). `mask` specifies other signals to block during execution of
     /// the signal-catching function.
     pub fn new(handler: SigHandler, flags: SaFlags, mask: SigSet) -> SigAction {
-        let mut s = unsafe { mem::uninitialized::<libc::sigaction>() };
-        s.sa_sigaction = match handler {
-            SigHandler::SigDfl => libc::SIG_DFL,
-            SigHandler::SigIgn => libc::SIG_IGN,
-            SigHandler::Handler(f) => f as *const extern fn(libc::c_int) as usize,
-            SigHandler::SigAction(f) => f as *const extern fn(libc::c_int, *mut libc::siginfo_t, *mut libc::c_void) as usize,
-        };
-        s.sa_flags = match handler {
-            SigHandler::SigAction(_) => (flags | SaFlags::SA_SIGINFO).bits(),
-            _ => (flags - SaFlags::SA_SIGINFO).bits(),
-        };
-        s.sa_mask = mask.sigset;
+        let mut s = mem::MaybeUninit::<libc::sigaction>::uninit();
+        unsafe {
+            let p = s.as_mut_ptr();
+            (*p).sa_sigaction = match handler {
+                SigHandler::SigDfl => libc::SIG_DFL,
+                SigHandler::SigIgn => libc::SIG_IGN,
+                SigHandler::Handler(f) => f as *const extern fn(libc::c_int) as usize,
+                SigHandler::SigAction(f) => f as *const extern fn(libc::c_int, *mut libc::siginfo_t, *mut libc::c_void) as usize,
+            };
+            (*p).sa_flags = match handler {
+                SigHandler::SigAction(_) => (flags | SaFlags::SA_SIGINFO).bits(),
+                _ => (flags - SaFlags::SA_SIGINFO).bits(),
+            };
+            (*p).sa_mask = mask.sigset;
 
-        SigAction { sigaction: s }
+            SigAction { sigaction: s.assume_init() }
+        }
     }
 
     /// Returns the flags set on the action.
@@ -501,12 +506,13 @@ impl SigAction {
 /// the body of the signal-catching function. Be certain to only make syscalls that are explicitly
 /// marked safe for signal handlers and only share global data using atomics.
 pub unsafe fn sigaction(signal: Signal, sigaction: &SigAction) -> Result<SigAction> {
-    let mut oldact = mem::uninitialized::<libc::sigaction>();
+    let mut oldact = mem::MaybeUninit::<libc::sigaction>::uninit();
 
-    let res =
-        libc::sigaction(signal as libc::c_int, &sigaction.sigaction as *const libc::sigaction, &mut oldact as *mut libc::sigaction);
+    let res = libc::sigaction(signal as libc::c_int,
+                              &sigaction.sigaction as *const libc::sigaction,
+                              oldact.as_mut_ptr());
 
-    Errno::result(res).map(|_| SigAction { sigaction: oldact })
+    Errno::result(res).map(|_| SigAction { sigaction: oldact.assume_init() })
 }
 
 /// Signal management (see [signal(3p)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/signal.html))
@@ -582,6 +588,25 @@ pub unsafe fn signal(signal: Signal, handler: SigHandler) -> Result<SigHandler> 
     })
 }
 
+fn do_pthread_sigmask(how: SigmaskHow,
+                       set: Option<&SigSet>,
+                       oldset: Option<*mut libc::sigset_t>) -> Result<()> {
+    if set.is_none() && oldset.is_none() {
+        return Ok(())
+    }
+
+    let res = unsafe {
+        // if set or oldset is None, pass in null pointers instead
+        libc::pthread_sigmask(how as libc::c_int,
+                             set.map_or_else(ptr::null::<libc::sigset_t>,
+                                             |s| &s.sigset as *const libc::sigset_t),
+                             oldset.unwrap_or(ptr::null_mut())
+                             )
+    };
+
+    Errno::result(res).map(drop)
+}
+
 /// Manages the signal mask (set of blocked signals) for the calling thread.
 ///
 /// If the `set` parameter is `Some(..)`, then the signal mask will be updated with the signal set.
@@ -599,21 +624,9 @@ pub unsafe fn signal(signal: Signal, handler: SigHandler) -> Result<SigHandler> 
 /// or [`sigprocmask`](http://pubs.opengroup.org/onlinepubs/9699919799/functions/sigprocmask.html) man pages.
 pub fn pthread_sigmask(how: SigmaskHow,
                        set: Option<&SigSet>,
-                       oldset: Option<&mut SigSet>) -> Result<()> {
-    if set.is_none() && oldset.is_none() {
-        return Ok(())
-    }
-
-    let res = unsafe {
-        // if set or oldset is None, pass in null pointers instead
-        libc::pthread_sigmask(how as libc::c_int,
-                             set.map_or_else(ptr::null::<libc::sigset_t>,
-                                             |s| &s.sigset as *const libc::sigset_t),
-                             oldset.map_or_else(ptr::null_mut::<libc::sigset_t>,
-                                                |os| &mut os.sigset as *mut libc::sigset_t))
-    };
-
-    Errno::result(res).map(drop)
+                       oldset: Option<&mut SigSet>) -> Result<()>
+{
+    do_pthread_sigmask(how, set, oldset.map(|os| &mut os.sigset as *mut _ ))
 }
 
 /// Examine and change blocked signals.

@@ -94,8 +94,7 @@ libc_bitflags!(
 );
 
 /// Wrapper type for `if_dqblk`
-// FIXME: Change to repr(transparent)
-#[repr(C)]
+#[repr(transparent)]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct Dqblk(libc::dqblk);
 
@@ -260,9 +259,9 @@ pub fn quotactl_sync<P: ?Sized + NixPath>(which: QuotaType, special: Option<&P>)
 
 /// Get disk quota limits and current usage for the given user/group id.
 pub fn quotactl_get<P: ?Sized + NixPath>(which: QuotaType, special: &P, id: c_int) -> Result<Dqblk> {
-    let mut dqblk = unsafe { mem::uninitialized() };
-    quotactl(QuotaCmd(QuotaSubCmd::Q_GETQUOTA, which), Some(special), id, &mut dqblk as *mut _ as *mut c_char)?;
-    dqblk
+    let mut dqblk = mem::MaybeUninit::uninit();
+    quotactl(QuotaCmd(QuotaSubCmd::Q_GETQUOTA, which), Some(special), id, dqblk.as_mut_ptr() as *mut c_char)?;
+    Ok(unsafe{ Dqblk(dqblk.assume_init())})
 }
 
 /// Configure quota values for the specified fields for a given user/group id.
