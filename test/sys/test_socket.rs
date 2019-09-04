@@ -106,7 +106,7 @@ pub fn test_addr_equality_abstract() {
     assert_eq!(addr1, addr2);
     assert_eq!(calculate_hash(&addr1), calculate_hash(&addr2));
 
-    addr2.0.sun_path[18] = 127;
+    addr2.0.sun_path[17] = 127;
     assert_ne!(addr1, addr2);
     assert_ne!(calculate_hash(&addr1), calculate_hash(&addr2));
 }
@@ -117,16 +117,13 @@ pub fn test_addr_equality_abstract() {
 pub fn test_abstract_uds_addr() {
     let empty = String::new();
     let addr = UnixAddr::new_abstract(empty.as_bytes()).unwrap();
-    let sun_path = [0u8; 107];
+    let sun_path: [u8; 0] = [];
     assert_eq!(addr.as_abstract(), Some(&sun_path[..]));
 
     let name = String::from("nix\0abstract\0test");
     let addr = UnixAddr::new_abstract(name.as_bytes()).unwrap();
     let sun_path = [
-        110u8, 105, 120, 0, 97, 98, 115, 116, 114, 97, 99, 116, 0, 116, 101, 115, 116, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        110u8, 105, 120, 0, 97, 98, 115, 116, 114, 97, 99, 116, 0, 116, 101, 115, 116
     ];
     assert_eq!(addr.as_abstract(), Some(&sun_path[..]));
     assert_eq!(addr.path(), None);

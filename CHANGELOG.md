@@ -40,6 +40,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#1107](https://github.com/nix-rust/nix/pull/1107))
 
 ### Fixed
+- Fix length of abstract socket addresses
+  ([#1120](https://github.com/nix-rust/nix/pull/1120))
+
 ### Removed
 
 ## [0.15.0] - 10 August 2019
