@@ -259,20 +259,12 @@ mod test_posix_fallocate {
                 assert_eq!(&data as &[u8], &[0u8; LEN] as &[u8]);
             }
             Err(nix::Error::Sys(Errno::EINVAL)) => {
-                // `posix_fallocate` returned EINVAL.
-                // According to POSIX.1-2008, its implementation shall
-                // return `EINVAL` if `len` is 0, `offset` is negative or
-                // the filesystem does not support this operation.
-                // According to POSIX.1-2001, its implementation shall
-                // return `EINVAL` if `len` is negative, `offset` is
-                // negative or the filesystem does not support this
-                // operation; and may return `EINVAL` if `len` is 0.
-                // However, this test is using `offset=0` and non-zero
-                // `len`.
-                // Suppose that the host platform is POSIX-compliant,
-                // then this can only be due to an underlying filesystem on
-                // `/tmp` that does not support `posix_fallocate`.
-                // This test is passing by giving it the benefit of doubt.
+                // POSIX requires posix_fallocate to return EINVAL both for
+                // invalid arguments (i.e. len < 0) and if the operation is not
+                // supported by the file system.
+                // There's no way to tell for sure whether the file system
+                // supports posix_fallocate, so we must pass the test if it
+                // returns EINVAL.
             }
             _ => res.unwrap(),
         }
@@ -290,7 +282,7 @@ mod test_posix_fallocate {
                 | Sys(Errno::EBADF) => (),
             errno =>
                 panic!(
-                    "errno does not match posix_fallocate spec, errno={}",
+                    "unexpected errno {}",
                     errno,
                 ),
         }
