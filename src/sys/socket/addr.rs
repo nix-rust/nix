@@ -560,7 +560,7 @@ impl UnixAddr {
                                      ret.sun_path.as_mut_ptr().offset(1) as *mut u8,
                                      path.len());
 
-            Ok(UnixAddr(ret, ret.sun_path.len()))
+            Ok(UnixAddr(ret, path.len() + 1))
         }
     }
 
@@ -1298,7 +1298,7 @@ mod tests {
         let addr = UnixAddr::new_abstract(name.as_bytes()).unwrap();
 
         let sun_path1 = addr.sun_path();
-        let sun_path2 = [0u8, 110, 105, 120, 0, 97, 98, 115, 116, 114, 97, 99, 116, 0, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        let sun_path2 = [0u8, 110, 105, 120, 0, 97, 98, 115, 116, 114, 97, 99, 116, 0, 116, 101, 115, 116];
         assert_eq!(sun_path1.len(), sun_path2.len());
         for i in 0..sun_path1.len() {
             assert_eq!(sun_path1[i], sun_path2[i]);
