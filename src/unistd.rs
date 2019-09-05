@@ -544,14 +544,12 @@ pub fn symlinkat<P1: ?Sized + NixPath, P2: ?Sized + NixPath>(
 fn reserve_buffer_size<T>(buf: &mut Vec<T>, limit: usize) -> Result<()> {
     use std::cmp::min;
 
-    if buf.len() == limit {
+    if buf.len() >= limit {
         return Err(Error::Sys(Errno::ERANGE))
     }
 
-    unsafe { buf.set_len(buf.capacity()) };
-
     let capacity = min(buf.capacity() * 2, limit);
-    buf.reserve_exact(capacity);
+    buf.reserve(capacity);
 
     Ok(())
 }
@@ -2480,12 +2478,12 @@ impl User {
               libc::size_t,
               *mut *mut libc::passwd) -> libc::c_int
     {
-        let cbuf_max = match sysconf(SysconfVar::GETPW_R_SIZE_MAX) {
+        let bufsize = match sysconf(SysconfVar::GETPW_R_SIZE_MAX) {
             Ok(Some(n)) => n as usize,
             Ok(None) | Err(_) => 1024 as usize,
         };
 
-        let mut cbuf = Vec::with_capacity(512);
+        let mut cbuf = Vec::with_capacity(bufsize);
         let mut pwd = mem::MaybeUninit::<libc::passwd>::uninit();
         let mut res = ptr::null_mut();
 
@@ -2504,7 +2502,7 @@ impl User {
                 }
             } else if Errno::last() == Errno::ERANGE {
                 // Trigger the internal buffer resizing logic.
-                reserve_buffer_size(&mut cbuf, cbuf_max)?;
+                reserve_buffer_size(&mut cbuf, bufsize)?;
             } else {
                 return Err(Error::Sys(Errno::last()));
             }
@@ -2598,12 +2596,12 @@ impl Group {
               libc::size_t,
               *mut *mut libc::group) -> libc::c_int
     {
-        let cbuf_max = match sysconf(SysconfVar::GETGR_R_SIZE_MAX) {
+        let bufsize = match sysconf(SysconfVar::GETGR_R_SIZE_MAX) {
             Ok(Some(n)) => n as usize,
             Ok(None) | Err(_) => 1024 as usize,
         };
 
-        let mut cbuf = Vec::with_capacity(512);
+        let mut cbuf = Vec::with_capacity(bufsize);
         let mut grp = mem::MaybeUninit::<libc::group>::uninit();
         let mut res = ptr::null_mut();
 
@@ -2622,7 +2620,7 @@ impl Group {
                 }
             } else if Errno::last() == Errno::ERANGE {
                 // Trigger the internal buffer resizing logic.
-                reserve_buffer_size(&mut cbuf, cbuf_max)?;
+                reserve_buffer_size(&mut cbuf, bufsize)?;
             } else {
                 return Err(Error::Sys(Errno::last()));
             }
