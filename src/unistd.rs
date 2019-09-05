@@ -2410,6 +2410,10 @@ pub fn access<P: ?Sized + NixPath>(path: &P, amode: AccessFlags) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
+#[cfg(not(any(target_os = "android",
+              target_os = "ios",
+              target_os = "macos",
+              target_env = "musl")))]
 /// Default buffer size for system user and group querying functions
 const PWGRP_BUFSIZE: usize = 1024;
 
