@@ -541,7 +541,7 @@ pub fn symlinkat<P1: ?Sized + NixPath, P2: ?Sized + NixPath>(
 
 // Double the buffer capacity up to limit. In case it already has
 // reached the limit, return Errno::ERANGE.
-fn reserve_buffer_size<T>(buf: &mut Vec<T>, limit: usize) -> Result<()> {
+fn reserve_double_buffer_size<T>(buf: &mut Vec<T>, limit: usize) -> Result<()> {
     use std::cmp::min;
 
     if buf.len() >= limit {
@@ -597,7 +597,7 @@ pub fn getcwd() -> Result<PathBuf> {
             }
 
             // Trigger the internal buffer resizing logic.
-            reserve_buffer_size(&mut buf, PATH_MAX as usize)?;
+            reserve_double_buffer_size(&mut buf, PATH_MAX as usize)?;
         }
     }
 }
@@ -2502,7 +2502,7 @@ impl User {
                 }
             } else if Errno::last() == Errno::ERANGE {
                 // Trigger the internal buffer resizing logic.
-                reserve_buffer_size(&mut cbuf, bufsize)?;
+                reserve_double_buffer_size(&mut cbuf, bufsize)?;
             } else {
                 return Err(Error::Sys(Errno::last()));
             }
@@ -2620,7 +2620,7 @@ impl Group {
                 }
             } else if Errno::last() == Errno::ERANGE {
                 // Trigger the internal buffer resizing logic.
-                reserve_buffer_size(&mut cbuf, bufsize)?;
+                reserve_double_buffer_size(&mut cbuf, bufsize)?;
             } else {
                 return Err(Error::Sys(Errno::last()));
             }
