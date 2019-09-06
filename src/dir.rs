@@ -83,12 +83,6 @@ impl Dir {
     /// Set the position of the directory stream, see `seekdir(3)`.
     #[cfg(not(target_os = "android"))]
     pub fn seek(&mut self, loc: SeekLoc) {
-        // While on 32-bit systems this is formally a lossy conversion (i64 -> i32),
-        // the subtlety here is **when** it's lossy. Truncation may occur when the location
-        // reported by `d_off` doesn't fit into a long, which is i32 on 32-bit systems.
-        //
-        // But this means that the truncation would occur anyway in  equivalent C code,
-        // either inside telldir or as an implicit conversion of the argument to seekdir.
         unsafe { libc::seekdir(self.0.as_ptr(), loc.0 as libc::c_long) }
     }
 
