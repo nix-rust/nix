@@ -160,16 +160,18 @@ impl<'d> Iterator for Iter<'d> {
             // for the NUL byte. It doesn't look like the std library does this; it just uses
             // fixed-sized buffers (and libc's dirent seems to be sized so this is appropriate).
             // Probably fine here too then.
-            let mut ent: Entry = Entry(::std::mem::uninitialized());
+            let mut ent = std::mem::MaybeUninit::<dirent>::uninit();
             let mut result = ptr::null_mut();
-            if let Err(e) = Errno::result(readdir_r((self.dir).0.as_ptr(), &mut ent.0, &mut result)) {
+            if let Err(e) = Errno::result(
+                readdir_r((self.dir).0.as_ptr(), ent.as_mut_ptr(), &mut result))
+            {
                 return Some(Err(e));
             }
-            if result == ptr::null_mut() {
+            if result.is_null() {
                 return None;
             }
-            assert_eq!(result, &mut ent.0 as *mut dirent);
-            return Some(Ok(ent));
+            assert_eq!(result, ent.as_mut_ptr());
+            Some(Ok(Entry(ent.assume_init())))
         }
     }
 }
@@ -186,6 +188,7 @@ impl<'d> Drop for Iter<'d> {
 ///
 /// Note that unlike the std version, this may represent the `.` or `..` entries.
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
+#[repr(transparent)]
 pub struct Entry(dirent);
 
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
@@ -225,7 +228,7 @@ impl Entry {
                   target_os = "macos",
                   target_os = "solaris")))]
     pub fn ino(&self) -> u64 {
-        self.0.d_fileno as u64
+        u64::from(self.0.d_fileno)
     }
 
     /// Returns the bare file name of this directory entry without any other leading path component.

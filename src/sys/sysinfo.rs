@@ -7,6 +7,7 @@ use errno::Errno;
 
 /// System info structure returned by `sysinfo`.
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
+#[repr(transparent)]
 pub struct SysInfo(libc::sysinfo);
 
 impl SysInfo {
@@ -66,7 +67,7 @@ impl SysInfo {
 ///
 /// [See `sysinfo(2)`](http://man7.org/linux/man-pages/man2/sysinfo.2.html).
 pub fn sysinfo() -> Result<SysInfo> {
-    let mut info: libc::sysinfo = unsafe { mem::uninitialized() };
-    let res = unsafe { libc::sysinfo(&mut info) };
-    Errno::result(res).map(|_| SysInfo(info))
+    let mut info = mem::MaybeUninit::uninit();
+    let res = unsafe { libc::sysinfo(info.as_mut_ptr()) };
+    Errno::result(res).map(|_| unsafe{ SysInfo(info.assume_init()) })
 }

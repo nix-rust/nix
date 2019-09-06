@@ -1045,13 +1045,13 @@ pub fn cfmakesane(termios: &mut Termios) {
 /// this structure *will not* reconfigure the port, instead the modifications should be done to
 /// the `Termios` structure and then the port should be reconfigured using `tcsetattr()`.
 pub fn tcgetattr(fd: RawFd) -> Result<Termios> {
-    let mut termios: libc::termios = unsafe { mem::uninitialized() };
+    let mut termios = mem::MaybeUninit::uninit();
 
-    let res = unsafe { libc::tcgetattr(fd, &mut termios) };
+    let res = unsafe { libc::tcgetattr(fd, termios.as_mut_ptr()) };
 
     Errno::result(res)?;
 
-    Ok(termios.into())
+    unsafe { Ok(termios.assume_init().into()) }
 }
 
 /// Set the configuration for a terminal (see

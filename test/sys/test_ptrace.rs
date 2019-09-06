@@ -46,7 +46,7 @@ fn test_ptrace_getsiginfo() {
 #[test]
 #[cfg(any(target_os = "android", target_os = "linux"))]
 fn test_ptrace_setsiginfo() {
-    let siginfo = unsafe { mem::uninitialized() };
+    let siginfo = unsafe { mem::zeroed() };
     if let Err(Error::UnsupportedOperation) = ptrace::setsiginfo(getpid(), &siginfo) {
         panic!("ptrace_setsiginfo returns Error::UnsupportedOperation!");
     }

@@ -29,7 +29,7 @@ impl PollFd {
     pub fn new(fd: RawFd, events: PollFlags) -> PollFd {
         PollFd {
             pollfd: libc::pollfd {
-                fd: fd,
+                fd,
                 events: events.bits(),
                 revents: PollFlags::empty().bits(),
             },
@@ -37,7 +37,7 @@ impl PollFd {
     }
 
     /// Returns the events that occured in the last call to `poll` or `ppoll`.
-    pub fn revents(&self) -> Option<PollFlags> {
+    pub fn revents(self) -> Option<PollFlags> {
         PollFlags::from_bits(self.pollfd.revents)
     }
 }

@@ -423,7 +423,7 @@ struct SetStruct<'a, T: 'static> {
 
 unsafe impl<'a, T> Set<'a, T> for SetStruct<'a, T> {
     fn new(ptr: &'a T) -> SetStruct<'a, T> {
-        SetStruct { ptr: ptr }
+        SetStruct { ptr }
     }
 
     fn ffi_ptr(&self) -> *const c_void {

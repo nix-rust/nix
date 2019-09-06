@@ -46,7 +46,7 @@ cfg_if! {
 }
 
 /// Sets the platform-specific errno to no-error
-unsafe fn clear() -> () {
+unsafe fn clear() {
     *errno_location() = 0;
 }
 
@@ -70,7 +70,7 @@ impl Errno {
         from_i32(err)
     }
 
-    pub unsafe fn clear() -> () {
+    pub unsafe fn clear() {
         clear()
     }
 

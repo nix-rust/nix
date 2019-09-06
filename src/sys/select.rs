@@ -9,16 +9,17 @@ use sys::time::{TimeSpec, TimeVal};
 
 pub use libc::FD_SETSIZE;
 
-// FIXME: Change to repr(transparent) once it's stable
-#[repr(C)]
+#[repr(transparent)]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct FdSet(libc::fd_set);
 
 impl FdSet {
     pub fn new() -> FdSet {
-        let mut fdset = unsafe { mem::uninitialized() };
-        unsafe { libc::FD_ZERO(&mut fdset) };
-        FdSet(fdset)
+        let mut fdset = mem::MaybeUninit::uninit();
+        unsafe {
+            libc::FD_ZERO(fdset.as_mut_ptr());
+            FdSet(fdset.assume_init())
+        }
     }
 
     pub fn insert(&mut self, fd: RawFd) {
@@ -66,6 +67,12 @@ impl FdSet {
         }
 
         None
+    }
+}
+
+impl Default for FdSet {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

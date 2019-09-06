@@ -234,7 +234,7 @@ impl KEvent {
     pub fn new(ident: uintptr_t, filter: EventFilter, flags: EventFlag,
                fflags:FilterFlag, data: intptr_t, udata: intptr_t) -> KEvent {
         KEvent { kevent: libc::kevent {
-            ident: ident,
+            ident,
             filter: filter as type_of_event_filter,
             flags: flags.bits(),
             fflags: fflags.bits(),
