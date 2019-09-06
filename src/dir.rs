@@ -253,13 +253,4 @@ impl Entry {
             /* libc::DT_UNKNOWN | */ _ => None,
         }
     }
-
-    /// Returns the current position of the directory stream.
-    ///
-    /// If this location is given to `Dir::seek`, the entries up to the current one
-    /// will be omitted and the iteration will start from the **next** directory entry.
-    #[cfg(target_os = "linux")]
-    pub fn seek_loc(&self) -> SeekLoc {
-        SeekLoc(self.0.d_off)
-    }
 }
