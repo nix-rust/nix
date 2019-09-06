@@ -7,7 +7,7 @@ use fcntl::FcntlArg::F_SETFD;
 use libc::{self, c_char, c_void, c_int, c_long, c_uint, size_t, pid_t, off_t,
            uid_t, gid_t, mode_t, PATH_MAX};
 use std::{fmt, mem, ptr};
-use std::ffi::{CString, CStr, OsString, OsStr};
+use std::ffi::{CStr, OsString, OsStr};
 use std::os::unix::ffi::{OsStringExt, OsStrExt};
 use std::os::unix::io::RawFd;
 use std::path::PathBuf;
@@ -675,10 +675,9 @@ pub fn fchownat<P: ?Sized + NixPath>(
     Errno::result(res).map(drop)
 }
 
-fn to_exec_array(args: &[CString]) -> Vec<*const c_char> {
-    let mut args_p: Vec<*const c_char> = args.iter().map(|s| s.as_ptr()).collect();
-    args_p.push(ptr::null());
-    args_p
+fn to_exec_array(args: &[&CStr]) -> Vec<*const c_char> {
+    use std::iter::once;
+    args.iter().map(|s| s.as_ptr()).chain(once(ptr::null())).collect()
 }
 
 /// Replace the current process image with a new one (see
@@ -688,7 +687,7 @@ fn to_exec_array(args: &[CString]) -> Vec<*const c_char> {
 /// performs the same action but does not allow for customization of the
 /// environment for the new process.
 #[inline]
-pub fn execv(path: &CString, argv: &[CString]) -> Result<Void> {
+pub fn execv(path: &CStr, argv: &[&CStr]) -> Result<Void> {
     let args_p = to_exec_array(argv);
 
     unsafe {
@@ -712,7 +711,7 @@ pub fn execv(path: &CString, argv: &[CString]) -> Result<Void> {
 /// in the `args` list is an argument to the new process. Each element in the
 /// `env` list should be a string in the form "key=value".
 #[inline]
-pub fn execve(path: &CString, args: &[CString], env: &[CString]) -> Result<Void> {
+pub fn execve(path: &CStr, args: &[&CStr], env: &[&CStr]) -> Result<Void> {
     let args_p = to_exec_array(args);
     let env_p = to_exec_array(env);
 
@@ -733,7 +732,7 @@ pub fn execve(path: &CString, args: &[CString], env: &[CString]) -> Result<Void>
 /// would not work if "bash" was specified for the path argument, but `execvp`
 /// would assuming that a bash executable was on the system `PATH`.
 #[inline]
-pub fn execvp(filename: &CString, args: &[CString]) -> Result<Void> {
+pub fn execvp(filename: &CStr, args: &[&CStr]) -> Result<Void> {
     let args_p = to_exec_array(args);
 
     unsafe {
@@ -753,7 +752,7 @@ pub fn execvp(filename: &CString, args: &[CString]) -> Result<Void> {
 #[cfg(any(target_os = "haiku",
           target_os = "linux",
           target_os = "openbsd"))]
-pub fn execvpe(filename: &CString, args: &[CString], env: &[CString]) -> Result<Void> {
+pub fn execvpe(filename: &CStr, args: &[&CStr], env: &[&CStr]) -> Result<Void> {
     let args_p = to_exec_array(args);
     let env_p = to_exec_array(env);
 
@@ -781,7 +780,7 @@ pub fn execvpe(filename: &CString, args: &[CString], env: &[CString]) -> Result<
           target_os = "linux",
           target_os = "freebsd"))]
 #[inline]
-pub fn fexecve(fd: RawFd, args: &[CString], env: &[CString]) -> Result<Void> {
+pub fn fexecve(fd: RawFd, args: &[&CStr], env: &[&CStr]) -> Result<Void> {
     let args_p = to_exec_array(args);
     let env_p = to_exec_array(env);
 
@@ -804,8 +803,8 @@ pub fn fexecve(fd: RawFd, args: &[CString], env: &[CString]) -> Result<Void> {
 /// is referenced as a file descriptor to the base directory plus a path.
 #[cfg(any(target_os = "android", target_os = "linux"))]
 #[inline]
-pub fn execveat(dirfd: RawFd, pathname: &CString, args: &[CString],
-                env: &[CString], flags: super::fcntl::AtFlags) -> Result<Void> {
+pub fn execveat(dirfd: RawFd, pathname: &CStr, args: &[&CStr],
+                env: &[&CStr], flags: super::fcntl::AtFlags) -> Result<Void> {
     let args_p = to_exec_array(args);
     let env_p = to_exec_array(env);
 
