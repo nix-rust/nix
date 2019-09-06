@@ -65,18 +65,7 @@ impl Dir {
 
     /// Returns an iterator of `Result<Entry>` which rewinds when finished.
     pub fn iter(&mut self) -> Iter {
-        Iter {
-            dir: self,
-            should_rewind: true
-        }
-    }
-
-    /// Returns an iterator of `Result<Entry>` which doesn't rewind when finished.
-    pub fn iter_norewind(&mut self) -> Iter {
-        Iter {
-            dir: self,
-            should_rewind: false
-        }
+        Iter(self)
     }
 
 
@@ -139,10 +128,7 @@ impl Drop for Dir {
 }
 
 #[derive(Debug, Eq, Hash, PartialEq)]
-pub struct Iter<'d> {
-    dir: &'d mut Dir,
-    should_rewind: bool,
-}
+pub struct Iter<'d>(&'d mut Dir);
 
 impl<'d> Iterator for Iter<'d> {
     type Item = Result<Entry>;
@@ -157,7 +143,7 @@ impl<'d> Iterator for Iter<'d> {
             let mut ent = std::mem::MaybeUninit::<dirent>::uninit();
             let mut result = ptr::null_mut();
             if let Err(e) = Errno::result(
-                readdir_r((self.dir).0.as_ptr(), ent.as_mut_ptr(), &mut result))
+                readdir_r((self.0).0.as_ptr(), ent.as_mut_ptr(), &mut result))
             {
                 return Some(Err(e));
             }
@@ -172,9 +158,7 @@ impl<'d> Iterator for Iter<'d> {
 
 impl<'d> Drop for Iter<'d> {
     fn drop(&mut self) {
-        if self.should_rewind {
-            self.dir.rewind()
-        }
+        self.0.rewind()
     }
 }
 
