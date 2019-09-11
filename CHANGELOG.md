@@ -6,6 +6,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased] - ReleaseDate
 ### Added
 
+- Added `posix_fallocate`.
+  ([#1105](https://github.com/nix-rust/nix/pull/1105))
+
 - Implemented `Default` for `FdSet`
   ([#1107](https://github.com/nix-rust/nix/pull/1107))
 
@@ -779,5 +782,3 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#335](https://github.com/nix-rust/nix/pull/335))
 
 ## [0.5.0] 2016-03-01
-- Added `posix_fallocate`.
-  ([#1105](https://github.com/nix-rust/nix/pull/1105))
