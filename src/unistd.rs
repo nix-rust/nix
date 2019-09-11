@@ -30,7 +30,7 @@ pub use self::usergroupiter::*;
 ///
 /// Newtype pattern around `uid_t` (which is just alias). It prevents bugs caused by accidentally
 /// passing wrong value.
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Default)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct Uid(uid_t);
 
 impl Uid {
@@ -79,7 +79,7 @@ pub const ROOT: Uid = Uid(0);
 ///
 /// Newtype pattern around `gid_t` (which is just alias). It prevents bugs caused by accidentally
 /// passing wrong value.
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Default)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct Gid(gid_t);
 
 impl Gid {
@@ -2423,7 +2423,7 @@ const PWGRP_BUFSIZE: usize = 1024;
 /// fields are based on the user's locale, which could be non-UTF8, while other fields are
 /// guaranteed to conform to [`NAME_REGEX`](https://serverfault.com/a/73101/407341), which only
 /// contains ASCII.
-#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct User {
     /// Username
     pub name: String,
