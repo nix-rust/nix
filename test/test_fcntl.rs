@@ -256,7 +256,7 @@ mod test_posix_fallocate {
             Ok(_) => {
                 let mut data = [1u8; LEN];
                 assert_eq!(tmp.read(&mut data).expect("read failure"), LEN);
-                assert_eq!(&data as &[u8], &[0u8; LEN] as &[u8]);
+                assert_eq!(&data[..], &[0u8; LEN][..]);
             }
             Err(nix::Error::Sys(Errno::EINVAL)) => {
                 // POSIX requires posix_fallocate to return EINVAL both for
