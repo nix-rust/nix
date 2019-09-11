@@ -2482,9 +2482,10 @@ impl User {
               libc::size_t,
               *mut *mut libc::passwd) -> libc::c_int
     {
+        let buflimit = 16384;
         let bufsize = match sysconf(SysconfVar::GETPW_R_SIZE_MAX) {
             Ok(Some(n)) => n as usize,
-            Ok(None) | Err(_) => 1024 as usize,
+            Ok(None) | Err(_) => buflimit as usize,
         };
 
         let mut cbuf = Vec::with_capacity(bufsize);
@@ -2506,7 +2507,7 @@ impl User {
                 }
             } else if Errno::last() == Errno::ERANGE {
                 // Trigger the internal buffer resizing logic.
-                reserve_double_buffer_size(&mut cbuf, bufsize)?;
+                reserve_double_buffer_size(&mut cbuf, buflimit)?;
             } else {
                 return Err(Error::Sys(Errno::last()));
             }
@@ -2600,9 +2601,10 @@ impl Group {
               libc::size_t,
               *mut *mut libc::group) -> libc::c_int
     {
+        let buflimit = 16384;
         let bufsize = match sysconf(SysconfVar::GETGR_R_SIZE_MAX) {
             Ok(Some(n)) => n as usize,
-            Ok(None) | Err(_) => 1024 as usize,
+            Ok(None) | Err(_) => buflimit as usize,
         };
 
         let mut cbuf = Vec::with_capacity(bufsize);
@@ -2624,7 +2626,7 @@ impl Group {
                 }
             } else if Errno::last() == Errno::ERANGE {
                 // Trigger the internal buffer resizing logic.
-                reserve_double_buffer_size(&mut cbuf, bufsize)?;
+                reserve_double_buffer_size(&mut cbuf, buflimit)?;
             } else {
                 return Err(Error::Sys(Errno::last()));
             }
