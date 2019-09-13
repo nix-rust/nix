@@ -221,11 +221,11 @@
 //!
 //! # fn main() {}
 //! ```
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(any(target_os = "android", target_os = "linux", target_os = "redox"))]
 #[macro_use]
 mod linux;
 
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(any(target_os = "android", target_os = "linux", target_os = "redox"))]
 pub use self::linux::*;
 
 #[cfg(any(target_os = "dragonfly",

@@ -81,6 +81,7 @@ fn test_mkstemp_directory() {
 }
 
 #[test]
+#[cfg(not(target_os = "redox"))]
 fn test_mkfifo() {
     let tempdir = tempfile::tempdir().unwrap();
     let mkfifo_fifo = tempdir.path().join("mkfifo_fifo");
@@ -93,6 +94,7 @@ fn test_mkfifo() {
 }
 
 #[test]
+#[cfg(not(target_os = "redox"))]
 fn test_mkfifo_directory() {
     // mkfifo should fail if a directory is given
     assert!(mkfifo(&env::temp_dir(), Mode::S_IRUSR).is_err());
@@ -599,6 +601,7 @@ pub extern fn alarm_signal_handler(raw_signal: libc::c_int) {
 }
 
 #[test]
+#[cfg(not(target_os = "redox"))]
 fn test_alarm() {
     let _m = ::SIGNAL_MTX.lock().expect("Mutex got poisoned by another test");
 
@@ -628,6 +631,7 @@ fn test_alarm() {
 }
 
 #[test]
+#[cfg(not(target_os = "redox"))]
 fn test_canceling_alarm() {
     let _m = ::SIGNAL_MTX.lock().expect("Mutex got poisoned by another test");
 

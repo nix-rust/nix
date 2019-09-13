@@ -53,6 +53,7 @@ fn test_writev() {
 }
 
 #[test]
+#[cfg(not(target_os = "redox"))]
 fn test_readv() {
     let s:String = thread_rng().sample_iter(&Alphanumeric).take(128).collect();
     let to_write = s.as_bytes().to_vec();
@@ -97,6 +98,7 @@ fn test_readv() {
 }
 
 #[test]
+#[cfg(not(target_os = "redox"))]
 fn test_pwrite() {
     use std::io::Read;
 

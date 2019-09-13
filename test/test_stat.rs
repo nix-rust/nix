@@ -78,7 +78,7 @@ fn assert_lstat_results(stat_result: Result<FileStat>) {
 }
 
 #[test]
-#[cfg(not(any(target_os = "netbsd")))]
+#[cfg(not(any(target_os = "netbsd", target_os = "redox")))]
 fn test_stat_and_fstat() {
     use nix::sys::stat::fstat;
 
@@ -110,7 +110,7 @@ fn test_fstatat() {
 }
 
 #[test]
-#[cfg(not(any(target_os = "netbsd")))]
+#[cfg(not(any(target_os = "netbsd", target_os = "redox")))]
 fn test_stat_fstat_lstat() {
     use nix::sys::stat::{fstat, lstat};
 
@@ -199,6 +199,7 @@ fn assert_times_eq(exp_atime_sec: u64, exp_mtime_sec: u64, attr: &fs::Metadata) 
 }
 
 #[test]
+#[cfg(not(target_os = "redox"))]
 fn test_utimes() {
     let tempdir = tempfile::tempdir().unwrap();
     let fullpath = tempdir.path().join("file");
@@ -234,6 +235,7 @@ fn test_lutimes() {
 }
 
 #[test]
+#[cfg(not(target_os = "redox"))]
 fn test_futimens() {
     let tempdir = tempfile::tempdir().unwrap();
     let fullpath = tempdir.path().join("file");
