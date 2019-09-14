@@ -54,7 +54,7 @@ fn test_ptsname_copy() {
     // Get the name of the slave
     let slave_name1 = unsafe { ptsname(&master_fd) }.unwrap();
     let slave_name2 = unsafe { ptsname(&master_fd) }.unwrap();
-    assert!(slave_name1 == slave_name2);
+    assert_eq!(slave_name1, slave_name2);
     // Also make sure that the string was actually copied and they point to different parts of
     // memory.
     assert!(slave_name1.as_ptr() != slave_name2.as_ptr());
@@ -71,7 +71,7 @@ fn test_ptsname_r_copy() {
     // Get the name of the slave
     let slave_name1 = ptsname_r(&master_fd).unwrap();
     let slave_name2 = ptsname_r(&master_fd).unwrap();
-    assert!(slave_name1 == slave_name2);
+    assert_eq!(slave_name1, slave_name2);
     assert!(slave_name1.as_ptr() != slave_name2.as_ptr());
 }
 

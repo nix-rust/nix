@@ -411,7 +411,7 @@ unsafe impl<T> Get<T> for GetStruct<T> {
     }
 
     unsafe fn unwrap(self) -> T {
-        assert!(self.len as usize == mem::size_of::<T>(), "invalid getsockopt implementation");
+        assert_eq!(self.len as usize, mem::size_of::<T>(), "invalid getsockopt implementation");
         self.val
     }
 }
@@ -458,7 +458,7 @@ unsafe impl Get<bool> for GetBool {
     }
 
     unsafe fn unwrap(self) -> bool {
-        assert!(self.len as usize == mem::size_of::<c_int>(), "invalid getsockopt implementation");
+        assert_eq!(self.len as usize, mem::size_of::<c_int>(), "invalid getsockopt implementation");
         self.val != 0
     }
 }
@@ -505,7 +505,7 @@ unsafe impl Get<u8> for GetU8 {
     }
 
     unsafe fn unwrap(self) -> u8 {
-        assert!(self.len as usize == mem::size_of::<u8>(), "invalid getsockopt implementation");
+        assert_eq!(self.len as usize, mem::size_of::<u8>(), "invalid getsockopt implementation");
         self.val as u8
     }
 }
@@ -552,7 +552,7 @@ unsafe impl Get<usize> for GetUsize {
     }
 
     unsafe fn unwrap(self) -> usize {
-        assert!(self.len as usize == mem::size_of::<c_int>(), "invalid getsockopt implementation");
+        assert_eq!(self.len as usize, mem::size_of::<c_int>(), "invalid getsockopt implementation");
         self.val as usize
     }
 }
@@ -644,7 +644,7 @@ mod test {
 
         let (a, b) = socketpair(AddressFamily::Unix, SockType::Stream, None, SockFlag::empty()).unwrap();
         let a_type = getsockopt(a, super::SockType).unwrap();
-        assert!(a_type == SockType::Stream);
+        assert_eq!(a_type, SockType::Stream);
         close(a).unwrap();
         close(b).unwrap();
     }
@@ -656,7 +656,7 @@ mod test {
 
         let s = socket(AddressFamily::Inet, SockType::Datagram, SockFlag::empty(), None).unwrap();
         let s_type = getsockopt(s, super::SockType).unwrap();
-        assert!(s_type == SockType::Datagram);
+        assert_eq!(s_type, SockType::Datagram);
         close(s).unwrap();
     }
 

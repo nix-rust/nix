@@ -31,7 +31,7 @@ fn test_mq_send_and_receive() {
     let mut buf = [0u8; 32];
     let mut prio = 0u32;
     let len = mq_receive(mqd1, &mut buf, &mut prio).unwrap();
-    assert!(prio == 1);
+    assert_eq!(prio, 1);
 
     mq_close(mqd1).unwrap();
     mq_close(mqd0).unwrap();
@@ -116,10 +116,10 @@ fn test_mq_set_nonblocking() {
     let mqd = r.unwrap();
     mq_set_nonblock(mqd).unwrap();
     let new_attr = mq_getattr(mqd);
-    assert!(new_attr.unwrap().flags() == MQ_OFlag::O_NONBLOCK.bits() as c_long);
+    assert_eq!(new_attr.unwrap().flags(), MQ_OFlag::O_NONBLOCK.bits() as c_long);
     mq_remove_nonblock(mqd).unwrap();
     let new_attr = mq_getattr(mqd);
-    assert!(new_attr.unwrap().flags() == 0);
+    assert_eq!(new_attr.unwrap().flags(), 0);
     mq_close(mqd).unwrap();
 }
 
@@ -141,12 +141,12 @@ fn test_mq_unlink() {
     let mqd = r.unwrap();
 
     let res_unlink = mq_unlink(mq_name_opened);
-    assert!(res_unlink == Ok(()) );
+    assert_eq!(res_unlink, Ok(()) );
 
     let res_unlink_not_opened = mq_unlink(mq_name_not_opened);
-    assert!(res_unlink_not_opened == Err(Sys(ENOENT)) );
+    assert_eq!(res_unlink_not_opened, Err(Sys(ENOENT)) );
 
     mq_close(mqd).unwrap();
     let res_unlink_after_close = mq_unlink(mq_name_opened);
-    assert!(res_unlink_after_close == Err(Sys(ENOENT)) );
+    assert_eq!(res_unlink_after_close, Err(Sys(ENOENT)) );
 }
