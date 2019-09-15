@@ -73,6 +73,35 @@ macro_rules! skip_if_not_root {
     };
 }
 
+cfg_if! {
+    if #[cfg(any(target_os = "android", target_os = "linux"))] {
+        macro_rules! skip_if_seccomp {
+            ($name:expr) => {
+                if let Ok(s) = std::fs::read_to_string("/proc/self/status") {
+                    for l in s.lines() {
+                        let mut fields = l.split_whitespace();
+                        if fields.next() == Some("Seccomp:") &&
+                            fields.next() != Some("0")
+                        {
+                            use ::std::io::Write;
+                            let stderr = ::std::io::stderr();
+                            let mut handle = stderr.lock();
+                            writeln!(handle,
+                                "{} cannot be run in Seccomp mode.  Skipping test.",
+                                stringify!($name)).unwrap();
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+    } else {
+        macro_rules! skip_if_seccomp {
+            ($name:expr) => {}
+        }
+    }
+}
+
 mod sys;
 mod test_dir;
 mod test_fcntl;
