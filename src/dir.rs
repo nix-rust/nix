@@ -68,13 +68,11 @@ impl Dir {
         Iter(self)
     }
 
-
     /// Set the position of the directory stream, see `seekdir(3)`.
     #[cfg(not(target_os = "android"))]
     pub fn seek(&mut self, loc: SeekLoc) {
-        unsafe { libc::seekdir(self.0.as_ptr(), loc.0 as libc::c_long) }
+        unsafe { libc::seekdir(self.0.as_ptr(), loc.0) }
     }
-
 
     /// Reset directory stream, see `rewinddir(3)`.
     pub fn rewind(&mut self) {
@@ -88,22 +86,22 @@ impl Dir {
     #[cfg(not(target_os = "android"))]
     pub fn tell(&self) -> SeekLoc {
         let loc = unsafe { libc::telldir(self.0.as_ptr()) };
-        SeekLoc(loc.into())
+        SeekLoc(loc)
     }
 }
 
 #[cfg(not(target_os = "android"))]
 #[derive(Clone, Copy, Debug)]
-pub struct SeekLoc(i64);
+pub struct SeekLoc(libc::c_long);
 
 #[cfg(not(target_os = "android"))]
 impl SeekLoc {
     pub unsafe fn from_raw(loc: i64) -> Self {
-        SeekLoc(loc)
+        SeekLoc(loc as libc::c_long)
     }
 
     pub fn to_raw(&self) -> i64 {
-        self.0
+        self.0 as i64
     }
 }
 
