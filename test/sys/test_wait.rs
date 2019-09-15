@@ -94,6 +94,7 @@ mod ptrace {
 
     #[test]
     fn test_wait_ptrace() {
+        require_capability!(CAP_SYS_PTRACE);
         let _m = ::FORK_MTX.lock().expect("Mutex got poisoned by another test");
 
         match fork().expect("Error: Fork Failed") {
