@@ -505,6 +505,7 @@ pub fn mkdir<P: ?Sized + NixPath>(path: &P, mode: Mode) -> Result<()> {
 /// }
 /// ```
 #[inline]
+#[cfg(not(target_os = "redox"))]
 pub fn mkfifo<P: ?Sized + NixPath>(path: &P, mode: Mode) -> Result<()> {
     let res = path.with_nix_path(|cstr| {
         unsafe { libc::mkfifo(cstr.as_ptr(), mode.bits() as mode_t) }
