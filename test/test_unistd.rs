@@ -1,18 +1,25 @@
-use nix::fcntl::{self, fcntl, FcntlArg, FdFlag, open, OFlag, readlink};
+#[cfg(not(target_os = "redox"))]
+use nix::fcntl::{self, open, readlink};
+use nix::fcntl::{fcntl, FcntlArg, FdFlag, OFlag};
 use nix::unistd::*;
 use nix::unistd::ForkResult::*;
+#[cfg(not(target_os = "redox"))]
 use nix::sys::signal::{SaFlags, SigAction, SigHandler, SigSet, Signal, sigaction};
 use nix::sys::wait::*;
 use nix::sys::stat::{self, Mode, SFlag};
 use nix::errno::Errno;
+#[cfg(not(target_os = "redox"))]
 use nix::Error;
 use std::{env, iter};
+#[cfg(not(target_os = "redox"))]
 use std::ffi::CString;
-use std::fs::{self, DirBuilder, File};
+#[cfg(not(target_os = "redox"))]
+use std::fs::DirBuilder;
+use std::fs::{self, File};
 use std::io::Write;
 use std::os::unix::prelude::*;
 use tempfile::{self, tempfile};
-use libc::{self, _exit, off_t};
+use libc::{_exit, off_t};
 
 #[test]
 #[cfg(not(any(target_os = "netbsd")))]
@@ -233,6 +240,7 @@ fn test_initgroups() {
     setgroups(&old_groups).unwrap();
 }
 
+#[cfg(not(target_os = "redox"))]
 macro_rules! execve_test_factory(
     ($test_name:ident, $syscall:ident, $exe: expr $(, $pathname:expr, $flags:expr)*) => (
     #[test]
@@ -466,7 +474,7 @@ cfg_if!{
                 skip_if_jailed!("test_acct");
             }
         }
-    } else {
+    } else if #[cfg(not(target_os = "redox"))] {
         macro_rules! require_acct{
             () => {
                 skip_if_not_root!("test_acct");
@@ -592,9 +600,11 @@ fn test_ftruncate() {
 }
 
 // Used in `test_alarm`.
+#[cfg(not(target_os = "redox"))]
 static mut ALARM_CALLED: bool = false;
 
 // Used in `test_alarm`.
+#[cfg(not(target_os = "redox"))]
 pub extern fn alarm_signal_handler(raw_signal: libc::c_int) {
     assert_eq!(raw_signal, libc::SIGALRM, "unexpected signal: {}", raw_signal);
     unsafe { ALARM_CALLED = true };

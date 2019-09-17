@@ -3,7 +3,7 @@ extern crate bytes;
 extern crate caps;
 #[macro_use]
 extern crate cfg_if;
-#[macro_use]
+#[cfg_attr(not(target_os = "redox"), macro_use)]
 extern crate nix;
 #[macro_use]
 extern crate lazy_static;
@@ -58,6 +58,7 @@ macro_rules! skip_if_jailed {
     }
 }
 
+#[cfg(not(target_os = "redox"))]
 macro_rules! skip_if_not_root {
     ($name:expr) => {
         use nix::unistd::Uid;

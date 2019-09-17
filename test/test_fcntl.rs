@@ -1,13 +1,22 @@
+#[cfg(not(target_os = "redox"))]
 use nix::Error;
+#[cfg(not(target_os = "redox"))]
 use nix::errno::*;
+#[cfg(not(target_os = "redox"))]
 use nix::fcntl::{open, OFlag, readlink};
 #[cfg(not(target_os = "redox"))]
 use nix::fcntl::{openat, readlinkat, renameat};
+#[cfg(not(target_os = "redox"))]
 use nix::sys::stat::Mode;
+#[cfg(not(target_os = "redox"))]
 use nix::unistd::{close, read};
+#[cfg(not(target_os = "redox"))]
 use tempfile::{self, NamedTempFile};
+#[cfg(not(target_os = "redox"))]
 use std::fs::File;
+#[cfg(not(target_os = "redox"))]
 use std::io::prelude::*;
+#[cfg(not(target_os = "redox"))]
 use std::os::unix::fs;
 
 #[test]

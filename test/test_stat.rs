@@ -1,15 +1,24 @@
-use std::fs::{self, File};
+#[cfg(not(target_os = "redox"))]
+use std::fs;
+use std::fs::File;
+#[cfg(not(target_os = "redox"))]
 use std::os::unix::fs::{symlink, PermissionsExt};
 use std::os::unix::prelude::AsRawFd;
+#[cfg(not(target_os = "redox"))]
 use std::time::{Duration, UNIX_EPOCH};
+#[cfg(not(target_os = "redox"))]
 use std::path::Path;
 
-#[cfg(not(any(target_os = "netbsd")))]
+#[cfg(not(any(target_os = "netbsd", target_os = "redox")))]
 use libc::{S_IFMT, S_IFLNK, mode_t};
 
+#[cfg(not(target_os = "redox"))]
 use nix::{fcntl, Error};
-use nix::errno::{Errno};
-use nix::sys::stat::{self, fchmod, futimens, stat, utimes};
+#[cfg(not(target_os = "redox"))]
+use nix::errno::Errno;
+#[cfg(not(target_os = "redox"))]
+use nix::sys::stat::{self, futimens, utimes};
+use nix::sys::stat::{fchmod, stat};
 #[cfg(not(target_os = "redox"))]
 use nix::sys::stat::{fchmodat, utimensat, mkdirat};
 #[cfg(any(target_os = "linux",
@@ -19,15 +28,19 @@ use nix::sys::stat::{fchmodat, utimensat, mkdirat};
           target_os = "freebsd",
           target_os = "netbsd"))]
 use nix::sys::stat::lutimes;
-use nix::sys::stat::{Mode, FchmodatFlags, UtimensatFlags};
+#[cfg(not(target_os = "redox"))]
+use nix::sys::stat::{FchmodatFlags, UtimensatFlags};
+use nix::sys::stat::Mode;
 
-#[cfg(not(any(target_os = "netbsd")))]
+#[cfg(not(any(target_os = "netbsd", target_os = "redox")))]
 use nix::sys::stat::FileStat;
 
+#[cfg(not(target_os = "redox"))]
 use nix::sys::time::{TimeSpec, TimeVal, TimeValLike};
+#[cfg(not(target_os = "redox"))]
 use nix::unistd::chdir;
 
-#[cfg(not(any(target_os = "netbsd")))]
+#[cfg(not(any(target_os = "netbsd", target_os = "redox")))]
 use nix::Result;
 use tempfile;
 
@@ -35,14 +48,14 @@ use tempfile;
 // uid and gid are signed on Windows, but not on other platforms. This function
 // allows warning free compiles on all platforms, and can be removed when
 // expression-level #[allow] is available.
-#[cfg(not(any(target_os = "netbsd")))]
+#[cfg(not(any(target_os = "netbsd", target_os = "redox")))]
 fn valid_uid_gid(stat: FileStat) -> bool {
     // uid could be 0 for the `root` user. This quite possible when
     // the tests are being run on a rooted Android device.
     stat.st_uid >= 0 && stat.st_gid >= 0
 }
 
-#[cfg(not(any(target_os = "netbsd")))]
+#[cfg(not(any(target_os = "netbsd", target_os = "redox")))]
 fn assert_stat_results(stat_result: Result<FileStat>) {
     let stats = stat_result.expect("stat call failed");
     assert!(stats.st_dev > 0);      // must be positive integer, exact number machine dependent
@@ -55,7 +68,7 @@ fn assert_stat_results(stat_result: Result<FileStat>) {
     assert!(stats.st_blocks <= 16);  // Up to 16 blocks can be allocated for a blank file
 }
 
-#[cfg(not(any(target_os = "netbsd")))]
+#[cfg(not(any(target_os = "netbsd", target_os = "redox")))]
 fn assert_lstat_results(stat_result: Result<FileStat>) {
     let stats = stat_result.expect("stat call failed");
     assert!(stats.st_dev > 0);      // must be positive integer, exact number machine dependent
@@ -189,6 +202,7 @@ fn test_fchmodat() {
 ///
 /// The atime and mtime are expressed with a resolution of seconds because some file systems
 /// (like macOS's HFS+) do not have higher granularity.
+#[cfg(not(target_os = "redox"))]
 fn assert_times_eq(exp_atime_sec: u64, exp_mtime_sec: u64, attr: &fs::Metadata) {
     assert_eq!(
         Duration::new(exp_atime_sec, 0),

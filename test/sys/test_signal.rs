@@ -1,4 +1,5 @@
 use libc;
+#[cfg(not(target_os = "redox"))]
 use nix::Error;
 use nix::sys::signal::*;
 use nix::unistd::*;

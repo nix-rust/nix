@@ -6,7 +6,9 @@ use std::{cmp, iter};
 use std::fs::{OpenOptions};
 use std::os::unix::io::AsRawFd;
 
-use tempfile::{tempfile, tempdir};
+#[cfg(not(target_os = "redox"))]
+use tempfile::tempfile;
+use tempfile::tempdir;
 
 #[test]
 fn test_writev() {
