@@ -505,7 +505,7 @@ pub fn mkdir<P: ?Sized + NixPath>(path: &P, mode: Mode) -> Result<()> {
 /// }
 /// ```
 #[inline]
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(target_os = "redox"))] // RedoxFS does not support fifo yet
 pub fn mkfifo<P: ?Sized + NixPath>(path: &P, mode: Mode) -> Result<()> {
     let res = path.with_nix_path(|cstr| {
         unsafe { libc::mkfifo(cstr.as_ptr(), mode.bits() as mode_t) }
@@ -1327,6 +1327,7 @@ pub fn fsync(fd: RawFd) -> Result<()> {
 // TODO: exclude only Apple systems after https://github.com/rust-lang/libc/pull/211
 #[cfg(any(target_os = "linux",
           target_os = "android",
+          target_os = "redox",
           target_os = "emscripten"))]
 #[inline]
 pub fn fdatasync(fd: RawFd) -> Result<()> {
@@ -1661,7 +1662,6 @@ pub fn initgroups(user: &CStr, group: Gid) -> Result<()> {
 ///
 /// See also [pause(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/pause.html).
 #[inline]
-#[cfg(not(target_os = "redox"))]
 pub fn pause() {
     unsafe { libc::pause() };
 }
