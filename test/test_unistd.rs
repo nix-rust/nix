@@ -184,7 +184,13 @@ macro_rules! execve_test_factory(
     ($test_name:ident, $syscall:ident, $exe: expr $(, $pathname:expr, $flags:expr)*) => (
     #[test]
     fn $test_name() {
-        let _m = ::FORK_MTX.lock().expect("Mutex got poisoned by another test");
+        if "execveat" == stringify!($syscall) {
+            // Though undocumented, Docker's default seccomp profile seems to
+            // block this syscall.  https://github.com/nix-rust/nix/issues/1122
+            skip_if_seccomp!($test_name);
+        }
+
+        let m = ::FORK_MTX.lock().expect("Mutex got poisoned by another test");
         // The `exec`d process will write to `writer`, and we'll read that
         // data from `reader`.
         let (reader, writer) = pipe().unwrap();
@@ -194,12 +200,9 @@ macro_rules! execve_test_factory(
         //       The tests make sure not to do that, though.
         match fork().unwrap() {
             Child => {
-                // Close stdout.
-                close(1).unwrap();
                 // Make `writer` be the stdout of the new process.
-                dup(writer).unwrap();
-                // exec!
-                $syscall(
+                dup2(writer, 1).unwrap();
+                let r = $syscall(
                     $exe,
                     $(&CString::new($pathname).unwrap(), )*
                     &[CString::new(b"".as_ref()).unwrap(),
@@ -208,11 +211,17 @@ macro_rules! execve_test_factory(
                                    .as_ref()).unwrap()],
                     &[CString::new(b"foo=bar".as_ref()).unwrap(),
                       CString::new(b"baz=quux".as_ref()).unwrap()]
-                    $(, $flags)*).unwrap();
+                    $(, $flags)*);
+                let _ = std::io::stderr()
+                    .write_all(format!("{:?}", r).as_bytes());
+                // Should only get here in event of error
+                unsafe{ _exit(1) };
             },
             Parent { child } => {
                 // Wait for the child to exit.
-                waitpid(child, None).unwrap();
+                let ws = waitpid(child, None);
+                drop(m);
+                assert_eq!(ws, Ok(WaitStatus::Exited(child, 0)));
                 // Read 1024 bytes.
                 let mut buf = [0u8; 1024];
                 read(reader, &mut buf).unwrap();

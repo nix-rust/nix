@@ -244,6 +244,10 @@ pub fn test_af_alg_cipher() {
                            ControlMessage, MsgFlags};
     use nix::sys::socket::sockopt::AlgSetKey;
 
+    // Travis's seccomp profile blocks AF_ALG
+    // https://docs.docker.com/engine/security/seccomp/
+    skip_if_seccomp!(test_af_alg_cipher);
+
     let alg_type = "skcipher";
     let alg_name = "ctr(aes)";
     // 256-bits secret key
@@ -307,6 +311,10 @@ pub fn test_af_alg_aead() {
                            AddressFamily, SockType, SockFlag, SockAddr,
                            ControlMessage, MsgFlags};
     use nix::sys::socket::sockopt::{AlgSetKey, AlgSetAeadAuthSize};
+
+    // Travis's seccomp profile blocks AF_ALG
+    // https://docs.docker.com/engine/security/seccomp/
+    skip_if_seccomp!(test_af_alg_aead);
 
     let auth_size = 4usize;
     let assoc_size = 16u32;
