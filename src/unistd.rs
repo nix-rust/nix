@@ -1336,7 +1336,15 @@ pub fn setgid(gid: Gid) -> Result<()> {
 /// with the `opendirectoryd` service.
 #[cfg(not(any(target_os = "ios", target_os = "macos")))]
 pub fn getgroups() -> Result<Vec<Gid>> {
-    // First get the number of groups so we can size our Vec
+    // First get the maximum number of groups. The value returned
+    // shall always be greater than or equal to one and less than or
+    // equal to the value of {NGROUPS_MAX} + 1.
+    let ngroups_max = match sysconf(SysconfVar::NGROUPS_MAX) {
+        Ok(Some(n)) => (n + 1) as usize,
+        Ok(None) | Err(_) => <usize>::max_value(),
+    };
+
+    // Next, get the number of groups so we can size our Vec
     let ngroups = unsafe { libc::getgroups(0, ptr::null_mut()) };
 
     // Now actually get the groups. We try multiple times in case the number of
@@ -1357,12 +1365,10 @@ pub fn getgroups() -> Result<Vec<Gid>> {
                 return Ok(groups);
             },
             Err(Error::Sys(Errno::EINVAL)) => {
-                // EINVAL indicates that the buffer size was too small. Trigger
-                // the internal buffer resizing logic of `Vec` by requiring
-                // more space than the current capacity.
-                let cap = groups.capacity();
-                unsafe { groups.set_len(cap) };
-                groups.reserve(1);
+                // EINVAL indicates that the buffer size was too
+                // small, resize it up to ngroups_max as limit.
+                reserve_double_buffer_size(&mut groups, ngroups_max)
+                    .or(Err(Error::Sys(Errno::EINVAL)))?;
             },
             Err(e) => return Err(e)
         }
