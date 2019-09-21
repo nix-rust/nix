@@ -1337,15 +1337,18 @@ pub fn setgid(gid: Gid) -> Result<()> {
 pub fn getgroups() -> Result<Vec<Gid>> {
     // First get the number of groups so we can size our Vec
     let ngroups = unsafe { libc::getgroups(0, ptr::null_mut()) };
+    let mut groups = Vec::<Gid>::with_capacity(Errno::result(ngroups)? as usize);
+
+    // The value returned shall always be greater than or equal to one
+    // and less than or equal to the value of {NGROUPS_MAX} + 1.
     let ngroups_max = match sysconf(SysconfVar::NGROUPS_MAX) {
-        Ok(Some(n)) => n as usize,
+        Ok(Some(n)) => (n + 1) as usize,
         Ok(None) | Err(_) => <usize>::max_value(),
     };
 
-    // Now actually get the groups. We try multiple times in case the number of
-    // groups has changed since the first call to getgroups() and the buffer is
-    // now too small.
-    let mut groups = Vec::<Gid>::with_capacity(Errno::result(ngroups)? as usize);
+    // We try multiple times in case the number of groups has changed
+    // since the first call to getgroups() and the buffer is now too
+    // small.
     loop {
         // FIXME: On the platforms we currently support, the `Gid` struct has
         // the same representation in memory as a bare `gid_t`. This is not
