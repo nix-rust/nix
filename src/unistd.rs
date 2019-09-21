@@ -5,7 +5,7 @@ use {Error, Result, NixPath};
 use fcntl::{AtFlags, at_rawfd, fcntl, FdFlag, OFlag};
 use fcntl::FcntlArg::F_SETFD;
 use libc::{self, c_char, c_void, c_int, c_long, c_uint, size_t, pid_t, off_t,
-           uid_t, gid_t, mode_t};
+           uid_t, gid_t, mode_t, PATH_MAX};
 use std::{fmt, mem, ptr};
 use std::ffi::{CString, CStr, OsString, OsStr};
 use std::os::unix::ffi::{OsStringExt, OsStrExt};
@@ -534,6 +534,21 @@ pub fn symlinkat<P1: ?Sized + NixPath, P2: ?Sized + NixPath>(
     Errno::result(res).map(drop)
 }
 
+// Double the buffer capacity up to limit. In case it already has
+// reached the limit, return Errno::ERANGE.
+fn reserve_double_buffer_size<T>(buf: &mut Vec<T>, limit: usize) -> Result<()> {
+    use std::cmp::min;
+
+    if buf.len() >= limit {
+        return Err(Error::Sys(Errno::ERANGE))
+    }
+
+    let capacity = min(buf.capacity() * 2, limit);
+    buf.reserve(capacity);
+
+    Ok(())
+}
+
 /// Returns the current directory as a `PathBuf`
 ///
 /// Err is returned if the current user doesn't have the permission to read or search a component
@@ -576,11 +591,8 @@ pub fn getcwd() -> Result<PathBuf> {
                 }
             }
 
-            // Trigger the internal buffer resizing logic of `Vec` by requiring
-            // more space than the current capacity.
-            let cap = buf.capacity();
-            buf.set_len(cap);
-            buf.reserve(1);
+            // Trigger the internal buffer resizing logic.
+            reserve_double_buffer_size(&mut buf, PATH_MAX as usize)?;
         }
     }
 }
