@@ -1337,21 +1337,21 @@ pub fn setgid(gid: Gid) -> Result<()> {
 #[cfg(not(any(target_os = "ios", target_os = "macos")))]
 pub fn getgroups() -> Result<Vec<Gid>> {
     // First get the number of groups so we can size our Vec
-    let ret = unsafe { libc::getgroups(0, ptr::null_mut()) };
+    let ngroups = unsafe { libc::getgroups(0, ptr::null_mut()) };
 
     // Now actually get the groups. We try multiple times in case the number of
     // groups has changed since the first call to getgroups() and the buffer is
     // now too small.
-    let mut groups = Vec::<Gid>::with_capacity(Errno::result(ret)? as usize);
+    let mut groups = Vec::<Gid>::with_capacity(Errno::result(ngroups)? as usize);
     loop {
         // FIXME: On the platforms we currently support, the `Gid` struct has
         // the same representation in memory as a bare `gid_t`. This is not
         // necessarily the case on all Rust platforms, though. See RFC 1785.
-        let ret = unsafe {
+        let ngroups = unsafe {
             libc::getgroups(groups.capacity() as c_int, groups.as_mut_ptr() as *mut gid_t)
         };
 
-        match Errno::result(ret) {
+        match Errno::result(ngroups) {
             Ok(s) => {
                 unsafe { groups.set_len(s as usize) };
                 return Ok(groups);
