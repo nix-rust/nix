@@ -80,7 +80,7 @@
 //! # let mut t = unsafe { Termios::default_uninit() };
 //! # cfsetspeed(&mut t, BaudRate::B9600);
 //! let speed = cfgetispeed(&t);
-//! assert!(speed == cfgetospeed(&t));
+//! assert_eq!(speed, cfgetospeed(&t));
 //! cfsetispeed(&mut t, speed);
 //! # }
 //! ```
@@ -99,8 +99,8 @@
 //! # fn main() {
 //! # let mut t = unsafe { Termios::default_uninit() };
 //! # cfsetspeed(&mut t, BaudRate::B9600);
-//! assert!(cfgetispeed(&t) == BaudRate::B9600);
-//! assert!(cfgetospeed(&t) == BaudRate::B9600);
+//! assert_eq!(cfgetispeed(&t), BaudRate::B9600);
+//! assert_eq!(cfgetospeed(&t), BaudRate::B9600);
 //! # }
 //! ```
 //!
@@ -118,8 +118,8 @@
 //! # fn main() {
 //! # let mut t = unsafe { Termios::default_uninit() };
 //! # cfsetspeed(&mut t, 9600u32);
-//! assert!(cfgetispeed(&t) == 9600u32);
-//! assert!(cfgetospeed(&t) == 9600u32);
+//! assert_eq!(cfgetispeed(&t), 9600u32);
+//! assert_eq!(cfgetospeed(&t), 9600u32);
 //! # }
 //! ```
 //!
@@ -137,8 +137,8 @@
 //! # fn main() {
 //! # let mut t = unsafe { Termios::default_uninit() };
 //! # cfsetspeed(&mut t, 9600u32);
-//! assert!(cfgetispeed(&t) == BaudRate::B9600.into());
-//! assert!(u32::from(BaudRate::B9600) == 9600u32);
+//! assert_eq!(cfgetispeed(&t), BaudRate::B9600.into());
+//! assert_eq!(u32::from(BaudRate::B9600), 9600u32);
 //! # }
 //! ```
 //!

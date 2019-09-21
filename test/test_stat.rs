@@ -46,9 +46,9 @@ fn assert_stat_results(stat_result: Result<FileStat>) {
     assert!(stats.st_dev > 0);      // must be positive integer, exact number machine dependent
     assert!(stats.st_ino > 0);      // inode is positive integer, exact number machine dependent
     assert!(stats.st_mode > 0);     // must be positive integer
-    assert!(stats.st_nlink == 1);   // there links created, must be 1
+    assert_eq!(stats.st_nlink, 1);   // there links created, must be 1
     assert!(valid_uid_gid(stats));  // must be positive integers
-    assert!(stats.st_size == 0);    // size is 0 because we did not write anything to the file
+    assert_eq!(stats.st_size, 0);    // size is 0 because we did not write anything to the file
     assert!(stats.st_blksize > 0);  // must be positive integer, exact number machine dependent
     assert!(stats.st_blocks <= 16);  // Up to 16 blocks can be allocated for a blank file
 }
@@ -63,8 +63,8 @@ fn assert_lstat_results(stat_result: Result<FileStat>) {
     // st_mode is c_uint (u32 on Android) while S_IFMT is mode_t
     // (u16 on Android), and that will be a compile error.
     // On other platforms they are the same (either both are u16 or u32).
-    assert!((stats.st_mode as usize) & (S_IFMT as usize) == S_IFLNK as usize); // should be a link
-    assert!(stats.st_nlink == 1);   // there links created, must be 1
+    assert_eq!((stats.st_mode as usize) & (S_IFMT as usize), S_IFLNK as usize); // should be a link
+    assert_eq!(stats.st_nlink, 1);   // there links created, must be 1
     assert!(valid_uid_gid(stats));  // must be positive integers
     assert!(stats.st_size > 0);    // size is > 0 because it points to another file
     assert!(stats.st_blksize > 0);  // must be positive integer, exact number machine dependent

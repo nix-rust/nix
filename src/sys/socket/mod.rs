@@ -1245,12 +1245,12 @@ pub unsafe fn sockaddr_storage_to_addr(
 
     match c_int::from(addr.ss_family) {
         libc::AF_INET => {
-            assert!(len as usize == mem::size_of::<sockaddr_in>());
+            assert_eq!(len as usize, mem::size_of::<sockaddr_in>());
             let ret = *(addr as *const _ as *const sockaddr_in);
             Ok(SockAddr::Inet(InetAddr::V4(ret)))
         }
         libc::AF_INET6 => {
-            assert!(len as usize == mem::size_of::<sockaddr_in6>());
+            assert_eq!(len as usize, mem::size_of::<sockaddr_in6>());
             Ok(SockAddr::Inet(InetAddr::V6(*(addr as *const _ as *const sockaddr_in6))))
         }
         libc::AF_UNIX => {

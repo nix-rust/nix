@@ -29,7 +29,7 @@ fn test_fork_and_waitpid() {
             let wait_status = waitpid(child, None);
             match wait_status {
                 // assert that waitpid returned correct status and the pid is the one of the child
-                Ok(WaitStatus::Exited(pid_t, _)) =>  assert!(pid_t == child),
+                Ok(WaitStatus::Exited(pid_t, _)) =>  assert_eq!(pid_t, child),
 
                 // panic, must never happen
                 s @ Ok(_) => panic!("Child exited {:?}, should never happen", s),
@@ -111,7 +111,7 @@ fn test_getsid() {
     let none_sid: ::libc::pid_t = getsid(None).unwrap().into();
     let pid_sid: ::libc::pid_t = getsid(Some(getpid())).unwrap().into();
     assert!(none_sid > 0);
-    assert!(none_sid == pid_sid);
+    assert_eq!(none_sid, pid_sid);
 }
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
