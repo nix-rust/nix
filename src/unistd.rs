@@ -631,6 +631,8 @@ pub fn chown<P: ?Sized + NixPath>(path: &P, owner: Option<Uid>, group: Option<Gi
 pub enum FchownatFlags {
     FollowSymlink,
     NoFollowSymlink,
+    #[cfg(target_os = "linux")]
+    EmptyPath,    
 }
 
 /// Change the ownership of the file at `path` to be owned by the specified
@@ -661,11 +663,13 @@ pub fn fchownat<P: ?Sized + NixPath>(
     group: Option<Gid>,
     flag: FchownatFlags,
 ) -> Result<()> {
-    let atflag =
-        match flag {
-            FchownatFlags::FollowSymlink => AtFlags::empty(),
-            FchownatFlags::NoFollowSymlink => AtFlags::AT_SYMLINK_NOFOLLOW,
-        };
+    let atflag = match flag {
+        FchownatFlags::FollowSymlink => AtFlags::empty(),
+        FchownatFlags::NoFollowSymlink => AtFlags::AT_SYMLINK_NOFOLLOW,
+        #[cfg(target_os = "linux")]
+        FchownatFlags::EmptyPath => AtFlags::AT_EMPTY_PATH,
+    };
+
     let res = path.with_nix_path(|cstr| unsafe {
         let (uid, gid) = chown_raw_ids(owner, group);
         libc::fchownat(at_rawfd(dirfd), cstr.as_ptr(), uid, gid,
