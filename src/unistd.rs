@@ -1486,19 +1486,8 @@ pub fn getgrouplist(user: &CStr, group: Gid) -> Result<Vec<Gid>> {
             // BSD systems will still fill the groups buffer with as many
             // groups as possible, but Linux manpages do not mention this
             // behavior.
-
-            let cap = groups.capacity();
-            if cap >= ngroups_max as usize {
-                // We already have the largest capacity we can, give up
-                return Err(Error::invalid_argument());
-            }
-
-            // Reserve space for at least ngroups
-            groups.reserve(ngroups as usize);
-
-            // Even if the buffer gets resized to bigger than ngroups_max,
-            // don't ever ask for more than ngroups_max groups
-            ngroups = min(ngroups_max, groups.capacity() as c_int);
+            reserve_double_buffer_size(&mut groups, ngroups_max as usize)
+                .or_else(|_| Err(Error::invalid_argument()))?;
         }
     }
 }
