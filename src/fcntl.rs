@@ -505,3 +505,24 @@ mod posix_fadvise {
         Errno::result(res)
     }
 }
+
+#[cfg(any(
+    target_os = "linux",
+    target_os = "android",
+    target_os = "emscripten",
+    target_os = "fuchsia",
+    any(target_os = "wasi", target_env = "wasi"),
+    target_os = "freebsd"
+))]
+pub fn posix_fallocate(
+    fd: RawFd,
+    offset: libc::off_t,
+    len: libc::off_t
+) -> Result<()> {
+    let res = unsafe { libc::posix_fallocate(fd, offset, len) };
+    match Errno::result(res) {
+        Err(err) => Err(err),
+        Ok(0) => Ok(()),
+        Ok(errno) => Err(crate::Error::Sys(Errno::from_i32(errno))),
+    }
+}
