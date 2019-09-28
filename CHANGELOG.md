@@ -45,6 +45,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   `self` by value.
   ([#1107](https://github.com/nix-rust/nix/pull/1107))
 
+- Type `&CString` for parameters of `exec(v|ve|vp|vpe|veat)` are changed to `&CStr`.
+  ([#1121](https://github.com/nix-rust/nix/pull/1121))
+
 ### Fixed
 - Fix length of abstract socket addresses
   ([#1120](https://github.com/nix-rust/nix/pull/1120))

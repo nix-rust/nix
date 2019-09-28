@@ -204,13 +204,13 @@ macro_rules! execve_test_factory(
                 dup2(writer, 1).unwrap();
                 let r = $syscall(
                     $exe,
-                    $(&CString::new($pathname).unwrap(), )*
-                    &[CString::new(b"".as_ref()).unwrap(),
-                      CString::new(b"-c".as_ref()).unwrap(),
+                    $(CString::new($pathname).unwrap().as_c_str(), )*
+                    &[CString::new(b"".as_ref()).unwrap().as_c_str(),
+                      CString::new(b"-c".as_ref()).unwrap().as_c_str(),
                       CString::new(b"echo nix!!! && echo foo=$foo && echo baz=$baz"
-                                   .as_ref()).unwrap()],
-                    &[CString::new(b"foo=bar".as_ref()).unwrap(),
-                      CString::new(b"baz=quux".as_ref()).unwrap()]
+                                   .as_ref()).unwrap().as_c_str()],
+                    &[CString::new(b"foo=bar".as_ref()).unwrap().as_c_str(),
+                      CString::new(b"baz=quux".as_ref()).unwrap().as_c_str()]
                     $(, $flags)*);
                 let _ = std::io::stderr()
                     .write_all(format!("{:?}", r).as_bytes());
@@ -238,18 +238,18 @@ macro_rules! execve_test_factory(
 
 cfg_if!{
     if #[cfg(target_os = "android")] {
-        execve_test_factory!(test_execve, execve, &CString::new("/system/bin/sh").unwrap());
+        execve_test_factory!(test_execve, execve, CString::new("/system/bin/sh").unwrap().as_c_str());
         execve_test_factory!(test_fexecve, fexecve, File::open("/system/bin/sh").unwrap().into_raw_fd());
     } else if #[cfg(any(target_os = "freebsd",
                         target_os = "linux"))] {
-        execve_test_factory!(test_execve, execve, &CString::new("/bin/sh").unwrap());
+        execve_test_factory!(test_execve, execve, CString::new("/bin/sh").unwrap().as_c_str());
         execve_test_factory!(test_fexecve, fexecve, File::open("/bin/sh").unwrap().into_raw_fd());
     } else if #[cfg(any(target_os = "dragonfly",
                         target_os = "ios",
                         target_os = "macos",
                         target_os = "netbsd",
                         target_os = "openbsd"))] {
-        execve_test_factory!(test_execve, execve, &CString::new("/bin/sh").unwrap());
+        execve_test_factory!(test_execve, execve, CString::new("/bin/sh").unwrap().as_c_str());
         // No fexecve() on DragonFly, ios, macos, NetBSD, OpenBSD.
         //
         // Note for NetBSD and OpenBSD: although rust-lang/libc includes it
