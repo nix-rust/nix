@@ -99,6 +99,41 @@ fn test_mkfifo_directory() {
 }
 
 #[test]
+fn test_mkfifoat() {
+    let tempdir = tempfile::tempdir().unwrap();
+    let mkfifoat_fifo = tempdir.path().join("mkfifoat_fifo");
+
+    mkfifoat(None, &mkfifoat_fifo, Mode::S_IRUSR).unwrap();
+
+    let stats = stat::stat(&mkfifoat_fifo).unwrap();
+    let typ = stat::SFlag::from_bits_truncate(stats.st_mode);
+    assert!(typ == SFlag::S_IFIFO);
+
+
+    let dirfd = open(tempdir.path(), OFlag::empty(), Mode::empty()).unwrap();
+    let mkfifoat_name = "mkfifoat_name";
+
+    mkfifoat(Some(dirfd), mkfifoat_name, Mode::S_IRUSR).unwrap();
+
+    let stats = stat::fstatat(dirfd, mkfifoat_name, fcntl::AtFlags::empty()).unwrap();
+    let typ = stat::SFlag::from_bits_truncate(stats.st_mode);
+    assert!(typ == SFlag::S_IFIFO);
+}
+
+#[test]
+fn test_mkfifoat_directory() {
+    // mkfifoat should fail if a directory is given
+    assert!(mkfifoat(None, &env::temp_dir(), Mode::S_IRUSR).is_err());
+
+    let tempdir = tempfile::tempdir().unwrap();
+    let dirfd = open(tempdir.path(), OFlag::empty(), Mode::empty()).unwrap();
+    let mkfifoat_dir = "mkfifoat_dir";
+    stat::mkdirat(dirfd, mkfifoat_dir, Mode::S_IRUSR).unwrap();
+
+    assert!(mkfifoat(Some(dirfd), mkfifoat_dir, Mode::S_IRUSR).is_err());
+}
+
+#[test]
 fn test_getpid() {
     let pid: ::libc::pid_t = getpid().into();
     let ppid: ::libc::pid_t = getppid().into();
