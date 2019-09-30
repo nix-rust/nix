@@ -678,6 +678,7 @@ fn test_access_file_exists() {
 
 #[test]
 fn test_faccessat_none_not_existing() {
+    use nix::fcntl::AtFlags;
     let tempdir = tempfile::tempdir().unwrap();
     let dir = tempdir.path().join("does_not_exist.txt");
     assert_eq!(
@@ -692,6 +693,7 @@ fn test_faccessat_none_not_existing() {
 
 #[test]
 fn test_faccessat_not_existing() {
+    use nix::fcntl::AtFlags;
     let tempdir = tempfile::tempdir().unwrap();
     let dirfd = open(tempdir.path(), OFlag::empty(), Mode::empty()).unwrap();
     let not_exist_file = "does_not_exist.txt";
@@ -712,6 +714,7 @@ fn test_faccessat_not_existing() {
 
 #[test]
 fn test_faccessat_none_file_exists() {
+    use nix::fcntl::AtFlags;
     let tempdir = tempfile::tempdir().unwrap();
     let path = tempdir.path().join("does_exist.txt");
     let _file = File::create(path.clone()).unwrap();
@@ -729,6 +732,7 @@ fn test_faccessat_none_file_exists() {
 
 #[test]
 fn test_faccessat_file_exists() {
+    use nix::fcntl::AtFlags;
     let tempdir = tempfile::tempdir().unwrap();
     let dirfd = open(tempdir.path(), OFlag::empty(), Mode::empty()).unwrap();
     let exist_file = "does_exist.txt";
