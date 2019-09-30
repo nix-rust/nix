@@ -6,6 +6,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased] - ReleaseDate
 ### Added
 
+- Added `faccessat`
+  ([#1780](https://github.com/nix-rust/nix/pull/1780))
 - Added `memfd` on Android.
   (#[1773](https://github.com/nix-rust/nix/pull/1773))
 - Added ETH_P_ALL to SockProtocol enum

@@ -1308,3 +1308,71 @@ fn test_getpeereid_invalid_fd() {
     // getpeereid is not POSIX, so error codes are inconsistent between different Unices.
     getpeereid(-1).expect_err("assertion failed");
 }
+
+#[test]
+#[cfg(not(any(target_os = "illumos", target_os = "redox")))]
+fn test_faccessat_none_not_existing() {
+    use nix::fcntl::AtFlags;
+    let tempdir = tempfile::tempdir().unwrap();
+    let dir = tempdir.path().join("does_not_exist.txt");
+    assert_eq!(
+        faccessat(None, &dir, AccessFlags::F_OK, AtFlags::empty())
+            .err()
+            .unwrap(),
+        Errno::ENOENT
+    );
+}
+
+#[test]
+#[cfg(not(any(target_os = "illumos", target_os = "redox")))]
+fn test_faccessat_not_existing() {
+    use nix::fcntl::AtFlags;
+    let tempdir = tempfile::tempdir().unwrap();
+    let dirfd = open(tempdir.path(), OFlag::empty(), Mode::empty()).unwrap();
+    let not_exist_file = "does_not_exist.txt";
+    assert_eq!(
+        faccessat(
+            Some(dirfd),
+            not_exist_file,
+            AccessFlags::F_OK,
+            AtFlags::empty()
+        )
+        .err()
+        .unwrap(),
+        Errno::ENOENT
+    );
+}
+
+#[test]
+#[cfg(not(any(target_os = "illumos", target_os = "redox")))]
+fn test_faccessat_none_file_exists() {
+    use nix::fcntl::AtFlags;
+    let tempdir = tempfile::tempdir().unwrap();
+    let path = tempdir.path().join("does_exist.txt");
+    let _file = File::create(path.clone()).unwrap();
+    assert!(faccessat(
+        None,
+        &path,
+        AccessFlags::R_OK | AccessFlags::W_OK,
+        AtFlags::empty()
+    )
+    .is_ok());
+}
+
+#[test]
+#[cfg(not(any(target_os = "illumos", target_os = "redox")))]
+fn test_faccessat_file_exists() {
+    use nix::fcntl::AtFlags;
+    let tempdir = tempfile::tempdir().unwrap();
+    let dirfd = open(tempdir.path(), OFlag::empty(), Mode::empty()).unwrap();
+    let exist_file = "does_exist.txt";
+    let path = tempdir.path().join(exist_file);
+    let _file = File::create(path.clone()).unwrap();
+    assert!(faccessat(
+        Some(dirfd),
+        &path,
+        AccessFlags::R_OK | AccessFlags::W_OK,
+        AtFlags::empty()
+    )
+    .is_ok());
+}
