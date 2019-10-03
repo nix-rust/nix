@@ -85,7 +85,7 @@ pub type type_of_event_flag = u16;
 #[cfg(any(target_os = "netbsd"))]
 pub type type_of_event_flag = u32;
 libc_bitflags!{
-    pub struct EventFlag: type_of_event_flag {
+    pub struct EvFlag: type_of_event_flag {
         EV_ADD;
         EV_CLEAR;
         EV_DELETE;
@@ -123,7 +123,7 @@ libc_bitflags!{
 }
 
 libc_bitflags!(
-    pub struct FilterFlag: u32 {
+    pub struct NoteFlag: u32 {
         #[cfg(any(target_os = "macos", target_os = "ios"))]
         NOTE_ABSOLUTE;
         NOTE_ATTRIB;
@@ -231,8 +231,8 @@ unsafe impl Send for KEvent {
 }
 
 impl KEvent {
-    pub fn new(ident: uintptr_t, filter: EventFilter, flags: EventFlag,
-               fflags:FilterFlag, data: intptr_t, udata: intptr_t) -> KEvent {
+    pub fn new(ident: uintptr_t, filter: EventFilter, flags: EvFlag,
+               fflags:NoteFlag, data: intptr_t, udata: intptr_t) -> KEvent {
         KEvent { kevent: libc::kevent {
             ident,
             filter: filter as type_of_event_filter,
@@ -251,12 +251,12 @@ impl KEvent {
         unsafe { mem::transmute(self.kevent.filter as type_of_event_filter) }
     }
 
-    pub fn flags(&self) -> EventFlag {
-        EventFlag::from_bits(self.kevent.flags).unwrap()
+    pub fn flags(&self) -> EvFlag {
+        EvFlag::from_bits(self.kevent.flags).unwrap()
     }
 
-    pub fn fflags(&self) -> FilterFlag {
-        FilterFlag::from_bits(self.kevent.fflags).unwrap()
+    pub fn fflags(&self) -> NoteFlag {
+        NoteFlag::from_bits(self.kevent.fflags).unwrap()
     }
 
     pub fn data(&self) -> intptr_t {
@@ -313,8 +313,8 @@ pub fn kevent_ts(kq: RawFd,
 pub fn ev_set(ev: &mut KEvent,
               ident: usize,
               filter: EventFilter,
-              flags: EventFlag,
-              fflags: FilterFlag,
+              flags: EvFlag,
+              fflags: NoteFlag,
               udata: intptr_t) {
 
     ev.kevent.ident  = ident as uintptr_t;
@@ -331,8 +331,8 @@ fn test_struct_kevent() {
 
     let actual = KEvent::new(0xdead_beef,
                              EventFilter::EVFILT_READ,
-                             EventFlag::EV_ONESHOT | EventFlag::EV_ADD,
-                             FilterFlag::NOTE_CHILD | FilterFlag::NOTE_EXIT,
+                             EvFlag::EV_ONESHOT | EvFlag::EV_ADD,
+                             NoteFlag::NOTE_CHILD | NoteFlag::NOTE_EXIT,
                              0x1337,
                              udata);
     assert_eq!(0xdead_beef, actual.ident());
