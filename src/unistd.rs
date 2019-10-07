@@ -506,6 +506,26 @@ pub fn mkfifo<P: ?Sized + NixPath>(path: &P, mode: Mode) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
+/// Creates new fifo special file (named pipe) with path `path` and access rights `mode`.
+/// 
+/// If `dirfd` has a value, then `path` is relative to directory associated with the file descriptor.
+/// 
+/// If `dirfd` is `None`, then `path` is relative to the current working directory. 
+/// 
+/// # References
+/// 
+/// [mkfifoat(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/mkfifoat.html).
+// mkfifoat is not implemented in OSX or android
+#[inline]
+#[cfg(not(any(target_os = "macos", target_os = "ios", target_os = "android")))]
+pub fn mkfifoat<P: ?Sized + NixPath>(dirfd: Option<RawFd>, path: &P, mode: Mode) -> Result<()> {
+    let res = path.with_nix_path(|cstr| unsafe {
+        libc::mkfifoat(at_rawfd(dirfd), cstr.as_ptr(), mode.bits() as mode_t)
+    })?;
+
+    Errno::result(res).map(drop)
+}
+
 /// Creates a symbolic link at `path2` which points to `path1`.
 ///
 /// If `dirfd` has a value, then `path2` is relative to directory associated
