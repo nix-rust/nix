@@ -15,6 +15,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Added `NixPath::is_empty`.
   ([#1107](https://github.com/nix-rust/nix/pull/1107))
 
+- Added `faccessat`
+  ([#1134](https://github.com/nix-rust/nix/pull/1134))
+
 ### Changed
 - `Signal::from_c_int` has been replaced by `Signal::try_from`
   ([#1113](https://github.com/nix-rust/nix/pull/1113))
