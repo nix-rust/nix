@@ -718,16 +718,13 @@ fn test_faccessat_none_file_exists() {
     let tempdir = tempfile::tempdir().unwrap();
     let path = tempdir.path().join("does_exist.txt");
     let _file = File::create(path.clone()).unwrap();
-    assert_eq!(
-        faccessat(
-            None,
-            &path,
-            AccessFlags::R_OK | AccessFlags::W_OK,
-            AtFlags::empty()
-        )
-        .is_ok(),
-        true
-    );
+    assert!(faccessat(
+        None,
+        &path,
+        AccessFlags::R_OK | AccessFlags::W_OK,
+        AtFlags::empty()
+    )
+    .is_ok());
 }
 
 #[test]
@@ -738,14 +735,11 @@ fn test_faccessat_file_exists() {
     let exist_file = "does_exist.txt";
     let path = tempdir.path().join(exist_file);
     let _file = File::create(path.clone()).unwrap();
-    assert_eq!(
-        faccessat(
-            Some(dirfd),
-            &path,
-            AccessFlags::R_OK | AccessFlags::W_OK,
-            AtFlags::empty()
-        )
-        .is_ok(),
-        true
-    );
+    assert!(faccessat(
+        Some(dirfd),
+        &path,
+        AccessFlags::R_OK | AccessFlags::W_OK,
+        AtFlags::empty()
+    )
+    .is_ok());
 }
