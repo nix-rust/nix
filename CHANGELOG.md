@@ -15,6 +15,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Added `NixPath::is_empty`.
   ([#1107](https://github.com/nix-rust/nix/pull/1107))
 
+- Added `mkfifoat`
+  ([#1133](https://github.com/nix-rust/nix/pull/1133))
+  
 - Added `faccessat`
   ([#1134](https://github.com/nix-rust/nix/pull/1134))
 
