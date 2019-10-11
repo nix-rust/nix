@@ -9,7 +9,7 @@ use libc::{S_IFMT, S_IFLNK, mode_t};
 
 use nix::{fcntl, Error};
 use nix::errno::{Errno};
-use nix::sys::stat::{self, fchmod, fchmodat, futimens, stat, utimes, utimensat, mkdirat, makedev, mknod, mknodat};
+use nix::sys::stat::{self, fchmod, fchmodat, futimens, stat, utimes, utimensat, mkdirat, mknod, mknodat};
 #[cfg(any(target_os = "linux",
           target_os = "haiku",
           target_os = "ios",
@@ -325,7 +325,7 @@ fn test_mknod_success_mode() {
 
 #[test]
 fn test_mknod_success_dev() {
-    let expected_dev_t = makedev(109, 234);
+    let expected_dev_t = 28138u64;
     let tempdir = tempfile::tempdir().unwrap();
     let path = &tempdir.path().join("test_node_name");
     assert!(mknod(
@@ -409,7 +409,7 @@ fn test_mknodat_success_mode() {
 #[test]
 #[cfg(not(any(target_os = "ios", target_os = "macos")))]
 fn test_mknodat_success_dev() {
-    let expected_dev_t = makedev(206, 197);
+    let expected_dev_t = 52933u64;
     let tempdir = tempfile::tempdir().unwrap();
     let dirfd = fcntl::open(tempdir.path(), fcntl::OFlag::empty(), stat::Mode::empty()).unwrap();
     let path = "test_node_name";
