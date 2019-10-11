@@ -301,7 +301,7 @@ fn test_mkdirat_fail() {
 fn test_mknod_success_path() {
     let tempdir = tempfile::tempdir().unwrap();
     let path = &tempdir.path().join("test_node_name");
-    assert!(mknod(path, stat::SFlag::empty(), stat::Mode::empty(), 0).is_ok());
+    assert!(mknod(path, stat::SFlag::S_IFBLK, stat::Mode::empty(), 0).is_ok());
     assert!(Path::exists(path));
 }
 
@@ -345,8 +345,7 @@ fn test_mknod_success_dev() {
 fn test_mknod_fail() {
     let tempdir = tempfile::tempdir().unwrap();
     let path = &tempdir.path().join("not_existing").join("test_node_name");
-    let result = mknod(path, stat::SFlag::empty(), stat::Mode::empty(), 0).unwrap_err();
-    assert_eq!(result, Error::Sys(Errno::ENOENT));
+    assert!(mknod(path, stat::SFlag::empty(), stat::Mode::empty(), 0).is_err());
 }
 
 #[test]
@@ -358,7 +357,7 @@ fn test_mknodat_success_path() {
     assert!(mknodat(
         Some(dirfd),
         path,
-        stat::SFlag::empty(),
+        stat::SFlag::S_IFBLK,
         stat::Mode::empty(),
         0
     )
@@ -433,13 +432,12 @@ fn test_mknodat_fail() {
     let tempdir = tempfile::tempdir().unwrap();
     let dirfd = fcntl::open(tempdir.path(), fcntl::OFlag::empty(), stat::Mode::empty()).unwrap();
     let path = Path::new("not_existing").join("test_node_name");
-    let result = mknodat(
+    assert!(mknodat(
         Some(dirfd),
         &path,
         stat::SFlag::empty(),
         stat::Mode::empty(),
         0,
     )
-    .unwrap_err();
-    assert_eq!(result, Error::Sys(Errno::ENOENT));
+    .is_err());
 }
