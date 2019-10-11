@@ -7,6 +7,8 @@ use std::path::Path;
 #[cfg(not(any(target_os = "netbsd")))]
 use libc::{S_IFMT, S_IFLNK, mode_t};
 
+use libc::dev_t;
+
 use nix::{fcntl, Error};
 use nix::errno::{Errno};
 use nix::sys::stat::{self, fchmod, fchmodat, futimens, stat, utimes, utimensat, mkdirat, mknod, mknodat};
@@ -325,7 +327,7 @@ fn test_mknod_success_mode() {
 
 #[test]
 fn test_mknod_success_dev() {
-    let expected_dev_t = 28138u64;
+    let expected_dev_t: dev_t = 28138;
     let tempdir = tempfile::tempdir().unwrap();
     let path = &tempdir.path().join("test_node_name");
     assert!(mknod(
@@ -336,7 +338,7 @@ fn test_mknod_success_dev() {
     )
     .is_ok());
     let result = fs::metadata(path).unwrap().rdev();
-    assert_eq!(result, expected_dev_t);
+    assert_eq!(result as dev_t, expected_dev_t);
 }
 
 #[test]
@@ -409,7 +411,7 @@ fn test_mknodat_success_mode() {
 #[test]
 #[cfg(not(any(target_os = "ios", target_os = "macos")))]
 fn test_mknodat_success_dev() {
-    let expected_dev_t = 52933u64;
+    let expected_dev_t: dev_t = 52933;
     let tempdir = tempfile::tempdir().unwrap();
     let dirfd = fcntl::open(tempdir.path(), fcntl::OFlag::empty(), stat::Mode::empty()).unwrap();
     let path = "test_node_name";
@@ -422,7 +424,7 @@ fn test_mknodat_success_dev() {
     )
     .is_ok());
     let result = fs::metadata(&tempdir.path().join(path)).unwrap().rdev();
-    assert_eq!(result, expected_dev_t);
+    assert_eq!(result as dev_t, expected_dev_t);
 }
 
 #[test]
