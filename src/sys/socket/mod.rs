@@ -857,7 +857,7 @@ pub fn sendmsg(fd: RawFd, iov: &[IoVec<&[u8]>], cmsgs: &[ControlMessage],
     let mhdr = unsafe {
         // Musl's msghdr has private fields, so this is the only way to
         // initialize it.
-        let mut mhdr = mem::MaybeUninit::<msghdr>::uninit();
+        let mut mhdr = mem::MaybeUninit::<msghdr>::zeroed();
         let p = mhdr.as_mut_ptr();
         (*p).msg_name = name as *mut _;
         (*p).msg_namelen = namelen;
@@ -910,7 +910,7 @@ pub fn recvmsg<'a>(fd: RawFd, iov: &[IoVec<&mut [u8]>],
     let mut mhdr = unsafe {
         // Musl's msghdr has private fields, so this is the only way to
         // initialize it.
-        let mut mhdr = mem::MaybeUninit::<msghdr>::uninit();
+        let mut mhdr = mem::MaybeUninit::<msghdr>::zeroed();
         let p = mhdr.as_mut_ptr();
         (*p).msg_name = address.as_mut_ptr() as *mut c_void;
         (*p).msg_namelen = mem::size_of::<sockaddr_storage>() as socklen_t;
