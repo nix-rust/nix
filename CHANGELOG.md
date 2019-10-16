@@ -5,6 +5,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - ReleaseDate
 ### Added
+- Added `Signal::as_str()`: returns signal name as `&'static str`
+  (#[1138](https://github.com/nix-rust/nix/pull/1138))
 
 - Added `posix_fallocate`.
   ([#1105](https://github.com/nix-rust/nix/pull/1105))
