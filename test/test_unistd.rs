@@ -474,6 +474,24 @@ cfg_if!{
 }
 
 #[test]
+fn test_passwd() -> nix::Result<()> {
+    let passwd = getpwuid(getuid())?
+        .expect("current user has a passwd entry");
+
+    assert!(!passwd.name()?
+        .to_str()
+        .expect("current user's username is utf-8")
+        .is_empty());
+
+    assert!(passwd.shell()?
+        .to_str()
+        .expect("current user's shell is utf-8")
+        .starts_with('/'));
+
+    Ok(())
+}
+
+#[test]
 fn test_acct() {
     use tempfile::NamedTempFile;
     use std::process::Command;

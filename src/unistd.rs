@@ -7,6 +7,7 @@ use fcntl::FcntlArg::F_SETFD;
 use libc::{self, c_char, c_void, c_int, c_long, c_uint, size_t, pid_t, off_t,
            uid_t, gid_t, mode_t, PATH_MAX};
 use std::{fmt, mem, ptr};
+use std::convert::TryFrom;
 use std::ffi::{CStr, OsString, OsStr};
 use std::os::unix::ffi::{OsStringExt, OsStrExt};
 use std::os::unix::io::RawFd;
@@ -1344,6 +1345,88 @@ pub fn setgid(gid: Gid) -> Result<()> {
     let res = unsafe { libc::setgid(gid.into()) };
 
     Errno::result(res).map(drop)
+}
+
+#[derive(Debug, Clone)]
+pub struct Passwd {
+    buf: Box<[u8]>,
+    inner: libc::passwd,
+}
+
+impl Passwd {
+    pub fn uid(&self) -> Uid {
+        Uid(self.inner.pw_uid)
+    }
+
+    pub fn gid(&self) -> Gid {
+        Gid(self.inner.pw_gid)
+    }
+
+    pub fn name(&self) -> Result<&CStr> {
+        range_check(&self.buf, self.inner.pw_name)
+    }
+
+    pub fn passwd(&self) -> Result<&CStr> {
+        range_check(&self.buf, self.inner.pw_passwd)
+    }
+
+    pub fn gecos(&self) -> Result<&CStr> {
+        range_check(&self.buf, self.inner.pw_gecos)
+    }
+
+    pub fn dir(&self) -> Result<&CStr> {
+        range_check(&self.buf, self.inner.pw_dir)
+    }
+
+    pub fn shell(&self) -> Result<&CStr> {
+        range_check(&self.buf, self.inner.pw_shell)
+    }
+}
+
+/// Confirm the provided `ptr` falls within `buf` before treating it as a `CStr`.
+///
+/// Note that this does not check that the end of the string is within `buf`,
+/// i.e. `buf` must be null-terminated.
+fn range_check(buf: &[u8], ptr: *const c_char) -> Result<&CStr> {
+    let comp_ptr = ptr as *const u8;
+    if comp_ptr < buf.as_ptr()
+        || buf.len() > std::isize::MAX as usize
+        || comp_ptr > unsafe { buf.as_ptr().offset(buf.len() as isize) } {
+        return Err(Error::Sys(Errno::ERANGE));
+    }
+
+    Ok(unsafe { CStr::from_ptr(ptr) })
+}
+
+/// Retrieve the specified user's `passwd` file entry.
+///
+/// See also [getpwuid(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/getpwuid.html)
+pub fn getpwuid(uid: Uid) -> Result<Option<Passwd>> {
+    let mut inner: libc::passwd = unsafe { mem::zeroed() };
+    let mut result = ptr::null_mut();
+    let buf_size = sysconf(SysconfVar::GETPW_R_SIZE_MAX)?
+        .and_then(|v| usize::try_from(v).ok())
+        .unwrap_or(16_384);
+    let mut buf = vec![0u8; buf_size].into_boxed_slice();
+
+    let res = unsafe {
+        libc::getpwuid_r(
+            uid.as_raw(),
+            &mut inner,
+            buf.as_mut_ptr() as *mut c_char,
+            buf_size,
+            &mut result,
+        )
+    };
+
+    Errno::result(res)?;
+
+    if result.is_null() {
+        Ok(None)
+    } else {
+        debug_assert_eq!(result, (&mut inner) as *mut _);
+        Ok(Some(Passwd { buf, inner }))
+    }
 }
 
 /// Get the list of supplementary group IDs of the calling process.
