@@ -88,7 +88,7 @@ impl Gid {
         getgid()
     }
 
-    /// Returns effective Gid of calling process. This is practically a more Rusty alias for `getgid`.
+    /// Returns effective Gid of calling process. This is practically a more Rusty alias for `getegid`.
     pub fn effective() -> Self {
         getegid()
     }
