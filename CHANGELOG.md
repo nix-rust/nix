@@ -18,6 +18,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Added `mkfifoat`
   ([#1133](https://github.com/nix-rust/nix/pull/1133))
 
+- Added `mknodat`
+  ([#1131](https://github.com/nix-rust/nix/pull/1131))
+
 ### Changed
 - `Signal::from_c_int` has been replaced by `Signal::try_from`
   ([#1113](https://github.com/nix-rust/nix/pull/1113))

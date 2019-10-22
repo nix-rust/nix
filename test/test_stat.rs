@@ -1,5 +1,5 @@
 use std::fs::{self, File};
-use std::os::unix::fs::{symlink, PermissionsExt};
+use std::os::unix::fs::{symlink, PermissionsExt, MetadataExt, FileTypeExt};
 use std::os::unix::prelude::AsRawFd;
 use std::time::{Duration, UNIX_EPOCH};
 use std::path::Path;
@@ -7,9 +7,11 @@ use std::path::Path;
 #[cfg(not(any(target_os = "netbsd")))]
 use libc::{S_IFMT, S_IFLNK, mode_t};
 
+use libc::dev_t;
+
 use nix::{fcntl, Error};
 use nix::errno::{Errno};
-use nix::sys::stat::{self, fchmod, fchmodat, futimens, stat, utimes, utimensat, mkdirat};
+use nix::sys::stat::{self, fchmod, fchmodat, futimens, stat, utimes, utimensat, mkdirat, mknod, mknodat};
 #[cfg(any(target_os = "linux",
           target_os = "haiku",
           target_os = "ios",
@@ -293,4 +295,149 @@ fn test_mkdirat_fail() {
                             stat::Mode::empty()).unwrap();
     let result = mkdirat(dirfd, filename, Mode::S_IRWXU).unwrap_err();
     assert_eq!(result, Error::Sys(Errno::ENOTDIR));
+}
+
+#[test]
+fn test_mknod_success_path() {
+    let tempdir = tempfile::tempdir().unwrap();
+    let path = &tempdir.path().join("test_node_name");
+    assert!(mknod(path, stat::SFlag::S_IFBLK, stat::Mode::empty(), 0).is_ok());
+    assert!(Path::exists(path));
+}
+
+#[test]
+fn test_mknod_success_sflag() {
+    let tempdir = tempfile::tempdir().unwrap();
+    let path = &tempdir.path().join("test_node_name");
+    assert!(mknod(path, stat::SFlag::S_IFIFO, stat::Mode::empty(), 0).is_ok());
+    let result = fs::metadata(path).unwrap().file_type();
+    assert!(result.is_fifo());
+}
+
+#[test]
+fn test_mknod_success_mode() {
+    let expected_bits = stat::SFlag::S_IFCHR.bits() | stat::Mode::S_IRWXU.bits();
+    let tempdir = tempfile::tempdir().unwrap();
+    let path = &tempdir.path().join("test_node_name");
+    assert!(mknod(path, stat::SFlag::S_IFCHR, stat::Mode::S_IRWXU, 0).is_ok());
+    let permissions = fs::metadata(path).unwrap().permissions();
+    let mode = permissions.mode();
+    assert_eq!(mode as mode_t, expected_bits)
+}
+
+#[test]
+fn test_mknod_success_dev() {
+    let expected_dev_t: dev_t = 28138;
+    let tempdir = tempfile::tempdir().unwrap();
+    let path = &tempdir.path().join("test_node_name");
+    assert!(mknod(
+        path,
+        stat::SFlag::S_IFBLK,
+        stat::Mode::empty(),
+        expected_dev_t
+    )
+    .is_ok());
+    let result = fs::metadata(path).unwrap().rdev();
+    assert_eq!(result as dev_t, expected_dev_t);
+}
+
+#[test]
+fn test_mknod_fail() {
+    let tempdir = tempfile::tempdir().unwrap();
+    let path = &tempdir.path().join("not_existing").join("test_node_name");
+    assert!(mknod(path, stat::SFlag::empty(), stat::Mode::empty(), 0).is_err());
+}
+
+#[test]
+#[cfg(not(any(target_os = "ios", target_os = "macos")))]
+fn test_mknodat_success_path() {
+    let tempdir = tempfile::tempdir().unwrap();
+    let dirfd = fcntl::open(tempdir.path(), fcntl::OFlag::empty(), stat::Mode::empty()).unwrap();
+    let path = "test_node_name";
+    assert!(mknodat(
+        Some(dirfd),
+        path,
+        stat::SFlag::S_IFBLK,
+        stat::Mode::empty(),
+        0
+    )
+    .is_ok());
+    assert!(Path::exists(&tempdir.path().join(path)));
+}
+
+#[test]
+#[cfg(not(any(target_os = "ios", target_os = "macos")))]
+fn test_mknodat_success_sflag() {
+    let tempdir = tempfile::tempdir().unwrap();
+    let dirfd = fcntl::open(tempdir.path(), fcntl::OFlag::empty(), stat::Mode::empty()).unwrap();
+    let path = "test_node_name";
+    assert!(mknodat(
+        Some(dirfd),
+        path,
+        stat::SFlag::S_IFIFO,
+        stat::Mode::empty(),
+        0
+    )
+    .is_ok());
+    let result = fs::metadata(&tempdir.path().join(path))
+        .unwrap()
+        .file_type();
+    assert!(result.is_fifo());
+}
+
+#[test]
+#[cfg(not(any(target_os = "ios", target_os = "macos")))]
+fn test_mknodat_success_mode() {
+    let expected_bits = stat::SFlag::S_IFCHR.bits() | stat::Mode::S_IRWXU.bits();
+    let tempdir = tempfile::tempdir().unwrap();
+    let dirfd = fcntl::open(tempdir.path(), fcntl::OFlag::empty(), stat::Mode::empty()).unwrap();
+    let path = "test_node_name";
+    assert!(mknodat(
+        Some(dirfd),
+        path,
+        stat::SFlag::S_IFCHR,
+        stat::Mode::S_IRWXU,
+        0
+    )
+    .is_ok());
+    let permissions = fs::metadata(&tempdir.path().join(path))
+        .unwrap()
+        .permissions();
+    let mode = permissions.mode();
+    assert_eq!(mode as mode_t, expected_bits)
+}
+
+#[test]
+#[cfg(not(any(target_os = "ios", target_os = "macos")))]
+fn test_mknodat_success_dev() {
+    let expected_dev_t: dev_t = 52933;
+    let tempdir = tempfile::tempdir().unwrap();
+    let dirfd = fcntl::open(tempdir.path(), fcntl::OFlag::empty(), stat::Mode::empty()).unwrap();
+    let path = "test_node_name";
+    assert!(mknodat(
+        Some(dirfd),
+        path,
+        stat::SFlag::S_IFBLK,
+        stat::Mode::empty(),
+        expected_dev_t
+    )
+    .is_ok());
+    let result = fs::metadata(&tempdir.path().join(path)).unwrap().rdev();
+    assert_eq!(result as dev_t, expected_dev_t);
+}
+
+#[test]
+#[cfg(not(any(target_os = "ios", target_os = "macos")))]
+fn test_mknodat_fail() {
+    let tempdir = tempfile::tempdir().unwrap();
+    let dirfd = fcntl::open(tempdir.path(), fcntl::OFlag::empty(), stat::Mode::empty()).unwrap();
+    let path = Path::new("not_existing").join("test_node_name");
+    assert!(mknodat(
+        Some(dirfd),
+        &path,
+        stat::SFlag::empty(),
+        stat::Mode::empty(),
+        0,
+    )
+    .is_err());
 }

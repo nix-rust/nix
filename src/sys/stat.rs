@@ -52,6 +52,27 @@ pub fn mknod<P: ?Sized + NixPath>(path: &P, kind: SFlag, perm: Mode, dev: dev_t)
     Errno::result(res).map(drop)
 }
 
+// mknodat not implemented in OSX
+#[cfg(not(any(target_os = "ios", target_os = "macos")))]
+pub fn mknodat<P: ?Sized + NixPath>(
+    dirfd: Option<RawFd>,
+    path: &P,
+    kind: SFlag,
+    perm: Mode,
+    dev: dev_t,
+) -> Result<()> {
+    let res = path.with_nix_path(|cstr| unsafe {
+        libc::mknodat(
+            at_rawfd(dirfd),
+            cstr.as_ptr(),
+            kind.bits | perm.bits() as mode_t,
+            dev,
+        )
+    })?;
+
+    Errno::result(res).map(drop)
+}
+
 #[cfg(target_os = "linux")]
 pub fn major(dev: dev_t) -> u64 {
     ((dev >> 32) & 0xffff_f000) |
