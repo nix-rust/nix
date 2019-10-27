@@ -19,6 +19,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#1133](https://github.com/nix-rust/nix/pull/1133))
 
 ### Changed
+- `sys::socket::recvfrom` now returns
+  `Result<(usize, Option<SockAddr>)>` instead of `Result<(usize, SockAddr)>`.
+  ([#1145](https://github.com/nix-rust/nix/pull/1145))
+
 - `Signal::from_c_int` has been replaced by `Signal::try_from`
   ([#1113](https://github.com/nix-rust/nix/pull/1113))
 

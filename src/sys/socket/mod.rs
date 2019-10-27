@@ -1075,10 +1075,13 @@ pub fn recv(sockfd: RawFd, buf: &mut [u8], flags: MsgFlags) -> Result<usize> {
 }
 
 /// Receive data from a connectionless or connection-oriented socket. Returns
-/// the number of bytes read and the socket address of the sender.
+/// the number of bytes read and, for connectionless sockets,  the socket
+/// address of the sender.
 ///
 /// [Further reading](http://pubs.opengroup.org/onlinepubs/9699919799/functions/recvfrom.html)
-pub fn recvfrom(sockfd: RawFd, buf: &mut [u8]) -> Result<(usize, SockAddr)> {
+pub fn recvfrom(sockfd: RawFd, buf: &mut [u8])
+    -> Result<(usize, Option<SockAddr>)>
+{
     unsafe {
         let mut addr: sockaddr_storage = mem::zeroed();
         let mut len = mem::size_of::<sockaddr_storage>() as socklen_t;
@@ -1089,10 +1092,13 @@ pub fn recvfrom(sockfd: RawFd, buf: &mut [u8]) -> Result<(usize, SockAddr)> {
             buf.len() as size_t,
             0,
             &mut addr as *mut libc::sockaddr_storage as *mut libc::sockaddr,
-            &mut len as *mut socklen_t))?;
+            &mut len as *mut socklen_t))? as usize;
 
-        sockaddr_storage_to_addr(&addr, len as usize)
-            .map(|addr| (ret as usize, addr))
+        match sockaddr_storage_to_addr(&addr, len as usize) {
+            Err(Error::Sys(Errno::ENOTCONN)) => Ok((ret, None)),
+            Ok(addr) => Ok((ret, Some(addr))),
+            Err(e) => Err(e)
+        }
     }
 }
 

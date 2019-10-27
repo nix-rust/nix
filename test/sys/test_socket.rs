@@ -161,6 +161,73 @@ pub fn test_socketpair() {
     assert_eq!(&buf[..], b"hello");
 }
 
+mod recvfrom {
+    use nix::Result;
+    use nix::sys::socket::*;
+    use std::thread;
+    use super::*;
+
+    const MSG: &'static [u8] = b"Hello, World!";
+
+    fn sendrecv<F>(rsock: RawFd, ssock: RawFd, f: F) -> Option<SockAddr>
+        where F: Fn(RawFd, &[u8], MsgFlags) -> Result<usize> + Send + 'static
+    {
+        let mut buf: [u8; 13] = [0u8; 13];
+        let mut l = 0;
+        let mut from = None;
+
+        let send_thread = thread::spawn(move || {
+            let mut l = 0;
+            while l < std::mem::size_of_val(MSG) {
+                l += f(ssock, &MSG[l..], MsgFlags::empty()).unwrap();
+            }
+        });
+
+        while l < std::mem::size_of_val(MSG) {
+            let (len, from_) = recvfrom(rsock, &mut buf[l..]).unwrap();
+            from = from_;
+            l += len;
+        }
+        assert_eq!(&buf, MSG);
+        send_thread.join().unwrap();
+        from
+    }
+
+    #[test]
+    pub fn stream() {
+        let (fd2, fd1) = socketpair(AddressFamily::Unix, SockType::Stream,
+                                    None, SockFlag::empty()).unwrap();
+        // Ignore from for stream sockets
+        let _ = sendrecv(fd1, fd2, |s, m, flags| {
+            send(s, m, flags)
+        });
+    }
+
+    #[test]
+    pub fn udp() {
+        let std_sa = SocketAddr::from_str("127.0.0.1:6789").unwrap();
+        let inet_addr = InetAddr::from_std(&std_sa);
+        let sock_addr = SockAddr::new_inet(inet_addr);
+        let rsock = socket(AddressFamily::Inet,
+            SockType::Datagram,
+            SockFlag::empty(),
+            None
+        ).unwrap();
+        bind(rsock, &sock_addr).unwrap();
+        let ssock = socket(
+            AddressFamily::Inet,
+            SockType::Datagram,
+            SockFlag::empty(),
+            None,
+        ).expect("send socket failed");
+        let from = sendrecv(rsock, ssock, move |s, m, flags| {
+            sendto(s, m, &sock_addr, flags)
+        });
+        // UDP sockets should set the from address
+        assert_eq!(AddressFamily::Inet, from.unwrap().family());
+    }
+}
+
 // Test error handling of our recvmsg wrapper
 #[test]
 pub fn test_recvmsg_ebadf() {
