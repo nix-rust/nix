@@ -112,9 +112,14 @@ impl FromStr for Signal {
     }
 }
 
-impl AsRef<str> for Signal {
-    fn as_ref(&self) -> &str {
-        match *self {
+impl Signal {
+    /// Returns name of signal.
+    ///
+    /// This function is equivalent to `<Signal as AsRef<str>>::as_ref()`,
+    /// with difference that returned string is `'static`
+    /// and not bound to `self`'s lifetime.
+    pub fn as_str(self) -> &'static str {
+        match self {
             Signal::SIGHUP => "SIGHUP",
             Signal::SIGINT => "SIGINT",
             Signal::SIGQUIT => "SIGQUIT",
@@ -154,6 +159,12 @@ impl AsRef<str> for Signal {
             #[cfg(not(any(target_os = "android", target_os = "emscripten", target_os = "linux")))]
             Signal::SIGINFO => "SIGINFO",
         }
+    }
+}
+
+impl AsRef<str> for Signal {
+    fn as_ref(&self) -> &str {
+        self.as_str()
     }
 }
 
