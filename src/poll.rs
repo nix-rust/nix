@@ -36,6 +36,11 @@ impl PollFd {
         }
     }
 
+    /// Returns the raw file descriptor.
+    pub fn raw_fd(&self) -> RawFd {
+        self.pollfd.fd
+    }
+
     /// Returns the events that occured in the last call to `poll` or `ppoll`.
     pub fn revents(self) -> Option<PollFlags> {
         PollFlags::from_bits(self.pollfd.revents)
