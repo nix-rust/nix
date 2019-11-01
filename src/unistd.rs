@@ -7,7 +7,7 @@ use fcntl::FcntlArg::F_SETFD;
 use libc::{self, c_char, c_void, c_int, c_long, c_uint, size_t, pid_t, off_t,
            uid_t, gid_t, mode_t, PATH_MAX};
 use std::{fmt, mem, ptr};
-use std::ffi::{CStr, OsString, OsStr};
+use std::ffi::{CString, CStr, OsString, OsStr};
 use std::os::unix::ffi::{OsStringExt, OsStrExt};
 use std::os::unix::io::RawFd;
 use std::path::PathBuf;
@@ -2423,4 +2423,256 @@ pub fn access<P: ?Sized + NixPath>(path: &P, amode: AccessFlags) -> Result<()> {
         }
     })?;
     Errno::result(res).map(drop)
+}
+
+/// Representation of a User, based on `libc::passwd`
+///
+/// The reason some fields in this struct are `String` and others are `CString` is because some
+/// fields are based on the user's locale, which could be non-UTF8, while other fields are
+/// guaranteed to conform to [`NAME_REGEX`](https://serverfault.com/a/73101/407341), which only
+/// contains ASCII.
+#[derive(Debug, Clone, PartialEq)]
+pub struct User {
+    /// Username
+    pub name: String,
+    /// User password (probably encrypted)
+    pub passwd: CString,
+    /// User ID
+    pub uid: Uid,
+    /// Group ID
+    pub gid: Gid,
+    /// User information
+    #[cfg(not(target_os = "android"))]
+    pub gecos: CString,
+    /// Home directory
+    pub dir: PathBuf,
+    /// Path to shell
+    pub shell: PathBuf,
+    /// Login class
+    #[cfg(not(any(target_os = "android", target_os = "linux")))]
+    pub class: CString,
+    /// Last password change
+    #[cfg(not(any(target_os = "android", target_os = "linux")))]
+    pub change: libc::time_t,
+    /// Expiration time of account
+    #[cfg(not(any(target_os = "android", target_os = "linux")))]
+    pub expire: libc::time_t
+}
+
+impl From<&libc::passwd> for User {
+    fn from(pw: &libc::passwd) -> User {
+        unsafe {
+            User {
+                name: CStr::from_ptr((*pw).pw_name).to_string_lossy().into_owned(),
+                passwd: CString::new(CStr::from_ptr((*pw).pw_passwd).to_bytes()).unwrap(),
+                #[cfg(not(target_os = "android"))]
+                gecos: CString::new(CStr::from_ptr((*pw).pw_gecos).to_bytes()).unwrap(),
+                dir: PathBuf::from(OsStr::from_bytes(CStr::from_ptr((*pw).pw_dir).to_bytes())),
+                shell: PathBuf::from(OsStr::from_bytes(CStr::from_ptr((*pw).pw_shell).to_bytes())),
+                uid: Uid::from_raw((*pw).pw_uid),
+                gid: Gid::from_raw((*pw).pw_gid),
+                #[cfg(not(any(target_os = "android", target_os = "linux")))]
+                class: CString::new(CStr::from_ptr((*pw).pw_class).to_bytes()).unwrap(),
+                #[cfg(not(any(target_os = "android", target_os = "linux")))]
+                change: (*pw).pw_change,
+                #[cfg(not(any(target_os = "android", target_os = "linux")))]
+                expire: (*pw).pw_expire
+            }
+        }
+    }
+}
+
+impl User {
+    fn from_anything<F>(f: F) -> Result<Option<Self>>
+    where
+        F: Fn(*mut libc::passwd,
+              *mut libc::c_char,
+              libc::size_t,
+              *mut *mut libc::passwd) -> libc::c_int
+    {
+        let buflimit = 16384;
+        let bufsize = match sysconf(SysconfVar::GETPW_R_SIZE_MAX) {
+            Ok(Some(n)) => n as usize,
+            Ok(None) | Err(_) => buflimit as usize,
+        };
+
+        let mut cbuf = Vec::with_capacity(bufsize);
+        let mut pwd = mem::MaybeUninit::<libc::passwd>::uninit();
+        let mut res = ptr::null_mut();
+
+        loop {
+            let error = f(pwd.as_mut_ptr(), cbuf.as_mut_ptr(), cbuf.capacity(), &mut res);
+            if error == 0 {
+                if res.is_null() {
+                    return Ok(None);
+                } else {
+                    let pwd = unsafe { pwd.assume_init() };
+                    return Ok(Some(User::from(&pwd)));
+                }
+            } else if Errno::last() == Errno::ERANGE {
+                // Trigger the internal buffer resizing logic.
+                reserve_double_buffer_size(&mut cbuf, buflimit)?;
+            } else {
+                return Err(Error::Sys(Errno::last()));
+            }
+        }
+    }
+
+    /// Get a user by UID.
+    ///
+    /// Internally, this function calls
+    /// [getpwuid_r(3)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/getpwuid_r.html)
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use nix::unistd::{Uid, User};
+    /// // Returns an Result<Option<User>>, thus the double unwrap.
+    /// let res = User::from_uid(Uid::from_raw(0)).unwrap().unwrap();
+    /// assert!(res.name == "root");
+    /// ```
+    pub fn from_uid(uid: Uid) -> Result<Option<Self>> {
+        User::from_anything(|pwd, cbuf, cap, res| {
+            unsafe { libc::getpwuid_r(uid.0, pwd, cbuf, cap, res) }
+        })
+    }
+
+    /// Get a user by name.
+    ///
+    /// Internally, this function calls
+    /// [getpwnam_r(3)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/getpwuid_r.html)
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use nix::unistd::User;
+    /// // Returns an Result<Option<User>>, thus the double unwrap.
+    /// let res = User::from_name("root").unwrap().unwrap();
+    /// assert!(res.name == "root");
+    /// ```
+    pub fn from_name(name: &str) -> Result<Option<Self>> {
+        let name = CString::new(name).unwrap();
+        User::from_anything(|pwd, cbuf, cap, res| {
+            unsafe { libc::getpwnam_r(name.as_ptr(), pwd, cbuf, cap, res) }
+        })
+    }
+}
+
+/// Representation of a Group, based on `libc::group`
+#[derive(Debug, Clone, PartialEq)]
+pub struct Group {
+    /// Group name
+    pub name: String,
+    /// Group ID
+    pub gid: Gid,
+    /// List of Group members
+    pub mem: Vec<String>
+}
+
+impl From<&libc::group> for Group {
+    fn from(gr: &libc::group) -> Group {
+        unsafe {
+            Group {
+                name: CStr::from_ptr((*gr).gr_name).to_string_lossy().into_owned(),
+                gid: Gid::from_raw((*gr).gr_gid),
+                mem: Group::members((*gr).gr_mem)
+            }
+        }
+    }
+}
+
+impl Group {
+    unsafe fn members(mem: *mut *mut c_char) -> Vec<String> {
+        let mut ret = Vec::new();
+
+        for i in 0.. {
+            let u = mem.offset(i);
+            if (*u).is_null() {
+                break;
+            } else {
+                let s = CStr::from_ptr(*u).to_string_lossy().into_owned();
+                ret.push(s);
+            }
+        }
+
+        ret
+    }
+
+    fn from_anything<F>(f: F) -> Result<Option<Self>>
+    where
+        F: Fn(*mut libc::group,
+              *mut libc::c_char,
+              libc::size_t,
+              *mut *mut libc::group) -> libc::c_int
+    {
+        let buflimit = 16384;
+        let bufsize = match sysconf(SysconfVar::GETGR_R_SIZE_MAX) {
+            Ok(Some(n)) => n as usize,
+            Ok(None) | Err(_) => buflimit as usize,
+        };
+
+        let mut cbuf = Vec::with_capacity(bufsize);
+        let mut grp = mem::MaybeUninit::<libc::group>::uninit();
+        let mut res = ptr::null_mut();
+
+        loop {
+            let error = f(grp.as_mut_ptr(), cbuf.as_mut_ptr(), cbuf.capacity(), &mut res);
+            if error == 0 {
+                if res.is_null() {
+                    return Ok(None);
+                } else {
+                    let grp = unsafe { grp.assume_init() };
+                    return Ok(Some(Group::from(&grp)));
+                }
+            } else if Errno::last() == Errno::ERANGE {
+                // Trigger the internal buffer resizing logic.
+                reserve_double_buffer_size(&mut cbuf, buflimit)?;
+            } else {
+                return Err(Error::Sys(Errno::last()));
+            }
+        }
+    }
+
+    /// Get a group by GID.
+    ///
+    /// Internally, this function calls
+    /// [getgrgid_r(3)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/getpwuid_r.html)
+    ///
+    /// # Examples
+    ///
+    // Disable this test on all OS except Linux as root group may not exist.
+    #[cfg_attr(not(target_os = "linux"), doc = " ```no_run")]
+    #[cfg_attr(target_os = "linux", doc = " ```")]
+    /// use nix::unistd::{Gid, Group};
+    /// // Returns an Result<Option<Group>>, thus the double unwrap.
+    /// let res = Group::from_gid(Gid::from_raw(0)).unwrap().unwrap();
+    /// assert!(res.name == "root");
+    /// ```
+    pub fn from_gid(gid: Gid) -> Result<Option<Self>> {
+        Group::from_anything(|grp, cbuf, cap, res| {
+            unsafe { libc::getgrgid_r(gid.0, grp, cbuf, cap, res) }
+        })
+    }
+
+    /// Get a group by name.
+    ///
+    /// Internally, this function calls
+    /// [getgrnam_r(3)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/getpwuid_r.html)
+    ///
+    /// # Examples
+    ///
+    // Disable this test on all OS except Linux as root group may not exist.
+    #[cfg_attr(not(target_os = "linux"), doc = " ```no_run")]
+    #[cfg_attr(target_os = "linux", doc = " ```")]
+    /// use nix::unistd::Group;
+    /// // Returns an Result<Option<Group>>, thus the double unwrap.
+    /// let res = Group::from_name("root").unwrap().unwrap();
+    /// assert!(res.name == "root");
+    /// ```
+    pub fn from_name(name: &str) -> Result<Option<Self>> {
+        let name = CString::new(name).unwrap();
+        Group::from_anything(|grp, cbuf, cap, res| {
+            unsafe { libc::getgrnam_r(name.as_ptr(), grp, cbuf, cap, res) }
+        })
+    }
 }

@@ -20,6 +20,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Added `mkfifoat`
   ([#1133](https://github.com/nix-rust/nix/pull/1133))
 
+- Added `User::from_uid`, `User::from_name`, `User::from_gid` and
+  `Group::from_name`,
+  ([#1139](https://github.com/nix-rust/nix/pull/1139))
+
 ### Changed
 - `sys::socket::recvfrom` now returns
   `Result<(usize, Option<SockAddr>)>` instead of `Result<(usize, SockAddr)>`.
