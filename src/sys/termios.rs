@@ -584,9 +584,10 @@ libc_enum! {
 }
 
 #[cfg(all(target_os = "linux", target_arch = "sparc64"))]
-pub const VMIN: SpecialCharacterIndices = SpecialCharacterIndices::VEOF;
-#[cfg(all(target_os = "linux", target_arch = "sparc64"))]
-pub const VTIME: SpecialCharacterIndices = SpecialCharacterIndices::VEOL;
+impl SpecialCharacterIndices {
+    pub const VMIN: SpecialCharacterIndices = SpecialCharacterIndices::VEOF;
+    pub const VTIME: SpecialCharacterIndices = SpecialCharacterIndices::VEOL;
+}
 
 pub use libc::NCCS;
 #[cfg(any(target_os = "dragonfly",
