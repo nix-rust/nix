@@ -583,6 +583,11 @@ libc_enum! {
     }
 }
 
+#[cfg(not(all(target_os = "linux", target_arch = "sparc64")))]
+pub const VMIN: SpecialCharacterIndices = SpecialCharacterIndices::VEOF;
+#[cfg(not(all(target_os = "linux", target_arch = "sparc64")))]
+pub const VTIME: SpecialCharacterIndices = SpecialCharacterIndices::VEOL;
+
 pub use libc::NCCS;
 #[cfg(any(target_os = "dragonfly",
           target_os = "freebsd",
