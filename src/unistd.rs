@@ -1169,6 +1169,58 @@ pub fn isatty(fd: RawFd) -> Result<bool> {
     }
 }
 
+/// Flags for `linkat` function.
+#[derive(Clone, Copy, Debug)]
+pub enum LinkatFlags {
+    SymlinkFollow,
+    NoSymlinkFollow,
+}
+
+/// Link one file to another file
+///
+/// Creates a new link (directory entry) at `newpath` for the existing file at `oldpath`. In the
+/// case of a relative `oldpath`, the path is interpreted relative to the directory associated
+/// with file descriptor `olddirfd` instead of the current working directory and similiarly for
+/// `newpath` and file descriptor `newdirfd`. In case `flag` is LinkatFlags::SymlinkFollow and
+/// `oldpath` names a symoblic link, a new link for the target of the symbolic link is created.
+/// If either `olddirfd` or `newdirfd` is `None`, `AT_FDCWD` is used respectively where `oldpath`
+/// and/or `newpath` is then interpreted relative to the current working directory of the calling
+/// process. If either `oldpath` or `newpath` is absolute, then `dirfd` is ignored.
+///
+/// # References
+/// See also [linkat(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/linkat.html)
+pub fn linkat<P: ?Sized + NixPath>(
+    olddirfd: Option<RawFd>,
+    oldpath: &P,
+    newdirfd: Option<RawFd>,
+    newpath: &P,
+    flag: LinkatFlags,
+) -> Result<()> {
+
+    let atflag =
+        match flag {
+            LinkatFlags::SymlinkFollow => AtFlags::AT_SYMLINK_FOLLOW,
+            LinkatFlags::NoSymlinkFollow => AtFlags::empty(),
+        };
+
+    let res =
+        oldpath.with_nix_path(|oldcstr| {
+            newpath.with_nix_path(|newcstr| {
+            unsafe {
+                libc::linkat(
+                    at_rawfd(olddirfd),
+                    oldcstr.as_ptr(),
+                    at_rawfd(newdirfd),
+                    newcstr.as_ptr(),
+                    atflag.bits() as libc::c_int
+                    )
+                }
+            })
+        })??;
+    Errno::result(res).map(drop)
+}
+
+
 /// Remove a directory entry
 ///
 /// See also [unlink(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/unlink.html)
