@@ -315,6 +315,21 @@ pub fn attach(pid: Pid) -> Result<()> {
     }
 }
 
+/// Attach to a running process, as with `ptrace(PTRACE_SEIZE, ...)`
+///
+/// Attaches to the process specified in pid, making it a tracee of the calling process.
+#[cfg(all(target_os = "linux", not(any(target_arch = "mips", target_arch = "mips64"))))]
+pub fn seize(pid: Pid, options: Options) -> Result<()> {
+    unsafe {
+        ptrace_other(
+            Request::PTRACE_SEIZE,
+            pid,
+            ptr::null_mut(),
+            options.bits() as *mut c_void,
+        ).map(drop) // ignore the useless return value
+    }
+}
+
 /// Detaches the current running process, as with `ptrace(PTRACE_DETACH, ...)`
 ///
 /// Detaches from the process specified in pid allowing it to run freely

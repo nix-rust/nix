@@ -5,6 +5,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - ReleaseDate
 ### Added
+- Added `ptrace::seize()`: similar to `attach()` on Linux
+  but with better-defined semantics.
+  (#[1154](https://github.com/nix-rust/nix/pull/1154))
+
 - Added `Signal::as_str()`: returns signal name as `&'static str`
   (#[1138](https://github.com/nix-rust/nix/pull/1138))
 
