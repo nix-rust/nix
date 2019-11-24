@@ -119,6 +119,9 @@ mod test_nix_path;
 mod test_poll;
 mod test_pty;
 #[cfg(any(target_os = "android",
+          target_os = "linux"))]
+mod test_sched;
+#[cfg(any(target_os = "android",
           target_os = "freebsd",
           target_os = "ios",
           target_os = "linux",

@@ -30,6 +30,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Added `linkat`
   ([#1101](https://github.com/nix-rust/nix/pull/1101))
 
+- Added `sched_getaffinity`.
+  ([#1148](https://github.com/nix-rust/nix/pull/1148))
+
 ### Changed
 - `sys::socket::recvfrom` now returns
   `Result<(usize, Option<SockAddr>)>` instead of `Result<(usize, SockAddr)>`.
