@@ -34,6 +34,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#1148](https://github.com/nix-rust/nix/pull/1148))
 
 ### Changed
+- `sys::socket::recvmsg` now takes a plain `Vec` instead of a `CmsgBuffer`
+  implementor.  If you were already using `cmsg_space!`, then you needn't worry.
+  ([#1156](https://github.com/nix-rust/nix/pull/1156))
+
 - `sys::socket::recvfrom` now returns
   `Result<(usize, Option<SockAddr>)>` instead of `Result<(usize, SockAddr)>`.
   ([#1145](https://github.com/nix-rust/nix/pull/1145))
@@ -77,6 +81,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#1136](https://github.com/nix-rust/nix/pull/1136))
 
 ### Removed
+- Remove the deprecated `CmsgSpace`.
+  ([#1156](https://github.com/nix-rust/nix/pull/1156))
 
 ## [0.15.0] - 10 August 2019
 ### Added
