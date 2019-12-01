@@ -18,6 +18,8 @@ fn test_killpg_none() {
 
 #[test]
 fn test_old_sigaction_flags() {
+    let _m = ::SIGNAL_MTX.lock().expect("Mutex got poisoned by another test");
+
     extern "C" fn handler(_: ::libc::c_int) {}
     let act = SigAction::new(
         SigHandler::Handler(handler),

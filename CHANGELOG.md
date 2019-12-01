@@ -80,6 +80,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - Fix length of abstract socket addresses
   ([#1120](https://github.com/nix-rust/nix/pull/1120))
+
 - Fix initialization of msghdr in recvmsg/sendmsg when built with musl
   ([#1136](https://github.com/nix-rust/nix/pull/1136))
 
