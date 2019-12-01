@@ -161,11 +161,11 @@
 //! cfsetspeed(&mut t, 9600u32);
 //! # }
 //! ```
-use Result;
+use {Error, Result};
 use errno::Errno;
 use libc::{self, c_int, tcflag_t};
 use std::cell::{Ref, RefCell};
-use std::convert::From;
+use std::convert::{From, TryFrom};
 use std::mem;
 use std::os::unix::io::RawFd;
 
@@ -376,9 +376,10 @@ libc_enum!{
     }
 }
 
-impl From<libc::speed_t> for BaudRate {
-    fn from(s: libc::speed_t) -> BaudRate {
+impl TryFrom<libc::speed_t> for BaudRate {
+    type Error = Error;
 
+    fn try_from(s: libc::speed_t) -> Result<BaudRate> {
         use libc::{B0, B50, B75, B110, B134, B150, B200, B300, B600, B1200, B1800, B2400, B4800,
                    B9600, B19200, B38400, B57600, B115200, B230400};
         #[cfg(any(target_os = "android", target_os = "linux"))]
@@ -398,85 +399,84 @@ impl From<libc::speed_t> for BaudRate {
         use libc::{B460800, B921600};
 
         match s {
-            B0 => BaudRate::B0,
-            B50 => BaudRate::B50,
-            B75 => BaudRate::B75,
-            B110 => BaudRate::B110,
-            B134 => BaudRate::B134,
-            B150 => BaudRate::B150,
-            B200 => BaudRate::B200,
-            B300 => BaudRate::B300,
-            B600 => BaudRate::B600,
-            B1200 => BaudRate::B1200,
-            B1800 => BaudRate::B1800,
-            B2400 => BaudRate::B2400,
-            B4800 => BaudRate::B4800,
+            B0 => Ok(BaudRate::B0),
+            B50 => Ok(BaudRate::B50),
+            B75 => Ok(BaudRate::B75),
+            B110 => Ok(BaudRate::B110),
+            B134 => Ok(BaudRate::B134),
+            B150 => Ok(BaudRate::B150),
+            B200 => Ok(BaudRate::B200),
+            B300 => Ok(BaudRate::B300),
+            B600 => Ok(BaudRate::B600),
+            B1200 => Ok(BaudRate::B1200),
+            B1800 => Ok(BaudRate::B1800),
+            B2400 => Ok(BaudRate::B2400),
+            B4800 => Ok(BaudRate::B4800),
             #[cfg(any(target_os = "dragonfly",
                       target_os = "freebsd",
                       target_os = "macos",
                       target_os = "netbsd",
                       target_os = "openbsd"))]
-            B7200 => BaudRate::B7200,
-            B9600 => BaudRate::B9600,
+            B7200 => Ok(BaudRate::B7200),
+            B9600 => Ok(BaudRate::B9600),
             #[cfg(any(target_os = "dragonfly",
                       target_os = "freebsd",
                       target_os = "macos",
                       target_os = "netbsd",
                       target_os = "openbsd"))]
-            B14400 => BaudRate::B14400,
-            B19200 => BaudRate::B19200,
+            B14400 => Ok(BaudRate::B14400),
+            B19200 => Ok(BaudRate::B19200),
             #[cfg(any(target_os = "dragonfly",
                       target_os = "freebsd",
                       target_os = "macos",
                       target_os = "netbsd",
                       target_os = "openbsd"))]
-            B28800 => BaudRate::B28800,
-            B38400 => BaudRate::B38400,
-            B57600 => BaudRate::B57600,
+            B28800 => Ok(BaudRate::B28800),
+            B38400 => Ok(BaudRate::B38400),
+            B57600 => Ok(BaudRate::B57600),
             #[cfg(any(target_os = "dragonfly",
                       target_os = "freebsd",
                       target_os = "macos",
                       target_os = "netbsd",
                       target_os = "openbsd"))]
-            B76800 => BaudRate::B76800,
-            B115200 => BaudRate::B115200,
-            B230400 => BaudRate::B230400,
+            B76800 => Ok(BaudRate::B76800),
+            B115200 => Ok(BaudRate::B115200),
+            B230400 => Ok(BaudRate::B230400),
             #[cfg(any(target_os = "android",
                       target_os = "freebsd",
                       target_os = "linux",
                       target_os = "netbsd"))]
-            B460800 => BaudRate::B460800,
+            B460800 => Ok(BaudRate::B460800),
             #[cfg(any(target_os = "android", target_os = "linux"))]
-            B500000 => BaudRate::B500000,
+            B500000 => Ok(BaudRate::B500000),
             #[cfg(any(target_os = "android", target_os = "linux"))]
-            B576000 => BaudRate::B576000,
+            B576000 => Ok(BaudRate::B576000),
             #[cfg(any(target_os = "android",
                       target_os = "freebsd",
                       target_os = "linux",
                       target_os = "netbsd"))]
-            B921600 => BaudRate::B921600,
+            B921600 => Ok(BaudRate::B921600),
             #[cfg(any(target_os = "android", target_os = "linux"))]
-            B1000000 => BaudRate::B1000000,
+            B1000000 => Ok(BaudRate::B1000000),
             #[cfg(any(target_os = "android", target_os = "linux"))]
-            B1152000 => BaudRate::B1152000,
+            B1152000 => Ok(BaudRate::B1152000),
             #[cfg(any(target_os = "android", target_os = "linux"))]
-            B1500000 => BaudRate::B1500000,
+            B1500000 => Ok(BaudRate::B1500000),
             #[cfg(any(target_os = "android", target_os = "linux"))]
-            B2000000 => BaudRate::B2000000,
+            B2000000 => Ok(BaudRate::B2000000),
             #[cfg(any(target_os = "android", all(target_os = "linux", not(target_arch = "sparc64"))))]
-            B2500000 => BaudRate::B2500000,
+            B2500000 => Ok(BaudRate::B2500000),
             #[cfg(any(target_os = "android", all(target_os = "linux", not(target_arch = "sparc64"))))]
-            B3000000 => BaudRate::B3000000,
+            B3000000 => Ok(BaudRate::B3000000),
             #[cfg(any(target_os = "android", all(target_os = "linux", not(target_arch = "sparc64"))))]
-            B3500000 => BaudRate::B3500000,
+            B3500000 => Ok(BaudRate::B3500000),
             #[cfg(any(target_os = "android", all(target_os = "linux", not(target_arch = "sparc64"))))]
-            B4000000 => BaudRate::B4000000,
-            b => unreachable!("Invalid baud constant: {}", b),
+            B4000000 => Ok(BaudRate::B4000000),
+            _ => Err(Error::invalid_argument())
         }
     }
 }
 
-// TODO: Include `TryFrom<u32> for BaudRate` once that API stabilizes
 #[cfg(any(target_os = "freebsd",
           target_os = "dragonfly",
           target_os = "ios",
@@ -963,13 +963,15 @@ cfg_if!{
             Errno::result(res).map(drop)
         }
     } else {
+        use std::convert::TryInto;
+
         /// Get input baud rate (see
         /// [cfgetispeed(3p)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/cfgetispeed.html)).
         ///
         /// `cfgetispeed()` extracts the input baud rate from the given `Termios` structure.
         pub fn cfgetispeed(termios: &Termios) -> BaudRate {
             let inner_termios = termios.get_libc_termios();
-            unsafe { libc::cfgetispeed(&*inner_termios) }.into()
+            unsafe { libc::cfgetispeed(&*inner_termios) }.try_into().unwrap()
         }
 
         /// Get output baud rate (see
@@ -978,7 +980,7 @@ cfg_if!{
         /// `cfgetospeed()` extracts the output baud rate from the given `Termios` structure.
         pub fn cfgetospeed(termios: &Termios) -> BaudRate {
             let inner_termios = termios.get_libc_termios();
-            unsafe { libc::cfgetospeed(&*inner_termios) }.into()
+            unsafe { libc::cfgetospeed(&*inner_termios) }.try_into().unwrap()
         }
 
         /// Set input baud rate (see
@@ -1110,4 +1112,15 @@ pub fn tcgetsid(fd: RawFd) -> Result<Pid> {
     let res = unsafe { libc::tcgetsid(fd) };
 
     Errno::result(res).map(Pid::from_raw)
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn try_from() {
+        assert_eq!(Ok(BaudRate::B0), BaudRate::try_from(libc::B0));
+        assert!(BaudRate::try_from(999999999).is_err());
+    }
 }
