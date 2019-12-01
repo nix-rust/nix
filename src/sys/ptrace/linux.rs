@@ -289,21 +289,26 @@ pub fn traceme() -> Result<()> {
 
 /// Ask for next syscall, as with `ptrace(PTRACE_SYSCALL, ...)`
 ///
-/// Arranges for the tracee to be stopped at the next entry to or exit from a system call.
-pub fn syscall(pid: Pid) -> Result<()> {
+/// Arranges for the tracee to be stopped at the next entry to or exit from a system call,
+/// optionally delivering a signal specified by `sig`.
+pub fn syscall<T: Into<Option<Signal>>>(pid: Pid, sig: T) -> Result<()> {
+    let data = match sig.into() {
+        Some(s) => s as i32 as *mut c_void,
+        None => ptr::null_mut(),
+    };
     unsafe {
         ptrace_other(
             Request::PTRACE_SYSCALL,
             pid,
             ptr::null_mut(),
-            ptr::null_mut(),
+            data,
         ).map(drop) // ignore the useless return value
     }
 }
 
 /// Attach to a running process, as with `ptrace(PTRACE_ATTACH, ...)`
 ///
-/// Attaches to the process specified in pid, making it a tracee of the calling process.
+/// Attaches to the process specified by `pid`, making it a tracee of the calling process.
 pub fn attach(pid: Pid) -> Result<()> {
     unsafe {
         ptrace_other(
@@ -332,14 +337,19 @@ pub fn seize(pid: Pid, options: Options) -> Result<()> {
 
 /// Detaches the current running process, as with `ptrace(PTRACE_DETACH, ...)`
 ///
-/// Detaches from the process specified in pid allowing it to run freely
-pub fn detach(pid: Pid) -> Result<()> {
+/// Detaches from the process specified by `pid` allowing it to run freely, optionally delivering a
+/// signal specified by `sig`.
+pub fn detach<T: Into<Option<Signal>>>(pid: Pid, sig: T) -> Result<()> {
+    let data = match sig.into() {
+        Some(s) => s as i32 as *mut c_void,
+        None => ptr::null_mut(),
+    };
     unsafe {
         ptrace_other(
             Request::PTRACE_DETACH,
             pid,
             ptr::null_mut(),
-            ptr::null_mut()
+            data
         ).map(drop)
     }
 }
