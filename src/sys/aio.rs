@@ -978,11 +978,7 @@ pub fn aio_cancel_all(fd: RawFd) -> Result<AioCancelStat> {
 ///
 /// Use `aio_suspend` to block until an aio operation completes.
 ///
-// Disable doctest due to a known bug in FreeBSD's 32-bit emulation.  The fix
-// will be included in release 11.2.
-// FIXME reenable the doc test when the CI machine gets upgraded to that release.
-// https://svnweb.freebsd.org/base?view=revision&revision=325018
-/// ```no_run
+/// ```
 /// # extern crate tempfile;
 /// # extern crate nix;
 /// # use nix::sys::aio::*;
