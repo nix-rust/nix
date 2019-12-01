@@ -305,6 +305,10 @@ sockopt_impl!(Both, Ipv4RecvIf, libc::IPPROTO_IP, libc::IP_RECVIF, bool);
     target_os = "openbsd",
 ))]
 sockopt_impl!(Both, Ipv4RecvDstAddr, libc::IPPROTO_IP, libc::IP_RECVDSTADDR, bool);
+#[cfg(any(target_os = "android", target_os = "linux"))]
+sockopt_impl!(Both, Ipv4RecvErr, libc::IPPROTO_IP, libc::IP_RECVERR, bool);
+#[cfg(any(target_os = "android", target_os = "linux"))]
+sockopt_impl!(Both, Ipv6RecvErr, libc::IPPROTO_IPV6, libc::IPV6_RECVERR, bool);
 
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
