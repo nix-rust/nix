@@ -37,6 +37,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   injection. ([#1083](https://github.com/nix-rust/nix/pull/1083))
 
 ### Changed
+- `sys::termios::BaudRate` now implements `TryFrom<speed_t>` instead of
+  `From<speed_t>`.  The old `From` implementation would panic on failure.
+  ([#1159](https://github.com/nix-rust/nix/pull/1159))
+
 - `sys::socket::recvmsg` now takes a plain `Vec` instead of a `CmsgBuffer`
   implementor.  If you were already using `cmsg_space!`, then you needn't worry.
   ([#1156](https://github.com/nix-rust/nix/pull/1156))
