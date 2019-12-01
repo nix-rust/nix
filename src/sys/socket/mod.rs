@@ -261,21 +261,6 @@ impl Ipv6MembershipRequest {
     }
 }
 
-cfg_if! {
-    // Darwin and DragonFly BSD always align struct cmsghdr to 32-bit only.
-    if #[cfg(any(target_os = "dragonfly", target_os = "ios", target_os = "macos"))] {
-        type align_of_cmsg_data = u32;
-    } else {
-        type align_of_cmsg_data = size_t;
-    }
-}
-
-/// A type that can be used to store ancillary data received by
-/// [`recvmsg`](fn.recvmsg.html)
-pub trait CmsgBuffer {
-    fn as_bytes_mut(&mut self) -> &mut [u8];
-}
-
 /// Create a buffer large enough for storing some control messages as returned
 /// by [`recvmsg`](fn.recvmsg.html).
 ///
@@ -311,60 +296,8 @@ macro_rules! cmsg_space {
                     CMSG_SPACE(mem::size_of::<$x>() as c_uint)
                 } as usize;
             )*
-            let mut v = Vec::<u8>::with_capacity(space);
-            // safe because any bit pattern is a valid u8
-            unsafe {v.set_len(space)};
-            v
+            Vec::<u8>::with_capacity(space)
         }
-    }
-}
-
-/// A structure used to make room in a cmsghdr passed to recvmsg. The
-/// size and alignment match that of a cmsghdr followed by a T, but the
-/// fields are not accessible, as the actual types will change on a call
-/// to recvmsg.
-///
-/// To make room for multiple messages, nest the type parameter with
-/// tuples:
-///
-/// ```
-/// use std::os::unix::io::RawFd;
-/// use nix::sys::socket::CmsgSpace;
-/// let cmsg: CmsgSpace<([RawFd; 3], CmsgSpace<[RawFd; 2]>)> = CmsgSpace::new();
-/// ```
-#[repr(C)]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct CmsgSpace<T> {
-    _hdr: cmsghdr,
-    _pad: [align_of_cmsg_data; 0],
-    _data: T,
-}
-
-impl<T> CmsgSpace<T> {
-    /// Create a CmsgSpace<T>. The structure is used only for space, so
-    /// the fields are uninitialized.
-    #[deprecated( since="0.14.0", note="Use the cmsg_space! macro instead")]
-    // It's deprecated anyway; no sense adding Default
-    #[allow(clippy::new_without_default)]
-    pub fn new() -> Self {
-        // Safe because the fields themselves aren't accessible.
-        unsafe { mem::uninitialized() }
-    }
-}
-
-impl<T> CmsgBuffer for CmsgSpace<T> {
-    fn as_bytes_mut(&mut self) -> &mut [u8] {
-        // Safe because nothing ever attempts to access CmsgSpace's fields
-        unsafe {
-            slice::from_raw_parts_mut(self as *mut CmsgSpace<T> as *mut u8,
-                                      mem::size_of::<Self>())
-        }
-    }
-}
-
-impl CmsgBuffer for Vec<u8> {
-    fn as_bytes_mut(&mut self) -> &mut [u8] {
-        &mut self[..]
     }
 }
 
@@ -893,33 +826,39 @@ pub fn sendmsg(fd: RawFd, iov: &[IoVec<&[u8]>], cmsgs: &[ControlMessage],
 /// optionally receive ancillary data into the provided buffer.
 /// If no ancillary data is desired, use () as the type parameter.
 ///
+/// # Arguments
+///
+/// * `fd`:             Socket file descriptor
+/// * `iov`:            Scatter-gather list of buffers to receive the message
+/// * `cmsg_buffer`:    Space to receive ancillary data.  Should be created by
+///                     [`cmsg_space!`](macro.cmsg_space.html)
+/// * `flags`:          Optional flags passed directly to the operating system.
+///
 /// # References
 /// [recvmsg(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/recvmsg.html)
 pub fn recvmsg<'a>(fd: RawFd, iov: &[IoVec<&mut [u8]>],
-                   cmsg_buffer: Option<&'a mut dyn CmsgBuffer>,
+                   mut cmsg_buffer: Option<&'a mut Vec<u8>>,
                    flags: MsgFlags) -> Result<RecvMsg<'a>>
 {
     let mut address = mem::MaybeUninit::uninit();
-    let (msg_control, msg_controllen) = match cmsg_buffer {
-        Some(cmsgspace) => {
-            let msg_buf = cmsgspace.as_bytes_mut();
-            (msg_buf.as_mut_ptr(), msg_buf.len())
-        },
-        None => (ptr::null_mut(), 0),
-    };
-    let mut mhdr = unsafe {
-        // Musl's msghdr has private fields, so this is the only way to
-        // initialize it.
-        let mut mhdr = mem::MaybeUninit::<msghdr>::zeroed();
-        let p = mhdr.as_mut_ptr();
-        (*p).msg_name = address.as_mut_ptr() as *mut c_void;
-        (*p).msg_namelen = mem::size_of::<sockaddr_storage>() as socklen_t;
-        (*p).msg_iov = iov.as_ptr() as *mut iovec;
-        (*p).msg_iovlen = iov.len() as _;
-        (*p).msg_control = msg_control as *mut c_void;
-        (*p).msg_controllen = msg_controllen as _;
-        (*p).msg_flags = 0;
-        mhdr.assume_init()
+    let (msg_control, msg_controllen) = cmsg_buffer.as_mut()
+        .map(|v| (v.as_mut_ptr(), v.capacity()))
+        .unwrap_or((ptr::null_mut(), 0));
+    let mut mhdr = {
+        unsafe {
+            // Musl's msghdr has private fields, so this is the only way to
+            // initialize it.
+            let mut mhdr = mem::MaybeUninit::<msghdr>::zeroed();
+            let p = mhdr.as_mut_ptr();
+            (*p).msg_name = address.as_mut_ptr() as *mut c_void;
+            (*p).msg_namelen = mem::size_of::<sockaddr_storage>() as socklen_t;
+            (*p).msg_iov = iov.as_ptr() as *mut iovec;
+            (*p).msg_iovlen = iov.len() as _;
+            (*p).msg_control = msg_control as *mut c_void;
+            (*p).msg_controllen = msg_controllen as _;
+            (*p).msg_flags = 0;
+            mhdr.assume_init()
+        }
     };
 
     let ret = unsafe { libc::recvmsg(fd, &mut mhdr, flags.bits()) };
@@ -928,6 +867,10 @@ pub fn recvmsg<'a>(fd: RawFd, iov: &[IoVec<&mut [u8]>],
         let cmsghdr = unsafe {
             if mhdr.msg_controllen > 0 {
                 // got control message(s)
+                cmsg_buffer
+                    .as_mut()
+                    .unwrap()
+                    .set_len(mhdr.msg_controllen as usize);
                 debug_assert!(!mhdr.msg_control.is_null());
                 debug_assert!(msg_controllen >= mhdr.msg_controllen as usize);
                 CMSG_FIRSTHDR(&mhdr as *const msghdr)
