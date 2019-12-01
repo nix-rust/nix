@@ -561,7 +561,7 @@ fn test_scm_credentials() {
             pid: getpid().as_raw(),
             uid: getuid().as_raw(),
             gid: getgid().as_raw(),
-        };
+        }.into();
         let cmsg = ControlMessage::ScmCredentials(&cred);
         assert_eq!(sendmsg(send, &iov, &[cmsg], MsgFlags::empty(), None).unwrap(), 5);
         close(send).unwrap();
@@ -577,9 +577,9 @@ fn test_scm_credentials() {
         for cmsg in msg.cmsgs() {
             if let ControlMessageOwned::ScmCredentials(cred) = cmsg {
                 assert!(received_cred.is_none());
-                assert_eq!(cred.pid, getpid().as_raw());
-                assert_eq!(cred.uid, getuid().as_raw());
-                assert_eq!(cred.gid, getgid().as_raw());
+                assert_eq!(cred.pid(), getpid().as_raw());
+                assert_eq!(cred.uid(), getuid().as_raw());
+                assert_eq!(cred.gid(), getgid().as_raw());
                 received_cred = Some(cred);
             } else {
                 panic!("unexpected cmsg");
@@ -641,7 +641,7 @@ fn test_impl_scm_credentials_and_rights(mut space: Vec<u8>) {
             pid: getpid().as_raw(),
             uid: getuid().as_raw(),
             gid: getgid().as_raw(),
-        };
+        }.into();
         let fds = [r];
         let cmsgs = [
             ControlMessage::ScmCredentials(&cred),
@@ -669,9 +669,9 @@ fn test_impl_scm_credentials_and_rights(mut space: Vec<u8>) {
                 }
                 ControlMessageOwned::ScmCredentials(cred) => {
                     assert!(received_cred.is_none());
-                    assert_eq!(cred.pid, getpid().as_raw());
-                    assert_eq!(cred.uid, getuid().as_raw());
-                    assert_eq!(cred.gid, getgid().as_raw());
+                    assert_eq!(cred.pid(), getpid().as_raw());
+                    assert_eq!(cred.uid(), getuid().as_raw());
+                    assert_eq!(cred.gid(), getgid().as_raw());
                     received_cred = Some(cred);
                 }
                 _ => panic!("unexpected cmsg"),
