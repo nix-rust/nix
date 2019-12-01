@@ -250,7 +250,7 @@ impl Termios {
     #[doc(hidden)]
     pub unsafe fn default_uninit() -> Self {
         Termios {
-            inner: RefCell::new(mem::uninitialized()),
+            inner: RefCell::new(mem::zeroed()),
             input_flags: InputFlags::empty(),
             output_flags: OutputFlags::empty(),
             control_flags: ControlFlags::empty(),

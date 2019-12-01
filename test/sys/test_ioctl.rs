@@ -323,7 +323,7 @@ mod freebsd_ioctls {
     #[test]
     fn test_ioctl_read() {
         let file = tempfile().unwrap();
-        let mut termios = unsafe { mem::uninitialized() };
+        let mut termios = unsafe { mem::zeroed() };
         let res = unsafe { tiocgeta(file.as_raw_fd(), &mut termios) };
         assert_eq!(res, Err(Sys(ENOTTY)));
     }
@@ -332,7 +332,7 @@ mod freebsd_ioctls {
     #[test]
     fn test_ioctl_write_ptr() {
         let file = tempfile().unwrap();
-        let termios: termios = unsafe { mem::uninitialized() };
+        let termios: termios = unsafe { mem::zeroed() };
         let res = unsafe { tiocseta(file.as_raw_fd(), &termios) };
         assert_eq!(res, Err(Sys(ENOTTY)));
     }
