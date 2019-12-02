@@ -87,7 +87,6 @@
 //!
 //! On non-BSDs, `cfgetispeed()` and `cfgetospeed()` both return a `BaudRate`:
 //!
-// FIXME: Replace `ignore` with `compile_fail` once 1.22 is the minimum support Rust version
 #![cfg_attr(any(target_os = "freebsd", target_os = "dragonfly", target_os = "ios",
                 target_os = "macos", target_os = "netbsd", target_os = "openbsd"),
             doc = " ```rust,ignore")]
@@ -106,7 +105,6 @@
 //!
 //! But on the BSDs, `cfgetispeed()` and `cfgetospeed()` both return `u32`s:
 //!
-// FIXME: Replace `ignore` with `compile_fail` once 1.22 is the minimum support Rust version
 #![cfg_attr(any(target_os = "freebsd", target_os = "dragonfly", target_os = "ios",
                 target_os = "macos", target_os = "netbsd", target_os = "openbsd"),
             doc = " ```rust")]
@@ -125,7 +123,6 @@
 //!
 //! It's trivial to convert from a `BaudRate` to a `u32` on BSDs:
 //!
-// FIXME: Replace `ignore` with `compile_fail` once 1.22 is the minimum support Rust version
 #![cfg_attr(any(target_os = "freebsd", target_os = "dragonfly", target_os = "ios",
                 target_os = "macos", target_os = "netbsd", target_os = "openbsd"),
             doc = " ```rust")]
@@ -145,7 +142,6 @@
 //! And on BSDs you can specify arbitrary baud rates (**note** this depends on hardware support)
 //! by specifying baud rates directly using `u32`s:
 //!
-// FIXME: Replace `ignore` with `compile_fail` once 1.22 is the minimum support Rust version
 #![cfg_attr(any(target_os = "freebsd", target_os = "dragonfly", target_os = "ios",
                 target_os = "macos", target_os = "netbsd", target_os = "openbsd"),
             doc = " ```rust")]
