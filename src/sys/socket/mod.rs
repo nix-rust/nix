@@ -261,6 +261,21 @@ impl Ipv6MembershipRequest {
     }
 }
 
+/// SockExtendedErr is the struct returned when IP_RECVERR is used to
+/// receive asyncronous IP errors.
+#[cfg(any(target_os = "android", target_os = "linux"))]
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct SockExtendedErr {
+    errno: u32,
+    origin: u8,
+    typ: u8,
+    code: u8,
+    pad: u8,
+    info: u32,
+    data: u32,
+}
+
 /// Create a buffer large enough for storing some control messages as returned
 /// by [`recvmsg`](fn.recvmsg.html).
 ///
@@ -463,6 +478,10 @@ pub enum ControlMessageOwned {
         target_os = "openbsd",
     ))]
     Ipv4RecvDstAddr(libc::in_addr),
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    Ipv4RecvErr(SockExtendedErr, sockaddr_in),
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    Ipv6RecvErr(SockExtendedErr, sockaddr_in6),
     /// Catch-all variant for unimplemented cmsg types.
     #[doc(hidden)]
     Unknown(UnknownCmsg),
@@ -545,6 +564,20 @@ impl ControlMessageOwned {
             (libc::IPPROTO_IP, libc::IP_RECVDSTADDR) => {
                 let dl = ptr::read_unaligned(p as *const libc::in_addr);
                 ControlMessageOwned::Ipv4RecvDstAddr(dl)
+            },
+            #[cfg(any(target_os = "android", target_os = "linux"))]
+            (libc::IPPROTO_IP, libc::IP_RECVERR) => {
+                let ee = p as *const SockExtendedErr;
+                let err = ptr::read_unaligned(ee);
+                let addr = ptr::read_unaligned((ee).add(1) as *const sockaddr_in);
+                ControlMessageOwned::Ipv4RecvErr(err, addr)
+            },
+            #[cfg(any(target_os = "android", target_os = "linux"))]
+            (libc::IPPROTO_IPV6, libc::IP_RECVERR) => {
+                let ee = p as *const SockExtendedErr;
+                let err = ptr::read_unaligned(ee);
+                let addr = ptr::read_unaligned((ee).add(1) as *const sockaddr_in6);
+                ControlMessageOwned::Ipv6RecvErr(err, addr)
             },
             (_, _) => {
                 let sl = slice::from_raw_parts(p, len);
