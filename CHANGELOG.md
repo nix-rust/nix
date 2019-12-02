@@ -40,11 +40,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 - `sys::termios::BaudRate` now implements `TryFrom<speed_t>` instead of
   `From<speed_t>`.  The old `From` implementation would panic on failure.
+  ([#1159](https://github.com/nix-rust/nix/pull/1159))
 
 - `sys::socket::ControlMessage::ScmCredentials` and
   `sys::socket::ControlMessageOwned::ScmCredentials` now wrap `UnixCredentials`
   rather than `libc::ucred`.
-  ([#1159](https://github.com/nix-rust/nix/pull/1159))
+  ([#1160](https://github.com/nix-rust/nix/pull/1160))
 
 - `sys::socket::recvmsg` now takes a plain `Vec` instead of a `CmsgBuffer`
   implementor.  If you were already using `cmsg_space!`, then you needn't worry.
