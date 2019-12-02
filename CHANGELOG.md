@@ -3,7 +3,7 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased] - ReleaseDate
+## [0.16.0] - 1 December 2019
 ### Added
 - Added `ptrace::seize()`: similar to `attach()` on Linux
   but with better-defined semantics.
