@@ -464,6 +464,7 @@ impl SigSet {
 
     /// Suspends execution of the calling thread until one of the signals in the
     /// signal mask becomes pending, and returns the accepted signal.
+    #[cfg(not(target_os = "redox"))] // RedoxFS does not yet support sigwait
     pub fn wait(&self) -> Result<Signal> {
         let mut signum = mem::MaybeUninit::uninit();
         let res = unsafe { libc::sigwait(&self.sigset as *const libc::sigset_t, signum.as_mut_ptr()) };

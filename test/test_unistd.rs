@@ -108,7 +108,9 @@ fn test_mkfifo_directory() {
 }
 
 #[test]
-#[cfg(not(any(target_os = "macos", target_os = "ios", target_os = "android")))]
+#[cfg(not(any(
+    target_os = "macos", target_os = "ios",
+    target_os = "android", target_os = "redox")))]
 fn test_mkfifoat_none() {
     let _m = ::CWD_LOCK.read().expect("Mutex got poisoned by another test");
 
@@ -123,7 +125,9 @@ fn test_mkfifoat_none() {
 }
 
 #[test]
-#[cfg(not(any(target_os = "macos", target_os = "ios", target_os = "android")))]
+#[cfg(not(any(
+    target_os = "macos", target_os = "ios",
+    target_os = "android", target_os = "redox")))]
 fn test_mkfifoat() {
     let tempdir = tempfile::tempdir().unwrap();
     let dirfd = open(tempdir.path(), OFlag::empty(), Mode::empty()).unwrap();
@@ -137,7 +141,9 @@ fn test_mkfifoat() {
 }
 
 #[test]
-#[cfg(not(any(target_os = "macos", target_os = "ios", target_os = "android")))]
+#[cfg(not(any(
+    target_os = "macos", target_os = "ios",
+    target_os = "android", target_os = "redox")))]
 fn test_mkfifoat_directory_none() {
     let _m = ::CWD_LOCK.read().expect("Mutex got poisoned by another test");
 
@@ -146,7 +152,9 @@ fn test_mkfifoat_directory_none() {
 }
 
 #[test]
-#[cfg(not(any(target_os = "macos", target_os = "ios", target_os = "android")))]
+#[cfg(not(any(
+    target_os = "macos", target_os = "ios",
+    target_os = "android", target_os = "redox")))]
 fn test_mkfifoat_directory() {
     // mkfifoat should fail if a directory is given
     let tempdir = tempfile::tempdir().unwrap();
@@ -680,6 +688,7 @@ fn test_symlinkat() {
 }
 
 #[test]
+#[cfg(not(target_os = "redox"))]
 fn test_linkat_file() {
     let tempdir = tempfile::tempdir().unwrap();
     let oldfilename = "foo.txt";
@@ -700,6 +709,7 @@ fn test_linkat_file() {
 }
 
 #[test]
+#[cfg(not(target_os = "redox"))]
 fn test_linkat_olddirfd_none() {
     let _dr = ::DirRestore::new();
 
@@ -724,6 +734,7 @@ fn test_linkat_olddirfd_none() {
 }
 
 #[test]
+#[cfg(not(target_os = "redox"))]
 fn test_linkat_newdirfd_none() {
     let _dr = ::DirRestore::new();
 
@@ -748,7 +759,7 @@ fn test_linkat_newdirfd_none() {
 }
 
 #[test]
-#[cfg(not(any(target_os = "ios", target_os = "macos")))]
+#[cfg(not(any(target_os = "ios", target_os = "macos", target_os = "redox")))]
 fn test_linkat_no_follow_symlink() {
     let _m = ::CWD_LOCK.read().expect("Mutex got poisoned by another test");
 
@@ -785,6 +796,7 @@ fn test_linkat_no_follow_symlink() {
 }
 
 #[test]
+#[cfg(not(target_os = "redox"))]
 fn test_linkat_follow_symlink() {
     let _m = ::CWD_LOCK.read().expect("Mutex got poisoned by another test");
 
