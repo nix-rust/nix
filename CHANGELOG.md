@@ -12,6 +12,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   (#[1168](https://github.com/nix-rust/nix/pull/1168))
 
 ### Removed
+- Added S_ISREG, S_ISDIR,... macro analogues to stat 
+  (#[1165](https://github.com/nix-rust/nix/pull/1165))
 
 ## [0.16.0] - 1 December 2019
 ### Added

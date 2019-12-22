@@ -133,6 +133,26 @@ fn test_stat_fstat_lstat() {
 }
 
 #[test]
+#[cfg(not(any(target_os = "netbsd")))]
+fn test_parse_st_mode() {
+    use nix::sys::stat::{lstat, s_isdir, s_islnk, s_isreg, stat};
+    let tempdir = tempfile::tempdir().unwrap();
+    let filename = tempdir.path().join("foo.txt");
+    let linkname = tempdir.path().join("foolink");
+    File::create(&filename).unwrap();
+    symlink("foo.txt", &linkname).unwrap();
+
+    let dir_stat = stat(tempdir.path()).unwrap();
+    assert!(s_isdir(dir_stat.st_mode));
+
+    let file_stat = stat(&filename).unwrap();
+    assert!(s_isreg(file_stat.st_mode));
+
+    let link_stat = lstat(&linkname).unwrap();
+    assert!(s_islnk(link_stat.st_mode));
+}
+
+#[test]
 fn test_fchmod() {
     let tempdir = tempfile::tempdir().unwrap();
     let filename = tempdir.path().join("foo.txt");
