@@ -108,7 +108,7 @@ impl Statfs {
     /// Optimal transfer block size
     #[cfg(any(target_os = "ios", target_os = "macos", target_os = "openbsd"))]
     pub fn optimal_transfer_size(&self) -> i32 {
-        self.0.f_iosize
+        self.0.f_iosize as _
     }
 
     /// Optimal transfer block size
@@ -389,7 +389,7 @@ impl Statfs {
     /// Free file nodes in filesystem
     #[cfg(any(target_os = "freebsd", target_os = "openbsd"))]
     pub fn files_free(&self) -> i64 {
-        self.0.f_ffree
+        self.0.f_ffree as _
     }
 
     /// Free file nodes in filesystem
