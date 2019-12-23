@@ -47,7 +47,7 @@ fn test_accessors() {
 // our bindings.  So it's sufficient to check that AioCb.cancel returned any
 // AioCancelStat value.
 #[test]
-#[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
+#[cfg_attr(target_env = "musl", ignore)]
 fn test_cancel() {
     let wbuf: &[u8] = b"CDEF";
 
@@ -72,7 +72,7 @@ fn test_cancel() {
 
 // Tests using aio_cancel_all for all outstanding IOs.
 #[test]
-#[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
+#[cfg_attr(target_env = "musl", ignore)]
 fn test_aio_cancel_all() {
     let wbuf: &[u8] = b"CDEF";
 
