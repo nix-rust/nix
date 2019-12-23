@@ -106,8 +106,14 @@ impl Statfs {
     }
 
     /// Optimal transfer block size
-    #[cfg(any(target_os = "ios", target_os = "macos", target_os = "openbsd"))]
+    #[cfg(any(target_os = "ios", target_os = "macos"))]
     pub fn optimal_transfer_size(&self) -> i32 {
+        self.0.f_iosize
+    }
+
+    /// Optimal transfer block size
+    #[cfg(target_os = "openbsd")]
+    pub fn optimal_transfer_size(&self) -> u32 {
         self.0.f_iosize
     }
 
@@ -118,7 +124,10 @@ impl Statfs {
     }
 
     /// Optimal transfer block size
-    #[cfg(all(target_os = "linux", target_env = "musl"))]
+    #[cfg(any(
+        target_os = "android",
+        all(target_os = "linux", target_env = "musl")
+    ))]
     pub fn optimal_transfer_size(&self) -> libc::c_ulong {
         self.0.f_bsize
     }
@@ -126,12 +135,6 @@ impl Statfs {
     /// Optimal transfer block size
     #[cfg(all(target_os = "linux", not(any(target_arch = "s390x", target_env = "musl"))))]
     pub fn optimal_transfer_size(&self) -> libc::c_long {
-        self.0.f_bsize
-    }
-
-    /// Optimal transfer block size
-    #[cfg(target_os = "android")]
-    pub fn optimal_transfer_size(&self) -> libc::c_ulong {
         self.0.f_bsize
     }
 
@@ -375,7 +378,13 @@ impl Statfs {
     }
 
     /// Free file nodes in filesystem
-    #[cfg(any(target_os = "ios", target_os = "macos", target_os = "android"))]
+    #[cfg(any(
+            target_os = "android",
+            target_os = "ios",
+            all(target_os = "linux", target_env = "musl"),
+            target_os = "macos",
+            target_os = "openbsd"
+    ))]
     pub fn files_free(&self) -> u64 {
         self.0.f_ffree
     }
@@ -387,14 +396,8 @@ impl Statfs {
     }
 
     /// Free file nodes in filesystem
-    #[cfg(any(target_os = "freebsd", target_os = "openbsd"))]
+    #[cfg(target_os = "freebsd")]
     pub fn files_free(&self) -> i64 {
-        self.0.f_ffree
-    }
-
-    /// Free file nodes in filesystem
-    #[cfg(all(target_os = "linux", target_env = "musl"))]
-    pub fn files_free(&self) -> u64 {
         self.0.f_ffree
     }
 

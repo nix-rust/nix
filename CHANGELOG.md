@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - ReleaseDate
+### Added
+### Changed
+### Fixed
+
+- Fixed the build for OpenBSD
+  (#[1168](https://github.com/nix-rust/nix/pull/1168))
+
+### Removed
 
 ## [0.16.0] - 1 December 2019
 ### Added
