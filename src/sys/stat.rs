@@ -22,6 +22,36 @@ libc_bitflags!(
     }
 );
 
+impl SFlag {
+    pub fn is_fifo(&self) -> bool {
+        *self == SFlag::S_IFIFO
+    }
+
+    pub fn is_chr(&self) -> bool {
+        *self == SFlag::S_IFCHR
+    }
+
+    pub fn is_dir(&self) -> bool {
+        *self == SFlag::S_IFDIR
+    }
+
+    pub fn is_blk(&self) -> bool {
+        *self == SFlag::S_IFBLK
+    }
+
+    pub fn is_reg(&self) -> bool {
+        *self == SFlag::S_IFREG
+    }
+
+    pub fn is_lnk(&self) -> bool {
+        *self == SFlag::S_IFLNK
+    }
+
+    pub fn is_sock(&self) -> bool {
+        *self == SFlag::S_IFSOCK
+    }
+}
+
 libc_bitflags! {
     pub struct Mode: mode_t {
         S_IRWXU;
@@ -121,6 +151,10 @@ pub fn fstatat<P: ?Sized + NixPath>(dirfd: RawFd, pathname: &P, f: AtFlags) -> R
     Errno::result(res)?;
 
     Ok(unsafe{dst.assume_init()})
+}
+
+pub fn file_type(stat: &FileStat) -> SFlag {
+    unsafe { SFlag::from_bits_unchecked(stat.st_mode & SFlag::S_IFMT.bits()) }
 }
 
 /// Change the file permission bits of the file specified by a file descriptor.
