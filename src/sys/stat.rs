@@ -124,38 +124,31 @@ pub fn fstatat<P: ?Sized + NixPath>(dirfd: RawFd, pathname: &P, f: AtFlags) -> R
 }
 
 pub fn s_isreg(st_mode: mode_t) -> bool {
-    let st_mode = unsafe { SFlag::from_bits_unchecked(st_mode) };
-    (SFlag::S_IFMT & st_mode) == SFlag::S_IFREG
+    (SFlag::S_IFMT.bits() & st_mode) == SFlag::S_IFREG.bits()
 }
 
 pub fn s_isdir(st_mode: mode_t) -> bool {
-    let st_mode = unsafe { SFlag::from_bits_unchecked(st_mode) };
-    (SFlag::S_IFMT & st_mode) == SFlag::S_IFDIR
+    (SFlag::S_IFMT.bits() & st_mode) == SFlag::S_IFDIR.bits()
 }
 
 pub fn s_ischr(st_mode: mode_t) -> bool {
-    let st_mode = unsafe { SFlag::from_bits_unchecked(st_mode) };
-    (SFlag::S_IFMT & st_mode) == SFlag::S_IFCHR
+    (SFlag::S_IFMT.bits() & st_mode) == SFlag::S_IFCHR.bits()
 }
 
 pub fn s_isblk(st_mode: mode_t) -> bool {
-    let st_mode = unsafe { SFlag::from_bits_unchecked(st_mode) };
-    (SFlag::S_IFMT & st_mode) == SFlag::S_IFBLK
+    (SFlag::S_IFMT.bits() & st_mode) == SFlag::S_IFBLK.bits()
 }
 
 pub fn s_isfifo(st_mode: mode_t) -> bool {
-    let st_mode = unsafe { SFlag::from_bits_unchecked(st_mode) };
-    (SFlag::S_IFMT & st_mode) == SFlag::S_IFIFO
+    (SFlag::S_IFMT.bits() & st_mode) == SFlag::S_IFIFO.bits()
 }
 
 pub fn s_islnk(st_mode: mode_t) -> bool {
-    let st_mode = unsafe { SFlag::from_bits_unchecked(st_mode) };
-    (SFlag::S_IFMT & st_mode) == SFlag::S_IFLNK
+    (SFlag::S_IFMT.bits() & st_mode) == SFlag::S_IFLNK.bits()
 }
 
 pub fn s_issock(st_mode: mode_t) -> bool {
-    let st_mode = unsafe { SFlag::from_bits_unchecked(st_mode) };
-    (SFlag::S_IFMT & st_mode) == SFlag::S_IFSOCK
+    (SFlag::S_IFMT.bits() & st_mode) == SFlag::S_IFSOCK.bits()
 }
 
 /// Change the file permission bits of the file specified by a file descriptor.
