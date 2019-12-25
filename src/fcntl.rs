@@ -2,6 +2,7 @@ use {Result, NixPath};
 use errno::Errno;
 use libc::{self, c_int, c_uint, c_char, size_t, ssize_t};
 use sys::stat::Mode;
+use unistd::{self, FdOps};
 use std::os::raw;
 use std::os::unix::io::RawFd;
 use std::ffi::OsString;
@@ -11,6 +12,7 @@ use std::os::unix::ffi::OsStringExt;
 use std::ptr; // For splice and copy_file_range
 #[cfg(any(target_os = "android", target_os = "linux"))]
 use sys::uio::IoVec;  // For vmsplice
+
 
 #[cfg(any(target_os = "linux",
           target_os = "android",
@@ -150,6 +152,64 @@ libc_bitflags!(
         O_WRONLY;
     }
 );
+
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct FileDescriptor(RawFd);
+
+impl FileDescriptor {
+    pub fn open<P: ?Sized + NixPath>(path: &P, oflag: OFlag, mode: Mode) -> Result<Self> {
+        let fd = open(path, oflag, mode)?;
+        unsafe { Ok(Self::from_raw_fd(fd)) }
+    }
+
+    /// This method internally dups stdin, so 
+    /// raw_fd() != STDIN_FILENO
+    pub fn stdin() -> Self {
+        let fd = unistd::dup(libc::STDIN_FILENO).unwrap();
+        unsafe { Self::from_raw_fd(fd) }
+    }
+
+    /// This method internally dups stdout, so 
+    /// raw_fd() != STDOUT_FILENO
+    pub fn stdout() -> Self {
+        let fd = unistd::dup(libc::STDOUT_FILENO).unwrap();
+        unsafe { Self::from_raw_fd(fd) }
+    }
+
+    /// This mehtod internally dups stderr, so
+    /// raw_fd() != STDERR_FILENO
+    pub fn stderr() -> Self {
+        let fd = unistd::dup(libc::STDERR_FILENO).unwrap();
+        unsafe { Self::from_raw_fd(fd) }
+    }
+
+    pub fn fsync(&self) -> Result<()> {
+        unistd::fsync(self.0)
+    }
+
+    #[cfg(any(target_os = "linux",
+          target_os = "android",
+          target_os = "emscripten"))]
+    pub fn fdatasync(&self) -> Result<()> {
+        unistd::fdatasync(self.0)
+    }
+}
+
+impl unistd::FdOps for FileDescriptor {   
+    unsafe fn from_raw_fd(fd: RawFd) -> Self {
+        FileDescriptor(fd)
+    }
+
+    unsafe fn raw_fd(&self) -> RawFd { self.0 }
+}
+
+impl unistd::SeekableFd for FileDescriptor {}
+
+impl Drop for FileDescriptor {
+    fn drop(&mut self) {
+        unistd::close(self.0).expect("You've already closed this file descriptor before me =(");
+    }
+}
 
 pub fn open<P: ?Sized + NixPath>(path: &P, oflag: OFlag, mode: Mode) -> Result<RawFd> {
     let fd = path.with_nix_path(|cstr| {

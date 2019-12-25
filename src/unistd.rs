@@ -21,6 +21,74 @@ pub use self::pivot_root::*;
           target_os = "linux", target_os = "openbsd"))]
 pub use self::setres::*;
 
+/// Implementors of this trait must implement Drop where they call unistd::close for inner raw fd. 
+pub trait FdOps: Drop + Sized {
+    /// You must guarantee input fd isn't owned by any of safe wrappers
+    unsafe fn from_raw_fd(fd: RawFd) -> Self;
+
+    /// You must guarantee the given RawFd won't be closed
+    /// and won't outlive this instance 
+    unsafe fn raw_fd(&self) -> RawFd;
+
+    fn into_raw_fd(self) -> RawFd {
+        let fd = unsafe { self.raw_fd() };
+        std::mem::forget(self);
+
+        fd
+    }
+
+    fn write(&mut self, buf: &[u8]) -> Result<usize> {
+        let fd = unsafe { self.raw_fd() };
+        write(fd, buf)
+    }
+
+    fn read(&mut self, buf: &mut [u8]) -> Result<usize> {
+        let fd = unsafe { self.raw_fd() };
+        read(fd, buf)
+    }
+
+    fn dup(&self) -> Result<Self> {
+        let fd = unsafe { self.raw_fd() };
+        let new_fd = dup(fd)?;
+        unsafe { Ok(Self::from_raw_fd(new_fd)) }
+    }
+
+    fn dup2<T: FdOps>(&self, other: T) -> Result<Self> {
+        let this_fd = unsafe { self.raw_fd() };
+        let other_fd = unsafe { other.raw_fd() };
+        
+        std::mem::forget(other);
+
+        let ret_fd = dup2(this_fd, other_fd)?;
+        
+        unsafe { Ok(Self::from_raw_fd(ret_fd)) }
+    }
+
+    /// You must guarantee that RawFd isn't owned by any of fd safe wrappers
+    unsafe fn dup2_raw(&self, other: RawFd) -> Result<Self> {
+        let ret_fd = dup2(self.raw_fd(), other)?;
+        Ok(Self::from_raw_fd(ret_fd))
+    }
+}
+
+pub trait SeekableFd: FdOps {
+    fn lseek(&mut self, offset: libc::off_t, whence: Whence) -> Result<libc::off_t> {
+        let fd = unsafe { self.raw_fd() };
+        lseek(fd, offset, whence)
+    }
+     
+    #[cfg(any(target_os = "linux", target_os = "android"))]
+    fn lseek64(&mut self, offset: libc::off64_t, whence: Whence) -> Result<libc::off64_t> {
+        let fd = unsafe { self.raw_fd() };
+        lseek64(fd, offset, whence)
+    }
+
+    fn is_seekable(&self) -> bool {
+        let fd = unsafe { self.raw_fd() };
+        lseek(fd, 0, Whence::SeekCur).is_ok()
+    }
+}
+
 /// User identifier
 ///
 /// Newtype pattern around `uid_t` (which is just alias). It prevents bugs caused by accidentally
