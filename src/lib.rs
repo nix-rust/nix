@@ -63,6 +63,8 @@ pub mod poll;
 #[deny(missing_docs)]
 pub mod pty;
 pub mod sched;
+#[cfg(target_os = "linux")]
+pub mod shadow;
 pub mod sys;
 // This can be implemented for other platforms as soon as libc
 // provides bindings for them.

@@ -7,6 +7,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Add `CLK_TCK` to `SysconfVar`
   (#[1177](https://github.com/nix-rust/nix/pull/1177))
+- Added `shadow.h` functions
+  (#[1173](https://github.com/nix-rust/nix/pull/1173))
 ### Changed
 ### Fixed
 ### Removed
