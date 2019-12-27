@@ -162,25 +162,9 @@ impl FileDescriptor {
         unsafe { Ok(Self::from_raw_fd(fd)) }
     }
 
-    /// This method internally dups stdin, so 
-    /// raw_fd() != STDIN_FILENO
-    pub fn stdin() -> Self {
-        let fd = unistd::dup(libc::STDIN_FILENO).unwrap();
-        unsafe { Self::from_raw_fd(fd) }
-    }
-
-    /// This method internally dups stdout, so 
-    /// raw_fd() != STDOUT_FILENO
-    pub fn stdout() -> Self {
-        let fd = unistd::dup(libc::STDOUT_FILENO).unwrap();
-        unsafe { Self::from_raw_fd(fd) }
-    }
-
-    /// This mehtod internally dups stderr, so
-    /// raw_fd() != STDERR_FILENO
-    pub fn stderr() -> Self {
-        let fd = unistd::dup(libc::STDERR_FILENO).unwrap();
-        unsafe { Self::from_raw_fd(fd) }
+    pub fn creat<P: ?Sized + NixPath>(path: &P, mode: Mode) -> Result<Self> {
+        let fd = open(path, OFlag::O_CREAT | OFlag::O_WRONLY | OFlag::O_TRUNC, mode)?;
+        unsafe { Ok(Self::from_raw_fd(fd)) }
     }
 
     pub fn fsync(&self) -> Result<()> {

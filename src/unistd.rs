@@ -21,9 +21,10 @@ pub use self::pivot_root::*;
           target_os = "linux", target_os = "openbsd"))]
 pub use self::setres::*;
 
-/// Implementors of this trait must implement Drop where they call unistd::close for inner raw fd. 
-pub trait FdOps: Drop + Sized {
+/// Common fd operations
+pub trait FdOps: Sized {
     /// You must guarantee input fd isn't owned by any of safe wrappers
+    /// and won't be used after this call
     unsafe fn from_raw_fd(fd: RawFd) -> Self;
 
     /// You must guarantee the given RawFd won't be closed
@@ -53,7 +54,7 @@ pub trait FdOps: Drop + Sized {
         unsafe { Ok(Self::from_raw_fd(new_fd)) }
     }
 
-    fn dup2<T: FdOps>(&self, other: T) -> Result<Self> {
+    fn dup2<T: FdOps>(&self, other: T) -> Result<T> {
         let this_fd = unsafe { self.raw_fd() };
         let other_fd = unsafe { other.raw_fd() };
         
@@ -61,14 +62,37 @@ pub trait FdOps: Drop + Sized {
 
         let ret_fd = dup2(this_fd, other_fd)?;
         
-        unsafe { Ok(Self::from_raw_fd(ret_fd)) }
+        unsafe { Ok(T::from_raw_fd(ret_fd)) }
     }
 
-    /// You must guarantee that RawFd isn't owned by any of fd safe wrappers
+    /// You must guarantee the RawFd isn't owned by any of fd safe wrappers
+    /// and won't be used after this call
     unsafe fn dup2_raw(&self, other: RawFd) -> Result<Self> {
         let ret_fd = dup2(self.raw_fd(), other)?;
         Ok(Self::from_raw_fd(ret_fd))
     }
+
+    fn fcntl(&mut self, arg: crate::fcntl::FcntlArg) -> Result<c_int> {
+        let fd = unsafe { self.raw_fd() };
+        fcntl(fd, arg)
+    }
+
+    fn fstat(&self) -> Result<crate::sys::stat::FileStat> {
+        use crate::sys::stat::fstat;
+
+        let fd = unsafe { self.raw_fd() };
+        fstat(fd)
+    }
+
+    /// TODO: Move to FileStat
+    fn file_type(&self) -> Result<crate::sys::stat::SFlag> {
+        use crate::sys::stat::file_type;
+        Ok(file_type(&self.fstat()?))
+    }
+
+    // TODO: Add ioctl
+ 
+    // TODO: Add another common methods    
 }
 
 pub trait SeekableFd: FdOps {
@@ -86,6 +110,51 @@ pub trait SeekableFd: FdOps {
     fn is_seekable(&self) -> bool {
         let fd = unsafe { self.raw_fd() };
         lseek(fd, 0, Whence::SeekCur).is_ok()
+    }
+}
+
+/// Safe abstraction around 
+/// STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct StdHandle {
+    inner: RawFd,
+}
+
+impl StdHandle {
+
+    pub fn stdin() -> Self {
+        // use crate::fcntl::FcntlArg::*;
+
+        let stdin = unsafe { StdHandle::from_raw_fd(libc::STDIN_FILENO) };
+        stdin
+        // stdin.fcntl(F_GETFD).map(move |_| stdin)
+    }
+
+    pub fn stdout() -> Self {
+        // use crate::fcntl::FcntlArg::*;
+
+        let stdout = unsafe { StdHandle::from_raw_fd(libc::STDOUT_FILENO) };
+        stdout
+        // stdout.fcntl(F_GETFD).map(move |_| stdout)
+    }
+
+    pub fn stderr() -> Self {
+        // use crate::fcntl::FcntlArg::*;
+
+        let stderr = unsafe { StdHandle::from_raw_fd(libc::STDERR_FILENO) };
+        stderr
+        // stderr.fcntl(F_GETFD).map(move |_| stderr)
+    }
+}
+
+impl FdOps for StdHandle {
+    unsafe fn from_raw_fd(fd: RawFd) -> Self {
+        assert!(fd < 3);
+        StdHandle {inner: fd}
+    }
+
+    unsafe fn raw_fd(&self) -> RawFd {
+        self.inner
     }
 }
 
