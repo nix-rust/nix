@@ -8,6 +8,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 ### Fixed
 ### Removed
+- Removed deprecated Error::description from error types
+  (#[1175](https://github.com/nix-rust/nix/pull/1175))
 
 ## [0.16.1] - 23 December 2019
 ### Added

@@ -111,11 +111,7 @@ impl ErrnoSentinel for libc::sighandler_t {
     fn sentinel() -> Self { libc::SIG_ERR }
 }
 
-impl error::Error for Errno {
-    fn description(&self) -> &str {
-        self.desc()
-    }
-}
+impl error::Error for Errno {}
 
 impl fmt::Display for Errno {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
