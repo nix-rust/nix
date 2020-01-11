@@ -1994,7 +1994,8 @@ pub enum SysconfVar {
     BC_STRING_MAX = libc::_SC_BC_STRING_MAX,
     /// Maximum number of simultaneous processes per real user ID.
     CHILD_MAX = libc::_SC_CHILD_MAX,
-    // _SC_CLK_TCK is obsolete
+    // The number of clock ticks per second.
+    CLK_TCK = libc::_SC_CLK_TCK,
     /// Maximum number of weights that can be assigned to an entry of the
     /// LC_COLLATE order keyword in the locale definition file
     COLL_WEIGHTS_MAX = libc::_SC_COLL_WEIGHTS_MAX,
