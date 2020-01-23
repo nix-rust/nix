@@ -29,7 +29,7 @@
 //! Historically `ioctl` numbers were arbitrary hard-coded values. In Linux (before 2.6) and some
 //! unices this has changed to a more-ordered system where the ioctl numbers are partitioned into
 //! subcomponents (For linux this is documented in
-//! [`Documentation/ioctl/ioctl-number.txt`](http://elixir.free-electrons.com/linux/latest/source/Documentation/ioctl/ioctl-number.txt)):
+//! [`Documentation/ioctl/ioctl-number.rst`](http://elixir.free-electrons.com/linux/latest/source/Documentation/ioctl/ioctl-number.rst)):
 //!
 //!   * Number: The actual ioctl ID
 //!   * Type: A grouping of ioctls for a common purpose or driver
