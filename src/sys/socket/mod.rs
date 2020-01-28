@@ -529,6 +529,19 @@ pub enum ControlMessageOwned {
     #[cfg(target_os = "linux")]
     UdpGroSegments(u16),
 
+    #[cfg(any(
+        target_os = "linux",
+        target_os = "android",
+        target_os = "freebsd",
+    ))]
+    OrigDstAddrV4(libc::sockaddr_in),
+    #[cfg(any(
+        target_os = "linux",
+        target_os = "android",
+        target_os = "freebsd",
+    ))]
+    OrigDstAddrV6(libc::sockaddr_in6),
+
     /// Catch-all variant for unimplemented cmsg types.
     #[doc(hidden)]
     Unknown(UnknownCmsg),
@@ -622,6 +635,16 @@ impl ControlMessageOwned {
                 let gso_size: u16 = ptr::read_unaligned(p as *const _);
                 ControlMessageOwned::UdpGroSegments(gso_size)
             },
+            #[cfg(any(target_os = "android", target_os = "linux", target_os = "freebsd"))]
+            (libc::IPPROTO_IP, libc::IP_ORIGDSTADDR) => {
+                let dl = ptr::read_unaligned(p as *const libc::sockaddr_in);
+                ControlMessageOwned::OrigDstAddrV4(dl)
+            },
+            #[cfg(any(target_os = "android", target_os = "linux", target_os = "freebsd"))]
+            (libc::IPPROTO_IPV6, libc::IPV6_ORIGDSTADDR) => {
+                let dl = ptr::read_unaligned(p as *const libc::sockaddr_in6);
+                ControlMessageOwned::OrigDstAddrV6(dl)
+            },
             (_, _) => {
                 let sl = slice::from_raw_parts(p, len);
                 let ucmsg = UnknownCmsg(*header, Vec::<u8>::from(&sl[..]));
@@ -676,6 +699,34 @@ pub enum ControlMessage<'a> {
     /// [`unix(4)`](https://www.freebsd.org/cgi/man.cgi?query=unix) man page.
     #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
     ScmCreds,
+
+    /// A message of type `IP_ORIGDSTADDR` which is triggered by setting
+    /// `RecvOrigDstAddrV4` socket option and is used to get original IPv4
+    /// UDP or TCP destination address when actual destination address
+    /// is overwritten by [`TPROXY`][1], which in turn may be used to
+    /// make a transparent proxy server.
+    /// 
+    /// [1]:https://www.kernel.org/doc/Documentation/networking/tproxy.txt
+    #[cfg(any(
+        target_os = "linux",
+        target_os = "android",
+        target_os = "freebsd",
+    ))]
+    OrigDstAddrV4(&'a libc::sockaddr_in),
+
+    /// A message of type `IPV6_ORIGDSTADDR` which is triggered by setting
+    /// `RecvOrigDstAddrV6` socket option and is used to get original IPv6
+    /// UDP or TCP destination address when actual destination address
+    /// is overwritten by [`TPROXY`][1], which in turn may be used to
+    /// make a transparent proxy server.
+    /// 
+    /// [1]:https://www.kernel.org/doc/Documentation/networking/tproxy.txt
+    #[cfg(any(
+        target_os = "linux",
+        target_os = "android",
+        target_os = "freebsd",
+    ))]
+    OrigDstAddrV6(&'a libc::sockaddr_in6),
 
     /// Set IV for `AF_ALG` crypto API.
     ///
@@ -754,14 +805,30 @@ impl<'a> ControlMessage<'a> {
             #[cfg(any(target_os = "android", target_os = "linux"))]
             ControlMessage::ScmCredentials(creds) => {
                 &creds.0 as *const libc::ucred as *const u8
-            }
+            },
             #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
             ControlMessage::ScmCreds => {
                 // The kernel overwrites the data, we just zero it
                 // to make sure it's not uninitialized memory
                 unsafe { ptr::write_bytes(cmsg_data, 0, self.len()) };
                 return
-            }
+            },
+            #[cfg(any(
+                target_os = "linux",
+                target_os = "android",
+                target_os = "freebsd",
+            ))]
+            ControlMessage::OrigDstAddrV4(origaddr) => {
+                origaddr as *const libc::sockaddr_in as *const u8
+            },
+            #[cfg(any(
+                target_os = "linux",
+                target_os = "android",
+                target_os = "freebsd",
+            ))]
+            ControlMessage::OrigDstAddrV6(origaddr) => {
+                origaddr as *const libc::sockaddr_in6 as *const u8
+            },
             #[cfg(any(target_os = "android", target_os = "linux"))]
             ControlMessage::AlgSetIv(iv) => {
                 let af_alg_iv = libc::af_alg_iv {
@@ -817,11 +884,27 @@ impl<'a> ControlMessage<'a> {
             #[cfg(any(target_os = "android", target_os = "linux"))]
             ControlMessage::ScmCredentials(creds) => {
                 mem::size_of_val(creds)
-            }
+            },
             #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
             ControlMessage::ScmCreds => {
                 mem::size_of::<libc::cmsgcred>()
-            }
+            },
+            #[cfg(any(
+                target_os = "linux",
+                target_os = "android",
+                target_os = "freebsd",
+            ))]
+            ControlMessage::OrigDstAddrV4(origaddr) => {
+                mem::size_of_val(origaddr)
+            },
+            #[cfg(any(
+                target_os = "linux",
+                target_os = "android",
+                target_os = "freebsd",
+            ))]
+            ControlMessage::OrigDstAddrV6(origaddr) => {
+                mem::size_of_val(origaddr)
+            },
             #[cfg(any(target_os = "android", target_os = "linux"))]
             ControlMessage::AlgSetIv(iv) => {
                 mem::size_of::<libc::af_alg_iv>() + iv.len()
@@ -854,6 +937,10 @@ impl<'a> ControlMessage<'a> {
                 ControlMessage::AlgSetAeadAssoclen(_) => libc::SOL_ALG,
             #[cfg(target_os = "linux")]
             ControlMessage::UdpGsoSegments(_) => libc::SOL_UDP,
+            #[cfg(any(target_os = "android", target_os = "linux", target_os = "freebsd"))]
+            ControlMessage::OrigDstAddrV4(_) => libc::IPPROTO_IP,
+            #[cfg(any(target_os = "android", target_os = "linux", target_os = "freebsd"))]
+            ControlMessage::OrigDstAddrV6(_) => libc::IPPROTO_IPV6,
         }
     }
 
@@ -868,6 +955,14 @@ impl<'a> ControlMessage<'a> {
             #[cfg(any(target_os = "android", target_os = "linux"))]
             ControlMessage::AlgSetIv(_) => {
                 libc::ALG_SET_IV
+            },
+            #[cfg(any(target_os = "android", target_os = "linux", target_os = "freebsd"))]
+            ControlMessage::OrigDstAddrV4(_) => {
+                libc::IP_ORIGDSTADDR
+            },
+            #[cfg(any(target_os = "android", target_os = "linux", target_os = "freebsd"))]
+            ControlMessage::OrigDstAddrV6(_) => {
+                libc::IPV6_ORIGDSTADDR
             },
             #[cfg(any(target_os = "android", target_os = "linux"))]
             ControlMessage::AlgSetOp(_) => {
