@@ -5,6 +5,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - ReleaseDate
 ### Added
+### Changed
+### Fixed
+### Removed
+
+## [0.17.0] - 3 February 2020
+### Added
 - Add `CLK_TCK` to `SysconfVar`
   (#[1177](https://github.com/nix-rust/nix/pull/1177))
 ### Changed
