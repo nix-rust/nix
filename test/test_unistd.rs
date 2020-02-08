@@ -874,6 +874,7 @@ mod safe_fd_wrappers {
         sys::stat::Mode,
     };
 
+    use std::os::unix::io::AsRawFd;
 
     #[test]
     fn test_basic_ops() {
@@ -941,13 +942,13 @@ mod safe_fd_wrappers {
         assert!(fd_writer2.write("x".as_bytes()).is_ok());
         assert!(fd21.write("y".as_bytes()).is_ok());
 
-        let raw_old = unsafe { fd12.raw_fd() };
+        let raw_old = fd12.as_raw_fd();
         let mut fd12 = fd21.dup2(fd12).unwrap();
-        assert_eq!(raw_old, unsafe { fd12.raw_fd() });
+        assert_eq!(raw_old, fd12.as_raw_fd());
 
-        let raw_old = unsafe { fd21.raw_fd() };
+        let raw_old = fd21.as_raw_fd();
         let mut fd21 = fd11.dup2(fd21).unwrap();
-        assert_eq!(raw_old, unsafe { fd21.raw_fd() });
+        assert_eq!(raw_old, fd21.as_raw_fd());
 
         assert!(fd12.write("z".as_bytes()).is_ok());
         assert!(fd21.write("d".as_bytes()).is_ok());

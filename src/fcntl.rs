@@ -2,9 +2,9 @@ use {Result, NixPath};
 use errno::Errno;
 use libc::{self, c_int, c_uint, c_char, size_t, ssize_t};
 use sys::stat::Mode;
-use unistd::{self, FdOps};
+use unistd;
 use std::os::raw;
-use std::os::unix::io::RawFd;
+use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 use std::ffi::OsString;
 use std::os::unix::ffi::OsStringExt;
 
@@ -179,15 +179,28 @@ impl FileDescriptor {
     }
 }
 
-impl unistd::FdOps for FileDescriptor {   
-    unsafe fn from_raw_fd(fd: RawFd) -> Self {
-        FileDescriptor(fd)
+impl AsRawFd for FileDescriptor {
+    fn as_raw_fd(&self) -> RawFd {
+        self.0
     }
-
-    unsafe fn raw_fd(&self) -> RawFd { self.0 }
 }
 
+impl FromRawFd for FileDescriptor {
+    unsafe fn from_raw_fd(fd: RawFd) -> Self {
+        Self(fd)
+    }
+}
+
+impl IntoRawFd for FileDescriptor {
+    fn into_raw_fd(self) -> RawFd {
+        self.0
+    }
+}
+
+impl unistd::FdOps for FileDescriptor {}
+
 impl unistd::SeekableFd for FileDescriptor {}
+
 
 impl Drop for FileDescriptor {
     fn drop(&mut self) {

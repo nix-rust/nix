@@ -9,7 +9,7 @@ use libc::{self, c_char, c_void, c_int, c_long, c_uint, size_t, pid_t, off_t,
 use std::{fmt, mem, ptr};
 use std::ffi::{CString, CStr, OsString, OsStr};
 use std::os::unix::ffi::{OsStringExt, OsStrExt};
-use std::os::unix::io::RawFd;
+use std::os::unix::io::{FromRawFd, IntoRawFd, AsRawFd, RawFd};
 use std::path::PathBuf;
 use void::Void;
 use sys::stat::Mode;
@@ -22,44 +22,36 @@ pub use self::pivot_root::*;
 pub use self::setres::*;
 
 /// Common fd operations
-pub trait FdOps: Sized {
-    /// You must guarantee input fd isn't owned by any of safe wrappers
-    /// and won't be used after this call
-    unsafe fn from_raw_fd(fd: RawFd) -> Self;
-
-    /// You must guarantee the given RawFd won't be closed
-    /// and won't outlive this instance 
-    unsafe fn raw_fd(&self) -> RawFd;
-
-    fn into_raw_fd(self) -> RawFd {
-        let fd = unsafe { self.raw_fd() };
-        std::mem::forget(self);
-
-        fd
-    }
-
+pub trait FdOps: FromRawFd + AsRawFd + IntoRawFd + Sized {
     fn write(&mut self, buf: &[u8]) -> Result<usize> {
-        let fd = unsafe { self.raw_fd() };
+        let fd = self.as_raw_fd();
+        // TODO: Make this call unsafe
         write(fd, buf)
     }
 
     fn read(&mut self, buf: &mut [u8]) -> Result<usize> {
-        let fd = unsafe { self.raw_fd() };
+        let fd = self.as_raw_fd();
+
+        // TODO: Make this call unsafe
         read(fd, buf)
     }
 
     fn dup(&self) -> Result<Self> {
-        let fd = unsafe { self.raw_fd() };
+        let fd = self.as_raw_fd();
+
+        // TODO: Make this call unsafe
         let new_fd = dup(fd)?;
+
         unsafe { Ok(Self::from_raw_fd(new_fd)) }
     }
 
     fn dup2<T: FdOps>(&self, other: T) -> Result<T> {
-        let this_fd = unsafe { self.raw_fd() };
-        let other_fd = unsafe { other.raw_fd() };
+        let this_fd = self.as_raw_fd();
+        let other_fd = other.as_raw_fd();
         
         std::mem::forget(other);
 
+        // TODO: Make this call unsafe
         let ret_fd = dup2(this_fd, other_fd)?;
         
         unsafe { Ok(T::from_raw_fd(ret_fd)) }
@@ -68,19 +60,24 @@ pub trait FdOps: Sized {
     /// You must guarantee the RawFd isn't owned by any of fd safe wrappers
     /// and won't be used after this call
     unsafe fn dup2_raw(&self, other: RawFd) -> Result<Self> {
-        let ret_fd = dup2(self.raw_fd(), other)?;
+        // TODO: Make this call unsafe
+        let ret_fd = dup2(self.as_raw_fd(), other)?;
         Ok(Self::from_raw_fd(ret_fd))
     }
 
     fn fcntl(&mut self, arg: crate::fcntl::FcntlArg) -> Result<c_int> {
-        let fd = unsafe { self.raw_fd() };
+        let fd = self.as_raw_fd();
+
+        // TODO: Make this call unsafe
         fcntl(fd, arg)
     }
 
     fn fstat(&self) -> Result<crate::sys::stat::FileStat> {
         use crate::sys::stat::fstat;
 
-        let fd = unsafe { self.raw_fd() };
+        let fd = self.as_raw_fd();
+
+        // TODO: Make this call unsafe
         fstat(fd)
     }
 
@@ -90,25 +87,29 @@ pub trait FdOps: Sized {
         Ok(file_type(&self.fstat()?))
     }
 
-    // TODO: Add ioctl
- 
     // TODO: Add another common methods    
 }
 
 pub trait SeekableFd: FdOps {
     fn lseek(&mut self, offset: libc::off_t, whence: Whence) -> Result<libc::off_t> {
-        let fd = unsafe { self.raw_fd() };
+        let fd = self.as_raw_fd();
+
+        // TODO: Make this call unsafe
         lseek(fd, offset, whence)
     }
      
     #[cfg(any(target_os = "linux", target_os = "android"))]
     fn lseek64(&mut self, offset: libc::off64_t, whence: Whence) -> Result<libc::off64_t> {
-        let fd = unsafe { self.raw_fd() };
+        let fd = self.as_raw_fd();
+
+        // TODO: Make this call unsafe
         lseek64(fd, offset, whence)
     }
 
     fn is_seekable(&self) -> bool {
-        let fd = unsafe { self.raw_fd() };
+        let fd = self.as_raw_fd();
+
+        // TODO: Make this call unsafe
         lseek(fd, 0, Whence::SeekCur).is_ok()
     }
 }
@@ -121,42 +122,42 @@ pub struct StdHandle {
 }
 
 impl StdHandle {
-
     pub fn stdin() -> Self {
-        // use crate::fcntl::FcntlArg::*;
-
         let stdin = unsafe { StdHandle::from_raw_fd(libc::STDIN_FILENO) };
         stdin
-        // stdin.fcntl(F_GETFD).map(move |_| stdin)
     }
 
     pub fn stdout() -> Self {
-        // use crate::fcntl::FcntlArg::*;
-
         let stdout = unsafe { StdHandle::from_raw_fd(libc::STDOUT_FILENO) };
         stdout
-        // stdout.fcntl(F_GETFD).map(move |_| stdout)
     }
 
     pub fn stderr() -> Self {
-        // use crate::fcntl::FcntlArg::*;
-
         let stderr = unsafe { StdHandle::from_raw_fd(libc::STDERR_FILENO) };
         stderr
-        // stderr.fcntl(F_GETFD).map(move |_| stderr)
     }
 }
 
-impl FdOps for StdHandle {
+impl FromRawFd for StdHandle {
     unsafe fn from_raw_fd(fd: RawFd) -> Self {
         assert!(fd < 3);
-        StdHandle {inner: fd}
+        Self { inner: fd }
     }
+}
 
-    unsafe fn raw_fd(&self) -> RawFd {
+impl AsRawFd for StdHandle {
+    fn as_raw_fd(&self) -> RawFd {
         self.inner
     }
 }
+
+impl IntoRawFd for StdHandle {
+    fn into_raw_fd(self) -> RawFd {
+        self.inner
+    }
+}
+
+impl FdOps for StdHandle {}
 
 /// User identifier
 ///
