@@ -83,8 +83,7 @@ pub trait FdOps: FromRawFd + AsRawFd + IntoRawFd + Sized {
 
     /// TODO: Move to FileStat
     fn file_type(&self) -> Result<crate::sys::stat::SFlag> {
-        use crate::sys::stat::file_type;
-        Ok(file_type(&self.fstat()?))
+        unimplemented!()
     }
 
     // TODO: Add another common methods    
