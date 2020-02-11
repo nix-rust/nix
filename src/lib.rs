@@ -30,6 +30,7 @@ pub extern crate libc;
 
 // Public crates
 pub mod dir;
+pub mod env;
 pub mod errno;
 #[deny(missing_docs)]
 pub mod features;
