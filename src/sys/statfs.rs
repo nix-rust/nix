@@ -20,19 +20,19 @@ pub struct Statfs(libc::statfs);
 
 #[cfg(target_os = "freebsd")]
 #[derive(Eq, Copy, Clone, PartialEq, Debug)]
-pub struct FsType(u32);
+pub struct FsType(pub u32);
 #[cfg(target_os = "android")]
 #[derive(Eq, Copy, Clone, PartialEq, Debug)]
-pub struct FsType(libc::c_ulong);
+pub struct FsType(pub libc::c_ulong);
 #[cfg(all(target_os = "linux", target_arch = "s390x"))]
 #[derive(Eq, Copy, Clone, PartialEq, Debug)]
-pub struct FsType(u32);
+pub struct FsType(pub u32);
 #[cfg(all(target_os = "linux", target_env = "musl"))]
 #[derive(Eq, Copy, Clone, PartialEq, Debug)]
-pub struct FsType(libc::c_ulong);
+pub struct FsType(pub libc::c_ulong);
 #[cfg(all(target_os = "linux", not(any(target_arch = "s390x", target_env = "musl"))))]
 #[derive(Eq, Copy, Clone, PartialEq, Debug)]
-pub struct FsType(libc::c_long);
+pub struct FsType(pub libc::c_long);
 
 #[cfg(all(target_os = "linux", not(target_env = "musl"), not(target_arch = "s390x")))]
 pub const ADFS_SUPER_MAGIC: FsType = FsType(libc::ADFS_SUPER_MAGIC);

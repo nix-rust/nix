@@ -9,6 +9,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   where it's available, and clears the environment of all variables
   via `std::env::vars` and `std::env::remove_var` on others.
   (#[1185](https://github.com/nix-rust/nix/pull/1185))
+- `FsType` inner value made public.
+  (#[1187](https://github.com/nix-rust/nix/pull/1187))
 ### Changed
 ### Fixed
 ### Removed
