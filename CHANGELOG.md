@@ -5,6 +5,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - ReleaseDate
 ### Added
+- Added `env::clearenv()`: calls `libc::clearenv` on platforms
+  where it's available, and clears the environment of all variables
+  via `std::env::vars` and `std::env::remove_var` on others.
+  (#[1185](https://github.com/nix-rust/nix/pull/1185))
 ### Changed
 ### Fixed
 ### Removed
