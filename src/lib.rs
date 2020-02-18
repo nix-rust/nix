@@ -12,7 +12,7 @@
 #![recursion_limit = "500"]
 #![deny(unused)]
 #![deny(unstable_features)]
-#![deny(missing_copy_implementations)]
+// #![deny(missing_copy_implementations)]
 #![deny(missing_debug_implementations)]
 
 // External crates

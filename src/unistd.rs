@@ -9,7 +9,7 @@ use libc::{self, c_char, c_void, c_int, c_long, c_uint, size_t, pid_t, off_t,
 use std::{fmt, mem, ptr};
 use std::ffi::{CString, CStr, OsString, OsStr};
 use std::os::unix::ffi::{OsStringExt, OsStrExt};
-use std::os::unix::io::RawFd;
+use std::os::unix::io::{FromRawFd, IntoRawFd, AsRawFd, RawFd};
 use std::path::PathBuf;
 use void::Void;
 use sys::stat::Mode;
@@ -20,6 +20,143 @@ pub use self::pivot_root::*;
 #[cfg(any(target_os = "android", target_os = "freebsd",
           target_os = "linux", target_os = "openbsd"))]
 pub use self::setres::*;
+
+/// Common fd operations
+pub trait FdOps: FromRawFd + AsRawFd + IntoRawFd + Sized {
+    fn write(&mut self, buf: &[u8]) -> Result<usize> {
+        let fd = self.as_raw_fd();
+        // TODO: Make this call unsafe
+        write(fd, buf)
+    }
+
+    fn read(&mut self, buf: &mut [u8]) -> Result<usize> {
+        let fd = self.as_raw_fd();
+
+        // TODO: Make this call unsafe
+        read(fd, buf)
+    }
+
+    fn dup(&self) -> Result<Self> {
+        let fd = self.as_raw_fd();
+
+        // TODO: Make this call unsafe
+        let new_fd = dup(fd)?;
+
+        unsafe { Ok(Self::from_raw_fd(new_fd)) }
+    }
+
+    fn dup2<T: FdOps>(&self, other: T) -> Result<T> {
+        let this_fd = self.as_raw_fd();
+        let other_fd = other.as_raw_fd();
+        
+        std::mem::forget(other);
+
+        // TODO: Make this call unsafe
+        let ret_fd = dup2(this_fd, other_fd)?;
+        
+        unsafe { Ok(T::from_raw_fd(ret_fd)) }
+    }
+
+    /// You must guarantee the RawFd isn't owned by any of fd safe wrappers
+    /// and won't be used after this call
+    unsafe fn dup2_raw(&self, other: RawFd) -> Result<Self> {
+        // TODO: Make this call unsafe
+        let ret_fd = dup2(self.as_raw_fd(), other)?;
+        Ok(Self::from_raw_fd(ret_fd))
+    }
+
+    fn fcntl(&mut self, arg: crate::fcntl::FcntlArg) -> Result<c_int> {
+        let fd = self.as_raw_fd();
+
+        // TODO: Make this call unsafe
+        fcntl(fd, arg)
+    }
+
+    fn fstat(&self) -> Result<crate::sys::stat::FileStat> {
+        use crate::sys::stat::fstat;
+
+        let fd = self.as_raw_fd();
+
+        // TODO: Make this call unsafe
+        fstat(fd)
+    }
+
+    /// TODO: Move to FileStat
+    fn file_type(&self) -> Result<crate::sys::stat::SFlag> {
+        unimplemented!()
+    }
+
+    // TODO: Add another common methods    
+}
+
+pub trait SeekableFd: FdOps {
+    fn lseek(&mut self, offset: libc::off_t, whence: Whence) -> Result<libc::off_t> {
+        let fd = self.as_raw_fd();
+
+        // TODO: Make this call unsafe
+        lseek(fd, offset, whence)
+    }
+     
+    #[cfg(any(target_os = "linux", target_os = "android"))]
+    fn lseek64(&mut self, offset: libc::off64_t, whence: Whence) -> Result<libc::off64_t> {
+        let fd = self.as_raw_fd();
+
+        // TODO: Make this call unsafe
+        lseek64(fd, offset, whence)
+    }
+
+    fn is_seekable(&self) -> bool {
+        let fd = self.as_raw_fd();
+
+        // TODO: Make this call unsafe
+        lseek(fd, 0, Whence::SeekCur).is_ok()
+    }
+}
+
+/// Safe abstraction around 
+/// STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct StdHandle {
+    inner: RawFd,
+}
+
+impl StdHandle {
+    pub fn stdin() -> Self {
+        let stdin = unsafe { StdHandle::from_raw_fd(libc::STDIN_FILENO) };
+        stdin
+    }
+
+    pub fn stdout() -> Self {
+        let stdout = unsafe { StdHandle::from_raw_fd(libc::STDOUT_FILENO) };
+        stdout
+    }
+
+    pub fn stderr() -> Self {
+        let stderr = unsafe { StdHandle::from_raw_fd(libc::STDERR_FILENO) };
+        stderr
+    }
+}
+
+impl FromRawFd for StdHandle {
+    unsafe fn from_raw_fd(fd: RawFd) -> Self {
+        assert!(fd < 3);
+        Self { inner: fd }
+    }
+}
+
+impl AsRawFd for StdHandle {
+    fn as_raw_fd(&self) -> RawFd {
+        self.inner
+    }
+}
+
+impl IntoRawFd for StdHandle {
+    fn into_raw_fd(self) -> RawFd {
+        self.inner
+    }
+}
+
+impl FdOps for StdHandle {}
 
 /// User identifier
 ///

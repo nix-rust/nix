@@ -866,3 +866,109 @@ fn test_access_file_exists() {
     let _file = File::create(path.clone()).unwrap();
     assert!(access(&path, AccessFlags::R_OK | AccessFlags::W_OK).is_ok());
 }
+
+mod safe_fd_wrappers {
+    use nix::{
+        unistd::{FdOps, SeekableFd, Whence},
+        fcntl::{FileDescriptor, OFlag},
+        sys::stat::Mode,
+    };
+
+    use std::os::unix::io::AsRawFd;
+
+    #[test]
+    fn test_basic_ops() {
+        let tempdir = tempfile::tempdir().unwrap();
+        let file = tempdir.path().join("test_basic_ops.txt");
+
+        let mut fd_writer = FileDescriptor::open(
+            &file,
+            OFlag::O_CREAT | OFlag::O_WRONLY | OFlag::O_TRUNC,
+            Mode::S_IRWXU | Mode::S_IRWXG | Mode::S_IRWXO
+        ).unwrap();
+
+        let mut fd_reader = FileDescriptor::open(
+            &file,
+            OFlag::O_CREAT | OFlag::O_RDONLY | OFlag::O_TRUNC,
+            Mode::S_IRWXU | Mode::S_IRWXG | Mode::S_IRWXO
+        ).unwrap();
+        
+        let mut read_buf = [0; 26];
+        let write_buf = "abcdefghijklmnopqrstuvwxyz".as_bytes();
+
+        assert_eq!(fd_writer.write(&write_buf[..6]), Ok(6));
+        assert_eq!(fd_reader.read(&mut read_buf), Ok(6));
+        assert_eq!(&read_buf[0..6], &write_buf[0..6]);
+
+
+        assert!(fd_writer.write(&write_buf[6..]).is_ok());
+        assert!(fd_reader.read(&mut read_buf[0..3]).is_ok());
+        assert_eq!(&read_buf[0..3], &write_buf[6..9]);
+
+        assert!(fd_writer.is_seekable());
+        assert!(fd_reader.is_seekable());
+
+        assert_eq!(fd_reader.lseek(0, Whence::SeekSet), Ok(0));
+
+        assert!(fd_reader.read(&mut read_buf).is_ok());
+        assert_eq!(&read_buf, &write_buf);
+    }
+
+    #[test]
+    fn test_dupstep() {
+        let tempdir = tempfile::tempdir().unwrap();
+        let file1 = tempdir.path().join("test_dupstep1.txt");
+        let file2 = tempdir.path().join("test_dupstep2.txt");
+
+        let mut fd_writer1 = FileDescriptor::open(
+            &file1,
+            OFlag::O_CREAT | OFlag::O_RDWR | OFlag::O_TRUNC,
+            Mode::S_IRWXU | Mode::S_IRWXG | Mode::S_IRWXO
+        ).unwrap();
+
+        let mut fd_writer2 = FileDescriptor::open(
+            &file2,
+            OFlag::O_CREAT | OFlag::O_RDWR | OFlag::O_TRUNC,
+            Mode::S_IRWXU | Mode::S_IRWXG | Mode::S_IRWXO
+        ).unwrap(); 
+        
+        let mut fd11 = fd_writer1.dup().unwrap();
+        let mut fd12 = fd_writer1.dup().unwrap();
+        let mut fd21 = fd_writer2.dup().unwrap();
+
+        assert!(fd_writer1.write("a".as_bytes()).is_ok());
+        assert!(fd11.write("b".as_bytes()).is_ok());
+        assert!(fd12.write("c".as_bytes()).is_ok());
+        assert!(fd_writer2.write("x".as_bytes()).is_ok());
+        assert!(fd21.write("y".as_bytes()).is_ok());
+
+        let raw_old = fd12.as_raw_fd();
+        let mut fd12 = fd21.dup2(fd12).unwrap();
+        assert_eq!(raw_old, fd12.as_raw_fd());
+
+        let raw_old = fd21.as_raw_fd();
+        let mut fd21 = fd11.dup2(fd21).unwrap();
+        assert_eq!(raw_old, fd21.as_raw_fd());
+
+        assert!(fd12.write("z".as_bytes()).is_ok());
+        assert!(fd21.write("d".as_bytes()).is_ok());
+
+        let mut buf = [0; 4];
+        
+        fd_writer1.lseek(0, Whence::SeekSet).unwrap();
+        fd_writer2.lseek(0, Whence::SeekSet).unwrap();
+
+        assert_eq!(fd_writer1.read(&mut buf), Ok(4));
+        assert_eq!(&mut buf, "abcd".as_bytes());
+
+        assert_eq!(fd_writer2.read(&mut buf), Ok(3));
+        assert_eq!(&mut buf[..3], "xyz".as_bytes());
+
+        drop(fd11);
+        drop(fd12);
+        drop(fd21);
+
+        assert!(fd_writer1.write("\0".as_bytes()).is_ok());
+        assert!(fd_writer2.write("\0".as_bytes()).is_ok());
+    }   
+}

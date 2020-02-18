@@ -2,8 +2,9 @@ use {Result, NixPath};
 use errno::Errno;
 use libc::{self, c_int, c_uint, c_char, size_t, ssize_t};
 use sys::stat::Mode;
+use unistd;
 use std::os::raw;
-use std::os::unix::io::RawFd;
+use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 use std::ffi::OsString;
 use std::os::unix::ffi::OsStringExt;
 
@@ -11,6 +12,7 @@ use std::os::unix::ffi::OsStringExt;
 use std::ptr; // For splice and copy_file_range
 #[cfg(any(target_os = "android", target_os = "linux"))]
 use sys::uio::IoVec;  // For vmsplice
+
 
 #[cfg(any(target_os = "linux",
           target_os = "android",
@@ -150,6 +152,61 @@ libc_bitflags!(
         O_WRONLY;
     }
 );
+
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct FileDescriptor(RawFd);
+
+impl FileDescriptor {
+    pub fn open<P: ?Sized + NixPath>(path: &P, oflag: OFlag, mode: Mode) -> Result<Self> {
+        let fd = open(path, oflag, mode)?;
+        unsafe { Ok(Self::from_raw_fd(fd)) }
+    }
+
+    pub fn creat<P: ?Sized + NixPath>(path: &P, mode: Mode) -> Result<Self> {
+        let fd = open(path, OFlag::O_CREAT | OFlag::O_WRONLY | OFlag::O_TRUNC, mode)?;
+        unsafe { Ok(Self::from_raw_fd(fd)) }
+    }
+
+    pub fn fsync(&self) -> Result<()> {
+        unistd::fsync(self.0)
+    }
+
+    #[cfg(any(target_os = "linux",
+          target_os = "android",
+          target_os = "emscripten"))]
+    pub fn fdatasync(&self) -> Result<()> {
+        unistd::fdatasync(self.0)
+    }
+}
+
+impl AsRawFd for FileDescriptor {
+    fn as_raw_fd(&self) -> RawFd {
+        self.0
+    }
+}
+
+impl FromRawFd for FileDescriptor {
+    unsafe fn from_raw_fd(fd: RawFd) -> Self {
+        Self(fd)
+    }
+}
+
+impl IntoRawFd for FileDescriptor {
+    fn into_raw_fd(self) -> RawFd {
+        self.0
+    }
+}
+
+impl unistd::FdOps for FileDescriptor {}
+
+impl unistd::SeekableFd for FileDescriptor {}
+
+
+impl Drop for FileDescriptor {
+    fn drop(&mut self) {
+        unistd::close(self.0).expect("You've already closed this file descriptor before me =(");
+    }
+}
 
 pub fn open<P: ?Sized + NixPath>(path: &P, oflag: OFlag, mode: Mode) -> Result<RawFd> {
     let fd = path.with_nix_path(|cstr| {
