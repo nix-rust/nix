@@ -115,7 +115,7 @@ impl fmt::Display for Gid {
 ///
 /// Newtype pattern around `pid_t` (which is just alias). It prevents bugs caused by accidentally
 /// passing wrong value.
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Pid(pid_t);
 
 impl Pid {

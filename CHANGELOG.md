@@ -14,6 +14,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Added `unistd::setfsuid` and `unistd::setfsgid` to set the user or group
   identity for filesystem checks per-thread.
   (#[1163](https://github.com/nix-rust/nix/pull/1163))
+- Derived `Ord`, `PartialOrd` for `unistd::Pid` (#[1189](https://github.com/nix-rust/nix/pull/1189))
+
 ### Changed
 ### Fixed
 ### Removed
