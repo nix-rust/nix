@@ -866,3 +866,41 @@ fn test_access_file_exists() {
     let _file = File::create(path.clone()).unwrap();
     assert!(access(&path, AccessFlags::R_OK | AccessFlags::W_OK).is_ok());
 }
+
+/// Tests setting the filesystem UID with `setfsuid`.
+#[cfg(any(target_os = "linux", target_os = "android"))]
+#[test]
+fn test_setfsuid() {
+    use std::os::unix::fs::PermissionsExt;
+    use std::{fs, thread};
+    require_capability!(CAP_SETUID);
+
+    // get the UID of the "nobody" user
+    let nobody = User::from_name("nobody").unwrap().unwrap();
+
+    // create a temporary file with permissions '-rw-r-----'
+    let file = tempfile::NamedTempFile::new().unwrap();
+    let temp_path = file.into_temp_path();
+    let temp_path_2 = (&temp_path).to_path_buf();
+    let mut permissions = fs::metadata(&temp_path).unwrap().permissions();
+    permissions.set_mode(640);
+
+    // spawn a new thread where to test setfsuid
+    thread::spawn(move || {
+        // set filesystem UID
+        let fuid = setfsuid(nobody.uid);
+        // trying to open the temporary file should fail with EACCES
+        let res = fs::File::open(&temp_path);
+        assert!(res.is_err());
+        assert_eq!(res.err().unwrap().kind(), io::ErrorKind::PermissionDenied);
+
+        // assert fuid actually changes
+        let prev_fuid = setfsuid(Uid::from_raw(-1i32 as u32));
+        assert_ne!(prev_fuid, fuid);
+    })
+    .join()
+    .unwrap();
+
+    // open the temporary file with the current thread filesystem UID
+    fs::File::open(temp_path_2).unwrap();
+}

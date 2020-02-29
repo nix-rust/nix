@@ -11,6 +11,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   (#[1185](https://github.com/nix-rust/nix/pull/1185))
 - `FsType` inner value made public.
   (#[1187](https://github.com/nix-rust/nix/pull/1187))
+- Added `unistd::setfsuid` and `unistd::setfsgid` to set the user or group
+  identity for filesystem checks per-thread.
+  (#[1163](https://github.com/nix-rust/nix/pull/1163))
 ### Changed
 ### Fixed
 ### Removed

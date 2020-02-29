@@ -1398,6 +1398,28 @@ pub fn setgid(gid: Gid) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
+/// Set the user identity used for filesystem checks per-thread.
+/// On both success and failure, this call returns the previous filesystem user
+/// ID of the caller.
+///
+/// See also [setfsuid(2)](http://man7.org/linux/man-pages/man2/setfsuid.2.html)
+#[cfg(any(target_os = "linux", target_os = "android"))]
+pub fn setfsuid(uid: Uid) -> Uid {
+    let prev_fsuid = unsafe { libc::setfsuid(uid.into()) };
+    Uid::from_raw(prev_fsuid as uid_t)
+}
+
+/// Set the group identity used for filesystem checks per-thread.
+/// On both success and failure, this call returns the previous filesystem group
+/// ID of the caller.
+///
+/// See also [setfsgid(2)](http://man7.org/linux/man-pages/man2/setfsgid.2.html)
+#[cfg(any(target_os = "linux", target_os = "android"))]
+pub fn setfsgid(gid: Gid) -> Gid {
+    let prev_fsgid = unsafe { libc::setfsgid(gid.into()) };
+    Gid::from_raw(prev_fsgid as gid_t)
+}
+
 /// Get the list of supplementary group IDs of the calling process.
 ///
 /// [Further reading](http://pubs.opengroup.org/onlinepubs/009695399/functions/getgroups.html)
