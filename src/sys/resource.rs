@@ -134,6 +134,7 @@ pub fn getrlimit(resource: Resource) -> Result<(Option<rlim_t>, Option<rlim_t>)>
 /// [`Resource`]: enum.Resource.html
 pub fn setrlimit(resource: Resource, soft_limit: Option<rlim_t>, hard_limit: Option<rlim_t>) -> Result<()> {
     let mut rlim: rlimit = unsafe { mem::uninitialized() };
+    // TODO: How do we handle the case where soft_limit isn't Some()?
     rlim.rlim_cur = soft_limit.unwrap_or(RLIM_INFINITY);
     rlim.rlim_max = hard_limit.unwrap_or(RLIM_INFINITY);
 
