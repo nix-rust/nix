@@ -1,14 +1,14 @@
 //! Configure the process resource limits.
 use std::mem;
 
-use libc::{self, c_int, rlimit, RLIM_INFINITY};
+use libc::{self, c_uint, rlimit, RLIM_INFINITY};
 pub use libc::rlim_t;
 
 use {Errno, Result};
 
 libc_enum!{
     /// A resource that limits apply to
-    #[repr(i32)]
+    #[repr(u32)]
     pub enum Resource {
         // POSIX
         /// This is the maximum size of the process's virtual memory (address space). The limit is specified in bytes, and is rounded down to the system page size.
@@ -97,8 +97,8 @@ libc_enum!{
 ///
 /// [`Resource`]: enum.Resource.html
 pub fn getrlimit(resource: Resource) -> Result<(Option<rlim_t>, Option<rlim_t>)> {
-    let mut rlim: rlimit = unsafe { mem::uninitialized() };
-    let res = unsafe { libc::getrlimit(resource as c_int, &mut rlim as *mut _) };
+    let mut rlim: rlimit = unsafe { mem::MaybeUninit::uninit().assume_init() };
+    let res = unsafe { libc::getrlimit(resource as c_uint, &mut rlim as *mut _) };
     // TODO: use Option::filter after it has been stabilized
     Errno::result(res).map(|_| {
         (if rlim.rlim_cur != RLIM_INFINITY { Some(rlim.rlim_cur) } else { None },
@@ -133,10 +133,10 @@ pub fn getrlimit(resource: Resource) -> Result<(Option<rlim_t>, Option<rlim_t>)>
 ///
 /// [`Resource`]: enum.Resource.html
 pub fn setrlimit(resource: Resource, soft_limit: Option<rlim_t>, hard_limit: Option<rlim_t>) -> Result<()> {
-    let mut rlim: rlimit = unsafe { mem::uninitialized() };
+    let mut rlim: rlimit = unsafe { mem::MaybeUninit::uninit().assume_init() };
     rlim.rlim_cur = soft_limit.unwrap_or(RLIM_INFINITY);
     rlim.rlim_max = hard_limit.unwrap_or(RLIM_INFINITY);
     
-    let res = unsafe { libc::setrlimit(resource as c_int, &rlim as *const _) };
+    let res = unsafe { libc::setrlimit(resource as c_uint, &rlim as *const _) };
     Errno::result(res).map(|_| ())
 }
