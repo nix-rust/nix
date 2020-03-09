@@ -14,7 +14,7 @@ mod consts {
     #[doc(hidden)]
     pub const IN: ioctl_num_type = 0x8000_0000;
     #[doc(hidden)]
-    pub const INOUT: ioctl_num_type = (IN|OUT);
+    pub const INOUT: ioctl_num_type = IN|OUT;
     #[doc(hidden)]
     pub const IOCPARM_MASK: ioctl_num_type = 0x1fff;
 }
