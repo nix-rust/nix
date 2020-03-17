@@ -5,6 +5,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - ReleaseDate
 ### Added
+- Added support for `F_OFD_*` `fcntl` commands on Linux and Android.
+  (#[1195](https://github.com/nix-rust/nix/pull/1195))
 - Added `env::clearenv()`: calls `libc::clearenv` on platforms
   where it's available, and clears the environment of all variables
   via `std::env::vars` and `std::env::remove_var` on others.
