@@ -286,6 +286,12 @@ pub fn fcntl(fd: RawFd, arg: FcntlArg) -> Result<c_int> {
             F_SETLKW(flock) => libc::fcntl(fd, libc::F_SETLKW, flock),
             F_GETLK(flock) => libc::fcntl(fd, libc::F_GETLK, flock),
             #[cfg(any(target_os = "android", target_os = "linux"))]
+            F_OFD_SETLK(flock) => libc::fcntl(fd, libc::F_OFD_SETLK, flock),
+            #[cfg(any(target_os = "android", target_os = "linux"))]
+            F_OFD_SETLKW(flock) => libc::fcntl(fd, libc::F_OFD_SETLKW, flock),
+            #[cfg(any(target_os = "android", target_os = "linux"))]
+            F_OFD_GETLK(flock) => libc::fcntl(fd, libc::F_OFD_GETLK, flock),
+            #[cfg(any(target_os = "android", target_os = "linux"))]
             F_ADD_SEALS(flag) => libc::fcntl(fd, libc::F_ADD_SEALS, flag.bits()),
             #[cfg(any(target_os = "android", target_os = "linux"))]
             F_GET_SEALS => libc::fcntl(fd, libc::F_GET_SEALS),
@@ -295,8 +301,6 @@ pub fn fcntl(fd: RawFd, arg: FcntlArg) -> Result<c_int> {
             F_GETPIPE_SZ => libc::fcntl(fd, libc::F_GETPIPE_SZ),
             #[cfg(any(target_os = "linux", target_os = "android"))]
             F_SETPIPE_SZ(size) => libc::fcntl(fd, libc::F_SETPIPE_SZ, size),
-            #[cfg(any(target_os = "linux", target_os = "android"))]
-            _ => unimplemented!()
         }
     };
 
