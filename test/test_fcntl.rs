@@ -205,7 +205,7 @@ mod linux_android {
         let tmp = NamedTempFile::new().unwrap();
 
         let fd = tmp.as_raw_fd();
-        let inode = fstat(fd).unwrap().st_ino;
+        let inode = fstat(fd).unwrap().st_ino as usize;
 
         let mut flock = libc::flock {
             l_type: libc::F_WRLCK as libc::c_short,
@@ -230,7 +230,7 @@ mod linux_android {
         assert_eq!(None, lock_info(inode));
     }
 
-    fn lock_info(inode: u64) -> Option<(String, String)> {
+    fn lock_info(inode: usize) -> Option<(String, String)> {
         let file = File::open("/proc/locks").unwrap();
         let buf = BufReader::new(file);
 
@@ -240,7 +240,7 @@ mod linux_android {
             let lock_type = parts[1];
             let lock_access = parts[3];
             let ino_parts: Vec<_> = parts[5].split(':').collect();
-            let ino: u64 = ino_parts[2].parse().unwrap();
+            let ino: usize = ino_parts[2].parse().unwrap();
             if ino == inode {
                 return Some((lock_type.to_string(), lock_access.to_string()))
             }
