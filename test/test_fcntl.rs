@@ -65,13 +65,15 @@ fn test_readlink() {
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 mod linux_android {
+    use std::fs::File;
     use std::io::prelude::*;
-    use std::io::SeekFrom;
+    use std::io::{BufRead, BufReader, SeekFrom};
     use std::os::unix::prelude::*;
 
     use libc::loff_t;
 
     use nix::fcntl::*;
+    use nix::sys::stat::fstat;
     use nix::sys::uio::IoVec;
     use nix::unistd::{close, pipe, read, write};
 
@@ -196,6 +198,54 @@ mod linux_android {
         // Check if we read exactly 100 bytes
         let mut buf = [0u8; 200];
         assert_eq!(100, read(fd, &mut buf).unwrap());
+    }
+
+    #[test]
+    fn test_ofd_locks() {
+        let tmp = NamedTempFile::new().unwrap();
+
+        let fd = tmp.as_raw_fd();
+        let inode = fstat(fd).unwrap().st_ino;
+
+        let mut flock = libc::flock {
+            l_type: libc::F_WRLCK as libc::c_short,
+            l_whence: libc::SEEK_SET as libc::c_short,
+            l_start: 0,
+            l_len: 0,
+            l_pid: 0,
+        };
+        fcntl(fd, FcntlArg::F_OFD_SETLKW(&flock)).unwrap();
+        assert_eq!(Some(("OFDLCK".to_string(), "WRITE".to_string())), lock_info(inode));
+
+        flock.l_type = libc::F_UNLCK as libc::c_short;
+        fcntl(fd, FcntlArg::F_OFD_SETLKW(&flock)).unwrap();
+        assert_eq!(None, lock_info(inode));
+
+        flock.l_type = libc::F_RDLCK as libc::c_short;
+        fcntl(fd, FcntlArg::F_OFD_SETLKW(&flock)).unwrap();
+        assert_eq!(Some(("OFDLCK".to_string(), "READ".to_string())), lock_info(inode));
+
+        flock.l_type = libc::F_UNLCK as libc::c_short;
+        fcntl(fd, FcntlArg::F_OFD_SETLKW(&flock)).unwrap();
+        assert_eq!(None, lock_info(inode));
+    }
+
+    fn lock_info(inode: u64) -> Option<(String, String)> {
+        let file = File::open("/proc/locks").unwrap();
+        let buf = BufReader::new(file);
+
+        for line in buf.lines() {
+            let line = line.unwrap();
+            let parts: Vec<_> = line.split_whitespace().collect();
+            let lock_type = parts[1];
+            let lock_access = parts[3];
+            let ino_parts: Vec<_> = parts[5].split(':').collect();
+            let ino: u64 = ino_parts[2].parse().unwrap();
+            if ino == inode {
+                return Some((lock_type.to_string(), lock_access.to_string()))
+            }
+        }
+        None
     }
 }
 
