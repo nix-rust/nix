@@ -216,7 +216,7 @@ mod linux_android {
             #[cfg(target_arch="mips")]
             l_sysid: 0,
             #[cfg(target_arch="mips")]
-            pad: 0,
+            pad: [0; 4],
         };
         fcntl(fd, FcntlArg::F_OFD_SETLKW(&flock)).unwrap();
         assert_eq!(Some(("OFDLCK".to_string(), "WRITE".to_string())), lock_info(inode));
