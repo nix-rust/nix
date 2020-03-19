@@ -8,7 +8,6 @@ use std::ptr::{null, null_mut};
 use libc::{self, c_int};
 use crate::Result;
 use crate::errno::Errno;
-use crate::sys::signal::SigSet;
 use crate::sys::time::{TimeSpec, TimeVal};
 
 pub use libc::FD_SETSIZE;
@@ -213,6 +212,11 @@ where
     Errno::result(res)
 }
 
+feature! {
+#![feature = "signal"]
+
+use crate::sys::signal::SigSet;
+
 /// Monitors file descriptors for readiness with an altered signal mask.
 ///
 /// Returns the total number of ready file descriptors in all sets. The sets are changed so that all
@@ -283,7 +287,7 @@ where
 
     Errno::result(res)
 }
-
+}
 
 #[cfg(test)]
 mod tests {

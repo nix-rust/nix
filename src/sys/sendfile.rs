@@ -22,6 +22,7 @@ use crate::errno::Errno;
 ///
 /// For more information, see [the sendfile(2) man page.](https://man7.org/linux/man-pages/man2/sendfile.2.html)
 #[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg_attr(docsrs, doc(cfg(all())))]
 pub fn sendfile(
     out_fd: RawFd,
     in_fd: RawFd,
@@ -48,6 +49,7 @@ pub fn sendfile(
 ///
 /// For more information, see [the sendfile(2) man page.](https://man7.org/linux/man-pages/man2/sendfile.2.html)
 #[cfg(target_os = "linux")]
+#[cfg_attr(docsrs, doc(cfg(all())))]
 pub fn sendfile64(
     out_fd: RawFd,
     in_fd: RawFd,

@@ -4,8 +4,6 @@
 use crate::errno::Errno;
 #[cfg(not(target_os = "redox"))]
 use crate::Result;
-#[cfg(not(target_os = "redox"))]
-use crate::sys::signal::Signal;
 use libc::{self, pthread_t};
 
 /// Identifies an individual thread.
@@ -21,6 +19,9 @@ pub fn pthread_self() -> Pthread {
     unsafe { libc::pthread_self() }
 }
 
+feature! {
+#![feature = "signal"]
+
 /// Send a signal to a thread (see [`pthread_kill(3)`]).
 ///
 /// If `signal` is `None`, `pthread_kill` will only preform error checking and
@@ -28,11 +29,14 @@ pub fn pthread_self() -> Pthread {
 ///
 /// [`pthread_kill(3)`]: https://pubs.opengroup.org/onlinepubs/9699919799/functions/pthread_kill.html
 #[cfg(not(target_os = "redox"))]
-pub fn pthread_kill<T: Into<Option<Signal>>>(thread: Pthread, signal: T) -> Result<()> {
+pub fn pthread_kill<T>(thread: Pthread, signal: T) -> Result<()>
+    where T: Into<Option<crate::sys::signal::Signal>>
+{
     let sig = match signal.into() {
         Some(s) => s as libc::c_int,
         None => 0,
     };
     let res = unsafe { libc::pthread_kill(thread, sig) };
     Errno::result(res).map(drop)
+}
 }

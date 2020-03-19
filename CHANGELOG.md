@@ -20,6 +20,15 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   `0..FD_SETSIZE`.
   (#[1575](https://github.com/nix-rust/nix/pull/1575))
 
+## [Unreleased] - ReleaseDate
+### Added
+
+- Added fine-grained features flags.  Most Nix functionality can now be
+  conditionally enabled.  By default, all features are enabled.
+  (#[1498](https://github.com/nix-rust/nix/pull/1498))
+
+### Changed
+### Fixed
 ### Removed
 
 ## [0.23.0] - 2021-09-28

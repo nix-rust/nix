@@ -1,8 +1,4 @@
 //! Wait for events to trigger on specific file descriptors
-#[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd", target_os = "linux"))]
-use crate::sys::time::TimeSpec;
-#[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd", target_os = "linux"))]
-use crate::sys::signal::SigSet;
 use std::os::unix::io::{AsRawFd, RawFd};
 
 use crate::Result;
@@ -81,15 +77,19 @@ libc_bitflags! {
         POLLOUT;
         /// Equivalent to [`POLLIN`](constant.POLLIN.html)
         #[cfg(not(target_os = "redox"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         POLLRDNORM;
         #[cfg(not(target_os = "redox"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         /// Equivalent to [`POLLOUT`](constant.POLLOUT.html)
         POLLWRNORM;
         /// Priority band data can be read (generally unused on Linux).
         #[cfg(not(target_os = "redox"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         POLLRDBAND;
         /// Priority data may be written.
         #[cfg(not(target_os = "redox"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         POLLWRBAND;
         /// Error condition (only returned in
         /// [`PollFd::revents`](struct.PollFd.html#method.revents);
@@ -142,6 +142,8 @@ pub fn poll(fds: &mut [PollFd], timeout: libc::c_int) -> Result<libc::c_int> {
     Errno::result(res)
 }
 
+feature! {
+#![feature = "signal"]
 /// `ppoll()` allows an application to safely wait until either a file
 /// descriptor becomes ready or until a signal is caught.
 /// ([`poll(2)`](https://man7.org/linux/man-pages/man2/poll.2.html))
@@ -151,7 +153,12 @@ pub fn poll(fds: &mut [PollFd], timeout: libc::c_int) -> Result<libc::c_int> {
 /// specify `None` as `timeout` (it is like `timeout = -1` for `poll`).
 ///
 #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd", target_os = "linux"))]
-pub fn ppoll(fds: &mut [PollFd], timeout: Option<TimeSpec>, sigmask: SigSet) -> Result<libc::c_int> {
+pub fn ppoll(
+    fds: &mut [PollFd],
+    timeout: Option<crate::sys::time::TimeSpec>,
+    sigmask: crate::sys::signal::SigSet
+    ) -> Result<libc::c_int>
+{
     let timeout = timeout.as_ref().map_or(core::ptr::null(), |r| r.as_ref());
     let res = unsafe {
         libc::ppoll(fds.as_mut_ptr() as *mut libc::pollfd,
@@ -160,4 +167,5 @@ pub fn ppoll(fds: &mut [PollFd], timeout: Option<TimeSpec>, sigmask: SigSet) -> 
                     sigmask.as_ref())
     };
     Errno::result(res)
+}
 }

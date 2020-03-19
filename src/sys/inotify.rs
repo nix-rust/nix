@@ -36,6 +36,7 @@ use crate::unistd::read;
 use crate::Result;
 use crate::NixPath;
 use crate::errno::Errno;
+use cfg_if::cfg_if;
 
 libc_bitflags! {
     /// Configuration options for [`inotify_add_watch`](fn.inotify_add_watch.html).
@@ -151,16 +152,15 @@ impl Inotify {
     /// Returns an EINVAL error if the watch descriptor is invalid.
     ///
     /// For more information see, [inotify_rm_watch(2)](https://man7.org/linux/man-pages/man2/inotify_rm_watch.2.html).
-    #[cfg(target_os = "linux")]
     pub fn rm_watch(self, wd: WatchDescriptor) -> Result<()> {
-        let res = unsafe { libc::inotify_rm_watch(self.fd, wd.wd) };
-
-        Errno::result(res).map(drop)
-    }
-
-    #[cfg(target_os = "android")]
-    pub fn rm_watch(self, wd: WatchDescriptor) -> Result<()> {
-        let res = unsafe { libc::inotify_rm_watch(self.fd, wd.wd as u32) };
+        cfg_if! {
+            if #[cfg(target_os = "linux")] {
+                let arg = wd.wd;
+            } else if #[cfg(target_os = "android")] {
+                let arg = wd.wd as u32;
+            }
+        }
+        let res = unsafe { libc::inotify_rm_watch(self.fd, arg) };
 
         Errno::result(res).map(drop)
     }

@@ -49,6 +49,7 @@ libc_enum! {
                   target_os = "macos",
                   target_os = "netbsd",
                   target_os = "openbsd"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         O_DSYNC
     }
 }
@@ -797,6 +798,7 @@ impl<'a> Drop for AioCb<'a> {
 ///
 /// The basic structure used to issue multiple AIO operations simultaneously.
 #[cfg(not(any(target_os = "ios", target_os = "macos")))]
+#[cfg_attr(docsrs, doc(cfg(all())))]
 pub struct LioCb<'a> {
     /// A collection of [`AioCb`]s.  All of these will be issued simultaneously
     /// by the [`listio`] method.
@@ -828,6 +830,7 @@ unsafe impl<'a> Send for LioCb<'a> {}
 unsafe impl<'a> Sync for LioCb<'a> {}
 
 #[cfg(not(any(target_os = "ios", target_os = "macos")))]
+#[cfg_attr(docsrs, doc(cfg(all())))]
 impl<'a> LioCb<'a> {
     /// Are no [`AioCb`]s contained?
     pub fn is_empty(&self) -> bool {
@@ -1036,6 +1039,7 @@ impl<'a> Debug for LioCb<'a> {
 // LioCbBuilder must use a Vec to make construction possible when the final size
 // is unknown.
 #[cfg(not(any(target_os = "ios", target_os = "macos")))]
+#[cfg_attr(docsrs, doc(cfg(all())))]
 #[derive(Debug)]
 pub struct LioCbBuilder<'a> {
     /// A collection of [`AioCb`]s.
@@ -1045,6 +1049,7 @@ pub struct LioCbBuilder<'a> {
 }
 
 #[cfg(not(any(target_os = "ios", target_os = "macos")))]
+#[cfg_attr(docsrs, doc(cfg(all())))]
 impl<'a> LioCbBuilder<'a> {
     /// Initialize an empty `LioCb`
     pub fn with_capacity(capacity: usize) -> LioCbBuilder<'a> {

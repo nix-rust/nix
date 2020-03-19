@@ -19,6 +19,8 @@ build: &BUILD
     - $TOOL +$TOOLCHAIN $BUILD $ZFLAGS --target $TARGET --all-targets
     - $TOOL +$TOOLCHAIN doc $ZFLAGS --no-deps --target $TARGET
     - $TOOL +$TOOLCHAIN clippy $ZFLAGS --target $TARGET -- -D warnings
+    - if [ -z "$NOHACK" ]; then $TOOL install cargo-hack; fi
+    - if [ -z "$NOHACK" ]; then $TOOL hack $ZFLAGS check --target $TARGET --each-feature; fi
 
 # Tests that do require executing the binaries
 test: &TEST
@@ -50,6 +52,9 @@ task:
     - cargo build --target i686-unknown-freebsd
     - cargo doc --no-deps --target i686-unknown-freebsd
     - cargo test --target i686-unknown-freebsd
+  i386_feature_script:
+    - . $HOME/.cargo/env
+    - cargo hack check --each-feature --target i686-unknown-freebsd
   before_cache_script: rm -rf $CARGO_HOME/registry/index
 
 # Test OSX in a full VM
@@ -201,6 +206,8 @@ task:
     # https://github.com/rust-embedded/cross/issues/535
     - name: iOS aarch64
       env:
+        # cargo hack tries to invoke the iphonesimulator SDK for iOS
+        NOHACK: 1
         TARGET: aarch64-apple-ios
         # Rustup only supports cross-building from arbitrary hosts for iOS at
         # 1.49.0 and above.  Below that it's possible to cross-build from an OSX
@@ -208,6 +215,8 @@ task:
         TOOLCHAIN: 1.49.0
     - name: iOS x86_64
       env:
+        # cargo hack tries to invoke the iphonesimulator SDK for iOS
+        NOHACK: 1
         TARGET: x86_64-apple-ios
         TOOLCHAIN: 1.49.0
     # Cross testing on powerpc fails with "undefined reference to renameat2".
@@ -244,11 +253,13 @@ task:
     BUILD: check
   name: Redox x86_64
   env:
-   TARGET: x86_64-unknown-redox
-   # Redox requires a nightly compiler.
-   # If stuff breaks, change nightly to the date at
-   # https://gitlab.redox-os.org/redox-os/redox/-/blob/master/rust-toolchain
-   TOOLCHAIN: nightly-2021-06-15
+    TARGET: x86_64-unknown-redox
+    # cargo-hack needs a newer compiler.  # TODO: try enabling NOHACK.
+    NOHACK: 1
+    # Redox requires a nightly compiler.
+    # If stuff breaks, change nightly to the date at
+    # https://gitlab.redox-os.org/redox-os/redox/-/blob/master/rust-toolchain
+    TOOLCHAIN: nightly-2021-06-15
   setup_script:
     - rustup target add $TARGET
     - rustup toolchain install $TOOLCHAIN --profile minimal --target $TARGET
@@ -310,6 +321,6 @@ task:
     image: rustlang/rust:nightly
   setup_script:
     - cargo update -Zminimal-versions
-  script:
+  check_script:
     - cargo check
   before_cache_script: rm -rf $CARGO_HOME/registry/index
