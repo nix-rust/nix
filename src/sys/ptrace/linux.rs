@@ -9,10 +9,12 @@ use sys::signal::Signal;
 
 pub type AddressType = *mut ::libc::c_void;
 
-#[cfg(all(target_os = "linux",
-          any(target_arch = "x86_64",
-              target_arch = "x86"),
-          target_env = "gnu"))]
+#[cfg(all(
+    target_os = "linux",
+    any(all(target_arch = "x86_64",
+            any(target_env = "gnu", target_env = "musl")),
+        all(target_arch = "x86", target_env = "gnu"))
+))]
 use libc::user_regs_struct;
 
 cfg_if! {
@@ -199,19 +201,23 @@ fn ptrace_peek(request: Request, pid: Pid, addr: AddressType, data: *mut c_void)
 }
 
 /// Get user registers, as with `ptrace(PTRACE_GETREGS, ...)`
-#[cfg(all(target_os = "linux",
-          any(target_arch = "x86_64",
-              target_arch = "x86"),
-          target_env = "gnu"))]
+#[cfg(all(
+    target_os = "linux",
+    any(all(target_arch = "x86_64",
+            any(target_env = "gnu", target_env = "musl")),
+        all(target_arch = "x86", target_env = "gnu"))
+))]
 pub fn getregs(pid: Pid) -> Result<user_regs_struct> {
     ptrace_get_data::<user_regs_struct>(Request::PTRACE_GETREGS, pid)
 }
 
 /// Set user registers, as with `ptrace(PTRACE_SETREGS, ...)`
-#[cfg(all(target_os = "linux",
-          any(target_arch = "x86_64",
-              target_arch = "x86"),
-          target_env = "gnu"))]
+#[cfg(all(
+    target_os = "linux",
+    any(all(target_arch = "x86_64",
+            any(target_env = "gnu", target_env = "musl")),
+        all(target_arch = "x86", target_env = "gnu"))
+))]
 pub fn setregs(pid: Pid, regs: user_regs_struct) -> Result<()> {
     let res = unsafe {
         libc::ptrace(Request::PTRACE_SETREGS as RequestType,
