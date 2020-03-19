@@ -11,6 +11,7 @@
 #![cfg_attr(test, deny(warnings))]
 #![recursion_limit = "500"]
 #![deny(unused)]
+#![allow(unused_macros)]
 #![deny(unstable_features)]
 #![deny(missing_copy_implementations)]
 #![deny(missing_debug_implementations)]
@@ -20,6 +21,7 @@
 extern crate bitflags;
 #[macro_use]
 extern crate cfg_if;
+#[cfg(any(feature = "unistd", feature = "reboot"))]
 extern crate void;
 
 // Re-exported external crates
@@ -29,47 +31,60 @@ pub extern crate libc;
 #[macro_use] mod macros;
 
 // Public crates
+#[cfg(feature = "dir")]
 pub mod dir;
+#[cfg(feature = "env")]
 pub mod env;
 pub mod errno;
 #[deny(missing_docs)]
+#[cfg(feature = "features")]
 pub mod features;
+#[cfg(feature = "fcntl")]
 pub mod fcntl;
 #[deny(missing_docs)]
-#[cfg(any(target_os = "android",
+#[cfg(all(feature = "ifaddrs",
+	any(target_os = "android",
           target_os = "dragonfly",
           target_os = "freebsd",
           target_os = "ios",
           target_os = "linux",
           target_os = "macos",
           target_os = "netbsd",
-          target_os = "openbsd"))]
+          target_os = "openbsd")))]
 pub mod ifaddrs;
-#[cfg(any(target_os = "android",
-          target_os = "linux"))]
+#[cfg(all(feature = "kmod",
+	any(target_os = "android",
+        target_os = "linux")))]
 pub mod kmod;
-#[cfg(any(target_os = "android",
-          target_os = "linux"))]
+#[cfg(all(feature = "mount",
+	any(target_os = "android",
+        target_os = "linux")))]
 pub mod mount;
-#[cfg(any(target_os = "dragonfly",
-          target_os = "freebsd",
-          target_os = "fushsia",
-          target_os = "linux",
-          target_os = "netbsd"))]
+#[cfg(all(feature = "mqueue",
+	any(target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "fushsia",
+        target_os = "linux",
+        target_os = "netbsd")))]
 pub mod mqueue;
 #[deny(missing_docs)]
+#[cfg(feature = "net")]
 pub mod net;
 #[deny(missing_docs)]
+#[cfg(feature = "poll")]
 pub mod poll;
 #[deny(missing_docs)]
+#[cfg(feature = "pty")]
 pub mod pty;
+#[cfg(feature = "sched")]
 pub mod sched;
 pub mod sys;
 // This can be implemented for other platforms as soon as libc
 // provides bindings for them.
-#[cfg(all(target_os = "linux",
+#[cfg(all(target_os = "linux", feature = "ucontext",
           any(target_arch = "x86", target_arch = "x86_64")))]
 pub mod ucontext;
+#[cfg(feature = "unistd")]
 pub mod unistd;
 
 /*

@@ -19,7 +19,54 @@ exclude     = [
 libc = { version = "0.2.60", features = [ "extra_traits" ] }
 bitflags = "1.1"
 cfg-if = "0.1.10"
-void = "1.0.2"
+void = { version = "1.0.2", optional = true }
+
+[features]
+default = [
+  "inotify", "epoll", "socket", "ifaddrs", "ptrace", "pthread", "memfd",
+  "quota", "select", "reboot", "signal", "signalfd", "sendfile", "aio", "wait",
+  "mount", "ucontext", "utsname", "uio", "fcntl", "unistd", "pty", "features",
+  "dir", "env", "kmod", "mqueue", "net", "sched", "event", "eventfd", "ioctl",
+  "mman", "stat", "statfs", "statvfs", "termios", "time"
+]
+inotify = []
+epoll = []
+socket = ["ifaddrs", "uio", "time"]
+ifaddrs = ["net"]
+ptrace = []
+pthread = []
+memfd = []
+quota = []
+select = []
+reboot = ["void"]
+signal = []
+signalfd = ["signal"]
+sendfile = []
+aio = ["signal"]
+wait = ["signal"]
+mount = []
+ucontext = []
+utsname = []
+uio = ["unistd"]
+fcntl = ["uio", "stat"]
+unistd = ["void", "fcntl"]
+pty = ["fcntl", "unistd"]
+features = ["utsname"]
+dir = []
+env = []
+kmod = []
+mqueue = []
+net = []
+sched = []
+event = []
+eventfd = []
+ioctl = []
+mman = []
+stat = ["time"]
+statfs = []
+statvfs = []
+termios = []
+time = []
 
 [target.'cfg(target_os = "dragonfly")'.build-dependencies]
 cc = "1"
