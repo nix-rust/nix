@@ -5,11 +5,12 @@ use cfg_if::cfg_if;
 use crate::errno::{self, Errno};
 use crate::{Error, Result, NixPath};
 #[cfg(not(target_os = "redox"))]
+#[cfg(feature = "fs")]
 use crate::fcntl::{AtFlags, at_rawfd};
-use crate::fcntl::{FdFlag, OFlag, fcntl};
-use crate::fcntl::FcntlArg::F_SETFD;
 use libc::{self, c_char, c_void, c_int, c_long, c_uint, size_t, pid_t, off_t,
            uid_t, gid_t, mode_t, PATH_MAX};
+#[cfg(feature = "fs")]
+use crate::fcntl::{FdFlag, OFlag, fcntl, FcntlArg::F_SETFD};
 use std::{fmt, mem, ptr};
 use std::convert::Infallible;
 use std::ffi::{CStr, OsString};
@@ -20,10 +21,14 @@ use std::os::unix::ffi::OsStringExt;
 use std::os::unix::ffi::OsStrExt;
 use std::os::unix::io::RawFd;
 use std::path::PathBuf;
+#[cfg(feature = "fs")]
 use crate::sys::stat::Mode;
 
-#[cfg(any(target_os = "android", target_os = "linux"))]
-pub use self::pivot_root::*;
+feature!{
+    #![feature = "fs"]
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    pub use self::pivot_root::*;
+}
 
 #[cfg(any(target_os = "android", target_os = "freebsd",
           target_os = "linux", target_os = "openbsd"))]
@@ -31,6 +36,9 @@ pub use self::setres::*;
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
 pub use self::getres::*;
+
+feature!{
+#![feature = "users"]
 
 /// User identifier
 ///
@@ -121,7 +129,10 @@ impl fmt::Display for Gid {
         fmt::Display::fmt(&self.0, f)
     }
 }
+}
 
+feature!{
+#![feature = "process"]
 /// Process identifier
 ///
 /// Newtype pattern around `pid_t` (which is just alias). It prevents bugs caused by accidentally
@@ -303,8 +314,10 @@ pub fn getsid(pid: Option<Pid>) -> Result<Pid> {
     let res = unsafe { libc::getsid(pid.unwrap_or(Pid(0)).into()) };
     Errno::result(res).map(Pid)
 }
+}
 
-
+feature!{
+#![all(feature = "process", feature = "term")]
 /// Get the terminal foreground process group (see
 /// [tcgetpgrp(3)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/tcgetpgrp.html)).
 ///
@@ -325,8 +338,10 @@ pub fn tcsetpgrp(fd: c_int, pgrp: Pid) -> Result<()> {
     let res = unsafe { libc::tcsetpgrp(fd, pgrp.into()) };
     Errno::result(res).map(drop)
 }
+}
 
-
+feature!{
+#![feature = "process"]
 /// Get the group id of the calling process (see
 ///[getpgrp(3)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/getpgrp.html)).
 ///
@@ -352,7 +367,10 @@ pub fn getpgrp() -> Pid {
 pub fn gettid() -> Pid {
     Pid(unsafe { libc::syscall(libc::SYS_gettid) as pid_t })
 }
+}
 
+feature!{
+#![feature = "fs"]
 /// Create a copy of the specified file descriptor (see
 /// [dup(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/dup.html)).
 ///
@@ -562,9 +580,11 @@ pub fn symlinkat<P1: ?Sized + NixPath, P2: ?Sized + NixPath>(
         })??;
     Errno::result(res).map(drop)
 }
+}
 
 // Double the buffer capacity up to limit. In case it already has
 // reached the limit, return Errno::ERANGE.
+#[cfg(any(feature = "fs", feature = "users"))]
 fn reserve_double_buffer_size<T>(buf: &mut Vec<T>, limit: usize) -> Result<()> {
     use std::cmp::min;
 
@@ -577,6 +597,9 @@ fn reserve_double_buffer_size<T>(buf: &mut Vec<T>, limit: usize) -> Result<()> {
 
     Ok(())
 }
+
+feature!{
+#![feature = "fs"]
 
 /// Returns the current directory as a `PathBuf`
 ///
@@ -621,6 +644,10 @@ pub fn getcwd() -> Result<PathBuf> {
         }
     }
 }
+}
+
+feature!{
+#![all(feature = "users", feature = "fs")]
 
 /// Computes the raw UID and GID values to pass to a `*chown` call.
 // The cast is not unnecessary on all platforms.
@@ -716,10 +743,16 @@ pub fn fchownat<P: ?Sized + NixPath>(
 
     Errno::result(res).map(drop)
 }
+}
 
+feature!{
+#![feature = "process"]
 fn to_exec_array<S: AsRef<CStr>>(args: &[S]) -> Vec<*const c_char> {
     use std::iter::once;
-    args.iter().map(|s| s.as_ref().as_ptr()).chain(once(ptr::null())).collect()
+    args.iter()
+        .map(|s| s.as_ref().as_ptr())
+        .chain(once(ptr::null()))
+        .collect()
 }
 
 /// Replace the current process image with a new one (see
@@ -895,6 +928,10 @@ pub fn daemon(nochdir: bool, noclose: bool) -> Result<()> {
     let res = unsafe { libc::daemon(nochdir as c_int, noclose as c_int) };
     Errno::result(res).map(drop)
 }
+}
+
+feature!{
+#![feature = "hostname"]
 
 /// Set the system host name (see
 /// [sethostname(2)](https://man7.org/linux/man-pages/man2/gethostname.2.html)).
@@ -955,6 +992,7 @@ pub fn gethostname(buffer: &mut [u8]) -> Result<&CStr> {
         unsafe { CStr::from_ptr(buffer.as_ptr() as *const c_char) }
     })
 }
+}
 
 /// Close a raw file descriptor
 ///
@@ -1003,6 +1041,9 @@ pub fn write(fd: RawFd, buf: &[u8]) -> Result<usize> {
 
     Errno::result(res).map(|r| r as usize)
 }
+
+feature!{
+#![feature = "fs"]
 
 /// Directive that tells [`lseek`] and [`lseek64`] what the offset is relative to.
 ///
@@ -1054,6 +1095,7 @@ pub fn lseek64(fd: RawFd, offset: libc::off64_t, whence: Whence) -> Result<libc:
 
     Errno::result(res).map(|r| r as libc::off64_t)
 }
+}
 
 /// Create an interprocess channel.
 ///
@@ -1070,6 +1112,8 @@ pub fn pipe() -> std::result::Result<(RawFd, RawFd), Error> {
     }
 }
 
+feature!{
+#![feature = "fs"]
 /// Like `pipe`, but allows setting certain file descriptor flags.
 ///
 /// The following flags are supported, and will be set atomically as the pipe is
@@ -1294,6 +1338,10 @@ pub fn fdatasync(fd: RawFd) -> Result<()> {
 
     Errno::result(res).map(drop)
 }
+}
+
+feature!{
+#![feature = "users"]
 
 /// Get a real user ID
 ///
@@ -1374,7 +1422,10 @@ pub fn setgid(gid: Gid) -> Result<()> {
 
     Errno::result(res).map(drop)
 }
+}
 
+feature!{
+#![all(feature = "fs", feature = "users")]
 /// Set the user identity used for filesystem checks per-thread.
 /// On both success and failure, this call returns the previous filesystem user
 /// ID of the caller.
@@ -1396,6 +1447,10 @@ pub fn setfsgid(gid: Gid) -> Gid {
     let prev_fsgid = unsafe { libc::setfsgid(gid.into()) };
     Gid::from_raw(prev_fsgid as gid_t)
 }
+}
+
+feature!{
+#![feature = "users"]
 
 /// Get the list of supplementary group IDs of the calling process.
 ///
@@ -1625,6 +1680,10 @@ pub fn initgroups(user: &CStr, group: Gid) -> Result<()> {
 
     Errno::result(res).map(drop)
 }
+}
+
+feature!{
+#![feature = "signal"]
 
 /// Suspend the thread until a signal is received.
 ///
@@ -1722,6 +1781,7 @@ pub mod alarm {
         }
     }
 }
+}
 
 /// Suspend execution for an interval of time
 ///
@@ -1731,6 +1791,9 @@ pub mod alarm {
 pub fn sleep(seconds: c_uint) -> c_uint {
     unsafe { libc::sleep(seconds) }
 }
+
+feature!{
+#![feature = "acct"]
 
 #[cfg(not(target_os = "redox"))]
 pub mod acct {
@@ -1756,7 +1819,10 @@ pub mod acct {
         Errno::result(res).map(drop)
     }
 }
+}
 
+feature!{
+#![feature = "fs"]
 /// Creates a regular file which persists even after process termination
 ///
 /// * `template`: a path whose 6 rightmost characters must be X, e.g. `/tmp/tmpfile_XXXXXX`
@@ -1792,6 +1858,10 @@ pub fn mkstemp<P: ?Sized + NixPath>(template: &P) -> Result<(RawFd, PathBuf)> {
     Errno::result(fd)?;
     Ok((fd, PathBuf::from(pathname)))
 }
+}
+
+feature!{
+#![all(feature = "fs", feature = "features")]
 
 /// Variable names for `pathconf`
 ///
@@ -1972,6 +2042,10 @@ pub fn pathconf<P: ?Sized + NixPath>(path: &P, var: PathconfVar) -> Result<Optio
         Ok(Some(raw))
     }
 }
+}
+
+feature!{
+#![feature = "features"]
 
 /// Variable names for `sysconf`
 ///
@@ -2472,6 +2546,10 @@ pub fn sysconf(var: SysconfVar) -> Result<Option<c_long>> {
         Ok(Some(raw))
     }
 }
+}
+
+feature!{
+#![feature = "fs"]
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
 mod pivot_root {
@@ -2491,10 +2569,14 @@ mod pivot_root {
         Errno::result(res).map(drop)
     }
 }
+}
 
 #[cfg(any(target_os = "android", target_os = "freebsd",
           target_os = "linux", target_os = "openbsd"))]
 mod setres {
+    feature!{
+    #![feature = "users"]
+
     use crate::Result;
     use crate::errno::Errno;
     use super::{Uid, Gid};
@@ -2530,10 +2612,14 @@ mod setres {
 
         Errno::result(res).map(drop)
     }
+    }
 }
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
 mod getres {
+    feature!{
+    #![feature = "users"]
+
     use crate::Result;
     use crate::errno::Errno;
     use super::{Uid, Gid};
@@ -2591,10 +2677,13 @@ mod getres {
 
         Errno::result(res).map(|_| ResGid { real: Gid(rgid), effective: Gid(egid), saved: Gid(sgid) } )
     }
+    }
 }
 
+#[cfg(feature = "fs")]
 libc_bitflags!{
     /// Options for access()
+    #[cfg_attr(docsrs, doc(cfg(feature = "fs")))]
     pub struct AccessFlags : c_int {
         /// Test for existence of file.
         F_OK;
@@ -2607,6 +2696,9 @@ libc_bitflags!{
     }
 }
 
+feature!{
+#![feature = "fs"]
+
 /// Checks the file named by `path` for accessibility according to the flags given by `amode`
 /// See [access(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/access.html)
 pub fn access<P: ?Sized + NixPath>(path: &P, amode: AccessFlags) -> Result<()> {
@@ -2617,6 +2709,10 @@ pub fn access<P: ?Sized + NixPath>(path: &P, amode: AccessFlags) -> Result<()> {
     })?;
     Errno::result(res).map(drop)
 }
+}
+
+feature!{
+#![feature = "users"]
 
 /// Representation of a User, based on `libc::passwd`
 ///
@@ -2758,7 +2854,7 @@ impl User {
     fn from_anything<F>(f: F) -> Result<Option<Self>>
     where
         F: Fn(*mut libc::passwd,
-              *mut libc::c_char,
+              *mut c_char,
               libc::size_t,
               *mut *mut libc::passwd) -> libc::c_int
     {
@@ -2879,7 +2975,7 @@ impl Group {
     fn from_anything<F>(f: F) -> Result<Option<Self>>
     where
         F: Fn(*mut libc::group,
-              *mut libc::c_char,
+              *mut c_char,
               libc::size_t,
               *mut *mut libc::group) -> libc::c_int
     {
@@ -2954,6 +3050,10 @@ impl Group {
         })
     }
 }
+}
+
+feature!{
+#![feature = "term"]
 
 /// Get the name of the terminal device that is open on file descriptor fd
 /// (see [`ttyname(3)`](https://man7.org/linux/man-pages/man3/ttyname.3.html)).
@@ -2972,6 +3072,10 @@ pub fn ttyname(fd: RawFd) -> Result<PathBuf> {
     buf.truncate(nul);
     Ok(OsString::from_vec(buf).into())
 }
+}
+
+feature!{
+#![all(feature = "socket", feature = "users")]
 
 /// Get the effective user ID and group ID associated with a Unix domain socket.
 ///
@@ -2991,4 +3095,5 @@ pub fn getpeereid(fd: RawFd) -> Result<(Uid, Gid)> {
     let ret = unsafe { libc::getpeereid(fd, &mut uid, &mut gid) };
 
     Errno::result(ret).map(|_| (Uid(uid), Gid(gid)))
+}
 }

@@ -160,6 +160,7 @@ use std::convert::From;
 use std::mem;
 use std::os::unix::io::RawFd;
 
+#[cfg(feature = "process")]
 use crate::unistd::Pid;
 
 /// Stores settings for the termios API
@@ -995,12 +996,15 @@ pub fn tcsendbreak(fd: RawFd, duration: c_int) -> Result<()> {
     Errno::result(unsafe { libc::tcsendbreak(fd, duration) }).map(drop)
 }
 
+feature!{
+#![feature = "process"]
 /// Get the session controlled by the given terminal (see
 /// [tcgetsid(3)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/tcgetsid.html)).
 pub fn tcgetsid(fd: RawFd) -> Result<Pid> {
     let res = unsafe { libc::tcgetsid(fd) };
 
     Errno::result(res).map(Pid::from_raw)
+}
 }
 
 #[cfg(test)]

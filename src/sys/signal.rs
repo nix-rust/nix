@@ -5,7 +5,6 @@
 
 use crate::{Error, Result};
 use crate::errno::Errno;
-use crate::unistd::Pid;
 use std::mem;
 use std::fmt;
 use std::str::FromStr;
@@ -14,8 +13,10 @@ use std::os::unix::io::RawFd;
 use std::ptr;
 
 #[cfg(not(any(target_os = "openbsd", target_os = "redox")))]
+#[cfg(any(feature = "aio", feature = "signal"))]
 pub use self::sigevent::*;
 
+#[cfg(any(feature = "aio", feature = "process", feature = "signal"))]
 libc_enum!{
     /// Types of operating system signals
     // Currently there is only one definition of c_int in libc, as well as only one
@@ -24,6 +25,7 @@ libc_enum!{
     // this is not (yet) possible.
     #[repr(i32)]
     #[non_exhaustive]
+    #[cfg_attr(docsrs, doc(cfg(any(feature = "aio", feature = "signal"))))]
     pub enum Signal {
         /// Hangup
         SIGHUP,
@@ -107,6 +109,7 @@ libc_enum!{
     impl TryFrom<i32>
 }
 
+#[cfg(feature = "signal")]
 impl FromStr for Signal {
     type Err = Error;
     fn from_str(s: &str) -> Result<Signal> {
@@ -161,6 +164,7 @@ impl FromStr for Signal {
     }
 }
 
+#[cfg(feature = "signal")]
 impl Signal {
     /// Returns name of signal.
     ///
@@ -217,21 +221,25 @@ impl Signal {
     }
 }
 
+#[cfg(feature = "signal")]
 impl AsRef<str> for Signal {
     fn as_ref(&self) -> &str {
         self.as_str()
     }
 }
 
+#[cfg(feature = "signal")]
 impl fmt::Display for Signal {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.write_str(self.as_ref())
     }
 }
 
+#[cfg(feature = "signal")]
 pub use self::Signal::*;
 
 #[cfg(target_os = "redox")]
+#[cfg(feature = "signal")]
 const SIGNALS: [Signal; 29] = [
     SIGHUP,
     SIGINT,
@@ -266,6 +274,7 @@ const SIGNALS: [Signal; 29] = [
               target_os = "emscripten", target_os = "fuchsia"),
           not(any(target_arch = "mips", target_arch = "mips64",
                   target_arch = "sparc64"))))]
+#[cfg(feature = "signal")]
 const SIGNALS: [Signal; 31] = [
     SIGHUP,
     SIGINT,
@@ -302,6 +311,7 @@ const SIGNALS: [Signal; 31] = [
               target_os = "emscripten", target_os = "fuchsia"),
           any(target_arch = "mips", target_arch = "mips64",
               target_arch = "sparc64")))]
+#[cfg(feature = "signal")]
 const SIGNALS: [Signal; 30] = [
     SIGHUP,
     SIGINT,
@@ -336,6 +346,7 @@ const SIGNALS: [Signal; 30] = [
 #[cfg(not(any(target_os = "linux", target_os = "android",
               target_os = "fuchsia", target_os = "emscripten",
               target_os = "redox")))]
+#[cfg(feature = "signal")]
 const SIGNALS: [Signal; 31] = [
     SIGHUP,
     SIGINT,
@@ -368,6 +379,9 @@ const SIGNALS: [Signal; 31] = [
     SIGSYS,
     SIGEMT,
     SIGINFO];
+
+feature!{
+#![feature = "signal"]
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 /// Iterate through all signals defined by this operating system
@@ -407,9 +421,12 @@ pub const SIGUNUSED : Signal = SIGSYS;
 type SaFlags_t = libc::c_int;
 #[cfg(target_os = "redox")]
 type SaFlags_t = libc::c_ulong;
+}
 
+#[cfg(feature = "signal")]
 libc_bitflags!{
     /// Controls the behavior of a [`SigAction`]
+    #[cfg_attr(docsrs, doc(cfg(feature = "signal")))]
     pub struct SaFlags: SaFlags_t {
         /// When catching a [`Signal::SIGCHLD`] signal, the signal will be
         /// generated only when a child process exits, not when a child process
@@ -435,10 +452,12 @@ libc_bitflags!{
     }
 }
 
+#[cfg(feature = "signal")]
 libc_enum! {
     /// Specifies how certain functions should manipulate a signal mask
     #[repr(i32)]
     #[non_exhaustive]
+    #[cfg_attr(docsrs, doc(cfg(feature = "signal")))]
     pub enum SigmaskHow {
         /// The new mask is the union of the current mask and the specified set.
         SIG_BLOCK,
@@ -450,12 +469,16 @@ libc_enum! {
     }
 }
 
+feature!{
+#![feature = "signal"]
+
+use crate::unistd::Pid;
+
 /// Specifies a set of [`Signal`]s that may be blocked, waited for, etc.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct SigSet {
     sigset: libc::sigset_t
 }
-
 
 impl SigSet {
     /// Initialize to include all signals.
@@ -912,7 +935,11 @@ pub fn raise(signal: Signal) -> Result<()> {
 
     Errno::result(res).map(drop)
 }
+}
 
+
+feature!{
+#![any(feature = "aio", feature = "signal")]
 
 /// Identifies a thread for [`SigevNotify::SigevThreadId`]
 #[cfg(target_os = "freebsd")]
@@ -960,9 +987,13 @@ pub enum SigevNotify {
         si_value: libc::intptr_t
     },
 }
+}
 
 #[cfg(not(any(target_os = "openbsd", target_os = "redox")))]
 mod sigevent {
+    feature!{
+    #![any(feature = "aio", feature = "signal")]
+
     use std::mem;
     use std::ptr;
     use super::SigevNotify;
@@ -1050,6 +1081,7 @@ mod sigevent {
         fn from(sigevent: &libc::sigevent) -> Self {
             SigEvent{ sigevent: *sigevent }
         }
+    }
     }
 }
 

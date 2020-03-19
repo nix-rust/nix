@@ -2,16 +2,56 @@
 //!
 //! Modules are structured according to the C header file that they would be
 //! defined in.
+//!
+//! # Features
+//!
+//! Nix uses the following Cargo features to enable optional functionality.
+//! They may be enabled in any combination.
+//! * `acct` - Process accounting
+//! * `aio` - POSIX AIO
+//! * `dir` - Stuff relating to directory iteration
+//! * `env` - Manipulate environment variables
+//! * `event` - Event-driven APIs, like `kqueue` and `epoll`
+//! * `features` - Query characteristics of the OS at runtime
+//! * `fs` - File system functionality
+//! * `hostname` - Get and set the system's hostname
+//! * `inotify` - Linux's `inotify` file system notification API
+//! * `ioctl` - The `ioctl` syscall, and wrappers for my specific instances
+//! * `kmod` - Load and unload kernel modules
+//! * `mman` - Stuff relating to memory management
+//! * `mount` - Mount and unmount file systems
+//! * `mqueue` - POSIX message queues
+//! * `net` - Networking-related functionality
+//! * `personality` - Set the process execution domain
+//! * `process` - Stuff relating to running processes
+//! * `poll` - APIs like `poll` and `select`
+//! * `pthread` - POSIX threads
+//! * `ptrace` - Process tracing and debugging
+//! * `quota` - File system quotas
+//! * `reboot` - Reboot the system
+//! * `resource` - Process resource limits
+//! * `sched` - Manipulate process's scheduling
+//! * `signal` - Send and receive signals to processes
+//! * `term` - Terminal control APIs
+//! * `time` - Query the operating system's clocks
+//! * `ucontext` - User thread context
+//! * `uio` - Vectored I/O
+//! * `users` - Stuff relating to users and groups
+//! * `zerocopy` - APIs like `sendfile` and `copy_file_range`
 #![crate_name = "nix"]
 #![cfg(unix)]
 #![allow(non_camel_case_types)]
 #![cfg_attr(test, deny(warnings))]
 #![recursion_limit = "500"]
 #![deny(unused)]
+#![allow(unused_macros)]
+#![cfg_attr(not(feature = "default"), allow(unused_imports))]
 #![deny(unstable_features)]
 #![deny(missing_copy_implementations)]
 #![deny(missing_debug_implementations)]
 #![warn(missing_docs)]
+
+#![cfg_attr(docsrs, feature(doc_cfg))]
 
 // Re-exported external crates
 pub use libc;
@@ -21,54 +61,96 @@ pub use libc;
 
 // Public crates
 #[cfg(not(target_os = "redox"))]
-#[allow(missing_docs)]
-pub mod dir;
-pub mod env;
+feature!{
+    #![feature = "dir"]
+    #[allow(missing_docs)]
+    pub mod dir;
+}
+feature!{
+    #![feature = "env"]
+    pub mod env;
+}
 #[allow(missing_docs)]
 pub mod errno;
-pub mod features;
+feature!{
+    #![feature = "features"]
+
+    #[deny(missing_docs)]
+    pub mod features;
+}
 #[allow(missing_docs)]
 pub mod fcntl;
-#[cfg(any(target_os = "android",
-          target_os = "dragonfly",
-          target_os = "freebsd",
-          target_os = "ios",
-          target_os = "linux",
-          target_os = "macos",
-          target_os = "netbsd",
-          target_os = "illumos",
-          target_os = "openbsd"))]
-pub mod ifaddrs;
+feature!{
+    #![feature = "net"]
+
+    #[cfg(any(target_os = "android",
+              target_os = "dragonfly",
+              target_os = "freebsd",
+              target_os = "ios",
+              target_os = "linux",
+              target_os = "macos",
+              target_os = "netbsd",
+              target_os = "illumos",
+              target_os = "openbsd"))]
+    #[deny(missing_docs)]
+    pub mod ifaddrs;
+    #[cfg(not(target_os = "redox"))]
+    #[deny(missing_docs)]
+    pub mod net;
+}
 #[cfg(any(target_os = "android",
           target_os = "linux"))]
-#[allow(missing_docs)]
-pub mod kmod;
+feature!{
+    #![feature = "kmod"]
+    #[allow(missing_docs)]
+    pub mod kmod;
+}
 #[cfg(any(target_os = "android",
           target_os = "freebsd",
           target_os = "linux"))]
-pub mod mount;
+feature!{
+    #![feature = "mount"]
+    pub mod mount;
+}
 #[cfg(any(target_os = "dragonfly",
           target_os = "freebsd",
           target_os = "fushsia",
           target_os = "linux",
           target_os = "netbsd"))]
-#[allow(missing_docs)]
-pub mod mqueue;
-#[cfg(not(target_os = "redox"))]
-pub mod net;
-pub mod poll;
+feature!{
+    #![feature = "mqueue"]
+    #[allow(missing_docs)]
+    pub mod mqueue;
+}
+feature!{
+    #![feature = "poll"]
+    pub mod poll;
+}
 #[cfg(not(any(target_os = "redox", target_os = "fuchsia")))]
-pub mod pty;
-pub mod sched;
+feature!{
+    #![feature = "term"]
+    #[deny(missing_docs)]
+    pub mod pty;
+}
+feature!{
+    #![feature = "sched"]
+    pub mod sched;
+}
 pub mod sys;
-#[allow(missing_docs)]
-pub mod time;
+feature!{
+    #![feature = "time"]
+    #[allow(missing_docs)]
+    pub mod time;
+}
 // This can be implemented for other platforms as soon as libc
 // provides bindings for them.
 #[cfg(all(target_os = "linux",
           any(target_arch = "x86", target_arch = "x86_64")))]
-#[allow(missing_docs)]
-pub mod ucontext;
+feature!{
+    #![feature = "ucontext"]
+    #[allow(missing_docs)]
+    pub mod ucontext;
+}
 #[allow(missing_docs)]
 pub mod unistd;
 

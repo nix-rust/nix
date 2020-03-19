@@ -6,6 +6,7 @@ use crate::sys::time::TimeSpec;
     target_os = "android",
     target_os = "emscripten",
 ))]
+#[cfg(feature = "process")]
 use crate::unistd::Pid;
 use crate::{Errno, Result};
 use libc::{self, clockid_t};
@@ -24,6 +25,8 @@ impl ClockId {
         ClockId(clk_id)
     }
 
+    feature!{
+    #![feature = "process"]
     /// Returns `ClockId` of a `pid` CPU-time clock
     #[cfg(any(
         target_os = "freebsd",
@@ -34,6 +37,7 @@ impl ClockId {
     ))]
     pub fn pid_cpu_clock_id(pid: Pid) -> Result<Self> {
         clock_getcpuclockid(pid)
+    }
     }
 
     /// Returns resolution of the clock id
@@ -248,6 +252,7 @@ pub fn clock_settime(clock_id: ClockId, timespec: TimeSpec) -> Result<()> {
     target_os = "android",
     target_os = "emscripten",
 ))]
+#[cfg(feature = "process")]
 pub fn clock_getcpuclockid(pid: Pid) -> Result<ClockId> {
     let mut clk_id: MaybeUninit<libc::clockid_t> = MaybeUninit::uninit();
     let ret = unsafe { libc::clock_getcpuclockid(pid.into(), clk_id.as_mut_ptr()) };

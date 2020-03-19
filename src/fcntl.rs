@@ -5,13 +5,15 @@ use std::ffi::OsString;
 use std::os::raw;
 use std::os::unix::ffi::OsStringExt;
 use std::os::unix::io::RawFd;
-use crate::sys::stat::Mode;
-use crate::{NixPath, Result};
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
 use std::ptr; // For splice and copy_file_range
-#[cfg(any(target_os = "android", target_os = "linux"))]
-use crate::sys::uio::IoVec; // For vmsplice
+#[cfg(feature = "fs")]
+use crate::{
+    NixPath,
+    Result,
+    sys::stat::Mode
+};
 
 #[cfg(any(
     target_os = "linux",
@@ -22,10 +24,13 @@ use crate::sys::uio::IoVec; // For vmsplice
     target_env = "uclibc",
     target_os = "freebsd"
 ))]
-pub use self::posix_fadvise::*;
+#[cfg(feature = "fs")]
+pub use self::posix_fadvise::{PosixFadviseAdvice, posix_fadvise};
 
 #[cfg(not(target_os = "redox"))]
+#[cfg(any(feature = "fs", feature = "process"))]
 libc_bitflags! {
+    #[cfg_attr(docsrs, doc(cfg(any(feature = "fs", feature = "process"))))]
     pub struct AtFlags: c_int {
         AT_REMOVEDIR;
         AT_SYMLINK_FOLLOW;
@@ -39,8 +44,10 @@ libc_bitflags! {
     }
 }
 
+#[cfg(any(feature = "fs", feature = "term"))]
 libc_bitflags!(
     /// Configuration options for opened files.
+    #[cfg_attr(docsrs, doc(cfg(any(feature = "fs", feature = "term"))))]
     pub struct OFlag: c_int {
         /// Mask for the access mode of the file.
         O_ACCMODE;
@@ -165,6 +172,9 @@ libc_bitflags!(
     }
 );
 
+feature!{
+#![feature = "fs"]
+
 // The conversion is not identical on all operating systems.
 #[allow(clippy::useless_conversion)]
 pub fn open<P: ?Sized + NixPath>(path: &P, oflag: OFlag, mode: Mode) -> Result<RawFd> {
@@ -209,12 +219,15 @@ pub fn renameat<P1: ?Sized + NixPath, P2: ?Sized + NixPath>(
     })??;
     Errno::result(res).map(drop)
 }
+}
 
 #[cfg(all(
     target_os = "linux",
     target_env = "gnu",
 ))]
+#[cfg(feature = "fs")]
 libc_bitflags! {
+    #[cfg_attr(docsrs, doc(cfg(feature = "fs")))]
     pub struct RenameFlags: u32 {
         RENAME_EXCHANGE;
         RENAME_NOREPLACE;
@@ -222,6 +235,8 @@ libc_bitflags! {
     }
 }
 
+feature!{
+#![feature = "fs"]
 #[cfg(all(
     target_os = "linux",
     target_env = "gnu",
@@ -348,6 +363,7 @@ pub(crate) fn at_rawfd(fd: Option<RawFd>) -> raw::c_int {
         Some(fd) => fd,
     }
 }
+}
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
 libc_bitflags!(
@@ -364,13 +380,18 @@ libc_bitflags!(
     }
 );
 
+#[cfg(feature = "fs")]
 libc_bitflags!(
     /// Additional configuration flags for `fcntl`'s `F_SETFD`.
+    #[cfg_attr(docsrs, doc(cfg(feature = "fs")))]
     pub struct FdFlag: c_int {
         /// The file descriptor will automatically be closed during a successful `execve(2)`.
         FD_CLOEXEC;
     }
 );
+
+feature!{
+#![feature = "fs"]
 
 #[cfg(not(target_os = "redox"))]
 #[derive(Debug, Eq, Hash, PartialEq)]
@@ -455,6 +476,7 @@ pub fn fcntl(fd: RawFd, arg: FcntlArg) -> Result<c_int> {
     Errno::result(res)
 }
 
+// TODO: convert to libc_enum
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 #[non_exhaustive]
 pub enum FlockArg {
@@ -483,10 +505,13 @@ pub fn flock(fd: RawFd, arg: FlockArg) -> Result<()> {
 
     Errno::result(res).map(drop)
 }
+}
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(feature = "zerocopy")]
 libc_bitflags! {
     /// Additional flags to `splice` and friends.
+    #[cfg_attr(docsrs, doc(cfg(feature = "zerocopy")))]
     pub struct SpliceFFlags: c_uint {
         /// Request that pages be moved instead of copied.
         ///
@@ -504,6 +529,9 @@ libc_bitflags! {
         SPLICE_F_GIFT;
     }
 }
+
+feature!{
+#![feature = "zerocopy"]
 
 /// Copy a range of data from one file to another
 ///
@@ -577,7 +605,12 @@ pub fn tee(fd_in: RawFd, fd_out: RawFd, len: usize, flags: SpliceFFlags) -> Resu
 }
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
-pub fn vmsplice(fd: RawFd, iov: &[IoVec<&[u8]>], flags: SpliceFFlags) -> Result<usize> {
+pub fn vmsplice(
+    fd: RawFd,
+    iov: &[crate::sys::uio::IoVec<&[u8]>],
+    flags: SpliceFFlags
+    ) -> Result<usize>
+{
     let ret = unsafe {
         libc::vmsplice(
             fd,
@@ -588,10 +621,13 @@ pub fn vmsplice(fd: RawFd, iov: &[IoVec<&[u8]>], flags: SpliceFFlags) -> Result<
     };
     Errno::result(ret).map(|r| r as usize)
 }
+}
 
 #[cfg(any(target_os = "linux"))]
+#[cfg(feature = "fs")]
 libc_bitflags!(
     /// Mode argument flags for fallocate determining operation performed on a given range.
+    #[cfg_attr(docsrs, doc(cfg(feature = "fs")))]
     pub struct FallocateFlags: c_int {
         /// File size is not changed.
         ///
@@ -620,11 +656,15 @@ libc_bitflags!(
     }
 );
 
+feature!{
+#![feature = "fs"]
+
 /// Manipulates file space.
 ///
 /// Allows the caller to directly manipulate the allocated disk space for the
 /// file referred to by fd.
 #[cfg(any(target_os = "linux"))]
+#[cfg(feature = "fs")]
 pub fn fallocate(
     fd: RawFd,
     mode: FallocateFlags,
@@ -634,6 +674,7 @@ pub fn fallocate(
     let res = unsafe { libc::fallocate(fd, mode.bits(), offset, len) };
     Errno::result(res).map(drop)
 }
+
 
 #[cfg(any(
     target_os = "linux",
@@ -649,9 +690,11 @@ mod posix_fadvise {
     use std::os::unix::io::RawFd;
     use crate::Result;
 
+    #[cfg(feature = "fs")]
     libc_enum! {
         #[repr(i32)]
         #[non_exhaustive]
+        #[cfg_attr(docsrs, doc(cfg(feature = "fs")))]
         pub enum PosixFadviseAdvice {
             POSIX_FADV_NORMAL,
             POSIX_FADV_SEQUENTIAL,
@@ -662,6 +705,8 @@ mod posix_fadvise {
         }
     }
 
+    feature!{
+    #![feature = "fs"]
     pub fn posix_fadvise(
         fd: RawFd,
         offset: libc::off_t,
@@ -675,6 +720,7 @@ mod posix_fadvise {
         } else {
             Err(Errno::from_i32(res))
         }
+    }
     }
 }
 
@@ -693,4 +739,5 @@ pub fn posix_fallocate(fd: RawFd, offset: libc::off_t, len: libc::off_t) -> Resu
         Ok(0) => Ok(()),
         Ok(errno) => Err(Errno::from_i32(errno)),
     }
+}
 }

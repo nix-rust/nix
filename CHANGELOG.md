@@ -6,6 +6,9 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 ## [0.23.0] - 2021-09-28
 ### Added
 
+- Added fine-grained features flags.  Most Nix functionality can now be
+  conditionally enabled.  By default, all features are enabled.
+  (#[TODO](https://github.com/nix-rust/nix/pull/TODO))
 - Added the `LocalPeerCred` sockopt.
   (#[1482](https://github.com/nix-rust/nix/pull/1482))
 - Added `TimeSpec::from_duration` and `TimeSpec::from_timespec`

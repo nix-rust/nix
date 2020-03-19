@@ -9,8 +9,9 @@ use std::mem;
 use std::os::unix::prelude::*;
 
 use crate::sys::termios::Termios;
-use crate::unistd::{self, ForkResult, Pid};
-use crate::{Result, fcntl};
+#[cfg(feature = "process")]
+use crate::unistd::{ForkResult, Pid};
+use crate::{Result, fcntl, unistd};
 use crate::errno::Errno;
 
 /// Representation of a master/slave pty pair
@@ -25,6 +26,8 @@ pub struct OpenptyResult {
     pub slave: RawFd,
 }
 
+feature!{
+#![feature = "process"]
 /// Representation of a master with a forked pty
 ///
 /// This is returned by `forkpty`. Note that this type does *not* implement `Drop`, so the user
@@ -35,6 +38,7 @@ pub struct ForkptyResult {
     pub master: RawFd,
     /// Metadata about forked process
     pub fork_result: ForkResult,
+}
 }
 
 
@@ -294,6 +298,8 @@ pub fn openpty<'a, 'b, T: Into<Option<&'a Winsize>>, U: Into<Option<&'b Termios>
     }
 }
 
+feature!{
+#![feature = "process"]
 /// Create a new pseudoterminal, returning the master file descriptor and forked pid.
 /// in `ForkptyResult`
 /// (see [`forkpty`](https://man7.org/linux/man-pages/man3/forkpty.3.html)).
@@ -345,4 +351,5 @@ pub unsafe fn forkpty<'a, 'b, T: Into<Option<&'a Winsize>>, U: Into<Option<&'b T
         master: master.assume_init(),
         fork_result,
     })
+}
 }

@@ -3,10 +3,9 @@ use crate::Result;
 use crate::NixPath;
 use crate::errno::Errno;
 #[cfg(not(target_os = "android"))]
-use crate::fcntl::OFlag;
+#[cfg(feature = "fs")]
+use crate::{fcntl::OFlag, sys::stat::Mode};
 use libc::{self, c_int, c_void, size_t, off_t};
-#[cfg(not(target_os = "android"))]
-use crate::sys::stat::Mode;
 use std::os::unix::io::RawFd;
 
 libc_bitflags!{
@@ -438,7 +437,15 @@ pub unsafe fn msync(addr: *mut c_void, length: size_t, flags: MsFlags) -> Result
 }
 
 #[cfg(not(target_os = "android"))]
-pub fn shm_open<P: ?Sized + NixPath>(name: &P, flag: OFlag, mode: Mode) -> Result<RawFd> {
+feature!{
+#![feature = "fs"]
+pub fn shm_open<P>(
+    name: &P,
+    flag: OFlag,
+    mode: Mode
+    ) -> Result<RawFd>
+    where P: ?Sized + NixPath
+{
     let ret = name.with_nix_path(|cstr| {
         #[cfg(any(target_os = "macos", target_os = "ios"))]
         unsafe {
@@ -451,6 +458,7 @@ pub fn shm_open<P: ?Sized + NixPath>(name: &P, flag: OFlag, mode: Mode) -> Resul
     })?;
 
     Errno::result(ret)
+}
 }
 
 #[cfg(not(target_os = "android"))]

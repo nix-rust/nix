@@ -101,6 +101,9 @@ pub struct RemoteIoVec {
     pub len: usize,
 }
 
+feature!{
+#![feature = "process"]
+
 /// Write data directly to another process's virtual memory
 /// (see [`process_vm_writev`(2)]).
 ///
@@ -170,6 +173,7 @@ pub fn process_vm_readv(
 
     Errno::result(res).map(|r| r as usize)
 }
+}
 
 /// A vector of buffers.
 ///
@@ -195,7 +199,7 @@ impl<T> IoVec<T> {
 }
 
 impl<'a> IoVec<&'a [u8]> {
-    #[cfg(target_os = "freebsd")]
+    #[cfg(all(feature = "mount", target_os = "freebsd"))]
     pub(crate) fn from_raw_parts(base: *mut c_void, len: usize) -> Self {
         IoVec(libc::iovec {
             iov_base: base,
