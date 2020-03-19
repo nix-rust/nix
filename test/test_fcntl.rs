@@ -211,7 +211,14 @@ mod linux_android {
     }
 
     #[test]
-    #[cfg(not(target_arch = "mips"))]
+    #[cfg(not(any(target_arch = "aarch64",
+                  target_arch = "arm",
+                  target_arch = "armv7",
+                  target_arch = "i686",
+                  target_arch = "mips",
+                  target_arch = "mips64",
+                  target_arch = "mips64el",
+                  target_arch = "powerpc64")))]
     fn test_ofd_locks() {
         let tmp = NamedTempFile::new().unwrap();
 
