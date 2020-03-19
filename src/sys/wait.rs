@@ -1,8 +1,8 @@
-use libc::{self, c_int};
-use Result;
 use errno::Errno;
+use libc::{self, c_int};
 use std::convert::TryFrom;
 use unistd::Pid;
+use Result;
 
 use sys::signal::Signal;
 
@@ -105,8 +105,7 @@ impl WaitStatus {
     pub fn pid(&self) -> Option<Pid> {
         use self::WaitStatus::*;
         match *self {
-            Exited(p, _)  | Signaled(p, _, _) |
-                Stopped(p, _) | Continued(p) => Some(p),
+            Exited(p, _) | Signaled(p, _, _) | Stopped(p, _) | Continued(p) => Some(p),
             StillAlive => None,
             #[cfg(any(target_os = "android", target_os = "linux"))]
             PtraceEvent(p, _, _) | PtraceSyscall(p) => Some(p),
@@ -211,6 +210,7 @@ impl WaitStatus {
     }
 }
 
+/// Wait for an event of a child process, either for a specific PID, or all children by passing None as pid 
 pub fn waitpid<P: Into<Option<Pid>>>(pid: P, options: Option<WaitPidFlag>) -> Result<WaitStatus> {
     use self::WaitStatus::*;
 
@@ -235,6 +235,55 @@ pub fn waitpid<P: Into<Option<Pid>>>(pid: P, options: Option<WaitPidFlag>) -> Re
     }
 }
 
+
+/// The same as calling waitpid(None, None)
 pub fn wait() -> Result<WaitStatus> {
     waitpid(None, None)
+}
+
+
+/// Returns an iterator over all currently available events of child processes.
+/// 
+/// This iterator is best used with a signal handler on the signal SIGCHLD
+/// ```
+/// for signal in signals.forever() {
+///     match signal as libc::c_int {
+///         signal_hook::SIGCHLD => {
+///             // one or more child events exist. We need to handle all now, because the signal is not sent for each.
+///             child_event_iter
+///                 .take_while(Result::is_ok) // you probably want to do some error handling, instead of just stopping the iterator
+///                 .for_each(|val| {
+///                     println("A child did something! {:?}", val);
+///                 });
+///         }
+///         _ => unreachable!("We only handle SIGCHLD"),
+///     }
+/// }
+/// ```
+pub fn child_event_iter() -> ChildEventIter {
+    std::iter::from_fn(get_next_child_event)
+}
+type ChildEventIter = std::iter::FromFn<fn() -> std::option::Option<Result<WaitStatus>>>;
+
+/// use waitpid with WNOHANG to poll the next event or return None if no more events exist
+fn get_next_child_event() -> Option<Result<WaitStatus>> {
+    match waitpid(None, Some(WaitPidFlag::WNOHANG)) {
+        Ok(status) => Some(Ok(status)),
+        Err(e) => {
+            if let crate::Error::Sys(crate::errno::Errno::ECHILD) = e {
+                // No more events to be waited on
+                None
+            } else {
+                // Some other error, which we cannot handle here
+                //
+                // This might be unecessary, since the other errors are either
+                // 1. EINTR which only occurs if WNOHANG is not used, but it is used here
+                // 2. EINVAL which should be impossible since only valid WaitPidFlags can be created
+                //
+                // Not having this error handling would make the API nicer, but it could introduce breakage on some
+                // systems that do not conform to the POSIX definition of waitpid?
+                Some(Err(e))
+            }
+        }
+    }
 }
