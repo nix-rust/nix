@@ -218,7 +218,8 @@ mod linux_android {
                   target_arch = "mips",
                   target_arch = "mips64",
                   target_arch = "mips64el",
-                  target_arch = "powerpc64")))]
+                  target_arch = "powerpc64",
+                  target_arch = "powerpc64le")))]
     fn test_ofd_locks() {
         let tmp = NamedTempFile::new().unwrap();
 
