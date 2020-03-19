@@ -27,7 +27,7 @@ default = [
   "quota", "select", "reboot", "signal", "signalfd", "sendfile", "aio", "wait",
   "mount", "ucontext", "utsname", "uio", "fcntl", "unistd", "pty", "features",
   "dir", "env", "kmod", "mqueue", "net", "sched", "event", "eventfd", "ioctl",
-  "mman", "stat", "statfs", "statvfs", "termios", "time"
+  "mman", "stat", "statfs", "statvfs", "termios", "time", "poll"
 ]
 inotify = []
 epoll = []
@@ -67,6 +67,7 @@ statfs = []
 statvfs = []
 termios = []
 time = []
+poll = []
 
 [target.'cfg(target_os = "dragonfly")'.build-dependencies]
 cc = "1"
