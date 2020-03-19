@@ -245,7 +245,9 @@ pub fn wait() -> Result<WaitStatus> {
 /// Returns an iterator over all currently available events of child processes.
 /// 
 /// This iterator is best used with a signal handler on the signal SIGCHLD
-/// ```
+/// (Note that this example uses the signal_hook crate. This is just for clarity, it would of course work with any other mechanism to
+/// receive signals)
+/// ```ignore
 /// for signal in signals.forever() {
 ///     match signal as libc::c_int {
 ///         signal_hook::SIGCHLD => {
@@ -253,7 +255,7 @@ pub fn wait() -> Result<WaitStatus> {
 ///             child_event_iter
 ///                 .take_while(Result::is_ok) // you probably want to do some error handling, instead of just stopping the iterator
 ///                 .for_each(|val| {
-///                     println("A child did something! {:?}", val);
+///                     println!("A child did something! {:?}", val);
 ///                 });
 ///         }
 ///         _ => unreachable!("We only handle SIGCHLD"),
