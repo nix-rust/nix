@@ -207,7 +207,7 @@ mod linux_android {
     #[cfg(not(any(target_arch = "aarch64",
                   target_arch = "arm",
                   target_arch = "armv7",
-                  target_arch = "i686",
+                  target_arch = "x86",
                   target_arch = "mips",
                   target_arch = "mips64",
                   target_arch = "mips64el",
