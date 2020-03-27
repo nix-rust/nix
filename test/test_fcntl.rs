@@ -200,6 +200,9 @@ mod linux_android {
         assert_eq!(100, read(fd, &mut buf).unwrap());
     }
 
+    // This test is disabled for the target architectures below
+    // due to OFD locks not being available in the kernel/libc
+    // versions used in the CI environment.
     #[test]
     #[cfg(not(any(target_arch = "aarch64",
                   target_arch = "arm",
