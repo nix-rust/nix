@@ -15,6 +15,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   identity for filesystem checks per-thread.
   (#[1163](https://github.com/nix-rust/nix/pull/1163))
 - Derived `Ord`, `PartialOrd` for `unistd::Pid` (#[1189](https://github.com/nix-rust/nix/pull/1189))
+- Added `sys::wait::child_event_iter` to conveniently handle all child events after a SIGCHLD signal. (#[1196](https://github.com/nix-rust/nix/pull/1196))
 
 ### Changed
 ### Fixed
