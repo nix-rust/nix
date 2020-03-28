@@ -468,9 +468,9 @@ libc_bitflags!(
 /// Allows the caller to directly manipulate the allocated disk space for the
 /// file referred to by fd.
 #[cfg(any(target_os = "linux"))]
-pub fn fallocate(fd: RawFd, mode: FallocateFlags, offset: libc::off_t, len: libc::off_t) -> Result<c_int> {
+pub fn fallocate(fd: RawFd, mode: FallocateFlags, offset: libc::off_t, len: libc::off_t) -> Result<()> {
     let res = unsafe { libc::fallocate(fd, mode.bits(), offset, len) };
-    Errno::result(res)
+    Errno::result(res).map(drop)
 }
 
 #[cfg(any(target_os = "linux",
