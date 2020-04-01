@@ -200,9 +200,11 @@ mod linux_android {
         assert_eq!(100, read(fd, &mut buf).unwrap());
     }
 
-    // This test is disabled for the target architectures below
+    // The tests below are disabled for the listed targets
     // due to OFD locks not being available in the kernel/libc
-    // versions used in the CI environment.
+    // versions used in the CI environment, probably because
+    // they run under QEMU.
+
     #[test]
     #[cfg(not(any(target_arch = "aarch64",
                   target_arch = "arm",
@@ -213,7 +215,7 @@ mod linux_android {
                   target_arch = "mips64el",
                   target_arch = "powerpc64",
                   target_arch = "powerpc64le")))]
-    fn test_ofd_locks() {
+    fn test_ofd_write_lock() {
         let tmp = NamedTempFile::new().unwrap();
 
         let fd = tmp.as_raw_fd();
@@ -235,8 +237,31 @@ mod linux_android {
         flock.l_type = libc::F_UNLCK as libc::c_short;
         fcntl(fd, FcntlArg::F_OFD_SETLKW(&flock)).expect("write unlock failed");
         assert_eq!(None, lock_info(inode));
+    }
 
-        flock.l_type = libc::F_RDLCK as libc::c_short;
+    #[test]
+    #[cfg(not(any(target_arch = "aarch64",
+                  target_arch = "arm",
+                  target_arch = "armv7",
+                  target_arch = "x86",
+                  target_arch = "mips",
+                  target_arch = "mips64",
+                  target_arch = "mips64el",
+                  target_arch = "powerpc64",
+                  target_arch = "powerpc64le")))]
+    fn test_ofd_read_lock() {
+        let tmp = NamedTempFile::new().unwrap();
+
+        let fd = tmp.as_raw_fd();
+        let inode = fstat(fd).expect("fstat failed").st_ino as usize;
+
+        let mut flock = libc::flock {
+            l_type: libc::F_RDLCK as libc::c_short,
+            l_whence: libc::SEEK_SET as libc::c_short,
+            l_start: 0,
+            l_len: 0,
+            l_pid: 0,
+        };
         fcntl(fd, FcntlArg::F_OFD_SETLKW(&flock)).expect("read lock failed");
         assert_eq!(
             Some(("OFDLCK".to_string(), "READ".to_string())),
