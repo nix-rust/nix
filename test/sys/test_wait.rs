@@ -56,6 +56,61 @@ fn test_waitstatus_pid() {
     }
 }
 
+#[test]
+fn test_child_iterator() {
+    let _m = ::FORK_MTX
+        .lock()
+        .expect("Mutex got poisoned by another test");
+
+    let mut children = Vec::new();
+
+    // create some child_processes and kill them immediatly so we can collect the exit codes
+    for _ in 0..10 {
+        // Safe: The child only calls `pause` and/or `_exit`, which are async-signal-safe.
+        match fork().expect("Error: Fork Failed") {
+            Child => {
+                pause();
+                unsafe { _exit(123) }
+            }
+            Parent { child } => {
+                kill(child, Some(SIGKILL)).expect("Error: Kill Failed");
+                children.push(child);
+            }
+        }
+    }
+
+    let start_time = std::time::Instant::now();
+
+    let mut exited_children = Vec::new();
+    
+    // this runs until all children have been signaled. It might have to call the iterator a few times, because the events might
+    // be delivered in chunks
+    while exited_children.len() < children.len() {
+        // this prevents the test from running for ever in case of a bug 
+        assert!(
+            start_time.elapsed() < std::time::Duration::from_secs(2), 
+            "It takes the children way too long to exit, something is probably broken"
+        );
+        exited_children.extend(child_event_iter());
+    }
+
+    assert_eq!(
+        exited_children.len(),
+        children.len(),
+        "There should be the same amount of exited children as created children"
+    );
+
+    for exit in &exited_children {
+        let is_as_expected = if let Ok(WaitStatus::Signaled(pid, signal, dumped)) = exit {
+            children.contains(&pid) && *signal == Signal::SIGKILL && !dumped
+        }else{
+            false
+        };
+        assert!(is_as_expected, "This exited child did not exit as expected: {:?}", exit);
+    }
+}
+
+
 #[cfg(any(target_os = "linux", target_os = "android"))]
 // FIXME: qemu-user doesn't implement ptrace on most arches
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
