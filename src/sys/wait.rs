@@ -240,9 +240,11 @@ pub fn wait() -> Result<WaitStatus> {
     waitpid(None, None)
 }
 
-/// Returns an iterator over all currently available events of child processes.
+/// Returns an iterator over all currently available events of child processes, as would be available via waitpid with the 
+/// [`WNOHANG`](struct.WaitPidFlag.html#associatedconstant.WNOHANG) flag.
 ///
-/// This iterator is best used with a signal handler on the signal `SIGCHLD` to handle all pending events.
+/// This iterator is best used with a signal handler on the signal `SIGCHLD` to handle all pending events. The iterator ends either
+/// if all remaining children are still running normally or no more children are running.
 /// 
 /// Note that you should not call this directly in a signal handler, since those have some restrictions on what may
 /// happen in them. Use a conditional variable to notify some other routine or use a crate like [signal_hook](https://crates.io/crates/signal-hook)
@@ -264,7 +266,13 @@ type ChildEventIter = std::iter::FromFn<fn() -> std::option::Option<Result<WaitS
 /// use waitpid with WNOHANG to poll the next event or return None if no more events exist
 fn get_next_child_event() -> Option<Result<WaitStatus>> {
     match waitpid(None, Some(WaitPidFlag::WNOHANG)) {
-        Ok(status) => Some(Ok(status)),
+        Ok(status) => {
+            if status == WaitStatus::StillAlive {
+                None
+            }else{
+                Some(Ok(status))
+            }
+        },
         Err(e) => {
             if let crate::Error::Sys(crate::errno::Errno::ECHILD) = e {
                 // No more events to be waited on
