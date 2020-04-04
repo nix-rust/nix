@@ -558,7 +558,7 @@ impl ControlMessageOwned {
                 ControlMessageOwned::Ipv4RecvErr(err, addr)
             },
             #[cfg(any(target_os = "android", target_os = "linux"))]
-            (libc::IPPROTO_IPV6, libc::IP_RECVERR) => {
+            (libc::IPPROTO_IPV6, libc::IPV6_RECVERR) => {
                 let ee = p as *const libc::sock_extended_err;
                 let err = ptr::read_unaligned(ee);
                 let addr = ptr::read_unaligned(libc::SO_EE_OFFENDER(ee) as *const sockaddr_in6);
