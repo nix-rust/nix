@@ -16,13 +16,10 @@ exclude     = [
 ]
 
 [dependencies]
-libc = { version = "0.2.60", features = [ "extra_traits" ] }
+libc = { version = "0.2.68", features = [ "extra_traits" ] }
 bitflags = "1.0"
 cfg-if = "0.1.2"
 void = "1.0.2"
-
-[patch.crates-io]
-libc = { git = "https://github.com/mcpherrinm/libc" }
 
 [target.'cfg(target_os = "dragonfly")'.build-dependencies]
 cc = "1"
