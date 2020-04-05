@@ -30,6 +30,7 @@ pub extern crate libc;
 
 // Public crates
 pub mod dir;
+pub mod env;
 pub mod errno;
 #[deny(missing_docs)]
 pub mod features;
@@ -152,16 +153,7 @@ impl From<std::string::FromUtf8Error> for Error {
     fn from(_: std::string::FromUtf8Error) -> Error { Error::InvalidUtf8 }
 }
 
-impl error::Error for Error {
-    fn description(&self) -> &str {
-        match *self {
-            Error::InvalidPath => "Invalid path",
-            Error::InvalidUtf8 => "Invalid UTF-8 string",
-            Error::UnsupportedOperation => "Unsupported Operation",
-            Error::Sys(ref errno) => errno.desc(),
-        }
-    }
-}
+impl error::Error for Error {}
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

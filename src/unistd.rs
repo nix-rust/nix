@@ -115,7 +115,7 @@ impl fmt::Display for Gid {
 ///
 /// Newtype pattern around `pid_t` (which is just alias). It prevents bugs caused by accidentally
 /// passing wrong value.
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Pid(pid_t);
 
 impl Pid {
@@ -1398,6 +1398,28 @@ pub fn setgid(gid: Gid) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
+/// Set the user identity used for filesystem checks per-thread.
+/// On both success and failure, this call returns the previous filesystem user
+/// ID of the caller.
+///
+/// See also [setfsuid(2)](http://man7.org/linux/man-pages/man2/setfsuid.2.html)
+#[cfg(any(target_os = "linux", target_os = "android"))]
+pub fn setfsuid(uid: Uid) -> Uid {
+    let prev_fsuid = unsafe { libc::setfsuid(uid.into()) };
+    Uid::from_raw(prev_fsuid as uid_t)
+}
+
+/// Set the group identity used for filesystem checks per-thread.
+/// On both success and failure, this call returns the previous filesystem group
+/// ID of the caller.
+///
+/// See also [setfsgid(2)](http://man7.org/linux/man-pages/man2/setfsgid.2.html)
+#[cfg(any(target_os = "linux", target_os = "android"))]
+pub fn setfsgid(gid: Gid) -> Gid {
+    let prev_fsgid = unsafe { libc::setfsgid(gid.into()) };
+    Gid::from_raw(prev_fsgid as gid_t)
+}
+
 /// Get the list of supplementary group IDs of the calling process.
 ///
 /// [Further reading](http://pubs.opengroup.org/onlinepubs/009695399/functions/getgroups.html)
@@ -1994,7 +2016,8 @@ pub enum SysconfVar {
     BC_STRING_MAX = libc::_SC_BC_STRING_MAX,
     /// Maximum number of simultaneous processes per real user ID.
     CHILD_MAX = libc::_SC_CHILD_MAX,
-    // _SC_CLK_TCK is obsolete
+    // The number of clock ticks per second.
+    CLK_TCK = libc::_SC_CLK_TCK,
     /// Maximum number of weights that can be assigned to an entry of the
     /// LC_COLLATE order keyword in the locale definition file
     COLL_WEIGHTS_MAX = libc::_SC_COLL_WEIGHTS_MAX,

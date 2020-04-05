@@ -5,6 +5,47 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - ReleaseDate
 ### Added
+- Added `env::clearenv()`: calls `libc::clearenv` on platforms
+  where it's available, and clears the environment of all variables
+  via `std::env::vars` and `std::env::remove_var` on others.
+  (#[1185](https://github.com/nix-rust/nix/pull/1185))
+- `FsType` inner value made public.
+  (#[1187](https://github.com/nix-rust/nix/pull/1187))
+- Added `unistd::setfsuid` and `unistd::setfsgid` to set the user or group
+  identity for filesystem checks per-thread.
+  (#[1163](https://github.com/nix-rust/nix/pull/1163))
+- Derived `Ord`, `PartialOrd` for `unistd::Pid` (#[1189](https://github.com/nix-rust/nix/pull/1189))
+
+### Changed
+- Changed `fallocate` return type from `c_int` to `()` (#[1201](https://github.com/nix-rust/nix/pull/1201))
+- Enabled `sys::ptrace::setregs` and `sys::ptrace::getregs` on x86_64-unknown-linux-musl target
+  (#[1198](https://github.com/nix-rust/nix/pull/1198))
+
+### Fixed
+### Removed
+
+## [0.17.0] - 3 February 2020
+### Added
+- Add `CLK_TCK` to `SysconfVar`
+  (#[1177](https://github.com/nix-rust/nix/pull/1177))
+### Changed
+### Fixed
+### Removed
+- Removed deprecated Error::description from error types
+  (#[1175](https://github.com/nix-rust/nix/pull/1175))
+
+## [0.16.1] - 23 December 2019
+### Added
+### Changed
+### Fixed
+
+- Fixed the build for OpenBSD
+  (#[1168](https://github.com/nix-rust/nix/pull/1168))
+
+### Removed
+
+## [0.16.0] - 1 December 2019
+### Added
 - Added `ptrace::seize()`: similar to `attach()` on Linux
   but with better-defined semantics.
   (#[1154](https://github.com/nix-rust/nix/pull/1154))
@@ -27,6 +68,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Added `User::from_uid`, `User::from_name`, `User::from_gid` and
   `Group::from_name`,
   ([#1139](https://github.com/nix-rust/nix/pull/1139))
+
 - Added `linkat`
   ([#1101](https://github.com/nix-rust/nix/pull/1101))
 
@@ -40,6 +82,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - `sys::termios::BaudRate` now implements `TryFrom<speed_t>` instead of
   `From<speed_t>`.  The old `From` implementation would panic on failure.
   ([#1159](https://github.com/nix-rust/nix/pull/1159))
+
+- `sys::socket::ControlMessage::ScmCredentials` and
+  `sys::socket::ControlMessageOwned::ScmCredentials` now wrap `UnixCredentials`
+  rather than `libc::ucred`.
+  ([#1160](https://github.com/nix-rust/nix/pull/1160))
 
 - `sys::socket::recvmsg` now takes a plain `Vec` instead of a `CmsgBuffer`
   implementor.  If you were already using `cmsg_space!`, then you needn't worry.

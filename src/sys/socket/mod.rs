@@ -190,7 +190,7 @@ cfg_if! {
         /// Unix credentials of the sending process.
         ///
         /// This struct is used with the `SO_PEERCRED` ancillary message for UNIX sockets.
-        #[repr(C)]
+        #[repr(transparent)]
         #[derive(Clone, Copy, Debug, Eq, PartialEq)]
         pub struct UnixCredentials(libc::ucred);
 
@@ -368,7 +368,7 @@ pub enum ControlMessageOwned {
     /// Received version of
     /// [`ControlMessage::ScmCredentials`][#enum.ControlMessage.html#variant.ScmCredentials]
     #[cfg(any(target_os = "android", target_os = "linux"))]
-    ScmCredentials(libc::ucred),
+    ScmCredentials(UnixCredentials),
     /// A message of type `SCM_TIMESTAMP`, containing the time the
     /// packet was received by the kernel.
     ///
@@ -500,7 +500,7 @@ impl ControlMessageOwned {
             #[cfg(any(target_os = "android", target_os = "linux"))]
             (libc::SOL_SOCKET, libc::SCM_CREDENTIALS) => {
                 let cred: libc::ucred = ptr::read_unaligned(p as *const _);
-                ControlMessageOwned::ScmCredentials(cred)
+                ControlMessageOwned::ScmCredentials(cred.into())
             }
             (libc::SOL_SOCKET, libc::SCM_TIMESTAMP) => {
                 let tv: libc::timeval = ptr::read_unaligned(p as *const _);
@@ -602,10 +602,8 @@ pub enum ControlMessage<'a> {
     ///
     /// For further information, please refer to the
     /// [`unix(7)`](http://man7.org/linux/man-pages/man7/unix.7.html) man page.
-    // FIXME: When `#[repr(transparent)]` is stable, use it on `UnixCredentials`
-    // and put that in here instead of a raw ucred.
     #[cfg(any(target_os = "android", target_os = "linux"))]
-    ScmCredentials(&'a libc::ucred),
+    ScmCredentials(&'a UnixCredentials),
 
     /// Set IV for `AF_ALG` crypto API.
     ///
@@ -673,7 +671,7 @@ impl<'a> ControlMessage<'a> {
             },
             #[cfg(any(target_os = "android", target_os = "linux"))]
             ControlMessage::ScmCredentials(creds) => {
-                creds as *const libc::ucred as *const u8
+                &creds.0 as *const libc::ucred as *const u8
             }
             #[cfg(any(target_os = "android", target_os = "linux"))]
             ControlMessage::AlgSetIv(iv) => {

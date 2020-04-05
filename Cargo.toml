@@ -1,7 +1,7 @@
 [package]
 name        = "nix"
 description = "Rust friendly bindings to *nix APIs"
-version     = "0.15.0"
+version     = "0.17.0"
 authors     = ["The nix-rust Project Developers"]
 repository  = "https://github.com/nix-rust/nix"
 license     = "MIT"
@@ -17,8 +17,8 @@ exclude     = [
 
 [dependencies]
 libc = { version = "0.2.68", features = [ "extra_traits" ] }
-bitflags = "1.0"
-cfg-if = "0.1.2"
+bitflags = "1.1"
+cfg-if = "0.1.10"
 void = "1.0.2"
 
 [target.'cfg(target_os = "dragonfly")'.build-dependencies]
@@ -43,6 +43,10 @@ path = "test/test.rs"
 [[test]]
 name = "test-aio-drop"
 path = "test/sys/test_aio_drop.rs"
+
+[[test]]
+name = "test-clearenv"
+path = "test/test_clearenv.rs"
 
 [[test]]
 name = "test-lio-listio-resubmit"
