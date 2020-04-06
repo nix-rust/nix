@@ -507,13 +507,13 @@ pub fn mkfifo<P: ?Sized + NixPath>(path: &P, mode: Mode) -> Result<()> {
 }
 
 /// Creates new fifo special file (named pipe) with path `path` and access rights `mode`.
-/// 
+///
 /// If `dirfd` has a value, then `path` is relative to directory associated with the file descriptor.
-/// 
-/// If `dirfd` is `None`, then `path` is relative to the current working directory. 
-/// 
+///
+/// If `dirfd` is `None`, then `path` is relative to the current working directory.
+///
 /// # References
-/// 
+///
 /// [mkfifoat(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/mkfifoat.html).
 // mkfifoat is not implemented in OSX or android
 #[inline]
@@ -559,7 +559,7 @@ pub fn symlinkat<P1: ?Sized + NixPath, P2: ?Sized + NixPath>(
 fn reserve_double_buffer_size<T>(buf: &mut Vec<T>, limit: usize) -> Result<()> {
     use std::cmp::min;
 
-    if buf.len() >= limit {
+    if buf.capacity() >= limit {
         return Err(Error::Sys(Errno::ERANGE))
     }
 
