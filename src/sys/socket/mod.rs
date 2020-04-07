@@ -657,15 +657,26 @@ impl<'a> ControlMessage<'a> {
             }
             #[cfg(any(target_os = "android", target_os = "linux"))]
             ControlMessage::AlgSetIv(iv) => {
+                let af_alg_iv = libc::af_alg_iv {
+                    ivlen: iv.len() as u32,
+                    iv: [0u8; 0],
+                };
+
+                let size = mem::size_of::<libc::af_alg_iv>();
+
                 unsafe {
-                    let alg_iv = cmsg_data as *mut libc::af_alg_iv;
-                    (*alg_iv).ivlen = iv.len() as u32;
+                    ptr::copy_nonoverlapping(
+                        &af_alg_iv as *const _ as *const u8,
+                        cmsg_data,
+                        size,
+                    );
                     ptr::copy_nonoverlapping(
                         iv.as_ptr(),
-                        (*alg_iv).iv.as_mut_ptr(),
+                        cmsg_data.add(size),
                         iv.len()
                     );
                 };
+
                 return
             },
             #[cfg(any(target_os = "android", target_os = "linux"))]

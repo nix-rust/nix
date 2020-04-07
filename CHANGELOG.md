@@ -28,6 +28,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Fixed a bug in nix::unistd that would result in an infinite loop
   when a group or user lookup required a buffer larger than
   16KB. (#[1198](https://github.com/nix-rust/nix/pull/1198))
+- Fixed unaligned casting of `cmsg_data` to `af_alg_iv` (#[1206](https://github.com/nix-rust/nix/pull/1206))
 
 ### Removed
 
