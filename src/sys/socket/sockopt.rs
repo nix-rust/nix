@@ -308,7 +308,10 @@ sockopt_impl!(Both, Ipv4RecvIf, libc::IPPROTO_IP, libc::IP_RECVIF, bool);
     target_os = "openbsd",
 ))]
 sockopt_impl!(Both, Ipv4RecvDstAddr, libc::IPPROTO_IP, libc::IP_RECVDSTADDR, bool);
-
+#[cfg(target_os = "linux")]
+sockopt_impl!(Both, UdpGsoSegment, libc::SOL_UDP, libc::UDP_SEGMENT, libc::c_int);
+#[cfg(target_os = "linux")]
+sockopt_impl!(Both, UdpGroSegment, libc::IPPROTO_UDP, libc::UDP_GRO, bool);
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
 #[derive(Copy, Clone, Debug)]

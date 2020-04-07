@@ -12,6 +12,7 @@ extern crate rand;
 #[cfg(target_os = "freebsd")]
 extern crate sysctl;
 extern crate tempfile;
+extern crate semver;
 
 cfg_if! {
     if #[cfg(any(target_os = "android", target_os = "linux"))] {
@@ -95,6 +96,42 @@ cfg_if! {
         }
     } else {
         macro_rules! skip_if_seccomp {
+            ($name:expr) => {}
+        }
+    }
+}
+
+cfg_if! {
+    if #[cfg(any(target_os = "android", target_os = "linux"))] {
+        macro_rules! require_kernel_version {
+            ($name:expr, $version_requirement:expr) => {
+                use ::std::io::Write;
+                use semver::{Version, VersionReq};
+
+                let version_requirement = VersionReq::parse($version_requirement)
+                        .expect("Bad match_version provided");
+
+                let uname = nix::sys::utsname::uname();
+
+                let mut version = Version::parse(uname.release()).unwrap();
+
+                //Keep only numeric parts
+                version.pre.clear();
+                version.build.clear();
+
+                if !version_requirement.matches(&version) {
+                    let stderr = ::std::io::stderr();
+                    let mut handle = stderr.lock();
+
+                    writeln!(handle,
+                        "Skip {} because kernel version `{}` doesn't match the requirement `{}`",
+                        stringify!($name), version, version_requirement).unwrap();
+                    return;
+                }
+            }
+        }
+    } else {
+        macro_rules! require_kernel_version {
             ($name:expr) => {}
         }
     }
