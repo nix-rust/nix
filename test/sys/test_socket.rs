@@ -304,6 +304,140 @@ mod recvfrom {
                 .expect("setsockopt UDP_GRO failed");
         }
     }
+
+    #[cfg(any(
+        target_os = "linux",
+        target_os = "android",
+        target_os = "freebsd",
+        target_os = "openbsd",
+        target_os = "netbsd",
+    ))]
+    #[test]
+    pub fn udp_sendmmsg() {
+        use nix::sys::uio::IoVec;
+
+        let std_sa = SocketAddr::from_str("127.0.0.1:6793").unwrap();
+        let std_sa2 = SocketAddr::from_str("127.0.0.1:6794").unwrap();
+        let inet_addr = InetAddr::from_std(&std_sa);
+        let inet_addr2 = InetAddr::from_std(&std_sa2);
+        let sock_addr = SockAddr::new_inet(inet_addr);
+        let sock_addr2 = SockAddr::new_inet(inet_addr2);
+
+        let rsock = socket(AddressFamily::Inet,
+            SockType::Datagram,
+            SockFlag::empty(),
+            None
+        ).unwrap();
+        bind(rsock, &sock_addr).unwrap();
+        let ssock = socket(
+            AddressFamily::Inet,
+            SockType::Datagram,
+            SockFlag::empty(),
+            None,
+        ).expect("send socket failed");
+
+        let from = sendrecv(rsock, ssock, move |s, m, flags| {
+            let iov = [IoVec::from_slice(m)];
+            let mut msgs = Vec::new();
+            msgs.push(
+                SendMmsgData {
+                    iov: &iov,
+                    cmsgs: &[],
+                    addr: Some(sock_addr),
+                    _lt: Default::default(),
+                });
+
+            let batch_size = 15;
+
+            for _ in 0..batch_size {
+                msgs.push(
+                    SendMmsgData {
+                        iov: &iov,
+                        cmsgs: &[],
+                        addr: Some(sock_addr2),
+                        _lt: Default::default(),
+                    }
+                );
+            }
+            sendmmsg(s, msgs.iter(), flags)
+                .map(move |sent_bytes| {
+                    assert!(sent_bytes.len() >= 1);
+                    for sent in &sent_bytes {
+                        assert_eq!(*sent, m.len());
+                    }
+                    sent_bytes.len()
+                })
+        }, |_, _ | {});
+        // UDP sockets should set the from address
+        assert_eq!(AddressFamily::Inet, from.unwrap().family());
+    }
+
+    #[cfg(any(
+        target_os = "linux",
+        target_os = "android",
+        target_os = "freebsd",
+        target_os = "netbsd",
+    ))]
+    #[test]
+    pub fn udp_recvmmsg() {
+        use nix::sys::uio::IoVec;
+        use nix::sys::socket::{MsgFlags, recvmmsg};
+
+        const NUM_MESSAGES_SENT: usize = 2;
+        const DATA: [u8; 2] = [1,2];
+
+        let std_sa = SocketAddr::from_str("127.0.0.1:6798").unwrap();
+        let inet_addr = InetAddr::from_std(&std_sa);
+        let sock_addr = SockAddr::new_inet(inet_addr);
+
+        let rsock = socket(AddressFamily::Inet,
+            SockType::Datagram,
+            SockFlag::empty(),
+            None
+        ).unwrap();
+        bind(rsock, &sock_addr).unwrap();
+        let ssock = socket(
+            AddressFamily::Inet,
+            SockType::Datagram,
+            SockFlag::empty(),
+            None,
+        ).expect("send socket failed");
+
+        let send_thread = thread::spawn(move || {
+            for _ in 0..NUM_MESSAGES_SENT {
+                sendto(ssock, &DATA[..], &sock_addr, MsgFlags::empty()).unwrap();
+            }
+        });
+
+        let mut msgs = std::collections::LinkedList::new();
+
+        // Buffers to receive exactly `NUM_MESSAGES_SENT` messages
+        let mut receive_buffers = [[0u8; 32]; NUM_MESSAGES_SENT];
+        let iovs: Vec<_> = receive_buffers.iter_mut().map(|buf| {
+            [IoVec::from_mut_slice(&mut buf[..])]
+        }).collect();
+
+        for iov in &iovs {
+            msgs.push_back(RecvMmsgData {
+                iov: iov,
+                cmsg_buffer: None,
+            })
+        };
+
+        let res = recvmmsg(rsock, &mut msgs, MsgFlags::empty(), None).expect("recvmmsg");
+        assert_eq!(res.len(), DATA.len());
+
+        for RecvMsg { address, bytes, .. } in res.into_iter() {
+            assert_eq!(AddressFamily::Inet, address.unwrap().family());
+            assert_eq!(DATA.len(), bytes);
+        }
+
+        for buf in &receive_buffers {
+            assert_eq!(&buf[..DATA.len()], DATA);
+        }
+
+        send_thread.join().unwrap();
+    }
 }
 
 // Test error handling of our recvmsg wrapper

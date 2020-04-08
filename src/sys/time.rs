@@ -67,6 +67,12 @@ impl AsRef<timespec> for TimeSpec {
     }
 }
 
+impl AsMut<timespec> for TimeSpec {
+    fn as_mut(&mut self) -> &mut timespec {
+        &mut self.0
+    }
+}
+
 impl Ord for TimeSpec {
     // The implementation of cmp is simplified by assuming that the struct is
     // normalized.  That is, tv_nsec must always be within [0, 1_000_000_000)
@@ -256,6 +262,12 @@ const TV_MIN_SECONDS: i64 = -TV_MAX_SECONDS;
 impl AsRef<timeval> for TimeVal {
     fn as_ref(&self) -> &timeval {
         &self.0
+    }
+}
+
+impl AsMut<timeval> for TimeVal {
+    fn as_mut(&mut self) -> &mut timeval {
+        &mut self.0
     }
 }
 
