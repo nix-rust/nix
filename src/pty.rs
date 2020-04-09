@@ -6,6 +6,7 @@ pub use libc::pid_t as SessionId;
 pub use libc::winsize as Winsize;
 
 use std::ffi::CStr;
+use std::io;
 use std::mem;
 use std::os::unix::prelude::*;
 
@@ -74,6 +75,21 @@ impl Drop for PtyMaster {
         if e == Err(Error::Sys(Errno::EBADF)) {
             panic!("Closing an invalid file descriptor!");
         };
+    }
+}
+
+impl io::Read for PtyMaster {
+    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+        ::unistd::read(self.0, buf).map_err(|e| e.as_errno().unwrap().into())
+    }
+}
+
+impl io::Write for PtyMaster {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        ::unistd::write(self.0, buf).map_err(|e| e.as_errno().unwrap().into())
+    }
+    fn flush(&mut self) -> io::Result<()> {
+        Ok(())
     }
 }
 
