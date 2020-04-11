@@ -73,13 +73,11 @@ impl FdSet {
     /// # extern crate nix;
     /// # use nix::sys::select::FdSet;
     /// # use std::os::unix::io::RawFd;
-    /// # fn main() {
     /// let mut set = FdSet::new();
     /// set.insert(4);
     /// set.insert(9);
     /// let fds: Vec<RawFd> = set.fds().collect();
     /// assert_eq!(fds, vec![4, 9]);
-    /// # }
     /// ```
     #[inline]
     pub fn fds(&self) -> Fds {
