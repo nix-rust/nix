@@ -8,12 +8,12 @@ extern crate nix;
 extern crate sysctl;
 extern crate tempfile;
 
-use nix::Error;
 use nix::errno::*;
 use nix::libc::off_t;
 use nix::sys::aio::*;
 use nix::sys::signal::SigevNotify;
-use nix::unistd::{SysconfVar, sysconf};
+use nix::unistd::{sysconf, SysconfVar};
+use nix::Error;
 use std::os::unix::io::AsRawFd;
 use std::{thread, time};
 use sysctl::CtlValue;
@@ -29,9 +29,10 @@ fn finish_liocb(liocb: &mut LioCb) {
             let e = liocb.error(j);
             match e {
                 Ok(()) => break,
-                Err(Error::Sys(Errno::EINPROGRESS)) =>
-                    thread::sleep(time::Duration::from_millis(10)),
-                Err(x) => panic!("aio_error({:?})", x)
+                Err(Error::Sys(Errno::EINPROGRESS)) => {
+                    thread::sleep(time::Duration::from_millis(10))
+                }
+                Err(x) => panic!("aio_error({:?})", x),
             }
         }
         assert_eq!(liocb.aio_return(j).unwrap(), BYTES_PER_OP as isize);
@@ -48,9 +49,9 @@ fn test_lio_listio_resubmit() {
 
     // Lookup system resource limits
     let alm = sysconf(SysconfVar::AIO_LISTIO_MAX)
-        .expect("sysconf").unwrap() as usize;
-    let maqpp = if let CtlValue::Int(x) = sysctl::value(
-            "vfs.aio.max_aio_queue_per_proc").unwrap(){
+        .expect("sysconf")
+        .unwrap() as usize;
+    let maqpp = if let CtlValue::Int(x) = sysctl::value("vfs.aio.max_aio_queue_per_proc").unwrap() {
         x as usize
     } else {
         panic!("unknown sysctl");
@@ -61,42 +62,52 @@ fn test_lio_listio_resubmit() {
     let target_ops = maqpp + alm / 2;
     let num_listios = (target_ops + alm - 3) / (alm - 2);
     let ops_per_listio = (target_ops + num_listios - 1) / num_listios;
-    assert!((num_listios - 1) * ops_per_listio < maqpp,
-        "the last lio_listio won't make any progress; fix the algorithm");
-    println!("Using {:?} LioCbs of {:?} operations apiece", num_listios,
-             ops_per_listio);
+    assert!(
+        (num_listios - 1) * ops_per_listio < maqpp,
+        "the last lio_listio won't make any progress; fix the algorithm"
+    );
+    println!(
+        "Using {:?} LioCbs of {:?} operations apiece",
+        num_listios, ops_per_listio
+    );
 
     let f = tempfile().unwrap();
-    let buffer_set = (0..num_listios).map(|_| {
-        (0..ops_per_listio).map(|_| {
-            vec![0u8; BYTES_PER_OP]
-        }).collect::<Vec<_>>()
-    }).collect::<Vec<_>>();
+    let buffer_set = (0..num_listios)
+        .map(|_| {
+            (0..ops_per_listio)
+                .map(|_| vec![0u8; BYTES_PER_OP])
+                .collect::<Vec<_>>()
+        })
+        .collect::<Vec<_>>();
 
-    let mut liocbs = (0..num_listios).map(|i| {
-        let mut liocb = LioCb::with_capacity(ops_per_listio);
-        for j in 0..ops_per_listio {
-            let offset = (BYTES_PER_OP * (i * ops_per_listio + j)) as off_t;
-            let wcb = AioCb::from_slice( f.as_raw_fd(),
-                                   offset,
-                                   &buffer_set[i][j][..],
-                                   0,   //priority
-                                   SigevNotify::SigevNone,
-                                   LioOpcode::LIO_WRITE);
-            liocb.aiocbs.push(wcb);
-        }
-        let mut err = liocb.listio(LioMode::LIO_NOWAIT, SigevNotify::SigevNone);
-        while err == Err(Error::Sys(Errno::EIO)) ||
-              err == Err(Error::Sys(Errno::EAGAIN)) ||
-              err == Err(Error::Sys(Errno::EINTR)) {
-            // 
-            thread::sleep(time::Duration::from_millis(10));
-            resubmit_count += 1;
-            err = liocb.listio_resubmit(LioMode::LIO_NOWAIT,
-                                        SigevNotify::SigevNone);
-        }
-        liocb
-    }).collect::<Vec<_>>();
+    let mut liocbs = (0..num_listios)
+        .map(|i| {
+            let mut liocb = LioCb::with_capacity(ops_per_listio);
+            for j in 0..ops_per_listio {
+                let offset = (BYTES_PER_OP * (i * ops_per_listio + j)) as off_t;
+                let wcb = AioCb::from_slice(
+                    f.as_raw_fd(),
+                    offset,
+                    &buffer_set[i][j][..],
+                    0, //priority
+                    SigevNotify::SigevNone,
+                    LioOpcode::LIO_WRITE,
+                );
+                liocb.aiocbs.push(wcb);
+            }
+            let mut err = liocb.listio(LioMode::LIO_NOWAIT, SigevNotify::SigevNone);
+            while err == Err(Error::Sys(Errno::EIO))
+                || err == Err(Error::Sys(Errno::EAGAIN))
+                || err == Err(Error::Sys(Errno::EINTR))
+            {
+                //
+                thread::sleep(time::Duration::from_millis(10));
+                resubmit_count += 1;
+                err = liocb.listio_resubmit(LioMode::LIO_NOWAIT, SigevNotify::SigevNone);
+            }
+            liocb
+        })
+        .collect::<Vec<_>>();
 
     // Ensure that every AioCb completed
     for liocb in liocbs.iter_mut() {

@@ -1,10 +1,10 @@
-use {Error, NixPath, Result};
 use errno::Errno;
 use fcntl::{self, OFlag};
 use libc;
 use std::os::unix::io::{AsRawFd, IntoRawFd, RawFd};
 use std::{ffi, ptr};
 use sys;
+use {Error, NixPath, Result};
 
 #[cfg(target_os = "linux")]
 use libc::{dirent64 as dirent, readdir64_r as readdir_r};
@@ -26,21 +26,26 @@ use libc::{dirent, readdir_r};
 ///    * returns entries' names as a `CStr` (no allocation or conversion beyond whatever libc
 ///      does).
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct Dir(
-    ptr::NonNull<libc::DIR>
-);
+pub struct Dir(ptr::NonNull<libc::DIR>);
 
 impl Dir {
     /// Opens the given path as with `fcntl::open`.
-    pub fn open<P: ?Sized + NixPath>(path: &P, oflag: OFlag,
-                                     mode: sys::stat::Mode) -> Result<Self> {
+    pub fn open<P: ?Sized + NixPath>(
+        path: &P,
+        oflag: OFlag,
+        mode: sys::stat::Mode,
+    ) -> Result<Self> {
         let fd = fcntl::open(path, oflag, mode)?;
         Dir::from_fd(fd)
     }
 
     /// Opens the given path as with `fcntl::openat`.
-    pub fn openat<P: ?Sized + NixPath>(dirfd: RawFd, path: &P, oflag: OFlag,
-                                       mode: sys::stat::Mode) -> Result<Self> {
+    pub fn openat<P: ?Sized + NixPath>(
+        dirfd: RawFd,
+        path: &P,
+        oflag: OFlag,
+        mode: sys::stat::Mode,
+    ) -> Result<Self> {
         let fd = fcntl::openat(dirfd, path, oflag, mode)?;
         Dir::from_fd(fd)
     }
@@ -104,9 +109,11 @@ impl<'d> Iterator for Iter<'d> {
             // Probably fine here too then.
             let mut ent = std::mem::MaybeUninit::<dirent>::uninit();
             let mut result = ptr::null_mut();
-            if let Err(e) = Errno::result(
-                readdir_r((self.0).0.as_ptr(), ent.as_mut_ptr(), &mut result))
-            {
+            if let Err(e) = Errno::result(readdir_r(
+                (self.0).0.as_ptr(),
+                ent.as_mut_ptr(),
+                &mut result,
+            )) {
                 return Some(Err(e));
             }
             if result.is_null() {
@@ -144,29 +151,33 @@ pub enum Type {
 
 impl Entry {
     /// Returns the inode number (`d_ino`) of the underlying `dirent`.
-    #[cfg(any(target_os = "android",
-              target_os = "emscripten",
-              target_os = "fuchsia",
-              target_os = "haiku",
-              target_os = "ios",
-              target_os = "l4re",
-              target_os = "linux",
-              target_os = "macos",
-              target_os = "solaris"))]
+    #[cfg(any(
+        target_os = "android",
+        target_os = "emscripten",
+        target_os = "fuchsia",
+        target_os = "haiku",
+        target_os = "ios",
+        target_os = "l4re",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "solaris"
+    ))]
     pub fn ino(&self) -> u64 {
         self.0.d_ino as u64
     }
 
     /// Returns the inode number (`d_fileno`) of the underlying `dirent`.
-    #[cfg(not(any(target_os = "android",
-                  target_os = "emscripten",
-                  target_os = "fuchsia",
-                  target_os = "haiku",
-                  target_os = "ios",
-                  target_os = "l4re",
-                  target_os = "linux",
-                  target_os = "macos",
-                  target_os = "solaris")))]
+    #[cfg(not(any(
+        target_os = "android",
+        target_os = "emscripten",
+        target_os = "fuchsia",
+        target_os = "haiku",
+        target_os = "ios",
+        target_os = "l4re",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "solaris"
+    )))]
     pub fn ino(&self) -> u64 {
         u64::from(self.0.d_fileno)
     }

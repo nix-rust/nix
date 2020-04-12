@@ -1,12 +1,12 @@
-use nix::Error;
 use nix::errno::*;
-use nix::fcntl::{openat, open, OFlag, readlink, readlinkat, renameat};
+use nix::fcntl::{open, openat, readlink, readlinkat, renameat, OFlag};
 use nix::sys::stat::Mode;
 use nix::unistd::{close, read};
-use tempfile::{self, NamedTempFile};
+use nix::Error;
 use std::fs::File;
 use std::io::prelude::*;
 use std::os::unix::fs;
+use tempfile::{self, NamedTempFile};
 
 #[test]
 fn test_openat() {
@@ -14,13 +14,14 @@ fn test_openat() {
     let mut tmp = NamedTempFile::new().unwrap();
     tmp.write_all(CONTENTS).unwrap();
 
-    let dirfd = open(tmp.path().parent().unwrap(),
-                     OFlag::empty(),
-                     Mode::empty()).unwrap();
-    let fd = openat(dirfd,
-                    tmp.path().file_name().unwrap(),
-                    OFlag::O_RDONLY,
-                    Mode::empty()).unwrap();
+    let dirfd = open(tmp.path().parent().unwrap(), OFlag::empty(), Mode::empty()).unwrap();
+    let fd = openat(
+        dirfd,
+        tmp.path().file_name().unwrap(),
+        OFlag::O_RDONLY,
+        Mode::empty(),
+    )
+    .unwrap();
 
     let mut buf = [0u8; 1024];
     assert_eq!(4, read(fd, &mut buf).unwrap());
@@ -39,8 +40,10 @@ fn test_renameat() {
     let new_dir = tempfile::tempdir().unwrap();
     let new_dirfd = open(new_dir.path(), OFlag::empty(), Mode::empty()).unwrap();
     renameat(Some(old_dirfd), "old", Some(new_dirfd), "new").unwrap();
-    assert_eq!(renameat(Some(old_dirfd), "old", Some(new_dirfd), "new").unwrap_err(),
-               Error::Sys(Errno::ENOENT));
+    assert_eq!(
+        renameat(Some(old_dirfd), "old", Some(new_dirfd), "new").unwrap_err(),
+        Error::Sys(Errno::ENOENT)
+    );
     close(old_dirfd).unwrap();
     close(new_dirfd).unwrap();
     assert!(new_dir.path().join("new").exists());
@@ -53,14 +56,14 @@ fn test_readlink() {
     let dst = tempdir.path().join("b");
     println!("a: {:?}, b: {:?}", &src, &dst);
     fs::symlink(&src.as_path(), &dst.as_path()).unwrap();
-    let dirfd = open(tempdir.path(),
-                     OFlag::empty(),
-                     Mode::empty()).unwrap();
+    let dirfd = open(tempdir.path(), OFlag::empty(), Mode::empty()).unwrap();
     let expected_dir = src.to_str().unwrap();
 
     assert_eq!(readlink(&dst).unwrap().to_str().unwrap(), expected_dir);
-    assert_eq!(readlinkat(dirfd, "b").unwrap().to_str().unwrap(), expected_dir);
-
+    assert_eq!(
+        readlinkat(dirfd, "b").unwrap().to_str().unwrap(),
+        expected_dir
+    );
 }
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
@@ -125,8 +128,15 @@ mod linux_android {
 
         let (rd, wr) = pipe().unwrap();
         let mut offset: loff_t = 5;
-        let res = splice(tmp.as_raw_fd(), Some(&mut offset),
-            wr, None, 2, SpliceFFlags::empty()).unwrap();
+        let res = splice(
+            tmp.as_raw_fd(),
+            Some(&mut offset),
+            wr,
+            None,
+            2,
+            SpliceFFlags::empty(),
+        )
+        .unwrap();
 
         assert_eq!(2, res);
 
@@ -206,15 +216,17 @@ mod linux_android {
     // they run under QEMU.
 
     #[test]
-    #[cfg(not(any(target_arch = "aarch64",
-                  target_arch = "arm",
-                  target_arch = "armv7",
-                  target_arch = "x86",
-                  target_arch = "mips",
-                  target_arch = "mips64",
-                  target_arch = "mips64el",
-                  target_arch = "powerpc64",
-                  target_arch = "powerpc64le")))]
+    #[cfg(not(any(
+        target_arch = "aarch64",
+        target_arch = "arm",
+        target_arch = "armv7",
+        target_arch = "x86",
+        target_arch = "mips",
+        target_arch = "mips64",
+        target_arch = "mips64el",
+        target_arch = "powerpc64",
+        target_arch = "powerpc64le"
+    )))]
     fn test_ofd_write_lock() {
         let tmp = NamedTempFile::new().unwrap();
 
@@ -240,15 +252,17 @@ mod linux_android {
     }
 
     #[test]
-    #[cfg(not(any(target_arch = "aarch64",
-                  target_arch = "arm",
-                  target_arch = "armv7",
-                  target_arch = "x86",
-                  target_arch = "mips",
-                  target_arch = "mips64",
-                  target_arch = "mips64el",
-                  target_arch = "powerpc64",
-                  target_arch = "powerpc64le")))]
+    #[cfg(not(any(
+        target_arch = "aarch64",
+        target_arch = "arm",
+        target_arch = "armv7",
+        target_arch = "x86",
+        target_arch = "mips",
+        target_arch = "mips64",
+        target_arch = "mips64el",
+        target_arch = "powerpc64",
+        target_arch = "powerpc64le"
+    )))]
     fn test_ofd_read_lock() {
         let tmp = NamedTempFile::new().unwrap();
 
@@ -292,20 +306,22 @@ mod linux_android {
     }
 }
 
-#[cfg(any(target_os = "linux",
-          target_os = "android",
-          target_os = "emscripten",
-          target_os = "fuchsia",
-          any(target_os = "wasi", target_env = "wasi"),
-          target_env = "uclibc",
-          target_env = "freebsd"))]
+#[cfg(any(
+    target_os = "linux",
+    target_os = "android",
+    target_os = "emscripten",
+    target_os = "fuchsia",
+    any(target_os = "wasi", target_env = "wasi"),
+    target_env = "uclibc",
+    target_env = "freebsd"
+))]
 mod test_posix_fadvise {
 
-    use tempfile::NamedTempFile;
-    use std::os::unix::io::{RawFd, AsRawFd};
     use nix::errno::Errno;
     use nix::fcntl::*;
     use nix::unistd::pipe;
+    use std::os::unix::io::{AsRawFd, RawFd};
+    use tempfile::NamedTempFile;
 
     #[test]
     fn test_success() {
@@ -319,25 +335,30 @@ mod test_posix_fadvise {
     #[test]
     fn test_errno() {
         let (rd, _wr) = pipe().unwrap();
-        let errno = posix_fadvise(rd as RawFd, 0, 100, PosixFadviseAdvice::POSIX_FADV_WILLNEED)
-                                 .unwrap();
+        let errno =
+            posix_fadvise(rd as RawFd, 0, 100, PosixFadviseAdvice::POSIX_FADV_WILLNEED).unwrap();
         assert_eq!(errno, Errno::ESPIPE as i32);
     }
 }
 
-#[cfg(any(target_os = "linux",
-          target_os = "android",
-          target_os = "emscripten",
-          target_os = "fuchsia",
-          any(target_os = "wasi", target_env = "wasi"),
-          target_os = "freebsd"))]
+#[cfg(any(
+    target_os = "linux",
+    target_os = "android",
+    target_os = "emscripten",
+    target_os = "fuchsia",
+    any(target_os = "wasi", target_env = "wasi"),
+    target_os = "freebsd"
+))]
 mod test_posix_fallocate {
 
-    use tempfile::NamedTempFile;
-    use std::{io::Read, os::unix::io::{RawFd, AsRawFd}};
     use nix::errno::Errno;
     use nix::fcntl::*;
     use nix::unistd::pipe;
+    use std::{
+        io::Read,
+        os::unix::io::{AsRawFd, RawFd},
+    };
+    use tempfile::NamedTempFile;
 
     #[test]
     fn success() {
@@ -369,15 +390,8 @@ mod test_posix_fallocate {
         let err = posix_fallocate(rd as RawFd, 0, 100).unwrap_err();
         use nix::Error::Sys;
         match err {
-            Sys(Errno::EINVAL)
-                | Sys(Errno::ENODEV)
-                | Sys(Errno::ESPIPE)
-                | Sys(Errno::EBADF) => (),
-            errno =>
-                panic!(
-                    "unexpected errno {}",
-                    errno,
-                ),
+            Sys(Errno::EINVAL) | Sys(Errno::ENODEV) | Sys(Errno::ESPIPE) | Sys(Errno::EBADF) => (),
+            errno => panic!("unexpected errno {}", errno,),
         }
     }
 }

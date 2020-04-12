@@ -1,11 +1,11 @@
+use errno::Errno;
+use libc::{self, c_int};
 use std::mem;
 use std::os::unix::io::RawFd;
 use std::ptr::{null, null_mut};
-use libc::{self, c_int};
-use Result;
-use errno::Errno;
 use sys::signal::SigSet;
 use sys::time::{TimeSpec, TimeVal};
+use Result;
 
 pub use libc::FD_SETSIZE;
 
@@ -62,7 +62,7 @@ impl FdSet {
         for i in (0..FD_SETSIZE).rev() {
             let i = i as RawFd;
             if unsafe { libc::FD_ISSET(i, self as *mut _ as *mut libc::fd_set) } {
-                return Some(i)
+                return Some(i);
             }
         }
 
@@ -99,11 +99,13 @@ impl Default for FdSet {
 /// [select(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/select.html)
 ///
 /// [`FdSet::highest`]: struct.FdSet.html#method.highest
-pub fn select<'a, N, R, W, E, T>(nfds: N,
-                                 readfds: R,
-                                 writefds: W,
-                                 errorfds: E,
-                                 timeout: T) -> Result<c_int>
+pub fn select<'a, N, R, W, E, T>(
+    nfds: N,
+    readfds: R,
+    writefds: W,
+    errorfds: E,
+    timeout: T,
+) -> Result<c_int>
 where
     N: Into<Option<c_int>>,
     R: Into<Option<&'a mut FdSet>>,
@@ -117,23 +119,30 @@ where
     let timeout = timeout.into();
 
     let nfds = nfds.into().unwrap_or_else(|| {
-        readfds.iter_mut()
+        readfds
+            .iter_mut()
             .chain(writefds.iter_mut())
             .chain(errorfds.iter_mut())
             .map(|set| set.highest().unwrap_or(-1))
             .max()
-            .unwrap_or(-1) + 1
+            .unwrap_or(-1)
+            + 1
     });
 
-    let readfds = readfds.map(|set| set as *mut _ as *mut libc::fd_set).unwrap_or(null_mut());
-    let writefds = writefds.map(|set| set as *mut _ as *mut libc::fd_set).unwrap_or(null_mut());
-    let errorfds = errorfds.map(|set| set as *mut _ as *mut libc::fd_set).unwrap_or(null_mut());
-    let timeout = timeout.map(|tv| tv as *mut _ as *mut libc::timeval)
-                         .unwrap_or(null_mut());
+    let readfds = readfds
+        .map(|set| set as *mut _ as *mut libc::fd_set)
+        .unwrap_or(null_mut());
+    let writefds = writefds
+        .map(|set| set as *mut _ as *mut libc::fd_set)
+        .unwrap_or(null_mut());
+    let errorfds = errorfds
+        .map(|set| set as *mut _ as *mut libc::fd_set)
+        .unwrap_or(null_mut());
+    let timeout = timeout
+        .map(|tv| tv as *mut _ as *mut libc::timeval)
+        .unwrap_or(null_mut());
 
-    let res = unsafe {
-        libc::select(nfds, readfds, writefds, errorfds, timeout)
-    };
+    let res = unsafe { libc::select(nfds, readfds, writefds, errorfds, timeout) };
 
     Errno::result(res)
 }
@@ -167,12 +176,14 @@ where
 /// [The new pselect() system call](https://lwn.net/Articles/176911/)
 ///
 /// [`FdSet::highest`]: struct.FdSet.html#method.highest
-pub fn pselect<'a, N, R, W, E, T, S>(nfds: N,
-                                     readfds: R,
-                                     writefds: W,
-                                     errorfds: E,
-                                     timeout: T,
-                                     sigmask: S) -> Result<c_int>
+pub fn pselect<'a, N, R, W, E, T, S>(
+    nfds: N,
+    readfds: R,
+    writefds: W,
+    errorfds: E,
+    timeout: T,
+    sigmask: S,
+) -> Result<c_int>
 where
     N: Into<Option<c_int>>,
     R: Into<Option<&'a mut FdSet>>,
@@ -188,34 +199,43 @@ where
     let timeout = timeout.into();
 
     let nfds = nfds.into().unwrap_or_else(|| {
-        readfds.iter_mut()
+        readfds
+            .iter_mut()
             .chain(writefds.iter_mut())
             .chain(errorfds.iter_mut())
             .map(|set| set.highest().unwrap_or(-1))
             .max()
-            .unwrap_or(-1) + 1
+            .unwrap_or(-1)
+            + 1
     });
 
-    let readfds = readfds.map(|set| set as *mut _ as *mut libc::fd_set).unwrap_or(null_mut());
-    let writefds = writefds.map(|set| set as *mut _ as *mut libc::fd_set).unwrap_or(null_mut());
-    let errorfds = errorfds.map(|set| set as *mut _ as *mut libc::fd_set).unwrap_or(null_mut());
-    let timeout = timeout.map(|ts| ts.as_ref() as *const libc::timespec).unwrap_or(null());
-    let sigmask = sigmask.map(|sm| sm.as_ref() as *const libc::sigset_t).unwrap_or(null());
+    let readfds = readfds
+        .map(|set| set as *mut _ as *mut libc::fd_set)
+        .unwrap_or(null_mut());
+    let writefds = writefds
+        .map(|set| set as *mut _ as *mut libc::fd_set)
+        .unwrap_or(null_mut());
+    let errorfds = errorfds
+        .map(|set| set as *mut _ as *mut libc::fd_set)
+        .unwrap_or(null_mut());
+    let timeout = timeout
+        .map(|ts| ts.as_ref() as *const libc::timespec)
+        .unwrap_or(null());
+    let sigmask = sigmask
+        .map(|sm| sm.as_ref() as *const libc::sigset_t)
+        .unwrap_or(null());
 
-    let res = unsafe {
-        libc::pselect(nfds, readfds, writefds, errorfds, timeout, sigmask)
-    };
+    let res = unsafe { libc::pselect(nfds, readfds, writefds, errorfds, timeout, sigmask) };
 
     Errno::result(res)
 }
-
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use std::os::unix::io::RawFd;
     use sys::time::{TimeVal, TimeValLike};
-    use unistd::{write, pipe};
+    use unistd::{pipe, write};
 
     #[test]
     fn fdset_insert() {
@@ -290,11 +310,10 @@ mod tests {
         fd_set.insert(r2);
 
         let mut timeout = TimeVal::seconds(10);
-        assert_eq!(1, select(None,
-                             &mut fd_set,
-                             None,
-                             None,
-                             &mut timeout).unwrap());
+        assert_eq!(
+            1,
+            select(None, &mut fd_set, None, None, &mut timeout).unwrap()
+        );
         assert!(fd_set.contains(r1));
         assert!(!fd_set.contains(r2));
     }
@@ -310,11 +329,17 @@ mod tests {
         fd_set.insert(r2);
 
         let mut timeout = TimeVal::seconds(10);
-        assert_eq!(1, select(Some(fd_set.highest().unwrap() + 1),
-                             &mut fd_set,
-                             None,
-                             None,
-                             &mut timeout).unwrap());
+        assert_eq!(
+            1,
+            select(
+                Some(fd_set.highest().unwrap() + 1),
+                &mut fd_set,
+                None,
+                None,
+                &mut timeout
+            )
+            .unwrap()
+        );
         assert!(fd_set.contains(r1));
         assert!(!fd_set.contains(r2));
     }
@@ -330,11 +355,17 @@ mod tests {
         fd_set.insert(r2);
 
         let mut timeout = TimeVal::seconds(10);
-        assert_eq!(1, select(::std::cmp::max(r1, r2) + 1,
-                             &mut fd_set,
-                             None,
-                             None,
-                             &mut timeout).unwrap());
+        assert_eq!(
+            1,
+            select(
+                ::std::cmp::max(r1, r2) + 1,
+                &mut fd_set,
+                None,
+                None,
+                &mut timeout
+            )
+            .unwrap()
+        );
         assert!(fd_set.contains(r1));
         assert!(!fd_set.contains(r2));
     }

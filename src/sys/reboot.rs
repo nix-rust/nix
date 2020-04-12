@@ -1,10 +1,10 @@
 //! Reboot/shutdown or enable/disable Ctrl-Alt-Delete.
 
-use {Error, Result};
 use errno::Errno;
 use libc;
-use void::Void;
 use std::mem::drop;
+use void::Void;
+use {Error, Result};
 
 libc_enum! {
     /// How exactly should the system be rebooted.
@@ -23,9 +23,7 @@ libc_enum! {
 }
 
 pub fn reboot(how: RebootMode) -> Result<Void> {
-    unsafe {
-        libc::reboot(how as libc::c_int)
-    };
+    unsafe { libc::reboot(how as libc::c_int) };
     Err(Error::Sys(Errno::last()))
 }
 
@@ -38,8 +36,6 @@ pub fn set_cad_enabled(enable: bool) -> Result<()> {
     } else {
         libc::RB_DISABLE_CAD
     };
-    let res = unsafe {
-        libc::reboot(cmd)
-    };
+    let res = unsafe { libc::reboot(cmd) };
     Errno::result(res).map(drop)
 }

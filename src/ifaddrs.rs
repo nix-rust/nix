@@ -10,9 +10,9 @@ use std::option::Option;
 
 use libc;
 
-use {Result, Errno};
-use sys::socket::SockAddr;
 use net::if_::*;
+use sys::socket::SockAddr;
+use {Errno, Result};
 
 /// Describes a single address for an interface as returned by `getifaddrs`.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -127,11 +127,9 @@ impl Iterator for InterfaceAddressIterator {
 pub fn getifaddrs() -> Result<InterfaceAddressIterator> {
     let mut addrs = mem::MaybeUninit::<*mut libc::ifaddrs>::uninit();
     unsafe {
-        Errno::result(libc::getifaddrs(addrs.as_mut_ptr())).map(|_| {
-            InterfaceAddressIterator {
-                base: addrs.assume_init(),
-                next: addrs.assume_init(),
-            }
+        Errno::result(libc::getifaddrs(addrs.as_mut_ptr())).map(|_| InterfaceAddressIterator {
+            base: addrs.assume_init(),
+            next: addrs.assume_init(),
         })
     }
 }

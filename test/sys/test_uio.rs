@@ -1,12 +1,12 @@
 use nix::sys::uio::*;
 use nix::unistd::*;
-use rand::{thread_rng, Rng};
 use rand::distributions::Alphanumeric;
-use std::{cmp, iter};
-use std::fs::{OpenOptions};
+use rand::{thread_rng, Rng};
+use std::fs::OpenOptions;
 use std::os::unix::io::AsRawFd;
+use std::{cmp, iter};
 
-use tempfile::{tempfile, tempdir};
+use tempfile::{tempdir, tempfile};
 
 #[test]
 fn test_writev() {
@@ -21,8 +21,12 @@ fn test_writev() {
     let mut consumed = 0;
     while consumed < to_write.len() {
         let left = to_write.len() - consumed;
-        let slice_len = if left <= 64 { left } else { thread_rng().gen_range(64, cmp::min(256, left)) };
-        let b = &to_write[consumed..consumed+slice_len];
+        let slice_len = if left <= 64 {
+            left
+        } else {
+            thread_rng().gen_range(64, cmp::min(256, left))
+        };
+        let b = &to_write[consumed..consumed + slice_len];
         iovecs.push(IoVec::from_slice(b));
         consumed += slice_len;
     }
@@ -54,13 +58,17 @@ fn test_writev() {
 
 #[test]
 fn test_readv() {
-    let s:String = thread_rng().sample_iter(&Alphanumeric).take(128).collect();
+    let s: String = thread_rng().sample_iter(&Alphanumeric).take(128).collect();
     let to_write = s.as_bytes().to_vec();
     let mut storage = Vec::new();
     let mut allocated = 0;
     while allocated < to_write.len() {
         let left = to_write.len() - allocated;
-        let vec_len = if left <= 64 { left } else { thread_rng().gen_range(64, cmp::min(256, left)) };
+        let vec_len = if left <= 64 {
+            left
+        } else {
+            thread_rng().gen_range(64, cmp::min(256, left))
+        };
         let v: Vec<u8> = iter::repeat(0u8).take(vec_len).collect();
         storage.push(v);
         allocated += vec_len;
@@ -101,12 +109,12 @@ fn test_pwrite() {
     use std::io::Read;
 
     let mut file = tempfile().unwrap();
-    let buf = [1u8;8];
+    let buf = [1u8; 8];
     assert_eq!(Ok(8), pwrite(file.as_raw_fd(), &buf, 8));
     let mut file_content = Vec::new();
     file.read_to_end(&mut file_content).unwrap();
-    let mut expected = vec![0u8;8];
-    expected.extend(vec![1;8]);
+    let mut expected = vec![0u8; 8];
+    expected.extend(vec![1; 8]);
     assert_eq!(file_content, expected);
 }
 
@@ -117,12 +125,17 @@ fn test_pread() {
     let tempdir = tempdir().unwrap();
 
     let path = tempdir.path().join("pread_test_file");
-    let mut file = OpenOptions::new().write(true).read(true).create(true)
-                                    .truncate(true).open(path).unwrap();
+    let mut file = OpenOptions::new()
+        .write(true)
+        .read(true)
+        .create(true)
+        .truncate(true)
+        .open(path)
+        .unwrap();
     let file_content: Vec<u8> = (0..64).collect();
     file.write_all(&file_content).unwrap();
 
-    let mut buf = [0u8;16];
+    let mut buf = [0u8; 16];
     assert_eq!(Ok(16), pread(file.as_raw_fd(), &mut buf, 16));
     let expected: Vec<_> = (16..32).collect();
     assert_eq!(&buf[..], &expected[..]);
@@ -134,7 +147,7 @@ fn test_pwritev() {
     use std::io::Read;
 
     let to_write: Vec<u8> = (0..128).collect();
-    let expected: Vec<u8> = [vec![0;100], to_write.clone()].concat();
+    let expected: Vec<u8> = [vec![0; 100], to_write.clone()].concat();
 
     let iovecs = [
         IoVec::from_slice(&to_write[0..17]),
@@ -146,8 +159,13 @@ fn test_pwritev() {
 
     // pwritev them into a temporary file
     let path = tempdir.path().join("pwritev_test_file");
-    let mut file = OpenOptions::new().write(true).read(true).create(true)
-                                    .truncate(true).open(path).unwrap();
+    let mut file = OpenOptions::new()
+        .write(true)
+        .read(true)
+        .create(true)
+        .truncate(true)
+        .open(path)
+        .unwrap();
 
     let written = pwritev(file.as_raw_fd(), &iovecs, 100).ok().unwrap();
     assert_eq!(written, to_write.len());
@@ -170,20 +188,23 @@ fn test_preadv() {
 
     let path = tempdir.path().join("preadv_test_file");
 
-    let mut file = OpenOptions::new().read(true).write(true).create(true)
-                                    .truncate(true).open(path).unwrap();
+    let mut file = OpenOptions::new()
+        .read(true)
+        .write(true)
+        .create(true)
+        .truncate(true)
+        .open(path)
+        .unwrap();
     file.write_all(&to_write).unwrap();
 
-    let mut buffers: Vec<Vec<u8>> = vec![
-        vec![0; 24],
-        vec![0; 1],
-        vec![0; 75],
-    ];
+    let mut buffers: Vec<Vec<u8>> = vec![vec![0; 24], vec![0; 1], vec![0; 75]];
 
     {
         // Borrow the buffers into IoVecs and preadv into them
-        let iovecs: Vec<_> = buffers.iter_mut().map(
-            |buf| IoVec::from_mut_slice(&mut buf[..])).collect();
+        let iovecs: Vec<_> = buffers
+            .iter_mut()
+            .map(|buf| IoVec::from_mut_slice(&mut buf[..]))
+            .collect();
         assert_eq!(Ok(100), preadv(file.as_raw_fd(), &iovecs, 100));
     }
 
@@ -196,12 +217,14 @@ fn test_preadv() {
 // FIXME: qemu-user doesn't implement process_vm_readv/writev on most arches
 #[cfg_attr(not(any(target_arch = "x86", target_arch = "x86_64")), ignore)]
 fn test_process_vm_readv() {
-    use nix::unistd::ForkResult::*;
     use nix::sys::signal::*;
     use nix::sys::wait::*;
+    use nix::unistd::ForkResult::*;
 
     require_capability!(CAP_SYS_PTRACE);
-    let _ = ::FORK_MTX.lock().expect("Mutex got poisoned by another test");
+    let _ = ::FORK_MTX
+        .lock()
+        .expect("Mutex got poisoned by another test");
 
     // Pre-allocate memory in the child, since allocation isn't safe
     // post-fork (~= async-signal-safe)
@@ -219,16 +242,14 @@ fn test_process_vm_readv() {
             let remote_iov = RemoteIoVec { base: ptr, len: 5 };
             let mut buf = vec![0u8; 5];
 
-            let ret = process_vm_readv(child,
-                                       &[IoVec::from_mut_slice(&mut buf)],
-                                       &[remote_iov]);
+            let ret = process_vm_readv(child, &[IoVec::from_mut_slice(&mut buf)], &[remote_iov]);
 
             kill(child, SIGTERM).unwrap();
             waitpid(child, None).unwrap();
 
             assert_eq!(Ok(5), ret);
             assert_eq!(20u8, buf.iter().sum());
-        },
+        }
         Child => {
             let _ = close(r);
             for i in &mut vector {
@@ -236,7 +257,9 @@ fn test_process_vm_readv() {
             }
             let _ = write(w, b"\0");
             let _ = close(w);
-            loop { let _ = pause(); }
-        },
+            loop {
+                let _ = pause();
+            }
+        }
     }
 }

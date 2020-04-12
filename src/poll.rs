@@ -1,13 +1,23 @@
 //! Wait for events to trigger on specific file descriptors
-#[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd", target_os = "linux"))]
-use sys::time::TimeSpec;
-#[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd", target_os = "linux"))]
-use sys::signal::SigSet;
 use std::os::unix::io::RawFd;
+#[cfg(any(
+    target_os = "android",
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "linux"
+))]
+use sys::signal::SigSet;
+#[cfg(any(
+    target_os = "android",
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "linux"
+))]
+use sys::time::TimeSpec;
 
+use errno::Errno;
 use libc;
 use Result;
-use errno::Errno;
 
 /// This is a wrapper around `libc::pollfd`.
 ///
@@ -114,9 +124,11 @@ libc_bitflags! {
 /// ready.
 pub fn poll(fds: &mut [PollFd], timeout: libc::c_int) -> Result<libc::c_int> {
     let res = unsafe {
-        libc::poll(fds.as_mut_ptr() as *mut libc::pollfd,
-                   fds.len() as libc::nfds_t,
-                   timeout)
+        libc::poll(
+            fds.as_mut_ptr() as *mut libc::pollfd,
+            fds.len() as libc::nfds_t,
+            timeout,
+        )
     };
 
     Errno::result(res)
@@ -129,15 +141,20 @@ pub fn poll(fds: &mut [PollFd], timeout: libc::c_int) -> Result<libc::c_int> {
 /// `ppoll` behaves like `poll`, but let you specify what signals may interrupt it
 /// with the `sigmask` argument.
 ///
-#[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd", target_os = "linux"))]
+#[cfg(any(
+    target_os = "android",
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "linux"
+))]
 pub fn ppoll(fds: &mut [PollFd], timeout: TimeSpec, sigmask: SigSet) -> Result<libc::c_int> {
-
-
     let res = unsafe {
-        libc::ppoll(fds.as_mut_ptr() as *mut libc::pollfd,
-                    fds.len() as libc::nfds_t,
-                    timeout.as_ref(),
-                    sigmask.as_ref())
+        libc::ppoll(
+            fds.as_mut_ptr() as *mut libc::pollfd,
+            fds.len() as libc::nfds_t,
+            timeout.as_ref(),
+            sigmask.as_ref(),
+        )
     };
     Errno::result(res)
 }

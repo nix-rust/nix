@@ -1,51 +1,71 @@
-use nix::Error;
-use nix::unistd::*;
-use nix::unistd::ForkResult::*;
+use libc::_exit;
 use nix::sys::signal::*;
 use nix::sys::wait::*;
-use libc::_exit;
+use nix::unistd::ForkResult::*;
+use nix::unistd::*;
+use nix::Error;
 
 #[test]
 fn test_wait_signal() {
-    let _ = ::FORK_MTX.lock().expect("Mutex got poisoned by another test");
+    let _ = ::FORK_MTX
+        .lock()
+        .expect("Mutex got poisoned by another test");
 
     // Safe: The child only calls `pause` and/or `_exit`, which are async-signal-safe.
     match fork().expect("Error: Fork Failed") {
-      Child => {
-          pause();
-          unsafe { _exit(123) }
-      },
-      Parent { child } => {
-          kill(child, Some(SIGKILL)).expect("Error: Kill Failed");
-          assert_eq!(waitpid(child, None), Ok(WaitStatus::Signaled(child, SIGKILL, false)));
-      },
+        Child => {
+            pause();
+            unsafe { _exit(123) }
+        }
+        Parent { child } => {
+            kill(child, Some(SIGKILL)).expect("Error: Kill Failed");
+            assert_eq!(
+                waitpid(child, None),
+                Ok(WaitStatus::Signaled(child, SIGKILL, false))
+            );
+        }
     }
 }
 
 #[test]
 fn test_wait_exit() {
-    let _m = ::FORK_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = ::FORK_MTX
+        .lock()
+        .expect("Mutex got poisoned by another test");
 
     // Safe: Child only calls `_exit`, which is async-signal-safe.
     match fork().expect("Error: Fork Failed") {
-      Child => unsafe { _exit(12); },
-      Parent { child } => {
-          assert_eq!(waitpid(child, None), Ok(WaitStatus::Exited(child, 12)));
-      },
+        Child => unsafe {
+            _exit(12);
+        },
+        Parent { child } => {
+            assert_eq!(waitpid(child, None), Ok(WaitStatus::Exited(child, 12)));
+        }
     }
 }
 
 #[test]
 fn test_waitstatus_from_raw() {
     let pid = Pid::from_raw(1);
-    assert_eq!(WaitStatus::from_raw(pid, 0x0002), Ok(WaitStatus::Signaled(pid, Signal::SIGINT, false)));
-    assert_eq!(WaitStatus::from_raw(pid, 0x0200), Ok(WaitStatus::Exited(pid, 2)));
-    assert_eq!(WaitStatus::from_raw(pid, 0x7f7f), Err(Error::invalid_argument()));
+    assert_eq!(
+        WaitStatus::from_raw(pid, 0x0002),
+        Ok(WaitStatus::Signaled(pid, Signal::SIGINT, false))
+    );
+    assert_eq!(
+        WaitStatus::from_raw(pid, 0x0200),
+        Ok(WaitStatus::Exited(pid, 2))
+    );
+    assert_eq!(
+        WaitStatus::from_raw(pid, 0x7f7f),
+        Err(Error::invalid_argument())
+    );
 }
 
 #[test]
 fn test_waitstatus_pid() {
-    let _m = ::FORK_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = ::FORK_MTX
+        .lock()
+        .expect("Mutex got poisoned by another test");
 
     match fork().unwrap() {
         Child => unsafe { _exit(0) },
@@ -60,12 +80,12 @@ fn test_waitstatus_pid() {
 // FIXME: qemu-user doesn't implement ptrace on most arches
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 mod ptrace {
-    use nix::sys::ptrace::{self, Options, Event};
+    use libc::_exit;
+    use nix::sys::ptrace::{self, Event, Options};
     use nix::sys::signal::*;
     use nix::sys::wait::*;
-    use nix::unistd::*;
     use nix::unistd::ForkResult::*;
-    use libc::_exit;
+    use nix::unistd::*;
 
     fn ptrace_child() -> ! {
         ptrace::traceme().unwrap();
@@ -77,16 +97,30 @@ mod ptrace {
 
     fn ptrace_parent(child: Pid) {
         // Wait for the raised SIGTRAP
-        assert_eq!(waitpid(child, None), Ok(WaitStatus::Stopped(child, SIGTRAP)));
+        assert_eq!(
+            waitpid(child, None),
+            Ok(WaitStatus::Stopped(child, SIGTRAP))
+        );
         // We want to test a syscall stop and a PTRACE_EVENT stop
-        assert!(ptrace::setoptions(child, Options::PTRACE_O_TRACESYSGOOD | Options::PTRACE_O_TRACEEXIT).is_ok());
+        assert!(ptrace::setoptions(
+            child,
+            Options::PTRACE_O_TRACESYSGOOD | Options::PTRACE_O_TRACEEXIT
+        )
+        .is_ok());
 
         // First, stop on the next system call, which will be exit()
         assert!(ptrace::syscall(child, None).is_ok());
         assert_eq!(waitpid(child, None), Ok(WaitStatus::PtraceSyscall(child)));
         // Then get the ptrace event for the process exiting
         assert!(ptrace::cont(child, None).is_ok());
-        assert_eq!(waitpid(child, None), Ok(WaitStatus::PtraceEvent(child, SIGTRAP, Event::PTRACE_EVENT_EXIT as i32)));
+        assert_eq!(
+            waitpid(child, None),
+            Ok(WaitStatus::PtraceEvent(
+                child,
+                SIGTRAP,
+                Event::PTRACE_EVENT_EXIT as i32
+            ))
+        );
         // Finally get the normal wait() result, now that the process has exited
         assert!(ptrace::cont(child, None).is_ok());
         assert_eq!(waitpid(child, None), Ok(WaitStatus::Exited(child, 0)));
@@ -95,7 +129,9 @@ mod ptrace {
     #[test]
     fn test_wait_ptrace() {
         require_capability!(CAP_SYS_PTRACE);
-        let _m = ::FORK_MTX.lock().expect("Mutex got poisoned by another test");
+        let _m = ::FORK_MTX
+            .lock()
+            .expect("Mutex got poisoned by another test");
 
         match fork().expect("Error: Fork Failed") {
             Child => ptrace_child(),

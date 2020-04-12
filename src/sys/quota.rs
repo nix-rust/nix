@@ -12,11 +12,11 @@
 //! dqblk.set_blocks_soft_limit(8000);
 //! quotactl_set(QuotaType::USRQUOTA, "/dev/sda1", 50, &dqblk, QuotaValidFlags::QIF_BLIMITS);
 //! ```
+use errno::Errno;
+use libc::{self, c_char, c_int};
 use std::default::Default;
 use std::{mem, ptr};
-use libc::{self, c_int, c_char};
-use {Result, NixPath};
-use errno::Errno;
+use {NixPath, Result};
 
 struct QuotaCmd(QuotaSubCmd, QuotaType);
 
@@ -27,7 +27,7 @@ impl QuotaCmd {
 }
 
 // linux quota version >= 2
-libc_enum!{
+libc_enum! {
     #[repr(i32)]
     enum QuotaSubCmd {
         Q_SYNC,
@@ -38,7 +38,7 @@ libc_enum!{
     }
 }
 
-libc_enum!{
+libc_enum! {
     /// The scope of the quota.
     #[repr(i32)]
     pub enum QuotaType {
@@ -49,7 +49,7 @@ libc_enum!{
     }
 }
 
-libc_enum!{
+libc_enum! {
     /// The type of quota format to use.
     #[repr(i32)]
     pub enum QuotaFmt {
@@ -226,11 +226,18 @@ impl Dqblk {
     }
 }
 
-fn quotactl<P: ?Sized + NixPath>(cmd: QuotaCmd, special: Option<&P>, id: c_int, addr: *mut c_char) -> Result<()> {
+fn quotactl<P: ?Sized + NixPath>(
+    cmd: QuotaCmd,
+    special: Option<&P>,
+    id: c_int,
+    addr: *mut c_char,
+) -> Result<()> {
     unsafe {
         Errno::clear();
         let res = match special {
-            Some(dev) => dev.with_nix_path(|path| libc::quotactl(cmd.as_int(), path.as_ptr(), id, addr)),
+            Some(dev) => {
+                dev.with_nix_path(|path| libc::quotactl(cmd.as_int(), path.as_ptr(), id, addr))
+            }
             None => Ok(libc::quotactl(cmd.as_int(), ptr::null(), id, addr)),
         }?;
 
@@ -239,34 +246,74 @@ fn quotactl<P: ?Sized + NixPath>(cmd: QuotaCmd, special: Option<&P>, id: c_int, 
 }
 
 /// Turn on disk quotas for a block device.
-pub fn quotactl_on<P: ?Sized + NixPath>(which: QuotaType, special: &P, format: QuotaFmt, quota_file: &P) -> Result<()> {
+pub fn quotactl_on<P: ?Sized + NixPath>(
+    which: QuotaType,
+    special: &P,
+    format: QuotaFmt,
+    quota_file: &P,
+) -> Result<()> {
     quota_file.with_nix_path(|path| {
         let mut path_copy = path.to_bytes_with_nul().to_owned();
         let p: *mut c_char = path_copy.as_mut_ptr() as *mut c_char;
-        quotactl(QuotaCmd(QuotaSubCmd::Q_QUOTAON, which), Some(special), format as c_int, p)
+        quotactl(
+            QuotaCmd(QuotaSubCmd::Q_QUOTAON, which),
+            Some(special),
+            format as c_int,
+            p,
+        )
     })?
 }
 
 /// Disable disk quotas for a block device.
 pub fn quotactl_off<P: ?Sized + NixPath>(which: QuotaType, special: &P) -> Result<()> {
-    quotactl(QuotaCmd(QuotaSubCmd::Q_QUOTAOFF, which), Some(special), 0, ptr::null_mut())
+    quotactl(
+        QuotaCmd(QuotaSubCmd::Q_QUOTAOFF, which),
+        Some(special),
+        0,
+        ptr::null_mut(),
+    )
 }
 
 /// Update the on-disk copy of quota usages for a filesystem.
 pub fn quotactl_sync<P: ?Sized + NixPath>(which: QuotaType, special: Option<&P>) -> Result<()> {
-    quotactl(QuotaCmd(QuotaSubCmd::Q_SYNC, which), special, 0, ptr::null_mut())
+    quotactl(
+        QuotaCmd(QuotaSubCmd::Q_SYNC, which),
+        special,
+        0,
+        ptr::null_mut(),
+    )
 }
 
 /// Get disk quota limits and current usage for the given user/group id.
-pub fn quotactl_get<P: ?Sized + NixPath>(which: QuotaType, special: &P, id: c_int) -> Result<Dqblk> {
+pub fn quotactl_get<P: ?Sized + NixPath>(
+    which: QuotaType,
+    special: &P,
+    id: c_int,
+) -> Result<Dqblk> {
     let mut dqblk = mem::MaybeUninit::uninit();
-    quotactl(QuotaCmd(QuotaSubCmd::Q_GETQUOTA, which), Some(special), id, dqblk.as_mut_ptr() as *mut c_char)?;
-    Ok(unsafe{ Dqblk(dqblk.assume_init())})
+    quotactl(
+        QuotaCmd(QuotaSubCmd::Q_GETQUOTA, which),
+        Some(special),
+        id,
+        dqblk.as_mut_ptr() as *mut c_char,
+    )?;
+    Ok(unsafe { Dqblk(dqblk.assume_init()) })
 }
 
 /// Configure quota values for the specified fields for a given user/group id.
-pub fn quotactl_set<P: ?Sized + NixPath>(which: QuotaType, special: &P, id: c_int, dqblk: &Dqblk, fields: QuotaValidFlags) -> Result<()> {
+pub fn quotactl_set<P: ?Sized + NixPath>(
+    which: QuotaType,
+    special: &P,
+    id: c_int,
+    dqblk: &Dqblk,
+    fields: QuotaValidFlags,
+) -> Result<()> {
     let mut dqblk_copy = *dqblk;
     dqblk_copy.0.dqb_valid = fields.bits();
-    quotactl(QuotaCmd(QuotaSubCmd::Q_SETQUOTA, which), Some(special), id, &mut dqblk_copy as *mut _ as *mut c_char)
+    quotactl(
+        QuotaCmd(QuotaSubCmd::Q_SETQUOTA, which),
+        Some(special),
+        id,
+        &mut dqblk_copy as *mut _ as *mut c_char,
+    )
 }

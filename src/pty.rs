@@ -9,10 +9,10 @@ use std::ffi::CStr;
 use std::mem;
 use std::os::unix::prelude::*;
 
+use errno::Errno;
 use sys::termios::Termios;
 use unistd::ForkResult;
-use {Result, Error, fcntl};
-use errno::Errno;
+use {fcntl, Error, Result};
 
 /// Representation of a master/slave pty pair
 ///
@@ -37,7 +37,6 @@ pub struct ForkptyResult {
     /// Metadata about forked process
     pub fork_result: ForkResult,
 }
-
 
 /// Representation of the Master device in a master/slave pty pair
 ///
@@ -126,9 +125,7 @@ pub fn grantpt(fd: &PtyMaster) -> Result<()> {
 /// ```
 #[inline]
 pub fn posix_openpt(flags: fcntl::OFlag) -> Result<PtyMaster> {
-    let fd = unsafe {
-        libc::posix_openpt(flags.bits())
-    };
+    let fd = unsafe { libc::posix_openpt(flags.bits()) };
 
     if fd < 0 {
         return Err(Error::last());
@@ -206,7 +203,6 @@ pub fn unlockpt(fd: &PtyMaster) -> Result<()> {
     Ok(())
 }
 
-
 /// Create a new pseudoterminal, returning the slave and master file descriptors
 /// in `OpenptyResult`
 /// (see [`openpty`](http://man7.org/linux/man-pages/man3/openpty.3.html)).
@@ -215,7 +211,10 @@ pub fn unlockpt(fd: &PtyMaster) -> Result<()> {
 /// the values in `winsize`. If `termios` is not `None`, the pseudoterminal's
 /// terminal settings of the slave will be set to the values in `termios`.
 #[inline]
-pub fn openpty<'a, 'b, T: Into<Option<&'a Winsize>>, U: Into<Option<&'b Termios>>>(winsize: T, termios: U) -> Result<OpenptyResult> {
+pub fn openpty<'a, 'b, T: Into<Option<&'a Winsize>>, U: Into<Option<&'b Termios>>>(
+    winsize: T,
+    termios: U,
+) -> Result<OpenptyResult> {
     use std::ptr;
 
     let mut slave = mem::MaybeUninit::<libc::c_int>::uninit();
@@ -234,17 +233,15 @@ pub fn openpty<'a, 'b, T: Into<Option<&'a Winsize>>, U: Into<Option<&'b Termios>
                     )
                 }
             }
-            (None, Some(winsize)) => {
-                unsafe {
-                    libc::openpty(
-                        master.as_mut_ptr(),
-                        slave.as_mut_ptr(),
-                        ptr::null_mut(),
-                        ptr::null_mut(),
-                        winsize as *const Winsize as *mut _,
-                    )
-                }
-            }
+            (None, Some(winsize)) => unsafe {
+                libc::openpty(
+                    master.as_mut_ptr(),
+                    slave.as_mut_ptr(),
+                    ptr::null_mut(),
+                    ptr::null_mut(),
+                    winsize as *const Winsize as *mut _,
+                )
+            },
             (Some(termios), None) => {
                 let inner_termios = termios.get_libc_termios();
                 unsafe {
@@ -257,17 +254,15 @@ pub fn openpty<'a, 'b, T: Into<Option<&'a Winsize>>, U: Into<Option<&'b Termios>
                     )
                 }
             }
-            (None, None) => {
-                unsafe {
-                    libc::openpty(
-                        master.as_mut_ptr(),
-                        slave.as_mut_ptr(),
-                        ptr::null_mut(),
-                        ptr::null_mut(),
-                        ptr::null_mut(),
-                    )
-                }
-            }
+            (None, None) => unsafe {
+                libc::openpty(
+                    master.as_mut_ptr(),
+                    slave.as_mut_ptr(),
+                    ptr::null_mut(),
+                    ptr::null_mut(),
+                    ptr::null_mut(),
+                )
+            },
         }
     };
 
@@ -293,8 +288,8 @@ pub fn forkpty<'a, 'b, T: Into<Option<&'a Winsize>>, U: Into<Option<&'b Termios>
     termios: U,
 ) -> Result<ForkptyResult> {
     use std::ptr;
-    use unistd::Pid;
     use unistd::ForkResult::*;
+    use unistd::Pid;
 
     let mut master = mem::MaybeUninit::<libc::c_int>::uninit();
 
@@ -302,7 +297,7 @@ pub fn forkpty<'a, 'b, T: Into<Option<&'a Winsize>>, U: Into<Option<&'b Termios>
         Some(termios) => {
             let inner_termios = termios.get_libc_termios();
             &*inner_termios as *const libc::termios as *mut _
-        },
+        }
         None => ptr::null_mut(),
     };
 
@@ -311,13 +306,13 @@ pub fn forkpty<'a, 'b, T: Into<Option<&'a Winsize>>, U: Into<Option<&'b Termios>
         .map(|ws| ws as *const Winsize as *mut _)
         .unwrap_or(ptr::null_mut());
 
-    let res = unsafe {
-        libc::forkpty(master.as_mut_ptr(), ptr::null_mut(), term, win)
-    };
+    let res = unsafe { libc::forkpty(master.as_mut_ptr(), ptr::null_mut(), term, win) };
 
     let fork_result = Errno::result(res).map(|res| match res {
         0 => Child,
-        res => Parent { child: Pid::from_raw(res) },
+        res => Parent {
+            child: Pid::from_raw(res),
+        },
     })?;
 
     unsafe {
@@ -327,4 +322,3 @@ pub fn forkpty<'a, 'b, T: Into<Option<&'a Winsize>>, U: Into<Option<&'b Termios>
         })
     }
 }
-

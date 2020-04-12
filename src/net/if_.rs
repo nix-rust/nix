@@ -5,7 +5,7 @@
 
 use libc;
 use libc::c_uint;
-use {Result, Error, NixPath};
+use {Error, NixPath, Result};
 
 /// Resolve an interface into a interface number.
 pub fn if_nametoindex<P: ?Sized + NixPath>(name: &P) -> Result<c_uint> {
@@ -217,7 +217,7 @@ libc_bitflags!(
         /// Do not provide packet information
         #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
         IFF_NO_PI as libc::c_int;
-        /// TUN device (no Ethernet headers) 
+        /// TUN device (no Ethernet headers)
         #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
         IFF_TUN as libc::c_int;
         /// TAP device

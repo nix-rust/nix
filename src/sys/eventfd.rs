@@ -1,7 +1,7 @@
+use errno::Errno;
 use libc;
 use std::os::unix::io::RawFd;
 use Result;
-use errno::Errno;
 
 libc_bitflags! {
     pub struct EfdFlags: libc::c_int {

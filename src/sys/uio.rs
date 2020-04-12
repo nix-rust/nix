@@ -1,11 +1,11 @@
 // Silence invalid warnings due to rust-lang/rust#16719
 #![allow(improper_ctypes)]
 
-use Result;
 use errno::Errno;
-use libc::{self, c_int, c_void, size_t, off_t};
+use libc::{self, c_int, c_void, off_t, size_t};
 use std::marker::PhantomData;
 use std::os::unix::io::RawFd;
+use Result;
 
 pub fn writev(fd: RawFd, iov: &[IoVec<&[u8]>]) -> Result<usize> {
     let res = unsafe { libc::writev(fd, iov.as_ptr() as *const libc::iovec, iov.len() as c_int) };
@@ -25,15 +25,21 @@ pub fn readv(fd: RawFd, iov: &mut [IoVec<&mut [u8]>]) -> Result<usize> {
 /// or an error occurs. The file offset is not changed.
 ///
 /// See also: [`writev`](fn.writev.html) and [`pwrite`](fn.pwrite.html)
-#[cfg(any(target_os = "dragonfly",
-          target_os = "freebsd",
-          target_os = "linux",
-          target_os = "netbsd",
-          target_os = "openbsd"))]
-pub fn pwritev(fd: RawFd, iov: &[IoVec<&[u8]>],
-               offset: off_t) -> Result<usize> {
+#[cfg(any(
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "linux",
+    target_os = "netbsd",
+    target_os = "openbsd"
+))]
+pub fn pwritev(fd: RawFd, iov: &[IoVec<&[u8]>], offset: off_t) -> Result<usize> {
     let res = unsafe {
-        libc::pwritev(fd, iov.as_ptr() as *const libc::iovec, iov.len() as c_int, offset)
+        libc::pwritev(
+            fd,
+            iov.as_ptr() as *const libc::iovec,
+            iov.len() as c_int,
+            offset,
+        )
     };
 
     Errno::result(res).map(|r| r as usize)
@@ -46,15 +52,21 @@ pub fn pwritev(fd: RawFd, iov: &[IoVec<&[u8]>],
 /// changed.
 ///
 /// See also: [`readv`](fn.readv.html) and [`pread`](fn.pread.html)
-#[cfg(any(target_os = "dragonfly",
-          target_os = "freebsd",
-          target_os = "linux",
-          target_os = "netbsd",
-          target_os = "openbsd"))]
-pub fn preadv(fd: RawFd, iov: &[IoVec<&mut [u8]>],
-              offset: off_t) -> Result<usize> {
+#[cfg(any(
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "linux",
+    target_os = "netbsd",
+    target_os = "openbsd"
+))]
+pub fn preadv(fd: RawFd, iov: &[IoVec<&mut [u8]>], offset: off_t) -> Result<usize> {
     let res = unsafe {
-        libc::preadv(fd, iov.as_ptr() as *const libc::iovec, iov.len() as c_int, offset)
+        libc::preadv(
+            fd,
+            iov.as_ptr() as *const libc::iovec,
+            iov.len() as c_int,
+            offset,
+        )
     };
 
     Errno::result(res).map(|r| r as usize)
@@ -62,17 +74,25 @@ pub fn preadv(fd: RawFd, iov: &[IoVec<&mut [u8]>],
 
 pub fn pwrite(fd: RawFd, buf: &[u8], offset: off_t) -> Result<usize> {
     let res = unsafe {
-        libc::pwrite(fd, buf.as_ptr() as *const c_void, buf.len() as size_t,
-                    offset)
+        libc::pwrite(
+            fd,
+            buf.as_ptr() as *const c_void,
+            buf.len() as size_t,
+            offset,
+        )
     };
 
     Errno::result(res).map(|r| r as usize)
 }
 
-pub fn pread(fd: RawFd, buf: &mut [u8], offset: off_t) -> Result<usize>{
+pub fn pread(fd: RawFd, buf: &mut [u8], offset: off_t) -> Result<usize> {
     let res = unsafe {
-        libc::pread(fd, buf.as_mut_ptr() as *mut c_void, buf.len() as size_t,
-                   offset)
+        libc::pread(
+            fd,
+            buf.as_mut_ptr() as *mut c_void,
+            buf.len() as size_t,
+            offset,
+        )
     };
 
     Errno::result(res).map(|r| r as usize)
@@ -117,11 +137,20 @@ pub struct RemoteIoVec {
 /// [`IoVec`]: struct.IoVec.html
 /// [`RemoteIoVec`]: struct.RemoteIoVec.html
 #[cfg(target_os = "linux")]
-pub fn process_vm_writev(pid: ::unistd::Pid, local_iov: &[IoVec<&[u8]>], remote_iov: &[RemoteIoVec]) -> Result<usize> {
+pub fn process_vm_writev(
+    pid: ::unistd::Pid,
+    local_iov: &[IoVec<&[u8]>],
+    remote_iov: &[RemoteIoVec],
+) -> Result<usize> {
     let res = unsafe {
-        libc::process_vm_writev(pid.into(),
-                                local_iov.as_ptr() as *const libc::iovec, local_iov.len() as libc::c_ulong,
-                                remote_iov.as_ptr() as *const libc::iovec, remote_iov.len() as libc::c_ulong, 0)
+        libc::process_vm_writev(
+            pid.into(),
+            local_iov.as_ptr() as *const libc::iovec,
+            local_iov.len() as libc::c_ulong,
+            remote_iov.as_ptr() as *const libc::iovec,
+            remote_iov.len() as libc::c_ulong,
+            0,
+        )
     };
 
     Errno::result(res).map(|r| r as usize)
@@ -148,11 +177,20 @@ pub fn process_vm_writev(pid: ::unistd::Pid, local_iov: &[IoVec<&[u8]>], remote_
 /// [`IoVec`]: struct.IoVec.html
 /// [`RemoteIoVec`]: struct.RemoteIoVec.html
 #[cfg(any(target_os = "linux"))]
-pub fn process_vm_readv(pid: ::unistd::Pid, local_iov: &[IoVec<&mut [u8]>], remote_iov: &[RemoteIoVec]) -> Result<usize> {
+pub fn process_vm_readv(
+    pid: ::unistd::Pid,
+    local_iov: &[IoVec<&mut [u8]>],
+    remote_iov: &[RemoteIoVec],
+) -> Result<usize> {
     let res = unsafe {
-        libc::process_vm_readv(pid.into(),
-                               local_iov.as_ptr() as *const libc::iovec, local_iov.len() as libc::c_ulong,
-                               remote_iov.as_ptr() as *const libc::iovec, remote_iov.len() as libc::c_ulong, 0)
+        libc::process_vm_readv(
+            pid.into(),
+            local_iov.as_ptr() as *const libc::iovec,
+            local_iov.len() as libc::c_ulong,
+            remote_iov.as_ptr() as *const libc::iovec,
+            remote_iov.len() as libc::c_ulong,
+            0,
+        )
     };
 
     Errno::result(res).map(|r| r as usize)
@@ -167,28 +205,30 @@ impl<T> IoVec<T> {
     pub fn as_slice(&self) -> &[u8] {
         use std::slice;
 
-        unsafe {
-            slice::from_raw_parts(
-                self.0.iov_base as *const u8,
-                self.0.iov_len as usize)
-        }
+        unsafe { slice::from_raw_parts(self.0.iov_base as *const u8, self.0.iov_len as usize) }
     }
 }
 
 impl<'a> IoVec<&'a [u8]> {
     pub fn from_slice(buf: &'a [u8]) -> IoVec<&'a [u8]> {
-        IoVec(libc::iovec {
-            iov_base: buf.as_ptr() as *mut c_void,
-            iov_len: buf.len() as size_t,
-        }, PhantomData)
+        IoVec(
+            libc::iovec {
+                iov_base: buf.as_ptr() as *mut c_void,
+                iov_len: buf.len() as size_t,
+            },
+            PhantomData,
+        )
     }
 }
 
 impl<'a> IoVec<&'a mut [u8]> {
     pub fn from_mut_slice(buf: &'a mut [u8]) -> IoVec<&'a mut [u8]> {
-        IoVec(libc::iovec {
-            iov_base: buf.as_ptr() as *mut c_void,
-            iov_len: buf.len() as size_t,
-        }, PhantomData)
+        IoVec(
+            libc::iovec {
+                iov_base: buf.as_ptr() as *mut c_void,
+                iov_len: buf.len() as size_t,
+            },
+            PhantomData,
+        )
     }
 }

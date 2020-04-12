@@ -1,15 +1,15 @@
-use {Error, Result};
-#[cfg(not(target_os = "android"))]
-use NixPath;
 use errno::Errno;
 #[cfg(not(target_os = "android"))]
 use fcntl::OFlag;
-use libc::{self, c_int, c_void, size_t, off_t};
+use libc::{self, c_int, c_void, off_t, size_t};
+use std::os::unix::io::RawFd;
 #[cfg(not(target_os = "android"))]
 use sys::stat::Mode;
-use std::os::unix::io::RawFd;
+#[cfg(not(target_os = "android"))]
+use NixPath;
+use {Error, Result};
 
-libc_bitflags!{
+libc_bitflags! {
     /// Desired memory protection of a memory mapping.
     pub struct ProtFlags: c_int {
         /// Pages cannot be accessed.
@@ -29,7 +29,7 @@ libc_bitflags!{
     }
 }
 
-libc_bitflags!{
+libc_bitflags! {
     /// Additional parameters for `mmap()`.
     pub struct MapFlags: c_int {
         /// Compatibility flag. Ignored.
@@ -102,7 +102,7 @@ libc_bitflags!{
     }
 }
 
-libc_enum!{
+libc_enum! {
     /// Usage information for a range of memory to allow for performance optimizations by the kernel.
     ///
     /// Used by [`madvise`](./fn.madvise.html).
@@ -195,7 +195,7 @@ libc_enum!{
     }
 }
 
-libc_bitflags!{
+libc_bitflags! {
     /// Configuration flags for `msync`.
     pub struct MsFlags: c_int {
         /// Schedule an update but return immediately.
@@ -213,7 +213,7 @@ libc_bitflags!{
     }
 }
 
-libc_bitflags!{
+libc_bitflags! {
     /// Flags for `mlockall`.
     pub struct MlockAllFlags: c_int {
         /// Lock pages that are currently mapped into the address space of the process.
@@ -248,7 +248,14 @@ pub fn munlockall() -> Result<()> {
 
 /// Calls to mmap are inherently unsafe, so they must be made in an unsafe block. Typically
 /// a higher-level abstraction will hide the unsafe interactions with the mmap'd region.
-pub unsafe fn mmap(addr: *mut c_void, length: size_t, prot: ProtFlags, flags: MapFlags, fd: RawFd, offset: off_t) -> Result<*mut c_void> {
+pub unsafe fn mmap(
+    addr: *mut c_void,
+    length: size_t,
+    prot: ProtFlags,
+    flags: MapFlags,
+    fd: RawFd,
+    offset: off_t,
+) -> Result<*mut c_void> {
     let ret = libc::mmap(addr, length, prot.bits(), flags.bits(), fd, offset);
 
     if ret == libc::MAP_FAILED {
@@ -317,9 +324,7 @@ pub fn shm_open<P: ?Sized + NixPath>(name: &P, flag: OFlag, mode: Mode) -> Resul
 
 #[cfg(not(target_os = "android"))]
 pub fn shm_unlink<P: ?Sized + NixPath>(name: &P) -> Result<()> {
-    let ret = name.with_nix_path(|cstr| {
-        unsafe { libc::shm_unlink(cstr.as_ptr()) }
-    })?;
+    let ret = name.with_nix_path(|cstr| unsafe { libc::shm_unlink(cstr.as_ptr()) })?;
 
     Errno::result(ret).map(drop)
 }

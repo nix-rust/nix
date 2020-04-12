@@ -1,6 +1,6 @@
-use std::mem;
 use libc::{self, c_char};
 use std::ffi::CStr;
+use std::mem;
 use std::str::from_utf8_unchecked;
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -9,23 +9,23 @@ pub struct UtsName(libc::utsname);
 
 impl UtsName {
     pub fn sysname(&self) -> &str {
-        to_str(&(&self.0.sysname as *const c_char ) as *const *const c_char)
+        to_str(&(&self.0.sysname as *const c_char) as *const *const c_char)
     }
 
     pub fn nodename(&self) -> &str {
-        to_str(&(&self.0.nodename as *const c_char ) as *const *const c_char)
+        to_str(&(&self.0.nodename as *const c_char) as *const *const c_char)
     }
 
     pub fn release(&self) -> &str {
-        to_str(&(&self.0.release as *const c_char ) as *const *const c_char)
+        to_str(&(&self.0.release as *const c_char) as *const *const c_char)
     }
 
     pub fn version(&self) -> &str {
-        to_str(&(&self.0.version as *const c_char ) as *const *const c_char)
+        to_str(&(&self.0.version as *const c_char) as *const *const c_char)
     }
 
     pub fn machine(&self) -> &str {
-        to_str(&(&self.0.machine as *const c_char ) as *const *const c_char)
+        to_str(&(&self.0.machine as *const c_char) as *const *const c_char)
     }
 }
 

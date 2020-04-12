@@ -185,9 +185,7 @@ mod sched_linux_like {
             let ptr = stack.as_mut_ptr().offset(stack.len() as isize);
             let ptr_aligned = ptr.offset((ptr as usize % 16) as isize * -1);
             libc::clone(
-                mem::transmute(
-                    callback as extern "C" fn(*mut Box<dyn FnMut() -> isize>) -> i32,
-                ),
+                mem::transmute(callback as extern "C" fn(*mut Box<dyn FnMut() -> isize>) -> i32),
                 ptr_aligned as *mut c_void,
                 combined,
                 &mut cb as *mut _ as *mut c_void,

@@ -1,23 +1,22 @@
 // Portions of this file are Copyright 2014 The Rust Project Developers.
 // See http://rust-lang.org/COPYRIGHT.
 
-///! Operating system signals.
-
-use libc;
-use {Error, Result};
 use errno::Errno;
+///! Operating system signals.
+use libc;
 use std::convert::TryFrom;
-use std::mem;
 use std::fmt;
-use std::str::FromStr;
+use std::mem;
 #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
 use std::os::unix::io::RawFd;
 use std::ptr;
+use std::str::FromStr;
+use {Error, Result};
 
 #[cfg(not(target_os = "openbsd"))]
 pub use self::sigevent::*;
 
-libc_enum!{
+libc_enum! {
     // Currently there is only one definition of c_int in libc, as well as only one
     // type for signal constants.
     // We would prefer to use the libc::c_int alias in the repr attribute. Unfortunately
@@ -84,8 +83,10 @@ impl FromStr for Signal {
             "SIGPIPE" => Signal::SIGPIPE,
             "SIGALRM" => Signal::SIGALRM,
             "SIGTERM" => Signal::SIGTERM,
-            #[cfg(all(any(target_os = "android", target_os = "emscripten", target_os = "linux"),
-                      not(any(target_arch = "mips", target_arch = "mips64", target_arch = "sparc64"))))]
+            #[cfg(all(
+                any(target_os = "android", target_os = "emscripten", target_os = "linux"),
+                not(any(target_arch = "mips", target_arch = "mips64", target_arch = "sparc64"))
+            ))]
             "SIGSTKFLT" => Signal::SIGSTKFLT,
             "SIGCHLD" => Signal::SIGCHLD,
             "SIGCONT" => Signal::SIGCONT,
@@ -135,8 +136,10 @@ impl Signal {
             Signal::SIGPIPE => "SIGPIPE",
             Signal::SIGALRM => "SIGALRM",
             Signal::SIGTERM => "SIGTERM",
-            #[cfg(all(any(target_os = "android", target_os = "emscripten", target_os = "linux"),
-                      not(any(target_arch = "mips", target_arch = "mips64", target_arch = "sparc64"))))]
+            #[cfg(all(
+                any(target_os = "android", target_os = "emscripten", target_os = "linux"),
+                not(any(target_arch = "mips", target_arch = "mips64", target_arch = "sparc64"))
+            ))]
             Signal::SIGSTKFLT => "SIGSTKFLT",
             Signal::SIGCHLD => "SIGCHLD",
             Signal::SIGCONT => "SIGCONT",
@@ -176,104 +179,30 @@ impl fmt::Display for Signal {
 
 pub use self::Signal::*;
 
-#[cfg(all(any(target_os = "linux", target_os = "android", target_os = "emscripten"), not(any(target_arch = "mips", target_arch = "mips64", target_arch = "sparc64"))))]
+#[cfg(all(
+    any(target_os = "linux", target_os = "android", target_os = "emscripten"),
+    not(any(target_arch = "mips", target_arch = "mips64", target_arch = "sparc64"))
+))]
 const SIGNALS: [Signal; 31] = [
-    SIGHUP,
-    SIGINT,
-    SIGQUIT,
-    SIGILL,
-    SIGTRAP,
-    SIGABRT,
-    SIGBUS,
-    SIGFPE,
-    SIGKILL,
-    SIGUSR1,
-    SIGSEGV,
-    SIGUSR2,
-    SIGPIPE,
-    SIGALRM,
-    SIGTERM,
-    SIGSTKFLT,
-    SIGCHLD,
-    SIGCONT,
-    SIGSTOP,
-    SIGTSTP,
-    SIGTTIN,
-    SIGTTOU,
-    SIGURG,
-    SIGXCPU,
-    SIGXFSZ,
-    SIGVTALRM,
-    SIGPROF,
-    SIGWINCH,
-    SIGIO,
-    SIGPWR,
-    SIGSYS];
-#[cfg(all(any(target_os = "linux", target_os = "android", target_os = "emscripten"), any(target_arch = "mips", target_arch = "mips64", target_arch = "sparc64")))]
+    SIGHUP, SIGINT, SIGQUIT, SIGILL, SIGTRAP, SIGABRT, SIGBUS, SIGFPE, SIGKILL, SIGUSR1, SIGSEGV,
+    SIGUSR2, SIGPIPE, SIGALRM, SIGTERM, SIGSTKFLT, SIGCHLD, SIGCONT, SIGSTOP, SIGTSTP, SIGTTIN,
+    SIGTTOU, SIGURG, SIGXCPU, SIGXFSZ, SIGVTALRM, SIGPROF, SIGWINCH, SIGIO, SIGPWR, SIGSYS,
+];
+#[cfg(all(
+    any(target_os = "linux", target_os = "android", target_os = "emscripten"),
+    any(target_arch = "mips", target_arch = "mips64", target_arch = "sparc64")
+))]
 const SIGNALS: [Signal; 30] = [
-    SIGHUP,
-    SIGINT,
-    SIGQUIT,
-    SIGILL,
-    SIGTRAP,
-    SIGABRT,
-    SIGBUS,
-    SIGFPE,
-    SIGKILL,
-    SIGUSR1,
-    SIGSEGV,
-    SIGUSR2,
-    SIGPIPE,
-    SIGALRM,
-    SIGTERM,
-    SIGCHLD,
-    SIGCONT,
-    SIGSTOP,
-    SIGTSTP,
-    SIGTTIN,
-    SIGTTOU,
-    SIGURG,
-    SIGXCPU,
-    SIGXFSZ,
-    SIGVTALRM,
-    SIGPROF,
-    SIGWINCH,
-    SIGIO,
-    SIGPWR,
-    SIGSYS];
+    SIGHUP, SIGINT, SIGQUIT, SIGILL, SIGTRAP, SIGABRT, SIGBUS, SIGFPE, SIGKILL, SIGUSR1, SIGSEGV,
+    SIGUSR2, SIGPIPE, SIGALRM, SIGTERM, SIGCHLD, SIGCONT, SIGSTOP, SIGTSTP, SIGTTIN, SIGTTOU,
+    SIGURG, SIGXCPU, SIGXFSZ, SIGVTALRM, SIGPROF, SIGWINCH, SIGIO, SIGPWR, SIGSYS,
+];
 #[cfg(not(any(target_os = "linux", target_os = "android", target_os = "emscripten")))]
 const SIGNALS: [Signal; 31] = [
-    SIGHUP,
-    SIGINT,
-    SIGQUIT,
-    SIGILL,
-    SIGTRAP,
-    SIGABRT,
-    SIGBUS,
-    SIGFPE,
-    SIGKILL,
-    SIGUSR1,
-    SIGSEGV,
-    SIGUSR2,
-    SIGPIPE,
-    SIGALRM,
-    SIGTERM,
-    SIGCHLD,
-    SIGCONT,
-    SIGSTOP,
-    SIGTSTP,
-    SIGTTIN,
-    SIGTTOU,
-    SIGURG,
-    SIGXCPU,
-    SIGXFSZ,
-    SIGVTALRM,
-    SIGPROF,
-    SIGWINCH,
-    SIGIO,
-    SIGSYS,
-    SIGEMT,
-    SIGINFO];
+    SIGHUP, SIGINT, SIGQUIT, SIGILL, SIGTRAP, SIGABRT, SIGBUS, SIGFPE, SIGKILL, SIGUSR1, SIGSEGV,
+    SIGUSR2, SIGPIPE, SIGALRM, SIGTERM, SIGCHLD, SIGCONT, SIGSTOP, SIGTSTP, SIGTTIN, SIGTTOU,
+    SIGURG, SIGXCPU, SIGXFSZ, SIGVTALRM, SIGPROF, SIGWINCH, SIGIO, SIGSYS, SIGEMT, SIGINFO,
+];
 
 pub const NSIG: libc::c_int = 32;
 
@@ -298,7 +227,7 @@ impl Iterator for SignalIterator {
 
 impl Signal {
     pub fn iterator() -> SignalIterator {
-        SignalIterator{next: 0}
+        SignalIterator { next: 0 }
     }
 }
 
@@ -314,11 +243,11 @@ impl TryFrom<libc::c_int> for Signal {
     }
 }
 
-pub const SIGIOT : Signal = SIGABRT;
-pub const SIGPOLL : Signal = SIGIO;
-pub const SIGUNUSED : Signal = SIGSYS;
+pub const SIGIOT: Signal = SIGABRT;
+pub const SIGPOLL: Signal = SIGIO;
+pub const SIGUNUSED: Signal = SIGSYS;
 
-libc_bitflags!{
+libc_bitflags! {
     pub struct SaFlags: libc::c_int {
         SA_NOCLDSTOP;
         SA_NOCLDWAIT;
@@ -341,27 +270,39 @@ libc_enum! {
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct SigSet {
-    sigset: libc::sigset_t
+    sigset: libc::sigset_t,
 }
-
 
 impl SigSet {
     pub fn all() -> SigSet {
         let mut sigset = mem::MaybeUninit::uninit();
         let _ = unsafe { libc::sigfillset(sigset.as_mut_ptr()) };
 
-        unsafe{ SigSet { sigset: sigset.assume_init() } }
+        unsafe {
+            SigSet {
+                sigset: sigset.assume_init(),
+            }
+        }
     }
 
     pub fn empty() -> SigSet {
         let mut sigset = mem::MaybeUninit::uninit();
         let _ = unsafe { libc::sigemptyset(sigset.as_mut_ptr()) };
 
-        unsafe{ SigSet { sigset: sigset.assume_init() } }
+        unsafe {
+            SigSet {
+                sigset: sigset.assume_init(),
+            }
+        }
     }
 
     pub fn add(&mut self, signal: Signal) {
-        unsafe { libc::sigaddset(&mut self.sigset as *mut libc::sigset_t, signal as libc::c_int) };
+        unsafe {
+            libc::sigaddset(
+                &mut self.sigset as *mut libc::sigset_t,
+                signal as libc::c_int,
+            )
+        };
     }
 
     pub fn clear(&mut self) {
@@ -369,11 +310,18 @@ impl SigSet {
     }
 
     pub fn remove(&mut self, signal: Signal) {
-        unsafe { libc::sigdelset(&mut self.sigset as *mut libc::sigset_t, signal as libc::c_int) };
+        unsafe {
+            libc::sigdelset(
+                &mut self.sigset as *mut libc::sigset_t,
+                signal as libc::c_int,
+            )
+        };
     }
 
     pub fn contains(&self, signal: Signal) -> bool {
-        let res = unsafe { libc::sigismember(&self.sigset as *const libc::sigset_t, signal as libc::c_int) };
+        let res = unsafe {
+            libc::sigismember(&self.sigset as *const libc::sigset_t, signal as libc::c_int)
+        };
 
         match res {
             1 => true,
@@ -394,7 +342,11 @@ impl SigSet {
     pub fn thread_get_mask() -> Result<SigSet> {
         let mut oldmask = mem::MaybeUninit::uninit();
         do_pthread_sigmask(SigmaskHow::SIG_SETMASK, None, Some(oldmask.as_mut_ptr()))?;
-        Ok(unsafe{ SigSet{sigset: oldmask.assume_init()}})
+        Ok(unsafe {
+            SigSet {
+                sigset: oldmask.assume_init(),
+            }
+        })
     }
 
     /// Sets the set of signals as the signal mask for the calling thread.
@@ -416,18 +368,21 @@ impl SigSet {
     pub fn thread_swap_mask(&self, how: SigmaskHow) -> Result<SigSet> {
         let mut oldmask = mem::MaybeUninit::uninit();
         do_pthread_sigmask(how, Some(self), Some(oldmask.as_mut_ptr()))?;
-        Ok(unsafe{ SigSet{sigset: oldmask.assume_init()}})
+        Ok(unsafe {
+            SigSet {
+                sigset: oldmask.assume_init(),
+            }
+        })
     }
 
     /// Suspends execution of the calling thread until one of the signals in the
     /// signal mask becomes pending, and returns the accepted signal.
     pub fn wait(&self) -> Result<Signal> {
         let mut signum = mem::MaybeUninit::uninit();
-        let res = unsafe { libc::sigwait(&self.sigset as *const libc::sigset_t, signum.as_mut_ptr()) };
+        let res =
+            unsafe { libc::sigwait(&self.sigset as *const libc::sigset_t, signum.as_mut_ptr()) };
 
-        Errno::result(res).map(|_| unsafe {
-            Signal::try_from(signum.assume_init()).unwrap()
-        })
+        Errno::result(res).map(|_| unsafe { Signal::try_from(signum.assume_init()).unwrap() })
     }
 }
 
@@ -446,16 +401,16 @@ pub enum SigHandler {
     /// Request that the signal be ignored.
     SigIgn,
     /// Use the given signal-catching function, which takes in the signal.
-    Handler(extern fn(libc::c_int)),
+    Handler(extern "C" fn(libc::c_int)),
     /// Use the given signal-catching function, which takes in the signal, information about how
     /// the signal was generated, and a pointer to the threads `ucontext_t`.
-    SigAction(extern fn(libc::c_int, *mut libc::siginfo_t, *mut libc::c_void))
+    SigAction(extern "C" fn(libc::c_int, *mut libc::siginfo_t, *mut libc::c_void)),
 }
 
 /// Action to take on receipt of a signal. Corresponds to `sigaction`.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct SigAction {
-    sigaction: libc::sigaction
+    sigaction: libc::sigaction,
 }
 
 impl SigAction {
@@ -471,8 +426,11 @@ impl SigAction {
             (*p).sa_sigaction = match handler {
                 SigHandler::SigDfl => libc::SIG_DFL,
                 SigHandler::SigIgn => libc::SIG_IGN,
-                SigHandler::Handler(f) => f as *const extern fn(libc::c_int) as usize,
-                SigHandler::SigAction(f) => f as *const extern fn(libc::c_int, *mut libc::siginfo_t, *mut libc::c_void) as usize,
+                SigHandler::Handler(f) => f as *const extern "C" fn(libc::c_int) as usize,
+                SigHandler::SigAction(f) => {
+                    f as *const extern "C" fn(libc::c_int, *mut libc::siginfo_t, *mut libc::c_void)
+                        as usize
+                }
             };
             (*p).sa_flags = match handler {
                 SigHandler::SigAction(_) => (flags | SaFlags::SA_SIGINFO).bits(),
@@ -480,7 +438,9 @@ impl SigAction {
             };
             (*p).sa_mask = mask.sigset;
 
-            SigAction { sigaction: s.assume_init() }
+            SigAction {
+                sigaction: s.assume_init(),
+            }
         }
     }
 
@@ -492,7 +452,9 @@ impl SigAction {
     /// Returns the set of signals that are blocked during execution of the action's
     /// signal-catching function.
     pub fn mask(&self) -> SigSet {
-        SigSet { sigset: self.sigaction.sa_mask }
+        SigSet {
+            sigset: self.sigaction.sa_mask,
+        }
     }
 
     /// Returns the action's handler.
@@ -500,9 +462,10 @@ impl SigAction {
         match self.sigaction.sa_sigaction {
             libc::SIG_DFL => SigHandler::SigDfl,
             libc::SIG_IGN => SigHandler::SigIgn,
-            f if self.flags().contains(SaFlags::SA_SIGINFO) =>
-                SigHandler::SigAction( unsafe { mem::transmute(f) } ),
-            f => SigHandler::Handler( unsafe { mem::transmute(f) } ),
+            f if self.flags().contains(SaFlags::SA_SIGINFO) => {
+                SigHandler::SigAction(unsafe { mem::transmute(f) })
+            }
+            f => SigHandler::Handler(unsafe { mem::transmute(f) }),
         }
     }
 }
@@ -520,11 +483,15 @@ impl SigAction {
 pub unsafe fn sigaction(signal: Signal, sigaction: &SigAction) -> Result<SigAction> {
     let mut oldact = mem::MaybeUninit::<libc::sigaction>::uninit();
 
-    let res = libc::sigaction(signal as libc::c_int,
-                              &sigaction.sigaction as *const libc::sigaction,
-                              oldact.as_mut_ptr());
+    let res = libc::sigaction(
+        signal as libc::c_int,
+        &sigaction.sigaction as *const libc::sigaction,
+        oldact.as_mut_ptr(),
+    );
 
-    Errno::result(res).map(|_| SigAction { sigaction: oldact.assume_init() })
+    Errno::result(res).map(|_| SigAction {
+        sigaction: oldact.assume_init(),
+    })
 }
 
 /// Signal management (see [signal(3p)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/signal.html))
@@ -592,29 +559,31 @@ pub unsafe fn signal(signal: Signal, handler: SigHandler) -> Result<SigHandler> 
         SigHandler::Handler(handler) => libc::signal(signal, handler as libc::sighandler_t),
         SigHandler::SigAction(_) => return Err(Error::UnsupportedOperation),
     };
-    Errno::result(res).map(|oldhandler| {
-        match oldhandler {
-            libc::SIG_DFL => SigHandler::SigDfl,
-            libc::SIG_IGN => SigHandler::SigIgn,
-            f => SigHandler::Handler(mem::transmute(f)),
-        }
+    Errno::result(res).map(|oldhandler| match oldhandler {
+        libc::SIG_DFL => SigHandler::SigDfl,
+        libc::SIG_IGN => SigHandler::SigIgn,
+        f => SigHandler::Handler(mem::transmute(f)),
     })
 }
 
-fn do_pthread_sigmask(how: SigmaskHow,
-                       set: Option<&SigSet>,
-                       oldset: Option<*mut libc::sigset_t>) -> Result<()> {
+fn do_pthread_sigmask(
+    how: SigmaskHow,
+    set: Option<&SigSet>,
+    oldset: Option<*mut libc::sigset_t>,
+) -> Result<()> {
     if set.is_none() && oldset.is_none() {
-        return Ok(())
+        return Ok(());
     }
 
     let res = unsafe {
         // if set or oldset is None, pass in null pointers instead
-        libc::pthread_sigmask(how as libc::c_int,
-                             set.map_or_else(ptr::null::<libc::sigset_t>,
-                                             |s| &s.sigset as *const libc::sigset_t),
-                             oldset.unwrap_or(ptr::null_mut())
-                             )
+        libc::pthread_sigmask(
+            how as libc::c_int,
+            set.map_or_else(ptr::null::<libc::sigset_t>, |s| {
+                &s.sigset as *const libc::sigset_t
+            }),
+            oldset.unwrap_or(ptr::null_mut()),
+        )
     };
 
     Errno::result(res).map(drop)
@@ -635,40 +604,53 @@ fn do_pthread_sigmask(how: SigmaskHow,
 ///
 /// For more information, visit the [`pthread_sigmask`](http://pubs.opengroup.org/onlinepubs/9699919799/functions/pthread_sigmask.html),
 /// or [`sigprocmask`](http://pubs.opengroup.org/onlinepubs/9699919799/functions/sigprocmask.html) man pages.
-pub fn pthread_sigmask(how: SigmaskHow,
-                       set: Option<&SigSet>,
-                       oldset: Option<&mut SigSet>) -> Result<()>
-{
-    do_pthread_sigmask(how, set, oldset.map(|os| &mut os.sigset as *mut _ ))
+pub fn pthread_sigmask(
+    how: SigmaskHow,
+    set: Option<&SigSet>,
+    oldset: Option<&mut SigSet>,
+) -> Result<()> {
+    do_pthread_sigmask(how, set, oldset.map(|os| &mut os.sigset as *mut _))
 }
 
 /// Examine and change blocked signals.
 ///
 /// For more informations see the [`sigprocmask` man
 /// pages](http://pubs.opengroup.org/onlinepubs/9699919799/functions/sigprocmask.html).
-pub fn sigprocmask(how: SigmaskHow, set: Option<&SigSet>, oldset: Option<&mut SigSet>) -> Result<()> {
+pub fn sigprocmask(
+    how: SigmaskHow,
+    set: Option<&SigSet>,
+    oldset: Option<&mut SigSet>,
+) -> Result<()> {
     if set.is_none() && oldset.is_none() {
-        return Ok(())
+        return Ok(());
     }
 
     let res = unsafe {
         // if set or oldset is None, pass in null pointers instead
-        libc::sigprocmask(how as libc::c_int,
-                          set.map_or_else(ptr::null::<libc::sigset_t>,
-                                          |s| &s.sigset as *const libc::sigset_t),
-                          oldset.map_or_else(ptr::null_mut::<libc::sigset_t>,
-                                             |os| &mut os.sigset as *mut libc::sigset_t))
+        libc::sigprocmask(
+            how as libc::c_int,
+            set.map_or_else(ptr::null::<libc::sigset_t>, |s| {
+                &s.sigset as *const libc::sigset_t
+            }),
+            oldset.map_or_else(ptr::null_mut::<libc::sigset_t>, |os| {
+                &mut os.sigset as *mut libc::sigset_t
+            }),
+        )
     };
 
     Errno::result(res).map(drop)
 }
 
 pub fn kill<T: Into<Option<Signal>>>(pid: ::unistd::Pid, signal: T) -> Result<()> {
-    let res = unsafe { libc::kill(pid.into(),
-                                  match signal.into() {
-                                      Some(s) => s as libc::c_int,
-                                      None => 0,
-                                  }) };
+    let res = unsafe {
+        libc::kill(
+            pid.into(),
+            match signal.into() {
+                Some(s) => s as libc::c_int,
+                None => 0,
+            },
+        )
+    };
 
     Errno::result(res).map(drop)
 }
@@ -680,11 +662,15 @@ pub fn kill<T: Into<Option<Signal>>>(pid: ::unistd::Pid, signal: T) -> Result<()
 /// If `signal` is `None`, `killpg` will only preform error checking and won't
 /// send any signal.
 pub fn killpg<T: Into<Option<Signal>>>(pgrp: ::unistd::Pid, signal: T) -> Result<()> {
-    let res = unsafe { libc::killpg(pgrp.into(),
-                                  match signal.into() {
-                                      Some(s) => s as libc::c_int,
-                                      None => 0,
-                                  }) };
+    let res = unsafe {
+        libc::killpg(
+            pgrp.into(),
+            match signal.into() {
+                Some(s) => s as libc::c_int,
+                None => 0,
+            },
+        )
+    };
 
     Errno::result(res).map(drop)
 }
@@ -694,7 +680,6 @@ pub fn raise(signal: Signal) -> Result<()> {
 
     Errno::result(res).map(drop)
 }
-
 
 #[cfg(target_os = "freebsd")]
 pub type type_of_thread_id = libc::lwpid_t;
@@ -713,7 +698,10 @@ pub enum SigevNotify {
     /// The signal given by `signal` will be delivered to the process.  The
     /// value in `si_value` will be present in the `si_value` field of the
     /// `siginfo_t` structure of the queued signal.
-    SigevSignal { signal: Signal, si_value: libc::intptr_t },
+    SigevSignal {
+        signal: Signal,
+        si_value: libc::intptr_t,
+    },
     // Note: SIGEV_THREAD is not implemented because libc::sigevent does not
     // expose a way to set the union members needed by SIGEV_THREAD.
     /// A new `kevent` is posted to the kqueue `kq`.  The `kevent`'s `udata`
@@ -724,25 +712,28 @@ pub enum SigevNotify {
     /// `thread_id`.  The value stored in `si_value` will be present in the
     /// `si_value` of the `siginfo_t` structure of the queued signal.
     #[cfg(any(target_os = "freebsd", target_os = "linux"))]
-    SigevThreadId { signal: Signal, thread_id: type_of_thread_id,
-                    si_value: libc::intptr_t },
+    SigevThreadId {
+        signal: Signal,
+        thread_id: type_of_thread_id,
+        si_value: libc::intptr_t,
+    },
 }
 
 #[cfg(not(target_os = "openbsd"))]
 mod sigevent {
+    #[cfg(any(target_os = "freebsd", target_os = "linux"))]
+    use super::type_of_thread_id;
+    use super::SigevNotify;
     use libc;
     use std::mem;
     use std::ptr;
-    use super::SigevNotify;
-    #[cfg(any(target_os = "freebsd", target_os = "linux"))]
-    use super::type_of_thread_id;
 
     /// Used to request asynchronous notification of the completion of certain
     /// events, such as POSIX AIO and timers.
     #[repr(C)]
     #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
     pub struct SigEvent {
-        sigevent: libc::sigevent
+        sigevent: libc::sigevent,
     }
 
     impl SigEvent {
@@ -760,50 +751,49 @@ mod sigevent {
         /// `SIGEV_SIGNAL`.  That field is part of a union that shares space with the
         /// more genuinely useful `sigev_notify_thread_id`
         pub fn new(sigev_notify: SigevNotify) -> SigEvent {
-            let mut sev = unsafe { mem::zeroed::<libc::sigevent>()};
+            let mut sev = unsafe { mem::zeroed::<libc::sigevent>() };
             sev.sigev_notify = match sigev_notify {
                 SigevNotify::SigevNone => libc::SIGEV_NONE,
-                SigevNotify::SigevSignal{..} => libc::SIGEV_SIGNAL,
+                SigevNotify::SigevSignal { .. } => libc::SIGEV_SIGNAL,
                 #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
-                SigevNotify::SigevKevent{..} => libc::SIGEV_KEVENT,
+                SigevNotify::SigevKevent { .. } => libc::SIGEV_KEVENT,
                 #[cfg(target_os = "freebsd")]
-                SigevNotify::SigevThreadId{..} => libc::SIGEV_THREAD_ID,
+                SigevNotify::SigevThreadId { .. } => libc::SIGEV_THREAD_ID,
                 #[cfg(all(target_os = "linux", target_env = "gnu", not(target_arch = "mips")))]
-                SigevNotify::SigevThreadId{..} => libc::SIGEV_THREAD_ID,
+                SigevNotify::SigevThreadId { .. } => libc::SIGEV_THREAD_ID,
                 #[cfg(any(all(target_os = "linux", target_env = "musl"), target_arch = "mips"))]
-                SigevNotify::SigevThreadId{..} => 4  // No SIGEV_THREAD_ID defined
+                SigevNotify::SigevThreadId { .. } => 4, // No SIGEV_THREAD_ID defined
             };
             sev.sigev_signo = match sigev_notify {
-                SigevNotify::SigevSignal{ signal, .. } => signal as libc::c_int,
+                SigevNotify::SigevSignal { signal, .. } => signal as libc::c_int,
                 #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
-                SigevNotify::SigevKevent{ kq, ..} => kq,
+                SigevNotify::SigevKevent { kq, .. } => kq,
                 #[cfg(any(target_os = "linux", target_os = "freebsd"))]
-                SigevNotify::SigevThreadId{ signal, .. } => signal as libc::c_int,
-                _ => 0
+                SigevNotify::SigevThreadId { signal, .. } => signal as libc::c_int,
+                _ => 0,
             };
             sev.sigev_value.sival_ptr = match sigev_notify {
                 SigevNotify::SigevNone => ptr::null_mut::<libc::c_void>(),
-                SigevNotify::SigevSignal{ si_value, .. } => si_value as *mut libc::c_void,
+                SigevNotify::SigevSignal { si_value, .. } => si_value as *mut libc::c_void,
                 #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
-                SigevNotify::SigevKevent{ udata, .. } => udata as *mut libc::c_void,
+                SigevNotify::SigevKevent { udata, .. } => udata as *mut libc::c_void,
                 #[cfg(any(target_os = "freebsd", target_os = "linux"))]
-                SigevNotify::SigevThreadId{ si_value, .. } => si_value as *mut libc::c_void,
+                SigevNotify::SigevThreadId { si_value, .. } => si_value as *mut libc::c_void,
             };
             SigEvent::set_tid(&mut sev, &sigev_notify);
-            SigEvent{sigevent: sev}
+            SigEvent { sigevent: sev }
         }
 
         #[cfg(any(target_os = "freebsd", target_os = "linux"))]
         fn set_tid(sev: &mut libc::sigevent, sigev_notify: &SigevNotify) {
             sev.sigev_notify_thread_id = match *sigev_notify {
                 SigevNotify::SigevThreadId { thread_id, .. } => thread_id,
-                _ => 0 as type_of_thread_id
+                _ => 0 as type_of_thread_id,
             };
         }
 
         #[cfg(not(any(target_os = "freebsd", target_os = "linux")))]
-        fn set_tid(_sev: &mut libc::sigevent, _sigev_notify: &SigevNotify) {
-        }
+        fn set_tid(_sev: &mut libc::sigevent, _sigev_notify: &SigevNotify) {}
 
         pub fn sigevent(&self) -> libc::sigevent {
             self.sigevent
@@ -812,15 +802,17 @@ mod sigevent {
 
     impl<'a> From<&'a libc::sigevent> for SigEvent {
         fn from(sigevent: &libc::sigevent) -> Self {
-            SigEvent{ sigevent: *sigevent }
+            SigEvent {
+                sigevent: *sigevent,
+            }
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use std::thread;
     use super::*;
+    use std::thread;
 
     #[test]
     fn test_contains() {
@@ -876,21 +868,23 @@ mod tests {
     #[test]
     fn test_thread_signal_set_mask() {
         thread::spawn(|| {
-            let prev_mask = SigSet::thread_get_mask()
-                .expect("Failed to get existing signal mask!");
+            let prev_mask = SigSet::thread_get_mask().expect("Failed to get existing signal mask!");
 
             let mut test_mask = prev_mask;
             test_mask.add(SIGUSR1);
 
             assert!(test_mask.thread_set_mask().is_ok());
-            let new_mask = SigSet::thread_get_mask()
-                .expect("Failed to get new mask!");
+            let new_mask = SigSet::thread_get_mask().expect("Failed to get new mask!");
 
             assert!(new_mask.contains(SIGUSR1));
             assert!(!new_mask.contains(SIGUSR2));
 
-            prev_mask.thread_set_mask().expect("Failed to revert signal mask!");
-        }).join().unwrap();
+            prev_mask
+                .thread_set_mask()
+                .expect("Failed to revert signal mask!");
+        })
+        .join()
+        .unwrap();
     }
 
     #[test]
@@ -902,7 +896,9 @@ mod tests {
             assert!(mask.thread_block().is_ok());
 
             assert!(SigSet::thread_get_mask().unwrap().contains(SIGUSR1));
-        }).join().unwrap();
+        })
+        .join()
+        .unwrap();
     }
 
     #[test]
@@ -914,7 +910,9 @@ mod tests {
             assert!(mask.thread_unblock().is_ok());
 
             assert!(!SigSet::thread_get_mask().unwrap().contains(SIGUSR1));
-        }).join().unwrap();
+        })
+        .join()
+        .unwrap();
     }
 
     #[test]
@@ -929,36 +927,42 @@ mod tests {
             let mut mask2 = SigSet::empty();
             mask2.add(SIGUSR2);
 
-            let oldmask = mask2.thread_swap_mask(SigmaskHow::SIG_SETMASK)
-                .unwrap();
+            let oldmask = mask2.thread_swap_mask(SigmaskHow::SIG_SETMASK).unwrap();
 
             assert!(oldmask.contains(SIGUSR1));
             assert!(!oldmask.contains(SIGUSR2));
 
             assert!(SigSet::thread_get_mask().unwrap().contains(SIGUSR2));
-        }).join().unwrap();
+        })
+        .join()
+        .unwrap();
     }
 
     #[test]
     fn test_sigaction() {
         use libc;
         thread::spawn(|| {
-            extern fn test_sigaction_handler(_: libc::c_int) {}
-            extern fn test_sigaction_action(_: libc::c_int,
-                _: *mut libc::siginfo_t, _: *mut libc::c_void) {}
+            extern "C" fn test_sigaction_handler(_: libc::c_int) {}
+            extern "C" fn test_sigaction_action(
+                _: libc::c_int,
+                _: *mut libc::siginfo_t,
+                _: *mut libc::c_void,
+            ) {
+            }
 
             let handler_sig = SigHandler::Handler(test_sigaction_handler);
 
-            let flags = SaFlags::SA_ONSTACK | SaFlags::SA_RESTART |
-                        SaFlags::SA_SIGINFO;
+            let flags = SaFlags::SA_ONSTACK | SaFlags::SA_RESTART | SaFlags::SA_SIGINFO;
 
             let mut mask = SigSet::empty();
             mask.add(SIGUSR1);
 
             let action_sig = SigAction::new(handler_sig, flags, mask);
 
-            assert_eq!(action_sig.flags(),
-                       SaFlags::SA_ONSTACK | SaFlags::SA_RESTART);
+            assert_eq!(
+                action_sig.flags(),
+                SaFlags::SA_ONSTACK | SaFlags::SA_RESTART
+            );
             assert_eq!(action_sig.handler(), handler_sig);
 
             mask = action_sig.mask();
@@ -974,7 +978,9 @@ mod tests {
 
             let action_ign = SigAction::new(SigHandler::SigIgn, flags, mask);
             assert_eq!(action_ign.handler(), SigHandler::SigIgn);
-        }).join().unwrap();
+        })
+        .join()
+        .unwrap();
     }
 
     #[test]
@@ -987,6 +993,8 @@ mod tests {
 
             raise(SIGUSR1).unwrap();
             assert_eq!(mask.wait().unwrap(), SIGUSR1);
-        }).join().unwrap();
+        })
+        .join()
+        .unwrap();
     }
 }

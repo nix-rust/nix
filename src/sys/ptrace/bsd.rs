@@ -8,8 +8,8 @@ use Result;
 pub type RequestType = c_int;
 
 cfg_if! {
-    if #[cfg(any(target_os = "dragonfly", 
-                 target_os = "freebsd", 
+    if #[cfg(any(target_os = "dragonfly",
+                 target_os = "freebsd",
                  target_os = "macos",
                  target_os = "openbsd"))] {
         #[doc(hidden)]
@@ -64,7 +64,8 @@ unsafe fn ptrace_other(
         libc::pid_t::from(pid),
         addr,
         data,
-    )).map(|_| 0)
+    ))
+    .map(|_| 0)
 }
 
 /// Sets the process as traceable, as with `ptrace(PT_TRACEME, ...)`
@@ -91,9 +92,7 @@ pub fn detach<T: Into<Option<Signal>>>(pid: Pid, sig: T) -> Result<()> {
         Some(s) => s as c_int,
         None => 0,
     };
-    unsafe {
-        ptrace_other(Request::PT_DETACH, pid, ptr::null_mut(), data).map(drop)
-    }
+    unsafe { ptrace_other(Request::PT_DETACH, pid, ptr::null_mut(), data).map(drop) }
 }
 
 /// Restart the stopped tracee process, as with `ptrace(PTRACE_CONT, ...)`
@@ -113,11 +112,9 @@ pub fn cont<T: Into<Option<Signal>>>(pid: Pid, sig: T) -> Result<()> {
 
 /// Issues a kill request as with `ptrace(PT_KILL, ...)`
 ///
-/// This request is equivalent to `ptrace(PT_CONTINUE, ..., SIGKILL);` 
+/// This request is equivalent to `ptrace(PT_CONTINUE, ..., SIGKILL);`
 pub fn kill(pid: Pid) -> Result<()> {
-    unsafe {
-        ptrace_other(Request::PT_KILL, pid, 0 as AddressType, 0).map(drop)
-    }
+    unsafe { ptrace_other(Request::PT_KILL, pid, 0 as AddressType, 0).map(drop) }
 }
 
 /// Move the stopped tracee process forward by a single step as with
@@ -145,15 +142,14 @@ pub fn kill(pid: Pid) -> Result<()> {
 ///     }
 /// }
 /// ```
-#[cfg(
-    any(
-        any(target_os = "dragonfly", target_os = "freebsd", target_os = "macos"),
-        all(target_os = "openbsd", target_arch = "x86_64"),
-        all(target_os = "netbsd",
-            any(target_arch = "x86_64", target_arch = "powerpc")
-        )
+#[cfg(any(
+    any(target_os = "dragonfly", target_os = "freebsd", target_os = "macos"),
+    all(target_os = "openbsd", target_arch = "x86_64"),
+    all(
+        target_os = "netbsd",
+        any(target_arch = "x86_64", target_arch = "powerpc")
     )
-)]
+))]
 pub fn step<T: Into<Option<Signal>>>(pid: Pid, sig: T) -> Result<()> {
     let data = match sig.into() {
         Some(s) => s as c_int,

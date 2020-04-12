@@ -11,10 +11,10 @@ mod os {
     // * accept4: 2.6.28
 
     static VERS_UNKNOWN: usize = 1;
-    static VERS_2_6_18:  usize = 2;
-    static VERS_2_6_27:  usize = 3;
-    static VERS_2_6_28:  usize = 4;
-    static VERS_3:       usize = 5;
+    static VERS_2_6_18: usize = 2;
+    static VERS_2_6_27: usize = 3;
+    static VERS_2_6_28: usize = 4;
+    static VERS_3: usize = 5;
 
     #[inline]
     fn digit(dst: &mut usize, b: u8) {
@@ -25,7 +25,7 @@ mod os {
     fn parse_kernel_version() -> usize {
         let u = uname();
 
-        let mut curr:  usize = 0;
+        let mut curr: usize = 0;
         let mut major: usize = 0;
         let mut minor: usize = 0;
         let mut patch: usize = 0;
@@ -39,13 +39,11 @@ mod os {
                 b'.' | b'-' => {
                     curr += 1;
                 }
-                b'0'..=b'9' => {
-                    match curr {
-                        0 => digit(&mut major, b),
-                        1 => digit(&mut minor, b),
-                        _ => digit(&mut patch, b),
-                    }
-                }
+                b'0'..=b'9' => match curr {
+                    0 => digit(&mut major, b),
+                    1 => digit(&mut minor, b),
+                    _ => digit(&mut patch, b),
+                },
                 _ => break,
             }
         }
@@ -94,7 +92,14 @@ mod os {
     }
 }
 
-#[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "dragonfly", target_os = "ios", target_os = "openbsd", target_os = "netbsd"))]
+#[cfg(any(
+    target_os = "macos",
+    target_os = "freebsd",
+    target_os = "dragonfly",
+    target_os = "ios",
+    target_os = "openbsd",
+    target_os = "netbsd"
+))]
 mod os {
     /// Check if the OS supports atomic close-on-exec for sockets
     pub fn socket_atomic_cloexec() -> bool {

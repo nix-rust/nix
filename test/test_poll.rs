@@ -1,5 +1,5 @@
-use nix::poll::{PollFlags, poll, PollFd};
-use nix::unistd::{write, pipe};
+use nix::poll::{poll, PollFd, PollFlags};
+use nix::unistd::{pipe, write};
 
 #[test]
 fn test_poll() {
@@ -22,10 +22,12 @@ fn test_poll() {
 // ppoll(2) is the same as poll except for how it handles timeouts and signals.
 // Repeating the test for poll(2) should be sufficient to check that our
 // bindings are correct.
-#[cfg(any(target_os = "android",
-          target_os = "dragonfly",
-          target_os = "freebsd",
-          target_os = "linux"))]
+#[cfg(any(
+    target_os = "android",
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "linux"
+))]
 #[test]
 fn test_ppoll() {
     use nix::poll::ppoll;

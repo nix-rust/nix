@@ -15,18 +15,17 @@
 //!
 //! Please note that signal discarding is not specific to `signalfd`, but also happens with regular
 //! signal handlers.
+use errno::Errno;
 use libc;
+pub use libc::signalfd_siginfo as siginfo;
+pub use sys::signal::{self, SigSet};
 use unistd;
 use {Error, Result};
-use errno::Errno;
-pub use sys::signal::{self, SigSet};
-pub use libc::signalfd_siginfo as siginfo;
 
-use std::os::unix::io::{RawFd, AsRawFd};
 use std::mem;
+use std::os::unix::io::{AsRawFd, RawFd};
 
-
-libc_bitflags!{
+libc_bitflags! {
     pub struct SfdFlags: libc::c_int {
         SFD_NONBLOCK;
         SFD_CLOEXEC;
@@ -49,7 +48,11 @@ pub const SIGNALFD_SIGINFO_SIZE: usize = 128;
 /// See [the signalfd man page for more information](http://man7.org/linux/man-pages/man2/signalfd.2.html)
 pub fn signalfd(fd: RawFd, mask: &SigSet, flags: SfdFlags) -> Result<RawFd> {
     unsafe {
-        Errno::result(libc::signalfd(fd as libc::c_int, mask.as_ref(), flags.bits()))
+        Errno::result(libc::signalfd(
+            fd as libc::c_int,
+            mask.as_ref(),
+            flags.bits(),
+        ))
     }
 }
 
@@ -101,15 +104,18 @@ impl SignalFd {
         let mut buffer = mem::MaybeUninit::<[u8; SIGNALFD_SIGINFO_SIZE]>::uninit();
 
         let res = Errno::result(unsafe {
-            libc::read(self.0,
-                       buffer.as_mut_ptr() as *mut libc::c_void,
-                       SIGNALFD_SIGINFO_SIZE as libc::size_t)
-        }).map(|r| r as usize);
+            libc::read(
+                self.0,
+                buffer.as_mut_ptr() as *mut libc::c_void,
+                SIGNALFD_SIGINFO_SIZE as libc::size_t,
+            )
+        })
+        .map(|r| r as usize);
         match res {
             Ok(SIGNALFD_SIGINFO_SIZE) => Ok(Some(unsafe { mem::transmute(buffer.assume_init()) })),
             Ok(_) => unreachable!("partial read on signalfd"),
             Err(Error::Sys(Errno::EAGAIN)) => Ok(None),
-            Err(error) => Err(error)
+            Err(error) => Err(error),
         }
     }
 }
@@ -137,17 +143,18 @@ impl Iterator for SignalFd {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::mem;
     use libc;
-
+    use std::mem;
 
     #[test]
     fn check_siginfo_size() {
-        assert_eq!(mem::size_of::<libc::signalfd_siginfo>(), SIGNALFD_SIGINFO_SIZE);
+        assert_eq!(
+            mem::size_of::<libc::signalfd_siginfo>(),
+            SIGNALFD_SIGINFO_SIZE
+        );
     }
 
     #[test]

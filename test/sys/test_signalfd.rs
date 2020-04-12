@@ -2,11 +2,13 @@ use std::convert::TryFrom;
 
 #[test]
 fn test_signalfd() {
+    use nix::sys::signal::{self, raise, SigSet, Signal};
     use nix::sys::signalfd::SignalFd;
-    use nix::sys::signal::{self, raise, Signal, SigSet};
 
     // Grab the mutex for altering signals so we don't interfere with other tests.
-    let _m = ::SIGNAL_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = ::SIGNAL_MTX
+        .lock()
+        .expect("Mutex got poisoned by another test");
 
     // Block the SIGUSR1 signal from automatic processing for this thread
     let mut mask = SigSet::empty();

@@ -1,8 +1,8 @@
-use libc::{self, c_int};
-use Result;
 use errno::Errno;
+use libc::{self, c_int};
 use std::convert::TryFrom;
 use unistd::Pid;
+use Result;
 
 use sys::signal::Signal;
 
@@ -105,8 +105,7 @@ impl WaitStatus {
     pub fn pid(&self) -> Option<Pid> {
         use self::WaitStatus::*;
         match *self {
-            Exited(p, _)  | Signaled(p, _, _) |
-                Stopped(p, _) | Continued(p) => Some(p),
+            Exited(p, _) | Signaled(p, _, _) | Stopped(p, _) | Continued(p) => Some(p),
             StillAlive => None,
             #[cfg(any(target_os = "android", target_os = "linux"))]
             PtraceEvent(p, _, _) | PtraceSyscall(p) => Some(p),

@@ -1,23 +1,25 @@
 use std::fs::{self, File};
 use std::os::unix::fs::{symlink, PermissionsExt};
 use std::os::unix::prelude::AsRawFd;
-use std::time::{Duration, UNIX_EPOCH};
 use std::path::Path;
+use std::time::{Duration, UNIX_EPOCH};
 
 #[cfg(not(any(target_os = "netbsd")))]
-use libc::{S_IFMT, S_IFLNK, mode_t};
+use libc::{mode_t, S_IFLNK, S_IFMT};
 
-use nix::{fcntl, Error};
-use nix::errno::{Errno};
-use nix::sys::stat::{self, fchmod, fchmodat, futimens, stat, utimes, utimensat, mkdirat};
-#[cfg(any(target_os = "linux",
-          target_os = "haiku",
-          target_os = "ios",
-          target_os = "macos",
-          target_os = "freebsd",
-          target_os = "netbsd"))]
+use nix::errno::Errno;
+#[cfg(any(
+    target_os = "linux",
+    target_os = "haiku",
+    target_os = "ios",
+    target_os = "macos",
+    target_os = "freebsd",
+    target_os = "netbsd"
+))]
 use nix::sys::stat::lutimes;
-use nix::sys::stat::{Mode, FchmodatFlags, UtimensatFlags};
+use nix::sys::stat::{self, fchmod, fchmodat, futimens, mkdirat, stat, utimensat, utimes};
+use nix::sys::stat::{FchmodatFlags, Mode, UtimensatFlags};
+use nix::{fcntl, Error};
 
 #[cfg(not(any(target_os = "netbsd")))]
 use nix::sys::stat::FileStat;
@@ -43,31 +45,34 @@ fn valid_uid_gid(stat: FileStat) -> bool {
 #[cfg(not(any(target_os = "netbsd")))]
 fn assert_stat_results(stat_result: Result<FileStat>) {
     let stats = stat_result.expect("stat call failed");
-    assert!(stats.st_dev > 0);      // must be positive integer, exact number machine dependent
-    assert!(stats.st_ino > 0);      // inode is positive integer, exact number machine dependent
-    assert!(stats.st_mode > 0);     // must be positive integer
-    assert_eq!(stats.st_nlink, 1);   // there links created, must be 1
-    assert!(valid_uid_gid(stats));  // must be positive integers
-    assert_eq!(stats.st_size, 0);    // size is 0 because we did not write anything to the file
-    assert!(stats.st_blksize > 0);  // must be positive integer, exact number machine dependent
-    assert!(stats.st_blocks <= 16);  // Up to 16 blocks can be allocated for a blank file
+    assert!(stats.st_dev > 0); // must be positive integer, exact number machine dependent
+    assert!(stats.st_ino > 0); // inode is positive integer, exact number machine dependent
+    assert!(stats.st_mode > 0); // must be positive integer
+    assert_eq!(stats.st_nlink, 1); // there links created, must be 1
+    assert!(valid_uid_gid(stats)); // must be positive integers
+    assert_eq!(stats.st_size, 0); // size is 0 because we did not write anything to the file
+    assert!(stats.st_blksize > 0); // must be positive integer, exact number machine dependent
+    assert!(stats.st_blocks <= 16); // Up to 16 blocks can be allocated for a blank file
 }
 
 #[cfg(not(any(target_os = "netbsd")))]
 fn assert_lstat_results(stat_result: Result<FileStat>) {
     let stats = stat_result.expect("stat call failed");
-    assert!(stats.st_dev > 0);      // must be positive integer, exact number machine dependent
-    assert!(stats.st_ino > 0);      // inode is positive integer, exact number machine dependent
-    assert!(stats.st_mode > 0);     // must be positive integer
+    assert!(stats.st_dev > 0); // must be positive integer, exact number machine dependent
+    assert!(stats.st_ino > 0); // inode is positive integer, exact number machine dependent
+    assert!(stats.st_mode > 0); // must be positive integer
 
     // st_mode is c_uint (u32 on Android) while S_IFMT is mode_t
     // (u16 on Android), and that will be a compile error.
     // On other platforms they are the same (either both are u16 or u32).
-    assert_eq!((stats.st_mode as usize) & (S_IFMT as usize), S_IFLNK as usize); // should be a link
-    assert_eq!(stats.st_nlink, 1);   // there links created, must be 1
-    assert!(valid_uid_gid(stats));  // must be positive integers
-    assert!(stats.st_size > 0);    // size is > 0 because it points to another file
-    assert!(stats.st_blksize > 0);  // must be positive integer, exact number machine dependent
+    assert_eq!(
+        (stats.st_mode as usize) & (S_IFMT as usize),
+        S_IFLNK as usize
+    ); // should be a link
+    assert_eq!(stats.st_nlink, 1); // there links created, must be 1
+    assert!(valid_uid_gid(stats)); // must be positive integers
+    assert!(stats.st_size > 0); // size is > 0 because it points to another file
+    assert!(stats.st_blksize > 0); // must be positive integer, exact number machine dependent
 
     // st_blocks depends on whether the machine's file system uses fast
     // or slow symlinks, so just make sure it's not negative
@@ -97,13 +102,9 @@ fn test_fstatat() {
     let tempdir = tempfile::tempdir().unwrap();
     let filename = tempdir.path().join("foo.txt");
     File::create(&filename).unwrap();
-    let dirfd = fcntl::open(tempdir.path(),
-                            fcntl::OFlag::empty(),
-                            stat::Mode::empty());
+    let dirfd = fcntl::open(tempdir.path(), fcntl::OFlag::empty(), stat::Mode::empty());
 
-    let result = stat::fstatat(dirfd.unwrap(),
-                               &filename,
-                               fcntl::AtFlags::empty());
+    let result = stat::fstatat(dirfd.unwrap(), &filename, fcntl::AtFlags::empty());
     assert_stat_results(result);
 }
 
@@ -189,10 +190,12 @@ fn test_fchmodat() {
 fn assert_times_eq(exp_atime_sec: u64, exp_mtime_sec: u64, attr: &fs::Metadata) {
     assert_eq!(
         Duration::new(exp_atime_sec, 0),
-        attr.accessed().unwrap().duration_since(UNIX_EPOCH).unwrap());
+        attr.accessed().unwrap().duration_since(UNIX_EPOCH).unwrap()
+    );
     assert_eq!(
         Duration::new(exp_mtime_sec, 0),
-        attr.modified().unwrap().duration_since(UNIX_EPOCH).unwrap());
+        attr.modified().unwrap().duration_since(UNIX_EPOCH).unwrap()
+    );
 }
 
 #[test]
@@ -206,12 +209,14 @@ fn test_utimes() {
 }
 
 #[test]
-#[cfg(any(target_os = "linux",
-          target_os = "haiku",
-          target_os = "ios",
-          target_os = "macos",
-          target_os = "freebsd",
-          target_os = "netbsd"))]
+#[cfg(any(
+    target_os = "linux",
+    target_os = "haiku",
+    target_os = "ios",
+    target_os = "macos",
+    target_os = "freebsd",
+    target_os = "netbsd"
+))]
 fn test_lutimes() {
     let tempdir = tempfile::tempdir().unwrap();
     let target = tempdir.path().join("target");
@@ -224,10 +229,16 @@ fn test_lutimes() {
     assert_times_eq(4560, 1230, &fs::symlink_metadata(&fullpath).unwrap());
 
     let target_metadata = fs::symlink_metadata(&target).unwrap();
-    assert_eq!(exp_target_metadata.accessed().unwrap(), target_metadata.accessed().unwrap(),
-               "atime of symlink target was unexpectedly modified");
-    assert_eq!(exp_target_metadata.modified().unwrap(), target_metadata.modified().unwrap(),
-               "mtime of symlink target was unexpectedly modified");
+    assert_eq!(
+        exp_target_metadata.accessed().unwrap(),
+        target_metadata.accessed().unwrap(),
+        "atime of symlink target was unexpectedly modified"
+    );
+    assert_eq!(
+        exp_target_metadata.modified().unwrap(),
+        target_metadata.modified().unwrap(),
+        "mtime of symlink target was unexpectedly modified"
+    );
 }
 
 #[test]
@@ -252,14 +263,26 @@ fn test_utimensat() {
 
     let dirfd = fcntl::open(tempdir.path(), fcntl::OFlag::empty(), stat::Mode::empty()).unwrap();
 
-    utimensat(Some(dirfd), filename, &TimeSpec::seconds(12345), &TimeSpec::seconds(678),
-              UtimensatFlags::FollowSymlink).unwrap();
+    utimensat(
+        Some(dirfd),
+        filename,
+        &TimeSpec::seconds(12345),
+        &TimeSpec::seconds(678),
+        UtimensatFlags::FollowSymlink,
+    )
+    .unwrap();
     assert_times_eq(12345, 678, &fs::metadata(&fullpath).unwrap());
 
     chdir(tempdir.path()).unwrap();
 
-    utimensat(None, filename, &TimeSpec::seconds(500), &TimeSpec::seconds(800),
-              UtimensatFlags::FollowSymlink).unwrap();
+    utimensat(
+        None,
+        filename,
+        &TimeSpec::seconds(500),
+        &TimeSpec::seconds(800),
+        UtimensatFlags::FollowSymlink,
+    )
+    .unwrap();
     assert_times_eq(500, 800, &fs::metadata(&fullpath).unwrap());
 }
 
@@ -279,7 +302,9 @@ fn test_mkdirat_success_mode() {
     let filename = "example_subdir";
     let dirfd = fcntl::open(tempdir.path(), fcntl::OFlag::empty(), stat::Mode::empty()).unwrap();
     assert!((mkdirat(dirfd, filename, Mode::S_IRWXU)).is_ok());
-    let permissions = fs::metadata(tempdir.path().join(filename)).unwrap().permissions();
+    let permissions = fs::metadata(tempdir.path().join(filename))
+        .unwrap()
+        .permissions();
     let mode = permissions.mode();
     assert_eq!(mode as mode_t, expected_bits)
 }
@@ -287,10 +312,14 @@ fn test_mkdirat_success_mode() {
 #[test]
 fn test_mkdirat_fail() {
     let tempdir = tempfile::tempdir().unwrap();
-    let not_dir_filename= "example_not_dir";
+    let not_dir_filename = "example_not_dir";
     let filename = "example_subdir_dir";
-    let dirfd = fcntl::open(&tempdir.path().join(not_dir_filename), fcntl::OFlag::O_CREAT,
-                            stat::Mode::empty()).unwrap();
+    let dirfd = fcntl::open(
+        &tempdir.path().join(not_dir_filename),
+        fcntl::OFlag::O_CREAT,
+        stat::Mode::empty(),
+    )
+    .unwrap();
     let result = mkdirat(dirfd, filename, Mode::S_IRWXU).unwrap_err();
     assert_eq!(result, Error::Sys(Errno::ENOTDIR));
 }
