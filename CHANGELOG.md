@@ -31,6 +31,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Removed
 
+- Removed `sys::socket::addr::from_libc_sockaddr` from the public API.
+  (#[1215](https://github.com/nix-rust/nix/pull/1215))
+
 ## [0.17.0] - 3 February 2020
 ### Added
 - Add `CLK_TCK` to `SysconfVar`
