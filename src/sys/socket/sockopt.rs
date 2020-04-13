@@ -3,7 +3,10 @@ use Result;
 use errno::Errno;
 use sys::time::TimeVal;
 use libc::{self, c_int, c_void, socklen_t};
-use std::mem;
+use std::mem::{
+    self,
+    MaybeUninit
+};
 use std::os::unix::io::RawFd;
 use std::ffi::{OsStr, OsString};
 #[cfg(target_family = "unix")]
@@ -84,14 +87,14 @@ macro_rules! getsockopt_impl {
 
             fn get(&self, fd: RawFd) -> Result<$ty> {
                 unsafe {
-                    let mut getter: $getter = Get::blank();
+                    let mut getter: $getter = Get::uninit();
 
                     let res = libc::getsockopt(fd, $level, $flag,
                                                getter.ffi_ptr(),
                                                getter.ffi_len());
                     Errno::result(res)?;
 
-                    Ok(getter.unwrap())
+                    Ok(getter.assume_init())
                 }
             }
         }
@@ -364,16 +367,16 @@ impl<T> SetSockOpt for AlgSetKey<T> where T: AsRef<[u8]> + Clone {
 
 /// Helper trait that describes what is expected from a `GetSockOpt` getter.
 unsafe trait Get<T> {
-    /// Returns an empty value.
-    unsafe fn blank() -> Self;
+    /// Returns an uninitialized value.
+    unsafe fn uninit() -> Self;
     /// Returns a pointer to the stored value. This pointer will be passed to the system's
     /// `getsockopt` call (`man 3p getsockopt`, argument `option_value`).
     fn ffi_ptr(&mut self) -> *mut c_void;
     /// Returns length of the stored value. This pointer will be passed to the system's
     /// `getsockopt` call (`man 3p getsockopt`, argument `option_len`).
     fn ffi_len(&mut self) -> *mut socklen_t;
-    /// Returns the stored value.
-    unsafe fn unwrap(self) -> T;
+    /// Returns the hopefully initialized inner value.
+    unsafe fn assume_init(self) -> T;
 }
 
 /// Helper trait that describes what is expected from a `SetSockOpt` setter.
@@ -391,28 +394,28 @@ unsafe trait Set<'a, T> {
 /// Getter for an arbitrary `struct`.
 struct GetStruct<T> {
     len: socklen_t,
-    val: T,
+    val: MaybeUninit<T>,
 }
 
 unsafe impl<T> Get<T> for GetStruct<T> {
-    unsafe fn blank() -> Self {
+    unsafe fn uninit() -> Self {
         GetStruct {
             len: mem::size_of::<T>() as socklen_t,
-            val: mem::zeroed(),
+            val: MaybeUninit::uninit(),
         }
     }
 
     fn ffi_ptr(&mut self) -> *mut c_void {
-        &mut self.val as *mut T as *mut c_void
+        self.val.as_mut_ptr() as *mut c_void
     }
 
     fn ffi_len(&mut self) -> *mut socklen_t {
         &mut self.len
     }
 
-    unsafe fn unwrap(self) -> T {
+    unsafe fn assume_init(self) -> T {
         assert_eq!(self.len as usize, mem::size_of::<T>(), "invalid getsockopt implementation");
-        self.val
+        self.val.assume_init()
     }
 }
 
@@ -438,28 +441,28 @@ unsafe impl<'a, T> Set<'a, T> for SetStruct<'a, T> {
 /// Getter for a boolean value.
 struct GetBool {
     len: socklen_t,
-    val: c_int,
+    val: MaybeUninit<c_int>,
 }
 
 unsafe impl Get<bool> for GetBool {
-    unsafe fn blank() -> Self {
+    unsafe fn uninit() -> Self {
         GetBool {
             len: mem::size_of::<c_int>() as socklen_t,
-            val: mem::zeroed(),
+            val: MaybeUninit::uninit(),
         }
     }
 
     fn ffi_ptr(&mut self) -> *mut c_void {
-        &mut self.val as *mut c_int as *mut c_void
+        self.val.as_mut_ptr() as *mut c_void
     }
 
     fn ffi_len(&mut self) -> *mut socklen_t {
         &mut self.len
     }
 
-    unsafe fn unwrap(self) -> bool {
+    unsafe fn assume_init(self) -> bool {
         assert_eq!(self.len as usize, mem::size_of::<c_int>(), "invalid getsockopt implementation");
-        self.val != 0
+        self.val.assume_init() != 0
     }
 }
 
@@ -485,28 +488,28 @@ unsafe impl<'a> Set<'a, bool> for SetBool {
 /// Getter for an `u8` value.
 struct GetU8 {
     len: socklen_t,
-    val: u8,
+    val: MaybeUninit<u8>,
 }
 
 unsafe impl Get<u8> for GetU8 {
-    unsafe fn blank() -> Self {
+    unsafe fn uninit() -> Self {
         GetU8 {
             len: mem::size_of::<u8>() as socklen_t,
-            val: mem::zeroed(),
+            val: MaybeUninit::uninit(),
         }
     }
 
     fn ffi_ptr(&mut self) -> *mut c_void {
-        &mut self.val as *mut u8 as *mut c_void
+        self.val.as_mut_ptr() as *mut c_void
     }
 
     fn ffi_len(&mut self) -> *mut socklen_t {
         &mut self.len
     }
 
-    unsafe fn unwrap(self) -> u8 {
+    unsafe fn assume_init(self) -> u8 {
         assert_eq!(self.len as usize, mem::size_of::<u8>(), "invalid getsockopt implementation");
-        self.val as u8
+        self.val.assume_init()
     }
 }
 
@@ -532,28 +535,28 @@ unsafe impl<'a> Set<'a, u8> for SetU8 {
 /// Getter for an `usize` value.
 struct GetUsize {
     len: socklen_t,
-    val: c_int,
+    val: MaybeUninit<c_int>,
 }
 
 unsafe impl Get<usize> for GetUsize {
-    unsafe fn blank() -> Self {
+    unsafe fn uninit() -> Self {
         GetUsize {
             len: mem::size_of::<c_int>() as socklen_t,
-            val: mem::zeroed(),
+            val: MaybeUninit::uninit(),
         }
     }
 
     fn ffi_ptr(&mut self) -> *mut c_void {
-        &mut self.val as *mut c_int as *mut c_void
+        self.val.as_mut_ptr() as *mut c_void
     }
 
     fn ffi_len(&mut self) -> *mut socklen_t {
         &mut self.len
     }
 
-    unsafe fn unwrap(self) -> usize {
+    unsafe fn assume_init(self) -> usize {
         assert_eq!(self.len as usize, mem::size_of::<c_int>(), "invalid getsockopt implementation");
-        self.val as usize
+        self.val.assume_init() as usize
     }
 }
 
@@ -579,27 +582,29 @@ unsafe impl<'a> Set<'a, usize> for SetUsize {
 /// Getter for a `OsString` value.
 struct GetOsString<T: AsMut<[u8]>> {
     len: socklen_t,
-    val: T,
+    val: MaybeUninit<T>,
 }
 
 unsafe impl<T: AsMut<[u8]>> Get<OsString> for GetOsString<T> {
-    unsafe fn blank() -> Self {
+    unsafe fn uninit() -> Self {
         GetOsString {
             len: mem::size_of::<T>() as socklen_t,
-            val: mem::zeroed(),
+            val: MaybeUninit::uninit(),
         }
     }
 
     fn ffi_ptr(&mut self) -> *mut c_void {
-        &mut self.val as *mut T as *mut c_void
+        self.val.as_mut_ptr() as *mut c_void
     }
 
     fn ffi_len(&mut self) -> *mut socklen_t {
         &mut self.len
     }
 
-    unsafe fn unwrap(mut self) -> OsString {
-        OsStr::from_bytes(self.val.as_mut()).to_owned()
+    unsafe fn assume_init(self) -> OsString {
+        let len = self.len as usize;
+        let mut v = self.val.assume_init();
+        OsStr::from_bytes(&v.as_mut()[0..len]).to_owned()
     }
 }
 
