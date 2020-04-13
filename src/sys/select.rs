@@ -32,9 +32,8 @@ impl FdSet {
         unsafe { libc::FD_CLR(fd, &mut self.0) };
     }
 
-    pub fn contains(&self, fd: RawFd) -> bool {
-        let mut copy = self.0;
-        unsafe { libc::FD_ISSET(fd, &mut copy) }
+    pub fn contains(&mut self, fd: RawFd) -> bool {
+        unsafe { libc::FD_ISSET(fd, &mut self.0) }
     }
 
     pub fn clear(&mut self) {
@@ -61,11 +60,13 @@ impl FdSet {
     /// ```
     ///
     /// [`select`]: fn.select.html
-    pub fn highest(&self) -> Option<RawFd> {
-        self.fds().next_back()
+    pub fn highest(&mut self) -> Option<RawFd> {
+        self.fds(None).next_back()
     }
 
-    /// Returns an iterator over the file descriptors in the set.
+    /// Returns an iterator over the file descriptors in the set. For
+    /// performance, it takes an optional higher bound: the iterator will not
+    /// return any elements of the set greater than the given file descriptor.
     ///
     /// # Examples
     ///
@@ -76,14 +77,14 @@ impl FdSet {
     /// let mut set = FdSet::new();
     /// set.insert(4);
     /// set.insert(9);
-    /// let fds: Vec<RawFd> = set.fds().collect();
+    /// let fds: Vec<RawFd> = set.fds(None).collect();
     /// assert_eq!(fds, vec![4, 9]);
     /// ```
     #[inline]
-    pub fn fds(&self) -> Fds {
+    pub fn fds(&mut self, highest: Option<RawFd>) -> Fds {
         Fds {
             set: self,
-            range: 0..FD_SETSIZE,
+            range: 0..highest.map(|h| h as usize + 1).unwrap_or(FD_SETSIZE),
         }
     }
 }
@@ -95,9 +96,9 @@ impl Default for FdSet {
 }
 
 /// Iterator over `FdSet`.
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct Fds<'a> {
-    set: &'a FdSet,
+    set: &'a mut FdSet,
     range: Range<usize>,
 }
 
