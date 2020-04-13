@@ -21,8 +21,6 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Changed `fallocate` return type from `c_int` to `()` (#[1201](https://github.com/nix-rust/nix/pull/1201))
 - Enabled `sys::ptrace::setregs` and `sys::ptrace::getregs` on x86_64-unknown-linux-musl target
   (#[1198](https://github.com/nix-rust/nix/pull/1198))
-- `select::FdSet::contains` and `select::FdSet::highest` now operate on `&FdSet`
-  instead of `&mut FdSet`.
 
 ### Fixed
 
