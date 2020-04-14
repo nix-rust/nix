@@ -16,6 +16,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   (#[1163](https://github.com/nix-rust/nix/pull/1163))
 - Derived `Ord`, `PartialOrd` for `unistd::Pid` (#[1189](https://github.com/nix-rust/nix/pull/1189))
 - Added `select::FdSet::fds` method to iterate over file descriptors in a set.
+  (#[#1207](https://github.com/nix-rust/nix/pull/1207))
 
 ### Changed
 - Changed `fallocate` return type from `c_int` to `()` (#[1201](https://github.com/nix-rust/nix/pull/1201))
