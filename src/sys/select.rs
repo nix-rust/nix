@@ -341,6 +341,20 @@ mod tests {
     }
 
     #[test]
+    fn fdset_fds() {
+        let mut set = FdSet::new();
+        assert_eq!(set.fds(None).collect::<Vec<_>>(), vec![]);
+        set.insert(0);
+        assert_eq!(set.fds(None).collect::<Vec<_>>(), vec![0]);
+        set.insert(90);
+        assert_eq!(set.fds(None).collect::<Vec<_>>(), vec![0, 90]);
+
+        // highest limit
+        assert_eq!(set.fds(Some(89)).collect::<Vec<_>>(), vec![0]);
+        assert_eq!(set.fds(Some(90)).collect::<Vec<_>>(), vec![0, 90]);
+    }
+
+    #[test]
     fn test_select() {
         let (r1, w1) = pipe().unwrap();
         write(w1, b"hi!").unwrap();
