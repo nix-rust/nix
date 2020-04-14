@@ -64,9 +64,11 @@ impl FdSet {
         self.fds(None).next_back()
     }
 
-    /// Returns an iterator over the file descriptors in the set. For
-    /// performance, it takes an optional higher bound: the iterator will not
-    /// return any elements of the set greater than the given file descriptor.
+    /// Returns an iterator over the file descriptors in the set.
+    /// 
+    /// For performance, it takes an optional higher bound: the iterator will
+    /// not return any elements of the set greater than the given file
+    /// descriptor.
     ///
     /// # Examples
     ///
