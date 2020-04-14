@@ -189,12 +189,22 @@ cfg_if! {
     if #[cfg(any(target_os = "android", target_os = "linux"))] {
         /// Unix credentials of the sending process.
         ///
-        /// This struct is used with the `SO_PEERCRED` ancillary message for UNIX sockets.
+        /// This struct is used with the `SO_PEERCRED` ancillary message
+        /// and the `SCM_CREDENTIALS` control message for UNIX sockets.
         #[repr(transparent)]
         #[derive(Clone, Copy, Debug, Eq, PartialEq)]
         pub struct UnixCredentials(libc::ucred);
 
         impl UnixCredentials {
+            /// Creates a new instance with the credentials of the current process
+            pub fn new() -> Self {
+                UnixCredentials(libc::ucred {
+                    pid: crate::unistd::getpid().as_raw(),
+                    uid: crate::unistd::getuid().as_raw(),
+                    gid: crate::unistd::getgid().as_raw(),
+                })
+            }
+
             /// Returns the process identifier
             pub fn pid(&self) -> libc::pid_t {
                 self.0.pid
@@ -220,6 +230,46 @@ cfg_if! {
         impl Into<libc::ucred> for UnixCredentials {
             fn into(self) -> libc::ucred {
                 self.0
+            }
+        }
+    } else if #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))] {
+        /// Unix credentials of the sending process.
+        ///
+        /// This struct is used with the `SCM_CREDS` ancillary message for UNIX sockets.
+        #[repr(transparent)]
+        #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+        pub struct UnixCredentials(libc::cmsgcred);
+
+        impl UnixCredentials {
+            /// Returns the process identifier
+            pub fn pid(&self) -> libc::pid_t {
+                self.0.cmcred_pid
+            }
+
+            /// Returns the real user identifier
+            pub fn uid(&self) -> libc::uid_t {
+                self.0.cmcred_uid
+            }
+
+            /// Returns the effective user identifier
+            pub fn euid(&self) -> libc::uid_t {
+                self.0.cmcred_euid
+            }
+
+            /// Returns the real group identifier
+            pub fn gid(&self) -> libc::gid_t {
+                self.0.cmcred_gid
+            }
+
+            /// Returns a list group identifiers (the first one being the effective GID)
+            pub fn groups(&self) -> &[libc::gid_t] {
+                unsafe { slice::from_raw_parts(self.0.cmcred_groups.as_ptr() as *const libc::gid_t, self.0.cmcred_ngroups as _) }
+            }
+        }
+
+        impl From<libc::cmsgcred> for UnixCredentials {
+            fn from(cred: libc::cmsgcred) -> Self {
+                UnixCredentials(cred)
             }
         }
     }
@@ -369,6 +419,10 @@ pub enum ControlMessageOwned {
     /// [`ControlMessage::ScmCredentials`][#enum.ControlMessage.html#variant.ScmCredentials]
     #[cfg(any(target_os = "android", target_os = "linux"))]
     ScmCredentials(UnixCredentials),
+    /// Received version of
+    /// [`ControlMessage::ScmCreds`][#enum.ControlMessage.html#variant.ScmCreds]
+    #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
+    ScmCreds(UnixCredentials),
     /// A message of type `SCM_TIMESTAMP`, containing the time the
     /// packet was received by the kernel.
     ///
@@ -510,6 +564,11 @@ impl ControlMessageOwned {
                 let cred: libc::ucred = ptr::read_unaligned(p as *const _);
                 ControlMessageOwned::ScmCredentials(cred.into())
             }
+            #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
+            (libc::SOL_SOCKET, libc::SCM_CREDS) => {
+                let cred: libc::cmsgcred = ptr::read_unaligned(p as *const _);
+                ControlMessageOwned::ScmCreds(cred.into())
+            }
             (libc::SOL_SOCKET, libc::SCM_TIMESTAMP) => {
                 let tv: libc::timeval = ptr::read_unaligned(p as *const _);
                 ControlMessageOwned::ScmTimestamp(TimeVal::from(tv))
@@ -603,6 +662,20 @@ pub enum ControlMessage<'a> {
     /// [`unix(7)`](http://man7.org/linux/man-pages/man7/unix.7.html) man page.
     #[cfg(any(target_os = "android", target_os = "linux"))]
     ScmCredentials(&'a UnixCredentials),
+    /// A message of type `SCM_CREDS`, containing the pid, uid, euid, gid and groups of
+    /// a process connected to the socket.
+    ///
+    /// This is similar to the socket options `LOCAL_CREDS` and `LOCAL_PEERCRED`, but
+    /// requires a process to explicitly send its credentials.
+    ///
+    /// Credentials are always overwritten by the kernel, so this variant does have
+    /// any data, unlike the receive-side
+    /// [`ControlMessageOwned::ScmCreds`][#enum.ControlMessageOwned.html#variant.ScmCreds].
+    ///
+    /// For further information, please refer to the
+    /// [`unix(4)`](https://www.freebsd.org/cgi/man.cgi?query=unix) man page.
+    #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
+    ScmCreds,
 
     /// Set IV for `AF_ALG` crypto API.
     ///
@@ -682,6 +755,13 @@ impl<'a> ControlMessage<'a> {
             ControlMessage::ScmCredentials(creds) => {
                 &creds.0 as *const libc::ucred as *const u8
             }
+            #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
+            ControlMessage::ScmCreds => {
+                // The kernel overwrites the data, we just zero it
+                // to make sure it's not uninitialized memory
+                unsafe { ptr::write_bytes(cmsg_data, 0, self.len()) };
+                return
+            }
             #[cfg(any(target_os = "android", target_os = "linux"))]
             ControlMessage::AlgSetIv(iv) => {
                 let af_alg_iv = libc::af_alg_iv {
@@ -738,6 +818,10 @@ impl<'a> ControlMessage<'a> {
             ControlMessage::ScmCredentials(creds) => {
                 mem::size_of_val(creds)
             }
+            #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
+            ControlMessage::ScmCreds => {
+                mem::size_of::<libc::cmsgcred>()
+            }
             #[cfg(any(target_os = "android", target_os = "linux"))]
             ControlMessage::AlgSetIv(iv) => {
                 mem::size_of::<libc::af_alg_iv>() + iv.len()
@@ -763,6 +847,8 @@ impl<'a> ControlMessage<'a> {
             ControlMessage::ScmRights(_) => libc::SOL_SOCKET,
             #[cfg(any(target_os = "android", target_os = "linux"))]
             ControlMessage::ScmCredentials(_) => libc::SOL_SOCKET,
+            #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
+            ControlMessage::ScmCreds => libc::SOL_SOCKET,
             #[cfg(any(target_os = "android", target_os = "linux"))]
             ControlMessage::AlgSetIv(_) | ControlMessage::AlgSetOp(_) |
                 ControlMessage::AlgSetAeadAssoclen(_) => libc::SOL_ALG,
@@ -777,6 +863,8 @@ impl<'a> ControlMessage<'a> {
             ControlMessage::ScmRights(_) => libc::SCM_RIGHTS,
             #[cfg(any(target_os = "android", target_os = "linux"))]
             ControlMessage::ScmCredentials(_) => libc::SCM_CREDENTIALS,
+            #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
+            ControlMessage::ScmCreds => libc::SCM_CREDS,
             #[cfg(any(target_os = "android", target_os = "linux"))]
             ControlMessage::AlgSetIv(_) => {
                 libc::ALG_SET_IV

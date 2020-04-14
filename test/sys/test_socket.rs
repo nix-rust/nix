@@ -752,29 +752,36 @@ pub fn test_sendmsg_empty_cmsgs() {
     }
 }
 
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(any(
+    target_os = "android",
+    target_os = "linux",
+    target_os = "freebsd",
+    target_os = "dragonfly",
+))]
 #[test]
 fn test_scm_credentials() {
-    use libc;
     use nix::sys::uio::IoVec;
     use nix::unistd::{close, getpid, getuid, getgid};
     use nix::sys::socket::{socketpair, sendmsg, recvmsg, setsockopt,
                            AddressFamily, SockType, SockFlag,
-                           ControlMessage, ControlMessageOwned, MsgFlags};
+                           ControlMessage, ControlMessageOwned, MsgFlags,
+                           UnixCredentials};
+    #[cfg(any(target_os = "android", target_os = "linux"))]
     use nix::sys::socket::sockopt::PassCred;
 
     let (send, recv) = socketpair(AddressFamily::Unix, SockType::Stream, None, SockFlag::empty())
         .unwrap();
+    #[cfg(any(target_os = "android", target_os = "linux"))]
     setsockopt(recv, PassCred, &true).unwrap();
 
     {
         let iov = [IoVec::from_slice(b"hello")];
-        let cred = libc::ucred {
-            pid: getpid().as_raw(),
-            uid: getuid().as_raw(),
-            gid: getgid().as_raw(),
-        }.into();
+        #[cfg(any(target_os = "android", target_os = "linux"))]
+        let cred = UnixCredentials::new();
+        #[cfg(any(target_os = "android", target_os = "linux"))]
         let cmsg = ControlMessage::ScmCredentials(&cred);
+        #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
+        let cmsg = ControlMessage::ScmCreds;
         assert_eq!(sendmsg(send, &iov, &[cmsg], MsgFlags::empty(), None).unwrap(), 5);
         close(send).unwrap();
     }
@@ -782,20 +789,23 @@ fn test_scm_credentials() {
     {
         let mut buf = [0u8; 5];
         let iov = [IoVec::from_mut_slice(&mut buf[..])];
-        let mut cmsgspace = cmsg_space!(libc::ucred);
+        let mut cmsgspace = cmsg_space!(UnixCredentials);
         let msg = recvmsg(recv, &iov, Some(&mut cmsgspace), MsgFlags::empty()).unwrap();
         let mut received_cred = None;
 
         for cmsg in msg.cmsgs() {
-            if let ControlMessageOwned::ScmCredentials(cred) = cmsg {
-                assert!(received_cred.is_none());
-                assert_eq!(cred.pid(), getpid().as_raw());
-                assert_eq!(cred.uid(), getuid().as_raw());
-                assert_eq!(cred.gid(), getgid().as_raw());
-                received_cred = Some(cred);
-            } else {
-                panic!("unexpected cmsg");
-            }
+            let cred = match cmsg {
+                #[cfg(any(target_os = "android", target_os = "linux"))]
+                ControlMessageOwned::ScmCredentials(cred) => cred,
+                #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
+                ControlMessageOwned::ScmCreds(cred) => cred,
+                other => panic!("unexpected cmsg {:?}", other),
+            };
+            assert!(received_cred.is_none());
+            assert_eq!(cred.pid(), getpid().as_raw());
+            assert_eq!(cred.uid(), getuid().as_raw());
+            assert_eq!(cred.gid(), getgid().as_raw());
+            received_cred = Some(cred);
         }
         received_cred.expect("no creds received");
         assert_eq!(msg.bytes, 5);
