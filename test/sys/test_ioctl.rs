@@ -182,7 +182,7 @@ mod linux_ioctls {
     #[test]
     fn test_ioctl_read_bad() {
         let file = tempfile().unwrap();
-        let mut termios = unsafe { mem::uninitialized() };
+        let mut termios = unsafe { mem::zeroed() };
         let res = unsafe { tcgets(file.as_raw_fd(), &mut termios) };
         assert_eq!(res, Err(Sys(ENOTTY)));
     }
@@ -199,7 +199,7 @@ mod linux_ioctls {
     #[test]
     fn test_ioctl_write_ptr_bad() {
         let file = tempfile().unwrap();
-        let termios: termios = unsafe { mem::uninitialized() };
+        let termios: termios = unsafe { mem::zeroed() };
         let res = unsafe { tcsets(file.as_raw_fd(), &termios) };
         assert_eq!(res, Err(Sys(ENOTTY)));
     }
@@ -250,7 +250,7 @@ mod linux_ioctls {
     #[test]
     fn test_ioctl_read() {
         let file = tempfile().unwrap();
-        let mut data: v4l2_audio = unsafe { mem::uninitialized() };
+        let mut data: v4l2_audio = unsafe { mem::zeroed() };
         let res = unsafe { g_audio(file.as_raw_fd(), &mut data) };
         assert!(res == Err(Sys(ENOTTY)) || res == Err(Sys(ENOSYS)));
     }
@@ -260,7 +260,7 @@ mod linux_ioctls {
     #[test]
     fn test_ioctl_readwrite() {
         let file = tempfile().unwrap();
-        let mut data: v4l2_audio = unsafe { mem::uninitialized() };
+        let mut data: v4l2_audio = unsafe { mem::zeroed() };
         let res = unsafe { enum_audio(file.as_raw_fd(), &mut data) };
         assert!(res == Err(Sys(ENOTTY)) || res == Err(Sys(ENOSYS)));
     }

@@ -1,6 +1,6 @@
 # Gate on Travis CI and Buildbot
 status = ["continuous-integration/travis-ci/push",
-	  "FreeBSD 11.2"]
+	  "FreeBSD 11.3"]
 
 # Set bors's timeout to 4 hours
 #
