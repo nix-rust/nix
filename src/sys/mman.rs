@@ -77,6 +77,43 @@ libc_bitflags!{
         /// Allocate the mapping using "huge pages."
         #[cfg(any(target_os = "android", target_os = "linux"))]
         MAP_HUGETLB;
+        /// Make use of 64KB huge page (must be supported by the system)
+        #[cfg(target_os = "linux")]
+        MAP_HUGE_64KB;
+        /// Make use of 512KB huge page (must be supported by the system)
+        #[cfg(target_os = "linux")]
+        MAP_HUGE_512KB;
+        /// Make use of 1MB huge page (must be supported by the system)
+        #[cfg(target_os = "linux")]
+        MAP_HUGE_1MB;
+        /// Make use of 2MB huge page (must be supported by the system)
+        #[cfg(target_os = "linux")]
+        MAP_HUGE_2MB;
+        /// Make use of 8MB huge page (must be supported by the system)
+        #[cfg(target_os = "linux")]
+        MAP_HUGE_8MB;
+        /// Make use of 16MB huge page (must be supported by the system)
+        #[cfg(target_os = "linux")]
+        MAP_HUGE_16MB;
+        /// Make use of 32MB huge page (must be supported by the system)
+        #[cfg(target_os = "linux")]
+        MAP_HUGE_32MB;
+        /// Make use of 256MB huge page (must be supported by the system)
+        #[cfg(target_os = "linux")]
+        MAP_HUGE_256MB;
+        /// Make use of 512MB huge page (must be supported by the system)
+        #[cfg(target_os = "linux")]
+        MAP_HUGE_512MB;
+        /// Make use of 1GB huge page (must be supported by the system)
+        #[cfg(target_os = "linux")]
+        MAP_HUGE_1GB;
+        /// Make use of 2GB huge page (must be supported by the system)
+        #[cfg(target_os = "linux")]
+        MAP_HUGE_2GB;
+        /// Make use of 16GB huge page (must be supported by the system)
+        #[cfg(target_os = "linux")]
+        MAP_HUGE_16GB;
+
         /// Lock the mapped region into memory as with `mlock(2)`.
         #[cfg(target_os = "netbsd")]
         MAP_WIRED;

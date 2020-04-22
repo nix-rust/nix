@@ -5,6 +5,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - ReleaseDate
 ### Added
+- Added support on linux systems for `MAP_HUGE_`_`SIZE`_ family of flags.
+  (#[1211](https://github.com/nix-rust/nix/pull/1211))
 - Added support for `F_OFD_*` `fcntl` commands on Linux and Android.
   (#[1195](https://github.com/nix-rust/nix/pull/1195))
 - Added `env::clearenv()`: calls `libc::clearenv` on platforms
@@ -125,7 +127,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
   // old code `readlink(&path, &mut buf)` can be replaced with the following
   let _: OsString = readlink(&path);
-  
+
   // old code `readlinkat(dirfd, &path, &mut buf)` can be replaced with the following
   let _: OsString = readlinkat(dirfd, &path);
   ```
