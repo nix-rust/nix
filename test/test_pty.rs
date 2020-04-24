@@ -1,4 +1,5 @@
-use std::io::Write;
+use std::fs::File;
+use std::io::{Read, Write};
 use std::path::Path;
 use std::os::unix::prelude::*;
 use tempfile::tempfile;
@@ -95,29 +96,68 @@ fn test_ptsname_unique() {
     assert!(slave_name1 != slave_name2);
 }
 
-/// Test opening a master/slave PTTY pair
-///
-/// This is a single larger test because much of these functions aren't useful by themselves. So for
-/// this test we perform the basic act of getting a file handle for a connect master/slave PTTY
-/// pair.
-#[test]
-fn test_open_ptty_pair() {
+/// Common setup for testing PTTY pairs
+fn open_ptty_pair() -> (PtyMaster, File) {
     let _m = ::PTSNAME_MTX.lock().expect("Mutex got poisoned by another test");
 
     // Open a new PTTY master
-    let master_fd = posix_openpt(OFlag::O_RDWR).expect("posix_openpt failed");
-    assert!(master_fd.as_raw_fd() > 0);
+    let master = posix_openpt(OFlag::O_RDWR).expect("posix_openpt failed");
 
     // Allow a slave to be generated for it
-    grantpt(&master_fd).expect("grantpt failed");
-    unlockpt(&master_fd).expect("unlockpt failed");
+    grantpt(&master).expect("grantpt failed");
+    unlockpt(&master).expect("unlockpt failed");
 
     // Get the name of the slave
-    let slave_name = unsafe { ptsname(&master_fd) }.expect("ptsname failed");
+    let slave_name = unsafe { ptsname(&master) }.expect("ptsname failed");
 
     // Open the slave device
     let slave_fd = open(Path::new(&slave_name), OFlag::O_RDWR, stat::Mode::empty()).unwrap();
-    assert!(slave_fd > 0);
+    let slave = unsafe { File::from_raw_fd(slave_fd) };
+
+    (master, slave)
+}
+
+/// Test opening a master/slave PTTY pair
+///
+/// This uses a common `open_ptty_pair` because much of these functions aren't useful by
+/// themselves. So for this test we perform the basic act of getting a file handle for a
+/// master/slave PTTY pair, then just sanity-check the raw values.
+#[test]
+fn test_open_ptty_pair() {
+    let (master, slave) = open_ptty_pair();
+    assert!(master.as_raw_fd() > 0);
+    assert!(slave.as_raw_fd() > 0);
+}
+
+/// Put the terminal in raw mode.
+fn make_raw(fd: RawFd) {
+    let mut termios = tcgetattr(fd).unwrap();
+    cfmakeraw(&mut termios);
+    tcsetattr(fd, SetArg::TCSANOW, &termios).unwrap();
+}
+
+/// Test `io::Read` on the PTTY master
+#[test]
+fn test_read_ptty_pair() {
+    let (mut master, mut slave) = open_ptty_pair();
+    make_raw(slave.as_raw_fd());
+
+    let mut buf = [0u8; 5];
+    slave.write_all(b"hello").unwrap();
+    master.read_exact(&mut buf).unwrap();
+    assert_eq!(&buf, b"hello");
+}
+
+/// Test `io::Write` on the PTTY master
+#[test]
+fn test_write_ptty_pair() {
+    let (mut master, mut slave) = open_ptty_pair();
+    make_raw(slave.as_raw_fd());
+
+    let mut buf = [0u8; 5];
+    master.write_all(b"adios").unwrap();
+    slave.read_exact(&mut buf).unwrap();
+    assert_eq!(&buf, b"adios");
 }
 
 #[test]
