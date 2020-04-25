@@ -91,6 +91,7 @@ impl Statfs {
     /// Magic code defining system type
     #[cfg(not(any(
         target_os = "openbsd",
+        target_os = "dragonfly",
         target_os = "ios",
         target_os = "macos"
     )))]
