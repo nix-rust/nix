@@ -169,8 +169,10 @@ mod recvfrom {
 
     const MSG: &'static [u8] = b"Hello, World!";
 
-    fn sendrecv<F>(rsock: RawFd, ssock: RawFd, f: F) -> Option<SockAddr>
-        where F: Fn(RawFd, &[u8], MsgFlags) -> Result<usize> + Send + 'static
+    fn sendrecv<Fs, Fr>(rsock: RawFd, ssock: RawFd, f_send: Fs, mut f_recv: Fr) -> Option<SockAddr>
+        where
+            Fs: Fn(RawFd, &[u8], MsgFlags) -> Result<usize> + Send + 'static,
+            Fr: FnMut(usize, Option<SockAddr>),
     {
         let mut buf: [u8; 13] = [0u8; 13];
         let mut l = 0;
@@ -179,12 +181,13 @@ mod recvfrom {
         let send_thread = thread::spawn(move || {
             let mut l = 0;
             while l < std::mem::size_of_val(MSG) {
-                l += f(ssock, &MSG[l..], MsgFlags::empty()).unwrap();
+                l += f_send(ssock, &MSG[l..], MsgFlags::empty()).unwrap();
             }
         });
 
         while l < std::mem::size_of_val(MSG) {
             let (len, from_) = recvfrom(rsock, &mut buf[l..]).unwrap();
+            f_recv(len, from_);
             from = from_;
             l += len;
         }
@@ -200,7 +203,7 @@ mod recvfrom {
         // Ignore from for stream sockets
         let _ = sendrecv(fd1, fd2, |s, m, flags| {
             send(s, m, flags)
-        });
+        }, |_, _| {});
     }
 
     #[test]
@@ -222,9 +225,84 @@ mod recvfrom {
         ).expect("send socket failed");
         let from = sendrecv(rsock, ssock, move |s, m, flags| {
             sendto(s, m, &sock_addr, flags)
-        });
+        },|_, _| {});
         // UDP sockets should set the from address
         assert_eq!(AddressFamily::Inet, from.unwrap().family());
+    }
+
+    #[cfg(target_os = "linux")]
+    mod udp_offload {
+        use super::*;
+        use nix::sys::uio::IoVec;
+        use nix::sys::socket::sockopt::{UdpGroSegment, UdpGsoSegment};
+
+        #[test]
+        pub fn gso() {
+            require_kernel_version!(udp_offload::gso, ">= 4.18");
+
+            // In this test, we send the data and provide a GSO segment size.
+            // Since we are sending the buffer of size 13, six UDP packets
+            // with size 2 and two UDP packet with size 1 will be sent.
+            let segment_size: u16 = 2;
+
+            let std_sa = SocketAddr::from_str("127.0.0.1:6791").unwrap();
+            let inet_addr = InetAddr::from_std(&std_sa);
+            let sock_addr = SockAddr::new_inet(inet_addr);
+            let rsock = socket(AddressFamily::Inet,
+                               SockType::Datagram,
+                               SockFlag::empty(),
+                               None
+            ).unwrap();
+
+            setsockopt(rsock, UdpGsoSegment, &(segment_size as _))
+                .expect("setsockopt UDP_SEGMENT failed");
+
+            bind(rsock, &sock_addr).unwrap();
+            let ssock = socket(
+                AddressFamily::Inet,
+                SockType::Datagram,
+                SockFlag::empty(),
+                None,
+            ).expect("send socket failed");
+
+            let mut num_packets_received: i32 = 0;
+
+            sendrecv(rsock, ssock, move |s, m, flags| {
+                let iov = [IoVec::from_slice(m)];
+                let cmsg = ControlMessage::UdpGsoSegments(&segment_size);
+                sendmsg(s, &iov, &[cmsg], flags, Some(&sock_addr))
+            }, {
+                let num_packets_received_ref = &mut num_packets_received;
+
+                move |len, _| {
+                    // check that we receive UDP packets with payload size
+                    // less or equal to segment size
+                    assert!(len <= segment_size as usize);
+                    *num_packets_received_ref += 1;
+                }
+            });
+
+            // Buffer size is 13, we will receive six packets of size 2,
+            // and one packet of size 1.
+            assert_eq!(7, num_packets_received);
+        }
+
+        #[test]
+        pub fn gro() {
+            require_kernel_version!(udp_offload::gro, ">= 5.3");
+
+            // It's hard to guarantee receiving GRO packets. Just checking
+            // that `setsockopt` doesn't fail with error
+
+            let rsock = socket(AddressFamily::Inet,
+                               SockType::Datagram,
+                               SockFlag::empty(),
+                               None
+            ).unwrap();
+
+            setsockopt(rsock, UdpGroSegment, &true)
+                .expect("setsockopt UDP_GRO failed");
+        }
     }
 }
 

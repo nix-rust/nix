@@ -463,6 +463,18 @@ pub enum ControlMessageOwned {
         target_os = "openbsd",
     ))]
     Ipv4RecvDstAddr(libc::in_addr),
+
+    /// UDP Generic Receive Offload (GRO) allows receiving multiple UDP
+    /// packets from a single sender.
+    /// Fixed-size payloads are following one by one in a receive buffer.
+    /// This Control Message indicates the size of all smaller packets,
+    /// except, maybe, the last one.
+    ///
+    /// `UdpGroSegment` socket option should be enabled on a socket
+    /// to allow receiving GRO packets.
+    #[cfg(target_os = "linux")]
+    UdpGroSegments(u16),
+
     /// Catch-all variant for unimplemented cmsg types.
     #[doc(hidden)]
     Unknown(UnknownCmsg),
@@ -546,6 +558,11 @@ impl ControlMessageOwned {
                 let dl = ptr::read_unaligned(p as *const libc::in_addr);
                 ControlMessageOwned::Ipv4RecvDstAddr(dl)
             },
+            #[cfg(target_os = "linux")]
+            (libc::SOL_UDP, libc::UDP_GRO) => {
+                let gso_size: u16 = ptr::read_unaligned(p as *const _);
+                ControlMessageOwned::UdpGroSegments(gso_size)
+            },
             (_, _) => {
                 let sl = slice::from_raw_parts(p, len);
                 let ucmsg = UnknownCmsg(*header, Vec::<u8>::from(&sl[..]));
@@ -617,6 +634,16 @@ pub enum ControlMessage<'a> {
     ))]
     AlgSetAeadAssoclen(&'a u32),
 
+    /// UDP GSO makes it possible for applications to generate network packets
+    /// for a virtual MTU much greater than the real one.
+    /// The length of the send data no longer matches the expected length on
+    /// the wire.
+    /// The size of the datagram payload as it should appear on the wire may be
+    /// passed through this control message.
+    /// Send buffer should consist of multiple fixed-size wire payloads
+    /// following one by one, and the last, possibly smaller one.
+    #[cfg(target_os = "linux")]
+    UdpGsoSegments(&'a u16),
 }
 
 // An opaque structure used to prevent cmsghdr from being a public type
@@ -687,6 +714,10 @@ impl<'a> ControlMessage<'a> {
             ControlMessage::AlgSetAeadAssoclen(len) => {
                 len as *const _ as *const u8
             },
+            #[cfg(target_os = "linux")]
+            ControlMessage::UdpGsoSegments(gso_size) => {
+                gso_size as *const _ as *const u8
+            },
         };
         unsafe {
             ptr::copy_nonoverlapping(
@@ -719,6 +750,10 @@ impl<'a> ControlMessage<'a> {
             ControlMessage::AlgSetAeadAssoclen(len) => {
                 mem::size_of_val(len)
             },
+            #[cfg(target_os = "linux")]
+            ControlMessage::UdpGsoSegments(gso_size) => {
+                mem::size_of_val(gso_size)
+            },
         }
     }
 
@@ -730,7 +765,9 @@ impl<'a> ControlMessage<'a> {
             ControlMessage::ScmCredentials(_) => libc::SOL_SOCKET,
             #[cfg(any(target_os = "android", target_os = "linux"))]
             ControlMessage::AlgSetIv(_) | ControlMessage::AlgSetOp(_) |
-                ControlMessage::AlgSetAeadAssoclen(_) => libc::SOL_ALG ,
+                ControlMessage::AlgSetAeadAssoclen(_) => libc::SOL_ALG,
+            #[cfg(target_os = "linux")]
+            ControlMessage::UdpGsoSegments(_) => libc::SOL_UDP,
         }
     }
 
@@ -751,6 +788,10 @@ impl<'a> ControlMessage<'a> {
             #[cfg(any(target_os = "android", target_os = "linux"))]
             ControlMessage::AlgSetAeadAssoclen(_) => {
                 libc::ALG_SET_AEAD_ASSOCLEN
+            },
+            #[cfg(target_os = "linux")]
+            ControlMessage::UdpGsoSegments(_) => {
+                libc::UDP_SEGMENT
             },
         }
     }
