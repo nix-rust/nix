@@ -48,7 +48,6 @@ libc_enum!{
                                                target_arch = "mips",
                                                target_arch = "mips64",
                                                target_arch = "x86_64",
-                                               target_arch = "riscv64",
                                                target_pointer_width = "32"))))]
         PTRACE_GETREGS,
         #[cfg(any(all(target_os = "android", target_pointer_width = "32"),
@@ -56,7 +55,6 @@ libc_enum!{
                                                target_arch = "mips",
                                                target_arch = "mips64",
                                                target_arch = "x86_64",
-                                               target_arch = "riscv64",
                                                target_pointer_width = "32"))))]
         PTRACE_SETREGS,
         #[cfg(any(all(target_os = "android", target_pointer_width = "32"),
@@ -64,7 +62,6 @@ libc_enum!{
                                                target_arch = "mips",
                                                target_arch = "mips64",
                                                target_arch = "x86_64",
-                                               target_arch = "riscv64",
                                                target_pointer_width = "32"))))]
         PTRACE_GETFPREGS,
         #[cfg(any(all(target_os = "android", target_pointer_width = "32"),
@@ -72,7 +69,6 @@ libc_enum!{
                                                target_arch = "mips",
                                                target_arch = "mips64",
                                                target_arch = "x86_64",
-                                               target_arch = "riscv64",
                                                target_pointer_width = "32"))))]
         PTRACE_SETFPREGS,
         PTRACE_ATTACH,
@@ -81,15 +77,13 @@ libc_enum!{
                                            target_arch = "mips",
                                            target_arch = "mips64",
                                            target_arch = "x86",
-                                           target_arch = "x86_64",
-                                           target_arch = "riscv64")))]
+                                           target_arch = "x86_64")))]
         PTRACE_GETFPXREGS,
         #[cfg(all(target_os = "linux", any(target_env = "musl",
                                            target_arch = "mips",
                                            target_arch = "mips64",
                                            target_arch = "x86",
-                                           target_arch = "x86_64",
-                                           target_arch = "riscv64")))]
+                                           target_arch = "x86_64")))]
         PTRACE_SETFPXREGS,
         PTRACE_SYSCALL,
         PTRACE_SETOPTIONS,
