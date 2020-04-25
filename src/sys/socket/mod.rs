@@ -982,16 +982,18 @@ pub fn recvmmsg<'a, I>(
 
     let mut output: Vec<libc::mmsghdr> = Vec::with_capacity(num_messages);
 
-    // Addresses should be pre-allocated and never change the address during building
-    // of the input data for `recvmmsg`
-    let mut addresses: Vec<sockaddr_storage> = vec![unsafe { mem::zeroed() }; num_messages];
+    // Addresses should be pre-allocated.  pack_mhdr_to_receive will store them
+    // as raw pointers, so we may not move them.  Turn the vec into a boxed
+    // slice so we won't inadvertently reallocate the vec.
+    let mut addresses = vec![mem::MaybeUninit::uninit(); num_messages]
+        .into_boxed_slice();
 
     let results: Vec<_> = iter.enumerate().map(|(i, d)| {
         let (msg_controllen, mhdr) = unsafe {
             pack_mhdr_to_receive(
                 d.iov.as_ref(),
                 &mut d.cmsg_buffer,
-                &mut addresses[i],
+                addresses[i].as_mut_ptr(),
             )
         };
 
@@ -1017,7 +1019,7 @@ pub fn recvmmsg<'a, I>(
 
     Ok(output
         .into_iter()
-        .zip(addresses.into_iter())
+        .zip(addresses.iter().map(|addr| unsafe{addr.assume_init()}))
         .zip(results.into_iter())
         .map(|((mmsghdr, address), (msg_controllen, cmsg_buffer))| {
             unsafe {
