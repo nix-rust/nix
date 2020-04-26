@@ -23,6 +23,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   ([#1207](https://github.com/nix-rust/nix/pull/1207))
 - Added support for UDP generic segmentation offload (GSO) and generic 
   receive offload (GRO) ([#1209](https://github.com/nix-rust/nix/pull/1209))
+- Added support for `sendmmsg` and `recvmmsg` calls
+  (#[1208](https://github.com/nix-rust/nix/pull/1208))
 
 ### Changed
 - Changed `fallocate` return type from `c_int` to `()` (#[1201](https://github.com/nix-rust/nix/pull/1201))
