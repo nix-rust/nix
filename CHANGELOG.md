@@ -33,6 +33,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   (#[1233](https://github.com/nix-rust/nix/pull/1233))
 - Added `EventFilter` bitflags for `EV_DISPATCH` and `EV_RECEIPT` on OpenBSD.
   (#[1252](https://github.com/nix-rust/nix/pull/1252))
+- Added support for `Ipv4PacketInfo` and `Ipv6PacketInfo` to `ControlMessage`.
+  (#[1222](https://github.com/nix-rust/nix/pull/1222))
 
 ### Changed
 - Changed `fallocate` return type from `c_int` to `()` (#[1201](https://github.com/nix-rust/nix/pull/1201))
