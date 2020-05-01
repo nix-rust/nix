@@ -714,7 +714,12 @@ impl SockAddr {
     ///
     /// Supports only the following address families: Unix, Inet (v4 & v6), Netlink and System.
     /// Returns None for unsupported families.
-    pub unsafe fn from_libc_sockaddr(addr: *const libc::sockaddr) -> Option<SockAddr> {
+    ///
+    /// # Safety
+    ///
+    /// unsafe because it takes a raw pointer as argument.  The caller must
+    /// ensure that the pointer is valid.
+    pub(crate) unsafe fn from_libc_sockaddr(addr: *const libc::sockaddr) -> Option<SockAddr> {
         if addr.is_null() {
             None
         } else {
