@@ -102,7 +102,7 @@ cfg_if! {
 }
 
 cfg_if! {
-    if #[cfg(any(target_os = "android", target_os = "linux"))] {
+    if #[cfg(target_os = "linux")] {
         macro_rules! require_kernel_version {
             ($name:expr, $version_requirement:expr) => {
                 use ::std::io::Write;
@@ -129,10 +129,6 @@ cfg_if! {
                     return;
                 }
             }
-        }
-    } else {
-        macro_rules! require_kernel_version {
-            ($name:expr) => {}
         }
     }
 }
