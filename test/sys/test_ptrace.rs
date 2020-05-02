@@ -128,6 +128,8 @@ fn test_ptrace_syscall() {
     use nix::unistd::getpid;
     use nix::unistd::ForkResult::*;
 
+    require_capability!(CAP_SYS_PTRACE);
+
     let _m = crate::FORK_MTX.lock().expect("Mutex got poisoned by another test");
 
     match fork().expect("Error: Fork Failed") {
