@@ -228,11 +228,19 @@ mod linux_android {
                   target_arch = "mips64",
                   target_arch = "mips64el",
                   target_arch = "powerpc64",
-                  target_arch = "powerpc64le")))]
+                  target_arch = "powerpc64le",
+                  target_env = "musl")))]
     fn test_ofd_write_lock() {
         let tmp = NamedTempFile::new().unwrap();
 
         let fd = tmp.as_raw_fd();
+        let statfs = nix::sys::statfs::fstatfs(&tmp).unwrap();
+        if statfs.filesystem_type() == nix::sys::statfs::OVERLAYFS_SUPER_MAGIC {
+            // OverlayFS is a union file system.  It returns one inode value in
+            // stat(2), but a different one shows up in /proc/locks.  So we must
+            // skip the test.
+            skip!("/proc/locks does not work on overlayfs");
+        }
         let inode = fstat(fd).expect("fstat failed").st_ino as usize;
 
         let mut flock = libc::flock {
@@ -262,11 +270,19 @@ mod linux_android {
                   target_arch = "mips64",
                   target_arch = "mips64el",
                   target_arch = "powerpc64",
-                  target_arch = "powerpc64le")))]
+                  target_arch = "powerpc64le",
+                  target_env = "musl")))]
     fn test_ofd_read_lock() {
         let tmp = NamedTempFile::new().unwrap();
 
         let fd = tmp.as_raw_fd();
+        let statfs = nix::sys::statfs::fstatfs(&tmp).unwrap();
+        if statfs.filesystem_type() == nix::sys::statfs::OVERLAYFS_SUPER_MAGIC {
+            // OverlayFS is a union file system.  It returns one inode value in
+            // stat(2), but a different one shows up in /proc/locks.  So we must
+            // skip the test.
+            skip!("/proc/locks does not work on overlayfs");
+        }
         let inode = fstat(fd).expect("fstat failed").st_ino as usize;
 
         let mut flock = libc::flock {
