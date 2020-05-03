@@ -180,33 +180,80 @@ pub fn renameat<P1: ?Sized + NixPath, P2: ?Sized + NixPath>(old_dirfd: Option<Ra
     Errno::result(res).map(drop)
 }
 
-fn wrap_readlink_result(v: &mut Vec<u8>, res: ssize_t) -> Result<OsString> {
-    match Errno::result(res) {
-        Err(err) => Err(err),
-        Ok(len) => {
-            unsafe { v.set_len(len as usize) }
-            Ok(OsString::from_vec(v.to_vec()))
+fn wrap_readlink_result(mut v: Vec<u8>, len: ssize_t) -> Result<OsString> {
+    unsafe { v.set_len(len as usize) }
+    v.shrink_to_fit();
+    Ok(OsString::from_vec(v.to_vec()))
+}
+
+fn readlink_maybe_at<P: ?Sized + NixPath>(dirfd: Option<RawFd>, path: &P,
+                                          v: &mut Vec<u8>)
+                                          -> Result<libc::ssize_t> {
+    path.with_nix_path(|cstr| {
+        unsafe {
+            match dirfd  {
+                Some(dirfd) => libc::readlinkat(dirfd, cstr.as_ptr(),
+                                                v.as_mut_ptr() as *mut c_char,
+                                                v.capacity() as size_t),
+                None => libc::readlink(cstr.as_ptr(),
+                                       v.as_mut_ptr() as *mut c_char,
+                                       v.capacity() as size_t),
+            }
+        }
+    })
+}
+
+fn inner_readlink<P: ?Sized + NixPath>(dirfd: Option<RawFd>, path: &P)
+                                       -> Result<OsString> {
+    let mut v = Vec::with_capacity(libc::PATH_MAX as usize);
+    // simple case: result is strictly less than `PATH_MAX`
+    let res = readlink_maybe_at(dirfd, path, &mut v)?;
+    let len = Errno::result(res)?;
+    debug_assert!(len >= 0);
+    if (len as usize) < v.capacity() {
+        return wrap_readlink_result(v, res);
+    }
+    // Uh oh, the result is too long...
+    // Let's try to ask lstat how many bytes to allocate.
+    let reported_size = super::sys::stat::lstat(path)
+        .and_then(|x| Ok(x.st_size)).unwrap_or(0);
+    let mut try_size = if reported_size > 0 {
+        // Note: even if `lstat`'s apparently valid answer turns out to be
+        // wrong, we will still read the full symlink no matter what.
+        reported_size as usize + 1
+    } else {
+        // If lstat doesn't cooperate, or reports an error, be a little less
+        // precise.
+        (libc::PATH_MAX as usize).max(128) << 1
+    };
+    loop {
+        v.reserve_exact(try_size);
+        let res = readlink_maybe_at(dirfd, path, &mut v)?;
+        let len = Errno::result(res)?;
+        debug_assert!(len >= 0);
+        if (len as usize) < v.capacity() {
+            break wrap_readlink_result(v, res);
+        }
+        else {
+            // Ugh! Still not big enough!
+            match try_size.checked_shl(1) {
+                Some(next_size) => try_size = next_size,
+                // It's absurd that this would happen, but handle it sanely
+                // anyway.
+                None => break Err(super::Error::Sys(Errno::ENAMETOOLONG))
+            }
         }
     }
 }
 
 pub fn readlink<P: ?Sized + NixPath>(path: &P) -> Result<OsString> {
-    let mut v = Vec::with_capacity(libc::PATH_MAX as usize);
-    let res = path.with_nix_path(|cstr| {
-        unsafe { libc::readlink(cstr.as_ptr(), v.as_mut_ptr() as *mut c_char, v.capacity() as size_t) }
-    })?;
-
-    wrap_readlink_result(&mut v, res)
+    inner_readlink(None, path)
 }
 
 
-pub fn readlinkat<P: ?Sized + NixPath>(dirfd: RawFd, path: &P) -> Result<OsString> {
-    let mut v = Vec::with_capacity(libc::PATH_MAX as usize);
-    let res = path.with_nix_path(|cstr| {
-        unsafe { libc::readlinkat(dirfd, cstr.as_ptr(), v.as_mut_ptr() as *mut c_char, v.capacity() as size_t) }
-    })?;
-
-    wrap_readlink_result(&mut v, res)
+pub fn readlinkat<P: ?Sized + NixPath>(dirfd: RawFd, path: &P)
+                                       -> Result<OsString> {
+    inner_readlink(Some(dirfd), path)
 }
 
 /// Computes the raw fd consumed by a function of the form `*at`.
