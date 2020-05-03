@@ -762,12 +762,12 @@ pub fn test_sendmsg_empty_cmsgs() {
 fn test_scm_credentials() {
     use nix::sys::uio::IoVec;
     use nix::unistd::{close, getpid, getuid, getgid};
-    use nix::sys::socket::{socketpair, sendmsg, recvmsg, setsockopt,
+    use nix::sys::socket::{socketpair, sendmsg, recvmsg,
                            AddressFamily, SockType, SockFlag,
                            ControlMessage, ControlMessageOwned, MsgFlags,
                            UnixCredentials};
     #[cfg(any(target_os = "android", target_os = "linux"))]
-    use nix::sys::socket::sockopt::PassCred;
+    use nix::sys::socket::{setsockopt, sockopt::PassCred};
 
     let (send, recv) = socketpair(AddressFamily::Unix, SockType::Stream, None, SockFlag::empty())
         .unwrap();
