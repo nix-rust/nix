@@ -1,25 +1,16 @@
-#[cfg(not(target_os = "redox"))]
 use {Error, NixPath, Result};
-#[cfg(not(target_os = "redox"))]
 use errno::Errno;
-#[cfg(not(target_os = "redox"))]
 use fcntl::{self, OFlag};
 use libc;
-#[cfg(not(target_os = "redox"))]
 use std::os::unix::io::{AsRawFd, IntoRawFd, RawFd};
-#[cfg(not(target_os = "redox"))]
 use std::ptr;
 use std::ffi;
-#[cfg(not(target_os = "redox"))]
 use sys;
 
 #[cfg(target_os = "linux")]
 use libc::{dirent64 as dirent, readdir64_r as readdir_r};
 
-#[cfg(target_os = "redox")]
-use libc::dirent;
-
-#[cfg(not(any(target_os = "linux", target_os = "redox")))]
+#[cfg(not(target_os = "linux"))]
 use libc::{dirent, readdir_r};
 
 /// An open directory.
@@ -36,12 +27,10 @@ use libc::{dirent, readdir_r};
 ///    * returns entries' names as a `CStr` (no allocation or conversion beyond whatever libc
 ///      does).
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-#[cfg(not(target_os = "redox"))]
 pub struct Dir(
     ptr::NonNull<libc::DIR>
 );
 
-#[cfg(not(target_os = "redox"))]
 impl Dir {
     /// Opens the given path as with `fcntl::open`.
     pub fn open<P: ?Sized + NixPath>(path: &P, oflag: OFlag,
@@ -87,17 +76,14 @@ impl Dir {
 // call `readdir` simultaneously from multiple threads.
 //
 // `Dir` is safe to pass from one thread to another, as it's not reference-counted.
-#[cfg(not(target_os = "redox"))]
 unsafe impl Send for Dir {}
 
-#[cfg(not(target_os = "redox"))]
 impl AsRawFd for Dir {
     fn as_raw_fd(&self) -> RawFd {
         unsafe { libc::dirfd(self.0.as_ptr()) }
     }
 }
 
-#[cfg(not(target_os = "redox"))]
 impl Drop for Dir {
     fn drop(&mut self) {
         unsafe { libc::closedir(self.0.as_ptr()) };
@@ -105,10 +91,8 @@ impl Drop for Dir {
 }
 
 #[derive(Debug, Eq, Hash, PartialEq)]
-#[cfg(not(target_os = "redox"))]
 pub struct Iter<'d>(&'d mut Dir);
 
-#[cfg(not(target_os = "redox"))]
 impl<'d> Iterator for Iter<'d> {
     type Item = Result<Entry>;
 
@@ -135,7 +119,6 @@ impl<'d> Iterator for Iter<'d> {
     }
 }
 
-#[cfg(not(target_os = "redox"))]
 impl<'d> Drop for Iter<'d> {
     fn drop(&mut self) {
         unsafe { libc::rewinddir((self.0).0.as_ptr()) }
@@ -170,7 +153,6 @@ impl Entry {
               target_os = "l4re",
               target_os = "linux",
               target_os = "macos",
-              target_os = "redox",
               target_os = "solaris"))]
     pub fn ino(&self) -> u64 {
         self.0.d_ino as u64
@@ -185,7 +167,6 @@ impl Entry {
                   target_os = "l4re",
                   target_os = "linux",
                   target_os = "macos",
-                  target_os = "redox",
                   target_os = "solaris")))]
     pub fn ino(&self) -> u64 {
         u64::from(self.0.d_fileno)

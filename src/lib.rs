@@ -28,6 +28,7 @@ pub extern crate libc;
 #[macro_use] mod macros;
 
 // Public crates
+#[cfg(not(target_os = "redox"))]
 pub mod dir;
 pub mod env;
 pub mod errno;
