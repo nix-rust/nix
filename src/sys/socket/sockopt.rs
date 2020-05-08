@@ -260,6 +260,8 @@ sockopt_impl!(SetOnly, SndBufForce, libc::SOL_SOCKET, libc::SO_SNDBUFFORCE, usiz
 sockopt_impl!(GetOnly, SockType, libc::SOL_SOCKET, libc::SO_TYPE, super::SockType);
 sockopt_impl!(GetOnly, AcceptConn, libc::SOL_SOCKET, libc::SO_ACCEPTCONN, bool);
 #[cfg(any(target_os = "android", target_os = "linux"))]
+sockopt_impl!(Both, BindToDevice, libc::SOL_SOCKET, libc::SO_BINDTODEVICE, OsString<[u8; libc::IFNAMSIZ]>);
+#[cfg(any(target_os = "android", target_os = "linux"))]
 sockopt_impl!(GetOnly, OriginalDst, libc::SOL_IP, libc::SO_ORIGINAL_DST, libc::sockaddr_in);
 sockopt_impl!(Both, ReceiveTimestamp, libc::SOL_SOCKET, libc::SO_TIMESTAMP, bool);
 #[cfg(any(target_os = "android", target_os = "linux"))]

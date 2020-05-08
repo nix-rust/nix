@@ -27,6 +27,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   (#[1208](https://github.com/nix-rust/nix/pull/1208))
 - Added support for `SCM_CREDS` messages (`UnixCredentials`) on FreeBSD/DragonFly
   (#[1216](https://github.com/nix-rust/nix/pull/1216))
+- Added `BindToDevice` socket option (sockopt) on Linux
+  (#[1233](https://github.com/nix-rust/nix/pull/1233))
 
 ### Changed
 - Changed `fallocate` return type from `c_int` to `()` (#[1201](https://github.com/nix-rust/nix/pull/1201))
