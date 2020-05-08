@@ -51,3 +51,19 @@ fn test_tcp_congestion() {
         val
     );
 }
+
+#[test]
+#[cfg(any(target_os = "android", target_os = "linux"))]
+fn test_bindtodevice() {
+    skip_if_not_root!("test_bindtodevice");
+
+    let fd = socket(AddressFamily::Inet, SockType::Stream, SockFlag::empty(), None).unwrap();
+
+    let val = getsockopt(fd, sockopt::BindToDevice).unwrap();
+    setsockopt(fd, sockopt::BindToDevice, &val).unwrap();
+
+    assert_eq!(
+        getsockopt(fd, sockopt::BindToDevice).unwrap(),
+        val
+    );
+}
