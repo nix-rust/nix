@@ -45,6 +45,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   when a group or user lookup required a buffer larger than
   16KB. (#[1198](https://github.com/nix-rust/nix/pull/1198))
 - Fixed unaligned casting of `cmsg_data` to `af_alg_iv` (#[1206](https://github.com/nix-rust/nix/pull/1206))
+- Fixed `readlink`/`readlinkat` when reading symlinks longer than `PATH_MAX` (#[1231](https://github.com/nix-rust/nix/pull/1231))
 
 ### Removed
 
