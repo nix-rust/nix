@@ -1,5 +1,6 @@
 use errno::Errno;
-use libc::{self, c_int, c_ulong};
+use libc::{self, c_char, c_int, c_ulong};
+use std::ptr;
 use {NixPath, Result};
 
 libc_bitflags!(
@@ -68,14 +69,14 @@ pub fn mount<
 ) -> Result<()> {
     let res = source.with_nix_path(|source| {
         target.with_nix_path(|target| {
-            fstype.with_nix_path(|fstype| {
-                data.with_nix_path(|data| unsafe {
+            fstype.with_nix_path_as_nullptr(|fstype| {
+                data.with_nix_path_as_nullptr(|data| unsafe {
                     libc::mount(
                         source.as_ptr(),
                         target.as_ptr(),
-                        fstype.as_ptr(),
+                        fstype,
                         flags.bits,
-                        data.as_ptr() as *const libc::c_void,
+                        data as *const libc::c_void,
                     )
                 })
             })
@@ -95,4 +96,23 @@ pub fn umount2<P: ?Sized + NixPath>(target: &P, flags: MntFlags) -> Result<()> {
     let res = target.with_nix_path(|cstr| unsafe { libc::umount2(cstr.as_ptr(), flags.bits) })?;
 
     Errno::result(res).map(drop)
+}
+
+trait NixPathWithNull {
+    fn with_nix_path_as_nullptr<T, F>(&self, f: F) -> Result<T>
+    where
+        F: FnOnce(*const c_char) -> T;
+}
+
+impl<'a, NP: ?Sized + NixPath> NixPathWithNull for NP {
+    fn with_nix_path_as_nullptr<T, F>(&self, f: F) -> Result<T>
+    where
+        F: FnOnce(*const c_char) -> T,
+    {
+        if self.is_empty() {
+            return Ok(f(ptr::null()));
+        }
+
+        self.with_nix_path(|data| f(data.as_ptr()))
+    }
 }
