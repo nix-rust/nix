@@ -20,7 +20,6 @@
 extern crate bitflags;
 #[macro_use]
 extern crate cfg_if;
-extern crate void;
 
 // Re-exported external crates
 pub extern crate libc;
