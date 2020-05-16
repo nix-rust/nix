@@ -46,6 +46,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   16KB. (#[1198](https://github.com/nix-rust/nix/pull/1198))
 - Fixed unaligned casting of `cmsg_data` to `af_alg_iv` (#[1206](https://github.com/nix-rust/nix/pull/1206))
 - Fixed `readlink`/`readlinkat` when reading symlinks longer than `PATH_MAX` (#[1231](https://github.com/nix-rust/nix/pull/1231))
+- `PollFd`, `EpollEvent`, `IpMembershipRequest`, `Ipv6MembershipRequest`,
+  `TimeVal`, and `IoVec` are now `repr(transparent)`.  This is required for
+  correctness's sake across all architectures and compilers, though now bugs
+  have been reported so far.
+  (#[1243](https://github.com/nix-rust/nix/pull/1243))
 
 ### Removed
 

@@ -245,7 +245,7 @@ impl fmt::Display for TimeSpec {
 
 
 
-#[repr(C)]
+#[repr(transparent)]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct TimeVal(timeval);
 

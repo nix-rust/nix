@@ -158,7 +158,7 @@ pub fn process_vm_readv(pid: ::unistd::Pid, local_iov: &[IoVec<&mut [u8]>], remo
     Errno::result(res).map(|r| r as usize)
 }
 
-#[repr(C)]
+#[repr(transparent)]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct IoVec<T>(libc::iovec, PhantomData<T>);
 

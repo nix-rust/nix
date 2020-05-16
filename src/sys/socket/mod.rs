@@ -278,7 +278,7 @@ cfg_if! {
 /// Request for multicast socket operations
 ///
 /// This is a wrapper type around `ip_mreq`.
-#[repr(C)]
+#[repr(transparent)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct IpMembershipRequest(libc::ip_mreq);
 
@@ -297,7 +297,7 @@ impl IpMembershipRequest {
 /// Request for ipv6 multicast socket operations
 ///
 /// This is a wrapper type around `ipv6_mreq`.
-#[repr(C)]
+#[repr(transparent)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Ipv6MembershipRequest(libc::ipv6_mreq);
 
