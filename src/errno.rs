@@ -46,8 +46,11 @@ cfg_if! {
 }
 
 /// Sets the platform-specific errno to no-error
-unsafe fn clear() {
-    *errno_location() = 0;
+fn clear() {
+    // Safe because errno is a thread-local variable
+    unsafe {
+        *errno_location() = 0;
+    }
 }
 
 /// Returns the platform-specific value of errno
@@ -70,7 +73,7 @@ impl Errno {
         from_i32(err)
     }
 
-    pub unsafe fn clear() {
+    pub fn clear() {
         clear()
     }
 
