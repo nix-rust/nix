@@ -425,8 +425,15 @@ pub fn read(pid: Pid, addr: AddressType) -> Result<c_long> {
 }
 
 /// Writes a word into the processes memory at the given address
-pub fn write(pid: Pid, addr: AddressType, data: *mut c_void) -> Result<()> {
-    unsafe {
-        ptrace_other(Request::PTRACE_POKEDATA, pid, addr, data).map(drop)
-    }
+///
+/// # Safety
+///
+/// The `data` argument is passed directly to `ptrace(2)`.  Read that man page
+/// for guidance.
+pub unsafe fn write(
+    pid: Pid,
+    addr: AddressType,
+    data: *mut c_void) -> Result<()>
+{
+    ptrace_other(Request::PTRACE_POKEDATA, pid, addr, data).map(drop)
 }
