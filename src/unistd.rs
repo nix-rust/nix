@@ -1055,7 +1055,9 @@ pub fn pipe() -> Result<(RawFd, RawFd)> {
 /// The following flags are supported, and will be set atomically as the pipe is
 /// created:
 ///
-/// `O_CLOEXEC`:    Set the close-on-exec flag for the new file descriptors.
+/// `O_CLOEXEC`:    Set the close-on-exec flag for the new file descriptors.  
+#[cfg_attr(target_os = "linux", doc = "`O_DIRECT`: Create a pipe that performs I/O in \"packet\" mode.  ")]
+#[cfg_attr(target_os = "netbsd", doc = "`O_NOSIGPIPE`: Return `EPIPE` instead of raising `SIGPIPE`.  ")]
 /// `O_NONBLOCK`:   Set the non-blocking flag for the ends of the pipe.
 ///
 /// See also [pipe(2)](http://man7.org/linux/man-pages/man2/pipe.2.html)
