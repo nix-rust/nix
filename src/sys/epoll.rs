@@ -43,7 +43,7 @@ libc_bitflags!{
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-#[repr(C)]
+#[repr(transparent)]
 pub struct EpollEvent {
     event: libc::epoll_event,
 }

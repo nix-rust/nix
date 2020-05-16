@@ -17,7 +17,7 @@ use errno::Errno;
 ///
 /// After a call to `poll` or `ppoll`, the events that occured can be
 /// retrieved by calling [`revents()`](#method.revents) on the `PollFd`.
-#[repr(C)]
+#[repr(transparent)]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct PollFd {
     pollfd: libc::pollfd,
