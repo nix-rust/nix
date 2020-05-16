@@ -131,7 +131,7 @@ impl Inotify {
     /// Returns a watch descriptor. This is not a File Descriptor! 
     ///
     /// For more information see, [inotify_add_watch(2)](http://man7.org/linux/man-pages/man2/inotify_add_watch.2.html).
-    pub fn add_watch<P: ?Sized + NixPath>(&self,
+    pub fn add_watch<P: ?Sized + NixPath>(self,
                                           path: &P,
                                           mask: AddWatchFlags) 
                                             -> Result<WatchDescriptor>
@@ -152,14 +152,14 @@ impl Inotify {
     ///
     /// For more information see, [inotify_rm_watch(2)](http://man7.org/linux/man-pages/man2/inotify_rm_watch.2.html).
     #[cfg(target_os = "linux")]
-    pub fn rm_watch(&self, wd: WatchDescriptor) -> Result<()> {
+    pub fn rm_watch(self, wd: WatchDescriptor) -> Result<()> {
         let res = unsafe { libc::inotify_rm_watch(self.fd, wd.wd) };
 
         Errno::result(res).map(drop)
     }
 
     #[cfg(target_os = "android")]
-    pub fn rm_watch(&self, wd: WatchDescriptor) -> Result<()> {
+    pub fn rm_watch(self, wd: WatchDescriptor) -> Result<()> {
         let res = unsafe { libc::inotify_rm_watch(self.fd, wd.wd as u32) };
 
         Errno::result(res).map(drop)
@@ -171,7 +171,7 @@ impl Inotify {
     /// 
     /// Returns as many events as available. If the call was non blocking and no
     /// events could be read then the EAGAIN error is returned.
-    pub fn read_events(&self) -> Result<Vec<InotifyEvent>> {
+    pub fn read_events(self) -> Result<Vec<InotifyEvent>> {
         let header_size = size_of::<libc::inotify_event>();
         const BUFSIZ: usize = 4096;
         let mut buffer = [0u8; BUFSIZ];

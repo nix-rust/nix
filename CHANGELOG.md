@@ -49,6 +49,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - `sys::socket::sockaddr_storage_to_addr` is no longer `unsafe`.  So is
   `offset_of!`.
   (#[1244](https://github.com/nix-rust/nix/pull/1244))
+- Several `Inotify` methods now take `self` by value instead of by reference
+  (#[1244](https://github.com/nix-rust/nix/pull/1244))
 
 ### Fixed
 
