@@ -44,6 +44,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   (#[1245](https://github.com/nix-rust/nix/pull/1245))
 - `execv`, `execve`, `execvp` and `execveat` in `::nix::unistd` and `reboot` in
   `::nix::sys::reboot` now return `Result<Infallible>` instead of `Result<Void>` (#[1239](https://github.com/nix-rust/nix/pull/1239))
+- `sys::socket::sockaddr_storage_to_addr` is no longer `unsafe`.  So is
+  `offset_of!`.
+  (#[1244](https://github.com/nix-rust/nix/pull/1244))
 
 ### Fixed
 

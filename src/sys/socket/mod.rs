@@ -1606,16 +1606,19 @@ pub fn getsockname(fd: RawFd) -> Result<SockAddr> {
     }
 }
 
-/// Return the appropriate `SockAddr` type from a `sockaddr_storage` of a certain
-/// size.  In C this would usually be done by casting.  The `len` argument
+/// Return the appropriate `SockAddr` type from a `sockaddr_storage` of a
+/// certain size.
+///
+/// In C this would usually be done by casting.  The `len` argument
 /// should be the number of bytes in the `sockaddr_storage` that are actually
 /// allocated and valid.  It must be at least as large as all the useful parts
 /// of the structure.  Note that in the case of a `sockaddr_un`, `len` need not
 /// include the terminating null.
-pub unsafe fn sockaddr_storage_to_addr(
+pub fn sockaddr_storage_to_addr(
     addr: &sockaddr_storage,
     len: usize) -> Result<SockAddr> {
 
+    assert!(len <= mem::size_of::<sockaddr_un>());
     if len < mem::size_of_val(&addr.ss_family) {
         return Err(Error::Sys(Errno::ENOTCONN));
     }
@@ -1623,32 +1626,48 @@ pub unsafe fn sockaddr_storage_to_addr(
     match c_int::from(addr.ss_family) {
         libc::AF_INET => {
             assert_eq!(len as usize, mem::size_of::<sockaddr_in>());
-            let ret = *(addr as *const _ as *const sockaddr_in);
-            Ok(SockAddr::Inet(InetAddr::V4(ret)))
+            let sin = unsafe {
+                *(addr as *const sockaddr_storage as *const sockaddr_in)
+            };
+            Ok(SockAddr::Inet(InetAddr::V4(sin)))
         }
         libc::AF_INET6 => {
             assert_eq!(len as usize, mem::size_of::<sockaddr_in6>());
-            Ok(SockAddr::Inet(InetAddr::V6(*(addr as *const _ as *const sockaddr_in6))))
+            let sin6 = unsafe {
+                *(addr as *const _ as *const sockaddr_in6)
+            };
+            Ok(SockAddr::Inet(InetAddr::V6(sin6)))
         }
         libc::AF_UNIX => {
-            let sun = *(addr as *const _ as *const sockaddr_un);
             let pathlen = len - offset_of!(sockaddr_un, sun_path);
+            let sun = unsafe {
+                *(addr as *const _ as *const sockaddr_un)
+            };
             Ok(SockAddr::Unix(UnixAddr(sun, pathlen)))
         }
         #[cfg(any(target_os = "android", target_os = "linux"))]
         libc::AF_NETLINK => {
             use libc::sockaddr_nl;
-            Ok(SockAddr::Netlink(NetlinkAddr(*(addr as *const _ as *const sockaddr_nl))))
+            let snl = unsafe {
+                *(addr as *const _ as *const sockaddr_nl)
+            };
+            Ok(SockAddr::Netlink(NetlinkAddr(snl)))
         }
         #[cfg(any(target_os = "android", target_os = "linux"))]
         libc::AF_ALG => {
             use libc::sockaddr_alg;
-            Ok(SockAddr::Alg(AlgAddr(*(addr as *const _ as *const sockaddr_alg))))
+            let salg = unsafe {
+                *(addr as *const _ as *const sockaddr_alg)
+            };
+            Ok(SockAddr::Alg(AlgAddr(salg)))
         }
         #[cfg(target_os = "linux")]
         libc::AF_VSOCK => {
             use libc::sockaddr_vm;
-            Ok(SockAddr::Vsock(VsockAddr(*(addr as *const _ as *const sockaddr_vm))))
+            let svm = unsafe {
+                *(addr as *const _ as *const sockaddr_vm)
+            };
+            Ok(SockAddr::Vsock(VsockAddr(svm)))
         }
         af => panic!("unexpected address family {}", af),
     }
