@@ -260,20 +260,37 @@ libc_bitflags!{
     }
 }
 
-/// Locks all memory pages that contain part of the address range with `length` bytes starting at
-/// `addr`. Locked pages never move to the swap area.
+/// Locks all memory pages that contain part of the address range with `length`
+/// bytes starting at `addr`.
+///
+/// Locked pages never move to the swap area.
+///
+/// # Safety
+///
+/// `addr` must meet all the requirements described in the `mlock(2)` man page.
 pub unsafe fn mlock(addr: *const c_void, length: size_t) -> Result<()> {
     Errno::result(libc::mlock(addr, length)).map(drop)
 }
 
-/// Unlocks all memory pages that contain part of the address range with `length` bytes starting at
-/// `addr`.
+/// Unlocks all memory pages that contain part of the address range with
+/// `length` bytes starting at `addr`.
+///
+/// # Safety
+///
+/// `addr` must meet all the requirements described in the `munlock(2)` man
+/// page.
 pub unsafe fn munlock(addr: *const c_void, length: size_t) -> Result<()> {
     Errno::result(libc::munlock(addr, length)).map(drop)
 }
 
-/// Locks all memory pages mapped into this process' address space. Locked pages never move to the
-/// swap area.
+/// Locks all memory pages mapped into this process' address space.
+///
+/// Locked pages never move to the swap area.
+///
+/// # Safety
+///
+/// `addr` must meet all the requirements described in the `mlockall(2)` man
+/// page.
 pub fn mlockall(flags: MlockAllFlags) -> Result<()> {
     unsafe { Errno::result(libc::mlockall(flags.bits())) }.map(drop)
 }
@@ -283,8 +300,11 @@ pub fn munlockall() -> Result<()> {
     unsafe { Errno::result(libc::munlockall()) }.map(drop)
 }
 
-/// Calls to mmap are inherently unsafe, so they must be made in an unsafe block. Typically
-/// a higher-level abstraction will hide the unsafe interactions with the mmap'd region.
+/// allocate memory, or map files or devices into memory
+///
+/// # Safety
+///
+/// See the `mmap(2)` man page for detailed requirements.
 pub unsafe fn mmap(addr: *mut c_void, length: size_t, prot: ProtFlags, flags: MapFlags, fd: RawFd, offset: off_t) -> Result<*mut c_void> {
     let ret = libc::mmap(addr, length, prot.bits(), flags.bits(), fd, offset);
 
@@ -295,10 +315,22 @@ pub unsafe fn mmap(addr: *mut c_void, length: size_t, prot: ProtFlags, flags: Ma
     }
 }
 
+/// remove a mapping
+///
+/// # Safety
+///
+/// `addr` must meet all the requirements described in the `munmap(2)` man
+/// page.
 pub unsafe fn munmap(addr: *mut c_void, len: size_t) -> Result<()> {
     Errno::result(libc::munmap(addr, len)).map(drop)
 }
 
+/// give advice about use of memory
+///
+/// # Safety
+///
+/// See the `madvise(2)` man page.  Take special care when using
+/// `MmapAdvise::MADV_FREE`.
 pub unsafe fn madvise(addr: *mut c_void, length: size_t, advise: MmapAdvise) -> Result<()> {
     Errno::result(libc::madvise(addr, length, advise as i32)).map(drop)
 }
@@ -332,6 +364,12 @@ pub unsafe fn mprotect(addr: *mut c_void, length: size_t, prot: ProtFlags) -> Re
     Errno::result(libc::mprotect(addr, length, prot.bits())).map(drop)
 }
 
+/// synchronize a mapped region
+///
+/// # Safety
+///
+/// `addr` must meet all the requirements described in the `msync(2)` man
+/// page.
 pub unsafe fn msync(addr: *mut c_void, length: size_t, flags: MsFlags) -> Result<()> {
     Errno::result(libc::msync(addr, length, flags.bits())).map(drop)
 }

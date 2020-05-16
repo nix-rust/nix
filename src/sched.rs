@@ -80,7 +80,8 @@ mod sched_linux_like {
             if field >= CpuSet::count() {
                 Err(Error::Sys(Errno::EINVAL))
             } else {
-                Ok(unsafe { libc::CPU_SET(field, &mut self.cpu_set) })
+                unsafe { libc::CPU_SET(field, &mut self.cpu_set); }
+                Ok(())
             }
         }
 
@@ -90,7 +91,8 @@ mod sched_linux_like {
             if field >= CpuSet::count() {
                 Err(Error::Sys(Errno::EINVAL))
             } else {
-                Ok(unsafe { libc::CPU_CLR(field, &mut self.cpu_set) })
+                unsafe { libc::CPU_CLR(field, &mut self.cpu_set);}
+                Ok(())
             }
         }
 
@@ -187,8 +189,8 @@ mod sched_linux_like {
 
         let res = unsafe {
             let combined = flags.bits() | signal.unwrap_or(0);
-            let ptr = stack.as_mut_ptr().offset(stack.len() as isize);
-            let ptr_aligned = ptr.offset((ptr as usize % 16) as isize * -1);
+            let ptr = stack.as_mut_ptr().add(stack.len());
+            let ptr_aligned = ptr.sub(ptr as usize % 16);
             libc::clone(
                 mem::transmute(
                     callback as extern "C" fn(*mut Box<dyn FnMut() -> isize>) -> i32,

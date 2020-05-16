@@ -30,10 +30,14 @@ impl UContext {
     }
 
     pub fn sigmask_mut(&mut self) -> &mut SigSet {
-        unsafe { mem::transmute(&mut self.context.uc_sigmask) }
+        unsafe {
+            &mut *(&mut self.context.uc_sigmask as *mut libc::sigset_t as *mut SigSet)
+        }
     }
 
     pub fn sigmask(&self) -> &SigSet {
-        unsafe { mem::transmute(&self.context.uc_sigmask) }
+        unsafe {
+            &*(&self.context.uc_sigmask as *const libc::sigset_t as *const SigSet)
+        }
     }
 }
