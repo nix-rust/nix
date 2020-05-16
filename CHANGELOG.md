@@ -61,6 +61,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   correctness's sake across all architectures and compilers, though now bugs
   have been reported so far.
   (#[1243](https://github.com/nix-rust/nix/pull/1243))
+- Fixed unaligned pointer read in `Inotify::read_events`.
+  (#[1244](https://github.com/nix-rust/nix/pull/1244))
 
 ### Removed
 
