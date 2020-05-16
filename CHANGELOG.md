@@ -35,7 +35,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   (#[1252](https://github.com/nix-rust/nix/pull/1252))
 - Added support for `Ipv4PacketInfo` and `Ipv6PacketInfo` to `ControlMessage`.
   (#[1222](https://github.com/nix-rust/nix/pull/1222))
-- `CpuSet` now implements `Default`.
+- `CpuSet` and `UnixCredentials` now implement `Default`.
   (#[1244](https://github.com/nix-rust/nix/pull/1244))
 
 ### Changed

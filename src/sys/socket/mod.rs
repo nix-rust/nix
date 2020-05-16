@@ -221,6 +221,12 @@ cfg_if! {
             }
         }
 
+        impl Default for UnixCredentials {
+            fn default() -> Self {
+                Self::new()
+            }
+        }
+
         impl From<libc::ucred> for UnixCredentials {
             fn from(cred: libc::ucred) -> Self {
                 UnixCredentials(cred)
