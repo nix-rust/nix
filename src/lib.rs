@@ -283,22 +283,3 @@ impl NixPath for PathBuf {
         self.as_os_str().with_nix_path(f)
     }
 }
-
-/// Treats `None` as an empty string.
-impl<'a, NP: ?Sized + NixPath>  NixPath for Option<&'a NP> {
-    fn is_empty(&self) -> bool {
-        self.map_or(true, NixPath::is_empty)
-    }
-
-    fn len(&self) -> usize {
-        self.map_or(0, NixPath::len)
-    }
-
-    fn with_nix_path<T, F>(&self, f: F) -> Result<T> where F: FnOnce(&CStr) -> T {
-        if let Some(nix_path) = *self {
-            nix_path.with_nix_path(f)
-        } else {
-            unsafe { CStr::from_ptr("\0".as_ptr() as *const _).with_nix_path(f) }
-        }
-    }
-}

@@ -253,6 +253,8 @@ pub fn quotactl_off<P: ?Sized + NixPath>(which: QuotaType, special: &P) -> Resul
 }
 
 /// Update the on-disk copy of quota usages for a filesystem.
+///
+/// If `special` is `None`, then all file systems with active quotas are sync'd.
 pub fn quotactl_sync<P: ?Sized + NixPath>(which: QuotaType, special: Option<&P>) -> Result<()> {
     quotactl(QuotaCmd(QuotaSubCmd::Q_SYNC, which), special, 0, ptr::null_mut())
 }
