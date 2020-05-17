@@ -7,11 +7,11 @@ use fcntl::FcntlArg::F_SETFD;
 use libc::{self, c_char, c_void, c_int, c_long, c_uint, size_t, pid_t, off_t,
            uid_t, gid_t, mode_t, PATH_MAX};
 use std::{fmt, mem, ptr};
+use std::convert::Infallible;
 use std::ffi::{CString, CStr, OsString, OsStr};
 use std::os::unix::ffi::{OsStringExt, OsStrExt};
 use std::os::unix::io::RawFd;
 use std::path::PathBuf;
-use void::Void;
 use sys::stat::Mode;
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
@@ -707,7 +707,7 @@ fn to_exec_array(args: &[&CStr]) -> Vec<*const c_char> {
 /// performs the same action but does not allow for customization of the
 /// environment for the new process.
 #[inline]
-pub fn execv(path: &CStr, argv: &[&CStr]) -> Result<Void> {
+pub fn execv(path: &CStr, argv: &[&CStr]) -> Result<Infallible> {
     let args_p = to_exec_array(argv);
 
     unsafe {
@@ -731,7 +731,7 @@ pub fn execv(path: &CStr, argv: &[&CStr]) -> Result<Void> {
 /// in the `args` list is an argument to the new process. Each element in the
 /// `env` list should be a string in the form "key=value".
 #[inline]
-pub fn execve(path: &CStr, args: &[&CStr], env: &[&CStr]) -> Result<Void> {
+pub fn execve(path: &CStr, args: &[&CStr], env: &[&CStr]) -> Result<Infallible> {
     let args_p = to_exec_array(args);
     let env_p = to_exec_array(env);
 
@@ -752,7 +752,7 @@ pub fn execve(path: &CStr, args: &[&CStr], env: &[&CStr]) -> Result<Void> {
 /// would not work if "bash" was specified for the path argument, but `execvp`
 /// would assuming that a bash executable was on the system `PATH`.
 #[inline]
-pub fn execvp(filename: &CStr, args: &[&CStr]) -> Result<Void> {
+pub fn execvp(filename: &CStr, args: &[&CStr]) -> Result<Infallible> {
     let args_p = to_exec_array(args);
 
     unsafe {
@@ -772,7 +772,7 @@ pub fn execvp(filename: &CStr, args: &[&CStr]) -> Result<Void> {
 #[cfg(any(target_os = "haiku",
           target_os = "linux",
           target_os = "openbsd"))]
-pub fn execvpe(filename: &CStr, args: &[&CStr], env: &[&CStr]) -> Result<Void> {
+pub fn execvpe(filename: &CStr, args: &[&CStr], env: &[&CStr]) -> Result<Infallible> {
     let args_p = to_exec_array(args);
     let env_p = to_exec_array(env);
 
@@ -800,7 +800,7 @@ pub fn execvpe(filename: &CStr, args: &[&CStr], env: &[&CStr]) -> Result<Void> {
           target_os = "linux",
           target_os = "freebsd"))]
 #[inline]
-pub fn fexecve(fd: RawFd, args: &[&CStr], env: &[&CStr]) -> Result<Void> {
+pub fn fexecve(fd: RawFd, args: &[&CStr], env: &[&CStr]) -> Result<Infallible> {
     let args_p = to_exec_array(args);
     let env_p = to_exec_array(env);
 
@@ -824,7 +824,7 @@ pub fn fexecve(fd: RawFd, args: &[&CStr], env: &[&CStr]) -> Result<Void> {
 #[cfg(any(target_os = "android", target_os = "linux"))]
 #[inline]
 pub fn execveat(dirfd: RawFd, pathname: &CStr, args: &[&CStr],
-                env: &[&CStr], flags: super::fcntl::AtFlags) -> Result<Void> {
+                env: &[&CStr], flags: super::fcntl::AtFlags) -> Result<Infallible> {
     let args_p = to_exec_array(args);
     let env_p = to_exec_array(env);
 
