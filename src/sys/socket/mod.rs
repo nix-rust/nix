@@ -1251,7 +1251,7 @@ fn pack_mhdr_to_send<'a, I, C>(
     // Next encode the sending address, if provided
     let (name, namelen) = match addr {
         Some(addr) => {
-            let (x, y) = unsafe { addr.as_ffi_pair() };
+            let (x, y) = addr.as_ffi_pair();
             (x as *const _, y)
         },
         None => (ptr::null(), 0),

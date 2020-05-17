@@ -768,39 +768,60 @@ impl SockAddr {
     /// with the size of the actual data type. sockaddr is commonly used as a proxy for
     /// a superclass as C doesn't support inheritance, so many functions that take
     /// a sockaddr * need to take the size of the underlying type as well and then internally cast it back.
-    pub unsafe fn as_ffi_pair(&self) -> (&libc::sockaddr, libc::socklen_t) {
+    pub fn as_ffi_pair(&self) -> (&libc::sockaddr, libc::socklen_t) {
         match *self {
             SockAddr::Inet(InetAddr::V4(ref addr)) => (
-                &*(addr as *const libc::sockaddr_in as *const libc::sockaddr),
+                // This cast is always allowed in C
+                unsafe {
+                    &*(addr as *const libc::sockaddr_in as *const libc::sockaddr)
+                },
                 mem::size_of_val(addr) as libc::socklen_t
             ),
             SockAddr::Inet(InetAddr::V6(ref addr)) => (
-                &*(addr as *const libc::sockaddr_in6 as *const libc::sockaddr),
+                // This cast is always allowed in C
+                unsafe {
+                    &*(addr as *const libc::sockaddr_in6 as *const libc::sockaddr)
+                },
                 mem::size_of_val(addr) as libc::socklen_t
             ),
             SockAddr::Unix(UnixAddr(ref addr, len)) => (
-                &*(addr as *const libc::sockaddr_un as *const libc::sockaddr),
+                // This cast is always allowed in C
+                unsafe {
+                    &*(addr as *const libc::sockaddr_un as *const libc::sockaddr)
+                },
                 (len + offset_of!(libc::sockaddr_un, sun_path)) as libc::socklen_t
             ),
             #[cfg(any(target_os = "android", target_os = "linux"))]
             SockAddr::Netlink(NetlinkAddr(ref sa)) => (
-                &*(sa as *const libc::sockaddr_nl as *const libc::sockaddr),
+                // This cast is always allowed in C
+                unsafe {
+                    &*(sa as *const libc::sockaddr_nl as *const libc::sockaddr)
+                },
                 mem::size_of_val(sa) as libc::socklen_t
             ),
             #[cfg(any(target_os = "android", target_os = "linux"))]
             SockAddr::Alg(AlgAddr(ref sa)) => (
-                &*(sa as *const libc::sockaddr_alg as *const libc::sockaddr),
+                // This cast is always allowed in C
+                unsafe {
+                    &*(sa as *const libc::sockaddr_alg as *const libc::sockaddr)
+                },
                 mem::size_of_val(sa) as libc::socklen_t
             ),
             #[cfg(any(target_os = "ios", target_os = "macos"))]
             SockAddr::SysControl(SysControlAddr(ref sa)) => (
-                &*(sa as *const libc::sockaddr_ctl as *const libc::sockaddr),
+                // This cast is always allowed in C
+                unsafe {
+                    &*(sa as *const libc::sockaddr_ctl as *const libc::sockaddr)
+                },
                 mem::size_of_val(sa) as libc::socklen_t
 
             ),
             #[cfg(any(target_os = "android", target_os = "linux"))]
             SockAddr::Link(LinkAddr(ref addr)) => (
-                &*(addr as *const libc::sockaddr_ll as *const libc::sockaddr),
+                // This cast is always allowed in C
+                unsafe {
+                    &*(addr as *const libc::sockaddr_ll as *const libc::sockaddr)
+                },
                 mem::size_of_val(addr) as libc::socklen_t
             ),
             #[cfg(any(target_os = "dragonfly",
@@ -810,12 +831,18 @@ impl SockAddr {
                       target_os = "netbsd",
                       target_os = "openbsd"))]
             SockAddr::Link(LinkAddr(ref addr)) => (
-                &*(addr as *const libc::sockaddr_dl as *const libc::sockaddr),
+                // This cast is always allowed in C
+                unsafe {
+                    &*(addr as *const libc::sockaddr_dl as *const libc::sockaddr)
+                },
                 mem::size_of_val(addr) as libc::socklen_t
             ),
             #[cfg(target_os = "linux")]
             SockAddr::Vsock(VsockAddr(ref sa)) => (
-                &*(sa as *const libc::sockaddr_vm as *const libc::sockaddr),
+                // This cast is always allowed in C
+                unsafe {
+                    &*(sa as *const libc::sockaddr_vm as *const libc::sockaddr)
+                },
                 mem::size_of_val(sa) as libc::socklen_t
             ),
         }

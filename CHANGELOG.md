@@ -50,6 +50,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   `offset_of!`.
 - `sys::socket::sockaddr_storage_to_addr`, `offset_of!`, and `Errno::clear` are
   no longer `unsafe`.
+- `SockAddr::as_ffi_pair`,`sys::socket::sockaddr_storage_to_addr`, `offset_of!`,
+  and `Errno::clear` are no longer `unsafe`.
   (#[1244](https://github.com/nix-rust/nix/pull/1244))
 - Several `Inotify` methods now take `self` by value instead of by reference
   (#[1244](https://github.com/nix-rust/nix/pull/1244))
