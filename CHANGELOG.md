@@ -59,6 +59,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Removed `sys::socket::addr::from_libc_sockaddr` from the public API.
   (#[1215](https://github.com/nix-rust/nix/pull/1215))
 
+- Nix no longer implements `NixPath` for `Option<P> where P: NixPath`.  Most
+  Nix functions that accept `NixPath` arguments can't do anything useful with
+  `None`.  The exceptions (`mount` and `quotactl_sync`) already take explicitly
+  optional arguments.
+  (#[1242](https://github.com/nix-rust/nix/pull/1242))
+
 ## [0.17.0] - 3 February 2020
 ### Added
 - Add `CLK_TCK` to `SysconfVar`
