@@ -728,6 +728,26 @@ pub enum ControlMessage<'a> {
     ))]
     OrigDstAddrV6(&'a libc::sockaddr_in6),
 
+    #[cfg(any(
+        target_os = "android",
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "netbsd",
+    ))]
+    Ipv4PacketInfo(&'a libc::in_pktinfo),
+    #[cfg(any(
+        target_os = "android",
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "openbsd",
+        target_os = "netbsd",
+    ))]
+    Ipv6PacketInfo(&'a libc::in6_pktinfo),
+
     /// Set IV for `AF_ALG` crypto API.
     ///
     /// For further information, please refer to the
@@ -829,6 +849,29 @@ impl<'a> ControlMessage<'a> {
             ControlMessage::OrigDstAddrV6(origaddr) => {
                 origaddr as *const libc::sockaddr_in6 as *const u8
             },
+            #[cfg(any(
+                target_os = "android",
+                target_os = "ios",
+                target_os = "linux",
+                target_os = "macos",
+                target_os = "netbsd",
+            ))]
+            ControlMessage::Ipv4PacketInfo(pktinfo) => {
+                pktinfo as *const libc::in_pktinfo as *const u8
+            },
+            #[cfg(any(
+                target_os = "android",
+                target_os = "dragonfly",
+                target_os = "freebsd",
+                target_os = "ios",
+                target_os = "linux",
+                target_os = "macos",
+                target_os = "openbsd",
+                target_os = "netbsd",
+            ))]
+            ControlMessage::Ipv6PacketInfo(pktinfo) => {
+                pktinfo as *const libc::in6_pktinfo as *const u8
+            },
             #[cfg(any(target_os = "android", target_os = "linux"))]
             ControlMessage::AlgSetIv(iv) => {
                 let af_alg_iv = libc::af_alg_iv {
@@ -905,6 +948,29 @@ impl<'a> ControlMessage<'a> {
             ControlMessage::OrigDstAddrV6(origaddr) => {
                 mem::size_of_val(origaddr)
             },
+            #[cfg(any(
+                target_os = "android",
+                target_os = "ios",
+                target_os = "linux",
+                target_os = "macos",
+                target_os = "netbsd",
+            ))]
+            ControlMessage::Ipv4PacketInfo(pktinfo) => {
+                mem::size_of_val(pktinfo)
+            },
+            #[cfg(any(
+                target_os = "android",
+                target_os = "dragonfly",
+                target_os = "freebsd",
+                target_os = "ios",
+                target_os = "linux",
+                target_os = "macos",
+                target_os = "openbsd",
+                target_os = "netbsd",
+            ))]
+            ControlMessage::Ipv6PacketInfo(pktinfo) => {
+                mem::size_of_val(pktinfo)
+            },
             #[cfg(any(target_os = "android", target_os = "linux"))]
             ControlMessage::AlgSetIv(iv) => {
                 mem::size_of::<libc::af_alg_iv>() + iv.len()
@@ -937,6 +1003,25 @@ impl<'a> ControlMessage<'a> {
                 ControlMessage::AlgSetAeadAssoclen(_) => libc::SOL_ALG,
             #[cfg(target_os = "linux")]
             ControlMessage::UdpGsoSegments(_) => libc::SOL_UDP,
+            #[cfg(any(
+                target_os = "android",
+                target_os = "ios",
+                target_os = "linux",
+                target_os = "macos",
+                target_os = "netbsd",
+            ))]
+            ControlMessage::Ipv4PacketInfo(_) => libc::IPPROTO_IP,
+            #[cfg(any(
+                target_os = "android",
+                target_os = "dragonfly",
+                target_os = "freebsd",
+                target_os = "ios",
+                target_os = "linux",
+                target_os = "macos",
+                target_os = "openbsd",
+                target_os = "netbsd",
+            ))]
+            ControlMessage::Ipv6PacketInfo(_) => libc::IPPROTO_IPV6,
             #[cfg(any(target_os = "android", target_os = "linux", target_os = "freebsd"))]
             ControlMessage::OrigDstAddrV4(_) => libc::IPPROTO_IP,
             #[cfg(any(target_os = "android", target_os = "linux", target_os = "freebsd"))]
@@ -955,6 +1040,29 @@ impl<'a> ControlMessage<'a> {
             #[cfg(any(target_os = "android", target_os = "linux"))]
             ControlMessage::AlgSetIv(_) => {
                 libc::ALG_SET_IV
+            },
+            #[cfg(any(
+                target_os = "android",
+                target_os = "ios",
+                target_os = "linux",
+                target_os = "macos",
+                target_os = "netbsd",
+            ))]
+            ControlMessage::Ipv4PacketInfo(_) => {
+                libc::IP_PKTINFO
+            },
+            #[cfg(any(
+                target_os = "android",
+                target_os = "dragonfly",
+                target_os = "freebsd",
+                target_os = "ios",
+                target_os = "linux",
+                target_os = "macos",
+                target_os = "openbsd",
+                target_os = "netbsd",
+            ))]
+            ControlMessage::Ipv6PacketInfo(_) => {
+                libc::IPV6_PKTINFO
             },
             #[cfg(any(target_os = "android", target_os = "linux", target_os = "freebsd"))]
             ControlMessage::OrigDstAddrV4(_) => {
