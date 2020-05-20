@@ -81,6 +81,9 @@ Tier 2:
   * x86_64-linux-android
   * x86_64-unknown-netbsd
 
+Tier 3:
+  * x86_64-unknown-redox
+
 ## Usage
 
 `nix` requires Rust 1.36.0 or newer.
