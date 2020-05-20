@@ -10,6 +10,7 @@ use libc::{self, c_ulong};
 use {Result, NixPath};
 use errno::Errno;
 
+#[cfg(not(target_os = "redox"))]
 libc_bitflags!(
     /// File system mount Flags
     #[repr(C)]
@@ -108,6 +109,7 @@ impl Statvfs {
     }
 
     /// Get the mount flags
+    #[cfg(not(target_os = "redox"))]
     pub fn flags(&self) -> FsFlags {
         FsFlags::from_bits_truncate(self.0.f_flag)
     }

@@ -95,6 +95,11 @@ matrix:
       script:
         - cargo update -Zminimal-versions
         - cargo check
+    - language: generic
+      name: redox
+      script:
+        - docker pull redoxos/redoxer
+        - docker run  -v $(pwd):$(pwd) -w $(pwd) redoxos/redoxer sh -c 'rm -rf ~/.redoxer && redoxer test'
 
 before_install: set -e
 

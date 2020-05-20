@@ -3,7 +3,8 @@ use errno::Errno;
 use fcntl::{self, OFlag};
 use libc;
 use std::os::unix::io::{AsRawFd, IntoRawFd, RawFd};
-use std::{ffi, ptr};
+use std::ptr;
+use std::ffi;
 use sys;
 
 #[cfg(target_os = "linux")]

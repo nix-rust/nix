@@ -6,6 +6,7 @@ use nix::sys::wait::*;
 use libc::_exit;
 
 #[test]
+#[cfg(not(target_os = "redox"))]
 fn test_wait_signal() {
     let _ = ::FORK_MTX.lock().expect("Mutex got poisoned by another test");
 

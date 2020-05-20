@@ -1,18 +1,25 @@
-use nix::fcntl::{self, fcntl, FcntlArg, FdFlag, open, OFlag, readlink};
+#[cfg(not(target_os = "redox"))]
+use nix::fcntl::{self, open, readlink};
+use nix::fcntl::{fcntl, FcntlArg, FdFlag, OFlag};
 use nix::unistd::*;
 use nix::unistd::ForkResult::*;
+#[cfg(not(target_os = "redox"))]
 use nix::sys::signal::{SaFlags, SigAction, SigHandler, SigSet, Signal, sigaction};
 use nix::sys::wait::*;
 use nix::sys::stat::{self, Mode, SFlag};
 use nix::errno::Errno;
+#[cfg(not(target_os = "redox"))]
 use nix::Error;
 use std::{env, iter};
+#[cfg(not(target_os = "redox"))]
 use std::ffi::CString;
-use std::fs::{self, DirBuilder, File};
+#[cfg(not(target_os = "redox"))]
+use std::fs::DirBuilder;
+use std::fs::{self, File};
 use std::io::Write;
 use std::os::unix::prelude::*;
 use tempfile::{self, tempfile};
-use libc::{self, _exit, off_t};
+use libc::{_exit, off_t};
 
 #[test]
 #[cfg(not(any(target_os = "netbsd")))]
@@ -81,6 +88,7 @@ fn test_mkstemp_directory() {
 }
 
 #[test]
+#[cfg(not(target_os = "redox"))]
 fn test_mkfifo() {
     let tempdir = tempfile::tempdir().unwrap();
     let mkfifo_fifo = tempdir.path().join("mkfifo_fifo");
@@ -93,13 +101,16 @@ fn test_mkfifo() {
 }
 
 #[test]
+#[cfg(not(target_os = "redox"))]
 fn test_mkfifo_directory() {
     // mkfifo should fail if a directory is given
     assert!(mkfifo(&env::temp_dir(), Mode::S_IRUSR).is_err());
 }
 
 #[test]
-#[cfg(not(any(target_os = "macos", target_os = "ios", target_os = "android")))]
+#[cfg(not(any(
+    target_os = "macos", target_os = "ios",
+    target_os = "android", target_os = "redox")))]
 fn test_mkfifoat_none() {
     let _m = ::CWD_LOCK.read().expect("Mutex got poisoned by another test");
 
@@ -114,7 +125,9 @@ fn test_mkfifoat_none() {
 }
 
 #[test]
-#[cfg(not(any(target_os = "macos", target_os = "ios", target_os = "android")))]
+#[cfg(not(any(
+    target_os = "macos", target_os = "ios",
+    target_os = "android", target_os = "redox")))]
 fn test_mkfifoat() {
     let tempdir = tempfile::tempdir().unwrap();
     let dirfd = open(tempdir.path(), OFlag::empty(), Mode::empty()).unwrap();
@@ -128,7 +141,9 @@ fn test_mkfifoat() {
 }
 
 #[test]
-#[cfg(not(any(target_os = "macos", target_os = "ios", target_os = "android")))]
+#[cfg(not(any(
+    target_os = "macos", target_os = "ios",
+    target_os = "android", target_os = "redox")))]
 fn test_mkfifoat_directory_none() {
     let _m = ::CWD_LOCK.read().expect("Mutex got poisoned by another test");
 
@@ -137,7 +152,9 @@ fn test_mkfifoat_directory_none() {
 }
 
 #[test]
-#[cfg(not(any(target_os = "macos", target_os = "ios", target_os = "android")))]
+#[cfg(not(any(
+    target_os = "macos", target_os = "ios",
+    target_os = "android", target_os = "redox")))]
 fn test_mkfifoat_directory() {
     // mkfifoat should fail if a directory is given
     let tempdir = tempfile::tempdir().unwrap();
@@ -157,6 +174,7 @@ fn test_getpid() {
 }
 
 #[test]
+#[cfg(not(target_os = "redox"))]
 fn test_getsid() {
     let none_sid: ::libc::pid_t = getsid(None).unwrap().into();
     let pid_sid: ::libc::pid_t = getsid(Some(getpid())).unwrap().into();
@@ -177,7 +195,7 @@ mod linux_android {
 
 #[test]
 // `getgroups()` and `setgroups()` do not behave as expected on Apple platforms
-#[cfg(not(any(target_os = "ios", target_os = "macos")))]
+#[cfg(not(any(target_os = "ios", target_os = "macos", target_os = "redox")))]
 fn test_setgroups() {
     // Skip this test when not run as root as `setgroups()` requires root.
     skip_if_not_root!("test_setgroups");
@@ -200,7 +218,7 @@ fn test_setgroups() {
 
 #[test]
 // `getgroups()` and `setgroups()` do not behave as expected on Apple platforms
-#[cfg(not(any(target_os = "ios", target_os = "macos")))]
+#[cfg(not(any(target_os = "ios", target_os = "macos", target_os = "redox")))]
 fn test_initgroups() {
     // Skip this test when not run as root as `initgroups()` and `setgroups()`
     // require root.
@@ -230,6 +248,7 @@ fn test_initgroups() {
     setgroups(&old_groups).unwrap();
 }
 
+#[cfg(not(target_os = "redox"))]
 macro_rules! execve_test_factory(
     ($test_name:ident, $syscall:ident, $exe: expr $(, $pathname:expr, $flags:expr)*) => (
     #[test]
@@ -391,6 +410,7 @@ fn test_chown() {
 }
 
 #[test]
+#[cfg(not(target_os = "redox"))]
 fn test_fchownat() {
     let _dr = ::DirRestore::new();
     // Testing for anything other than our own UID/GID is hard.
@@ -462,7 +482,7 @@ cfg_if!{
                 skip_if_jailed!("test_acct");
             }
         }
-    } else {
+    } else if #[cfg(not(target_os = "redox"))] {
         macro_rules! require_acct{
             () => {
                 skip_if_not_root!("test_acct");
@@ -472,6 +492,7 @@ cfg_if!{
 }
 
 #[test]
+#[cfg(not(target_os = "redox"))]
 fn test_acct() {
     use tempfile::NamedTempFile;
     use std::process::Command;
@@ -550,6 +571,7 @@ fn test_pipe2() {
 }
 
 #[test]
+#[cfg(not(target_os = "redox"))]
 fn test_truncate() {
     let tempdir = tempfile::tempdir().unwrap();
     let path = tempdir.path().join("file");
@@ -586,15 +608,18 @@ fn test_ftruncate() {
 }
 
 // Used in `test_alarm`.
+#[cfg(not(target_os = "redox"))]
 static mut ALARM_CALLED: bool = false;
 
 // Used in `test_alarm`.
+#[cfg(not(target_os = "redox"))]
 pub extern fn alarm_signal_handler(raw_signal: libc::c_int) {
     assert_eq!(raw_signal, libc::SIGALRM, "unexpected signal: {}", raw_signal);
     unsafe { ALARM_CALLED = true };
 }
 
 #[test]
+#[cfg(not(target_os = "redox"))]
 fn test_alarm() {
     let _m = ::SIGNAL_MTX.lock().expect("Mutex got poisoned by another test");
 
@@ -624,6 +649,7 @@ fn test_alarm() {
 }
 
 #[test]
+#[cfg(not(target_os = "redox"))]
 fn test_canceling_alarm() {
     let _m = ::SIGNAL_MTX.lock().expect("Mutex got poisoned by another test");
 
@@ -634,6 +660,7 @@ fn test_canceling_alarm() {
 }
 
 #[test]
+#[cfg(not(target_os = "redox"))]
 fn test_symlinkat() {
     let _m = ::CWD_LOCK.read().expect("Mutex got poisoned by another test");
 
@@ -661,6 +688,7 @@ fn test_symlinkat() {
 }
 
 #[test]
+#[cfg(not(target_os = "redox"))]
 fn test_linkat_file() {
     let tempdir = tempfile::tempdir().unwrap();
     let oldfilename = "foo.txt";
@@ -681,6 +709,7 @@ fn test_linkat_file() {
 }
 
 #[test]
+#[cfg(not(target_os = "redox"))]
 fn test_linkat_olddirfd_none() {
     let _dr = ::DirRestore::new();
 
@@ -705,6 +734,7 @@ fn test_linkat_olddirfd_none() {
 }
 
 #[test]
+#[cfg(not(target_os = "redox"))]
 fn test_linkat_newdirfd_none() {
     let _dr = ::DirRestore::new();
 
@@ -729,7 +759,7 @@ fn test_linkat_newdirfd_none() {
 }
 
 #[test]
-#[cfg(not(any(target_os = "ios", target_os = "macos")))]
+#[cfg(not(any(target_os = "ios", target_os = "macos", target_os = "redox")))]
 fn test_linkat_no_follow_symlink() {
     let _m = ::CWD_LOCK.read().expect("Mutex got poisoned by another test");
 
@@ -766,6 +796,7 @@ fn test_linkat_no_follow_symlink() {
 }
 
 #[test]
+#[cfg(not(target_os = "redox"))]
 fn test_linkat_follow_symlink() {
     let _m = ::CWD_LOCK.read().expect("Mutex got poisoned by another test");
 
@@ -801,6 +832,7 @@ fn test_linkat_follow_symlink() {
 }
 
 #[test]
+#[cfg(not(target_os = "redox"))]
 fn test_unlinkat_dir_noremovedir() {
     let tempdir = tempfile::tempdir().unwrap();
     let dirname = "foo_dir";
@@ -818,6 +850,7 @@ fn test_unlinkat_dir_noremovedir() {
  }
 
 #[test]
+#[cfg(not(target_os = "redox"))]
 fn test_unlinkat_dir_removedir() {
     let tempdir = tempfile::tempdir().unwrap();
     let dirname = "foo_dir";
@@ -835,6 +868,7 @@ fn test_unlinkat_dir_removedir() {
  }
 
 #[test]
+#[cfg(not(target_os = "redox"))]
 fn test_unlinkat_file() {
     let tempdir = tempfile::tempdir().unwrap();
     let filename = "foo.txt";

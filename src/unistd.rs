@@ -2,14 +2,20 @@
 
 use errno::{self, Errno};
 use {Error, Result, NixPath};
-use fcntl::{AtFlags, at_rawfd, fcntl, FdFlag, OFlag};
+#[cfg(not(target_os = "redox"))]
+use fcntl::{AtFlags, at_rawfd};
+use fcntl::{FdFlag, OFlag, fcntl};
 use fcntl::FcntlArg::F_SETFD;
 use libc::{self, c_char, c_void, c_int, c_long, c_uint, size_t, pid_t, off_t,
            uid_t, gid_t, mode_t, PATH_MAX};
 use std::{fmt, mem, ptr};
 use std::convert::Infallible;
-use std::ffi::{CString, CStr, OsString, OsStr};
-use std::os::unix::ffi::{OsStringExt, OsStrExt};
+use std::ffi::{CStr, OsString};
+#[cfg(not(target_os = "redox"))]
+use std::ffi::{CString, OsStr};
+use std::os::unix::ffi::OsStringExt;
+#[cfg(not(target_os = "redox"))]
+use std::os::unix::ffi::OsStrExt;
 use std::os::unix::io::RawFd;
 use std::path::PathBuf;
 use sys::stat::Mode;
@@ -285,6 +291,7 @@ pub fn setsid() -> Result<Pid> {
 /// Obtain the process group ID of the process that is the session leader of the process specified
 /// by pid. If pid is zero, it specifies the calling process.
 #[inline]
+#[cfg(not(target_os = "redox"))]
 pub fn getsid(pid: Option<Pid>) -> Result<Pid> {
     let res = unsafe { libc::getsid(pid.unwrap_or(Pid(0)).into()) };
     Errno::result(res).map(Pid)
@@ -498,6 +505,7 @@ pub fn mkdir<P: ?Sized + NixPath>(path: &P, mode: Mode) -> Result<()> {
 /// }
 /// ```
 #[inline]
+#[cfg(not(target_os = "redox"))] // RedoxFS does not support fifo yet
 pub fn mkfifo<P: ?Sized + NixPath>(path: &P, mode: Mode) -> Result<()> {
     let res = path.with_nix_path(|cstr| {
         unsafe { libc::mkfifo(cstr.as_ptr(), mode.bits() as mode_t) }
@@ -517,7 +525,9 @@ pub fn mkfifo<P: ?Sized + NixPath>(path: &P, mode: Mode) -> Result<()> {
 /// [mkfifoat(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/mkfifoat.html).
 // mkfifoat is not implemented in OSX or android
 #[inline]
-#[cfg(not(any(target_os = "macos", target_os = "ios", target_os = "android")))]
+#[cfg(not(any(
+    target_os = "macos", target_os = "ios",
+    target_os = "android", target_os = "redox")))]
 pub fn mkfifoat<P: ?Sized + NixPath>(dirfd: Option<RawFd>, path: &P, mode: Mode) -> Result<()> {
     let res = path.with_nix_path(|cstr| unsafe {
         libc::mkfifoat(at_rawfd(dirfd), cstr.as_ptr(), mode.bits() as mode_t)
@@ -535,6 +545,7 @@ pub fn mkfifoat<P: ?Sized + NixPath>(dirfd: Option<RawFd>, path: &P, mode: Mode)
 /// directory. This is identical to `libc::symlink(path1, path2)`.
 ///
 /// See also [symlinkat(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/symlinkat.html).
+#[cfg(not(target_os = "redox"))]
 pub fn symlinkat<P1: ?Sized + NixPath, P2: ?Sized + NixPath>(
     path1: &P1,
     dirfd: Option<RawFd>,
@@ -674,6 +685,7 @@ pub enum FchownatFlags {
 /// # References
 ///
 /// [fchownat(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/fchownat.html).
+#[cfg(not(target_os = "redox"))]
 pub fn fchownat<P: ?Sized + NixPath>(
     dirfd: Option<RawFd>,
     path: &P,
@@ -866,6 +878,7 @@ pub fn execveat(dirfd: RawFd, pathname: &CStr, args: &[&CStr],
     note="Deprecated in MacOSX 10.5"
 ))]
 #[cfg_attr(any(target_os = "macos", target_os = "ios"), allow(deprecated))]
+#[cfg(not(target_os = "redox"))]
 pub fn daemon(nochdir: bool, noclose: bool) -> Result<()> {
     let res = unsafe { libc::daemon(nochdir as c_int, noclose as c_int) };
     Errno::result(res).map(drop)
@@ -878,6 +891,7 @@ pub fn daemon(nochdir: bool, noclose: bool) -> Result<()> {
 /// On some systems, the host name is limited to as few as 64 bytes.  An error
 /// will be return if the name is not valid or the current process does not have
 /// permissions to update the host name.
+#[cfg(not(target_os = "redox"))]
 pub fn sethostname<S: AsRef<OsStr>>(name: S) -> Result<()> {
     // Handle some differences in type of the len arg across platforms.
     cfg_if! {
@@ -1066,6 +1080,7 @@ pub fn pipe() -> Result<(RawFd, RawFd)> {
           target_os = "emscripten",
           target_os = "freebsd",
           target_os = "linux",
+          target_os = "redox",
           target_os = "netbsd",
           target_os = "openbsd"))]
 pub fn pipe2(flags: OFlag) -> Result<(RawFd, RawFd)> {
@@ -1138,6 +1153,7 @@ fn pipe2_setflags(fd1: RawFd, fd2: RawFd, flags: OFlag) -> Result<()> {
 ///
 /// See also
 /// [truncate(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/truncate.html)
+#[cfg(not(target_os = "redox"))]
 pub fn truncate<P: ?Sized + NixPath>(path: &P, len: off_t) -> Result<()> {
     let res = path.with_nix_path(|cstr| {
         unsafe {
@@ -1191,6 +1207,7 @@ pub enum LinkatFlags {
 ///
 /// # References
 /// See also [linkat(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/linkat.html)
+#[cfg(not(target_os = "redox"))] // RedoxFS does not support symlinks yet
 pub fn linkat<P: ?Sized + NixPath>(
     olddirfd: Option<RawFd>,
     oldpath: &P,
@@ -1252,6 +1269,7 @@ pub enum UnlinkatFlags {
 ///
 /// # References
 /// See also [unlinkat(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/unlinkat.html)
+#[cfg(not(target_os = "redox"))]
 pub fn unlinkat<P: ?Sized + NixPath>(
     dirfd: Option<RawFd>,
     path: &P,
@@ -1503,7 +1521,7 @@ pub fn getgroups() -> Result<Vec<Gid>> {
 /// #     try_main().unwrap();
 /// # }
 /// ```
-#[cfg(not(any(target_os = "ios", target_os = "macos")))]
+#[cfg(not(any(target_os = "ios", target_os = "macos", target_os = "redox")))]
 pub fn setgroups(groups: &[Gid]) -> Result<()> {
     cfg_if! {
         if #[cfg(any(target_os = "dragonfly",
@@ -1547,7 +1565,7 @@ pub fn setgroups(groups: &[Gid]) -> Result<()> {
 /// and `setgroups()`. Additionally, while some implementations will return a
 /// partial list of groups when `NGROUPS_MAX` is exceeded, this implementation
 /// will only ever return the complete list or else an error.
-#[cfg(not(any(target_os = "ios", target_os = "macos")))]
+#[cfg(not(any(target_os = "ios", target_os = "macos", target_os = "redox")))]
 pub fn getgrouplist(user: &CStr, group: Gid) -> Result<Vec<Gid>> {
     let ngroups_max = match sysconf(SysconfVar::NGROUPS_MAX) {
         Ok(Some(n)) => n as c_int,
@@ -1627,7 +1645,7 @@ pub fn getgrouplist(user: &CStr, group: Gid) -> Result<Vec<Gid>> {
 /// #     try_main().unwrap();
 /// # }
 /// ```
-#[cfg(not(any(target_os = "ios", target_os = "macos")))]
+#[cfg(not(any(target_os = "ios", target_os = "macos", target_os = "redox")))]
 pub fn initgroups(user: &CStr, group: Gid) -> Result<()> {
     cfg_if! {
         if #[cfg(any(target_os = "ios", target_os = "macos"))] {
@@ -1646,6 +1664,7 @@ pub fn initgroups(user: &CStr, group: Gid) -> Result<()> {
 ///
 /// See also [pause(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/pause.html).
 #[inline]
+#[cfg(not(target_os = "redox"))]
 pub fn pause() {
     unsafe { libc::pause() };
 }
@@ -1738,6 +1757,7 @@ pub fn sleep(seconds: c_uint) -> c_uint {
     unsafe { libc::sleep(seconds) }
 }
 
+#[cfg(not(target_os = "redox"))]
 pub mod acct {
     use libc;
     use {Result, NixPath};
@@ -1819,7 +1839,7 @@ pub fn mkstemp<P: ?Sized + NixPath>(template: &P) -> Result<(RawFd, PathBuf)> {
 #[repr(i32)]
 pub enum PathconfVar {
     #[cfg(any(target_os = "dragonfly", target_os = "freebsd", target_os = "linux",
-              target_os = "netbsd", target_os = "openbsd"))]
+              target_os = "netbsd", target_os = "openbsd", target_os = "redox"))]
     /// Minimum number of bits needed to represent, as a signed integer value,
     /// the maximum size of a regular file allowed in the specified directory.
     FILESIZEBITS = libc::_PC_FILESIZEBITS,
@@ -1843,11 +1863,11 @@ pub enum PathconfVar {
     /// a pipe.
     PIPE_BUF = libc::_PC_PIPE_BUF,
     #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "linux",
-              target_os = "netbsd", target_os = "openbsd"))]
+              target_os = "netbsd", target_os = "openbsd", target_os = "redox"))]
     /// Symbolic links can be created.
     POSIX2_SYMLINKS = libc::_PC_2_SYMLINKS,
     #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd",
-              target_os = "linux", target_os = "openbsd"))]
+              target_os = "linux", target_os = "openbsd", target_os = "redox"))]
     /// Minimum number of bytes of storage actually allocated for any portion of
     /// a file.
     POSIX_ALLOC_SIZE_MIN = libc::_PC_ALLOC_SIZE_MIN,
@@ -1857,19 +1877,20 @@ pub enum PathconfVar {
     /// `POSIX_REC_MIN_XFER_SIZE` and `POSIX_REC_MAX_XFER_SIZE` values.
     POSIX_REC_INCR_XFER_SIZE = libc::_PC_REC_INCR_XFER_SIZE,
     #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd",
-              target_os = "linux", target_os = "openbsd"))]
+              target_os = "linux", target_os = "openbsd", target_os = "redox"))]
     /// Maximum recommended file transfer size.
     POSIX_REC_MAX_XFER_SIZE = libc::_PC_REC_MAX_XFER_SIZE,
     #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd",
-              target_os = "linux", target_os = "openbsd"))]
+              target_os = "linux", target_os = "openbsd", target_os = "redox"))]
     /// Minimum recommended file transfer size.
     POSIX_REC_MIN_XFER_SIZE = libc::_PC_REC_MIN_XFER_SIZE,
     #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd",
-              target_os = "linux", target_os = "openbsd"))]
+              target_os = "linux", target_os = "openbsd", target_os = "redox"))]
     ///  Recommended file transfer buffer alignment.
     POSIX_REC_XFER_ALIGN = libc::_PC_REC_XFER_ALIGN,
     #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd",
-              target_os = "linux", target_os = "netbsd", target_os = "openbsd"))]
+              target_os = "linux", target_os = "netbsd", target_os = "openbsd",
+              target_os = "redox"))]
     /// Maximum number of bytes in a symbolic link.
     SYMLINK_MAX = libc::_PC_SYMLINK_MAX,
     /// The use of `chown` and `fchown` is restricted to a process with
@@ -1883,17 +1904,18 @@ pub enum PathconfVar {
     /// disable terminal special character handling.
     _POSIX_VDISABLE = libc::_PC_VDISABLE,
     #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd",
-              target_os = "linux", target_os = "openbsd"))]
+              target_os = "linux", target_os = "openbsd", target_os = "redox"))]
     /// Asynchronous input or output operations may be performed for the
     /// associated file.
     _POSIX_ASYNC_IO = libc::_PC_ASYNC_IO,
     #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd",
-              target_os = "linux", target_os = "openbsd"))]
+              target_os = "linux", target_os = "openbsd", target_os = "redox"))]
     /// Prioritized input or output operations may be performed for the
     /// associated file.
     _POSIX_PRIO_IO = libc::_PC_PRIO_IO,
     #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd",
-              target_os = "linux", target_os = "netbsd", target_os = "openbsd"))]
+              target_os = "linux", target_os = "netbsd", target_os = "openbsd",
+              target_os = "redox"))]
     /// Synchronized input or output operations may be performed for the
     /// associated file.
     _POSIX_SYNC_IO = libc::_PC_SYNC_IO,
@@ -1994,9 +2016,11 @@ pub fn pathconf<P: ?Sized + NixPath>(path: &P, var: PathconfVar) -> Result<Optio
 pub enum SysconfVar {
     /// Maximum number of I/O operations in a single list I/O call supported by
     /// the implementation.
+    #[cfg(not(target_os = "redox"))]
     AIO_LISTIO_MAX = libc::_SC_AIO_LISTIO_MAX,
     /// Maximum number of outstanding asynchronous I/O operations supported by
     /// the implementation.
+    #[cfg(not(target_os = "redox"))]
     AIO_MAX = libc::_SC_AIO_MAX,
     #[cfg(any(target_os="android", target_os="dragonfly", target_os="freebsd",
               target_os = "ios", target_os="linux", target_os = "macos",
@@ -2007,14 +2031,19 @@ pub enum SysconfVar {
     /// Maximum length of argument to the exec functions including environment data.
     ARG_MAX = libc::_SC_ARG_MAX,
     /// Maximum number of functions that may be registered with `atexit`.
+    #[cfg(not(target_os = "redox"))]
     ATEXIT_MAX = libc::_SC_ATEXIT_MAX,
     /// Maximum obase values allowed by the bc utility.
+    #[cfg(not(target_os = "redox"))]
     BC_BASE_MAX = libc::_SC_BC_BASE_MAX,
     /// Maximum number of elements permitted in an array by the bc utility.
+    #[cfg(not(target_os = "redox"))]
     BC_DIM_MAX = libc::_SC_BC_DIM_MAX,
     /// Maximum scale value allowed by the bc utility.
+    #[cfg(not(target_os = "redox"))]
     BC_SCALE_MAX = libc::_SC_BC_SCALE_MAX,
     /// Maximum length of a string constant accepted by the bc utility.
+    #[cfg(not(target_os = "redox"))]
     BC_STRING_MAX = libc::_SC_BC_STRING_MAX,
     /// Maximum number of simultaneous processes per real user ID.
     CHILD_MAX = libc::_SC_CHILD_MAX,
@@ -2022,11 +2051,14 @@ pub enum SysconfVar {
     CLK_TCK = libc::_SC_CLK_TCK,
     /// Maximum number of weights that can be assigned to an entry of the
     /// LC_COLLATE order keyword in the locale definition file
+    #[cfg(not(target_os = "redox"))]
     COLL_WEIGHTS_MAX = libc::_SC_COLL_WEIGHTS_MAX,
     /// Maximum number of timer expiration overruns.
+    #[cfg(not(target_os = "redox"))]
     DELAYTIMER_MAX = libc::_SC_DELAYTIMER_MAX,
     /// Maximum number of expressions that can be nested within parentheses by
     /// the expr utility.
+    #[cfg(not(target_os = "redox"))]
     EXPR_NEST_MAX = libc::_SC_EXPR_NEST_MAX,
     #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
               target_os="linux", target_os = "macos", target_os="netbsd",
@@ -2036,23 +2068,29 @@ pub enum SysconfVar {
     HOST_NAME_MAX = libc::_SC_HOST_NAME_MAX,
     /// Maximum number of iovec structures that one process has available for
     /// use with `readv` or `writev`.
+    #[cfg(not(target_os = "redox"))]
     IOV_MAX = libc::_SC_IOV_MAX,
     /// Unless otherwise noted, the maximum length, in bytes, of a utility's
     /// input line (either standard input or another file), when the utility is
     /// described as processing text files. The length includes room for the
     /// trailing <newline>.
+    #[cfg(not(target_os = "redox"))]
     LINE_MAX = libc::_SC_LINE_MAX,
     /// Maximum length of a login name.
     LOGIN_NAME_MAX = libc::_SC_LOGIN_NAME_MAX,
     /// Maximum number of simultaneous supplementary group IDs per process.
     NGROUPS_MAX = libc::_SC_NGROUPS_MAX,
     /// Initial size of `getgrgid_r` and `getgrnam_r` data buffers
+    #[cfg(not(target_os = "redox"))]
     GETGR_R_SIZE_MAX = libc::_SC_GETGR_R_SIZE_MAX,
     /// Initial size of `getpwuid_r` and `getpwnam_r` data buffers
+    #[cfg(not(target_os = "redox"))]
     GETPW_R_SIZE_MAX = libc::_SC_GETPW_R_SIZE_MAX,
     /// The maximum number of open message queue descriptors a process may hold.
+    #[cfg(not(target_os = "redox"))]
     MQ_OPEN_MAX = libc::_SC_MQ_OPEN_MAX,
     /// The maximum number of message priorities supported by the implementation.
+    #[cfg(not(target_os = "redox"))]
     MQ_PRIO_MAX = libc::_SC_MQ_PRIO_MAX,
     /// A value one greater than the maximum value that the system may assign to
     /// a newly-created file descriptor.
@@ -2067,6 +2105,7 @@ pub enum SysconfVar {
     /// The implementation supports barriers.
     _POSIX_BARRIERS = libc::_SC_BARRIERS,
     /// The implementation supports asynchronous input and output.
+    #[cfg(not(target_os = "redox"))]
     _POSIX_ASYNCHRONOUS_IO = libc::_SC_ASYNCHRONOUS_IO,
     #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
               target_os="linux", target_os = "macos", target_os="netbsd",
@@ -2079,24 +2118,32 @@ pub enum SysconfVar {
     /// The implementation supports the Process CPU-Time Clocks option.
     _POSIX_CPUTIME = libc::_SC_CPUTIME,
     /// The implementation supports the File Synchronization option.
+    #[cfg(not(target_os = "redox"))]
     _POSIX_FSYNC = libc::_SC_FSYNC,
     #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
               target_os="linux", target_os = "macos", target_os="openbsd"))]
     /// The implementation supports the IPv6 option.
     _POSIX_IPV6 = libc::_SC_IPV6,
     /// The implementation supports job control.
+    #[cfg(not(target_os = "redox"))]
     _POSIX_JOB_CONTROL = libc::_SC_JOB_CONTROL,
     /// The implementation supports memory mapped Files.
+    #[cfg(not(target_os = "redox"))]
     _POSIX_MAPPED_FILES = libc::_SC_MAPPED_FILES,
     /// The implementation supports the Process Memory Locking option.
+    #[cfg(not(target_os = "redox"))]
     _POSIX_MEMLOCK = libc::_SC_MEMLOCK,
     /// The implementation supports the Range Memory Locking option.
+    #[cfg(not(target_os = "redox"))]
     _POSIX_MEMLOCK_RANGE = libc::_SC_MEMLOCK_RANGE,
     /// The implementation supports memory protection.
+    #[cfg(not(target_os = "redox"))]
     _POSIX_MEMORY_PROTECTION = libc::_SC_MEMORY_PROTECTION,
     /// The implementation supports the Message Passing option.
+    #[cfg(not(target_os = "redox"))]
     _POSIX_MESSAGE_PASSING = libc::_SC_MESSAGE_PASSING,
     /// The implementation supports the Monotonic Clock option.
+    #[cfg(not(target_os = "redox"))]
     _POSIX_MONOTONIC_CLOCK = libc::_SC_MONOTONIC_CLOCK,
     #[cfg(any(target_os="android", target_os="dragonfly", target_os="freebsd",
               target_os = "ios", target_os="linux", target_os = "macos",
@@ -2104,6 +2151,7 @@ pub enum SysconfVar {
     /// The implementation supports the Prioritized Input and Output option.
     _POSIX_PRIORITIZED_IO = libc::_SC_PRIORITIZED_IO,
     /// The implementation supports the Process Scheduling option.
+    #[cfg(not(target_os = "redox"))]
     _POSIX_PRIORITY_SCHEDULING = libc::_SC_PRIORITY_SCHEDULING,
     #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
               target_os="linux", target_os = "macos", target_os="openbsd"))]
@@ -2125,10 +2173,13 @@ pub enum SysconfVar {
     /// The implementation supports the Regular Expression Handling option.
     _POSIX_REGEXP = libc::_SC_REGEXP,
     /// Each process has a saved set-user-ID and a saved set-group-ID.
+    #[cfg(not(target_os = "redox"))]
     _POSIX_SAVED_IDS = libc::_SC_SAVED_IDS,
     /// The implementation supports semaphores.
+    #[cfg(not(target_os = "redox"))]
     _POSIX_SEMAPHORES = libc::_SC_SEMAPHORES,
     /// The implementation supports the Shared Memory Objects option.
+    #[cfg(not(target_os = "redox"))]
     _POSIX_SHARED_MEMORY_OBJECTS = libc::_SC_SHARED_MEMORY_OBJECTS,
     #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
               target_os="linux", target_os = "macos", target_os="netbsd",
@@ -2153,10 +2204,13 @@ pub enum SysconfVar {
               target_os="openbsd"))]
     _POSIX_SS_REPL_MAX = libc::_SC_SS_REPL_MAX,
     /// The implementation supports the Synchronized Input and Output option.
+    #[cfg(not(target_os = "redox"))]
     _POSIX_SYNCHRONIZED_IO = libc::_SC_SYNCHRONIZED_IO,
     /// The implementation supports the Thread Stack Address Attribute option.
+    #[cfg(not(target_os = "redox"))]
     _POSIX_THREAD_ATTR_STACKADDR = libc::_SC_THREAD_ATTR_STACKADDR,
     /// The implementation supports the Thread Stack Size Attribute option.
+    #[cfg(not(target_os = "redox"))]
     _POSIX_THREAD_ATTR_STACKSIZE = libc::_SC_THREAD_ATTR_STACKSIZE,
     #[cfg(any(target_os = "ios", target_os="linux", target_os = "macos",
               target_os="netbsd", target_os="openbsd"))]
@@ -2164,10 +2218,13 @@ pub enum SysconfVar {
     _POSIX_THREAD_CPUTIME = libc::_SC_THREAD_CPUTIME,
     /// The implementation supports the Non-Robust Mutex Priority Inheritance
     /// option.
+    #[cfg(not(target_os = "redox"))]
     _POSIX_THREAD_PRIO_INHERIT = libc::_SC_THREAD_PRIO_INHERIT,
     /// The implementation supports the Non-Robust Mutex Priority Protection option.
+    #[cfg(not(target_os = "redox"))]
     _POSIX_THREAD_PRIO_PROTECT = libc::_SC_THREAD_PRIO_PROTECT,
     /// The implementation supports the Thread Execution Scheduling option.
+    #[cfg(not(target_os = "redox"))]
     _POSIX_THREAD_PRIORITY_SCHEDULING = libc::_SC_THREAD_PRIORITY_SCHEDULING,
     #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
               target_os="linux", target_os = "macos", target_os="netbsd",
@@ -2182,18 +2239,21 @@ pub enum SysconfVar {
     /// The implementation supports the Robust Mutex Priority Protection option.
     _POSIX_THREAD_ROBUST_PRIO_PROTECT = libc::_SC_THREAD_ROBUST_PRIO_PROTECT,
     /// The implementation supports thread-safe functions.
+    #[cfg(not(target_os = "redox"))]
     _POSIX_THREAD_SAFE_FUNCTIONS = libc::_SC_THREAD_SAFE_FUNCTIONS,
     #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
               target_os="linux", target_os = "macos", target_os="openbsd"))]
     /// The implementation supports the Thread Sporadic Server option.
     _POSIX_THREAD_SPORADIC_SERVER = libc::_SC_THREAD_SPORADIC_SERVER,
     /// The implementation supports threads.
+    #[cfg(not(target_os = "redox"))]
     _POSIX_THREADS = libc::_SC_THREADS,
     #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
               target_os="linux", target_os = "macos", target_os="openbsd"))]
     /// The implementation supports timeouts.
     _POSIX_TIMEOUTS = libc::_SC_TIMEOUTS,
     /// The implementation supports timers.
+    #[cfg(not(target_os = "redox"))]
     _POSIX_TIMERS = libc::_SC_TIMERS,
     #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
               target_os="linux", target_os = "macos", target_os="openbsd"))]
@@ -2258,17 +2318,23 @@ pub enum SysconfVar {
     /// using at least 64 bits.
     _POSIX_V6_LPBIG_OFFBIG = libc::_SC_V6_LPBIG_OFFBIG,
     /// The implementation supports the C-Language Binding option.
+    #[cfg(not(target_os = "redox"))]
     _POSIX2_C_BIND = libc::_SC_2_C_BIND,
     /// The implementation supports the C-Language Development Utilities option.
+    #[cfg(not(target_os = "redox"))]
     _POSIX2_C_DEV = libc::_SC_2_C_DEV,
     /// The implementation supports the Terminal Characteristics option.
+    #[cfg(not(target_os = "redox"))]
     _POSIX2_CHAR_TERM = libc::_SC_2_CHAR_TERM,
     /// The implementation supports the FORTRAN Development Utilities option.
+    #[cfg(not(target_os = "redox"))]
     _POSIX2_FORT_DEV = libc::_SC_2_FORT_DEV,
     /// The implementation supports the FORTRAN Runtime Utilities option.
+    #[cfg(not(target_os = "redox"))]
     _POSIX2_FORT_RUN = libc::_SC_2_FORT_RUN,
     /// The implementation supports the creation of locales by the localedef
     /// utility.
+    #[cfg(not(target_os = "redox"))]
     _POSIX2_LOCALEDEF = libc::_SC_2_LOCALEDEF,
     #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
               target_os="linux", target_os = "macos", target_os="netbsd",
@@ -2302,26 +2368,34 @@ pub enum SysconfVar {
     /// The implementation supports the Track Batch Job Request option.
     _POSIX2_PBS_TRACK = libc::_SC_2_PBS_TRACK,
     /// The implementation supports the Software Development Utilities option.
+    #[cfg(not(target_os = "redox"))]
     _POSIX2_SW_DEV = libc::_SC_2_SW_DEV,
     /// The implementation supports the User Portability Utilities option.
+    #[cfg(not(target_os = "redox"))]
     _POSIX2_UPE = libc::_SC_2_UPE,
     /// Integer value indicating version of the Shell and Utilities volume of
     /// POSIX.1 to which the implementation conforms.
+    #[cfg(not(target_os = "redox"))]
     _POSIX2_VERSION = libc::_SC_2_VERSION,
     /// The size of a system page in bytes.
     ///
     /// POSIX also defines an alias named `PAGESIZE`, but Rust does not allow two
     /// enum constants to have the same value, so nix omits `PAGESIZE`.
     PAGE_SIZE = libc::_SC_PAGE_SIZE,
+    #[cfg(not(target_os = "redox"))]
     PTHREAD_DESTRUCTOR_ITERATIONS = libc::_SC_THREAD_DESTRUCTOR_ITERATIONS,
+    #[cfg(not(target_os = "redox"))]
     PTHREAD_KEYS_MAX = libc::_SC_THREAD_KEYS_MAX,
+    #[cfg(not(target_os = "redox"))]
     PTHREAD_STACK_MIN = libc::_SC_THREAD_STACK_MIN,
+    #[cfg(not(target_os = "redox"))]
     PTHREAD_THREADS_MAX = libc::_SC_THREAD_THREADS_MAX,
     RE_DUP_MAX = libc::_SC_RE_DUP_MAX,
     #[cfg(any(target_os="android", target_os="dragonfly", target_os="freebsd",
               target_os = "ios", target_os="linux", target_os = "macos",
               target_os="openbsd"))]
     RTSIG_MAX = libc::_SC_RTSIG_MAX,
+    #[cfg(not(target_os = "redox"))]
     SEM_NSEMS_MAX = libc::_SC_SEM_NSEMS_MAX,
     #[cfg(any(target_os="android", target_os="dragonfly", target_os="freebsd",
               target_os = "ios", target_os="linux", target_os = "macos",
@@ -2336,6 +2410,7 @@ pub enum SysconfVar {
               target_os="linux", target_os = "macos", target_os="netbsd",
               target_os="openbsd"))]
     SYMLOOP_MAX = libc::_SC_SYMLOOP_MAX,
+    #[cfg(not(target_os = "redox"))]
     TIMER_MAX = libc::_SC_TIMER_MAX,
     TTY_NAME_MAX = libc::_SC_TTY_NAME_MAX,
     TZNAME_MAX = libc::_SC_TZNAME_MAX,
@@ -2366,6 +2441,7 @@ pub enum SysconfVar {
     _XOPEN_REALTIME_THREADS = libc::_SC_XOPEN_REALTIME_THREADS,
     /// The implementation supports the Issue 4, Version 2 Shared Memory Option
     /// Group.
+    #[cfg(not(target_os = "redox"))]
     _XOPEN_SHM = libc::_SC_XOPEN_SHM,
     #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
               target_os="linux", target_os = "macos", target_os="openbsd"))]
@@ -2508,6 +2584,7 @@ pub fn access<P: ?Sized + NixPath>(path: &P, amode: AccessFlags) -> Result<()> {
 /// fields are based on the user's locale, which could be non-UTF8, while other fields are
 /// guaranteed to conform to [`NAME_REGEX`](https://serverfault.com/a/73101/407341), which only
 /// contains ASCII.
+#[cfg(not(target_os = "redox"))] // RedoxFS does not support passwd
 #[derive(Debug, Clone, PartialEq)]
 pub struct User {
     /// Username
@@ -2536,6 +2613,7 @@ pub struct User {
     pub expire: libc::time_t
 }
 
+#[cfg(not(target_os = "redox"))] // RedoxFS does not support passwd
 impl From<&libc::passwd> for User {
     fn from(pw: &libc::passwd) -> User {
         unsafe {
@@ -2559,6 +2637,7 @@ impl From<&libc::passwd> for User {
     }
 }
 
+#[cfg(not(target_os = "redox"))] // RedoxFS does not support passwd
 impl User {
     fn from_anything<F>(f: F) -> Result<Option<Self>>
     where
@@ -2636,6 +2715,7 @@ impl User {
 }
 
 /// Representation of a Group, based on `libc::group`
+#[cfg(not(target_os = "redox"))] // RedoxFS does not support passwd
 #[derive(Debug, Clone, PartialEq)]
 pub struct Group {
     /// Group name
@@ -2646,6 +2726,7 @@ pub struct Group {
     pub mem: Vec<String>
 }
 
+#[cfg(not(target_os = "redox"))] // RedoxFS does not support passwd
 impl From<&libc::group> for Group {
     fn from(gr: &libc::group) -> Group {
         unsafe {
@@ -2658,6 +2739,7 @@ impl From<&libc::group> for Group {
     }
 }
 
+#[cfg(not(target_os = "redox"))] // RedoxFS does not support passwd
 impl Group {
     unsafe fn members(mem: *mut *mut c_char) -> Vec<String> {
         let mut ret = Vec::new();

@@ -25,6 +25,7 @@ pub mod eventfd;
           target_os = "freebsd",
           target_os = "ios",
           target_os = "linux",
+          target_os = "redox",
           target_os = "macos",
           target_os = "netbsd",
           target_os = "openbsd"))]
@@ -34,6 +35,7 @@ pub mod ioctl;
 #[cfg(target_os = "linux")]
 pub mod memfd;
 
+#[cfg(not(target_os = "redox"))]
 pub mod mman;
 
 pub mod pthread;
@@ -53,6 +55,7 @@ pub mod quota;
 #[cfg(any(target_os = "linux"))]
 pub mod reboot;
 
+#[cfg(not(target_os = "redox"))]
 pub mod select;
 
 #[cfg(any(target_os = "android",
@@ -67,6 +70,7 @@ pub mod signal;
 #[cfg(any(target_os = "android", target_os = "linux"))]
 pub mod signalfd;
 
+#[cfg(not(target_os = "redox"))]
 pub mod socket;
 
 pub mod stat;

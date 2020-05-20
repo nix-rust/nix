@@ -57,6 +57,6 @@ name = "test-mount"
 path = "test/test_mount.rs"
 harness = false
 
-[[test]]
+[[target.'cfg(not(target_os = "redox"))'.test]]
 name = "test-ptymaster-drop"
 path = "test/test_ptymaster_drop.rs"

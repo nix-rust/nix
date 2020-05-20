@@ -64,12 +64,16 @@ libc_bitflags! {
         /// `O_NONBLOCK` is set).
         POLLOUT;
         /// Equivalent to [`POLLIN`](constant.POLLIN.html)
+        #[cfg(not(target_os = "redox"))]
         POLLRDNORM;
+        #[cfg(not(target_os = "redox"))]
         /// Equivalent to [`POLLOUT`](constant.POLLOUT.html)
         POLLWRNORM;
         /// Priority band data can be read (generally unused on Linux).
+        #[cfg(not(target_os = "redox"))]
         POLLRDBAND;
         /// Priority data may be written.
+        #[cfg(not(target_os = "redox"))]
         POLLWRBAND;
         /// Error condition (only returned in
         /// [`PollFd::revents`](struct.PollFd.html#method.revents);
