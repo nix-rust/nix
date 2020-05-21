@@ -267,6 +267,8 @@ sockopt_impl!(Both, ReceiveTimestamp, libc::SOL_SOCKET, libc::SO_TIMESTAMP, bool
 #[cfg(any(target_os = "android", target_os = "linux"))]
 sockopt_impl!(Both, IpTransparent, libc::SOL_IP, libc::IP_TRANSPARENT, bool);
 #[cfg(any(target_os = "android", target_os = "linux", target_os = "freebsd"))]
+sockopt_impl!(Both, IncludeIpHeaders, libc::IPPROTO_IP, libc::IP_HDRINCL, bool);
+#[cfg(any(target_os = "android", target_os = "linux", target_os = "freebsd"))]
 sockopt_impl!(Both, RecvOrigDstAddrV4, libc::SOL_IP, libc::IP_RECVORIGDSTADDR, bool);
 #[cfg(any(target_os = "android", target_os = "linux", target_os = "freebsd"))]
 sockopt_impl!(Both, RecvOrigDstAddrV6, libc::SOL_IPV6, libc::IPV6_RECVORIGDSTADDR, bool);
