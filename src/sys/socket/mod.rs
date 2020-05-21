@@ -532,13 +532,11 @@ pub enum ControlMessageOwned {
     #[cfg(any(
         target_os = "linux",
         target_os = "android",
-        target_os = "freebsd",
     ))]
     OrigDstAddrV4(libc::sockaddr_in),
     #[cfg(any(
         target_os = "linux",
         target_os = "android",
-        target_os = "freebsd",
     ))]
     OrigDstAddrV6(libc::sockaddr_in6),
 
@@ -635,12 +633,12 @@ impl ControlMessageOwned {
                 let gso_size: u16 = ptr::read_unaligned(p as *const _);
                 ControlMessageOwned::UdpGroSegments(gso_size)
             },
-            #[cfg(any(target_os = "android", target_os = "linux", target_os = "freebsd"))]
+            #[cfg(any(target_os = "android", target_os = "linux"))]
             (libc::IPPROTO_IP, libc::IP_ORIGDSTADDR) => {
                 let dl = ptr::read_unaligned(p as *const libc::sockaddr_in);
                 ControlMessageOwned::OrigDstAddrV4(dl)
             },
-            #[cfg(any(target_os = "android", target_os = "linux", target_os = "freebsd"))]
+            #[cfg(any(target_os = "android", target_os = "linux"))]
             (libc::IPPROTO_IPV6, libc::IPV6_ORIGDSTADDR) => {
                 let dl = ptr::read_unaligned(p as *const libc::sockaddr_in6);
                 ControlMessageOwned::OrigDstAddrV6(dl)
@@ -710,7 +708,6 @@ pub enum ControlMessage<'a> {
     #[cfg(any(
         target_os = "linux",
         target_os = "android",
-        target_os = "freebsd",
     ))]
     OrigDstAddrV4(&'a libc::sockaddr_in),
 
@@ -724,7 +721,6 @@ pub enum ControlMessage<'a> {
     #[cfg(any(
         target_os = "linux",
         target_os = "android",
-        target_os = "freebsd",
     ))]
     OrigDstAddrV6(&'a libc::sockaddr_in6),
 
@@ -836,7 +832,6 @@ impl<'a> ControlMessage<'a> {
             #[cfg(any(
                 target_os = "linux",
                 target_os = "android",
-                target_os = "freebsd",
             ))]
             ControlMessage::OrigDstAddrV4(origaddr) => {
                 origaddr as *const libc::sockaddr_in as *const u8
@@ -844,7 +839,6 @@ impl<'a> ControlMessage<'a> {
             #[cfg(any(
                 target_os = "linux",
                 target_os = "android",
-                target_os = "freebsd",
             ))]
             ControlMessage::OrigDstAddrV6(origaddr) => {
                 origaddr as *const libc::sockaddr_in6 as *const u8
@@ -935,7 +929,6 @@ impl<'a> ControlMessage<'a> {
             #[cfg(any(
                 target_os = "linux",
                 target_os = "android",
-                target_os = "freebsd",
             ))]
             ControlMessage::OrigDstAddrV4(origaddr) => {
                 mem::size_of_val(origaddr)
@@ -943,7 +936,6 @@ impl<'a> ControlMessage<'a> {
             #[cfg(any(
                 target_os = "linux",
                 target_os = "android",
-                target_os = "freebsd",
             ))]
             ControlMessage::OrigDstAddrV6(origaddr) => {
                 mem::size_of_val(origaddr)
@@ -1064,11 +1056,11 @@ impl<'a> ControlMessage<'a> {
             ControlMessage::Ipv6PacketInfo(_) => {
                 libc::IPV6_PKTINFO
             },
-            #[cfg(any(target_os = "android", target_os = "linux", target_os = "freebsd"))]
+            #[cfg(any(target_os = "android", target_os = "linux"))]
             ControlMessage::OrigDstAddrV4(_) => {
                 libc::IP_ORIGDSTADDR
             },
-            #[cfg(any(target_os = "android", target_os = "linux", target_os = "freebsd"))]
+            #[cfg(any(target_os = "android", target_os = "linux"))]
             ControlMessage::OrigDstAddrV6(_) => {
                 libc::IPV6_ORIGDSTADDR
             },
