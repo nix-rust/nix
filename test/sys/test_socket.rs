@@ -309,7 +309,6 @@ mod recvfrom {
         target_os = "linux",
         target_os = "android",
         target_os = "freebsd",
-        target_os = "openbsd",
         target_os = "netbsd",
     ))]
     #[test]

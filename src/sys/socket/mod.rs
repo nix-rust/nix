@@ -920,7 +920,6 @@ pub fn sendmsg(fd: RawFd, iov: &[IoVec<&[u8]>], cmsgs: &[ControlMessage],
     target_os = "linux",
     target_os = "android",
     target_os = "freebsd",
-    target_os = "openbsd",
     target_os = "netbsd",
 ))]
 #[derive(Debug)]
@@ -956,7 +955,6 @@ pub struct SendMmsgData<'a, I, C>
     target_os = "linux",
     target_os = "android",
     target_os = "freebsd",
-    target_os = "openbsd",
     target_os = "netbsd",
 ))]
 pub fn sendmmsg<'a, I, C>(
