@@ -28,7 +28,7 @@ type type_of_data = intptr_t;
 #[cfg(any(target_os = "netbsd"))]
 type type_of_udata = intptr_t;
 #[cfg(any(target_os = "netbsd", target_os = "openbsd"))]
-type type_of_data = libc::int64_t;
+type type_of_data = i64;
 
 #[cfg(target_os = "netbsd")]
 type type_of_event_filter = u32;
