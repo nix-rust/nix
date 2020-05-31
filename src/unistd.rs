@@ -1,5 +1,6 @@
 //! Safe wrappers around functions found in libc "unistd.h" header
 
+#[cfg(not(target_os = "redox"))]
 use cfg_if::cfg_if;
 use crate::errno::{self, Errno};
 use crate::{Error, Result, NixPath};
@@ -1110,7 +1111,7 @@ pub fn pipe2(flags: OFlag) -> Result<(RawFd, RawFd)> {
 
 #[cfg(any(target_os = "ios", target_os = "macos"))]
 fn pipe2_setflags(fd1: RawFd, fd2: RawFd, flags: OFlag) -> Result<()> {
-    use fcntl::FcntlArg::F_SETFL;
+    use crate::fcntl::FcntlArg::F_SETFL;
 
     let mut res = Ok(0);
 
