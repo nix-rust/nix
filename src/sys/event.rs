@@ -28,7 +28,7 @@ type type_of_data = intptr_t;
 #[cfg(any(target_os = "netbsd"))]
 type type_of_udata = intptr_t;
 #[cfg(any(target_os = "netbsd", target_os = "openbsd"))]
-type type_of_data = libc::int64_t;
+type type_of_data = i64;
 
 #[cfg(target_os = "netbsd")]
 type type_of_event_filter = u32;
@@ -90,14 +90,9 @@ libc_bitflags!{
         EV_CLEAR;
         EV_DELETE;
         EV_DISABLE;
-        // No released version of OpenBSD supports EV_DISPATCH or EV_RECEIPT.
-        // These have been commited to the -current branch though and are
-        // expected to be part of the OpenBSD 6.2 release in Nov 2017.
-        // See: https://marc.info/?l=openbsd-tech&m=149621427511219&w=2
-        // https://github.com/rust-lang/libc/pull/613
         #[cfg(any(target_os = "dragonfly", target_os = "freebsd",
                   target_os = "ios", target_os = "macos",
-                  target_os = "netbsd"))]
+                  target_os = "netbsd", target_os = "openbsd"))]
         EV_DISPATCH;
         #[cfg(target_os = "freebsd")]
         EV_DROP;
@@ -116,7 +111,7 @@ libc_bitflags!{
         EV_POLL;
         #[cfg(any(target_os = "dragonfly", target_os = "freebsd",
                   target_os = "ios", target_os = "macos",
-                  target_os = "netbsd"))]
+                  target_os = "netbsd", target_os = "openbsd"))]
         EV_RECEIPT;
         EV_SYSFLAGS;
     }
