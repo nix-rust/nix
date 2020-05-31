@@ -48,7 +48,7 @@ macro_rules! libc_bitflags {
             )+
         }
     ) => {
-        bitflags! {
+        ::bitflags::bitflags! {
             $(#[$outer])*
             pub struct $BitFlags: $T {
                 $(

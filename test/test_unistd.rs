@@ -18,13 +18,13 @@ use std::fs::DirBuilder;
 use std::fs::{self, File};
 use std::io::Write;
 use std::os::unix::prelude::*;
-use tempfile::{self, tempfile};
+use tempfile::{tempdir, tempfile};
 use libc::{_exit, off_t};
 
 #[test]
 #[cfg(not(any(target_os = "netbsd")))]
 fn test_fork_and_waitpid() {
-    let _m = ::FORK_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = crate::FORK_MTX.lock().expect("Mutex got poisoned by another test");
 
     // Safe: Child only calls `_exit`, which is signal-safe
     match fork().expect("Error: Fork Failed") {
@@ -52,7 +52,7 @@ fn test_fork_and_waitpid() {
 #[test]
 fn test_wait() {
     // Grab FORK_MTX so wait doesn't reap a different test's child process
-    let _m = ::FORK_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = crate::FORK_MTX.lock().expect("Mutex got poisoned by another test");
 
     // Safe: Child only calls `_exit`, which is signal-safe
     match fork().expect("Error: Fork Failed") {
@@ -90,7 +90,7 @@ fn test_mkstemp_directory() {
 #[test]
 #[cfg(not(target_os = "redox"))]
 fn test_mkfifo() {
-    let tempdir = tempfile::tempdir().unwrap();
+    let tempdir = tempdir().unwrap();
     let mkfifo_fifo = tempdir.path().join("mkfifo_fifo");
 
     mkfifo(&mkfifo_fifo, Mode::S_IRUSR).unwrap();
@@ -112,9 +112,9 @@ fn test_mkfifo_directory() {
     target_os = "macos", target_os = "ios",
     target_os = "android", target_os = "redox")))]
 fn test_mkfifoat_none() {
-    let _m = ::CWD_LOCK.read().expect("Mutex got poisoned by another test");
+    let _m = crate::CWD_LOCK.read().expect("Mutex got poisoned by another test");
 
-    let tempdir = tempfile::tempdir().unwrap();
+    let tempdir = tempdir().unwrap();
     let mkfifoat_fifo = tempdir.path().join("mkfifoat_fifo");
 
     mkfifoat(None, &mkfifoat_fifo, Mode::S_IRUSR).unwrap();
@@ -129,7 +129,7 @@ fn test_mkfifoat_none() {
     target_os = "macos", target_os = "ios",
     target_os = "android", target_os = "redox")))]
 fn test_mkfifoat() {
-    let tempdir = tempfile::tempdir().unwrap();
+    let tempdir = tempdir().unwrap();
     let dirfd = open(tempdir.path(), OFlag::empty(), Mode::empty()).unwrap();
     let mkfifoat_name = "mkfifoat_name";
 
@@ -145,7 +145,7 @@ fn test_mkfifoat() {
     target_os = "macos", target_os = "ios",
     target_os = "android", target_os = "redox")))]
 fn test_mkfifoat_directory_none() {
-    let _m = ::CWD_LOCK.read().expect("Mutex got poisoned by another test");
+    let _m = crate::CWD_LOCK.read().expect("Mutex got poisoned by another test");
 
     // mkfifoat should fail if a directory is given
     assert!(!mkfifoat(None, &env::temp_dir(), Mode::S_IRUSR).is_ok());
@@ -157,7 +157,7 @@ fn test_mkfifoat_directory_none() {
     target_os = "android", target_os = "redox")))]
 fn test_mkfifoat_directory() {
     // mkfifoat should fail if a directory is given
-    let tempdir = tempfile::tempdir().unwrap();
+    let tempdir = tempdir().unwrap();
     let dirfd = open(tempdir.path(), OFlag::empty(), Mode::empty()).unwrap();
     let mkfifoat_dir = "mkfifoat_dir";
     stat::mkdirat(dirfd, mkfifoat_dir, Mode::S_IRUSR).unwrap();
@@ -200,7 +200,7 @@ fn test_setgroups() {
     // Skip this test when not run as root as `setgroups()` requires root.
     skip_if_not_root!("test_setgroups");
 
-    let _m = ::GROUPS_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = crate::GROUPS_MTX.lock().expect("Mutex got poisoned by another test");
 
     // Save the existing groups
     let old_groups = getgroups().unwrap();
@@ -224,7 +224,7 @@ fn test_initgroups() {
     // require root.
     skip_if_not_root!("test_initgroups");
 
-    let _m = ::GROUPS_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = crate::GROUPS_MTX.lock().expect("Mutex got poisoned by another test");
 
     // Save the existing groups
     let old_groups = getgroups().unwrap();
@@ -259,7 +259,7 @@ macro_rules! execve_test_factory(
             skip_if_seccomp!($test_name);
         }
 
-        let m = ::FORK_MTX.lock().expect("Mutex got poisoned by another test");
+        let m = crate::FORK_MTX.lock().expect("Mutex got poisoned by another test");
         // The `exec`d process will write to `writer`, and we'll read that
         // data from `reader`.
         let (reader, writer) = pipe().unwrap();
@@ -353,9 +353,9 @@ cfg_if!{
 #[test]
 fn test_fchdir() {
     // fchdir changes the process's cwd
-    let _dr = ::DirRestore::new();
+    let _dr = crate::DirRestore::new();
 
-    let tmpdir = tempfile::tempdir().unwrap();
+    let tmpdir = tempdir().unwrap();
     let tmpdir_path = tmpdir.path().canonicalize().unwrap();
     let tmpdir_fd = File::open(&tmpdir_path).unwrap().into_raw_fd();
 
@@ -368,9 +368,9 @@ fn test_fchdir() {
 #[test]
 fn test_getcwd() {
     // chdir changes the process's cwd
-    let _dr = ::DirRestore::new();
+    let _dr = crate::DirRestore::new();
 
-    let tmpdir = tempfile::tempdir().unwrap();
+    let tmpdir = tempdir().unwrap();
     let tmpdir_path = tmpdir.path().canonicalize().unwrap();
     assert!(chdir(&tmpdir_path).is_ok());
     assert_eq!(getcwd().unwrap(), tmpdir_path);
@@ -395,7 +395,7 @@ fn test_chown() {
     let uid = Some(getuid());
     let gid = Some(getgid());
 
-    let tempdir = tempfile::tempdir().unwrap();
+    let tempdir = tempdir().unwrap();
     let path = tempdir.path().join("file");
     {
         File::create(&path).unwrap();
@@ -412,12 +412,12 @@ fn test_chown() {
 #[test]
 #[cfg(not(target_os = "redox"))]
 fn test_fchownat() {
-    let _dr = ::DirRestore::new();
+    let _dr = crate::DirRestore::new();
     // Testing for anything other than our own UID/GID is hard.
     let uid = Some(getuid());
     let gid = Some(getgid());
 
-    let tempdir = tempfile::tempdir().unwrap();
+    let tempdir = tempdir().unwrap();
     let path = tempdir.path().join("file");
     {
         File::create(&path).unwrap();
@@ -445,7 +445,7 @@ fn test_lseek() {
     lseek(tmpfd, offset, Whence::SeekSet).unwrap();
 
     let mut buf = [0u8; 7];
-    ::read_exact(tmpfd, &mut buf);
+    crate::read_exact(tmpfd, &mut buf);
     assert_eq!(b"f123456", &buf);
 
     close(tmpfd).unwrap();
@@ -462,7 +462,7 @@ fn test_lseek64() {
     lseek64(tmpfd, 5, Whence::SeekSet).unwrap();
 
     let mut buf = [0u8; 7];
-    ::read_exact(tmpfd, &mut buf);
+    crate::read_exact(tmpfd, &mut buf);
     assert_eq!(b"f123456", &buf);
 
     close(tmpfd).unwrap();
@@ -498,7 +498,7 @@ fn test_acct() {
     use std::process::Command;
     use std::{thread, time};
 
-    let _m = ::FORK_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = crate::FORK_MTX.lock().expect("Mutex got poisoned by another test");
     require_acct!();
 
     let file = NamedTempFile::new().unwrap();
@@ -573,7 +573,7 @@ fn test_pipe2() {
 #[test]
 #[cfg(not(target_os = "redox"))]
 fn test_truncate() {
-    let tempdir = tempfile::tempdir().unwrap();
+    let tempdir = tempdir().unwrap();
     let path = tempdir.path().join("file");
 
     {
@@ -590,7 +590,7 @@ fn test_truncate() {
 
 #[test]
 fn test_ftruncate() {
-    let tempdir = tempfile::tempdir().unwrap();
+    let tempdir = tempdir().unwrap();
     let path = tempdir.path().join("file");
 
     let tmpfd = {
@@ -621,7 +621,7 @@ pub extern fn alarm_signal_handler(raw_signal: libc::c_int) {
 #[test]
 #[cfg(not(target_os = "redox"))]
 fn test_alarm() {
-    let _m = ::SIGNAL_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = crate::SIGNAL_MTX.lock().expect("Mutex got poisoned by another test");
 
     let handler = SigHandler::Handler(alarm_signal_handler);
     let signal_action = SigAction::new(handler, SaFlags::SA_RESTART, SigSet::empty());
@@ -651,7 +651,7 @@ fn test_alarm() {
 #[test]
 #[cfg(not(target_os = "redox"))]
 fn test_canceling_alarm() {
-    let _m = ::SIGNAL_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = crate::SIGNAL_MTX.lock().expect("Mutex got poisoned by another test");
 
     assert_eq!(alarm::cancel(), None);
 
@@ -662,9 +662,9 @@ fn test_canceling_alarm() {
 #[test]
 #[cfg(not(target_os = "redox"))]
 fn test_symlinkat() {
-    let _m = ::CWD_LOCK.read().expect("Mutex got poisoned by another test");
+    let _m = crate::CWD_LOCK.read().expect("Mutex got poisoned by another test");
 
-    let tempdir = tempfile::tempdir().unwrap();
+    let tempdir = tempdir().unwrap();
 
     let target = tempdir.path().join("a");
     let linkpath = tempdir.path().join("b");
@@ -690,7 +690,7 @@ fn test_symlinkat() {
 #[test]
 #[cfg(not(target_os = "redox"))]
 fn test_linkat_file() {
-    let tempdir = tempfile::tempdir().unwrap();
+    let tempdir = tempdir().unwrap();
     let oldfilename = "foo.txt";
     let oldfilepath = tempdir.path().join(oldfilename);
 
@@ -711,13 +711,13 @@ fn test_linkat_file() {
 #[test]
 #[cfg(not(target_os = "redox"))]
 fn test_linkat_olddirfd_none() {
-    let _dr = ::DirRestore::new();
+    let _dr = crate::DirRestore::new();
 
-    let tempdir_oldfile = tempfile::tempdir().unwrap();
+    let tempdir_oldfile = tempdir().unwrap();
     let oldfilename = "foo.txt";
     let oldfilepath = tempdir_oldfile.path().join(oldfilename);
 
-    let tempdir_newfile = tempfile::tempdir().unwrap();
+    let tempdir_newfile = tempdir().unwrap();
     let newfilename = "bar.txt";
     let newfilepath = tempdir_newfile.path().join(newfilename);
 
@@ -736,13 +736,13 @@ fn test_linkat_olddirfd_none() {
 #[test]
 #[cfg(not(target_os = "redox"))]
 fn test_linkat_newdirfd_none() {
-    let _dr = ::DirRestore::new();
+    let _dr = crate::DirRestore::new();
 
-    let tempdir_oldfile = tempfile::tempdir().unwrap();
+    let tempdir_oldfile = tempdir().unwrap();
     let oldfilename = "foo.txt";
     let oldfilepath = tempdir_oldfile.path().join(oldfilename);
 
-    let tempdir_newfile = tempfile::tempdir().unwrap();
+    let tempdir_newfile = tempdir().unwrap();
     let newfilename = "bar.txt";
     let newfilepath = tempdir_newfile.path().join(newfilename);
 
@@ -761,9 +761,9 @@ fn test_linkat_newdirfd_none() {
 #[test]
 #[cfg(not(any(target_os = "ios", target_os = "macos", target_os = "redox")))]
 fn test_linkat_no_follow_symlink() {
-    let _m = ::CWD_LOCK.read().expect("Mutex got poisoned by another test");
+    let _m = crate::CWD_LOCK.read().expect("Mutex got poisoned by another test");
 
-    let tempdir = tempfile::tempdir().unwrap();
+    let tempdir = tempdir().unwrap();
     let oldfilename = "foo.txt";
     let oldfilepath = tempdir.path().join(oldfilename);
 
@@ -798,9 +798,9 @@ fn test_linkat_no_follow_symlink() {
 #[test]
 #[cfg(not(target_os = "redox"))]
 fn test_linkat_follow_symlink() {
-    let _m = ::CWD_LOCK.read().expect("Mutex got poisoned by another test");
+    let _m = crate::CWD_LOCK.read().expect("Mutex got poisoned by another test");
 
-    let tempdir = tempfile::tempdir().unwrap();
+    let tempdir = tempdir().unwrap();
     let oldfilename = "foo.txt";
     let oldfilepath = tempdir.path().join(oldfilename);
 
@@ -834,7 +834,7 @@ fn test_linkat_follow_symlink() {
 #[test]
 #[cfg(not(target_os = "redox"))]
 fn test_unlinkat_dir_noremovedir() {
-    let tempdir = tempfile::tempdir().unwrap();
+    let tempdir = tempdir().unwrap();
     let dirname = "foo_dir";
     let dirpath = tempdir.path().join(dirname);
 
@@ -852,7 +852,7 @@ fn test_unlinkat_dir_noremovedir() {
 #[test]
 #[cfg(not(target_os = "redox"))]
 fn test_unlinkat_dir_removedir() {
-    let tempdir = tempfile::tempdir().unwrap();
+    let tempdir = tempdir().unwrap();
     let dirname = "foo_dir";
     let dirpath = tempdir.path().join(dirname);
 
@@ -870,7 +870,7 @@ fn test_unlinkat_dir_removedir() {
 #[test]
 #[cfg(not(target_os = "redox"))]
 fn test_unlinkat_file() {
-    let tempdir = tempfile::tempdir().unwrap();
+    let tempdir = tempdir().unwrap();
     let filename = "foo.txt";
     let filepath = tempdir.path().join(filename);
 
@@ -887,7 +887,7 @@ fn test_unlinkat_file() {
 
 #[test]
 fn test_access_not_existing() {
-    let tempdir = tempfile::tempdir().unwrap();
+    let tempdir = tempdir().unwrap();
     let dir = tempdir.path().join("does_not_exist.txt");
     assert_eq!(access(&dir, AccessFlags::F_OK).err().unwrap().as_errno().unwrap(),
                Errno::ENOENT);
@@ -895,7 +895,7 @@ fn test_access_not_existing() {
 
 #[test]
 fn test_access_file_exists() {
-    let tempdir = tempfile::tempdir().unwrap();
+    let tempdir = tempdir().unwrap();
     let path  = tempdir.path().join("does_exist.txt");
     let _file = File::create(path.clone()).unwrap();
     assert!(access(&path, AccessFlags::R_OK | AccessFlags::W_OK).is_ok());

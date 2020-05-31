@@ -88,17 +88,11 @@ Tier 3:
 
 `nix` requires Rust 1.36.0 or newer.
 
-To use `nix`, first add this to your `Cargo.toml`:
+To use `nix`, add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
 nix = "0.17.0"
-```
-
-Then, add this to your crate root:
-
-```rust,ignore
-extern crate nix;
 ```
 
 ## Contributing

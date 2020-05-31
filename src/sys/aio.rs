@@ -21,20 +21,19 @@
 //! [`aio_cancel_all`](fn.aio_cancel_all.html), though the operating system may
 //! not support this for all filesystems and devices.
 
-use {Error, Result};
-use errno::Errno;
+use crate::{Error, Result};
+use crate::errno::Errno;
 use std::os::unix::io::RawFd;
 use libc::{c_void, off_t, size_t};
-use libc;
 use std::borrow::{Borrow, BorrowMut};
 use std::fmt;
 use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::mem;
 use std::ptr::{null, null_mut};
-use sys::signal::*;
+use crate::sys::signal::*;
 use std::thread;
-use sys::time::TimeSpec;
+use crate::sys::time::TimeSpec;
 
 libc_enum! {
     /// Mode for `AioCb::fsync`.  Controls whether only data or both data and
@@ -226,8 +225,6 @@ impl<'a> AioCb<'a> {
     /// [`fsync`](#method.fsync) operation.
     ///
     /// ```
-    /// # extern crate tempfile;
-    /// # extern crate nix;
     /// # use nix::errno::Errno;
     /// # use nix::Error;
     /// # use nix::sys::aio::*;
@@ -287,8 +284,6 @@ impl<'a> AioCb<'a> {
     /// Create an `AioCb` from a mutable slice and read into it.
     ///
     /// ```
-    /// # extern crate tempfile;
-    /// # extern crate nix;
     /// # use nix::errno::Errno;
     /// # use nix::Error;
     /// # use nix::sys::aio::*;
@@ -363,8 +358,6 @@ impl<'a> AioCb<'a> {
     /// Create an `AioCb` from a Vector and use it for writing
     ///
     /// ```
-    /// # extern crate tempfile;
-    /// # extern crate nix;
     /// # use nix::errno::Errno;
     /// # use nix::Error;
     /// # use nix::sys::aio::*;
@@ -394,9 +387,6 @@ impl<'a> AioCb<'a> {
     /// Create an `AioCb` from a `Bytes` object
     ///
     /// ```
-    /// # extern crate bytes;
-    /// # extern crate tempfile;
-    /// # extern crate nix;
     /// # use bytes::Bytes;
     /// # use nix::sys::aio::*;
     /// # use nix::sys::signal::SigevNotify;
@@ -419,9 +409,6 @@ impl<'a> AioCb<'a> {
     /// using an un`Box`ed `Bytes` object.
     ///
     /// ```
-    /// # extern crate bytes;
-    /// # extern crate tempfile;
-    /// # extern crate nix;
     /// # use bytes::Bytes;
     /// # use nix::sys::aio::*;
     /// # use nix::sys::signal::SigevNotify;
@@ -480,8 +467,6 @@ impl<'a> AioCb<'a> {
     /// Create an `AioCb` from a Vector and use it for reading
     ///
     /// ```
-    /// # extern crate tempfile;
-    /// # extern crate nix;
     /// # use nix::errno::Errno;
     /// # use nix::Error;
     /// # use nix::sys::aio::*;
@@ -642,8 +627,6 @@ impl<'a> AioCb<'a> {
     /// Construct an `AioCb` from a slice and use it for writing.
     ///
     /// ```
-    /// # extern crate tempfile;
-    /// # extern crate nix;
     /// # use nix::errno::Errno;
     /// # use nix::Error;
     /// # use nix::sys::aio::*;
@@ -726,8 +709,6 @@ impl<'a> AioCb<'a> {
     /// result.
     ///
     /// ```
-    /// # extern crate tempfile;
-    /// # extern crate nix;
     /// # use nix::errno::Errno;
     /// # use nix::Error;
     /// # use nix::sys::aio::*;
@@ -781,8 +762,6 @@ impl<'a> AioCb<'a> {
     /// is an alternative to `aio_suspend`, used by most of the other examples.
     ///
     /// ```
-    /// # extern crate tempfile;
-    /// # extern crate nix;
     /// # use nix::errno::Errno;
     /// # use nix::Error;
     /// # use nix::sys::aio::*;
@@ -925,8 +904,6 @@ impl<'a> AioCb<'a> {
 /// descriptor.
 ///
 /// ```
-/// # extern crate tempfile;
-/// # extern crate nix;
 /// # use nix::errno::Errno;
 /// # use nix::Error;
 /// # use nix::sys::aio::*;
@@ -979,8 +956,6 @@ pub fn aio_cancel_all(fd: RawFd) -> Result<AioCancelStat> {
 /// Use `aio_suspend` to block until an aio operation completes.
 ///
 /// ```
-/// # extern crate tempfile;
-/// # extern crate nix;
 /// # use nix::sys::aio::*;
 /// # use nix::sys::signal::SigevNotify;
 /// # use std::os::unix::io::AsRawFd;
@@ -1087,8 +1062,6 @@ impl<'a> LioCb<'a> {
     /// [`AioCb::error`] to poll.
     ///
     /// ```
-    /// # extern crate tempfile;
-    /// # extern crate nix;
     /// # use nix::sys::aio::*;
     /// # use nix::sys::signal::SigevNotify;
     /// # use std::os::unix::io::AsRawFd;
@@ -1144,8 +1117,6 @@ impl<'a> LioCb<'a> {
     ///
     /// # Examples
     /// ```no_run
-    /// # extern crate tempfile;
-    /// # extern crate nix;
     /// # use nix::Error;
     /// # use nix::errno::Errno;
     /// # use nix::sys::aio::*;

@@ -1,12 +1,12 @@
-use {Error, Result};
+use crate::{Error, Result};
 #[cfg(not(target_os = "android"))]
-use NixPath;
-use errno::Errno;
+use crate::NixPath;
+use crate::errno::Errno;
 #[cfg(not(target_os = "android"))]
-use fcntl::OFlag;
+use crate::fcntl::OFlag;
 use libc::{self, c_int, c_void, size_t, off_t};
 #[cfg(not(target_os = "android"))]
-use sys::stat::Mode;
+use crate::sys::stat::Mode;
 use std::os::unix::io::RawFd;
 
 libc_bitflags!{

@@ -1,6 +1,3 @@
-extern crate nix;
-extern crate tempfile;
-
 // Test dropping an AioCb that hasn't yet finished.
 // This must happen in its own process, because on OSX this test seems to hose
 // the AIO subsystem and causes subsequent tests to fail

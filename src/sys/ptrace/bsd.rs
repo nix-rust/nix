@@ -1,9 +1,10 @@
-use errno::Errno;
+use cfg_if::cfg_if;
+use crate::errno::Errno;
 use libc::{self, c_int};
 use std::ptr;
-use sys::signal::Signal;
-use unistd::Pid;
-use Result;
+use crate::sys::signal::Signal;
+use crate::unistd::Pid;
+use crate::Result;
 
 pub type RequestType = c_int;
 
@@ -128,7 +129,6 @@ pub fn kill(pid: Pid) -> Result<()> {
 ///
 /// # Example
 /// ```rust
-/// extern crate nix;
 /// use nix::sys::ptrace::step;
 /// use nix::unistd::Pid;
 /// use nix::sys::signal::Signal;

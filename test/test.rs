@@ -1,18 +1,9 @@
-extern crate bytes;
-#[cfg(any(target_os = "android", target_os = "linux"))]
-extern crate caps;
 #[macro_use]
 extern crate cfg_if;
 #[cfg_attr(not(target_os = "redox"), macro_use)]
 extern crate nix;
 #[macro_use]
 extern crate lazy_static;
-extern crate libc;
-extern crate rand;
-#[cfg(target_os = "freebsd")]
-extern crate sysctl;
-extern crate tempfile;
-extern crate semver;
 
 cfg_if! {
     if #[cfg(any(target_os = "android", target_os = "linux"))] {
@@ -207,7 +198,7 @@ struct DirRestore<'a> {
 
 impl<'a> DirRestore<'a> {
     fn new() -> Self {
-        let guard = ::CWD_LOCK.write()
+        let guard = crate::CWD_LOCK.write()
             .expect("Lock got poisoned by another test");
         DirRestore{
             _g: guard,

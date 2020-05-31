@@ -1,10 +1,10 @@
+use cfg_if::cfg_if;
 use libc::{self, c_int};
-use Result;
-use errno::Errno;
+use crate::Result;
+use crate::errno::Errno;
+use crate::unistd::Pid;
+use crate::sys::signal::Signal;
 use std::convert::TryFrom;
-use unistd::Pid;
-
-use sys::signal::Signal;
 
 libc_bitflags!(
     pub struct WaitPidFlag: c_int {

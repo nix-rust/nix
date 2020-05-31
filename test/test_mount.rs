@@ -3,10 +3,6 @@
 // namespaces (Linux >= 3.8 compiled with CONFIG_USER_NS), the test should run
 // without root.
 
-extern crate libc;
-extern crate nix;
-extern crate tempfile;
-
 #[cfg(target_os = "linux")]
 mod test_mount {
     use std::fs::{self, File};

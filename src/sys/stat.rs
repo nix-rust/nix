@@ -1,14 +1,12 @@
 pub use libc::{dev_t, mode_t};
 pub use libc::stat as FileStat;
 
-use {Result, NixPath};
-use errno::Errno;
+use crate::{Result, NixPath, errno::Errno};
 #[cfg(not(target_os = "redox"))]
-use fcntl::{AtFlags, at_rawfd};
-use libc;
+use crate::fcntl::{AtFlags, at_rawfd};
 use std::mem;
 use std::os::unix::io::RawFd;
-use sys::time::{TimeSpec, TimeVal};
+use crate::sys::time::{TimeSpec, TimeVal};
 
 libc_bitflags!(
     pub struct SFlag: mode_t {

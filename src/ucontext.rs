@@ -1,10 +1,10 @@
 use libc;
 #[cfg(not(target_env = "musl"))]
-use Result;
+use crate::Result;
 #[cfg(not(target_env = "musl"))]
-use errno::Errno;
+use crate::errno::Errno;
 use std::mem;
-use sys::signal::SigSet;
+use crate::sys::signal::SigSet;
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct UContext {

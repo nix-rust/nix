@@ -68,7 +68,7 @@ fn test_ptrace_cont() {
 
     require_capability!(CAP_SYS_PTRACE);
 
-    let _m = ::FORK_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = crate::FORK_MTX.lock().expect("Mutex got poisoned by another test");
 
     // FIXME: qemu-user doesn't implement ptrace on all architectures
     // and retunrs ENOSYS in this case.
@@ -128,7 +128,7 @@ fn test_ptrace_syscall() {
     use nix::unistd::getpid;
     use nix::unistd::ForkResult::*;
 
-    let _m = ::FORK_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = crate::FORK_MTX.lock().expect("Mutex got poisoned by another test");
 
     match fork().expect("Error: Fork Failed") {
         Child => {

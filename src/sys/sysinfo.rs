@@ -2,8 +2,8 @@ use libc::{self, SI_LOAD_SHIFT};
 use std::{cmp, mem};
 use std::time::Duration;
 
-use Result;
-use errno::Errno;
+use crate::Result;
+use crate::errno::Errno;
 
 /// System info structure returned by `sysinfo`.
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]

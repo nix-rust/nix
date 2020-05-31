@@ -1,7 +1,7 @@
 //! Reboot/shutdown or enable/disable Ctrl-Alt-Delete.
 
-use {Error, Result};
-use errno::Errno;
+use crate::{Error, Result};
+use crate::errno::Errno;
 use libc;
 use std::convert::Infallible;
 use std::mem::drop;

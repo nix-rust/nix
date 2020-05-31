@@ -4,10 +4,10 @@ use std::ops::Range;
 use std::os::unix::io::RawFd;
 use std::ptr::{null, null_mut};
 use libc::{self, c_int};
-use Result;
-use errno::Errno;
-use sys::signal::SigSet;
-use sys::time::{TimeSpec, TimeVal};
+use crate::Result;
+use crate::errno::Errno;
+use crate::sys::signal::SigSet;
+use crate::sys::time::{TimeSpec, TimeVal};
 
 pub use libc::FD_SETSIZE;
 
@@ -49,7 +49,6 @@ impl FdSet {
     /// # Example
     ///
     /// ```
-    /// # extern crate nix;
     /// # use nix::sys::select::FdSet;
     /// # fn main() {
     /// let mut set = FdSet::new();
@@ -73,7 +72,6 @@ impl FdSet {
     /// # Examples
     ///
     /// ```
-    /// # extern crate nix;
     /// # use nix::sys::select::FdSet;
     /// # use std::os::unix::io::RawFd;
     /// let mut set = FdSet::new();
@@ -275,8 +273,8 @@ where
 mod tests {
     use super::*;
     use std::os::unix::io::RawFd;
-    use sys::time::{TimeVal, TimeValLike};
-    use unistd::{write, pipe};
+    use crate::sys::time::{TimeVal, TimeValLike};
+    use crate::unistd::{write, pipe};
 
     #[test]
     fn fdset_insert() {

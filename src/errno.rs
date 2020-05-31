@@ -1,8 +1,8 @@
+use cfg_if::cfg_if;
 #[cfg(not(target_os = "dragonfly"))]
-use libc;
 use libc::{c_int, c_void};
 use std::{fmt, io, error};
-use {Error, Result};
+use crate::{Error, Result};
 
 pub use self::consts::*;
 
@@ -584,8 +584,6 @@ fn desc(errno: Errno) -> &'static str {
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 mod consts {
-    use libc;
-
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     #[repr(i32)]
     pub enum Errno {
@@ -873,8 +871,6 @@ mod consts {
 
 #[cfg(any(target_os = "macos", target_os = "ios"))]
 mod consts {
-    use libc;
-
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     #[repr(i32)]
     pub enum Errno {
@@ -1110,8 +1106,6 @@ mod consts {
 
 #[cfg(target_os = "freebsd")]
 mod consts {
-    use libc;
-
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     #[repr(i32)]
     pub enum Errno {
@@ -1328,8 +1322,6 @@ mod consts {
 
 #[cfg(target_os = "dragonfly")]
 mod consts {
-    use libc;
-
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     #[repr(i32)]
     pub enum Errno {
@@ -1543,8 +1535,6 @@ mod consts {
 
 #[cfg(target_os = "openbsd")]
 mod consts {
-    use libc;
-
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     #[repr(i32)]
     pub enum Errno {
@@ -1757,8 +1747,6 @@ mod consts {
 
 #[cfg(target_os = "netbsd")]
 mod consts {
-    use libc;
-
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     #[repr(i32)]
     pub enum Errno {
@@ -1973,8 +1961,6 @@ mod consts {
 
 #[cfg(target_os = "redox")]
 mod consts {
-    use libc;
-
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     #[repr(i32)]
     pub enum Errno {

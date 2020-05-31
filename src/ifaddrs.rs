@@ -3,16 +3,15 @@
 //! Uses the Linux and/or BSD specific function `getifaddrs` to query the list
 //! of interfaces and their associated addresses.
 
+use cfg_if::cfg_if;
 use std::ffi;
 use std::iter::Iterator;
 use std::mem;
 use std::option::Option;
 
-use libc;
-
-use {Result, Errno};
-use sys::socket::SockAddr;
-use net::if_::*;
+use crate::{Result, Errno};
+use crate::sys::socket::SockAddr;
+use crate::net::if_::*;
 
 /// Describes a single address for an interface as returned by `getifaddrs`.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]

@@ -1,11 +1,10 @@
-use {Error, NixPath, Result};
-use errno::Errno;
-use fcntl::{self, OFlag};
-use libc;
+use crate::{Error, NixPath, Result};
+use crate::errno::Errno;
+use crate::fcntl::{self, OFlag};
 use std::os::unix::io::{AsRawFd, IntoRawFd, RawFd};
 use std::ptr;
 use std::ffi;
-use sys;
+use crate::sys;
 
 #[cfg(target_os = "linux")]
 use libc::{dirent64 as dirent, readdir64_r as readdir_r};

@@ -1,17 +1,17 @@
-use errno::Errno;
+use crate::errno::Errno;
 use libc::{self, c_char, c_int, c_uint, size_t, ssize_t};
 use std::ffi::OsString;
 #[cfg(not(target_os = "redox"))]
 use std::os::raw;
 use std::os::unix::ffi::OsStringExt;
 use std::os::unix::io::RawFd;
-use sys::stat::Mode;
-use {NixPath, Result};
+use crate::sys::stat::Mode;
+use crate::{NixPath, Result};
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
 use std::ptr; // For splice and copy_file_range
 #[cfg(any(target_os = "android", target_os = "linux"))]
-use sys::uio::IoVec; // For vmsplice
+use crate::sys::uio::IoVec; // For vmsplice
 
 #[cfg(any(
     target_os = "linux",
@@ -586,10 +586,10 @@ pub fn fallocate(
     target_env = "freebsd"
 ))]
 mod posix_fadvise {
-    use errno::Errno;
+    use crate::errno::Errno;
     use libc;
     use std::os::unix::io::RawFd;
-    use Result;
+    use crate::Result;
 
     libc_enum! {
         #[repr(i32)]

@@ -3,7 +3,7 @@ pub use self::os::*;
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 mod os {
-    use sys::utsname::uname;
+    use crate::sys::utsname::uname;
 
     // Features:
     // * atomic cloexec on socket: 2.6.27

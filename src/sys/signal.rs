@@ -3,9 +3,9 @@
 
 ///! Operating system signals.
 
-use libc;
-use {Error, Result};
-use errno::Errno;
+use crate::{Error, Result};
+use crate::errno::Errno;
+use crate::unistd::Pid;
 use std::convert::TryFrom;
 use std::mem;
 use std::fmt;
@@ -623,8 +623,6 @@ pub unsafe fn sigaction(signal: Signal, sigaction: &SigAction) -> Result<SigActi
 ///
 /// ```no_run
 /// # #[macro_use] extern crate lazy_static;
-/// # extern crate libc;
-/// # extern crate nix;
 /// # use std::convert::TryFrom;
 /// # use std::sync::atomic::{AtomicBool, Ordering};
 /// # use nix::sys::signal::{self, Signal, SigHandler};
@@ -735,7 +733,7 @@ pub fn sigprocmask(how: SigmaskHow, set: Option<&SigSet>, oldset: Option<&mut Si
     Errno::result(res).map(drop)
 }
 
-pub fn kill<T: Into<Option<Signal>>>(pid: ::unistd::Pid, signal: T) -> Result<()> {
+pub fn kill<T: Into<Option<Signal>>>(pid: Pid, signal: T) -> Result<()> {
     let res = unsafe { libc::kill(pid.into(),
                                   match signal.into() {
                                       Some(s) => s as libc::c_int,
@@ -751,7 +749,7 @@ pub fn kill<T: Into<Option<Signal>>>(pid: ::unistd::Pid, signal: T) -> Result<()
 /// If `pgrp` less then or equal 1, the behavior is platform-specific.
 /// If `signal` is `None`, `killpg` will only preform error checking and won't
 /// send any signal.
-pub fn killpg<T: Into<Option<Signal>>>(pgrp: ::unistd::Pid, signal: T) -> Result<()> {
+pub fn killpg<T: Into<Option<Signal>>>(pgrp: Pid, signal: T) -> Result<()> {
     let res = unsafe { libc::killpg(pgrp.into(),
                                   match signal.into() {
                                       Some(s) => s as libc::c_int,
@@ -802,7 +800,6 @@ pub enum SigevNotify {
 
 #[cfg(not(any(target_os = "openbsd", target_os = "redox")))]
 mod sigevent {
-    use libc;
     use std::mem;
     use std::ptr;
     use super::SigevNotify;
@@ -1019,7 +1016,6 @@ mod tests {
     #[test]
     #[cfg(not(target_os = "redox"))]
     fn test_sigaction() {
-        use libc;
         thread::spawn(|| {
             extern fn test_sigaction_handler(_: libc::c_int) {}
             extern fn test_sigaction_action(_: libc::c_int,

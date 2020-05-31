@@ -1,18 +1,17 @@
-use libc;
-use {Errno, Result};
+use crate::{Errno, Result};
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
 pub use self::sched_linux_like::*;
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
 mod sched_linux_like {
-    use errno::Errno;
+    use crate::errno::Errno;
     use libc::{self, c_int, c_void};
     use std::mem;
     use std::option::Option;
     use std::os::unix::io::RawFd;
-    use unistd::Pid;
-    use {Error, Result};
+    use crate::unistd::Pid;
+    use crate::{Error, Result};
 
     // For some functions taking with a parameter of type CloneFlags,
     // only a subset of these flags have an effect.

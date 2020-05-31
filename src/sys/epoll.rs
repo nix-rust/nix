@@ -1,10 +1,10 @@
-use Result;
-use errno::Errno;
+use crate::Result;
+use crate::errno::Errno;
 use libc::{self, c_int};
 use std::os::unix::io::RawFd;
 use std::ptr;
 use std::mem;
-use ::Error;
+use crate::Error;
 
 libc_bitflags!(
     pub struct EpollFlags: c_int {

@@ -1,13 +1,12 @@
 //! Wait for events to trigger on specific file descriptors
 #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd", target_os = "linux"))]
-use sys::time::TimeSpec;
+use crate::sys::time::TimeSpec;
 #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd", target_os = "linux"))]
-use sys::signal::SigSet;
+use crate::sys::signal::SigSet;
 use std::os::unix::io::RawFd;
 
-use libc;
-use Result;
-use errno::Errno;
+use crate::Result;
+use crate::errno::Errno;
 
 /// This is a wrapper around `libc::pollfd`.
 ///

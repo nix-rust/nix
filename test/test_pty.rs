@@ -29,7 +29,7 @@ fn test_explicit_close() {
 #[test]
 #[cfg(any(target_os = "android", target_os = "linux"))]
 fn test_ptsname_equivalence() {
-    let _m = ::PTSNAME_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = crate::PTSNAME_MTX.lock().expect("Mutex got poisoned by another test");
 
     // Open a new PTTY master
     let master_fd = posix_openpt(OFlag::O_RDWR).unwrap();
@@ -46,7 +46,7 @@ fn test_ptsname_equivalence() {
 #[test]
 #[cfg(any(target_os = "android", target_os = "linux"))]
 fn test_ptsname_copy() {
-    let _m = ::PTSNAME_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = crate::PTSNAME_MTX.lock().expect("Mutex got poisoned by another test");
 
     // Open a new PTTY master
     let master_fd = posix_openpt(OFlag::O_RDWR).unwrap();
@@ -80,7 +80,7 @@ fn test_ptsname_r_copy() {
 #[test]
 #[cfg(any(target_os = "android", target_os = "linux"))]
 fn test_ptsname_unique() {
-    let _m = ::PTSNAME_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = crate::PTSNAME_MTX.lock().expect("Mutex got poisoned by another test");
 
     // Open a new PTTY master
     let master1_fd = posix_openpt(OFlag::O_RDWR).unwrap();
@@ -98,7 +98,7 @@ fn test_ptsname_unique() {
 
 /// Common setup for testing PTTY pairs
 fn open_ptty_pair() -> (PtyMaster, File) {
-    let _m = ::PTSNAME_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = crate::PTSNAME_MTX.lock().expect("Mutex got poisoned by another test");
 
     // Open a new PTTY master
     let master = posix_openpt(OFlag::O_RDWR).expect("posix_openpt failed");
@@ -163,7 +163,7 @@ fn test_write_ptty_pair() {
 #[test]
 fn test_openpty() {
     // openpty uses ptname(3) internally
-    let _m = ::PTSNAME_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = crate::PTSNAME_MTX.lock().expect("Mutex got poisoned by another test");
 
     let pty = openpty(None, None).unwrap();
     assert!(pty.master > 0);
@@ -173,21 +173,21 @@ fn test_openpty() {
     let string = "foofoofoo\n";
     let mut buf = [0u8; 10];
     write(pty.master, string.as_bytes()).unwrap();
-    ::read_exact(pty.slave, &mut buf);
+    crate::read_exact(pty.slave, &mut buf);
 
     assert_eq!(&buf, string.as_bytes());
 
     // Read the echo as well
     let echoed_string = "foofoofoo\r\n";
     let mut buf = [0u8; 11];
-    ::read_exact(pty.master, &mut buf);
+    crate::read_exact(pty.master, &mut buf);
     assert_eq!(&buf, echoed_string.as_bytes());
 
     let string2 = "barbarbarbar\n";
     let echoed_string2 = "barbarbarbar\r\n";
     let mut buf = [0u8; 14];
     write(pty.slave, string2.as_bytes()).unwrap();
-    ::read_exact(pty.master, &mut buf);
+    crate::read_exact(pty.master, &mut buf);
 
     assert_eq!(&buf, echoed_string2.as_bytes());
 
@@ -198,7 +198,7 @@ fn test_openpty() {
 #[test]
 fn test_openpty_with_termios() {
     // openpty uses ptname(3) internally
-    let _m = ::PTSNAME_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = crate::PTSNAME_MTX.lock().expect("Mutex got poisoned by another test");
 
     // Open one pty to get attributes for the second one
     let mut termios = {
@@ -222,20 +222,20 @@ fn test_openpty_with_termios() {
     let string = "foofoofoo\n";
     let mut buf = [0u8; 10];
     write(pty.master, string.as_bytes()).unwrap();
-    ::read_exact(pty.slave, &mut buf);
+    crate::read_exact(pty.slave, &mut buf);
 
     assert_eq!(&buf, string.as_bytes());
 
     // read the echo as well
     let echoed_string = "foofoofoo\n";
-    ::read_exact(pty.master, &mut buf);
+    crate::read_exact(pty.master, &mut buf);
     assert_eq!(&buf, echoed_string.as_bytes());
 
     let string2 = "barbarbarbar\n";
     let echoed_string2 = "barbarbarbar\n";
     let mut buf = [0u8; 13];
     write(pty.slave, string2.as_bytes()).unwrap();
-    ::read_exact(pty.master, &mut buf);
+    crate::read_exact(pty.master, &mut buf);
 
     assert_eq!(&buf, echoed_string2.as_bytes());
 
@@ -249,9 +249,9 @@ fn test_forkpty() {
     use nix::sys::signal::*;
     use nix::sys::wait::wait;
     // forkpty calls openpty which uses ptname(3) internally.
-    let _m0 = ::PTSNAME_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m0 = crate::PTSNAME_MTX.lock().expect("Mutex got poisoned by another test");
     // forkpty spawns a child process
-    let _m1 = ::FORK_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m1 = crate::FORK_MTX.lock().expect("Mutex got poisoned by another test");
 
     let string = "naninani\n";
     let echoed_string = "naninani\r\n";
@@ -265,7 +265,7 @@ fn test_forkpty() {
         Parent { child } => {
             let mut buf = [0u8; 10];
             assert!(child.as_raw() > 0);
-            ::read_exact(pty.master, &mut buf);
+            crate::read_exact(pty.master, &mut buf);
             kill(child, SIGTERM).unwrap();
             wait().unwrap(); // keep other tests using generic wait from getting our child
             assert_eq!(&buf, echoed_string.as_bytes());

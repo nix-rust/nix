@@ -1,5 +1,3 @@
-extern crate nix;
-
 use nix::fcntl::OFlag;
 use nix::pty::*;
 use nix::unistd::close;
