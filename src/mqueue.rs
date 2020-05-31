@@ -2,12 +2,12 @@
 //!
 //! [Further reading and details on the C API](http://man7.org/linux/man-pages/man7/mq_overview.7.html)
 
-use Result;
-use errno::Errno;
+use crate::Result;
+use crate::errno::Errno;
 
 use libc::{self, c_char, c_long, mqd_t, size_t};
 use std::ffi::CString;
-use sys::stat::Mode;
+use crate::sys::stat::Mode;
 use std::mem;
 
 libc_bitflags!{

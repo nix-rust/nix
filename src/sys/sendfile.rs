@@ -1,10 +1,11 @@
+use cfg_if::cfg_if;
 use std::os::unix::io::RawFd;
 use std::ptr;
 
 use libc::{self, off_t};
 
-use Result;
-use errno::Errno;
+use crate::Result;
+use crate::errno::Errno;
 
 /// Copy up to `count` bytes to `out_fd` from `in_fd` starting at `offset`.
 ///
@@ -36,7 +37,7 @@ cfg_if! {
     if #[cfg(any(target_os = "freebsd",
                  target_os = "ios",
                  target_os = "macos"))] {
-        use sys::uio::IoVec;
+        use crate::sys::uio::IoVec;
 
         #[derive(Clone, Debug, Eq, Hash, PartialEq)]
         struct SendfileHeaderTrailer<'a>(

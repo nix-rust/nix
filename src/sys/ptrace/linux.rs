@@ -1,11 +1,12 @@
 //! For detailed description of the ptrace requests, consult `man ptrace`.
 
+use cfg_if::cfg_if;
 use std::{mem, ptr};
-use {Error, Result};
-use errno::Errno;
+use crate::{Error, Result};
+use crate::errno::Errno;
 use libc::{self, c_void, c_long, siginfo_t};
-use ::unistd::Pid;
-use sys::signal::Signal;
+use crate::unistd::Pid;
+use crate::sys::signal::Signal;
 
 pub type AddressType = *mut ::libc::c_void;
 
@@ -391,7 +392,6 @@ pub fn kill(pid: Pid) -> Result<()> {
 ///
 /// # Example
 /// ```rust
-/// extern crate nix;
 /// use nix::sys::ptrace::step;
 /// use nix::unistd::Pid;
 /// use nix::sys::signal::Signal; 

@@ -4,10 +4,7 @@ use std::os::unix::io::AsRawFd;
 #[cfg(not(any(target_os = "linux", target_os = "android")))]
 use std::ffi::CStr;
 
-use libc;
-
-use {NixPath, Result};
-use errno::Errno;
+use crate::{NixPath, Result, errno::Errno};
 
 #[cfg(target_os = "android")]
 pub type fsid_t = libc::__fsid_t;
@@ -457,8 +454,8 @@ pub fn fstatfs<T: AsRawFd>(fd: &T) -> Result<Statfs> {
 mod test {
     use std::fs::File;
 
-    use sys::statfs::*;
-    use sys::statvfs::*;
+    use crate::sys::statfs::*;
+    use crate::sys::statvfs::*;
     use std::path::Path;
 
     #[test]

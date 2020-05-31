@@ -1,20 +1,19 @@
 use super::sa_family_t;
-use {Error, Result, NixPath};
-use errno::Errno;
-use libc;
+use crate::{Error, Result, NixPath};
+use crate::errno::Errno;
 use std::{fmt, mem, net, ptr, slice};
 use std::ffi::OsStr;
 use std::hash::{Hash, Hasher};
 use std::path::Path;
 use std::os::unix::ffi::OsStrExt;
 #[cfg(any(target_os = "android", target_os = "linux"))]
-use ::sys::socket::addr::netlink::NetlinkAddr;
+use crate::sys::socket::addr::netlink::NetlinkAddr;
 #[cfg(any(target_os = "android", target_os = "linux"))]
-use ::sys::socket::addr::alg::AlgAddr;
+use crate::sys::socket::addr::alg::AlgAddr;
 #[cfg(any(target_os = "ios", target_os = "macos"))]
 use std::os::unix::io::RawFd;
 #[cfg(any(target_os = "ios", target_os = "macos"))]
-use ::sys::socket::addr::sys_control::SysControlAddr;
+use crate::sys::socket::addr::sys_control::SysControlAddr;
 #[cfg(any(target_os = "android",
           target_os = "dragonfly",
           target_os = "freebsd",
@@ -851,7 +850,7 @@ impl fmt::Display for SockAddr {
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
 pub mod netlink {
-    use ::sys::socket::addr::AddressFamily;
+    use crate::sys::socket::addr::AddressFamily;
     use libc::{sa_family_t, sockaddr_nl};
     use std::{fmt, mem};
 
@@ -949,11 +948,11 @@ pub mod alg {
 
 #[cfg(any(target_os = "ios", target_os = "macos"))]
 pub mod sys_control {
-    use ::sys::socket::addr::AddressFamily;
+    use crate::sys::socket::addr::AddressFamily;
     use libc::{self, c_uchar};
     use std::{fmt, mem};
     use std::os::unix::io::RawFd;
-    use {Errno, Error, Result};
+    use crate::{Errno, Error, Result};
 
     // FIXME: Move type into `libc`
     #[repr(C)]
@@ -1021,7 +1020,7 @@ pub mod sys_control {
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
 mod datalink {
-    use super::{libc, fmt, AddressFamily};
+    use super::{fmt, AddressFamily};
 
     /// Hardware Address
     #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -1093,7 +1092,7 @@ mod datalink {
           target_os = "netbsd",
           target_os = "openbsd"))]
 mod datalink {
-    use super::{libc, fmt, AddressFamily};
+    use super::{fmt, AddressFamily};
 
     /// Hardware Address
     #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -1180,7 +1179,7 @@ mod datalink {
 
 #[cfg(target_os = "linux")]
 pub mod vsock {
-    use ::sys::socket::addr::AddressFamily;
+    use crate::sys::socket::addr::AddressFamily;
     use libc::{sa_family_t, sockaddr_vm};
     use std::{fmt, mem};
     use std::hash::{Hash, Hasher};

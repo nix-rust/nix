@@ -1,6 +1,6 @@
 use libc::{self, c_ulong, c_int};
-use {Result, NixPath};
-use errno::Errno;
+use crate::{Result, NixPath};
+use crate::errno::Errno;
 
 libc_bitflags!(
     pub struct MsFlags: c_ulong {

@@ -445,7 +445,7 @@ extern fn sigfunc(_: c_int) {
 #[test]
 #[cfg_attr(any(all(target_env = "musl", target_arch = "x86_64"), target_arch = "mips", target_arch = "mips64"), ignore)]
 fn test_write_sigev_signal() {
-    let _m = ::SIGNAL_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = crate::SIGNAL_MTX.lock().expect("Mutex got poisoned by another test");
     let sa = SigAction::new(SigHandler::Handler(sigfunc),
                             SaFlags::SA_RESETHAND,
                             SigSet::empty());
@@ -583,7 +583,7 @@ fn test_liocb_listio_nowait() {
 #[cfg(not(any(target_os = "ios", target_os = "macos")))]
 #[cfg_attr(any(target_arch = "mips", target_arch = "mips64", target_env = "musl"), ignore)]
 fn test_liocb_listio_signal() {
-    let _m = ::SIGNAL_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = crate::SIGNAL_MTX.lock().expect("Mutex got poisoned by another test");
     const INITIAL: &[u8] = b"abcdef123456";
     const WBUF: &[u8] = b"CDEF";
     let mut rbuf = vec![0; 4];

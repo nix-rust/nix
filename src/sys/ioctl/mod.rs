@@ -221,6 +221,8 @@
 //!
 //! # fn main() {}
 //! ```
+use cfg_if::cfg_if;
+
 #[cfg(any(target_os = "android", target_os = "linux", target_os = "redox"))]
 #[macro_use]
 mod linux;
@@ -317,7 +319,6 @@ macro_rules! ioctl_none {
 ///
 /// ```no_run
 /// # #[macro_use] extern crate nix;
-/// # extern crate libc;
 /// # use libc::TIOCNXCL;
 /// # use std::fs::File;
 /// # use std::os::unix::io::AsRawFd;
@@ -396,7 +397,6 @@ macro_rules! ioctl_read {
 /// # Example
 ///
 /// ```
-/// # extern crate libc;
 /// # #[macro_use] extern crate nix;
 /// # #[cfg(any(target_os = "android", target_os = "linux"))]
 /// ioctl_read_bad!(tcgets, libc::TCGETS, libc::termios);
@@ -470,7 +470,6 @@ macro_rules! ioctl_write_ptr {
 /// # Example
 ///
 /// ```
-/// # extern crate libc;
 /// # #[macro_use] extern crate nix;
 /// # #[cfg(any(target_os = "android", target_os = "linux"))]
 /// ioctl_write_ptr_bad!(tcsets, libc::TCSETS, libc::termios);
@@ -590,7 +589,6 @@ cfg_if!{
 /// # Examples
 ///
 /// ```
-/// # extern crate libc;
 /// # #[macro_use] extern crate nix;
 /// # #[cfg(any(target_os = "android", target_os = "linux"))]
 /// ioctl_write_int_bad!(tcsbrk, libc::TCSBRK);

@@ -1,7 +1,8 @@
+use cfg_if::cfg_if;
 use super::{GetSockOpt, SetSockOpt};
-use Result;
-use errno::Errno;
-use sys::time::TimeVal;
+use crate::Result;
+use crate::errno::Errno;
+use crate::sys::time::TimeVal;
 use libc::{self, c_int, c_void, socklen_t};
 use std::mem::{
     self,
@@ -650,7 +651,7 @@ mod test {
     #[test]
     fn is_socket_type_unix() {
         use super::super::*;
-        use ::unistd::close;
+        use crate::unistd::close;
 
         let (a, b) = socketpair(AddressFamily::Unix, SockType::Stream, None, SockFlag::empty()).unwrap();
         let a_type = getsockopt(a, super::SockType).unwrap();
@@ -662,7 +663,7 @@ mod test {
     #[test]
     fn is_socket_type_dgram() {
         use super::super::*;
-        use ::unistd::close;
+        use crate::unistd::close;
 
         let s = socket(AddressFamily::Inet, SockType::Datagram, SockFlag::empty(), None).unwrap();
         let s_type = getsockopt(s, super::SockType).unwrap();
@@ -676,7 +677,7 @@ mod test {
     #[test]
     fn can_get_listen_on_tcp_socket() {
         use super::super::*;
-        use ::unistd::close;
+        use crate::unistd::close;
 
         let s = socket(AddressFamily::Inet, SockType::Stream, SockFlag::empty(), None).unwrap();
         let s_listening = getsockopt(s, super::AcceptConn).unwrap();

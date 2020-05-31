@@ -15,14 +15,8 @@
 #![deny(missing_copy_implementations)]
 #![deny(missing_debug_implementations)]
 
-// External crates
-#[macro_use]
-extern crate bitflags;
-#[macro_use]
-extern crate cfg_if;
-
 // Re-exported external crates
-pub extern crate libc;
+pub use libc;
 
 // Private internal modules
 #[macro_use] mod macros;

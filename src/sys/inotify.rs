@@ -23,7 +23,6 @@
 //! }
 //! ```
 
-use libc;
 use libc::{
     c_char,
     c_int,
@@ -32,10 +31,10 @@ use std::ffi::{OsString,OsStr,CStr};
 use std::os::unix::ffi::OsStrExt;
 use std::mem::size_of;
 use std::os::unix::io::{RawFd,AsRawFd,FromRawFd};
-use unistd::read;
-use Result;
-use NixPath;
-use errno::Errno;
+use crate::unistd::read;
+use crate::Result;
+use crate::NixPath;
+use crate::errno::Errno;
 
 libc_bitflags! {
     /// Configuration options for [`inotify_add_watch`](fn.inotify_add_watch.html).

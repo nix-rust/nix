@@ -172,7 +172,7 @@ fn test_fchmod() {
 #[test]
 #[cfg(not(target_os = "redox"))]
 fn test_fchmodat() {
-    let _dr = ::DirRestore::new();
+    let _dr = crate::DirRestore::new();
     let tempdir = tempfile::tempdir().unwrap();
     let filename = "foo.txt";
     let fullpath = tempdir.path().join(filename);
@@ -264,7 +264,7 @@ fn test_futimens() {
 #[test]
 #[cfg(not(target_os = "redox"))]
 fn test_utimensat() {
-    let _dr = ::DirRestore::new();
+    let _dr = crate::DirRestore::new();
     let tempdir = tempfile::tempdir().unwrap();
     let filename = "foo.txt";
     let fullpath = tempdir.path().join(filename);

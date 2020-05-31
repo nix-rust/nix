@@ -1,14 +1,14 @@
 //! Socket interface functions
 //!
 //! [Further reading](http://man7.org/linux/man-pages/man7/socket.7.html)
-use {Error, Result};
-use errno::Errno;
+use cfg_if::cfg_if;
+use crate::{Error, Result, errno::Errno};
 use libc::{self, c_void, c_int, iovec, socklen_t, size_t,
         CMSG_FIRSTHDR, CMSG_NXTHDR, CMSG_DATA, CMSG_LEN};
 use std::{mem, ptr, slice};
 use std::os::unix::io::RawFd;
-use sys::time::TimeVal;
-use sys::uio::IoVec;
+use crate::sys::time::TimeVal;
+use crate::sys::uio::IoVec;
 
 mod addr;
 pub mod sockopt;
@@ -30,11 +30,11 @@ pub use self::addr::{
     LinkAddr,
 };
 #[cfg(any(target_os = "android", target_os = "linux"))]
-pub use ::sys::socket::addr::netlink::NetlinkAddr;
+pub use crate::sys::socket::addr::netlink::NetlinkAddr;
 #[cfg(any(target_os = "android", target_os = "linux"))]
-pub use sys::socket::addr::alg::AlgAddr;
+pub use crate::sys::socket::addr::alg::AlgAddr;
 #[cfg(target_os = "linux")]
-pub use sys::socket::addr::vsock::VsockAddr;
+pub use crate::sys::socket::addr::vsock::VsockAddr;
 
 pub use libc::{
     cmsghdr,

@@ -16,10 +16,10 @@
 //! Please note that signal discarding is not specific to `signalfd`, but also happens with regular
 //! signal handlers.
 use libc;
-use unistd;
-use {Error, Result};
-use errno::Errno;
-pub use sys::signal::{self, SigSet};
+use crate::unistd;
+use crate::{Error, Result};
+use crate::errno::Errno;
+pub use crate::sys::signal::{self, SigSet};
 pub use libc::signalfd_siginfo as siginfo;
 
 use std::os::unix::io::{RawFd, AsRawFd};

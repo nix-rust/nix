@@ -74,7 +74,6 @@
 //! Additionally round-tripping baud rates is consistent across platforms:
 //!
 //! ```rust
-//! # extern crate nix;
 //! # use nix::sys::termios::{BaudRate, cfgetispeed, cfgetospeed, cfsetispeed, cfsetspeed, Termios};
 //! # fn main() {
 //! # let mut t = unsafe { Termios::default_uninit() };
@@ -93,7 +92,6 @@
 #![cfg_attr(not(any(target_os = "freebsd", target_os = "dragonfly", target_os = "ios",
                     target_os = "macos", target_os = "netbsd", target_os = "openbsd")),
             doc = " ```rust")]
-//! # extern crate nix;
 //! # use nix::sys::termios::{BaudRate, cfgetispeed, cfgetospeed, cfsetspeed, Termios};
 //! # fn main() {
 //! # let mut t = unsafe { Termios::default_uninit() };
@@ -111,7 +109,6 @@
 #![cfg_attr(not(any(target_os = "freebsd", target_os = "dragonfly", target_os = "ios",
                     target_os = "macos", target_os = "netbsd", target_os = "openbsd")),
             doc = " ```rust,ignore")]
-//! # extern crate nix;
 //! # use nix::sys::termios::{BaudRate, cfgetispeed, cfgetospeed, cfsetspeed, Termios};
 //! # fn main() {
 //! # let mut t = unsafe { Termios::default_uninit() };
@@ -129,7 +126,6 @@
 #![cfg_attr(not(any(target_os = "freebsd", target_os = "dragonfly", target_os = "ios",
                     target_os = "macos", target_os = "netbsd", target_os = "openbsd")),
             doc = " ```rust,ignore")]
-//! # extern crate nix;
 //! # use nix::sys::termios::{BaudRate, cfgetispeed, cfsetspeed, Termios};
 //! # fn main() {
 //! # let mut t = unsafe { Termios::default_uninit() };
@@ -148,7 +144,6 @@
 #![cfg_attr(not(any(target_os = "freebsd", target_os = "dragonfly", target_os = "ios",
                     target_os = "macos", target_os = "netbsd", target_os = "openbsd")),
             doc = " ```rust,ignore")]
-//! # extern crate nix;
 //! # use nix::sys::termios::{cfsetispeed, cfsetospeed, cfsetspeed, Termios};
 //! # fn main() {
 //! # let mut t = unsafe { Termios::default_uninit() };
@@ -157,15 +152,16 @@
 //! cfsetspeed(&mut t, 9600u32);
 //! # }
 //! ```
-use {Error, Result};
-use errno::Errno;
+use cfg_if::cfg_if;
+use crate::{Error, Result};
+use crate::errno::Errno;
 use libc::{self, c_int, tcflag_t};
 use std::cell::{Ref, RefCell};
 use std::convert::{From, TryFrom};
 use std::mem;
 use std::os::unix::io::RawFd;
 
-use ::unistd::Pid;
+use crate::unistd::Pid;
 
 /// Stores settings for the termios API
 ///
@@ -193,8 +189,6 @@ impl Termios {
     /// This can be used for interfacing with other FFI functions like:
     ///
     /// ```rust
-    /// # extern crate libc;
-    /// # extern crate nix;
     /// # fn main() {
     /// # use nix::sys::termios::Termios;
     /// # let mut termios = unsafe { Termios::default_uninit() };

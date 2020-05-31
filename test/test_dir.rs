@@ -1,11 +1,8 @@
-extern crate nix;
-extern crate tempfile;
-
 use nix::dir::{Dir, Type};
 use nix::fcntl::OFlag;
 use nix::sys::stat::Mode;
 use std::fs::File;
-use self::tempfile::tempdir;
+use tempfile::tempdir;
 
 #[test]
 fn read() {

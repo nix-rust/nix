@@ -1,11 +1,12 @@
 //! Safe wrappers around functions found in libc "unistd.h" header
 
-use errno::{self, Errno};
-use {Error, Result, NixPath};
+use cfg_if::cfg_if;
+use crate::errno::{self, Errno};
+use crate::{Error, Result, NixPath};
 #[cfg(not(target_os = "redox"))]
-use fcntl::{AtFlags, at_rawfd};
-use fcntl::{FdFlag, OFlag, fcntl};
-use fcntl::FcntlArg::F_SETFD;
+use crate::fcntl::{AtFlags, at_rawfd};
+use crate::fcntl::{FdFlag, OFlag, fcntl};
+use crate::fcntl::FcntlArg::F_SETFD;
 use libc::{self, c_char, c_void, c_int, c_long, c_uint, size_t, pid_t, off_t,
            uid_t, gid_t, mode_t, PATH_MAX};
 use std::{fmt, mem, ptr};
@@ -18,7 +19,7 @@ use std::os::unix::ffi::OsStringExt;
 use std::os::unix::ffi::OsStrExt;
 use std::os::unix::io::RawFd;
 use std::path::PathBuf;
-use sys::stat::Mode;
+use crate::sys::stat::Mode;
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
 pub use self::pivot_root::*;
@@ -443,9 +444,6 @@ pub fn fchdir(dirfd: RawFd) -> Result<()> {
 /// # Example
 ///
 /// ```rust
-/// extern crate tempfile;
-/// extern crate nix;
-///
 /// use nix::unistd;
 /// use nix::sys::stat;
 /// use tempfile::tempdir;
@@ -486,9 +484,6 @@ pub fn mkdir<P: ?Sized + NixPath>(path: &P, mode: Mode) -> Result<()> {
 /// # Example
 ///
 /// ```rust
-/// extern crate tempfile;
-/// extern crate nix;
-///
 /// use nix::unistd;
 /// use nix::sys::stat;
 /// use tempfile::tempdir;
@@ -588,8 +583,6 @@ fn reserve_double_buffer_size<T>(buf: &mut Vec<T>, limit: usize) -> Result<()> {
 /// # Example
 ///
 /// ```rust
-/// extern crate nix;
-///
 /// use nix::unistd;
 ///
 /// fn main() {
@@ -953,9 +946,6 @@ pub fn gethostname(buffer: &mut [u8]) -> Result<&CStr> {
 /// # Examples
 ///
 /// ```no_run
-/// extern crate tempfile;
-/// extern crate nix;
-///
 /// use std::os::unix::io::AsRawFd;
 /// use nix::unistd::close;
 ///
@@ -966,9 +956,6 @@ pub fn gethostname(buffer: &mut [u8]) -> Result<&CStr> {
 /// ```
 ///
 /// ```rust
-/// extern crate tempfile;
-/// extern crate nix;
-///
 /// use std::os::unix::io::IntoRawFd;
 /// use nix::unistd::close;
 ///
@@ -1720,8 +1707,6 @@ pub mod alarm {
     //!
     //! See also [alarm(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/alarm.html).
 
-    use libc;
-
     /// Schedule an alarm signal.
     ///
     /// This will cause the system to generate a `SIGALRM` signal for the
@@ -1759,9 +1744,8 @@ pub fn sleep(seconds: c_uint) -> c_uint {
 
 #[cfg(not(target_os = "redox"))]
 pub mod acct {
-    use libc;
-    use {Result, NixPath};
-    use errno::Errno;
+    use crate::{Result, NixPath};
+    use crate::errno::Errno;
     use std::ptr;
 
     /// Enable process accounting
@@ -2494,9 +2478,8 @@ pub fn sysconf(var: SysconfVar) -> Result<Option<c_long>> {
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
 mod pivot_root {
-    use libc;
-    use {Result, NixPath};
-    use errno::Errno;
+    use crate::{Result, NixPath};
+    use crate::errno::Errno;
 
     pub fn pivot_root<P1: ?Sized + NixPath, P2: ?Sized + NixPath>(
             new_root: &P1, put_old: &P2) -> Result<()> {
@@ -2515,9 +2498,8 @@ mod pivot_root {
 #[cfg(any(target_os = "android", target_os = "freebsd",
           target_os = "linux", target_os = "openbsd"))]
 mod setres {
-    use libc;
-    use Result;
-    use errno::Errno;
+    use crate::Result;
+    use crate::errno::Errno;
     use super::{Uid, Gid};
 
     /// Sets the real, effective, and saved uid.

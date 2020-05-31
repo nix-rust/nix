@@ -1,12 +1,11 @@
 /* TOOD: Implement for other kqueue based systems
  */
 
-use {Errno, Result};
+use crate::{Errno, Result};
 #[cfg(not(target_os = "netbsd"))]
 use libc::{timespec, time_t, c_int, c_long, intptr_t, uintptr_t};
 #[cfg(target_os = "netbsd")]
 use libc::{timespec, time_t, c_long, intptr_t, uintptr_t, size_t};
-use libc;
 use std::os::unix::io::RawFd;
 use std::ptr;
 use std::mem;

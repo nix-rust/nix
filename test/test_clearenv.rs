@@ -1,5 +1,3 @@
-extern crate nix;
-
 use std::env;
 
 #[test]
