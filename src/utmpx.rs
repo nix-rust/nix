@@ -17,40 +17,41 @@ use std::convert::TryFrom;
 use std::ffi::CStr;
 use std::marker::PhantomData;
 
-/// Valid `UtmpEntry` entry types.
-#[derive(Clone, Copy, PartialEq, Eq, Debug, Hash, Ord, PartialOrd)]
-#[repr(i16)]
-pub enum EntryType {
-    /// No valid user accounting information.
-    Empty = libc::EMPTY,
-    /// Change in system run-level.
-    #[cfg(target_os = "linux")]
-    RunLevel = libc::RUN_LVL,
-    /// Identifies time of system boot.
-    BootTime = libc::BOOT_TIME,
-    /// Identifies time of system shutdown.
-    #[cfg(any(
-        target_os = "dragonfly",
-        target_os = "freebsd",
-        target_os = "ios",
-        target_os = "macos"
-    ))]
-    ShutdownTime = libc::SHUTDOWN_TIME,
-    /// Identifies time after system clock changed.
-    NewTime = libc::NEW_TIME,
-    /// Identifies time when system clock changed.
-    OldTime = libc::OLD_TIME,
-    /// Identifies a process spawned by the init process.
-    InitProcess = libc::INIT_PROCESS,
-    /// Identifies the session leader of a logged-in user.
-    LoginProcess = libc::LOGIN_PROCESS,
-    /// Identifies a process.
-    UserProcess = libc::USER_PROCESS,
-    /// Identifies a session leader who has exited.
-    DeadProcess = libc::DEAD_PROCESS,
-    /// Accounting.
-    #[cfg(target_env = "gnu")]
-    Accounting = libc::ACCOUNTING,
+libc_enum! {
+    /// Valid `UtmpEntry` entry types.
+    #[repr(i16)]
+    pub enum EntryType {
+        /// No valid user accounting information.
+        EMPTY,
+        /// Change in system run-level.
+        #[cfg(target_os = "linux")]
+        RUN_LVL,
+        /// Identifies time of system boot.
+        BOOT_TIME,
+        /// Identifies time of system shutdown.
+        #[cfg(any(
+            target_os = "dragonfly",
+            target_os = "freebsd",
+            target_os = "ios",
+            target_os = "macos"
+        ))]
+        SHUTDOWN_TIME,
+        /// Identifies time after system clock changed.
+        NEW_TIME,
+        /// Identifies time when system clock changed.
+        OLD_TIME,
+        /// Identifies a process spawned by the init process.
+        INIT_PROCESS,
+        /// Identifies the session leader of a logged-in user.
+        LOGIN_PROCESS,
+        /// Identifies a process.
+        USER_PROCESS,
+        /// Identifies a session leader who has exited.
+        DEAD_PROCESS,
+        /// Accounting.
+        #[cfg(target_env = "gnu")]
+        ACCOUNTING,
+    }
 }
 
 impl TryFrom<i16> for EntryType {
@@ -59,25 +60,25 @@ impl TryFrom<i16> for EntryType {
     /// Try to build an `EntryType` from its discriminant.
     fn try_from(value: i16) -> Result<Self> {
         match value {
-            libc::EMPTY => Ok(EntryType::Empty),
+            libc::EMPTY => Ok(EntryType::EMPTY),
             #[cfg(target_os = "linux")]
-            libc::RUN_LVL => Ok(EntryType::RunLevel),
-            libc::BOOT_TIME => Ok(EntryType::BootTime),
+            libc::RUN_LVL => Ok(EntryType::RUN_LVL),
+            libc::BOOT_TIME => Ok(EntryType::BOOT_TIME),
             #[cfg(any(
                 target_os = "dragonfly",
                 target_os = "freebsd",
                 target_os = "ios",
                 target_os = "macos"
             ))]
-            libc::SHUTDOWN_TIME => Ok(EntryType::ShutdownTime),
-            libc::OLD_TIME => Ok(EntryType::OldTime),
-            libc::NEW_TIME => Ok(EntryType::NewTime),
-            libc::USER_PROCESS => Ok(EntryType::UserProcess),
-            libc::INIT_PROCESS => Ok(EntryType::InitProcess),
-            libc::LOGIN_PROCESS => Ok(EntryType::LoginProcess),
-            libc::DEAD_PROCESS => Ok(EntryType::DeadProcess),
+            libc::SHUTDOWN_TIME => Ok(EntryType::SHUTDOWN_TIME),
+            libc::OLD_TIME => Ok(EntryType::OLD_TIME),
+            libc::NEW_TIME => Ok(EntryType::NEW_TIME),
+            libc::USER_PROCESS => Ok(EntryType::USER_PROCESS),
+            libc::INIT_PROCESS => Ok(EntryType::INIT_PROCESS),
+            libc::LOGIN_PROCESS => Ok(EntryType::LOGIN_PROCESS),
+            libc::DEAD_PROCESS => Ok(EntryType::DEAD_PROCESS),
             #[cfg(target_env = "gnu")]
-            libc::ACCOUNTING => Ok(EntryType::Accounting),
+            libc::ACCOUNTING => Ok(EntryType::ACCOUNTING),
             _ => Err(Error::invalid_argument()),
         }
     }
@@ -140,7 +141,7 @@ impl UtmpEntry {
 
     /// Copy out buffer content, as a bytes vector.
     fn charbuf_to_bytes(input: &[libc::c_char]) -> Vec<u8> {
-        let bytes = unsafe { &*(input as *const _  as *const [u8]) };
+        let bytes = unsafe { &*(input as *const _ as *const [u8]) };
         let mut buf = vec![0u8; bytes.len()];
         buf.copy_from_slice(bytes);
         buf
@@ -193,7 +194,7 @@ impl Utmp {
     ///
     /// # Safety
     ///
-    /// This operations is unsafe because it mutates global libc state. In order to
+    /// This operation is unsafe because it mutates global libc state. In order to
     /// safely invoke this, the caller must ensure that nothing else in the process
     /// is accessing the `utmp` database at the same time.
     pub unsafe fn open() -> Result<Utmp> {
@@ -210,14 +211,8 @@ impl Utmp {
     }
 
     /// Rewind the file pointer to the beginning of the database.
-    ///
-    /// # Safety
-    ///
-    /// This operations is unsafe because it mutates global libc state. In order to
-    /// safely invoke this, the caller must ensure that nothing else in the process
-    /// is accessing the `utmp` database at the same time.
-    pub unsafe fn rewind(&mut self) {
-        libc::setutxent()
+    pub fn rewind(&mut self) {
+        unsafe { libc::setutxent() }
     }
 }
 
