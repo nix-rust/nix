@@ -4,7 +4,7 @@ use tempfile::tempfile;
 use nix::{Error, fcntl};
 use nix::errno::Errno;
 use nix::pty::openpty;
-use nix::sys::termios::{self, LocalFlags, OutputFlags, Termios, tcgetattr};
+use nix::sys::termios::{self, LocalFlags, OutputFlags, tcgetattr};
 use nix::unistd::{read, write, close};
 
 /// Helper function analogous to `std::io::Write::write_all`, but for `RawFd`s
@@ -127,10 +127,4 @@ fn test_local_flags() {
     close(pty.master).unwrap();
     close(pty.slave).unwrap();
     assert_eq!(read, Error::Sys(Errno::EAGAIN));
-}
-
-#[test]
-fn test_cfmakeraw() {
-    let mut termios = unsafe { Termios::default_uninit() };
-    termios::cfmakeraw(&mut termios);
 }

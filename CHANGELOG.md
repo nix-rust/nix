@@ -62,6 +62,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 - Removed `sys::socket::addr::from_libc_sockaddr` from the public API.
   (#[1215](https://github.com/nix-rust/nix/pull/1215))
+- Removed `sys::termios::{get_libc_termios, get_libc_termios_mut, update_wrapper`
+  from the public API. These were previously hidden in the docs but still usable
+  by downstream.
+  (#[1235](https://github.com/nix-rust/nix/pull/1235))
 
 - Nix no longer implements `NixPath` for `Option<P> where P: NixPath`.  Most
   Nix functions that accept `NixPath` arguments can't do anything useful with
