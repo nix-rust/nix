@@ -561,6 +561,14 @@ fn test_pipe() {
 
 // pipe2(2) is the same as pipe(2), except it allows setting some flags.  Check
 // that we can set a flag.
+#[cfg(any(target_os = "android",
+          target_os = "dragonfly",
+          target_os = "emscripten",
+          target_os = "freebsd",
+          target_os = "linux",
+          target_os = "redox",
+          target_os = "netbsd",
+          target_os = "openbsd"))]
 #[test]
 fn test_pipe2() {
     let (fd0, fd1) = pipe2(OFlag::O_CLOEXEC).unwrap();
