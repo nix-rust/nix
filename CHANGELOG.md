@@ -69,10 +69,14 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   optional arguments.
   (#[1242](https://github.com/nix-rust/nix/pull/1242))
 
-- Removed `unistd::daemon`, `unistd::pipe2`,
-  `sys::event::FilterFlag::NOTE_EXIT_REPARENTED`, and
-  `sys::event::FilterFlag::NOTE_REAP` on OSX and ios.  Removed
-  `sys::ptrace::ptrace` on Android and Linux.
+- Removed `unistd::daemon` and `unistd::pipe2` on OSX and ios
+  (#[1255](https://github.com/nix-rust/nix/pull/1255))
+
+- Removed `sys::event::FilterFlag::NOTE_EXIT_REPARENTED` and
+  `sys::event::FilterFlag::NOTE_REAP` on OSX and ios.
+  (#[1255](https://github.com/nix-rust/nix/pull/1255))
+
+- Removed `sys::ptrace::ptrace` on Android and Linux.
   (#[1255](https://github.com/nix-rust/nix/pull/1255))
 
 ## [0.17.0] - 3 February 2020

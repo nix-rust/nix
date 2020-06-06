@@ -566,9 +566,9 @@ fn test_pipe() {
           target_os = "emscripten",
           target_os = "freebsd",
           target_os = "linux",
-          target_os = "redox",
           target_os = "netbsd",
-          target_os = "openbsd"))]
+          target_os = "openbsd",
+          target_os = "redox"))]
 #[test]
 fn test_pipe2() {
     let (fd0, fd1) = pipe2(OFlag::O_CLOEXEC).unwrap();
