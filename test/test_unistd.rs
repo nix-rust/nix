@@ -17,6 +17,7 @@ use std::ffi::CString;
 use std::fs::DirBuilder;
 use std::fs::{self, File};
 use std::io::Write;
+use std::mem;
 use std::os::unix::prelude::*;
 use tempfile::{tempdir, tempfile};
 use libc::{_exit, off_t};
@@ -407,6 +408,23 @@ fn test_chown() {
 
     fs::remove_file(&path).unwrap();
     chown(&path, uid, gid).unwrap_err();
+}
+
+#[test]
+fn test_fchown() {
+    // Testing for anything other than our own UID/GID is hard.
+    let uid = Some(getuid());
+    let gid = Some(getgid());
+
+    let path = tempfile().unwrap();
+    let fd = path.as_raw_fd();
+
+    fchown(fd, uid, gid).unwrap();
+    fchown(fd, uid, None).unwrap();
+    fchown(fd, None, gid).unwrap();
+
+    mem::drop(path);
+    fchown(fd, uid, gid).unwrap_err();
 }
 
 #[test]

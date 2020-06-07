@@ -5,6 +5,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - ReleaseDate
 ### Added
+- Added `fchown(2)` wrapper.
+  (#[1257](https://github.com/nix-rust/nix/pull/1257))
 - Added support on linux systems for `MAP_HUGE_`_`SIZE`_ family of flags.
   (#[1211](https://github.com/nix-rust/nix/pull/1211))
 - Added support for `F_OFD_*` `fcntl` commands on Linux and Android.
