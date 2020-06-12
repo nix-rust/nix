@@ -3,6 +3,7 @@ use libc;
 use crate::Result;
 #[cfg(not(target_env = "musl"))]
 use crate::errno::Errno;
+#[cfg(not(target_env = "musl"))]
 use std::mem;
 use crate::sys::signal::SigSet;
 
