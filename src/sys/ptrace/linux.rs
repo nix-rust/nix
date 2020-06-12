@@ -168,22 +168,6 @@ libc_bitflags! {
     }
 }
 
-/// Performs a ptrace request. If the request in question is provided by a specialised function
-/// this function will return an unsupported operation error.
-#[deprecated(
-    since="0.10.0",
-    note="usages of `ptrace()` should be replaced with the specialized helper functions instead"
-)]
-pub unsafe fn ptrace(request: Request, pid: Pid, addr: AddressType, data: *mut c_void) -> Result<c_long> {
-    use self::Request::*;
-    match request {
-        PTRACE_PEEKTEXT | PTRACE_PEEKDATA | PTRACE_GETSIGINFO | 
-            PTRACE_GETEVENTMSG | PTRACE_SETSIGINFO | PTRACE_SETOPTIONS | 
-            PTRACE_POKETEXT | PTRACE_POKEDATA | PTRACE_KILL => Err(Error::UnsupportedOperation),
-        _ => ptrace_other(request, pid, addr, data)
-    }
-}
-
 fn ptrace_peek(request: Request, pid: Pid, addr: AddressType, data: *mut c_void) -> Result<c_long> {
     let ret = unsafe {
         Errno::clear();

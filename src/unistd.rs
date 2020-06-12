@@ -881,12 +881,12 @@ pub fn execveat(dirfd: RawFd, pathname: &CStr, args: &[&CStr],
 ///   descriptors will remain identical after daemonizing.
 /// * `noclose = false`: The process' stdin, stdout, and stderr will point to
 ///   `/dev/null` after daemonizing.
-#[cfg_attr(any(target_os = "macos", target_os = "ios"), deprecated(
-    since="0.14.0",
-    note="Deprecated in MacOSX 10.5"
-))]
-#[cfg_attr(any(target_os = "macos", target_os = "ios"), allow(deprecated))]
-#[cfg(not(target_os = "redox"))]
+#[cfg(any(target_os = "android",
+          target_os = "dragonfly",
+          target_os = "freebsd",
+          target_os = "linux",
+          target_os = "netbsd",
+          target_os = "openbsd"))]
 pub fn daemon(nochdir: bool, noclose: bool) -> Result<()> {
     let res = unsafe { libc::daemon(nochdir as c_int, noclose as c_int) };
     Errno::result(res).map(drop)
@@ -1095,60 +1095,6 @@ pub fn pipe2(flags: OFlag) -> Result<(RawFd, RawFd)> {
     Errno::result(res)?;
 
     unsafe { Ok((fds.assume_init()[0], fds.assume_init()[1])) }
-}
-
-/// Like `pipe`, but allows setting certain file descriptor flags.
-///
-/// The following flags are supported, and will be set after the pipe is
-/// created:
-///
-/// `O_CLOEXEC`:    Set the close-on-exec flag for the new file descriptors.
-/// `O_NONBLOCK`:   Set the non-blocking flag for the ends of the pipe.
-#[cfg(any(target_os = "ios", target_os = "macos"))]
-#[deprecated(
-    since="0.10.0",
-    note="pipe2(2) is not actually atomic on these platforms.  Use pipe(2) and fcntl(2) instead"
-)]
-pub fn pipe2(flags: OFlag) -> Result<(RawFd, RawFd)> {
-    let mut fds = mem::MaybeUninit::<[c_int; 2]>::uninit();
-
-    let res = unsafe { libc::pipe(fds.as_mut_ptr() as *mut c_int) };
-
-    Errno::result(res)?;
-
-    unsafe {
-        pipe2_setflags(fds.assume_init()[0], fds.assume_init()[1], flags)?;
-
-        Ok((fds.assume_init()[0], fds.assume_init()[1]))
-    }
-}
-
-#[cfg(any(target_os = "ios", target_os = "macos"))]
-fn pipe2_setflags(fd1: RawFd, fd2: RawFd, flags: OFlag) -> Result<()> {
-    use crate::fcntl::FcntlArg::F_SETFL;
-
-    let mut res = Ok(0);
-
-    if flags.contains(OFlag::O_CLOEXEC) {
-        res = res
-            .and_then(|_| fcntl(fd1, F_SETFD(FdFlag::FD_CLOEXEC)))
-            .and_then(|_| fcntl(fd2, F_SETFD(FdFlag::FD_CLOEXEC)));
-    }
-
-    if flags.contains(OFlag::O_NONBLOCK) {
-        res = res
-            .and_then(|_| fcntl(fd1, F_SETFL(OFlag::O_NONBLOCK)))
-            .and_then(|_| fcntl(fd2, F_SETFL(OFlag::O_NONBLOCK)));
-    }
-
-    match res {
-        Ok(_) => Ok(()),
-        Err(e) => {
-            let _ = close(fd1);
-            let _ = close(fd2);
-            Err(e)
-        }
-    }
 }
 
 /// Truncate a file to a specified length
