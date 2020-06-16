@@ -7,6 +7,8 @@ use nix::unistd::ForkResult::*;
 use nix::sys::signal::{SaFlags, SigAction, SigHandler, SigSet, Signal, sigaction};
 use nix::sys::wait::*;
 use nix::sys::stat::{self, Mode, SFlag};
+#[cfg(not(target_os = "redox"))]
+use nix::pty::{posix_openpt, grantpt, unlockpt, ptsname};
 use nix::errno::Errno;
 #[cfg(not(target_os = "redox"))]
 use nix::Error;
@@ -19,6 +21,8 @@ use std::fs::{self, File};
 use std::io::Write;
 use std::mem;
 use std::os::unix::prelude::*;
+#[cfg(not(target_os = "redox"))]
+use std::path::Path;
 use tempfile::{tempdir, tempfile};
 use libc::{_exit, off_t};
 
@@ -963,4 +967,47 @@ fn test_setfsuid() {
 
     // open the temporary file with the current thread filesystem UID
     fs::File::open(temp_path_2).unwrap();
+}
+
+#[test]
+#[cfg(not(target_os = "redox"))]
+fn test_ttyname() {
+    let fd = posix_openpt(OFlag::O_RDWR).expect("posix_openpt failed");
+    assert!(fd.as_raw_fd() > 0);
+
+    // on linux, we can just call ttyname on the pty master directly, but
+    // apparently osx requires that ttyname is called on a slave pty (can't
+    // find this documented anywhere, but it seems to empirically be the case)
+    grantpt(&fd).expect("grantpt failed");
+    unlockpt(&fd).expect("unlockpt failed");
+    let sname = unsafe { ptsname(&fd) }.expect("ptsname failed");
+    let fds = open(
+        Path::new(&sname),
+        OFlag::O_RDWR,
+        stat::Mode::empty(),
+    ).expect("open failed");
+    assert!(fds > 0);
+
+    let name = ttyname(fds).expect("ttyname failed");
+    assert!(name.starts_with("/dev"));
+}
+
+#[test]
+#[cfg(not(target_os = "redox"))]
+fn test_ttyname_not_pty() {
+    let fd = File::open("/dev/zero").unwrap();
+    assert!(fd.as_raw_fd() > 0);
+    assert_eq!(ttyname(fd.as_raw_fd()), Err(Error::Sys(Errno::ENOTTY)));
+}
+
+#[test]
+#[cfg(all(not(target_os = "redox"), not(target_env = "musl")))]
+fn test_ttyname_invalid_fd() {
+    assert_eq!(ttyname(-1), Err(Error::Sys(Errno::EBADF)));
+}
+
+#[test]
+#[cfg(all(not(target_os = "redox"), target_env = "musl"))]
+fn test_ttyname_invalid_fd() {
+    assert_eq!(ttyname(-1), Err(Error::Sys(Errno::ENOTTY)));
 }
