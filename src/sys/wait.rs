@@ -1,10 +1,10 @@
+use crate::errno::Errno;
+use crate::sys::signal::Signal;
+use crate::unistd::Pid;
+use crate::Result;
 use cfg_if::cfg_if;
 use libc::{self, c_int};
-use crate::Result;
-use crate::errno::Errno;
-use crate::unistd::Pid;
-use crate::sys::signal::Signal;
-use std::convert::TryFrom;
+use std::convert::{From, Into, TryFrom};
 
 libc_bitflags!(
     pub struct WaitPidFlag: c_int {
@@ -49,6 +49,36 @@ libc_bitflags!(
         __WCLONE;
     }
 );
+
+/// Possible child targets of `waitpid()`.
+///
+/// The most common variants for waiting are waiting for a specific
+/// child via `WaitPid::Child(pid)` and waiting for any child via
+/// `WaitPid::AnyChild`.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum WaitTarget {
+    /// A child process with `Pid` process id.
+    Child(Pid),
+    /// Any child process of the same process group as the calling process.
+    SameGroupChild,
+    /// Any child process.
+    AnyChild,
+    /// Any child process of `Pid` process group id. Note, do not negate
+    /// this value, use process id of group leader instead.
+    ChildOfGroup(Pid),
+}
+
+impl From<Pid> for WaitTarget {
+    /// Convert libc `pid_t` to `waitpid`'s `pid` as Rust safe `WaitTarget`.
+    fn from(pid: Pid) -> WaitTarget {
+        match pid.as_raw() {
+            i if i > 0 => WaitTarget::Child(pid),
+            -1 => WaitTarget::AnyChild,
+            0 => WaitTarget::SameGroupChild,
+            _ => WaitTarget::ChildOfGroup(pid),
+        }
+    }
+}
 
 /// Possible return values from `wait()` or `waitpid()`.
 ///
@@ -214,7 +244,11 @@ impl WaitStatus {
     }
 }
 
-pub fn waitpid<P: Into<Option<Pid>>>(pid: P, options: Option<WaitPidFlag>) -> Result<WaitStatus> {
+/// Wrapper around `libc::waitpid` that uses [`WaitTarget`] to determine
+/// `Pid` target. It waits for the specified `who` target optionally with
+/// [`WaitPidFlag`] to specify options for waiting and return the result of
+/// [`WaitStatus`].
+pub fn waitpid<P: Into<WaitTarget>>(who: P, options: Option<WaitPidFlag>) -> Result<WaitStatus> {
     use self::WaitStatus::*;
 
     let mut status: i32 = 0;
@@ -224,13 +258,17 @@ pub fn waitpid<P: Into<Option<Pid>>>(pid: P, options: Option<WaitPidFlag>) -> Re
         None => 0,
     };
 
-    let res = unsafe {
-        libc::waitpid(
-            pid.into().unwrap_or_else(|| Pid::from_raw(-1)).into(),
-            &mut status as *mut c_int,
-            option_bits,
-        )
+    let pid = match who.into() {
+        WaitTarget::Child(pid) => pid.into(),
+        WaitTarget::SameGroupChild => 0,
+        WaitTarget::AnyChild => -1,
+        WaitTarget::ChildOfGroup(pid) => {
+            let pid: libc::pid_t = pid.into();
+            -pid
+        }
     };
+
+    let res = unsafe { libc::waitpid(pid, &mut status as *mut c_int, option_bits) };
 
     match Errno::result(res)? {
         0 => Ok(StillAlive),
@@ -238,6 +276,7 @@ pub fn waitpid<P: Into<Option<Pid>>>(pid: P, options: Option<WaitPidFlag>) -> Re
     }
 }
 
+/// Wrapper around `libc::wait` to wait until any child process terminates.
 pub fn wait() -> Result<WaitStatus> {
-    waitpid(None, None)
+    waitpid(WaitTarget::AnyChild, None)
 }
