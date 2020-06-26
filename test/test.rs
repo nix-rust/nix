@@ -155,6 +155,12 @@ mod test_sched;
 mod test_sendfile;
 mod test_stat;
 mod test_unistd;
+#[cfg(any(target_env = "gnu",
+          target_os = "dragonfly",
+          target_os = "freebsd",
+          target_os = "ios",
+          target_os = "macos"))]
+mod test_utmpx;
 
 use std::os::unix::io::RawFd;
 use std::path::PathBuf;
@@ -188,6 +194,8 @@ lazy_static! {
     pub static ref PTSNAME_MTX: Mutex<()> = Mutex::new(());
     /// Any test that alters signal handling must grab this mutex.
     pub static ref SIGNAL_MTX: Mutex<()> = Mutex::new(());
+    /// Any test that accesses `utmpx(5)` must grab this mutex.
+    pub static ref UTMPX_MTX: Mutex<()> = Mutex::new(());
 }
 
 /// RAII object that restores a test's original directory on drop

@@ -249,6 +249,19 @@ impl fmt::Display for TimeSpec {
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct TimeVal(timeval);
 
+impl TimeVal {
+    #[allow(dead_code)]
+
+    /// Build a `TimeVal` from seconds and microseconds parts.
+    pub(crate) fn from_usec(secs: i64, usecs: i64) -> Self {
+        let tv = timeval {
+            tv_sec: secs as libc::time_t,
+            tv_usec: usecs as libc::suseconds_t,
+        };
+        Self(tv)
+    }
+}
+
 const MICROS_PER_SEC: i64 = 1_000_000;
 
 #[cfg(target_pointer_width = "64")]
