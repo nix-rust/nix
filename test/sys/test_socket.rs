@@ -666,6 +666,111 @@ pub fn test_af_alg_aead() {
     assert_eq!(decrypted[(assoc_size as usize)..(payload_len + (assoc_size as usize))], payload[(assoc_size as usize)..payload_len + (assoc_size as usize)]);
 }
 
+// Verify `ControlMessage::Ipv4PacketInfo` for `sendmsg`.
+// This creates a (udp) socket bound to localhost, then sends a message to
+// itself but uses Ipv4PacketInfo to force the source address to be localhost.
+//
+// This would be a more interesting test if we could assume that the test host
+// has more than one IP address (since we could select a different address to
+// test from).
+#[cfg(any(target_os = "linux",
+        target_os = "macos",
+        target_os = "netbsd"))]
+#[test]
+pub fn test_sendmsg_ipv4packetinfo() {
+    use nix::sys::uio::IoVec;
+    use nix::sys::socket::{socket, sendmsg, bind,
+                           AddressFamily, SockType, SockFlag, SockAddr,
+                           ControlMessage, MsgFlags};
+
+    let sock = socket(AddressFamily::Inet,
+                      SockType::Datagram,
+                      SockFlag::empty(),
+                      None)
+        .expect("socket failed");
+
+    let std_sa = SocketAddr::from_str("127.0.0.1:4000").unwrap();
+    let inet_addr = InetAddr::from_std(&std_sa);
+    let sock_addr = SockAddr::new_inet(inet_addr);
+
+    bind(sock, &sock_addr).expect("bind failed");
+
+    let slice = [1u8, 2, 3, 4, 5, 6, 7, 8];
+    let iov = [IoVec::from_slice(&slice)];
+
+    if let InetAddr::V4(sin) = inet_addr {
+        let pi = libc::in_pktinfo {
+            ipi_ifindex: 0, /* Unspecified interface */
+            ipi_addr: libc::in_addr { s_addr: 0 },
+            ipi_spec_dst: sin.sin_addr,
+        };
+
+        let cmsg = [ControlMessage::Ipv4PacketInfo(&pi)];
+
+        sendmsg(sock, &iov, &cmsg, MsgFlags::empty(), Some(&sock_addr))
+            .expect("sendmsg");
+    } else {
+        panic!("No IPv4 addresses available for testing?");
+    }
+}
+
+// Verify `ControlMessage::Ipv6PacketInfo` for `sendmsg`.
+// This creates a (udp) socket bound to ip6-localhost, then sends a message to
+// itself but uses Ipv6PacketInfo to force the source address to be
+// ip6-localhost.
+//
+// This would be a more interesting test if we could assume that the test host
+// has more than one IP address (since we could select a different address to
+// test from).
+#[cfg(any(target_os = "linux",
+        target_os = "macos",
+        target_os = "netbsd",
+        target_os = "freebsd"))]
+#[test]
+pub fn test_sendmsg_ipv6packetinfo() {
+    use nix::Error;
+    use nix::errno::Errno;
+    use nix::sys::uio::IoVec;
+    use nix::sys::socket::{socket, sendmsg, bind,
+                           AddressFamily, SockType, SockFlag, SockAddr,
+                           ControlMessage, MsgFlags};
+
+    let sock = socket(AddressFamily::Inet6,
+                      SockType::Datagram,
+                      SockFlag::empty(),
+                      None)
+        .expect("socket failed");
+
+    let std_sa = SocketAddr::from_str("[::1]:6000").unwrap();
+    let inet_addr = InetAddr::from_std(&std_sa);
+    let sock_addr = SockAddr::new_inet(inet_addr);
+
+    match bind(sock, &sock_addr) {
+        Err(Error::Sys(Errno::EADDRNOTAVAIL)) => {
+            println!("IPv6 not available, skipping test.");
+            return;
+        },
+        _ => (),
+    }
+
+    let slice = [1u8, 2, 3, 4, 5, 6, 7, 8];
+    let iov = [IoVec::from_slice(&slice)];
+
+    if let InetAddr::V6(sin) = inet_addr {
+        let pi = libc::in6_pktinfo {
+            ipi6_ifindex: 0, /* Unspecified interface */
+            ipi6_addr: sin.sin6_addr,
+        };
+
+        let cmsg = [ControlMessage::Ipv6PacketInfo(&pi)];
+
+        sendmsg(sock, &iov, &cmsg, MsgFlags::empty(), Some(&sock_addr))
+            .expect("sendmsg");
+    } else {
+        println!("No IPv6 addresses available for testing: skipping testing Ipv6PacketInfo");
+    }
+}
+
 /// Tests that passing multiple fds using a single `ControlMessage` works.
 // Disable the test on emulated platforms due to a bug in QEMU versions <
 // 2.12.0.  https://bugs.launchpad.net/qemu/+bug/1701808
