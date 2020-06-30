@@ -95,11 +95,18 @@ matrix:
       script:
         - cargo update -Zminimal-versions
         - cargo check
+
+    # Redoxer is too unreliable, so we'll do a cross-build only
+    # See also:
+    # https://github.com/nix-rust/nix/issues/1258
+    # https://github.com/rust-embedded/cross/issues/427
     - language: generic
       name: redox
       script:
-        - docker pull redoxos/redoxer
-        - docker run  -v $(pwd):$(pwd) -w $(pwd) redoxos/redoxer sh -c 'rm -rf ~/.redoxer && redoxer test'
+        - curl --proto '=https' --tlsv1.2 -sSf --output rustup.sh https://sh.rustup.rs
+        - sh rustup.sh -y --profile=minimal --default-toolchain 1.36.0 --target x86_64-unknown-redox
+        - . $HOME/.cargo/env
+        - cargo build --all-targets
 
 before_install: set -e
 
