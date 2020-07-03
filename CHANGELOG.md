@@ -37,6 +37,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   (#[1222](https://github.com/nix-rust/nix/pull/1222))
 - `CpuSet` and `UnixCredentials` now implement `Default`.
   (#[1244](https://github.com/nix-rust/nix/pull/1244))
+- Added `unistd::ttyname`
+  (#[1259](https://github.com/nix-rust/nix/pull/1259))
 
 ### Changed
 - Changed `fallocate` return type from `c_int` to `()` (#[1201](https://github.com/nix-rust/nix/pull/1201))

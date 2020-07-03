@@ -2774,3 +2774,20 @@ impl Group {
         })
     }
 }
+
+/// Get the name of the terminal device that is open on file descriptor fd
+/// (see [`ttyname(3)`](http://man7.org/linux/man-pages/man3/ttyname.3.html)).
+pub fn ttyname(fd: RawFd) -> Result<PathBuf> {
+    const PATH_MAX: usize = libc::PATH_MAX as usize;
+    let mut buf = vec![0_u8; PATH_MAX];
+    let c_buf = buf.as_mut_ptr() as *mut libc::c_char;
+
+    let ret = unsafe { libc::ttyname_r(fd, c_buf, buf.len()) };
+    if ret != 0 {
+        return Err(Error::Sys(Errno::from_i32(ret)));
+    }
+
+    let nul = buf.iter().position(|c| *c == b'\0').unwrap();
+    buf.truncate(nul);
+    Ok(OsString::from_vec(buf).into())
+}
