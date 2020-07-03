@@ -87,6 +87,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Removed `sys::ptrace::ptrace` on Android and Linux.
   (#[1255](https://github.com/nix-rust/nix/pull/1255))
 
+- Dropped support for powerpc64-unknown-linux-gnu
+  (#[1266](https://github.com/nix-rust/nix/pull/1268))
+
 ## [0.17.0] - 3 February 2020
 ### Added
 - Add `CLK_TCK` to `SysconfVar`

@@ -58,7 +58,6 @@ Tier 1:
   * mips64-unknown-linux-gnuabi64
   * mips64el-unknown-linux-gnuabi64
   * mipsel-unknown-linux-gnu
-  * powerpc64-unknown-linux-gnu
   * powerpc64le-unknown-linux-gnu
   * x86_64-apple-darwin
   * x86_64-unknown-freebsd
