@@ -35,6 +35,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   (#[1252](https://github.com/nix-rust/nix/pull/1252))
 - Added support for `Ipv4PacketInfo` and `Ipv6PacketInfo` to `ControlMessage`.
   (#[1222](https://github.com/nix-rust/nix/pull/1222))
+- `CpuSet` and `UnixCredentials` now implement `Default`.
+  (#[1244](https://github.com/nix-rust/nix/pull/1244))
 
 ### Changed
 - Changed `fallocate` return type from `c_int` to `()` (#[1201](https://github.com/nix-rust/nix/pull/1201))
@@ -44,6 +46,15 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   (#[1245](https://github.com/nix-rust/nix/pull/1245))
 - `execv`, `execve`, `execvp` and `execveat` in `::nix::unistd` and `reboot` in
   `::nix::sys::reboot` now return `Result<Infallible>` instead of `Result<Void>` (#[1239](https://github.com/nix-rust/nix/pull/1239))
+- `sys::socket::sockaddr_storage_to_addr` is no longer `unsafe`.  So is
+  `offset_of!`.
+- `sys::socket::sockaddr_storage_to_addr`, `offset_of!`, and `Errno::clear` are
+  no longer `unsafe`.
+- `SockAddr::as_ffi_pair`,`sys::socket::sockaddr_storage_to_addr`, `offset_of!`,
+  and `Errno::clear` are no longer `unsafe`.
+  (#[1244](https://github.com/nix-rust/nix/pull/1244))
+- Several `Inotify` methods now take `self` by value instead of by reference
+  (#[1244](https://github.com/nix-rust/nix/pull/1244))
 
 ### Fixed
 
@@ -61,6 +72,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   correctness's sake across all architectures and compilers, though now bugs
   have been reported so far.
   (#[1243](https://github.com/nix-rust/nix/pull/1243))
+- Fixed unaligned pointer read in `Inotify::read_events`.
+  (#[1244](https://github.com/nix-rust/nix/pull/1244))
 
 ### Removed
 

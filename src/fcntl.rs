@@ -161,6 +161,8 @@ libc_bitflags!(
     }
 );
 
+// The conversion is not identical on all operating systems.
+#[allow(clippy::identity_conversion)]
 pub fn open<P: ?Sized + NixPath>(path: &P, oflag: OFlag, mode: Mode) -> Result<RawFd> {
     let fd = path.with_nix_path(|cstr| {
         unsafe { libc::open(cstr.as_ptr(), oflag.bits(), mode.bits() as c_uint) }
@@ -169,6 +171,8 @@ pub fn open<P: ?Sized + NixPath>(path: &P, oflag: OFlag, mode: Mode) -> Result<R
     Errno::result(fd)
 }
 
+// The conversion is not identical on all operating systems.
+#[allow(clippy::identity_conversion)]
 #[cfg(not(target_os = "redox"))]
 pub fn openat<P: ?Sized + NixPath>(
     dirfd: RawFd,

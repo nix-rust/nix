@@ -1465,9 +1465,7 @@ pub fn getgroups() -> Result<Vec<Gid>> {
 /// #     Ok(())
 /// # }
 /// #
-/// # fn main() {
-/// #     try_main().unwrap();
-/// # }
+/// # try_main().unwrap();
 /// ```
 #[cfg(not(any(target_os = "ios", target_os = "macos", target_os = "redox")))]
 pub fn setgroups(groups: &[Gid]) -> Result<()> {
@@ -1589,9 +1587,7 @@ pub fn getgrouplist(user: &CStr, group: Gid) -> Result<Vec<Gid>> {
 /// #     Ok(())
 /// # }
 /// #
-/// # fn main() {
-/// #     try_main().unwrap();
-/// # }
+/// # try_main().unwrap();
 /// ```
 #[cfg(not(any(target_os = "ios", target_os = "macos", target_os = "redox")))]
 pub fn initgroups(user: &CStr, group: Gid) -> Result<()> {
