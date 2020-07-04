@@ -83,6 +83,10 @@ pub const SMB_SUPER_MAGIC: FsType = FsType(libc::SMB_SUPER_MAGIC);
 pub const TMPFS_MAGIC: FsType = FsType(libc::TMPFS_MAGIC);
 #[cfg(all(target_os = "linux", not(target_env = "musl"), not(target_arch = "s390x")))]
 pub const USBDEVICE_SUPER_MAGIC: FsType = FsType(libc::USBDEVICE_SUPER_MAGIC);
+#[cfg(all(target_os = "linux", not(target_env = "musl"), not(target_arch = "s390x")))]
+pub const CGROUP_SUPER_MAGIC: FsType = FsType(libc::CGROUP_SUPER_MAGIC);
+#[cfg(all(target_os = "linux", not(target_env = "musl"), not(target_arch = "s390x")))]
+pub const CGROUP2_SUPER_MAGIC: FsType = FsType(libc::CGROUP2_SUPER_MAGIC);
 
 impl Statfs {
     /// Magic code defining system type
