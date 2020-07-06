@@ -1188,6 +1188,18 @@ pub fn linkat<P: ?Sized + NixPath>(
 }
 
 
+/// Remove a directory
+///
+/// See also [rmdir(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/rmdir.html)
+pub fn rmdir<P: ?Sized + NixPath>(path: &P) -> Result<()> {
+    let res = path.with_nix_path(|cstr| {
+        unsafe {
+            libc::rmdir(cstr.as_ptr())
+        }
+    })?;
+    Errno::result(res).map(drop)
+}
+
 /// Remove a directory entry
 ///
 /// See also [unlink(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/unlink.html)

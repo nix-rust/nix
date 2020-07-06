@@ -916,6 +916,20 @@ fn test_unlinkat_file() {
  }
 
 #[test]
+fn test_rmdir() {
+    let tempdir = tempdir().unwrap();
+    let dirname = "foo_dir";
+    let dirpath = tempdir.path().join(dirname);
+
+    // Create dir
+    DirBuilder::new().recursive(true).create(&dirpath).unwrap();
+
+    rmdir(dirpath.as_path()).unwrap();
+
+    assert!(!dirpath.exists());
+}
+
+#[test]
 fn test_access_not_existing() {
     let tempdir = tempdir().unwrap();
     let dir = tempdir.path().join("does_not_exist.txt");
