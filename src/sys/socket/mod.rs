@@ -730,7 +730,9 @@ pub enum ControlMessage<'a> {
     /// [`ip(7)`](http://man7.org/linux/man-pages/man7/ip.7.html) man page.
     #[cfg(any(target_os = "linux",
               target_os = "macos",
-              target_os = "netbsd"))]
+              target_os = "netbsd",
+              target_os = "android",
+              target_os = "ios",))]
     Ipv4PacketInfo(&'a libc::in_pktinfo),
 
     /// Configure the sending addressing and interface for v6
@@ -740,7 +742,9 @@ pub enum ControlMessage<'a> {
     #[cfg(any(target_os = "linux",
               target_os = "macos",
               target_os = "netbsd",
-              target_os = "freebsd"))]
+              target_os = "freebsd",
+              target_os = "android",
+              target_os = "ios",))]
     Ipv6PacketInfo(&'a libc::in6_pktinfo),
 }
 
@@ -824,10 +828,12 @@ impl<'a> ControlMessage<'a> {
                 gso_size as *const _ as *const u8
             },
             #[cfg(any(target_os = "linux", target_os = "macos",
-                      target_os = "netbsd"))]
+                      target_os = "netbsd", target_os = "android",
+                      target_os = "ios",))]
             ControlMessage::Ipv4PacketInfo(info) => info as *const _ as *const u8,
             #[cfg(any(target_os = "linux", target_os = "macos",
-                      target_os = "netbsd", target_os = "freebsd"))]
+                      target_os = "netbsd", target_os = "freebsd",
+                      target_os = "android", target_os = "ios",))]
             ControlMessage::Ipv6PacketInfo(info) => info as *const _ as *const u8,
         };
         unsafe {
@@ -870,10 +876,12 @@ impl<'a> ControlMessage<'a> {
                 mem::size_of_val(gso_size)
             },
             #[cfg(any(target_os = "linux", target_os = "macos",
-              target_os = "netbsd"))]
+              target_os = "netbsd", target_os = "android",
+              target_os = "ios",))]
             ControlMessage::Ipv4PacketInfo(info) => mem::size_of_val(info),
             #[cfg(any(target_os = "linux", target_os = "macos",
-              target_os = "netbsd", target_os = "freebsd"))]
+              target_os = "netbsd", target_os = "freebsd",
+              target_os = "android", target_os = "ios",))]
             ControlMessage::Ipv6PacketInfo(info) => mem::size_of_val(info),
         }
     }
@@ -892,10 +900,12 @@ impl<'a> ControlMessage<'a> {
             #[cfg(target_os = "linux")]
             ControlMessage::UdpGsoSegments(_) => libc::SOL_UDP,
             #[cfg(any(target_os = "linux", target_os = "macos",
-                      target_os = "netbsd"))]
+                      target_os = "netbsd", target_os = "android",
+                      target_os = "ios",))]
             ControlMessage::Ipv4PacketInfo(_) => libc::IPPROTO_IP,
             #[cfg(any(target_os = "linux", target_os = "macos",
-              target_os = "netbsd", target_os = "freebsd"))]
+              target_os = "netbsd", target_os = "freebsd",
+              target_os = "android", target_os = "ios",))]
             ControlMessage::Ipv6PacketInfo(_) => libc::IPPROTO_IPV6,
         }
     }
@@ -925,10 +935,12 @@ impl<'a> ControlMessage<'a> {
                 libc::UDP_SEGMENT
             },
             #[cfg(any(target_os = "linux", target_os = "macos",
-                      target_os = "netbsd"))]
+                      target_os = "netbsd", target_os = "android",
+                      target_os = "ios",))]
             ControlMessage::Ipv4PacketInfo(_) => libc::IP_PKTINFO,
             #[cfg(any(target_os = "linux", target_os = "macos",
-                      target_os = "netbsd", target_os = "freebsd"))]
+                      target_os = "netbsd", target_os = "freebsd",
+                      target_os = "android", target_os = "ios",))]
             ControlMessage::Ipv6PacketInfo(_) => libc::IPV6_PKTINFO,
         }
     }
