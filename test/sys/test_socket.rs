@@ -1462,3 +1462,40 @@ pub fn test_vsock() {
     close(s1).unwrap();
     thr.join().unwrap();
 }
+
+#[cfg(any(target_os = "android", target_os = "linux"))]
+#[test]
+pub fn test_sockaddr_storage_to_datalink() {
+    use nix::sys::socket::sockaddr_storage;
+    // in C, sockaddr_* are as if sockaddr_storage was a union
+    let mut storage : sockaddr_storage = unsafe { std::mem::zeroed::<sockaddr_storage>() };
+    let ll: *mut libc::sockaddr_ll = &mut storage as *mut _ as *mut libc::sockaddr_ll;
+    unsafe {
+        // NOTE: libc has libc::AF_PACKET as cint, instead of u16
+        (*ll).sll_family = libc::AF_PACKET as u16;
+        // NOTE: libc has libc::ETH_P_IP as cint, instead of u16
+        (*ll).sll_protocol = (libc::ETH_P_IP as u16).to_be();
+        (*ll).sll_ifindex = 1i32;
+        (*ll).sll_hatype = libc::ARPHRD_ETHER.to_be();
+        (*ll).sll_pkttype = 0u8; // PACKET_HOST (constant not in libc crate)
+        (*ll).sll_halen = 6;
+        // 00:00:5E:00:53:00 is reserved for documentation.
+        (*ll).sll_addr = [0x02, 0x00, 0x5E, 0x00, 0x53, 0x00, 0x00, 0x00];
+    }
+    let addr = nix::sys::socket::sockaddr_storage_to_addr(&storage,
+        std::mem::size_of::<libc::sockaddr_ll>()).expect("Conversion failed");
+    if let nix::sys::socket::SockAddr::Link(la) = addr {
+        assert_eq!(la.family(), AddressFamily::Packet);
+        // NOTE: LinkAddr doesn't convert protocol to native byte order.
+        assert_eq!(u16::from_be(la.protocol()), (libc::ETH_P_IP as u16));
+        assert_eq!(la.ifindex(), 1usize);
+        // NOTE: LinkAddr doesn't convert hatype to native byteorder
+        assert_eq!(u16::from_be(la.hatype()), libc::ARPHRD_ETHER);
+        assert_eq!(la.pkttype(), 0u8);
+        assert_eq!(la.halen(), 6usize);
+        // NOTE: LinkAddr always only returns 6 bytes.
+        assert_eq!(la.addr(), [0x02, 0x00, 0x5E, 0x00, 0x53, 0x00]);
+    } else {
+        panic!("Conversion returned incorrect type");
+    }
+}
