@@ -29,6 +29,7 @@ pub struct OpenptyResult {
 ///
 /// This is returned by `forkpty`. Note that this type does *not* implement `Drop`, so the user
 /// must manually close the file descriptors.
+#[cfg(not(target_os = "fuchsia"))]
 #[derive(Clone, Copy, Debug)]
 pub struct ForkptyResult {
     /// The master port in a virtual pty pair
@@ -302,6 +303,7 @@ pub fn openpty<'a, 'b, T: Into<Option<&'a Winsize>>, U: Into<Option<&'b Termios>
 /// If `winsize` is not `None`, the window size of the slave will be set to
 /// the values in `winsize`. If `termios` is not `None`, the pseudoterminal's
 /// terminal settings of the slave will be set to the values in `termios`.
+#[cfg(not(target_os = "fuchsia"))]
 pub fn forkpty<'a, 'b, T: Into<Option<&'a Winsize>>, U: Into<Option<&'b Termios>>>(
     winsize: T,
     termios: U,
