@@ -41,3 +41,5 @@ mod test_pthread;
           target_os = "netbsd",
           target_os = "openbsd"))]
 mod test_ptrace;
+#[cfg(any(target_os = "android", target_os = "linux"))]
+mod test_timerfd;

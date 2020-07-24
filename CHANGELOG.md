@@ -41,6 +41,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   (#[1259](https://github.com/nix-rust/nix/pull/1259))
 - Added support for `Ipv4PacketInfo` and `Ipv6PacketInfo` to `ControlMessage` for iOS and Android.
   (#[1265](https://github.com/nix-rust/nix/pull/1265))
+- Added support for `TimerFd`.
+  (#[1261](https://github.com/nix-rust/nix/pull/1261))
 
 ### Changed
 - Changed `fallocate` return type from `c_int` to `()` (#[1201](https://github.com/nix-rust/nix/pull/1201))
