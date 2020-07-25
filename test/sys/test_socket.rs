@@ -1479,7 +1479,7 @@ pub fn test_sockaddr_storage_to_datalink() {
         (*ll).sll_hatype = libc::ARPHRD_ETHER.to_be();
         (*ll).sll_pkttype = 0u8; // PACKET_HOST (constant not in libc crate)
         (*ll).sll_halen = 6;
-        // 00:00:5E:00:53:00 is reserved for documentation.
+        // 0x:00:5E:00:53:00 is reserved for documentation.
         (*ll).sll_addr = [0x02, 0x00, 0x5E, 0x00, 0x53, 0x00, 0x00, 0x00];
     }
     let addr = nix::sys::socket::sockaddr_storage_to_addr(&storage,
