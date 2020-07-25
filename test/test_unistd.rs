@@ -936,7 +936,7 @@ fn test_access_file_exists() {
 #[test]
 fn test_setfsuid() {
     use std::os::unix::fs::PermissionsExt;
-    use std::{fs, thread};
+    use std::{fs, io, thread};
     require_capability!(CAP_SETUID);
 
     // get the UID of the "nobody" user

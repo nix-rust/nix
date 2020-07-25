@@ -72,6 +72,8 @@ pub const NFS_SUPER_MAGIC: FsType = FsType(libc::NFS_SUPER_MAGIC);
 #[cfg(all(target_os = "linux", not(target_env = "musl"), not(target_arch = "s390x")))]
 pub const OPENPROM_SUPER_MAGIC: FsType = FsType(libc::OPENPROM_SUPER_MAGIC);
 #[cfg(all(target_os = "linux", not(target_env = "musl"), not(target_arch = "s390x")))]
+pub const OVERLAYFS_SUPER_MAGIC: FsType = FsType(libc::OVERLAYFS_SUPER_MAGIC);
+#[cfg(all(target_os = "linux", not(target_env = "musl"), not(target_arch = "s390x")))]
 pub const PROC_SUPER_MAGIC: FsType = FsType(libc::PROC_SUPER_MAGIC);
 #[cfg(all(target_os = "linux", not(target_env = "musl"), not(target_arch = "s390x")))]
 pub const QNX4_SUPER_MAGIC: FsType = FsType(libc::QNX4_SUPER_MAGIC);

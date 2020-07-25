@@ -5,22 +5,27 @@ extern crate nix;
 #[macro_use]
 extern crate lazy_static;
 
+macro_rules! skip {
+    ($($reason: expr),+) => {
+        use ::std::io::{self, Write};
+
+        let stderr = io::stderr();
+        let mut handle = stderr.lock();
+        writeln!(handle, $($reason),+).unwrap();
+        return;
+    }
+}
+
 cfg_if! {
     if #[cfg(any(target_os = "android", target_os = "linux"))] {
         macro_rules! require_capability {
             ($capname:ident) => {
                 use ::caps::{Capability, CapSet, has_cap};
-                use ::std::io::{self, Write};
 
                 if !has_cap(None, CapSet::Effective, Capability::$capname)
                     .unwrap()
                 {
-                    let stderr = io::stderr();
-                    let mut handle = stderr.lock();
-                    writeln!(handle,
-                        "Insufficient capabilities. Skipping test.")
-                        .unwrap();
-                    return;
+                    skip!("Insufficient capabilities. Skipping test.");
                 }
             }
         }
@@ -39,12 +44,7 @@ macro_rules! skip_if_jailed {
         if let CtlValue::Int(1) = ::sysctl::value("security.jail.jailed")
             .unwrap()
         {
-            use ::std::io::Write;
-            let stderr = ::std::io::stderr();
-            let mut handle = stderr.lock();
-            writeln!(handle, "{} cannot run in a jail. Skipping test.", $name)
-                .unwrap();
-            return;
+            skip!("{} cannot run in a jail. Skipping test.", $name);
         }
     }
 }
@@ -55,11 +55,7 @@ macro_rules! skip_if_not_root {
         use nix::unistd::Uid;
 
         if !Uid::current().is_root() {
-            use ::std::io::Write;
-            let stderr = ::std::io::stderr();
-            let mut handle = stderr.lock();
-            writeln!(handle, "{} requires root privileges. Skipping test.", $name).unwrap();
-            return;
+            skip!("{} requires root privileges. Skipping test.", $name);
         }
     };
 }
@@ -74,13 +70,8 @@ cfg_if! {
                         if fields.next() == Some("Seccomp:") &&
                             fields.next() != Some("0")
                         {
-                            use ::std::io::Write;
-                            let stderr = ::std::io::stderr();
-                            let mut handle = stderr.lock();
-                            writeln!(handle,
-                                "{} cannot be run in Seccomp mode.  Skipping test.",
-                                stringify!($name)).unwrap();
-                            return;
+                            skip!("{} cannot be run in Seccomp mode.  Skipping test.",
+                                stringify!($name));
                         }
                     }
                 }
@@ -97,7 +88,6 @@ cfg_if! {
     if #[cfg(target_os = "linux")] {
         macro_rules! require_kernel_version {
             ($name:expr, $version_requirement:expr) => {
-                use ::std::io::Write;
                 use semver::{Version, VersionReq};
 
                 let version_requirement = VersionReq::parse($version_requirement)
@@ -112,13 +102,8 @@ cfg_if! {
                 version.build.clear();
 
                 if !version_requirement.matches(&version) {
-                    let stderr = ::std::io::stderr();
-                    let mut handle = stderr.lock();
-
-                    writeln!(handle,
-                        "Skip {} because kernel version `{}` doesn't match the requirement `{}`",
-                        stringify!($name), version, version_requirement).unwrap();
-                    return;
+                    skip!("Skip {} because kernel version `{}` doesn't match the requirement `{}`",
+                        stringify!($name), version, version_requirement);
                 }
             }
         }
