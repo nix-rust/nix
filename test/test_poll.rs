@@ -37,14 +37,14 @@ fn test_ppoll() {
     let mut fds = [PollFd::new(r, PollFlags::POLLIN)];
 
     // Poll an idle pipe.  Should timeout
-    let nfds = ppoll(&mut fds, timeout, SigSet::empty()).unwrap();
+    let nfds = ppoll(&mut fds, Some(timeout), SigSet::empty()).unwrap();
     assert_eq!(nfds, 0);
     assert!(!fds[0].revents().unwrap().contains(PollFlags::POLLIN));
 
     write(w, b".").unwrap();
 
     // Poll a readable pipe.  Should return an event.
-    let nfds = ppoll(&mut fds, timeout, SigSet::empty()).unwrap();
+    let nfds = ppoll(&mut fds, Some(timeout), SigSet::empty()).unwrap();
     assert_eq!(nfds, 1);
     assert!(fds[0].revents().unwrap().contains(PollFlags::POLLIN));
 }

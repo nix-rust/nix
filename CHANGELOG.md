@@ -48,7 +48,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Changed `fallocate` return type from `c_int` to `()` (#[1201](https://github.com/nix-rust/nix/pull/1201))
 - Enabled `sys::ptrace::setregs` and `sys::ptrace::getregs` on x86_64-unknown-linux-musl target
   (#[1198](https://github.com/nix-rust/nix/pull/1198))
-- On Linux, `ptrace::write` is now an `unsafe` function.  Caveat programmer.
+- On Linux, `ptrace::write` is now an `unsafe` function. Caveat programmer.
   (#[1245](https://github.com/nix-rust/nix/pull/1245))
 - `execv`, `execve`, `execvp` and `execveat` in `::nix::unistd` and `reboot` in
   `::nix::sys::reboot` now return `Result<Infallible>` instead of `Result<Void>` (#[1239](https://github.com/nix-rust/nix/pull/1239))
@@ -61,6 +61,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   (#[1244](https://github.com/nix-rust/nix/pull/1244))
 - Several `Inotify` methods now take `self` by value instead of by reference
   (#[1244](https://github.com/nix-rust/nix/pull/1244))
+- `nix::poll::ppoll`: `timeout` parameter is now optional, None is equivalent for infinite timeout.
 
 ### Fixed
 

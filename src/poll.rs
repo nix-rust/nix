@@ -130,16 +130,16 @@ pub fn poll(fds: &mut [PollFd], timeout: libc::c_int) -> Result<libc::c_int> {
 /// ([`poll(2)`](http://man7.org/linux/man-pages/man2/poll.2.html))
 ///
 /// `ppoll` behaves like `poll`, but let you specify what signals may interrupt it
-/// with the `sigmask` argument.
+/// with the `sigmask` argument. If you want `ppoll` to block indefinitely,
+/// specify `None` as `timeout` (it is like `timeout = -1` for `poll`).
 ///
 #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd", target_os = "linux"))]
-pub fn ppoll(fds: &mut [PollFd], timeout: TimeSpec, sigmask: SigSet) -> Result<libc::c_int> {
-
-
+pub fn ppoll(fds: &mut [PollFd], timeout: Option<TimeSpec>, sigmask: SigSet) -> Result<libc::c_int> {
+    let timeout = timeout.as_ref().map_or(core::ptr::null(), |r| r.as_ref());
     let res = unsafe {
         libc::ppoll(fds.as_mut_ptr() as *mut libc::pollfd,
                     fds.len() as libc::nfds_t,
-                    timeout.as_ref(),
+                    timeout,
                     sigmask.as_ref())
     };
     Errno::result(res)
