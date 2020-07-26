@@ -5,6 +5,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - ReleaseDate
 ### Added
+### Changed
+### Fixed
+### Removed
+
+## [0.18.0] - 26 July 2020
+### Added
 - Added `fchown(2)` wrapper.
   (#[1257](https://github.com/nix-rust/nix/pull/1257))
 - Added support on linux systems for `MAP_HUGE_`_`SIZE`_ family of flags.
