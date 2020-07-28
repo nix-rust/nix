@@ -92,7 +92,9 @@ mod os {
     pub fn test_parsing_kernel_version() {
         assert!(kernel_version() > 0);
     }
+}
 
+mod os {
     #[cfg(any(target_os = "macos", target_os = "freebsd",
               target_os = "dragonfly", target_os = "ios",
               target_os = "openbsd", target_os = "netbsd",
