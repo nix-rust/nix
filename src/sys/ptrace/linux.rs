@@ -131,9 +131,10 @@ libc_enum!{
         /// Event for a stop before an exit. Unlike the waitpid Exit status program.
         /// registers can still be examined
         PTRACE_EVENT_EXIT,
-        /// STop triggered by a seccomp rule on a tracee.
+        /// Stop triggered by a seccomp rule on a tracee.
         PTRACE_EVENT_SECCOMP,
-        // PTRACE_EVENT_STOP not provided by libc because it's defined in glibc 2.26
+        /// Stop triggered by [`interrupt`], or a group stop, or when a new child is attached.
+        PTRACE_EVENT_STOP,
     }
 }
 
@@ -368,7 +369,7 @@ pub fn kill(pid: Pid) -> Result<()> {
     }
 }
 
-/// Move the stopped tracee process forward by a single step as with 
+/// Move the stopped tracee process forward by a single step as with
 /// `ptrace(PTRACE_SINGLESTEP, ...)`
 ///
 /// Advances the execution of the process with PID `pid` by a single step optionally delivering a
@@ -378,11 +379,11 @@ pub fn kill(pid: Pid) -> Result<()> {
 /// ```rust
 /// use nix::sys::ptrace::step;
 /// use nix::unistd::Pid;
-/// use nix::sys::signal::Signal; 
+/// use nix::sys::signal::Signal;
 /// use nix::sys::wait::*;
 /// fn main() {
-///     // If a process changes state to the stopped state because of a SIGUSR1 
-///     // signal, this will step the process forward and forward the user 
+///     // If a process changes state to the stopped state because of a SIGUSR1
+///     // signal, this will step the process forward and forward the user
 ///     // signal to the stopped process
 ///     match waitpid(Pid::from_raw(-1), None) {
 ///         Ok(WaitStatus::Stopped(pid, Signal::SIGUSR1)) => {
@@ -420,4 +421,19 @@ pub unsafe fn write(
     data: *mut c_void) -> Result<()>
 {
     ptrace_other(Request::PTRACE_POKEDATA, pid, addr, data).map(drop)
+}
+
+/// Stops the tracee.
+#[cfg(all(target_os = "linux", not(any(target_arch = "mips",
+                                       target_arch = "mips64"))))]
+pub fn interrupt(pid: Pid) -> Result<()> {
+    unsafe {
+        ptrace_other(
+            Request::PTRACE_INTERRUPT,
+            pid,
+            ptr::null_mut(),
+            ptr::null_mut(),
+        )
+        .map(drop)
+    }
 }
