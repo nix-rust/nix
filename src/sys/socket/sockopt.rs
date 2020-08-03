@@ -252,6 +252,8 @@ sockopt_impl!(Both, TcpKeepAlive, libc::IPPROTO_TCP, libc::TCP_KEEPALIVE, u32);
           target_os = "linux",
           target_os = "nacl"))]
 sockopt_impl!(Both, TcpKeepIdle, libc::IPPROTO_TCP, libc::TCP_KEEPIDLE, u32);
+sockopt_impl!(Both, TcpKeepCount, libc::IPPROTO_TCP, libc::TCP_KEEPCNT, u32);
+sockopt_impl!(Both, TcpKeepInterval, libc::IPPROTO_TCP, libc::TCP_KEEPINTVL, u32);
 sockopt_impl!(Both, RcvBuf, libc::SOL_SOCKET, libc::SO_RCVBUF, usize);
 sockopt_impl!(Both, SndBuf, libc::SOL_SOCKET, libc::SO_SNDBUF, usize);
 #[cfg(any(target_os = "android", target_os = "linux"))]
