@@ -53,7 +53,7 @@ cfg_if! {
     }
 }
 
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "redox", target_os = "fuchsia")))]
 #[macro_export] macro_rules! skip_if_not_root {
     ($name:expr) => {
         use nix::unistd::Uid;

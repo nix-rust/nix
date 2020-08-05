@@ -1,4 +1,3 @@
-use nix::ifaddrs::InterfaceAddress;
 use nix::sys::socket::{AddressFamily, InetAddr, UnixAddr, getsockname};
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
@@ -1161,7 +1160,7 @@ pub fn test_syscontrol() {
     target_os = "netbsd",
     target_os = "openbsd",
 ))]
-fn loopback_address(family: AddressFamily) -> Option<InterfaceAddress> {
+fn loopback_address(family: AddressFamily) -> Option<nix::ifaddrs::InterfaceAddress> {
     use std::io;
     use std::io::Write;
     use nix::ifaddrs::getifaddrs;

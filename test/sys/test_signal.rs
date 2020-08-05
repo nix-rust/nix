@@ -12,6 +12,7 @@ fn test_kill_none() {
 }
 
 #[test]
+#[cfg(not(target_os = "fuchsia"))]
 fn test_killpg_none() {
     killpg(getpgrp(), None)
         .expect("Should be able to send signal to my process group.");

@@ -81,6 +81,7 @@ Tier 2:
   * x86_64-unknown-netbsd
 
 Tier 3:
+  * x86_64-fuchsia
   * x86_64-unknown-redox
 
 ## Usage

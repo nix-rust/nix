@@ -21,7 +21,8 @@ use crate::sys::socket::addr::sys_control::SysControlAddr;
           target_os = "linux",
           target_os = "macos",
           target_os = "netbsd",
-          target_os = "openbsd"))]
+          target_os = "openbsd",
+          target_os = "fuchsia"))]
 pub use self::datalink::LinkAddr;
 #[cfg(any(target_os = "android", target_os = "linux"))]
 pub use self::vsock::VsockAddr;
@@ -41,7 +42,7 @@ pub enum AddressFamily {
     #[cfg(any(target_os = "android", target_os = "linux"))]
     Netlink = libc::AF_NETLINK,
     /// Low level packet interface (see [`packet(7)`](http://man7.org/linux/man-pages/man7/packet.7.html))
-    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(any(target_os = "android", target_os = "linux", target_os = "fuchsia"))]
     Packet = libc::AF_PACKET,
     /// KEXT Controls and Notifications
     #[cfg(any(target_os = "ios", target_os = "macos"))]
@@ -718,6 +719,7 @@ impl SockAddr {
     ///
     /// unsafe because it takes a raw pointer as argument.  The caller must
     /// ensure that the pointer is valid.
+    #[cfg(not(target_os = "fuchsia"))]
     pub(crate) unsafe fn from_libc_sockaddr(addr: *const libc::sockaddr) -> Option<SockAddr> {
         if addr.is_null() {
             None
@@ -1045,7 +1047,7 @@ pub mod sys_control {
 }
 
 
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(any(target_os = "android", target_os = "linux", target_os = "fuchsia"))]
 mod datalink {
     use super::{fmt, AddressFamily};
 

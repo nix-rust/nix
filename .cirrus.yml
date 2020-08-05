@@ -160,6 +160,10 @@ task:
     - name: NetBSD x86_64
       env:
         TARGET: x86_64-unknown-netbsd
+    - name: Fuchsia x86_64
+      env:
+        TARGET: x86_64-fuchsia
+        CHECK_TESTS: true
   container:
     image: rust:1.40
   setup_script:
@@ -167,6 +171,7 @@ task:
   script:
     - cargo +$TOOLCHAIN check --target $TARGET
     - cargo +$TOOLCHAIN check --target $TARGET --release
+    - 'if [ "$CHECK_TESTS" == true ]; then cargo +$TOOLCHAIN check --all-targets --target $TARGET; fi'
     # TODO: check the tests, too.  The old Travis CI setup didn't do that, so
     # they don't build on all platforms.
   before_cache_script: rm -rf $CARGO_HOME/registry/index
