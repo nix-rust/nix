@@ -5,6 +5,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - ReleaseDate
 ### Added
+- Added `poll::PollFd::fd` method to expose the underlying file
+  descriptor of a `PollFd`.
+  (#[1286](https://github.com/nix-rust/nix/pull/1286))
 ### Changed
 ### Fixed
 ### Removed

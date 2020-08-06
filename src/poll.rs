@@ -39,6 +39,11 @@ impl PollFd {
     pub fn revents(self) -> Option<PollFlags> {
         PollFlags::from_bits(self.pollfd.revents)
     }
+
+    /// Returns the file descriptor this `PollFd` refers to
+    pub fn fd(self) -> RawFd {
+        self.pollfd.fd
+    }
 }
 
 libc_bitflags! {
