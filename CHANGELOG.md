@@ -5,6 +5,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - ReleaseDate
 ### Added
+- Added `ptrace::read_user` and `ptrace::write_user` on Linux.
+  (#[1287](https://github.com/nix-rust/nix/pull/1287))
 ### Changed
 ### Fixed
 ### Removed
