@@ -92,6 +92,64 @@ pub enum SockProtocol {
     /// ([ref](https://developer.apple.com/library/content/documentation/Darwin/Conceptual/NKEConceptual/control/control.html))
     #[cfg(any(target_os = "ios", target_os = "macos"))]
     KextControl = libc::SYSPROTO_CONTROL,
+    /// Receives routing and link updates and may be used to modify the routing tables (both IPv4 and IPv6), IP addresses, link
+    // parameters, neighbor setups, queueing disciplines, traffic classes and packet classifiers
+    /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    NetlinkRoute = libc::NETLINK_ROUTE,
+    /// Reserved for user-mode socket protocols
+    /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    NetlinkUserSock = libc::NETLINK_USERSOCK,
+    /// Query information about sockets of various protocol families from the kernel
+    /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    NetlinkSockDiag = libc::NETLINK_SOCK_DIAG,
+    /// SELinux event notifications.
+    /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    NetlinkSELinux = libc::NETLINK_SELINUX,
+    /// Open-iSCSI
+    /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    NetlinkISCSI = libc::NETLINK_ISCSI,
+    /// Auditing
+    /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    NetlinkAudit = libc::NETLINK_AUDIT,
+    /// Access to FIB lookup from user space
+    /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    NetlinkFIBLookup = libc::NETLINK_FIB_LOOKUP,
+    /// Netfilter subsystem
+    /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    NetlinkNetFilter = libc::NETLINK_NETFILTER,
+    /// SCSI Transports
+    /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    NetlinkSCSITransport = libc::NETLINK_SCSITRANSPORT,
+    /// Infiniband RDMA
+    /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    NetlinkRDMA = libc::NETLINK_RDMA,
+    /// Transport IPv6 packets from netfilter to user space.  Used by ip6_queue kernel module.
+    /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    NetlinkIPv6Firewall = libc::NETLINK_IP6_FW,
+    /// DECnet routing messages
+    /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    NetlinkDECNetRoutingMessage = libc::NETLINK_DNRTMSG,
+    /// Kernel messages to user space
+    /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    NetlinkKObjectUEvent = libc::NETLINK_KOBJECT_UEVENT,
+    /// Netlink interface to request information about ciphers registered with the kernel crypto API as well as allow
+    /// configuration of the kernel crypto API.
+    /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    NetlinkCrypto = libc::NETLINK_CRYPTO,
 }
 
 libc_bitflags!{
