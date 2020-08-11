@@ -205,7 +205,7 @@ fn test_openpty_with_termios() {
         let pty = openpty(None, None).unwrap();
         assert!(pty.master > 0);
         assert!(pty.slave > 0);
-        let termios = tcgetattr(pty.master).unwrap();
+        let termios = tcgetattr(pty.slave).unwrap();
         close(pty.master).unwrap();
         close(pty.slave).unwrap();
         termios
