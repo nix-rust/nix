@@ -150,7 +150,7 @@ pub enum FchmodatFlags {
 /// If `flag` is `FchmodatFlags::NoFollowSymlink` and `path` names a symbolic link,
 /// then the mode of the symbolic link is changed.
 ///
-/// `fchmod(None, path, mode, FchmodatFlags::FollowSymlink)` is identical to
+/// `fchmodat(None, path, mode, FchmodatFlags::FollowSymlink)` is identical to
 /// a call `libc::chmod(path, mode)`. That's why `chmod` is unimplemented
 /// in the `nix` crate.
 ///
