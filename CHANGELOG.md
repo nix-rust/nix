@@ -7,6 +7,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Added Netlink protocol families to the `SockProtocol` enum
 (#[1289](https://github.com/nix-rust/nix/pull/1289))
 ### Added
+- Added `ptrace::read_user` and `ptrace::write_user` on Linux.
+  (#[1287](https://github.com/nix-rust/nix/pull/1287))
 ### Changed
 - Changed unistd::{execv,execve,execvp,execvpe,fexecve,execveat} to take both `&[&CStr]` and `&[CString]` as its list argument(s).
   (#[1278](https://github.com/nix-rust/nix/pull/1278))

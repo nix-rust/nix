@@ -1,9 +1,9 @@
-use nix::Error;
 use nix::errno::Errno;
-use nix::unistd::getpid;
 use nix::sys::ptrace;
 #[cfg(any(target_os = "android", target_os = "linux"))]
 use nix::sys::ptrace::Options;
+use nix::unistd::getpid;
+use nix::Error;
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
 use std::mem;
@@ -14,8 +14,11 @@ fn test_ptrace() {
     // FIXME: qemu-user doesn't implement ptrace on all arches, so permit ENOSYS
     require_capability!(CAP_SYS_PTRACE);
     let err = ptrace::attach(getpid()).unwrap_err();
-    assert!(err == Error::Sys(Errno::EPERM) || err == Error::Sys(Errno::EINVAL) ||
-            err == Error::Sys(Errno::ENOSYS));
+    assert!(
+        err == Error::Sys(Errno::EPERM)
+            || err == Error::Sys(Errno::EINVAL)
+            || err == Error::Sys(Errno::ENOSYS)
+    );
 }
 
 // Just make sure ptrace_setoptions can be called at all, for now.
@@ -57,7 +60,6 @@ fn test_ptrace_setsiginfo() {
     }
 }
 
-
 #[test]
 fn test_ptrace_cont() {
     use nix::sys::ptrace;
@@ -68,7 +70,9 @@ fn test_ptrace_cont() {
 
     require_capability!(CAP_SYS_PTRACE);
 
-    let _m = crate::FORK_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = crate::FORK_MTX
+        .lock()
+        .expect("Mutex got poisoned by another test");
 
     // FIXME: qemu-user doesn't implement ptrace on all architectures
     // and retunrs ENOSYS in this case.
@@ -89,16 +93,21 @@ fn test_ptrace_cont() {
             loop {
                 raise(Signal::SIGTRAP).unwrap();
             }
-
-        },
+        }
         Parent { child } => {
-            assert_eq!(waitpid(child, None), Ok(WaitStatus::Stopped(child, Signal::SIGTRAP)));
+            assert_eq!(
+                waitpid(child, None),
+                Ok(WaitStatus::Stopped(child, Signal::SIGTRAP))
+            );
             ptrace::cont(child, None).unwrap();
-            assert_eq!(waitpid(child, None), Ok(WaitStatus::Stopped(child, Signal::SIGTRAP)));
+            assert_eq!(
+                waitpid(child, None),
+                Ok(WaitStatus::Stopped(child, Signal::SIGTRAP))
+            );
             ptrace::cont(child, Some(Signal::SIGKILL)).unwrap();
             match waitpid(child, None) {
                 Ok(WaitStatus::Signaled(pid, Signal::SIGKILL, _)) if pid == child => {
-                    // FIXME It's been observed on some systems (apple) the 
+                    // FIXME It's been observed on some systems (apple) the
                     // tracee may not be killed but remain as a zombie process
                     // affecting other wait based tests. Add an extra kill just
                     // to make sure there are no zombies.
@@ -109,19 +118,20 @@ fn test_ptrace_cont() {
                 }
                 _ => panic!("The process should have been killed"),
             }
-        },
+        }
     }
 }
 
 // ptrace::{setoptions, getregs} are only available in these platforms
-#[cfg(all(target_os = "linux",
-          any(target_arch = "x86_64",
-              target_arch = "x86"),
-          target_env = "gnu"))]
+#[cfg(all(
+    target_os = "linux",
+    any(target_arch = "x86_64", target_arch = "x86"),
+    target_env = "gnu"
+))]
 #[test]
 fn test_ptrace_syscall() {
-    use nix::sys::signal::kill;
     use nix::sys::ptrace;
+    use nix::sys::signal::kill;
     use nix::sys::signal::Signal;
     use nix::sys::wait::{waitpid, WaitStatus};
     use nix::unistd::fork;
@@ -130,7 +140,9 @@ fn test_ptrace_syscall() {
 
     require_capability!(CAP_SYS_PTRACE);
 
-    let _m = crate::FORK_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = crate::FORK_MTX
+        .lock()
+        .expect("Mutex got poisoned by another test");
 
     match fork().expect("Error: Fork Failed") {
         Child => {
@@ -139,11 +151,16 @@ fn test_ptrace_syscall() {
             let pid = getpid();
             kill(pid, Signal::SIGSTOP).unwrap();
             kill(pid, Signal::SIGTERM).unwrap();
-            unsafe { ::libc::_exit(0); }
-        },
+            unsafe {
+                ::libc::_exit(0);
+            }
+        }
 
         Parent { child } => {
-            assert_eq!(waitpid(child, None), Ok(WaitStatus::Stopped(child, Signal::SIGSTOP)));
+            assert_eq!(
+                waitpid(child, None),
+                Ok(WaitStatus::Stopped(child, Signal::SIGSTOP))
+            );
 
             // set this option to recognize syscall-stops
             ptrace::setoptions(child, ptrace::Options::PTRACE_O_TRACESYSGOOD).unwrap();
@@ -166,11 +183,87 @@ fn test_ptrace_syscall() {
 
             // receive signal
             ptrace::syscall(child, None).unwrap();
-            assert_eq!(waitpid(child, None), Ok(WaitStatus::Stopped(child, Signal::SIGTERM)));
+            assert_eq!(
+                waitpid(child, None),
+                Ok(WaitStatus::Stopped(child, Signal::SIGTERM))
+            );
 
             // inject signal
             ptrace::syscall(child, Signal::SIGTERM).unwrap();
-            assert_eq!(waitpid(child, None), Ok(WaitStatus::Signaled(child, Signal::SIGTERM, false)));
-        },
+            assert_eq!(
+                waitpid(child, None),
+                Ok(WaitStatus::Signaled(child, Signal::SIGTERM, false))
+            );
+        }
+    }
+}
+
+#[cfg(all(
+    target_os = "linux",
+    any(target_arch = "x86_64", target_arch = "x86"),
+    target_env = "gnu"
+))]
+#[test]
+fn test_ptrace_peek_poke_user() {
+    use nix::sys::ptrace;
+    use nix::sys::signal::Signal;
+    use nix::sys::wait::{waitpid, WaitStatus};
+    use nix::unistd::fork;
+    use nix::unistd::ForkResult::*;
+
+    require_capability!(CAP_SYS_PTRACE);
+
+    let _m = crate::FORK_MTX
+        .lock()
+        .expect("Mutex got poisoned by another test");
+
+    match fork().expect("Error: Fork Failed") {
+        Child => {
+            ptrace::traceme().unwrap();
+            // first sigstop until parent is ready to continue
+            unsafe {
+                ::libc::_exit(0);
+            }
+        }
+
+        Parent { child } => {
+            assert_eq!(
+                waitpid(child, None),
+                Ok(WaitStatus::Stopped(child, Signal::SIGSTOP))
+            );
+
+            // Test reading from user area
+            let registers = ptrace::getregs(child).unwrap();
+            let register = ptrace::read_user(child, 0 as *mut libc::c_void).unwrap();
+
+            #[cfg(target_arch = "x86_64")]
+            assert_eq!(registers.r15, register as libc::c_ulonglong);
+
+            #[cfg(target_arch = "x86")]
+            assert_eq!(registers.ebx, register as libc::c_long);
+
+            // Test writing to user area
+            let var = 123;
+            unsafe {
+                ptrace::write_user(child, 0 as *mut libc::c_void, var as *mut libc::c_void)
+                    .unwrap();
+            }
+            let new_register = ptrace::read_user(child, 0 as *mut libc::c_void).unwrap();
+
+            assert_eq!(var, new_register);
+
+            // Set register to the previous value to not corrupt anything
+            unsafe {
+                ptrace::write_user(
+                    child,
+                    0 as *mut libc::c_void,
+                    register as *mut libc::c_void,
+                )
+                .unwrap();
+            }
+
+            // Wait for child to exit
+            waitpid(child, None).unwrap();
+        }
     }
 }
