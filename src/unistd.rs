@@ -1018,20 +1018,14 @@ pub enum Whence {
     /// Specify an offset relative to the next location in the file greater than or
     /// equal to offset that contains some data. If offset points to
     /// some data, then the file offset is set to offset.
-    #[cfg(any(target_os = "dragonfly", target_os = "freebsd",
-          all(target_os = "linux", not(any(target_env = "musl",
-                                           target_arch = "mips",
-                                           target_arch = "mips64")))))]
+    #[cfg(any(target_os = "dragonfly", target_os = "freebsd", target_os = "linux"))]
     SeekData = libc::SEEK_DATA,
     /// Specify an offset relative to the next hole in the file greater than
     /// or equal to offset. If offset points into the middle of a hole, then
     /// the file offset should be set to offset. If there is no hole past offset,
     /// then the file offset should be adjusted to the end of the file (i.e., there
     /// is an implicit hole at the end of any file).
-    #[cfg(any(target_os = "dragonfly", target_os = "freebsd",
-          all(target_os = "linux", not(any(target_env = "musl",
-                                           target_arch = "mips",
-                                           target_arch = "mips64")))))]
+    #[cfg(any(target_os = "dragonfly", target_os = "freebsd", target_os = "linux"))]
     SeekHole = libc::SEEK_HOLE
 }
 
