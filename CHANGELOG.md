@@ -10,6 +10,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 - Expose `SeekData` and `SeekHole` on all Linux targets
 (#[1284](https://github.com/nix-rust/nix/pull/1284))
+- Changed unistd::{execv,execve,execvp,execvpe,fexecve,execveat} to take both `&[&CStr]` and `&[CString]` as its list argument(s).
+  (#[1278](https://github.com/nix-rust/nix/pull/1278))
 ### Fixed
 ### Removed
 

@@ -12,9 +12,9 @@ use libc::{self, c_char, c_void, c_int, c_long, c_uint, size_t, pid_t, off_t,
            uid_t, gid_t, mode_t, PATH_MAX};
 use std::{fmt, mem, ptr};
 use std::convert::Infallible;
-use std::ffi::{CStr, OsString};
+use std::ffi::{CStr, CString, OsString};
 #[cfg(not(target_os = "redox"))]
-use std::ffi::{CString, OsStr};
+use std::ffi::{OsStr};
 use std::os::unix::ffi::OsStringExt;
 #[cfg(not(target_os = "redox"))]
 use std::os::unix::ffi::OsStrExt;
@@ -715,9 +715,9 @@ pub fn fchownat<P: ?Sized + NixPath>(
     Errno::result(res).map(drop)
 }
 
-fn to_exec_array(args: &[&CStr]) -> Vec<*const c_char> {
+fn to_exec_array<S: AsRef<CStr>>(args: &[S]) -> Vec<*const c_char> {
     use std::iter::once;
-    args.iter().map(|s| s.as_ptr()).chain(once(ptr::null())).collect()
+    args.iter().map(|s| s.as_ref().as_ptr()).chain(once(ptr::null())).collect()
 }
 
 /// Replace the current process image with a new one (see
@@ -727,7 +727,7 @@ fn to_exec_array(args: &[&CStr]) -> Vec<*const c_char> {
 /// performs the same action but does not allow for customization of the
 /// environment for the new process.
 #[inline]
-pub fn execv(path: &CStr, argv: &[&CStr]) -> Result<Infallible> {
+pub fn execv<S: AsRef<CStr>>(path: &CStr, argv: &[S]) -> Result<Infallible> {
     let args_p = to_exec_array(argv);
 
     unsafe {
@@ -751,7 +751,7 @@ pub fn execv(path: &CStr, argv: &[&CStr]) -> Result<Infallible> {
 /// in the `args` list is an argument to the new process. Each element in the
 /// `env` list should be a string in the form "key=value".
 #[inline]
-pub fn execve(path: &CStr, args: &[&CStr], env: &[&CStr]) -> Result<Infallible> {
+pub fn execve<SA: AsRef<CStr>, SE: AsRef<CStr>>(path: &CStr, args: &[SA], env: &[SE]) -> Result<Infallible> {
     let args_p = to_exec_array(args);
     let env_p = to_exec_array(env);
 
@@ -772,7 +772,7 @@ pub fn execve(path: &CStr, args: &[&CStr], env: &[&CStr]) -> Result<Infallible> 
 /// would not work if "bash" was specified for the path argument, but `execvp`
 /// would assuming that a bash executable was on the system `PATH`.
 #[inline]
-pub fn execvp(filename: &CStr, args: &[&CStr]) -> Result<Infallible> {
+pub fn execvp<S: AsRef<CStr>>(filename: &CStr, args: &[S]) -> Result<Infallible> {
     let args_p = to_exec_array(args);
 
     unsafe {
@@ -792,7 +792,7 @@ pub fn execvp(filename: &CStr, args: &[&CStr]) -> Result<Infallible> {
 #[cfg(any(target_os = "haiku",
           target_os = "linux",
           target_os = "openbsd"))]
-pub fn execvpe(filename: &CStr, args: &[&CStr], env: &[&CStr]) -> Result<Infallible> {
+pub fn execvpe<SA: AsRef<CStr>, SE: AsRef<CStr>>(filename: &CStr, args: &[SA], env: &[SE]) -> Result<Infallible> {
     let args_p = to_exec_array(args);
     let env_p = to_exec_array(env);
 
@@ -820,7 +820,7 @@ pub fn execvpe(filename: &CStr, args: &[&CStr], env: &[&CStr]) -> Result<Infalli
           target_os = "linux",
           target_os = "freebsd"))]
 #[inline]
-pub fn fexecve(fd: RawFd, args: &[&CStr], env: &[&CStr]) -> Result<Infallible> {
+pub fn fexecve<SA: AsRef<CStr> ,SE: AsRef<CStr>>(fd: RawFd, args: &[SA], env: &[SE]) -> Result<Infallible> {
     let args_p = to_exec_array(args);
     let env_p = to_exec_array(env);
 
@@ -843,8 +843,8 @@ pub fn fexecve(fd: RawFd, args: &[&CStr], env: &[&CStr]) -> Result<Infallible> {
 /// is referenced as a file descriptor to the base directory plus a path.
 #[cfg(any(target_os = "android", target_os = "linux"))]
 #[inline]
-pub fn execveat(dirfd: RawFd, pathname: &CStr, args: &[&CStr],
-                env: &[&CStr], flags: super::fcntl::AtFlags) -> Result<Infallible> {
+pub fn execveat<SA: AsRef<CStr>,SE: AsRef<CStr>>(dirfd: RawFd, pathname: &CStr, args: &[SA],
+                env: &[SE], flags: super::fcntl::AtFlags) -> Result<Infallible> {
     let args_p = to_exec_array(args);
     let env_p = to_exec_array(env);
 
