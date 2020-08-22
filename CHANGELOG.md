@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - ReleaseDate
+- Added Netlink protocol families to the `SockProtocol` enum
+(#[1289](https://github.com/nix-rust/nix/pull/1289))
 ### Added
 ### Changed
 ### Fixed
