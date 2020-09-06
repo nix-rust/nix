@@ -22,7 +22,7 @@ fn test_tcgetattr_pty() {
     let _m = crate::PTSNAME_MTX.lock().expect("Mutex got poisoned by another test");
 
     let pty = openpty(None, None).expect("openpty failed");
-    assert!(termios::tcgetattr(pty.master).is_ok());
+    assert!(termios::tcgetattr(pty.slave).is_ok());
     close(pty.master).expect("closing the master failed");
     close(pty.slave).expect("closing the slave failed");
 }
@@ -53,7 +53,7 @@ fn test_output_flags() {
         let pty = openpty(None, None).expect("openpty failed");
         assert!(pty.master > 0);
         assert!(pty.slave > 0);
-        let termios = tcgetattr(pty.master).expect("tcgetattr failed");
+        let termios = tcgetattr(pty.slave).expect("tcgetattr failed");
         close(pty.master).unwrap();
         close(pty.slave).unwrap();
         termios
@@ -95,7 +95,7 @@ fn test_local_flags() {
         let pty = openpty(None, None).unwrap();
         assert!(pty.master > 0);
         assert!(pty.slave > 0);
-        let termios = tcgetattr(pty.master).unwrap();
+        let termios = tcgetattr(pty.slave).unwrap();
         close(pty.master).unwrap();
         close(pty.slave).unwrap();
         termios
