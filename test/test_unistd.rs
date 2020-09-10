@@ -32,7 +32,7 @@ fn test_fork_and_waitpid() {
     let _m = crate::FORK_MTX.lock().expect("Mutex got poisoned by another test");
 
     // Safe: Child only calls `_exit`, which is signal-safe
-    match fork().expect("Error: Fork Failed") {
+    match unsafe{fork()}.expect("Error: Fork Failed") {
         Child => unsafe { _exit(0) },
         Parent { child } => {
             // assert that child was created and pid > 0
@@ -60,7 +60,7 @@ fn test_wait() {
     let _m = crate::FORK_MTX.lock().expect("Mutex got poisoned by another test");
 
     // Safe: Child only calls `_exit`, which is signal-safe
-    match fork().expect("Error: Fork Failed") {
+    match unsafe{fork()}.expect("Error: Fork Failed") {
         Child => unsafe { _exit(0) },
         Parent { child } => {
             let wait_status = wait();
@@ -302,7 +302,7 @@ macro_rules! execve_test_factory(
         // Safe: Child calls `exit`, `dup`, `close` and the provided `exec*` family function.
         // NOTE: Technically, this makes the macro unsafe to use because you could pass anything.
         //       The tests make sure not to do that, though.
-        match fork().unwrap() {
+        match unsafe{fork()}.unwrap() {
             Child => {
                 // Make `writer` be the stdout of the new process.
                 dup2(writer, 1).unwrap();

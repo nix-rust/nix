@@ -81,7 +81,7 @@ fn test_ptrace_cont() {
         return;
     }
 
-    match fork().expect("Error: Fork Failed") {
+    match unsafe{fork()}.expect("Error: Fork Failed") {
         Child => {
             ptrace::traceme().unwrap();
             // As recommended by ptrace(2), raise SIGTRAP to pause the child
@@ -132,7 +132,7 @@ fn test_ptrace_syscall() {
 
     let _m = crate::FORK_MTX.lock().expect("Mutex got poisoned by another test");
 
-    match fork().expect("Error: Fork Failed") {
+    match unsafe{fork()}.expect("Error: Fork Failed") {
         Child => {
             ptrace::traceme().unwrap();
             // first sigstop until parent is ready to continue
