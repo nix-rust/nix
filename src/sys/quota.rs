@@ -21,6 +21,7 @@ use crate::errno::Errno;
 struct QuotaCmd(QuotaSubCmd, QuotaType);
 
 impl QuotaCmd {
+    #[allow(unused_unsafe)]
     fn as_int(&self) -> c_int {
         unsafe { libc::QCMD(self.0 as i32, self.1 as i32) }
     }
