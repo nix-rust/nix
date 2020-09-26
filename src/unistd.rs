@@ -2671,6 +2671,8 @@ impl User {
 pub struct Group {
     /// Group name
     pub name: String,
+    /// Group password
+    pub passwd: CString,
     /// Group ID
     pub gid: Gid,
     /// List of Group members
@@ -2683,6 +2685,7 @@ impl From<&libc::group> for Group {
         unsafe {
             Group {
                 name: CStr::from_ptr((*gr).gr_name).to_string_lossy().into_owned(),
+                passwd: CString::new(CStr::from_ptr((*gr).gr_passwd).to_bytes()).unwrap(),
                 gid: Gid::from_raw((*gr).gr_gid),
                 mem: Group::members((*gr).gr_mem)
             }
