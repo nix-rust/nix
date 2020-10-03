@@ -1,5 +1,4 @@
 use cfg_if::cfg_if;
-#[cfg(not(target_os = "dragonfly"))]
 use libc::{c_int, c_void};
 use std::{fmt, io, error};
 use crate::{Error, Result};
@@ -13,32 +12,15 @@ cfg_if! {
         unsafe fn errno_location() -> *mut c_int {
             libc::__error()
         }
-    } else if #[cfg(target_os = "dragonfly")] {
-        // DragonFly uses a thread-local errno variable, but #[thread_local] is
-        // feature-gated and not available in stable Rust as of this writing
-        // (Rust 1.21.0). We have to use a C extension to access it
-        // (src/errno_dragonfly.c).
-        //
-        // Tracking issue for `thread_local` stabilization:
-        //
-        //     https://github.com/rust-lang/rust/issues/29594
-        //
-        // Once this becomes stable, we can remove build.rs,
-        // src/errno_dragonfly.c, and use:
-        //
-        //     extern { #[thread_local] static errno: c_int; }
-        //
-        #[link(name="errno_dragonfly", kind="static")]
-        extern {
-            pub fn errno_location() -> *mut c_int;
-        }
     } else if #[cfg(any(target_os = "android",
                         target_os = "netbsd",
                         target_os = "openbsd"))] {
         unsafe fn errno_location() -> *mut c_int {
             libc::__errno()
         }
-    } else if #[cfg(any(target_os = "linux", target_os = "redox"))] {
+    } else if #[cfg(any(target_os = "linux",
+                        target_os = "redox",
+                        target_os = "dragonfly"))] {
         unsafe fn errno_location() -> *mut c_int {
             libc::__errno_location()
         }
