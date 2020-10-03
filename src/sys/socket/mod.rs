@@ -495,10 +495,6 @@ pub enum ControlMessageOwned {
     ///
     /// # Examples
     ///
-    // Disable this test on FreeBSD i386
-    // https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=222039
-    #[cfg_attr(not(all(target_os = "freebsd", target_arch = "x86")), doc = " ```")]
-    #[cfg_attr(all(target_os = "freebsd", target_arch = "x86"), doc = " ```no_run")]
     /// # #[macro_use] extern crate nix;
     /// # use nix::sys::socket::*;
     /// # use nix::sys::uio::IoVec;
