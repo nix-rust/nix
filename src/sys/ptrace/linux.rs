@@ -109,6 +109,12 @@ libc_enum!{
         #[cfg(all(target_os = "linux", not(any(target_arch = "mips",
                                                target_arch = "mips64"))))]
         PTRACE_PEEKSIGINFO,
+        #[cfg(all(target_os = "linux", target_env = "gnu",
+                  any(target_arch = "x86", target_arch = "x86_64")))]
+        PTRACE_SYSEMU,
+        #[cfg(all(target_os = "linux", target_env = "gnu",
+                  any(target_arch = "x86", target_arch = "x86_64")))]
+        PTRACE_SYSEMU_SINGLESTEP,
     }
 }
 
@@ -278,7 +284,7 @@ pub fn traceme() -> Result<()> {
     }
 }
 
-/// Ask for next syscall, as with `ptrace(PTRACE_SYSCALL, ...)`
+/// Continue execution until the next syscall, as with `ptrace(PTRACE_SYSCALL, ...)`
 ///
 /// Arranges for the tracee to be stopped at the next entry to or exit from a system call,
 /// optionally delivering a signal specified by `sig`.
@@ -294,6 +300,23 @@ pub fn syscall<T: Into<Option<Signal>>>(pid: Pid, sig: T) -> Result<()> {
             ptr::null_mut(),
             data,
         ).map(drop) // ignore the useless return value
+    }
+}
+
+/// Continue execution until the next syscall, as with `ptrace(PTRACE_SYSEMU, ...)`
+///
+/// In contrast to the `syscall` function, the syscall stopped at will not be executed.
+/// Thus the the tracee will only be stopped once per syscall,
+/// optionally delivering a signal specified by `sig`.
+#[cfg(all(target_os = "linux", target_env = "gnu", any(target_arch = "x86", target_arch = "x86_64")))]
+pub fn sysemu<T: Into<Option<Signal>>>(pid: Pid, sig: T) -> Result<()> {
+    let data = match sig.into() {
+        Some(s) => s as i32 as *mut c_void,
+        None => ptr::null_mut(),
+    };
+    unsafe {
+        ptrace_other(Request::PTRACE_SYSEMU, pid, ptr::null_mut(), data).map(drop)
+        // ignore the useless return value
     }
 }
 
@@ -402,6 +425,28 @@ pub fn step<T: Into<Option<Signal>>>(pid: Pid, sig: T) -> Result<()> {
     }
 }
 
+/// Move the stopped tracee process forward by a single step or stop at the next syscall
+/// as with `ptrace(PTRACE_SYSEMU_SINGLESTEP, ...)`
+///
+/// Advances the execution by a single step or until the next syscall.
+/// In case the tracee is stopped at a syscall, the syscall will not be executed.
+/// Optionally, the signal specified by `sig` is delivered to the tracee upon continuation.
+#[cfg(all(target_os = "linux", target_env = "gnu", any(target_arch = "x86", target_arch = "x86_64")))]
+pub fn sysemu_step<T: Into<Option<Signal>>>(pid: Pid, sig: T) -> Result<()> {
+    let data = match sig.into() {
+        Some(s) => s as i32 as *mut c_void,
+        None => ptr::null_mut(),
+    };
+    unsafe {
+        ptrace_other(
+            Request::PTRACE_SYSEMU_SINGLESTEP,
+            pid,
+            ptr::null_mut(),
+            data,
+        )
+        .map(drop) // ignore the useless return value
+    }
+}
 
 /// Reads a word from a processes memory at the given address
 pub fn read(pid: Pid, addr: AddressType) -> Result<c_long> {
