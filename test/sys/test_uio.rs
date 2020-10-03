@@ -212,7 +212,7 @@ fn test_process_vm_readv() {
     let mut vector = vec![1u8, 2, 3, 4, 5];
 
     let (r, w) = pipe().unwrap();
-    match fork().expect("Error: Fork Failed") {
+    match unsafe{fork()}.expect("Error: Fork Failed") {
         Parent { child } => {
             close(w).unwrap();
             // wait for child
