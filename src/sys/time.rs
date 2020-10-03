@@ -1,4 +1,5 @@
 use std::{cmp, fmt, ops};
+use std::time::Duration;
 use std::convert::From;
 use libc::{c_long, timespec, timeval};
 pub use libc::{time_t, suseconds_t};
@@ -63,6 +64,21 @@ const TS_MIN_SECONDS: i64 = -TS_MAX_SECONDS;
 impl From<timespec> for TimeSpec {
     fn from(ts: timespec) -> Self {
         Self(ts)
+    }
+}
+
+impl From<Duration> for TimeSpec {
+    fn from(duration: Duration) -> Self {
+        TimeSpec(timespec {
+            tv_sec: duration.as_secs() as time_t,
+            tv_nsec: duration.subsec_nanos() as c_long
+        })
+    }
+}
+
+impl From<TimeSpec> for Duration {
+    fn from(timespec: TimeSpec) -> Self {
+        Duration::new(timespec.0.tv_sec as u64, timespec.0.tv_nsec as u32)
     }
 }
 
@@ -484,6 +500,7 @@ fn div_rem_64(this: i64, other: i64) -> (i64, i64) {
 #[cfg(test)]
 mod test {
     use super::{TimeSpec, TimeVal, TimeValLike};
+    use std::time::Duration;
 
     #[test]
     pub fn test_timespec() {
@@ -492,6 +509,15 @@ mod test {
                    TimeSpec::seconds(3));
         assert_eq!(TimeSpec::minutes(3) + TimeSpec::seconds(2),
                    TimeSpec::seconds(182));
+    }
+
+    #[test]
+    pub fn test_timespec_from() {
+        let duration = Duration::new(123, 123_456_789);
+        let timespec = TimeSpec::nanoseconds(123_123_456_789);
+
+        assert_eq!(TimeSpec::from(duration), timespec);
+        assert_eq!(Duration::from(timespec), duration);
     }
 
     #[test]

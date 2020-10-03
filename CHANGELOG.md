@@ -7,6 +7,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Added Netlink protocol families to the `SockProtocol` enum
 (#[1289](https://github.com/nix-rust/nix/pull/1289))
+- Added `clock_gettime`, `clock_settime`, `clock_getres`,
+  `clock_getcpuclockid` functions and `ClockId` struct.
+  (#[1281](https://github.com/nix-rust/nix/pull/1281))
 ### Changed
 - Expose `SeekData` and `SeekHole` on all Linux targets
 (#[1284](https://github.com/nix-rust/nix/pull/1284))

@@ -61,6 +61,7 @@ pub mod poll;
 pub mod pty;
 pub mod sched;
 pub mod sys;
+pub mod time;
 // This can be implemented for other platforms as soon as libc
 // provides bindings for them.
 #[cfg(all(target_os = "linux",
