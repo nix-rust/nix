@@ -1044,3 +1044,23 @@ fn test_ttyname_invalid_fd() {
 fn test_ttyname_invalid_fd() {
     assert_eq!(ttyname(-1), Err(Error::Sys(Errno::ENOTTY)));
 }
+
+#[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux", target_os = "openbsd"))]
+#[test]
+fn test_setresuid() {
+    setresuid(Some(getuid()), Some(getuid()), Some(getuid())).unwrap();
+    assert_eq!(geteuid(), getuid());
+
+    setresuid(None, None, None).unwrap();
+    assert_eq!(geteuid(), getuid());
+}
+
+#[cfg(any(target_os = "android", target_os = "freebsd",target_os = "linux", target_os = "openbsd"))]
+#[test]
+fn test_setresgid() {
+    setresgid(Some(getgid()), Some(getgid()), Some(getgid())).unwrap();
+    assert_eq!(getegid(), getgid());
+
+    setresgid(None, None, None).unwrap();
+    assert_eq!(getegid(), getgid());
+}
