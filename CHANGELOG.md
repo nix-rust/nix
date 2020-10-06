@@ -6,12 +6,15 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased] - ReleaseDate
 ### Added
 - Added Netlink protocol families to the `SockProtocol` enum
-(#[1289](https://github.com/nix-rust/nix/pull/1289))
+  (#[1289](https://github.com/nix-rust/nix/pull/1289))
 - Added `clock_gettime`, `clock_settime`, `clock_getres`,
   `clock_getcpuclockid` functions and `ClockId` struct.
   (#[1281](https://github.com/nix-rust/nix/pull/1281))
 - Added wrapper functions for `PTRACE_SYSEMU` and `PTRACE_SYSEMU_SINGLESTEP`.
   (#[1300](https://github.com/nix-rust/nix/pull/1300))
+- Add support for Vsock on Android rather than just Linux.
+  (#[1301](https://github.com/nix-rust/nix/pull/1301))
+
 ### Changed
 - Expose `SeekData` and `SeekHole` on all Linux targets
 (#[1284](https://github.com/nix-rust/nix/pull/1284))

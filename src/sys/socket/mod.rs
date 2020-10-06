@@ -33,7 +33,7 @@ pub use self::addr::{
 pub use crate::sys::socket::addr::netlink::NetlinkAddr;
 #[cfg(any(target_os = "android", target_os = "linux"))]
 pub use crate::sys::socket::addr::alg::AlgAddr;
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "android", target_os = "linux"))]
 pub use crate::sys::socket::addr::vsock::VsockAddr;
 
 pub use libc::{
@@ -1737,7 +1737,7 @@ pub fn sockaddr_storage_to_addr(
             };
             Ok(SockAddr::Alg(AlgAddr(salg)))
         }
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "android", target_os = "linux"))]
         libc::AF_VSOCK => {
             use libc::sockaddr_vm;
             let svm = unsafe {
