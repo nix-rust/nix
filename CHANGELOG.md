@@ -14,7 +14,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   (#[1300](https://github.com/nix-rust/nix/pull/1300))
 - Add support for Vsock on Android rather than just Linux.
   (#[1301](https://github.com/nix-rust/nix/pull/1301))
-
+- Added `TCP_KEEPCNT` and `TCP_KEEPINTVL` TCP keepalive options.
+  (#[1283](https://github.com/nix-rust/nix/pull/1283))
 ### Changed
 - Expose `SeekData` and `SeekHole` on all Linux targets
 (#[1284](https://github.com/nix-rust/nix/pull/1284))
