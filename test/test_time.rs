@@ -1,3 +1,4 @@
+use nix::sys::time::{TimeSpec, TimeValLike};
 #[cfg(any(
     target_os = "freebsd",
     target_os = "dragonfly",
@@ -6,7 +7,7 @@
     target_os = "emscripten",
 ))]
 use nix::time::clock_getcpuclockid;
-use nix::time::{clock_getres, clock_gettime, ClockId};
+use nix::time::{clock_getres, clock_gettime, clock_nanosleep, ClockId, ClockNanosleepFlags};
 
 #[test]
 pub fn test_clock_getres() {
@@ -53,4 +54,16 @@ pub fn test_clock_id_pid_cpu_clock_id() {
     assert!(ClockId::pid_cpu_clock_id(nix::unistd::Pid::this())
         .map(ClockId::now)
         .is_ok());
+}
+
+#[test]
+pub fn test_clock_nanosleep() {
+    let sleep_time = TimeSpec::microseconds(1);
+    let res = clock_nanosleep(
+        ClockId::CLOCK_MONOTONIC,
+        ClockNanosleepFlags::empty(),
+        &sleep_time,
+    );
+    let expected = TimeSpec::microseconds(0);
+    assert_eq!(res, Ok(expected));
 }

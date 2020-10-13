@@ -1,4 +1,5 @@
-use crate::sys::time::TimeSpec;
+use bitflags::bitflags;
+use crate::sys::time::{TimeSpec, TimeValLike};
 #[cfg(any(
     target_os = "freebsd",
     target_os = "dragonfly",
@@ -252,6 +253,49 @@ pub fn clock_getcpuclockid(pid: Pid) -> Result<ClockId> {
     if ret == 0 {
         let res = unsafe { clk_id.assume_init() };
         Ok(ClockId::from(res))
+    } else {
+        Err(Error::Sys(Errno::from_i32(ret)))
+    }
+}
+
+bitflags! {
+    /// Flags that are used for arming the timer.
+    pub struct ClockNanosleepFlags: libc::c_int {
+        const TIMER_ABSTIME = libc::TIMER_ABSTIME;
+    }
+}
+
+/// Suspend execution of this thread for the amount of time specified by rqtp
+/// and measured against the clock speficied by ClockId. If flags is
+/// TIMER_ABSTIME, this function will suspend execution until the time value of
+/// clock_id reaches the absolute time specified by rqtp. If a signal is caught
+/// by a signal-catching function, or a signal causes the process to terminate,
+/// this sleep is interrrupted.
+/// see also [man 3 clock_nanosleep](https://pubs.opengroup.org/onlinepubs/009695399/functions/clock_nanosleep.html)
+#[cfg(any(
+    target_os = "freebsd",
+    target_os = "netbsd",
+    target_os = "linux",
+    target_os = "android",
+    target_os = "solaris",
+    target_os = "illumos",
+))]
+pub fn clock_nanosleep(
+    clock_id: ClockId,
+    flags: ClockNanosleepFlags,
+    rqtp: &TimeSpec,
+) -> Result<TimeSpec> {
+    let mut rmtp: TimeSpec = TimeSpec::nanoseconds(0);
+    let ret = unsafe {
+        libc::clock_nanosleep(
+            clock_id.as_raw(),
+            flags.bits(),
+            rqtp.as_ref() as *const _,
+            rmtp.as_mut() as *mut _,
+        )
+    };
+    if ret == 0 {
+        Ok(rmtp)
     } else {
         Err(Error::Sys(Errno::from_i32(ret)))
     }
