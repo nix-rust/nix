@@ -139,6 +139,17 @@ libc_bitflags!{
     }
 }
 
+#[cfg(target_os = "linux")]
+libc_bitflags!{
+    /// Options for `mremap()`.
+    pub struct MRemapFlags: c_int {
+        /// Permit the kernel to relocate the mapping to a new virtual address, if necessary.
+        MREMAP_MAYMOVE;
+        /// Place the mapping at exactly the address specified in `new_address`.
+        MREMAP_FIXED;
+    }
+}
+
 libc_enum!{
     /// Usage information for a range of memory to allow for performance optimizations by the kernel.
     ///
@@ -307,6 +318,30 @@ pub fn munlockall() -> Result<()> {
 /// See the `mmap(2)` man page for detailed requirements.
 pub unsafe fn mmap(addr: *mut c_void, length: size_t, prot: ProtFlags, flags: MapFlags, fd: RawFd, offset: off_t) -> Result<*mut c_void> {
     let ret = libc::mmap(addr, length, prot.bits(), flags.bits(), fd, offset);
+
+    if ret == libc::MAP_FAILED {
+        Err(Error::Sys(Errno::last()))
+    } else {
+        Ok(ret)
+    }
+}
+
+/// Expands (or shrinks) an existing memory mapping, potentially moving it at
+/// the same time.
+///
+/// # Safety
+///
+/// See the `mremap(2)` [man page](https://man7.org/linux/man-pages/man2/mremap.2.html) for
+/// detailed requirements.
+#[cfg(target_os = "linux")]
+pub unsafe fn mremap(
+    addr: *mut c_void,
+    old_size: size_t,
+    new_size: size_t,
+    flags: MRemapFlags,
+    new_address: Option<* mut c_void>,
+) -> Result<*mut c_void> {
+    let ret = libc::mremap(addr, old_size, new_size, flags.bits(), new_address.unwrap_or(std::ptr::null_mut()));
 
     if ret == libc::MAP_FAILED {
         Err(Error::Sys(Errno::last()))

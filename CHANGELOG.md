@@ -5,6 +5,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - ReleaseDate
 ### Added
+- Added `mremap` (#[1306](https://github.com/nix-rust/nix/pull/1306))
 ### Changed
 ### Fixed
 ### Removed
