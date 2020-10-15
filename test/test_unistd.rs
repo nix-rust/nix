@@ -377,7 +377,7 @@ cfg_if!{
                              "./sh", AtFlags::empty());
         execve_test_factory!(test_execveat_absolute, execveat, File::open("/").unwrap().into_raw_fd(),
                              "/system/bin/sh", AtFlags::empty());
-    } else if #[cfg(all(target_os = "linux"), any(target_arch ="x86_64", target_arch ="x86"))] {
+    } else if #[cfg(all(target_os = "linux", any(target_arch ="x86_64", target_arch ="x86")))] {
         use nix::fcntl::AtFlags;
         execve_test_factory!(test_execveat_empty, execveat, File::open("/bin/sh").unwrap().into_raw_fd(),
                              "", AtFlags::AT_EMPTY_PATH);
