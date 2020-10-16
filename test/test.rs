@@ -95,7 +95,11 @@ cfg_if! {
 
                 let uname = nix::sys::utsname::uname();
 
-                let mut version = Version::parse(uname.release()).unwrap();
+                // Linux may report version as 4.18.el8_2.x86_64 or 5.18.200-fc33.x86_64
+                // semver sematics does not support underscore. Replace this with hypen.
+                let mut version = Version::parse(
+                    &uname.release().to_string().replace("_", "-")
+                ).unwrap();
 
                 //Keep only numeric parts
                 version.pre.clear();
