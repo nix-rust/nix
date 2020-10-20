@@ -8,6 +8,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Added `mremap` (#[1306](https://github.com/nix-rust/nix/pull/1306))
 ### Changed
 ### Fixed
+- Fixed the calculation of `num_microseconds` in the impl of `TimeValLike`
+  for `TimeSpec` (#[1322](https://github.com/nix-rust/nix/pull/1322))
 ### Removed
 
 ## [0.19.0] - 6 October 2020
