@@ -477,6 +477,10 @@ impl Ipv6Addr {
         Ipv6Addr(libc::in6_addr{s6_addr: to_u8_array!(a,b,c,d,e,f,g,h)})
     }
 
+    pub fn any() -> Ipv6Addr {
+        Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0)
+    }
+
     pub fn from_std(std: &net::Ipv6Addr) -> Ipv6Addr {
         let s = std.segments();
         Ipv6Addr::new(s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7])
