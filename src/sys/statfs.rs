@@ -41,9 +41,13 @@ pub const ADFS_SUPER_MAGIC: FsType = FsType(libc::ADFS_SUPER_MAGIC as fs_type_t)
 #[cfg(all(target_os = "linux", not(target_env = "musl")))]
 pub const AFFS_SUPER_MAGIC: FsType = FsType(libc::AFFS_SUPER_MAGIC as fs_type_t);
 #[cfg(all(target_os = "linux", not(target_env = "musl")))]
+pub const BPF_FS_MAGIC: FsType = FsType(libc::BPF_FS_MAGIC as fs_type_t);
+#[cfg(all(target_os = "linux", not(target_env = "musl")))]
 pub const CODA_SUPER_MAGIC: FsType = FsType(libc::CODA_SUPER_MAGIC as fs_type_t);
 #[cfg(all(target_os = "linux", not(target_env = "musl")))]
 pub const CRAMFS_MAGIC: FsType = FsType(libc::CRAMFS_MAGIC as fs_type_t);
+#[cfg(all(target_os = "linux", not(target_env = "musl")))]
+pub const DEBUGFS_MAGIC: FsType = FsType(libc::DEBUGFS_MAGIC as fs_type_t);
 #[cfg(all(target_os = "linux", not(target_env = "musl")))]
 pub const EFS_SUPER_MAGIC: FsType = FsType(libc::EFS_SUPER_MAGIC as fs_type_t);
 #[cfg(all(target_os = "linux", not(target_env = "musl")))]
@@ -87,7 +91,11 @@ pub const REISERFS_SUPER_MAGIC: FsType = FsType(libc::REISERFS_SUPER_MAGIC as fs
 #[cfg(all(target_os = "linux", not(target_env = "musl")))]
 pub const SMB_SUPER_MAGIC: FsType = FsType(libc::SMB_SUPER_MAGIC as fs_type_t);
 #[cfg(all(target_os = "linux", not(target_env = "musl")))]
+pub const SYSFS_MAGIC: FsType = FsType(libc::SYSFS_MAGIC as fs_type_t);
+#[cfg(all(target_os = "linux", not(target_env = "musl")))]
 pub const TMPFS_MAGIC: FsType = FsType(libc::TMPFS_MAGIC as fs_type_t);
+#[cfg(all(target_os = "linux", not(target_env = "musl")))]
+pub const TRACEFS_MAGIC: FsType = FsType(libc::TRACEFS_MAGIC as fs_type_t);
 #[cfg(all(target_os = "linux", not(target_env = "musl")))]
 pub const USBDEVICE_SUPER_MAGIC: FsType = FsType(libc::USBDEVICE_SUPER_MAGIC as fs_type_t);
 #[cfg(all(target_os = "linux", not(target_env = "musl")))]
