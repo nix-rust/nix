@@ -6,6 +6,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased] - ReleaseDate
 ### Added
 - Added `mremap` (#[1306](https://github.com/nix-rust/nix/pull/1306))
+- `nix::sys::termios::Termios` now implements `Sync` and `Copy`.
+- There are now `From` implementations for converting both ways between
+  `libc::termios` and `nix::sys::termios::Termios`.
 ### Changed
 ### Fixed
 ### Removed

@@ -155,7 +155,6 @@ use cfg_if::cfg_if;
 use crate::{Error, Result};
 use crate::errno::Errno;
 use libc::{self, c_int, tcflag_t};
-use std::cell::{Ref, RefCell};
 use std::convert::{From, TryFrom};
 use std::mem;
 use std::os::unix::io::RawFd;
@@ -167,9 +166,20 @@ use crate::unistd::Pid;
 /// This is a wrapper around the `libc::termios` struct that provides a safe interface for the
 /// standard fields. The only safe way to obtain an instance of this struct is to extract it from
 /// an open port using `tcgetattr()`.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Termios {
-    inner: RefCell<libc::termios>,
+    // The actual fields present in `libc::termios`, their types, and even their interpretations
+    // vary from one platform to another. We want to expose a portable subset as public fields of
+    // `Termios`, using stable types, and allow access to the rest via accessors, if at all.
+    //
+    // So we carry around this private `libc::termios`, initialize our public fields from it
+    // whenever it's changed (see `set_libc_termios`), and propagate our public fields' values back
+    // into it whenever we need a real `libc::termios` to pass to `tcsetattr`, `cfmakeraw`, or the
+    // like (see `get_libc_termios`).
+    //
+    // Any fields unknown to us get reasonable values from the initial `tcgetattr` used to create
+    // this `Termios`, and are thus passed through to subsequent `tcsetattr` calls unchanged.
+    inner: libc::termios,
     /// Input mode flags (see `termios.c_iflag` documentation)
     pub input_flags: InputFlags,
     /// Output mode flags (see `termios.c_oflag` documentation)
@@ -183,43 +193,24 @@ pub struct Termios {
 }
 
 impl Termios {
-    /// Exposes an immutable reference to the underlying `libc::termios` data structure.
+    /// Return a copy of the internal `libc::termios` structure.
     ///
     /// This is not part of `nix`'s public API because it requires additional work to maintain type
     /// safety.
-    pub(crate) fn get_libc_termios(&self) -> Ref<libc::termios> {
-        {
-            let mut termios = self.inner.borrow_mut();
-            termios.c_iflag = self.input_flags.bits();
-            termios.c_oflag = self.output_flags.bits();
-            termios.c_cflag = self.control_flags.bits();
-            termios.c_lflag = self.local_flags.bits();
-            termios.c_cc = self.control_chars;
-        }
-        self.inner.borrow()
+    pub(crate) fn get_libc_termios(&self) -> libc::termios {
+        let mut termios = self.inner;
+        termios.c_iflag = self.input_flags.bits();
+        termios.c_oflag = self.output_flags.bits();
+        termios.c_cflag = self.control_flags.bits();
+        termios.c_lflag = self.local_flags.bits();
+        termios.c_cc = self.control_chars;
+        termios
     }
 
-    /// Exposes the inner `libc::termios` datastore within `Termios`.
-    ///
-    /// This is unsafe because if this is used to modify the inner `libc::termios` struct, it will
-    /// not automatically update the safe wrapper type around it. In this case it should also be
-    /// paired with a call to `update_wrapper()` so that the wrapper-type and internal
-    /// representation stay consistent.
-    pub(crate) unsafe fn get_libc_termios_mut(&mut self) -> *mut libc::termios {
-        {
-            let mut termios = self.inner.borrow_mut();
-            termios.c_iflag = self.input_flags.bits();
-            termios.c_oflag = self.output_flags.bits();
-            termios.c_cflag = self.control_flags.bits();
-            termios.c_lflag = self.local_flags.bits();
-            termios.c_cc = self.control_chars;
-        }
-        self.inner.as_ptr()
-    }
-
-    /// Updates the wrapper values from the internal `libc::termios` data structure.
-    pub(crate) fn update_wrapper(&mut self) {
-        let termios = *self.inner.borrow_mut();
+    /// Set the internal `libc::termios` structure to `termios`,
+    /// and update the public fields.
+    pub(crate) fn set_libc_termios(&mut self, termios: &libc::termios) {
+        self.inner = *termios;
         self.input_flags = InputFlags::from_bits_truncate(termios.c_iflag);
         self.output_flags = OutputFlags::from_bits_truncate(termios.c_oflag);
         self.control_flags = ControlFlags::from_bits_truncate(termios.c_cflag);
@@ -231,7 +222,7 @@ impl Termios {
 impl From<libc::termios> for Termios {
     fn from(termios: libc::termios) -> Self {
         Termios {
-            inner: RefCell::new(termios),
+            inner: termios,
             input_flags: InputFlags::from_bits_truncate(termios.c_iflag),
             output_flags: OutputFlags::from_bits_truncate(termios.c_oflag),
             control_flags: ControlFlags::from_bits_truncate(termios.c_cflag),
@@ -243,7 +234,7 @@ impl From<libc::termios> for Termios {
 
 impl From<Termios> for libc::termios {
     fn from(termios: Termios) -> Self {
-        termios.inner.into_inner()
+        termios.inner
     }
 }
 
@@ -881,7 +872,7 @@ cfg_if!{
         /// `cfgetispeed()` extracts the input baud rate from the given `Termios` structure.
         pub fn cfgetispeed(termios: &Termios) -> u32 {
             let inner_termios = termios.get_libc_termios();
-            unsafe { libc::cfgetispeed(&*inner_termios) as u32 }
+            unsafe { libc::cfgetispeed(&inner_termios) as u32 }
         }
 
         /// Get output baud rate (see
@@ -890,7 +881,7 @@ cfg_if!{
         /// `cfgetospeed()` extracts the output baud rate from the given `Termios` structure.
         pub fn cfgetospeed(termios: &Termios) -> u32 {
             let inner_termios = termios.get_libc_termios();
-            unsafe { libc::cfgetospeed(&*inner_termios) as u32 }
+            unsafe { libc::cfgetospeed(&inner_termios) as u32 }
         }
 
         /// Set input baud rate (see
@@ -898,9 +889,9 @@ cfg_if!{
         ///
         /// `cfsetispeed()` sets the intput baud rate in the given `Termios` structure.
         pub fn cfsetispeed<T: Into<u32>>(termios: &mut Termios, baud: T) -> Result<()> {
-            let inner_termios = unsafe { termios.get_libc_termios_mut() };
-            let res = unsafe { libc::cfsetispeed(inner_termios, baud.into() as libc::speed_t) };
-            termios.update_wrapper();
+            let mut inner_termios = termios.get_libc_termios();
+            let res = unsafe { libc::cfsetispeed(&mut inner_termios as *mut _, baud.into() as libc::speed_t) };
+            termios.set_libc_termios(&inner_termios);
             Errno::result(res).map(drop)
         }
 
@@ -909,9 +900,9 @@ cfg_if!{
         ///
         /// `cfsetospeed()` sets the output baud rate in the given termios structure.
         pub fn cfsetospeed<T: Into<u32>>(termios: &mut Termios, baud: T) -> Result<()> {
-            let inner_termios = unsafe { termios.get_libc_termios_mut() };
-            let res = unsafe { libc::cfsetospeed(inner_termios, baud.into() as libc::speed_t) };
-            termios.update_wrapper();
+            let mut inner_termios = termios.get_libc_termios();
+            let res = unsafe { libc::cfsetospeed(&mut inner_termios as *mut _, baud.into() as libc::speed_t) };
+            termios.set_libc_termios(&inner_termios);
             Errno::result(res).map(drop)
         }
 
@@ -921,9 +912,9 @@ cfg_if!{
         /// `cfsetspeed()` sets the input and output baud rate in the given termios structure. Note that
         /// this is part of the 4.4BSD standard and not part of POSIX.
         pub fn cfsetspeed<T: Into<u32>>(termios: &mut Termios, baud: T) -> Result<()> {
-            let inner_termios = unsafe { termios.get_libc_termios_mut() };
-            let res = unsafe { libc::cfsetspeed(inner_termios, baud.into() as libc::speed_t) };
-            termios.update_wrapper();
+            let mut inner_termios = termios.get_libc_termios();
+            let res = unsafe { libc::cfsetspeed(&mut inner_termios as *mut _, baud.into() as libc::speed_t) };
+            termios.set_libc_termios(&inner_termios);
             Errno::result(res).map(drop)
         }
     } else {
@@ -935,7 +926,7 @@ cfg_if!{
         /// `cfgetispeed()` extracts the input baud rate from the given `Termios` structure.
         pub fn cfgetispeed(termios: &Termios) -> BaudRate {
             let inner_termios = termios.get_libc_termios();
-            unsafe { libc::cfgetispeed(&*inner_termios) }.try_into().unwrap()
+            unsafe { libc::cfgetispeed(&inner_termios) }.try_into().unwrap()
         }
 
         /// Get output baud rate (see
@@ -944,7 +935,7 @@ cfg_if!{
         /// `cfgetospeed()` extracts the output baud rate from the given `Termios` structure.
         pub fn cfgetospeed(termios: &Termios) -> BaudRate {
             let inner_termios = termios.get_libc_termios();
-            unsafe { libc::cfgetospeed(&*inner_termios) }.try_into().unwrap()
+            unsafe { libc::cfgetospeed(&inner_termios) }.try_into().unwrap()
         }
 
         /// Set input baud rate (see
@@ -952,9 +943,9 @@ cfg_if!{
         ///
         /// `cfsetispeed()` sets the intput baud rate in the given `Termios` structure.
         pub fn cfsetispeed(termios: &mut Termios, baud: BaudRate) -> Result<()> {
-            let inner_termios = unsafe { termios.get_libc_termios_mut() };
-            let res = unsafe { libc::cfsetispeed(inner_termios, baud as libc::speed_t) };
-            termios.update_wrapper();
+            let mut inner_termios = termios.get_libc_termios();
+            let res = unsafe { libc::cfsetispeed(&mut inner_termios as *mut _, baud as libc::speed_t) };
+            termios.set_libc_termios(&inner_termios);
             Errno::result(res).map(drop)
         }
 
@@ -963,9 +954,9 @@ cfg_if!{
         ///
         /// `cfsetospeed()` sets the output baud rate in the given `Termios` structure.
         pub fn cfsetospeed(termios: &mut Termios, baud: BaudRate) -> Result<()> {
-            let inner_termios = unsafe { termios.get_libc_termios_mut() };
-            let res = unsafe { libc::cfsetospeed(inner_termios, baud as libc::speed_t) };
-            termios.update_wrapper();
+            let mut inner_termios = termios.get_libc_termios();
+            let res = unsafe { libc::cfsetospeed(&mut inner_termios as *mut _, baud as libc::speed_t) };
+            termios.set_libc_termios(&inner_termios);
             Errno::result(res).map(drop)
         }
 
@@ -975,9 +966,9 @@ cfg_if!{
         /// `cfsetspeed()` sets the input and output baud rate in the given `Termios` structure. Note that
         /// this is part of the 4.4BSD standard and not part of POSIX.
         pub fn cfsetspeed(termios: &mut Termios, baud: BaudRate) -> Result<()> {
-            let inner_termios = unsafe { termios.get_libc_termios_mut() };
-            let res = unsafe { libc::cfsetspeed(inner_termios, baud as libc::speed_t) };
-            termios.update_wrapper();
+            let mut inner_termios = termios.get_libc_termios();
+            let res = unsafe { libc::cfsetspeed(&mut inner_termios as *mut _, baud as libc::speed_t) };
+            termios.set_libc_termios(&inner_termios);
             Errno::result(res).map(drop)
         }
     }
@@ -990,11 +981,11 @@ cfg_if!{
 /// character, echoing is disabled, and all special input and output processing is disabled. Note
 /// that this is a non-standard function, but is available on Linux and BSDs.
 pub fn cfmakeraw(termios: &mut Termios) {
-    let inner_termios = unsafe { termios.get_libc_termios_mut() };
+    let mut inner_termios = termios.get_libc_termios();
     unsafe {
-        libc::cfmakeraw(inner_termios);
+        libc::cfmakeraw(&mut inner_termios as *mut _);
     }
-    termios.update_wrapper();
+    termios.set_libc_termios(&inner_termios);
 }
 
 /// Configures the port to "sane" mode (like the configuration of a newly created terminal) (see
@@ -1003,11 +994,11 @@ pub fn cfmakeraw(termios: &mut Termios) {
 /// Note that this is a non-standard function, available on FreeBSD.
 #[cfg(target_os = "freebsd")]
 pub fn cfmakesane(termios: &mut Termios) {
-    let inner_termios = unsafe { termios.get_libc_termios_mut() };
+    let mut inner_termios = termios.get_libc_termios();
     unsafe {
-        libc::cfmakesane(inner_termios);
+        libc::cfmakesane(&mut inner_termios as *mut _);
     }
-    termios.update_wrapper();
+    termios.set_libc_termios(&inner_termios);
 }
 
 /// Return the configuration of a port
@@ -1034,7 +1025,7 @@ pub fn tcgetattr(fd: RawFd) -> Result<Termios> {
 /// *any* of the parameters were successfully set, not only if all were set successfully.
 pub fn tcsetattr(fd: RawFd, actions: SetArg, termios: &Termios) -> Result<()> {
     let inner_termios = termios.get_libc_termios();
-    Errno::result(unsafe { libc::tcsetattr(fd, actions as c_int, &*inner_termios) }).map(drop)
+    Errno::result(unsafe { libc::tcsetattr(fd, actions as c_int, &inner_termios) }).map(drop)
 }
 
 /// Block until all output data is written (see
