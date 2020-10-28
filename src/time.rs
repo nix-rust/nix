@@ -37,6 +37,7 @@ impl ClockId {
     }
 
     /// Returns resolution of the clock id
+    #[cfg(not(target_os = "redox"))]
     pub fn res(self) -> Result<TimeSpec> {
         clock_getres(self)
     }
@@ -204,6 +205,7 @@ impl std::fmt::Display for ClockId {
 
 /// Get the resolution of the specified clock, (see
 /// [clock_getres(2)](https://pubs.opengroup.org/onlinepubs/7908799/xsh/clock_getres.html)).
+#[cfg(not(target_os = "redox"))]
 pub fn clock_getres(clock_id: ClockId) -> Result<TimeSpec> {
     let mut c_time: MaybeUninit<libc::timespec> = MaybeUninit::uninit();
     let ret = unsafe { libc::clock_getres(clock_id.as_raw(), c_time.as_mut_ptr()) };
