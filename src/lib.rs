@@ -146,6 +146,31 @@ impl From<Errno> for Error {
     fn from(errno: Errno) -> Error { Error::from_errno(errno) }
 }
 
+impl From<std::io::Error> for Error {
+    fn from(err: std::io::Error) -> Error {
+        match err.raw_os_error() {
+            Some(errno) => Error::from_errno(Errno::from_i32(errno)),
+            None => Error::from_errno(Errno::UnknownErrno),
+        }
+    }
+}
+
+fn io_error(str: &str) -> std::io::Error {
+    std::io::Error::new(std::io::ErrorKind::Other, str)
+}
+
+
+impl From<Error> for std::io::Error {
+    fn from(err: Error) -> std::io::Error {
+        match err {
+            Error::Sys(errno) => errno.into(),
+            Error::InvalidPath => io_error("InvalidPath"),
+            Error::InvalidUtf8 => io_error("InvalidUtf8"),
+            Error::UnsupportedOperation => io_error("UnsupportedOperation"),
+        }
+    }
+}
+
 impl From<std::string::FromUtf8Error> for Error {
     fn from(_: std::string::FromUtf8Error) -> Error { Error::InvalidUtf8 }
 }
