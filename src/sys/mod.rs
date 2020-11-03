@@ -6,6 +6,9 @@
           target_os = "netbsd"))]
 pub mod aio;
 
+#[cfg(any(target_os = "freebsd", target_os = "linux", target_os = "macos"))]
+pub mod block;
+
 #[cfg(any(target_os = "android", target_os = "linux"))]
 pub mod epoll;
 
