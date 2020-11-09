@@ -847,22 +847,22 @@ impl<'a> ControlMessage<'a> {
             }
             #[cfg(any(target_os = "android", target_os = "linux"))]
             ControlMessage::AlgSetIv(iv) => {
-                let af_alg_iv = libc::af_alg_iv {
-                    ivlen: iv.len() as u32,
-                    iv: [0u8; 0],
-                };
+                // libc::af_alg_iv is deprecated: https://github.com/rust-lang/libc/issues/1501
+                // struct af_alg_iv { ivlen: u32, iv: [c_uchar] }
+                // we just have to manually construct that in memory
 
-                let size = mem::size_of::<libc::af_alg_iv>();
+                let ivlen = iv.len() as u32;
+                let lensize = mem::size_of::<u32>();
 
                 unsafe {
                     ptr::copy_nonoverlapping(
-                        &af_alg_iv as *const _ as *const u8,
+                        &ivlen as *const _ as *const u8,
                         cmsg_data,
-                        size,
+                        lensize,
                     );
                     ptr::copy_nonoverlapping(
                         iv.as_ptr(),
-                        cmsg_data.add(size),
+                        cmsg_data.add(lensize),
                         iv.len()
                     );
                 };
@@ -915,7 +915,7 @@ impl<'a> ControlMessage<'a> {
             }
             #[cfg(any(target_os = "android", target_os = "linux"))]
             ControlMessage::AlgSetIv(iv) => {
-                mem::size_of::<libc::af_alg_iv>() + iv.len()
+                mem::size_of::<u32>() + iv.len()
             },
             #[cfg(any(target_os = "android", target_os = "linux"))]
             ControlMessage::AlgSetOp(op) => {
