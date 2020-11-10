@@ -7,6 +7,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Added `mremap` (#[1306](https://github.com/nix-rust/nix/pull/1306))
 
+- Added `personality` (#[1331](https://github.com/nix-rust/nix/pull/1331))
 ### Fixed
 ### Changed
 
@@ -70,7 +71,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Derived `Ord`, `PartialOrd` for `unistd::Pid` (#[1189](https://github.com/nix-rust/nix/pull/1189))
 - Added `select::FdSet::fds` method to iterate over file descriptors in a set.
   ([#1207](https://github.com/nix-rust/nix/pull/1207))
-- Added support for UDP generic segmentation offload (GSO) and generic 
+- Added support for UDP generic segmentation offload (GSO) and generic
   receive offload (GRO) ([#1209](https://github.com/nix-rust/nix/pull/1209))
 - Added support for `sendmmsg` and `recvmmsg` calls
   (#[1208](https://github.com/nix-rust/nix/pull/1208))
