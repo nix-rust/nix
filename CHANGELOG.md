@@ -8,6 +8,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Added `mremap` (#[1306](https://github.com/nix-rust/nix/pull/1306))
 
 ### Fixed
+- Fixed compilation on Redox
+  (#[1327](https://github.com/nix-rust/nix/pull/1327))
 ### Changed
 ### Removed
 
