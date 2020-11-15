@@ -11,6 +11,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Added `personality` (#[1331](https://github.com/nix-rust/nix/pull/1331))
 - Added limited Fuchsia support (#[1285](https://github.com/nix-rust/nix/pull/1285))
 - Added `getpeereid` (#[1342](https://github.com/nix-rust/nix/pull/1342))
+- Implemented `IntoIterator` for `Dir`
+  (#[1333](https://github.com/nix-rust/nix/pull/1333)).
+### Changed
 ### Fixed
 - Define `*_MAGIC` filesystem constants on Linux s390x
   (#[1372](https://github.com/nix-rust/nix/pull/1372))
