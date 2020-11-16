@@ -2,6 +2,7 @@ use std::{cmp, fmt, ops};
 use std::time::Duration;
 use std::convert::From;
 use libc::{c_long, timespec, timeval};
+#[cfg_attr(target_env = "musl", allow(deprecated))] // https://github.com/rust-lang/libc/issues/1848
 pub use libc::{time_t, suseconds_t};
 
 pub trait TimeValLike: Sized {
@@ -69,6 +70,7 @@ impl From<timespec> for TimeSpec {
 
 impl From<Duration> for TimeSpec {
     fn from(duration: Duration) -> Self {
+        #[cfg_attr(target_env = "musl", allow(deprecated))] // https://github.com/rust-lang/libc/issues/1848
         TimeSpec(timespec {
             tv_sec: duration.as_secs() as time_t,
             tv_nsec: duration.subsec_nanos() as c_long
@@ -117,6 +119,7 @@ impl TimeValLike for TimeSpec {
     fn seconds(seconds: i64) -> TimeSpec {
         assert!(seconds >= TS_MIN_SECONDS && seconds <= TS_MAX_SECONDS,
                 "TimeSpec out of bounds; seconds={}", seconds);
+        #[cfg_attr(target_env = "musl", allow(deprecated))] // https://github.com/rust-lang/libc/issues/1848
         TimeSpec(timespec {tv_sec: seconds as time_t, tv_nsec: 0 })
     }
 
@@ -143,6 +146,7 @@ impl TimeValLike for TimeSpec {
         let (secs, nanos) = div_mod_floor_64(nanoseconds, NANOS_PER_SEC);
         assert!(secs >= TS_MIN_SECONDS && secs <= TS_MAX_SECONDS,
                 "TimeSpec out of bounds");
+        #[cfg_attr(target_env = "musl", allow(deprecated))] // https://github.com/rust-lang/libc/issues/1848
         TimeSpec(timespec {tv_sec: secs as time_t,
                            tv_nsec: nanos as c_long })
     }
@@ -179,6 +183,7 @@ impl TimeSpec {
         }
     }
 
+    #[cfg_attr(target_env = "musl", allow(deprecated))] // https://github.com/rust-lang/libc/issues/1848
     pub fn tv_sec(&self) -> time_t {
         self.0.tv_sec
     }
@@ -315,6 +320,7 @@ impl TimeValLike for TimeVal {
     fn seconds(seconds: i64) -> TimeVal {
         assert!(seconds >= TV_MIN_SECONDS && seconds <= TV_MAX_SECONDS,
                 "TimeVal out of bounds; seconds={}", seconds);
+        #[cfg_attr(target_env = "musl", allow(deprecated))] // https://github.com/rust-lang/libc/issues/1848
         TimeVal(timeval {tv_sec: seconds as time_t, tv_usec: 0 })
     }
 
@@ -332,6 +338,7 @@ impl TimeValLike for TimeVal {
         let (secs, micros) = div_mod_floor_64(microseconds, MICROS_PER_SEC);
         assert!(secs >= TV_MIN_SECONDS && secs <= TV_MAX_SECONDS,
                 "TimeVal out of bounds");
+        #[cfg_attr(target_env = "musl", allow(deprecated))] // https://github.com/rust-lang/libc/issues/1848
         TimeVal(timeval {tv_sec: secs as time_t,
                            tv_usec: micros as suseconds_t })
     }
@@ -344,6 +351,7 @@ impl TimeValLike for TimeVal {
         let (secs, micros) = div_mod_floor_64(microseconds, MICROS_PER_SEC);
         assert!(secs >= TV_MIN_SECONDS && secs <= TV_MAX_SECONDS,
                 "TimeVal out of bounds");
+        #[cfg_attr(target_env = "musl", allow(deprecated))] // https://github.com/rust-lang/libc/issues/1848
         TimeVal(timeval {tv_sec: secs as time_t,
                            tv_usec: micros as suseconds_t })
     }
@@ -380,6 +388,7 @@ impl TimeVal {
         }
     }
 
+    #[cfg_attr(target_env = "musl", allow(deprecated))] // https://github.com/rust-lang/libc/issues/1848
     pub fn tv_sec(&self) -> time_t {
         self.0.tv_sec
     }
