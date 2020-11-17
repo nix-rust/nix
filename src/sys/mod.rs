@@ -103,5 +103,5 @@ pub mod wait;
 #[cfg(any(target_os = "android", target_os = "linux"))]
 pub mod inotify;
 
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "android", target_os = "linux"))]
 pub mod timerfd;
