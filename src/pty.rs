@@ -243,7 +243,7 @@ pub fn openpty<'a, 'b, T: Into<Option<&'a Winsize>>, U: Into<Option<&'b Termios>
                         master.as_mut_ptr(),
                         slave.as_mut_ptr(),
                         ptr::null_mut(),
-                        &*inner_termios as *const libc::termios as *mut _,
+                        &inner_termios as *const libc::termios as *mut _,
                         winsize as *const Winsize as *mut _,
                     )
                 }
@@ -266,7 +266,7 @@ pub fn openpty<'a, 'b, T: Into<Option<&'a Winsize>>, U: Into<Option<&'b Termios>
                         master.as_mut_ptr(),
                         slave.as_mut_ptr(),
                         ptr::null_mut(),
-                        &*inner_termios as *const libc::termios as *mut _,
+                        &inner_termios as *const libc::termios as *mut _,
                         ptr::null_mut(),
                     )
                 }
@@ -313,7 +313,7 @@ pub fn forkpty<'a, 'b, T: Into<Option<&'a Winsize>>, U: Into<Option<&'b Termios>
     let term = match termios.into() {
         Some(termios) => {
             let inner_termios = termios.get_libc_termios();
-            &*inner_termios as *const libc::termios as *mut _
+            &inner_termios as *const libc::termios as *mut _
         },
         None => ptr::null_mut(),
     };
