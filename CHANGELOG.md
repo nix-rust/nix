@@ -6,11 +6,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased] - ReleaseDate
 ### Added
 - Added `mremap` (#[1306](https://github.com/nix-rust/nix/pull/1306))
-
 - Added `personality` (#[1331](https://github.com/nix-rust/nix/pull/1331))
-
 - Added limited Fuchsia support (#[1285](https://github.com/nix-rust/nix/pull/1285))
-
+- Added `getpeereid` (#[1342](https://github.com/nix-rust/nix/pull/1342))
 ### Fixed
 ### Changed
 
