@@ -1217,17 +1217,18 @@ pub fn recvmmsg<'a, I>(
 
     let ret = unsafe { libc::recvmmsg(fd, output.as_mut_ptr(), output.len() as _, flags.bits() as _, timeout) };
 
-    let r = Errno::result(ret)?;
+    let _ = Errno::result(ret)?;
 
     Ok(output
         .into_iter()
+        .take(ret as usize)
         .zip(addresses.iter().map(|addr| unsafe{addr.assume_init()}))
         .zip(results.into_iter())
         .map(|((mmsghdr, address), (msg_controllen, cmsg_buffer))| {
             unsafe {
                 read_mhdr(
                     mmsghdr.msg_hdr,
-                    r as isize,
+                    mmsghdr.msg_len as isize,
                     msg_controllen,
                     address,
                     cmsg_buffer
