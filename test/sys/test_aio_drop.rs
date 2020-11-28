@@ -9,6 +9,7 @@
               target_os = "macos",
               target_os = "freebsd",
               target_os = "netbsd")))]
+#[cfg_attr(target_env = "gnu", ignore = "Occasionally fails in Travis; glibc bug suspected")]
 fn test_drop() {
     use nix::sys::aio::*;
     use nix::sys::signal::*;
