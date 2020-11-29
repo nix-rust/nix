@@ -5,16 +5,16 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - ReleaseDate
 ### Added
-
 - Added `mremap` (#[1306](https://github.com/nix-rust/nix/pull/1306))
 
-### Changed
 ### Fixed
+### Changed
+### Removed
 
+## [0.19.1] - 28 November 2020
+### Fixed
 - Fixed bugs in `recvmmsg`.
   (#[1341](https://github.com/nix-rust/nix/pull/1341))
-
-### Removed
 
 ## [0.19.0] - 6 October 2020
 ### Added
