@@ -7,11 +7,13 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 ### Changed
 ### Fixed
+### Removed
+
+## [0.19.1] - 28 November 2020
+### Fixed
 
 - Fixed bugs in `recvmmsg`.
   (#[1341](https://github.com/nix-rust/nix/pull/1341))
-
-### Removed
 
 ## [0.19.0] - 6 October 2020
 ### Added
