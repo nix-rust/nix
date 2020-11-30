@@ -116,7 +116,7 @@ task:
         TARGET: x86_64-unknown-linux-musl
         TOOLCHAIN: 1.40.0
   container:
-    image: rust:1.36
+    image: rust:1.40
   setup_script:
     - rustup toolchain install $TOOLCHAIN
     - rustup target add --toolchain $TOOLCHAIN $TARGET
@@ -161,7 +161,7 @@ task:
       env:
         TARGET: x86_64-unknown-netbsd
   container:
-    image: rust:1.36
+    image: rust:1.40
   setup_script:
     - rustup target add $TARGET
   script:
