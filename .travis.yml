@@ -104,7 +104,7 @@ matrix:
         - curl --proto '=https' --tlsv1.2 -sSf --output rustup.sh https://sh.rustup.rs
         - sh rustup.sh -y --profile=minimal --default-toolchain 1.36.0 --target x86_64-unknown-redox
         - . $HOME/.cargo/env
-        - cargo build --all-targets
+        - cargo build --target x86_64-unknown-redox --all-targets
 
 before_install: set -e
 
