@@ -102,7 +102,8 @@ matrix:
       name: redox
       script:
         - curl --proto '=https' --tlsv1.2 -sSf --output rustup.sh https://sh.rustup.rs
-        - sh rustup.sh -y --profile=minimal --default-toolchain 1.36.0 --target x86_64-unknown-redox
+        # if stuff breaks, change nightly to the date in the toolchain_* directory at https://static.redox-os.org
+        - sh rustup.sh -y --profile=minimal --default-toolchain nightly-2020-08-04 --target x86_64-unknown-redox
         - . $HOME/.cargo/env
         - cargo build --target x86_64-unknown-redox --all-targets
 
