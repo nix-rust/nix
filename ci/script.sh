@@ -5,8 +5,8 @@ set -ex
 
 main() {
     # Add a cfg spec to allow disabling specific tests under CI.
-    if [ "$TRAVIS" = true ]; then
-        export RUSTFLAGS=--cfg=travis
+    if [ "$CIRRUS_CI" = true ]; then
+        export RUSTFLAGS=--cfg=cirrus
     fi
 
     IFS=';' read -ra TARGET_ARRAY <<< "$TARGET"
@@ -26,6 +26,6 @@ main() {
 }
 
 # we don't run the "test phase" when doing deploys
-if [ -z $TRAVIS_TAG ]; then
+if [ -z $CIRRUS_TAG ]; then
     main
 fi

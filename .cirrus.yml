@@ -1,16 +1,15 @@
-freebsd_instance:
-  image: freebsd-11-4-release-amd64
+cargo_cache:
+  folder: $CARGO_HOME/registry
+  fingerprint_script: cat Cargo.lock || echo ""
 
-# Test FreeBSD in a full VM on cirrus-ci.com.  Test the i686 target too, in the
+# Test FreeBSD in a full VM.  Test the i686 target too, in the
 # same VM.  The binary will be built in 32-bit mode, but will execute on a
 # 64-bit kernel and in a 64-bit environment.  Our tests don't execute any of
 # the system's binaries, so the environment shouldn't matter.
 task:
-  name: FreeBSD 11.4
-  cargo_cache:
-    folder: $CARGO_HOME/registry
-    fingerprint_script: cat Cargo.lock || echo ""
-  # Install Rust
+  name: FreeBSD amd64 & i686
+  freebsd_instance:
+    image: freebsd-11-4-release-amd64
   setup_script:
     - fetch https://sh.rustup.rs -o rustup.sh
     - sh rustup.sh -y --profile=minimal --default-toolchain 1.36.0
@@ -21,4 +20,187 @@ task:
   i386_test_script:
     - . $HOME/.cargo/env
     - cargo test --target i686-unknown-freebsd
+  before_cache_script: rm -rf $CARGO_HOME/registry/index
+
+task:
+  matrix:
+    - name: OSX x86_64
+      env:
+        TARGET: x86_64-apple-darwin
+    - name: OSX i686
+      env:
+        TARGET: i686-apple-darwin
+        DISABLE_TESTS: 1
+    - name: iOS
+      env:
+        # To save VM startup time, test all iOS targets in a single task.
+        # The startup and scheduling time was very significant for Travis, but
+        # not known for Cirrus.
+        TARGET: "aarch64-apple-ios;armv7-apple-ios;armv7s-apple-ios;i386-apple-ios;x86_64-apple-ios"
+        DISABLE_TESTS: 1
+  osx_instance:
+    image: catalina-xcode
+  setup_script:
+    - curl --proto '=https' --tlsv1.2 -sSf -o rustup.sh https://sh.rustup.rs
+    - sh rustup.sh -y --profile=minimal --default-toolchain 1.36.0
+    - . $HOME/.cargo/env
+    - bash ci/install.sh
+  script:
+    - . $HOME/.cargo/env
+    - bash ci/script.sh
+  before_cache_script: rm -rf $CARGO_HOME/registry/index
+
+# Use cross for QEMU-based testing
+# cross needs to execute Docker, so we must use Cirrus's Docker Builder task.
+docker_builder:
+  env:
+    RUST_TEST_THREADS: 1            # QEMU works best with 1 thread
+    HOME: /tmp/home
+    PATH: $HOME/.cargo/bin:$PATH
+      #cpu: 1 docker_builder doesn't support "cpu"?
+  matrix:
+    - name: Linux aarch64
+      env:
+        TARGET: aarch64-unknown-linux-gnu
+    - name: Linux arm gnueabi
+      env:
+        TARGET: arm-unknown-linux-gnueabi
+    - name: Linux armv7 gnueabihf
+      env:
+        TARGET: armv7-unknown-linux-gnueabihf
+    - name: Linux i686
+      env:
+        TARGET: i686-unknown-linux-gnu
+    - name: Linux i686 musl
+      env:
+        TARGET: i686-unknown-linux-musl
+    - name: Linux MIPS
+      env:
+        TARGET: mips-unknown-linux-gnu
+    - name: Linux MIPS64
+      env:
+        TARGET: mips64-unknown-linux-gnuabi64
+    - name: Linux MIPS64 el
+      env:
+        TARGET: mips64el-unknown-linux-gnuabi64
+    - name: Linux mipsel
+      env:
+        TARGET: mipsel-unknown-linux-gnu
+    - name: Linux powerpc64le
+      env:
+        TARGET: powerpc64le-unknown-linux-gnu
+  setup_script:
+    - mkdir /tmp/home
+    - curl --proto '=https' --tlsv1.2 -sSf -o rustup.sh https://sh.rustup.rs
+    - sh rustup.sh -y --profile=minimal --default-toolchain 1.36.0
+    - . $HOME/.cargo/env
+    - bash ci/install.sh
+  script:
+    - . $HOME/.cargo/env || true
+    - bash ci/script.sh
+  before_cache_script: rm -rf $CARGO_HOME/registry/index
+
+# Tasks for Linux amd64 builds
+task:
+  matrix:
+    - name: Rust Stable
+      env:
+        TARGET: x86_64-unknown-linux-gnu
+        TOOLCHAIN: stable
+    - name: Linux x86_64
+      env:
+        TARGET: x86_64-unknown-linux-gnu
+        TOOLCHAIN: 1.36.0
+    - name: Linux x86_64 musl
+      env:
+        TARGET: x86_64-unknown-linux-musl
+        TOOLCHAIN: 1.36.0
+  container:
+    image: rust:1.36
+  setup_script:
+    - rustup toolchain install $TOOLCHAIN
+    - rustup target add --toolchain $TOOLCHAIN $TARGET
+  script:
+    - cargo +$TOOLCHAIN build --target $TARGET --all-targets
+    - cargo +$TOOLCHAIN build --target $TARGET --all-targets --release
+    - cargo +$TOOLCHAIN test --target $TARGET
+    - cargo +$TOOLCHAIN test --target $TARGET --release
+  before_cache_script: rm -rf $CARGO_HOME/registry/index
+
+# Tasks for cross-compiling, but no testing
+task:
+  matrix:
+    - name: Android aarch64
+      env:
+        TARGET: aarch64-linux-android
+    - name: Android arm
+      env:
+        TARGET: arm-linux-androideabi
+    - name: Android armv7
+      env:
+        TARGET: armv7-linux-androideabi
+    - name: Android i686
+      env:
+        TARGET: i686-linux-android
+    - name: Android x86_64
+      env:
+        TARGET: x86_64-linux-android
+    - name: Linux arm-musleabi
+      env:
+        TARGET: arm-unknown-linux-musleabi
+    - name: Linux powerpc
+      env:
+        TARGET: powerpc-unknown-linux-gnu
+    - name: Linux s390x
+      env:
+        TARGET: s390x-unknown-linux-gnu
+    - name: Linux s390x
+      env:
+        TARGET: s390x-unknown-linux-gnu
+    - name: NetBSD x86_64
+      env:
+        TARGET: x86_64-unknown-netbsd
+  container:
+    image: rust:1.36
+  setup_script:
+    - rustup target add $TARGET
+  script:
+    - cargo +$TOOLCHAIN check --target $TARGET
+    - cargo +$TOOLCHAIN check --target $TARGET --release
+    # TODO: check the tests, too.  The old Travis CI setup didn't do that, so
+    # they don't build on all platforms.
+  before_cache_script: rm -rf $CARGO_HOME/registry/index
+
+# Redoxer is too unreliable, so we'll do a cross-build only
+# See also:
+# https://github.com/nix-rust/nix/issues/1258
+# https://github.com/rust-embedded/cross/issues/427
+task:
+  name: Redox x86_64
+  env:
+    TARGET: x86_64-unknown-redox
+    # Redox requires a nightly compiler.
+    # If stuff breaks, change nightly to the date in the toolchain_*
+    # directory at https://static.redox-os.org
+    TOOLCHAIN: nightly-2020-08-04
+  container:
+    image: rustlang/rust:nightly
+  setup_script:
+    - rustup toolchain install $TOOLCHAIN --profile minimal --target $TARGET
+  script:
+    - cargo +$TOOLCHAIN check --target $TARGET
+    - cargo +$TOOLCHAIN check --target $TARGET --release
+  before_cache_script: rm -rf $CARGO_HOME/registry/index
+
+# Test that we can build with the lowest version of all dependencies.
+# "cargo test" doesn't work because some of our dev-dependencies, like
+# rand, can't build with thier own minimal dependencies.
+task:
+  name: Minver
+  container:
+    image: rustlang/rust:nightly
+  setup_script:
+    - cargo update -Zminimal-versions
+  script:
+    - cargo check
   before_cache_script: rm -rf $CARGO_HOME/registry/index

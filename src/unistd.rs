@@ -12,9 +12,9 @@ use libc::{self, c_char, c_void, c_int, c_long, c_uint, size_t, pid_t, off_t,
            uid_t, gid_t, mode_t, PATH_MAX};
 use std::{fmt, mem, ptr};
 use std::convert::Infallible;
-use std::ffi::{CStr, CString, OsString};
+use std::ffi::{CStr, OsString};
 #[cfg(not(target_os = "redox"))]
-use std::ffi::{OsStr};
+use std::ffi::{CString, OsStr};
 use std::os::unix::ffi::OsStringExt;
 #[cfg(not(target_os = "redox"))]
 use std::os::unix::ffi::OsStrExt;

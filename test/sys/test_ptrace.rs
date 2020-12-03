@@ -8,6 +8,8 @@ use nix::sys::ptrace::Options;
 #[cfg(any(target_os = "android", target_os = "linux"))]
 use std::mem;
 
+use crate::*;
+
 #[test]
 fn test_ptrace() {
     // Just make sure ptrace can be called at all, for now.

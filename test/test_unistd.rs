@@ -26,6 +26,8 @@ use std::path::Path;
 use tempfile::{tempdir, tempfile};
 use libc::{_exit, off_t};
 
+use crate::*;
+
 #[test]
 #[cfg(not(any(target_os = "netbsd")))]
 fn test_fork_and_waitpid() {
@@ -990,8 +992,9 @@ fn test_setfsuid() {
     let nobody = User::from_name("nobody").unwrap().unwrap();
 
     // create a temporary file with permissions '-rw-r-----'
-    let file = tempfile::NamedTempFile::new().unwrap();
+    let file = tempfile::NamedTempFile::new_in("/var/tmp").unwrap();
     let temp_path = file.into_temp_path();
+    dbg!(&temp_path);
     let temp_path_2 = (&temp_path).to_path_buf();
     let mut permissions = fs::metadata(&temp_path).unwrap().permissions();
     permissions.set_mode(640);
