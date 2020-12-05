@@ -51,7 +51,6 @@ Tier 1:
   * aarch64-unknown-linux-gnu
   * arm-unknown-linux-gnueabi
   * armv7-unknown-linux-gnueabihf
-  * i686-apple-darwin
   * i686-unknown-freebsd
   * i686-unknown-linux-gnu
   * i686-unknown-linux-musl
@@ -74,6 +73,7 @@ Tier 2:
   * armv7-linux-androideabi
   * armv7s-apple-ios
   * i386-apple-ios
+  * i686-apple-darwin
   * i686-linux-android
   * powerpc-unknown-linux-gnu
   * s390x-unknown-linux-gnu
