@@ -684,6 +684,12 @@ pub extern fn alarm_signal_handler(raw_signal: libc::c_int) {
 #[test]
 #[cfg(not(target_os = "redox"))]
 fn test_alarm() {
+    use std::{
+        time::{Duration, Instant,},
+        thread
+    };
+
+    // Maybe other tests that fork interfere with this one?
     let _m = crate::SIGNAL_MTX.lock().expect("Mutex got poisoned by another test");
 
     let handler = SigHandler::Handler(alarm_signal_handler);
@@ -701,8 +707,16 @@ fn test_alarm() {
 
     // We should be woken up after 1 second by the alarm, so we'll sleep for 2
     // seconds to be sure.
-    sleep(2);
-    assert_eq!(unsafe { ALARM_CALLED }, true, "expected our alarm signal handler to be called");
+    let starttime = Instant::now();
+    loop {
+        thread::sleep(Duration::from_millis(100));
+        if unsafe { ALARM_CALLED} {
+            break;
+        }
+        if starttime.elapsed() > Duration::from_secs(3) {
+            panic!("Timeout waiting for SIGALRM");
+        }
+    }
 
     // Reset the signal.
     unsafe {
