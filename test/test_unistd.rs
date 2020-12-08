@@ -261,18 +261,24 @@ macro_rules! execve_test_factory(
 
     #[cfg(test)]
     mod $test_name {
+    use std::ffi::CStr;
     use super::*;
+
+    const EMPTY: &'static [u8] = b"\0";
+    const DASH_C: &'static [u8] = b"-c\0";
+    const BIGARG: &'static [u8] = b"echo nix!!! && echo foo=$foo && echo baz=$baz\0";
+    const FOO: &'static [u8] = b"foo=bar\0";
+    const BAZ: &'static [u8] = b"baz=quux\0";
 
     fn syscall_cstr_ref() -> Result<std::convert::Infallible, nix::Error> {
         $syscall(
             $exe,
             $(CString::new($pathname).unwrap().as_c_str(), )*
-            &[CString::new(b"".as_ref()).unwrap().as_c_str(),
-              CString::new(b"-c".as_ref()).unwrap().as_c_str(),
-              CString::new(b"echo nix!!! && echo foo=$foo && echo baz=$baz"
-                           .as_ref()).unwrap().as_c_str()],
-            &[CString::new(b"foo=bar".as_ref()).unwrap().as_c_str(),
-              CString::new(b"baz=quux".as_ref()).unwrap().as_c_str()]
+            &[CStr::from_bytes_with_nul(EMPTY).unwrap(),
+              CStr::from_bytes_with_nul(DASH_C).unwrap(),
+              CStr::from_bytes_with_nul(BIGARG).unwrap()],
+            &[CStr::from_bytes_with_nul(FOO).unwrap(),
+              CStr::from_bytes_with_nul(BAZ).unwrap()]
             $(, $flags)*)
     }
 
@@ -280,12 +286,11 @@ macro_rules! execve_test_factory(
         $syscall(
             $exe,
             $(CString::new($pathname).unwrap().as_c_str(), )*
-            &[CString::new(b"".as_ref()).unwrap(),
-              CString::new(b"-c".as_ref()).unwrap(),
-              CString::new(b"echo nix!!! && echo foo=$foo && echo baz=$baz"
-                           .as_ref()).unwrap()],
-            &[CString::new(b"foo=bar".as_ref()).unwrap(),
-              CString::new(b"baz=quux".as_ref()).unwrap()]
+            &[CString::from(CStr::from_bytes_with_nul(EMPTY).unwrap()),
+              CString::from(CStr::from_bytes_with_nul(DASH_C).unwrap()),
+              CString::from(CStr::from_bytes_with_nul(BIGARG).unwrap())],
+            &[CString::from(CStr::from_bytes_with_nul(FOO).unwrap()),
+              CString::from(CStr::from_bytes_with_nul(BAZ).unwrap())]
             $(, $flags)*)
     }
 
