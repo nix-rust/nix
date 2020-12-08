@@ -2,6 +2,7 @@ use std::fs::copy;
 use std::path::PathBuf;
 use std::process::Command;
 use tempfile::{tempdir, TempDir};
+use crate::*;
 
 fn compile_kernel_module() -> (PathBuf, String, TempDir) {
     let _m = crate::FORK_MTX

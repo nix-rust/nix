@@ -67,6 +67,7 @@ mod ptrace {
     use nix::unistd::*;
     use nix::unistd::ForkResult::*;
     use libc::_exit;
+    use crate::*;
 
     fn ptrace_child() -> ! {
         ptrace::traceme().unwrap();

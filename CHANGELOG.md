@@ -9,6 +9,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Fixed
 ### Changed
+
+- i686-apple-darwin has been demoted to Tier 2 support, because it's deprecated
+  by Xcode.
+  (#[1350](https://github.com/nix-rust/nix/pull/1350))
+
 ### Removed
 
 ## [0.19.1] - 28 November 2020

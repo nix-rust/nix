@@ -1,5 +1,7 @@
 use rand::{thread_rng, Rng};
 use nix::sys::socket::{socket, sockopt, getsockopt, setsockopt, AddressFamily, SockType, SockFlag, SockProtocol};
+#[cfg(any(target_os = "android", target_os = "linux"))]
+use crate::*;
 
 #[cfg(target_os = "linux")]
 #[test]

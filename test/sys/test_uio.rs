@@ -203,6 +203,7 @@ fn test_process_vm_readv() {
     use nix::unistd::ForkResult::*;
     use nix::sys::signal::*;
     use nix::sys::wait::*;
+    use crate::*;
 
     require_capability!(CAP_SYS_PTRACE);
     let _ = crate::FORK_MTX.lock().expect("Mutex got poisoned by another test");

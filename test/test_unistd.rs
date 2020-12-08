@@ -26,6 +26,8 @@ use std::path::Path;
 use tempfile::{tempdir, tempfile};
 use libc::{_exit, off_t};
 
+use crate::*;
+
 #[test]
 #[cfg(not(any(target_os = "netbsd")))]
 fn test_fork_and_waitpid() {
@@ -259,18 +261,24 @@ macro_rules! execve_test_factory(
 
     #[cfg(test)]
     mod $test_name {
+    use std::ffi::CStr;
     use super::*;
+
+    const EMPTY: &'static [u8] = b"\0";
+    const DASH_C: &'static [u8] = b"-c\0";
+    const BIGARG: &'static [u8] = b"echo nix!!! && echo foo=$foo && echo baz=$baz\0";
+    const FOO: &'static [u8] = b"foo=bar\0";
+    const BAZ: &'static [u8] = b"baz=quux\0";
 
     fn syscall_cstr_ref() -> Result<std::convert::Infallible, nix::Error> {
         $syscall(
             $exe,
             $(CString::new($pathname).unwrap().as_c_str(), )*
-            &[CString::new(b"".as_ref()).unwrap().as_c_str(),
-              CString::new(b"-c".as_ref()).unwrap().as_c_str(),
-              CString::new(b"echo nix!!! && echo foo=$foo && echo baz=$baz"
-                           .as_ref()).unwrap().as_c_str()],
-            &[CString::new(b"foo=bar".as_ref()).unwrap().as_c_str(),
-              CString::new(b"baz=quux".as_ref()).unwrap().as_c_str()]
+            &[CStr::from_bytes_with_nul(EMPTY).unwrap(),
+              CStr::from_bytes_with_nul(DASH_C).unwrap(),
+              CStr::from_bytes_with_nul(BIGARG).unwrap()],
+            &[CStr::from_bytes_with_nul(FOO).unwrap(),
+              CStr::from_bytes_with_nul(BAZ).unwrap()]
             $(, $flags)*)
     }
 
@@ -278,12 +286,11 @@ macro_rules! execve_test_factory(
         $syscall(
             $exe,
             $(CString::new($pathname).unwrap().as_c_str(), )*
-            &[CString::new(b"".as_ref()).unwrap(),
-              CString::new(b"-c".as_ref()).unwrap(),
-              CString::new(b"echo nix!!! && echo foo=$foo && echo baz=$baz"
-                           .as_ref()).unwrap()],
-            &[CString::new(b"foo=bar".as_ref()).unwrap(),
-              CString::new(b"baz=quux".as_ref()).unwrap()]
+            &[CString::from(CStr::from_bytes_with_nul(EMPTY).unwrap()),
+              CString::from(CStr::from_bytes_with_nul(DASH_C).unwrap()),
+              CString::from(CStr::from_bytes_with_nul(BIGARG).unwrap())],
+            &[CString::from(CStr::from_bytes_with_nul(FOO).unwrap()),
+              CString::from(CStr::from_bytes_with_nul(BAZ).unwrap())]
             $(, $flags)*)
     }
 
@@ -684,6 +691,12 @@ pub extern fn alarm_signal_handler(raw_signal: libc::c_int) {
 #[test]
 #[cfg(not(target_os = "redox"))]
 fn test_alarm() {
+    use std::{
+        time::{Duration, Instant,},
+        thread
+    };
+
+    // Maybe other tests that fork interfere with this one?
     let _m = crate::SIGNAL_MTX.lock().expect("Mutex got poisoned by another test");
 
     let handler = SigHandler::Handler(alarm_signal_handler);
@@ -701,8 +714,16 @@ fn test_alarm() {
 
     // We should be woken up after 1 second by the alarm, so we'll sleep for 2
     // seconds to be sure.
-    sleep(2);
-    assert_eq!(unsafe { ALARM_CALLED }, true, "expected our alarm signal handler to be called");
+    let starttime = Instant::now();
+    loop {
+        thread::sleep(Duration::from_millis(100));
+        if unsafe { ALARM_CALLED} {
+            break;
+        }
+        if starttime.elapsed() > Duration::from_secs(3) {
+            panic!("Timeout waiting for SIGALRM");
+        }
+    }
 
     // Reset the signal.
     unsafe {
@@ -976,8 +997,9 @@ fn test_setfsuid() {
     let nobody = User::from_name("nobody").unwrap().unwrap();
 
     // create a temporary file with permissions '-rw-r-----'
-    let file = tempfile::NamedTempFile::new().unwrap();
+    let file = tempfile::NamedTempFile::new_in("/var/tmp").unwrap();
     let temp_path = file.into_temp_path();
+    dbg!(&temp_path);
     let temp_path_2 = (&temp_path).to_path_buf();
     let mut permissions = fs::metadata(&temp_path).unwrap().permissions();
     permissions.set_mode(640);
