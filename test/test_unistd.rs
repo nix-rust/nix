@@ -335,11 +335,17 @@ macro_rules! execve_test_factory(
         }
     }
 
+    // These tests frequently fail on musl, probably due to
+        // https://github.com/nix-rust/nix/issues/555
+    #[cfg_attr(target_env = "musl", ignore)]
     #[test]
     fn test_cstr_ref() {
         common_test(syscall_cstr_ref);
     }
 
+    // These tests frequently fail on musl, probably due to
+        // https://github.com/nix-rust/nix/issues/555
+    #[cfg_attr(target_env = "musl", ignore)]
     #[test]
     fn test_cstring() {
         common_test(syscall_cstring);
@@ -355,6 +361,8 @@ cfg_if!{
         execve_test_factory!(test_fexecve, fexecve, File::open("/system/bin/sh").unwrap().into_raw_fd());
     } else if #[cfg(any(target_os = "freebsd",
                         target_os = "linux"))] {
+        // These tests frequently fail on musl, probably due to
+        // https://github.com/nix-rust/nix/issues/555
         execve_test_factory!(test_execve, execve, CString::new("/bin/sh").unwrap().as_c_str());
         execve_test_factory!(test_fexecve, fexecve, File::open("/bin/sh").unwrap().into_raw_fd());
     } else if #[cfg(any(target_os = "dragonfly",
@@ -377,11 +385,14 @@ execve_test_factory!(test_execvpe, execvpe, &CString::new("sh").unwrap());
 cfg_if!{
     if #[cfg(target_os = "android")] {
         use nix::fcntl::AtFlags;
-        execve_test_factory!(test_execveat_empty, execveat, File::open("/system/bin/sh").unwrap().into_raw_fd(),
+        execve_test_factory!(test_execveat_empty, execveat,
+                             File::open("/system/bin/sh").unwrap().into_raw_fd(),
                              "", AtFlags::AT_EMPTY_PATH);
-        execve_test_factory!(test_execveat_relative, execveat, File::open("/system/bin/").unwrap().into_raw_fd(),
+        execve_test_factory!(test_execveat_relative, execveat,
+                             File::open("/system/bin/").unwrap().into_raw_fd(),
                              "./sh", AtFlags::empty());
-        execve_test_factory!(test_execveat_absolute, execveat, File::open("/").unwrap().into_raw_fd(),
+        execve_test_factory!(test_execveat_absolute, execveat,
+                             File::open("/").unwrap().into_raw_fd(),
                              "/system/bin/sh", AtFlags::empty());
     } else if #[cfg(all(target_os = "linux", any(target_arch ="x86_64", target_arch ="x86")))] {
         use nix::fcntl::AtFlags;
