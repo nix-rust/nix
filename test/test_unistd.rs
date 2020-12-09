@@ -19,7 +19,6 @@ use std::ffi::CString;
 use std::fs::DirBuilder;
 use std::fs::{self, File};
 use std::io::Write;
-use std::mem;
 use std::os::unix::prelude::*;
 #[cfg(not(target_os = "redox"))]
 use std::path::Path;
@@ -466,9 +465,7 @@ fn test_fchown() {
     fchown(fd, uid, gid).unwrap();
     fchown(fd, uid, None).unwrap();
     fchown(fd, None, gid).unwrap();
-
-    mem::drop(path);
-    fchown(fd, uid, gid).unwrap_err();
+    fchown(999999999, uid, gid).unwrap_err();
 }
 
 #[test]
