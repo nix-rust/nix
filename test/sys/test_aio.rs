@@ -164,7 +164,12 @@ fn test_aio_suspend() {
     loop {
         {
             let cbbuf = [&wcb, &rcb];
-            assert!(aio_suspend(&cbbuf[..], Some(timeout)).is_ok());
+            let r = aio_suspend(&cbbuf[..], Some(timeout));
+            match r {
+                Err(Error::Sys(Errno::EINTR)) => continue,
+                Err(e) => panic!("aio_suspend returned {:?}", e),
+                Ok(_) => ()
+            };
         }
         if rcb.error() != Err(Error::from(Errno::EINPROGRESS)) &&
            wcb.error() != Err(Error::from(Errno::EINPROGRESS)) {
