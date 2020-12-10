@@ -8,6 +8,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Added `mremap` (#[1306](https://github.com/nix-rust/nix/pull/1306))
 
 ### Fixed
+- Fixed `MAGIC` constants in `nix::sys::statfs` on s390x (#[1357](https://github.com/nix-rust/nix/pull/1357))
+
 ### Changed
 
 - i686-apple-darwin has been demoted to Tier 2 support, because it's deprecated

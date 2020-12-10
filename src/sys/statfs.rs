@@ -90,6 +90,65 @@ pub const CGROUP_SUPER_MAGIC: FsType = FsType(libc::CGROUP_SUPER_MAGIC);
 #[cfg(all(target_os = "linux", not(target_env = "musl"), not(target_arch = "s390x")))]
 pub const CGROUP2_SUPER_MAGIC: FsType = FsType(libc::CGROUP2_SUPER_MAGIC);
 
+#[cfg(all(target_os = "linux", target_arch = "s390x"))]
+pub const ADFS_SUPER_MAGIC: FsType = FsType(libc::ADFS_SUPER_MAGIC as u32);
+#[cfg(all(target_os = "linux", target_arch = "s390x"))]
+pub const AFFS_SUPER_MAGIC: FsType = FsType(libc::AFFS_SUPER_MAGIC as u32);
+#[cfg(all(target_os = "linux", target_arch = "s390x"))]
+pub const CODA_SUPER_MAGIC: FsType = FsType(libc::CODA_SUPER_MAGIC as u32);
+#[cfg(all(target_os = "linux", target_arch = "s390x"))]
+pub const CRAMFS_MAGIC: FsType = FsType(libc::CRAMFS_MAGIC as u32);
+#[cfg(all(target_os = "linux", target_arch = "s390x"))]
+pub const EFS_SUPER_MAGIC: FsType = FsType(libc::EFS_SUPER_MAGIC as u32);
+#[cfg(all(target_os = "linux", target_arch = "s390x"))]
+pub const EXT2_SUPER_MAGIC: FsType = FsType(libc::EXT2_SUPER_MAGIC as u32);
+#[cfg(all(target_os = "linux", target_arch = "s390x"))]
+pub const EXT3_SUPER_MAGIC: FsType = FsType(libc::EXT3_SUPER_MAGIC as u32);
+#[cfg(all(target_os = "linux", target_arch = "s390x"))]
+pub const EXT4_SUPER_MAGIC: FsType = FsType(libc::EXT4_SUPER_MAGIC as u32);
+#[cfg(all(target_os = "linux", target_arch = "s390x"))]
+pub const HPFS_SUPER_MAGIC: FsType = FsType(libc::HPFS_SUPER_MAGIC as u32);
+#[cfg(all(target_os = "linux", target_arch = "s390x"))]
+pub const HUGETLBFS_MAGIC: FsType = FsType(libc::HUGETLBFS_MAGIC as u32);
+#[cfg(all(target_os = "linux", target_arch = "s390x"))]
+pub const ISOFS_SUPER_MAGIC: FsType = FsType(libc::ISOFS_SUPER_MAGIC as u32);
+#[cfg(all(target_os = "linux", target_arch = "s390x"))]
+pub const JFFS2_SUPER_MAGIC: FsType = FsType(libc::JFFS2_SUPER_MAGIC as u32);
+#[cfg(all(target_os = "linux", target_arch = "s390x"))]
+pub const MINIX_SUPER_MAGIC: FsType = FsType(libc::MINIX_SUPER_MAGIC as u32);
+#[cfg(all(target_os = "linux", target_arch = "s390x"))]
+pub const MINIX_SUPER_MAGIC2: FsType = FsType(libc::MINIX_SUPER_MAGIC2 as u32);
+#[cfg(all(target_os = "linux", target_arch = "s390x"))]
+pub const MINIX2_SUPER_MAGIC: FsType = FsType(libc::MINIX2_SUPER_MAGIC as u32);
+#[cfg(all(target_os = "linux", target_arch = "s390x"))]
+pub const MINIX2_SUPER_MAGIC2: FsType = FsType(libc::MINIX2_SUPER_MAGIC2 as u32);
+#[cfg(all(target_os = "linux", target_arch = "s390x"))]
+pub const MSDOS_SUPER_MAGIC: FsType = FsType(libc::MSDOS_SUPER_MAGIC as u32);
+#[cfg(all(target_os = "linux", target_arch = "s390x"))]
+pub const NCP_SUPER_MAGIC: FsType = FsType(libc::NCP_SUPER_MAGIC as u32);
+#[cfg(all(target_os = "linux", target_arch = "s390x"))]
+pub const NFS_SUPER_MAGIC: FsType = FsType(libc::NFS_SUPER_MAGIC as u32);
+#[cfg(all(target_os = "linux", target_arch = "s390x"))]
+pub const OPENPROM_SUPER_MAGIC: FsType = FsType(libc::OPENPROM_SUPER_MAGIC as u32);
+#[cfg(all(target_os = "linux", target_arch = "s390x"))]
+pub const OVERLAYFS_SUPER_MAGIC: FsType = FsType(libc::OVERLAYFS_SUPER_MAGIC as u32);
+#[cfg(all(target_os = "linux", target_arch = "s390x"))]
+pub const PROC_SUPER_MAGIC: FsType = FsType(libc::PROC_SUPER_MAGIC as u32);
+#[cfg(all(target_os = "linux", target_arch = "s390x"))]
+pub const QNX4_SUPER_MAGIC: FsType = FsType(libc::QNX4_SUPER_MAGIC as u32);
+#[cfg(all(target_os = "linux", target_arch = "s390x"))]
+pub const REISERFS_SUPER_MAGIC: FsType = FsType(libc::REISERFS_SUPER_MAGIC as u32);
+#[cfg(all(target_os = "linux", target_arch = "s390x"))]
+pub const SMB_SUPER_MAGIC: FsType = FsType(libc::SMB_SUPER_MAGIC as u32);
+#[cfg(all(target_os = "linux", target_arch = "s390x"))]
+pub const TMPFS_MAGIC: FsType = FsType(libc::TMPFS_MAGIC as u32);
+#[cfg(all(target_os = "linux", target_arch = "s390x"))]
+pub const USBDEVICE_SUPER_MAGIC: FsType = FsType(libc::USBDEVICE_SUPER_MAGIC as u32);
+#[cfg(all(target_os = "linux", target_arch = "s390x"))]
+pub const CGROUP_SUPER_MAGIC: FsType = FsType(libc::CGROUP_SUPER_MAGIC as u32);
+#[cfg(all(target_os = "linux", target_arch = "s390x"))]
+pub const CGROUP2_SUPER_MAGIC: FsType = FsType(libc::CGROUP2_SUPER_MAGIC as u32);
+
 impl Statfs {
     /// Magic code defining system type
     #[cfg(not(any(
