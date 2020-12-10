@@ -1633,7 +1633,8 @@ pub mod alarm {
     //!
     //! Scheduling an alarm and waiting for the signal:
     //!
-    //! ```
+#![cfg_attr(target_os = "redox", doc = " ```rust,ignore")]
+#![cfg_attr(not(target_os = "redox"), doc = " ```rust")]
     //! use std::time::{Duration, Instant};
     //!
     //! use nix::unistd::{alarm, pause};
@@ -1642,14 +1643,23 @@ pub mod alarm {
     //! // We need to setup an empty signal handler to catch the alarm signal,
     //! // otherwise the program will be terminated once the signal is delivered.
     //! extern fn signal_handler(_: nix::libc::c_int) { }
-    //! unsafe { sigaction(Signal::SIGALRM, &SigAction::new(SigHandler::Handler(signal_handler), SaFlags::empty(), SigSet::empty())); }
+    //! let sa = SigAction::new(
+    //!     SigHandler::Handler(signal_handler),
+    //!     SaFlags::empty(),
+    //!     SigSet::empty()
+    //! );
+    //! unsafe {
+    //!     sigaction(Signal::SIGALRM, &sa);
+    //! }
     //!
     //! // Set an alarm for 1 second from now.
     //! alarm::set(1);
     //!
     //! let start = Instant::now();
     //! // Pause the process until the alarm signal is received.
-    //! pause();
+    //! let mut sigset = SigSet::empty();
+    //! sigset.add(Signal::SIGALRM);
+    //! sigset.wait();
     //!
     //! assert!(start.elapsed() >= Duration::from_secs(1));
     //! ```
