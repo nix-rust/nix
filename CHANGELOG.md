@@ -6,6 +6,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased] - ReleaseDate
 ### Added
 - Added `mremap` (#[1306](https://github.com/nix-rust/nix/pull/1306))
+- Added public API for the `PTRACE_GETFPREGS` and `PTRACE_SETFPREGS` requests.
+  (#[1356](https://github.com/nix-rust/nix/pull/1356))
 
 ### Fixed
 ### Changed
