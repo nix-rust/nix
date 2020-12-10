@@ -16,7 +16,7 @@ pub type AddressType = *mut ::libc::c_void;
             any(target_env = "gnu", target_env = "musl")),
         all(target_arch = "x86", target_env = "gnu"))
 ))]
-use libc::user_regs_struct;
+use libc::{user_regs_struct, user_fpregs_struct};
 
 cfg_if! {
     if #[cfg(any(all(target_os = "linux", target_arch = "s390x"),
@@ -206,6 +206,34 @@ pub fn getregs(pid: Pid) -> Result<user_regs_struct> {
 pub fn setregs(pid: Pid, regs: user_regs_struct) -> Result<()> {
     let res = unsafe {
         libc::ptrace(Request::PTRACE_SETREGS as RequestType,
+                     libc::pid_t::from(pid),
+                     ptr::null_mut::<c_void>(),
+                     &regs as *const _ as *const c_void)
+    };
+    Errno::result(res).map(drop)
+}
+
+/// Get floating point registers, as with `ptrace(PTRACE_GETFPREGS, ...)`
+#[cfg(all(
+    target_os = "linux",
+    any(all(target_arch = "x86_64",
+            any(target_env = "gnu", target_env = "musl")),
+        all(target_arch = "x86", target_env = "gnu"))
+))]
+pub fn getfpregs(pid: Pid) -> Result<user_fpregs_struct> {
+    ptrace_get_data::<user_fpregs_struct>(Request::PTRACE_GETFPREGS, pid)
+}
+
+/// Set floating point registers, as with `ptrace(PTRACE_SETFPREGS)`
+#[cfg(all(
+    target_os = "linux",
+    any(all(target_arch = "x86_64",
+            any(target_env = "gnu", target_env = "musl")),
+        all(target_arch = "x86", target_env = "gnu"))
+))]
+pub fn setfpregs(pid: Pid, regs: user_fpregs_struct) -> Result<()> {
+    let res = unsafe {
+        libc::ptrace(Request::PTRACE_SETFPREGS as RequestType,
                      libc::pid_t::from(pid),
                      ptr::null_mut::<c_void>(),
                      &regs as *const _ as *const c_void)
