@@ -9,7 +9,7 @@ license     = "MIT"
 categories  = ["os::unix-apis"]
 exclude     = [
   "/.gitignore",
-  "/.travis.yml",
+  "/.cirrus.yml",
   "/ci/*",
   "/Cross.toml",
   "/RELEASE_PROCEDURE.md",

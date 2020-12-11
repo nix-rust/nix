@@ -1,4 +1,3 @@
-# Gate on Travis CI and Buildbot
 status = [
   "FreeBSD amd64 & i686",
   "OSX x86_64",
@@ -34,10 +33,10 @@ status = [
 # Set bors's timeout to 1 hour
 #
 # bors's timeout should always be at least twice as long as the test suite
-# takes.  This is to allow Travis to fast-fail a test; if one of the builders
-# immediately reports a failure, then bors will move on to the next batch,
-# leaving the slower builders to work through the already-doomed run and the
-# next one.
+# takes.  This is to allow the CI provider to fast-fail a test; if one of the
+# builders immediately reports a failure, then bors will move on to the next
+# batch, leaving the slower builders to work through the already-doomed run and
+# the next one.
 #
 # At the time this was written, nix's test suite took about twenty minutes to
 # run.  The timeout was raised to one hour to give nix room to grow and time
