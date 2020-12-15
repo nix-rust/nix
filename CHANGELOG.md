@@ -10,6 +10,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 ### Changed
 
+- Minimum supported Rust version is now 1.40.0.
+  ([#1356](https://github.com/nix-rust/nix/pull/1356))
+
 - i686-apple-darwin has been demoted to Tier 2 support, because it's deprecated
   by Xcode.
   (#[1350](https://github.com/nix-rust/nix/pull/1350))

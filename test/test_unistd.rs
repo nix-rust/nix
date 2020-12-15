@@ -1064,13 +1064,7 @@ fn test_ttyname_not_pty() {
 }
 
 #[test]
-#[cfg(all(not(target_os = "redox"), not(target_env = "musl")))]
+#[cfg(all(not(target_os = "redox")))]
 fn test_ttyname_invalid_fd() {
     assert_eq!(ttyname(-1), Err(Error::Sys(Errno::EBADF)));
-}
-
-#[test]
-#[cfg(all(not(target_os = "redox"), target_env = "musl"))]
-fn test_ttyname_invalid_fd() {
-    assert_eq!(ttyname(-1), Err(Error::Sys(Errno::ENOTTY)));
 }

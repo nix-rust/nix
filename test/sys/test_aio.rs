@@ -137,6 +137,9 @@ fn test_fsync_error() {
 // in Travis's version of glibc or Linux.  Either way, we must skip the test.
 // https://github.com/nix-rust/nix/issues/1099
 #[cfg_attr(target_os = "linux", ignore)]
+// On Cirrus, aio_suspend is failing with EINVAL
+// https://github.com/nix-rust/nix/issues/1361
+#[cfg_attr(target_os = "macos", ignore)]
 fn test_aio_suspend() {
     const INITIAL: &[u8] = b"abcdef123456";
     const WBUF: &[u8] = b"CDEFG";
