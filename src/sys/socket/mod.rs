@@ -380,7 +380,6 @@ impl Ipv6MembershipRequest {
 /// Normally the value is an `in_addr` structure, but
 /// Linux also supports an ip_mreqn or (since Linux 3.5) ip_mreq
 /// structure, hence define an enum to support future expansions.
-#[repr(transparent)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum IpMulticastIfRequest {
     IN_ADDR(libc::in_addr),
