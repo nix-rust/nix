@@ -233,6 +233,7 @@ cfg_if! {
         sockopt_impl!(SetOnly, Ipv6DropMembership, libc::IPPROTO_IPV6, libc::IPV6_LEAVE_GROUP, super::Ipv6MembershipRequest);
     }
 }
+sockopt_impl!(Both, IpMulticastIf, libc::IPPROTO_IP, libc::IP_MULTICAST_IF, super::IpMulticastIfRequest);
 sockopt_impl!(Both, IpMulticastTtl, libc::IPPROTO_IP, libc::IP_MULTICAST_TTL, u8);
 sockopt_impl!(Both, IpMulticastLoop, libc::IPPROTO_IP, libc::IP_MULTICAST_LOOP, bool);
 sockopt_impl!(Both, ReceiveTimeout, libc::SOL_SOCKET, libc::SO_RCVTIMEO, TimeVal);
