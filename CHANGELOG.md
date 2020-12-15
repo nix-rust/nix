@@ -19,6 +19,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Removed
 
+- Removed `SockLevel`, which hasn't been used for a few years
+  (#[1362](https://github.com/nix-rust/nix/pull/1362))
+
 ## [0.19.1] - 28 November 2020
 ### Fixed
 - Fixed bugs in `recvmmsg`.
