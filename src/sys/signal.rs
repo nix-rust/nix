@@ -39,8 +39,10 @@ libc_enum!{
         SIGPIPE,
         SIGALRM,
         SIGTERM,
-        #[cfg(all(any(target_os = "android", target_os = "emscripten", target_os = "linux"),
-                  not(any(target_arch = "mips", target_arch = "mips64", target_arch = "sparc64"))))]
+        #[cfg(all(any(target_os = "android", target_os = "emscripten",
+                      target_os = "fuchsia", target_os = "linux"),
+                  not(any(target_arch = "mips", target_arch = "mips64",
+                          target_arch = "sparc64"))))]
         SIGSTKFLT,
         SIGCHLD,
         SIGCONT,
@@ -55,14 +57,17 @@ libc_enum!{
         SIGPROF,
         SIGWINCH,
         SIGIO,
-        #[cfg(any(target_os = "android", target_os = "emscripten", target_os = "linux"))]
+        #[cfg(any(target_os = "android", target_os = "emscripten",
+                  target_os = "fuchsia", target_os = "linux"))]
         SIGPWR,
         SIGSYS,
         #[cfg(not(any(target_os = "android", target_os = "emscripten",
-                      target_os = "linux", target_os = "redox")))]
+                      target_os = "fuchsia", target_os = "linux",
+                      target_os = "redox")))]
         SIGEMT,
         #[cfg(not(any(target_os = "android", target_os = "emscripten",
-                      target_os = "linux", target_os = "redox")))]
+                      target_os = "fuchsia", target_os = "linux",
+                      target_os = "redox")))]
         SIGINFO,
     }
 }
@@ -86,8 +91,10 @@ impl FromStr for Signal {
             "SIGPIPE" => Signal::SIGPIPE,
             "SIGALRM" => Signal::SIGALRM,
             "SIGTERM" => Signal::SIGTERM,
-            #[cfg(all(any(target_os = "android", target_os = "emscripten", target_os = "linux"),
-                      not(any(target_arch = "mips", target_arch = "mips64", target_arch = "sparc64"))))]
+            #[cfg(all(any(target_os = "android", target_os = "emscripten",
+                          target_os = "fuchsia", target_os = "linux"),
+                      not(any(target_arch = "mips", target_arch = "mips64",
+                              target_arch = "sparc64"))))]
             "SIGSTKFLT" => Signal::SIGSTKFLT,
             "SIGCHLD" => Signal::SIGCHLD,
             "SIGCONT" => Signal::SIGCONT,
@@ -102,14 +109,17 @@ impl FromStr for Signal {
             "SIGPROF" => Signal::SIGPROF,
             "SIGWINCH" => Signal::SIGWINCH,
             "SIGIO" => Signal::SIGIO,
-            #[cfg(any(target_os = "android", target_os = "emscripten", target_os = "linux"))]
+            #[cfg(any(target_os = "android", target_os = "emscripten",
+                      target_os = "fuchsia", target_os = "linux"))]
             "SIGPWR" => Signal::SIGPWR,
             "SIGSYS" => Signal::SIGSYS,
             #[cfg(not(any(target_os = "android", target_os = "emscripten",
-                          target_os = "linux", target_os = "redox")))]
+                          target_os = "fuchsia", target_os = "linux",
+                          target_os = "redox")))]
             "SIGEMT" => Signal::SIGEMT,
             #[cfg(not(any(target_os = "android", target_os = "emscripten",
-                          target_os = "linux", target_os = "redox")))]
+                          target_os = "fuchsia", target_os = "linux",
+                          target_os = "redox")))]
             "SIGINFO" => Signal::SIGINFO,
             _ => return Err(Error::invalid_argument()),
         })
@@ -139,7 +149,8 @@ impl Signal {
             Signal::SIGPIPE => "SIGPIPE",
             Signal::SIGALRM => "SIGALRM",
             Signal::SIGTERM => "SIGTERM",
-            #[cfg(all(any(target_os = "android", target_os = "emscripten", target_os = "linux"),
+            #[cfg(all(any(target_os = "android", target_os = "emscripten",
+                          target_os = "fuchsia", target_os = "linux"),
                       not(any(target_arch = "mips", target_arch = "mips64", target_arch = "sparc64"))))]
             Signal::SIGSTKFLT => "SIGSTKFLT",
             Signal::SIGCHLD => "SIGCHLD",
@@ -155,14 +166,17 @@ impl Signal {
             Signal::SIGPROF => "SIGPROF",
             Signal::SIGWINCH => "SIGWINCH",
             Signal::SIGIO => "SIGIO",
-            #[cfg(any(target_os = "android", target_os = "emscripten", target_os = "linux"))]
+            #[cfg(any(target_os = "android", target_os = "emscripten",
+                      target_os = "fuchsia", target_os = "linux"))]
             Signal::SIGPWR => "SIGPWR",
             Signal::SIGSYS => "SIGSYS",
             #[cfg(not(any(target_os = "android", target_os = "emscripten",
-                          target_os = "linux", target_os = "redox")))]
+                          target_os = "fuchsia", target_os = "linux",
+                          target_os = "redox")))]
             Signal::SIGEMT => "SIGEMT",
             #[cfg(not(any(target_os = "android", target_os = "emscripten",
-                          target_os = "linux", target_os = "redox")))]
+                          target_os = "fuchsia", target_os = "linux",
+                          target_os = "redox")))]
             Signal::SIGINFO => "SIGINFO",
         }
     }
@@ -213,7 +227,10 @@ const SIGNALS: [Signal; 29] = [
     SIGWINCH,
     SIGIO,
     SIGSYS];
-#[cfg(all(any(target_os = "linux", target_os = "android", target_os = "emscripten"), not(any(target_arch = "mips", target_arch = "mips64", target_arch = "sparc64"))))]
+#[cfg(all(any(target_os = "linux", target_os = "android",
+              target_os = "emscripten", target_os = "fuchsia"),
+          not(any(target_arch = "mips", target_arch = "mips64",
+                  target_arch = "sparc64"))))]
 const SIGNALS: [Signal; 31] = [
     SIGHUP,
     SIGINT,
@@ -246,7 +263,10 @@ const SIGNALS: [Signal; 31] = [
     SIGIO,
     SIGPWR,
     SIGSYS];
-#[cfg(all(any(target_os = "linux", target_os = "android", target_os = "emscripten"), any(target_arch = "mips", target_arch = "mips64", target_arch = "sparc64")))]
+#[cfg(all(any(target_os = "linux", target_os = "android",
+              target_os = "emscripten", target_os = "fuchsia"),
+          any(target_arch = "mips", target_arch = "mips64",
+              target_arch = "sparc64")))]
 const SIGNALS: [Signal; 30] = [
     SIGHUP,
     SIGINT,
@@ -279,7 +299,8 @@ const SIGNALS: [Signal; 30] = [
     SIGPWR,
     SIGSYS];
 #[cfg(not(any(target_os = "linux", target_os = "android",
-              target_os = "emscripten", target_os = "redox")))]
+              target_os = "fuchsia", target_os = "emscripten",
+              target_os = "redox")))]
 const SIGNALS: [Signal; 31] = [
     SIGHUP,
     SIGINT,
@@ -749,6 +770,7 @@ pub fn kill<T: Into<Option<Signal>>>(pid: Pid, signal: T) -> Result<()> {
 /// If `pgrp` less then or equal 1, the behavior is platform-specific.
 /// If `signal` is `None`, `killpg` will only preform error checking and won't
 /// send any signal.
+#[cfg(not(target_os = "fuchsia"))]
 pub fn killpg<T: Into<Option<Signal>>>(pgrp: Pid, signal: T) -> Result<()> {
     let res = unsafe { libc::killpg(pgrp.into(),
                                   match signal.into() {
@@ -829,7 +851,10 @@ mod sigevent {
         /// `SIGEV_SIGNAL`.  That field is part of a union that shares space with the
         /// more genuinely useful `sigev_notify_thread_id`
         pub fn new(sigev_notify: SigevNotify) -> SigEvent {
-            let mut sev = unsafe { mem::zeroed::<libc::sigevent>()};
+            // NB: This uses MaybeUninit rather than mem::zeroed because libc::sigevent contains a
+            // function pointer on Fuchsia as of https://github.com/rust-lang/libc/commit/2f59370,
+            // and function pointers must not be null.
+            let mut sev = unsafe { mem::MaybeUninit::<libc::sigevent>::zeroed().assume_init() };
             sev.sigev_notify = match sigev_notify {
                 SigevNotify::SigevNone => libc::SIGEV_NONE,
                 SigevNotify::SigevSignal{..} => libc::SIGEV_SIGNAL,

@@ -426,6 +426,7 @@ pub fn chdir<P: ?Sized + NixPath>(path: &P) -> Result<()> {
 /// This function may fail in a number of different scenarios.  See the man
 /// pages for additional details on possible failure cases.
 #[inline]
+#[cfg(not(target_os = "fuchsia"))]
 pub fn fchdir(dirfd: RawFd) -> Result<()> {
     let res = unsafe { libc::fchdir(dirfd) };
 
@@ -1095,7 +1096,7 @@ pub fn pipe2(flags: OFlag) -> Result<(RawFd, RawFd)> {
 ///
 /// See also
 /// [truncate(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/truncate.html)
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "redox", target_os = "fuchsia")))]
 pub fn truncate<P: ?Sized + NixPath>(path: &P, len: off_t) -> Result<()> {
     let res = path.with_nix_path(|cstr| {
         unsafe {
@@ -1232,6 +1233,7 @@ pub fn unlinkat<P: ?Sized + NixPath>(
 
 
 #[inline]
+#[cfg(not(target_os = "fuchsia"))]
 pub fn chroot<P: ?Sized + NixPath>(path: &P) -> Result<()> {
     let res = path.with_nix_path(|cstr| {
         unsafe { libc::chroot(cstr.as_ptr()) }
@@ -2546,13 +2548,16 @@ pub struct User {
     /// Path to shell
     pub shell: PathBuf,
     /// Login class
-    #[cfg(not(any(target_os = "android", target_os = "linux")))]
+    #[cfg(not(any(target_os = "android", target_os = "fuchsia",
+                  target_os = "linux")))]
     pub class: CString,
     /// Last password change
-    #[cfg(not(any(target_os = "android", target_os = "linux")))]
+    #[cfg(not(any(target_os = "android", target_os = "fuchsia",
+                  target_os = "linux")))]
     pub change: libc::time_t,
     /// Expiration time of account
-    #[cfg(not(any(target_os = "android", target_os = "linux")))]
+    #[cfg(not(any(target_os = "android", target_os = "fuchsia",
+                  target_os = "linux")))]
     pub expire: libc::time_t
 }
 
@@ -2569,11 +2574,14 @@ impl From<&libc::passwd> for User {
                 shell: PathBuf::from(OsStr::from_bytes(CStr::from_ptr((*pw).pw_shell).to_bytes())),
                 uid: Uid::from_raw((*pw).pw_uid),
                 gid: Gid::from_raw((*pw).pw_gid),
-                #[cfg(not(any(target_os = "android", target_os = "linux")))]
+                #[cfg(not(any(target_os = "android", target_os = "fuchsia",
+                              target_os = "linux")))]
                 class: CString::new(CStr::from_ptr((*pw).pw_class).to_bytes()).unwrap(),
-                #[cfg(not(any(target_os = "android", target_os = "linux")))]
+                #[cfg(not(any(target_os = "android", target_os = "fuchsia",
+                              target_os = "linux")))]
                 change: (*pw).pw_change,
-                #[cfg(not(any(target_os = "android", target_os = "linux")))]
+                #[cfg(not(any(target_os = "android", target_os = "fuchsia",
+                              target_os = "linux")))]
                 expire: (*pw).pw_expire
             }
         }
@@ -2781,6 +2789,7 @@ impl Group {
 
 /// Get the name of the terminal device that is open on file descriptor fd
 /// (see [`ttyname(3)`](http://man7.org/linux/man-pages/man3/ttyname.3.html)).
+#[cfg(not(target_os = "fuchsia"))]
 pub fn ttyname(fd: RawFd) -> Result<PathBuf> {
     const PATH_MAX: usize = libc::PATH_MAX as usize;
     let mut buf = vec![0_u8; PATH_MAX];
