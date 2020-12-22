@@ -1069,3 +1069,42 @@ fn test_ttyname_not_pty() {
 fn test_ttyname_invalid_fd() {
     assert_eq!(ttyname(-1), Err(Error::Sys(Errno::EBADF)));
 }
+
+#[test]
+#[cfg(any(
+    target_os = "macos",
+    target_os = "ios",
+    target_os = "freebsd",
+    target_os = "openbsd",
+    target_os = "netbsd",
+    target_os = "dragonfly",
+))]
+fn test_getpeereid() {
+    use std::os::unix::net::UnixStream;
+    let (sock_a, sock_b) = UnixStream::pair().unwrap();
+
+    let (uid_a, gid_a) = getpeereid(sock_a.as_raw_fd()).unwrap();
+    let (uid_b, gid_b) = getpeereid(sock_b.as_raw_fd()).unwrap();
+
+    let uid = geteuid();
+    let gid = getegid();
+
+    assert_eq!(uid, uid_a);
+    assert_eq!(gid, gid_a);
+    assert_eq!(uid_a, uid_b);
+    assert_eq!(gid_a, gid_b);
+}
+
+#[test]
+#[cfg(any(
+    target_os = "macos",
+    target_os = "ios",
+    target_os = "freebsd",
+    target_os = "openbsd",
+    target_os = "netbsd",
+    target_os = "dragonfly",
+))]
+fn test_getpeereid_invalid_fd() {
+    // getpeereid is not POSIX, so error codes are inconsistent between different Unices.
+    assert!(getpeereid(-1).is_err());
+}

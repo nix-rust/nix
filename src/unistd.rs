@@ -2804,3 +2804,23 @@ pub fn ttyname(fd: RawFd) -> Result<PathBuf> {
     buf.truncate(nul);
     Ok(OsString::from_vec(buf).into())
 }
+
+/// Get the effective user ID and group ID associated with a Unix domain socket.
+///
+/// See also [getpeereid(3)](https://www.freebsd.org/cgi/man.cgi?query=getpeereid)
+#[cfg(any(
+    target_os = "macos",
+    target_os = "ios",
+    target_os = "freebsd",
+    target_os = "openbsd",
+    target_os = "netbsd",
+    target_os = "dragonfly",
+))]
+pub fn getpeereid(fd: RawFd) -> Result<(Uid, Gid)> {
+    let mut uid = 1;
+    let mut gid = 1;
+
+    let ret = unsafe { libc::getpeereid(fd, &mut uid, &mut gid) };
+
+    Errno::result(ret).map(|_| (Uid(uid), Gid(gid)))
+}
