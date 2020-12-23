@@ -1,4 +1,4 @@
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "redox", target_os = "fuchsia")))]
 mod t {
     use nix::fcntl::OFlag;
     use nix::pty::*;

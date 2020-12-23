@@ -1,43 +1,41 @@
-# Gate on Travis CI and Buildbot
 status = [
-  "FreeBSD amd64 & i686",
-  "OSX x86_64",
-  "OSX i686",
-  "iOS",
-  "Linux aarch64",
-  "Linux arm gnueabi",
-  "Linux armv7 gnueabihf",
-  "Linux i686",
-  "Linux i686 musl",
-  "Linux MIPS",
-  "Linux MIPS64",
-  "Linux MIPS64 el",
-  "Linux mipsel",
-  "Linux powerpc64le",
-  "Rust Stable",
-  "Linux x86_64",
-  "Linux x86_64 musl",
   "Android aarch64",
   "Android arm",
   "Android armv7",
   "Android i686",
   "Android x86_64",
+  "FreeBSD amd64 & i686",
+  "Linux MIPS",
+  "Linux MIPS64 el",
+  "Linux MIPS64",
+  "Linux aarch64",
+  "Linux arm gnueabi",
   "Linux arm-musleabi",
+  "Linux armv7 gnueabihf",
+  "Linux i686 musl",
+  "Linux i686",
+  "Linux mipsel",
   "Linux powerpc",
+  "Linux powerpc64le",
   "Linux s390x",
-  "Linux s390x",
-  "NetBSD x86_64",
-  "Redox x86_64",
+  "Linux x86_64 musl",
+  "Linux x86_64",
   "Minver",
+  "NetBSD x86_64",
+  "OSX i686",
+  "OSX x86_64",
+  "Redox x86_64",
+  "Rust Stable",
+  "iOS",
 ]
 
 # Set bors's timeout to 1 hour
 #
 # bors's timeout should always be at least twice as long as the test suite
-# takes.  This is to allow Travis to fast-fail a test; if one of the builders
-# immediately reports a failure, then bors will move on to the next batch,
-# leaving the slower builders to work through the already-doomed run and the
-# next one.
+# takes.  This is to allow the CI provider to fast-fail a test; if one of the
+# builders immediately reports a failure, then bors will move on to the next
+# batch, leaving the slower builders to work through the already-doomed run and
+# the next one.
 #
 # At the time this was written, nix's test suite took about twenty minutes to
 # run.  The timeout was raised to one hour to give nix room to grow and time

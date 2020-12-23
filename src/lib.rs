@@ -57,7 +57,7 @@ pub mod net;
 #[deny(missing_docs)]
 pub mod poll;
 #[deny(missing_docs)]
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "redox", target_os = "fuchsia")))]
 pub mod pty;
 pub mod sched;
 pub mod sys;

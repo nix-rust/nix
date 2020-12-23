@@ -9,7 +9,7 @@ license     = "MIT"
 categories  = ["os::unix-apis"]
 exclude     = [
   "/.gitignore",
-  "/.travis.yml",
+  "/.cirrus.yml",
   "/ci/*",
   "/Cross.toml",
   "/RELEASE_PROCEDURE.md",
@@ -26,6 +26,7 @@ targets = [
   "x86_64-unknown-openbsd",
   "x86_64-unknown-netbsd",
   "x86_64-unknown-dragonfly",
+  "x86_64-fuchsia",
   "x86_64-unknown-redox"
 ]
 

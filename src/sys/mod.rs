@@ -38,6 +38,9 @@ pub mod memfd;
 #[cfg(not(target_os = "redox"))]
 pub mod mman;
 
+#[cfg(target_os = "linux")]
+pub mod personality;
+
 pub mod pthread;
 
 #[cfg(any(target_os = "android",

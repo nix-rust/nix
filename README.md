@@ -1,6 +1,5 @@
 # Rust bindings to *nix APIs
 
-[![Travis Build Status](https://travis-ci.org/nix-rust/nix.svg?branch=master)](https://travis-ci.org/nix-rust/nix)
 [![Cirrus Build Status](https://api.cirrus-ci.com/github/nix-rust/nix.svg)](https://cirrus-ci.com/github/nix-rust/nix)
 [![crates.io](http://meritbadge.herokuapp.com/nix)](https://crates.io/crates/nix)
 
@@ -82,11 +81,12 @@ Tier 2:
   * x86_64-unknown-netbsd
 
 Tier 3:
+  * x86_64-fuchsia
   * x86_64-unknown-redox
 
 ## Usage
 
-`nix` requires Rust 1.36.0 or newer.
+`nix` requires Rust 1.40.0 or newer.
 
 To use `nix`, add this to your `Cargo.toml`:
 

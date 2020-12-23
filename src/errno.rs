@@ -20,7 +20,8 @@ cfg_if! {
         }
     } else if #[cfg(any(target_os = "linux",
                         target_os = "redox",
-                        target_os = "dragonfly"))] {
+                        target_os = "dragonfly",
+                        target_os = "fuchsia"))] {
         unsafe fn errno_location() -> *mut c_int {
             libc::__errno_location()
         }
@@ -188,192 +189,254 @@ fn desc(errno: Errno) -> &'static str {
         EHOSTDOWN       => "Host is down",
         EHOSTUNREACH    => "No route to host",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         ECHRNG          => "Channel number out of range",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         EL2NSYNC        => "Level 2 not synchronized",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         EL3HLT          => "Level 3 halted",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         EL3RST          => "Level 3 reset",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         ELNRNG          => "Link number out of range",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         EUNATCH         => "Protocol driver not attached",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         ENOCSI          => "No CSI structure available",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         EL2HLT          => "Level 2 halted",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         EBADE           => "Invalid exchange",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         EBADR           => "Invalid request descriptor",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         EXFULL          => "Exchange full",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         ENOANO          => "No anode",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         EBADRQC         => "Invalid request code",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         EBADSLT         => "Invalid slot",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         EBFONT          => "Bad font file format",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         ENOSTR          => "Device not a stream",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         ENODATA         => "No data available",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         ETIME           => "Timer expired",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         ENOSR           => "Out of streams resources",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         ENONET          => "Machine is not on the network",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         ENOPKG          => "Package not installed",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         EREMOTE         => "Object is remote",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         ENOLINK         => "Link has been severed",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         EADV            => "Advertise error",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         ESRMNT          => "Srmount error",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         ECOMM           => "Communication error on send",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         EPROTO          => "Protocol error",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         EMULTIHOP       => "Multihop attempted",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         EDOTDOT         => "RFS specific error",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         EBADMSG         => "Not a data message",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         EOVERFLOW       => "Value too large for defined data type",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         ENOTUNIQ        => "Name not unique on network",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         EBADFD          => "File descriptor in bad state",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         EREMCHG         => "Remote address changed",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         ELIBACC         => "Can not access a needed shared library",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         ELIBBAD         => "Accessing a corrupted shared library",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         ELIBSCN         => ".lib section in a.out corrupted",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         ELIBMAX         => "Attempting to link in too many shared libraries",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         ELIBEXEC        => "Cannot exec a shared library directly",
 
-        #[cfg(any(target_os = "linux", target_os = "android", target_os = "openbsd"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia", target_os = "openbsd"))]
         EILSEQ          => "Illegal byte sequence",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         ERESTART        => "Interrupted system call should be restarted",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         ESTRPIPE        => "Streams pipe error",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         EUSERS          => "Too many users",
 
         #[cfg(any(target_os = "linux", target_os = "android",
-                  target_os = "netbsd", target_os = "redox"))]
+                  target_os = "fuchsia", target_os = "netbsd",
+                  target_os = "redox"))]
         EOPNOTSUPP      => "Operation not supported on transport endpoint",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         ESTALE          => "Stale file handle",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         EUCLEAN         => "Structure needs cleaning",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         ENOTNAM         => "Not a XENIX named type file",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         ENAVAIL         => "No XENIX semaphores available",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         EISNAM          => "Is a named type file",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         EREMOTEIO       => "Remote I/O error",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         EDQUOT          => "Quota exceeded",
 
         #[cfg(any(target_os = "linux", target_os = "android",
-                  target_os = "openbsd", target_os = "dragonfly"))]
+                  target_os = "fuchsia", target_os = "openbsd",
+                  target_os = "dragonfly"))]
         ENOMEDIUM       => "No medium found",
 
-        #[cfg(any(target_os = "linux", target_os = "android", target_os = "openbsd"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia", target_os = "openbsd"))]
         EMEDIUMTYPE     => "Wrong medium type",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         ECANCELED       => "Operation canceled",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         ENOKEY          => "Required key not available",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         EKEYEXPIRED     => "Key has expired",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         EKEYREVOKED     => "Key has been revoked",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         EKEYREJECTED    => "Key was rejected by service",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         EOWNERDEAD      => "Owner died",
 
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(any(target_os = "linux", target_os = "android",
+                  target_os = "fuchsia"))]
         ENOTRECOVERABLE => "State not recoverable",
 
-        #[cfg(all(target_os = "linux", not(target_arch="mips")))]
+        #[cfg(any(all(target_os = "linux", not(target_arch="mips")),
+                  target_os = "fuchsia"))]
         ERFKILL         => "Operation not possible due to RF-kill",
 
-        #[cfg(all(target_os = "linux", not(target_arch="mips")))]
+        #[cfg(any(all(target_os = "linux", not(target_arch="mips")),
+                  target_os = "fuchsia"))]
         EHWPOISON       => "Memory page has hardware error",
 
         #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
@@ -567,7 +630,8 @@ fn desc(errno: Errno) -> &'static str {
     }
 }
 
-#[cfg(any(target_os = "linux", target_os = "android"))]
+#[cfg(any(target_os = "linux", target_os = "android",
+          target_os = "fuchsia"))]
 mod consts {
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     #[repr(i32)]

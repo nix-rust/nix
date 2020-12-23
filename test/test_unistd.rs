@@ -7,7 +7,7 @@ use nix::unistd::ForkResult::*;
 use nix::sys::signal::{SaFlags, SigAction, SigHandler, SigSet, Signal, sigaction};
 use nix::sys::wait::*;
 use nix::sys::stat::{self, Mode, SFlag};
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "redox", target_os = "fuchsia")))]
 use nix::pty::{posix_openpt, grantpt, unlockpt, ptsname};
 use nix::errno::Errno;
 #[cfg(not(target_os = "redox"))]
@@ -201,7 +201,7 @@ mod linux_android {
 
 #[test]
 // `getgroups()` and `setgroups()` do not behave as expected on Apple platforms
-#[cfg(not(any(target_os = "ios", target_os = "macos", target_os = "redox")))]
+#[cfg(not(any(target_os = "ios", target_os = "macos", target_os = "redox", target_os = "fuchsia")))]
 fn test_setgroups() {
     // Skip this test when not run as root as `setgroups()` requires root.
     skip_if_not_root!("test_setgroups");
@@ -224,7 +224,7 @@ fn test_setgroups() {
 
 #[test]
 // `getgroups()` and `setgroups()` do not behave as expected on Apple platforms
-#[cfg(not(any(target_os = "ios", target_os = "macos", target_os = "redox")))]
+#[cfg(not(any(target_os = "ios", target_os = "macos", target_os = "redox", target_os = "fuchsia")))]
 fn test_initgroups() {
     // Skip this test when not run as root as `initgroups()` and `setgroups()`
     // require root.
@@ -406,6 +406,7 @@ cfg_if!{
 }
 
 #[test]
+#[cfg(not(target_os = "fuchsia"))]
 fn test_fchdir() {
     // fchdir changes the process's cwd
     let _dr = crate::DirRestore::new();
@@ -552,7 +553,7 @@ cfg_if!{
                 skip_if_jailed!("test_acct");
             }
         }
-    } else if #[cfg(not(target_os = "redox"))] {
+    } else if #[cfg(not(any(target_os = "redox", target_os = "fuchsia")))] {
         macro_rules! require_acct{
             () => {
                 skip_if_not_root!("test_acct");
@@ -562,7 +563,7 @@ cfg_if!{
 }
 
 #[test]
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "redox", target_os = "fuchsia")))]
 fn test_acct() {
     use tempfile::NamedTempFile;
     use std::process::Command;
@@ -649,7 +650,7 @@ fn test_pipe2() {
 }
 
 #[test]
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "redox", target_os = "fuchsia")))]
 fn test_truncate() {
     let tempdir = tempdir().unwrap();
     let path = tempdir.path().join("file");
@@ -1033,7 +1034,7 @@ fn test_setfsuid() {
 }
 
 #[test]
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "redox", target_os = "fuchsia")))]
 fn test_ttyname() {
     let fd = posix_openpt(OFlag::O_RDWR).expect("posix_openpt failed");
     assert!(fd.as_raw_fd() > 0);
@@ -1056,7 +1057,7 @@ fn test_ttyname() {
 }
 
 #[test]
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "redox", target_os = "fuchsia")))]
 fn test_ttyname_not_pty() {
     let fd = File::open("/dev/zero").unwrap();
     assert!(fd.as_raw_fd() > 0);
@@ -1064,13 +1065,46 @@ fn test_ttyname_not_pty() {
 }
 
 #[test]
-#[cfg(all(not(target_os = "redox"), not(target_env = "musl")))]
+#[cfg(not(any(target_os = "redox", target_os = "fuchsia")))]
 fn test_ttyname_invalid_fd() {
     assert_eq!(ttyname(-1), Err(Error::Sys(Errno::EBADF)));
 }
 
 #[test]
-#[cfg(all(not(target_os = "redox"), target_env = "musl"))]
-fn test_ttyname_invalid_fd() {
-    assert_eq!(ttyname(-1), Err(Error::Sys(Errno::ENOTTY)));
+#[cfg(any(
+    target_os = "macos",
+    target_os = "ios",
+    target_os = "freebsd",
+    target_os = "openbsd",
+    target_os = "netbsd",
+    target_os = "dragonfly",
+))]
+fn test_getpeereid() {
+    use std::os::unix::net::UnixStream;
+    let (sock_a, sock_b) = UnixStream::pair().unwrap();
+
+    let (uid_a, gid_a) = getpeereid(sock_a.as_raw_fd()).unwrap();
+    let (uid_b, gid_b) = getpeereid(sock_b.as_raw_fd()).unwrap();
+
+    let uid = geteuid();
+    let gid = getegid();
+
+    assert_eq!(uid, uid_a);
+    assert_eq!(gid, gid_a);
+    assert_eq!(uid_a, uid_b);
+    assert_eq!(gid_a, gid_b);
+}
+
+#[test]
+#[cfg(any(
+    target_os = "macos",
+    target_os = "ios",
+    target_os = "freebsd",
+    target_os = "openbsd",
+    target_os = "netbsd",
+    target_os = "dragonfly",
+))]
+fn test_getpeereid_invalid_fd() {
+    // getpeereid is not POSIX, so error codes are inconsistent between different Unices.
+    assert!(getpeereid(-1).is_err());
 }

@@ -21,9 +21,9 @@ mod test_sockopt;
 mod test_select;
 #[cfg(any(target_os = "android", target_os = "linux"))]
 mod test_sysinfo;
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "redox", target_os = "fuchsia")))]
 mod test_termios;
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "redox", target_os = "fuchsia")))]
 mod test_ioctl;
 mod test_wait;
 mod test_uio;
