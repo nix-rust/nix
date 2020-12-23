@@ -1,5 +1,6 @@
 use rand::{thread_rng, Rng};
-use nix::sys::socket::{socket, sockopt, getsockopt, setsockopt, AddressFamily, SockType, SockFlag, SockProtocol};
+use nix::ifaddrs::getifaddrs;
+use nix::sys::socket::{AddressFamily, IpAddr, IpMulticastIfRequest, SockAddr, SockFlag, SockProtocol, SockType, getsockopt, setsockopt, socket, sockopt};
 #[cfg(any(target_os = "android", target_os = "linux"))]
 use crate::*;
 
@@ -92,5 +93,21 @@ fn test_so_tcp_keepalive() {
         let x = getsockopt(fd, sockopt::TcpKeepInterval).unwrap();
         setsockopt(fd, sockopt::TcpKeepInterval, &(x + 1)).unwrap();
         assert_eq!(getsockopt(fd, sockopt::TcpKeepInterval).unwrap(), x + 1);
+    }
+}
+
+#[test]
+fn test_so_multicast_if() {
+    let fd = socket(AddressFamily::Inet, SockType::Datagram, SockFlag::empty(), None).unwrap();
+    let addrs = getifaddrs().unwrap();
+
+    for if_addr in addrs {
+        if let Some(SockAddr::Inet(inet_addr)) = if_addr.address {
+            if let IpAddr::V4(ipv4_addr) = inet_addr.ip() {
+                let request = IpMulticastIfRequest::new_in_addr(ipv4_addr);
+                setsockopt(fd, sockopt::IpMulticastIf, &request).unwrap();
+                assert_eq!(getsockopt(fd, sockopt::IpMulticastIf).unwrap(), request);
+            }
+        }
     }
 }
