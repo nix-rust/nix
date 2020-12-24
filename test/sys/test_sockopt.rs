@@ -1,6 +1,14 @@
 use rand::{thread_rng, Rng};
-use nix::ifaddrs::getifaddrs;
-use nix::sys::socket::{AddressFamily, IpAddr, IpMulticastIfInAddr, SockAddr, SockFlag, SockProtocol, SockType, getsockopt, setsockopt, socket, sockopt};
+use nix::sys::socket::{socket, sockopt, getsockopt, setsockopt, AddressFamily, SockType, SockFlag, SockProtocol};
+#[cfg(not(all(target_os = "linux",
+                     target_env = "gnu",
+                     any(target_arch = "mips",
+                         target_arch = "mips64",
+                         target_arch = "aarch64",
+                         target_arch = "arm",
+                         target_arch = "powerpc64"))))]
+use nix::{ifaddrs::getifaddrs, sys::socket::{IpAddr, IpMulticastIfInAddr, SockAddr}};
+
 #[cfg(any(target_os = "android", target_os = "linux"))]
 use crate::*;
 
