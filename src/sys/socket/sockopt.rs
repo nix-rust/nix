@@ -233,7 +233,17 @@ cfg_if! {
         sockopt_impl!(SetOnly, Ipv6DropMembership, libc::IPPROTO_IPV6, libc::IPV6_LEAVE_GROUP, super::Ipv6MembershipRequest);
     }
 }
-sockopt_impl!(Both, IpMulticastIf, libc::IPPROTO_IP, libc::IP_MULTICAST_IF, super::IpMulticastIfInAddr);
+cfg_if! {
+    if #[cfg(not(all(target_os = "linux",
+                     target_env = "gnu",
+                     any(target_arch = "mips",
+                         target_arch = "mips64",
+                         target_arch = "aarch64",
+                         target_arch = "arm",
+                         target_arch = "powerpc64"))))] {
+        sockopt_impl!(Both, IpMulticastIf, libc::IPPROTO_IP, libc::IP_MULTICAST_IF, super::IpMulticastIfInAddr);
+    }
+}
 sockopt_impl!(Both, IpMulticastTtl, libc::IPPROTO_IP, libc::IP_MULTICAST_TTL, u8);
 sockopt_impl!(Both, IpMulticastLoop, libc::IPPROTO_IP, libc::IP_MULTICAST_LOOP, bool);
 sockopt_impl!(Both, ReceiveTimeout, libc::SOL_SOCKET, libc::SO_RCVTIMEO, TimeVal);

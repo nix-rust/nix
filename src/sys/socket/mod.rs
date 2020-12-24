@@ -375,18 +375,28 @@ impl Ipv6MembershipRequest {
     }
 }
 
-/// Request for multicast socket's outgoing interface
-///
-/// The value must be a `libc::in_addr` structure, which is the most common.
-/// `ip_mreqn` or `ip_mreq` structure are not supported. One reason is that
-/// `#[repr(transparent)]` does not support enum.
-#[repr(transparent)]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct IpMulticastIfInAddr(libc::in_addr);
+cfg_if! {
+    if #[cfg(not(all(target_os = "linux",
+                     target_env = "gnu",
+                     any(target_arch = "mips",
+                         target_arch = "mips64",
+                         target_arch = "aarch64",
+                         target_arch = "arm",
+                         target_arch = "powerpc64"))))] {
+        /// Request for multicast socket's outgoing interface
+        ///
+        /// The value must be a `libc::in_addr` structure, which is the most common.
+        /// `ip_mreqn` or `ip_mreq` structure are not supported. One reason is that
+        /// `#[repr(transparent)]` does not support enum.
+        #[repr(transparent)]
+        #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+        pub struct IpMulticastIfInAddr(libc::in_addr);
 
-impl IpMulticastIfInAddr {
-    pub fn new(interface: Ipv4Addr) -> Self {
-        IpMulticastIfInAddr(interface.0)
+        impl IpMulticastIfInAddr {
+            pub fn new(interface: Ipv4Addr) -> Self {
+                IpMulticastIfInAddr(interface.0)
+            }
+        }
     }
 }
 

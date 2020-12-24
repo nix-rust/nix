@@ -97,6 +97,13 @@ fn test_so_tcp_keepalive() {
 }
 
 #[test]
+#[cfg(not(all(target_os = "linux",
+                     target_env = "gnu",
+                     any(target_arch = "mips",
+                         target_arch = "mips64",
+                         target_arch = "aarch64",
+                         target_arch = "arm",
+                         target_arch = "powerpc64"))))]
 fn test_so_multicast_if() {
     let fd = socket(AddressFamily::Inet, SockType::Datagram, SockFlag::empty(), None).unwrap();
     let addrs = getifaddrs().unwrap();
