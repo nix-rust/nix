@@ -385,8 +385,9 @@ cfg_if! {
                          target_arch = "powerpc64"))))] {
         /// Request for multicast socket's outgoing interface
         ///
-        /// The value must be a `libc::in_addr` structure, which is the most common.
-        /// `ip_mreqn` or `ip_mreq` structure are not supported. One reason is that
+        /// The value is a `libc::in_addr` structure, which is the most common.
+        /// `ip_mreqn` or `ip_mreq` structure are not supported at this point, one
+        /// reason is that if we use enum to represent all possible structures,
         /// `#[repr(transparent)]` does not support enum.
         #[repr(transparent)]
         #[derive(Clone, Copy, Debug, Eq, PartialEq)]
