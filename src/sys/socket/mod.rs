@@ -377,18 +377,16 @@ impl Ipv6MembershipRequest {
 
 /// Request for multicast socket's outgoing interface
 ///
-/// Normally the value is an `in_addr` structure, but
-/// Linux also supports an ip_mreqn or (since Linux 3.5) ip_mreq
-/// structure, hence define an enum to support future expansions.
+/// The value must be a `libc::in_addr` structure, which is the most common.
+/// `ip_mreqn` or `ip_mreq` structure are not supported. One reason is that
+/// `#[repr(transparent)]` does not support enum.
+#[repr(transparent)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum IpMulticastIfRequest {
-    IN_ADDR(libc::in_addr),
-}
+pub struct IpMulticastIfInAddr(libc::in_addr);
 
-impl IpMulticastIfRequest {
-    /// Instantiate a new `IpMulticastIfRequest::IN_ADDR`
-    pub fn new_in_addr(interface: Ipv4Addr) -> Self {
-        IpMulticastIfRequest::IN_ADDR(interface.0)
+impl IpMulticastIfInAddr {
+    pub fn new(interface: Ipv4Addr) -> Self {
+        IpMulticastIfInAddr(interface.0)
     }
 }
 

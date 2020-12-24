@@ -1,6 +1,6 @@
 use rand::{thread_rng, Rng};
 use nix::ifaddrs::getifaddrs;
-use nix::sys::socket::{AddressFamily, IpAddr, IpMulticastIfRequest, SockAddr, SockFlag, SockProtocol, SockType, getsockopt, setsockopt, socket, sockopt};
+use nix::sys::socket::{AddressFamily, IpAddr, IpMulticastIfInAddr, SockAddr, SockFlag, SockProtocol, SockType, getsockopt, setsockopt, socket, sockopt};
 #[cfg(any(target_os = "android", target_os = "linux"))]
 use crate::*;
 
@@ -104,7 +104,7 @@ fn test_so_multicast_if() {
     for if_addr in addrs {
         if let Some(SockAddr::Inet(inet_addr)) = if_addr.address {
             if let IpAddr::V4(ipv4_addr) = inet_addr.ip() {
-                let request = IpMulticastIfRequest::new_in_addr(ipv4_addr);
+                let request = IpMulticastIfInAddr::new(ipv4_addr);
                 setsockopt(fd, sockopt::IpMulticastIf, &request).unwrap();
                 assert_eq!(getsockopt(fd, sockopt::IpMulticastIf).unwrap(), request);
             }
