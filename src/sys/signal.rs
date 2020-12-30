@@ -13,6 +13,7 @@ use std::str::FromStr;
 #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
 use std::os::unix::io::RawFd;
 use std::ptr;
+use libc::c_int;
 
 #[cfg(not(any(target_os = "openbsd", target_os = "redox")))]
 pub use self::sigevent::*;
@@ -191,6 +192,17 @@ impl AsRef<str> for Signal {
 impl fmt::Display for Signal {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.write_str(self.as_ref())
+    }
+}
+
+impl Into<c_int> for Signal {
+    fn into(self) -> c_int {
+        for i in 0..SIGNALS.len() {
+            if SIGNALS[i] == self {
+                return (i + 1) as i32;
+            }
+        }
+        unreachable!()
     }
 }
 
@@ -1088,5 +1100,25 @@ mod tests {
             raise(SIGUSR1).unwrap();
             assert_eq!(mask.wait().unwrap(), SIGUSR1);
         }).join().unwrap();
+    }
+
+    #[test]
+    #[cfg(not(target_os = "redox"))]
+    fn test_signal_into_c_int() {
+        let sig = Signal::SIGINT;
+        let sig_int: c_int = sig.into();
+        assert_eq!(sig_int, 2);
+
+        let sig = Signal::SIGHUP;
+        let sig_int: c_int = sig.into();
+        assert_eq!(sig_int, 1);
+
+        let sig = Signal::SIGKILL;
+        let sig_int: c_int = sig.into();
+        assert_eq!(sig_int, 9);
+
+        let sig = Signal::SIGTERM;
+        let sig_int: c_int = sig.into();
+        assert_eq!(sig_int, 15);
     }
 }
