@@ -31,63 +31,63 @@ pub struct FsType(pub libc::c_ulong);
 #[derive(Eq, Copy, Clone, PartialEq, Debug)]
 pub struct FsType(pub libc::c_long);
 
-#[cfg(all(target_os = "linux", not(target_env = "musl"), not(target_arch = "s390x")))]
+#[cfg(all(target_os = "linux", not(target_env = "musl")))]
 pub const ADFS_SUPER_MAGIC: FsType = FsType(libc::ADFS_SUPER_MAGIC);
-#[cfg(all(target_os = "linux", not(target_env = "musl"), not(target_arch = "s390x")))]
+#[cfg(all(target_os = "linux", not(target_env = "musl")))]
 pub const AFFS_SUPER_MAGIC: FsType = FsType(libc::AFFS_SUPER_MAGIC);
-#[cfg(all(target_os = "linux", not(target_env = "musl"), not(target_arch = "s390x")))]
+#[cfg(all(target_os = "linux", not(target_env = "musl")))]
 pub const CODA_SUPER_MAGIC: FsType = FsType(libc::CODA_SUPER_MAGIC);
-#[cfg(all(target_os = "linux", not(target_env = "musl"), not(target_arch = "s390x")))]
+#[cfg(all(target_os = "linux", not(target_env = "musl")))]
 pub const CRAMFS_MAGIC: FsType = FsType(libc::CRAMFS_MAGIC);
-#[cfg(all(target_os = "linux", not(target_env = "musl"), not(target_arch = "s390x")))]
+#[cfg(all(target_os = "linux", not(target_env = "musl")))]
 pub const EFS_SUPER_MAGIC: FsType = FsType(libc::EFS_SUPER_MAGIC);
-#[cfg(all(target_os = "linux", not(target_env = "musl"), not(target_arch = "s390x")))]
+#[cfg(all(target_os = "linux", not(target_env = "musl")))]
 pub const EXT2_SUPER_MAGIC: FsType = FsType(libc::EXT2_SUPER_MAGIC);
-#[cfg(all(target_os = "linux", not(target_env = "musl"), not(target_arch = "s390x")))]
+#[cfg(all(target_os = "linux", not(target_env = "musl")))]
 pub const EXT3_SUPER_MAGIC: FsType = FsType(libc::EXT3_SUPER_MAGIC);
-#[cfg(all(target_os = "linux", not(target_env = "musl"), not(target_arch = "s390x")))]
+#[cfg(all(target_os = "linux", not(target_env = "musl")))]
 pub const EXT4_SUPER_MAGIC: FsType = FsType(libc::EXT4_SUPER_MAGIC);
-#[cfg(all(target_os = "linux", not(target_env = "musl"), not(target_arch = "s390x")))]
+#[cfg(all(target_os = "linux", not(target_env = "musl")))]
 pub const HPFS_SUPER_MAGIC: FsType = FsType(libc::HPFS_SUPER_MAGIC);
-#[cfg(all(target_os = "linux", not(target_env = "musl"), not(target_arch = "s390x")))]
+#[cfg(all(target_os = "linux", not(target_env = "musl")))]
 pub const HUGETLBFS_MAGIC: FsType = FsType(libc::HUGETLBFS_MAGIC);
-#[cfg(all(target_os = "linux", not(target_env = "musl"), not(target_arch = "s390x")))]
+#[cfg(all(target_os = "linux", not(target_env = "musl")))]
 pub const ISOFS_SUPER_MAGIC: FsType = FsType(libc::ISOFS_SUPER_MAGIC);
-#[cfg(all(target_os = "linux", not(target_env = "musl"), not(target_arch = "s390x")))]
+#[cfg(all(target_os = "linux", not(target_env = "musl")))]
 pub const JFFS2_SUPER_MAGIC: FsType = FsType(libc::JFFS2_SUPER_MAGIC);
-#[cfg(all(target_os = "linux", not(target_env = "musl"), not(target_arch = "s390x")))]
+#[cfg(all(target_os = "linux", not(target_env = "musl")))]
 pub const MINIX_SUPER_MAGIC: FsType = FsType(libc::MINIX_SUPER_MAGIC);
-#[cfg(all(target_os = "linux", not(target_env = "musl"), not(target_arch = "s390x")))]
+#[cfg(all(target_os = "linux", not(target_env = "musl")))]
 pub const MINIX_SUPER_MAGIC2: FsType = FsType(libc::MINIX_SUPER_MAGIC2);
-#[cfg(all(target_os = "linux", not(target_env = "musl"), not(target_arch = "s390x")))]
+#[cfg(all(target_os = "linux", not(target_env = "musl")))]
 pub const MINIX2_SUPER_MAGIC: FsType = FsType(libc::MINIX2_SUPER_MAGIC);
-#[cfg(all(target_os = "linux", not(target_env = "musl"), not(target_arch = "s390x")))]
+#[cfg(all(target_os = "linux", not(target_env = "musl")))]
 pub const MINIX2_SUPER_MAGIC2: FsType = FsType(libc::MINIX2_SUPER_MAGIC2);
-#[cfg(all(target_os = "linux", not(target_env = "musl"), not(target_arch = "s390x")))]
+#[cfg(all(target_os = "linux", not(target_env = "musl")))]
 pub const MSDOS_SUPER_MAGIC: FsType = FsType(libc::MSDOS_SUPER_MAGIC);
-#[cfg(all(target_os = "linux", not(target_env = "musl"), not(target_arch = "s390x")))]
+#[cfg(all(target_os = "linux", not(target_env = "musl")))]
 pub const NCP_SUPER_MAGIC: FsType = FsType(libc::NCP_SUPER_MAGIC);
-#[cfg(all(target_os = "linux", not(target_env = "musl"), not(target_arch = "s390x")))]
+#[cfg(all(target_os = "linux", not(target_env = "musl")))]
 pub const NFS_SUPER_MAGIC: FsType = FsType(libc::NFS_SUPER_MAGIC);
-#[cfg(all(target_os = "linux", not(target_env = "musl"), not(target_arch = "s390x")))]
+#[cfg(all(target_os = "linux", not(target_env = "musl")))]
 pub const OPENPROM_SUPER_MAGIC: FsType = FsType(libc::OPENPROM_SUPER_MAGIC);
-#[cfg(all(target_os = "linux", not(target_env = "musl"), not(target_arch = "s390x")))]
+#[cfg(all(target_os = "linux", not(target_env = "musl")))]
 pub const OVERLAYFS_SUPER_MAGIC: FsType = FsType(libc::OVERLAYFS_SUPER_MAGIC);
-#[cfg(all(target_os = "linux", not(target_env = "musl"), not(target_arch = "s390x")))]
+#[cfg(all(target_os = "linux", not(target_env = "musl")))]
 pub const PROC_SUPER_MAGIC: FsType = FsType(libc::PROC_SUPER_MAGIC);
-#[cfg(all(target_os = "linux", not(target_env = "musl"), not(target_arch = "s390x")))]
+#[cfg(all(target_os = "linux", not(target_env = "musl")))]
 pub const QNX4_SUPER_MAGIC: FsType = FsType(libc::QNX4_SUPER_MAGIC);
-#[cfg(all(target_os = "linux", not(target_env = "musl"), not(target_arch = "s390x")))]
+#[cfg(all(target_os = "linux", not(target_env = "musl")))]
 pub const REISERFS_SUPER_MAGIC: FsType = FsType(libc::REISERFS_SUPER_MAGIC);
-#[cfg(all(target_os = "linux", not(target_env = "musl"), not(target_arch = "s390x")))]
+#[cfg(all(target_os = "linux", not(target_env = "musl")))]
 pub const SMB_SUPER_MAGIC: FsType = FsType(libc::SMB_SUPER_MAGIC);
-#[cfg(all(target_os = "linux", not(target_env = "musl"), not(target_arch = "s390x")))]
+#[cfg(all(target_os = "linux", not(target_env = "musl")))]
 pub const TMPFS_MAGIC: FsType = FsType(libc::TMPFS_MAGIC);
-#[cfg(all(target_os = "linux", not(target_env = "musl"), not(target_arch = "s390x")))]
+#[cfg(all(target_os = "linux", not(target_env = "musl")))]
 pub const USBDEVICE_SUPER_MAGIC: FsType = FsType(libc::USBDEVICE_SUPER_MAGIC);
-#[cfg(all(target_os = "linux", not(target_env = "musl"), not(target_arch = "s390x")))]
+#[cfg(all(target_os = "linux", not(target_env = "musl")))]
 pub const CGROUP_SUPER_MAGIC: FsType = FsType(libc::CGROUP_SUPER_MAGIC);
-#[cfg(all(target_os = "linux", not(target_env = "musl"), not(target_arch = "s390x")))]
+#[cfg(all(target_os = "linux", not(target_env = "musl")))]
 pub const CGROUP2_SUPER_MAGIC: FsType = FsType(libc::CGROUP2_SUPER_MAGIC);
 
 impl Statfs {
