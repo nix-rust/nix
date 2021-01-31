@@ -1702,6 +1702,15 @@ pub fn sockaddr_storage_to_addr(
             Ok(SockAddr::Unix(UnixAddr(sun, pathlen)))
         }
         #[cfg(any(target_os = "android", target_os = "linux"))]
+        libc::AF_PACKET => {
+            use libc::sockaddr_ll;
+            assert_eq!(len as usize, mem::size_of::<sockaddr_ll>());
+            let sll = unsafe {
+                *(addr as *const _ as *const sockaddr_ll)
+            };
+            Ok(SockAddr::Link(LinkAddr(sll)))
+        }
+        #[cfg(any(target_os = "android", target_os = "linux"))]
         libc::AF_NETLINK => {
             use libc::sockaddr_nl;
             let snl = unsafe {
