@@ -10,6 +10,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Added limited Fuchsia support (#[1285](https://github.com/nix-rust/nix/pull/1285))
 - Added `getpeereid` (#[1342](https://github.com/nix-rust/nix/pull/1342))
 ### Fixed
+- `TimerFd` now closes the underlying fd on drop.
+  ([#1381](https://github.com/nix-rust/nix/pull/1381))
 ### Changed
 
 - Minimum supported Rust version is now 1.40.0.
@@ -25,6 +27,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 - Removed `SockLevel`, which hasn't been used for a few years
   (#[1362](https://github.com/nix-rust/nix/pull/1362))
+- Removed both `Copy` and `Clone` from `TimerFd`.
+  ([#1381](https://github.com/nix-rust/nix/pull/1381))
 
 ## [0.19.1] - 28 November 2020
 ### Fixed

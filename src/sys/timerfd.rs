@@ -37,7 +37,7 @@ use std::os::unix::io::{AsRawFd, FromRawFd, RawFd};
 
 /// A timerfd instance. This is also a file descriptor, you can feed it to
 /// other interfaces consuming file descriptors, epoll for example.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug)]
 pub struct TimerFd {
     fd: RawFd,
 }
@@ -166,7 +166,7 @@ pub enum Expiration {
 impl TimerFd {
     /// Creates a new timer based on the clock defined by `clockid`. The
     /// underlying fd can be assigned specific flags with `flags` (CLOEXEC,
-    /// NONBLOCK).
+    /// NONBLOCK). The underlying fd will be closed on drop.
     pub fn new(clockid: ClockId, flags: TimerFlags) -> Result<Self> {
         Errno::result(unsafe { libc::timerfd_create(clockid as i32, flags.bits()) })
             .map(|fd| Self { fd })
@@ -268,5 +268,18 @@ impl TimerFd {
         }
 
         Ok(())
+    }
+}
+
+impl Drop for TimerFd {
+    fn drop(&mut self) {
+        if !std::thread::panicking() {
+            let result = Errno::result(unsafe {
+                libc::close(self.fd)
+            });
+            if let Err(Error::Sys(Errno::EBADF)) = result {
+                panic!("close of TimerFd encountered EBADF");
+            }
+        }
     }
 }
