@@ -23,6 +23,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Removed
 
+- `Dir`, `SignalFd`, and `PtyMaster` are no longer `Clone`.
+  (#[1382](https://github.com/nix-rust/nix/pull/1382))
+
 - Removed `SockLevel`, which hasn't been used for a few years
   (#[1362](https://github.com/nix-rust/nix/pull/1362))
 

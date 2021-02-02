@@ -43,7 +43,7 @@ pub struct ForkptyResult {
 /// While this datatype is a thin wrapper around `RawFd`, it enforces that the available PTY
 /// functions are given the correct file descriptor. Additionally this type implements `Drop`,
 /// so that when it's consumed or goes out of scope, it's automatically cleaned-up.
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+#[derive(Debug, Eq, Hash, PartialEq)]
 pub struct PtyMaster(RawFd);
 
 impl AsRawFd for PtyMaster {

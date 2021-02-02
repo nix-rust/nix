@@ -25,7 +25,7 @@ use libc::{dirent, readdir_r};
 ///    * returns entries for `.` (current directory) and `..` (parent directory).
 ///    * returns entries' names as a `CStr` (no allocation or conversion beyond whatever libc
 ///      does).
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+#[derive(Debug, Eq, Hash, PartialEq)]
 pub struct Dir(
     ptr::NonNull<libc::DIR>
 );
@@ -85,7 +85,10 @@ impl AsRawFd for Dir {
 
 impl Drop for Dir {
     fn drop(&mut self) {
-        unsafe { libc::closedir(self.0.as_ptr()) };
+        let e = Errno::result(unsafe { libc::closedir(self.0.as_ptr()) });
+        if !std::thread::panicking() && e == Err(Error::Sys(Errno::EBADF)) {
+            panic!("Closing an invalid file descriptor!");
+        };
     }
 }
 
