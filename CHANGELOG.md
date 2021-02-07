@@ -10,6 +10,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Added limited Fuchsia support (#[1285](https://github.com/nix-rust/nix/pull/1285))
 - Added `getpeereid` (#[1342](https://github.com/nix-rust/nix/pull/1342))
 ### Fixed
+- Define `*_MAGIC` filesystem constants on Linux s390x
+  (#[1372](https://github.com/nix-rust/nix/pull/1372))
+
 ### Changed
 
 - Minimum supported Rust version is now 1.40.0.
