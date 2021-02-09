@@ -5,6 +5,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - ReleaseDate
 ### Added
+### Fixed
+### Changed
+### Removed
+
+## [0.20.0] - 9 February 2021
+### Added
 
 - Added a `passwd` field to `Group` (#[1338](https://github.com/nix-rust/nix/pull/1338))
 - Added `mremap` (#[1306](https://github.com/nix-rust/nix/pull/1306))
