@@ -83,7 +83,7 @@
 //! # }
 //! ```
 //!
-//!
+//! ```
 //! # use nix::sys::termios::{BaudRate, cfgetispeed, cfgetospeed, cfsetspeed, Termios};
 //! # fn main() {
 //! # let mut t: Termios = unsafe { std::mem::zeroed() };
@@ -95,6 +95,7 @@
 //!
 //! It's trivial to convert from a `BaudRate` to a `u32`:
 //!
+//! ```
 //! # use nix::sys::termios::{BaudRate, cfgetispeed, cfsetspeed, Termios};
 //! # fn main() {
 //! # let mut t: Termios = unsafe { std::mem::zeroed() };
@@ -104,6 +105,7 @@
 //! # }
 //! ```
 //!
+//! ```
 //! # use nix::sys::termios::{cfsetispeed, cfsetospeed, cfsetspeed, Termios};
 //! # fn main() {
 //! # let mut t: Termios = unsafe { std::mem::zeroed() };
@@ -114,8 +116,8 @@
 //! ```
 //!
 //! The BaudRate enum is there as a guideline, but non-standard rates can be
-//! set on current Linux and BSD systems
-//!
+//! set on Linux and BSD systems
+//! ```
 //! # use nix::sys::termios::{BaudRate, cfgetispeed, cfsetspeed, Termios};
 //! # fn main() {
 //! # let mut t: Termios = unsafe { std::mem::zeroed() };
@@ -124,7 +126,6 @@
 //! # }
 //! ```
 //!
-//! ```
 use crate::errno::Errno;
 use crate::{Error, Result};
 use cfg_if::cfg_if;
