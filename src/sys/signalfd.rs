@@ -79,7 +79,7 @@ pub fn signalfd(fd: RawFd, mask: &SigSet, flags: SfdFlags) -> Result<RawFd> {
 ///     Err(err) => (), // some error happend
 /// }
 /// ```
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+#[derive(Debug, Eq, Hash, PartialEq)]
 pub struct SignalFd(RawFd);
 
 impl SignalFd {
@@ -116,7 +116,10 @@ impl SignalFd {
 
 impl Drop for SignalFd {
     fn drop(&mut self) {
-        let _ = unistd::close(self.0);
+        let e = unistd::close(self.0);
+        if !std::thread::panicking() && e == Err(Error::Sys(Errno::EBADF)) {
+            panic!("Closing an invalid file descriptor!");
+        };
     }
 }
 
