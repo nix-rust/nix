@@ -1,9 +1,9 @@
+use crate::errno::Errno;
+use crate::sys::signal::Signal;
+use crate::unistd::Pid;
+use crate::Result;
 use cfg_if::cfg_if;
 use libc::{self, c_int};
-use crate::Result;
-use crate::errno::Errno;
-use crate::unistd::Pid;
-use crate::sys::signal::Signal;
 use std::convert::TryFrom;
 
 libc_bitflags!(
@@ -108,8 +108,7 @@ impl WaitStatus {
     pub fn pid(&self) -> Option<Pid> {
         use self::WaitStatus::*;
         match *self {
-            Exited(p, _)  | Signaled(p, _, _) |
-                Stopped(p, _) | Continued(p) => Some(p),
+            Exited(p, _) | Signaled(p, _, _) | Stopped(p, _) | Continued(p) => Some(p),
             StillAlive => None,
             #[cfg(any(target_os = "android", target_os = "linux"))]
             PtraceEvent(p, _, _) | PtraceSyscall(p) => Some(p),
