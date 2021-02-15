@@ -14,9 +14,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Implemented `IntoIterator` for `Dir`
   (#[1333](https://github.com/nix-rust/nix/pull/1333)).
 ### Changed
+
 ### Fixed
 - Define `*_MAGIC` filesystem constants on Linux s390x
   (#[1372](https://github.com/nix-rust/nix/pull/1372))
+- mqueue, sysinfo, timespec, statfs, test_ptrace_syscall() on x32
+  (#[1366](https://github.com/nix-rust/nix/pull/1366))
 
 ### Changed
 
