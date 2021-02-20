@@ -302,7 +302,19 @@ pub fn openpty<'a, 'b, T: Into<Option<&'a Winsize>>, U: Into<Option<&'b Termios>
 /// If `winsize` is not `None`, the window size of the slave will be set to
 /// the values in `winsize`. If `termios` is not `None`, the pseudoterminal's
 /// terminal settings of the slave will be set to the values in `termios`.
-pub fn forkpty<'a, 'b, T: Into<Option<&'a Winsize>>, U: Into<Option<&'b Termios>>>(
+///
+/// # Safety
+///
+/// In a multithreaded program, only [async-signal-safe] functions like `pause`
+/// and `_exit` may be called by the child (the parent isn't restricted). Note
+/// that memory allocation may **not** be async-signal-safe and thus must be
+/// prevented.
+///
+/// Those functions are only a small subset of your operating system's API, so
+/// special care must be taken to only invoke code you can control and audit.
+///
+/// [async-signal-safe]: http://man7.org/linux/man-pages/man7/signal-safety.7.html
+pub unsafe fn forkpty<'a, 'b, T: Into<Option<&'a Winsize>>, U: Into<Option<&'b Termios>>>(
     winsize: T,
     termios: U,
 ) -> Result<ForkptyResult> {
@@ -323,20 +335,15 @@ pub fn forkpty<'a, 'b, T: Into<Option<&'a Winsize>>, U: Into<Option<&'b Termios>
         .map(|ws| ws as *const Winsize as *mut _)
         .unwrap_or(ptr::null_mut());
 
-    let res = unsafe {
-        libc::forkpty(master.as_mut_ptr(), ptr::null_mut(), term, win)
-    };
+    let res = libc::forkpty(master.as_mut_ptr(), ptr::null_mut(), term, win);
 
     let fork_result = Errno::result(res).map(|res| match res {
         0 => ForkResult::Child,
         res => ForkResult::Parent { child: Pid::from_raw(res) },
     })?;
 
-    unsafe {
-        Ok(ForkptyResult {
-            master: master.assume_init(),
-            fork_result,
-        })
-    }
+    Ok(ForkptyResult {
+        master: master.assume_init(),
+        fork_result,
+    })
 }
-

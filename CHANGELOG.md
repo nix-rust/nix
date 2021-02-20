@@ -5,7 +5,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - ReleaseDate
 ### Added
+
 ### Changed
+- Made `forkpty` unsafe, like `fork`
+  (#[1390](https://github.com/nix-rust/nix/pull/1390))
+
 ### Fixed
 ### Removed
 

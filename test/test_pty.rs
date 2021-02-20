@@ -255,7 +255,9 @@ fn test_forkpty() {
 
     let string = "naninani\n";
     let echoed_string = "naninani\r\n";
-    let pty = forkpty(None, None).unwrap();
+    let pty = unsafe {
+        forkpty(None, None).unwrap()
+    };
     match pty.fork_result {
         Child => {
             write(STDOUT_FILENO, string.as_bytes()).unwrap();
