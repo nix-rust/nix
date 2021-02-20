@@ -3,7 +3,7 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased] - ReleaseDate
+## [0.20.0] - 20 February 2021
 ### Added
 
 - Added a `passwd` field to `Group` (#[1338](https://github.com/nix-rust/nix/pull/1338))
