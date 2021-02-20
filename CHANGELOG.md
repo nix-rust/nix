@@ -16,6 +16,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 
 ### Fixed
+- `TimerFd` now closes the underlying fd on drop.
+  ([#1381](https://github.com/nix-rust/nix/pull/1381))
 - Define `*_MAGIC` filesystem constants on Linux s390x
   (#[1372](https://github.com/nix-rust/nix/pull/1372))
 - mqueue, sysinfo, timespec, statfs, test_ptrace_syscall() on x32
@@ -39,6 +41,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 - Removed `SockLevel`, which hasn't been used for a few years
   (#[1362](https://github.com/nix-rust/nix/pull/1362))
+- Removed both `Copy` and `Clone` from `TimerFd`.
+  ([#1381](https://github.com/nix-rust/nix/pull/1381))
 
 ## [0.19.1] - 28 November 2020
 ### Fixed
