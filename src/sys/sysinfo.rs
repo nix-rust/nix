@@ -10,6 +10,12 @@ use crate::errno::Errno;
 #[repr(transparent)]
 pub struct SysInfo(libc::sysinfo);
 
+// The fields are c_ulong on 32-bit linux, u64 on 64-bit linux; x32's ulong is u32
+#[cfg(all(target_arch = "x86_64", target_pointer_width = "32"))]
+type mem_blocks_t = u64;
+#[cfg(not(all(target_arch = "x86_64", target_pointer_width = "32")))]
+type mem_blocks_t = libc::c_ulong;
+
 impl SysInfo {
     /// Returns the load average tuple.
     ///
@@ -58,7 +64,7 @@ impl SysInfo {
         self.scale_mem(self.0.freeram)
     }
 
-    fn scale_mem(&self, units: libc::c_ulong) -> u64 {
+    fn scale_mem(&self, units: mem_blocks_t) -> u64 {
         units as u64 * self.0.mem_unit as u64
     }
 }

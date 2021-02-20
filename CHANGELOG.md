@@ -5,13 +5,24 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - ReleaseDate
 ### Added
+
+- Added a `passwd` field to `Group` (#[1338](https://github.com/nix-rust/nix/pull/1338))
 - Added `mremap` (#[1306](https://github.com/nix-rust/nix/pull/1306))
 - Added `personality` (#[1331](https://github.com/nix-rust/nix/pull/1331))
 - Added limited Fuchsia support (#[1285](https://github.com/nix-rust/nix/pull/1285))
 - Added `getpeereid` (#[1342](https://github.com/nix-rust/nix/pull/1342))
+- Implemented `IntoIterator` for `Dir`
+  (#[1333](https://github.com/nix-rust/nix/pull/1333)).
+### Changed
+
 ### Fixed
 - `TimerFd` now closes the underlying fd on drop.
   ([#1381](https://github.com/nix-rust/nix/pull/1381))
+- Define `*_MAGIC` filesystem constants on Linux s390x
+  (#[1372](https://github.com/nix-rust/nix/pull/1372))
+- mqueue, sysinfo, timespec, statfs, test_ptrace_syscall() on x32
+  (#[1366](https://github.com/nix-rust/nix/pull/1366))
+
 ### Changed
 
 - Minimum supported Rust version is now 1.40.0.
@@ -24,6 +35,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   (#[1344](https://github.com/nix-rust/nix/pull/1344))
 
 ### Removed
+
+- `Dir`, `SignalFd`, and `PtyMaster` are no longer `Clone`.
+  (#[1382](https://github.com/nix-rust/nix/pull/1382))
 
 - Removed `SockLevel`, which hasn't been used for a few years
   (#[1362](https://github.com/nix-rust/nix/pull/1362))
