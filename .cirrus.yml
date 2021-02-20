@@ -157,6 +157,10 @@ task:
     - name: Linux s390x
       env:
         TARGET: s390x-unknown-linux-gnu
+    - name: Linux x32
+      env:
+        TARGET: x86_64-unknown-linux-gnux32
+        CHECK_TESTS: true
     - name: NetBSD x86_64
       env:
         TARGET: x86_64-unknown-netbsd

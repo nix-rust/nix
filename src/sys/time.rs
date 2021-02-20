@@ -1,7 +1,7 @@
 use std::{cmp, fmt, ops};
 use std::time::Duration;
 use std::convert::From;
-use libc::{c_long, timespec, timeval};
+use libc::{timespec, timeval};
 #[cfg_attr(target_env = "musl", allow(deprecated))] // https://github.com/rust-lang/libc/issues/1848
 pub use libc::{time_t, suseconds_t};
 
@@ -62,6 +62,13 @@ const TS_MAX_SECONDS: i64 = ::std::isize::MAX as i64;
 
 const TS_MIN_SECONDS: i64 = -TS_MAX_SECONDS;
 
+// x32 compatibility
+// See https://sourceware.org/bugzilla/show_bug.cgi?id=16437
+#[cfg(all(target_arch = "x86_64", target_pointer_width = "32"))]
+type timespec_tv_nsec_t = i64;
+#[cfg(not(all(target_arch = "x86_64", target_pointer_width = "32")))]
+type timespec_tv_nsec_t = libc::c_long;
+
 impl From<timespec> for TimeSpec {
     fn from(ts: timespec) -> Self {
         Self(ts)
@@ -73,7 +80,7 @@ impl From<Duration> for TimeSpec {
         #[cfg_attr(target_env = "musl", allow(deprecated))] // https://github.com/rust-lang/libc/issues/1848
         TimeSpec(timespec {
             tv_sec: duration.as_secs() as time_t,
-            tv_nsec: duration.subsec_nanos() as c_long
+            tv_nsec: duration.subsec_nanos() as timespec_tv_nsec_t
         })
     }
 }
@@ -148,7 +155,7 @@ impl TimeValLike for TimeSpec {
                 "TimeSpec out of bounds");
         #[cfg_attr(target_env = "musl", allow(deprecated))] // https://github.com/rust-lang/libc/issues/1848
         TimeSpec(timespec {tv_sec: secs as time_t,
-                           tv_nsec: nanos as c_long })
+                           tv_nsec: nanos as timespec_tv_nsec_t })
     }
 
     fn num_seconds(&self) -> i64 {
@@ -175,9 +182,9 @@ impl TimeValLike for TimeSpec {
 }
 
 impl TimeSpec {
-    fn nanos_mod_sec(&self) -> c_long {
+    fn nanos_mod_sec(&self) -> timespec_tv_nsec_t {
         if self.tv_sec() < 0 && self.tv_nsec() > 0 {
-            self.tv_nsec() - NANOS_PER_SEC as c_long
+            self.tv_nsec() - NANOS_PER_SEC as timespec_tv_nsec_t
         } else {
             self.tv_nsec()
         }
@@ -188,7 +195,7 @@ impl TimeSpec {
         self.0.tv_sec
     }
 
-    pub fn tv_nsec(&self) -> c_long {
+    pub fn tv_nsec(&self) -> timespec_tv_nsec_t {
         self.0.tv_nsec
     }
 }

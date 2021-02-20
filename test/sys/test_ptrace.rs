@@ -100,7 +100,7 @@ fn test_ptrace_cont() {
             ptrace::cont(child, Some(Signal::SIGKILL)).unwrap();
             match waitpid(child, None) {
                 Ok(WaitStatus::Signaled(pid, Signal::SIGKILL, _)) if pid == child => {
-                    // FIXME It's been observed on some systems (apple) the 
+                    // FIXME It's been observed on some systems (apple) the
                     // tracee may not be killed but remain as a zombie process
                     // affecting other wait based tests. Add an extra kill just
                     // to make sure there are no zombies.
@@ -150,11 +150,11 @@ fn test_ptrace_syscall() {
             // set this option to recognize syscall-stops
             ptrace::setoptions(child, ptrace::Options::PTRACE_O_TRACESYSGOOD).unwrap();
 
-            #[cfg(target_pointer_width = "64")]
-            let get_syscall_id = || ptrace::getregs(child).unwrap().orig_rax as i64;
+            #[cfg(target_arch = "x86_64")]
+            let get_syscall_id = || ptrace::getregs(child).unwrap().orig_rax as libc::c_long;
 
-            #[cfg(target_pointer_width = "32")]
-            let get_syscall_id = || ptrace::getregs(child).unwrap().orig_eax as i32;
+            #[cfg(target_arch = "x86")]
+            let get_syscall_id = || ptrace::getregs(child).unwrap().orig_eax as libc::c_long;
 
             // kill entry
             ptrace::syscall(child, None).unwrap();
