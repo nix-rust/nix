@@ -2,7 +2,7 @@
 name        = "nix"
 description = "Rust friendly bindings to *nix APIs"
 edition     = "2018"
-version     = "0.19.0"
+version     = "0.20.0"
 authors     = ["The nix-rust Project Developers"]
 repository  = "https://github.com/nix-rust/nix"
 license     = "MIT"
@@ -31,7 +31,7 @@ targets = [
 ]
 
 [dependencies]
-libc = { version = "0.2.78", features = [ "extra_traits" ] }
+libc = { version = "0.2.82", features = [ "extra_traits" ] }
 bitflags = "1.1"
 cfg-if = "1.0"
 
@@ -41,12 +41,12 @@ cc = "1"
 [dev-dependencies]
 bytes = "0.4.8"
 lazy_static = "1.2"
-rand = "0.6"
-tempfile = "3.0.5"
+rand = "0.8"
+tempfile = "3.2.0"
 semver = "0.9.0"
 
 [target.'cfg(any(target_os = "android", target_os = "linux"))'.dev-dependencies]
-caps = "0.3.1"
+caps = "0.5.1"
 
 [target.'cfg(target_os = "freebsd")'.dev-dependencies]
 sysctl = "0.1"

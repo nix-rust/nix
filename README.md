@@ -83,6 +83,7 @@ Tier 2:
 Tier 3:
   * x86_64-fuchsia
   * x86_64-unknown-redox
+  * x86_64-unknown-linux-gnux32
 
 ## Usage
 
@@ -92,7 +93,7 @@ To use `nix`, add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-nix = "0.19.0"
+nix = "0.20.0"
 ```
 
 ## Contributing

@@ -20,7 +20,7 @@ use crate::sys::uio::IoVec; // For vmsplice
     target_os = "fuchsia",
     any(target_os = "wasi", target_env = "wasi"),
     target_env = "uclibc",
-    target_env = "freebsd"
+    target_os = "freebsd"
 ))]
 pub use self::posix_fadvise::*;
 
@@ -587,7 +587,7 @@ pub fn fallocate(
     target_os = "fuchsia",
     any(target_os = "wasi", target_env = "wasi"),
     target_env = "uclibc",
-    target_env = "freebsd"
+    target_os = "freebsd"
 ))]
 mod posix_fadvise {
     use crate::errno::Errno;

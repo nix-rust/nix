@@ -14,7 +14,11 @@ use tempfile::tempdir;
 fn test_writev() {
     let mut to_write = Vec::with_capacity(16 * 128);
     for _ in 0..16 {
-        let s: String = thread_rng().sample_iter(&Alphanumeric).take(128).collect();
+        let s: String = thread_rng()
+            .sample_iter(&Alphanumeric)
+            .map(char::from)
+            .take(128)
+            .collect();
         let b = s.as_bytes();
         to_write.extend(b.iter().cloned());
     }
@@ -23,7 +27,7 @@ fn test_writev() {
     let mut consumed = 0;
     while consumed < to_write.len() {
         let left = to_write.len() - consumed;
-        let slice_len = if left <= 64 { left } else { thread_rng().gen_range(64, cmp::min(256, left)) };
+        let slice_len = if left <= 64 { left } else { thread_rng().gen_range(64..cmp::min(256, left)) };
         let b = &to_write[consumed..consumed+slice_len];
         iovecs.push(IoVec::from_slice(b));
         consumed += slice_len;
@@ -57,13 +61,17 @@ fn test_writev() {
 #[test]
 #[cfg(not(target_os = "redox"))]
 fn test_readv() {
-    let s:String = thread_rng().sample_iter(&Alphanumeric).take(128).collect();
+    let s:String = thread_rng()
+        .sample_iter(&Alphanumeric)
+        .map(char::from)
+        .take(128)
+        .collect();
     let to_write = s.as_bytes().to_vec();
     let mut storage = Vec::new();
     let mut allocated = 0;
     while allocated < to_write.len() {
         let left = to_write.len() - allocated;
-        let vec_len = if left <= 64 { left } else { thread_rng().gen_range(64, cmp::min(256, left)) };
+        let vec_len = if left <= 64 { left } else { thread_rng().gen_range(64..cmp::min(256, left)) };
         let v: Vec<u8> = iter::repeat(0u8).take(vec_len).collect();
         storage.push(v);
         allocated += vec_len;

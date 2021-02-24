@@ -332,7 +332,7 @@ mod linux_android {
           target_os = "fuchsia",
           any(target_os = "wasi", target_env = "wasi"),
           target_env = "uclibc",
-          target_env = "freebsd"))]
+          target_os = "freebsd"))]
 mod test_posix_fadvise {
 
     use tempfile::NamedTempFile;

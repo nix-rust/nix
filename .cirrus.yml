@@ -52,12 +52,11 @@ task:
 
 # Use cross for QEMU-based testing
 # cross needs to execute Docker, so we must use Cirrus's Docker Builder task.
-docker_builder:
+task:
   env:
     RUST_TEST_THREADS: 1            # QEMU works best with 1 thread
     HOME: /tmp/home
     PATH: $HOME/.cargo/bin:$PATH
-      #cpu: 1 docker_builder doesn't support "cpu"?
   matrix:
     - name: Linux aarch64
       env:
@@ -89,6 +88,12 @@ docker_builder:
     - name: Linux powerpc64le
       env:
         TARGET: powerpc64le-unknown-linux-gnu
+  compute_engine_instance:
+    image_project: cirrus-images
+    image: family/docker-builder
+    platform: linux
+    cpu: 1                          # Since QEMU will only use 1 thread
+    memory: 4G
   setup_script:
     - mkdir /tmp/home
     - curl --proto '=https' --tlsv1.2 -sSf -o rustup.sh https://sh.rustup.rs
@@ -157,6 +162,10 @@ task:
     - name: Linux s390x
       env:
         TARGET: s390x-unknown-linux-gnu
+    - name: Linux x32
+      env:
+        TARGET: x86_64-unknown-linux-gnux32
+        CHECK_TESTS: true
     - name: NetBSD x86_64
       env:
         TARGET: x86_64-unknown-netbsd
