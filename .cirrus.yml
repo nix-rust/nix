@@ -72,7 +72,6 @@ task:
   before_cache_script: rm -rf $CARGO_HOME/registry/index
   allow_failures: true
 
-task:
 # Use cross for QEMU-based testing
 # cross needs to execute Docker, so we must use Cirrus's Docker Builder task.
 task:
