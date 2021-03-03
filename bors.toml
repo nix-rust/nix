@@ -27,6 +27,7 @@ status = [
   "Redox x86_64",
   "Rust Stable",
   "iOS",
+  "macOS aarch64",
 ]
 
 # Set bors's timeout to 1 hour

@@ -50,6 +50,29 @@ task:
     - bash ci/script.sh
   before_cache_script: rm -rf $CARGO_HOME/registry/index
 
+
+# macOS aarch64 requires a more recent toolchain than the other macOS targets.
+task:
+  name: macOS aarch64
+  env:
+    TARGET: aarch64-apple-darwin
+    TOOLCHAIN: stable
+    DISABLE_TESTS: 1
+  osx_instance:
+    image: big-sur-xcode
+  setup_script:
+    - curl --proto '=https' --tlsv1.2 -sSf -o rustup.sh https://sh.rustup.rs
+    - sh rustup.sh -y --profile=minimal --default-toolchain $TOOLCHAIN
+    - . $HOME/.cargo/env
+    - rustup target add $TARGET
+    - bash ci/install.sh
+  script:
+    - . $HOME/.cargo/env
+    - bash ci/script.sh
+  before_cache_script: rm -rf $CARGO_HOME/registry/index
+  allow_failures: true
+
+task:
 # Use cross for QEMU-based testing
 # cross needs to execute Docker, so we must use Cirrus's Docker Builder task.
 task:
