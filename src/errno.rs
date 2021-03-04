@@ -8,15 +8,12 @@ pub use self::consts::*;
 cfg_if! {
     if #[cfg(any(target_os = "freebsd",
                  target_os = "ios",
-                 target_os = "macos"))] {
+                 target_os = "macos",
+                 target_os = "android",
+                 target_os = "netbsd",
+                 target_os = "openbsd"))] {
         unsafe fn errno_location() -> *mut c_int {
             libc::__error()
-        }
-    } else if #[cfg(any(target_os = "android",
-                        target_os = "netbsd",
-                        target_os = "openbsd"))] {
-        unsafe fn errno_location() -> *mut c_int {
-            libc::__errno()
         }
     } else if #[cfg(any(target_os = "linux",
                         target_os = "redox",
