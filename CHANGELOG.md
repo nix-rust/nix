@@ -5,11 +5,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - ReleaseDate
 ### Added
+- Added `aarch64-apple-darwin` with Tier 3 support.
+  (#[1396](https://github.com/nix-rust/nix/pull/1396))
 
 ### Changed
 - Made `forkpty` unsafe, like `fork`
   (#[1390](https://github.com/nix-rust/nix/pull/1390))
-- Added `aarch64-apple-darwin` with Tier 3 support.
 
 ### Fixed
 ### Removed

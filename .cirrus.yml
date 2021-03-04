@@ -56,7 +56,7 @@ task:
   name: macOS aarch64
   env:
     TARGET: aarch64-apple-darwin
-    TOOLCHAIN: stable
+    TOOLCHAIN: 1.50.0
     DISABLE_TESTS: 1
   osx_instance:
     image: big-sur-xcode
@@ -70,7 +70,6 @@ task:
     - . $HOME/.cargo/env
     - bash ci/script.sh
   before_cache_script: rm -rf $CARGO_HOME/registry/index
-  allow_failures: true
 
 # Use cross for QEMU-based testing
 # cross needs to execute Docker, so we must use Cirrus's Docker Builder task.
