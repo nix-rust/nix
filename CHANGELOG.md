@@ -13,6 +13,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 ### Removed
 
+- Removed `sys::socket::accept4` from Android arm because libc removed it in
+  version 0.2.87.
+  ([#1399](https://github.com/nix-rust/nix/pull/1399))
+
 ## [0.20.0] - 20 February 2021
 ### Added
 
