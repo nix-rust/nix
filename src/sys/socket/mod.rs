@@ -1481,7 +1481,14 @@ pub fn accept(sockfd: RawFd) -> Result<RawFd> {
 /// Accept a connection on a socket
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/accept.2.html)
-#[cfg(any(target_os = "android",
+#[cfg(any(all(
+            target_os = "android",
+            any(
+                target_arch = "aarch64",
+                target_arch = "x86",
+                target_arch = "x86_64"
+            )
+          ),
           target_os = "freebsd",
           target_os = "linux",
           target_os = "openbsd"))]
