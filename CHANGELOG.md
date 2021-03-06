@@ -11,6 +11,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   (#[1390](https://github.com/nix-rust/nix/pull/1390))
 
 ### Fixed
+- Allow `sockaddr_ll` size, as reported by the Linux kernel, to be smaller then it's definition
+  (#[1395](https://github.com/nix-rust/nix/pull/1395))
+
 ### Removed
 
 - Removed `sys::socket::accept4` from Android arm because libc removed it in

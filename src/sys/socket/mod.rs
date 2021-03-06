@@ -1711,7 +1711,10 @@ pub fn sockaddr_storage_to_addr(
         #[cfg(any(target_os = "android", target_os = "linux"))]
         libc::AF_PACKET => {
             use libc::sockaddr_ll;
-            assert_eq!(len as usize, mem::size_of::<sockaddr_ll>());
+            // Apparently the Linux kernel can return smaller sizes when
+            // the value in the last element of sockaddr_ll (`sll_addr`) is
+            // smaller than the declared size of that field
+            assert!(len as usize <= mem::size_of::<sockaddr_ll>());
             let sll = unsafe {
                 *(addr as *const _ as *const sockaddr_ll)
             };
