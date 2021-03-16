@@ -53,14 +53,12 @@ impl Dir {
 
     /// Converts from a file descriptor, closing it on success or failure.
     pub fn from_fd(fd: RawFd) -> Result<Self> {
-        let d = unsafe { libc::fdopendir(fd) };
-        if d.is_null() {
+        let d = ptr::NonNull::new(unsafe { libc::fdopendir(fd) }).ok_or_else(|| {
             let e = Error::last();
             unsafe { libc::close(fd) };
-            return Err(e);
-        };
-        // Always guaranteed to be non-null by the previous check
-        Ok(Dir(ptr::NonNull::new(d).unwrap()))
+            e
+        })?;
+        Ok(Dir(d))
     }
 
     /// Returns an iterator of `Result<Entry>` which rewinds when finished.
