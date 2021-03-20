@@ -7,6 +7,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Add new symbol for linux IP_MULTICAST_ALL
   (#[1418](https://github.com/nix-rust/nix/pull/1418))
+- Added TIMESTAMPNS support for linux
+  (#[1402](https://github.com/nix-rust/nix/pull/1402))
 
 ### Changed
 - Made `forkpty` unsafe, like `fork`
