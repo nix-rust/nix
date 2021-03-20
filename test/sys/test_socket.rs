@@ -1535,3 +1535,111 @@ pub fn test_vsock() {
     close(s1).unwrap();
     thr.join().unwrap();
 }
+
+// Disable the test on emulated platforms because it fails in Cirrus-CI.  Lack of QEMU
+// support is suspected.
+#[cfg_attr(not(any(target_arch = "x86_64")), ignore)]
+#[cfg(all(target_os = "linux"))]
+#[test]
+fn test_recvmsg_timestampns() {
+    use nix::sys::socket::*;
+    use nix::sys::uio::IoVec;
+    use nix::sys::time::*;
+    use std::time::*;
+
+    // Set up
+    let message = "Ohayō!".as_bytes();
+    let in_socket = socket(
+        AddressFamily::Inet,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None).unwrap();
+    setsockopt(in_socket, sockopt::ReceiveTimestampns, &true).unwrap();
+    let localhost = InetAddr::new(IpAddr::new_v4(127, 0, 0, 1), 0);
+    bind(in_socket, &SockAddr::new_inet(localhost)).unwrap();
+    let address = getsockname(in_socket).unwrap();
+    // Get initial time
+    let time0 = SystemTime::now();
+    // Send the message
+    let iov = [IoVec::from_slice(message)];
+    let flags = MsgFlags::empty();
+    let l = sendmsg(in_socket, &iov, &[], flags, Some(&address)).unwrap();
+    assert_eq!(message.len(), l);
+    // Receive the message
+    let mut buffer = vec![0u8; message.len()];
+    let mut cmsgspace = nix::cmsg_space!(TimeSpec);
+    let iov = [IoVec::from_mut_slice(&mut buffer)];
+    let r = recvmsg(in_socket, &iov, Some(&mut cmsgspace), flags).unwrap();
+    let rtime = match r.cmsgs().next() {
+        Some(ControlMessageOwned::ScmTimestampns(rtime)) => rtime,
+        Some(_) => panic!("Unexpected control message"),
+        None => panic!("No control message")
+    };
+    // Check the final time
+    let time1 = SystemTime::now();
+    // the packet's received timestamp should lie in-between the two system
+    // times, unless the system clock was adjusted in the meantime.
+    let rduration = Duration::new(rtime.tv_sec() as u64,
+    rtime.tv_nsec() as u32);
+    assert!(time0.duration_since(UNIX_EPOCH).unwrap() <= rduration);
+    assert!(rduration <= time1.duration_since(UNIX_EPOCH).unwrap());
+    // Close socket
+    nix::unistd::close(in_socket).unwrap();
+}
+
+// Disable the test on emulated platforms because it fails in Cirrus-CI.  Lack of QEMU
+// support is suspected.
+#[cfg_attr(not(any(target_arch = "x86_64")), ignore)]
+#[cfg(all(target_os = "linux"))]
+#[test]
+fn test_recvmmsg_timestampns() {
+    use nix::sys::socket::*;
+    use nix::sys::uio::IoVec;
+    use nix::sys::time::*;
+    use std::time::*;
+
+    // Set up
+    let message = "Ohayō!".as_bytes();
+    let in_socket = socket(
+        AddressFamily::Inet,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None).unwrap();
+    setsockopt(in_socket, sockopt::ReceiveTimestampns, &true).unwrap();
+    let localhost = InetAddr::new(IpAddr::new_v4(127, 0, 0, 1), 0);
+    bind(in_socket, &SockAddr::new_inet(localhost)).unwrap();
+    let address = getsockname(in_socket).unwrap();
+    // Get initial time
+    let time0 = SystemTime::now();
+    // Send the message
+    let iov = [IoVec::from_slice(message)];
+    let flags = MsgFlags::empty();
+    let l = sendmsg(in_socket, &iov, &[], flags, Some(&address)).unwrap();
+    assert_eq!(message.len(), l);
+    // Receive the message
+    let mut buffer = vec![0u8; message.len()];
+    let mut cmsgspace = nix::cmsg_space!(TimeSpec);
+    let iov = [IoVec::from_mut_slice(&mut buffer)];
+    let mut data = vec![
+        RecvMmsgData {
+            iov,
+            cmsg_buffer: Some(&mut cmsgspace),
+        },
+    ];
+    let r = recvmmsg(in_socket, &mut data, flags, None).unwrap();
+    let rtime = match r[0].cmsgs().next() {
+        Some(ControlMessageOwned::ScmTimestampns(rtime)) => rtime,
+        Some(_) => panic!("Unexpected control message"),
+        None => panic!("No control message")
+    };
+    // Check the final time
+    let time1 = SystemTime::now();
+    // the packet's received timestamp should lie in-between the two system
+    // times, unless the system clock was adjusted in the meantime.
+    let rduration = Duration::new(rtime.tv_sec() as u64,
+    rtime.tv_nsec() as u32);
+    assert!(time0.duration_since(UNIX_EPOCH).unwrap() <= rduration);
+    assert!(rduration <= time1.duration_since(UNIX_EPOCH).unwrap());
+    // Close socket
+    nix::unistd::close(in_socket).unwrap();
+}
