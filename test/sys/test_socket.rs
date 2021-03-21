@@ -1491,6 +1491,7 @@ pub fn test_recv_ipv6pktinfo() {
 }
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg_attr(not(target_arch = "x86_64"), ignore)]
 #[test]
 pub fn test_vsock() {
     use libc;
