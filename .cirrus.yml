@@ -182,6 +182,20 @@ task:
     # they don't build on all platforms.
   before_cache_script: rm -rf $CARGO_HOME/registry/index
 
+# illumos toolchain isn't available via rustup until 1.50
+task:
+  name: illumos
+  env:
+    TARGET: x86_64-unknown-illumos
+  container:
+    image: rust:1.50
+  setup_script:
+    - rustup target add $TARGET
+  script:
+    - cargo +$TOOLCHAIN check --target $TARGET
+    - cargo +$TOOLCHAIN check --target $TARGET --release
+  before_cache_script: rm -rf $CARGO_HOME/registry/index
+
 # Redoxer is too unreliable, so we'll do a cross-build only
 # See also:
 # https://github.com/nix-rust/nix/issues/1258

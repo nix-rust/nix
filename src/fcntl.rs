@@ -34,6 +34,8 @@ libc_bitflags! {
         AT_NO_AUTOMOUNT;
         #[cfg(any(target_os = "android", target_os = "linux"))]
         AT_EMPTY_PATH;
+        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        AT_EACCESS;
     }
 }
 
@@ -48,6 +50,7 @@ libc_bitflags!(
         /// Open the file in append-only mode.
         O_APPEND;
         /// Generate a signal when input or output becomes possible.
+        #[cfg(not(any(target_os = "illumos", target_os = "solaris")))]
         O_ASYNC;
         /// Closes the file descriptor once an `execve` call is made.
         ///
@@ -63,6 +66,7 @@ libc_bitflags!(
                   target_os = "netbsd"))]
         O_DIRECT;
         /// If the specified path isn't a directory, fail.
+        #[cfg(not(any(target_os = "illumos", target_os = "solaris")))]
         O_DIRECTORY;
         /// Implicitly follow each `write()` with an `fdatasync()`.
         #[cfg(any(target_os = "android",

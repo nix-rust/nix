@@ -19,6 +19,7 @@ pub mod sockopt;
  *
  */
 
+#[cfg(not(any(target_os = "illumos", target_os = "solaris")))]
 pub use self::addr::{
     AddressFamily,
     SockAddr,
@@ -29,6 +30,17 @@ pub use self::addr::{
     Ipv6Addr,
     LinkAddr,
 };
+#[cfg(any(target_os = "illumos", target_os = "solaris"))]
+pub use self::addr::{
+    AddressFamily,
+    SockAddr,
+    InetAddr,
+    UnixAddr,
+    IpAddr,
+    Ipv4Addr,
+    Ipv6Addr,
+};
+
 #[cfg(any(target_os = "android", target_os = "linux"))]
 pub use crate::sys::socket::addr::netlink::NetlinkAddr;
 #[cfg(any(target_os = "android", target_os = "linux"))]
@@ -159,6 +171,7 @@ libc_bitflags!{
         #[cfg(any(target_os = "android",
                   target_os = "dragonfly",
                   target_os = "freebsd",
+                  target_os = "illumos",
                   target_os = "linux",
                   target_os = "netbsd",
                   target_os = "openbsd"))]
@@ -167,6 +180,7 @@ libc_bitflags!{
         #[cfg(any(target_os = "android",
                   target_os = "dragonfly",
                   target_os = "freebsd",
+                  target_os = "illumos",
                   target_os = "linux",
                   target_os = "netbsd",
                   target_os = "openbsd"))]

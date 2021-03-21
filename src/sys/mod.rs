@@ -28,6 +28,7 @@ pub mod eventfd;
           target_os = "redox",
           target_os = "macos",
           target_os = "netbsd",
+          target_os = "illumos",
           target_os = "openbsd"))]
 #[macro_use]
 pub mod ioctl;

@@ -192,6 +192,7 @@ impl Entry {
               target_os = "emscripten",
               target_os = "fuchsia",
               target_os = "haiku",
+              target_os = "illumos",
               target_os = "ios",
               target_os = "l4re",
               target_os = "linux",
@@ -206,6 +207,7 @@ impl Entry {
                   target_os = "emscripten",
                   target_os = "fuchsia",
                   target_os = "haiku",
+                  target_os = "illumos",
                   target_os = "ios",
                   target_os = "l4re",
                   target_os = "linux",
@@ -226,6 +228,7 @@ impl Entry {
     /// notably, some Linux filesystems don't implement this. The caller should use `stat` or
     /// `fstat` if this returns `None`.
     pub fn file_type(&self) -> Option<Type> {
+        #[cfg(not(any(target_os = "illumos", target_os = "solaris")))]
         match self.0.d_type {
             libc::DT_FIFO => Some(Type::Fifo),
             libc::DT_CHR => Some(Type::CharacterDevice),
@@ -236,5 +239,9 @@ impl Entry {
             libc::DT_SOCK => Some(Type::Socket),
             /* libc::DT_UNKNOWN | */ _ => None,
         }
+
+        // illumos and Solaris systems do not have the d_type member at all:
+        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        None
     }
 }
