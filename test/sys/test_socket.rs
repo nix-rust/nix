@@ -1508,16 +1508,10 @@ pub fn test_vsock() {
                     SockFlag::empty(), None)
              .expect("socket failed");
 
-    // VMADDR_CID_HYPERVISOR and VMADDR_CID_LOCAL are reserved, so we expect
-    // an EADDRNOTAVAIL error.
+    // VMADDR_CID_HYPERVISOR is reserved, so we expect an EADDRNOTAVAIL error.
     let sockaddr = SockAddr::new_vsock(libc::VMADDR_CID_HYPERVISOR, port);
     assert_eq!(bind(s1, &sockaddr).err(),
                Some(Error::Sys(Errno::EADDRNOTAVAIL)));
-
-    let sockaddr = SockAddr::new_vsock(libc::VMADDR_CID_LOCAL, port);
-    assert_eq!(bind(s1, &sockaddr).err(),
-               Some(Error::Sys(Errno::EADDRNOTAVAIL)));
-
 
     let sockaddr = SockAddr::new_vsock(libc::VMADDR_CID_ANY, port);
     assert_eq!(bind(s1, &sockaddr), Ok(()));
