@@ -415,13 +415,11 @@ impl Ipv6MembershipRequest {
 macro_rules! cmsg_space {
     ( $( $x:ty ),* ) => {
         {
-            use nix::sys::socket::{c_uint, CMSG_SPACE};
-            use std::mem;
             let mut space = 0;
             $(
                 // CMSG_SPACE is always safe
                 space += unsafe {
-                    CMSG_SPACE(mem::size_of::<$x>() as c_uint)
+                    $crate::sys::socket::CMSG_SPACE(::std::mem::size_of::<$x>() as $crate::sys::socket::c_uint)
                 } as usize;
             )*
             Vec::<u8>::with_capacity(space)
@@ -1787,5 +1785,13 @@ pub fn shutdown(df: RawFd, how: Shutdown) -> Result<()> {
         };
 
         Errno::result(shutdown(df, how)).map(drop)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn can_use_cmsg_space() {
+        let _ = cmsg_space!(u8);
     }
 }
