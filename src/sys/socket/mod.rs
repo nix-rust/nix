@@ -392,6 +392,11 @@ impl Ipv6MembershipRequest {
 /// Create a buffer large enough for storing some control messages as returned
 /// by [`recvmsg`](fn.recvmsg.html).
 ///
+/// When creating multiple buffers through `cmsg_space!`, use funtion variant like
+/// `std::iter::repeat_with`, but not clone like `std::iter::repeat`. This is because
+/// user of this buffer is relying on the specific `capacity` set in `cmsg_space!`,
+/// and `clone` does not preserve it.
+///
 /// # Examples
 ///
 /// ```
