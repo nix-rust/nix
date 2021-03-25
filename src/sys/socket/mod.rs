@@ -392,16 +392,15 @@ impl Ipv6MembershipRequest {
 /// Create a buffer large enough for storing some control messages as returned
 /// by [`recvmsg`](fn.recvmsg.html).
 ///
-/// When creating multiple buffers through `cmsg_space!`, use funtion variant like
-/// `std::iter::repeat_with`, but not clone like `std::iter::repeat`. This is because
-/// user of this buffer is relying on the specific `capacity` set in `cmsg_space!`,
-/// and `clone` does not preserve it.
+/// The usage of space created by `cmsg_space!` depends on specific `capacity` set on the `Vec`
+/// inside the `cmsg_space!`. Thus, user should avoid cloning the space created by `cmsg_space!`
+/// because `clone` does not preserve `capacity`. See examples below for creating multiple buffers.
 ///
 /// # Examples
 ///
 /// ```
 /// # #[macro_use] extern crate nix;
-/// # use nix::sys::time::TimeVal;
+/// # use nix::sys::time::{TimeSpec, TimeVal};
 /// # use std::os::unix::io::RawFd;
 /// # fn main() {
 /// // Create a buffer for a `ControlMessageOwned::ScmTimestamp` message
@@ -412,6 +411,13 @@ impl Ipv6MembershipRequest {
 /// // Create a buffer big enough for a `ControlMessageOwned::ScmRights` message
 /// // and a `ControlMessageOwned::ScmTimestamp` message
 /// let _ = cmsg_space!(RawFd, TimeVal);
+/// // Create 5 buffers for storing `TimeSpec` using `repeat_with`
+/// let _: Vec<_> = std::iter::repeat_with(|| {
+///    nix::cmsg_space!(TimeSpec)
+/// }).take(5).collect();
+/// // Note that `let _: Vec<_> = std::iter::repeat(nix::cmsg_space!(TimeSpec)).take(5).collect()`
+/// // would compile, but the spaces created would not be usable later, and will result in
+/// // `MSG_CTRUNC`
 /// # }
 /// ```
 // Unfortunately, CMSG_SPACE isn't a const_fn, or else we could return a
