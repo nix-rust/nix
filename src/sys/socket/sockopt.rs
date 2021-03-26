@@ -271,6 +271,8 @@ sockopt_impl!(GetOnly, AcceptConn, libc::SOL_SOCKET, libc::SO_ACCEPTCONN, bool);
 sockopt_impl!(Both, BindToDevice, libc::SOL_SOCKET, libc::SO_BINDTODEVICE, OsString<[u8; libc::IFNAMSIZ]>);
 #[cfg(any(target_os = "android", target_os = "linux"))]
 sockopt_impl!(GetOnly, OriginalDst, libc::SOL_IP, libc::SO_ORIGINAL_DST, libc::sockaddr_in);
+#[cfg(any(target_os = "android", target_os = "linux"))]
+sockopt_impl!(GetOnly, Ip6tOriginalDst, libc::SOL_IPV6, libc::IP6T_SO_ORIGINAL_DST, libc::sockaddr_in6);
 sockopt_impl!(Both, ReceiveTimestamp, libc::SOL_SOCKET, libc::SO_TIMESTAMP, bool);
 #[cfg(any(target_os = "android", target_os = "linux"))]
 sockopt_impl!(Both, IpTransparent, libc::SOL_IP, libc::IP_TRANSPARENT, bool);
