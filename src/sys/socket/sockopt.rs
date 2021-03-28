@@ -279,14 +279,17 @@ sockopt_impl!(
     libc::IP_MULTICAST_LOOP,
     bool
 );
-sockopt_impl!(
-    Both,
-    IpMulticastAll,
-    libc::IPPROTO_IP,
-    libc::IP_MULTICAST_ALL,
-    bool
-);
-#[cfg(any(target_os = "linux"))]
+cfg_if! {
+ if #[cfg(any(target_os = "linux"))] {
+    sockopt_impl!(
+        Both,
+        IpMulticastAll,
+        libc::IPPROTO_IP,
+        libc::IP_MULTICAST_ALL,
+        bool
+    );
+ }
+}
 sockopt_impl!(
     Both,
     ReceiveTimeout,
