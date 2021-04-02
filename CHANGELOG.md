@@ -13,6 +13,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - Allow `sockaddr_ll` size, as reported by the Linux kernel, to be smaller then it's definition
   (#[1395](https://github.com/nix-rust/nix/pull/1395))
+- Fix spurious errors using `sendmmsg` with multiple cmsgs
+  (#[1414](https://github.com/nix-rust/nix/pull/1414))
 
 ### Removed
 

@@ -1101,23 +1101,22 @@ pub fn sendmmsg<'a, I, C>(
 
     let mut output = Vec::<libc::mmsghdr>::with_capacity(reserve_items);
 
-    let mut cmsgs_buffer = vec![0u8; 0];
+    let mut cmsgs_buffers = Vec::<Vec<u8>>::with_capacity(reserve_items);
 
     for d in iter {
-        let cmsgs_start = cmsgs_buffer.len();
-        let cmsgs_required_capacity: usize = d.cmsgs.as_ref().iter().map(|c| c.space()).sum();
-        let cmsgs_buffer_need_capacity = cmsgs_start + cmsgs_required_capacity;
-        cmsgs_buffer.resize(cmsgs_buffer_need_capacity, 0);
+        let capacity: usize = d.cmsgs.as_ref().iter().map(|c| c.space()).sum();
+        let mut cmsgs_buffer = vec![0u8; capacity];
 
         output.push(libc::mmsghdr {
             msg_hdr: pack_mhdr_to_send(
-                &mut cmsgs_buffer[cmsgs_start..],
+                &mut cmsgs_buffer,
                 &d.iov,
                 &d.cmsgs,
                 d.addr.as_ref()
             ),
             msg_len: 0,
         });
+        cmsgs_buffers.push(cmsgs_buffer);
     };
 
     let ret = unsafe { libc::sendmmsg(fd, output.as_mut_ptr(), output.len() as _, flags.bits() as _) };
