@@ -2641,10 +2641,10 @@ impl User {
               libc::size_t,
               *mut *mut libc::passwd) -> libc::c_int
     {
-        let buflimit = 16384;
+        let buflimit = 1048576;
         let bufsize = match sysconf(SysconfVar::GETPW_R_SIZE_MAX) {
             Ok(Some(n)) => n as usize,
-            Ok(None) | Err(_) => buflimit as usize,
+            Ok(None) | Err(_) => 16384,
         };
 
         let mut cbuf = Vec::with_capacity(bufsize);
@@ -2762,10 +2762,10 @@ impl Group {
               libc::size_t,
               *mut *mut libc::group) -> libc::c_int
     {
-        let buflimit = 16384;
+        let buflimit = 1048576;
         let bufsize = match sysconf(SysconfVar::GETGR_R_SIZE_MAX) {
             Ok(Some(n)) => n as usize,
-            Ok(None) | Err(_) => buflimit as usize,
+            Ok(None) | Err(_) => 16384,
         };
 
         let mut cbuf = Vec::with_capacity(bufsize);
