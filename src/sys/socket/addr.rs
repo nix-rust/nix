@@ -1,6 +1,7 @@
 use super::sa_family_t;
 use crate::{Error, Result, NixPath};
 use crate::errno::Errno;
+use memoffset::offset_of;
 use std::{fmt, mem, net, ptr, slice};
 use std::ffi::OsStr;
 use std::hash::{Hash, Hasher};
