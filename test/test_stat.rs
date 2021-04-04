@@ -10,7 +10,9 @@ use std::time::{Duration, UNIX_EPOCH};
 use std::path::Path;
 
 #[cfg(not(any(target_os = "netbsd", target_os = "redox")))]
-use libc::{S_IFMT, S_IFLNK, mode_t};
+use libc::{S_IFMT, S_IFLNK};
+#[cfg(not(target_os = "redox"))]
+use libc::mode_t;
 
 #[cfg(not(target_os = "redox"))]
 use nix::{fcntl, Error};
@@ -69,6 +71,8 @@ fn assert_stat_results(stat_result: Result<FileStat>) {
 }
 
 #[cfg(not(any(target_os = "netbsd", target_os = "redox")))]
+// (Android's st_blocks is ulonglong which is always non-negative.)
+#[cfg_attr(target_os = "android", allow(unused_comparisons))]
 fn assert_lstat_results(stat_result: Result<FileStat>) {
     let stats = stat_result.expect("stat call failed");
     assert!(stats.st_dev > 0);      // must be positive integer, exact number machine dependent
@@ -86,7 +90,6 @@ fn assert_lstat_results(stat_result: Result<FileStat>) {
 
     // st_blocks depends on whether the machine's file system uses fast
     // or slow symlinks, so just make sure it's not negative
-    // (Android's st_blocks is ulonglong which is always non-negative.)
     assert!(stats.st_blocks >= 0);
 }
 
@@ -159,14 +162,14 @@ fn test_fchmod() {
     fchmod(file.as_raw_fd(), mode1).unwrap();
 
     let file_stat1 = stat(&filename).unwrap();
-    assert_eq!(file_stat1.st_mode & 0o7777, mode1.bits());
+    assert_eq!(file_stat1.st_mode as mode_t & 0o7777, mode1.bits());
 
     let mut mode2 = Mode::empty();
     mode2.insert(Mode::S_IROTH);
     fchmod(file.as_raw_fd(), mode2).unwrap();
 
     let file_stat2 = stat(&filename).unwrap();
-    assert_eq!(file_stat2.st_mode & 0o7777, mode2.bits());
+    assert_eq!(file_stat2.st_mode as mode_t & 0o7777, mode2.bits());
 }
 
 #[test]
@@ -186,7 +189,7 @@ fn test_fchmodat() {
     fchmodat(Some(dirfd), filename, mode1, FchmodatFlags::FollowSymlink).unwrap();
 
     let file_stat1 = stat(&fullpath).unwrap();
-    assert_eq!(file_stat1.st_mode & 0o7777, mode1.bits());
+    assert_eq!(file_stat1.st_mode as mode_t & 0o7777, mode1.bits());
 
     chdir(tempdir.path()).unwrap();
 
@@ -195,7 +198,7 @@ fn test_fchmodat() {
     fchmodat(None, filename, mode2, FchmodatFlags::FollowSymlink).unwrap();
 
     let file_stat2 = stat(&fullpath).unwrap();
-    assert_eq!(file_stat2.st_mode & 0o7777, mode2.bits());
+    assert_eq!(file_stat2.st_mode as mode_t & 0o7777, mode2.bits());
 }
 
 /// Asserts that the atime and mtime in a file's metadata match expected values.
