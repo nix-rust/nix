@@ -757,6 +757,7 @@ pub fn test_af_alg_aead() {
         target_os = "netbsd"))]
 #[test]
 pub fn test_sendmsg_ipv4packetinfo() {
+    use cfg_if::cfg_if;
     use nix::sys::uio::IoVec;
     use nix::sys::socket::{socket, sendmsg, bind,
                            AddressFamily, SockType, SockFlag, SockAddr,
@@ -778,11 +779,21 @@ pub fn test_sendmsg_ipv4packetinfo() {
     let iov = [IoVec::from_slice(&slice)];
 
     if let InetAddr::V4(sin) = inet_addr {
-        let pi = libc::in_pktinfo {
-            ipi_ifindex: 0, /* Unspecified interface */
-            ipi_addr: libc::in_addr { s_addr: 0 },
-            ipi_spec_dst: sin.sin_addr,
-        };
+        cfg_if! {
+            if #[cfg(target_os = "netbsd")] {
+                drop(sin);
+                let pi = libc::in_pktinfo {
+                    ipi_ifindex: 0, /* Unspecified interface */
+                    ipi_addr: libc::in_addr { s_addr: 0 },
+                };
+            } else {
+                let pi = libc::in_pktinfo {
+                    ipi_ifindex: 0, /* Unspecified interface */
+                    ipi_addr: libc::in_addr { s_addr: 0 },
+                    ipi_spec_dst: sin.sin_addr,
+                };
+            }
+        }
 
         let cmsg = [ControlMessage::Ipv4PacketInfo(&pi)];
 
@@ -1472,13 +1483,13 @@ pub fn test_recv_ipv6pktinfo() {
             Some(ControlMessageOwned::Ipv6PacketInfo(pktinfo)) => {
                 let i = if_nametoindex(lo_name.as_bytes()).expect("if_nametoindex");
                 assert_eq!(
-                    pktinfo.ipi6_ifindex,
+                    pktinfo.ipi6_ifindex as libc::c_uint,
                     i,
                     "unexpected ifindex (expected {}, got {})",
                     i,
                     pktinfo.ipi6_ifindex
                 );
-            }
+            },
             _ => (),
         }
         assert!(cmsgs.next().is_none(), "unexpected additional control msg");
