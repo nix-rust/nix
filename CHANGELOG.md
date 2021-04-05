@@ -126,6 +126,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   (#[1265](https://github.com/nix-rust/nix/pull/1265))
 - Added support for `TimerFd`.
   (#[1261](https://github.com/nix-rust/nix/pull/1261))
+- Added support for `sockaddr_ll` to `sockaddr_storage_to_addr`.
+  (#[1274](https://github.com/nix-rust/nix/pull/1274))
 
 ### Changed
 - Changed `fallocate` return type from `c_int` to `()` (#[1201](https://github.com/nix-rust/nix/pull/1201))

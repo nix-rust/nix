@@ -1757,6 +1757,14 @@ pub fn sockaddr_storage_to_addr(
             };
             Ok(SockAddr::Vsock(VsockAddr(svm)))
         }
+        #[cfg(any(target_os = "android", target_os = "linux"))]
+        libc::AF_PACKET => {
+            use libc::sockaddr_ll;
+            let ll = unsafe {
+                *(addr as *const _ as *const sockaddr_ll)
+            };
+            Ok(SockAddr::Link(LinkAddr(ll)))
+        }
         af => panic!("unexpected address family {}", af),
     }
 }
