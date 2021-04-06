@@ -415,9 +415,8 @@ impl Ipv6MembershipRequest {
 /// let _: Vec<_> = std::iter::repeat_with(|| {
 ///    nix::cmsg_space!(TimeSpec)
 /// }).take(5).collect();
-/// // Note that `let _: Vec<_> = std::iter::repeat(nix::cmsg_space!(TimeSpec)).take(5).collect()`
-/// // would compile, but the spaces created would not be usable later, and will result in
-/// // `MSG_CTRUNC`
+/// // Note: must use `repeat_with` rather than `repeat` because `Clone` does not preserve
+/// // the `Vec`'s capacity.
 /// # }
 /// ```
 // Unfortunately, CMSG_SPACE isn't a const_fn, or else we could return a
