@@ -7,6 +7,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Added TIMESTAMPNS support for linux
   (#[1402](https://github.com/nix-rust/nix/pull/1402))
+- Added TIMESTAMPNING support for linux
+  (#[1402](https://github.com/nix-rust/nix/pull/1420))
 
 ### Changed
 - Made `forkpty` unsafe, like `fork`
