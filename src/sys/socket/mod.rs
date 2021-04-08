@@ -562,6 +562,11 @@ pub enum ControlMessageOwned {
     /// [Further reading](https://www.kernel.org/doc/html/latest/networking/timestamping.html)
     #[cfg(all(target_os = "linux"))]
     ScmTimestampns(TimeSpec),
+    /// Configurable nanoseconds resolution timestamps
+    ///
+    /// [Further reading](https://www.kernel.org/doc/html/latest/networking/timestamping.html)
+    #[cfg(all(target_os = "linux"))]
+    ScmTimestamping([TimeSpec; 3]),
     #[cfg(any(
         target_os = "android",
         target_os = "ios",
@@ -657,6 +662,12 @@ impl ControlMessageOwned {
             (libc::SOL_SOCKET, libc::SCM_TIMESTAMPNS) => {
                 let ts: libc::timespec = ptr::read_unaligned(p as *const _);
                 ControlMessageOwned::ScmTimestampns(TimeSpec::from(ts))
+            }
+            #[cfg(all(target_os = "linux"))]
+            (libc::SOL_SOCKET, libc::SCM_TIMESTAMPING) => {
+                let tss: [libc::timespec; 3] = ptr::read_unaligned(p as *const _);
+                let tss2 = [TimeSpec::from(tss[0]), TimeSpec::from(tss[1]), TimeSpec::from(tss[2])];
+                ControlMessageOwned::ScmTimestamping(tss2)
             }
             #[cfg(any(
                 target_os = "android",
