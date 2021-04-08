@@ -8,6 +8,8 @@ use libc::{self, c_void, c_int, iovec, socklen_t, size_t,
 use memoffset::offset_of;
 use std::{mem, ptr, slice};
 use std::os::unix::io::RawFd;
+#[cfg(all(target_os = "linux"))]
+use crate::sys::time::TimeSpec;
 use crate::sys::time::TimeVal;
 use crate::sys::uio::IoVec;
 
@@ -555,6 +557,11 @@ pub enum ControlMessageOwned {
     /// # }
     /// ```
     ScmTimestamp(TimeVal),
+    /// Nanoseconds resolution timestamp
+    ///
+    /// [Further reading](https://www.kernel.org/doc/html/latest/networking/timestamping.html)
+    #[cfg(all(target_os = "linux"))]
+    ScmTimestampns(TimeSpec),
     #[cfg(any(
         target_os = "android",
         target_os = "ios",
@@ -646,6 +653,11 @@ impl ControlMessageOwned {
                 let tv: libc::timeval = ptr::read_unaligned(p as *const _);
                 ControlMessageOwned::ScmTimestamp(TimeVal::from(tv))
             },
+            #[cfg(all(target_os = "linux"))]
+            (libc::SOL_SOCKET, libc::SCM_TIMESTAMPNS) => {
+                let ts: libc::timespec = ptr::read_unaligned(p as *const _);
+                ControlMessageOwned::ScmTimestampns(TimeSpec::from(ts))
+            }
             #[cfg(any(
                 target_os = "android",
                 target_os = "freebsd",
