@@ -5,8 +5,11 @@ use cfg_if::cfg_if;
 use crate::{Error, Result, errno::Errno};
 use libc::{self, c_void, c_int, iovec, socklen_t, size_t,
         CMSG_FIRSTHDR, CMSG_NXTHDR, CMSG_DATA, CMSG_LEN};
+use memoffset::offset_of;
 use std::{mem, ptr, slice};
 use std::os::unix::io::RawFd;
+#[cfg(all(target_os = "linux"))]
+use crate::sys::time::TimeSpec;
 use crate::sys::time::TimeVal;
 use crate::sys::uio::IoVec;
 
@@ -554,6 +557,11 @@ pub enum ControlMessageOwned {
     /// # }
     /// ```
     ScmTimestamp(TimeVal),
+    /// Nanoseconds resolution timestamp
+    ///
+    /// [Further reading](https://www.kernel.org/doc/html/latest/networking/timestamping.html)
+    #[cfg(all(target_os = "linux"))]
+    ScmTimestampns(TimeSpec),
     #[cfg(any(
         target_os = "android",
         target_os = "ios",
@@ -645,6 +653,11 @@ impl ControlMessageOwned {
                 let tv: libc::timeval = ptr::read_unaligned(p as *const _);
                 ControlMessageOwned::ScmTimestamp(TimeVal::from(tv))
             },
+            #[cfg(all(target_os = "linux"))]
+            (libc::SOL_SOCKET, libc::SCM_TIMESTAMPNS) => {
+                let ts: libc::timespec = ptr::read_unaligned(p as *const _);
+                ControlMessageOwned::ScmTimestampns(TimeSpec::from(ts))
+            }
             #[cfg(any(
                 target_os = "android",
                 target_os = "freebsd",
@@ -1101,23 +1114,22 @@ pub fn sendmmsg<'a, I, C>(
 
     let mut output = Vec::<libc::mmsghdr>::with_capacity(reserve_items);
 
-    let mut cmsgs_buffer = vec![0u8; 0];
+    let mut cmsgs_buffers = Vec::<Vec<u8>>::with_capacity(reserve_items);
 
     for d in iter {
-        let cmsgs_start = cmsgs_buffer.len();
-        let cmsgs_required_capacity: usize = d.cmsgs.as_ref().iter().map(|c| c.space()).sum();
-        let cmsgs_buffer_need_capacity = cmsgs_start + cmsgs_required_capacity;
-        cmsgs_buffer.resize(cmsgs_buffer_need_capacity, 0);
+        let capacity: usize = d.cmsgs.as_ref().iter().map(|c| c.space()).sum();
+        let mut cmsgs_buffer = vec![0u8; capacity];
 
         output.push(libc::mmsghdr {
             msg_hdr: pack_mhdr_to_send(
-                &mut cmsgs_buffer[cmsgs_start..],
+                &mut cmsgs_buffer,
                 &d.iov,
                 &d.cmsgs,
                 d.addr.as_ref()
             ),
             msg_len: 0,
         });
+        cmsgs_buffers.push(cmsgs_buffer);
     };
 
     let ret = unsafe { libc::sendmmsg(fd, output.as_mut_ptr(), output.len() as _, flags.bits() as _) };

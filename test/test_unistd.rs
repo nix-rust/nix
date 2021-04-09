@@ -23,7 +23,7 @@ use std::os::unix::prelude::*;
 #[cfg(not(target_os = "redox"))]
 use std::path::Path;
 use tempfile::{tempdir, tempfile};
-use libc::{_exit, off_t};
+use libc::{_exit, mode_t, off_t};
 
 use crate::*;
 
@@ -102,7 +102,7 @@ fn test_mkfifo() {
     mkfifo(&mkfifo_fifo, Mode::S_IRUSR).unwrap();
 
     let stats = stat::stat(&mkfifo_fifo).unwrap();
-    let typ = stat::SFlag::from_bits_truncate(stats.st_mode);
+    let typ = stat::SFlag::from_bits_truncate(stats.st_mode as mode_t);
     assert!(typ == SFlag::S_IFIFO);
 }
 
@@ -629,10 +629,10 @@ fn test_sysconf_unsupported() {
 #[test]
 fn test_pipe() {
     let (fd0, fd1) = pipe().unwrap();
-    let m0 = stat::SFlag::from_bits_truncate(stat::fstat(fd0).unwrap().st_mode);
+    let m0 = stat::SFlag::from_bits_truncate(stat::fstat(fd0).unwrap().st_mode as mode_t);
     // S_IFIFO means it's a pipe
     assert_eq!(m0, SFlag::S_IFIFO);
-    let m1 = stat::SFlag::from_bits_truncate(stat::fstat(fd1).unwrap().st_mode);
+    let m1 = stat::SFlag::from_bits_truncate(stat::fstat(fd1).unwrap().st_mode as mode_t);
     assert_eq!(m1, SFlag::S_IFIFO);
 }
 
@@ -926,7 +926,9 @@ fn test_linkat_follow_symlink() {
     let newfilestat = stat::stat(&newfilepath).unwrap();
 
     // Check the file type of the new link
-    assert!((stat::SFlag::from_bits_truncate(newfilestat.st_mode) & SFlag::S_IFMT) ==  SFlag::S_IFREG);
+    assert_eq!((stat::SFlag::from_bits_truncate(newfilestat.st_mode as mode_t) & SFlag::S_IFMT),
+        SFlag::S_IFREG
+    );
 
     // Check the number of hard links to the original file
     assert_eq!(newfilestat.st_nlink, 2);
