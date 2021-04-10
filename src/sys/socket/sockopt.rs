@@ -214,6 +214,7 @@ macro_rules! sockopt_impl {
  */
 
 sockopt_impl!(Both, ReuseAddr, libc::SOL_SOCKET, libc::SO_REUSEADDR, bool);
+#[cfg(not(any(target_os = "illumos", target_os = "solaris")))]
 sockopt_impl!(Both, ReusePort, libc::SOL_SOCKET, libc::SO_REUSEPORT, bool);
 sockopt_impl!(Both, TcpNoDelay, libc::IPPROTO_TCP, libc::TCP_NODELAY, bool);
 sockopt_impl!(Both, Linger, libc::SOL_SOCKET, libc::SO_LINGER, libc::linger);
@@ -225,10 +226,12 @@ cfg_if! {
         sockopt_impl!(SetOnly, Ipv6DropMembership, libc::IPPROTO_IPV6, libc::IPV6_DROP_MEMBERSHIP, super::Ipv6MembershipRequest);
     } else if #[cfg(any(target_os = "dragonfly",
                         target_os = "freebsd",
+                        target_os = "illumos",
                         target_os = "ios",
                         target_os = "macos",
                         target_os = "netbsd",
-                        target_os = "openbsd"))] {
+                        target_os = "openbsd",
+                        target_os = "solaris"))] {
         sockopt_impl!(SetOnly, Ipv6AddMembership, libc::IPPROTO_IPV6, libc::IPV6_JOIN_GROUP, super::Ipv6MembershipRequest);
         sockopt_impl!(SetOnly, Ipv6DropMembership, libc::IPPROTO_IPV6, libc::IPV6_LEAVE_GROUP, super::Ipv6MembershipRequest);
     }
@@ -269,6 +272,8 @@ sockopt_impl!(Both, BindToDevice, libc::SOL_SOCKET, libc::SO_BINDTODEVICE, OsStr
 #[cfg(any(target_os = "android", target_os = "linux"))]
 sockopt_impl!(GetOnly, OriginalDst, libc::SOL_IP, libc::SO_ORIGINAL_DST, libc::sockaddr_in);
 sockopt_impl!(Both, ReceiveTimestamp, libc::SOL_SOCKET, libc::SO_TIMESTAMP, bool);
+#[cfg(all(target_os = "linux"))]
+sockopt_impl!(Both, ReceiveTimestampns, libc::SOL_SOCKET, libc::SO_TIMESTAMPNS, bool);
 #[cfg(any(target_os = "android", target_os = "linux"))]
 sockopt_impl!(Both, IpTransparent, libc::SOL_IP, libc::IP_TRANSPARENT, bool);
 #[cfg(target_os = "openbsd")]

@@ -885,9 +885,11 @@ pub fn execveat<SA: AsRef<CStr>,SE: AsRef<CStr>>(dirfd: RawFd, pathname: &CStr, 
 #[cfg(any(target_os = "android",
           target_os = "dragonfly",
           target_os = "freebsd",
+          target_os = "illumos",
           target_os = "linux",
           target_os = "netbsd",
-          target_os = "openbsd"))]
+          target_os = "openbsd",
+          target_os = "solaris"))]
 pub fn daemon(nochdir: bool, noclose: bool) -> Result<()> {
     let res = unsafe { libc::daemon(nochdir as c_int, noclose as c_int) };
     Errno::result(res).map(drop)
@@ -906,8 +908,10 @@ pub fn sethostname<S: AsRef<OsStr>>(name: S) -> Result<()> {
     cfg_if! {
         if #[cfg(any(target_os = "dragonfly",
                      target_os = "freebsd",
+                     target_os = "illumos",
                      target_os = "ios",
-                     target_os = "macos", ))] {
+                     target_os = "macos",
+                     target_os = "solaris", ))] {
             type sethostname_len_t = c_int;
         } else {
             type sethostname_len_t = size_t;
@@ -1019,14 +1023,22 @@ pub enum Whence {
     /// Specify an offset relative to the next location in the file greater than or
     /// equal to offset that contains some data. If offset points to
     /// some data, then the file offset is set to offset.
-    #[cfg(any(target_os = "dragonfly", target_os = "freebsd", target_os = "linux"))]
+    #[cfg(any(target_os = "dragonfly",
+              target_os = "freebsd",
+              target_os = "illumos",
+              target_os = "linux",
+              target_os = "solaris"))]
     SeekData = libc::SEEK_DATA,
     /// Specify an offset relative to the next hole in the file greater than
     /// or equal to offset. If offset points into the middle of a hole, then
     /// the file offset should be set to offset. If there is no hole past offset,
     /// then the file offset should be adjusted to the end of the file (i.e., there
     /// is an implicit hole at the end of any file).
-    #[cfg(any(target_os = "dragonfly", target_os = "freebsd", target_os = "linux"))]
+    #[cfg(any(target_os = "dragonfly",
+              target_os = "freebsd",
+              target_os = "illumos",
+              target_os = "linux",
+              target_os = "solaris"))]
     SeekHole = libc::SEEK_HOLE
 }
 
@@ -1076,10 +1088,12 @@ pub fn pipe() -> Result<(RawFd, RawFd)> {
           target_os = "dragonfly",
           target_os = "emscripten",
           target_os = "freebsd",
+          target_os = "illumos",
           target_os = "linux",
           target_os = "redox",
           target_os = "netbsd",
-          target_os = "openbsd"))]
+          target_os = "openbsd",
+          target_os = "solaris"))]
 pub fn pipe2(flags: OFlag) -> Result<(RawFd, RawFd)> {
     let mut fds = mem::MaybeUninit::<[c_int; 2]>::uninit();
 
@@ -1274,7 +1288,9 @@ pub fn fsync(fd: RawFd) -> Result<()> {
 // TODO: exclude only Apple systems after https://github.com/rust-lang/libc/pull/211
 #[cfg(any(target_os = "linux",
           target_os = "android",
-          target_os = "emscripten"))]
+          target_os = "emscripten",
+          target_os = "illumos",
+          target_os = "solaris"))]
 #[inline]
 pub fn fdatasync(fd: RawFd) -> Result<()> {
     let res = unsafe { libc::fdatasync(fd) };
@@ -1468,9 +1484,11 @@ pub fn setgroups(groups: &[Gid]) -> Result<()> {
     cfg_if! {
         if #[cfg(any(target_os = "dragonfly",
                      target_os = "freebsd",
+                     target_os = "illumos",
                      target_os = "ios",
                      target_os = "macos",
                      target_os = "netbsd",
+                     target_os = "illumos",
                      target_os = "openbsd"))] {
             type setgroups_ngroups_t = c_int;
         } else {
@@ -1507,7 +1525,10 @@ pub fn setgroups(groups: &[Gid]) -> Result<()> {
 /// and `setgroups()`. Additionally, while some implementations will return a
 /// partial list of groups when `NGROUPS_MAX` is exceeded, this implementation
 /// will only ever return the complete list or else an error.
-#[cfg(not(any(target_os = "ios", target_os = "macos", target_os = "redox")))]
+#[cfg(not(any(target_os = "illumos",
+              target_os = "ios",
+              target_os = "macos",
+              target_os = "redox")))]
 pub fn getgrouplist(user: &CStr, group: Gid) -> Result<Vec<Gid>> {
     let ngroups_max = match sysconf(SysconfVar::NGROUPS_MAX) {
         Ok(Some(n)) => n as c_int,
@@ -1809,8 +1830,9 @@ pub enum PathconfVar {
     /// Maximum number of bytes that is guaranteed to be atomic when writing to
     /// a pipe.
     PIPE_BUF = libc::_PC_PIPE_BUF,
-    #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "linux",
-              target_os = "netbsd", target_os = "openbsd", target_os = "redox"))]
+    #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "illumos",
+              target_os = "linux", target_os = "netbsd", target_os = "openbsd",
+              target_os = "redox", target_os = "solaris"))]
     /// Symbolic links can be created.
     POSIX2_SYMLINKS = libc::_PC_2_SYMLINKS,
     #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd",
@@ -1836,8 +1858,8 @@ pub enum PathconfVar {
     ///  Recommended file transfer buffer alignment.
     POSIX_REC_XFER_ALIGN = libc::_PC_REC_XFER_ALIGN,
     #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd",
-              target_os = "linux", target_os = "netbsd", target_os = "openbsd",
-              target_os = "redox"))]
+              target_os = "illumos", target_os = "linux", target_os = "netbsd",
+              target_os = "openbsd", target_os = "redox", target_os = "solaris"))]
     /// Maximum number of bytes in a symbolic link.
     SYMLINK_MAX = libc::_PC_SYMLINK_MAX,
     /// The use of `chown` and `fchown` is restricted to a process with
@@ -1851,18 +1873,20 @@ pub enum PathconfVar {
     /// disable terminal special character handling.
     _POSIX_VDISABLE = libc::_PC_VDISABLE,
     #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd",
-              target_os = "linux", target_os = "openbsd", target_os = "redox"))]
+              target_os = "illumos", target_os = "linux", target_os = "openbsd",
+              target_os = "redox", target_os = "solaris"))]
     /// Asynchronous input or output operations may be performed for the
     /// associated file.
     _POSIX_ASYNC_IO = libc::_PC_ASYNC_IO,
     #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd",
-              target_os = "linux", target_os = "openbsd", target_os = "redox"))]
+              target_os = "illumos", target_os = "linux", target_os = "openbsd",
+              target_os = "redox", target_os = "solaris"))]
     /// Prioritized input or output operations may be performed for the
     /// associated file.
     _POSIX_PRIO_IO = libc::_PC_PRIO_IO,
     #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd",
-              target_os = "linux", target_os = "netbsd", target_os = "openbsd",
-              target_os = "redox"))]
+              target_os = "illumos", target_os = "linux", target_os = "netbsd",
+              target_os = "openbsd", target_os = "redox", target_os = "solaris"))]
     /// Synchronized input or output operations may be performed for the
     /// associated file.
     _POSIX_SYNC_IO = libc::_PC_SYNC_IO,
@@ -2007,9 +2031,9 @@ pub enum SysconfVar {
     /// the expr utility.
     #[cfg(not(target_os = "redox"))]
     EXPR_NEST_MAX = libc::_SC_EXPR_NEST_MAX,
-    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
-              target_os="linux", target_os = "macos", target_os="netbsd",
-              target_os="openbsd"))]
+    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "illumos",
+              target_os = "ios", target_os="linux", target_os = "macos",
+              target_os="netbsd", target_os="openbsd", target_os = "solaris"))]
     /// Maximum length of a host name (not including the terminating null) as
     /// returned from the `gethostname` function
     HOST_NAME_MAX = libc::_SC_HOST_NAME_MAX,
@@ -2046,29 +2070,30 @@ pub enum SysconfVar {
               target_os="linux", target_os = "macos", target_os="openbsd"))]
     /// The implementation supports the Advisory Information option.
     _POSIX_ADVISORY_INFO = libc::_SC_ADVISORY_INFO,
-    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
-              target_os="linux", target_os = "macos", target_os="netbsd",
-              target_os="openbsd"))]
+    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "illumos",
+              target_os = "ios", target_os="linux", target_os = "macos",
+              target_os="netbsd", target_os="openbsd", target_os = "solaris"))]
     /// The implementation supports barriers.
     _POSIX_BARRIERS = libc::_SC_BARRIERS,
     /// The implementation supports asynchronous input and output.
     #[cfg(not(target_os = "redox"))]
     _POSIX_ASYNCHRONOUS_IO = libc::_SC_ASYNCHRONOUS_IO,
-    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
-              target_os="linux", target_os = "macos", target_os="netbsd",
-              target_os="openbsd"))]
+    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "illumos",
+              target_os = "ios", target_os="linux", target_os = "macos",
+              target_os="netbsd", target_os="openbsd", target_os = "solaris"))]
     /// The implementation supports clock selection.
     _POSIX_CLOCK_SELECTION = libc::_SC_CLOCK_SELECTION,
-    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
-              target_os="linux", target_os = "macos", target_os="netbsd",
-              target_os="openbsd"))]
+    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "illumos",
+              target_os = "ios", target_os="linux", target_os = "macos",
+              target_os="netbsd", target_os="openbsd", target_os = "solaris"))]
     /// The implementation supports the Process CPU-Time Clocks option.
     _POSIX_CPUTIME = libc::_SC_CPUTIME,
     /// The implementation supports the File Synchronization option.
     #[cfg(not(target_os = "redox"))]
     _POSIX_FSYNC = libc::_SC_FSYNC,
-    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
-              target_os="linux", target_os = "macos", target_os="openbsd"))]
+    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "illumos",
+              target_os = "ios", target_os="linux", target_os = "macos",
+              target_os="openbsd", target_os = "solaris"))]
     /// The implementation supports the IPv6 option.
     _POSIX_IPV6 = libc::_SC_IPV6,
     /// The implementation supports job control.
@@ -2093,20 +2118,21 @@ pub enum SysconfVar {
     #[cfg(not(target_os = "redox"))]
     _POSIX_MONOTONIC_CLOCK = libc::_SC_MONOTONIC_CLOCK,
     #[cfg(any(target_os="android", target_os="dragonfly", target_os="freebsd",
-              target_os = "ios", target_os="linux", target_os = "macos",
-              target_os="openbsd"))]
+              target_os = "illumos", target_os = "ios", target_os="linux",
+              target_os = "macos", target_os="openbsd", target_os = "solaris"))]
     /// The implementation supports the Prioritized Input and Output option.
     _POSIX_PRIORITIZED_IO = libc::_SC_PRIORITIZED_IO,
     /// The implementation supports the Process Scheduling option.
     #[cfg(not(target_os = "redox"))]
     _POSIX_PRIORITY_SCHEDULING = libc::_SC_PRIORITY_SCHEDULING,
-    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
-              target_os="linux", target_os = "macos", target_os="openbsd"))]
+    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "illumos",
+              target_os = "ios", target_os="linux", target_os = "macos",
+              target_os="openbsd", target_os = "solaris"))]
     /// The implementation supports the Raw Sockets option.
     _POSIX_RAW_SOCKETS = libc::_SC_RAW_SOCKETS,
-    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
-              target_os="linux", target_os = "macos", target_os="netbsd",
-              target_os="openbsd"))]
+    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "illumos",
+              target_os = "ios", target_os="linux", target_os = "macos",
+              target_os="netbsd", target_os="openbsd", target_os = "solaris"))]
     /// The implementation supports read-write locks.
     _POSIX_READER_WRITER_LOCKS = libc::_SC_READER_WRITER_LOCKS,
     #[cfg(any(target_os = "android", target_os="dragonfly", target_os="freebsd",
@@ -2114,9 +2140,9 @@ pub enum SysconfVar {
               target_os = "openbsd"))]
     /// The implementation supports realtime signals.
     _POSIX_REALTIME_SIGNALS = libc::_SC_REALTIME_SIGNALS,
-    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
-              target_os="linux", target_os = "macos", target_os="netbsd",
-              target_os="openbsd"))]
+    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "illumos",
+              target_os = "ios", target_os="linux", target_os = "macos",
+              target_os="netbsd", target_os="openbsd", target_os = "solaris"))]
     /// The implementation supports the Regular Expression Handling option.
     _POSIX_REGEXP = libc::_SC_REGEXP,
     /// Each process has a saved set-user-ID and a saved set-group-ID.
@@ -2548,16 +2574,25 @@ pub struct User {
     /// Path to shell
     pub shell: PathBuf,
     /// Login class
-    #[cfg(not(any(target_os = "android", target_os = "fuchsia",
-                  target_os = "linux")))]
+    #[cfg(not(any(target_os = "android",
+                  target_os = "fuchsia",
+                  target_os = "illumos",
+                  target_os = "linux",
+                  target_os = "solaris")))]
     pub class: CString,
     /// Last password change
-    #[cfg(not(any(target_os = "android", target_os = "fuchsia",
-                  target_os = "linux")))]
+    #[cfg(not(any(target_os = "android",
+                  target_os = "fuchsia",
+                  target_os = "illumos",
+                  target_os = "linux",
+                  target_os = "solaris")))]
     pub change: libc::time_t,
     /// Expiration time of account
-    #[cfg(not(any(target_os = "android", target_os = "fuchsia",
-                  target_os = "linux")))]
+    #[cfg(not(any(target_os = "android",
+                  target_os = "fuchsia",
+                  target_os = "illumos",
+                  target_os = "linux",
+                  target_os = "solaris")))]
     pub expire: libc::time_t
 }
 
@@ -2574,14 +2609,23 @@ impl From<&libc::passwd> for User {
                 shell: PathBuf::from(OsStr::from_bytes(CStr::from_ptr((*pw).pw_shell).to_bytes())),
                 uid: Uid::from_raw((*pw).pw_uid),
                 gid: Gid::from_raw((*pw).pw_gid),
-                #[cfg(not(any(target_os = "android", target_os = "fuchsia",
-                              target_os = "linux")))]
+                #[cfg(not(any(target_os = "android",
+                              target_os = "fuchsia",
+                              target_os = "illumos",
+                              target_os = "linux",
+                              target_os = "solaris")))]
                 class: CString::new(CStr::from_ptr((*pw).pw_class).to_bytes()).unwrap(),
-                #[cfg(not(any(target_os = "android", target_os = "fuchsia",
-                              target_os = "linux")))]
+                #[cfg(not(any(target_os = "android",
+                              target_os = "fuchsia",
+                              target_os = "illumos",
+                              target_os = "linux",
+                              target_os = "solaris")))]
                 change: (*pw).pw_change,
-                #[cfg(not(any(target_os = "android", target_os = "fuchsia",
-                              target_os = "linux")))]
+                #[cfg(not(any(target_os = "android",
+                              target_os = "fuchsia",
+                              target_os = "illumos",
+                              target_os = "linux",
+                              target_os = "solaris")))]
                 expire: (*pw).pw_expire
             }
         }
@@ -2597,10 +2641,10 @@ impl User {
               libc::size_t,
               *mut *mut libc::passwd) -> libc::c_int
     {
-        let buflimit = 16384;
+        let buflimit = 1048576;
         let bufsize = match sysconf(SysconfVar::GETPW_R_SIZE_MAX) {
             Ok(Some(n)) => n as usize,
-            Ok(None) | Err(_) => buflimit as usize,
+            Ok(None) | Err(_) => 16384,
         };
 
         let mut cbuf = Vec::with_capacity(bufsize);
@@ -2718,10 +2762,10 @@ impl Group {
               libc::size_t,
               *mut *mut libc::group) -> libc::c_int
     {
-        let buflimit = 16384;
+        let buflimit = 1048576;
         let bufsize = match sysconf(SysconfVar::GETGR_R_SIZE_MAX) {
             Ok(Some(n)) => n as usize,
-            Ok(None) | Err(_) => buflimit as usize,
+            Ok(None) | Err(_) => 16384,
         };
 
         let mut cbuf = Vec::with_capacity(bufsize);

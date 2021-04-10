@@ -27,13 +27,17 @@ targets = [
   "x86_64-unknown-netbsd",
   "x86_64-unknown-dragonfly",
   "x86_64-fuchsia",
-  "x86_64-unknown-redox"
+  "x86_64-unknown-redox",
+  "x86_64-unknown-illumos"
 ]
 
 [dependencies]
-libc = { version = "0.2.82", features = [ "extra_traits" ] }
+libc = { version = "0.2.93", features = [ "extra_traits" ] }
 bitflags = "1.1"
 cfg-if = "1.0"
+
+[target.'cfg(not(target_os = "redox"))'.dependencies]
+memoffset = "0.6.3"
 
 [target.'cfg(target_os = "dragonfly")'.build-dependencies]
 cc = "1"

@@ -37,6 +37,7 @@ pub mod fcntl;
           target_os = "linux",
           target_os = "macos",
           target_os = "netbsd",
+          target_os = "illumos",
           target_os = "openbsd"))]
 pub mod ifaddrs;
 #[cfg(any(target_os = "android",

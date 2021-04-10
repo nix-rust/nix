@@ -5,6 +5,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - ReleaseDate
 ### Added
+- Added TIMESTAMPNS support for linux
+  (#[1402](https://github.com/nix-rust/nix/pull/1402))
 - Added public API for the `PTRACE_GETFPREGS` and `PTRACE_SETFPREGS` requests.
   (#[1356](https://github.com/nix-rust/nix/pull/1356))
 
@@ -13,7 +15,16 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   (#[1390](https://github.com/nix-rust/nix/pull/1390))
 
 ### Fixed
+- Allow `sockaddr_ll` size, as reported by the Linux kernel, to be smaller then it's definition
+  (#[1395](https://github.com/nix-rust/nix/pull/1395))
+- Fix spurious errors using `sendmmsg` with multiple cmsgs
+  (#[1414](https://github.com/nix-rust/nix/pull/1414))
+
 ### Removed
+
+- Removed `sys::socket::accept4` from Android arm because libc removed it in
+  version 0.2.87.
+  ([#1399](https://github.com/nix-rust/nix/pull/1399))
 
 ## [0.20.0] - 20 February 2021
 ### Added

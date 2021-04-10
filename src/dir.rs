@@ -53,14 +53,12 @@ impl Dir {
 
     /// Converts from a file descriptor, closing it on success or failure.
     pub fn from_fd(fd: RawFd) -> Result<Self> {
-        let d = unsafe { libc::fdopendir(fd) };
-        if d.is_null() {
+        let d = ptr::NonNull::new(unsafe { libc::fdopendir(fd) }).ok_or_else(|| {
             let e = Error::last();
             unsafe { libc::close(fd) };
-            return Err(e);
-        };
-        // Always guaranteed to be non-null by the previous check
-        Ok(Dir(ptr::NonNull::new(d).unwrap()))
+            e
+        })?;
+        Ok(Dir(d))
     }
 
     /// Returns an iterator of `Result<Entry>` which rewinds when finished.
@@ -192,6 +190,7 @@ impl Entry {
               target_os = "emscripten",
               target_os = "fuchsia",
               target_os = "haiku",
+              target_os = "illumos",
               target_os = "ios",
               target_os = "l4re",
               target_os = "linux",
@@ -206,6 +205,7 @@ impl Entry {
                   target_os = "emscripten",
                   target_os = "fuchsia",
                   target_os = "haiku",
+                  target_os = "illumos",
                   target_os = "ios",
                   target_os = "l4re",
                   target_os = "linux",
@@ -226,6 +226,7 @@ impl Entry {
     /// notably, some Linux filesystems don't implement this. The caller should use `stat` or
     /// `fstat` if this returns `None`.
     pub fn file_type(&self) -> Option<Type> {
+        #[cfg(not(any(target_os = "illumos", target_os = "solaris")))]
         match self.0.d_type {
             libc::DT_FIFO => Some(Type::Fifo),
             libc::DT_CHR => Some(Type::CharacterDevice),
@@ -236,5 +237,9 @@ impl Entry {
             libc::DT_SOCK => Some(Type::Socket),
             /* libc::DT_UNKNOWN | */ _ => None,
         }
+
+        // illumos and Solaris systems do not have the d_type member at all:
+        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        None
     }
 }

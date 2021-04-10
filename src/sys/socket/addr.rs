@@ -1,6 +1,7 @@
 use super::sa_family_t;
 use crate::{Error, Result, NixPath};
 use crate::errno::Errno;
+use memoffset::offset_of;
 use std::{fmt, mem, net, ptr, slice};
 use std::ffi::OsStr;
 use std::hash::{Hash, Hasher};
@@ -20,6 +21,7 @@ use crate::sys::socket::addr::sys_control::SysControlAddr;
           target_os = "ios",
           target_os = "linux",
           target_os = "macos",
+          target_os = "illumos",
           target_os = "netbsd",
           target_os = "openbsd",
           target_os = "fuchsia"))]
@@ -42,7 +44,11 @@ pub enum AddressFamily {
     #[cfg(any(target_os = "android", target_os = "linux"))]
     Netlink = libc::AF_NETLINK,
     /// Low level packet interface (see [`packet(7)`](http://man7.org/linux/man-pages/man7/packet.7.html))
-    #[cfg(any(target_os = "android", target_os = "linux", target_os = "fuchsia"))]
+    #[cfg(any(target_os = "android",
+              target_os = "linux",
+              target_os = "illumos",
+              target_os = "fuchsia",
+              target_os = "solaris"))]
     Packet = libc::AF_PACKET,
     /// KEXT Controls and Notifications
     #[cfg(any(target_os = "ios", target_os = "macos"))]
@@ -98,12 +104,16 @@ pub enum AddressFamily {
     Can = libc::AF_CAN,
     #[cfg(any(target_os = "android", target_os = "linux"))]
     Tipc = libc::AF_TIPC,
-    #[cfg(not(any(target_os = "ios", target_os = "macos")))]
+    #[cfg(not(any(target_os = "illumos",
+                  target_os = "ios",
+                  target_os = "macos",
+                  target_os = "solaris")))]
     Bluetooth = libc::AF_BLUETOOTH,
     #[cfg(any(target_os = "android", target_os = "linux"))]
     Iucv = libc::AF_IUCV,
     #[cfg(any(target_os = "android", target_os = "linux"))]
     RxRpc = libc::AF_RXRPC,
+    #[cfg(not(any(target_os = "illumos", target_os = "solaris")))]
     Isdn = libc::AF_ISDN,
     #[cfg(any(target_os = "android", target_os = "linux"))]
     Phonet = libc::AF_PHONET,
@@ -190,6 +200,7 @@ pub enum AddressFamily {
               target_os = "freebsd",
               target_os = "ios",
               target_os = "macos",
+              target_os = "illumos",
               target_os = "netbsd",
               target_os = "openbsd"))]
     Link = libc::AF_LINK,
@@ -241,6 +252,7 @@ impl AddressFamily {
                       target_os = "ios",
                       target_os = "macos",
                       target_os = "netbsd",
+                      target_os = "illumos",
                       target_os = "openbsd"))]
             libc::AF_LINK => Some(AddressFamily::Link),
             #[cfg(any(target_os = "android", target_os = "linux"))]
@@ -645,6 +657,7 @@ pub enum SockAddr {
               target_os = "ios",
               target_os = "linux",
               target_os = "macos",
+              target_os = "illumos",
               target_os = "netbsd",
               target_os = "openbsd"))]
     Link(LinkAddr),
@@ -699,6 +712,7 @@ impl SockAddr {
                       target_os = "ios",
                       target_os = "macos",
                       target_os = "netbsd",
+                      target_os = "illumos",
                       target_os = "openbsd"))]
             SockAddr::Link(..) => AddressFamily::Link,
             #[cfg(any(target_os = "android", target_os = "linux"))]
@@ -744,6 +758,7 @@ impl SockAddr {
                           target_os = "ios",
                           target_os = "macos",
                           target_os = "netbsd",
+                          target_os = "illumos",
                           target_os = "openbsd"))]
                 Some(AddressFamily::Link) => {
                     let ether_addr = LinkAddr(*(addr as *const libc::sockaddr_dl));
@@ -830,6 +845,7 @@ impl SockAddr {
                       target_os = "freebsd",
                       target_os = "ios",
                       target_os = "macos",
+                      target_os = "illumos",
                       target_os = "netbsd",
                       target_os = "openbsd"))]
             SockAddr::Link(LinkAddr(ref addr)) => (
@@ -869,6 +885,7 @@ impl fmt::Display for SockAddr {
                       target_os = "linux",
                       target_os = "macos",
                       target_os = "netbsd",
+                      target_os = "illumos",
                       target_os = "openbsd"))]
             SockAddr::Link(ref ether_addr) => ether_addr.fmt(f),
             #[cfg(any(target_os = "android", target_os = "linux"))]
@@ -1118,6 +1135,7 @@ mod datalink {
           target_os = "freebsd",
           target_os = "ios",
           target_os = "macos",
+          target_os = "illumos",
           target_os = "netbsd",
           target_os = "openbsd"))]
 mod datalink {
@@ -1129,6 +1147,7 @@ mod datalink {
 
     impl LinkAddr {
         /// Total length of sockaddr
+        #[cfg(not(target_os = "illumos"))]
         pub fn len(&self) -> usize {
             self.0.sdl_len as usize
         }
@@ -1280,6 +1299,7 @@ mod tests {
               target_os = "linux",
               target_os = "macos",
               target_os = "netbsd",
+              target_os = "illumos",
               target_os = "openbsd"))]
     use super::*;
 
@@ -1306,6 +1326,28 @@ mod tests {
     #[test]
     fn test_macos_tap_datalink_addr() {
         let bytes = [20i8, 18, 7, 0, 6, 3, 6, 0, 101, 110, 48, 24, 101, -112, -35, 76, -80];
+        let ptr = bytes.as_ptr();
+        let sa = ptr as *const libc::sockaddr;
+        let _sock_addr = unsafe { SockAddr::from_libc_sockaddr(sa) };
+
+        assert!(_sock_addr.is_some());
+
+        let sock_addr = _sock_addr.unwrap();
+
+        assert_eq!(sock_addr.family(), AddressFamily::Link);
+
+        match sock_addr {
+            SockAddr::Link(ether_addr) => {
+                assert_eq!(ether_addr.addr(), [24u8, 101, 144, 221, 76, 176]);
+            },
+            _ => { unreachable!() }
+        };
+    }
+
+    #[cfg(target_os = "illumos")]
+    #[test]
+    fn test_illumos_tap_datalink_addr() {
+        let bytes = [25u8, 0, 0, 0, 6, 0, 6, 0, 24, 101, 144, 221, 76, 176];
         let ptr = bytes.as_ptr();
         let sa = ptr as *const libc::sockaddr;
         let _sock_addr = unsafe { SockAddr::from_libc_sockaddr(sa) };

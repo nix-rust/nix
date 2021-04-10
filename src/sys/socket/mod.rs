@@ -5,8 +5,11 @@ use cfg_if::cfg_if;
 use crate::{Error, Result, errno::Errno};
 use libc::{self, c_void, c_int, iovec, socklen_t, size_t,
         CMSG_FIRSTHDR, CMSG_NXTHDR, CMSG_DATA, CMSG_LEN};
+use memoffset::offset_of;
 use std::{mem, ptr, slice};
 use std::os::unix::io::RawFd;
+#[cfg(all(target_os = "linux"))]
+use crate::sys::time::TimeSpec;
 use crate::sys::time::TimeVal;
 use crate::sys::uio::IoVec;
 
@@ -19,6 +22,7 @@ pub mod sockopt;
  *
  */
 
+#[cfg(not(any(target_os = "illumos", target_os = "solaris")))]
 pub use self::addr::{
     AddressFamily,
     SockAddr,
@@ -29,6 +33,17 @@ pub use self::addr::{
     Ipv6Addr,
     LinkAddr,
 };
+#[cfg(any(target_os = "illumos", target_os = "solaris"))]
+pub use self::addr::{
+    AddressFamily,
+    SockAddr,
+    InetAddr,
+    UnixAddr,
+    IpAddr,
+    Ipv4Addr,
+    Ipv6Addr,
+};
+
 #[cfg(any(target_os = "android", target_os = "linux"))]
 pub use crate::sys::socket::addr::netlink::NetlinkAddr;
 #[cfg(any(target_os = "android", target_os = "linux"))]
@@ -159,6 +174,7 @@ libc_bitflags!{
         #[cfg(any(target_os = "android",
                   target_os = "dragonfly",
                   target_os = "freebsd",
+                  target_os = "illumos",
                   target_os = "linux",
                   target_os = "netbsd",
                   target_os = "openbsd"))]
@@ -167,6 +183,7 @@ libc_bitflags!{
         #[cfg(any(target_os = "android",
                   target_os = "dragonfly",
                   target_os = "freebsd",
+                  target_os = "illumos",
                   target_os = "linux",
                   target_os = "netbsd",
                   target_os = "openbsd"))]
@@ -401,13 +418,11 @@ impl Ipv6MembershipRequest {
 macro_rules! cmsg_space {
     ( $( $x:ty ),* ) => {
         {
-            use nix::sys::socket::{c_uint, CMSG_SPACE};
-            use std::mem;
             let mut space = 0;
             $(
                 // CMSG_SPACE is always safe
                 space += unsafe {
-                    CMSG_SPACE(mem::size_of::<$x>() as c_uint)
+                    $crate::sys::socket::CMSG_SPACE(::std::mem::size_of::<$x>() as $crate::sys::socket::c_uint)
                 } as usize;
             )*
             Vec::<u8>::with_capacity(space)
@@ -542,6 +557,11 @@ pub enum ControlMessageOwned {
     /// # }
     /// ```
     ScmTimestamp(TimeVal),
+    /// Nanoseconds resolution timestamp
+    ///
+    /// [Further reading](https://www.kernel.org/doc/html/latest/networking/timestamping.html)
+    #[cfg(all(target_os = "linux"))]
+    ScmTimestampns(TimeSpec),
     #[cfg(any(
         target_os = "android",
         target_os = "ios",
@@ -633,6 +653,11 @@ impl ControlMessageOwned {
                 let tv: libc::timeval = ptr::read_unaligned(p as *const _);
                 ControlMessageOwned::ScmTimestamp(TimeVal::from(tv))
             },
+            #[cfg(all(target_os = "linux"))]
+            (libc::SOL_SOCKET, libc::SCM_TIMESTAMPNS) => {
+                let ts: libc::timespec = ptr::read_unaligned(p as *const _);
+                ControlMessageOwned::ScmTimestampns(TimeSpec::from(ts))
+            }
             #[cfg(any(
                 target_os = "android",
                 target_os = "freebsd",
@@ -1089,23 +1114,22 @@ pub fn sendmmsg<'a, I, C>(
 
     let mut output = Vec::<libc::mmsghdr>::with_capacity(reserve_items);
 
-    let mut cmsgs_buffer = vec![0u8; 0];
+    let mut cmsgs_buffers = Vec::<Vec<u8>>::with_capacity(reserve_items);
 
     for d in iter {
-        let cmsgs_start = cmsgs_buffer.len();
-        let cmsgs_required_capacity: usize = d.cmsgs.as_ref().iter().map(|c| c.space()).sum();
-        let cmsgs_buffer_need_capacity = cmsgs_start + cmsgs_required_capacity;
-        cmsgs_buffer.resize(cmsgs_buffer_need_capacity, 0);
+        let capacity: usize = d.cmsgs.as_ref().iter().map(|c| c.space()).sum();
+        let mut cmsgs_buffer = vec![0u8; capacity];
 
         output.push(libc::mmsghdr {
             msg_hdr: pack_mhdr_to_send(
-                &mut cmsgs_buffer[cmsgs_start..],
+                &mut cmsgs_buffer,
                 &d.iov,
                 &d.cmsgs,
                 d.addr.as_ref()
             ),
             msg_len: 0,
         });
+        cmsgs_buffers.push(cmsgs_buffer);
     };
 
     let ret = unsafe { libc::sendmmsg(fd, output.as_mut_ptr(), output.len() as _, flags.bits() as _) };
@@ -1481,7 +1505,14 @@ pub fn accept(sockfd: RawFd) -> Result<RawFd> {
 /// Accept a connection on a socket
 ///
 /// [Further reading](http://man7.org/linux/man-pages/man2/accept.2.html)
-#[cfg(any(target_os = "android",
+#[cfg(any(all(
+            target_os = "android",
+            any(
+                target_arch = "aarch64",
+                target_arch = "x86",
+                target_arch = "x86_64"
+            )
+          ),
           target_os = "freebsd",
           target_os = "linux",
           target_os = "openbsd"))]
@@ -1704,7 +1735,10 @@ pub fn sockaddr_storage_to_addr(
         #[cfg(any(target_os = "android", target_os = "linux"))]
         libc::AF_PACKET => {
             use libc::sockaddr_ll;
-            assert_eq!(len as usize, mem::size_of::<sockaddr_ll>());
+            // Apparently the Linux kernel can return smaller sizes when
+            // the value in the last element of sockaddr_ll (`sll_addr`) is
+            // smaller than the declared size of that field
+            assert!(len as usize <= mem::size_of::<sockaddr_ll>());
             let sll = unsafe {
                 *(addr as *const _ as *const sockaddr_ll)
             };
@@ -1763,5 +1797,13 @@ pub fn shutdown(df: RawFd, how: Shutdown) -> Result<()> {
         };
 
         Errno::result(shutdown(df, how)).map(drop)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn can_use_cmsg_space() {
+        let _ = cmsg_space!(u8);
     }
 }
