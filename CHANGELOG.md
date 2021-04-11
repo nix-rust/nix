@@ -5,6 +5,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - ReleaseDate
 ### Added
+- Add new symbol for linux IP_MULTICAST_ALL
+  (#[]())
+- Added TIMESTAMPNS support for linux
+  (#[1402](https://github.com/nix-rust/nix/pull/1402))
 
 ### Changed
 - Made `forkpty` unsafe, like `fork`
@@ -13,6 +17,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - Allow `sockaddr_ll` size, as reported by the Linux kernel, to be smaller then it's definition
   (#[1395](https://github.com/nix-rust/nix/pull/1395))
+- Fix spurious errors using `sendmmsg` with multiple cmsgs
+  (#[1414](https://github.com/nix-rust/nix/pull/1414))
 
 ### Removed
 

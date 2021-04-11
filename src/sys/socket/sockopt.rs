@@ -1,21 +1,18 @@
-use cfg_if::cfg_if;
 use super::{GetSockOpt, SetSockOpt};
-use crate::Result;
 use crate::errno::Errno;
 use crate::sys::time::TimeVal;
+use crate::Result;
+use cfg_if::cfg_if;
 use libc::{self, c_int, c_void, socklen_t};
-use std::mem::{
-    self,
-    MaybeUninit
-};
-use std::os::unix::io::RawFd;
 use std::ffi::{OsStr, OsString};
+use std::mem::{self, MaybeUninit};
 #[cfg(target_family = "unix")]
 use std::os::unix::ffi::OsStrExt;
+use std::os::unix::io::RawFd;
 
 // Constants
 // TCP_CA_NAME_MAX isn't defined in user space include files
-#[cfg(any(target_os = "freebsd", target_os = "linux"))] 
+#[cfg(any(target_os = "freebsd", target_os = "linux"))]
 const TCP_CA_NAME_MAX: usize = 16;
 
 /// Helper for implementing `SetSockOpt` for a given socket option. See
@@ -49,14 +46,13 @@ macro_rules! setsockopt_impl {
                 unsafe {
                     let setter: $setter = Set::new(val);
 
-                    let res = libc::setsockopt(fd, $level, $flag,
-                                               setter.ffi_ptr(),
-                                               setter.ffi_len());
+                    let res =
+                        libc::setsockopt(fd, $level, $flag, setter.ffi_ptr(), setter.ffi_len());
                     Errno::result(res).map(drop)
                 }
             }
         }
-    }
+    };
 }
 
 /// Helper for implementing `GetSockOpt` for a given socket option. See
@@ -90,16 +86,15 @@ macro_rules! getsockopt_impl {
                 unsafe {
                     let mut getter: $getter = Get::uninit();
 
-                    let res = libc::getsockopt(fd, $level, $flag,
-                                               getter.ffi_ptr(),
-                                               getter.ffi_len());
+                    let res =
+                        libc::getsockopt(fd, $level, $flag, getter.ffi_ptr(), getter.ffi_len());
                     Errno::result(res)?;
 
                     Ok(getter.assume_init())
                 }
             }
         }
-    }
+    };
 }
 
 /// Helper to generate the sockopt accessors. See
@@ -165,7 +160,15 @@ macro_rules! sockopt_impl {
     };
 
     (Both, $name:ident, $level:path, $flag:path, OsString<$array:ty>) => {
-        sockopt_impl!(Both, $name, $level, $flag, OsString, GetOsString<$array>, SetOsString);
+        sockopt_impl!(
+            Both,
+            $name,
+            $level,
+            $flag,
+            OsString,
+            GetOsString<$array>,
+            SetOsString
+        );
     };
 
     /*
@@ -203,7 +206,15 @@ macro_rules! sockopt_impl {
     };
 
     (Both, $name:ident, $level:path, $flag:path, $ty:ty) => {
-        sockopt_impl!(Both, $name, $level, $flag, $ty, GetStruct<$ty>, SetStruct<$ty>);
+        sockopt_impl!(
+            Both,
+            $name,
+            $level,
+            $flag,
+            $ty,
+            GetStruct<$ty>,
+            SetStruct<$ty>
+        );
     };
 }
 
@@ -217,9 +228,27 @@ sockopt_impl!(Both, ReuseAddr, libc::SOL_SOCKET, libc::SO_REUSEADDR, bool);
 #[cfg(not(any(target_os = "illumos", target_os = "solaris")))]
 sockopt_impl!(Both, ReusePort, libc::SOL_SOCKET, libc::SO_REUSEPORT, bool);
 sockopt_impl!(Both, TcpNoDelay, libc::IPPROTO_TCP, libc::TCP_NODELAY, bool);
-sockopt_impl!(Both, Linger, libc::SOL_SOCKET, libc::SO_LINGER, libc::linger);
-sockopt_impl!(SetOnly, IpAddMembership, libc::IPPROTO_IP, libc::IP_ADD_MEMBERSHIP, super::IpMembershipRequest);
-sockopt_impl!(SetOnly, IpDropMembership, libc::IPPROTO_IP, libc::IP_DROP_MEMBERSHIP, super::IpMembershipRequest);
+sockopt_impl!(
+    Both,
+    Linger,
+    libc::SOL_SOCKET,
+    libc::SO_LINGER,
+    libc::linger
+);
+sockopt_impl!(
+    SetOnly,
+    IpAddMembership,
+    libc::IPPROTO_IP,
+    libc::IP_ADD_MEMBERSHIP,
+    super::IpMembershipRequest
+);
+sockopt_impl!(
+    SetOnly,
+    IpDropMembership,
+    libc::IPPROTO_IP,
+    libc::IP_DROP_MEMBERSHIP,
+    super::IpMembershipRequest
+);
 cfg_if! {
     if #[cfg(any(target_os = "android", target_os = "linux"))] {
         sockopt_impl!(SetOnly, Ipv6AddMembership, libc::IPPROTO_IPV6, libc::IPV6_ADD_MEMBERSHIP, super::Ipv6MembershipRequest);
@@ -236,44 +265,163 @@ cfg_if! {
         sockopt_impl!(SetOnly, Ipv6DropMembership, libc::IPPROTO_IPV6, libc::IPV6_LEAVE_GROUP, super::Ipv6MembershipRequest);
     }
 }
-sockopt_impl!(Both, IpMulticastTtl, libc::IPPROTO_IP, libc::IP_MULTICAST_TTL, u8);
-sockopt_impl!(Both, IpMulticastLoop, libc::IPPROTO_IP, libc::IP_MULTICAST_LOOP, bool);
-sockopt_impl!(Both, ReceiveTimeout, libc::SOL_SOCKET, libc::SO_RCVTIMEO, TimeVal);
-sockopt_impl!(Both, SendTimeout, libc::SOL_SOCKET, libc::SO_SNDTIMEO, TimeVal);
+sockopt_impl!(
+    Both,
+    IpMulticastTtl,
+    libc::IPPROTO_IP,
+    libc::IP_MULTICAST_TTL,
+    u8
+);
+sockopt_impl!(
+    Both,
+    IpMulticastLoop,
+    libc::IPPROTO_IP,
+    libc::IP_MULTICAST_LOOP,
+    bool
+);
+#[cfg(any(target_os = "linux", target_os = "android"))]
+sockopt_impl!(
+    Both,
+    IpMulticastAll,
+    libc::IPPROTO_IP,
+    libc::IP_MULTICAST_ALL,
+    bool
+);
+sockopt_impl!(
+    Both,
+    ReceiveTimeout,
+    libc::SOL_SOCKET,
+    libc::SO_RCVTIMEO,
+    TimeVal
+);
+sockopt_impl!(
+    Both,
+    SendTimeout,
+    libc::SOL_SOCKET,
+    libc::SO_SNDTIMEO,
+    TimeVal
+);
 sockopt_impl!(Both, Broadcast, libc::SOL_SOCKET, libc::SO_BROADCAST, bool);
 sockopt_impl!(Both, OobInline, libc::SOL_SOCKET, libc::SO_OOBINLINE, bool);
 sockopt_impl!(GetOnly, SocketError, libc::SOL_SOCKET, libc::SO_ERROR, i32);
 sockopt_impl!(Both, KeepAlive, libc::SOL_SOCKET, libc::SO_KEEPALIVE, bool);
 #[cfg(any(target_os = "android", target_os = "linux"))]
-sockopt_impl!(GetOnly, PeerCredentials, libc::SOL_SOCKET, libc::SO_PEERCRED, super::UnixCredentials);
-#[cfg(any(target_os = "ios",
-          target_os = "macos"))]
-sockopt_impl!(Both, TcpKeepAlive, libc::IPPROTO_TCP, libc::TCP_KEEPALIVE, u32);
-#[cfg(any(target_os = "android",
-          target_os = "dragonfly",
-          target_os = "freebsd",
-          target_os = "linux",
-          target_os = "nacl"))]
-sockopt_impl!(Both, TcpKeepIdle, libc::IPPROTO_TCP, libc::TCP_KEEPIDLE, u32);
+sockopt_impl!(
+    GetOnly,
+    PeerCredentials,
+    libc::SOL_SOCKET,
+    libc::SO_PEERCRED,
+    super::UnixCredentials
+);
+#[cfg(any(target_os = "ios", target_os = "macos"))]
+sockopt_impl!(
+    Both,
+    TcpKeepAlive,
+    libc::IPPROTO_TCP,
+    libc::TCP_KEEPALIVE,
+    u32
+);
+#[cfg(any(
+    target_os = "android",
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "linux",
+    target_os = "nacl"
+))]
+sockopt_impl!(
+    Both,
+    TcpKeepIdle,
+    libc::IPPROTO_TCP,
+    libc::TCP_KEEPIDLE,
+    u32
+);
 #[cfg(not(target_os = "openbsd"))]
-sockopt_impl!(Both, TcpKeepCount, libc::IPPROTO_TCP, libc::TCP_KEEPCNT, u32);
+sockopt_impl!(
+    Both,
+    TcpKeepCount,
+    libc::IPPROTO_TCP,
+    libc::TCP_KEEPCNT,
+    u32
+);
 #[cfg(not(target_os = "openbsd"))]
-sockopt_impl!(Both, TcpKeepInterval, libc::IPPROTO_TCP, libc::TCP_KEEPINTVL, u32);
+sockopt_impl!(
+    Both,
+    TcpKeepInterval,
+    libc::IPPROTO_TCP,
+    libc::TCP_KEEPINTVL,
+    u32
+);
 sockopt_impl!(Both, RcvBuf, libc::SOL_SOCKET, libc::SO_RCVBUF, usize);
 sockopt_impl!(Both, SndBuf, libc::SOL_SOCKET, libc::SO_SNDBUF, usize);
 #[cfg(any(target_os = "android", target_os = "linux"))]
-sockopt_impl!(SetOnly, RcvBufForce, libc::SOL_SOCKET, libc::SO_RCVBUFFORCE, usize);
+sockopt_impl!(
+    SetOnly,
+    RcvBufForce,
+    libc::SOL_SOCKET,
+    libc::SO_RCVBUFFORCE,
+    usize
+);
 #[cfg(any(target_os = "android", target_os = "linux"))]
-sockopt_impl!(SetOnly, SndBufForce, libc::SOL_SOCKET, libc::SO_SNDBUFFORCE, usize);
-sockopt_impl!(GetOnly, SockType, libc::SOL_SOCKET, libc::SO_TYPE, super::SockType);
-sockopt_impl!(GetOnly, AcceptConn, libc::SOL_SOCKET, libc::SO_ACCEPTCONN, bool);
+sockopt_impl!(
+    SetOnly,
+    SndBufForce,
+    libc::SOL_SOCKET,
+    libc::SO_SNDBUFFORCE,
+    usize
+);
+sockopt_impl!(
+    GetOnly,
+    SockType,
+    libc::SOL_SOCKET,
+    libc::SO_TYPE,
+    super::SockType
+);
+sockopt_impl!(
+    GetOnly,
+    AcceptConn,
+    libc::SOL_SOCKET,
+    libc::SO_ACCEPTCONN,
+    bool
+);
 #[cfg(any(target_os = "android", target_os = "linux"))]
-sockopt_impl!(Both, BindToDevice, libc::SOL_SOCKET, libc::SO_BINDTODEVICE, OsString<[u8; libc::IFNAMSIZ]>);
+sockopt_impl!(
+    Both,
+    BindToDevice,
+    libc::SOL_SOCKET,
+    libc::SO_BINDTODEVICE,
+    OsString<[u8; libc::IFNAMSIZ]>
+);
 #[cfg(any(target_os = "android", target_os = "linux"))]
-sockopt_impl!(GetOnly, OriginalDst, libc::SOL_IP, libc::SO_ORIGINAL_DST, libc::sockaddr_in);
-sockopt_impl!(Both, ReceiveTimestamp, libc::SOL_SOCKET, libc::SO_TIMESTAMP, bool);
+sockopt_impl!(
+    GetOnly,
+    OriginalDst,
+    libc::SOL_IP,
+    libc::SO_ORIGINAL_DST,
+    libc::sockaddr_in
+);
+sockopt_impl!(
+    Both,
+    ReceiveTimestamp,
+    libc::SOL_SOCKET,
+    libc::SO_TIMESTAMP,
+    bool
+);
+#[cfg(all(target_os = "linux"))]
+sockopt_impl!(
+    Both,
+    ReceiveTimestampns,
+    libc::SOL_SOCKET,
+    libc::SO_TIMESTAMPNS,
+    bool
+);
 #[cfg(any(target_os = "android", target_os = "linux"))]
-sockopt_impl!(Both, IpTransparent, libc::SOL_IP, libc::IP_TRANSPARENT, bool);
+sockopt_impl!(
+    Both,
+    IpTransparent,
+    libc::SOL_IP,
+    libc::IP_TRANSPARENT,
+    bool
+);
 #[cfg(target_os = "openbsd")]
 sockopt_impl!(Both, BindAny, libc::SOL_SOCKET, libc::SO_BINDANY, bool);
 #[cfg(target_os = "freebsd")]
@@ -282,8 +430,14 @@ sockopt_impl!(Both, BindAny, libc::IPPROTO_IP, libc::IP_BINDANY, bool);
 sockopt_impl!(Both, Mark, libc::SOL_SOCKET, libc::SO_MARK, u32);
 #[cfg(any(target_os = "android", target_os = "linux"))]
 sockopt_impl!(Both, PassCred, libc::SOL_SOCKET, libc::SO_PASSCRED, bool);
-#[cfg(any(target_os = "freebsd", target_os = "linux"))] 
-sockopt_impl!(Both, TcpCongestion, libc::IPPROTO_TCP, libc::TCP_CONGESTION, OsString<[u8; TCP_CA_NAME_MAX]>);
+#[cfg(any(target_os = "freebsd", target_os = "linux"))]
+sockopt_impl!(
+    Both,
+    TcpCongestion,
+    libc::IPPROTO_TCP,
+    libc::TCP_CONGESTION,
+    OsString<[u8; TCP_CA_NAME_MAX]>
+);
 #[cfg(any(
     target_os = "android",
     target_os = "ios",
@@ -291,7 +445,13 @@ sockopt_impl!(Both, TcpCongestion, libc::IPPROTO_TCP, libc::TCP_CONGESTION, OsSt
     target_os = "macos",
     target_os = "netbsd",
 ))]
-sockopt_impl!(Both, Ipv4PacketInfo, libc::IPPROTO_IP, libc::IP_PKTINFO, bool);
+sockopt_impl!(
+    Both,
+    Ipv4PacketInfo,
+    libc::IPPROTO_IP,
+    libc::IP_PKTINFO,
+    bool
+);
 #[cfg(any(
     target_os = "android",
     target_os = "freebsd",
@@ -301,7 +461,13 @@ sockopt_impl!(Both, Ipv4PacketInfo, libc::IPPROTO_IP, libc::IP_PKTINFO, bool);
     target_os = "netbsd",
     target_os = "openbsd",
 ))]
-sockopt_impl!(Both, Ipv6RecvPacketInfo, libc::IPPROTO_IPV6, libc::IPV6_RECVPKTINFO, bool);
+sockopt_impl!(
+    Both,
+    Ipv6RecvPacketInfo,
+    libc::IPPROTO_IPV6,
+    libc::IPV6_RECVPKTINFO,
+    bool
+);
 #[cfg(any(
     target_os = "freebsd",
     target_os = "ios",
@@ -317,9 +483,21 @@ sockopt_impl!(Both, Ipv4RecvIf, libc::IPPROTO_IP, libc::IP_RECVIF, bool);
     target_os = "netbsd",
     target_os = "openbsd",
 ))]
-sockopt_impl!(Both, Ipv4RecvDstAddr, libc::IPPROTO_IP, libc::IP_RECVDSTADDR, bool);
+sockopt_impl!(
+    Both,
+    Ipv4RecvDstAddr,
+    libc::IPPROTO_IP,
+    libc::IP_RECVDSTADDR,
+    bool
+);
 #[cfg(target_os = "linux")]
-sockopt_impl!(Both, UdpGsoSegment, libc::SOL_UDP, libc::UDP_SEGMENT, libc::c_int);
+sockopt_impl!(
+    Both,
+    UdpGsoSegment,
+    libc::SOL_UDP,
+    libc::UDP_SEGMENT,
+    libc::c_int
+);
 #[cfg(target_os = "linux")]
 sockopt_impl!(Both, UdpGroSegment, libc::IPPROTO_UDP, libc::UDP_GRO, bool);
 
@@ -335,11 +513,13 @@ impl SetSockOpt for AlgSetAeadAuthSize {
 
     fn set(&self, fd: RawFd, val: &usize) -> Result<()> {
         unsafe {
-            let res = libc::setsockopt(fd,
-                                       libc::SOL_ALG,
-                                       libc::ALG_SET_AEAD_AUTHSIZE,
-                                       ::std::ptr::null(),
-                                       *val as libc::socklen_t);
+            let res = libc::setsockopt(
+                fd,
+                libc::SOL_ALG,
+                libc::ALG_SET_AEAD_AUTHSIZE,
+                ::std::ptr::null(),
+                *val as libc::socklen_t,
+            );
             Errno::result(res).map(drop)
         }
     }
@@ -357,16 +537,21 @@ impl<T> Default for AlgSetKey<T> {
 }
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
-impl<T> SetSockOpt for AlgSetKey<T> where T: AsRef<[u8]> + Clone {
+impl<T> SetSockOpt for AlgSetKey<T>
+where
+    T: AsRef<[u8]> + Clone,
+{
     type Val = T;
 
     fn set(&self, fd: RawFd, val: &T) -> Result<()> {
         unsafe {
-            let res = libc::setsockopt(fd,
-                                       libc::SOL_ALG,
-                                       libc::ALG_SET_KEY,
-                                       val.as_ref().as_ptr() as *const _,
-                                       val.as_ref().len() as libc::socklen_t);
+            let res = libc::setsockopt(
+                fd,
+                libc::SOL_ALG,
+                libc::ALG_SET_KEY,
+                val.as_ref().as_ptr() as *const _,
+                val.as_ref().len() as libc::socklen_t,
+            );
             Errno::result(res).map(drop)
         }
     }
@@ -427,7 +612,11 @@ unsafe impl<T> Get<T> for GetStruct<T> {
     }
 
     unsafe fn assume_init(self) -> T {
-        assert_eq!(self.len as usize, mem::size_of::<T>(), "invalid getsockopt implementation");
+        assert_eq!(
+            self.len as usize,
+            mem::size_of::<T>(),
+            "invalid getsockopt implementation"
+        );
         self.val.assume_init()
     }
 }
@@ -474,7 +663,11 @@ unsafe impl Get<bool> for GetBool {
     }
 
     unsafe fn assume_init(self) -> bool {
-        assert_eq!(self.len as usize, mem::size_of::<c_int>(), "invalid getsockopt implementation");
+        assert_eq!(
+            self.len as usize,
+            mem::size_of::<c_int>(),
+            "invalid getsockopt implementation"
+        );
         self.val.assume_init() != 0
     }
 }
@@ -486,7 +679,9 @@ struct SetBool {
 
 unsafe impl<'a> Set<'a, bool> for SetBool {
     fn new(val: &'a bool) -> SetBool {
-        SetBool { val: if *val { 1 } else { 0 } }
+        SetBool {
+            val: if *val { 1 } else { 0 },
+        }
     }
 
     fn ffi_ptr(&self) -> *const c_void {
@@ -521,7 +716,11 @@ unsafe impl Get<u8> for GetU8 {
     }
 
     unsafe fn assume_init(self) -> u8 {
-        assert_eq!(self.len as usize, mem::size_of::<u8>(), "invalid getsockopt implementation");
+        assert_eq!(
+            self.len as usize,
+            mem::size_of::<u8>(),
+            "invalid getsockopt implementation"
+        );
         self.val.assume_init()
     }
 }
@@ -568,7 +767,11 @@ unsafe impl Get<usize> for GetUsize {
     }
 
     unsafe fn assume_init(self) -> usize {
-        assert_eq!(self.len as usize, mem::size_of::<c_int>(), "invalid getsockopt implementation");
+        assert_eq!(
+            self.len as usize,
+            mem::size_of::<c_int>(),
+            "invalid getsockopt implementation"
+        );
         self.val.assume_init() as usize
     }
 }
@@ -628,7 +831,9 @@ struct SetOsString<'a> {
 
 unsafe impl<'a> Set<'a, OsString> for SetOsString<'a> {
     fn new(val: &'a OsString) -> SetOsString {
-        SetOsString { val: val.as_os_str() }
+        SetOsString {
+            val: val.as_os_str(),
+        }
     }
 
     fn ffi_ptr(&self) -> *const c_void {
@@ -640,7 +845,6 @@ unsafe impl<'a> Set<'a, OsString> for SetOsString<'a> {
     }
 }
 
-
 #[cfg(test)]
 mod test {
     #[cfg(any(target_os = "android", target_os = "linux"))]
@@ -648,7 +852,13 @@ mod test {
     fn can_get_peercred_on_unix_socket() {
         use super::super::*;
 
-        let (a, b) = socketpair(AddressFamily::Unix, SockType::Stream, None, SockFlag::empty()).unwrap();
+        let (a, b) = socketpair(
+            AddressFamily::Unix,
+            SockType::Stream,
+            None,
+            SockFlag::empty(),
+        )
+        .unwrap();
         let a_cred = getsockopt(a, super::PeerCredentials).unwrap();
         let b_cred = getsockopt(b, super::PeerCredentials).unwrap();
         assert_eq!(a_cred, b_cred);
@@ -660,7 +870,13 @@ mod test {
         use super::super::*;
         use crate::unistd::close;
 
-        let (a, b) = socketpair(AddressFamily::Unix, SockType::Stream, None, SockFlag::empty()).unwrap();
+        let (a, b) = socketpair(
+            AddressFamily::Unix,
+            SockType::Stream,
+            None,
+            SockFlag::empty(),
+        )
+        .unwrap();
         let a_type = getsockopt(a, super::SockType).unwrap();
         assert_eq!(a_type, SockType::Stream);
         close(a).unwrap();
@@ -672,21 +888,31 @@ mod test {
         use super::super::*;
         use crate::unistd::close;
 
-        let s = socket(AddressFamily::Inet, SockType::Datagram, SockFlag::empty(), None).unwrap();
+        let s = socket(
+            AddressFamily::Inet,
+            SockType::Datagram,
+            SockFlag::empty(),
+            None,
+        )
+        .unwrap();
         let s_type = getsockopt(s, super::SockType).unwrap();
         assert_eq!(s_type, SockType::Datagram);
         close(s).unwrap();
     }
 
-    #[cfg(any(target_os = "freebsd",
-              target_os = "linux",
-              target_os = "nacl"))]
+    #[cfg(any(target_os = "freebsd", target_os = "linux", target_os = "nacl"))]
     #[test]
     fn can_get_listen_on_tcp_socket() {
         use super::super::*;
         use crate::unistd::close;
 
-        let s = socket(AddressFamily::Inet, SockType::Stream, SockFlag::empty(), None).unwrap();
+        let s = socket(
+            AddressFamily::Inet,
+            SockType::Stream,
+            SockFlag::empty(),
+            None,
+        )
+        .unwrap();
         let s_listening = getsockopt(s, super::AcceptConn).unwrap();
         assert!(!s_listening);
         listen(s, 10).unwrap();
@@ -694,5 +920,4 @@ mod test {
         assert!(s_listening2);
         close(s).unwrap();
     }
-
 }
