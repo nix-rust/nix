@@ -5,8 +5,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - ReleaseDate
 ### Added
+
 - Add new symbol for linux IP_MULTICAST_ALL
-  (#[]())
+  (#[1423](https://github.com/nix-rust/nix/pull/1423))
+
 - Added TIMESTAMPNS support for linux
   (#[1402](https://github.com/nix-rust/nix/pull/1402))
 

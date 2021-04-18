@@ -392,28 +392,10 @@ sockopt_impl!(
     OsString<[u8; libc::IFNAMSIZ]>
 );
 #[cfg(any(target_os = "android", target_os = "linux"))]
-sockopt_impl!(
-    GetOnly,
-    OriginalDst,
-    libc::SOL_IP,
-    libc::SO_ORIGINAL_DST,
-    libc::sockaddr_in
-);
-sockopt_impl!(
-    Both,
-    ReceiveTimestamp,
-    libc::SOL_SOCKET,
-    libc::SO_TIMESTAMP,
-    bool
-);
+sockopt_impl!(GetOnly, OriginalDst, libc::SOL_IP, libc::SO_ORIGINAL_DST, libc::sockaddr_in);
+sockopt_impl!(Both, ReceiveTimestamp, libc::SOL_SOCKET, libc::SO_TIMESTAMP, bool);
 #[cfg(all(target_os = "linux"))]
-sockopt_impl!(
-    Both,
-    ReceiveTimestampns,
-    libc::SOL_SOCKET,
-    libc::SO_TIMESTAMPNS,
-    bool
-);
+sockopt_impl!(Both, ReceiveTimestampns, libc::SOL_SOCKET, libc::SO_TIMESTAMPNS, bool);
 #[cfg(any(target_os = "android", target_os = "linux"))]
 sockopt_impl!(
     Both,
