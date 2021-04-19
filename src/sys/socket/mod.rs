@@ -609,6 +609,11 @@ pub enum ControlMessageOwned {
     #[cfg(target_os = "linux")]
     UdpGroSegments(u16),
 
+    /// IP Time-to-live (IP_TTL) is the value of the 8-bit TTL header
+    /// in an ipv4 packet.
+    #[cfg(target_os = "linux")]
+    IpTtl(u8),
+
     /// Catch-all variant for unimplemented cmsg types.
     #[doc(hidden)]
     Unknown(UnknownCmsg),
@@ -706,6 +711,11 @@ impl ControlMessageOwned {
             (libc::SOL_UDP, libc::UDP_GRO) => {
                 let gso_size: u16 = ptr::read_unaligned(p as *const _);
                 ControlMessageOwned::UdpGroSegments(gso_size)
+            },
+            #[cfg(target_os = "linux")]
+            (libc::SOL_IP, libc::IP_TTL) => {
+                let ttl: u8 = ptr::read_unaligned(p as *const _);
+                ControlMessageOwned::IpTtl(ttl)
             },
             (_, _) => {
                 let sl = slice::from_raw_parts(p, len);
