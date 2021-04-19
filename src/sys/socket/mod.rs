@@ -510,6 +510,7 @@ pub enum ControlMessageOwned {
     ///
     /// # Examples
     ///
+    /// ```
     /// # #[macro_use] extern crate nix;
     /// # use nix::sys::socket::*;
     /// # use nix::sys::uio::IoVec;
