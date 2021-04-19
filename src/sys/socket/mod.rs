@@ -624,6 +624,7 @@ pub enum ControlMessageOwned {
     /// Errors from the IP message queue are returned in a struct
     /// containing the sock_extended_err and the sockaddr_in of the
     /// source of the packet.
+    #[cfg(target_os = "linux")]
     IpRecvErr(RecvErr),
 
     /// Catch-all variant for unimplemented cmsg types.
