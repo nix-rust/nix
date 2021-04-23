@@ -29,6 +29,9 @@ pub use self::pivot_root::*;
           target_os = "linux", target_os = "openbsd"))]
 pub use self::setres::*;
 
+#[cfg(any(target_os = "android", target_os = "linux"))]
+pub use self::getres::*;
+
 /// User identifier
 ///
 /// Newtype pattern around `uid_t` (which is just alias). It prevents bugs caused by accidentally
@@ -2513,6 +2516,67 @@ mod setres {
         let res = unsafe { libc::setresgid(rgid.into(), egid.into(), sgid.into()) };
 
         Errno::result(res).map(drop)
+    }
+}
+
+#[cfg(any(target_os = "android", target_os = "linux"))]
+mod getres {
+    use crate::Result;
+    use crate::errno::Errno;
+    use super::{Uid, Gid};
+
+    /// Real, effective and saved user IDs.
+    #[derive(Debug, Copy, Clone, Eq, PartialEq)]
+    pub struct ResUid {
+        pub real: Uid,
+        pub effective: Uid,
+        pub saved: Uid
+    }
+
+    /// Real, effective and saved group IDs.
+    #[derive(Debug, Copy, Clone, Eq, PartialEq)]
+    pub struct ResGid {
+        pub real: Gid,
+        pub effective: Gid,
+        pub saved: Gid
+    }
+
+    /// Gets the real, effective, and saved user IDs.
+    ///
+    /// ([see getresuid(2)](http://man7.org/linux/man-pages/man2/getresuid.2.html))
+    ///
+    /// #Returns
+    ///
+    /// - `Ok((Uid, Uid, Uid))`: tuple of real, effective and saved uids on success.
+    /// - `Err(x)`: libc error code on failure.
+    ///
+    #[inline]
+    pub fn getresuid() -> Result<ResUid> {
+        let mut ruid = libc::uid_t::max_value();
+        let mut euid = libc::uid_t::max_value();
+        let mut suid = libc::uid_t::max_value();
+        let res = unsafe { libc::getresuid(&mut ruid, &mut euid, &mut suid) };
+
+        Errno::result(res).map(|_| ResUid{ real: Uid(ruid), effective: Uid(euid), saved: Uid(suid) })
+    }
+
+    /// Gets the real, effective, and saved group IDs.
+    ///
+    /// ([see getresgid(2)](http://man7.org/linux/man-pages/man2/getresgid.2.html))
+    ///
+    /// #Returns
+    ///
+    /// - `Ok((Gid, Gid, Gid))`: tuple of real, effective and saved gids on success.
+    /// - `Err(x)`: libc error code on failure.
+    ///
+    #[inline]
+    pub fn getresgid() -> Result<ResGid> {
+        let mut rgid = libc::gid_t::max_value();
+        let mut egid = libc::gid_t::max_value();
+        let mut sgid = libc::gid_t::max_value();
+        let res = unsafe { libc::getresgid(&mut rgid, &mut egid, &mut sgid) };
+
+        Errno::result(res).map(|_| ResGid { real: Gid(rgid), effective: Gid(egid), saved: Gid(sgid) } )
     }
 }
 
