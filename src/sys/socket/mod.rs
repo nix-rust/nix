@@ -564,6 +564,9 @@ pub enum ControlMessageOwned {
     ScmTimestampns(TimeSpec),
     /// Configurable nanoseconds resolution timestamps
     ///
+    /// Three `TimeSpec`s are returned in the control message. At least one field is non-zero at
+    /// any time. Most timestamps are passed in ts[0]. Hardware timestamps are passed in ts[2].
+    ///
     /// [Further reading](https://www.kernel.org/doc/html/latest/networking/timestamping.html)
     #[cfg(all(target_os = "linux"))]
     ScmTimestamping([TimeSpec; 3]),
