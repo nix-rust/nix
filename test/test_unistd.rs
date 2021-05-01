@@ -729,7 +729,7 @@ fn test_alarm() {
     // Overwriting an alarm should return the old alarm.
     assert_eq!(alarm::set(1), Some(60));
 
-    // We should be woken up after 1 second by the alarm, so we'll sleep for 2
+    // We should be woken up after 1 second by the alarm, so we'll sleep for 3
     // seconds to be sure.
     let starttime = Instant::now();
     loop {

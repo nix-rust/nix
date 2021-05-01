@@ -1668,7 +1668,7 @@ pub mod alarm {
     //! extern fn signal_handler(_: nix::libc::c_int) { }
     //! let sa = SigAction::new(
     //!     SigHandler::Handler(signal_handler),
-    //!     SaFlags::empty(),
+    //!     SaFlags::SA_RESTART,
     //!     SigSet::empty()
     //! );
     //! unsafe {
