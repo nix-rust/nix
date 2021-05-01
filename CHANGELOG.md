@@ -11,6 +11,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 - Made `forkpty` unsafe, like `fork`
   (#[1390](https://github.com/nix-rust/nix/pull/1390))
+- Made `Uid`, `Gid` and `Pid` methods `from_raw` and `as_raw` a `const fn`
+  (#[1429](https://github.com/nix-rust/nix/pull/1429))
+- Made `Uid::is_root` a `const fn`
+  (#[1429](https://github.com/nix-rust/nix/pull/1429))
 
 ### Fixed
 - Allow `sockaddr_ll` size, as reported by the Linux kernel, to be smaller then it's definition

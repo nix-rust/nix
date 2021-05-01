@@ -38,7 +38,7 @@ pub struct Uid(uid_t);
 
 impl Uid {
     /// Creates `Uid` from raw `uid_t`.
-    pub fn from_raw(uid: uid_t) -> Self {
+    pub const fn from_raw(uid: uid_t) -> Self {
         Uid(uid)
     }
 
@@ -53,12 +53,12 @@ impl Uid {
     }
 
     /// Returns true if the `Uid` represents privileged user - root. (If it equals zero.)
-    pub fn is_root(self) -> bool {
-        self == ROOT
+    pub const fn is_root(self) -> bool {
+        self.0 == ROOT.0
     }
 
     /// Get the raw `uid_t` wrapped by `self`.
-    pub fn as_raw(self) -> uid_t {
+    pub const fn as_raw(self) -> uid_t {
         self.0
     }
 }
@@ -87,7 +87,7 @@ pub struct Gid(gid_t);
 
 impl Gid {
     /// Creates `Gid` from raw `gid_t`.
-    pub fn from_raw(gid: gid_t) -> Self {
+    pub const fn from_raw(gid: gid_t) -> Self {
         Gid(gid)
     }
 
@@ -102,7 +102,7 @@ impl Gid {
     }
 
     /// Get the raw `gid_t` wrapped by `self`.
-    pub fn as_raw(self) -> gid_t {
+    pub const fn as_raw(self) -> gid_t {
         self.0
     }
 }
@@ -128,7 +128,7 @@ pub struct Pid(pid_t);
 
 impl Pid {
     /// Creates `Pid` from raw `pid_t`.
-    pub fn from_raw(pid: pid_t) -> Self {
+    pub const fn from_raw(pid: pid_t) -> Self {
         Pid(pid)
     }
 
@@ -143,7 +143,7 @@ impl Pid {
     }
 
     /// Get the raw `pid_t` wrapped by `self`.
-    pub fn as_raw(self) -> pid_t {
+    pub const fn as_raw(self) -> pid_t {
         self.0
     }
 }
