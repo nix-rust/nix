@@ -91,6 +91,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   (#[1278](https://github.com/nix-rust/nix/pull/1278))
 - Made `unistd::fork` an unsafe funtion, bringing it in line with [libstd's decision](https://github.com/rust-lang/rust/pull/58059).
   (#[1293](https://github.com/nix-rust/nix/pull/1293))
+- Support for no-change of parameters of `setresuid` and `setresgid` wrapper
+  ([#1305](https://github.com/nix-rust/nix/pull/1305/))
 ### Fixed
 ### Removed
 
