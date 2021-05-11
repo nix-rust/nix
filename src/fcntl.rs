@@ -252,7 +252,18 @@ fn inner_readlink<P: ?Sized + NixPath>(dirfd: Option<RawFd>, path: &P) -> Result
     }
     // Uh oh, the result is too long...
     // Let's try to ask lstat how many bytes to allocate.
-    let reported_size = super::sys::stat::lstat(path)
+    let reported_size = match dirfd {
+        #[cfg(target_os = "redox")]
+        Some(_) => unreachable!(),
+        #[cfg(any(target_os = "android", target_os = "linux"))]
+        Some(dirfd) => {
+            let flags = if path.is_empty() { AtFlags::AT_EMPTY_PATH } else { AtFlags::empty() };
+            super::sys::stat::fstatat(dirfd, path, flags | AtFlags::AT_SYMLINK_NOFOLLOW)
+        },
+        #[cfg(not(any(target_os = "android", target_os = "linux", target_os = "redox")))]
+        Some(dirfd) => super::sys::stat::fstatat(dirfd, path, AtFlags::AT_SYMLINK_NOFOLLOW),
+        None => super::sys::stat::lstat(path)
+    }
         .and_then(|x| Ok(x.st_size))
         .unwrap_or(0);
     let mut try_size = if reported_size > 0 {
