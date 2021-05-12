@@ -225,6 +225,226 @@ mod sched_linux_like {
     }
 }
 
+#[cfg(not(any(target_os = "ios", target_os = "macos", target_os = "redox")))]
+pub use self::sched_scheduler::*;
+
+#[cfg(not(any(target_os = "ios", target_os = "macos", target_os = "redox")))]
+mod sched_scheduler {
+    use crate::unistd::Pid;
+    use crate::{Errno, Result};
+    use libc::{self, c_int};
+    use std::convert::TryFrom;
+    use std::mem;
+
+    libc_enum! {
+        #[repr(i32)]
+        #[non_exhaustive]
+        pub enum SchedType {
+            #[cfg(target_os = "android")]
+            SCHED_NORMAL,
+            #[cfg(any(target_os = "dragonfly", target_os = "freebsd", target_os = "fuchsia", target_os = "illumos", target_os = "linux", target_os = "netbsd"))]
+            SCHED_OTHER,
+            #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd", target_os = "fuchsia", target_os = "illumos", target_os = "linux", target_os = "netbsd"))]
+            SCHED_FIFO,
+            #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd", target_os = "fuchsia", target_os = "illumos", target_os = "linux", target_os = "netbsd"))]
+            SCHED_RR,
+            #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+            SCHED_BATCH,
+            #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+            SCHED_IDLE,
+            #[cfg(target_os = "android")]
+            SCHED_DEADLINE,
+            #[cfg(target_os = "illumos")]
+            SCHED_SYS,
+            #[cfg(target_os = "illumos")]
+            SCHED_IA,
+            #[cfg(target_os = "illumos")]
+            SCHED_FSS,
+            #[cfg(target_os = "illumos")]
+            SCHED_FX,
+        }
+
+        impl TryFrom<i32>
+    }
+
+    libc_bitflags! {
+        pub struct SchedFlags: c_int {
+            #[cfg(target_os = "linux")]
+            SCHED_RESET_ON_FORK;
+        }
+    }
+
+    #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+    pub struct SchedPolicy {
+        pub sched_type: SchedType,
+        #[cfg(target_os = "linux")]
+        pub sched_flags: SchedFlags,
+    }
+
+    impl SchedPolicy {
+        pub fn new(sched_type: SchedType) -> Self {
+            SchedPolicy::_with_flags(sched_type, SchedFlags::empty())
+        }
+
+        pub fn with_flags(sched_type: SchedType, sched_flags: SchedFlags) -> Self {
+            SchedPolicy::_with_flags(sched_type, sched_flags)
+        }
+
+        #[cfg(target_os = "linux")]
+        pub const fn bits(&self) -> i32 {
+            self.sched_type as i32 | self.sched_flags.bits()
+        }
+
+        #[cfg(not(target_os = "linux"))]
+        pub const fn bits(&self) -> i32 {
+            self.sched_type as i32
+        }
+
+        #[cfg(target_os = "linux")]
+        pub fn from_bits(bits: i32) -> Option<Self> {
+            let type_bits = bits & !SchedFlags::all().bits();
+            let sched_type = SchedType::try_from(type_bits).ok()?;
+            let flag_bits = bits & SchedFlags::all().bits();
+            let sched_flags = SchedFlags::from_bits(flag_bits)?;
+            Some(SchedPolicy::with_flags(sched_type, sched_flags))
+        }
+
+        #[cfg(not(target_os = "linux"))]
+        pub fn from_bits(bits: i32) -> Option<Self> {
+            let type_bits = bits & !SchedFlags::all().bits();
+            let sched_type = SchedType::try_from(type_bits).ok()?;
+            Some(SchedPolicy::new(sched_type))
+        }
+
+        #[cfg(target_os = "linux")]
+        #[inline]
+        fn _with_flags(sched_type: SchedType, sched_flags: SchedFlags) -> Self {
+            SchedPolicy {
+                sched_type,
+                sched_flags,
+            }
+        }
+
+        #[cfg(not(target_os = "linux"))]
+        #[inline]
+        fn _with_flags(sched_type: SchedType, _sched_flags: SchedFlags) -> Self {
+            SchedPolicy {
+                sched_type,
+            }
+        }
+    }
+
+    #[repr(transparent)]
+    #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+    pub struct SchedParam(libc::sched_param);
+
+    impl SchedParam {
+        pub fn new(priority: i32) -> Self {
+            let sched_param = unsafe {
+                // Illumos's sched_param has a private padding field.
+                let mut param = mem::MaybeUninit::<libc::sched_param>::zeroed();
+                let p = param.as_mut_ptr();
+                (*p).sched_priority = priority;
+                param.assume_init()
+            };
+            SchedParam(sched_param)
+        }
+
+        pub const fn priority(&self) -> i32 {
+            self.0.sched_priority
+        }
+    }
+
+    impl Default for SchedParam {
+        fn default() -> Self {
+            SchedParam::new(0)
+        }
+    }
+
+    /// Get minimum priority value for policy
+    ///
+    /// See also [`sched_get_priority_min(2)`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/sched_get_priority_min.html)
+    pub fn sched_get_priority_min(policy: SchedPolicy) -> Result<i32> {
+        let res = unsafe { libc::sched_get_priority_min(policy.bits()) };
+
+        Errno::result(res)
+    }
+
+    /// Get maximum priority value for policy
+    ///
+    /// See also [`sched_get_priority_max(2)`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/sched_get_priority_max.html)
+    pub fn sched_get_priority_max(policy: SchedPolicy) -> Result<i32> {
+        let res = unsafe { libc::sched_get_priority_max(policy.bits()) };
+
+        Errno::result(res)
+    }
+
+    /// Set thread's scheduling parameters
+    ///
+    /// `pid` is the thread ID to update.
+    /// If `pid` is None or zero, then the parameters for the calling thread are set.
+    ///
+    /// See also [`sched_setparam(2)`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/sched_setparam.html)
+    pub fn sched_setparam(pid: Option<Pid>, sched_param: SchedParam) -> Result<()> {
+        let res =
+            unsafe { libc::sched_setparam(pid.unwrap_or_else(|| Pid::from_raw(0)).into(), &sched_param.0) };
+
+        Errno::result(res).map(drop)
+    }
+
+    /// Get thread's scheduling parameters
+    ///
+    /// `pid` is the thread ID to check.
+    /// If `pid` is None or zero, then the parameters for the calling thread are retrieved.
+    ///
+    /// See also [`sched_getparam(2)`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/sched_getparam.html)
+    pub fn sched_getparam(pid: Option<Pid>) -> Result<SchedParam> {
+        let mut sched_param = mem::MaybeUninit::uninit();
+        let res = unsafe {
+            libc::sched_getparam(
+                pid.unwrap_or_else(|| Pid::from_raw(0)).into(),
+                sched_param.as_mut_ptr(),
+            )
+        };
+
+        Errno::result(res).map(|_| unsafe { SchedParam(sched_param.assume_init()) })
+    }
+
+    /// Set thread's scheduling policy and parameters
+    ///
+    /// `pid` is the thread ID to update.
+    /// If `pid` is None or zero, then the policy and parameters for the calling thread are set.
+    ///
+    /// See also [`sched_setscheduler(2)`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/sched_setscheduler.html)
+    pub fn sched_setscheduler(
+        pid: Option<Pid>,
+        policy: SchedPolicy,
+        sched_param: SchedParam,
+    ) -> Result<()> {
+        let res = unsafe {
+            libc::sched_setscheduler(
+                pid.unwrap_or_else(|| Pid::from_raw(0)).into(),
+                policy.bits(),
+                &sched_param.0,
+            )
+        };
+
+        Errno::result(res).map(drop)
+    }
+
+    /// Get thread's scheduling policy and parameters
+    ///
+    /// `pid` is the thread ID to check.
+    /// If `pid` is None or zero, then the policy and parameters for the calling thread are retrieved.
+    ///
+    /// See also [`sched_getscheduler(2)`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/sched_getscheduler.html)
+    pub fn sched_getscheduler(pid: Option<Pid>) -> Result<SchedPolicy> {
+        let res = unsafe { libc::sched_getscheduler(pid.unwrap_or_else(|| Pid::from_raw(0)).into()) };
+
+        Errno::result(res).and(SchedPolicy::from_bits(res).ok_or(Errno::EINVAL))
+    }
+}
+
 /// Explicitly yield the processor to other threads.
 ///
 /// [Further reading](https://pubs.opengroup.org/onlinepubs/9699919799/functions/sched_yield.html)
