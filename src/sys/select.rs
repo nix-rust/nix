@@ -64,7 +64,7 @@ impl FdSet {
     }
 
     /// Returns an iterator over the file descriptors in the set.
-    /// 
+    ///
     /// For performance, it takes an optional higher bound: the iterator will
     /// not return any elements of the set greater than the given file
     /// descriptor.
@@ -155,7 +155,7 @@ impl<'a> FusedIterator for Fds<'a> {}
 ///
 /// # References
 ///
-/// [select(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/select.html)
+/// [select(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/select.html)
 ///
 /// [`FdSet::highest`]: struct.FdSet.html#method.highest
 pub fn select<'a, N, R, W, E, T>(nfds: N,
@@ -221,7 +221,7 @@ where
 ///
 /// # References
 ///
-/// [pselect(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/pselect.html)
+/// [pselect(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/pselect.html)
 ///
 /// [The new pselect() system call](https://lwn.net/Articles/176911/)
 ///

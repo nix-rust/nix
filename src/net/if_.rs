@@ -21,22 +21,22 @@ libc_bitflags!(
     /// Standard interface flags, used by `getifaddrs`
     pub struct InterfaceFlags: libc::c_int {
         /// Interface is running. (see
-        /// [`netdevice(7)`](http://man7.org/linux/man-pages/man7/netdevice.7.html))
+        /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
         IFF_UP;
         /// Valid broadcast address set. (see
-        /// [`netdevice(7)`](http://man7.org/linux/man-pages/man7/netdevice.7.html))
+        /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
         IFF_BROADCAST;
         /// Internal debugging flag. (see
-        /// [`netdevice(7)`](http://man7.org/linux/man-pages/man7/netdevice.7.html))
+        /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
         IFF_DEBUG;
         /// Interface is a loopback interface. (see
-        /// [`netdevice(7)`](http://man7.org/linux/man-pages/man7/netdevice.7.html))
+        /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
         IFF_LOOPBACK;
         /// Interface is a point-to-point link. (see
-        /// [`netdevice(7)`](http://man7.org/linux/man-pages/man7/netdevice.7.html))
+        /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
         IFF_POINTOPOINT;
         /// Avoid use of trailers. (see
-        /// [`netdevice(7)`](http://man7.org/linux/man-pages/man7/netdevice.7.html))
+        /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
         #[cfg(any(target_os = "android",
                   target_os = "fuchsia",
                   target_os = "ios",
@@ -50,7 +50,7 @@ libc_bitflags!(
         #[cfg(any(target_os = "dragonfly"))]
         IFF_SMART;
         /// Resources allocated. (see
-        /// [`netdevice(7)`](http://man7.org/linux/man-pages/man7/netdevice.7.html))
+        /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
         #[cfg(any(target_os = "android",
                   target_os = "dragonfly",
                   target_os = "freebsd",
@@ -64,16 +64,16 @@ libc_bitflags!(
                   target_os = "solaris"))]
         IFF_RUNNING;
         /// No arp protocol, L2 destination address not set. (see
-        /// [`netdevice(7)`](http://man7.org/linux/man-pages/man7/netdevice.7.html))
+        /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
         IFF_NOARP;
         /// Interface is in promiscuous mode. (see
-        /// [`netdevice(7)`](http://man7.org/linux/man-pages/man7/netdevice.7.html))
+        /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
         IFF_PROMISC;
         /// Receive all multicast packets. (see
-        /// [`netdevice(7)`](http://man7.org/linux/man-pages/man7/netdevice.7.html))
+        /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
         IFF_ALLMULTI;
         /// Master of a load balancing bundle. (see
-        /// [`netdevice(7)`](http://man7.org/linux/man-pages/man7/netdevice.7.html))
+        /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
         #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
         IFF_MASTER;
         /// transmission in progress, tx hardware queue is full
@@ -87,7 +87,7 @@ libc_bitflags!(
         #[cfg(any(target_os = "illumos", target_os = "solaris"))]
         IFF_INTELLIGENT;
         /// Slave of a load balancing bundle. (see
-        /// [`netdevice(7)`](http://man7.org/linux/man-pages/man7/netdevice.7.html))
+        /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
         #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
         IFF_SLAVE;
         /// Can't hear own transmissions.
@@ -99,7 +99,7 @@ libc_bitflags!(
                   target_os = "osx"))]
         IFF_SIMPLEX;
         /// Supports multicast. (see
-        /// [`netdevice(7)`](http://man7.org/linux/man-pages/man7/netdevice.7.html))
+        /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
         IFF_MULTICAST;
         /// Per link layer defined bit.
         #[cfg(any(target_os = "dragonfly",
@@ -113,7 +113,7 @@ libc_bitflags!(
         #[cfg(any(target_os = "illumos", target_os = "solaris"))]
         IFF_MULTI_BCAST;
         /// Is able to select media type via ifmap. (see
-        /// [`netdevice(7)`](http://man7.org/linux/man-pages/man7/netdevice.7.html))
+        /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
         #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
         IFF_PORTSEL;
         /// Per link layer defined bit.
@@ -128,7 +128,7 @@ libc_bitflags!(
         #[cfg(any(target_os = "illumos", target_os = "solaris"))]
         IFF_UNNUMBERED;
         /// Auto media selection active. (see
-        /// [`netdevice(7)`](http://man7.org/linux/man-pages/man7/netdevice.7.html))
+        /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
         #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
         IFF_AUTOMEDIA;
         /// Per link layer defined bit.
@@ -149,7 +149,7 @@ libc_bitflags!(
         #[cfg(any(target_os = "solaris", target_os = "illumos"))]
         IFF_DHCPRUNNING;
         /// The addresses are lost when the interface goes down. (see
-        /// [`netdevice(7)`](http://man7.org/linux/man-pages/man7/netdevice.7.html))
+        /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
         #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
         IFF_DYNAMIC;
         /// Do not advertise.
@@ -218,7 +218,7 @@ libc_bitflags!(
         /// Do not provide packet information
         #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
         IFF_NO_PI as libc::c_int;
-        /// TUN device (no Ethernet headers) 
+        /// TUN device (no Ethernet headers)
         #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
         IFF_TUN as libc::c_int;
         /// TAP device

@@ -81,14 +81,14 @@ pub enum WaitStatus {
     /// field is the `PTRACE_EVENT_*` value of the event.
     ///
     /// [`nix::sys::ptrace`]: ../ptrace/index.html
-    /// [`ptrace`(2)]: http://man7.org/linux/man-pages/man2/ptrace.2.html
+    /// [`ptrace`(2)]: https://man7.org/linux/man-pages/man2/ptrace.2.html
     #[cfg(any(target_os = "linux", target_os = "android"))]
     PtraceEvent(Pid, Signal, c_int),
     /// The traced process was stopped by execution of a system call,
     /// and `PTRACE_O_TRACESYSGOOD` is in effect. See [`ptrace`(2)] for
     /// more information.
     ///
-    /// [`ptrace`(2)]: http://man7.org/linux/man-pages/man2/ptrace.2.html
+    /// [`ptrace`(2)]: https://man7.org/linux/man-pages/man2/ptrace.2.html
     #[cfg(any(target_os = "linux", target_os = "android"))]
     PtraceSyscall(Pid),
     /// The process was previously stopped but has resumed execution

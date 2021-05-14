@@ -112,7 +112,7 @@ pub struct RemoteIoVec {
 ///
 /// This function is only available on Linux.
 ///
-/// [`process_vm_writev`(2)]: http://man7.org/linux/man-pages/man2/process_vm_writev.2.html
+/// [`process_vm_writev`(2)]: https://man7.org/linux/man-pages/man2/process_vm_writev.2.html
 /// [ptrace]: ../ptrace/index.html
 /// [`IoVec`]: struct.IoVec.html
 /// [`RemoteIoVec`]: struct.RemoteIoVec.html
@@ -147,7 +147,7 @@ pub fn process_vm_writev(
 ///
 /// This function is only available on Linux.
 ///
-/// [`process_vm_readv`(2)]: http://man7.org/linux/man-pages/man2/process_vm_readv.2.html
+/// [`process_vm_readv`(2)]: https://man7.org/linux/man-pages/man2/process_vm_readv.2.html
 /// [`ptrace`]: ../ptrace/index.html
 /// [`IoVec`]: struct.IoVec.html
 /// [`RemoteIoVec`]: struct.RemoteIoVec.html

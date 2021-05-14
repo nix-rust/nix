@@ -3,7 +3,7 @@
 //! Timer FD is a Linux-only API to create timers and get expiration
 //! notifications through file descriptors.
 //!
-//! For more documentation, please read [timerfd_create(2)](http://man7.org/linux/man-pages/man2/timerfd_create.2.html).
+//! For more documentation, please read [timerfd_create(2)](https://man7.org/linux/man-pages/man2/timerfd_create.2.html).
 //!
 //! # Examples
 //!
@@ -56,7 +56,7 @@ impl FromRawFd for TimerFd {
 
 libc_enum! {
     /// The type of the clock used to mark the progress of the timer. For more
-    /// details on each kind of clock, please refer to [timerfd_create(2)](http://man7.org/linux/man-pages/man2/timerfd_create.2.html).
+    /// details on each kind of clock, please refer to [timerfd_create(2)](https://man7.org/linux/man-pages/man2/timerfd_create.2.html).
     #[repr(i32)]
     pub enum ClockId {
         CLOCK_REALTIME,

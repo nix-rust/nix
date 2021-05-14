@@ -109,7 +109,7 @@ mod sched_linux_like {
     }
 
     /// `sched_setaffinity` set a thread's CPU affinity mask
-    /// ([`sched_setaffinity(2)`](http://man7.org/linux/man-pages/man2/sched_setaffinity.2.html))
+    /// ([`sched_setaffinity(2)`](https://man7.org/linux/man-pages/man2/sched_setaffinity.2.html))
     ///
     /// `pid` is the thread ID to update.
     /// If pid is zero, then the calling thread is updated.
@@ -142,7 +142,7 @@ mod sched_linux_like {
     }
 
     /// `sched_getaffinity` get a thread's CPU affinity mask
-    /// ([`sched_getaffinity(2)`](http://man7.org/linux/man-pages/man2/sched_getaffinity.2.html))
+    /// ([`sched_getaffinity(2)`](https://man7.org/linux/man-pages/man2/sched_getaffinity.2.html))
     ///
     /// `pid` is the thread ID to check.
     /// If pid is zero, then the calling thread is checked.
@@ -219,7 +219,7 @@ mod sched_linux_like {
 
 /// Explicitly yield the processor to other threads.
 ///
-/// [Further reading](http://pubs.opengroup.org/onlinepubs/9699919799/functions/sched_yield.html)
+/// [Further reading](https://pubs.opengroup.org/onlinepubs/9699919799/functions/sched_yield.html)
 pub fn sched_yield() -> Result<()> {
     let res = unsafe { libc::sched_yield() };
 

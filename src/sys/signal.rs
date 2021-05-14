@@ -1,5 +1,5 @@
 // Portions of this file are Copyright 2014 The Rust Project Developers.
-// See http://rust-lang.org/COPYRIGHT.
+// See https://www.rust-lang.org/policies/licenses.
 
 ///! Operating system signals.
 
@@ -619,7 +619,7 @@ pub unsafe fn sigaction(signal: Signal, sigaction: &SigAction) -> Result<SigActi
     Errno::result(res).map(|_| SigAction { sigaction: oldact.assume_init() })
 }
 
-/// Signal management (see [signal(3p)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/signal.html))
+/// Signal management (see [signal(3p)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/signal.html))
 ///
 /// Installs `handler` for the given `signal`, returning the previous signal
 /// handler. `signal` should only be used following another call to `signal` or
@@ -724,8 +724,8 @@ fn do_pthread_sigmask(how: SigmaskHow,
 ///
 /// If both `set` and `oldset` is None, this function is a no-op.
 ///
-/// For more information, visit the [`pthread_sigmask`](http://pubs.opengroup.org/onlinepubs/9699919799/functions/pthread_sigmask.html),
-/// or [`sigprocmask`](http://pubs.opengroup.org/onlinepubs/9699919799/functions/sigprocmask.html) man pages.
+/// For more information, visit the [`pthread_sigmask`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/pthread_sigmask.html),
+/// or [`sigprocmask`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/sigprocmask.html) man pages.
 pub fn pthread_sigmask(how: SigmaskHow,
                        set: Option<&SigSet>,
                        oldset: Option<&mut SigSet>) -> Result<()>
@@ -736,7 +736,7 @@ pub fn pthread_sigmask(how: SigmaskHow,
 /// Examine and change blocked signals.
 ///
 /// For more informations see the [`sigprocmask` man
-/// pages](http://pubs.opengroup.org/onlinepubs/9699919799/functions/sigprocmask.html).
+/// pages](https://pubs.opengroup.org/onlinepubs/9699919799/functions/sigprocmask.html).
 pub fn sigprocmask(how: SigmaskHow, set: Option<&SigSet>, oldset: Option<&mut SigSet>) -> Result<()> {
     if set.is_none() && oldset.is_none() {
         return Ok(())
@@ -765,7 +765,7 @@ pub fn kill<T: Into<Option<Signal>>>(pid: Pid, signal: T) -> Result<()> {
 }
 
 /// Send a signal to a process group [(see
-/// killpg(3))](http://pubs.opengroup.org/onlinepubs/9699919799/functions/killpg.html).
+/// killpg(3))](https://pubs.opengroup.org/onlinepubs/9699919799/functions/killpg.html).
 ///
 /// If `pgrp` less then or equal 1, the behavior is platform-specific.
 /// If `signal` is `None`, `killpg` will only preform error checking and won't
