@@ -372,7 +372,7 @@ pub unsafe fn madvise(addr: *mut c_void, length: size_t, advise: MmapAdvise) -> 
 
 /// Set protection of memory mapping.
 ///
-/// See [`mprotect(3)`](http://pubs.opengroup.org/onlinepubs/9699919799/functions/mprotect.html) for
+/// See [`mprotect(3)`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/mprotect.html) for
 /// details.
 ///
 /// # Safety

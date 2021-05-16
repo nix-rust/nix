@@ -34,16 +34,16 @@ pub use self::vsock::VsockAddr;
 #[repr(i32)]
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Hash)]
 pub enum AddressFamily {
-    /// Local communication (see [`unix(7)`](http://man7.org/linux/man-pages/man7/unix.7.html))
+    /// Local communication (see [`unix(7)`](https://man7.org/linux/man-pages/man7/unix.7.html))
     Unix = libc::AF_UNIX,
-    /// IPv4 Internet protocols (see [`ip(7)`](http://man7.org/linux/man-pages/man7/ip.7.html))
+    /// IPv4 Internet protocols (see [`ip(7)`](https://man7.org/linux/man-pages/man7/ip.7.html))
     Inet = libc::AF_INET,
-    /// IPv6 Internet protocols (see [`ipv6(7)`](http://man7.org/linux/man-pages/man7/ipv6.7.html))
+    /// IPv6 Internet protocols (see [`ipv6(7)`](https://man7.org/linux/man-pages/man7/ipv6.7.html))
     Inet6 = libc::AF_INET6,
-    /// Kernel user interface device (see [`netlink(7)`](http://man7.org/linux/man-pages/man7/netlink.7.html))
+    /// Kernel user interface device (see [`netlink(7)`](https://man7.org/linux/man-pages/man7/netlink.7.html))
     #[cfg(any(target_os = "android", target_os = "linux"))]
     Netlink = libc::AF_NETLINK,
-    /// Low level packet interface (see [`packet(7)`](http://man7.org/linux/man-pages/man7/packet.7.html))
+    /// Low level packet interface (see [`packet(7)`](https://man7.org/linux/man-pages/man7/packet.7.html))
     #[cfg(any(target_os = "android",
               target_os = "linux",
               target_os = "illumos",
@@ -67,7 +67,7 @@ pub enum AddressFamily {
     /// Access to raw ATM PVCs
     #[cfg(any(target_os = "android", target_os = "linux"))]
     AtmPvc = libc::AF_ATMPVC,
-    /// ITU-T X.25 / ISO-8208 protocol (see [`x25(7)`](http://man7.org/linux/man-pages/man7/x25.7.html))
+    /// ITU-T X.25 / ISO-8208 protocol (see [`x25(7)`](https://man7.org/linux/man-pages/man7/x25.7.html))
     #[cfg(any(target_os = "android", target_os = "linux"))]
     X25 = libc::AF_X25,
     #[cfg(any(target_os = "android", target_os = "linux"))]
@@ -225,7 +225,7 @@ pub enum AddressFamily {
               target_os = "netbsd",
               target_os = "openbsd"))]
     Natm = libc::AF_NATM,
-    /// Unspecified address family, (see [`getaddrinfo(3)`](http://man7.org/linux/man-pages/man3/getaddrinfo.3.html))
+    /// Unspecified address family, (see [`getaddrinfo(3)`](https://man7.org/linux/man-pages/man3/getaddrinfo.3.html))
     #[cfg(any(target_os = "android", target_os = "linux"))]
     Unspec = libc::AF_UNSPEC,
 }

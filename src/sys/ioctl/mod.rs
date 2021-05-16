@@ -104,7 +104,7 @@
 //! respectively. To determine the specific `write_` variant to use you'll need to find
 //! what the argument type is supposed to be. If it's an `int`, then `write_int` should be used,
 //! otherwise it should be a pointer and `write_ptr` should be used. On Linux the
-//! [`ioctl_list` man page](http://man7.org/linux/man-pages/man2/ioctl_list.2.html) describes a
+//! [`ioctl_list` man page](https://man7.org/linux/man-pages/man2/ioctl_list.2.html) describes a
 //! large number of `ioctl`s and describes their argument data type.
 //!
 //! Using "bad" `ioctl`s

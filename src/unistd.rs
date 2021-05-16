@@ -191,7 +191,7 @@ impl ForkResult {
 }
 
 /// Create a new child process duplicating the parent process ([see
-/// fork(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/fork.html)).
+/// fork(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/fork.html)).
 ///
 /// After calling the fork system call (successfully) two processes will
 /// be created that are identical with the exception of their pid and the
@@ -228,7 +228,7 @@ impl ForkResult {
 /// Those functions are only a small subset of your operating system's API, so
 /// special care must be taken to only invoke code you can control and audit.
 ///
-/// [async-signal-safe]: http://man7.org/linux/man-pages/man7/signal-safety.7.html
+/// [async-signal-safe]: https://man7.org/linux/man-pages/man7/signal-safety.7.html
 #[inline]
 pub unsafe fn fork() -> Result<ForkResult> {
     use self::ForkResult::*;
@@ -241,7 +241,7 @@ pub unsafe fn fork() -> Result<ForkResult> {
 }
 
 /// Get the pid of this process (see
-/// [getpid(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/getpid.html)).
+/// [getpid(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/getpid.html)).
 ///
 /// Since you are running code, there is always a pid to return, so there
 /// is no error case that needs to be handled.
@@ -251,7 +251,7 @@ pub fn getpid() -> Pid {
 }
 
 /// Get the pid of this processes' parent (see
-/// [getpid(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/getppid.html)).
+/// [getpid(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/getppid.html)).
 ///
 /// There is always a parent pid to return, so there is no error case that needs
 /// to be handled.
@@ -261,7 +261,7 @@ pub fn getppid() -> Pid {
 }
 
 /// Set a process group ID (see
-/// [setpgid(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/setpgid.html)).
+/// [setpgid(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/setpgid.html)).
 ///
 /// Set the process group id (PGID) of a particular process.  If a pid of zero
 /// is specified, then the pid of the calling process is used.  Process groups
@@ -281,14 +281,14 @@ pub fn getpgid(pid: Option<Pid>) -> Result<Pid> {
 }
 
 /// Create new session and set process group id (see
-/// [setsid(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/setsid.html)).
+/// [setsid(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/setsid.html)).
 #[inline]
 pub fn setsid() -> Result<Pid> {
     Errno::result(unsafe { libc::setsid() }).map(Pid)
 }
 
 /// Get the process group ID of a session leader
-/// [getsid(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/getsid.html).
+/// [getsid(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/getsid.html).
 ///
 /// Obtain the process group ID of the process that is the session leader of the process specified
 /// by pid. If pid is zero, it specifies the calling process.
@@ -301,7 +301,7 @@ pub fn getsid(pid: Option<Pid>) -> Result<Pid> {
 
 
 /// Get the terminal foreground process group (see
-/// [tcgetpgrp(3)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/tcgetpgrp.html)).
+/// [tcgetpgrp(3)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/tcgetpgrp.html)).
 ///
 /// Get the group process id (GPID) of the foreground process group on the
 /// terminal associated to file descriptor (FD).
@@ -311,7 +311,7 @@ pub fn tcgetpgrp(fd: c_int) -> Result<Pid> {
     Errno::result(res).map(Pid)
 }
 /// Set the terminal foreground process group (see
-/// [tcgetpgrp(3)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/tcsetpgrp.html)).
+/// [tcgetpgrp(3)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/tcsetpgrp.html)).
 ///
 /// Get the group process id (PGID) to the foreground process group on the
 /// terminal associated to file descriptor (FD).
@@ -323,7 +323,7 @@ pub fn tcsetpgrp(fd: c_int, pgrp: Pid) -> Result<()> {
 
 
 /// Get the group id of the calling process (see
-///[getpgrp(3)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/getpgrp.html)).
+///[getpgrp(3)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/getpgrp.html)).
 ///
 /// Get the process group id (PGID) of the calling process.
 /// According to the man page it is always successful.
@@ -333,7 +333,7 @@ pub fn getpgrp() -> Pid {
 }
 
 /// Get the caller's thread ID (see
-/// [gettid(2)](http://man7.org/linux/man-pages/man2/gettid.2.html).
+/// [gettid(2)](https://man7.org/linux/man-pages/man2/gettid.2.html).
 ///
 /// This function is only available on Linux based systems.  In a single
 /// threaded process, the main thread will have the same ID as the process.  In
@@ -349,7 +349,7 @@ pub fn gettid() -> Pid {
 }
 
 /// Create a copy of the specified file descriptor (see
-/// [dup(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/dup.html)).
+/// [dup(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/dup.html)).
 ///
 /// The new file descriptor will be have a new index but refer to the same
 /// resource as the old file descriptor and the old and new file descriptors may
@@ -366,7 +366,7 @@ pub fn dup(oldfd: RawFd) -> Result<RawFd> {
 }
 
 /// Create a copy of the specified file descriptor using the specified fd (see
-/// [dup(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/dup.html)).
+/// [dup(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/dup.html)).
 ///
 /// This function behaves similar to `dup()` except that it will try to use the
 /// specified fd instead of allocating a new one.  See the man pages for more
@@ -379,7 +379,7 @@ pub fn dup2(oldfd: RawFd, newfd: RawFd) -> Result<RawFd> {
 }
 
 /// Create a new copy of the specified file descriptor using the specified fd
-/// and flags (see [dup(2)](http://man7.org/linux/man-pages/man2/dup.2.html)).
+/// and flags (see [dup(2)](https://man7.org/linux/man-pages/man2/dup.2.html)).
 ///
 /// This function behaves similar to `dup2()` but allows for flags to be
 /// specified.
@@ -406,7 +406,7 @@ fn dup3_polyfill(oldfd: RawFd, newfd: RawFd, flags: OFlag) -> Result<RawFd> {
 }
 
 /// Change the current working directory of the calling process (see
-/// [chdir(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/chdir.html)).
+/// [chdir(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/chdir.html)).
 ///
 /// This function may fail in a number of different scenarios.  See the man
 /// pages for additional details on possible failure cases.
@@ -421,7 +421,7 @@ pub fn chdir<P: ?Sized + NixPath>(path: &P) -> Result<()> {
 
 /// Change the current working directory of the process to the one
 /// given as an open file descriptor (see
-/// [fchdir(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/fchdir.html)).
+/// [fchdir(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/fchdir.html)).
 ///
 /// This function may fail in a number of different scenarios.  See the man
 /// pages for additional details on possible failure cases.
@@ -433,7 +433,7 @@ pub fn fchdir(dirfd: RawFd) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
-/// Creates new directory `path` with access rights `mode`.  (see [mkdir(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/mkdir.html))
+/// Creates new directory `path` with access rights `mode`.  (see [mkdir(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/mkdir.html))
 ///
 /// # Errors
 ///
@@ -481,7 +481,7 @@ pub fn mkdir<P: ?Sized + NixPath>(path: &P, mode: Mode) -> Result<()> {
 /// - the path name is too long (longer than `PATH_MAX`, usually 4096 on linux, 1024 on OS X)
 ///
 /// For a full list consult
-/// [posix specification](http://pubs.opengroup.org/onlinepubs/9699919799/functions/mkfifo.html)
+/// [posix specification](https://pubs.opengroup.org/onlinepubs/9699919799/functions/mkfifo.html)
 ///
 /// # Example
 ///
@@ -519,7 +519,7 @@ pub fn mkfifo<P: ?Sized + NixPath>(path: &P, mode: Mode) -> Result<()> {
 ///
 /// # References
 ///
-/// [mkfifoat(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/mkfifoat.html).
+/// [mkfifoat(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/mkfifoat.html).
 // mkfifoat is not implemented in OSX or android
 #[inline]
 #[cfg(not(any(
@@ -541,7 +541,7 @@ pub fn mkfifoat<P: ?Sized + NixPath>(dirfd: Option<RawFd>, path: &P, mode: Mode)
 /// If `dirfd` is `None`, then `path2` is relative to the current working
 /// directory. This is identical to `libc::symlink(path1, path2)`.
 ///
-/// See also [symlinkat(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/symlinkat.html).
+/// See also [symlinkat(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/symlinkat.html).
 #[cfg(not(target_os = "redox"))]
 pub fn symlinkat<P1: ?Sized + NixPath, P2: ?Sized + NixPath>(
     path1: &P1,
@@ -637,7 +637,7 @@ fn chown_raw_ids(owner: Option<Uid>, group: Option<Gid>) -> (libc::uid_t, libc::
 
 /// Change the ownership of the file at `path` to be owned by the specified
 /// `owner` (user) and `group` (see
-/// [chown(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/chown.html)).
+/// [chown(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/chown.html)).
 ///
 /// The owner/group for the provided path name will not be modified if `None` is
 /// provided for that argument.  Ownership change will be attempted for the path
@@ -693,7 +693,7 @@ pub enum FchownatFlags {
 ///
 /// # References
 ///
-/// [fchownat(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/fchownat.html).
+/// [fchownat(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/fchownat.html).
 #[cfg(not(target_os = "redox"))]
 pub fn fchownat<P: ?Sized + NixPath>(
     dirfd: Option<RawFd>,
@@ -722,7 +722,7 @@ fn to_exec_array<S: AsRef<CStr>>(args: &[S]) -> Vec<*const c_char> {
 }
 
 /// Replace the current process image with a new one (see
-/// [exec(3)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/exec.html)).
+/// [exec(3)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/exec.html)).
 ///
 /// See the `::nix::unistd::execve` system call for additional details.  `execv`
 /// performs the same action but does not allow for customization of the
@@ -740,7 +740,7 @@ pub fn execv<S: AsRef<CStr>>(path: &CStr, argv: &[S]) -> Result<Infallible> {
 
 
 /// Replace the current process image with a new one (see
-/// [execve(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/exec.html)).
+/// [execve(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/exec.html)).
 ///
 /// The execve system call allows for another process to be "called" which will
 /// replace the current process image.  That is, this process becomes the new
@@ -765,7 +765,7 @@ pub fn execve<SA: AsRef<CStr>, SE: AsRef<CStr>>(path: &CStr, args: &[SA], env: &
 
 /// Replace the current process image with a new one and replicate shell `PATH`
 /// searching behavior (see
-/// [exec(3)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/exec.html)).
+/// [exec(3)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/exec.html)).
 ///
 /// See `::nix::unistd::execve` for additional details.  `execvp` behaves the
 /// same as execv except that it will examine the `PATH` environment variables
@@ -785,7 +785,7 @@ pub fn execvp<S: AsRef<CStr>>(filename: &CStr, args: &[S]) -> Result<Infallible>
 
 /// Replace the current process image with a new one and replicate shell `PATH`
 /// searching behavior (see
-/// [`execvpe(3)`](http://man7.org/linux/man-pages/man3/exec.3.html)).
+/// [`execvpe(3)`](https://man7.org/linux/man-pages/man3/exec.3.html)).
 ///
 /// This functions like a combination of `execvp(2)` and `execve(2)` to pass an
 /// environment and have a search path. See these two for additional
@@ -805,7 +805,7 @@ pub fn execvpe<SA: AsRef<CStr>, SE: AsRef<CStr>>(filename: &CStr, args: &[SA], e
 }
 
 /// Replace the current process image with a new one (see
-/// [fexecve(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/fexecve.html)).
+/// [fexecve(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/fexecve.html)).
 ///
 /// The `fexecve` function allows for another process to be "called" which will
 /// replace the current process image.  That is, this process becomes the new
@@ -833,7 +833,7 @@ pub fn fexecve<SA: AsRef<CStr> ,SE: AsRef<CStr>>(fd: RawFd, args: &[SA], env: &[
 }
 
 /// Execute program relative to a directory file descriptor (see
-/// [execveat(2)](http://man7.org/linux/man-pages/man2/execveat.2.html)).
+/// [execveat(2)](https://man7.org/linux/man-pages/man2/execveat.2.html)).
 ///
 /// The `execveat` function allows for another process to be "called" which will
 /// replace the current process image.  That is, this process becomes the new
@@ -858,7 +858,7 @@ pub fn execveat<SA: AsRef<CStr>,SE: AsRef<CStr>>(dirfd: RawFd, pathname: &CStr, 
 }
 
 /// Daemonize this process by detaching from the controlling terminal (see
-/// [daemon(3)](http://man7.org/linux/man-pages/man3/daemon.3.html)).
+/// [daemon(3)](https://man7.org/linux/man-pages/man3/daemon.3.html)).
 ///
 /// When a process is launched it is typically associated with a parent and it,
 /// in turn, by its controlling terminal/process.  In order for a process to run
@@ -896,7 +896,7 @@ pub fn daemon(nochdir: bool, noclose: bool) -> Result<()> {
 }
 
 /// Set the system host name (see
-/// [sethostname(2)](http://man7.org/linux/man-pages/man2/gethostname.2.html)).
+/// [sethostname(2)](https://man7.org/linux/man-pages/man2/gethostname.2.html)).
 ///
 /// Given a name, attempt to update the system host name to the given string.
 /// On some systems, the host name is limited to as few as 64 bytes.  An error
@@ -926,7 +926,7 @@ pub fn sethostname<S: AsRef<OsStr>>(name: S) -> Result<()> {
 
 /// Get the host name and store it in the provided buffer, returning a pointer
 /// the `CStr` in that buffer on success (see
-/// [gethostname(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/gethostname.html)).
+/// [gethostname(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/gethostname.html)).
 ///
 /// This function call attempts to get the host name for the running system and
 /// store it in a provided buffer.  The buffer will be populated with bytes up
@@ -961,7 +961,7 @@ pub fn gethostname(buffer: &mut [u8]) -> Result<&CStr> {
 /// `std::fs::File`.  Explicitly closing them with this method too can result in
 /// a double-close condition, which can cause confusing `EBADF` errors in
 /// seemingly unrelated code.  Caveat programmer.  See also
-/// [close(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/close.html).
+/// [close(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/close.html).
 ///
 /// # Examples
 ///
@@ -991,7 +991,7 @@ pub fn close(fd: RawFd) -> Result<()> {
 
 /// Read from a raw file descriptor.
 ///
-/// See also [read(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/read.html)
+/// See also [read(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/read.html)
 pub fn read(fd: RawFd, buf: &mut [u8]) -> Result<usize> {
     let res = unsafe { libc::read(fd, buf.as_mut_ptr() as *mut c_void, buf.len() as size_t) };
 
@@ -1000,7 +1000,7 @@ pub fn read(fd: RawFd, buf: &mut [u8]) -> Result<usize> {
 
 /// Write to a raw file descriptor.
 ///
-/// See also [write(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/write.html)
+/// See also [write(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/write.html)
 pub fn write(fd: RawFd, buf: &[u8]) -> Result<usize> {
     let res = unsafe { libc::write(fd, buf.as_ptr() as *const c_void, buf.len() as size_t) };
 
@@ -1044,7 +1044,7 @@ pub enum Whence {
 
 /// Move the read/write file offset.
 ///
-/// See also [lseek(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/lseek.html)
+/// See also [lseek(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/lseek.html)
 pub fn lseek(fd: RawFd, offset: off_t, whence: Whence) -> Result<off_t> {
     let res = unsafe { libc::lseek(fd, offset, whence as i32) };
 
@@ -1060,7 +1060,7 @@ pub fn lseek64(fd: RawFd, offset: libc::off64_t, whence: Whence) -> Result<libc:
 
 /// Create an interprocess channel.
 ///
-/// See also [pipe(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/pipe.html)
+/// See also [pipe(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/pipe.html)
 pub fn pipe() -> Result<(RawFd, RawFd)> {
     unsafe {
         let mut fds = mem::MaybeUninit::<[c_int; 2]>::uninit();
@@ -1078,12 +1078,12 @@ pub fn pipe() -> Result<(RawFd, RawFd)> {
 /// The following flags are supported, and will be set atomically as the pipe is
 /// created:
 ///
-/// `O_CLOEXEC`:    Set the close-on-exec flag for the new file descriptors.  
+/// `O_CLOEXEC`:    Set the close-on-exec flag for the new file descriptors.
 #[cfg_attr(target_os = "linux", doc = "`O_DIRECT`: Create a pipe that performs I/O in \"packet\" mode.  ")]
 #[cfg_attr(target_os = "netbsd", doc = "`O_NOSIGPIPE`: Return `EPIPE` instead of raising `SIGPIPE`.  ")]
 /// `O_NONBLOCK`:   Set the non-blocking flag for the ends of the pipe.
 ///
-/// See also [pipe(2)](http://man7.org/linux/man-pages/man2/pipe.2.html)
+/// See also [pipe(2)](https://man7.org/linux/man-pages/man2/pipe.2.html)
 #[cfg(any(target_os = "android",
           target_os = "dragonfly",
           target_os = "emscripten",
@@ -1109,7 +1109,7 @@ pub fn pipe2(flags: OFlag) -> Result<(RawFd, RawFd)> {
 /// Truncate a file to a specified length
 ///
 /// See also
-/// [truncate(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/truncate.html)
+/// [truncate(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/truncate.html)
 #[cfg(not(any(target_os = "redox", target_os = "fuchsia")))]
 pub fn truncate<P: ?Sized + NixPath>(path: &P, len: off_t) -> Result<()> {
     let res = path.with_nix_path(|cstr| {
@@ -1124,7 +1124,7 @@ pub fn truncate<P: ?Sized + NixPath>(path: &P, len: off_t) -> Result<()> {
 /// Truncate a file to a specified length
 ///
 /// See also
-/// [ftruncate(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/ftruncate.html)
+/// [ftruncate(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/ftruncate.html)
 pub fn ftruncate(fd: RawFd, len: off_t) -> Result<()> {
     Errno::result(unsafe { libc::ftruncate(fd, len) }).map(drop)
 }
@@ -1163,7 +1163,7 @@ pub enum LinkatFlags {
 /// process. If either `oldpath` or `newpath` is absolute, then `dirfd` is ignored.
 ///
 /// # References
-/// See also [linkat(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/linkat.html)
+/// See also [linkat(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/linkat.html)
 #[cfg(not(target_os = "redox"))] // RedoxFS does not support symlinks yet
 pub fn linkat<P: ?Sized + NixPath>(
     olddirfd: Option<RawFd>,
@@ -1199,7 +1199,7 @@ pub fn linkat<P: ?Sized + NixPath>(
 
 /// Remove a directory entry
 ///
-/// See also [unlink(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/unlink.html)
+/// See also [unlink(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/unlink.html)
 pub fn unlink<P: ?Sized + NixPath>(path: &P) -> Result<()> {
     let res = path.with_nix_path(|cstr| {
         unsafe {
@@ -1225,7 +1225,7 @@ pub enum UnlinkatFlags {
 /// is performed.
 ///
 /// # References
-/// See also [unlinkat(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/unlinkat.html)
+/// See also [unlinkat(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/unlinkat.html)
 #[cfg(not(target_os = "redox"))]
 pub fn unlinkat<P: ?Sized + NixPath>(
     dirfd: Option<RawFd>,
@@ -1258,7 +1258,7 @@ pub fn chroot<P: ?Sized + NixPath>(path: &P) -> Result<()> {
 
 /// Commit filesystem caches to disk
 ///
-/// See also [sync(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/sync.html)
+/// See also [sync(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/sync.html)
 #[cfg(any(
     target_os = "dragonfly",
     target_os = "freebsd",
@@ -1272,7 +1272,7 @@ pub fn sync() {
 
 /// Synchronize changes to a file
 ///
-/// See also [fsync(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/fsync.html)
+/// See also [fsync(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/fsync.html)
 #[inline]
 pub fn fsync(fd: RawFd) -> Result<()> {
     let res = unsafe { libc::fsync(fd) };
@@ -1283,7 +1283,7 @@ pub fn fsync(fd: RawFd) -> Result<()> {
 /// Synchronize the data of a file
 ///
 /// See also
-/// [fdatasync(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/fdatasync.html)
+/// [fdatasync(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/fdatasync.html)
 // `fdatasync(2) is in POSIX, but in libc it is only defined in `libc::notbsd`.
 // TODO: exclude only Apple systems after https://github.com/rust-lang/libc/pull/211
 #[cfg(any(target_os = "linux",
@@ -1300,7 +1300,7 @@ pub fn fdatasync(fd: RawFd) -> Result<()> {
 
 /// Get a real user ID
 ///
-/// See also [getuid(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/getuid.html)
+/// See also [getuid(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/getuid.html)
 // POSIX requires that getuid is always successful, so no need to check return
 // value or errno.
 #[inline]
@@ -1310,7 +1310,7 @@ pub fn getuid() -> Uid {
 
 /// Get the effective user ID
 ///
-/// See also [geteuid(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/geteuid.html)
+/// See also [geteuid(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/geteuid.html)
 // POSIX requires that geteuid is always successful, so no need to check return
 // value or errno.
 #[inline]
@@ -1320,7 +1320,7 @@ pub fn geteuid() -> Uid {
 
 /// Get the real group ID
 ///
-/// See also [getgid(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/getgid.html)
+/// See also [getgid(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/getgid.html)
 // POSIX requires that getgid is always successful, so no need to check return
 // value or errno.
 #[inline]
@@ -1330,7 +1330,7 @@ pub fn getgid() -> Gid {
 
 /// Get the effective group ID
 ///
-/// See also [getegid(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/getegid.html)
+/// See also [getegid(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/getegid.html)
 // POSIX requires that getegid is always successful, so no need to check return
 // value or errno.
 #[inline]
@@ -1340,7 +1340,7 @@ pub fn getegid() -> Gid {
 
 /// Set the effective user ID
 ///
-/// See also [seteuid(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/seteuid.html)
+/// See also [seteuid(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/seteuid.html)
 #[inline]
 pub fn seteuid(euid: Uid) -> Result<()> {
     let res = unsafe { libc::seteuid(euid.into()) };
@@ -1350,7 +1350,7 @@ pub fn seteuid(euid: Uid) -> Result<()> {
 
 /// Set the effective group ID
 ///
-/// See also [setegid(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/setegid.html)
+/// See also [setegid(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/setegid.html)
 #[inline]
 pub fn setegid(egid: Gid) -> Result<()> {
     let res = unsafe { libc::setegid(egid.into()) };
@@ -1360,7 +1360,7 @@ pub fn setegid(egid: Gid) -> Result<()> {
 
 /// Set the user ID
 ///
-/// See also [setuid(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/setuid.html)
+/// See also [setuid(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/setuid.html)
 #[inline]
 pub fn setuid(uid: Uid) -> Result<()> {
     let res = unsafe { libc::setuid(uid.into()) };
@@ -1370,7 +1370,7 @@ pub fn setuid(uid: Uid) -> Result<()> {
 
 /// Set the group ID
 ///
-/// See also [setgid(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/setgid.html)
+/// See also [setgid(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/setgid.html)
 #[inline]
 pub fn setgid(gid: Gid) -> Result<()> {
     let res = unsafe { libc::setgid(gid.into()) };
@@ -1382,7 +1382,7 @@ pub fn setgid(gid: Gid) -> Result<()> {
 /// On both success and failure, this call returns the previous filesystem user
 /// ID of the caller.
 ///
-/// See also [setfsuid(2)](http://man7.org/linux/man-pages/man2/setfsuid.2.html)
+/// See also [setfsuid(2)](https://man7.org/linux/man-pages/man2/setfsuid.2.html)
 #[cfg(any(target_os = "linux", target_os = "android"))]
 pub fn setfsuid(uid: Uid) -> Uid {
     let prev_fsuid = unsafe { libc::setfsuid(uid.into()) };
@@ -1393,7 +1393,7 @@ pub fn setfsuid(uid: Uid) -> Uid {
 /// On both success and failure, this call returns the previous filesystem group
 /// ID of the caller.
 ///
-/// See also [setfsgid(2)](http://man7.org/linux/man-pages/man2/setfsgid.2.html)
+/// See also [setfsgid(2)](https://man7.org/linux/man-pages/man2/setfsgid.2.html)
 #[cfg(any(target_os = "linux", target_os = "android"))]
 pub fn setfsgid(gid: Gid) -> Gid {
     let prev_fsgid = unsafe { libc::setfsgid(gid.into()) };
@@ -1402,7 +1402,7 @@ pub fn setfsgid(gid: Gid) -> Gid {
 
 /// Get the list of supplementary group IDs of the calling process.
 ///
-/// [Further reading](http://pubs.opengroup.org/onlinepubs/009695399/functions/getgroups.html)
+/// [Further reading](https://pubs.opengroup.org/onlinepubs/009695399/functions/getgroups.html)
 ///
 /// **Note:** This function is not available for Apple platforms. On those
 /// platforms, checking group membership should be achieved via communication
@@ -1450,7 +1450,7 @@ pub fn getgroups() -> Result<Vec<Gid>> {
 
 /// Set the list of supplementary group IDs for the calling process.
 ///
-/// [Further reading](http://man7.org/linux/man-pages/man2/getgroups.2.html)
+/// [Further reading](https://man7.org/linux/man-pages/man2/getgroups.2.html)
 ///
 /// **Note:** This function is not available for Apple platforms. On those
 /// platforms, group membership management should be achieved via communication
@@ -1510,7 +1510,7 @@ pub fn setgroups(groups: &[Gid]) -> Result<()> {
 /// Gets the group IDs of all groups that `user` is a member of. The additional
 /// group `group` is also added to the list.
 ///
-/// [Further reading](http://man7.org/linux/man-pages/man3/getgrouplist.3.html)
+/// [Further reading](https://man7.org/linux/man-pages/man3/getgrouplist.3.html)
 ///
 /// **Note:** This function is not available for Apple platforms. On those
 /// platforms, checking group membership should be achieved via communication
@@ -1574,7 +1574,7 @@ pub fn getgrouplist(user: &CStr, group: Gid) -> Result<Vec<Gid>> {
 /// that `user` is a member of. The additional group `group` is also added to
 /// the list.
 ///
-/// [Further reading](http://man7.org/linux/man-pages/man3/initgroups.3.html)
+/// [Further reading](https://man7.org/linux/man-pages/man3/initgroups.3.html)
 ///
 /// **Note:** This function is not available for Apple platforms. On those
 /// platforms, group membership management should be achieved via communication
@@ -1623,7 +1623,7 @@ pub fn initgroups(user: &CStr, group: Gid) -> Result<()> {
 
 /// Suspend the thread until a signal is received.
 ///
-/// See also [pause(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/pause.html).
+/// See also [pause(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/pause.html).
 #[inline]
 #[cfg(not(target_os = "redox"))]
 pub fn pause() {
@@ -1689,7 +1689,7 @@ pub mod alarm {
     //!
     //! # References
     //!
-    //! See also [alarm(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/alarm.html).
+    //! See also [alarm(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/alarm.html).
 
     /// Schedule an alarm signal.
     ///
@@ -1719,7 +1719,7 @@ pub mod alarm {
 
 /// Suspend execution for an interval of time
 ///
-/// See also [sleep(2)](http://pubs.opengroup.org/onlinepubs/009695399/functions/sleep.html#tag_03_705_05)
+/// See also [sleep(2)](https://pubs.opengroup.org/onlinepubs/009695399/functions/sleep.html#tag_03_705_05)
 // Per POSIX, does not fail
 #[inline]
 pub fn sleep(seconds: c_uint) -> c_uint {
@@ -1759,7 +1759,7 @@ pub mod acct {
 /// Err is returned either if no temporary filename could be created or the template doesn't
 /// end with XXXXXX
 ///
-/// See also [mkstemp(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/mkstemp.html)
+/// See also [mkstemp(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/mkstemp.html)
 ///
 /// # Example
 ///
@@ -1790,7 +1790,7 @@ pub fn mkstemp<P: ?Sized + NixPath>(template: &P) -> Result<(RawFd, PathBuf)> {
 /// Variable names for `pathconf`
 ///
 /// Nix uses the same naming convention for these variables as the
-/// [getconf(1)](http://pubs.opengroup.org/onlinepubs/9699919799/utilities/getconf.html) utility.
+/// [getconf(1)](https://pubs.opengroup.org/onlinepubs/9699919799/utilities/getconf.html) utility.
 /// That is, `PathconfVar` variables have the same name as the abstract
 /// variables  shown in the `pathconf(2)` man page.  Usually, it's the same as
 /// the C variable name without the leading `_PC_`.
@@ -1800,9 +1800,9 @@ pub fn mkstemp<P: ?Sized + NixPath>(template: &P) -> Result<(RawFd, PathBuf)> {
 ///
 /// # References
 ///
-/// - [pathconf(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/pathconf.html)
-/// - [limits.h](http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/limits.h.html)
-/// - [unistd.h](http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/unistd.h.html)
+/// - [pathconf(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/pathconf.html)
+/// - [limits.h](https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/limits.h.html)
+/// - [unistd.h](https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/unistd.h.html)
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 #[repr(i32)]
 pub enum PathconfVar {
@@ -1896,7 +1896,7 @@ pub enum PathconfVar {
 }
 
 /// Like `pathconf`, but works with file descriptors instead of paths (see
-/// [fpathconf(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/pathconf.html))
+/// [fpathconf(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/pathconf.html))
 ///
 /// # Parameters
 ///
@@ -1928,12 +1928,12 @@ pub fn fpathconf(fd: RawFd, var: PathconfVar) -> Result<Option<c_long>> {
 }
 
 /// Get path-dependent configurable system variables (see
-/// [pathconf(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/pathconf.html))
+/// [pathconf(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/pathconf.html))
 ///
 /// Returns the value of a path-dependent configurable system variable.  Most
 /// supported variables also have associated compile-time constants, but POSIX
 /// allows their values to change at runtime.  There are generally two types of
-/// `pathconf` variables: options and limits.  See [pathconf(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/pathconf.html) for more details.
+/// `pathconf` variables: options and limits.  See [pathconf(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/pathconf.html) for more details.
 ///
 /// # Parameters
 ///
@@ -1969,7 +1969,7 @@ pub fn pathconf<P: ?Sized + NixPath>(path: &P, var: PathconfVar) -> Result<Optio
 /// Variable names for `sysconf`
 ///
 /// Nix uses the same naming convention for these variables as the
-/// [getconf(1)](http://pubs.opengroup.org/onlinepubs/9699919799/utilities/getconf.html) utility.
+/// [getconf(1)](https://pubs.opengroup.org/onlinepubs/9699919799/utilities/getconf.html) utility.
 /// That is, `SysconfVar` variables have the same name as the abstract variables
 /// shown in the `sysconf(3)` man page.  Usually, it's the same as the C
 /// variable name without the leading `_SC_`.
@@ -1979,9 +1979,9 @@ pub fn pathconf<P: ?Sized + NixPath>(path: &P, var: PathconfVar) -> Result<Optio
 ///
 /// # References
 ///
-/// - [sysconf(3)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/sysconf.html)
-/// - [unistd.h](http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/unistd.h.html)
-/// - [limits.h](http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/limits.h.html)
+/// - [sysconf(3)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/sysconf.html)
+/// - [unistd.h](https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/unistd.h.html)
+/// - [limits.h](https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/limits.h.html)
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 #[repr(i32)]
 pub enum SysconfVar {
@@ -2434,7 +2434,7 @@ pub enum SysconfVar {
 }
 
 /// Get configurable system variables (see
-/// [sysconf(3)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/sysconf.html))
+/// [sysconf(3)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/sysconf.html))
 ///
 /// Returns the value of a configurable system variable.  Most supported
 /// variables also have associated compile-time constants, but POSIX
@@ -2492,7 +2492,7 @@ mod setres {
     use super::{Uid, Gid};
 
     /// Sets the real, effective, and saved uid.
-    /// ([see setresuid(2)](http://man7.org/linux/man-pages/man2/setresuid.2.html))
+    /// ([see setresuid(2)](https://man7.org/linux/man-pages/man2/setresuid.2.html))
     ///
     /// * `ruid`: real user id
     /// * `euid`: effective user id
@@ -2508,7 +2508,7 @@ mod setres {
     }
 
     /// Sets the real, effective, and saved gid.
-    /// ([see setresuid(2)](http://man7.org/linux/man-pages/man2/setresuid.2.html))
+    /// ([see setresuid(2)](https://man7.org/linux/man-pages/man2/setresuid.2.html))
     ///
     /// * `rgid`: real group id
     /// * `egid`: effective group id
@@ -2539,7 +2539,7 @@ libc_bitflags!{
 }
 
 /// Checks the file named by `path` for accessibility according to the flags given by `amode`
-/// See [access(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/access.html)
+/// See [access(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/access.html)
 pub fn access<P: ?Sized + NixPath>(path: &P, amode: AccessFlags) -> Result<()> {
     let res = path.with_nix_path(|cstr| {
         unsafe {
@@ -2672,7 +2672,7 @@ impl User {
     /// Get a user by UID.
     ///
     /// Internally, this function calls
-    /// [getpwuid_r(3)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/getpwuid_r.html)
+    /// [getpwuid_r(3)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/getpwuid_r.html)
     ///
     /// # Examples
     ///
@@ -2691,7 +2691,7 @@ impl User {
     /// Get a user by name.
     ///
     /// Internally, this function calls
-    /// [getpwnam_r(3)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/getpwuid_r.html)
+    /// [getpwnam_r(3)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/getpwuid_r.html)
     ///
     /// # Examples
     ///
@@ -2793,7 +2793,7 @@ impl Group {
     /// Get a group by GID.
     ///
     /// Internally, this function calls
-    /// [getgrgid_r(3)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/getpwuid_r.html)
+    /// [getgrgid_r(3)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/getpwuid_r.html)
     ///
     /// # Examples
     ///
@@ -2814,7 +2814,7 @@ impl Group {
     /// Get a group by name.
     ///
     /// Internally, this function calls
-    /// [getgrnam_r(3)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/getpwuid_r.html)
+    /// [getgrnam_r(3)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/getpwuid_r.html)
     ///
     /// # Examples
     ///
@@ -2835,7 +2835,7 @@ impl Group {
 }
 
 /// Get the name of the terminal device that is open on file descriptor fd
-/// (see [`ttyname(3)`](http://man7.org/linux/man-pages/man3/ttyname.3.html)).
+/// (see [`ttyname(3)`](https://man7.org/linux/man-pages/man3/ttyname.3.html)).
 #[cfg(not(target_os = "fuchsia"))]
 pub fn ttyname(fd: RawFd) -> Result<PathBuf> {
     const PATH_MAX: usize = libc::PATH_MAX as usize;

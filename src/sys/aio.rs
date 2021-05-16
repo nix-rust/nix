@@ -740,7 +740,7 @@ impl<'a> AioCb<'a> {
     ///
     /// # References
     ///
-    /// [aio_cancel](http://pubs.opengroup.org/onlinepubs/9699919799/functions/aio_cancel.html)
+    /// [aio_cancel](https://pubs.opengroup.org/onlinepubs/9699919799/functions/aio_cancel.html)
     pub fn cancel(&mut self) -> Result<AioCancelStat> {
         match unsafe { libc::aio_cancel(self.aiocb.aio_fildes, &mut self.aiocb) } {
             libc::AIO_CANCELED => Ok(AioCancelStat::AioCanceled),
@@ -788,7 +788,7 @@ impl<'a> AioCb<'a> {
     ///
     /// # References
     ///
-    /// [aio_error](http://pubs.opengroup.org/onlinepubs/9699919799/functions/aio_error.html)
+    /// [aio_error](https://pubs.opengroup.org/onlinepubs/9699919799/functions/aio_error.html)
     pub fn error(&mut self) -> Result<()> {
         match unsafe { libc::aio_error(&mut self.aiocb as *mut libc::aiocb) } {
             0 => Ok(()),
@@ -802,7 +802,7 @@ impl<'a> AioCb<'a> {
     ///
     /// # References
     ///
-    /// [aio_fsync](http://pubs.opengroup.org/onlinepubs/9699919799/functions/aio_fsync.html)
+    /// [aio_fsync](https://pubs.opengroup.org/onlinepubs/9699919799/functions/aio_fsync.html)
     pub fn fsync(&mut self, mode: AioFsyncMode) -> Result<()> {
         let p: *mut libc::aiocb = &mut self.aiocb;
         Errno::result(unsafe {
@@ -848,7 +848,7 @@ impl<'a> AioCb<'a> {
     ///
     /// # References
     ///
-    /// [aio_read](http://pubs.opengroup.org/onlinepubs/9699919799/functions/aio_read.html)
+    /// [aio_read](https://pubs.opengroup.org/onlinepubs/9699919799/functions/aio_read.html)
     pub fn read(&mut self) -> Result<()> {
         assert!(self.mutable, "Can't read into an immutable buffer");
         let p: *mut libc::aiocb = &mut self.aiocb;
@@ -872,7 +872,7 @@ impl<'a> AioCb<'a> {
     ///
     /// # References
     ///
-    /// [aio_return](http://pubs.opengroup.org/onlinepubs/9699919799/functions/aio_return.html)
+    /// [aio_return](https://pubs.opengroup.org/onlinepubs/9699919799/functions/aio_return.html)
     // Note: this should be just `return`, but that's a reserved word
     pub fn aio_return(&mut self) -> Result<isize> {
         let p: *mut libc::aiocb = &mut self.aiocb;
@@ -884,7 +884,7 @@ impl<'a> AioCb<'a> {
     ///
     /// # References
     ///
-    /// [aio_write](http://pubs.opengroup.org/onlinepubs/9699919799/functions/aio_write.html)
+    /// [aio_write](https://pubs.opengroup.org/onlinepubs/9699919799/functions/aio_write.html)
     pub fn write(&mut self) -> Result<()> {
         let p: *mut libc::aiocb = &mut self.aiocb;
         Errno::result(unsafe {
@@ -935,7 +935,7 @@ impl<'a> AioCb<'a> {
 ///
 /// # References
 ///
-/// [`aio_cancel`](http://pubs.opengroup.org/onlinepubs/9699919799/functions/aio_cancel.html)
+/// [`aio_cancel`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/aio_cancel.html)
 pub fn aio_cancel_all(fd: RawFd) -> Result<AioCancelStat> {
     match unsafe { libc::aio_cancel(fd, null_mut()) } {
         libc::AIO_CANCELED => Ok(AioCancelStat::AioCanceled),
@@ -976,7 +976,7 @@ pub fn aio_cancel_all(fd: RawFd) -> Result<AioCancelStat> {
 /// ```
 /// # References
 ///
-/// [`aio_suspend`](http://pubs.opengroup.org/onlinepubs/9699919799/functions/aio_suspend.html)
+/// [`aio_suspend`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/aio_suspend.html)
 pub fn aio_suspend(list: &[&AioCb], timeout: Option<TimeSpec>) -> Result<()> {
     let plist = list as *const [&AioCb] as *const [*const libc::aiocb];
     let p = plist as *const *const libc::aiocb;
@@ -1084,7 +1084,7 @@ impl<'a> LioCb<'a> {
     ///
     /// # References
     ///
-    /// [`lio_listio`](http://pubs.opengroup.org/onlinepubs/9699919799/functions/lio_listio.html)
+    /// [`lio_listio`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/lio_listio.html)
     ///
     /// [`aio_suspend`]: fn.aio_suspend.html
     /// [`AioCb::error`]: struct.AioCb.html#method.error
@@ -1146,9 +1146,9 @@ impl<'a> LioCb<'a> {
     ///
     /// # References
     ///
-    /// [`lio_listio`](http://pubs.opengroup.org/onlinepubs/9699919799/functions/lio_listio.html)
+    /// [`lio_listio`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/lio_listio.html)
     ///
-    /// [`lio_listio`]: http://pubs.opengroup.org/onlinepubs/9699919799/functions/lio_listio.html
+    /// [`lio_listio`]: https://pubs.opengroup.org/onlinepubs/9699919799/functions/lio_listio.html
     /// [`LioCb::aio_return`]: struct.LioCb.html#method.aio_return
     // Note: the addresses of any EINPROGRESS or EOK aiocbs _must_ not be
     // changed by this method, because the kernel relies on their addresses
