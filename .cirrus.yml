@@ -8,6 +8,9 @@ cargo_cache:
 # the system's binaries, so the environment shouldn't matter.
 task:
   name: FreeBSD amd64 & i686
+  env:
+    # Temporary workaround for https://github.com/rust-lang/rustup/issues/2774
+    RUSTUP_IO_THREADS: 1
   freebsd_instance:
     image: freebsd-11-4-release-amd64
   setup_script:
