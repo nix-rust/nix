@@ -62,10 +62,7 @@ fn test_ptrace_setsiginfo() {
 #[test]
 #[cfg(all(
     target_os = "linux",
-    any(
-        all(target_arch = "x86_64", any(target_env = "gnu", target_env = "musl")),
-        all(target_arch = "x86", target_env = "gnu")
-    )
+    all(target_arch = "x86_64", any(target_env = "gnu", target_env = "musl")),
 ))]
 fn test_ptrace_setregs() {
     use nix::sys::ptrace;
@@ -122,6 +119,62 @@ fn test_ptrace_setregs() {
 }
 
 #[test]
+#[cfg(all(target_os = "linux", all(target_arch = "x86", target_env = "gnu")))]
+fn test_ptrace_setregs() {
+    use nix::sys::ptrace;
+    use nix::sys::signal::{raise, Signal};
+    use nix::sys::wait::{waitpid, WaitPidFlag, WaitStatus};
+    use nix::unistd::fork;
+    use nix::unistd::ForkResult::*;
+
+    require_capability!(CAP_SYS_PTRACE);
+
+    let _m = crate::FORK_MTX
+        .lock()
+        .expect("Mutex got poisoned by another test");
+    match unsafe { fork() }.expect("Error: Fork Failed") {
+        Child => {
+            ptrace::traceme().unwrap();
+            // As recommended by ptrace(2), raise SIGTRAP to pause the child
+            // until the parent is ready to continue
+            loop {
+                raise(Signal::SIGTRAP).unwrap();
+            }
+        }
+        Parent { child } => {
+            assert_eq!(
+                waitpid(child, None),
+                Ok(WaitStatus::Stopped(child, Signal::SIGTRAP))
+            );
+
+            let mut regs = ptrace::getregs(child).expect("Failed to get regs.");
+            regs.eax = 0x42424242;
+            ptrace::setregs(child, regs).expect("Failed to set regs");
+            let regs = ptrace::getregs(child).expect("Failed to get regs after modification.");
+
+            ptrace::cont(child, Some(Signal::SIGKILL)).unwrap();
+            match waitpid(child, None) {
+                Ok(WaitStatus::Signaled(pid, Signal::SIGKILL, _)) if pid == child => {
+                    // FIXME It's been observed on some systems (apple) the
+                    // tracee may not be killed but remain as a zombie process
+                    // affecting other wait based tests. Add an extra kill just
+                    // to make sure there are no zombies.
+                    let _ = waitpid(child, Some(WaitPidFlag::WNOHANG));
+                    while ptrace::cont(child, Some(Signal::SIGKILL)).is_ok() {
+                        let _ = waitpid(child, Some(WaitPidFlag::WNOHANG));
+                    }
+                }
+                _ => panic!("The process should have been killed"),
+            }
+
+            // Test is put after cleanup to make sure that cleanup always runs, regardless of the
+            // test result
+            assert_eq!(regs.eax, 0x42424242);
+        }
+    }
+}
+
+#[test]
 #[cfg(all(
     target_os = "linux",
     any(
@@ -157,7 +210,7 @@ fn test_ptrace_setfpregs() {
             );
 
             let mut fpregs = ptrace::getfpregs(child).expect("Failed to get fpregs.");
-            fpregs.xmm_space[0] = 0x42424242;
+            fpregs.st_space[0] = 0x42424242;
             ptrace::setfpregs(child, fpregs).expect("Failed to set fpregs");
             let fpregs =
                 ptrace::getfpregs(child).expect("Failed to get fpregs after modification.");
@@ -179,7 +232,7 @@ fn test_ptrace_setfpregs() {
 
             // Test is put after cleanup to make sure that cleanup always runs, regardless of the
             // test result
-            assert_eq!(fpregs.xmm_space[0], 0x42424242);
+            assert_eq!(fpregs.st_space[0], 0x42424242);
         }
     }
 }
