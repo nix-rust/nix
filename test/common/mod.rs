@@ -114,8 +114,8 @@ cfg_if! {
                 let mut version = Version::parse(fixed_release).unwrap();
 
                 //Keep only numeric parts
-                version.pre.clear();
-                version.build.clear();
+                version.pre = semver::Prerelease::EMPTY;
+                version.build = semver::BuildMetadata::EMPTY;
 
                 if !version_requirement.matches(&version) {
                     skip!("Skip {} because kernel version `{}` doesn't match the requirement `{}`",
