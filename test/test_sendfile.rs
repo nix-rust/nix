@@ -36,7 +36,7 @@ fn test_sendfile_linux() {
     close(wr).unwrap();
 }
 
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(target_os = "linux")]
 #[test]
 fn test_sendfile64_linux() {
     const CONTENTS: &[u8] = b"abcdef123456";

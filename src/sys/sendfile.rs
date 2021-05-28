@@ -45,7 +45,7 @@ pub fn sendfile(
 /// `in_fd` must support `mmap`-like operations and therefore cannot be a socket.
 ///
 /// For more information, see [the sendfile(2) man page.](https://man7.org/linux/man-pages/man2/sendfile.2.html)
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(target_os = "linux")]
 pub fn sendfile64(
     out_fd: RawFd,
     in_fd: RawFd,
