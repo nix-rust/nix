@@ -7,6 +7,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 ### Added
 - Added TIMESTAMPNS support for linux
   (#[1402](https://github.com/nix-rust/nix/pull/1402))
+- Added `sendfile64` (#[XXXX](https://github.com/nix-rust/nix/pull/XXXX))
 
 ### Changed
 - Made `forkpty` unsafe, like `fork`
