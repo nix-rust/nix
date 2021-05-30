@@ -166,7 +166,7 @@ libc_bitflags!(
 );
 
 // The conversion is not identical on all operating systems.
-#[allow(clippy::identity_conversion)]
+#[allow(clippy::useless_conversion)]
 pub fn open<P: ?Sized + NixPath>(path: &P, oflag: OFlag, mode: Mode) -> Result<RawFd> {
     let fd = path.with_nix_path(|cstr| {
         unsafe { libc::open(cstr.as_ptr(), oflag.bits(), mode.bits() as c_uint) }
@@ -176,7 +176,7 @@ pub fn open<P: ?Sized + NixPath>(path: &P, oflag: OFlag, mode: Mode) -> Result<R
 }
 
 // The conversion is not identical on all operating systems.
-#[allow(clippy::identity_conversion)]
+#[allow(clippy::useless_conversion)]
 #[cfg(not(target_os = "redox"))]
 pub fn openat<P: ?Sized + NixPath>(
     dirfd: RawFd,
@@ -264,7 +264,7 @@ fn inner_readlink<P: ?Sized + NixPath>(dirfd: Option<RawFd>, path: &P) -> Result
         Some(dirfd) => super::sys::stat::fstatat(dirfd, path, AtFlags::AT_SYMLINK_NOFOLLOW),
         None => super::sys::stat::lstat(path)
     }
-        .and_then(|x| Ok(x.st_size))
+        .map(|x| x.st_size)
         .unwrap_or(0);
     let mut try_size = if reported_size > 0 {
         // Note: even if `lstat`'s apparently valid answer turns out to be

@@ -50,12 +50,10 @@ impl FdSet {
     ///
     /// ```
     /// # use nix::sys::select::FdSet;
-    /// # fn main() {
     /// let mut set = FdSet::new();
     /// set.insert(4);
     /// set.insert(9);
     /// assert_eq!(set.highest(), Some(9));
-    /// # }
     /// ```
     ///
     /// [`select`]: fn.select.html

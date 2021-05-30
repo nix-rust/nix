@@ -450,15 +450,13 @@ pub fn fchdir(dirfd: RawFd) -> Result<()> {
 /// use nix::sys::stat;
 /// use tempfile::tempdir;
 ///
-/// fn main() {
-///     let tmp_dir1 = tempdir().unwrap();
-///     let tmp_dir2 = tmp_dir1.path().join("new_dir");
+/// let tmp_dir1 = tempdir().unwrap();
+/// let tmp_dir2 = tmp_dir1.path().join("new_dir");
 ///
-///     // create new directory and give read, write and execute rights to the owner
-///     match unistd::mkdir(&tmp_dir2, stat::Mode::S_IRWXU) {
-///        Ok(_) => println!("created {:?}", tmp_dir2),
-///        Err(err) => println!("Error creating directory: {}", err),
-///     }
+/// // create new directory and give read, write and execute rights to the owner
+/// match unistd::mkdir(&tmp_dir2, stat::Mode::S_IRWXU) {
+///    Ok(_) => println!("created {:?}", tmp_dir2),
+///    Err(err) => println!("Error creating directory: {}", err),
 /// }
 /// ```
 #[inline]
@@ -490,15 +488,13 @@ pub fn mkdir<P: ?Sized + NixPath>(path: &P, mode: Mode) -> Result<()> {
 /// use nix::sys::stat;
 /// use tempfile::tempdir;
 ///
-/// fn main() {
-///     let tmp_dir = tempdir().unwrap();
-///     let fifo_path = tmp_dir.path().join("foo.pipe");
+/// let tmp_dir = tempdir().unwrap();
+/// let fifo_path = tmp_dir.path().join("foo.pipe");
 ///
-///     // create new fifo and give read, write and execute rights to the owner
-///     match unistd::mkfifo(&fifo_path, stat::Mode::S_IRWXU) {
-///        Ok(_) => println!("created {:?}", fifo_path),
-///        Err(err) => println!("Error creating fifo: {}", err),
-///     }
+/// // create new fifo and give read, write and execute rights to the owner
+/// match unistd::mkfifo(&fifo_path, stat::Mode::S_IRWXU) {
+///    Ok(_) => println!("created {:?}", fifo_path),
+///    Err(err) => println!("Error creating fifo: {}", err),
 /// }
 /// ```
 #[inline]
@@ -587,11 +583,9 @@ fn reserve_double_buffer_size<T>(buf: &mut Vec<T>, limit: usize) -> Result<()> {
 /// ```rust
 /// use nix::unistd;
 ///
-/// fn main() {
-///     // assume that we are allowed to get current directory
-///     let dir = unistd::getcwd().unwrap();
-///     println!("The current directory is {:?}", dir);
-/// }
+/// // assume that we are allowed to get current directory
+/// let dir = unistd::getcwd().unwrap();
+/// println!("The current directory is {:?}", dir);
 /// ```
 #[inline]
 pub fn getcwd() -> Result<PathBuf> {
@@ -624,6 +618,8 @@ pub fn getcwd() -> Result<PathBuf> {
 }
 
 /// Computes the raw UID and GID values to pass to a `*chown` call.
+// The cast is not unnecessary on all platforms.
+#[allow(clippy::unnecessary_cast)]
 fn chown_raw_ids(owner: Option<Uid>, group: Option<Gid>) -> (libc::uid_t, libc::gid_t) {
     // According to the POSIX specification, -1 is used to indicate that owner and group
     // are not to be changed.  Since uid_t and gid_t are unsigned types, we have to wrap
@@ -969,20 +965,16 @@ pub fn gethostname(buffer: &mut [u8]) -> Result<&CStr> {
 /// use std::os::unix::io::AsRawFd;
 /// use nix::unistd::close;
 ///
-/// fn main() {
-///     let f = tempfile::tempfile().unwrap();
-///     close(f.as_raw_fd()).unwrap();   // Bad!  f will also close on drop!
-/// }
+/// let f = tempfile::tempfile().unwrap();
+/// close(f.as_raw_fd()).unwrap();   // Bad!  f will also close on drop!
 /// ```
 ///
 /// ```rust
 /// use std::os::unix::io::IntoRawFd;
 /// use nix::unistd::close;
 ///
-/// fn main() {
-///     let f = tempfile::tempfile().unwrap();
-///     close(f.into_raw_fd()).unwrap(); // Good.  into_raw_fd consumes f
-/// }
+/// let f = tempfile::tempfile().unwrap();
+/// close(f.into_raw_fd()).unwrap(); // Good.  into_raw_fd consumes f
 /// ```
 pub fn close(fd: RawFd) -> Result<()> {
     let res = unsafe { libc::close(fd) };
@@ -1563,7 +1555,7 @@ pub fn getgrouplist(user: &CStr, group: Gid) -> Result<Vec<Gid>> {
             // groups as possible, but Linux manpages do not mention this
             // behavior.
             reserve_double_buffer_size(&mut groups, ngroups_max as usize)
-                .or_else(|_| Err(Error::invalid_argument()))?;
+                .map_err(|_| Error::invalid_argument())?;
         }
     }
 }

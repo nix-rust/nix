@@ -7,7 +7,6 @@ use std::path::Path;
 use std::slice;
 use std::str::FromStr;
 use libc::c_char;
-use tempfile;
 #[cfg(any(target_os = "linux", target_os= "android"))]
 use crate::*;
 
@@ -81,7 +80,7 @@ pub fn test_addr_equality_path() {
     let path = "/foo/bar";
     let actual = Path::new(path);
     let addr1 = UnixAddr::new(actual).unwrap();
-    let mut addr2 = addr1.clone();
+    let mut addr2 = addr1;
 
     addr2.0.sun_path[10] = 127;
 
@@ -168,7 +167,7 @@ mod recvfrom {
     use std::thread;
     use super::*;
 
-    const MSG: &'static [u8] = b"Hello, World!";
+    const MSG: &[u8] = b"Hello, World!";
 
     fn sendrecv<Fs, Fr>(rsock: RawFd, ssock: RawFd, f_send: Fs, mut f_recv: Fr) -> Option<SockAddr>
         where
@@ -318,6 +317,7 @@ mod recvfrom {
         target_os = "freebsd",
         target_os = "netbsd",
     ))]
+    #[allow(clippy::vec_init_then_push)]
     #[test]
     pub fn udp_sendmmsg() {
         use nix::sys::uio::IoVec;
@@ -367,7 +367,7 @@ mod recvfrom {
             }
             sendmmsg(s, msgs.iter(), flags)
                 .map(move |sent_bytes| {
-                    assert!(sent_bytes.len() >= 1);
+                    assert!(!sent_bytes.is_empty());
                     for sent in &sent_bytes {
                         assert_eq!(*sent, m.len());
                     }
@@ -425,7 +425,7 @@ mod recvfrom {
 
         for iov in &iovs {
             msgs.push_back(RecvMmsgData {
-                iov: iov,
+                iov,
                 cmsg_buffer: None,
             })
         };
@@ -497,7 +497,7 @@ mod recvfrom {
 
         for iov in &iovs {
             msgs.push_back(RecvMmsgData {
-                iov: iov,
+                iov,
                 cmsg_buffer: None,
             })
         };
@@ -835,12 +835,9 @@ pub fn test_sendmsg_ipv6packetinfo() {
     let inet_addr = InetAddr::from_std(&std_sa);
     let sock_addr = SockAddr::new_inet(inet_addr);
 
-    match bind(sock, &sock_addr) {
-        Err(Error::Sys(Errno::EADDRNOTAVAIL)) => {
-            println!("IPv6 not available, skipping test.");
-            return;
-        },
-        _ => (),
+    if let Err(Error::Sys(Errno::EADDRNOTAVAIL)) = bind(sock, &sock_addr) {
+        println!("IPv6 not available, skipping test.");
+        return;
     }
 
     let slice = [1u8, 2, 3, 4, 5, 6, 7, 8];
@@ -1399,8 +1396,8 @@ pub fn test_recvif() {
                 _ => panic!("unexpected additional control msg"),
             }
         }
-        assert_eq!(rx_recvif, true);
-        assert_eq!(rx_recvdstaddr, true);
+        assert!(rx_recvif);
+        assert!(rx_recvdstaddr);
         assert_eq!(msg.bytes, 8);
         assert_eq!(
             iovec[0].as_slice(),
@@ -1479,18 +1476,16 @@ pub fn test_recv_ipv6pktinfo() {
         );
 
         let mut cmsgs = msg.cmsgs();
-        match cmsgs.next() {
-            Some(ControlMessageOwned::Ipv6PacketInfo(pktinfo)) => {
-                let i = if_nametoindex(lo_name.as_bytes()).expect("if_nametoindex");
-                assert_eq!(
-                    pktinfo.ipi6_ifindex as libc::c_uint,
-                    i,
-                    "unexpected ifindex (expected {}, got {})",
-                    i,
-                    pktinfo.ipi6_ifindex
-                );
-            },
-            _ => (),
+        if let Some(ControlMessageOwned::Ipv6PacketInfo(pktinfo)) = cmsgs.next()
+        {
+            let i = if_nametoindex(lo_name.as_bytes()).expect("if_nametoindex");
+            assert_eq!(
+                pktinfo.ipi6_ifindex as libc::c_uint,
+                i,
+                "unexpected ifindex (expected {}, got {})",
+                i,
+                pktinfo.ipi6_ifindex
+            );
         }
         assert!(cmsgs.next().is_none(), "unexpected additional control msg");
         assert_eq!(msg.bytes, 8);

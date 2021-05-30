@@ -133,16 +133,14 @@ pub fn kill(pid: Pid) -> Result<()> {
 /// use nix::unistd::Pid;
 /// use nix::sys::signal::Signal;
 /// use nix::sys::wait::*;
-/// fn main() {
-///     // If a process changes state to the stopped state because of a SIGUSR1
-///     // signal, this will step the process forward and forward the user
-///     // signal to the stopped process
-///     match waitpid(Pid::from_raw(-1), None) {
-///         Ok(WaitStatus::Stopped(pid, Signal::SIGUSR1)) => {
-///             let _ = step(pid, Signal::SIGUSR1);
-///         }
-///         _ => {},
+/// // If a process changes state to the stopped state because of a SIGUSR1
+/// // signal, this will step the process forward and forward the user
+/// // signal to the stopped process
+/// match waitpid(Pid::from_raw(-1), None) {
+///     Ok(WaitStatus::Stopped(pid, Signal::SIGUSR1)) => {
+///         let _ = step(pid, Signal::SIGUSR1);
 ///     }
+///     _ => {},
 /// }
 /// ```
 #[cfg(
