@@ -850,10 +850,10 @@ mod sigevent {
         /// Linux, Solaris, and portable programs should prefer `SIGEV_THREAD_ID` or
         /// `SIGEV_SIGNAL`.  That field is part of a union that shares space with the
         /// more genuinely useful `sigev_notify_thread_id`
+        // Allow invalid_value warning on Fuchsia only.
+        // See https://github.com/nix-rust/nix/issues/1441
+        #[cfg_attr(target_os = "fuchsia", allow(invalid_value))]
         pub fn new(sigev_notify: SigevNotify) -> SigEvent {
-            // NB: This uses MaybeUninit rather than mem::zeroed because libc::sigevent contains a
-            // function pointer on Fuchsia as of https://github.com/rust-lang/libc/commit/2f59370,
-            // and function pointers must not be null.
             let mut sev = unsafe { mem::MaybeUninit::<libc::sigevent>::zeroed().assume_init() };
             sev.sigev_notify = match sigev_notify {
                 SigevNotify::SigevNone => libc::SIGEV_NONE,
