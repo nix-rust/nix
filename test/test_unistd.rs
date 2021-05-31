@@ -624,6 +624,25 @@ fn test_sysconf_unsupported() {
     assert!(open_max.expect("sysconf failed").is_none())
 }
 
+
+#[cfg(any(target_os = "android", target_os = "linux"))]
+#[test]
+fn test_getresuid() {
+    let resuids = getresuid().unwrap();
+    assert!(resuids.real.as_raw() != libc::uid_t::max_value());
+    assert!(resuids.effective.as_raw() != libc::uid_t::max_value());
+    assert!(resuids.saved.as_raw() != libc::uid_t::max_value());
+}
+
+#[cfg(any(target_os = "android", target_os = "linux"))]
+#[test]
+fn test_getresgid() {
+    let resgids = getresgid().unwrap();
+    assert!(resgids.real.as_raw() != libc::gid_t::max_value());
+    assert!(resgids.effective.as_raw() != libc::gid_t::max_value());
+    assert!(resgids.saved.as_raw() != libc::gid_t::max_value());
+}
+
 // Test that we can create a pair of pipes.  No need to verify that they pass
 // data; that's the domain of the OS, not nix.
 #[test]
