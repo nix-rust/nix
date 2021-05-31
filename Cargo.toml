@@ -43,7 +43,7 @@ memoffset = "0.6.3"
 cc = "1"
 
 [dev-dependencies]
-bytes = "0.4.8"
+assert-impl = "0.1"
 lazy_static = "1.2"
 rand = "0.8"
 tempfile = "3.2.0"

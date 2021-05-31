@@ -15,7 +15,7 @@ task:
     image: freebsd-11-4-release-amd64
   setup_script:
     - fetch https://sh.rustup.rs -o rustup.sh
-    - sh rustup.sh -y --profile=minimal --default-toolchain 1.40.0
+    - sh rustup.sh -y --profile=minimal --default-toolchain 1.41.0
     - $HOME/.cargo/bin/rustup target add i686-unknown-freebsd
   amd64_test_script:
     - . $HOME/.cargo/env
@@ -46,7 +46,7 @@ task:
     image: catalina-xcode
   setup_script:
     - curl --proto '=https' --tlsv1.2 -sSf -o rustup.sh https://sh.rustup.rs
-    - sh rustup.sh -y --profile=minimal --default-toolchain 1.40.0
+    - sh rustup.sh -y --profile=minimal --default-toolchain 1.41.0
     - . $HOME/.cargo/env
     - bash ci/install.sh
   script:
@@ -101,7 +101,7 @@ task:
   setup_script:
     - mkdir /tmp/home
     - curl --proto '=https' --tlsv1.2 -sSf -o rustup.sh https://sh.rustup.rs
-    - sh rustup.sh -y --profile=minimal --default-toolchain 1.40.0
+    - sh rustup.sh -y --profile=minimal --default-toolchain 1.41.0
     - . $HOME/.cargo/env
     - bash ci/install.sh
   script:
@@ -119,13 +119,13 @@ task:
     - name: Linux x86_64
       env:
         TARGET: x86_64-unknown-linux-gnu
-        TOOLCHAIN: 1.40.0
+        TOOLCHAIN: 1.41.0
     - name: Linux x86_64 musl
       env:
         TARGET: x86_64-unknown-linux-musl
-        TOOLCHAIN: 1.40.0
+        TOOLCHAIN: 1.41.0
   container:
-    image: rust:1.40
+    image: rust:1.41
   setup_script:
     - rustup toolchain install $TOOLCHAIN
     - rustup target add --toolchain $TOOLCHAIN $TARGET
@@ -173,7 +173,7 @@ task:
       env:
         TARGET: x86_64-fuchsia
   container:
-    image: rust:1.40
+    image: rust:1.41
   setup_script:
     - rustup target add $TARGET
   script:
