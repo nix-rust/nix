@@ -5,6 +5,12 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased] - ReleaseDate
 ### Added
+### Changed
+### Fixed
+### Removed
+
+## [0.21.0] - 31 May 2021
+### Added
 - Added `getresuid` and `getresgid`
   (#[1430](https://github.com/nix-rust/nix/pull/1430))
 - Added TIMESTAMPNS support for linux
