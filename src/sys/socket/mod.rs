@@ -710,7 +710,7 @@ impl ControlMessageOwned {
             },
             (_, _) => {
                 let sl = slice::from_raw_parts(p, len);
-                let ucmsg = UnknownCmsg(*header, Vec::<u8>::from(&sl[..]));
+                let ucmsg = UnknownCmsg(*header, Vec::<u8>::from(sl));
                 ControlMessageOwned::Unknown(ucmsg)
             }
         }

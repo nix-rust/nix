@@ -74,7 +74,7 @@ fn test_bindtodevice() {
 fn test_so_tcp_keepalive() {
     let fd = socket(AddressFamily::Inet, SockType::Stream, SockFlag::empty(), SockProtocol::Tcp).unwrap();
     setsockopt(fd, sockopt::KeepAlive, &true).unwrap();
-    assert_eq!(getsockopt(fd, sockopt::KeepAlive).unwrap(), true);
+    assert!(getsockopt(fd, sockopt::KeepAlive).unwrap());
 
     #[cfg(any(target_os = "android",
               target_os = "dragonfly",

@@ -513,7 +513,7 @@ impl<'a> AioCb<'a> {
         }
     }
 
-    fn error_unpinned(self: &mut Self) -> Result<()> {
+    fn error_unpinned(&mut self) -> Result<()> {
         let r = unsafe {
             libc::aio_error(&mut self.aiocb.0 as *mut libc::aiocb)
         };
@@ -645,7 +645,7 @@ impl<'a> AioCb<'a> {
         SigEvent::from(&self.aiocb.0.aio_sigevent)
     }
 
-    fn aio_return_unpinned(self: &mut Self) -> Result<isize> {
+    fn aio_return_unpinned(&mut self) -> Result<isize> {
         unsafe {
             let p: *mut libc::aiocb = &mut self.aiocb.0;
             self.in_progress = false;
@@ -838,6 +838,10 @@ unsafe impl<'a> Sync for LioCb<'a> {}
 
 #[cfg(not(any(target_os = "ios", target_os = "macos")))]
 impl<'a> LioCb<'a> {
+    pub fn is_empty(&self) -> bool {
+        self.aiocbs.is_empty()
+    }
+
     /// Return the number of individual [`AioCb`]s contained.
     pub fn len(&self) -> usize {
         self.aiocbs.len()

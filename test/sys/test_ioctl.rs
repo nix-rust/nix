@@ -56,10 +56,10 @@ mod linux {
     #[test]
     fn test_op_write_64() {
         if cfg!(any(target_arch = "mips64", target_arch="powerpc64")){
-            assert_eq!(request_code_write!(b'z', 10, (1 as u64) << 32) as u32,
+            assert_eq!(request_code_write!(b'z', 10, 1u64 << 32) as u32,
                        0x8000_7A0A);
         } else {
-            assert_eq!(request_code_write!(b'z', 10, (1 as u64) << 32) as u32,
+            assert_eq!(request_code_write!(b'z', 10, 1u64 << 32) as u32,
                        0x4000_7A0A);
         }
 
@@ -80,10 +80,10 @@ mod linux {
     #[test]
     fn test_op_read_64() {
         if cfg!(any(target_arch = "mips64", target_arch="powerpc64")){
-            assert_eq!(request_code_read!(b'z', 10, (1 as u64) << 32) as u32,
+            assert_eq!(request_code_read!(b'z', 10, 1u64 << 32) as u32,
                        0x4000_7A0A);
         } else {
-            assert_eq!(request_code_read!(b'z', 10, (1 as u64) << 32) as u32,
+            assert_eq!(request_code_read!(b'z', 10, 1u64 << 32) as u32,
                        0x8000_7A0A);
         }
     }
@@ -97,7 +97,7 @@ mod linux {
     #[cfg(target_pointer_width = "64")]
     #[test]
     fn test_op_read_write_64() {
-        assert_eq!(request_code_readwrite!(b'z', 10, (1 as u64) << 32) as u32,
+        assert_eq!(request_code_readwrite!(b'z', 10, 1u64 << 32) as u32,
                    0xC000_7A0A);
     }
 }
@@ -131,7 +131,7 @@ mod bsd {
     #[cfg(target_pointer_width = "64")]
     #[test]
     fn test_op_write_64() {
-        assert_eq!(request_code_write!(b'z', 10, (1 as u64) << 32), 0x8000_7A0A);
+        assert_eq!(request_code_write!(b'z', 10, 1u64 << 32), 0x8000_7A0A);
     }
 
     #[test]
@@ -143,7 +143,7 @@ mod bsd {
     #[cfg(target_pointer_width = "64")]
     #[test]
     fn test_op_read_64() {
-        assert_eq!(request_code_read!(b'z', 10, (1 as u64) << 32), 0x4000_7A0A);
+        assert_eq!(request_code_read!(b'z', 10, 1u64 << 32), 0x4000_7A0A);
     }
 
     #[test]
@@ -155,7 +155,7 @@ mod bsd {
     #[cfg(target_pointer_width = "64")]
     #[test]
     fn test_op_read_write_64() {
-        assert_eq!(request_code_readwrite!(b'z', 10, (1 as u64) << 32), 0xC000_7A0A);
+        assert_eq!(request_code_readwrite!(b'z', 10, 1u64 << 32), 0xC000_7A0A);
     }
 }
 

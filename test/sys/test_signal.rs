@@ -1,4 +1,3 @@
-use libc;
 #[cfg(not(target_os = "redox"))]
 use nix::Error;
 use nix::sys::signal::*;
@@ -53,9 +52,9 @@ fn test_sigprocmask() {
 
     // Make sure the old set doesn't contain the signal, otherwise the following
     // test don't make sense.
-    assert_eq!(old_signal_set.contains(SIGNAL), false,
-               "the {:?} signal is already blocked, please change to a \
-                different one", SIGNAL);
+    assert!(!old_signal_set.contains(SIGNAL),
+            "the {:?} signal is already blocked, please change to a \
+             different one", SIGNAL);
 
     // Now block the signal.
     let mut signal_set = SigSet::empty();
@@ -67,8 +66,8 @@ fn test_sigprocmask() {
     old_signal_set.clear();
     sigprocmask(SigmaskHow::SIG_BLOCK, None, Some(&mut old_signal_set))
         .expect("expect to be able to retrieve old signals");
-    assert_eq!(old_signal_set.contains(SIGNAL), true,
-               "expected the {:?} to be blocked", SIGNAL);
+    assert!(old_signal_set.contains(SIGNAL),
+            "expected the {:?} to be blocked", SIGNAL);
 
     // Reset the signal.
     sigprocmask(SigmaskHow::SIG_UNBLOCK, Some(&signal_set), None)

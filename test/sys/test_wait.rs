@@ -8,7 +8,7 @@ use libc::_exit;
 #[test]
 #[cfg(not(target_os = "redox"))]
 fn test_wait_signal() {
-    let _ = crate::FORK_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = crate::FORK_MTX.lock().expect("Mutex got poisoned by another test");
 
     // Safe: The child only calls `pause` and/or `_exit`, which are async-signal-safe.
     match unsafe{fork()}.expect("Error: Fork Failed") {

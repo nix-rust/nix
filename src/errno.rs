@@ -94,7 +94,7 @@ impl ErrnoSentinel for i64 {
 }
 
 impl ErrnoSentinel for *mut c_void {
-    fn sentinel() -> Self { (-1 as isize) as *mut c_void }
+    fn sentinel() -> Self { -1isize as *mut c_void }
 }
 
 impl ErrnoSentinel for libc::sighandler_t {

@@ -441,7 +441,7 @@ fn test_getcwd() {
     // kicks in.  Note: One path cannot be longer than 255 bytes
     // (NAME_MAX) whole path cannot be longer than PATH_MAX (usually
     // 4096 on linux, 1024 on macos)
-    let mut inner_tmp_dir = tmpdir_path.to_path_buf();
+    let mut inner_tmp_dir = tmpdir_path;
     for _ in 0..5 {
         let newdir = iter::repeat("a").take(100).collect::<String>();
         inner_tmp_dir.push(newdir);

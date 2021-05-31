@@ -44,18 +44,6 @@ use nix::unistd::chdir;
 
 #[cfg(not(any(target_os = "netbsd", target_os = "redox")))]
 use nix::Result;
-use tempfile;
-
-#[allow(unused_comparisons)]
-// uid and gid are signed on Windows, but not on other platforms. This function
-// allows warning free compiles on all platforms, and can be removed when
-// expression-level #[allow] is available.
-#[cfg(not(any(target_os = "netbsd", target_os = "redox")))]
-fn valid_uid_gid(stat: FileStat) -> bool {
-    // uid could be 0 for the `root` user. This quite possible when
-    // the tests are being run on a rooted Android device.
-    stat.st_uid >= 0 && stat.st_gid >= 0
-}
 
 #[cfg(not(any(target_os = "netbsd", target_os = "redox")))]
 fn assert_stat_results(stat_result: Result<FileStat>) {
@@ -64,7 +52,6 @@ fn assert_stat_results(stat_result: Result<FileStat>) {
     assert!(stats.st_ino > 0);      // inode is positive integer, exact number machine dependent
     assert!(stats.st_mode > 0);     // must be positive integer
     assert_eq!(stats.st_nlink, 1);   // there links created, must be 1
-    assert!(valid_uid_gid(stats));  // must be positive integers
     assert_eq!(stats.st_size, 0);    // size is 0 because we did not write anything to the file
     assert!(stats.st_blksize > 0);  // must be positive integer, exact number machine dependent
     assert!(stats.st_blocks <= 16);  // Up to 16 blocks can be allocated for a blank file
@@ -84,7 +71,6 @@ fn assert_lstat_results(stat_result: Result<FileStat>) {
     // On other platforms they are the same (either both are u16 or u32).
     assert_eq!((stats.st_mode as usize) & (S_IFMT as usize), S_IFLNK as usize); // should be a link
     assert_eq!(stats.st_nlink, 1);   // there links created, must be 1
-    assert!(valid_uid_gid(stats));  // must be positive integers
     assert!(stats.st_size > 0);    // size is > 0 because it points to another file
     assert!(stats.st_blksize > 0);  // must be positive integer, exact number machine dependent
 
