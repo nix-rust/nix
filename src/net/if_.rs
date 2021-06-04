@@ -3,8 +3,8 @@
 //! Uses Linux and/or POSIX functions to resolve interface names like "eth0"
 //! or "socan1" into device numbers.
 
+use crate::{Error, NixPath, Result};
 use libc::c_uint;
-use crate::{Result, Error, NixPath};
 
 /// Resolve an interface into a interface number.
 pub fn if_nametoindex<P: ?Sized + NixPath>(name: &P) -> Result<c_uint> {
@@ -267,3 +267,145 @@ libc_bitflags!(
         IFF_IPMP;
     }
 );
+
+#[cfg(any(
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "fuchsia",
+    target_os = "ios",
+    target_os = "linux",
+    target_os = "macos",
+    target_os = "netbsd",
+    target_os = "openbsd",
+))]
+mod if_nameindex {
+    use super::*;
+
+    use std::ffi::CStr;
+    use std::fmt;
+    use std::marker::PhantomData;
+    use std::ptr::NonNull;
+
+    /// A network interface. Has a name like "eth0" or "wlp4s0" or "wlan0", as well as an index
+    /// (1, 2, 3, etc) that identifies it in the OS's networking stack.
+    #[allow(missing_copy_implementations)]
+    #[repr(transparent)]
+    pub struct Interface(libc::if_nameindex);
+
+    impl Interface {
+        /// Obtain the index of this interface.
+        pub fn index(&self) -> c_uint {
+            self.0.if_index
+        }
+
+        /// Obtain the name of this interface.
+        pub fn name(&self) -> &CStr {
+            unsafe { CStr::from_ptr(self.0.if_name) }
+        }
+    }
+
+    impl fmt::Debug for Interface {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            f.debug_struct("Interface")
+                .field("index", &self.index())
+                .field("name", &self.name())
+                .finish()
+        }
+    }
+
+    /// A list of the network interfaces available on this system. Obtained from [`if_nameindex()`].
+    pub struct Interfaces {
+        ptr: NonNull<libc::if_nameindex>,
+    }
+
+    impl Interfaces {
+        /// Iterate over the interfaces in this list.
+        #[inline]
+        pub fn iter(&self) -> InterfacesIter<'_> {
+            self.into_iter()
+        }
+
+        /// Convert this to a slice of interfaces. Note that the underlying interfaces list is
+        /// null-terminated, so calling this calculates the length. If random access isn't needed,
+        /// [`Interfaces::iter()`] should be used instead.
+        pub fn to_slice(&self) -> &[Interface] {
+            let ifs = self.ptr.as_ptr() as *const Interface;
+            let len = self.iter().count();
+            unsafe { std::slice::from_raw_parts(ifs, len) }
+        }
+    }
+
+    impl Drop for Interfaces {
+        fn drop(&mut self) {
+            unsafe { libc::if_freenameindex(self.ptr.as_ptr()) };
+        }
+    }
+
+    impl fmt::Debug for Interfaces {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            self.to_slice().fmt(f)
+        }
+    }
+
+    impl<'a> IntoIterator for &'a Interfaces {
+        type IntoIter = InterfacesIter<'a>;
+        type Item = &'a Interface;
+        #[inline]
+        fn into_iter(self) -> Self::IntoIter {
+            InterfacesIter {
+                ptr: self.ptr.as_ptr(),
+                _marker: PhantomData,
+            }
+        }
+    }
+
+    /// An iterator over the interfaces in an [`Interfaces`].
+    #[derive(Debug)]
+    pub struct InterfacesIter<'a> {
+        ptr: *const libc::if_nameindex,
+        _marker: PhantomData<&'a Interfaces>,
+    }
+
+    impl<'a> Iterator for InterfacesIter<'a> {
+        type Item = &'a Interface;
+        #[inline]
+        fn next(&mut self) -> Option<Self::Item> {
+            unsafe {
+                if (*self.ptr).if_index == 0 {
+                    None
+                } else {
+                    let ret = &*(self.ptr as *const Interface);
+                    self.ptr = self.ptr.add(1);
+                    Some(ret)
+                }
+            }
+        }
+    }
+
+    /// Retrieve a list of the network interfaces available on the local system.
+    ///
+    /// ```
+    /// let interfaces = nix::net::if_::if_nameindex().unwrap();
+    /// for iface in &interfaces {
+    ///     println!("Interface #{} is called {}", iface.index(), iface.name().to_string_lossy());
+    /// }
+    /// ```
+    pub fn if_nameindex() -> Result<Interfaces> {
+        unsafe {
+            let ifs = libc::if_nameindex();
+            let ptr = NonNull::new(ifs).ok_or_else(Error::last)?;
+            Ok(Interfaces { ptr })
+        }
+    }
+}
+#[cfg(any(
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "fuchsia",
+    target_os = "ios",
+    target_os = "linux",
+    target_os = "macos",
+    target_os = "netbsd",
+    target_os = "openbsd",
+))]
+pub use if_nameindex::*;
