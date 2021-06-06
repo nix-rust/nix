@@ -25,7 +25,7 @@ fn finish_liocb(liocb: &mut LioCb) {
             let e = liocb.error(j);
             match e {
                 Ok(()) => break,
-                Err(Error::Sys(Errno::EINPROGRESS)) =>
+                Err(Error(Errno::EINPROGRESS)) =>
                     thread::sleep(time::Duration::from_millis(10)),
                 Err(x) => panic!("aio_error({:?})", x)
             }
@@ -82,9 +82,9 @@ fn test_lio_listio_resubmit() {
         }
         let mut liocb = builder.finish();
         let mut err = liocb.listio(LioMode::LIO_NOWAIT, SigevNotify::SigevNone);
-        while err == Err(Error::Sys(Errno::EIO)) ||
-              err == Err(Error::Sys(Errno::EAGAIN)) ||
-              err == Err(Error::Sys(Errno::EINTR)) {
+        while err == Err(Error(Errno::EIO)) ||
+              err == Err(Error(Errno::EAGAIN)) ||
+              err == Err(Error(Errno::EINTR)) {
             // 
             thread::sleep(time::Duration::from_millis(10));
             resubmit_count += 1;

@@ -1,3 +1,4 @@
+use nix::errno::Errno;
 use nix::Error;
 use nix::unistd::*;
 use nix::unistd::ForkResult::*;
@@ -41,7 +42,7 @@ fn test_waitstatus_from_raw() {
     let pid = Pid::from_raw(1);
     assert_eq!(WaitStatus::from_raw(pid, 0x0002), Ok(WaitStatus::Signaled(pid, Signal::SIGINT, false)));
     assert_eq!(WaitStatus::from_raw(pid, 0x0200), Ok(WaitStatus::Exited(pid, 2)));
-    assert_eq!(WaitStatus::from_raw(pid, 0x7f7f), Err(Error::invalid_argument()));
+    assert_eq!(WaitStatus::from_raw(pid, 0x7f7f), Err(Error(Errno::EINVAL)));
 }
 
 #[test]

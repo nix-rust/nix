@@ -972,7 +972,7 @@ fn test_unlinkat_dir_noremovedir() {
 
     // Attempt unlink dir at relative path without proper flag
     let err_result = unlinkat(Some(dirfd), dirname, UnlinkatFlags::NoRemoveDir).unwrap_err();
-    assert!(err_result == Error::Sys(Errno::EISDIR) || err_result == Error::Sys(Errno::EPERM));
+    assert!(err_result == Error(Errno::EISDIR) || err_result == Error(Errno::EPERM));
  }
 
 #[test]
@@ -1015,8 +1015,8 @@ fn test_unlinkat_file() {
 fn test_access_not_existing() {
     let tempdir = tempdir().unwrap();
     let dir = tempdir.path().join("does_not_exist.txt");
-    assert_eq!(access(&dir, AccessFlags::F_OK).err().unwrap().as_errno().unwrap(),
-               Errno::ENOENT);
+    assert_eq!(access(&dir, AccessFlags::F_OK).err().unwrap(),
+               Error(Errno::ENOENT));
 }
 
 #[test]
@@ -1094,13 +1094,13 @@ fn test_ttyname() {
 fn test_ttyname_not_pty() {
     let fd = File::open("/dev/zero").unwrap();
     assert!(fd.as_raw_fd() > 0);
-    assert_eq!(ttyname(fd.as_raw_fd()), Err(Error::Sys(Errno::ENOTTY)));
+    assert_eq!(ttyname(fd.as_raw_fd()), Err(Error(Errno::ENOTTY)));
 }
 
 #[test]
 #[cfg(not(any(target_os = "redox", target_os = "fuchsia")))]
 fn test_ttyname_invalid_fd() {
-    assert_eq!(ttyname(-1), Err(Error::Sys(Errno::EBADF)));
+    assert_eq!(ttyname(-1), Err(Error(Errno::EBADF)));
 }
 
 #[test]

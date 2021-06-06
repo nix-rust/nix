@@ -64,11 +64,21 @@ impl Errno {
         clear()
     }
 
+    pub(crate) fn result2<S: ErrnoSentinel + PartialEq<S>>(value: S)
+        -> std::result::Result<S, Self>
+    {
+        if value == S::sentinel() {
+            Err(Self::last())
+        } else {
+            Ok(value)
+        }
+    }
+
     /// Returns `Ok(value)` if it does not contain the sentinel value. This
     /// should not be used when `-1` is not the errno sentinel value.
     pub fn result<S: ErrnoSentinel + PartialEq<S>>(value: S) -> Result<S> {
         if value == S::sentinel() {
-            Err(Error::Sys(Self::last()))
+            Err(Error::from(Self::last()))
         } else {
             Ok(value)
         }

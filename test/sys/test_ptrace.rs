@@ -16,8 +16,8 @@ fn test_ptrace() {
     // FIXME: qemu-user doesn't implement ptrace on all arches, so permit ENOSYS
     require_capability!(CAP_SYS_PTRACE);
     let err = ptrace::attach(getpid()).unwrap_err();
-    assert!(err == Error::Sys(Errno::EPERM) || err == Error::Sys(Errno::EINVAL) ||
-            err == Error::Sys(Errno::ENOSYS));
+    assert!(err == Error(Errno::EPERM) || err == Error(Errno::EINVAL) ||
+            err == Error(Errno::ENOSYS));
 }
 
 // Just make sure ptrace_setoptions can be called at all, for now.
@@ -26,7 +26,7 @@ fn test_ptrace() {
 fn test_ptrace_setoptions() {
     require_capability!(CAP_SYS_PTRACE);
     let err = ptrace::setoptions(getpid(), Options::PTRACE_O_TRACESYSGOOD).unwrap_err();
-    assert!(err != Error::UnsupportedOperation);
+    assert!(err != Error(Errno::EOPNOTSUPP));
 }
 
 // Just make sure ptrace_getevent can be called at all, for now.
@@ -35,7 +35,7 @@ fn test_ptrace_setoptions() {
 fn test_ptrace_getevent() {
     require_capability!(CAP_SYS_PTRACE);
     let err = ptrace::getevent(getpid()).unwrap_err();
-    assert!(err != Error::UnsupportedOperation);
+    assert!(err != Error(Errno::EOPNOTSUPP));
 }
 
 // Just make sure ptrace_getsiginfo can be called at all, for now.
@@ -43,8 +43,8 @@ fn test_ptrace_getevent() {
 #[cfg(any(target_os = "android", target_os = "linux"))]
 fn test_ptrace_getsiginfo() {
     require_capability!(CAP_SYS_PTRACE);
-    if let Err(Error::UnsupportedOperation) = ptrace::getsiginfo(getpid()) {
-        panic!("ptrace_getsiginfo returns Error::UnsupportedOperation!");
+    if let Err(Error(Errno::EOPNOTSUPP)) = ptrace::getsiginfo(getpid()) {
+        panic!("ptrace_getsiginfo returns Error(Errno::EOPNOTSUPP)!");
     }
 }
 
@@ -54,8 +54,8 @@ fn test_ptrace_getsiginfo() {
 fn test_ptrace_setsiginfo() {
     require_capability!(CAP_SYS_PTRACE);
     let siginfo = unsafe { mem::zeroed() };
-    if let Err(Error::UnsupportedOperation) = ptrace::setsiginfo(getpid(), &siginfo) {
-        panic!("ptrace_setsiginfo returns Error::UnsupportedOperation!");
+    if let Err(Error(Errno::EOPNOTSUPP)) = ptrace::setsiginfo(getpid(), &siginfo) {
+        panic!("ptrace_setsiginfo returns Error(Errno::EOPNOTSUPP)!");
     }
 }
 
@@ -79,7 +79,7 @@ fn test_ptrace_cont() {
     // On valid platforms the ptrace call should return Errno::EPERM, this
     // is already tested by `test_ptrace`.
     let err = ptrace::attach(getpid()).unwrap_err();
-    if err == Error::Sys(Errno::ENOSYS) {
+    if err == Error(Errno::ENOSYS) {
         return;
     }
 

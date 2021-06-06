@@ -55,7 +55,7 @@ fn test_renameat() {
     let new_dirfd = open(new_dir.path(), OFlag::empty(), Mode::empty()).unwrap();
     renameat(Some(old_dirfd), "old", Some(new_dirfd), "new").unwrap();
     assert_eq!(renameat(Some(old_dirfd), "old", Some(new_dirfd), "new").unwrap_err(),
-               Error::Sys(Errno::ENOENT));
+               Error(Errno::ENOENT));
     close(old_dirfd).unwrap();
     close(new_dirfd).unwrap();
     assert!(new_dir.path().join("new").exists());
@@ -385,7 +385,7 @@ mod test_posix_fallocate {
                 assert_eq!(tmp.read(&mut data).expect("read failure"), LEN);
                 assert_eq!(&data[..], &[0u8; LEN][..]);
             }
-            Err(nix::Error::Sys(Errno::EINVAL)) => {
+            Err(nix::Error(Errno::EINVAL)) => {
                 // POSIX requires posix_fallocate to return EINVAL both for
                 // invalid arguments (i.e. len < 0) and if the operation is not
                 // supported by the file system.
@@ -401,12 +401,8 @@ mod test_posix_fallocate {
     fn errno() {
         let (rd, _wr) = pipe().unwrap();
         let err = posix_fallocate(rd as RawFd, 0, 100).unwrap_err();
-        use nix::Error::Sys;
-        match err {
-            Sys(Errno::EINVAL)
-                | Sys(Errno::ENODEV)
-                | Sys(Errno::ESPIPE)
-                | Sys(Errno::EBADF) => (),
+        match err.0 {
+            Errno::EINVAL | Errno::ENODEV | Errno::ESPIPE | Errno::EBADF => (),
             errno =>
                 panic!(
                     "unexpected errno {}",

@@ -136,7 +136,7 @@ impl fmt::Display for NmountError {
 
 impl From<NmountError> for io::Error {
     fn from(err: NmountError) -> Self {
-        io::Error::from_raw_os_error(err.errno as i32)
+        err.errno.into()
     }
 }
 
@@ -381,7 +381,7 @@ impl<'a> Nmount<'a> {
                         Some(CStr::from_bytes_with_nul(sl).unwrap())
                     }
                 };
-                Err(NmountError::new(error.as_errno().unwrap(), errmsg))
+                Err(NmountError::new(error.into(), errmsg))
             }
         }
     }

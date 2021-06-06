@@ -255,6 +255,6 @@ pub fn clock_getcpuclockid(pid: Pid) -> Result<ClockId> {
         let res = unsafe { clk_id.assume_init() };
         Ok(ClockId::from(res))
     } else {
-        Err(Error::Sys(Errno::from_i32(ret)))
+        Err(Error::from(Errno::from_i32(ret)))
     }
 }

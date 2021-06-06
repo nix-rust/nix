@@ -536,7 +536,7 @@ impl UnixAddr {
                 let bytes = cstr.to_bytes();
 
                 if bytes.len() > ret.sun_path.len() {
-                    return Err(Error::Sys(Errno::ENAMETOOLONG));
+                    return Err(Error::from(Errno::ENAMETOOLONG));
                 }
 
                 ptr::copy_nonoverlapping(bytes.as_ptr(),
@@ -563,7 +563,7 @@ impl UnixAddr {
             };
 
             if path.len() + 1 > ret.sun_path.len() {
-                return Err(Error::Sys(Errno::ENAMETOOLONG));
+                return Err(Error::from(Errno::ENAMETOOLONG));
             }
 
             // Abstract addresses are represented by sun_path[0] ==
@@ -1035,7 +1035,7 @@ pub mod sys_control {
 
         pub fn from_name(sockfd: RawFd, name: &str, unit: u32) -> Result<SysControlAddr> {
             if name.len() > MAX_KCTL_NAME {
-                return Err(Error::Sys(Errno::ENAMETOOLONG));
+                return Err(Error::from(Errno::ENAMETOOLONG));
             }
 
             let mut ctl_name = [0; MAX_KCTL_NAME];

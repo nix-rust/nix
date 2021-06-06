@@ -528,7 +528,7 @@ pub fn test_recvmsg_ebadf() {
     let iov = [IoVec::from_mut_slice(&mut buf[..])];
     let fd = -1;    // Bad file descriptor
     let r = recvmsg(fd, &iov, None, MsgFlags::empty());
-    assert_eq!(r.err().unwrap(), Error::Sys(Errno::EBADF));
+    assert_eq!(r.err().unwrap(), Error(Errno::EBADF));
 }
 
 // Disable the test on emulated platforms due to a bug in QEMU versions <
@@ -835,7 +835,7 @@ pub fn test_sendmsg_ipv6packetinfo() {
     let inet_addr = InetAddr::from_std(&std_sa);
     let sock_addr = SockAddr::new_inet(inet_addr);
 
-    if let Err(Error::Sys(Errno::EADDRNOTAVAIL)) = bind(sock, &sock_addr) {
+    if let Err(Error(Errno::EADDRNOTAVAIL)) = bind(sock, &sock_addr) {
         println!("IPv6 not available, skipping test.");
         return;
     }
@@ -1153,7 +1153,7 @@ pub fn test_syscontrol() {
                     SockFlag::empty(), SockProtocol::KextControl)
              .expect("socket failed");
     let _sockaddr = SockAddr::new_sys_control(fd, "com.apple.net.utun_control", 0).expect("resolving sys_control name failed");
-    assert_eq!(SockAddr::new_sys_control(fd, "foo.bar.lol", 0).err(), Some(Error::Sys(Errno::ENOENT)));
+    assert_eq!(SockAddr::new_sys_control(fd, "foo.bar.lol", 0).err(), Some(Error(Errno::ENOENT)));
 
     // requires root privileges
     // connect(fd, &sockaddr).expect("connect failed");
@@ -1516,7 +1516,7 @@ pub fn test_vsock() {
     // VMADDR_CID_HYPERVISOR is reserved, so we expect an EADDRNOTAVAIL error.
     let sockaddr = SockAddr::new_vsock(libc::VMADDR_CID_HYPERVISOR, port);
     assert_eq!(bind(s1, &sockaddr).err(),
-               Some(Error::Sys(Errno::EADDRNOTAVAIL)));
+               Some(Error(Errno::EADDRNOTAVAIL)));
 
     let sockaddr = SockAddr::new_vsock(libc::VMADDR_CID_ANY, port);
     assert_eq!(bind(s1, &sockaddr), Ok(()));

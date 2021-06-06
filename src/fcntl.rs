@@ -288,7 +288,7 @@ fn inner_readlink<P: ?Sized + NixPath>(dirfd: Option<RawFd>, path: &P) -> Result
                 Some(next_size) => try_size = next_size,
                 // It's absurd that this would happen, but handle it sanely
                 // anyway.
-                None => break Err(super::Error::Sys(Errno::ENAMETOOLONG)),
+                None => break Err(super::Error::from(Errno::ENAMETOOLONG)),
             }
         }
     }
@@ -646,6 +646,6 @@ pub fn posix_fallocate(fd: RawFd, offset: libc::off_t, len: libc::off_t) -> Resu
     match Errno::result(res) {
         Err(err) => Err(err),
         Ok(0) => Ok(()),
-        Ok(errno) => Err(crate::Error::Sys(Errno::from_i32(errno))),
+        Ok(errno) => Err(crate::Error::from(Errno::from_i32(errno))),
     }
 }

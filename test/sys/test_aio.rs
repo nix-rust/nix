@@ -177,7 +177,7 @@ fn test_aio_suspend() {
             let cbbuf = [wcb.as_ref(), rcb.as_ref()];
             let r = aio_suspend(&cbbuf[..], Some(timeout));
             match r {
-                Err(Error::Sys(Errno::EINTR)) => continue,
+                Err(Error(Errno::EINTR)) => continue,
                 Err(e) => panic!("aio_suspend returned {:?}", e),
                 Ok(_) => ()
             };

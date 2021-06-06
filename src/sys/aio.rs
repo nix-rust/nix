@@ -508,7 +508,7 @@ impl<'a> AioCb<'a> {
             libc::AIO_CANCELED => Ok(AioCancelStat::AioCanceled),
             libc::AIO_NOTCANCELED => Ok(AioCancelStat::AioNotCanceled),
             libc::AIO_ALLDONE => Ok(AioCancelStat::AioAllDone),
-            -1 => Err(Error::last()),
+            -1 => Err(Error::from(Errno::last())),
             _ => panic!("unknown aio_cancel return value")
         }
     }
@@ -519,8 +519,8 @@ impl<'a> AioCb<'a> {
         };
         match r {
             0 => Ok(()),
-            num if num > 0 => Err(Error::from_errno(Errno::from_i32(num))),
-            -1 => Err(Error::last()),
+            num if num > 0 => Err(Error::from(Errno::from_i32(num))),
+            -1 => Err(Error::from(Errno::last())),
             num => panic!("unknown aio_error return value {:?}", num)
         }
     }
@@ -735,7 +735,7 @@ pub fn aio_cancel_all(fd: RawFd) -> Result<AioCancelStat> {
         libc::AIO_CANCELED => Ok(AioCancelStat::AioCanceled),
         libc::AIO_NOTCANCELED => Ok(AioCancelStat::AioNotCanceled),
         libc::AIO_ALLDONE => Ok(AioCancelStat::AioAllDone),
-        -1 => Err(Error::last()),
+        -1 => Err(Error::from(Errno::last())),
         _ => panic!("unknown aio_cancel return value")
     }
 }
@@ -943,8 +943,8 @@ impl<'a> LioCb<'a> {
     ///         LioOpcode::LIO_WRITE
     ///     ).finish();
     /// let mut err = liocb.listio(LioMode::LIO_WAIT, SigevNotify::SigevNone);
-    /// while err == Err(Error::Sys(Errno::EIO)) ||
-    ///       err == Err(Error::Sys(Errno::EAGAIN)) {
+    /// while err == Err(Error::from(Errno::EIO)) ||
+    ///       err == Err(Error::from(Errno::EAGAIN)) {
     ///     thread::sleep(time::Duration::from_millis(10));
     ///     err = liocb.listio_resubmit(LioMode::LIO_WAIT, SigevNotify::SigevNone);
     /// }
@@ -983,13 +983,13 @@ impl<'a> LioCb<'a> {
                     // aiocb is complete; collect its status and don't resubmit
                     self.results[i] = Some(a.aio_return_unpinned());
                 },
-                Err(Error::Sys(Errno::EAGAIN)) => {
+                Err(Error(Errno::EAGAIN)) => {
                     self.list.push(a as *mut AioCb<'a> as *mut libc::aiocb);
                 },
-                Err(Error::Sys(Errno::EINPROGRESS)) => {
+                Err(Error(Errno::EINPROGRESS)) => {
                     // aiocb is was successfully queued; no need to do anything
                 },
-                Err(Error::Sys(Errno::EINVAL)) => panic!(
+                Err(Error(Errno::EINVAL)) => panic!(
                     "AioCb was never submitted, or already finalized"),
                 _ => unreachable!()
             }

@@ -320,7 +320,7 @@ pub unsafe fn mmap(addr: *mut c_void, length: size_t, prot: ProtFlags, flags: Ma
     let ret = libc::mmap(addr, length, prot.bits(), flags.bits(), fd, offset);
 
     if ret == libc::MAP_FAILED {
-        Err(Error::Sys(Errno::last()))
+        Err(Error::from(Errno::last()))
     } else {
         Ok(ret)
     }
@@ -344,7 +344,7 @@ pub unsafe fn mremap(
     let ret = libc::mremap(addr, old_size, new_size, flags.bits(), new_address.unwrap_or(std::ptr::null_mut()));
 
     if ret == libc::MAP_FAILED {
-        Err(Error::Sys(Errno::last()))
+        Err(Error::from(Errno::last()))
     } else {
         Ok(ret)
     }

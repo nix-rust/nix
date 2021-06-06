@@ -180,7 +180,7 @@ fn ptrace_peek(request: Request, pid: Pid, addr: AddressType, data: *mut c_void)
         libc::ptrace(request as RequestType, libc::pid_t::from(pid), addr, data)
     };
     match Errno::result(ret) {
-        Ok(..) | Err(Error::Sys(Errno::UnknownErrno)) => Ok(ret),
+        Ok(..) | Err(Error(Errno::UnknownErrno)) => Ok(ret),
         err @ Err(..) => err,
     }
 }

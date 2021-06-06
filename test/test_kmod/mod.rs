@@ -130,7 +130,7 @@ fn test_finit_module_invalid() {
     let f = File::open(kmod_path).expect("unable to open kernel module");
     let result = finit_module(&f, &CString::new("").unwrap(), ModuleInitFlags::empty());
 
-    assert_eq!(result.unwrap_err(), Error::Sys(Errno::EINVAL));
+    assert_eq!(result.unwrap_err(), Error::from(Errno::EINVAL));
 }
 
 #[test]
@@ -147,7 +147,7 @@ fn test_finit_module_twice_and_delete_module() {
 
     let result = finit_module(&f, &CString::new("").unwrap(), ModuleInitFlags::empty());
 
-    assert_eq!(result.unwrap_err(), Error::Sys(Errno::EEXIST));
+    assert_eq!(result.unwrap_err(), Error::from(Errno::EEXIST));
 
     delete_module(
         &CString::new(kmod_name).unwrap(),
@@ -163,5 +163,5 @@ fn test_delete_module_not_loaded() {
 
     let result = delete_module(&CString::new("hello").unwrap(), DeleteModuleFlags::empty());
 
-    assert_eq!(result.unwrap_err(), Error::Sys(Errno::ENOENT));
+    assert_eq!(result.unwrap_err(), Error::from(Errno::ENOENT));
 }

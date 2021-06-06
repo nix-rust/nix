@@ -10,7 +10,7 @@ macro_rules! loop_while_eintr {
         loop {
             match $poll_expr {
                 Ok(nfds) => break nfds,
-                Err(Error::Sys(Errno::EINTR)) => (),
+                Err(Error(Errno::EINTR)) => (),
                 Err(e) => panic!("{}", e)
             }
         }

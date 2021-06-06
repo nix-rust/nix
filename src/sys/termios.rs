@@ -449,7 +449,7 @@ impl TryFrom<libc::speed_t> for BaudRate {
             B3500000 => Ok(BaudRate::B3500000),
             #[cfg(any(target_os = "android", all(target_os = "linux", not(target_arch = "sparc64"))))]
             B4000000 => Ok(BaudRate::B4000000),
-            _ => Err(Error::invalid_argument())
+            _ => Err(Error::from(Errno::EINVAL))
         }
     }
 }
