@@ -344,6 +344,7 @@ impl InetAddr {
         }
     }
 
+    #[deprecated(since = "0.23.0", note = "use .to_string() instead")]
     pub fn to_str(&self) -> String {
         format!("{}", self)
     }
@@ -722,6 +723,7 @@ impl SockAddr {
         }
     }
 
+    #[deprecated(since = "0.23.0", note = "use .to_string() instead")]
     pub fn to_str(&self) -> String {
         format!("{}", self)
     }
