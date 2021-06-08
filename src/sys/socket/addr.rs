@@ -736,7 +736,7 @@ impl SockAddr {
     /// unsafe because it takes a raw pointer as argument.  The caller must
     /// ensure that the pointer is valid.
     #[cfg(not(target_os = "fuchsia"))]
-    pub(crate) unsafe fn from_libc_sockaddr(addr: *const libc::sockaddr) -> Option<SockAddr> {
+    pub unsafe fn from_raw_sockaddr(addr: *const libc::sockaddr) -> Option<SockAddr> {
         if addr.is_null() {
             None
         } else {
@@ -1315,7 +1315,7 @@ mod tests {
     fn test_macos_loopback_datalink_addr() {
         let bytes = [20i8, 18, 1, 0, 24, 3, 0, 0, 108, 111, 48, 0, 0, 0, 0, 0];
         let sa = bytes.as_ptr() as *const libc::sockaddr;
-        let _sock_addr = unsafe { SockAddr::from_libc_sockaddr(sa) };
+        let _sock_addr = unsafe { SockAddr::from_raw_sockaddr(sa) };
         assert!(_sock_addr.is_none());
     }
 
@@ -1330,7 +1330,7 @@ mod tests {
         let bytes = [20i8, 18, 7, 0, 6, 3, 6, 0, 101, 110, 48, 24, 101, -112, -35, 76, -80];
         let ptr = bytes.as_ptr();
         let sa = ptr as *const libc::sockaddr;
-        let _sock_addr = unsafe { SockAddr::from_libc_sockaddr(sa) };
+        let _sock_addr = unsafe { SockAddr::from_raw_sockaddr(sa) };
 
         assert!(_sock_addr.is_some());
 
@@ -1352,7 +1352,7 @@ mod tests {
         let bytes = [25u8, 0, 0, 0, 6, 0, 6, 0, 24, 101, 144, 221, 76, 176];
         let ptr = bytes.as_ptr();
         let sa = ptr as *const libc::sockaddr;
-        let _sock_addr = unsafe { SockAddr::from_libc_sockaddr(sa) };
+        let _sock_addr = unsafe { SockAddr::from_raw_sockaddr(sa) };
 
         assert!(_sock_addr.is_some());
 
