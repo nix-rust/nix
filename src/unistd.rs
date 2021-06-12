@@ -1670,10 +1670,11 @@ pub mod alarm {
     //!     sigaction(Signal::SIGALRM, &sa);
     //! }
     //!
+    //! let start = Instant::now();
+    //!
     //! // Set an alarm for 1 second from now.
     //! alarm::set(1);
     //!
-    //! let start = Instant::now();
     //! // Pause the process until the alarm signal is received.
     //! let mut sigset = SigSet::empty();
     //! sigset.add(Signal::SIGALRM);
