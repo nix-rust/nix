@@ -14,6 +14,16 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1457](https://github.com/nix-rust/nix/pull/1457))
 
 ### Changed
+- `ptsname_r` now returns a lossily-converted string in the event of bad UTF,
+  just like `ptsname`.
+  ([#1446](https://github.com/nix-rust/nix/pull/1446))
+- Nix's error type is now a simple wrapper around the platform's Errno.  This
+  means it is now `Into<std::io::Error>`.  It's also `Clone`, `Copy`, `Eq`, and
+  has a small fixed size.  It also requires less typing.  For example, the old
+  enum variant `nix::Error::Sys(nix::errno::Errno::EINVAL)` is now simply
+  `nix::Error::EINVAL`.
+  ([#1446](https://github.com/nix-rust/nix/pull/1446))
+
 ### Fixed
 ### Removed
 
@@ -46,9 +56,6 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1440](https://github.com/nix-rust/nix/pull/1440))
 - Minimum supported Rust version is now 1.41.0.
   ([#1440](https://github.com/nix-rust/nix/pull/1440))
-- `ptsname_r` now returns a lossily-converted string in the event of bad UTF,
-  just like `ptsname`.
-  ([#1446](https://github.com/nix-rust/nix/pull/1446))
 - Errno aliases are now associated consts on `Errno`, instead of consts in the
   `errno` module.
   (#[1452](https://github.com/nix-rust/nix/pull/1452))
