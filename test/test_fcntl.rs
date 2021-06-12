@@ -102,11 +102,15 @@ mod linux_android {
     /// resulting file is read and should contain the contents `bar`.
     /// The from_offset should be updated by the call to reflect
     /// the 3 bytes read (6).
-    ///
-    /// FIXME: This test is disabled for linux based builds, because Travis
-    /// Linux version is too old for `copy_file_range`.
     #[test]
-    #[ignore]
+    // QEMU does not support copy_file_range. Skip platforms that use QEMU in CI
+    #[cfg_attr(all(target_os = "linux", any(
+            target_arch = "aarch64",
+            target_arch = "arm",
+            target_arch = "mips",
+            target_arch = "mips64",
+            target_arch = "powerpc64"
+    )), ignore)]
     fn test_copy_file_range() {
         const CONTENTS: &[u8] = b"foobarbaz";
 
