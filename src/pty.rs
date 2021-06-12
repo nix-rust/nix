@@ -70,7 +70,7 @@ impl Drop for PtyMaster {
         // condition, which can cause confusing errors for future I/O
         // operations.
         let e = unistd::close(self.0);
-        if e == Err(Error(Errno::EBADF)) {
+        if e == Err(Errno::EBADF) {
             panic!("Closing an invalid file descriptor!");
         };
     }

@@ -1572,7 +1572,7 @@ pub fn recvfrom(sockfd: RawFd, buf: &mut [u8])
             &mut len as *mut socklen_t))? as usize;
 
         match sockaddr_storage_to_addr(&addr, len as usize) {
-            Err(Error(Errno::ENOTCONN)) => Ok((ret, None)),
+            Err(Errno::ENOTCONN) => Ok((ret, None)),
             Ok(addr) => Ok((ret, Some(addr))),
             Err(e) => Err(e)
         }

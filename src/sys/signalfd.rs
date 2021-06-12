@@ -108,7 +108,7 @@ impl SignalFd {
         match res {
             Ok(SIGNALFD_SIGINFO_SIZE) => Ok(Some(unsafe { mem::transmute(buffer.assume_init()) })),
             Ok(_) => unreachable!("partial read on signalfd"),
-            Err(Error(Errno::EAGAIN)) => Ok(None),
+            Err(Errno::EAGAIN) => Ok(None),
             Err(error) => Err(error)
         }
     }

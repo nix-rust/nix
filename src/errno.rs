@@ -1,5 +1,6 @@
 use cfg_if::cfg_if;
 use libc::{c_int, c_void};
+use std::convert::TryFrom;
 use std::{fmt, io, error};
 use crate::{Error, Result};
 
@@ -48,6 +49,42 @@ pub fn errno() -> i32 {
 }
 
 impl Errno {
+    /// Convert this `Error` to an [`Errno`](enum.Errno.html).
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use nix::Error;
+    /// # use nix::errno::Errno;
+    /// let e = Error::from(Errno::EPERM);
+    /// assert_eq!(Some(Errno::EPERM), e.as_errno());
+    /// ```
+    #[deprecated(
+        since = "0.22.0",
+        note = "It's a no-op now; just delete it."
+    )]
+    pub fn as_errno(self) -> Option<Self> {
+        Some(self)
+    }
+
+    /// Create a nix Error from a given errno
+    #[deprecated(
+        since = "0.22.0",
+        note = "It's a no-op now; just delete it."
+    )]
+    pub fn from_errno(errno: Errno) -> Error {
+        Error::from(errno)
+    }
+
+    /// Create a new invalid argument error (`EINVAL`)
+    #[deprecated(
+        since = "0.22.0",
+        note = "Use Errno::EINVAL instead"
+    )]
+    pub fn invalid_argument() -> Error {
+        Errno::EINVAL
+    }
+
     pub fn last() -> Self {
         last()
     }
@@ -64,9 +101,9 @@ impl Errno {
         clear()
     }
 
-    pub(crate) fn result2<S: ErrnoSentinel + PartialEq<S>>(value: S)
-        -> std::result::Result<S, Self>
-    {
+    /// Returns `Ok(value)` if it does not contain the sentinel value. This
+    /// should not be used when `-1` is not the errno sentinel value.
+    pub fn result<S: ErrnoSentinel + PartialEq<S>>(value: S) -> Result<S> {
         if value == S::sentinel() {
             Err(Self::last())
         } else {
@@ -74,14 +111,19 @@ impl Errno {
         }
     }
 
-    /// Returns `Ok(value)` if it does not contain the sentinel value. This
-    /// should not be used when `-1` is not the errno sentinel value.
-    pub fn result<S: ErrnoSentinel + PartialEq<S>>(value: S) -> Result<S> {
-        if value == S::sentinel() {
-            Err(Error::from(Self::last()))
-        } else {
-            Ok(value)
-        }
+    /// Backwards compatibility hack for Nix <= 0.21.0 users
+    ///
+    /// In older versions of Nix, `Error::Sys` was an enum variant.  Now it's a
+    /// function, which is compatible with most of the former use cases of the
+    /// enum variant.  But you should use `Error(Errno::...)` instead.
+    #[deprecated(
+        since = "0.22.0",
+        note = "Use Errno::... instead"
+    )]
+    #[allow(non_snake_case)]
+    #[inline]
+    pub fn Sys(errno: Errno) -> Error {
+        errno
     }
 }
 
@@ -122,6 +164,16 @@ impl fmt::Display for Errno {
 impl From<Errno> for io::Error {
     fn from(err: Errno) -> Self {
         io::Error::from_raw_os_error(err as i32)
+    }
+}
+
+impl TryFrom<io::Error> for Errno {
+    type Error = io::Error;
+
+    fn try_from(ioerror: io::Error) -> std::result::Result<Self, io::Error> {
+        ioerror.raw_os_error()
+            .map(Errno::from_i32)
+            .ok_or(ioerror)
     }
 }
 

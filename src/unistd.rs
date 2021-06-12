@@ -1432,7 +1432,7 @@ pub fn getgroups() -> Result<Vec<Gid>> {
                 unsafe { groups.set_len(s as usize) };
                 return Ok(groups);
             },
-            Err(Error(Errno::EINVAL)) => {
+            Err(Errno::EINVAL) => {
                 // EINVAL indicates that the buffer size was too
                 // small, resize it up to ngroups_max as limit.
                 reserve_double_buffer_size(&mut groups, ngroups_max)

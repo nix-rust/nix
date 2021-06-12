@@ -79,16 +79,15 @@ pub mod unistd;
 
 use libc::{c_char, PATH_MAX};
 
-use std::convert::TryFrom;
-use std::{error, fmt, io, ptr, result};
+use std::{ptr, result};
 use std::ffi::{CStr, OsStr};
 use std::os::unix::ffi::OsStrExt;
 use std::path::{Path, PathBuf};
 
-use errno::{Errno, ErrnoSentinel};
+use errno::Errno;
 
 /// Nix Result Type
-pub type Result<T> = result::Result<T, Error>;
+pub type Result<T> = result::Result<T, Errno>;
 
 /// Nix's main error type.
 ///
@@ -100,111 +99,7 @@ pub type Result<T> = result::Result<T, Error>;
 /// * Small size
 /// * Represents all of the system's errnos, instead of just the most common
 /// ones.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct Error(pub Errno);
-
-impl Error {
-    /// Convert this `Error` to an [`Errno`](enum.Errno.html).
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// # use nix::Error;
-    /// # use nix::errno::Errno;
-    /// let e = Error::from(Errno::EPERM);
-    /// assert_eq!(Some(Errno::EPERM), e.as_errno());
-    /// ```
-    #[deprecated(
-        since = "0.22.0",
-        note = "Use Error::into<Errno> instead"
-    )]
-    pub fn as_errno(self) -> Option<Errno> {
-        Some(self.0)
-    }
-
-    /// Create a nix Error from a given errno
-    #[deprecated(
-        since = "0.22.0",
-        note = "Use Error::from instead"
-    )]
-    pub fn from_errno(errno: Errno) -> Error {
-        Error::from(errno)
-    }
-
-    /// Get the current errno and convert it to a nix Error
-    pub fn last() -> Error {
-        Error::from(Errno::last())
-    }
-
-    /// Create a new invalid argument error (`EINVAL`)
-    #[deprecated(
-        since = "0.22.0",
-        note = "Use Error::from(Errno::EINVAL) instead"
-    )]
-    pub fn invalid_argument() -> Error {
-        Error::from(Errno::EINVAL)
-    }
-
-    /// Returns `Ok(value)` if it does not contain the sentinel value. This
-    /// should not be used when `-1` is not the errno sentinel value.
-    pub(crate) fn result<S: ErrnoSentinel + PartialEq<S>>(value: S)
-        -> std::result::Result<S, Error>
-    {
-        Errno::result2(value).map_err(Self::from)
-    }
-
-    /// Backwards compatibility hack for Nix <= 0.21.0 users
-    ///
-    /// In older versions of Nix, `Error::Sys` was an enum variant.  Now it's a
-    /// function, which is compatible with most of the former use cases of the
-    /// enum variant.  But you should use `Error(Errno::...)` instead.
-    #[deprecated(
-        since = "0.22.0",
-        note = "Use Error(Errno::...) instead"
-    )]
-    #[allow(non_snake_case)]
-    #[inline]
-    pub fn Sys(errno: Errno) -> Error {
-        Error::from(errno)
-    }
-}
-
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}: {}", self.0, self.0.desc())
-    }
-}
-
-impl error::Error for Error {}
-
-impl From<Errno> for Error {
-    fn from(errno: Errno) -> Self {
-        Self(errno)
-    }
-}
-
-impl From<Error> for Errno {
-    fn from(error: Error) -> Self {
-        error.0
-    }
-}
-
-impl TryFrom<io::Error> for Error {
-    type Error = io::Error;
-
-    fn try_from(ioerror: io::Error) -> std::result::Result<Self, io::Error> {
-        ioerror.raw_os_error()
-            .map(Errno::from_i32)
-            .map(Error::from)
-            .ok_or(ioerror)
-    }
-}
-
-impl From<Error> for io::Error {
-    fn from(error: Error) -> Self {
-        Self::from_raw_os_error(error.0 as i32)
-    }
-}
+pub type Error = Errno;
 
 pub trait NixPath {
     fn is_empty(&self) -> bool;

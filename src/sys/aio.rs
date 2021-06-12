@@ -983,13 +983,13 @@ impl<'a> LioCb<'a> {
                     // aiocb is complete; collect its status and don't resubmit
                     self.results[i] = Some(a.aio_return_unpinned());
                 },
-                Err(Error(Errno::EAGAIN)) => {
+                Err(Errno::EAGAIN) => {
                     self.list.push(a as *mut AioCb<'a> as *mut libc::aiocb);
                 },
-                Err(Error(Errno::EINPROGRESS)) => {
+                Err(Errno::EINPROGRESS) => {
                     // aiocb is was successfully queued; no need to do anything
                 },
-                Err(Error(Errno::EINVAL)) => panic!(
+                Err(Errno::EINVAL) => panic!(
                     "AioCb was never submitted, or already finalized"),
                 _ => unreachable!()
             }
