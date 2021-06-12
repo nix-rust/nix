@@ -379,7 +379,7 @@ impl<'a> AioCb<'a> {
         }
     }
 
-    /// Like [`from_mut_slice`], but works on constant slices rather than
+    /// Like [`AioCb::from_mut_slice`], but works on constant slices rather than
     /// mutable slices.
     ///
     /// An `AioCb` created this way cannot be used with `read`, and its
@@ -1102,8 +1102,8 @@ impl<'a> LioCbBuilder<'a> {
     ///
     /// Afterwards it will be possible to issue the operations with
     /// [`LioCb::listio`].  Conversely, it will no longer be possible to add new
-    /// operations with [`LioCb::emplace_slice`] or
-    /// [`LioCb::emplace_mut_slice`].
+    /// operations with [`LioCbBuilder::emplace_slice`] or
+    /// [`LioCbBuilder::emplace_mut_slice`].
     ///
     /// [`LioCb::listio`]: struct.LioCb.html#method.listio
     /// [`LioCb::from_mut_slice`]: struct.LioCb.html#method.from_mut_slice
