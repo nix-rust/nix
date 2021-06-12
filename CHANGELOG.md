@@ -46,6 +46,9 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1440](https://github.com/nix-rust/nix/pull/1440))
 - Minimum supported Rust version is now 1.41.0.
   ([#1440](https://github.com/nix-rust/nix/pull/1440))
+- `ptsname_r` now returns a lossily-converted string in the event of bad UTF,
+  just like `ptsname`.
+  ([#1446](https://github.com/nix-rust/nix/pull/1446))
 - Errno aliases are now associated consts on `Errno`, instead of consts in the
   `errno` module.
   (#[1452](https://github.com/nix-rust/nix/pull/1452))

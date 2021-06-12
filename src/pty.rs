@@ -190,18 +190,17 @@ pub unsafe fn ptsname(fd: &PtyMaster) -> Result<String> {
 #[cfg(any(target_os = "android", target_os = "linux"))]
 #[inline]
 pub fn ptsname_r(fd: &PtyMaster) -> Result<String> {
-    let mut name_buf = vec![0u8; 64];
-    let name_buf_ptr = name_buf.as_mut_ptr() as *mut libc::c_char;
-    if unsafe { libc::ptsname_r(fd.as_raw_fd(), name_buf_ptr, name_buf.capacity()) } != 0 {
-        return Err(Error::last());
-    }
+    let mut name_buf = Vec::<libc::c_char>::with_capacity(64);
+    let name_buf_ptr = name_buf.as_mut_ptr();
+    let cname = unsafe {
+        let cap = name_buf.capacity();
+        if libc::ptsname_r(fd.as_raw_fd(), name_buf_ptr, cap) != 0 {
+            return Err(Error::last());
+        }
+        CStr::from_ptr(name_buf.as_ptr())
+    };
 
-    // Find the first null-character terminating this string. This is guaranteed to succeed if the
-    // return value of `libc::ptsname_r` is 0.
-    let null_index = name_buf.iter().position(|c| *c == b'\0').unwrap();
-    name_buf.truncate(null_index);
-
-    let name = String::from_utf8(name_buf)?;
+    let name = cname.to_string_lossy().into_owned();
     Ok(name)
 }
 
