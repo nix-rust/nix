@@ -176,6 +176,15 @@ mod sched_linux_like {
         Errno::result(res).and(Ok(cpuset))
     }
 
+    /// `clone` create a child process
+    /// ([`clone(2)`](https://man7.org/linux/man-pages/man2/clone.2.html))
+    ///
+    /// `stack` is a reference to an array which will hold the stack of the new
+    /// process. Contrary to colling `clone(2)` from C, where the provided
+    /// stack address must be the highest address of the memory region, this is
+    /// not needed here. This requirement will be taken care of by `nix` and
+    /// the user only needs to provide a reference to a normally allocated
+    /// buffer.
     pub fn clone(
         mut cb: CloneCb,
         stack: &mut [u8],
