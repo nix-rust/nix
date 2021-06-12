@@ -57,6 +57,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   longer be needed now that async/await are available.  `AioCb`s now work
   exclusively with borrowed buffers, not owned ones.
   (#[1440](https://github.com/nix-rust/nix/pull/1440))
+- Removed some Errno values from platforms where they aren't actually defined.
+  (#[1452](https://github.com/nix-rust/nix/pull/1452))
 
 ## [0.20.0] - 20 February 2021
 ### Added
