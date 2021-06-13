@@ -40,6 +40,9 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1440](https://github.com/nix-rust/nix/pull/1440))
 - Minimum supported Rust version is now 1.41.0.
   ([#1440](https://github.com/nix-rust/nix/pull/1440))
+- Errno aliases are now associated consts on `Errno`, instead of consts in the
+  `errno` module.`
+  (#[1452](https://github.com/nix-rust/nix/pull/1452))
 
 ### Fixed
 - Allow `sockaddr_ll` size, as reported by the Linux kernel, to be smaller then it's definition
