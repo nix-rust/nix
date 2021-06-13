@@ -843,9 +843,11 @@ mod consts {
         EHWPOISON       = libc::EHWPOISON,
     }
 
-    pub const EWOULDBLOCK: Errno = Errno::EAGAIN;
-    pub const EDEADLOCK:   Errno = Errno::EDEADLK;
-    pub const ENOTSUP:     Errno = Errno::EOPNOTSUPP;
+    impl Errno {
+        pub const EWOULDBLOCK: Errno = Errno::EAGAIN;
+        pub const EDEADLOCK:   Errno = Errno::EDEADLK;
+        pub const ENOTSUP:     Errno = Errno::EOPNOTSUPP;
+    }
 
     pub fn from_i32(e: i32) -> Errno {
         use self::Errno::*;
@@ -1103,11 +1105,11 @@ mod consts {
         EQFULL          = libc::EQFULL,
     }
 
-    pub const ELAST: Errno       = Errno::EQFULL;
-    pub const EWOULDBLOCK: Errno = Errno::EAGAIN;
-    pub const EDEADLOCK:   Errno = Errno::EDEADLK;
-
-    pub const EL2NSYNC: Errno = Errno::UnknownErrno;
+    impl Errno {
+        pub const ELAST: Errno       = Errno::EQFULL;
+        pub const EWOULDBLOCK: Errno = Errno::EAGAIN;
+        pub const EDEADLOCK:   Errno = Errno::EDEADLK;
+    }
 
     pub fn from_i32(e: i32) -> Errno {
         use self::Errno::*;
@@ -1328,11 +1330,12 @@ mod consts {
         EOWNERDEAD      = libc::EOWNERDEAD,
     }
 
-    pub const ELAST: Errno       = Errno::EOWNERDEAD;
-    pub const EWOULDBLOCK: Errno = Errno::EAGAIN;
-    pub const EDEADLOCK:   Errno = Errno::EDEADLK;
-
-    pub const EL2NSYNC: Errno = Errno::UnknownErrno;
+    impl Errno {
+        pub const ELAST: Errno       = Errno::EOWNERDEAD;
+        pub const EWOULDBLOCK: Errno = Errno::EAGAIN;
+        pub const EDEADLOCK:   Errno = Errno::EDEADLK;
+        pub const EOPNOTSUPP:  Errno = Errno::ENOTSUP;
+    }
 
     pub fn from_i32(e: i32) -> Errno {
         use self::Errno::*;
@@ -1542,12 +1545,12 @@ mod consts {
         EASYNC          = libc::EASYNC,
     }
 
-    pub const ELAST: Errno       = Errno::EASYNC;
-    pub const EWOULDBLOCK: Errno = Errno::EAGAIN;
-    pub const EDEADLOCK:   Errno = Errno::EDEADLK;
-    pub const EOPNOTSUPP:  Errno = Errno::ENOTSUP;
-
-    pub const EL2NSYNC: Errno = Errno::UnknownErrno;
+    impl Errno {
+        pub const ELAST: Errno       = Errno::EASYNC;
+        pub const EWOULDBLOCK: Errno = Errno::EAGAIN;
+        pub const EDEADLOCK:   Errno = Errno::EDEADLK;
+        pub const EOPNOTSUPP:  Errno = Errno::ENOTSUP;
+    }
 
     pub fn from_i32(e: i32) -> Errno {
         use self::Errno::*;
@@ -1756,10 +1759,10 @@ mod consts {
         EPROTO          = libc::EPROTO,
     }
 
-    pub const ELAST: Errno       = Errno::ENOTSUP;
-    pub const EWOULDBLOCK: Errno = Errno::EAGAIN;
-
-    pub const EL2NSYNC: Errno = Errno::UnknownErrno;
+    impl Errno {
+        pub const ELAST: Errno       = Errno::ENOTSUP;
+        pub const EWOULDBLOCK: Errno = Errno::EAGAIN;
+    }
 
     pub fn from_i32(e: i32) -> Errno {
         use self::Errno::*;
@@ -1969,10 +1972,10 @@ mod consts {
         EPROTO          = libc::EPROTO,
     }
 
-    pub const ELAST: Errno       = Errno::ENOTSUP;
-    pub const EWOULDBLOCK: Errno = Errno::EAGAIN;
-
-    pub const EL2NSYNC: Errno = Errno::UnknownErrno;
+    impl Errno {
+        pub const ELAST: Errno       = Errno::ENOTSUP;
+        pub const EWOULDBLOCK: Errno = Errno::EAGAIN;
+    }
 
     pub fn from_i32(e: i32) -> Errno {
         use self::Errno::*;
@@ -2172,10 +2175,9 @@ mod consts {
         EPROTO = libc::EPROTO,
     }
 
-    pub const ELAST: Errno = Errno::UnknownErrno;
-    pub const EWOULDBLOCK: Errno = Errno::EAGAIN;
-
-    pub const EL2NSYNC: Errno = Errno::UnknownErrno;
+    impl Errno {
+        pub const EWOULDBLOCK: Errno = Errno::EAGAIN;
+    }
 
     pub fn from_i32(e: i32) -> Errno {
         use self::Errno::*;
@@ -2400,8 +2402,10 @@ mod consts {
         ESTALE = libc::ESTALE,
     }
 
-    pub const ELAST: Errno       = Errno::ESTALE;
-    pub const EWOULDBLOCK: Errno = Errno::EAGAIN;
+    impl Errno {
+        pub const ELAST: Errno       = Errno::ESTALE;
+        pub const EWOULDBLOCK: Errno = Errno::EAGAIN;
+    }
 
     pub fn from_i32(e: i32) -> Errno {
         use self::Errno::*;

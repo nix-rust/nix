@@ -40,12 +40,17 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1440](https://github.com/nix-rust/nix/pull/1440))
 - Minimum supported Rust version is now 1.41.0.
   ([#1440](https://github.com/nix-rust/nix/pull/1440))
+- Errno aliases are now associated consts on `Errno`, instead of consts in the
+  `errno` module.`
+  (#[1452](https://github.com/nix-rust/nix/pull/1452))
 
 ### Fixed
 - Allow `sockaddr_ll` size, as reported by the Linux kernel, to be smaller then it's definition
   (#[1395](https://github.com/nix-rust/nix/pull/1395))
 - Fix spurious errors using `sendmmsg` with multiple cmsgs
   (#[1414](https://github.com/nix-rust/nix/pull/1414))
+- Added `Errno::EOPNOTSUPP` to FreeBSD, where it was missing.
+  (#[1452](https://github.com/nix-rust/nix/pull/1452))
 
 ### Removed
 
@@ -57,6 +62,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   longer be needed now that async/await are available.  `AioCb`s now work
   exclusively with borrowed buffers, not owned ones.
   (#[1440](https://github.com/nix-rust/nix/pull/1440))
+- Removed some Errno values from platforms where they aren't actually defined.
+  (#[1452](https://github.com/nix-rust/nix/pull/1452))
 
 ## [0.20.0] - 20 February 2021
 ### Added
