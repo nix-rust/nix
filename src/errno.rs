@@ -1334,6 +1334,7 @@ mod consts {
         pub const ELAST: Errno       = Errno::EOWNERDEAD;
         pub const EWOULDBLOCK: Errno = Errno::EAGAIN;
         pub const EDEADLOCK:   Errno = Errno::EDEADLK;
+        pub const EOPNOTSUPP:  Errno = Errno::ENOTSUP;
     }
 
     pub fn from_i32(e: i32) -> Errno {

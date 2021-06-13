@@ -49,6 +49,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1395](https://github.com/nix-rust/nix/pull/1395))
 - Fix spurious errors using `sendmmsg` with multiple cmsgs
   (#[1414](https://github.com/nix-rust/nix/pull/1414))
+- Added `Errno::EOPNOTSUPP` to FreeBSD, where it was missing.
+  (#[1452](https://github.com/nix-rust/nix/pull/1452))
 
 ### Removed
 
