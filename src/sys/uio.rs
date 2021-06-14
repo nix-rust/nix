@@ -168,7 +168,7 @@ pub fn process_vm_readv(
 
 #[repr(transparent)]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub struct IoVec<T>(libc::iovec, PhantomData<T>);
+pub struct IoVec<T>(pub(crate) libc::iovec, PhantomData<T>);
 
 impl<T> IoVec<T> {
     #[inline]
@@ -184,6 +184,14 @@ impl<T> IoVec<T> {
 }
 
 impl<'a> IoVec<&'a [u8]> {
+    #[cfg(target_os = "freebsd")]
+    pub(crate) fn from_raw_parts(base: *mut c_void, len: usize) -> Self {
+        IoVec(libc::iovec {
+            iov_base: base,
+            iov_len: len
+        }, PhantomData)
+    }
+
     pub fn from_slice(buf: &'a [u8]) -> IoVec<&'a [u8]> {
         IoVec(libc::iovec {
             iov_base: buf.as_ptr() as *mut c_void,

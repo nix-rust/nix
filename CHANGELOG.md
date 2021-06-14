@@ -6,6 +6,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased] - ReleaseDate
 ### Added
 - Added `if_nameindex` (#[1445](https://github.com/nix-rust/nix/pull/1445))
+- Added `nmount` for FreeBSD.
+  (#[1447](https://github.com/nix-rust/nix/pull/1447))
 
 ### Changed
 ### Fixed
