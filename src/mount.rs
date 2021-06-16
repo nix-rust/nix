@@ -49,6 +49,267 @@ libc_bitflags!(
 
 libc_bitflags!(
     pub struct MntFlags: c_int {
+        /// Read only filesystem
+        #[cfg(any(
+            target_os = "macos",
+            target_os = "freebsd",
+            target_os = "dragonfly",
+            target_os = "openbsd",
+            target_os = "bitrig",
+            target_os = "netbsd"
+        ))]
+        MNT_RDONLY;
+        /// File system written synchronously
+        #[cfg(any(
+            target_os = "macos",
+            target_os = "freebsd",
+            target_os = "dragonfly",
+            target_os = "openbsd",
+            target_os = "bitrig",
+            target_os = "netbsd"
+        ))]
+        MNT_SYNCHRONOUS;
+        /// Can't exec from filesystem
+        #[cfg(any(
+            target_os = "macos",
+            target_os = "freebsd",
+            target_os = "dragonfly",
+            target_os = "openbsd",
+            target_os = "bitrig",
+            target_os = "netbsd"
+        ))]
+        MNT_NOEXEC;
+        /// Don't honor setuid bits on fs
+        #[cfg(any(
+            target_os = "macos",
+            target_os = "freebsd",
+            target_os = "dragonfly",
+            target_os = "openbsd",
+            target_os = "bitrig",
+            target_os = "netbsd"
+        ))]
+        MNT_NOSUID;
+        /// Don't interpret special files
+        #[cfg(any(
+            target_os = "macos",
+            target_os = "freebsd",
+            target_os = "dragonfly",
+            target_os = "openbsd",
+            target_os = "bitrig",
+            target_os = "netbsd"
+        ))]
+        MNT_NODEV;
+        /// Union with underlying filesystem
+        #[cfg(any(
+            target_os = "macos",
+            target_os = "freebsd",
+            target_os = "dragonfly",
+            target_os = "openbsd",
+            target_os = "bitrig",
+            target_os = "netbsd"
+        ))]
+        MNT_UNION;
+        /// File system written asynchronously
+        #[cfg(any(
+            target_os = "macos",
+            target_os = "freebsd",
+            target_os = "dragonfly",
+            target_os = "openbsd",
+            target_os = "bitrig",
+            target_os = "netbsd"
+        ))]
+        MNT_ASYNC;
+        /// File system supports content protection
+        #[cfg(any(
+            target_os = "macos",
+            target_os = "freebsd",
+            target_os = "dragonfly",
+            target_os = "openbsd",
+            target_os = "bitrig",
+            target_os = "netbsd"
+        ))]
+        MNT_CPROTECT;
+        /// File system is exported
+        #[cfg(any(
+            target_os = "macos",
+            target_os = "freebsd",
+            target_os = "dragonfly",
+            target_os = "openbsd",
+            target_os = "bitrig",
+            target_os = "netbsd"
+        ))]
+        MNT_EXPORTED;
+        /// File system is quarantined
+        #[cfg(any(
+            target_os = "macos",
+            target_os = "freebsd",
+            target_os = "dragonfly",
+            target_os = "openbsd",
+            target_os = "bitrig",
+            target_os = "netbsd"
+        ))]
+        MNT_QUARANTINE;
+        /// Filesystem is stored locally
+        #[cfg(any(
+            target_os = "macos",
+            target_os = "freebsd",
+            target_os = "dragonfly",
+            target_os = "openbsd",
+            target_os = "bitrig",
+            target_os = "netbsd"
+        ))]
+        MNT_LOCAL;
+        /// Quotas are enabled on filesystem
+        #[cfg(any(
+            target_os = "macos",
+            target_os = "freebsd",
+            target_os = "dragonfly",
+            target_os = "openbsd",
+            target_os = "bitrig",
+            target_os = "netbsd"
+        ))]
+        MNT_QUOTA;
+        /// Identifies the root filesystem
+        #[cfg(any(
+            target_os = "macos",
+            target_os = "freebsd",
+            target_os = "dragonfly",
+            target_os = "openbsd",
+            target_os = "bitrig",
+            target_os = "netbsd"
+        ))]
+        MNT_ROOTFS;
+        /// FS supports volfs (deprecated flag in Mac OS X 10.5)
+        #[cfg(any(
+            target_os = "macos",
+            target_os = "freebsd",
+            target_os = "dragonfly",
+            target_os = "openbsd",
+            target_os = "bitrig",
+            target_os = "netbsd"
+        ))]
+        MNT_DOVOLFS;
+        /// File system is not appropriate path to user data
+        #[cfg(any(
+            target_os = "macos",
+            target_os = "freebsd",
+            target_os = "dragonfly",
+            target_os = "openbsd",
+            target_os = "bitrig",
+            target_os = "netbsd"
+        ))]
+        MNT_DONTBROWSE;
+        /// VFS will ignore ownership information on filesystem objects
+        #[cfg(any(
+            target_os = "macos",
+            target_os = "freebsd",
+            target_os = "dragonfly",
+            target_os = "openbsd",
+            target_os = "bitrig",
+            target_os = "netbsd"
+        ))]
+        MNT_IGNORE_OWNERSHIP;
+        /// Filesystem was mounted by automounter
+        #[cfg(any(
+            target_os = "macos",
+            target_os = "freebsd",
+            target_os = "dragonfly",
+            target_os = "openbsd",
+            target_os = "bitrig",
+            target_os = "netbsd"
+        ))]
+        MNT_AUTOMOUNTED;
+        /// Filesystem is journaled
+        #[cfg(any(
+            target_os = "macos",
+            target_os = "freebsd",
+            target_os = "dragonfly",
+            target_os = "openbsd",
+            target_os = "bitrig",
+            target_os = "netbsd"
+        ))]
+        MNT_JOURNALED;
+        /// Don't allow user extended attributes
+        #[cfg(any(
+            target_os = "macos",
+            target_os = "freebsd",
+            target_os = "dragonfly",
+            target_os = "openbsd",
+            target_os = "bitrig",
+            target_os = "netbsd"
+        ))]
+        MNT_NOUSERXATTR;
+        /// Filesystem should defer writes
+        #[cfg(any(
+            target_os = "macos",
+            target_os = "freebsd",
+            target_os = "dragonfly",
+            target_os = "openbsd",
+            target_os = "bitrig",
+            target_os = "netbsd"
+        ))]
+        MNT_DEFWRITE;
+        /// MAC support for individual labels
+        #[cfg(any(
+            target_os = "macos",
+            target_os = "freebsd",
+            target_os = "dragonfly",
+            target_os = "openbsd",
+            target_os = "bitrig",
+            target_os = "netbsd"
+        ))]
+        MNT_MULTILABEL;
+        /// Disable update of file access time
+        #[cfg(any(
+            target_os = "macos",
+            target_os = "freebsd",
+            target_os = "dragonfly",
+            target_os = "openbsd",
+            target_os = "bitrig",
+            target_os = "netbsd"
+        ))]
+        MNT_NOATIME;
+        /// The mount is a snapshot
+        #[cfg(any(
+            target_os = "macos",
+            target_os = "freebsd",
+            target_os = "dragonfly",
+            target_os = "openbsd",
+            target_os = "bitrig",
+            target_os = "netbsd"
+        ))]
+        MNT_SNAPSHOT;
+        /// Not a real mount, just an update
+        #[cfg(any(
+            target_os = "macos",
+            target_os = "freebsd",
+            target_os = "dragonfly",
+            target_os = "openbsd",
+            target_os = "bitrig",
+            target_os = "netbsd"
+        ))]
+        MNT_UPDATE;
+        /// Don't block unmount if not responding
+        #[cfg(any(
+            target_os = "macos",
+            target_os = "freebsd",
+            target_os = "dragonfly",
+            target_os = "openbsd",
+            target_os = "bitrig",
+            target_os = "netbsd"
+        ))]
+        MNT_NOBLOCK;
+        /// Reload filesystem data
+        #[cfg(any(
+            target_os = "macos",
+            target_os = "freebsd",
+            target_os = "dragonfly",
+            target_os = "openbsd",
+            target_os = "bitrig",
+            target_os = "netbsd"
+        ))]
+        MNT_RELOAD;
+        /// Force unmount or readonly change
         MNT_FORCE;
         MNT_DETACH;
         MNT_EXPIRE;
