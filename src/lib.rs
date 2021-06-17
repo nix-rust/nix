@@ -44,6 +44,7 @@ pub mod ifaddrs;
           target_os = "linux"))]
 pub mod kmod;
 #[cfg(any(target_os = "android",
+          target_os = "freebsd",
           target_os = "linux"))]
 pub mod mount;
 #[cfg(any(target_os = "dragonfly",

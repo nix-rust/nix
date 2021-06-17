@@ -13,6 +13,8 @@ mod test_fcntl;
 #[cfg(any(target_os = "android",
           target_os = "linux"))]
 mod test_kmod;
+#[cfg(target_os = "freebsd")]
+mod test_nmount;
 #[cfg(any(target_os = "dragonfly",
           target_os = "freebsd",
           target_os = "fushsia",
