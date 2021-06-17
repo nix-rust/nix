@@ -86,49 +86,6 @@ libc_bitflags!(
         /// Indicates that the mount command is being applied to an already
         /// mounted file system.
         MNT_UPDATE;
-        ///// Exported read only.
-        //#[cfg(any(
-                //target_os = "dragonfly",
-                //target_os = "freebsd",
-                //target_os = "netbsd",
-                //target_os = "openbsd"
-        //))]
-        //MNT_EXRDONLY;
-        ///// Filesystem is exported.
-        //MNT_EXPORTED;
-        ///// Exported to the world.
-        //#[cfg(any(
-                //target_os = "dragonfly",
-                //target_os = "freebsd",
-                //target_os = "netbsd",
-                //target_os = "openbsd"
-        //))]
-        //MNT_DEFEXPORTED;
-        ///// Anon uid mapping for all.
-        //#[cfg(any(
-                //target_os = "dragonfly",
-                //target_os = "freebsd",
-                //target_os = "netbsd",
-                //target_os = "openbsd"
-        //))]
-        //MNT_EXPORTANON;
-        ///// Exported with Kerberos.
-        //#[cfg(any(
-                //target_os = "dragonfly",
-                //target_os = "freebsd",
-                //target_os = "netbsd",
-        //))]
-        //MNT_EXKERB;
-        ///// Public export (WebNFS).
-        //#[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
-        //MNT_EXPUBLIC;
-        ///// Delete export host lists.
-        //#[cfg(any(
-                //target_os = "dragonfly",
-                //target_os = "freebsd",
-                //target_os = "openbsd",
-        //))]
-        //MNT_DELEXPORT;
         /// Check vnode use counts.
         #[cfg(target_os = "freebsd")]
         MNT_NONBUSY;
@@ -364,11 +321,9 @@ impl<'a> Nmount<'a> {
     /// Nmount::new()
     ///     .str_opt_owned("fspath", mountpoint.to_str().unwrap());
     /// ```
-    pub fn str_opt_owned<P: ?Sized + NixPath>(
-        &mut self,
-        name: &P,
-        val: &P
-    ) -> &mut Self
+    pub fn str_opt_owned<P1, P2>(&mut self, name: &P1, val: &P2) -> &mut Self
+        where P1: ?Sized + NixPath,
+              P2: ?Sized + NixPath
     {
         name.with_nix_path(|s| {
             let len = s.to_bytes_with_nul().len();
