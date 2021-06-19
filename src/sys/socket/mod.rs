@@ -610,6 +610,17 @@ pub enum ControlMessageOwned {
     #[cfg(target_os = "linux")]
     UdpGroSegments(u16),
 
+    /// SO_RXQ_OVFL indicates that an unsigned 32 bit value
+    /// ancilliary msg (cmsg) should be attached to recieved
+    /// skbs indicating the number of packets dropped by the
+    /// socket between the last recieved packet and this
+    /// received packet.
+    ///
+    /// `RxqOvfl` socket option should be enabled on a socket
+    /// to allow receiving the drop counter.
+    #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+    RxqOvfl(u32),
+
     /// Catch-all variant for unimplemented cmsg types.
     #[doc(hidden)]
     Unknown(UnknownCmsg),
@@ -707,6 +718,11 @@ impl ControlMessageOwned {
             (libc::SOL_UDP, libc::UDP_GRO) => {
                 let gso_size: u16 = ptr::read_unaligned(p as *const _);
                 ControlMessageOwned::UdpGroSegments(gso_size)
+            },
+            #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+            (libc::SOL_SOCKET, libc::SO_RXQ_OVFL) => {
+                let drop_counter = ptr::read_unaligned(p as *const u32);
+                ControlMessageOwned::RxqOvfl(drop_counter)
             },
             (_, _) => {
                 let sl = slice::from_raw_parts(p, len);
@@ -826,6 +842,14 @@ pub enum ControlMessage<'a> {
               target_os = "android",
               target_os = "ios",))]
     Ipv6PacketInfo(&'a libc::in6_pktinfo),
+
+    /// SO_RXQ_OVFL indicates that an unsigned 32 bit value
+    /// ancilliary msg (cmsg) should be attached to recieved
+    /// skbs indicating the number of packets dropped by the
+    /// socket between the last recieved packet and this
+    /// received packet.
+    #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+    RxqOvfl(&'a u32),
 }
 
 // An opaque structure used to prevent cmsghdr from being a public type
@@ -916,6 +940,10 @@ impl<'a> ControlMessage<'a> {
                       target_os = "netbsd", target_os = "freebsd",
                       target_os = "android", target_os = "ios",))]
             ControlMessage::Ipv6PacketInfo(info) => info as *const _ as *const u8,
+            #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+            ControlMessage::RxqOvfl(drop_count) => {
+                drop_count as *const _ as *const u8
+            },
         };
         unsafe {
             ptr::copy_nonoverlapping(
@@ -964,6 +992,10 @@ impl<'a> ControlMessage<'a> {
               target_os = "netbsd", target_os = "freebsd",
               target_os = "android", target_os = "ios",))]
             ControlMessage::Ipv6PacketInfo(info) => mem::size_of_val(info),
+            #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+            ControlMessage::RxqOvfl(drop_count) => {
+                mem::size_of_val(drop_count)
+            },
         }
     }
 
@@ -988,6 +1020,8 @@ impl<'a> ControlMessage<'a> {
               target_os = "netbsd", target_os = "freebsd",
               target_os = "android", target_os = "ios",))]
             ControlMessage::Ipv6PacketInfo(_) => libc::IPPROTO_IPV6,
+            #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+            ControlMessage::RxqOvfl(_) => libc::SOL_SOCKET,
         }
     }
 
@@ -1023,6 +1057,10 @@ impl<'a> ControlMessage<'a> {
                       target_os = "netbsd", target_os = "freebsd",
                       target_os = "android", target_os = "ios",))]
             ControlMessage::Ipv6PacketInfo(_) => libc::IPV6_PKTINFO,
+            #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+            ControlMessage::RxqOvfl(_) => {
+                libc::SO_RXQ_OVFL
+            },
         }
     }
 

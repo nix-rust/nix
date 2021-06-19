@@ -1645,3 +1645,86 @@ fn test_recvmmsg_timestampns() {
     // Close socket
     nix::unistd::close(in_socket).unwrap();
 }
+
+// Disable the test on emulated platforms because it fails in Cirrus-CI.  Lack of QEMU
+// support is suspected.
+#[cfg_attr(not(any(target_arch = "x86_64")), ignore)]
+#[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+#[test]
+fn test_recvmsg_rxq_ovfl() {
+    use nix::Error;
+    use nix::sys::socket::*;
+    use nix::sys::uio::IoVec;
+    use nix::sys::socket::sockopt::{RxqOvfl, RcvBuf};
+
+    let message = [0u8; 2048];
+    let bufsize = message.len() * 2;
+
+    let in_socket = socket(
+        AddressFamily::Inet,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None).unwrap();
+    let out_socket = socket(
+        AddressFamily::Inet,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None).unwrap();
+
+    let localhost = InetAddr::new(IpAddr::new_v4(127, 0, 0, 1), 0);
+    bind(in_socket, &SockAddr::new_inet(localhost)).unwrap();
+
+    let address = getsockname(in_socket).unwrap();
+    connect(out_socket, &address).unwrap();
+
+    // Set SO_RXQ_OVFL flag.
+    setsockopt(in_socket, RxqOvfl, &1).unwrap();
+
+    // Set the receiver buffer size to hold only 2 messages.
+    setsockopt(in_socket, RcvBuf, &bufsize).unwrap();
+
+    let mut drop_counter = 0;
+
+    for _ in 0..2 {
+        let iov = [IoVec::from_slice(&message)];
+        let flags = MsgFlags::empty();
+
+        // Send the 3 messages (the receiver buffer can only hold 2 messages)
+        // to create an overflow.
+        for _ in 0..3 {
+            let l = sendmsg(out_socket, &iov, &[], flags, Some(&address)).unwrap();
+            assert_eq!(message.len(), l);
+        }
+
+        // Receive the message and check the drop counter if any.
+        loop {
+            let mut buffer = vec![0u8; message.len()];
+            let mut cmsgspace = nix::cmsg_space!(u32);
+
+            let iov = [IoVec::from_mut_slice(&mut buffer)];
+
+            match recvmsg(
+                in_socket,
+                &iov,
+                Some(&mut cmsgspace),
+                MsgFlags::MSG_DONTWAIT) {
+                Ok(r) => {
+                    drop_counter = match r.cmsgs().next() {
+                        Some(ControlMessageOwned::RxqOvfl(drop_counter)) => drop_counter,
+                        Some(_) => panic!("Unexpected control message"),
+                        None => 0,
+                    };
+                },
+                Err(Error::EAGAIN) => { break; },
+                _ => { panic!("unknown recvmsg() error"); },
+            }
+        }
+    }
+
+    // One packet lost.
+    assert_eq!(drop_counter, 1);
+
+    // Close sockets
+    nix::unistd::close(in_socket).unwrap();
+    nix::unistd::close(out_socket).unwrap();
+}
