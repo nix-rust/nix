@@ -10,6 +10,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1447](https://github.com/nix-rust/nix/pull/1447))
 - Added `IpFreebind` socket option (sockopt) on Linux, Fuchsia and Android.
   (#[1456](https://github.com/nix-rust/nix/pull/1456))
+- Added `TcpUserTimeout` socket option (sockopt) on Linux and Fuchsia.
+  (#[1457](https://github.com/nix-rust/nix/pull/1457))
 
 ### Changed
 ### Fixed
