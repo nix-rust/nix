@@ -8,6 +8,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Added `if_nameindex` (#[1445](https://github.com/nix-rust/nix/pull/1445))
 - Added `nmount` for FreeBSD.
   (#[1447](https://github.com/nix-rust/nix/pull/1447))
+- Added `IpFreebind` socket option (sockopt) on Linux, Fuchsia and Android.
+  (#[1456](https://github.com/nix-rust/nix/pull/1456))
 
 ### Changed
 ### Fixed

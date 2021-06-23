@@ -238,6 +238,8 @@ cfg_if! {
 }
 sockopt_impl!(Both, IpMulticastTtl, libc::IPPROTO_IP, libc::IP_MULTICAST_TTL, u8);
 sockopt_impl!(Both, IpMulticastLoop, libc::IPPROTO_IP, libc::IP_MULTICAST_LOOP, bool);
+#[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+sockopt_impl!(Both, IpFreebind, libc::IPPROTO_IP, libc::IP_FREEBIND, bool);
 sockopt_impl!(Both, ReceiveTimeout, libc::SOL_SOCKET, libc::SO_RCVTIMEO, TimeVal);
 sockopt_impl!(Both, SendTimeout, libc::SOL_SOCKET, libc::SO_SNDTIMEO, TimeVal);
 sockopt_impl!(Both, Broadcast, libc::SOL_SOCKET, libc::SO_BROADCAST, bool);
