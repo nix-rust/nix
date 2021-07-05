@@ -261,6 +261,8 @@ sockopt_impl!(Both, TcpKeepIdle, libc::IPPROTO_TCP, libc::TCP_KEEPIDLE, u32);
 sockopt_impl!(Both, TcpKeepCount, libc::IPPROTO_TCP, libc::TCP_KEEPCNT, u32);
 #[cfg(not(target_os = "openbsd"))]
 sockopt_impl!(Both, TcpKeepInterval, libc::IPPROTO_TCP, libc::TCP_KEEPINTVL, u32);
+#[cfg(any(target_os = "fuchsia", target_os = "linux"))]
+sockopt_impl!(Both, TcpUserTimeout, libc::IPPROTO_TCP, libc::TCP_USER_TIMEOUT, u32);
 sockopt_impl!(Both, RcvBuf, libc::SOL_SOCKET, libc::SO_RCVBUF, usize);
 sockopt_impl!(Both, SndBuf, libc::SOL_SOCKET, libc::SO_SNDBUF, usize);
 #[cfg(any(target_os = "android", target_os = "linux"))]
