@@ -60,6 +60,7 @@ pub use libc::{
     sockaddr_in6,
     sockaddr_storage,
     sockaddr_un,
+    sock_extended_err,
 };
 
 // Needed by the cmsg_space macro
@@ -431,6 +432,12 @@ macro_rules! cmsg_space {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct RecvErr {
+    pub ee: sock_extended_err,
+    pub offender: sockaddr_in,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct RecvMsg<'a> {
     pub bytes: usize,
     cmsghdr: Option<&'a cmsghdr>,
@@ -610,6 +617,17 @@ pub enum ControlMessageOwned {
     #[cfg(target_os = "linux")]
     UdpGroSegments(u16),
 
+    /// IP Time-to-live (IP_TTL) is the value of the 8-bit TTL header
+    /// in an ipv4 packet.
+    #[cfg(target_os = "linux")]
+    IpTtl(u8),
+
+    /// Errors from the IP message queue are returned in a struct
+    /// containing the sock_extended_err and the sockaddr_in of the
+    /// source of the packet.
+    #[cfg(target_os = "linux")]
+    IpRecvErr(RecvErr),
+
     /// Catch-all variant for unimplemented cmsg types.
     #[doc(hidden)]
     Unknown(UnknownCmsg),
@@ -707,6 +725,16 @@ impl ControlMessageOwned {
             (libc::SOL_UDP, libc::UDP_GRO) => {
                 let gso_size: u16 = ptr::read_unaligned(p as *const _);
                 ControlMessageOwned::UdpGroSegments(gso_size)
+            },
+            #[cfg(target_os = "linux")]
+            (libc::SOL_IP, libc::IP_TTL) => {
+                let ttl: u8 = ptr::read_unaligned(p as *const _);
+                ControlMessageOwned::IpTtl(ttl)
+            },
+            #[cfg(target_os = "linux")]
+            (libc::SOL_IP, libc::IP_RECVERR) => {
+                let sockerr: RecvErr = ptr::read_unaligned(p as *const _);
+                ControlMessageOwned::IpRecvErr(sockerr)
             },
             (_, _) => {
                 let sl = slice::from_raw_parts(p, len);
