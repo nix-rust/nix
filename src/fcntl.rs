@@ -210,6 +210,43 @@ pub fn renameat<P1: ?Sized + NixPath, P2: ?Sized + NixPath>(
     Errno::result(res).map(drop)
 }
 
+#[cfg(all(
+    target_os = "linux",
+    target_env = "gnu",
+))]
+libc_bitflags! {
+    pub struct RenameFlags: u32 {
+        RENAME_EXCHANGE;
+        RENAME_NOREPLACE;
+        RENAME_WHITEOUT;
+    }
+}
+
+#[cfg(all(
+    target_os = "linux",
+    target_env = "gnu",
+))]
+pub fn renameat2<P1: ?Sized + NixPath, P2: ?Sized + NixPath>(
+    old_dirfd: Option<RawFd>,
+    old_path: &P1,
+    new_dirfd: Option<RawFd>,
+    new_path: &P2,
+    flags: RenameFlags,
+) -> Result<()> {
+    let res = old_path.with_nix_path(|old_cstr| {
+        new_path.with_nix_path(|new_cstr| unsafe {
+            libc::renameat2(
+                at_rawfd(old_dirfd),
+                old_cstr.as_ptr(),
+                at_rawfd(new_dirfd),
+                new_cstr.as_ptr(),
+                flags.bits(),
+            )
+        })
+    })??;
+    Errno::result(res).map(drop)
+}
+
 fn wrap_readlink_result(mut v: Vec<u8>, len: ssize_t) -> Result<OsString> {
     unsafe { v.set_len(len as usize) }
     v.shrink_to_fit();

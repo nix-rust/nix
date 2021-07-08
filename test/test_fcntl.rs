@@ -4,6 +4,17 @@ use nix::errno::*;
 use nix::fcntl::{open, OFlag, readlink};
 #[cfg(not(target_os = "redox"))]
 use nix::fcntl::{openat, readlinkat, renameat};
+#[cfg(all(
+    target_os = "linux",
+    target_env = "gnu",
+    any(
+        target_arch = "x86_64",
+        target_arch = "x32",
+        target_arch = "powerpc",
+        target_arch = "s390x"
+    )
+))]
+use nix::fcntl::{RenameFlags, renameat2};
 #[cfg(not(target_os = "redox"))]
 use nix::sys::stat::Mode;
 #[cfg(not(target_os = "redox"))]
@@ -58,6 +69,132 @@ fn test_renameat() {
     close(new_dirfd).unwrap();
     assert!(new_dir.path().join("new").exists());
 }
+
+#[test]
+#[cfg(all(
+    target_os = "linux",
+    target_env = "gnu",
+    any(
+        target_arch = "x86_64",
+        target_arch = "x32",
+        target_arch = "powerpc",
+        target_arch = "s390x"
+    )
+))]
+fn test_renameat2_behaves_like_renameat_with_no_flags() {
+    let old_dir = tempfile::tempdir().unwrap();
+    let old_dirfd = open(old_dir.path(), OFlag::empty(), Mode::empty()).unwrap();
+    let old_path = old_dir.path().join("old");
+    File::create(&old_path).unwrap();
+    let new_dir = tempfile::tempdir().unwrap();
+    let new_dirfd = open(new_dir.path(), OFlag::empty(), Mode::empty()).unwrap();
+    renameat2(
+        Some(old_dirfd),
+        "old",
+        Some(new_dirfd),
+        "new",
+        RenameFlags::empty(),
+    )
+    .unwrap();
+    assert_eq!(
+        renameat2(
+            Some(old_dirfd),
+            "old",
+            Some(new_dirfd),
+            "new",
+            RenameFlags::empty()
+        )
+        .unwrap_err(),
+        Errno::ENOENT
+    );
+    close(old_dirfd).unwrap();
+    close(new_dirfd).unwrap();
+    assert!(new_dir.path().join("new").exists());
+}
+
+#[test]
+#[cfg(all(
+    target_os = "linux",
+    target_env = "gnu",
+    any(
+        target_arch = "x86_64",
+        target_arch = "x32",
+        target_arch = "powerpc",
+        target_arch = "s390x"
+    )
+))]
+fn test_renameat2_exchange() {
+    let old_dir = tempfile::tempdir().unwrap();
+    let old_dirfd = open(old_dir.path(), OFlag::empty(), Mode::empty()).unwrap();
+    let old_path = old_dir.path().join("old");
+    {
+        let mut old_f = File::create(&old_path).unwrap();
+        old_f.write(b"old").unwrap();
+    }
+    let new_dir = tempfile::tempdir().unwrap();
+    let new_dirfd = open(new_dir.path(), OFlag::empty(), Mode::empty()).unwrap();
+    let new_path = new_dir.path().join("new");
+    {
+        let mut new_f = File::create(&new_path).unwrap();
+        new_f.write(b"new").unwrap();
+    }
+    renameat2(
+        Some(old_dirfd),
+        "old",
+        Some(new_dirfd),
+        "new",
+        RenameFlags::RENAME_EXCHANGE,
+    )
+    .unwrap();
+    let mut buf = String::new();
+    let mut new_f = File::open(&new_path).unwrap();
+    new_f.read_to_string(&mut buf).unwrap();
+    assert_eq!(buf, "old");
+    buf = "".to_string();
+    let mut old_f = File::open(&old_path).unwrap();
+    old_f.read_to_string(&mut buf).unwrap();
+    assert_eq!(buf, "new");
+    close(old_dirfd).unwrap();
+    close(new_dirfd).unwrap();
+}
+
+#[test]
+#[cfg(all(
+    target_os = "linux",
+    target_env = "gnu",
+    any(
+        target_arch = "x86_64",
+        target_arch = "x32",
+        target_arch = "powerpc",
+        target_arch = "s390x"
+    )
+))]
+fn test_renameat2_noreplace() {
+    let old_dir = tempfile::tempdir().unwrap();
+    let old_dirfd = open(old_dir.path(), OFlag::empty(), Mode::empty()).unwrap();
+    let old_path = old_dir.path().join("old");
+    File::create(&old_path).unwrap();
+    let new_dir = tempfile::tempdir().unwrap();
+    let new_dirfd = open(new_dir.path(), OFlag::empty(), Mode::empty()).unwrap();
+    let new_path = new_dir.path().join("new");
+    File::create(&new_path).unwrap();
+    assert_eq!(
+        renameat2(
+            Some(old_dirfd),
+            "old",
+            Some(new_dirfd),
+            "new",
+            RenameFlags::RENAME_NOREPLACE
+        )
+        .unwrap_err(),
+        Errno::EEXIST
+    );
+    close(old_dirfd).unwrap();
+    close(new_dirfd).unwrap();
+    assert!(new_dir.path().join("new").exists());
+    assert!(old_dir.path().join("old").exists());
+}
+
 
 #[test]
 #[cfg(not(target_os = "redox"))]
