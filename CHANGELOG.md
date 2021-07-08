@@ -12,6 +12,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1456](https://github.com/nix-rust/nix/pull/1456))
 - Added `TcpUserTimeout` socket option (sockopt) on Linux and Fuchsia.
   (#[1457](https://github.com/nix-rust/nix/pull/1457))
+- Added `renameat2` for Linux
+  (#[1458](https://github.com/nix-rust/nix/pull/1458))
 
 ### Changed
 - `ptsname_r` now returns a lossily-converted string in the event of bad UTF,
