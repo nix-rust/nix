@@ -68,7 +68,7 @@ mod sched_linux_like {
         /// `field` is the CPU id to test
         pub fn is_set(&self, field: usize) -> Result<bool> {
             if field >= CpuSet::count() {
-                Err(Error::Sys(Errno::EINVAL))
+                Err(Error::from(Errno::EINVAL))
             } else {
                 Ok(unsafe { libc::CPU_ISSET(field, &self.cpu_set) })
             }
@@ -78,7 +78,7 @@ mod sched_linux_like {
         /// `field` is the CPU id to add
         pub fn set(&mut self, field: usize) -> Result<()> {
             if field >= CpuSet::count() {
-                Err(Error::Sys(Errno::EINVAL))
+                Err(Error::from(Errno::EINVAL))
             } else {
                 unsafe { libc::CPU_SET(field, &mut self.cpu_set); }
                 Ok(())
@@ -89,7 +89,7 @@ mod sched_linux_like {
         /// `field` is the CPU id to remove
         pub fn unset(&mut self, field: usize) -> Result<()> {
             if field >= CpuSet::count() {
-                Err(Error::Sys(Errno::EINVAL))
+                Err(Error::from(Errno::EINVAL))
             } else {
                 unsafe { libc::CPU_CLR(field, &mut self.cpu_set);}
                 Ok(())

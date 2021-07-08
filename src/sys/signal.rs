@@ -121,7 +121,7 @@ impl FromStr for Signal {
                           target_os = "fuchsia", target_os = "linux",
                           target_os = "redox")))]
             "SIGINFO" => Signal::SIGINFO,
-            _ => return Err(Error::invalid_argument()),
+            _ => return Err(Error::from(Errno::EINVAL)),
         })
     }
 }
@@ -368,7 +368,7 @@ impl TryFrom<libc::c_int> for Signal {
         if 0 < signum && signum < NSIG {
             Ok(unsafe { mem::transmute(signum) })
         } else {
-            Err(Error::invalid_argument())
+            Err(Error::from(Errno::EINVAL))
         }
     }
 }
@@ -664,7 +664,7 @@ pub unsafe fn sigaction(signal: Signal, sigaction: &SigAction) -> Result<SigActi
 ///
 /// # Errors
 ///
-/// Returns [`Error::UnsupportedOperation`] if `handler` is
+/// Returns [`Error(Errno::EOPNOTSUPP)`] if `handler` is
 /// [`SigAction`][SigActionStruct]. Use [`sigaction`][SigActionFn] instead.
 ///
 /// `signal` also returns any error from `libc::signal`, such as when an attempt
@@ -681,7 +681,7 @@ pub unsafe fn signal(signal: Signal, handler: SigHandler) -> Result<SigHandler> 
         SigHandler::SigIgn => libc::signal(signal, libc::SIG_IGN),
         SigHandler::Handler(handler) => libc::signal(signal, handler as libc::sighandler_t),
         #[cfg(not(target_os = "redox"))]
-        SigHandler::SigAction(_) => return Err(Error::UnsupportedOperation),
+        SigHandler::SigAction(_) => return Err(Error::from(Errno::ENOTSUP)),
     };
     Errno::result(res).map(|oldhandler| {
         match oldhandler {
@@ -949,7 +949,7 @@ mod tests {
 
     #[test]
     fn test_from_str_invalid_value() {
-        let errval = Err(Error::Sys(Errno::EINVAL));
+        let errval = Err(Error::from(Errno::EINVAL));
         assert_eq!("NOSIGNAL".parse::<Signal>(), errval);
         assert_eq!("kill".parse::<Signal>(), errval);
         assert_eq!("9".parse::<Signal>(), errval);

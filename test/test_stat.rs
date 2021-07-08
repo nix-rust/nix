@@ -15,7 +15,7 @@ use libc::{S_IFMT, S_IFLNK};
 use libc::mode_t;
 
 #[cfg(not(target_os = "redox"))]
-use nix::{fcntl, Error};
+use nix::fcntl;
 #[cfg(not(target_os = "redox"))]
 use nix::errno::Errno;
 #[cfg(not(target_os = "redox"))]
@@ -304,5 +304,5 @@ fn test_mkdirat_fail() {
     let dirfd = fcntl::open(&tempdir.path().join(not_dir_filename), fcntl::OFlag::O_CREAT,
                             stat::Mode::empty()).unwrap();
     let result = mkdirat(dirfd, filename, Mode::S_IRWXU).unwrap_err();
-    assert_eq!(result, Error::Sys(Errno::ENOTDIR));
+    assert_eq!(result, Errno::ENOTDIR);
 }

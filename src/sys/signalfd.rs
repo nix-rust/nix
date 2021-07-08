@@ -108,7 +108,7 @@ impl SignalFd {
         match res {
             Ok(SIGNALFD_SIGINFO_SIZE) => Ok(Some(unsafe { mem::transmute(buffer.assume_init()) })),
             Ok(_) => unreachable!("partial read on signalfd"),
-            Err(Error::Sys(Errno::EAGAIN)) => Ok(None),
+            Err(Errno::EAGAIN) => Ok(None),
             Err(error) => Err(error)
         }
     }
@@ -117,7 +117,7 @@ impl SignalFd {
 impl Drop for SignalFd {
     fn drop(&mut self) {
         let e = unistd::close(self.0);
-        if !std::thread::panicking() && e == Err(Error::Sys(Errno::EBADF)) {
+        if !std::thread::panicking() && e == Err(Error::from(Errno::EBADF)) {
             panic!("Closing an invalid file descriptor!");
         };
     }

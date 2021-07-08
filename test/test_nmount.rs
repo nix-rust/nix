@@ -46,6 +46,6 @@ fn bad_fstype() {
         .str_opt_owned("target", target.path().to_str().unwrap())
         .nmount(MntFlags::empty()).unwrap_err();
     
-    assert_eq!(e.errno(), Errno::EINVAL);
+    assert_eq!(e.error(), Errno::EINVAL);
     assert_eq!(e.errmsg(), Some("Invalid fstype"));
 }

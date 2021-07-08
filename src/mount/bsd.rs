@@ -1,4 +1,5 @@
 use crate::{
+    Error,
     Errno,
     NixPath,
     Result,
@@ -99,7 +100,7 @@ libc_bitflags!(
 /// by `nmount(2)`.
 #[derive(Debug)]
 pub struct NmountError {
-    errno: Errno,
+    errno: Error,
     errmsg: Option<String>
 }
 
@@ -109,14 +110,14 @@ impl NmountError {
         self.errmsg.as_deref()
     }
 
-    /// Returns the inner [`Errno`]
-    pub fn errno(&self) -> Errno {
+    /// Returns the inner [`Error`]
+    pub fn error(&self) -> Error {
         self.errno
     }
 
-    fn new(errno: Errno, errmsg: Option<&CStr>) -> Self {
+    fn new(error: Error, errmsg: Option<&CStr>) -> Self {
         Self {
-            errno,
+            errno: error,
             errmsg: errmsg.map(CStr::to_string_lossy).map(Cow::into_owned)
         }
     }
@@ -136,7 +137,7 @@ impl fmt::Display for NmountError {
 
 impl From<NmountError> for io::Error {
     fn from(err: NmountError) -> Self {
-        io::Error::from_raw_os_error(err.errno as i32)
+        err.errno.into()
     }
 }
 
@@ -381,7 +382,7 @@ impl<'a> Nmount<'a> {
                         Some(CStr::from_bytes_with_nul(sl).unwrap())
                     }
                 };
-                Err(NmountError::new(error.as_errno().unwrap(), errmsg))
+                Err(NmountError::new(error.into(), errmsg))
             }
         }
     }

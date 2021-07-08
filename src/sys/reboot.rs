@@ -26,7 +26,7 @@ pub fn reboot(how: RebootMode) -> Result<Infallible> {
     unsafe {
         libc::reboot(how as libc::c_int)
     };
-    Err(Error::Sys(Errno::last()))
+    Err(Error::from(Errno::last()))
 }
 
 /// Enable or disable the reboot keystroke (Ctrl-Alt-Delete).

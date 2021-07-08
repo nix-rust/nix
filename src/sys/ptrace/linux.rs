@@ -2,7 +2,7 @@
 
 use cfg_if::cfg_if;
 use std::{mem, ptr};
-use crate::{Error, Result};
+use crate::Result;
 use crate::errno::Errno;
 use libc::{self, c_void, c_long, siginfo_t};
 use crate::unistd::Pid;
@@ -180,7 +180,7 @@ fn ptrace_peek(request: Request, pid: Pid, addr: AddressType, data: *mut c_void)
         libc::ptrace(request as RequestType, libc::pid_t::from(pid), addr, data)
     };
     match Errno::result(ret) {
-        Ok(..) | Err(Error::Sys(Errno::UnknownErrno)) => Ok(ret),
+        Ok(..) | Err(Errno::UnknownErrno) => Ok(ret),
         err @ Err(..) => err,
     }
 }

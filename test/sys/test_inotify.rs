@@ -14,7 +14,7 @@ pub fn test_inotify() {
     instance.add_watch(tempdir.path(), AddWatchFlags::IN_ALL_EVENTS).unwrap();
 
     let events = instance.read_events();
-    assert_eq!(events.unwrap_err(), Error::Sys(Errno::EAGAIN));
+    assert_eq!(events.unwrap_err(), Error::from(Errno::EAGAIN));
 
     File::create(tempdir.path().join("test")).unwrap();
 
@@ -31,7 +31,7 @@ pub fn test_inotify_multi_events() {
     instance.add_watch(tempdir.path(), AddWatchFlags::IN_ALL_EVENTS).unwrap();
 
     let events = instance.read_events();
-    assert_eq!(events.unwrap_err(), Error::Sys(Errno::EAGAIN));
+    assert_eq!(events.unwrap_err(), Error::from(Errno::EAGAIN));
 
     File::create(tempdir.path().join("test")).unwrap();
     rename(tempdir.path().join("test"), tempdir.path().join("test2")).unwrap();

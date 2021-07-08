@@ -51,5 +51,5 @@ fn rewind() {
 
 #[test]
 fn ebadf() {
-    assert_eq!(Dir::from_fd(-1).unwrap_err(), nix::Error::Sys(nix::errno::Errno::EBADF));
+    assert_eq!(Dir::from_fd(-1).unwrap_err(), nix::Error::EBADF);
 }

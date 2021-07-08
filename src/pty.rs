@@ -70,7 +70,7 @@ impl Drop for PtyMaster {
         // condition, which can cause confusing errors for future I/O
         // operations.
         let e = unistd::close(self.0);
-        if e == Err(Error::Sys(Errno::EBADF)) {
+        if e == Err(Errno::EBADF) {
             panic!("Closing an invalid file descriptor!");
         };
     }
@@ -78,13 +78,13 @@ impl Drop for PtyMaster {
 
 impl io::Read for PtyMaster {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        unistd::read(self.0, buf).map_err(|e| e.as_errno().unwrap().into())
+        unistd::read(self.0, buf).map_err(io::Error::from)
     }
 }
 
 impl io::Write for PtyMaster {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        unistd::write(self.0, buf).map_err(|e| e.as_errno().unwrap().into())
+        unistd::write(self.0, buf).map_err(io::Error::from)
     }
     fn flush(&mut self) -> io::Result<()> {
         Ok(())
@@ -99,7 +99,7 @@ impl io::Write for PtyMaster {
 #[inline]
 pub fn grantpt(fd: &PtyMaster) -> Result<()> {
     if unsafe { libc::grantpt(fd.as_raw_fd()) } < 0 {
-        return Err(Error::last());
+        return Err(Error::from(Errno::last()));
     }
 
     Ok(())
@@ -145,7 +145,7 @@ pub fn posix_openpt(flags: fcntl::OFlag) -> Result<PtyMaster> {
     };
 
     if fd < 0 {
-        return Err(Error::last());
+        return Err(Error::from(Errno::last()));
     }
 
     Ok(PtyMaster(fd))
@@ -171,7 +171,7 @@ pub fn posix_openpt(flags: fcntl::OFlag) -> Result<PtyMaster> {
 pub unsafe fn ptsname(fd: &PtyMaster) -> Result<String> {
     let name_ptr = libc::ptsname(fd.as_raw_fd());
     if name_ptr.is_null() {
-        return Err(Error::last());
+        return Err(Error::from(Errno::last()));
     }
 
     let name = CStr::from_ptr(name_ptr);
@@ -190,18 +190,17 @@ pub unsafe fn ptsname(fd: &PtyMaster) -> Result<String> {
 #[cfg(any(target_os = "android", target_os = "linux"))]
 #[inline]
 pub fn ptsname_r(fd: &PtyMaster) -> Result<String> {
-    let mut name_buf = vec![0u8; 64];
-    let name_buf_ptr = name_buf.as_mut_ptr() as *mut libc::c_char;
-    if unsafe { libc::ptsname_r(fd.as_raw_fd(), name_buf_ptr, name_buf.capacity()) } != 0 {
-        return Err(Error::last());
-    }
+    let mut name_buf = Vec::<libc::c_char>::with_capacity(64);
+    let name_buf_ptr = name_buf.as_mut_ptr();
+    let cname = unsafe {
+        let cap = name_buf.capacity();
+        if libc::ptsname_r(fd.as_raw_fd(), name_buf_ptr, cap) != 0 {
+            return Err(Error::last());
+        }
+        CStr::from_ptr(name_buf.as_ptr())
+    };
 
-    // Find the first null-character terminating this string. This is guaranteed to succeed if the
-    // return value of `libc::ptsname_r` is 0.
-    let null_index = name_buf.iter().position(|c| *c == b'\0').unwrap();
-    name_buf.truncate(null_index);
-
-    let name = String::from_utf8(name_buf)?;
+    let name = cname.to_string_lossy().into_owned();
     Ok(name)
 }
 
@@ -214,7 +213,7 @@ pub fn ptsname_r(fd: &PtyMaster) -> Result<String> {
 #[inline]
 pub fn unlockpt(fd: &PtyMaster) -> Result<()> {
     if unsafe { libc::unlockpt(fd.as_raw_fd()) } < 0 {
-        return Err(Error::last());
+        return Err(Error::from(Errno::last()));
     }
 
     Ok(())

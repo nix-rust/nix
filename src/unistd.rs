@@ -393,7 +393,7 @@ pub fn dup3(oldfd: RawFd, newfd: RawFd, flags: OFlag) -> Result<RawFd> {
 #[inline]
 fn dup3_polyfill(oldfd: RawFd, newfd: RawFd, flags: OFlag) -> Result<RawFd> {
     if oldfd == newfd {
-        return Err(Error::Sys(Errno::EINVAL));
+        return Err(Error::from(Errno::EINVAL));
     }
 
     let fd = dup2(oldfd, newfd)?;
@@ -567,7 +567,7 @@ fn reserve_double_buffer_size<T>(buf: &mut Vec<T>, limit: usize) -> Result<()> {
     use std::cmp::min;
 
     if buf.capacity() >= limit {
-        return Err(Error::Sys(Errno::ERANGE))
+        return Err(Error::from(Errno::ERANGE))
     }
 
     let capacity = min(buf.capacity() * 2, limit);
@@ -610,7 +610,7 @@ pub fn getcwd() -> Result<PathBuf> {
                 let error = Errno::last();
                 // ERANGE means buffer was too small to store directory name
                 if error != Errno::ERANGE {
-                    return Err(Error::Sys(error));
+                    return Err(Error::from(error));
                 }
             }
 
@@ -734,7 +734,7 @@ pub fn execv<S: AsRef<CStr>>(path: &CStr, argv: &[S]) -> Result<Infallible> {
         libc::execv(path.as_ptr(), args_p.as_ptr())
     };
 
-    Err(Error::Sys(Errno::last()))
+    Err(Error::from(Errno::last()))
 }
 
 
@@ -759,7 +759,7 @@ pub fn execve<SA: AsRef<CStr>, SE: AsRef<CStr>>(path: &CStr, args: &[SA], env: &
         libc::execve(path.as_ptr(), args_p.as_ptr(), env_p.as_ptr())
     };
 
-    Err(Error::Sys(Errno::last()))
+    Err(Error::from(Errno::last()))
 }
 
 /// Replace the current process image with a new one and replicate shell `PATH`
@@ -779,7 +779,7 @@ pub fn execvp<S: AsRef<CStr>>(filename: &CStr, args: &[S]) -> Result<Infallible>
         libc::execvp(filename.as_ptr(), args_p.as_ptr())
     };
 
-    Err(Error::Sys(Errno::last()))
+    Err(Error::from(Errno::last()))
 }
 
 /// Replace the current process image with a new one and replicate shell `PATH`
@@ -800,7 +800,7 @@ pub fn execvpe<SA: AsRef<CStr>, SE: AsRef<CStr>>(filename: &CStr, args: &[SA], e
         libc::execvpe(filename.as_ptr(), args_p.as_ptr(), env_p.as_ptr())
     };
 
-    Err(Error::Sys(Errno::last()))
+    Err(Error::from(Errno::last()))
 }
 
 /// Replace the current process image with a new one (see
@@ -828,7 +828,7 @@ pub fn fexecve<SA: AsRef<CStr> ,SE: AsRef<CStr>>(fd: RawFd, args: &[SA], env: &[
         libc::fexecve(fd, args_p.as_ptr(), env_p.as_ptr())
     };
 
-    Err(Error::Sys(Errno::last()))
+    Err(Error::from(Errno::last()))
 }
 
 /// Execute program relative to a directory file descriptor (see
@@ -853,7 +853,7 @@ pub fn execveat<SA: AsRef<CStr>,SE: AsRef<CStr>>(dirfd: RawFd, pathname: &CStr, 
                       args_p.as_ptr(), env_p.as_ptr(), flags);
     };
 
-    Err(Error::Sys(Errno::last()))
+    Err(Error::from(Errno::last()))
 }
 
 /// Daemonize this process by detaching from the controlling terminal (see
@@ -1056,13 +1056,13 @@ pub fn lseek64(fd: RawFd, offset: libc::off64_t, whence: Whence) -> Result<libc:
 /// Create an interprocess channel.
 ///
 /// See also [pipe(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/pipe.html)
-pub fn pipe() -> Result<(RawFd, RawFd)> {
+pub fn pipe() -> std::result::Result<(RawFd, RawFd), Error> {
     unsafe {
         let mut fds = mem::MaybeUninit::<[c_int; 2]>::uninit();
 
         let res = libc::pipe(fds.as_mut_ptr() as *mut c_int);
 
-        Errno::result(res)?;
+        Error::result(res)?;
 
         Ok((fds.assume_init()[0], fds.assume_init()[1]))
     }
@@ -1133,7 +1133,7 @@ pub fn isatty(fd: RawFd) -> Result<bool> {
         } else {
             match Errno::last() {
                 Errno::ENOTTY => Ok(false),
-                err => Err(Error::Sys(err)),
+                err => Err(Error::from(err)),
             }
         }
     }
@@ -1432,11 +1432,11 @@ pub fn getgroups() -> Result<Vec<Gid>> {
                 unsafe { groups.set_len(s as usize) };
                 return Ok(groups);
             },
-            Err(Error::Sys(Errno::EINVAL)) => {
+            Err(Errno::EINVAL) => {
                 // EINVAL indicates that the buffer size was too
                 // small, resize it up to ngroups_max as limit.
                 reserve_double_buffer_size(&mut groups, ngroups_max)
-                    .or(Err(Error::Sys(Errno::EINVAL)))?;
+                    .or(Err(Error::from(Errno::EINVAL)))?;
             },
             Err(e) => return Err(e)
         }
@@ -1558,7 +1558,7 @@ pub fn getgrouplist(user: &CStr, group: Gid) -> Result<Vec<Gid>> {
             // groups as possible, but Linux manpages do not mention this
             // behavior.
             reserve_double_buffer_size(&mut groups, ngroups_max as usize)
-                .map_err(|_| Error::invalid_argument())?;
+                .map_err(|_| Error::from(Errno::EINVAL))?;
         }
     }
 }
@@ -1916,7 +1916,7 @@ pub fn fpathconf(fd: RawFd, var: PathconfVar) -> Result<Option<c_long>> {
         if errno::errno() == 0 {
             Ok(None)
         } else {
-            Err(Error::Sys(Errno::last()))
+            Err(Error::from(Errno::last()))
         }
     } else {
         Ok(Some(raw))
@@ -1955,7 +1955,7 @@ pub fn pathconf<P: ?Sized + NixPath>(path: &P, var: PathconfVar) -> Result<Optio
         if errno::errno() == 0 {
             Ok(None)
         } else {
-            Err(Error::Sys(Errno::last()))
+            Err(Error::from(Errno::last()))
         }
     } else {
         Ok(Some(raw))
@@ -2454,7 +2454,7 @@ pub fn sysconf(var: SysconfVar) -> Result<Option<c_long>> {
         if errno::errno() == 0 {
             Ok(None)
         } else {
-            Err(Error::Sys(Errno::last()))
+            Err(Error::from(Errno::last()))
         }
     } else {
         Ok(Some(raw))
@@ -2721,7 +2721,7 @@ impl User {
                 // Trigger the internal buffer resizing logic.
                 reserve_double_buffer_size(&mut cbuf, buflimit)?;
             } else {
-                return Err(Error::Sys(Errno::last()));
+                return Err(Error::from(Errno::last()));
             }
         }
     }
@@ -2842,7 +2842,7 @@ impl Group {
                 // Trigger the internal buffer resizing logic.
                 reserve_double_buffer_size(&mut cbuf, buflimit)?;
             } else {
-                return Err(Error::Sys(Errno::last()));
+                return Err(Error::from(Errno::last()));
             }
         }
     }
@@ -2901,7 +2901,7 @@ pub fn ttyname(fd: RawFd) -> Result<PathBuf> {
 
     let ret = unsafe { libc::ttyname_r(fd, c_buf, buf.len()) };
     if ret != 0 {
-        return Err(Error::Sys(Errno::from_i32(ret)));
+        return Err(Error::from(Errno::from_i32(ret)));
     }
 
     let nul = buf.iter().position(|c| *c == b'\0').unwrap();

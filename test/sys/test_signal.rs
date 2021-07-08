@@ -1,5 +1,5 @@
 #[cfg(not(target_os = "redox"))]
-use nix::Error;
+use nix::errno::Errno;
 use nix::sys::signal::*;
 use nix::unistd::*;
 use std::convert::TryFrom;
@@ -92,7 +92,7 @@ fn test_signal_sigaction() {
     let _m = crate::SIGNAL_MTX.lock().expect("Mutex got poisoned by another test");
 
     let action_handler = SigHandler::SigAction(test_sigaction_action);
-    assert_eq!(unsafe { signal(Signal::SIGINT, action_handler) }.unwrap_err(), Error::UnsupportedOperation);
+    assert_eq!(unsafe { signal(Signal::SIGINT, action_handler) }.unwrap_err(), Errno::ENOTSUP);
 }
 
 #[test]

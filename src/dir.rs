@@ -84,7 +84,7 @@ impl AsRawFd for Dir {
 impl Drop for Dir {
     fn drop(&mut self) {
         let e = Errno::result(unsafe { libc::closedir(self.0.as_ptr()) });
-        if !std::thread::panicking() && e == Err(Error::Sys(Errno::EBADF)) {
+        if !std::thread::panicking() && e == Err(Error::from(Errno::EBADF)) {
             panic!("Closing an invalid file descriptor!");
         };
     }

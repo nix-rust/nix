@@ -30,7 +30,7 @@
 //! ```
 use crate::sys::time::TimeSpec;
 use crate::unistd::read;
-use crate::{errno::Errno, Error, Result};
+use crate::{errno::Errno, Result};
 use bitflags::bitflags;
 use libc::c_int;
 use std::os::unix::io::{AsRawFd, FromRawFd, RawFd};
@@ -259,7 +259,7 @@ impl TimerFd {
         loop {
             if let Err(e) = read(self.fd, &mut [0u8; 8]) {
                 match e {
-                    Error::Sys(Errno::EINTR) => continue,
+                    Errno::EINTR => continue,
                     _ => return Err(e),
                 }
             } else {
@@ -277,7 +277,7 @@ impl Drop for TimerFd {
             let result = Errno::result(unsafe {
                 libc::close(self.fd)
             });
-            if let Err(Error::Sys(Errno::EBADF)) = result {
+            if let Err(Errno::EBADF) = result {
                 panic!("close of TimerFd encountered EBADF");
             }
         }

@@ -1,7 +1,7 @@
 use std::os::unix::prelude::*;
 use tempfile::tempfile;
 
-use nix::{Error, fcntl};
+use nix::fcntl;
 use nix::errno::Errno;
 use nix::pty::openpty;
 use nix::sys::termios::{self, LocalFlags, OutputFlags, tcgetattr};
@@ -32,14 +32,14 @@ fn test_tcgetattr_pty() {
 fn test_tcgetattr_enotty() {
     let file = tempfile().unwrap();
     assert_eq!(termios::tcgetattr(file.as_raw_fd()).err(),
-               Some(Error::Sys(Errno::ENOTTY)));
+               Some(Errno::ENOTTY));
 }
 
 // Test tcgetattr on an invalid file descriptor
 #[test]
 fn test_tcgetattr_ebadf() {
     assert_eq!(termios::tcgetattr(-1).err(),
-               Some(Error::Sys(Errno::EBADF)));
+               Some(Errno::EBADF));
 }
 
 // Test modifying output flags
@@ -126,5 +126,5 @@ fn test_local_flags() {
     let read = read(pty.master, &mut buf).unwrap_err();
     close(pty.master).unwrap();
     close(pty.slave).unwrap();
-    assert_eq!(read, Error::Sys(Errno::EAGAIN));
+    assert_eq!(read, Errno::EAGAIN);
 }

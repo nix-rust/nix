@@ -1572,7 +1572,7 @@ pub fn recvfrom(sockfd: RawFd, buf: &mut [u8])
             &mut len as *mut socklen_t))? as usize;
 
         match sockaddr_storage_to_addr(&addr, len as usize) {
-            Err(Error::Sys(Errno::ENOTCONN)) => Ok((ret, None)),
+            Err(Errno::ENOTCONN) => Ok((ret, None)),
             Ok(addr) => Ok((ret, Some(addr))),
             Err(e) => Err(e)
         }
@@ -1708,7 +1708,7 @@ pub fn sockaddr_storage_to_addr(
 
     assert!(len <= mem::size_of::<sockaddr_un>());
     if len < mem::size_of_val(&addr.ss_family) {
-        return Err(Error::Sys(Errno::ENOTCONN));
+        return Err(Error::from(Errno::ENOTCONN));
     }
 
     match c_int::from(addr.ss_family) {
