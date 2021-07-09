@@ -14,6 +14,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1457](https://github.com/nix-rust/nix/pull/1457))
 - Added `renameat2` for Linux
   (#[1458](https://github.com/nix-rust/nix/pull/1458))
+- Added `RxqOvfl` support on Linux, Fuchsia and Android.
+  (#[1455](https://github.com/nix-rust/nix/pull/1455))
 
 ### Changed
 - `ptsname_r` now returns a lossily-converted string in the event of bad UTF,

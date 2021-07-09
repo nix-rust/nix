@@ -328,6 +328,8 @@ sockopt_impl!(Both, Ipv4RecvDstAddr, libc::IPPROTO_IP, libc::IP_RECVDSTADDR, boo
 sockopt_impl!(Both, UdpGsoSegment, libc::SOL_UDP, libc::UDP_SEGMENT, libc::c_int);
 #[cfg(target_os = "linux")]
 sockopt_impl!(Both, UdpGroSegment, libc::IPPROTO_UDP, libc::UDP_GRO, bool);
+#[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+sockopt_impl!(Both, RxqOvfl, libc::SOL_SOCKET, libc::SO_RXQ_OVFL, libc::c_int);
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
 #[derive(Copy, Clone, Debug)]
