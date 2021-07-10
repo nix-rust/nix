@@ -200,14 +200,19 @@ impl ForkResult {
 /// be created that are identical with the exception of their pid and the
 /// return value of this function.  As an example:
 ///
-/// ```no_run
-/// use nix::unistd::{fork, ForkResult};
+/// ```
+/// use nix::{sys::wait::waitpid,unistd::{fork, ForkResult, write}};
 ///
 /// match unsafe{fork()} {
 ///    Ok(ForkResult::Parent { child, .. }) => {
 ///        println!("Continuing execution in parent process, new child has pid: {}", child);
+///        waitpid(child, None).unwrap();
 ///    }
-///    Ok(ForkResult::Child) => println!("I'm a new child process"),
+///    Ok(ForkResult::Child) => {
+///        // Unsafe to use `println!` (or `unwrap`) here. See Safety.
+///        write(libc::STDOUT_FILENO, "I'm a new child process\n".as_bytes()).ok();
+///        unsafe { libc::_exit(0) };
+///    }
 ///    Err(_) => println!("Fork failed"),
 /// }
 /// ```
