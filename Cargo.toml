@@ -7,14 +7,7 @@ authors     = ["The nix-rust Project Developers"]
 repository  = "https://github.com/nix-rust/nix"
 license     = "MIT"
 categories  = ["os::unix-apis"]
-exclude     = [
-  "/.gitignore",
-  "/.cirrus.yml",
-  "/ci/*",
-  "/Cross.toml",
-  "/RELEASE_PROCEDURE.md",
-  "/bors.toml"
-]
+include = ["src/**/*", "LICENSE", "README.md", "CHANGELOG.md"]
 
 [package.metadata.docs.rs]
 targets = [
