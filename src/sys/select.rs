@@ -32,8 +32,8 @@ impl FdSet {
         unsafe { libc::FD_CLR(fd, &mut self.0) };
     }
 
-    pub fn contains(&mut self, fd: RawFd) -> bool {
-        unsafe { libc::FD_ISSET(fd, &mut self.0) }
+    pub fn contains(&self, fd: RawFd) -> bool {
+        unsafe { libc::FD_ISSET(fd, &self.0) }
     }
 
     pub fn clear(&mut self) {
@@ -57,7 +57,7 @@ impl FdSet {
     /// ```
     ///
     /// [`select`]: fn.select.html
-    pub fn highest(&mut self) -> Option<RawFd> {
+    pub fn highest(&self) -> Option<RawFd> {
         self.fds(None).next_back()
     }
 
@@ -79,7 +79,7 @@ impl FdSet {
     /// assert_eq!(fds, vec![4, 9]);
     /// ```
     #[inline]
-    pub fn fds(&mut self, highest: Option<RawFd>) -> Fds {
+    pub fn fds(&self, highest: Option<RawFd>) -> Fds {
         Fds {
             set: self,
             range: 0..highest.map(|h| h as usize + 1).unwrap_or(FD_SETSIZE),
@@ -96,7 +96,7 @@ impl Default for FdSet {
 /// Iterator over `FdSet`.
 #[derive(Debug)]
 pub struct Fds<'a> {
-    set: &'a mut FdSet,
+    set: &'a FdSet,
     range: Range<usize>,
 }
 

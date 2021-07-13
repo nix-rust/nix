@@ -6,6 +6,10 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased] - ReleaseDate
 ### Added
 ### Changed
+
+- `FdSet::{contains, highest, fds}` no longer require a mutable reference.
+  (#[1464](https://github.com/nix-rust/nix/pull/1464))
+
 ### Fixed
 ### Removed
 
