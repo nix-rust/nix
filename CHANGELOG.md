@@ -5,6 +5,9 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased] - ReleaseDate
 ### Added
+- Added `TimeSpec::from_duration` and `TimeSpec::from_timespec`
+  (#[1465](https://github.com/nix-rust/nix/pull/1465))
+
 ### Changed
 ### Fixed
 ### Removed
