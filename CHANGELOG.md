@@ -10,6 +10,9 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 - Fixed buffer overflow in `unistd::getgrouplist`.
   (#[1545](https://github.com/nix-rust/nix/pull/1545))
+- Added more errno definitions for better backwards compatibility with
+  Nix 0.21.0.
+  (#[1467](https://github.com/nix-rust/nix/pull/1467))
 
 ## [0.22.1] - 13 August 2021
 ### Added
