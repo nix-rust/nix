@@ -11,6 +11,11 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1464](https://github.com/nix-rust/nix/pull/1464))
 
 ### Fixed
+
+- Added more errno definitions for better backwards compatibility with
+  Nix 0.21.0.
+  (#[1467](https://github.com/nix-rust/nix/pull/1467))
+
 ### Removed
 
 ## [0.22.0] - 9 July 2021
