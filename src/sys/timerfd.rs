@@ -99,11 +99,24 @@ impl TimerSpec {
             },
         })
     }
+
+    pub fn is_none(&self) -> bool {
+        self.0.it_interval.tv_sec == 0
+            && self.0.it_interval.tv_nsec == 0
+            && self.0.it_value.tv_sec == 0
+            && self.0.it_value.tv_nsec == 0
+    }
 }
 
 impl AsRef<libc::itimerspec> for TimerSpec {
     fn as_ref(&self) -> &libc::itimerspec {
         &self.0
+    }
+}
+
+impl AsMut<libc::itimerspec> for TimerSpec {
+    fn as_mut(&mut self) -> &mut libc::itimerspec {
+        &mut self.0
     }
 }
 
@@ -125,6 +138,15 @@ impl From<Expiration> for TimerSpec {
                 it_interval: *t.as_ref(),
                 it_value: *t.as_ref(),
             }),
+        }
+    }
+}
+
+impl From<Option<Expiration>> for TimerSpec {
+    fn from(expiration: Option<Expiration>) -> Self {
+        match expiration {
+            None => Self::none(),
+            Some(e) => e.into(),
         }
     }
 }
@@ -154,6 +176,16 @@ impl From<TimerSpec> for Expiration {
     }
 }
 
+impl Into<Option<Expiration>> for TimerSpec {
+    fn into(self) -> Option<Expiration> {
+        if self.is_none() {
+            None
+        } else {
+            Some(self.into())
+        }
+    }
+}
+
 /// An enumeration allowing the definition of the expiration time of an alarm,
 /// recurring or not.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -163,13 +195,48 @@ pub enum Expiration {
     Interval(TimeSpec),
 }
 
+/// Directly wraps [`libc::timerfd_create`].
+///
+/// It may be more convenient to use [`TimerFd`].
+pub fn timerfd_create(clockid: ClockId, flags: TimerFlags) -> Result<RawFd> {
+    Errno::result(unsafe { libc::timerfd_create(clockid as i32, flags.bits()) })
+}
+
+/// Directly wraps [`libc::timerfd_settime`].
+///
+/// It may be more convenient to use [`TimerFd`].
+pub fn timerfd_settime(
+    fd: RawFd,
+    flags: TimerSetTimeFlags,
+    new_value: Option<Expiration>,
+) -> Result<Option<Expiration>> {
+    let new_value: TimerSpec = new_value.into();
+    let mut old_value = TimerSpec::none();
+
+    Errno::result(unsafe {
+        libc::timerfd_settime(fd, flags.bits(), new_value.as_ref(), old_value.as_mut())
+    })?;
+
+    Ok(old_value.into())
+}
+
+/// Directly wraps [`libc::timerfd_gettime`].
+///
+/// It may be more convenient to use [`TimerFd`].
+pub fn timerfd_gettime(fd: RawFd) -> Result<Option<Expiration>> {
+    let mut value = TimerSpec::none();
+
+    Errno::result(unsafe { libc::timerfd_gettime(fd, value.as_mut()) })?;
+
+    Ok(value.into())
+}
+
 impl TimerFd {
     /// Creates a new timer based on the clock defined by `clockid`. The
     /// underlying fd can be assigned specific flags with `flags` (CLOEXEC,
     /// NONBLOCK). The underlying fd will be closed on drop.
     pub fn new(clockid: ClockId, flags: TimerFlags) -> Result<Self> {
-        Errno::result(unsafe { libc::timerfd_create(clockid as i32, flags.bits()) })
-            .map(|fd| Self { fd })
+        timerfd_create(clockid, flags).map(|fd| Self { fd })
     }
 
     /// Sets a new alarm on the timer.
@@ -209,47 +276,17 @@ impl TimerFd {
     /// Note: Setting a one shot alarm with a 0s TimeSpec disables the alarm
     /// altogether.
     pub fn set(&self, expiration: Expiration, flags: TimerSetTimeFlags) -> Result<()> {
-        let timerspec: TimerSpec = expiration.into();
-        Errno::result(unsafe {
-            libc::timerfd_settime(
-                self.fd,
-                flags.bits(),
-                timerspec.as_ref(),
-                std::ptr::null_mut(),
-            )
-        })
-        .map(drop)
+        timerfd_settime(self.fd, flags, Some(expiration)).map(drop)
     }
 
     /// Get the parameters for the alarm currently set, if any.
     pub fn get(&self) -> Result<Option<Expiration>> {
-        let mut timerspec = TimerSpec::none();
-        let timerspec_ptr: *mut libc::itimerspec = &mut timerspec.0;
-
-        Errno::result(unsafe { libc::timerfd_gettime(self.fd, timerspec_ptr) }).map(|_| {
-            if timerspec.0.it_interval.tv_sec == 0
-                && timerspec.0.it_interval.tv_nsec == 0
-                && timerspec.0.it_value.tv_sec == 0
-                && timerspec.0.it_value.tv_nsec == 0
-            {
-                None
-            } else {
-                Some(timerspec.into())
-            }
-        })
+        timerfd_gettime(self.fd)
     }
 
     /// Remove the alarm if any is set.
     pub fn unset(&self) -> Result<()> {
-        Errno::result(unsafe {
-            libc::timerfd_settime(
-                self.fd,
-                TimerSetTimeFlags::empty().bits(),
-                TimerSpec::none().as_ref(),
-                std::ptr::null_mut(),
-            )
-        })
-        .map(drop)
+        timerfd_settime(self.fd, TimerSetTimeFlags::empty(), None).map(drop)
     }
 
     /// Wait for the configured alarm to expire.
@@ -274,9 +311,7 @@ impl TimerFd {
 impl Drop for TimerFd {
     fn drop(&mut self) {
         if !std::thread::panicking() {
-            let result = Errno::result(unsafe {
-                libc::close(self.fd)
-            });
+            let result = Errno::result(unsafe { libc::close(self.fd) });
             if let Err(Errno::EBADF) = result {
                 panic!("close of TimerFd encountered EBADF");
             }

@@ -5,6 +5,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased] - ReleaseDate
 ### Added
+- Added raw `timerfd` wrappers (#[1468](https://github.com/nix-rust/nix/pull/1468))
+
 ### Changed
 ### Fixed
 ### Removed
