@@ -5,6 +5,10 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased] - ReleaseDate
 ### Added
+
+- Added `IPV6_V6ONLY` sockopt.
+  (#[1470](https://github.com/nix-rust/nix/pull/1470))
+
 ### Changed
 
 - `FdSet::{contains, highest, fds}` no longer require a mutable reference.
