@@ -2694,6 +2694,51 @@ impl From<&libc::passwd> for User {
     }
 }
 
+impl From<User> for libc::passwd {
+    fn from(u: User) -> Self {
+        let name = match std::ffi::CString::new(u.name) {
+            Ok(n) => n.into_raw(),
+            Err(_) => std::ptr::null_mut(),
+        };
+        let dir = match u.dir.into_os_string().into_string() {
+            Ok(s) => std::ffi::CString::new(s.as_str()).unwrap().into_raw(),
+            Err(_) => std::ptr::null_mut(),
+        };
+        let shell = match u.shell.into_os_string().into_string() {
+            Ok(s) => std::ffi::CString::new(s.as_str()).unwrap().into_raw(),
+            Err(_) => std::ptr::null_mut(),
+        };
+        Self {
+            pw_name: name,
+            pw_passwd: u.passwd.into_raw(),
+            #[cfg(not(target_os = "android"))]
+            pw_gecos: u.gecos.into_raw(),
+            pw_dir: dir,
+            pw_shell: shell,
+            pw_uid: u.uid.0,
+            pw_gid: u.gid.0,
+            #[cfg(not(any(target_os = "android",
+                              target_os = "fuchsia",
+                              target_os = "illumos",
+                              target_os = "linux",
+                              target_os = "solaris")))]
+            pw_class: u.class.into_raw(),
+            #[cfg(not(any(target_os = "android",
+                              target_os = "fuchsia",
+                              target_os = "illumos",
+                              target_os = "linux",
+                              target_os = "solaris")))] 
+            pw_change: u.change,
+            #[cfg(not(any(target_os = "android",
+                              target_os = "fuchsia",
+                              target_os = "illumos",
+                              target_os = "linux",
+                              target_os = "solaris")))] 
+            pw_expire: u.expire,
+        }
+    }
+}
+
 #[cfg(not(target_os = "redox"))] // RedoxFS does not support passwd
 impl User {
     fn from_anything<F>(f: F) -> Result<Option<Self>>
