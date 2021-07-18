@@ -8,9 +8,12 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 - Added `TimeSpec::from_duration` and `TimeSpec::from_timespec`
   (#[1465](https://github.com/nix-rust/nix/pull/1465))
-
 - Added `IPV6_V6ONLY` sockopt.
   (#[1470](https://github.com/nix-rust/nix/pull/1470))
+- Added `impl From<User> for libc::passwd` trait implementation to convert a `User`
+  into a `libc::passwd`. Consumes the `User` struct to give ownership over
+  the member pointers.
+  (#[1471](https://github.com/nix-rust/nix/pull/1471))
 - Added `pthread_kill`.
   (#[1472](https://github.com/nix-rust/nix/pull/1472))
 
@@ -18,6 +21,10 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 - `FdSet::{contains, highest, fds}` no longer require a mutable reference.
   (#[1464](https://github.com/nix-rust/nix/pull/1464))
+- `User::gecos` and corresponding `libc::passwd::pw_gecos` are supported on
+  64-bit Android, change conditional compilation to include the field in
+  64-bit Android builds
+  (#[1471](https://github.com/nix-rust/nix/pull/1471))
 
 ### Fixed
 

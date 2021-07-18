@@ -1025,6 +1025,14 @@ fn test_access_file_exists() {
     assert!(access(&path, AccessFlags::R_OK | AccessFlags::W_OK).is_ok());
 }
 
+#[test]
+fn test_user_into_passwd() {
+    // get the UID of the "nobody" user
+    let nobody = User::from_name("nobody").unwrap().unwrap();
+    let pwd: libc::passwd = nobody.into();
+    let _: User = (&pwd).into();
+}
+
 /// Tests setting the filesystem UID with `setfsuid`.
 #[cfg(any(target_os = "linux", target_os = "android"))]
 #[test]

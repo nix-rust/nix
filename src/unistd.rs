@@ -2629,7 +2629,7 @@ pub struct User {
     /// Group ID
     pub gid: Gid,
     /// User information
-    #[cfg(not(target_os = "android"))]
+    #[cfg(not(all(target_os = "android", target_pointer_width = "32")))]
     pub gecos: CString,
     /// Home directory
     pub dir: PathBuf,
@@ -2665,7 +2665,7 @@ impl From<&libc::passwd> for User {
             User {
                 name: CStr::from_ptr((*pw).pw_name).to_string_lossy().into_owned(),
                 passwd: CString::new(CStr::from_ptr((*pw).pw_passwd).to_bytes()).unwrap(),
-                #[cfg(not(target_os = "android"))]
+                #[cfg(not(all(target_os = "android", target_pointer_width = "32")))]
                 gecos: CString::new(CStr::from_ptr((*pw).pw_gecos).to_bytes()).unwrap(),
                 dir: PathBuf::from(OsStr::from_bytes(CStr::from_ptr((*pw).pw_dir).to_bytes())),
                 shell: PathBuf::from(OsStr::from_bytes(CStr::from_ptr((*pw).pw_shell).to_bytes())),
@@ -2690,6 +2690,58 @@ impl From<&libc::passwd> for User {
                               target_os = "solaris")))]
                 expire: (*pw).pw_expire
             }
+        }
+    }
+}
+
+#[cfg(not(target_os = "redox"))] // RedoxFS does not support passwd
+impl From<User> for libc::passwd {
+    fn from(u: User) -> Self {
+        let name = match CString::new(u.name) {
+            Ok(n) => n.into_raw(),
+            Err(_) => CString::new("").unwrap().into_raw(),
+        };
+        let dir = match u.dir.into_os_string().into_string() {
+            Ok(s) => CString::new(s.as_str()).unwrap().into_raw(),
+            Err(_) => CString::new("").unwrap().into_raw(),
+        };
+        let shell = match u.shell.into_os_string().into_string() {
+            Ok(s) => CString::new(s.as_str()).unwrap().into_raw(),
+            Err(_) => CString::new("").unwrap().into_raw(),
+        };
+        Self {
+            pw_name: name,
+            pw_passwd: u.passwd.into_raw(),
+            #[cfg(not(all(target_os = "android", target_pointer_width = "32")))]
+            pw_gecos: u.gecos.into_raw(),
+            pw_dir: dir,
+            pw_shell: shell,
+            pw_uid: u.uid.0,
+            pw_gid: u.gid.0,
+            #[cfg(not(any(target_os = "android",
+                          target_os = "fuchsia",
+                          target_os = "illumos",
+                          target_os = "linux",
+                          target_os = "solaris")))]
+            pw_class: u.class.into_raw(),
+            #[cfg(not(any(target_os = "android",
+                          target_os = "fuchsia",
+                          target_os = "illumos",
+                          target_os = "linux",
+                          target_os = "solaris")))]
+            pw_change: u.change,
+            #[cfg(not(any(target_os = "android",
+                          target_os = "fuchsia",
+                          target_os = "illumos",
+                          target_os = "linux",
+                          target_os = "solaris")))]
+            pw_expire: u.expire,
+            #[cfg(target_os = "illumos")]
+            pw_age: CString::new("").unwrap().into_raw(),
+            #[cfg(target_os = "illumos")]
+            pw_comment: CString::new("").unwrap().into_raw(),
+            #[cfg(target_os = "freebsd")]
+            pw_fields: 0,
         }
     }
 }
