@@ -16,6 +16,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1471](https://github.com/nix-rust/nix/pull/1471))
 - Added `pthread_kill`.
   (#[1472](https://github.com/nix-rust/nix/pull/1472))
+- Added `mknodat`.
+  (#[1473](https://github.com/nix-rust/nix/pull/1473))
 
 ### Changed
 
