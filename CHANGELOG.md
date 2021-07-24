@@ -11,6 +11,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 - Added `IPV6_V6ONLY` sockopt.
   (#[1470](https://github.com/nix-rust/nix/pull/1470))
+- Added `pthread_kill`.
+  (#[1472](https://github.com/nix-rust/nix/pull/1472))
 
 ### Changed
 
