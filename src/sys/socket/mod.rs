@@ -412,20 +412,19 @@ impl Ipv6MembershipRequest {
 /// let _ = cmsg_space!(RawFd, TimeVal);
 /// # }
 /// ```
-// Unfortunately, CMSG_SPACE isn't a const_fn, or else we could return a
-// stack-allocated array.
 #[macro_export]
 macro_rules! cmsg_space {
     ( $( $x:ty ),* ) => {
         {
-            let mut space = 0;
+            const SPACE: usize = 0
             $(
+                +
                 // CMSG_SPACE is always safe
-                space += unsafe {
+                unsafe {
                     $crate::sys::socket::CMSG_SPACE(::std::mem::size_of::<$x>() as $crate::sys::socket::c_uint)
-                } as usize;
-            )*
-            Vec::<u8>::with_capacity(space)
+                } as usize
+            )* ;
+            Vec::<u8>::with_capacity(SPACE)
         }
     }
 }

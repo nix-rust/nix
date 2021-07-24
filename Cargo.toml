@@ -25,7 +25,7 @@ targets = [
 ]
 
 [dependencies]
-libc = { git = "https://github.com/rust-lang/libc", rev = "9c1489fa8", features = [ "extra_traits" ] }
+libc = { git = "https://github.com/rust-lang/libc", rev = "9c1489fa8", features = [ "const-extern-fn", "extra_traits" ] }
 bitflags = "1.1"
 cfg-if = "1.0"
 
