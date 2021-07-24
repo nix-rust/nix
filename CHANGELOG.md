@@ -5,11 +5,24 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased] - ReleaseDate
 ### Added
+
 - Added `TimeSpec::from_duration` and `TimeSpec::from_timespec`
   (#[1465](https://github.com/nix-rust/nix/pull/1465))
 
+- Added `IPV6_V6ONLY` sockopt.
+  (#[1470](https://github.com/nix-rust/nix/pull/1470))
+
 ### Changed
+
+- `FdSet::{contains, highest, fds}` no longer require a mutable reference.
+  (#[1464](https://github.com/nix-rust/nix/pull/1464))
+
 ### Fixed
+
+- Added more errno definitions for better backwards compatibility with
+  Nix 0.21.0.
+  (#[1467](https://github.com/nix-rust/nix/pull/1467))
+
 ### Removed
 
 ## [0.22.0] - 9 July 2021
