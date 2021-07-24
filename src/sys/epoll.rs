@@ -29,6 +29,7 @@ libc_bitflags!(
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 #[repr(i32)]
+#[non_exhaustive]
 pub enum EpollOp {
     EpollCtlAdd = libc::EPOLL_CTL_ADD,
     EpollCtlDel = libc::EPOLL_CTL_DEL,

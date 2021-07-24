@@ -768,6 +768,7 @@ fn desc(errno: Errno) -> &'static str {
 mod consts {
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     #[repr(i32)]
+    #[non_exhaustive]
     pub enum Errno {
         UnknownErrno    = 0,
         EPERM           = libc::EPERM,
@@ -1073,6 +1074,7 @@ mod consts {
 mod consts {
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     #[repr(i32)]
+    #[non_exhaustive]
     pub enum Errno {
         UnknownErrno    = 0,
         EPERM           = libc::EPERM,
@@ -1324,6 +1326,7 @@ mod consts {
 mod consts {
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     #[repr(i32)]
+    #[non_exhaustive]
     pub enum Errno {
         UnknownErrno    = 0,
         EPERM           = libc::EPERM,
@@ -1562,6 +1565,7 @@ mod consts {
 mod consts {
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     #[repr(i32)]
+    #[non_exhaustive]
     pub enum Errno {
         UnknownErrno    = 0,
         EPERM           = libc::EPERM,
@@ -1796,6 +1800,7 @@ mod consts {
 mod consts {
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     #[repr(i32)]
+    #[non_exhaustive]
     pub enum Errno {
         UnknownErrno    = 0,
         EPERM           = libc::EPERM,
@@ -2019,6 +2024,7 @@ mod consts {
 mod consts {
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     #[repr(i32)]
+    #[non_exhaustive]
     pub enum Errno {
         UnknownErrno    = 0,
         EPERM           = libc::EPERM,
@@ -2244,6 +2250,7 @@ mod consts {
 mod consts {
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     #[repr(i32)]
+    #[non_exhaustive]
     pub enum Errno {
         UnknownErrno = 0,
         EPERM = libc::EPERM,
@@ -2441,6 +2448,7 @@ mod consts {
 mod consts {
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     #[repr(i32)]
+    #[non_exhaustive]
     pub enum Errno {
         UnknownErrno = 0,
         EPERM = libc::EPERM,

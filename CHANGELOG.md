@@ -14,6 +14,10 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - `FdSet::{contains, highest, fds}` no longer require a mutable reference.
   (#[1464](https://github.com/nix-rust/nix/pull/1464))
 
+- Most enums that come from C, for example `Errno`, are now marked as
+  `#[non_exhaustive]`.
+  (#[1474](https://github.com/nix-rust/nix/pull/1474))
+
 ### Fixed
 
 - Added more errno definitions for better backwards compatibility with

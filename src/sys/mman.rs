@@ -155,6 +155,7 @@ libc_enum!{
     ///
     /// Used by [`madvise`](./fn.madvise.html).
     #[repr(i32)]
+    #[non_exhaustive]
     pub enum MmapAdvise {
         /// No further special treatment. This is the default.
         MADV_NORMAL,

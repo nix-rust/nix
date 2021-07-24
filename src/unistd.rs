@@ -1806,6 +1806,7 @@ pub fn mkstemp<P: ?Sized + NixPath>(template: &P) -> Result<(RawFd, PathBuf)> {
 /// - [unistd.h](https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/unistd.h.html)
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 #[repr(i32)]
+#[non_exhaustive]
 pub enum PathconfVar {
     #[cfg(any(target_os = "dragonfly", target_os = "freebsd", target_os = "linux",
               target_os = "netbsd", target_os = "openbsd", target_os = "redox"))]
@@ -1985,6 +1986,7 @@ pub fn pathconf<P: ?Sized + NixPath>(path: &P, var: PathconfVar) -> Result<Optio
 /// - [limits.h](https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/limits.h.html)
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 #[repr(i32)]
+#[non_exhaustive]
 pub enum SysconfVar {
     /// Maximum number of I/O operations in a single list I/O call supported by
     /// the implementation.

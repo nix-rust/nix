@@ -32,6 +32,7 @@ pub use self::vsock::VsockAddr;
 /// These constants specify the protocol family to be used
 /// in [`socket`](fn.socket.html) and [`socketpair`](fn.socketpair.html)
 #[repr(i32)]
+#[non_exhaustive]
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Hash)]
 pub enum AddressFamily {
     /// Local communication (see [`unix(7)`](https://man7.org/linux/man-pages/man7/unix.7.html))
@@ -641,6 +642,7 @@ impl Hash for UnixAddr {
 
 /// Represents a socket address
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[non_exhaustive]
 pub enum SockAddr {
     Inet(InetAddr),
     Unix(UnixAddr),

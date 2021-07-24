@@ -39,6 +39,7 @@ libc_enum! {
     /// Mode for `AioCb::fsync`.  Controls whether only data or both data and
     /// metadata are synced.
     #[repr(i32)]
+    #[non_exhaustive]
     pub enum AioFsyncMode {
         /// do it like `fsync`
         O_SYNC,
@@ -57,6 +58,7 @@ libc_enum! {
     /// given `aiocb` should be used for a read operation, a write operation, or
     /// ignored.  Has no effect for any other aio functions.
     #[repr(i32)]
+    #[non_exhaustive]
     pub enum LioOpcode {
         LIO_NOP,
         LIO_WRITE,

@@ -58,6 +58,7 @@ libc_enum! {
     /// The type of the clock used to mark the progress of the timer. For more
     /// details on each kind of clock, please refer to [timerfd_create(2)](https://man7.org/linux/man-pages/man2/timerfd_create.2.html).
     #[repr(i32)]
+    #[non_exhaustive]
     pub enum ClockId {
         CLOCK_REALTIME,
         CLOCK_MONOTONIC,

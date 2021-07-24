@@ -374,6 +374,7 @@ libc_bitflags!(
 
 #[cfg(not(target_os = "redox"))]
 #[derive(Debug, Eq, Hash, PartialEq)]
+#[non_exhaustive]
 pub enum FcntlArg<'a> {
     F_DUPFD(RawFd),
     F_DUPFD_CLOEXEC(RawFd),
@@ -405,6 +406,7 @@ pub enum FcntlArg<'a> {
 
 #[cfg(target_os = "redox")]
 #[derive(Debug, Clone, Copy, Eq, Hash, PartialEq)]
+#[non_exhaustive]
 pub enum FcntlArg {
     F_DUPFD(RawFd),
     F_DUPFD_CLOEXEC(RawFd),
@@ -454,6 +456,7 @@ pub fn fcntl(fd: RawFd, arg: FcntlArg) -> Result<c_int> {
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[non_exhaustive]
 pub enum FlockArg {
     LockShared,
     LockExclusive,
@@ -649,6 +652,7 @@ mod posix_fadvise {
 
     libc_enum! {
         #[repr(i32)]
+        #[non_exhaustive]
         pub enum PosixFadviseAdvice {
             POSIX_FADV_NORMAL,
             POSIX_FADV_SEQUENTIAL,
