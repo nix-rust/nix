@@ -372,7 +372,7 @@ impl IpAddr {
     /// Create a new IpAddr that contains an IPv4 address.
     ///
     /// The result will represent the IP address a.b.c.d
-    pub fn new_v4(a: u8, b: u8, c: u8, d: u8) -> IpAddr {
+    pub const fn new_v4(a: u8, b: u8, c: u8, d: u8) -> IpAddr {
         IpAddr::V4(Ipv4Addr::new(a, b, c, d))
     }
 
@@ -381,7 +381,7 @@ impl IpAddr {
     /// The result will represent the IP address a:b:c:d:e:f
     #[allow(clippy::many_single_char_names)]
     #[allow(clippy::too_many_arguments)]
-    pub fn new_v6(a: u16, b: u16, c: u16, d: u16, e: u16, f: u16, g: u16, h: u16) -> IpAddr {
+    pub const fn new_v6(a: u16, b: u16, c: u16, d: u16, e: u16, f: u16, g: u16, h: u16) -> IpAddr {
         IpAddr::V6(Ipv6Addr::new(a, b, c, d, e, f, g, h))
     }
 
@@ -420,11 +420,11 @@ pub struct Ipv4Addr(pub libc::in_addr);
 
 impl Ipv4Addr {
     #[allow(clippy::identity_op)]   // More readable this way
-    pub fn new(a: u8, b: u8, c: u8, d: u8) -> Ipv4Addr {
-        let ip = ((u32::from(a) << 24) |
-                  (u32::from(b) << 16) |
-                  (u32::from(c) <<  8) |
-                  (u32::from(d) <<  0)).to_be();
+    pub const fn new(a: u8, b: u8, c: u8, d: u8) -> Ipv4Addr {
+        let ip = (((a as u32) << 24) |
+                  ((b as u32) << 16) |
+                  ((c as u32) <<  8) |
+                  ((d as u32) <<  0)).to_be();
 
         Ipv4Addr(libc::in_addr { s_addr: ip })
     }
@@ -436,16 +436,16 @@ impl Ipv4Addr {
         Ipv4Addr::new(bits[0], bits[1], bits[2], bits[3])
     }
 
-    pub fn any() -> Ipv4Addr {
+    pub const fn any() -> Ipv4Addr {
         Ipv4Addr(libc::in_addr { s_addr: libc::INADDR_ANY })
     }
 
-    pub fn octets(self) -> [u8; 4] {
+    pub const fn octets(self) -> [u8; 4] {
         let bits = u32::from_be(self.0.s_addr);
         [(bits >> 24) as u8, (bits >> 16) as u8, (bits >> 8) as u8, bits as u8]
     }
 
-    pub fn to_std(self) -> net::Ipv4Addr {
+    pub const fn to_std(self) -> net::Ipv4Addr {
         let bits = self.octets();
         net::Ipv4Addr::new(bits[0], bits[1], bits[2], bits[3])
     }
@@ -486,7 +486,7 @@ macro_rules! to_u16_array {
 impl Ipv6Addr {
     #[allow(clippy::many_single_char_names)]
     #[allow(clippy::too_many_arguments)]
-    pub fn new(a: u16, b: u16, c: u16, d: u16, e: u16, f: u16, g: u16, h: u16) -> Ipv6Addr {
+    pub const fn new(a: u16, b: u16, c: u16, d: u16, e: u16, f: u16, g: u16, h: u16) -> Ipv6Addr {
         Ipv6Addr(libc::in6_addr{s6_addr: to_u8_array!(a,b,c,d,e,f,g,h)})
     }
 
@@ -496,11 +496,11 @@ impl Ipv6Addr {
     }
 
     /// Return the eight 16-bit segments that make up this address
-    pub fn segments(&self) -> [u16; 8] {
+    pub const fn segments(&self) -> [u16; 8] {
         to_u16_array!(self, 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15)
     }
 
-    pub fn to_std(&self) -> net::Ipv6Addr {
+    pub const fn to_std(&self) -> net::Ipv6Addr {
         let s = self.segments();
         net::Ipv6Addr::new(s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7])
     }
@@ -913,11 +913,11 @@ pub mod netlink {
             NetlinkAddr(addr)
         }
 
-        pub fn pid(&self) -> u32 {
+        pub const fn pid(&self) -> u32 {
             self.0.nl_pid
         }
 
-        pub fn groups(&self) -> u32 {
+        pub const fn groups(&self) -> u32 {
             self.0.nl_groups
         }
     }
@@ -1020,7 +1020,7 @@ pub mod sys_control {
     pub struct SysControlAddr(pub libc::sockaddr_ctl);
 
     impl SysControlAddr {
-        pub fn new(id: u32, unit: u32) -> SysControlAddr {
+        pub const fn new(id: u32, unit: u32) -> SysControlAddr {
             let addr = libc::sockaddr_ctl {
                 sc_len: mem::size_of::<libc::sockaddr_ctl>() as c_uchar,
                 sc_family: AddressFamily::System as c_uchar,
@@ -1047,11 +1047,11 @@ pub mod sys_control {
             Ok(SysControlAddr::new(info.ctl_id, unit))
         }
 
-        pub fn id(&self) -> u32 {
+        pub const fn id(&self) -> u32 {
             self.0.sc_id
         }
 
-        pub fn unit(&self) -> u32 {
+        pub const fn unit(&self) -> u32 {
             self.0.sc_unit
         }
     }

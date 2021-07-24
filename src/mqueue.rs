@@ -59,7 +59,7 @@ impl MqAttr {
         }
     }
 
-    pub fn flags(&self) -> mq_attr_member_t {
+    pub const fn flags(&self) -> mq_attr_member_t {
         self.mq_attr.mq_flags
     }
 }

@@ -356,7 +356,7 @@ impl Iterator for SignalIterator {
 }
 
 impl Signal {
-    pub fn iterator() -> SignalIterator {
+    pub const fn iterator() -> SignalIterator {
         SignalIterator{next: 0}
     }
 }

@@ -52,19 +52,19 @@ pub fn mknod<P: ?Sized + NixPath>(path: &P, kind: SFlag, perm: Mode, dev: dev_t)
 }
 
 #[cfg(target_os = "linux")]
-pub fn major(dev: dev_t) -> u64 {
+pub const fn major(dev: dev_t) -> u64 {
     ((dev >> 32) & 0xffff_f000) |
     ((dev >>  8) & 0x0000_0fff)
 }
 
 #[cfg(target_os = "linux")]
-pub fn minor(dev: dev_t) -> u64 {
+pub const fn minor(dev: dev_t) -> u64 {
     ((dev >> 12) & 0xffff_ff00) |
     ((dev      ) & 0x0000_00ff)
 }
 
 #[cfg(target_os = "linux")]
-pub fn makedev(major: u64, minor: u64) -> dev_t {
+pub const fn makedev(major: u64, minor: u64) -> dev_t {
     ((major & 0xffff_f000) << 32) |
     ((major & 0x0000_0fff) <<  8) |
     ((minor & 0xffff_ff00) << 12) |

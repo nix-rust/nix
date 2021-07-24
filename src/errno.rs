@@ -63,7 +63,7 @@ impl Errno {
         since = "0.22.0",
         note = "It's a no-op now; just delete it."
     )]
-    pub fn as_errno(self) -> Option<Self> {
+    pub const fn as_errno(self) -> Option<Self> {
         Some(self)
     }
 
@@ -81,7 +81,7 @@ impl Errno {
         since = "0.22.0",
         note = "Use Errno::EINVAL instead"
     )]
-    pub fn invalid_argument() -> Error {
+    pub const fn invalid_argument() -> Error {
         Errno::EINVAL
     }
 
@@ -122,7 +122,7 @@ impl Errno {
     )]
     #[allow(non_snake_case)]
     #[inline]
-    pub fn Sys(errno: Errno) -> Error {
+    pub const fn Sys(errno: Errno) -> Error {
         errno
     }
 }

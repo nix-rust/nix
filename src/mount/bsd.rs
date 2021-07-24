@@ -111,7 +111,7 @@ impl NmountError {
     }
 
     /// Returns the inner [`Error`]
-    pub fn error(&self) -> Error {
+    pub const fn error(&self) -> Error {
         self.errno
     }
 

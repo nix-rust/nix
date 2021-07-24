@@ -384,7 +384,7 @@ pub struct Ipv6MembershipRequest(libc::ipv6_mreq);
 
 impl Ipv6MembershipRequest {
     /// Instantiate a new `Ipv6MembershipRequest`
-    pub fn new(group: Ipv6Addr) -> Self {
+    pub const fn new(group: Ipv6Addr) -> Self {
         Ipv6MembershipRequest(libc::ipv6_mreq {
             ipv6mr_multiaddr: group.0,
             ipv6mr_interface: 0,

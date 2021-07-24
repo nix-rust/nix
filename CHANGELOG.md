@@ -17,6 +17,9 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - `FdSet::{contains, highest, fds}` no longer require a mutable reference.
   (#[1464](https://github.com/nix-rust/nix/pull/1464))
 
+- Many more functions, mostly contructors, are now `const`.
+  (#[1476](https://github.com/nix-rust/nix/pull/1476))
+
 ### Fixed
 
 - Added more errno definitions for better backwards compatibility with

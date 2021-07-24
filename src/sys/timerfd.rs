@@ -87,7 +87,7 @@ bitflags! {
 struct TimerSpec(libc::itimerspec);
 
 impl TimerSpec {
-    pub fn none() -> Self {
+    pub const fn none() -> Self {
         Self(libc::itimerspec {
             it_interval: libc::timespec {
                 tv_sec: 0,
