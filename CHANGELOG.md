@@ -25,6 +25,10 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   64-bit Android, change conditional compilation to include the field in
   64-bit Android builds
   (#[1471](https://github.com/nix-rust/nix/pull/1471))
+- `eventfd`s are supported on Android, change conditional compilation to
+  include `sys::eventfd::eventfd` and `sys::eventfd::EfdFlags`for Android
+  builds.
+  (#[1481](https://github.com/nix-rust/nix/pull/1481))
 
 ### Fixed
 

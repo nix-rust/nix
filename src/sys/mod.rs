@@ -17,7 +17,7 @@ pub mod epoll;
           target_os = "openbsd"))]
 pub mod event;
 
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "android", target_os = "linux"))]
 pub mod eventfd;
 
 #[cfg(any(target_os = "android",
