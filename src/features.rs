@@ -97,7 +97,7 @@ mod os {
 #[cfg(any(target_os = "illumos"))]
 mod os {
     /// Check if the OS supports atomic close-on-exec for sockets
-    pub fn socket_atomic_cloexec() -> bool {
+    pub const fn socket_atomic_cloexec() -> bool {
         true
     }
 }
@@ -109,7 +109,7 @@ mod os {
           target_os = "solaris"))]
 mod os {
     /// Check if the OS supports atomic close-on-exec for sockets
-    pub fn socket_atomic_cloexec() -> bool {
+    pub const fn socket_atomic_cloexec() -> bool {
         false
     }
 }

@@ -70,6 +70,7 @@ pub use libc::{c_uint, CMSG_SPACE};
 /// when creating a socket with [`socket()`](fn.socket.html)
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 #[repr(i32)]
+#[non_exhaustive]
 pub enum SockType {
     /// Provides sequenced, reliable, two-way, connection-
     /// based byte streams.  An out-of-band data transmission
@@ -94,6 +95,7 @@ pub enum SockType {
 /// to specify the protocol to use.
 #[repr(i32)]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[non_exhaustive]
 pub enum SockProtocol {
     /// TCP protocol ([ip(7)](https://man7.org/linux/man-pages/man7/ip.7.html))
     Tcp = libc::IPPROTO_TCP,
@@ -384,7 +386,7 @@ pub struct Ipv6MembershipRequest(libc::ipv6_mreq);
 
 impl Ipv6MembershipRequest {
     /// Instantiate a new `Ipv6MembershipRequest`
-    pub fn new(group: Ipv6Addr) -> Self {
+    pub const fn new(group: Ipv6Addr) -> Self {
         Ipv6MembershipRequest(libc::ipv6_mreq {
             ipv6mr_multiaddr: group.0,
             ipv6mr_interface: 0,
@@ -490,6 +492,7 @@ impl<'a> Iterator for CmsgIterator<'a> {
 //
 //  See https://github.com/nix-rust/nix/issues/999
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[non_exhaustive]
 pub enum ControlMessageOwned {
     /// Received version of
     /// [`ControlMessage::ScmRights`][#enum.ControlMessage.html#variant.ScmRights]
@@ -739,6 +742,7 @@ impl ControlMessageOwned {
 ///
 /// [Further reading](https://man7.org/linux/man-pages/man3/cmsg.3.html)
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[non_exhaustive]
 pub enum ControlMessage<'a> {
     /// A message of type `SCM_RIGHTS`, containing an array of file
     /// descriptors passed between processes.

@@ -187,11 +187,11 @@ impl TimeSpec {
     }
 
     #[cfg_attr(target_env = "musl", allow(deprecated))] // https://github.com/rust-lang/libc/issues/1848
-    pub fn tv_sec(&self) -> time_t {
+    pub const fn tv_sec(&self) -> time_t {
         self.0.tv_sec
     }
 
-    pub fn tv_nsec(&self) -> timespec_tv_nsec_t {
+    pub const fn tv_nsec(&self) -> timespec_tv_nsec_t {
         self.0.tv_nsec
     }
 
@@ -404,11 +404,11 @@ impl TimeVal {
     }
 
     #[cfg_attr(target_env = "musl", allow(deprecated))] // https://github.com/rust-lang/libc/issues/1848
-    pub fn tv_sec(&self) -> time_t {
+    pub const fn tv_sec(&self) -> time_t {
         self.0.tv_sec
     }
 
-    pub fn tv_usec(&self) -> suseconds_t {
+    pub const fn tv_usec(&self) -> suseconds_t {
         self.0.tv_usec
     }
 }

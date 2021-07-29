@@ -256,6 +256,7 @@ libc_enum!{
     /// B0 is special and will disable the port.
     #[cfg_attr(all(any(target_os = "ios", target_os = "macos"), target_pointer_width = "64"), repr(u64))]
     #[cfg_attr(not(all(any(target_os = "ios", target_os = "macos"), target_pointer_width = "64")), repr(u32))]
+    #[non_exhaustive]
     pub enum BaudRate {
         B0,
         B50,
@@ -472,6 +473,7 @@ libc_enum! {
     ///
     /// Used as an argument to `tcsetattr()`
     #[repr(i32)]
+    #[non_exhaustive]
     pub enum SetArg {
         /// The change will occur immediately
         TCSANOW,
@@ -487,6 +489,7 @@ libc_enum! {
     ///
     /// Used as an argument to `tcflush()`.
     #[repr(i32)]
+    #[non_exhaustive]
     pub enum FlushArg {
         /// Flush data that was received but not read
         TCIFLUSH,
@@ -502,6 +505,7 @@ libc_enum! {
     ///
     /// Used as an argument to `tcflow()`.
     #[repr(i32)]
+    #[non_exhaustive]
     pub enum FlowArg {
         /// Suspend transmission
         TCOOFF,
@@ -518,6 +522,7 @@ libc_enum! {
 libc_enum! {
     /// Indices into the `termios.c_cc` array for special characters.
     #[repr(usize)]
+    #[non_exhaustive]
     pub enum SpecialCharacterIndices {
         VDISCARD,
         #[cfg(any(target_os = "dragonfly",

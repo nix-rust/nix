@@ -97,7 +97,7 @@ mod sched_linux_like {
         }
 
         /// Return the maximum number of CPU in CpuSet
-        pub fn count() -> usize {
+        pub const fn count() -> usize {
             8 * mem::size_of::<libc::cpu_set_t>()
         }
     }

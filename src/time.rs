@@ -20,7 +20,7 @@ pub struct ClockId(clockid_t);
 
 impl ClockId {
     /// Creates `ClockId` from raw `clockid_t`
-    pub fn from_raw(clk_id: clockid_t) -> Self {
+    pub const fn from_raw(clk_id: clockid_t) -> Self {
         ClockId(clk_id)
     }
 
@@ -61,7 +61,7 @@ impl ClockId {
     }
 
     /// Gets the raw `clockid_t` wrapped by `self`
-    pub fn as_raw(self) -> clockid_t {
+    pub const fn as_raw(self) -> clockid_t {
         self.0
     }
 

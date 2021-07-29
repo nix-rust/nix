@@ -23,6 +23,7 @@ libc_enum!{
     // We would prefer to use the libc::c_int alias in the repr attribute. Unfortunately
     // this is not (yet) possible.
     #[repr(i32)]
+    #[non_exhaustive]
     pub enum Signal {
         SIGHUP,
         SIGINT,
@@ -356,7 +357,7 @@ impl Iterator for SignalIterator {
 }
 
 impl Signal {
-    pub fn iterator() -> SignalIterator {
+    pub const fn iterator() -> SignalIterator {
         SignalIterator{next: 0}
     }
 }
@@ -396,6 +397,7 @@ libc_bitflags!{
 
 libc_enum! {
     #[repr(i32)]
+    #[non_exhaustive]
     pub enum SigmaskHow {
         SIG_BLOCK,
         SIG_UNBLOCK,

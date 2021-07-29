@@ -306,3 +306,45 @@ fn test_mkdirat_fail() {
     let result = mkdirat(dirfd, filename, Mode::S_IRWXU).unwrap_err();
     assert_eq!(result, Errno::ENOTDIR);
 }
+
+#[test]
+#[cfg(not(any(target_os = "freebsd",
+              target_os = "ios",
+              target_os = "macos",
+              target_os = "redox")))]
+fn test_mknod_family() {
+    use fcntl::{AtFlags, OFlag};
+    use nix::dir::Dir;
+    use stat::{fstatat, lstat, mknod, mknodat, SFlag};
+
+    let file_name = "test_file";
+    {
+        let tempdir = tempfile::tempdir().unwrap();
+        let target = tempdir.path().join(file_name);
+        mknod(&target, SFlag::S_IFREG, Mode::S_IRWXU, 0).unwrap();
+        let mode = lstat(&target).unwrap().st_mode as mode_t;
+        assert!(mode & libc::S_IFREG == libc::S_IFREG);
+        assert!(mode & libc::S_IRWXU == libc::S_IRWXU);
+    }
+    {
+        let tempdir = tempfile::tempdir().unwrap();
+        let target_dir = Dir::open(tempdir.path(), OFlag::O_DIRECTORY, Mode::S_IRWXU).unwrap();
+        mknodat(
+            target_dir.as_raw_fd(),
+            file_name,
+            SFlag::S_IFREG,
+            Mode::S_IRWXU,
+            0,
+        )
+        .unwrap();
+        let mode = fstatat(
+            target_dir.as_raw_fd(),
+            file_name,
+            AtFlags::AT_SYMLINK_NOFOLLOW,
+        )
+        .unwrap()
+        .st_mode as mode_t;
+        assert!(mode & libc::S_IFREG == libc::S_IFREG);
+        assert!(mode & libc::S_IRWXU == libc::S_IRWXU);
+    }
+}

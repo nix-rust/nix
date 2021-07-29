@@ -9,6 +9,7 @@ use std::os::unix::io::RawFd;
 use crate::sys::time::{TimeSpec, TimeVal};
 
 libc_bitflags!(
+    /// "File type" flags for `mknod` and related functions.
     pub struct SFlag: mode_t {
         S_IFIFO;
         S_IFCHR;
@@ -22,6 +23,7 @@ libc_bitflags!(
 );
 
 libc_bitflags! {
+    /// "File mode / permissions" flags.
     pub struct Mode: mode_t {
         S_IRWXU;
         S_IRUSR;
@@ -41,30 +43,45 @@ libc_bitflags! {
     }
 }
 
+/// Create a special or ordinary file, by pathname.
 pub fn mknod<P: ?Sized + NixPath>(path: &P, kind: SFlag, perm: Mode, dev: dev_t) -> Result<()> {
-    let res = path.with_nix_path(|cstr| {
-        unsafe {
-            libc::mknod(cstr.as_ptr(), kind.bits | perm.bits() as mode_t, dev)
-        }
+    let res = path.with_nix_path(|cstr| unsafe {
+        libc::mknod(cstr.as_ptr(), kind.bits | perm.bits() as mode_t, dev)
+    })?;
+
+    Errno::result(res).map(drop)
+}
+
+/// Create a special or ordinary file, relative to a given directory.
+#[cfg(not(any(target_os = "ios", target_os = "macos", target_os = "redox")))]
+pub fn mknodat<P: ?Sized + NixPath>(
+    dirfd: RawFd,
+    path: &P,
+    kind: SFlag,
+    perm: Mode,
+    dev: dev_t,
+) -> Result<()> {
+    let res = path.with_nix_path(|cstr| unsafe {
+        libc::mknodat(dirfd, cstr.as_ptr(), kind.bits | perm.bits() as mode_t, dev)
     })?;
 
     Errno::result(res).map(drop)
 }
 
 #[cfg(target_os = "linux")]
-pub fn major(dev: dev_t) -> u64 {
+pub const fn major(dev: dev_t) -> u64 {
     ((dev >> 32) & 0xffff_f000) |
     ((dev >>  8) & 0x0000_0fff)
 }
 
 #[cfg(target_os = "linux")]
-pub fn minor(dev: dev_t) -> u64 {
+pub const fn minor(dev: dev_t) -> u64 {
     ((dev >> 12) & 0xffff_ff00) |
     ((dev      ) & 0x0000_00ff)
 }
 
 #[cfg(target_os = "linux")]
-pub fn makedev(major: u64, minor: u64) -> dev_t {
+pub const fn makedev(major: u64, minor: u64) -> dev_t {
     ((major & 0xffff_f000) << 32) |
     ((major & 0x0000_0fff) <<  8) |
     ((minor & 0xffff_ff00) << 12) |

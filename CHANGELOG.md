@@ -16,6 +16,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1471](https://github.com/nix-rust/nix/pull/1471))
 - Added `pthread_kill`.
   (#[1472](https://github.com/nix-rust/nix/pull/1472))
+- Added `mknodat`.
+  (#[1473](https://github.com/nix-rust/nix/pull/1473))
 
 ### Changed
 
@@ -29,6 +31,13 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   include `sys::eventfd::eventfd` and `sys::eventfd::EfdFlags`for Android
   builds.
   (#[1481](https://github.com/nix-rust/nix/pull/1481))
+
+- Most enums that come from C, for example `Errno`, are now marked as
+  `#[non_exhaustive]`.
+  (#[1474](https://github.com/nix-rust/nix/pull/1474))
+
+- Many more functions, mostly contructors, are now `const`.
+  (#[1476](https://github.com/nix-rust/nix/pull/1476))
 
 ### Fixed
 
