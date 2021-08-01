@@ -59,6 +59,9 @@ pub mod quota;
 #[cfg(any(target_os = "linux"))]
 pub mod reboot;
 
+#[cfg(not(any(target_os = "redox", target_os = "fuchsia", target_os = "illumos")))]
+pub mod resource;
+
 #[cfg(not(target_os = "redox"))]
 pub mod select;
 
