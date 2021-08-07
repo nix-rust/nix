@@ -3,6 +3,47 @@ use nix::sys::socket::{socket, sockopt, getsockopt, setsockopt, AddressFamily, S
 #[cfg(any(target_os = "android", target_os = "linux"))]
 use crate::*;
 
+// NB: FreeBSD supports LOCAL_PEERCRED for SOCK_SEQPACKET, but OSX does not.
+#[cfg(any(
+        target_os = "dragonfly",
+        target_os = "freebsd",
+))]
+#[test]
+pub fn test_local_peercred_seqpacket() {
+    use nix::{
+        unistd::{Gid, Uid},
+        sys::socket::socketpair
+    };
+
+    let (fd1, _fd2) = socketpair(AddressFamily::Unix, SockType::SeqPacket, None,
+                                SockFlag::empty()).unwrap();
+    let xucred = getsockopt(fd1, sockopt::LocalPeerCred).unwrap();
+    assert_eq!(xucred.version(), 0);
+    assert_eq!(Uid::from_raw(xucred.uid()), Uid::current());
+    assert_eq!(Gid::from_raw(xucred.groups()[0]), Gid::current());
+}
+
+#[cfg(any(
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "macos",
+        target_os = "ios"
+))]
+#[test]
+pub fn test_local_peercred_stream() {
+    use nix::{
+        unistd::{Gid, Uid},
+        sys::socket::socketpair
+    };
+
+    let (fd1, _fd2) = socketpair(AddressFamily::Unix, SockType::Stream, None,
+                                SockFlag::empty()).unwrap();
+    let xucred = getsockopt(fd1, sockopt::LocalPeerCred).unwrap();
+    assert_eq!(xucred.version(), 0);
+    assert_eq!(Uid::from_raw(xucred.uid()), Uid::current());
+    assert_eq!(Gid::from_raw(xucred.groups()[0]), Gid::current());
+}
+
 #[cfg(target_os = "linux")]
 #[test]
 fn is_so_mark_functional() {

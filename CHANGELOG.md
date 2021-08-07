@@ -6,6 +6,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased] - ReleaseDate
 ### Added
 
+- Added the `LocalPeerCred` sockopt.
+  (#[1482](https://github.com/nix-rust/nix/pull/1482))
 - Added `TimeSpec::from_duration` and `TimeSpec::from_timespec`
   (#[1465](https://github.com/nix-rust/nix/pull/1465))
 - Added `IPV6_V6ONLY` sockopt.
