@@ -599,7 +599,9 @@ libc_bitflags! {
         ICRNL;
         IXON;
         IXOFF;
+        #[cfg(not(target_os = "redox"))]
         IXANY;
+        #[cfg(not(target_os = "redox"))]
         IMAXBEL;
         #[cfg(any(target_os = "android", target_os = "linux", target_os = "macos"))]
         IUTF8;
