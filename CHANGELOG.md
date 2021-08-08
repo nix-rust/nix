@@ -13,6 +13,10 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Removed
 
+- Removed a couple of termios constants on redox that were never actually
+  supported.
+  (#[1483](https://github.com/nix-rust/nix/pull/1483))
+
 ## [0.20.0] - 20 February 2021
 ### Added
 
