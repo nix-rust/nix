@@ -43,17 +43,28 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Many more functions, mostly contructors, are now `const`.
   (#[1476](https://github.com/nix-rust/nix/pull/1476))
 
+- `sys::event::KEvent::filter` now returns a `Result` instead of being
+  infalliable.  The only cases where it will now return an error are cases
+  where it previously would've had undefined behavior.
+  (#[1484](https://github.com/nix-rust/nix/pull/1484))
+
 ### Fixed
 
 - Added more errno definitions for better backwards compatibility with
   Nix 0.21.0.
   (#[1467](https://github.com/nix-rust/nix/pull/1467))
 
+- Fixed potential undefined behavior in `Signal::try_from` on some platforms.
+  (#[1484](https://github.com/nix-rust/nix/pull/1484))
+
 ### Removed
 
 - Removed a couple of termios constants on redox that were never actually
   supported.
   (#[1483](https://github.com/nix-rust/nix/pull/1483))
+- Removed `nix::sys::signal::NSIG`.  It was of dubious utility, and not correct
+  for all platforms.
+  (#[1484](https://github.com/nix-rust/nix/pull/1484))
 
 ## [0.22.0] - 9 July 2021
 ### Added

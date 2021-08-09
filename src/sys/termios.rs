@@ -152,11 +152,11 @@
 //! # }
 //! ```
 use cfg_if::cfg_if;
-use crate::{Error, Result};
+use crate::Result;
 use crate::errno::Errno;
 use libc::{self, c_int, tcflag_t};
 use std::cell::{Ref, RefCell};
-use std::convert::{From, TryFrom};
+use std::convert::From;
 use std::mem;
 use std::os::unix::io::RawFd;
 
@@ -340,119 +340,7 @@ libc_enum!{
         #[cfg(any(target_os = "android", all(target_os = "linux", not(target_arch = "sparc64"))))]
         B4000000,
     }
-}
-
-impl TryFrom<libc::speed_t> for BaudRate {
-    type Error = Error;
-
-    fn try_from(s: libc::speed_t) -> Result<BaudRate> {
-        use libc::{B0, B50, B75, B110, B134, B150, B200, B300, B600, B1200, B1800, B2400, B4800,
-                   B9600, B19200, B38400, B57600, B115200, B230400};
-        #[cfg(any(target_os = "android", target_os = "linux"))]
-        use libc::{B500000, B576000, B1000000, B1152000, B1500000, B2000000};
-        #[cfg(any(target_os = "android", all(target_os = "linux", not(target_arch = "sparc64"))))]
-        use libc::{B2500000, B3000000, B3500000, B4000000};
-        #[cfg(any(target_os = "dragonfly",
-                  target_os = "freebsd",
-                  target_os = "macos",
-                  target_os = "netbsd",
-                  target_os = "openbsd"))]
-        use libc::{B7200, B14400, B28800, B76800};
-        #[cfg(any(target_os = "android",
-                  target_os = "freebsd",
-                  target_os = "linux",
-                  target_os = "netbsd"))]
-        use libc::{B460800, B921600};
-        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
-        use libc::{B153600, B307200, B460800, B921600};
-
-        match s {
-            B0 => Ok(BaudRate::B0),
-            B50 => Ok(BaudRate::B50),
-            B75 => Ok(BaudRate::B75),
-            B110 => Ok(BaudRate::B110),
-            B134 => Ok(BaudRate::B134),
-            B150 => Ok(BaudRate::B150),
-            B200 => Ok(BaudRate::B200),
-            B300 => Ok(BaudRate::B300),
-            B600 => Ok(BaudRate::B600),
-            B1200 => Ok(BaudRate::B1200),
-            B1800 => Ok(BaudRate::B1800),
-            B2400 => Ok(BaudRate::B2400),
-            B4800 => Ok(BaudRate::B4800),
-            #[cfg(any(target_os = "dragonfly",
-                      target_os = "freebsd",
-                      target_os = "macos",
-                      target_os = "netbsd",
-                      target_os = "openbsd"))]
-            B7200 => Ok(BaudRate::B7200),
-            B9600 => Ok(BaudRate::B9600),
-            #[cfg(any(target_os = "dragonfly",
-                      target_os = "freebsd",
-                      target_os = "macos",
-                      target_os = "netbsd",
-                      target_os = "openbsd"))]
-            B14400 => Ok(BaudRate::B14400),
-            B19200 => Ok(BaudRate::B19200),
-            #[cfg(any(target_os = "dragonfly",
-                      target_os = "freebsd",
-                      target_os = "macos",
-                      target_os = "netbsd",
-                      target_os = "openbsd"))]
-            B28800 => Ok(BaudRate::B28800),
-            B38400 => Ok(BaudRate::B38400),
-            B57600 => Ok(BaudRate::B57600),
-            #[cfg(any(target_os = "dragonfly",
-                      target_os = "freebsd",
-                      target_os = "macos",
-                      target_os = "netbsd",
-                      target_os = "openbsd"))]
-            B76800 => Ok(BaudRate::B76800),
-            B115200 => Ok(BaudRate::B115200),
-            #[cfg(any(target_os = "illumos",
-                      target_os = "solaris"))]
-            B153600 => Ok(BaudRate::B153600),
-            B230400 => Ok(BaudRate::B230400),
-            #[cfg(any(target_os = "illumos",
-                      target_os = "solaris"))]
-            B307200 => Ok(BaudRate::B307200),
-            #[cfg(any(target_os = "android",
-                      target_os = "freebsd",
-                      target_os = "illumos",
-                      target_os = "linux",
-                      target_os = "netbsd",
-                      target_os = "solaris"))]
-            B460800 => Ok(BaudRate::B460800),
-            #[cfg(any(target_os = "android", target_os = "linux"))]
-            B500000 => Ok(BaudRate::B500000),
-            #[cfg(any(target_os = "android", target_os = "linux"))]
-            B576000 => Ok(BaudRate::B576000),
-            #[cfg(any(target_os = "android",
-                      target_os = "freebsd",
-                      target_os = "illumos",
-                      target_os = "linux",
-                      target_os = "netbsd",
-                      target_os = "solaris"))]
-            B921600 => Ok(BaudRate::B921600),
-            #[cfg(any(target_os = "android", target_os = "linux"))]
-            B1000000 => Ok(BaudRate::B1000000),
-            #[cfg(any(target_os = "android", target_os = "linux"))]
-            B1152000 => Ok(BaudRate::B1152000),
-            #[cfg(any(target_os = "android", target_os = "linux"))]
-            B1500000 => Ok(BaudRate::B1500000),
-            #[cfg(any(target_os = "android", target_os = "linux"))]
-            B2000000 => Ok(BaudRate::B2000000),
-            #[cfg(any(target_os = "android", all(target_os = "linux", not(target_arch = "sparc64"))))]
-            B2500000 => Ok(BaudRate::B2500000),
-            #[cfg(any(target_os = "android", all(target_os = "linux", not(target_arch = "sparc64"))))]
-            B3000000 => Ok(BaudRate::B3000000),
-            #[cfg(any(target_os = "android", all(target_os = "linux", not(target_arch = "sparc64"))))]
-            B3500000 => Ok(BaudRate::B3500000),
-            #[cfg(any(target_os = "android", all(target_os = "linux", not(target_arch = "sparc64"))))]
-            B4000000 => Ok(BaudRate::B4000000),
-            _ => Err(Error::from(Errno::EINVAL))
-        }
-    }
+    impl TryFrom<libc::speed_t>
 }
 
 #[cfg(any(target_os = "freebsd",
@@ -1118,6 +1006,7 @@ pub fn tcgetsid(fd: RawFd) -> Result<Pid> {
 #[cfg(test)]
 mod test {
     use super::*;
+    use std::convert::TryFrom;
 
     #[test]
     fn try_from() {

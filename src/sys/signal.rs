@@ -6,7 +6,6 @@
 use crate::{Error, Result};
 use crate::errno::Errno;
 use crate::unistd::Pid;
-use std::convert::TryFrom;
 use std::mem;
 use std::fmt;
 use std::str::FromStr;
@@ -71,6 +70,7 @@ libc_enum!{
                       target_os = "redox")))]
         SIGINFO,
     }
+    impl TryFrom<i32>
 }
 
 impl FromStr for Signal {
@@ -335,8 +335,6 @@ const SIGNALS: [Signal; 31] = [
     SIGEMT,
     SIGINFO];
 
-pub const NSIG: libc::c_int = 32;
-
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct SignalIterator {
     next: usize,
@@ -359,18 +357,6 @@ impl Iterator for SignalIterator {
 impl Signal {
     pub const fn iterator() -> SignalIterator {
         SignalIterator{next: 0}
-    }
-}
-
-impl TryFrom<libc::c_int> for Signal {
-    type Error = Error;
-
-    fn try_from(signum: libc::c_int) -> Result<Signal> {
-        if 0 < signum && signum < NSIG {
-            Ok(unsafe { mem::transmute(signum) })
-        } else {
-            Err(Error::from(Errno::EINVAL))
-        }
     }
 }
 
@@ -489,6 +475,8 @@ impl SigSet {
     /// signal mask becomes pending, and returns the accepted signal.
     #[cfg(not(target_os = "redox"))] // RedoxFS does not yet support sigwait
     pub fn wait(&self) -> Result<Signal> {
+        use std::convert::TryFrom;
+
         let mut signum = mem::MaybeUninit::uninit();
         let res = unsafe { libc::sigwait(&self.sigset as *const libc::sigset_t, signum.as_mut_ptr()) };
 
