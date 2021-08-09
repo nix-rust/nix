@@ -114,6 +114,48 @@ fn test_ptrace_cont() {
     }
 }
 
+#[cfg(target_os = "linux")]
+#[test]
+fn test_ptrace_interrupt() {
+    use nix::sys::ptrace;
+    use nix::sys::signal::Signal;
+    use nix::sys::wait::{waitpid, WaitPidFlag, WaitStatus};
+    use nix::unistd::fork;
+    use nix::unistd::ForkResult::*;
+    use std::thread::sleep;
+    use std::time::Duration;
+
+    require_capability!(CAP_SYS_PTRACE);
+
+    let _m = crate::FORK_MTX.lock().expect("Mutex got poisoned by another test");
+
+    match unsafe{fork()}.expect("Error: Fork Failed") {
+        Child => {
+            loop {
+                sleep(Duration::from_millis(1000));
+            }
+
+        },
+        Parent { child } => {
+            ptrace::seize(child, ptrace::Options::PTRACE_O_TRACESYSGOOD).unwrap();
+            ptrace::interrupt(child).unwrap();
+            assert_eq!(waitpid(child, None), Ok(WaitStatus::PtraceEvent(child, Signal::SIGTRAP, 128)));
+            ptrace::syscall(child, None).unwrap();
+            assert_eq!(waitpid(child, None), Ok(WaitStatus::PtraceSyscall(child)));
+            ptrace::detach(child, Some(Signal::SIGKILL)).unwrap();
+            match waitpid(child, None) {
+                Ok(WaitStatus::Signaled(pid, Signal::SIGKILL, _)) if pid == child => {
+                    let _ = waitpid(child, Some(WaitPidFlag::WNOHANG));
+                    while ptrace::cont(child, Some(Signal::SIGKILL)).is_ok() {
+                        let _ = waitpid(child, Some(WaitPidFlag::WNOHANG));
+                    }
+                }
+                _ => panic!("The process should have been killed"),
+            }
+        },
+    }
+}
+
 // ptrace::{setoptions, getregs} are only available in these platforms
 #[cfg(all(target_os = "linux",
           any(target_arch = "x86_64",
