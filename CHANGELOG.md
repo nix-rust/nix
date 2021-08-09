@@ -20,6 +20,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1473](https://github.com/nix-rust/nix/pull/1473))
 - Added `setrlimit` and `getrlimit`.
   (#[1302](https://github.com/nix-rust/nix/pull/1302))
+- Added `ptrace::interrupt` method for platforms that support `PTRACE_INTERRUPT`
+  (#[1422](https://github.com/nix-rust/nix/pull/1422))
 
 ### Changed
 
@@ -90,8 +92,6 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Added `sendfile64` (#[1439](https://github.com/nix-rust/nix/pull/1439))
 - Added `MS_LAZYTIME` to `MsFlags`
   (#[1437](https://github.com/nix-rust/nix/pull/1437))
-- Added `ptrace::interrupt` method for platforms that support `PTRACE_INTERRUPT`
-  (#[1422](https://github.com/nix-rust/nix/pull/1422))
 
 ### Changed
 - Made `forkpty` unsafe, like `fork`
