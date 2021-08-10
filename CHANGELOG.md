@@ -8,6 +8,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 - Added the `LocalPeerCred` sockopt.
   (#[1482](https://github.com/nix-rust/nix/pull/1482))
+- Added `epoll_pwait` wrapper
+  (#[1488](https://github.com/nix-rust/nix/pull/1488))
 - Added `TimeSpec::from_duration` and `TimeSpec::from_timespec`
   (#[1465](https://github.com/nix-rust/nix/pull/1465))
 - Added `IPV6_V6ONLY` sockopt.
