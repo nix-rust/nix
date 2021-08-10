@@ -1780,21 +1780,21 @@ pub fn sockaddr_storage_to_addr(
     addr: &sockaddr_storage,
     len: usize) -> Result<SockAddr> {
 
-    assert!(len <= mem::size_of::<sockaddr_un>());
+    assert!(len <= mem::size_of::<sockaddr_storage>());
     if len < mem::size_of_val(&addr.ss_family) {
         return Err(Error::from(Errno::ENOTCONN));
     }
 
     match c_int::from(addr.ss_family) {
         libc::AF_INET => {
-            assert_eq!(len as usize, mem::size_of::<sockaddr_in>());
+            assert!(len as usize >= mem::size_of::<sockaddr_in>());
             let sin = unsafe {
                 *(addr as *const sockaddr_storage as *const sockaddr_in)
             };
             Ok(SockAddr::Inet(InetAddr::V4(sin)))
         }
         libc::AF_INET6 => {
-            assert_eq!(len as usize, mem::size_of::<sockaddr_in6>());
+            assert!(len as usize >= mem::size_of::<sockaddr_in6>());
             let sin6 = unsafe {
                 *(addr as *const _ as *const sockaddr_in6)
             };
@@ -1810,10 +1810,10 @@ pub fn sockaddr_storage_to_addr(
         #[cfg(any(target_os = "android", target_os = "linux"))]
         libc::AF_PACKET => {
             use libc::sockaddr_ll;
+            // Don't assert anything about the size.
             // Apparently the Linux kernel can return smaller sizes when
             // the value in the last element of sockaddr_ll (`sll_addr`) is
             // smaller than the declared size of that field
-            assert!(len as usize <= mem::size_of::<sockaddr_ll>());
             let sll = unsafe {
                 *(addr as *const _ as *const sockaddr_ll)
             };

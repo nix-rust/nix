@@ -1,12 +1,13 @@
-use nix::sys::socket::{AddressFamily, InetAddr, UnixAddr, getsockname};
+use nix::sys::socket::{AddressFamily, InetAddr, SockAddr, UnixAddr, getsockname, sockaddr, sockaddr_in6, sockaddr_storage_to_addr};
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
+use std::mem::{self, MaybeUninit};
 use std::net::{self, Ipv6Addr, SocketAddr, SocketAddrV6};
 use std::os::unix::io::RawFd;
 use std::path::Path;
 use std::slice;
 use std::str::FromStr;
-use libc::c_char;
+use libc::{c_char, sockaddr_storage};
 #[cfg(any(target_os = "linux", target_os= "android"))]
 use crate::*;
 
@@ -34,6 +35,29 @@ pub fn test_inetv4_addr_to_sock_addr() {
 }
 
 #[test]
+pub fn test_inetv4_addr_roundtrip_sockaddr_storage_to_addr() {
+    let actual: net::SocketAddr = FromStr::from_str("127.0.0.1:3000").unwrap();
+    let addr = InetAddr::from_std(&actual);
+    let sockaddr = SockAddr::new_inet(addr);
+
+    let (storage, ffi_size) = {
+        let mut storage = MaybeUninit::<sockaddr_storage>::zeroed();
+        let storage_ptr = storage.as_mut_ptr().cast::<sockaddr>();
+        let (ffi_ptr, ffi_size) = sockaddr.as_ffi_pair();
+        assert_eq!(mem::size_of::<sockaddr>(), ffi_size as usize);
+        unsafe {
+            storage_ptr.copy_from_nonoverlapping(ffi_ptr as *const sockaddr, 1);
+            (storage.assume_init(), ffi_size)
+        }
+    };
+
+    let from_storage = sockaddr_storage_to_addr(&storage, ffi_size as usize).unwrap();
+    assert_eq!(from_storage, sockaddr);
+    let from_storage = sockaddr_storage_to_addr(&storage, mem::size_of::<sockaddr_storage>()).unwrap();
+    assert_eq!(from_storage, sockaddr);
+}
+
+#[test]
 pub fn test_inetv6_addr_to_sock_addr() {
     let port: u16 = 3000;
     let flowinfo: u32 = 1;
@@ -53,6 +77,33 @@ pub fn test_inetv6_addr_to_sock_addr() {
     }
 
     assert_eq!(actual, addr.to_std());
+}
+#[test]
+pub fn test_inetv6_addr_roundtrip_sockaddr_storage_to_addr() {
+    let port: u16 = 3000;
+    let flowinfo: u32 = 1;
+    let scope_id: u32 = 2;
+    let ip: Ipv6Addr = "fe80::1".parse().unwrap();
+
+    let actual = SocketAddr::V6(SocketAddrV6::new(ip, port, flowinfo, scope_id));
+    let addr = InetAddr::from_std(&actual);
+    let sockaddr = SockAddr::new_inet(addr);
+
+    let (storage, ffi_size) = {
+        let mut storage = MaybeUninit::<sockaddr_storage>::zeroed();
+        let storage_ptr = storage.as_mut_ptr().cast::<sockaddr_in6>();
+        let (ffi_ptr, ffi_size) = sockaddr.as_ffi_pair();
+        assert_eq!(mem::size_of::<sockaddr_in6>(), ffi_size as usize);
+        unsafe {
+            storage_ptr.copy_from_nonoverlapping((ffi_ptr as *const sockaddr).cast::<sockaddr_in6>(), 1);
+            (storage.assume_init(), ffi_size)
+        }
+    };
+
+    let from_storage = sockaddr_storage_to_addr(&storage, ffi_size as usize).unwrap();
+    assert_eq!(from_storage, sockaddr);
+    let from_storage = sockaddr_storage_to_addr(&storage, mem::size_of::<sockaddr_storage>()).unwrap();
+    assert_eq!(from_storage, sockaddr);
 }
 
 #[test]
@@ -1169,7 +1220,6 @@ fn loopback_address(family: AddressFamily) -> Option<nix::ifaddrs::InterfaceAddr
     use std::io;
     use std::io::Write;
     use nix::ifaddrs::getifaddrs;
-    use nix::sys::socket::SockAddr;
     use nix::net::if_::*;
 
     let addrs = match getifaddrs() {
