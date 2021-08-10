@@ -584,9 +584,31 @@ impl SigAction {
         match self.sigaction.sa_sigaction {
             libc::SIG_DFL => SigHandler::SigDfl,
             libc::SIG_IGN => SigHandler::SigIgn,
-            f if self.flags().contains(SaFlags::SA_SIGINFO) =>
-                SigHandler::SigAction( unsafe { mem::transmute(f) } ),
-            f => SigHandler::Handler( unsafe { mem::transmute(f) } ),
+            p if self.flags().contains(SaFlags::SA_SIGINFO) =>
+                SigHandler::SigAction(
+                // Safe for one of two reasons:
+                // * The SigHandler was created by SigHandler::new, in which
+                //   case the pointer is correct, or
+                // * The SigHandler was created by signal or sigaction, which
+                //   are unsafe functions, so the caller should've somehow
+                //   ensured that it is correctly initialized.
+                unsafe{
+                    *(&p as *const usize
+                         as *const extern fn(_, _, _))
+                }
+                as extern fn(_, _, _)),
+            p => SigHandler::Handler(
+                // Safe for one of two reasons:
+                // * The SigHandler was created by SigHandler::new, in which
+                //   case the pointer is correct, or
+                // * The SigHandler was created by signal or sigaction, which
+                //   are unsafe functions, so the caller should've somehow
+                //   ensured that it is correctly initialized.
+                unsafe{
+                    *(&p as *const usize
+                         as *const extern fn(libc::c_int))
+                }
+                as extern fn(libc::c_int)),
         }
     }
 
@@ -596,7 +618,18 @@ impl SigAction {
         match self.sigaction.sa_handler {
             libc::SIG_DFL => SigHandler::SigDfl,
             libc::SIG_IGN => SigHandler::SigIgn,
-            f => SigHandler::Handler( unsafe { mem::transmute(f) } ),
+            p => SigHandler::Handler(
+                // Safe for one of two reasons:
+                // * The SigHandler was created by SigHandler::new, in which
+                //   case the pointer is correct, or
+                // * The SigHandler was created by signal or sigaction, which
+                //   are unsafe functions, so the caller should've somehow
+                //   ensured that it is correctly initialized.
+                unsafe{
+                    *(&p as *const usize
+                         as *const extern fn(libc::c_int))
+                }
+                as extern fn(libc::c_int)),
         }
     }
 }
@@ -608,9 +641,16 @@ impl SigAction {
 ///
 /// # Safety
 ///
-/// Signal handlers may be called at any point during execution, which limits what is safe to do in
-/// the body of the signal-catching function. Be certain to only make syscalls that are explicitly
-/// marked safe for signal handlers and only share global data using atomics.
+/// * Signal handlers may be called at any point during execution, which limits
+///   what is safe to do in the body of the signal-catching function. Be certain
+///   to only make syscalls that are explicitly marked safe for signal handlers
+///   and only share global data using atomics.
+///
+/// * There is also no guarantee that the old signal handler was installed
+///   correctly.  If it was installed by this crate, it will be.  But if it was
+///   installed by, for example, C code, then there is no guarantee its function
+///   pointer is valid.  In that case, this function effectively dereferences a
+///   raw pointer of unknown provenance.
 pub unsafe fn sigaction(signal: Signal, sigaction: &SigAction) -> Result<SigAction> {
     let mut oldact = mem::MaybeUninit::<libc::sigaction>::uninit();
 
@@ -689,7 +729,10 @@ pub unsafe fn signal(signal: Signal, handler: SigHandler) -> Result<SigHandler> 
         match oldhandler {
             libc::SIG_DFL => SigHandler::SigDfl,
             libc::SIG_IGN => SigHandler::SigIgn,
-            f => SigHandler::Handler(mem::transmute(f)),
+            p => SigHandler::Handler(
+                *(&p as *const usize
+                     as *const extern fn(libc::c_int))
+                as extern fn(libc::c_int)),
         }
     })
 }
