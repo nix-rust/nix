@@ -24,6 +24,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1302](https://github.com/nix-rust/nix/pull/1302))
 - Added `ptrace::interrupt` method for platforms that support `PTRACE_INTERRUPT`
   (#[1422](https://github.com/nix-rust/nix/pull/1422))
+- Added `IP6T_SO_ORIGINAL_DST` sockopt.
+  (#[1490](https://github.com/nix-rust/nix/pull/1490))
 
 ### Changed
 
