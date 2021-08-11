@@ -358,6 +358,38 @@ cfg_if! {
     }
 }
 
+cfg_if!{
+    if #[cfg(any(
+                target_os = "dragonfly",
+                target_os = "freebsd",
+                target_os = "macos",
+                target_os = "ios"
+        ))] {
+        /// Return type of [`LocalPeerCred`](crate::sys::socket::sockopt::LocalPeerCred)
+        #[repr(transparent)]
+        #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+        pub struct XuCred(libc::xucred);
+
+        impl XuCred {
+            /// Structure layout version
+            pub fn version(&self) -> u32 {
+                self.0.cr_version
+            }
+
+            /// Effective user ID
+            pub fn uid(&self) -> libc::uid_t {
+                self.0.cr_uid
+            }
+
+            /// Returns a list of group identifiers (the first one being the
+            /// effective GID)
+            pub fn groups(&self) -> &[libc::gid_t] {
+                &self.0.cr_groups
+            }
+        }
+    }
+}
+
 /// Request for multicast socket operations
 ///
 /// This is a wrapper type around `ip_mreq`.

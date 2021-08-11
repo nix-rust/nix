@@ -30,7 +30,7 @@ const TCP_CA_NAME_MAX: usize = 16;
 /// # Arguments
 ///
 /// * `$name:ident`: name of the type you want to implement `SetSockOpt` for.
-/// * `$level:path` : socket layer, or a `protocol level`: could be *raw sockets*
+/// * `$level:expr` : socket layer, or a `protocol level`: could be *raw sockets*
 ///    (`libc::SOL_SOCKET`), *ip protocol* (libc::IPPROTO_IP), *tcp protocol* (`libc::IPPROTO_TCP`),
 ///    and more. Please refer to your system manual for more options. Will be passed as the second
 ///    argument (`level`) to the `setsockopt` call.
@@ -41,7 +41,7 @@ const TCP_CA_NAME_MAX: usize = 16;
 /// * Type that implements the `Set` trait for the type from the previous item (like `SetBool` for
 ///    `bool`, `SetUsize` for `usize`, etc.).
 macro_rules! setsockopt_impl {
-    ($name:ident, $level:path, $flag:path, $ty:ty, $setter:ty) => {
+    ($name:ident, $level:expr, $flag:path, $ty:ty, $setter:ty) => {
         impl SetSockOpt for $name {
             type Val = $ty;
 
@@ -82,7 +82,7 @@ macro_rules! setsockopt_impl {
 /// * Type that implements the `Get` trait for the type from the previous item (`GetBool` for
 ///    `bool`, `GetUsize` for `usize`, etc.).
 macro_rules! getsockopt_impl {
-    ($name:ident, $level:path, $flag:path, $ty:ty, $getter:ty) => {
+    ($name:ident, $level:expr, $flag:path, $ty:ty, $getter:ty) => {
         impl GetSockOpt for $name {
             type Val = $ty;
 
@@ -117,7 +117,7 @@ macro_rules! getsockopt_impl {
 /// * `GetOnly`, `SetOnly` or `Both`: whether you want to implement only getter, only setter or
 ///    both of them.
 /// * `$name:ident`: name of type `GetSockOpt`/`SetSockOpt` will be implemented for.
-/// * `$level:path` : socket layer, or a `protocol level`: could be *raw sockets*
+/// * `$level:expr` : socket layer, or a `protocol level`: could be *raw sockets*
 ///    (`lic::SOL_SOCKET`), *ip protocol* (libc::IPPROTO_IP), *tcp protocol* (`libc::IPPROTO_TCP`),
 ///    and more. Please refer to your system manual for more options. Will be passed as the second
 ///    argument (`level`) to the `getsockopt`/`setsockopt` call.
@@ -128,43 +128,43 @@ macro_rules! getsockopt_impl {
 /// * `$getter:ty`: `Get` implementation; optional; only for `GetOnly` and `Both`.
 /// * `$setter:ty`: `Set` implementation; optional; only for `SetOnly` and `Both`.
 macro_rules! sockopt_impl {
-    (GetOnly, $name:ident, $level:path, $flag:path, bool) => {
+    (GetOnly, $name:ident, $level:expr, $flag:path, bool) => {
         sockopt_impl!(GetOnly, $name, $level, $flag, bool, GetBool);
     };
 
-    (GetOnly, $name:ident, $level:path, $flag:path, u8) => {
+    (GetOnly, $name:ident, $level:expr, $flag:path, u8) => {
         sockopt_impl!(GetOnly, $name, $level, $flag, u8, GetU8);
     };
 
-    (GetOnly, $name:ident, $level:path, $flag:path, usize) => {
+    (GetOnly, $name:ident, $level:expr, $flag:path, usize) => {
         sockopt_impl!(GetOnly, $name, $level, $flag, usize, GetUsize);
     };
 
-    (SetOnly, $name:ident, $level:path, $flag:path, bool) => {
+    (SetOnly, $name:ident, $level:expr, $flag:path, bool) => {
         sockopt_impl!(SetOnly, $name, $level, $flag, bool, SetBool);
     };
 
-    (SetOnly, $name:ident, $level:path, $flag:path, u8) => {
+    (SetOnly, $name:ident, $level:expr, $flag:path, u8) => {
         sockopt_impl!(SetOnly, $name, $level, $flag, u8, SetU8);
     };
 
-    (SetOnly, $name:ident, $level:path, $flag:path, usize) => {
+    (SetOnly, $name:ident, $level:expr, $flag:path, usize) => {
         sockopt_impl!(SetOnly, $name, $level, $flag, usize, SetUsize);
     };
 
-    (Both, $name:ident, $level:path, $flag:path, bool) => {
+    (Both, $name:ident, $level:expr, $flag:path, bool) => {
         sockopt_impl!(Both, $name, $level, $flag, bool, GetBool, SetBool);
     };
 
-    (Both, $name:ident, $level:path, $flag:path, u8) => {
+    (Both, $name:ident, $level:expr, $flag:path, u8) => {
         sockopt_impl!(Both, $name, $level, $flag, u8, GetU8, SetU8);
     };
 
-    (Both, $name:ident, $level:path, $flag:path, usize) => {
+    (Both, $name:ident, $level:expr, $flag:path, usize) => {
         sockopt_impl!(Both, $name, $level, $flag, usize, GetUsize, SetUsize);
     };
 
-    (Both, $name:ident, $level:path, $flag:path, OsString<$array:ty>) => {
+    (Both, $name:ident, $level:expr, $flag:path, OsString<$array:ty>) => {
         sockopt_impl!(Both, $name, $level, $flag, OsString, GetOsString<$array>, SetOsString);
     };
 
@@ -172,29 +172,29 @@ macro_rules! sockopt_impl {
      * Matchers with generic getter types must be placed at the end, so
      * they'll only match _after_ specialized matchers fail
      */
-    (GetOnly, $name:ident, $level:path, $flag:path, $ty:ty) => {
+    (GetOnly, $name:ident, $level:expr, $flag:path, $ty:ty) => {
         sockopt_impl!(GetOnly, $name, $level, $flag, $ty, GetStruct<$ty>);
     };
 
-    (GetOnly, $name:ident, $level:path, $flag:path, $ty:ty, $getter:ty) => {
+    (GetOnly, $name:ident, $level:expr, $flag:path, $ty:ty, $getter:ty) => {
         #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
         pub struct $name;
 
         getsockopt_impl!($name, $level, $flag, $ty, $getter);
     };
 
-    (SetOnly, $name:ident, $level:path, $flag:path, $ty:ty) => {
+    (SetOnly, $name:ident, $level:expr, $flag:path, $ty:ty) => {
         sockopt_impl!(SetOnly, $name, $level, $flag, $ty, SetStruct<$ty>);
     };
 
-    (SetOnly, $name:ident, $level:path, $flag:path, $ty:ty, $setter:ty) => {
+    (SetOnly, $name:ident, $level:expr, $flag:path, $ty:ty, $setter:ty) => {
         #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
         pub struct $name;
 
         setsockopt_impl!($name, $level, $flag, $ty, $setter);
     };
 
-    (Both, $name:ident, $level:path, $flag:path, $ty:ty, $getter:ty, $setter:ty) => {
+    (Both, $name:ident, $level:expr, $flag:path, $ty:ty, $getter:ty, $setter:ty) => {
         #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
         pub struct $name;
 
@@ -202,7 +202,7 @@ macro_rules! sockopt_impl {
         getsockopt_impl!($name, $level, $flag, $ty, $getter);
     };
 
-    (Both, $name:ident, $level:path, $flag:path, $ty:ty) => {
+    (Both, $name:ident, $level:expr, $flag:path, $ty:ty) => {
         sockopt_impl!(Both, $name, $level, $flag, $ty, GetStruct<$ty>, SetStruct<$ty>);
     };
 }
@@ -246,6 +246,14 @@ sockopt_impl!(Both, Broadcast, libc::SOL_SOCKET, libc::SO_BROADCAST, bool);
 sockopt_impl!(Both, OobInline, libc::SOL_SOCKET, libc::SO_OOBINLINE, bool);
 sockopt_impl!(GetOnly, SocketError, libc::SOL_SOCKET, libc::SO_ERROR, i32);
 sockopt_impl!(Both, KeepAlive, libc::SOL_SOCKET, libc::SO_KEEPALIVE, bool);
+#[cfg(any(
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "macos",
+        target_os = "ios"
+))]
+// Get the credentials of the peer process of a connected unix domain socket.
+sockopt_impl!(GetOnly, LocalPeerCred, 0, libc::LOCAL_PEERCRED, super::XuCred);
 #[cfg(any(target_os = "android", target_os = "linux"))]
 sockopt_impl!(GetOnly, PeerCredentials, libc::SOL_SOCKET, libc::SO_PEERCRED, super::UnixCredentials);
 #[cfg(any(target_os = "ios",
