@@ -34,7 +34,7 @@ libc_bitflags!{
 }
 
 pub const SIGNALFD_NEW: RawFd = -1;
-pub const SIGNALFD_SIGINFO_SIZE: usize = 128;
+pub const SIGNALFD_SIGINFO_SIZE: usize = mem::size_of::<libc::signalfd_siginfo>();
 
 /// Creates a new file descriptor for reading signals.
 ///
@@ -144,14 +144,6 @@ impl Iterator for SignalFd {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::mem;
-    use libc;
-
-
-    #[test]
-    fn check_siginfo_size() {
-        assert_eq!(mem::size_of::<libc::signalfd_siginfo>(), SIGNALFD_SIGINFO_SIZE);
-    }
 
     #[test]
     fn create_signalfd() {
