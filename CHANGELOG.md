@@ -44,6 +44,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 - Many more functions, mostly contructors, are now `const`.
   (#[1476](https://github.com/nix-rust/nix/pull/1476))
+  (#[1492](https://github.com/nix-rust/nix/pull/1492))
 
 - `sys::event::KEvent::filter` now returns a `Result` instead of being
   infalliable.  The only cases where it will now return an error are cases
