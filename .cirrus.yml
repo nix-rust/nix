@@ -31,16 +31,13 @@ task:
     - name: OSX x86_64
       env:
         TARGET: x86_64-apple-darwin
-    - name: OSX i686
+    - name: iOS aarch64
       env:
-        TARGET: i686-apple-darwin
+        TARGET: aarch64-apple-ios
         DISABLE_TESTS: 1
-    - name: iOS
+    - name: iOS x86_64
       env:
-        # To save VM startup time, test all iOS targets in a single task.
-        # The startup and scheduling time was very significant for Travis, but
-        # not known for Cirrus.
-        TARGET: "aarch64-apple-ios;armv7-apple-ios;armv7s-apple-ios;i386-apple-ios;x86_64-apple-ios"
+        TARGET: x86_64-apple-ios
         DISABLE_TESTS: 1
   osx_instance:
     image: catalina-xcode
