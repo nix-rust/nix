@@ -50,6 +50,9 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   where it previously would've had undefined behavior.
   (#[1484](https://github.com/nix-rust/nix/pull/1484))
 
+- Minimum supported Rust version is now 1.46.0.
+  ([#1492](https://github.com/nix-rust/nix/pull/1492))
+
 ### Fixed
 
 - Added more errno definitions for better backwards compatibility with
