@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
+This project adheres to [Semantic Versioning](https://semver.org/).
+
+## [Unreleased] - ReleaseDate
+### Added
+### Changed
+### Fixed
+
+- Locked bitflags to < 1.3.0 to fix the build with rust < 1.46.0.
+
+### Removed
 
 ## [0.20.0] - 20 February 2021
 ### Added
