@@ -68,11 +68,7 @@ Tier 2:
   * aarch64-linux-android
   * arm-linux-androideabi
   * arm-unknown-linux-musleabi
-  * armv7-apple-ios
   * armv7-linux-androideabi
-  * armv7s-apple-ios
-  * i386-apple-ios
-  * i686-apple-darwin
   * i686-linux-android
   * powerpc-unknown-linux-gnu
   * s390x-unknown-linux-gnu
@@ -87,7 +83,7 @@ Tier 3:
 
 ## Usage
 
-`nix` requires Rust 1.41.0 or newer.
+`nix` requires Rust 1.46.0 or newer.
 
 To use `nix`, add this to your `Cargo.toml`:
 

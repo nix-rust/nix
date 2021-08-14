@@ -113,9 +113,9 @@ macro_rules! libc_enum {
         $v enum $BitFlags {
             $($entries)*
         }
-        #[allow(unused_doc_comment)]
         impl ::std::convert::TryFrom<$repr> for $BitFlags {
             type Error = $crate::Error;
+            #[allow(unused_doc_comments)]
             fn try_from(x: $repr) -> $crate::Result<Self> {
                 match x {
                     $($try_froms)*

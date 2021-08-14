@@ -44,11 +44,15 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 - Many more functions, mostly contructors, are now `const`.
   (#[1476](https://github.com/nix-rust/nix/pull/1476))
+  (#[1492](https://github.com/nix-rust/nix/pull/1492))
 
 - `sys::event::KEvent::filter` now returns a `Result` instead of being
   infalliable.  The only cases where it will now return an error are cases
   where it previously would've had undefined behavior.
   (#[1484](https://github.com/nix-rust/nix/pull/1484))
+
+- Minimum supported Rust version is now 1.46.0.
+  ([#1492](https://github.com/nix-rust/nix/pull/1492))
 
 ### Fixed
 
@@ -67,6 +71,10 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Removed `nix::sys::signal::NSIG`.  It was of dubious utility, and not correct
   for all platforms.
   (#[1484](https://github.com/nix-rust/nix/pull/1484))
+
+- Removed support for 32-bit Apple targets, since they've been dropped by both
+  Rustc and Xcode.
+  (#[1492](https://github.com/nix-rust/nix/pull/1492))
 
 ## [0.22.0] - 9 July 2021
 ### Added

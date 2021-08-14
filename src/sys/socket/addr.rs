@@ -237,7 +237,7 @@ impl AddressFamily {
     ///
     /// Currently only supports these address families: Unix, Inet (v4 & v6), Netlink, Link/Packet
     /// and System. Returns None for unsupported or unknown address families.
-    pub fn from_i32(family: i32) -> Option<AddressFamily> {
+    pub const fn from_i32(family: i32) -> Option<AddressFamily> {
         match family {
             libc::AF_UNIX => Some(AddressFamily::Unix),
             libc::AF_INET => Some(AddressFamily::Inet),
@@ -314,7 +314,7 @@ impl InetAddr {
         }
     }
     /// Gets the IP address associated with this socket address.
-    pub fn ip(&self) -> IpAddr {
+    pub const fn ip(&self) -> IpAddr {
         match *self {
             InetAddr::V4(ref sa) => IpAddr::V4(Ipv4Addr(sa.sin_addr)),
             InetAddr::V6(ref sa) => IpAddr::V6(Ipv6Addr(sa.sin6_addr)),
@@ -322,7 +322,7 @@ impl InetAddr {
     }
 
     /// Gets the port number associated with this socket address
-    pub fn port(&self) -> u16 {
+    pub const fn port(&self) -> u16 {
         match *self {
             InetAddr::V6(ref sa) => u16::from_be(sa.sin6_port),
             InetAddr::V4(ref sa) => u16::from_be(sa.sin_port),
@@ -393,7 +393,7 @@ impl IpAddr {
         }
     }
 
-    pub fn to_std(&self) -> net::IpAddr {
+    pub const fn to_std(&self) -> net::IpAddr {
         match *self {
             IpAddr::V4(ref ip) => net::IpAddr::V4(ip.to_std()),
             IpAddr::V6(ref ip) => net::IpAddr::V6(ip.to_std()),
