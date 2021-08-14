@@ -93,7 +93,7 @@ To use `nix`, add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-nix = "0.20.0"
+nix = "0.20.1"
 ```
 
 ## Contributing
