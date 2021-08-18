@@ -1,7 +1,7 @@
 # Rust bindings to *nix APIs
 
 [![Cirrus Build Status](https://api.cirrus-ci.com/github/nix-rust/nix.svg)](https://cirrus-ci.com/github/nix-rust/nix)
-[![crates.io](https://meritbadge.herokuapp.com/nix)](https://crates.io/crates/nix)
+[![crates.io](https://img.shields.io/crates/v/nix.svg)](https://crates.io/crates/nix)
 
 [Documentation (Releases)](https://docs.rs/nix/)
 
