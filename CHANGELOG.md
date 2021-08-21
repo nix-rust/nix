@@ -26,6 +26,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1422](https://github.com/nix-rust/nix/pull/1422))
 - Added `IP6T_SO_ORIGINAL_DST` sockopt.
   (#[1490](https://github.com/nix-rust/nix/pull/1490))
+- Added the `PTRACE_EVENT_STOP` variant to the `sys::ptrace::Event` enum
+  (#[1335](https://github.com/nix-rust/nix/pull/1335))
 
 ### Changed
 
