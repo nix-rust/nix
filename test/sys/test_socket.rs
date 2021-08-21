@@ -28,7 +28,7 @@ pub fn test_inetv4_addr_to_sock_addr() {
         _ => panic!("nope"),
     }
 
-    assert_eq!(addr.to_str(), "127.0.0.1:3000");
+    assert_eq!(addr.to_string(), "127.0.0.1:3000");
 
     let inet = addr.to_std();
     assert_eq!(actual, inet);
@@ -194,8 +194,8 @@ pub fn test_getsockname() {
                .expect("socket failed");
     let sockaddr = SockAddr::new_unix(&sockname).unwrap();
     bind(sock, &sockaddr).expect("bind failed");
-    assert_eq!(sockaddr.to_str(),
-               getsockname(sock).expect("getsockname failed").to_str());
+    assert_eq!(sockaddr.to_string(),
+               getsockname(sock).expect("getsockname failed").to_string());
 }
 
 #[test]

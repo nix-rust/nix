@@ -80,6 +80,9 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   Rustc and Xcode.
   (#[1492](https://github.com/nix-rust/nix/pull/1492))
 
+- Deprecated `SockAddr/InetAddr::to_str` in favor of `ToString::to_string`
+  (#[1495](https://github.com/nix-rust/nix/pull/1495))
+
 ## [0.22.0] - 9 July 2021
 ### Added
 - Added `if_nameindex` (#[1445](https://github.com/nix-rust/nix/pull/1445))
