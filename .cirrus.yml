@@ -8,9 +8,6 @@ cargo_cache:
 # the system's binaries, so the environment shouldn't matter.
 task:
   name: FreeBSD amd64 & i686
-  env:
-    # Temporary workaround for https://github.com/rust-lang/rustup/issues/2774
-    RUSTUP_IO_THREADS: 1
   freebsd_instance:
     image: freebsd-11-4-release-amd64
   setup_script:
@@ -31,24 +28,17 @@ task:
     - name: OSX x86_64
       env:
         TARGET: x86_64-apple-darwin
-    - name: iOS aarch64
-      env:
-        TARGET: aarch64-apple-ios
-        DISABLE_TESTS: 1
-    - name: iOS x86_64
-      env:
-        TARGET: x86_64-apple-ios
-        DISABLE_TESTS: 1
   osx_instance:
     image: catalina-xcode
   setup_script:
     - curl --proto '=https' --tlsv1.2 -sSf -o rustup.sh https://sh.rustup.rs
     - sh rustup.sh -y --profile=minimal --default-toolchain 1.46.0
     - . $HOME/.cargo/env
-    - bash ci/install.sh
+    - cargo install cross
   script:
     - . $HOME/.cargo/env
-    - bash ci/script.sh
+    - cross build --target $TARGET
+    - cross test --target $TARGET
   before_cache_script: rm -rf $CARGO_HOME/registry/index
 
 # Use cross for QEMU-based testing
@@ -100,10 +90,11 @@ task:
     - curl --proto '=https' --tlsv1.2 -sSf -o rustup.sh https://sh.rustup.rs
     - sh rustup.sh -y --profile=minimal --default-toolchain 1.46.0
     - . $HOME/.cargo/env
-    - bash ci/install.sh
+    - cargo install cross
   script:
     - . $HOME/.cargo/env || true
-    - bash ci/script.sh
+    - cross build --target $TARGET
+    - cross test --target $TARGET
   before_cache_script: rm -rf $CARGO_HOME/registry/index
 
 # Tasks for Linux amd64 builds
@@ -128,14 +119,18 @@ task:
     - rustup target add --toolchain $TOOLCHAIN $TARGET
   script:
     - cargo +$TOOLCHAIN build --target $TARGET --all-targets
-    - cargo +$TOOLCHAIN build --target $TARGET --all-targets --release
     - cargo +$TOOLCHAIN test --target $TARGET
-    - cargo +$TOOLCHAIN test --target $TARGET --release
   before_cache_script: rm -rf $CARGO_HOME/registry/index
 
 # Tasks for cross-compiling, but no testing
 task:
+  container:
+    image: rust:1.46
+  env:
+    TOOLCHAIN: 1.46.0
   matrix:
+    # Cross claims to support Android, but when it tries to run Nix's tests it
+    # reports undefined symbol references.
     - name: Android aarch64
       env:
         TARGET: aarch64-linux-android
@@ -154,9 +149,40 @@ task:
     - name: Linux arm-musleabi
       env:
         TARGET: arm-unknown-linux-musleabi
+    - name: Fuchsia x86_64
+      env:
+        TARGET: x86_64-fuchsia
+    - name: Illumos
+      env:
+        TARGET: x86_64-unknown-illumos
+        # illumos toolchain isn't available via rustup until 1.50
+        TOOLCHAIN: 1.50.0
+      container:
+        image: rust:1.50
+    # Cross claims to support running tests on iOS, but it actually doesn't.
+    # https://github.com/rust-embedded/cross/issues/535
+    - name: iOS aarch64
+      env:
+        TARGET: aarch64-apple-ios
+        # Rustup only supports cross-building from arbitrary hosts for iOS at
+        # 1.49.0 and above.  Below that it's possible to cross-build from an OSX
+        # host, but OSX VMs
+        # are more expensive than Linux VMs.
+        TOOLCHAIN: 1.49.0
+    - name: iOS x86_64
+      env:
+        TARGET: x86_64-apple-ios
+        TOOLCHAIN: 1.49.0
+    # Cross testing on powerpc fails with "undefined reference to renameat2".
+    # Perhaps cross is using too-old a version?
     - name: Linux powerpc
       env:
         TARGET: powerpc-unknown-linux-gnu
+    # Cross claims to support Linux powerpc64, but it really doesn't.
+    # https://github.com/rust-embedded/cross/issues/441
+    - name: Linux powerpc64
+      env:
+        TARGET: powerpc64-unknown-linux-gnu
     - name: Linux s390x
       env:
         TARGET: s390x-unknown-linux-gnu
@@ -166,57 +192,24 @@ task:
     - name: NetBSD x86_64
       env:
         TARGET: x86_64-unknown-netbsd
-    - name: Fuchsia x86_64
+    - name: Redox x86_64
       env:
-        TARGET: x86_64-fuchsia
-  container:
-    image: rust:1.46
+        TARGET: x86_64-unknown-redox
+        # Redox requires a nightly compiler.
+        # If stuff breaks, change nightly to the date in the toolchain_*
+        # directory at https://static.redox-os.org
+        TOOLCHAIN: nightly-2020-08-04
   setup_script:
     - rustup target add $TARGET
-  script:
-    - cargo +$TOOLCHAIN check --target $TARGET
-    - cargo +$TOOLCHAIN check --target $TARGET --release
-    - cargo +$TOOLCHAIN check --all-targets --target $TARGET
-  before_cache_script: rm -rf $CARGO_HOME/registry/index
-
-# illumos toolchain isn't available via rustup until 1.50
-task:
-  name: illumos
-  env:
-    TARGET: x86_64-unknown-illumos
-  container:
-    image: rust:1.50
-  setup_script:
-    - rustup target add $TARGET
-  script:
-    - cargo +$TOOLCHAIN check --target $TARGET
-    - cargo +$TOOLCHAIN check --target $TARGET --release
-  before_cache_script: rm -rf $CARGO_HOME/registry/index
-
-# Redoxer is too unreliable, so we'll do a cross-build only
-# See also:
-# https://github.com/nix-rust/nix/issues/1258
-# https://github.com/rust-embedded/cross/issues/427
-task:
-  name: Redox x86_64
-  env:
-    TARGET: x86_64-unknown-redox
-    # Redox requires a nightly compiler.
-    # If stuff breaks, change nightly to the date in the toolchain_*
-    # directory at https://static.redox-os.org
-    TOOLCHAIN: nightly-2020-08-04
-  container:
-    image: rustlang/rust:nightly
-  setup_script:
     - rustup toolchain install $TOOLCHAIN --profile minimal --target $TARGET
   script:
     - cargo +$TOOLCHAIN check --target $TARGET
-    - cargo +$TOOLCHAIN check --target $TARGET --release
+    - cargo +$TOOLCHAIN check --all-targets --target $TARGET
   before_cache_script: rm -rf $CARGO_HOME/registry/index
 
 # Test that we can build with the lowest version of all dependencies.
 # "cargo test" doesn't work because some of our dev-dependencies, like
-# rand, can't build with thier own minimal dependencies.
+# rand, can't build with their own minimal dependencies.
 task:
   name: Minver
   container:
