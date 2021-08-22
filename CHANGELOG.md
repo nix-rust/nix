@@ -28,6 +28,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1490](https://github.com/nix-rust/nix/pull/1490))
 - Added the `PTRACE_EVENT_STOP` variant to the `sys::ptrace::Event` enum
   (#[1335](https://github.com/nix-rust/nix/pull/1335))
+- Exposed `SockAddr::from_raw_sockaddr`
+  (#[1447](https://github.com/nix-rust/nix/pull/1447))
 
 ### Changed
 
