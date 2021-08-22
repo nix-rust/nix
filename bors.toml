@@ -17,6 +17,7 @@ status = [
   "Linux i686",
   "Linux mipsel",
   "Linux powerpc",
+  "Linux powerpc64",
   "Linux powerpc64le",
   "Linux s390x",
   "Linux x32",

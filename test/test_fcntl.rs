@@ -28,8 +28,6 @@ use std::io::prelude::*;
 #[cfg(not(target_os = "redox"))]
 use std::os::unix::fs;
 
-use crate::*;
-
 #[test]
 #[cfg(not(target_os = "redox"))]
 fn test_openat() {

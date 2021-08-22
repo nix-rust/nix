@@ -1025,6 +1025,7 @@ fn test_access_file_exists() {
     assert!(access(&path, AccessFlags::R_OK | AccessFlags::W_OK).is_ok());
 }
 
+#[cfg(not(target_os = "redox"))]
 #[test]
 fn test_user_into_passwd() {
     // get the UID of the "nobody" user
