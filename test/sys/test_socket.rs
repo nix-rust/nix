@@ -113,9 +113,9 @@ pub fn test_path_to_sock_addr() {
     let addr = UnixAddr::new(actual).unwrap();
 
     let expect: &[c_char] = unsafe {
-        slice::from_raw_parts(path.as_bytes().as_ptr() as *const c_char, path.len())
+        slice::from_raw_parts(path.as_ptr() as *const c_char, path.len())
     };
-    assert_eq!(&addr.0.sun_path[..8], expect);
+    assert_eq!(unsafe { &(*addr.as_ptr()).sun_path[..8] }, expect);
 
     assert_eq!(addr.path(), Some(actual));
 }
@@ -133,7 +133,7 @@ pub fn test_addr_equality_path() {
     let addr1 = UnixAddr::new(actual).unwrap();
     let mut addr2 = addr1;
 
-    addr2.0.sun_path[10] = 127;
+    unsafe { (*addr2.as_mut_ptr()).sun_path[10] = 127 };
 
     assert_eq!(addr1, addr2);
     assert_eq!(calculate_hash(&addr1), calculate_hash(&addr2));
@@ -157,7 +157,7 @@ pub fn test_addr_equality_abstract() {
     assert_eq!(addr1, addr2);
     assert_eq!(calculate_hash(&addr1), calculate_hash(&addr2));
 
-    addr2.0.sun_path[17] = 127;
+    unsafe { (*addr2.as_mut_ptr()).sun_path[17] = 127 };
     assert_ne!(addr1, addr2);
     assert_ne!(calculate_hash(&addr1), calculate_hash(&addr2));
 }
@@ -180,7 +180,7 @@ pub fn test_abstract_uds_addr() {
     assert_eq!(addr.path(), None);
 
     // Internally, name is null-prefixed (abstract namespace)
-    assert_eq!(addr.0.sun_path[0], 0);
+    assert_eq!(unsafe { (*addr.as_ptr()).sun_path[0] }, 0);
 }
 
 #[test]
@@ -194,8 +194,7 @@ pub fn test_getsockname() {
                .expect("socket failed");
     let sockaddr = SockAddr::new_unix(&sockname).unwrap();
     bind(sock, &sockaddr).expect("bind failed");
-    assert_eq!(sockaddr.to_string(),
-               getsockname(sock).expect("getsockname failed").to_string());
+    assert_eq!(sockaddr, getsockname(sock).expect("getsockname failed"));
 }
 
 #[test]

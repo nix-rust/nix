@@ -1802,10 +1802,10 @@ pub fn sockaddr_storage_to_addr(
         }
         libc::AF_UNIX => {
             let pathlen = len - offset_of!(sockaddr_un, sun_path);
-            let sun = unsafe {
-                *(addr as *const _ as *const sockaddr_un)
-            };
-            Ok(SockAddr::Unix(UnixAddr(sun, pathlen)))
+            unsafe {
+                let sun = *(addr as *const _ as *const sockaddr_un);
+                Ok(SockAddr::Unix(UnixAddr::from_raw_parts(sun, pathlen)))
+            }
         }
         #[cfg(any(target_os = "android", target_os = "linux"))]
         libc::AF_PACKET => {
