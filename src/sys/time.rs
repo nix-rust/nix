@@ -1,6 +1,7 @@
+use crate::errno::Errno;
 use std::{cmp, fmt, ops};
 use std::time::Duration;
-use std::convert::From;
+use std::convert::{From, TryFrom};
 use libc::{timespec, timeval};
 #[cfg_attr(target_env = "musl", allow(deprecated))] // https://github.com/rust-lang/libc/issues/1848
 pub use libc::{time_t, suseconds_t};
@@ -81,9 +82,16 @@ impl From<Duration> for TimeSpec {
     }
 }
 
-impl From<TimeSpec> for Duration {
-    fn from(timespec: TimeSpec) -> Self {
-        Duration::new(timespec.0.tv_sec as u64, timespec.0.tv_nsec as u32)
+impl TryFrom<TimeSpec> for Duration {
+    type Error = Errno;
+
+    fn try_from(value: TimeSpec) -> Result<Self, Self::Error> {
+        let secs = u64::try_from(value.0.tv_sec).map_err(|_| Errno::EINVAL)?;
+        if value.0.tv_nsec >= NANOS_PER_SEC {
+            return Err(Errno::EINVAL);
+        }
+        let nanos = u32::try_from(value.0.tv_nsec).map_err(|_| Errno::EINVAL)?;
+        Ok(Duration::new(secs, nanos))
     }
 }
 
@@ -524,6 +532,10 @@ fn div_rem_64(this: i64, other: i64) -> (i64, i64) {
 #[cfg(test)]
 mod test {
     use super::{TimeSpec, TimeVal, TimeValLike};
+
+    use crate::errno::Errno;
+    use libc::timespec;
+    use std::convert::TryFrom;
     use std::time::Duration;
 
     #[test]
@@ -536,12 +548,19 @@ mod test {
     }
 
     #[test]
-    pub fn test_timespec_from() {
+    pub fn test_timespec_try_from() {
         let duration = Duration::new(123, 123_456_789);
         let timespec = TimeSpec::nanoseconds(123_123_456_789);
 
         assert_eq!(TimeSpec::from(duration), timespec);
-        assert_eq!(Duration::from(timespec), duration);
+        assert_eq!(Duration::try_from(timespec), Ok(duration));
+
+        assert_eq!(Duration::try_from(TimeSpec::from(timespec{tv_sec: -1, tv_nsec: 0})),
+                   Err(Errno::EINVAL));
+        assert_eq!(Duration::try_from(TimeSpec::from(timespec{tv_sec: 0, tv_nsec: -1})),
+                   Err(Errno::EINVAL));
+        assert_eq!(Duration::try_from(TimeSpec::from(timespec{tv_sec: 0, tv_nsec: 1_000_000_000})),
+                   Err(Errno::EINVAL));
     }
 
     #[test]
