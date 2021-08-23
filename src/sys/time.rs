@@ -1,7 +1,7 @@
 use crate::errno::Errno;
 use std::{cmp, fmt, ops};
 use std::time::Duration;
-use std::convert::{From, TryFrom};
+use std::convert::{From, TryFrom, TryInto};
 use libc::{timespec, timeval};
 #[cfg_attr(target_env = "musl", allow(deprecated))] // https://github.com/rust-lang/libc/issues/1848
 pub use libc::{time_t, suseconds_t};
@@ -87,10 +87,10 @@ impl TryFrom<TimeSpec> for Duration {
 
     fn try_from(value: TimeSpec) -> Result<Self, Self::Error> {
         let secs = u64::try_from(value.0.tv_sec).map_err(|_| Errno::EINVAL)?;
-        if value.0.tv_nsec >= NANOS_PER_SEC {
+        let nanos = u32::try_from(value.0.tv_nsec).map_err(|_| Errno::EINVAL)?;
+        if nanos >= NANOS_PER_SEC.try_into().unwrap() {
             return Err(Errno::EINVAL);
         }
-        let nanos = u32::try_from(value.0.tv_nsec).map_err(|_| Errno::EINVAL)?;
         Ok(Duration::new(secs, nanos))
     }
 }
