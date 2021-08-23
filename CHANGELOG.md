@@ -30,6 +30,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1335](https://github.com/nix-rust/nix/pull/1335))
 - Exposed `SockAddr::from_raw_sockaddr`
   (#[1447](https://github.com/nix-rust/nix/pull/1447))
+- Replaced Replace From<TimeSpec> for Duration with TryFrom<TimeSpec>
+  (#[1502](https://github.com/nix-rust/nix/pull/1502))
 
 ### Changed
 
