@@ -549,7 +549,7 @@ cfg_if!{
     if #[cfg(any(target_os = "android", target_os = "linux"))] {
         macro_rules! require_acct{
             () => {
-                require_capability!(CAP_SYS_PACCT);
+                require_capability!("test_acct", CAP_SYS_PACCT);
             }
         }
     } else if #[cfg(target_os = "freebsd")] {
@@ -1040,7 +1040,7 @@ fn test_user_into_passwd() {
 fn test_setfsuid() {
     use std::os::unix::fs::PermissionsExt;
     use std::{fs, io, thread};
-    require_capability!(CAP_SETUID);
+    require_capability!("test_setfsuid", CAP_SETUID);
 
     // get the UID of the "nobody" user
     let nobody = User::from_name("nobody").unwrap().unwrap();

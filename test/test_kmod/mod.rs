@@ -41,7 +41,7 @@ use std::io::Read;
 
 #[test]
 fn test_finit_and_delete_module() {
-    require_capability!(CAP_SYS_MODULE);
+    require_capability!("test_finit_and_delete_module", CAP_SYS_MODULE);
     let _m0 = crate::KMOD_MTX.lock().expect("Mutex got poisoned by another test");
     let _m1 = crate::CWD_LOCK.read().expect("Mutex got poisoned by another test");
 
@@ -58,8 +58,8 @@ fn test_finit_and_delete_module() {
 }
 
 #[test]
-fn test_finit_and_delete_modul_with_params() {
-    require_capability!(CAP_SYS_MODULE);
+fn test_finit_and_delete_module_with_params() {
+    require_capability!("test_finit_and_delete_module_with_params", CAP_SYS_MODULE);
     let _m0 = crate::KMOD_MTX.lock().expect("Mutex got poisoned by another test");
     let _m1 = crate::CWD_LOCK.read().expect("Mutex got poisoned by another test");
 
@@ -80,7 +80,7 @@ fn test_finit_and_delete_modul_with_params() {
 
 #[test]
 fn test_init_and_delete_module() {
-    require_capability!(CAP_SYS_MODULE);
+    require_capability!("test_init_and_delete_module", CAP_SYS_MODULE);
     let _m0 = crate::KMOD_MTX.lock().expect("Mutex got poisoned by another test");
     let _m1 = crate::CWD_LOCK.read().expect("Mutex got poisoned by another test");
 
@@ -100,7 +100,7 @@ fn test_init_and_delete_module() {
 
 #[test]
 fn test_init_and_delete_module_with_params() {
-    require_capability!(CAP_SYS_MODULE);
+    require_capability!("test_init_and_delete_module_with_params", CAP_SYS_MODULE);
     let _m0 = crate::KMOD_MTX.lock().expect("Mutex got poisoned by another test");
     let _m1 = crate::CWD_LOCK.read().expect("Mutex got poisoned by another test");
 
@@ -121,7 +121,7 @@ fn test_init_and_delete_module_with_params() {
 
 #[test]
 fn test_finit_module_invalid() {
-    require_capability!(CAP_SYS_MODULE);
+    require_capability!("test_finit_module_invalid", CAP_SYS_MODULE);
     let _m0 = crate::KMOD_MTX.lock().expect("Mutex got poisoned by another test");
     let _m1 = crate::CWD_LOCK.read().expect("Mutex got poisoned by another test");
 
@@ -135,7 +135,7 @@ fn test_finit_module_invalid() {
 
 #[test]
 fn test_finit_module_twice_and_delete_module() {
-    require_capability!(CAP_SYS_MODULE);
+    require_capability!("test_finit_module_twice_and_delete_module", CAP_SYS_MODULE);
     let _m0 = crate::KMOD_MTX.lock().expect("Mutex got poisoned by another test");
     let _m1 = crate::CWD_LOCK.read().expect("Mutex got poisoned by another test");
 
@@ -157,7 +157,7 @@ fn test_finit_module_twice_and_delete_module() {
 
 #[test]
 fn test_delete_module_not_loaded() {
-    require_capability!(CAP_SYS_MODULE);
+    require_capability!("test_delete_module_not_loaded", CAP_SYS_MODULE);
     let _m0 = crate::KMOD_MTX.lock().expect("Mutex got poisoned by another test");
     let _m1 = crate::CWD_LOCK.read().expect("Mutex got poisoned by another test");
 

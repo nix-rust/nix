@@ -13,7 +13,7 @@ use crate::*;
 fn test_ptrace() {
     // Just make sure ptrace can be called at all, for now.
     // FIXME: qemu-user doesn't implement ptrace on all arches, so permit ENOSYS
-    require_capability!(CAP_SYS_PTRACE);
+    require_capability!("test_ptrace", CAP_SYS_PTRACE);
     let err = ptrace::attach(getpid()).unwrap_err();
     assert!(err == Errno::EPERM || err == Errno::EINVAL ||
             err == Errno::ENOSYS);
@@ -23,7 +23,7 @@ fn test_ptrace() {
 #[test]
 #[cfg(any(target_os = "android", target_os = "linux"))]
 fn test_ptrace_setoptions() {
-    require_capability!(CAP_SYS_PTRACE);
+    require_capability!("test_ptrace_setoptions", CAP_SYS_PTRACE);
     let err = ptrace::setoptions(getpid(), Options::PTRACE_O_TRACESYSGOOD).unwrap_err();
     assert!(err != Errno::EOPNOTSUPP);
 }
@@ -32,7 +32,7 @@ fn test_ptrace_setoptions() {
 #[test]
 #[cfg(any(target_os = "android", target_os = "linux"))]
 fn test_ptrace_getevent() {
-    require_capability!(CAP_SYS_PTRACE);
+    require_capability!("test_ptrace_getevent", CAP_SYS_PTRACE);
     let err = ptrace::getevent(getpid()).unwrap_err();
     assert!(err != Errno::EOPNOTSUPP);
 }
@@ -41,7 +41,7 @@ fn test_ptrace_getevent() {
 #[test]
 #[cfg(any(target_os = "android", target_os = "linux"))]
 fn test_ptrace_getsiginfo() {
-    require_capability!(CAP_SYS_PTRACE);
+    require_capability!("test_ptrace_getsiginfo", CAP_SYS_PTRACE);
     if let Err(Errno::EOPNOTSUPP) = ptrace::getsiginfo(getpid()) {
         panic!("ptrace_getsiginfo returns Errno::EOPNOTSUPP!");
     }
@@ -51,7 +51,7 @@ fn test_ptrace_getsiginfo() {
 #[test]
 #[cfg(any(target_os = "android", target_os = "linux"))]
 fn test_ptrace_setsiginfo() {
-    require_capability!(CAP_SYS_PTRACE);
+    require_capability!("test_ptrace_setsiginfo", CAP_SYS_PTRACE);
     let siginfo = unsafe { mem::zeroed() };
     if let Err(Errno::EOPNOTSUPP) = ptrace::setsiginfo(getpid(), &siginfo) {
         panic!("ptrace_setsiginfo returns Errno::EOPNOTSUPP!");
@@ -67,7 +67,7 @@ fn test_ptrace_cont() {
     use nix::unistd::fork;
     use nix::unistd::ForkResult::*;
 
-    require_capability!(CAP_SYS_PTRACE);
+    require_capability!("test_ptrace_cont", CAP_SYS_PTRACE);
 
     let _m = crate::FORK_MTX.lock().expect("Mutex got poisoned by another test");
 
@@ -125,7 +125,7 @@ fn test_ptrace_interrupt() {
     use std::thread::sleep;
     use std::time::Duration;
 
-    require_capability!(CAP_SYS_PTRACE);
+    require_capability!("test_ptrace_interrupt", CAP_SYS_PTRACE);
 
     let _m = crate::FORK_MTX.lock().expect("Mutex got poisoned by another test");
 
@@ -171,7 +171,7 @@ fn test_ptrace_syscall() {
     use nix::unistd::getpid;
     use nix::unistd::ForkResult::*;
 
-    require_capability!(CAP_SYS_PTRACE);
+    require_capability!("test_ptrace_syscall", CAP_SYS_PTRACE);
 
     let _m = crate::FORK_MTX.lock().expect("Mutex got poisoned by another test");
 
