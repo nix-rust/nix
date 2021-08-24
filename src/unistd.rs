@@ -2742,7 +2742,7 @@ impl From<User> for libc::passwd {
             pw_age: CString::new("").unwrap().into_raw(),
             #[cfg(target_os = "illumos")]
             pw_comment: CString::new("").unwrap().into_raw(),
-            #[cfg(target_os = "freebsd")]
+            #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
             pw_fields: 0,
         }
     }
