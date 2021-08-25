@@ -1056,6 +1056,14 @@ pub enum ControlMessage<'a> {
     #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     RxqOvfl(&'a u32),
+
+    /// Configure the transmission time of packets.
+    ///
+    /// For further information, please refer to the
+    /// [`tc-etf(8)`](https://man7.org/linux/man-pages/man8/tc-etf.8.html) man
+    /// page.
+    #[cfg(target_os = "linux")]
+    TxTime(&'a u64),
 }
 
 // An opaque structure used to prevent cmsghdr from being a public type
@@ -1153,6 +1161,10 @@ impl<'a> ControlMessage<'a> {
             ControlMessage::RxqOvfl(drop_count) => {
                 drop_count as *const _ as *const u8
             },
+            #[cfg(target_os = "linux")]
+            ControlMessage::TxTime(tx_time) => {
+                tx_time as *const _ as *const u8
+            },
         };
         unsafe {
             ptr::copy_nonoverlapping(
@@ -1208,6 +1220,10 @@ impl<'a> ControlMessage<'a> {
             ControlMessage::RxqOvfl(drop_count) => {
                 mem::size_of_val(drop_count)
             },
+            #[cfg(target_os = "linux")]
+            ControlMessage::TxTime(tx_time) => {
+                mem::size_of_val(tx_time)
+            },
         }
     }
 
@@ -1237,6 +1253,8 @@ impl<'a> ControlMessage<'a> {
             ControlMessage::Ipv6PacketInfo(_) => libc::IPPROTO_IPV6,
             #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
             ControlMessage::RxqOvfl(_) => libc::SOL_SOCKET,
+            #[cfg(target_os = "linux")]
+            ControlMessage::TxTime(_) => libc::SOL_SOCKET,
         }
     }
 
@@ -1278,6 +1296,10 @@ impl<'a> ControlMessage<'a> {
             #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
             ControlMessage::RxqOvfl(_) => {
                 libc::SO_RXQ_OVFL
+            },
+            #[cfg(target_os = "linux")]
+            ControlMessage::TxTime(_) => {
+                libc::SCM_TXTIME
             },
         }
     }

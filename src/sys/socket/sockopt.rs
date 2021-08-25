@@ -582,6 +582,11 @@ sockopt_impl!(
     #[allow(missing_docs)]
     // Not documented by Linux!
     UdpGroSegment, Both, libc::IPPROTO_UDP, libc::UDP_GRO, bool);
+#[cfg(target_os = "linux")]
+sockopt_impl!(
+    /// Configures the behavior of time-based transmission of packets, for use
+    /// with the `TxTime` control message.
+    TxTime, Both, libc::SOL_SOCKET, libc::SO_TXTIME, libc::sock_txtime);
 #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
 sockopt_impl!(
     /// Indicates that an unsigned 32-bit value ancillary message (cmsg) should
