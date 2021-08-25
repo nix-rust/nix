@@ -265,6 +265,13 @@ sockopt_impl!(Both, TcpKeepAlive, libc::IPPROTO_TCP, libc::TCP_KEEPALIVE, u32);
           target_os = "linux",
           target_os = "nacl"))]
 sockopt_impl!(Both, TcpKeepIdle, libc::IPPROTO_TCP, libc::TCP_KEEPIDLE, u32);
+cfg_if! {
+    if #[cfg(any(target_os = "android", target_os = "linux"))] {
+        sockopt_impl!(Both, TcpMaxSeg, libc::IPPROTO_TCP, libc::TCP_MAXSEG, u32);
+    } else {
+        sockopt_impl!(GetOnly, TcpMaxSeg, libc::IPPROTO_TCP, libc::TCP_MAXSEG, u32);
+    }
+}
 #[cfg(not(target_os = "openbsd"))]
 sockopt_impl!(Both, TcpKeepCount, libc::IPPROTO_TCP, libc::TCP_KEEPCNT, u32);
 #[cfg(not(target_os = "openbsd"))]

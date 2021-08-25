@@ -30,6 +30,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1335](https://github.com/nix-rust/nix/pull/1335))
 - Exposed `SockAddr::from_raw_sockaddr`
   (#[1447](https://github.com/nix-rust/nix/pull/1447))
+- Added support for `TCP_MAXSEG` TCP Maximum Segment Size socket options
+  (#[1292](https://github.com/nix-rust/nix/pull/1292))
 
 ### Changed
 
