@@ -9,9 +9,9 @@ use std::iter::Iterator;
 use std::mem;
 use std::option::Option;
 
-use crate::{Result, Errno};
-use crate::sys::socket::SockAddr;
 use crate::net::if_::*;
+use crate::sys::socket::SockAddr;
+use crate::{Errno, Result};
 
 /// Describes a single address for an interface as returned by `getifaddrs`.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -46,8 +46,31 @@ impl InterfaceAddress {
     /// Create an `InterfaceAddress` from the libc struct.
     fn from_libc_ifaddrs(info: &libc::ifaddrs) -> InterfaceAddress {
         let ifname = unsafe { ffi::CStr::from_ptr(info.ifa_name) };
-        let address = unsafe { SockAddr::from_libc_sockaddr(info.ifa_addr) };
-        let netmask = unsafe { SockAddr::from_libc_sockaddr(info.ifa_netmask) };
+        let get_sockaddr = |sa: *const libc::sockaddr| {
+            if sa.is_null() {
+                return None;
+            }
+            // TODO: there's gotta be a better way to do this but this is basically
+            //       what the man pages recommend
+            let len = match unsafe { (*sa).sa_family } as _ {
+                libc::AF_INET => mem::size_of::<libc::sockaddr_in>(),
+                libc::AF_INET6 => mem::size_of::<libc::sockaddr_in6>(),
+                #[cfg(any(
+                    target_os = "android",
+                    target_os = "linux",
+                    target_os = "illumos",
+                    target_os = "fuchsia",
+                    target_os = "solaris"
+                ))]
+                libc::AF_PACKET => mem::size_of::<libc::sockaddr_in>(),
+                #[cfg(any(target_os = "android", target_os = "linux"))]
+                libc::AF_NETLINK => mem::size_of::<libc::sockaddr_nl>(),
+                _ => return None,
+            };
+            unsafe { SockAddr::from_raw_sockaddr(sa, len) }.ok()
+        };
+        let address = get_sockaddr(info.ifa_addr);
+        let netmask = get_sockaddr(info.ifa_netmask);
         let mut addr = InterfaceAddress {
             interface_name: ifname.to_string_lossy().to_string(),
             flags: InterfaceFlags::from_bits_truncate(info.ifa_flags as i32),
@@ -59,9 +82,9 @@ impl InterfaceAddress {
 
         let ifu = get_ifu_from_sockaddr(info);
         if addr.flags.contains(InterfaceFlags::IFF_POINTOPOINT) {
-            addr.destination = unsafe { SockAddr::from_libc_sockaddr(ifu) };
+            addr.destination = get_sockaddr(ifu);
         } else if addr.flags.contains(InterfaceFlags::IFF_BROADCAST) {
-            addr.broadcast = unsafe { SockAddr::from_libc_sockaddr(ifu) };
+            addr.broadcast = get_sockaddr(ifu);
         }
 
         addr
@@ -127,9 +150,10 @@ pub fn getifaddrs() -> Result<InterfaceAddressIterator> {
     let mut addrs = mem::MaybeUninit::<*mut libc::ifaddrs>::uninit();
     unsafe {
         Errno::result(libc::getifaddrs(addrs.as_mut_ptr())).map(|_| {
+            let addrs = addrs.assume_init();
             InterfaceAddressIterator {
-                base: addrs.assume_init(),
-                next: addrs.assume_init(),
+                base: addrs,
+                next: addrs,
             }
         })
     }

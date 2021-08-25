@@ -1,4 +1,4 @@
-use nix::sys::socket::{AddressFamily, InetAddr, SockAddr, UnixAddr, getsockname, sockaddr, sockaddr_in6, sockaddr_storage_to_addr};
+use nix::sys::socket::{AddressFamily, InetAddr, SockAddr, UnixAddr, getsockname, sockaddr, sockaddr_in6};
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::mem::{self, MaybeUninit};
@@ -35,7 +35,7 @@ pub fn test_inetv4_addr_to_sock_addr() {
 }
 
 #[test]
-pub fn test_inetv4_addr_roundtrip_sockaddr_storage_to_addr() {
+pub fn test_inetv4_addr_roundtrip_sockaddr_from_raw() {
     let actual: net::SocketAddr = FromStr::from_str("127.0.0.1:3000").unwrap();
     let addr = InetAddr::from_std(&actual);
     let sockaddr = SockAddr::new_inet(addr);
@@ -47,13 +47,13 @@ pub fn test_inetv4_addr_roundtrip_sockaddr_storage_to_addr() {
         assert_eq!(mem::size_of::<sockaddr>(), ffi_size as usize);
         unsafe {
             storage_ptr.copy_from_nonoverlapping(ffi_ptr as *const sockaddr, 1);
-            (storage.assume_init(), ffi_size)
+            (storage, ffi_size)
         }
     };
 
-    let from_storage = sockaddr_storage_to_addr(&storage, ffi_size as usize).unwrap();
+    let from_storage = unsafe { SockAddr::from_raw_sockaddr(storage.as_ptr() as _, ffi_size as usize).unwrap() };
     assert_eq!(from_storage, sockaddr);
-    let from_storage = sockaddr_storage_to_addr(&storage, mem::size_of::<sockaddr_storage>()).unwrap();
+    let from_storage = unsafe { SockAddr::from_raw_sockaddr(storage.as_ptr() as _, mem::size_of::<sockaddr_storage>()).unwrap() };
     assert_eq!(from_storage, sockaddr);
 }
 
@@ -79,7 +79,7 @@ pub fn test_inetv6_addr_to_sock_addr() {
     assert_eq!(actual, addr.to_std());
 }
 #[test]
-pub fn test_inetv6_addr_roundtrip_sockaddr_storage_to_addr() {
+pub fn test_inetv6_addr_roundtrip_sockaddr_from_raw() {
     let port: u16 = 3000;
     let flowinfo: u32 = 1;
     let scope_id: u32 = 2;
@@ -96,13 +96,13 @@ pub fn test_inetv6_addr_roundtrip_sockaddr_storage_to_addr() {
         assert_eq!(mem::size_of::<sockaddr_in6>(), ffi_size as usize);
         unsafe {
             storage_ptr.copy_from_nonoverlapping((ffi_ptr as *const sockaddr).cast::<sockaddr_in6>(), 1);
-            (storage.assume_init(), ffi_size)
+            (storage, ffi_size)
         }
     };
 
-    let from_storage = sockaddr_storage_to_addr(&storage, ffi_size as usize).unwrap();
+    let from_storage = unsafe { SockAddr::from_raw_sockaddr(storage.as_ptr() as _, ffi_size as usize).unwrap() };
     assert_eq!(from_storage, sockaddr);
-    let from_storage = sockaddr_storage_to_addr(&storage, mem::size_of::<sockaddr_storage>()).unwrap();
+    let from_storage = unsafe { SockAddr::from_raw_sockaddr(storage.as_ptr() as _, mem::size_of::<sockaddr_storage>()).unwrap() };
     assert_eq!(from_storage, sockaddr);
 }
 
@@ -1218,17 +1218,13 @@ pub fn test_syscontrol() {
     target_os = "openbsd",
 ))]
 fn loopback_address(family: AddressFamily) -> Option<nix::ifaddrs::InterfaceAddress> {
-    use std::io;
-    use std::io::Write;
     use nix::ifaddrs::getifaddrs;
     use nix::net::if_::*;
 
     let addrs = match getifaddrs() {
         Ok(iter) => iter,
         Err(e) => {
-            let stdioerr = io::stderr();
-            let mut handle = stdioerr.lock();
-            writeln!(handle, "getifaddrs: {:?}", e).unwrap();
+            eprintln!("getifaddrs: {:?}", e);
             return None;
         },
     };

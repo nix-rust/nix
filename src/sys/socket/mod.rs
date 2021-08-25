@@ -5,7 +5,6 @@ use cfg_if::cfg_if;
 use crate::{Result, errno::Errno};
 use libc::{self, c_void, c_int, iovec, socklen_t, size_t,
         CMSG_FIRSTHDR, CMSG_NXTHDR, CMSG_DATA, CMSG_LEN};
-use memoffset::offset_of;
 use std::{mem, ptr, slice};
 use std::os::unix::io::RawFd;
 #[cfg(all(target_os = "linux"))]
@@ -1320,7 +1319,7 @@ pub fn recvmmsg<'a, I>(
     // Addresses should be pre-allocated.  pack_mhdr_to_receive will store them
     // as raw pointers, so we may not move them.  Turn the vec into a boxed
     // slice so we won't inadvertently reallocate the vec.
-    let mut addresses = vec![mem::MaybeUninit::uninit(); num_messages]
+    let mut addresses = vec![mem::MaybeUninit::<sockaddr_storage>::uninit(); num_messages]
         .into_boxed_slice();
 
     let results: Vec<_> = iter.enumerate().map(|(i, d)| {
@@ -1355,7 +1354,7 @@ pub fn recvmmsg<'a, I>(
     Ok(output
         .into_iter()
         .take(ret as usize)
-        .zip(addresses.iter().map(|addr| unsafe{addr.assume_init()}))
+        .zip(addresses.iter())
         .zip(results.into_iter())
         .map(|((mmsghdr, address), (msg_controllen, cmsg_buffer))| {
             unsafe {
@@ -1363,7 +1362,7 @@ pub fn recvmmsg<'a, I>(
                     mmsghdr.msg_hdr,
                     mmsghdr.msg_len as isize,
                     msg_controllen,
-                    address,
+                    address.as_ptr() as *const sockaddr,
                     cmsg_buffer
                 )
             }
@@ -1375,7 +1374,7 @@ unsafe fn read_mhdr<'a, 'b>(
     mhdr: msghdr,
     r: isize,
     msg_controllen: usize,
-    address: sockaddr_storage,
+    address: *const sockaddr,
     cmsg_buffer: &'a mut Option<&'b mut Vec<u8>>
 ) -> RecvMsg<'b> {
     let cmsghdr = {
@@ -1393,10 +1392,7 @@ unsafe fn read_mhdr<'a, 'b>(
         }.as_ref()
     };
 
-    let address = sockaddr_storage_to_addr(
-        &address ,
-         mhdr.msg_namelen as usize
-    ).ok();
+    let address = SockAddr::from_raw_sockaddr(address, mhdr.msg_namelen as usize).ok();
 
     RecvMsg {
         bytes: r as usize,
@@ -1516,7 +1512,7 @@ pub fn recvmsg<'a>(fd: RawFd, iov: &[IoVec<&mut [u8]>],
                    mut cmsg_buffer: Option<&'a mut Vec<u8>>,
                    flags: MsgFlags) -> Result<RecvMsg<'a>>
 {
-    let mut address = mem::MaybeUninit::uninit();
+    let mut address = mem::MaybeUninit::<sockaddr_storage>::uninit();
 
     let (msg_controllen, mut mhdr) = unsafe {
         pack_mhdr_to_receive(&iov, &mut cmsg_buffer, address.as_mut_ptr())
@@ -1526,7 +1522,7 @@ pub fn recvmsg<'a>(fd: RawFd, iov: &[IoVec<&mut [u8]>],
 
     let r = Errno::result(ret)?;
 
-    Ok(unsafe { read_mhdr(mhdr, r, msg_controllen, address.assume_init(), &mut cmsg_buffer) })
+    Ok(unsafe { read_mhdr(mhdr, r, msg_controllen, address.as_ptr() as *const sockaddr, &mut cmsg_buffer) })
 }
 
 
@@ -1668,7 +1664,7 @@ pub fn recvfrom(sockfd: RawFd, buf: &mut [u8])
     -> Result<(usize, Option<SockAddr>)>
 {
     unsafe {
-        let mut addr: sockaddr_storage = mem::zeroed();
+        let mut addr = mem::MaybeUninit::<sockaddr_storage>::uninit();
         let mut len = mem::size_of::<sockaddr_storage>() as socklen_t;
 
         let ret = Errno::result(libc::recvfrom(
@@ -1676,10 +1672,10 @@ pub fn recvfrom(sockfd: RawFd, buf: &mut [u8])
             buf.as_ptr() as *mut c_void,
             buf.len() as size_t,
             0,
-            &mut addr as *mut libc::sockaddr_storage as *mut libc::sockaddr,
+            addr.as_mut_ptr() as *mut libc::sockaddr,
             &mut len as *mut socklen_t))? as usize;
 
-        match sockaddr_storage_to_addr(&addr, len as usize) {
+        match SockAddr::from_raw_sockaddr(addr.as_ptr() as _, len as usize) {
             Err(Errno::ENOTCONN) => Ok((ret, None)),
             Ok(addr) => Ok((ret, Some(addr))),
             Err(e) => Err(e)
@@ -1765,7 +1761,7 @@ pub fn setsockopt<O: SetSockOpt>(fd: RawFd, opt: O, val: &O::Val) -> Result<()> 
 /// [Further reading](https://pubs.opengroup.org/onlinepubs/9699919799/functions/getpeername.html)
 pub fn getpeername(fd: RawFd) -> Result<SockAddr> {
     unsafe {
-        let mut addr = mem::MaybeUninit::uninit();
+        let mut addr = mem::MaybeUninit::<sockaddr_storage>::uninit();
         let mut len = mem::size_of::<sockaddr_storage>() as socklen_t;
 
         let ret = libc::getpeername(
@@ -1776,7 +1772,7 @@ pub fn getpeername(fd: RawFd) -> Result<SockAddr> {
 
         Errno::result(ret)?;
 
-        sockaddr_storage_to_addr(&addr.assume_init(), len as usize)
+        SockAddr::from_raw_sockaddr(addr.as_ptr() as _, len as usize)
     }
 }
 
@@ -1785,7 +1781,7 @@ pub fn getpeername(fd: RawFd) -> Result<SockAddr> {
 /// [Further reading](https://pubs.opengroup.org/onlinepubs/9699919799/functions/getsockname.html)
 pub fn getsockname(fd: RawFd) -> Result<SockAddr> {
     unsafe {
-        let mut addr = mem::MaybeUninit::uninit();
+        let mut addr = mem::MaybeUninit::<sockaddr_storage>::uninit();
         let mut len = mem::size_of::<sockaddr_storage>() as socklen_t;
 
         let ret = libc::getsockname(
@@ -1796,89 +1792,9 @@ pub fn getsockname(fd: RawFd) -> Result<SockAddr> {
 
         Errno::result(ret)?;
 
-        sockaddr_storage_to_addr(&addr.assume_init(), len as usize)
+        SockAddr::from_raw_sockaddr(addr.as_ptr() as _, len as usize)
     }
 }
-
-/// Return the appropriate `SockAddr` type from a `sockaddr_storage` of a
-/// certain size.
-///
-/// In C this would usually be done by casting.  The `len` argument
-/// should be the number of bytes in the `sockaddr_storage` that are actually
-/// allocated and valid.  It must be at least as large as all the useful parts
-/// of the structure.  Note that in the case of a `sockaddr_un`, `len` need not
-/// include the terminating null.
-pub fn sockaddr_storage_to_addr(
-    addr: &sockaddr_storage,
-    len: usize) -> Result<SockAddr> {
-
-    assert!(len <= mem::size_of::<sockaddr_storage>());
-    if len < mem::size_of_val(&addr.ss_family) {
-        return Err(Errno::ENOTCONN);
-    }
-
-    match c_int::from(addr.ss_family) {
-        libc::AF_INET => {
-            assert!(len as usize >= mem::size_of::<sockaddr_in>());
-            let sin = unsafe {
-                *(addr as *const sockaddr_storage as *const sockaddr_in)
-            };
-            Ok(SockAddr::Inet(InetAddr::V4(sin)))
-        }
-        libc::AF_INET6 => {
-            assert!(len as usize >= mem::size_of::<sockaddr_in6>());
-            let sin6 = unsafe {
-                *(addr as *const _ as *const sockaddr_in6)
-            };
-            Ok(SockAddr::Inet(InetAddr::V6(sin6)))
-        }
-        libc::AF_UNIX => {
-            let pathlen = len - offset_of!(sockaddr_un, sun_path);
-            unsafe {
-                let sun = *(addr as *const _ as *const sockaddr_un);
-                Ok(SockAddr::Unix(UnixAddr::from_raw_parts(sun, pathlen)))
-            }
-        }
-        #[cfg(any(target_os = "android", target_os = "linux"))]
-        libc::AF_PACKET => {
-            use libc::sockaddr_ll;
-            // Don't assert anything about the size.
-            // Apparently the Linux kernel can return smaller sizes when
-            // the value in the last element of sockaddr_ll (`sll_addr`) is
-            // smaller than the declared size of that field
-            let sll = unsafe {
-                *(addr as *const _ as *const sockaddr_ll)
-            };
-            Ok(SockAddr::Link(LinkAddr(sll)))
-        }
-        #[cfg(any(target_os = "android", target_os = "linux"))]
-        libc::AF_NETLINK => {
-            use libc::sockaddr_nl;
-            let snl = unsafe {
-                *(addr as *const _ as *const sockaddr_nl)
-            };
-            Ok(SockAddr::Netlink(NetlinkAddr(snl)))
-        }
-        #[cfg(any(target_os = "android", target_os = "linux"))]
-        libc::AF_ALG => {
-            use libc::sockaddr_alg;
-            let salg = unsafe {
-                *(addr as *const _ as *const sockaddr_alg)
-            };
-            Ok(SockAddr::Alg(AlgAddr(salg)))
-        }
-        #[cfg(any(target_os = "android", target_os = "linux"))]
-        libc::AF_VSOCK => {
-            use libc::sockaddr_vm;
-            let svm = unsafe {
-                *(addr as *const _ as *const sockaddr_vm)
-            };
-            Ok(SockAddr::Vsock(VsockAddr(svm)))
-        }
-        af => panic!("unexpected address family {}", af),
-    }
-}
-
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum Shutdown {
