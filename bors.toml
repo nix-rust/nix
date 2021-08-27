@@ -30,7 +30,7 @@ status = [
   "Rust Stable",
   "iOS aarch64",
   "iOS x86_64",
-  "illumos",
+  "Illumos",
 ]
 
 # Set bors's timeout to 1 hour
