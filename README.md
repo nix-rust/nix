@@ -74,6 +74,7 @@ Tier 2:
   * s390x-unknown-linux-gnu
   * x86_64-apple-ios
   * x86_64-linux-android
+  * x86_64-unknown-illumos
   * x86_64-unknown-netbsd
 
 Tier 3:

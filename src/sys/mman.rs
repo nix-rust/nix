@@ -65,8 +65,8 @@ libc_bitflags!{
         MAP_LOCKED;
         /// Do not reserve swap space for this mapping.
         ///
-        /// This was removed in FreeBSD 11.
-        #[cfg(not(target_os = "freebsd"))]
+        /// This was removed in FreeBSD 11 and is unused in DragonFlyBSD.
+        #[cfg(not(any(target_os = "dragonfly", target_os = "freebsd")))]
         MAP_NORESERVE;
         /// Populate page tables for a mapping.
         #[cfg(any(target_os = "android", target_os = "linux"))]
@@ -122,8 +122,8 @@ libc_bitflags!{
         MAP_NOSYNC;
         /// Rename private pages to a file.
         ///
-        /// This was removed in FreeBSD 11.
-        #[cfg(any(target_os = "dragonfly", target_os = "netbsd", target_os = "openbsd"))]
+        /// This was removed in FreeBSD 11 and is unused in DragonFlyBSD.
+        #[cfg(any(target_os = "netbsd", target_os = "openbsd"))]
         MAP_RENAME;
         /// Region may contain semaphores.
         #[cfg(any(target_os = "dragonfly", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
