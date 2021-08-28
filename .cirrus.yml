@@ -48,10 +48,8 @@ task:
     RUST_TEST_THREADS: 1            # QEMU works best with 1 thread
     HOME: /tmp/home
     PATH: $HOME/.cargo/bin:$PATH
+    RUSTFLAGS: --cfg qemu
   matrix:
-    - name: Linux aarch64
-      env:
-        TARGET: aarch64-unknown-linux-gnu
     - name: Linux arm gnueabi
       env:
         TARGET: arm-unknown-linux-gnueabi
@@ -97,29 +95,36 @@ task:
     - cross test --target $TARGET
   before_cache_script: rm -rf $CARGO_HOME/registry/index
 
-# Tasks for Linux amd64 builds
+# Tasks for Linux native builds
 task:
   matrix:
     - name: Rust Stable
+      container:
+        image: rust:latest
       env:
         TARGET: x86_64-unknown-linux-gnu
-        TOOLCHAIN: stable
+    - name: Linux aarch64
+      arm_container:
+        image: rust:1.46
+      env:
+        RUSTFLAGS: --cfg graviton
+        TARGET: aarch64-unknown-linux-gnu
     - name: Linux x86_64
+      container:
+        image: rust:1.46
       env:
         TARGET: x86_64-unknown-linux-gnu
-        TOOLCHAIN: 1.46.0
     - name: Linux x86_64 musl
+      container:
+        image: rust:1.46
       env:
         TARGET: x86_64-unknown-linux-musl
-        TOOLCHAIN: 1.46.0
-  container:
-    image: rust:1.46
   setup_script:
-    - rustup toolchain install $TOOLCHAIN
-    - rustup target add --toolchain $TOOLCHAIN $TARGET
+    - rustup target add $TARGET
+    - uname -a
   script:
-    - cargo +$TOOLCHAIN build --target $TARGET --all-targets
-    - cargo +$TOOLCHAIN test --target $TARGET
+    - cargo build --target $TARGET --all-targets
+    - cargo test --target $TARGET
   before_cache_script: rm -rf $CARGO_HOME/registry/index
 
 # Tasks for cross-compiling, but no testing

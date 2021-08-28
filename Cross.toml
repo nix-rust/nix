@@ -1,2 +1,5 @@
 [build.env]
-passthrough = ["RUST_TEST_THREADS"]
+passthrough = [
+	"RUSTFLAGS",
+	"RUST_TEST_THREADS"
+]
