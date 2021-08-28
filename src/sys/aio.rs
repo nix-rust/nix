@@ -60,8 +60,11 @@ libc_enum! {
     #[repr(i32)]
     #[non_exhaustive]
     pub enum LioOpcode {
+        /// No operation
         LIO_NOP,
+        /// Write data as if by a call to [`aio_write`]
         LIO_WRITE,
+        /// Write data as if by a call to [`aio_read`]
         LIO_READ,
     }
 }
@@ -840,6 +843,7 @@ unsafe impl<'a> Sync for LioCb<'a> {}
 
 #[cfg(not(any(target_os = "ios", target_os = "macos")))]
 impl<'a> LioCb<'a> {
+    /// Are no [`AioCb`]s contained?
     pub fn is_empty(&self) -> bool {
         self.aiocbs.is_empty()
     }

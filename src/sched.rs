@@ -1,3 +1,7 @@
+//! Execution scheduling
+//!
+//! See Also
+//! [sched.h](https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/sched.h.html)
 use crate::{Errno, Result};
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
@@ -16,33 +20,70 @@ mod sched_linux_like {
     // For some functions taking with a parameter of type CloneFlags,
     // only a subset of these flags have an effect.
     libc_bitflags! {
+        /// Options for use with [`clone`]
         pub struct CloneFlags: c_int {
+            /// The calling process and the child process run in the same
+            /// memory space.
             CLONE_VM;
+            /// The caller and the child process share the same  filesystem
+            /// information.
             CLONE_FS;
+            /// The calling process and the child process share the same file
+            /// descriptor table.
             CLONE_FILES;
+            /// The calling process and the child process share the same table
+            /// of signal handlers.
             CLONE_SIGHAND;
+            /// If the calling process is being traced, then trace the child
+            /// also.
             CLONE_PTRACE;
+            /// The execution of the calling process is suspended until the
+            /// child releases its virtual memory resources via a call to
+            /// execve(2) or _exit(2) (as with vfork(2)).
             CLONE_VFORK;
+            /// The parent of the new child  (as returned by getppid(2))
+            /// will be the same as that of the calling process.
             CLONE_PARENT;
+            /// The child is placed in the same thread group as the calling
+            /// process.
             CLONE_THREAD;
+            /// The cloned child is started in a new mount namespace.
             CLONE_NEWNS;
+            /// The child and the calling process share a single list of System
+            /// V semaphore adjustment values
             CLONE_SYSVSEM;
-            CLONE_SETTLS;
-            CLONE_PARENT_SETTID;
-            CLONE_CHILD_CLEARTID;
+            // Not supported by Nix due to lack of varargs support in Rust FFI
+            // CLONE_SETTLS;
+            // Not supported by Nix due to lack of varargs support in Rust FFI
+            // CLONE_PARENT_SETTID;
+            // Not supported by Nix due to lack of varargs support in Rust FFI
+            // CLONE_CHILD_CLEARTID;
+            /// Unused since Linux 2.6.2
+            #[deprecated(since = "0.23.0", note = "Deprecated by Linux 2.6.2")]
             CLONE_DETACHED;
+            /// A tracing process cannot force `CLONE_PTRACE` on this child
+            /// process.
             CLONE_UNTRACED;
-            CLONE_CHILD_SETTID;
+            // Not supported by Nix due to lack of varargs support in Rust FFI
+            // CLONE_CHILD_SETTID;
+            /// Create the process in a new cgroup namespace.
             CLONE_NEWCGROUP;
+            /// Create the process in a new UTS namespace.
             CLONE_NEWUTS;
+            /// Create the process in a new IPC namespace.
             CLONE_NEWIPC;
+            /// Create the process in a new user namespace.
             CLONE_NEWUSER;
+            /// Create the process in a new PID namespace.
             CLONE_NEWPID;
+            /// Create the process in a new network namespace.
             CLONE_NEWNET;
+            /// The new process shares an I/O context with the calling process.
             CLONE_IO;
         }
     }
 
+    /// Type for the function executed by [`clone`].
     pub type CloneCb<'a> = Box<dyn FnMut() -> isize + 'a>;
 
     /// CpuSet represent a bit-mask of CPUs.
@@ -212,12 +253,18 @@ mod sched_linux_like {
         Errno::result(res).map(Pid::from_raw)
     }
 
+    /// disassociate parts of the process execution context
+    ///
+    /// See also [unshare(2)](https://man7.org/linux/man-pages/man2/unshare.2.html)
     pub fn unshare(flags: CloneFlags) -> Result<()> {
         let res = unsafe { libc::unshare(flags.bits()) };
 
         Errno::result(res).map(drop)
     }
 
+    /// reassociate thread with a namespace
+    ///
+    /// See also [setns(2)](https://man7.org/linux/man-pages/man2/setns.2.html)
     pub fn setns(fd: RawFd, nstype: CloneFlags) -> Result<()> {
         let res = unsafe { libc::setns(fd, nstype.bits()) };
 

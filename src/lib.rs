@@ -14,6 +14,7 @@
 #![deny(unstable_features)]
 #![deny(missing_copy_implementations)]
 #![deny(missing_debug_implementations)]
+#![deny(missing_docs)]
 
 // Re-exported external crates
 pub use libc;
@@ -23,13 +24,14 @@ pub use libc;
 
 // Public crates
 #[cfg(not(target_os = "redox"))]
+#[allow(missing_docs)]
 pub mod dir;
 pub mod env;
+#[allow(missing_docs)]
 pub mod errno;
-#[deny(missing_docs)]
 pub mod features;
+#[allow(missing_docs)]
 pub mod fcntl;
-#[deny(missing_docs)]
 #[cfg(any(target_os = "android",
           target_os = "dragonfly",
           target_os = "freebsd",
@@ -42,6 +44,7 @@ pub mod fcntl;
 pub mod ifaddrs;
 #[cfg(any(target_os = "android",
           target_os = "linux"))]
+#[allow(missing_docs)]
 pub mod kmod;
 #[cfg(any(target_os = "android",
           target_os = "freebsd",
@@ -52,23 +55,24 @@ pub mod mount;
           target_os = "fushsia",
           target_os = "linux",
           target_os = "netbsd"))]
+#[allow(missing_docs)]
 pub mod mqueue;
-#[deny(missing_docs)]
 #[cfg(not(target_os = "redox"))]
 pub mod net;
-#[deny(missing_docs)]
 pub mod poll;
-#[deny(missing_docs)]
 #[cfg(not(any(target_os = "redox", target_os = "fuchsia")))]
 pub mod pty;
 pub mod sched;
 pub mod sys;
+#[allow(missing_docs)]
 pub mod time;
 // This can be implemented for other platforms as soon as libc
 // provides bindings for them.
 #[cfg(all(target_os = "linux",
           any(target_arch = "x86", target_arch = "x86_64")))]
+#[allow(missing_docs)]
 pub mod ucontext;
+#[allow(missing_docs)]
 pub mod unistd;
 
 /*
@@ -101,11 +105,17 @@ pub type Result<T> = result::Result<T, Errno>;
 /// ones.
 pub type Error = Errno;
 
+/// Common trait used to represent file system paths by many Nix functions.
 pub trait NixPath {
+    /// Is the path empty?
     fn is_empty(&self) -> bool;
 
+    /// Length of the path in bytes
     fn len(&self) -> usize;
 
+    /// Execute a function with this path as a `CStr`.
+    ///
+    /// Mostly used internally by Nix.
     fn with_nix_path<T, F>(&self, f: F) -> Result<T>
         where F: FnOnce(&CStr) -> T;
 }

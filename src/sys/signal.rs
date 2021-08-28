@@ -1,7 +1,7 @@
 // Portions of this file are Copyright 2014 The Rust Project Developers.
 // See https://www.rust-lang.org/policies/licenses.
 
-///! Operating system signals.
+//! Operating system signals.
 
 use crate::{Error, Result};
 use crate::errno::Errno;

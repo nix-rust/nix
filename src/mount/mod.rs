@@ -1,7 +1,10 @@
+//! Mount file systems
 #[cfg(any(target_os = "android", target_os = "linux"))]
+#[allow(missing_docs)]
 mod linux;
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
+#[allow(missing_docs)]
 pub use self::linux::*;
 
 #[cfg(any(target_os = "dragonfly",
