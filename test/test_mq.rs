@@ -60,7 +60,11 @@ fn test_mq_getattr() {
 // FIXME: Fix failures for mips in QEMU
 #[test]
 #[cfg(not(any(target_os = "netbsd")))]
-#[cfg_attr(any(target_arch = "mips", target_arch = "mips64"), ignore)]
+#[cfg_attr(all(
+        qemu,
+        any(target_arch = "mips", target_arch = "mips64")
+    ), ignore
+)]
 fn test_mq_setattr() {
     use nix::mqueue::{mq_getattr, mq_setattr};
     const MSG_SIZE: mq_attr_member_t = 32;
@@ -97,7 +101,11 @@ fn test_mq_setattr() {
 // FIXME: Fix failures for mips in QEMU
 #[test]
 #[cfg(not(any(target_os = "netbsd")))]
-#[cfg_attr(any(target_arch = "mips", target_arch = "mips64"), ignore)]
+#[cfg_attr(all(
+        qemu,
+        any(target_arch = "mips", target_arch = "mips64")
+    ), ignore
+)]
 fn test_mq_set_nonblocking() {
     use nix::mqueue::{mq_getattr, mq_set_nonblock, mq_remove_nonblock};
     const MSG_SIZE: mq_attr_member_t = 32;

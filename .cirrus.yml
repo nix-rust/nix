@@ -48,6 +48,7 @@ task:
     RUST_TEST_THREADS: 1            # QEMU works best with 1 thread
     HOME: /tmp/home
     PATH: $HOME/.cargo/bin:$PATH
+    RUSTFLAGS: --cfg qemu
   matrix:
     - name: Linux arm gnueabi
       env:
@@ -94,7 +95,7 @@ task:
     - cross test --target $TARGET
   before_cache_script: rm -rf $CARGO_HOME/registry/index
 
-# Tasks for Linux amd64 builds
+# Tasks for Linux native builds
 task:
   matrix:
     - name: Rust Stable
@@ -106,6 +107,7 @@ task:
       arm_container:
         image: rust:1.46
       env:
+        RUSTFLAGS: --cfg graviton
         TARGET: aarch64-unknown-linux-gnu
     - name: Linux x86_64
       container:

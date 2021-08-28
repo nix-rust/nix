@@ -205,8 +205,8 @@ fn test_preadv() {
 
 #[test]
 #[cfg(target_os = "linux")]
-// FIXME: qemu-user doesn't implement process_vm_readv/writev on most arches
-#[cfg_attr(not(any(target_arch = "x86", target_arch = "x86_64")), ignore)]
+// qemu-user doesn't implement process_vm_readv/writev on most arches
+#[cfg_attr(qemu, ignore)]
 fn test_process_vm_readv() {
     use nix::unistd::ForkResult::*;
     use nix::sys::signal::*;
