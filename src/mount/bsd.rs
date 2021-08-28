@@ -347,6 +347,7 @@ impl<'a> Nmount<'a> {
         self
     }
 
+    /// Create a new `Nmount` struct with no options
     pub fn new() -> Self {
         Self::default()
     }
