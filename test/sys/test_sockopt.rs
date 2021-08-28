@@ -49,7 +49,7 @@ pub fn test_local_peercred_stream() {
 fn is_so_mark_functional() {
     use nix::sys::socket::sockopt;
 
-    require_capability!(CAP_NET_ADMIN);
+    require_capability!("is_so_mark_functional", CAP_NET_ADMIN);
 
     let s = socket(AddressFamily::Inet, SockType::Stream, SockFlag::empty(), None).unwrap();
     setsockopt(s, sockopt::Mark, &1337).unwrap();

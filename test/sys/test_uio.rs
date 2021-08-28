@@ -213,7 +213,7 @@ fn test_process_vm_readv() {
     use nix::sys::wait::*;
     use crate::*;
 
-    require_capability!(CAP_SYS_PTRACE);
+    require_capability!("test_process_vm_readv", CAP_SYS_PTRACE);
     let _m = crate::FORK_MTX.lock().expect("Mutex got poisoned by another test");
 
     // Pre-allocate memory in the child, since allocation isn't safe

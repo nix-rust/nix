@@ -14,19 +14,19 @@ use cfg_if::cfg_if;
 cfg_if! {
     if #[cfg(any(target_os = "android", target_os = "linux"))] {
         #[macro_export] macro_rules! require_capability {
-            ($capname:ident) => {
+            ($name:expr, $capname:ident) => {
                 use ::caps::{Capability, CapSet, has_cap};
 
                 if !has_cap(None, CapSet::Effective, Capability::$capname)
                     .unwrap()
                 {
-                    skip!("Insufficient capabilities. Skipping test.");
+                    skip!("{} requires capability {}. Skipping test.", $name, Capability::$capname);
                 }
             }
         }
     } else if #[cfg(not(target_os = "redox"))] {
         #[macro_export] macro_rules! require_capability {
-            ($capname:ident) => {}
+            ($name:expr, $capname:ident) => {}
         }
     }
 }
