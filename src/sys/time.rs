@@ -1,4 +1,3 @@
-use crate::errno::Errno;
 use std::{cmp, fmt, ops};
 use std::time::Duration;
 use std::convert::{From, TryFrom, TryInto};
@@ -82,14 +81,26 @@ impl From<Duration> for TimeSpec {
     }
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct DurationFromTimeSpecError {}
+
+impl fmt::Display for DurationFromTimeSpecError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Conversion to Duration failed")
+    }
+}
+
+impl std::error::Error for DurationFromTimeSpecError {}
+
+
 impl TryFrom<TimeSpec> for Duration {
-    type Error = Errno;
+    type Error = DurationFromTimeSpecError;
 
     fn try_from(value: TimeSpec) -> Result<Self, Self::Error> {
-        let secs = u64::try_from(value.0.tv_sec).map_err(|_| Errno::EINVAL)?;
-        let nanos = u32::try_from(value.0.tv_nsec).map_err(|_| Errno::EINVAL)?;
+        let secs = u64::try_from(value.0.tv_sec).map_err(|_| DurationFromTimeSpecError{})?;
+        let nanos = u32::try_from(value.0.tv_nsec).map_err(|_| DurationFromTimeSpecError{})?;
         if nanos >= NANOS_PER_SEC.try_into().unwrap() {
-            return Err(Errno::EINVAL);
+            return Err(DurationFromTimeSpecError{});
         }
         Ok(Duration::new(secs, nanos))
     }
@@ -531,9 +542,8 @@ fn div_rem_64(this: i64, other: i64) -> (i64, i64) {
 
 #[cfg(test)]
 mod test {
-    use super::{TimeSpec, TimeVal, TimeValLike};
+    use super::{DurationFromTimeSpecError, TimeSpec, TimeVal, TimeValLike};
 
-    use crate::errno::Errno;
     use libc::timespec;
     use std::convert::TryFrom;
     use std::time::Duration;
@@ -556,11 +566,11 @@ mod test {
         assert_eq!(Duration::try_from(timespec), Ok(duration));
 
         assert_eq!(Duration::try_from(TimeSpec::from(timespec{tv_sec: -1, tv_nsec: 0})),
-                   Err(Errno::EINVAL));
+                   Err(DurationFromTimeSpecError{}));
         assert_eq!(Duration::try_from(TimeSpec::from(timespec{tv_sec: 0, tv_nsec: -1})),
-                   Err(Errno::EINVAL));
+                   Err(DurationFromTimeSpecError{}));
         assert_eq!(Duration::try_from(TimeSpec::from(timespec{tv_sec: 0, tv_nsec: 1_000_000_000})),
-                   Err(Errno::EINVAL));
+                   Err(DurationFromTimeSpecError{}));
     }
 
     #[test]
