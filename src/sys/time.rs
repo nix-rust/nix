@@ -1,6 +1,6 @@
 use std::{cmp, fmt, ops};
 use std::time::Duration;
-use std::convert::{From, TryFrom, TryInto};
+use std::convert::{From, TryFrom};
 use libc::{timespec, timeval};
 #[cfg_attr(target_env = "musl", allow(deprecated))] // https://github.com/rust-lang/libc/issues/1848
 pub use libc::{time_t, suseconds_t};
@@ -228,7 +228,7 @@ impl TimeSpec {
     ///
     /// A TimeSpec created any way other than `From<timespec>` is guaranteed to be normalized.
     pub const fn is_normalized(&self) -> bool {
-        self.tv_nsec() < NANOS_PER_SEC.try_into().unwrap() && self.tv_nsec() >= 0
+        self.tv_nsec() < 1_000_000_000 && self.tv_nsec() >= 0
     }
 }
 
