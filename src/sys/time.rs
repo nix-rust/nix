@@ -1,6 +1,6 @@
 use std::{cmp, fmt, ops};
 use std::time::Duration;
-use std::convert::{From, TryFrom, TryInto};
+use std::convert::{From, TryFrom};
 use libc::{timespec, timeval};
 #[cfg_attr(target_env = "musl", allow(deprecated))] // https://github.com/rust-lang/libc/issues/1848
 pub use libc::{time_t, suseconds_t};
@@ -97,12 +97,8 @@ impl TryFrom<TimeSpec> for Duration {
     type Error = DurationFromTimeSpecError;
 
     fn try_from(value: TimeSpec) -> Result<Self, Self::Error> {
-        let secs = u64::try_from(value.0.tv_sec).map_err(|_| DurationFromTimeSpecError{})?;
-        let nanos = u32::try_from(value.0.tv_nsec).map_err(|_| DurationFromTimeSpecError{})?;
-        if nanos >= NANOS_PER_SEC.try_into().unwrap() {
-            return Err(DurationFromTimeSpecError{});
-        }
-        Ok(Duration::new(secs, nanos))
+        let nanos = u64::try_from(value.num_nanoseconds()).map_err(|_| DurationFromTimeSpecError{})?;
+        Ok(Duration::from_nanos(nanos))
     }
 }
 
@@ -569,8 +565,12 @@ mod test {
                    Err(DurationFromTimeSpecError{}));
         assert_eq!(Duration::try_from(TimeSpec::from(timespec{tv_sec: 0, tv_nsec: -1})),
                    Err(DurationFromTimeSpecError{}));
+
+        // Non-normalized is ok, as long as it works out to a non-negative Duration.
         assert_eq!(Duration::try_from(TimeSpec::from(timespec{tv_sec: 0, tv_nsec: 1_000_000_000})),
-                   Err(DurationFromTimeSpecError{}));
+                   Ok(Duration::from_secs(1)));
+        assert_eq!(Duration::try_from(TimeSpec::from(timespec{tv_sec: 1, tv_nsec: -100_000_000})),
+                   Ok(Duration::from_millis(900)));
     }
 
     #[test]
