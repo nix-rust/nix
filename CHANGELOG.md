@@ -30,7 +30,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1335](https://github.com/nix-rust/nix/pull/1335))
 - Exposed `SockAddr::from_raw_sockaddr`
   (#[1447](https://github.com/nix-rust/nix/pull/1447))
-- Replaced Replace From<TimeSpec> for Duration with TryFrom<TimeSpec>
+- Added `TimeSpec::is_normalized`.
   (#[1502](https://github.com/nix-rust/nix/pull/1502))
 
 ### Changed
@@ -61,6 +61,11 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 - Minimum supported Rust version is now 1.46.0.
   ([#1492](https://github.com/nix-rust/nix/pull/1492))
+
+- Replaced Replace From<TimeSpec> for Duration with TryFrom<TimeSpec>.
+  Previously trying to convert a negative `TimeSpec` into a `Duration`
+  would panic.
+  (#[1502](https://github.com/nix-rust/nix/pull/1502))
 
 ### Fixed
 
