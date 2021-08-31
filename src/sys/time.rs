@@ -221,6 +221,15 @@ impl TimeSpec {
     pub const fn from_timespec(timespec: timespec) -> Self {
         Self(timespec)
     }
+
+    /// A TimeSpec is normalized if its `tv_nsec` is non-negative, and less than 1_000_000_000.  An
+    /// unnormalized TimeSpec will be rejected by most libc functions, and won't be sorted
+    /// correctly.
+    ///
+    /// A TimeSpec created any way other than `From<timespec>` is guaranteed to be normalized.
+    pub const fn is_normalized(&self) -> bool {
+        self.tv_nsec() < NANOS_PER_SEC && self.tv_nsec() >= 0
+    }
 }
 
 impl ops::Neg for TimeSpec {
@@ -551,6 +560,17 @@ mod test {
                    TimeSpec::seconds(3));
         assert_eq!(TimeSpec::minutes(3) + TimeSpec::seconds(2),
                    TimeSpec::seconds(182));
+    }
+
+    #[test]
+    pub fn test_timespec_is_normalized() {
+        assert!(TimeSpec::from(timespec{tv_sec: 0, tv_nsec: 0}).is_normalized());
+        assert!(TimeSpec::from(timespec{tv_sec: 0, tv_nsec: 1}).is_normalized());
+        assert!(TimeSpec::from(timespec{tv_sec: 1, tv_nsec: 1}).is_normalized());
+        assert!(TimeSpec::from(timespec{tv_sec: -1, tv_nsec: 1}).is_normalized());
+
+        assert!(!TimeSpec::from(timespec{tv_sec: 0, tv_nsec: -1}).is_normalized());
+        assert!(!TimeSpec::from(timespec{tv_sec: -1, tv_nsec: -1}).is_normalized());
     }
 
     #[test]
