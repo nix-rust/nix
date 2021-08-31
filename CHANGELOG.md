@@ -64,7 +64,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 - Replaced Replace From<TimeSpec> for Duration with TryFrom<TimeSpec>.
   Previously trying to convert a negative `TimeSpec` into a `Duration`
-  would panic.
+  would reinterpret negative fields as positive integer types via `as`.
   (#[1502](https://github.com/nix-rust/nix/pull/1502))
 
 ### Fixed
