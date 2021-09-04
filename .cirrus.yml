@@ -2,6 +2,9 @@ cargo_cache:
   folder: $CARGO_HOME/registry
   fingerprint_script: cat Cargo.lock || echo ""
 
+env:
+  RUSTFLAGS: -D warnings
+  RUSTDOCFLAGS: -D warnings
 # Test FreeBSD in a full VM.  Test the i686 target too, in the
 # same VM.  The binary will be built in 32-bit mode, but will execute on a
 # 64-bit kernel and in a 64-bit environment.  Our tests don't execute any of
@@ -17,9 +20,11 @@ task:
   amd64_test_script:
     - . $HOME/.cargo/env
     - cargo test
+    - cargo doc --no-deps
   i386_test_script:
     - . $HOME/.cargo/env
     - cargo test --target i686-unknown-freebsd
+    - cargo doc --no-deps --target i686-unknown-freebsd
   before_cache_script: rm -rf $CARGO_HOME/registry/index
 
 # Test OSX and iOS in a full VM
@@ -48,7 +53,7 @@ task:
     RUST_TEST_THREADS: 1            # QEMU works best with 1 thread
     HOME: /tmp/home
     PATH: $HOME/.cargo/bin:$PATH
-    RUSTFLAGS: --cfg qemu
+    RUSTFLAGS: --cfg qemu -D warnings
   matrix:
     - name: Linux arm gnueabi
       env:
@@ -93,6 +98,7 @@ task:
     - . $HOME/.cargo/env || true
     - cross build --target $TARGET
     - cross test --target $TARGET
+    - cross doc --no-deps --target $TARGET
   before_cache_script: rm -rf $CARGO_HOME/registry/index
 
 # Tasks for Linux native builds
@@ -107,7 +113,7 @@ task:
       arm_container:
         image: rust:1.46
       env:
-        RUSTFLAGS: --cfg graviton
+        RUSTFLAGS: --cfg graviton -D warnings
         TARGET: aarch64-unknown-linux-gnu
     - name: Linux x86_64
       container:
@@ -125,6 +131,7 @@ task:
   script:
     - cargo build --target $TARGET --all-targets
     - cargo test --target $TARGET
+    - cargo doc --no-deps --target $TARGET
   before_cache_script: rm -rf $CARGO_HOME/registry/index
 
 # Tasks for cross-compiling, but no testing
@@ -210,6 +217,7 @@ task:
   script:
     - cargo +$TOOLCHAIN check --target $TARGET
     - cargo +$TOOLCHAIN check --all-targets --target $TARGET
+    - cargo +$TOOLCHAIN doc --no-deps --target $TARGET
   before_cache_script: rm -rf $CARGO_HOME/registry/index
 
 # Test that we can build with the lowest version of all dependencies.

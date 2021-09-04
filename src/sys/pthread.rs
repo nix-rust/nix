@@ -1,3 +1,5 @@
+//! Low level threading primitives
+
 #[cfg(not(target_os = "redox"))]
 use crate::errno::Errno;
 #[cfg(not(target_os = "redox"))]
@@ -6,6 +8,7 @@ use crate::Result;
 use crate::sys::signal::Signal;
 use libc::{self, pthread_t};
 
+/// Identifies an individual thread.
 pub type Pthread = pthread_t;
 
 /// Obtain ID of the calling thread (see

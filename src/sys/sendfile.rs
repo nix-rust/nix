@@ -1,3 +1,5 @@
+//! Send data from a file to a socket, bypassing userland.
+
 use cfg_if::cfg_if;
 use std::os::unix::io::RawFd;
 use std::ptr;

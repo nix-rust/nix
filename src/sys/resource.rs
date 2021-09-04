@@ -50,54 +50,88 @@ libc_enum! {
     #[non_exhaustive]
     pub enum Resource {
         #[cfg(not(any(target_os = "netbsd", target_os = "freebsd")))]
+        /// The maximum amount (in bytes) of virtual memory the process is
+        /// allowed to map.
         RLIMIT_AS,
+        /// The largest size (in bytes) core(5) file that may be created.
         RLIMIT_CORE,
+        /// The maximum amount of cpu time (in seconds) to be used by each
+        /// process.
         RLIMIT_CPU,
+        /// The maximum size (in bytes) of the data segment for a process
         RLIMIT_DATA,
+        /// The largest size (in bytes) file that may be created.
         RLIMIT_FSIZE,
+        /// The maximum number of open files for this process.
         RLIMIT_NOFILE,
+        /// The maximum size (in bytes) of the stack segment for a process.
         RLIMIT_STACK,
 
         #[cfg(target_os = "freebsd")]
+        /// The maximum number of kqueues this user id is allowed to create.
         RLIMIT_KQUEUES,
 
         #[cfg(any(target_os = "android", target_os = "linux"))]
+        /// A limit on the combined number of flock locks and fcntl leases that
+        /// this process may establish.
         RLIMIT_LOCKS,
 
         #[cfg(any(target_os = "android", target_os = "freebsd", target_os = "openbsd", target_os = "linux"))]
+        /// The maximum size (in bytes) which a process may lock into memory
+        /// using the mlock(2) system call.
         RLIMIT_MEMLOCK,
 
         #[cfg(any(target_os = "android", target_os = "linux"))]
+        /// A limit on the number of bytes that can be allocated for POSIX
+        /// message queues  for  the  real  user  ID  of  the  calling process.
         RLIMIT_MSGQUEUE,
 
         #[cfg(any(target_os = "android", target_os = "linux"))]
+        /// A ceiling to which the process's nice value can be raised using
+        /// setpriority or nice.
         RLIMIT_NICE,
 
         #[cfg(any(target_os = "android", target_os = "freebsd", target_os = "openbsd", target_os = "linux"))]
+        /// The maximum number of simultaneous processes for this user id.
         RLIMIT_NPROC,
 
         #[cfg(target_os = "freebsd")]
+        /// The maximum number of pseudo-terminals this user id is allowed to
+        /// create.
         RLIMIT_NPTS,
 
         #[cfg(any(target_os = "android", target_os = "freebsd", target_os = "openbsd", target_os = "linux"))]
+        /// When there is memory pressure and swap is available, prioritize
+        /// eviction of a process' resident pages beyond this amount (in bytes).
         RLIMIT_RSS,
 
         #[cfg(any(target_os = "android", target_os = "linux"))]
+        /// A ceiling on the real-time priority that may be set for this process
+        /// using sched_setscheduler and  sched_set‐ param.
         RLIMIT_RTPRIO,
 
         #[cfg(any(target_os = "linux"))]
+        /// A limit (in microseconds) on the amount of CPU time that a process
+        /// scheduled under a real-time scheduling policy may con‐ sume without
+        /// making a blocking system call.
         RLIMIT_RTTIME,
 
         #[cfg(any(target_os = "android", target_os = "linux"))]
+        /// A limit on the number of signals that may be queued for the real
+        /// user ID of the  calling  process.
         RLIMIT_SIGPENDING,
 
         #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
+        /// The maximum size (in bytes) of socket buffer usage for this user.
         RLIMIT_SBSIZE,
 
         #[cfg(target_os = "freebsd")]
+        /// The maximum size (in bytes) of the swap space that may be reserved
+        /// or used by all of this user id's processes.
         RLIMIT_SWAP,
 
         #[cfg(target_os = "freebsd")]
+        /// An alias for RLIMIT_AS.
         RLIMIT_VMEM,
     }
 }

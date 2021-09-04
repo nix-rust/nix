@@ -49,7 +49,6 @@ pub mod mman;
 #[allow(missing_docs)]
 pub mod personality;
 
-#[allow(missing_docs)]
 pub mod pthread;
 
 #[cfg(any(target_os = "android",
@@ -70,11 +69,9 @@ pub mod quota;
 pub mod reboot;
 
 #[cfg(not(any(target_os = "redox", target_os = "fuchsia", target_os = "illumos")))]
-#[allow(missing_docs)]
 pub mod resource;
 
 #[cfg(not(target_os = "redox"))]
-#[allow(missing_docs)]
 pub mod select;
 
 #[cfg(any(target_os = "android",
@@ -82,10 +79,8 @@ pub mod select;
           target_os = "ios",
           target_os = "linux",
           target_os = "macos"))]
-#[allow(missing_docs)]
 pub mod sendfile;
 
-#[allow(missing_docs)]
 pub mod signal;
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
@@ -107,7 +102,6 @@ pub mod stat;
           target_os = "macos",
           target_os = "openbsd"
 ))]
-#[allow(missing_docs)]
 pub mod statfs;
 
 pub mod statvfs;
@@ -122,13 +116,10 @@ pub mod termios;
 #[allow(missing_docs)]
 pub mod time;
 
-#[allow(missing_docs)]
 pub mod uio;
 
-#[allow(missing_docs)]
 pub mod utsname;
 
-#[allow(missing_docs)]
 pub mod wait;
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
