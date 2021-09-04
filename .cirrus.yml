@@ -10,13 +10,14 @@ env:
   TOOL: cargo
   # The MSRV
   TOOLCHAIN: 1.46.0
+  ZFLAGS:
 
 # Tests that don't require executing the build binaries
 build: &BUILD
   build_script:
     - . $HOME/.cargo/env || true
-    - $TOOL +$TOOLCHAIN $BUILD --target $TARGET --all-targets
-    - $TOOL +$TOOLCHAIN doc --no-deps --target $TARGET
+    - $TOOL +$TOOLCHAIN $BUILD $ZFLAGS --target $TARGET --all-targets
+    - $TOOL +$TOOLCHAIN doc $ZFLAGS --no-deps --target $TARGET
 
 # Tests that do require executing the binaries
 test: &TEST
@@ -223,6 +224,26 @@ task:
   setup_script:
     - rustup target add $TARGET
     - rustup toolchain install $TOOLCHAIN --profile minimal --target $TARGET
+  << : *BUILD
+  before_cache_script: rm -rf $CARGO_HOME/registry/index
+
+# Rust Tier 3 targets can't use Rustup
+task:
+  container:
+    image: rustlang/rust:nightly
+  env:
+    BUILD: check
+    TOOLCHAIN: nightly
+    ZFLAGS: -Zbuild-std
+  matrix:
+    - name: DragonFly BSD x86_64
+      env:
+        TARGET: x86_64-unknown-dragonfly
+    - name: OpenBSD x86_64
+      env:
+        TARGET: x86_64-unknown-openbsd
+  setup_script:
+    - rustup component add rust-src
   << : *BUILD
   before_cache_script: rm -rf $CARGO_HOME/registry/index
 

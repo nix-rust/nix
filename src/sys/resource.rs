@@ -49,7 +49,11 @@ libc_enum! {
         ), repr(i32))]
     #[non_exhaustive]
     pub enum Resource {
-        #[cfg(not(any(target_os = "netbsd", target_os = "freebsd")))]
+        #[cfg(not(any(
+                    target_os = "freebsd",
+                    target_os = "netbsd",
+                    target_os = "openbsd"
+        )))]
         /// The maximum amount (in bytes) of virtual memory the process is
         /// allowed to map.
         RLIMIT_AS,
