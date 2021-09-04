@@ -30,11 +30,7 @@ pub fn readv(fd: RawFd, iov: &mut [IoVec<&mut [u8]>]) -> Result<usize> {
 /// or an error occurs. The file offset is not changed.
 ///
 /// See also: [`writev`](fn.writev.html) and [`pwrite`](fn.pwrite.html)
-#[cfg(any(target_os = "dragonfly",
-          target_os = "freebsd",
-          target_os = "linux",
-          target_os = "netbsd",
-          target_os = "openbsd"))]
+#[cfg(not(target_os = "redox"))]
 pub fn pwritev(fd: RawFd, iov: &[IoVec<&[u8]>],
                offset: off_t) -> Result<usize> {
     let res = unsafe {
@@ -51,11 +47,7 @@ pub fn pwritev(fd: RawFd, iov: &[IoVec<&[u8]>],
 /// changed.
 ///
 /// See also: [`readv`](fn.readv.html) and [`pread`](fn.pread.html)
-#[cfg(any(target_os = "dragonfly",
-          target_os = "freebsd",
-          target_os = "linux",
-          target_os = "netbsd",
-          target_os = "openbsd"))]
+#[cfg(not(target_os = "redox"))]
 pub fn preadv(fd: RawFd, iov: &[IoVec<&mut [u8]>],
               offset: off_t) -> Result<usize> {
     let res = unsafe {
@@ -181,7 +173,7 @@ pub fn process_vm_readv(
 
 /// A vector of buffers.
 ///
-/// Vectored I/O methods like [`pwritev`] and [`preadv`] use this structure for
+/// Vectored I/O methods like [`writev`] and [`readv`] use this structure for
 /// both reading and writing.  Each `IoVec` specifies the base address and
 /// length of an area in memory.
 #[repr(transparent)]
