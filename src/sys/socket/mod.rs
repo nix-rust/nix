@@ -526,15 +526,12 @@ impl<'a> Iterator for CmsgIterator<'a> {
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[non_exhaustive]
 pub enum ControlMessageOwned {
-    /// Received version of
-    /// [`ControlMessage::ScmRights`][#enum.ControlMessage.html#variant.ScmRights]
+    /// Received version of [`ControlMessage::ScmRights`]
     ScmRights(Vec<RawFd>),
-    /// Received version of
-    /// [`ControlMessage::ScmCredentials`][#enum.ControlMessage.html#variant.ScmCredentials]
+    /// Received version of [`ControlMessage::ScmCredentials`]
     #[cfg(any(target_os = "android", target_os = "linux"))]
     ScmCredentials(UnixCredentials),
-    /// Received version of
-    /// [`ControlMessage::ScmCreds`][#enum.ControlMessage.html#variant.ScmCreds]
+    /// Received version of [`ControlMessage::ScmCreds`]
     #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
     ScmCreds(UnixCredentials),
     /// A message of type `SCM_TIMESTAMP`, containing the time the
@@ -808,7 +805,7 @@ pub enum ControlMessage<'a> {
     ///
     /// Credentials are always overwritten by the kernel, so this variant does have
     /// any data, unlike the receive-side
-    /// [`ControlMessageOwned::ScmCreds`][#enum.ControlMessageOwned.html#variant.ScmCreds].
+    /// [`ControlMessageOwned::ScmCreds`].
     ///
     /// For further information, please refer to the
     /// [`unix(4)`](https://www.freebsd.org/cgi/man.cgi?query=unix) man page.
