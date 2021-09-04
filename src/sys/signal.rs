@@ -925,6 +925,7 @@ pub type type_of_thread_id = libc::pid_t;
 // sigval is actually a union of a int and a void*.  But it's never really used
 // as a pointer, because neither libc nor the kernel ever dereference it.  nix
 // therefore presents it as an intptr_t, which is how kevent uses it.
+#[cfg(not(any(target_os = "openbsd", target_os = "redox")))]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum SigevNotify {
     /// No notification will be delivered

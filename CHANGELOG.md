@@ -76,6 +76,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Removed a couple of termios constants on redox that were never actually
   supported.
   (#[1483](https://github.com/nix-rust/nix/pull/1483))
+
 - Removed `nix::sys::signal::NSIG`.  It was of dubious utility, and not correct
   for all platforms.
   (#[1484](https://github.com/nix-rust/nix/pull/1484))
@@ -86,6 +87,9 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 - Deprecated `SockAddr/InetAddr::to_str` in favor of `ToString::to_string`
   (#[1495](https://github.com/nix-rust/nix/pull/1495))
+
+- Removed `SigevNotify` on OpenBSD and Redox.
+  (#[1511](https://github.com/nix-rust/nix/pull/1511))
 
 ## [0.22.0] - 9 July 2021
 ### Added
