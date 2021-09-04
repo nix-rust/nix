@@ -3,31 +3,51 @@ cargo_cache:
   fingerprint_script: cat Cargo.lock || echo ""
 
 env:
+  # Build by default; don't just check
+  BUILD: build
   RUSTFLAGS: -D warnings
   RUSTDOCFLAGS: -D warnings
+  TOOL: cargo
+  # The MSRV
+  TOOLCHAIN: 1.46.0
+
+# Tests that don't require executing the build binaries
+build: &BUILD
+  build_script:
+    - . $HOME/.cargo/env || true
+    - $TOOL +$TOOLCHAIN $BUILD --target $TARGET --all-targets
+    - $TOOL +$TOOLCHAIN doc --no-deps --target $TARGET
+
+# Tests that do require executing the binaries
+test: &TEST
+  << : *BUILD
+  test_script:
+    - . $HOME/.cargo/env || true
+    - $TOOL +$TOOLCHAIN test --target $TARGET
+
 # Test FreeBSD in a full VM.  Test the i686 target too, in the
 # same VM.  The binary will be built in 32-bit mode, but will execute on a
 # 64-bit kernel and in a 64-bit environment.  Our tests don't execute any of
 # the system's binaries, so the environment shouldn't matter.
 task:
   name: FreeBSD amd64 & i686
+  env:
+    TARGET: x86_64-unknown-freebsd
   freebsd_instance:
     image: freebsd-11-4-release-amd64
   setup_script:
     - fetch https://sh.rustup.rs -o rustup.sh
-    - sh rustup.sh -y --profile=minimal --default-toolchain 1.46.0
+    - sh rustup.sh -y --profile=minimal --default-toolchain $TOOLCHAIN
     - $HOME/.cargo/bin/rustup target add i686-unknown-freebsd
-  amd64_test_script:
-    - . $HOME/.cargo/env
-    - cargo test
-    - cargo doc --no-deps
+  << : *TEST
   i386_test_script:
     - . $HOME/.cargo/env
-    - cargo test --target i686-unknown-freebsd
+    - cargo build --target i686-unknown-freebsd
     - cargo doc --no-deps --target i686-unknown-freebsd
+    - cargo test --target i686-unknown-freebsd
   before_cache_script: rm -rf $CARGO_HOME/registry/index
 
-# Test OSX and iOS in a full VM
+# Test OSX in a full VM
 task:
   matrix:
     - name: OSX x86_64
@@ -37,13 +57,9 @@ task:
     image: catalina-xcode
   setup_script:
     - curl --proto '=https' --tlsv1.2 -sSf -o rustup.sh https://sh.rustup.rs
-    - sh rustup.sh -y --profile=minimal --default-toolchain 1.46.0
+    - sh rustup.sh -y --profile=minimal --default-toolchain $TOOLCHAIN
     - . $HOME/.cargo/env
-    - cargo install cross
-  script:
-    - . $HOME/.cargo/env
-    - cross build --target $TARGET
-    - cross test --target $TARGET
+  << : *TEST
   before_cache_script: rm -rf $CARGO_HOME/registry/index
 
 # Use cross for QEMU-based testing
@@ -54,6 +70,7 @@ task:
     HOME: /tmp/home
     PATH: $HOME/.cargo/bin:$PATH
     RUSTFLAGS: --cfg qemu -D warnings
+    TOOL: cross
   matrix:
     - name: Linux arm gnueabi
       env:
@@ -91,14 +108,10 @@ task:
   setup_script:
     - mkdir /tmp/home
     - curl --proto '=https' --tlsv1.2 -sSf -o rustup.sh https://sh.rustup.rs
-    - sh rustup.sh -y --profile=minimal --default-toolchain 1.46.0
+    - sh rustup.sh -y --profile=minimal --default-toolchain $TOOLCHAIN
     - . $HOME/.cargo/env
     - cargo install cross
-  script:
-    - . $HOME/.cargo/env || true
-    - cross build --target $TARGET
-    - cross test --target $TARGET
-    - cross doc --no-deps --target $TARGET
+  << : *TEST
   before_cache_script: rm -rf $CARGO_HOME/registry/index
 
 # Tasks for Linux native builds
@@ -109,6 +122,7 @@ task:
         image: rust:latest
       env:
         TARGET: x86_64-unknown-linux-gnu
+        TOOLCHAIN:
     - name: Linux aarch64
       arm_container:
         image: rust:1.46
@@ -127,11 +141,7 @@ task:
         TARGET: x86_64-unknown-linux-musl
   setup_script:
     - rustup target add $TARGET
-    - uname -a
-  script:
-    - cargo build --target $TARGET --all-targets
-    - cargo test --target $TARGET
-    - cargo doc --no-deps --target $TARGET
+  << : *TEST
   before_cache_script: rm -rf $CARGO_HOME/registry/index
 
 # Tasks for cross-compiling, but no testing
@@ -139,7 +149,7 @@ task:
   container:
     image: rust:1.46
   env:
-    TOOLCHAIN: 1.46.0
+    BUILD: check
   matrix:
     # Cross claims to support Android, but when it tries to run Nix's tests it
     # reports undefined symbol references.
@@ -178,8 +188,7 @@ task:
         TARGET: aarch64-apple-ios
         # Rustup only supports cross-building from arbitrary hosts for iOS at
         # 1.49.0 and above.  Below that it's possible to cross-build from an OSX
-        # host, but OSX VMs
-        # are more expensive than Linux VMs.
+        # host, but OSX VMs are more expensive than Linux VMs.
         TOOLCHAIN: 1.49.0
     - name: iOS x86_64
       env:
@@ -214,10 +223,7 @@ task:
   setup_script:
     - rustup target add $TARGET
     - rustup toolchain install $TOOLCHAIN --profile minimal --target $TARGET
-  script:
-    - cargo +$TOOLCHAIN check --target $TARGET
-    - cargo +$TOOLCHAIN check --all-targets --target $TARGET
-    - cargo +$TOOLCHAIN doc --no-deps --target $TARGET
+  << : *BUILD
   before_cache_script: rm -rf $CARGO_HOME/registry/index
 
 # Test that we can build with the lowest version of all dependencies.
@@ -225,6 +231,8 @@ task:
 # rand, can't build with their own minimal dependencies.
 task:
   name: Minver
+  env:
+    TOOLCHAIN: nightly
   container:
     image: rustlang/rust:nightly
   setup_script:
