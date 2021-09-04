@@ -17,6 +17,7 @@ use std::ptr;
 pub use self::sigevent::*;
 
 libc_enum!{
+    /// Types of operating system signals
     // Currently there is only one definition of c_int in libc, as well as only one
     // type for signal constants.
     // We would prefer to use the libc::c_int alias in the repr attribute. Unfortunately
@@ -24,50 +25,83 @@ libc_enum!{
     #[repr(i32)]
     #[non_exhaustive]
     pub enum Signal {
+        /// Hangup
         SIGHUP,
+        /// Interrupt
         SIGINT,
+        /// Quit
         SIGQUIT,
+        /// Illegal instruction (not reset when caught)
         SIGILL,
+        /// Trace trap (not reset when caught)
         SIGTRAP,
+        /// Abort
         SIGABRT,
+        /// Bus error
         SIGBUS,
+        /// Floating point exception
         SIGFPE,
+        /// Kill (cannot be caught or ignored)
         SIGKILL,
+        /// User defined signal 1
         SIGUSR1,
+        /// Segmentation violation
         SIGSEGV,
+        /// User defined signal 2
         SIGUSR2,
+        /// Write on a pipe with no one to read it
         SIGPIPE,
+        /// Alarm clock
         SIGALRM,
+        /// Software termination signal from kill
         SIGTERM,
+        /// Stack fault (obsolete)
         #[cfg(all(any(target_os = "android", target_os = "emscripten",
                       target_os = "fuchsia", target_os = "linux"),
                   not(any(target_arch = "mips", target_arch = "mips64",
                           target_arch = "sparc64"))))]
         SIGSTKFLT,
+        /// To parent on child stop or exit
         SIGCHLD,
+        /// Continue a stopped process
         SIGCONT,
+        /// Sendable stop signal not from tty
         SIGSTOP,
+        /// Stop signal from tty
         SIGTSTP,
+        /// To readers pgrp upon background tty read
         SIGTTIN,
+        /// Like TTIN if (tp->t_local&LTOSTOP)
         SIGTTOU,
+        /// Urgent condition on IO channel
         SIGURG,
+        /// Exceeded CPU time limit
         SIGXCPU,
+        /// Exceeded file size limit
         SIGXFSZ,
+        /// Virtual time alarm
         SIGVTALRM,
+        /// Profiling time alarm
         SIGPROF,
+        /// Window size changes
         SIGWINCH,
+        /// Input/output possible signal
         SIGIO,
         #[cfg(any(target_os = "android", target_os = "emscripten",
                   target_os = "fuchsia", target_os = "linux"))]
+        /// Power failure imminent.
         SIGPWR,
+        /// Bad system call
         SIGSYS,
         #[cfg(not(any(target_os = "android", target_os = "emscripten",
                       target_os = "fuchsia", target_os = "linux",
                       target_os = "redox")))]
+        /// Emulator trap
         SIGEMT,
         #[cfg(not(any(target_os = "android", target_os = "emscripten",
                       target_os = "fuchsia", target_os = "linux",
                       target_os = "redox")))]
+        /// Information request
         SIGINFO,
     }
     impl TryFrom<i32>
@@ -336,6 +370,7 @@ const SIGNALS: [Signal; 31] = [
     SIGINFO];
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+/// Iterate through all signals defined by this operating system
 pub struct SignalIterator {
     next: usize,
 }
@@ -355,13 +390,17 @@ impl Iterator for SignalIterator {
 }
 
 impl Signal {
+    /// Iterate through all signals defined by this OS
     pub const fn iterator() -> SignalIterator {
         SignalIterator{next: 0}
     }
 }
 
+/// Alias for [`SIGABRT`]
 pub const SIGIOT : Signal = SIGABRT;
+/// Alias for [`SIGIO`]
 pub const SIGPOLL : Signal = SIGIO;
+/// Alias for [`SIGSYS`]
 pub const SIGUNUSED : Signal = SIGSYS;
 
 #[cfg(not(target_os = "redox"))]
@@ -370,27 +409,48 @@ type SaFlags_t = libc::c_int;
 type SaFlags_t = libc::c_ulong;
 
 libc_bitflags!{
+    /// Controls the behavior of a [`SigAction`]
     pub struct SaFlags: SaFlags_t {
+        /// When catching a [`Signal::SIGCHLD`] signal, the signal will be
+        /// generated only when a child process exits, not when a child process
+        /// stops.
         SA_NOCLDSTOP;
+        /// When catching a [`Signal::SIGCHLD`] signal, the system will not
+        /// create zombie processes when children of the calling process exit.
         SA_NOCLDWAIT;
+        /// Further occurrences of the delivered signal are not masked during
+        /// the execution of the handler.
         SA_NODEFER;
+        /// The system will deliver the signal to the process on a signal stack,
+        /// specified by each thread with sigaltstack(2).
         SA_ONSTACK;
+        /// The handler is reset back to the default at the moment the signal is
+        /// delivered.
         SA_RESETHAND;
+        /// Requests that certain system calls restart if interrupted by this
+        /// signal.  See the man page for complete details.
         SA_RESTART;
+        /// This flag is controlled internally by Nix.
         SA_SIGINFO;
     }
 }
 
 libc_enum! {
+    /// Specifies how certain functions should manipulate a signal mask
     #[repr(i32)]
     #[non_exhaustive]
     pub enum SigmaskHow {
+        /// The new mask is the union of the current mask and the specified set.
         SIG_BLOCK,
+        /// The new mask is the intersection of the current mask and the
+        /// complement of the specified set.
         SIG_UNBLOCK,
+        /// The current mask is replaced by the specified set.
         SIG_SETMASK,
     }
 }
 
+/// Specifies a set of [`Signal`]s that may be blocked, waited for, etc.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct SigSet {
     sigset: libc::sigset_t
@@ -398,6 +458,7 @@ pub struct SigSet {
 
 
 impl SigSet {
+    /// Initialize to include all signals.
     pub fn all() -> SigSet {
         let mut sigset = mem::MaybeUninit::uninit();
         let _ = unsafe { libc::sigfillset(sigset.as_mut_ptr()) };
@@ -405,6 +466,7 @@ impl SigSet {
         unsafe{ SigSet { sigset: sigset.assume_init() } }
     }
 
+    /// Initialize to include nothing.
     pub fn empty() -> SigSet {
         let mut sigset = mem::MaybeUninit::uninit();
         let _ = unsafe { libc::sigemptyset(sigset.as_mut_ptr()) };
@@ -412,18 +474,22 @@ impl SigSet {
         unsafe{ SigSet { sigset: sigset.assume_init() } }
     }
 
+    /// Add the specified signal to the set.
     pub fn add(&mut self, signal: Signal) {
         unsafe { libc::sigaddset(&mut self.sigset as *mut libc::sigset_t, signal as libc::c_int) };
     }
 
+    /// Remove all signals from this set.
     pub fn clear(&mut self) {
         unsafe { libc::sigemptyset(&mut self.sigset as *mut libc::sigset_t) };
     }
 
+    /// Remove the specified signal from this set.
     pub fn remove(&mut self, signal: Signal) {
         unsafe { libc::sigdelset(&mut self.sigset as *mut libc::sigset_t, signal as libc::c_int) };
     }
 
+    /// Return whether this set includes the specified signal.
     pub fn contains(&self, signal: Signal) -> bool {
         let res = unsafe { libc::sigismember(&self.sigset as *const libc::sigset_t, signal as libc::c_int) };
 
@@ -434,6 +500,8 @@ impl SigSet {
         }
     }
 
+    /// Merge all of `other`'s signals into this set.
+    // TODO: use libc::sigorset on supported operating systems.
     pub fn extend(&mut self, other: &SigSet) {
         for signal in Signal::iterator() {
             if other.contains(signal) {
@@ -787,6 +855,24 @@ pub fn sigprocmask(how: SigmaskHow, set: Option<&SigSet>, oldset: Option<&mut Si
     Errno::result(res).map(drop)
 }
 
+/// Send a signal to a process
+///
+/// # Arguments
+///
+/// * `pid` -    Specifies which processes should receive the signal.
+///   - If positive, specifies an individual process
+///   - If zero, the signal will be sent to all processes whose group
+///     ID is equal to the process group ID of the sender.  This is a
+///     variant of [`killpg`].
+///   - If `-1` and the process has super-user privileges, the signal
+///     is sent to all processes exclusing system processes.
+///   - If less than `-1`, the signal is sent to all processes whose
+///     process group ID is equal to the absolute value of `pid`.
+/// * `signal` - Signal to send.  If 0, error checking if performed but no
+///              signal is actually sent.
+///
+/// See Also
+/// [`kill(2)`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/kill.html)
 pub fn kill<T: Into<Option<Signal>>>(pid: Pid, signal: T) -> Result<()> {
     let res = unsafe { libc::kill(pid.into(),
                                   match signal.into() {
@@ -797,12 +883,16 @@ pub fn kill<T: Into<Option<Signal>>>(pid: Pid, signal: T) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
-/// Send a signal to a process group [(see
-/// killpg(3))](https://pubs.opengroup.org/onlinepubs/9699919799/functions/killpg.html).
+/// Send a signal to a process group
 ///
-/// If `pgrp` less then or equal 1, the behavior is platform-specific.
-/// If `signal` is `None`, `killpg` will only preform error checking and won't
-/// send any signal.
+/// # Arguments
+///
+/// * `pgrp` -   Process group to signal.  If less then or equal 1, the behavior
+///              is platform-specific.
+/// * `signal` - Signal to send. If `None`, `killpg` will only preform error
+///              checking and won't send any signal.
+///
+/// See Also [killpg(3)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/killpg.html).
 #[cfg(not(target_os = "fuchsia"))]
 pub fn killpg<T: Into<Option<Signal>>>(pgrp: Pid, signal: T) -> Result<()> {
     let res = unsafe { libc::killpg(pgrp.into(),
@@ -814,6 +904,9 @@ pub fn killpg<T: Into<Option<Signal>>>(pgrp: Pid, signal: T) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
+/// Send a signal to the current thread
+///
+/// See Also [raise(3)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/raise.html)
 pub fn raise(signal: Signal) -> Result<()> {
     let res = unsafe { libc::raise(signal as libc::c_int) };
 
@@ -821,13 +914,14 @@ pub fn raise(signal: Signal) -> Result<()> {
 }
 
 
+/// Identifies a thread for [`SigevNotify::SigevThreadId`]
 #[cfg(target_os = "freebsd")]
 pub type type_of_thread_id = libc::lwpid_t;
+/// Identifies a thread for [`SigevNotify::SigevThreadId`]
 #[cfg(target_os = "linux")]
 pub type type_of_thread_id = libc::pid_t;
 
-/// Used to request asynchronous notification of certain events, for example,
-/// with POSIX AIO, POSIX message queues, and POSIX timers.
+/// Specifies the notification method used by a [`SigEvent`]
 // sigval is actually a union of a int and a void*.  But it's never really used
 // as a pointer, because neither libc nor the kernel ever dereference it.  nix
 // therefore presents it as an intptr_t, which is how kevent uses it.
@@ -835,22 +929,35 @@ pub type type_of_thread_id = libc::pid_t;
 pub enum SigevNotify {
     /// No notification will be delivered
     SigevNone,
-    /// The signal given by `signal` will be delivered to the process.  The
-    /// value in `si_value` will be present in the `si_value` field of the
-    /// `siginfo_t` structure of the queued signal.
-    SigevSignal { signal: Signal, si_value: libc::intptr_t },
+    /// Notify by delivering a signal to the process.
+    SigevSignal {
+        /// Signal to deliver
+        signal: Signal,
+        /// Will be present in the `si_value` field of the [`libc::siginfo_t`]
+        /// structure of the queued signal.
+        si_value: libc::intptr_t
+    },
     // Note: SIGEV_THREAD is not implemented because libc::sigevent does not
     // expose a way to set the union members needed by SIGEV_THREAD.
-    /// A new `kevent` is posted to the kqueue `kq`.  The `kevent`'s `udata`
-    /// field will contain the value in `udata`.
+    /// Notify by delivering an event to a kqueue.
     #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
-    SigevKevent { kq: RawFd, udata: libc::intptr_t },
-    /// The signal `signal` is queued to the thread whose LWP ID is given in
-    /// `thread_id`.  The value stored in `si_value` will be present in the
-    /// `si_value` of the `siginfo_t` structure of the queued signal.
+    SigevKevent {
+        /// File descriptor of the kqueue to notify.
+        kq: RawFd,
+        /// Will be contained in the kevent's `udata` field.
+        udata: libc::intptr_t
+    },
+    /// Notify by delivering a signal to a thread.
     #[cfg(any(target_os = "freebsd", target_os = "linux"))]
-    SigevThreadId { signal: Signal, thread_id: type_of_thread_id,
-                    si_value: libc::intptr_t },
+    SigevThreadId {
+        /// Signal to send
+        signal: Signal,
+        /// LWP ID of the thread to notify
+        thread_id: type_of_thread_id,
+        /// Will be present in the `si_value` field of the [`libc::siginfo_t`]
+        /// structure of the queued signal.
+        si_value: libc::intptr_t
+    },
 }
 
 #[cfg(not(any(target_os = "openbsd", target_os = "redox")))]
@@ -932,6 +1039,7 @@ mod sigevent {
         fn set_tid(_sev: &mut libc::sigevent, _sigev_notify: &SigevNotify) {
         }
 
+        /// Return a copy of the inner structure
         pub fn sigevent(&self) -> libc::sigevent {
             self.sigevent
         }

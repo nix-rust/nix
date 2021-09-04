@@ -62,9 +62,9 @@ libc_enum! {
     pub enum LioOpcode {
         /// No operation
         LIO_NOP,
-        /// Write data as if by a call to [`aio_write`]
+        /// Write data as if by a call to [`AioCb::write`]
         LIO_WRITE,
-        /// Write data as if by a call to [`aio_read`]
+        /// Write data as if by a call to [`AioCb::read`]
         LIO_READ,
     }
 }
