@@ -30,6 +30,10 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1335](https://github.com/nix-rust/nix/pull/1335))
 - Exposed `SockAddr::from_raw_sockaddr`
   (#[1447](https://github.com/nix-rust/nix/pull/1447))
+- Added `TcpRepair`
+  (#[1503](https://github.com/nix-rust/nix/pull/1503))
+- Enabled `pwritev` and `preadv` for more operating systems.
+  (#[1511](https://github.com/nix-rust/nix/pull/1511))
 - Added support for `TCP_MAXSEG` TCP Maximum Segment Size socket options
   (#[1292](https://github.com/nix-rust/nix/pull/1292))
 
@@ -76,6 +80,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Removed a couple of termios constants on redox that were never actually
   supported.
   (#[1483](https://github.com/nix-rust/nix/pull/1483))
+
 - Removed `nix::sys::signal::NSIG`.  It was of dubious utility, and not correct
   for all platforms.
   (#[1484](https://github.com/nix-rust/nix/pull/1484))
@@ -86,6 +91,9 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 - Deprecated `SockAddr/InetAddr::to_str` in favor of `ToString::to_string`
   (#[1495](https://github.com/nix-rust/nix/pull/1495))
+
+- Removed `SigevNotify` on OpenBSD and Redox.
+  (#[1511](https://github.com/nix-rust/nix/pull/1511))
 
 ## [0.22.0] - 9 July 2021
 ### Added

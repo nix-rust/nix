@@ -1,3 +1,4 @@
+//! Wait for a process to change status
 use crate::errno::Errno;
 use crate::sys::signal::Signal;
 use crate::unistd::Pid;
@@ -7,9 +8,17 @@ use libc::{self, c_int};
 use std::convert::TryFrom;
 
 libc_bitflags!(
+    /// Controls the behavior of [`waitpid`].
     pub struct WaitPidFlag: c_int {
+        /// Do not block when there are no processes wishing to report status.
         WNOHANG;
+        /// Report the status of selected processes which are stopped due to a
+        /// [`SIGTTIN`](crate::sys::signal::Signal::SIGTTIN),
+        /// [`SIGTTOU`](crate::sys::signal::Signal::SIGTTOU),
+        /// [`SIGTSTP`](crate::sys::signal::Signal::SIGTSTP), or
+        /// [`SIGSTOP`](crate::sys::signal::Signal::SIGSTOP) signal.
         WUNTRACED;
+        /// Report the status of selected processes which have terminated.
         #[cfg(any(target_os = "android",
                   target_os = "freebsd",
                   target_os = "haiku",
@@ -19,7 +28,11 @@ libc_bitflags!(
                   target_os = "macos",
                   target_os = "netbsd"))]
         WEXITED;
+        /// Report the status of selected processes that have continued from a
+        /// job control stop by receiving a
+        /// [`SIGCONT`](crate::sys::signal::Signal::SIGCONT) signal.
         WCONTINUED;
+        /// An alias for WUNTRACED.
         #[cfg(any(target_os = "android",
                   target_os = "freebsd",
                   target_os = "haiku",
@@ -45,6 +58,7 @@ libc_bitflags!(
         /// Wait on all children, regardless of type
         #[cfg(any(target_os = "android", target_os = "linux", target_os = "redox"))]
         __WALL;
+        /// Wait for "clone" children only.
         #[cfg(any(target_os = "android", target_os = "linux", target_os = "redox"))]
         __WCLONE;
     }
@@ -213,6 +227,9 @@ impl WaitStatus {
     }
 }
 
+/// Wait for a process to change status
+///
+/// See also [waitpid(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/waitpid.html)
 pub fn waitpid<P: Into<Option<Pid>>>(pid: P, options: Option<WaitPidFlag>) -> Result<WaitStatus> {
     use self::WaitStatus::*;
 
@@ -237,6 +254,9 @@ pub fn waitpid<P: Into<Option<Pid>>>(pid: P, options: Option<WaitPidFlag>) -> Re
     }
 }
 
+/// Wait for any child process to change status or a signal is received.
+///
+/// See also [wait(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/wait.html)
 pub fn wait() -> Result<WaitStatus> {
     waitpid(None, None)
 }

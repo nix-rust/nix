@@ -74,12 +74,15 @@ Tier 2:
   * s390x-unknown-linux-gnu
   * x86_64-apple-ios
   * x86_64-linux-android
+  * x86_64-unknown-illumos
   * x86_64-unknown-netbsd
 
 Tier 3:
   * x86_64-fuchsia
-  * x86_64-unknown-redox
+  * x86_64-unknown-dragonfly
   * x86_64-unknown-linux-gnux32
+  * x86_64-unknown-openbsd
+  * x86_64-unknown-redox
 
 ## Usage
 

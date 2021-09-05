@@ -236,14 +236,8 @@ mod linux_android {
     /// The from_offset should be updated by the call to reflect
     /// the 3 bytes read (6).
     #[test]
-    // QEMU does not support copy_file_range. Skip platforms that use QEMU in CI
-    #[cfg_attr(all(target_os = "linux", any(
-            target_arch = "aarch64",
-            target_arch = "arm",
-            target_arch = "mips",
-            target_arch = "mips64",
-            target_arch = "powerpc64"
-    )), ignore)]
+    // QEMU does not support copy_file_range. Skip under qemu
+    #[cfg_attr(qemu, ignore)]
     fn test_copy_file_range() {
         const CONTENTS: &[u8] = b"foobarbaz";
 

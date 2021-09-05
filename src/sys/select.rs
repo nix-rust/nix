@@ -1,3 +1,4 @@
+//! Portably monitor a group of file descriptors for readiness.
 use std::iter::FusedIterator;
 use std::mem;
 use std::ops::Range;
@@ -11,11 +12,13 @@ use crate::sys::time::{TimeSpec, TimeVal};
 
 pub use libc::FD_SETSIZE;
 
+/// Contains a set of file descriptors used by [`select`]
 #[repr(transparent)]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct FdSet(libc::fd_set);
 
 impl FdSet {
+    /// Create an empty `FdSet`
     pub fn new() -> FdSet {
         let mut fdset = mem::MaybeUninit::uninit();
         unsafe {
@@ -24,18 +27,22 @@ impl FdSet {
         }
     }
 
+    /// Add a file descriptor to an `FdSet`
     pub fn insert(&mut self, fd: RawFd) {
         unsafe { libc::FD_SET(fd, &mut self.0) };
     }
 
+    /// Remove a file descriptor from an `FdSet`
     pub fn remove(&mut self, fd: RawFd) {
         unsafe { libc::FD_CLR(fd, &mut self.0) };
     }
 
+    /// Test an `FdSet` for the presence of a certain file descriptor.
     pub fn contains(&self, fd: RawFd) -> bool {
         unsafe { libc::FD_ISSET(fd, &self.0) }
     }
 
+    /// Remove all file descriptors from this `FdSet`.
     pub fn clear(&mut self) {
         unsafe { libc::FD_ZERO(&mut self.0) };
     }

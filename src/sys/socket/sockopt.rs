@@ -274,6 +274,10 @@ cfg_if! {
 }
 #[cfg(not(target_os = "openbsd"))]
 sockopt_impl!(Both, TcpKeepCount, libc::IPPROTO_TCP, libc::TCP_KEEPCNT, u32);
+#[cfg(any(target_os = "android",
+          target_os = "fuchsia",
+          target_os = "linux"))]
+sockopt_impl!(Both, TcpRepair, libc::IPPROTO_TCP, libc::TCP_REPAIR, u32);
 #[cfg(not(target_os = "openbsd"))]
 sockopt_impl!(Both, TcpKeepInterval, libc::IPPROTO_TCP, libc::TCP_KEEPINTVL, u32);
 #[cfg(any(target_os = "fuchsia", target_os = "linux"))]

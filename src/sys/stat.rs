@@ -256,6 +256,7 @@ pub fn futimens(fd: RawFd, atime: &TimeSpec, mtime: &TimeSpec) -> Result<()> {
 }
 
 /// Flags for `utimensat` function.
+// TODO: replace with fcntl::AtFlags
 #[derive(Clone, Copy, Debug)]
 pub enum UtimensatFlags {
     FollowSymlink,

@@ -288,9 +288,9 @@ mod recvfrom {
         use nix::sys::socket::sockopt::{UdpGroSegment, UdpGsoSegment};
 
         #[test]
-        // Disable the test on emulated platforms because it fails in Cirrus-CI.  Lack of QEMU
-        // support is suspected.
-        #[cfg_attr(not(any(target_arch = "x86_64", target_arch="i686")), ignore)]
+        // Disable the test under emulation because it fails in Cirrus-CI.  Lack
+        // of QEMU support is suspected.
+        #[cfg_attr(qemu, ignore)]
         pub fn gso() {
             require_kernel_version!(udp_offload::gso, ">= 4.18");
 
@@ -342,9 +342,9 @@ mod recvfrom {
         }
 
         #[test]
-        // Disable the test on emulated platforms because it fails in Cirrus-CI.  Lack of QEMU
-        // support is suspected.
-        #[cfg_attr(not(any(target_arch = "x86_64", target_arch="i686")), ignore)]
+        // Disable the test on emulated platforms because it fails in Cirrus-CI.
+        // Lack of QEMU support is suspected.
+        #[cfg_attr(qemu, ignore)]
         pub fn gro() {
             require_kernel_version!(udp_offload::gro, ">= 5.3");
 
@@ -583,7 +583,7 @@ pub fn test_recvmsg_ebadf() {
 
 // Disable the test on emulated platforms due to a bug in QEMU versions <
 // 2.12.0.  https://bugs.launchpad.net/qemu/+bug/1701808
-#[cfg_attr(not(any(target_arch = "x86_64", target_arch="i686")), ignore)]
+#[cfg_attr(qemu, ignore)]
 #[test]
 pub fn test_scm_rights() {
     use nix::sys::uio::IoVec;
@@ -637,8 +637,8 @@ pub fn test_scm_rights() {
 }
 
 // Disable the test on emulated platforms due to not enabled support of AF_ALG in QEMU from rust cross
-#[cfg_attr(not(any(target_arch = "x86_64", target_arch = "i686")), ignore)]
 #[cfg(any(target_os = "linux", target_os= "android"))]
+#[cfg_attr(qemu, ignore)]
 #[test]
 pub fn test_af_alg_cipher() {
     use libc;
@@ -705,9 +705,10 @@ pub fn test_af_alg_cipher() {
     assert_eq!(decrypted, payload);
 }
 
-// Disable the test on emulated platforms due to not enabled support of AF_ALG in QEMU from rust cross
-#[cfg_attr(not(any(target_arch = "x86_64", target_arch = "i686")), ignore)]
+// Disable the test on emulated platforms due to not enabled support of AF_ALG
+// in QEMU from rust cross
 #[cfg(any(target_os = "linux", target_os= "android"))]
+#[cfg_attr(qemu, ignore)]
 #[test]
 pub fn test_af_alg_aead() {
     use libc::{ALG_OP_DECRYPT, ALG_OP_ENCRYPT};
@@ -910,7 +911,7 @@ pub fn test_sendmsg_ipv6packetinfo() {
 /// Tests that passing multiple fds using a single `ControlMessage` works.
 // Disable the test on emulated platforms due to a bug in QEMU versions <
 // 2.12.0.  https://bugs.launchpad.net/qemu/+bug/1701808
-#[cfg_attr(not(any(target_arch = "x86_64", target_arch="i686")), ignore)]
+#[cfg_attr(qemu, ignore)]
 #[test]
 fn test_scm_rights_single_cmsg_multiple_fds() {
     use std::os::unix::net::UnixDatagram;
@@ -1057,9 +1058,9 @@ fn test_scm_credentials() {
 /// Ensure that we can send `SCM_CREDENTIALS` and `SCM_RIGHTS` with a single
 /// `sendmsg` call.
 #[cfg(any(target_os = "android", target_os = "linux"))]
-// qemu's handling of multiple cmsgs is bugged, ignore tests on non-x86
+// qemu's handling of multiple cmsgs is bugged, ignore tests under emulation
 // see https://bugs.launchpad.net/qemu/+bug/1781280
-#[cfg_attr(not(any(target_arch = "x86_64", target_arch = "x86")), ignore)]
+#[cfg_attr(qemu, ignore)]
 #[test]
 fn test_scm_credentials_and_rights() {
     use libc;
@@ -1071,9 +1072,9 @@ fn test_scm_credentials_and_rights() {
 /// Ensure that passing a an oversized control message buffer to recvmsg
 /// still works.
 #[cfg(any(target_os = "android", target_os = "linux"))]
-// qemu's handling of multiple cmsgs is bugged, ignore tests on non-x86
+// qemu's handling of multiple cmsgs is bugged, ignore tests under emulation
 // see https://bugs.launchpad.net/qemu/+bug/1781280
-#[cfg_attr(not(any(target_arch = "x86_64", target_arch = "x86")), ignore)]
+#[cfg_attr(qemu, ignore)]
 #[test]
 fn test_too_large_cmsgspace() {
     let space = vec![0u8; 1024];
@@ -1262,10 +1263,13 @@ fn loopback_address(family: AddressFamily) -> Option<nix::ifaddrs::InterfaceAddr
     target_os = "netbsd",
 ))]
 // qemu doesn't seem to be emulating this correctly in these architectures
-#[cfg_attr(any(
-    target_arch = "mips",
-    target_arch = "mips64",
-    target_arch = "powerpc64",
+#[cfg_attr(all(
+    qemu,
+    any(
+        target_arch = "mips",
+        target_arch = "mips64",
+        target_arch = "powerpc64",
+    )
 ), ignore)]
 #[test]
 pub fn test_recv_ipv4pktinfo() {
@@ -1352,10 +1356,13 @@ pub fn test_recv_ipv4pktinfo() {
     target_os = "openbsd",
 ))]
 // qemu doesn't seem to be emulating this correctly in these architectures
-#[cfg_attr(any(
-    target_arch = "mips",
-    target_arch = "mips64",
-    target_arch = "powerpc64",
+#[cfg_attr(all(
+    qemu,
+    any(
+        target_arch = "mips",
+        target_arch = "mips64",
+        target_arch = "powerpc64",
+    )
 ), ignore)]
 #[test]
 pub fn test_recvif() {
@@ -1463,10 +1470,13 @@ pub fn test_recvif() {
     target_os = "openbsd",
 ))]
 // qemu doesn't seem to be emulating this correctly in these architectures
-#[cfg_attr(any(
-    target_arch = "mips",
-    target_arch = "mips64",
-    target_arch = "powerpc64",
+#[cfg_attr(all(
+    qemu,
+    any(
+        target_arch = "mips",
+        target_arch = "mips64",
+        target_arch = "powerpc64",
+    )
 ), ignore)]
 #[test]
 pub fn test_recv_ipv6pktinfo() {
@@ -1544,6 +1554,7 @@ pub fn test_recv_ipv6pktinfo() {
 }
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg_attr(graviton, ignore = "Not supported by the CI environment")]
 #[test]
 pub fn test_vsock() {
     use libc;
@@ -1588,9 +1599,9 @@ pub fn test_vsock() {
     thr.join().unwrap();
 }
 
-// Disable the test on emulated platforms because it fails in Cirrus-CI.  Lack of QEMU
-// support is suspected.
-#[cfg_attr(not(any(target_arch = "x86_64")), ignore)]
+// Disable the test on emulated platforms because it fails in Cirrus-CI.  Lack
+// of QEMU support is suspected.
+#[cfg_attr(qemu, ignore)]
 #[cfg(all(target_os = "linux"))]
 #[test]
 fn test_recvmsg_timestampns() {
@@ -1639,9 +1650,9 @@ fn test_recvmsg_timestampns() {
     nix::unistd::close(in_socket).unwrap();
 }
 
-// Disable the test on emulated platforms because it fails in Cirrus-CI.  Lack of QEMU
-// support is suspected.
-#[cfg_attr(not(any(target_arch = "x86_64")), ignore)]
+// Disable the test on emulated platforms because it fails in Cirrus-CI.  Lack
+// of QEMU support is suspected.
+#[cfg_attr(qemu, ignore)]
 #[cfg(all(target_os = "linux"))]
 #[test]
 fn test_recvmmsg_timestampns() {
@@ -1696,9 +1707,9 @@ fn test_recvmmsg_timestampns() {
     nix::unistd::close(in_socket).unwrap();
 }
 
-// Disable the test on emulated platforms because it fails in Cirrus-CI.  Lack of QEMU
-// support is suspected.
-#[cfg_attr(not(any(target_arch = "x86_64")), ignore)]
+// Disable the test on emulated platforms because it fails in Cirrus-CI.  Lack
+// of QEMU support is suspected.
+#[cfg_attr(qemu, ignore)]
 #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
 #[test]
 fn test_recvmsg_rxq_ovfl() {
