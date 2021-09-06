@@ -40,6 +40,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1514](https://github.com/nix-rust/nix/pull/1514))
 - Added `AsRawFd` implementation on `PollFd`.
   (#[1516](https://github.com/nix-rust/nix/pull/1516))
+- Added `Ipv4Ttl` and `Ipv6Ttl` sockopts.
+  (#[1515](https://github.com/nix-rust/nix/pull/1515))
 
 ### Changed
 

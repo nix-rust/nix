@@ -356,6 +356,10 @@ sockopt_impl!(Both, Ipv6V6Only, libc::IPPROTO_IPV6, libc::IPV6_V6ONLY, bool);
 sockopt_impl!(Both, Ipv4RecvErr, libc::IPPROTO_IP, libc::IP_RECVERR, bool);
 #[cfg(any(target_os = "android", target_os = "linux"))]
 sockopt_impl!(Both, Ipv6RecvErr, libc::IPPROTO_IPV6, libc::IPV6_RECVERR, bool);
+#[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
+sockopt_impl!(Both, Ipv4Ttl, libc::IPPROTO_IP, libc::IP_TTL, libc::c_int);
+#[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
+sockopt_impl!(Both, Ipv6Ttl, libc::IPPROTO_IPV6, libc::IPV6_UNICAST_HOPS, libc::c_int);
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
 #[derive(Copy, Clone, Debug)]
