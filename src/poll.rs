@@ -3,7 +3,7 @@
 use crate::sys::time::TimeSpec;
 #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd", target_os = "linux"))]
 use crate::sys::signal::SigSet;
-use std::os::unix::io::RawFd;
+use std::os::unix::io::{AsRawFd, RawFd};
 
 use crate::Result;
 use crate::errno::Errno;
@@ -38,6 +38,12 @@ impl PollFd {
     /// Returns the events that occured in the last call to `poll` or `ppoll`.
     pub fn revents(self) -> Option<PollFlags> {
         PollFlags::from_bits(self.pollfd.revents)
+    }
+}
+
+impl AsRawFd for PollFd {
+    fn as_raw_fd(&self) -> RawFd {
+        self.pollfd.fd
     }
 }
 

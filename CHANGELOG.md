@@ -36,6 +36,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1511](https://github.com/nix-rust/nix/pull/1511))
 - Added `Ipv4RecvErr` and `Ipv6RecvErr` sockopts and associated control messages.
   (#[1514](https://github.com/nix-rust/nix/pull/1514))
+- Added `AsRawFd` implementation on `PollFd`.
+  (#[1516](https://github.com/nix-rust/nix/pull/1516))
 
 ### Changed
 
