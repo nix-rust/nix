@@ -712,6 +712,7 @@ pub fn test_af_alg_cipher() {
 #[test]
 pub fn test_af_alg_aead() {
     use libc::{ALG_OP_DECRYPT, ALG_OP_ENCRYPT};
+    use nix::fcntl::{fcntl, FcntlArg, OFlag};
     use nix::sys::uio::IoVec;
     use nix::unistd::{read, close};
     use nix::sys::socket::{socket, sendmsg, bind, accept, setsockopt,
@@ -790,6 +791,11 @@ pub fn test_af_alg_aead() {
 
     // allocate buffer for decrypted data
     let mut decrypted = vec![0u8; payload_len + (assoc_size as usize) + auth_size];
+    // Starting with kernel 4.9, the interface changed slightly such that the
+    // authentication tag memory is only needed in the output buffer for encryption
+    // and in the input buffer for decryption.
+    // Do not block on read, as we may have fewer bytes than buffer size
+    fcntl(session_socket,FcntlArg::F_SETFL(OFlag::O_NONBLOCK)).expect("fcntl non_blocking");
     let num_bytes = read(session_socket, &mut decrypted).expect("read decrypt");
 
     assert!(num_bytes >= payload_len + (assoc_size as usize));
