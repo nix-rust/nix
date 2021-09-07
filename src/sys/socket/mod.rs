@@ -653,6 +653,13 @@ pub enum ControlMessageOwned {
     #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
     RxqOvfl(u32),
 
+    /// Socket error queue control messages read with the `MSG_ERRQUEUE` flag.
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    Ipv4RecvErr(libc::sock_extended_err, Option<sockaddr_in>),
+    /// Socket error queue control messages read with the `MSG_ERRQUEUE` flag.
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    Ipv6RecvErr(libc::sock_extended_err, Option<sockaddr_in6>),
+
     /// Catch-all variant for unimplemented cmsg types.
     #[doc(hidden)]
     Unknown(UnknownCmsg),
@@ -756,11 +763,39 @@ impl ControlMessageOwned {
                 let drop_counter = ptr::read_unaligned(p as *const u32);
                 ControlMessageOwned::RxqOvfl(drop_counter)
             },
+            #[cfg(any(target_os = "android", target_os = "linux"))]
+            (libc::IPPROTO_IP, libc::IP_RECVERR) => {
+                let (err, addr) = Self::recv_err_helper::<sockaddr_in>(p, len);
+                ControlMessageOwned::Ipv4RecvErr(err, addr)
+            },
+            #[cfg(any(target_os = "android", target_os = "linux"))]
+            (libc::IPPROTO_IPV6, libc::IPV6_RECVERR) => {
+                let (err, addr) = Self::recv_err_helper::<sockaddr_in6>(p, len);
+                ControlMessageOwned::Ipv6RecvErr(err, addr)
+            },
             (_, _) => {
                 let sl = slice::from_raw_parts(p, len);
                 let ucmsg = UnknownCmsg(*header, Vec::<u8>::from(sl));
                 ControlMessageOwned::Unknown(ucmsg)
             }
+        }
+    }
+
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    unsafe fn recv_err_helper<T>(p: *mut libc::c_uchar, len: usize) -> (libc::sock_extended_err, Option<T>) {
+        let ee = p as *const libc::sock_extended_err;
+        let err = ptr::read_unaligned(ee);
+
+        // For errors originating on the network, SO_EE_OFFENDER(ee) points inside the p[..len]
+        // CMSG_DATA buffer.  For local errors, there is no address included in the control
+        // message, and SO_EE_OFFENDER(ee) points beyond the end of the buffer.  So, we need to
+        // validate that the address object is in-bounds before we attempt to copy it.
+        let addrp = libc::SO_EE_OFFENDER(ee) as *const T;
+
+        if addrp.offset(1) as usize - (p as usize) > len {
+            (err, None)
+        } else {
+            (err, Some(ptr::read_unaligned(addrp)))
         }
     }
 }
