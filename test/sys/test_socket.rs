@@ -712,6 +712,7 @@ pub fn test_af_alg_cipher() {
 #[test]
 pub fn test_af_alg_aead() {
     use libc::{ALG_OP_DECRYPT, ALG_OP_ENCRYPT};
+    use nix::fcntl::{fcntl, FcntlArg, OFlag};
     use nix::sys::uio::IoVec;
     use nix::unistd::{read, close};
     use nix::sys::socket::{socket, sendmsg, bind, accept, setsockopt,
@@ -790,6 +791,11 @@ pub fn test_af_alg_aead() {
 
     // allocate buffer for decrypted data
     let mut decrypted = vec![0u8; payload_len + (assoc_size as usize) + auth_size];
+    // Starting with kernel 4.9, the interface changed slightly such that the
+    // authentication tag memory is only needed in the output buffer for encryption
+    // and in the input buffer for decryption.
+    // Do not block on read, as we may have fewer bytes than buffer size
+    fcntl(session_socket,FcntlArg::F_SETFL(OFlag::O_NONBLOCK)).expect("fcntl non_blocking");
     let num_bytes = read(session_socket, &mut decrypted).expect("read decrypt");
 
     assert!(num_bytes >= payload_len + (assoc_size as usize));
@@ -1788,4 +1794,161 @@ fn test_recvmsg_rxq_ovfl() {
     // Close sockets
     nix::unistd::close(in_socket).unwrap();
     nix::unistd::close(out_socket).unwrap();
+}
+
+#[cfg(any(
+    target_os = "linux",
+    target_os = "android",
+))]
+mod linux_errqueue {
+    use nix::sys::socket::*;
+    use super::{FromStr, SocketAddr};
+
+    // Send a UDP datagram to a bogus destination address and observe an ICMP error (v4).
+    //
+    // Disable the test on QEMU because QEMU emulation of IP_RECVERR is broken (as documented on PR
+    // #1514).
+    #[cfg_attr(qemu, ignore)]
+    #[test]
+    fn test_recverr_v4() {
+        #[repr(u8)]
+        enum IcmpTypes {
+            DestUnreach = 3, // ICMP_DEST_UNREACH
+        }
+        #[repr(u8)]
+        enum IcmpUnreachCodes {
+            PortUnreach = 3, // ICMP_PORT_UNREACH
+        }
+
+        test_recverr_impl::<sockaddr_in, _, _>(
+            "127.0.0.1:6800",
+            AddressFamily::Inet,
+            sockopt::Ipv4RecvErr,
+            libc::SO_EE_ORIGIN_ICMP,
+            IcmpTypes::DestUnreach as u8,
+            IcmpUnreachCodes::PortUnreach as u8,
+            // Closure handles protocol-specific testing and returns generic sock_extended_err for
+            // protocol-independent test impl.
+            |cmsg| {
+                if let ControlMessageOwned::Ipv4RecvErr(ext_err, err_addr) = cmsg {
+                    if let Some(origin) = err_addr {
+                        // Validate that our network error originated from 127.0.0.1:0.
+                        assert_eq!(origin.sin_family, AddressFamily::Inet as _);
+                        assert_eq!(Ipv4Addr(origin.sin_addr), Ipv4Addr::new(127, 0, 0, 1));
+                        assert_eq!(origin.sin_port, 0);
+                    } else {
+                        panic!("Expected some error origin");
+                    }
+                    return *ext_err
+                } else {
+                    panic!("Unexpected control message {:?}", cmsg);
+                }
+            },
+        )
+    }
+
+    // Essentially the same test as v4.
+    //
+    // Disable the test on QEMU because QEMU emulation of IPV6_RECVERR is broken (as documented on
+    // PR #1514).
+    #[cfg_attr(qemu, ignore)]
+    #[test]
+    fn test_recverr_v6() {
+        #[repr(u8)]
+        enum IcmpV6Types {
+            DestUnreach = 1, // ICMPV6_DEST_UNREACH
+        }
+        #[repr(u8)]
+        enum IcmpV6UnreachCodes {
+            PortUnreach = 4, // ICMPV6_PORT_UNREACH
+        }
+
+        test_recverr_impl::<sockaddr_in6, _, _>(
+            "[::1]:6801",
+            AddressFamily::Inet6,
+            sockopt::Ipv6RecvErr,
+            libc::SO_EE_ORIGIN_ICMP6,
+            IcmpV6Types::DestUnreach as u8,
+            IcmpV6UnreachCodes::PortUnreach as u8,
+            // Closure handles protocol-specific testing and returns generic sock_extended_err for
+            // protocol-independent test impl.
+            |cmsg| {
+                if let ControlMessageOwned::Ipv6RecvErr(ext_err, err_addr) = cmsg {
+                    if let Some(origin) = err_addr {
+                        // Validate that our network error originated from localhost:0.
+                        assert_eq!(origin.sin6_family, AddressFamily::Inet6 as _);
+                        assert_eq!(
+                            Ipv6Addr(origin.sin6_addr),
+                            Ipv6Addr::from_std(&"::1".parse().unwrap()),
+                        );
+                        assert_eq!(origin.sin6_port, 0);
+                    } else {
+                        panic!("Expected some error origin");
+                    }
+                    return *ext_err
+                } else {
+                    panic!("Unexpected control message {:?}", cmsg);
+                }
+            },
+        )
+    }
+
+    fn test_recverr_impl<SA, OPT, TESTF>(sa: &str,
+                                         af: AddressFamily,
+                                         opt: OPT,
+                                         ee_origin: u8,
+                                         ee_type: u8,
+                                         ee_code: u8,
+                                         testf: TESTF)
+        where
+            OPT: SetSockOpt<Val = bool>,
+            TESTF: FnOnce(&ControlMessageOwned) -> libc::sock_extended_err,
+    {
+        use nix::errno::Errno;
+        use nix::sys::uio::IoVec;
+
+        const MESSAGE_CONTENTS: &str = "ABCDEF";
+
+        let sock_addr = {
+            let std_sa = SocketAddr::from_str(sa).unwrap();
+            let inet_addr = InetAddr::from_std(&std_sa);
+            SockAddr::new_inet(inet_addr)
+        };
+        let sock = socket(af, SockType::Datagram, SockFlag::SOCK_CLOEXEC, None).unwrap();
+        setsockopt(sock, opt, &true).unwrap();
+        if let Err(e) = sendto(sock, MESSAGE_CONTENTS.as_bytes(), &sock_addr, MsgFlags::empty()) {
+            assert_eq!(e, Errno::EADDRNOTAVAIL);
+            println!("{:?} not available, skipping test.", af);
+            return;
+        }
+
+        let mut buf = [0u8; 8];
+        let iovec = [IoVec::from_mut_slice(&mut buf)];
+        let mut cspace = cmsg_space!(libc::sock_extended_err, SA);
+
+        let msg = recvmsg(sock, &iovec, Some(&mut cspace), MsgFlags::MSG_ERRQUEUE).unwrap();
+        // The sent message / destination associated with the error is returned:
+        assert_eq!(msg.bytes, MESSAGE_CONTENTS.as_bytes().len());
+        assert_eq!(&buf[..msg.bytes], MESSAGE_CONTENTS.as_bytes());
+        // recvmsg(2): "The original destination address of the datagram that caused the error is
+        // supplied via msg_name;" however, this is not literally true.  E.g., an earlier version
+        // of this test used 0.0.0.0 (::0) as the destination address, which was mutated into
+        // 127.0.0.1 (::1).
+        assert_eq!(msg.address, Some(sock_addr));
+
+        // Check for expected control message.
+        let ext_err = match msg.cmsgs().next() {
+            Some(cmsg) => testf(&cmsg),
+            None => panic!("No control message"),
+        };
+
+        assert_eq!(ext_err.ee_errno, libc::ECONNREFUSED as u32);
+        assert_eq!(ext_err.ee_origin, ee_origin);
+        // ip(7): ee_type and ee_code are set from the type and code fields of the ICMP (ICMPv6)
+        // header.
+        assert_eq!(ext_err.ee_type, ee_type);
+        assert_eq!(ext_err.ee_code, ee_code);
+        // ip(7): ee_info contains the discovered MTU for EMSGSIZE errors.
+        assert_eq!(ext_err.ee_info, 0);
+    }
 }
