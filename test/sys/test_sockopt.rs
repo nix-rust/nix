@@ -70,6 +70,57 @@ fn test_so_buf() {
     assert!(actual >= bufsize);
 }
 
+#[test]
+fn test_so_tcp_maxseg() {
+    use std::net::SocketAddr;
+    use std::str::FromStr;
+    use nix::sys::socket::{accept, bind, connect, listen, InetAddr, SockAddr};
+    use nix::unistd::{close, write};
+
+    let std_sa = SocketAddr::from_str("127.0.0.1:4001").unwrap();
+    let inet_addr = InetAddr::from_std(&std_sa);
+    let sock_addr = SockAddr::new_inet(inet_addr);
+
+    let rsock = socket(AddressFamily::Inet, SockType::Stream, SockFlag::empty(), SockProtocol::Tcp)
+                .unwrap();
+    bind(rsock, &sock_addr).unwrap();
+    listen(rsock, 10).unwrap();
+    let initial = getsockopt(rsock, sockopt::TcpMaxSeg).unwrap();
+    // Initial MSS is expected to be 536 (https://tools.ietf.org/html/rfc879#section-1) but some
+    // platforms keep it even lower. This might fail if you've tuned your initial MSS to be larger
+    // than 700
+    cfg_if! {
+        if #[cfg(any(target_os = "android", target_os = "linux"))] {
+            let segsize: u32 = 873;
+            assert!(initial < segsize);
+            setsockopt(rsock, sockopt::TcpMaxSeg, &segsize).unwrap();
+        } else {
+            assert!(initial < 700);
+        }
+    }
+
+    // Connect and check the MSS that was advertised
+    let ssock = socket(AddressFamily::Inet, SockType::Stream, SockFlag::empty(), SockProtocol::Tcp)
+                .unwrap();
+    connect(ssock, &sock_addr).unwrap();
+    let rsess = accept(rsock).unwrap();
+    write(rsess, b"hello").unwrap();
+    let actual = getsockopt(ssock, sockopt::TcpMaxSeg).unwrap();
+    // Actual max segment size takes header lengths into account, max IPv4 options (60 bytes) + max
+    // TCP options (40 bytes) are subtracted from the requested maximum as a lower boundary.
+    cfg_if! {
+        if #[cfg(any(target_os = "android", target_os = "linux"))] {
+            assert!((segsize - 100) <= actual);
+            assert!(actual <= segsize);
+        } else {
+            assert!(initial < actual);
+            assert!(536 < actual);
+        }
+    }
+    close(rsock).unwrap();
+    close(ssock).unwrap();
+}
+
 // The CI doesn't supported getsockopt and setsockopt on emulated processors.
 // It's beleived that a QEMU issue, the tests run ok on a fully emulated system.
 // Current CI just run the binary with QEMU but the Kernel remains the same as the host.

@@ -34,6 +34,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1503](https://github.com/nix-rust/nix/pull/1503))
 - Enabled `pwritev` and `preadv` for more operating systems.
   (#[1511](https://github.com/nix-rust/nix/pull/1511))
+ Added support for `TCP_MAXSEG` TCP Maximum Segment Size socket options
+  (#[1292](https://github.com/nix-rust/nix/pull/1292))
 - Added `Ipv4RecvErr` and `Ipv6RecvErr` sockopts and associated control messages.
   (#[1514](https://github.com/nix-rust/nix/pull/1514))
 - Added `AsRawFd` implementation on `PollFd`.
