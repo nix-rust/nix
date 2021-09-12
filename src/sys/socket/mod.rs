@@ -1714,21 +1714,19 @@ pub fn send(fd: RawFd, buf: &[u8], flags: MsgFlags) -> Result<usize> {
  *
  */
 
-/// Represents a socket option that can be accessed or set. Used as an argument
-/// to `getsockopt`
+/// Represents a socket option that can be retrieved.
 pub trait GetSockOpt : Copy {
     type Val;
 
-    #[doc(hidden)]
+    /// Look up the value of this socket option on the given socket.
     fn get(&self, fd: RawFd) -> Result<Self::Val>;
 }
 
-/// Represents a socket option that can be accessed or set. Used as an argument
-/// to `setsockopt`
+/// Represents a socket option that can be set.
 pub trait SetSockOpt : Clone {
     type Val;
 
-    #[doc(hidden)]
+    /// Set the value of this socket option on the given socket.
     fn set(&self, fd: RawFd, val: &Self::Val) -> Result<()>;
 }
 

@@ -128,73 +128,99 @@ macro_rules! getsockopt_impl {
 /// * `$getter:ty`: `Get` implementation; optional; only for `GetOnly` and `Both`.
 /// * `$setter:ty`: `Set` implementation; optional; only for `SetOnly` and `Both`.
 macro_rules! sockopt_impl {
-    ($name:ident, GetOnly, $level:expr, $flag:path, bool) => {
-        sockopt_impl!($name, GetOnly, $level, $flag, bool, GetBool);
+    ($(#[$attr:meta])* $name:ident, GetOnly, $level:expr, $flag:path, bool) => {
+        sockopt_impl!($(#[$attr])*
+                      $name, GetOnly, $level, $flag, bool, GetBool);
     };
 
-    ($name:ident, GetOnly, $level:expr, $flag:path, u8) => {
-        sockopt_impl!($name, GetOnly, $level, $flag, u8, GetU8);
+    ($(#[$attr:meta])* $name:ident, GetOnly, $level:expr, $flag:path, u8) => {
+        sockopt_impl!($(#[$attr])* $name, GetOnly, $level, $flag, u8, GetU8);
     };
 
-    ($name:ident, GetOnly, $level:expr, $flag:path, usize) => {
-        sockopt_impl!($name, GetOnly, $level, $flag, usize, GetUsize);
+    ($(#[$attr:meta])* $name:ident, GetOnly, $level:expr, $flag:path, usize) =>
+    {
+        sockopt_impl!($(#[$attr])*
+                      $name, GetOnly, $level, $flag, usize, GetUsize);
     };
 
-    ($name:ident, SetOnly, $level:expr, $flag:path, bool) => {
-        sockopt_impl!($name, SetOnly, $level, $flag, bool, SetBool);
+    ($(#[$attr:meta])* $name:ident, SetOnly, $level:expr, $flag:path, bool) => {
+        sockopt_impl!($(#[$attr])*
+                      $name, SetOnly, $level, $flag, bool, SetBool);
     };
 
-    ($name:ident, SetOnly, $level:expr, $flag:path, u8) => {
-        sockopt_impl!($name, SetOnly, $level, $flag, u8, SetU8);
+    ($(#[$attr:meta])* $name:ident, SetOnly, $level:expr, $flag:path, u8) => {
+        sockopt_impl!($(#[$attr])* $name, SetOnly, $level, $flag, u8, SetU8);
     };
 
-    ($name:ident, SetOnly, $level:expr, $flag:path, usize) => {
-        sockopt_impl!($name, SetOnly, $level, $flag, usize, SetUsize);
+    ($(#[$attr:meta])* $name:ident, SetOnly, $level:expr, $flag:path, usize) =>
+    {
+        sockopt_impl!($(#[$attr])*
+                      $name, SetOnly, $level, $flag, usize, SetUsize);
     };
 
-    ($name:ident, Both, $level:expr, $flag:path, bool) => {
-        sockopt_impl!($name, Both, $level, $flag, bool, GetBool, SetBool);
+    ($(#[$attr:meta])* $name:ident, Both, $level:expr, $flag:path, bool) => {
+        sockopt_impl!($(#[$attr])*
+                      $name, Both, $level, $flag, bool, GetBool, SetBool);
     };
 
-    ($name:ident, Both, $level:expr, $flag:path, u8) => {
-        sockopt_impl!($name, Both, $level, $flag, u8, GetU8, SetU8);
+    ($(#[$attr:meta])* $name:ident, Both, $level:expr, $flag:path, u8) => {
+        sockopt_impl!($(#[$attr])*
+                      $name, Both, $level, $flag, u8, GetU8, SetU8);
     };
 
-    ($name:ident, Both, $level:expr, $flag:path, usize) => {
-        sockopt_impl!($name, Both, $level, $flag, usize, GetUsize, SetUsize);
+    ($(#[$attr:meta])* $name:ident, Both, $level:expr, $flag:path, usize) => {
+        sockopt_impl!($(#[$attr])*
+                      $name, Both, $level, $flag, usize, GetUsize, SetUsize);
     };
 
-    ($name:ident, Both, $level:expr, $flag:path, OsString<$array:ty>) => {
-        sockopt_impl!($name, Both, $level, $flag, OsString, GetOsString<$array>, SetOsString);
+    ($(#[$attr:meta])* $name:ident, Both, $level:expr, $flag:path,
+     OsString<$array:ty>) =>
+    {
+        sockopt_impl!($(#[$attr])*
+                      $name, Both, $level, $flag, OsString, GetOsString<$array>,
+                      SetOsString);
     };
 
     /*
      * Matchers with generic getter types must be placed at the end, so
      * they'll only match _after_ specialized matchers fail
      */
-    ($name:ident, GetOnly, $level:expr, $flag:path, $ty:ty) => {
-        sockopt_impl!($name, GetOnly, $level, $flag, $ty, GetStruct<$ty>);
+    ($(#[$attr:meta])* $name:ident, GetOnly, $level:expr, $flag:path, $ty:ty) =>
+    {
+        sockopt_impl!($(#[$attr])*
+                      $name, GetOnly, $level, $flag, $ty, GetStruct<$ty>);
     };
 
-    ($name:ident, GetOnly, $level:expr, $flag:path, $ty:ty, $getter:ty) => {
+    ($(#[$attr:meta])* $name:ident, GetOnly, $level:expr, $flag:path, $ty:ty,
+     $getter:ty) =>
+    {
+        $(#[$attr])*
         #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
         pub struct $name;
 
         getsockopt_impl!($name, $level, $flag, $ty, $getter);
     };
 
-    ($name:ident, SetOnly, $level:expr, $flag:path, $ty:ty) => {
-        sockopt_impl!($name, SetOnly, $level, $flag, $ty, SetStruct<$ty>);
+    ($(#[$attr:meta])* $name:ident, SetOnly, $level:expr, $flag:path, $ty:ty) =>
+    {
+        sockopt_impl!($(#[$attr])*
+                      $name, SetOnly, $level, $flag, $ty, SetStruct<$ty>);
     };
 
-    ($name:ident, SetOnly, $level:expr, $flag:path, $ty:ty, $setter:ty) => {
+    ($(#[$attr:meta])* $name:ident, SetOnly, $level:expr, $flag:path, $ty:ty,
+     $setter:ty) =>
+    {
+        $(#[$attr])*
         #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
         pub struct $name;
 
         setsockopt_impl!($name, $level, $flag, $ty, $setter);
     };
 
-    ($name:ident, Both, $level:expr, $flag:path, $ty:ty, $getter:ty, $setter:ty) => {
+    ($(#[$attr:meta])* $name:ident, Both, $level:expr, $flag:path, $ty:ty,
+     $getter:ty, $setter:ty) =>
+    {
+        $(#[$attr])*
         #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
         pub struct $name;
 
@@ -202,8 +228,10 @@ macro_rules! sockopt_impl {
         getsockopt_impl!($name, $level, $flag, $ty, $getter);
     };
 
-    ($name:ident, Both, $level:expr, $flag:path, $ty:ty) => {
-        sockopt_impl!($name, Both, $level, $flag, $ty, GetStruct<$ty>, SetStruct<$ty>);
+    ($(#[$attr:meta])* $name:ident, Both, $level:expr, $flag:path, $ty:ty) => {
+        sockopt_impl!($(#[$attr])*
+                      $name, Both, $level, $flag, $ty, GetStruct<$ty>,
+                      SetStruct<$ty>);
     };
 }
 
