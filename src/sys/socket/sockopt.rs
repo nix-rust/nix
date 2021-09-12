@@ -1,3 +1,4 @@
+//! Socket options as used by `setsockopt` and `getsockopt`.
 use cfg_if::cfg_if;
 use super::{GetSockOpt, SetSockOpt};
 use crate::Result;
@@ -241,17 +242,45 @@ macro_rules! sockopt_impl {
  *
  */
 
-sockopt_impl!(ReuseAddr, Both, libc::SOL_SOCKET, libc::SO_REUSEADDR, bool);
+sockopt_impl!(
+    /// Enables local address reuse
+    ReuseAddr, Both, libc::SOL_SOCKET, libc::SO_REUSEADDR, bool
+);
 #[cfg(not(any(target_os = "illumos", target_os = "solaris")))]
-sockopt_impl!(ReusePort, Both, libc::SOL_SOCKET, libc::SO_REUSEPORT, bool);
-sockopt_impl!(TcpNoDelay, Both, libc::IPPROTO_TCP, libc::TCP_NODELAY, bool);
-sockopt_impl!(Linger, Both, libc::SOL_SOCKET, libc::SO_LINGER, libc::linger);
-sockopt_impl!(IpAddMembership, SetOnly, libc::IPPROTO_IP, libc::IP_ADD_MEMBERSHIP, super::IpMembershipRequest);
-sockopt_impl!(IpDropMembership, SetOnly, libc::IPPROTO_IP, libc::IP_DROP_MEMBERSHIP, super::IpMembershipRequest);
+sockopt_impl!(
+    /// Permits multiple AF_INET or AF_INET6 sockets to be bound to an
+    /// identical socket address.
+    ReusePort, Both, libc::SOL_SOCKET, libc::SO_REUSEPORT, bool);
+sockopt_impl!(
+    /// Under most circumstances, TCP sends data when it is presented; when
+    /// outstanding data has not yet been acknowledged, it gathers small amounts
+    /// of output to be sent in a single packet once an acknowledgement is
+    /// received.  For a small number of clients, such as window systems that
+    /// send a stream of mouse events which receive no replies, this
+    /// packetization may cause significant delays.  The boolean option
+    /// TCP_NODELAY defeats this algorithm.
+    TcpNoDelay, Both, libc::IPPROTO_TCP, libc::TCP_NODELAY, bool);
+sockopt_impl!(
+    /// When enabled,  a close(2) or shutdown(2) will not return until all
+    /// queued messages for the socket have been successfully sent or the
+    /// linger timeout has been reached.
+    Linger, Both, libc::SOL_SOCKET, libc::SO_LINGER, libc::linger);
+sockopt_impl!(
+    /// Join a multicast group
+    IpAddMembership, SetOnly, libc::IPPROTO_IP, libc::IP_ADD_MEMBERSHIP,
+    super::IpMembershipRequest);
+sockopt_impl!(
+    /// Leave a multicast group.
+    IpDropMembership, SetOnly, libc::IPPROTO_IP, libc::IP_DROP_MEMBERSHIP,
+    super::IpMembershipRequest);
 cfg_if! {
     if #[cfg(any(target_os = "android", target_os = "linux"))] {
-        sockopt_impl!(Ipv6AddMembership, SetOnly, libc::IPPROTO_IPV6, libc::IPV6_ADD_MEMBERSHIP, super::Ipv6MembershipRequest);
-        sockopt_impl!(Ipv6DropMembership, SetOnly, libc::IPPROTO_IPV6, libc::IPV6_DROP_MEMBERSHIP, super::Ipv6MembershipRequest);
+        sockopt_impl!(
+            /// Join an IPv6 multicast group.
+            Ipv6AddMembership, SetOnly, libc::IPPROTO_IPV6, libc::IPV6_ADD_MEMBERSHIP, super::Ipv6MembershipRequest);
+        sockopt_impl!(
+            /// Leave an IPv6 multicast group.
+            Ipv6DropMembership, SetOnly, libc::IPPROTO_IPV6, libc::IPV6_DROP_MEMBERSHIP, super::Ipv6MembershipRequest);
     } else if #[cfg(any(target_os = "dragonfly",
                         target_os = "freebsd",
                         target_os = "illumos",
@@ -260,85 +289,185 @@ cfg_if! {
                         target_os = "netbsd",
                         target_os = "openbsd",
                         target_os = "solaris"))] {
-        sockopt_impl!(Ipv6AddMembership, SetOnly, libc::IPPROTO_IPV6, libc::IPV6_JOIN_GROUP, super::Ipv6MembershipRequest);
-        sockopt_impl!(Ipv6DropMembership, SetOnly, libc::IPPROTO_IPV6, libc::IPV6_LEAVE_GROUP, super::Ipv6MembershipRequest);
+        sockopt_impl!(
+            /// Join an IPv6 multicast group.
+            Ipv6AddMembership, SetOnly, libc::IPPROTO_IPV6,
+            libc::IPV6_JOIN_GROUP, super::Ipv6MembershipRequest);
+        sockopt_impl!(
+            /// Leave an IPv6 multicast group.
+            Ipv6DropMembership, SetOnly, libc::IPPROTO_IPV6,
+            libc::IPV6_LEAVE_GROUP, super::Ipv6MembershipRequest);
     }
 }
-sockopt_impl!(IpMulticastTtl, Both, libc::IPPROTO_IP, libc::IP_MULTICAST_TTL, u8);
-sockopt_impl!(IpMulticastLoop, Both, libc::IPPROTO_IP, libc::IP_MULTICAST_LOOP, bool);
+sockopt_impl!(
+    /// Set or read the time-to-live value of outgoing multicast packets for
+    /// this socket.
+    IpMulticastTtl, Both, libc::IPPROTO_IP, libc::IP_MULTICAST_TTL, u8);
+sockopt_impl!(
+    /// Set or read a boolean integer argument that determines whether sent
+    /// multicast packets should be looped back to the local sockets.
+    IpMulticastLoop, Both, libc::IPPROTO_IP, libc::IP_MULTICAST_LOOP, bool);
 #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
-sockopt_impl!(IpFreebind, Both, libc::IPPROTO_IP, libc::IP_FREEBIND, bool);
-sockopt_impl!(ReceiveTimeout, Both, libc::SOL_SOCKET, libc::SO_RCVTIMEO, TimeVal);
-sockopt_impl!(SendTimeout, Both, libc::SOL_SOCKET, libc::SO_SNDTIMEO, TimeVal);
-sockopt_impl!(Broadcast, Both, libc::SOL_SOCKET, libc::SO_BROADCAST, bool);
-sockopt_impl!(OobInline, Both, libc::SOL_SOCKET, libc::SO_OOBINLINE, bool);
-sockopt_impl!(SocketError, GetOnly, libc::SOL_SOCKET, libc::SO_ERROR, i32);
-sockopt_impl!(KeepAlive, Both, libc::SOL_SOCKET, libc::SO_KEEPALIVE, bool);
+sockopt_impl!(
+    /// If enabled, this boolean option allows binding to an IP address that
+    /// is nonlocal or does not (yet) exist.
+    IpFreebind, Both, libc::IPPROTO_IP, libc::IP_FREEBIND, bool);
+sockopt_impl!(
+    /// Specify the receiving timeout until reporting an error.
+    ReceiveTimeout, Both, libc::SOL_SOCKET, libc::SO_RCVTIMEO, TimeVal);
+sockopt_impl!(
+    /// Specify the sending timeout until reporting an error.
+    SendTimeout, Both, libc::SOL_SOCKET, libc::SO_SNDTIMEO, TimeVal);
+sockopt_impl!(
+    /// Set or get the broadcast flag.
+    Broadcast, Both, libc::SOL_SOCKET, libc::SO_BROADCAST, bool);
+sockopt_impl!(
+    /// If this option is enabled, out-of-band data is directly placed into
+    /// the receive data stream.
+    OobInline, Both, libc::SOL_SOCKET, libc::SO_OOBINLINE, bool);
+sockopt_impl!(
+    /// Get and clear the pending socket error.
+    SocketError, GetOnly, libc::SOL_SOCKET, libc::SO_ERROR, i32);
+sockopt_impl!(
+    /// Enable sending of keep-alive messages on connection-oriented sockets.
+    KeepAlive, Both, libc::SOL_SOCKET, libc::SO_KEEPALIVE, bool);
 #[cfg(any(
         target_os = "dragonfly",
         target_os = "freebsd",
         target_os = "macos",
         target_os = "ios"
 ))]
-// Get the credentials of the peer process of a connected unix domain socket.
-sockopt_impl!(LocalPeerCred, GetOnly, 0, libc::LOCAL_PEERCRED, super::XuCred);
+sockopt_impl!(
+    /// Get the credentials of the peer process of a connected unix domain
+    /// socket.
+    LocalPeerCred, GetOnly, 0, libc::LOCAL_PEERCRED, super::XuCred);
 #[cfg(any(target_os = "android", target_os = "linux"))]
-sockopt_impl!(PeerCredentials, GetOnly, libc::SOL_SOCKET, libc::SO_PEERCRED, super::UnixCredentials);
+sockopt_impl!(
+    /// Return the credentials of the foreign process connected to this socket.
+    PeerCredentials, GetOnly, libc::SOL_SOCKET, libc::SO_PEERCRED, super::UnixCredentials);
 #[cfg(any(target_os = "ios",
           target_os = "macos"))]
-sockopt_impl!(TcpKeepAlive, Both, libc::IPPROTO_TCP, libc::TCP_KEEPALIVE, u32);
+sockopt_impl!(
+    /// Specify the amount of time, in seconds, that the connection must be idle
+    /// before keepalive probes (if enabled) are sent.
+    TcpKeepAlive, Both, libc::IPPROTO_TCP, libc::TCP_KEEPALIVE, u32);
 #[cfg(any(target_os = "android",
           target_os = "dragonfly",
           target_os = "freebsd",
           target_os = "linux",
           target_os = "nacl"))]
-sockopt_impl!(TcpKeepIdle, Both, libc::IPPROTO_TCP, libc::TCP_KEEPIDLE, u32);
+sockopt_impl!(
+    /// The time (in seconds) the connection needs to remain idle before TCP
+    /// starts sending keepalive probes
+    TcpKeepIdle, Both, libc::IPPROTO_TCP, libc::TCP_KEEPIDLE, u32);
 cfg_if! {
     if #[cfg(any(target_os = "android", target_os = "linux"))] {
-        sockopt_impl!(TcpMaxSeg, Both, libc::IPPROTO_TCP, libc::TCP_MAXSEG, u32);
+        sockopt_impl!(
+            /// The maximum segment size for outgoing TCP packets.
+            TcpMaxSeg, Both, libc::IPPROTO_TCP, libc::TCP_MAXSEG, u32);
     } else {
-        sockopt_impl!(TcpMaxSeg, GetOnly, libc::IPPROTO_TCP, libc::TCP_MAXSEG, u32);
+        sockopt_impl!(
+            /// The maximum segment size for outgoing TCP packets.
+            TcpMaxSeg, GetOnly, libc::IPPROTO_TCP, libc::TCP_MAXSEG, u32);
     }
 }
 #[cfg(not(target_os = "openbsd"))]
-sockopt_impl!(TcpKeepCount, Both, libc::IPPROTO_TCP, libc::TCP_KEEPCNT, u32);
+sockopt_impl!(
+    /// The maximum number of keepalive probes TCP should send before
+    /// dropping the connection.
+    TcpKeepCount, Both, libc::IPPROTO_TCP, libc::TCP_KEEPCNT, u32);
 #[cfg(any(target_os = "android",
           target_os = "fuchsia",
           target_os = "linux"))]
-sockopt_impl!(TcpRepair, Both, libc::IPPROTO_TCP, libc::TCP_REPAIR, u32);
+sockopt_impl!(
+    #[allow(missing_docs)]
+    // Not documented by Linux!
+    TcpRepair, Both, libc::IPPROTO_TCP, libc::TCP_REPAIR, u32);
 #[cfg(not(target_os = "openbsd"))]
-sockopt_impl!(TcpKeepInterval, Both, libc::IPPROTO_TCP, libc::TCP_KEEPINTVL, u32);
+sockopt_impl!(
+    /// The time (in seconds) between individual keepalive probes.
+    TcpKeepInterval, Both, libc::IPPROTO_TCP, libc::TCP_KEEPINTVL, u32);
 #[cfg(any(target_os = "fuchsia", target_os = "linux"))]
-sockopt_impl!(TcpUserTimeout, Both, libc::IPPROTO_TCP, libc::TCP_USER_TIMEOUT, u32);
-sockopt_impl!(RcvBuf, Both, libc::SOL_SOCKET, libc::SO_RCVBUF, usize);
-sockopt_impl!(SndBuf, Both, libc::SOL_SOCKET, libc::SO_SNDBUF, usize);
+sockopt_impl!(
+    /// Specifies the maximum amount of time in milliseconds that transmitted
+    /// data may remain unacknowledged before TCP will forcibly close the
+    /// corresponding connection
+    TcpUserTimeout, Both, libc::IPPROTO_TCP, libc::TCP_USER_TIMEOUT, u32);
+sockopt_impl!(
+    /// Sets or gets the maximum socket receive buffer in bytes.
+    RcvBuf, Both, libc::SOL_SOCKET, libc::SO_RCVBUF, usize);
+sockopt_impl!(
+    /// Sets or gets the maximum socket send buffer in bytes.
+    SndBuf, Both, libc::SOL_SOCKET, libc::SO_SNDBUF, usize);
 #[cfg(any(target_os = "android", target_os = "linux"))]
-sockopt_impl!(RcvBufForce, SetOnly, libc::SOL_SOCKET, libc::SO_RCVBUFFORCE, usize);
+sockopt_impl!(
+    /// Using this socket option, a privileged (`CAP_NET_ADMIN`) process can
+    /// perform the same task as `SO_RCVBUF`, but the `rmem_max limit` can be
+    /// overridden.
+    RcvBufForce, SetOnly, libc::SOL_SOCKET, libc::SO_RCVBUFFORCE, usize);
 #[cfg(any(target_os = "android", target_os = "linux"))]
-sockopt_impl!(SndBufForce, SetOnly, libc::SOL_SOCKET, libc::SO_SNDBUFFORCE, usize);
-sockopt_impl!(SockType, GetOnly, libc::SOL_SOCKET, libc::SO_TYPE, super::SockType);
-sockopt_impl!(AcceptConn, GetOnly, libc::SOL_SOCKET, libc::SO_ACCEPTCONN, bool);
+sockopt_impl!(
+    /// Using this socket option, a privileged (`CAP_NET_ADMIN`)  process can
+    /// perform the same task as `SO_SNDBUF`, but the `wmem_max` limit can be
+    /// overridden.
+    SndBufForce, SetOnly, libc::SOL_SOCKET, libc::SO_SNDBUFFORCE, usize);
+sockopt_impl!(
+    /// Gets the socket type as an integer.
+    SockType, GetOnly, libc::SOL_SOCKET, libc::SO_TYPE, super::SockType);
+sockopt_impl!(
+    /// Returns a value indicating whether or not this socket has been marked to
+    /// accept connections with `listen(2)`.
+    AcceptConn, GetOnly, libc::SOL_SOCKET, libc::SO_ACCEPTCONN, bool);
 #[cfg(any(target_os = "android", target_os = "linux"))]
-sockopt_impl!(BindToDevice, Both, libc::SOL_SOCKET, libc::SO_BINDTODEVICE, OsString<[u8; libc::IFNAMSIZ]>);
+sockopt_impl!(
+    /// Bind this socket to a particular device like “eth0”.
+    BindToDevice, Both, libc::SOL_SOCKET, libc::SO_BINDTODEVICE, OsString<[u8; libc::IFNAMSIZ]>);
 #[cfg(any(target_os = "android", target_os = "linux"))]
-sockopt_impl!(OriginalDst, GetOnly, libc::SOL_IP, libc::SO_ORIGINAL_DST, libc::sockaddr_in);
+sockopt_impl!(
+    #[allow(missing_docs)]
+    // Not documented by Linux!
+    OriginalDst, GetOnly, libc::SOL_IP, libc::SO_ORIGINAL_DST, libc::sockaddr_in);
 #[cfg(any(target_os = "android", target_os = "linux"))]
-sockopt_impl!(Ip6tOriginalDst, GetOnly, libc::SOL_IPV6, libc::IP6T_SO_ORIGINAL_DST, libc::sockaddr_in6);
-sockopt_impl!(ReceiveTimestamp, Both, libc::SOL_SOCKET, libc::SO_TIMESTAMP, bool);
+sockopt_impl!(
+    #[allow(missing_docs)]
+    // Not documented by Linux!
+    Ip6tOriginalDst, GetOnly, libc::SOL_IPV6, libc::IP6T_SO_ORIGINAL_DST, libc::sockaddr_in6);
+sockopt_impl!( 
+    /// Enable or disable the receiving of the `SO_TIMESTAMP` control message.
+    ReceiveTimestamp, Both, libc::SOL_SOCKET, libc::SO_TIMESTAMP, bool);
 #[cfg(all(target_os = "linux"))]
-sockopt_impl!(ReceiveTimestampns, Both, libc::SOL_SOCKET, libc::SO_TIMESTAMPNS, bool);
+sockopt_impl!(
+    /// Enable or disable the receiving of the `SO_TIMESTAMPNS` control message.
+    ReceiveTimestampns, Both, libc::SOL_SOCKET, libc::SO_TIMESTAMPNS, bool);
 #[cfg(any(target_os = "android", target_os = "linux"))]
-sockopt_impl!(IpTransparent, Both, libc::SOL_IP, libc::IP_TRANSPARENT, bool);
+sockopt_impl!(
+    /// Setting this boolean option enables transparent proxying on this socket.
+    IpTransparent, Both, libc::SOL_IP, libc::IP_TRANSPARENT, bool);
 #[cfg(target_os = "openbsd")]
-sockopt_impl!(BindAny, Both, libc::SOL_SOCKET, libc::SO_BINDANY, bool);
+sockopt_impl!(
+    /// Allows the socket to be bound to addresses which are not local to the
+    /// machine, so it can be used to make a transparent proxy.
+    BindAny, Both, libc::SOL_SOCKET, libc::SO_BINDANY, bool);
 #[cfg(target_os = "freebsd")]
-sockopt_impl!(BindAny, Both, libc::IPPROTO_IP, libc::IP_BINDANY, bool);
+sockopt_impl!(
+    /// Can `bind(2)` to any address, even one not bound to any available
+    /// network interface in the system.
+    BindAny, Both, libc::IPPROTO_IP, libc::IP_BINDANY, bool);
 #[cfg(target_os = "linux")]
-sockopt_impl!(Mark, Both, libc::SOL_SOCKET, libc::SO_MARK, u32);
+sockopt_impl!(
+    /// Set the mark for each packet sent through this socket (similar to the
+    /// netfilter MARK target but socket-based).
+    Mark, Both, libc::SOL_SOCKET, libc::SO_MARK, u32);
 #[cfg(any(target_os = "android", target_os = "linux"))]
-sockopt_impl!(PassCred, Both, libc::SOL_SOCKET, libc::SO_PASSCRED, bool);
+sockopt_impl!(
+    /// Enable or disable the receiving of the `SCM_CREDENTIALS` control
+    /// message.
+    PassCred, Both, libc::SOL_SOCKET, libc::SO_PASSCRED, bool);
 #[cfg(any(target_os = "freebsd", target_os = "linux"))] 
-sockopt_impl!(TcpCongestion, Both, libc::IPPROTO_TCP, libc::TCP_CONGESTION, OsString<[u8; TCP_CA_NAME_MAX]>);
+sockopt_impl!(
+    /// This option allows the caller to set the TCP congestion control
+    /// algorithm to be used,  on a per-socket basis.
+    TcpCongestion, Both, libc::IPPROTO_TCP, libc::TCP_CONGESTION, OsString<[u8; TCP_CA_NAME_MAX]>);
 #[cfg(any(
     target_os = "android",
     target_os = "ios",
@@ -346,7 +475,10 @@ sockopt_impl!(TcpCongestion, Both, libc::IPPROTO_TCP, libc::TCP_CONGESTION, OsSt
     target_os = "macos",
     target_os = "netbsd",
 ))]
-sockopt_impl!(Ipv4PacketInfo, Both, libc::IPPROTO_IP, libc::IP_PKTINFO, bool);
+sockopt_impl!(
+    /// Pass an `IP_PKTINFO` ancillary message that contains a pktinfo
+    /// structure that supplies some information about the incoming packet.
+    Ipv4PacketInfo, Both, libc::IPPROTO_IP, libc::IP_PKTINFO, bool);
 #[cfg(any(
     target_os = "android",
     target_os = "freebsd",
@@ -356,7 +488,10 @@ sockopt_impl!(Ipv4PacketInfo, Both, libc::IPPROTO_IP, libc::IP_PKTINFO, bool);
     target_os = "netbsd",
     target_os = "openbsd",
 ))]
-sockopt_impl!(Ipv6RecvPacketInfo, Both, libc::IPPROTO_IPV6, libc::IPV6_RECVPKTINFO, bool);
+sockopt_impl!(
+    /// Set delivery of the `IPV6_PKTINFO` control message on incoming
+    /// datagrams.
+    Ipv6RecvPacketInfo, Both, libc::IPPROTO_IPV6, libc::IPV6_RECVPKTINFO, bool);
 #[cfg(any(
     target_os = "freebsd",
     target_os = "ios",
@@ -364,7 +499,10 @@ sockopt_impl!(Ipv6RecvPacketInfo, Both, libc::IPPROTO_IPV6, libc::IPV6_RECVPKTIN
     target_os = "netbsd",
     target_os = "openbsd",
 ))]
-sockopt_impl!(Ipv4RecvIf, Both, libc::IPPROTO_IP, libc::IP_RECVIF, bool);
+sockopt_impl!(
+    /// The `recvmsg(2)` call returns a `struct sockaddr_dl` corresponding to
+    /// the interface on which the packet was received.
+    Ipv4RecvIf, Both, libc::IPPROTO_IP, libc::IP_RECVIF, bool);
 #[cfg(any(
     target_os = "freebsd",
     target_os = "ios",
@@ -372,23 +510,49 @@ sockopt_impl!(Ipv4RecvIf, Both, libc::IPPROTO_IP, libc::IP_RECVIF, bool);
     target_os = "netbsd",
     target_os = "openbsd",
 ))]
-sockopt_impl!(Ipv4RecvDstAddr, Both, libc::IPPROTO_IP, libc::IP_RECVDSTADDR, bool);
+sockopt_impl!(
+    /// The `recvmsg(2)` call will return the destination IP address for a UDP
+    /// datagram.
+    Ipv4RecvDstAddr, Both, libc::IPPROTO_IP, libc::IP_RECVDSTADDR, bool);
 #[cfg(target_os = "linux")]
-sockopt_impl!(UdpGsoSegment, Both, libc::SOL_UDP, libc::UDP_SEGMENT, libc::c_int);
+sockopt_impl!(
+    #[allow(missing_docs)]
+    // Not documented by Linux!
+    UdpGsoSegment, Both, libc::SOL_UDP, libc::UDP_SEGMENT, libc::c_int);
 #[cfg(target_os = "linux")]
-sockopt_impl!(UdpGroSegment, Both, libc::IPPROTO_UDP, libc::UDP_GRO, bool);
+sockopt_impl!(
+    #[allow(missing_docs)]
+    // Not documented by Linux!
+    UdpGroSegment, Both, libc::IPPROTO_UDP, libc::UDP_GRO, bool);
 #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
-sockopt_impl!(RxqOvfl, Both, libc::SOL_SOCKET, libc::SO_RXQ_OVFL, libc::c_int);
-sockopt_impl!(Ipv6V6Only, Both, libc::IPPROTO_IPV6, libc::IPV6_V6ONLY, bool);
+sockopt_impl!(
+    /// Indicates that an unsigned 32-bit value ancillary message (cmsg) should
+    /// be attached to received skbs indicating the number of packets dropped by
+    /// the socket since its creation.
+    RxqOvfl, Both, libc::SOL_SOCKET, libc::SO_RXQ_OVFL, libc::c_int);
+sockopt_impl!(
+    /// The socket is restricted to sending and receiving IPv6 packets only.
+    Ipv6V6Only, Both, libc::IPPROTO_IPV6, libc::IPV6_V6ONLY, bool);
 #[cfg(any(target_os = "android", target_os = "linux"))]
-sockopt_impl!(Ipv4RecvErr, Both, libc::IPPROTO_IP, libc::IP_RECVERR, bool);
+sockopt_impl!(
+    /// Enable extended reliable error message passing.
+    Ipv4RecvErr, Both, libc::IPPROTO_IP, libc::IP_RECVERR, bool);
 #[cfg(any(target_os = "android", target_os = "linux"))]
-sockopt_impl!(Ipv6RecvErr, Both, libc::IPPROTO_IPV6, libc::IPV6_RECVERR, bool);
+sockopt_impl!(
+    /// Control receiving of asynchronous error options.
+    Ipv6RecvErr, Both, libc::IPPROTO_IPV6, libc::IPV6_RECVERR, bool);
 #[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
-sockopt_impl!(Ipv4Ttl, Both, libc::IPPROTO_IP, libc::IP_TTL, libc::c_int);
+sockopt_impl!(
+    /// Set or retrieve the current time-to-live field that is used in every
+    /// packet sent from this socket.
+    Ipv4Ttl, Both, libc::IPPROTO_IP, libc::IP_TTL, libc::c_int);
 #[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
-sockopt_impl!(Ipv6Ttl, Both, libc::IPPROTO_IPV6, libc::IPV6_UNICAST_HOPS, libc::c_int);
+sockopt_impl!(
+    /// Set the unicast hop limit for the socket.
+    Ipv6Ttl, Both, libc::IPPROTO_IPV6, libc::IPV6_UNICAST_HOPS, libc::c_int);
 
+#[allow(missing_docs)]
+// Not documented by Linux!
 #[cfg(any(target_os = "android", target_os = "linux"))]
 #[derive(Copy, Clone, Debug)]
 pub struct AlgSetAeadAuthSize;
@@ -411,6 +575,8 @@ impl SetSockOpt for AlgSetAeadAuthSize {
     }
 }
 
+#[allow(missing_docs)]
+// Not documented by Linux!
 #[cfg(any(target_os = "android", target_os = "linux"))]
 #[derive(Clone, Debug)]
 pub struct AlgSetKey<T>(::std::marker::PhantomData<T>);

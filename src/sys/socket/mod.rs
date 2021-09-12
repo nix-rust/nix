@@ -14,6 +14,7 @@ use crate::sys::time::TimeVal;
 use crate::sys::uio::IoVec;
 
 mod addr;
+#[deny(missing_docs)]
 pub mod sockopt;
 
 /*
