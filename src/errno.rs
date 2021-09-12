@@ -103,6 +103,7 @@ impl Errno {
 
     /// Returns `Ok(value)` if it does not contain the sentinel value. This
     /// should not be used when `-1` is not the errno sentinel value.
+    #[inline]
     pub fn result<S: ErrnoSentinel + PartialEq<S>>(value: S) -> Result<S> {
         if value == S::sentinel() {
             Err(Self::last())
