@@ -1420,6 +1420,14 @@ pub fn getgroups() -> Result<Vec<Gid>> {
     // Next, get the number of groups so we can size our Vec
     let ngroups = unsafe { libc::getgroups(0, ptr::null_mut()) };
 
+    // If there are no supplementary groups, return early.
+    // This prevents a potential buffer over-read if the number of groups
+    // increases from zero before the next call. It would return the total
+    // number of groups beyond the capacity of the buffer.
+    if ngroups == 0 {
+        return Ok(Vec::new());
+    }
+
     // Now actually get the groups. We try multiple times in case the number of
     // groups has changed since the first call to getgroups() and the buffer is
     // now too small.
