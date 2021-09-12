@@ -129,7 +129,7 @@ libc_bitflags!{
         #[cfg(any(target_os = "dragonfly", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
         MAP_HASSEMAPHORE;
         /// Region grows down, like a stack.
-        #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd", target_os = "linux"))]
+        #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd", target_os = "linux", target_os = "openbsd"))]
         MAP_STACK;
         /// Pages in this mapping are not retained in the kernel's memory cache.
         #[cfg(any(target_os = "ios", target_os = "macos"))]
