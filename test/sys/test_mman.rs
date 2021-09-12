@@ -20,7 +20,7 @@ fn test_mmap_anonymous() {
 }
 
 #[test]
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "netbsd"))]
 fn test_mremap_grow() {
     const ONE_K : size_t = 1024;
     let slice : &mut[u8] = unsafe {
@@ -35,8 +35,13 @@ fn test_mremap_grow() {
     assert_eq !(slice[ONE_K - 1], 0xFF);
 
     let slice : &mut[u8] = unsafe {
+        #[cfg(target_os = "linux")]
         let mem = mremap(slice.as_mut_ptr() as * mut c_void, ONE_K, 10 * ONE_K,
                          MRemapFlags::MREMAP_MAYMOVE, None)
+                      .unwrap();
+        #[cfg(target_os = "netbsd")]
+        let mem = mremap(slice.as_mut_ptr() as * mut c_void, ONE_K, 10 * ONE_K,
+                         MRemapFlags::MAP_REMAPDUP, None)
                       .unwrap();
         std::slice::from_raw_parts_mut(mem as * mut u8, 10 * ONE_K)
     };
@@ -51,7 +56,7 @@ fn test_mremap_grow() {
 }
 
 #[test]
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "netbsd"))]
 fn test_mremap_shrink() {
     const ONE_K : size_t = 1024;
     let slice : &mut[u8] = unsafe {
@@ -66,11 +71,16 @@ fn test_mremap_shrink() {
     assert_eq !(slice[ONE_K - 1], 0xFF);
 
     let slice : &mut[u8] = unsafe {
+        #[cfg(target_os = "linux")]
         let mem = mremap(slice.as_mut_ptr() as * mut c_void, 10 * ONE_K, ONE_K,
                          MRemapFlags::empty(), None)
                       .unwrap();
         // Since we didn't supply MREMAP_MAYMOVE, the address should be the
         // same.
+        #[cfg(target_os = "linux")]
+        let mem = mremap(slice.as_mut_ptr() as * mut c_void, 10 * ONE_K, ONE_K,
+                         MRemapFlags::MAP_FIXED), None)
+                      .unwrap();
         assert_eq !(mem, slice.as_mut_ptr() as * mut c_void);
         std::slice::from_raw_parts_mut(mem as * mut u8, ONE_K)
     };

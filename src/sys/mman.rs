@@ -139,14 +139,22 @@ libc_bitflags!{
     }
 }
 
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "netbsd"))]
 libc_bitflags!{
     /// Options for `mremap()`.
     pub struct MRemapFlags: c_int {
         /// Permit the kernel to relocate the mapping to a new virtual address, if necessary.
+        #[cfg(target_os = "linux")]
         MREMAP_MAYMOVE;
         /// Place the mapping at exactly the address specified in `new_address`.
+        #[cfg(target_os = "linux")]
         MREMAP_FIXED;
+        /// Permits to use the old and new address as hints to relocate the mapping.
+        #[cfg(target_os = "netbsd")]
+        MAP_FIXED;
+        /// Allows to duplicate the mapping to be able to apply different flags on the copy.
+        #[cfg(target_os = "netbsd")]
+        MAP_REMAPDUP;
     }
 }
 
@@ -334,7 +342,7 @@ pub unsafe fn mmap(addr: *mut c_void, length: size_t, prot: ProtFlags, flags: Ma
 ///
 /// See the `mremap(2)` [man page](https://man7.org/linux/man-pages/man2/mremap.2.html) for
 /// detailed requirements.
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "netbsd"))]
 pub unsafe fn mremap(
     addr: *mut c_void,
     old_size: size_t,
@@ -342,7 +350,16 @@ pub unsafe fn mremap(
     flags: MRemapFlags,
     new_address: Option<* mut c_void>,
 ) -> Result<*mut c_void> {
+    #[cfg(target_os = "linux")]
     let ret = libc::mremap(addr, old_size, new_size, flags.bits(), new_address.unwrap_or(std::ptr::null_mut()));
+    #[cfg(target_os = "netbsd")]
+    let ret = libc::mremap(
+        addr,
+        old_size,
+        new_address.unwrap_or(std::ptr::null_mut()),
+        new_size,
+        flags.bits(),
+        );
 
     if ret == libc::MAP_FAILED {
         Err(Error::from(Errno::last()))
