@@ -126,6 +126,6 @@ pub mod wait;
 #[allow(missing_docs)]
 pub mod inotify;
 
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "android", target_os = "linux"))]
 #[allow(missing_docs)]
 pub mod timerfd;

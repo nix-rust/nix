@@ -186,3 +186,14 @@ fn test_so_tcp_keepalive() {
         assert_eq!(getsockopt(fd, sockopt::TcpKeepInterval).unwrap(), x + 1);
     }
 }
+
+#[test]
+#[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
+fn test_ttl_opts() {
+    let fd4 = socket(AddressFamily::Inet, SockType::Datagram, SockFlag::empty(), None).unwrap();
+    setsockopt(fd4, sockopt::Ipv4Ttl, &1)
+        .expect("setting ipv4ttl on an inet socket should succeed");
+    let fd6 = socket(AddressFamily::Inet6, SockType::Datagram, SockFlag::empty(), None).unwrap();
+    setsockopt(fd6, sockopt::Ipv6Ttl, &1)
+        .expect("setting ipv6ttl on an inet6 socket should succeed");
+}
