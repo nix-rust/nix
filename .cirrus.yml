@@ -35,7 +35,7 @@ task:
   env:
     TARGET: x86_64-unknown-freebsd
   freebsd_instance:
-    image: freebsd-11-4-release-amd64
+    image: freebsd-12-2-release-amd64
   setup_script:
     - fetch https://sh.rustup.rs -o rustup.sh
     - sh rustup.sh -y --profile=minimal --default-toolchain $TOOLCHAIN
