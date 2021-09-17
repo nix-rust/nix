@@ -40,6 +40,10 @@ libc_bitflags!{
         MAP_PRIVATE;
         /// Place the mapping at exactly the address specified in `addr`.
         MAP_FIXED;
+        /// To be used with `MAP_FIXED`, to forbid the system
+        /// to select a different address than the one specified.
+        #[cfg(target_os = "freebsd")]
+        MAP_EXCL;
         /// Synonym for `MAP_ANONYMOUS`.
         MAP_ANON;
         /// The mapping is not backed by any file.
