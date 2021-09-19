@@ -1,8 +1,7 @@
-use nix::Error;
 use nix::libc::{c_void, size_t};
 use nix::sys::mman::{mmap, MapFlags, ProtFlags};
 
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "netbsd"))]
 use nix::sys::mman::{mremap, MRemapFlags};
 
 #[test]
@@ -10,7 +9,7 @@ fn test_mmap_anonymous() {
     let ref mut byte = unsafe {
         let ptr = mmap(std::ptr::null_mut(), 1,
                        ProtFlags::PROT_READ | ProtFlags::PROT_WRITE,
-                       MapFlags::MAP_PRIVATE | MapFlags::MAP_ANONYMOUS, -1, 0)
+                       MapFlags::MAP_PRIVATE | MapFlags::MAP_ANON, -1, 0)
                       .unwrap();
         *(ptr as * mut u8)
     };
@@ -26,7 +25,7 @@ fn test_mremap_grow() {
     let slice : &mut[u8] = unsafe {
         let mem = mmap(std::ptr::null_mut(), ONE_K,
                        ProtFlags::PROT_READ | ProtFlags::PROT_WRITE,
-                       MapFlags::MAP_ANONYMOUS | MapFlags::MAP_PRIVATE, -1, 0)
+                       MapFlags::MAP_ANON | MapFlags::MAP_PRIVATE, -1, 0)
                       .unwrap();
         std::slice::from_raw_parts_mut(mem as * mut u8, ONE_K)
     };
@@ -56,13 +55,19 @@ fn test_mremap_grow() {
 }
 
 #[test]
-#[cfg(any(target_os = "linux", target_os = "netbsd"))]
+// calling mremap to shrink could cause segfaults on some 32bit architectures likely due to qemu bug
+// refs: https://bugs.launchpad.net/qemu/+bug/1876373
+#[cfg(all(any(target_os = "linux", target_os = "netbsd"),
+          not(any(target_arch = "mips",
+                  target_arch = "mipsel",
+                  target_arch = "arm",
+                  target_arch = "armv7"))))]
 fn test_mremap_shrink() {
     const ONE_K : size_t = 1024;
     let slice : &mut[u8] = unsafe {
         let mem = mmap(std::ptr::null_mut(), 10 * ONE_K,
                        ProtFlags::PROT_READ | ProtFlags::PROT_WRITE,
-                       MapFlags::MAP_ANONYMOUS | MapFlags::MAP_PRIVATE, -1, 0)
+                       MapFlags::MAP_ANON | MapFlags::MAP_PRIVATE, -1, 0)
                       .unwrap();
         std::slice::from_raw_parts_mut(mem as * mut u8, ONE_K)
     };
@@ -75,12 +80,12 @@ fn test_mremap_shrink() {
         let mem = mremap(slice.as_mut_ptr() as * mut c_void, 10 * ONE_K, ONE_K,
                          MRemapFlags::empty(), None)
                       .unwrap();
+        #[cfg(target_os = "netbsd")]
+        let mem = mremap(slice.as_mut_ptr() as * mut c_void, 10 * ONE_K, ONE_K,
+                         MRemapFlags::MAP_FIXED, None)
+                      .unwrap();
         // Since we didn't supply MREMAP_MAYMOVE, the address should be the
         // same.
-        #[cfg(target_os = "linux")]
-        let mem = mremap(slice.as_mut_ptr() as * mut c_void, 10 * ONE_K, ONE_K,
-                         MRemapFlags::MAP_FIXED), None)
-                      .unwrap();
         assert_eq !(mem, slice.as_mut_ptr() as * mut c_void);
         std::slice::from_raw_parts_mut(mem as * mut u8, ONE_K)
     };
