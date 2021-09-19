@@ -47,7 +47,6 @@ libc_bitflags!{
         /// Synonym for `MAP_ANONYMOUS`.
         MAP_ANON;
         /// The mapping is not backed by any file.
-        #[cfg(any(target_os = "android", target_os = "linux", target_os = "freebsd"))]
         MAP_ANONYMOUS;
         /// Put the mapping into the first 2GB of the process address space.
         #[cfg(any(all(any(target_os = "android", target_os = "linux"),

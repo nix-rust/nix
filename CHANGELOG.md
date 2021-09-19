@@ -48,6 +48,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1522](https://github.com/nix-rust/nix/pull/1522))
 - Added `MAP_CONCEAL` mmap flag for openbsd.
   (#[1531](https://github.com/nix-rust/nix/pull/1531))
+- Added `MAP_ANONYMOUS` for all operating systems.
+  (#[1534](https://github.com/nix-rust/nix/pull/1534))
 
 ### Changed
 
