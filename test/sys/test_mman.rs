@@ -1,6 +1,4 @@
-use nix::Error;
-use nix::libc::{c_void, size_t};
-use nix::sys::mman::{mmap, MapFlags, ProtFlags, mincore, mincore_vec_char_t};
+use nix::sys::mman::{mincore, mincore_vec_char_t, mmap, MapFlags, ProtFlags};
 
 #[cfg(target_os = "linux")]
 use nix::sys::mman::{mremap, MRemapFlags};
