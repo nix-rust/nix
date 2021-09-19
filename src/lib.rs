@@ -160,7 +160,7 @@ impl NixPath for CStr {
             where F: FnOnce(&CStr) -> T {
         // Equivalence with the [u8] impl.
         if self.len() >= PATH_MAX as usize {
-            return Err(Error::from(Errno::ENAMETOOLONG))
+            return Err(Errno::ENAMETOOLONG)
         }
 
         Ok(f(self))
@@ -181,11 +181,11 @@ impl NixPath for [u8] {
         let mut buf = [0u8; PATH_MAX as usize];
 
         if self.len() >= PATH_MAX as usize {
-            return Err(Error::from(Errno::ENAMETOOLONG))
+            return Err(Errno::ENAMETOOLONG)
         }
 
         match self.iter().position(|b| *b == 0) {
-            Some(_) => Err(Error::from(Errno::EINVAL)),
+            Some(_) => Err(Errno::EINVAL),
             None => {
                 unsafe {
                     // TODO: Replace with bytes::copy_memory. rust-lang/rust#24028

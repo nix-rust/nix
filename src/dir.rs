@@ -84,7 +84,7 @@ impl AsRawFd for Dir {
 impl Drop for Dir {
     fn drop(&mut self) {
         let e = Errno::result(unsafe { libc::closedir(self.0.as_ptr()) });
-        if !std::thread::panicking() && e == Err(Error::from(Errno::EBADF)) {
+        if !std::thread::panicking() && e == Err(Errno::EBADF) {
             panic!("Closing an invalid file descriptor!");
         };
     }
@@ -211,6 +211,7 @@ impl Entry {
                   target_os = "linux",
                   target_os = "macos",
                   target_os = "solaris")))]
+    #[allow(clippy::useless_conversion)]    // Not useless on all OSes
     pub fn ino(&self) -> u64 {
         u64::from(self.0.d_fileno)
     }

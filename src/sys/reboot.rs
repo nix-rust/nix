@@ -1,8 +1,7 @@
 //! Reboot/shutdown or enable/disable Ctrl-Alt-Delete.
 
-use crate::{Error, Result};
+use crate::Result;
 use crate::errno::Errno;
-use libc;
 use std::convert::Infallible;
 use std::mem::drop;
 
@@ -27,7 +26,7 @@ pub fn reboot(how: RebootMode) -> Result<Infallible> {
     unsafe {
         libc::reboot(how as libc::c_int)
     };
-    Err(Error::from(Errno::last()))
+    Err(Errno::last())
 }
 
 /// Enable or disable the reboot keystroke (Ctrl-Alt-Delete).

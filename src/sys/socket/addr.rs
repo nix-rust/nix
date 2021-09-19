@@ -1,5 +1,5 @@
 use super::sa_family_t;
-use crate::{Error, Result, NixPath};
+use crate::{Result, NixPath};
 use crate::errno::Errno;
 use memoffset::offset_of;
 use std::{fmt, mem, net, ptr, slice};
@@ -270,6 +270,7 @@ pub enum InetAddr {
 }
 
 impl InetAddr {
+    #[allow(clippy::needless_update)]   // It isn't needless on all OSes
     pub fn from_std(std: &net::SocketAddr) -> InetAddr {
         match *std {
             net::SocketAddr::V4(ref addr) => {
@@ -293,6 +294,7 @@ impl InetAddr {
         }
     }
 
+    #[allow(clippy::needless_update)]   // It isn't needless on all OSes
     pub fn new(ip: IpAddr, port: u16) -> InetAddr {
         match ip {
             IpAddr::V4(ref ip) => {
@@ -565,7 +567,7 @@ impl UnixAddr {
                 let bytes = cstr.to_bytes();
 
                 if bytes.len() >= ret.sun_path.len() {
-                    return Err(Error::from(Errno::ENAMETOOLONG));
+                    return Err(Errno::ENAMETOOLONG);
                 }
 
                 ptr::copy_nonoverlapping(bytes.as_ptr(),
@@ -592,7 +594,7 @@ impl UnixAddr {
             };
 
             if path.len() >= ret.sun_path.len() {
-                return Err(Error::from(Errno::ENAMETOOLONG));
+                return Err(Errno::ENAMETOOLONG);
             }
 
             // Abstract addresses are represented by sun_path[0] ==
@@ -751,7 +753,7 @@ impl SockAddr {
 
     #[cfg(any(target_os = "ios", target_os = "macos"))]
     pub fn new_sys_control(sockfd: RawFd, name: &str, unit: u32) -> Result<SockAddr> {
-        SysControlAddr::from_name(sockfd, name, unit).map(|a| SockAddr::SysControl(a))
+        SysControlAddr::from_name(sockfd, name, unit).map(SockAddr::SysControl)
     }
 
     #[cfg(any(target_os = "android", target_os = "linux"))]
@@ -1064,7 +1066,7 @@ pub mod sys_control {
     use libc::{self, c_uchar};
     use std::{fmt, mem};
     use std::os::unix::io::RawFd;
-    use crate::{Errno, Error, Result};
+    use crate::{Errno, Result};
 
     // FIXME: Move type into `libc`
     #[repr(C)]
@@ -1075,7 +1077,7 @@ pub mod sys_control {
         pub ctl_name: [c_uchar; MAX_KCTL_NAME],
     }
 
-    const CTL_IOC_MAGIC: u8 = 'N' as u8;
+    const CTL_IOC_MAGIC: u8 = b'N';
     const CTL_IOC_INFO: u8 = 3;
     const MAX_KCTL_NAME: usize = 96;
 
@@ -1101,7 +1103,7 @@ pub mod sys_control {
 
         pub fn from_name(sockfd: RawFd, name: &str, unit: u32) -> Result<SysControlAddr> {
             if name.len() > MAX_KCTL_NAME {
-                return Err(Error::from(Errno::ENAMETOOLONG));
+                return Err(Errno::ENAMETOOLONG);
             }
 
             let mut ctl_name = [0; MAX_KCTL_NAME];

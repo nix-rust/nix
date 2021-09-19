@@ -257,14 +257,9 @@ impl TimerFd {
     ///
     /// Note: If the alarm is unset, then you will wait forever.
     pub fn wait(&self) -> Result<()> {
-        loop {
-            if let Err(e) = read(self.fd, &mut [0u8; 8]) {
-                match e {
-                    Errno::EINTR => continue,
-                    _ => return Err(e),
-                }
-            } else {
-                break;
+        while let Err(e) = read(self.fd, &mut [0u8; 8]) {
+            if e != Errno::EINTR {
+                return Err(e)
             }
         }
 

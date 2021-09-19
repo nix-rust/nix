@@ -111,7 +111,7 @@ impl<'a> Iterator for Fds<'a> {
     type Item = RawFd;
 
     fn next(&mut self) -> Option<RawFd> {
-        while let Some(i) = self.range.next() {
+        for i in &mut self.range {
             if self.set.contains(i as RawFd) {
                 return Some(i as RawFd);
             }

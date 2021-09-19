@@ -34,7 +34,6 @@ fn compile_kernel_module() -> (PathBuf, String, TempDir) {
 use nix::errno::Errno;
 use nix::kmod::{delete_module, DeleteModuleFlags};
 use nix::kmod::{finit_module, init_module, ModuleInitFlags};
-use nix::Error;
 use std::ffi::CString;
 use std::fs::File;
 use std::io::Read;
@@ -90,7 +89,7 @@ fn test_init_and_delete_module() {
     let mut contents: Vec<u8> = Vec::new();
     f.read_to_end(&mut contents)
         .expect("unable to read kernel module content to buffer");
-    init_module(&mut contents, &CString::new("").unwrap()).expect("unable to load kernel module");
+    init_module(&contents, &CString::new("").unwrap()).expect("unable to load kernel module");
 
     delete_module(
         &CString::new(kmod_name).unwrap(),
@@ -110,7 +109,7 @@ fn test_init_and_delete_module_with_params() {
     let mut contents: Vec<u8> = Vec::new();
     f.read_to_end(&mut contents)
         .expect("unable to read kernel module content to buffer");
-    init_module(&mut contents, &CString::new("who=Nix number=2015").unwrap())
+    init_module(&contents, &CString::new("who=Nix number=2015").unwrap())
         .expect("unable to load kernel module");
 
     delete_module(
@@ -130,7 +129,7 @@ fn test_finit_module_invalid() {
     let f = File::open(kmod_path).expect("unable to open kernel module");
     let result = finit_module(&f, &CString::new("").unwrap(), ModuleInitFlags::empty());
 
-    assert_eq!(result.unwrap_err(), Error::from(Errno::EINVAL));
+    assert_eq!(result.unwrap_err(), Errno::EINVAL);
 }
 
 #[test]
@@ -147,7 +146,7 @@ fn test_finit_module_twice_and_delete_module() {
 
     let result = finit_module(&f, &CString::new("").unwrap(), ModuleInitFlags::empty());
 
-    assert_eq!(result.unwrap_err(), Error::from(Errno::EEXIST));
+    assert_eq!(result.unwrap_err(), Errno::EEXIST);
 
     delete_module(
         &CString::new(kmod_name).unwrap(),
@@ -163,5 +162,5 @@ fn test_delete_module_not_loaded() {
 
     let result = delete_module(&CString::new("hello").unwrap(), DeleteModuleFlags::empty());
 
-    assert_eq!(result.unwrap_err(), Error::from(Errno::ENOENT));
+    assert_eq!(result.unwrap_err(), Errno::ENOENT);
 }

@@ -6,7 +6,7 @@ use crate::sys::time::TimeSpec;
     target_os = "android",
     target_os = "emscripten",
 ))]
-use crate::{unistd::Pid, Error};
+use crate::unistd::Pid;
 use crate::{Errno, Result};
 use libc::{self, clockid_t};
 use std::mem::MaybeUninit;
@@ -255,6 +255,6 @@ pub fn clock_getcpuclockid(pid: Pid) -> Result<ClockId> {
         let res = unsafe { clk_id.assume_init() };
         Ok(ClockId::from(res))
     } else {
-        Err(Error::from(Errno::from_i32(ret)))
+        Err(Errno::from_i32(ret))
     }
 }

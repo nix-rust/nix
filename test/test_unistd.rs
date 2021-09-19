@@ -10,7 +10,7 @@ use nix::sys::stat::{self, Mode, SFlag};
 #[cfg(not(any(target_os = "redox", target_os = "fuchsia")))]
 use nix::pty::{posix_openpt, grantpt, unlockpt, ptsname};
 use nix::errno::Errno;
-use std::{env, iter};
+use std::env;
 #[cfg(not(any(target_os = "fuchsia", target_os = "redox")))]
 use std::ffi::CString;
 #[cfg(not(target_os = "redox"))]
@@ -443,7 +443,7 @@ fn test_getcwd() {
     // 4096 on linux, 1024 on macos)
     let mut inner_tmp_dir = tmpdir_path;
     for _ in 0..5 {
-        let newdir = iter::repeat("a").take(100).collect::<String>();
+        let newdir = "a".repeat(100);
         inner_tmp_dir.push(newdir);
         assert!(mkdir(inner_tmp_dir.as_path(), Mode::S_IRWXU).is_ok());
     }
@@ -1051,7 +1051,7 @@ fn test_setfsuid() {
     dbg!(&temp_path);
     let temp_path_2 = (&temp_path).to_path_buf();
     let mut permissions = fs::metadata(&temp_path).unwrap().permissions();
-    permissions.set_mode(640);
+    permissions.set_mode(0o640);
 
     // spawn a new thread where to test setfsuid
     thread::spawn(move || {

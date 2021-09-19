@@ -18,6 +18,7 @@ build: &BUILD
     - . $HOME/.cargo/env || true
     - $TOOL +$TOOLCHAIN $BUILD $ZFLAGS --target $TARGET --all-targets
     - $TOOL +$TOOLCHAIN doc $ZFLAGS --no-deps --target $TARGET
+    - $TOOL +$TOOLCHAIN clippy $ZFLAGS --target $TARGET -- -D warnings
 
 # Tests that do require executing the binaries
 test: &TEST
@@ -39,7 +40,9 @@ task:
   setup_script:
     - fetch https://sh.rustup.rs -o rustup.sh
     - sh rustup.sh -y --profile=minimal --default-toolchain $TOOLCHAIN
-    - $HOME/.cargo/bin/rustup target add i686-unknown-freebsd
+    - . $HOME/.cargo/env
+    - rustup target add i686-unknown-freebsd
+    - rustup component add --toolchain $TOOLCHAIN clippy
   << : *TEST
   i386_test_script:
     - . $HOME/.cargo/env
@@ -60,6 +63,7 @@ task:
     - curl --proto '=https' --tlsv1.2 -sSf -o rustup.sh https://sh.rustup.rs
     - sh rustup.sh -y --profile=minimal --default-toolchain $TOOLCHAIN
     - . $HOME/.cargo/env
+    - rustup component add --toolchain $TOOLCHAIN clippy
   << : *TEST
   before_cache_script: rm -rf $CARGO_HOME/registry/index
 
@@ -142,6 +146,7 @@ task:
         TARGET: x86_64-unknown-linux-musl
   setup_script:
     - rustup target add $TARGET
+    - rustup component add clippy
   << : *TEST
   before_cache_script: rm -rf $CARGO_HOME/registry/index
 
@@ -224,6 +229,7 @@ task:
   setup_script:
     - rustup target add $TARGET
     - rustup toolchain install $TOOLCHAIN --profile minimal --target $TARGET
+    - rustup component add --toolchain $TOOLCHAIN clippy
   << : *BUILD
   before_cache_script: rm -rf $CARGO_HOME/registry/index
 

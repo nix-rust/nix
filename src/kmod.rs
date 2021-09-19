@@ -2,7 +2,6 @@
 //!
 //! For more details see
 
-use libc;
 use std::ffi::CStr;
 use std::os::unix::io::AsRawFd;
 

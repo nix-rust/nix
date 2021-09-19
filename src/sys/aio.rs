@@ -21,7 +21,7 @@
 //! [`aio_cancel_all`](fn.aio_cancel_all.html), though the operating system may
 //! not support this for all filesystems and devices.
 
-use crate::{Error, Result};
+use crate::Result;
 use crate::errno::Errno;
 use std::os::unix::io::RawFd;
 use libc::{c_void, off_t, size_t};
@@ -148,15 +148,13 @@ impl<'a> AioCb<'a> {
     /// # use std::{thread, time};
     /// # use std::os::unix::io::AsRawFd;
     /// # use tempfile::tempfile;
-    /// # fn main() {
     /// let f = tempfile().unwrap();
     /// let mut aiocb = AioCb::from_fd( f.as_raw_fd(), 0, SigevNone);
     /// aiocb.fsync(AioFsyncMode::O_SYNC).expect("aio_fsync failed early");
-    /// while (aiocb.error() == Err(Error::from(Errno::EINPROGRESS))) {
+    /// while (aiocb.error() == Err(Errno::EINPROGRESS)) {
     ///     thread::sleep(time::Duration::from_millis(10));
     /// }
     /// aiocb.aio_return().expect("aio_fsync failed late");
-    /// # }
     /// ```
     pub fn from_fd(fd: RawFd, prio: libc::c_int,
                     sigev_notify: SigevNotify) -> Pin<Box<AioCb<'a>>> {
@@ -229,7 +227,6 @@ impl<'a> AioCb<'a> {
     /// # use std::io::Write;
     /// # use std::os::unix::io::AsRawFd;
     /// # use tempfile::tempfile;
-    /// # fn main() {
     /// const INITIAL: &[u8] = b"abcdef123456";
     /// const LEN: usize = 4;
     /// let mut rbuf = vec![0; LEN];
@@ -243,13 +240,12 @@ impl<'a> AioCb<'a> {
     ///         SigevNotify::SigevNone,
     ///         LioOpcode::LIO_NOP);
     ///     aiocb.read().unwrap();
-    ///     while (aiocb.error() == Err(Error::from(Errno::EINPROGRESS))) {
+    ///     while (aiocb.error() == Err(Errno::EINPROGRESS)) {
     ///         thread::sleep(time::Duration::from_millis(10));
     ///     }
     ///     assert_eq!(aiocb.aio_return().unwrap() as usize, LEN);
     /// }
     /// assert_eq!(rbuf, b"cdef");
-    /// # }
     /// ```
     pub fn from_mut_slice(fd: RawFd, offs: off_t, buf: &'a mut [u8],
                           prio: libc::c_int, sigev_notify: SigevNotify,
@@ -404,7 +400,6 @@ impl<'a> AioCb<'a> {
     /// # use std::{thread, time};
     /// # use std::os::unix::io::AsRawFd;
     /// # use tempfile::tempfile;
-    /// # fn main() {
     /// const WBUF: &[u8] = b"abcdef123456";
     /// let mut f = tempfile().unwrap();
     /// let mut aiocb = AioCb::from_slice( f.as_raw_fd(),
@@ -414,11 +409,10 @@ impl<'a> AioCb<'a> {
     ///     SigevNotify::SigevNone,
     ///     LioOpcode::LIO_NOP);
     /// aiocb.write().unwrap();
-    /// while (aiocb.error() == Err(Error::from(Errno::EINPROGRESS))) {
+    /// while (aiocb.error() == Err(Errno::EINPROGRESS)) {
     ///     thread::sleep(time::Duration::from_millis(10));
     /// }
     /// assert_eq!(aiocb.aio_return().unwrap() as usize, WBUF.len());
-    /// # }
     /// ```
     // Note: another solution to the problem of writing const buffers would be
     // to genericize AioCb for both &mut [u8] and &[u8] buffers.  AioCb::read
@@ -480,7 +474,6 @@ impl<'a> AioCb<'a> {
     /// # use std::io::Write;
     /// # use std::os::unix::io::AsRawFd;
     /// # use tempfile::tempfile;
-    /// # fn main() {
     /// let wbuf = b"CDEF";
     /// let mut f = tempfile().unwrap();
     /// let mut aiocb = AioCb::from_slice( f.as_raw_fd(),
@@ -492,13 +485,12 @@ impl<'a> AioCb<'a> {
     /// aiocb.write().unwrap();
     /// let cs = aiocb.cancel().unwrap();
     /// if cs == AioCancelStat::AioNotCanceled {
-    ///     while (aiocb.error() == Err(Error::from(Errno::EINPROGRESS))) {
+    ///     while (aiocb.error() == Err(Errno::EINPROGRESS)) {
     ///         thread::sleep(time::Duration::from_millis(10));
     ///     }
     /// }
     /// // Must call `aio_return`, but ignore the result
     /// let _ = aiocb.aio_return();
-    /// # }
     /// ```
     ///
     /// # References
@@ -513,7 +505,7 @@ impl<'a> AioCb<'a> {
             libc::AIO_CANCELED => Ok(AioCancelStat::AioCanceled),
             libc::AIO_NOTCANCELED => Ok(AioCancelStat::AioNotCanceled),
             libc::AIO_ALLDONE => Ok(AioCancelStat::AioAllDone),
-            -1 => Err(Error::from(Errno::last())),
+            -1 => Err(Errno::last()),
             _ => panic!("unknown aio_cancel return value")
         }
     }
@@ -524,8 +516,8 @@ impl<'a> AioCb<'a> {
         };
         match r {
             0 => Ok(()),
-            num if num > 0 => Err(Error::from(Errno::from_i32(num))),
-            -1 => Err(Error::from(Errno::last())),
+            num if num > 0 => Err(Errno::from_i32(num)),
+            -1 => Err(Errno::last()),
             num => panic!("unknown aio_error return value {:?}", num)
         }
     }
@@ -548,7 +540,6 @@ impl<'a> AioCb<'a> {
     /// # use std::{thread, time};
     /// # use std::os::unix::io::AsRawFd;
     /// # use tempfile::tempfile;
-    /// # fn main() {
     /// const WBUF: &[u8] = b"abcdef123456";
     /// let mut f = tempfile().unwrap();
     /// let mut aiocb = AioCb::from_slice( f.as_raw_fd(),
@@ -558,11 +549,10 @@ impl<'a> AioCb<'a> {
     ///     SigevNotify::SigevNone,
     ///     LioOpcode::LIO_NOP);
     /// aiocb.write().unwrap();
-    /// while (aiocb.error() == Err(Error::from(Errno::EINPROGRESS))) {
+    /// while (aiocb.error() == Err(Errno::EINPROGRESS)) {
     ///     thread::sleep(time::Duration::from_millis(10));
     /// }
     /// assert_eq!(aiocb.aio_return().unwrap() as usize, WBUF.len());
-    /// # }
     /// ```
     ///
     /// # References
@@ -711,7 +701,6 @@ impl<'a> AioCb<'a> {
 /// # use std::io::Write;
 /// # use std::os::unix::io::AsRawFd;
 /// # use tempfile::tempfile;
-/// # fn main() {
 /// let wbuf = b"CDEF";
 /// let mut f = tempfile().unwrap();
 /// let mut aiocb = AioCb::from_slice( f.as_raw_fd(),
@@ -723,13 +712,12 @@ impl<'a> AioCb<'a> {
 /// aiocb.write().unwrap();
 /// let cs = aio_cancel_all(f.as_raw_fd()).unwrap();
 /// if cs == AioCancelStat::AioNotCanceled {
-///     while (aiocb.error() == Err(Error::from(Errno::EINPROGRESS))) {
+///     while (aiocb.error() == Err(Errno::EINPROGRESS)) {
 ///         thread::sleep(time::Duration::from_millis(10));
 ///     }
 /// }
 /// // Must call `aio_return`, but ignore the result
 /// let _ = aiocb.aio_return();
-/// # }
 /// ```
 ///
 /// # References
@@ -740,7 +728,7 @@ pub fn aio_cancel_all(fd: RawFd) -> Result<AioCancelStat> {
         libc::AIO_CANCELED => Ok(AioCancelStat::AioCanceled),
         libc::AIO_NOTCANCELED => Ok(AioCancelStat::AioNotCanceled),
         libc::AIO_ALLDONE => Ok(AioCancelStat::AioAllDone),
-        -1 => Err(Error::from(Errno::last())),
+        -1 => Err(Errno::last()),
         _ => panic!("unknown aio_cancel return value")
     }
 }
@@ -759,7 +747,6 @@ pub fn aio_cancel_all(fd: RawFd) -> Result<AioCancelStat> {
 /// # use nix::sys::signal::SigevNotify;
 /// # use std::os::unix::io::AsRawFd;
 /// # use tempfile::tempfile;
-/// # fn main() {
 /// const WBUF: &[u8] = b"abcdef123456";
 /// let mut f = tempfile().unwrap();
 /// let mut aiocb = AioCb::from_slice( f.as_raw_fd(),
@@ -771,7 +758,6 @@ pub fn aio_cancel_all(fd: RawFd) -> Result<AioCancelStat> {
 /// aiocb.write().unwrap();
 /// aio_suspend(&[aiocb.as_ref()], None).expect("aio_suspend failed");
 /// assert_eq!(aiocb.aio_return().unwrap() as usize, WBUF.len());
-/// # }
 /// ```
 /// # References
 ///
@@ -876,7 +862,6 @@ impl<'a> LioCb<'a> {
     /// # use nix::sys::signal::SigevNotify;
     /// # use std::os::unix::io::AsRawFd;
     /// # use tempfile::tempfile;
-    /// # fn main() {
     /// const WBUF: &[u8] = b"abcdef123456";
     /// let mut f = tempfile().unwrap();
     /// let mut liocb = LioCbBuilder::with_capacity(1)
@@ -891,7 +876,6 @@ impl<'a> LioCb<'a> {
     /// liocb.listio(LioMode::LIO_WAIT,
     ///              SigevNotify::SigevNone).unwrap();
     /// assert_eq!(liocb.aio_return(0).unwrap() as usize, WBUF.len());
-    /// # }
     /// ```
     ///
     /// # References
@@ -936,7 +920,6 @@ impl<'a> LioCb<'a> {
     /// # use std::os::unix::io::AsRawFd;
     /// # use std::{thread, time};
     /// # use tempfile::tempfile;
-    /// # fn main() {
     /// const WBUF: &[u8] = b"abcdef123456";
     /// let mut f = tempfile().unwrap();
     /// let mut liocb = LioCbBuilder::with_capacity(1)
@@ -949,13 +932,12 @@ impl<'a> LioCb<'a> {
     ///         LioOpcode::LIO_WRITE
     ///     ).finish();
     /// let mut err = liocb.listio(LioMode::LIO_WAIT, SigevNotify::SigevNone);
-    /// while err == Err(Error::from(Errno::EIO)) ||
-    ///       err == Err(Error::from(Errno::EAGAIN)) {
+    /// while err == Err(Errno::EIO) ||
+    ///       err == Err(Errno::EAGAIN) {
     ///     thread::sleep(time::Duration::from_millis(10));
     ///     err = liocb.listio_resubmit(LioMode::LIO_WAIT, SigevNotify::SigevNone);
     /// }
     /// assert_eq!(liocb.aio_return(0).unwrap() as usize, WBUF.len());
-    /// # }
     /// ```
     ///
     /// # References

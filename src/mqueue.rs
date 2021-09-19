@@ -155,6 +155,7 @@ pub fn mq_setattr(mqd: mqd_t, newattr: &MqAttr) -> Result<MqAttr> {
 /// Convenience function.
 /// Sets the `O_NONBLOCK` attribute for a given message queue descriptor
 /// Returns the old attributes
+#[allow(clippy::useless_conversion)]    // Not useless on all OSes
 pub fn mq_set_nonblock(mqd: mqd_t) -> Result<MqAttr> {
     let oldattr = mq_getattr(mqd)?;
     let newattr = MqAttr::new(mq_attr_member_t::from(MQ_OFlag::O_NONBLOCK.bits()),

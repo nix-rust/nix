@@ -114,6 +114,8 @@ fn open_ptty_pair() -> (PtyMaster, File) {
     let slave_fd = open(Path::new(&slave_name), OFlag::O_RDWR, stat::Mode::empty()).unwrap();
 
     #[cfg(target_os = "illumos")]
+    // TODO: rewrite using ioctl! 
+    #[allow(clippy::comparison_chain)]
     {
         use libc::{ioctl, I_FIND, I_PUSH};
 

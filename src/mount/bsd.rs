@@ -383,7 +383,7 @@ impl<'a> Nmount<'a> {
                         Some(CStr::from_bytes_with_nul(sl).unwrap())
                     }
                 };
-                Err(NmountError::new(error.into(), errmsg))
+                Err(NmountError::new(error, errmsg))
             }
         }
     }

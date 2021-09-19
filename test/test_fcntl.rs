@@ -127,14 +127,14 @@ fn test_renameat2_exchange() {
     let old_path = old_dir.path().join("old");
     {
         let mut old_f = File::create(&old_path).unwrap();
-        old_f.write(b"old").unwrap();
+        old_f.write_all(b"old").unwrap();
     }
     let new_dir = tempfile::tempdir().unwrap();
     let new_dirfd = open(new_dir.path(), OFlag::empty(), Mode::empty()).unwrap();
     let new_path = new_dir.path().join("new");
     {
         let mut new_f = File::create(&new_path).unwrap();
-        new_f.write(b"new").unwrap();
+        new_f.write_all(b"new").unwrap();
     }
     renameat2(
         Some(old_dirfd),
@@ -319,9 +319,10 @@ mod linux_android {
 
         let buf1 = b"abcdef";
         let buf2 = b"defghi";
-        let mut iovecs = Vec::with_capacity(2);
-        iovecs.push(IoVec::from_slice(&buf1[0..3]));
-        iovecs.push(IoVec::from_slice(&buf2[0..3]));
+        let iovecs = vec![
+            IoVec::from_slice(&buf1[0..3]),
+            IoVec::from_slice(&buf2[0..3])
+        ];
 
         let res = vmsplice(wr, &iovecs[..], SpliceFFlags::empty()).unwrap();
 
