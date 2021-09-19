@@ -74,6 +74,10 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Minimum supported Rust version is now 1.46.0.
   ([#1492](https://github.com/nix-rust/nix/pull/1492))
 
+- Rework `UnixAddr` to encapsulate internals better in order to fix soundness
+  issues. No longer allows creating a `UnixAddr` from a raw `sockaddr_un`.
+  ([#1496](https://github.com/nix-rust/nix/pull/1496))
+
 ### Fixed
 
 - Added more errno definitions for better backwards compatibility with

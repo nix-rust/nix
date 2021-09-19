@@ -515,15 +515,42 @@ impl fmt::Display for Ipv6Addr {
 }
 
 /// A wrapper around `sockaddr_un`.
-///
-/// This also tracks the length of `sun_path` address (excluding
-/// a terminating null), because it may not be null-terminated.  For example,
-/// unconnected and Linux abstract sockets are never null-terminated, and POSIX
-/// does not require that `sun_len` include the terminating null even for normal
-/// sockets.  Note that the actual sockaddr length is greater by
-/// `offset_of!(libc::sockaddr_un, sun_path)`
 #[derive(Clone, Copy, Debug)]
-pub struct UnixAddr(pub libc::sockaddr_un, pub usize);
+pub struct UnixAddr {
+    // INVARIANT: sun & path_len are valid as defined by docs for from_raw_parts
+    sun: libc::sockaddr_un,
+    path_len: usize,
+}
+
+// linux man page unix(7) says there are 3 kinds of unix socket:
+// pathname: addrlen = offsetof(struct sockaddr_un, sun_path) + strlen(sun_path) + 1
+// unnamed: addrlen = sizeof(sa_family_t)
+// abstract: addren > sizeof(sa_family_t), name = sun_path[..(addrlen - sizeof(sa_family_t))]
+//
+// what we call path_len = addrlen - offsetof(struct sockaddr_un, sun_path)
+#[derive(PartialEq, Eq, Hash)]
+enum UnixAddrKind<'a> {
+    Pathname(&'a Path),
+    Unnamed,
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    Abstract(&'a [u8]),
+}
+impl<'a> UnixAddrKind<'a> {
+    /// Safety: sun & path_len must be valid
+    unsafe fn get(sun: &'a libc::sockaddr_un, path_len: usize) -> Self {
+        if path_len == 0 {
+            return Self::Unnamed;
+        }
+        #[cfg(any(target_os = "android", target_os = "linux"))]
+        if sun.sun_path[0] == 0 {
+            let name =
+                slice::from_raw_parts(sun.sun_path.as_ptr().add(1) as *const u8, path_len - 1);
+            return Self::Abstract(name);
+        }
+        let pathname = slice::from_raw_parts(sun.sun_path.as_ptr() as *const u8, path_len - 1);
+        Self::Pathname(Path::new(OsStr::from_bytes(pathname)))
+    }
+}
 
 impl UnixAddr {
     /// Create a new sockaddr_un representing a filesystem path.
@@ -537,7 +564,7 @@ impl UnixAddr {
 
                 let bytes = cstr.to_bytes();
 
-                if bytes.len() > ret.sun_path.len() {
+                if bytes.len() >= ret.sun_path.len() {
                     return Err(Error::from(Errno::ENAMETOOLONG));
                 }
 
@@ -545,7 +572,7 @@ impl UnixAddr {
                                          ret.sun_path.as_mut_ptr() as *mut u8,
                                          bytes.len());
 
-                Ok(UnixAddr(ret, bytes.len()))
+                Ok(UnixAddr::from_raw_parts(ret, bytes.len() + 1))
             }
         })?
     }
@@ -564,7 +591,7 @@ impl UnixAddr {
                 .. mem::zeroed()
             };
 
-            if path.len() + 1 > ret.sun_path.len() {
+            if path.len() >= ret.sun_path.len() {
                 return Err(Error::from(Errno::ENAMETOOLONG));
             }
 
@@ -574,28 +601,39 @@ impl UnixAddr {
                                      ret.sun_path.as_mut_ptr().offset(1) as *mut u8,
                                      path.len());
 
-            Ok(UnixAddr(ret, path.len() + 1))
+            Ok(UnixAddr::from_raw_parts(ret, path.len() + 1))
         }
     }
 
-    fn sun_path(&self) -> &[u8] {
-        unsafe { slice::from_raw_parts(self.0.sun_path.as_ptr() as *const u8, self.1) }
+    /// Create a UnixAddr from a raw `sockaddr_un` struct and a size. `path_len` is the "addrlen"
+    /// of this address, but minus `offsetof(struct sockaddr_un, sun_path)`. Basically the length
+    /// of the data in `sun_path`.
+    ///
+    /// # Safety
+    /// This pair of sockaddr_un & path_len must be a valid unix addr, which means:
+    /// - path_len <= sockaddr_un.sun_path.len()
+    /// - if this is a unix addr with a pathname, sun.sun_path is a nul-terminated fs path and
+    ///   sun.sun_path[path_len - 1] == 0 || sun.sun_path[path_len] == 0
+    pub(crate) unsafe fn from_raw_parts(sun: libc::sockaddr_un, mut path_len: usize) -> UnixAddr {
+        if let UnixAddrKind::Pathname(_) = UnixAddrKind::get(&sun, path_len) {
+            if sun.sun_path[path_len - 1] != 0 {
+                assert_eq!(sun.sun_path[path_len], 0);
+                path_len += 1
+            }
+        }
+        UnixAddr { sun, path_len }
+    }
+
+    fn kind(&self) -> UnixAddrKind<'_> {
+        // SAFETY: our sockaddr is always valid because of the invariant on the struct
+        unsafe { UnixAddrKind::get(&self.sun, self.path_len) }
     }
 
     /// If this address represents a filesystem path, return that path.
     pub fn path(&self) -> Option<&Path> {
-        if self.1 == 0 || self.0.sun_path[0] == 0 {
-            // unnamed or abstract
-            None
-        } else {
-            let p = self.sun_path();
-            // POSIX only requires that `sun_len` be at least long enough to
-            // contain the pathname, and it need not be null-terminated.  So we
-            // need to create a string that is the shorter of the
-            // null-terminated length or the full length.
-            let ptr = &self.0.sun_path as *const libc::c_char;
-            let reallen = unsafe { libc::strnlen(ptr, p.len()) };
-            Some(Path::new(<OsStr as OsStrExt>::from_bytes(&p[..reallen])))
+        match self.kind() {
+            UnixAddrKind::Pathname(path) => Some(path),
+            _ => None,
         }
     }
 
@@ -605,31 +643,55 @@ impl UnixAddr {
     /// leading null byte. `None` is returned for unnamed or path-backed sockets.
     #[cfg(any(target_os = "android", target_os = "linux"))]
     pub fn as_abstract(&self) -> Option<&[u8]> {
-        if self.1 >= 1 && self.0.sun_path[0] == 0 {
-            Some(&self.sun_path()[1..])
-        } else {
-            // unnamed or filesystem path
-            None
+        match self.kind() {
+            UnixAddrKind::Abstract(name) => Some(name),
+            _ => None,
         }
     }
+
+    /// Returns the addrlen of this socket - `offsetof(struct sockaddr_un, sun_path)`
+    #[inline]
+    pub fn path_len(&self) -> usize {
+        self.path_len
+    }
+    /// Returns a pointer to the raw `sockaddr_un` struct
+    #[inline]
+    pub fn as_ptr(&self) -> *const libc::sockaddr_un {
+        &self.sun
+    }
+    /// Returns a mutable pointer to the raw `sockaddr_un` struct
+    #[inline]
+    pub fn as_mut_ptr(&mut self) -> *mut libc::sockaddr_un {
+        &mut self.sun
+    }
+}
+
+#[cfg(any(target_os = "android", target_os = "linux"))]
+fn fmt_abstract(abs: &[u8], f: &mut fmt::Formatter) -> fmt::Result {
+    use fmt::Write;
+    f.write_str("@\"")?;
+    for &b in abs {
+        use fmt::Display;
+        char::from(b).escape_default().fmt(f)?;
+    }
+    f.write_char('"')?;
+    Ok(())
 }
 
 impl fmt::Display for UnixAddr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        if self.1 == 0 {
-            f.write_str("<unbound UNIX socket>")
-        } else if let Some(path) = self.path() {
-            path.display().fmt(f)
-        } else {
-            let display = String::from_utf8_lossy(&self.sun_path()[1..]);
-            write!(f, "@{}", display)
+        match self.kind() {
+            UnixAddrKind::Pathname(path) => path.display().fmt(f),
+            UnixAddrKind::Unnamed => f.pad("<unbound UNIX socket>"),
+            #[cfg(any(target_os = "android", target_os = "linux"))]
+            UnixAddrKind::Abstract(name) => fmt_abstract(name, f),
         }
     }
 }
 
 impl PartialEq for UnixAddr {
     fn eq(&self, other: &UnixAddr) -> bool {
-        self.sun_path() == other.sun_path()
+        self.kind() == other.kind()
     }
 }
 
@@ -637,7 +699,7 @@ impl Eq for UnixAddr {}
 
 impl Hash for UnixAddr {
     fn hash<H: Hasher>(&self, s: &mut H) {
-        ( self.0.sun_family, self.sun_path() ).hash(s)
+        self.kind().hash(s)
     }
 }
 
@@ -805,12 +867,12 @@ impl SockAddr {
                 },
                 mem::size_of_val(addr) as libc::socklen_t
             ),
-            SockAddr::Unix(UnixAddr(ref addr, len)) => (
+            SockAddr::Unix(UnixAddr { ref sun, path_len }) => (
                 // This cast is always allowed in C
                 unsafe {
-                    &*(addr as *const libc::sockaddr_un as *const libc::sockaddr)
+                    &*(sun as *const libc::sockaddr_un as *const libc::sockaddr)
                 },
-                (len + offset_of!(libc::sockaddr_un, sun_path)) as libc::socklen_t
+                (path_len + offset_of!(libc::sockaddr_un, sun_path)) as libc::socklen_t
             ),
             #[cfg(any(target_os = "android", target_os = "linux"))]
             SockAddr::Netlink(NetlinkAddr(ref sa)) => (
@@ -1376,11 +1438,8 @@ mod tests {
         let name = String::from("nix\0abstract\0test");
         let addr = UnixAddr::new_abstract(name.as_bytes()).unwrap();
 
-        let sun_path1 = addr.sun_path();
-        let sun_path2 = [0u8, 110, 105, 120, 0, 97, 98, 115, 116, 114, 97, 99, 116, 0, 116, 101, 115, 116];
-        assert_eq!(sun_path1.len(), sun_path2.len());
-        for i in 0..sun_path1.len() {
-            assert_eq!(sun_path1[i], sun_path2[i]);
-        }
+        let sun_path1 = unsafe { &(*addr.as_ptr()).sun_path[..addr.path_len()] };
+        let sun_path2 = [0, 110, 105, 120, 0, 97, 98, 115, 116, 114, 97, 99, 116, 0, 116, 101, 115, 116];
+        assert_eq!(sun_path1, sun_path2);
     }
 }
