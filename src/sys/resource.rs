@@ -200,8 +200,8 @@ pub fn getrlimit(resource: Resource) -> Result<(Option<rlim_t>, Option<rlim_t>)>
 /// ```
 /// # use nix::sys::resource::{setrlimit, Resource};
 ///
-/// let soft_limit = Some(1024);
-/// let hard_limit = Some(1048576);
+/// let soft_limit = Some(512);
+/// let hard_limit = Some(1024);
 /// setrlimit(Resource::RLIMIT_NOFILE, soft_limit, hard_limit).unwrap();
 /// ```
 ///
