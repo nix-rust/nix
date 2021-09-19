@@ -43,3 +43,4 @@ mod test_pthread;
 mod test_ptrace;
 #[cfg(any(target_os = "android", target_os = "linux"))]
 mod test_timerfd;
+mod test_mman;

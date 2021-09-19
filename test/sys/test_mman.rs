@@ -10,7 +10,7 @@ fn test_mmap_anonymous() {
     let ref mut byte = unsafe {
         let ptr = mmap(std::ptr::null_mut(), 1,
                        ProtFlags::PROT_READ | ProtFlags::PROT_WRITE,
-                       MapFlags::MAP_PRIVATE | MapFlags::MAP_ANONYMOUS, -1, 0)
+                       MapFlags::MAP_PRIVATE | MapFlags::MAP_ANON, -1, 0)
                       .unwrap();
         *(ptr as * mut u8)
     };
@@ -26,7 +26,7 @@ fn test_mremap_grow() {
     let slice : &mut[u8] = unsafe {
         let mem = mmap(std::ptr::null_mut(), ONE_K,
                        ProtFlags::PROT_READ | ProtFlags::PROT_WRITE,
-                       MapFlags::MAP_ANONYMOUS | MapFlags::MAP_PRIVATE, -1, 0)
+                       MapFlags::MAP_ANON | MapFlags::MAP_PRIVATE, -1, 0)
                       .unwrap();
         std::slice::from_raw_parts_mut(mem as * mut u8, ONE_K)
     };
@@ -62,7 +62,7 @@ fn test_mremap_shrink() {
     let slice : &mut[u8] = unsafe {
         let mem = mmap(std::ptr::null_mut(), 10 * ONE_K,
                        ProtFlags::PROT_READ | ProtFlags::PROT_WRITE,
-                       MapFlags::MAP_ANONYMOUS | MapFlags::MAP_PRIVATE, -1, 0)
+                       MapFlags::MAP_ANON | MapFlags::MAP_PRIVATE, -1, 0)
                       .unwrap();
         std::slice::from_raw_parts_mut(mem as * mut u8, ONE_K)
     };
@@ -79,7 +79,7 @@ fn test_mremap_shrink() {
         // same.
         #[cfg(target_os = "linux")]
         let mem = mremap(slice.as_mut_ptr() as * mut c_void, 10 * ONE_K, ONE_K,
-                         MRemapFlags::MAP_FIXED), None)
+                         MRemapFlags::MAP_FIXED, None)
                       .unwrap();
         assert_eq !(mem, slice.as_mut_ptr() as * mut c_void);
         std::slice::from_raw_parts_mut(mem as * mut u8, ONE_K)
