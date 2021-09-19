@@ -1,6 +1,6 @@
 use nix::Error;
 use nix::libc::{c_void, size_t};
-use nix::sys::mman::{mmap, MapFlags, ProtFlags};
+use nix::sys::mman::{mmap, MapFlags, ProtFlags, mincore, mincore_vec_char_t};
 
 #[cfg(target_os = "linux")]
 use nix::sys::mman::{mremap, MRemapFlags};
@@ -87,4 +87,31 @@ fn test_mremap_shrink() {
 
     // The first KB should still be accessible and have the old data in it.
     assert_eq !(slice[ONE_K - 1], 0xFF);
+}
+
+#[test]
+#[cfg(any(target_os = "linux", target_os = "freebsd", target_os = "macos"))]
+fn test_mincore() {
+    use std::os::unix::io::AsRawFd;
+
+    let page_size = nix::unistd::sysconf(nix::unistd::SysconfVar::PAGE_SIZE)
+        .ok()
+        .flatten()
+        .unwrap() as usize;
+    let file = std::fs::File::open("/etc/hosts").unwrap();
+    let file_meta = file.metadata().unwrap();
+    let file_len = file_meta.len() as usize;
+    let mem = unsafe {
+        mmap(std::ptr::null_mut(),
+             file_meta.len() as usize,
+             ProtFlags::PROT_READ,
+             MapFlags::MAP_PRIVATE, file.as_raw_fd(), 0)
+    }.unwrap();
+
+    let pages = (file_len + page_size + 1) / page_size;
+    let mincore_vec = unsafe {
+        libc::malloc(pages)
+    } as *mut mincore_vec_char_t;
+
+    assert!(mincore(mem, file_len, mincore_vec).is_ok());
 }

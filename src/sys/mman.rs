@@ -324,6 +324,20 @@ pub fn munlockall() -> Result<()> {
     unsafe { Errno::result(libc::munlockall()) }.map(drop)
 }
 
+#[cfg(any(target_os = "linux"))]
+pub type mincore_vec_char_t = std::os::raw::c_uchar;
+#[cfg(any(target_os = "freebsd", target_os = "macos"))]
+pub type mincore_vec_char_t = std::os::raw::c_char;
+
+/// Inspect page residency in memory at the address `addr` continuing for `length` bytes.
+///
+/// # Safety
+///
+/// `addr` and `vec` must meet all the requirements described in the `mincore(2)` man page.
+pub fn mincore(addr: *mut c_void, length: size_t, vec: *mut mincore_vec_char_t) -> Result<()> {
+    unsafe { Errno::result(libc::mincore(addr, length, vec)) }.map(drop)
+}
+
 /// allocate memory, or map files or devices into memory
 ///
 /// # Safety
