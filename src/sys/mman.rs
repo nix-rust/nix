@@ -334,6 +334,7 @@ pub type mincore_vec_char_t = std::os::raw::c_char;
 /// # Safety
 ///
 /// `addr` and `vec` must meet all the requirements described in the `mincore(2)` man page.
+#[cfg(any(target_os = "linux", target_os = "freebsd", target_os = "macos"))]
 pub fn mincore(addr: *mut c_void, length: size_t, vec: *mut mincore_vec_char_t) -> Result<()> {
     unsafe { Errno::result(libc::mincore(addr, length, vec)) }.map(drop)
 }

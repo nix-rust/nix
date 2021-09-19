@@ -71,7 +71,7 @@ fn test_mremap_shrink() {
 
     let slice : &mut[u8] = unsafe {
         #[cfg(target_os = "linux")]
-        let mem = mremap(slice.as_mut_ptr() as * mut c_void, 10 * ONE_K, ONE_K,
+        mremap(slice.as_mut_ptr() as * mut c_void, 10 * ONE_K, ONE_K,
                          MRemapFlags::empty(), None)
                       .unwrap();
         // Since we didn't supply MREMAP_MAYMOVE, the address should be the
