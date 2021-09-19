@@ -1,3 +1,4 @@
+use nix::libc::{c_void, size_t};
 use nix::sys::mman::{mincore, mincore_vec_char_t, mmap, MapFlags, ProtFlags};
 
 #[cfg(target_os = "linux")]
@@ -77,7 +78,7 @@ fn test_mremap_shrink() {
         // same.
         #[cfg(target_os = "linux")]
         let mem = mremap(slice.as_mut_ptr() as * mut c_void, 10 * ONE_K, ONE_K,
-                         MRemapFlags::MAP_FIXED, None)
+                         MRemapFlags::MREMAP_FIXED, None)
                       .unwrap();
         assert_eq !(mem, slice.as_mut_ptr() as * mut c_void);
         std::slice::from_raw_parts_mut(mem as * mut u8, ONE_K)
