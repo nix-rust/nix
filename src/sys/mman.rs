@@ -143,6 +143,9 @@ libc_bitflags!{
         /// Allows to use large pages, underlying alignment based on size.
         #[cfg(target_os = "freesd")]
         MAP_ALIGNED_SUPER;
+        /// Pages will be discarded in the core dumps.
+        #[cfg(target_os = "openbsd")]
+        MAP_CONCEAL;
     }
 }
 

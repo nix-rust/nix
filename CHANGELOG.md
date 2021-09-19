@@ -46,6 +46,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1525](https://github.com/nix-rust/nix/pull/1525))
 - Added `MAP_ALIGNED_SUPER` mmap flag for freebsd.
   (#[1522](https://github.com/nix-rust/nix/pull/1522))
+- Added `MAP_CONCEAL` mmap flag for openbsd.
+  (#[1531](https://github.com/nix-rust/nix/pull/1531))
 
 ### Changed
 
