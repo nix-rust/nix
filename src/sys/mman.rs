@@ -138,6 +138,7 @@ libc_bitflags!{
         /// Pages in this mapping are not retained in the kernel's memory cache.
         #[cfg(any(target_os = "ios", target_os = "macos"))]
         MAP_NOCACHE;
+        /// Allows the W/X bit on the page, it's necessary on aarch64 architecture.
         #[cfg(any(target_os = "ios", target_os = "macos"))]
         MAP_JIT;
         /// Allows to use large pages, underlying alignment based on size.
