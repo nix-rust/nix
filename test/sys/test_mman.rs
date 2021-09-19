@@ -56,9 +56,13 @@ fn test_mremap_grow() {
 }
 
 #[test]
-// calling mremap to shrink could cause segfaults on 32bit architecture likely due to qemu bug
+// calling mremap to shrink could cause segfaults on some 32bit architecture likely due to qemu bug
 // refs: https://bugs.launchpad.net/qemu/+bug/1876373
-#[cfg(all(any(target_os = "linux", target_os = "netbsd")), target_pointer_width = "64")]
+#[cfg(all(any(target_os = "linux", target_os = "netbsd"),
+          not(any(target_arch = "mips",
+                  target_arch = "mipsel",
+                  target_arch = "arm",
+                  target_arch = "armv7"))))]
 fn test_mremap_shrink() {
     use nix::libc::{c_void, size_t};
 
