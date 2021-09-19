@@ -152,7 +152,7 @@ pub fn test_abstract_sun_path_too_long() {
 pub fn test_addr_equality_abstract() {
     let name = String::from("nix\0abstract\0test");
     let addr1 = UnixAddr::new_abstract(name.as_bytes()).unwrap();
-    let mut addr2 = addr1.clone();
+    let mut addr2 = addr1;
 
     assert_eq!(addr1, addr2);
     assert_eq!(calculate_hash(&addr1), calculate_hash(&addr2));
@@ -367,7 +367,6 @@ mod recvfrom {
         target_os = "freebsd",
         target_os = "netbsd",
     ))]
-    #[allow(clippy::vec_init_then_push)]
     #[test]
     pub fn udp_sendmmsg() {
         use nix::sys::uio::IoVec;
@@ -394,14 +393,14 @@ mod recvfrom {
 
         let from = sendrecv(rsock, ssock, move |s, m, flags| {
             let iov = [IoVec::from_slice(m)];
-            let mut msgs = Vec::new();
-            msgs.push(
+            let mut msgs = vec![
                 SendMmsgData {
                     iov: &iov,
                     cmsgs: &[],
                     addr: Some(sock_addr),
                     _lt: Default::default(),
-                });
+                }
+            ];
 
             let batch_size = 15;
 
@@ -640,7 +639,6 @@ pub fn test_scm_rights() {
 #[cfg_attr(qemu, ignore)]
 #[test]
 pub fn test_af_alg_cipher() {
-    use libc;
     use nix::sys::uio::IoVec;
     use nix::unistd::read;
     use nix::sys::socket::{socket, sendmsg, bind, accept, setsockopt,
@@ -837,7 +835,7 @@ pub fn test_sendmsg_ipv4packetinfo() {
     if let InetAddr::V4(sin) = inet_addr {
         cfg_if! {
             if #[cfg(target_os = "netbsd")] {
-                drop(sin);
+                let _dontcare = sin;
                 let pi = libc::in_pktinfo {
                     ipi_ifindex: 0, /* Unspecified interface */
                     ipi_addr: libc::in_addr { s_addr: 0 },
@@ -925,7 +923,6 @@ fn test_scm_rights_single_cmsg_multiple_fds() {
     use nix::sys::socket::{ControlMessage, ControlMessageOwned, MsgFlags,
         sendmsg, recvmsg};
     use nix::sys::uio::IoVec;
-    use libc;
 
     let (send, receive) = UnixDatagram::pair().unwrap();
     let thread = thread::spawn(move || {
@@ -1068,8 +1065,6 @@ fn test_scm_credentials() {
 #[cfg_attr(qemu, ignore)]
 #[test]
 fn test_scm_credentials_and_rights() {
-    use libc;
-
     let space = cmsg_space!(libc::ucred, RawFd);
     test_impl_scm_credentials_and_rights(space);
 }
@@ -1278,7 +1273,6 @@ fn loopback_address(family: AddressFamily) -> Option<nix::ifaddrs::InterfaceAddr
 ), ignore)]
 #[test]
 pub fn test_recv_ipv4pktinfo() {
-    use libc;
     use nix::sys::socket::sockopt::Ipv4PacketInfo;
     use nix::sys::socket::{bind, SockFlag, SockType};
     use nix::sys::socket::{getsockname, setsockopt, socket};
@@ -1331,18 +1325,15 @@ pub fn test_recv_ipv4pktinfo() {
         );
 
         let mut cmsgs = msg.cmsgs();
-        match cmsgs.next() {
-            Some(ControlMessageOwned::Ipv4PacketInfo(pktinfo)) => {
-                let i = if_nametoindex(lo_name.as_bytes()).expect("if_nametoindex");
-                assert_eq!(
-                    pktinfo.ipi_ifindex as libc::c_uint,
-                    i,
-                    "unexpected ifindex (expected {}, got {})",
-                    i,
-                    pktinfo.ipi_ifindex
-                );
-            }
-            _ => (),
+        if let Some(ControlMessageOwned::Ipv4PacketInfo(pktinfo)) = cmsgs.next() {
+            let i = if_nametoindex(lo_name.as_bytes()).expect("if_nametoindex");
+            assert_eq!(
+                pktinfo.ipi_ifindex as libc::c_uint,
+                i,
+                "unexpected ifindex (expected {}, got {})",
+                i,
+                pktinfo.ipi_ifindex
+            );
         }
         assert!(cmsgs.next().is_none(), "unexpected additional control msg");
         assert_eq!(msg.bytes, 8);
@@ -1371,7 +1362,6 @@ pub fn test_recv_ipv4pktinfo() {
 ), ignore)]
 #[test]
 pub fn test_recvif() {
-    use libc;
     use nix::net::if_::*;
     use nix::sys::socket::sockopt::{Ipv4RecvIf, Ipv4RecvDstAddr};
     use nix::sys::socket::{bind, SockFlag, SockType};
@@ -1485,7 +1475,6 @@ pub fn test_recvif() {
 ), ignore)]
 #[test]
 pub fn test_recv_ipv6pktinfo() {
-    use libc;
     use nix::net::if_::*;
     use nix::sys::socket::sockopt::Ipv6RecvPacketInfo;
     use nix::sys::socket::{bind, SockFlag, SockType};
@@ -1562,7 +1551,6 @@ pub fn test_recv_ipv6pktinfo() {
 #[cfg_attr(graviton, ignore = "Not supported by the CI environment")]
 #[test]
 pub fn test_vsock() {
-    use libc;
     use nix::errno::Errno;
     use nix::sys::socket::{AddressFamily, socket, bind, connect, listen,
                            SockAddr, SockType, SockFlag};
@@ -1838,7 +1826,7 @@ mod linux_errqueue {
                     } else {
                         panic!("Expected some error origin");
                     }
-                    return *ext_err
+                    *ext_err
                 } else {
                     panic!("Unexpected control message {:?}", cmsg);
                 }
@@ -1884,7 +1872,7 @@ mod linux_errqueue {
                     } else {
                         panic!("Expected some error origin");
                     }
-                    return *ext_err
+                    *ext_err
                 } else {
                     panic!("Unexpected control message {:?}", cmsg);
                 }

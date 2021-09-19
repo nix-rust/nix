@@ -1,5 +1,5 @@
 use libc::{c_int, c_void};
-use nix::{Error, Result};
+use nix::Result;
 use nix::errno::*;
 use nix::sys::aio::*;
 use nix::sys::signal::{SaFlags, SigAction, sigaction, SigevNotify, SigHandler, Signal, SigSet};
@@ -16,7 +16,7 @@ use tempfile::tempfile;
 fn poll_aio(aiocb: &mut Pin<Box<AioCb>>) -> Result<()> {
     loop {
         let err = aiocb.error();
-        if err != Err(Error::from(Errno::EINPROGRESS)) { return err; };
+        if err != Err(Errno::EINPROGRESS) { return err; };
         thread::sleep(time::Duration::from_millis(10));
     }
 }
@@ -26,7 +26,7 @@ fn poll_aio(aiocb: &mut Pin<Box<AioCb>>) -> Result<()> {
 fn poll_lio(liocb: &mut LioCb, i: usize) -> Result<()> {
     loop {
         let err = liocb.error(i);
-        if err != Err(Error::from(Errno::EINPROGRESS)) { return err; };
+        if err != Err(Errno::EINPROGRESS) { return err; };
         thread::sleep(time::Duration::from_millis(10));
     }
 }
@@ -70,7 +70,7 @@ fn test_cancel() {
                             LioOpcode::LIO_NOP);
     aiocb.write().unwrap();
     let err = aiocb.error();
-    assert!(err == Ok(()) || err == Err(Error::from(Errno::EINPROGRESS)));
+    assert!(err == Ok(()) || err == Err(Errno::EINPROGRESS));
 
     let cancelstat = aiocb.cancel();
     assert!(cancelstat.is_ok());
@@ -95,7 +95,7 @@ fn test_aio_cancel_all() {
                             LioOpcode::LIO_NOP);
     aiocb.write().unwrap();
     let err = aiocb.error();
-    assert!(err == Ok(()) || err == Err(Error::from(Errno::EINPROGRESS)));
+    assert!(err == Ok(()) || err == Err(Errno::EINPROGRESS));
 
     let cancelstat = aio_cancel_all(f.as_raw_fd());
     assert!(cancelstat.is_ok());
@@ -182,8 +182,8 @@ fn test_aio_suspend() {
                 Ok(_) => ()
             };
         }
-        if rcb.error() != Err(Error::from(Errno::EINPROGRESS)) &&
-           wcb.error() != Err(Error::from(Errno::EINPROGRESS)) {
+        if rcb.error() != Err(Errno::EINPROGRESS) &&
+           wcb.error() != Err(Errno::EINPROGRESS) {
             break
         }
     }

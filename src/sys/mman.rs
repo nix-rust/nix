@@ -1,4 +1,4 @@
-use crate::{Error, Result};
+use crate::Result;
 #[cfg(not(target_os = "android"))]
 use crate::NixPath;
 use crate::errno::Errno;
@@ -333,7 +333,7 @@ pub unsafe fn mmap(addr: *mut c_void, length: size_t, prot: ProtFlags, flags: Ma
     let ret = libc::mmap(addr, length, prot.bits(), flags.bits(), fd, offset);
 
     if ret == libc::MAP_FAILED {
-        Err(Error::from(Errno::last()))
+        Err(Errno::last())
     } else {
         Ok(ret)
     }
@@ -366,7 +366,7 @@ pub unsafe fn mremap(
         );
 
     if ret == libc::MAP_FAILED {
-        Err(Error::from(Errno::last()))
+        Err(Errno::last())
     } else {
         Ok(ret)
     }

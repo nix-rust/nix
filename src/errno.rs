@@ -72,8 +72,9 @@ impl Errno {
         since = "0.22.0",
         note = "It's a no-op now; just delete it."
     )]
+    #[allow(clippy::wrong_self_convention)] // False positive
     pub fn from_errno(errno: Errno) -> Error {
-        Error::from(errno)
+        errno
     }
 
     /// Create a new invalid argument error (`EINVAL`)

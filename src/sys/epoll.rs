@@ -1,4 +1,4 @@
-use crate::{Error, Result};
+use crate::Result;
 use crate::errno::Errno;
 use libc::{self, c_int};
 use std::os::unix::io::RawFd;
@@ -86,7 +86,7 @@ pub fn epoll_ctl<'a, T>(epfd: RawFd, op: EpollOp, fd: RawFd, event: T) -> Result
 {
     let mut event: Option<&mut EpollEvent> = event.into();
     if event.is_none() && op != EpollOp::EpollCtlDel {
-        Err(Error::from(Errno::EINVAL))
+        Err(Errno::EINVAL)
     } else {
         let res = unsafe {
             if let Some(ref mut event) = event {

@@ -180,10 +180,7 @@ impl ForkResult {
     /// Return `true` if this is the child process of the `fork()`
     #[inline]
     pub fn is_child(self) -> bool {
-        match self {
-            ForkResult::Child => true,
-            _ => false
-        }
+        matches!(self, ForkResult::Child)
     }
 
     /// Returns `true` if this is the parent process of the `fork()`
@@ -398,7 +395,7 @@ pub fn dup3(oldfd: RawFd, newfd: RawFd, flags: OFlag) -> Result<RawFd> {
 #[inline]
 fn dup3_polyfill(oldfd: RawFd, newfd: RawFd, flags: OFlag) -> Result<RawFd> {
     if oldfd == newfd {
-        return Err(Error::from(Errno::EINVAL));
+        return Err(Errno::EINVAL);
     }
 
     let fd = dup2(oldfd, newfd)?;
@@ -572,7 +569,7 @@ fn reserve_double_buffer_size<T>(buf: &mut Vec<T>, limit: usize) -> Result<()> {
     use std::cmp::min;
 
     if buf.capacity() >= limit {
-        return Err(Error::from(Errno::ERANGE))
+        return Err(Errno::ERANGE)
     }
 
     let capacity = min(buf.capacity() * 2, limit);
@@ -615,9 +612,9 @@ pub fn getcwd() -> Result<PathBuf> {
                 let error = Errno::last();
                 // ERANGE means buffer was too small to store directory name
                 if error != Errno::ERANGE {
-                    return Err(Error::from(error));
+                    return Err(error);
                 }
-            }
+           }
 
             // Trigger the internal buffer resizing logic.
             reserve_double_buffer_size(&mut buf, PATH_MAX as usize)?;
@@ -739,7 +736,7 @@ pub fn execv<S: AsRef<CStr>>(path: &CStr, argv: &[S]) -> Result<Infallible> {
         libc::execv(path.as_ptr(), args_p.as_ptr())
     };
 
-    Err(Error::from(Errno::last()))
+    Err(Errno::last())
 }
 
 
@@ -764,7 +761,7 @@ pub fn execve<SA: AsRef<CStr>, SE: AsRef<CStr>>(path: &CStr, args: &[SA], env: &
         libc::execve(path.as_ptr(), args_p.as_ptr(), env_p.as_ptr())
     };
 
-    Err(Error::from(Errno::last()))
+    Err(Errno::last())
 }
 
 /// Replace the current process image with a new one and replicate shell `PATH`
@@ -784,7 +781,7 @@ pub fn execvp<S: AsRef<CStr>>(filename: &CStr, args: &[S]) -> Result<Infallible>
         libc::execvp(filename.as_ptr(), args_p.as_ptr())
     };
 
-    Err(Error::from(Errno::last()))
+    Err(Errno::last())
 }
 
 /// Replace the current process image with a new one and replicate shell `PATH`
@@ -805,7 +802,7 @@ pub fn execvpe<SA: AsRef<CStr>, SE: AsRef<CStr>>(filename: &CStr, args: &[SA], e
         libc::execvpe(filename.as_ptr(), args_p.as_ptr(), env_p.as_ptr())
     };
 
-    Err(Error::from(Errno::last()))
+    Err(Errno::last())
 }
 
 /// Replace the current process image with a new one (see
@@ -833,7 +830,7 @@ pub fn fexecve<SA: AsRef<CStr> ,SE: AsRef<CStr>>(fd: RawFd, args: &[SA], env: &[
         libc::fexecve(fd, args_p.as_ptr(), env_p.as_ptr())
     };
 
-    Err(Error::from(Errno::last()))
+    Err(Errno::last())
 }
 
 /// Execute program relative to a directory file descriptor (see
@@ -858,7 +855,7 @@ pub fn execveat<SA: AsRef<CStr>,SE: AsRef<CStr>>(dirfd: RawFd, pathname: &CStr, 
                       args_p.as_ptr(), env_p.as_ptr(), flags);
     };
 
-    Err(Error::from(Errno::last()))
+    Err(Errno::last())
 }
 
 /// Daemonize this process by detaching from the controlling terminal (see
@@ -1138,9 +1135,9 @@ pub fn isatty(fd: RawFd) -> Result<bool> {
         } else {
             match Errno::last() {
                 Errno::ENOTTY => Ok(false),
-                err => Err(Error::from(err)),
+                err => Err(err),
             }
-        }
+       }
     }
 }
 
@@ -1449,7 +1446,7 @@ pub fn getgroups() -> Result<Vec<Gid>> {
                 // EINVAL indicates that the buffer size was too
                 // small, resize it up to ngroups_max as limit.
                 reserve_double_buffer_size(&mut groups, ngroups_max)
-                    .or(Err(Error::from(Errno::EINVAL)))?;
+                    .or(Err(Errno::EINVAL))?;
             },
             Err(e) => return Err(e)
         }
@@ -1571,7 +1568,7 @@ pub fn getgrouplist(user: &CStr, group: Gid) -> Result<Vec<Gid>> {
             // groups as possible, but Linux manpages do not mention this
             // behavior.
             reserve_double_buffer_size(&mut groups, ngroups_max as usize)
-                .map_err(|_| Error::from(Errno::EINVAL))?;
+                .map_err(|_| Errno::EINVAL)?;
         }
     }
 }
@@ -1930,7 +1927,7 @@ pub fn fpathconf(fd: RawFd, var: PathconfVar) -> Result<Option<c_long>> {
         if errno::errno() == 0 {
             Ok(None)
         } else {
-            Err(Error::from(Errno::last()))
+            Err(Errno::last())
         }
     } else {
         Ok(Some(raw))
@@ -1969,7 +1966,7 @@ pub fn pathconf<P: ?Sized + NixPath>(path: &P, var: PathconfVar) -> Result<Optio
         if errno::errno() == 0 {
             Ok(None)
         } else {
-            Err(Error::from(Errno::last()))
+            Err(Errno::last())
         }
     } else {
         Ok(Some(raw))
@@ -2469,7 +2466,7 @@ pub fn sysconf(var: SysconfVar) -> Result<Option<c_long>> {
         if errno::errno() == 0 {
             Ok(None)
         } else {
-            Err(Error::from(Errno::last()))
+            Err(Errno::last())
         }
     } else {
         Ok(Some(raw))
@@ -2788,7 +2785,7 @@ impl User {
                 // Trigger the internal buffer resizing logic.
                 reserve_double_buffer_size(&mut cbuf, buflimit)?;
             } else {
-                return Err(Error::from(Errno::last()));
+                return Err(Errno::last());
             }
         }
     }
@@ -2909,7 +2906,7 @@ impl Group {
                 // Trigger the internal buffer resizing logic.
                 reserve_double_buffer_size(&mut cbuf, buflimit)?;
             } else {
-                return Err(Error::from(Errno::last()));
+                return Err(Errno::last());
             }
         }
     }
@@ -2968,7 +2965,7 @@ pub fn ttyname(fd: RawFd) -> Result<PathBuf> {
 
     let ret = unsafe { libc::ttyname_r(fd, c_buf, buf.len()) };
     if ret != 0 {
-        return Err(Error::from(Errno::from_i32(ret)));
+        return Err(Errno::from_i32(ret));
     }
 
     let nul = buf.iter().position(|c| *c == b'\0').unwrap();

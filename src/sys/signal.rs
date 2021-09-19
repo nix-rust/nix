@@ -156,7 +156,7 @@ impl FromStr for Signal {
                           target_os = "fuchsia", target_os = "linux",
                           target_os = "redox")))]
             "SIGINFO" => Signal::SIGINFO,
-            _ => return Err(Error::from(Errno::EINVAL)),
+            _ => return Err(Errno::EINVAL),
         })
     }
 }
@@ -779,7 +779,7 @@ pub unsafe fn signal(signal: Signal, handler: SigHandler) -> Result<SigHandler> 
         SigHandler::SigIgn => libc::signal(signal, libc::SIG_IGN),
         SigHandler::Handler(handler) => libc::signal(signal, handler as libc::sighandler_t),
         #[cfg(not(target_os = "redox"))]
-        SigHandler::SigAction(_) => return Err(Error::from(Errno::ENOTSUP)),
+        SigHandler::SigAction(_) => return Err(Errno::ENOTSUP),
     };
     Errno::result(res).map(|oldhandler| {
         match oldhandler {
@@ -1091,7 +1091,7 @@ mod tests {
 
     #[test]
     fn test_from_str_invalid_value() {
-        let errval = Err(Error::from(Errno::EINVAL));
+        let errval = Err(Errno::EINVAL);
         assert_eq!("NOSIGNAL".parse::<Signal>(), errval);
         assert_eq!("kill".parse::<Signal>(), errval);
         assert_eq!("9".parse::<Signal>(), errval);

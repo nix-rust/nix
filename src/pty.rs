@@ -10,7 +10,7 @@ use std::os::unix::prelude::*;
 
 use crate::sys::termios::Termios;
 use crate::unistd::{self, ForkResult, Pid};
-use crate::{Result, Error, fcntl};
+use crate::{Result, fcntl};
 use crate::errno::Errno;
 
 /// Representation of a master/slave pty pair
@@ -99,7 +99,7 @@ impl io::Write for PtyMaster {
 #[inline]
 pub fn grantpt(fd: &PtyMaster) -> Result<()> {
     if unsafe { libc::grantpt(fd.as_raw_fd()) } < 0 {
-        return Err(Error::from(Errno::last()));
+        return Err(Errno::last());
     }
 
     Ok(())
@@ -145,7 +145,7 @@ pub fn posix_openpt(flags: fcntl::OFlag) -> Result<PtyMaster> {
     };
 
     if fd < 0 {
-        return Err(Error::from(Errno::last()));
+        return Err(Errno::last());
     }
 
     Ok(PtyMaster(fd))
@@ -171,7 +171,7 @@ pub fn posix_openpt(flags: fcntl::OFlag) -> Result<PtyMaster> {
 pub unsafe fn ptsname(fd: &PtyMaster) -> Result<String> {
     let name_ptr = libc::ptsname(fd.as_raw_fd());
     if name_ptr.is_null() {
-        return Err(Error::from(Errno::last()));
+        return Err(Errno::last());
     }
 
     let name = CStr::from_ptr(name_ptr);
@@ -195,7 +195,7 @@ pub fn ptsname_r(fd: &PtyMaster) -> Result<String> {
     let cname = unsafe {
         let cap = name_buf.capacity();
         if libc::ptsname_r(fd.as_raw_fd(), name_buf_ptr, cap) != 0 {
-            return Err(Error::last());
+            return Err(crate::Error::last());
         }
         CStr::from_ptr(name_buf.as_ptr())
     };
@@ -213,7 +213,7 @@ pub fn ptsname_r(fd: &PtyMaster) -> Result<String> {
 #[inline]
 pub fn unlockpt(fd: &PtyMaster) -> Result<()> {
     if unsafe { libc::unlockpt(fd.as_raw_fd()) } < 0 {
-        return Err(Error::from(Errno::last()));
+        return Err(Errno::last());
     }
 
     Ok(())

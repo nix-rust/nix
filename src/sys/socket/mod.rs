@@ -2,7 +2,7 @@
 //!
 //! [Further reading](https://man7.org/linux/man-pages/man7/socket.7.html)
 use cfg_if::cfg_if;
-use crate::{Error, Result, errno::Errno};
+use crate::{Result, errno::Errno};
 use libc::{self, c_void, c_int, iovec, socklen_t, size_t,
         CMSG_FIRSTHDR, CMSG_NXTHDR, CMSG_DATA, CMSG_LEN};
 use memoffset::offset_of;
@@ -311,9 +311,9 @@ cfg_if! {
             }
         }
 
-        impl Into<libc::ucred> for UnixCredentials {
-            fn into(self) -> libc::ucred {
-                self.0
+        impl From<UnixCredentials> for libc::ucred {
+            fn from(uc: UnixCredentials) -> Self {
+                uc.0
             }
         }
     } else if #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))] {
@@ -1300,6 +1300,7 @@ pub struct RecvMmsgData<'a, I>
     target_os = "freebsd",
     target_os = "netbsd",
 ))]
+#[allow(clippy::needless_collect)]  // Complicated false positive
 pub fn recvmmsg<'a, I>(
     fd: RawFd,
     data: impl std::iter::IntoIterator<Item=&'a mut RecvMmsgData<'a, I>,
@@ -1813,7 +1814,7 @@ pub fn sockaddr_storage_to_addr(
 
     assert!(len <= mem::size_of::<sockaddr_storage>());
     if len < mem::size_of_val(&addr.ss_family) {
-        return Err(Error::from(Errno::ENOTCONN));
+        return Err(Errno::ENOTCONN);
     }
 
     match c_int::from(addr.ss_family) {

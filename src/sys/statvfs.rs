@@ -150,7 +150,7 @@ mod test {
 
     #[test]
     fn statvfs_call() {
-        statvfs("/".as_bytes()).unwrap();
+        statvfs(&b"/"[..]).unwrap();
     }
 
     #[test]
