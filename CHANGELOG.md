@@ -89,6 +89,9 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Fixed potential undefined behavior in `Signal::try_from` on some platforms.
   (#[1484](https://github.com/nix-rust/nix/pull/1484))
 
+- Fixed mman tests to be runnable.
+  (#[1535](https://github.com/nix-rust/nix/pull/1535))
+
 ### Removed
 
 - Removed a couple of termios constants on redox that were never actually
