@@ -74,15 +74,15 @@ fn test_mremap_shrink() {
 
     let slice : &mut[u8] = unsafe {
         #[cfg(target_os = "linux")]
-        mremap(slice.as_mut_ptr() as * mut c_void, 10 * ONE_K, ONE_K,
+        let mem = mremap(slice.as_mut_ptr() as * mut c_void, 10 * ONE_K, ONE_K,
                          MRemapFlags::empty(), None)
+                      .unwrap();
+        #[cfg(target_os = "netbsd")]
+        let mem = mremap(slice.as_mut_ptr() as * mut c_void, 10 * ONE_K, ONE_K,
+                         MRemapFlags::MAP_FIXED, None)
                       .unwrap();
         // Since we didn't supply MREMAP_MAYMOVE, the address should be the
         // same.
-        #[cfg(target_os = "linux")]
-        let mem = mremap(slice.as_mut_ptr() as * mut c_void, 10 * ONE_K, ONE_K,
-                         MRemapFlags::MREMAP_FIXED | MRemapFlags::MREMAP_MAYMOVE, None)
-                      .unwrap();
         assert_eq !(mem, slice.as_mut_ptr() as * mut c_void);
         std::slice::from_raw_parts_mut(mem as * mut u8, ONE_K)
     };
@@ -91,30 +91,30 @@ fn test_mremap_shrink() {
     assert_eq !(slice[ONE_K - 1], 0xFF);
 }
 
-#[test]
-#[cfg(any(target_os = "linux", target_os = "freebsd", target_os = "macos"))]
-fn test_mincore() {
-    use std::os::unix::io::AsRawFd;
-    use nix::sys::mman::{mincore, mincore_vec_char_t};
-
-    let page_size = nix::unistd::sysconf(nix::unistd::SysconfVar::PAGE_SIZE)
-        .ok()
-        .flatten()
-        .unwrap() as usize;
-    let file = std::fs::File::open("/etc/hosts").unwrap();
-    let file_meta = file.metadata().unwrap();
-    let file_len = file_meta.len() as usize;
-    let mem = unsafe {
-        mmap(std::ptr::null_mut(),
-             file_meta.len() as usize,
-             ProtFlags::PROT_READ,
-             MapFlags::MAP_PRIVATE, file.as_raw_fd(), 0)
-    }.unwrap();
-
-    let pages = (file_len + page_size + 1) / page_size;
-    let mincore_vec = unsafe {
-        libc::malloc(pages)
-    } as *mut mincore_vec_char_t;
-
-    assert!(mincore(mem, file_len, mincore_vec).is_ok());
-}
+// #[test]
+// #[cfg(any(target_os = "linux", target_os = "freebsd", target_os = "macos"))]
+// fn test_mincore() {
+//     use std::os::unix::io::AsRawFd;
+//     use nix::sys::mman::{mincore, mincore_vec_char_t};
+//
+//     let page_size = nix::unistd::sysconf(nix::unistd::SysconfVar::PAGE_SIZE)
+//         .ok()
+//         .flatten()
+//         .unwrap() as usize;
+//     let file = std::fs::File::open("/etc/hosts").unwrap();
+//     let file_meta = file.metadata().unwrap();
+//     let file_len = file_meta.len() as usize;
+//     let mem = unsafe {
+//         mmap(std::ptr::null_mut(),
+//              file_meta.len() as usize,
+//              ProtFlags::PROT_READ,
+//              MapFlags::MAP_PRIVATE, file.as_raw_fd(), 0)
+//     }.unwrap();
+//
+//     let pages = (file_len + page_size + 1) / page_size;
+//     let mincore_vec = unsafe {
+//         libc::malloc(pages)
+//     } as *mut mincore_vec_char_t;
+//
+//     assert!(mincore(mem, file_len, mincore_vec).is_ok());
+// }
