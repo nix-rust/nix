@@ -1,5 +1,4 @@
-use nix::libc::{c_void, size_t};
-use nix::sys::mman::{mincore, mincore_vec_char_t, mmap, MapFlags, ProtFlags};
+use nix::sys::mman::{mmap, MapFlags, ProtFlags};
 
 #[cfg(target_os = "linux")]
 use nix::sys::mman::{mremap, MRemapFlags};
@@ -21,6 +20,8 @@ fn test_mmap_anonymous() {
 #[test]
 #[cfg(any(target_os = "linux", target_os = "netbsd"))]
 fn test_mremap_grow() {
+    use nix::libc::{c_void, size_t};
+
     const ONE_K : size_t = 1024;
     let slice : &mut[u8] = unsafe {
         let mem = mmap(std::ptr::null_mut(), ONE_K,
@@ -57,6 +58,8 @@ fn test_mremap_grow() {
 #[test]
 #[cfg(any(target_os = "linux", target_os = "netbsd"))]
 fn test_mremap_shrink() {
+    use nix::libc::{c_void, size_t};
+
     const ONE_K : size_t = 1024;
     let slice : &mut[u8] = unsafe {
         let mem = mmap(std::ptr::null_mut(), 10 * ONE_K,
@@ -92,6 +95,7 @@ fn test_mremap_shrink() {
 #[cfg(any(target_os = "linux", target_os = "freebsd", target_os = "macos"))]
 fn test_mincore() {
     use std::os::unix::io::AsRawFd;
+    use nix::sys::mman::{mincore, mincore_vec_char_t};
 
     let page_size = nix::unistd::sysconf(nix::unistd::SysconfVar::PAGE_SIZE)
         .ok()
