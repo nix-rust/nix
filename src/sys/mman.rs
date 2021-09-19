@@ -140,6 +140,9 @@ libc_bitflags!{
         MAP_NOCACHE;
         #[cfg(any(target_os = "ios", target_os = "macos"))]
         MAP_JIT;
+        /// Allows to use large pages, underlying alignment based on size.
+        #[cfg(target_os = "freesd")]
+        MAP_ALIGNED_SUPER;
     }
 }
 
