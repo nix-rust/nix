@@ -50,6 +50,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1531](https://github.com/nix-rust/nix/pull/1531))
 - Added `MAP_ANONYMOUS` for all operating systems.
   (#[1534](https://github.com/nix-rust/nix/pull/1534))
+- Added read/write accessors for 'events' on `PollFd`.
+  (#[1517](https://github.com/nix-rust/nix/pull/1517))
 
 ### Changed
 

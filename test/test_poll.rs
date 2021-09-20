@@ -72,3 +72,11 @@ fn test_pollfd_fd() {
     let pfd = PollFd::new(0x1234, PollFlags::empty());
     assert_eq!(pfd.as_raw_fd(), 0x1234);
 }
+
+#[test]
+fn test_pollfd_events() {
+    let mut pfd = PollFd::new(-1, PollFlags::POLLIN);
+    assert_eq!(pfd.events(), PollFlags::POLLIN);
+    pfd.set_events(PollFlags::POLLOUT);
+    assert_eq!(pfd.events(), PollFlags::POLLOUT);
+}
