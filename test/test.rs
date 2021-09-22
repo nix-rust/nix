@@ -29,6 +29,7 @@ mod test_poll;
 #[cfg(not(any(target_os = "redox", target_os = "fuchsia")))]
 mod test_pty;
 #[cfg(any(target_os = "android",
+          target_os = "dragonfly",
           target_os = "linux"))]
 mod test_sched;
 #[cfg(any(target_os = "android",

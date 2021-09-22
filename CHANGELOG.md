@@ -15,6 +15,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1567](https://github.com/nix-rust/nix/pull/1567))
 - Added `fdatasync` for FreeBSD, Fuchsia, NetBSD, and OpenBSD.
   (#[1581](https://github.com/nix-rust/nix/pull/1581))
+- Added `sched_setaffinity` and `sched_getaffinity` on DragonFly.
+  (#[1537](https://github.com/nix-rust/nix/pull/1537))
 
 ### Changed
 ### Fixed
