@@ -67,7 +67,7 @@ impl InterfaceAddress {
                 libc::AF_NETLINK => mem::size_of::<libc::sockaddr_nl>(),
                 _ => return None,
             };
-            unsafe { SockAddr::from_raw_sockaddr(sa, len) }.ok()
+            unsafe { SockAddr::from_raw_sockaddr(sa, len as libc::socklen_t) }.ok()
         };
         let address = get_sockaddr(info.ifa_addr);
         let netmask = get_sockaddr(info.ifa_netmask);

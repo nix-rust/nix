@@ -1392,7 +1392,7 @@ unsafe fn read_mhdr<'a, 'b>(
         }.as_ref()
     };
 
-    let address = SockAddr::from_raw_sockaddr(address, mhdr.msg_namelen as usize).ok();
+    let address = SockAddr::from_raw_sockaddr(address, mhdr.msg_namelen).ok();
 
     RecvMsg {
         bytes: r as usize,
@@ -1675,7 +1675,7 @@ pub fn recvfrom(sockfd: RawFd, buf: &mut [u8])
             addr.as_mut_ptr() as *mut libc::sockaddr,
             &mut len as *mut socklen_t))? as usize;
 
-        match SockAddr::from_raw_sockaddr(addr.as_ptr() as _, len as usize) {
+        match SockAddr::from_raw_sockaddr(addr.as_ptr() as _, len) {
             Err(Errno::ENOTCONN) => Ok((ret, None)),
             Ok(addr) => Ok((ret, Some(addr))),
             Err(e) => Err(e)
@@ -1772,7 +1772,7 @@ pub fn getpeername(fd: RawFd) -> Result<SockAddr> {
 
         Errno::result(ret)?;
 
-        SockAddr::from_raw_sockaddr(addr.as_ptr() as _, len as usize)
+        SockAddr::from_raw_sockaddr(addr.as_ptr() as _, len)
     }
 }
 
@@ -1792,7 +1792,7 @@ pub fn getsockname(fd: RawFd) -> Result<SockAddr> {
 
         Errno::result(ret)?;
 
-        SockAddr::from_raw_sockaddr(addr.as_ptr() as _, len as usize)
+        SockAddr::from_raw_sockaddr(addr.as_ptr() as _, len)
     }
 }
 
@@ -1812,7 +1812,7 @@ pub fn getsockname(fd: RawFd) -> Result<SockAddr> {
 pub fn sockaddr_storage_to_addr(
     addr: &sockaddr_storage,
     len: usize) -> Result<SockAddr> {
-    unsafe { SockAddr::from_raw_sockaddr(addr as *const sockaddr_storage as *const sockaddr, len) }
+    unsafe { SockAddr::from_raw_sockaddr(addr as *const sockaddr_storage as *const sockaddr, len as _) }
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]

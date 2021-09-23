@@ -820,7 +820,7 @@ impl SockAddr {
     /// let mut addr = mem::MaybeUninit::<sockaddr_storage>::uninit();
     /// let mut addrlen = mem::size_of::<sockaddr_storage>() as socklen_t;
     /// unsafe { get_me_an_address(addr.as_mut_ptr() as *mut sockaddr, &mut addrlen) };
-    /// let addr: SockAddr = unsafe { SockAddr::from_raw_sockaddr(addr.as_ptr() as *const sockaddr, addrlen as usize)? };
+    /// let addr: SockAddr = unsafe { SockAddr::from_raw_sockaddr(addr.as_ptr() as *const sockaddr, addrlen)? };
     /// # let _ = addr;
     /// # Ok(()) }
     /// ```
@@ -828,7 +828,8 @@ impl SockAddr {
     /// # Safety
     /// `addr` must be a valid, non-null pointer, and `len` should describe the
     /// number of bytes within `*addr` that are initialized and represent data.
-    pub(crate) unsafe fn from_raw_sockaddr(addr: *const libc::sockaddr, len: usize) -> Result<SockAddr> {
+    pub(crate) unsafe fn from_raw_sockaddr(addr: *const libc::sockaddr, len: libc::socklen_t) -> Result<SockAddr> {
+        let len = len as usize;
         let af = (*addr).sa_family;
         if len < mem::size_of_val(&af) {
             return Err(Errno::ENOTCONN);
@@ -838,13 +839,13 @@ impl SockAddr {
         match af {
             AddressFamily::Inet => {
                 use libc::sockaddr_in;
-                assert!(len as usize >= mem::size_of::<sockaddr_in>());
+                assert!(len >= mem::size_of::<sockaddr_in>());
                 let sin = *(addr as *const sockaddr_in);
                 Ok(SockAddr::Inet(InetAddr::V4(sin)))
             }
             AddressFamily::Inet6 => {
                 use libc::sockaddr_in6;
-                assert!(len as usize >= mem::size_of::<sockaddr_in6>());
+                assert!(len >= mem::size_of::<sockaddr_in6>());
                 let sin6 = *(addr as *const sockaddr_in6);
                 Ok(SockAddr::Inet(InetAddr::V6(sin6)))
             }
@@ -1434,7 +1435,7 @@ mod tests {
     fn test_macos_loopback_datalink_addr() {
         let bytes = [20i8, 18, 1, 0, 24, 3, 0, 0, 108, 111, 48, 0, 0, 0, 0, 0];
         let sa = bytes.as_ptr() as *const libc::sockaddr;
-        let sock_addr = unsafe { SockAddr::from_raw_sockaddr(sa, bytes.len()).unwrap() };
+        let sock_addr = unsafe { SockAddr::from_raw_sockaddr(sa, bytes.len() as _).unwrap() };
         if let SockAddr::Link(link_addr) = sock_addr {
             assert!(link_addr.is_empty())
         } else {
@@ -1453,7 +1454,7 @@ mod tests {
         let bytes = [20i8, 18, 7, 0, 6, 3, 6, 0, 101, 110, 48, 24, 101, -112, -35, 76, -80];
         let ptr = bytes.as_ptr();
         let sa = ptr as *const libc::sockaddr;
-        let sock_addr = unsafe { SockAddr::from_raw_sockaddr(sa, bytes.len()).unwrap() };
+        let sock_addr = unsafe { SockAddr::from_raw_sockaddr(sa, bytes.len() as _).unwrap() };
 
         assert_eq!(sock_addr.family(), AddressFamily::Link);
 
@@ -1471,7 +1472,7 @@ mod tests {
         let bytes = [25u8, 0, 0, 0, 6, 0, 6, 0, 24, 101, 144, 221, 76, 176];
         let ptr = bytes.as_ptr();
         let sa = ptr as *const libc::sockaddr;
-        let sock_addr = unsafe { SockAddr::from_raw_sockaddr(sa, bytes.len()).unwrap() };
+        let sock_addr = unsafe { SockAddr::from_raw_sockaddr(sa, bytes.len() as _).unwrap() };
 
         assert_eq!(sock_addr.family(), AddressFamily::Link);
 

@@ -51,9 +51,9 @@ pub fn test_inetv4_addr_roundtrip_sockaddr_from_raw() {
         }
     };
 
-    let from_storage = unsafe { SockAddr::from_raw_sockaddr(storage.as_ptr() as _, ffi_size as usize).unwrap() };
+    let from_storage = unsafe { SockAddr::from_raw_sockaddr(storage.as_ptr() as _, ffi_size).unwrap() };
     assert_eq!(from_storage, sockaddr);
-    let from_storage = unsafe { SockAddr::from_raw_sockaddr(storage.as_ptr() as _, mem::size_of::<sockaddr_storage>()).unwrap() };
+    let from_storage = unsafe { SockAddr::from_raw_sockaddr(storage.as_ptr() as _, mem::size_of::<sockaddr_storage>() as _).unwrap() };
     assert_eq!(from_storage, sockaddr);
 }
 
@@ -100,9 +100,9 @@ pub fn test_inetv6_addr_roundtrip_sockaddr_from_raw() {
         }
     };
 
-    let from_storage = unsafe { SockAddr::from_raw_sockaddr(storage.as_ptr() as _, ffi_size as usize).unwrap() };
+    let from_storage = unsafe { SockAddr::from_raw_sockaddr(storage.as_ptr() as _, ffi_size).unwrap() };
     assert_eq!(from_storage, sockaddr);
-    let from_storage = unsafe { SockAddr::from_raw_sockaddr(storage.as_ptr() as _, mem::size_of::<sockaddr_storage>()).unwrap() };
+    let from_storage = unsafe { SockAddr::from_raw_sockaddr(storage.as_ptr() as _, mem::size_of::<sockaddr_storage>() as _).unwrap() };
     assert_eq!(from_storage, sockaddr);
 }
 
