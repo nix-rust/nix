@@ -1796,6 +1796,25 @@ pub fn getsockname(fd: RawFd) -> Result<SockAddr> {
     }
 }
 
+
+/// Return the appropriate `SockAddr` type from a `sockaddr_storage` of a
+/// certain size.
+///
+/// **This function is deprecated, as its use is likely to be unsound. It has been
+/// replaced by [`SockAddr::from_raw_sockaddr()`].**
+///
+/// In C this would usually be done by casting.  The `len` argument
+/// should be the number of bytes in the `sockaddr_storage` that are actually
+/// allocated and valid.  It must be at least as large as all the useful parts
+/// of the structure.  Note that in the case of a `sockaddr_un`, `len` need not
+/// include the terminating null.
+#[deprecated(since = "0.23.0", note = "Usage of this is likely to be unsound, use SockAddr::from_raw_sockaddr instead")]
+pub fn sockaddr_storage_to_addr(
+    addr: &sockaddr_storage,
+    len: usize) -> Result<SockAddr> {
+    unsafe { SockAddr::from_raw_sockaddr(addr as *const sockaddr_storage as *const sockaddr, len) }
+}
+
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum Shutdown {
     /// Further receptions will be disallowed.
