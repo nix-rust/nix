@@ -808,6 +808,23 @@ impl SockAddr {
     /// of the structure.  Note that in the case of a `sockaddr_un`, `len` need not
     /// include the terminating null.
     ///
+    /// # Example
+    /// ```no_run
+    /// # fn main() -> nix::Result<()> {
+    /// # use nix::sys::socket::SockAddr;
+    /// use libc::{sockaddr, sockaddr_storage, socklen_t};
+    /// extern "C" {
+    ///     fn get_me_an_address(addr: *mut sockaddr, addrlen: *mut socklen_t);
+    /// }
+    /// use std::mem;
+    /// let mut addr = mem::MaybeUninit::<sockaddr_storage>::uninit();
+    /// let mut addrlen = mem::size_of::<sockaddr_storage>() as socklen_t;
+    /// unsafe { get_me_an_address(addr.as_mut_ptr() as *mut sockaddr, &mut addrlen) };
+    /// let addr: SockAddr = unsafe { SockAddr::from_raw_sockaddr(addr.as_ptr() as *const sockaddr, addrlen as usize)? };
+    /// # let _ = addr;
+    /// # Ok(()) }
+    /// ```
+    ///
     /// # Safety
     /// `addr` must be a valid, non-null pointer, and `len` should describe the
     /// number of bytes within `*addr` that are initialized and represent data.
