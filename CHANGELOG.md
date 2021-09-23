@@ -83,11 +83,15 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- `posix_fadvise` now returns errors in the conventional way, rather than as a
+  non-zero value in `Ok()`.
+  (#[1538](https://github.com/nix-rust/nix/pull/1538))
 - Added more errno definitions for better backwards compatibility with
   Nix 0.21.0.
   (#[1467](https://github.com/nix-rust/nix/pull/1467))
 - Fixed potential undefined behavior in `Signal::try_from` on some platforms.
   (#[1484](https://github.com/nix-rust/nix/pull/1484))
+
 
 ### Removed
 
