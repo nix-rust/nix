@@ -85,6 +85,10 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Raised bitflags to 1.3.0 and the MSRV to 1.46.0.
   ([#1492](https://github.com/nix-rust/nix/pull/1492))
 
+- Changed `SockAddr::as_ffi_pair` to return a raw pointer to the `sockaddr`
+  instead of a reference.
+  (#[1504](https://github.com/nix-rust/nix/pull/1504))
+
 ### Fixed
 
 - `posix_fadvise` now returns errors in the conventional way, rather than as a
