@@ -51,6 +51,10 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Added read/write accessors for 'events' on `PollFd`.
   (#[1517](https://github.com/nix-rust/nix/pull/1517))
 
+- Deprecated `nix::sys::socket::sockaddr_storage_to_addr` in favor of the new
+  `SockAddr::from_raw_sockaddr`.
+  (#[1504](https://github.com/nix-rust/nix/pull/1504))
+
 ### Changed
 
 - `FdSet::{contains, highest, fds}` no longer require a mutable reference.
