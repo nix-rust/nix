@@ -7,6 +7,8 @@ use crate::Result;
 #[cfg(not(target_os = "redox"))]
 use crate::sys::signal::Signal;
 use libc::{self, pthread_t};
+#[cfg(all(target_os = "linux", not(target_env = "musl")))]
+use std::ffi::{CStr, CString};
 
 /// Identifies an individual thread.
 pub type Pthread = pthread_t;
@@ -35,4 +37,23 @@ pub fn pthread_kill<T: Into<Option<Signal>>>(thread: Pthread, signal: T) -> Resu
     };
     let res = unsafe { libc::pthread_kill(thread, sig) };
     Errno::result(res).map(drop)
+}
+
+/// Obtain the name of the thread
+///
+/// On linux the name cannot exceed 16 length including null terminator
+#[cfg(all(target_os = "linux", not(target_env = "musl")))]
+pub fn pthread_getname_np(thread: Pthread) -> Result<String> {
+    let mut name = [0u8; 16];
+    unsafe { libc::pthread_getname_np(thread, name.as_mut_ptr() as _, name.len()) };
+    let cname = unsafe { CStr::from_ptr(name.as_ptr() as _) };
+    Ok(cname.to_owned().to_string_lossy().to_string())
+}
+
+/// Set the name of the thread
+#[cfg(all(target_os = "linux", not(target_env = "musl")))]
+pub fn pthread_setname_np(thread: Pthread, name: String) {
+    let cname = CString::new(name).expect("name failed");
+    let nameptr = cname.as_ptr();
+    unsafe { libc::pthread_setname_np(thread, nameptr) };
 }
