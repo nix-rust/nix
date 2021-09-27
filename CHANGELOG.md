@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.20.2] - 28 September 2021
+### Added
+### Changed
+### Fixed
+
+- Fixed buffer overflow in `unistd::getgrouplist`.
+  (#[1545](https://github.com/nix-rust/nix/pull/1545))
+
 ## [0.20.1] - 13 August 2021
 ### Added
 ### Changed
