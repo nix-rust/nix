@@ -91,9 +91,10 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Added more errno definitions for better backwards compatibility with
   Nix 0.21.0.
   (#[1467](https://github.com/nix-rust/nix/pull/1467))
-
 - Fixed potential undefined behavior in `Signal::try_from` on some platforms.
   (#[1484](https://github.com/nix-rust/nix/pull/1484))
+- Fixed buffer overflow in `unistd::getgrouplist`.
+  (#[1545](https://github.com/nix-rust/nix/pull/1545))
 
 ### Removed
 
