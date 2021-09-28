@@ -34,7 +34,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1503](https://github.com/nix-rust/nix/pull/1503))
 - Enabled `pwritev` and `preadv` for more operating systems.
   (#[1511](https://github.com/nix-rust/nix/pull/1511))
- Added support for `TCP_MAXSEG` TCP Maximum Segment Size socket options
+- Added support for `TCP_MAXSEG` TCP Maximum Segment Size socket options
   (#[1292](https://github.com/nix-rust/nix/pull/1292))
 - Added `Ipv4RecvErr` and `Ipv6RecvErr` sockopts and associated control messages.
   (#[1514](https://github.com/nix-rust/nix/pull/1514))
@@ -42,13 +42,11 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1516](https://github.com/nix-rust/nix/pull/1516))
 - Added `Ipv4Ttl` and `Ipv6Ttl` sockopts.
   (#[1515](https://github.com/nix-rust/nix/pull/1515))
-- Added `MAP_EXCL` mmap flag for freebsd.
-  (#[1525](https://github.com/nix-rust/nix/pull/1525))
-- Added `MAP_ALIGNED_SUPER` mmap flag for freebsd.
+- Added `MAP_EXCL`, `MAP_ALIGNED_SUPER`, and `MAP_CONCEAL` mmap flags, and
+  exposed `MAP_ANONYMOUS` for all operating systems.
   (#[1522](https://github.com/nix-rust/nix/pull/1522))
-- Added `MAP_CONCEAL` mmap flag for openbsd.
+  (#[1525](https://github.com/nix-rust/nix/pull/1525))
   (#[1531](https://github.com/nix-rust/nix/pull/1531))
-- Added `MAP_ANONYMOUS` for all operating systems.
   (#[1534](https://github.com/nix-rust/nix/pull/1534))
 
 ### Changed
@@ -63,33 +61,29 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   include `sys::eventfd::eventfd` and `sys::eventfd::EfdFlags`for Android
   builds.
   (#[1481](https://github.com/nix-rust/nix/pull/1481))
-
 - Most enums that come from C, for example `Errno`, are now marked as
   `#[non_exhaustive]`.
   (#[1474](https://github.com/nix-rust/nix/pull/1474))
-
 - Many more functions, mostly contructors, are now `const`.
   (#[1476](https://github.com/nix-rust/nix/pull/1476))
   (#[1492](https://github.com/nix-rust/nix/pull/1492))
-
 - `sys::event::KEvent::filter` now returns a `Result` instead of being
   infalliable.  The only cases where it will now return an error are cases
   where it previously would've had undefined behavior.
   (#[1484](https://github.com/nix-rust/nix/pull/1484))
-
 - Minimum supported Rust version is now 1.46.0.
   ([#1492](https://github.com/nix-rust/nix/pull/1492))
-
 - Rework `UnixAddr` to encapsulate internals better in order to fix soundness
   issues. No longer allows creating a `UnixAddr` from a raw `sockaddr_un`.
   ([#1496](https://github.com/nix-rust/nix/pull/1496))
+- Raised bitflags to 1.3.0 and the MSRV to 1.46.0.
+  ([#1492](https://github.com/nix-rust/nix/pull/1492))
 
 ### Fixed
 
 - Added more errno definitions for better backwards compatibility with
   Nix 0.21.0.
   (#[1467](https://github.com/nix-rust/nix/pull/1467))
-
 - Fixed potential undefined behavior in `Signal::try_from` on some platforms.
   (#[1484](https://github.com/nix-rust/nix/pull/1484))
 
@@ -98,18 +92,14 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Removed a couple of termios constants on redox that were never actually
   supported.
   (#[1483](https://github.com/nix-rust/nix/pull/1483))
-
 - Removed `nix::sys::signal::NSIG`.  It was of dubious utility, and not correct
   for all platforms.
   (#[1484](https://github.com/nix-rust/nix/pull/1484))
-
 - Removed support for 32-bit Apple targets, since they've been dropped by both
   Rustc and Xcode.
   (#[1492](https://github.com/nix-rust/nix/pull/1492))
-
 - Deprecated `SockAddr/InetAddr::to_str` in favor of `ToString::to_string`
   (#[1495](https://github.com/nix-rust/nix/pull/1495))
-
 - Removed `SigevNotify` on OpenBSD and Redox.
   (#[1511](https://github.com/nix-rust/nix/pull/1511))
 
