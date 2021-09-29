@@ -57,6 +57,64 @@ pub fn test_inetv4_addr_roundtrip_sockaddr_storage_to_addr() {
     assert_eq!(from_storage, sockaddr);
 }
 
+#[cfg(any(target_os = "linux"))]
+#[cfg_attr(qemu, ignore)]
+#[test]
+pub fn test_timestamping() {
+    use nix::sys::socket::{
+        recvmsg, sendmsg, setsockopt, socket, sockopt::Timestamping, ControlMessageOwned, MsgFlags,
+        SockFlag, SockType, TimestampingFlag,
+    };
+    use nix::sys::uio::IoVec;
+
+    let std_sa = SocketAddr::from_str("127.0.0.1:6790").unwrap();
+    let inet_addr = InetAddr::from_std(&std_sa);
+    let sock_addr = SockAddr::new_inet(inet_addr);
+
+    let ssock = socket(
+        AddressFamily::Inet,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )
+    .expect("send socket failed");
+
+    let rsock = socket(
+        AddressFamily::Inet,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )
+    .unwrap();
+    nix::sys::socket::bind(rsock, &sock_addr).unwrap();
+
+    setsockopt(rsock, Timestamping, &TimestampingFlag::all()).unwrap();
+
+    let sbuf = [0u8; 2048];
+    let mut rbuf = [0u8; 2048];
+    let flags = MsgFlags::empty();
+    let iov1 = [IoVec::from_slice(&sbuf)];
+    let iov2 = [IoVec::from_mut_slice(&mut rbuf)];
+    let mut cmsg = cmsg_space!(nix::sys::socket::Timestamps);
+    sendmsg(ssock, &iov1, &[], flags, Some(&sock_addr)).unwrap();
+    let recv = recvmsg(rsock, &iov2, Some(&mut cmsg), flags).unwrap();
+
+    let mut ts = None;
+    for c in recv.cmsgs() {
+        if let ControlMessageOwned::ScmTimestampsns(timestamps) = c {
+            ts = Some(timestamps.system);
+        }
+    }
+    let ts = ts.expect("ScmTimestampns is present");
+    let sys_time = ::nix::time::clock_gettime(::nix::time::ClockId::CLOCK_REALTIME).unwrap();
+    let diff = if ts > sys_time {
+        ts - sys_time
+    } else {
+        sys_time - ts
+    };
+    assert!(std::time::Duration::from(diff).as_secs() < 60);
+}
+
 #[test]
 pub fn test_inetv6_addr_to_sock_addr() {
     let port: u16 = 3000;
