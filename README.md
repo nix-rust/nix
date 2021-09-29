@@ -84,16 +84,10 @@ Tier 3:
   * x86_64-unknown-openbsd
   * x86_64-unknown-redox
 
-## Usage
+## Minimum Supported Rust Version (MSRV)
 
-`nix` requires Rust 1.46.0 or newer.
-
-To use `nix`, add this to your `Cargo.toml`:
-
-```toml
-[dependencies]
-nix = "0.22.0"
-```
+nix is supported on Rust 1.46.0 and higher.  It's MSRV will not be
+changed in the future without bumping the major or minor version.
 
 ## Contributing
 
