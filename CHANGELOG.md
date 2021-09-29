@@ -3,7 +3,7 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased] - ReleaseDate
+## [0.23.0] - 2021-09-28
 ### Added
 
 - Added the `LocalPeerCred` sockopt.
