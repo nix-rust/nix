@@ -46,8 +46,8 @@ impl InterfaceAddress {
     /// Create an `InterfaceAddress` from the libc struct.
     fn from_libc_ifaddrs(info: &libc::ifaddrs) -> InterfaceAddress {
         let ifname = unsafe { ffi::CStr::from_ptr(info.ifa_name) };
-        let address = unsafe { SockAddr::from_raw_sockaddr(info.ifa_addr) };
-        let netmask = unsafe { SockAddr::from_raw_sockaddr(info.ifa_netmask) };
+        let address = unsafe { SockAddr::from_libc_sockaddr(info.ifa_addr) };
+        let netmask = unsafe { SockAddr::from_libc_sockaddr(info.ifa_netmask) };
         let mut addr = InterfaceAddress {
             interface_name: ifname.to_string_lossy().to_string(),
             flags: InterfaceFlags::from_bits_truncate(info.ifa_flags as i32),
@@ -59,9 +59,9 @@ impl InterfaceAddress {
 
         let ifu = get_ifu_from_sockaddr(info);
         if addr.flags.contains(InterfaceFlags::IFF_POINTOPOINT) {
-            addr.destination = unsafe { SockAddr::from_raw_sockaddr(ifu) };
+            addr.destination = unsafe { SockAddr::from_libc_sockaddr(ifu) };
         } else if addr.flags.contains(InterfaceFlags::IFF_BROADCAST) {
-            addr.broadcast = unsafe { SockAddr::from_raw_sockaddr(ifu) };
+            addr.broadcast = unsafe { SockAddr::from_libc_sockaddr(ifu) };
         }
 
         addr
