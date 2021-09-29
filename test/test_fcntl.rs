@@ -473,17 +473,16 @@ mod test_posix_fadvise {
     fn test_success() {
         let tmp = NamedTempFile::new().unwrap();
         let fd = tmp.as_raw_fd();
-        let res = posix_fadvise(fd, 0, 100, PosixFadviseAdvice::POSIX_FADV_WILLNEED).unwrap();
+        let res = posix_fadvise(fd, 0, 100, PosixFadviseAdvice::POSIX_FADV_WILLNEED);
 
-        assert_eq!(res, 0);
+        assert!(res.is_ok());
     }
 
     #[test]
     fn test_errno() {
         let (rd, _wr) = pipe().unwrap();
-        let errno = posix_fadvise(rd as RawFd, 0, 100, PosixFadviseAdvice::POSIX_FADV_WILLNEED)
-                                 .unwrap();
-        assert_eq!(errno, Errno::ESPIPE as i32);
+        let res = posix_fadvise(rd as RawFd, 0, 100, PosixFadviseAdvice::POSIX_FADV_WILLNEED);
+        assert_eq!(res, Err(Errno::ESPIPE));
     }
 }
 

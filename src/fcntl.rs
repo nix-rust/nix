@@ -667,9 +667,14 @@ mod posix_fadvise {
         offset: libc::off_t,
         len: libc::off_t,
         advice: PosixFadviseAdvice,
-    ) -> Result<libc::c_int> {
+    ) -> Result<()> {
         let res = unsafe { libc::posix_fadvise(fd, offset, len, advice as libc::c_int) };
-        Errno::result(res)
+
+        if res == 0 {
+            Ok(())
+        } else {
+            Err(Errno::from_i32(res))
+        }
     }
 }
 
