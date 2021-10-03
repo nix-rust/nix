@@ -1,6 +1,6 @@
 syntax: glob
 Cargo.lock
-target/
+target
 *.diff
 *.rej
 *.orig
