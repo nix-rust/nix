@@ -353,6 +353,48 @@ pub fn gettid() -> Pid {
     Pid(unsafe { libc::syscall(libc::SYS_gettid) as pid_t })
 }
 
+/// Get the caller's thread ID based from the given process.
+///
+/// Darwin specific call, the ID will differ in a multithreaded context.
+/// Since we are always referring to the current thread, the related
+/// ID always exist.
+#[cfg(target_vendor = "apple")]
+#[inline]
+pub fn gettid() -> Pid {
+    let mut tid: u64 = 0;
+    unsafe { libc::pthread_threadid_np(libc::pthread_self(), &mut tid) };
+    Pid(tid as pid_t)
+}
+
+/// Get the caller's thread ID always from the calling thread.
+///
+/// Note that the call never fails.
+#[cfg(target_os = "freebsd")]
+#[inline]
+pub fn gettid() -> Pid {
+    Pid(unsafe { libc::pthread_getthreadid_np() as pid_t })
+}
+
+/// Get the caller's thread ID always from the calling thread.
+///
+/// Note that the call never fails.
+#[cfg(target_os = "openbsd")]
+#[allow(non_upper_case_globals)]
+#[inline]
+pub fn gettid() -> Pid {
+    const SYS_getthrid: libc::c_int = 299;
+    Pid(unsafe { libc::syscall(SYS_getthrid) as pid_t })
+}
+
+/// Get the caller's LWP ID always from the calling LWP.
+///
+/// Note that the call never fails.
+#[cfg(target_os = "netbsd")]
+#[inline]
+pub fn gettid() -> Pid {
+    Pid(unsafe { libc::_lwp_self() as pid_t })
+}
+
 /// Create a copy of the specified file descriptor (see
 /// [dup(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/dup.html)).
 ///

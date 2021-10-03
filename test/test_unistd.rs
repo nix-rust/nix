@@ -188,15 +188,13 @@ fn test_getsid() {
     assert_eq!(none_sid, pid_sid);
 }
 
-#[cfg(any(target_os = "linux", target_os = "android"))]
-mod linux_android {
-    use nix::unistd::gettid;
+#[cfg(any(target_os = "linux", target_os = "android", target_vendor = "apple", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd"))]
+use nix::unistd::gettid;
 
-    #[test]
-    fn test_gettid() {
-        let tid: ::libc::pid_t = gettid().into();
-        assert!(tid > 0);
-    }
+#[test]
+fn test_gettid() {
+    let tid: ::libc::pid_t = gettid().into();
+    assert!(tid > 0);
 }
 
 #[test]
