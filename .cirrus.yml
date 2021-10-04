@@ -5,6 +5,7 @@ cargo_cache:
 env:
   # Build by default; don't just check
   BUILD: build
+  CLIPPYFLAGS: -D warnings
   RUSTFLAGS: -D warnings
   RUSTDOCFLAGS: -D warnings
   TOOL: cargo
@@ -18,7 +19,7 @@ build: &BUILD
     - . $HOME/.cargo/env || true
     - $TOOL +$TOOLCHAIN $BUILD $ZFLAGS --target $TARGET --all-targets
     - $TOOL +$TOOLCHAIN doc $ZFLAGS --no-deps --target $TARGET
-    - $TOOL +$TOOLCHAIN clippy $ZFLAGS --target $TARGET -- -D warnings
+    - $TOOL +$TOOLCHAIN clippy $ZFLAGS --target $TARGET -- $CLIPPYFLAGS
 
 # Tests that do require executing the binaries
 test: &TEST
@@ -239,6 +240,10 @@ task:
     image: rustlang/rust:nightly
   env:
     BUILD: check
+    # Must allow here rather than in lib.rs because this lint doesn't exist
+    # prior to Rust 1.57.0
+    # https://github.com/rust-lang/rust-clippy/issues/7718
+    CLIPPYFLAGS: -D warnings -A clippy::if_then_panic
     TOOLCHAIN: nightly
     ZFLAGS: -Zbuild-std
   matrix:
