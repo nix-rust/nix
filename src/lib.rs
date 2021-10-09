@@ -23,8 +23,8 @@
 //! * `mqueue` - POSIX message queues
 //! * `net` - Networking-related functionality
 //! * `personality` - Set the process execution domain
-//! * `process` - Stuff relating to running processes
 //! * `poll` - APIs like `poll` and `select`
+//! * `process` - Stuff relating to running processes
 //! * `pthread` - POSIX threads
 //! * `ptrace` - Process tracing and debugging
 //! * `quota` - File system quotas
