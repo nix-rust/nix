@@ -996,7 +996,7 @@ pub fn tcsendbreak(fd: RawFd, duration: c_int) -> Result<()> {
     Errno::result(unsafe { libc::tcsendbreak(fd, duration) }).map(drop)
 }
 
-feature!{
+feature! {
 #![feature = "process"]
 /// Get the session controlled by the given terminal (see
 /// [tcgetsid(3)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/tcgetsid.html)).

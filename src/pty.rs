@@ -26,7 +26,7 @@ pub struct OpenptyResult {
     pub slave: RawFd,
 }
 
-feature!{
+feature! {
 #![feature = "process"]
 /// Representation of a master with a forked pty
 ///
@@ -298,7 +298,7 @@ pub fn openpty<'a, 'b, T: Into<Option<&'a Winsize>>, U: Into<Option<&'b Termios>
     }
 }
 
-feature!{
+feature! {
 #![feature = "process"]
 /// Create a new pseudoterminal, returning the master file descriptor and forked pid.
 /// in `ForkptyResult`

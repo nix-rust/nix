@@ -24,7 +24,7 @@ use std::path::PathBuf;
 #[cfg(feature = "fs")]
 use crate::sys::stat::Mode;
 
-feature!{
+feature! {
     #![feature = "fs"]
     #[cfg(any(target_os = "android", target_os = "linux"))]
     pub use self::pivot_root::*;
@@ -37,7 +37,7 @@ pub use self::setres::*;
 #[cfg(any(target_os = "android", target_os = "linux"))]
 pub use self::getres::*;
 
-feature!{
+feature! {
 #![feature = "users"]
 
 /// User identifier
@@ -131,7 +131,7 @@ impl fmt::Display for Gid {
 }
 }
 
-feature!{
+feature! {
 #![feature = "process"]
 /// Process identifier
 ///
@@ -316,7 +316,7 @@ pub fn getsid(pid: Option<Pid>) -> Result<Pid> {
 }
 }
 
-feature!{
+feature! {
 #![all(feature = "process", feature = "term")]
 /// Get the terminal foreground process group (see
 /// [tcgetpgrp(3)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/tcgetpgrp.html)).
@@ -340,7 +340,7 @@ pub fn tcsetpgrp(fd: c_int, pgrp: Pid) -> Result<()> {
 }
 }
 
-feature!{
+feature! {
 #![feature = "process"]
 /// Get the group id of the calling process (see
 ///[getpgrp(3)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/getpgrp.html)).
@@ -369,7 +369,7 @@ pub fn gettid() -> Pid {
 }
 }
 
-feature!{
+feature! {
 #![feature = "fs"]
 /// Create a copy of the specified file descriptor (see
 /// [dup(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/dup.html)).
@@ -598,7 +598,7 @@ fn reserve_double_buffer_size<T>(buf: &mut Vec<T>, limit: usize) -> Result<()> {
     Ok(())
 }
 
-feature!{
+feature! {
 #![feature = "fs"]
 
 /// Returns the current directory as a `PathBuf`
@@ -646,7 +646,7 @@ pub fn getcwd() -> Result<PathBuf> {
 }
 }
 
-feature!{
+feature! {
 #![all(feature = "users", feature = "fs")]
 
 /// Computes the raw UID and GID values to pass to a `*chown` call.
@@ -745,7 +745,7 @@ pub fn fchownat<P: ?Sized + NixPath>(
 }
 }
 
-feature!{
+feature! {
 #![feature = "process"]
 fn to_exec_array<S: AsRef<CStr>>(args: &[S]) -> Vec<*const c_char> {
     use std::iter::once;
@@ -930,7 +930,7 @@ pub fn daemon(nochdir: bool, noclose: bool) -> Result<()> {
 }
 }
 
-feature!{
+feature! {
 #![feature = "hostname"]
 
 /// Set the system host name (see
@@ -1042,7 +1042,7 @@ pub fn write(fd: RawFd, buf: &[u8]) -> Result<usize> {
     Errno::result(res).map(|r| r as usize)
 }
 
-feature!{
+feature! {
 #![feature = "fs"]
 
 /// Directive that tells [`lseek`] and [`lseek64`] what the offset is relative to.
@@ -1112,7 +1112,7 @@ pub fn pipe() -> std::result::Result<(RawFd, RawFd), Error> {
     }
 }
 
-feature!{
+feature! {
 #![feature = "fs"]
 /// Like `pipe`, but allows setting certain file descriptor flags.
 ///
@@ -1340,7 +1340,7 @@ pub fn fdatasync(fd: RawFd) -> Result<()> {
 }
 }
 
-feature!{
+feature! {
 #![feature = "users"]
 
 /// Get a real user ID
@@ -1424,7 +1424,7 @@ pub fn setgid(gid: Gid) -> Result<()> {
 }
 }
 
-feature!{
+feature! {
 #![all(feature = "fs", feature = "users")]
 /// Set the user identity used for filesystem checks per-thread.
 /// On both success and failure, this call returns the previous filesystem user
@@ -1449,7 +1449,7 @@ pub fn setfsgid(gid: Gid) -> Gid {
 }
 }
 
-feature!{
+feature! {
 #![feature = "users"]
 
 /// Get the list of supplementary group IDs of the calling process.
@@ -1682,7 +1682,7 @@ pub fn initgroups(user: &CStr, group: Gid) -> Result<()> {
 }
 }
 
-feature!{
+feature! {
 #![feature = "signal"]
 
 /// Suspend the thread until a signal is received.
@@ -1792,7 +1792,7 @@ pub fn sleep(seconds: c_uint) -> c_uint {
     unsafe { libc::sleep(seconds) }
 }
 
-feature!{
+feature! {
 #![feature = "acct"]
 
 #[cfg(not(target_os = "redox"))]
@@ -1821,7 +1821,7 @@ pub mod acct {
 }
 }
 
-feature!{
+feature! {
 #![feature = "fs"]
 /// Creates a regular file which persists even after process termination
 ///
@@ -1860,7 +1860,7 @@ pub fn mkstemp<P: ?Sized + NixPath>(template: &P) -> Result<(RawFd, PathBuf)> {
 }
 }
 
-feature!{
+feature! {
 #![all(feature = "fs", feature = "features")]
 
 /// Variable names for `pathconf`
@@ -2044,7 +2044,7 @@ pub fn pathconf<P: ?Sized + NixPath>(path: &P, var: PathconfVar) -> Result<Optio
 }
 }
 
-feature!{
+feature! {
 #![feature = "features"]
 
 /// Variable names for `sysconf`
@@ -2548,7 +2548,7 @@ pub fn sysconf(var: SysconfVar) -> Result<Option<c_long>> {
 }
 }
 
-feature!{
+feature! {
 #![feature = "fs"]
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
@@ -2574,7 +2574,7 @@ mod pivot_root {
 #[cfg(any(target_os = "android", target_os = "freebsd",
           target_os = "linux", target_os = "openbsd"))]
 mod setres {
-    feature!{
+    feature! {
     #![feature = "users"]
 
     use crate::Result;
@@ -2617,7 +2617,7 @@ mod setres {
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
 mod getres {
-    feature!{
+    feature! {
     #![feature = "users"]
 
     use crate::Result;
@@ -2696,7 +2696,7 @@ libc_bitflags!{
     }
 }
 
-feature!{
+feature! {
 #![feature = "fs"]
 
 /// Checks the file named by `path` for accessibility according to the flags given by `amode`
@@ -2711,7 +2711,7 @@ pub fn access<P: ?Sized + NixPath>(path: &P, amode: AccessFlags) -> Result<()> {
 }
 }
 
-feature!{
+feature! {
 #![feature = "users"]
 
 /// Representation of a User, based on `libc::passwd`
@@ -3052,7 +3052,7 @@ impl Group {
 }
 }
 
-feature!{
+feature! {
 #![feature = "term"]
 
 /// Get the name of the terminal device that is open on file descriptor fd
@@ -3074,7 +3074,7 @@ pub fn ttyname(fd: RawFd) -> Result<PathBuf> {
 }
 }
 
-feature!{
+feature! {
 #![all(feature = "socket", feature = "users")]
 
 /// Get the effective user ID and group ID associated with a Unix domain socket.

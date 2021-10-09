@@ -138,7 +138,7 @@ pub fn poll(fds: &mut [PollFd], timeout: libc::c_int) -> Result<libc::c_int> {
     Errno::result(res)
 }
 
-feature!{
+feature! {
 #![feature = "signal"]
 /// `ppoll()` allows an application to safely wait until either a file
 /// descriptor becomes ready or until a signal is caught.

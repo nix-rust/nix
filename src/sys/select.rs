@@ -201,7 +201,7 @@ where
     Errno::result(res)
 }
 
-feature!{
+feature! {
 #![feature = "signal"]
 
 use crate::sys::signal::SigSet;

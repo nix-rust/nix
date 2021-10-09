@@ -101,7 +101,7 @@ pub struct RemoteIoVec {
     pub len: usize,
 }
 
-feature!{
+feature! {
 #![feature = "process"]
 
 /// Write data directly to another process's virtual memory

@@ -411,7 +411,7 @@ cfg_if!{
     }
 }
 
-feature!{
+feature! {
 #![feature = "net"]
 /// Request for multicast socket operations
 ///
@@ -450,7 +450,7 @@ impl Ipv6MembershipRequest {
 }
 }
 
-feature!{
+feature! {
 #![feature = "uio"]
 
 /// Create a buffer large enough for storing some control messages as returned

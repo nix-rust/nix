@@ -437,7 +437,7 @@ pub unsafe fn msync(addr: *mut c_void, length: size_t, flags: MsFlags) -> Result
 }
 
 #[cfg(not(target_os = "android"))]
-feature!{
+feature! {
 #![feature = "fs"]
 pub fn shm_open<P>(
     name: &P,

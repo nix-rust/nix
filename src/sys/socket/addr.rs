@@ -264,7 +264,7 @@ impl AddressFamily {
     }
 }
 
-feature!{
+feature! {
 #![feature = "net"]
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -743,7 +743,7 @@ pub enum SockAddr {
 }
 
 impl SockAddr {
-    feature!{
+    feature! {
     #![feature = "net"]
     pub fn new_inet(addr: InetAddr) -> SockAddr {
         SockAddr::Inet(addr)
@@ -764,7 +764,7 @@ impl SockAddr {
         SockAddr::Alg(AlgAddr::new(alg_type, alg_name))
     }
 
-    feature!{
+    feature! {
     #![feature = "ioctl"]
     #[cfg(any(target_os = "ios", target_os = "macos"))]
     pub fn new_sys_control(sockfd: RawFd, name: &str, unit: u32) -> Result<SockAddr> {
@@ -1095,7 +1095,7 @@ pub mod alg {
     }
 }
 
-feature!{
+feature! {
 #![feature = "ioctl"]
 #[cfg(any(target_os = "ios", target_os = "macos"))]
 pub mod sys_control {
@@ -1172,7 +1172,7 @@ pub mod sys_control {
 
 #[cfg(any(target_os = "android", target_os = "linux", target_os = "fuchsia"))]
 mod datalink {
-    feature!{
+    feature! {
     #![feature = "net"]
     use super::{fmt, AddressFamily};
 
@@ -1248,7 +1248,7 @@ mod datalink {
           target_os = "netbsd",
           target_os = "openbsd"))]
 mod datalink {
-    feature!{
+    feature! {
     #![feature = "net"]
     use super::{fmt, AddressFamily};
 

@@ -19,7 +19,7 @@ pub fn pthread_self() -> Pthread {
     unsafe { libc::pthread_self() }
 }
 
-feature!{
+feature! {
 #![feature = "signal"]
 
 /// Send a signal to a thread (see [`pthread_kill(3)`]).

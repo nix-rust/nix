@@ -25,7 +25,7 @@ impl ClockId {
         ClockId(clk_id)
     }
 
-    feature!{
+    feature! {
     #![feature = "process"]
     /// Returns `ClockId` of a `pid` CPU-time clock
     #[cfg(any(

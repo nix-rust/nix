@@ -61,18 +61,18 @@ pub use libc;
 
 // Public crates
 #[cfg(not(target_os = "redox"))]
-feature!{
+feature! {
     #![feature = "dir"]
     #[allow(missing_docs)]
     pub mod dir;
 }
-feature!{
+feature! {
     #![feature = "env"]
     pub mod env;
 }
 #[allow(missing_docs)]
 pub mod errno;
-feature!{
+feature! {
     #![feature = "features"]
 
     #[deny(missing_docs)]
@@ -80,7 +80,7 @@ feature!{
 }
 #[allow(missing_docs)]
 pub mod fcntl;
-feature!{
+feature! {
     #![feature = "net"]
 
     #[cfg(any(target_os = "android",
@@ -100,7 +100,7 @@ feature!{
 }
 #[cfg(any(target_os = "android",
           target_os = "linux"))]
-feature!{
+feature! {
     #![feature = "kmod"]
     #[allow(missing_docs)]
     pub mod kmod;
@@ -108,7 +108,7 @@ feature!{
 #[cfg(any(target_os = "android",
           target_os = "freebsd",
           target_os = "linux"))]
-feature!{
+feature! {
     #![feature = "mount"]
     pub mod mount;
 }
@@ -117,27 +117,27 @@ feature!{
           target_os = "fushsia",
           target_os = "linux",
           target_os = "netbsd"))]
-feature!{
+feature! {
     #![feature = "mqueue"]
     #[allow(missing_docs)]
     pub mod mqueue;
 }
-feature!{
+feature! {
     #![feature = "poll"]
     pub mod poll;
 }
 #[cfg(not(any(target_os = "redox", target_os = "fuchsia")))]
-feature!{
+feature! {
     #![feature = "term"]
     #[deny(missing_docs)]
     pub mod pty;
 }
-feature!{
+feature! {
     #![feature = "sched"]
     pub mod sched;
 }
 pub mod sys;
-feature!{
+feature! {
     #![feature = "time"]
     #[allow(missing_docs)]
     pub mod time;
@@ -146,7 +146,7 @@ feature!{
 // provides bindings for them.
 #[cfg(all(target_os = "linux",
           any(target_arch = "x86", target_arch = "x86_64")))]
-feature!{
+feature! {
     #![feature = "ucontext"]
     #[allow(missing_docs)]
     pub mod ucontext;

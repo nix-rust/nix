@@ -5,12 +5,12 @@
           target_os = "linux",
           target_os = "macos",
           target_os = "netbsd"))]
-feature!{
+feature! {
     #![feature = "aio"]
     pub mod aio;
 }
 
-feature!{
+feature! {
     #![feature = "event"]
 
     #[cfg(any(target_os = "android", target_os = "linux"))]
@@ -47,27 +47,27 @@ feature!{
 pub mod ioctl;
 
 #[cfg(target_os = "linux")]
-feature!{
+feature! {
     #![feature = "fs"]
     #[allow(missing_docs)]
     pub mod memfd;
 }
 
 #[cfg(not(target_os = "redox"))]
-feature!{
+feature! {
     #![feature = "mman"]
     #[allow(missing_docs)]
     pub mod mman;
 }
 
 #[cfg(target_os = "linux")]
-feature!{
+feature! {
     #![feature = "personality"]
     #[allow(missing_docs)]
     pub mod personality;
 }
 
-feature!{
+feature! {
     #![feature = "pthread"]
     pub mod pthread;
 }
@@ -79,33 +79,33 @@ feature!{
           target_os = "macos",
           target_os = "netbsd",
           target_os = "openbsd"))]
-feature!{
+feature! {
     #![feature = "ptrace"]
     #[allow(missing_docs)]
     pub mod ptrace;
 }
 
 #[cfg(target_os = "linux")]
-feature!{
+feature! {
     #![feature = "quota"]
     pub mod quota;
 }
 
 #[cfg(target_os = "linux")]
-feature!{
+feature! {
     #![feature = "reboot"]
     #[allow(missing_docs)]
     pub mod reboot;
 }
 
 #[cfg(not(any(target_os = "redox", target_os = "fuchsia", target_os = "illumos")))]
-feature!{
+feature! {
     #![feature = "resource"]
     pub mod resource;
 }
 
 #[cfg(not(target_os = "redox"))]
-feature!{
+feature! {
     #![feature = "poll"]
     pub mod select;
 }
@@ -115,7 +115,7 @@ feature!{
           target_os = "ios",
           target_os = "linux",
           target_os = "macos"))]
-feature!{
+feature! {
     #![feature = "zerocopy"]
     pub mod sendfile;
 }
@@ -123,20 +123,20 @@ feature!{
 pub mod signal;
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
-feature!{
+feature! {
     #![feature = "signal"]
     #[allow(missing_docs)]
     pub mod signalfd;
 }
 
 #[cfg(not(target_os = "redox"))]
-feature!{
+feature! {
     #![feature = "socket"]
     #[allow(missing_docs)]
     pub mod socket;
 }
 
-feature!{
+feature! {
     #![feature = "fs"]
     #[allow(missing_docs)]
     pub mod stat;
@@ -150,12 +150,12 @@ feature!{
           target_os = "macos",
           target_os = "openbsd"
 ))]
-feature!{
+feature! {
     #![feature = "fs"]
     pub mod statfs;
 }
 
-feature!{
+feature! {
     #![feature = "fs"]
     pub mod statvfs;
 }
@@ -164,7 +164,7 @@ feature!{
 #[allow(missing_docs)]
 pub mod sysinfo;
 
-feature!{
+feature! {
     #![feature = "term"]
     #[allow(missing_docs)]
     pub mod termios;
@@ -173,30 +173,30 @@ feature!{
 #[allow(missing_docs)]
 pub mod time;
 
-feature!{
+feature! {
     #![feature = "uio"]
     pub mod uio;
 }
 
-feature!{
+feature! {
     #![feature = "features"]
     pub mod utsname;
 }
 
-feature!{
+feature! {
     #![feature = "process"]
     pub mod wait;
 }
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
-feature!{
+feature! {
     #![feature = "inotify"]
     #[allow(missing_docs)]
     pub mod inotify;
 }
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
-feature!{
+feature! {
     #![feature = "time"]
     #[allow(missing_docs)]
     pub mod timerfd;

@@ -380,7 +380,7 @@ const SIGNALS: [Signal; 31] = [
     SIGEMT,
     SIGINFO];
 
-feature!{
+feature! {
 #![feature = "signal"]
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -469,7 +469,7 @@ libc_enum! {
     }
 }
 
-feature!{
+feature! {
 #![feature = "signal"]
 
 use crate::unistd::Pid;
@@ -938,7 +938,7 @@ pub fn raise(signal: Signal) -> Result<()> {
 }
 
 
-feature!{
+feature! {
 #![any(feature = "aio", feature = "signal")]
 
 /// Identifies a thread for [`SigevNotify::SigevThreadId`]
@@ -991,7 +991,7 @@ pub enum SigevNotify {
 
 #[cfg(not(any(target_os = "openbsd", target_os = "redox")))]
 mod sigevent {
-    feature!{
+    feature! {
     #![any(feature = "aio", feature = "signal")]
 
     use std::mem;

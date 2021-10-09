@@ -172,7 +172,7 @@ libc_bitflags!(
     }
 );
 
-feature!{
+feature! {
 #![feature = "fs"]
 
 // The conversion is not identical on all operating systems.
@@ -235,7 +235,7 @@ libc_bitflags! {
     }
 }
 
-feature!{
+feature! {
 #![feature = "fs"]
 #[cfg(all(
     target_os = "linux",
@@ -392,7 +392,7 @@ libc_bitflags!(
     }
 );
 
-feature!{
+feature! {
 #![feature = "fs"]
 
 #[cfg(not(target_os = "redox"))]
@@ -532,7 +532,7 @@ libc_bitflags! {
     }
 }
 
-feature!{
+feature! {
 #![feature = "zerocopy"]
 
 /// Copy a range of data from one file to another
@@ -658,7 +658,7 @@ libc_bitflags!(
     }
 );
 
-feature!{
+feature! {
 #![feature = "fs"]
 
 /// Manipulates file space.
@@ -707,7 +707,7 @@ mod posix_fadvise {
         }
     }
 
-    feature!{
+    feature! {
     #![feature = "fs"]
     pub fn posix_fadvise(
         fd: RawFd,
