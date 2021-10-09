@@ -366,8 +366,10 @@ pub(crate) fn at_rawfd(fd: Option<RawFd>) -> raw::c_int {
 }
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(feature = "fs")]
 libc_bitflags!(
     /// Additional flags for file sealing, which allows for limiting operations on a file.
+    #[cfg_attr(docsrs, doc(cfg(feature = "fs")))]
     pub struct SealFlag: c_int {
         /// Prevents further calls to `fcntl()` with `F_ADD_SEALS`.
         F_SEAL_SEAL;
