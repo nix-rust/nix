@@ -611,9 +611,9 @@ impl<T> SetSockOpt for AlgSetKey<T> where T: AsRef<[u8]> + Clone {
  */
 
 /// Helper trait that describes what is expected from a `GetSockOpt` getter.
-unsafe trait Get<T> {
+trait Get<T> {
     /// Returns an uninitialized value.
-    unsafe fn uninit() -> Self;
+    fn uninit() -> Self;
     /// Returns a pointer to the stored value. This pointer will be passed to the system's
     /// `getsockopt` call (`man 3p getsockopt`, argument `option_value`).
     fn ffi_ptr(&mut self) -> *mut c_void;
@@ -625,7 +625,7 @@ unsafe trait Get<T> {
 }
 
 /// Helper trait that describes what is expected from a `SetSockOpt` setter.
-unsafe trait Set<'a, T> {
+trait Set<'a, T> {
     /// Initialize the setter with a given value.
     fn new(val: &'a T) -> Self;
     /// Returns a pointer to the stored value. This pointer will be passed to the system's
@@ -642,8 +642,8 @@ struct GetStruct<T> {
     val: MaybeUninit<T>,
 }
 
-unsafe impl<T> Get<T> for GetStruct<T> {
-    unsafe fn uninit() -> Self {
+impl<T> Get<T> for GetStruct<T> {
+    fn uninit() -> Self {
         GetStruct {
             len: mem::size_of::<T>() as socklen_t,
             val: MaybeUninit::uninit(),
@@ -669,7 +669,7 @@ struct SetStruct<'a, T: 'static> {
     ptr: &'a T,
 }
 
-unsafe impl<'a, T> Set<'a, T> for SetStruct<'a, T> {
+impl<'a, T> Set<'a, T> for SetStruct<'a, T> {
     fn new(ptr: &'a T) -> SetStruct<'a, T> {
         SetStruct { ptr }
     }
@@ -689,8 +689,8 @@ struct GetBool {
     val: MaybeUninit<c_int>,
 }
 
-unsafe impl Get<bool> for GetBool {
-    unsafe fn uninit() -> Self {
+impl Get<bool> for GetBool {
+    fn uninit() -> Self {
         GetBool {
             len: mem::size_of::<c_int>() as socklen_t,
             val: MaybeUninit::uninit(),
@@ -716,7 +716,7 @@ struct SetBool {
     val: c_int,
 }
 
-unsafe impl<'a> Set<'a, bool> for SetBool {
+impl<'a> Set<'a, bool> for SetBool {
     fn new(val: &'a bool) -> SetBool {
         SetBool { val: if *val { 1 } else { 0 } }
     }
@@ -736,8 +736,8 @@ struct GetU8 {
     val: MaybeUninit<u8>,
 }
 
-unsafe impl Get<u8> for GetU8 {
-    unsafe fn uninit() -> Self {
+impl Get<u8> for GetU8 {
+    fn uninit() -> Self {
         GetU8 {
             len: mem::size_of::<u8>() as socklen_t,
             val: MaybeUninit::uninit(),
@@ -763,7 +763,7 @@ struct SetU8 {
     val: u8,
 }
 
-unsafe impl<'a> Set<'a, u8> for SetU8 {
+impl<'a> Set<'a, u8> for SetU8 {
     fn new(val: &'a u8) -> SetU8 {
         SetU8 { val: *val as u8 }
     }
@@ -783,8 +783,8 @@ struct GetUsize {
     val: MaybeUninit<c_int>,
 }
 
-unsafe impl Get<usize> for GetUsize {
-    unsafe fn uninit() -> Self {
+impl Get<usize> for GetUsize {
+    fn uninit() -> Self {
         GetUsize {
             len: mem::size_of::<c_int>() as socklen_t,
             val: MaybeUninit::uninit(),
@@ -810,7 +810,7 @@ struct SetUsize {
     val: c_int,
 }
 
-unsafe impl<'a> Set<'a, usize> for SetUsize {
+impl<'a> Set<'a, usize> for SetUsize {
     fn new(val: &'a usize) -> SetUsize {
         SetUsize { val: *val as c_int }
     }
@@ -830,8 +830,8 @@ struct GetOsString<T: AsMut<[u8]>> {
     val: MaybeUninit<T>,
 }
 
-unsafe impl<T: AsMut<[u8]>> Get<OsString> for GetOsString<T> {
-    unsafe fn uninit() -> Self {
+impl<T: AsMut<[u8]>> Get<OsString> for GetOsString<T> {
+    fn uninit() -> Self {
         GetOsString {
             len: mem::size_of::<T>() as socklen_t,
             val: MaybeUninit::uninit(),
@@ -858,7 +858,7 @@ struct SetOsString<'a> {
     val: &'a OsStr,
 }
 
-unsafe impl<'a> Set<'a, OsString> for SetOsString<'a> {
+impl<'a> Set<'a, OsString> for SetOsString<'a> {
     fn new(val: &'a OsString) -> SetOsString {
         SetOsString { val: val.as_os_str() }
     }
