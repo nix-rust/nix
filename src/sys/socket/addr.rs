@@ -823,7 +823,7 @@ impl SockAddr {
     /// unsafe because it takes a raw pointer as argument.  The caller must
     /// ensure that the pointer is valid.
     #[cfg(not(target_os = "fuchsia"))]
-    #[cfg(any(feature = "net", feature = "uio"))]
+    #[cfg(feature = "net")]
     pub(crate) unsafe fn from_libc_sockaddr(addr: *const libc::sockaddr) -> Option<SockAddr> {
         if addr.is_null() {
             None
