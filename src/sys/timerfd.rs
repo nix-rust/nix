@@ -31,7 +31,6 @@
 use crate::sys::time::TimeSpec;
 use crate::unistd::read;
 use crate::{errno::Errno, Result};
-use bitflags::bitflags;
 use libc::c_int;
 use std::os::unix::io::{AsRawFd, FromRawFd, RawFd};
 

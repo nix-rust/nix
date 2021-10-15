@@ -17,6 +17,7 @@
 pub use libc;
 
 // Private internal modules
+#[macro_use] mod bitflags;
 #[macro_use] mod macros;
 
 // Public crates
