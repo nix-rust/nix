@@ -30,7 +30,7 @@ mod test_ioctl;
 mod test_wait;
 mod test_uio;
 
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "android", target_os = "linux"))]
 mod test_epoll;
 #[cfg(target_os = "linux")]
 mod test_inotify;

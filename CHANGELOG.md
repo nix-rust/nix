@@ -11,6 +11,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Added fine-grained features flags.  Most Nix functionality can now be
   conditionally enabled.  By default, all features are enabled.
   (#[1611](https://github.com/nix-rust/nix/pull/1611))
+- Added `EPOLLEXCLUSIVE` on Android.
+  (#[1567](https://github.com/nix-rust/nix/pull/1567))
 
 ### Changed
 ### Fixed
