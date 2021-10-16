@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased] - ReleaseDate
+
+### Added
+### Changed
+### Fixed
+
+- Removed the external dependency on bitflags, which fixes the build for
+  downstream crates that require both Nix >= 0.23.0 and bitflags < 1.3.0.
+  (#[1560](https://github.com/nix-rust/nix/pull/1560))
+
+### Removed
+
 ## [0.23.0] - 2021-09-28
 ### Added
 
