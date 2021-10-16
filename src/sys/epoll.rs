@@ -19,6 +19,7 @@ libc_bitflags!(
         EPOLLHUP;
         EPOLLRDHUP;
         #[cfg(target_os = "linux")]  // Added in 4.5; not in Android.
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         EPOLLEXCLUSIVE;
         #[cfg(not(target_arch = "mips"))]
         EPOLLWAKEUP;

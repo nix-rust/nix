@@ -91,6 +91,7 @@ libc_enum!{
         SIGIO,
         #[cfg(any(target_os = "android", target_os = "emscripten",
                   target_os = "fuchsia", target_os = "linux"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         /// Power failure imminent.
         SIGPWR,
         /// Bad system call
@@ -98,11 +99,13 @@ libc_enum!{
         #[cfg(not(any(target_os = "android", target_os = "emscripten",
                       target_os = "fuchsia", target_os = "linux",
                       target_os = "redox")))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         /// Emulator trap
         SIGEMT,
         #[cfg(not(any(target_os = "android", target_os = "emscripten",
                       target_os = "fuchsia", target_os = "linux",
                       target_os = "redox")))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         /// Information request
         SIGINFO,
     }
@@ -565,6 +568,7 @@ impl SigSet {
     /// Suspends execution of the calling thread until one of the signals in the
     /// signal mask becomes pending, and returns the accepted signal.
     #[cfg(not(target_os = "redox"))] // RedoxFS does not yet support sigwait
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn wait(&self) -> Result<Signal> {
         use std::convert::TryFrom;
 
@@ -596,6 +600,7 @@ pub enum SigHandler {
     /// Use the given signal-catching function, which takes in the signal, information about how
     /// the signal was generated, and a pointer to the threads `ucontext_t`.
     #[cfg(not(target_os = "redox"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     SigAction(extern fn(libc::c_int, *mut libc::siginfo_t, *mut libc::c_void))
 }
 
@@ -659,6 +664,7 @@ impl SigAction {
 
     /// Returns the action's handler.
     #[cfg(not(target_os = "redox"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn handler(&self) -> SigHandler {
         match self.sigaction.sa_sigaction {
             libc::SIG_DFL => SigHandler::SigDfl,
@@ -693,6 +699,7 @@ impl SigAction {
 
     /// Returns the action's handler.
     #[cfg(target_os = "redox")]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn handler(&self) -> SigHandler {
         match self.sigaction.sa_handler {
             libc::SIG_DFL => SigHandler::SigDfl,
@@ -969,6 +976,7 @@ pub enum SigevNotify {
     // expose a way to set the union members needed by SIGEV_THREAD.
     /// Notify by delivering an event to a kqueue.
     #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     SigevKevent {
         /// File descriptor of the kqueue to notify.
         kq: RawFd,
@@ -977,6 +985,7 @@ pub enum SigevNotify {
     },
     /// Notify by delivering a signal to a thread.
     #[cfg(any(target_os = "freebsd", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     SigevThreadId {
         /// Signal to send
         signal: Signal,
@@ -990,6 +999,7 @@ pub enum SigevNotify {
 }
 
 #[cfg(not(any(target_os = "openbsd", target_os = "redox")))]
+#[cfg_attr(docsrs, doc(cfg(all())))]
 mod sigevent {
     feature! {
     #![any(feature = "aio", feature = "signal")]

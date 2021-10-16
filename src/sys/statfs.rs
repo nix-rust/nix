@@ -11,9 +11,11 @@ use crate::{NixPath, Result, errno::Errno};
 
 /// Identifies a mounted file system
 #[cfg(target_os = "android")]
+#[cfg_attr(docsrs, doc(cfg(all())))]
 pub type fsid_t = libc::__fsid_t;
 /// Identifies a mounted file system
 #[cfg(not(target_os = "android"))]
+#[cfg_attr(docsrs, doc(cfg(all())))]
 pub type fsid_t = libc::fsid_t;
 
 /// Describes a mounted file system
@@ -142,12 +144,14 @@ impl Statfs {
         target_os = "ios",
         target_os = "macos"
     )))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn filesystem_type(&self) -> FsType {
         FsType(self.0.f_type)
     }
 
     /// Magic code defining system type
     #[cfg(not(any(target_os = "linux", target_os = "android")))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn filesystem_type_name(&self) -> &str {
         let c_str = unsafe { CStr::from_ptr(self.0.f_fstypename.as_ptr()) };
         c_str.to_str().unwrap()
@@ -155,18 +159,21 @@ impl Statfs {
 
     /// Optimal transfer block size
     #[cfg(any(target_os = "ios", target_os = "macos"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn optimal_transfer_size(&self) -> i32 {
         self.0.f_iosize
     }
 
     /// Optimal transfer block size
     #[cfg(target_os = "openbsd")]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn optimal_transfer_size(&self) -> u32 {
         self.0.f_iosize
     }
 
     /// Optimal transfer block size
     #[cfg(all(target_os = "linux", target_arch = "s390x"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn optimal_transfer_size(&self) -> u32 {
         self.0.f_bsize
     }
@@ -176,30 +183,35 @@ impl Statfs {
         target_os = "android",
         all(target_os = "linux", target_env = "musl")
     ))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn optimal_transfer_size(&self) -> libc::c_ulong {
         self.0.f_bsize
     }
 
     /// Optimal transfer block size
     #[cfg(all(target_os = "linux", not(any(target_arch = "s390x", target_env = "musl"))))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn optimal_transfer_size(&self) -> libc::__fsword_t {
         self.0.f_bsize
     }
 
     /// Optimal transfer block size
     #[cfg(target_os = "dragonfly")]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn optimal_transfer_size(&self) -> libc::c_long {
         self.0.f_iosize
     }
 
     /// Optimal transfer block size
     #[cfg(target_os = "freebsd")]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn optimal_transfer_size(&self) -> u64 {
         self.0.f_iosize
     }
 
     /// Size of a block
     #[cfg(any(target_os = "ios", target_os = "macos", target_os = "openbsd"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn block_size(&self) -> u32 {
         self.0.f_bsize
     }
@@ -207,6 +219,7 @@ impl Statfs {
     /// Size of a block
     // f_bsize on linux: https://github.com/torvalds/linux/blob/master/fs/nfs/super.c#L471
     #[cfg(all(target_os = "linux", target_arch = "s390x"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn block_size(&self) -> u32 {
         self.0.f_bsize
     }
@@ -214,6 +227,7 @@ impl Statfs {
     /// Size of a block
     // f_bsize on linux: https://github.com/torvalds/linux/blob/master/fs/nfs/super.c#L471
     #[cfg(all(target_os = "linux", target_env = "musl"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn block_size(&self) -> libc::c_ulong {
         self.0.f_bsize
     }
@@ -221,54 +235,63 @@ impl Statfs {
     /// Size of a block
     // f_bsize on linux: https://github.com/torvalds/linux/blob/master/fs/nfs/super.c#L471
     #[cfg(all(target_os = "linux", not(any(target_arch = "s390x", target_env = "musl"))))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn block_size(&self) -> libc::__fsword_t {
         self.0.f_bsize
     }
 
     /// Size of a block
     #[cfg(target_os = "freebsd")]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn block_size(&self) -> u64 {
         self.0.f_bsize
     }
 
     /// Size of a block
     #[cfg(target_os = "android")]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn block_size(&self) -> libc::c_ulong {
         self.0.f_bsize
     }
 
     /// Size of a block
     #[cfg(target_os = "dragonfly")]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn block_size(&self) -> libc::c_long {
         self.0.f_bsize
     }
 
     /// Maximum length of filenames
     #[cfg(any(target_os = "freebsd", target_os = "openbsd"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn maximum_name_length(&self) -> u32 {
         self.0.f_namemax
     }
 
     /// Maximum length of filenames
     #[cfg(all(target_os = "linux", target_arch = "s390x"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn maximum_name_length(&self) -> u32 {
         self.0.f_namelen
     }
 
     /// Maximum length of filenames
     #[cfg(all(target_os = "linux", target_env = "musl"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn maximum_name_length(&self) -> libc::c_ulong {
         self.0.f_namelen
     }
 
     /// Maximum length of filenames
     #[cfg(all(target_os = "linux", not(any(target_arch = "s390x", target_env = "musl"))))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn maximum_name_length(&self) -> libc::__fsword_t {
         self.0.f_namelen
     }
 
     /// Maximum length of filenames
     #[cfg(target_os = "android")]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn maximum_name_length(&self) -> libc::c_ulong {
         self.0.f_namelen
     }
@@ -281,18 +304,21 @@ impl Statfs {
         target_os = "freebsd",
         target_os = "openbsd",
     ))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn blocks(&self) -> u64 {
         self.0.f_blocks
     }
 
     /// Total data blocks in filesystem
     #[cfg(target_os = "dragonfly")]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn blocks(&self) -> libc::c_long {
         self.0.f_blocks
     }
 
     /// Total data blocks in filesystem
     #[cfg(all(target_os = "linux", any(target_env = "musl", all(target_arch = "x86_64", target_pointer_width = "32"))))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn blocks(&self) -> u64 {
         self.0.f_blocks
     }
@@ -307,6 +333,7 @@ impl Statfs {
         target_os = "dragonfly",
         all(target_os = "linux", any(target_env = "musl", all(target_arch = "x86_64", target_pointer_width = "32")))
     )))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn blocks(&self) -> libc::c_ulong {
         self.0.f_blocks
     }
@@ -319,18 +346,21 @@ impl Statfs {
         target_os = "freebsd",
         target_os = "openbsd",
     ))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn blocks_free(&self) -> u64 {
         self.0.f_bfree
     }
 
     /// Free blocks in filesystem
     #[cfg(target_os = "dragonfly")]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn blocks_free(&self) -> libc::c_long {
         self.0.f_bfree
     }
 
     /// Free blocks in filesystem
     #[cfg(all(target_os = "linux", any(target_env = "musl", all(target_arch = "x86_64", target_pointer_width = "32"))))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn blocks_free(&self) -> u64 {
         self.0.f_bfree
     }
@@ -345,30 +375,35 @@ impl Statfs {
         target_os = "dragonfly",
         all(target_os = "linux", any(target_env = "musl", all(target_arch = "x86_64", target_pointer_width = "32")))
     )))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn blocks_free(&self) -> libc::c_ulong {
         self.0.f_bfree
     }
 
     /// Free blocks available to unprivileged user
     #[cfg(any(target_os = "ios", target_os = "macos", target_os = "android"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn blocks_available(&self) -> u64 {
         self.0.f_bavail
     }
 
     /// Free blocks available to unprivileged user
     #[cfg(target_os = "dragonfly")]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn blocks_available(&self) -> libc::c_long {
         self.0.f_bavail
     }
 
     /// Free blocks available to unprivileged user
     #[cfg(any(target_os = "freebsd", target_os = "openbsd"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn blocks_available(&self) -> i64 {
         self.0.f_bavail
     }
 
     /// Free blocks available to unprivileged user
     #[cfg(all(target_os = "linux", any(target_env = "musl", all(target_arch = "x86_64", target_pointer_width = "32"))))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn blocks_available(&self) -> u64 {
         self.0.f_bavail
     }
@@ -383,6 +418,7 @@ impl Statfs {
         target_os = "dragonfly",
         all(target_os = "linux", any(target_env = "musl", all(target_arch = "x86_64", target_pointer_width = "32")))
     )))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn blocks_available(&self) -> libc::c_ulong {
         self.0.f_bavail
     }
@@ -395,18 +431,21 @@ impl Statfs {
         target_os = "freebsd",
         target_os = "openbsd",
     ))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn files(&self) -> u64 {
         self.0.f_files
     }
 
     /// Total file nodes in filesystem
     #[cfg(target_os = "dragonfly")]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn files(&self) -> libc::c_long {
         self.0.f_files
     }
 
     /// Total file nodes in filesystem
     #[cfg(all(target_os = "linux", any(target_env = "musl", all(target_arch = "x86_64", target_pointer_width = "32"))))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn files(&self) -> libc::fsfilcnt_t {
         self.0.f_files
     }
@@ -421,6 +460,7 @@ impl Statfs {
         target_os = "dragonfly",
         all(target_os = "linux", any(target_env = "musl", all(target_arch = "x86_64", target_pointer_width = "32")))
     )))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn files(&self) -> libc::c_ulong {
         self.0.f_files
     }
@@ -432,24 +472,28 @@ impl Statfs {
             target_os = "macos",
             target_os = "openbsd"
     ))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn files_free(&self) -> u64 {
         self.0.f_ffree
     }
 
     /// Free file nodes in filesystem
     #[cfg(target_os = "dragonfly")]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn files_free(&self) -> libc::c_long {
         self.0.f_ffree
     }
 
     /// Free file nodes in filesystem
     #[cfg(target_os = "freebsd")]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn files_free(&self) -> i64 {
         self.0.f_ffree
     }
 
     /// Free file nodes in filesystem
     #[cfg(all(target_os = "linux", any(target_env = "musl", all(target_arch = "x86_64", target_pointer_width = "32"))))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn files_free(&self) -> libc::fsfilcnt_t {
         self.0.f_ffree
     }
@@ -464,6 +508,7 @@ impl Statfs {
         target_os = "dragonfly",
         all(target_os = "linux", any(target_env = "musl", all(target_arch = "x86_64", target_pointer_width = "32")))
     )))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn files_free(&self) -> libc::c_ulong {
         self.0.f_ffree
     }

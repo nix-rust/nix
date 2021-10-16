@@ -8,6 +8,7 @@ use crate::{Errno, Result};
 pub use self::sched_linux_like::*;
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg_attr(docsrs, doc(cfg(all())))]
 mod sched_linux_like {
     use crate::errno::Errno;
     use libc::{self, c_int, c_void};

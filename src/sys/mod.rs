@@ -161,6 +161,7 @@ feature! {
 }
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg_attr(docsrs, doc(cfg(all())))]
 #[allow(missing_docs)]
 pub mod sysinfo;
 

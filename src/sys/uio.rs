@@ -31,6 +31,7 @@ pub fn readv(fd: RawFd, iov: &mut [IoVec<&mut [u8]>]) -> Result<usize> {
 ///
 /// See also: [`writev`](fn.writev.html) and [`pwrite`](fn.pwrite.html)
 #[cfg(not(target_os = "redox"))]
+#[cfg_attr(docsrs, doc(cfg(all())))]
 pub fn pwritev(fd: RawFd, iov: &[IoVec<&[u8]>],
                offset: off_t) -> Result<usize> {
     let res = unsafe {
@@ -48,6 +49,7 @@ pub fn pwritev(fd: RawFd, iov: &[IoVec<&[u8]>],
 ///
 /// See also: [`readv`](fn.readv.html) and [`pread`](fn.pread.html)
 #[cfg(not(target_os = "redox"))]
+#[cfg_attr(docsrs, doc(cfg(all())))]
 pub fn preadv(fd: RawFd, iov: &[IoVec<&mut [u8]>],
               offset: off_t) -> Result<usize> {
     let res = unsafe {
@@ -92,6 +94,7 @@ pub fn pread(fd: RawFd, buf: &mut [u8], offset: off_t) -> Result<usize>{
 /// is used with [`process_vm_readv`](fn.process_vm_readv.html)
 /// and [`process_vm_writev`](fn.process_vm_writev.html).
 #[cfg(target_os = "linux")]
+#[cfg_attr(docsrs, doc(cfg(all())))]
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct RemoteIoVec {

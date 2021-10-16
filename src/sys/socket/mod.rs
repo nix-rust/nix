@@ -117,68 +117,84 @@ pub enum SockProtocol {
     /// Allows applications and other KEXTs to be notified when certain kernel events occur
     /// ([ref](https://developer.apple.com/library/content/documentation/Darwin/Conceptual/NKEConceptual/control/control.html))
     #[cfg(any(target_os = "ios", target_os = "macos"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     KextEvent = libc::SYSPROTO_EVENT,
     /// Allows applications to configure and control a KEXT
     /// ([ref](https://developer.apple.com/library/content/documentation/Darwin/Conceptual/NKEConceptual/control/control.html))
     #[cfg(any(target_os = "ios", target_os = "macos"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     KextControl = libc::SYSPROTO_CONTROL,
     /// Receives routing and link updates and may be used to modify the routing tables (both IPv4 and IPv6), IP addresses, link
     // parameters, neighbor setups, queueing disciplines, traffic classes and packet classifiers
     /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     NetlinkRoute = libc::NETLINK_ROUTE,
     /// Reserved for user-mode socket protocols
     /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     NetlinkUserSock = libc::NETLINK_USERSOCK,
     /// Query information about sockets of various protocol families from the kernel
     /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     NetlinkSockDiag = libc::NETLINK_SOCK_DIAG,
     /// SELinux event notifications.
     /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     NetlinkSELinux = libc::NETLINK_SELINUX,
     /// Open-iSCSI
     /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     NetlinkISCSI = libc::NETLINK_ISCSI,
     /// Auditing
     /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     NetlinkAudit = libc::NETLINK_AUDIT,
     /// Access to FIB lookup from user space
     /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     NetlinkFIBLookup = libc::NETLINK_FIB_LOOKUP,
     /// Netfilter subsystem
     /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     NetlinkNetFilter = libc::NETLINK_NETFILTER,
     /// SCSI Transports
     /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     NetlinkSCSITransport = libc::NETLINK_SCSITRANSPORT,
     /// Infiniband RDMA
     /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     NetlinkRDMA = libc::NETLINK_RDMA,
     /// Transport IPv6 packets from netfilter to user space.  Used by ip6_queue kernel module.
     /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     NetlinkIPv6Firewall = libc::NETLINK_IP6_FW,
     /// DECnet routing messages
     /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     NetlinkDECNetRoutingMessage = libc::NETLINK_DNRTMSG,
     /// Kernel messages to user space
     /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     NetlinkKObjectUEvent = libc::NETLINK_KOBJECT_UEVENT,
     /// Netlink interface to request information about ciphers registered with the kernel crypto API as well as allow
     /// configuration of the kernel crypto API.
     /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     NetlinkCrypto = libc::NETLINK_CRYPTO,
 }
 
@@ -193,6 +209,7 @@ libc_bitflags!{
                   target_os = "linux",
                   target_os = "netbsd",
                   target_os = "openbsd"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         SOCK_NONBLOCK;
         /// Set close-on-exec on the new descriptor
         #[cfg(any(target_os = "android",
@@ -202,13 +219,16 @@ libc_bitflags!{
                   target_os = "linux",
                   target_os = "netbsd",
                   target_os = "openbsd"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         SOCK_CLOEXEC;
         /// Return `EPIPE` instead of raising `SIGPIPE`
         #[cfg(target_os = "netbsd")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         SOCK_NOSIGPIPE;
         /// For domains `AF_INET(6)`, only allow `connect(2)`, `sendto(2)`, or `sendmsg(2)`
         /// to the DNS port (typically 53)
         #[cfg(target_os = "openbsd")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         SOCK_DNS;
     }
 }
@@ -257,6 +277,7 @@ libc_bitflags!{
         /// the socket error queue. (For more details, see
         /// [recvfrom(2)](https://linux.die.net/man/2/recvfrom))
         #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MSG_ERRQUEUE;
         /// Set the `close-on-exec` flag for the file descriptor received via a UNIX domain
         /// file descriptor using the `SCM_RIGHTS` operation (described in
@@ -271,6 +292,7 @@ libc_bitflags!{
                   target_os = "linux",
                   target_os = "netbsd",
                   target_os = "openbsd"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MSG_CMSG_CLOEXEC;
     }
 }
@@ -557,9 +579,11 @@ pub enum ControlMessageOwned {
     ScmRights(Vec<RawFd>),
     /// Received version of [`ControlMessage::ScmCredentials`]
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     ScmCredentials(UnixCredentials),
     /// Received version of [`ControlMessage::ScmCreds`]
     #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     ScmCreds(UnixCredentials),
     /// A message of type `SCM_TIMESTAMP`, containing the time the
     /// packet was received by the kernel.
@@ -621,6 +645,7 @@ pub enum ControlMessageOwned {
     ///
     /// [Further reading](https://www.kernel.org/doc/html/latest/networking/timestamping.html)
     #[cfg(all(target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     ScmTimestampns(TimeSpec),
     #[cfg(any(
         target_os = "android",
@@ -688,13 +713,18 @@ pub enum ControlMessageOwned {
     /// `RxqOvfl` socket option should be enabled on a socket
     /// to allow receiving the drop counter.
     #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     RxqOvfl(u32),
 
     /// Socket error queue control messages read with the `MSG_ERRQUEUE` flag.
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(feature = "net")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv4RecvErr(libc::sock_extended_err, Option<sockaddr_in>),
     /// Socket error queue control messages read with the `MSG_ERRQUEUE` flag.
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(feature = "net")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv6RecvErr(libc::sock_extended_err, Option<sockaddr_in6>),
 
     /// Catch-all variant for unimplemented cmsg types.
@@ -806,11 +836,13 @@ impl ControlMessageOwned {
                 ControlMessageOwned::RxqOvfl(drop_counter)
             },
             #[cfg(any(target_os = "android", target_os = "linux"))]
+            #[cfg(feature = "net")]
             (libc::IPPROTO_IP, libc::IP_RECVERR) => {
                 let (err, addr) = Self::recv_err_helper::<sockaddr_in>(p, len);
                 ControlMessageOwned::Ipv4RecvErr(err, addr)
             },
             #[cfg(any(target_os = "android", target_os = "linux"))]
+            #[cfg(feature = "net")]
             (libc::IPPROTO_IPV6, libc::IPV6_RECVERR) => {
                 let (err, addr) = Self::recv_err_helper::<sockaddr_in6>(p, len);
                 ControlMessageOwned::Ipv6RecvErr(err, addr)
@@ -824,6 +856,7 @@ impl ControlMessageOwned {
     }
 
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(feature = "net")]
     unsafe fn recv_err_helper<T>(p: *mut libc::c_uchar, len: usize) -> (libc::sock_extended_err, Option<T>) {
         let ee = p as *const libc::sock_extended_err;
         let err = ptr::read_unaligned(ee);
@@ -873,6 +906,7 @@ pub enum ControlMessage<'a> {
     /// For further information, please refer to the
     /// [`unix(7)`](https://man7.org/linux/man-pages/man7/unix.7.html) man page.
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     ScmCredentials(&'a UnixCredentials),
     /// A message of type `SCM_CREDS`, containing the pid, uid, euid, gid and groups of
     /// a process connected to the socket.
@@ -887,6 +921,7 @@ pub enum ControlMessage<'a> {
     /// For further information, please refer to the
     /// [`unix(4)`](https://www.freebsd.org/cgi/man.cgi?query=unix) man page.
     #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     ScmCreds,
 
     /// Set IV for `AF_ALG` crypto API.
@@ -897,6 +932,7 @@ pub enum ControlMessage<'a> {
         target_os = "android",
         target_os = "linux",
     ))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     AlgSetIv(&'a [u8]),
     /// Set crypto operation for `AF_ALG` crypto API. It may be one of
     /// `ALG_OP_ENCRYPT` or `ALG_OP_DECRYPT`
@@ -907,6 +943,7 @@ pub enum ControlMessage<'a> {
         target_os = "android",
         target_os = "linux",
     ))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     AlgSetOp(&'a libc::c_int),
     /// Set the length of associated authentication data (AAD) (applicable only to AEAD algorithms)
     /// for `AF_ALG` crypto API.
@@ -917,6 +954,7 @@ pub enum ControlMessage<'a> {
         target_os = "android",
         target_os = "linux",
     ))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     AlgSetAeadAssoclen(&'a u32),
 
     /// UDP GSO makes it possible for applications to generate network packets
@@ -965,6 +1003,7 @@ pub enum ControlMessage<'a> {
     /// socket between the last recieved packet and this
     /// received packet.
     #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     RxqOvfl(&'a u32),
 }
 

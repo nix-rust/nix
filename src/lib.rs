@@ -40,6 +40,7 @@
 //! * `zerocopy` - APIs like `sendfile` and `copy_file_range`
 #![crate_name = "nix"]
 #![cfg(unix)]
+#![cfg_attr(docsrs, doc(cfg(all())))]
 #![allow(non_camel_case_types)]
 #![cfg_attr(test, deny(warnings))]
 #![recursion_limit = "500"]

@@ -21,9 +21,11 @@ libc_bitflags!{
         PROT_EXEC;
         /// Apply protection up to the end of a mapping that grows upwards.
         #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         PROT_GROWSDOWN;
         /// Apply protection down to the beginning of a mapping that grows downwards.
         #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         PROT_GROWSUP;
     }
 }
@@ -42,6 +44,7 @@ libc_bitflags!{
         /// To be used with `MAP_FIXED`, to forbid the system
         /// to select a different address than the one specified.
         #[cfg(target_os = "freebsd")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MAP_EXCL;
         /// Synonym for `MAP_ANONYMOUS`.
         MAP_ANON;
@@ -52,98 +55,128 @@ libc_bitflags!{
                       any(target_arch = "x86", target_arch = "x86_64")),
                   all(target_os = "linux", target_env = "musl", any(target_arch = "x86", target_arch = "x86_64")),
                   all(target_os = "freebsd", target_pointer_width = "64")))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MAP_32BIT;
         /// Used for stacks; indicates to the kernel that the mapping should extend downward in memory.
         #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MAP_GROWSDOWN;
         /// Compatibility flag. Ignored.
         #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MAP_DENYWRITE;
         /// Compatibility flag. Ignored.
         #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MAP_EXECUTABLE;
         /// Mark the mmaped region to be locked in the same way as `mlock(2)`.
         #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MAP_LOCKED;
         /// Do not reserve swap space for this mapping.
         ///
         /// This was removed in FreeBSD 11 and is unused in DragonFlyBSD.
         #[cfg(not(any(target_os = "dragonfly", target_os = "freebsd")))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MAP_NORESERVE;
         /// Populate page tables for a mapping.
         #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MAP_POPULATE;
         /// Only meaningful when used with `MAP_POPULATE`. Don't perform read-ahead.
         #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MAP_NONBLOCK;
         /// Allocate the mapping using "huge pages."
         #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MAP_HUGETLB;
         /// Make use of 64KB huge page (must be supported by the system)
         #[cfg(target_os = "linux")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MAP_HUGE_64KB;
         /// Make use of 512KB huge page (must be supported by the system)
         #[cfg(target_os = "linux")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MAP_HUGE_512KB;
         /// Make use of 1MB huge page (must be supported by the system)
         #[cfg(target_os = "linux")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MAP_HUGE_1MB;
         /// Make use of 2MB huge page (must be supported by the system)
         #[cfg(target_os = "linux")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MAP_HUGE_2MB;
         /// Make use of 8MB huge page (must be supported by the system)
         #[cfg(target_os = "linux")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MAP_HUGE_8MB;
         /// Make use of 16MB huge page (must be supported by the system)
         #[cfg(target_os = "linux")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MAP_HUGE_16MB;
         /// Make use of 32MB huge page (must be supported by the system)
         #[cfg(target_os = "linux")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MAP_HUGE_32MB;
         /// Make use of 256MB huge page (must be supported by the system)
         #[cfg(target_os = "linux")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MAP_HUGE_256MB;
         /// Make use of 512MB huge page (must be supported by the system)
         #[cfg(target_os = "linux")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MAP_HUGE_512MB;
         /// Make use of 1GB huge page (must be supported by the system)
         #[cfg(target_os = "linux")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MAP_HUGE_1GB;
         /// Make use of 2GB huge page (must be supported by the system)
         #[cfg(target_os = "linux")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MAP_HUGE_2GB;
         /// Make use of 16GB huge page (must be supported by the system)
         #[cfg(target_os = "linux")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MAP_HUGE_16GB;
 
         /// Lock the mapped region into memory as with `mlock(2)`.
         #[cfg(target_os = "netbsd")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MAP_WIRED;
         /// Causes dirtied data in the specified range to be flushed to disk only when necessary.
         #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MAP_NOSYNC;
         /// Rename private pages to a file.
         ///
         /// This was removed in FreeBSD 11 and is unused in DragonFlyBSD.
         #[cfg(any(target_os = "netbsd", target_os = "openbsd"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MAP_RENAME;
         /// Region may contain semaphores.
         #[cfg(any(target_os = "dragonfly", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MAP_HASSEMAPHORE;
         /// Region grows down, like a stack.
         #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd", target_os = "linux", target_os = "openbsd"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MAP_STACK;
         /// Pages in this mapping are not retained in the kernel's memory cache.
         #[cfg(any(target_os = "ios", target_os = "macos"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MAP_NOCACHE;
         /// Allows the W/X bit on the page, it's necessary on aarch64 architecture.
         #[cfg(any(target_os = "ios", target_os = "macos"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MAP_JIT;
         /// Allows to use large pages, underlying alignment based on size.
         #[cfg(target_os = "freesd")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MAP_ALIGNED_SUPER;
         /// Pages will be discarded in the core dumps.
         #[cfg(target_os = "openbsd")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MAP_CONCEAL;
     }
 }
@@ -154,15 +187,19 @@ libc_bitflags!{
     pub struct MRemapFlags: c_int {
         /// Permit the kernel to relocate the mapping to a new virtual address, if necessary.
         #[cfg(target_os = "linux")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MREMAP_MAYMOVE;
         /// Place the mapping at exactly the address specified in `new_address`.
         #[cfg(target_os = "linux")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MREMAP_FIXED;
         /// Permits to use the old and new address as hints to relocate the mapping.
         #[cfg(target_os = "netbsd")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MAP_FIXED;
         /// Allows to duplicate the mapping to be able to apply different flags on the copy.
         #[cfg(target_os = "netbsd")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MAP_REMAPDUP;
     }
 }
@@ -186,23 +223,29 @@ libc_enum!{
         MADV_DONTNEED,
         /// Free up a given range of pages and its associated backing store.
         #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MADV_REMOVE,
         /// Do not make pages in this range available to the child after a `fork(2)`.
         #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MADV_DONTFORK,
         /// Undo the effect of `MADV_DONTFORK`.
         #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MADV_DOFORK,
         /// Poison the given pages.
         ///
         /// Subsequent references to those pages are treated like hardware memory corruption.
         #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MADV_HWPOISON,
         /// Enable Kernel Samepage Merging (KSM) for the given pages.
         #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MADV_MERGEABLE,
         /// Undo the effect of `MADV_MERGEABLE`
         #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MADV_UNMERGEABLE,
         /// Preserve the memory of each page but offline the original page.
         #[cfg(any(target_os = "android",
@@ -217,46 +260,61 @@ libc_enum!{
         MADV_SOFT_OFFLINE,
         /// Enable Transparent Huge Pages (THP) for pages in the given range.
         #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MADV_HUGEPAGE,
         /// Undo the effect of `MADV_HUGEPAGE`.
         #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MADV_NOHUGEPAGE,
         /// Exclude the given range from a core dump.
         #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MADV_DONTDUMP,
         /// Undo the effect of an earlier `MADV_DONTDUMP`.
         #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MADV_DODUMP,
         /// Specify that the application no longer needs the pages in the given range.
         MADV_FREE,
         /// Request that the system not flush the current range to disk unless it needs to.
         #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MADV_NOSYNC,
         /// Undoes the effects of `MADV_NOSYNC` for any future pages dirtied within the given range.
         #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MADV_AUTOSYNC,
         /// Region is not included in a core file.
         #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MADV_NOCORE,
         /// Include region in a core file
         #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MADV_CORE,
         #[cfg(any(target_os = "freebsd"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MADV_PROTECT,
         /// Invalidate the hardware page table for the given region.
         #[cfg(target_os = "dragonfly")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MADV_INVAL,
         /// Set the offset of the page directory page to `value` for the virtual page table.
         #[cfg(target_os = "dragonfly")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MADV_SETMAP,
         /// Indicates that the application will not need the data in the given range.
         #[cfg(any(target_os = "ios", target_os = "macos"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MADV_ZERO_WIRED_PAGES,
         #[cfg(any(target_os = "ios", target_os = "macos"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MADV_FREE_REUSABLE,
         #[cfg(any(target_os = "ios", target_os = "macos"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MADV_FREE_REUSE,
         #[cfg(any(target_os = "ios", target_os = "macos"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MADV_CAN_REUSE,
     }
 }
@@ -270,9 +328,11 @@ libc_bitflags!{
         MS_INVALIDATE;
         /// Invalidate pages, but leave them mapped.
         #[cfg(any(target_os = "ios", target_os = "macos"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MS_KILLPAGES;
         /// Deactivate pages, but leave them mapped.
         #[cfg(any(target_os = "ios", target_os = "macos"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MS_DEACTIVATE;
         /// Perform an update and wait for it to complete.
         MS_SYNC;

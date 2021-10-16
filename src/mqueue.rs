@@ -37,8 +37,10 @@ pub struct MqAttr {
 // x32 compatibility
 // See https://sourceware.org/bugzilla/show_bug.cgi?id=21279
 #[cfg(all(target_arch = "x86_64", target_pointer_width = "32"))]
+#[cfg_attr(docsrs, doc(cfg(all())))]
 pub type mq_attr_member_t = i64;
 #[cfg(not(all(target_arch = "x86_64", target_pointer_width = "32")))]
+#[cfg_attr(docsrs, doc(cfg(all())))]
 pub type mq_attr_member_t = libc::c_long;
 
 impl MqAttr {

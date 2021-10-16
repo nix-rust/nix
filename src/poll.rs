@@ -77,15 +77,19 @@ libc_bitflags! {
         POLLOUT;
         /// Equivalent to [`POLLIN`](constant.POLLIN.html)
         #[cfg(not(target_os = "redox"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         POLLRDNORM;
         #[cfg(not(target_os = "redox"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         /// Equivalent to [`POLLOUT`](constant.POLLOUT.html)
         POLLWRNORM;
         /// Priority band data can be read (generally unused on Linux).
         #[cfg(not(target_os = "redox"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         POLLRDBAND;
         /// Priority data may be written.
         #[cfg(not(target_os = "redox"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         POLLWRBAND;
         /// Error condition (only returned in
         /// [`PollFd::revents`](struct.PollFd.html#method.revents);

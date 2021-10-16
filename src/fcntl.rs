@@ -53,11 +53,13 @@ libc_bitflags!(
         O_ACCMODE;
         /// Use alternate I/O semantics.
         #[cfg(target_os = "netbsd")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         O_ALT_IO;
         /// Open the file in append-only mode.
         O_APPEND;
         /// Generate a signal when input or output becomes possible.
         #[cfg(not(any(target_os = "illumos", target_os = "solaris")))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         O_ASYNC;
         /// Closes the file descriptor once an `execve` call is made.
         ///
@@ -71,9 +73,11 @@ libc_bitflags!(
                   target_os = "freebsd",
                   target_os = "linux",
                   target_os = "netbsd"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         O_DIRECT;
         /// If the specified path isn't a directory, fail.
         #[cfg(not(any(target_os = "illumos", target_os = "solaris")))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         O_DIRECTORY;
         /// Implicitly follow each `write()` with an `fdatasync()`.
         #[cfg(any(target_os = "android",
@@ -82,11 +86,13 @@ libc_bitflags!(
                   target_os = "macos",
                   target_os = "netbsd",
                   target_os = "openbsd"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         O_DSYNC;
         /// Error out if a file was not created.
         O_EXCL;
         /// Open for execute only.
         #[cfg(target_os = "freebsd")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         O_EXEC;
         /// Open with an exclusive file lock.
         #[cfg(any(target_os = "dragonfly",
@@ -96,6 +102,7 @@ libc_bitflags!(
                   target_os = "netbsd",
                   target_os = "openbsd",
                   target_os = "redox"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         O_EXLOCK;
         /// Same as `O_SYNC`.
         #[cfg(any(target_os = "dragonfly",
@@ -106,18 +113,23 @@ libc_bitflags!(
                   target_os = "netbsd",
                   target_os = "openbsd",
                   target_os = "redox"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         O_FSYNC;
         /// Allow files whose sizes can't be represented in an `off_t` to be opened.
         #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         O_LARGEFILE;
         /// Do not update the file last access time during `read(2)`s.
         #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         O_NOATIME;
         /// Don't attach the device as the process' controlling terminal.
         #[cfg(not(target_os = "redox"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         O_NOCTTY;
         /// Same as `O_NONBLOCK`.
         #[cfg(not(target_os = "redox"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         O_NDELAY;
         /// `open()` will fail if the given path is a symbolic link.
         O_NOFOLLOW;
@@ -125,11 +137,13 @@ libc_bitflags!(
         O_NONBLOCK;
         /// Don't deliver `SIGPIPE`.
         #[cfg(target_os = "netbsd")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         O_NOSIGPIPE;
         /// Obtain a file descriptor for low-level access.
         ///
         /// The file itself is not opened and other file operations will fail.
         #[cfg(any(target_os = "android", target_os = "linux", target_os = "redox"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         O_PATH;
         /// Only allow reading.
         ///
@@ -141,9 +155,11 @@ libc_bitflags!(
         O_RDWR;
         /// Similar to `O_DSYNC` but applies to `read`s instead.
         #[cfg(any(target_os = "linux", target_os = "netbsd", target_os = "openbsd"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         O_RSYNC;
         /// Skip search permission checks.
         #[cfg(target_os = "netbsd")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         O_SEARCH;
         /// Open with a shared file lock.
         #[cfg(any(target_os = "dragonfly",
@@ -153,17 +169,21 @@ libc_bitflags!(
                   target_os = "netbsd",
                   target_os = "openbsd",
                   target_os = "redox"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         O_SHLOCK;
         /// Implicitly follow each `write()` with an `fsync()`.
         #[cfg(not(target_os = "redox"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         O_SYNC;
         /// Create an unnamed temporary file.
         #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         O_TMPFILE;
         /// Truncate an existing regular file to 0 length if it allows writing.
         O_TRUNC;
         /// Restore default TTY attributes.
         #[cfg(target_os = "freebsd")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         O_TTY_INIT;
         /// Only allow writing.
         ///

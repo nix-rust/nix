@@ -44,6 +44,7 @@ pub enum AddressFamily {
     Inet6 = libc::AF_INET6,
     /// Kernel user interface device (see [`netlink(7)`](https://man7.org/linux/man-pages/man7/netlink.7.html))
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     Netlink = libc::AF_NETLINK,
     /// Low level packet interface (see [`packet(7)`](https://man7.org/linux/man-pages/man7/packet.7.html))
     #[cfg(any(target_os = "android",
@@ -51,84 +52,117 @@ pub enum AddressFamily {
               target_os = "illumos",
               target_os = "fuchsia",
               target_os = "solaris"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     Packet = libc::AF_PACKET,
     /// KEXT Controls and Notifications
     #[cfg(any(target_os = "ios", target_os = "macos"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     System = libc::AF_SYSTEM,
     /// Amateur radio AX.25 protocol
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     Ax25 = libc::AF_AX25,
     /// IPX - Novell protocols
     Ipx = libc::AF_IPX,
     /// AppleTalk
     AppleTalk = libc::AF_APPLETALK,
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     NetRom = libc::AF_NETROM,
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     Bridge = libc::AF_BRIDGE,
     /// Access to raw ATM PVCs
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     AtmPvc = libc::AF_ATMPVC,
     /// ITU-T X.25 / ISO-8208 protocol (see [`x25(7)`](https://man7.org/linux/man-pages/man7/x25.7.html))
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     X25 = libc::AF_X25,
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     Rose = libc::AF_ROSE,
     Decnet = libc::AF_DECnet,
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     NetBeui = libc::AF_NETBEUI,
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     Security = libc::AF_SECURITY,
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     Key = libc::AF_KEY,
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     Ash = libc::AF_ASH,
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     Econet = libc::AF_ECONET,
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     AtmSvc = libc::AF_ATMSVC,
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     Rds = libc::AF_RDS,
     Sna = libc::AF_SNA,
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     Irda = libc::AF_IRDA,
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     Pppox = libc::AF_PPPOX,
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     Wanpipe = libc::AF_WANPIPE,
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     Llc = libc::AF_LLC,
     #[cfg(target_os = "linux")]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     Ib = libc::AF_IB,
     #[cfg(target_os = "linux")]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     Mpls = libc::AF_MPLS,
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     Can = libc::AF_CAN,
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     Tipc = libc::AF_TIPC,
     #[cfg(not(any(target_os = "illumos",
                   target_os = "ios",
                   target_os = "macos",
                   target_os = "solaris")))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     Bluetooth = libc::AF_BLUETOOTH,
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     Iucv = libc::AF_IUCV,
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     RxRpc = libc::AF_RXRPC,
     #[cfg(not(any(target_os = "illumos", target_os = "solaris")))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     Isdn = libc::AF_ISDN,
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     Phonet = libc::AF_PHONET,
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     Ieee802154 = libc::AF_IEEE802154,
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     Caif = libc::AF_CAIF,
     /// Interface to kernel crypto API
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     Alg = libc::AF_ALG,
     #[cfg(target_os = "linux")]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     Nfc = libc::AF_NFC,
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     Vsock = libc::AF_VSOCK,
     #[cfg(any(target_os = "dragonfly",
               target_os = "freebsd",
@@ -136,6 +170,7 @@ pub enum AddressFamily {
               target_os = "macos",
               target_os = "netbsd",
               target_os = "openbsd"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     ImpLink = libc::AF_IMPLINK,
     #[cfg(any(target_os = "dragonfly",
               target_os = "freebsd",
@@ -143,6 +178,7 @@ pub enum AddressFamily {
               target_os = "macos",
               target_os = "netbsd",
               target_os = "openbsd"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     Pup = libc::AF_PUP,
     #[cfg(any(target_os = "dragonfly",
               target_os = "freebsd",
@@ -150,11 +186,13 @@ pub enum AddressFamily {
               target_os = "macos",
               target_os = "netbsd",
               target_os = "openbsd"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     Chaos = libc::AF_CHAOS,
     #[cfg(any(target_os = "ios",
               target_os = "macos",
               target_os = "netbsd",
               target_os = "openbsd"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     Ns = libc::AF_NS,
     #[cfg(any(target_os = "dragonfly",
               target_os = "freebsd",
@@ -162,6 +200,7 @@ pub enum AddressFamily {
               target_os = "macos",
               target_os = "netbsd",
               target_os = "openbsd"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     Iso = libc::AF_ISO,
     #[cfg(any(target_os = "dragonfly",
               target_os = "freebsd",
@@ -169,6 +208,7 @@ pub enum AddressFamily {
               target_os = "macos",
               target_os = "netbsd",
               target_os = "openbsd"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     Datakit = libc::AF_DATAKIT,
     #[cfg(any(target_os = "dragonfly",
               target_os = "freebsd",
@@ -176,6 +216,7 @@ pub enum AddressFamily {
               target_os = "macos",
               target_os = "netbsd",
               target_os = "openbsd"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     Ccitt = libc::AF_CCITT,
     #[cfg(any(target_os = "dragonfly",
               target_os = "freebsd",
@@ -183,6 +224,7 @@ pub enum AddressFamily {
               target_os = "macos",
               target_os = "netbsd",
               target_os = "openbsd"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     Dli = libc::AF_DLI,
     #[cfg(any(target_os = "dragonfly",
               target_os = "freebsd",
@@ -190,6 +232,7 @@ pub enum AddressFamily {
               target_os = "macos",
               target_os = "netbsd",
               target_os = "openbsd"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     Lat = libc::AF_LAT,
     #[cfg(any(target_os = "dragonfly",
               target_os = "freebsd",
@@ -197,6 +240,7 @@ pub enum AddressFamily {
               target_os = "macos",
               target_os = "netbsd",
               target_os = "openbsd"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     Hylink = libc::AF_HYLINK,
     #[cfg(any(target_os = "dragonfly",
               target_os = "freebsd",
@@ -205,6 +249,7 @@ pub enum AddressFamily {
               target_os = "illumos",
               target_os = "netbsd",
               target_os = "openbsd"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     Link = libc::AF_LINK,
     #[cfg(any(target_os = "dragonfly",
               target_os = "freebsd",
@@ -212,6 +257,7 @@ pub enum AddressFamily {
               target_os = "macos",
               target_os = "netbsd",
               target_os = "openbsd"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     Coip = libc::AF_COIP,
     #[cfg(any(target_os = "dragonfly",
               target_os = "freebsd",
@@ -219,6 +265,7 @@ pub enum AddressFamily {
               target_os = "macos",
               target_os = "netbsd",
               target_os = "openbsd"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     Cnt = libc::AF_CNT,
     #[cfg(any(target_os = "dragonfly",
               target_os = "freebsd",
@@ -226,9 +273,11 @@ pub enum AddressFamily {
               target_os = "macos",
               target_os = "netbsd",
               target_os = "openbsd"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     Natm = libc::AF_NATM,
     /// Unspecified address family, (see [`getaddrinfo(3)`](https://man7.org/linux/man-pages/man3/getaddrinfo.3.html))
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     Unspec = libc::AF_UNSPEC,
 }
 
@@ -591,6 +640,7 @@ impl UnixAddr {
     /// This is a Linux-specific extension, primarily used to allow chrooted
     /// processes to communicate with processes having a different filesystem view.
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn new_abstract(path: &[u8]) -> Result<UnixAddr> {
         unsafe {
             let mut ret = libc::sockaddr_un {
@@ -649,6 +699,7 @@ impl UnixAddr {
     /// For abstract sockets only the bare name is returned, without the
     /// leading null byte. `None` is returned for unnamed or path-backed sockets.
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn as_abstract(&self) -> Option<&[u8]> {
         match self.kind() {
             UnixAddrKind::Abstract(name) => Some(name),
@@ -719,8 +770,10 @@ pub enum SockAddr {
     Inet(InetAddr),
     Unix(UnixAddr),
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     Netlink(NetlinkAddr),
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     Alg(AlgAddr),
     #[cfg(all(feature = "ioctl", any(target_os = "ios", target_os = "macos")))]
     #[cfg_attr(docsrs, doc(cfg(feature = "ioctl")))]
@@ -739,6 +792,7 @@ pub enum SockAddr {
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Link(LinkAddr),
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     Vsock(VsockAddr),
 }
 
@@ -755,11 +809,13 @@ impl SockAddr {
     }
 
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn new_netlink(pid: u32, groups: u32) -> SockAddr {
         SockAddr::Netlink(NetlinkAddr::new(pid, groups))
     }
 
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn new_alg(alg_type: &str, alg_name: &str) -> SockAddr {
         SockAddr::Alg(AlgAddr::new(alg_type, alg_name))
     }
@@ -773,6 +829,7 @@ impl SockAddr {
     }
 
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn new_vsock(cid: u32, port: u32) -> SockAddr {
         SockAddr::Vsock(VsockAddr::new(cid, port))
     }
@@ -998,6 +1055,7 @@ impl fmt::Display for SockAddr {
 }
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg_attr(docsrs, doc(cfg(all())))]
 pub mod netlink {
     use crate::sys::socket::addr::AddressFamily;
     use libc::{sa_family_t, sockaddr_nl};
@@ -1033,6 +1091,7 @@ pub mod netlink {
 }
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg_attr(docsrs, doc(cfg(all())))]
 pub mod alg {
     use libc::{AF_ALG, sockaddr_alg, c_char};
     use std::{fmt, mem, str};
@@ -1171,6 +1230,7 @@ pub mod sys_control {
 
 
 #[cfg(any(target_os = "android", target_os = "linux", target_os = "fuchsia"))]
+#[cfg_attr(docsrs, doc(cfg(all())))]
 mod datalink {
     feature! {
     #![feature = "net"]
@@ -1247,6 +1307,7 @@ mod datalink {
           target_os = "illumos",
           target_os = "netbsd",
           target_os = "openbsd"))]
+#[cfg_attr(docsrs, doc(cfg(all())))]
 mod datalink {
     feature! {
     #![feature = "net"]
@@ -1259,6 +1320,7 @@ mod datalink {
     impl LinkAddr {
         /// Total length of sockaddr
         #[cfg(not(target_os = "illumos"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         pub fn len(&self) -> usize {
             self.0.sdl_len as usize
         }
@@ -1338,6 +1400,7 @@ mod datalink {
 }
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg_attr(docsrs, doc(cfg(all())))]
 pub mod vsock {
     use crate::sys::socket::addr::AddressFamily;
     use libc::{sa_family_t, sockaddr_vm};

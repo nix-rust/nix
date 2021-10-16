@@ -5,6 +5,7 @@ use std::os::unix::io::{AsRawFd, IntoRawFd, RawFd};
 use std::ptr;
 use std::ffi;
 use crate::sys;
+use cfg_if::cfg_if;
 
 #[cfg(target_os = "linux")]
 use libc::{dirent64 as dirent, readdir64_r as readdir_r};
@@ -186,34 +187,24 @@ pub enum Type {
 
 impl Entry {
     /// Returns the inode number (`d_ino`) of the underlying `dirent`.
-    #[cfg(any(target_os = "android",
-              target_os = "emscripten",
-              target_os = "fuchsia",
-              target_os = "haiku",
-              target_os = "illumos",
-              target_os = "ios",
-              target_os = "l4re",
-              target_os = "linux",
-              target_os = "macos",
-              target_os = "solaris"))]
-    pub fn ino(&self) -> u64 {
-        self.0.d_ino as u64
-    }
-
-    /// Returns the inode number (`d_fileno`) of the underlying `dirent`.
-    #[cfg(not(any(target_os = "android",
-                  target_os = "emscripten",
-                  target_os = "fuchsia",
-                  target_os = "haiku",
-                  target_os = "illumos",
-                  target_os = "ios",
-                  target_os = "l4re",
-                  target_os = "linux",
-                  target_os = "macos",
-                  target_os = "solaris")))]
     #[allow(clippy::useless_conversion)]    // Not useless on all OSes
     pub fn ino(&self) -> u64 {
-        u64::from(self.0.d_fileno)
+        cfg_if! {
+            if #[cfg(any(target_os = "android",
+                         target_os = "emscripten",
+                         target_os = "fuchsia",
+                         target_os = "haiku",
+                         target_os = "illumos",
+                         target_os = "ios",
+                         target_os = "l4re",
+                         target_os = "linux",
+                         target_os = "macos",
+                         target_os = "solaris"))] {
+                self.0.d_ino as u64
+            } else {
+                u64::from(self.0.d_fileno)
+            }
+        }
     }
 
     /// Returns the bare file name of this directory entry without any other leading path component.
