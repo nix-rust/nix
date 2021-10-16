@@ -210,7 +210,8 @@ libc_enum!{
             all(target_os = "linux", any(
                 target_arch = "aarch64",
                 target_arch = "arm",
-                target_arch = "ppc",
+                target_arch = "powerpc",
+                target_arch = "powerpc64",
                 target_arch = "s390x",
                 target_arch = "x86",
                 target_arch = "x86_64",
