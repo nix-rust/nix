@@ -45,6 +45,7 @@ use nix::unistd::chdir;
 use nix::Result;
 
 #[cfg(not(any(target_os = "netbsd", target_os = "redox")))]
+#[cfg_attr(target_os = "openbsd", ignore)]
 fn assert_stat_results(stat_result: Result<FileStat>) {
     let stats = stat_result.expect("stat call failed");
     assert!(stats.st_dev > 0);      // must be positive integer, exact number machine dependent
@@ -57,6 +58,7 @@ fn assert_stat_results(stat_result: Result<FileStat>) {
 }
 
 #[cfg(not(any(target_os = "netbsd", target_os = "redox")))]
+#[cfg_attr(target_os = "openbsd", ignore)]
 // (Android's st_blocks is ulonglong which is always non-negative.)
 #[cfg_attr(target_os = "android", allow(unused_comparisons))]
 #[allow(clippy::absurd_extreme_comparisons)]    // Not absurd on all OSes
@@ -81,6 +83,7 @@ fn assert_lstat_results(stat_result: Result<FileStat>) {
 
 #[test]
 #[cfg(not(any(target_os = "netbsd", target_os = "redox")))]
+#[cfg_attr(target_os = "openbsd", ignore)]
 fn test_stat_and_fstat() {
     use nix::sys::stat::fstat;
 
@@ -97,6 +100,7 @@ fn test_stat_and_fstat() {
 
 #[test]
 #[cfg(not(any(target_os = "netbsd", target_os = "redox")))]
+#[cfg_attr(target_os = "openbsd", ignore)]
 fn test_fstatat() {
     let tempdir = tempfile::tempdir().unwrap();
     let filename = tempdir.path().join("foo.txt");
@@ -113,6 +117,7 @@ fn test_fstatat() {
 
 #[test]
 #[cfg(not(any(target_os = "netbsd", target_os = "redox")))]
+#[cfg_attr(target_os = "openbsd", ignore)]
 fn test_stat_fstat_lstat() {
     use nix::sys::stat::{fstat, lstat};
 
@@ -312,6 +317,7 @@ fn test_mkdirat_fail() {
               target_os = "ios",
               target_os = "macos",
               target_os = "redox")))]
+#[cfg_attr(target_os = "openbsd", ignore)]
 fn test_mknod() {
     use stat::{lstat, mknod, SFlag};
 
@@ -330,6 +336,7 @@ fn test_mknod() {
               target_os = "ios",
               target_os = "macos",
               target_os = "redox")))]
+#[cfg_attr(target_os = "openbsd", ignore)]
 fn test_mknodat() {
     use fcntl::{AtFlags, OFlag};
     use nix::dir::Dir;
