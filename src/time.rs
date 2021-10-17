@@ -51,10 +51,8 @@ impl ClockId {
     #[cfg(not(any(
         target_os = "macos",
         target_os = "ios",
-        all(
-            not(any(target_env = "uclibc", target_env = "newlibc")),
-            any(target_os = "redox", target_os = "hermit",),
-        ),
+        target_os = "redox",
+        target_os = "hermit",
     )))]
     pub fn set_time(self, timespec: TimeSpec) -> Result<()> {
         clock_settime(self, timespec)
@@ -66,28 +64,25 @@ impl ClockId {
     }
 
     #[cfg(any(
+        target_os = "android",
+        target_os = "emscripten",
         target_os = "fuchsia",
-        all(
-            not(any(target_env = "uclibc", target_env = "newlib")),
-            any(target_os = "linux", target_os = "android", target_os = "emscripten"),
-        )
+        target_os = "linux"
     ))]
     pub const CLOCK_BOOTTIME: ClockId = ClockId(libc::CLOCK_BOOTTIME);
     #[cfg(any(
+        target_os = "android",
+        target_os = "emscripten",
         target_os = "fuchsia",
-        all(
-            not(any(target_env = "uclibc", target_env = "newlib")),
-            any(target_os = "linux", target_os = "android", target_os = "emscripten")
-        )
+        target_os = "linux"
     ))]
     pub const CLOCK_BOOTTIME_ALARM: ClockId = ClockId(libc::CLOCK_BOOTTIME_ALARM);
     pub const CLOCK_MONOTONIC: ClockId = ClockId(libc::CLOCK_MONOTONIC);
     #[cfg(any(
+        target_os = "android",
+        target_os = "emscripten",
         target_os = "fuchsia",
-        all(
-            not(any(target_env = "uclibc", target_env = "newlib")),
-            any(target_os = "linux", target_os = "android", target_os = "emscripten")
-        )
+        target_os = "linux"
     ))]
     pub const CLOCK_MONOTONIC_COARSE: ClockId = ClockId(libc::CLOCK_MONOTONIC_COARSE);
     #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
@@ -95,43 +90,39 @@ impl ClockId {
     #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
     pub const CLOCK_MONOTONIC_PRECISE: ClockId = ClockId(libc::CLOCK_MONOTONIC_PRECISE);
     #[cfg(any(
+        target_os = "android",
+        target_os = "emscripten",
         target_os = "fuchsia",
-        all(
-            not(any(target_env = "uclibc", target_env = "newlib")),
-            any(target_os = "linux", target_os = "android", target_os = "emscripten")
-        )
+        target_os = "linux"
     ))]
     pub const CLOCK_MONOTONIC_RAW: ClockId = ClockId(libc::CLOCK_MONOTONIC_RAW);
     #[cfg(any(
+        target_os = "android",
+        target_os = "emscripten",
         target_os = "fuchsia",
-        target_env = "uclibc",
         target_os = "macos",
         target_os = "ios",
         target_os = "freebsd",
         target_os = "dragonfly",
-        all(
-            not(target_env = "newlib"),
-            any(target_os = "linux", target_os = "android", target_os = "emscripten")
-        )
+        target_os = "redox",
+        target_os = "linux"
     ))]
     pub const CLOCK_PROCESS_CPUTIME_ID: ClockId = ClockId(libc::CLOCK_PROCESS_CPUTIME_ID);
     #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
     pub const CLOCK_PROF: ClockId = ClockId(libc::CLOCK_PROF);
     pub const CLOCK_REALTIME: ClockId = ClockId(libc::CLOCK_REALTIME);
     #[cfg(any(
+        target_os = "android",
+        target_os = "emscripten",
         target_os = "fuchsia",
-        all(
-            not(any(target_env = "uclibc", target_env = "newlib")),
-            any(target_os = "linux", target_os = "android", target_os = "emscripten")
-        )
+        target_os = "linux"
     ))]
     pub const CLOCK_REALTIME_ALARM: ClockId = ClockId(libc::CLOCK_REALTIME_ALARM);
     #[cfg(any(
+        target_os = "android",
+        target_os = "emscripten",
         target_os = "fuchsia",
-        all(
-            not(any(target_env = "uclibc", target_env = "newlib")),
-            any(target_os = "linux", target_os = "android", target_os = "emscripten")
-        )
+        target_os = "linux"
     ))]
     pub const CLOCK_REALTIME_COARSE: ClockId = ClockId(libc::CLOCK_REALTIME_COARSE);
     #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
@@ -141,38 +132,27 @@ impl ClockId {
     #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
     pub const CLOCK_SECOND: ClockId = ClockId(libc::CLOCK_SECOND);
     #[cfg(any(
+        target_os = "emscripten",
         target_os = "fuchsia",
-        all(
-            not(any(target_env = "uclibc", target_env = "newlib")),
-            any(
-                target_os = "emscripten",
-                all(target_os = "linux", target_env = "musl")
-            )
-        )
+        all(target_os = "linux", target_env = "musl")
     ))]
     pub const CLOCK_SGI_CYCLE: ClockId = ClockId(libc::CLOCK_SGI_CYCLE);
     #[cfg(any(
+        target_os = "android",
+        target_os = "emscripten",
         target_os = "fuchsia",
-        all(
-            not(any(target_env = "uclibc", target_env = "newlib")),
-            any(
-                target_os = "emscripten",
-                all(target_os = "linux", target_env = "musl")
-            )
-        )
+        target_os = "linux"
     ))]
     pub const CLOCK_TAI: ClockId = ClockId(libc::CLOCK_TAI);
     #[cfg(any(
-        target_env = "uclibc",
+        target_os = "android",
+        target_os = "emscripten",
         target_os = "fuchsia",
         target_os = "ios",
         target_os = "macos",
         target_os = "freebsd",
         target_os = "dragonfly",
-        all(
-            not(target_env = "newlib"),
-            any(target_os = "linux", target_os = "android", target_os = "emscripten",),
-        ),
+        target_os = "linux"
     ))]
     pub const CLOCK_THREAD_CPUTIME_ID: ClockId = ClockId(libc::CLOCK_THREAD_CPUTIME_ID);
     #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
@@ -229,10 +209,9 @@ pub fn clock_gettime(clock_id: ClockId) -> Result<TimeSpec> {
 #[cfg(not(any(
     target_os = "macos",
     target_os = "ios",
-    all(
-        not(any(target_env = "uclibc", target_env = "newlibc")),
-        any(target_os = "redox", target_os = "hermit",),
-    ),
+    target_env = "uclibc",
+    target_os = "redox",
+    target_os = "hermit",
 )))]
 pub fn clock_settime(clock_id: ClockId, timespec: TimeSpec) -> Result<()> {
     let ret = unsafe { libc::clock_settime(clock_id.as_raw(), timespec.as_ref()) };
