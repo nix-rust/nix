@@ -3,6 +3,7 @@ use crate::{Result, NixPath};
 use crate::errno::Errno;
 use memoffset::offset_of;
 use std::{fmt, mem, net, ptr, slice};
+use std::convert::From;
 use std::ffi::OsStr;
 use std::hash::{Hash, Hasher};
 use std::path::Path;
@@ -959,6 +960,61 @@ impl fmt::Display for SockAddr {
             #[cfg(any(target_os = "android", target_os = "linux"))]
             SockAddr::Vsock(ref svm) => svm.fmt(f),
         }
+    }
+}
+
+impl From<InetAddr> for SockAddr {
+    fn from(addr: InetAddr) -> Self {
+        Self::Inet(addr)
+    }
+}
+
+impl From<UnixAddr> for SockAddr {
+    fn from(addr: UnixAddr) -> Self {
+        Self::Unix(addr)
+    }
+}
+
+#[cfg(any(target_os = "android", target_os = "linux"))]
+impl From<NetlinkAddr> for SockAddr {
+    fn from(addr: NetlinkAddr) -> Self {
+        Self::Netlink(addr)
+    }
+}
+
+#[cfg(any(target_os = "android", target_os = "linux"))]
+impl From<AlgAddr> for SockAddr {
+    fn from(addr: AlgAddr) -> Self {
+        Self::Alg(addr)
+    }
+}
+
+#[cfg(any(target_os = "ios", target_os = "macos"))]
+impl From<SysControlAddr> for SockAddr {
+    fn from(addr: SysControlAddr) -> Self {
+        Self::SysControl(addr)
+    }
+}
+
+#[cfg(any(target_os = "android",
+          target_os = "dragonfly",
+          target_os = "freebsd",
+          target_os = "ios",
+          target_os = "linux",
+          target_os = "macos",
+          target_os = "illumos",
+          target_os = "netbsd",
+          target_os = "openbsd"))]
+impl From<LinkAddr> for SockAddr {
+    fn from(addr: LinkAddr) -> Self {
+        Self::Link(addr)
+    }
+}
+
+#[cfg(any(target_os = "android", target_os = "linux"))]
+impl From<VsockAddr> for SockAddr {
+    fn from(addr: VsockAddr) -> Self {
+        Self::Vsock(addr)
     }
 }
 
