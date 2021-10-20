@@ -6,6 +6,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased] - ReleaseDate
 ### Added
 
+- Added `fexecve` on DragonFly.
+  (#[1577](https://github.com/nix-rust/nix/pull/1577))
 - Added fine-grained features flags.  Most Nix functionality can now be
   conditionally enabled.  By default, all features are enabled.
   (#[1611](https://github.com/nix-rust/nix/pull/1611))
