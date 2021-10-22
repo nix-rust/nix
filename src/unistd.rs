@@ -1323,11 +1323,13 @@ pub fn fsync(fd: RawFd) -> Result<()> {
 ///
 /// See also
 /// [fdatasync(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/fdatasync.html)
-// `fdatasync(2) is in POSIX, but in libc it is only defined in `libc::notbsd`.
-// TODO: exclude only Apple systems after https://github.com/rust-lang/libc/pull/211
 #[cfg(any(target_os = "linux",
           target_os = "android",
           target_os = "emscripten",
+          target_os = "freebsd",
+          target_os = "fuchsia",
+          target_os = "netbsd",
+          target_os = "openbsd",
           target_os = "illumos",
           target_os = "solaris"))]
 #[inline]
