@@ -52,3 +52,31 @@ pub fn test_pselect_nfds2() {
     assert!(fd_set.contains(r1));
     assert!(!fd_set.contains(r2));
 }
+
+macro_rules! generate_fdset_bad_fd_tests {
+    ($fd:expr, $($method:ident),* $(,)?) => {
+        $(
+            #[test]
+            #[should_panic]
+            fn $method() {
+                FdSet::new().$method($fd);
+            }
+        )*
+    }
+}
+
+mod test_fdset_negative_fd {
+    use super::*;
+    generate_fdset_bad_fd_tests!(-1, insert, remove, contains);
+}
+
+mod test_fdset_too_large_fd {
+    use super::*;
+    use std::convert::TryInto;
+    generate_fdset_bad_fd_tests!(
+        FD_SETSIZE.try_into().unwrap(),
+        insert,
+        remove,
+        contains,
+    );
+}

@@ -1,4 +1,5 @@
 //! Portably monitor a group of file descriptors for readiness.
+use std::convert::TryFrom;
 use std::iter::FusedIterator;
 use std::mem;
 use std::ops::Range;
@@ -17,6 +18,13 @@ pub use libc::FD_SETSIZE;
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct FdSet(libc::fd_set);
 
+fn assert_fd_valid(fd: RawFd) {
+    assert!(
+        usize::try_from(fd).map_or(false, |fd| fd < FD_SETSIZE),
+        "fd must be in the range 0..FD_SETSIZE",
+    );
+}
+
 impl FdSet {
     /// Create an empty `FdSet`
     pub fn new() -> FdSet {
@@ -29,16 +37,19 @@ impl FdSet {
 
     /// Add a file descriptor to an `FdSet`
     pub fn insert(&mut self, fd: RawFd) {
+        assert_fd_valid(fd);
         unsafe { libc::FD_SET(fd, &mut self.0) };
     }
 
     /// Remove a file descriptor from an `FdSet`
     pub fn remove(&mut self, fd: RawFd) {
+        assert_fd_valid(fd);
         unsafe { libc::FD_CLR(fd, &mut self.0) };
     }
 
     /// Test an `FdSet` for the presence of a certain file descriptor.
     pub fn contains(&self, fd: RawFd) -> bool {
+        assert_fd_valid(fd);
         unsafe { libc::FD_ISSET(fd, &self.0) }
     }
 
