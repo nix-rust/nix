@@ -77,10 +77,6 @@ task:
     PATH: $HOME/.cargo/bin:$PATH
     RUSTFLAGS: --cfg qemu -D warnings
     TOOL: cross
-    # cross-based builds must temporarily use Rust 1.51.0 due to this bug:
-    # https://github.com/gimli-rs/object/issues/394
-    TOOLCHAIN: 1.51.0
-    CLIPPYFLAGS: -D warnings -A clippy::upper_case_acronyms -A clippy::unnecessary-wraps
   matrix:
     - name: Linux arm gnueabi
       env:
