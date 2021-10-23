@@ -8,6 +8,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 - Added `fexecve` on DragonFly.
   (#[1577](https://github.com/nix-rust/nix/pull/1577))
+- `sys::uio::IoVec` is now `Send` and `Sync`
+  (#[1582](https://github.com/nix-rust/nix/pull/1582))
 - Added fine-grained features flags.  Most Nix functionality can now be
   conditionally enabled.  By default, all features are enabled.
   (#[1611](https://github.com/nix-rust/nix/pull/1611))
