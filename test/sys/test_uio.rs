@@ -141,7 +141,7 @@ fn test_pread() {
 }
 
 #[test]
-#[cfg(target_os = "linux")]
+#[cfg(not(any(target_os = "macos", target_os = "redox")))]
 fn test_pwritev() {
     use std::io::Read;
 
@@ -171,7 +171,7 @@ fn test_pwritev() {
 }
 
 #[test]
-#[cfg(target_os = "linux")]
+#[cfg(not(any(target_os = "macos", target_os = "redox")))]
 fn test_preadv() {
     use std::io::Write;
 
