@@ -30,7 +30,7 @@ pub fn readv(fd: RawFd, iov: &mut [IoVec<&mut [u8]>]) -> Result<usize> {
 /// or an error occurs. The file offset is not changed.
 ///
 /// See also: [`writev`](fn.writev.html) and [`pwrite`](fn.pwrite.html)
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "macos", target_os = "redox")))]
 pub fn pwritev(fd: RawFd, iov: &[IoVec<&[u8]>],
                offset: off_t) -> Result<usize> {
     let res = unsafe {
@@ -47,7 +47,7 @@ pub fn pwritev(fd: RawFd, iov: &[IoVec<&[u8]>],
 /// changed.
 ///
 /// See also: [`readv`](fn.readv.html) and [`pread`](fn.pread.html)
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "macos", target_os = "redox")))]
 pub fn preadv(fd: RawFd, iov: &[IoVec<&mut [u8]>],
               offset: off_t) -> Result<usize> {
     let res = unsafe {
