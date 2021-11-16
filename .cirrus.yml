@@ -17,6 +17,7 @@ task:
     - fetch https://sh.rustup.rs -o rustup.sh
     - sh rustup.sh -y --profile=minimal --default-toolchain 1.41.0
     - $HOME/.cargo/bin/rustup target add i686-unknown-freebsd
+    - cp Cargo.lock.msrv Cargo.lock
   amd64_test_script:
     - . $HOME/.cargo/env
     - cargo test
@@ -49,6 +50,7 @@ task:
     - sh rustup.sh -y --profile=minimal --default-toolchain 1.41.0
     - . $HOME/.cargo/env
     - bash ci/install.sh
+    - cp Cargo.lock.msrv Cargo.lock
   script:
     - . $HOME/.cargo/env
     - bash ci/script.sh
@@ -104,18 +106,15 @@ task:
     - sh rustup.sh -y --profile=minimal --default-toolchain 1.41.0
     - . $HOME/.cargo/env
     - bash ci/install.sh
+    - cp Cargo.lock.msrv Cargo.lock
   script:
     - . $HOME/.cargo/env || true
     - bash ci/script.sh
   before_cache_script: rm -rf $CARGO_HOME/registry/index
 
-# Tasks for Linux amd64 builds
+# Tasks for Linux amd64 builds MSRV
 task:
   matrix:
-    - name: Rust Stable
-      env:
-        TARGET: x86_64-unknown-linux-gnu
-        TOOLCHAIN: stable
     - name: Linux x86_64
       env:
         TARGET: x86_64-unknown-linux-gnu
@@ -129,11 +128,27 @@ task:
   setup_script:
     - rustup toolchain install $TOOLCHAIN
     - rustup target add --toolchain $TOOLCHAIN $TARGET
+    - cp Cargo.lock.msrv Cargo.lock
   script:
     - cargo +$TOOLCHAIN build --target $TARGET --all-targets
     - cargo +$TOOLCHAIN build --target $TARGET --all-targets --release
     - cargo +$TOOLCHAIN test --target $TARGET
     - cargo +$TOOLCHAIN test --target $TARGET --release
+  before_cache_script: rm -rf $CARGO_HOME/registry/index
+
+# Tasks for Linux amd64 builds Stable
+task:
+  name: Rust Stable
+  env:
+    TARGET: x86_64-unknown-linux-gnu
+    TOOLCHAIN: stable
+  container:
+    image: rust
+  script:
+    - cargo build --all-targets
+    - cargo build --all-targets --release
+    - cargo test
+    - cargo test --release
   before_cache_script: rm -rf $CARGO_HOME/registry/index
 
 # Tasks for cross-compiling, but no testing
@@ -176,6 +191,7 @@ task:
     image: rust:1.41
   setup_script:
     - rustup target add $TARGET
+    - cp Cargo.lock.msrv Cargo.lock
   script:
     - cargo +$TOOLCHAIN check --target $TARGET
     - cargo +$TOOLCHAIN check --target $TARGET --release
@@ -191,6 +207,7 @@ task:
     image: rust:1.50
   setup_script:
     - rustup target add $TARGET
+    - cp Cargo.lock.msrv Cargo.lock
   script:
     - cargo +$TOOLCHAIN check --target $TARGET
     - cargo +$TOOLCHAIN check --target $TARGET --release
