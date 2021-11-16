@@ -245,6 +245,10 @@ task:
     - name: DragonFly BSD x86_64
       env:
         TARGET: x86_64-unknown-dragonfly
+        # Temporarily allow deprecation on DragonflyBSD until an alternative is
+        # available.
+        #https://github.com/rust-lang/libc/pull/2522
+        RUSTFLAGS: -D warnings -A deprecated
     - name: OpenBSD x86_64
       env:
         TARGET: x86_64-unknown-openbsd
