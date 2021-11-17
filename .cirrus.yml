@@ -54,12 +54,11 @@ task:
 
 # Test OSX in a full VM
 task:
-  matrix:
-    - name: OSX x86_64
-      env:
-        TARGET: x86_64-apple-darwin
+  name: OSX x86_64
+  env:
+    TARGET: x86_64-apple-darwin
   osx_instance:
-    image: catalina-xcode
+    image: big-sur-xcode
   setup_script:
     - curl --proto '=https' --tlsv1.2 -sSf -o rustup.sh https://sh.rustup.rs
     - sh rustup.sh -y --profile=minimal --default-toolchain $TOOLCHAIN
