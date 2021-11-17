@@ -65,11 +65,11 @@ task:
         TARGET: x86_64-apple-darwin
       osx_instance:
         image: big-sur-xcode
-    - name: OSX x86_64 Monterrey
+    - name: OSX x86_64 Monterey
       env:
         TARGET: x86_64-apple-darwin
       osx_instance:
-        image: monterrey-xcode
+        image: monterey-xcode
   setup_script:
     - curl --proto '=https' --tlsv1.2 -sSf -o rustup.sh https://sh.rustup.rs
     - sh rustup.sh -y --profile=minimal --default-toolchain $TOOLCHAIN
