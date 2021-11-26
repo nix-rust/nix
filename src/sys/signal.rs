@@ -868,8 +868,8 @@ pub fn sigprocmask(how: SigmaskHow, set: Option<&SigSet>, oldset: Option<&mut Si
 ///     is sent to all processes exclusing system processes.
 ///   - If less than `-1`, the signal is sent to all processes whose
 ///     process group ID is equal to the absolute value of `pid`.
-/// * `signal` - Signal to send.  If 0, error checking if performed but no
-///              signal is actually sent.
+/// * `signal` - Signal to send. If `None`, error checking is performed
+///              but no signal is actually sent.
 ///
 /// See Also
 /// [`kill(2)`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/kill.html)
