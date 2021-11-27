@@ -8,7 +8,7 @@ use libc::_exit;
 #[test]
 #[cfg(not(target_os = "redox"))]
 fn test_wait_signal() {
-    let _m = crate::FORK_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = crate::FORK_MTX.lock();
 
     // Safe: The child only calls `pause` and/or `_exit`, which are async-signal-safe.
     match unsafe{fork()}.expect("Error: Fork Failed") {
@@ -25,7 +25,7 @@ fn test_wait_signal() {
 
 #[test]
 fn test_wait_exit() {
-    let _m = crate::FORK_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = crate::FORK_MTX.lock();
 
     // Safe: Child only calls `_exit`, which is async-signal-safe.
     match unsafe{fork()}.expect("Error: Fork Failed") {
@@ -46,7 +46,7 @@ fn test_waitstatus_from_raw() {
 
 #[test]
 fn test_waitstatus_pid() {
-    let _m = crate::FORK_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = crate::FORK_MTX.lock();
 
     match unsafe{fork()}.unwrap() {
         Child => unsafe { _exit(0) },
@@ -97,7 +97,7 @@ mod ptrace {
     #[test]
     fn test_wait_ptrace() {
         require_capability!("test_wait_ptrace", CAP_SYS_PTRACE);
-        let _m = crate::FORK_MTX.lock().expect("Mutex got poisoned by another test");
+        let _m = crate::FORK_MTX.lock();
 
         match unsafe{fork()}.expect("Error: Fork Failed") {
             Child => ptrace_child(),

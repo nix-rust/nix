@@ -19,7 +19,7 @@ fn test_killpg_none() {
 
 #[test]
 fn test_old_sigaction_flags() {
-    let _m = crate::SIGNAL_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = crate::SIGNAL_MTX.lock();
 
     extern "C" fn handler(_: ::libc::c_int) {}
     let act = SigAction::new(
@@ -41,7 +41,7 @@ fn test_sigprocmask_noop() {
 
 #[test]
 fn test_sigprocmask() {
-    let _m = crate::SIGNAL_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = crate::SIGNAL_MTX.lock();
 
     // This needs to be a signal that rust doesn't use in the test harness.
     const SIGNAL: Signal = Signal::SIGCHLD;
@@ -89,7 +89,7 @@ extern fn test_sigaction_action(_: libc::c_int, _: *mut libc::siginfo_t, _: *mut
 #[test]
 #[cfg(not(target_os = "redox"))]
 fn test_signal_sigaction() {
-    let _m = crate::SIGNAL_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = crate::SIGNAL_MTX.lock();
 
     let action_handler = SigHandler::SigAction(test_sigaction_action);
     assert_eq!(unsafe { signal(Signal::SIGINT, action_handler) }.unwrap_err(), Errno::ENOTSUP);
@@ -97,7 +97,7 @@ fn test_signal_sigaction() {
 
 #[test]
 fn test_signal() {
-    let _m = crate::SIGNAL_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = crate::SIGNAL_MTX.lock();
 
     unsafe { signal(Signal::SIGINT, SigHandler::SigIgn) }.unwrap();
     raise(Signal::SIGINT).unwrap();
