@@ -69,7 +69,7 @@ fn test_ptrace_cont() {
 
     require_capability!("test_ptrace_cont", CAP_SYS_PTRACE);
 
-    let _m = crate::FORK_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = crate::FORK_MTX.lock();
 
     // FIXME: qemu-user doesn't implement ptrace on all architectures
     // and retunrs ENOSYS in this case.
@@ -127,7 +127,7 @@ fn test_ptrace_interrupt() {
 
     require_capability!("test_ptrace_interrupt", CAP_SYS_PTRACE);
 
-    let _m = crate::FORK_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = crate::FORK_MTX.lock();
 
     match unsafe{fork()}.expect("Error: Fork Failed") {
         Child => {
@@ -173,7 +173,7 @@ fn test_ptrace_syscall() {
 
     require_capability!("test_ptrace_syscall", CAP_SYS_PTRACE);
 
-    let _m = crate::FORK_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = crate::FORK_MTX.lock();
 
     match unsafe{fork()}.expect("Error: Fork Failed") {
         Child => {

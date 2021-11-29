@@ -214,7 +214,7 @@ fn test_process_vm_readv() {
     use crate::*;
 
     require_capability!("test_process_vm_readv", CAP_SYS_PTRACE);
-    let _m = crate::FORK_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = crate::FORK_MTX.lock();
 
     // Pre-allocate memory in the child, since allocation isn't safe
     // post-fork (~= async-signal-safe)
