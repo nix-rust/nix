@@ -60,6 +60,8 @@ pub mod poll;
 #[cfg(not(any(target_os = "redox", target_os = "fuchsia")))]
 pub mod pty;
 pub mod sched;
+#[cfg(target_os = "linux")]
+pub mod shadow;
 pub mod sys;
 #[allow(missing_docs)]
 pub mod time;
