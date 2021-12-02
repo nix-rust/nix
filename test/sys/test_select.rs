@@ -5,9 +5,7 @@ use nix::sys::time::{TimeSpec, TimeValLike};
 
 #[test]
 pub fn test_pselect() {
-    let _mtx = crate::SIGNAL_MTX
-        .lock()
-        .expect("Mutex got poisoned by another test");
+    let _mtx = crate::SIGNAL_MTX.lock();
 
     let (r1, w1) = pipe().unwrap();
     write(w1, b"hi!").unwrap();

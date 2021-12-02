@@ -19,7 +19,7 @@ fn write_all(f: RawFd, buf: &[u8]) {
 #[test]
 fn test_tcgetattr_pty() {
     // openpty uses ptname(3) internally
-    let _m = crate::PTSNAME_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = crate::PTSNAME_MTX.lock();
 
     let pty = openpty(None, None).expect("openpty failed");
     assert!(termios::tcgetattr(pty.slave).is_ok());
@@ -46,7 +46,7 @@ fn test_tcgetattr_ebadf() {
 #[test]
 fn test_output_flags() {
     // openpty uses ptname(3) internally
-    let _m = crate::PTSNAME_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = crate::PTSNAME_MTX.lock();
 
     // Open one pty to get attributes for the second one
     let mut termios = {
@@ -88,7 +88,7 @@ fn test_output_flags() {
 #[test]
 fn test_local_flags() {
     // openpty uses ptname(3) internally
-    let _m = crate::PTSNAME_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = crate::PTSNAME_MTX.lock();
 
     // Open one pty to get attributes for the second one
     let mut termios = {

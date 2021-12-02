@@ -28,7 +28,7 @@ use crate::*;
 #[test]
 #[cfg(not(any(target_os = "netbsd")))]
 fn test_fork_and_waitpid() {
-    let _m = crate::FORK_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = crate::FORK_MTX.lock();
 
     // Safe: Child only calls `_exit`, which is signal-safe
     match unsafe{fork()}.expect("Error: Fork Failed") {
@@ -56,7 +56,7 @@ fn test_fork_and_waitpid() {
 #[test]
 fn test_wait() {
     // Grab FORK_MTX so wait doesn't reap a different test's child process
-    let _m = crate::FORK_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = crate::FORK_MTX.lock();
 
     // Safe: Child only calls `_exit`, which is signal-safe
     match unsafe{fork()}.expect("Error: Fork Failed") {
@@ -116,7 +116,7 @@ fn test_mkfifo_directory() {
     target_os = "macos", target_os = "ios",
     target_os = "android", target_os = "redox")))]
 fn test_mkfifoat_none() {
-    let _m = crate::CWD_LOCK.read().expect("Mutex got poisoned by another test");
+    let _m = crate::CWD_LOCK.read();
 
     let tempdir = tempdir().unwrap();
     let mkfifoat_fifo = tempdir.path().join("mkfifoat_fifo");
@@ -151,7 +151,7 @@ fn test_mkfifoat() {
     target_os = "macos", target_os = "ios",
     target_os = "android", target_os = "redox")))]
 fn test_mkfifoat_directory_none() {
-    let _m = crate::CWD_LOCK.read().expect("Mutex got poisoned by another test");
+    let _m = crate::CWD_LOCK.read();
 
     // mkfifoat should fail if a directory is given
     assert!(!mkfifoat(None, &env::temp_dir(), Mode::S_IRUSR).is_ok());
@@ -206,7 +206,7 @@ fn test_setgroups() {
     // Skip this test when not run as root as `setgroups()` requires root.
     skip_if_not_root!("test_setgroups");
 
-    let _m = crate::GROUPS_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = crate::GROUPS_MTX.lock();
 
     // Save the existing groups
     let old_groups = getgroups().unwrap();
@@ -234,7 +234,7 @@ fn test_initgroups() {
     // require root.
     skip_if_not_root!("test_initgroups");
 
-    let _m = crate::GROUPS_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = crate::GROUPS_MTX.lock();
 
     // Save the existing groups
     let old_groups = getgroups().unwrap();
@@ -304,7 +304,7 @@ macro_rules! execve_test_factory(
             skip_if_seccomp!($test_name);
         }
 
-        let m = crate::FORK_MTX.lock().expect("Mutex got poisoned by another test");
+        let m = crate::FORK_MTX.lock();
         // The `exec`d process will write to `writer`, and we'll read that
         // data from `reader`.
         let (reader, writer) = pipe().unwrap();
@@ -575,7 +575,7 @@ fn test_acct() {
     use std::process::Command;
     use std::{thread, time};
 
-    let _m = crate::FORK_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = crate::FORK_MTX.lock();
     require_acct!();
 
     let file = NamedTempFile::new().unwrap();
@@ -735,7 +735,7 @@ fn test_alarm() {
     };
 
     // Maybe other tests that fork interfere with this one?
-    let _m = crate::SIGNAL_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = crate::SIGNAL_MTX.lock();
 
     let handler = SigHandler::Handler(alarm_signal_handler);
     let signal_action = SigAction::new(handler, SaFlags::SA_RESTART, SigSet::empty());
@@ -773,7 +773,7 @@ fn test_alarm() {
 #[test]
 #[cfg(not(target_os = "redox"))]
 fn test_canceling_alarm() {
-    let _m = crate::SIGNAL_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = crate::SIGNAL_MTX.lock();
 
     assert_eq!(alarm::cancel(), None);
 
@@ -784,7 +784,7 @@ fn test_canceling_alarm() {
 #[test]
 #[cfg(not(target_os = "redox"))]
 fn test_symlinkat() {
-    let _m = crate::CWD_LOCK.read().expect("Mutex got poisoned by another test");
+    let _m = crate::CWD_LOCK.read();
 
     let tempdir = tempdir().unwrap();
 
@@ -883,7 +883,7 @@ fn test_linkat_newdirfd_none() {
 #[test]
 #[cfg(not(any(target_os = "ios", target_os = "macos", target_os = "redox")))]
 fn test_linkat_no_follow_symlink() {
-    let _m = crate::CWD_LOCK.read().expect("Mutex got poisoned by another test");
+    let _m = crate::CWD_LOCK.read();
 
     let tempdir = tempdir().unwrap();
     let oldfilename = "foo.txt";
@@ -920,7 +920,7 @@ fn test_linkat_no_follow_symlink() {
 #[test]
 #[cfg(not(target_os = "redox"))]
 fn test_linkat_follow_symlink() {
-    let _m = crate::CWD_LOCK.read().expect("Mutex got poisoned by another test");
+    let _m = crate::CWD_LOCK.read();
 
     let tempdir = tempdir().unwrap();
     let oldfilename = "foo.txt";

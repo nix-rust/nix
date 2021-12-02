@@ -43,7 +43,7 @@ mod test_unistd;
 
 use std::os::unix::io::RawFd;
 use std::path::PathBuf;
-use std::sync::{Mutex, RwLock, RwLockWriteGuard};
+use parking_lot::{Mutex, RwLock, RwLockWriteGuard};
 use nix::unistd::{chdir, getcwd, read};
 
 
@@ -84,8 +84,7 @@ struct DirRestore<'a> {
 
 impl<'a> DirRestore<'a> {
     fn new() -> Self {
-        let guard = crate::CWD_LOCK.write()
-            .expect("Lock got poisoned by another test");
+        let guard = crate::CWD_LOCK.write();
         DirRestore{
             _g: guard,
             d: getcwd().unwrap(),

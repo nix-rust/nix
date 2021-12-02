@@ -7,7 +7,7 @@ authors     = ["The nix-rust Project Developers"]
 repository  = "https://github.com/nix-rust/nix"
 license     = "MIT"
 categories  = ["os::unix-apis"]
-include = ["src/**/*", "LICENSE", "README.md", "CHANGELOG.md"]
+include = ["src/**/*", "test/**/*", "LICENSE", "README.md", "CHANGELOG.md"]
 
 [package.metadata.docs.rs]
 targets = [
@@ -38,6 +38,7 @@ cc = "1"
 [dev-dependencies]
 assert-impl = "0.1"
 lazy_static = "1.2"
+parking_lot = "0.11.2"
 rand = "0.8"
 tempfile = "3.2.0"
 semver = "1.0.0"
