@@ -141,7 +141,7 @@ libc_bitflags!{
         #[cfg(any(target_os = "ios", target_os = "macos"))]
         MAP_JIT;
         /// Allows to use large pages, underlying alignment based on size.
-        #[cfg(target_os = "freesd")]
+        #[cfg(target_os = "freebsd")]
         MAP_ALIGNED_SUPER;
         /// Pages will be discarded in the core dumps.
         #[cfg(target_os = "openbsd")]
