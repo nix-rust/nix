@@ -38,7 +38,6 @@ pub mod eventfd;
 pub mod ioctl;
 
 #[cfg(target_os = "linux")]
-#[allow(missing_docs)]
 pub mod memfd;
 
 #[cfg(not(target_os = "redox"))]
