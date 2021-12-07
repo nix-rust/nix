@@ -30,6 +30,9 @@ use std::os::unix::fs;
 
 #[test]
 #[cfg(not(target_os = "redox"))]
+// QEMU does not handle openat well enough to satisfy this test
+// https://gitlab.com/qemu-project/qemu/-/issues/829
+#[cfg_attr(qemu, ignore)]
 fn test_openat() {
     const CONTENTS: &[u8] = b"abcd";
     let mut tmp = NamedTempFile::new().unwrap();
@@ -357,6 +360,7 @@ mod linux_android {
 
     #[test]
     #[cfg(all(target_os = "linux", not(target_env = "musl")))]
+    #[cfg_attr(target_env = "uclibc", ignore)]  // uclibc doesn't support OFD locks, but the test should still compile
     fn test_ofd_write_lock() {
         use nix::sys::stat::fstat;
         use std::mem;
@@ -394,6 +398,7 @@ mod linux_android {
 
     #[test]
     #[cfg(all(target_os = "linux", not(target_env = "musl")))]
+    #[cfg_attr(target_env = "uclibc", ignore)]  // uclibc doesn't support OFD locks, but the test should still compile
     fn test_ofd_read_lock() {
         use nix::sys::stat::fstat;
         use std::mem;

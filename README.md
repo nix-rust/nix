@@ -78,6 +78,7 @@ Tier 2:
   * x86_64-unknown-netbsd
 
 Tier 3:
+  * armv7-unknown-linux-uclibceabihf
   * x86_64-fuchsia
   * x86_64-unknown-dragonfly
   * x86_64-unknown-linux-gnux32

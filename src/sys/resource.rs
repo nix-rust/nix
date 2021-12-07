@@ -7,9 +7,9 @@ pub use libc::rlim_t;
 use std::mem;
 
 cfg_if! {
-    if #[cfg(all(target_os = "linux", target_env = "gnu"))]{
+    if #[cfg(all(target_os = "linux", any(target_env = "gnu", target_env = "uclibc")))]{
         use libc::{__rlimit_resource_t, rlimit, RLIM_INFINITY};
-    }else if #[cfg(any(
+    } else if #[cfg(any(
         target_os = "freebsd",
         target_os = "openbsd",
         target_os = "netbsd",
@@ -199,9 +199,9 @@ pub fn getrlimit(resource: Resource) -> Result<(Option<rlim_t>, Option<rlim_t>)>
     let mut old_rlim = mem::MaybeUninit::<rlimit>::uninit();
 
     cfg_if! {
-        if #[cfg(all(target_os = "linux", target_env = "gnu"))]{
+        if #[cfg(all(target_os = "linux", any(target_env = "gnu", target_env = "uclibc")))]{
             let res = unsafe { libc::getrlimit(resource as __rlimit_resource_t, old_rlim.as_mut_ptr()) };
-        }else{
+        } else {
             let res = unsafe { libc::getrlimit(resource as c_int, old_rlim.as_mut_ptr()) };
         }
     }
@@ -253,7 +253,7 @@ pub fn setrlimit(
         rlim_max: hard_limit.unwrap_or(RLIM_INFINITY),
     };
     cfg_if! {
-        if #[cfg(all(target_os = "linux", target_env = "gnu"))]{
+        if #[cfg(all(target_os = "linux", any(target_env = "gnu", target_env = "uclibc")))]{
             let res = unsafe { libc::setrlimit(resource as __rlimit_resource_t, &new_rlim as *const rlimit) };
         }else{
             let res = unsafe { libc::setrlimit(resource as c_int, &new_rlim as *const rlimit) };

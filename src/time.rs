@@ -237,7 +237,6 @@ pub fn clock_gettime(clock_id: ClockId) -> Result<TimeSpec> {
 #[cfg(not(any(
     target_os = "macos",
     target_os = "ios",
-    target_env = "uclibc",
     target_os = "redox",
     target_os = "hermit",
 )))]
