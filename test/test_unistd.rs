@@ -154,7 +154,7 @@ fn test_mkfifoat_directory_none() {
     let _m = crate::CWD_LOCK.read();
 
     // mkfifoat should fail if a directory is given
-    assert!(!mkfifoat(None, &env::temp_dir(), Mode::S_IRUSR).is_ok());
+    assert!(mkfifoat(None, &env::temp_dir(), Mode::S_IRUSR).is_err());
 }
 
 #[test]
@@ -168,7 +168,7 @@ fn test_mkfifoat_directory() {
     let mkfifoat_dir = "mkfifoat_dir";
     stat::mkdirat(dirfd, mkfifoat_dir, Mode::S_IRUSR).unwrap();
 
-    assert!(!mkfifoat(Some(dirfd), mkfifoat_dir, Mode::S_IRUSR).is_ok());
+    assert!(mkfifoat(Some(dirfd), mkfifoat_dir, Mode::S_IRUSR).is_err());
 }
 
 #[test]

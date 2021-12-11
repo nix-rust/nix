@@ -39,7 +39,6 @@ impl std::error::Error for ClearEnvError {}
 ///  environment access in the program is via `std::env`, but the requirement on
 ///  thread safety must still be upheld.
 pub unsafe fn clearenv() -> std::result::Result<(), ClearEnvError> {
-    let ret;
     cfg_if! {
         if #[cfg(any(target_os = "fuchsia",
                      target_os = "wasi",
@@ -48,13 +47,13 @@ pub unsafe fn clearenv() -> std::result::Result<(), ClearEnvError> {
                      target_os = "linux",
                      target_os = "android",
                      target_os = "emscripten"))] {
-            ret = libc::clearenv();
+            let ret = libc::clearenv();
         } else {
             use std::env;
             for (name, _) in env::vars_os() {
                 env::remove_var(name);
             }
-            ret = 0;
+            let ret = 0;
         }
     }
 
