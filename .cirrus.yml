@@ -43,6 +43,7 @@ task:
     - . $HOME/.cargo/env
     - rustup target add i686-unknown-freebsd
     - rustup component add --toolchain $TOOLCHAIN clippy
+    - cp Cargo.lock.msrv Cargo.lock
   << : *TEST
   i386_test_script:
     - . $HOME/.cargo/env
@@ -64,6 +65,7 @@ task:
     - sh rustup.sh -y --profile=minimal --default-toolchain $TOOLCHAIN
     - . $HOME/.cargo/env
     - rustup component add --toolchain $TOOLCHAIN clippy
+    - cp Cargo.lock.msrv Cargo.lock
   << : *TEST
   before_cache_script: rm -rf $CARGO_HOME/registry/index
 
@@ -116,18 +118,13 @@ task:
     - sh rustup.sh -y --profile=minimal --default-toolchain $TOOLCHAIN
     - . $HOME/.cargo/env
     - cargo install cross
+    - cp Cargo.lock.msrv Cargo.lock
   << : *TEST
   before_cache_script: rm -rf $CARGO_HOME/registry/index
 
 # Tasks for Linux native builds
 task:
   matrix:
-    - name: Rust Stable
-      container:
-        image: rust:latest
-      env:
-        TARGET: x86_64-unknown-linux-gnu
-        TOOLCHAIN:
     - name: Linux aarch64
       arm_container:
         image: rust:1.46
@@ -144,6 +141,20 @@ task:
         image: rust:1.46
       env:
         TARGET: x86_64-unknown-linux-musl
+  setup_script:
+    - rustup target add $TARGET
+    - rustup component add clippy
+    - cp Cargo.lock.msrv Cargo.lock
+  << : *TEST
+  before_cache_script: rm -rf $CARGO_HOME/registry/index
+
+task:
+  name: Rust Stable
+  container:
+    image: rust:latest
+  env:
+    TARGET: x86_64-unknown-linux-gnu
+    TOOLCHAIN:
   setup_script:
     - rustup target add $TARGET
     - rustup component add clippy
@@ -219,13 +230,26 @@ task:
     - name: NetBSD x86_64
       env:
         TARGET: x86_64-unknown-netbsd
-    - name: Redox x86_64
-      env:
-        TARGET: x86_64-unknown-redox
-        # Redox requires a nightly compiler.
-        # If stuff breaks, change nightly to the date at
-        # https://gitlab.redox-os.org/redox-os/redox/-/blob/master/rust-toolchain
-        TOOLCHAIN: nightly-2021-06-15
+  setup_script:
+    - rustup target add $TARGET
+    - rustup toolchain install $TOOLCHAIN --profile minimal --target $TARGET
+    - rustup component add --toolchain $TOOLCHAIN clippy
+    - cp Cargo.lock.msrv Cargo.lock
+  << : *BUILD
+  before_cache_script: rm -rf $CARGO_HOME/registry/index
+
+task:
+  container:
+    image: rust:1.46
+  env:
+    BUILD: check
+  name: Redox x86_64
+  env:
+   TARGET: x86_64-unknown-redox
+   # Redox requires a nightly compiler.
+   # If stuff breaks, change nightly to the date at
+   # https://gitlab.redox-os.org/redox-os/redox/-/blob/master/rust-toolchain
+   TOOLCHAIN: nightly-2021-06-15
   setup_script:
     - rustup target add $TARGET
     - rustup toolchain install $TOOLCHAIN --profile minimal --target $TARGET
