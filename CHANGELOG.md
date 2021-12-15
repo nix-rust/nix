@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.22.3] - 22 January 2022
+### Changed
+
+- Relaxed the bitflags requirement from 1.3.1 to 1.1.  This partially reverts
+  #1492.  From now on, the MSRV is not guaranteed to work with all versions of
+  all dependencies, just with some version of all dependencies.
+  (#[1607](https://github.com/nix-rust/nix/pull/1607))
+
 ## [0.22.2] - 28 September 2021
 ### Added
 ### Changed
