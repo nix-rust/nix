@@ -14,5 +14,5 @@ The release is prepared as follows:
 - Ask for a new libc version if, necessary. It usually is.  Then update the
   dependency in Cargo.toml accordingly.
 - Confirm that everything's ready for a release by running
-  `cargo release --dry-run <patch|minor|major>`
-- Create the release with `cargo release <patch|minor|major>`
+  `cargo release <patch|minor|major>`
+- Create the release with `cargo release -x <patch|minor|major>`
