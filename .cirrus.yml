@@ -265,32 +265,6 @@ task:
   << : *BUILD
   before_cache_script: rm -rf $CARGO_HOME/registry/index
 
-# DragonflyBSD temporarily needs a pinned nightly toolchain
-# rustc is broken on DragonflyBSD as of Dec-5, probably by
-# https://github.com/rust-lang/rust/commit/e68887e67cc6b7bb4ea5113a40eaa4c0831bda13
-task:
-  container:
-    image: rust:1.46
-  name: DragonFly BSD x86_64
-  env:
-    BUILD: check
-    ZFLAGS: -Zbuild-std
-    TARGET: x86_64-unknown-dragonfly
-    # Redox requires a nightly compiler.
-    # If stuff breaks, change nightly to the date at
-    # https://gitlab.redox-os.org/redox-os/redox/-/blob/master/rust-toolchain
-    TOOLCHAIN: nightly-2021-12-04
-    # Temporarily allow deprecation on DragonflyBSD until an alternative is
-    # available.
-    #https://github.com/rust-lang/libc/pull/2522
-    RUSTFLAGS: -D warnings -A deprecated
-  setup_script:
-    - rustup toolchain add $TOOLCHAIN --profile minimal
-    - rustup component add rust-src --toolchain $TOOLCHAIN
-    - rustup component add clippy --toolchain $TOOLCHAIN
-  << : *BUILD
-  before_cache_script: rm -rf $CARGO_HOME/registry/index
-
 # Rust Tier 3 targets can't use Rustup
 task:
   container:
@@ -300,6 +274,9 @@ task:
     TOOLCHAIN: nightly
     ZFLAGS: -Zbuild-std
   matrix:
+    - name: DragonFly BSD x86_64
+      env:
+        TARGET: x86_64-unknown-dragonfly
     - name: OpenBSD x86_64
       env:
         TARGET: x86_64-unknown-openbsd
