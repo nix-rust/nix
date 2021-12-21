@@ -161,9 +161,9 @@ pub mod unistd;
  *
  */
 
-use libc::{c_char, PATH_MAX};
+use libc::PATH_MAX;
 
-use std::{ptr, result};
+use std::result;
 use std::ffi::{CStr, OsStr};
 use std::os::unix::ffi::OsStrExt;
 use std::path::{Path, PathBuf};
@@ -267,16 +267,10 @@ impl NixPath for [u8] {
             return Err(Errno::ENAMETOOLONG)
         }
 
-        match self.iter().position(|b| *b == 0) {
-            Some(_) => Err(Errno::EINVAL),
-            None => {
-                unsafe {
-                    // TODO: Replace with bytes::copy_memory. rust-lang/rust#24028
-                    ptr::copy_nonoverlapping(self.as_ptr(), buf.as_mut_ptr(), self.len());
-                    Ok(f(CStr::from_ptr(buf.as_ptr() as *const c_char)))
-                }
-
-            }
+        buf[..self.len()].copy_from_slice(self);
+        match CStr::from_bytes_with_nul(&buf[..=self.len()]) {
+            Ok(s) => Ok(f(s)),
+            Err(_) => Err(Errno::EINVAL),
         }
     }
 }
