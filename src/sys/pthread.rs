@@ -7,6 +7,8 @@ use crate::Result;
 #[cfg(not(target_os = "redox"))]
 use crate::sys::signal::Signal;
 use libc::{self, pthread_t};
+#[cfg(all(target_os = "linux", not(target_env = "musl")))]
+use std::ffi::CString;
 
 /// Identifies an individual thread.
 pub type Pthread = pthread_t;
@@ -35,4 +37,32 @@ pub fn pthread_kill<T: Into<Option<Signal>>>(thread: Pthread, signal: T) -> Resu
     };
     let res = unsafe { libc::pthread_kill(thread, sig) };
     Errno::result(res).map(drop)
+}
+
+/// Obtain the name of the thread
+///
+/// On linux the name cannot exceed 16 length including null terminator.
+#[cfg(all(target_os = "linux", not(target_env = "musl")))]
+pub fn pthread_getname_np(thread: Pthread) -> Result<CString> {
+    let mut name = vec![0u8; 16];
+    unsafe { libc::pthread_getname_np(thread, name.as_mut_ptr() as _, name.len()) };
+    let zi = name.iter().position(|x| *x == b'\0').unwrap();
+    name.truncate(zi);
+    Ok(unsafe { CString::from_vec_unchecked(name) })
+}
+
+/// Set the name of the thread
+/// [`pthread_setname_np(3)`](https://man7.org/linux/man-pages/man3/pthread_setname_np.3.html)
+///
+/// To override the default name of the thread, should not exceed 16 bytes.
+#[cfg(all(target_os = "linux", not(target_env = "musl")))]
+pub fn pthread_setname_np<T: AsRef<[u8]>>(thread: Pthread, name: T) -> Result<libc::c_int> {
+    match CString::new(name.as_ref()) {
+        Ok(cname) => {
+            let nameptr = cname.as_ptr();
+            let res = unsafe { libc::pthread_setname_np(thread, nameptr) };
+            Errno::result(res).map(|r| r)
+        },
+        Err(err) => Errno::result(err.nul_position()).map(|r| r as libc::c_int),
+    }
 }
