@@ -74,6 +74,9 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Changed `getrlimit` and `setrlimit` to use `rlim_t` directly
   instead of `Option<rlim_t>`.
   (#[1668](https://github.com/nix-rust/nix/pull/1668))
+- Deprecated `InetAddr` and `SockAddr` in favor of `SockaddrIn`, `SockaddrIn6`,
+  and `SockaddrStorage`.
+  (#[1684](https://github.com/nix-rust/nix/pull/1684))
 
 ### Fixed
 

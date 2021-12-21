@@ -72,14 +72,13 @@ fn test_so_buf() {
 
 #[test]
 fn test_so_tcp_maxseg() {
-    use std::net::SocketAddr;
+    use std::net::SocketAddrV4;
     use std::str::FromStr;
-    use nix::sys::socket::{accept, bind, connect, listen, InetAddr, SockAddr};
+    use nix::sys::socket::{accept, bind, connect, listen, SockaddrIn};
     use nix::unistd::{close, write};
 
-    let std_sa = SocketAddr::from_str("127.0.0.1:4001").unwrap();
-    let inet_addr = InetAddr::from_std(&std_sa);
-    let sock_addr = SockAddr::new_inet(inet_addr);
+    let std_sa = SocketAddrV4::from_str("127.0.0.1:4001").unwrap();
+    let sock_addr = SockaddrIn::from(std_sa);
 
     let rsock = socket(AddressFamily::Inet, SockType::Stream, SockFlag::empty(), SockProtocol::Tcp)
                 .unwrap();
