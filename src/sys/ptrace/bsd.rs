@@ -30,10 +30,12 @@ libc_enum! {
         PT_READ_I,
         PT_READ_D,
         #[cfg(target_os = "macos")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         PT_READ_U,
         PT_WRITE_I,
         PT_WRITE_D,
         #[cfg(target_os = "macos")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         PT_WRITE_U,
         PT_CONTINUE,
         PT_KILL,
@@ -47,10 +49,13 @@ libc_enum! {
         PT_ATTACH,
         PT_DETACH,
         #[cfg(target_os = "macos")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         PT_SIGEXC,
         #[cfg(target_os = "macos")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         PT_THUPDATE,
         #[cfg(target_os = "macos")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         PT_ATTACHEXC
     }
 }

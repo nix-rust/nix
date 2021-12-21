@@ -11,6 +11,7 @@ categories  = ["os::unix-apis"]
 include = ["src/**/*", "test/**/*", "LICENSE", "README.md", "CHANGELOG.md"]
 
 [package.metadata.docs.rs]
+rustdoc-args = ["--cfg", "docsrs"]
 targets = [
   "x86_64-unknown-linux-gnu",
   "aarch64-linux-android",
@@ -32,6 +33,48 @@ cfg-if = "1.0"
 
 [target.'cfg(not(target_os = "redox"))'.dependencies]
 memoffset = "0.6.3"
+
+[features]
+default = [
+  "acct", "aio", "dir", "env", "event", "features", "fs",
+  "hostname", "inotify", "ioctl", "kmod", "mman", "mount", "mqueue",
+  "net", "personality", "poll", "process", "pthread", "ptrace", "quota",
+  "reboot", "resource", "sched", "signal", "socket", "term", "time",
+  "ucontext", "uio", "users", "zerocopy",
+]
+
+acct = []
+aio = []
+dir = ["fs"]
+env = []
+event = []
+features = []
+fs = []
+hostname = []
+inotify = []
+ioctl = []
+kmod = []
+mman = []
+mount = ["uio"]
+mqueue = ["fs"]
+net = ["socket"]
+personality = []
+poll = []
+pthread = []
+ptrace = ["process"]
+quota = []
+process = []
+reboot = []
+resource = []
+sched = ["process"]
+signal = ["process"]
+socket = []
+term = []
+time = []
+ucontext = ["signal"]
+uio = []
+users = ["features"]
+zerocopy = ["fs", "uio"]
 
 [target.'cfg(target_os = "dragonfly")'.build-dependencies]
 cc = "1"

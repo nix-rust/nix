@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased] - ReleaseDate
+### Added
+
+- Added fine-grained features flags.  Most Nix functionality can now be
+  conditionally enabled.  By default, all features are enabled.
+  (#[1611](https://github.com/nix-rust/nix/pull/1611))
+
+### Changed
+### Fixed
+### Removed
+
 ## [0.23.1] - 2021-12-16
 
 ### Added
@@ -19,8 +30,6 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   `FdSet::contains` involving file descriptors outside of the range
   `0..FD_SETSIZE`.
   (#[1575](https://github.com/nix-rust/nix/pull/1575))
-
-### Removed
 
 ## [0.23.0] - 2021-09-28
 ### Added

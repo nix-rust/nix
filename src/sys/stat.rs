@@ -54,6 +54,7 @@ pub fn mknod<P: ?Sized + NixPath>(path: &P, kind: SFlag, perm: Mode, dev: dev_t)
 
 /// Create a special or ordinary file, relative to a given directory.
 #[cfg(not(any(target_os = "ios", target_os = "macos", target_os = "redox")))]
+#[cfg_attr(docsrs, doc(cfg(all())))]
 pub fn mknodat<P: ?Sized + NixPath>(
     dirfd: RawFd,
     path: &P,
@@ -69,18 +70,21 @@ pub fn mknodat<P: ?Sized + NixPath>(
 }
 
 #[cfg(target_os = "linux")]
+#[cfg_attr(docsrs, doc(cfg(all())))]
 pub const fn major(dev: dev_t) -> u64 {
     ((dev >> 32) & 0xffff_f000) |
     ((dev >>  8) & 0x0000_0fff)
 }
 
 #[cfg(target_os = "linux")]
+#[cfg_attr(docsrs, doc(cfg(all())))]
 pub const fn minor(dev: dev_t) -> u64 {
     ((dev >> 12) & 0xffff_ff00) |
     ((dev      ) & 0x0000_00ff)
 }
 
 #[cfg(target_os = "linux")]
+#[cfg_attr(docsrs, doc(cfg(all())))]
 pub const fn makedev(major: u64, minor: u64) -> dev_t {
     ((major & 0xffff_f000) << 32) |
     ((major & 0x0000_0fff) <<  8) |
@@ -129,6 +133,7 @@ pub fn fstat(fd: RawFd) -> Result<FileStat> {
 }
 
 #[cfg(not(target_os = "redox"))]
+#[cfg_attr(docsrs, doc(cfg(all())))]
 pub fn fstatat<P: ?Sized + NixPath>(dirfd: RawFd, pathname: &P, f: AtFlags) -> Result<FileStat> {
     let mut dst = mem::MaybeUninit::uninit();
     let res = pathname.with_nix_path(|cstr| {
@@ -175,6 +180,7 @@ pub enum FchmodatFlags {
 ///
 /// [fchmodat(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/fchmodat.html).
 #[cfg(not(target_os = "redox"))]
+#[cfg_attr(docsrs, doc(cfg(all())))]
 pub fn fchmodat<P: ?Sized + NixPath>(
     dirfd: Option<RawFd>,
     path: &P,
@@ -233,6 +239,7 @@ pub fn utimes<P: ?Sized + NixPath>(path: &P, atime: &TimeVal, mtime: &TimeVal) -
           target_os = "macos",
           target_os = "freebsd",
           target_os = "netbsd"))]
+#[cfg_attr(docsrs, doc(cfg(all())))]
 pub fn lutimes<P: ?Sized + NixPath>(path: &P, atime: &TimeVal, mtime: &TimeVal) -> Result<()> {
     let times: [libc::timeval; 2] = [*atime.as_ref(), *mtime.as_ref()];
     let res = path.with_nix_path(|cstr| unsafe {
@@ -280,6 +287,7 @@ pub enum UtimensatFlags {
 ///
 /// [utimensat(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/utimens.html).
 #[cfg(not(target_os = "redox"))]
+#[cfg_attr(docsrs, doc(cfg(all())))]
 pub fn utimensat<P: ?Sized + NixPath>(
     dirfd: Option<RawFd>,
     path: &P,
@@ -306,6 +314,7 @@ pub fn utimensat<P: ?Sized + NixPath>(
 }
 
 #[cfg(not(target_os = "redox"))]
+#[cfg_attr(docsrs, doc(cfg(all())))]
 pub fn mkdirat<P: ?Sized + NixPath>(fd: RawFd, path: &P, mode: Mode) -> Result<()> {
     let res = path.with_nix_path(|cstr| {
         unsafe { libc::mkdirat(fd, cstr.as_ptr(), mode.bits() as mode_t) }

@@ -8,10 +8,14 @@ use libc::{self, c_void, c_int, iovec, socklen_t, size_t,
 use memoffset::offset_of;
 use std::{mem, ptr, slice};
 use std::os::unix::io::RawFd;
-#[cfg(all(target_os = "linux"))]
+#[cfg(target_os = "linux")]
+#[cfg(feature = "uio")]
 use crate::sys::time::TimeSpec;
-use crate::sys::time::TimeVal;
-use crate::sys::uio::IoVec;
+#[cfg(feature = "uio")]
+use crate::sys::{
+    time::TimeVal,
+    uio::IoVec
+};
 
 mod addr;
 #[deny(missing_docs)]
@@ -27,19 +31,27 @@ pub mod sockopt;
 pub use self::addr::{
     AddressFamily,
     SockAddr,
-    InetAddr,
     UnixAddr,
+};
+#[cfg(not(any(target_os = "illumos", target_os = "solaris")))]
+#[cfg(feature = "net")]
+pub use self::addr::{
+    InetAddr,
     IpAddr,
     Ipv4Addr,
     Ipv6Addr,
-    LinkAddr,
+    LinkAddr
 };
 #[cfg(any(target_os = "illumos", target_os = "solaris"))]
 pub use self::addr::{
     AddressFamily,
     SockAddr,
-    InetAddr,
     UnixAddr,
+};
+#[cfg(any(target_os = "illumos", target_os = "solaris"))]
+#[cfg(feature = "net")]
+pub use self::addr::{
+    InetAddr,
     IpAddr,
     Ipv4Addr,
     Ipv6Addr,
@@ -52,16 +64,16 @@ pub use crate::sys::socket::addr::alg::AlgAddr;
 #[cfg(any(target_os = "android", target_os = "linux"))]
 pub use crate::sys::socket::addr::vsock::VsockAddr;
 
+#[cfg(feature = "uio")]
+pub use libc::{cmsghdr, msghdr};
 pub use libc::{
-    cmsghdr,
-    msghdr,
     sa_family_t,
     sockaddr,
-    sockaddr_in,
-    sockaddr_in6,
     sockaddr_storage,
     sockaddr_un,
 };
+#[cfg(feature = "net")]
+pub use libc::{sockaddr_in, sockaddr_in6};
 
 // Needed by the cmsg_space macro
 #[doc(hidden)]
@@ -105,68 +117,84 @@ pub enum SockProtocol {
     /// Allows applications and other KEXTs to be notified when certain kernel events occur
     /// ([ref](https://developer.apple.com/library/content/documentation/Darwin/Conceptual/NKEConceptual/control/control.html))
     #[cfg(any(target_os = "ios", target_os = "macos"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     KextEvent = libc::SYSPROTO_EVENT,
     /// Allows applications to configure and control a KEXT
     /// ([ref](https://developer.apple.com/library/content/documentation/Darwin/Conceptual/NKEConceptual/control/control.html))
     #[cfg(any(target_os = "ios", target_os = "macos"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     KextControl = libc::SYSPROTO_CONTROL,
     /// Receives routing and link updates and may be used to modify the routing tables (both IPv4 and IPv6), IP addresses, link
     // parameters, neighbor setups, queueing disciplines, traffic classes and packet classifiers
     /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     NetlinkRoute = libc::NETLINK_ROUTE,
     /// Reserved for user-mode socket protocols
     /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     NetlinkUserSock = libc::NETLINK_USERSOCK,
     /// Query information about sockets of various protocol families from the kernel
     /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     NetlinkSockDiag = libc::NETLINK_SOCK_DIAG,
     /// SELinux event notifications.
     /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     NetlinkSELinux = libc::NETLINK_SELINUX,
     /// Open-iSCSI
     /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     NetlinkISCSI = libc::NETLINK_ISCSI,
     /// Auditing
     /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     NetlinkAudit = libc::NETLINK_AUDIT,
     /// Access to FIB lookup from user space
     /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     NetlinkFIBLookup = libc::NETLINK_FIB_LOOKUP,
     /// Netfilter subsystem
     /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     NetlinkNetFilter = libc::NETLINK_NETFILTER,
     /// SCSI Transports
     /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     NetlinkSCSITransport = libc::NETLINK_SCSITRANSPORT,
     /// Infiniband RDMA
     /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     NetlinkRDMA = libc::NETLINK_RDMA,
     /// Transport IPv6 packets from netfilter to user space.  Used by ip6_queue kernel module.
     /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     NetlinkIPv6Firewall = libc::NETLINK_IP6_FW,
     /// DECnet routing messages
     /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     NetlinkDECNetRoutingMessage = libc::NETLINK_DNRTMSG,
     /// Kernel messages to user space
     /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     NetlinkKObjectUEvent = libc::NETLINK_KOBJECT_UEVENT,
     /// Netlink interface to request information about ciphers registered with the kernel crypto API as well as allow
     /// configuration of the kernel crypto API.
     /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     NetlinkCrypto = libc::NETLINK_CRYPTO,
 }
 
@@ -181,6 +209,7 @@ libc_bitflags!{
                   target_os = "linux",
                   target_os = "netbsd",
                   target_os = "openbsd"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         SOCK_NONBLOCK;
         /// Set close-on-exec on the new descriptor
         #[cfg(any(target_os = "android",
@@ -190,13 +219,16 @@ libc_bitflags!{
                   target_os = "linux",
                   target_os = "netbsd",
                   target_os = "openbsd"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         SOCK_CLOEXEC;
         /// Return `EPIPE` instead of raising `SIGPIPE`
         #[cfg(target_os = "netbsd")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         SOCK_NOSIGPIPE;
         /// For domains `AF_INET(6)`, only allow `connect(2)`, `sendto(2)`, or `sendmsg(2)`
         /// to the DNS port (typically 53)
         #[cfg(target_os = "openbsd")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         SOCK_DNS;
     }
 }
@@ -245,6 +277,7 @@ libc_bitflags!{
         /// the socket error queue. (For more details, see
         /// [recvfrom(2)](https://linux.die.net/man/2/recvfrom))
         #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MSG_ERRQUEUE;
         /// Set the `close-on-exec` flag for the file descriptor received via a UNIX domain
         /// file descriptor using the `SCM_RIGHTS` operation (described in
@@ -259,6 +292,7 @@ libc_bitflags!{
                   target_os = "linux",
                   target_os = "netbsd",
                   target_os = "openbsd"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MSG_CMSG_CLOEXEC;
     }
 }
@@ -276,11 +310,14 @@ cfg_if! {
         impl UnixCredentials {
             /// Creates a new instance with the credentials of the current process
             pub fn new() -> Self {
-                UnixCredentials(libc::ucred {
-                    pid: crate::unistd::getpid().as_raw(),
-                    uid: crate::unistd::getuid().as_raw(),
-                    gid: crate::unistd::getgid().as_raw(),
-                })
+                // Safe because these FFI functions are inherently safe
+                unsafe {
+                    UnixCredentials(libc::ucred {
+                        pid: libc::getpid(),
+                        uid: libc::getuid(),
+                        gid: libc::getgid()
+                    })
+                }
             }
 
             /// Returns the process identifier
@@ -347,7 +384,12 @@ cfg_if! {
 
             /// Returns a list group identifiers (the first one being the effective GID)
             pub fn groups(&self) -> &[libc::gid_t] {
-                unsafe { slice::from_raw_parts(self.0.cmcred_groups.as_ptr() as *const libc::gid_t, self.0.cmcred_ngroups as _) }
+                unsafe {
+                    slice::from_raw_parts(
+                        self.0.cmcred_groups.as_ptr() as *const libc::gid_t,
+                        self.0.cmcred_ngroups as _
+                    )
+                }
             }
         }
 
@@ -391,6 +433,8 @@ cfg_if!{
     }
 }
 
+feature! {
+#![feature = "net"]
 /// Request for multicast socket operations
 ///
 /// This is a wrapper type around `ip_mreq`.
@@ -426,6 +470,10 @@ impl Ipv6MembershipRequest {
         })
     }
 }
+}
+
+feature! {
+#![feature = "uio"]
 
 /// Create a buffer large enough for storing some control messages as returned
 /// by [`recvmsg`](fn.recvmsg.html).
@@ -531,9 +579,11 @@ pub enum ControlMessageOwned {
     ScmRights(Vec<RawFd>),
     /// Received version of [`ControlMessage::ScmCredentials`]
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     ScmCredentials(UnixCredentials),
     /// Received version of [`ControlMessage::ScmCreds`]
     #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     ScmCreds(UnixCredentials),
     /// A message of type `SCM_TIMESTAMP`, containing the time the
     /// packet was received by the kernel.
@@ -595,6 +645,7 @@ pub enum ControlMessageOwned {
     ///
     /// [Further reading](https://www.kernel.org/doc/html/latest/networking/timestamping.html)
     #[cfg(all(target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     ScmTimestampns(TimeSpec),
     #[cfg(any(
         target_os = "android",
@@ -603,6 +654,8 @@ pub enum ControlMessageOwned {
         target_os = "macos",
         target_os = "netbsd",
     ))]
+    #[cfg(feature = "net")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv4PacketInfo(libc::in_pktinfo),
     #[cfg(any(
         target_os = "android",
@@ -614,6 +667,8 @@ pub enum ControlMessageOwned {
         target_os = "openbsd",
         target_os = "netbsd",
     ))]
+    #[cfg(feature = "net")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv6PacketInfo(libc::in6_pktinfo),
     #[cfg(any(
         target_os = "freebsd",
@@ -622,6 +677,8 @@ pub enum ControlMessageOwned {
         target_os = "netbsd",
         target_os = "openbsd",
     ))]
+    #[cfg(feature = "net")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv4RecvIf(libc::sockaddr_dl),
     #[cfg(any(
         target_os = "freebsd",
@@ -630,6 +687,8 @@ pub enum ControlMessageOwned {
         target_os = "netbsd",
         target_os = "openbsd",
     ))]
+    #[cfg(feature = "net")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv4RecvDstAddr(libc::in_addr),
 
     /// UDP Generic Receive Offload (GRO) allows receiving multiple UDP
@@ -641,6 +700,8 @@ pub enum ControlMessageOwned {
     /// `UdpGroSegment` socket option should be enabled on a socket
     /// to allow receiving GRO packets.
     #[cfg(target_os = "linux")]
+    #[cfg(feature = "net")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     UdpGroSegments(u16),
 
     /// SO_RXQ_OVFL indicates that an unsigned 32 bit value
@@ -652,13 +713,18 @@ pub enum ControlMessageOwned {
     /// `RxqOvfl` socket option should be enabled on a socket
     /// to allow receiving the drop counter.
     #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     RxqOvfl(u32),
 
     /// Socket error queue control messages read with the `MSG_ERRQUEUE` flag.
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(feature = "net")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv4RecvErr(libc::sock_extended_err, Option<sockaddr_in>),
     /// Socket error queue control messages read with the `MSG_ERRQUEUE` flag.
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(feature = "net")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv6RecvErr(libc::sock_extended_err, Option<sockaddr_in6>),
 
     /// Catch-all variant for unimplemented cmsg types.
@@ -717,6 +783,7 @@ impl ControlMessageOwned {
                 target_os = "linux",
                 target_os = "macos"
             ))]
+            #[cfg(feature = "net")]
             (libc::IPPROTO_IPV6, libc::IPV6_PKTINFO) => {
                 let info = ptr::read_unaligned(p as *const libc::in6_pktinfo);
                 ControlMessageOwned::Ipv6PacketInfo(info)
@@ -728,6 +795,7 @@ impl ControlMessageOwned {
                 target_os = "macos",
                 target_os = "netbsd",
             ))]
+            #[cfg(feature = "net")]
             (libc::IPPROTO_IP, libc::IP_PKTINFO) => {
                 let info = ptr::read_unaligned(p as *const libc::in_pktinfo);
                 ControlMessageOwned::Ipv4PacketInfo(info)
@@ -739,6 +807,7 @@ impl ControlMessageOwned {
                 target_os = "netbsd",
                 target_os = "openbsd",
             ))]
+            #[cfg(feature = "net")]
             (libc::IPPROTO_IP, libc::IP_RECVIF) => {
                 let dl = ptr::read_unaligned(p as *const libc::sockaddr_dl);
                 ControlMessageOwned::Ipv4RecvIf(dl)
@@ -750,11 +819,13 @@ impl ControlMessageOwned {
                 target_os = "netbsd",
                 target_os = "openbsd",
             ))]
+            #[cfg(feature = "net")]
             (libc::IPPROTO_IP, libc::IP_RECVDSTADDR) => {
                 let dl = ptr::read_unaligned(p as *const libc::in_addr);
                 ControlMessageOwned::Ipv4RecvDstAddr(dl)
             },
             #[cfg(target_os = "linux")]
+            #[cfg(feature = "net")]
             (libc::SOL_UDP, libc::UDP_GRO) => {
                 let gso_size: u16 = ptr::read_unaligned(p as *const _);
                 ControlMessageOwned::UdpGroSegments(gso_size)
@@ -765,11 +836,13 @@ impl ControlMessageOwned {
                 ControlMessageOwned::RxqOvfl(drop_counter)
             },
             #[cfg(any(target_os = "android", target_os = "linux"))]
+            #[cfg(feature = "net")]
             (libc::IPPROTO_IP, libc::IP_RECVERR) => {
                 let (err, addr) = Self::recv_err_helper::<sockaddr_in>(p, len);
                 ControlMessageOwned::Ipv4RecvErr(err, addr)
             },
             #[cfg(any(target_os = "android", target_os = "linux"))]
+            #[cfg(feature = "net")]
             (libc::IPPROTO_IPV6, libc::IPV6_RECVERR) => {
                 let (err, addr) = Self::recv_err_helper::<sockaddr_in6>(p, len);
                 ControlMessageOwned::Ipv6RecvErr(err, addr)
@@ -783,6 +856,7 @@ impl ControlMessageOwned {
     }
 
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(feature = "net")]
     unsafe fn recv_err_helper<T>(p: *mut libc::c_uchar, len: usize) -> (libc::sock_extended_err, Option<T>) {
         let ee = p as *const libc::sock_extended_err;
         let err = ptr::read_unaligned(ee);
@@ -832,6 +906,7 @@ pub enum ControlMessage<'a> {
     /// For further information, please refer to the
     /// [`unix(7)`](https://man7.org/linux/man-pages/man7/unix.7.html) man page.
     #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     ScmCredentials(&'a UnixCredentials),
     /// A message of type `SCM_CREDS`, containing the pid, uid, euid, gid and groups of
     /// a process connected to the socket.
@@ -846,6 +921,7 @@ pub enum ControlMessage<'a> {
     /// For further information, please refer to the
     /// [`unix(4)`](https://www.freebsd.org/cgi/man.cgi?query=unix) man page.
     #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     ScmCreds,
 
     /// Set IV for `AF_ALG` crypto API.
@@ -856,6 +932,7 @@ pub enum ControlMessage<'a> {
         target_os = "android",
         target_os = "linux",
     ))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     AlgSetIv(&'a [u8]),
     /// Set crypto operation for `AF_ALG` crypto API. It may be one of
     /// `ALG_OP_ENCRYPT` or `ALG_OP_DECRYPT`
@@ -866,6 +943,7 @@ pub enum ControlMessage<'a> {
         target_os = "android",
         target_os = "linux",
     ))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     AlgSetOp(&'a libc::c_int),
     /// Set the length of associated authentication data (AAD) (applicable only to AEAD algorithms)
     /// for `AF_ALG` crypto API.
@@ -876,6 +954,7 @@ pub enum ControlMessage<'a> {
         target_os = "android",
         target_os = "linux",
     ))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     AlgSetAeadAssoclen(&'a u32),
 
     /// UDP GSO makes it possible for applications to generate network packets
@@ -887,6 +966,8 @@ pub enum ControlMessage<'a> {
     /// Send buffer should consist of multiple fixed-size wire payloads
     /// following one by one, and the last, possibly smaller one.
     #[cfg(target_os = "linux")]
+    #[cfg(feature = "net")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     UdpGsoSegments(&'a u16),
 
     /// Configure the sending addressing and interface for v4
@@ -898,6 +979,8 @@ pub enum ControlMessage<'a> {
               target_os = "netbsd",
               target_os = "android",
               target_os = "ios",))]
+    #[cfg(feature = "net")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv4PacketInfo(&'a libc::in_pktinfo),
 
     /// Configure the sending addressing and interface for v6
@@ -910,6 +993,8 @@ pub enum ControlMessage<'a> {
               target_os = "freebsd",
               target_os = "android",
               target_os = "ios",))]
+    #[cfg(feature = "net")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv6PacketInfo(&'a libc::in6_pktinfo),
 
     /// SO_RXQ_OVFL indicates that an unsigned 32 bit value
@@ -918,6 +1003,7 @@ pub enum ControlMessage<'a> {
     /// socket between the last recieved packet and this
     /// received packet.
     #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     RxqOvfl(&'a u32),
 }
 
@@ -998,16 +1084,19 @@ impl<'a> ControlMessage<'a> {
                 len as *const _ as *const u8
             },
             #[cfg(target_os = "linux")]
+            #[cfg(feature = "net")]
             ControlMessage::UdpGsoSegments(gso_size) => {
                 gso_size as *const _ as *const u8
             },
             #[cfg(any(target_os = "linux", target_os = "macos",
                       target_os = "netbsd", target_os = "android",
                       target_os = "ios",))]
+            #[cfg(feature = "net")]
             ControlMessage::Ipv4PacketInfo(info) => info as *const _ as *const u8,
             #[cfg(any(target_os = "linux", target_os = "macos",
                       target_os = "netbsd", target_os = "freebsd",
                       target_os = "android", target_os = "ios",))]
+            #[cfg(feature = "net")]
             ControlMessage::Ipv6PacketInfo(info) => info as *const _ as *const u8,
             #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
             ControlMessage::RxqOvfl(drop_count) => {
@@ -1050,16 +1139,19 @@ impl<'a> ControlMessage<'a> {
                 mem::size_of_val(len)
             },
             #[cfg(target_os = "linux")]
+            #[cfg(feature = "net")]
             ControlMessage::UdpGsoSegments(gso_size) => {
                 mem::size_of_val(gso_size)
             },
             #[cfg(any(target_os = "linux", target_os = "macos",
               target_os = "netbsd", target_os = "android",
               target_os = "ios",))]
+            #[cfg(feature = "net")]
             ControlMessage::Ipv4PacketInfo(info) => mem::size_of_val(info),
             #[cfg(any(target_os = "linux", target_os = "macos",
               target_os = "netbsd", target_os = "freebsd",
               target_os = "android", target_os = "ios",))]
+            #[cfg(feature = "net")]
             ControlMessage::Ipv6PacketInfo(info) => mem::size_of_val(info),
             #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
             ControlMessage::RxqOvfl(drop_count) => {
@@ -1080,14 +1172,17 @@ impl<'a> ControlMessage<'a> {
             ControlMessage::AlgSetIv(_) | ControlMessage::AlgSetOp(_) |
                 ControlMessage::AlgSetAeadAssoclen(_) => libc::SOL_ALG,
             #[cfg(target_os = "linux")]
+            #[cfg(feature = "net")]
             ControlMessage::UdpGsoSegments(_) => libc::SOL_UDP,
             #[cfg(any(target_os = "linux", target_os = "macos",
                       target_os = "netbsd", target_os = "android",
                       target_os = "ios",))]
+            #[cfg(feature = "net")]
             ControlMessage::Ipv4PacketInfo(_) => libc::IPPROTO_IP,
             #[cfg(any(target_os = "linux", target_os = "macos",
               target_os = "netbsd", target_os = "freebsd",
               target_os = "android", target_os = "ios",))]
+            #[cfg(feature = "net")]
             ControlMessage::Ipv6PacketInfo(_) => libc::IPPROTO_IPV6,
             #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
             ControlMessage::RxqOvfl(_) => libc::SOL_SOCKET,
@@ -1115,16 +1210,19 @@ impl<'a> ControlMessage<'a> {
                 libc::ALG_SET_AEAD_ASSOCLEN
             },
             #[cfg(target_os = "linux")]
+            #[cfg(feature = "net")]
             ControlMessage::UdpGsoSegments(_) => {
                 libc::UDP_SEGMENT
             },
             #[cfg(any(target_os = "linux", target_os = "macos",
                       target_os = "netbsd", target_os = "android",
                       target_os = "ios",))]
+            #[cfg(feature = "net")]
             ControlMessage::Ipv4PacketInfo(_) => libc::IP_PKTINFO,
             #[cfg(any(target_os = "linux", target_os = "macos",
                       target_os = "netbsd", target_os = "freebsd",
                       target_os = "android", target_os = "ios",))]
+            #[cfg(feature = "net")]
             ControlMessage::Ipv6PacketInfo(_) => libc::IPV6_PKTINFO,
             #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
             ControlMessage::RxqOvfl(_) => {
@@ -1528,6 +1626,7 @@ pub fn recvmsg<'a>(fd: RawFd, iov: &[IoVec<&mut [u8]>],
 
     Ok(unsafe { read_mhdr(mhdr, r, msg_controllen, address.assume_init(), &mut cmsg_buffer) })
 }
+}
 
 
 /// Create an endpoint for communication
@@ -1818,6 +1917,7 @@ pub fn sockaddr_storage_to_addr(
     }
 
     match c_int::from(addr.ss_family) {
+        #[cfg(feature = "net")]
         libc::AF_INET => {
             assert!(len as usize >= mem::size_of::<sockaddr_in>());
             let sin = unsafe {
@@ -1825,6 +1925,7 @@ pub fn sockaddr_storage_to_addr(
             };
             Ok(SockAddr::Inet(InetAddr::V4(sin)))
         }
+        #[cfg(feature = "net")]
         libc::AF_INET6 => {
             assert!(len as usize >= mem::size_of::<sockaddr_in6>());
             let sin6 = unsafe {
@@ -1840,6 +1941,7 @@ pub fn sockaddr_storage_to_addr(
             }
         }
         #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(feature = "net")]
         libc::AF_PACKET => {
             use libc::sockaddr_ll;
             // Don't assert anything about the size.

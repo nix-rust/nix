@@ -21,33 +21,43 @@ libc_bitflags!(
         ST_NOSUID;
         /// Do not interpret character or block-special devices
         #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         ST_NODEV;
         /// Do not allow execution of binaries on the filesystem
         #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         ST_NOEXEC;
         /// All IO should be done synchronously
         #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         ST_SYNCHRONOUS;
         /// Allow mandatory locks on the filesystem
         #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         ST_MANDLOCK;
         /// Write on file/directory/symlink
         #[cfg(target_os = "linux")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         ST_WRITE;
         /// Append-only file
         #[cfg(target_os = "linux")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         ST_APPEND;
         /// Immutable file
         #[cfg(target_os = "linux")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         ST_IMMUTABLE;
         /// Do not update access times on files
         #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         ST_NOATIME;
         /// Do not update access times on files
         #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         ST_NODIRATIME;
         /// Update access time relative to modify/change time
         #[cfg(any(target_os = "android", all(target_os = "linux", not(target_env = "musl"))))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         ST_RELATIME;
     }
 );
@@ -109,6 +119,7 @@ impl Statvfs {
 
     /// Get the mount flags
     #[cfg(not(target_os = "redox"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn flags(&self) -> FsFlags {
         FsFlags::from_bits_truncate(self.0.f_flag)
     }
