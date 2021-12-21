@@ -19,8 +19,8 @@ build: &BUILD
     - $TOOL +$TOOLCHAIN $BUILD $ZFLAGS --target $TARGET --all-targets
     - $TOOL +$TOOLCHAIN doc $ZFLAGS --no-deps --target $TARGET
     - $TOOL +$TOOLCHAIN clippy $ZFLAGS --target $TARGET -- -D warnings
-    - if [ -z "$NOHACK" ]; then $TOOL install cargo-hack; fi
-    - if [ -z "$NOHACK" ]; then $TOOL hack $ZFLAGS check --target $TARGET --each-feature; fi
+    - if [ -z "$NOHACK" ]; then $TOOL +$TOOLCHAIN install cargo-hack; fi
+    - if [ -z "$NOHACK" ]; then $TOOL +$TOOLCHAIN hack $ZFLAGS check --target $TARGET --each-feature; fi
 
 # Tests that do require executing the binaries
 test: &TEST
