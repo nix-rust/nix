@@ -228,3 +228,8 @@ impl<'a> IoVec<&'a mut [u8]> {
         }, PhantomData)
     }
 }
+
+// The only reason IoVec isn't automatically Send+Sync is because libc::iovec
+// contains raw pointers.
+unsafe impl<T> Send for IoVec<T> where T: Send {}
+unsafe impl<T> Sync for IoVec<T> where T: Sync {}
