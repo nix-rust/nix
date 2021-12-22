@@ -13,6 +13,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1611](https://github.com/nix-rust/nix/pull/1611))
 - Added `EPOLLEXCLUSIVE` on Android.
   (#[1567](https://github.com/nix-rust/nix/pull/1567))
+- Added `fdatasync` for FreeBSD, Fuchsia, NetBSD, and OpenBSD.
+  (#[1581](https://github.com/nix-rust/nix/pull/1581))
 
 ### Changed
 ### Fixed
