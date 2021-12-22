@@ -5,7 +5,7 @@ use cfg_if::cfg_if;
 use crate::{Result, errno::Errno};
 use libc::{self, c_void, c_int, iovec, socklen_t, size_t,
         CMSG_FIRSTHDR, CMSG_NXTHDR, CMSG_DATA, CMSG_LEN};
-use memoffset::offset_of;
+use std::convert::TryInto;
 use std::{mem, ptr, slice};
 use std::os::unix::io::RawFd;
 #[cfg(target_os = "linux")]
@@ -1934,10 +1934,10 @@ pub fn sockaddr_storage_to_addr(
             Ok(SockAddr::Inet(InetAddr::V6(sin6)))
         }
         libc::AF_UNIX => {
-            let pathlen = len - offset_of!(sockaddr_un, sun_path);
             unsafe {
                 let sun = *(addr as *const _ as *const sockaddr_un);
-                Ok(SockAddr::Unix(UnixAddr::from_raw_parts(sun, pathlen)))
+                let sun_len = len.try_into().unwrap();
+                Ok(SockAddr::Unix(UnixAddr::from_raw_parts(sun, sun_len)))
             }
         }
         #[cfg(any(target_os = "android", target_os = "linux"))]
