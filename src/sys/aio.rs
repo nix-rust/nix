@@ -1065,6 +1065,7 @@ impl<'a> LioCbBuilder<'a> {
     ///
     /// [`LioCb`]: struct.LioCb.html
     /// [`AioCb::from_slice`]: struct.AioCb.html#method.from_slice
+    #[must_use]
     pub fn emplace_slice(mut self, fd: RawFd, offs: off_t, buf: &'a [u8],
                          prio: libc::c_int, sigev_notify: SigevNotify,
                          opcode: LioOpcode) -> Self
@@ -1081,6 +1082,7 @@ impl<'a> LioCbBuilder<'a> {
     ///
     /// [`LioCb`]: struct.LioCb.html
     /// [`AioCb::from_mut_slice`]: struct.AioCb.html#method.from_mut_slice
+    #[must_use]
     pub fn emplace_mut_slice(mut self, fd: RawFd, offs: off_t,
                              buf: &'a mut [u8], prio: libc::c_int,
                              sigev_notify: SigevNotify, opcode: LioOpcode)
