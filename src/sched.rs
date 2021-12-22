@@ -87,6 +87,71 @@ mod sched_linux_like {
     /// Type for the function executed by [`clone`].
     pub type CloneCb<'a> = Box<dyn FnMut() -> isize + 'a>;
 
+    /// `clone` create a child process
+    /// ([`clone(2)`](https://man7.org/linux/man-pages/man2/clone.2.html))
+    ///
+    /// `stack` is a reference to an array which will hold the stack of the new
+    /// process.  Unlike when calling `clone(2)` from C, the provided stack
+    /// address need not be the highest address of the region.  Nix will take
+    /// care of that requirement.  The user only needs to provide a reference to
+    /// a normally allocated buffer.
+    pub fn clone(
+        mut cb: CloneCb,
+        stack: &mut [u8],
+        flags: CloneFlags,
+        signal: Option<c_int>,
+    ) -> Result<Pid> {
+        extern "C" fn callback(data: *mut CloneCb) -> c_int {
+            let cb: &mut CloneCb = unsafe { &mut *data };
+            (*cb)() as c_int
+        }
+
+        let res = unsafe {
+            let combined = flags.bits() | signal.unwrap_or(0);
+            let ptr = stack.as_mut_ptr().add(stack.len());
+            let ptr_aligned = ptr.sub(ptr as usize % 16);
+            libc::clone(
+                mem::transmute(
+                    callback as extern "C" fn(*mut Box<dyn FnMut() -> isize>) -> i32,
+                ),
+                ptr_aligned as *mut c_void,
+                combined,
+                &mut cb as *mut _ as *mut c_void,
+            )
+        };
+
+        Errno::result(res).map(Pid::from_raw)
+    }
+
+    /// disassociate parts of the process execution context
+    ///
+    /// See also [unshare(2)](https://man7.org/linux/man-pages/man2/unshare.2.html)
+    pub fn unshare(flags: CloneFlags) -> Result<()> {
+        let res = unsafe { libc::unshare(flags.bits()) };
+
+        Errno::result(res).map(drop)
+    }
+
+    /// reassociate thread with a namespace
+    ///
+    /// See also [setns(2)](https://man7.org/linux/man-pages/man2/setns.2.html)
+    pub fn setns(fd: RawFd, nstype: CloneFlags) -> Result<()> {
+        let res = unsafe { libc::setns(fd, nstype.bits()) };
+
+        Errno::result(res).map(drop)
+    }
+}
+
+#[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "linux"))]
+pub use self::sched_affinity::*;
+
+#[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "linux"))]
+mod sched_affinity {
+    use crate::errno::Errno;
+    use std::mem;
+    use crate::unistd::Pid;
+    use crate::Result;
+
     /// CpuSet represent a bit-mask of CPUs.
     /// CpuSets are used by sched_setaffinity and
     /// sched_getaffinity for example.
@@ -216,60 +281,6 @@ mod sched_linux_like {
         };
 
         Errno::result(res).and(Ok(cpuset))
-    }
-
-    /// `clone` create a child process
-    /// ([`clone(2)`](https://man7.org/linux/man-pages/man2/clone.2.html))
-    ///
-    /// `stack` is a reference to an array which will hold the stack of the new
-    /// process.  Unlike when calling `clone(2)` from C, the provided stack
-    /// address need not be the highest address of the region.  Nix will take
-    /// care of that requirement.  The user only needs to provide a reference to
-    /// a normally allocated buffer.
-    pub fn clone(
-        mut cb: CloneCb,
-        stack: &mut [u8],
-        flags: CloneFlags,
-        signal: Option<c_int>,
-    ) -> Result<Pid> {
-        extern "C" fn callback(data: *mut CloneCb) -> c_int {
-            let cb: &mut CloneCb = unsafe { &mut *data };
-            (*cb)() as c_int
-        }
-
-        let res = unsafe {
-            let combined = flags.bits() | signal.unwrap_or(0);
-            let ptr = stack.as_mut_ptr().add(stack.len());
-            let ptr_aligned = ptr.sub(ptr as usize % 16);
-            libc::clone(
-                mem::transmute(
-                    callback as extern "C" fn(*mut Box<dyn FnMut() -> isize>) -> i32,
-                ),
-                ptr_aligned as *mut c_void,
-                combined,
-                &mut cb as *mut _ as *mut c_void,
-            )
-        };
-
-        Errno::result(res).map(Pid::from_raw)
-    }
-
-    /// disassociate parts of the process execution context
-    ///
-    /// See also [unshare(2)](https://man7.org/linux/man-pages/man2/unshare.2.html)
-    pub fn unshare(flags: CloneFlags) -> Result<()> {
-        let res = unsafe { libc::unshare(flags.bits()) };
-
-        Errno::result(res).map(drop)
-    }
-
-    /// reassociate thread with a namespace
-    ///
-    /// See also [setns(2)](https://man7.org/linux/man-pages/man2/setns.2.html)
-    pub fn setns(fd: RawFd, nstype: CloneFlags) -> Result<()> {
-        let res = unsafe { libc::setns(fd, nstype.bits()) };
-
-        Errno::result(res).map(drop)
     }
 }
 
