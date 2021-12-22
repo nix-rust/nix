@@ -1,4 +1,5 @@
 use super::sa_family_t;
+use cfg_if::cfg_if;
 use crate::{Result, NixPath};
 use crate::errno::Errno;
 use memoffset::offset_of;
@@ -580,7 +581,13 @@ pub struct UnixAddr {
     sun: libc::sockaddr_un,
     /// The length of the valid part of `sun`, including the sun_family field
     /// but excluding any trailing nul.
-    sun_len: u8,
+    // On the BSDs, this field is built into sun
+    #[cfg(any(target_os = "android",
+              target_os = "fuchsia",
+              target_os = "illumos",
+              target_os = "linux"
+    ))]
+    sun_len: u8
 }
 
 // linux man page unix(7) says there are 3 kinds of unix socket:
@@ -611,7 +618,18 @@ impl<'a> UnixAddrKind<'a> {
             return Self::Abstract(name);
         }
         let pathname = slice::from_raw_parts(sun.sun_path.as_ptr() as *const u8, path_len);
-        Self::Pathname(Path::new(OsStr::from_bytes(pathname)))
+        if pathname.last() == Some(&0) {
+            // A trailing NUL is not considered part of the path, and it does
+            // not need to be included in the addrlen passed to functions like
+            // bind().  However, Linux adds a trailing NUL, even if one was not
+            // originally present, when returning addrs from functions like
+            // getsockname() (the BSDs do not do that).  So we need to filter
+            // out any trailing NUL here, so sockaddrs can round-trip through
+            // the kernel and still compare equal.
+            Self::Pathname(Path::new(OsStr::from_bytes(&pathname[0..pathname.len() - 1])))
+        } else {
+            Self::Pathname(Path::new(OsStr::from_bytes(pathname)))
+        }
     }
 }
 
@@ -640,7 +658,6 @@ impl UnixAddr {
                           target_os = "ios",
                           target_os = "macos",
                           target_os = "netbsd",
-                          target_os = "illumos",
                           target_os = "openbsd"))]
                 {
                     ret.sun_len = sun_len;
@@ -657,7 +674,7 @@ impl UnixAddr {
     /// Create a new `sockaddr_un` representing an address in the "abstract namespace".
     ///
     /// The leading nul byte for the abstract namespace is automatically added;
-    /// thus the input `path` is expected to be the bare name, not null-prefixed.
+    /// thus the input `path` is expected to be the bare name, not NUL-prefixed.
     /// This is a Linux-specific extension, primarily used to allow chrooted
     /// processes to communicate with processes having a different filesystem view.
     #[cfg(any(target_os = "android", target_os = "linux"))]
@@ -699,23 +716,24 @@ impl UnixAddr {
     /// - if this is a unix addr with a pathname, sun.sun_path is a
     ///   fs path, not necessarily nul-terminated.
     pub(crate) unsafe fn from_raw_parts(sun: libc::sockaddr_un, sun_len: u8) -> UnixAddr {
-        #[cfg(any(target_os = "dragonfly",
-                  target_os = "freebsd",
-                  target_os = "ios",
-                  target_os = "macos",
-                  target_os = "netbsd",
-                  target_os = "illumos",
-                  target_os = "openbsd"))]
-        {
-            assert_eq!(sun_len, sun.sun_len);
+        cfg_if!{
+            if #[cfg(any(target_os = "android",
+                     target_os = "fuchsia",
+                     target_os = "illumos",
+                     target_os = "linux"
+                ))]
+            {
+                UnixAddr { sun, sun_len }
+            } else {
+                assert_eq!(sun_len, sun.sun_len);
+                UnixAddr {sun}
+            }
         }
-
-        UnixAddr { sun, sun_len }
     }
 
     fn kind(&self) -> UnixAddrKind<'_> {
         // SAFETY: our sockaddr is always valid because of the invariant on the struct
-        unsafe { UnixAddrKind::get(&self.sun, self.sun_len) }
+        unsafe { UnixAddrKind::get(&self.sun, self.sun_len()) }
     }
 
     /// If this address represents a filesystem path, return that path.
@@ -729,7 +747,7 @@ impl UnixAddr {
     /// If this address represents an abstract socket, return its name.
     ///
     /// For abstract sockets only the bare name is returned, without the
-    /// leading null byte. `None` is returned for unnamed or path-backed sockets.
+    /// leading NUL byte. `None` is returned for unnamed or path-backed sockets.
     #[cfg(any(target_os = "android", target_os = "linux"))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn as_abstract(&self) -> Option<&[u8]> {
@@ -742,7 +760,7 @@ impl UnixAddr {
     /// Returns the addrlen of this socket - `offsetof(struct sockaddr_un, sun_path)`
     #[inline]
     pub fn path_len(&self) -> usize {
-        self.sun_len as usize - offset_of!(libc::sockaddr_un, sun_path)
+        self.sun_len() as usize - offset_of!(libc::sockaddr_un, sun_path)
     }
     /// Returns a pointer to the raw `sockaddr_un` struct
     #[inline]
@@ -753,6 +771,21 @@ impl UnixAddr {
     #[inline]
     pub fn as_mut_ptr(&mut self) -> *mut libc::sockaddr_un {
         &mut self.sun
+    }
+
+    fn sun_len(&self)-> u8 {
+        cfg_if!{
+            if #[cfg(any(target_os = "android",
+                     target_os = "fuchsia",
+                     target_os = "illumos",
+                     target_os = "linux"
+                ))]
+            {
+                self.sun_len
+            } else {
+                self.sun.sun_len
+            }
+        }
     }
 }
 
@@ -987,12 +1020,12 @@ impl SockAddr {
                 },
                 mem::size_of_val(addr) as libc::socklen_t
             ),
-            SockAddr::Unix(UnixAddr { ref sun, sun_len }) => (
+            SockAddr::Unix(ref unix_addr) => (
                 // This cast is always allowed in C
                 unsafe {
-                    &*(sun as *const libc::sockaddr_un as *const libc::sockaddr)
+                    &*(&unix_addr.sun as *const libc::sockaddr_un as *const libc::sockaddr)
                 },
-                sun_len as libc::socklen_t
+                unix_addr.sun_len() as libc::socklen_t
             ),
             #[cfg(any(target_os = "android", target_os = "linux"))]
             SockAddr::Netlink(NetlinkAddr(ref sa)) => (
