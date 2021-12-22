@@ -848,11 +848,9 @@ pub fn execvpe<SA: AsRef<CStr>, SE: AsRef<CStr>>(filename: &CStr, args: &[SA], e
 ///
 /// This function is similar to `execve`, except that the program to be executed
 /// is referenced as a file descriptor instead of a path.
-// Note for NetBSD and OpenBSD: although rust-lang/libc includes it (under
-// unix/bsd/netbsdlike/) fexecve is not currently implemented on NetBSD nor on
-// OpenBSD.
 #[cfg(any(target_os = "android",
           target_os = "linux",
+          target_os = "dragonfly",
           target_os = "freebsd"))]
 #[inline]
 pub fn fexecve<SA: AsRef<CStr> ,SE: AsRef<CStr>>(fd: RawFd, args: &[SA], env: &[SE]) -> Result<Infallible> {

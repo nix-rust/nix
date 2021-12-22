@@ -363,25 +363,21 @@ cfg_if!{
     if #[cfg(target_os = "android")] {
         execve_test_factory!(test_execve, execve, CString::new("/system/bin/sh").unwrap().as_c_str());
         execve_test_factory!(test_fexecve, fexecve, File::open("/system/bin/sh").unwrap().into_raw_fd());
-    } else if #[cfg(any(target_os = "freebsd",
+    } else if #[cfg(any(target_os = "dragonfly",
+                        target_os = "freebsd",
                         target_os = "linux"))] {
         // These tests frequently fail on musl, probably due to
         // https://github.com/nix-rust/nix/issues/555
         execve_test_factory!(test_execve, execve, CString::new("/bin/sh").unwrap().as_c_str());
         execve_test_factory!(test_fexecve, fexecve, File::open("/bin/sh").unwrap().into_raw_fd());
-    } else if #[cfg(any(target_os = "dragonfly",
-                        target_os = "illumos",
+    } else if #[cfg(any(target_os = "illumos",
                         target_os = "ios",
                         target_os = "macos",
                         target_os = "netbsd",
                         target_os = "openbsd",
                         target_os = "solaris"))] {
         execve_test_factory!(test_execve, execve, CString::new("/bin/sh").unwrap().as_c_str());
-        // No fexecve() on DragonFly, ios, macos, NetBSD, OpenBSD.
-        //
-        // Note for NetBSD and OpenBSD: although rust-lang/libc includes it
-        // (under unix/bsd/netbsdlike/) fexecve is not currently implemented on
-        // NetBSD nor on OpenBSD.
+        // No fexecve() on ios, macos, NetBSD, OpenBSD.
     }
 }
 
