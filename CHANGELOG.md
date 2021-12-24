@@ -19,6 +19,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1581](https://github.com/nix-rust/nix/pull/1581))
 - Added `sched_setaffinity` and `sched_getaffinity` on DragonFly.
   (#[1537](https://github.com/nix-rust/nix/pull/1537))
+- Added the `SO_TIMESTAMPING` support
+  (#[1547](https://github.com/nix-rust/nix/pull/1547))
 
 ### Changed
 ### Fixed

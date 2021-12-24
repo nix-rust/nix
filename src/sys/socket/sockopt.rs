@@ -16,7 +16,7 @@ use std::os::unix::ffi::OsStrExt;
 
 // Constants
 // TCP_CA_NAME_MAX isn't defined in user space include files
-#[cfg(any(target_os = "freebsd", target_os = "linux"))] 
+#[cfg(any(target_os = "freebsd", target_os = "linux"))]
 #[cfg(feature = "net")]
 const TCP_CA_NAME_MAX: usize = 16;
 
@@ -465,7 +465,12 @@ sockopt_impl!(
     #[allow(missing_docs)]
     // Not documented by Linux!
     Ip6tOriginalDst, GetOnly, libc::SOL_IPV6, libc::IP6T_SO_ORIGINAL_DST, libc::sockaddr_in6);
-sockopt_impl!( 
+#[cfg(any(target_os = "linux"))]
+sockopt_impl!(
+    /// Specifies exact type of timestamping information collected by the kernel
+    /// [Further reading](https://www.kernel.org/doc/html/latest/networking/timestamping.html)
+    Timestamping, Both, libc::SOL_SOCKET, libc::SO_TIMESTAMPING, super::TimestampingFlag);
+sockopt_impl!(
     /// Enable or disable the receiving of the `SO_TIMESTAMP` control message.
     ReceiveTimestamp, Both, libc::SOL_SOCKET, libc::SO_TIMESTAMP, bool);
 #[cfg(all(target_os = "linux"))]
@@ -502,7 +507,7 @@ sockopt_impl!(
     /// Enable or disable the receiving of the `SCM_CREDENTIALS` control
     /// message.
     PassCred, Both, libc::SOL_SOCKET, libc::SO_PASSCRED, bool);
-#[cfg(any(target_os = "freebsd", target_os = "linux"))] 
+#[cfg(any(target_os = "freebsd", target_os = "linux"))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
