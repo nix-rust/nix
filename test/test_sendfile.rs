@@ -8,7 +8,7 @@ use tempfile::tempfile;
 cfg_if! {
     if #[cfg(any(target_os = "android", target_os = "linux"))] {
         use nix::unistd::{close, pipe, read};
-    } else if #[cfg(any(target_os = "freebsd", target_os = "ios", target_os = "macos"))] {
+    } else if #[cfg(any(target_os = "dragonfly", target_os = "freebsd", target_os = "ios", target_os = "macos"))] {
         use std::net::Shutdown;
         use std::os::unix::net::UnixStream;
     }
@@ -88,6 +88,51 @@ fn test_sendfile_freebsd() {
         Some(trailers.as_slice()),
         SfFlags::empty(),
         0,
+    );
+    assert!(res.is_ok());
+    wr.shutdown(Shutdown::Both).unwrap();
+
+    // Prepare the expected result
+    let expected_string =
+        header_strings.concat() + &body[body_offset..] + &trailer_strings.concat();
+
+    // Verify the message that was sent
+    assert_eq!(bytes_written as usize, expected_string.as_bytes().len());
+
+    let mut read_string = String::new();
+    let bytes_read = rd.read_to_string(&mut read_string).unwrap();
+    assert_eq!(bytes_written as usize, bytes_read);
+    assert_eq!(expected_string, read_string);
+}
+
+#[cfg(target_os = "dragonfly")]
+#[test]
+fn test_sendfile_dragonfly() {
+    // Declare the content
+    let header_strings = vec!["HTTP/1.1 200 OK\n", "Content-Type: text/plain\n", "\n"];
+    let body = "Xabcdef123456";
+    let body_offset = 1;
+    let trailer_strings = vec!["\n", "Served by Make Believe\n"];
+
+    // Write the body to a file
+    let mut tmp = tempfile().unwrap();
+    tmp.write_all(body.as_bytes()).unwrap();
+
+    // Prepare headers and trailers for sendfile
+    let headers: Vec<&[u8]> = header_strings.iter().map(|s| s.as_bytes()).collect();
+    let trailers: Vec<&[u8]> = trailer_strings.iter().map(|s| s.as_bytes()).collect();
+
+    // Prepare socket pair
+    let (mut rd, wr) = UnixStream::pair().unwrap();
+
+    // Call the test method
+    let (res, bytes_written) = sendfile(
+        tmp.as_raw_fd(),
+        wr.as_raw_fd(),
+        body_offset as off_t,
+        None,
+        Some(headers.as_slice()),
+        Some(trailers.as_slice()),
     );
     assert!(res.is_ok());
     wr.shutdown(Shutdown::Both).unwrap();
