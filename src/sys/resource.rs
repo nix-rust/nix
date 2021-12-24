@@ -24,12 +24,15 @@ cfg_if! {
 }
 
 libc_enum! {
+    /// Types of process resources.
+    ///
     /// The Resource enum is platform dependent. Check different platform
-    /// manuals for more details. Some platform links has been provided for
-    /// earier reference (non-exhaustive).
+    /// manuals for more details. Some platform links have been provided for
+    /// easier reference (non-exhaustive).
     ///
     /// * [Linux](https://man7.org/linux/man-pages/man2/getrlimit.2.html)
     /// * [FreeBSD](https://www.freebsd.org/cgi/man.cgi?query=setrlimit)
+    /// * [NetBSD](https://man.netbsd.org/setrlimit.2)
 
     // linux-gnu uses u_int as resource enum, which is implemented in libc as
     // well.
@@ -49,11 +52,7 @@ libc_enum! {
         ), repr(i32))]
     #[non_exhaustive]
     pub enum Resource {
-        #[cfg(not(any(
-                    target_os = "freebsd",
-                    target_os = "netbsd",
-                    target_os = "openbsd"
-        )))]
+        #[cfg(not(any(target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
         /// The maximum amount (in bytes) of virtual memory the process is
         /// allowed to map.
@@ -83,7 +82,13 @@ libc_enum! {
         /// this process may establish.
         RLIMIT_LOCKS,
 
-        #[cfg(any(target_os = "android", target_os = "freebsd", target_os = "openbsd", target_os = "linux"))]
+        #[cfg(any(
+            target_os = "android",
+            target_os = "freebsd",
+            target_os = "openbsd",
+            target_os = "linux",
+            target_os = "netbsd"
+        ))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
         /// The maximum size (in bytes) which a process may lock into memory
         /// using the mlock(2) system call.
@@ -101,7 +106,13 @@ libc_enum! {
         /// setpriority or nice.
         RLIMIT_NICE,
 
-        #[cfg(any(target_os = "android", target_os = "freebsd", target_os = "openbsd", target_os = "linux"))]
+        #[cfg(any(
+            target_os = "android",
+            target_os = "freebsd",
+            target_os = "netbsd",
+            target_os = "openbsd",
+            target_os = "linux",
+        ))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
         /// The maximum number of simultaneous processes for this user id.
         RLIMIT_NPROC,
@@ -112,7 +123,12 @@ libc_enum! {
         /// create.
         RLIMIT_NPTS,
 
-        #[cfg(any(target_os = "android", target_os = "freebsd", target_os = "openbsd", target_os = "linux"))]
+        #[cfg(any(target_os = "android",
+            target_os = "freebsd",
+            target_os = "netbsd",
+            target_os = "openbsd",
+            target_os = "linux",
+        ))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
         /// When there is memory pressure and swap is available, prioritize
         /// eviction of a process' resident pages beyond this amount (in bytes).
