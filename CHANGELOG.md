@@ -24,6 +24,10 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 ### Fixed
 ### Removed
 
+- Removed public access to the inner fields of `NetlinkAddr`, `AlgAddr`,
+  `SysControlAddr`, `LinkAddr`, and `VsockAddr`.
+  (#[1614](https://github.com/nix-rust/nix/pull/1614))
+
 ## [0.23.1] - 2021-12-16
 
 ### Added

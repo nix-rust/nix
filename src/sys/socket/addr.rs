@@ -473,6 +473,7 @@ impl fmt::Display for IpAddr {
  */
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[repr(transparent)]
 pub struct Ipv4Addr(pub libc::in_addr);
 
 impl Ipv4Addr {
@@ -522,6 +523,7 @@ impl fmt::Display for Ipv4Addr {
  */
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[repr(transparent)]
 pub struct Ipv6Addr(pub libc::in6_addr);
 
 // Note that IPv6 addresses are stored in big endian order on all architectures.
@@ -1062,7 +1064,8 @@ pub mod netlink {
     use std::{fmt, mem};
 
     #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
-    pub struct NetlinkAddr(pub sockaddr_nl);
+    #[repr(transparent)]
+    pub struct NetlinkAddr(pub(in super::super) sockaddr_nl);
 
     impl NetlinkAddr {
         pub fn new(pid: u32, groups: u32) -> NetlinkAddr {
@@ -1099,7 +1102,8 @@ pub mod alg {
     use std::ffi::CStr;
 
     #[derive(Copy, Clone)]
-    pub struct AlgAddr(pub sockaddr_alg);
+    #[repr(transparent)]
+    pub struct AlgAddr(pub(in super::super) sockaddr_alg);
 
     // , PartialEq, Eq, Debug, Hash
     impl PartialEq for AlgAddr {
@@ -1179,9 +1183,9 @@ pub mod sys_control {
 
     ioctl_readwrite!(ctl_info, CTL_IOC_MAGIC, CTL_IOC_INFO, ctl_ioc_info);
 
-    #[repr(C)]
     #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-    pub struct SysControlAddr(pub libc::sockaddr_ctl);
+    #[repr(transparent)]
+    pub struct SysControlAddr(pub(in super::super) libc::sockaddr_ctl);
 
     impl SysControlAddr {
         pub const fn new(id: u32, unit: u32) -> SysControlAddr {
@@ -1238,7 +1242,8 @@ mod datalink {
 
     /// Hardware Address
     #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-    pub struct LinkAddr(pub libc::sockaddr_ll);
+    #[repr(transparent)]
+    pub struct LinkAddr(pub(in super::super) libc::sockaddr_ll);
 
     impl LinkAddr {
         /// Always AF_PACKET
@@ -1315,7 +1320,8 @@ mod datalink {
 
     /// Hardware Address
     #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-    pub struct LinkAddr(pub libc::sockaddr_dl);
+    #[repr(transparent)]
+    pub struct LinkAddr(pub(in super::super) libc::sockaddr_dl);
 
     impl LinkAddr {
         /// Total length of sockaddr
@@ -1408,7 +1414,8 @@ pub mod vsock {
     use std::hash::{Hash, Hasher};
 
     #[derive(Copy, Clone)]
-    pub struct VsockAddr(pub sockaddr_vm);
+    #[repr(transparent)]
+    pub struct VsockAddr(pub(in super::super) sockaddr_vm);
 
     impl PartialEq for VsockAddr {
         fn eq(&self, other: &Self) -> bool {
