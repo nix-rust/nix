@@ -308,7 +308,8 @@ fn test_mkdirat_fail() {
 }
 
 #[test]
-#[cfg(not(any(target_os = "freebsd",
+#[cfg(not(any(target_os = "dragonfly",
+              target_os = "freebsd",
               target_os = "ios",
               target_os = "macos",
               target_os = "redox")))]
@@ -325,7 +326,8 @@ fn test_mknod() {
 }
 
 #[test]
-#[cfg(not(any(target_os = "freebsd",
+#[cfg(not(any(target_os = "dragonfly",
+              target_os = "freebsd",
               target_os = "illumos",
               target_os = "ios",
               target_os = "macos",
