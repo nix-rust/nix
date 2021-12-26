@@ -64,6 +64,21 @@ impl MqAttr {
     pub const fn flags(&self) -> mq_attr_member_t {
         self.mq_attr.mq_flags
     }
+
+    /// The max number of messages that can be held by the queue
+    pub const fn maxmsg(&self) -> mq_attr_member_t {
+        self.mq_attr.mq_maxmsg
+    }
+
+    /// The maximum size of each message (in bytes)
+    pub const fn msgsize(&self) -> mq_attr_member_t {
+        self.mq_attr.mq_msgsize
+    }
+
+    /// The number of messages currently held in the queue
+    pub const fn curmsgs(&self) -> mq_attr_member_t {
+        self.mq_attr.mq_curmsgs
+    }
 }
 
 
