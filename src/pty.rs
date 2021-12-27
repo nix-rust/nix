@@ -112,7 +112,7 @@ pub fn grantpt(fd: &PtyMaster) -> Result<()> {
 /// Open a pseudoterminal device (see
 /// [`posix_openpt(3)`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/posix_openpt.html))
 ///
-/// `posix_openpt()` returns a file descriptor to an existing unused pseuterminal master device.
+/// `posix_openpt()` returns a file descriptor to an existing unused pseudoterminal master device.
 ///
 /// # Examples
 ///
@@ -214,7 +214,7 @@ pub fn ptsname_r(fd: &PtyMaster) -> Result<String> {
 ///
 /// `unlockpt()` unlocks the slave pseudoterminal device corresponding to the master pseudoterminal
 /// referred to by `fd`. This must be called before trying to open the slave side of a
-/// pseuoterminal.
+/// pseudoterminal.
 #[inline]
 pub fn unlockpt(fd: &PtyMaster) -> Result<()> {
     if unsafe { libc::unlockpt(fd.as_raw_fd()) } < 0 {

@@ -204,8 +204,8 @@ impl ForkResult {
 /// Create a new child process duplicating the parent process ([see
 /// fork(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/fork.html)).
 ///
-/// After calling the fork system call (successfully) two processes will
-/// be created that are identical with the exception of their pid and the
+/// After successfully calling the fork system call, a second process will
+/// be created which is identical to the original except for the pid and the
 /// return value of this function.  As an example:
 ///
 /// ```
@@ -225,7 +225,7 @@ impl ForkResult {
 /// }
 /// ```
 ///
-/// This will print something like the following (order indeterministic).  The
+/// This will print something like the following (order nondeterministic).  The
 /// thing to note is that you end up with two processes continuing execution
 /// immediately after the fork call but with different match arms.
 ///

@@ -866,7 +866,7 @@ pub fn pthread_sigmask(how: SigmaskHow,
 
 /// Examine and change blocked signals.
 ///
-/// For more informations see the [`sigprocmask` man
+/// For more information see the [`sigprocmask` man
 /// pages](https://pubs.opengroup.org/onlinepubs/9699919799/functions/sigprocmask.html).
 pub fn sigprocmask(how: SigmaskHow, set: Option<&SigSet>, oldset: Option<&mut SigSet>) -> Result<()> {
     if set.is_none() && oldset.is_none() {

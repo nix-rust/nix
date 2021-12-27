@@ -1,6 +1,6 @@
 mod common;
 
-// Impelmentation note: to allow unprivileged users to run it, this test makes
+// Implementation note: to allow unprivileged users to run it, this test makes
 // use of user and mount namespaces. On systems that allow unprivileged user
 // namespaces (Linux >= 3.8 compiled with CONFIG_USER_NS), the test should run
 // without root.

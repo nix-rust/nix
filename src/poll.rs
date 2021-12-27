@@ -10,7 +10,7 @@ use crate::errno::Errno;
 /// [`ppoll`](fn.ppoll.html) functions to specify the events of interest
 /// for a specific file descriptor.
 ///
-/// After a call to `poll` or `ppoll`, the events that occured can be
+/// After a call to `poll` or `ppoll`, the events that occurred can be
 /// retrieved by calling [`revents()`](#method.revents) on the `PollFd`.
 #[repr(transparent)]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -31,7 +31,7 @@ impl PollFd {
         }
     }
 
-    /// Returns the events that occured in the last call to `poll` or `ppoll`.  Will only return
+    /// Returns the events that occurred in the last call to `poll` or `ppoll`.  Will only return
     /// `None` if the kernel provides status flags that Nix does not know about.
     pub fn revents(self) -> Option<PollFlags> {
         PollFlags::from_bits(self.pollfd.revents)

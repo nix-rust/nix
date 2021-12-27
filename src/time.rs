@@ -14,7 +14,7 @@ use std::mem::MaybeUninit;
 
 /// Clock identifier
 ///
-/// Newtype pattern around `clockid_t` (which is just alias). It pervents bugs caused by
+/// Newtype pattern around `clockid_t` (which is just alias). It prevents bugs caused by
 /// accidentally passing wrong value.
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct ClockId(clockid_t);

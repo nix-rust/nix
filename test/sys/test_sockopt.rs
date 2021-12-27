@@ -122,7 +122,7 @@ fn test_so_tcp_maxseg() {
 }
 
 // The CI doesn't supported getsockopt and setsockopt on emulated processors.
-// It's beleived that a QEMU issue, the tests run ok on a fully emulated system.
+// It's believed that a QEMU issue, the tests run ok on a fully emulated system.
 // Current CI just run the binary with QEMU but the Kernel remains the same as the host.
 // So the syscall doesn't work properly unless the kernel is also emulated.
 #[test]
