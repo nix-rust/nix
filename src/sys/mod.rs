@@ -201,3 +201,18 @@ feature! {
     #[allow(missing_docs)]
     pub mod timerfd;
 }
+
+#[cfg(all(
+    any(
+        target_os = "freebsd",
+        target_os = "illumos",
+        target_os = "linux",
+        target_os = "netbsd"
+    ),
+    feature = "time",
+    feature = "signal"
+))]
+feature! {
+    #![feature = "time"]
+    pub mod timer;
+}
