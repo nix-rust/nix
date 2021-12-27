@@ -72,7 +72,7 @@ fn test_ptrace_cont() {
     let _m = crate::FORK_MTX.lock();
 
     // FIXME: qemu-user doesn't implement ptrace on all architectures
-    // and retunrs ENOSYS in this case.
+    // and returns ENOSYS in this case.
     // We (ab)use this behavior to detect the affected platforms
     // and skip the test then.
     // On valid platforms the ptrace call should return Errno::EPERM, this

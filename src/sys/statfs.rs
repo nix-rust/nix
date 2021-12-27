@@ -536,7 +536,7 @@ impl Debug for Statfs {
 
 /// Describes a mounted file system.
 ///
-/// The result is OS-dependent.  For a portabable alternative, see
+/// The result is OS-dependent.  For a portable alternative, see
 /// [`statvfs`](crate::sys::statvfs::statvfs).
 ///
 /// # Arguments
@@ -552,7 +552,7 @@ pub fn statfs<P: ?Sized + NixPath>(path: &P) -> Result<Statfs> {
 
 /// Describes a mounted file system.
 ///
-/// The result is OS-dependent.  For a portabable alternative, see
+/// The result is OS-dependent.  For a portable alternative, see
 /// [`fstatvfs`](crate::sys::statvfs::fstatvfs).
 ///
 /// # Arguments
