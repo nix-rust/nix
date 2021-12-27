@@ -488,6 +488,7 @@ mod test_posix_fadvise {
 
 #[cfg(any(target_os = "linux",
           target_os = "android",
+          target_os = "dragonfly",
           target_os = "emscripten",
           target_os = "fuchsia",
           any(target_os = "wasi", target_env = "wasi"),
