@@ -23,6 +23,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1621](https://github.com/nix-rust/nix/pull/1621))
 - Added the `SO_TIMESTAMPING` support
   (#[1547](https://github.com/nix-rust/nix/pull/1547))
+- Added getter methods to `MqAttr` struct
+  (#[1619](https://github.com/nix-rust/nix/pull/1619))
 
 ### Changed
 ### Fixed
