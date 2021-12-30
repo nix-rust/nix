@@ -1997,3 +1997,60 @@ mod linux_errqueue {
         assert_eq!(ext_err.ee_info, 0);
     }
 }
+
+// Disable the test on emulated platforms because it fails in Cirrus-CI.  Lack
+// of QEMU support is suspected.
+#[cfg_attr(qemu, ignore)]
+#[cfg(target_os = "linux")]
+#[test]
+pub fn test_txtime() {
+    use nix::sys::socket::{
+        bind, recvmsg, sendmsg, setsockopt, socket, sockopt, ControlMessage,
+        MsgFlags, SockFlag, SockType,
+    };
+    use nix::sys::time::TimeValLike;
+    use nix::time::{ClockId, clock_gettime};
+
+    require_kernel_version!(test_txtime, ">= 5.8");
+
+    let std_sa = SocketAddr::from_str("127.0.0.1:6790").unwrap();
+    let inet_addr = InetAddr::from_std(&std_sa);
+    let sock_addr = SockAddr::new_inet(inet_addr);
+
+    let ssock = socket(
+        AddressFamily::Inet,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )
+    .expect("send socket failed");
+
+    let txtime_cfg = libc::sock_txtime {
+        clockid: libc::CLOCK_MONOTONIC,
+        flags: 0,
+    };
+    setsockopt(ssock, sockopt::TxTime, &txtime_cfg).unwrap();
+
+    let rsock = socket(
+        AddressFamily::Inet,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )
+    .unwrap();
+    bind(rsock, &sock_addr).unwrap();
+
+    let sbuf = [0u8; 2048];
+    let iov1 = [nix::sys::uio::IoVec::from_slice(&sbuf)];
+
+    let now = clock_gettime(ClockId::CLOCK_MONOTONIC).unwrap();
+    let delay = std::time::Duration::from_secs(1).into();
+    let txtime = (now + delay).num_nanoseconds() as u64;
+
+    let cmsg = ControlMessage::TxTime(&txtime);
+    sendmsg(ssock, &iov1, &[cmsg], MsgFlags::empty(), Some(&sock_addr)).unwrap();
+
+    let mut rbuf = [0u8; 2048];
+    let iov2 = [nix::sys::uio::IoVec::from_mut_slice(&mut rbuf)];
+    recvmsg(rsock, &iov2, None, MsgFlags::empty()).unwrap();
+}

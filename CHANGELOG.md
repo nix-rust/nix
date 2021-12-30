@@ -25,6 +25,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1547](https://github.com/nix-rust/nix/pull/1547))
 - Added getter methods to `MqAttr` struct
   (#[1619](https://github.com/nix-rust/nix/pull/1619))
+- Added the `TxTime` sockopt and control message.
+  (#[1564](https://github.com/nix-rust/nix/pull/1564))
 
 ### Changed
 ### Fixed
