@@ -27,6 +27,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1619](https://github.com/nix-rust/nix/pull/1619))
 - Added the `TxTime` sockopt and control message.
   (#[1564](https://github.com/nix-rust/nix/pull/1564))
+- Added POSIX per-process timer support
+  (#[1622](https://github.com/nix-rust/nix/pull/1622))
 
 ### Changed
 ### Fixed

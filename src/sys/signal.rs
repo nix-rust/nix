@@ -1085,6 +1085,11 @@ mod sigevent {
         pub fn sigevent(&self) -> libc::sigevent {
             self.sigevent
         }
+
+        /// Returns a mutable pointer to the `sigevent` wrapped by `self`
+        pub fn as_mut_ptr(&mut self) -> *mut libc::sigevent {
+            &mut self.sigevent
+        }
     }
 
     impl<'a> From<&'a libc::sigevent> for SigEvent {

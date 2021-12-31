@@ -76,9 +76,6 @@ uio = []
 users = ["features"]
 zerocopy = ["fs", "uio"]
 
-[target.'cfg(target_os = "dragonfly")'.build-dependencies]
-cc = "1"
-
 [dev-dependencies]
 assert-impl = "0.1"
 lazy_static = "1.2"

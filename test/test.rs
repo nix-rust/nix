@@ -41,6 +41,17 @@ mod test_sendfile;
 mod test_stat;
 mod test_time;
 mod test_unistd;
+#[cfg(all(
+    any(
+        target_os = "freebsd",
+        target_os = "illumos",
+        target_os = "linux",
+        target_os = "netbsd"
+    ),
+    feature = "time",
+    feature = "signal"
+))]
+mod test_timer;
 
 use std::os::unix::io::RawFd;
 use std::path::PathBuf;

@@ -5,6 +5,129 @@ use libc::{timespec, timeval};
 #[cfg_attr(target_env = "musl", allow(deprecated))] // https://github.com/rust-lang/libc/issues/1848
 pub use libc::{time_t, suseconds_t};
 
+#[cfg(any(
+    all(feature = "time", any(target_os = "android", target_os = "linux")),
+    all(
+        any(
+            target_os = "freebsd",
+            target_os = "illumos",
+            target_os = "linux",
+            target_os = "netbsd"
+        ),
+        feature = "time",
+        feature = "signal"
+    )
+))]
+pub(crate) mod timer {
+    use crate::sys::time::TimeSpec;
+    use bitflags::bitflags;
+
+    #[derive(Debug, Clone, Copy)]
+    pub(crate) struct TimerSpec(libc::itimerspec);
+
+    impl TimerSpec {
+        pub const fn none() -> Self {
+            Self(libc::itimerspec {
+                it_interval: libc::timespec {
+                    tv_sec: 0,
+                    tv_nsec: 0,
+                },
+                it_value: libc::timespec {
+                    tv_sec: 0,
+                    tv_nsec: 0,
+                },
+            })
+        }
+    }
+
+    impl AsMut<libc::itimerspec> for TimerSpec {
+        fn as_mut(&mut self) -> &mut libc::itimerspec {
+            &mut self.0
+        }
+    }
+
+    impl AsRef<libc::itimerspec> for TimerSpec {
+        fn as_ref(&self) -> &libc::itimerspec {
+            &self.0
+        }
+    }
+
+    impl From<Expiration> for TimerSpec {
+        fn from(expiration: Expiration) -> TimerSpec {
+            match expiration {
+                Expiration::OneShot(t) => TimerSpec(libc::itimerspec {
+                    it_interval: libc::timespec {
+                        tv_sec: 0,
+                        tv_nsec: 0,
+                    },
+                    it_value: *t.as_ref(),
+                }),
+                Expiration::IntervalDelayed(start, interval) => TimerSpec(libc::itimerspec {
+                    it_interval: *interval.as_ref(),
+                    it_value: *start.as_ref(),
+                }),
+                Expiration::Interval(t) => TimerSpec(libc::itimerspec {
+                    it_interval: *t.as_ref(),
+                    it_value: *t.as_ref(),
+                }),
+            }
+        }
+    }
+
+    /// An enumeration allowing the definition of the expiration time of an alarm,
+    /// recurring or not.
+    #[derive(Debug, Clone, Copy, PartialEq)]
+    pub enum Expiration {
+        /// Alarm will trigger once after the time given in `TimeSpec`
+        OneShot(TimeSpec),
+        /// Alarm will trigger after a specified delay and then every interval of
+        /// time.
+        IntervalDelayed(TimeSpec, TimeSpec),
+        /// Alarm will trigger every specified interval of time.
+        Interval(TimeSpec),
+    }
+
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    bitflags! {
+        /// Flags that are used for arming the timer.
+        pub struct TimerSetTimeFlags: libc::c_int {
+            const TFD_TIMER_ABSTIME = libc::TFD_TIMER_ABSTIME;
+        }
+    }
+    #[cfg(any(target_os = "freebsd", target_os = "netbsd", target_os = "dragonfly", target_os = "illumos"))]
+    bitflags! {
+        /// Flags that are used for arming the timer.
+        pub struct TimerSetTimeFlags: libc::c_int {
+            const TFD_TIMER_ABSTIME = libc::TIMER_ABSTIME;
+        }
+    }
+
+    impl From<TimerSpec> for Expiration {
+        fn from(timerspec: TimerSpec) -> Expiration {
+            match timerspec {
+                TimerSpec(libc::itimerspec {
+                    it_interval:
+                        libc::timespec {
+                            tv_sec: 0,
+                            tv_nsec: 0,
+                        },
+                    it_value: ts,
+                }) => Expiration::OneShot(ts.into()),
+                TimerSpec(libc::itimerspec {
+                    it_interval: int_ts,
+                    it_value: val_ts,
+                }) => {
+                    if (int_ts.tv_sec == val_ts.tv_sec) && (int_ts.tv_nsec == val_ts.tv_nsec) {
+                        Expiration::Interval(int_ts.into())
+                    } else {
+                        Expiration::IntervalDelayed(val_ts.into(), int_ts.into())
+                    }
+                }
+            }
+        }
+    }
+}
+
 pub trait TimeValLike: Sized {
     #[inline]
     fn zero() -> Self {
