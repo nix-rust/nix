@@ -195,7 +195,7 @@ libc_bitflags!{
         #[cfg(target_os = "linux")]
         #[cfg_attr(docsrs, doc(cfg(all())))]
         MREMAP_FIXED;
-        /// Permits to use the old and new address as hints to relocate the mapping.
+        /// Place the mapping at exactly the address specified in `new_address`.
         #[cfg(target_os = "netbsd")]
         #[cfg_attr(docsrs, doc(cfg(all())))]
         MAP_FIXED;
