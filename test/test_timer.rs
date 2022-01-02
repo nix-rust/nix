@@ -23,6 +23,7 @@ fn alarm_fires() {
     // Avoid interfering with other signal using tests by taking a mutex shared
     // among other tests in this crate.
     let _m = crate::SIGNAL_MTX.lock();
+    const TIMER_PERIOD: Duration = Duration::from_millis(100);
 
     //
     // Setup
@@ -44,7 +45,7 @@ fn alarm_fires() {
         si_value: 0,
     });
     let mut timer = Timer::new(clockid, sigevent).expect("failed to create timer");
-    let expiration = Expiration::Interval(Duration::from_millis(250).into());
+    let expiration = Expiration::Interval(TIMER_PERIOD.into());
     let flags = TimerSetTimeFlags::empty();
     timer.set(expiration, flags).expect("could not set timer");
 
@@ -73,7 +74,7 @@ fn alarm_fires() {
     // is never called something has gone sideways and the test fails.
     let starttime = Instant::now();
     loop {
-        thread::sleep(Duration::from_millis(500));
+        thread::sleep(2 * TIMER_PERIOD);
         if ALARM_CALLED.load(Ordering::Acquire) {
             break;
         }
@@ -82,9 +83,16 @@ fn alarm_fires() {
         }
     }
 
-    // Replace the old signal handler now that we've completed the test. If the
-    // test fails this process panics, so the fact we might not get here is
-    // okay.
+    // Cleanup:
+    // 1) deregister the OS's timer.
+    // 2) Wait for a full timer period, since POSIX does not require that
+    //    disabling the timer will clear pending signals, and on NetBSD at least
+    //    it does not.
+    // 2) Replace the old signal handler now that we've completed the test. If
+    //    the test fails this process panics, so the fact we might not get here
+    //    is okay.
+    drop(timer);
+    thread::sleep(TIMER_PERIOD);
     unsafe {
         sigaction(SIG, &old_handler).expect("unable to reset signal handler");
     }
