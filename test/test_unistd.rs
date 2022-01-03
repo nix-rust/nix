@@ -621,7 +621,11 @@ fn test_sysconf_unsupported() {
 }
 
 
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(any(target_os = "android",
+          target_os = "dragonfly",
+          target_os = "freebsd",
+          target_os = "linux",
+          target_os = "openbsd"))]
 #[test]
 fn test_getresuid() {
     let resuids = getresuid().unwrap();
@@ -630,7 +634,11 @@ fn test_getresuid() {
     assert!(resuids.saved.as_raw() != libc::uid_t::max_value());
 }
 
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(any(target_os = "android",
+          target_os = "dragonfly",
+          target_os = "freebsd",
+          target_os = "linux",
+          target_os = "openbsd"))]
 #[test]
 fn test_getresgid() {
     let resgids = getresgid().unwrap();

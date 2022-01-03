@@ -30,11 +30,18 @@ feature! {
     pub use self::pivot_root::*;
 }
 
-#[cfg(any(target_os = "android", target_os = "freebsd",
-          target_os = "linux", target_os = "openbsd"))]
+#[cfg(any(target_os = "android",
+          target_os = "dragonfly",
+          target_os = "freebsd",
+          target_os = "linux",
+          target_os = "openbsd"))]
 pub use self::setres::*;
 
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(any(target_os = "android",
+          target_os = "dragonfly",
+          target_os = "freebsd",
+          target_os = "linux",
+          target_os = "openbsd"))]
 pub use self::getres::*;
 
 feature! {
@@ -2691,8 +2698,11 @@ mod pivot_root {
 }
 }
 
-#[cfg(any(target_os = "android", target_os = "freebsd",
-          target_os = "linux", target_os = "openbsd"))]
+#[cfg(any(target_os = "android",
+          target_os = "dragonfly",
+          target_os = "freebsd",
+          target_os = "linux",
+          target_os = "openbsd"))]
 mod setres {
     feature! {
     #![feature = "users"]
@@ -2735,7 +2745,11 @@ mod setres {
     }
 }
 
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(any(target_os = "android",
+          target_os = "dragonfly",
+          target_os = "freebsd",
+          target_os = "linux",
+          target_os = "openbsd"))]
 mod getres {
     feature! {
     #![feature = "users"]
