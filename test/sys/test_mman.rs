@@ -73,16 +73,11 @@ fn test_mremap_shrink() {
     assert_eq !(slice[ONE_K - 1], 0xFF);
 
     let slice : &mut[u8] = unsafe {
-        #[cfg(target_os = "linux")]
         let mem = mremap(slice.as_mut_ptr() as * mut c_void, 10 * ONE_K, ONE_K,
                          MRemapFlags::empty(), None)
                       .unwrap();
         // Since we didn't supply MREMAP_MAYMOVE, the address should be the
         // same.
-        #[cfg(target_os = "netbsd")]
-        let mem = mremap(slice.as_mut_ptr() as * mut c_void, 10 * ONE_K, ONE_K,
-                         MRemapFlags::MAP_FIXED, None)
-                      .unwrap();
         assert_eq !(mem, slice.as_mut_ptr() as * mut c_void);
         std::slice::from_raw_parts_mut(mem as * mut u8, ONE_K)
     };
