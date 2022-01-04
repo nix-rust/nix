@@ -33,6 +33,7 @@ mod test_pty;
           target_os = "linux"))]
 mod test_sched;
 #[cfg(any(target_os = "android",
+          target_os = "dragonfly",
           target_os = "freebsd",
           target_os = "ios",
           target_os = "linux",

@@ -29,6 +29,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1564](https://github.com/nix-rust/nix/pull/1564))
 - Added POSIX per-process timer support
   (#[1622](https://github.com/nix-rust/nix/pull/1622))
+- Added `sendfile` on DragonFly.
+  (#[1615](https://github.com/nix-rust/nix/pull/1615))
 
 ### Changed
 ### Fixed
