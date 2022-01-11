@@ -2013,7 +2013,7 @@ pub fn test_txtime() {
 
     require_kernel_version!(test_txtime, ">= 5.8");
 
-    let std_sa = SocketAddr::from_str("127.0.0.1:6790").unwrap();
+    let std_sa = SocketAddr::from_str("127.0.0.1:6802").unwrap();
     let inet_addr = InetAddr::from_std(&std_sa);
     let sock_addr = SockAddr::new_inet(inet_addr);
 
