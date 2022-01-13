@@ -33,6 +33,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1615](https://github.com/nix-rust/nix/pull/1615))
 - Added `getresuid`, `setresuid`, `getresgid`, and `setresgid` on DragonFly, FreeBSD, and OpenBSD.
   (#[1628](https://github.com/nix-rust/nix/pull/1628))
+- Added `sys::termios::ArbitraryBaudRate` and `TryFrom<ArbitraryBaudRate> for BaudRate`,a cross-platform API for arbitrary baud rate conversion.
+  (#[1632](https://github.com/nix-rust/nix/pull/1632))
 
 ### Changed
 ### Fixed

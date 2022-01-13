@@ -70,6 +70,19 @@
 //! # }
 //! ```
 //!
+//! For convenience a cross-platform [`ArbitraryBaudRate`] is available that converts a `u32` to a `BaudRate`:
+//!
+//! ```rust
+//! # use nix::sys::termios::{BaudRate, cfsetispeed, cfsetospeed, cfsetspeed, Termios, ArbitraryBaudRate};
+//! # use std::convert::TryFrom;
+//! # fn main() {
+//! # let mut t: Termios = unsafe { std::mem::zeroed() };
+//! cfsetispeed(&mut t, BaudRate::try_from(ArbitraryBaudRate(9600)).unwrap());
+//! cfsetospeed(&mut t, BaudRate::try_from(ArbitraryBaudRate(9600)).unwrap());
+//! cfsetspeed(&mut t, BaudRate::try_from(ArbitraryBaudRate(9600)).unwrap());
+//! # }
+//! ```
+//!
 //! Additionally round-tripping baud rates is consistent across platforms:
 //!
 //! ```rust
@@ -159,6 +172,7 @@ use std::cell::{Ref, RefCell};
 use std::convert::From;
 use std::mem;
 use std::os::unix::io::RawFd;
+use std::convert::TryFrom;
 
 #[cfg(feature = "process")]
 use crate::unistd::Pid;
@@ -371,6 +385,110 @@ libc_enum!{
 impl From<BaudRate> for u32 {
     fn from(b: BaudRate) -> u32 {
         b as u32
+    }
+}
+
+/// Representation for arbitrary baud rates for systems that do not
+/// otherwise support it.
+///
+/// ```rust
+/// # use nix::sys::termios::{BaudRate, ArbitraryBaudRate};
+/// # use std::convert::TryFrom;
+/// assert_eq!(Ok(BaudRate::B9600), BaudRate::try_from(ArbitraryBaudRate(9600)));
+/// ```
+#[derive(Copy, Debug, Clone)]
+pub struct ArbitraryBaudRate(pub u32);
+
+impl TryFrom<ArbitraryBaudRate> for BaudRate {
+    type Error = Errno;
+
+    fn try_from(abr: ArbitraryBaudRate) -> Result<BaudRate> {
+        use BaudRate::*;
+
+        Ok(match abr.0 {
+            0 => B0,
+            50 => B50,
+            75 => B75,
+            110 => B110,
+            134 => B134,
+            150 => B150,
+            200 => B200,
+            300 => B300,
+            600 => B600,
+            1200 => B1200,
+            1800 => B1800,
+            2400 => B2400,
+            4800 => B4800,
+            #[cfg(any(target_os = "dragonfly",
+                      target_os = "freebsd",
+                      target_os = "macos",
+                      target_os = "netbsd",
+                      target_os = "openbsd"))]
+            7200 => B7200,
+            9600 => B9600,
+            #[cfg(any(target_os = "dragonfly",
+                      target_os = "freebsd",
+                      target_os = "macos",
+                      target_os = "netbsd",
+                      target_os = "openbsd"))]
+            14400 => B14400,
+            19200 => B19200,
+            #[cfg(any(target_os = "dragonfly",
+                      target_os = "freebsd",
+                      target_os = "macos",
+                      target_os = "netbsd",
+                      target_os = "openbsd"))]
+            28800 => B28800,
+            38400 => B38400,
+            57600 => B57600,
+            #[cfg(any(target_os = "dragonfly",
+                      target_os = "freebsd",
+                      target_os = "macos",
+                      target_os = "netbsd",
+                      target_os = "openbsd"))]
+            76800 => B76800,
+            115200 => B115200,
+            #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+            153600 => B153600,
+            230400 => B230400,
+            #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+            307200 => B307200,
+            #[cfg(any(target_os = "android",
+                      target_os = "freebsd",
+                      target_os = "illumos",
+                      target_os = "linux",
+                      target_os = "netbsd",
+                      target_os = "solaris"))]
+            460800 => B460800,
+            #[cfg(any(target_os = "android", target_os = "linux"))]
+            500000 => B500000,
+            #[cfg(any(target_os = "android", target_os = "linux"))]
+            576000 => B576000,
+            #[cfg(any(target_os = "android",
+                      target_os = "freebsd",
+                      target_os = "illumos",
+                      target_os = "linux",
+                      target_os = "netbsd",
+                      target_os = "solaris"))]
+            921600 => B921600,
+            #[cfg(any(target_os = "android", target_os = "linux"))]
+            1000000 => B1000000,
+            #[cfg(any(target_os = "android", target_os = "linux"))]
+            1152000 => B1152000,
+            #[cfg(any(target_os = "android", target_os = "linux"))]
+            1500000 => B1500000,
+            #[cfg(any(target_os = "android", target_os = "linux"))]
+            2000000 => B2000000,
+            #[cfg(any(target_os = "android", all(target_os = "linux", not(target_arch = "sparc64"))))]
+            2500000 => B2500000,
+            #[cfg(any(target_os = "android", all(target_os = "linux", not(target_arch = "sparc64"))))]
+            3000000 => B3000000,
+            #[cfg(any(target_os = "android", all(target_os = "linux", not(target_arch = "sparc64"))))]
+            3500000 => B3500000,
+            #[cfg(any(target_os = "android", all(target_os = "linux", not(target_arch = "sparc64"))))]
+            4000000 => B4000000,
+            _ => return Err(Errno::EINVAL),
+        })
     }
 }
 
@@ -1092,8 +1210,14 @@ mod test {
     use std::convert::TryFrom;
 
     #[test]
-    fn try_from() {
+    fn try_from_speed_t() {
         assert_eq!(Ok(BaudRate::B0), BaudRate::try_from(libc::B0));
         assert!(BaudRate::try_from(999999999).is_err());
+    }
+
+    #[test]
+    fn try_from_arbitrary_baud_rate() {
+        assert_eq!(Ok(BaudRate::B9600), BaudRate::try_from(ArbitraryBaudRate(9600)));
+        assert!(BaudRate::try_from(ArbitraryBaudRate(999999999)).is_err());
     }
 }
