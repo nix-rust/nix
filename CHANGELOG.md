@@ -31,6 +31,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1622](https://github.com/nix-rust/nix/pull/1622))
 - Added `sendfile` on DragonFly.
   (#[1615](https://github.com/nix-rust/nix/pull/1615))
+- Added `UMOUNT_NOFOLLOW`, `FUSE_SUPER_MAGIC` on Linux.
+  (#[1634](https://github.com/nix-rust/nix/pull/1634))
 - Added `getresuid`, `setresuid`, `getresgid`, and `setresgid` on DragonFly, FreeBSD, and OpenBSD.
   (#[1628](https://github.com/nix-rust/nix/pull/1628))
 

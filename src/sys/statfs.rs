@@ -73,6 +73,9 @@ pub const EXT3_SUPER_MAGIC: FsType = FsType(libc::EXT3_SUPER_MAGIC as fs_type_t)
 pub const EXT4_SUPER_MAGIC: FsType = FsType(libc::EXT4_SUPER_MAGIC as fs_type_t);
 #[cfg(all(target_os = "linux", not(target_env = "musl")))]
 #[allow(missing_docs)]
+pub const FUSE_SUPER_MAGIC: FsType = FsType(libc::FUSE_SUPER_MAGIC as fs_type_t);
+#[cfg(all(target_os = "linux", not(target_env = "musl")))]
+#[allow(missing_docs)]
 pub const HPFS_SUPER_MAGIC: FsType = FsType(libc::HPFS_SUPER_MAGIC as fs_type_t);
 #[cfg(all(target_os = "linux", not(target_env = "musl")))]
 #[allow(missing_docs)]

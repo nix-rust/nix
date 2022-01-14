@@ -53,6 +53,7 @@ libc_bitflags!(
         MNT_FORCE;
         MNT_DETACH;
         MNT_EXPIRE;
+        UMOUNT_NOFOLLOW;
     }
 );
 
