@@ -41,6 +41,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Removed public access to the inner fields of `NetlinkAddr`, `AlgAddr`,
   `SysControlAddr`, `LinkAddr`, and `VsockAddr`.
   (#[1614](https://github.com/nix-rust/nix/pull/1614))
+- Removed `EventFlag::EV_SYSFLAG`.
+  (#[1635](https://github.com/nix-rust/nix/pull/1635))
 
 ## [0.23.1] - 2021-12-16
 

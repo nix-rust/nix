@@ -114,7 +114,6 @@ libc_bitflags!{
                   target_os = "ios", target_os = "macos",
                   target_os = "netbsd", target_os = "openbsd"))]
         EV_RECEIPT;
-        EV_SYSFLAGS;
     }
 }
 
