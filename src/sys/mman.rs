@@ -43,6 +43,10 @@ libc_bitflags!{
         MAP_PRIVATE;
         /// Place the mapping at exactly the address specified in `addr`.
         MAP_FIXED;
+        /// Place the mapping at exactly the address specified in `addr`, but never clobber an existing range.
+        #[cfg(target_os = "linux")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
+        MAP_FIXED_NOREPLACE;
         /// To be used with `MAP_FIXED`, to forbid the system
         /// to select a different address than the one specified.
         #[cfg(target_os = "freebsd")]
