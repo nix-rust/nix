@@ -115,6 +115,7 @@ pub fn mq_unlink(name: &CString) -> Result<()> {
 /// Close a message queue
 ///
 /// See also [`mq_close(2)`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_close.html)
+#[allow(clippy::not_unsafe_ptr_arg_deref)] // mqd_t is a pointer on some platforms
 pub fn mq_close(mqdes: mqd_t) -> Result<()> {
     let res = unsafe { libc::mq_close(mqdes) };
     Errno::result(res).map(drop)
@@ -123,6 +124,7 @@ pub fn mq_close(mqdes: mqd_t) -> Result<()> {
 /// Receive a message from a message queue
 ///
 /// See also [`mq_receive(2)`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_receive.html)
+#[allow(clippy::not_unsafe_ptr_arg_deref)] // mqd_t is a pointer on some platforms
 pub fn mq_receive(mqdes: mqd_t, message: &mut [u8], msg_prio: &mut u32) -> Result<usize> {
     let len = message.len() as size_t;
     let res = unsafe {
@@ -137,6 +139,7 @@ pub fn mq_receive(mqdes: mqd_t, message: &mut [u8], msg_prio: &mut u32) -> Resul
 /// Send a message to a message queue
 ///
 /// See also [`mq_send(2)`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_send.html)
+#[allow(clippy::not_unsafe_ptr_arg_deref)] // mqd_t is a pointer on some platforms
 pub fn mq_send(mqdes: mqd_t, message: &[u8], msq_prio: u32) -> Result<()> {
     let res = unsafe {
         libc::mq_send(mqdes,
@@ -150,6 +153,7 @@ pub fn mq_send(mqdes: mqd_t, message: &[u8], msq_prio: u32) -> Result<()> {
 /// Get message queue attributes
 ///
 /// See also [`mq_getattr(2)`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_getattr.html)
+#[allow(clippy::not_unsafe_ptr_arg_deref)] // mqd_t is a pointer on some platforms
 pub fn mq_getattr(mqd: mqd_t) -> Result<MqAttr> {
     let mut attr = mem::MaybeUninit::<libc::mq_attr>::uninit();
     let res = unsafe { libc::mq_getattr(mqd, attr.as_mut_ptr()) };
@@ -161,6 +165,7 @@ pub fn mq_getattr(mqd: mqd_t) -> Result<MqAttr> {
 /// It is recommend to use the `mq_set_nonblock()` and `mq_remove_nonblock()` convenience functions as they are easier to use
 ///
 /// [Further reading](https://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_setattr.html)
+#[allow(clippy::not_unsafe_ptr_arg_deref)] // mqd_t is a pointer on some platforms
 pub fn mq_setattr(mqd: mqd_t, newattr: &MqAttr) -> Result<MqAttr> {
     let mut attr = mem::MaybeUninit::<libc::mq_attr>::uninit();
     let res = unsafe {
@@ -172,6 +177,7 @@ pub fn mq_setattr(mqd: mqd_t, newattr: &MqAttr) -> Result<MqAttr> {
 /// Convenience function.
 /// Sets the `O_NONBLOCK` attribute for a given message queue descriptor
 /// Returns the old attributes
+#[allow(clippy::not_unsafe_ptr_arg_deref)] // mqd_t is a pointer on some platforms
 #[allow(clippy::useless_conversion)]    // Not useless on all OSes
 pub fn mq_set_nonblock(mqd: mqd_t) -> Result<MqAttr> {
     let oldattr = mq_getattr(mqd)?;

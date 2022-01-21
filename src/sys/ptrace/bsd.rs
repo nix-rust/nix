@@ -9,8 +9,8 @@ use crate::Result;
 pub type RequestType = c_int;
 
 cfg_if! {
-    if #[cfg(any(target_os = "dragonfly", 
-                 target_os = "freebsd", 
+    if #[cfg(any(target_os = "dragonfly",
+                 target_os = "freebsd",
                  target_os = "macos",
                  target_os = "openbsd"))] {
         #[doc(hidden)]
@@ -120,7 +120,7 @@ pub fn cont<T: Into<Option<Signal>>>(pid: Pid, sig: T) -> Result<()> {
 
 /// Issues a kill request as with `ptrace(PT_KILL, ...)`
 ///
-/// This request is equivalent to `ptrace(PT_CONTINUE, ..., SIGKILL);` 
+/// This request is equivalent to `ptrace(PT_CONTINUE, ..., SIGKILL);`
 pub fn kill(pid: Pid) -> Result<()> {
     unsafe {
         ptrace_other(Request::PT_KILL, pid, 0 as AddressType, 0).map(drop)
@@ -167,6 +167,7 @@ pub fn step<T: Into<Option<Signal>>>(pid: Pid, sig: T) -> Result<()> {
 }
 
 /// Reads a word from a processes memory at the given address
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub fn read(pid: Pid, addr: AddressType) -> Result<c_int> {
     unsafe {
         // Traditionally there was a difference between reading data or
@@ -176,6 +177,7 @@ pub fn read(pid: Pid, addr: AddressType) -> Result<c_int> {
 }
 
 /// Writes a word into the processes memory at the given address
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub fn write(pid: Pid, addr: AddressType, data: c_int) -> Result<()> {
     unsafe { ptrace_other(Request::PT_WRITE_D, pid, addr, data).map(drop) }
 }
