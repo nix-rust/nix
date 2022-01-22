@@ -39,6 +39,11 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1636](https://github.com/nix-rust/nix/pull/1636))
 
 ### Changed
+
+- `mqueue` functions now operate on a distinct type, `nix::mqueue::MqdT`.
+  Accessors take this type by reference, not by value.
+  (#[1639](https://github.com/nix-rust/nix/pull/1639))
+
 ### Fixed
 ### Removed
 

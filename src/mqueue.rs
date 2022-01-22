@@ -1,12 +1,40 @@
 //! Posix Message Queue functions
 //!
+//! # Example
+//!
+// no_run because a kernel module may be required.
+//! ```no_run
+//! # use std::ffi::CString;
+//! # use nix::mqueue::*;
+//! use nix::sys::stat::Mode;
+//!
+//! const MSG_SIZE: mq_attr_member_t = 32;
+//! let mq_name= CString::new("/a_nix_test_queue").unwrap();
+//!
+//! let oflag0 = MQ_OFlag::O_CREAT | MQ_OFlag::O_WRONLY;
+//! let mode = Mode::S_IWUSR | Mode::S_IRUSR | Mode::S_IRGRP | Mode::S_IROTH;
+//! let mqd0 = mq_open(&mq_name, oflag0, mode, None).unwrap();
+//! let msg_to_send = b"msg_1";
+//! mq_send(&mqd0, msg_to_send, 1).unwrap();
+//!
+//! let oflag1 = MQ_OFlag::O_CREAT | MQ_OFlag::O_RDONLY;
+//! let mqd1 = mq_open(&mq_name, oflag1, mode, None).unwrap();
+//! let mut buf = [0u8; 32];
+//! let mut prio = 0u32;
+//! let len = mq_receive(&mqd1, &mut buf, &mut prio).unwrap();
+//! assert_eq!(prio, 1);
+//! assert_eq!(msg_to_send, &buf[0..len]);
+//!
+//! mq_close(mqd1).unwrap();
+//! mq_close(mqd0).unwrap();
+//! ```
 //! [Further reading and details on the C API](https://man7.org/linux/man-pages/man7/mq_overview.7.html)
 
 use crate::Result;
 use crate::errno::Errno;
 
 use libc::{self, c_char, mqd_t, size_t};
-use std::ffi::CString;
+use std::ffi::CStr;
 use crate::sys::stat::Mode;
 use std::mem;
 
@@ -33,6 +61,14 @@ libc_bitflags!{
 pub struct MqAttr {
     mq_attr: libc::mq_attr,
 }
+
+/// Identifies an open POSIX Message Queue
+// A safer wrapper around libc::mqd_t, which is a pointer on some platforms
+// Deliberately is not Clone to prevent use-after-close scenarios
+#[repr(transparent)]
+#[derive(Debug)]
+#[allow(missing_copy_implementations)]
+pub struct MqdT(mqd_t);
 
 // x32 compatibility
 // See https://sourceware.org/bugzilla/show_bug.cgi?id=21279
@@ -87,11 +123,11 @@ impl MqAttr {
 /// See also [`mq_open(2)`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_open.html)
 // The mode.bits cast is only lossless on some OSes
 #[allow(clippy::cast_lossless)]
-pub fn mq_open(name: &CString,
+pub fn mq_open(name: &CStr,
                oflag: MQ_OFlag,
                mode: Mode,
                attr: Option<&MqAttr>)
-               -> Result<mqd_t> {
+               -> Result<MqdT> {
     let res = match attr {
         Some(mq_attr) => unsafe {
             libc::mq_open(name.as_ptr(),
@@ -101,13 +137,13 @@ pub fn mq_open(name: &CString,
         },
         None => unsafe { libc::mq_open(name.as_ptr(), oflag.bits()) },
     };
-    Errno::result(res)
+    Errno::result(res).map(MqdT)
 }
 
 /// Remove a message queue
 ///
 /// See also [`mq_unlink(2)`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_unlink.html)
-pub fn mq_unlink(name: &CString) -> Result<()> {
+pub fn mq_unlink(name: &CStr) -> Result<()> {
     let res = unsafe { libc::mq_unlink(name.as_ptr()) };
     Errno::result(res).map(drop)
 }
@@ -115,18 +151,18 @@ pub fn mq_unlink(name: &CString) -> Result<()> {
 /// Close a message queue
 ///
 /// See also [`mq_close(2)`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_close.html)
-pub fn mq_close(mqdes: mqd_t) -> Result<()> {
-    let res = unsafe { libc::mq_close(mqdes) };
+pub fn mq_close(mqdes: MqdT) -> Result<()> {
+    let res = unsafe { libc::mq_close(mqdes.0) };
     Errno::result(res).map(drop)
 }
 
 /// Receive a message from a message queue
 ///
 /// See also [`mq_receive(2)`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_receive.html)
-pub fn mq_receive(mqdes: mqd_t, message: &mut [u8], msg_prio: &mut u32) -> Result<usize> {
+pub fn mq_receive(mqdes: &MqdT, message: &mut [u8], msg_prio: &mut u32) -> Result<usize> {
     let len = message.len() as size_t;
     let res = unsafe {
-        libc::mq_receive(mqdes,
+        libc::mq_receive(mqdes.0,
                          message.as_mut_ptr() as *mut c_char,
                          len,
                          msg_prio as *mut u32)
@@ -137,9 +173,9 @@ pub fn mq_receive(mqdes: mqd_t, message: &mut [u8], msg_prio: &mut u32) -> Resul
 /// Send a message to a message queue
 ///
 /// See also [`mq_send(2)`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_send.html)
-pub fn mq_send(mqdes: mqd_t, message: &[u8], msq_prio: u32) -> Result<()> {
+pub fn mq_send(mqdes: &MqdT, message: &[u8], msq_prio: u32) -> Result<()> {
     let res = unsafe {
-        libc::mq_send(mqdes,
+        libc::mq_send(mqdes.0,
                       message.as_ptr() as *const c_char,
                       message.len(),
                       msq_prio)
@@ -150,9 +186,9 @@ pub fn mq_send(mqdes: mqd_t, message: &[u8], msq_prio: u32) -> Result<()> {
 /// Get message queue attributes
 ///
 /// See also [`mq_getattr(2)`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_getattr.html)
-pub fn mq_getattr(mqd: mqd_t) -> Result<MqAttr> {
+pub fn mq_getattr(mqd: &MqdT) -> Result<MqAttr> {
     let mut attr = mem::MaybeUninit::<libc::mq_attr>::uninit();
-    let res = unsafe { libc::mq_getattr(mqd, attr.as_mut_ptr()) };
+    let res = unsafe { libc::mq_getattr(mqd.0, attr.as_mut_ptr()) };
     Errno::result(res).map(|_| unsafe{MqAttr { mq_attr: attr.assume_init() }})
 }
 
@@ -161,10 +197,10 @@ pub fn mq_getattr(mqd: mqd_t) -> Result<MqAttr> {
 /// It is recommend to use the `mq_set_nonblock()` and `mq_remove_nonblock()` convenience functions as they are easier to use
 ///
 /// [Further reading](https://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_setattr.html)
-pub fn mq_setattr(mqd: mqd_t, newattr: &MqAttr) -> Result<MqAttr> {
+pub fn mq_setattr(mqd: &MqdT, newattr: &MqAttr) -> Result<MqAttr> {
     let mut attr = mem::MaybeUninit::<libc::mq_attr>::uninit();
     let res = unsafe {
-        libc::mq_setattr(mqd, &newattr.mq_attr as *const libc::mq_attr, attr.as_mut_ptr())
+        libc::mq_setattr(mqd.0, &newattr.mq_attr as *const libc::mq_attr, attr.as_mut_ptr())
     };
     Errno::result(res).map(|_| unsafe{ MqAttr { mq_attr: attr.assume_init() }})
 }
@@ -173,7 +209,7 @@ pub fn mq_setattr(mqd: mqd_t, newattr: &MqAttr) -> Result<MqAttr> {
 /// Sets the `O_NONBLOCK` attribute for a given message queue descriptor
 /// Returns the old attributes
 #[allow(clippy::useless_conversion)]    // Not useless on all OSes
-pub fn mq_set_nonblock(mqd: mqd_t) -> Result<MqAttr> {
+pub fn mq_set_nonblock(mqd: &MqdT) -> Result<MqAttr> {
     let oldattr = mq_getattr(mqd)?;
     let newattr = MqAttr::new(mq_attr_member_t::from(MQ_OFlag::O_NONBLOCK.bits()),
                               oldattr.mq_attr.mq_maxmsg,
@@ -185,7 +221,7 @@ pub fn mq_set_nonblock(mqd: mqd_t) -> Result<MqAttr> {
 /// Convenience function.
 /// Removes `O_NONBLOCK` attribute for a given message queue descriptor
 /// Returns the old attributes
-pub fn mq_remove_nonblock(mqd: mqd_t) -> Result<MqAttr> {
+pub fn mq_remove_nonblock(mqd: &MqdT) -> Result<MqAttr> {
     let oldattr = mq_getattr(mqd)?;
     let newattr = MqAttr::new(0,
                               oldattr.mq_attr.mq_maxmsg,
