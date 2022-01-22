@@ -37,6 +37,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1628](https://github.com/nix-rust/nix/pull/1628))
 - Added `MAP_FIXED_NOREPLACE` on Linux.
   (#[1636](https://github.com/nix-rust/nix/pull/1636))
+- Added `fspacectl` on FreeBSD
+  (#[1640](https://github.com/nix-rust/nix/pull/1640))
 
 ### Changed
 
