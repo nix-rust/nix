@@ -742,7 +742,8 @@ impl SpacectlRange {
 ///
 /// # Example
 ///
-/// ```
+// no_run because it fails to link until FreeBSD 14.0
+/// ```no_run
 /// # use std::io::Write;
 /// # use std::os::unix::fs::FileExt;
 /// # use std::os::unix::io::AsRawFd;
@@ -753,12 +754,7 @@ impl SpacectlRange {
 /// f.write_all(INITIAL).unwrap();
 /// let mut range = SpacectlRange(3, 6);
 /// while (!range.is_empty()) {
-///     let r = fspacectl(f.as_raw_fd(), range);
-///     # if r == Err(nix::Error::ENOSYS) {
-///     #     // not supported until FreeBSD 14.0
-///     #     return;
-///     # }
-///     range = r.unwrap();
+///     range = fspacectl(f.as_raw_fd(), range).unwrap();
 /// }
 /// let mut buf = vec![0; INITIAL.len()];
 /// f.read_exact_at(&mut buf, 0).unwrap();
@@ -792,7 +788,8 @@ pub fn fspacectl(fd: RawFd, range: SpacectlRange) -> Result<SpacectlRange> {
 ///
 /// # Example
 ///
-/// ```
+// no_run because it fails to link until FreeBSD 14.0
+/// ```no_run
 /// # use std::io::Write;
 /// # use std::os::unix::fs::FileExt;
 /// # use std::os::unix::io::AsRawFd;
@@ -801,12 +798,7 @@ pub fn fspacectl(fd: RawFd, range: SpacectlRange) -> Result<SpacectlRange> {
 /// const INITIAL: &[u8] = b"0123456789abcdef";
 /// let mut f = tempfile().unwrap();
 /// f.write_all(INITIAL).unwrap();
-/// let r = fspacectl_all(f.as_raw_fd(), 3, 6);
-/// # if r == Err(nix::Error::ENOSYS) {
-/// #     // not supported until FreeBSD 14.0
-/// #     return;
-/// # }
-/// r.unwrap();
+/// fspacectl_all(f.as_raw_fd(), 3, 6).unwrap();
 /// let mut buf = vec![0; INITIAL.len()];
 /// f.read_exact_at(&mut buf, 0).unwrap();
 /// assert_eq!(buf, b"012\0\0\0\0\0\09abcdef");
