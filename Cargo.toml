@@ -32,7 +32,7 @@ bitflags = "1.1"
 cfg-if = "1.0"
 
 [target.'cfg(not(target_os = "redox"))'.dependencies]
-memoffset = "0.6.3"
+memoffset = { version = "0.6.3", optional = true }
 
 [features]
 default = [
@@ -68,7 +68,7 @@ reboot = []
 resource = []
 sched = ["process"]
 signal = ["process"]
-socket = []
+socket = ["memoffset"]
 term = []
 time = []
 ucontext = ["signal"]
