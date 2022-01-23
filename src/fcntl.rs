@@ -697,6 +697,131 @@ pub fn fallocate(
     Errno::result(res).map(drop)
 }
 
+/// Argument to [`fspacectl`] describing the range to zero.  The first member is
+/// the file offset, and the second is the length of the region.
+#[cfg(any(target_os = "freebsd"))]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct SpacectlRange(pub libc::off_t, pub libc::off_t);
+
+#[cfg(any(target_os = "freebsd"))]
+impl SpacectlRange {
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.1 == 0
+    }
+
+    #[inline]
+    pub fn len(&self) -> libc::off_t {
+        self.1
+    }
+
+    #[inline]
+    pub fn offset(&self) -> libc::off_t {
+        self.0
+    }
+}
+
+/// Punch holes in a file.
+///
+/// `fspacectl` instructs the file system to deallocate a portion of a file.
+/// After a successful operation, this region of the file will return all zeroes
+/// if read.  If the file system supports deallocation, then it may free the
+/// underlying storage, too.
+///
+/// # Arguments
+///
+/// - `fd`      -   File to operate on
+/// - `range.0` -   File offset at which to begin deallocation
+/// - `range.1` -   Length of the region to deallocate
+///
+/// # Returns
+///
+/// The operation may deallocate less than the entire requested region.  On
+/// success, it returns the region that still remains to be deallocated.  The
+/// caller should loop until the returned region is empty.
+///
+/// # Example
+///
+// no_run because it fails to link until FreeBSD 14.0
+/// ```no_run
+/// # use std::io::Write;
+/// # use std::os::unix::fs::FileExt;
+/// # use std::os::unix::io::AsRawFd;
+/// # use nix::fcntl::*;
+/// # use tempfile::tempfile;
+/// const INITIAL: &[u8] = b"0123456789abcdef";
+/// let mut f = tempfile().unwrap();
+/// f.write_all(INITIAL).unwrap();
+/// let mut range = SpacectlRange(3, 6);
+/// while (!range.is_empty()) {
+///     range = fspacectl(f.as_raw_fd(), range).unwrap();
+/// }
+/// let mut buf = vec![0; INITIAL.len()];
+/// f.read_exact_at(&mut buf, 0).unwrap();
+/// assert_eq!(buf, b"012\0\0\0\0\0\09abcdef");
+/// ```
+#[cfg(target_os = "freebsd")]
+pub fn fspacectl(fd: RawFd, range: SpacectlRange) -> Result<SpacectlRange> {
+    let mut rqsr = libc::spacectl_range{r_offset: range.0, r_len: range.1};
+    let res = unsafe { libc::fspacectl(
+            fd,
+            libc::SPACECTL_DEALLOC, // Only one command is supported ATM
+            &rqsr,
+            0,                      // No flags are currently supported
+            &mut rqsr
+    )};
+    Errno::result(res).map(|_| SpacectlRange(rqsr.r_offset, rqsr.r_len))
+}
+
+/// Like [`fspacectl`], but will never return incomplete.
+///
+/// # Arguments
+///
+/// - `fd`      -   File to operate on
+/// - `offset`  -   File offset at which to begin deallocation
+/// - `len`     -   Length of the region to deallocate
+///
+/// # Returns
+///
+/// Returns `()` on success.  On failure, the region may or may not be partially
+/// deallocated.
+///
+/// # Example
+///
+// no_run because it fails to link until FreeBSD 14.0
+/// ```no_run
+/// # use std::io::Write;
+/// # use std::os::unix::fs::FileExt;
+/// # use std::os::unix::io::AsRawFd;
+/// # use nix::fcntl::*;
+/// # use tempfile::tempfile;
+/// const INITIAL: &[u8] = b"0123456789abcdef";
+/// let mut f = tempfile().unwrap();
+/// f.write_all(INITIAL).unwrap();
+/// fspacectl_all(f.as_raw_fd(), 3, 6).unwrap();
+/// let mut buf = vec![0; INITIAL.len()];
+/// f.read_exact_at(&mut buf, 0).unwrap();
+/// assert_eq!(buf, b"012\0\0\0\0\0\09abcdef");
+/// ```
+#[cfg(target_os = "freebsd")]
+pub fn fspacectl_all(fd: RawFd, offset: libc::off_t, len: libc::off_t)
+    -> Result<()>
+{
+    let mut rqsr = libc::spacectl_range{r_offset: offset, r_len: len};
+    while rqsr.r_len > 0 {
+        let res = unsafe { libc::fspacectl(
+                fd,
+                libc::SPACECTL_DEALLOC, // Only one command is supported ATM
+                &rqsr,
+                0,                      // No flags are currently supported
+                &mut rqsr
+        )};
+        if let Err(e) = Errno::result(res) {
+            return Err(e);
+        }
+    }
+    Ok(())
+}
 
 #[cfg(any(
     target_os = "linux",
