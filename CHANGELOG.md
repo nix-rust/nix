@@ -10,6 +10,9 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- `InetAddr::from_std` now sets the `sin_len`/`sin6_len` fields on the BSDs.
+  (#[1642](https://github.com/nix-rust/nix/pull/1642))
+
 ### Removed
 
 ## [0.22.3] - 22 January 2022
