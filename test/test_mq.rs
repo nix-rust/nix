@@ -41,13 +41,13 @@ fn test_mq_send_and_receive() {
     };
     let mqd0 = r0.unwrap();
     let msg_to_send = "msg_1";
-    mq_send(mqd0, msg_to_send.as_bytes(), 1).unwrap();
+    mq_send(&mqd0, msg_to_send.as_bytes(), 1).unwrap();
 
     let oflag1 = MQ_OFlag::O_CREAT | MQ_OFlag::O_RDONLY;
     let mqd1 = mq_open(mq_name, oflag1, mode, Some(&attr)).unwrap();
     let mut buf = [0u8; 32];
     let mut prio = 0u32;
-    let len = mq_receive(mqd1, &mut buf, &mut prio).unwrap();
+    let len = mq_receive(&mqd1, &mut buf, &mut prio).unwrap();
     assert_eq!(prio, 1);
 
     mq_close(mqd1).unwrap();
@@ -71,7 +71,7 @@ fn test_mq_getattr() {
     };
     let mqd = r.unwrap();
 
-    let read_attr = mq_getattr(mqd).unwrap();
+    let read_attr = mq_getattr(&mqd).unwrap();
     assert_attr_eq!(read_attr, initial_attr);
     mq_close(mqd).unwrap();
 }
@@ -98,20 +98,20 @@ fn test_mq_setattr() {
     let mqd = r.unwrap();
 
     let new_attr = MqAttr::new(0, 20, MSG_SIZE * 2, 100);
-    let old_attr = mq_setattr(mqd, &new_attr).unwrap();
+    let old_attr = mq_setattr(&mqd, &new_attr).unwrap();
     assert_attr_eq!(old_attr, initial_attr);
 
     // No changes here because according to the Linux man page only
     // O_NONBLOCK can be set (see tests below)
     #[cfg(not(any(target_os = "dragonfly", target_os = "netbsd")))]
     {
-        let new_attr_get = mq_getattr(mqd).unwrap();
+        let new_attr_get = mq_getattr(&mqd).unwrap();
         assert_ne!(new_attr_get, new_attr);
     }
 
     let new_attr_non_blocking = MqAttr::new(MQ_OFlag::O_NONBLOCK.bits() as mq_attr_member_t, 10, MSG_SIZE, 0);
-    mq_setattr(mqd, &new_attr_non_blocking).unwrap();
-    let new_attr_get = mq_getattr(mqd).unwrap();
+    mq_setattr(&mqd, &new_attr_non_blocking).unwrap();
+    let new_attr_get = mq_getattr(&mqd).unwrap();
 
     // now the O_NONBLOCK flag has been set
     #[cfg(not(any(target_os = "dragonfly", target_os = "netbsd")))]
@@ -142,12 +142,12 @@ fn test_mq_set_nonblocking() {
         return;
     };
     let mqd = r.unwrap();
-    mq_set_nonblock(mqd).unwrap();
-    let new_attr = mq_getattr(mqd);
+    mq_set_nonblock(&mqd).unwrap();
+    let new_attr = mq_getattr(&mqd);
     let o_nonblock_bits = MQ_OFlag::O_NONBLOCK.bits() as mq_attr_member_t;
     assert_eq!(new_attr.unwrap().flags() & o_nonblock_bits, o_nonblock_bits);
-    mq_remove_nonblock(mqd).unwrap();
-    let new_attr = mq_getattr(mqd);
+    mq_remove_nonblock(&mqd).unwrap();
+    let new_attr = mq_getattr(&mqd);
     assert_eq!(new_attr.unwrap().flags() & o_nonblock_bits, 0);
     mq_close(mqd).unwrap();
 }
