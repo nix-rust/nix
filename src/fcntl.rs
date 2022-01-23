@@ -629,7 +629,7 @@ pub fn tee(fd_in: RawFd, fd_out: RawFd, len: usize, flags: SpliceFFlags) -> Resu
 #[cfg(any(target_os = "linux", target_os = "android"))]
 pub fn vmsplice(
     fd: RawFd,
-    iov: &[crate::sys::uio::IoVec<&[u8]>],
+    iov: &[std::io::IoSlice<'_>],
     flags: SpliceFFlags
     ) -> Result<usize>
 {

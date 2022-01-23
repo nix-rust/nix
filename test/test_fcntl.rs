@@ -218,12 +218,11 @@ fn test_readlink() {
 #[cfg(any(target_os = "linux", target_os = "android"))]
 mod linux_android {
     use std::io::prelude::*;
-    use std::io::SeekFrom;
+    use std::io::{IoSlice, SeekFrom};
     use std::os::unix::prelude::*;
     use libc::loff_t;
 
     use nix::fcntl::*;
-    use nix::sys::uio::IoVec;
     use nix::unistd::{close, pipe, read, write};
 
     use tempfile::tempfile;
@@ -323,8 +322,8 @@ mod linux_android {
         let buf1 = b"abcdef";
         let buf2 = b"defghi";
         let iovecs = vec![
-            IoVec::from_slice(&buf1[0..3]),
-            IoVec::from_slice(&buf2[0..3])
+            IoSlice::new(&buf1[0..3]),
+            IoSlice::new(&buf2[0..3])
         ];
 
         let res = vmsplice(wr, &iovecs[..], SpliceFFlags::empty()).unwrap();

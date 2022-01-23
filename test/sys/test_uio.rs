@@ -4,7 +4,11 @@ use rand::{thread_rng, Rng};
 use rand::distributions::Alphanumeric;
 use std::{cmp, iter};
 use std::fs::{OpenOptions};
+use std::io::IoSlice;
 use std::os::unix::io::AsRawFd;
+
+#[cfg(not(target_os = "redox"))]
+use std::io::IoSliceMut;
 
 #[cfg(not(target_os = "redox"))]
 use tempfile::tempfile;
@@ -29,7 +33,7 @@ fn test_writev() {
         let left = to_write.len() - consumed;
         let slice_len = if left <= 64 { left } else { thread_rng().gen_range(64..cmp::min(256, left)) };
         let b = &to_write[consumed..consumed+slice_len];
-        iovecs.push(IoVec::from_slice(b));
+        iovecs.push(IoSlice::new(b));
         consumed += slice_len;
     }
     let pipe_res = pipe();
@@ -78,7 +82,7 @@ fn test_readv() {
     }
     let mut iovecs = Vec::with_capacity(storage.len());
     for v in &mut storage {
-        iovecs.push(IoVec::from_mut_slice(&mut v[..]));
+        iovecs.push(IoSliceMut::new(&mut v[..]));
     }
     let pipe_res = pipe();
     assert!(pipe_res.is_ok());
@@ -95,7 +99,7 @@ fn test_readv() {
     // Cccumulate data from iovecs
     let mut read_buf = Vec::with_capacity(to_write.len());
     for iovec in &iovecs {
-        read_buf.extend(iovec.as_slice().iter().cloned());
+        read_buf.extend(iovec.iter().cloned());
     }
     // Check whether iovecs contain all written data
     assert_eq!(read_buf.len(), to_write.len());
@@ -149,9 +153,9 @@ fn test_pwritev() {
     let expected: Vec<u8> = [vec![0;100], to_write.clone()].concat();
 
     let iovecs = [
-        IoVec::from_slice(&to_write[0..17]),
-        IoVec::from_slice(&to_write[17..64]),
-        IoVec::from_slice(&to_write[64..128]),
+        IoSlice::new(&to_write[0..17]),
+        IoSlice::new(&to_write[17..64]),
+        IoSlice::new(&to_write[64..128]),
     ];
 
     let tempdir = tempdir().unwrap();
@@ -194,9 +198,9 @@ fn test_preadv() {
 
     {
         // Borrow the buffers into IoVecs and preadv into them
-        let iovecs: Vec<_> = buffers.iter_mut().map(
-            |buf| IoVec::from_mut_slice(&mut buf[..])).collect();
-        assert_eq!(Ok(100), preadv(file.as_raw_fd(), &iovecs, 100));
+        let mut iovecs: Vec<_> = buffers.iter_mut().map(
+            |buf| IoSliceMut::new(&mut buf[..])).collect();
+        assert_eq!(Ok(100), preadv(file.as_raw_fd(), &mut iovecs, 100));
     }
 
     let all = buffers.concat();
@@ -233,7 +237,7 @@ fn test_process_vm_readv() {
             let mut buf = vec![0u8; 5];
 
             let ret = process_vm_readv(child,
-                                       &[IoVec::from_mut_slice(&mut buf)],
+                                       &mut [IoSliceMut::new(&mut buf)],
                                        &[remote_iov]);
 
             kill(child, SIGTERM).unwrap();

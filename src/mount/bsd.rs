@@ -3,7 +3,6 @@ use crate::{
     Errno,
     NixPath,
     Result,
-    sys::uio::IoVec
 };
 use libc::{c_char, c_int, c_uint, c_void};
 use std::{
@@ -11,7 +10,7 @@ use std::{
     ffi::{CString, CStr},
     fmt,
     io,
-    ptr
+    marker::PhantomData,
 };
 
 
@@ -198,13 +197,45 @@ pub type NmountResult = std::result::Result<(), NmountError>;
 #[cfg_attr(docsrs, doc(cfg(all())))]
 #[derive(Debug, Default)]
 pub struct Nmount<'a>{
-    iov: Vec<IoVec<&'a [u8]>>,
+    // n.b. notgull: In reality, this is a list that contains
+    //               both mutable and immutable pointers.
+    //               Be careful using this.
+    iov: Vec<libc::iovec>,
     is_owned: Vec<bool>,
+    marker: PhantomData<&'a ()>,
 }
 
 #[cfg(target_os = "freebsd")]
 #[cfg_attr(docsrs, doc(cfg(all())))]
 impl<'a> Nmount<'a> {
+    /// Helper function to push a slice onto the `iov` array.
+    fn push_slice(&mut self, val: &'a [u8], is_owned: bool) {
+        self.iov.push(libc::iovec {
+            iov_base: val.as_ptr() as *mut _,
+            iov_len: val.len(),
+        });
+        self.is_owned.push(is_owned);
+    }
+
+    /// Helper function to push a pointer and its length onto the `iov` array.
+    fn push_pointer_and_length(&mut self, val: *const u8, len: usize, is_owned: bool) {
+        self.iov.push(libc::iovec {
+            iov_base: val as *mut _,
+            iov_len: len,
+        });
+        self.is_owned.push(is_owned);
+    }
+
+    /// Helper function to push a `nix` path as owned.
+    fn push_nix_path<P: ?Sized + NixPath>(&mut self, val: &P) {
+        val.with_nix_path(|s| {
+            let len = s.to_bytes_with_nul().len();
+            let ptr = s.to_owned().into_raw() as *const u8;
+
+            self.push_pointer_and_length(ptr, len, true);
+        }).unwrap(); 
+    }
+
     /// Add an opaque mount option.
     ///
     /// Some file systems take binary-valued mount options.  They can be set
@@ -239,10 +270,8 @@ impl<'a> Nmount<'a> {
         len: usize
     ) -> &mut Self
     {
-        self.iov.push(IoVec::from_slice(name.to_bytes_with_nul()));
-        self.is_owned.push(false);
-        self.iov.push(IoVec::from_raw_parts(val, len));
-        self.is_owned.push(false);
+        self.push_slice(name.to_bytes_with_nul(), false);
+        self.push_pointer_and_length(val.cast(), len, false);
         self
     }
 
@@ -258,10 +287,8 @@ impl<'a> Nmount<'a> {
     ///     .null_opt(&read_only);
     /// ```
     pub fn null_opt(&mut self, name: &'a CStr) -> &mut Self {
-        self.iov.push(IoVec::from_slice(name.to_bytes_with_nul()));
-        self.is_owned.push(false);
-        self.iov.push(IoVec::from_raw_parts(ptr::null_mut(), 0));
-        self.is_owned.push(false);
+        self.push_slice(name.to_bytes_with_nul(), false);
+        self.push_slice(&[], false);
         self
     }
 
@@ -283,17 +310,8 @@ impl<'a> Nmount<'a> {
     /// ```
     pub fn null_opt_owned<P: ?Sized + NixPath>(&mut self, name: &P) -> &mut Self
     {
-        name.with_nix_path(|s| {
-            let len = s.to_bytes_with_nul().len();
-            self.iov.push(IoVec::from_raw_parts(
-                // Must free it later
-                s.to_owned().into_raw() as *mut c_void,
-                len
-            ));
-            self.is_owned.push(true);
-        }).unwrap();
-        self.iov.push(IoVec::from_raw_parts(ptr::null_mut(), 0));
-        self.is_owned.push(false);
+        self.push_nix_path(name);
+        self.push_slice(&[], false);
         self
     }
 
@@ -315,10 +333,8 @@ impl<'a> Nmount<'a> {
         val: &'a CStr
     ) -> &mut Self
     {
-        self.iov.push(IoVec::from_slice(name.to_bytes_with_nul()));
-        self.is_owned.push(false);
-        self.iov.push(IoVec::from_slice(val.to_bytes_with_nul()));
-        self.is_owned.push(false);
+        self.push_slice(name.to_bytes_with_nul(), false);
+        self.push_slice(val.to_bytes_with_nul(), false);
         self
     }
 
@@ -341,24 +357,8 @@ impl<'a> Nmount<'a> {
         where P1: ?Sized + NixPath,
               P2: ?Sized + NixPath
     {
-        name.with_nix_path(|s| {
-            let len = s.to_bytes_with_nul().len();
-            self.iov.push(IoVec::from_raw_parts(
-                // Must free it later
-                s.to_owned().into_raw() as *mut c_void,
-                len
-            ));
-            self.is_owned.push(true);
-        }).unwrap();
-        val.with_nix_path(|s| {
-            let len = s.to_bytes_with_nul().len();
-            self.iov.push(IoVec::from_raw_parts(
-                // Must free it later
-                s.to_owned().into_raw() as *mut c_void,
-                len
-            ));
-            self.is_owned.push(true);
-        }).unwrap();
+        self.push_nix_path(name);
+        self.push_nix_path(val);
         self
     }
 
@@ -369,18 +369,19 @@ impl<'a> Nmount<'a> {
 
     /// Actually mount the file system.
     pub fn nmount(&mut self, flags: MntFlags) -> NmountResult {
-        // nmount can return extra error information via a "errmsg" return
-        // argument.
         const ERRMSG_NAME: &[u8] = b"errmsg\0";
         let mut errmsg = vec![0u8; 255];
-        self.iov.push(IoVec::from_raw_parts(
-                ERRMSG_NAME.as_ptr() as *mut c_void,
-                ERRMSG_NAME.len()
-        ));
-        self.iov.push(IoVec::from_raw_parts(
-                errmsg.as_mut_ptr() as *mut c_void,
-                errmsg.len()
-        ));
+
+        // nmount can return extra error information via a "errmsg" return
+        // argument.
+        self.push_slice(ERRMSG_NAME, false);
+
+        // SAFETY: we are pushing a mutable iovec here, so we can't use
+        //         the above method
+        self.iov.push(libc::iovec {
+            iov_base: errmsg.as_mut_ptr() as *mut c_void,
+            iov_len: errmsg.len(),
+        });
 
         let niov = self.iov.len() as c_uint;
         let iovp = self.iov.as_mut_ptr() as *mut libc::iovec;
@@ -412,7 +413,7 @@ impl<'a> Drop for Nmount<'a> {
                 // Free the owned string.  Safe because we recorded ownership,
                 // and Nmount does not implement Clone.
                 unsafe {
-                    drop(CString::from_raw(iov.0.iov_base as *mut c_char));
+                    drop(CString::from_raw(iov.iov_base as *mut c_char));
                 }
             }
         }

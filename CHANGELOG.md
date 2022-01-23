@@ -85,6 +85,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   ignoring failures from libc.  And getters on the `UtsName` struct now return
   an `&OsStr` instead of `&str`.
   (#[1672](https://github.com/nix-rust/nix/pull/1672))
+- Replaced `IoVec` with `IoSlice` and `IoSliceMut`, and replaced `IoVec::from_slice` with
+  `IoSlice::new`. (#[1643](https://github.com/nix-rust/nix/pull/1643))
 
 ### Fixed
 

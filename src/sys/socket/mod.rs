@@ -14,10 +14,8 @@ use std::net;
 #[cfg(feature = "uio")]
 use crate::sys::time::TimeSpec;
 #[cfg(feature = "uio")]
-use crate::sys::{
-    time::TimeVal,
-    uio::IoVec
-};
+use crate::sys::time::TimeVal;
+use std::io::{IoSlice, IoSliceMut};
 
 #[deny(missing_docs)]
 mod addr;
@@ -657,8 +655,8 @@ pub enum ControlMessageOwned {
     /// ```
     /// # #[macro_use] extern crate nix;
     /// # use nix::sys::socket::*;
-    /// # use nix::sys::uio::IoVec;
     /// # use nix::sys::time::*;
+    /// # use std::io::{IoSlice, IoSliceMut};
     /// # use std::time::*;
     /// # use std::str::FromStr;
     /// # fn main() {
@@ -676,15 +674,15 @@ pub enum ControlMessageOwned {
     /// // Get initial time
     /// let time0 = SystemTime::now();
     /// // Send the message
-    /// let iov = [IoVec::from_slice(message)];
+    /// let iov = [IoSlice::new(message)];
     /// let flags = MsgFlags::empty();
     /// let l = sendmsg(in_socket, &iov, &[], flags, Some(&address)).unwrap();
     /// assert_eq!(message.len(), l);
     /// // Receive the message
     /// let mut buffer = vec![0u8; message.len()];
     /// let mut cmsgspace = cmsg_space!(TimeVal);
-    /// let iov = [IoVec::from_mut_slice(&mut buffer)];
-    /// let r = recvmsg::<SockaddrIn>(in_socket, &iov, Some(&mut cmsgspace), flags)
+    /// let mut iov = [IoSliceMut::new(&mut buffer)];
+    /// let r = recvmsg::<SockaddrIn>(in_socket, &mut iov, Some(&mut cmsgspace), flags)
     ///     .unwrap();
     /// let rtime = match r.cmsgs().next() {
     ///     Some(ControlMessageOwned::ScmTimestamp(rtime)) => rtime,
@@ -1367,13 +1365,13 @@ impl<'a> ControlMessage<'a> {
 /// ```
 /// # use nix::sys::socket::*;
 /// # use nix::unistd::pipe;
-/// # use nix::sys::uio::IoVec;
+/// # use std::io::IoSlice;
 /// let (fd1, fd2) = socketpair(AddressFamily::Unix, SockType::Stream, None,
 ///     SockFlag::empty())
 ///     .unwrap();
 /// let (r, w) = pipe().unwrap();
 ///
-/// let iov = [IoVec::from_slice(b"hello")];
+/// let iov = [IoSlice::new(b"hello")];
 /// let fds = [r];
 /// let cmsg = ControlMessage::ScmRights(&fds);
 /// sendmsg::<()>(fd1, &iov, &[cmsg], MsgFlags::empty(), None).unwrap();
@@ -1382,19 +1380,19 @@ impl<'a> ControlMessage<'a> {
 /// ```
 /// # use nix::sys::socket::*;
 /// # use nix::unistd::pipe;
-/// # use nix::sys::uio::IoVec;
+/// # use std::io::IoSlice;
 /// # use std::str::FromStr;
 /// let localhost = SockaddrIn::from_str("1.2.3.4:8080").unwrap();
 /// let fd = socket(AddressFamily::Inet, SockType::Datagram, SockFlag::empty(),
 ///     None).unwrap();
 /// let (r, w) = pipe().unwrap();
 ///
-/// let iov = [IoVec::from_slice(b"hello")];
+/// let iov = [IoSlice::new(b"hello")];
 /// let fds = [r];
 /// let cmsg = ControlMessage::ScmRights(&fds);
 /// sendmsg(fd, &iov, &[cmsg], MsgFlags::empty(), Some(&localhost)).unwrap();
 /// ```
-pub fn sendmsg<S>(fd: RawFd, iov: &[IoVec<&[u8]>], cmsgs: &[ControlMessage],
+pub fn sendmsg<S>(fd: RawFd, iov: &[IoSlice<'_>], cmsgs: &[ControlMessage],
                flags: MsgFlags, addr: Option<&S>) -> Result<usize>
     where S: SockaddrLike
 {
@@ -1420,7 +1418,7 @@ pub fn sendmsg<S>(fd: RawFd, iov: &[IoVec<&[u8]>], cmsgs: &[ControlMessage],
 #[derive(Debug)]
 pub struct SendMmsgData<'a, I, C, S>
     where
-        I: AsRef<[IoVec<&'a [u8]>]>,
+        I: AsRef<[IoSlice<'a>]>,
         C: AsRef<[ControlMessage<'a>]>,
         S: SockaddrLike + 'a
 {
@@ -1459,7 +1457,7 @@ pub fn sendmmsg<'a, I, C, S>(
     flags: MsgFlags
 ) -> Result<Vec<usize>>
     where
-        I: AsRef<[IoVec<&'a [u8]>]> + 'a,
+        I: AsRef<[IoSlice<'a>]> + 'a,
         C: AsRef<[ControlMessage<'a>]> + 'a,
         S: SockaddrLike + 'a
 {
@@ -1510,7 +1508,7 @@ pub fn sendmmsg<'a, I, C, S>(
 #[derive(Debug)]
 pub struct RecvMmsgData<'a, I>
     where
-        I: AsRef<[IoVec<&'a mut [u8]>]> + 'a,
+        I: AsRef<[IoSliceMut<'a>]> + 'a,
 {
     pub iov: I,
     pub cmsg_buffer: Option<&'a mut Vec<u8>>,
@@ -1557,7 +1555,7 @@ pub fn recvmmsg<'a, I, S>(
     timeout: Option<crate::sys::time::TimeSpec>
 ) -> Result<Vec<RecvMsg<'a, S>>>
     where
-        I: AsRef<[IoVec<&'a mut [u8]>]> + 'a,
+        I: AsRef<[IoSliceMut<'a>]> + 'a,
         S: Copy + SockaddrLike + 'a
 {
     let iter = data.into_iter();
@@ -1653,14 +1651,14 @@ unsafe fn read_mhdr<'a, 'b, S>(
     }
 }
 
-unsafe fn pack_mhdr_to_receive<'a, I, S>(
+unsafe fn pack_mhdr_to_receive<'outer, 'inner, I, S>(
     iov: I,
     cmsg_buffer: &mut Option<&mut Vec<u8>>,
     address: *mut S,
 ) -> (usize, msghdr)
     where
-        I: AsRef<[IoVec<&'a mut [u8]>]> + 'a,
-        S: SockaddrLike + 'a
+        I: AsRef<[IoSliceMut<'inner>]> + 'outer,
+        S: SockaddrLike + 'outer
 {
     let (msg_control, msg_controllen) = cmsg_buffer.as_mut()
         .map(|v| (v.as_mut_ptr(), v.capacity()))
@@ -1691,7 +1689,7 @@ fn pack_mhdr_to_send<'a, I, C, S>(
     addr: Option<&S>
 ) -> msghdr
     where
-        I: AsRef<[IoVec<&'a [u8]>]>,
+        I: AsRef<[IoSlice<'a>]>,
         C: AsRef<[ControlMessage<'a>]>,
         S: SockaddrLike + 'a
 {
@@ -1751,7 +1749,7 @@ fn pack_mhdr_to_send<'a, I, C, S>(
 ///
 /// # References
 /// [recvmsg(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/recvmsg.html)
-pub fn recvmsg<'a, S>(fd: RawFd, iov: &[IoVec<&mut [u8]>],
+pub fn recvmsg<'a, 'outer, 'inner, S>(fd: RawFd, iov: &'outer mut [IoSliceMut<'inner>],
                    mut cmsg_buffer: Option<&'a mut Vec<u8>>,
                    flags: MsgFlags) -> Result<RecvMsg<'a, S>>
     where S: SockaddrLike + 'a
@@ -1759,7 +1757,7 @@ pub fn recvmsg<'a, S>(fd: RawFd, iov: &[IoVec<&mut [u8]>],
     let mut address = mem::MaybeUninit::uninit();
 
     let (msg_controllen, mut mhdr) = unsafe {
-        pack_mhdr_to_receive(&iov, &mut cmsg_buffer, address.as_mut_ptr())
+        pack_mhdr_to_receive::<_, S>(iov, &mut cmsg_buffer, address.as_mut_ptr())
     };
 
     let ret = unsafe { libc::recvmsg(fd, &mut mhdr, flags.bits()) };
