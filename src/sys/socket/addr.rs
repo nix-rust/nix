@@ -330,6 +330,11 @@ impl InetAddr {
         match *std {
             net::SocketAddr::V4(ref addr) => {
                 InetAddr::V4(libc::sockaddr_in {
+                    #[cfg(any(target_os = "dragonfly", target_os = "freebsd",
+                              target_os = "haiku", target_os = "hermit",
+                              target_os = "ios", target_os = "macos",
+                              target_os = "netbsd", target_os = "openbsd"))]
+                    sin_len: mem::size_of::<libc::sockaddr_in>() as u8,
                     sin_family: AddressFamily::Inet as sa_family_t,
                     sin_port: addr.port().to_be(),  // network byte order
                     sin_addr: Ipv4Addr::from_std(addr.ip()).0,
@@ -338,6 +343,11 @@ impl InetAddr {
             }
             net::SocketAddr::V6(ref addr) => {
                 InetAddr::V6(libc::sockaddr_in6 {
+                    #[cfg(any(target_os = "dragonfly", target_os = "freebsd",
+                              target_os = "haiku", target_os = "hermit",
+                              target_os = "ios", target_os = "macos",
+                              target_os = "netbsd", target_os = "openbsd"))]
+                    sin6_len: mem::size_of::<libc::sockaddr_in6>() as u8,
                     sin6_family: AddressFamily::Inet6 as sa_family_t,
                     sin6_port: addr.port().to_be(),  // network byte order
                     sin6_addr: Ipv6Addr::from_std(addr.ip()).0,

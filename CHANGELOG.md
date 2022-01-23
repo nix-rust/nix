@@ -47,6 +47,10 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1639](https://github.com/nix-rust/nix/pull/1639))
 
 ### Fixed
+
+- `InetAddr::from_std` now sets the `sin_len`/`sin6_len` fields on the BSDs.
+  (#[1642](https://github.com/nix-rust/nix/pull/1642))
+
 ### Removed
 
 - Removed public access to the inner fields of `NetlinkAddr`, `AlgAddr`,
