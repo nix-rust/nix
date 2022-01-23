@@ -396,7 +396,7 @@ impl<'a> Drop for Nmount<'a> {
                 // Free the owned string.  Safe because we recorded ownership,
                 // and Nmount does not implement Clone.
                 unsafe {
-                    CString::from_raw(iov.0.iov_base as *mut c_char);
+                    drop(CString::from_raw(iov.0.iov_base as *mut c_char));
                 }
             }
         }
