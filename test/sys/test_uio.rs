@@ -204,7 +204,7 @@ fn test_preadv() {
 }
 
 #[test]
-#[cfg(target_os = "linux")]
+#[cfg(all(target_os = "linux", not(target_env = "uclibc")))] // uclibc doesn't implement process_vm_readv
 // qemu-user doesn't implement process_vm_readv/writev on most arches
 #[cfg_attr(qemu, ignore)]
 fn test_process_vm_readv() {

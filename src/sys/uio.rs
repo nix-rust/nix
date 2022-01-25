@@ -34,6 +34,8 @@ pub fn readv(fd: RawFd, iov: &mut [IoVec<&mut [u8]>]) -> Result<usize> {
 #[cfg_attr(docsrs, doc(cfg(all())))]
 pub fn pwritev(fd: RawFd, iov: &[IoVec<&[u8]>],
                offset: off_t) -> Result<usize> {
+    #[cfg(target_env = "uclibc")]
+    let offset = offset as libc::off64_t; // uclibc doesn't use off_t
     let res = unsafe {
         libc::pwritev(fd, iov.as_ptr() as *const libc::iovec, iov.len() as c_int, offset)
     };
@@ -52,6 +54,8 @@ pub fn pwritev(fd: RawFd, iov: &[IoVec<&[u8]>],
 #[cfg_attr(docsrs, doc(cfg(all())))]
 pub fn preadv(fd: RawFd, iov: &[IoVec<&mut [u8]>],
               offset: off_t) -> Result<usize> {
+    #[cfg(target_env = "uclibc")]
+    let offset = offset as libc::off64_t; // uclibc doesn't use off_t
     let res = unsafe {
         libc::preadv(fd, iov.as_ptr() as *const libc::iovec, iov.len() as c_int, offset)
     };
@@ -127,7 +131,7 @@ feature! {
 /// [ptrace]: ../ptrace/index.html
 /// [`IoVec`]: struct.IoVec.html
 /// [`RemoteIoVec`]: struct.RemoteIoVec.html
-#[cfg(target_os = "linux")]
+#[cfg(all(target_os = "linux", not(target_env = "uclibc")))]
 pub fn process_vm_writev(
     pid: crate::unistd::Pid,
     local_iov: &[IoVec<&[u8]>],
@@ -162,7 +166,7 @@ pub fn process_vm_writev(
 /// [`ptrace`]: ../ptrace/index.html
 /// [`IoVec`]: struct.IoVec.html
 /// [`RemoteIoVec`]: struct.RemoteIoVec.html
-#[cfg(any(target_os = "linux"))]
+#[cfg(all(target_os = "linux", not(target_env = "uclibc")))]
 pub fn process_vm_readv(
     pid: crate::unistd::Pid,
     local_iov: &[IoVec<&mut [u8]>],

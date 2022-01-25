@@ -120,10 +120,10 @@ pub enum AddressFamily {
     #[cfg(any(target_os = "android", target_os = "linux"))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     Llc = libc::AF_LLC,
-    #[cfg(target_os = "linux")]
+    #[cfg(all(target_os = "linux", not(target_env = "uclibc")))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     Ib = libc::AF_IB,
-    #[cfg(target_os = "linux")]
+    #[cfg(all(target_os = "linux", not(target_env = "uclibc")))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     Mpls = libc::AF_MPLS,
     #[cfg(any(target_os = "android", target_os = "linux"))]

@@ -20,7 +20,8 @@ use libc::user_regs_struct;
 
 cfg_if! {
     if #[cfg(any(all(target_os = "linux", target_arch = "s390x"),
-                 all(target_os = "linux", target_env = "gnu")))] {
+                 all(target_os = "linux", target_env = "gnu"),
+                 target_env = "uclibc"))] {
         #[doc(hidden)]
         pub type RequestType = ::libc::c_uint;
     } else {
@@ -30,8 +31,8 @@ cfg_if! {
 }
 
 libc_enum!{
-    #[cfg_attr(not(any(target_env = "musl", target_os = "android")), repr(u32))]
-    #[cfg_attr(any(target_env = "musl", target_os = "android"), repr(i32))]
+    #[cfg_attr(not(any(target_env = "musl", target_env = "uclibc", target_os = "android")), repr(u32))]
+    #[cfg_attr(any(target_env = "musl", target_env = "uclibc", target_os = "android"), repr(i32))]
     /// Ptrace Request enum defining the action to be taken.
     #[non_exhaustive]
     pub enum Request {

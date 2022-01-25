@@ -11,13 +11,13 @@ libc_bitflags! {
         ADDR_NO_RANDOMIZE;
         ADDR_LIMIT_32BIT;
         ADDR_LIMIT_3GB;
-        #[cfg(not(target_env = "musl"))]
+        #[cfg(not(any(target_env = "musl", target_env = "uclibc")))]
         FDPIC_FUNCPTRS;
         MMAP_PAGE_ZERO;
         READ_IMPLIES_EXEC;
         SHORT_INODE;
         STICKY_TIMEOUTS;
-        #[cfg(not(target_env = "musl"))]
+        #[cfg(not(any(target_env = "musl", target_env = "uclibc")))]
         UNAME26;
         WHOLE_SECONDS;
     }

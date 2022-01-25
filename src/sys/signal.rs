@@ -11,6 +11,7 @@ use std::str::FromStr;
 #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
 use std::os::unix::io::RawFd;
 use std::ptr;
+use cfg_if::cfg_if;
 
 #[cfg(not(any(target_os = "openbsd", target_os = "redox")))]
 #[cfg(any(feature = "aio", feature = "signal"))]
@@ -420,10 +421,15 @@ pub const SIGPOLL : Signal = SIGIO;
 /// Alias for [`SIGSYS`]
 pub const SIGUNUSED : Signal = SIGSYS;
 
-#[cfg(not(target_os = "redox"))]
-type SaFlags_t = libc::c_int;
-#[cfg(target_os = "redox")]
-type SaFlags_t = libc::c_ulong;
+cfg_if! {
+    if #[cfg(target_os = "redox")] {
+        type SaFlags_t = libc::c_ulong;
+    } else if #[cfg(target_env = "uclibc")] {
+        type SaFlags_t = libc::c_ulong;
+    } else {
+        type SaFlags_t = libc::c_int;
+    }
+}
 }
 
 #[cfg(feature = "signal")]
@@ -1045,6 +1051,8 @@ mod sigevent {
                 #[cfg(target_os = "freebsd")]
                 SigevNotify::SigevThreadId{..} => libc::SIGEV_THREAD_ID,
                 #[cfg(all(target_os = "linux", target_env = "gnu", not(target_arch = "mips")))]
+                SigevNotify::SigevThreadId{..} => libc::SIGEV_THREAD_ID,
+                #[cfg(all(target_os = "linux", target_env = "uclibc"))]
                 SigevNotify::SigevThreadId{..} => libc::SIGEV_THREAD_ID,
                 #[cfg(any(all(target_os = "linux", target_env = "musl"), target_arch = "mips"))]
                 SigevNotify::SigevThreadId{..} => 4  // No SIGEV_THREAD_ID defined

@@ -14,6 +14,7 @@ status = [
   "Linux arm gnueabi",
   "Linux arm-musleabi",
   "Linux armv7 gnueabihf",
+  "Linux armv7 uclibceabihf",
   "Linux i686 musl",
   "Linux i686",
   "Linux mipsel",
