@@ -76,7 +76,7 @@ pub fn pwrite(fd: RawFd, buf: &[u8], offset: off_t) -> Result<usize> {
     Errno::result(res).map(|r| r as usize)
 }
 
-/// Low-level write to a file, with specified offset.
+/// Low-level read from a file, with specified offset.
 ///
 /// See also [pread(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/pread.html)
 // TODO: move to unistd
