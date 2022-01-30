@@ -58,9 +58,9 @@ task:
     - cargo hack check --each-feature --target i686-unknown-freebsd
   before_cache_script: rm -rf $CARGO_HOME/registry/index
 
-# Test OSX in a full VM
+# Test macOS x86_64 in a full VM
 task:
-  name: OSX x86_64
+  name: macOS x86_64
   env:
     TARGET: x86_64-apple-darwin
   osx_instance:
@@ -211,8 +211,8 @@ task:
         NOHACK: 1
         TARGET: aarch64-apple-ios
         # Rustup only supports cross-building from arbitrary hosts for iOS at
-        # 1.49.0 and above.  Below that it's possible to cross-build from an OSX
-        # host, but OSX VMs are more expensive than Linux VMs.
+        # 1.49.0 and above.  Below that it's possible to cross-build from a macOS
+        # host, but macOS VMs are more expensive than Linux VMs.
         TOOLCHAIN: 1.49.0
     - name: iOS x86_64
       env:
@@ -236,6 +236,13 @@ task:
     - name: Linux x32
       env:
         TARGET: x86_64-unknown-linux-gnux32
+    - name: macOS aarch64
+      env:
+        TARGET: aarch64-apple-darwin
+        # macOS aarch64 toolchain isn't available via rustup until 1.49
+        TOOLCHAIN: 1.49.0
+      container:
+        image: rust:1.49
     - name: NetBSD x86_64
       env:
         TARGET: x86_64-unknown-netbsd
