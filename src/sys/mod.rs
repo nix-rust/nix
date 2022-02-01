@@ -61,7 +61,6 @@ feature! {
 #[cfg(target_os = "linux")]
 feature! {
     #![feature = "personality"]
-    #[allow(missing_docs)]
     pub mod personality;
 }
 
