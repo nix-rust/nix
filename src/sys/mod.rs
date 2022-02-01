@@ -55,7 +55,6 @@ feature! {
 #[cfg(not(target_os = "redox"))]
 feature! {
     #![feature = "mman"]
-    #[allow(missing_docs)]
     pub mod mman;
 }
 

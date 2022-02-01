@@ -299,6 +299,7 @@ libc_enum!{
         #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
         MADV_CORE,
+        /// This process should not be killed when swap space is exhausted.
         #[cfg(any(target_os = "freebsd"))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
         MADV_PROTECT,
@@ -314,14 +315,18 @@ libc_enum!{
         #[cfg(any(target_os = "ios", target_os = "macos"))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
         MADV_ZERO_WIRED_PAGES,
+        /// Pages can be reused (by anyone).
         #[cfg(any(target_os = "ios", target_os = "macos"))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
         MADV_FREE_REUSABLE,
+        /// Caller wants to reuse those pages.
         #[cfg(any(target_os = "ios", target_os = "macos"))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
         MADV_FREE_REUSE,
+        // Darwin doesn't document this flag's behavior.
         #[cfg(any(target_os = "ios", target_os = "macos"))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
+        #[allow(missing_docs)]
         MADV_CAN_REUSE,
     }
 }
