@@ -192,7 +192,6 @@ feature! {
 #[cfg(any(target_os = "android", target_os = "linux"))]
 feature! {
     #![feature = "inotify"]
-    #[allow(missing_docs)]
     pub mod inotify;
 }
 
