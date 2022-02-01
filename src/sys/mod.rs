@@ -91,7 +91,6 @@ feature! {
 #[cfg(target_os = "linux")]
 feature! {
     #![feature = "reboot"]
-    #[allow(missing_docs)]
     pub mod reboot;
 }
 
