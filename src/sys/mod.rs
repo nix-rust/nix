@@ -195,7 +195,6 @@ feature! {
 #[cfg(any(target_os = "android", target_os = "linux"))]
 feature! {
     #![feature = "time"]
-    #[allow(missing_docs)]
     pub mod timerfd;
 }
 
