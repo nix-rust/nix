@@ -1,6 +1,7 @@
 syntax: glob
 Cargo.lock
 target
+.idea
 *.diff
 *.rej
 *.orig
