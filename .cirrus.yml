@@ -311,4 +311,4 @@ task:
   container:
     image: rustlang/rust:nightly
   check_script:
-    - git diff --name-only --diff-filter=ACMRT $CIRRUS_BASE_SHA HEAD -- '*.rs' | xargs rustfmt --check
+    - git diff --name-only --diff-filter=ACMRT $CIRRUS_BASE_SHA HEAD -- '*.rs' | xargs --no-run-if-empty rustfmt --check
