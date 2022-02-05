@@ -303,3 +303,12 @@ task:
   check_script:
     - cargo check
   before_cache_script: rm -rf $CARGO_HOME/registry/index
+
+task:
+  name: Fmt check
+  env:
+    TOOLCHAIN: nightly
+  container:
+    image: rustlang/rust:nightly
+  check_script:
+    - git diff --name-only --diff-filter=ACMRT $CIRRUS_BASE_SHA HEAD -- '*.rs' | xargs rustfmt --check
