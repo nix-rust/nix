@@ -64,6 +64,7 @@ Tier 1:
   * x86_64-unknown-linux-musl
 
 Tier 2:
+  * aarch64-apple-darwin
   * aarch64-apple-ios
   * aarch64-linux-android
   * arm-linux-androideabi
@@ -87,7 +88,7 @@ Tier 3:
 
 ## Minimum Supported Rust Version (MSRV)
 
-nix is supported on Rust 1.46.0 and higher.  It's MSRV will not be
+nix is supported on Rust 1.46.0 and higher.  Its MSRV will not be
 changed in the future without bumping the major or minor version.
 
 ## Contributing
