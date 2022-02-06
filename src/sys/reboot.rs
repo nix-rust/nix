@@ -13,15 +13,22 @@ libc_enum! {
     #[repr(i32)]
     #[non_exhaustive]
     pub enum RebootMode {
+        /// Halt the system.
         RB_HALT_SYSTEM,
+        /// Execute a kernel that has been loaded earlier with
+        /// [`kexec_load(2)`](https://man7.org/linux/man-pages/man2/kexec_load.2.html).
         RB_KEXEC,
+        /// Stop the system and switch off power, if possible.
         RB_POWER_OFF,
+        /// Restart the system.
         RB_AUTOBOOT,
-        // we do not support Restart2,
+        // we do not support Restart2.
+        /// Suspend the system using software suspend.
         RB_SW_SUSPEND,
     }
 }
 
+/// Reboots or shuts down the system.
 pub fn reboot(how: RebootMode) -> Result<Infallible> {
     unsafe {
         libc::reboot(how as libc::c_int)

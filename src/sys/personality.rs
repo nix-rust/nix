@@ -1,3 +1,4 @@
+//! Process execution domains
 use crate::Result;
 use crate::errno::Errno;
 
@@ -7,18 +8,44 @@ libc_bitflags! {
     /// Flags used and returned by [`get()`](fn.get.html) and
     /// [`set()`](fn.set.html).
     pub struct Persona: c_int {
+        /// Provide the legacy virtual address space layout.
         ADDR_COMPAT_LAYOUT;
+        /// Disable address-space-layout randomization.
         ADDR_NO_RANDOMIZE;
+        /// Limit the address space to 32 bits.
         ADDR_LIMIT_32BIT;
+        /// Use `0xc0000000` as the offset at which to search a virtual memory
+        /// chunk on [`mmap(2)`], otherwise use `0xffffe000`.
+        ///
+        /// [`mmap(2)`]: https://man7.org/linux/man-pages/man2/mmap.2.html
         ADDR_LIMIT_3GB;
+        /// User-space function pointers to signal handlers point to descriptors.
         #[cfg(not(any(target_env = "musl", target_env = "uclibc")))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         FDPIC_FUNCPTRS;
+        /// Map page 0 as read-only.
         MMAP_PAGE_ZERO;
+        /// `PROT_READ` implies `PROT_EXEC` for [`mmap(2)`].
+        ///
+        /// [`mmap(2)`]: https://man7.org/linux/man-pages/man2/mmap.2.html
         READ_IMPLIES_EXEC;
+        /// No effects.
         SHORT_INODE;
+        /// [`select(2)`], [`pselect(2)`], and [`ppoll(2)`] do not modify the
+        /// returned timeout argument when interrupted by a signal handler.
+        ///
+        /// [`select(2)`]: https://man7.org/linux/man-pages/man2/select.2.html
+        /// [`pselect(2)`]: https://man7.org/linux/man-pages/man2/pselect.2.html
+        /// [`ppoll(2)`]: https://man7.org/linux/man-pages/man2/ppoll.2.html
         STICKY_TIMEOUTS;
+        /// Have [`uname(2)`] report a 2.6.40+ version number rather than a 3.x
+        /// version number.
+        ///
+        /// [`uname(2)`]: https://man7.org/linux/man-pages/man2/uname.2.html
         #[cfg(not(any(target_env = "musl", target_env = "uclibc")))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         UNAME26;
+        /// No effects.
         WHOLE_SECONDS;
     }
 }

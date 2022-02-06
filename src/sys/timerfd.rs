@@ -60,10 +60,19 @@ libc_enum! {
     #[repr(i32)]
     #[non_exhaustive]
     pub enum ClockId {
+        /// A settable system-wide real-time clock.
         CLOCK_REALTIME,
+        /// A non-settable monotonically increasing clock.
+        ///
+        /// Does not change after system startup.
+        /// Does not measure time while the system is suspended.
         CLOCK_MONOTONIC,
+        /// Like `CLOCK_MONOTONIC`, except that `CLOCK_BOOTTIME` includes the time
+        /// that the system was suspended.
         CLOCK_BOOTTIME,
+        /// Like `CLOCK_REALTIME`, but will wake the system if it is suspended.
         CLOCK_REALTIME_ALARM,
+        /// Like `CLOCK_BOOTTIME`, but will wake the system if it is suspended.
         CLOCK_BOOTTIME_ALARM,
     }
 }
@@ -72,7 +81,9 @@ libc_bitflags! {
     /// Additional flags to change the behaviour of the file descriptor at the
     /// time of creation.
     pub struct TimerFlags: c_int {
+        /// Set the `O_NONBLOCK` flag on the open file description referred to by the new file descriptor.
         TFD_NONBLOCK;
+        /// Set the `FD_CLOEXEC` flag on the file descriptor.
         TFD_CLOEXEC;
     }
 }

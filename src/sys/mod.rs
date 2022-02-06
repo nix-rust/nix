@@ -55,14 +55,12 @@ feature! {
 #[cfg(not(target_os = "redox"))]
 feature! {
     #![feature = "mman"]
-    #[allow(missing_docs)]
     pub mod mman;
 }
 
 #[cfg(target_os = "linux")]
 feature! {
     #![feature = "personality"]
-    #[allow(missing_docs)]
     pub mod personality;
 }
 
@@ -93,7 +91,6 @@ feature! {
 #[cfg(target_os = "linux")]
 feature! {
     #![feature = "reboot"]
-    #[allow(missing_docs)]
     pub mod reboot;
 }
 
@@ -192,14 +189,12 @@ feature! {
 #[cfg(any(target_os = "android", target_os = "linux"))]
 feature! {
     #![feature = "inotify"]
-    #[allow(missing_docs)]
     pub mod inotify;
 }
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
 feature! {
     #![feature = "time"]
-    #[allow(missing_docs)]
     pub mod timerfd;
 }
 
