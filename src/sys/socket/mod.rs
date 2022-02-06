@@ -1794,8 +1794,13 @@ pub fn accept(sockfd: RawFd) -> Result<RawFd> {
                 target_arch = "x86_64"
             )
           ),
+          target_os = "dragonfly",
+          target_os = "emscripten",
           target_os = "freebsd",
+          target_os = "fuchsia",
+          target_os = "illumos",
           target_os = "linux",
+          target_os = "netbsd",
           target_os = "openbsd"))]
 pub fn accept4(sockfd: RawFd, flags: SockFlag) -> Result<RawFd> {
     let res = unsafe { libc::accept4(sockfd, ptr::null_mut(), ptr::null_mut(), flags.bits()) };

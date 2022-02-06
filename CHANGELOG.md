@@ -39,6 +39,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1636](https://github.com/nix-rust/nix/pull/1636))
 - Added `fspacectl` on FreeBSD
   (#[1640](https://github.com/nix-rust/nix/pull/1640))
+- Added `accept4` on DragonFly, Emscripten, Fuchsia, Illumos, and NetBSD.
+  (#[1654](https://github.com/nix-rust/nix/pull/1654))
 
 ### Changed
 
