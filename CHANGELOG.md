@@ -41,6 +41,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1640](https://github.com/nix-rust/nix/pull/1640))
 - Added `accept4` on DragonFly, Emscripten, Fuchsia, Illumos, and NetBSD.
   (#[1654](https://github.com/nix-rust/nix/pull/1654))
+- Added `AsRawFd` implementation on `OwningIter`.
+  (#[1563](https://github.com/nix-rust/nix/pull/1563))
 
 ### Changed
 

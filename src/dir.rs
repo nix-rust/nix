@@ -142,6 +142,14 @@ impl Iterator for OwningIter {
     }
 }
 
+/// The file descriptor continues to be owned by the `OwningIter`,
+/// so callers must not keep a `RawFd` after the `OwningIter` is dropped.
+impl AsRawFd for OwningIter {
+    fn as_raw_fd(&self) -> RawFd {
+        self.0.as_raw_fd()
+    }
+}
+
 impl IntoIterator for Dir {
     type Item = Result<Entry>;
     type IntoIter = OwningIter;
