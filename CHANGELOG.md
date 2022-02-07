@@ -43,6 +43,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1654](https://github.com/nix-rust/nix/pull/1654))
 - Added `AsRawFd` implementation on `OwningIter`.
   (#[1563](https://github.com/nix-rust/nix/pull/1563))
+- Added `process_vm_readv` and `process_vm_writev` on Android.
+  (#[1557](https://github.com/nix-rust/nix/pull/1557))
 
 ### Changed
 
