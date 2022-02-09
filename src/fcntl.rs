@@ -889,3 +889,6 @@ pub fn posix_fallocate(fd: RawFd, offset: libc::off_t, len: libc::off_t) -> Resu
     }
 }
 }
+
+#[cfg(any(target_os = "android", target_os = "linux"))]
+pub mod statx;
