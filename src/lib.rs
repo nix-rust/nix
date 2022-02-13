@@ -146,7 +146,8 @@ feature! {
 // This can be implemented for other platforms as soon as libc
 // provides bindings for them.
 #[cfg(all(target_os = "linux",
-          any(target_arch = "x86", target_arch = "x86_64")))]
+          any(target_arch = "s390x", target_arch = "x86",
+              target_arch = "x86_64")))]
 feature! {
     #![feature = "ucontext"]
     #[allow(missing_docs)]
