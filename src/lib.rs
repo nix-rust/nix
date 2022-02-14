@@ -164,8 +164,9 @@ pub mod unistd;
 
 use libc::PATH_MAX;
 
-use std::result;
+use std::{ptr, result, slice};
 use std::ffi::{CStr, OsStr};
+use std::mem::MaybeUninit;
 use std::os::unix::ffi::OsStrExt;
 use std::path::{Path, PathBuf};
 
@@ -261,15 +262,22 @@ impl NixPath for [u8] {
     }
 
     fn with_nix_path<T, F>(&self, f: F) -> Result<T>
-            where F: FnOnce(&CStr) -> T {
-        let mut buf = [0u8; PATH_MAX as usize];
-
+    where
+        F: FnOnce(&CStr) -> T,
+    {
         if self.len() >= PATH_MAX as usize {
-            return Err(Errno::ENAMETOOLONG)
+            return Err(Errno::ENAMETOOLONG);
         }
 
-        buf[..self.len()].copy_from_slice(self);
-        match CStr::from_bytes_with_nul(&buf[..=self.len()]) {
+        let mut buf = MaybeUninit::<[u8; PATH_MAX as usize]>::uninit();
+        let buf_ptr = buf.as_mut_ptr() as *mut u8;
+
+        unsafe {
+            ptr::copy_nonoverlapping(self.as_ptr(), buf_ptr, self.len());
+            buf_ptr.add(self.len()).write(0);
+        }
+
+        match CStr::from_bytes_with_nul(unsafe { slice::from_raw_parts(buf_ptr, self.len() + 1) }) {
             Ok(s) => Ok(f(s)),
             Err(_) => Err(Errno::EINVAL),
         }
