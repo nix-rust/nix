@@ -47,12 +47,19 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1557](https://github.com/nix-rust/nix/pull/1557))
 - Added `nix::uncontext` module on s390x.
   (#[1662](https://github.com/nix-rust/nix/pull/1662))
+- Implemented `Extend`, `FromIterator`, and `IntoIterator` for `SigSet` and
+  added `SigSet::iter` and `SigSetIter`.
+  (#[1553](https://github.com/nix-rust/nix/pull/1553))
 
 ### Changed
 
 - `mqueue` functions now operate on a distinct type, `nix::mqueue::MqdT`.
   Accessors take this type by reference, not by value.
   (#[1639](https://github.com/nix-rust/nix/pull/1639))
+- Removed `SigSet::extend` in favor of `<SigSet as Extend<Signal>>::extend`.
+  Because of this change, you now need `use std::iter::Extend` to call `extend`
+  on a `SigSet`.
+  (#[1553](https://github.com/nix-rust/nix/pull/1553))
 
 ### Fixed
 

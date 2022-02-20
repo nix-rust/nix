@@ -482,6 +482,9 @@ feature! {
 #![feature = "signal"]
 
 use crate::unistd::Pid;
+use std::iter::Extend;
+use std::iter::FromIterator;
+use std::iter::IntoIterator;
 
 /// Specifies a set of [`Signal`]s that may be blocked, waited for, etc.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -532,14 +535,9 @@ impl SigSet {
         }
     }
 
-    /// Merge all of `other`'s signals into this set.
-    // TODO: use libc::sigorset on supported operating systems.
-    pub fn extend(&mut self, other: &SigSet) {
-        for signal in Signal::iterator() {
-            if other.contains(signal) {
-                self.add(signal);
-            }
-        }
+    /// Returns an iterator that yields the signals contained in this set.
+    pub fn iter(&self) -> SigSetIter<'_> {
+        self.into_iter()
     }
 
     /// Gets the currently blocked (masked) set of signals for the calling thread.
@@ -590,6 +588,55 @@ impl SigSet {
 impl AsRef<libc::sigset_t> for SigSet {
     fn as_ref(&self) -> &libc::sigset_t {
         &self.sigset
+    }
+}
+
+// TODO: Consider specialization for the case where T is &SigSet and libc::sigorset is available.
+impl Extend<Signal> for SigSet {
+    fn extend<T>(&mut self, iter: T)
+    where T: IntoIterator<Item = Signal> {
+        for signal in iter {
+            self.add(signal);
+        }
+    }
+}
+
+impl FromIterator<Signal> for SigSet {
+    fn from_iter<T>(iter: T) -> Self
+    where T: IntoIterator<Item = Signal> {
+        let mut sigset = SigSet::empty();
+        sigset.extend(iter);
+        sigset
+    }
+}
+
+/// Iterator for a [`SigSet`].
+///
+/// Call [`SigSet::iter`] to create an iterator.
+#[derive(Clone, Debug)]
+pub struct SigSetIter<'a> {
+    sigset: &'a SigSet,
+    inner: SignalIterator,
+}
+
+impl Iterator for SigSetIter<'_> {
+    type Item = Signal;
+    fn next(&mut self) -> Option<Signal> {
+        loop {
+            match self.inner.next() {
+                None => return None,
+                Some(signal) if self.sigset.contains(signal) => return Some(signal),
+                Some(_signal) => continue,
+            }
+        }
+    }
+}
+
+impl<'a> IntoIterator for &'a SigSet {
+    type Item = Signal;
+    type IntoIter = SigSetIter<'a>;
+    fn into_iter(self) -> Self::IntoIter {
+        SigSetIter { sigset: self, inner: Signal::iterator() }
     }
 }
 
@@ -1233,6 +1280,13 @@ mod tests {
 
             assert!(SigSet::thread_get_mask().unwrap().contains(SIGUSR2));
         }).join().unwrap();
+    }
+
+    #[test]
+    fn test_from_and_into_iterator() {
+        let sigset = SigSet::from_iter(vec![Signal::SIGUSR1, Signal::SIGUSR2]);
+        let signals = sigset.into_iter().collect::<Vec<Signal>>();
+        assert_eq!(signals, [Signal::SIGUSR1, Signal::SIGUSR2]);
     }
 
     #[test]
