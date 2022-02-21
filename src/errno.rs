@@ -608,11 +608,13 @@ fn desc(errno: Errno) -> &'static str {
         EPROTO          => "Protocol error",
 
         #[cfg(any(target_os = "macos", target_os = "freebsd",
-                  target_os = "ios", target_os = "openbsd"))]
+                  target_os = "dragonfly", target_os = "ios",
+                  target_os = "openbsd"))]
         ENOTRECOVERABLE => "State not recoverable",
 
         #[cfg(any(target_os = "macos", target_os = "freebsd",
-                  target_os = "ios", target_os = "openbsd"))]
+                  target_os = "dragonfly", target_os = "ios",
+                  target_os = "openbsd"))]
         EOWNERDEAD      => "Previous owner died",
 
         #[cfg(any(target_os = "macos", target_os = "freebsd",
@@ -1663,6 +1665,8 @@ mod consts {
         ENOLINK         = libc::ENOLINK,
         EPROTO          = libc::EPROTO,
         ENOMEDIUM       = libc::ENOMEDIUM,
+        ENOTRECOVERABLE = libc::ENOTRECOVERABLE,
+        EOWNERDEAD      = libc::EOWNERDEAD,
         EASYNC          = libc::EASYNC,
     }
 
