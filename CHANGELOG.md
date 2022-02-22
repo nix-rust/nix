@@ -50,6 +50,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Implemented `Extend`, `FromIterator`, and `IntoIterator` for `SigSet` and
   added `SigSet::iter` and `SigSetIter`.
   (#[1553](https://github.com/nix-rust/nix/pull/1553))
+- Added `ENOTRECOVERABLE` and `EOWNERDEAD` error codes on DragonFly.
+  (#[1665](https://github.com/nix-rust/nix/pull/1665))
 
 ### Changed
 
