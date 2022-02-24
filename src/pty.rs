@@ -95,6 +95,21 @@ impl io::Write for PtyMaster {
     }
 }
 
+impl io::Read for &PtyMaster {
+    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+        unistd::read(self.0, buf).map_err(io::Error::from)
+    }
+}
+
+impl io::Write for &PtyMaster {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        unistd::write(self.0, buf).map_err(io::Error::from)
+    }
+    fn flush(&mut self) -> io::Result<()> {
+        Ok(())
+    }
+}
+
 /// Grant access to a slave pseudoterminal (see
 /// [`grantpt(3)`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/grantpt.html))
 ///

@@ -52,6 +52,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1553](https://github.com/nix-rust/nix/pull/1553))
 - Added `ENOTRECOVERABLE` and `EOWNERDEAD` error codes on DragonFly.
   (#[1665](https://github.com/nix-rust/nix/pull/1665))
+- Implemented `Read` and `Write` for `&PtyMaster`
+  (#[1664](https://github.com/nix-rust/nix/pull/1664))
 
 ### Changed
 

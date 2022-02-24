@@ -170,6 +170,11 @@ fn test_read_ptty_pair() {
     slave.write_all(b"hello").unwrap();
     master.read_exact(&mut buf).unwrap();
     assert_eq!(&buf, b"hello");
+
+    let mut master = &master;
+    slave.write_all(b"hello").unwrap();
+    master.read_exact(&mut buf).unwrap();
+    assert_eq!(&buf, b"hello");
 }
 
 /// Test `io::Write` on the PTTY master
@@ -179,6 +184,11 @@ fn test_write_ptty_pair() {
     make_raw(slave.as_raw_fd());
 
     let mut buf = [0u8; 5];
+    master.write_all(b"adios").unwrap();
+    slave.read_exact(&mut buf).unwrap();
+    assert_eq!(&buf, b"adios");
+
+    let mut master = &master;
     master.write_all(b"adios").unwrap();
     slave.read_exact(&mut buf).unwrap();
     assert_eq!(&buf, b"adios");
