@@ -497,7 +497,8 @@ impl SpecialCharacterIndices {
 }
 
 pub use libc::NCCS;
-#[cfg(any(target_os = "dragonfly",
+#[cfg(any(target_os = "android",
+          target_os = "dragonfly",
           target_os = "freebsd",
           target_os = "linux",
           target_os = "macos",
