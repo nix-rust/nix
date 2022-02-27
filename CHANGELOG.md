@@ -64,6 +64,9 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   Because of this change, you now need `use std::iter::Extend` to call `extend`
   on a `SigSet`.
   (#[1553](https://github.com/nix-rust/nix/pull/1553))
+- Removed the the `PATH_MAX` restriction from APIs accepting paths. Paths
+  will now be allocated on the heap if they are too long. In addition, large
+  instruction count improvements (~30x) were made to path handling.
 
 ### Fixed
 

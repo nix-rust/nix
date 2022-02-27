@@ -156,19 +156,11 @@ feature! {
 #[allow(missing_docs)]
 pub mod unistd;
 
-/*
- *
- * ===== Result / Error =====
- *
- */
-
-use libc::PATH_MAX;
-
-use std::{ptr, result, slice};
-use std::ffi::{CStr, OsStr};
+use std::ffi::{CStr, CString, OsStr};
 use std::mem::MaybeUninit;
 use std::os::unix::ffi::OsStrExt;
 use std::path::{Path, PathBuf};
+use std::{ptr, result, slice};
 
 use errno::Errno;
 
@@ -242,12 +234,9 @@ impl NixPath for CStr {
     }
 
     fn with_nix_path<T, F>(&self, f: F) -> Result<T>
-            where F: FnOnce(&CStr) -> T {
-        // Equivalence with the [u8] impl.
-        if self.len() >= PATH_MAX as usize {
-            return Err(Errno::ENAMETOOLONG)
-        }
-
+    where
+        F: FnOnce(&CStr) -> T,
+    {
         Ok(f(self))
     }
 }
@@ -265,11 +254,19 @@ impl NixPath for [u8] {
     where
         F: FnOnce(&CStr) -> T,
     {
-        if self.len() >= PATH_MAX as usize {
-            return Err(Errno::ENAMETOOLONG);
+        // The real PATH_MAX is typically 4096, but it's statistically unlikely to have a path
+        // longer than ~300 bytes. See the the PR description to get stats for your own machine.
+        // https://github.com/nix-rust/nix/pull/1656
+        //
+        // By being smaller than a memory page, we also avoid the compiler inserting a probe frame:
+        // https://docs.rs/compiler_builtins/latest/compiler_builtins/probestack/index.html
+        const MAX_STACK_ALLOCATION: usize = 1024;
+
+        if self.len() >= MAX_STACK_ALLOCATION {
+            return with_nix_path_allocating(self, f);
         }
 
-        let mut buf = MaybeUninit::<[u8; PATH_MAX as usize]>::uninit();
+        let mut buf = MaybeUninit::<[u8; MAX_STACK_ALLOCATION]>::uninit();
         let buf_ptr = buf.as_mut_ptr() as *mut u8;
 
         unsafe {
@@ -281,6 +278,18 @@ impl NixPath for [u8] {
             Ok(s) => Ok(f(s)),
             Err(_) => Err(Errno::EINVAL),
         }
+    }
+}
+
+#[cold]
+#[inline(never)]
+fn with_nix_path_allocating<T, F>(from: &[u8], f: F) -> Result<T>
+where
+    F: FnOnce(&CStr) -> T,
+{
+    match CString::new(from) {
+        Ok(s) => Ok(f(&s)),
+        Err(_) => Err(Errno::EINVAL),
     }
 }
 
