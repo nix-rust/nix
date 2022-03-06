@@ -182,7 +182,7 @@ impl Statx {
 
     /// Retrieve uid (owner, user ID), if it has been returned by kernel.
     pub fn uid(&self) -> Option<Uid> {
-        if Mask::STATX_NLINK.bits() & self.inner.stx_mask > 0 {
+        if Mask::STATX_UID.bits() & self.inner.stx_mask > 0 {
             Some(Uid::from_raw(self.inner.stx_uid))
         } else {
             None
