@@ -344,7 +344,7 @@ impl Statfs {
     }
 
     /// Total data blocks in filesystem
-    #[cfg(all(target_os = "linux", any(target_env = "musl", all(target_arch = "x86_64", target_pointer_width = "32"))))]
+    #[cfg(all(target_os = "linux", any(target_env = "musl", target_arch = "riscv32", all(target_arch = "x86_64", target_pointer_width = "32"))))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn blocks(&self) -> u64 {
         self.0.f_blocks
@@ -358,7 +358,7 @@ impl Statfs {
         target_os = "freebsd",
         target_os = "openbsd",
         target_os = "dragonfly",
-        all(target_os = "linux", any(target_env = "musl", all(target_arch = "x86_64", target_pointer_width = "32")))
+        all(target_os = "linux", any(target_env = "musl", target_arch = "riscv32", all(target_arch = "x86_64", target_pointer_width = "32")))
     )))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn blocks(&self) -> libc::c_ulong {
@@ -386,7 +386,7 @@ impl Statfs {
     }
 
     /// Free blocks in filesystem
-    #[cfg(all(target_os = "linux", any(target_env = "musl", all(target_arch = "x86_64", target_pointer_width = "32"))))]
+    #[cfg(all(target_os = "linux", any(target_env = "musl", target_arch = "riscv32", all(target_arch = "x86_64", target_pointer_width = "32"))))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn blocks_free(&self) -> u64 {
         self.0.f_bfree
@@ -400,7 +400,7 @@ impl Statfs {
         target_os = "freebsd",
         target_os = "openbsd",
         target_os = "dragonfly",
-        all(target_os = "linux", any(target_env = "musl", all(target_arch = "x86_64", target_pointer_width = "32")))
+        all(target_os = "linux", any(target_env = "musl", target_arch = "riscv32", all(target_arch = "x86_64", target_pointer_width = "32")))
     )))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn blocks_free(&self) -> libc::c_ulong {
@@ -429,7 +429,7 @@ impl Statfs {
     }
 
     /// Free blocks available to unprivileged user
-    #[cfg(all(target_os = "linux", any(target_env = "musl", all(target_arch = "x86_64", target_pointer_width = "32"))))]
+    #[cfg(all(target_os = "linux", any(target_env = "musl", target_arch = "riscv32", all(target_arch = "x86_64", target_pointer_width = "32"))))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn blocks_available(&self) -> u64 {
         self.0.f_bavail
@@ -443,7 +443,7 @@ impl Statfs {
         target_os = "freebsd",
         target_os = "openbsd",
         target_os = "dragonfly",
-        all(target_os = "linux", any(target_env = "musl", all(target_arch = "x86_64", target_pointer_width = "32")))
+        all(target_os = "linux", any(target_env = "musl", target_arch = "riscv32", all(target_arch = "x86_64", target_pointer_width = "32")))
     )))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn blocks_available(&self) -> libc::c_ulong {
@@ -471,7 +471,7 @@ impl Statfs {
     }
 
     /// Total file nodes in filesystem
-    #[cfg(all(target_os = "linux", any(target_env = "musl", all(target_arch = "x86_64", target_pointer_width = "32"))))]
+    #[cfg(all(target_os = "linux", any(target_env = "musl", target_arch = "riscv32", all(target_arch = "x86_64", target_pointer_width = "32"))))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn files(&self) -> libc::fsfilcnt_t {
         self.0.f_files
@@ -485,7 +485,7 @@ impl Statfs {
         target_os = "freebsd",
         target_os = "openbsd",
         target_os = "dragonfly",
-        all(target_os = "linux", any(target_env = "musl", all(target_arch = "x86_64", target_pointer_width = "32")))
+        all(target_os = "linux", any(target_env = "musl", target_arch = "riscv32", all(target_arch = "x86_64", target_pointer_width = "32")))
     )))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn files(&self) -> libc::c_ulong {
@@ -519,7 +519,7 @@ impl Statfs {
     }
 
     /// Free file nodes in filesystem
-    #[cfg(all(target_os = "linux", any(target_env = "musl", all(target_arch = "x86_64", target_pointer_width = "32"))))]
+    #[cfg(all(target_os = "linux", any(target_env = "musl", target_arch = "riscv32", all(target_arch = "x86_64", target_pointer_width = "32"))))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn files_free(&self) -> libc::fsfilcnt_t {
         self.0.f_ffree
@@ -533,7 +533,7 @@ impl Statfs {
         target_os = "freebsd",
         target_os = "openbsd",
         target_os = "dragonfly",
-        all(target_os = "linux", any(target_env = "musl", all(target_arch = "x86_64", target_pointer_width = "32")))
+        all(target_os = "linux", any(target_env = "musl", target_arch = "riscv32", all(target_arch = "x86_64", target_pointer_width = "32")))
     )))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn files_free(&self) -> libc::c_ulong {
