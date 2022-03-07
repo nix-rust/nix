@@ -98,15 +98,11 @@ pub fn statx<P: ?Sized + NixPath>(
 
     Errno::result(res)?;
 
-    Ok(Statx {
-        inner: unsafe { dst.assume_init() },
-    })
+    Ok(Statx ( unsafe { dst.assume_init() } ))
 }
 
 #[derive(Debug,Copy,Clone)]
-pub struct Statx {
-    pub inner: libc::statx,
-}
+pub struct Statx (pub libc::statx);
 
 impl From<libc::statx_timestamp> for TimeSpec {
     fn from(x: libc::statx_timestamp) -> Self {
@@ -120,8 +116,8 @@ impl From<libc::statx_timestamp> for TimeSpec {
 impl Statx {
     /// Retrieve file type, if it has been returned by kernel
     pub fn filetype(&self) -> Option<SFlag> {
-        if Mask::STATX_TYPE.bits() & self.inner.stx_mask > 0 {
-            Some(SFlag::from_bits_truncate(self.inner.stx_mode as mode_t & SFlag::S_IFMT.bits()))
+        if Mask::STATX_TYPE.bits() & self.0.stx_mask > 0 {
+            Some(SFlag::from_bits_truncate(self.0.stx_mode as mode_t & SFlag::S_IFMT.bits()))
         } else {
             None
         }
@@ -129,8 +125,8 @@ impl Statx {
     
     /// Retrieve file mode, if it has been returned by kernel.
     pub fn mode(&self) -> Option<Mode> {
-        if Mask::STATX_MODE.bits() & self.inner.stx_mask > 0 {
-            Some(Mode::from_bits_truncate(self.inner.stx_mode as mode_t))
+        if Mask::STATX_MODE.bits() & self.0.stx_mask > 0 {
+            Some(Mode::from_bits_truncate(self.0.stx_mode as mode_t))
         } else {
             None
         }
@@ -138,8 +134,8 @@ impl Statx {
 
     /// Retrieve number of hard links, if it has been returned by kernel.
     pub fn nlinks(&self) -> Option<u32> {
-        if Mask::STATX_NLINK.bits() & self.inner.stx_mask > 0 {
-            Some(self.inner.stx_nlink)
+        if Mask::STATX_NLINK.bits() & self.0.stx_mask > 0 {
+            Some(self.0.stx_nlink)
         } else {
             None
         }
@@ -147,8 +143,8 @@ impl Statx {
 
     /// Retrieve uid (owner, user ID), if it has been returned by kernel.
     pub fn uid(&self) -> Option<Uid> {
-        if Mask::STATX_UID.bits() & self.inner.stx_mask > 0 {
-            Some(Uid::from_raw(self.inner.stx_uid))
+        if Mask::STATX_UID.bits() & self.0.stx_mask > 0 {
+            Some(Uid::from_raw(self.0.stx_uid))
         } else {
             None
         }
@@ -156,8 +152,8 @@ impl Statx {
 
     /// Retrieve gid (group ID), if it has been returned by kernel.
     pub fn gid(&self) -> Option<Gid> {
-        if Mask::STATX_GID.bits() & self.inner.stx_mask > 0 {
-            Some(Gid::from_raw(self.inner.stx_uid))
+        if Mask::STATX_GID.bits() & self.0.stx_mask > 0 {
+            Some(Gid::from_raw(self.0.stx_uid))
         } else {
             None
         }
@@ -165,8 +161,8 @@ impl Statx {
 
     /// Retrieve file access time, if it has been returned by kernel
     pub fn atime(&self) -> Option<TimeSpec> {
-        if Mask::STATX_ATIME.bits() & self.inner.stx_mask > 0 {
-            Some(self.inner.stx_atime.into())
+        if Mask::STATX_ATIME.bits() & self.0.stx_mask > 0 {
+            Some(self.0.stx_atime.into())
         } else {
             None
         }
@@ -174,8 +170,8 @@ impl Statx {
 
     /// Retrieve file modification time, if it has been returned by kernel
     pub fn mtime(&self) -> Option<TimeSpec> {
-        if Mask::STATX_MTIME.bits() & self.inner.stx_mask > 0 {
-            Some(self.inner.stx_mtime.into())
+        if Mask::STATX_MTIME.bits() & self.0.stx_mask > 0 {
+            Some(self.0.stx_mtime.into())
         } else {
             None
         }
@@ -183,8 +179,8 @@ impl Statx {
 
     /// Retrieve file attribute change time, if it has been returned by kernel
     pub fn ctime(&self) -> Option<TimeSpec> {
-        if Mask::STATX_CTIME.bits() & self.inner.stx_mask > 0 {
-            Some(self.inner.stx_ctime.into())
+        if Mask::STATX_CTIME.bits() & self.0.stx_mask > 0 {
+            Some(self.0.stx_ctime.into())
         } else {
             None
         }
@@ -192,8 +188,8 @@ impl Statx {
 
     /// Retrieve file birth (creation) time, if it has been returned by kernel
     pub fn btime(&self) -> Option<TimeSpec> {
-        if Mask::STATX_BTIME.bits() & self.inner.stx_mask > 0 {
-            Some(self.inner.stx_btime.into())
+        if Mask::STATX_BTIME.bits() & self.0.stx_mask > 0 {
+            Some(self.0.stx_btime.into())
         } else {
             None
         }
@@ -201,8 +197,8 @@ impl Statx {
 
     /// Retrieve inode number, if it has been returned by kernel
     pub fn ino(&self) -> Option<u64> {
-        if Mask::STATX_INO.bits() & self.inner.stx_mask > 0 {
-            Some(self.inner.stx_ino)
+        if Mask::STATX_INO.bits() & self.0.stx_mask > 0 {
+            Some(self.0.stx_ino)
         } else {
             None
         }
@@ -210,8 +206,8 @@ impl Statx {
 
     /// Retrieve file size, in bytes, if it has been returned by kernel
     pub fn size(&self) -> Option<u64> {
-        if Mask::STATX_SIZE.bits() & self.inner.stx_mask > 0 {
-            Some(self.inner.stx_size)
+        if Mask::STATX_SIZE.bits() & self.0.stx_mask > 0 {
+            Some(self.0.stx_size)
         } else {
             None
         }
@@ -219,8 +215,8 @@ impl Statx {
 
     /// Retrieve file size as a number of blocks, if it has been returned by kernel
     pub fn blocks(&self) -> Option<u64> {
-        if Mask::STATX_BLOCKS.bits() & self.inner.stx_mask > 0 {
-            Some(self.inner.stx_blocks)
+        if Mask::STATX_BLOCKS.bits() & self.0.stx_mask > 0 {
+            Some(self.0.stx_blocks)
         } else {
             None
         }
@@ -231,8 +227,8 @@ impl Statx {
         // I'm not sure what exact mask bit should be used to check presence of block size.
         // Actual Linux kernel seems return most of STATX_BASIC_STATS
         // in one go, regarless of which things were asked for.
-        if Mask::STATX_BASIC_STATS.bits() & self.inner.stx_mask == Mask::STATX_BASIC_STATS.bits()  {
-            Some(self.inner.stx_blksize)
+        if Mask::STATX_BASIC_STATS.bits() & self.0.stx_mask == Mask::STATX_BASIC_STATS.bits()  {
+            Some(self.0.stx_blksize)
         } else {
             None
         }
@@ -240,8 +236,8 @@ impl Statx {
 
     /// Retrieve mount ID, if it has been returned by kernel
     pub fn mnt_id(&self) -> Option<u64> {
-        if Mask::STATX_MNT_ID.bits() & self.inner.stx_mask > 0 {
-            Some(self.inner.stx_mnt_id)
+        if Mask::STATX_MNT_ID.bits() & self.0.stx_mask > 0 {
+            Some(self.0.stx_mnt_id)
         } else {
             None
         }
@@ -253,8 +249,8 @@ impl Statx {
         // I'm not sure what exact mask bit should be used to check presence of this information.
         // Actual Linux kernel seems return most of STATX_BASIC_STATS in one go,
         // regarless of which things were asked for.
-        if Mask::STATX_BASIC_STATS.bits() & self.inner.stx_mask == Mask::STATX_BASIC_STATS.bits() {
-            Some((self.inner.stx_dev_major, self.inner.stx_dev_minor))
+        if Mask::STATX_BASIC_STATS.bits() & self.0.stx_mask == Mask::STATX_BASIC_STATS.bits() {
+            Some((self.0.stx_dev_major, self.0.stx_dev_minor))
         } else {
             None
         }
@@ -269,8 +265,8 @@ impl Statx {
         // I'm not sure what exact mask bit should be used to check presence of this information.
         // Actual Linux kernel seems return most of STATX_BASIC_STATS
         // in one go, regarless of which things were asked for.
-        if Mask::STATX_BASIC_STATS.bits() & self.inner.stx_mask == Mask::STATX_BASIC_STATS.bits() {
-            Some((self.inner.stx_rdev_major, self.inner.stx_rdev_minor))
+        if Mask::STATX_BASIC_STATS.bits() & self.0.stx_mask == Mask::STATX_BASIC_STATS.bits() {
+            Some((self.0.stx_rdev_major, self.0.stx_rdev_minor))
         } else {
             None
         }
@@ -279,8 +275,8 @@ impl Statx {
     /// Determine if the file is compressed. None means kernel does not
     /// indicate this attrbiute is supported by the filesystem
     pub fn compressed(&self) -> Option<bool> {
-        if self.inner.stx_attributes_mask & libc::STATX_ATTR_COMPRESSED as u64 > 0 {
-            Some(self.inner.stx_attributes & libc::STATX_ATTR_COMPRESSED as u64 > 0)
+        if self.0.stx_attributes_mask & libc::STATX_ATTR_COMPRESSED as u64 > 0 {
+            Some(self.0.stx_attributes & libc::STATX_ATTR_COMPRESSED as u64 > 0)
         } else {
             None
         }
@@ -289,8 +285,8 @@ impl Statx {
     /// Determine if the file is immutable. None means kernel does not indicate this
     /// attrbiute is supported by the filesystem
     pub fn immutable(&self) -> Option<bool> {
-        if self.inner.stx_attributes_mask & libc::STATX_ATTR_IMMUTABLE as u64 > 0 {
-            Some(self.inner.stx_attributes & libc::STATX_ATTR_IMMUTABLE as u64 > 0)
+        if self.0.stx_attributes_mask & libc::STATX_ATTR_IMMUTABLE as u64 > 0 {
+            Some(self.0.stx_attributes & libc::STATX_ATTR_IMMUTABLE as u64 > 0)
         } else {
             None
         }
@@ -299,8 +295,8 @@ impl Statx {
     /// Determine if the file is append-only. None means kernel does not indicate
     /// this attrbiute is supported by the filesystem
     pub fn append_only(&self) -> Option<bool> {
-        if self.inner.stx_attributes_mask & libc::STATX_ATTR_APPEND as u64 > 0 {
-            Some(self.inner.stx_attributes & libc::STATX_ATTR_APPEND as u64 > 0)
+        if self.0.stx_attributes_mask & libc::STATX_ATTR_APPEND as u64 > 0 {
+            Some(self.0.stx_attributes & libc::STATX_ATTR_APPEND as u64 > 0)
         } else {
             None
         }
@@ -309,8 +305,8 @@ impl Statx {
     /// Determine if the file is not a candidate for a backup. None means kernel
     /// does not indicate this attrbiute is supported by the filesystem
     pub fn nodump(&self) -> Option<bool> {
-        if self.inner.stx_attributes_mask & libc::STATX_ATTR_NODUMP as u64 > 0 {
-            Some(self.inner.stx_attributes & libc::STATX_ATTR_NODUMP as u64 > 0)
+        if self.0.stx_attributes_mask & libc::STATX_ATTR_NODUMP as u64 > 0 {
+            Some(self.0.stx_attributes & libc::STATX_ATTR_NODUMP as u64 > 0)
         } else {
             None
         }
@@ -319,8 +315,8 @@ impl Statx {
     /// Determine if the file requires a key to be encrypted(?).
     /// None means kernel does not indicate this attrbiute is supported by the filesystem
     pub fn encrypted(&self) -> Option<bool> {
-        if self.inner.stx_attributes_mask & libc::STATX_ATTR_ENCRYPTED as u64 > 0 {
-            Some(self.inner.stx_attributes & libc::STATX_ATTR_ENCRYPTED as u64 > 0)
+        if self.0.stx_attributes_mask & libc::STATX_ATTR_ENCRYPTED as u64 > 0 {
+            Some(self.0.stx_attributes & libc::STATX_ATTR_ENCRYPTED as u64 > 0)
         } else {
             None
         }
@@ -330,8 +326,8 @@ impl Statx {
     /// Determine if the file has fs-verify enabled. None means kernel does not
     /// indicate this attrbiute is supported by the filesystem
     pub fn verify_enabled(&self) -> Option<bool> {
-        if self.inner.stx_attributes_mask & libc::STATX_ATTR_VERITY as u64 > 0 {
-            Some(self.inner.stx_attributes & libc::STATX_ATTR_VERITY as u64 > 0)
+        if self.0.stx_attributes_mask & libc::STATX_ATTR_VERITY as u64 > 0 {
+            Some(self.0.stx_attributes & libc::STATX_ATTR_VERITY as u64 > 0)
         } else {
             None
         }
@@ -340,8 +336,8 @@ impl Statx {
     /// Determine if the file is in CPU direct access state. None means kernel
     /// does not indicate this attrbiute is supported by the filesystem.
     pub fn dax(&self) -> Option<bool> {
-        if self.inner.stx_attributes_mask & libc::STATX_ATTR_DAX as u64 > 0 {
-            Some(self.inner.stx_attributes & libc::STATX_ATTR_DAX as u64 > 0)
+        if self.0.stx_attributes_mask & libc::STATX_ATTR_DAX as u64 > 0 {
+            Some(self.0.stx_attributes & libc::STATX_ATTR_DAX as u64 > 0)
         } else {
             None
         }
