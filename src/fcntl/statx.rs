@@ -68,7 +68,7 @@ libc_bitflags!(
 );
 
 /// Attempt to retrieve stats of `pathname`. If `pathname` is relative, `dirfd`
-/// is used as starting directory for lookups. If `dirfs` is None, current
+/// is used as starting directory for lookups. If `dirfd` is None, current
 /// directory is used.
 /// `pathname` may be empty string. But instead of specifying empty string
 /// literal, you are adviced to use zero-terminated `CStr` to avoid extra allocation 
