@@ -103,28 +103,6 @@ pub fn statx<P: ?Sized + NixPath>(
     })
 }
 
-/// Get stats of specified file descriptor (not nesessarily directory) without resolving the path.
-/// Automaitcally sets the `AT_EMPTY_PATH` flag.
-pub fn statx_without_path(dirfd: RawFd, mut flags: Flags, mask: Mask) -> Result<Statx> {
-    flags.set(Flags::AT_EMPTY_PATH, true);
-    let mut dst = mem::MaybeUninit::uninit();
-    let res = unsafe {
-        libc::statx(
-            dirfd,
-            b"\0" as *const u8 as *const libc::c_char,
-            flags.bits() as libc::c_int,
-            mask.bits() as libc::c_uint,
-            dst.as_mut_ptr(),
-        )
-    };
-
-    Errno::result(res)?;
-
-    Ok(Statx {
-        inner: unsafe { dst.assume_init() },
-    })
-}
-
 #[derive(Debug,Copy,Clone)]
 pub struct Statx {
     pub inner: libc::statx,
