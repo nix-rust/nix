@@ -2,7 +2,7 @@ use std::{mem, os::unix::prelude::RawFd};
 
 use libc::{self, c_int, c_uint, mode_t};
 
-use crate::{errno::Errno, NixPath, Result, sys::stat::{SFlag, Mode}, unistd::{Uid, Gid}};
+use crate::{errno::Errno, NixPath, Result, sys::stat::{SFlag, Mode}, unistd::{Uid, Gid}, sys::time::TimeSpec};
 
 libc_bitflags!(
     /// Configuration options for statx.
@@ -108,9 +108,18 @@ pub struct Statx {
     pub inner: libc::statx,
 }
 
+impl From<libc::statx_timestamp> for TimeSpec {
+    fn from(x: libc::statx_timestamp) -> Self {
+        TimeSpec::from_timespec(libc::timespec {
+            tv_sec: x.tv_sec,
+            tv_nsec: x.tv_nsec.into(),
+        })
+    }
+}
+
 impl Statx {
     /// Retrieve file type, if it has been returned by kernel
-    pub fn r#type(&self) -> Option<SFlag> {
+    pub fn filetype(&self) -> Option<SFlag> {
         if Mask::STATX_TYPE.bits() & self.inner.stx_mask > 0 {
             Some(SFlag::from_bits_truncate(self.inner.stx_mode as mode_t & SFlag::S_IFMT.bits()))
         } else {
@@ -147,7 +156,7 @@ impl Statx {
 
     /// Retrieve gid (group ID), if it has been returned by kernel.
     pub fn gid(&self) -> Option<Gid> {
-        if Mask::STATX_NLINK.bits() & self.inner.stx_mask > 0 {
+        if Mask::STATX_GID.bits() & self.inner.stx_mask > 0 {
             Some(Gid::from_raw(self.inner.stx_uid))
         } else {
             None
@@ -155,36 +164,36 @@ impl Statx {
     }
 
     /// Retrieve file access time, if it has been returned by kernel
-    pub fn atime(&self) -> Option<libc::statx_timestamp> {
+    pub fn atime(&self) -> Option<TimeSpec> {
         if Mask::STATX_ATIME.bits() & self.inner.stx_mask > 0 {
-            Some(self.inner.stx_atime)
+            Some(self.inner.stx_atime.into())
         } else {
             None
         }
     }
 
     /// Retrieve file modification time, if it has been returned by kernel
-    pub fn mtime(&self) -> Option<libc::statx_timestamp> {
+    pub fn mtime(&self) -> Option<TimeSpec> {
         if Mask::STATX_MTIME.bits() & self.inner.stx_mask > 0 {
-            Some(self.inner.stx_mtime)
+            Some(self.inner.stx_mtime.into())
         } else {
             None
         }
     }
 
     /// Retrieve file attribute change time, if it has been returned by kernel
-    pub fn ctime(&self) -> Option<libc::statx_timestamp> {
+    pub fn ctime(&self) -> Option<TimeSpec> {
         if Mask::STATX_CTIME.bits() & self.inner.stx_mask > 0 {
-            Some(self.inner.stx_ctime)
+            Some(self.inner.stx_ctime.into())
         } else {
             None
         }
     }
 
     /// Retrieve file birth (creation) time, if it has been returned by kernel
-    pub fn btime(&self) -> Option<libc::statx_timestamp> {
+    pub fn btime(&self) -> Option<TimeSpec> {
         if Mask::STATX_BTIME.bits() & self.inner.stx_mask > 0 {
-            Some(self.inner.stx_btime)
+            Some(self.inner.stx_btime.into())
         } else {
             None
         }
