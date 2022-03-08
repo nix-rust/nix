@@ -316,6 +316,20 @@ libc_bitflags!{
                   target_os = "openbsd"))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
         MSG_CMSG_CLOEXEC;
+        /// Requests not to send `SIGPIPE` errors when the other end breaks the connection.
+        /// (For more details, see [send(2)](https://linux.die.net/man/2/send)).
+        #[cfg(any(target_os = "android",
+                  target_os = "dragonfly",
+                  target_os = "freebsd",
+                  target_os = "fuchsia",
+                  target_os = "haiku",
+                  target_os = "illumos",
+                  target_os = "linux",
+                  target_os = "netbsd",
+                  target_os = "openbsd",
+                  target_os = "solaris"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
+        MSG_NOSIGNAL;
     }
 }
 

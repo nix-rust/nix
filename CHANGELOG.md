@@ -54,6 +54,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1665](https://github.com/nix-rust/nix/pull/1665))
 - Implemented `Read` and `Write` for `&PtyMaster`
   (#[1664](https://github.com/nix-rust/nix/pull/1664))
+- Added `MSG_NOSIGNAL` for Android, Dragonfly, FreeBSD, Fuchsia, Haiku, Illumos, Linux, NetBSD, OpenBSD and Solaris.
+  (#[1670](https://github.com/nix-rust/nix/pull/1670))
 
 ### Changed
 
