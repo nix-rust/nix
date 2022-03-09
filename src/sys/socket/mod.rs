@@ -1471,7 +1471,7 @@ pub struct RecvMmsgData<'a, I>
 ///
 /// * `iov`:            Scatter-gather list of buffers to receive the message
 /// * `cmsg_buffer`:    Space to receive ancillary data.  Should be created by
-///                     [`cmsg_space!`](macro.cmsg_space.html)
+///                     [`cmsg_space!`](../../macro.cmsg_space.html)
 ///
 /// # Returns
 /// A `Vec` with multiple `RecvMsg`, one per received message
@@ -1692,7 +1692,7 @@ fn pack_mhdr_to_send<'a, I, C>(
 /// * `fd`:             Socket file descriptor
 /// * `iov`:            Scatter-gather list of buffers to receive the message
 /// * `cmsg_buffer`:    Space to receive ancillary data.  Should be created by
-///                     [`cmsg_space!`](macro.cmsg_space.html)
+///                     [`cmsg_space!`](../../macro.cmsg_space.html)
 /// * `flags`:          Optional flags passed directly to the operating system.
 ///
 /// # References
