@@ -24,6 +24,33 @@ fn test_wait_signal() {
 }
 
 #[test]
+#[cfg(any(
+    target_os = "android",
+    target_os = "freebsd",
+    target_os = "haiku",
+    all(target_os = "linux", not(target_env = "uclibc")),
+))]
+#[cfg(not(any(target_arch = "mips", target_arch = "mips64")))]
+fn test_waitid_signal() {
+    let _m = crate::FORK_MTX.lock();
+
+    // Safe: The child only calls `pause` and/or `_exit`, which are async-signal-safe.
+    match unsafe{fork()}.expect("Error: Fork Failed") {
+      Child => {
+          pause();
+          unsafe { _exit(123) }
+      },
+      Parent { child } => {
+          kill(child, Some(SIGKILL)).expect("Error: Kill Failed");
+          assert_eq!(
+              waitid(Id::Pid(child), WaitPidFlag::WEXITED),
+              Ok(WaitStatus::Signaled(child, SIGKILL, false)),
+          );
+      },
+    }
+}
+
+#[test]
 fn test_wait_exit() {
     let _m = crate::FORK_MTX.lock();
 
@@ -33,6 +60,29 @@ fn test_wait_exit() {
       Parent { child } => {
           assert_eq!(waitpid(child, None), Ok(WaitStatus::Exited(child, 12)));
       },
+    }
+}
+
+#[test]
+#[cfg(any(
+    target_os = "android",
+    target_os = "freebsd",
+    target_os = "haiku",
+    all(target_os = "linux", not(target_env = "uclibc")),
+))]
+#[cfg(not(any(target_arch = "mips", target_arch = "mips64")))]
+fn test_waitid_exit() {
+    let _m = crate::FORK_MTX.lock();
+
+    // Safe: Child only calls `_exit`, which is async-signal-safe.
+    match unsafe{fork()}.expect("Error: Fork Failed") {
+      Child => unsafe { _exit(12); },
+      Parent { child } => {
+          assert_eq!(
+              waitid(Id::Pid(child), WaitPidFlag::WEXITED),
+              Ok(WaitStatus::Exited(child, 12)),
+          );
+      }
     }
 }
 
@@ -52,6 +102,25 @@ fn test_waitstatus_pid() {
         Child => unsafe { _exit(0) },
         Parent { child } => {
             let status = waitpid(child, None).unwrap();
+            assert_eq!(status.pid(), Some(child));
+        }
+    }
+}
+
+#[test]
+#[cfg(any(
+    target_os = "android",
+    target_os = "freebsd",
+    target_os = "haiku",
+    all(target_os = "linux", not(target_env = "uclibc")),
+))]
+fn test_waitid_pid() {
+    let _m = crate::FORK_MTX.lock();
+
+    match unsafe { fork() }.unwrap() {
+        Child => unsafe { _exit(0) },
+        Parent { child } => {
+            let status = waitid(Id::Pid(child), WaitPidFlag::WEXITED).unwrap();
             assert_eq!(status.pid(), Some(child));
         }
     }
@@ -77,7 +146,7 @@ mod ptrace {
         unsafe { _exit(0) }
     }
 
-    fn ptrace_parent(child: Pid) {
+    fn ptrace_wait_parent(child: Pid) {
         // Wait for the raised SIGTRAP
         assert_eq!(waitpid(child, None), Ok(WaitStatus::Stopped(child, SIGTRAP)));
         // We want to test a syscall stop and a PTRACE_EVENT stop
@@ -94,6 +163,39 @@ mod ptrace {
         assert_eq!(waitpid(child, None), Ok(WaitStatus::Exited(child, 0)));
     }
 
+    #[cfg(not(target_env = "uclibc"))]
+    fn ptrace_waitid_parent(child: Pid) {
+        // Wait for the raised SIGTRAP
+        //
+        // Unlike waitpid(), waitid() can distinguish trap events from regular
+        // stop events, so unlike ptrace_wait_parent(), we get a PtraceEvent here
+        assert_eq!(
+            waitid(Id::Pid(child), WaitPidFlag::WEXITED),
+            Ok(WaitStatus::PtraceEvent(child, SIGTRAP, 0)),
+        );
+        // We want to test a syscall stop and a PTRACE_EVENT stop
+        assert!(ptrace::setoptions(child, Options::PTRACE_O_TRACESYSGOOD | Options::PTRACE_O_TRACEEXIT).is_ok());
+
+        // First, stop on the next system call, which will be exit()
+        assert!(ptrace::syscall(child, None).is_ok());
+        assert_eq!(
+            waitid(Id::Pid(child), WaitPidFlag::WEXITED),
+            Ok(WaitStatus::PtraceSyscall(child)),
+        );
+        // Then get the ptrace event for the process exiting
+        assert!(ptrace::cont(child, None).is_ok());
+        assert_eq!(
+            waitid(Id::Pid(child), WaitPidFlag::WEXITED),
+            Ok(WaitStatus::PtraceEvent(child, SIGTRAP, Event::PTRACE_EVENT_EXIT as i32)),
+        );
+        // Finally get the normal wait() result, now that the process has exited
+        assert!(ptrace::cont(child, None).is_ok());
+        assert_eq!(
+            waitid(Id::Pid(child), WaitPidFlag::WEXITED),
+            Ok(WaitStatus::Exited(child, 0)),
+        );
+    }
+
     #[test]
     fn test_wait_ptrace() {
         require_capability!("test_wait_ptrace", CAP_SYS_PTRACE);
@@ -101,7 +203,19 @@ mod ptrace {
 
         match unsafe{fork()}.expect("Error: Fork Failed") {
             Child => ptrace_child(),
-            Parent { child } => ptrace_parent(child),
+            Parent { child } => ptrace_wait_parent(child),
+        }
+    }
+
+    #[test]
+    #[cfg(not(target_env = "uclibc"))]
+    fn test_waitid_ptrace() {
+        require_capability!("test_waitid_ptrace", CAP_SYS_PTRACE);
+        let _m = crate::FORK_MTX.lock();
+
+        match unsafe{fork()}.expect("Error: Fork Failed") {
+            Child => ptrace_child(),
+            Parent { child } => ptrace_waitid_parent(child),
         }
     }
 }

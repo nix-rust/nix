@@ -56,6 +56,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1664](https://github.com/nix-rust/nix/pull/1664))
 - Added `MSG_NOSIGNAL` for Android, Dragonfly, FreeBSD, Fuchsia, Haiku, Illumos, Linux, NetBSD, OpenBSD and Solaris.
   (#[1670](https://github.com/nix-rust/nix/pull/1670))
+- Added `waitid`.
+  (#[1584](https://github.com/nix-rust/nix/pull/1584))
 
 ### Changed
 
