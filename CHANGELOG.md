@@ -76,6 +76,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 - `InetAddr::from_std` now sets the `sin_len`/`sin6_len` fields on the BSDs.
   (#[1642](https://github.com/nix-rust/nix/pull/1642))
+- Fixed a panic in `LinkAddr::addr`.  That function now returns an `Option`.
+  (#[1675](https://github.com/nix-rust/nix/pull/1675))
 
 ### Removed
 
