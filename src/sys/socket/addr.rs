@@ -1446,33 +1446,38 @@ mod datalink {
         }
 
         /// Physical-layer address (MAC)
-        pub fn addr(&self) -> [u8; 6] {
+        pub fn addr(&self) -> Option<[u8; 6]> {
             let nlen = self.nlen();
             let data = self.0.sdl_data;
 
-            assert!(!self.is_empty());
-
-            [
-                data[nlen] as u8,
-                data[nlen + 1] as u8,
-                data[nlen + 2] as u8,
-                data[nlen + 3] as u8,
-                data[nlen + 4] as u8,
-                data[nlen + 5] as u8,
-            ]
+            if self.is_empty() {
+                None
+            } else {
+                Some([
+                    data[nlen] as u8,
+                    data[nlen + 1] as u8,
+                    data[nlen + 2] as u8,
+                    data[nlen + 3] as u8,
+                    data[nlen + 4] as u8,
+                    data[nlen + 5] as u8,
+                ])
+            }
         }
     }
 
     impl fmt::Display for LinkAddr {
         fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-            let addr = self.addr();
-            write!(f, "{:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x}",
-                addr[0],
-                addr[1],
-                addr[2],
-                addr[3],
-                addr[4],
-                addr[5])
+            if let Some(addr) = self.addr() {
+                write!(f, "{:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x}",
+                    addr[0],
+                    addr[1],
+                    addr[2],
+                    addr[3],
+                    addr[4],
+                    addr[5])
+            } else {
+                Ok(())
+            }
         }
     }
     }
@@ -1558,6 +1563,28 @@ mod tests {
               target_os = "openbsd"))]
     use super::*;
 
+    /// Don't panic when trying to display an empty datalink address
+    #[cfg(any(target_os = "dragonfly",
+              target_os = "freebsd",
+              target_os = "ios",
+              target_os = "macos",
+              target_os = "netbsd",
+              target_os = "openbsd"))]
+    #[test]
+    fn test_datalink_display() {
+        let la = LinkAddr(libc::sockaddr_dl{
+            sdl_len: 56,
+            sdl_family: 18,
+            sdl_index: 5,
+            sdl_type: 24,
+            sdl_nlen: 3,
+            sdl_alen: 0,
+            sdl_slen: 0,
+            .. unsafe{mem::zeroed()}
+        });
+        format!("{}", la);
+    }
+
     #[cfg(any(target_os = "dragonfly",
               target_os = "freebsd",
               target_os = "ios",
@@ -1593,7 +1620,8 @@ mod tests {
 
         match sock_addr {
             SockAddr::Link(ether_addr) => {
-                assert_eq!(ether_addr.addr(), [24u8, 101, 144, 221, 76, 176]);
+                assert_eq!(ether_addr.addr(),
+                           Some([24u8, 101, 144, 221, 76, 176]));
             },
             _ => { unreachable!() }
         };
@@ -1615,7 +1643,8 @@ mod tests {
 
         match sock_addr {
             SockAddr::Link(ether_addr) => {
-                assert_eq!(ether_addr.addr(), [24u8, 101, 144, 221, 76, 176]);
+                assert_eq!(ether_addr.addr(),
+                           Some([24u8, 101, 144, 221, 76, 176]));
             },
             _ => { unreachable!() }
         };
