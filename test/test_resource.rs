@@ -12,9 +12,9 @@ use nix::sys::resource::{getrlimit, setrlimit, Resource};
 #[test]
 #[cfg(not(any(target_os = "redox", target_os = "fuchsia", target_os = "illumos")))]
 pub fn test_resource_limits_nofile() {
-    let (soft_limit, hard_limit) = getrlimit(Resource::RLIMIT_NOFILE).unwrap();
+    let (mut soft_limit, hard_limit) = getrlimit(Resource::RLIMIT_NOFILE).unwrap();
 
-    let soft_limit = Some(soft_limit.map_or(1024, |v| v - 1));
+    soft_limit -= 1;
     assert_ne!(soft_limit, hard_limit);
     setrlimit(Resource::RLIMIT_NOFILE, soft_limit, hard_limit).unwrap();
 

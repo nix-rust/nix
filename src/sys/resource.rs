@@ -8,7 +8,7 @@ use std::mem;
 
 cfg_if! {
     if #[cfg(all(target_os = "linux", any(target_env = "gnu", target_env = "uclibc")))]{
-        use libc::{__rlimit_resource_t, rlimit, RLIM_INFINITY};
+        use libc::{__rlimit_resource_t, rlimit};
     } else if #[cfg(any(
         target_os = "freebsd",
         target_os = "openbsd",
@@ -19,7 +19,7 @@ cfg_if! {
         target_os = "dragonfly",
         all(target_os = "linux", not(target_env = "gnu"))
     ))]{
-        use libc::{c_int, rlimit, RLIM_INFINITY};
+        use libc::{c_int, rlimit};
     }
 }
 
@@ -173,8 +173,8 @@ libc_enum! {
 
 /// Get the current processes resource limits
 ///
-/// A value of `None` indicates the value equals to `RLIM_INFINITY` which means
-/// there is no limit.
+/// The special value `RLIM_INFINITY` indicates that no limit will be
+/// enforced.
 ///
 /// # Parameters
 ///
@@ -186,8 +186,8 @@ libc_enum! {
 /// # use nix::sys::resource::{getrlimit, Resource};
 ///
 /// let (soft_limit, hard_limit) = getrlimit(Resource::RLIMIT_NOFILE).unwrap();
-/// println!("current soft_limit: {:?}", soft_limit);
-/// println!("current hard_limit: {:?}", hard_limit);
+/// println!("current soft_limit: {}", soft_limit);
+/// println!("current hard_limit: {}", hard_limit);
 /// ```
 ///
 /// # References
@@ -195,7 +195,7 @@ libc_enum! {
 /// [getrlimit(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/getrlimit.html#tag_16_215)
 ///
 /// [`Resource`]: enum.Resource.html
-pub fn getrlimit(resource: Resource) -> Result<(Option<rlim_t>, Option<rlim_t>)> {
+pub fn getrlimit(resource: Resource) -> Result<(rlim_t, rlim_t)> {
     let mut old_rlim = mem::MaybeUninit::<rlimit>::uninit();
 
     cfg_if! {
@@ -208,7 +208,7 @@ pub fn getrlimit(resource: Resource) -> Result<(Option<rlim_t>, Option<rlim_t>)>
 
     Errno::result(res).map(|_| {
         let rlimit { rlim_cur, rlim_max } = unsafe { old_rlim.assume_init() };
-        (Some(rlim_cur), Some(rlim_max))
+        (rlim_cur, rlim_max)
     })
 }
 
@@ -218,21 +218,20 @@ pub fn getrlimit(resource: Resource) -> Result<(Option<rlim_t>, Option<rlim_t>)>
 ///
 /// * `resource`: The [`Resource`] that we want to set the limits of.
 /// * `soft_limit`: The value that the kernel enforces for the corresponding
-///   resource. Note: `None` input will be replaced by constant `RLIM_INFINITY`.
+///   resource.
 /// * `hard_limit`: The ceiling for the soft limit. Must be lower or equal to
-///   the current hard limit for non-root users. Note: `None` input will be
-///   replaced by constant `RLIM_INFINITY`.
+///   the current hard limit for non-root users.
 ///
-/// > Note: for some os (linux_gnu), setting hard_limit to `RLIM_INFINITY` can
-/// > results `EPERM` Error. So you will need to set the number explicitly.
+/// The special value `RLIM_INFINITY` indicates that no limit will be
+/// enforced.
 ///
 /// # Examples
 ///
 /// ```
 /// # use nix::sys::resource::{setrlimit, Resource};
 ///
-/// let soft_limit = Some(512);
-/// let hard_limit = Some(1024);
+/// let soft_limit = 512;
+/// let hard_limit = 1024;
 /// setrlimit(Resource::RLIMIT_NOFILE, soft_limit, hard_limit).unwrap();
 /// ```
 ///
@@ -245,12 +244,12 @@ pub fn getrlimit(resource: Resource) -> Result<(Option<rlim_t>, Option<rlim_t>)>
 /// Note: `setrlimit` provides a safe wrapper to libc's `setrlimit`.
 pub fn setrlimit(
     resource: Resource,
-    soft_limit: Option<rlim_t>,
-    hard_limit: Option<rlim_t>,
+    soft_limit: rlim_t,
+    hard_limit: rlim_t,
 ) -> Result<()> {
     let new_rlim = rlimit {
-        rlim_cur: soft_limit.unwrap_or(RLIM_INFINITY),
-        rlim_max: hard_limit.unwrap_or(RLIM_INFINITY),
+        rlim_cur: soft_limit,
+        rlim_max: hard_limit,
     };
     cfg_if! {
         if #[cfg(all(target_os = "linux", any(target_env = "gnu", target_env = "uclibc")))]{

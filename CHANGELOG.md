@@ -71,6 +71,9 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Removed the the `PATH_MAX` restriction from APIs accepting paths. Paths
   will now be allocated on the heap if they are too long. In addition, large
   instruction count improvements (~30x) were made to path handling.
+- Changed `getrlimit` and `setrlimit` to use `rlim_t` directly
+  instead of `Option<rlim_t>`.
+  (#[1668](https://github.com/nix-rust/nix/pull/1668))
 
 ### Fixed
 
