@@ -1351,28 +1351,32 @@ mod datalink {
         }
 
         /// Physical-layer address (MAC)
-        pub fn addr(&self) -> [u8; 6] {
-            [
+        // Returns an Option just for cross-platform compatibility
+        pub fn addr(&self) -> Option<[u8; 6]> {
+            Some([
                 self.0.sll_addr[0] as u8,
                 self.0.sll_addr[1] as u8,
                 self.0.sll_addr[2] as u8,
                 self.0.sll_addr[3] as u8,
                 self.0.sll_addr[4] as u8,
                 self.0.sll_addr[5] as u8,
-            ]
+            ])
         }
     }
 
     impl fmt::Display for LinkAddr {
         fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-            let addr = self.addr();
-            write!(f, "{:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x}",
-                addr[0],
-                addr[1],
-                addr[2],
-                addr[3],
-                addr[4],
-                addr[5])
+            if let Some(addr) = self.addr() {
+                write!(f, "{:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x}",
+                    addr[0],
+                    addr[1],
+                    addr[2],
+                    addr[3],
+                    addr[4],
+                    addr[5])
+            } else {
+                Ok(())
+            }
         }
     }
     }

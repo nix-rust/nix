@@ -81,6 +81,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1642](https://github.com/nix-rust/nix/pull/1642))
 - Fixed a panic in `LinkAddr::addr`.  That function now returns an `Option`.
   (#[1675](https://github.com/nix-rust/nix/pull/1675))
+  (#[1677](https://github.com/nix-rust/nix/pull/1677))
 
 ### Removed
 
