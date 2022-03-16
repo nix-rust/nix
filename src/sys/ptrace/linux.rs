@@ -4,19 +4,34 @@ use cfg_if::cfg_if;
 use std::{mem, ptr};
 use crate::Result;
 use crate::errno::Errno;
-use libc::{self, c_void, c_long, siginfo_t};
+use libc::{self, c_void, c_long, siginfo_t, NT_PRSTATUS, NT_PRFPREG, iovec};
 use crate::unistd::Pid;
 use crate::sys::signal::Signal;
 
 pub type AddressType = *mut ::libc::c_void;
 
 #[cfg(all(
-    target_os = "linux",
+    any(target_os = "linux", target_os = "android"),
+    any(all(target_arch = "x86_64",
+            any(target_env = "gnu", target_env = "musl")),
+        all(target_arch = "x86", target_env = "gnu"),
+        target_arch = "aarch64")
+))]
+use libc::user_regs_struct;
+
+#[cfg(all(
+    any(target_os = "linux", target_os = "android"),
     any(all(target_arch = "x86_64",
             any(target_env = "gnu", target_env = "musl")),
         all(target_arch = "x86", target_env = "gnu"))
 ))]
-use libc::user_regs_struct;
+use libc::user_fpregs_struct;
+
+#[cfg(all(
+    any(target_os = "linux", target_os = "android"),
+    target_arch = "aarch64",
+))]
+use libc::user_fsimd_struct;
 
 cfg_if! {
     if #[cfg(any(all(target_os = "linux", target_arch = "s390x"),
@@ -52,6 +67,7 @@ libc_enum!{
                                                target_arch = "mips64",
                                                target_arch = "x86_64",
                                                target_pointer_width = "32"))))]
+        // These REGS APIs don't exist on aarch64 android, you must use REGSET.
         PTRACE_GETREGS,
         #[cfg(any(all(target_os = "android", target_pointer_width = "32"),
                   all(target_os = "linux", any(target_env = "musl",
@@ -93,8 +109,8 @@ libc_enum!{
         PTRACE_GETEVENTMSG,
         PTRACE_GETSIGINFO,
         PTRACE_SETSIGINFO,
-        #[cfg(all(target_os = "linux", not(any(target_arch = "mips",
-                                               target_arch = "mips64"))))]
+        #[cfg(all(any(target_os = "android", target_os = "linux"),
+                  not(any(target_arch = "mips", target_arch = "mips64"))))]
         PTRACE_GETREGSET,
         #[cfg(all(target_os = "linux", not(any(target_arch = "mips",
                                                target_arch = "mips64"))))]
@@ -217,6 +233,25 @@ pub fn setregs(pid: Pid, regs: user_regs_struct) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
+/// Gets the general-purpose user registers, as eith `ptrace(PTRACE_GETREGSET, pid, NT_PRSTATUS, ..)
+#[cfg(all(any(target_os = "linux", target_os = "android"),
+          any(target_arch = "aarch64", target_arch = "x86_64")))]
+pub fn getregset_general(pid: Pid) -> Result<user_regs_struct> {
+    ptrace_getregset::<user_regs_struct>(Request::PTRACE_GETREGSET, pid, NT_PRSTATUS)
+}
+
+/// Gets the floating point user registers, as with `ptrace(PTRACE_GETREGSET, pid, NT_PRFPREG, ..)
+#[cfg(all(any(target_os = "linux", target_os = "android"), target_arch = "x86_64"))]
+pub fn getregset_float(pid: Pid) -> Result<user_fpregs_struct> {
+    ptrace_getregset::<user_fpregs_struct>(Request::PTRACE_GETREGSET, pid, NT_PRFPREG)
+}
+
+/// Gets the floating point user registers, as with `ptrace(PTRACE_GETREGSET, pid, NT_PRFPREG, ..)
+#[cfg(all(any(target_os = "linux", target_os = "android"), target_arch = "aarch64"))]
+pub fn getregset_float(pid: Pid) -> Result<user_fpsimd_struct> {
+    ptrace_getregset::<user_fpsimd_struct>(Request::PTRACE_GETREGSET, pid, NT_PRFPREG)
+}
+
 /// Function for ptrace requests that return values from the data field.
 /// Some ptrace get requests populate structs or larger elements than `c_long`
 /// and therefore use the data field to return values. This function handles these
@@ -229,6 +264,33 @@ fn ptrace_get_data<T>(request: Request, pid: Pid) -> Result<T> {
                      ptr::null_mut::<T>(),
                      data.as_mut_ptr() as *const _ as *const c_void)
     };
+    Errno::result(res)?;
+    Ok(unsafe{ data.assume_init() })
+}
+
+/// Function for ptrace requests that return values from the data field.
+/// Some ptrace get requests populate structs or larger elements than `c_long`
+/// and therefore use the data field to return values. This function handles these
+/// requests.
+fn ptrace_getregset<T>(request: Request, pid: Pid, regset: i32) -> Result<T> {
+    let mut data = mem::MaybeUninit::<T>::uninit();
+    let expected_len = mem::size_of::<T>();
+    let mut output = iovec {
+        iov_base: data.as_mut_ptr() as *mut _ as *mut c_void,
+        iov_len: expected_len,
+    };
+
+    let res = unsafe {
+        libc::ptrace(request as RequestType,
+                     libc::pid_t::from(pid),
+                     regset as usize as *const c_void,
+                     &mut output as *mut _ as *mut c_void)
+    };
+    // If we get the struct definition wrong for a platform, linux can just scribble all over
+    // our memory. In some sense it's "too late" because it could have written past the bounds
+    // of our `data` value, but it's better to try to crash now than keep the program going!
+    assert_eq!(output.iov_len, expected_len, "ptrace GETREGSET produced unexpected length, this may be Undefined Behaviour!");
+
     Errno::result(res)?;
     Ok(unsafe{ data.assume_init() })
 }

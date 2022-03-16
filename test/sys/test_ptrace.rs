@@ -37,6 +37,24 @@ fn test_ptrace_getevent() {
     assert!(err != Errno::EOPNOTSUPP);
 }
 
+// Just make sure ptrace_getregset_general can be called at all, for now.
+#[test]
+#[cfg(any(target_os = "android", target_os = "linux"))]
+fn test_ptrace_getregset_general() {
+    require_capability!("test_ptrace_getevent", CAP_SYS_PTRACE);
+    let err = ptrace::getregset_general(getpid()).unwrap_err();
+    assert!(err != Errno::EOPNOTSUPP);
+}
+
+// Just make sure ptrace_getregset_float can be called at all, for now.
+#[test]
+#[cfg(any(target_os = "android", target_os = "linux"))]
+fn test_ptrace_getregset_float() {
+    require_capability!("test_ptrace_getevent", CAP_SYS_PTRACE);
+    let err = ptrace::getregset_float(getpid()).unwrap_err();
+    assert!(err != Errno::EOPNOTSUPP);
+}
+
 // Just make sure ptrace_getsiginfo can be called at all, for now.
 #[test]
 #[cfg(any(target_os = "android", target_os = "linux"))]
