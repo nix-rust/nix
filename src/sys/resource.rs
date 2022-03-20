@@ -39,7 +39,7 @@ libc_enum! {
     //
     // https://gcc.gnu.org/legacy-ml/gcc/2015-08/msg00441.html
     // https://github.com/rust-lang/libc/blob/master/src/unix/linux_like/linux/gnu/mod.rs
-    #[cfg_attr(all(target_os = "linux", target_env = "gnu"), repr(u32))]
+    #[cfg_attr(all(target_os = "linux", any(target_env = "gnu", target_env = "uclibc")), repr(u32))]
     #[cfg_attr(any(
             target_os = "freebsd",
             target_os = "openbsd",
@@ -48,7 +48,7 @@ libc_enum! {
             target_os = "ios",
             target_os = "android",
             target_os = "dragonfly",
-            all(target_os = "linux", not(target_env = "gnu"))
+            all(target_os = "linux", not(any(target_env = "gnu", target_env = "uclibc")))
         ), repr(i32))]
     #[non_exhaustive]
     pub enum Resource {
