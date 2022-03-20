@@ -589,21 +589,12 @@ impl SigAction {
     /// is the `SigAction` variant). `mask` specifies other signals to block during execution of
     /// the signal-catching function.
     pub fn new(handler: SigHandler, flags: SaFlags, mask: SigSet) -> SigAction {
-        #[cfg(target_os = "redox")]
-        unsafe fn install_sig(p: *mut libc::sigaction, handler: SigHandler) {
-            (*p).sa_handler = match handler {
-                SigHandler::SigDfl => libc::SIG_DFL,
-                SigHandler::SigIgn => libc::SIG_IGN,
-                SigHandler::Handler(f) => f as *const extern fn(libc::c_int) as usize,
-            };
-        }
-
-        #[cfg(not(target_os = "redox"))]
         unsafe fn install_sig(p: *mut libc::sigaction, handler: SigHandler) {
             (*p).sa_sigaction = match handler {
                 SigHandler::SigDfl => libc::SIG_DFL,
                 SigHandler::SigIgn => libc::SIG_IGN,
                 SigHandler::Handler(f) => f as *const extern fn(libc::c_int) as usize,
+                #[cfg(not(target_os = "redox"))]
                 SigHandler::SigAction(f) => f as *const extern fn(libc::c_int, *mut libc::siginfo_t, *mut libc::c_void) as usize,
             };
         }
@@ -635,11 +626,11 @@ impl SigAction {
     }
 
     /// Returns the action's handler.
-    #[cfg(not(target_os = "redox"))]
     pub fn handler(&self) -> SigHandler {
         match self.sigaction.sa_sigaction {
             libc::SIG_DFL => SigHandler::SigDfl,
             libc::SIG_IGN => SigHandler::SigIgn,
+            #[cfg(not(target_os = "redox"))]
             p if self.flags().contains(SaFlags::SA_SIGINFO) =>
                 SigHandler::SigAction(
                 // Safe for one of two reasons:
@@ -653,27 +644,6 @@ impl SigAction {
                          as *const extern fn(_, _, _))
                 }
                 as extern fn(_, _, _)),
-            p => SigHandler::Handler(
-                // Safe for one of two reasons:
-                // * The SigHandler was created by SigHandler::new, in which
-                //   case the pointer is correct, or
-                // * The SigHandler was created by signal or sigaction, which
-                //   are unsafe functions, so the caller should've somehow
-                //   ensured that it is correctly initialized.
-                unsafe{
-                    *(&p as *const usize
-                         as *const extern fn(libc::c_int))
-                }
-                as extern fn(libc::c_int)),
-        }
-    }
-
-    /// Returns the action's handler.
-    #[cfg(target_os = "redox")]
-    pub fn handler(&self) -> SigHandler {
-        match self.sigaction.sa_handler {
-            libc::SIG_DFL => SigHandler::SigDfl,
-            libc::SIG_IGN => SigHandler::SigIgn,
             p => SigHandler::Handler(
                 // Safe for one of two reasons:
                 // * The SigHandler was created by SigHandler::new, in which
