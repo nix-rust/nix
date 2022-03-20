@@ -943,8 +943,8 @@ feature! {
 ///
 /// Given a name, attempt to update the system host name to the given string.
 /// On some systems, the host name is limited to as few as 64 bytes.  An error
-/// will be return if the name is not valid or the current process does not have
-/// permissions to update the host name.
+/// will be returned if the name is not valid or the current process does not
+/// have permissions to update the host name.
 #[cfg(not(target_os = "redox"))]
 pub fn sethostname<S: AsRef<OsStr>>(name: S) -> Result<()> {
     // Handle some differences in type of the len arg across platforms.
