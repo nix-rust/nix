@@ -31,6 +31,7 @@
 //! * `reboot` - Reboot the system
 //! * `resource` - Process resource limits
 //! * `sched` - Manipulate process's scheduling
+//! * `socket` - Sockets, whether for networking or local use
 //! * `signal` - Send and receive signals to processes
 //! * `term` - Terminal control APIs
 //! * `time` - Query the operating system's clocks
