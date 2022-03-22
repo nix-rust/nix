@@ -8,6 +8,8 @@ use libc::{self, c_void, c_int, iovec, socklen_t, size_t,
 use std::convert::TryInto;
 use std::{mem, ptr, slice};
 use std::os::unix::io::RawFd;
+#[cfg(feature = "net")]
+use std::net;
 #[cfg(target_os = "linux")]
 #[cfg(feature = "uio")]
 use crate::sys::time::TimeSpec;
@@ -92,6 +94,9 @@ pub use libc::{sockaddr_in, sockaddr_in6};
 // Needed by the cmsg_space macro
 #[doc(hidden)]
 pub use libc::{c_uint, CMSG_SPACE};
+
+#[cfg(feature = "net")]
+use crate::sys::socket::addr::{ipv4addr_to_libc, ipv6addr_to_libc};
 
 /// These constants are used to specify the communication semantics
 /// when creating a socket with [`socket()`](fn.socket.html)
@@ -496,10 +501,16 @@ impl IpMembershipRequest {
     /// Instantiate a new `IpMembershipRequest`
     ///
     /// If `interface` is `None`, then `Ipv4Addr::any()` will be used for the interface.
-    pub fn new(group: Ipv4Addr, interface: Option<Ipv4Addr>) -> Self {
+    pub fn new(group: net::Ipv4Addr, interface: Option<net::Ipv4Addr>)
+        -> Self
+    {
+        let imr_addr = match interface {
+            None => net::Ipv4Addr::UNSPECIFIED,
+            Some(addr) => addr
+        };
         IpMembershipRequest(libc::ip_mreq {
-            imr_multiaddr: group.0,
-            imr_interface: interface.unwrap_or_else(Ipv4Addr::any).0,
+            imr_multiaddr: ipv4addr_to_libc(group),
+            imr_interface: ipv4addr_to_libc(imr_addr)
         })
     }
 }
@@ -513,9 +524,9 @@ pub struct Ipv6MembershipRequest(libc::ipv6_mreq);
 
 impl Ipv6MembershipRequest {
     /// Instantiate a new `Ipv6MembershipRequest`
-    pub const fn new(group: Ipv6Addr) -> Self {
+    pub const fn new(group: net::Ipv6Addr) -> Self {
         Ipv6MembershipRequest(libc::ipv6_mreq {
-            ipv6mr_multiaddr: group.0,
+            ipv6mr_multiaddr: ipv6addr_to_libc(&group),
             ipv6mr_interface: 0,
         })
     }
