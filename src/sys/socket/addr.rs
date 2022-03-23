@@ -32,6 +32,26 @@ pub use self::datalink::LinkAddr;
 #[cfg(any(target_os = "android", target_os = "linux"))]
 pub use self::vsock::VsockAddr;
 
+/// Convert a std::net::Ipv4Addr into the libc form.
+#[cfg(feature = "net")]
+pub(crate) fn ipv4addr_to_libc(addr: net::Ipv4Addr) -> libc::in_addr {
+    let octets = addr.octets();
+    libc::in_addr {
+        s_addr: u32::to_be(((octets[0] as u32) << 24) |
+            ((octets[1] as u32) << 16) |
+            ((octets[2] as u32) << 8) |
+            (octets[3] as u32))
+    }
+}
+
+/// Convert a std::net::Ipv6Addr into the libc form.
+#[cfg(feature = "net")]
+pub(crate) const fn ipv6addr_to_libc(addr: &net::Ipv6Addr) -> libc::in6_addr {
+    libc::in6_addr {
+        s6_addr: addr.octets()
+    }
+}
+
 /// These constants specify the protocol family to be used
 /// in [`socket`](fn.socket.html) and [`socketpair`](fn.socketpair.html)
 ///
@@ -497,14 +517,20 @@ impl fmt::Display for InetAddr {
  * ===== IpAddr =====
  *
  */
-#[allow(missing_docs)]  // https://github.com/nix-rust/nix/issues/1681
+#[allow(missing_docs)]  // Since they're all deprecated anyway
+#[allow(deprecated)]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[deprecated(
+    since = "0.24.0",
+    note = "Use std::net::IpAddr instead"
+)]
 pub enum IpAddr {
     V4(Ipv4Addr),
     V6(Ipv6Addr),
 }
 
-#[allow(missing_docs)]  // https://github.com/nix-rust/nix/issues/1681
+#[allow(deprecated)]
+#[allow(missing_docs)]  // Since they're all deprecated anyway
 impl IpAddr {
     /// Create a new IpAddr that contains an IPv4 address.
     ///
@@ -537,6 +563,7 @@ impl IpAddr {
     }
 }
 
+#[allow(deprecated)]
 impl fmt::Display for IpAddr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
@@ -552,12 +579,17 @@ impl fmt::Display for IpAddr {
  *
  */
 
-#[allow(missing_docs)]  // https://github.com/nix-rust/nix/issues/1681
+#[deprecated(
+    since = "0.24.0",
+    note = "Use std::net::Ipv4Addr instead"
+)]
+#[allow(missing_docs)]  // Since they're all deprecated anyway
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 #[repr(transparent)]
 pub struct Ipv4Addr(pub libc::in_addr);
 
-#[allow(missing_docs)]  // https://github.com/nix-rust/nix/issues/1681
+#[allow(deprecated)]
+#[allow(missing_docs)]  // Since they're all deprecated anyway
 impl Ipv4Addr {
     #[allow(clippy::identity_op)]   // More readable this way
     pub const fn new(a: u8, b: u8, c: u8, d: u8) -> Ipv4Addr {
@@ -591,6 +623,7 @@ impl Ipv4Addr {
     }
 }
 
+#[allow(deprecated)]
 impl fmt::Display for Ipv4Addr {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         let octets = self.octets();
@@ -604,7 +637,11 @@ impl fmt::Display for Ipv4Addr {
  *
  */
 
-#[allow(missing_docs)]  // https://github.com/nix-rust/nix/issues/1681
+#[deprecated(
+    since = "0.24.0",
+    note = "Use std::net::Ipv6Addr instead"
+)]
+#[allow(missing_docs)]  // Since they're all deprecated anyway
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 #[repr(transparent)]
 pub struct Ipv6Addr(pub libc::in6_addr);
@@ -625,7 +662,8 @@ macro_rules! to_u16_array {
     }
 }
 
-#[allow(missing_docs)]  // https://github.com/nix-rust/nix/issues/1681
+#[allow(deprecated)]
+#[allow(missing_docs)]  // Since they're all deprecated anyway
 impl Ipv6Addr {
     #[allow(clippy::many_single_char_names)]
     #[allow(clippy::too_many_arguments)]
@@ -649,6 +687,7 @@ impl Ipv6Addr {
     }
 }
 
+#[allow(deprecated)]
 impl fmt::Display for Ipv6Addr {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         self.to_std().fmt(fmt)
@@ -1172,7 +1211,7 @@ impl From<net::SocketAddrV4> for SockaddrIn {
             sin_len: mem::size_of::<libc::sockaddr_in>() as u8,
             sin_family: AddressFamily::Inet as sa_family_t,
             sin_port: addr.port().to_be(),  // network byte order
-            sin_addr: Ipv4Addr::from_std(addr.ip()).0,
+            sin_addr: ipv4addr_to_libc(*addr.ip()),
             .. unsafe { mem::zeroed() }
         })
     }
@@ -1266,7 +1305,7 @@ impl From<net::SocketAddrV6> for SockaddrIn6 {
             sin6_len: mem::size_of::<libc::sockaddr_in6>() as u8,
             sin6_family: AddressFamily::Inet6 as sa_family_t,
             sin6_port: addr.port().to_be(),  // network byte order
-            sin6_addr: Ipv6Addr::from_std(addr.ip()).0,
+            sin6_addr: ipv6addr_to_libc(addr.ip()),
             sin6_flowinfo: addr.flowinfo(),  // host byte order
             sin6_scope_id: addr.scope_id(),  // host byte order
             .. unsafe { mem::zeroed() }
@@ -2544,6 +2583,24 @@ pub mod vsock {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    mod types {
+        use super::*;
+
+        #[test]
+        fn test_ipv4addr_to_libc() {
+            let s = std::net::Ipv4Addr::new(1, 2, 3, 4);
+            let l = ipv4addr_to_libc(s);
+            assert_eq!(l.s_addr, u32::to_be(0x01020304));
+        }
+
+        #[test]
+        fn test_ipv6addr_to_libc() {
+            let s = std::net::Ipv6Addr::new(1, 2, 3, 4, 5, 6, 7, 8);
+            let l = ipv6addr_to_libc(&s);
+            assert_eq!(l.s6_addr, [0, 1, 0, 2, 0, 3, 0, 4, 0, 5, 0, 6, 0, 7, 0, 8]);
+        }
+    }
 
     mod link {
         #[cfg(any(target_os = "ios",

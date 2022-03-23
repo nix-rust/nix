@@ -1833,7 +1833,7 @@ mod linux_errqueue {
                     if let Some(origin) = err_addr {
                         // Validate that our network error originated from 127.0.0.1:0.
                         assert_eq!(origin.sin_family, AddressFamily::Inet as _);
-                        assert_eq!(Ipv4Addr(origin.sin_addr), Ipv4Addr::new(127, 0, 0, 1));
+                        assert_eq!(origin.sin_addr.s_addr, u32::from_be(0x7f000001));
                         assert_eq!(origin.sin_port, 0);
                     } else {
                         panic!("Expected some error origin");
@@ -1877,8 +1877,8 @@ mod linux_errqueue {
                         // Validate that our network error originated from localhost:0.
                         assert_eq!(origin.sin6_family, AddressFamily::Inet6 as _);
                         assert_eq!(
-                            Ipv6Addr(origin.sin6_addr),
-                            Ipv6Addr::from_std(&"::1".parse().unwrap()),
+                            origin.sin6_addr.s6_addr,
+                            std::net::Ipv6Addr::LOCALHOST.octets()
                         );
                         assert_eq!(origin.sin6_port, 0);
                     } else {

@@ -77,6 +77,9 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Deprecated `InetAddr` and `SockAddr` in favor of `SockaddrIn`, `SockaddrIn6`,
   and `SockaddrStorage`.
   (#[1684](https://github.com/nix-rust/nix/pull/1684))
+- Deprecated `IpAddr`, `Ipv4Addr`, and `Ipv6Addr` in favor of their equivalents
+  from the standard library.
+  (#[1685](https://github.com/nix-rust/nix/pull/1685))
 
 ### Fixed
 
