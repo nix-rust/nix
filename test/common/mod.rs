@@ -111,15 +111,15 @@ cfg_if! {
                 let version_requirement = VersionReq::parse($version_requirement)
                         .expect("Bad match_version provided");
 
-                let uname = nix::sys::utsname::uname();
-                println!("{}", uname.sysname());
-                println!("{}", uname.nodename());
-                println!("{}", uname.release());
-                println!("{}", uname.version());
-                println!("{}", uname.machine());
+                let uname = nix::sys::utsname::uname().unwrap();
+                println!("{}", uname.sysname().to_str().unwrap());
+                println!("{}", uname.nodename().to_str().unwrap());
+                println!("{}", uname.release().to_str().unwrap());
+                println!("{}", uname.version().to_str().unwrap());
+                println!("{}", uname.machine().to_str().unwrap());
 
                 // Fix stuff that the semver parser can't handle
-                let fixed_release = &uname.release().to_string()
+                let fixed_release = &uname.release().to_str().unwrap().to_string()
                     // Fedora 33 reports version as 4.18.el8_2.x86_64 or
                     // 5.18.200-fc33.x86_64.  Remove the underscore.
                     .replace("_", "-")

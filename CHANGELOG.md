@@ -80,6 +80,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Deprecated `IpAddr`, `Ipv4Addr`, and `Ipv6Addr` in favor of their equivalents
   from the standard library.
   (#[1685](https://github.com/nix-rust/nix/pull/1685))
+- `uname` now returns a `Result` instead of blindly assuming the call never fails.
+- Getters on the `UtsName` struct now return a `&OsStr` instead of `&str`.
 
 ### Fixed
 
