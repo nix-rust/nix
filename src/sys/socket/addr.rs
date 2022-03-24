@@ -1014,10 +1014,22 @@ pub trait SockaddrLike: private::SockaddrLikePriv {
     /// Some C APIs from provide `len`, and others do not.  If it's provided it
     /// will be validated.  If not, it will be guessed based on the family.
     ///
+    /// # Arguments
+    ///
+    /// - `addr`:   raw pointer to something that can be cast to a
+    ///             `libc::sockaddr`. For example, `libc::sockaddr_in`,
+    ///             `libc::sockaddr_in6`, etc.
+    /// - `len`:    For fixed-width types like `sockaddr_in`, it will be
+    ///             validated if present and ignored if not.  For variable-width
+    ///             types it is required and must be the total length of valid
+    ///             data.  For example, if `addr` points to a
+    ///             named `sockaddr_un`, then `len` must be the length of the
+    ///             structure up to but not including the trailing NUL.
+    ///
     /// # Safety
     ///
     /// `addr` must be valid for the specific type of sockaddr.  `len`, if
-    /// present, must be the length of valid data in `addr`.
+    /// present, must not exceed the length of valid data in `addr`.
     unsafe fn from_raw(addr: *const libc::sockaddr, len: Option<libc::socklen_t>)
         -> Option<Self> where Self: Sized;
 
