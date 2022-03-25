@@ -6,13 +6,13 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased] - ReleaseDate
 ### Added
 
+- Added fine-grained features flags.  Most Nix functionality can now be
+  conditionally enabled.  By default, all features are enabled.
+  (#[1611](https://github.com/nix-rust/nix/pull/1611))
 - Added `fexecve` on DragonFly.
   (#[1577](https://github.com/nix-rust/nix/pull/1577))
 - `sys::uio::IoVec` is now `Send` and `Sync`
   (#[1582](https://github.com/nix-rust/nix/pull/1582))
-- Added fine-grained features flags.  Most Nix functionality can now be
-  conditionally enabled.  By default, all features are enabled.
-  (#[1611](https://github.com/nix-rust/nix/pull/1611))
 - Added `EPOLLEXCLUSIVE` on Android.
   (#[1567](https://github.com/nix-rust/nix/pull/1567))
 - Added `fdatasync` for FreeBSD, Fuchsia, NetBSD, and OpenBSD.
@@ -21,7 +21,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1537](https://github.com/nix-rust/nix/pull/1537))
 - Added `posix_fallocate` on DragonFly.
   (#[1621](https://github.com/nix-rust/nix/pull/1621))
-- Added the `SO_TIMESTAMPING` support
+- Added `SO_TIMESTAMPING` support
   (#[1547](https://github.com/nix-rust/nix/pull/1547))
 - Added getter methods to `MqAttr` struct
   (#[1619](https://github.com/nix-rust/nix/pull/1619))
@@ -71,6 +71,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Removed the the `PATH_MAX` restriction from APIs accepting paths. Paths
   will now be allocated on the heap if they are too long. In addition, large
   instruction count improvements (~30x) were made to path handling.
+  (#[1656](https://github.com/nix-rust/nix/pull/1656))
 - Changed `getrlimit` and `setrlimit` to use `rlim_t` directly
   instead of `Option<rlim_t>`.
   (#[1668](https://github.com/nix-rust/nix/pull/1668))
@@ -80,8 +81,10 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Deprecated `IpAddr`, `Ipv4Addr`, and `Ipv6Addr` in favor of their equivalents
   from the standard library.
   (#[1685](https://github.com/nix-rust/nix/pull/1685))
-- `uname` now returns a `Result` instead of blindly assuming the call never fails.
-- Getters on the `UtsName` struct now return a `&OsStr` instead of `&str`.
+- `uname` now returns a `Result<UtsName>` instead of just a `UtsName` and
+  ignoring failures from libc.  And getters on the `UtsName` struct now return
+  an `&OsStr` instead of `&str`.
+  (#[1672](https://github.com/nix-rust/nix/pull/1672))
 
 ### Fixed
 
