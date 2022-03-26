@@ -244,11 +244,9 @@ task:
     BUILD: check
   name: Redox x86_64
   env:
-   TARGET: x86_64-unknown-redox
-   # Redox requires a nightly compiler.
-   # If stuff breaks, change nightly to the date at
-   # https://gitlab.redox-os.org/redox-os/redox/-/blob/master/rust-toolchain
-   TOOLCHAIN: nightly-2021-06-15
+    TARGET: x86_64-unknown-redox
+    # Redox's MSRV policy is unclear.  Until they define it, use nightly.
+    TOOLCHAIN: nightly
   setup_script:
     - rustup target add $TARGET
     - rustup toolchain install $TOOLCHAIN --profile minimal --target $TARGET
