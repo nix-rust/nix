@@ -9,6 +9,9 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Added fine-grained features flags.  Most Nix functionality can now be
   conditionally enabled.  By default, all features are enabled.
   (#[1611](https://github.com/nix-rust/nix/pull/1611))
+- Added statfs FS type magic constants for `target_os = "android"`
+  and synced constants with libc v0.2.121.
+  (#[1690](https://github.com/nix-rust/nix/pull/1690))
 - Added `fexecve` on DragonFly.
   (#[1577](https://github.com/nix-rust/nix/pull/1577))
 - `sys::uio::IoVec` is now `Send` and `Sync`
