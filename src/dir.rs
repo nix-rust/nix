@@ -53,6 +53,7 @@ impl Dir {
     }
 
     /// Converts from a file descriptor, closing it on success or failure.
+    #[cfg_attr(has_doc_alias, doc(alias("fdopendir")))]
     pub fn from_fd(fd: RawFd) -> Result<Self> {
         let d = ptr::NonNull::new(unsafe { libc::fdopendir(fd) }).ok_or_else(|| {
             let e = Error::last();

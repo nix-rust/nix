@@ -92,6 +92,7 @@ impl TimerFd {
     /// Creates a new timer based on the clock defined by `clockid`. The
     /// underlying fd can be assigned specific flags with `flags` (CLOEXEC,
     /// NONBLOCK). The underlying fd will be closed on drop.
+    #[cfg_attr(has_doc_alias, doc(alias("timerfd_create")))]
     pub fn new(clockid: ClockId, flags: TimerFlags) -> Result<Self> {
         Errno::result(unsafe { libc::timerfd_create(clockid as i32, flags.bits()) })
             .map(|fd| Self { fd })
@@ -133,6 +134,7 @@ impl TimerFd {
     ///
     /// Note: Setting a one shot alarm with a 0s TimeSpec disables the alarm
     /// altogether.
+    #[cfg_attr(has_doc_alias, doc(alias("timerfd_settime")))]
     pub fn set(&self, expiration: Expiration, flags: TimerSetTimeFlags) -> Result<()> {
         let timerspec: TimerSpec = expiration.into();
         Errno::result(unsafe {
@@ -147,6 +149,7 @@ impl TimerFd {
     }
 
     /// Get the parameters for the alarm currently set, if any.
+    #[cfg_attr(has_doc_alias, doc(alias("timerfd_gettime")))]
     pub fn get(&self) -> Result<Option<Expiration>> {
         let mut timerspec = TimerSpec::none();
         Errno::result(unsafe { libc::timerfd_gettime(self.fd, timerspec.as_mut()) }).map(|_| {
@@ -163,6 +166,7 @@ impl TimerFd {
     }
 
     /// Remove the alarm if any is set.
+    #[cfg_attr(has_doc_alias, doc(alias("timerfd_settime")))]
     pub fn unset(&self) -> Result<()> {
         Errno::result(unsafe {
             libc::timerfd_settime(
