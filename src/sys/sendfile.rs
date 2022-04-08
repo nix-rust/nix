@@ -68,13 +68,13 @@ cfg_if! {
                  target_os = "freebsd",
                  target_os = "ios",
                  target_os = "macos"))] {
-        use crate::sys::uio::IoVec;
+        use std::io::IoSlice;
 
-        #[derive(Clone, Debug, Eq, Hash, PartialEq)]
+        #[derive(Clone, Debug)]
         struct SendfileHeaderTrailer<'a>(
             libc::sf_hdtr,
-            Option<Vec<IoVec<&'a [u8]>>>,
-            Option<Vec<IoVec<&'a [u8]>>>,
+            Option<Vec<IoSlice<'a>>>,
+            Option<Vec<IoSlice<'a>>>,
         );
 
         impl<'a> SendfileHeaderTrailer<'a> {
@@ -82,10 +82,10 @@ cfg_if! {
                 headers: Option<&'a [&'a [u8]]>,
                 trailers: Option<&'a [&'a [u8]]>
             ) -> SendfileHeaderTrailer<'a> {
-                let header_iovecs: Option<Vec<IoVec<&[u8]>>> =
-                    headers.map(|s| s.iter().map(|b| IoVec::from_slice(b)).collect());
-                let trailer_iovecs: Option<Vec<IoVec<&[u8]>>> =
-                    trailers.map(|s| s.iter().map(|b| IoVec::from_slice(b)).collect());
+                let header_iovecs: Option<Vec<IoSlice<'_>>> =
+                    headers.map(|s| s.iter().map(|b| IoSlice::new(b)).collect());
+                let trailer_iovecs: Option<Vec<IoSlice<'_>>> =
+                    trailers.map(|s| s.iter().map(|b| IoSlice::new(b)).collect());
                 SendfileHeaderTrailer(
                     libc::sf_hdtr {
                         headers: {
