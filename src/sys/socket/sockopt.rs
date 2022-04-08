@@ -615,6 +615,19 @@ sockopt_impl!(
 sockopt_impl!(
     /// Set the unicast hop limit for the socket.
     Ipv6Ttl, Both, libc::IPPROTO_IPV6, libc::IPV6_UNICAST_HOPS, libc::c_int);
+#[cfg(any(target_os = "ios", target_os = "macos"))]
+sockopt_impl!(
+    /// Set "don't fragment packet" flag on the IP packet.
+    IpDontFrag, Both, libc::IPPROTO_IP, libc::IP_DONTFRAG, bool);
+#[cfg(any(
+    target_os = "android",
+    target_os = "ios",
+    target_os = "linux",
+    target_os = "macos",
+))]
+sockopt_impl!(
+    /// Set "don't fragment packet" flag on the IPv6 packet.
+    Ipv6DontFrag, Both, libc::IPPROTO_IPV6, libc::IPV6_DONTFRAG, bool);
 
 #[allow(missing_docs)]
 // Not documented by Linux!

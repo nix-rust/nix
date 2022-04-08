@@ -61,6 +61,9 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1670](https://github.com/nix-rust/nix/pull/1670))
 - Added `waitid`.
   (#[1584](https://github.com/nix-rust/nix/pull/1584))
+- Added `Ipv6DontFrag` for android, iOS, linux and macOS.
+- Added `IpDontFrag` for iOS, macOS.
+  (#[1692](https://github.com/nix-rust/nix/pull/1692))
 
 ### Changed
 
