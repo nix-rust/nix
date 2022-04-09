@@ -36,11 +36,11 @@ memoffset = { version = "0.6.3", optional = true }
 
 [features]
 default = [
-  "acct", "aio", "dir", "env", "event", "features", "fs",
+  "acct", "aio", "dir", "env", "event", "feature", "fs",
   "hostname", "inotify", "ioctl", "kmod", "mman", "mount", "mqueue",
   "net", "personality", "poll", "process", "pthread", "ptrace", "quota",
   "reboot", "resource", "sched", "signal", "socket", "term", "time",
-  "ucontext", "uio", "users", "zerocopy",
+  "ucontext", "uio", "user", "zerocopy",
 ]
 
 acct = []
@@ -48,7 +48,7 @@ aio = []
 dir = ["fs"]
 env = []
 event = []
-features = []
+feature = []
 fs = []
 hostname = []
 inotify = []
@@ -73,7 +73,7 @@ term = []
 time = []
 ucontext = ["signal"]
 uio = []
-users = ["features"]
+user = ["feature"]
 zerocopy = ["fs", "uio"]
 
 [dev-dependencies]

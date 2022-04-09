@@ -45,7 +45,7 @@ pub use self::setres::*;
 pub use self::getres::*;
 
 feature! {
-#![feature = "users"]
+#![feature = "user"]
 
 /// User identifier
 ///
@@ -591,7 +591,7 @@ pub fn symlinkat<P1: ?Sized + NixPath, P2: ?Sized + NixPath>(
 
 // Double the buffer capacity up to limit. In case it already has
 // reached the limit, return Errno::ERANGE.
-#[cfg(any(feature = "fs", feature = "users"))]
+#[cfg(any(feature = "fs", feature = "user"))]
 fn reserve_double_buffer_size<T>(buf: &mut Vec<T>, limit: usize) -> Result<()> {
     use std::cmp::min;
 
@@ -654,7 +654,7 @@ pub fn getcwd() -> Result<PathBuf> {
 }
 
 feature! {
-#![all(feature = "users", feature = "fs")]
+#![all(feature = "user", feature = "fs")]
 
 /// Computes the raw UID and GID values to pass to a `*chown` call.
 // The cast is not unnecessary on all platforms.
@@ -1348,7 +1348,7 @@ pub fn fdatasync(fd: RawFd) -> Result<()> {
 }
 
 feature! {
-#![feature = "users"]
+#![feature = "user"]
 
 /// Get a real user ID
 ///
@@ -1432,7 +1432,7 @@ pub fn setgid(gid: Gid) -> Result<()> {
 }
 
 feature! {
-#![all(feature = "fs", feature = "users")]
+#![all(feature = "fs", feature = "user")]
 /// Set the user identity used for filesystem checks per-thread.
 /// On both success and failure, this call returns the previous filesystem user
 /// ID of the caller.
@@ -1457,7 +1457,7 @@ pub fn setfsgid(gid: Gid) -> Gid {
 }
 
 feature! {
-#![feature = "users"]
+#![feature = "user"]
 
 /// Get the list of supplementary group IDs of the calling process.
 ///
@@ -1868,7 +1868,7 @@ pub fn mkstemp<P: ?Sized + NixPath>(template: &P) -> Result<(RawFd, PathBuf)> {
 }
 
 feature! {
-#![all(feature = "fs", feature = "features")]
+#![all(feature = "fs", feature = "feature")]
 
 /// Variable names for `pathconf`
 ///
@@ -2064,7 +2064,7 @@ pub fn pathconf<P: ?Sized + NixPath>(path: &P, var: PathconfVar) -> Result<Optio
 }
 
 feature! {
-#![feature = "features"]
+#![feature = "feature"]
 
 /// Variable names for `sysconf`
 ///
@@ -2705,7 +2705,7 @@ mod pivot_root {
           target_os = "openbsd"))]
 mod setres {
     feature! {
-    #![feature = "users"]
+    #![feature = "user"]
 
     use crate::Result;
     use crate::errno::Errno;
@@ -2752,7 +2752,7 @@ mod setres {
           target_os = "openbsd"))]
 mod getres {
     feature! {
-    #![feature = "users"]
+    #![feature = "user"]
 
     use crate::Result;
     use crate::errno::Errno;
@@ -2846,7 +2846,7 @@ pub fn access<P: ?Sized + NixPath>(path: &P, amode: AccessFlags) -> Result<()> {
 }
 
 feature! {
-#![feature = "users"]
+#![feature = "user"]
 
 /// Representation of a User, based on `libc::passwd`
 ///
@@ -3212,7 +3212,7 @@ pub fn ttyname(fd: RawFd) -> Result<PathBuf> {
 }
 
 feature! {
-#![all(feature = "socket", feature = "users")]
+#![all(feature = "socket", feature = "user")]
 
 /// Get the effective user ID and group ID associated with a Unix domain socket.
 ///
