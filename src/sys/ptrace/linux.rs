@@ -14,8 +14,9 @@ pub type AddressType = *mut ::libc::c_void;
     target_os = "linux",
     any(all(target_arch = "x86_64",
             any(target_env = "gnu", target_env = "musl")),
-        all(target_arch = "x86", target_env = "gnu"))
-))]
+        all(target_arch = "x86", target_env = "gnu"),
+        all(target_arch = "aarch64", target_os = "linux"),
+)))]
 use libc::user_regs_struct;
 
 cfg_if! {
@@ -480,4 +481,88 @@ pub unsafe fn write(
     data: *mut c_void) -> Result<()>
 {
     ptrace_other(Request::PTRACE_POKEDATA, pid, addr, data).map(drop)
+}
+
+/// Read the tracee's registers.
+///
+/// as with `ptrace(PTRACE_GETREGSET, ...)`
+///
+/// # Arguments
+///
+/// * `pid` - tracee's `nix::unistd::Pid`
+#[cfg(any(all(target_os = "linux", target_env = "gnu", target_arch = "aarch64")))]
+pub fn getregset(pid: Pid) -> Result<user_regs_struct> {
+    ptrace_get_iovec_data::<user_regs_struct>(
+        Request::PTRACE_GETREGSET,
+        pid,
+        libc::NT_PRSTATUS,
+    )
+}
+
+/// Modify the tracee's registers.
+///
+/// as with `ptrace(PTRACE_SETREGSET, ...)`
+///
+/// # Arguments
+///
+/// * `pid` - tracee's `nix::unistd::Pid`
+///
+/// * `regs` - `libc::user_regs_struct` to set
+#[cfg(any(all(target_os = "linux", target_env = "gnu", target_arch = "aarch64")))]
+pub fn setregset(pid: Pid, regs: user_regs_struct) -> Result<()> {
+    ptrace_set_iovec_data(
+        Request::PTRACE_SETREGSET,
+        pid,
+        libc::NT_PRSTATUS,
+        regs,
+    )
+}
+
+/// As with `ptrace_get_data` but with an `iovec`
+#[cfg(any(all(target_os = "linux", target_env = "gnu", target_arch = "aarch64")))]
+fn ptrace_get_iovec_data<T>(
+    request: Request,
+    pid: Pid,
+    nt_req: libc::c_int,
+) -> Result<T> {
+    let mut data = mem::MaybeUninit::<T>::uninit();
+    let mut iov = libc::iovec {
+        iov_base: data.as_mut_ptr() as *mut c_void,
+        iov_len: mem::size_of::<T>(),
+    };
+
+    let res = unsafe {
+        libc::ptrace(
+            request as RequestType,
+            pid,
+            nt_req as AddressType,
+            &mut iov as *mut _ as *mut c_void,
+        )
+    };
+
+    Errno::result(res)?;
+    Ok(unsafe { data.assume_init() })
+}
+
+#[cfg(any(all(target_os = "linux", target_env = "gnu", target_arch = "aarch64")))]
+fn ptrace_set_iovec_data<T>(
+    request: Request,
+    pid: Pid,
+    nt_req: libc::c_int,
+    data: T,
+) -> Result<()> {
+    let iov = libc::iovec {
+        iov_base: &data as *const _ as *mut c_void,
+        iov_len: mem::size_of::<T>(),
+    };
+
+    unsafe {
+        ptrace_other(
+            request,
+            pid,
+            nt_req as AddressType,
+            &iov as *const _ as *mut c_void,
+        )
+        .map(drop)
+    }
 }

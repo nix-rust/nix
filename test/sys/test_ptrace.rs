@@ -217,3 +217,44 @@ fn test_ptrace_syscall() {
         },
     }
 }
+
+#[cfg(any(all(target_os = "linux",
+        target_arch = "aarch64", target_env = "gnu")))]
+#[test]
+fn test_ptrace_regsets() {
+    use nix::sys::signal::*;
+    use nix::sys::wait::{waitpid, WaitStatus};
+    use nix::unistd::fork;
+    use nix::sys::ptrace::{self, getregset, setregset};
+    use nix::unistd::ForkResult::*;
+
+    require_capability!("test_ptrace_regsets", CAP_SYS_PTRACE);
+
+    let _m = crate::FORK_MTX.lock();
+
+    match unsafe{fork()}.expect("Error: Fork Failed") {
+        Child => {
+            ptrace::traceme().unwrap();
+            // As recommended by ptrace(2), raise SIGTRAP to pause the child
+            // until the parent is ready to continue
+            loop {
+                raise(Signal::SIGTRAP).unwrap();
+            }
+        }
+
+        Parent { child } => {
+            assert_eq!(waitpid(child, None), Ok(WaitStatus::Stopped(child, Signal::SIGTRAP)));
+            let mut regstruct = getregset(child).unwrap();
+            regstruct.regs[16] = 0xdeadbeef;
+            let _ = setregset(child, regstruct);
+            assert_eq!(0xdeadbeef, getregset(child).unwrap().regs[16]);
+            ptrace::cont(child, Some(Signal::SIGKILL)).unwrap();
+            match waitpid(child, None) {
+                Ok(WaitStatus::Signaled(pid, Signal::SIGKILL, _)) if pid == child => {
+
+                }
+                _ => panic!("The process should have been killed"),
+            }
+        },
+    }
+}
