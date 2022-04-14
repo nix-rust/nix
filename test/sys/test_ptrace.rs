@@ -1,3 +1,8 @@
+#[cfg(all(target_os = "linux",
+          any(target_arch = "x86_64",
+              target_arch = "x86"),
+          target_env = "gnu"))]
+use memoffset::offset_of;
 use nix::errno::Errno;
 use nix::unistd::getpid;
 use nix::sys::ptrace;
@@ -197,15 +202,29 @@ fn test_ptrace_syscall() {
             #[cfg(target_arch = "x86")]
             let get_syscall_id = || ptrace::getregs(child).unwrap().orig_eax as libc::c_long;
 
+            // this duplicates `get_syscall_id` for the purpose of testing `ptrace::read_user`.
+            #[cfg(target_arch = "x86_64")]
+            let rax_offset = offset_of!(libc::user_regs_struct, orig_rax);
+            #[cfg(target_arch = "x86")]
+            let rax_offset = offset_of!(libc::user_regs_struct, orig_eax);
+
+            let get_syscall_from_user_area = || {
+                // Find the offset of `user.regs.rax` (or `user.regs.eax` for x86)
+                let rax_offset = offset_of!(libc::user, regs) + rax_offset;
+                ptrace::read_user(child, rax_offset as _).unwrap() as libc::c_long
+            };
+
             // kill entry
             ptrace::syscall(child, None).unwrap();
             assert_eq!(waitpid(child, None), Ok(WaitStatus::PtraceSyscall(child)));
             assert_eq!(get_syscall_id(), ::libc::SYS_kill);
+            assert_eq!(get_syscall_from_user_area(), ::libc::SYS_kill);
 
             // kill exit
             ptrace::syscall(child, None).unwrap();
             assert_eq!(waitpid(child, None), Ok(WaitStatus::PtraceSyscall(child)));
             assert_eq!(get_syscall_id(), ::libc::SYS_kill);
+            assert_eq!(get_syscall_from_user_area(), ::libc::SYS_kill);
 
             // receive signal
             ptrace::syscall(child, None).unwrap();
