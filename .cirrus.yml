@@ -38,7 +38,7 @@ task:
   env:
     TARGET: x86_64-unknown-freebsd
   freebsd_instance:
-    image: freebsd-12-2-release-amd64
+    image: freebsd-12-3-release-amd64
   setup_script:
     - kldload mqueuefs
     - fetch https://sh.rustup.rs -o rustup.sh
