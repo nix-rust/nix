@@ -177,7 +177,7 @@ feature! {
 }
 
 feature! {
-    #![feature = "features"]
+    #![feature = "feature"]
     pub mod utsname;
 }
 

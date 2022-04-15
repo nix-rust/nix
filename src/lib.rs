@@ -12,7 +12,7 @@
 //! * `dir` - Stuff relating to directory iteration
 //! * `env` - Manipulate environment variables
 //! * `event` - Event-driven APIs, like `kqueue` and `epoll`
-//! * `features` - Query characteristics of the OS at runtime
+//! * `feature` - Query characteristics of the OS at runtime
 //! * `fs` - File system functionality
 //! * `hostname` - Get and set the system's hostname
 //! * `inotify` - Linux's `inotify` file system notification API
@@ -37,7 +37,7 @@
 //! * `time` - Query the operating system's clocks
 //! * `ucontext` - User thread context
 //! * `uio` - Vectored I/O
-//! * `users` - Stuff relating to users and groups
+//! * `user` - Stuff relating to users and groups
 //! * `zerocopy` - APIs like `sendfile` and `copy_file_range`
 #![crate_name = "nix"]
 #![cfg(unix)]
@@ -75,7 +75,7 @@ feature! {
 #[allow(missing_docs)]
 pub mod errno;
 feature! {
-    #![feature = "features"]
+    #![feature = "feature"]
 
     #[deny(missing_docs)]
     pub mod features;
