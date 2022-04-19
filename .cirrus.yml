@@ -286,26 +286,11 @@ task:
     - name: OpenBSD x86_64
       env:
         TARGET: x86_64-unknown-openbsd
+    - name: Linux armv7 uclibceabihf
+      env:
+        TARGET: armv7-unknown-linux-uclibceabihf
   setup_script:
     - rustup component add rust-src
-  << : *BUILD
-  before_cache_script: rm -rf $CARGO_HOME/registry/index
-
-# uclibc needs its own task for now, due to Rust bug 95866
-# https://github.com/rust-lang/rust/issues/95866
-task:
-  name: Linux armv7 uclibceabihf
-  container:
-    image: rustlang/rust:nightly
-  env:
-    BUILD: check
-    ZFLAGS: -Zbuild-std
-    TARGET: armv7-unknown-linux-uclibceabihf
-    TOOLCHAIN: nightly-2022-04-01
-  setup_script:
-    - rustup toolchain install $TOOLCHAIN --profile minimal
-    - rustup component add --toolchain $TOOLCHAIN rust-src
-    - rustup component add --toolchain $TOOLCHAIN clippy
   << : *BUILD
   before_cache_script: rm -rf $CARGO_HOME/registry/index
 
