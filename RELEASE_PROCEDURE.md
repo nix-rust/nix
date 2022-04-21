@@ -16,3 +16,4 @@ The release is prepared as follows:
 - Confirm that everything's ready for a release by running
   `cargo release <patch|minor|major>`
 - Create the release with `cargo release -x <patch|minor|major>`
+- Push the created tag to GitHub.
