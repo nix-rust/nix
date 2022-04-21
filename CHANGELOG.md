@@ -3,7 +3,7 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased] - ReleaseDate
+## [0.24.0] - 2022-04-21
 ### Added
 
 - Added fine-grained features flags.  Most Nix functionality can now be
