@@ -3,6 +3,16 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased] - ReleaseDate
+### Added
+### Changed
+### Fixed
+
+- Fixed `UnixAddr::size` on Linux-based OSes.
+  (#[1702](https://github.com/nix-rust/nix/pull/1702))
+
+### Removed
+
 ## [0.24.0] - 2022-04-21
 ### Added
 

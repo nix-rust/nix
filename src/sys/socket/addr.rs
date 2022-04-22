@@ -953,6 +953,10 @@ impl SockaddrLike for UnixAddr {
         ptr::copy(addr as *const u8, sup, su_len as usize);
         Some(Self::from_raw_parts(su, su_len as u8))
     }
+
+    fn size() -> libc::socklen_t where Self: Sized {
+        mem::size_of::<libc::sockaddr_un>() as libc::socklen_t
+    }
 }
 
 impl AsRef<libc::sockaddr_un> for UnixAddr {
@@ -2615,11 +2619,12 @@ mod tests {
     }
 
     mod link {
+        use super::*;
         #[cfg(any(target_os = "ios",
                   target_os = "macos",
                   target_os = "illumos"
                   ))]
-        use super::{*, super::super::socklen_t};
+        use super::super::super::socklen_t;
 
         /// Don't panic when trying to display an empty datalink address
         #[cfg(any(target_os = "dragonfly",
@@ -2701,6 +2706,24 @@ mod tests {
             assert_eq!(sock_addr.as_link_addr().unwrap().addr(),
                     Some([24u8, 101, 144, 221, 76, 176]));
         }
+
+        #[test]
+        fn size() {
+            #[cfg(any(target_os = "dragonfly",
+                      target_os = "freebsd",
+                      target_os = "ios",
+                      target_os = "macos",
+                      target_os = "netbsd",
+                      target_os = "illumos",
+                      target_os = "openbsd"))]
+            let l = mem::size_of::<libc::sockaddr_dl>();
+            #[cfg(any(
+                    target_os = "android",
+                    target_os = "fuchsia",
+                    target_os = "linux"))]
+            let l = mem::size_of::<libc::sockaddr_ll>();
+            assert_eq!( LinkAddr::size() as usize, l);
+        }
     }
 
     mod sockaddr_in {
@@ -2712,6 +2735,12 @@ mod tests {
             let s = "127.0.0.1:8080";
             let addr = SockaddrIn::from_str(s).unwrap();
             assert_eq!(s, format!("{}", addr));
+        }
+
+        #[test]
+        fn size() {
+            assert_eq!(mem::size_of::<libc::sockaddr_in>(),
+                SockaddrIn::size() as usize);
         }
     }
 
@@ -2725,10 +2754,15 @@ mod tests {
             let addr = SockaddrIn6::from_str(s).unwrap();
             assert_eq!(s, format!("{}", addr));
         }
+
+        #[test]
+        fn size() {
+            assert_eq!(mem::size_of::<libc::sockaddr_in6>(),
+                SockaddrIn6::size() as usize);
+        }
     }
 
     mod unixaddr {
-        #[cfg(any(target_os = "android", target_os = "linux"))]
         use super::*;
 
         #[cfg(any(target_os = "android", target_os = "linux"))]
@@ -2742,5 +2776,10 @@ mod tests {
             assert_eq!(sun_path1, sun_path2);
         }
 
+        #[test]
+        fn size() {
+            assert_eq!(mem::size_of::<libc::sockaddr_un>(),
+                UnixAddr::size() as usize);
+        }
     }
 }
