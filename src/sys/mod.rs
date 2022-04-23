@@ -94,7 +94,7 @@ feature! {
     pub mod reboot;
 }
 
-#[cfg(not(any(target_os = "redox", target_os = "fuchsia", target_os = "illumos")))]
+#[cfg(not(any(target_os = "redox", target_os = "fuchsia", target_os = "illumos", target_os = "haiku")))]
 feature! {
     #![feature = "resource"]
     pub mod resource;

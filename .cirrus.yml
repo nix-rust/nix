@@ -298,6 +298,9 @@ task:
     - name: Linux armv7 uclibceabihf
       env:
         TARGET: armv7-unknown-linux-uclibceabihf
+    - name: Haiku x86_64
+      env:
+        TARGET: x86_64-unknown-haiku
   setup_script:
     - rustup component add rust-src
   << : *BUILD

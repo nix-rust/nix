@@ -38,7 +38,7 @@ pub use self::addr::{
     UnixAddr,
 };
 #[allow(deprecated)]
-#[cfg(not(any(target_os = "illumos", target_os = "solaris")))]
+#[cfg(not(any(target_os = "illumos", target_os = "solaris", target_os = "haiku")))]
 #[cfg(feature = "net")]
 pub use self::addr::{
     InetAddr,
@@ -57,7 +57,7 @@ pub use self::addr::{
     UnixAddr,
 };
 #[allow(deprecated)]
-#[cfg(any(target_os = "illumos", target_os = "solaris"))]
+#[cfg(any(target_os = "illumos", target_os = "solaris", target_os = "haiku"))]
 #[cfg(feature = "net")]
 pub use self::addr::{
     InetAddr,
@@ -118,6 +118,7 @@ pub enum SockType {
     Raw = libc::SOCK_RAW,
     /// Provides a reliable datagram layer that does not
     /// guarantee ordering.
+    #[cfg(not(any(target_os = "haiku")))]
     Rdm = libc::SOCK_RDM,
 }
 
@@ -845,6 +846,7 @@ impl ControlMessageOwned {
                 let cred: libc::cmsgcred = ptr::read_unaligned(p as *const _);
                 ControlMessageOwned::ScmCreds(cred.into())
             }
+            #[cfg(not(target_os = "haiku"))]
             (libc::SOL_SOCKET, libc::SCM_TIMESTAMP) => {
                 let tv: libc::timeval = ptr::read_unaligned(p as *const _);
                 ControlMessageOwned::ScmTimestamp(TimeVal::from(tv))

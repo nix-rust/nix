@@ -236,6 +236,7 @@ pub use self::linux::*;
           target_os = "ios",
           target_os = "macos",
           target_os = "netbsd",
+          target_os = "haiku",
           target_os = "openbsd"))]
 #[macro_use]
 mod bsd;
@@ -246,6 +247,7 @@ mod bsd;
           target_os = "ios",
           target_os = "macos",
           target_os = "netbsd",
+          target_os = "haiku",
           target_os = "openbsd"))]
 pub use self::bsd::*;
 

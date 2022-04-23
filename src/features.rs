@@ -114,6 +114,7 @@ mod os {
 #[cfg(any(target_os = "macos",
           target_os = "ios",
           target_os = "fuchsia",
+          target_os = "haiku",
           target_os = "solaris"))]
 mod os {
     /// Check if the OS supports atomic close-on-exec for sockets

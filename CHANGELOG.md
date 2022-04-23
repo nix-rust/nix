@@ -12,6 +12,9 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - impl From<SockaddrIn> for std::net::SocketAddrV4 and
   impl From<SockaddrIn6> for std::net::SocketAddrV6.
   (#[1711](https://github.com/nix-rust/nix/pull/1711))
+- Fixed compilation and updated support on Haiku
+- Added support for the `x86_64-unknown-haiku` target.
+  (#[1703](https://github.com/nix-rust/nix/pull/1703))
 
 ### Changed
 

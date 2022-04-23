@@ -351,6 +351,7 @@ libc_bitflags!{
     }
 }
 
+#[cfg(not(target_os = "haiku"))]
 libc_bitflags!{
     /// Flags for [`mlockall`].
     pub struct MlockAllFlags: c_int {
@@ -393,6 +394,7 @@ pub unsafe fn munlock(addr: *const c_void, length: size_t) -> Result<()> {
 /// Locked pages never move to the swap area. For more information, see [`mlockall(2)`].
 ///
 /// [`mlockall(2)`]: https://man7.org/linux/man-pages/man2/mlockall.2.html
+#[cfg(not(target_os = "haiku"))]
 pub fn mlockall(flags: MlockAllFlags) -> Result<()> {
     unsafe { Errno::result(libc::mlockall(flags.bits())) }.map(drop)
 }
@@ -402,6 +404,7 @@ pub fn mlockall(flags: MlockAllFlags) -> Result<()> {
 /// For more information, see [`munlockall(2)`].
 ///
 /// [`munlockall(2)`]: https://man7.org/linux/man-pages/man2/munlockall.2.html
+#[cfg(not(target_os = "haiku"))]
 pub fn munlockall() -> Result<()> {
     unsafe { Errno::result(libc::munlockall()) }.map(drop)
 }

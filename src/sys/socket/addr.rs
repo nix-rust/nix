@@ -26,6 +26,7 @@ use crate::sys::socket::addr::sys_control::SysControlAddr;
           target_os = "illumos",
           target_os = "netbsd",
           target_os = "openbsd",
+          target_os = "haiku",
           target_os = "fuchsia"))]
 #[cfg(feature = "net")]
 pub use self::datalink::LinkAddr;
@@ -120,6 +121,7 @@ pub enum AddressFamily {
     #[cfg_attr(docsrs, doc(cfg(all())))]
     Rose = libc::AF_ROSE,
     /// DECet protocol sockets.
+    #[cfg(not(target_os = "haiku"))]
     Decnet = libc::AF_DECnet,
     /// Reserved for "802.2LLC project"; never used.
     #[cfg(any(target_os = "android", target_os = "linux"))]
@@ -151,6 +153,7 @@ pub enum AddressFamily {
     #[cfg_attr(docsrs, doc(cfg(all())))]
     Rds = libc::AF_RDS,
     /// IBM SNA
+    #[cfg(not(target_os = "haiku"))]
     Sna = libc::AF_SNA,
     /// Socket interface over IrDA
     #[cfg(any(target_os = "android", target_os = "linux"))]
@@ -202,7 +205,7 @@ pub enum AddressFamily {
     #[cfg_attr(docsrs, doc(cfg(all())))]
     RxRpc = libc::AF_RXRPC,
     /// New "modular ISDN" driver interface protocol
-    #[cfg(not(any(target_os = "illumos", target_os = "solaris")))]
+    #[cfg(not(any(target_os = "illumos", target_os = "solaris", target_os = "haiku")))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     Isdn = libc::AF_ISDN,
     /// Nokia cellular modem IPC/RPC interface
@@ -1158,6 +1161,7 @@ impl SockaddrIn {
                   target_os = "ios",
                   target_os = "macos",
                   target_os = "netbsd",
+                  target_os = "haiku",
                   target_os = "openbsd"))]
             sin_len: Self::size() as u8,
             sin_family: AddressFamily::Inet as sa_family_t,
@@ -1442,6 +1446,7 @@ impl SockaddrLike for SockaddrStorage {
                           target_os = "macos",
                           target_os = "illumos",
                           target_os = "netbsd",
+                          target_os = "haiku",
                           target_os = "openbsd"))]
                 #[cfg(feature = "net")]
                 libc::AF_LINK => LinkAddr::from_raw(addr, l)
@@ -2411,6 +2416,7 @@ mod datalink {
           target_os = "macos",
           target_os = "illumos",
           target_os = "netbsd",
+          target_os = "haiku",
           target_os = "openbsd"))]
 #[cfg_attr(docsrs, doc(cfg(all())))]
 mod datalink {
@@ -2425,11 +2431,13 @@ mod datalink {
 
     impl LinkAddr {
         /// interface index, if != 0, system given index for interface
+        #[cfg(not(target_os = "haiku"))]
         pub fn ifindex(&self) -> usize {
             self.0.sdl_index as usize
         }
 
         /// Datalink type
+        #[cfg(not(target_os = "haiku"))]
         pub fn datalink_type(&self) -> u8 {
             self.0.sdl_type
         }
@@ -2445,6 +2453,7 @@ mod datalink {
         }
 
         /// link layer selector length
+        #[cfg(not(target_os = "haiku"))]
         pub fn slen(&self) -> usize {
             self.0.sdl_slen as usize
         }
@@ -2737,7 +2746,8 @@ mod tests {
                       target_os = "macos",
                       target_os = "netbsd",
                       target_os = "illumos",
-                      target_os = "openbsd"))]
+                      target_os = "openbsd",
+                      target_os = "haiku"))]
             let l = mem::size_of::<libc::sockaddr_dl>();
             #[cfg(any(
                     target_os = "android",

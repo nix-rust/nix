@@ -39,7 +39,7 @@ pub fn readv(fd: RawFd, iov: &mut [IoSliceMut<'_>]) -> Result<usize> {
 /// or an error occurs. The file offset is not changed.
 ///
 /// See also: [`writev`](fn.writev.html) and [`pwrite`](fn.pwrite.html)
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "redox", target_os = "haiku")))]
 #[cfg_attr(docsrs, doc(cfg(all())))]
 pub fn pwritev(fd: RawFd, iov: &[IoSlice<'_>],
                offset: off_t) -> Result<usize> {
@@ -62,7 +62,7 @@ pub fn pwritev(fd: RawFd, iov: &[IoSlice<'_>],
 /// changed.
 ///
 /// See also: [`readv`](fn.readv.html) and [`pread`](fn.pread.html)
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "redox", target_os = "haiku")))]
 #[cfg_attr(docsrs, doc(cfg(all())))]
 pub fn preadv(fd: RawFd, iov: &mut [IoSliceMut<'_>],
               offset: off_t) -> Result<usize> {

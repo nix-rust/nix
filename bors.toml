@@ -36,6 +36,7 @@ status = [
   "iOS aarch64",
   "iOS x86_64",
   "Illumos",
+  "Haiku x86_64",
 ]
 
 # Set bors's timeout to 1 hour

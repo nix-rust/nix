@@ -15,17 +15,17 @@ mod test_aio;
 mod test_mman;
 #[cfg(target_os = "linux")]
 mod test_signalfd;
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "redox", target_os = "haiku")))]
 mod test_socket;
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "redox")))]
 mod test_sockopt;
 #[cfg(not(target_os = "redox"))]
 mod test_select;
 #[cfg(any(target_os = "android", target_os = "linux"))]
 mod test_sysinfo;
-#[cfg(not(any(target_os = "redox", target_os = "fuchsia")))]
+#[cfg(not(any(target_os = "redox", target_os = "fuchsia", target_os = "haiku")))]
 mod test_termios;
-#[cfg(not(any(target_os = "redox", target_os = "fuchsia")))]
+#[cfg(not(any(target_os = "redox", target_os = "fuchsia", target_os = "haiku")))]
 mod test_ioctl;
 mod test_wait;
 mod test_uio;

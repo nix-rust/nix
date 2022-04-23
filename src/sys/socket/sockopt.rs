@@ -399,7 +399,7 @@ cfg_if! {
             TcpMaxSeg, GetOnly, libc::IPPROTO_TCP, libc::TCP_MAXSEG, u32);
     }
 }
-#[cfg(not(target_os = "openbsd"))]
+#[cfg(not(any(target_os = "openbsd", target_os = "haiku")))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -413,7 +413,7 @@ sockopt_impl!(
     #[allow(missing_docs)]
     // Not documented by Linux!
     TcpRepair, Both, libc::IPPROTO_TCP, libc::TCP_REPAIR, u32);
-#[cfg(not(target_os = "openbsd"))]
+#[cfg(not(any(target_os = "openbsd", target_os = "haiku")))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -473,6 +473,7 @@ sockopt_impl!(
     /// Specifies exact type of timestamping information collected by the kernel
     /// [Further reading](https://www.kernel.org/doc/html/latest/networking/timestamping.html)
     Timestamping, Both, libc::SOL_SOCKET, libc::SO_TIMESTAMPING, super::TimestampingFlag);
+#[cfg(not(target_os = "haiku"))]
 sockopt_impl!(
     /// Enable or disable the receiving of the `SO_TIMESTAMP` control message.
     ReceiveTimestamp, Both, libc::SOL_SOCKET, libc::SO_TIMESTAMP, bool);
