@@ -78,14 +78,14 @@ zerocopy = ["fs", "uio"]
 
 [dev-dependencies]
 assert-impl = "0.1"
-lazy_static = "1.2"
+lazy_static = "1.4"
 parking_lot = "0.11.2"
 rand = "0.8"
-tempfile = "3.2.0"
-semver = "1.0.0"
+tempfile = "3.3.0"
+semver = "1.0.7"
 
 [target.'cfg(any(target_os = "android", target_os = "linux"))'.dev-dependencies]
-caps = "0.5.1"
+caps = "0.5.3"
 
 [target.'cfg(target_os = "freebsd")'.dev-dependencies]
 sysctl = "0.4"
