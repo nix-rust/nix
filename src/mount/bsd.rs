@@ -168,8 +168,9 @@ pub type NmountResult = std::result::Result<(), NmountError>;
 /// To mount `target` onto `mountpoint` with `nullfs`:
 /// ```
 /// # use nix::unistd::Uid;
-/// # use ::sysctl::CtlValue;
-/// # if !Uid::current().is_root() && CtlValue::Int(0) == ::sysctl::value("vfs.usermount").unwrap() {
+/// # use ::sysctl::{CtlValue, Sysctl};
+/// # let ctl = ::sysctl::Ctl::new("vfs.usermount").unwrap();
+/// # if !Uid::current().is_root() && CtlValue::Int(0) == ctl.value().unwrap() {
 /// #     return;
 /// # };
 /// use nix::mount::{MntFlags, Nmount, unmount};
