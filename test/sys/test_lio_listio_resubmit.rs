@@ -11,7 +11,7 @@ use nix::sys::signal::SigevNotify;
 use nix::unistd::{SysconfVar, sysconf};
 use std::os::unix::io::AsRawFd;
 use std::{thread, time};
-use sysctl::CtlValue;
+use sysctl::{CtlValue, Sysctl};
 use tempfile::tempfile;
 
 const BYTES_PER_OP: usize = 512;
@@ -44,8 +44,8 @@ fn test_lio_listio_resubmit() {
     // Lookup system resource limits
     let alm = sysconf(SysconfVar::AIO_LISTIO_MAX)
         .expect("sysconf").unwrap() as usize;
-    let maqpp = if let CtlValue::Int(x) = sysctl::value(
-            "vfs.aio.max_aio_queue_per_proc").unwrap(){
+    let ctl = sysctl::Ctl::new("vfs.aio.max_aio_queue_per_proc").unwrap();
+    let maqpp = if let CtlValue::Int(x) = ctl.value().unwrap() {
         x as usize
     } else {
         panic!("unknown sysctl");
