@@ -1,4 +1,13 @@
 pub use libc::{dev_t, mode_t};
+#[cfg(any(target_os = "macos", target_os = "ios", target_os = "watchos"))]
+pub use libc::c_uint;
+#[cfg(any(
+    target_os = "openbsd",
+    target_os = "netbsd",
+    target_os = "freebsd",
+    target_os = "dragonfly"
+))]
+pub use libc::c_ulong;
 pub use libc::stat as FileStat;
 
 use crate::{Result, NixPath, errno::Errno};
@@ -40,6 +49,96 @@ libc_bitflags! {
         S_ISUID as mode_t;
         S_ISGID as mode_t;
         S_ISVTX as mode_t;
+    }
+}
+
+#[cfg(any(target_os = "macos", target_os = "ios", target_os = "watchos"))]
+pub type type_of_file_flag = c_uint;
+#[cfg(any(
+    target_os = "openbsd",
+    target_os = "netbsd",
+    target_os = "freebsd",
+    target_os = "dragonfly"
+))]
+pub type type_of_file_flag = c_ulong;
+
+#[cfg(any(
+    target_os = "openbsd",
+    target_os = "netbsd",
+    target_os = "freebsd",
+    target_os = "dragonfly",
+    target_os = "macos",
+    target_os = "ios",
+    target_os = "watchos",
+))]
+libc_bitflags! {
+    /// File flags.
+    #[cfg_attr(docsrs, doc(cfg(all())))]
+    pub struct FileFlag: type_of_file_flag {
+        UF_SETTABLE;
+        UF_NODUMP;
+        UF_IMMUTABLE;
+        UF_APPEND;
+        UF_OPAQUE;
+
+        SF_SETTABLE;
+        SF_ARCHIVED;
+        SF_IMMUTABLE;
+        SF_APPEND;
+
+        #[cfg(any(target_os = "dragonfly"))]
+        UF_NOHISTORY;
+        #[cfg(any(target_os = "dragonfly"))]
+        UF_CACHE;
+        #[cfg(any(target_os = "dragonfly"))]
+        UF_XLINK;
+        #[cfg(any(target_os = "dragonfly"))]
+        SF_NOHISTORY;
+        #[cfg(any(target_os = "dragonfly"))]
+        SF_CACHE;
+        #[cfg(any(target_os = "dragonfly"))]
+        SF_XLINK;
+
+        #[cfg(any(target_os = "freebsd"))]
+        UF_SYSTEM;
+        #[cfg(any(target_os = "freebsd"))]
+        UF_SPARSE;
+        #[cfg(any(target_os = "freebsd"))]
+        UF_OFFLINE;
+        #[cfg(any(target_os = "freebsd"))]
+        UF_REPARSE;
+        #[cfg(any(target_os = "freebsd"))]
+        UF_ARCHIVE;
+        #[cfg(any(target_os = "freebsd"))]
+        UF_READONLY;
+        #[cfg(any(target_os = "freebsd"))]
+        SF_SNAPSHOT;
+
+        #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
+        UF_NOUNLINK;
+        #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
+        SF_NOUNLINK;
+
+        #[cfg(any(target_os = "macos", target_os = "ios", target_os = "watchos"))]
+        UF_COMPRESSED;
+        #[cfg(any(target_os = "macos", target_os = "ios", target_os = "watchos"))]
+        UF_TRACKED;
+
+        #[cfg(any(
+            target_os = "freebsd",
+            target_os = "macos",
+            target_os = "ios",
+            target_os = "watchos"
+        ))]
+        UF_HIDDEN;
+
+
+        #[cfg(any(target_os = "netbsd"))]
+        SF_SNAPSHOT;
+        #[cfg(any(target_os = "netbsd"))]
+        SF_LOG;
+        #[cfg(any(target_os = "netbsd"))]
+        SF_SNAPINVAL;
     }
 }
 

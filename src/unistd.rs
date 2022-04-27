@@ -3234,3 +3234,25 @@ pub fn getpeereid(fd: RawFd) -> Result<(Uid, Gid)> {
     Errno::result(ret).map(|_| (Uid(uid), Gid(gid)))
 }
 }
+
+feature! {
+#![all(feature = "fs")]
+
+/// Set the file flags.
+///
+/// See also [chflags(2)](https://www.freebsd.org/cgi/man.cgi?query=chflags&sektion=2)
+#[cfg(any(
+    target_os = "openbsd",
+    target_os = "netbsd",
+    target_os = "freebsd",
+    target_os = "dragonfly",
+    target_os = "macos",
+    target_os = "ios",
+    target_os = "watchos",
+))]
+pub fn chflags<P: ?Sized + NixPath>(path: &P, flags: FileFlag) -> Result<()> {
+    let res = path.with_nix_path(|cstr| { unsafe { libc::chflags(cstr.as_ptr(), flags) } })?;
+
+    Errno::result(res).map(drop)
+}
+}
