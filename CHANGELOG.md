@@ -5,6 +5,11 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased] - ReleaseDate
 ### Added
+
+- impl From<SockaddrIn> for std::net::SocketAddrV4 and
+  impl From<SockaddrIn6> for std::net::SocketAddrV6.
+  (#[1711](https://github.com/nix-rust/nix/pull/1711))
+
 ### Changed
 ### Fixed
 ### Removed
