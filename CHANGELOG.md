@@ -6,13 +6,29 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased] - ReleaseDate
 ### Added
 
+- Added `aio_writev` and `aio_readv`.
+  (#[1713](https://github.com/nix-rust/nix/pull/1713))
+
 - impl From<SockaddrIn> for std::net::SocketAddrV4 and
   impl From<SockaddrIn6> for std::net::SocketAddrV6.
   (#[1711](https://github.com/nix-rust/nix/pull/1711))
 
 ### Changed
+
+- Rewrote the aio module.  The new module:
+  * Does more type checking at compile time rather than runtime.
+  * Gives the caller control over whether and when to `Box` an aio operation.
+  * Changes the type of the `priority` arguments to `i32`.
+  * Changes the return type of `aio_return` to `usize`.
+  (#[1713](https://github.com/nix-rust/nix/pull/1713))
+
 ### Fixed
 ### Removed
+
+- Removed support for resubmitting partially complete `lio_listio` operations.
+  It was too complicated, and didn't fit Nix's theme of zero-cost abstractions.
+  Instead, it can be reimplemented downstream.
+  (#[1713](https://github.com/nix-rust/nix/pull/1713))
 
 ## [0.24.1] - 2022-04-22
 ### Added

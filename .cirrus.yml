@@ -36,11 +36,18 @@ test: &TEST
 # 64-bit kernel and in a 64-bit environment.  Our tests don't execute any of
 # the system's binaries, so the environment shouldn't matter.
 task:
-  name: FreeBSD amd64 & i686
   env:
     TARGET: x86_64-unknown-freebsd
-  freebsd_instance:
-    image: freebsd-12-3-release-amd64
+  matrix:
+    - name: FreeBSD 12 amd64 & i686
+      freebsd_instance:
+        image: freebsd-12-3-release-amd64
+    - name: FreeBSD 14 amd64 & i686
+      freebsd_instance:
+        image_family: freebsd-14-0-snap
+      # Enable tests that would fail on FreeBSD 12
+      RUSTFLAGS: --cfg fbsd14 -D warnings
+      RUSTDOCFLAGS: --cfg fbsd14
   setup_script:
     - kldload mqueuefs
     - fetch https://sh.rustup.rs -o rustup.sh
