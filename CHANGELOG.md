@@ -5,6 +5,10 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased] - ReleaseDate
 ### Added
+
+- Added S_ISREG, S_ISDIR,... macro analogues to stat 
+  (#[1165](https://github.com/nix-rust/nix/pull/1165))
+
 ### Changed
 ### Fixed
 ### Removed

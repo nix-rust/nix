@@ -145,6 +145,34 @@ pub fn fstatat<P: ?Sized + NixPath>(dirfd: RawFd, pathname: &P, f: AtFlags) -> R
     Ok(unsafe{dst.assume_init()})
 }
 
+pub fn s_isreg(st_mode: mode_t) -> bool {
+    (SFlag::S_IFMT.bits() & st_mode) == SFlag::S_IFREG.bits()
+}
+
+pub fn s_isdir(st_mode: mode_t) -> bool {
+    (SFlag::S_IFMT.bits() & st_mode) == SFlag::S_IFDIR.bits()
+}
+
+pub fn s_ischr(st_mode: mode_t) -> bool {
+    (SFlag::S_IFMT.bits() & st_mode) == SFlag::S_IFCHR.bits()
+}
+
+pub fn s_isblk(st_mode: mode_t) -> bool {
+    (SFlag::S_IFMT.bits() & st_mode) == SFlag::S_IFBLK.bits()
+}
+
+pub fn s_isfifo(st_mode: mode_t) -> bool {
+    (SFlag::S_IFMT.bits() & st_mode) == SFlag::S_IFIFO.bits()
+}
+
+pub fn s_islnk(st_mode: mode_t) -> bool {
+    (SFlag::S_IFMT.bits() & st_mode) == SFlag::S_IFLNK.bits()
+}
+
+pub fn s_issock(st_mode: mode_t) -> bool {
+    (SFlag::S_IFMT.bits() & st_mode) == SFlag::S_IFSOCK.bits()
+}
+
 /// Change the file permission bits of the file specified by a file descriptor.
 ///
 /// # References
