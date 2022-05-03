@@ -257,6 +257,19 @@ pub fn test_socketpair() {
     assert_eq!(&buf[..], b"hello");
 }
 
+#[test]
+pub fn test_std_conversions() {
+    use nix::sys::socket::*;
+
+    let std_sa = SocketAddrV4::from_str("127.0.0.1:6789").unwrap();
+    let sock_addr = SockaddrIn::from(std_sa);
+    assert_eq!(std_sa, sock_addr.into());
+
+    let std_sa = SocketAddrV6::from_str("[::1]:6000").unwrap();
+    let sock_addr: SockaddrIn6 = SockaddrIn6::from(std_sa);
+    assert_eq!(std_sa, sock_addr.into());
+}
+
 mod recvfrom {
     use nix::Result;
     use nix::sys::socket::*;

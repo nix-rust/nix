@@ -1234,6 +1234,16 @@ impl From<net::SocketAddrV4> for SockaddrIn {
 }
 
 #[cfg(feature = "net")]
+impl From<SockaddrIn> for net::SocketAddrV4 {
+    fn from(addr: SockaddrIn) -> Self {
+        net::SocketAddrV4::new(
+            net::Ipv4Addr::from(addr.0.sin_addr.s_addr.to_ne_bytes()),
+            u16::from_be(addr.0.sin_port)
+        )
+    }
+}
+
+#[cfg(feature = "net")]
 impl std::str::FromStr for SockaddrIn {
     type Err = net::AddrParseError;
 
@@ -1326,6 +1336,18 @@ impl From<net::SocketAddrV6> for SockaddrIn6 {
             sin6_scope_id: addr.scope_id(),  // host byte order
             .. unsafe { mem::zeroed() }
         })
+    }
+}
+
+#[cfg(feature = "net")]
+impl From<SockaddrIn6> for net::SocketAddrV6 {
+    fn from(addr: SockaddrIn6) -> Self {
+        net::SocketAddrV6::new(
+            net::Ipv6Addr::from(addr.0.sin6_addr.s6_addr),
+            u16::from_be(addr.0.sin6_port),
+            u32::from_be(addr.0.sin6_flowinfo),
+            u32::from_be(addr.0.sin6_scope_id)
+        )
     }
 }
 
