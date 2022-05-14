@@ -94,6 +94,9 @@ macro_rules! libc_bitflags {
 ///     }
 /// }
 /// ```
+// Some targets don't use all rules.
+#[allow(unknown_lints)]
+#[allow(unused_macro_rules)]
 macro_rules! libc_enum {
     // Exit rule.
     (@make_enum
