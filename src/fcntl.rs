@@ -742,8 +742,8 @@ impl SpacectlRange {
 ///
 /// # Example
 ///
-// no_run because it fails to link until FreeBSD 14.0
-/// ```no_run
+#[cfg_attr(fbsd14, doc = " ```")]
+#[cfg_attr(not(fbsd14), doc = " ```no_run")]
 /// # use std::io::Write;
 /// # use std::os::unix::fs::FileExt;
 /// # use std::os::unix::io::AsRawFd;
@@ -788,8 +788,8 @@ pub fn fspacectl(fd: RawFd, range: SpacectlRange) -> Result<SpacectlRange> {
 ///
 /// # Example
 ///
-// no_run because it fails to link until FreeBSD 14.0
-/// ```no_run
+#[cfg_attr(fbsd14, doc = " ```")]
+#[cfg_attr(not(fbsd14), doc = " ```no_run")]
 /// # use std::io::Write;
 /// # use std::os::unix::fs::FileExt;
 /// # use std::os::unix::io::AsRawFd;
