@@ -53,7 +53,7 @@ pub fn mknod<P: ?Sized + NixPath>(path: &P, kind: SFlag, perm: Mode, dev: dev_t)
 }
 
 /// Create a special or ordinary file, relative to a given directory.
-#[cfg(not(any(target_os = "ios", target_os = "macos", target_os = "redox")))]
+#[cfg(not(any(target_os = "ios", target_os = "macos", target_os = "redox", target_os = "haiku")))]
 #[cfg_attr(docsrs, doc(cfg(all())))]
 pub fn mknodat<P: ?Sized + NixPath>(
     dirfd: RawFd,

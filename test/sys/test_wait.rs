@@ -6,7 +6,7 @@ use nix::sys::wait::*;
 use libc::_exit;
 
 #[test]
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "redox", target_os = "haiku")))]
 fn test_wait_signal() {
     let _m = crate::FORK_MTX.lock();
 
@@ -27,7 +27,7 @@ fn test_wait_signal() {
 #[cfg(any(
     target_os = "android",
     target_os = "freebsd",
-    target_os = "haiku",
+    //target_os = "haiku",
     all(target_os = "linux", not(target_env = "uclibc")),
 ))]
 #[cfg(not(any(target_arch = "mips", target_arch = "mips64")))]
@@ -63,6 +63,7 @@ fn test_wait_exit() {
     }
 }
 
+#[cfg(not(target_os = "haiku"))]
 #[test]
 #[cfg(any(
     target_os = "android",

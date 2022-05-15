@@ -255,8 +255,9 @@ libc_enum!{
     /// enum.
     ///
     /// B0 is special and will disable the port.
+    #[cfg_attr(all(any(target_os = "haiku"), target_pointer_width = "64"), repr(u8))]
     #[cfg_attr(all(any(target_os = "ios", target_os = "macos"), target_pointer_width = "64"), repr(u64))]
-    #[cfg_attr(not(all(any(target_os = "ios", target_os = "macos"), target_pointer_width = "64")), repr(u32))]
+    #[cfg_attr(not(all(any(target_os = "ios", target_os = "macos", target_os = "haiku"), target_pointer_width = "64")), repr(u32))]
     #[non_exhaustive]
     pub enum BaudRate {
         B0,
@@ -374,6 +375,14 @@ impl From<BaudRate> for u32 {
     }
 }
 
+#[cfg(target_os = "haiku")]
+impl From<BaudRate> for u8 {
+    fn from(b: BaudRate) -> u8 {
+        b as u8
+    }
+}
+
+
 // TODO: Add TCSASOFT, which will require treating this as a bitfield.
 libc_enum! {
     /// Specify when a port configuration change should occur.
@@ -426,6 +435,7 @@ libc_enum! {
 }
 
 // TODO: Make this usable directly as a slice index.
+#[cfg(not(target_os = "haiku"))]
 libc_enum! {
     /// Indices into the `termios.c_cc` array for special characters.
     #[repr(usize)]
@@ -524,7 +534,7 @@ libc_bitflags! {
         #[cfg(not(target_os = "redox"))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
         IXANY;
-        #[cfg(not(target_os = "redox"))]
+        #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
         IMAXBEL;
         #[cfg(any(target_os = "android", target_os = "linux", target_os = "macos"))]
@@ -851,7 +861,7 @@ libc_bitflags! {
         #[cfg_attr(docsrs, doc(cfg(all())))]
         ALTWERASE;
         IEXTEN;
-        #[cfg(not(target_os = "redox"))]
+        #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
         EXTPROC;
         TOSTOP;
@@ -979,6 +989,7 @@ cfg_if!{
         ///
         /// `cfsetspeed()` sets the input and output baud rate in the given `Termios` structure. Note that
         /// this is part of the 4.4BSD standard and not part of POSIX.
+        #[cfg(not(target_os = "haiku"))]
         pub fn cfsetspeed(termios: &mut Termios, baud: BaudRate) -> Result<()> {
             let inner_termios = unsafe { termios.get_libc_termios_mut() };
             let res = unsafe { libc::cfsetspeed(inner_termios, baud as libc::speed_t) };
@@ -1095,6 +1106,9 @@ mod test {
     #[test]
     fn try_from() {
         assert_eq!(Ok(BaudRate::B0), BaudRate::try_from(libc::B0));
+        #[cfg(not(target_os = "haiku"))]
         assert!(BaudRate::try_from(999999999).is_err());
+        #[cfg(target_os = "haiku")]
+        assert!(BaudRate::try_from(99).is_err());
     }
 }

@@ -82,6 +82,7 @@ Tier 3:
   * armv7-unknown-linux-uclibceabihf
   * x86_64-fuchsia
   * x86_64-unknown-dragonfly
+  * x86_64-unknown-haiku
   * x86_64-unknown-linux-gnux32
   * x86_64-unknown-openbsd
   * x86_64-unknown-redox

@@ -1,6 +1,6 @@
 #[macro_use]
 extern crate cfg_if;
-#[cfg_attr(not(target_os = "redox"), macro_use)]
+#[cfg_attr(not(any(target_os = "redox", target_os = "haiku")), macro_use)]
 extern crate nix;
 #[macro_use]
 extern crate lazy_static;
@@ -26,7 +26,7 @@ mod test_net;
 mod test_nix_path;
 mod test_resource;
 mod test_poll;
-#[cfg(not(any(target_os = "redox", target_os = "fuchsia")))]
+#[cfg(not(any(target_os = "redox", target_os = "fuchsia", target_os = "haiku")))]
 mod test_pty;
 #[cfg(any(target_os = "android",
           target_os = "dragonfly",

@@ -1,5 +1,7 @@
 #[cfg(not(target_os = "redox"))]
-use nix::fcntl::{self, open, readlink};
+use nix::fcntl::{self, open};
+#[cfg(not(any(target_os = "redox", target_os = "haiku")))]
+use nix::fcntl::{readlink};
 use nix::fcntl::OFlag;
 use nix::unistd::*;
 use nix::unistd::ForkResult::*;
@@ -7,7 +9,7 @@ use nix::unistd::ForkResult::*;
 use nix::sys::signal::{SaFlags, SigAction, SigHandler, SigSet, Signal, sigaction};
 use nix::sys::wait::*;
 use nix::sys::stat::{self, Mode, SFlag};
-#[cfg(not(any(target_os = "redox", target_os = "fuchsia")))]
+#[cfg(not(any(target_os = "redox", target_os = "fuchsia", target_os = "haiku")))]
 use nix::pty::{posix_openpt, grantpt, unlockpt, ptsname};
 use nix::errno::Errno;
 use std::env;
@@ -18,7 +20,7 @@ use std::fs::DirBuilder;
 use std::fs::{self, File};
 use std::io::Write;
 use std::os::unix::prelude::*;
-#[cfg(not(any(target_os = "fuchsia", target_os = "redox")))]
+#[cfg(not(any(target_os = "fuchsia", target_os = "redox", target_os = "haiku")))]
 use std::path::Path;
 use tempfile::{tempdir, tempfile};
 use libc::{_exit, mode_t, off_t};
@@ -114,7 +116,7 @@ fn test_mkfifo_directory() {
 #[test]
 #[cfg(not(any(
     target_os = "macos", target_os = "ios",
-    target_os = "android", target_os = "redox")))]
+    target_os = "android", target_os = "redox", target_os = "haiku")))]
 fn test_mkfifoat_none() {
     let _m = crate::CWD_LOCK.read();
 
@@ -131,7 +133,7 @@ fn test_mkfifoat_none() {
 #[test]
 #[cfg(not(any(
     target_os = "macos", target_os = "ios",
-    target_os = "android", target_os = "redox")))]
+    target_os = "android", target_os = "redox", target_os = "haiku")))]
 fn test_mkfifoat() {
     use nix::fcntl;
 
@@ -149,7 +151,7 @@ fn test_mkfifoat() {
 #[test]
 #[cfg(not(any(
     target_os = "macos", target_os = "ios",
-    target_os = "android", target_os = "redox")))]
+    target_os = "android", target_os = "redox", target_os = "haiku")))]
 fn test_mkfifoat_directory_none() {
     let _m = crate::CWD_LOCK.read();
 
@@ -160,7 +162,7 @@ fn test_mkfifoat_directory_none() {
 #[test]
 #[cfg(not(any(
     target_os = "macos", target_os = "ios",
-    target_os = "android", target_os = "redox")))]
+    target_os = "android", target_os = "redox", target_os = "haiku")))]
 fn test_mkfifoat_directory() {
     // mkfifoat should fail if a directory is given
     let tempdir = tempdir().unwrap();
@@ -201,7 +203,7 @@ mod linux_android {
 
 #[test]
 // `getgroups()` and `setgroups()` do not behave as expected on Apple platforms
-#[cfg(not(any(target_os = "ios", target_os = "macos", target_os = "redox", target_os = "fuchsia")))]
+#[cfg(not(any(target_os = "ios", target_os = "macos", target_os = "redox", target_os = "fuchsia", target_os = "haiku")))]
 fn test_setgroups() {
     // Skip this test when not run as root as `setgroups()` requires root.
     skip_if_not_root!("test_setgroups");
@@ -228,6 +230,7 @@ fn test_setgroups() {
               target_os = "macos",
               target_os = "redox",
               target_os = "fuchsia",
+              target_os = "haiku",
               target_os = "illumos")))]
 fn test_initgroups() {
     // Skip this test when not run as root as `initgroups()` and `setgroups()`
@@ -555,7 +558,7 @@ cfg_if!{
                 skip_if_jailed!("test_acct");
             }
         }
-    } else if #[cfg(not(any(target_os = "redox", target_os = "fuchsia")))] {
+    } else if #[cfg(not(any(target_os = "redox", target_os = "fuchsia", target_os = "haiku")))] {
         macro_rules! require_acct{
             () => {
                 skip_if_not_root!("test_acct");
@@ -565,7 +568,7 @@ cfg_if!{
 }
 
 #[test]
-#[cfg(not(any(target_os = "redox", target_os = "fuchsia")))]
+#[cfg(not(any(target_os = "redox", target_os = "fuchsia", target_os = "haiku")))]
 fn test_acct() {
     use tempfile::NamedTempFile;
     use std::process::Command;
@@ -786,7 +789,7 @@ fn test_canceling_alarm() {
 }
 
 #[test]
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "redox", target_os = "haiku")))]
 fn test_symlinkat() {
     let _m = crate::CWD_LOCK.read();
 
@@ -814,7 +817,7 @@ fn test_symlinkat() {
 }
 
 #[test]
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "redox", target_os = "haiku")))]
 fn test_linkat_file() {
     let tempdir = tempdir().unwrap();
     let oldfilename = "foo.txt";
@@ -835,7 +838,7 @@ fn test_linkat_file() {
 }
 
 #[test]
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "redox", target_os = "haiku")))]
 fn test_linkat_olddirfd_none() {
     let _dr = crate::DirRestore::new();
 
@@ -860,7 +863,7 @@ fn test_linkat_olddirfd_none() {
 }
 
 #[test]
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "redox", target_os = "haiku")))]
 fn test_linkat_newdirfd_none() {
     let _dr = crate::DirRestore::new();
 
@@ -885,7 +888,7 @@ fn test_linkat_newdirfd_none() {
 }
 
 #[test]
-#[cfg(not(any(target_os = "ios", target_os = "macos", target_os = "redox")))]
+#[cfg(not(any(target_os = "ios", target_os = "macos", target_os = "redox", target_os = "haiku")))]
 fn test_linkat_no_follow_symlink() {
     let _m = crate::CWD_LOCK.read();
 
@@ -922,7 +925,7 @@ fn test_linkat_no_follow_symlink() {
 }
 
 #[test]
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "redox", target_os = "haiku")))]
 fn test_linkat_follow_symlink() {
     let _m = crate::CWD_LOCK.read();
 
@@ -1033,7 +1036,13 @@ fn test_access_file_exists() {
 #[test]
 fn test_user_into_passwd() {
     // get the UID of the "nobody" user
-    let nobody = User::from_name("nobody").unwrap().unwrap();
+    #[cfg(not(target_os = "haiku"))]
+    let test_username = "nobody";
+    // "nobody" unavailable on haiku
+    #[cfg(target_os = "haiku")]
+    let test_username = "user";
+
+    let nobody = User::from_name(test_username).unwrap().unwrap();
     let pwd: libc::passwd = nobody.into();
     let _: User = (&pwd).into();
 }
@@ -1078,7 +1087,7 @@ fn test_setfsuid() {
 }
 
 #[test]
-#[cfg(not(any(target_os = "redox", target_os = "fuchsia")))]
+#[cfg(not(any(target_os = "redox", target_os = "fuchsia", target_os = "haiku")))]
 fn test_ttyname() {
     let fd = posix_openpt(OFlag::O_RDWR).expect("posix_openpt failed");
     assert!(fd.as_raw_fd() > 0);
@@ -1109,7 +1118,7 @@ fn test_ttyname_not_pty() {
 }
 
 #[test]
-#[cfg(not(any(target_os = "redox", target_os = "fuchsia")))]
+#[cfg(not(any(target_os = "redox", target_os = "fuchsia", target_os = "haiku")))]
 fn test_ttyname_invalid_fd() {
     assert_eq!(ttyname(-1), Err(Errno::EBADF));
 }

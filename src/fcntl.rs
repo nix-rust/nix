@@ -58,7 +58,7 @@ libc_bitflags!(
         /// Open the file in append-only mode.
         O_APPEND;
         /// Generate a signal when input or output becomes possible.
-        #[cfg(not(any(target_os = "illumos", target_os = "solaris")))]
+        #[cfg(not(any(target_os = "illumos", target_os = "solaris", target_os = "haiku")))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
         O_ASYNC;
         /// Closes the file descriptor once an `execve` call is made.
@@ -128,7 +128,7 @@ libc_bitflags!(
         #[cfg_attr(docsrs, doc(cfg(all())))]
         O_NOCTTY;
         /// Same as `O_NONBLOCK`.
-        #[cfg(not(target_os = "redox"))]
+        #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
         O_NDELAY;
         /// `open()` will fail if the given path is a symbolic link.

@@ -1,10 +1,12 @@
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "redox", target_os = "haiku")))]
 use std::fs;
 use std::fs::File;
 #[cfg(not(target_os = "redox"))]
-use std::os::unix::fs::{symlink, PermissionsExt};
+use std::os::unix::fs::{symlink};
+#[cfg(not(any(target_os = "redox", target_os = "haiku")))]
+use std::os::unix::fs::{PermissionsExt};
 use std::os::unix::prelude::AsRawFd;
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "redox", target_os = "haiku")))]
 use std::time::{Duration, UNIX_EPOCH};
 #[cfg(not(target_os = "redox"))]
 use std::path::Path;
@@ -18,25 +20,30 @@ use nix::fcntl;
 #[cfg(not(target_os = "redox"))]
 use nix::errno::Errno;
 #[cfg(not(target_os = "redox"))]
-use nix::sys::stat::{self, futimens, utimes};
+use nix::sys::stat::{self};
+#[cfg(not(any(target_os = "redox", target_os = "haiku")))]
+use nix::sys::stat::{futimens, utimes};
 use nix::sys::stat::{fchmod, stat};
 #[cfg(not(target_os = "redox"))]
-use nix::sys::stat::{fchmodat, utimensat, mkdirat};
+use nix::sys::stat::{fchmodat, mkdirat};
+#[cfg(not(any(target_os = "redox", target_os = "haiku")))]
+use nix::sys::stat::{utimensat};
 #[cfg(any(target_os = "linux",
-          target_os = "haiku",
           target_os = "ios",
           target_os = "macos",
           target_os = "freebsd",
           target_os = "netbsd"))]
 use nix::sys::stat::lutimes;
 #[cfg(not(target_os = "redox"))]
-use nix::sys::stat::{FchmodatFlags, UtimensatFlags};
+use nix::sys::stat::{FchmodatFlags};
+#[cfg(not(any(target_os = "redox", target_os = "haiku")))]
+use nix::sys::stat::{UtimensatFlags};
 use nix::sys::stat::Mode;
 
 #[cfg(not(any(target_os = "netbsd", target_os = "redox")))]
 use nix::sys::stat::FileStat;
 
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "redox", target_os = "haiku")))]
 use nix::sys::time::{TimeSpec, TimeVal, TimeValLike};
 #[cfg(not(target_os = "redox"))]
 use nix::unistd::chdir;
@@ -191,7 +198,7 @@ fn test_fchmodat() {
 ///
 /// The atime and mtime are expressed with a resolution of seconds because some file systems
 /// (like macOS's HFS+) do not have higher granularity.
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "redox", target_os = "haiku")))]
 fn assert_times_eq(exp_atime_sec: u64, exp_mtime_sec: u64, attr: &fs::Metadata) {
     assert_eq!(
         Duration::new(exp_atime_sec, 0),
@@ -202,7 +209,7 @@ fn assert_times_eq(exp_atime_sec: u64, exp_mtime_sec: u64, attr: &fs::Metadata) 
 }
 
 #[test]
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "redox", target_os = "haiku")))]
 fn test_utimes() {
     let tempdir = tempfile::tempdir().unwrap();
     let fullpath = tempdir.path().join("file");
@@ -214,7 +221,6 @@ fn test_utimes() {
 
 #[test]
 #[cfg(any(target_os = "linux",
-          target_os = "haiku",
           target_os = "ios",
           target_os = "macos",
           target_os = "freebsd",
@@ -238,7 +244,7 @@ fn test_lutimes() {
 }
 
 #[test]
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "redox", target_os = "haiku")))]
 fn test_futimens() {
     let tempdir = tempfile::tempdir().unwrap();
     let fullpath = tempdir.path().join("file");
@@ -251,7 +257,7 @@ fn test_futimens() {
 }
 
 #[test]
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "redox", target_os = "haiku")))]
 fn test_utimensat() {
     let _dr = crate::DirRestore::new();
     let tempdir = tempfile::tempdir().unwrap();
@@ -283,7 +289,7 @@ fn test_mkdirat_success_path() {
 }
 
 #[test]
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "redox", target_os = "haiku")))]
 fn test_mkdirat_success_mode() {
     let expected_bits = stat::SFlag::S_IFDIR.bits() | stat::Mode::S_IRWXU.bits();
     let tempdir = tempfile::tempdir().unwrap();
@@ -312,6 +318,7 @@ fn test_mkdirat_fail() {
               target_os = "freebsd",
               target_os = "ios",
               target_os = "macos",
+              target_os = "haiku",
               target_os = "redox")))]
 fn test_mknod() {
     use stat::{lstat, mknod, SFlag};
@@ -331,6 +338,7 @@ fn test_mknod() {
               target_os = "illumos",
               target_os = "ios",
               target_os = "macos",
+              target_os = "haiku",
               target_os = "redox")))]
 fn test_mknodat() {
     use fcntl::{AtFlags, OFlag};
