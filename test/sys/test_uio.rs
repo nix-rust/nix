@@ -253,7 +253,7 @@ fn test_process_vm_readv() {
             }
             let _ = write(w, b"\0");
             let _ = close(w);
-            loop { let _ = pause(); }
+            loop { pause(); }
         },
     }
 }
