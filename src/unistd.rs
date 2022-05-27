@@ -3028,6 +3028,9 @@ impl User {
             } else if Errno::last() == Errno::ERANGE {
                 // Trigger the internal buffer resizing logic.
                 reserve_double_buffer_size(&mut cbuf, buflimit)?;
+            }  else if Errno::last() == Errno::ENOENT {
+                // User does not seem to exist
+                return Ok(None);
             } else {
                 return Err(Errno::last());
             }
