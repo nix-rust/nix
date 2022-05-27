@@ -3042,6 +3042,9 @@ impl User {
     /// Internally, this function calls
     /// [getpwuid_r(3)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/getpwuid_r.html)
     ///
+    /// The outer Result represents any unexpected error.
+    /// The Option is filled if a user with a given uid exists. If not, the Option will be None.
+    ///
     /// # Examples
     ///
     /// ```
@@ -3049,6 +3052,9 @@ impl User {
     /// // Returns an Result<Option<User>>, thus the double unwrap.
     /// let res = User::from_uid(Uid::from_raw(0)).unwrap().unwrap();
     /// assert!(res.name == "root");
+    ///
+    /// let nonexistant_res = User::from_uid(1337).unwrap();
+    /// assert!(res.is_none())
     /// ```
     pub fn from_uid(uid: Uid) -> Result<Option<Self>> {
         User::from_anything(|pwd, cbuf, cap, res| {
@@ -3061,6 +3067,9 @@ impl User {
     /// Internally, this function calls
     /// [getpwnam_r(3)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/getpwuid_r.html)
     ///
+    /// The outer Result represents any unexpected error.
+    /// The Option is filled if a user with a given user name exists. If not, the Option will be None.
+    ///
     /// # Examples
     ///
     /// ```
@@ -3068,6 +3077,9 @@ impl User {
     /// // Returns an Result<Option<User>>, thus the double unwrap.
     /// let res = User::from_name("root").unwrap().unwrap();
     /// assert!(res.name == "root");
+    ///
+    /// let nonexistant_res = User::from_name("nonexistantuser").unwrap();
+    /// assert!(res.is_none())
     /// ```
     pub fn from_name(name: &str) -> Result<Option<Self>> {
         let name = CString::new(name).unwrap();
