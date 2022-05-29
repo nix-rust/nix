@@ -149,7 +149,7 @@ impl From<TimerSpec> for Expiration {
 
 /// An enumeration allowing the definition of the expiration time of an alarm,
 /// recurring or not.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum Expiration {
     OneShot(TimeSpec),
     IntervalDelayed(TimeSpec, TimeSpec),
