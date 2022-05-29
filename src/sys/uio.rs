@@ -132,6 +132,10 @@ pub struct RemoteIoVec {
     note = "`IoVec` is no longer used in the public interface, use `IoSlice` or `IoSliceMut` instead"
 )]
 #[repr(transparent)]
+#[allow(renamed_and_removed_lints)]
+#[allow(clippy::unknown_clippy_lints)]
+// Clippy false positive: https://github.com/rust-lang/rust-clippy/issues/8867
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct IoVec<T>(pub(crate) libc::iovec, PhantomData<T>);
 
