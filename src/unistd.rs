@@ -2613,7 +2613,7 @@ pub fn access<P: ?Sized + NixPath>(path: &P, amode: AccessFlags) -> Result<()> {
 /// guaranteed to conform to [`NAME_REGEX`](https://serverfault.com/a/73101/407341), which only
 /// contains ASCII.
 #[cfg(not(target_os = "redox"))] // RedoxFS does not support passwd
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct User {
     /// Username
     pub name: String,
@@ -2771,7 +2771,7 @@ impl User {
 
 /// Representation of a Group, based on `libc::group`
 #[cfg(not(target_os = "redox"))] // RedoxFS does not support passwd
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Group {
     /// Group name
     pub name: String,
