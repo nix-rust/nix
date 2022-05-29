@@ -76,7 +76,7 @@ pub(crate) mod timer {
 
     /// An enumeration allowing the definition of the expiration time of an alarm,
     /// recurring or not.
-    #[derive(Debug, Clone, Copy, PartialEq)]
+    #[derive(Debug, Clone, Copy, Eq, PartialEq)]
     pub enum Expiration {
         /// Alarm will trigger once after the time given in `TimeSpec`
         OneShot(TimeSpec),
@@ -243,7 +243,7 @@ impl PartialOrd for TimeSpec {
 impl TimeValLike for TimeSpec {
     #[inline]
     fn seconds(seconds: i64) -> TimeSpec {
-        assert!(seconds >= TS_MIN_SECONDS && seconds <= TS_MAX_SECONDS,
+        assert!((TS_MIN_SECONDS..=TS_MAX_SECONDS).contains(&seconds),
                 "TimeSpec out of bounds; seconds={}", seconds);
         #[cfg_attr(target_env = "musl", allow(deprecated))] // https://github.com/rust-lang/libc/issues/1848
         TimeSpec(timespec {tv_sec: seconds as time_t, tv_nsec: 0 })
@@ -270,7 +270,7 @@ impl TimeValLike for TimeSpec {
     #[inline]
     fn nanoseconds(nanoseconds: i64) -> TimeSpec {
         let (secs, nanos) = div_mod_floor_64(nanoseconds, NANOS_PER_SEC);
-        assert!(secs >= TS_MIN_SECONDS && secs <= TS_MAX_SECONDS,
+        assert!((TS_MIN_SECONDS..=TS_MAX_SECONDS).contains(&secs),
                 "TimeSpec out of bounds");
         #[cfg_attr(target_env = "musl", allow(deprecated))] // https://github.com/rust-lang/libc/issues/1848
         TimeSpec(timespec {tv_sec: secs as time_t,
@@ -456,7 +456,7 @@ impl PartialOrd for TimeVal {
 impl TimeValLike for TimeVal {
     #[inline]
     fn seconds(seconds: i64) -> TimeVal {
-        assert!(seconds >= TV_MIN_SECONDS && seconds <= TV_MAX_SECONDS,
+        assert!((TV_MIN_SECONDS..=TV_MAX_SECONDS).contains(&seconds),
                 "TimeVal out of bounds; seconds={}", seconds);
         #[cfg_attr(target_env = "musl", allow(deprecated))] // https://github.com/rust-lang/libc/issues/1848
         TimeVal(timeval {tv_sec: seconds as time_t, tv_usec: 0 })
@@ -474,7 +474,7 @@ impl TimeValLike for TimeVal {
     #[inline]
     fn microseconds(microseconds: i64) -> TimeVal {
         let (secs, micros) = div_mod_floor_64(microseconds, MICROS_PER_SEC);
-        assert!(secs >= TV_MIN_SECONDS && secs <= TV_MAX_SECONDS,
+        assert!((TV_MIN_SECONDS..=TV_MAX_SECONDS).contains(&secs),
                 "TimeVal out of bounds");
         #[cfg_attr(target_env = "musl", allow(deprecated))] // https://github.com/rust-lang/libc/issues/1848
         TimeVal(timeval {tv_sec: secs as time_t,
@@ -487,7 +487,7 @@ impl TimeValLike for TimeVal {
     fn nanoseconds(nanoseconds: i64) -> TimeVal {
         let microseconds = nanoseconds / 1000;
         let (secs, micros) = div_mod_floor_64(microseconds, MICROS_PER_SEC);
-        assert!(secs >= TV_MIN_SECONDS && secs <= TV_MAX_SECONDS,
+        assert!((TV_MIN_SECONDS..=TV_MAX_SECONDS).contains(&secs),
                 "TimeVal out of bounds");
         #[cfg_attr(target_env = "musl", allow(deprecated))] // https://github.com/rust-lang/libc/issues/1848
         TimeVal(timeval {tv_sec: secs as time_t,
