@@ -9,6 +9,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Added `aio_writev` and `aio_readv`.
   (#[1713](https://github.com/nix-rust/nix/pull/1713))
 
+- impl `From<uid_t>` for `Uid` and `From<gid_t>` for `Gid`
+  (#[1727](https://github.com/nix-rust/nix/pull/1727))
 - impl From<SockaddrIn> for std::net::SocketAddrV4 and
   impl From<SockaddrIn6> for std::net::SocketAddrV6.
   (#[1711](https://github.com/nix-rust/nix/pull/1711))
