@@ -87,6 +87,12 @@ impl From<Uid> for uid_t {
     }
 }
 
+impl From<uid_t> for Uid {
+    fn from(uid: uid_t) -> Self {
+        Uid(uid)
+    }
+}
+
 impl fmt::Display for Uid {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Display::fmt(&self.0, f)
@@ -128,6 +134,12 @@ impl Gid {
 impl From<Gid> for gid_t {
     fn from(gid: Gid) -> Self {
         gid.0
+    }
+}
+
+impl From<gid_t> for Gid {
+    fn from(gid: gid_t) -> Self {
+        Gid(gid)
     }
 }
 
