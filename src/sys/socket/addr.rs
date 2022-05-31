@@ -1514,6 +1514,14 @@ impl SockaddrStorage {
     accessors!{as_alg_addr, as_alg_addr_mut, AlgAddr,
         AddressFamily::Alg, libc::sockaddr_alg, alg}
 
+    #[cfg(any(target_os = "android",
+              target_os = "fuchsia",
+              target_os = "linux"))]
+    #[cfg(feature = "net")]
+    accessors!{
+        as_link_addr, as_link_addr_mut, LinkAddr,
+        AddressFamily::Packet, libc::sockaddr_ll, dl}
+
     #[cfg(any(target_os = "dragonfly",
               target_os = "freebsd",
               target_os = "ios",
@@ -2680,6 +2688,25 @@ mod tests {
                 .. unsafe{mem::zeroed()}
             });
             format!("{}", la);
+        }
+
+        #[cfg(all(
+                any(target_os = "android",
+                    target_os = "fuchsia",
+                    target_os = "linux"),
+                target_endian = "little"
+        ))]
+        #[test]
+        fn linux_loopback() {
+            let bytes = [17u8, 0, 0, 0, 1, 0, 0, 0, 4, 3, 0, 6, 1, 2, 3, 4, 5, 6, 0, 0];
+            let sa = bytes.as_ptr() as *const libc::sockaddr;
+            let len = None;
+            let sock_addr = unsafe { SockaddrStorage::from_raw(sa, len) }.unwrap();
+            assert_eq!(sock_addr.family(), Some(AddressFamily::Packet));
+            match sock_addr.as_link_addr() {
+                Some(dl) => assert_eq!(dl.addr(), Some([1, 2, 3, 4, 5, 6])),
+                None => panic!("Can't unwrap sockaddr storage")
+            }
         }
 
         #[cfg(any(target_os = "ios",

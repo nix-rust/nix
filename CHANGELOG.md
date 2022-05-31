@@ -30,6 +30,11 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1713](https://github.com/nix-rust/nix/pull/1713))
 
 ### Fixed
+
+- Enabled `SockaddrStorage::{as_link_addr, as_link_addr_mut}` for Linux-like
+  operating systems.
+  (#[1729](https://github.com/nix-rust/nix/pull/1729))
+
 ### Removed
 
 - Removed support for resubmitting partially complete `lio_listio` operations.
