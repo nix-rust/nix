@@ -7,6 +7,11 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 ### Added
 ### Changed
 ### Fixed
+
+- Enabled `SockaddrStorage::{as_link_addr, as_link_addr_mut}` for Linux-like
+  operating systems.
+  (#[1729](https://github.com/nix-rust/nix/pull/1729))
+
 ### Removed
 
 ## [0.24.1] - 2022-04-22
