@@ -5,7 +5,7 @@
 /// The `libc` crate must be in scope with the name `libc`.
 ///
 /// # Example
-/// ```
+/// ```ignore
 /// libc_bitflags!{
 ///     pub struct ProtFlags: libc::c_int {
 ///         PROT_NONE;
@@ -25,7 +25,7 @@
 /// various flags have different types, so we cast the broken ones to the right
 /// type.
 ///
-/// ```
+/// ```ignore
 /// libc_bitflags!{
 ///     pub struct SaFlags: libc::c_ulong {
 ///         SA_NOCLDSTOP as libc::c_ulong;
@@ -66,7 +66,7 @@ macro_rules! libc_bitflags {
 /// The `libc` crate must be in scope with the name `libc`.
 ///
 /// # Example
-/// ```
+/// ```ignore
 /// libc_enum!{
 ///     pub enum ProtFlags {
 ///         PROT_NONE,
