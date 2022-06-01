@@ -8,6 +8,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 - Added `aio_writev` and `aio_readv`.
   (#[1713](https://github.com/nix-rust/nix/pull/1713))
+- Added `Pid::as_wait_pgrp` for use with `waitpid`
+  (#[1732](https://github.com/nix-rust/nix/pull/1732))
 
 - impl `From<uid_t>` for `Uid` and `From<gid_t>` for `Gid`
   (#[1727](https://github.com/nix-rust/nix/pull/1727))
@@ -28,6 +30,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   * Changes the type of the `priority` arguments to `i32`.
   * Changes the return type of `aio_return` to `usize`.
   (#[1713](https://github.com/nix-rust/nix/pull/1713))
+- `waitpid` now accepts any `Into<Option<WaitPidFlag>>` instead of `Option<WaitPidFlag>`
+  (#[1732](https://github.com/nix-rust/nix/pull/1732))
 
 ### Fixed
 

@@ -159,6 +159,14 @@ feature! {
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Pid(pid_t);
 
+/// A helper constant which causes `waitpid` to return for any
+/// child PID with the same process group as the current process
+pub const ANY_PGRP_CHILD: Pid = Pid(0);
+
+/// A helper constant which causes `waitpid`
+/// to wait on any child process
+pub const ANY_CHILD: Pid = Pid(-1);
+
 impl Pid {
     /// Creates `Pid` from raw `pid_t`.
     pub const fn from_raw(pid: pid_t) -> Self {
@@ -178,6 +186,62 @@ impl Pid {
     /// Get the raw `pid_t` wrapped by `self`.
     pub const fn as_raw(self) -> pid_t {
         self.0
+    }
+
+    /// Convert a Pid to its process group representation for use with
+    /// [`waitpid`]
+    ///
+    /// [`waitpid`] accepts process group ids (PGIDs) as well as single PIDs.
+    /// Because both types are natively represented as positive, signed
+    /// [`pid_t`], [`waitpid`] distinguishes between the two by having PGIDs
+    /// passed negated (twos compliment).
+    ///
+    /// # Notes
+    ///
+    /// - In contexts where PGIDs do not intersect with PIDs, (e.g., the return
+    ///   value of [`getpgrp`]) they are still represented by positive values.
+    /// - `Pid` is [`Copy`], so unless the return value is bound to the same
+    ///   variable, inversion is unnecessary.
+    /// - This function only converts in one direction. All calls after first
+    ///   have no effect.
+    /// - This function is only useful in the rare cases when the given process
+    ///   group is not the same as that of the process calling [`waitpid`].
+    ///   Otherwise, it's preferrable to use the [`ANY_PGRP_CHILD`] which will
+    ///   always use the current process' PGID.
+    /// - In debug mode, panics if the raw PID is `i32::MIN`
+    ///   (See [`abs`](i32::abs))
+    ///
+    /// [`pid_t`]: libc::pid_t
+    /// [`waitpid`]: crate::sys::wait::waitpid
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use nix::unistd::Pid;
+    ///
+    /// let pid = Pid::from_raw(42);
+    ///
+    /// // Calls after the first do nothing
+    /// assert_ne!(pid, pid.as_wait_pgrp());
+    /// assert_eq!(pid.as_wait_pgrp(), pid.as_wait_pgrp().as_wait_pgrp());
+    ///
+    /// // Inversion is generally unnecessary because Pid is Copy
+    /// assert_eq!(pid, Pid::from_raw(42));
+    /// ```
+    ///
+    /// ```no_run
+    /// use nix::unistd::{ANY_PGRP_CHILD, getpgrp};
+    /// use nix::sys::wait::waitpid;
+    ///
+    /// // Unnecessary:
+    /// let my_pgrp = getpgrp();
+    /// let _ = waitpid(my_pgrp.as_wait_pgrp(), None);
+    ///
+    /// // Equivalent and preferred:
+    /// let _ = waitpid(ANY_PGRP_CHILD, None);
+    /// ```
+    pub const fn as_wait_pgrp(self) -> Pid {
+        Pid(-self.0.abs())
     }
 }
 
