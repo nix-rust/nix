@@ -27,7 +27,7 @@ targets = [
 ]
 
 [dependencies]
-libc = { version = "0.2.147", features = ["extra_traits"] }
+libc = { git = "https://github.com/asomers/libc.git", rev = "d81b318adeae923142c0b5640417cd90509e02ca", features = [ "extra_traits" ] }
 bitflags = "2.3.1"
 cfg-if = "1.0"
 pin-utils = { version = "0.1.0", optional = true }
