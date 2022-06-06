@@ -380,8 +380,7 @@ sockopt_impl!(
 #[cfg(any(target_os = "android",
           target_os = "dragonfly",
           target_os = "freebsd",
-          target_os = "linux",
-          target_os = "nacl"))]
+          target_os = "linux"))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -993,8 +992,7 @@ mod test {
     }
 
     #[cfg(any(target_os = "freebsd",
-              target_os = "linux",
-              target_os = "nacl"))]
+              target_os = "linux"))]
     #[test]
     fn can_get_listen_on_tcp_socket() {
         use super::super::*;

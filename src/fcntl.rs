@@ -20,7 +20,7 @@ use crate::{
     target_os = "android",
     target_os = "emscripten",
     target_os = "fuchsia",
-    any(target_os = "wasi", target_env = "wasi"),
+    target_os = "wasi",
     target_env = "uclibc",
     target_os = "freebsd"
 ))]
@@ -828,7 +828,7 @@ pub fn fspacectl_all(fd: RawFd, offset: libc::off_t, len: libc::off_t)
     target_os = "android",
     target_os = "emscripten",
     target_os = "fuchsia",
-    any(target_os = "wasi", target_env = "wasi"),
+    target_os = "wasi",
     target_env = "uclibc",
     target_os = "freebsd"
 ))]
@@ -877,7 +877,7 @@ mod posix_fadvise {
     target_os = "dragonfly",
     target_os = "emscripten",
     target_os = "fuchsia",
-    any(target_os = "wasi", target_env = "wasi"),
+    target_os = "wasi",
     target_os = "freebsd"
 ))]
 pub fn posix_fallocate(fd: RawFd, offset: libc::off_t, len: libc::off_t) -> Result<()> {

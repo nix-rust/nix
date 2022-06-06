@@ -170,8 +170,7 @@ fn test_so_tcp_keepalive() {
     #[cfg(any(target_os = "android",
               target_os = "dragonfly",
               target_os = "freebsd",
-              target_os = "linux",
-              target_os = "nacl"))] {
+              target_os = "linux"))] {
         let x = getsockopt(fd, sockopt::TcpKeepIdle).unwrap();
         setsockopt(fd, sockopt::TcpKeepIdle, &(x + 1)).unwrap();
         assert_eq!(getsockopt(fd, sockopt::TcpKeepIdle).unwrap(), x + 1);

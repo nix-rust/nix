@@ -42,7 +42,6 @@ pub unsafe fn clearenv() -> std::result::Result<(), ClearEnvError> {
     cfg_if! {
         if #[cfg(any(target_os = "fuchsia",
                      target_os = "wasi",
-                     target_env = "wasi",
                      target_env = "uclibc",
                      target_os = "linux",
                      target_os = "android",
