@@ -11,6 +11,9 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Enabled `SockaddrStorage::{as_link_addr, as_link_addr_mut}` for Linux-like
   operating systems.
   (#[1729](https://github.com/nix-rust/nix/pull/1729))
+- Fixed `SockaddrLike::from_raw` implementations for `VsockAddr` and
+  `SysControlAddr`.
+  (#[1736](https://github.com/nix-rust/nix/pull/1736))
 
 ### Removed
 
