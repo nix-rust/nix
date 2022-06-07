@@ -2232,7 +2232,7 @@ pub mod sys_control {
                     return None;
                 }
             }
-            if (*addr).sa_family as i32 != libc::AF_INET6 as i32 {
+            if (*addr).sa_family as i32 != libc::AF_SYSTEM as i32 {
                 return None;
             }
             Some(SysControlAddr(*(addr as *const libc::sockaddr_ctl)))
