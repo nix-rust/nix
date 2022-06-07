@@ -2535,7 +2535,7 @@ pub mod vsock {
                     return None;
                 }
             }
-            if (*addr).sa_family as i32 != libc::AF_INET6 as i32 {
+            if (*addr).sa_family as i32 != libc::AF_VSOCK as i32 {
                 return None;
             }
             Some(VsockAddr(*(addr as *const libc::sockaddr_vm)))
