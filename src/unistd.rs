@@ -1,28 +1,30 @@
 //! Safe wrappers around functions found in libc "unistd.h" header
 
+use crate::errno::{self, Errno};
+#[cfg(not(target_os = "redox"))]
+#[cfg(feature = "fs")]
+use crate::fcntl::{at_rawfd, AtFlags};
+#[cfg(feature = "fs")]
+use crate::fcntl::{fcntl, FcntlArg::F_SETFD, FdFlag, OFlag};
+#[cfg(feature = "fs")]
+use crate::sys::stat::Mode;
+use crate::{Error, NixPath, Result};
 #[cfg(not(target_os = "redox"))]
 use cfg_if::cfg_if;
-use crate::errno::{self, Errno};
-use crate::{Error, Result, NixPath};
-#[cfg(not(target_os = "redox"))]
-#[cfg(feature = "fs")]
-use crate::fcntl::{AtFlags, at_rawfd};
-use libc::{self, c_char, c_void, c_int, c_long, c_uint, size_t, pid_t, off_t,
-           uid_t, gid_t, mode_t, PATH_MAX};
-#[cfg(feature = "fs")]
-use crate::fcntl::{FdFlag, OFlag, fcntl, FcntlArg::F_SETFD};
-use std::{fmt, mem, ptr};
+use libc::{
+    self, c_char, c_int, c_long, c_uint, c_void, gid_t, mode_t, off_t, pid_t, size_t, uid_t,
+    PATH_MAX,
+};
 use std::convert::Infallible;
 use std::ffi::{CStr, OsString};
 #[cfg(not(target_os = "redox"))]
 use std::ffi::{CString, OsStr};
-use std::os::unix::ffi::OsStringExt;
 #[cfg(not(target_os = "redox"))]
 use std::os::unix::ffi::OsStrExt;
+use std::os::unix::ffi::OsStringExt;
 use std::os::unix::io::RawFd;
 use std::path::PathBuf;
-#[cfg(feature = "fs")]
-use crate::sys::stat::Mode;
+use std::{fmt, mem, ptr};
 
 feature! {
     #![feature = "fs"]
@@ -30,18 +32,22 @@ feature! {
     pub use self::pivot_root::*;
 }
 
-#[cfg(any(target_os = "android",
-          target_os = "dragonfly",
-          target_os = "freebsd",
-          target_os = "linux",
-          target_os = "openbsd"))]
+#[cfg(any(
+    target_os = "android",
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "linux",
+    target_os = "openbsd"
+))]
 pub use self::setres::*;
 
-#[cfg(any(target_os = "android",
-          target_os = "dragonfly",
-          target_os = "freebsd",
-          target_os = "linux",
-          target_os = "openbsd"))]
+#[cfg(any(
+    target_os = "android",
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "linux",
+    target_os = "openbsd"
+))]
 pub use self::getres::*;
 
 feature! {
@@ -373,6 +379,7 @@ pub fn setpgid(pid: Pid, pgid: Pid) -> Result<()> {
     let res = unsafe { libc::setpgid(pid.into(), pgid.into()) };
     Errno::result(res).map(drop)
 }
+
 #[inline]
 pub fn getpgid(pid: Option<Pid>) -> Result<Pid> {
     let res = unsafe { libc::getpgid(pid.unwrap_or(Pid(0)).into()) };
@@ -672,7 +679,7 @@ fn reserve_double_buffer_size<T>(buf: &mut Vec<T>, limit: usize) -> Result<()> {
     use std::cmp::min;
 
     if buf.capacity() >= limit {
-        return Err(Errno::ERANGE)
+        return Err(Errno::ERANGE);
     }
 
     let capacity = min(buf.capacity() * 2, limit);
@@ -2776,11 +2783,13 @@ mod pivot_root {
 }
 }
 
-#[cfg(any(target_os = "android",
-          target_os = "dragonfly",
-          target_os = "freebsd",
-          target_os = "linux",
-          target_os = "openbsd"))]
+#[cfg(any(
+    target_os = "android",
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "linux",
+    target_os = "openbsd"
+))]
 mod setres {
     feature! {
     #![feature = "user"]
@@ -2823,11 +2832,13 @@ mod setres {
     }
 }
 
-#[cfg(any(target_os = "android",
-          target_os = "dragonfly",
-          target_os = "freebsd",
-          target_os = "linux",
-          target_os = "openbsd"))]
+#[cfg(any(
+    target_os = "android",
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "linux",
+    target_os = "openbsd"
+))]
 mod getres {
     feature! {
     #![feature = "user"]
@@ -2893,7 +2904,7 @@ mod getres {
 }
 
 #[cfg(feature = "fs")]
-libc_bitflags!{
+libc_bitflags! {
     /// Options for access()
     #[cfg_attr(docsrs, doc(cfg(feature = "fs")))]
     pub struct AccessFlags : c_int {
