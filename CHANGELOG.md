@@ -24,6 +24,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1747](https://github.com/nix-rust/nix/pull/1747))
 - Added the `DontRoute` SockOpt
   (#[1752](https://github.com/nix-rust/nix/pull/1752))
+- Added `signal::SigSet::from_sigset_t_unchecked()`.
+  (#[1741](https://github.com/nix-rust/nix/pull/1741))
 
 ### Changed
 

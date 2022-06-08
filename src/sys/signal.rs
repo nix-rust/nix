@@ -567,6 +567,19 @@ impl SigSet {
             Signal::try_from(signum.assume_init()).unwrap()
         })
     }
+
+    /// Converts a `libc::sigset_t` object to a [`SigSet`] without checking  whether the
+    /// `libc::sigset_t` is already initialized.
+    ///
+    /// # Safety
+    ///
+    /// The `sigset` passed in must be a valid an initialized `libc::sigset_t` by calling either
+    /// [`sigemptyset(3)`](https://man7.org/linux/man-pages/man3/sigemptyset.3p.html) or
+    /// [`sigfillset(3)`](https://man7.org/linux/man-pages/man3/sigfillset.3p.html).
+    /// Otherwise, the results are undefined.
+    pub unsafe fn from_sigset_t_unchecked(sigset: libc::sigset_t) -> SigSet {
+        SigSet { sigset }
+    }
 }
 
 impl AsRef<libc::sigset_t> for SigSet {
@@ -1310,5 +1323,22 @@ mod tests {
         })
         .join()
         .unwrap();
+    }
+
+    #[test]
+    fn test_from_sigset_t_unchecked() {
+        let src_set = SigSet::empty();
+        let set = unsafe { SigSet::from_sigset_t_unchecked(src_set.sigset) };
+
+        for signal in Signal::iterator() {
+            assert!(!set.contains(signal));
+        }
+
+        let src_set = SigSet::all();
+        let set = unsafe { SigSet::from_sigset_t_unchecked(src_set.sigset) };
+
+        for signal in Signal::iterator() {
+            assert!(set.contains(signal));
+        }
     }
 }
