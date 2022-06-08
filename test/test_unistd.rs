@@ -583,7 +583,10 @@ fn test_acct() {
     acct::enable(path).unwrap();
 
     loop {
-        Command::new("echo").arg("Hello world");
+        Command::new("echo")
+            .arg("Hello world")
+            .output()
+            .unwrap();
         let len = fs::metadata(path).unwrap().len();
         if len > 0 { break; }
         thread::sleep(time::Duration::from_millis(10));
