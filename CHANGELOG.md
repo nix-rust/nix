@@ -28,6 +28,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   * Changes the type of the `priority` arguments to `i32`.
   * Changes the return type of `aio_return` to `usize`.
   (#[1713](https://github.com/nix-rust/nix/pull/1713))
+- `nix::poll::ppoll`: `sigmask` parameter is now optional.
+  (#[1739](https://github.com/nix-rust/nix/pull/1739))
 
 ### Fixed
 
