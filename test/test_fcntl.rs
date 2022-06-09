@@ -462,7 +462,7 @@ mod linux_android {
           target_os = "android",
           target_os = "emscripten",
           target_os = "fuchsia",
-          any(target_os = "wasi", target_env = "wasi"),
+          target_os = "wasi",
           target_env = "uclibc",
           target_os = "freebsd"))]
 mod test_posix_fadvise {
@@ -495,7 +495,7 @@ mod test_posix_fadvise {
           target_os = "dragonfly",
           target_os = "emscripten",
           target_os = "fuchsia",
-          any(target_os = "wasi", target_env = "wasi"),
+          target_os = "wasi",
           target_os = "freebsd"))]
 mod test_posix_fallocate {
 

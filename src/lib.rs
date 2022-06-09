@@ -116,7 +116,6 @@ feature! {
 }
 #[cfg(any(target_os = "dragonfly",
           target_os = "freebsd",
-          target_os = "fushsia",
           target_os = "linux",
           target_os = "netbsd"))]
 feature! {
