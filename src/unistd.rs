@@ -1,28 +1,30 @@
 //! Safe wrappers around functions found in libc "unistd.h" header
 
+use crate::errno::{self, Errno};
+#[cfg(not(target_os = "redox"))]
+#[cfg(feature = "fs")]
+use crate::fcntl::{at_rawfd, AtFlags};
+#[cfg(feature = "fs")]
+use crate::fcntl::{fcntl, FcntlArg::F_SETFD, FdFlag, OFlag};
+#[cfg(feature = "fs")]
+use crate::sys::stat::Mode;
+use crate::{Error, NixPath, Result};
 #[cfg(not(target_os = "redox"))]
 use cfg_if::cfg_if;
-use crate::errno::{self, Errno};
-use crate::{Error, Result, NixPath};
-#[cfg(not(target_os = "redox"))]
-#[cfg(feature = "fs")]
-use crate::fcntl::{AtFlags, at_rawfd};
-use libc::{self, c_char, c_void, c_int, c_long, c_uint, size_t, pid_t, off_t,
-           uid_t, gid_t, mode_t, PATH_MAX};
-#[cfg(feature = "fs")]
-use crate::fcntl::{FdFlag, OFlag, fcntl, FcntlArg::F_SETFD};
-use std::{fmt, mem, ptr};
+use libc::{
+    self, c_char, c_int, c_long, c_uint, c_void, gid_t, mode_t, off_t, pid_t, size_t, uid_t,
+    PATH_MAX,
+};
 use std::convert::Infallible;
 use std::ffi::{CStr, OsString};
 #[cfg(not(target_os = "redox"))]
 use std::ffi::{CString, OsStr};
-use std::os::unix::ffi::OsStringExt;
 #[cfg(not(target_os = "redox"))]
 use std::os::unix::ffi::OsStrExt;
+use std::os::unix::ffi::OsStringExt;
 use std::os::unix::io::RawFd;
 use std::path::PathBuf;
-#[cfg(feature = "fs")]
-use crate::sys::stat::Mode;
+use std::{fmt, mem, ptr};
 
 feature! {
     #![feature = "fs"]
@@ -30,18 +32,22 @@ feature! {
     pub use self::pivot_root::*;
 }
 
-#[cfg(any(target_os = "android",
-          target_os = "dragonfly",
-          target_os = "freebsd",
-          target_os = "linux",
-          target_os = "openbsd"))]
+#[cfg(any(
+    target_os = "android",
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "linux",
+    target_os = "openbsd"
+))]
 pub use self::setres::*;
 
-#[cfg(any(target_os = "android",
-          target_os = "dragonfly",
-          target_os = "freebsd",
-          target_os = "linux",
-          target_os = "openbsd"))]
+#[cfg(any(
+    target_os = "android",
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "linux",
+    target_os = "openbsd"
+))]
 pub use self::getres::*;
 
 feature! {
@@ -159,6 +165,14 @@ feature! {
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Pid(pid_t);
 
+/// A helper constant which causes `waitpid` to return for any
+/// child PID with the same process group as the current process
+pub const ANY_PGRP_CHILD: Pid = Pid(0);
+
+/// A helper constant which causes `waitpid`
+/// to wait on any child process
+pub const ANY_CHILD: Pid = Pid(-1);
+
 impl Pid {
     /// Creates `Pid` from raw `pid_t`.
     pub const fn from_raw(pid: pid_t) -> Self {
@@ -178,6 +192,62 @@ impl Pid {
     /// Get the raw `pid_t` wrapped by `self`.
     pub const fn as_raw(self) -> pid_t {
         self.0
+    }
+
+    /// Convert a Pid to its process group representation for use with
+    /// [`waitpid`]
+    ///
+    /// [`waitpid`] accepts process group ids (PGIDs) as well as single PIDs.
+    /// Because both types are natively represented as positive, signed
+    /// [`pid_t`], [`waitpid`] distinguishes between the two by having PGIDs
+    /// passed negated (twos compliment).
+    ///
+    /// # Notes
+    ///
+    /// - In contexts where PGIDs do not intersect with PIDs, (e.g., the return
+    ///   value of [`getpgrp`]) they are still represented by positive values.
+    /// - `Pid` is [`Copy`], so unless the return value is bound to the same
+    ///   variable, inversion is unnecessary.
+    /// - This function only converts in one direction. All calls after first
+    ///   have no effect.
+    /// - This function is only useful in the rare cases when the given process
+    ///   group is not the same as that of the process calling [`waitpid`].
+    ///   Otherwise, it's preferrable to use the [`ANY_PGRP_CHILD`] which will
+    ///   always use the current process' PGID.
+    /// - In debug mode, panics if the raw PID is `i32::MIN`
+    ///   (See [`abs`](i32::abs))
+    ///
+    /// [`pid_t`]: libc::pid_t
+    /// [`waitpid`]: crate::sys::wait::waitpid
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use nix::unistd::Pid;
+    ///
+    /// let pid = Pid::from_raw(42);
+    ///
+    /// // Calls after the first do nothing
+    /// assert_ne!(pid, pid.as_wait_pgrp());
+    /// assert_eq!(pid.as_wait_pgrp(), pid.as_wait_pgrp().as_wait_pgrp());
+    ///
+    /// // Inversion is generally unnecessary because Pid is Copy
+    /// assert_eq!(pid, Pid::from_raw(42));
+    /// ```
+    ///
+    /// ```no_run
+    /// use nix::unistd::{ANY_PGRP_CHILD, getpgrp};
+    /// use nix::sys::wait::waitpid;
+    ///
+    /// // Unnecessary:
+    /// let my_pgrp = getpgrp();
+    /// let _ = waitpid(my_pgrp.as_wait_pgrp(), None);
+    ///
+    /// // Equivalent and preferred:
+    /// let _ = waitpid(ANY_PGRP_CHILD, None);
+    /// ```
+    pub const fn as_wait_pgrp(self) -> Pid {
+        Pid(-self.0.abs())
     }
 }
 
@@ -309,6 +379,7 @@ pub fn setpgid(pid: Pid, pgid: Pid) -> Result<()> {
     let res = unsafe { libc::setpgid(pid.into(), pgid.into()) };
     Errno::result(res).map(drop)
 }
+
 #[inline]
 pub fn getpgid(pid: Option<Pid>) -> Result<Pid> {
     let res = unsafe { libc::getpgid(pid.unwrap_or(Pid(0)).into()) };
@@ -608,7 +679,7 @@ fn reserve_double_buffer_size<T>(buf: &mut Vec<T>, limit: usize) -> Result<()> {
     use std::cmp::min;
 
     if buf.capacity() >= limit {
-        return Err(Errno::ERANGE)
+        return Err(Errno::ERANGE);
     }
 
     let capacity = min(buf.capacity() * 2, limit);
@@ -2712,11 +2783,13 @@ mod pivot_root {
 }
 }
 
-#[cfg(any(target_os = "android",
-          target_os = "dragonfly",
-          target_os = "freebsd",
-          target_os = "linux",
-          target_os = "openbsd"))]
+#[cfg(any(
+    target_os = "android",
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "linux",
+    target_os = "openbsd"
+))]
 mod setres {
     feature! {
     #![feature = "user"]
@@ -2759,11 +2832,13 @@ mod setres {
     }
 }
 
-#[cfg(any(target_os = "android",
-          target_os = "dragonfly",
-          target_os = "freebsd",
-          target_os = "linux",
-          target_os = "openbsd"))]
+#[cfg(any(
+    target_os = "android",
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "linux",
+    target_os = "openbsd"
+))]
 mod getres {
     feature! {
     #![feature = "user"]
@@ -2829,7 +2904,7 @@ mod getres {
 }
 
 #[cfg(feature = "fs")]
-libc_bitflags!{
+libc_bitflags! {
     /// Options for access()
     #[cfg_attr(docsrs, doc(cfg(feature = "fs")))]
     pub struct AccessFlags : c_int {
