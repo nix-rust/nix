@@ -85,6 +85,9 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- Reimplemented sendmmsg/recvmmsg to avoid allocations and with better API
+  (#[1744](https://github.com/nix-rust/nix/pull/1744))
+
 - Rewrote the aio module.  The new module:
   * Does more type checking at compile time rather than runtime.
   * Gives the caller control over whether and when to `Box` an aio operation.
