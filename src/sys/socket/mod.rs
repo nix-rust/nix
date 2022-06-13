@@ -1621,7 +1621,8 @@ pub fn recvmmsg<'a, I, S>(
             .unwrap_or((ptr::null_mut(), 0));
         let mhdr = unsafe {
                 pack_mhdr_to_receive(
-                d.iov.as_ref(),
+                d.iov.as_ref().as_ptr(),
+                d.iov.as_ref().len(),
                 msg_control,
                 msg_controllen,
                 addresses[i].as_mut_ptr(),
@@ -1695,15 +1696,15 @@ unsafe fn read_mhdr<'a, S>(
     }
 }
 
-unsafe fn pack_mhdr_to_receive<'outer, 'inner, I, S>(
-    iov: I,
+unsafe fn pack_mhdr_to_receive<S>(
+    iov_buffer: *const IoSliceMut,
+    iov_buffer_len: usize,
     cmsg_buffer: *const u8,
     cmsg_capacity: usize,
     address: *mut S,
 ) -> msghdr
     where
-        I: AsRef<[IoSliceMut<'inner>]> + 'outer,
-        S: SockaddrLike + 'outer
+        S: SockaddrLike
 {
     // Musl's msghdr has private fields, so this is the only way to
     // initialize it.
@@ -1711,8 +1712,8 @@ unsafe fn pack_mhdr_to_receive<'outer, 'inner, I, S>(
     let p = mhdr.as_mut_ptr();
     (*p).msg_name = (*address).as_mut_ptr() as *mut c_void;
     (*p).msg_namelen = S::size();
-    (*p).msg_iov = iov.as_ref().as_ptr() as *mut iovec;
-    (*p).msg_iovlen = iov.as_ref().len() as _;
+    (*p).msg_iov = iov_buffer as *mut iovec;
+    (*p).msg_iovlen = iov_buffer_len as _;
     (*p).msg_control = cmsg_buffer as *mut c_void;
     (*p).msg_controllen = cmsg_capacity as _;
     (*p).msg_flags = 0;
@@ -1797,7 +1798,7 @@ pub fn recvmsg<'a, 'outer, 'inner, S>(fd: RawFd, iov: &'outer mut [IoSliceMut<'i
         .map(|v| (v.as_mut_ptr(), v.capacity()))
         .unwrap_or((ptr::null_mut(), 0));
     let mut mhdr = unsafe {
-        pack_mhdr_to_receive::<_, S>(iov, msg_control, msg_controllen, address.as_mut_ptr())
+        pack_mhdr_to_receive(iov.as_ref().as_ptr(), iov.len(), msg_control, msg_controllen, address.as_mut_ptr())
     };
 
     let ret = unsafe { libc::recvmsg(fd, &mut mhdr, flags.bits()) };
