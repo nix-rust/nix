@@ -501,31 +501,31 @@ mod recvfrom {
             rsock,
             ssock,
             move |s, m, flags| {
-                let iov = [IoSlice::new(m)];
-                let mut msgs = vec![SendMmsgData {
-                    iov: &iov,
-                    cmsgs: &[],
-                    addr: Some(sock_addr),
-                    _lt: Default::default(),
-                }];
-
                 let batch_size = 15;
+                let mut iovs = Vec::with_capacity(1 + batch_size);
+                let mut addrs = Vec::with_capacity(1 + batch_size);
+                let mut data = MultiHeaders::preallocate(1 + batch_size, None);
+                let iov = IoSlice::new(m);
+                // first chunk:
+                iovs.push([iov]);
+                addrs.push(Some(sock_addr));
 
                 for _ in 0..batch_size {
-                    msgs.push(SendMmsgData {
-                        iov: &iov,
-                        cmsgs: &[],
-                        addr: Some(sock_addr2),
-                        _lt: Default::default(),
-                    });
+                    iovs.push([iov]);
+                    addrs.push(Some(sock_addr2));
                 }
-                sendmmsg(s, msgs.iter(), flags).map(move |sent_bytes| {
-                    assert!(!sent_bytes.is_empty());
-                    for sent in &sent_bytes {
-                        assert_eq!(*sent, m.len());
-                    }
-                    sent_bytes.len()
-                })
+
+                let res = sendmmsg(s, &mut data, &iovs, addrs, [], flags)?;
+                let mut sent_messages = 0;
+                let mut sent_bytes = 0;
+                for item in res {
+                    sent_messages += 1;
+                    sent_bytes += item.bytes;
+                }
+                //
+                assert_eq!(sent_messages, iovs.len());
+                assert_eq!(sent_bytes, sent_messages * m.len());
+                Ok(sent_messages)
             },
             |_, _| {},
         );
@@ -577,21 +577,19 @@ mod recvfrom {
 
         // Buffers to receive exactly `NUM_MESSAGES_SENT` messages
         let mut receive_buffers = [[0u8; 32]; NUM_MESSAGES_SENT];
-        let iovs: Vec<_> = receive_buffers
-            .iter_mut()
-            .map(|buf| [IoSliceMut::new(&mut buf[..])])
-            .collect();
+        msgs.extend(
+            receive_buffers
+                .iter_mut()
+                .map(|buf| [IoSliceMut::new(&mut buf[..])]),
+        );
 
-        for iov in &iovs {
-            msgs.push_back(RecvMmsgData {
-                iov,
-                cmsg_buffer: None,
-            })
-        }
+        let mut data =
+            MultiHeaders::<SockaddrIn>::preallocate(msgs.len(), None);
 
         let res: Vec<RecvMsg<SockaddrIn>> =
-            recvmmsg(rsock, &mut msgs, MsgFlags::empty(), None)
-                .expect("recvmmsg");
+            recvmmsg(rsock, &mut data, msgs.iter(), MsgFlags::empty(), None)
+                .expect("recvmmsg")
+                .collect();
         assert_eq!(res.len(), DATA.len());
 
         for RecvMsg { address, bytes, .. } in res.into_iter() {
@@ -655,21 +653,26 @@ mod recvfrom {
         // will return when there are fewer than requested messages in the
         // kernel buffers when using `MSG_DONTWAIT`.
         let mut receive_buffers = [[0u8; 32]; NUM_MESSAGES_SENT + 2];
-        let iovs: Vec<_> = receive_buffers
-            .iter_mut()
-            .map(|buf| [IoSliceMut::new(&mut buf[..])])
-            .collect();
+        msgs.extend(
+            receive_buffers
+                .iter_mut()
+                .map(|buf| [IoSliceMut::new(&mut buf[..])]),
+        );
 
-        for iov in &iovs {
-            msgs.push_back(RecvMmsgData {
-                iov,
-                cmsg_buffer: None,
-            })
-        }
+        let mut data = MultiHeaders::<SockaddrIn>::preallocate(
+            NUM_MESSAGES_SENT + 2,
+            None,
+        );
 
-        let res: Vec<RecvMsg<SockaddrIn>> =
-            recvmmsg(rsock, &mut msgs, MsgFlags::MSG_DONTWAIT, None)
-                .expect("recvmmsg");
+        let res: Vec<RecvMsg<SockaddrIn>> = recvmmsg(
+            rsock,
+            &mut data,
+            msgs.iter(),
+            MsgFlags::MSG_DONTWAIT,
+            None,
+        )
+        .expect("recvmmsg")
+        .collect();
         assert_eq!(res.len(), NUM_MESSAGES_SENT);
 
         for RecvMsg { address, bytes, .. } in res.into_iter() {
@@ -2205,14 +2208,13 @@ fn test_recvmmsg_timestampns() {
     assert_eq!(message.len(), l);
     // Receive the message
     let mut buffer = vec![0u8; message.len()];
-    let mut cmsgspace = nix::cmsg_space!(TimeSpec);
-    let iov = [IoSliceMut::new(&mut buffer)];
-    let mut data = vec![RecvMmsgData {
-        iov,
-        cmsg_buffer: Some(&mut cmsgspace),
-    }];
+    let cmsgspace = nix::cmsg_space!(TimeSpec);
+    let iov = vec![[IoSliceMut::new(&mut buffer)]];
+    let mut data = MultiHeaders::preallocate(1, Some(cmsgspace));
     let r: Vec<RecvMsg<()>> =
-        recvmmsg(in_socket, &mut data, flags, None).unwrap();
+        recvmmsg(in_socket, &mut data, iov.iter(), flags, None)
+            .unwrap()
+            .collect();
     let rtime = match r[0].cmsgs().next() {
         Some(ControlMessageOwned::ScmTimestampns(rtime)) => rtime,
         Some(_) => panic!("Unexpected control message"),
