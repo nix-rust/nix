@@ -1005,20 +1005,23 @@ pub fn sethostname<S: AsRef<OsStr>>(name: S) -> Result<()> {
 ///
 /// ```no_run
 /// use nix::unistd;
+/// use std::mem;
 ///
-/// let mut buf = [0u8; 64];
+/// let mut buf = [mem::MaybeUninit::uninit(); 64];
 /// let hostname_cstr = unistd::gethostname(&mut buf).expect("Failed getting hostname");
 /// let hostname = hostname_cstr.to_str().expect("Hostname wasn't valid UTF-8");
 /// println!("Hostname: {}", hostname);
 /// ```
-pub fn gethostname(buffer: &mut [u8]) -> Result<&CStr> {
+pub fn gethostname(buffer: &mut [mem::MaybeUninit<u8>]) -> Result<&CStr> {
     let ptr = buffer.as_mut_ptr() as *mut c_char;
     let len = buffer.len() as size_t;
 
     let res = unsafe { libc::gethostname(ptr, len) };
     Errno::result(res).map(|_| {
-        buffer[len - 1] = 0; // ensure always null-terminated
-        unsafe { CStr::from_ptr(buffer.as_ptr() as *const c_char) }
+        unsafe {
+            buffer[len - 1].as_mut_ptr().write(0); // ensure always null-terminated
+            CStr::from_ptr(buffer.as_ptr() as *const c_char) 
+        }
     })
 }
 }

@@ -32,6 +32,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1713](https://github.com/nix-rust/nix/pull/1713))
 - `nix::poll::ppoll`: `sigmask` parameter is now optional.
   (#[1739](https://github.com/nix-rust/nix/pull/1739))
+- Changed `gethostname` to use a buffer of `MaybeUninit` values.
+  (#[1745](https://github.com/nix-rust/nix/pull/1745))
 
 ### Fixed
 

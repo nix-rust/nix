@@ -25,7 +25,7 @@ call:
 pub unsafe extern fn gethostname(name: *mut c_char, len: size_t) -> c_int;
 
 // nix api (returns a nix::Result<CStr>)
-pub fn gethostname<'a>(buffer: &'a mut [u8]) -> Result<&'a CStr>;
+pub fn gethostname<'a>(buffer: &'a mut [mem::MaybeUninit<u8>]) -> Result<&'a CStr>;
 ```
 
 ## Supported Platforms
