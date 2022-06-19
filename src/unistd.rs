@@ -608,7 +608,7 @@ fn reserve_double_buffer_size<T>(buf: &mut Vec<T>, limit: usize) -> Result<()> {
     use std::cmp::min;
 
     if buf.capacity() >= limit {
-        return Err(Errno::ERANGE)
+        return Err(Errno::ERANGE);
     }
 
     let capacity = min(buf.capacity() * 2, limit);
@@ -1118,15 +1118,13 @@ pub fn lseek64(fd: RawFd, offset: libc::off64_t, whence: Whence) -> Result<libc:
 ///
 /// See also [pipe(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/pipe.html)
 pub fn pipe() -> std::result::Result<(RawFd, RawFd), Error> {
-    unsafe {
-        let mut fds = mem::MaybeUninit::<[c_int; 2]>::uninit();
+    let mut fds = mem::MaybeUninit::<[c_int; 2]>::uninit();
 
-        let res = libc::pipe(fds.as_mut_ptr() as *mut c_int);
+    let res = unsafe { libc::pipe(fds.as_mut_ptr() as *mut c_int) };
 
-        Error::result(res)?;
+    Error::result(res)?;
 
-        Ok((fds.assume_init()[0], fds.assume_init()[1]))
-    }
+    unsafe { Ok((fds.assume_init()[0], fds.assume_init()[1])) }
 }
 
 feature! {
