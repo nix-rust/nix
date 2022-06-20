@@ -465,6 +465,9 @@ use std::iter::FromIterator;
 use std::iter::IntoIterator;
 
 /// Specifies a set of [`Signal`]s that may be blocked, waited for, etc.
+// We are using `transparent` here to be super sure that `SigSet`
+// is represented exactly like the `sigset_t` struct from C.
+#[repr(transparent)]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct SigSet {
     sigset: libc::sigset_t
