@@ -1,15 +1,16 @@
-use nix::sys::inotify::{AddWatchFlags,InitFlags,Inotify};
 use nix::errno::Errno;
+use nix::sys::inotify::{AddWatchFlags, InitFlags, Inotify};
 use std::ffi::OsString;
 use std::fs::{rename, File};
 
 #[test]
 pub fn test_inotify() {
-    let instance = Inotify::init(InitFlags::IN_NONBLOCK)
-        .unwrap();
+    let instance = Inotify::init(InitFlags::IN_NONBLOCK).unwrap();
     let tempdir = tempfile::tempdir().unwrap();
 
-    instance.add_watch(tempdir.path(), AddWatchFlags::IN_ALL_EVENTS).unwrap();
+    instance
+        .add_watch(tempdir.path(), AddWatchFlags::IN_ALL_EVENTS)
+        .unwrap();
 
     let events = instance.read_events();
     assert_eq!(events.unwrap_err(), Errno::EAGAIN);
@@ -22,11 +23,12 @@ pub fn test_inotify() {
 
 #[test]
 pub fn test_inotify_multi_events() {
-    let instance = Inotify::init(InitFlags::IN_NONBLOCK)
-        .unwrap();
+    let instance = Inotify::init(InitFlags::IN_NONBLOCK).unwrap();
     let tempdir = tempfile::tempdir().unwrap();
 
-    instance.add_watch(tempdir.path(), AddWatchFlags::IN_ALL_EVENTS).unwrap();
+    instance
+        .add_watch(tempdir.path(), AddWatchFlags::IN_ALL_EVENTS)
+        .unwrap();
 
     let events = instance.read_events();
     assert_eq!(events.unwrap_err(), Errno::EAGAIN);

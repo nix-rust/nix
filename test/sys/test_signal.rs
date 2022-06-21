@@ -52,9 +52,12 @@ fn test_sigprocmask() {
 
     // Make sure the old set doesn't contain the signal, otherwise the following
     // test don't make sense.
-    assert!(!old_signal_set.contains(SIGNAL),
-            "the {:?} signal is already blocked, please change to a \
-             different one", SIGNAL);
+    assert!(
+        !old_signal_set.contains(SIGNAL),
+        "the {:?} signal is already blocked, please change to a \
+             different one",
+        SIGNAL
+    );
 
     // Now block the signal.
     let mut signal_set = SigSet::empty();
@@ -66,8 +69,11 @@ fn test_sigprocmask() {
     old_signal_set.clear();
     sigprocmask(SigmaskHow::SIG_BLOCK, None, Some(&mut old_signal_set))
         .expect("expect to be able to retrieve old signals");
-    assert!(old_signal_set.contains(SIGNAL),
-            "expected the {:?} to be blocked", SIGNAL);
+    assert!(
+        old_signal_set.contains(SIGNAL),
+        "expected the {:?} to be blocked",
+        SIGNAL
+    );
 
     // Reset the signal.
     sigprocmask(SigmaskHow::SIG_UNBLOCK, Some(&signal_set), None)
@@ -78,13 +84,18 @@ lazy_static! {
     static ref SIGNALED: AtomicBool = AtomicBool::new(false);
 }
 
-extern fn test_sigaction_handler(signal: libc::c_int) {
+extern "C" fn test_sigaction_handler(signal: libc::c_int) {
     let signal = Signal::try_from(signal).unwrap();
     SIGNALED.store(signal == Signal::SIGINT, Ordering::Relaxed);
 }
 
 #[cfg(not(target_os = "redox"))]
-extern fn test_sigaction_action(_: libc::c_int, _: *mut libc::siginfo_t, _: *mut libc::c_void) {}
+extern "C" fn test_sigaction_action(
+    _: libc::c_int,
+    _: *mut libc::siginfo_t,
+    _: *mut libc::c_void,
+) {
+}
 
 #[test]
 #[cfg(not(target_os = "redox"))]
@@ -92,7 +103,10 @@ fn test_signal_sigaction() {
     let _m = crate::SIGNAL_MTX.lock();
 
     let action_handler = SigHandler::SigAction(test_sigaction_action);
-    assert_eq!(unsafe { signal(Signal::SIGINT, action_handler) }.unwrap_err(), Errno::ENOTSUP);
+    assert_eq!(
+        unsafe { signal(Signal::SIGINT, action_handler) }.unwrap_err(),
+        Errno::ENOTSUP
+    );
 }
 
 #[test]
@@ -101,20 +115,32 @@ fn test_signal() {
 
     unsafe { signal(Signal::SIGINT, SigHandler::SigIgn) }.unwrap();
     raise(Signal::SIGINT).unwrap();
-    assert_eq!(unsafe { signal(Signal::SIGINT, SigHandler::SigDfl) }.unwrap(), SigHandler::SigIgn);
+    assert_eq!(
+        unsafe { signal(Signal::SIGINT, SigHandler::SigDfl) }.unwrap(),
+        SigHandler::SigIgn
+    );
 
     let handler = SigHandler::Handler(test_sigaction_handler);
-    assert_eq!(unsafe { signal(Signal::SIGINT, handler) }.unwrap(), SigHandler::SigDfl);
+    assert_eq!(
+        unsafe { signal(Signal::SIGINT, handler) }.unwrap(),
+        SigHandler::SigDfl
+    );
     raise(Signal::SIGINT).unwrap();
     assert!(SIGNALED.load(Ordering::Relaxed));
 
     #[cfg(not(any(target_os = "illumos", target_os = "solaris")))]
-    assert_eq!(unsafe { signal(Signal::SIGINT, SigHandler::SigDfl) }.unwrap(), handler);
+    assert_eq!(
+        unsafe { signal(Signal::SIGINT, SigHandler::SigDfl) }.unwrap(),
+        handler
+    );
 
     // System V based OSes (e.g. illumos and Solaris) always resets the
     // disposition to SIG_DFL prior to calling the signal handler
     #[cfg(any(target_os = "illumos", target_os = "solaris"))]
-    assert_eq!(unsafe { signal(Signal::SIGINT, SigHandler::SigDfl) }.unwrap(), SigHandler::SigDfl);
+    assert_eq!(
+        unsafe { signal(Signal::SIGINT, SigHandler::SigDfl) }.unwrap(),
+        SigHandler::SigDfl
+    );
 
     // Restore default signal handler
     unsafe { signal(Signal::SIGINT, SigHandler::SigDfl) }.unwrap();

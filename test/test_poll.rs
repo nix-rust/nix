@@ -1,7 +1,7 @@
 use nix::{
     errno::Errno,
-    poll::{PollFlags, poll, PollFd},
-    unistd::{write, pipe}
+    poll::{poll, PollFd, PollFlags},
+    unistd::{pipe, write},
 };
 
 macro_rules! loop_while_eintr {
@@ -10,10 +10,10 @@ macro_rules! loop_while_eintr {
             match $poll_expr {
                 Ok(nfds) => break nfds,
                 Err(Errno::EINTR) => (),
-                Err(e) => panic!("{}", e)
+                Err(e) => panic!("{}", e),
             }
         }
-    }
+    };
 }
 
 #[test]
@@ -37,10 +37,12 @@ fn test_poll() {
 // ppoll(2) is the same as poll except for how it handles timeouts and signals.
 // Repeating the test for poll(2) should be sufficient to check that our
 // bindings are correct.
-#[cfg(any(target_os = "android",
-          target_os = "dragonfly",
-          target_os = "freebsd",
-          target_os = "linux"))]
+#[cfg(any(
+    target_os = "android",
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "linux"
+))]
 #[test]
 fn test_ppoll() {
     use nix::poll::ppoll;

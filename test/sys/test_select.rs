@@ -1,7 +1,7 @@
 use nix::sys::select::*;
-use nix::unistd::{pipe, write};
 use nix::sys::signal::SigSet;
 use nix::sys::time::{TimeSpec, TimeValLike};
+use nix::unistd::{pipe, write};
 
 #[test]
 pub fn test_pselect() {
@@ -45,7 +45,8 @@ pub fn test_pselect_nfds2() {
             None,
             &timeout,
             None
-        ).unwrap()
+        )
+        .unwrap()
     );
     assert!(fd_set.contains(r1));
     assert!(!fd_set.contains(r2));

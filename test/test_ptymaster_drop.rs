@@ -15,6 +15,6 @@ mod t {
     fn test_double_close() {
         let m = posix_openpt(OFlag::O_RDWR).unwrap();
         close(m.as_raw_fd()).unwrap();
-        drop(m);            // should panic here
+        drop(m); // should panic here
     }
 }
