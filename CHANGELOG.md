@@ -19,6 +19,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1703](https://github.com/nix-rust/nix/pull/1703))
 - Added `ptrace::read_user` and `ptrace::write_user` for Linux.
   (#[1697](https://github.com/nix-rust/nix/pull/1697))
+- Added `getrusage` and helper types `UsageWho` and `Usage`
+  (#[1747](https://github.com/nix-rust/nix/pull/1747))
 
 ### Changed
 

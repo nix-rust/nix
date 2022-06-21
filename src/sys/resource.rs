@@ -1,7 +1,9 @@
 //! Configure the process resource limits.
 use cfg_if::cfg_if;
+use libc::{c_int, c_long, rusage};
 
 use crate::errno::Errno;
+use crate::sys::time::TimeVal;
 use crate::Result;
 pub use libc::rlim_t;
 use std::mem;
@@ -19,7 +21,7 @@ cfg_if! {
         target_os = "dragonfly",
         all(target_os = "linux", not(target_env = "gnu"))
     ))]{
-        use libc::{c_int, rlimit};
+        use libc::rlimit;
     }
 }
 
@@ -242,11 +244,7 @@ pub fn getrlimit(resource: Resource) -> Result<(rlim_t, rlim_t)> {
 /// [`Resource`]: enum.Resource.html
 ///
 /// Note: `setrlimit` provides a safe wrapper to libc's `setrlimit`.
-pub fn setrlimit(
-    resource: Resource,
-    soft_limit: rlim_t,
-    hard_limit: rlim_t,
-) -> Result<()> {
+pub fn setrlimit(resource: Resource, soft_limit: rlim_t, hard_limit: rlim_t) -> Result<()> {
     let new_rlim = rlimit {
         rlim_cur: soft_limit,
         rlim_max: hard_limit,
@@ -260,4 +258,180 @@ pub fn setrlimit(
     }
 
     Errno::result(res).map(drop)
+}
+
+libc_enum! {
+    /// Whose resource usage should be returned by [`getrusage`].
+    #[repr(i32)]
+    #[non_exhaustive]
+    pub enum UsageWho {
+        /// Resource usage for the current process.
+        RUSAGE_SELF,
+
+        /// Resource usage for all the children that have terminated and been waited for.
+        RUSAGE_CHILDREN,
+
+        #[cfg(any(target_os = "linux", target_os = "freebsd", target_os = "openbsd"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
+        /// Resource usage for the calling thread.
+        RUSAGE_THREAD,
+    }
+}
+
+/// Output of `getrusage` with information about resource usage. Some of the fields
+/// may be unused in some platforms, and will be always zeroed out. See their manuals
+/// for details.
+#[repr(transparent)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct Usage(rusage);
+
+impl AsRef<rusage> for Usage {
+    fn as_ref(&self) -> &rusage {
+        &self.0
+    }
+}
+
+impl AsMut<rusage> for Usage {
+    fn as_mut(&mut self) -> &mut rusage {
+        &mut self.0
+    }
+}
+
+impl Usage {
+    /// Total amount of time spent executing in user mode.
+    pub fn user_time(&self) -> TimeVal {
+        TimeVal::from(self.0.ru_utime)
+    }
+
+    /// Total amount of time spent executing in kernel mode.
+    pub fn system_time(&self) -> TimeVal {
+        TimeVal::from(self.0.ru_stime)
+    }
+
+    /// The resident set size at its peak, in kilobytes.
+    pub fn max_rss(&self) -> c_long {
+        self.0.ru_maxrss
+    }
+
+    /// Integral value expressed in kilobytes times ticks of execution indicating
+    /// the amount of text memory shared with other processes.
+    pub fn shared_integral(&self) -> c_long {
+        self.0.ru_ixrss
+    }
+
+    /// Integral value expressed in kilobytes times ticks of execution indicating
+    /// the amount of unshared memory used by data.
+    pub fn unshared_data_integral(&self) -> c_long {
+        self.0.ru_idrss
+    }
+
+    /// Integral value expressed in kilobytes times ticks of execution indicating
+    /// the amount of unshared memory used for stack space.
+    pub fn unshared_stack_integral(&self) -> c_long {
+        self.0.ru_isrss
+    }
+
+    /// Number of page faults that were served without resorting to I/O, with pages
+    /// that have been allocated previously by the kernel.
+    pub fn minor_page_faults(&self) -> c_long {
+        self.0.ru_minflt
+    }
+
+    /// Number of page faults that were served through I/O (i.e. swap).
+    pub fn major_page_faults(&self) -> c_long {
+        self.0.ru_majflt
+    }
+
+    /// Number of times all of the memory was fully swapped out.
+    pub fn full_swaps(&self) -> c_long {
+        self.0.ru_nswap
+    }
+
+    /// Number of times a read was done from a block device.
+    pub fn block_reads(&self) -> c_long {
+        self.0.ru_inblock
+    }
+
+    /// Number of times a write was done to a block device.
+    pub fn block_writes(&self) -> c_long {
+        self.0.ru_oublock
+    }
+
+    /// Number of IPC messages sent.
+    pub fn ipc_sends(&self) -> c_long {
+        self.0.ru_msgsnd
+    }
+
+    /// Number of IPC messages received.
+    pub fn ipc_receives(&self) -> c_long {
+        self.0.ru_msgrcv
+    }
+
+    /// Number of signals received.
+    pub fn signals(&self) -> c_long {
+        self.0.ru_nsignals
+    }
+
+    /// Number of times a context switch was voluntarily invoked.
+    pub fn voluntary_context_switches(&self) -> c_long {
+        self.0.ru_nvcsw
+    }
+
+    /// Number of times a context switch was imposed by the kernel (usually due to
+    /// time slice expiring or preemption by a higher priority process).
+    pub fn involuntary_context_switches(&self) -> c_long {
+        self.0.ru_nivcsw
+    }
+}
+
+/// Get usage information for a process, its children or the current thread
+///
+/// Real time information can be obtained for either the current process or (in some
+/// systems) thread, but information about children processes is only provided for
+/// those that have terminated and been waited for (see [`super::wait::wait`]).
+///
+/// Some information may be missing depending on the platform, and the way information
+/// is provided for children may also vary. Check the manuals for details.
+///
+/// # References
+///
+/// * [getrusage(2)](https://pubs.opengroup.org/onlinepubs/009696699/functions/getrusage.html)
+/// * [Linux](https://man7.org/linux/man-pages/man2/getrusage.2.html)
+/// * [FreeBSD](https://www.freebsd.org/cgi/man.cgi?query=getrusage)
+/// * [NetBSD](https://man.netbsd.org/getrusage.2)
+/// * [MacOS](https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man2/getrusage.2.html)
+///
+/// [`UsageWho`]: enum.UsageWho.html
+///
+/// Note: `getrusage` provides a safe wrapper to libc's [`libc::getrusage`].
+pub fn getrusage(who: UsageWho) -> Result<Usage> {
+    unsafe {
+        let mut rusage = mem::MaybeUninit::<rusage>::uninit();
+        let res = libc::getrusage(who as c_int, rusage.as_mut_ptr());
+        Errno::result(res).map(|_| Usage(rusage.assume_init()))
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::{getrusage, UsageWho};
+
+    #[test]
+    pub fn test_self_cpu_time() {
+        // Make sure some CPU time is used.
+        let mut numbers: Vec<i32> = (1..1_000_000).collect();
+        numbers.iter_mut().for_each(|item| *item *= 2);
+
+        // FIXME: this is here to help ensure the compiler does not optimize the whole
+        // thing away. Replace the assert with test::black_box once stabilized.
+        assert_eq!(numbers[100..200].iter().sum::<i32>(), 30_100);
+
+        let usage = getrusage(UsageWho::RUSAGE_SELF).expect("Failed to call getrusage for SELF");
+        let rusage = usage.as_ref();
+
+        let user = usage.user_time();
+        assert!(user.tv_sec() > 0 || user.tv_usec() > 0);
+        assert_eq!(user.tv_sec(), rusage.ru_utime.tv_sec);
+        assert_eq!(user.tv_usec(), rusage.ru_utime.tv_usec);
+    }
 }
