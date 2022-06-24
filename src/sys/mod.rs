@@ -1,10 +1,12 @@
 //! Mostly platform-specific functionality
-#[cfg(any(target_os = "dragonfly",
-          target_os = "freebsd",
-          target_os = "ios",
-          all(target_os = "linux", not(target_env = "uclibc")),
-          target_os = "macos",
-          target_os = "netbsd"))]
+#[cfg(any(
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "ios",
+    all(target_os = "linux", not(target_env = "uclibc")),
+    target_os = "macos",
+    target_os = "netbsd"
+))]
 feature! {
     #![feature = "aio"]
     pub mod aio;
@@ -31,16 +33,18 @@ feature! {
     pub mod eventfd;
 }
 
-#[cfg(any(target_os = "android",
-          target_os = "dragonfly",
-          target_os = "freebsd",
-          target_os = "ios",
-          target_os = "linux",
-          target_os = "redox",
-          target_os = "macos",
-          target_os = "netbsd",
-          target_os = "illumos",
-          target_os = "openbsd"))]
+#[cfg(any(
+    target_os = "android",
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "ios",
+    target_os = "linux",
+    target_os = "redox",
+    target_os = "macos",
+    target_os = "netbsd",
+    target_os = "illumos",
+    target_os = "openbsd"
+))]
 #[cfg(feature = "ioctl")]
 #[cfg_attr(docsrs, doc(cfg(feature = "ioctl")))]
 #[macro_use]
@@ -69,13 +73,15 @@ feature! {
     pub mod pthread;
 }
 
-#[cfg(any(target_os = "android",
-          target_os = "dragonfly",
-          target_os = "freebsd",
-          target_os = "linux",
-          target_os = "macos",
-          target_os = "netbsd",
-          target_os = "openbsd"))]
+#[cfg(any(
+    target_os = "android",
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "linux",
+    target_os = "macos",
+    target_os = "netbsd",
+    target_os = "openbsd"
+))]
 feature! {
     #![feature = "ptrace"]
     #[allow(missing_docs)]
@@ -94,7 +100,12 @@ feature! {
     pub mod reboot;
 }
 
-#[cfg(not(any(target_os = "redox", target_os = "fuchsia", target_os = "illumos", target_os = "haiku")))]
+#[cfg(not(any(
+    target_os = "redox",
+    target_os = "fuchsia",
+    target_os = "illumos",
+    target_os = "haiku"
+)))]
 feature! {
     #![feature = "resource"]
     pub mod resource;
@@ -106,12 +117,14 @@ feature! {
     pub mod select;
 }
 
-#[cfg(any(target_os = "android",
-          target_os = "dragonfly",
-          target_os = "freebsd",
-          target_os = "ios",
-          target_os = "linux",
-          target_os = "macos"))]
+#[cfg(any(
+    target_os = "android",
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "ios",
+    target_os = "linux",
+    target_os = "macos"
+))]
 feature! {
     #![feature = "zerocopy"]
     pub mod sendfile;
@@ -139,13 +152,14 @@ feature! {
     pub mod stat;
 }
 
-#[cfg(any(target_os = "android",
-          target_os = "dragonfly",
-          target_os = "freebsd",
-          target_os = "ios",
-          target_os = "linux",
-          target_os = "macos",
-          target_os = "openbsd"
+#[cfg(any(
+    target_os = "android",
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "ios",
+    target_os = "linux",
+    target_os = "macos",
+    target_os = "openbsd"
 ))]
 feature! {
     #![feature = "fs"]

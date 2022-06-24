@@ -2,8 +2,8 @@ use std::convert::TryFrom;
 
 #[test]
 fn test_signalfd() {
+    use nix::sys::signal::{self, raise, SigSet, Signal};
     use nix::sys::signalfd::SignalFd;
-    use nix::sys::signal::{self, raise, Signal, SigSet};
 
     // Grab the mutex for altering signals so we don't interfere with other tests.
     let _m = crate::SIGNAL_MTX.lock();

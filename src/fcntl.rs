@@ -6,14 +6,10 @@ use std::os::raw;
 use std::os::unix::ffi::OsStringExt;
 use std::os::unix::io::RawFd;
 
+#[cfg(feature = "fs")]
+use crate::{sys::stat::Mode, NixPath, Result};
 #[cfg(any(target_os = "android", target_os = "linux"))]
 use std::ptr; // For splice and copy_file_range
-#[cfg(feature = "fs")]
-use crate::{
-    NixPath,
-    Result,
-    sys::stat::Mode
-};
 
 #[cfg(any(
     target_os = "linux",
@@ -25,7 +21,7 @@ use crate::{
     target_os = "freebsd"
 ))]
 #[cfg(feature = "fs")]
-pub use self::posix_fadvise::{PosixFadviseAdvice, posix_fadvise};
+pub use self::posix_fadvise::{posix_fadvise, PosixFadviseAdvice};
 
 #[cfg(not(target_os = "redox"))]
 #[cfg(any(feature = "fs", feature = "process"))]
@@ -241,10 +237,7 @@ pub fn renameat<P1: ?Sized + NixPath, P2: ?Sized + NixPath>(
 }
 }
 
-#[cfg(all(
-    target_os = "linux",
-    target_env = "gnu",
-))]
+#[cfg(all(target_os = "linux", target_env = "gnu",))]
 #[cfg(feature = "fs")]
 libc_bitflags! {
     #[cfg_attr(docsrs, doc(cfg(feature = "fs")))]

@@ -1,17 +1,24 @@
+use libc::{_exit, mode_t, off_t};
+use nix::errno::Errno;
+#[cfg(not(any(target_os = "redox", target_os = "haiku")))]
+use nix::fcntl::readlink;
+use nix::fcntl::OFlag;
 #[cfg(not(target_os = "redox"))]
 use nix::fcntl::{self, open};
-#[cfg(not(any(target_os = "redox", target_os = "haiku")))]
-use nix::fcntl::{readlink};
-use nix::fcntl::OFlag;
-use nix::unistd::*;
-use nix::unistd::ForkResult::*;
+#[cfg(not(any(
+    target_os = "redox",
+    target_os = "fuchsia",
+    target_os = "haiku"
+)))]
+use nix::pty::{grantpt, posix_openpt, ptsname, unlockpt};
 #[cfg(not(target_os = "redox"))]
-use nix::sys::signal::{SaFlags, SigAction, SigHandler, SigSet, Signal, sigaction};
-use nix::sys::wait::*;
+use nix::sys::signal::{
+    sigaction, SaFlags, SigAction, SigHandler, SigSet, Signal,
+};
 use nix::sys::stat::{self, Mode, SFlag};
-#[cfg(not(any(target_os = "redox", target_os = "fuchsia", target_os = "haiku")))]
-use nix::pty::{posix_openpt, grantpt, unlockpt, ptsname};
-use nix::errno::Errno;
+use nix::sys::wait::*;
+use nix::unistd::ForkResult::*;
+use nix::unistd::*;
 use std::env;
 #[cfg(not(any(target_os = "fuchsia", target_os = "redox")))]
 use std::ffi::CString;
@@ -20,10 +27,13 @@ use std::fs::DirBuilder;
 use std::fs::{self, File};
 use std::io::Write;
 use std::os::unix::prelude::*;
-#[cfg(not(any(target_os = "fuchsia", target_os = "redox", target_os = "haiku")))]
+#[cfg(not(any(
+    target_os = "fuchsia",
+    target_os = "redox",
+    target_os = "haiku"
+)))]
 use std::path::Path;
 use tempfile::{tempdir, tempfile};
-use libc::{_exit, mode_t, off_t};
 
 use crate::*;
 
@@ -33,7 +43,7 @@ fn test_fork_and_waitpid() {
     let _m = crate::FORK_MTX.lock();
 
     // Safe: Child only calls `_exit`, which is signal-safe
-    match unsafe{fork()}.expect("Error: Fork Failed") {
+    match unsafe { fork() }.expect("Error: Fork Failed") {
         Child => unsafe { _exit(0) },
         Parent { child } => {
             // assert that child was created and pid > 0
@@ -42,16 +52,17 @@ fn test_fork_and_waitpid() {
             let wait_status = waitpid(child, None);
             match wait_status {
                 // assert that waitpid returned correct status and the pid is the one of the child
-                Ok(WaitStatus::Exited(pid_t, _)) =>  assert_eq!(pid_t, child),
+                Ok(WaitStatus::Exited(pid_t, _)) => assert_eq!(pid_t, child),
 
                 // panic, must never happen
-                s @ Ok(_) => panic!("Child exited {:?}, should never happen", s),
+                s @ Ok(_) => {
+                    panic!("Child exited {:?}, should never happen", s)
+                }
 
                 // panic, waitpid should never fail
-                Err(s) => panic!("Error: waitpid returned Err({:?}", s)
+                Err(s) => panic!("Error: waitpid returned Err({:?}", s),
             }
-
-        },
+        }
     }
 }
 
@@ -61,14 +72,14 @@ fn test_wait() {
     let _m = crate::FORK_MTX.lock();
 
     // Safe: Child only calls `_exit`, which is signal-safe
-    match unsafe{fork()}.expect("Error: Fork Failed") {
+    match unsafe { fork() }.expect("Error: Fork Failed") {
         Child => unsafe { _exit(0) },
         Parent { child } => {
             let wait_status = wait();
 
             // just assert that (any) one child returns with WaitStatus::Exited
             assert_eq!(wait_status, Ok(WaitStatus::Exited(child, 0)));
-        },
+        }
     }
 }
 
@@ -82,8 +93,8 @@ fn test_mkstemp() {
         Ok((fd, path)) => {
             close(fd).unwrap();
             unlink(path.as_path()).unwrap();
-        },
-        Err(e) => panic!("mkstemp failed: {}", e)
+        }
+        Err(e) => panic!("mkstemp failed: {}", e),
     }
 }
 
@@ -115,8 +126,12 @@ fn test_mkfifo_directory() {
 
 #[test]
 #[cfg(not(any(
-    target_os = "macos", target_os = "ios",
-    target_os = "android", target_os = "redox", target_os = "haiku")))]
+    target_os = "macos",
+    target_os = "ios",
+    target_os = "android",
+    target_os = "redox",
+    target_os = "haiku"
+)))]
 fn test_mkfifoat_none() {
     let _m = crate::CWD_LOCK.read();
 
@@ -132,8 +147,12 @@ fn test_mkfifoat_none() {
 
 #[test]
 #[cfg(not(any(
-    target_os = "macos", target_os = "ios",
-    target_os = "android", target_os = "redox", target_os = "haiku")))]
+    target_os = "macos",
+    target_os = "ios",
+    target_os = "android",
+    target_os = "redox",
+    target_os = "haiku"
+)))]
 fn test_mkfifoat() {
     use nix::fcntl;
 
@@ -143,15 +162,20 @@ fn test_mkfifoat() {
 
     mkfifoat(Some(dirfd), mkfifoat_name, Mode::S_IRUSR).unwrap();
 
-    let stats = stat::fstatat(dirfd, mkfifoat_name, fcntl::AtFlags::empty()).unwrap();
+    let stats =
+        stat::fstatat(dirfd, mkfifoat_name, fcntl::AtFlags::empty()).unwrap();
     let typ = stat::SFlag::from_bits_truncate(stats.st_mode);
     assert_eq!(typ, SFlag::S_IFIFO);
 }
 
 #[test]
 #[cfg(not(any(
-    target_os = "macos", target_os = "ios",
-    target_os = "android", target_os = "redox", target_os = "haiku")))]
+    target_os = "macos",
+    target_os = "ios",
+    target_os = "android",
+    target_os = "redox",
+    target_os = "haiku"
+)))]
 fn test_mkfifoat_directory_none() {
     let _m = crate::CWD_LOCK.read();
 
@@ -161,8 +185,12 @@ fn test_mkfifoat_directory_none() {
 
 #[test]
 #[cfg(not(any(
-    target_os = "macos", target_os = "ios",
-    target_os = "android", target_os = "redox", target_os = "haiku")))]
+    target_os = "macos",
+    target_os = "ios",
+    target_os = "android",
+    target_os = "redox",
+    target_os = "haiku"
+)))]
 fn test_mkfifoat_directory() {
     // mkfifoat should fail if a directory is given
     let tempdir = tempdir().unwrap();
@@ -203,7 +231,13 @@ mod linux_android {
 
 #[test]
 // `getgroups()` and `setgroups()` do not behave as expected on Apple platforms
-#[cfg(not(any(target_os = "ios", target_os = "macos", target_os = "redox", target_os = "fuchsia", target_os = "haiku")))]
+#[cfg(not(any(
+    target_os = "ios",
+    target_os = "macos",
+    target_os = "redox",
+    target_os = "fuchsia",
+    target_os = "haiku"
+)))]
 fn test_setgroups() {
     // Skip this test when not run as root as `setgroups()` requires root.
     skip_if_not_root!("test_setgroups");
@@ -226,12 +260,14 @@ fn test_setgroups() {
 
 #[test]
 // `getgroups()` and `setgroups()` do not behave as expected on Apple platforms
-#[cfg(not(any(target_os = "ios",
-              target_os = "macos",
-              target_os = "redox",
-              target_os = "fuchsia",
-              target_os = "haiku",
-              target_os = "illumos")))]
+#[cfg(not(any(
+    target_os = "ios",
+    target_os = "macos",
+    target_os = "redox",
+    target_os = "fuchsia",
+    target_os = "haiku",
+    target_os = "illumos"
+)))]
 fn test_initgroups() {
     // Skip this test when not run as root as `initgroups()` and `setgroups()`
     // require root.
@@ -362,7 +398,7 @@ macro_rules! execve_test_factory(
     )
 );
 
-cfg_if!{
+cfg_if! {
     if #[cfg(target_os = "android")] {
         execve_test_factory!(test_execve, execve, CString::new("/system/bin/sh").unwrap().as_c_str());
         execve_test_factory!(test_fexecve, fexecve, File::open("/system/bin/sh").unwrap().into_raw_fd());
@@ -387,7 +423,7 @@ cfg_if!{
 #[cfg(any(target_os = "haiku", target_os = "linux", target_os = "openbsd"))]
 execve_test_factory!(test_execvpe, execvpe, &CString::new("sh").unwrap());
 
-cfg_if!{
+cfg_if! {
     if #[cfg(target_os = "android")] {
         use nix::fcntl::AtFlags;
         execve_test_factory!(test_execveat_empty, execveat,
@@ -501,7 +537,8 @@ fn test_fchownat() {
 
     let dirfd = open(tempdir.path(), OFlag::empty(), Mode::empty()).unwrap();
 
-    fchownat(Some(dirfd), "file", uid, gid, FchownatFlags::FollowSymlink).unwrap();
+    fchownat(Some(dirfd), "file", uid, gid, FchownatFlags::FollowSymlink)
+        .unwrap();
 
     chdir(tempdir.path()).unwrap();
     fchownat(None, "file", uid, gid, FchownatFlags::FollowSymlink).unwrap();
@@ -544,7 +581,7 @@ fn test_lseek64() {
     close(tmpfd).unwrap();
 }
 
-cfg_if!{
+cfg_if! {
     if #[cfg(any(target_os = "android", target_os = "linux"))] {
         macro_rules! require_acct{
             () => {
@@ -568,11 +605,15 @@ cfg_if!{
 }
 
 #[test]
-#[cfg(not(any(target_os = "redox", target_os = "fuchsia", target_os = "haiku")))]
+#[cfg(not(any(
+    target_os = "redox",
+    target_os = "fuchsia",
+    target_os = "haiku"
+)))]
 fn test_acct() {
-    use tempfile::NamedTempFile;
     use std::process::Command;
     use std::{thread, time};
+    use tempfile::NamedTempFile;
 
     let _m = crate::FORK_MTX.lock();
     require_acct!();
@@ -583,12 +624,11 @@ fn test_acct() {
     acct::enable(path).unwrap();
 
     loop {
-        Command::new("echo")
-            .arg("Hello world")
-            .output()
-            .unwrap();
+        Command::new("echo").arg("Hello world").output().unwrap();
         let len = fs::metadata(path).unwrap().len();
-        if len > 0 { break; }
+        if len > 0 {
+            break;
+        }
         thread::sleep(time::Duration::from_millis(10));
     }
     acct::disable().unwrap();
@@ -599,21 +639,36 @@ fn test_fpathconf_limited() {
     let f = tempfile().unwrap();
     // AFAIK, PATH_MAX is limited on all platforms, so it makes a good test
     let path_max = fpathconf(f.as_raw_fd(), PathconfVar::PATH_MAX);
-    assert!(path_max.expect("fpathconf failed").expect("PATH_MAX is unlimited") > 0);
+    assert!(
+        path_max
+            .expect("fpathconf failed")
+            .expect("PATH_MAX is unlimited")
+            > 0
+    );
 }
 
 #[test]
 fn test_pathconf_limited() {
     // AFAIK, PATH_MAX is limited on all platforms, so it makes a good test
     let path_max = pathconf("/", PathconfVar::PATH_MAX);
-    assert!(path_max.expect("pathconf failed").expect("PATH_MAX is unlimited") > 0);
+    assert!(
+        path_max
+            .expect("pathconf failed")
+            .expect("PATH_MAX is unlimited")
+            > 0
+    );
 }
 
 #[test]
 fn test_sysconf_limited() {
     // AFAIK, OPEN_MAX is limited on all platforms, so it makes a good test
     let open_max = sysconf(SysconfVar::OPEN_MAX);
-    assert!(open_max.expect("sysconf failed").expect("OPEN_MAX is unlimited") > 0);
+    assert!(
+        open_max
+            .expect("sysconf failed")
+            .expect("OPEN_MAX is unlimited")
+            > 0
+    );
 }
 
 #[cfg(target_os = "freebsd")]
@@ -626,12 +681,13 @@ fn test_sysconf_unsupported() {
     assert!(open_max.expect("sysconf failed").is_none())
 }
 
-
-#[cfg(any(target_os = "android",
-          target_os = "dragonfly",
-          target_os = "freebsd",
-          target_os = "linux",
-          target_os = "openbsd"))]
+#[cfg(any(
+    target_os = "android",
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "linux",
+    target_os = "openbsd"
+))]
 #[test]
 fn test_getresuid() {
     let resuids = getresuid().unwrap();
@@ -640,11 +696,13 @@ fn test_getresuid() {
     assert!(resuids.saved.as_raw() != libc::uid_t::max_value());
 }
 
-#[cfg(any(target_os = "android",
-          target_os = "dragonfly",
-          target_os = "freebsd",
-          target_os = "linux",
-          target_os = "openbsd"))]
+#[cfg(any(
+    target_os = "android",
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "linux",
+    target_os = "openbsd"
+))]
 #[test]
 fn test_getresgid() {
     let resgids = getresgid().unwrap();
@@ -658,25 +716,31 @@ fn test_getresgid() {
 #[test]
 fn test_pipe() {
     let (fd0, fd1) = pipe().unwrap();
-    let m0 = stat::SFlag::from_bits_truncate(stat::fstat(fd0).unwrap().st_mode as mode_t);
+    let m0 = stat::SFlag::from_bits_truncate(
+        stat::fstat(fd0).unwrap().st_mode as mode_t,
+    );
     // S_IFIFO means it's a pipe
     assert_eq!(m0, SFlag::S_IFIFO);
-    let m1 = stat::SFlag::from_bits_truncate(stat::fstat(fd1).unwrap().st_mode as mode_t);
+    let m1 = stat::SFlag::from_bits_truncate(
+        stat::fstat(fd1).unwrap().st_mode as mode_t,
+    );
     assert_eq!(m1, SFlag::S_IFIFO);
 }
 
 // pipe2(2) is the same as pipe(2), except it allows setting some flags.  Check
 // that we can set a flag.
-#[cfg(any(target_os = "android",
-          target_os = "dragonfly",
-          target_os = "emscripten",
-          target_os = "freebsd",
-          target_os = "illumos",
-          target_os = "linux",
-          target_os = "netbsd",
-          target_os = "openbsd",
-          target_os = "redox",
-          target_os = "solaris"))]
+#[cfg(any(
+    target_os = "android",
+    target_os = "dragonfly",
+    target_os = "emscripten",
+    target_os = "freebsd",
+    target_os = "illumos",
+    target_os = "linux",
+    target_os = "netbsd",
+    target_os = "openbsd",
+    target_os = "redox",
+    target_os = "solaris"
+))]
 #[test]
 fn test_pipe2() {
     use nix::fcntl::{fcntl, FcntlArg, FdFlag};
@@ -731,8 +795,13 @@ static mut ALARM_CALLED: bool = false;
 
 // Used in `test_alarm`.
 #[cfg(not(target_os = "redox"))]
-pub extern fn alarm_signal_handler(raw_signal: libc::c_int) {
-    assert_eq!(raw_signal, libc::SIGALRM, "unexpected signal: {}", raw_signal);
+pub extern "C" fn alarm_signal_handler(raw_signal: libc::c_int) {
+    assert_eq!(
+        raw_signal,
+        libc::SIGALRM,
+        "unexpected signal: {}",
+        raw_signal
+    );
     unsafe { ALARM_CALLED = true };
 }
 
@@ -740,15 +809,16 @@ pub extern fn alarm_signal_handler(raw_signal: libc::c_int) {
 #[cfg(not(target_os = "redox"))]
 fn test_alarm() {
     use std::{
-        time::{Duration, Instant,},
-        thread
+        thread,
+        time::{Duration, Instant},
     };
 
     // Maybe other tests that fork interfere with this one?
     let _m = crate::SIGNAL_MTX.lock();
 
     let handler = SigHandler::Handler(alarm_signal_handler);
-    let signal_action = SigAction::new(handler, SaFlags::SA_RESTART, SigSet::empty());
+    let signal_action =
+        SigAction::new(handler, SaFlags::SA_RESTART, SigSet::empty());
     let old_handler = unsafe {
         sigaction(Signal::SIGALRM, &signal_action)
             .expect("unable to set signal handler for alarm")
@@ -765,7 +835,7 @@ fn test_alarm() {
     let starttime = Instant::now();
     loop {
         thread::sleep(Duration::from_millis(100));
-        if unsafe { ALARM_CALLED} {
+        if unsafe { ALARM_CALLED } {
             break;
         }
         if starttime.elapsed() > Duration::from_secs(3) {
@@ -833,10 +903,19 @@ fn test_linkat_file() {
     File::create(&oldfilepath).unwrap();
 
     // Get file descriptor for base directory
-    let dirfd = fcntl::open(tempdir.path(), fcntl::OFlag::empty(), stat::Mode::empty()).unwrap();
+    let dirfd =
+        fcntl::open(tempdir.path(), fcntl::OFlag::empty(), stat::Mode::empty())
+            .unwrap();
 
     // Attempt hard link file at relative path
-    linkat(Some(dirfd), oldfilename, Some(dirfd), newfilename, LinkatFlags::SymlinkFollow).unwrap();
+    linkat(
+        Some(dirfd),
+        oldfilename,
+        Some(dirfd),
+        newfilename,
+        LinkatFlags::SymlinkFollow,
+    )
+    .unwrap();
     assert!(newfilepath.exists());
 }
 
@@ -857,11 +936,23 @@ fn test_linkat_olddirfd_none() {
     File::create(&oldfilepath).unwrap();
 
     // Get file descriptor for base directory of new file
-    let dirfd = fcntl::open(tempdir_newfile.path(), fcntl::OFlag::empty(), stat::Mode::empty()).unwrap();
+    let dirfd = fcntl::open(
+        tempdir_newfile.path(),
+        fcntl::OFlag::empty(),
+        stat::Mode::empty(),
+    )
+    .unwrap();
 
     // Attempt hard link file using curent working directory as relative path for old file path
     chdir(tempdir_oldfile.path()).unwrap();
-    linkat(None, oldfilename, Some(dirfd), newfilename, LinkatFlags::SymlinkFollow).unwrap();
+    linkat(
+        None,
+        oldfilename,
+        Some(dirfd),
+        newfilename,
+        LinkatFlags::SymlinkFollow,
+    )
+    .unwrap();
     assert!(newfilepath.exists());
 }
 
@@ -882,16 +973,33 @@ fn test_linkat_newdirfd_none() {
     File::create(&oldfilepath).unwrap();
 
     // Get file descriptor for base directory of old file
-    let dirfd = fcntl::open(tempdir_oldfile.path(), fcntl::OFlag::empty(), stat::Mode::empty()).unwrap();
+    let dirfd = fcntl::open(
+        tempdir_oldfile.path(),
+        fcntl::OFlag::empty(),
+        stat::Mode::empty(),
+    )
+    .unwrap();
 
     // Attempt hard link file using current working directory as relative path for new file path
     chdir(tempdir_newfile.path()).unwrap();
-    linkat(Some(dirfd), oldfilename, None, newfilename, LinkatFlags::SymlinkFollow).unwrap();
+    linkat(
+        Some(dirfd),
+        oldfilename,
+        None,
+        newfilename,
+        LinkatFlags::SymlinkFollow,
+    )
+    .unwrap();
     assert!(newfilepath.exists());
 }
 
 #[test]
-#[cfg(not(any(target_os = "ios", target_os = "macos", target_os = "redox", target_os = "haiku")))]
+#[cfg(not(any(
+    target_os = "ios",
+    target_os = "macos",
+    target_os = "redox",
+    target_os = "haiku"
+)))]
 fn test_linkat_no_follow_symlink() {
     let _m = crate::CWD_LOCK.read();
 
@@ -912,17 +1020,23 @@ fn test_linkat_no_follow_symlink() {
     symlinkat(&oldfilepath, None, &symoldfilepath).unwrap();
 
     // Get file descriptor for base directory
-    let dirfd = fcntl::open(tempdir.path(), fcntl::OFlag::empty(), stat::Mode::empty()).unwrap();
+    let dirfd =
+        fcntl::open(tempdir.path(), fcntl::OFlag::empty(), stat::Mode::empty())
+            .unwrap();
 
     // Attempt link symlink of file at relative path
-    linkat(Some(dirfd), symoldfilename, Some(dirfd), newfilename, LinkatFlags::NoSymlinkFollow).unwrap();
+    linkat(
+        Some(dirfd),
+        symoldfilename,
+        Some(dirfd),
+        newfilename,
+        LinkatFlags::NoSymlinkFollow,
+    )
+    .unwrap();
 
     // Assert newfile is actually a symlink to oldfile.
     assert_eq!(
-        readlink(&newfilepath)
-            .unwrap()
-            .to_str()
-            .unwrap(),
+        readlink(&newfilepath).unwrap().to_str().unwrap(),
         oldfilepath.to_str().unwrap()
     );
 }
@@ -949,15 +1063,26 @@ fn test_linkat_follow_symlink() {
     symlinkat(&oldfilepath, None, &symoldfilepath).unwrap();
 
     // Get file descriptor for base directory
-    let dirfd = fcntl::open(tempdir.path(), fcntl::OFlag::empty(), stat::Mode::empty()).unwrap();
+    let dirfd =
+        fcntl::open(tempdir.path(), fcntl::OFlag::empty(), stat::Mode::empty())
+            .unwrap();
 
     // Attempt link target of symlink of file at relative path
-    linkat(Some(dirfd), symoldfilename, Some(dirfd), newfilename, LinkatFlags::SymlinkFollow).unwrap();
+    linkat(
+        Some(dirfd),
+        symoldfilename,
+        Some(dirfd),
+        newfilename,
+        LinkatFlags::SymlinkFollow,
+    )
+    .unwrap();
 
     let newfilestat = stat::stat(&newfilepath).unwrap();
 
     // Check the file type of the new link
-    assert_eq!((stat::SFlag::from_bits_truncate(newfilestat.st_mode as mode_t) & SFlag::S_IFMT),
+    assert_eq!(
+        (stat::SFlag::from_bits_truncate(newfilestat.st_mode as mode_t)
+            & SFlag::S_IFMT),
         SFlag::S_IFREG
     );
 
@@ -976,12 +1101,15 @@ fn test_unlinkat_dir_noremovedir() {
     DirBuilder::new().recursive(true).create(&dirpath).unwrap();
 
     // Get file descriptor for base directory
-    let dirfd = fcntl::open(tempdir.path(), fcntl::OFlag::empty(), stat::Mode::empty()).unwrap();
+    let dirfd =
+        fcntl::open(tempdir.path(), fcntl::OFlag::empty(), stat::Mode::empty())
+            .unwrap();
 
     // Attempt unlink dir at relative path without proper flag
-    let err_result = unlinkat(Some(dirfd), dirname, UnlinkatFlags::NoRemoveDir).unwrap_err();
+    let err_result =
+        unlinkat(Some(dirfd), dirname, UnlinkatFlags::NoRemoveDir).unwrap_err();
     assert!(err_result == Errno::EISDIR || err_result == Errno::EPERM);
- }
+}
 
 #[test]
 #[cfg(not(target_os = "redox"))]
@@ -994,12 +1122,14 @@ fn test_unlinkat_dir_removedir() {
     DirBuilder::new().recursive(true).create(&dirpath).unwrap();
 
     // Get file descriptor for base directory
-    let dirfd = fcntl::open(tempdir.path(), fcntl::OFlag::empty(), stat::Mode::empty()).unwrap();
+    let dirfd =
+        fcntl::open(tempdir.path(), fcntl::OFlag::empty(), stat::Mode::empty())
+            .unwrap();
 
     // Attempt unlink dir at relative path with proper flag
     unlinkat(Some(dirfd), dirname, UnlinkatFlags::RemoveDir).unwrap();
     assert!(!dirpath.exists());
- }
+}
 
 #[test]
 #[cfg(not(target_os = "redox"))]
@@ -1012,25 +1142,29 @@ fn test_unlinkat_file() {
     File::create(&filepath).unwrap();
 
     // Get file descriptor for base directory
-    let dirfd = fcntl::open(tempdir.path(), fcntl::OFlag::empty(), stat::Mode::empty()).unwrap();
+    let dirfd =
+        fcntl::open(tempdir.path(), fcntl::OFlag::empty(), stat::Mode::empty())
+            .unwrap();
 
     // Attempt unlink file at relative path
     unlinkat(Some(dirfd), filename, UnlinkatFlags::NoRemoveDir).unwrap();
     assert!(!filepath.exists());
- }
+}
 
 #[test]
 fn test_access_not_existing() {
     let tempdir = tempdir().unwrap();
     let dir = tempdir.path().join("does_not_exist.txt");
-    assert_eq!(access(&dir, AccessFlags::F_OK).err().unwrap(),
-               Errno::ENOENT);
+    assert_eq!(
+        access(&dir, AccessFlags::F_OK).err().unwrap(),
+        Errno::ENOENT
+    );
 }
 
 #[test]
 fn test_access_file_exists() {
     let tempdir = tempdir().unwrap();
-    let path  = tempdir.path().join("does_exist.txt");
+    let path = tempdir.path().join("does_exist.txt");
     let _file = File::create(path.clone()).unwrap();
     assert!(access(&path, AccessFlags::R_OK | AccessFlags::W_OK).is_ok());
 }
@@ -1090,7 +1224,11 @@ fn test_setfsuid() {
 }
 
 #[test]
-#[cfg(not(any(target_os = "redox", target_os = "fuchsia", target_os = "haiku")))]
+#[cfg(not(any(
+    target_os = "redox",
+    target_os = "fuchsia",
+    target_os = "haiku"
+)))]
 fn test_ttyname() {
     let fd = posix_openpt(OFlag::O_RDWR).expect("posix_openpt failed");
     assert!(fd.as_raw_fd() > 0);
@@ -1101,11 +1239,8 @@ fn test_ttyname() {
     grantpt(&fd).expect("grantpt failed");
     unlockpt(&fd).expect("unlockpt failed");
     let sname = unsafe { ptsname(&fd) }.expect("ptsname failed");
-    let fds = open(
-        Path::new(&sname),
-        OFlag::O_RDWR,
-        stat::Mode::empty(),
-    ).expect("open failed");
+    let fds = open(Path::new(&sname), OFlag::O_RDWR, stat::Mode::empty())
+        .expect("open failed");
     assert!(fds > 0);
 
     let name = ttyname(fds).expect("ttyname failed");
@@ -1121,7 +1256,11 @@ fn test_ttyname_not_pty() {
 }
 
 #[test]
-#[cfg(not(any(target_os = "redox", target_os = "fuchsia", target_os = "haiku")))]
+#[cfg(not(any(
+    target_os = "redox",
+    target_os = "fuchsia",
+    target_os = "haiku"
+)))]
 fn test_ttyname_invalid_fd() {
     assert_eq!(ttyname(-1), Err(Errno::EBADF));
 }

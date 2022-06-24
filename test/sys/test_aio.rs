@@ -4,8 +4,7 @@ use std::{
     os::unix::io::AsRawFd,
     pin::Pin,
     sync::atomic::{AtomicBool, Ordering},
-    thread,
-    time,
+    thread, time,
 };
 
 use libc::c_int;
@@ -14,12 +13,7 @@ use nix::{
     sys::{
         aio::*,
         signal::{
-            sigaction,
-            SaFlags,
-            SigAction,
-            SigHandler,
-            SigSet,
-            SigevNotify,
+            sigaction, SaFlags, SigAction, SigHandler, SigSet, SigevNotify,
             Signal,
         },
         time::{TimeSpec, TimeValLike},
@@ -58,7 +52,7 @@ mod aio_fsync {
             AioFsyncMode::O_SYNC,
             42,
             SigevNotify::SigevSignal {
-                signal:   Signal::SIGUSR2,
+                signal: Signal::SIGUSR2,
                 si_value: 99,
             },
         );
@@ -126,7 +120,7 @@ mod aio_read {
             &mut rbuf,
             42, //priority
             SigevNotify::SigevSignal {
-                signal:   Signal::SIGUSR2,
+                signal: Signal::SIGUSR2,
                 si_value: 99,
             },
         );
@@ -254,7 +248,7 @@ mod aio_readv {
             &mut rbufs,
             42, //priority
             SigevNotify::SigevSignal {
-                signal:   Signal::SIGUSR2,
+                signal: Signal::SIGUSR2,
                 si_value: 99,
             },
         );
@@ -314,7 +308,7 @@ mod aio_write {
             &wbuf,
             42, //priority
             SigevNotify::SigevSignal {
-                signal:   Signal::SIGUSR2,
+                signal: Signal::SIGUSR2,
                 si_value: 99,
             },
         );
@@ -455,7 +449,7 @@ mod aio_writev {
             &wbufs,
             42, //priority
             SigevNotify::SigevSignal {
-                signal:   Signal::SIGUSR2,
+                signal: Signal::SIGUSR2,
                 si_value: 99,
             },
         );
@@ -536,7 +530,7 @@ fn sigev_signal() {
         WBUF,
         0, //priority
         SigevNotify::SigevSignal {
-            signal:   Signal::SIGUSR2,
+            signal: Signal::SIGUSR2,
             si_value: 0, //TODO: validate in sigfunc
         },
     ));
@@ -624,8 +618,8 @@ fn test_aio_suspend() {
                 Ok(_) => (),
             };
         }
-        if rcb.as_mut().error() != Err(Errno::EINPROGRESS) &&
-            wcb.as_mut().error() != Err(Errno::EINPROGRESS)
+        if rcb.as_mut().error() != Err(Errno::EINPROGRESS)
+            && wcb.as_mut().error() != Err(Errno::EINPROGRESS)
         {
             break;
         }

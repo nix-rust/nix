@@ -33,6 +33,7 @@ status = [
   "OpenBSD x86_64",
   "Redox x86_64",
   "Rust Stable",
+  "Rust Formatter",
   "iOS aarch64",
   "iOS x86_64",
   "Illumos",

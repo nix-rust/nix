@@ -1,13 +1,9 @@
 use crate::*;
 use nix::{
     errno::Errno,
-    mount::{MntFlags, Nmount, unmount}
+    mount::{unmount, MntFlags, Nmount},
 };
-use std::{
-    ffi::CString,
-    fs::File,
-    path::Path
-};
+use std::{ffi::CString, fs::File, path::Path};
 use tempfile::tempdir;
 
 #[test]
@@ -24,14 +20,15 @@ fn ok() {
         .str_opt(&fstype, &nullfs)
         .str_opt_owned("fspath", mountpoint.path().to_str().unwrap())
         .str_opt_owned("target", target.path().to_str().unwrap())
-        .nmount(MntFlags::empty()).unwrap();
-    
+        .nmount(MntFlags::empty())
+        .unwrap();
+
     // Now check that the sentry is visible through the mountpoint
     let exists = Path::exists(&mountpoint.path().join("sentry"));
 
     // Cleanup the mountpoint before asserting
     unmount(mountpoint.path(), MntFlags::empty()).unwrap();
-    
+
     assert!(exists);
 }
 
@@ -44,8 +41,9 @@ fn bad_fstype() {
     let e = Nmount::new()
         .str_opt_owned("fspath", mountpoint.path().to_str().unwrap())
         .str_opt_owned("target", target.path().to_str().unwrap())
-        .nmount(MntFlags::empty()).unwrap_err();
-    
+        .nmount(MntFlags::empty())
+        .unwrap_err();
+
     assert_eq!(e.error(), Errno::EINVAL);
     assert_eq!(e.errmsg(), Some("Invalid fstype"));
 }

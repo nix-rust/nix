@@ -3,8 +3,8 @@ use std::ffi::CString;
 use std::str;
 
 use nix::errno::Errno;
-use nix::mqueue::{mq_open, mq_close, mq_send, mq_receive, mq_attr_member_t};
-use nix::mqueue::{MqAttr, MQ_OFlag};
+use nix::mqueue::{mq_attr_member_t, mq_close, mq_open, mq_receive, mq_send};
+use nix::mqueue::{MQ_OFlag, MqAttr};
 use nix::sys::stat::Mode;
 
 // Defined as a macro such that the error source is reported as the caller's location.
@@ -29,8 +29,8 @@ macro_rules! assert_attr_eq {
 #[test]
 fn test_mq_send_and_receive() {
     const MSG_SIZE: mq_attr_member_t = 32;
-    let attr =  MqAttr::new(0, 10, MSG_SIZE, 0);
-    let mq_name= &CString::new(b"/a_nix_test_queue".as_ref()).unwrap();
+    let attr = MqAttr::new(0, 10, MSG_SIZE, 0);
+    let mq_name = &CString::new(b"/a_nix_test_queue".as_ref()).unwrap();
 
     let oflag0 = MQ_OFlag::O_CREAT | MQ_OFlag::O_WRONLY;
     let mode = Mode::S_IWUSR | Mode::S_IRUSR | Mode::S_IRGRP | Mode::S_IROTH;
@@ -55,12 +55,11 @@ fn test_mq_send_and_receive() {
     assert_eq!(msg_to_send, str::from_utf8(&buf[0..len]).unwrap());
 }
 
-
 #[test]
 fn test_mq_getattr() {
     use nix::mqueue::mq_getattr;
     const MSG_SIZE: mq_attr_member_t = 32;
-    let initial_attr =  MqAttr::new(0, 10, MSG_SIZE, 0);
+    let initial_attr = MqAttr::new(0, 10, MSG_SIZE, 0);
     let mq_name = &CString::new(b"/attr_test_get_attr".as_ref()).unwrap();
     let oflag = MQ_OFlag::O_CREAT | MQ_OFlag::O_WRONLY;
     let mode = Mode::S_IWUSR | Mode::S_IRUSR | Mode::S_IRGRP | Mode::S_IROTH;
@@ -78,15 +77,14 @@ fn test_mq_getattr() {
 
 // FIXME: Fix failures for mips in QEMU
 #[test]
-#[cfg_attr(all(
-        qemu,
-        any(target_arch = "mips", target_arch = "mips64")
-    ), ignore
+#[cfg_attr(
+    all(qemu, any(target_arch = "mips", target_arch = "mips64")),
+    ignore
 )]
 fn test_mq_setattr() {
     use nix::mqueue::{mq_getattr, mq_setattr};
     const MSG_SIZE: mq_attr_member_t = 32;
-    let initial_attr =  MqAttr::new(0, 10, MSG_SIZE, 0);
+    let initial_attr = MqAttr::new(0, 10, MSG_SIZE, 0);
     let mq_name = &CString::new(b"/attr_test_get_attr".as_ref()).unwrap();
     let oflag = MQ_OFlag::O_CREAT | MQ_OFlag::O_WRONLY;
     let mode = Mode::S_IWUSR | Mode::S_IRUSR | Mode::S_IRGRP | Mode::S_IROTH;
@@ -109,7 +107,12 @@ fn test_mq_setattr() {
         assert_ne!(new_attr_get, new_attr);
     }
 
-    let new_attr_non_blocking = MqAttr::new(MQ_OFlag::O_NONBLOCK.bits() as mq_attr_member_t, 10, MSG_SIZE, 0);
+    let new_attr_non_blocking = MqAttr::new(
+        MQ_OFlag::O_NONBLOCK.bits() as mq_attr_member_t,
+        10,
+        MSG_SIZE,
+        0,
+    );
     mq_setattr(&mqd, &new_attr_non_blocking).unwrap();
     let new_attr_get = mq_getattr(&mqd).unwrap();
 
@@ -124,15 +127,14 @@ fn test_mq_setattr() {
 
 // FIXME: Fix failures for mips in QEMU
 #[test]
-#[cfg_attr(all(
-        qemu,
-        any(target_arch = "mips", target_arch = "mips64")
-    ), ignore
+#[cfg_attr(
+    all(qemu, any(target_arch = "mips", target_arch = "mips64")),
+    ignore
 )]
 fn test_mq_set_nonblocking() {
-    use nix::mqueue::{mq_getattr, mq_set_nonblock, mq_remove_nonblock};
+    use nix::mqueue::{mq_getattr, mq_remove_nonblock, mq_set_nonblock};
     const MSG_SIZE: mq_attr_member_t = 32;
-    let initial_attr =  MqAttr::new(0, 10, MSG_SIZE, 0);
+    let initial_attr = MqAttr::new(0, 10, MSG_SIZE, 0);
     let mq_name = &CString::new(b"/attr_test_get_attr".as_ref()).unwrap();
     let oflag = MQ_OFlag::O_CREAT | MQ_OFlag::O_WRONLY;
     let mode = Mode::S_IWUSR | Mode::S_IRUSR | Mode::S_IRGRP | Mode::S_IROTH;
@@ -156,10 +158,11 @@ fn test_mq_set_nonblocking() {
 fn test_mq_unlink() {
     use nix::mqueue::mq_unlink;
     const MSG_SIZE: mq_attr_member_t = 32;
-    let initial_attr =  MqAttr::new(0, 10, MSG_SIZE, 0);
+    let initial_attr = MqAttr::new(0, 10, MSG_SIZE, 0);
     let mq_name_opened = &CString::new(b"/mq_unlink_test".as_ref()).unwrap();
     #[cfg(not(any(target_os = "dragonfly", target_os = "netbsd")))]
-    let mq_name_not_opened = &CString::new(b"/mq_unlink_test".as_ref()).unwrap();
+    let mq_name_not_opened =
+        &CString::new(b"/mq_unlink_test".as_ref()).unwrap();
     let oflag = MQ_OFlag::O_CREAT | MQ_OFlag::O_WRONLY;
     let mode = Mode::S_IWUSR | Mode::S_IRUSR | Mode::S_IRGRP | Mode::S_IROTH;
     let r = mq_open(mq_name_opened, oflag, mode, Some(&initial_attr));
@@ -170,7 +173,7 @@ fn test_mq_unlink() {
     let mqd = r.unwrap();
 
     let res_unlink = mq_unlink(mq_name_opened);
-    assert_eq!(res_unlink, Ok(()) );
+    assert_eq!(res_unlink, Ok(()));
 
     // NetBSD (and others which inherit its implementation) defer removing the message
     // queue name until all references are closed, whereas Linux and others remove the
@@ -178,10 +181,10 @@ fn test_mq_unlink() {
     #[cfg(not(any(target_os = "dragonfly", target_os = "netbsd")))]
     {
         let res_unlink_not_opened = mq_unlink(mq_name_not_opened);
-        assert_eq!(res_unlink_not_opened, Err(Errno::ENOENT) );
+        assert_eq!(res_unlink_not_opened, Err(Errno::ENOENT));
     }
 
     mq_close(mqd).unwrap();
     let res_unlink_after_close = mq_unlink(mq_name_opened);
-    assert_eq!(res_unlink_after_close, Err(Errno::ENOENT) );
+    assert_eq!(res_unlink_after_close, Err(Errno::ENOENT));
 }
