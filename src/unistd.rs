@@ -991,37 +991,34 @@ pub fn sethostname<S: AsRef<OsStr>>(name: S) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
-/// Get the host name and store it in the provided buffer, returning a pointer
-/// the `CStr` in that buffer on success (see
+/// Get the host name and store it in an internally allocated buffer, returning an
+/// `OsString` on success (see
 /// [gethostname(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/gethostname.html)).
 ///
 /// This function call attempts to get the host name for the running system and
-/// store it in a provided buffer.  The buffer will be populated with bytes up
-/// to the length of the provided slice including a NUL terminating byte.  If
-/// the hostname is longer than the length provided, no error will be provided.
-/// The posix specification does not specify whether implementations will
-/// null-terminate in this case, but the nix implementation will ensure that the
-/// buffer is null terminated in this case.
+/// store it in an internal buffer, returning it as an `OsString` if successful.
 ///
 /// ```no_run
 /// use nix::unistd;
-/// use std::mem;
 ///
-/// let mut buf = [mem::MaybeUninit::uninit(); 64];
-/// let hostname_cstr = unistd::gethostname(&mut buf).expect("Failed getting hostname");
-/// let hostname = hostname_cstr.to_str().expect("Hostname wasn't valid UTF-8");
+/// let hostname = unistd::gethostname().expect("Failed getting hostname");
+/// let hostname = hostname.into_string().expect("Hostname wasn't valid UTF-8");
 /// println!("Hostname: {}", hostname);
 /// ```
-pub fn gethostname(buffer: &mut [mem::MaybeUninit<u8>]) -> Result<&CStr> {
+pub fn gethostname() -> Result<OsString> {
+    // The capacity is the max length of a hostname plus the NUL terminator.
+    let mut buffer: Vec<u8> = Vec::with_capacity(256);
     let ptr = buffer.as_mut_ptr() as *mut c_char;
-    let len = buffer.len() as size_t;
+    let len = buffer.capacity() as size_t;
 
     let res = unsafe { libc::gethostname(ptr, len) };
     Errno::result(res).map(|_| {
         unsafe {
-            buffer[len - 1].as_mut_ptr().write(0); // ensure always null-terminated
-            CStr::from_ptr(buffer.as_ptr() as *const c_char) 
+            buffer.as_mut_ptr().wrapping_add(len - 1).write(0); // ensure always null-terminated
+            let len = CStr::from_ptr(buffer.as_ptr() as *const c_char).len();
+            buffer.set_len(len);
         }
+        OsString::from_vec(buffer)
     })
 }
 }
