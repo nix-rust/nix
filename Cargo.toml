@@ -35,6 +35,9 @@ pin-utils = { version = "0.1.0", optional = true }
 [target.'cfg(not(target_os = "redox"))'.dependencies]
 memoffset = { version = "0.6.3", optional = true }
 
+[build-dependencies]
+autocfg = "1.1.0"
+
 [features]
 default = [
   "acct", "aio", "dir", "env", "event", "feature", "fs",

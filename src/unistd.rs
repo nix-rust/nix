@@ -67,11 +67,13 @@ impl Uid {
     }
 
     /// Returns Uid of calling process. This is practically a more Rusty alias for `getuid`.
+    #[cfg_attr(has_doc_alias, doc(alias("getuid")))]
     pub fn current() -> Self {
         getuid()
     }
 
     /// Returns effective Uid of calling process. This is practically a more Rusty alias for `geteuid`.
+    #[cfg_attr(has_doc_alias, doc(alias("geteuid")))]
     pub fn effective() -> Self {
         geteuid()
     }
@@ -122,11 +124,13 @@ impl Gid {
     }
 
     /// Returns Gid of calling process. This is practically a more Rusty alias for `getgid`.
+    #[cfg_attr(has_doc_alias, doc(alias("getgid")))]
     pub fn current() -> Self {
         getgid()
     }
 
     /// Returns effective Gid of calling process. This is practically a more Rusty alias for `getegid`.
+    #[cfg_attr(has_doc_alias, doc(alias("getegid")))]
     pub fn effective() -> Self {
         getegid()
     }
@@ -172,11 +176,13 @@ impl Pid {
     }
 
     /// Returns PID of calling process
+    #[cfg_attr(has_doc_alias, doc(alias("getpid")))]
     pub fn this() -> Self {
         getpid()
     }
 
     /// Returns PID of parent of calling process
+    #[cfg_attr(has_doc_alias, doc(alias("getppid")))]
     pub fn parent() -> Self {
         getppid()
     }
