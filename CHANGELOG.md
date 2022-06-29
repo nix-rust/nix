@@ -24,6 +24,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1747](https://github.com/nix-rust/nix/pull/1747))
 - Added the `DontRoute` SockOpt
   (#[1752](https://github.com/nix-rust/nix/pull/1752))
+- Added `memfd_create` on Android.
+  (#[1753](https://github.com/nix-rust/nix/pull/1753))
 
 ### Changed
 
