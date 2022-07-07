@@ -2938,35 +2938,35 @@ impl From<&libc::passwd> for User {
     fn from(pw: &libc::passwd) -> User {
         unsafe {
             User {
-                name: CStr::from_ptr((*pw).pw_name).to_string_lossy().into_owned(),
-                passwd: CString::new(CStr::from_ptr((*pw).pw_passwd).to_bytes()).unwrap(),
+                name: CStr::from_ptr(pw.pw_name).to_string_lossy().into_owned(),
+                passwd: CString::new(CStr::from_ptr(pw.pw_passwd).to_bytes()).unwrap(),
                 #[cfg(not(all(target_os = "android", target_pointer_width = "32")))]
-                gecos: CString::new(CStr::from_ptr((*pw).pw_gecos).to_bytes()).unwrap(),
-                dir: PathBuf::from(OsStr::from_bytes(CStr::from_ptr((*pw).pw_dir).to_bytes())),
-                shell: PathBuf::from(OsStr::from_bytes(CStr::from_ptr((*pw).pw_shell).to_bytes())),
-                uid: Uid::from_raw((*pw).pw_uid),
-                gid: Gid::from_raw((*pw).pw_gid),
+                gecos: CString::new(CStr::from_ptr(pw.pw_gecos).to_bytes()).unwrap(),
+                dir: PathBuf::from(OsStr::from_bytes(CStr::from_ptr(pw.pw_dir).to_bytes())),
+                shell: PathBuf::from(OsStr::from_bytes(CStr::from_ptr(pw.pw_shell).to_bytes())),
+                uid: Uid::from_raw(pw.pw_uid),
+                gid: Gid::from_raw(pw.pw_gid),
                 #[cfg(not(any(target_os = "android",
                               target_os = "fuchsia",
                               target_os = "haiku",
                               target_os = "illumos",
                               target_os = "linux",
                               target_os = "solaris")))]
-                class: CString::new(CStr::from_ptr((*pw).pw_class).to_bytes()).unwrap(),
+                class: CString::new(CStr::from_ptr(pw.pw_class).to_bytes()).unwrap(),
                 #[cfg(not(any(target_os = "android",
                               target_os = "fuchsia",
                               target_os = "haiku",
                               target_os = "illumos",
                               target_os = "linux",
                               target_os = "solaris")))]
-                change: (*pw).pw_change,
+                change: pw.pw_change,
                 #[cfg(not(any(target_os = "android",
                               target_os = "fuchsia",
                               target_os = "haiku",
                               target_os = "illumos",
                               target_os = "linux",
                               target_os = "solaris")))]
-                expire: (*pw).pw_expire
+                expire: pw.pw_expire
             }
         }
     }
@@ -3123,10 +3123,10 @@ impl From<&libc::group> for Group {
     fn from(gr: &libc::group) -> Group {
         unsafe {
             Group {
-                name: CStr::from_ptr((*gr).gr_name).to_string_lossy().into_owned(),
-                passwd: CString::new(CStr::from_ptr((*gr).gr_passwd).to_bytes()).unwrap(),
-                gid: Gid::from_raw((*gr).gr_gid),
-                mem: Group::members((*gr).gr_mem)
+                name: CStr::from_ptr(gr.gr_name).to_string_lossy().into_owned(),
+                passwd: CString::new(CStr::from_ptr(gr.gr_passwd).to_bytes()).unwrap(),
+                gid: Gid::from_raw(gr.gr_gid),
+                mem: Group::members(gr.gr_mem)
             }
         }
     }
