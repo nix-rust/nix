@@ -345,7 +345,7 @@ mod recvfrom {
         )
         .unwrap();
         // Ignore from for stream sockets
-        let _ = sendrecv(fd1, fd2, |s, m, flags| send(s, m, flags), |_, _| {});
+        let _ = sendrecv(fd1, fd2, send, |_, _| {});
     }
 
     #[test]
@@ -1472,7 +1472,7 @@ fn loopback_address(
     use std::io;
     use std::io::Write;
 
-    let addrs = match getifaddrs() {
+    let mut addrs = match getifaddrs() {
         Ok(iter) => iter,
         Err(e) => {
             let stdioerr = io::stderr();
@@ -1482,15 +1482,11 @@ fn loopback_address(
         }
     };
     // return first address matching family
-    for ifaddr in addrs {
-        if ifaddr.flags.contains(InterfaceFlags::IFF_LOOPBACK)
+    addrs.find(|ifaddr| {
+        ifaddr.flags.contains(InterfaceFlags::IFF_LOOPBACK)
             && ifaddr.address.as_ref().and_then(SockaddrLike::family)
                 == Some(family)
-        {
-            return Some(ifaddr);
-        }
-    }
-    None
+    })
 }
 
 #[cfg(any(

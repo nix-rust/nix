@@ -1169,6 +1169,8 @@ fn test_access_file_exists() {
     assert!(access(&path, AccessFlags::R_OK | AccessFlags::W_OK).is_ok());
 }
 
+//Clippy false positive https://github.com/rust-lang/rust-clippy/issues/9111
+#[allow(clippy::needless_borrow)]
 #[cfg(not(target_os = "redox"))]
 #[test]
 fn test_user_into_passwd() {
@@ -1198,8 +1200,7 @@ fn test_setfsuid() {
     // create a temporary file with permissions '-rw-r-----'
     let file = tempfile::NamedTempFile::new_in("/var/tmp").unwrap();
     let temp_path = file.into_temp_path();
-    dbg!(&temp_path);
-    let temp_path_2 = (&temp_path).to_path_buf();
+    let temp_path_2 = temp_path.to_path_buf();
     let mut permissions = fs::metadata(&temp_path).unwrap().permissions();
     permissions.set_mode(0o640);
 
