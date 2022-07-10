@@ -1,3 +1,5 @@
+//! List directory contents
+
 use crate::{Error, NixPath, Result};
 use crate::errno::Errno;
 use crate::fcntl::{self, OFlag};
@@ -114,6 +116,7 @@ fn next(dir: &mut Dir) -> Option<Result<Entry>> {
     }
 }
 
+/// Return type of [`Dir::iter`].
 #[derive(Debug, Eq, Hash, PartialEq)]
 pub struct Iter<'d>(&'d mut Dir);
 
@@ -183,14 +186,22 @@ impl IntoIterator for Dir {
 #[repr(transparent)]
 pub struct Entry(dirent);
 
+/// Type of file referenced by a directory entry
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
 pub enum Type {
+    /// FIFO (Named pipe)
     Fifo,
+    /// Character device
     CharacterDevice,
+    /// Directory
     Directory,
+    /// Block device
     BlockDevice,
+    /// Regular file
     File,
+    /// Symbolic link
     Symlink,
+    /// Unix-domain socket
     Socket,
 }
 
