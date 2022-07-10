@@ -119,7 +119,6 @@ feature! {
 ))]
 feature! {
     #![feature = "mqueue"]
-    #[allow(missing_docs)]
     pub mod mqueue;
 }
 feature! {
