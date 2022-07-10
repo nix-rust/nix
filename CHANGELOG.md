@@ -21,6 +21,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1697](https://github.com/nix-rust/nix/pull/1697))
 - Added `getrusage` and helper types `UsageWho` and `Usage`
   (#[1747](https://github.com/nix-rust/nix/pull/1747))
+- Added the `DontRoute` SockOpt
+  (#[1752](https://github.com/nix-rust/nix/pull/1752))
 
 ### Changed
 

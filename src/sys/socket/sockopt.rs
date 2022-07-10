@@ -353,6 +353,9 @@ sockopt_impl!(
     /// Get and clear the pending socket error.
     SocketError, GetOnly, libc::SOL_SOCKET, libc::SO_ERROR, i32);
 sockopt_impl!(
+    /// Set or get the don't route flag.
+    DontRoute, Both, libc::SOL_SOCKET, libc::SO_DONTROUTE, bool);
+sockopt_impl!(
     /// Enable sending of keep-alive messages on connection-oriented sockets.
     KeepAlive, Both, libc::SOL_SOCKET, libc::SO_KEEPALIVE, bool);
 #[cfg(any(
