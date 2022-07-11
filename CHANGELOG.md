@@ -6,9 +6,10 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased] - ReleaseDate
 ### Added
 
+- Added const constructors for `TimeSpec` and `TimeVal`
+  (#[1760](https://github.com/nix-rust/nix/pull/1760))
 - Added `aio_writev` and `aio_readv`.
   (#[1713](https://github.com/nix-rust/nix/pull/1713))
-
 - impl `From<uid_t>` for `Uid` and `From<gid_t>` for `Gid`
   (#[1727](https://github.com/nix-rust/nix/pull/1727))
 - impl From<SockaddrIn> for std::net::SocketAddrV4 and

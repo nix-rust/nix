@@ -65,7 +65,6 @@ mod macros;
 #[cfg(not(target_os = "redox"))]
 feature! {
     #![feature = "dir"]
-    #[allow(missing_docs)]
     pub mod dir;
 }
 feature! {
@@ -119,7 +118,6 @@ feature! {
 ))]
 feature! {
     #![feature = "mqueue"]
-    #[allow(missing_docs)]
     pub mod mqueue;
 }
 feature! {

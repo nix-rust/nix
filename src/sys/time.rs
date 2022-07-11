@@ -330,6 +330,15 @@ impl TimeValLike for TimeSpec {
 }
 
 impl TimeSpec {
+    /// Construct a new `TimeSpec` from its components
+    #[cfg_attr(target_env = "musl", allow(deprecated))] // https://github.com/rust-lang/libc/issues/1848
+    pub const fn new(seconds: time_t, nanoseconds: timespec_tv_nsec_t) -> Self {
+        Self(timespec {
+            tv_sec: seconds,
+            tv_nsec: nanoseconds,
+        })
+    }
+
     fn nanos_mod_sec(&self) -> timespec_tv_nsec_t {
         if self.tv_sec() < 0 && self.tv_nsec() > 0 {
             self.tv_nsec() - NANOS_PER_SEC as timespec_tv_nsec_t
@@ -564,6 +573,15 @@ impl TimeValLike for TimeVal {
 }
 
 impl TimeVal {
+    /// Construct a new `TimeVal` from its components
+    #[cfg_attr(target_env = "musl", allow(deprecated))] // https://github.com/rust-lang/libc/issues/1848
+    pub const fn new(seconds: time_t, microseconds: suseconds_t) -> Self {
+        Self(timeval {
+            tv_sec: seconds,
+            tv_usec: microseconds,
+        })
+    }
+
     fn micros_mod_sec(&self) -> suseconds_t {
         if self.tv_sec() < 0 && self.tv_usec() > 0 {
             self.tv_usec() - MICROS_PER_SEC as suseconds_t
