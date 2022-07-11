@@ -20,7 +20,7 @@ build: &BUILD
     - rustc +$TOOLCHAIN -Vv
     - $TOOL +$TOOLCHAIN $BUILD $ZFLAGS --target $TARGET --all-targets
     - $TOOL +$TOOLCHAIN doc $ZFLAGS --no-deps --target $TARGET
-    - $TOOL +$TOOLCHAIN clippy $ZFLAGS --target $TARGET -- -D warnings
+    - $TOOL +$TOOLCHAIN clippy $ZFLAGS --target $TARGET --all-targets -- -D warnings
     - if [ -z "$NOHACK" ]; then $TOOL +$TOOLCHAIN install cargo-hack; fi
     - if [ -z "$NOHACK" ]; then $TOOL +$TOOLCHAIN hack $ZFLAGS check --target $TARGET --each-feature; fi
 
