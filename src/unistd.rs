@@ -2668,6 +2668,19 @@ pub enum SysconfVar {
     /// Integer value indicating version of the X/Open Portability Guide to
     /// which the implementation conforms.
     _XOPEN_VERSION = libc::_SC_XOPEN_VERSION,
+    /// The number of pages of physical memory. Note that it is possible for
+    /// the product of this value to overflow.
+    #[cfg(any(target_os="android", target_os="linux"))]
+    _PHYS_PAGES = libc::_SC_PHYS_PAGES,
+    /// The number of currently available pages of physical memory.
+    #[cfg(any(target_os="android", target_os="linux"))]
+    _AVPHYS_PAGES = libc::_SC_AVPHYS_PAGES,
+    /// The number of processors configured.
+    #[cfg(any(target_os="android", target_os="linux"))]
+    _NPROCESSORS_CONF = libc::_SC_NPROCESSORS_CONF,
+    /// The number of processors currently online (available).
+    #[cfg(any(target_os="android", target_os="linux"))]
+    _NPROCESSORS_ONLN = libc::_SC_NPROCESSORS_ONLN,
 }
 
 /// Get configurable system variables (see
