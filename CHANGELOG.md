@@ -8,6 +8,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 ### Changed
 ### Fixed
 
+- Fixed buffer overflow in nix::sys::socket::recvfrom.
+  (#[1763](https://github.com/nix-rust/nix/pull/1763))
 - Enabled `SockaddrStorage::{as_link_addr, as_link_addr_mut}` for Linux-like
   operating systems.
   (#[1729](https://github.com/nix-rust/nix/pull/1729))

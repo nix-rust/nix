@@ -1910,8 +1910,8 @@ pub fn recvfrom<T:SockaddrLike>(sockfd: RawFd, buf: &mut [u8])
     -> Result<(usize, Option<T>)>
 {
     unsafe {
-        let mut addr = mem::MaybeUninit::uninit();
-        let mut len = mem::size_of::<T>() as socklen_t;
+        let mut addr = mem::MaybeUninit::<T>::uninit();
+        let mut len = mem::size_of_val(&addr) as socklen_t;
 
         let ret = Errno::result(libc::recvfrom(
             sockfd,
@@ -1921,7 +1921,10 @@ pub fn recvfrom<T:SockaddrLike>(sockfd: RawFd, buf: &mut [u8])
             addr.as_mut_ptr() as *mut libc::sockaddr,
             &mut len as *mut socklen_t))? as usize;
 
-        Ok((ret, T::from_raw(&addr.assume_init(), Some(len))))
+        Ok((ret, T::from_raw(
+            addr.assume_init().as_ptr() as *const libc::sockaddr,
+            Some(len))
+        ))
     }
 }
 
