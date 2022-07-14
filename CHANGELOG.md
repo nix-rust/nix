@@ -10,6 +10,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1761](https://github.com/nix-rust/nix/pull/1761))
 - Added const constructors for `TimeSpec` and `TimeVal`
   (#[1760](https://github.com/nix-rust/nix/pull/1760))
+- Added `chflags`.
+  (#[1758](https://github.com/nix-rust/nix/pull/1758))
 - Added `aio_writev` and `aio_readv`.
   (#[1713](https://github.com/nix-rust/nix/pull/1713))
 - impl `From<uid_t>` for `Uid` and `From<gid_t>` for `Gid`

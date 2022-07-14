@@ -6,6 +6,18 @@ use crate::errno::{self, Errno};
 use crate::fcntl::{at_rawfd, AtFlags};
 #[cfg(feature = "fs")]
 use crate::fcntl::{fcntl, FcntlArg::F_SETFD, FdFlag, OFlag};
+#[cfg(all(
+    feature = "fs",
+    any(
+        target_os = "openbsd",
+        target_os = "netbsd",
+        target_os = "freebsd",
+        target_os = "dragonfly",
+        target_os = "macos",
+        target_os = "ios"
+    )
+))]
+use crate::sys::stat::FileFlag;
 #[cfg(feature = "fs")]
 use crate::sys::stat::Mode;
 use crate::{Error, NixPath, Result};
@@ -3286,5 +3298,28 @@ pub fn getpeereid(fd: RawFd) -> Result<(Uid, Gid)> {
     let ret = unsafe { libc::getpeereid(fd, &mut uid, &mut gid) };
 
     Errno::result(ret).map(|_| (Uid(uid), Gid(gid)))
+}
+}
+
+feature! {
+#![all(feature = "fs")]
+
+/// Set the file flags.
+///
+/// See also [chflags(2)](https://www.freebsd.org/cgi/man.cgi?query=chflags&sektion=2)
+#[cfg(any(
+    target_os = "openbsd",
+    target_os = "netbsd",
+    target_os = "freebsd",
+    target_os = "dragonfly",
+    target_os = "macos",
+    target_os = "ios"
+))]
+pub fn chflags<P: ?Sized + NixPath>(path: &P, flags: FileFlag) -> Result<()> {
+    let res = path.with_nix_path(|cstr| unsafe {
+        libc::chflags(cstr.as_ptr(), flags.bits())
+    })?;
+
+    Errno::result(res).map(drop)
 }
 }

@@ -29,6 +29,7 @@ mod test_signalfd;
 mod test_socket;
 #[cfg(not(any(target_os = "redox")))]
 mod test_sockopt;
+mod test_stat;
 #[cfg(any(target_os = "android", target_os = "linux"))]
 mod test_sysinfo;
 #[cfg(not(any(
