@@ -28,6 +28,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1747](https://github.com/nix-rust/nix/pull/1747))
 - Added the `DontRoute` SockOpt
   (#[1752](https://github.com/nix-rust/nix/pull/1752))
+- Added `signal::SigSet::from_sigset_t_unchecked()`.
+  (#[1741](https://github.com/nix-rust/nix/pull/1741))
 
 ### Changed
 
@@ -41,6 +43,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1739](https://github.com/nix-rust/nix/pull/1739))
 - Changed `gethostname` to return an owned `OsString`.
   (#[1745](https://github.com/nix-rust/nix/pull/1745))
+- `signal:SigSet` is now marked as `repr(transparent)`.
+  (#[1741](https://github.com/nix-rust/nix/pull/1741))
 
 ### Fixed
 
