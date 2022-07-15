@@ -758,8 +758,8 @@ pub enum FchownatFlags {
 /// If `flag` is `FchownatFlags::NoFollowSymlink` and `path` names a symbolic link,
 /// then the mode of the symbolic link is changed.
 ///
-/// `fchownat(None, path, mode, FchownatFlags::NoFollowSymlink)` is identical to
-/// a call `libc::lchown(path, mode)`.  That's why `lchmod` is unimplemented in
+/// `fchownat(None, path, owner, group, FchownatFlags::NoFollowSymlink)` is identical to
+/// a call `libc::lchown(path, owner, group)`.  That's why `lchown` is unimplemented in
 /// the `nix` crate.
 ///
 /// # References
