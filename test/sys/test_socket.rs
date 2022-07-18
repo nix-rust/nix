@@ -298,7 +298,7 @@ pub fn test_std_conversions() {
 mod recvfrom {
     use super::*;
     use nix::sys::socket::*;
-    use nix::Result;
+    use nix::{errno::Errno, Result};
     use std::thread;
 
     const MSG: &[u8] = b"Hello, World!";
@@ -680,6 +680,51 @@ mod recvfrom {
         for buf in &receive_buffers[..NUM_MESSAGES_SENT] {
             assert_eq!(&buf[..DATA.len()], DATA);
         }
+    }
+
+    #[test]
+    pub fn udp_inet6() {
+        let addr = std::net::Ipv6Addr::from_str("::1").unwrap();
+        let rport = 6789;
+        let rstd_sa = SocketAddrV6::new(addr, rport, 0, 0);
+        let raddr = SockaddrIn6::from(rstd_sa);
+        let sport = 6790;
+        let sstd_sa = SocketAddrV6::new(addr, sport, 0, 0);
+        let saddr = SockaddrIn6::from(sstd_sa);
+        let rsock = socket(
+            AddressFamily::Inet6,
+            SockType::Datagram,
+            SockFlag::empty(),
+            None,
+        )
+        .expect("receive socket failed");
+        match bind(rsock, &raddr) {
+            Err(Errno::EADDRNOTAVAIL) => {
+                println!("IPv6 not available, skipping test.");
+                return;
+            }
+            Err(e) => panic!("bind: {}", e),
+            Ok(()) => (),
+        }
+        let ssock = socket(
+            AddressFamily::Inet6,
+            SockType::Datagram,
+            SockFlag::empty(),
+            None,
+        )
+        .expect("send socket failed");
+        bind(ssock, &saddr).unwrap();
+        let from = sendrecv(
+            rsock,
+            ssock,
+            move |s, m, flags| sendto(s, m, &raddr, flags),
+            |_, _| {},
+        );
+        assert_eq!(AddressFamily::Inet6, from.unwrap().family().unwrap());
+        let osent_addr = from.unwrap();
+        let sent_addr = osent_addr.as_sockaddr_in6().unwrap();
+        assert_eq!(sent_addr.ip(), addr);
+        assert_eq!(sent_addr.port(), sport);
     }
 }
 
@@ -1734,7 +1779,7 @@ pub fn test_recv_ipv6pktinfo() {
     let (lo_name, lo) = match lo_ifaddr {
         Some(ifaddr) => (
             ifaddr.interface_name,
-            ifaddr.address.expect("Expect IPv4 address on interface"),
+            ifaddr.address.expect("Expect IPv6 address on interface"),
         ),
         None => return,
     };

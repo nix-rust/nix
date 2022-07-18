@@ -6,6 +6,18 @@ use crate::errno::{self, Errno};
 use crate::fcntl::{at_rawfd, AtFlags};
 #[cfg(feature = "fs")]
 use crate::fcntl::{fcntl, FcntlArg::F_SETFD, FdFlag, OFlag};
+#[cfg(all(
+    feature = "fs",
+    any(
+        target_os = "openbsd",
+        target_os = "netbsd",
+        target_os = "freebsd",
+        target_os = "dragonfly",
+        target_os = "macos",
+        target_os = "ios"
+    )
+))]
+use crate::sys::stat::FileFlag;
 #[cfg(feature = "fs")]
 use crate::sys::stat::Mode;
 use crate::{Error, NixPath, Result};
@@ -746,8 +758,8 @@ pub enum FchownatFlags {
 /// If `flag` is `FchownatFlags::NoFollowSymlink` and `path` names a symbolic link,
 /// then the mode of the symbolic link is changed.
 ///
-/// `fchownat(None, path, mode, FchownatFlags::NoFollowSymlink)` is identical to
-/// a call `libc::lchown(path, mode)`.  That's why `lchmod` is unimplemented in
+/// `fchownat(None, path, owner, group, FchownatFlags::NoFollowSymlink)` is identical to
+/// a call `libc::lchown(path, owner, group)`.  That's why `lchown` is unimplemented in
 /// the `nix` crate.
 ///
 /// # References
@@ -2668,6 +2680,19 @@ pub enum SysconfVar {
     /// Integer value indicating version of the X/Open Portability Guide to
     /// which the implementation conforms.
     _XOPEN_VERSION = libc::_SC_XOPEN_VERSION,
+    /// The number of pages of physical memory. Note that it is possible for
+    /// the product of this value to overflow.
+    #[cfg(any(target_os="android", target_os="linux"))]
+    _PHYS_PAGES = libc::_SC_PHYS_PAGES,
+    /// The number of currently available pages of physical memory.
+    #[cfg(any(target_os="android", target_os="linux"))]
+    _AVPHYS_PAGES = libc::_SC_AVPHYS_PAGES,
+    /// The number of processors configured.
+    #[cfg(any(target_os="android", target_os="linux"))]
+    _NPROCESSORS_CONF = libc::_SC_NPROCESSORS_CONF,
+    /// The number of processors currently online (available).
+    #[cfg(any(target_os="android", target_os="linux"))]
+    _NPROCESSORS_ONLN = libc::_SC_NPROCESSORS_ONLN,
 }
 
 /// Get configurable system variables (see
@@ -3273,5 +3298,28 @@ pub fn getpeereid(fd: RawFd) -> Result<(Uid, Gid)> {
     let ret = unsafe { libc::getpeereid(fd, &mut uid, &mut gid) };
 
     Errno::result(ret).map(|_| (Uid(uid), Gid(gid)))
+}
+}
+
+feature! {
+#![all(feature = "fs")]
+
+/// Set the file flags.
+///
+/// See also [chflags(2)](https://www.freebsd.org/cgi/man.cgi?query=chflags&sektion=2)
+#[cfg(any(
+    target_os = "openbsd",
+    target_os = "netbsd",
+    target_os = "freebsd",
+    target_os = "dragonfly",
+    target_os = "macos",
+    target_os = "ios"
+))]
+pub fn chflags<P: ?Sized + NixPath>(path: &P, flags: FileFlag) -> Result<()> {
+    let res = path.with_nix_path(|cstr| unsafe {
+        libc::chflags(cstr.as_ptr(), flags.bits())
+    })?;
+
+    Errno::result(res).map(drop)
 }
 }

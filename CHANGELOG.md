@@ -6,8 +6,12 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased] - ReleaseDate
 ### Added
 
+- Added four non-standard Linux `SysconfVar` variants
+  (#[1761](https://github.com/nix-rust/nix/pull/1761))
 - Added const constructors for `TimeSpec` and `TimeVal`
   (#[1760](https://github.com/nix-rust/nix/pull/1760))
+- Added `chflags`.
+  (#[1758](https://github.com/nix-rust/nix/pull/1758))
 - Added `aio_writev` and `aio_readv`.
   (#[1713](https://github.com/nix-rust/nix/pull/1713))
 - impl `From<uid_t>` for `Uid` and `From<gid_t>` for `Gid`
@@ -24,6 +28,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1747](https://github.com/nix-rust/nix/pull/1747))
 - Added the `DontRoute` SockOpt
   (#[1752](https://github.com/nix-rust/nix/pull/1752))
+- Added `signal::SigSet::from_sigset_t_unchecked()`.
+  (#[1741](https://github.com/nix-rust/nix/pull/1741))
 - Added `memfd_create` on Android.
   (#[1753](https://github.com/nix-rust/nix/pull/1753))
 
@@ -39,9 +45,13 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1739](https://github.com/nix-rust/nix/pull/1739))
 - Changed `gethostname` to return an owned `OsString`.
   (#[1745](https://github.com/nix-rust/nix/pull/1745))
+- `signal:SigSet` is now marked as `repr(transparent)`.
+  (#[1741](https://github.com/nix-rust/nix/pull/1741))
 
 ### Fixed
 
+- Fixed buffer overflow in nix::sys::socket::recvfrom.
+  (#[1763](https://github.com/nix-rust/nix/pull/1763))
 - Enabled `SockaddrStorage::{as_link_addr, as_link_addr_mut}` for Linux-like
   operating systems.
   (#[1729](https://github.com/nix-rust/nix/pull/1729))
