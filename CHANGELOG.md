@@ -6,6 +6,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased] - ReleaseDate
 ### Added
 
+- Added ETH_P_ALL to SockProtocol enum
+  (#[1768](https://github.com/nix-rust/nix/pull/1768))
 - Added four non-standard Linux `SysconfVar` variants
   (#[1761](https://github.com/nix-rust/nix/pull/1761))
 - Added const constructors for `TimeSpec` and `TimeVal`
