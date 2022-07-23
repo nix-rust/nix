@@ -30,6 +30,10 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1752](https://github.com/nix-rust/nix/pull/1752))
 - Added `signal::SigSet::from_sigset_t_unchecked()`.
   (#[1741](https://github.com/nix-rust/nix/pull/1741))
+- Added IP_ORIGDSTADDR using Ipv4OrigDstAddr in setsockopt and recvmsg.
+  (#[1772](https://github.com/nix-rust/nix/pull/1772))
+- Added IPV6_ORIGDSTADDR using Ipv6OrigDstAddr in setsockopt and recvmsg.
+  (#[1772](https://github.com/nix-rust/nix/pull/1772))
 
 ### Changed
 
