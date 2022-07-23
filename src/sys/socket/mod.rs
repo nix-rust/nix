@@ -949,6 +949,7 @@ impl ControlMessageOwned {
 
     #[cfg(any(target_os = "android", target_os = "linux"))]
     #[cfg(feature = "net")]
+    #[allow(clippy::cast_ptr_alignment)]    // False positive
     unsafe fn recv_err_helper<T>(p: *mut libc::c_uchar, len: usize) -> (libc::sock_extended_err, Option<T>) {
         let ee = p as *const libc::sock_extended_err;
         let err = ptr::read_unaligned(ee);
