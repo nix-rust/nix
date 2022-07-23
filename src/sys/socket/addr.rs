@@ -1195,7 +1195,7 @@ impl SockaddrLike for SockaddrIn {
         if (*addr).sa_family as i32 != libc::AF_INET as i32 {
             return None;
         }
-        Some(SockaddrIn(*(addr as *const libc::sockaddr_in)))
+        Some(Self(ptr::read_unaligned(addr as *const _)))
     }
 }
 
@@ -1301,7 +1301,7 @@ impl SockaddrLike for SockaddrIn6 {
         if (*addr).sa_family as i32 != libc::AF_INET6 as i32 {
             return None;
         }
-        Some(SockaddrIn6(*(addr as *const libc::sockaddr_in6)))
+        Some(Self(ptr::read_unaligned(addr as *const _)))
     }
 }
 
@@ -1870,21 +1870,21 @@ impl SockAddr {
                 Some(AddressFamily::Unix) => None,
                 #[cfg(feature = "net")]
                 Some(AddressFamily::Inet) => Some(SockAddr::Inet(
-                    InetAddr::V4(*(addr as *const libc::sockaddr_in)))),
+                    InetAddr::V4(ptr::read_unaligned(addr as *const _)))),
                 #[cfg(feature = "net")]
                 Some(AddressFamily::Inet6) => Some(SockAddr::Inet(
-                    InetAddr::V6(*(addr as *const libc::sockaddr_in6)))),
+                    InetAddr::V6(ptr::read_unaligned(addr as *const _)))),
                 #[cfg(any(target_os = "android", target_os = "linux"))]
                 Some(AddressFamily::Netlink) => Some(SockAddr::Netlink(
-                    NetlinkAddr(*(addr as *const libc::sockaddr_nl)))),
+                    NetlinkAddr(ptr::read_unaligned(addr as *const _)))),
                 #[cfg(all(feature = "ioctl",
                           any(target_os = "ios", target_os = "macos")))]
                 Some(AddressFamily::System) => Some(SockAddr::SysControl(
-                    SysControlAddr(*(addr as *const libc::sockaddr_ctl)))),
+                    SysControlAddr(ptr::read_unaligned(addr as *const _)))),
                 #[cfg(any(target_os = "android", target_os = "linux"))]
                 #[cfg(feature = "net")]
                 Some(AddressFamily::Packet) => Some(SockAddr::Link(
-                    LinkAddr(*(addr as *const libc::sockaddr_ll)))),
+                    LinkAddr(ptr::read_unaligned(addr as *const _)))),
                 #[cfg(any(target_os = "dragonfly",
                           target_os = "freebsd",
                           target_os = "ios",
@@ -1894,7 +1894,7 @@ impl SockAddr {
                           target_os = "openbsd"))]
                 #[cfg(feature = "net")]
                 Some(AddressFamily::Link) => {
-                    let ether_addr = LinkAddr(*(addr as *const libc::sockaddr_dl));
+                    let ether_addr = LinkAddr(ptr::read_unaligned(addr as *const _));
                     if ether_addr.is_empty() {
                         None
                     } else {
@@ -1903,7 +1903,7 @@ impl SockAddr {
                 },
                 #[cfg(any(target_os = "android", target_os = "linux"))]
                 Some(AddressFamily::Vsock) => Some(SockAddr::Vsock(
-                    VsockAddr(*(addr as *const libc::sockaddr_vm)))),
+                    VsockAddr(ptr::read_unaligned(addr as *const _)))),
                 // Other address families are currently not supported and simply yield a None
                 // entry instead of a proper conversion to a `SockAddr`.
                 Some(_) | None => None,
@@ -2104,7 +2104,7 @@ pub mod netlink {
             if (*addr).sa_family as i32 != libc::AF_NETLINK as i32 {
                 return None;
             }
-            Some(NetlinkAddr(*(addr as *const libc::sockaddr_nl)))
+            Some(Self(ptr::read_unaligned(addr as *const _)))
         }
     }
 
@@ -2148,7 +2148,7 @@ pub mod alg {
             if (*addr).sa_family as i32 != libc::AF_ALG as i32 {
                 return None;
             }
-            Some(AlgAddr(*(addr as *const libc::sockaddr_alg)))
+            Some(Self(ptr::read_unaligned(addr as *const _)))
         }
     }
 
@@ -2220,7 +2220,7 @@ feature! {
 pub mod sys_control {
     use crate::sys::socket::addr::AddressFamily;
     use libc::{self, c_uchar};
-    use std::{fmt, mem};
+    use std::{fmt, mem, ptr};
     use std::os::unix::io::RawFd;
     use crate::{Errno, Result};
     use super::{private, SockaddrLike};
@@ -2262,7 +2262,7 @@ pub mod sys_control {
             if (*addr).sa_family as i32 != libc::AF_SYSTEM as i32 {
                 return None;
             }
-            Some(SysControlAddr(*(addr as *const libc::sockaddr_ctl)))
+            Some(Self(ptr::read_unaligned(addr as *const _)))
         }
     }
 
@@ -2329,7 +2329,7 @@ pub mod sys_control {
 mod datalink {
     feature! {
     #![feature = "net"]
-    use super::{fmt, mem, private, SockaddrLike};
+    use super::{fmt, mem, private, ptr, SockaddrLike};
 
     /// Hardware Address
     #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -2405,7 +2405,7 @@ mod datalink {
             if (*addr).sa_family as i32 != libc::AF_PACKET as i32 {
                 return None;
             }
-            Some(LinkAddr(*(addr as *const libc::sockaddr_ll)))
+            Some(Self(ptr::read_unaligned(addr as *const _)))
         }
     }
 
@@ -2430,7 +2430,7 @@ mod datalink {
 mod datalink {
     feature! {
     #![feature = "net"]
-    use super::{fmt, mem, private, SockaddrLike};
+    use super::{fmt, mem, private, ptr, SockaddrLike};
 
     /// Hardware Address
     #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -2525,7 +2525,7 @@ mod datalink {
             if (*addr).sa_family as i32 != libc::AF_LINK as i32 {
                 return None;
             }
-            Some(LinkAddr(*(addr as *const libc::sockaddr_dl)))
+            Some(Self(ptr::read_unaligned(addr as *const _)))
         }
     }
 
@@ -2569,7 +2569,7 @@ pub mod vsock {
             if (*addr).sa_family as i32 != libc::AF_VSOCK as i32 {
                 return None;
             }
-            Some(VsockAddr(*(addr as *const libc::sockaddr_vm)))
+            Some(Self(ptr::read_unaligned(addr as *const _)))
         }
     }
 
@@ -2658,6 +2658,8 @@ mod tests {
     }
 
     mod link {
+        #![allow(clippy::cast_ptr_alignment)]
+
         use super::*;
         #[cfg(any(target_os = "ios",
                   target_os = "macos",
@@ -2698,8 +2700,11 @@ mod tests {
         ))]
         #[test]
         fn linux_loopback() {
-            let bytes = [17u8, 0, 0, 0, 1, 0, 0, 0, 4, 3, 0, 6, 1, 2, 3, 4, 5, 6, 0, 0];
-            let sa = bytes.as_ptr() as *const libc::sockaddr;
+            #[repr(align(2))]
+            struct Raw([u8; 20]);
+
+            let bytes = Raw([17u8, 0, 0, 0, 1, 0, 0, 0, 4, 3, 0, 6, 1, 2, 3, 4, 5, 6, 0, 0]);
+            let sa = bytes.0.as_ptr() as *const libc::sockaddr;
             let len = None;
             let sock_addr = unsafe { SockaddrStorage::from_raw(sa, len) }.unwrap();
             assert_eq!(sock_addr.family(), Some(AddressFamily::Packet));
