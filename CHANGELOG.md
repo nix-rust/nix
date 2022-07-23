@@ -47,6 +47,17 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1741](https://github.com/nix-rust/nix/pull/1741))
 
 ### Fixed
+### Removed
+
+- Removed support for resubmitting partially complete `lio_listio` operations.
+  It was too complicated, and didn't fit Nix's theme of zero-cost abstractions.
+  Instead, it can be reimplemented downstream.
+  (#[1713](https://github.com/nix-rust/nix/pull/1713))
+
+## [0.24.2] - 2022-07-17
+### Added
+### Changed
+### Fixed
 
 - Fixed buffer overflow in nix::sys::socket::recvfrom.
   (#[1763](https://github.com/nix-rust/nix/pull/1763))
@@ -56,13 +67,6 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Fixed `SockaddrLike::from_raw` implementations for `VsockAddr` and
   `SysControlAddr`.
   (#[1736](https://github.com/nix-rust/nix/pull/1736))
-
-### Removed
-
-- Removed support for resubmitting partially complete `lio_listio` operations.
-  It was too complicated, and didn't fit Nix's theme of zero-cost abstractions.
-  Instead, it can be reimplemented downstream.
-  (#[1713](https://github.com/nix-rust/nix/pull/1713))
 
 ## [0.24.1] - 2022-04-22
 ### Added
