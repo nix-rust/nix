@@ -214,6 +214,13 @@ pub enum SockProtocol {
     #[cfg(any(target_os = "android", target_os = "linux"))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     NetlinkCrypto = libc::NETLINK_CRYPTO,
+    /// Non-DIX type protocol number defined for the Ethernet IEEE 802.3 interface that allows packets of all protocols
+    /// defined in the interface to be received.
+    /// ([ref](https://man7.org/linux/man-pages/man7/packet.7.html))
+    // The protocol number is fed into the socket syscall in network byte order.
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
+    EthAll = libc::ETH_P_ALL.to_be(),
 }
 
 #[cfg(any(target_os = "linux"))]
