@@ -574,6 +574,13 @@ sockopt_impl!(
     /// The `recvmsg(2)` call will return the destination IP address for a UDP
     /// datagram.
     Ipv4RecvDstAddr, Both, libc::IPPROTO_IP, libc::IP_RECVDSTADDR, bool);
+#[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
+#[cfg(feature = "net")]
+sockopt_impl!(
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
+    /// The `recvmsg(2)` call will return the destination IP address for a UDP
+    /// datagram.
+    Ipv4OrigDstAddr, Both, libc::IPPROTO_IP, libc::IP_ORIGDSTADDR, bool);
 #[cfg(target_os = "linux")]
 #[cfg(feature = "net")]
 sockopt_impl!(
@@ -621,6 +628,13 @@ sockopt_impl!(
 sockopt_impl!(
     /// Set the unicast hop limit for the socket.
     Ipv6Ttl, Both, libc::IPPROTO_IPV6, libc::IPV6_UNICAST_HOPS, libc::c_int);
+#[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
+#[cfg(feature = "net")]
+sockopt_impl!(
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
+    /// The `recvmsg(2)` call will return the destination IP address for a UDP
+    /// datagram.
+    Ipv6OrigDstAddr, Both, libc::IPPROTO_IPV6, libc::IPV6_ORIGDSTADDR, bool);
 #[cfg(any(target_os = "ios", target_os = "macos"))]
 sockopt_impl!(
     /// Set "don't fragment packet" flag on the IP packet.

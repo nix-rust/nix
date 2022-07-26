@@ -1745,6 +1745,176 @@ pub fn test_recvif() {
     }
 }
 
+#[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
+#[cfg_attr(qemu, ignore)]
+#[test]
+pub fn test_recvif_ipv4() {
+    use nix::sys::socket::sockopt::Ipv4OrigDstAddr;
+    use nix::sys::socket::{bind, SockFlag, SockType, SockaddrIn};
+    use nix::sys::socket::{getsockname, setsockopt, socket};
+    use nix::sys::socket::{recvmsg, sendmsg, ControlMessageOwned, MsgFlags};
+    use std::io::{IoSlice, IoSliceMut};
+
+    let lo_ifaddr = loopback_address(AddressFamily::Inet);
+    let (_lo_name, lo) = match lo_ifaddr {
+        Some(ifaddr) => (
+            ifaddr.interface_name,
+            ifaddr.address.expect("Expect IPv4 address on interface"),
+        ),
+        None => return,
+    };
+    let receive = socket(
+        AddressFamily::Inet,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )
+    .expect("receive socket failed");
+    bind(receive, &lo).expect("bind failed");
+    let sa: SockaddrIn = getsockname(receive).expect("getsockname failed");
+    setsockopt(receive, Ipv4OrigDstAddr, &true)
+        .expect("setsockopt IP_ORIGDSTADDR failed");
+
+    {
+        let slice = [1u8, 2, 3, 4, 5, 6, 7, 8];
+        let iov = [IoSlice::new(&slice)];
+
+        let send = socket(
+            AddressFamily::Inet,
+            SockType::Datagram,
+            SockFlag::empty(),
+            None,
+        )
+        .expect("send socket failed");
+        sendmsg(send, &iov, &[], MsgFlags::empty(), Some(&sa))
+            .expect("sendmsg failed");
+    }
+
+    {
+        let mut buf = [0u8; 8];
+        let mut iovec = [IoSliceMut::new(&mut buf)];
+        let mut space = cmsg_space!(libc::sockaddr_in);
+        let msg = recvmsg::<()>(
+            receive,
+            &mut iovec,
+            Some(&mut space),
+            MsgFlags::empty(),
+        )
+        .expect("recvmsg failed");
+        assert!(!msg
+            .flags
+            .intersects(MsgFlags::MSG_TRUNC | MsgFlags::MSG_CTRUNC));
+        assert_eq!(msg.cmsgs().count(), 1, "expected 1 cmsgs");
+
+        let mut rx_recvorigdstaddr = false;
+        for cmsg in msg.cmsgs() {
+            match cmsg {
+                ControlMessageOwned::Ipv4OrigDstAddr(addr) => {
+                    rx_recvorigdstaddr = true;
+                    if let Some(sin) = lo.as_sockaddr_in() {
+                        assert_eq!(sin.as_ref().sin_addr.s_addr,
+                                   addr.sin_addr.s_addr,
+                                   "unexpected destination address (expected {}, got {})",
+                                   sin.as_ref().sin_addr.s_addr,
+                                   addr.sin_addr.s_addr);
+                    } else {
+                        panic!("unexpected Sockaddr");
+                    }
+                }
+                _ => panic!("unexpected additional control msg"),
+            }
+        }
+        assert!(rx_recvorigdstaddr);
+        assert_eq!(msg.bytes, 8);
+        assert_eq!(*iovec[0], [1u8, 2, 3, 4, 5, 6, 7, 8]);
+    }
+}
+
+#[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
+#[cfg_attr(qemu, ignore)]
+#[test]
+pub fn test_recvif_ipv6() {
+    use nix::sys::socket::sockopt::Ipv6OrigDstAddr;
+    use nix::sys::socket::{bind, SockFlag, SockType, SockaddrIn6};
+    use nix::sys::socket::{getsockname, setsockopt, socket};
+    use nix::sys::socket::{recvmsg, sendmsg, ControlMessageOwned, MsgFlags};
+    use std::io::{IoSlice, IoSliceMut};
+
+    let lo_ifaddr = loopback_address(AddressFamily::Inet6);
+    let (_lo_name, lo) = match lo_ifaddr {
+        Some(ifaddr) => (
+            ifaddr.interface_name,
+            ifaddr.address.expect("Expect IPv6 address on interface"),
+        ),
+        None => return,
+    };
+    let receive = socket(
+        AddressFamily::Inet6,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )
+    .expect("receive socket failed");
+    bind(receive, &lo).expect("bind failed");
+    let sa: SockaddrIn6 = getsockname(receive).expect("getsockname failed");
+    setsockopt(receive, Ipv6OrigDstAddr, &true)
+        .expect("setsockopt IP_ORIGDSTADDR failed");
+
+    {
+        let slice = [1u8, 2, 3, 4, 5, 6, 7, 8];
+        let iov = [IoSlice::new(&slice)];
+
+        let send = socket(
+            AddressFamily::Inet6,
+            SockType::Datagram,
+            SockFlag::empty(),
+            None,
+        )
+        .expect("send socket failed");
+        sendmsg(send, &iov, &[], MsgFlags::empty(), Some(&sa))
+            .expect("sendmsg failed");
+    }
+
+    {
+        let mut buf = [0u8; 8];
+        let mut iovec = [IoSliceMut::new(&mut buf)];
+        let mut space = cmsg_space!(libc::sockaddr_in6);
+        let msg = recvmsg::<()>(
+            receive,
+            &mut iovec,
+            Some(&mut space),
+            MsgFlags::empty(),
+        )
+        .expect("recvmsg failed");
+        assert!(!msg
+            .flags
+            .intersects(MsgFlags::MSG_TRUNC | MsgFlags::MSG_CTRUNC));
+        assert_eq!(msg.cmsgs().count(), 1, "expected 1 cmsgs");
+
+        let mut rx_recvorigdstaddr = false;
+        for cmsg in msg.cmsgs() {
+            match cmsg {
+                ControlMessageOwned::Ipv6OrigDstAddr(addr) => {
+                    rx_recvorigdstaddr = true;
+                    if let Some(sin) = lo.as_sockaddr_in6() {
+                        assert_eq!(sin.as_ref().sin6_addr.s6_addr,
+                                   addr.sin6_addr.s6_addr,
+                                   "unexpected destination address (expected {:?}, got {:?})",
+                                   sin.as_ref().sin6_addr.s6_addr,
+                                   addr.sin6_addr.s6_addr);
+                    } else {
+                        panic!("unexpected Sockaddr");
+                    }
+                }
+                _ => panic!("unexpected additional control msg"),
+            }
+        }
+        assert!(rx_recvorigdstaddr);
+        assert_eq!(msg.bytes, 8);
+        assert_eq!(*iovec[0], [1u8, 2, 3, 4, 5, 6, 7, 8]);
+    }
+}
+
 #[cfg(any(
     target_os = "android",
     target_os = "freebsd",
