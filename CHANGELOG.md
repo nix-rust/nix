@@ -38,6 +38,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1772](https://github.com/nix-rust/nix/pull/1772))
 - Added IPV6_ORIGDSTADDR using Ipv6OrigDstAddr in setsockopt and recvmsg.
   (#[1772](https://github.com/nix-rust/nix/pull/1772))
+- Added `IP_SENDSRCADDR` using `Ipv4SendSrcAddr` in `sendmsg`.
+  (#[1776](https://github.com/nix-rust/nix/pull/1776))
 
 ### Changed
 
