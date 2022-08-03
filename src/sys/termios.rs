@@ -1107,8 +1107,8 @@ mod test {
     fn try_from() {
         assert_eq!(Ok(BaudRate::B0), BaudRate::try_from(libc::B0));
         #[cfg(not(target_os = "haiku"))]
-        assert!(BaudRate::try_from(999999999).is_err());
+        BaudRate::try_from(999999999).expect_err("assertion failed");
         #[cfg(target_os = "haiku")]
-        assert!(BaudRate::try_from(99).is_err());
+        BaudRate::try_from(99).expect_err("assertion failed");
     }
 }

@@ -1189,7 +1189,7 @@ mod tests {
             let mut test_mask = prev_mask;
             test_mask.add(SIGUSR1);
 
-            assert!(test_mask.thread_set_mask().is_ok());
+            test_mask.thread_set_mask().expect("assertion failed");
             let new_mask =
                 SigSet::thread_get_mask().expect("Failed to get new mask!");
 
@@ -1211,7 +1211,7 @@ mod tests {
             let mut mask = SigSet::empty();
             mask.add(SIGUSR1);
 
-            assert!(mask.thread_block().is_ok());
+            mask.thread_block().expect("assertion failed");
 
             assert!(SigSet::thread_get_mask().unwrap().contains(SIGUSR1));
         })
@@ -1226,7 +1226,7 @@ mod tests {
             let mut mask = SigSet::empty();
             mask.add(SIGUSR1);
 
-            assert!(mask.thread_unblock().is_ok());
+            mask.thread_unblock().expect("assertion failed");
 
             assert!(!SigSet::thread_get_mask().unwrap().contains(SIGUSR1));
         })

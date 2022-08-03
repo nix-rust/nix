@@ -204,7 +204,7 @@ pub fn test_addr_equality_path() {
 pub fn test_abstract_sun_path_too_long() {
     let name = String::from("nix\0abstract\0tesnix\0abstract\0tesnix\0abstract\0tesnix\0abstract\0tesnix\0abstract\0testttttnix\0abstract\0test\0make\0sure\0this\0is\0long\0enough");
     let addr = UnixAddr::new_abstract(name.as_bytes());
-    assert!(addr.is_err());
+    addr.expect_err("assertion failed");
 }
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
