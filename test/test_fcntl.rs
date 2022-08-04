@@ -492,10 +492,8 @@ mod test_posix_fadvise {
     fn test_success() {
         let tmp = NamedTempFile::new().unwrap();
         let fd = tmp.as_raw_fd();
-        let res =
-            posix_fadvise(fd, 0, 100, PosixFadviseAdvice::POSIX_FADV_WILLNEED);
-
-        assert!(res.is_ok());
+        posix_fadvise(fd, 0, 100, PosixFadviseAdvice::POSIX_FADV_WILLNEED)
+            .expect("posix_fadvise failed");
     }
 
     #[test]

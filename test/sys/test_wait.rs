@@ -167,17 +167,17 @@ mod ptrace {
             Ok(WaitStatus::Stopped(child, SIGTRAP))
         );
         // We want to test a syscall stop and a PTRACE_EVENT stop
-        assert!(ptrace::setoptions(
+        ptrace::setoptions(
             child,
-            Options::PTRACE_O_TRACESYSGOOD | Options::PTRACE_O_TRACEEXIT
+            Options::PTRACE_O_TRACESYSGOOD | Options::PTRACE_O_TRACEEXIT,
         )
-        .is_ok());
+        .expect("setoptions failed");
 
         // First, stop on the next system call, which will be exit()
-        assert!(ptrace::syscall(child, None).is_ok());
+        ptrace::syscall(child, None).expect("syscall failed");
         assert_eq!(waitpid(child, None), Ok(WaitStatus::PtraceSyscall(child)));
         // Then get the ptrace event for the process exiting
-        assert!(ptrace::cont(child, None).is_ok());
+        ptrace::cont(child, None).expect("cont failed");
         assert_eq!(
             waitpid(child, None),
             Ok(WaitStatus::PtraceEvent(
@@ -187,7 +187,7 @@ mod ptrace {
             ))
         );
         // Finally get the normal wait() result, now that the process has exited
-        assert!(ptrace::cont(child, None).is_ok());
+        ptrace::cont(child, None).expect("cont failed");
         assert_eq!(waitpid(child, None), Ok(WaitStatus::Exited(child, 0)));
     }
 
@@ -202,20 +202,20 @@ mod ptrace {
             Ok(WaitStatus::PtraceEvent(child, SIGTRAP, 0)),
         );
         // We want to test a syscall stop and a PTRACE_EVENT stop
-        assert!(ptrace::setoptions(
+        ptrace::setoptions(
             child,
-            Options::PTRACE_O_TRACESYSGOOD | Options::PTRACE_O_TRACEEXIT
+            Options::PTRACE_O_TRACESYSGOOD | Options::PTRACE_O_TRACEEXIT,
         )
-        .is_ok());
+        .expect("setopts failed");
 
         // First, stop on the next system call, which will be exit()
-        assert!(ptrace::syscall(child, None).is_ok());
+        ptrace::syscall(child, None).expect("syscall failed");
         assert_eq!(
             waitid(Id::Pid(child), WaitPidFlag::WEXITED),
             Ok(WaitStatus::PtraceSyscall(child)),
         );
         // Then get the ptrace event for the process exiting
-        assert!(ptrace::cont(child, None).is_ok());
+        ptrace::cont(child, None).expect("cont failed");
         assert_eq!(
             waitid(Id::Pid(child), WaitPidFlag::WEXITED),
             Ok(WaitStatus::PtraceEvent(
@@ -225,7 +225,7 @@ mod ptrace {
             )),
         );
         // Finally get the normal wait() result, now that the process has exited
-        assert!(ptrace::cont(child, None).is_ok());
+        ptrace::cont(child, None).expect("cont failed");
         assert_eq!(
             waitid(Id::Pid(child), WaitPidFlag::WEXITED),
             Ok(WaitStatus::Exited(child, 0)),

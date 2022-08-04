@@ -323,7 +323,7 @@ fn test_mkdirat_success_path() {
     let dirfd =
         fcntl::open(tempdir.path(), fcntl::OFlag::empty(), stat::Mode::empty())
             .unwrap();
-    assert!((mkdirat(dirfd, filename, Mode::S_IRWXU)).is_ok());
+    mkdirat(dirfd, filename, Mode::S_IRWXU).expect("mkdirat failed");
     assert!(Path::exists(&tempdir.path().join(filename)));
 }
 
@@ -337,7 +337,7 @@ fn test_mkdirat_success_mode() {
     let dirfd =
         fcntl::open(tempdir.path(), fcntl::OFlag::empty(), stat::Mode::empty())
             .unwrap();
-    assert!((mkdirat(dirfd, filename, Mode::S_IRWXU)).is_ok());
+    mkdirat(dirfd, filename, Mode::S_IRWXU).expect("mkdirat failed");
     let permissions = fs::metadata(tempdir.path().join(filename))
         .unwrap()
         .permissions();

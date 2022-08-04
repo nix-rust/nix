@@ -85,7 +85,7 @@ mod aio_fsync {
             SigevNotify::SigevNone,
         ));
         let err = aiof.as_mut().submit();
-        assert!(err.is_err());
+        err.expect_err("assertion failed");
     }
 
     #[test]
@@ -102,7 +102,7 @@ mod aio_fsync {
             SigevNotify::SigevNone,
         ));
         let err = aiof.as_mut().submit();
-        assert!(err.is_ok());
+        err.expect("assert failed");
         poll_aio!(&mut aiof).unwrap();
         aiof.as_mut().aio_return().unwrap();
     }
@@ -149,7 +149,7 @@ mod aio_read {
         aior.as_mut().submit().unwrap();
 
         let cancelstat = aior.as_mut().cancel();
-        assert!(cancelstat.is_ok());
+        cancelstat.expect("assert failed");
 
         // Wait for aiow to complete, but don't care whether it succeeded
         let _ = poll_aio!(&mut aior);
@@ -174,7 +174,7 @@ mod aio_read {
             0, //priority
             SigevNotify::SigevNone,
         ));
-        assert!(aior.as_mut().submit().is_err());
+        aior.as_mut().submit().expect_err("assertion failed");
     }
 
     // Test a simple aio operation with no completion notification.  We must
@@ -342,7 +342,7 @@ mod aio_write {
         assert!(err == Ok(()) || err == Err(Errno::EINPROGRESS));
 
         let cancelstat = aiow.as_mut().cancel();
-        assert!(cancelstat.is_ok());
+        cancelstat.expect("assert failed");
 
         // Wait for aiow to complete, but don't care whether it succeeded
         let _ = poll_aio!(&mut aiow);
@@ -426,7 +426,7 @@ mod aio_write {
             0, //priority
             SigevNotify::SigevNone,
         ));
-        assert!(aiow.as_mut().submit().is_err());
+        aiow.as_mut().submit().expect_err("assertion failed");
         // Dropping the AioWrite at this point should not panic
     }
 }
@@ -565,7 +565,7 @@ fn test_aio_cancel_all() {
     assert!(err == Ok(()) || err == Err(Errno::EINPROGRESS));
 
     let cancelstat = aio_cancel_all(f.as_raw_fd());
-    assert!(cancelstat.is_ok());
+    cancelstat.expect("assert failed");
 
     // Wait for aiocb to complete, but don't care whether it succeeded
     let _ = poll_aio!(&mut aiocb);

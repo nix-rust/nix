@@ -41,29 +41,22 @@ fn test_writev() {
         consumed += slice_len;
     }
     let pipe_res = pipe();
-    assert!(pipe_res.is_ok());
-    let (reader, writer) = pipe_res.ok().unwrap();
+    let (reader, writer) = pipe_res.expect("Couldn't create pipe");
     // FileDesc will close its filedesc (reader).
     let mut read_buf: Vec<u8> = iter::repeat(0u8).take(128 * 16).collect();
     // Blocking io, should write all data.
     let write_res = writev(writer, &iovecs);
-    // Successful write
-    assert!(write_res.is_ok());
-    let written = write_res.ok().unwrap();
+    let written = write_res.expect("couldn't write");
     // Check whether we written all data
     assert_eq!(to_write.len(), written);
     let read_res = read(reader, &mut read_buf[..]);
-    // Successful read
-    assert!(read_res.is_ok());
-    let read = read_res.ok().unwrap() as usize;
+    let read = read_res.expect("couldn't read");
     // Check we have read as much as we written
     assert_eq!(read, written);
     // Check equality of written and read data
     assert_eq!(&to_write, &read_buf);
-    let close_res = close(writer);
-    assert!(close_res.is_ok());
-    let close_res = close(reader);
-    assert!(close_res.is_ok());
+    close(writer).expect("closed writer");
+    close(reader).expect("closed reader");
 }
 
 #[test]
@@ -92,16 +85,10 @@ fn test_readv() {
     for v in &mut storage {
         iovecs.push(IoSliceMut::new(&mut v[..]));
     }
-    let pipe_res = pipe();
-    assert!(pipe_res.is_ok());
-    let (reader, writer) = pipe_res.ok().unwrap();
+    let (reader, writer) = pipe().expect("couldn't create pipe");
     // Blocking io, should write all data.
-    let write_res = write(writer, &to_write);
-    // Successful write
-    assert!(write_res.is_ok());
-    let read_res = readv(reader, &mut iovecs[..]);
-    assert!(read_res.is_ok());
-    let read = read_res.ok().unwrap();
+    write(writer, &to_write).expect("write failed");
+    let read = readv(reader, &mut iovecs[..]).expect("read failed");
     // Check whether we've read all data
     assert_eq!(to_write.len(), read);
     // Cccumulate data from iovecs
@@ -113,10 +100,8 @@ fn test_readv() {
     assert_eq!(read_buf.len(), to_write.len());
     // Check equality of written and read data
     assert_eq!(&read_buf, &to_write);
-    let close_res = close(reader);
-    assert!(close_res.is_ok());
-    let close_res = close(writer);
-    assert!(close_res.is_ok());
+    close(reader).expect("couldn't close reader");
+    close(writer).expect("couldn't close writer");
 }
 
 #[test]

@@ -101,7 +101,7 @@ fn test_mkstemp() {
 #[test]
 fn test_mkstemp_directory() {
     // mkstemp should fail if a directory is given
-    assert!(mkstemp(&env::temp_dir()).is_err());
+    mkstemp(&env::temp_dir()).expect_err("assertion failed");
 }
 
 #[test]
@@ -121,7 +121,7 @@ fn test_mkfifo() {
 #[cfg(not(target_os = "redox"))]
 fn test_mkfifo_directory() {
     // mkfifo should fail if a directory is given
-    assert!(mkfifo(&env::temp_dir(), Mode::S_IRUSR).is_err());
+    mkfifo(&env::temp_dir(), Mode::S_IRUSR).expect_err("assertion failed");
 }
 
 #[test]
@@ -180,7 +180,8 @@ fn test_mkfifoat_directory_none() {
     let _m = crate::CWD_LOCK.read();
 
     // mkfifoat should fail if a directory is given
-    assert!(mkfifoat(None, &env::temp_dir(), Mode::S_IRUSR).is_err());
+    mkfifoat(None, &env::temp_dir(), Mode::S_IRUSR)
+        .expect_err("assertion failed");
 }
 
 #[test]
@@ -198,7 +199,8 @@ fn test_mkfifoat_directory() {
     let mkfifoat_dir = "mkfifoat_dir";
     stat::mkdirat(dirfd, mkfifoat_dir, Mode::S_IRUSR).unwrap();
 
-    assert!(mkfifoat(Some(dirfd), mkfifoat_dir, Mode::S_IRUSR).is_err());
+    mkfifoat(Some(dirfd), mkfifoat_dir, Mode::S_IRUSR)
+        .expect_err("assertion failed");
 }
 
 #[test]
@@ -456,10 +458,10 @@ fn test_fchdir() {
     let tmpdir_path = tmpdir.path().canonicalize().unwrap();
     let tmpdir_fd = File::open(&tmpdir_path).unwrap().into_raw_fd();
 
-    assert!(fchdir(tmpdir_fd).is_ok());
+    fchdir(tmpdir_fd).expect("assertion failed");
     assert_eq!(getcwd().unwrap(), tmpdir_path);
 
-    assert!(close(tmpdir_fd).is_ok());
+    close(tmpdir_fd).expect("assertion failed");
 }
 
 #[test]
@@ -469,7 +471,7 @@ fn test_getcwd() {
 
     let tmpdir = tempdir().unwrap();
     let tmpdir_path = tmpdir.path().canonicalize().unwrap();
-    assert!(chdir(&tmpdir_path).is_ok());
+    chdir(&tmpdir_path).expect("assertion failed");
     assert_eq!(getcwd().unwrap(), tmpdir_path);
 
     // make path 500 chars longer so that buffer doubling in getcwd
@@ -480,9 +482,10 @@ fn test_getcwd() {
     for _ in 0..5 {
         let newdir = "a".repeat(100);
         inner_tmp_dir.push(newdir);
-        assert!(mkdir(inner_tmp_dir.as_path(), Mode::S_IRWXU).is_ok());
+        mkdir(inner_tmp_dir.as_path(), Mode::S_IRWXU)
+            .expect("assertion failed");
     }
-    assert!(chdir(inner_tmp_dir.as_path()).is_ok());
+    chdir(inner_tmp_dir.as_path()).expect("assertion failed");
     assert_eq!(getcwd().unwrap(), inner_tmp_dir.as_path());
 }
 
@@ -1166,7 +1169,8 @@ fn test_access_file_exists() {
     let tempdir = tempdir().unwrap();
     let path = tempdir.path().join("does_exist.txt");
     let _file = File::create(path.clone()).unwrap();
-    assert!(access(&path, AccessFlags::R_OK | AccessFlags::W_OK).is_ok());
+    access(&path, AccessFlags::R_OK | AccessFlags::W_OK)
+        .expect("assertion failed");
 }
 
 //Clippy false positive https://github.com/rust-lang/rust-clippy/issues/9111
@@ -1210,8 +1214,8 @@ fn test_setfsuid() {
         let fuid = setfsuid(nobody.uid);
         // trying to open the temporary file should fail with EACCES
         let res = fs::File::open(&temp_path);
-        assert!(res.is_err());
-        assert_eq!(res.err().unwrap().kind(), io::ErrorKind::PermissionDenied);
+        let err = res.expect_err("assertion failed");
+        assert_eq!(err.kind(), io::ErrorKind::PermissionDenied);
 
         // assert fuid actually changes
         let prev_fuid = setfsuid(Uid::from_raw(-1i32 as u32));
@@ -1302,5 +1306,5 @@ fn test_getpeereid() {
 ))]
 fn test_getpeereid_invalid_fd() {
     // getpeereid is not POSIX, so error codes are inconsistent between different Unices.
-    assert!(getpeereid(-1).is_err());
+    getpeereid(-1).expect_err("assertion failed");
 }
