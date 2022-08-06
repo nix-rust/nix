@@ -2900,6 +2900,27 @@ pub fn access<P: ?Sized + NixPath>(path: &P, amode: AccessFlags) -> Result<()> {
     })?;
     Errno::result(res).map(drop)
 }
+
+/// Checks the file named by `path` for accessibility according to the flags given by `mode`
+///
+/// If `dirfd` has a value, then `path` is relative to directory associated with the file descriptor.
+///
+/// If `dirfd` is `None`, then `path` is relative to the current working directory.
+///
+/// # References
+///
+/// [faccessat(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/faccessat.html)
+// illumos: faccessat(2) appears to be supported, but the libc crate does not provide a binding.
+// redox: does not appear to support the *at family of syscalls.
+#[cfg(not(any(target_os = "illumos", target_os = "redox")))]
+pub fn faccessat<P: ?Sized + NixPath>(dirfd: Option<RawFd>, path: &P, mode: AccessFlags, flags: AtFlags) -> Result<()> {
+    let res = path.with_nix_path(|cstr| {
+        unsafe {
+            libc::faccessat(at_rawfd(dirfd), cstr.as_ptr(), mode.bits(), flags.bits())
+        }
+    })?;
+    Errno::result(res).map(drop)
+}
 }
 
 feature! {
