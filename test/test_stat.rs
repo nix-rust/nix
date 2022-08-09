@@ -20,11 +20,11 @@ use nix::errno::Errno;
 #[cfg(not(target_os = "redox"))]
 use nix::fcntl;
 #[cfg(any(
-    target_os = "linux",
-    target_os = "ios",
-    target_os = "macos",
-    target_os = "freebsd",
-    target_os = "netbsd"
+target_os = "linux",
+target_os = "ios",
+target_os = "macos",
+target_os = "freebsd",
+target_os = "netbsd"
 ))]
 use nix::sys::stat::lutimes;
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
@@ -234,11 +234,11 @@ fn test_utimes() {
 
 #[test]
 #[cfg(any(
-    target_os = "linux",
-    target_os = "ios",
-    target_os = "macos",
-    target_os = "freebsd",
-    target_os = "netbsd"
+target_os = "linux",
+target_os = "ios",
+target_os = "macos",
+target_os = "freebsd",
+target_os = "netbsd"
 ))]
 fn test_lutimes() {
     let tempdir = tempfile::tempdir().unwrap();
@@ -299,7 +299,7 @@ fn test_utimensat() {
         &TimeSpec::seconds(678),
         UtimensatFlags::FollowSymlink,
     )
-    .unwrap();
+        .unwrap();
     assert_times_eq(12345, 678, &fs::metadata(&fullpath).unwrap());
 
     chdir(tempdir.path()).unwrap();
@@ -311,7 +311,7 @@ fn test_utimensat() {
         &TimeSpec::seconds(800),
         UtimensatFlags::FollowSymlink,
     )
-    .unwrap();
+        .unwrap();
     assert_times_eq(500, 800, &fs::metadata(&fullpath).unwrap());
 }
 
@@ -356,19 +356,19 @@ fn test_mkdirat_fail() {
         fcntl::OFlag::O_CREAT,
         stat::Mode::empty(),
     )
-    .unwrap();
+        .unwrap();
     let result = mkdirat(dirfd, filename, Mode::S_IRWXU).unwrap_err();
     assert_eq!(result, Errno::ENOTDIR);
 }
 
 #[test]
 #[cfg(not(any(
-    target_os = "dragonfly",
-    target_os = "freebsd",
-    target_os = "ios",
-    target_os = "macos",
-    target_os = "haiku",
-    target_os = "redox"
+target_os = "dragonfly",
+target_os = "freebsd",
+target_os = "ios",
+target_os = "macos",
+target_os = "haiku",
+target_os = "redox"
 )))]
 fn test_mknod() {
     use stat::{lstat, mknod, SFlag};
@@ -378,19 +378,19 @@ fn test_mknod() {
     let target = tempdir.path().join(file_name);
     mknod(&target, SFlag::S_IFREG, Mode::S_IRWXU, 0).unwrap();
     let mode = lstat(&target).unwrap().st_mode as mode_t;
-    assert!(mode & libc::S_IFREG == libc::S_IFREG);
-    assert!(mode & libc::S_IRWXU == libc::S_IRWXU);
+    assert_eq!(mode & libc::S_IFREG, libc::S_IFREG);
+    assert_eq!(mode & libc::S_IRWXU, libc::S_IRWXU);
 }
 
 #[test]
 #[cfg(not(any(
-    target_os = "dragonfly",
-    target_os = "freebsd",
-    target_os = "illumos",
-    target_os = "ios",
-    target_os = "macos",
-    target_os = "haiku",
-    target_os = "redox"
+target_os = "dragonfly",
+target_os = "freebsd",
+target_os = "illumos",
+target_os = "ios",
+target_os = "macos",
+target_os = "haiku",
+target_os = "redox"
 )))]
 fn test_mknodat() {
     use fcntl::{AtFlags, OFlag};
@@ -408,14 +408,14 @@ fn test_mknodat() {
         Mode::S_IRWXU,
         0,
     )
-    .unwrap();
+        .unwrap();
     let mode = fstatat(
         target_dir.as_raw_fd(),
         file_name,
         AtFlags::AT_SYMLINK_NOFOLLOW,
     )
-    .unwrap()
-    .st_mode as mode_t;
-    assert!(mode & libc::S_IFREG == libc::S_IFREG);
-    assert!(mode & libc::S_IRWXU == libc::S_IRWXU);
+        .unwrap()
+        .st_mode as mode_t;
+    assert_eq!(mode & libc::S_IFREG, libc::S_IFREG);
+    assert_eq!(mode & libc::S_IRWXU, libc::S_IRWXU);
 }

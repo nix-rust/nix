@@ -7,15 +7,15 @@ use crate::fcntl::{at_rawfd, AtFlags};
 #[cfg(feature = "fs")]
 use crate::fcntl::{fcntl, FcntlArg::F_SETFD, FdFlag, OFlag};
 #[cfg(all(
-    feature = "fs",
-    any(
-        target_os = "openbsd",
-        target_os = "netbsd",
-        target_os = "freebsd",
-        target_os = "dragonfly",
-        target_os = "macos",
-        target_os = "ios"
-    )
+feature = "fs",
+any(
+target_os = "openbsd",
+target_os = "netbsd",
+target_os = "freebsd",
+target_os = "dragonfly",
+target_os = "macos",
+target_os = "ios"
+)
 ))]
 use crate::sys::stat::FileFlag;
 #[cfg(feature = "fs")]
@@ -45,20 +45,20 @@ feature! {
 }
 
 #[cfg(any(
-    target_os = "android",
-    target_os = "dragonfly",
-    target_os = "freebsd",
-    target_os = "linux",
-    target_os = "openbsd"
+target_os = "android",
+target_os = "dragonfly",
+target_os = "freebsd",
+target_os = "linux",
+target_os = "openbsd"
 ))]
 pub use self::setres::*;
 
 #[cfg(any(
-    target_os = "android",
-    target_os = "dragonfly",
-    target_os = "freebsd",
-    target_os = "linux",
-    target_os = "openbsd"
+target_os = "android",
+target_os = "dragonfly",
+target_os = "freebsd",
+target_os = "linux",
+target_os = "openbsd"
 ))]
 pub use self::getres::*;
 
@@ -1572,7 +1572,7 @@ pub fn getgroups() -> Result<Vec<Gid>> {
 /// # use std::error::Error;
 /// # use nix::unistd::*;
 /// #
-/// # fn try_main() -> Result<(), Box<Error>> {
+/// # fn try_main() -> Result<(), Box<dyn Error>> {
 /// let uid = Uid::from_raw(33);
 /// let gid = Gid::from_raw(34);
 /// setgroups(&[gid])?;
@@ -1698,7 +1698,7 @@ pub fn getgrouplist(user: &CStr, group: Gid) -> Result<Vec<Gid>> {
 /// # use std::ffi::CString;
 /// # use nix::unistd::*;
 /// #
-/// # fn try_main() -> Result<(), Box<Error>> {
+/// # fn try_main() -> Result<(), Box<dyn Error>> {
 /// let user = CString::new("www-data").unwrap();
 /// let uid = Uid::from_raw(33);
 /// let gid = Gid::from_raw(33);
@@ -2752,11 +2752,11 @@ mod pivot_root {
 }
 
 #[cfg(any(
-    target_os = "android",
-    target_os = "dragonfly",
-    target_os = "freebsd",
-    target_os = "linux",
-    target_os = "openbsd"
+target_os = "android",
+target_os = "dragonfly",
+target_os = "freebsd",
+target_os = "linux",
+target_os = "openbsd"
 ))]
 mod setres {
     feature! {
@@ -2801,11 +2801,11 @@ mod setres {
 }
 
 #[cfg(any(
-    target_os = "android",
-    target_os = "dragonfly",
-    target_os = "freebsd",
-    target_os = "linux",
-    target_os = "openbsd"
+target_os = "android",
+target_os = "dragonfly",
+target_os = "freebsd",
+target_os = "linux",
+target_os = "openbsd"
 ))]
 mod getres {
     feature! {
@@ -3121,7 +3121,7 @@ impl User {
     /// use nix::unistd::{Uid, User};
     /// // Returns an Result<Option<User>>, thus the double unwrap.
     /// let res = User::from_uid(Uid::from_raw(0)).unwrap().unwrap();
-    /// assert!(res.name == "root");
+    /// assert_eq!(res.name, "root");
     /// ```
     pub fn from_uid(uid: Uid) -> Result<Option<Self>> {
         User::from_anything(|pwd, cbuf, cap, res| {
@@ -3140,7 +3140,7 @@ impl User {
     /// use nix::unistd::User;
     /// // Returns an Result<Option<User>>, thus the double unwrap.
     /// let res = User::from_name("root").unwrap().unwrap();
-    /// assert!(res.name == "root");
+    /// assert_eq!(res.name, "root");
     /// ```
     pub fn from_name(name: &str) -> Result<Option<Self>> {
         let name = CString::new(name).unwrap();

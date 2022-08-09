@@ -677,7 +677,7 @@ pub enum ControlMessageOwned {
     ///     None).unwrap();
     /// setsockopt(in_socket, sockopt::ReceiveTimestamp, &true).unwrap();
     /// let localhost = SockaddrIn::from_str("127.0.0.1:0").unwrap();
-    /// bind(in_socket, &localhost);
+    /// bind(in_socket, &localhost).unwrap();
     /// let address: SockaddrIn = getsockname(in_socket).unwrap();
     /// // Get initial time
     /// let time0 = SystemTime::now();

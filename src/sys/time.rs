@@ -7,17 +7,17 @@ use std::time::Duration;
 use std::{cmp, fmt, ops};
 
 #[cfg(any(
-    all(feature = "time", any(target_os = "android", target_os = "linux")),
-    all(
-        any(
-            target_os = "freebsd",
-            target_os = "illumos",
-            target_os = "linux",
-            target_os = "netbsd"
-        ),
-        feature = "time",
-        feature = "signal"
-    )
+all(feature = "time", any(target_os = "android", target_os = "linux")),
+all(
+any(
+target_os = "freebsd",
+target_os = "illumos",
+target_os = "linux",
+target_os = "netbsd"
+),
+feature = "time",
+feature = "signal"
+)
 ))]
 pub(crate) mod timer {
     use crate::sys::time::TimeSpec;
@@ -98,10 +98,10 @@ pub(crate) mod timer {
         }
     }
     #[cfg(any(
-        target_os = "freebsd",
-        target_os = "netbsd",
-        target_os = "dragonfly",
-        target_os = "illumos"
+    target_os = "freebsd",
+    target_os = "netbsd",
+    target_os = "dragonfly",
+    target_os = "illumos"
     ))]
     bitflags! {
         /// Flags that are used for arming the timer.
@@ -114,17 +114,17 @@ pub(crate) mod timer {
         fn from(timerspec: TimerSpec) -> Expiration {
             match timerspec {
                 TimerSpec(libc::itimerspec {
-                    it_interval:
-                        libc::timespec {
-                            tv_sec: 0,
-                            tv_nsec: 0,
-                        },
-                    it_value: ts,
-                }) => Expiration::OneShot(ts.into()),
+                              it_interval:
+                              libc::timespec {
+                                  tv_sec: 0,
+                                  tv_nsec: 0,
+                              },
+                              it_value: ts,
+                          }) => Expiration::OneShot(ts.into()),
                 TimerSpec(libc::itimerspec {
-                    it_interval: int_ts,
-                    it_value: val_ts,
-                }) => {
+                              it_interval: int_ts,
+                              it_value: val_ts,
+                          }) => {
                     if (int_ts.tv_sec == val_ts.tv_sec)
                         && (int_ts.tv_nsec == val_ts.tv_nsec)
                     {
@@ -193,7 +193,7 @@ const SECS_PER_MINUTE: i64 = 60;
 const SECS_PER_HOUR: i64 = 3600;
 
 #[cfg(target_pointer_width = "64")]
-const TS_MAX_SECONDS: i64 = (::std::i64::MAX / NANOS_PER_SEC) - 1;
+const TS_MAX_SECONDS: i64 = (i64::MAX / NANOS_PER_SEC) - 1;
 
 #[cfg(target_pointer_width = "32")]
 const TS_MAX_SECONDS: i64 = ::std::isize::MAX as i64;
@@ -453,7 +453,7 @@ pub struct TimeVal(timeval);
 const MICROS_PER_SEC: i64 = 1_000_000;
 
 #[cfg(target_pointer_width = "64")]
-const TV_MAX_SECONDS: i64 = (::std::i64::MAX / MICROS_PER_SEC) - 1;
+const TV_MAX_SECONDS: i64 = (i64::MAX / MICROS_PER_SEC) - 1;
 
 #[cfg(target_pointer_width = "32")]
 const TV_MAX_SECONDS: i64 = ::std::isize::MAX as i64;
@@ -713,7 +713,7 @@ mod test {
 
     #[test]
     pub fn test_timespec() {
-        assert!(TimeSpec::seconds(1) != TimeSpec::zero());
+        assert_ne!(TimeSpec::seconds(1), TimeSpec::zero());
         assert_eq!(
             TimeSpec::seconds(1) + TimeSpec::seconds(2),
             TimeSpec::seconds(3)
@@ -743,7 +743,7 @@ mod test {
 
     #[test]
     pub fn test_timespec_ord() {
-        assert!(TimeSpec::seconds(1) == TimeSpec::nanoseconds(1_000_000_000));
+        assert_eq!(TimeSpec::seconds(1), TimeSpec::nanoseconds(1_000_000_000));
         assert!(TimeSpec::seconds(1) < TimeSpec::nanoseconds(1_000_000_001));
         assert!(TimeSpec::seconds(1) > TimeSpec::nanoseconds(999_999_999));
         assert!(TimeSpec::seconds(-1) < TimeSpec::nanoseconds(-999_999_999));
@@ -765,7 +765,7 @@ mod test {
 
     #[test]
     pub fn test_timeval() {
-        assert!(TimeVal::seconds(1) != TimeVal::zero());
+        assert_ne!(TimeVal::seconds(1), TimeVal::zero());
         assert_eq!(
             TimeVal::seconds(1) + TimeVal::seconds(2),
             TimeVal::seconds(3)
@@ -778,7 +778,7 @@ mod test {
 
     #[test]
     pub fn test_timeval_ord() {
-        assert!(TimeVal::seconds(1) == TimeVal::microseconds(1_000_000));
+        assert_eq!(TimeVal::seconds(1), TimeVal::microseconds(1_000_000));
         assert!(TimeVal::seconds(1) < TimeVal::microseconds(1_000_001));
         assert!(TimeVal::seconds(1) > TimeVal::microseconds(999_999));
         assert!(TimeVal::seconds(-1) < TimeVal::microseconds(-999_999));

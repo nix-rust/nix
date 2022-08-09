@@ -982,7 +982,7 @@ mod test {
         let a_cred = getsockopt(a, super::PeerCredentials).unwrap();
         let b_cred = getsockopt(b, super::PeerCredentials).unwrap();
         assert_eq!(a_cred, b_cred);
-        assert!(a_cred.pid() != 0);
+        assert_ne!(a_cred.pid(), 0);
     }
 
     #[test]

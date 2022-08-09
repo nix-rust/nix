@@ -64,9 +64,9 @@
 //! # use nix::sys::termios::{BaudRate, cfsetispeed, cfsetospeed, cfsetspeed, Termios};
 //! # fn main() {
 //! # let mut t: Termios = unsafe { std::mem::zeroed() };
-//! cfsetispeed(&mut t, BaudRate::B9600);
-//! cfsetospeed(&mut t, BaudRate::B9600);
-//! cfsetspeed(&mut t, BaudRate::B9600);
+//! cfsetispeed(&mut t, BaudRate::B9600).unwrap();
+//! cfsetospeed(&mut t, BaudRate::B9600).unwrap();
+//! cfsetspeed(&mut t, BaudRate::B9600).unwrap();
 //! # }
 //! ```
 //!
@@ -76,10 +76,10 @@
 //! # use nix::sys::termios::{BaudRate, cfgetispeed, cfgetospeed, cfsetispeed, cfsetspeed, Termios};
 //! # fn main() {
 //! # let mut t: Termios = unsafe { std::mem::zeroed() };
-//! # cfsetspeed(&mut t, BaudRate::B9600);
+//! # cfsetspeed(&mut t, BaudRate::B9600).unwrap();
 //! let speed = cfgetispeed(&t);
 //! assert_eq!(speed, cfgetospeed(&t));
-//! cfsetispeed(&mut t, speed);
+//! cfsetispeed(&mut t, speed).unwrap();
 //! # }
 //! ```
 //!
