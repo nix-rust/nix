@@ -196,7 +196,7 @@ const SECS_PER_HOUR: i64 = 3600;
 const TS_MAX_SECONDS: i64 = (i64::MAX / NANOS_PER_SEC) - 1;
 
 #[cfg(target_pointer_width = "32")]
-const TS_MAX_SECONDS: i64 = ::std::isize::MAX as i64;
+const TS_MAX_SECONDS: i64 = isize::MAX as i64;
 
 const TS_MIN_SECONDS: i64 = -TS_MAX_SECONDS;
 
@@ -456,7 +456,7 @@ const MICROS_PER_SEC: i64 = 1_000_000;
 const TV_MAX_SECONDS: i64 = (i64::MAX / MICROS_PER_SEC) - 1;
 
 #[cfg(target_pointer_width = "32")]
-const TV_MAX_SECONDS: i64 = ::std::isize::MAX as i64;
+const TV_MAX_SECONDS: i64 = isize::MAX as i64;
 
 const TV_MIN_SECONDS: i64 = -TV_MAX_SECONDS;
 
