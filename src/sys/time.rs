@@ -7,17 +7,17 @@ use std::time::Duration;
 use std::{cmp, fmt, ops};
 
 #[cfg(any(
-all(feature = "time", any(target_os = "android", target_os = "linux")),
-all(
-any(
-target_os = "freebsd",
-target_os = "illumos",
-target_os = "linux",
-target_os = "netbsd"
-),
-feature = "time",
-feature = "signal"
-)
+    all(feature = "time", any(target_os = "android", target_os = "linux")),
+    all(
+        any(
+            target_os = "freebsd",
+            target_os = "illumos",
+            target_os = "linux",
+            target_os = "netbsd"
+        ),
+        feature = "time",
+        feature = "signal"
+    )
 ))]
 pub(crate) mod timer {
     use crate::sys::time::TimeSpec;
@@ -98,10 +98,10 @@ pub(crate) mod timer {
         }
     }
     #[cfg(any(
-    target_os = "freebsd",
-    target_os = "netbsd",
-    target_os = "dragonfly",
-    target_os = "illumos"
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "dragonfly",
+        target_os = "illumos"
     ))]
     bitflags! {
         /// Flags that are used for arming the timer.
@@ -114,17 +114,17 @@ pub(crate) mod timer {
         fn from(timerspec: TimerSpec) -> Expiration {
             match timerspec {
                 TimerSpec(libc::itimerspec {
-                              it_interval:
-                              libc::timespec {
-                                  tv_sec: 0,
-                                  tv_nsec: 0,
-                              },
-                              it_value: ts,
-                          }) => Expiration::OneShot(ts.into()),
+                    it_interval:
+                        libc::timespec {
+                            tv_sec: 0,
+                            tv_nsec: 0,
+                        },
+                    it_value: ts,
+                }) => Expiration::OneShot(ts.into()),
                 TimerSpec(libc::itimerspec {
-                              it_interval: int_ts,
-                              it_value: val_ts,
-                          }) => {
+                    it_interval: int_ts,
+                    it_value: val_ts,
+                }) => {
                     if (int_ts.tv_sec == val_ts.tv_sec)
                         && (int_ts.tv_nsec == val_ts.tv_nsec)
                     {

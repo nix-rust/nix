@@ -6,9 +6,9 @@ use nix::fcntl::OFlag;
 #[cfg(not(target_os = "redox"))]
 use nix::fcntl::{self, open};
 #[cfg(not(any(
-target_os = "redox",
-target_os = "fuchsia",
-target_os = "haiku"
+    target_os = "redox",
+    target_os = "fuchsia",
+    target_os = "haiku"
 )))]
 use nix::pty::{grantpt, posix_openpt, ptsname, unlockpt};
 #[cfg(not(target_os = "redox"))]
@@ -28,9 +28,9 @@ use std::fs::{self, File};
 use std::io::Write;
 use std::os::unix::prelude::*;
 #[cfg(not(any(
-target_os = "fuchsia",
-target_os = "redox",
-target_os = "haiku"
+    target_os = "fuchsia",
+    target_os = "redox",
+    target_os = "haiku"
 )))]
 use std::path::Path;
 use tempfile::{tempdir, tempfile};
@@ -126,11 +126,11 @@ fn test_mkfifo_directory() {
 
 #[test]
 #[cfg(not(any(
-target_os = "macos",
-target_os = "ios",
-target_os = "android",
-target_os = "redox",
-target_os = "haiku"
+    target_os = "macos",
+    target_os = "ios",
+    target_os = "android",
+    target_os = "redox",
+    target_os = "haiku"
 )))]
 fn test_mkfifoat_none() {
     let _m = crate::CWD_LOCK.read();
@@ -147,11 +147,11 @@ fn test_mkfifoat_none() {
 
 #[test]
 #[cfg(not(any(
-target_os = "macos",
-target_os = "ios",
-target_os = "android",
-target_os = "redox",
-target_os = "haiku"
+    target_os = "macos",
+    target_os = "ios",
+    target_os = "android",
+    target_os = "redox",
+    target_os = "haiku"
 )))]
 fn test_mkfifoat() {
     use nix::fcntl;
@@ -170,11 +170,11 @@ fn test_mkfifoat() {
 
 #[test]
 #[cfg(not(any(
-target_os = "macos",
-target_os = "ios",
-target_os = "android",
-target_os = "redox",
-target_os = "haiku"
+    target_os = "macos",
+    target_os = "ios",
+    target_os = "android",
+    target_os = "redox",
+    target_os = "haiku"
 )))]
 fn test_mkfifoat_directory_none() {
     let _m = crate::CWD_LOCK.read();
@@ -186,11 +186,11 @@ fn test_mkfifoat_directory_none() {
 
 #[test]
 #[cfg(not(any(
-target_os = "macos",
-target_os = "ios",
-target_os = "android",
-target_os = "redox",
-target_os = "haiku"
+    target_os = "macos",
+    target_os = "ios",
+    target_os = "android",
+    target_os = "redox",
+    target_os = "haiku"
 )))]
 fn test_mkfifoat_directory() {
     // mkfifoat should fail if a directory is given
@@ -234,11 +234,11 @@ mod linux_android {
 #[test]
 // `getgroups()` and `setgroups()` do not behave as expected on Apple platforms
 #[cfg(not(any(
-target_os = "ios",
-target_os = "macos",
-target_os = "redox",
-target_os = "fuchsia",
-target_os = "haiku"
+    target_os = "ios",
+    target_os = "macos",
+    target_os = "redox",
+    target_os = "fuchsia",
+    target_os = "haiku"
 )))]
 fn test_setgroups() {
     // Skip this test when not run as root as `setgroups()` requires root.
@@ -263,12 +263,12 @@ fn test_setgroups() {
 #[test]
 // `getgroups()` and `setgroups()` do not behave as expected on Apple platforms
 #[cfg(not(any(
-target_os = "ios",
-target_os = "macos",
-target_os = "redox",
-target_os = "fuchsia",
-target_os = "haiku",
-target_os = "illumos"
+    target_os = "ios",
+    target_os = "macos",
+    target_os = "redox",
+    target_os = "fuchsia",
+    target_os = "haiku",
+    target_os = "illumos"
 )))]
 fn test_initgroups() {
     // Skip this test when not run as root as `initgroups()` and `setgroups()`
@@ -609,9 +609,9 @@ cfg_if! {
 
 #[test]
 #[cfg(not(any(
-target_os = "redox",
-target_os = "fuchsia",
-target_os = "haiku"
+    target_os = "redox",
+    target_os = "fuchsia",
+    target_os = "haiku"
 )))]
 fn test_acct() {
     use std::process::Command;
@@ -685,11 +685,11 @@ fn test_sysconf_unsupported() {
 }
 
 #[cfg(any(
-target_os = "android",
-target_os = "dragonfly",
-target_os = "freebsd",
-target_os = "linux",
-target_os = "openbsd"
+    target_os = "android",
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "linux",
+    target_os = "openbsd"
 ))]
 #[test]
 fn test_getresuid() {
@@ -700,11 +700,11 @@ fn test_getresuid() {
 }
 
 #[cfg(any(
-target_os = "android",
-target_os = "dragonfly",
-target_os = "freebsd",
-target_os = "linux",
-target_os = "openbsd"
+    target_os = "android",
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "linux",
+    target_os = "openbsd"
 ))]
 #[test]
 fn test_getresgid() {
@@ -733,16 +733,16 @@ fn test_pipe() {
 // pipe2(2) is the same as pipe(2), except it allows setting some flags.  Check
 // that we can set a flag.
 #[cfg(any(
-target_os = "android",
-target_os = "dragonfly",
-target_os = "emscripten",
-target_os = "freebsd",
-target_os = "illumos",
-target_os = "linux",
-target_os = "netbsd",
-target_os = "openbsd",
-target_os = "redox",
-target_os = "solaris"
+    target_os = "android",
+    target_os = "dragonfly",
+    target_os = "emscripten",
+    target_os = "freebsd",
+    target_os = "illumos",
+    target_os = "linux",
+    target_os = "netbsd",
+    target_os = "openbsd",
+    target_os = "redox",
+    target_os = "solaris"
 ))]
 #[test]
 fn test_pipe2() {
@@ -918,7 +918,7 @@ fn test_linkat_file() {
         newfilename,
         LinkatFlags::SymlinkFollow,
     )
-        .unwrap();
+    .unwrap();
     assert!(newfilepath.exists());
 }
 
@@ -944,7 +944,7 @@ fn test_linkat_olddirfd_none() {
         fcntl::OFlag::empty(),
         stat::Mode::empty(),
     )
-        .unwrap();
+    .unwrap();
 
     // Attempt hard link file using curent working directory as relative path for old file path
     chdir(tempdir_oldfile.path()).unwrap();
@@ -955,7 +955,7 @@ fn test_linkat_olddirfd_none() {
         newfilename,
         LinkatFlags::SymlinkFollow,
     )
-        .unwrap();
+    .unwrap();
     assert!(newfilepath.exists());
 }
 
@@ -981,7 +981,7 @@ fn test_linkat_newdirfd_none() {
         fcntl::OFlag::empty(),
         stat::Mode::empty(),
     )
-        .unwrap();
+    .unwrap();
 
     // Attempt hard link file using current working directory as relative path for new file path
     chdir(tempdir_newfile.path()).unwrap();
@@ -992,16 +992,16 @@ fn test_linkat_newdirfd_none() {
         newfilename,
         LinkatFlags::SymlinkFollow,
     )
-        .unwrap();
+    .unwrap();
     assert!(newfilepath.exists());
 }
 
 #[test]
 #[cfg(not(any(
-target_os = "ios",
-target_os = "macos",
-target_os = "redox",
-target_os = "haiku"
+    target_os = "ios",
+    target_os = "macos",
+    target_os = "redox",
+    target_os = "haiku"
 )))]
 fn test_linkat_no_follow_symlink() {
     let _m = crate::CWD_LOCK.read();
@@ -1035,7 +1035,7 @@ fn test_linkat_no_follow_symlink() {
         newfilename,
         LinkatFlags::NoSymlinkFollow,
     )
-        .unwrap();
+    .unwrap();
 
     // Assert newfile is actually a symlink to oldfile.
     assert_eq!(
@@ -1078,7 +1078,7 @@ fn test_linkat_follow_symlink() {
         newfilename,
         LinkatFlags::SymlinkFollow,
     )
-        .unwrap();
+    .unwrap();
 
     let newfilestat = stat::stat(&newfilepath).unwrap();
 
@@ -1180,10 +1180,10 @@ fn test_access_file_exists() {
 fn test_user_into_passwd() {
     // get the UID of the "nobody" user
     #[cfg(not(target_os = "haiku"))]
-        let test_username = "nobody";
+    let test_username = "nobody";
     // "nobody" unavailable on haiku
     #[cfg(target_os = "haiku")]
-        let test_username = "user";
+    let test_username = "user";
 
     let nobody = User::from_name(test_username).unwrap().unwrap();
     let pwd: libc::passwd = nobody.into();
@@ -1221,8 +1221,8 @@ fn test_setfsuid() {
         let prev_fuid = setfsuid(Uid::from_raw(-1i32 as u32));
         assert_ne!(prev_fuid, fuid);
     })
-        .join()
-        .unwrap();
+    .join()
+    .unwrap();
 
     // open the temporary file with the current thread filesystem UID
     fs::File::open(temp_path_2).unwrap();
@@ -1230,9 +1230,9 @@ fn test_setfsuid() {
 
 #[test]
 #[cfg(not(any(
-target_os = "redox",
-target_os = "fuchsia",
-target_os = "haiku"
+    target_os = "redox",
+    target_os = "fuchsia",
+    target_os = "haiku"
 )))]
 fn test_ttyname() {
     let fd = posix_openpt(OFlag::O_RDWR).expect("posix_openpt failed");
@@ -1262,9 +1262,9 @@ fn test_ttyname_not_pty() {
 
 #[test]
 #[cfg(not(any(
-target_os = "redox",
-target_os = "fuchsia",
-target_os = "haiku"
+    target_os = "redox",
+    target_os = "fuchsia",
+    target_os = "haiku"
 )))]
 fn test_ttyname_invalid_fd() {
     assert_eq!(ttyname(-1), Err(Errno::EBADF));
@@ -1272,12 +1272,12 @@ fn test_ttyname_invalid_fd() {
 
 #[test]
 #[cfg(any(
-target_os = "macos",
-target_os = "ios",
-target_os = "freebsd",
-target_os = "openbsd",
-target_os = "netbsd",
-target_os = "dragonfly",
+    target_os = "macos",
+    target_os = "ios",
+    target_os = "freebsd",
+    target_os = "openbsd",
+    target_os = "netbsd",
+    target_os = "dragonfly",
 ))]
 fn test_getpeereid() {
     use std::os::unix::net::UnixStream;
@@ -1297,12 +1297,12 @@ fn test_getpeereid() {
 
 #[test]
 #[cfg(any(
-target_os = "macos",
-target_os = "ios",
-target_os = "freebsd",
-target_os = "openbsd",
-target_os = "netbsd",
-target_os = "dragonfly",
+    target_os = "macos",
+    target_os = "ios",
+    target_os = "freebsd",
+    target_os = "openbsd",
+    target_os = "netbsd",
+    target_os = "dragonfly",
 ))]
 fn test_getpeereid_invalid_fd() {
     // getpeereid is not POSIX, so error codes are inconsistent between different Unices.
@@ -1337,8 +1337,8 @@ fn test_faccessat_not_existing() {
             AccessFlags::F_OK,
             AtFlags::empty(),
         )
-            .err()
-            .unwrap(),
+        .err()
+        .unwrap(),
         Errno::ENOENT
     );
 }
@@ -1356,7 +1356,7 @@ fn test_faccessat_none_file_exists() {
         AccessFlags::R_OK | AccessFlags::W_OK,
         AtFlags::empty(),
     )
-        .is_ok());
+    .is_ok());
 }
 
 #[test]
@@ -1374,5 +1374,5 @@ fn test_faccessat_file_exists() {
         AccessFlags::R_OK | AccessFlags::W_OK,
         AtFlags::empty(),
     )
-        .is_ok());
+    .is_ok());
 }
