@@ -10,6 +10,9 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- Workaround XNU bug causing netmasks returned by `getifaddrs` to misbehave.
+  ([#1788](https://github.com/nix-rust/nix/pull/1788))
+
 ### Removed
 
 ## [0.25.0] - 2022-08-13
