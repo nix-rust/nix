@@ -2244,7 +2244,7 @@ pub mod sys_control {
     ///
     /// # References
     ///
-    /// https://developer.apple.com/documentation/kernel/sockaddr_ctl
+    /// <https://developer.apple.com/documentation/kernel/sockaddr_ctl>
     #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
     #[repr(transparent)]
     pub struct SysControlAddr(pub(in super::super) libc::sockaddr_ctl);

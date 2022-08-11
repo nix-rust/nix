@@ -89,7 +89,7 @@ Tier 3:
 
 ## Minimum Supported Rust Version (MSRV)
 
-nix is supported on Rust 1.46.0 and higher.  Its MSRV will not be
+nix is supported on Rust 1.56.1 and higher.  Its MSRV will not be
 changed in the future without bumping the major or minor version.
 
 ## Contributing

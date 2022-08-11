@@ -911,10 +911,11 @@ pub fn sigprocmask(how: SigmaskHow, set: Option<&SigSet>, oldset: Option<&mut Si
 /// # Arguments
 ///
 /// * `pid` -    Specifies which processes should receive the signal.
-///   - If positive, specifies an individual process
+///   - If positive, specifies an individual process.
 ///   - If zero, the signal will be sent to all processes whose group
 ///     ID is equal to the process group ID of the sender.  This is a
-///     variant of [`killpg`].
+#[cfg_attr(target_os = "fuchsia", doc = "variant of `killpg`.")]
+#[cfg_attr(not(target_os = "fuchsia"), doc = "variant of [`killpg`].")]
 ///   - If `-1` and the process has super-user privileges, the signal
 ///     is sent to all processes exclusing system processes.
 ///   - If less than `-1`, the signal is sent to all processes whose
