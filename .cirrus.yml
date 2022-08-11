@@ -95,6 +95,9 @@ task:
     PATH: $HOME/.cargo/bin:$PATH
     RUSTFLAGS: --cfg qemu -D warnings
     TOOL: cross
+    # Cross needs at least 1.51.0 after Serde accidentally raised its MSRV.
+    # And Clippy has too many false positives from 1.51.0 through 1.53.0
+    TOOLCHAIN: 1.54.0
   matrix:
     - name: Linux arm gnueabi
       env:
