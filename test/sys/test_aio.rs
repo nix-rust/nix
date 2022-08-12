@@ -101,8 +101,7 @@ mod aio_fsync {
             0,
             SigevNotify::SigevNone,
         ));
-        let err = aiof.as_mut().submit();
-        err.expect("assert failed");
+        aiof.as_mut().submit().unwrap();
         poll_aio!(&mut aiof).unwrap();
         aiof.as_mut().aio_return().unwrap();
     }
@@ -148,8 +147,7 @@ mod aio_read {
             Box::pin(AioRead::new(fd, 2, &mut rbuf, 0, SigevNotify::SigevNone));
         aior.as_mut().submit().unwrap();
 
-        let cancelstat = aior.as_mut().cancel();
-        cancelstat.expect("assert failed");
+        aior.as_mut().cancel().unwrap();
 
         // Wait for aiow to complete, but don't care whether it succeeded
         let _ = poll_aio!(&mut aior);
@@ -341,8 +339,7 @@ mod aio_write {
         let err = aiow.as_mut().error();
         assert!(err == Ok(()) || err == Err(Errno::EINPROGRESS));
 
-        let cancelstat = aiow.as_mut().cancel();
-        cancelstat.expect("assert failed");
+        aiow.as_mut().cancel().unwrap();
 
         // Wait for aiow to complete, but don't care whether it succeeded
         let _ = poll_aio!(&mut aiow);
@@ -564,8 +561,7 @@ fn test_aio_cancel_all() {
     let err = aiocb.as_mut().error();
     assert!(err == Ok(()) || err == Err(Errno::EINPROGRESS));
 
-    let cancelstat = aio_cancel_all(f.as_raw_fd());
-    cancelstat.expect("assert failed");
+    aio_cancel_all(f.as_raw_fd()).unwrap();
 
     // Wait for aiocb to complete, but don't care whether it succeeded
     let _ = poll_aio!(&mut aiocb);
