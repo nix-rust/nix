@@ -114,7 +114,7 @@ fn test_mkfifo() {
 
     let stats = stat::stat(&mkfifo_fifo).unwrap();
     let typ = stat::SFlag::from_bits_truncate(stats.st_mode as mode_t);
-    assert!(typ == SFlag::S_IFIFO);
+    assert_eq!(typ, SFlag::S_IFIFO);
 }
 
 #[test]
@@ -300,7 +300,7 @@ fn test_initgroups() {
 }
 
 #[cfg(not(any(target_os = "fuchsia", target_os = "redox")))]
-macro_rules! execve_test_factory(
+macro_rules! execve_test_factory (
     ($test_name:ident, $syscall:ident, $exe: expr $(, $pathname:expr, $flags:expr)*) => (
 
     #[cfg(test)]
@@ -694,9 +694,9 @@ fn test_sysconf_unsupported() {
 #[test]
 fn test_getresuid() {
     let resuids = getresuid().unwrap();
-    assert!(resuids.real.as_raw() != libc::uid_t::max_value());
-    assert!(resuids.effective.as_raw() != libc::uid_t::max_value());
-    assert!(resuids.saved.as_raw() != libc::uid_t::max_value());
+    assert_ne!(resuids.real.as_raw(), libc::uid_t::MAX);
+    assert_ne!(resuids.effective.as_raw(), libc::uid_t::MAX);
+    assert_ne!(resuids.saved.as_raw(), libc::uid_t::MAX);
 }
 
 #[cfg(any(
@@ -709,9 +709,9 @@ fn test_getresuid() {
 #[test]
 fn test_getresgid() {
     let resgids = getresgid().unwrap();
-    assert!(resgids.real.as_raw() != libc::gid_t::max_value());
-    assert!(resgids.effective.as_raw() != libc::gid_t::max_value());
-    assert!(resgids.saved.as_raw() != libc::gid_t::max_value());
+    assert_ne!(resgids.real.as_raw(), libc::gid_t::MAX);
+    assert_ne!(resgids.effective.as_raw(), libc::gid_t::MAX);
+    assert_ne!(resgids.saved.as_raw(), libc::gid_t::MAX);
 }
 
 // Test that we can create a pair of pipes.  No need to verify that they pass
@@ -1335,7 +1335,7 @@ fn test_faccessat_not_existing() {
             Some(dirfd),
             not_exist_file,
             AccessFlags::F_OK,
-            AtFlags::empty()
+            AtFlags::empty(),
         )
         .err()
         .unwrap(),
@@ -1354,7 +1354,7 @@ fn test_faccessat_none_file_exists() {
         None,
         &path,
         AccessFlags::R_OK | AccessFlags::W_OK,
-        AtFlags::empty()
+        AtFlags::empty(),
     )
     .is_ok());
 }
@@ -1372,7 +1372,7 @@ fn test_faccessat_file_exists() {
         Some(dirfd),
         &path,
         AccessFlags::R_OK | AccessFlags::W_OK,
-        AtFlags::empty()
+        AtFlags::empty(),
     )
     .is_ok());
 }

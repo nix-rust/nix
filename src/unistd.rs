@@ -1572,7 +1572,7 @@ pub fn getgroups() -> Result<Vec<Gid>> {
 /// # use std::error::Error;
 /// # use nix::unistd::*;
 /// #
-/// # fn try_main() -> Result<(), Box<Error>> {
+/// # fn try_main() -> Result<(), Box<dyn Error>> {
 /// let uid = Uid::from_raw(33);
 /// let gid = Gid::from_raw(34);
 /// setgroups(&[gid])?;
@@ -1698,7 +1698,7 @@ pub fn getgrouplist(user: &CStr, group: Gid) -> Result<Vec<Gid>> {
 /// # use std::ffi::CString;
 /// # use nix::unistd::*;
 /// #
-/// # fn try_main() -> Result<(), Box<Error>> {
+/// # fn try_main() -> Result<(), Box<dyn Error>> {
 /// let user = CString::new("www-data").unwrap();
 /// let uid = Uid::from_raw(33);
 /// let gid = Gid::from_raw(33);
@@ -3121,7 +3121,7 @@ impl User {
     /// use nix::unistd::{Uid, User};
     /// // Returns an Result<Option<User>>, thus the double unwrap.
     /// let res = User::from_uid(Uid::from_raw(0)).unwrap().unwrap();
-    /// assert!(res.name == "root");
+    /// assert_eq!(res.name, "root");
     /// ```
     pub fn from_uid(uid: Uid) -> Result<Option<Self>> {
         User::from_anything(|pwd, cbuf, cap, res| {
@@ -3140,7 +3140,7 @@ impl User {
     /// use nix::unistd::User;
     /// // Returns an Result<Option<User>>, thus the double unwrap.
     /// let res = User::from_name("root").unwrap().unwrap();
-    /// assert!(res.name == "root");
+    /// assert_eq!(res.name, "root");
     /// ```
     pub fn from_name(name: &str) -> Result<Option<Self>> {
         let name = CString::new(name).unwrap();

@@ -233,8 +233,8 @@ mod sched_affinity {
     /// use nix::unistd::Pid;
     ///
     /// let mut cpu_set = CpuSet::new();
-    /// cpu_set.set(0);
-    /// sched_setaffinity(Pid::from_raw(0), &cpu_set);
+    /// cpu_set.set(0).unwrap();
+    /// sched_setaffinity(Pid::from_raw(0), &cpu_set).unwrap();
     /// ```
     pub fn sched_setaffinity(pid: Pid, cpuset: &CpuSet) -> Result<()> {
         let res = unsafe {

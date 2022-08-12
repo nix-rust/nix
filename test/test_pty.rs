@@ -58,7 +58,7 @@ fn test_ptsname_copy() {
     assert_eq!(slave_name1, slave_name2);
     // Also make sure that the string was actually copied and they point to different parts of
     // memory.
-    assert!(slave_name1.as_ptr() != slave_name2.as_ptr());
+    assert_ne!(slave_name1.as_ptr(), slave_name2.as_ptr());
 }
 
 /// Test data copying of `ptsname_r`
@@ -73,7 +73,7 @@ fn test_ptsname_r_copy() {
     let slave_name1 = ptsname_r(&master_fd).unwrap();
     let slave_name2 = ptsname_r(&master_fd).unwrap();
     assert_eq!(slave_name1, slave_name2);
-    assert!(slave_name1.as_ptr() != slave_name2.as_ptr());
+    assert_ne!(slave_name1.as_ptr(), slave_name2.as_ptr());
 }
 
 /// Test that `ptsname` returns different names for different devices
@@ -93,7 +93,7 @@ fn test_ptsname_unique() {
     // Get the name of the slave
     let slave_name1 = unsafe { ptsname(&master1_fd) }.unwrap();
     let slave_name2 = unsafe { ptsname(&master2_fd) }.unwrap();
-    assert!(slave_name1 != slave_name2);
+    assert_ne!(slave_name1, slave_name2);
 }
 
 /// Common setup for testing PTTY pairs

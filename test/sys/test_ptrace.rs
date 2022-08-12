@@ -33,7 +33,7 @@ fn test_ptrace_setoptions() {
     require_capability!("test_ptrace_setoptions", CAP_SYS_PTRACE);
     let err = ptrace::setoptions(getpid(), Options::PTRACE_O_TRACESYSGOOD)
         .unwrap_err();
-    assert!(err != Errno::EOPNOTSUPP);
+    assert_ne!(err, Errno::EOPNOTSUPP);
 }
 
 // Just make sure ptrace_getevent can be called at all, for now.
@@ -42,7 +42,7 @@ fn test_ptrace_setoptions() {
 fn test_ptrace_getevent() {
     require_capability!("test_ptrace_getevent", CAP_SYS_PTRACE);
     let err = ptrace::getevent(getpid()).unwrap_err();
-    assert!(err != Errno::EOPNOTSUPP);
+    assert_ne!(err, Errno::EOPNOTSUPP);
 }
 
 // Just make sure ptrace_getsiginfo can be called at all, for now.

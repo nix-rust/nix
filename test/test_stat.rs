@@ -378,8 +378,8 @@ fn test_mknod() {
     let target = tempdir.path().join(file_name);
     mknod(&target, SFlag::S_IFREG, Mode::S_IRWXU, 0).unwrap();
     let mode = lstat(&target).unwrap().st_mode as mode_t;
-    assert!(mode & libc::S_IFREG == libc::S_IFREG);
-    assert!(mode & libc::S_IRWXU == libc::S_IRWXU);
+    assert_eq!(mode & libc::S_IFREG, libc::S_IFREG);
+    assert_eq!(mode & libc::S_IRWXU, libc::S_IRWXU);
 }
 
 #[test]
@@ -416,6 +416,6 @@ fn test_mknodat() {
     )
     .unwrap()
     .st_mode as mode_t;
-    assert!(mode & libc::S_IFREG == libc::S_IFREG);
-    assert!(mode & libc::S_IRWXU == libc::S_IRWXU);
+    assert_eq!(mode & libc::S_IFREG, libc::S_IFREG);
+    assert_eq!(mode & libc::S_IRWXU, libc::S_IRWXU);
 }

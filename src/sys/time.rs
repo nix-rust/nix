@@ -193,10 +193,10 @@ const SECS_PER_MINUTE: i64 = 60;
 const SECS_PER_HOUR: i64 = 3600;
 
 #[cfg(target_pointer_width = "64")]
-const TS_MAX_SECONDS: i64 = (::std::i64::MAX / NANOS_PER_SEC) - 1;
+const TS_MAX_SECONDS: i64 = (i64::MAX / NANOS_PER_SEC) - 1;
 
 #[cfg(target_pointer_width = "32")]
-const TS_MAX_SECONDS: i64 = ::std::isize::MAX as i64;
+const TS_MAX_SECONDS: i64 = isize::MAX as i64;
 
 const TS_MIN_SECONDS: i64 = -TS_MAX_SECONDS;
 
@@ -453,10 +453,10 @@ pub struct TimeVal(timeval);
 const MICROS_PER_SEC: i64 = 1_000_000;
 
 #[cfg(target_pointer_width = "64")]
-const TV_MAX_SECONDS: i64 = (::std::i64::MAX / MICROS_PER_SEC) - 1;
+const TV_MAX_SECONDS: i64 = (i64::MAX / MICROS_PER_SEC) - 1;
 
 #[cfg(target_pointer_width = "32")]
-const TV_MAX_SECONDS: i64 = ::std::isize::MAX as i64;
+const TV_MAX_SECONDS: i64 = isize::MAX as i64;
 
 const TV_MIN_SECONDS: i64 = -TV_MAX_SECONDS;
 
@@ -713,7 +713,7 @@ mod test {
 
     #[test]
     pub fn test_timespec() {
-        assert!(TimeSpec::seconds(1) != TimeSpec::zero());
+        assert_ne!(TimeSpec::seconds(1), TimeSpec::zero());
         assert_eq!(
             TimeSpec::seconds(1) + TimeSpec::seconds(2),
             TimeSpec::seconds(3)
@@ -743,7 +743,7 @@ mod test {
 
     #[test]
     pub fn test_timespec_ord() {
-        assert!(TimeSpec::seconds(1) == TimeSpec::nanoseconds(1_000_000_000));
+        assert_eq!(TimeSpec::seconds(1), TimeSpec::nanoseconds(1_000_000_000));
         assert!(TimeSpec::seconds(1) < TimeSpec::nanoseconds(1_000_000_001));
         assert!(TimeSpec::seconds(1) > TimeSpec::nanoseconds(999_999_999));
         assert!(TimeSpec::seconds(-1) < TimeSpec::nanoseconds(-999_999_999));
@@ -765,7 +765,7 @@ mod test {
 
     #[test]
     pub fn test_timeval() {
-        assert!(TimeVal::seconds(1) != TimeVal::zero());
+        assert_ne!(TimeVal::seconds(1), TimeVal::zero());
         assert_eq!(
             TimeVal::seconds(1) + TimeVal::seconds(2),
             TimeVal::seconds(3)
@@ -778,7 +778,7 @@ mod test {
 
     #[test]
     pub fn test_timeval_ord() {
-        assert!(TimeVal::seconds(1) == TimeVal::microseconds(1_000_000));
+        assert_eq!(TimeVal::seconds(1), TimeVal::microseconds(1_000_000));
         assert!(TimeVal::seconds(1) < TimeVal::microseconds(1_000_001));
         assert!(TimeVal::seconds(1) > TimeVal::microseconds(999_999));
         assert!(TimeVal::seconds(-1) < TimeVal::microseconds(-999_999));
