@@ -378,7 +378,7 @@ pub(crate) fn at_rawfd(fd: Option<RawFd>) -> raw::c_int {
 }
 }
 
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(any(target_os = "android", target_os = "linux", target_os = "freebsd"))]
 #[cfg(feature = "fs")]
 libc_bitflags!(
     /// Additional flags for file sealing, which allows for limiting operations on a file.
@@ -427,9 +427,9 @@ pub enum FcntlArg<'a> {
     F_OFD_SETLKW(&'a libc::flock),
     #[cfg(any(target_os = "linux", target_os = "android"))]
     F_OFD_GETLK(&'a mut libc::flock),
-    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(any(target_os = "android", target_os = "linux", target_os = "freebsd"))]
     F_ADD_SEALS(SealFlag),
-    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(any(target_os = "android", target_os = "linux", target_os = "freebsd"))]
     F_GET_SEALS,
     #[cfg(any(target_os = "macos", target_os = "ios"))]
     F_FULLFSYNC,
@@ -475,9 +475,9 @@ pub fn fcntl(fd: RawFd, arg: FcntlArg) -> Result<c_int> {
             F_OFD_SETLKW(flock) => libc::fcntl(fd, libc::F_OFD_SETLKW, flock),
             #[cfg(any(target_os = "android", target_os = "linux"))]
             F_OFD_GETLK(flock) => libc::fcntl(fd, libc::F_OFD_GETLK, flock),
-            #[cfg(any(target_os = "android", target_os = "linux"))]
+            #[cfg(any(target_os = "android", target_os = "linux", target_os = "freebsd"))]
             F_ADD_SEALS(flag) => libc::fcntl(fd, libc::F_ADD_SEALS, flag.bits()),
-            #[cfg(any(target_os = "android", target_os = "linux"))]
+            #[cfg(any(target_os = "android", target_os = "linux", target_os = "freebsd"))]
             F_GET_SEALS => libc::fcntl(fd, libc::F_GET_SEALS),
             #[cfg(any(target_os = "macos", target_os = "ios"))]
             F_FULLFSYNC => libc::fcntl(fd, libc::F_FULLFSYNC),
