@@ -1122,6 +1122,58 @@ pub fn test_sendmsg_ipv6packetinfo() {
     .expect("sendmsg");
 }
 
+// Verify that ControlMessage::Ipv4SendSrcAddr works for sendmsg. This
+// creates a UDP socket bound to all local interfaces (0.0.0.0). It then
+// sends message to itself at 127.0.0.1 while explicitly specifying
+// 127.0.0.1 as the source address through an Ipv4SendSrcAddr
+// (IP_SENDSRCADDR) control message.
+//
+// Note that binding to 0.0.0.0 is *required* on FreeBSD; sendmsg
+// returns EINVAL otherwise. (See FreeBSD's ip(4) man page.)
+#[cfg(any(
+    target_os = "netbsd",
+    target_os = "freebsd",
+    target_os = "openbsd",
+    target_os = "dragonfly",
+))]
+#[test]
+pub fn test_sendmsg_ipv4sendsrcaddr() {
+    use nix::sys::socket::{
+        bind, sendmsg, socket, AddressFamily, ControlMessage, MsgFlags,
+        SockFlag, SockType, SockaddrIn,
+    };
+    use std::io::IoSlice;
+
+    let sock = socket(
+        AddressFamily::Inet,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )
+    .expect("socket failed");
+
+    let unspec_sock_addr = SockaddrIn::new(0, 0, 0, 0, 0);
+    bind(sock, &unspec_sock_addr).expect("bind failed");
+    let bound_sock_addr: SockaddrIn = getsockname(sock).unwrap();
+    let localhost_sock_addr: SockaddrIn =
+        SockaddrIn::new(127, 0, 0, 1, bound_sock_addr.port());
+
+    let slice = [1u8, 2, 3, 4, 5, 6, 7, 8];
+    let iov = [IoSlice::new(&slice)];
+    let cmsg = [ControlMessage::Ipv4SendSrcAddr(
+        &localhost_sock_addr.as_ref().sin_addr,
+    )];
+
+    sendmsg(
+        sock,
+        &iov,
+        &cmsg,
+        MsgFlags::empty(),
+        Some(&localhost_sock_addr),
+    )
+    .expect("sendmsg");
+}
+
 /// Tests that passing multiple fds using a single `ControlMessage` works.
 // Disable the test on emulated platforms due to a bug in QEMU versions <
 // 2.12.0.  https://bugs.launchpad.net/qemu/+bug/1701808
