@@ -11,6 +11,9 @@ env:
   # The MSRV
   TOOLCHAIN: 1.46.0
   ZFLAGS:
+  # Temporarily disable cargo-hack until we raise the MSRV to 1.51.0 or later.
+  # See https://github.com/nix-rust/nix/pull/1792
+  NOHACK: 1
 
 # Tests that don't require executing the build binaries
 build: &BUILD
@@ -64,7 +67,7 @@ task:
     - cargo test --target i686-unknown-freebsd
   i386_feature_script:
     - . $HOME/.cargo/env
-    - cargo hack check --each-feature --target i686-unknown-freebsd
+    - if [ -z "$NOHACK" ]; then cargo hack check --each-feature --target i686-unknown-freebsd; fi
   before_cache_script: rm -rf $CARGO_HOME/registry/index
 
 # Test macOS x86_64 in a full VM
@@ -92,6 +95,9 @@ task:
     PATH: $HOME/.cargo/bin:$PATH
     RUSTFLAGS: --cfg qemu -D warnings
     TOOL: cross
+    # Cross needs at least 1.51.0 after Serde accidentally raised its MSRV.
+    # And Clippy has too many false positives from 1.51.0 through 1.53.0
+    TOOLCHAIN: 1.54.0
   matrix:
     - name: Linux arm gnueabi
       env:
