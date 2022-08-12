@@ -1,4 +1,8 @@
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
+use libc::mode_t;
+#[cfg(not(any(target_os = "netbsd", target_os = "redox")))]
+use libc::{S_IFLNK, S_IFMT};
+#[cfg(not(any(target_os = "redox", target_os = "haiku")))]
 use std::fs;
 use std::fs::File;
 #[cfg(not(target_os = "redox"))]
@@ -10,10 +14,6 @@ use std::os::unix::prelude::AsRawFd;
 use std::path::Path;
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
 use std::time::{Duration, UNIX_EPOCH};
-
-use libc::mode_t;
-#[cfg(not(any(target_os = "netbsd", target_os = "redox")))]
-use libc::{S_IFLNK, S_IFMT};
 
 #[cfg(not(target_os = "redox"))]
 use nix::errno::Errno;
@@ -56,13 +56,13 @@ use nix::Result;
 #[cfg(not(any(target_os = "netbsd", target_os = "redox")))]
 fn assert_stat_results(stat_result: Result<FileStat>) {
     let stats = stat_result.expect("stat call failed");
-    assert!(stats.st_dev > 0); // must be positive integer, exact number machine dependent
-    assert!(stats.st_ino > 0); // inode is positive integer, exact number machine dependent
-    assert!(stats.st_mode > 0); // must be positive integer
-    assert_eq!(stats.st_nlink, 1); // there links created, must be 1
-    assert_eq!(stats.st_size, 0); // size is 0 because we did not write anything to the file
-    assert!(stats.st_blksize > 0); // must be positive integer, exact number machine dependent
-    assert!(stats.st_blocks <= 16); // Up to 16 blocks can be allocated for a blank file
+    assert!(stats.dev() > 0); // must be positive integer, exact number machine dependent
+    assert!(stats.ino() > 0); // inode is positive integer, exact number machine dependent
+    assert!(stats.mode() > 0); // must be positive integer
+    assert_eq!(stats.nlink(), 1); // there links created, must be 1
+    assert_eq!(stats.size(), 0); // size is 0 because we did not write anything to the file
+    assert!(stats.blksize() > 0); // must be positive integer, exact number machine dependent
+    assert!(stats.blocks() <= 16); // Up to 16 blocks can be allocated for a blank file
 }
 
 #[cfg(not(any(target_os = "netbsd", target_os = "redox")))]
@@ -71,24 +71,24 @@ fn assert_stat_results(stat_result: Result<FileStat>) {
 #[allow(clippy::absurd_extreme_comparisons)] // Not absurd on all OSes
 fn assert_lstat_results(stat_result: Result<FileStat>) {
     let stats = stat_result.expect("stat call failed");
-    assert!(stats.st_dev > 0); // must be positive integer, exact number machine dependent
-    assert!(stats.st_ino > 0); // inode is positive integer, exact number machine dependent
-    assert!(stats.st_mode > 0); // must be positive integer
+    assert!(stats.dev() > 0); // must be positive integer, exact number machine dependent
+    assert!(stats.ino() > 0); // inode is positive integer, exact number machine dependent
+    assert!(stats.mode() > 0); // must be positive integer
 
     // st_mode is c_uint (u32 on Android) while S_IFMT is mode_t
     // (u16 on Android), and that will be a compile error.
     // On other platforms they are the same (either both are u16 or u32).
     assert_eq!(
-        (stats.st_mode as usize) & (S_IFMT as usize),
+        (stats.mode() as usize) & (S_IFMT as usize),
         S_IFLNK as usize
     ); // should be a link
-    assert_eq!(stats.st_nlink, 1); // there links created, must be 1
-    assert!(stats.st_size > 0); // size is > 0 because it points to another file
-    assert!(stats.st_blksize > 0); // must be positive integer, exact number machine dependent
+    assert_eq!(stats.nlink(), 1); // there links created, must be 1
+    assert!(stats.size() > 0); // size is > 0 because it points to another file
+    assert!(stats.blksize() > 0); // must be positive integer, exact number machine dependent
 
     // st_blocks depends on whether the machine's file system uses fast
     // or slow symlinks, so just make sure it's not negative
-    assert!(stats.st_blocks >= 0);
+    assert!(stats.blocks() >= 0);
 }
 
 #[test]
@@ -158,14 +158,14 @@ fn test_fchmod() {
     fchmod(file.as_raw_fd(), mode1).unwrap();
 
     let file_stat1 = stat(&filename).unwrap();
-    assert_eq!(file_stat1.st_mode as mode_t & 0o7777, mode1.bits());
+    assert_eq!(file_stat1.mode() & 0o7777, mode1.bits());
 
     let mut mode2 = Mode::empty();
     mode2.insert(Mode::S_IROTH);
     fchmod(file.as_raw_fd(), mode2).unwrap();
 
     let file_stat2 = stat(&filename).unwrap();
-    assert_eq!(file_stat2.st_mode as mode_t & 0o7777, mode2.bits());
+    assert_eq!(file_stat2.mode() & 0o7777, mode2.bits());
 }
 
 #[test]
@@ -188,7 +188,7 @@ fn test_fchmodat() {
         .unwrap();
 
     let file_stat1 = stat(&fullpath).unwrap();
-    assert_eq!(file_stat1.st_mode as mode_t & 0o7777, mode1.bits());
+    assert_eq!(file_stat1.mode() & 0o7777, mode1.bits());
 
     chdir(tempdir.path()).unwrap();
 
@@ -197,7 +197,7 @@ fn test_fchmodat() {
     fchmodat(None, filename, mode2, FchmodatFlags::FollowSymlink).unwrap();
 
     let file_stat2 = stat(&fullpath).unwrap();
-    assert_eq!(file_stat2.st_mode as mode_t & 0o7777, mode2.bits());
+    assert_eq!(file_stat2.mode() & 0o7777, mode2.bits());
 }
 
 /// Asserts that the atime and mtime in a file's metadata match expected values.
@@ -377,7 +377,7 @@ fn test_mknod() {
     let tempdir = tempfile::tempdir().unwrap();
     let target = tempdir.path().join(file_name);
     mknod(&target, SFlag::S_IFREG, Mode::S_IRWXU, 0).unwrap();
-    let mode = lstat(&target).unwrap().st_mode as mode_t;
+    let mode = lstat(&target).unwrap().mode();
     assert_eq!(mode & libc::S_IFREG, libc::S_IFREG);
     assert_eq!(mode & libc::S_IRWXU, libc::S_IRWXU);
 }
@@ -415,7 +415,7 @@ fn test_mknodat() {
         AtFlags::AT_SYMLINK_NOFOLLOW,
     )
     .unwrap()
-    .st_mode as mode_t;
+    .mode();
     assert_eq!(mode & libc::S_IFREG, libc::S_IFREG);
     assert_eq!(mode & libc::S_IRWXU, libc::S_IRWXU);
 }

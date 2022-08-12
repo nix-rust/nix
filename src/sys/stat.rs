@@ -1,4 +1,3 @@
-pub use libc::{dev_t, mode_t};
 #[cfg(any(target_os = "macos", target_os = "ios", target_os = "openbsd"))]
 pub use libc::c_uint;
 #[cfg(any(
@@ -7,14 +6,357 @@ pub use libc::c_uint;
     target_os = "dragonfly"
 ))]
 pub use libc::c_ulong;
-pub use libc::stat as FileStat;
+pub use libc::{blkcnt_t, blksize_t, dev_t, ino_t, mode_t, nlink_t, off_t};
 
-use crate::{Result, NixPath, errno::Errno};
 #[cfg(not(target_os = "redox"))]
-use crate::fcntl::{AtFlags, at_rawfd};
-use std::mem;
-use std::os::unix::io::RawFd;
+use crate::fcntl::{at_rawfd, AtFlags};
 use crate::sys::time::{TimeSpec, TimeVal};
+use crate::unistd::{Gid, Uid};
+use crate::{errno::Errno, NixPath, Result};
+use libc::timespec;
+#[cfg(all(
+    target_os = "android",
+    any(target_arch = "arm", target_arch = "armv7", target_arch = "x86")
+))]
+use std::convert::TryInto;
+use std::{mem, os::unix::io::RawFd};
+
+#[repr(transparent)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+/// File status, a wrapper type for `libc::stat`
+pub struct FileStat(libc::stat);
+
+impl FileStat {
+    /// Constructs a new `FileStat` from raw `libc::stat`
+    pub fn from_raw(raw_stat: libc::stat) -> Self {
+        Self(raw_stat)
+    }
+
+    /// Gets the raw `libc::stat` wrapped by self.
+    pub fn as_raw(&self) -> libc::stat {
+        self.0
+    }
+
+    #[cfg(all(
+        target_os = "android",
+        any(target_arch = "arm", target_arch = "armv7", target_arch = "x86")
+    ))]
+    /// Returns the ID of device containing this file
+    pub fn dev(&self) -> libc::c_ulonglong {
+        self.0.st_dev
+    }
+
+    #[cfg(all(
+        target_os = "linux",
+        any(target_arch = "mips", target_arch = "mipsel")
+    ))]
+    /// Returns the ID of device containing this file
+    pub fn dev(&self) -> libc::c_ulong {
+        self.0.st_dev
+    }
+
+    #[cfg(not(any(
+        all(
+            target_os = "android",
+            any(
+                target_arch = "arm",
+                target_arch = "armv7",
+                target_arch = "x86"
+            )
+        ),
+        all(
+            target_os = "linux",
+            any(target_arch = "mips", target_arch = "mipsel")
+        )
+    )))]
+    /// Returns the ID of device containing this file
+    pub fn dev(&self) -> dev_t {
+        self.0.st_dev
+    }
+
+    #[cfg(all(
+        target_os = "android",
+        any(target_arch = "arm", target_arch = "armv7", target_arch = "x86")
+    ))]
+    /// Returns the Inode number
+    pub fn ino(&self) -> libc::c_ulonglong {
+        self.0.st_ino
+    }
+
+    #[cfg(not(all(
+        target_os = "android",
+        any(target_arch = "arm", target_arch = "armv7", target_arch = "x86")
+    )))]
+    /// Returns the Inode number
+    pub fn ino(&self) -> ino_t {
+        self.0.st_ino
+    }
+
+    #[cfg(all(target_os = "android", target_arch = "x86_64"))]
+    /// Returns the number of hard links
+    pub fn nlink(&self) -> libc::c_ulong {
+        self.0.st_nlink
+    }
+
+    #[cfg(not(all(target_os = "android", target_arch = "x86_64")))]
+    /// Returns the number of hard links
+    pub fn nlink(&self) -> nlink_t {
+        self.0.st_nlink
+    }
+
+    #[cfg(all(
+        target_os = "android",
+        any(target_arch = "arm", target_arch = "armv7", target_arch = "x86")
+    ))]
+    /// Returns a number encoding `file type` and `mode`
+    ///
+    /// We have dedicated types for `file type`
+    /// ([SFlag](https://docs.rs/nix/latest/nix/sys/stat/struct.SFlag.html)) and
+    /// `mode` ([Mode](https://docs.rs/nix/latest/nix/sys/stat/struct.Mode.html)),
+    /// You should use them instead of using the raw numeric type.
+    pub fn mode(&self) -> mode_t {
+        self.0.st_mode.try_into().unwrap()
+    }
+
+    #[cfg(not(all(
+        target_os = "android",
+        any(target_arch = "arm", target_arch = "armv7", target_arch = "x86")
+    )))]
+    /// Returns a number encoding `file type` and `mode`
+    ///
+    /// We have dedicated types for `file type`
+    /// ([SFlag](https://docs.rs/nix/latest/nix/sys/stat/struct.SFlag.html)) and
+    /// `mode` ([Mode](https://docs.rs/nix/latest/nix/sys/stat/struct.Mode.html)),
+    /// You should use them instead of using the raw numeric type.
+    pub fn mode(&self) -> mode_t {
+        self.0.st_mode
+    }
+
+    /// Returns the User ID of the file owner
+    pub fn uid(&self) -> Uid {
+        Uid::from_raw(self.0.st_uid)
+    }
+
+    /// Returns the Group ID of the file owner
+    pub fn gid(&self) -> Gid {
+        Gid::from_raw(self.0.st_gid)
+    }
+
+    #[cfg(all(
+        target_os = "android",
+        any(target_arch = "arm", target_arch = "armv7", target_arch = "x86")
+    ))]
+    /// Returns the device ID (if this is a special file)
+    pub fn rdev(&self) -> libc::c_ulonglong {
+        self.0.st_rdev
+    }
+
+    #[cfg(all(
+        target_os = "linux",
+        any(target_arch = "mips", target_arch = "mipsel")
+    ))]
+    /// Returns the device ID (if this is a special file)
+    pub fn rdev(&self) -> libc::c_ulong {
+        self.0.st_rdev
+    }
+
+    #[cfg(not(any(
+        all(
+            target_os = "android",
+            any(
+                target_arch = "arm",
+                target_arch = "armv7",
+                target_arch = "x86"
+            )
+        ),
+        all(
+            target_os = "linux",
+            any(target_arch = "mips", target_arch = "mipsel")
+        )
+    )))]
+    /// Returns the device ID (if this is a special file)
+    pub fn rdev(&self) -> dev_t {
+        self.0.st_rdev
+    }
+
+    #[cfg(all(
+        target_os = "android",
+        any(target_arch = "arm", target_arch = "armv7", target_arch = "x86")
+    ))]
+    /// Returns the total size, in bytes
+    pub fn size(&self) -> libc::c_longlong {
+        self.0.st_size
+    }
+
+    #[cfg(not(all(
+        target_os = "android",
+        any(target_arch = "arm", target_arch = "armv7", target_arch = "x86")
+    )))]
+    /// Returns the total size, in bytes
+    pub fn size(&self) -> off_t {
+        self.0.st_size
+    }
+
+    #[cfg(all(target_os = "android", target_arch = "aarch64"))]
+    /// Returns the block size
+    pub fn blksize(&self) -> libc::c_int {
+        self.0.st_blksize
+    }
+
+    #[cfg(all(target_os = "android", target_arch = "x86_64"))]
+    /// Returns the block size
+    pub fn blksize(&self) -> libc::c_long {
+        self.0.st_blksize
+    }
+
+    #[cfg(not(all(
+        target_os = "android",
+        any(target_arch = "aarch64", target_arch = "x86_64")
+    )))]
+    /// Returns the block size
+    pub fn blksize(&self) -> blksize_t {
+        self.0.st_blksize
+    }
+
+    #[cfg(all(
+        target_os = "android",
+        any(target_arch = "x86_64", target_arch = "aarch64")
+    ))]
+    /// Returns the number of blocks allocated
+    pub fn blocks(&self) -> libc::c_long {
+        self.0.st_blocks
+    }
+
+    #[cfg(all(
+        target_os = "android",
+        any(target_arch = "arm", target_arch = "x86", target_arch = "armv7")
+    ))]
+    /// Returns the number of blocks allocated
+    pub fn blocks(&self) -> libc::c_ulonglong {
+        self.0.st_blocks
+    }
+
+    #[cfg(not(all(
+        target_os = "android",
+        any(
+            target_arch = "aarch64",
+            target_arch = "x86_64",
+            target_arch = "arm",
+            target_arch = "armv7",
+            target_arch = "x86"
+        )
+    )))]
+    /// Returns the number of blocks allocated
+    pub fn blocks(&self) -> blkcnt_t {
+        self.0.st_blocks
+    }
+
+    #[cfg(not(target_os = "netbsd"))]
+    /// Returns the time of last access
+    pub fn atime(&self) -> TimeSpec {
+        TimeSpec::from_timespec(timespec {
+            tv_sec: self.0.st_atime,
+            tv_nsec: self.0.st_atime_nsec,
+        })
+    }
+
+    #[cfg(target_os = "netbsd")]
+    /// Returns the time of last access
+    pub fn atime(&self) -> TimeSpec {
+        TimeSpec::from_timespec(timespec {
+            tv_sec: self.0.st_atime,
+            tv_nsec: self.0.st_atimensec,
+        })
+    }
+
+    #[cfg(not(target_os = "netbsd"))]
+    /// Returns the time of last modification
+    pub fn mtime(&self) -> TimeSpec {
+        TimeSpec::from_timespec(timespec {
+            tv_sec: self.0.st_mtime,
+            tv_nsec: self.0.st_mtime_nsec,
+        })
+    }
+
+    #[cfg(target_os = "netbsd")]
+    /// Returns the time of last modification
+    pub fn mtime(&self) -> TimeSpec {
+        TimeSpec::from_timespec(timespec {
+            tv_sec: self.0.st_mtime,
+            tv_nsec: self.0.st_mtimensec,
+        })
+    }
+
+    #[cfg(not(target_os = "netbsd"))]
+    /// Returns the time of last status change
+    pub fn ctime(&self) -> TimeSpec {
+        TimeSpec::from_timespec(timespec {
+            tv_sec: self.0.st_ctime,
+            tv_nsec: self.0.st_ctime_nsec,
+        })
+    }
+
+    #[cfg(target_os = "netbsd")]
+    /// Returns the time of last status change
+    pub fn ctime(&self) -> TimeSpec {
+        TimeSpec::from_timespec(timespec {
+            tv_sec: self.0.st_ctime,
+            tv_nsec: self.0.st_ctimensec,
+        })
+    }
+
+    #[cfg(any(target_os = "openbsd", target_os = "macos", target_os = "ios"))]
+    /// Return the file flags
+    pub fn flags(&self) -> FileFlag {
+        FileFlag::from_bits(self.0.st_flags).unwrap()
+    }
+
+    #[cfg(any(
+        target_os = "freebsd",
+        target_os = "dragonfly",
+        target_os = "netbsd",
+    ))]
+    /// Return the file flags
+    pub fn flags(&self) -> FileFlag {
+        FileFlag::from_bits(self.0.st_flags.into()).unwrap()
+    }
+
+    #[cfg(any(
+        target_os = "freebsd",
+        target_os = "dragonfly",
+        target_os = "netbsd",
+        target_os = "openbsd",
+        target_os = "macos",
+        target_os = "ios"
+    ))]
+    /// Returns the Inode generation number
+    pub fn gen(&self) -> u32 {
+        self.0.st_gen
+    }
+
+    #[cfg(any(
+        target_os = "freebsd",
+        target_os = "openbsd",
+        target_os = "macos",
+        target_os = "ios"
+    ))]
+    /// Returns the birth time
+    pub fn birthtime(&self) -> TimeSpec {
+        TimeSpec::from_timespec(timespec {
+            tv_sec: self.0.st_birthtime,
+            tv_nsec: self.0.st_birthtime_nsec,
+        })
+    }
+
+    #[cfg(target_os = "netbsd")]
+    /// Returns the birth time
+    pub fn birthtime(&self) -> TimeSpec {
+        TimeSpec::from_timespec(timespec {
+            tv_sec: self.0.st_birthtime,
+            tv_nsec: self.0.st_birthtimensec,
+        })
+    }
+}
 
 libc_bitflags!(
     /// "File type" flags for `mknod` and related functions.
@@ -51,7 +393,7 @@ libc_bitflags! {
     }
 }
 
-#[cfg(any(target_os = "macos", target_os = "ios", target_os="openbsd"))]
+#[cfg(any(target_os = "macos", target_os = "ios", target_os = "openbsd"))]
 pub type type_of_file_flag = c_uint;
 #[cfg(any(
     target_os = "netbsd",
@@ -156,7 +498,12 @@ libc_bitflags! {
 }
 
 /// Create a special or ordinary file, by pathname.
-pub fn mknod<P: ?Sized + NixPath>(path: &P, kind: SFlag, perm: Mode, dev: dev_t) -> Result<()> {
+pub fn mknod<P: ?Sized + NixPath>(
+    path: &P,
+    kind: SFlag,
+    perm: Mode,
+    dev: dev_t,
+) -> Result<()> {
     let res = path.with_nix_path(|cstr| unsafe {
         libc::mknod(cstr.as_ptr(), kind.bits | perm.bits() as mode_t, dev)
     })?;
@@ -165,7 +512,12 @@ pub fn mknod<P: ?Sized + NixPath>(path: &P, kind: SFlag, perm: Mode, dev: dev_t)
 }
 
 /// Create a special or ordinary file, relative to a given directory.
-#[cfg(not(any(target_os = "ios", target_os = "macos", target_os = "redox", target_os = "haiku")))]
+#[cfg(not(any(
+    target_os = "ios",
+    target_os = "macos",
+    target_os = "redox",
+    target_os = "haiku"
+)))]
 #[cfg_attr(docsrs, doc(cfg(all())))]
 pub fn mknodat<P: ?Sized + NixPath>(
     dirfd: RawFd,
@@ -175,7 +527,12 @@ pub fn mknodat<P: ?Sized + NixPath>(
     dev: dev_t,
 ) -> Result<()> {
     let res = path.with_nix_path(|cstr| unsafe {
-        libc::mknodat(dirfd, cstr.as_ptr(), kind.bits | perm.bits() as mode_t, dev)
+        libc::mknodat(
+            dirfd,
+            cstr.as_ptr(),
+            kind.bits | perm.bits() as mode_t,
+            dev,
+        )
     })?;
 
     Errno::result(res).map(drop)
@@ -184,24 +541,22 @@ pub fn mknodat<P: ?Sized + NixPath>(
 #[cfg(target_os = "linux")]
 #[cfg_attr(docsrs, doc(cfg(all())))]
 pub const fn major(dev: dev_t) -> u64 {
-    ((dev >> 32) & 0xffff_f000) |
-    ((dev >>  8) & 0x0000_0fff)
+    ((dev >> 32) & 0xffff_f000) | ((dev >> 8) & 0x0000_0fff)
 }
 
 #[cfg(target_os = "linux")]
 #[cfg_attr(docsrs, doc(cfg(all())))]
 pub const fn minor(dev: dev_t) -> u64 {
-    ((dev >> 12) & 0xffff_ff00) |
-    ((dev      ) & 0x0000_00ff)
+    ((dev >> 12) & 0xffff_ff00) | ((dev) & 0x0000_00ff)
 }
 
 #[cfg(target_os = "linux")]
 #[cfg_attr(docsrs, doc(cfg(all())))]
 pub const fn makedev(major: u64, minor: u64) -> dev_t {
-    ((major & 0xffff_f000) << 32) |
-    ((major & 0x0000_0fff) <<  8) |
-    ((minor & 0xffff_ff00) << 12) |
-     (minor & 0x0000_00ff)
+    ((major & 0xffff_f000) << 32)
+        | ((major & 0x0000_0fff) << 8)
+        | ((minor & 0xffff_ff00) << 12)
+        | (minor & 0x0000_00ff)
 }
 
 pub fn umask(mode: Mode) -> Mode {
@@ -211,28 +566,24 @@ pub fn umask(mode: Mode) -> Mode {
 
 pub fn stat<P: ?Sized + NixPath>(path: &P) -> Result<FileStat> {
     let mut dst = mem::MaybeUninit::uninit();
-    let res = path.with_nix_path(|cstr| {
-        unsafe {
-            libc::stat(cstr.as_ptr(), dst.as_mut_ptr())
-        }
+    let res = path.with_nix_path(|cstr| unsafe {
+        libc::stat(cstr.as_ptr(), dst.as_mut_ptr())
     })?;
 
     Errno::result(res)?;
 
-    Ok(unsafe{dst.assume_init()})
+    Ok(FileStat::from_raw(unsafe { dst.assume_init() }))
 }
 
 pub fn lstat<P: ?Sized + NixPath>(path: &P) -> Result<FileStat> {
     let mut dst = mem::MaybeUninit::uninit();
-    let res = path.with_nix_path(|cstr| {
-        unsafe {
-            libc::lstat(cstr.as_ptr(), dst.as_mut_ptr())
-        }
+    let res = path.with_nix_path(|cstr| unsafe {
+        libc::lstat(cstr.as_ptr(), dst.as_mut_ptr())
     })?;
 
     Errno::result(res)?;
 
-    Ok(unsafe{dst.assume_init()})
+    Ok(FileStat::from_raw(unsafe { dst.assume_init() }))
 }
 
 pub fn fstat(fd: RawFd) -> Result<FileStat> {
@@ -241,20 +592,29 @@ pub fn fstat(fd: RawFd) -> Result<FileStat> {
 
     Errno::result(res)?;
 
-    Ok(unsafe{dst.assume_init()})
+    Ok(FileStat::from_raw(unsafe { dst.assume_init() }))
 }
 
 #[cfg(not(target_os = "redox"))]
 #[cfg_attr(docsrs, doc(cfg(all())))]
-pub fn fstatat<P: ?Sized + NixPath>(dirfd: RawFd, pathname: &P, f: AtFlags) -> Result<FileStat> {
+pub fn fstatat<P: ?Sized + NixPath>(
+    dirfd: RawFd,
+    pathname: &P,
+    f: AtFlags,
+) -> Result<FileStat> {
     let mut dst = mem::MaybeUninit::uninit();
-    let res = pathname.with_nix_path(|cstr| {
-        unsafe { libc::fstatat(dirfd, cstr.as_ptr(), dst.as_mut_ptr(), f.bits() as libc::c_int) }
+    let res = pathname.with_nix_path(|cstr| unsafe {
+        libc::fstatat(
+            dirfd,
+            cstr.as_ptr(),
+            dst.as_mut_ptr(),
+            f.bits() as libc::c_int,
+        )
     })?;
 
     Errno::result(res)?;
 
-    Ok(unsafe{dst.assume_init()})
+    Ok(FileStat::from_raw(unsafe { dst.assume_init() }))
 }
 
 /// Change the file permission bits of the file specified by a file descriptor.
@@ -299,11 +659,10 @@ pub fn fchmodat<P: ?Sized + NixPath>(
     mode: Mode,
     flag: FchmodatFlags,
 ) -> Result<()> {
-    let atflag =
-        match flag {
-            FchmodatFlags::FollowSymlink => AtFlags::empty(),
-            FchmodatFlags::NoFollowSymlink => AtFlags::AT_SYMLINK_NOFOLLOW,
-        };
+    let atflag = match flag {
+        FchmodatFlags::FollowSymlink => AtFlags::empty(),
+        FchmodatFlags::NoFollowSymlink => AtFlags::AT_SYMLINK_NOFOLLOW,
+    };
     let res = path.with_nix_path(|cstr| unsafe {
         libc::fchmodat(
             at_rawfd(dirfd),
@@ -326,7 +685,11 @@ pub fn fchmodat<P: ?Sized + NixPath>(
 /// # References
 ///
 /// [utimes(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/utimes.html).
-pub fn utimes<P: ?Sized + NixPath>(path: &P, atime: &TimeVal, mtime: &TimeVal) -> Result<()> {
+pub fn utimes<P: ?Sized + NixPath>(
+    path: &P,
+    atime: &TimeVal,
+    mtime: &TimeVal,
+) -> Result<()> {
     let times: [libc::timeval; 2] = [*atime.as_ref(), *mtime.as_ref()];
     let res = path.with_nix_path(|cstr| unsafe {
         libc::utimes(cstr.as_ptr(), &times[0])
@@ -345,14 +708,20 @@ pub fn utimes<P: ?Sized + NixPath>(path: &P, atime: &TimeVal, mtime: &TimeVal) -
 /// # References
 ///
 /// [lutimes(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/lutimes.html).
-#[cfg(any(target_os = "linux",
-          target_os = "haiku",
-          target_os = "ios",
-          target_os = "macos",
-          target_os = "freebsd",
-          target_os = "netbsd"))]
+#[cfg(any(
+    target_os = "linux",
+    target_os = "haiku",
+    target_os = "ios",
+    target_os = "macos",
+    target_os = "freebsd",
+    target_os = "netbsd"
+))]
 #[cfg_attr(docsrs, doc(cfg(all())))]
-pub fn lutimes<P: ?Sized + NixPath>(path: &P, atime: &TimeVal, mtime: &TimeVal) -> Result<()> {
+pub fn lutimes<P: ?Sized + NixPath>(
+    path: &P,
+    atime: &TimeVal,
+    mtime: &TimeVal,
+) -> Result<()> {
     let times: [libc::timeval; 2] = [*atime.as_ref(), *mtime.as_ref()];
     let res = path.with_nix_path(|cstr| unsafe {
         libc::lutimes(cstr.as_ptr(), &times[0])
@@ -368,7 +737,7 @@ pub fn lutimes<P: ?Sized + NixPath>(path: &P, atime: &TimeVal, mtime: &TimeVal) 
 /// [futimens(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/futimens.html).
 #[inline]
 pub fn futimens(fd: RawFd, atime: &TimeSpec, mtime: &TimeSpec) -> Result<()> {
-    let times: [libc::timespec; 2] = [*atime.as_ref(), *mtime.as_ref()];
+    let times: [timespec; 2] = [*atime.as_ref(), *mtime.as_ref()];
     let res = unsafe { libc::futimens(fd, &times[0]) };
 
     Errno::result(res).map(drop)
@@ -405,14 +774,13 @@ pub fn utimensat<P: ?Sized + NixPath>(
     path: &P,
     atime: &TimeSpec,
     mtime: &TimeSpec,
-    flag: UtimensatFlags
+    flag: UtimensatFlags,
 ) -> Result<()> {
-    let atflag =
-        match flag {
-            UtimensatFlags::FollowSymlink => AtFlags::empty(),
-            UtimensatFlags::NoFollowSymlink => AtFlags::AT_SYMLINK_NOFOLLOW,
-        };
-    let times: [libc::timespec; 2] = [*atime.as_ref(), *mtime.as_ref()];
+    let atflag = match flag {
+        UtimensatFlags::FollowSymlink => AtFlags::empty(),
+        UtimensatFlags::NoFollowSymlink => AtFlags::AT_SYMLINK_NOFOLLOW,
+    };
+    let times: [timespec; 2] = [*atime.as_ref(), *mtime.as_ref()];
     let res = path.with_nix_path(|cstr| unsafe {
         libc::utimensat(
             at_rawfd(dirfd),
@@ -427,9 +795,13 @@ pub fn utimensat<P: ?Sized + NixPath>(
 
 #[cfg(not(target_os = "redox"))]
 #[cfg_attr(docsrs, doc(cfg(all())))]
-pub fn mkdirat<P: ?Sized + NixPath>(fd: RawFd, path: &P, mode: Mode) -> Result<()> {
-    let res = path.with_nix_path(|cstr| {
-        unsafe { libc::mkdirat(fd, cstr.as_ptr(), mode.bits() as mode_t) }
+pub fn mkdirat<P: ?Sized + NixPath>(
+    fd: RawFd,
+    path: &P,
+    mode: Mode,
+) -> Result<()> {
+    let res = path.with_nix_path(|cstr| unsafe {
+        libc::mkdirat(fd, cstr.as_ptr(), mode.bits() as mode_t)
     })?;
 
     Errno::result(res).map(drop)

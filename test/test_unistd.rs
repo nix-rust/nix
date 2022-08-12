@@ -1,4 +1,4 @@
-use libc::{_exit, mode_t, off_t};
+use libc::{_exit, off_t};
 use nix::errno::Errno;
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
 use nix::fcntl::readlink;
@@ -113,7 +113,7 @@ fn test_mkfifo() {
     mkfifo(&mkfifo_fifo, Mode::S_IRUSR).unwrap();
 
     let stats = stat::stat(&mkfifo_fifo).unwrap();
-    let typ = stat::SFlag::from_bits_truncate(stats.st_mode as mode_t);
+    let typ = stat::SFlag::from_bits_truncate(stats.mode());
     assert_eq!(typ, SFlag::S_IFIFO);
 }
 
@@ -141,7 +141,7 @@ fn test_mkfifoat_none() {
     mkfifoat(None, &mkfifoat_fifo, Mode::S_IRUSR).unwrap();
 
     let stats = stat::stat(&mkfifoat_fifo).unwrap();
-    let typ = stat::SFlag::from_bits_truncate(stats.st_mode);
+    let typ = stat::SFlag::from_bits_truncate(stats.mode());
     assert_eq!(typ, SFlag::S_IFIFO);
 }
 
@@ -164,7 +164,7 @@ fn test_mkfifoat() {
 
     let stats =
         stat::fstatat(dirfd, mkfifoat_name, fcntl::AtFlags::empty()).unwrap();
-    let typ = stat::SFlag::from_bits_truncate(stats.st_mode);
+    let typ = stat::SFlag::from_bits_truncate(stats.mode());
     assert_eq!(typ, SFlag::S_IFIFO);
 }
 
@@ -719,14 +719,10 @@ fn test_getresgid() {
 #[test]
 fn test_pipe() {
     let (fd0, fd1) = pipe().unwrap();
-    let m0 = stat::SFlag::from_bits_truncate(
-        stat::fstat(fd0).unwrap().st_mode as mode_t,
-    );
+    let m0 = stat::SFlag::from_bits_truncate(stat::fstat(fd0).unwrap().mode());
     // S_IFIFO means it's a pipe
     assert_eq!(m0, SFlag::S_IFIFO);
-    let m1 = stat::SFlag::from_bits_truncate(
-        stat::fstat(fd1).unwrap().st_mode as mode_t,
-    );
+    let m1 = stat::SFlag::from_bits_truncate(stat::fstat(fd1).unwrap().mode());
     assert_eq!(m1, SFlag::S_IFIFO);
 }
 
@@ -1084,13 +1080,12 @@ fn test_linkat_follow_symlink() {
 
     // Check the file type of the new link
     assert_eq!(
-        (stat::SFlag::from_bits_truncate(newfilestat.st_mode as mode_t)
-            & SFlag::S_IFMT),
+        (stat::SFlag::from_bits_truncate(newfilestat.mode()) & SFlag::S_IFMT),
         SFlag::S_IFREG
     );
 
     // Check the number of hard links to the original file
-    assert_eq!(newfilestat.st_nlink, 2);
+    assert_eq!(newfilestat.nlink(), 2);
 }
 
 #[test]

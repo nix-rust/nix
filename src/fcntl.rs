@@ -329,7 +329,7 @@ fn inner_readlink<P: ?Sized + NixPath>(dirfd: Option<RawFd>, path: &P) -> Result
         Some(dirfd) => super::sys::stat::fstatat(dirfd, path, AtFlags::AT_SYMLINK_NOFOLLOW),
         None => super::sys::stat::lstat(path)
     }
-        .map(|x| x.st_size)
+        .map(|x| x.size())
         .unwrap_or(0);
     let mut try_size = if reported_size > 0 {
         // Note: even if `lstat`'s apparently valid answer turns out to be

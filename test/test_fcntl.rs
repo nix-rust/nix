@@ -390,7 +390,7 @@ mod linux_android {
             // skip the test.
             skip!("/proc/locks does not work on overlayfs");
         }
-        let inode = fstat(fd).expect("fstat failed").st_ino as usize;
+        let inode = fstat(fd).expect("fstat failed").ino() as usize;
 
         let mut flock: libc::flock = unsafe {
             mem::zeroed() // required for Linux/mips
@@ -428,7 +428,7 @@ mod linux_android {
             // skip the test.
             skip!("/proc/locks does not work on overlayfs");
         }
-        let inode = fstat(fd).expect("fstat failed").st_ino as usize;
+        let inode = fstat(fd).expect("fstat failed").ino() as usize;
 
         let mut flock: libc::flock = unsafe {
             mem::zeroed() // required for Linux/mips
