@@ -11,9 +11,6 @@ env:
   # The MSRV
   TOOLCHAIN: 1.46.0
   ZFLAGS:
-  # Temporarily disable cargo-hack until we raise the MSRV to 1.51.0 or later.
-  # See https://github.com/nix-rust/nix/pull/1792
-  NOHACK: 1
 
 # Tests that don't require executing the build binaries
 build: &BUILD
@@ -24,7 +21,8 @@ build: &BUILD
     - $TOOL +$TOOLCHAIN $BUILD $ZFLAGS --target $TARGET --all-targets
     - $TOOL +$TOOLCHAIN doc $ZFLAGS --no-deps --target $TARGET
     - $TOOL +$TOOLCHAIN clippy $ZFLAGS --target $TARGET --all-targets -- -D warnings
-    - if [ -z "$NOHACK" ]; then $TOOL +$TOOLCHAIN install --version 0.5.14 cargo-hack; fi
+    - if [ -z "$NOHACK" ]; then mkdir -p $HOME/.cargo/bin; export PATH=$HOME/.cargo/bin:$PATH; fi
+    - if [ -z "$NOHACK" ]; then curl -LsSf https://github.com/taiki-e/cargo-hack/releases/latest/download/cargo-hack-${HOST:-$TARGET}.tar.gz | tar xzf - -C ~/.cargo/bin; fi
     - if [ -z "$NOHACK" ]; then $TOOL +$TOOLCHAIN hack $ZFLAGS check --target $TARGET --each-feature; fi
 
 # Tests that do require executing the binaries
@@ -92,6 +90,7 @@ task:
   env:
     RUST_TEST_THREADS: 1            # QEMU works best with 1 thread
     HOME: /tmp/home
+    HOST: x86_64-unknown-linux-gnu
     PATH: $HOME/.cargo/bin:$PATH
     RUSTFLAGS: --cfg qemu -D warnings
     TOOL: cross
@@ -187,6 +186,7 @@ task:
     image: rust:1.46
   env:
     BUILD: check
+    HOST: x86_64-unknown-linux-gnu
   matrix:
     # Cross claims to support Android, but when it tries to run Nix's tests it
     # reports undefined symbol references.
@@ -276,6 +276,7 @@ task:
     BUILD: check
   name: Redox x86_64
   env:
+    HOST: x86_64-unknown-linux-gnu
     TARGET: x86_64-unknown-redox
     # Redox's MSRV policy is unclear.  Until they define it, use nightly.
     TOOLCHAIN: nightly
@@ -292,6 +293,7 @@ task:
     image: rustlang/rust:nightly
   env:
     BUILD: check
+    HOST: x86_64-unknown-linux-gnu
     TOOLCHAIN: nightly
     ZFLAGS: -Zbuild-std
   matrix:
@@ -318,6 +320,7 @@ task:
 task:
   name: Minver
   env:
+    HOST: x86_64-unknown-linux-gnu
     TOOLCHAIN: nightly
   container:
     image: rustlang/rust:nightly
