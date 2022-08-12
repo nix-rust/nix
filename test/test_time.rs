@@ -29,18 +29,18 @@ pub fn test_clock_gettime() {
 #[test]
 pub fn test_clock_getcpuclockid() {
     let clock_id = clock_getcpuclockid(nix::unistd::Pid::this()).unwrap();
-    clock_gettime(clock_id).expect("assert failed");
+    clock_gettime(clock_id).unwrap();
 }
 
 #[cfg(not(target_os = "redox"))]
 #[test]
 pub fn test_clock_id_res() {
-    ClockId::CLOCK_REALTIME.res().expect("assert failed");
+    ClockId::CLOCK_REALTIME.res().unwrap();
 }
 
 #[test]
 pub fn test_clock_id_now() {
-    ClockId::CLOCK_REALTIME.now().expect("assert failed");
+    ClockId::CLOCK_REALTIME.now().unwrap();
 }
 
 #[cfg(any(
@@ -54,6 +54,6 @@ pub fn test_clock_id_now() {
 pub fn test_clock_id_pid_cpu_clock_id() {
     ClockId::pid_cpu_clock_id(nix::unistd::Pid::this())
         .map(ClockId::now)
-        .expect("assert failed")
-        .expect("assert failed");
+        .unwrap()
+        .unwrap();
 }

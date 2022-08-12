@@ -22,7 +22,7 @@ fn test_tcgetattr_pty() {
     let _m = crate::PTSNAME_MTX.lock();
 
     let pty = openpty(None, None).expect("openpty failed");
-    termios::tcgetattr(pty.slave).expect("assert failed");
+    termios::tcgetattr(pty.slave).unwrap();
     close(pty.master).expect("closing the master failed");
     close(pty.slave).expect("closing the slave failed");
 }
