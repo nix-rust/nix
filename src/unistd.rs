@@ -2937,7 +2937,7 @@ feature! {
 pub struct User {
     /// Username
     pub name: String,
-    /// User password (probably encrypted)
+    /// User password (probably hashed)
     pub passwd: CString,
     /// User ID
     pub uid: Uid,
