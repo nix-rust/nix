@@ -20,3 +20,18 @@ fn test_pthread_kill_none() {
     pthread_kill(pthread_self(), None)
         .expect("Should be able to send signal to my thread.");
 }
+
+#[test]
+#[cfg(all(
+    any(target_os = "linux", target_os = "android"),
+    target_env = "gnu"
+))]
+fn test_pthread_sigqueue_none() {
+    use std::ptr::null_mut;
+    pthread_sigqueue(pthread_self(), None, SigVal::Int(0)).expect(
+        "Should be able to send signal to my thread, with an integer sigval.",
+    );
+    pthread_sigqueue(pthread_self(), None, SigVal::Ptr(null_mut())).expect(
+        "Should be able to send signal to my thread, with an ptr sigval.",
+    );
+}
