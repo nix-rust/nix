@@ -77,6 +77,8 @@ pub use crate::sys::socket::addr::netlink::NetlinkAddr;
 pub use crate::sys::socket::addr::alg::AlgAddr;
 #[cfg(any(target_os = "android", target_os = "linux"))]
 pub use crate::sys::socket::addr::vsock::VsockAddr;
+#[cfg(any(target_os = "macos", target_os = "ios"))]
+pub use crate::sys::socket::addr::network_driver::NetworkDriverAddr;
 
 #[cfg(feature = "uio")]
 pub use libc::{cmsghdr, msghdr};
