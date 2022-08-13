@@ -2,7 +2,7 @@
 name        = "nix"
 description = "Rust friendly bindings to *nix APIs"
 edition     = "2018"
-version     = "0.25.0"
+version     = "0.25.1-alpha.0"
 rust-version = "1.46"
 authors     = ["The nix-rust Project Developers"]
 repository  = "https://github.com/nix-rust/nix"
