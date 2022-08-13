@@ -10,7 +10,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   ([#1780](https://github.com/nix-rust/nix/pull/1780))
 - Added `memfd` on Android.
   (#[1773](https://github.com/nix-rust/nix/pull/1773))
-- Added ETH_P_ALL to SockProtocol enum
+- Added `ETH_P_ALL` to `SockProtocol` enum
   (#[1768](https://github.com/nix-rust/nix/pull/1768))
 - Added four non-standard Linux `SysconfVar` variants
   (#[1761](https://github.com/nix-rust/nix/pull/1761))
@@ -22,10 +22,9 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1713](https://github.com/nix-rust/nix/pull/1713))
 - impl `From<uid_t>` for `Uid` and `From<gid_t>` for `Gid`
   (#[1727](https://github.com/nix-rust/nix/pull/1727))
-- impl From<SockaddrIn> for std::net::SocketAddrV4 and
-  impl From<SockaddrIn6> for std::net::SocketAddrV6.
+- impl `From<SockaddrIn>` for `std::net::SocketAddrV4` and
+  impl `From<SockaddrIn6>` for `std::net::SocketAddrV6`.
   (#[1711](https://github.com/nix-rust/nix/pull/1711))
-- Fixed compilation and updated support on Haiku
 - Added support for the `x86_64-unknown-haiku` target.
   (#[1703](https://github.com/nix-rust/nix/pull/1703))
 - Added `ptrace::read_user` and `ptrace::write_user` for Linux.
@@ -36,11 +35,11 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1752](https://github.com/nix-rust/nix/pull/1752))
 - Added `signal::SigSet::from_sigset_t_unchecked()`.
   (#[1741](https://github.com/nix-rust/nix/pull/1741))
-- Added IP_ORIGDSTADDR using Ipv4OrigDstAddr in setsockopt and recvmsg.
+- Added the `Ipv4OrigDstAddr` sockopt and control message.
   (#[1772](https://github.com/nix-rust/nix/pull/1772))
-- Added IPV6_ORIGDSTADDR using Ipv6OrigDstAddr in setsockopt and recvmsg.
+- Added the `Ipv6OrigDstAddr` sockopt and control message.
   (#[1772](https://github.com/nix-rust/nix/pull/1772))
-- Added `IP_SENDSRCADDR` using `Ipv4SendSrcAddr` in `sendmsg`.
+- Added the `Ipv4SendSrcAddr` control message.
   (#[1776](https://github.com/nix-rust/nix/pull/1776))
 
 ### Changed
@@ -58,7 +57,6 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - `signal:SigSet` is now marked as `repr(transparent)`.
   (#[1741](https://github.com/nix-rust/nix/pull/1741))
 
-### Fixed
 ### Removed
 
 - Removed support for resubmitting partially complete `lio_listio` operations.
@@ -67,11 +65,9 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1713](https://github.com/nix-rust/nix/pull/1713))
 
 ## [0.24.2] - 2022-07-17
-### Added
-### Changed
 ### Fixed
 
-- Fixed buffer overflow in nix::sys::socket::recvfrom.
+- Fixed buffer overflow in `nix::sys::socket::recvfrom`.
   (#[1763](https://github.com/nix-rust/nix/pull/1763))
 - Enabled `SockaddrStorage::{as_link_addr, as_link_addr_mut}` for Linux-like
   operating systems.
@@ -81,14 +77,10 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1736](https://github.com/nix-rust/nix/pull/1736))
 
 ## [0.24.1] - 2022-04-22
-### Added
-### Changed
 ### Fixed
 
 - Fixed `UnixAddr::size` on Linux-based OSes.
   (#[1702](https://github.com/nix-rust/nix/pull/1702))
-
-### Removed
 
 ## [0.24.0] - 2022-04-21
 ### Added
@@ -199,7 +191,6 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [0.23.1] - 2021-12-16
 
-### Added
 ### Changed
 
 - Relaxed the bitflags requirement from 1.3.1 to 1.1.  This partially reverts
