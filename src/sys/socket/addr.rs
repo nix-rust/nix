@@ -1605,7 +1605,7 @@ impl SockaddrLike for SockaddrStorage {
                 libc::AF_VSOCK => {
                     VsockAddr::from_raw(addr, l).map(|vsock| Self { vsock })
                 }
-                #[cfg(any(target_os = "macos", target_os = "android"))]
+                #[cfg(any(target_os = "macos", target_os = "ios"))]
                 libc::AF_NDRV => NetworkDriverAddr::from_raw(addr, l)
                     .map(|network_driver| Self { network_driver }),
                 _ => None,
@@ -2873,8 +2873,8 @@ pub mod network_driver {
     use crate::sys::socket::addr::private::SockaddrLikePriv;
     use crate::sys::socket::SockaddrLike;
     use libc::{sockaddr, socklen_t};
-    use std::ffi::{CStr, CString};
     use std::mem;
+    use std::str;
 
     /// Network driver address
     #[repr(transparent)]
@@ -2886,28 +2886,27 @@ pub mod network_driver {
         ///
         /// Returns `None` on cases where the length of `name` is 0 or greater
         /// than 15 (maximum length)
-        pub fn new(name: &CStr) -> Option<Self> {
-            let name_len: usize = name.to_bytes().len();
+        pub fn new(name: &str) -> Option<Self> {
+            let name_len: usize = name.len();
             if name_len > 15 || name_len == 0 {
                 return None;
             }
             let mut addr: libc::sockaddr_ndrv = unsafe { mem::zeroed() };
             addr.snd_len = mem::size_of::<libc::sockaddr_ndrv>() as u8;
             addr.snd_family = libc::AF_NDRV as u8;
-            addr.snd_name[..name_len].clone_from_slice(name.to_bytes());
+            addr.snd_name[..name_len].clone_from_slice(name.as_bytes());
 
             Some(Self(addr))
         }
 
         /// Returns the `snd_name` field
-        pub fn name(&self) -> CString {
+        pub fn name(&self) -> String {
             // name length, NUL excluded
             let name_len: usize = (0..15)
                 .find(|idx: &usize| self.0.snd_name[*idx] == 0)
                 .expect("NUL not found");
 
-            CString::from_vec_with_nul(self.0.snd_name[..name_len + 1].to_vec())
-                .unwrap()
+            str::from_utf8(&self.0.snd_name[..name_len]).unwrap().to_owned()
         }
     }
 
