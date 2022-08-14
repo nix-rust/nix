@@ -57,5 +57,5 @@ pub fn test_timerfd_unset() {
 
     timer.unset().unwrap();
 
-    assert!(timer.get().unwrap() == None);
+    assert!(timer.get().unwrap().is_none());
 }
