@@ -442,6 +442,8 @@ impl AddressFamily {
             libc::AF_LINK => Some(AddressFamily::Link),
             #[cfg(any(target_os = "android", target_os = "linux"))]
             libc::AF_VSOCK => Some(AddressFamily::Vsock),
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
+            libc::AF_NDRV => Some(AddressFamily::Ndrv),
             _ => None,
         }
     }
@@ -1604,9 +1606,8 @@ impl SockaddrLike for SockaddrStorage {
                     VsockAddr::from_raw(addr, l).map(|vsock| Self { vsock })
                 }
                 #[cfg(any(target_os = "macos", target_os = "android"))]
-                libc::AF_NDRV => {
-                    NetworkDriverAddr::from_raw(addr, l).map(|network_driver| Self { network_driver })
-                }
+                libc::AF_NDRV => NetworkDriverAddr::from_raw(addr, l)
+                    .map(|network_driver| Self { network_driver }),
                 _ => None,
             }
         }
@@ -2884,7 +2885,7 @@ pub mod network_driver {
         /// Creates a new NetworkDriverAddr
         ///
         /// Returns `None` on cases where the length of `name` is 0 or greater
-        /// than 15
+        /// than 15 (maximum length)
         pub fn new(name: &CStr) -> Option<Self> {
             let name_len: usize = name.to_bytes().len();
             if name_len > 15 || name_len == 0 {
