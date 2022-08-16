@@ -9,7 +9,7 @@ env:
   RUSTDOCFLAGS: -D warnings
   TOOL: cargo
   # The MSRV
-  TOOLCHAIN: 1.46.0
+  TOOLCHAIN: 1.56.1
   ZFLAGS:
 
 # Tests that don't require executing the build binaries
@@ -94,9 +94,6 @@ task:
     PATH: $HOME/.cargo/bin:$PATH
     RUSTFLAGS: --cfg qemu -D warnings
     TOOL: cross
-    # Cross needs at least 1.51.0 after Serde accidentally raised its MSRV.
-    # And Clippy has too many false positives from 1.51.0 through 1.53.0
-    TOOLCHAIN: 1.54.0
   matrix:
     - name: Linux arm gnueabi
       env:
@@ -146,18 +143,18 @@ task:
   matrix:
     - name: Linux aarch64
       arm_container:
-        image: rust:1.46
+        image: rust:1.56
       env:
         RUSTFLAGS: --cfg graviton -D warnings
         TARGET: aarch64-unknown-linux-gnu
     - name: Linux x86_64
       container:
-        image: rust:1.46
+        image: rust:1.56
       env:
         TARGET: x86_64-unknown-linux-gnu
     - name: Linux x86_64 musl
       container:
-        image: rust:1.46
+        image: rust:1.56
       env:
         TARGET: x86_64-unknown-linux-musl
   setup_script:
@@ -183,7 +180,7 @@ task:
 # Tasks for cross-compiling, but no testing
 task:
   container:
-    image: rust:1.46
+    image: rust:1.56
   env:
     BUILD: check
     HOST: x86_64-unknown-linux-gnu
@@ -214,10 +211,6 @@ task:
     - name: Illumos
       env:
         TARGET: x86_64-unknown-illumos
-        # illumos toolchain isn't available via rustup until 1.50
-        TOOLCHAIN: 1.50.0
-      container:
-        image: rust:1.50
     # Cross claims to support running tests on iOS, but it actually doesn't.
     # https://github.com/rust-embedded/cross/issues/535
     - name: iOS aarch64
@@ -225,16 +218,11 @@ task:
         # cargo hack tries to invoke the iphonesimulator SDK for iOS
         NOHACK: 1
         TARGET: aarch64-apple-ios
-        # Rustup only supports cross-building from arbitrary hosts for iOS at
-        # 1.49.0 and above.  Below that it's possible to cross-build from a macOS
-        # host, but macOS VMs are more expensive than Linux VMs.
-        TOOLCHAIN: 1.49.0
     - name: iOS x86_64
       env:
         # cargo hack tries to invoke the iphonesimulator SDK for iOS
         NOHACK: 1
         TARGET: x86_64-apple-ios
-        TOOLCHAIN: 1.49.0
     # Cross testing on powerpc fails with "undefined reference to renameat2".
     # Perhaps cross is using too-old a version?
     - name: Linux powerpc
@@ -254,10 +242,6 @@ task:
     - name: macOS aarch64
       env:
         TARGET: aarch64-apple-darwin
-        # macOS aarch64 toolchain isn't available via rustup until 1.49
-        TOOLCHAIN: 1.49.0
-      container:
-        image: rust:1.49
     - name: NetBSD x86_64
       env:
         TARGET: x86_64-unknown-netbsd
@@ -271,7 +255,7 @@ task:
 
 task:
   container:
-    image: rust:1.46
+    image: rust:1.56
   env:
     BUILD: check
   name: Redox x86_64

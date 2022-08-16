@@ -8,6 +8,9 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- The MSRV is now 1.56.1
+  ([#1792](https://github.com/nix-rust/nix/pull/1792))
+
 ### Fixed
 
 ### Removed
