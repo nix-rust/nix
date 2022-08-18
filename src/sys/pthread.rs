@@ -50,7 +50,14 @@ pub enum SigVal {
 }
 
 // Because of macro/trait machinery in libc, libc doesn't provide this union.
-// Only used to ensure that union type conversion is done exactly as C would.
+// There already is a sigval in libc and is defined as a struct. That struct
+// has PartialEq/Hash/Debug etc implemented, and has done so for a long time.
+// There's no practical way to implement PartialEq/Hash/Debug for a union b/c
+// that would lead to hashing/equality checking/printing uninitialized memory.
+// So changing the current struct to a union is a breaking change, because of
+// the removal of the union trait implementations.
+// So we have to have this definition which is nly used to ensure that union
+// type conversion is done exactly as C would.
 #[repr(C)]
 union sigval_union {
     ptr: *mut libc::c_void,
