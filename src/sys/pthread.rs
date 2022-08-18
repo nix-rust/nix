@@ -1,6 +1,5 @@
 //! Low level threading primitives
 
-
 #[cfg(not(target_os = "redox"))]
 use crate::errno::Errno;
 #[cfg(not(target_os = "redox"))]
