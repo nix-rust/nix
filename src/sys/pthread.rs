@@ -81,7 +81,7 @@ impl From<SigVal> for libc::sigval {
 /// `pthread_sigqueue` is a GNU extension and is not available on other libcs
 ///
 /// [`pthread_sigqueue(3)`]: https://man7.org/linux/man-pages/man3/pthread_sigqueue.3.html
-#[cfg(all(any(target_os = "linux", target_os = "android"), target_env = "gnu"))]
+#[cfg(target_env = "gnu")]
 pub fn pthread_sigqueue<T>(thread: Pthread, signal: T, sigval: SigVal) -> Result<()>
     where T: Into<Option<crate::sys::signal::Signal>>
 {

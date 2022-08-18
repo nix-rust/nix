@@ -22,10 +22,7 @@ fn test_pthread_kill_none() {
 }
 
 #[test]
-#[cfg(all(
-    any(target_os = "linux", target_os = "android"),
-    target_env = "gnu"
-))]
+#[cfg(target_env = "gnu")]
 fn test_pthread_sigqueue_none() {
     use std::ptr::null_mut;
     pthread_sigqueue(pthread_self(), None, SigVal::Int(0)).expect(
