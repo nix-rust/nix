@@ -12,6 +12,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 - Workaround XNU bug causing netmasks returned by `getifaddrs` to misbehave.
   ([#1788](https://github.com/nix-rust/nix/pull/1788))
+- Fix microsecond calculation for `TimeSpec`.
+  ([#1801](https://github.com/nix-rust/nix/pull/1801))
 
 ### Removed
 
