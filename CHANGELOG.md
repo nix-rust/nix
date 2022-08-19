@@ -12,6 +12,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 - `InetAddr::from_std` now sets the `sin_len`/`sin6_len` fields on the BSDs.
   (#[1642](https://github.com/nix-rust/nix/pull/1642))
+- Fix microsecond calculation for `TimeSpec`.
+  ([#1801](https://github.com/nix-rust/nix/pull/1801))
 
 ### Removed
 
