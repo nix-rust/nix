@@ -13,6 +13,9 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- Fix microsecond calculation for `TimeSpec`.
+  ([#1801](https://github.com/nix-rust/nix/pull/1801))
+
 ### Removed
 
 ## [0.25.0] - 2022-08-13
