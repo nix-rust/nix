@@ -167,7 +167,7 @@ impl TimeValLike for TimeSpec {
     }
 
     fn num_microseconds(&self) -> i64 {
-        self.num_nanoseconds() / 1_000_000_000
+        self.num_nanoseconds() / 1_000
     }
 
     fn num_nanoseconds(&self) -> i64 {
