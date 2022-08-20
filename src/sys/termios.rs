@@ -181,6 +181,15 @@ pub struct Termios {
     pub local_flags: LocalFlags,
     /// Control characters (see `termios.c_cc` documentation)
     pub control_chars: [libc::cc_t; NCCS],
+    /// Line discipline (see `termios.c_line` documentation)
+    #[cfg(any(
+        target_os = "linux",
+        target_os = "android",
+    ))]
+    pub line_discipline: libc::cc_t,
+    /// Line discipline (see `termios.c_line` documentation)
+    #[cfg(target_os = "haiku")]
+    pub line_discipline: libc::c_char,
 }
 
 impl Termios {
@@ -196,6 +205,14 @@ impl Termios {
             termios.c_cflag = self.control_flags.bits();
             termios.c_lflag = self.local_flags.bits();
             termios.c_cc = self.control_chars;
+            #[cfg(any(
+                target_os = "linux",
+                target_os = "android",
+                target_os = "haiku",
+            ))]
+            {
+                termios.c_line = self.line_discipline;
+            }
         }
         self.inner.borrow()
     }
@@ -214,6 +231,14 @@ impl Termios {
             termios.c_cflag = self.control_flags.bits();
             termios.c_lflag = self.local_flags.bits();
             termios.c_cc = self.control_chars;
+            #[cfg(any(
+                target_os = "linux",
+                target_os = "android",
+                target_os = "haiku",
+            ))]
+            {
+                termios.c_line = self.line_discipline;
+            }
         }
         self.inner.as_ptr()
     }
@@ -226,6 +251,14 @@ impl Termios {
         self.control_flags = ControlFlags::from_bits_truncate(termios.c_cflag);
         self.local_flags = LocalFlags::from_bits_truncate(termios.c_lflag);
         self.control_chars = termios.c_cc;
+        #[cfg(any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "haiku",
+        ))]
+        {
+            self.line_discipline = termios.c_line;
+        }
     }
 }
 
@@ -238,6 +271,12 @@ impl From<libc::termios> for Termios {
             control_flags: ControlFlags::from_bits_truncate(termios.c_cflag),
             local_flags: LocalFlags::from_bits_truncate(termios.c_lflag),
             control_chars: termios.c_cc,
+            #[cfg(any(
+                target_os = "linux",
+                target_os = "android",
+                target_os = "haiku",
+            ))]
+            line_discipline: termios.c_line,
         }
     }
 }
