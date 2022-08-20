@@ -6,26 +6,22 @@ use std::os::raw;
 use std::os::unix::ffi::OsStringExt;
 use std::os::unix::io::RawFd;
 
+#[cfg(feature = "fs")]
+use crate::{sys::stat::Mode, NixPath, Result};
 #[cfg(any(target_os = "android", target_os = "linux"))]
 use std::ptr; // For splice and copy_file_range
-#[cfg(feature = "fs")]
-use crate::{
-    NixPath,
-    Result,
-    sys::stat::Mode
-};
 
 #[cfg(any(
     target_os = "linux",
     target_os = "android",
     target_os = "emscripten",
     target_os = "fuchsia",
-    any(target_os = "wasi", target_env = "wasi"),
+    target_os = "wasi",
     target_env = "uclibc",
     target_os = "freebsd"
 ))]
 #[cfg(feature = "fs")]
-pub use self::posix_fadvise::{PosixFadviseAdvice, posix_fadvise};
+pub use self::posix_fadvise::{posix_fadvise, PosixFadviseAdvice};
 
 #[cfg(not(target_os = "redox"))]
 #[cfg(any(feature = "fs", feature = "process"))]
@@ -58,7 +54,7 @@ libc_bitflags!(
         /// Open the file in append-only mode.
         O_APPEND;
         /// Generate a signal when input or output becomes possible.
-        #[cfg(not(any(target_os = "illumos", target_os = "solaris")))]
+        #[cfg(not(any(target_os = "illumos", target_os = "solaris", target_os = "haiku")))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
         O_ASYNC;
         /// Closes the file descriptor once an `execve` call is made.
@@ -128,7 +124,7 @@ libc_bitflags!(
         #[cfg_attr(docsrs, doc(cfg(all())))]
         O_NOCTTY;
         /// Same as `O_NONBLOCK`.
-        #[cfg(not(target_os = "redox"))]
+        #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
         O_NDELAY;
         /// `open()` will fail if the given path is a symbolic link.
@@ -241,10 +237,7 @@ pub fn renameat<P1: ?Sized + NixPath, P2: ?Sized + NixPath>(
 }
 }
 
-#[cfg(all(
-    target_os = "linux",
-    target_env = "gnu",
-))]
+#[cfg(all(target_os = "linux", target_env = "gnu",))]
 #[cfg(feature = "fs")]
 libc_bitflags! {
     #[cfg_attr(docsrs, doc(cfg(feature = "fs")))]
@@ -385,7 +378,7 @@ pub(crate) fn at_rawfd(fd: Option<RawFd>) -> raw::c_int {
 }
 }
 
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(any(target_os = "android", target_os = "linux", target_os = "freebsd"))]
 #[cfg(feature = "fs")]
 libc_bitflags!(
     /// Additional flags for file sealing, which allows for limiting operations on a file.
@@ -434,9 +427,9 @@ pub enum FcntlArg<'a> {
     F_OFD_SETLKW(&'a libc::flock),
     #[cfg(any(target_os = "linux", target_os = "android"))]
     F_OFD_GETLK(&'a mut libc::flock),
-    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(any(target_os = "android", target_os = "linux", target_os = "freebsd"))]
     F_ADD_SEALS(SealFlag),
-    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(any(target_os = "android", target_os = "linux", target_os = "freebsd"))]
     F_GET_SEALS,
     #[cfg(any(target_os = "macos", target_os = "ios"))]
     F_FULLFSYNC,
@@ -482,9 +475,9 @@ pub fn fcntl(fd: RawFd, arg: FcntlArg) -> Result<c_int> {
             F_OFD_SETLKW(flock) => libc::fcntl(fd, libc::F_OFD_SETLKW, flock),
             #[cfg(any(target_os = "android", target_os = "linux"))]
             F_OFD_GETLK(flock) => libc::fcntl(fd, libc::F_OFD_GETLK, flock),
-            #[cfg(any(target_os = "android", target_os = "linux"))]
+            #[cfg(any(target_os = "android", target_os = "linux", target_os = "freebsd"))]
             F_ADD_SEALS(flag) => libc::fcntl(fd, libc::F_ADD_SEALS, flag.bits()),
-            #[cfg(any(target_os = "android", target_os = "linux"))]
+            #[cfg(any(target_os = "android", target_os = "linux", target_os = "freebsd"))]
             F_GET_SEALS => libc::fcntl(fd, libc::F_GET_SEALS),
             #[cfg(any(target_os = "macos", target_os = "ios"))]
             F_FULLFSYNC => libc::fcntl(fd, libc::F_FULLFSYNC),
@@ -742,8 +735,8 @@ impl SpacectlRange {
 ///
 /// # Example
 ///
-// no_run because it fails to link until FreeBSD 14.0
-/// ```no_run
+#[cfg_attr(fbsd14, doc = " ```")]
+#[cfg_attr(not(fbsd14), doc = " ```no_run")]
 /// # use std::io::Write;
 /// # use std::os::unix::fs::FileExt;
 /// # use std::os::unix::io::AsRawFd;
@@ -788,8 +781,8 @@ pub fn fspacectl(fd: RawFd, range: SpacectlRange) -> Result<SpacectlRange> {
 ///
 /// # Example
 ///
-// no_run because it fails to link until FreeBSD 14.0
-/// ```no_run
+#[cfg_attr(fbsd14, doc = " ```")]
+#[cfg_attr(not(fbsd14), doc = " ```no_run")]
 /// # use std::io::Write;
 /// # use std::os::unix::fs::FileExt;
 /// # use std::os::unix::io::AsRawFd;
@@ -828,7 +821,7 @@ pub fn fspacectl_all(fd: RawFd, offset: libc::off_t, len: libc::off_t)
     target_os = "android",
     target_os = "emscripten",
     target_os = "fuchsia",
-    any(target_os = "wasi", target_env = "wasi"),
+    target_os = "wasi",
     target_env = "uclibc",
     target_os = "freebsd"
 ))]
@@ -877,7 +870,7 @@ mod posix_fadvise {
     target_os = "dragonfly",
     target_os = "emscripten",
     target_os = "fuchsia",
-    any(target_os = "wasi", target_env = "wasi"),
+    target_os = "wasi",
     target_os = "freebsd"
 ))]
 pub fn posix_fallocate(fd: RawFd, offset: libc::off_t, len: libc::off_t) -> Result<()> {

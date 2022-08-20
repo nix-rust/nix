@@ -38,7 +38,7 @@ pub use self::addr::{
     UnixAddr,
 };
 #[allow(deprecated)]
-#[cfg(not(any(target_os = "illumos", target_os = "solaris")))]
+#[cfg(not(any(target_os = "illumos", target_os = "solaris", target_os = "haiku")))]
 #[cfg(feature = "net")]
 pub use self::addr::{
     InetAddr,
@@ -57,7 +57,7 @@ pub use self::addr::{
     UnixAddr,
 };
 #[allow(deprecated)]
-#[cfg(any(target_os = "illumos", target_os = "solaris"))]
+#[cfg(any(target_os = "illumos", target_os = "solaris", target_os = "haiku"))]
 #[cfg(feature = "net")]
 pub use self::addr::{
     InetAddr,
@@ -118,6 +118,7 @@ pub enum SockType {
     Raw = libc::SOCK_RAW,
     /// Provides a reliable datagram layer that does not
     /// guarantee ordering.
+    #[cfg(not(any(target_os = "haiku")))]
     Rdm = libc::SOCK_RDM,
 }
 
@@ -213,6 +214,13 @@ pub enum SockProtocol {
     #[cfg(any(target_os = "android", target_os = "linux"))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     NetlinkCrypto = libc::NETLINK_CRYPTO,
+    /// Non-DIX type protocol number defined for the Ethernet IEEE 802.3 interface that allows packets of all protocols
+    /// defined in the interface to be received.
+    /// ([ref](https://man7.org/linux/man-pages/man7/packet.7.html))
+    // The protocol number is fed into the socket syscall in network byte order.
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
+    EthAll = libc::ETH_P_ALL.to_be(),
 }
 
 #[cfg(any(target_os = "linux"))]
@@ -669,7 +677,7 @@ pub enum ControlMessageOwned {
     ///     None).unwrap();
     /// setsockopt(in_socket, sockopt::ReceiveTimestamp, &true).unwrap();
     /// let localhost = SockaddrIn::from_str("127.0.0.1:0").unwrap();
-    /// bind(in_socket, &localhost);
+    /// bind(in_socket, &localhost).unwrap();
     /// let address: SockaddrIn = getsockname(in_socket).unwrap();
     /// // Get initial time
     /// let time0 = SystemTime::now();
@@ -756,6 +764,14 @@ pub enum ControlMessageOwned {
     #[cfg(feature = "net")]
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv4RecvDstAddr(libc::in_addr),
+    #[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
+    #[cfg(feature = "net")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
+    Ipv4OrigDstAddr(libc::sockaddr_in),
+    #[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
+    #[cfg(feature = "net")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
+    Ipv6OrigDstAddr(libc::sockaddr_in6),
 
     /// UDP Generic Receive Offload (GRO) allows receiving multiple UDP
     /// packets from a single sender.
@@ -845,6 +861,7 @@ impl ControlMessageOwned {
                 let cred: libc::cmsgcred = ptr::read_unaligned(p as *const _);
                 ControlMessageOwned::ScmCreds(cred.into())
             }
+            #[cfg(not(target_os = "haiku"))]
             (libc::SOL_SOCKET, libc::SCM_TIMESTAMP) => {
                 let tv: libc::timeval = ptr::read_unaligned(p as *const _);
                 ControlMessageOwned::ScmTimestamp(TimeVal::from(tv))
@@ -914,6 +931,12 @@ impl ControlMessageOwned {
                 let dl = ptr::read_unaligned(p as *const libc::in_addr);
                 ControlMessageOwned::Ipv4RecvDstAddr(dl)
             },
+            #[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
+            #[cfg(feature = "net")]
+            (libc::IPPROTO_IP, libc::IP_ORIGDSTADDR) => {
+                let dl = ptr::read_unaligned(p as *const libc::sockaddr_in);
+                ControlMessageOwned::Ipv4OrigDstAddr(dl)
+            },
             #[cfg(target_os = "linux")]
             #[cfg(feature = "net")]
             (libc::SOL_UDP, libc::UDP_GRO) => {
@@ -937,6 +960,12 @@ impl ControlMessageOwned {
                 let (err, addr) = Self::recv_err_helper::<sockaddr_in6>(p, len);
                 ControlMessageOwned::Ipv6RecvErr(err, addr)
             },
+            #[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
+            #[cfg(feature = "net")]
+            (libc::IPPROTO_IPV6, libc::IPV6_ORIGDSTADDR) => {
+                let dl = ptr::read_unaligned(p as *const libc::sockaddr_in6);
+                ControlMessageOwned::Ipv6OrigDstAddr(dl)
+            },
             (_, _) => {
                 let sl = slice::from_raw_parts(p, len);
                 let ucmsg = UnknownCmsg(*header, Vec::<u8>::from(sl));
@@ -947,6 +976,7 @@ impl ControlMessageOwned {
 
     #[cfg(any(target_os = "android", target_os = "linux"))]
     #[cfg(feature = "net")]
+    #[allow(clippy::cast_ptr_alignment)]    // False positive
     unsafe fn recv_err_helper<T>(p: *mut libc::c_uchar, len: usize) -> (libc::sock_extended_err, Option<T>) {
         let ee = p as *const libc::sock_extended_err;
         let err = ptr::read_unaligned(ee);
@@ -1087,6 +1117,17 @@ pub enum ControlMessage<'a> {
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv6PacketInfo(&'a libc::in6_pktinfo),
 
+    /// Configure the IPv4 source address with `IP_SENDSRCADDR`.
+    #[cfg(any(
+        target_os = "netbsd",
+        target_os = "freebsd",
+        target_os = "openbsd",
+        target_os = "dragonfly",
+    ))]
+    #[cfg(feature = "net")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
+    Ipv4SendSrcAddr(&'a libc::in_addr),
+
     /// SO_RXQ_OVFL indicates that an unsigned 32 bit value
     /// ancilliary msg (cmsg) should be attached to recieved
     /// skbs indicating the number of packets dropped by the
@@ -1196,6 +1237,10 @@ impl<'a> ControlMessage<'a> {
                       target_os = "android", target_os = "ios",))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv6PacketInfo(info) => info as *const _ as *const u8,
+            #[cfg(any(target_os = "netbsd", target_os = "freebsd",
+                      target_os = "openbsd", target_os = "dragonfly"))]
+            #[cfg(feature = "net")]
+            ControlMessage::Ipv4SendSrcAddr(addr) => addr as *const _ as *const u8,
             #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
             ControlMessage::RxqOvfl(drop_count) => {
                 drop_count as *const _ as *const u8
@@ -1255,6 +1300,10 @@ impl<'a> ControlMessage<'a> {
               target_os = "android", target_os = "ios",))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv6PacketInfo(info) => mem::size_of_val(info),
+            #[cfg(any(target_os = "netbsd", target_os = "freebsd",
+                      target_os = "openbsd", target_os = "dragonfly"))]
+            #[cfg(feature = "net")]
+            ControlMessage::Ipv4SendSrcAddr(addr) => mem::size_of_val(addr),
             #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
             ControlMessage::RxqOvfl(drop_count) => {
                 mem::size_of_val(drop_count)
@@ -1290,6 +1339,10 @@ impl<'a> ControlMessage<'a> {
               target_os = "android", target_os = "ios",))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv6PacketInfo(_) => libc::IPPROTO_IPV6,
+            #[cfg(any(target_os = "netbsd", target_os = "freebsd",
+                      target_os = "openbsd", target_os = "dragonfly"))]
+            #[cfg(feature = "net")]
+            ControlMessage::Ipv4SendSrcAddr(_) => libc::IPPROTO_IP,
             #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
             ControlMessage::RxqOvfl(_) => libc::SOL_SOCKET,
             #[cfg(target_os = "linux")]
@@ -1332,6 +1385,10 @@ impl<'a> ControlMessage<'a> {
                       target_os = "android", target_os = "ios",))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv6PacketInfo(_) => libc::IPV6_PKTINFO,
+            #[cfg(any(target_os = "netbsd", target_os = "freebsd",
+                      target_os = "openbsd", target_os = "dragonfly"))]
+            #[cfg(feature = "net")]
+            ControlMessage::Ipv4SendSrcAddr(_) => libc::IP_SENDSRCADDR,
             #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
             ControlMessage::RxqOvfl(_) => {
                 libc::SO_RXQ_OVFL
@@ -1910,8 +1967,8 @@ pub fn recvfrom<T:SockaddrLike>(sockfd: RawFd, buf: &mut [u8])
     -> Result<(usize, Option<T>)>
 {
     unsafe {
-        let mut addr = mem::MaybeUninit::uninit();
-        let mut len = mem::size_of::<T>() as socklen_t;
+        let mut addr = mem::MaybeUninit::<T>::uninit();
+        let mut len = mem::size_of_val(&addr) as socklen_t;
 
         let ret = Errno::result(libc::recvfrom(
             sockfd,
@@ -1921,7 +1978,10 @@ pub fn recvfrom<T:SockaddrLike>(sockfd: RawFd, buf: &mut [u8])
             addr.as_mut_ptr() as *mut libc::sockaddr,
             &mut len as *mut socklen_t))? as usize;
 
-        Ok((ret, T::from_raw(&addr.assume_init(), Some(len))))
+        Ok((ret, T::from_raw(
+            addr.assume_init().as_ptr() as *const libc::sockaddr,
+            Some(len))
+        ))
     }
 }
 

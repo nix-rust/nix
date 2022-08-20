@@ -39,23 +39,29 @@ use crate::sys::stat::Mode;
 use std::mem;
 
 libc_bitflags!{
+    /// Used with [`mq_open`].
     pub struct MQ_OFlag: libc::c_int {
+        /// Open the message queue for receiving messages.
         O_RDONLY;
+        /// Open the queue for sending messages.
         O_WRONLY;
+        /// Open the queue for both receiving and sending messages
         O_RDWR;
+        /// Create a message queue.
         O_CREAT;
+        /// If set along with `O_CREAT`, `mq_open` will fail if the message
+        /// queue name exists.
         O_EXCL;
+        /// `mq_send` and `mq_receive` should fail with `EAGAIN` rather than
+        /// wait for resources that are not currently available.
         O_NONBLOCK;
+        /// Set the close-on-exec flag for the message queue descriptor.
         O_CLOEXEC;
     }
 }
 
-libc_bitflags!{
-    pub struct FdFlag: libc::c_int {
-        FD_CLOEXEC;
-    }
-}
-
+/// A message-queue attribute, optionally used with [`mq_setattr`] and
+/// [`mq_getattr`] and optionally [`mq_open`],
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct MqAttr {
@@ -72,14 +78,24 @@ pub struct MqdT(mqd_t);
 
 // x32 compatibility
 // See https://sourceware.org/bugzilla/show_bug.cgi?id=21279
+/// Size of a message queue attribute member
 #[cfg(all(target_arch = "x86_64", target_pointer_width = "32"))]
 #[cfg_attr(docsrs, doc(cfg(all())))]
 pub type mq_attr_member_t = i64;
+/// Size of a message queue attribute member
 #[cfg(not(all(target_arch = "x86_64", target_pointer_width = "32")))]
 #[cfg_attr(docsrs, doc(cfg(all())))]
 pub type mq_attr_member_t = libc::c_long;
 
 impl MqAttr {
+    /// Create a new message queue attribute
+    ///
+    /// # Arguments
+    ///
+    /// - `mq_flags`:   Either `0` or `O_NONBLOCK`.
+    /// - `mq_maxmsg`:  Maximum number of messages on the queue.
+    /// - `mq_msgsize`: Maximum message size in bytes.
+    /// - `mq_curmsgs`: Number of messages currently in the queue.
     pub fn new(mq_flags: mq_attr_member_t,
                mq_maxmsg: mq_attr_member_t,
                mq_msgsize: mq_attr_member_t,
@@ -97,6 +113,7 @@ impl MqAttr {
         }
     }
 
+    /// The current flags, either `0` or `O_NONBLOCK`.
     pub const fn flags(&self) -> mq_attr_member_t {
         self.mq_attr.mq_flags
     }

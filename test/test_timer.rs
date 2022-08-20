@@ -1,5 +1,6 @@
 use nix::sys::signal::{
-    sigaction, SaFlags, SigAction, SigEvent, SigHandler, SigSet, SigevNotify, Signal,
+    sigaction, SaFlags, SigAction, SigEvent, SigHandler, SigSet, SigevNotify,
+    Signal,
 };
 use nix::sys::timer::{Expiration, Timer, TimerSetTimeFlags};
 use nix::time::ClockId;
@@ -32,9 +33,12 @@ fn alarm_fires() {
     // Create a handler for the test signal, `SIG`. The handler is responsible
     // for flipping `ALARM_CALLED`.
     let handler = SigHandler::Handler(handle_sigalarm);
-    let signal_action = SigAction::new(handler, SaFlags::SA_RESTART, SigSet::empty());
-    let old_handler =
-        unsafe { sigaction(SIG, &signal_action).expect("unable to set signal handler for alarm") };
+    let signal_action =
+        SigAction::new(handler, SaFlags::SA_RESTART, SigSet::empty());
+    let old_handler = unsafe {
+        sigaction(SIG, &signal_action)
+            .expect("unable to set signal handler for alarm")
+    };
 
     // Create the timer. We use the monotonic clock here, though any would do
     // really. The timer is set to fire every 250 milliseconds with no delay for
@@ -44,7 +48,8 @@ fn alarm_fires() {
         signal: SIG,
         si_value: 0,
     });
-    let mut timer = Timer::new(clockid, sigevent).expect("failed to create timer");
+    let mut timer =
+        Timer::new(clockid, sigevent).expect("failed to create timer");
     let expiration = Expiration::Interval(TIMER_PERIOD.into());
     let flags = TimerSetTimeFlags::empty();
     timer.set(expiration, flags).expect("could not set timer");
@@ -60,12 +65,10 @@ fn alarm_fires() {
     // represents a delay to the next expiration. We're only interested in the
     // timer still being extant.
     match timer.get() {
-        Ok(Some(exp)) => {
-            assert!(matches!(
-                exp,
-                Expiration::Interval(..) | Expiration::IntervalDelayed(..)
-            ))
-        }
+        Ok(Some(exp)) => assert!(matches!(
+            exp,
+            Expiration::Interval(..) | Expiration::IntervalDelayed(..)
+        )),
         _ => panic!("timer lost its expiration"),
     }
 

@@ -6,6 +6,97 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased] - ReleaseDate
 ### Added
 
+### Changed
+
+- The MSRV is now 1.56.1
+  ([#1792](https://github.com/nix-rust/nix/pull/1792))
+
+### Fixed
+
+### Removed
+
+## [0.25.0] - 2022-08-13
+### Added
+
+- Added `faccessat`
+  ([#1780](https://github.com/nix-rust/nix/pull/1780))
+- Added `memfd` on Android.
+  (#[1773](https://github.com/nix-rust/nix/pull/1773))
+- Added `ETH_P_ALL` to `SockProtocol` enum
+  (#[1768](https://github.com/nix-rust/nix/pull/1768))
+- Added four non-standard Linux `SysconfVar` variants
+  (#[1761](https://github.com/nix-rust/nix/pull/1761))
+- Added const constructors for `TimeSpec` and `TimeVal`
+  (#[1760](https://github.com/nix-rust/nix/pull/1760))
+- Added `chflags`.
+  (#[1758](https://github.com/nix-rust/nix/pull/1758))
+- Added `aio_writev` and `aio_readv`.
+  (#[1713](https://github.com/nix-rust/nix/pull/1713))
+- impl `From<uid_t>` for `Uid` and `From<gid_t>` for `Gid`
+  (#[1727](https://github.com/nix-rust/nix/pull/1727))
+- impl `From<SockaddrIn>` for `std::net::SocketAddrV4` and
+  impl `From<SockaddrIn6>` for `std::net::SocketAddrV6`.
+  (#[1711](https://github.com/nix-rust/nix/pull/1711))
+- Added support for the `x86_64-unknown-haiku` target.
+  (#[1703](https://github.com/nix-rust/nix/pull/1703))
+- Added `ptrace::read_user` and `ptrace::write_user` for Linux.
+  (#[1697](https://github.com/nix-rust/nix/pull/1697))
+- Added `getrusage` and helper types `UsageWho` and `Usage`
+  (#[1747](https://github.com/nix-rust/nix/pull/1747))
+- Added the `DontRoute` SockOpt
+  (#[1752](https://github.com/nix-rust/nix/pull/1752))
+- Added `signal::SigSet::from_sigset_t_unchecked()`.
+  (#[1741](https://github.com/nix-rust/nix/pull/1741))
+- Added the `Ipv4OrigDstAddr` sockopt and control message.
+  (#[1772](https://github.com/nix-rust/nix/pull/1772))
+- Added the `Ipv6OrigDstAddr` sockopt and control message.
+  (#[1772](https://github.com/nix-rust/nix/pull/1772))
+- Added the `Ipv4SendSrcAddr` control message.
+  (#[1776](https://github.com/nix-rust/nix/pull/1776))
+
+### Changed
+
+- Rewrote the aio module.  The new module:
+  * Does more type checking at compile time rather than runtime.
+  * Gives the caller control over whether and when to `Box` an aio operation.
+  * Changes the type of the `priority` arguments to `i32`.
+  * Changes the return type of `aio_return` to `usize`.
+  (#[1713](https://github.com/nix-rust/nix/pull/1713))
+- `nix::poll::ppoll`: `sigmask` parameter is now optional.
+  (#[1739](https://github.com/nix-rust/nix/pull/1739))
+- Changed `gethostname` to return an owned `OsString`.
+  (#[1745](https://github.com/nix-rust/nix/pull/1745))
+- `signal:SigSet` is now marked as `repr(transparent)`.
+  (#[1741](https://github.com/nix-rust/nix/pull/1741))
+
+### Removed
+
+- Removed support for resubmitting partially complete `lio_listio` operations.
+  It was too complicated, and didn't fit Nix's theme of zero-cost abstractions.
+  Instead, it can be reimplemented downstream.
+  (#[1713](https://github.com/nix-rust/nix/pull/1713))
+
+## [0.24.2] - 2022-07-17
+### Fixed
+
+- Fixed buffer overflow in `nix::sys::socket::recvfrom`.
+  (#[1763](https://github.com/nix-rust/nix/pull/1763))
+- Enabled `SockaddrStorage::{as_link_addr, as_link_addr_mut}` for Linux-like
+  operating systems.
+  (#[1729](https://github.com/nix-rust/nix/pull/1729))
+- Fixed `SockaddrLike::from_raw` implementations for `VsockAddr` and
+  `SysControlAddr`.
+  (#[1736](https://github.com/nix-rust/nix/pull/1736))
+
+## [0.24.1] - 2022-04-22
+### Fixed
+
+- Fixed `UnixAddr::size` on Linux-based OSes.
+  (#[1702](https://github.com/nix-rust/nix/pull/1702))
+
+## [0.24.0] - 2022-04-21
+### Added
+
 - Added fine-grained features flags.  Most Nix functionality can now be
   conditionally enabled.  By default, all features are enabled.
   (#[1611](https://github.com/nix-rust/nix/pull/1611))
@@ -112,7 +203,6 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [0.23.1] - 2021-12-16
 
-### Added
 ### Changed
 
 - Relaxed the bitflags requirement from 1.3.1 to 1.1.  This partially reverts

@@ -3,13 +3,17 @@
 // the AIO subsystem and causes subsequent tests to fail
 #[test]
 #[should_panic(expected = "Dropped an in-progress AioCb")]
-#[cfg(all(not(target_env = "musl"),
-          not(target_env = "uclibc"),
-          any(target_os = "linux",
-              target_os = "ios",
-              target_os = "macos",
-              target_os = "freebsd",
-              target_os = "netbsd")))]
+#[cfg(all(
+    not(target_env = "musl"),
+    not(target_env = "uclibc"),
+    any(
+        target_os = "linux",
+        target_os = "ios",
+        target_os = "macos",
+        target_os = "freebsd",
+        target_os = "netbsd"
+    )
+))]
 fn test_drop() {
     use nix::sys::aio::*;
     use nix::sys::signal::*;
@@ -20,11 +24,12 @@ fn test_drop() {
 
     let f = tempfile().unwrap();
     f.set_len(6).unwrap();
-    let mut aiocb = AioCb::from_slice( f.as_raw_fd(),
-                           2,   //offset
-                           WBUF,
-                           0,   //priority
-                           SigevNotify::SigevNone,
-                           LioOpcode::LIO_NOP);
-    aiocb.write().unwrap();
+    let mut aiocb = Box::pin(AioWrite::new(
+        f.as_raw_fd(),
+        2, //offset
+        WBUF,
+        0, //priority
+        SigevNotify::SigevNone,
+    ));
+    aiocb.as_mut().submit().unwrap();
 }

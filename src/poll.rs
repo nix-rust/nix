@@ -151,20 +151,24 @@ feature! {
 /// `ppoll` behaves like `poll`, but let you specify what signals may interrupt it
 /// with the `sigmask` argument. If you want `ppoll` to block indefinitely,
 /// specify `None` as `timeout` (it is like `timeout = -1` for `poll`).
+/// If `sigmask` is `None`, then no signal mask manipulation is performed,
+/// so in that case `ppoll` differs from `poll` only in the precision of the
+/// timeout argument.
 ///
 #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd", target_os = "linux"))]
 pub fn ppoll(
     fds: &mut [PollFd],
     timeout: Option<crate::sys::time::TimeSpec>,
-    sigmask: crate::sys::signal::SigSet
+    sigmask: Option<crate::sys::signal::SigSet>
     ) -> Result<libc::c_int>
 {
     let timeout = timeout.as_ref().map_or(core::ptr::null(), |r| r.as_ref());
+    let sigmask = sigmask.as_ref().map_or(core::ptr::null(), |r| r.as_ref());
     let res = unsafe {
         libc::ppoll(fds.as_mut_ptr() as *mut libc::pollfd,
                     fds.len() as libc::nfds_t,
                     timeout,
-                    sigmask.as_ref())
+                    sigmask)
     };
     Errno::result(res)
 }

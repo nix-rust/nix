@@ -566,3 +566,24 @@ fn ptrace_set_iovec_data<T>(
         .map(drop)
     }
 }
+
+/// Reads a word from a user area at `offset`.
+/// The user struct definition can be found in `/usr/include/sys/user.h`.
+pub fn read_user(pid: Pid, offset: AddressType) -> Result<c_long> {
+    ptrace_peek(Request::PTRACE_PEEKUSER, pid, offset, ptr::null_mut())
+}
+
+/// Writes a word to a user area at `offset`.
+/// The user struct definition can be found in `/usr/include/sys/user.h`.
+///
+/// # Safety
+///
+/// The `data` argument is passed directly to `ptrace(2)`.  Read that man page
+/// for guidance.
+pub unsafe fn write_user(
+    pid: Pid,
+    offset: AddressType,
+    data: *mut c_void) -> Result<()>
+{
+    ptrace_other(Request::PTRACE_POKEUSER, pid, offset, data).map(drop)
+}

@@ -1,22 +1,27 @@
-use rand::{thread_rng, Rng};
-use nix::sys::socket::{socket, sockopt, getsockopt, setsockopt, AddressFamily, SockType, SockFlag, SockProtocol};
 #[cfg(any(target_os = "android", target_os = "linux"))]
 use crate::*;
+use nix::sys::socket::{
+    getsockopt, setsockopt, socket, sockopt, AddressFamily, SockFlag,
+    SockProtocol, SockType,
+};
+use rand::{thread_rng, Rng};
 
 // NB: FreeBSD supports LOCAL_PEERCRED for SOCK_SEQPACKET, but OSX does not.
-#[cfg(any(
-        target_os = "dragonfly",
-        target_os = "freebsd",
-))]
+#[cfg(any(target_os = "dragonfly", target_os = "freebsd",))]
 #[test]
 pub fn test_local_peercred_seqpacket() {
     use nix::{
+        sys::socket::socketpair,
         unistd::{Gid, Uid},
-        sys::socket::socketpair
     };
 
-    let (fd1, _fd2) = socketpair(AddressFamily::Unix, SockType::SeqPacket, None,
-                                SockFlag::empty()).unwrap();
+    let (fd1, _fd2) = socketpair(
+        AddressFamily::Unix,
+        SockType::SeqPacket,
+        None,
+        SockFlag::empty(),
+    )
+    .unwrap();
     let xucred = getsockopt(fd1, sockopt::LocalPeerCred).unwrap();
     assert_eq!(xucred.version(), 0);
     assert_eq!(Uid::from_raw(xucred.uid()), Uid::current());
@@ -24,20 +29,25 @@ pub fn test_local_peercred_seqpacket() {
 }
 
 #[cfg(any(
-        target_os = "dragonfly",
-        target_os = "freebsd",
-        target_os = "macos",
-        target_os = "ios"
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "macos",
+    target_os = "ios"
 ))]
 #[test]
 pub fn test_local_peercred_stream() {
     use nix::{
+        sys::socket::socketpair,
         unistd::{Gid, Uid},
-        sys::socket::socketpair
     };
 
-    let (fd1, _fd2) = socketpair(AddressFamily::Unix, SockType::Stream, None,
-                                SockFlag::empty()).unwrap();
+    let (fd1, _fd2) = socketpair(
+        AddressFamily::Unix,
+        SockType::Stream,
+        None,
+        SockFlag::empty(),
+    )
+    .unwrap();
     let xucred = getsockopt(fd1, sockopt::LocalPeerCred).unwrap();
     assert_eq!(xucred.version(), 0);
     assert_eq!(Uid::from_raw(xucred.uid()), Uid::current());
@@ -51,7 +61,13 @@ fn is_so_mark_functional() {
 
     require_capability!("is_so_mark_functional", CAP_NET_ADMIN);
 
-    let s = socket(AddressFamily::Inet, SockType::Stream, SockFlag::empty(), None).unwrap();
+    let s = socket(
+        AddressFamily::Inet,
+        SockType::Stream,
+        SockFlag::empty(),
+        None,
+    )
+    .unwrap();
     setsockopt(s, sockopt::Mark, &1337).unwrap();
     let mark = getsockopt(s, sockopt::Mark).unwrap();
     assert_eq!(mark, 1337);
@@ -59,8 +75,13 @@ fn is_so_mark_functional() {
 
 #[test]
 fn test_so_buf() {
-    let fd = socket(AddressFamily::Inet, SockType::Datagram, SockFlag::empty(), SockProtocol::Udp)
-             .unwrap();
+    let fd = socket(
+        AddressFamily::Inet,
+        SockType::Datagram,
+        SockFlag::empty(),
+        SockProtocol::Udp,
+    )
+    .unwrap();
     let bufsize: usize = thread_rng().gen_range(4096..131_072);
     setsockopt(fd, sockopt::SndBuf, &bufsize).unwrap();
     let actual = getsockopt(fd, sockopt::SndBuf).unwrap();
@@ -72,16 +93,21 @@ fn test_so_buf() {
 
 #[test]
 fn test_so_tcp_maxseg() {
-    use std::net::SocketAddrV4;
-    use std::str::FromStr;
     use nix::sys::socket::{accept, bind, connect, listen, SockaddrIn};
     use nix::unistd::{close, write};
+    use std::net::SocketAddrV4;
+    use std::str::FromStr;
 
     let std_sa = SocketAddrV4::from_str("127.0.0.1:4001").unwrap();
     let sock_addr = SockaddrIn::from(std_sa);
 
-    let rsock = socket(AddressFamily::Inet, SockType::Stream, SockFlag::empty(), SockProtocol::Tcp)
-                .unwrap();
+    let rsock = socket(
+        AddressFamily::Inet,
+        SockType::Stream,
+        SockFlag::empty(),
+        SockProtocol::Tcp,
+    )
+    .unwrap();
     bind(rsock, &sock_addr).unwrap();
     listen(rsock, 10).unwrap();
     let initial = getsockopt(rsock, sockopt::TcpMaxSeg).unwrap();
@@ -99,8 +125,13 @@ fn test_so_tcp_maxseg() {
     }
 
     // Connect and check the MSS that was advertised
-    let ssock = socket(AddressFamily::Inet, SockType::Stream, SockFlag::empty(), SockProtocol::Tcp)
-                .unwrap();
+    let ssock = socket(
+        AddressFamily::Inet,
+        SockType::Stream,
+        SockFlag::empty(),
+        SockProtocol::Tcp,
+    )
+    .unwrap();
     connect(ssock, &sock_addr).unwrap();
     let rsess = accept(rsock).unwrap();
     write(rsess, b"hello").unwrap();
@@ -132,17 +163,25 @@ fn test_so_tcp_maxseg() {
 fn test_tcp_congestion() {
     use std::ffi::OsString;
 
-    let fd = socket(AddressFamily::Inet, SockType::Stream, SockFlag::empty(), None).unwrap();
+    let fd = socket(
+        AddressFamily::Inet,
+        SockType::Stream,
+        SockFlag::empty(),
+        None,
+    )
+    .unwrap();
 
     let val = getsockopt(fd, sockopt::TcpCongestion).unwrap();
     setsockopt(fd, sockopt::TcpCongestion, &val).unwrap();
 
-    setsockopt(fd, sockopt::TcpCongestion, &OsString::from("tcp_congestion_does_not_exist")).unwrap_err();
+    setsockopt(
+        fd,
+        sockopt::TcpCongestion,
+        &OsString::from("tcp_congestion_does_not_exist"),
+    )
+    .unwrap_err();
 
-    assert_eq!(
-        getsockopt(fd, sockopt::TcpCongestion).unwrap(),
-        val
-    );
+    assert_eq!(getsockopt(fd, sockopt::TcpCongestion).unwrap(), val);
 }
 
 #[test]
@@ -150,28 +189,39 @@ fn test_tcp_congestion() {
 fn test_bindtodevice() {
     skip_if_not_root!("test_bindtodevice");
 
-    let fd = socket(AddressFamily::Inet, SockType::Stream, SockFlag::empty(), None).unwrap();
+    let fd = socket(
+        AddressFamily::Inet,
+        SockType::Stream,
+        SockFlag::empty(),
+        None,
+    )
+    .unwrap();
 
     let val = getsockopt(fd, sockopt::BindToDevice).unwrap();
     setsockopt(fd, sockopt::BindToDevice, &val).unwrap();
 
-    assert_eq!(
-        getsockopt(fd, sockopt::BindToDevice).unwrap(),
-        val
-    );
+    assert_eq!(getsockopt(fd, sockopt::BindToDevice).unwrap(), val);
 }
 
 #[test]
 fn test_so_tcp_keepalive() {
-    let fd = socket(AddressFamily::Inet, SockType::Stream, SockFlag::empty(), SockProtocol::Tcp).unwrap();
+    let fd = socket(
+        AddressFamily::Inet,
+        SockType::Stream,
+        SockFlag::empty(),
+        SockProtocol::Tcp,
+    )
+    .unwrap();
     setsockopt(fd, sockopt::KeepAlive, &true).unwrap();
     assert!(getsockopt(fd, sockopt::KeepAlive).unwrap());
 
-    #[cfg(any(target_os = "android",
-              target_os = "dragonfly",
-              target_os = "freebsd",
-              target_os = "linux",
-              target_os = "nacl"))] {
+    #[cfg(any(
+        target_os = "android",
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "linux"
+    ))]
+    {
         let x = getsockopt(fd, sockopt::TcpKeepIdle).unwrap();
         setsockopt(fd, sockopt::TcpKeepIdle, &(x + 1)).unwrap();
         assert_eq!(getsockopt(fd, sockopt::TcpKeepIdle).unwrap(), x + 1);
@@ -189,10 +239,22 @@ fn test_so_tcp_keepalive() {
 #[test]
 #[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
 fn test_ttl_opts() {
-    let fd4 = socket(AddressFamily::Inet, SockType::Datagram, SockFlag::empty(), None).unwrap();
+    let fd4 = socket(
+        AddressFamily::Inet,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )
+    .unwrap();
     setsockopt(fd4, sockopt::Ipv4Ttl, &1)
         .expect("setting ipv4ttl on an inet socket should succeed");
-    let fd6 = socket(AddressFamily::Inet6, SockType::Datagram, SockFlag::empty(), None).unwrap();
+    let fd6 = socket(
+        AddressFamily::Inet6,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )
+    .unwrap();
     setsockopt(fd6, sockopt::Ipv6Ttl, &1)
         .expect("setting ipv6ttl on an inet6 socket should succeed");
 }
@@ -200,38 +262,68 @@ fn test_ttl_opts() {
 #[test]
 #[cfg(any(target_os = "ios", target_os = "macos"))]
 fn test_dontfrag_opts() {
-    let fd4 = socket(AddressFamily::Inet, SockType::Stream, SockFlag::empty(), SockProtocol::Tcp).unwrap();
+    let fd4 = socket(
+        AddressFamily::Inet,
+        SockType::Stream,
+        SockFlag::empty(),
+        SockProtocol::Tcp,
+    )
+    .unwrap();
     setsockopt(fd4, sockopt::IpDontFrag, &true)
         .expect("setting IP_DONTFRAG on an inet stream socket should succeed");
-    setsockopt(fd4, sockopt::IpDontFrag, &false)
-        .expect("unsetting IP_DONTFRAG on an inet stream socket should succeed");
-    let fd4d = socket(AddressFamily::Inet, SockType::Datagram, SockFlag::empty(), None).unwrap();
-    setsockopt(fd4d, sockopt::IpDontFrag, &true)
-        .expect("setting IP_DONTFRAG on an inet datagram socket should succeed");
-    setsockopt(fd4d, sockopt::IpDontFrag, &false)
-        .expect("unsetting IP_DONTFRAG on an inet datagram socket should succeed");
+    setsockopt(fd4, sockopt::IpDontFrag, &false).expect(
+        "unsetting IP_DONTFRAG on an inet stream socket should succeed",
+    );
+    let fd4d = socket(
+        AddressFamily::Inet,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )
+    .unwrap();
+    setsockopt(fd4d, sockopt::IpDontFrag, &true).expect(
+        "setting IP_DONTFRAG on an inet datagram socket should succeed",
+    );
+    setsockopt(fd4d, sockopt::IpDontFrag, &false).expect(
+        "unsetting IP_DONTFRAG on an inet datagram socket should succeed",
+    );
 }
 
 #[test]
 #[cfg(any(
-        target_os = "android",
-        target_os = "ios",
-        target_os = "linux",
-        target_os = "macos",
-    )
-)]
+    target_os = "android",
+    target_os = "ios",
+    target_os = "linux",
+    target_os = "macos",
+))]
 // Disable the test under emulation because it fails in Cirrus-CI.  Lack
 // of QEMU support is suspected.
 #[cfg_attr(qemu, ignore)]
 fn test_v6dontfrag_opts() {
-    let fd6 = socket(AddressFamily::Inet6, SockType::Stream, SockFlag::empty(), SockProtocol::Tcp).unwrap();
-    setsockopt(fd6, sockopt::Ipv6DontFrag, &true)
-        .expect("setting IPV6_DONTFRAG on an inet6 stream socket should succeed");
-    setsockopt(fd6, sockopt::Ipv6DontFrag, &false)
-        .expect("unsetting IPV6_DONTFRAG on an inet6 stream socket should succeed");
-    let fd6d = socket(AddressFamily::Inet6, SockType::Datagram, SockFlag::empty(), None).unwrap();
-    setsockopt(fd6d, sockopt::Ipv6DontFrag, &true)
-        .expect("setting IPV6_DONTFRAG on an inet6 datagram socket should succeed");
-    setsockopt(fd6d, sockopt::Ipv6DontFrag, &false)
-        .expect("unsetting IPV6_DONTFRAG on an inet6 datagram socket should succeed");
+    let fd6 = socket(
+        AddressFamily::Inet6,
+        SockType::Stream,
+        SockFlag::empty(),
+        SockProtocol::Tcp,
+    )
+    .unwrap();
+    setsockopt(fd6, sockopt::Ipv6DontFrag, &true).expect(
+        "setting IPV6_DONTFRAG on an inet6 stream socket should succeed",
+    );
+    setsockopt(fd6, sockopt::Ipv6DontFrag, &false).expect(
+        "unsetting IPV6_DONTFRAG on an inet6 stream socket should succeed",
+    );
+    let fd6d = socket(
+        AddressFamily::Inet6,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )
+    .unwrap();
+    setsockopt(fd6d, sockopt::Ipv6DontFrag, &true).expect(
+        "setting IPV6_DONTFRAG on an inet6 datagram socket should succeed",
+    );
+    setsockopt(fd6d, sockopt::Ipv6DontFrag, &false).expect(
+        "unsetting IPV6_DONTFRAG on an inet6 datagram socket should succeed",
+    );
 }

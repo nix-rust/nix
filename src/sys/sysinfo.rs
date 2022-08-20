@@ -1,9 +1,9 @@
 use libc::{self, SI_LOAD_SHIFT};
-use std::{cmp, mem};
 use std::time::Duration;
+use std::{cmp, mem};
 
-use crate::Result;
 use crate::errno::Errno;
+use crate::Result;
 
 /// System info structure returned by `sysinfo`.
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
@@ -75,5 +75,5 @@ impl SysInfo {
 pub fn sysinfo() -> Result<SysInfo> {
     let mut info = mem::MaybeUninit::uninit();
     let res = unsafe { libc::sysinfo(info.as_mut_ptr()) };
-    Errno::result(res).map(|_| unsafe{ SysInfo(info.assume_init()) })
+    Errno::result(res).map(|_| unsafe { SysInfo(info.assume_init()) })
 }

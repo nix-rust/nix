@@ -1,6 +1,7 @@
 use cfg_if::cfg_if;
 
-#[macro_export] macro_rules! skip {
+#[macro_export]
+macro_rules! skip {
     ($($reason: expr),+) => {
         use ::std::io::{self, Write};
 
@@ -33,42 +34,49 @@ cfg_if! {
 
 /// Skip the test if we don't have the ability to mount file systems.
 #[cfg(target_os = "freebsd")]
-#[macro_export] macro_rules! require_mount {
+#[macro_export]
+macro_rules! require_mount {
     ($name:expr) => {
-        use ::sysctl::CtlValue;
+        use ::sysctl::{CtlValue, Sysctl};
         use nix::unistd::Uid;
 
-        if !Uid::current().is_root() && CtlValue::Int(0) == ::sysctl::value("vfs.usermount").unwrap()
+        let ctl = ::sysctl::Ctl::new("vfs.usermount").unwrap();
+        if !Uid::current().is_root() && CtlValue::Int(0) == ctl.value().unwrap()
         {
-            skip!("{} requires the ability to mount file systems. Skipping test.", $name);
+            skip!(
+                "{} requires the ability to mount file systems. Skipping test.",
+                $name
+            );
         }
-    }
+    };
 }
 
-#[cfg(any(target_os = "linux", target_os= "android"))]
-#[macro_export] macro_rules! skip_if_cirrus {
+#[cfg(any(target_os = "linux", target_os = "android"))]
+#[macro_export]
+macro_rules! skip_if_cirrus {
     ($reason:expr) => {
         if std::env::var_os("CIRRUS_CI").is_some() {
             skip!("{}", $reason);
         }
-    }
+    };
 }
 
 #[cfg(target_os = "freebsd")]
-#[macro_export] macro_rules! skip_if_jailed {
+#[macro_export]
+macro_rules! skip_if_jailed {
     ($name:expr) => {
-        use ::sysctl::CtlValue;
+        use ::sysctl::{CtlValue, Sysctl};
 
-        if let CtlValue::Int(1) = ::sysctl::value("security.jail.jailed")
-            .unwrap()
-        {
+        let ctl = ::sysctl::Ctl::new("security.jail.jailed").unwrap();
+        if let CtlValue::Int(1) = ctl.value().unwrap() {
             skip!("{} cannot run in a jail. Skipping test.", $name);
         }
-    }
+    };
 }
 
 #[cfg(not(any(target_os = "redox", target_os = "fuchsia")))]
-#[macro_export] macro_rules! skip_if_not_root {
+#[macro_export]
+macro_rules! skip_if_not_root {
     ($name:expr) => {
         use nix::unistd::Uid;
 

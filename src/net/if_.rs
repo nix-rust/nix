@@ -28,6 +28,7 @@ libc_bitflags!(
         IFF_BROADCAST;
         /// Internal debugging flag. (see
         /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
+        #[cfg(not(target_os = "haiku"))]
         IFF_DEBUG;
         /// Interface is a loopback interface. (see
         /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
@@ -102,8 +103,7 @@ libc_bitflags!(
                   target_os = "freebsd",
                   target_os = "macos",
                   target_os = "netbsd",
-                  target_os = "openbsd",
-                  target_os = "osx"))]
+                  target_os = "openbsd"))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
         IFF_SIMPLEX;
         /// Supports multicast. (see

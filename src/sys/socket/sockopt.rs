@@ -129,6 +129,9 @@ macro_rules! getsockopt_impl {
 /// * `$ty:ty`: type of the value that will be get/set.
 /// * `$getter:ty`: `Get` implementation; optional; only for `GetOnly` and `Both`.
 /// * `$setter:ty`: `Set` implementation; optional; only for `SetOnly` and `Both`.
+// Some targets don't use all rules.
+#[allow(unknown_lints)]
+#[allow(unused_macro_rules)]
 macro_rules! sockopt_impl {
     ($(#[$attr:meta])* $name:ident, GetOnly, $level:expr, $flag:path, bool) => {
         sockopt_impl!($(#[$attr])*
@@ -350,6 +353,9 @@ sockopt_impl!(
     /// Get and clear the pending socket error.
     SocketError, GetOnly, libc::SOL_SOCKET, libc::SO_ERROR, i32);
 sockopt_impl!(
+    /// Set or get the don't route flag.
+    DontRoute, Both, libc::SOL_SOCKET, libc::SO_DONTROUTE, bool);
+sockopt_impl!(
     /// Enable sending of keep-alive messages on connection-oriented sockets.
     KeepAlive, Both, libc::SOL_SOCKET, libc::SO_KEEPALIVE, bool);
 #[cfg(any(
@@ -377,8 +383,7 @@ sockopt_impl!(
 #[cfg(any(target_os = "android",
           target_os = "dragonfly",
           target_os = "freebsd",
-          target_os = "linux",
-          target_os = "nacl"))]
+          target_os = "linux"))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -396,7 +401,7 @@ cfg_if! {
             TcpMaxSeg, GetOnly, libc::IPPROTO_TCP, libc::TCP_MAXSEG, u32);
     }
 }
-#[cfg(not(target_os = "openbsd"))]
+#[cfg(not(any(target_os = "openbsd", target_os = "haiku")))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -410,7 +415,7 @@ sockopt_impl!(
     #[allow(missing_docs)]
     // Not documented by Linux!
     TcpRepair, Both, libc::IPPROTO_TCP, libc::TCP_REPAIR, u32);
-#[cfg(not(target_os = "openbsd"))]
+#[cfg(not(any(target_os = "openbsd", target_os = "haiku")))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -470,6 +475,7 @@ sockopt_impl!(
     /// Specifies exact type of timestamping information collected by the kernel
     /// [Further reading](https://www.kernel.org/doc/html/latest/networking/timestamping.html)
     Timestamping, Both, libc::SOL_SOCKET, libc::SO_TIMESTAMPING, super::TimestampingFlag);
+#[cfg(not(target_os = "haiku"))]
 sockopt_impl!(
     /// Enable or disable the receiving of the `SO_TIMESTAMP` control message.
     ReceiveTimestamp, Both, libc::SOL_SOCKET, libc::SO_TIMESTAMP, bool);
@@ -568,6 +574,13 @@ sockopt_impl!(
     /// The `recvmsg(2)` call will return the destination IP address for a UDP
     /// datagram.
     Ipv4RecvDstAddr, Both, libc::IPPROTO_IP, libc::IP_RECVDSTADDR, bool);
+#[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
+#[cfg(feature = "net")]
+sockopt_impl!(
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
+    /// The `recvmsg(2)` call will return the destination IP address for a UDP
+    /// datagram.
+    Ipv4OrigDstAddr, Both, libc::IPPROTO_IP, libc::IP_ORIGDSTADDR, bool);
 #[cfg(target_os = "linux")]
 #[cfg(feature = "net")]
 sockopt_impl!(
@@ -615,6 +628,13 @@ sockopt_impl!(
 sockopt_impl!(
     /// Set the unicast hop limit for the socket.
     Ipv6Ttl, Both, libc::IPPROTO_IPV6, libc::IPV6_UNICAST_HOPS, libc::c_int);
+#[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
+#[cfg(feature = "net")]
+sockopt_impl!(
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
+    /// The `recvmsg(2)` call will return the destination IP address for a UDP
+    /// datagram.
+    Ipv6OrigDstAddr, Both, libc::IPPROTO_IPV6, libc::IPV6_ORIGDSTADDR, bool);
 #[cfg(any(target_os = "ios", target_os = "macos"))]
 sockopt_impl!(
     /// Set "don't fragment packet" flag on the IP packet.
@@ -962,7 +982,7 @@ mod test {
         let a_cred = getsockopt(a, super::PeerCredentials).unwrap();
         let b_cred = getsockopt(b, super::PeerCredentials).unwrap();
         assert_eq!(a_cred, b_cred);
-        assert!(a_cred.pid() != 0);
+        assert_ne!(a_cred.pid(), 0);
     }
 
     #[test]
@@ -989,8 +1009,7 @@ mod test {
     }
 
     #[cfg(any(target_os = "freebsd",
-              target_os = "linux",
-              target_os = "nacl"))]
+              target_os = "linux"))]
     #[test]
     fn can_get_listen_on_tcp_socket() {
         use super::super::*;

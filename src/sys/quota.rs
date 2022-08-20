@@ -6,11 +6,11 @@
 //!
 //! ```rust,no_run
 //! # use nix::sys::quota::{Dqblk, quotactl_on, quotactl_set, QuotaFmt, QuotaType, QuotaValidFlags};
-//! quotactl_on(QuotaType::USRQUOTA, "/dev/sda1", QuotaFmt::QFMT_VFS_V1, "aquota.user");
+//! quotactl_on(QuotaType::USRQUOTA, "/dev/sda1", QuotaFmt::QFMT_VFS_V1, "aquota.user").unwrap();
 //! let mut dqblk: Dqblk = Default::default();
 //! dqblk.set_blocks_hard_limit(10000);
 //! dqblk.set_blocks_soft_limit(8000);
-//! quotactl_set(QuotaType::USRQUOTA, "/dev/sda1", 50, &dqblk, QuotaValidFlags::QIF_BLIMITS);
+//! quotactl_set(QuotaType::USRQUOTA, "/dev/sda1", 50, &dqblk, QuotaValidFlags::QIF_BLIMITS).unwrap();
 //! ```
 use std::default::Default;
 use std::{mem, ptr};

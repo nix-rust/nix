@@ -9,17 +9,20 @@ env:
   RUSTDOCFLAGS: -D warnings
   TOOL: cargo
   # The MSRV
-  TOOLCHAIN: 1.46.0
+  TOOLCHAIN: 1.56.1
   ZFLAGS:
 
 # Tests that don't require executing the build binaries
 build: &BUILD
   build_script:
     - . $HOME/.cargo/env || true
+    - $TOOL +$TOOLCHAIN -Vv
+    - rustc +$TOOLCHAIN -Vv
     - $TOOL +$TOOLCHAIN $BUILD $ZFLAGS --target $TARGET --all-targets
     - $TOOL +$TOOLCHAIN doc $ZFLAGS --no-deps --target $TARGET
-    - $TOOL +$TOOLCHAIN clippy $ZFLAGS --target $TARGET -- -D warnings
-    - if [ -z "$NOHACK" ]; then $TOOL +$TOOLCHAIN install cargo-hack; fi
+    - $TOOL +$TOOLCHAIN clippy $ZFLAGS --target $TARGET --all-targets -- -D warnings
+    - if [ -z "$NOHACK" ]; then mkdir -p $HOME/.cargo/bin; export PATH=$HOME/.cargo/bin:$PATH; fi
+    - if [ -z "$NOHACK" ]; then curl -LsSf https://github.com/taiki-e/cargo-hack/releases/latest/download/cargo-hack-${HOST:-$TARGET}.tar.gz | tar xzf - -C ~/.cargo/bin; fi
     - if [ -z "$NOHACK" ]; then $TOOL +$TOOLCHAIN hack $ZFLAGS check --target $TARGET --each-feature; fi
 
 # Tests that do require executing the binaries
@@ -34,11 +37,18 @@ test: &TEST
 # 64-bit kernel and in a 64-bit environment.  Our tests don't execute any of
 # the system's binaries, so the environment shouldn't matter.
 task:
-  name: FreeBSD amd64 & i686
   env:
     TARGET: x86_64-unknown-freebsd
-  freebsd_instance:
-    image: freebsd-12-2-release-amd64
+  matrix:
+    - name: FreeBSD 12 amd64 & i686
+      freebsd_instance:
+        image: freebsd-12-3-release-amd64
+    - name: FreeBSD 14 amd64 & i686
+      freebsd_instance:
+        image_family: freebsd-14-0-snap
+      # Enable tests that would fail on FreeBSD 12
+      RUSTFLAGS: --cfg fbsd14 -D warnings
+      RUSTDOCFLAGS: --cfg fbsd14
   setup_script:
     - kldload mqueuefs
     - fetch https://sh.rustup.rs -o rustup.sh
@@ -55,7 +65,7 @@ task:
     - cargo test --target i686-unknown-freebsd
   i386_feature_script:
     - . $HOME/.cargo/env
-    - cargo hack check --each-feature --target i686-unknown-freebsd
+    - if [ -z "$NOHACK" ]; then cargo hack check --each-feature --target i686-unknown-freebsd; fi
   before_cache_script: rm -rf $CARGO_HOME/registry/index
 
 # Test macOS x86_64 in a full VM
@@ -80,6 +90,7 @@ task:
   env:
     RUST_TEST_THREADS: 1            # QEMU works best with 1 thread
     HOME: /tmp/home
+    HOST: x86_64-unknown-linux-gnu
     PATH: $HOME/.cargo/bin:$PATH
     RUSTFLAGS: --cfg qemu -D warnings
     TOOL: cross
@@ -122,7 +133,7 @@ task:
     - curl --proto '=https' --tlsv1.2 -sSf -o rustup.sh https://sh.rustup.rs
     - sh rustup.sh -y --profile=minimal --default-toolchain $TOOLCHAIN
     - . $HOME/.cargo/env
-    - cargo install cross
+    - cargo install cross --version 0.2.1 # cross 0.2.2 bumped the MSRV to 1.58.1
     - cp Cargo.lock.msrv Cargo.lock
   << : *TEST
   before_cache_script: rm -rf $CARGO_HOME/registry/index
@@ -132,18 +143,18 @@ task:
   matrix:
     - name: Linux aarch64
       arm_container:
-        image: rust:1.46
+        image: rust:1.56
       env:
         RUSTFLAGS: --cfg graviton -D warnings
         TARGET: aarch64-unknown-linux-gnu
     - name: Linux x86_64
       container:
-        image: rust:1.46
+        image: rust:1.56
       env:
         TARGET: x86_64-unknown-linux-gnu
     - name: Linux x86_64 musl
       container:
-        image: rust:1.46
+        image: rust:1.56
       env:
         TARGET: x86_64-unknown-linux-musl
   setup_script:
@@ -169,9 +180,10 @@ task:
 # Tasks for cross-compiling, but no testing
 task:
   container:
-    image: rust:1.46
+    image: rust:1.56
   env:
     BUILD: check
+    HOST: x86_64-unknown-linux-gnu
   matrix:
     # Cross claims to support Android, but when it tries to run Nix's tests it
     # reports undefined symbol references.
@@ -199,10 +211,6 @@ task:
     - name: Illumos
       env:
         TARGET: x86_64-unknown-illumos
-        # illumos toolchain isn't available via rustup until 1.50
-        TOOLCHAIN: 1.50.0
-      container:
-        image: rust:1.50
     # Cross claims to support running tests on iOS, but it actually doesn't.
     # https://github.com/rust-embedded/cross/issues/535
     - name: iOS aarch64
@@ -210,16 +218,11 @@ task:
         # cargo hack tries to invoke the iphonesimulator SDK for iOS
         NOHACK: 1
         TARGET: aarch64-apple-ios
-        # Rustup only supports cross-building from arbitrary hosts for iOS at
-        # 1.49.0 and above.  Below that it's possible to cross-build from a macOS
-        # host, but macOS VMs are more expensive than Linux VMs.
-        TOOLCHAIN: 1.49.0
     - name: iOS x86_64
       env:
         # cargo hack tries to invoke the iphonesimulator SDK for iOS
         NOHACK: 1
         TARGET: x86_64-apple-ios
-        TOOLCHAIN: 1.49.0
     # Cross testing on powerpc fails with "undefined reference to renameat2".
     # Perhaps cross is using too-old a version?
     - name: Linux powerpc
@@ -239,10 +242,6 @@ task:
     - name: macOS aarch64
       env:
         TARGET: aarch64-apple-darwin
-        # macOS aarch64 toolchain isn't available via rustup until 1.49
-        TOOLCHAIN: 1.49.0
-      container:
-        image: rust:1.49
     - name: NetBSD x86_64
       env:
         TARGET: x86_64-unknown-netbsd
@@ -256,11 +255,12 @@ task:
 
 task:
   container:
-    image: rust:1.46
+    image: rust:1.56
   env:
     BUILD: check
   name: Redox x86_64
   env:
+    HOST: x86_64-unknown-linux-gnu
     TARGET: x86_64-unknown-redox
     # Redox's MSRV policy is unclear.  Until they define it, use nightly.
     TOOLCHAIN: nightly
@@ -277,6 +277,7 @@ task:
     image: rustlang/rust:nightly
   env:
     BUILD: check
+    HOST: x86_64-unknown-linux-gnu
     TOOLCHAIN: nightly
     ZFLAGS: -Zbuild-std
   matrix:
@@ -289,6 +290,9 @@ task:
     - name: Linux armv7 uclibceabihf
       env:
         TARGET: armv7-unknown-linux-uclibceabihf
+    - name: Haiku x86_64
+      env:
+        TARGET: x86_64-unknown-haiku
   setup_script:
     - rustup component add rust-src
   << : *BUILD
@@ -300,6 +304,7 @@ task:
 task:
   name: Minver
   env:
+    HOST: x86_64-unknown-linux-gnu
     TOOLCHAIN: nightly
   container:
     image: rustlang/rust:nightly
@@ -308,3 +313,11 @@ task:
   check_script:
     - cargo check
   before_cache_script: rm -rf $CARGO_HOME/registry/index
+
+# Tasks that checks if the code is formatted right using `cargo fmt` tool
+task:
+  name: Rust Formatter
+  container:
+    image: rust:latest
+  setup_script: rustup +$TOOLCHAIN component add rustfmt
+  test_script: $TOOL +$TOOLCHAIN fmt --all -- --check

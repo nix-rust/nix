@@ -227,37 +227,45 @@ use cfg_if::cfg_if;
 #[macro_use]
 mod linux;
 
-#[cfg(any(target_os = "android", target_os = "linux", target_os = "redox"))]
+#[cfg(any(
+    target_os = "android",
+    target_os = "linux",
+    target_os = "redox"
+))]
 pub use self::linux::*;
 
-#[cfg(any(target_os = "dragonfly",
-          target_os = "freebsd",
-          target_os = "illumos",
-          target_os = "ios",
-          target_os = "macos",
-          target_os = "netbsd",
-          target_os = "openbsd"))]
+#[cfg(any(
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "illumos",
+    target_os = "ios",
+    target_os = "macos",
+    target_os = "netbsd",
+    target_os = "haiku",
+    target_os = "openbsd"
+))]
 #[macro_use]
 mod bsd;
 
-#[cfg(any(target_os = "dragonfly",
-          target_os = "freebsd",
-          target_os = "illumos",
-          target_os = "ios",
-          target_os = "macos",
-          target_os = "netbsd",
-          target_os = "openbsd"))]
+#[cfg(any(
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "illumos",
+    target_os = "ios",
+    target_os = "macos",
+    target_os = "netbsd",
+    target_os = "haiku",
+    target_os = "openbsd"
+))]
 pub use self::bsd::*;
 
 /// Convert raw ioctl return value to a Nix result
 #[macro_export]
 #[doc(hidden)]
 macro_rules! convert_ioctl_res {
-    ($w:expr) => (
-        {
-            $crate::errno::Errno::result($w)
-        }
-    );
+    ($w:expr) => {{
+        $crate::errno::Errno::result($w)
+    }};
 }
 
 /// Generates a wrapper function for an ioctl that passes no data to the kernel.
@@ -489,7 +497,7 @@ macro_rules! ioctl_write_ptr_bad {
     )
 }
 
-cfg_if!{
+cfg_if! {
     if #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))] {
         /// Generates a wrapper function for a ioctl that writes an integer to the kernel.
         ///

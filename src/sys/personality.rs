@@ -86,7 +86,7 @@ pub fn get() -> Result<Persona> {
 /// # use nix::sys::personality::{self, Persona};
 /// let mut pers = personality::get().unwrap();
 /// assert!(!pers.contains(Persona::ADDR_NO_RANDOMIZE));
-/// personality::set(pers | Persona::ADDR_NO_RANDOMIZE);
+/// personality::set(pers | Persona::ADDR_NO_RANDOMIZE).unwrap();
 /// ```
 pub fn set(persona: Persona) -> Result<Persona> {
     let res = unsafe {

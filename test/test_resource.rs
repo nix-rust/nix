@@ -1,4 +1,9 @@
-#[cfg(not(any(target_os = "redox", target_os = "fuchsia", target_os = "illumos")))]
+#[cfg(not(any(
+    target_os = "redox",
+    target_os = "fuchsia",
+    target_os = "illumos",
+    target_os = "haiku"
+)))]
 use nix::sys::resource::{getrlimit, setrlimit, Resource};
 
 /// Tests the RLIMIT_NOFILE functionality of getrlimit(), where the resource RLIMIT_NOFILE refers
@@ -10,9 +15,15 @@ use nix::sys::resource::{getrlimit, setrlimit, Resource};
 /// to put the new soft limit in effect, and then getrlimit() once more to ensure the limits have
 /// been updated.
 #[test]
-#[cfg(not(any(target_os = "redox", target_os = "fuchsia", target_os = "illumos")))]
+#[cfg(not(any(
+    target_os = "redox",
+    target_os = "fuchsia",
+    target_os = "illumos",
+    target_os = "haiku"
+)))]
 pub fn test_resource_limits_nofile() {
-    let (mut soft_limit, hard_limit) = getrlimit(Resource::RLIMIT_NOFILE).unwrap();
+    let (mut soft_limit, hard_limit) =
+        getrlimit(Resource::RLIMIT_NOFILE).unwrap();
 
     soft_limit -= 1;
     assert_ne!(soft_limit, hard_limit);

@@ -5,7 +5,8 @@ status = [
   "Android i686",
   "Android x86_64",
   "DragonFly BSD x86_64",
-  "FreeBSD amd64 & i686",
+  "FreeBSD 12 amd64 & i686",
+  "FreeBSD 14 amd64 & i686",
   "Fuchsia x86_64",
   "Linux MIPS",
   "Linux MIPS64 el",
@@ -32,9 +33,11 @@ status = [
   "OpenBSD x86_64",
   "Redox x86_64",
   "Rust Stable",
+  "Rust Formatter",
   "iOS aarch64",
   "iOS x86_64",
   "Illumos",
+  "Haiku x86_64",
 ]
 
 # Set bors's timeout to 1 hour

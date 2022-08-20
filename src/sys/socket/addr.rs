@@ -26,6 +26,7 @@ use crate::sys::socket::addr::sys_control::SysControlAddr;
           target_os = "illumos",
           target_os = "netbsd",
           target_os = "openbsd",
+          target_os = "haiku",
           target_os = "fuchsia"))]
 #[cfg(feature = "net")]
 pub use self::datalink::LinkAddr;
@@ -120,6 +121,7 @@ pub enum AddressFamily {
     #[cfg_attr(docsrs, doc(cfg(all())))]
     Rose = libc::AF_ROSE,
     /// DECet protocol sockets.
+    #[cfg(not(target_os = "haiku"))]
     Decnet = libc::AF_DECnet,
     /// Reserved for "802.2LLC project"; never used.
     #[cfg(any(target_os = "android", target_os = "linux"))]
@@ -151,6 +153,7 @@ pub enum AddressFamily {
     #[cfg_attr(docsrs, doc(cfg(all())))]
     Rds = libc::AF_RDS,
     /// IBM SNA
+    #[cfg(not(target_os = "haiku"))]
     Sna = libc::AF_SNA,
     /// Socket interface over IrDA
     #[cfg(any(target_os = "android", target_os = "linux"))]
@@ -202,7 +205,7 @@ pub enum AddressFamily {
     #[cfg_attr(docsrs, doc(cfg(all())))]
     RxRpc = libc::AF_RXRPC,
     /// New "modular ISDN" driver interface protocol
-    #[cfg(not(any(target_os = "illumos", target_os = "solaris")))]
+    #[cfg(not(any(target_os = "illumos", target_os = "solaris", target_os = "haiku")))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     Isdn = libc::AF_ISDN,
     /// Nokia cellular modem IPC/RPC interface
@@ -953,6 +956,10 @@ impl SockaddrLike for UnixAddr {
         ptr::copy(addr as *const u8, sup, su_len as usize);
         Some(Self::from_raw_parts(su, su_len as u8))
     }
+
+    fn size() -> libc::socklen_t where Self: Sized {
+        mem::size_of::<libc::sockaddr_un>() as libc::socklen_t
+    }
 }
 
 impl AsRef<libc::sockaddr_un> for UnixAddr {
@@ -1154,6 +1161,7 @@ impl SockaddrIn {
                   target_os = "ios",
                   target_os = "macos",
                   target_os = "netbsd",
+                  target_os = "haiku",
                   target_os = "openbsd"))]
             sin_len: Self::size() as u8,
             sin_family: AddressFamily::Inet as sa_family_t,
@@ -1187,7 +1195,7 @@ impl SockaddrLike for SockaddrIn {
         if (*addr).sa_family as i32 != libc::AF_INET as i32 {
             return None;
         }
-        Some(SockaddrIn(*(addr as *const libc::sockaddr_in)))
+        Some(Self(ptr::read_unaligned(addr as *const _)))
     }
 }
 
@@ -1226,6 +1234,16 @@ impl From<net::SocketAddrV4> for SockaddrIn {
             sin_addr: ipv4addr_to_libc(*addr.ip()),
             .. unsafe { mem::zeroed() }
         })
+    }
+}
+
+#[cfg(feature = "net")]
+impl From<SockaddrIn> for net::SocketAddrV4 {
+    fn from(addr: SockaddrIn) -> Self {
+        net::SocketAddrV4::new(
+            net::Ipv4Addr::from(addr.0.sin_addr.s_addr.to_ne_bytes()),
+            u16::from_be(addr.0.sin_port)
+        )
     }
 }
 
@@ -1283,7 +1301,7 @@ impl SockaddrLike for SockaddrIn6 {
         if (*addr).sa_family as i32 != libc::AF_INET6 as i32 {
             return None;
         }
-        Some(SockaddrIn6(*(addr as *const libc::sockaddr_in6)))
+        Some(Self(ptr::read_unaligned(addr as *const _)))
     }
 }
 
@@ -1322,6 +1340,18 @@ impl From<net::SocketAddrV6> for SockaddrIn6 {
             sin6_scope_id: addr.scope_id(),  // host byte order
             .. unsafe { mem::zeroed() }
         })
+    }
+}
+
+#[cfg(feature = "net")]
+impl From<SockaddrIn6> for net::SocketAddrV6 {
+    fn from(addr: SockaddrIn6) -> Self {
+        net::SocketAddrV6::new(
+            net::Ipv6Addr::from(addr.0.sin6_addr.s6_addr),
+            u16::from_be(addr.0.sin6_port),
+            u32::from_be(addr.0.sin6_flowinfo),
+            u32::from_be(addr.0.sin6_scope_id)
+        )
     }
 }
 
@@ -1416,6 +1446,7 @@ impl SockaddrLike for SockaddrStorage {
                           target_os = "macos",
                           target_os = "illumos",
                           target_os = "netbsd",
+                          target_os = "haiku",
                           target_os = "openbsd"))]
                 #[cfg(feature = "net")]
                 libc::AF_LINK => LinkAddr::from_raw(addr, l)
@@ -1482,6 +1513,14 @@ impl SockaddrStorage {
     #[cfg(any(target_os = "android", target_os = "linux"))]
     accessors!{as_alg_addr, as_alg_addr_mut, AlgAddr,
         AddressFamily::Alg, libc::sockaddr_alg, alg}
+
+    #[cfg(any(target_os = "android",
+              target_os = "fuchsia",
+              target_os = "linux"))]
+    #[cfg(feature = "net")]
+    accessors!{
+        as_link_addr, as_link_addr_mut, LinkAddr,
+        AddressFamily::Packet, libc::sockaddr_ll, dl}
 
     #[cfg(any(target_os = "dragonfly",
               target_os = "freebsd",
@@ -1831,21 +1870,21 @@ impl SockAddr {
                 Some(AddressFamily::Unix) => None,
                 #[cfg(feature = "net")]
                 Some(AddressFamily::Inet) => Some(SockAddr::Inet(
-                    InetAddr::V4(*(addr as *const libc::sockaddr_in)))),
+                    InetAddr::V4(ptr::read_unaligned(addr as *const _)))),
                 #[cfg(feature = "net")]
                 Some(AddressFamily::Inet6) => Some(SockAddr::Inet(
-                    InetAddr::V6(*(addr as *const libc::sockaddr_in6)))),
+                    InetAddr::V6(ptr::read_unaligned(addr as *const _)))),
                 #[cfg(any(target_os = "android", target_os = "linux"))]
                 Some(AddressFamily::Netlink) => Some(SockAddr::Netlink(
-                    NetlinkAddr(*(addr as *const libc::sockaddr_nl)))),
+                    NetlinkAddr(ptr::read_unaligned(addr as *const _)))),
                 #[cfg(all(feature = "ioctl",
                           any(target_os = "ios", target_os = "macos")))]
                 Some(AddressFamily::System) => Some(SockAddr::SysControl(
-                    SysControlAddr(*(addr as *const libc::sockaddr_ctl)))),
+                    SysControlAddr(ptr::read_unaligned(addr as *const _)))),
                 #[cfg(any(target_os = "android", target_os = "linux"))]
                 #[cfg(feature = "net")]
                 Some(AddressFamily::Packet) => Some(SockAddr::Link(
-                    LinkAddr(*(addr as *const libc::sockaddr_ll)))),
+                    LinkAddr(ptr::read_unaligned(addr as *const _)))),
                 #[cfg(any(target_os = "dragonfly",
                           target_os = "freebsd",
                           target_os = "ios",
@@ -1855,7 +1894,7 @@ impl SockAddr {
                           target_os = "openbsd"))]
                 #[cfg(feature = "net")]
                 Some(AddressFamily::Link) => {
-                    let ether_addr = LinkAddr(*(addr as *const libc::sockaddr_dl));
+                    let ether_addr = LinkAddr(ptr::read_unaligned(addr as *const _));
                     if ether_addr.is_empty() {
                         None
                     } else {
@@ -1864,7 +1903,7 @@ impl SockAddr {
                 },
                 #[cfg(any(target_os = "android", target_os = "linux"))]
                 Some(AddressFamily::Vsock) => Some(SockAddr::Vsock(
-                    VsockAddr(*(addr as *const libc::sockaddr_vm)))),
+                    VsockAddr(ptr::read_unaligned(addr as *const _)))),
                 // Other address families are currently not supported and simply yield a None
                 // entry instead of a proper conversion to a `SockAddr`.
                 Some(_) | None => None,
@@ -2065,7 +2104,7 @@ pub mod netlink {
             if (*addr).sa_family as i32 != libc::AF_NETLINK as i32 {
                 return None;
             }
-            Some(NetlinkAddr(*(addr as *const libc::sockaddr_nl)))
+            Some(Self(ptr::read_unaligned(addr as *const _)))
         }
     }
 
@@ -2109,7 +2148,7 @@ pub mod alg {
             if (*addr).sa_family as i32 != libc::AF_ALG as i32 {
                 return None;
             }
-            Some(AlgAddr(*(addr as *const libc::sockaddr_alg)))
+            Some(Self(ptr::read_unaligned(addr as *const _)))
         }
     }
 
@@ -2181,7 +2220,7 @@ feature! {
 pub mod sys_control {
     use crate::sys::socket::addr::AddressFamily;
     use libc::{self, c_uchar};
-    use std::{fmt, mem};
+    use std::{fmt, mem, ptr};
     use std::os::unix::io::RawFd;
     use crate::{Errno, Result};
     use super::{private, SockaddrLike};
@@ -2205,7 +2244,7 @@ pub mod sys_control {
     ///
     /// # References
     ///
-    /// https://developer.apple.com/documentation/kernel/sockaddr_ctl
+    /// <https://developer.apple.com/documentation/kernel/sockaddr_ctl>
     #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
     #[repr(transparent)]
     pub struct SysControlAddr(pub(in super::super) libc::sockaddr_ctl);
@@ -2220,10 +2259,10 @@ pub mod sys_control {
                     return None;
                 }
             }
-            if (*addr).sa_family as i32 != libc::AF_INET6 as i32 {
+            if (*addr).sa_family as i32 != libc::AF_SYSTEM as i32 {
                 return None;
             }
-            Some(SysControlAddr(*(addr as *const libc::sockaddr_ctl)))
+            Some(Self(ptr::read_unaligned(addr as *const _)))
         }
     }
 
@@ -2290,7 +2329,7 @@ pub mod sys_control {
 mod datalink {
     feature! {
     #![feature = "net"]
-    use super::{fmt, mem, private, SockaddrLike};
+    use super::{fmt, mem, private, ptr, SockaddrLike};
 
     /// Hardware Address
     #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -2366,7 +2405,7 @@ mod datalink {
             if (*addr).sa_family as i32 != libc::AF_PACKET as i32 {
                 return None;
             }
-            Some(LinkAddr(*(addr as *const libc::sockaddr_ll)))
+            Some(Self(ptr::read_unaligned(addr as *const _)))
         }
     }
 
@@ -2385,12 +2424,13 @@ mod datalink {
           target_os = "macos",
           target_os = "illumos",
           target_os = "netbsd",
+          target_os = "haiku",
           target_os = "openbsd"))]
 #[cfg_attr(docsrs, doc(cfg(all())))]
 mod datalink {
     feature! {
     #![feature = "net"]
-    use super::{fmt, mem, private, SockaddrLike};
+    use super::{fmt, mem, private, ptr, SockaddrLike};
 
     /// Hardware Address
     #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -2399,11 +2439,13 @@ mod datalink {
 
     impl LinkAddr {
         /// interface index, if != 0, system given index for interface
+        #[cfg(not(target_os = "haiku"))]
         pub fn ifindex(&self) -> usize {
             self.0.sdl_index as usize
         }
 
         /// Datalink type
+        #[cfg(not(target_os = "haiku"))]
         pub fn datalink_type(&self) -> u8 {
             self.0.sdl_type
         }
@@ -2419,6 +2461,7 @@ mod datalink {
         }
 
         /// link layer selector length
+        #[cfg(not(target_os = "haiku"))]
         pub fn slen(&self) -> usize {
             self.0.sdl_slen as usize
         }
@@ -2482,7 +2525,7 @@ mod datalink {
             if (*addr).sa_family as i32 != libc::AF_LINK as i32 {
                 return None;
             }
-            Some(LinkAddr(*(addr as *const libc::sockaddr_dl)))
+            Some(Self(ptr::read_unaligned(addr as *const _)))
         }
     }
 
@@ -2523,10 +2566,10 @@ pub mod vsock {
                     return None;
                 }
             }
-            if (*addr).sa_family as i32 != libc::AF_INET6 as i32 {
+            if (*addr).sa_family as i32 != libc::AF_VSOCK as i32 {
                 return None;
             }
-            Some(VsockAddr(*(addr as *const libc::sockaddr_vm)))
+            Some(Self(ptr::read_unaligned(addr as *const _)))
         }
     }
 
@@ -2615,11 +2658,14 @@ mod tests {
     }
 
     mod link {
+        #![allow(clippy::cast_ptr_alignment)]
+
+        use super::*;
         #[cfg(any(target_os = "ios",
                   target_os = "macos",
                   target_os = "illumos"
                   ))]
-        use super::{*, super::super::socklen_t};
+        use super::super::super::socklen_t;
 
         /// Don't panic when trying to display an empty datalink address
         #[cfg(any(target_os = "dragonfly",
@@ -2644,6 +2690,28 @@ mod tests {
                 .. unsafe{mem::zeroed()}
             });
             format!("{}", la);
+        }
+
+        #[cfg(all(
+                any(target_os = "android",
+                    target_os = "fuchsia",
+                    target_os = "linux"),
+                target_endian = "little"
+        ))]
+        #[test]
+        fn linux_loopback() {
+            #[repr(align(2))]
+            struct Raw([u8; 20]);
+
+            let bytes = Raw([17u8, 0, 0, 0, 1, 0, 0, 0, 4, 3, 0, 6, 1, 2, 3, 4, 5, 6, 0, 0]);
+            let sa = bytes.0.as_ptr() as *const libc::sockaddr;
+            let len = None;
+            let sock_addr = unsafe { SockaddrStorage::from_raw(sa, len) }.unwrap();
+            assert_eq!(sock_addr.family(), Some(AddressFamily::Packet));
+            match sock_addr.as_link_addr() {
+                Some(dl) => assert_eq!(dl.addr(), Some([1, 2, 3, 4, 5, 6])),
+                None => panic!("Can't unwrap sockaddr storage")
+            }
         }
 
         #[cfg(any(target_os = "ios",
@@ -2701,6 +2769,25 @@ mod tests {
             assert_eq!(sock_addr.as_link_addr().unwrap().addr(),
                     Some([24u8, 101, 144, 221, 76, 176]));
         }
+
+        #[test]
+        fn size() {
+            #[cfg(any(target_os = "dragonfly",
+                      target_os = "freebsd",
+                      target_os = "ios",
+                      target_os = "macos",
+                      target_os = "netbsd",
+                      target_os = "illumos",
+                      target_os = "openbsd",
+                      target_os = "haiku"))]
+            let l = mem::size_of::<libc::sockaddr_dl>();
+            #[cfg(any(
+                    target_os = "android",
+                    target_os = "fuchsia",
+                    target_os = "linux"))]
+            let l = mem::size_of::<libc::sockaddr_ll>();
+            assert_eq!( LinkAddr::size() as usize, l);
+        }
     }
 
     mod sockaddr_in {
@@ -2712,6 +2799,12 @@ mod tests {
             let s = "127.0.0.1:8080";
             let addr = SockaddrIn::from_str(s).unwrap();
             assert_eq!(s, format!("{}", addr));
+        }
+
+        #[test]
+        fn size() {
+            assert_eq!(mem::size_of::<libc::sockaddr_in>(),
+                SockaddrIn::size() as usize);
         }
     }
 
@@ -2725,10 +2818,15 @@ mod tests {
             let addr = SockaddrIn6::from_str(s).unwrap();
             assert_eq!(s, format!("{}", addr));
         }
+
+        #[test]
+        fn size() {
+            assert_eq!(mem::size_of::<libc::sockaddr_in6>(),
+                SockaddrIn6::size() as usize);
+        }
     }
 
     mod unixaddr {
-        #[cfg(any(target_os = "android", target_os = "linux"))]
         use super::*;
 
         #[cfg(any(target_os = "android", target_os = "linux"))]
@@ -2742,5 +2840,10 @@ mod tests {
             assert_eq!(sun_path1, sun_path2);
         }
 
+        #[test]
+        fn size() {
+            assert_eq!(mem::size_of::<libc::sockaddr_un>(),
+                UnixAddr::size() as usize);
+        }
     }
 }

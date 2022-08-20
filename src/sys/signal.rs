@@ -3,22 +3,22 @@
 
 //! Operating system signals.
 
-use crate::{Error, Result};
 use crate::errno::Errno;
-use std::mem;
+use crate::{Error, Result};
+use cfg_if::cfg_if;
 use std::fmt;
-use std::str::FromStr;
+use std::mem;
 #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
 use std::os::unix::io::RawFd;
 use std::ptr;
-use cfg_if::cfg_if;
+use std::str::FromStr;
 
 #[cfg(not(any(target_os = "openbsd", target_os = "redox")))]
 #[cfg(any(feature = "aio", feature = "signal"))]
 pub use self::sigevent::*;
 
 #[cfg(any(feature = "aio", feature = "process", feature = "signal"))]
-libc_enum!{
+libc_enum! {
     /// Types of operating system signals
     // Currently there is only one definition of c_int in libc, as well as only one
     // type for signal constants.
@@ -89,6 +89,8 @@ libc_enum!{
         /// Window size changes
         SIGWINCH,
         /// Input/output possible signal
+        #[cfg(not(target_os = "haiku"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         SIGIO,
         #[cfg(any(target_os = "android", target_os = "emscripten",
                   target_os = "fuchsia", target_os = "linux"))]
@@ -99,13 +101,13 @@ libc_enum!{
         SIGSYS,
         #[cfg(not(any(target_os = "android", target_os = "emscripten",
                       target_os = "fuchsia", target_os = "linux",
-                      target_os = "redox")))]
+                      target_os = "redox", target_os = "haiku")))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
         /// Emulator trap
         SIGEMT,
         #[cfg(not(any(target_os = "android", target_os = "emscripten",
                       target_os = "fuchsia", target_os = "linux",
-                      target_os = "redox")))]
+                      target_os = "redox", target_os = "haiku")))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
         /// Information request
         SIGINFO,
@@ -133,10 +135,19 @@ impl FromStr for Signal {
             "SIGPIPE" => Signal::SIGPIPE,
             "SIGALRM" => Signal::SIGALRM,
             "SIGTERM" => Signal::SIGTERM,
-            #[cfg(all(any(target_os = "android", target_os = "emscripten",
-                          target_os = "fuchsia", target_os = "linux"),
-                      not(any(target_arch = "mips", target_arch = "mips64",
-                              target_arch = "sparc64"))))]
+            #[cfg(all(
+                any(
+                    target_os = "android",
+                    target_os = "emscripten",
+                    target_os = "fuchsia",
+                    target_os = "linux"
+                ),
+                not(any(
+                    target_arch = "mips",
+                    target_arch = "mips64",
+                    target_arch = "sparc64"
+                ))
+            ))]
             "SIGSTKFLT" => Signal::SIGSTKFLT,
             "SIGCHLD" => Signal::SIGCHLD,
             "SIGCONT" => Signal::SIGCONT,
@@ -150,18 +161,33 @@ impl FromStr for Signal {
             "SIGVTALRM" => Signal::SIGVTALRM,
             "SIGPROF" => Signal::SIGPROF,
             "SIGWINCH" => Signal::SIGWINCH,
+            #[cfg(not(target_os = "haiku"))]
             "SIGIO" => Signal::SIGIO,
-            #[cfg(any(target_os = "android", target_os = "emscripten",
-                      target_os = "fuchsia", target_os = "linux"))]
+            #[cfg(any(
+                target_os = "android",
+                target_os = "emscripten",
+                target_os = "fuchsia",
+                target_os = "linux"
+            ))]
             "SIGPWR" => Signal::SIGPWR,
             "SIGSYS" => Signal::SIGSYS,
-            #[cfg(not(any(target_os = "android", target_os = "emscripten",
-                          target_os = "fuchsia", target_os = "linux",
-                          target_os = "redox")))]
+            #[cfg(not(any(
+                target_os = "android",
+                target_os = "emscripten",
+                target_os = "fuchsia",
+                target_os = "linux",
+                target_os = "redox",
+                target_os = "haiku"
+            )))]
             "SIGEMT" => Signal::SIGEMT,
-            #[cfg(not(any(target_os = "android", target_os = "emscripten",
-                          target_os = "fuchsia", target_os = "linux",
-                          target_os = "redox")))]
+            #[cfg(not(any(
+                target_os = "android",
+                target_os = "emscripten",
+                target_os = "fuchsia",
+                target_os = "linux",
+                target_os = "redox",
+                target_os = "haiku"
+            )))]
             "SIGINFO" => Signal::SIGINFO,
             _ => return Err(Errno::EINVAL),
         })
@@ -192,9 +218,19 @@ impl Signal {
             Signal::SIGPIPE => "SIGPIPE",
             Signal::SIGALRM => "SIGALRM",
             Signal::SIGTERM => "SIGTERM",
-            #[cfg(all(any(target_os = "android", target_os = "emscripten",
-                          target_os = "fuchsia", target_os = "linux"),
-                      not(any(target_arch = "mips", target_arch = "mips64", target_arch = "sparc64"))))]
+            #[cfg(all(
+                any(
+                    target_os = "android",
+                    target_os = "emscripten",
+                    target_os = "fuchsia",
+                    target_os = "linux"
+                ),
+                not(any(
+                    target_arch = "mips",
+                    target_arch = "mips64",
+                    target_arch = "sparc64"
+                ))
+            ))]
             Signal::SIGSTKFLT => "SIGSTKFLT",
             Signal::SIGCHLD => "SIGCHLD",
             Signal::SIGCONT => "SIGCONT",
@@ -208,18 +244,33 @@ impl Signal {
             Signal::SIGVTALRM => "SIGVTALRM",
             Signal::SIGPROF => "SIGPROF",
             Signal::SIGWINCH => "SIGWINCH",
+            #[cfg(not(target_os = "haiku"))]
             Signal::SIGIO => "SIGIO",
-            #[cfg(any(target_os = "android", target_os = "emscripten",
-                      target_os = "fuchsia", target_os = "linux"))]
+            #[cfg(any(
+                target_os = "android",
+                target_os = "emscripten",
+                target_os = "fuchsia",
+                target_os = "linux"
+            ))]
             Signal::SIGPWR => "SIGPWR",
             Signal::SIGSYS => "SIGSYS",
-            #[cfg(not(any(target_os = "android", target_os = "emscripten",
-                          target_os = "fuchsia", target_os = "linux",
-                          target_os = "redox")))]
+            #[cfg(not(any(
+                target_os = "android",
+                target_os = "emscripten",
+                target_os = "fuchsia",
+                target_os = "linux",
+                target_os = "redox",
+                target_os = "haiku"
+            )))]
             Signal::SIGEMT => "SIGEMT",
-            #[cfg(not(any(target_os = "android", target_os = "emscripten",
-                          target_os = "fuchsia", target_os = "linux",
-                          target_os = "redox")))]
+            #[cfg(not(any(
+                target_os = "android",
+                target_os = "emscripten",
+                target_os = "fuchsia",
+                target_os = "linux",
+                target_os = "redox",
+                target_os = "haiku"
+            )))]
             Signal::SIGINFO => "SIGINFO",
         }
     }
@@ -245,144 +296,70 @@ pub use self::Signal::*;
 #[cfg(target_os = "redox")]
 #[cfg(feature = "signal")]
 const SIGNALS: [Signal; 29] = [
-    SIGHUP,
-    SIGINT,
-    SIGQUIT,
-    SIGILL,
-    SIGTRAP,
-    SIGABRT,
-    SIGBUS,
-    SIGFPE,
-    SIGKILL,
-    SIGUSR1,
-    SIGSEGV,
-    SIGUSR2,
-    SIGPIPE,
-    SIGALRM,
-    SIGTERM,
-    SIGCHLD,
-    SIGCONT,
-    SIGSTOP,
-    SIGTSTP,
-    SIGTTIN,
-    SIGTTOU,
-    SIGURG,
-    SIGXCPU,
-    SIGXFSZ,
-    SIGVTALRM,
-    SIGPROF,
-    SIGWINCH,
-    SIGIO,
-    SIGSYS];
-#[cfg(all(any(target_os = "linux", target_os = "android",
-              target_os = "emscripten", target_os = "fuchsia"),
-          not(any(target_arch = "mips", target_arch = "mips64",
-                  target_arch = "sparc64"))))]
+    SIGHUP, SIGINT, SIGQUIT, SIGILL, SIGTRAP, SIGABRT, SIGBUS, SIGFPE, SIGKILL,
+    SIGUSR1, SIGSEGV, SIGUSR2, SIGPIPE, SIGALRM, SIGTERM, SIGCHLD, SIGCONT,
+    SIGSTOP, SIGTSTP, SIGTTIN, SIGTTOU, SIGURG, SIGXCPU, SIGXFSZ, SIGVTALRM,
+    SIGPROF, SIGWINCH, SIGIO, SIGSYS,
+];
+#[cfg(target_os = "haiku")]
+#[cfg(feature = "signal")]
+const SIGNALS: [Signal; 28] = [
+    SIGHUP, SIGINT, SIGQUIT, SIGILL, SIGTRAP, SIGABRT, SIGBUS, SIGFPE, SIGKILL,
+    SIGUSR1, SIGSEGV, SIGUSR2, SIGPIPE, SIGALRM, SIGTERM, SIGCHLD, SIGCONT,
+    SIGSTOP, SIGTSTP, SIGTTIN, SIGTTOU, SIGURG, SIGXCPU, SIGXFSZ, SIGVTALRM,
+    SIGPROF, SIGWINCH, SIGSYS,
+];
+#[cfg(all(
+    any(
+        target_os = "linux",
+        target_os = "android",
+        target_os = "emscripten",
+        target_os = "fuchsia"
+    ),
+    not(any(
+        target_arch = "mips",
+        target_arch = "mips64",
+        target_arch = "sparc64"
+    ))
+))]
 #[cfg(feature = "signal")]
 const SIGNALS: [Signal; 31] = [
-    SIGHUP,
-    SIGINT,
-    SIGQUIT,
-    SIGILL,
-    SIGTRAP,
-    SIGABRT,
-    SIGBUS,
-    SIGFPE,
-    SIGKILL,
-    SIGUSR1,
-    SIGSEGV,
-    SIGUSR2,
-    SIGPIPE,
-    SIGALRM,
-    SIGTERM,
-    SIGSTKFLT,
-    SIGCHLD,
-    SIGCONT,
-    SIGSTOP,
-    SIGTSTP,
-    SIGTTIN,
-    SIGTTOU,
-    SIGURG,
-    SIGXCPU,
-    SIGXFSZ,
-    SIGVTALRM,
-    SIGPROF,
-    SIGWINCH,
-    SIGIO,
-    SIGPWR,
-    SIGSYS];
-#[cfg(all(any(target_os = "linux", target_os = "android",
-              target_os = "emscripten", target_os = "fuchsia"),
-          any(target_arch = "mips", target_arch = "mips64",
-              target_arch = "sparc64")))]
+    SIGHUP, SIGINT, SIGQUIT, SIGILL, SIGTRAP, SIGABRT, SIGBUS, SIGFPE, SIGKILL,
+    SIGUSR1, SIGSEGV, SIGUSR2, SIGPIPE, SIGALRM, SIGTERM, SIGSTKFLT, SIGCHLD,
+    SIGCONT, SIGSTOP, SIGTSTP, SIGTTIN, SIGTTOU, SIGURG, SIGXCPU, SIGXFSZ,
+    SIGVTALRM, SIGPROF, SIGWINCH, SIGIO, SIGPWR, SIGSYS,
+];
+#[cfg(all(
+    any(
+        target_os = "linux",
+        target_os = "android",
+        target_os = "emscripten",
+        target_os = "fuchsia"
+    ),
+    any(target_arch = "mips", target_arch = "mips64", target_arch = "sparc64")
+))]
 #[cfg(feature = "signal")]
 const SIGNALS: [Signal; 30] = [
-    SIGHUP,
-    SIGINT,
-    SIGQUIT,
-    SIGILL,
-    SIGTRAP,
-    SIGABRT,
-    SIGBUS,
-    SIGFPE,
-    SIGKILL,
-    SIGUSR1,
-    SIGSEGV,
-    SIGUSR2,
-    SIGPIPE,
-    SIGALRM,
-    SIGTERM,
-    SIGCHLD,
-    SIGCONT,
-    SIGSTOP,
-    SIGTSTP,
-    SIGTTIN,
-    SIGTTOU,
-    SIGURG,
-    SIGXCPU,
-    SIGXFSZ,
-    SIGVTALRM,
-    SIGPROF,
-    SIGWINCH,
-    SIGIO,
-    SIGPWR,
-    SIGSYS];
-#[cfg(not(any(target_os = "linux", target_os = "android",
-              target_os = "fuchsia", target_os = "emscripten",
-              target_os = "redox")))]
+    SIGHUP, SIGINT, SIGQUIT, SIGILL, SIGTRAP, SIGABRT, SIGBUS, SIGFPE, SIGKILL,
+    SIGUSR1, SIGSEGV, SIGUSR2, SIGPIPE, SIGALRM, SIGTERM, SIGCHLD, SIGCONT,
+    SIGSTOP, SIGTSTP, SIGTTIN, SIGTTOU, SIGURG, SIGXCPU, SIGXFSZ, SIGVTALRM,
+    SIGPROF, SIGWINCH, SIGIO, SIGPWR, SIGSYS,
+];
+#[cfg(not(any(
+    target_os = "linux",
+    target_os = "android",
+    target_os = "fuchsia",
+    target_os = "emscripten",
+    target_os = "redox",
+    target_os = "haiku"
+)))]
 #[cfg(feature = "signal")]
 const SIGNALS: [Signal; 31] = [
-    SIGHUP,
-    SIGINT,
-    SIGQUIT,
-    SIGILL,
-    SIGTRAP,
-    SIGABRT,
-    SIGBUS,
-    SIGFPE,
-    SIGKILL,
-    SIGUSR1,
-    SIGSEGV,
-    SIGUSR2,
-    SIGPIPE,
-    SIGALRM,
-    SIGTERM,
-    SIGCHLD,
-    SIGCONT,
-    SIGSTOP,
-    SIGTSTP,
-    SIGTTIN,
-    SIGTTOU,
-    SIGURG,
-    SIGXCPU,
-    SIGXFSZ,
-    SIGVTALRM,
-    SIGPROF,
-    SIGWINCH,
-    SIGIO,
-    SIGSYS,
-    SIGEMT,
-    SIGINFO];
+    SIGHUP, SIGINT, SIGQUIT, SIGILL, SIGTRAP, SIGABRT, SIGBUS, SIGFPE, SIGKILL,
+    SIGUSR1, SIGSEGV, SIGUSR2, SIGPIPE, SIGALRM, SIGTERM, SIGCHLD, SIGCONT,
+    SIGSTOP, SIGTSTP, SIGTTIN, SIGTTOU, SIGURG, SIGXCPU, SIGXFSZ, SIGVTALRM,
+    SIGPROF, SIGWINCH, SIGIO, SIGSYS, SIGEMT, SIGINFO,
+];
 
 feature! {
 #![feature = "signal"]
@@ -417,6 +394,7 @@ impl Signal {
 /// Alias for [`SIGABRT`]
 pub const SIGIOT : Signal = SIGABRT;
 /// Alias for [`SIGIO`]
+#[cfg(not(target_os = "haiku"))]
 pub const SIGPOLL : Signal = SIGIO;
 /// Alias for [`SIGSYS`]
 pub const SIGUNUSED : Signal = SIGSYS;
@@ -433,7 +411,7 @@ cfg_if! {
 }
 
 #[cfg(feature = "signal")]
-libc_bitflags!{
+libc_bitflags! {
     /// Controls the behavior of a [`SigAction`]
     #[cfg_attr(docsrs, doc(cfg(feature = "signal")))]
     pub struct SaFlags: SaFlags_t {
@@ -487,6 +465,9 @@ use std::iter::FromIterator;
 use std::iter::IntoIterator;
 
 /// Specifies a set of [`Signal`]s that may be blocked, waited for, etc.
+// We are using `transparent` here to be super sure that `SigSet`
+// is represented exactly like the `sigset_t` struct from C.
+#[repr(transparent)]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct SigSet {
     sigset: libc::sigset_t
@@ -494,6 +475,7 @@ pub struct SigSet {
 
 impl SigSet {
     /// Initialize to include all signals.
+    #[cfg_attr(has_doc_alias, doc(alias("sigfillset")))]
     pub fn all() -> SigSet {
         let mut sigset = mem::MaybeUninit::uninit();
         let _ = unsafe { libc::sigfillset(sigset.as_mut_ptr()) };
@@ -502,6 +484,7 @@ impl SigSet {
     }
 
     /// Initialize to include nothing.
+    #[cfg_attr(has_doc_alias, doc(alias("sigemptyset")))]
     pub fn empty() -> SigSet {
         let mut sigset = mem::MaybeUninit::uninit();
         let _ = unsafe { libc::sigemptyset(sigset.as_mut_ptr()) };
@@ -510,21 +493,25 @@ impl SigSet {
     }
 
     /// Add the specified signal to the set.
+    #[cfg_attr(has_doc_alias, doc(alias("sigaddset")))]
     pub fn add(&mut self, signal: Signal) {
         unsafe { libc::sigaddset(&mut self.sigset as *mut libc::sigset_t, signal as libc::c_int) };
     }
 
     /// Remove all signals from this set.
+    #[cfg_attr(has_doc_alias, doc(alias("sigemptyset")))]
     pub fn clear(&mut self) {
         unsafe { libc::sigemptyset(&mut self.sigset as *mut libc::sigset_t) };
     }
 
     /// Remove the specified signal from this set.
+    #[cfg_attr(has_doc_alias, doc(alias("sigdelset")))]
     pub fn remove(&mut self, signal: Signal) {
         unsafe { libc::sigdelset(&mut self.sigset as *mut libc::sigset_t, signal as libc::c_int) };
     }
 
     /// Return whether this set includes the specified signal.
+    #[cfg_attr(has_doc_alias, doc(alias("sigismember")))]
     pub fn contains(&self, signal: Signal) -> bool {
         let res = unsafe { libc::sigismember(&self.sigset as *const libc::sigset_t, signal as libc::c_int) };
 
@@ -582,6 +569,19 @@ impl SigSet {
         Errno::result(res).map(|_| unsafe {
             Signal::try_from(signum.assume_init()).unwrap()
         })
+    }
+
+    /// Converts a `libc::sigset_t` object to a [`SigSet`] without checking  whether the
+    /// `libc::sigset_t` is already initialized.
+    ///
+    /// # Safety
+    ///
+    /// The `sigset` passed in must be a valid an initialized `libc::sigset_t` by calling either
+    /// [`sigemptyset(3)`](https://man7.org/linux/man-pages/man3/sigemptyset.3p.html) or
+    /// [`sigfillset(3)`](https://man7.org/linux/man-pages/man3/sigfillset.3p.html).
+    /// Otherwise, the results are undefined.
+    pub unsafe fn from_sigset_t_unchecked(sigset: libc::sigset_t) -> SigSet {
+        SigSet { sigset }
     }
 }
 
@@ -911,10 +911,11 @@ pub fn sigprocmask(how: SigmaskHow, set: Option<&SigSet>, oldset: Option<&mut Si
 /// # Arguments
 ///
 /// * `pid` -    Specifies which processes should receive the signal.
-///   - If positive, specifies an individual process
+///   - If positive, specifies an individual process.
 ///   - If zero, the signal will be sent to all processes whose group
 ///     ID is equal to the process group ID of the sender.  This is a
-///     variant of [`killpg`].
+#[cfg_attr(target_os = "fuchsia", doc = "variant of `killpg`.")]
+#[cfg_attr(not(target_os = "fuchsia"), doc = "variant of [`killpg`].")]
 ///   - If `-1` and the process has super-user privileges, the signal
 ///     is sent to all processes exclusing system processes.
 ///   - If less than `-1`, the signal is sent to all processes whose
@@ -964,7 +965,6 @@ pub fn raise(signal: Signal) -> Result<()> {
     Errno::result(res).map(drop)
 }
 }
-
 
 feature! {
 #![any(feature = "aio", feature = "signal")]
@@ -1125,9 +1125,9 @@ mod sigevent {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     #[cfg(not(target_os = "redox"))]
     use std::thread;
-    use super::*;
 
     #[test]
     fn test_contains() {
@@ -1190,15 +1190,19 @@ mod tests {
             let mut test_mask = prev_mask;
             test_mask.add(SIGUSR1);
 
-            assert!(test_mask.thread_set_mask().is_ok());
-            let new_mask = SigSet::thread_get_mask()
-                .expect("Failed to get new mask!");
+            test_mask.thread_set_mask().expect("assertion failed");
+            let new_mask =
+                SigSet::thread_get_mask().expect("Failed to get new mask!");
 
             assert!(new_mask.contains(SIGUSR1));
             assert!(!new_mask.contains(SIGUSR2));
 
-            prev_mask.thread_set_mask().expect("Failed to revert signal mask!");
-        }).join().unwrap();
+            prev_mask
+                .thread_set_mask()
+                .expect("Failed to revert signal mask!");
+        })
+        .join()
+        .unwrap();
     }
 
     #[test]
@@ -1208,10 +1212,12 @@ mod tests {
             let mut mask = SigSet::empty();
             mask.add(SIGUSR1);
 
-            assert!(mask.thread_block().is_ok());
+            mask.thread_block().expect("assertion failed");
 
             assert!(SigSet::thread_get_mask().unwrap().contains(SIGUSR1));
-        }).join().unwrap();
+        })
+        .join()
+        .unwrap();
     }
 
     #[test]
@@ -1221,10 +1227,12 @@ mod tests {
             let mut mask = SigSet::empty();
             mask.add(SIGUSR1);
 
-            assert!(mask.thread_unblock().is_ok());
+            mask.thread_unblock().expect("assertion failed");
 
             assert!(!SigSet::thread_get_mask().unwrap().contains(SIGUSR1));
-        }).join().unwrap();
+        })
+        .join()
+        .unwrap();
     }
 
     #[test]
@@ -1240,14 +1248,16 @@ mod tests {
             let mut mask2 = SigSet::empty();
             mask2.add(SIGUSR2);
 
-            let oldmask = mask2.thread_swap_mask(SigmaskHow::SIG_SETMASK)
-                .unwrap();
+            let oldmask =
+                mask2.thread_swap_mask(SigmaskHow::SIG_SETMASK).unwrap();
 
             assert!(oldmask.contains(SIGUSR1));
             assert!(!oldmask.contains(SIGUSR2));
 
             assert!(SigSet::thread_get_mask().unwrap().contains(SIGUSR2));
-        }).join().unwrap();
+        })
+        .join()
+        .unwrap();
     }
 
     #[test]
@@ -1261,22 +1271,28 @@ mod tests {
     #[cfg(not(target_os = "redox"))]
     fn test_sigaction() {
         thread::spawn(|| {
-            extern fn test_sigaction_handler(_: libc::c_int) {}
-            extern fn test_sigaction_action(_: libc::c_int,
-                _: *mut libc::siginfo_t, _: *mut libc::c_void) {}
+            extern "C" fn test_sigaction_handler(_: libc::c_int) {}
+            extern "C" fn test_sigaction_action(
+                _: libc::c_int,
+                _: *mut libc::siginfo_t,
+                _: *mut libc::c_void,
+            ) {
+            }
 
             let handler_sig = SigHandler::Handler(test_sigaction_handler);
 
-            let flags = SaFlags::SA_ONSTACK | SaFlags::SA_RESTART |
-                        SaFlags::SA_SIGINFO;
+            let flags =
+                SaFlags::SA_ONSTACK | SaFlags::SA_RESTART | SaFlags::SA_SIGINFO;
 
             let mut mask = SigSet::empty();
             mask.add(SIGUSR1);
 
             let action_sig = SigAction::new(handler_sig, flags, mask);
 
-            assert_eq!(action_sig.flags(),
-                       SaFlags::SA_ONSTACK | SaFlags::SA_RESTART);
+            assert_eq!(
+                action_sig.flags(),
+                SaFlags::SA_ONSTACK | SaFlags::SA_RESTART
+            );
             assert_eq!(action_sig.handler(), handler_sig);
 
             mask = action_sig.mask();
@@ -1292,7 +1308,9 @@ mod tests {
 
             let action_ign = SigAction::new(SigHandler::SigIgn, flags, mask);
             assert_eq!(action_ign.handler(), SigHandler::SigIgn);
-        }).join().unwrap();
+        })
+        .join()
+        .unwrap();
     }
 
     #[test]
@@ -1306,6 +1324,25 @@ mod tests {
 
             raise(SIGUSR1).unwrap();
             assert_eq!(mask.wait().unwrap(), SIGUSR1);
-        }).join().unwrap();
+        })
+        .join()
+        .unwrap();
+    }
+
+    #[test]
+    fn test_from_sigset_t_unchecked() {
+        let src_set = SigSet::empty();
+        let set = unsafe { SigSet::from_sigset_t_unchecked(src_set.sigset) };
+
+        for signal in Signal::iterator() {
+            assert!(!set.contains(signal));
+        }
+
+        let src_set = SigSet::all();
+        let set = unsafe { SigSet::from_sigset_t_unchecked(src_set.sigset) };
+
+        for signal in Signal::iterator() {
+            assert!(set.contains(signal));
+        }
     }
 }

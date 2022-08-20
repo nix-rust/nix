@@ -4,7 +4,6 @@ use nix::sys::stat::Mode;
 use std::fs::File;
 use tempfile::tempdir;
 
-
 #[cfg(test)]
 fn flags() -> OFlag {
     #[cfg(target_os = "illumos")]
@@ -17,11 +16,11 @@ fn flags() -> OFlag {
 }
 
 #[test]
-#[allow(clippy::unnecessary_sort_by)]   // False positive
+#[allow(clippy::unnecessary_sort_by)] // False positive
 fn read() {
     let tmp = tempdir().unwrap();
     File::create(&tmp.path().join("foo")).unwrap();
-    ::std::os::unix::fs::symlink("foo", tmp.path().join("bar")).unwrap();
+    std::os::unix::fs::symlink("foo", tmp.path().join("bar")).unwrap();
     let mut dir = Dir::open(tmp.path(), flags(), Mode::empty()).unwrap();
     let mut entries: Vec<_> = dir.iter().map(|e| e.unwrap()).collect();
     entries.sort_by(|a, b| a.file_name().cmp(b.file_name()));
@@ -43,13 +42,23 @@ fn read() {
 fn rewind() {
     let tmp = tempdir().unwrap();
     let mut dir = Dir::open(tmp.path(), flags(), Mode::empty()).unwrap();
-    let entries1: Vec<_> = dir.iter().map(|e| e.unwrap().file_name().to_owned()).collect();
-    let entries2: Vec<_> = dir.iter().map(|e| e.unwrap().file_name().to_owned()).collect();
-    let entries3: Vec<_> = dir.into_iter().map(|e| e.unwrap().file_name().to_owned()).collect();
+    let entries1: Vec<_> = dir
+        .iter()
+        .map(|e| e.unwrap().file_name().to_owned())
+        .collect();
+    let entries2: Vec<_> = dir
+        .iter()
+        .map(|e| e.unwrap().file_name().to_owned())
+        .collect();
+    let entries3: Vec<_> = dir
+        .into_iter()
+        .map(|e| e.unwrap().file_name().to_owned())
+        .collect();
     assert_eq!(entries1, entries2);
     assert_eq!(entries2, entries3);
 }
 
+#[cfg(not(target_os = "haiku"))]
 #[test]
 fn ebadf() {
     assert_eq!(Dir::from_fd(-1).unwrap_err(), nix::Error::EBADF);

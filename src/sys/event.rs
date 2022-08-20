@@ -7,6 +7,7 @@ use libc::{timespec, time_t, c_int, c_long, intptr_t, uintptr_t};
 #[cfg(target_os = "netbsd")]
 use libc::{timespec, time_t, c_long, intptr_t, uintptr_t, size_t};
 use std::convert::TryInto;
+use std::mem;
 use std::os::unix::io::RawFd;
 use std::ptr;
 
@@ -21,13 +22,8 @@ pub struct KEvent {
           target_os = "ios", target_os = "macos",
           target_os = "openbsd"))]
 type type_of_udata = *mut libc::c_void;
-#[cfg(any(target_os = "dragonfly", target_os = "freebsd",
-          target_os = "ios", target_os = "macos"))]
-type type_of_data = intptr_t;
 #[cfg(any(target_os = "netbsd"))]
 type type_of_udata = intptr_t;
-#[cfg(any(target_os = "netbsd", target_os = "openbsd"))]
-type type_of_data = i64;
 
 #[cfg(target_os = "netbsd")]
 type type_of_event_filter = u32;
@@ -217,6 +213,7 @@ unsafe impl Send for KEvent {
 }
 
 impl KEvent {
+    #[allow(clippy::needless_update)]   // Not needless on all platforms.
     pub fn new(ident: uintptr_t, filter: EventFilter, flags: EventFlag,
                fflags:FilterFlag, data: intptr_t, udata: intptr_t) -> KEvent {
         KEvent { kevent: libc::kevent {
@@ -224,8 +221,10 @@ impl KEvent {
             filter: filter as type_of_event_filter,
             flags: flags.bits(),
             fflags: fflags.bits(),
-            data: data as type_of_data,
-            udata: udata as type_of_udata
+            // data can be either i64 or intptr_t, depending on platform
+            data: data as _,
+            udata: udata as type_of_udata,
+            .. unsafe { mem::zeroed() }
         } }
     }
 
@@ -328,7 +327,7 @@ fn test_struct_kevent() {
     assert_eq!(libc::EVFILT_READ, filter);
     assert_eq!(libc::EV_ONESHOT | libc::EV_ADD, actual.flags().bits());
     assert_eq!(libc::NOTE_CHILD | libc::NOTE_EXIT, actual.fflags().bits());
-    assert_eq!(0x1337, actual.data() as type_of_data);
+    assert_eq!(0x1337, actual.data());
     assert_eq!(udata as type_of_udata, actual.udata() as type_of_udata);
     assert_eq!(mem::size_of::<libc::kevent>(), mem::size_of::<KEvent>());
 }

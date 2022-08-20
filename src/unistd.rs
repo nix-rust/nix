@@ -1,28 +1,42 @@
 //! Safe wrappers around functions found in libc "unistd.h" header
 
+use crate::errno::{self, Errno};
+#[cfg(not(target_os = "redox"))]
+#[cfg(feature = "fs")]
+use crate::fcntl::{at_rawfd, AtFlags};
+#[cfg(feature = "fs")]
+use crate::fcntl::{fcntl, FcntlArg::F_SETFD, FdFlag, OFlag};
+#[cfg(all(
+    feature = "fs",
+    any(
+        target_os = "openbsd",
+        target_os = "netbsd",
+        target_os = "freebsd",
+        target_os = "dragonfly",
+        target_os = "macos",
+        target_os = "ios"
+    )
+))]
+use crate::sys::stat::FileFlag;
+#[cfg(feature = "fs")]
+use crate::sys::stat::Mode;
+use crate::{Error, NixPath, Result};
 #[cfg(not(target_os = "redox"))]
 use cfg_if::cfg_if;
-use crate::errno::{self, Errno};
-use crate::{Error, Result, NixPath};
-#[cfg(not(target_os = "redox"))]
-#[cfg(feature = "fs")]
-use crate::fcntl::{AtFlags, at_rawfd};
-use libc::{self, c_char, c_void, c_int, c_long, c_uint, size_t, pid_t, off_t,
-           uid_t, gid_t, mode_t, PATH_MAX};
-#[cfg(feature = "fs")]
-use crate::fcntl::{FdFlag, OFlag, fcntl, FcntlArg::F_SETFD};
-use std::{fmt, mem, ptr};
+use libc::{
+    self, c_char, c_int, c_long, c_uint, c_void, gid_t, mode_t, off_t, pid_t,
+    size_t, uid_t, PATH_MAX,
+};
 use std::convert::Infallible;
 use std::ffi::{CStr, OsString};
 #[cfg(not(target_os = "redox"))]
 use std::ffi::{CString, OsStr};
-use std::os::unix::ffi::OsStringExt;
 #[cfg(not(target_os = "redox"))]
 use std::os::unix::ffi::OsStrExt;
+use std::os::unix::ffi::OsStringExt;
 use std::os::unix::io::RawFd;
 use std::path::PathBuf;
-#[cfg(feature = "fs")]
-use crate::sys::stat::Mode;
+use std::{fmt, mem, ptr};
 
 feature! {
     #![feature = "fs"]
@@ -30,22 +44,26 @@ feature! {
     pub use self::pivot_root::*;
 }
 
-#[cfg(any(target_os = "android",
-          target_os = "dragonfly",
-          target_os = "freebsd",
-          target_os = "linux",
-          target_os = "openbsd"))]
+#[cfg(any(
+    target_os = "android",
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "linux",
+    target_os = "openbsd"
+))]
 pub use self::setres::*;
 
-#[cfg(any(target_os = "android",
-          target_os = "dragonfly",
-          target_os = "freebsd",
-          target_os = "linux",
-          target_os = "openbsd"))]
+#[cfg(any(
+    target_os = "android",
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "linux",
+    target_os = "openbsd"
+))]
 pub use self::getres::*;
 
 feature! {
-#![feature = "users"]
+#![feature = "user"]
 
 /// User identifier
 ///
@@ -61,11 +79,13 @@ impl Uid {
     }
 
     /// Returns Uid of calling process. This is practically a more Rusty alias for `getuid`.
+    #[cfg_attr(has_doc_alias, doc(alias("getuid")))]
     pub fn current() -> Self {
         getuid()
     }
 
     /// Returns effective Uid of calling process. This is practically a more Rusty alias for `geteuid`.
+    #[cfg_attr(has_doc_alias, doc(alias("geteuid")))]
     pub fn effective() -> Self {
         geteuid()
     }
@@ -84,6 +104,12 @@ impl Uid {
 impl From<Uid> for uid_t {
     fn from(uid: Uid) -> Self {
         uid.0
+    }
+}
+
+impl From<uid_t> for Uid {
+    fn from(uid: uid_t) -> Self {
+        Uid(uid)
     }
 }
 
@@ -110,11 +136,13 @@ impl Gid {
     }
 
     /// Returns Gid of calling process. This is practically a more Rusty alias for `getgid`.
+    #[cfg_attr(has_doc_alias, doc(alias("getgid")))]
     pub fn current() -> Self {
         getgid()
     }
 
     /// Returns effective Gid of calling process. This is practically a more Rusty alias for `getegid`.
+    #[cfg_attr(has_doc_alias, doc(alias("getegid")))]
     pub fn effective() -> Self {
         getegid()
     }
@@ -128,6 +156,12 @@ impl Gid {
 impl From<Gid> for gid_t {
     fn from(gid: Gid) -> Self {
         gid.0
+    }
+}
+
+impl From<gid_t> for Gid {
+    fn from(gid: gid_t) -> Self {
+        Gid(gid)
     }
 }
 
@@ -154,11 +188,13 @@ impl Pid {
     }
 
     /// Returns PID of calling process
+    #[cfg_attr(has_doc_alias, doc(alias("getpid")))]
     pub fn this() -> Self {
         getpid()
     }
 
     /// Returns PID of parent of calling process
+    #[cfg_attr(has_doc_alias, doc(alias("getppid")))]
     pub fn parent() -> Self {
         getppid()
     }
@@ -549,7 +585,7 @@ pub fn mkfifo<P: ?Sized + NixPath>(path: &P, mode: Mode) -> Result<()> {
 // mkfifoat is not implemented in OSX or android
 #[inline]
 #[cfg(not(any(
-    target_os = "macos", target_os = "ios",
+    target_os = "macos", target_os = "ios", target_os = "haiku",
     target_os = "android", target_os = "redox")))]
 pub fn mkfifoat<P: ?Sized + NixPath>(dirfd: Option<RawFd>, path: &P, mode: Mode) -> Result<()> {
     let res = path.with_nix_path(|cstr| unsafe {
@@ -591,12 +627,12 @@ pub fn symlinkat<P1: ?Sized + NixPath, P2: ?Sized + NixPath>(
 
 // Double the buffer capacity up to limit. In case it already has
 // reached the limit, return Errno::ERANGE.
-#[cfg(any(feature = "fs", feature = "users"))]
+#[cfg(any(feature = "fs", feature = "user"))]
 fn reserve_double_buffer_size<T>(buf: &mut Vec<T>, limit: usize) -> Result<()> {
     use std::cmp::min;
 
     if buf.capacity() >= limit {
-        return Err(Errno::ERANGE)
+        return Err(Errno::ERANGE);
     }
 
     let capacity = min(buf.capacity() * 2, limit);
@@ -654,7 +690,7 @@ pub fn getcwd() -> Result<PathBuf> {
 }
 
 feature! {
-#![all(feature = "users", feature = "fs")]
+#![all(feature = "user", feature = "fs")]
 
 /// Computes the raw UID and GID values to pass to a `*chown` call.
 // The cast is not unnecessary on all platforms.
@@ -722,8 +758,8 @@ pub enum FchownatFlags {
 /// If `flag` is `FchownatFlags::NoFollowSymlink` and `path` names a symbolic link,
 /// then the mode of the symbolic link is changed.
 ///
-/// `fchownat(None, path, mode, FchownatFlags::NoFollowSymlink)` is identical to
-/// a call `libc::lchown(path, mode)`.  That's why `lchmod` is unimplemented in
+/// `fchownat(None, path, owner, group, FchownatFlags::NoFollowSymlink)` is identical to
+/// a call `libc::lchown(path, owner, group)`.  That's why `lchown` is unimplemented in
 /// the `nix` crate.
 ///
 /// # References
@@ -967,34 +1003,34 @@ pub fn sethostname<S: AsRef<OsStr>>(name: S) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
-/// Get the host name and store it in the provided buffer, returning a pointer
-/// the `CStr` in that buffer on success (see
+/// Get the host name and store it in an internally allocated buffer, returning an
+/// `OsString` on success (see
 /// [gethostname(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/gethostname.html)).
 ///
 /// This function call attempts to get the host name for the running system and
-/// store it in a provided buffer.  The buffer will be populated with bytes up
-/// to the length of the provided slice including a NUL terminating byte.  If
-/// the hostname is longer than the length provided, no error will be provided.
-/// The posix specification does not specify whether implementations will
-/// null-terminate in this case, but the nix implementation will ensure that the
-/// buffer is null terminated in this case.
+/// store it in an internal buffer, returning it as an `OsString` if successful.
 ///
 /// ```no_run
 /// use nix::unistd;
 ///
-/// let mut buf = [0u8; 64];
-/// let hostname_cstr = unistd::gethostname(&mut buf).expect("Failed getting hostname");
-/// let hostname = hostname_cstr.to_str().expect("Hostname wasn't valid UTF-8");
+/// let hostname = unistd::gethostname().expect("Failed getting hostname");
+/// let hostname = hostname.into_string().expect("Hostname wasn't valid UTF-8");
 /// println!("Hostname: {}", hostname);
 /// ```
-pub fn gethostname(buffer: &mut [u8]) -> Result<&CStr> {
+pub fn gethostname() -> Result<OsString> {
+    // The capacity is the max length of a hostname plus the NUL terminator.
+    let mut buffer: Vec<u8> = Vec::with_capacity(256);
     let ptr = buffer.as_mut_ptr() as *mut c_char;
-    let len = buffer.len() as size_t;
+    let len = buffer.capacity() as size_t;
 
     let res = unsafe { libc::gethostname(ptr, len) };
     Errno::result(res).map(|_| {
-        buffer[len - 1] = 0; // ensure always null-terminated
-        unsafe { CStr::from_ptr(buffer.as_ptr() as *const c_char) }
+        unsafe {
+            buffer.as_mut_ptr().wrapping_add(len - 1).write(0); // ensure always null-terminated
+            let len = CStr::from_ptr(buffer.as_ptr() as *const c_char).len();
+            buffer.set_len(len);
+        }
+        OsString::from_vec(buffer)
     })
 }
 }
@@ -1033,7 +1069,9 @@ pub fn close(fd: RawFd) -> Result<()> {
 ///
 /// See also [read(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/read.html)
 pub fn read(fd: RawFd, buf: &mut [u8]) -> Result<usize> {
-    let res = unsafe { libc::read(fd, buf.as_mut_ptr() as *mut c_void, buf.len() as size_t) };
+    let res = unsafe {
+        libc::read(fd, buf.as_mut_ptr() as *mut c_void, buf.len() as size_t)
+    };
 
     Errno::result(res).map(|r| r as usize)
 }
@@ -1042,7 +1080,9 @@ pub fn read(fd: RawFd, buf: &mut [u8]) -> Result<usize> {
 ///
 /// See also [write(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/write.html)
 pub fn write(fd: RawFd, buf: &[u8]) -> Result<usize> {
-    let res = unsafe { libc::write(fd, buf.as_ptr() as *const c_void, buf.len() as size_t) };
+    let res = unsafe {
+        libc::write(fd, buf.as_ptr() as *const c_void, buf.len() as size_t)
+    };
 
     Errno::result(res).map(|r| r as usize)
 }
@@ -1106,15 +1146,13 @@ pub fn lseek64(fd: RawFd, offset: libc::off64_t, whence: Whence) -> Result<libc:
 ///
 /// See also [pipe(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/pipe.html)
 pub fn pipe() -> std::result::Result<(RawFd, RawFd), Error> {
-    unsafe {
-        let mut fds = mem::MaybeUninit::<[c_int; 2]>::uninit();
+    let mut fds = mem::MaybeUninit::<[c_int; 2]>::uninit();
 
-        let res = libc::pipe(fds.as_mut_ptr() as *mut c_int);
+    let res = unsafe { libc::pipe(fds.as_mut_ptr() as *mut c_int) };
 
-        Error::result(res)?;
+    Error::result(res)?;
 
-        Ok((fds.assume_init()[0], fds.assume_init()[1]))
-    }
+    unsafe { Ok((fds.assume_init()[0], fds.assume_init()[1])) }
 }
 
 feature! {
@@ -1348,7 +1386,7 @@ pub fn fdatasync(fd: RawFd) -> Result<()> {
 }
 
 feature! {
-#![feature = "users"]
+#![feature = "user"]
 
 /// Get a real user ID
 ///
@@ -1432,7 +1470,7 @@ pub fn setgid(gid: Gid) -> Result<()> {
 }
 
 feature! {
-#![all(feature = "fs", feature = "users")]
+#![all(feature = "fs", feature = "user")]
 /// Set the user identity used for filesystem checks per-thread.
 /// On both success and failure, this call returns the previous filesystem user
 /// ID of the caller.
@@ -1457,7 +1495,7 @@ pub fn setfsgid(gid: Gid) -> Gid {
 }
 
 feature! {
-#![feature = "users"]
+#![feature = "user"]
 
 /// Get the list of supplementary group IDs of the calling process.
 ///
@@ -1534,7 +1572,7 @@ pub fn getgroups() -> Result<Vec<Gid>> {
 /// # use std::error::Error;
 /// # use nix::unistd::*;
 /// #
-/// # fn try_main() -> Result<(), Box<Error>> {
+/// # fn try_main() -> Result<(), Box<dyn Error>> {
 /// let uid = Uid::from_raw(33);
 /// let gid = Gid::from_raw(34);
 /// setgroups(&[gid])?;
@@ -1546,7 +1584,7 @@ pub fn getgroups() -> Result<Vec<Gid>> {
 /// #
 /// # try_main().unwrap();
 /// ```
-#[cfg(not(any(target_os = "ios", target_os = "macos", target_os = "redox")))]
+#[cfg(not(any(target_os = "ios", target_os = "macos", target_os = "redox", target_os = "haiku")))]
 pub fn setgroups(groups: &[Gid]) -> Result<()> {
     cfg_if! {
         if #[cfg(any(target_os = "dragonfly",
@@ -1660,7 +1698,7 @@ pub fn getgrouplist(user: &CStr, group: Gid) -> Result<Vec<Gid>> {
 /// # use std::ffi::CString;
 /// # use nix::unistd::*;
 /// #
-/// # fn try_main() -> Result<(), Box<Error>> {
+/// # fn try_main() -> Result<(), Box<dyn Error>> {
 /// let user = CString::new("www-data").unwrap();
 /// let uid = Uid::from_raw(33);
 /// let gid = Gid::from_raw(33);
@@ -1673,7 +1711,7 @@ pub fn getgrouplist(user: &CStr, group: Gid) -> Result<Vec<Gid>> {
 /// #
 /// # try_main().unwrap();
 /// ```
-#[cfg(not(any(target_os = "ios", target_os = "macos", target_os = "redox")))]
+#[cfg(not(any(target_os = "ios", target_os = "macos", target_os = "redox", target_os = "haiku")))]
 pub fn initgroups(user: &CStr, group: Gid) -> Result<()> {
     cfg_if! {
         if #[cfg(any(target_os = "ios", target_os = "macos"))] {
@@ -1802,7 +1840,7 @@ pub fn sleep(seconds: c_uint) -> c_uint {
 feature! {
 #![feature = "acct"]
 
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "redox", target_os = "haiku")))]
 pub mod acct {
     use crate::{Result, NixPath};
     use crate::errno::Errno;
@@ -1868,7 +1906,7 @@ pub fn mkstemp<P: ?Sized + NixPath>(template: &P) -> Result<(RawFd, PathBuf)> {
 }
 
 feature! {
-#![all(feature = "fs", feature = "features")]
+#![all(feature = "fs", feature = "feature")]
 
 /// Variable names for `pathconf`
 ///
@@ -2064,7 +2102,7 @@ pub fn pathconf<P: ?Sized + NixPath>(path: &P, var: PathconfVar) -> Result<Optio
 }
 
 feature! {
-#![feature = "features"]
+#![feature = "feature"]
 
 /// Variable names for `sysconf`
 ///
@@ -2088,12 +2126,12 @@ feature! {
 pub enum SysconfVar {
     /// Maximum number of I/O operations in a single list I/O call supported by
     /// the implementation.
-    #[cfg(not(target_os = "redox"))]
+    #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     AIO_LISTIO_MAX = libc::_SC_AIO_LISTIO_MAX,
     /// Maximum number of outstanding asynchronous I/O operations supported by
     /// the implementation.
-    #[cfg(not(target_os = "redox"))]
+    #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     AIO_MAX = libc::_SC_AIO_MAX,
     #[cfg(any(target_os="android", target_os="dragonfly", target_os="freebsd",
@@ -2110,19 +2148,19 @@ pub enum SysconfVar {
     #[cfg_attr(docsrs, doc(cfg(all())))]
     ATEXIT_MAX = libc::_SC_ATEXIT_MAX,
     /// Maximum obase values allowed by the bc utility.
-    #[cfg(not(target_os = "redox"))]
+    #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     BC_BASE_MAX = libc::_SC_BC_BASE_MAX,
     /// Maximum number of elements permitted in an array by the bc utility.
-    #[cfg(not(target_os = "redox"))]
+    #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     BC_DIM_MAX = libc::_SC_BC_DIM_MAX,
     /// Maximum scale value allowed by the bc utility.
-    #[cfg(not(target_os = "redox"))]
+    #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     BC_SCALE_MAX = libc::_SC_BC_SCALE_MAX,
     /// Maximum length of a string constant accepted by the bc utility.
-    #[cfg(not(target_os = "redox"))]
+    #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     BC_STRING_MAX = libc::_SC_BC_STRING_MAX,
     /// Maximum number of simultaneous processes per real user ID.
@@ -2131,16 +2169,16 @@ pub enum SysconfVar {
     CLK_TCK = libc::_SC_CLK_TCK,
     /// Maximum number of weights that can be assigned to an entry of the
     /// LC_COLLATE order keyword in the locale definition file
-    #[cfg(not(target_os = "redox"))]
+    #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     COLL_WEIGHTS_MAX = libc::_SC_COLL_WEIGHTS_MAX,
     /// Maximum number of timer expiration overruns.
-    #[cfg(not(target_os = "redox"))]
+    #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     DELAYTIMER_MAX = libc::_SC_DELAYTIMER_MAX,
     /// Maximum number of expressions that can be nested within parentheses by
     /// the expr utility.
-    #[cfg(not(target_os = "redox"))]
+    #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     EXPR_NEST_MAX = libc::_SC_EXPR_NEST_MAX,
     #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "illumos",
@@ -2159,10 +2197,11 @@ pub enum SysconfVar {
     /// input line (either standard input or another file), when the utility is
     /// described as processing text files. The length includes room for the
     /// trailing <newline>.
-    #[cfg(not(target_os = "redox"))]
+    #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     LINE_MAX = libc::_SC_LINE_MAX,
     /// Maximum length of a login name.
+    #[cfg(not(target_os = "haiku"))]
     LOGIN_NAME_MAX = libc::_SC_LOGIN_NAME_MAX,
     /// Maximum number of simultaneous supplementary group IDs per process.
     NGROUPS_MAX = libc::_SC_NGROUPS_MAX,
@@ -2175,11 +2214,11 @@ pub enum SysconfVar {
     #[cfg_attr(docsrs, doc(cfg(all())))]
     GETPW_R_SIZE_MAX = libc::_SC_GETPW_R_SIZE_MAX,
     /// The maximum number of open message queue descriptors a process may hold.
-    #[cfg(not(target_os = "redox"))]
+    #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     MQ_OPEN_MAX = libc::_SC_MQ_OPEN_MAX,
     /// The maximum number of message priorities supported by the implementation.
-    #[cfg(not(target_os = "redox"))]
+    #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     MQ_PRIO_MAX = libc::_SC_MQ_PRIO_MAX,
     /// A value one greater than the maximum value that the system may assign to
@@ -2197,7 +2236,7 @@ pub enum SysconfVar {
     /// The implementation supports barriers.
     _POSIX_BARRIERS = libc::_SC_BARRIERS,
     /// The implementation supports asynchronous input and output.
-    #[cfg(not(target_os = "redox"))]
+    #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_ASYNCHRONOUS_IO = libc::_SC_ASYNCHRONOUS_IO,
     #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "illumos",
@@ -2213,7 +2252,7 @@ pub enum SysconfVar {
     /// The implementation supports the Process CPU-Time Clocks option.
     _POSIX_CPUTIME = libc::_SC_CPUTIME,
     /// The implementation supports the File Synchronization option.
-    #[cfg(not(target_os = "redox"))]
+    #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_FSYNC = libc::_SC_FSYNC,
     #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "illumos",
@@ -2227,15 +2266,15 @@ pub enum SysconfVar {
     #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_JOB_CONTROL = libc::_SC_JOB_CONTROL,
     /// The implementation supports memory mapped Files.
-    #[cfg(not(target_os = "redox"))]
+    #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_MAPPED_FILES = libc::_SC_MAPPED_FILES,
     /// The implementation supports the Process Memory Locking option.
-    #[cfg(not(target_os = "redox"))]
+    #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_MEMLOCK = libc::_SC_MEMLOCK,
     /// The implementation supports the Range Memory Locking option.
-    #[cfg(not(target_os = "redox"))]
+    #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_MEMLOCK_RANGE = libc::_SC_MEMLOCK_RANGE,
     /// The implementation supports memory protection.
@@ -2243,7 +2282,7 @@ pub enum SysconfVar {
     #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_MEMORY_PROTECTION = libc::_SC_MEMORY_PROTECTION,
     /// The implementation supports the Message Passing option.
-    #[cfg(not(target_os = "redox"))]
+    #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_MESSAGE_PASSING = libc::_SC_MESSAGE_PASSING,
     /// The implementation supports the Monotonic Clock option.
@@ -2257,7 +2296,7 @@ pub enum SysconfVar {
     /// The implementation supports the Prioritized Input and Output option.
     _POSIX_PRIORITIZED_IO = libc::_SC_PRIORITIZED_IO,
     /// The implementation supports the Process Scheduling option.
-    #[cfg(not(target_os = "redox"))]
+    #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_PRIORITY_SCHEDULING = libc::_SC_PRIORITY_SCHEDULING,
     #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "illumos",
@@ -2293,7 +2332,7 @@ pub enum SysconfVar {
     #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_SEMAPHORES = libc::_SC_SEMAPHORES,
     /// The implementation supports the Shared Memory Objects option.
-    #[cfg(not(target_os = "redox"))]
+    #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_SHARED_MEMORY_OBJECTS = libc::_SC_SHARED_MEMORY_OBJECTS,
     #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
@@ -2324,7 +2363,7 @@ pub enum SysconfVar {
     #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_SS_REPL_MAX = libc::_SC_SS_REPL_MAX,
     /// The implementation supports the Synchronized Input and Output option.
-    #[cfg(not(target_os = "redox"))]
+    #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_SYNCHRONIZED_IO = libc::_SC_SYNCHRONIZED_IO,
     /// The implementation supports the Thread Stack Address Attribute option.
@@ -2342,11 +2381,11 @@ pub enum SysconfVar {
     _POSIX_THREAD_CPUTIME = libc::_SC_THREAD_CPUTIME,
     /// The implementation supports the Non-Robust Mutex Priority Inheritance
     /// option.
-    #[cfg(not(target_os = "redox"))]
+    #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_THREAD_PRIO_INHERIT = libc::_SC_THREAD_PRIO_INHERIT,
     /// The implementation supports the Non-Robust Mutex Priority Protection option.
-    #[cfg(not(target_os = "redox"))]
+    #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_THREAD_PRIO_PROTECT = libc::_SC_THREAD_PRIO_PROTECT,
     /// The implementation supports the Thread Execution Scheduling option.
@@ -2369,7 +2408,7 @@ pub enum SysconfVar {
     /// The implementation supports the Robust Mutex Priority Protection option.
     _POSIX_THREAD_ROBUST_PRIO_PROTECT = libc::_SC_THREAD_ROBUST_PRIO_PROTECT,
     /// The implementation supports thread-safe functions.
-    #[cfg(not(target_os = "redox"))]
+    #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_THREAD_SAFE_FUNCTIONS = libc::_SC_THREAD_SAFE_FUNCTIONS,
     #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
@@ -2466,28 +2505,28 @@ pub enum SysconfVar {
     /// using at least 64 bits.
     _POSIX_V6_LPBIG_OFFBIG = libc::_SC_V6_LPBIG_OFFBIG,
     /// The implementation supports the C-Language Binding option.
-    #[cfg(not(target_os = "redox"))]
+    #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX2_C_BIND = libc::_SC_2_C_BIND,
     /// The implementation supports the C-Language Development Utilities option.
-    #[cfg(not(target_os = "redox"))]
+    #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX2_C_DEV = libc::_SC_2_C_DEV,
     /// The implementation supports the Terminal Characteristics option.
-    #[cfg(not(target_os = "redox"))]
+    #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX2_CHAR_TERM = libc::_SC_2_CHAR_TERM,
     /// The implementation supports the FORTRAN Development Utilities option.
-    #[cfg(not(target_os = "redox"))]
+    #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX2_FORT_DEV = libc::_SC_2_FORT_DEV,
     /// The implementation supports the FORTRAN Runtime Utilities option.
-    #[cfg(not(target_os = "redox"))]
+    #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX2_FORT_RUN = libc::_SC_2_FORT_RUN,
     /// The implementation supports the creation of locales by the localedef
     /// utility.
-    #[cfg(not(target_os = "redox"))]
+    #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX2_LOCALEDEF = libc::_SC_2_LOCALEDEF,
     #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
@@ -2528,16 +2567,16 @@ pub enum SysconfVar {
     /// The implementation supports the Track Batch Job Request option.
     _POSIX2_PBS_TRACK = libc::_SC_2_PBS_TRACK,
     /// The implementation supports the Software Development Utilities option.
-    #[cfg(not(target_os = "redox"))]
+    #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX2_SW_DEV = libc::_SC_2_SW_DEV,
     /// The implementation supports the User Portability Utilities option.
-    #[cfg(not(target_os = "redox"))]
+    #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX2_UPE = libc::_SC_2_UPE,
     /// Integer value indicating version of the Shell and Utilities volume of
     /// POSIX.1 to which the implementation conforms.
-    #[cfg(not(target_os = "redox"))]
+    #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX2_VERSION = libc::_SC_2_VERSION,
     /// The size of a system page in bytes.
@@ -2545,18 +2584,19 @@ pub enum SysconfVar {
     /// POSIX also defines an alias named `PAGESIZE`, but Rust does not allow two
     /// enum constants to have the same value, so nix omits `PAGESIZE`.
     PAGE_SIZE = libc::_SC_PAGE_SIZE,
-    #[cfg(not(target_os = "redox"))]
+    #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     PTHREAD_DESTRUCTOR_ITERATIONS = libc::_SC_THREAD_DESTRUCTOR_ITERATIONS,
-    #[cfg(not(target_os = "redox"))]
+    #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     PTHREAD_KEYS_MAX = libc::_SC_THREAD_KEYS_MAX,
     #[cfg(not(target_os = "redox"))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     PTHREAD_STACK_MIN = libc::_SC_THREAD_STACK_MIN,
-    #[cfg(not(target_os = "redox"))]
+    #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     PTHREAD_THREADS_MAX = libc::_SC_THREAD_THREADS_MAX,
+    #[cfg(not(target_os = "haiku"))]
     RE_DUP_MAX = libc::_SC_RE_DUP_MAX,
     #[cfg(any(target_os="android", target_os="dragonfly", target_os="freebsd",
               target_os = "ios", target_os="linux", target_os = "macos",
@@ -2619,7 +2659,7 @@ pub enum SysconfVar {
     _XOPEN_REALTIME_THREADS = libc::_SC_XOPEN_REALTIME_THREADS,
     /// The implementation supports the Issue 4, Version 2 Shared Memory Option
     /// Group.
-    #[cfg(not(target_os = "redox"))]
+    #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     _XOPEN_SHM = libc::_SC_XOPEN_SHM,
     #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
@@ -2640,6 +2680,19 @@ pub enum SysconfVar {
     /// Integer value indicating version of the X/Open Portability Guide to
     /// which the implementation conforms.
     _XOPEN_VERSION = libc::_SC_XOPEN_VERSION,
+    /// The number of pages of physical memory. Note that it is possible for
+    /// the product of this value to overflow.
+    #[cfg(any(target_os="android", target_os="linux"))]
+    _PHYS_PAGES = libc::_SC_PHYS_PAGES,
+    /// The number of currently available pages of physical memory.
+    #[cfg(any(target_os="android", target_os="linux"))]
+    _AVPHYS_PAGES = libc::_SC_AVPHYS_PAGES,
+    /// The number of processors configured.
+    #[cfg(any(target_os="android", target_os="linux"))]
+    _NPROCESSORS_CONF = libc::_SC_NPROCESSORS_CONF,
+    /// The number of processors currently online (available).
+    #[cfg(any(target_os="android", target_os="linux"))]
+    _NPROCESSORS_ONLN = libc::_SC_NPROCESSORS_ONLN,
 }
 
 /// Get configurable system variables (see
@@ -2698,14 +2751,16 @@ mod pivot_root {
 }
 }
 
-#[cfg(any(target_os = "android",
-          target_os = "dragonfly",
-          target_os = "freebsd",
-          target_os = "linux",
-          target_os = "openbsd"))]
+#[cfg(any(
+    target_os = "android",
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "linux",
+    target_os = "openbsd"
+))]
 mod setres {
     feature! {
-    #![feature = "users"]
+    #![feature = "user"]
 
     use crate::Result;
     use crate::errno::Errno;
@@ -2745,14 +2800,16 @@ mod setres {
     }
 }
 
-#[cfg(any(target_os = "android",
-          target_os = "dragonfly",
-          target_os = "freebsd",
-          target_os = "linux",
-          target_os = "openbsd"))]
+#[cfg(any(
+    target_os = "android",
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "linux",
+    target_os = "openbsd"
+))]
 mod getres {
     feature! {
-    #![feature = "users"]
+    #![feature = "user"]
 
     use crate::Result;
     use crate::errno::Errno;
@@ -2815,7 +2872,7 @@ mod getres {
 }
 
 #[cfg(feature = "fs")]
-libc_bitflags!{
+libc_bitflags! {
     /// Options for access()
     #[cfg_attr(docsrs, doc(cfg(feature = "fs")))]
     pub struct AccessFlags : c_int {
@@ -2843,10 +2900,31 @@ pub fn access<P: ?Sized + NixPath>(path: &P, amode: AccessFlags) -> Result<()> {
     })?;
     Errno::result(res).map(drop)
 }
+
+/// Checks the file named by `path` for accessibility according to the flags given by `mode`
+///
+/// If `dirfd` has a value, then `path` is relative to directory associated with the file descriptor.
+///
+/// If `dirfd` is `None`, then `path` is relative to the current working directory.
+///
+/// # References
+///
+/// [faccessat(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/faccessat.html)
+// illumos: faccessat(2) appears to be supported, but the libc crate does not provide a binding.
+// redox: does not appear to support the *at family of syscalls.
+#[cfg(not(any(target_os = "illumos", target_os = "redox")))]
+pub fn faccessat<P: ?Sized + NixPath>(dirfd: Option<RawFd>, path: &P, mode: AccessFlags, flags: AtFlags) -> Result<()> {
+    let res = path.with_nix_path(|cstr| {
+        unsafe {
+            libc::faccessat(at_rawfd(dirfd), cstr.as_ptr(), mode.bits(), flags.bits())
+        }
+    })?;
+    Errno::result(res).map(drop)
+}
 }
 
 feature! {
-#![feature = "users"]
+#![feature = "user"]
 
 /// Representation of a User, based on `libc::passwd`
 ///
@@ -2855,11 +2933,11 @@ feature! {
 /// guaranteed to conform to [`NAME_REGEX`](https://serverfault.com/a/73101/407341), which only
 /// contains ASCII.
 #[cfg(not(target_os = "redox"))] // RedoxFS does not support passwd
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct User {
     /// Username
     pub name: String,
-    /// User password (probably encrypted)
+    /// User password (probably hashed)
     pub passwd: CString,
     /// User ID
     pub uid: Uid,
@@ -2875,6 +2953,7 @@ pub struct User {
     /// Login class
     #[cfg(not(any(target_os = "android",
                   target_os = "fuchsia",
+                  target_os = "haiku",
                   target_os = "illumos",
                   target_os = "linux",
                   target_os = "solaris")))]
@@ -2883,6 +2962,7 @@ pub struct User {
     /// Last password change
     #[cfg(not(any(target_os = "android",
                   target_os = "fuchsia",
+                  target_os = "haiku",
                   target_os = "illumos",
                   target_os = "linux",
                   target_os = "solaris")))]
@@ -2891,6 +2971,7 @@ pub struct User {
     /// Expiration time of account
     #[cfg(not(any(target_os = "android",
                   target_os = "fuchsia",
+                  target_os = "haiku",
                   target_os = "illumos",
                   target_os = "linux",
                   target_os = "solaris")))]
@@ -2898,37 +2979,40 @@ pub struct User {
     pub expire: libc::time_t
 }
 
-#[cfg(not(target_os = "redox"))] // RedoxFS does not support passwd
+#[cfg(not(target_os = "redox"))] //RedoxFS does not support passwd
 impl From<&libc::passwd> for User {
     fn from(pw: &libc::passwd) -> User {
         unsafe {
             User {
-                name: CStr::from_ptr((*pw).pw_name).to_string_lossy().into_owned(),
-                passwd: CString::new(CStr::from_ptr((*pw).pw_passwd).to_bytes()).unwrap(),
+                name: CStr::from_ptr(pw.pw_name).to_string_lossy().into_owned(),
+                passwd: CString::new(CStr::from_ptr(pw.pw_passwd).to_bytes()).unwrap(),
                 #[cfg(not(all(target_os = "android", target_pointer_width = "32")))]
-                gecos: CString::new(CStr::from_ptr((*pw).pw_gecos).to_bytes()).unwrap(),
-                dir: PathBuf::from(OsStr::from_bytes(CStr::from_ptr((*pw).pw_dir).to_bytes())),
-                shell: PathBuf::from(OsStr::from_bytes(CStr::from_ptr((*pw).pw_shell).to_bytes())),
-                uid: Uid::from_raw((*pw).pw_uid),
-                gid: Gid::from_raw((*pw).pw_gid),
+                gecos: CString::new(CStr::from_ptr(pw.pw_gecos).to_bytes()).unwrap(),
+                dir: PathBuf::from(OsStr::from_bytes(CStr::from_ptr(pw.pw_dir).to_bytes())),
+                shell: PathBuf::from(OsStr::from_bytes(CStr::from_ptr(pw.pw_shell).to_bytes())),
+                uid: Uid::from_raw(pw.pw_uid),
+                gid: Gid::from_raw(pw.pw_gid),
                 #[cfg(not(any(target_os = "android",
                               target_os = "fuchsia",
+                              target_os = "haiku",
                               target_os = "illumos",
                               target_os = "linux",
                               target_os = "solaris")))]
-                class: CString::new(CStr::from_ptr((*pw).pw_class).to_bytes()).unwrap(),
+                class: CString::new(CStr::from_ptr(pw.pw_class).to_bytes()).unwrap(),
                 #[cfg(not(any(target_os = "android",
                               target_os = "fuchsia",
+                              target_os = "haiku",
                               target_os = "illumos",
                               target_os = "linux",
                               target_os = "solaris")))]
-                change: (*pw).pw_change,
+                change: pw.pw_change,
                 #[cfg(not(any(target_os = "android",
                               target_os = "fuchsia",
+                              target_os = "haiku",
                               target_os = "illumos",
                               target_os = "linux",
                               target_os = "solaris")))]
-                expire: (*pw).pw_expire
+                expire: pw.pw_expire
             }
         }
     }
@@ -2960,18 +3044,21 @@ impl From<User> for libc::passwd {
             pw_gid: u.gid.0,
             #[cfg(not(any(target_os = "android",
                           target_os = "fuchsia",
+                          target_os = "haiku",
                           target_os = "illumos",
                           target_os = "linux",
                           target_os = "solaris")))]
             pw_class: u.class.into_raw(),
             #[cfg(not(any(target_os = "android",
                           target_os = "fuchsia",
+                          target_os = "haiku",
                           target_os = "illumos",
                           target_os = "linux",
                           target_os = "solaris")))]
             pw_change: u.change,
             #[cfg(not(any(target_os = "android",
                           target_os = "fuchsia",
+                          target_os = "haiku",
                           target_os = "illumos",
                           target_os = "linux",
                           target_os = "solaris")))]
@@ -3034,7 +3121,7 @@ impl User {
     /// use nix::unistd::{Uid, User};
     /// // Returns an Result<Option<User>>, thus the double unwrap.
     /// let res = User::from_uid(Uid::from_raw(0)).unwrap().unwrap();
-    /// assert!(res.name == "root");
+    /// assert_eq!(res.name, "root");
     /// ```
     pub fn from_uid(uid: Uid) -> Result<Option<Self>> {
         User::from_anything(|pwd, cbuf, cap, res| {
@@ -3053,7 +3140,7 @@ impl User {
     /// use nix::unistd::User;
     /// // Returns an Result<Option<User>>, thus the double unwrap.
     /// let res = User::from_name("root").unwrap().unwrap();
-    /// assert!(res.name == "root");
+    /// assert_eq!(res.name, "root");
     /// ```
     pub fn from_name(name: &str) -> Result<Option<Self>> {
         let name = CString::new(name).unwrap();
@@ -3065,7 +3152,7 @@ impl User {
 
 /// Representation of a Group, based on `libc::group`
 #[cfg(not(target_os = "redox"))] // RedoxFS does not support passwd
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Group {
     /// Group name
     pub name: String,
@@ -3082,10 +3169,10 @@ impl From<&libc::group> for Group {
     fn from(gr: &libc::group) -> Group {
         unsafe {
             Group {
-                name: CStr::from_ptr((*gr).gr_name).to_string_lossy().into_owned(),
-                passwd: CString::new(CStr::from_ptr((*gr).gr_passwd).to_bytes()).unwrap(),
-                gid: Gid::from_raw((*gr).gr_gid),
-                mem: Group::members((*gr).gr_mem)
+                name: CStr::from_ptr(gr.gr_name).to_string_lossy().into_owned(),
+                passwd: CString::new(CStr::from_ptr(gr.gr_passwd).to_bytes()).unwrap(),
+                gid: Gid::from_raw(gr.gr_gid),
+                mem: Group::members(gr.gr_mem)
             }
         }
     }
@@ -3212,7 +3299,7 @@ pub fn ttyname(fd: RawFd) -> Result<PathBuf> {
 }
 
 feature! {
-#![all(feature = "socket", feature = "users")]
+#![all(feature = "socket", feature = "user")]
 
 /// Get the effective user ID and group ID associated with a Unix domain socket.
 ///
@@ -3232,5 +3319,28 @@ pub fn getpeereid(fd: RawFd) -> Result<(Uid, Gid)> {
     let ret = unsafe { libc::getpeereid(fd, &mut uid, &mut gid) };
 
     Errno::result(ret).map(|_| (Uid(uid), Gid(gid)))
+}
+}
+
+feature! {
+#![all(feature = "fs")]
+
+/// Set the file flags.
+///
+/// See also [chflags(2)](https://www.freebsd.org/cgi/man.cgi?query=chflags&sektion=2)
+#[cfg(any(
+    target_os = "openbsd",
+    target_os = "netbsd",
+    target_os = "freebsd",
+    target_os = "dragonfly",
+    target_os = "macos",
+    target_os = "ios"
+))]
+pub fn chflags<P: ?Sized + NixPath>(path: &P, flags: FileFlag) -> Result<()> {
+    let res = path.with_nix_path(|cstr| unsafe {
+        libc::chflags(cstr.as_ptr(), flags.bits())
+    })?;
+
+    Errno::result(res).map(drop)
 }
 }
