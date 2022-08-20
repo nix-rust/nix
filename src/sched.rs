@@ -142,10 +142,10 @@ mod sched_linux_like {
     }
 }
 
-#[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "linux"))]
+#[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd", target_os = "linux"))]
 pub use self::sched_affinity::*;
 
-#[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "linux"))]
+#[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd", target_os = "linux"))]
 mod sched_affinity {
     use crate::errno::Errno;
     use std::mem;
@@ -157,10 +157,13 @@ mod sched_affinity {
     /// sched_getaffinity for example.
     ///
     /// This is a wrapper around `libc::cpu_set_t`.
-    #[repr(C)]
+    #[repr(transparent)]
     #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
     pub struct CpuSet {
+        #[cfg(not(target_os = "freebsd"))]
         cpu_set: libc::cpu_set_t,
+        #[cfg(target_os = "freebsd")]
+        cpu_set: libc::cpuset_t,
     }
 
     impl CpuSet {
@@ -205,7 +208,12 @@ mod sched_affinity {
 
         /// Return the maximum number of CPU in CpuSet
         pub const fn count() -> usize {
-            8 * mem::size_of::<libc::cpu_set_t>()
+            #[cfg(not(target_os = "freebsd"))]
+            let bytes = mem::size_of::<libc::cpu_set_t>();
+            #[cfg(target_os = "freebsd")]
+            let bytes = mem::size_of::<libc::cpuset_t>();
+
+            8 * bytes
         }
     }
 
