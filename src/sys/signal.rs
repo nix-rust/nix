@@ -475,7 +475,7 @@ pub struct SigSet {
 
 impl SigSet {
     /// Initialize to include all signals.
-    #[cfg_attr(has_doc_alias, doc(alias("sigfillset")))]
+    #[doc(alias("sigfillset"))]
     pub fn all() -> SigSet {
         let mut sigset = mem::MaybeUninit::uninit();
         let _ = unsafe { libc::sigfillset(sigset.as_mut_ptr()) };
@@ -484,7 +484,7 @@ impl SigSet {
     }
 
     /// Initialize to include nothing.
-    #[cfg_attr(has_doc_alias, doc(alias("sigemptyset")))]
+    #[doc(alias("sigemptyset"))]
     pub fn empty() -> SigSet {
         let mut sigset = mem::MaybeUninit::uninit();
         let _ = unsafe { libc::sigemptyset(sigset.as_mut_ptr()) };
@@ -493,25 +493,25 @@ impl SigSet {
     }
 
     /// Add the specified signal to the set.
-    #[cfg_attr(has_doc_alias, doc(alias("sigaddset")))]
+    #[doc(alias("sigaddset"))]
     pub fn add(&mut self, signal: Signal) {
         unsafe { libc::sigaddset(&mut self.sigset as *mut libc::sigset_t, signal as libc::c_int) };
     }
 
     /// Remove all signals from this set.
-    #[cfg_attr(has_doc_alias, doc(alias("sigemptyset")))]
+    #[doc(alias("sigemptyset"))]
     pub fn clear(&mut self) {
         unsafe { libc::sigemptyset(&mut self.sigset as *mut libc::sigset_t) };
     }
 
     /// Remove the specified signal from this set.
-    #[cfg_attr(has_doc_alias, doc(alias("sigdelset")))]
+    #[doc(alias("sigdelset"))]
     pub fn remove(&mut self, signal: Signal) {
         unsafe { libc::sigdelset(&mut self.sigset as *mut libc::sigset_t, signal as libc::c_int) };
     }
 
     /// Return whether this set includes the specified signal.
-    #[cfg_attr(has_doc_alias, doc(alias("sigismember")))]
+    #[doc(alias("sigismember"))]
     pub fn contains(&self, signal: Signal) -> bool {
         let res = unsafe { libc::sigismember(&self.sigset as *const libc::sigset_t, signal as libc::c_int) };
 
