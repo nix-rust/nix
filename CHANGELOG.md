@@ -6,6 +6,9 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased] - ReleaseDate
 ### Added
 
+- Added `line_discipline` field to `Termios` on Linux, Android and Haiku
+    ([#1805](https://github.com/nix-rust/nix/pull/1805))
+
 ### Changed
 
 - The MSRV is now 1.56.1
