@@ -115,3 +115,59 @@ fn test_mremap_shrink() {
     // The first KB should still be accessible and have the old data in it.
     assert_eq!(slice[ONE_K - 1], 0xFF);
 }
+
+#[test]
+#[cfg(target_vendor = "apple")]
+fn test_pthread_map_jit() {
+    use nix::libc::size_t;
+    use nix::sys::mman::mmap;
+    use nix::sys::pthread::{
+        pthread_jit_write_protect_np, pthread_jit_write_protect_supported_np,
+    };
+
+    match pthread_jit_write_protect_supported_np() {
+        Ok(..) => {
+            const ONE_K: size_t = 1024;
+            pthread_jit_write_protect_np(true);
+            let tslice: &mut [u8] = unsafe {
+                let mem = mmap(
+                    std::ptr::null_mut(),
+                    10 * ONE_K,
+                    ProtFlags::PROT_READ
+                        | ProtFlags::PROT_WRITE
+                        | ProtFlags::PROT_EXEC,
+                    MapFlags::MAP_ANONYMOUS
+                        | MapFlags::MAP_PRIVATE
+                        | MapFlags::MAP_JIT,
+                    -1,
+                    0,
+                )
+                .unwrap();
+                std::slice::from_raw_parts_mut(mem as *mut u8, ONE_K)
+            };
+            // A SIBGUS signal would be triggered upon value change
+            assert_eq!(tslice[ONE_K - 1], 0x00);
+            pthread_jit_write_protect_np(false);
+            let slice: &mut [u8] = unsafe {
+                let mem = mmap(
+                    std::ptr::null_mut(),
+                    10 * ONE_K,
+                    ProtFlags::PROT_READ
+                        | ProtFlags::PROT_WRITE
+                        | ProtFlags::PROT_EXEC,
+                    MapFlags::MAP_ANONYMOUS
+                        | MapFlags::MAP_PRIVATE
+                        | MapFlags::MAP_JIT,
+                    -1,
+                    0,
+                )
+                .unwrap();
+                std::slice::from_raw_parts_mut(mem as *mut u8, ONE_K)
+            };
+            assert_eq!(slice[ONE_K - 1], 0x00);
+            slice[ONE_K - 1] = 0xFF;
+            assert_eq!(slice[ONE_K - 1], 0xFF);
+        }
+        _ => println!("MAP_JIT region protection unsupported"),
+    }
+}

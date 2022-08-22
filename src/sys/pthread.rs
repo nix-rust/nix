@@ -40,3 +40,19 @@ pub fn pthread_kill<T>(thread: Pthread, signal: T) -> Result<()>
     Errno::result(res).map(drop)
 }
 }
+
+/// Checks whether the system supports per-thread protection on region created with MAP_JIT
+///
+/// Mostly meaningful only on arm64 architecture.
+#[cfg(target_vendor = "apple")]
+pub fn pthread_jit_write_protect_supported_np() -> Result<bool> {
+    Ok(unsafe { libc::pthread_jit_write_protect_supported_np() == 1 })
+}
+
+/// Enable/disable per-thread protection on region created with MAP_JIT
+///
+/// Mostly meaningful only on arm64 architecture.
+#[cfg(target_vendor = "apple")]
+pub fn pthread_jit_write_protect_np(enabled: bool) {
+    unsafe { libc::pthread_jit_write_protect_np(enabled as i32) };
+}
