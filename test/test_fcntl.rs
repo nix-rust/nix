@@ -216,7 +216,7 @@ fn test_readlink() {
     let src = tempdir.path().join("a");
     let dst = tempdir.path().join("b");
     println!("a: {:?}, b: {:?}", &src, &dst);
-    fs::symlink(&src.as_path(), &dst.as_path()).unwrap();
+    fs::symlink(src.as_path(), dst.as_path()).unwrap();
     let dirfd = open(tempdir.path(), OFlag::empty(), Mode::empty()).unwrap();
     let expected_dir = src.to_str().unwrap();
 

@@ -1477,7 +1477,7 @@ pub fn sendmsg<S>(fd: RawFd, iov: &[IoSlice<'_>], cmsgs: &[ControlMessage],
     // because subsequent code will not clear the padding bytes.
     let mut cmsg_buffer = vec![0u8; capacity];
 
-    let mhdr = pack_mhdr_to_send(&mut cmsg_buffer[..], &iov, &cmsgs, addr);
+    let mhdr = pack_mhdr_to_send(&mut cmsg_buffer[..], iov, cmsgs, addr);
 
     let ret = unsafe { libc::sendmsg(fd, &mhdr, flags.bits()) };
 
