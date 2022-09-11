@@ -725,7 +725,7 @@ struct SetBool {
 
 impl<'a> Set<'a, bool> for SetBool {
     fn new(val: &'a bool) -> SetBool {
-        SetBool { val: if *val { 1 } else { 0 } }
+        SetBool { val: i32::from(*val) }
     }
 
     fn ffi_ptr(&self) -> *const c_void {
