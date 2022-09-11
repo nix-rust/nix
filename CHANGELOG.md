@@ -14,6 +14,9 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   ([#1788](https://github.com/nix-rust/nix/pull/1788))
 - Fix microsecond calculation for `TimeSpec`.
   ([#1801](https://github.com/nix-rust/nix/pull/1801))
+- Fix `User::from_name` and `Group::from_name` panicking
+  when given a name containing a nul.
+  ([#1815](https://github.com/nix-rust/nix/pull/1815))
 
 ### Removed
 
