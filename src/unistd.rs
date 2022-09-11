@@ -2759,7 +2759,10 @@ impl User {
     /// assert!(res.name == "root");
     /// ```
     pub fn from_name(name: &str) -> Result<Option<Self>> {
-        let name = CString::new(name).unwrap();
+        let name = match CString::new(name) {
+            Ok(c_str) => c_str,
+            Err(_nul_error) => return Ok(None),
+        };
         User::from_anything(|pwd, cbuf, cap, res| {
             unsafe { libc::getpwnam_r(name.as_ptr(), pwd, cbuf, cap, res) }
         })
@@ -2884,7 +2887,10 @@ impl Group {
     /// assert!(res.name == "root");
     /// ```
     pub fn from_name(name: &str) -> Result<Option<Self>> {
-        let name = CString::new(name).unwrap();
+        let name = match CString::new(name) {
+            Ok(c_str) => c_str,
+            Err(_nul_error) => return Ok(None),
+        };
         Group::from_anything(|grp, cbuf, cap, res| {
             unsafe { libc::getgrnam_r(name.as_ptr(), grp, cbuf, cap, res) }
         })
