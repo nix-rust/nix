@@ -10,6 +10,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   ([#1804](https://github.com/nix-rust/nix/pull/1804))
 - Added `line_discipline` field to `Termios` on Linux, Android and Haiku
   ([#1805](https://github.com/nix-rust/nix/pull/1805))
+- Added `domainname` field of `UtsName` on Android and Linux
+  ([#1817](https://github.com/nix-rust/nix/pull/1817))
 
 ### Changed
 

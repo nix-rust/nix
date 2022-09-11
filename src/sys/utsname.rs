@@ -35,6 +35,12 @@ impl UtsName {
     pub fn machine(&self) -> &OsStr {
         cast_and_trim(&self.0.machine)
     }
+
+    /// NIS or YP domain name of this machine.
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    pub fn domainname(&self) -> &OsStr {
+        cast_and_trim(&self.0.domainname)
+    }
 }
 
 /// Get system identification
