@@ -24,6 +24,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   ([#1824](https://github.com/nix-rust/nix/pull/1824))
 - Fixed using `SockaddrStorage` to store a Unix-domain socket address on Linux.
   ([#1871](https://github.com/nix-rust/nix/pull/1871))
+- Fix UB with `sys::socket::sockopt::SockType` using `SOCK_PACKET`.
+  ([#1821](https://github.com/nix-rust/nix/pull/1821))
 
 ### Removed
 
