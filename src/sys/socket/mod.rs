@@ -5,7 +5,7 @@ use cfg_if::cfg_if;
 use crate::{Result, errno::Errno};
 use libc::{self, c_void, c_int, iovec, socklen_t, size_t,
         CMSG_FIRSTHDR, CMSG_NXTHDR, CMSG_DATA, CMSG_LEN};
-use std::convert::TryInto;
+use std::convert::{TryFrom, TryInto};
 use std::{mem, ptr, slice};
 use std::os::unix::io::RawFd;
 #[cfg(feature = "net")]
@@ -119,6 +119,24 @@ pub enum SockType {
     /// Provides a reliable datagram layer that does not
     /// guarantee ordering.
     Rdm = libc::SOCK_RDM,
+}
+// The TryFrom impl could've been derived using libc_enum!.  But for
+// backwards-compatibility with Nix-0.25.0 we manually implement it, so as to
+// keep the old variant names.
+impl TryFrom<i32> for SockType {
+    type Error = crate::Error;
+
+    fn try_from(x: i32) -> Result<Self> {
+        match x {
+            libc::SOCK_STREAM => Ok(Self::Stream),
+            libc::SOCK_DGRAM => Ok(Self::Datagram),
+            libc::SOCK_SEQPACKET => Ok(Self::SeqPacket),
+            libc::SOCK_RAW => Ok(Self::Raw),
+            #[cfg(not(any(target_os = "haiku")))]
+            libc::SOCK_RDM => Ok(Self::Rdm),
+            _ => Err(Errno::EINVAL)
+        }
+    }
 }
 
 /// Constants used in [`socket`](fn.socket.html) and [`socketpair`](fn.socketpair.html)
