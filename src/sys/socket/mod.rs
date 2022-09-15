@@ -12,7 +12,7 @@ use libc::{
     self, c_int, c_void, iovec, size_t, socklen_t, CMSG_DATA, CMSG_FIRSTHDR,
     CMSG_LEN, CMSG_NXTHDR,
 };
-use std::convert::TryInto;
+use std::convert::{TryFrom, TryInto};
 use std::io::{IoSlice, IoSliceMut};
 #[cfg(feature = "net")]
 use std::net;
@@ -106,6 +106,24 @@ pub enum SockType {
     /// guarantee ordering.
     #[cfg(not(any(target_os = "haiku")))]
     Rdm = libc::SOCK_RDM,
+}
+// The TryFrom impl could've been derived using libc_enum!.  But for
+// backwards-compatibility with Nix-0.25.0 we manually implement it, so as to
+// keep the old variant names.
+impl TryFrom<i32> for SockType {
+    type Error = crate::Error;
+
+    fn try_from(x: i32) -> Result<Self> {
+        match x {
+            libc::SOCK_STREAM => Ok(Self::Stream),
+            libc::SOCK_DGRAM => Ok(Self::Datagram),
+            libc::SOCK_SEQPACKET => Ok(Self::SeqPacket),
+            libc::SOCK_RAW => Ok(Self::Raw),
+            #[cfg(not(any(target_os = "haiku")))]
+            libc::SOCK_RDM => Ok(Self::Rdm),
+            _ => Err(Errno::EINVAL)
+        }
+    }
 }
 
 /// Constants used in [`socket`](fn.socket.html) and [`socketpair`](fn.socketpair.html)
