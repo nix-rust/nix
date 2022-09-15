@@ -19,6 +19,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   ([#1815](https://github.com/nix-rust/nix/pull/1815))
 - Fix `User::from_uid` and `User::from_name` crash on Android platform.
   ([#1824](https://github.com/nix-rust/nix/pull/1824))
+- Fix UB with `sys::socket::sockopt::SockType` using `SOCK_PACKET`.
+  ([#1821](https://github.com/nix-rust/nix/pull/1821))
 
 ### Removed
 
