@@ -12,7 +12,9 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   ([#1805](https://github.com/nix-rust/nix/pull/1805))
 - Expose the memfd module on FreeBSD (memfd was added in FreeBSD 13)
   ([#1808](https://github.com/nix-rust/nix/pull/1808))
-
+- Added `domainname` field of `UtsName` on Android and Linux
+  ([#1817](https://github.com/nix-rust/nix/pull/1817))
+  
 ### Changed
 
 - The MSRV is now 1.56.1
