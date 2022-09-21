@@ -93,7 +93,8 @@ libc_enum! {
         #[cfg_attr(docsrs, doc(cfg(all())))]
         SIGIO,
         #[cfg(any(target_os = "android", target_os = "emscripten",
-                  target_os = "fuchsia", target_os = "linux"))]
+                  target_os = "fuchsia", target_os = "linux",
+                  target_os = "aix"))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
         /// Power failure imminent.
         SIGPWR,
@@ -107,7 +108,8 @@ libc_enum! {
         SIGEMT,
         #[cfg(not(any(target_os = "android", target_os = "emscripten",
                       target_os = "fuchsia", target_os = "linux",
-                      target_os = "redox", target_os = "haiku")))]
+                      target_os = "redox", target_os = "haiku",
+                      target_os = "aix")))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
         /// Information request
         SIGINFO,
@@ -186,6 +188,7 @@ impl FromStr for Signal {
                 target_os = "fuchsia",
                 target_os = "linux",
                 target_os = "redox",
+                target_os = "aix",
                 target_os = "haiku"
             )))]
             "SIGINFO" => Signal::SIGINFO,
@@ -250,6 +253,7 @@ impl Signal {
                 target_os = "android",
                 target_os = "emscripten",
                 target_os = "fuchsia",
+                target_os = "aix",
                 target_os = "linux"
             ))]
             Signal::SIGPWR => "SIGPWR",
@@ -269,6 +273,7 @@ impl Signal {
                 target_os = "fuchsia",
                 target_os = "linux",
                 target_os = "redox",
+                target_os = "aix",
                 target_os = "haiku"
             )))]
             Signal::SIGINFO => "SIGINFO",
@@ -345,11 +350,20 @@ const SIGNALS: [Signal; 30] = [
     SIGSTOP, SIGTSTP, SIGTTIN, SIGTTOU, SIGURG, SIGXCPU, SIGXFSZ, SIGVTALRM,
     SIGPROF, SIGWINCH, SIGIO, SIGPWR, SIGSYS,
 ];
+#[cfg(target_os = "aix")]
+#[cfg(feature = "signal")]
+const SIGNALS: [Signal; 30] = [
+    SIGHUP, SIGINT, SIGQUIT, SIGILL, SIGABRT, SIGEMT, SIGFPE, SIGKILL, SIGSEGV,
+    SIGSYS, SIGPIPE, SIGALRM, SIGTERM, SIGUSR1, SIGUSR2, SIGPWR, SIGWINCH,
+    SIGURG, SIGPOLL, SIGIO, SIGSTOP, SIGTSTP, SIGCONT, SIGTTIN, SIGTTOU,
+    SIGVTALRM, SIGPROF, SIGXCPU, SIGXFSZ, SIGTRAP,
+];
 #[cfg(not(any(
     target_os = "linux",
     target_os = "android",
     target_os = "fuchsia",
     target_os = "emscripten",
+    target_os = "aix",
     target_os = "redox",
     target_os = "haiku"
 )))]
@@ -669,6 +683,7 @@ impl SigAction {
     /// is the `SigAction` variant). `mask` specifies other signals to block during execution of
     /// the signal-catching function.
     pub fn new(handler: SigHandler, flags: SaFlags, mask: SigSet) -> SigAction {
+        #[cfg(not(target_os = "aix"))]
         unsafe fn install_sig(p: *mut libc::sigaction, handler: SigHandler) {
             (*p).sa_sigaction = match handler {
                 SigHandler::SigDfl => libc::SIG_DFL,
@@ -676,6 +691,16 @@ impl SigAction {
                 SigHandler::Handler(f) => f as *const extern fn(libc::c_int) as usize,
                 #[cfg(not(target_os = "redox"))]
                 SigHandler::SigAction(f) => f as *const extern fn(libc::c_int, *mut libc::siginfo_t, *mut libc::c_void) as usize,
+            };
+        }
+
+        #[cfg(target_os = "aix")]
+        unsafe fn install_sig(p: *mut libc::sigaction, handler: SigHandler) {
+            (*p).sa_union.__su_sigaction = match handler {
+                SigHandler::SigDfl => mem::transmute::<usize, extern "C" fn(libc::c_int, *mut libc::siginfo_t, *mut libc::c_void)>(libc::SIG_DFL),
+                SigHandler::SigIgn => mem::transmute::<usize, extern "C" fn(libc::c_int, *mut libc::siginfo_t, *mut libc::c_void)>(libc::SIG_IGN),
+                SigHandler::Handler(f) => mem::transmute::<extern "C" fn(i32), extern "C" fn(i32, *mut libc::siginfo_t, *mut libc::c_void)>(f),
+                SigHandler::SigAction(f) => f,
             };
         }
 
@@ -706,6 +731,7 @@ impl SigAction {
     }
 
     /// Returns the action's handler.
+    #[cfg(not(target_os = "aix"))]
     pub fn handler(&self) -> SigHandler {
         match self.sigaction.sa_sigaction {
             libc::SIG_DFL => SigHandler::SigDfl,
@@ -736,6 +762,26 @@ impl SigAction {
                          as *const extern fn(libc::c_int))
                 }
                 as extern fn(libc::c_int)),
+        }
+    }
+
+    /// Returns the action's handler.
+    #[cfg(target_os = "aix")]
+    pub fn handler(&self) -> SigHandler {
+        unsafe {
+        match self.sigaction.sa_union.__su_sigaction as usize {
+            libc::SIG_DFL => SigHandler::SigDfl,
+            libc::SIG_IGN => SigHandler::SigIgn,
+            p if self.flags().contains(SaFlags::SA_SIGINFO) =>
+                SigHandler::SigAction(
+                    *(&p as *const usize
+                         as *const extern fn(_, _, _))
+                as extern fn(_, _, _)),
+            p => SigHandler::Handler(
+                    *(&p as *const usize
+                         as *const extern fn(libc::c_int))
+                as extern fn(libc::c_int)),
+        }
         }
     }
 }

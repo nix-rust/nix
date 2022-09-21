@@ -5,13 +5,17 @@ pub use libc::winsize as Winsize;
 
 use std::ffi::CStr;
 use std::io;
+#[cfg(not(target_os = "aix"))]
 use std::mem;
 use std::os::unix::prelude::*;
 
 use crate::errno::Errno;
+#[cfg(not(target_os = "aix"))]
 use crate::sys::termios::Termios;
 #[cfg(feature = "process")]
-use crate::unistd::{ForkResult, Pid};
+use crate::unistd::ForkResult;
+#[cfg(all(feature = "process", not(target_os = "aix")))]
+use crate::unistd::Pid;
 use crate::{fcntl, unistd, Result};
 
 /// Representation of a master/slave pty pair
@@ -224,6 +228,7 @@ pub fn unlockpt(fd: &PtyMaster) -> Result<()> {
 /// the values in `winsize`. If `termios` is not `None`, the pseudoterminal's
 /// terminal settings of the slave will be set to the values in `termios`.
 #[inline]
+#[cfg(not(target_os = "aix"))]
 pub fn openpty<
     'a,
     'b,
@@ -315,6 +320,7 @@ feature! {
 /// special care must be taken to only invoke code you can control and audit.
 ///
 /// [async-signal-safe]: https://man7.org/linux/man-pages/man7/signal-safety.7.html
+#[cfg(not(target_os = "aix"))]
 pub unsafe fn forkpty<'a, 'b, T: Into<Option<&'a Winsize>>, U: Into<Option<&'b Termios>>>(
     winsize: T,
     termios: U,

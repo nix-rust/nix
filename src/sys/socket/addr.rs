@@ -9,7 +9,8 @@
     target_os = "netbsd",
     target_os = "openbsd",
     target_os = "haiku",
-    target_os = "fuchsia"
+    target_os = "fuchsia",
+    target_os = "aix",
 ))]
 #[cfg(feature = "net")]
 pub use self::datalink::LinkAddr;
@@ -99,7 +100,8 @@ pub enum AddressFamily {
     #[cfg_attr(docsrs, doc(cfg(all())))]
     Ax25 = libc::AF_AX25,
     /// IPX - Novell protocols
-    #[cfg(not(target_os = "redox"))]
+    #[cfg(not(any(target_os = "aix", target_os = "redox")))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     Ipx = libc::AF_IPX,
     /// AppleTalk
     #[cfg(not(target_os = "redox"))]
@@ -200,6 +202,7 @@ pub enum AddressFamily {
     Tipc = libc::AF_TIPC,
     /// Bluetooth low-level socket protocol
     #[cfg(not(any(
+        target_os = "aix",
         target_os = "illumos",
         target_os = "ios",
         target_os = "macos",
@@ -219,6 +222,7 @@ pub enum AddressFamily {
     RxRpc = libc::AF_RXRPC,
     /// New "modular ISDN" driver interface protocol
     #[cfg(not(any(
+        target_os = "aix",
         target_os = "illumos",
         target_os = "solaris",
         target_os = "haiku",
@@ -1014,6 +1018,7 @@ impl SockaddrIn {
                 target_os = "ios",
                 target_os = "macos",
                 target_os = "netbsd",
+                target_os = "aix",
                 target_os = "haiku",
                 target_os = "openbsd"
             ))]
@@ -2153,6 +2158,7 @@ mod datalink {
     target_os = "illumos",
     target_os = "netbsd",
     target_os = "haiku",
+    target_os = "aix",
     target_os = "openbsd"
 ))]
 #[cfg_attr(docsrs, doc(cfg(all())))]
@@ -2524,6 +2530,7 @@ mod tests {
         #[test]
         fn size() {
             #[cfg(any(
+                target_os = "aix",
                 target_os = "dragonfly",
                 target_os = "freebsd",
                 target_os = "ios",

@@ -54,7 +54,10 @@ libc_bitflags!(
         /// Open the file in append-only mode.
         O_APPEND;
         /// Generate a signal when input or output becomes possible.
-        #[cfg(not(any(target_os = "illumos", target_os = "solaris", target_os = "haiku")))]
+        #[cfg(not(any(target_os = "aix",
+                      target_os = "illumos",
+                      target_os = "solaris",
+                      target_os = "haiku")))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
         O_ASYNC;
         /// Closes the file descriptor once an `execve` call is made.

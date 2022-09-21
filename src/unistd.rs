@@ -1025,6 +1025,7 @@ pub fn sethostname<S: AsRef<OsStr>>(name: S) -> Result<()> {
                      target_os = "illumos",
                      target_os = "ios",
                      target_os = "macos",
+                     target_os = "aix",
                      target_os = "solaris", ))] {
             type sethostname_len_t = c_int;
         } else {
@@ -1646,7 +1647,8 @@ pub fn getgroups() -> Result<Vec<Gid>> {
 )))]
 pub fn setgroups(groups: &[Gid]) -> Result<()> {
     cfg_if! {
-        if #[cfg(any(target_os = "dragonfly",
+        if #[cfg(any(target_os = "aix",
+                     target_os = "dragonfly",
                      target_os = "freebsd",
                      target_os = "illumos",
                      target_os = "ios",
@@ -1693,6 +1695,7 @@ pub fn setgroups(groups: &[Gid]) -> Result<()> {
 /// partial list of groups when `NGROUPS_MAX` is exceeded, this implementation
 /// will only ever return the complete list or else an error.
 #[cfg(not(any(
+    target_os = "aix",
     target_os = "illumos",
     target_os = "ios",
     target_os = "macos",
@@ -3457,6 +3460,7 @@ pub struct User {
     pub shell: PathBuf,
     /// Login class
     #[cfg(not(any(
+        target_os = "aix",
         target_os = "android",
         target_os = "fuchsia",
         target_os = "haiku",
@@ -3468,6 +3472,7 @@ pub struct User {
     pub class: CString,
     /// Last password change
     #[cfg(not(any(
+        target_os = "aix",
         target_os = "android",
         target_os = "fuchsia",
         target_os = "haiku",
@@ -3479,6 +3484,7 @@ pub struct User {
     pub change: libc::time_t,
     /// Expiration time of account
     #[cfg(not(any(
+        target_os = "aix",
         target_os = "android",
         target_os = "fuchsia",
         target_os = "haiku",
@@ -3533,6 +3539,7 @@ impl From<&libc::passwd> for User {
                 uid: Uid::from_raw(pw.pw_uid),
                 gid: Gid::from_raw(pw.pw_gid),
                 #[cfg(not(any(
+                    target_os = "aix",
                     target_os = "android",
                     target_os = "fuchsia",
                     target_os = "haiku",
@@ -3543,6 +3550,7 @@ impl From<&libc::passwd> for User {
                 class: CString::new(CStr::from_ptr(pw.pw_class).to_bytes())
                     .unwrap(),
                 #[cfg(not(any(
+                    target_os = "aix",
                     target_os = "android",
                     target_os = "fuchsia",
                     target_os = "haiku",
@@ -3552,6 +3560,7 @@ impl From<&libc::passwd> for User {
                 )))]
                 change: pw.pw_change,
                 #[cfg(not(any(
+                    target_os = "aix",
                     target_os = "android",
                     target_os = "fuchsia",
                     target_os = "haiku",
@@ -3593,6 +3602,7 @@ impl From<User> for libc::passwd {
             pw_uid: u.uid.0,
             pw_gid: u.gid.0,
             #[cfg(not(any(
+                target_os = "aix",
                 target_os = "android",
                 target_os = "fuchsia",
                 target_os = "haiku",
@@ -3602,6 +3612,7 @@ impl From<User> for libc::passwd {
             )))]
             pw_class: u.class.into_raw(),
             #[cfg(not(any(
+                target_os = "aix",
                 target_os = "android",
                 target_os = "fuchsia",
                 target_os = "haiku",
@@ -3611,6 +3622,7 @@ impl From<User> for libc::passwd {
             )))]
             pw_change: u.change,
             #[cfg(not(any(
+                target_os = "aix",
                 target_os = "android",
                 target_os = "fuchsia",
                 target_os = "haiku",

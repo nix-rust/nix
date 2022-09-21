@@ -113,6 +113,7 @@ mod os {
 }
 
 #[cfg(any(
+    target_os = "aix",
     target_os = "macos",
     target_os = "ios",
     target_os = "fuchsia",

@@ -397,6 +397,8 @@ libc_enum! {
         #[cfg_attr(docsrs, doc(cfg(all())))]
         B28800,
         B38400,
+        #[cfg(not(target_os = "aix"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         B57600,
         #[cfg(any(target_os = "dragonfly",
                 target_os = "freebsd",
@@ -405,10 +407,14 @@ libc_enum! {
                 target_os = "openbsd"))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
         B76800,
+        #[cfg(not(target_os = "aix"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         B115200,
         #[cfg(any(target_os = "illumos", target_os = "solaris"))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
         B153600,
+        #[cfg(not(target_os = "aix"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         B230400,
         #[cfg(any(target_os = "illumos", target_os = "solaris"))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
@@ -542,6 +548,8 @@ libc_enum! {
     #[repr(usize)]
     #[non_exhaustive]
     pub enum SpecialCharacterIndices {
+        #[cfg(not(target_os = "aix"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         VDISCARD,
         #[cfg(any(target_os = "dragonfly",
                 target_os = "freebsd",
@@ -549,6 +557,7 @@ libc_enum! {
                 target_os = "macos",
                 target_os = "netbsd",
                 target_os = "openbsd",
+                target_os = "aix",
                 target_os = "solaris"))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
         VDSUSP,
@@ -566,7 +575,7 @@ libc_enum! {
         VKILL,
         VLNEXT,
         #[cfg(not(any(all(target_os = "linux", target_arch = "sparc64"),
-                target_os = "illumos", target_os = "solaris")))]
+                target_os = "illumos", target_os = "solaris", target_os = "aix")))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
         VMIN,
         VQUIT,
@@ -590,9 +599,11 @@ libc_enum! {
         #[cfg_attr(docsrs, doc(cfg(all())))]
         VSWTCH,
         #[cfg(not(any(all(target_os = "linux", target_arch = "sparc64"),
-                target_os = "illumos", target_os = "solaris")))]
+                target_os = "illumos", target_os = "solaris", target_os = "aix")))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
         VTIME,
+        #[cfg(not(target_os = "aix"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         VWERASE,
         #[cfg(target_os = "dragonfly")]
         #[cfg_attr(docsrs, doc(cfg(all())))]
@@ -603,7 +614,8 @@ libc_enum! {
 #[cfg(any(
     all(target_os = "linux", target_arch = "sparc64"),
     target_os = "illumos",
-    target_os = "solaris"
+    target_os = "solaris",
+    target_os = "aix",
 ))]
 impl SpecialCharacterIndices {
     pub const VMIN: SpecialCharacterIndices = SpecialCharacterIndices::VEOF;
@@ -616,6 +628,7 @@ pub use libc::NCCS;
     target_os = "dragonfly",
     target_os = "freebsd",
     target_os = "linux",
+    target_os = "aix",
     target_os = "macos",
     target_os = "netbsd",
     target_os = "openbsd"
@@ -881,7 +894,7 @@ libc_bitflags! {
         PARODD;
         HUPCL;
         CLOCAL;
-        #[cfg(not(target_os = "redox"))]
+        #[cfg(not(any(target_os = "redox", target_os = "aix")))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
         CRTSCTS;
         #[cfg(any(target_os = "android", target_os = "linux"))]
@@ -967,7 +980,7 @@ libc_bitflags! {
         #[cfg_attr(docsrs, doc(cfg(all())))]
         ALTWERASE;
         IEXTEN;
-        #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
+        #[cfg(not(any(target_os = "redox", target_os = "haiku", target_os = "aix")))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
         EXTPROC;
         TOSTOP;

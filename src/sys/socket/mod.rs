@@ -322,6 +322,8 @@ libc_bitflags! {
         /// which will affect all threads in
         /// the calling process and as well as other processes that hold
         /// file descriptors referring to the same open file description.
+        #[cfg(not(target_os = "aix"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MSG_DONTWAIT;
         /// Receive flags: Control Data was discarded (buffer too small)
         MSG_CTRUNC;
@@ -887,7 +889,7 @@ impl ControlMessageOwned {
                 let cred: libc::cmsgcred = ptr::read_unaligned(p as *const _);
                 ControlMessageOwned::ScmCreds(cred.into())
             }
-            #[cfg(not(target_os = "haiku"))]
+            #[cfg(not(any(target_os = "aix", target_os = "haiku")))]
             (libc::SOL_SOCKET, libc::SCM_TIMESTAMP) => {
                 let tv: libc::timeval = ptr::read_unaligned(p as *const _);
                 ControlMessageOwned::ScmTimestamp(TimeVal::from(tv))
