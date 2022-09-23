@@ -50,7 +50,7 @@ feature! {
 #[macro_use]
 pub mod ioctl;
 
-#[cfg(target_os = "linux")]
+#[cfg(all(target_os = "linux", any(target_arch = "x86_64")))]
 feature! {
     #![feature = "getrandom"]
     pub mod getrandom;
