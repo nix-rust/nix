@@ -50,6 +50,12 @@ feature! {
 #[macro_use]
 pub mod ioctl;
 
+#[cfg(target_os = "linux")]
+feature! {
+    #![feature = "getrandom"]
+    pub mod getrandom;
+}
+
 #[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
 feature! {
     #![feature = "fs"]

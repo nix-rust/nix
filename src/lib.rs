@@ -29,6 +29,7 @@
 //! * `ptrace` - Process tracing and debugging
 //! * `quota` - File system quotas
 //! * `reboot` - Reboot the system
+//! * `getrandom` - Get random bytes
 //! * `resource` - Process resource limits
 //! * `sched` - Manipulate process's scheduling
 //! * `socket` - Sockets, whether for networking or local use
