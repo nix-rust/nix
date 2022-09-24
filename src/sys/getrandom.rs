@@ -1,6 +1,6 @@
 //! Wrapper around getrandom.
 
-use crate::Result;
+use crate::{Errno, Result};
 use libc;
 
 libc_enum! {
@@ -8,33 +8,23 @@ libc_enum! {
     #[repr(u32)]
     #[non_exhaustive]
     pub enum RandomMode{
-        /// If  this  bit is set, then random bytes are drawn from the
-        /// random source (i.e., the same source as the /dev/random device)
-        ///  instead of the urandom source.
+        /// Random bytes are drawn from random source
         GRND_RANDOM,
-        /// By default, when reading from the random source, getrandom()
-        /// blocks if no random bytes are available, and when reading
-        /// from the urandom source, it blocks if the entropy pool has
-        /// not yet been initialized. If the GRND_NONBLOCK flag is
-        /// set, then getrandom() does not block in these cases
+        /// Doesn't block if no random bytes are available
         GRND_NONBLOCK,
     }
 }
 
-/// Returns a vector of random bytes
-pub fn getrandom(size: usize, mode: RandomMode) -> Result<Vec<u8>> {
-    let mut buffer = vec![0; size];
-    unsafe {
-        assert_eq!(
-            libc::getrandom(
-                buffer.as_mut_ptr() as *mut libc::c_void,
-                size,
-                mode as u32,
-            ),
-            size as isize
+/// Returns the number of bytes copied to the slice
+pub fn getrandom(buffer: &mut [u8], mode: RandomMode) -> Result<isize> {
+    let n = unsafe {
+        libc::getrandom(
+            buffer.as_mut_ptr() as *mut libc::c_void,
+            buffer.len(),
+            mode as u32,
         )
     };
-    Ok(buffer)
+    Errno::result(n)
 }
 
 #[cfg(test)]
@@ -42,7 +32,8 @@ mod tests {
     use super::*;
     #[test]
     fn test_getrandom() {
-        let random_bytes = getrandom(1000, RandomMode::GRND_RANDOM).unwrap();
-        assert_eq!(random_bytes.len(), 1000)
+        let mut buffer: Vec<u8> = vec![0; 100];
+        let n = getrandom(&mut buffer, RandomMode::GRND_RANDOM).unwrap();
+        assert_eq!(n, 100)
     }
 }

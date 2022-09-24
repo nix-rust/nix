@@ -41,7 +41,7 @@ default = [
   "hostname", "inotify", "ioctl", "kmod", "mman", "mount", "mqueue",
   "net", "personality", "poll", "process", "pthread", "ptrace", "quota",
   "reboot", "resource", "sched", "signal", "socket", "term", "time",
-  "ucontext", "uio", "user", "zerocopy", "getrandom",
+  "ucontext", "uio", "user", "zerocopy", "random",
 ]
 
 acct = []
@@ -66,7 +66,7 @@ ptrace = ["process"]
 quota = []
 process = []
 reboot = []
-getrandom = []
+random = []
 resource = []
 sched = ["process"]
 signal = ["process"]
