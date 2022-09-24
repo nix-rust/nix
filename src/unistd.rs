@@ -2984,12 +2984,12 @@ impl From<&libc::passwd> for User {
     fn from(pw: &libc::passwd) -> User {
         unsafe {
             User {
-                name: CStr::from_ptr(pw.pw_name).to_string_lossy().into_owned(),
-                passwd: CString::new(CStr::from_ptr(pw.pw_passwd).to_bytes()).unwrap(),
+                name: if pw.pw_name.is_null() { Default::default() } else { CStr::from_ptr(pw.pw_name).to_string_lossy().into_owned() },
+                passwd: if pw.pw_passwd.is_null() { Default::default() } else { CString::new(CStr::from_ptr(pw.pw_passwd).to_bytes()).unwrap() },
                 #[cfg(not(all(target_os = "android", target_pointer_width = "32")))]
-                gecos: CString::new(CStr::from_ptr(pw.pw_gecos).to_bytes()).unwrap(),
-                dir: PathBuf::from(OsStr::from_bytes(CStr::from_ptr(pw.pw_dir).to_bytes())),
-                shell: PathBuf::from(OsStr::from_bytes(CStr::from_ptr(pw.pw_shell).to_bytes())),
+                gecos: if pw.pw_gecos.is_null() { Default::default() } else { CString::new(CStr::from_ptr(pw.pw_gecos).to_bytes()).unwrap() },
+                dir: if pw.pw_dir.is_null() { Default::default() } else { PathBuf::from(OsStr::from_bytes(CStr::from_ptr(pw.pw_dir).to_bytes())) },
+                shell: if pw.pw_shell.is_null() { Default::default() } else { PathBuf::from(OsStr::from_bytes(CStr::from_ptr(pw.pw_shell).to_bytes())) },
                 uid: Uid::from_raw(pw.pw_uid),
                 gid: Gid::from_raw(pw.pw_gid),
                 #[cfg(not(any(target_os = "android",
