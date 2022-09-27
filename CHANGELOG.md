@@ -6,6 +6,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased] - ReleaseDate
 ### Added
 
+- Added `sched_getcpu` on platforms that support it.
+  ([#1825](https://github.com/nix-rust/nix/pull/1825))
 - Added `sched_getaffinity` and `sched_setaffinity` on FreeBSD.
   ([#1804](https://github.com/nix-rust/nix/pull/1804))
 - Added `line_discipline` field to `Termios` on Linux, Android and Haiku
