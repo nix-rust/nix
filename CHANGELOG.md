@@ -6,6 +6,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased] - ReleaseDate
 ### Added
 
+- Added `NSFS_MAGIC` FsType on Linux and Android.
+  ([#1829](https://github.com/nix-rust/nix/pull/1829))
 - Added `sched_getcpu` on platforms that support it.
   ([#1825](https://github.com/nix-rust/nix/pull/1825))
 - Added `sched_getaffinity` and `sched_setaffinity` on FreeBSD.

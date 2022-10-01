@@ -205,6 +205,9 @@ pub const USBDEVICE_SUPER_MAGIC: FsType = FsType(libc::USBDEVICE_SUPER_MAGIC as 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 #[allow(missing_docs)]
 pub const XENFS_SUPER_MAGIC: FsType = FsType(libc::XENFS_SUPER_MAGIC as fs_type_t);
+#[cfg(any(target_os = "linux", target_os = "android"))]
+#[allow(missing_docs)]
+pub const NSFS_MAGIC: FsType = FsType(libc::NSFS_MAGIC as fs_type_t);
 
 
 impl Statfs {
