@@ -6,6 +6,7 @@ use crate::errno::Errno;
 use crate::sys::time::TimeVal;
 use crate::Result;
 pub use libc::rlim_t;
+pub use libc::RLIM_INFINITY;
 use std::mem;
 
 cfg_if! {
@@ -175,7 +176,7 @@ libc_enum! {
 
 /// Get the current processes resource limits
 ///
-/// The special value `RLIM_INFINITY` indicates that no limit will be
+/// The special value [`RLIM_INFINITY`] indicates that no limit will be
 /// enforced.
 ///
 /// # Parameters
@@ -224,7 +225,7 @@ pub fn getrlimit(resource: Resource) -> Result<(rlim_t, rlim_t)> {
 /// * `hard_limit`: The ceiling for the soft limit. Must be lower or equal to
 ///   the current hard limit for non-root users.
 ///
-/// The special value `RLIM_INFINITY` indicates that no limit will be
+/// The special value [`RLIM_INFINITY`] indicates that no limit will be
 /// enforced.
 ///
 /// # Examples

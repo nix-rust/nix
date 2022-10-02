@@ -18,6 +18,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   ([#1808](https://github.com/nix-rust/nix/pull/1808))
 - Added `domainname` field of `UtsName` on Android and Linux
   ([#1817](https://github.com/nix-rust/nix/pull/1817))
+- Re-export `RLIM_INFINITY` from `libc`
+  ([#1831](https://github.com/nix-rust/nix/pull/1831))
   
 ### Changed
 
