@@ -285,6 +285,16 @@ task:
     - name: Linux armv7 uclibceabihf
       env:
         TARGET: armv7-unknown-linux-uclibceabihf
+    - name: Linux powerpc musl
+      env:
+        TARGET: powerpc-unknown-linux-musl
+    - name: Linux powerpc64 musl
+      env:
+        TARGET: powerpc64-unknown-linux-musl
+    - name: Linux s390x musl
+      env:
+        TARGET: s390x-unknown-linux-musl
+      allow_failures: true
     - name: Haiku x86_64
       env:
         TARGET: x86_64-unknown-haiku
