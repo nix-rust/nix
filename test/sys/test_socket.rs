@@ -565,6 +565,9 @@ mod recvfrom {
             None,
         )
         .expect("send socket failed");
+        setsockopt(rsock, sockopt::ReceiveTimestampns, &true).unwrap();
+        let mut cmsgspace1 = nix::cmsg_space!(nix::sys::time::TimeSpec);
+        let mut cmsgspace2 = nix::cmsg_space!(nix::sys::time::TimeSpec);
 
         let send_thread = thread::spawn(move || {
             for _ in 0..NUM_MESSAGES_SENT {
@@ -582,19 +585,30 @@ mod recvfrom {
             .map(|buf| [IoSliceMut::new(&mut buf[..])])
             .collect();
 
-        for iov in &iovs {
-            msgs.push_back(RecvMmsgData {
-                iov,
-                cmsg_buffer: None,
-            })
-        }
+        msgs.push_back(RecvMmsgData {
+            iov: &iovs[0],
+            cmsg_buffer: Some(&mut cmsgspace1),
+        });
+        msgs.push_back(RecvMmsgData {
+            iov: &iovs[1],
+            cmsg_buffer: Some(&mut cmsgspace2),
+        });
 
         let res: Vec<RecvMsg<SockaddrIn>> =
             recvmmsg(rsock, &mut msgs, MsgFlags::empty(), None)
                 .expect("recvmmsg");
         assert_eq!(res.len(), DATA.len());
 
-        for RecvMsg { address, bytes, .. } in res.into_iter() {
+        for r in res.into_iter() {
+            let rtime = match r.cmsgs().next() {
+                Some(ControlMessageOwned::ScmTimestampns(rtime)) => rtime,
+                Some(_) => panic!("Unexpected control message"),
+                None => panic!("No control message"),
+            };
+            assert!(rtime.tv_sec() > 10000);
+
+            let RecvMsg { address, bytes, .. } = r;
+
             assert_eq!(AddressFamily::Inet, address.unwrap().family().unwrap());
             assert_eq!(DATA.len(), bytes);
         }
