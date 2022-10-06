@@ -599,6 +599,7 @@ mod recvfrom {
                 .expect("recvmmsg");
         assert_eq!(res.len(), DATA.len());
 
+        // one
         for r in res.into_iter() {
             let rtime = match r.cmsgs().next() {
                 Some(ControlMessageOwned::ScmTimestampns(rtime)) => rtime,
