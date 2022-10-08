@@ -20,6 +20,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   ([#1817](https://github.com/nix-rust/nix/pull/1817))
 - Re-export `RLIM_INFINITY` from `libc`
   ([#1831](https://github.com/nix-rust/nix/pull/1831))
+- Added `syncfs(2)` on Linux
+  ([#1833](https://github.com/nix-rust/nix/pull/1833))
   
 ### Changed
 
