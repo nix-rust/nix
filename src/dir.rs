@@ -186,6 +186,8 @@ pub enum Type {
 
 impl Entry {
     /// Returns the inode number (`d_ino`) of the underlying `dirent`.
+    // The cast is not unnecessary on all platforms.
+    #[allow(clippy::unnecessary_cast)]
     #[cfg(any(target_os = "android",
               target_os = "emscripten",
               target_os = "fuchsia",
@@ -212,6 +214,8 @@ impl Entry {
                   target_os = "macos",
                   target_os = "solaris")))]
     #[allow(clippy::useless_conversion)]    // Not useless on all OSes
+    // The cast is not unnecessary on all platforms.
+    #[allow(clippy::unnecessary_cast)]
     pub fn ino(&self) -> u64 {
         u64::from(self.0.d_fileno)
     }

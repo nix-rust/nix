@@ -698,6 +698,8 @@ impl ControlMessageOwned {
     unsafe fn decode_from(header: &cmsghdr) -> ControlMessageOwned
     {
         let p = CMSG_DATA(header);
+        // The cast is not unnecessary on all platforms.
+        #[allow(clippy::unnecessary_cast)]
         let len = header as *const _ as usize + header.cmsg_len as usize
             - p as usize;
         match (header.cmsg_level, header.cmsg_type) {
@@ -1358,7 +1360,7 @@ pub fn recvmmsg<'a, I>(
             }
         );
 
-        (msg_controllen as usize, &mut d.cmsg_buffer)
+        (msg_controllen, &mut d.cmsg_buffer)
     }).collect();
 
     let timeout = if let Some(mut t) = timeout {
@@ -1377,6 +1379,8 @@ pub fn recvmmsg<'a, I>(
         .zip(addresses.iter().map(|addr| unsafe{addr.assume_init()}))
         .zip(results.into_iter())
         .map(|((mmsghdr, address), (msg_controllen, cmsg_buffer))| {
+            // The cast is not unnecessary on all platforms.
+            #[allow(clippy::unnecessary_cast)]
             unsafe {
                 read_mhdr(
                     mmsghdr.msg_hdr,
@@ -1395,8 +1399,10 @@ unsafe fn read_mhdr<'a, 'b>(
     r: isize,
     msg_controllen: usize,
     address: sockaddr_storage,
-    cmsg_buffer: &'a mut Option<&'b mut Vec<u8>>
-) -> RecvMsg<'b> {
+    cmsg_buffer: &mut Option<&'a mut Vec<u8>>
+) -> RecvMsg<'a> {
+    // The cast is not unnecessary on all platforms.
+    #[allow(clippy::unnecessary_cast)]
     let cmsghdr = {
         if mhdr.msg_controllen > 0 {
             // got control message(s)
@@ -1538,7 +1544,7 @@ pub fn recvmsg<'a>(fd: RawFd, iov: &[IoVec<&mut [u8]>],
     let mut address = mem::MaybeUninit::uninit();
 
     let (msg_controllen, mut mhdr) = unsafe {
-        pack_mhdr_to_receive(&iov, &mut cmsg_buffer, address.as_mut_ptr())
+        pack_mhdr_to_receive(iov, &mut cmsg_buffer, address.as_mut_ptr())
     };
 
     let ret = unsafe { libc::recvmsg(fd, &mut mhdr, flags.bits()) };
@@ -1838,14 +1844,14 @@ pub fn sockaddr_storage_to_addr(
 
     match c_int::from(addr.ss_family) {
         libc::AF_INET => {
-            assert!(len as usize >= mem::size_of::<sockaddr_in>());
+            assert!(len >= mem::size_of::<sockaddr_in>());
             let sin = unsafe {
                 *(addr as *const sockaddr_storage as *const sockaddr_in)
             };
             Ok(SockAddr::Inet(InetAddr::V4(sin)))
         }
         libc::AF_INET6 => {
-            assert!(len as usize >= mem::size_of::<sockaddr_in6>());
+            assert!(len >= mem::size_of::<sockaddr_in6>());
             let sin6 = unsafe {
                 *(addr as *const _ as *const sockaddr_in6)
             };

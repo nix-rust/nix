@@ -30,6 +30,8 @@ ioctl_readwrite_buf!(readwritebuf_test, 0, 0, u32);
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 mod linux {
+    // The cast is not unnecessary on all platforms.
+    #[allow(clippy::unnecessary_cast)]
     #[test]
     fn test_op_none() {
         if cfg!(any(target_arch = "mips", target_arch = "mips64", target_arch="powerpc", target_arch="powerpc64")){
@@ -41,6 +43,8 @@ mod linux {
         }
     }
 
+    // The cast is not unnecessary on all platforms.
+    #[allow(clippy::unnecessary_cast)]
     #[test]
     fn test_op_write() {
         if cfg!(any(target_arch = "mips", target_arch = "mips64", target_arch="powerpc", target_arch="powerpc64")){
@@ -65,6 +69,8 @@ mod linux {
 
     }
 
+    // The cast is not unnecessary on all platforms.
+    #[allow(clippy::unnecessary_cast)]
     #[test]
     fn test_op_read() {
         if cfg!(any(target_arch = "mips", target_arch = "mips64", target_arch="powerpc", target_arch="powerpc64")){
@@ -88,6 +94,8 @@ mod linux {
         }
     }
 
+    // The cast is not unnecessary on all platforms.
+    #[allow(clippy::unnecessary_cast)]
     #[test]
     fn test_op_read_write() {
         assert_eq!(request_code_readwrite!(b'z', 10, 1) as u32, 0xC001_7A0A);

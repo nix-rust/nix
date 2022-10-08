@@ -772,7 +772,7 @@ struct SetU8 {
 
 impl<'a> Set<'a, u8> for SetU8 {
     fn new(val: &'a u8) -> SetU8 {
-        SetU8 { val: *val as u8 }
+        SetU8 { val: *val }
     }
 
     fn ffi_ptr(&self) -> *const c_void {

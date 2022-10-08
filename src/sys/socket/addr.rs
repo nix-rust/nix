@@ -1185,12 +1185,12 @@ mod datalink {
         /// Physical-layer address (MAC)
         pub fn addr(&self) -> [u8; 6] {
             [
-                self.0.sll_addr[0] as u8,
-                self.0.sll_addr[1] as u8,
-                self.0.sll_addr[2] as u8,
-                self.0.sll_addr[3] as u8,
-                self.0.sll_addr[4] as u8,
-                self.0.sll_addr[5] as u8,
+                self.0.sll_addr[0],
+                self.0.sll_addr[1],
+                self.0.sll_addr[2],
+                self.0.sll_addr[3],
+                self.0.sll_addr[4],
+                self.0.sll_addr[5],
             ]
         }
     }
