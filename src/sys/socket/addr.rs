@@ -935,7 +935,7 @@ impl SockaddrLike for UnixAddr {
                 return None;
             }
         }
-        if (*addr).sa_family as i32 != libc::AF_UNIX as i32 {
+        if (*addr).sa_family as i32 != libc::AF_UNIX {
             return None;
         }
         let mut su: libc::sockaddr_un = mem::zeroed();
@@ -1192,7 +1192,7 @@ impl SockaddrLike for SockaddrIn {
                 return None;
             }
         }
-        if (*addr).sa_family as i32 != libc::AF_INET as i32 {
+        if (*addr).sa_family as i32 != libc::AF_INET {
             return None;
         }
         Some(Self(ptr::read_unaligned(addr as *const _)))
@@ -1298,7 +1298,7 @@ impl SockaddrLike for SockaddrIn6 {
                 return None;
             }
         }
-        if (*addr).sa_family as i32 != libc::AF_INET6 as i32 {
+        if (*addr).sa_family as i32 != libc::AF_INET6 {
             return None;
         }
         Some(Self(ptr::read_unaligned(addr as *const _)))
@@ -2185,7 +2185,7 @@ pub mod netlink {
                     return None;
                 }
             }
-            if (*addr).sa_family as i32 != libc::AF_NETLINK as i32 {
+            if (*addr).sa_family as i32 != libc::AF_NETLINK {
                 return None;
             }
             Some(Self(ptr::read_unaligned(addr as *const _)))
@@ -2229,7 +2229,7 @@ pub mod alg {
                     return None;
                 }
             }
-            if (*addr).sa_family as i32 != libc::AF_ALG as i32 {
+            if (*addr).sa_family as i32 != libc::AF_ALG {
                 return None;
             }
             Some(Self(ptr::read_unaligned(addr as *const _)))
@@ -2343,7 +2343,7 @@ pub mod sys_control {
                     return None;
                 }
             }
-            if (*addr).sa_family as i32 != libc::AF_SYSTEM as i32 {
+            if (*addr).sa_family as i32 != libc::AF_SYSTEM {
                 return None;
             }
             Some(Self(ptr::read_unaligned(addr as *const _)))
@@ -2450,12 +2450,12 @@ mod datalink {
         // Returns an Option just for cross-platform compatibility
         pub fn addr(&self) -> Option<[u8; 6]> {
             Some([
-                self.0.sll_addr[0] as u8,
-                self.0.sll_addr[1] as u8,
-                self.0.sll_addr[2] as u8,
-                self.0.sll_addr[3] as u8,
-                self.0.sll_addr[4] as u8,
-                self.0.sll_addr[5] as u8,
+                self.0.sll_addr[0],
+                self.0.sll_addr[1],
+                self.0.sll_addr[2],
+                self.0.sll_addr[3],
+                self.0.sll_addr[4],
+                self.0.sll_addr[5],
             ])
         }
     }
@@ -2486,7 +2486,7 @@ mod datalink {
                     return None;
                 }
             }
-            if (*addr).sa_family as i32 != libc::AF_PACKET as i32 {
+            if (*addr).sa_family as i32 != libc::AF_PACKET {
                 return None;
             }
             Some(Self(ptr::read_unaligned(addr as *const _)))
@@ -2561,6 +2561,8 @@ mod datalink {
         }
 
         /// Physical-layer address (MAC)
+        // The cast is not unnecessary on all platforms.
+        #[allow(clippy::unnecessary_cast)]
         pub fn addr(&self) -> Option<[u8; 6]> {
             let nlen = self.nlen();
             let data = self.0.sdl_data;
@@ -2606,7 +2608,7 @@ mod datalink {
                     return None;
                 }
             }
-            if (*addr).sa_family as i32 != libc::AF_LINK as i32 {
+            if (*addr).sa_family as i32 != libc::AF_LINK {
                 return None;
             }
             Some(Self(ptr::read_unaligned(addr as *const _)))
@@ -2650,7 +2652,7 @@ pub mod vsock {
                     return None;
                 }
             }
-            if (*addr).sa_family as i32 != libc::AF_VSOCK as i32 {
+            if (*addr).sa_family as i32 != libc::AF_VSOCK {
                 return None;
             }
             Some(Self(ptr::read_unaligned(addr as *const _)))
