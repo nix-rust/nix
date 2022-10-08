@@ -95,8 +95,13 @@ exit 23";
             .unwrap_or_else(|e| panic!("mount failed: {}", e));
 
         // EROFS: Read-only file system
-        assert_eq!(EROFS as i32,
-                   File::create(tempdir.path().join("test")).unwrap_err().raw_os_error().unwrap());
+        assert_eq!(
+            EROFS,
+            File::create(tempdir.path().join("test"))
+                .unwrap_err()
+                .raw_os_error()
+                .unwrap()
+        );
 
         umount(tempdir.path()).unwrap_or_else(|e| panic!("umount failed: {}", e));
     }
@@ -133,8 +138,14 @@ exit 23";
                 &test_path);
 
         // EACCES: Permission denied
-        assert_eq!(EACCES as i32,
-                   Command::new(&test_path).status().unwrap_err().raw_os_error().unwrap());
+        assert_eq!(
+            EACCES,
+            Command::new(&test_path)
+                .status()
+                .unwrap_err()
+                .raw_os_error()
+                .unwrap()
+        );
 
         umount(tempdir.path()).unwrap_or_else(|e| panic!("umount failed: {}", e));
     }

@@ -280,6 +280,8 @@ impl TimeValLike for TimeSpec {
         TimeSpec(ts)
     }
 
+    // The cast is not unnecessary on all platforms.
+    #[allow(clippy::unnecessary_cast)]
     fn num_seconds(&self) -> i64 {
         if self.tv_sec() < 0 && self.tv_nsec() > 0 {
             (self.tv_sec() + 1) as i64
@@ -296,6 +298,8 @@ impl TimeValLike for TimeSpec {
         self.num_nanoseconds() / 1_000
     }
 
+    // The cast is not unnecessary on all platforms.
+    #[allow(clippy::unnecessary_cast)]
     fn num_nanoseconds(&self) -> i64 {
         let secs = self.num_seconds() * 1_000_000_000;
         let nsec = self.nanos_mod_sec();
@@ -498,6 +502,8 @@ impl TimeValLike for TimeVal {
                            tv_usec: micros as suseconds_t })
     }
 
+    // The cast is not unnecessary on all platforms.
+    #[allow(clippy::unnecessary_cast)]
     fn num_seconds(&self) -> i64 {
         if self.tv_sec() < 0 && self.tv_usec() > 0 {
             (self.tv_sec() + 1) as i64
@@ -510,6 +516,8 @@ impl TimeValLike for TimeVal {
         self.num_microseconds() / 1_000
     }
 
+    // The cast is not unnecessary on all platforms.
+    #[allow(clippy::unnecessary_cast)]
     fn num_microseconds(&self) -> i64 {
         let secs = self.num_seconds() * 1_000_000;
         let usec = self.micros_mod_sec();
