@@ -1354,6 +1354,17 @@ pub fn sync() {
     unsafe { libc::sync() };
 }
 
+/// Commit filesystem caches containing file referred to by the open file
+/// descriptor `fd` to disk
+///
+/// See also [syncfs(2)](https://man7.org/linux/man-pages/man2/sync.2.html)
+#[cfg(target_os = "linux")]
+pub fn syncfs(fd: RawFd) -> Result<()> {
+    let res = unsafe { libc::syncfs(fd) };
+
+    Errno::result(res).map(drop)
+}
+
 /// Synchronize changes to a file
 ///
 /// See also [fsync(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/fsync.html)
