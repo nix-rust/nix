@@ -839,6 +839,8 @@ impl ControlMessageOwned {
     unsafe fn decode_from(header: &cmsghdr) -> ControlMessageOwned
     {
         let p = CMSG_DATA(header);
+        // The cast is not unnecessary on all platforms.
+        #[allow(clippy::unnecessary_cast)]
         let len = header as *const _ as usize + header.cmsg_len as usize
             - p as usize;
         match (header.cmsg_level, header.cmsg_type) {
@@ -1643,7 +1645,7 @@ pub fn recvmmsg<'a, I, S>(
             }
         );
 
-        (msg_controllen as usize, &mut d.cmsg_buffer)
+        (msg_controllen, &mut d.cmsg_buffer)
     }).collect();
 
     let timeout = if let Some(mut t) = timeout {
@@ -1662,6 +1664,8 @@ pub fn recvmmsg<'a, I, S>(
         .zip(addresses.iter().map(|addr| unsafe{addr.assume_init()}))
         .zip(results.into_iter())
         .map(|((mmsghdr, address), (msg_controllen, cmsg_buffer))| {
+            // The cast is not unnecessary on all platforms.
+            #[allow(clippy::unnecessary_cast)]
             unsafe {
                 read_mhdr(
                     mmsghdr.msg_hdr,
@@ -1684,6 +1688,8 @@ unsafe fn read_mhdr<'a, 'b, S>(
 ) -> RecvMsg<'b, S>
     where S: SockaddrLike
 {
+    // The cast is not unnecessary on all platforms.
+    #[allow(clippy::unnecessary_cast)]
     let cmsghdr = {
         if mhdr.msg_controllen > 0 {
             // got control message(s)
@@ -2131,7 +2137,7 @@ pub fn sockaddr_storage_to_addr(
     match c_int::from(addr.ss_family) {
         #[cfg(feature = "net")]
         libc::AF_INET => {
-            assert!(len as usize >= mem::size_of::<sockaddr_in>());
+            assert!(len >= mem::size_of::<sockaddr_in>());
             let sin = unsafe {
                 *(addr as *const sockaddr_storage as *const sockaddr_in)
             };
@@ -2139,7 +2145,7 @@ pub fn sockaddr_storage_to_addr(
         }
         #[cfg(feature = "net")]
         libc::AF_INET6 => {
-            assert!(len as usize >= mem::size_of::<sockaddr_in6>());
+            assert!(len >= mem::size_of::<sockaddr_in6>());
             let sin6 = unsafe {
                 *(addr as *const _ as *const sockaddr_in6)
             };
