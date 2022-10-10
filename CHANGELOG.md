@@ -22,6 +22,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   ([#1831](https://github.com/nix-rust/nix/pull/1831))
 - Added `syncfs(2)` on Linux
   ([#1833](https://github.com/nix-rust/nix/pull/1833))
+- Added `faccessat(2)` on illumos
+  ([#1841](https://github.com/nix-rust/nix/pull/1841))
   
 ### Changed
 
