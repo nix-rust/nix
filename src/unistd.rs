@@ -2921,9 +2921,8 @@ pub fn access<P: ?Sized + NixPath>(path: &P, amode: AccessFlags) -> Result<()> {
 /// # References
 ///
 /// [faccessat(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/faccessat.html)
-// illumos: faccessat(2) appears to be supported, but the libc crate does not provide a binding.
 // redox: does not appear to support the *at family of syscalls.
-#[cfg(not(any(target_os = "illumos", target_os = "redox")))]
+#[cfg(not(target_os = "redox"))]
 pub fn faccessat<P: ?Sized + NixPath>(dirfd: Option<RawFd>, path: &P, mode: AccessFlags, flags: AtFlags) -> Result<()> {
     let res = path.with_nix_path(|cstr| {
         unsafe {
