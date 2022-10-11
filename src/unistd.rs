@@ -417,7 +417,7 @@ feature! {
 /// Create a copy of the specified file descriptor (see
 /// [dup(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/dup.html)).
 ///
-/// The new file descriptor will be have a new index but refer to the same
+/// The new file descriptor will have a new index but refer to the same
 /// resource as the old file descriptor and the old and new file descriptors may
 /// be used interchangeably.  The new and old file descriptor share the same
 /// underlying resource, offset, and file status flags.  The actual index used
