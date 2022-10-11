@@ -24,6 +24,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   ([#1833](https://github.com/nix-rust/nix/pull/1833))
 - Added `faccessat(2)` on illumos
   ([#1841](https://github.com/nix-rust/nix/pull/1841))
+- Added `PTRACE_GETFPREGS` and `PTRACE_SETFPREGS` on Linux
+  ([#1844](https://github.com/nix-rust/nix/pull/1844))
   
 ### Changed
 
