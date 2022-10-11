@@ -307,11 +307,14 @@ fn test_ptrace_setregs() {
             let mut regs = ptrace::getregs(child).expect("Failed to get regs.");
             regs.rax = 0x42424242;
             ptrace::setregs(child, regs).expect("Failed to set regs");
-            let regs = ptrace::getregs(child).expect("Failed to get regs after modification.");
+            let regs = ptrace::getregs(child)
+                .expect("Failed to get regs after modification.");
 
             ptrace::cont(child, Some(Signal::SIGKILL)).unwrap();
             match waitpid(child, None) {
-                Ok(WaitStatus::Signaled(pid, Signal::SIGKILL, _)) if pid == child => {
+                Ok(WaitStatus::Signaled(pid, Signal::SIGKILL, _))
+                    if pid == child =>
+                {
                     // FIXME It's been observed on some systems (apple) the
                     // tracee may not be killed but remain as a zombie process
                     // affecting other wait based tests. Add an extra kill just
@@ -361,11 +364,14 @@ fn test_ptrace_setregs() {
             let mut regs = ptrace::getregs(child).expect("Failed to get regs.");
             regs.eax = 0x42424242;
             ptrace::setregs(child, regs).expect("Failed to set regs");
-            let regs = ptrace::getregs(child).expect("Failed to get regs after modification.");
+            let regs = ptrace::getregs(child)
+                .expect("Failed to get regs after modification.");
 
             ptrace::cont(child, Some(Signal::SIGKILL)).unwrap();
             match waitpid(child, None) {
-                Ok(WaitStatus::Signaled(pid, Signal::SIGKILL, _)) if pid == child => {
+                Ok(WaitStatus::Signaled(pid, Signal::SIGKILL, _))
+                    if pid == child =>
+                {
                     // FIXME It's been observed on some systems (apple) the
                     // tracee may not be killed but remain as a zombie process
                     // affecting other wait based tests. Add an extra kill just
@@ -389,7 +395,10 @@ fn test_ptrace_setregs() {
 #[cfg(all(
     target_os = "linux",
     any(
-        all(target_arch = "x86_64", any(target_env = "gnu", target_env = "musl")),
+        all(
+            target_arch = "x86_64",
+            any(target_env = "gnu", target_env = "musl")
+        ),
         all(target_arch = "x86", target_env = "gnu")
     )
 ))]
@@ -418,15 +427,18 @@ fn test_ptrace_setfpregs() {
                 Ok(WaitStatus::Stopped(child, Signal::SIGTRAP))
             );
 
-            let mut fpregs = ptrace::getfpregs(child).expect("Failed to get fpregs.");
+            let mut fpregs =
+                ptrace::getfpregs(child).expect("Failed to get fpregs.");
             fpregs.st_space[0] = 0x42424242;
             ptrace::setfpregs(child, fpregs).expect("Failed to set fpregs");
-            let fpregs =
-                ptrace::getfpregs(child).expect("Failed to get fpregs after modification.");
+            let fpregs = ptrace::getfpregs(child)
+                .expect("Failed to get fpregs after modification.");
 
             ptrace::cont(child, Some(Signal::SIGKILL)).unwrap();
             match waitpid(child, None) {
-                Ok(WaitStatus::Signaled(pid, Signal::SIGKILL, _)) if pid == child => {
+                Ok(WaitStatus::Signaled(pid, Signal::SIGKILL, _))
+                    if pid == child =>
+                {
                     // FIXME It's been observed on some systems (apple) the
                     // tracee may not be killed but remain as a zombie process
                     // affecting other wait based tests. Add an extra kill just
