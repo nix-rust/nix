@@ -208,7 +208,9 @@ pub const XENFS_SUPER_MAGIC: FsType = FsType(libc::XENFS_SUPER_MAGIC as fs_type_
 #[cfg(any(target_os = "linux", target_os = "android"))]
 #[allow(missing_docs)]
 pub const NSFS_MAGIC: FsType = FsType(libc::NSFS_MAGIC as fs_type_t);
-
+#[cfg(all(any(target_os = "linux", target_os = "android"), not(target_env = "musl")))]
+#[allow(missing_docs)]
+pub const XFS_SUPER_MAGIC: FsType = FsType(libc::XFS_SUPER_MAGIC as fs_type_t);
 
 impl Statfs {
     /// Magic code defining system type
