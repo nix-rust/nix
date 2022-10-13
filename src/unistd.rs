@@ -2931,6 +2931,27 @@ pub fn faccessat<P: ?Sized + NixPath>(dirfd: Option<RawFd>, path: &P, mode: Acce
     })?;
     Errno::result(res).map(drop)
 }
+
+/// Checks the file named by `path` for accessibility according to the flags given
+/// by `mode` using effective UID, effective GID and supplementary group lists.
+///
+/// # References
+///
+/// * [FreeBSD man page](https://www.freebsd.org/cgi/man.cgi?query=eaccess&sektion=2&n=1)
+/// * [Linux man page](https://man7.org/linux/man-pages/man3/euidaccess.3.html)
+#[cfg(any(
+    all(target_os = "linux", not(target_env = "uclibc")),
+    target_os = "freebsd",
+    target_os = "dragonfly"
+))]
+pub fn eaccess<P: ?Sized + NixPath>(path: &P, mode: AccessFlags) -> Result<()> {
+    let res = path.with_nix_path(|cstr| {
+        unsafe {
+            libc::eaccess(cstr.as_ptr(), mode.bits)
+        }
+    })?;
+    Errno::result(res).map(drop)
+}
 }
 
 feature! {
