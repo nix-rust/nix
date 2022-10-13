@@ -2207,7 +2207,7 @@ pub enum SysconfVar {
     /// Unless otherwise noted, the maximum length, in bytes, of a utility's
     /// input line (either standard input or another file), when the utility is
     /// described as processing text files. The length includes room for the
-    /// trailing <newline>.
+    /// trailing newline.
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     LINE_MAX = libc::_SC_LINE_MAX,
