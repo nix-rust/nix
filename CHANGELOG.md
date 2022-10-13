@@ -24,6 +24,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   ([#1833](https://github.com/nix-rust/nix/pull/1833))
 - Added `faccessat(2)` on illumos
   ([#1841](https://github.com/nix-rust/nix/pull/1841))
+- Added `eaccess()` on FreeBSD, DragonFly and Linux (glibc and musl).
+  ([#1842](https://github.com/nix-rust/nix/pull/1842))
   
 ### Changed
 
