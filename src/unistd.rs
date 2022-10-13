@@ -2052,7 +2052,7 @@ pub enum SysconfVar {
     /// Unless otherwise noted, the maximum length, in bytes, of a utility's
     /// input line (either standard input or another file), when the utility is
     /// described as processing text files. The length includes room for the
-    /// trailing <newline>.
+    /// trailing newline.
     #[cfg(not(target_os = "redox"))]
     LINE_MAX = libc::_SC_LINE_MAX,
     /// Maximum length of a login name.
