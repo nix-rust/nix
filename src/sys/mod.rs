@@ -226,3 +226,9 @@ feature! {
     #![feature = "time"]
     pub mod timer;
 }
+
+#[cfg(any(target_os = "linux", target_os = "android"))]
+feature! {
+    #![feature = "xattr"]
+    pub mod xattr;
+}
