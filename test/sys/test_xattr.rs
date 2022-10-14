@@ -20,7 +20,7 @@ fn test_setxattr_file_exist() {
 
     match res {
         // The underlying file system does not support EA, skip this test.
-        Err(Errno::ENOTSUP) => return,
+        Err(Errno::ENOTSUP) => {},
         // If EA is supported, then no error should occur
         _ => assert!(res.is_ok()),
     }
@@ -70,7 +70,7 @@ fn test_fsetxattr() {
 
     match res {
         // The underlying file system does not support EA, skip this test.
-        Err(Errno::ENOTSUP) => return,
+        Err(Errno::ENOTSUP) => {},
         // If EA is supported, then no error should occur
         _ => assert!(res.is_ok()),
     }
@@ -90,7 +90,7 @@ fn test_listxattr() {
 
     match res {
         // The underlying file system does not support EA, skip this test.
-        Err(Errno::ENOTSUP) => return,
+        Err(Errno::ENOTSUP) => {},
         // If EA is supported, then no error should occur
         _ => assert!(res.is_ok()),
     }
@@ -111,7 +111,7 @@ fn test_flistxattr() {
 
     match res {
         // The underlying file system does not support EA, skip this test.
-        Err(Errno::ENOTSUP) => return,
+        Err(Errno::ENOTSUP) => {},
         // If EA is supported, then no error should occur
         _ => assert!(res.is_ok()),
     }
