@@ -1841,7 +1841,7 @@ mod test {
         let recv = super::recvmmsg(rsock, &mut data, recv_iovs.iter(), flags, Some(t))?;
 
         for rmsg in recv {
-            #[cfg(not(qemu))]
+            #[cfg(not(any(qemu, target_arch = "aarch64")))]
             let mut saw_time = false;
             let mut recvd = 0;
             for cmsg in rmsg.cmsgs() {
@@ -1856,14 +1856,14 @@ mod test {
                         sys_time - ts
                     };
                     assert!(std::time::Duration::from(diff).as_secs() < 60);
-                    #[cfg(not(qemu))]
+                    #[cfg(not(any(qemu, target_arch = "aarch64")))]
                     {
                         saw_time = true;
                     }
                 }
             }
 
-            #[cfg(not(qemu))]
+            #[cfg(not(any(qemu, target_arch = "aarch64")))]
             assert!(saw_time);
 
             for iov in rmsg.iovs() {
