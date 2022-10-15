@@ -124,7 +124,7 @@ fn test_getxattr() {
         errno::Errno,
         sys::xattr::{getxattr, setxattr, SetxattrFlag},
     };
-    use std::{ffi::OsString, fs::File};
+    use std::fs::File;
 
     let temp_dir = tempfile::tempdir_in("./").unwrap();
     let temp_file_path = temp_dir.path().join("test_getxattr");
@@ -146,7 +146,7 @@ fn test_getxattr() {
     assert!(res.is_ok());
 
     assert_eq!(
-        Ok(OsString::new()),
+        Ok(Vec::new()),
         getxattr(temp_file_path.as_path(), "user.test_getxattr")
     );
 }
@@ -158,7 +158,7 @@ fn test_fgetxattr() {
         errno::Errno,
         sys::xattr::{fgetxattr, fsetxattr, SetxattrFlag},
     };
-    use std::{ffi::OsString, fs::File, os::unix::io::AsRawFd};
+    use std::{fs::File, os::unix::io::AsRawFd};
 
     let temp_dir = tempfile::tempdir_in("./").unwrap();
     let temp_file_path = temp_dir.path().join("test_fgetxattr");
@@ -181,7 +181,7 @@ fn test_fgetxattr() {
     assert!(res.is_ok());
 
     assert_eq!(
-        Ok(OsString::new()),
+        Ok(Vec::new()),
         fgetxattr(temp_file_fd, "user.test_fgetxattr")
     );
 }

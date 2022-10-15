@@ -38,8 +38,8 @@
 //! * `ucontext` - User thread context
 //! * `uio` - Vectored I/O
 //! * `user` - Stuff relating to users and groups
-//! * `zerocopy` - APIs like `sendfile` and `copy_file_range`
 //! * `xattr` - Extended Attributes related APIs
+//! * `zerocopy` - APIs like `sendfile` and `copy_file_range`
 #![crate_name = "nix"]
 #![cfg(unix)]
 #![cfg_attr(docsrs, doc(cfg(all())))]

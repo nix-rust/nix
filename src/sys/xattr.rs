@@ -5,10 +5,7 @@ use crate::{errno::Errno, NixPath, Result};
 #[cfg(any(target_os = "linux", target_os = "android"))]
 use std::{
     ffi::{CString, OsStr, OsString},
-    os::unix::{
-        ffi::{OsStrExt, OsStringExt},
-        io::RawFd,
-    },
+    os::unix::{ffi::OsStrExt, io::RawFd},
     ptr::null_mut,
 };
 
@@ -136,7 +133,7 @@ pub fn flistxattr(fd: RawFd) -> Result<Vec<OsString>> {
 ///
 /// For more information, see [getxattr(2)](https://man7.org/linux/man-pages/man2/getxattr.2.html)
 #[cfg(any(target_os = "linux", target_os = "android"))]
-pub fn getxattr<P, S>(path: &P, name: S) -> Result<OsString>
+pub fn getxattr<P, S>(path: &P, name: S) -> Result<Vec<u8>>
 where
     P: ?Sized + NixPath,
     S: AsRef<OsStr>,
@@ -160,7 +157,7 @@ where
 
     // The corresponding value is empty, return
     if buffer_size == 0 {
-        return Ok(OsString::new());
+        return Ok(Vec::new());
     }
 
     let mut buffer: Vec<u8> =
@@ -177,7 +174,7 @@ where
 
     Errno::result(res).map(|len| unsafe {
         buffer.set_len(len as usize);
-        OsString::from_vec(buffer)
+        buffer
     })
 }
 
@@ -187,7 +184,7 @@ where
 ///
 /// For more information, see [lgetxattr(2)](https://man7.org/linux/man-pages/man2/getxattr.2.html)
 #[cfg(any(target_os = "linux", target_os = "android"))]
-pub fn lgetxattr<P, S>(path: &P, name: S) -> Result<OsString>
+pub fn lgetxattr<P, S>(path: &P, name: S) -> Result<Vec<u8>>
 where
     P: ?Sized + NixPath,
     S: AsRef<OsStr>,
@@ -211,7 +208,7 @@ where
 
     // The corresponding value is empty, return
     if buffer_size == 0 {
-        return Ok(OsString::new());
+        return Ok(Vec::new());
     }
 
     let mut buffer: Vec<u8> =
@@ -228,7 +225,7 @@ where
 
     Errno::result(res).map(|len| unsafe {
         buffer.set_len(len as usize);
-        OsString::from_vec(buffer)
+        buffer
     })
 }
 
@@ -238,7 +235,7 @@ where
 ///
 /// For more information, see [fgetxattr(2)](https://man7.org/linux/man-pages/man2/getxattr.2.html)
 #[cfg(any(target_os = "linux", target_os = "android"))]
-pub fn fgetxattr<S>(fd: RawFd, name: S) -> Result<OsString>
+pub fn fgetxattr<S>(fd: RawFd, name: S) -> Result<Vec<u8>>
 where
     S: AsRef<OsStr>,
 {
@@ -256,7 +253,7 @@ where
 
     // The corresponding value is empty, return
     if buffer_size == 0 {
-        return Ok(OsString::new());
+        return Ok(Vec::new());
     }
 
     let mut buffer: Vec<u8> =
@@ -273,7 +270,7 @@ where
 
     Errno::result(res).map(|len| unsafe {
         buffer.set_len(len as usize);
-        OsString::from_vec(buffer)
+        buffer
     })
 }
 
@@ -352,15 +349,16 @@ where
 ///
 /// For more information, see [setxattr(2)](https://man7.org/linux/man-pages/man2/lsetxattr.2.html)
 #[cfg(any(target_os = "linux", target_os = "android"))]
-pub fn setxattr<P, S>(
+pub fn setxattr<P, S, B>(
     path: &P,
     name: S,
-    value: S,
+    value: B,
     flags: SetxattrFlag,
 ) -> Result<()>
 where
     P: ?Sized + NixPath,
     S: AsRef<OsStr>,
+    B: AsRef<[u8]>,
 {
     let name = if let Ok(name) = CString::new(name.as_ref().as_bytes()) {
         name
@@ -369,7 +367,7 @@ where
         return Err(Errno::EINVAL);
     };
 
-    let value_ptr = value.as_ref().as_bytes().as_ptr() as *mut libc::c_void;
+    let value_ptr = value.as_ref().as_ptr() as *mut libc::c_void;
     let value_len = value.as_ref().len();
 
     let res = path.with_nix_path(|path| unsafe {
@@ -391,15 +389,16 @@ where
 ///
 /// For more information, see [lsetxattr(2)](https://man7.org/linux/man-pages/man2/lsetxattr.2.html)
 #[cfg(any(target_os = "linux", target_os = "android"))]
-pub fn lsetxattr<P, S>(
+pub fn lsetxattr<P, S, B>(
     path: &P,
     name: S,
-    value: S,
+    value: B,
     flags: SetxattrFlag,
 ) -> Result<()>
-    where
-        P: ?Sized + NixPath,
-        S: AsRef<OsStr>,
+where
+    P: ?Sized + NixPath,
+    S: AsRef<OsStr>,
+    B: AsRef<[u8]>,
 {
     let name = if let Ok(name) = CString::new(name.as_ref().as_bytes()) {
         name
@@ -408,7 +407,7 @@ pub fn lsetxattr<P, S>(
         return Err(Errno::EINVAL);
     };
 
-    let value_ptr = value.as_ref().as_bytes().as_ptr() as *mut libc::c_void;
+    let value_ptr = value.as_ref().as_ptr() as *mut libc::c_void;
     let value_len = value.as_ref().len();
 
     let res = path.with_nix_path(|path| unsafe {
@@ -429,14 +428,15 @@ pub fn lsetxattr<P, S>(
 ///
 /// For more information, see [fsetxattr(2)](https://man7.org/linux/man-pages/man2/lsetxattr.2.html)
 #[cfg(any(target_os = "linux", target_os = "android"))]
-pub fn fsetxattr<S>(
+pub fn fsetxattr<S, B>(
     fd: RawFd,
     name: S,
-    value: S,
+    value: B,
     flags: SetxattrFlag,
 ) -> Result<()>
-    where
-        S: AsRef<OsStr>,
+where
+    S: AsRef<OsStr>,
+    B: AsRef<[u8]>,
 {
     let name = if let Ok(name) = CString::new(name.as_ref().as_bytes()) {
         name
@@ -445,17 +445,11 @@ pub fn fsetxattr<S>(
         return Err(Errno::EINVAL);
     };
 
-    let value_ptr = value.as_ref().as_bytes().as_ptr() as *mut libc::c_void;
+    let value_ptr = value.as_ref().as_ptr() as *mut libc::c_void;
     let value_len = value.as_ref().len();
 
     let res = unsafe {
-        libc::fsetxattr(
-            fd,
-            name.as_ptr(),
-            value_ptr,
-            value_len,
-            flags.bits,
-        )
+        libc::fsetxattr(fd, name.as_ptr(), value_ptr, value_len, flags.bits)
     };
 
     Errno::result(res).map(drop)

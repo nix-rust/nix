@@ -26,6 +26,9 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   ([#1841](https://github.com/nix-rust/nix/pull/1841))
 - Added `eaccess()` on FreeBSD, DragonFly and Linux (glibc and musl).
   ([#1842](https://github.com/nix-rust/nix/pull/1842))
+- Added `listxattr/setxattr/getxattr/removexattr` and their variants on Linux 
+  and Android.
+  ([#1847](https://github.com/nix-rust/nix/pull/1847))
   
 ### Changed
 
