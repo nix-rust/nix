@@ -7,6 +7,8 @@ use std::os::unix::io::AsRawFd;
 #[cfg(not(any(target_os = "linux", target_os = "android")))]
 use std::ffi::CStr;
 
+use cfg_if::cfg_if;
+
 use crate::{NixPath, Result, errno::Errno};
 
 /// Identifies a mounted file system
@@ -18,10 +20,30 @@ pub type fsid_t = libc::__fsid_t;
 #[cfg_attr(docsrs, doc(cfg(all())))]
 pub type fsid_t = libc::fsid_t;
 
+cfg_if! {
+    if #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))] {
+        type type_of_statfs = libc::statfs64;
+        const LIBC_FSTATFS: unsafe extern fn
+            (fd: libc::c_int, buf: *mut type_of_statfs) -> libc::c_int
+            = libc::fstatfs64;
+        const LIBC_STATFS: unsafe extern fn
+            (path: *const libc::c_char, buf: *mut type_of_statfs) -> libc::c_int
+            = libc::statfs64;
+    } else {
+        type type_of_statfs = libc::statfs;
+        const LIBC_FSTATFS: unsafe extern fn
+            (fd: libc::c_int, buf: *mut type_of_statfs) -> libc::c_int
+            = libc::fstatfs;
+        const LIBC_STATFS: unsafe extern fn
+            (path: *const libc::c_char, buf: *mut type_of_statfs) -> libc::c_int
+            = libc::statfs;
+    }
+}
+
 /// Describes a mounted file system
 #[derive(Clone, Copy)]
 #[repr(transparent)]
-pub struct Statfs(libc::statfs);
+pub struct Statfs(type_of_statfs);
 
 #[cfg(target_os = "freebsd")]
 type fs_type_t = u32;
@@ -642,8 +664,8 @@ impl Debug for Statfs {
 /// `path` - Path to any file within the file system to describe
 pub fn statfs<P: ?Sized + NixPath>(path: &P) -> Result<Statfs> {
     unsafe {
-        let mut stat = mem::MaybeUninit::<libc::statfs>::uninit();
-        let res = path.with_nix_path(|path| libc::statfs(path.as_ptr(), stat.as_mut_ptr()))?;
+        let mut stat = mem::MaybeUninit::<type_of_statfs>::uninit();
+        let res = path.with_nix_path(|path| LIBC_STATFS(path.as_ptr(), stat.as_mut_ptr()))?;
         Errno::result(res).map(|_| Statfs(stat.assume_init()))
     }
 }
@@ -658,8 +680,8 @@ pub fn statfs<P: ?Sized + NixPath>(path: &P) -> Result<Statfs> {
 /// `fd` - File descriptor of any open file within the file system to describe
 pub fn fstatfs<T: AsRawFd>(fd: &T) -> Result<Statfs> {
     unsafe {
-        let mut stat = mem::MaybeUninit::<libc::statfs>::uninit();
-        Errno::result(libc::fstatfs(fd.as_raw_fd(), stat.as_mut_ptr()))
+        let mut stat = mem::MaybeUninit::<type_of_statfs>::uninit();
+        Errno::result(LIBC_FSTATFS(fd.as_raw_fd(), stat.as_mut_ptr()))
             .map(|_| Statfs(stat.assume_init()))
     }
 }
