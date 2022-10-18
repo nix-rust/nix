@@ -422,7 +422,9 @@ impl Statfs {
         target_os = "macos",
         target_os = "android",
         target_os = "freebsd",
+        target_os = "fuchsia",
         target_os = "openbsd",
+        target_os = "linux",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn blocks(&self) -> u64 {
@@ -437,24 +439,9 @@ impl Statfs {
     }
 
     /// Total data blocks in filesystem
-    #[cfg(all(target_os = "linux", any(target_env = "musl", target_arch = "riscv32", all(target_arch = "x86_64", target_pointer_width = "32"))))]
+    #[cfg(target_os = "emscripten")]
     #[cfg_attr(docsrs, doc(cfg(all())))]
-    pub fn blocks(&self) -> u64 {
-        self.0.f_blocks
-    }
-
-    /// Total data blocks in filesystem
-    #[cfg(not(any(
-        target_os = "ios",
-        target_os = "macos",
-        target_os = "android",
-        target_os = "freebsd",
-        target_os = "openbsd",
-        target_os = "dragonfly",
-        all(target_os = "linux", any(target_env = "musl", target_arch = "riscv32", all(target_arch = "x86_64", target_pointer_width = "32")))
-    )))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
-    pub fn blocks(&self) -> libc::c_ulong {
+    pub fn blocks(&self) -> u32 {
         self.0.f_blocks
     }
 
@@ -464,7 +451,9 @@ impl Statfs {
         target_os = "macos",
         target_os = "android",
         target_os = "freebsd",
+        target_os = "fuchsia",
         target_os = "openbsd",
+        target_os = "linux",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn blocks_free(&self) -> u64 {
@@ -479,29 +468,20 @@ impl Statfs {
     }
 
     /// Free blocks in filesystem
-    #[cfg(all(target_os = "linux", any(target_env = "musl", target_arch = "riscv32", all(target_arch = "x86_64", target_pointer_width = "32"))))]
+    #[cfg(target_os = "emscripten")]
     #[cfg_attr(docsrs, doc(cfg(all())))]
-    pub fn blocks_free(&self) -> u64 {
-        self.0.f_bfree
-    }
-
-    /// Free blocks in filesystem
-    #[cfg(not(any(
-        target_os = "ios",
-        target_os = "macos",
-        target_os = "android",
-        target_os = "freebsd",
-        target_os = "openbsd",
-        target_os = "dragonfly",
-        all(target_os = "linux", any(target_env = "musl", target_arch = "riscv32", all(target_arch = "x86_64", target_pointer_width = "32")))
-    )))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
-    pub fn blocks_free(&self) -> libc::c_ulong {
+    pub fn blocks_free(&self) -> u32 {
         self.0.f_bfree
     }
 
     /// Free blocks available to unprivileged user
-    #[cfg(any(target_os = "ios", target_os = "macos", target_os = "android"))]
+    #[cfg(any(
+        target_os = "ios",
+        target_os = "macos",
+        target_os = "android",
+        target_os = "fuchsia",
+        target_os = "linux",
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn blocks_available(&self) -> u64 {
         self.0.f_bavail
@@ -522,24 +502,9 @@ impl Statfs {
     }
 
     /// Free blocks available to unprivileged user
-    #[cfg(all(target_os = "linux", any(target_env = "musl", target_arch = "riscv32", all(target_arch = "x86_64", target_pointer_width = "32"))))]
+    #[cfg(target_os = "emscripten")]
     #[cfg_attr(docsrs, doc(cfg(all())))]
-    pub fn blocks_available(&self) -> u64 {
-        self.0.f_bavail
-    }
-
-    /// Free blocks available to unprivileged user
-    #[cfg(not(any(
-        target_os = "ios",
-        target_os = "macos",
-        target_os = "android",
-        target_os = "freebsd",
-        target_os = "openbsd",
-        target_os = "dragonfly",
-        all(target_os = "linux", any(target_env = "musl", target_arch = "riscv32", all(target_arch = "x86_64", target_pointer_width = "32")))
-    )))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
-    pub fn blocks_available(&self) -> libc::c_ulong {
+    pub fn blocks_available(&self) -> u32 {
         self.0.f_bavail
     }
 
@@ -549,7 +514,9 @@ impl Statfs {
         target_os = "macos",
         target_os = "android",
         target_os = "freebsd",
+        target_os = "fuchsia",
         target_os = "openbsd",
+        target_os = "linux",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn files(&self) -> u64 {
@@ -564,33 +531,20 @@ impl Statfs {
     }
 
     /// Total file nodes in filesystem
-    #[cfg(all(target_os = "linux", any(target_env = "musl", target_arch = "riscv32", all(target_arch = "x86_64", target_pointer_width = "32"))))]
+    #[cfg(target_os = "emscripten")]
     #[cfg_attr(docsrs, doc(cfg(all())))]
-    pub fn files(&self) -> libc::fsfilcnt_t {
-        self.0.f_files
-    }
-
-    /// Total file nodes in filesystem
-    #[cfg(not(any(
-        target_os = "ios",
-        target_os = "macos",
-        target_os = "android",
-        target_os = "freebsd",
-        target_os = "openbsd",
-        target_os = "dragonfly",
-        all(target_os = "linux", any(target_env = "musl", target_arch = "riscv32", all(target_arch = "x86_64", target_pointer_width = "32")))
-    )))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
-    pub fn files(&self) -> libc::c_ulong {
+    pub fn files(&self) -> u32 {
         self.0.f_files
     }
 
     /// Free file nodes in filesystem
     #[cfg(any(
-            target_os = "android",
-            target_os = "ios",
-            target_os = "macos",
-            target_os = "openbsd"
+        target_os = "ios",
+        target_os = "macos",
+        target_os = "android",
+        target_os = "fuchsia",
+        target_os = "openbsd",
+        target_os = "linux",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn files_free(&self) -> u64 {
@@ -612,24 +566,9 @@ impl Statfs {
     }
 
     /// Free file nodes in filesystem
-    #[cfg(all(target_os = "linux", any(target_env = "musl", target_arch = "riscv32", all(target_arch = "x86_64", target_pointer_width = "32"))))]
+    #[cfg(target_os = "emscripten")]
     #[cfg_attr(docsrs, doc(cfg(all())))]
-    pub fn files_free(&self) -> libc::fsfilcnt_t {
-        self.0.f_ffree
-    }
-
-    /// Free file nodes in filesystem
-    #[cfg(not(any(
-        target_os = "ios",
-        target_os = "macos",
-        target_os = "android",
-        target_os = "freebsd",
-        target_os = "openbsd",
-        target_os = "dragonfly",
-        all(target_os = "linux", any(target_env = "musl", target_arch = "riscv32", all(target_arch = "x86_64", target_pointer_width = "32")))
-    )))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
-    pub fn files_free(&self) -> libc::c_ulong {
+    pub fn files_free(&self) -> u32 {
         self.0.f_ffree
     }
 
