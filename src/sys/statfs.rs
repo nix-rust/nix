@@ -7,7 +7,19 @@ use std::os::unix::io::AsRawFd;
 #[cfg(not(any(target_os = "linux", target_os = "android")))]
 use std::ffi::CStr;
 
+use cfg_if::cfg_if;
+
 use crate::{NixPath, Result, errno::Errno};
+#[cfg(all(feature = "mount",
+          any(target_os = "dragonfly",
+              target_os = "freebsd",
+              target_os = "macos",
+              target_os = "netbsd",
+              target_os = "openbsd")
+))]
+use crate::mount::MntFlags;
+#[cfg(target_os = "linux")]
+use crate::sys::statvfs::FsFlags;
 
 /// Identifies a mounted file system
 #[cfg(target_os = "android")]
@@ -18,10 +30,30 @@ pub type fsid_t = libc::__fsid_t;
 #[cfg_attr(docsrs, doc(cfg(all())))]
 pub type fsid_t = libc::fsid_t;
 
+cfg_if! {
+    if #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))] {
+        type type_of_statfs = libc::statfs64;
+        const LIBC_FSTATFS: unsafe extern fn
+            (fd: libc::c_int, buf: *mut type_of_statfs) -> libc::c_int
+            = libc::fstatfs64;
+        const LIBC_STATFS: unsafe extern fn
+            (path: *const libc::c_char, buf: *mut type_of_statfs) -> libc::c_int
+            = libc::statfs64;
+    } else {
+        type type_of_statfs = libc::statfs;
+        const LIBC_FSTATFS: unsafe extern fn
+            (fd: libc::c_int, buf: *mut type_of_statfs) -> libc::c_int
+            = libc::fstatfs;
+        const LIBC_STATFS: unsafe extern fn
+            (path: *const libc::c_char, buf: *mut type_of_statfs) -> libc::c_int
+            = libc::statfs;
+    }
+}
+
 /// Describes a mounted file system
 #[derive(Clone, Copy)]
 #[repr(transparent)]
-pub struct Statfs(libc::statfs);
+pub struct Statfs(type_of_statfs);
 
 #[cfg(target_os = "freebsd")]
 type fs_type_t = u32;
@@ -352,6 +384,29 @@ impl Statfs {
         self.0.f_bsize
     }
 
+    /// Get the mount flags
+    #[cfg(all(feature = "mount",
+              any(target_os = "dragonfly",
+                  target_os = "freebsd",
+                  target_os = "macos",
+                  target_os = "netbsd",
+                  target_os = "openbsd")
+    ))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
+    #[allow(clippy::unnecessary_cast)]  // Not unnecessary on all arches
+    pub fn flags(&self) -> MntFlags {
+        MntFlags::from_bits_truncate(self.0.f_flags as i32)
+    }
+
+    /// Get the mount flags
+    // The f_flags field exists on Android and Fuchsia too, but without man
+    // pages I can't tell if it can be cast to FsFlags.
+    #[cfg(target_os = "linux")]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
+    pub fn flags(&self) -> FsFlags {
+        FsFlags::from_bits_truncate(self.0.f_flags as libc::c_ulong)
+    }
+
     /// Maximum length of filenames
     #[cfg(any(target_os = "freebsd", target_os = "openbsd"))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
@@ -400,7 +455,9 @@ impl Statfs {
         target_os = "macos",
         target_os = "android",
         target_os = "freebsd",
+        target_os = "fuchsia",
         target_os = "openbsd",
+        target_os = "linux",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn blocks(&self) -> u64 {
@@ -415,24 +472,9 @@ impl Statfs {
     }
 
     /// Total data blocks in filesystem
-    #[cfg(all(target_os = "linux", any(target_env = "musl", target_arch = "riscv32", all(target_arch = "x86_64", target_pointer_width = "32"))))]
+    #[cfg(target_os = "emscripten")]
     #[cfg_attr(docsrs, doc(cfg(all())))]
-    pub fn blocks(&self) -> u64 {
-        self.0.f_blocks
-    }
-
-    /// Total data blocks in filesystem
-    #[cfg(not(any(
-        target_os = "ios",
-        target_os = "macos",
-        target_os = "android",
-        target_os = "freebsd",
-        target_os = "openbsd",
-        target_os = "dragonfly",
-        all(target_os = "linux", any(target_env = "musl", target_arch = "riscv32", all(target_arch = "x86_64", target_pointer_width = "32")))
-    )))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
-    pub fn blocks(&self) -> libc::c_ulong {
+    pub fn blocks(&self) -> u32 {
         self.0.f_blocks
     }
 
@@ -442,7 +484,9 @@ impl Statfs {
         target_os = "macos",
         target_os = "android",
         target_os = "freebsd",
+        target_os = "fuchsia",
         target_os = "openbsd",
+        target_os = "linux",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn blocks_free(&self) -> u64 {
@@ -457,29 +501,20 @@ impl Statfs {
     }
 
     /// Free blocks in filesystem
-    #[cfg(all(target_os = "linux", any(target_env = "musl", target_arch = "riscv32", all(target_arch = "x86_64", target_pointer_width = "32"))))]
+    #[cfg(target_os = "emscripten")]
     #[cfg_attr(docsrs, doc(cfg(all())))]
-    pub fn blocks_free(&self) -> u64 {
-        self.0.f_bfree
-    }
-
-    /// Free blocks in filesystem
-    #[cfg(not(any(
-        target_os = "ios",
-        target_os = "macos",
-        target_os = "android",
-        target_os = "freebsd",
-        target_os = "openbsd",
-        target_os = "dragonfly",
-        all(target_os = "linux", any(target_env = "musl", target_arch = "riscv32", all(target_arch = "x86_64", target_pointer_width = "32")))
-    )))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
-    pub fn blocks_free(&self) -> libc::c_ulong {
+    pub fn blocks_free(&self) -> u32 {
         self.0.f_bfree
     }
 
     /// Free blocks available to unprivileged user
-    #[cfg(any(target_os = "ios", target_os = "macos", target_os = "android"))]
+    #[cfg(any(
+        target_os = "ios",
+        target_os = "macos",
+        target_os = "android",
+        target_os = "fuchsia",
+        target_os = "linux",
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn blocks_available(&self) -> u64 {
         self.0.f_bavail
@@ -500,24 +535,9 @@ impl Statfs {
     }
 
     /// Free blocks available to unprivileged user
-    #[cfg(all(target_os = "linux", any(target_env = "musl", target_arch = "riscv32", all(target_arch = "x86_64", target_pointer_width = "32"))))]
+    #[cfg(target_os = "emscripten")]
     #[cfg_attr(docsrs, doc(cfg(all())))]
-    pub fn blocks_available(&self) -> u64 {
-        self.0.f_bavail
-    }
-
-    /// Free blocks available to unprivileged user
-    #[cfg(not(any(
-        target_os = "ios",
-        target_os = "macos",
-        target_os = "android",
-        target_os = "freebsd",
-        target_os = "openbsd",
-        target_os = "dragonfly",
-        all(target_os = "linux", any(target_env = "musl", target_arch = "riscv32", all(target_arch = "x86_64", target_pointer_width = "32")))
-    )))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
-    pub fn blocks_available(&self) -> libc::c_ulong {
+    pub fn blocks_available(&self) -> u32 {
         self.0.f_bavail
     }
 
@@ -527,7 +547,9 @@ impl Statfs {
         target_os = "macos",
         target_os = "android",
         target_os = "freebsd",
+        target_os = "fuchsia",
         target_os = "openbsd",
+        target_os = "linux",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn files(&self) -> u64 {
@@ -542,33 +564,20 @@ impl Statfs {
     }
 
     /// Total file nodes in filesystem
-    #[cfg(all(target_os = "linux", any(target_env = "musl", target_arch = "riscv32", all(target_arch = "x86_64", target_pointer_width = "32"))))]
+    #[cfg(target_os = "emscripten")]
     #[cfg_attr(docsrs, doc(cfg(all())))]
-    pub fn files(&self) -> libc::fsfilcnt_t {
-        self.0.f_files
-    }
-
-    /// Total file nodes in filesystem
-    #[cfg(not(any(
-        target_os = "ios",
-        target_os = "macos",
-        target_os = "android",
-        target_os = "freebsd",
-        target_os = "openbsd",
-        target_os = "dragonfly",
-        all(target_os = "linux", any(target_env = "musl", target_arch = "riscv32", all(target_arch = "x86_64", target_pointer_width = "32")))
-    )))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
-    pub fn files(&self) -> libc::c_ulong {
+    pub fn files(&self) -> u32 {
         self.0.f_files
     }
 
     /// Free file nodes in filesystem
     #[cfg(any(
-            target_os = "android",
-            target_os = "ios",
-            target_os = "macos",
-            target_os = "openbsd"
+        target_os = "ios",
+        target_os = "macos",
+        target_os = "android",
+        target_os = "fuchsia",
+        target_os = "openbsd",
+        target_os = "linux",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn files_free(&self) -> u64 {
@@ -590,24 +599,9 @@ impl Statfs {
     }
 
     /// Free file nodes in filesystem
-    #[cfg(all(target_os = "linux", any(target_env = "musl", target_arch = "riscv32", all(target_arch = "x86_64", target_pointer_width = "32"))))]
+    #[cfg(target_os = "emscripten")]
     #[cfg_attr(docsrs, doc(cfg(all())))]
-    pub fn files_free(&self) -> libc::fsfilcnt_t {
-        self.0.f_ffree
-    }
-
-    /// Free file nodes in filesystem
-    #[cfg(not(any(
-        target_os = "ios",
-        target_os = "macos",
-        target_os = "android",
-        target_os = "freebsd",
-        target_os = "openbsd",
-        target_os = "dragonfly",
-        all(target_os = "linux", any(target_env = "musl", target_arch = "riscv32", all(target_arch = "x86_64", target_pointer_width = "32")))
-    )))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
-    pub fn files_free(&self) -> libc::c_ulong {
+    pub fn files_free(&self) -> u32 {
         self.0.f_ffree
     }
 
@@ -619,16 +613,25 @@ impl Statfs {
 
 impl Debug for Statfs {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("Statfs")
-            .field("optimal_transfer_size", &self.optimal_transfer_size())
-            .field("block_size", &self.block_size())
-            .field("blocks", &self.blocks())
-            .field("blocks_free", &self.blocks_free())
-            .field("blocks_available", &self.blocks_available())
-            .field("files", &self.files())
-            .field("files_free", &self.files_free())
-            .field("filesystem_id", &self.filesystem_id())
-            .finish()
+        let mut ds = f.debug_struct("Statfs");
+        ds.field("optimal_transfer_size", &self.optimal_transfer_size());
+        ds.field("block_size", &self.block_size());
+        ds.field("blocks", &self.blocks());
+        ds.field("blocks_free", &self.blocks_free());
+        ds.field("blocks_available", &self.blocks_available());
+        ds.field("files", &self.files());
+        ds.field("files_free", &self.files_free());
+        ds.field("filesystem_id", &self.filesystem_id());
+        #[cfg(all(feature = "mount",
+                  any(target_os = "dragonfly",
+                      target_os = "freebsd",
+                      target_os = "macos",
+                      target_os = "netbsd",
+                      target_os = "openbsd")
+        ))]
+        ds.field("flags", &self.flags());
+        ds.finish()
+
     }
 }
 
@@ -642,8 +645,8 @@ impl Debug for Statfs {
 /// `path` - Path to any file within the file system to describe
 pub fn statfs<P: ?Sized + NixPath>(path: &P) -> Result<Statfs> {
     unsafe {
-        let mut stat = mem::MaybeUninit::<libc::statfs>::uninit();
-        let res = path.with_nix_path(|path| libc::statfs(path.as_ptr(), stat.as_mut_ptr()))?;
+        let mut stat = mem::MaybeUninit::<type_of_statfs>::uninit();
+        let res = path.with_nix_path(|path| LIBC_STATFS(path.as_ptr(), stat.as_mut_ptr()))?;
         Errno::result(res).map(|_| Statfs(stat.assume_init()))
     }
 }
@@ -658,8 +661,8 @@ pub fn statfs<P: ?Sized + NixPath>(path: &P) -> Result<Statfs> {
 /// `fd` - File descriptor of any open file within the file system to describe
 pub fn fstatfs<T: AsRawFd>(fd: &T) -> Result<Statfs> {
     unsafe {
-        let mut stat = mem::MaybeUninit::<libc::statfs>::uninit();
-        Errno::result(libc::fstatfs(fd.as_raw_fd(), stat.as_mut_ptr()))
+        let mut stat = mem::MaybeUninit::<type_of_statfs>::uninit();
+        Errno::result(LIBC_FSTATFS(fd.as_raw_fd(), stat.as_mut_ptr()))
             .map(|_| Statfs(stat.assume_init()))
     }
 }
