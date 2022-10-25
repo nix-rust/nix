@@ -99,3 +99,7 @@ path = "test/test_clearenv.rs"
 name = "test-mount"
 path = "test/test_mount.rs"
 harness = false
+
+[[test]]
+name = "test-prctl"
+path = "test/sys/test_prctl.rs"

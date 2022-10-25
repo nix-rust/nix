@@ -67,6 +67,12 @@ feature! {
     pub mod personality;
 }
 
+#[cfg(target_os = "linux")]
+feature! {
+    #![feature = "process"]
+    pub mod prctl;
+}
+
 feature! {
     #![feature = "pthread"]
     pub mod pthread;
