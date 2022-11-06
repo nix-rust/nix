@@ -371,6 +371,41 @@ sockopt_impl!(
     libc::IP_MULTICAST_LOOP,
     bool
 );
+#[cfg(target_os = "linux")]
+#[cfg(feature = "net")]
+sockopt_impl!(
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
+    /// Set the protocol-defined priority for all packets to be
+    /// sent on this socket
+    Priority,
+    Both,
+    libc::SOL_SOCKET,
+    libc::SO_PRIORITY,
+    libc::c_int
+);
+#[cfg(target_os = "linux")]
+#[cfg(feature = "net")]
+sockopt_impl!(
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
+    /// Set or receive the Type-Of-Service (TOS) field that is
+    /// sent with every IP packet originating from this socket
+    IpTos,
+    Both,
+    libc::IPPROTO_IP,
+    libc::IP_TOS,
+    libc::c_int
+);
+#[cfg(target_os = "linux")]
+#[cfg(feature = "net")]
+sockopt_impl!(
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
+    /// Traffic class associated with outgoing packets
+    Ipv6TClass,
+    Both,
+    libc::IPPROTO_IPV6,
+    libc::IPV6_TCLASS,
+    libc::c_int
+);
 #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
 #[cfg(feature = "net")]
 sockopt_impl!(
