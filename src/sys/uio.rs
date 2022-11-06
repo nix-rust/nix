@@ -4,7 +4,6 @@ use crate::errno::Errno;
 use crate::Result;
 use libc::{self, c_int, c_void, off_t, size_t};
 use std::io::{IoSlice, IoSliceMut};
-use std::marker::PhantomData;
 use std::os::unix::io::RawFd;
 
 /// Low-level vectored write to a raw file descriptor
@@ -144,77 +143,6 @@ pub struct RemoteIoVec {
     /// The number of bytes in this slice (`iov_len`).
     pub len: usize,
 }
-
-/// A vector of buffers.
-///
-/// Vectored I/O methods like [`writev`] and [`readv`] use this structure for
-/// both reading and writing.  Each `IoVec` specifies the base address and
-/// length of an area in memory.
-#[deprecated(
-    since = "0.24.0",
-    note = "`IoVec` is no longer used in the public interface, use `IoSlice` or `IoSliceMut` instead"
-)]
-#[repr(transparent)]
-#[allow(renamed_and_removed_lints)]
-#[allow(clippy::unknown_clippy_lints)]
-// Clippy false positive: https://github.com/rust-lang/rust-clippy/issues/8867
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub struct IoVec<T>(pub(crate) libc::iovec, PhantomData<T>);
-
-#[allow(deprecated)]
-impl<T> IoVec<T> {
-    /// View the `IoVec` as a Rust slice.
-    #[deprecated(
-        since = "0.24.0",
-        note = "Use the `Deref` impl of `IoSlice` or `IoSliceMut` instead"
-    )]
-    #[inline]
-    pub fn as_slice(&self) -> &[u8] {
-        use std::slice;
-
-        unsafe {
-            slice::from_raw_parts(self.0.iov_base as *const u8, self.0.iov_len)
-        }
-    }
-}
-
-#[allow(deprecated)]
-impl<'a> IoVec<&'a [u8]> {
-    /// Create an `IoVec` from a Rust slice.
-    #[deprecated(since = "0.24.0", note = "Use `IoSlice::new` instead")]
-    pub fn from_slice(buf: &'a [u8]) -> IoVec<&'a [u8]> {
-        IoVec(
-            libc::iovec {
-                iov_base: buf.as_ptr() as *mut c_void,
-                iov_len: buf.len() as size_t,
-            },
-            PhantomData,
-        )
-    }
-}
-
-#[allow(deprecated)]
-impl<'a> IoVec<&'a mut [u8]> {
-    /// Create an `IoVec` from a mutable Rust slice.
-    #[deprecated(since = "0.24.0", note = "Use `IoSliceMut::new` instead")]
-    pub fn from_mut_slice(buf: &'a mut [u8]) -> IoVec<&'a mut [u8]> {
-        IoVec(
-            libc::iovec {
-                iov_base: buf.as_ptr() as *mut c_void,
-                iov_len: buf.len() as size_t,
-            },
-            PhantomData,
-        )
-    }
-}
-
-// The only reason IoVec isn't automatically Send+Sync is because libc::iovec
-// contains raw pointers.
-#[allow(deprecated)]
-unsafe impl<T> Send for IoVec<T> where T: Send {}
-#[allow(deprecated)]
-unsafe impl<T> Sync for IoVec<T> where T: Sync {}
 
 feature! {
 #![feature = "process"]
