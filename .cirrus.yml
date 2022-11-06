@@ -315,4 +315,4 @@ task:
   container:
     image: rust:latest
   setup_script: rustup +$TOOLCHAIN component add rustfmt
-  test_script: $TOOL +$TOOLCHAIN fmt --all -- --check
+  test_script: $TOOL +$TOOLCHAIN fmt --all -- --check **/*.rs

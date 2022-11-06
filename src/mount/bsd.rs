@@ -1,24 +1,16 @@
 #[cfg(target_os = "freebsd")]
-use crate::{
-    Error,
-};
-use crate::{
-    Errno,
-    NixPath,
-    Result,
-};
+use crate::Error;
+use crate::{Errno, NixPath, Result};
+use libc::c_int;
 #[cfg(target_os = "freebsd")]
 use libc::{c_char, c_uint, c_void};
-use libc::c_int;
 #[cfg(target_os = "freebsd")]
 use std::{
     borrow::Cow,
-    ffi::{CString, CStr},
+    ffi::{CStr, CString},
+    fmt, io,
     marker::PhantomData,
-    fmt,
-    io,
 };
-
 
 libc_bitflags!(
     /// Used with [`Nmount::nmount`].
@@ -111,7 +103,6 @@ libc_bitflags!(
     }
 );
 
-
 /// The Error type of [`Nmount::nmount`].
 ///
 /// It wraps an [`Errno`], but also may contain an additional message returned
@@ -120,7 +111,7 @@ libc_bitflags!(
 #[derive(Debug)]
 pub struct NmountError {
     errno: Error,
-    errmsg: Option<String>
+    errmsg: Option<String>,
 }
 
 #[cfg(target_os = "freebsd")]
@@ -138,7 +129,7 @@ impl NmountError {
     fn new(error: Error, errmsg: Option<&CStr>) -> Self {
         Self {
             errno: error,
-            errmsg: errmsg.map(CStr::to_string_lossy).map(Cow::into_owned)
+            errmsg: errmsg.map(CStr::to_string_lossy).map(Cow::into_owned),
         }
     }
 }
@@ -199,7 +190,7 @@ pub type NmountResult = std::result::Result<(), NmountError>;
 ///     .str_opt_owned("fspath", mountpoint.path().to_str().unwrap())
 ///     .str_opt_owned("target", target.path().to_str().unwrap())
 ///     .nmount(MntFlags::empty()).unwrap();
-/// 
+///
 /// unmount(mountpoint.path(), MntFlags::empty()).unwrap();
 /// ```
 ///
@@ -209,7 +200,7 @@ pub type NmountResult = std::result::Result<(), NmountError>;
 #[cfg(target_os = "freebsd")]
 #[cfg_attr(docsrs, doc(cfg(all())))]
 #[derive(Debug, Default)]
-pub struct Nmount<'a>{
+pub struct Nmount<'a> {
     // n.b. notgull: In reality, this is a list that contains
     //               both mutable and immutable pointers.
     //               Be careful using this.
@@ -231,7 +222,12 @@ impl<'a> Nmount<'a> {
     }
 
     /// Helper function to push a pointer and its length onto the `iov` array.
-    fn push_pointer_and_length(&mut self, val: *const u8, len: usize, is_owned: bool) {
+    fn push_pointer_and_length(
+        &mut self,
+        val: *const u8,
+        len: usize,
+        is_owned: bool,
+    ) {
         self.iov.push(libc::iovec {
             iov_base: val as *mut _,
             iov_len: len,
@@ -246,7 +242,8 @@ impl<'a> Nmount<'a> {
             let ptr = s.to_owned().into_raw() as *const u8;
 
             self.push_pointer_and_length(ptr, len, true);
-        }).unwrap(); 
+        })
+        .unwrap();
     }
 
     /// Add an opaque mount option.
@@ -280,9 +277,8 @@ impl<'a> Nmount<'a> {
         &mut self,
         name: &'a CStr,
         val: *mut c_void,
-        len: usize
-    ) -> &mut Self
-    {
+        len: usize,
+    ) -> &mut Self {
         self.push_slice(name.to_bytes_with_nul(), false);
         self.push_pointer_and_length(val.cast(), len, false);
         self
@@ -321,8 +317,10 @@ impl<'a> Nmount<'a> {
     /// let mut nmount: Nmount<'static> = Nmount::new();
     /// nmount.null_opt_owned(read_only);
     /// ```
-    pub fn null_opt_owned<P: ?Sized + NixPath>(&mut self, name: &P) -> &mut Self
-    {
+    pub fn null_opt_owned<P: ?Sized + NixPath>(
+        &mut self,
+        name: &P,
+    ) -> &mut Self {
         self.push_nix_path(name);
         self.push_slice(&[], false);
         self
@@ -340,12 +338,7 @@ impl<'a> Nmount<'a> {
     /// Nmount::new()
     ///     .str_opt(&fstype, &nullfs);
     /// ```
-    pub fn str_opt(
-        &mut self,
-        name: &'a CStr,
-        val: &'a CStr
-    ) -> &mut Self
-    {
+    pub fn str_opt(&mut self, name: &'a CStr, val: &'a CStr) -> &mut Self {
         self.push_slice(name.to_bytes_with_nul(), false);
         self.push_slice(val.to_bytes_with_nul(), false);
         self
@@ -367,8 +360,9 @@ impl<'a> Nmount<'a> {
     ///     .str_opt_owned("fspath", mountpoint.to_str().unwrap());
     /// ```
     pub fn str_opt_owned<P1, P2>(&mut self, name: &P1, val: &P2) -> &mut Self
-        where P1: ?Sized + NixPath,
-              P2: ?Sized + NixPath
+    where
+        P1: ?Sized + NixPath,
+        P2: ?Sized + NixPath,
     {
         self.push_nix_path(name);
         self.push_nix_path(val);
@@ -398,9 +392,7 @@ impl<'a> Nmount<'a> {
 
         let niov = self.iov.len() as c_uint;
         let iovp = self.iov.as_mut_ptr() as *mut libc::iovec;
-        let res = unsafe {
-            libc::nmount(iovp, niov, flags.bits)
-        };
+        let res = unsafe { libc::nmount(iovp, niov, flags.bits) };
         match Errno::result(res) {
             Ok(_) => Ok(()),
             Err(error) => {
@@ -437,7 +429,9 @@ impl<'a> Drop for Nmount<'a> {
 ///
 /// Useful flags include
 /// * `MNT_FORCE` -     Unmount even if still in use.
-#[cfg_attr(target_os = "freebsd", doc = "
+#[cfg_attr(
+    target_os = "freebsd",
+    doc = "
 * `MNT_BYFSID` -    `mountpoint` is not a path, but a file system ID
                     encoded as `FSID:val0:val1`, where `val0` and `val1`
                     are the contents of the `fsid_t val[]` array in decimal.
@@ -445,12 +439,14 @@ impl<'a> Drop for Nmount<'a> {
                     will be unmounted.  See
                     [`statfs`](crate::sys::statfs::statfs) to determine the
                     `fsid`.
-")]
+"
+)]
 pub fn unmount<P>(mountpoint: &P, flags: MntFlags) -> Result<()>
-    where P: ?Sized + NixPath
+where
+    P: ?Sized + NixPath,
 {
-    let res = mountpoint.with_nix_path(|cstr| {
-        unsafe { libc::unmount(cstr.as_ptr(), flags.bits) }
+    let res = mountpoint.with_nix_path(|cstr| unsafe {
+        libc::unmount(cstr.as_ptr(), flags.bits)
     })?;
 
     Errno::result(res).map(drop)
