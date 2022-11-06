@@ -32,10 +32,10 @@ fn read() {
 
     // Check file types. The system is allowed to return DT_UNKNOWN (aka None here) but if it does
     // return a type, ensure it's correct.
-    assert!(&[Some(Type::Directory), None].contains(&entries[0].file_type())); // .: dir
-    assert!(&[Some(Type::Directory), None].contains(&entries[1].file_type())); // ..: dir
-    assert!(&[Some(Type::Symlink), None].contains(&entries[2].file_type())); // bar: symlink
-    assert!(&[Some(Type::File), None].contains(&entries[3].file_type())); // foo: regular file
+    assert!(&[Type::Directory, Type::Unknown].contains(&entries[0].file_type())); // .: dir
+    assert!(&[Type::Directory, Type::Unknown].contains(&entries[1].file_type())); // ..: dir
+    assert!(&[Type::Symlink, Type::Unknown].contains(&entries[2].file_type())); // bar: symlink
+    assert!(&[Type::File, Type::Unknown].contains(&entries[3].file_type())); // foo: regular file
 }
 
 #[test]

@@ -2,6 +2,7 @@
 
 use crate::errno::Errno;
 use crate::fcntl::{self, OFlag};
+pub use crate::file_type::FileType as Type;
 use crate::sys;
 use crate::{Error, NixPath, Result};
 use cfg_if::cfg_if;
@@ -195,25 +196,6 @@ impl IntoIterator for Dir {
 #[repr(transparent)]
 pub struct Entry(dirent);
 
-/// Type of file referenced by a directory entry
-#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
-pub enum Type {
-    /// FIFO (Named pipe)
-    Fifo,
-    /// Character device
-    CharacterDevice,
-    /// Directory
-    Directory,
-    /// Block device
-    BlockDevice,
-    /// Regular file
-    File,
-    /// Symbolic link
-    Symlink,
-    /// Unix-domain socket
-    Socket,
-}
-
 impl Entry {
     /// Returns the inode number (`d_ino`) of the underlying `dirent`.
     #[allow(clippy::useless_conversion)] // Not useless on all OSes
@@ -240,7 +222,7 @@ impl Entry {
 
     /// Returns the bare file name of this directory entry without any other leading path component.
     pub fn file_name(&self) -> &ffi::CStr {
-        unsafe { ::std::ffi::CStr::from_ptr(self.0.d_name.as_ptr()) }
+        unsafe { ffi::CStr::from_ptr(self.0.d_name.as_ptr()) }
     }
 
     /// Returns the type of this directory entry, if known.
@@ -248,29 +230,23 @@ impl Entry {
     /// See platform `readdir(3)` or `dirent(5)` manpage for when the file type is known;
     /// notably, some Linux filesystems don't implement this. The caller should use `stat` or
     /// `fstat` if this returns `None`.
-    pub fn file_type(&self) -> Option<Type> {
+    pub fn file_type(&self) -> Type {
         #[cfg(not(any(
             target_os = "illumos",
             target_os = "solaris",
             target_os = "haiku"
         )))]
-        match self.0.d_type {
-            libc::DT_FIFO => Some(Type::Fifo),
-            libc::DT_CHR => Some(Type::CharacterDevice),
-            libc::DT_DIR => Some(Type::Directory),
-            libc::DT_BLK => Some(Type::BlockDevice),
-            libc::DT_REG => Some(Type::File),
-            libc::DT_LNK => Some(Type::Symlink),
-            libc::DT_SOCK => Some(Type::Socket),
-            /* libc::DT_UNKNOWN | */ _ => None,
+        {
+            Type::from(self.0.d_type)
         }
 
-        // illumos, Solaris, and Haiku systems do not have the d_type member at all:
         #[cfg(any(
             target_os = "illumos",
             target_os = "solaris",
             target_os = "haiku"
         ))]
-        None
+        {
+            Type::Unknown
+        }
     }
 }

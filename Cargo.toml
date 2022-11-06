@@ -46,10 +46,12 @@ default = [
 
 acct = []
 aio = ["pin-utils"]
-dir = ["fs"]
+dents = ["file_type"]
+dir = ["fs", "file_type"]
 env = []
 event = []
 feature = []
+file_type = []
 fs = []
 hostname = []
 inotify = []

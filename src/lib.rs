@@ -9,6 +9,7 @@
 //! They may be enabled in any combination.
 //! * `acct` - Process accounting
 //! * `aio` - POSIX AIO
+//! * `dents` - Raw directory iteration using Linux's getdents syscall
 //! * `dir` - Stuff relating to directory iteration
 //! * `env` - Manipulate environment variables
 //! * `event` - Event-driven APIs, like `kqueue` and `epoll`
@@ -63,6 +64,11 @@ pub use libc;
 mod macros;
 
 // Public crates
+#[cfg(target_os = "linux")]
+feature! {
+    #![feature = "dents"]
+    pub mod dents;
+}
 #[cfg(not(target_os = "redox"))]
 feature! {
     #![feature = "dir"]
@@ -79,6 +85,10 @@ feature! {
 
     #[deny(missing_docs)]
     pub mod features;
+}
+feature! {
+    #![feature = "file_type"]
+    pub mod file_type;
 }
 #[allow(missing_docs)]
 pub mod fcntl;
