@@ -223,7 +223,7 @@ pub fn test_addr_equality_abstract() {
 }
 
 // Test getting/setting abstract addresses (without unix socket creation)
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "android", target_os = "linux"))]
 #[test]
 pub fn test_abstract_uds_addr() {
     let empty = String::new();
@@ -245,6 +245,7 @@ pub fn test_abstract_uds_addr() {
 }
 
 // Test getting an unnamed address (without unix socket creation)
+#[cfg(any(target_os = "android", target_os = "linux"))]
 #[test]
 pub fn test_unnamed_uds_addr() {
     use crate::nix::sys::socket::SockaddrLike;
@@ -256,7 +257,6 @@ pub fn test_unnamed_uds_addr() {
     assert!(addr.path().is_none());
     assert_eq!(addr.path_len(), 0);
 
-    #[cfg(target_os = "linux")]
     assert!(addr.as_abstract().is_none());
 }
 
@@ -1544,6 +1544,7 @@ pub fn test_named_unixdomain() {
 }
 
 // Test using unnamed unix domain addresses
+#[cfg(any(target_os = "android", target_os = "linux"))]
 #[test]
 pub fn test_unnamed_unixdomain() {
     use nix::sys::socket::{getsockname, socketpair};

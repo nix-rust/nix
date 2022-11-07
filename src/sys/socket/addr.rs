@@ -886,24 +886,15 @@ impl UnixAddr {
     }
 
     /// Create a new `sockaddr_un` representing an "unnamed" unix socket address.
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn new_unnamed() -> UnixAddr {
-        #[allow(unused)]
-        let mut ret = libc::sockaddr_un {
+        let ret = libc::sockaddr_un {
             sun_family: AddressFamily::Unix as sa_family_t,
             .. unsafe { mem::zeroed() }
         };
 
         let sun_len: u8 = offset_of!(libc::sockaddr_un, sun_path).try_into().unwrap();
-
-        #[cfg(any(target_os = "dragonfly",
-                  target_os = "freebsd",
-                  target_os = "ios",
-                  target_os = "macos",
-                  target_os = "netbsd",
-                  target_os = "openbsd"))]
-        {
-            ret.sun_len = sun_len;
-        }
 
         unsafe { UnixAddr::from_raw_parts(ret, sun_len) }
     }
@@ -965,6 +956,8 @@ impl UnixAddr {
     }
 
     /// Check if this address is an "unnamed" unix socket address.
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     #[inline]
     pub fn is_unnamed(&self) -> bool {
         matches!(self.kind(), UnixAddrKind::Unnamed)
