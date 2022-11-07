@@ -1,5 +1,7 @@
 use crate::Result;
 use crate::errno::Errno;
+#[cfg(not(target_os = "android"))]
+use crate::sys::signal::SigSet;
 use libc::{self, c_int};
 use std::os::unix::io::RawFd;
 use std::ptr;
@@ -102,6 +104,16 @@ pub fn epoll_ctl<'a, T>(epfd: RawFd, op: EpollOp, fd: RawFd, event: T) -> Result
 pub fn epoll_wait(epfd: RawFd, events: &mut [EpollEvent], timeout_ms: isize) -> Result<usize> {
     let res = unsafe {
         libc::epoll_wait(epfd, events.as_mut_ptr() as *mut libc::epoll_event, events.len() as c_int, timeout_ms as c_int)
+    };
+
+    Errno::result(res).map(|r| r as usize)
+}
+
+#[cfg(not(target_os = "android"))]
+#[inline]
+pub fn epoll_pwait(epfd: RawFd, events: &mut [EpollEvent], timeout_ms: isize, sigmask: SigSet) -> Result<usize> {
+    let res = unsafe {
+        libc::epoll_pwait(epfd, events.as_mut_ptr() as *mut libc::epoll_event, events.len() as c_int, timeout_ms as c_int, sigmask.as_ref())
     };
 
     Errno::result(res).map(|r| r as usize)
