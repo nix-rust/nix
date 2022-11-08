@@ -319,7 +319,8 @@ const SIGNALS: [Signal; 28] = [
     not(any(
         target_arch = "mips",
         target_arch = "mips64",
-        target_arch = "sparc64"
+        target_arch = "sparc64",
+        target_arch = "loongarch64"
     ))
 ))]
 #[cfg(feature = "signal")]
@@ -359,6 +360,18 @@ const SIGNALS: [Signal; 31] = [
     SIGUSR1, SIGSEGV, SIGUSR2, SIGPIPE, SIGALRM, SIGTERM, SIGCHLD, SIGCONT,
     SIGSTOP, SIGTSTP, SIGTTIN, SIGTTOU, SIGURG, SIGXCPU, SIGXFSZ, SIGVTALRM,
     SIGPROF, SIGWINCH, SIGIO, SIGSYS, SIGEMT, SIGINFO,
+];
+#[cfg(all(
+    any(target_os = "linux"),
+    any(target_arch = "loongarch64")
+))]
+#[cfg(feature = "signal")]
+const SIGNALS: [Signal; 31] = [
+    SIGHUP, SIGINT, SIGQUIT, SIGILL, SIGTRAP, SIGABRT, SIGBUS,
+    SIGFPE, SIGKILL, SIGUSR1, SIGSEGV, SIGUSR2, SIGPIPE, SIGALRM,
+    SIGTERM, SIGSTKFLT, SIGCHLD, SIGCONT, SIGSTOP, SIGTSTP, SIGTTIN,
+    SIGTTOU, SIGURG, SIGXCPU, SIGXFSZ, SIGVTALRM, SIGPROF, SIGWINCH,
+    SIGIO, SIGPWR, SIGSYS
 ];
 
 feature! {
