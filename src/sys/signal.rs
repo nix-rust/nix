@@ -62,7 +62,8 @@ libc_enum! {
         #[cfg(all(any(target_os = "android", target_os = "emscripten",
                       target_os = "fuchsia", target_os = "linux"),
                   not(any(target_arch = "mips", target_arch = "mips64",
-                          target_arch = "sparc64"))))]
+                          target_arch = "sparc64",
+                          target_arch = "loongarch64"))))]
         SIGSTKFLT,
         /// To parent on child stop or exit
         SIGCHLD,
@@ -145,7 +146,8 @@ impl FromStr for Signal {
                 not(any(
                     target_arch = "mips",
                     target_arch = "mips64",
-                    target_arch = "sparc64"
+                    target_arch = "sparc64",
+                    target_arch = "loongarch64"
                 ))
             ))]
             "SIGSTKFLT" => Signal::SIGSTKFLT,
@@ -228,7 +230,8 @@ impl Signal {
                 not(any(
                     target_arch = "mips",
                     target_arch = "mips64",
-                    target_arch = "sparc64"
+                    target_arch = "sparc64",
+                    target_arch = "loongarch64"
                 ))
             ))]
             Signal::SIGSTKFLT => "SIGSTKFLT",
@@ -319,7 +322,8 @@ const SIGNALS: [Signal; 28] = [
     not(any(
         target_arch = "mips",
         target_arch = "mips64",
-        target_arch = "sparc64"
+        target_arch = "sparc64",
+        target_arch = "loongarch64"
     ))
 ))]
 #[cfg(feature = "signal")]
