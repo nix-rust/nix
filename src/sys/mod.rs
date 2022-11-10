@@ -68,6 +68,12 @@ feature! {
     pub mod personality;
 }
 
+#[cfg(target_os = "linux")]
+feature! {
+    #![feature = "pidfd"]
+    pub mod pidfd;
+}
+
 feature! {
     #![feature = "pthread"]
     pub mod pthread;

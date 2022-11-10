@@ -23,6 +23,7 @@
 //! * `mqueue` - POSIX message queues
 //! * `net` - Networking-related functionality
 //! * `personality` - Set the process execution domain
+//! * `pidfd` - Linux's PID file descriptors
 //! * `poll` - APIs like `poll` and `select`
 //! * `process` - Stuff relating to running processes
 //! * `pthread` - POSIX threads

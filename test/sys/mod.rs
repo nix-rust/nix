@@ -45,6 +45,8 @@ mod test_wait;
 mod test_epoll;
 #[cfg(target_os = "linux")]
 mod test_inotify;
+#[cfg(target_os = "linux")]
+mod test_pidfd;
 mod test_pthread;
 #[cfg(any(
     target_os = "android",

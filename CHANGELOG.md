@@ -30,6 +30,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   ([#1841](https://github.com/nix-rust/nix/pull/1841))
 - Added `eaccess()` on FreeBSD, DragonFly and Linux (glibc and musl).
   ([#1842](https://github.com/nix-rust/nix/pull/1842))
+- Added `pidfd_{open,getfd,send_signal}()` on Linux
+  ([#1859](https://github.com/nix-rust/nix/pull/1859))
   
 ### Changed
 

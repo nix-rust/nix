@@ -39,7 +39,7 @@ memoffset = { version = "0.6.3", optional = true }
 default = [
   "acct", "aio", "dir", "env", "event", "feature", "fs",
   "hostname", "inotify", "ioctl", "kmod", "mman", "mount", "mqueue",
-  "net", "personality", "poll", "process", "pthread", "ptrace", "quota",
+  "net", "personality", "pidfd", "poll", "process", "pthread", "ptrace", "quota",
   "reboot", "resource", "sched", "signal", "socket", "term", "time",
   "ucontext", "uio", "user", "zerocopy",
 ]
@@ -60,6 +60,7 @@ mount = ["uio"]
 mqueue = ["fs"]
 net = ["socket"]
 personality = []
+pidfd = ["process"]
 poll = []
 pthread = []
 ptrace = ["process"]
