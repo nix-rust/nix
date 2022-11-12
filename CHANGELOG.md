@@ -48,6 +48,9 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Removed
 
+- Removed deprecated error constants and conversions.
+  ([#1860](https://github.com/nix-rust/nix/pull/1860))
+
 ## [0.25.0] - 2022-08-13
 ### Added
 
