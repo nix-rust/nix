@@ -12,7 +12,7 @@ use libc::{
     self, c_int, c_void, iovec, size_t, socklen_t, CMSG_DATA, CMSG_FIRSTHDR,
     CMSG_LEN, CMSG_NXTHDR,
 };
-use std::convert::{TryFrom, TryInto};
+use std::convert::TryFrom;
 use std::io::{IoSlice, IoSliceMut};
 #[cfg(feature = "net")]
 use std::net;
@@ -32,32 +32,24 @@ pub mod sockopt;
 
 pub use self::addr::{SockaddrLike, SockaddrStorage};
 
-#[cfg(not(any(target_os = "illumos", target_os = "solaris")))]
-#[allow(deprecated)]
-pub use self::addr::{AddressFamily, SockAddr, UnixAddr};
 #[cfg(any(target_os = "illumos", target_os = "solaris"))]
-#[allow(deprecated)]
-pub use self::addr::{AddressFamily, SockAddr, UnixAddr};
-#[allow(deprecated)]
+pub use self::addr::{AddressFamily, UnixAddr};
+#[cfg(not(any(target_os = "illumos", target_os = "solaris")))]
+pub use self::addr::{AddressFamily, UnixAddr};
 #[cfg(not(any(
     target_os = "illumos",
     target_os = "solaris",
     target_os = "haiku"
 )))]
 #[cfg(feature = "net")]
-pub use self::addr::{
-    InetAddr, IpAddr, Ipv4Addr, Ipv6Addr, LinkAddr, SockaddrIn, SockaddrIn6,
-};
-#[allow(deprecated)]
+pub use self::addr::{LinkAddr, SockaddrIn, SockaddrIn6};
 #[cfg(any(
     target_os = "illumos",
     target_os = "solaris",
     target_os = "haiku"
 ))]
 #[cfg(feature = "net")]
-pub use self::addr::{
-    InetAddr, IpAddr, Ipv4Addr, Ipv6Addr, SockaddrIn, SockaddrIn6,
-};
+pub use self::addr::{SockaddrIn, SockaddrIn6};
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
 pub use crate::sys::socket::addr::alg::AlgAddr;
@@ -121,7 +113,7 @@ impl TryFrom<i32> for SockType {
             libc::SOCK_RAW => Ok(Self::Raw),
             #[cfg(not(any(target_os = "haiku")))]
             libc::SOCK_RDM => Ok(Self::Rdm),
-            _ => Err(Errno::EINVAL)
+            _ => Err(Errno::EINVAL),
         }
     }
 }
@@ -2376,81 +2368,6 @@ pub fn getsockname<T: SockaddrLike>(fd: RawFd) -> Result<T> {
     }
 }
 
-/// Return the appropriate `SockAddr` type from a `sockaddr_storage` of a
-/// certain size.
-///
-/// In C this would usually be done by casting.  The `len` argument
-/// should be the number of bytes in the `sockaddr_storage` that are actually
-/// allocated and valid.  It must be at least as large as all the useful parts
-/// of the structure.  Note that in the case of a `sockaddr_un`, `len` need not
-/// include the terminating null.
-#[deprecated(
-    since = "0.24.0",
-    note = "use SockaddrLike or SockaddrStorage instead"
-)]
-#[allow(deprecated)]
-pub fn sockaddr_storage_to_addr(
-    addr: &sockaddr_storage,
-    len: usize,
-) -> Result<SockAddr> {
-    assert!(len <= mem::size_of::<sockaddr_storage>());
-    if len < mem::size_of_val(&addr.ss_family) {
-        return Err(Errno::ENOTCONN);
-    }
-
-    match c_int::from(addr.ss_family) {
-        #[cfg(feature = "net")]
-        libc::AF_INET => {
-            assert!(len >= mem::size_of::<sockaddr_in>());
-            let sin = unsafe {
-                *(addr as *const sockaddr_storage as *const sockaddr_in)
-            };
-            Ok(SockAddr::Inet(InetAddr::V4(sin)))
-        }
-        #[cfg(feature = "net")]
-        libc::AF_INET6 => {
-            assert!(len >= mem::size_of::<sockaddr_in6>());
-            let sin6 = unsafe { *(addr as *const _ as *const sockaddr_in6) };
-            Ok(SockAddr::Inet(InetAddr::V6(sin6)))
-        }
-        libc::AF_UNIX => unsafe {
-            let sun = *(addr as *const _ as *const sockaddr_un);
-            let sun_len = len.try_into().unwrap();
-            Ok(SockAddr::Unix(UnixAddr::from_raw_parts(sun, sun_len)))
-        },
-        #[cfg(any(target_os = "android", target_os = "linux"))]
-        #[cfg(feature = "net")]
-        libc::AF_PACKET => {
-            use libc::sockaddr_ll;
-            // Don't assert anything about the size.
-            // Apparently the Linux kernel can return smaller sizes when
-            // the value in the last element of sockaddr_ll (`sll_addr`) is
-            // smaller than the declared size of that field
-            let sll = unsafe { *(addr as *const _ as *const sockaddr_ll) };
-            Ok(SockAddr::Link(LinkAddr(sll)))
-        }
-        #[cfg(any(target_os = "android", target_os = "linux"))]
-        libc::AF_NETLINK => {
-            use libc::sockaddr_nl;
-            let snl = unsafe { *(addr as *const _ as *const sockaddr_nl) };
-            Ok(SockAddr::Netlink(NetlinkAddr(snl)))
-        }
-        #[cfg(any(target_os = "android", target_os = "linux"))]
-        libc::AF_ALG => {
-            use libc::sockaddr_alg;
-            let salg = unsafe { *(addr as *const _ as *const sockaddr_alg) };
-            Ok(SockAddr::Alg(AlgAddr(salg)))
-        }
-        #[cfg(any(target_os = "android", target_os = "linux"))]
-        libc::AF_VSOCK => {
-            use libc::sockaddr_vm;
-            let svm = unsafe { *(addr as *const _ as *const sockaddr_vm) };
-            Ok(SockAddr::Vsock(VsockAddr(svm)))
-        }
-        af => panic!("unexpected address family {}", af),
-    }
-}
-
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum Shutdown {
     /// Further receptions will be disallowed.
@@ -2485,7 +2402,11 @@ mod tests {
         let _ = cmsg_space!(u8);
     }
 
-    #[cfg(not(any(target_os = "redox", target_os = "linux", target_os = "android")))]
+    #[cfg(not(any(
+        target_os = "redox",
+        target_os = "linux",
+        target_os = "android"
+    )))]
     #[test]
     fn can_open_routing_socket() {
         let _ = super::socket(
