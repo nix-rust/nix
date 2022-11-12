@@ -1,10 +1,10 @@
 //! Interfaces for managing memory-backed files.
 
-use std::os::unix::io::RawFd;
 use cfg_if::cfg_if;
+use std::os::unix::io::RawFd;
 
-use crate::Result;
 use crate::errno::Errno;
+use crate::Result;
 use std::ffi::CStr;
 
 libc_bitflags!(

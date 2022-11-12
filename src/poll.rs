@@ -1,8 +1,8 @@
 //! Wait for events to trigger on specific file descriptors
 use std::os::unix::io::{AsRawFd, RawFd};
 
-use crate::Result;
 use crate::errno::Errno;
+use crate::Result;
 
 /// This is a wrapper around `libc::pollfd`.
 ///
@@ -134,9 +134,11 @@ libc_bitflags! {
 /// ready.
 pub fn poll(fds: &mut [PollFd], timeout: libc::c_int) -> Result<libc::c_int> {
     let res = unsafe {
-        libc::poll(fds.as_mut_ptr() as *mut libc::pollfd,
-                   fds.len() as libc::nfds_t,
-                   timeout)
+        libc::poll(
+            fds.as_mut_ptr() as *mut libc::pollfd,
+            fds.len() as libc::nfds_t,
+            timeout,
+        )
     };
 
     Errno::result(res)
