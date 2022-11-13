@@ -1427,13 +1427,15 @@ impl<'a> ControlMessage<'a> {
 /// # use nix::sys::socket::*;
 /// # use nix::unistd::pipe;
 /// # use std::io::IoSlice;
+/// # use std::os::unix::io::AsRawFd;
+///
 /// let (fd1, fd2) = socketpair(AddressFamily::Unix, SockType::Stream, None,
 ///     SockFlag::empty())
 ///     .unwrap();
 /// let (r, w) = pipe().unwrap();
 ///
 /// let iov = [IoSlice::new(b"hello")];
-/// let fds = [r];
+/// let fds = [r.as_raw_fd()];
 /// let cmsg = ControlMessage::ScmRights(&fds);
 /// sendmsg::<()>(fd1, &iov, &[cmsg], MsgFlags::empty(), None).unwrap();
 /// ```
@@ -1442,14 +1444,16 @@ impl<'a> ControlMessage<'a> {
 /// # use nix::sys::socket::*;
 /// # use nix::unistd::pipe;
 /// # use std::io::IoSlice;
+/// # use std::os::unix::io::AsRawFd;
 /// # use std::str::FromStr;
+///
 /// let localhost = SockaddrIn::from_str("1.2.3.4:8080").unwrap();
 /// let fd = socket(AddressFamily::Inet, SockType::Datagram, SockFlag::empty(),
 ///     None).unwrap();
 /// let (r, w) = pipe().unwrap();
 ///
 /// let iov = [IoSlice::new(b"hello")];
-/// let fds = [r];
+/// let fds = [r.as_raw_fd()];
 /// let cmsg = ControlMessage::ScmRights(&fds);
 /// sendmsg(fd, &iov, &[cmsg], MsgFlags::empty(), Some(&localhost)).unwrap();
 /// ```

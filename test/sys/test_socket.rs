@@ -5,6 +5,8 @@ use nix::sys::socket::{getsockname, AddressFamily, UnixAddr};
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::net::{SocketAddrV4, SocketAddrV6};
+use std::os::unix::io::AsRawFd;
+use std::os::unix::io::BorrowedFd;
 use std::os::unix::io::RawFd;
 use std::path::Path;
 use std::slice;
@@ -195,9 +197,9 @@ pub fn test_socketpair() {
         SockFlag::empty(),
     )
     .unwrap();
-    write(fd1, b"hello").unwrap();
+    write(unsafe { &BorrowedFd::borrow_raw(fd1) }, b"hello").unwrap();
     let mut buf = [0; 5];
-    read(fd2, &mut buf).unwrap();
+    read(unsafe { &BorrowedFd::borrow_raw(fd2) }, &mut buf).unwrap();
 
     assert_eq!(&buf[..], b"hello");
 }
@@ -691,7 +693,7 @@ pub fn test_scm_rights() {
 
     {
         let iov = [IoSlice::new(b"hello")];
-        let fds = [r];
+        let fds = [r.as_raw_fd()];
         let cmsg = ControlMessage::ScmRights(&fds);
         assert_eq!(
             sendmsg::<()>(fd1, &iov, &[cmsg], MsgFlags::empty(), None).unwrap(),
@@ -732,12 +734,11 @@ pub fn test_scm_rights() {
 
     let received_r = received_r.expect("Did not receive passed fd");
     // Ensure that the received file descriptor works
-    write(w, b"world").unwrap();
+    write(&w, b"world").unwrap();
     let mut buf = [0u8; 5];
-    read(received_r, &mut buf).unwrap();
+    read(unsafe { &BorrowedFd::borrow_raw(received_r) }, &mut buf).unwrap();
     assert_eq!(&buf[..], b"world");
     close(received_r).unwrap();
-    close(w).unwrap();
 }
 
 // Disable the test on emulated platforms due to not enabled support of AF_ALG in QEMU from rust cross
@@ -796,7 +797,11 @@ pub fn test_af_alg_cipher() {
 
     // allocate buffer for encrypted data
     let mut encrypted = vec![0u8; payload_len];
-    let num_bytes = read(session_socket, &mut encrypted).expect("read encrypt");
+    let num_bytes = read(
+        unsafe { &BorrowedFd::borrow_raw(session_socket) },
+        &mut encrypted,
+    )
+    .expect("read encrypt");
     assert_eq!(num_bytes, payload_len);
 
     let iov = IoSlice::new(&encrypted);
@@ -812,7 +817,11 @@ pub fn test_af_alg_cipher() {
 
     // allocate buffer for decrypted data
     let mut decrypted = vec![0u8; payload_len];
-    let num_bytes = read(session_socket, &mut decrypted).expect("read decrypt");
+    let num_bytes = read(
+        unsafe { &BorrowedFd::borrow_raw(session_socket) },
+        &mut decrypted,
+    )
+    .expect("read decrypt");
 
     assert_eq!(num_bytes, payload_len);
     assert_eq!(decrypted, payload);
@@ -893,7 +902,11 @@ pub fn test_af_alg_aead() {
     // allocate buffer for encrypted data
     let mut encrypted =
         vec![0u8; (assoc_size as usize) + payload_len + auth_size];
-    let num_bytes = read(session_socket, &mut encrypted).expect("read encrypt");
+    let num_bytes = read(
+        unsafe { &BorrowedFd::borrow_raw(session_socket) },
+        &mut encrypted,
+    )
+    .expect("read encrypt");
     assert_eq!(num_bytes, payload_len + auth_size + (assoc_size as usize));
     close(session_socket).expect("close");
 
@@ -924,7 +937,11 @@ pub fn test_af_alg_aead() {
     // Do not block on read, as we may have fewer bytes than buffer size
     fcntl(session_socket, FcntlArg::F_SETFL(OFlag::O_NONBLOCK))
         .expect("fcntl non_blocking");
-    let num_bytes = read(session_socket, &mut decrypted).expect("read decrypt");
+    let num_bytes = read(
+        unsafe { &BorrowedFd::borrow_raw(session_socket) },
+        &mut decrypted,
+    )
+    .expect("read decrypt");
 
     assert!(num_bytes >= payload_len + (assoc_size as usize));
     assert_eq!(
@@ -1344,7 +1361,7 @@ fn test_impl_scm_credentials_and_rights(mut space: Vec<u8>) {
             gid: getgid().as_raw(),
         }
         .into();
-        let fds = [r];
+        let fds = [r.as_raw_fd()];
         let cmsgs = [
             ControlMessage::ScmCredentials(&cred),
             ControlMessage::ScmRights(&fds),
@@ -1394,12 +1411,11 @@ fn test_impl_scm_credentials_and_rights(mut space: Vec<u8>) {
 
     let received_r = received_r.expect("Did not receive passed fd");
     // Ensure that the received file descriptor works
-    write(w, b"world").unwrap();
+    write(&w, b"world").unwrap();
     let mut buf = [0u8; 5];
-    read(received_r, &mut buf).unwrap();
+    read(unsafe { &BorrowedFd::borrow_raw(received_r) }, &mut buf).unwrap();
     assert_eq!(&buf[..], b"world");
     close(received_r).unwrap();
-    close(w).unwrap();
 }
 
 // Test creating and using named unix domain sockets
@@ -1432,14 +1448,15 @@ pub fn test_named_unixdomain() {
         )
         .expect("socket failed");
         connect(s2, &sockaddr).expect("connect failed");
-        write(s2, b"hello").expect("write failed");
+        write(unsafe { &BorrowedFd::borrow_raw(s2) }, b"hello")
+            .expect("write failed");
         close(s2).unwrap();
     });
 
     let s3 = accept(s1).expect("accept failed");
 
     let mut buf = [0; 5];
-    read(s3, &mut buf).unwrap();
+    read(unsafe { &BorrowedFd::borrow_raw(s3) }, &mut buf).unwrap();
     close(s3).unwrap();
     close(s1).unwrap();
     thr.join().unwrap();

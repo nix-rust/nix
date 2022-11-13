@@ -7,13 +7,12 @@ fn test_chflags() {
         sys::stat::{fstat, FileFlag},
         unistd::chflags,
     };
-    use std::os::unix::io::AsRawFd;
     use tempfile::NamedTempFile;
 
     let f = NamedTempFile::new().unwrap();
 
     let initial = FileFlag::from_bits_truncate(
-        fstat(f.as_raw_fd()).unwrap().st_flags.into(),
+        fstat(f.as_file()).unwrap().st_flags.into(),
     );
     // UF_OFFLINE is preserved by all FreeBSD file systems, but not interpreted
     // in any way, so it's handy for testing.
@@ -22,7 +21,7 @@ fn test_chflags() {
     chflags(f.path(), commanded).unwrap();
 
     let changed = FileFlag::from_bits_truncate(
-        fstat(f.as_raw_fd()).unwrap().st_flags.into(),
+        fstat(f.as_file()).unwrap().st_flags.into(),
     );
 
     assert_eq!(commanded, changed);

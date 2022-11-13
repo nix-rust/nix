@@ -96,6 +96,7 @@ fn test_so_tcp_maxseg() {
     use nix::sys::socket::{accept, bind, connect, listen, SockaddrIn};
     use nix::unistd::{close, write};
     use std::net::SocketAddrV4;
+    use std::os::unix::io::BorrowedFd;
     use std::str::FromStr;
 
     let std_sa = SocketAddrV4::from_str("127.0.0.1:4001").unwrap();
@@ -134,7 +135,7 @@ fn test_so_tcp_maxseg() {
     .unwrap();
     connect(ssock, &sock_addr).unwrap();
     let rsess = accept(rsock).unwrap();
-    write(rsess, b"hello").unwrap();
+    write(unsafe { &BorrowedFd::borrow_raw(rsess) }, b"hello").unwrap();
     let actual = getsockopt(ssock, sockopt::TcpMaxSeg).unwrap();
     // Actual max segment size takes header lengths into account, max IPv4 options (60 bytes) + max
     // TCP options (40 bytes) are subtracted from the requested maximum as a lower boundary.
