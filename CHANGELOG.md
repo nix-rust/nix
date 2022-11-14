@@ -38,6 +38,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   ([#1857](https://github.com/nix-rust/nix/pull/1857))
 - Added `SockProtocol::Raw` for raw sockets
   ([#1848](https://github.com/nix-rust/nix/pull/1848))
+- added `IP_MTU` (`IpMtu`) `IPPROTO_IP` sockopt on Linux and Android.
+  ([#1865](https://github.com/nix-rust/nix/pull/1865))
 
 ### Changed
 

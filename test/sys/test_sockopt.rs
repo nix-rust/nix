@@ -237,6 +237,33 @@ fn test_so_tcp_keepalive() {
 }
 
 #[test]
+#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg_attr(qemu, ignore)]
+fn test_get_mtu() {
+    use nix::sys::socket::{bind, connect, SockaddrIn};
+    use std::net::SocketAddrV4;
+    use std::str::FromStr;
+
+    let std_sa = SocketAddrV4::from_str("127.0.0.1:4001").unwrap();
+    let std_sb = SocketAddrV4::from_str("127.0.0.1:4002").unwrap();
+
+    let usock = socket(
+        AddressFamily::Inet,
+        SockType::Datagram,
+        SockFlag::empty(),
+        SockProtocol::Udp,
+    )
+    .unwrap();
+
+    // Bind and initiate connection
+    bind(usock, &SockaddrIn::from(std_sa)).unwrap();
+    connect(usock, &SockaddrIn::from(std_sb)).unwrap();
+
+    // Loopback connections have 2^16 - the maximum - MTU
+    assert_eq!(getsockopt(usock, sockopt::IpMtu), Ok(u16::MAX as i32))
+}
+
+#[test]
 #[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
 fn test_ttl_opts() {
     let fd4 = socket(
