@@ -33,19 +33,33 @@ libc_bitflags!(
 libc_bitflags! {
     /// "File mode / permissions" flags.
     pub struct Mode: mode_t {
+        /// Read, write and execute for owner.
         S_IRWXU;
+        /// Read for owner.
         S_IRUSR;
+        /// Write for owner.
         S_IWUSR;
+        /// Execute for owner.
         S_IXUSR;
+        /// Read write and execute for group.
         S_IRWXG;
+        /// Read fr group.
         S_IRGRP;
+        /// Write for group.
         S_IWGRP;
+        /// Execute for group.
         S_IXGRP;
+        /// Read, write and execute for other.
         S_IRWXO;
+        /// Read for other.
         S_IROTH;
+        /// Write for other.
         S_IWOTH;
+        /// Execute for other.
         S_IXOTH;
+        /// Set user id on execution.
         S_ISUID as mode_t;
+        /// Set group id on execution.
         S_ISGID as mode_t;
         S_ISVTX as mode_t;
     }
