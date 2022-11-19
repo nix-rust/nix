@@ -6,7 +6,9 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased] - ReleaseDate
 ### Added
 
-- Add `MntFlags` and `unmount` on all of the BSDs.
+- Added `SockaddrStorage::{as_unix_addr, as_unix_addr_mut}`
+  ([#1871](https://github.com/nix-rust/nix/pull/1871))
+- Added `MntFlags` and `unmount` on all of the BSDs.
   ([#1849](https://github.com/nix-rust/nix/pull/1849))
 - Added a 'Statfs::flags' method.
   ([#1849](https://github.com/nix-rust/nix/pull/1849))
@@ -38,6 +40,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- Fixed using `SockaddrStorage` to store a Unix-domain socket address on Linux.
+  ([#1871](https://github.com/nix-rust/nix/pull/1871))
 - Fix microsecond calculation for `TimeSpec`.
   ([#1801](https://github.com/nix-rust/nix/pull/1801))
 - Fix `User::from_name` and `Group::from_name` panicking
