@@ -6,6 +6,9 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased] - ReleaseDate
 ### Added
 
+- Added `SockaddrStorage::{as_unix_addr, as_unix_addr_mut}`
+  ([#1871](https://github.com/nix-rust/nix/pull/1871))
+
 ### Changed
 
 ### Fixed
@@ -19,6 +22,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   ([#1815](https://github.com/nix-rust/nix/pull/1815))
 - Fix `User::from_uid` and `User::from_name` crash on Android platform.
   ([#1824](https://github.com/nix-rust/nix/pull/1824))
+- Fixed using `SockaddrStorage` to store a Unix-domain socket address on Linux.
+  ([#1871](https://github.com/nix-rust/nix/pull/1871))
 
 ### Removed
 

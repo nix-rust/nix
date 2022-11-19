@@ -1398,7 +1398,18 @@ impl SockaddrLike for SockaddrStorage {
                 let mut ss: libc::sockaddr_storage = mem::zeroed();
                 let ssp = &mut ss as *mut libc::sockaddr_storage as *mut u8;
                 ptr::copy(addr as *const u8, ssp, len as usize);
-                Some(Self{ss})
+                #[cfg(any(
+                    target_os = "android",
+                    target_os = "fuchsia",
+                    target_os = "illumos",
+                    target_os = "linux"
+                ))]
+                if i32::from(ss.ss_family) == libc::AF_UNIX {
+                    // Safe because we UnixAddr is strictly smaller than
+                    // SockaddrStorage, and we just initialized the structure.
+                    (*(&mut ss as *mut libc::sockaddr_storage as *mut UnixAddr)).sun_len = len as u8;
+                }
+                Some(Self { ss })
             }
         } else {
             // If length is not available and addr is of a fixed-length type,
@@ -1445,6 +1456,21 @@ impl SockaddrLike for SockaddrStorage {
             }
         }
     }
+
+    #[cfg(any(
+        target_os = "android",
+        target_os = "fuchsia",
+        target_os = "illumos",
+        target_os = "linux"
+    ))]
+    fn len(&self) -> libc::socklen_t {
+        match self.as_unix_addr() {
+            // The UnixAddr type knows its own length
+            Some(ua) => ua.len(),
+            // For all else, we're just a boring SockaddrStorage
+            None => mem::size_of_val(self) as libc::socklen_t
+        }
+    }
 }
 
 macro_rules! accessors {
@@ -1483,6 +1509,64 @@ macro_rules! accessors {
 }
 
 impl SockaddrStorage {
+    /// Downcast to an immutable `[UnixAddr]` reference.
+    pub fn as_unix_addr(&self) -> Option<&UnixAddr> {
+        cfg_if! {
+            if #[cfg(any(target_os = "android",
+                     target_os = "fuchsia",
+                     target_os = "illumos",
+                     target_os = "linux"
+                ))]
+            {
+                let p = unsafe{ &self.ss as *const libc::sockaddr_storage };
+                // Safe because UnixAddr is strictly smaller than
+                // sockaddr_storage, and we're fully initialized
+                let len = unsafe {
+                    (*(p as *const UnixAddr )).sun_len as usize
+                };
+            } else {
+                let len = self.len() as usize;
+            }
+        }
+        // Sanity checks
+        if self.family() != Some(AddressFamily::Unix) ||
+           len < offset_of!(libc::sockaddr_un, sun_path) ||
+           len > mem::size_of::<libc::sockaddr_un>() {
+            None
+        } else {
+            Some(unsafe{&self.su})
+        }
+    }
+
+    /// Downcast to a mutable `[UnixAddr]` reference.
+    pub fn as_unix_addr_mut(&mut self) -> Option<&mut UnixAddr> {
+        cfg_if! {
+            if #[cfg(any(target_os = "android",
+                     target_os = "fuchsia",
+                     target_os = "illumos",
+                     target_os = "linux"
+                ))]
+            {
+                let p = unsafe{ &self.ss as *const libc::sockaddr_storage };
+                // Safe because UnixAddr is strictly smaller than
+                // sockaddr_storage, and we're fully initialized
+                let len = unsafe {
+                    (*(p as *const UnixAddr )).sun_len as usize
+                };
+            } else {
+                let len = self.len() as usize;
+            }
+        }
+        // Sanity checks
+        if self.family() != Some(AddressFamily::Unix) ||
+           len < offset_of!(libc::sockaddr_un, sun_path) ||
+           len > mem::size_of::<libc::sockaddr_un>() {
+            None
+        } else {
+            Some(unsafe{&mut self.su})
+        }
+    }
+
     #[cfg(any(target_os = "android", target_os = "linux"))]
     accessors!{as_alg_addr, as_alg_addr_mut, AlgAddr,
         AddressFamily::Alg, libc::sockaddr_alg, alg}
@@ -2786,6 +2870,44 @@ mod tests {
         fn size() {
             assert_eq!(mem::size_of::<libc::sockaddr_in6>(),
                 SockaddrIn6::size() as usize);
+        }
+    }
+
+    mod sockaddr_storage {
+        use super::*;
+
+        #[test]
+        fn from_sockaddr_un_named() {
+            let ua = UnixAddr::new("/var/run/mysock").unwrap();
+            let ptr = ua.as_ptr() as *const libc::sockaddr;
+            let ss = unsafe {
+                SockaddrStorage::from_raw(ptr, Some(ua.len()))
+            }.unwrap();
+            assert_eq!(ss.len(), ua.len());
+        }
+
+        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[test]
+        fn from_sockaddr_un_abstract_named() {
+            let name = String::from("nix\0abstract\0test");
+            let ua = UnixAddr::new_abstract(name.as_bytes()).unwrap();
+            let ptr = ua.as_ptr() as *const libc::sockaddr;
+            let ss = unsafe {
+                SockaddrStorage::from_raw(ptr, Some(ua.len()))
+            }.unwrap();
+            assert_eq!(ss.len(), ua.len());
+        }
+
+        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[test]
+        fn from_sockaddr_un_abstract_unnamed() {
+            let empty = String::new();
+            let ua = UnixAddr::new_abstract(empty.as_bytes()).unwrap();
+            let ptr = ua.as_ptr() as *const libc::sockaddr;
+            let ss = unsafe {
+                SockaddrStorage::from_raw(ptr, Some(ua.len()))
+            }.unwrap();
+            assert_eq!(ss.len(), ua.len());
         }
     }
 
