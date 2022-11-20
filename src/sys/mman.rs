@@ -418,7 +418,7 @@ pub fn munlockall() -> Result<()> {
 /// [`mmap(2)`]: https://man7.org/linux/man-pages/man2/mmap.2.html
 pub unsafe fn mmap(
     addr: Option<NonZeroUsize>,
-    length: size_t,
+    length: NonZeroUsize,
     prot: ProtFlags,
     flags: MapFlags,
     fd: RawFd,
@@ -428,8 +428,8 @@ pub unsafe fn mmap(
         std::ptr::null_mut(),
         |a| usize::from(a) as *mut c_void
     );
-
-    let ret = libc::mmap(ptr, length, prot.bits(), flags.bits(), fd, offset);
+    
+    let ret = libc::mmap(ptr, length.into(), prot.bits(), flags.bits(), fd, offset);
 
     if ret == libc::MAP_FAILED {
         Err(Errno::last())
@@ -520,8 +520,9 @@ pub unsafe fn madvise(
 /// # use nix::sys::mman::{mmap, mprotect, MapFlags, ProtFlags};
 /// # use std::ptr;
 /// const ONE_K: size_t = 1024;
+/// let one_k_non_zero = std::num::NonZeroUsize::new(ONE_K).unwrap();
 /// let mut slice: &mut [u8] = unsafe {
-///     let mem = mmap(None, ONE_K, ProtFlags::PROT_NONE,
+///     let mem = mmap(None, one_k_non_zero, ProtFlags::PROT_NONE,
 ///                    MapFlags::MAP_ANON | MapFlags::MAP_PRIVATE, -1, 0).unwrap();
 ///     mprotect(mem, ONE_K, ProtFlags::PROT_READ | ProtFlags::PROT_WRITE).unwrap();
 ///     std::slice::from_raw_parts_mut(mem as *mut u8, ONE_K)
