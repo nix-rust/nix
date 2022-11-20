@@ -30,7 +30,9 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   ([#1841](https://github.com/nix-rust/nix/pull/1841))
 - Added `eaccess()` on FreeBSD, DragonFly and Linux (glibc and musl).
   ([#1842](https://github.com/nix-rust/nix/pull/1842))
-  
+- Added `IP_TOS` `SO_PRIORITY` and `IPV6_TCLASS` sockopts for Linux
+  ([#1853](https://github.com/nix-rust/nix/pull/1853))
+
 ### Changed
 
 - The MSRV is now 1.56.1

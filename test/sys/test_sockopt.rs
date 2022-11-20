@@ -327,3 +327,51 @@ fn test_v6dontfrag_opts() {
         "unsetting IPV6_DONTFRAG on an inet6 datagram socket should succeed",
     );
 }
+
+#[test]
+#[cfg(target_os = "linux")]
+fn test_so_priority() {
+    let fd = socket(
+        AddressFamily::Inet,
+        SockType::Stream,
+        SockFlag::empty(),
+        SockProtocol::Tcp,
+    )
+    .unwrap();
+    let priority = 3;
+    setsockopt(fd, sockopt::Priority, &priority).unwrap();
+    assert_eq!(getsockopt(fd, sockopt::Priority).unwrap(), priority);
+}
+
+#[test]
+#[cfg(target_os = "linux")]
+fn test_ip_tos() {
+    let fd = socket(
+        AddressFamily::Inet,
+        SockType::Stream,
+        SockFlag::empty(),
+        SockProtocol::Tcp,
+    )
+    .unwrap();
+    let tos = 0x80; // CS4
+    setsockopt(fd, sockopt::IpTos, &tos).unwrap();
+    assert_eq!(getsockopt(fd, sockopt::IpTos).unwrap(), tos);
+}
+
+#[test]
+#[cfg(target_os = "linux")]
+// Disable the test under emulation because it fails in Cirrus-CI.  Lack
+// of QEMU support is suspected.
+#[cfg_attr(qemu, ignore)]
+fn test_ipv6_tclass() {
+    let fd = socket(
+        AddressFamily::Inet6,
+        SockType::Stream,
+        SockFlag::empty(),
+        SockProtocol::Tcp,
+    )
+    .unwrap();
+    let class = 0x80; // CS4
+    setsockopt(fd, sockopt::Ipv6TClass, &class).unwrap();
+    assert_eq!(getsockopt(fd, sockopt::Ipv6TClass).unwrap(), class);
+}
