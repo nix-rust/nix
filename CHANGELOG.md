@@ -35,6 +35,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 - The MSRV is now 1.56.1
   ([#1792](https://github.com/nix-rust/nix/pull/1792))
+- The `addr` argument of `sys::mman::mmap` is now of type `Option<NonZeroUsize>`.
+  ([#1870](https://github.com/nix-rust/nix/pull/1870))
 
 ### Fixed
 

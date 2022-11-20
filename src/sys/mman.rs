@@ -8,7 +8,7 @@ use crate::Result;
 #[cfg(feature = "fs")]
 use crate::{fcntl::OFlag, sys::stat::Mode};
 use libc::{self, c_int, c_void, off_t, size_t};
-use std::os::unix::io::RawFd;
+use std::{os::unix::io::RawFd, num::NonZeroUsize};
 
 libc_bitflags! {
     /// Desired memory protection of a memory mapping.
@@ -417,14 +417,19 @@ pub fn munlockall() -> Result<()> {
 ///
 /// [`mmap(2)`]: https://man7.org/linux/man-pages/man2/mmap.2.html
 pub unsafe fn mmap(
-    addr: *mut c_void,
+    addr: Option<NonZeroUsize>,
     length: size_t,
     prot: ProtFlags,
     flags: MapFlags,
     fd: RawFd,
     offset: off_t,
 ) -> Result<*mut c_void> {
-    let ret = libc::mmap(addr, length, prot.bits(), flags.bits(), fd, offset);
+    let ptr = addr.map_or(
+        std::ptr::null_mut(),
+        |a| usize::from(a) as *mut c_void
+    );
+
+    let ret = libc::mmap(ptr, length, prot.bits(), flags.bits(), fd, offset);
 
     if ret == libc::MAP_FAILED {
         Err(Errno::last())
@@ -516,7 +521,7 @@ pub unsafe fn madvise(
 /// # use std::ptr;
 /// const ONE_K: size_t = 1024;
 /// let mut slice: &mut [u8] = unsafe {
-///     let mem = mmap(ptr::null_mut(), ONE_K, ProtFlags::PROT_NONE,
+///     let mem = mmap(None, ONE_K, ProtFlags::PROT_NONE,
 ///                    MapFlags::MAP_ANON | MapFlags::MAP_PRIVATE, -1, 0).unwrap();
 ///     mprotect(mem, ONE_K, ProtFlags::PROT_READ | ProtFlags::PROT_WRITE).unwrap();
 ///     std::slice::from_raw_parts_mut(mem as *mut u8, ONE_K)
