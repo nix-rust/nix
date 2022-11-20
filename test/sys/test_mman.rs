@@ -4,7 +4,7 @@ use nix::sys::mman::{mmap, MapFlags, ProtFlags};
 fn test_mmap_anonymous() {
     unsafe {
         let ptr = mmap(
-            std::ptr::null_mut(),
+            None,
             1,
             ProtFlags::PROT_READ | ProtFlags::PROT_WRITE,
             MapFlags::MAP_PRIVATE | MapFlags::MAP_ANONYMOUS,
@@ -27,7 +27,7 @@ fn test_mremap_grow() {
     const ONE_K: size_t = 1024;
     let slice: &mut [u8] = unsafe {
         let mem = mmap(
-            std::ptr::null_mut(),
+            None,
             ONE_K,
             ProtFlags::PROT_READ | ProtFlags::PROT_WRITE,
             MapFlags::MAP_ANONYMOUS | MapFlags::MAP_PRIVATE,
@@ -83,7 +83,7 @@ fn test_mremap_shrink() {
     const ONE_K: size_t = 1024;
     let slice: &mut [u8] = unsafe {
         let mem = mmap(
-            std::ptr::null_mut(),
+            None,
             10 * ONE_K,
             ProtFlags::PROT_READ | ProtFlags::PROT_WRITE,
             MapFlags::MAP_ANONYMOUS | MapFlags::MAP_PRIVATE,
