@@ -118,6 +118,8 @@ pub enum SockProtocol {
     Tcp = libc::IPPROTO_TCP,
     /// UDP protocol ([ip(7)](https://man7.org/linux/man-pages/man7/ip.7.html))
     Udp = libc::IPPROTO_UDP,
+    /// Raw sockets ([raw(7)](https://man7.org/linux/man-pages/man7/raw.7.html))
+    Raw = libc::IPPROTO_RAW,
     /// Allows applications and other KEXTs to be notified when certain kernel events occur
     /// ([ref](https://developer.apple.com/library/content/documentation/Darwin/Conceptual/NKEConceptual/control/control.html))
     #[cfg(any(target_os = "ios", target_os = "macos"))]
