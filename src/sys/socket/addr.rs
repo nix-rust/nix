@@ -3197,8 +3197,7 @@ mod tests {
         #[cfg(any(target_os = "android", target_os = "linux"))]
         #[test]
         fn from_sockaddr_un_abstract_unnamed() {
-            let empty = String::new();
-            let ua = UnixAddr::new_abstract(empty.as_bytes()).unwrap();
+            let ua = UnixAddr::new_unnamed();
             let ptr = ua.as_ptr() as *const libc::sockaddr;
             let ss = unsafe {
                 SockaddrStorage::from_raw(ptr, Some(ua.len()))
