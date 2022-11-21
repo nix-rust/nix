@@ -37,6 +37,26 @@ impl PollFd {
         PollFlags::from_bits(self.pollfd.revents)
     }
 
+    /// Returns if any of the events of interest occured in the last call to `poll` or `ppoll`. Will
+    /// only return `None` if the kernel provides status flags that Nix does not know about.
+    ///
+    /// Equivalent to `x.revents()? != PollFlags::empty()`.
+    ///
+    /// This is marginally more efficient than [`PollFd::all`].
+    pub fn any(self) -> Option<bool> {
+        Some(self.revents()? != PollFlags::empty())
+    }
+
+    /// Returns if all the events of interest occured in the last call to `poll` or `ppoll`. Will
+    /// only return `None` if the kernel provides status flags that Nix does not know about.
+    ///
+    /// Equivalent to `x.revents()? & x.events() == x.events()`.
+    ///
+    /// This is marginally less efficient than [`PollFd::any`].
+    pub fn all(self) -> Option<bool> {
+        Some(self.revents()? & self.events() == self.events())
+    }
+
     /// The events of interest for this `PollFd`.
     pub fn events(self) -> PollFlags {
         PollFlags::from_bits(self.pollfd.events).unwrap()
