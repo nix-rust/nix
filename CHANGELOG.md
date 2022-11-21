@@ -39,6 +39,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   ([#1792](https://github.com/nix-rust/nix/pull/1792))
 - The `addr` argument of `sys::mman::mmap` is now of type `Option<NonZeroUsize>`.
   ([#1870](https://github.com/nix-rust/nix/pull/1870))
+- The `length` argument of `sys::mman::mmap` is now of type `NonZeroUsize`.
+  ([#1873](https://github.com/nix-rust/nix/pull/1873))
 
 ### Fixed
 
