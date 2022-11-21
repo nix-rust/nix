@@ -34,6 +34,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   ([#1842](https://github.com/nix-rust/nix/pull/1842))
 - Added `IP_TOS` `SO_PRIORITY` and `IPV6_TCLASS` sockopts for Linux
   ([#1853](https://github.com/nix-rust/nix/pull/1853))
+- Added `new_unnamed` and `is_unnamed` for `UnixAddr` on Linux and Android.
+  ([#1857](https://github.com/nix-rust/nix/pull/1857))
 
 ### Changed
 

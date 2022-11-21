@@ -885,6 +885,20 @@ impl UnixAddr {
         }
     }
 
+    /// Create a new `sockaddr_un` representing an "unnamed" unix socket address.
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
+    pub fn new_unnamed() -> UnixAddr {
+        let ret = libc::sockaddr_un {
+            sun_family: AddressFamily::Unix as sa_family_t,
+            .. unsafe { mem::zeroed() }
+        };
+
+        let sun_len: u8 = offset_of!(libc::sockaddr_un, sun_path).try_into().unwrap();
+
+        unsafe { UnixAddr::from_raw_parts(ret, sun_len) }
+    }
+
     /// Create a UnixAddr from a raw `sockaddr_un` struct and a size. `sun_len`
     /// is the size of the valid portion of the struct, excluding any trailing
     /// NUL.
@@ -939,6 +953,14 @@ impl UnixAddr {
             UnixAddrKind::Abstract(name) => Some(name),
             _ => None,
         }
+    }
+
+    /// Check if this address is an "unnamed" unix socket address.
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
+    #[inline]
+    pub fn is_unnamed(&self) -> bool {
+        matches!(self.kind(), UnixAddrKind::Unnamed)
     }
 
     /// Returns the addrlen of this socket - `offsetof(struct sockaddr_un, sun_path)`

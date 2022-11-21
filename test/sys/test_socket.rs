@@ -223,7 +223,7 @@ pub fn test_addr_equality_abstract() {
 }
 
 // Test getting/setting abstract addresses (without unix socket creation)
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "android", target_os = "linux"))]
 #[test]
 pub fn test_abstract_uds_addr() {
     let empty = String::new();
@@ -242,6 +242,22 @@ pub fn test_abstract_uds_addr() {
 
     // Internally, name is null-prefixed (abstract namespace)
     assert_eq!(unsafe { (*addr.as_ptr()).sun_path[0] }, 0);
+}
+
+// Test getting an unnamed address (without unix socket creation)
+#[cfg(any(target_os = "android", target_os = "linux"))]
+#[test]
+pub fn test_unnamed_uds_addr() {
+    use crate::nix::sys::socket::SockaddrLike;
+
+    let addr = UnixAddr::new_unnamed();
+
+    assert!(addr.is_unnamed());
+    assert_eq!(addr.len(), 2);
+    assert!(addr.path().is_none());
+    assert_eq!(addr.path_len(), 0);
+
+    assert!(addr.as_abstract().is_none());
 }
 
 #[test]
@@ -1484,7 +1500,7 @@ fn test_impl_scm_credentials_and_rights(mut space: Vec<u8>) {
 
 // Test creating and using named unix domain sockets
 #[test]
-pub fn test_unixdomain() {
+pub fn test_named_unixdomain() {
     use nix::sys::socket::{accept, bind, connect, listen, socket, UnixAddr};
     use nix::sys::socket::{SockFlag, SockType};
     use nix::unistd::{close, read, write};
@@ -1525,6 +1541,59 @@ pub fn test_unixdomain() {
     thr.join().unwrap();
 
     assert_eq!(&buf[..], b"hello");
+}
+
+// Test using unnamed unix domain addresses
+#[cfg(any(target_os = "android", target_os = "linux"))]
+#[test]
+pub fn test_unnamed_unixdomain() {
+    use nix::sys::socket::{getsockname, socketpair};
+    use nix::sys::socket::{SockFlag, SockType};
+    use nix::unistd::close;
+
+    let (fd_1, fd_2) = socketpair(
+        AddressFamily::Unix,
+        SockType::Stream,
+        None,
+        SockFlag::empty(),
+    )
+    .expect("socketpair failed");
+
+    let addr_1: UnixAddr = getsockname(fd_1).expect("getsockname failed");
+    assert!(addr_1.is_unnamed());
+
+    close(fd_1).unwrap();
+    close(fd_2).unwrap();
+}
+
+// Test creating and using unnamed unix domain addresses for autobinding sockets
+#[cfg(any(target_os = "android", target_os = "linux"))]
+#[test]
+pub fn test_unnamed_unixdomain_autobind() {
+    use nix::sys::socket::{bind, getsockname, socket};
+    use nix::sys::socket::{SockFlag, SockType};
+    use nix::unistd::close;
+
+    let fd = socket(
+        AddressFamily::Unix,
+        SockType::Stream,
+        SockFlag::empty(),
+        None,
+    )
+    .expect("socket failed");
+
+    // unix(7): "If a bind(2) call specifies addrlen as `sizeof(sa_family_t)`, or [...], then the
+    // socket is autobound to an abstract address"
+    bind(fd, &UnixAddr::new_unnamed()).expect("bind failed");
+
+    let addr: UnixAddr = getsockname(fd).expect("getsockname failed");
+    let addr = addr.as_abstract().unwrap();
+
+    // changed from 8 to 5 bytes in Linux 2.3.15, and rust's minimum supported Linux version is 3.2
+    // (as of 2022-11)
+    assert_eq!(addr.len(), 5);
+
+    close(fd).unwrap();
 }
 
 // Test creating and using named system control sockets
