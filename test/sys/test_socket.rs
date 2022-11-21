@@ -1561,7 +1561,6 @@ pub fn test_unnamed_unixdomain() {
 
     let addr_1: UnixAddr = getsockname(fd_1).expect("getsockname failed");
     assert!(addr_1.is_unnamed());
-    assert_eq!(addr_1, UnixAddr::new_unnamed());
 
     close(fd_1).unwrap();
     close(fd_2).unwrap();
