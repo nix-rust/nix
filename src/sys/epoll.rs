@@ -35,12 +35,6 @@ pub enum EpollOp {
     EpollCtlMod = libc::EPOLL_CTL_MOD,
 }
 
-libc_bitflags! {
-    pub struct EpollCreateFlags: c_int {
-        EPOLL_CLOEXEC;
-    }
-}
-
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 #[repr(transparent)]
 pub struct EpollEvent {
@@ -78,8 +72,9 @@ pub fn epoll_create() -> Result<RawFd> {
 }
 
 #[inline]
-pub fn epoll_create1(flags: EpollCreateFlags) -> Result<RawFd> {
-    let res = unsafe { libc::epoll_create1(flags.bits()) };
+pub fn epoll_create1(close_on_exec: bool) -> Result<RawFd> {
+    let flags = if close_on_exec { libc::EPOLL_CLOEXEC } else { 0 };
+    let res = unsafe { libc::epoll_create1(flags) };
 
     Errno::result(res)
 }
