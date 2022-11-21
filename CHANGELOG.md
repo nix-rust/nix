@@ -36,6 +36,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   ([#1853](https://github.com/nix-rust/nix/pull/1853))
 - Added `new_unnamed` and `is_unnamed` for `UnixAddr` on Linux and Android.
   ([#1857](https://github.com/nix-rust/nix/pull/1857))
+- Added `SockProtocol::Raw` for raw sockets
+  ([#1848](https://github.com/nix-rust/nix/pull/1848))
 
 ### Changed
 
