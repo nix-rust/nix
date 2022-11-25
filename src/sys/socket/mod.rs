@@ -1727,6 +1727,8 @@ where
 {
     type Item = RecvMsg<'a, 'a, S>;
 
+    // The cast is not unnecessary on all platforms.
+    #[allow(clippy::unnecessary_cast)]
     fn next(&mut self) -> Option<Self::Item> {
         if self.current_index >= self.received {
             return None;
