@@ -1394,7 +1394,7 @@ pub fn recvmmsg<'a, I>(
         .collect())
 }
 
-unsafe fn read_mhdr<'a, 'b>(
+unsafe fn read_mhdr<'a>(
     mhdr: msghdr,
     r: isize,
     msg_controllen: usize,
