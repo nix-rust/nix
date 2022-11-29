@@ -1697,13 +1697,13 @@ pub fn recvmmsg<'a, I, S>(
         .collect())
 }
 
-unsafe fn read_mhdr<'a, 'b, S>(
+unsafe fn read_mhdr<'a, S>(
     mhdr: msghdr,
     r: isize,
     msg_controllen: usize,
     address: S,
-    cmsg_buffer: &'a mut Option<&'b mut Vec<u8>>
-) -> RecvMsg<'b, S>
+    cmsg_buffer: &mut Option<&'a mut Vec<u8>>
+) -> RecvMsg<'a, S>
     where S: SockaddrLike
 {
     // The cast is not unnecessary on all platforms.
