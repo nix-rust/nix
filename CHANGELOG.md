@@ -46,7 +46,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Fix `User::from_uid` and `User::from_name` crash on Android platform.
   ([#1824](https://github.com/nix-rust/nix/pull/1824))
 - Workaround XNU bug causing netmasks returned by `getifaddrs` to misbehave.
-  (#1709)
+  ([#1788](https://github.com/nix-rust/nix/pull/1788))
   
 ### Removed
 
