@@ -5,6 +5,9 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased] - ReleaseDate
 ### Added
+- Add `PF_ROUTE` to `SockType` on macOS, iOS, all of the BSDs, Fuchsia, Haiku, Illumos.
+  ([#1867](https://github.com/nix-rust/nix/pull/1867))
+
 ### Changed
 ### Fixed
 ### Removed
