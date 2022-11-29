@@ -9,6 +9,9 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Added `SockaddrStorage::{as_unix_addr, as_unix_addr_mut}`
   ([#1871](https://github.com/nix-rust/nix/pull/1871))
 - Added `MntFlags` and `unmount` on all of the BSDs.
+- Added `any()` and `all()` to `poll::PollFd`.
+  ([#1877](https://github.com/nix-rust/nix/pull/1877))
+- Add `MntFlags` and `unmount` on all of the BSDs.
   ([#1849](https://github.com/nix-rust/nix/pull/1849))
 - Added a 'Statfs::flags' method.
   ([#1849](https://github.com/nix-rust/nix/pull/1849))
