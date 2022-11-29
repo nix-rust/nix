@@ -6,7 +6,10 @@ use crate::Result;
 use cfg_if::cfg_if;
 use libc::{self, c_int, c_void, socklen_t};
 use std::ffi::{OsStr, OsString};
-use std::mem::{self, MaybeUninit};
+use std::{
+    convert::TryFrom,
+    mem::{self, MaybeUninit}
+};
 #[cfg(target_family = "unix")]
 use std::os::unix::ffi::OsStrExt;
 use std::os::unix::io::RawFd;
@@ -102,7 +105,10 @@ macro_rules! getsockopt_impl {
                     );
                     Errno::result(res)?;
 
-                    Ok(getter.assume_init())
+                    match <$ty>::try_from(getter.assume_init()) {
+                        Err(_) => Err(Errno::EINVAL),
+                        Ok(r) => Ok(r)
+                    }
                 }
             }
         }
@@ -629,7 +635,8 @@ sockopt_impl!(
     GetOnly,
     libc::SOL_SOCKET,
     libc::SO_TYPE,
-    super::SockType
+    super::SockType,
+    GetStruct<i32>
 );
 sockopt_impl!(
     /// Returns a value indicating whether or not this socket has been marked to

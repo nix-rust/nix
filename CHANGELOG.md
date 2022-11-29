@@ -7,6 +7,9 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 ### Added
 ### Changed
 ### Fixed
+- Fix UB with `sys::socket::sockopt::SockType` using `SOCK_PACKET`.
+  ([#1821](https://github.com/nix-rust/nix/pull/1821))
+
 ### Removed
 
 ## [0.26.0] - 2022-11-29
