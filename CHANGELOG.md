@@ -13,7 +13,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   ([#1877](https://github.com/nix-rust/nix/pull/1877))
 - Add `MntFlags` and `unmount` on all of the BSDs.
   ([#1849](https://github.com/nix-rust/nix/pull/1849))
-- Added a 'Statfs::flags' method.
+- Added a `Statfs::flags` method.
   ([#1849](https://github.com/nix-rust/nix/pull/1849))
 - Added `NSFS_MAGIC` FsType on Linux and Android.
   ([#1829](https://github.com/nix-rust/nix/pull/1829))
