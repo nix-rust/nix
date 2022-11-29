@@ -385,6 +385,30 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Removed `SigevNotify` on OpenBSD and Redox.
   (#[1511](https://github.com/nix-rust/nix/pull/1511))
 
+## [0.22.3] - 22 January 2022
+### Changed
+- Relaxed the bitflags requirement from 1.3.1 to 1.1.  This partially reverts
+  #1492.  From now on, the MSRV is not guaranteed to work with all versions of
+  all dependencies, just with some version of all dependencies.
+  (#[1607](https://github.com/nix-rust/nix/pull/1607))
+
+## [0.22.2] - 28 September 2021
+### Fixed
+- Fixed buffer overflow in `unistd::getgrouplist`.
+  (#[1545](https://github.com/nix-rust/nix/pull/1545))
+- Added more errno definitions for better backwards compatibility with
+  Nix 0.21.0.
+  (#[1467](https://github.com/nix-rust/nix/pull/1467))
+
+## [0.22.1] - 13 August 2021
+### Fixed
+- Locked bitflags to < 1.3.0 to fix the build with rust < 1.46.0.
+
+### Removed
+- Removed a couple of termios constants on redox that were never actually
+  supported.
+  (#[1483](https://github.com/nix-rust/nix/pull/1483))
+
 ## [0.22.0] - 9 July 2021
 ### Added
 - Added `if_nameindex` (#[1445](https://github.com/nix-rust/nix/pull/1445))
@@ -410,8 +434,19 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   `nix::Error::EINVAL`.
   ([#1446](https://github.com/nix-rust/nix/pull/1446))
 
+## [0.21.2] - 29 September 2021
 ### Fixed
+- Fixed buffer overflow in `unistd::getgrouplist`.
+  (#[1545](https://github.com/nix-rust/nix/pull/1545))
+
+## [0.21.1] - 13 August 2021
+### Fixed
+- Locked bitflags to < 1.3.0 to fix the build with rust < 1.46.0.
+
 ### Removed
+- Removed a couple of termios constants on redox that were never actually
+  supported.
+  (#[1483](https://github.com/nix-rust/nix/pull/1483))
 
 ## [0.21.0] - 31 May 2021
 ### Added
@@ -466,6 +501,20 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1440](https://github.com/nix-rust/nix/pull/1440))
 - Removed some Errno values from platforms where they aren't actually defined.
   (#[1452](https://github.com/nix-rust/nix/pull/1452))
+
+## [0.20.2] - 28 September 2021
+### Fixed
+- Fixed buffer overflow in `unistd::getgrouplist`.
+  (#[1545](https://github.com/nix-rust/nix/pull/1545))
+
+## [0.20.1] - 13 August 2021
+### Fixed
+- Locked bitflags to < 1.3.0 to fix the build with rust < 1.46.0.
+
+### Removed
+- Removed a couple of termios constants on redox that were never actually
+  supported.
+  (#[1483](https://github.com/nix-rust/nix/pull/1483))
 
 ## [0.20.0] - 20 February 2021
 ### Added
@@ -530,8 +579,6 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1278](https://github.com/nix-rust/nix/pull/1278))
 - Made `unistd::fork` an unsafe funtion, bringing it in line with [libstd's decision](https://github.com/rust-lang/rust/pull/58059).
   (#[1293](https://github.com/nix-rust/nix/pull/1293))
-### Fixed
-### Removed
 
 ## [0.18.0] - 26 July 2020
 ### Added
@@ -644,21 +691,15 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 ### Added
 - Add `CLK_TCK` to `SysconfVar`
   (#[1177](https://github.com/nix-rust/nix/pull/1177))
-### Changed
-### Fixed
 ### Removed
 - Removed deprecated Error::description from error types
   (#[1175](https://github.com/nix-rust/nix/pull/1175))
 
 ## [0.16.1] - 23 December 2019
-### Added
-### Changed
 ### Fixed
 
 - Fixed the build for OpenBSD
   (#[1168](https://github.com/nix-rust/nix/pull/1168))
-
-### Removed
 
 ## [0.16.0] - 1 December 2019
 ### Added
@@ -787,8 +828,6 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Enabled `sched_yield` for all nix hosts.
   ([#1090](https://github.com/nix-rust/nix/pull/1090))
 
-### Removed
-
 ## [0.14.1] - 2019-06-06
 ### Added
 - Macros exported by `nix` may now be imported via `use` on the Rust 2018
@@ -812,8 +851,6 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 ### Fixed
 - Fix the build on Android and Linux/mips with recent versions of libc.
   ([#1072](https://github.com/nix-rust/nix/pull/1072/commits))
-
-### Removed
 
 ## [0.14.0] - 2019-05-21
 ### Added
@@ -883,6 +920,23 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   should've been defined in the first place.
   ([#1055](https://github.com/nix-rust/nix/pull/1055))
 
+## [0.13.1] - 2019-06-10
+### Changed
+- Changed some public types from reexports of libc types like `uint32_t` to the
+  native equivalents like `u32.`
+  ([#1072](https://github.com/nix-rust/nix/pull/1072/commits))
+
+### Fixed
+- Fix the build on Android and Linux/mips with recent versions of libc.
+  ([#1072](https://github.com/nix-rust/nix/pull/1072/commits))
+- Fixed build on Linux/arm and Linux/s390x with the latest Rust libc
+  ([52102cb](https://github.com/nix-rust/nix/commit/52102cb76398c4dfb9ea141b98c5b01a2e050973))
+
+### Removed
+- `Daemon`, `NOTE_REAP`, and `NOTE_EXIT_REPARENTED` are now deprecated on OSX
+  and iOS.
+  ([#1033](https://github.com/nix-rust/nix/pull/1033))
+
 ## [0.13.0] - 2019-01-15
 ### Added
 - Added PKTINFO(V4) & V6PKTINFO cmsg support - Android/FreeBSD/iOS/Linux/MacOS.
@@ -900,14 +954,30 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Added an `mprotect` wrapper.
   ([#991](https://github.com/nix-rust/nix/pull/991))
 
-### Changed
 ### Fixed
 - `lutimes` never worked on OpenBSD as it is not implemented on OpenBSD. It has
   been removed. ([#1000](https://github.com/nix-rust/nix/pull/1000))
 - `fexecve` never worked on NetBSD or on OpenBSD as it is not implemented on
   either OS. It has been removed. ([#1000](https://github.com/nix-rust/nix/pull/1000))
 
+## [0.12.1] 2019-06-08
+### Changed
+- Changed some public types from reexports of libc types like `uint32_t` to the
+  native equivalents like `u32.`
+  ([#1072](https://github.com/nix-rust/nix/pull/1072/commits))
+
+### Fixed
+- Fix the build on Android and Linux/mips with recent versions of libc.
+  ([#1072](https://github.com/nix-rust/nix/pull/1072/commits))
+- Fixed build on Linux/arm and Linux/s390x with the latest Rust libc
+  ([52102cb](https://github.com/nix-rust/nix/commit/52102cb76398c4dfb9ea141b98c5b01a2e050973))
+
 ### Removed
+- `fexecve` never worked on NetBSD or on OpenBSD as it is not implemented on
+  either OS. It has been removed. ([#1000](https://github.com/nix-rust/nix/pull/1000))
+- `Daemon`, `NOTE_REAP`, and `NOTE_EXIT_REPARENTED` are now deprecated on OSX
+  and iOS.
+  ([#1033](https://github.com/nix-rust/nix/pull/1033))
 
 ## [0.12.0] 2018-11-28
 
@@ -959,7 +1029,24 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Fixed passing multiple file descriptors over Unix Sockets.
   ([#918](https://github.com/nix-rust/nix/pull/918))
 
+## [0.11.1] 2019-06-06
+### Changed
+- Changed some public types from reexports of libc types like `uint32_t` to the
+  native equivalents like `u32.`
+  ([#1072](https://github.com/nix-rust/nix/pull/1072/commits))
+
+### Fixed
+- Fix the build on Android and Linux/mips with recent versions of libc.
+  ([#1072](https://github.com/nix-rust/nix/pull/1072/commits))
+- Fixed build on Linux/arm and Linux/s390x with the latest Rust libc
+  ([52102cb](https://github.com/nix-rust/nix/commit/52102cb76398c4dfb9ea141b98c5b01a2e050973))
+
 ### Removed
+- `fexecve` never worked on NetBSD or on OpenBSD as it is not implemented on
+  either OS. It has been removed. ([#1000](https://github.com/nix-rust/nix/pull/1000))
+- `Daemon`, `NOTE_REAP`, and `NOTE_EXIT_REPARENTED` are now deprecated on OSX
+  and iOS.
+  ([#1033](https://github.com/nix-rust/nix/pull/1033))
 
 ## [0.11.0] 2018-06-01
 
