@@ -1228,11 +1228,13 @@ pub fn isatty(fd: RawFd) -> Result<bool> {
     }
 }
 
-/// Flags for `linkat` function.
-#[derive(Clone, Copy, Debug)]
-pub enum LinkatFlags {
-    SymlinkFollow,
-    NoSymlinkFollow,
+libc_bitflags! {
+    /// Flags for `linkat` function.
+    pub struct LinkatFlags: c_int {
+        AT_SYMLINK_FOLLOW;
+        #[cfg(any(target_os = "android", target_os = "linux"))]
+        AT_EMPTY_PATH;
+    }
 }
 
 /// Link one file to another file
@@ -1254,14 +1256,8 @@ pub fn linkat<P: ?Sized + NixPath>(
     oldpath: &P,
     newdirfd: Option<RawFd>,
     newpath: &P,
-    flag: LinkatFlags,
+    flags: LinkatFlags,
 ) -> Result<()> {
-
-    let atflag =
-        match flag {
-            LinkatFlags::SymlinkFollow => AtFlags::AT_SYMLINK_FOLLOW,
-            LinkatFlags::NoSymlinkFollow => AtFlags::empty(),
-        };
 
     let res =
         oldpath.with_nix_path(|oldcstr| {
@@ -1272,7 +1268,7 @@ pub fn linkat<P: ?Sized + NixPath>(
                     oldcstr.as_ptr(),
                     at_rawfd(newdirfd),
                     newcstr.as_ptr(),
-                    atflag.bits() as libc::c_int
+                    flags.bits()
                     )
                 }
             })
