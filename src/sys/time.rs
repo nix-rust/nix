@@ -5,6 +5,10 @@ use libc::{timespec, timeval};
 #[cfg_attr(target_env = "musl", allow(deprecated))] // https://github.com/rust-lang/libc/issues/1848
 pub use libc::{time_t, suseconds_t};
 
+const TIMESPEC_ZERO: libc::timespec = unsafe {
+    std::mem::transmute([0u8; std::mem::size_of::<libc::timespec>()])
+};
+
 #[cfg(any(
     all(feature = "time", any(target_os = "android", target_os = "linux")),
     all(
@@ -19,7 +23,7 @@ pub use libc::{time_t, suseconds_t};
     )
 ))]
 pub(crate) mod timer {
-    use crate::sys::time::TimeSpec;
+    use crate::sys::time::{TimeSpec, TIMESPEC_ZERO};
     use bitflags::bitflags;
 
     #[derive(Debug, Clone, Copy)]
@@ -28,14 +32,8 @@ pub(crate) mod timer {
     impl TimerSpec {
         pub const fn none() -> Self {
             Self(libc::itimerspec {
-                it_interval: libc::timespec {
-                    tv_sec: 0,
-                    tv_nsec: 0,
-                },
-                it_value: libc::timespec {
-                    tv_sec: 0,
-                    tv_nsec: 0,
-                },
+                it_interval: TIMESPEC_ZERO,
+                it_value: TIMESPEC_ZERO,
             })
         }
     }
@@ -56,10 +54,7 @@ pub(crate) mod timer {
         fn from(expiration: Expiration) -> TimerSpec {
             match expiration {
                 Expiration::OneShot(t) => TimerSpec(libc::itimerspec {
-                    it_interval: libc::timespec {
-                        tv_sec: 0,
-                        tv_nsec: 0,
-                    },
+                    it_interval: TIMESPEC_ZERO,
                     it_value: *t.as_ref(),
                 }),
                 Expiration::IntervalDelayed(start, interval) => TimerSpec(libc::itimerspec {
@@ -110,6 +105,7 @@ pub(crate) mod timer {
                         libc::timespec {
                             tv_sec: 0,
                             tv_nsec: 0,
+                            ..
                         },
                     it_value: ts,
                 }) => Expiration::OneShot(ts.into()),
@@ -242,11 +238,15 @@ impl PartialOrd for TimeSpec {
 
 impl TimeValLike for TimeSpec {
     #[inline]
+    #[cfg_attr(target_env = "musl", allow(deprecated))]
+    // https://github.com/rust-lang/libc/issues/1848
     fn seconds(seconds: i64) -> TimeSpec {
         assert!((TS_MIN_SECONDS..=TS_MAX_SECONDS).contains(&seconds),
                 "TimeSpec out of bounds; seconds={}", seconds);
-        #[cfg_attr(target_env = "musl", allow(deprecated))] // https://github.com/rust-lang/libc/issues/1848
-        TimeSpec(timespec {tv_sec: seconds as time_t, tv_nsec: 0 })
+        let mut ts = TIMESPEC_ZERO;
+        ts.tv_sec = seconds as time_t;
+        ts.tv_nsec = 0;
+        TimeSpec(ts)
     }
 
     #[inline]
@@ -268,13 +268,16 @@ impl TimeValLike for TimeSpec {
 
     /// Makes a new `TimeSpec` with given number of nanoseconds.
     #[inline]
+    #[cfg_attr(target_env = "musl", allow(deprecated))]
+    // https://github.com/rust-lang/libc/issues/1848
     fn nanoseconds(nanoseconds: i64) -> TimeSpec {
         let (secs, nanos) = div_mod_floor_64(nanoseconds, NANOS_PER_SEC);
         assert!((TS_MIN_SECONDS..=TS_MAX_SECONDS).contains(&secs),
                 "TimeSpec out of bounds");
-        #[cfg_attr(target_env = "musl", allow(deprecated))] // https://github.com/rust-lang/libc/issues/1848
-        TimeSpec(timespec {tv_sec: secs as time_t,
-                           tv_nsec: nanos as timespec_tv_nsec_t })
+        let mut ts = TIMESPEC_ZERO;
+        ts.tv_sec = secs as time_t;
+        ts.tv_nsec = nanos as timespec_tv_nsec_t;
+        TimeSpec(ts)
     }
 
     fn num_seconds(&self) -> i64 {
@@ -318,12 +321,13 @@ impl TimeSpec {
         self.0.tv_nsec
     }
 
+    #[cfg_attr(target_env = "musl", allow(deprecated))]
+    // https://github.com/rust-lang/libc/issues/1848
     pub const fn from_duration(duration: Duration) -> Self {
-        #[cfg_attr(target_env = "musl", allow(deprecated))] // https://github.com/rust-lang/libc/issues/1848
-        TimeSpec(timespec {
-            tv_sec: duration.as_secs() as time_t,
-            tv_nsec: duration.subsec_nanos() as timespec_tv_nsec_t
-        })
+        let mut ts = TIMESPEC_ZERO;
+        ts.tv_sec = duration.as_secs() as time_t;
+        ts.tv_nsec = duration.subsec_nanos() as timespec_tv_nsec_t;
+        TimeSpec(ts)
     }
 
     pub const fn from_timespec(timespec: timespec) -> Self {
