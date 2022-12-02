@@ -162,6 +162,9 @@ pub fn step<T: Into<Option<Signal>>>(pid: Pid, sig: T) -> Result<()> {
 }
 
 /// Reads a word from a processes memory at the given address
+// Technically, ptrace doesn't dereference the pointer.  It passes it directly
+// to the kernel.
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub fn read(pid: Pid, addr: AddressType) -> Result<c_int> {
     unsafe {
         // Traditionally there was a difference between reading data or
@@ -171,6 +174,9 @@ pub fn read(pid: Pid, addr: AddressType) -> Result<c_int> {
 }
 
 /// Writes a word into the processes memory at the given address
+// Technically, ptrace doesn't dereference the pointer.  It passes it directly
+// to the kernel.
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub fn write(pid: Pid, addr: AddressType, data: c_int) -> Result<()> {
     unsafe { ptrace_other(Request::PT_WRITE_D, pid, addr, data).map(drop) }
 }
