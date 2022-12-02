@@ -47,7 +47,7 @@ fn test_writev() {
     let read_res = read(reader, &mut read_buf[..]);
     // Successful read
     assert!(read_res.is_ok());
-    let read = read_res.ok().unwrap() as usize;
+    let read = read_res.ok().unwrap();
     // Check we have read as much as we written
     assert_eq!(read, written);
     // Check equality of written and read data
@@ -249,7 +249,7 @@ fn test_process_vm_readv() {
             }
             let _ = write(w, b"\0");
             let _ = close(w);
-            loop { let _ = pause(); }
+            loop { pause(); }
         },
     }
 }
