@@ -5,6 +5,10 @@ use libc::{timespec, timeval};
 #[cfg_attr(target_env = "musl", allow(deprecated))] // https://github.com/rust-lang/libc/issues/1848
 pub use libc::{time_t, suseconds_t};
 
+pub(crate) const TIMESPEC_ZERO: libc::timespec = unsafe {
+    std::mem::transmute([0u8; std::mem::size_of::<libc::timespec>()])
+};
+
 pub trait TimeValLike: Sized {
     #[inline]
     fn zero() -> Self {
@@ -76,12 +80,12 @@ impl From<timespec> for TimeSpec {
 }
 
 impl From<Duration> for TimeSpec {
+    #[cfg_attr(target_env = "musl", allow(deprecated))] // https://github.com/rust-lang/libc/issues/1848
     fn from(duration: Duration) -> Self {
-        #[cfg_attr(target_env = "musl", allow(deprecated))] // https://github.com/rust-lang/libc/issues/1848
-        TimeSpec(timespec {
-            tv_sec: duration.as_secs() as time_t,
-            tv_nsec: duration.subsec_nanos() as timespec_tv_nsec_t
-        })
+        let mut ts = TIMESPEC_ZERO;
+        ts.tv_sec = duration.as_secs() as time_t;
+        ts.tv_nsec = duration.subsec_nanos() as timespec_tv_nsec_t;
+        TimeSpec(ts)
     }
 }
 
@@ -123,11 +127,15 @@ impl PartialOrd for TimeSpec {
 
 impl TimeValLike for TimeSpec {
     #[inline]
+    #[cfg_attr(target_env = "musl", allow(deprecated))]
+    // https://github.com/rust-lang/libc/issues/1848
     fn seconds(seconds: i64) -> TimeSpec {
         assert!(seconds >= TS_MIN_SECONDS && seconds <= TS_MAX_SECONDS,
                 "TimeSpec out of bounds; seconds={}", seconds);
-        #[cfg_attr(target_env = "musl", allow(deprecated))] // https://github.com/rust-lang/libc/issues/1848
-        TimeSpec(timespec {tv_sec: seconds as time_t, tv_nsec: 0 })
+        let mut ts = TIMESPEC_ZERO;
+        ts.tv_sec = seconds as time_t;
+        ts.tv_nsec = 0;
+        TimeSpec(ts)
     }
 
     #[inline]
@@ -149,13 +157,16 @@ impl TimeValLike for TimeSpec {
 
     /// Makes a new `TimeSpec` with given number of nanoseconds.
     #[inline]
+    #[cfg_attr(target_env = "musl", allow(deprecated))]
+    // https://github.com/rust-lang/libc/issues/1848
     fn nanoseconds(nanoseconds: i64) -> TimeSpec {
         let (secs, nanos) = div_mod_floor_64(nanoseconds, NANOS_PER_SEC);
         assert!(secs >= TS_MIN_SECONDS && secs <= TS_MAX_SECONDS,
                 "TimeSpec out of bounds");
-        #[cfg_attr(target_env = "musl", allow(deprecated))] // https://github.com/rust-lang/libc/issues/1848
-        TimeSpec(timespec {tv_sec: secs as time_t,
-                           tv_nsec: nanos as timespec_tv_nsec_t })
+        let mut ts = TIMESPEC_ZERO;
+        ts.tv_sec = secs as time_t;
+        ts.tv_nsec = nanos as timespec_tv_nsec_t;
+        TimeSpec(ts)
     }
 
     fn num_seconds(&self) -> i64 {
