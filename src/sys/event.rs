@@ -114,6 +114,9 @@ libc_bitflags!{
                   target_os = "ios", target_os = "macos",
                   target_os = "netbsd", target_os = "openbsd"))]
         EV_RECEIPT;
+        // Removed in 0.24 by 84e3c56bcc144fb4964caa69fb1dddeccb35be82,
+        // but leaving around in older versions.
+        #[allow(deprecated)]
         EV_SYSFLAGS;
     }
 }
