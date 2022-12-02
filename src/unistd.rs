@@ -2613,7 +2613,7 @@ pub fn access<P: ?Sized + NixPath>(path: &P, amode: AccessFlags) -> Result<()> {
 /// guaranteed to conform to [`NAME_REGEX`](https://serverfault.com/a/73101/407341), which only
 /// contains ASCII.
 #[cfg(not(target_os = "redox"))] // RedoxFS does not support passwd
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct User {
     /// Username
     pub name: String,
@@ -2658,14 +2658,14 @@ impl From<&libc::passwd> for User {
     fn from(pw: &libc::passwd) -> User {
         unsafe {
             User {
-                name: CStr::from_ptr((*pw).pw_name).to_string_lossy().into_owned(),
-                passwd: CString::new(CStr::from_ptr((*pw).pw_passwd).to_bytes()).unwrap(),
-                #[cfg(not(target_os = "android"))]
-                gecos: CString::new(CStr::from_ptr((*pw).pw_gecos).to_bytes()).unwrap(),
-                dir: PathBuf::from(OsStr::from_bytes(CStr::from_ptr((*pw).pw_dir).to_bytes())),
-                shell: PathBuf::from(OsStr::from_bytes(CStr::from_ptr((*pw).pw_shell).to_bytes())),
-                uid: Uid::from_raw((*pw).pw_uid),
-                gid: Gid::from_raw((*pw).pw_gid),
+                name: if pw.pw_name.is_null() { Default::default() } else { CStr::from_ptr(pw.pw_name).to_string_lossy().into_owned() },
+                passwd: if pw.pw_passwd.is_null() { Default::default() } else { CString::new(CStr::from_ptr(pw.pw_passwd).to_bytes()).unwrap() },
+                #[cfg(not(all(target_os = "android", target_pointer_width = "32")))]
+                gecos: if pw.pw_gecos.is_null() { Default::default() } else { CString::new(CStr::from_ptr(pw.pw_gecos).to_bytes()).unwrap() },
+                dir: if pw.pw_dir.is_null() { Default::default() } else { PathBuf::from(OsStr::from_bytes(CStr::from_ptr(pw.pw_dir).to_bytes())) },
+                shell: if pw.pw_shell.is_null() { Default::default() } else { PathBuf::from(OsStr::from_bytes(CStr::from_ptr(pw.pw_shell).to_bytes())) },
+                uid: Uid::from_raw(pw.pw_uid),
+                gid: Gid::from_raw(pw.pw_gid),
                 #[cfg(not(any(target_os = "android",
                               target_os = "fuchsia",
                               target_os = "illumos",
@@ -2759,7 +2759,10 @@ impl User {
     /// assert!(res.name == "root");
     /// ```
     pub fn from_name(name: &str) -> Result<Option<Self>> {
-        let name = CString::new(name).unwrap();
+        let name = match CString::new(name) {
+            Ok(c_str) => c_str,
+            Err(_nul_error) => return Ok(None),
+        };
         User::from_anything(|pwd, cbuf, cap, res| {
             unsafe { libc::getpwnam_r(name.as_ptr(), pwd, cbuf, cap, res) }
         })
@@ -2768,7 +2771,7 @@ impl User {
 
 /// Representation of a Group, based on `libc::group`
 #[cfg(not(target_os = "redox"))] // RedoxFS does not support passwd
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Group {
     /// Group name
     pub name: String,
@@ -2884,7 +2887,10 @@ impl Group {
     /// assert!(res.name == "root");
     /// ```
     pub fn from_name(name: &str) -> Result<Option<Self>> {
-        let name = CString::new(name).unwrap();
+        let name = match CString::new(name) {
+            Ok(c_str) => c_str,
+            Err(_nul_error) => return Ok(None),
+        };
         Group::from_anything(|grp, cbuf, cap, res| {
             unsafe { libc::getgrnam_r(name.as_ptr(), grp, cbuf, cap, res) }
         })
