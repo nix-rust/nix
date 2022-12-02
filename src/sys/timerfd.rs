@@ -28,7 +28,7 @@
 //! // We wait for the timer to expire.
 //! timer.wait().unwrap();
 //! ```
-use crate::sys::time::TimeSpec;
+use crate::sys::time::{TIMESPEC_ZERO, TimeSpec};
 use crate::unistd::read;
 use crate::{errno::Errno, Result};
 use bitflags::bitflags;
@@ -89,14 +89,8 @@ struct TimerSpec(libc::itimerspec);
 impl TimerSpec {
     pub fn none() -> Self {
         Self(libc::itimerspec {
-            it_interval: libc::timespec {
-                tv_sec: 0,
-                tv_nsec: 0,
-            },
-            it_value: libc::timespec {
-                tv_sec: 0,
-                tv_nsec: 0,
-            },
+            it_interval: TIMESPEC_ZERO,
+            it_value: TIMESPEC_ZERO,
         })
     }
 }
@@ -111,10 +105,7 @@ impl From<Expiration> for TimerSpec {
     fn from(expiration: Expiration) -> TimerSpec {
         match expiration {
             Expiration::OneShot(t) => TimerSpec(libc::itimerspec {
-                it_interval: libc::timespec {
-                    tv_sec: 0,
-                    tv_nsec: 0,
-                },
+                it_interval: TIMESPEC_ZERO,
                 it_value: *t.as_ref(),
             }),
             Expiration::IntervalDelayed(start, interval) => TimerSpec(libc::itimerspec {
@@ -137,6 +128,7 @@ impl From<TimerSpec> for Expiration {
                     libc::timespec {
                         tv_sec: 0,
                         tv_nsec: 0,
+                        ..
                     },
                 it_value: ts,
             }) => Expiration::OneShot(ts.into()),
