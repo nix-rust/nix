@@ -3,7 +3,7 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased] - ReleaseDate
+## [0.24.3] - 2022-12-02
 ### Added
 
 - Added `SockaddrStorage::{as_unix_addr, as_unix_addr_mut}`
