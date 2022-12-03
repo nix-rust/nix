@@ -16,6 +16,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 - Removed deprecated IoVec API.
   ([#1855](https://github.com/nix-rust/nix/pull/1855))
+- Removed deprecated net APIs.
+  ([#1861](https://github.com/nix-rust/nix/pull/1861))
 
 ## [0.26.1] - 2022-11-29
 ### Fixed
