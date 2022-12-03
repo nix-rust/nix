@@ -7,6 +7,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 ### Added
 - Add `PF_ROUTE` to `SockType` on macOS, iOS, all of the BSDs, Fuchsia, Haiku, Illumos.
   ([#1867](https://github.com/nix-rust/nix/pull/1867))
+- Added `nix::ucontext` module on `aarch64-unknown-linux-gnu`.
+  (#[1662](https://github.com/nix-rust/nix/pull/1662))
 
 ### Changed
 ### Fixed
@@ -213,7 +215,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1563](https://github.com/nix-rust/nix/pull/1563))
 - Added `process_vm_readv` and `process_vm_writev` on Android.
   (#[1557](https://github.com/nix-rust/nix/pull/1557))
-- Added `nix::uncontext` module on s390x.
+- Added `nix::ucontext` module on s390x.
   (#[1662](https://github.com/nix-rust/nix/pull/1662))
 - Implemented `Extend`, `FromIterator`, and `IntoIterator` for `SigSet` and
   added `SigSet::iter` and `SigSetIter`.
