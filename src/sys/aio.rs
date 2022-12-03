@@ -163,7 +163,7 @@ impl AioCb {
             0 => Ok(()),
             num if num > 0 => Err(Errno::from_i32(num)),
             -1 => Err(Errno::last()),
-            num => panic!("unknown aio_error return value {:?}", num),
+            num => panic!("unknown aio_error return value {num:?}"),
         }
     }
 

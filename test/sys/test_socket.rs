@@ -626,7 +626,7 @@ mod recvfrom {
                 println!("IPv6 not available, skipping test.");
                 return;
             }
-            Err(e) => panic!("bind: {}", e),
+            Err(e) => panic!("bind: {e}"),
             Ok(()) => (),
         }
         let ssock = socket(
@@ -1272,7 +1272,7 @@ fn test_scm_credentials() {
                 ControlMessageOwned::ScmCredentials(cred) => cred,
                 #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
                 ControlMessageOwned::ScmCreds(cred) => cred,
-                other => panic!("unexpected cmsg {:?}", other),
+                other => panic!("unexpected cmsg {other:?}"),
             };
             assert!(received_cred.is_none());
             assert_eq!(cred.pid(), getpid().as_raw());
@@ -1550,7 +1550,7 @@ fn loopback_address(
         Err(e) => {
             let stdioerr = io::stderr();
             let mut handle = stdioerr.lock();
-            writeln!(handle, "getifaddrs: {:?}", e).unwrap();
+            writeln!(handle, "getifaddrs: {e:?}").unwrap();
             return None;
         }
     };
@@ -2347,7 +2347,7 @@ mod linux_errqueue {
                     }
                     *ext_err
                 } else {
-                    panic!("Unexpected control message {:?}", cmsg);
+                    panic!("Unexpected control message {cmsg:?}");
                 }
             },
         )
@@ -2398,7 +2398,7 @@ mod linux_errqueue {
                     }
                     *ext_err
                 } else {
-                    panic!("Unexpected control message {:?}", cmsg);
+                    panic!("Unexpected control message {cmsg:?}");
                 }
             },
         )
@@ -2432,7 +2432,7 @@ mod linux_errqueue {
             MsgFlags::empty(),
         ) {
             assert_eq!(e, Errno::EADDRNOTAVAIL);
-            println!("{:?} not available, skipping test.", af);
+            println!("{af:?} not available, skipping test.");
             return;
         }
 

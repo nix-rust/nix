@@ -56,11 +56,11 @@ fn test_fork_and_waitpid() {
 
                 // panic, must never happen
                 s @ Ok(_) => {
-                    panic!("Child exited {:?}, should never happen", s)
+                    panic!("Child exited {s:?}, should never happen")
                 }
 
                 // panic, waitpid should never fail
-                Err(s) => panic!("Error: waitpid returned Err({:?}", s),
+                Err(s) => panic!("Error: waitpid returned Err({s:?}"),
             }
         }
     }
@@ -94,7 +94,7 @@ fn test_mkstemp() {
             close(fd).unwrap();
             unlink(path.as_path()).unwrap();
         }
-        Err(e) => panic!("mkstemp failed: {}", e),
+        Err(e) => panic!("mkstemp failed: {e}"),
     }
 }
 
@@ -799,12 +799,7 @@ static mut ALARM_CALLED: bool = false;
 // Used in `test_alarm`.
 #[cfg(not(target_os = "redox"))]
 pub extern "C" fn alarm_signal_handler(raw_signal: libc::c_int) {
-    assert_eq!(
-        raw_signal,
-        libc::SIGALRM,
-        "unexpected signal: {}",
-        raw_signal
-    );
+    assert_eq!(raw_signal, libc::SIGALRM, "unexpected signal: {raw_signal}");
     unsafe { ALARM_CALLED = true };
 }
 
