@@ -12,6 +12,9 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 ### Fixed
 ### Removed
 
+- Removed deprecated IoVec API.
+  ([#1855](https://github.com/nix-rust/nix/pull/1855))
+
 ## [0.26.1] - 2022-11-29
 ### Fixed
 - Fix UB with `sys::socket::sockopt::SockType` using `SOCK_PACKET`.
