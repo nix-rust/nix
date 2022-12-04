@@ -15,6 +15,15 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - The MSRV is now 1.63
   ([#1862](https://github.com/nix-rust/nix/pull/1862))
 
+- Implemented I/O safety.  Many public functions argument and return types have
+  changed:
+  | Original Type | New Type              |
+  | ------------- | --------------------- |
+  | AsRawFd       | AsFd                  |
+  | RawFd         | BorrowedFd or OwnedFd |
+
+  (#[1910](https://github.com/nix-rust/nix/pull/1910))
+
 ### Fixed
 ### Removed
 
