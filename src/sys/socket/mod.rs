@@ -283,17 +283,14 @@ libc_bitflags! {
         /// Sends or requests out-of-band data on sockets that support this notion
         /// (e.g., of type [`Stream`](enum.SockType.html)); the underlying protocol must also
         /// support out-of-band data.
-        #[allow(deprecated)]    // Suppress useless warnings from libc PR 2963
         MSG_OOB;
         /// Peeks at an incoming message. The data is treated as unread and the next
         /// [`recv()`](fn.recv.html)
         /// or similar function shall still return this data.
-        #[allow(deprecated)]    // Suppress useless warnings from libc PR 2963
         MSG_PEEK;
         /// Receive operation blocks until the full amount of data can be
         /// returned. The function may return smaller amount of data if a signal
         /// is caught, an error or disconnect occurs.
-        #[allow(deprecated)]    // Suppress useless warnings from libc PR 2963
         MSG_WAITALL;
         /// Enables nonblocking operation; if the operation would block,
         /// `EAGAIN` or `EWOULDBLOCK` is returned.  This provides similar
@@ -305,10 +302,8 @@ libc_bitflags! {
         /// which will affect all threads in
         /// the calling process and as well as other processes that hold
         /// file descriptors referring to the same open file description.
-        #[allow(deprecated)]    // Suppress useless warnings from libc PR 2963
         MSG_DONTWAIT;
         /// Receive flags: Control Data was discarded (buffer too small)
-        #[allow(deprecated)]    // Suppress useless warnings from libc PR 2963
         MSG_CTRUNC;
         /// For raw ([`Packet`](addr/enum.AddressFamily.html)), Internet datagram
         /// (since Linux 2.4.27/2.6.8),
@@ -318,18 +313,15 @@ libc_bitflags! {
         /// domain ([unix(7)](https://linux.die.net/man/7/unix)) sockets.
         ///
         /// For use with Internet stream sockets, see [tcp(7)](https://linux.die.net/man/7/tcp).
-        #[allow(deprecated)]    // Suppress useless warnings from libc PR 2963
         MSG_TRUNC;
         /// Terminates a record (when this notion is supported, as for
         /// sockets of type [`SeqPacket`](enum.SockType.html)).
-        #[allow(deprecated)]    // Suppress useless warnings from libc PR 2963
         MSG_EOR;
         /// This flag specifies that queued errors should be received from
         /// the socket error queue. (For more details, see
         /// [recvfrom(2)](https://linux.die.net/man/2/recvfrom))
         #[cfg(any(target_os = "android", target_os = "linux"))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
-        #[allow(deprecated)]    // Suppress useless warnings from libc PR 2963
         MSG_ERRQUEUE;
         /// Set the `close-on-exec` flag for the file descriptor received via a UNIX domain
         /// file descriptor using the `SCM_RIGHTS` operation (described in
@@ -345,7 +337,6 @@ libc_bitflags! {
                   target_os = "netbsd",
                   target_os = "openbsd"))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
-        #[allow(deprecated)]    // Suppress useless warnings from libc PR 2963
         MSG_CMSG_CLOEXEC;
         /// Requests not to send `SIGPIPE` errors when the other end breaks the connection.
         /// (For more details, see [send(2)](https://linux.die.net/man/2/send)).
@@ -360,7 +351,6 @@ libc_bitflags! {
                   target_os = "openbsd",
                   target_os = "solaris"))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
-        #[allow(deprecated)]    // Suppress useless warnings from libc PR 2963
         MSG_NOSIGNAL;
     }
 }
@@ -1581,8 +1571,7 @@ pub struct MultiHeaders<S> {
     addresses: Box<[mem::MaybeUninit<S>]>,
     // while we are not using it directly - this is used to store control messages
     // and we retain pointers to them inside items array
-    #[allow(dead_code)]
-    cmsg_buffers: Option<Box<[u8]>>,
+    _cmsg_buffers: Option<Box<[u8]>>,
     msg_controllen: usize,
 }
 
@@ -1630,7 +1619,7 @@ impl<S> MultiHeaders<S> {
         Self {
             items: items.into_boxed_slice(),
             addresses,
-            cmsg_buffers,
+            _cmsg_buffers: cmsg_buffers,
             msg_controllen,
         }
     }

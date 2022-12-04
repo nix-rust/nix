@@ -138,7 +138,6 @@ macro_rules! getsockopt_impl {
 /// * `$getter:ty`: `Get` implementation; optional; only for `GetOnly` and `Both`.
 /// * `$setter:ty`: `Set` implementation; optional; only for `SetOnly` and `Both`.
 // Some targets don't use all rules.
-#[allow(unknown_lints)]
 #[allow(unused_macro_rules)]
 macro_rules! sockopt_impl {
     ($(#[$attr:meta])* $name:ident, GetOnly, $level:expr, $flag:path, bool) => {
