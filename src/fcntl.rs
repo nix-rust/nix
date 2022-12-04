@@ -237,7 +237,7 @@ pub fn renameat<P1: ?Sized + NixPath, P2: ?Sized + NixPath>(
 }
 }
 
-#[cfg(all(target_os = "linux", target_env = "gnu",))]
+#[cfg(all(target_os = "linux", target_env = "gnu"))]
 #[cfg(feature = "fs")]
 libc_bitflags! {
     #[cfg_attr(docsrs, doc(cfg(feature = "fs")))]
@@ -250,10 +250,7 @@ libc_bitflags! {
 
 feature! {
 #![feature = "fs"]
-#[cfg(all(
-    target_os = "linux",
-    target_env = "gnu",
-))]
+#[cfg(all(target_os = "linux", target_env = "gnu"))]
 pub fn renameat2<P1: ?Sized + NixPath, P2: ?Sized + NixPath>(
     old_dirfd: Option<RawFd>,
     old_path: &P1,
@@ -308,53 +305,79 @@ fn readlink_maybe_at<P: ?Sized + NixPath>(
 
 fn inner_readlink<P: ?Sized + NixPath>(dirfd: Option<RawFd>, path: &P) -> Result<OsString> {
     let mut v = Vec::with_capacity(libc::PATH_MAX as usize);
-    // simple case: result is strictly less than `PATH_MAX`
-    let res = readlink_maybe_at(dirfd, path, &mut v)?;
-    let len = Errno::result(res)?;
-    debug_assert!(len >= 0);
-    if (len as usize) < v.capacity() {
-        return wrap_readlink_result(v, res);
-    }
-    // Uh oh, the result is too long...
-    // Let's try to ask lstat how many bytes to allocate.
-    let reported_size = match dirfd {
-        #[cfg(target_os = "redox")]
-        Some(_) => unreachable!(),
-        #[cfg(any(target_os = "android", target_os = "linux"))]
-        Some(dirfd) => {
-            let flags = if path.is_empty() { AtFlags::AT_EMPTY_PATH } else { AtFlags::empty() };
-            super::sys::stat::fstatat(dirfd, path, flags | AtFlags::AT_SYMLINK_NOFOLLOW)
-        },
-        #[cfg(not(any(target_os = "android", target_os = "linux", target_os = "redox")))]
-        Some(dirfd) => super::sys::stat::fstatat(dirfd, path, AtFlags::AT_SYMLINK_NOFOLLOW),
-        None => super::sys::stat::lstat(path)
-    }
-        .map(|x| x.st_size)
-        .unwrap_or(0);
-    let mut try_size = if reported_size > 0 {
-        // Note: even if `lstat`'s apparently valid answer turns out to be
-        // wrong, we will still read the full symlink no matter what.
-        reported_size as usize + 1
-    } else {
-        // If lstat doesn't cooperate, or reports an error, be a little less
-        // precise.
-        (libc::PATH_MAX as usize).max(128) << 1
-    };
-    loop {
-        v.reserve_exact(try_size);
+
+    {
+        // simple case: result is strictly less than `PATH_MAX`
         let res = readlink_maybe_at(dirfd, path, &mut v)?;
         let len = Errno::result(res)?;
         debug_assert!(len >= 0);
         if (len as usize) < v.capacity() {
-            break wrap_readlink_result(v, res);
-        } else {
-            // Ugh! Still not big enough!
-            match try_size.checked_shl(1) {
-                Some(next_size) => try_size = next_size,
-                // It's absurd that this would happen, but handle it sanely
-                // anyway.
-                None => break Err(Errno::ENAMETOOLONG),
+            return wrap_readlink_result(v, res);
+        }
+    }
+
+    // Uh oh, the result is too long...
+    // Let's try to ask lstat how many bytes to allocate.
+    let mut try_size = {
+        let reported_size = match dirfd {
+            #[cfg(target_os = "redox")]
+            Some(_) => unreachable!(),
+            #[cfg(any(target_os = "android", target_os = "linux"))]
+            Some(dirfd) => {
+                let flags = if path.is_empty() {
+                    AtFlags::AT_EMPTY_PATH
+                } else {
+                    AtFlags::empty()
+                };
+                super::sys::stat::fstatat(
+                    dirfd,
+                    path,
+                    flags | AtFlags::AT_SYMLINK_NOFOLLOW,
+                )
             }
+            #[cfg(not(any(
+                target_os = "android",
+                target_os = "linux",
+                target_os = "redox"
+            )))]
+            Some(dirfd) => super::sys::stat::fstatat(
+                dirfd,
+                path,
+                AtFlags::AT_SYMLINK_NOFOLLOW,
+            ),
+            None => super::sys::stat::lstat(path),
+        }
+        .map(|x| x.st_size)
+        .unwrap_or(0);
+
+        if reported_size > 0 {
+            // Note: even if `lstat`'s apparently valid answer turns out to be
+            // wrong, we will still read the full symlink no matter what.
+            reported_size as usize + 1
+        } else {
+            // If lstat doesn't cooperate, or reports an error, be a little less
+            // precise.
+            (libc::PATH_MAX as usize).max(128) << 1
+        }
+    };
+
+    loop {
+        {
+            v.reserve_exact(try_size);
+            let res = readlink_maybe_at(dirfd, path, &mut v)?;
+            let len = Errno::result(res)?;
+            debug_assert!(len >= 0);
+            if (len as usize) < v.capacity() {
+                return wrap_readlink_result(v, res);
+            }
+        }
+
+        // Ugh! Still not big enough!
+        match try_size.checked_shl(1) {
+            Some(next_size) => try_size = next_size,
+            // It's absurd that this would happen, but handle it sanely
+            // anyway.
+            None => break Err(Errno::ENAMETOOLONG),
         }
     }
 }

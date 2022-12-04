@@ -240,7 +240,7 @@ impl Entry {
 
     /// Returns the bare file name of this directory entry without any other leading path component.
     pub fn file_name(&self) -> &ffi::CStr {
-        unsafe { ::std::ffi::CStr::from_ptr(self.0.d_name.as_ptr()) }
+        unsafe { ffi::CStr::from_ptr(self.0.d_name.as_ptr()) }
     }
 
     /// Returns the type of this directory entry, if known.
