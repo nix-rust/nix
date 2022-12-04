@@ -42,9 +42,7 @@ pub(crate) const fn ipv4addr_to_libc(addr: net::Ipv4Addr) -> libc::in_addr {
     static_assertions::assert_eq_size!(net::Ipv4Addr, libc::in_addr);
     // Safe because both types have the same memory layout, and no fancy Drop
     // impls.
-    unsafe {
-        mem::transmute(addr)
-    }
+    unsafe { mem::transmute(addr) }
 }
 
 /// Convert a std::net::Ipv6Addr into the libc form.
@@ -52,9 +50,7 @@ pub(crate) const fn ipv4addr_to_libc(addr: net::Ipv4Addr) -> libc::in_addr {
 pub(crate) const fn ipv6addr_to_libc(addr: &net::Ipv6Addr) -> libc::in6_addr {
     static_assertions::assert_eq_size!(net::Ipv6Addr, libc::in6_addr);
     // Safe because both are Newtype wrappers around the same libc type
-    unsafe {
-        mem::transmute(*addr)
-    }
+    unsafe { mem::transmute(*addr) }
 }
 
 /// These constants specify the protocol family to be used
@@ -79,7 +75,11 @@ pub enum AddressFamily {
     #[cfg_attr(docsrs, doc(cfg(all())))]
     Netlink = libc::AF_NETLINK,
     /// Kernel interface for interacting with the routing table
-    #[cfg(not(any(target_os = "redox", target_os = "linux", target_os = "android")))]
+    #[cfg(not(any(
+        target_os = "redox",
+        target_os = "linux",
+        target_os = "android"
+    )))]
     Route = libc::PF_ROUTE,
     /// Low level packet interface (see [`packet(7)`](https://man7.org/linux/man-pages/man7/packet.7.html))
     #[cfg(any(
@@ -422,7 +422,11 @@ impl AddressFamily {
             libc::AF_NETLINK => Some(AddressFamily::Netlink),
             #[cfg(any(target_os = "macos", target_os = "macos"))]
             libc::AF_SYSTEM => Some(AddressFamily::System),
-            #[cfg(not(any(target_os = "redox", target_os = "linux", target_os = "android")))]
+            #[cfg(not(any(
+                target_os = "redox",
+                target_os = "linux",
+                target_os = "android"
+            )))]
             libc::PF_ROUTE => Some(AddressFamily::Route),
             #[cfg(any(target_os = "android", target_os = "linux"))]
             libc::AF_PACKET => Some(AddressFamily::Packet),
@@ -592,10 +596,11 @@ impl UnixAddr {
     pub fn new_unnamed() -> UnixAddr {
         let ret = libc::sockaddr_un {
             sun_family: AddressFamily::Unix as sa_family_t,
-            .. unsafe { mem::zeroed() }
+            ..unsafe { mem::zeroed() }
         };
 
-        let sun_len: u8 = offset_of!(libc::sockaddr_un, sun_path).try_into().unwrap();
+        let sun_len: u8 =
+            offset_of!(libc::sockaddr_un, sun_path).try_into().unwrap();
 
         unsafe { UnixAddr::from_raw_parts(ret, sun_len) }
     }
@@ -1268,7 +1273,9 @@ impl SockaddrLike for SockaddrStorage {
                 if i32::from(ss.ss_family) == libc::AF_UNIX {
                     // Safe because we UnixAddr is strictly smaller than
                     // SockaddrStorage, and we just initialized the structure.
-                    (*(&mut ss as *mut libc::sockaddr_storage as *mut UnixAddr)).sun_len = len as u8;
+                    (*(&mut ss as *mut libc::sockaddr_storage
+                        as *mut UnixAddr))
+                        .sun_len = len as u8;
                 }
                 Some(Self { ss })
             }
@@ -1343,7 +1350,7 @@ impl SockaddrLike for SockaddrStorage {
             // The UnixAddr type knows its own length
             Some(ua) => ua.len(),
             // For all else, we're just a boring SockaddrStorage
-            None => mem::size_of_val(self) as libc::socklen_t
+            None => mem::size_of_val(self) as libc::socklen_t,
         }
     }
 }
@@ -1403,12 +1410,13 @@ impl SockaddrStorage {
             }
         }
         // Sanity checks
-        if self.family() != Some(AddressFamily::Unix) ||
-           len < offset_of!(libc::sockaddr_un, sun_path) ||
-           len > mem::size_of::<libc::sockaddr_un>() {
+        if self.family() != Some(AddressFamily::Unix)
+            || len < offset_of!(libc::sockaddr_un, sun_path)
+            || len > mem::size_of::<libc::sockaddr_un>()
+        {
             None
         } else {
-            Some(unsafe{&self.su})
+            Some(unsafe { &self.su })
         }
     }
 
@@ -1432,12 +1440,13 @@ impl SockaddrStorage {
             }
         }
         // Sanity checks
-        if self.family() != Some(AddressFamily::Unix) ||
-           len < offset_of!(libc::sockaddr_un, sun_path) ||
-           len > mem::size_of::<libc::sockaddr_un>() {
+        if self.family() != Some(AddressFamily::Unix)
+            || len < offset_of!(libc::sockaddr_un, sun_path)
+            || len > mem::size_of::<libc::sockaddr_un>()
+        {
             None
         } else {
-            Some(unsafe{&mut self.su})
+            Some(unsafe { &mut self.su })
         }
     }
 
@@ -2525,9 +2534,8 @@ mod tests {
         fn from_sockaddr_un_named() {
             let ua = UnixAddr::new("/var/run/mysock").unwrap();
             let ptr = ua.as_ptr() as *const libc::sockaddr;
-            let ss = unsafe {
-                SockaddrStorage::from_raw(ptr, Some(ua.len()))
-            }.unwrap();
+            let ss = unsafe { SockaddrStorage::from_raw(ptr, Some(ua.len())) }
+                .unwrap();
             assert_eq!(ss.len(), ua.len());
         }
 
@@ -2537,9 +2545,8 @@ mod tests {
             let name = String::from("nix\0abstract\0test");
             let ua = UnixAddr::new_abstract(name.as_bytes()).unwrap();
             let ptr = ua.as_ptr() as *const libc::sockaddr;
-            let ss = unsafe {
-                SockaddrStorage::from_raw(ptr, Some(ua.len()))
-            }.unwrap();
+            let ss = unsafe { SockaddrStorage::from_raw(ptr, Some(ua.len())) }
+                .unwrap();
             assert_eq!(ss.len(), ua.len());
         }
 
@@ -2548,9 +2555,8 @@ mod tests {
         fn from_sockaddr_un_abstract_unnamed() {
             let ua = UnixAddr::new_unnamed();
             let ptr = ua.as_ptr() as *const libc::sockaddr;
-            let ss = unsafe {
-                SockaddrStorage::from_raw(ptr, Some(ua.len()))
-            }.unwrap();
+            let ss = unsafe { SockaddrStorage::from_raw(ptr, Some(ua.len())) }
+                .unwrap();
             assert_eq!(ss.len(), ua.len());
         }
     }

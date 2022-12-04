@@ -8,7 +8,7 @@ use crate::Result;
 #[cfg(feature = "fs")]
 use crate::{fcntl::OFlag, sys::stat::Mode};
 use libc::{self, c_int, c_void, off_t, size_t};
-use std::{os::unix::io::RawFd, num::NonZeroUsize};
+use std::{num::NonZeroUsize, os::unix::io::RawFd};
 
 libc_bitflags! {
     /// Desired memory protection of a memory mapping.
@@ -424,12 +424,11 @@ pub unsafe fn mmap(
     fd: RawFd,
     offset: off_t,
 ) -> Result<*mut c_void> {
-    let ptr = addr.map_or(
-        std::ptr::null_mut(),
-        |a| usize::from(a) as *mut c_void
-    );
-    
-    let ret = libc::mmap(ptr, length.into(), prot.bits(), flags.bits(), fd, offset);
+    let ptr =
+        addr.map_or(std::ptr::null_mut(), |a| usize::from(a) as *mut c_void);
+
+    let ret =
+        libc::mmap(ptr, length.into(), prot.bits(), flags.bits(), fd, offset);
 
     if ret == libc::MAP_FAILED {
         Err(Errno::last())

@@ -6,13 +6,13 @@ use crate::Result;
 use cfg_if::cfg_if;
 use libc::{self, c_int, c_void, socklen_t};
 use std::ffi::{OsStr, OsString};
-use std::{
-    convert::TryFrom,
-    mem::{self, MaybeUninit}
-};
 #[cfg(target_family = "unix")]
 use std::os::unix::ffi::OsStrExt;
 use std::os::unix::io::RawFd;
+use std::{
+    convert::TryFrom,
+    mem::{self, MaybeUninit},
+};
 
 // Constants
 // TCP_CA_NAME_MAX isn't defined in user space include files
@@ -107,7 +107,7 @@ macro_rules! getsockopt_impl {
 
                     match <$ty>::try_from(getter.assume_init()) {
                         Err(_) => Err(Errno::EINVAL),
-                        Ok(r) => Ok(r)
+                        Ok(r) => Ok(r),
                     }
                 }
             }
