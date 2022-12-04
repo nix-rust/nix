@@ -559,7 +559,7 @@ mod test_posix_fallocate {
         let err = posix_fallocate(rd as RawFd, 0, 100).unwrap_err();
         match err {
             Errno::EINVAL | Errno::ENODEV | Errno::ESPIPE | Errno::EBADF => (),
-            errno => panic!("unexpected errno {}", errno,),
+            errno => panic!("unexpected errno {errno}",),
         }
     }
 }

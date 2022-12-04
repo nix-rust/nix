@@ -2373,7 +2373,7 @@ mod tests {
                 sdl_slen: 0,
                 ..unsafe { mem::zeroed() }
             });
-            format!("{}", la);
+            format!("{la}");
         }
 
         #[cfg(all(
@@ -2495,7 +2495,7 @@ mod tests {
         fn display() {
             let s = "127.0.0.1:8080";
             let addr = SockaddrIn::from_str(s).unwrap();
-            assert_eq!(s, format!("{}", addr));
+            assert_eq!(s, format!("{addr}"));
         }
 
         #[test]
@@ -2515,7 +2515,7 @@ mod tests {
         fn display() {
             let s = "[1234:5678:90ab:cdef::1111:2222]:8080";
             let addr = SockaddrIn6::from_str(s).unwrap();
-            assert_eq!(s, format!("{}", addr));
+            assert_eq!(s, format!("{addr}"));
         }
 
         #[test]

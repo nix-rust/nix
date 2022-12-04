@@ -12,7 +12,6 @@ use libc::{
     self, c_int, c_void, iovec, size_t, socklen_t, CMSG_DATA, CMSG_FIRSTHDR,
     CMSG_LEN, CMSG_NXTHDR,
 };
-use std::convert::TryFrom;
 use std::io::{IoSlice, IoSliceMut};
 #[cfg(feature = "net")]
 use std::net;

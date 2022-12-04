@@ -9,7 +9,7 @@ env:
   RUSTDOCFLAGS: -D warnings
   TOOL: cargo
   # The MSRV
-  TOOLCHAIN: 1.56.1
+  TOOLCHAIN: 1.63.0
   ZFLAGS:
 
 # Tests that don't require executing the build binaries
@@ -140,18 +140,18 @@ task:
   matrix:
     - name: Linux aarch64
       arm_container:
-        image: rust:1.56
+        image: rust:1.63.0
       env:
         RUSTFLAGS: --cfg graviton -D warnings
         TARGET: aarch64-unknown-linux-gnu
     - name: Linux x86_64
       container:
-        image: rust:1.56
+        image: rust:1.63.0
       env:
         TARGET: x86_64-unknown-linux-gnu
     - name: Linux x86_64 musl
       container:
-        image: rust:1.56
+        image: rust:1.63.0
       env:
         TARGET: x86_64-unknown-linux-musl
   setup_script:
@@ -176,7 +176,7 @@ task:
 # Tasks for cross-compiling, but no testing
 task:
   container:
-    image: rust:1.56
+    image: rust:1.63.0
   env:
     BUILD: check
     HOST: x86_64-unknown-linux-gnu
@@ -250,7 +250,7 @@ task:
 
 task:
   container:
-    image: rust:1.56
+    image: rust:1.63.0
   env:
     BUILD: check
   name: Redox x86_64
