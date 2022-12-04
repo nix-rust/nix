@@ -67,13 +67,13 @@ task:
     - if [ -z "$NOHACK" ]; then cargo hack check --each-feature --target i686-unknown-freebsd; fi
   before_cache_script: rm -rf $CARGO_HOME/registry/index
 
-# Test macOS x86_64 in a full VM
+# Test macOS aarch64 in a full VM
 task:
-  name: macOS x86_64
+  name: macOS aarch64
   env:
-    TARGET: x86_64-apple-darwin
-  osx_instance:
-    image: big-sur-xcode
+    TARGET: aarch64-apple-darwin
+  macos_instance:
+    image: ghcr.io/cirruslabs/macos-ventura-base:latest
   setup_script:
     - curl --proto '=https' --tlsv1.2 -sSf -o rustup.sh https://sh.rustup.rs
     - sh rustup.sh -y --profile=minimal --default-toolchain $TOOLCHAIN
@@ -235,9 +235,9 @@ task:
     - name: Linux x32
       env:
         TARGET: x86_64-unknown-linux-gnux32
-    - name: macOS aarch64
+    - name: macOS x86_64
       env:
-        TARGET: aarch64-apple-darwin
+        TARGET: x86_64-apple-darwin
     - name: NetBSD x86_64
       env:
         TARGET: x86_64-unknown-netbsd
