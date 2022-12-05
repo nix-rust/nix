@@ -2084,13 +2084,16 @@ pub fn test_vsock() {
 
         // The current implementation does not support loopback devices, so,
         // for now, we expect a failure on the connect.
-        assert_ne!(connect(s2, &sockaddr_host), Ok(()));
+        dbg!(&sockaddr_host);
+        let r = connect(s2, &sockaddr_host);
+        dbg!(&r);
+        assert_ne!(r, Ok(()));
 
         close(s2).unwrap();
     });
 
-    close(s1).unwrap();
     thr.join().unwrap();
+    close(s1).unwrap();
 }
 
 // Disable the test on emulated platforms because it fails in Cirrus-CI.  Lack
