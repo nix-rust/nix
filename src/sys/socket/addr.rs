@@ -1763,6 +1763,89 @@ pub mod netlink {
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
 #[cfg_attr(docsrs, doc(cfg(all())))]
+pub mod can {
+    use super::*;
+    use crate::sys::socket::addr::AddressFamily;
+    use libc::{sa_family_t, sockaddr_can, c_int, c_uint};
+    use std::{fmt, mem};
+
+    /// Address for the Linux SocketCAN implementation for the Controller Area Network
+    /// automotive bus protocol.
+    ///
+    /// # References
+    ///
+    /// [SocketCAN](https://docs.kernel.org/networking/can.html)
+    #[derive(Copy, Clone)]
+    #[allow(missing_debug_implementations)]
+    #[repr(transparent)]
+    pub struct CanAddr(pub(in super::super) sockaddr_can);
+
+    impl CanAddr {
+        /// Construct a new CAN socket address from its interface index.
+        pub fn new(ifindex: c_uint) -> Self {
+            let mut addr: sockaddr_can = unsafe { mem::zeroed() };
+            addr.can_family = AddressFamily::Can as sa_family_t;
+            addr.can_ifindex = ifindex as c_int;
+
+            Self(addr)
+        }
+
+        /// Return the socket's CAN interface index.
+        pub const fn ifindex(&self) -> c_uint {
+            self.0.can_ifindex as c_uint
+        }
+    }
+
+    impl private::SockaddrLikePriv for CanAddr {}
+    impl SockaddrLike for CanAddr {
+        unsafe fn from_raw(
+            addr: *const libc::sockaddr,
+            len: Option<libc::socklen_t>,
+        ) -> Option<Self>
+        where
+            Self: Sized,
+        {
+            if let Some(l) = len {
+                if l != mem::size_of::<libc::sockaddr_can>() as libc::socklen_t {
+                    return None;
+                }
+            }
+            if (*addr).sa_family as i32 != libc::AF_CAN {
+                return None;
+            }
+            Some(Self(ptr::read_unaligned(addr as *const _)))
+        }
+    }
+
+    impl AsRef<libc::sockaddr_can> for CanAddr {
+        fn as_ref(&self) -> &libc::sockaddr_can {
+            &self.0
+        }
+    }
+
+    impl fmt::Display for CanAddr {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            write!(f, "ifindex: {}", self.ifindex())
+        }
+    }
+
+    impl PartialEq for CanAddr {
+        fn eq(&self, other: &CanAddr) -> bool {
+            self.ifindex() == other.ifindex()
+        }
+    }
+
+    impl Eq for CanAddr {}
+
+    impl Hash for CanAddr {
+        fn hash<H: Hasher>(&self, s: &mut H) {
+            self.ifindex().hash(s)
+        }
+    }
+}
+
+#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg_attr(docsrs, doc(cfg(all())))]
 pub mod alg {
     use super::*;
     use libc::{c_char, sockaddr_alg, AF_ALG};
