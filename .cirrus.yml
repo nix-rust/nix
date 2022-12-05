@@ -42,7 +42,7 @@ task:
   matrix:
     - name: FreeBSD 12 amd64 & i686
       freebsd_instance:
-        image: freebsd-12-3-release-amd64
+        image: freebsd-12-4-release-amd64
     - name: FreeBSD 14 amd64 & i686
       freebsd_instance:
         image_family: freebsd-14-0-snap
