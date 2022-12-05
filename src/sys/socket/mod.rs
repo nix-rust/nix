@@ -18,7 +18,7 @@ use libc::{
 use std::io::{IoSlice, IoSliceMut};
 #[cfg(feature = "net")]
 use std::net;
-use std::os::unix::io::RawFd;
+use std::os::unix::io::{AsFd, AsRawFd, FromRawFd, RawFd, OwnedFd};
 use std::{mem, ptr};
 
 #[deny(missing_docs)]
@@ -693,6 +693,7 @@ pub enum ControlMessageOwned {
     /// # use std::io::{IoSlice, IoSliceMut};
     /// # use std::time::*;
     /// # use std::str::FromStr;
+    /// # use std::os::unix::io::AsRawFd;
     /// # fn main() {
     /// // Set up
     /// let message = "Ohayō!".as_bytes();
@@ -701,22 +702,22 @@ pub enum ControlMessageOwned {
     ///     SockType::Datagram,
     ///     SockFlag::empty(),
     ///     None).unwrap();
-    /// setsockopt(in_socket, sockopt::ReceiveTimestamp, &true).unwrap();
+    /// setsockopt(&in_socket, sockopt::ReceiveTimestamp, &true).unwrap();
     /// let localhost = SockaddrIn::from_str("127.0.0.1:0").unwrap();
-    /// bind(in_socket, &localhost).unwrap();
-    /// let address: SockaddrIn = getsockname(in_socket).unwrap();
+    /// bind(in_socket.as_raw_fd(), &localhost).unwrap();
+    /// let address: SockaddrIn = getsockname(in_socket.as_raw_fd()).unwrap();
     /// // Get initial time
     /// let time0 = SystemTime::now();
     /// // Send the message
     /// let iov = [IoSlice::new(message)];
     /// let flags = MsgFlags::empty();
-    /// let l = sendmsg(in_socket, &iov, &[], flags, Some(&address)).unwrap();
+    /// let l = sendmsg(in_socket.as_raw_fd(), &iov, &[], flags, Some(&address)).unwrap();
     /// assert_eq!(message.len(), l);
     /// // Receive the message
     /// let mut buffer = vec![0u8; message.len()];
     /// let mut cmsgspace = cmsg_space!(TimeVal);
     /// let mut iov = [IoSliceMut::new(&mut buffer)];
-    /// let r = recvmsg::<SockaddrIn>(in_socket, &mut iov, Some(&mut cmsgspace), flags)
+    /// let r = recvmsg::<SockaddrIn>(in_socket.as_raw_fd(), &mut iov, Some(&mut cmsgspace), flags)
     ///     .unwrap();
     /// let rtime = match r.cmsgs().next() {
     ///     Some(ControlMessageOwned::ScmTimestamp(rtime)) => rtime,
@@ -732,7 +733,6 @@ pub enum ControlMessageOwned {
     /// assert!(time0.duration_since(UNIX_EPOCH).unwrap() <= rduration);
     /// assert!(rduration <= time1.duration_since(UNIX_EPOCH).unwrap());
     /// // Close socket
-    /// nix::unistd::close(in_socket).unwrap();
     /// # }
     /// ```
     ScmTimestamp(TimeVal),
@@ -1451,6 +1451,7 @@ impl<'a> ControlMessage<'a> {
 /// # use nix::sys::socket::*;
 /// # use nix::unistd::pipe;
 /// # use std::io::IoSlice;
+/// # use std::os::unix::io::AsRawFd;
 /// let (fd1, fd2) = socketpair(AddressFamily::Unix, SockType::Stream, None,
 ///     SockFlag::empty())
 ///     .unwrap();
@@ -1459,7 +1460,7 @@ impl<'a> ControlMessage<'a> {
 /// let iov = [IoSlice::new(b"hello")];
 /// let fds = [r];
 /// let cmsg = ControlMessage::ScmRights(&fds);
-/// sendmsg::<()>(fd1, &iov, &[cmsg], MsgFlags::empty(), None).unwrap();
+/// sendmsg::<()>(fd1.as_raw_fd(), &iov, &[cmsg], MsgFlags::empty(), None).unwrap();
 /// ```
 /// When directing to a specific address, the generic type will be inferred.
 /// ```
@@ -1467,6 +1468,7 @@ impl<'a> ControlMessage<'a> {
 /// # use nix::unistd::pipe;
 /// # use std::io::IoSlice;
 /// # use std::str::FromStr;
+/// # use std::os::unix::io::AsRawFd;
 /// let localhost = SockaddrIn::from_str("1.2.3.4:8080").unwrap();
 /// let fd = socket(AddressFamily::Inet, SockType::Datagram, SockFlag::empty(),
 ///     None).unwrap();
@@ -1475,7 +1477,7 @@ impl<'a> ControlMessage<'a> {
 /// let iov = [IoSlice::new(b"hello")];
 /// let fds = [r];
 /// let cmsg = ControlMessage::ScmRights(&fds);
-/// sendmsg(fd, &iov, &[cmsg], MsgFlags::empty(), Some(&localhost)).unwrap();
+/// sendmsg(fd.as_raw_fd(), &iov, &[cmsg], MsgFlags::empty(), Some(&localhost)).unwrap();
 /// ```
 pub fn sendmsg<S>(fd: RawFd, iov: &[IoSlice<'_>], cmsgs: &[ControlMessage],
                flags: MsgFlags, addr: Option<&S>) -> Result<usize>
@@ -1823,6 +1825,7 @@ mod test {
     use crate::sys::socket::{AddressFamily, ControlMessageOwned};
     use crate::*;
     use std::str::FromStr;
+    use std::os::unix::io::AsRawFd;
 
     #[cfg_attr(qemu, ignore)]
     #[test]
@@ -1849,9 +1852,9 @@ mod test {
             None,
         )?;
 
-        crate::sys::socket::bind(rsock, &sock_addr)?;
+        crate::sys::socket::bind(rsock.as_raw_fd(), &sock_addr)?;
 
-        setsockopt(rsock, Timestamping, &TimestampingFlag::all())?;
+        setsockopt(&rsock, Timestamping, &TimestampingFlag::all())?;
 
         let sbuf = (0..400).map(|i| i as u8).collect::<Vec<_>>();
 
@@ -1873,13 +1876,13 @@ mod test {
         let iov1 = [IoSlice::new(&sbuf)];
 
         let cmsg = cmsg_space!(crate::sys::socket::Timestamps);
-        sendmsg(ssock, &iov1, &[], flags, Some(&sock_addr)).unwrap();
+        sendmsg(ssock.as_raw_fd(), &iov1, &[], flags, Some(&sock_addr)).unwrap();
 
         let mut data = super::MultiHeaders::<()>::preallocate(recv_iovs.len(), Some(cmsg));
 
         let t = sys::time::TimeSpec::from_duration(std::time::Duration::from_secs(10));
 
-        let recv = super::recvmmsg(rsock, &mut data, recv_iovs.iter(), flags, Some(t))?;
+        let recv = super::recvmmsg(rsock.as_raw_fd(), &mut data, recv_iovs.iter(), flags, Some(t))?;
 
         for rmsg in recv {
             #[cfg(not(any(qemu, target_arch = "aarch64")))]
@@ -2091,7 +2094,7 @@ pub fn socket<T: Into<Option<SockProtocol>>>(
     ty: SockType,
     flags: SockFlag,
     protocol: T,
-) -> Result<RawFd> {
+) -> Result<OwnedFd> {
     let protocol = match protocol.into() {
         None => 0,
         Some(p) => p as c_int,
@@ -2105,7 +2108,13 @@ pub fn socket<T: Into<Option<SockProtocol>>>(
 
     let res = unsafe { libc::socket(domain as c_int, ty, protocol) };
 
-    Errno::result(res)
+    match res {
+        -1 => Err(Errno::last()),
+        fd => {
+            // Safe because libc::socket returned success
+            unsafe { Ok(OwnedFd::from_raw_fd(fd)) }
+        }
+    }
 }
 
 /// Create a pair of connected sockets
@@ -2116,7 +2125,7 @@ pub fn socketpair<T: Into<Option<SockProtocol>>>(
     ty: SockType,
     protocol: T,
     flags: SockFlag,
-) -> Result<(RawFd, RawFd)> {
+) -> Result<(OwnedFd, OwnedFd)> {
     let protocol = match protocol.into() {
         None => 0,
         Some(p) => p as c_int,
@@ -2135,14 +2144,18 @@ pub fn socketpair<T: Into<Option<SockProtocol>>>(
     };
     Errno::result(res)?;
 
-    Ok((fds[0], fds[1]))
+    // Safe because socketpair returned success.
+    unsafe {
+        Ok((OwnedFd::from_raw_fd(fds[0]), OwnedFd::from_raw_fd(fds[1])))
+    }
 }
 
 /// Listen for connections on a socket
 ///
 /// [Further reading](https://pubs.opengroup.org/onlinepubs/9699919799/functions/listen.html)
-pub fn listen(sockfd: RawFd, backlog: usize) -> Result<()> {
-    let res = unsafe { libc::listen(sockfd, backlog as c_int) };
+pub fn listen<F: AsFd>(sock: &F, backlog: usize) -> Result<()> {
+    let fd = sock.as_fd().as_raw_fd();
+    let res = unsafe { libc::listen(fd, backlog as c_int) };
 
     Errno::result(res).map(drop)
 }
@@ -2302,7 +2315,7 @@ pub trait GetSockOpt: Copy {
     type Val;
 
     /// Look up the value of this socket option on the given socket.
-    fn get(&self, fd: RawFd) -> Result<Self::Val>;
+    fn get<F: AsFd>(&self, fd: &F) -> Result<Self::Val>;
 }
 
 /// Represents a socket option that can be set.
@@ -2310,13 +2323,13 @@ pub trait SetSockOpt: Clone {
     type Val;
 
     /// Set the value of this socket option on the given socket.
-    fn set(&self, fd: RawFd, val: &Self::Val) -> Result<()>;
+    fn set<F: AsFd>(&self, fd: &F, val: &Self::Val) -> Result<()>;
 }
 
 /// Get the current value for the requested socket option
 ///
 /// [Further reading](https://pubs.opengroup.org/onlinepubs/9699919799/functions/getsockopt.html)
-pub fn getsockopt<O: GetSockOpt>(fd: RawFd, opt: O) -> Result<O::Val> {
+pub fn getsockopt<F: AsFd, O: GetSockOpt>(fd: &F, opt: O) -> Result<O::Val> {
     opt.get(fd)
 }
 
@@ -2330,15 +2343,14 @@ pub fn getsockopt<O: GetSockOpt>(fd: RawFd, opt: O) -> Result<O::Val> {
 /// use nix::sys::socket::setsockopt;
 /// use nix::sys::socket::sockopt::KeepAlive;
 /// use std::net::TcpListener;
-/// use std::os::unix::io::AsRawFd;
 ///
 /// let listener = TcpListener::bind("0.0.0.0:0").unwrap();
-/// let fd = listener.as_raw_fd();
-/// let res = setsockopt(fd, KeepAlive, &true);
+/// let fd = listener;
+/// let res = setsockopt(&fd, KeepAlive, &true);
 /// assert!(res.is_ok());
 /// ```
-pub fn setsockopt<O: SetSockOpt>(
-    fd: RawFd,
+pub fn setsockopt<F: AsFd, O: SetSockOpt>(
+    fd: &F,
     opt: O,
     val: &O::Val,
 ) -> Result<()> {

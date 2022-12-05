@@ -9,7 +9,7 @@ use std::ffi::{OsStr, OsString};
 use std::mem::{self, MaybeUninit};
 #[cfg(target_family = "unix")]
 use std::os::unix::ffi::OsStrExt;
-use std::os::unix::io::RawFd;
+use std::os::unix::io::{AsFd, AsRawFd};
 
 // Constants
 // TCP_CA_NAME_MAX isn't defined in user space include files
@@ -44,12 +44,12 @@ macro_rules! setsockopt_impl {
         impl SetSockOpt for $name {
             type Val = $ty;
 
-            fn set(&self, fd: RawFd, val: &$ty) -> Result<()> {
+            fn set<F: AsFd>(&self, fd: &F, val: &$ty) -> Result<()> {
                 unsafe {
                     let setter: $setter = Set::new(val);
 
                     let res = libc::setsockopt(
-                        fd,
+                        fd.as_fd().as_raw_fd(),
                         $level,
                         $flag,
                         setter.ffi_ptr(),
@@ -89,12 +89,12 @@ macro_rules! getsockopt_impl {
         impl GetSockOpt for $name {
             type Val = $ty;
 
-            fn get(&self, fd: RawFd) -> Result<$ty> {
+            fn get<F: AsFd>(&self, fd: &F) -> Result<$ty> {
                 unsafe {
                     let mut getter: $getter = Get::uninit();
 
                     let res = libc::getsockopt(
-                        fd,
+                        fd.as_fd().as_raw_fd(),
                         $level,
                         $flag,
                         getter.ffi_ptr(),
@@ -1033,10 +1033,10 @@ pub struct AlgSetAeadAuthSize;
 impl SetSockOpt for AlgSetAeadAuthSize {
     type Val = usize;
 
-    fn set(&self, fd: RawFd, val: &usize) -> Result<()> {
+    fn set<F: AsFd>(&self, fd: &F, val: &usize) -> Result<()> {
         unsafe {
             let res = libc::setsockopt(
-                fd,
+                fd.as_fd().as_raw_fd(),
                 libc::SOL_ALG,
                 libc::ALG_SET_AEAD_AUTHSIZE,
                 ::std::ptr::null(),
@@ -1067,10 +1067,10 @@ where
 {
     type Val = T;
 
-    fn set(&self, fd: RawFd, val: &T) -> Result<()> {
+    fn set<F: AsFd>(&self, fd: &F, val: &T) -> Result<()> {
         unsafe {
             let res = libc::setsockopt(
-                fd,
+                fd.as_fd().as_raw_fd(),
                 libc::SOL_ALG,
                 libc::ALG_SET_KEY,
                 val.as_ref().as_ptr() as *const _,
@@ -1383,8 +1383,8 @@ mod test {
             SockFlag::empty(),
         )
         .unwrap();
-        let a_cred = getsockopt(a, super::PeerCredentials).unwrap();
-        let b_cred = getsockopt(b, super::PeerCredentials).unwrap();
+        let a_cred = getsockopt(&a, super::PeerCredentials).unwrap();
+        let b_cred = getsockopt(&b, super::PeerCredentials).unwrap();
         assert_eq!(a_cred, b_cred);
         assert_ne!(a_cred.pid(), 0);
     }
@@ -1392,25 +1392,21 @@ mod test {
     #[test]
     fn is_socket_type_unix() {
         use super::super::*;
-        use crate::unistd::close;
 
-        let (a, b) = socketpair(
+        let (a, _b) = socketpair(
             AddressFamily::Unix,
             SockType::Stream,
             None,
             SockFlag::empty(),
         )
         .unwrap();
-        let a_type = getsockopt(a, super::SockType).unwrap();
+        let a_type = getsockopt(&a, super::SockType).unwrap();
         assert_eq!(a_type, SockType::Stream);
-        close(a).unwrap();
-        close(b).unwrap();
     }
 
     #[test]
     fn is_socket_type_dgram() {
         use super::super::*;
-        use crate::unistd::close;
 
         let s = socket(
             AddressFamily::Inet,
@@ -1419,16 +1415,14 @@ mod test {
             None,
         )
         .unwrap();
-        let s_type = getsockopt(s, super::SockType).unwrap();
+        let s_type = getsockopt(&s, super::SockType).unwrap();
         assert_eq!(s_type, SockType::Datagram);
-        close(s).unwrap();
     }
 
     #[cfg(any(target_os = "freebsd", target_os = "linux"))]
     #[test]
     fn can_get_listen_on_tcp_socket() {
         use super::super::*;
-        use crate::unistd::close;
 
         let s = socket(
             AddressFamily::Inet,
@@ -1437,11 +1431,10 @@ mod test {
             None,
         )
         .unwrap();
-        let s_listening = getsockopt(s, super::AcceptConn).unwrap();
+        let s_listening = getsockopt(&s, super::AcceptConn).unwrap();
         assert!(!s_listening);
-        listen(s, 10).unwrap();
-        let s_listening2 = getsockopt(s, super::AcceptConn).unwrap();
+        listen(&s, 10).unwrap();
+        let s_listening2 = getsockopt(&s, super::AcceptConn).unwrap();
         assert!(s_listening2);
-        close(s).unwrap();
     }
 }
