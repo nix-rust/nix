@@ -1761,7 +1761,7 @@ pub mod netlink {
     }
 }
 
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(target_os = "linux")]
 #[cfg_attr(docsrs, doc(cfg(all())))]
 pub mod can {
     use super::*;
