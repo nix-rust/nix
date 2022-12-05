@@ -641,7 +641,6 @@ impl<'a> IntoIterator for &'a SigSet {
 }
 
 /// A signal handler.
-#[allow(unknown_lints)]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum SigHandler {
     /// Default signal handling.
