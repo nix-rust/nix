@@ -1,3 +1,4 @@
+#![cfg(feature = "socket")]
 #[cfg(any(target_os = "linux", target_os = "android"))]
 use crate::*;
 use libc::c_char;
@@ -12,6 +13,7 @@ use std::str::FromStr;
 
 #[cfg(any(target_os = "linux"))]
 #[cfg_attr(qemu, ignore)]
+#[cfg(all(feature = "uio",feature = "net",feature = "time"))]
 #[test]
 pub fn test_timestamping() {
     use nix::sys::socket::{
@@ -203,6 +205,7 @@ pub fn test_socketpair() {
 }
 
 #[test]
+#[cfg(feature = "net")]
 pub fn test_std_conversions() {
     use nix::sys::socket::*;
 
@@ -269,6 +272,7 @@ mod recvfrom {
     }
 
     #[test]
+    #[cfg(feature = "net")]
     pub fn udp() {
         let std_sa = SocketAddrV4::from_str("127.0.0.1:6789").unwrap();
         let sock_addr = SockaddrIn::from(std_sa);
@@ -298,6 +302,7 @@ mod recvfrom {
     }
 
     #[cfg(target_os = "linux")]
+    #[cfg(feature = "net")]
     mod udp_offload {
         use super::*;
         use nix::sys::socket::sockopt::{UdpGroSegment, UdpGsoSegment};
@@ -307,6 +312,7 @@ mod recvfrom {
         // Disable the test under emulation because it fails in Cirrus-CI.  Lack
         // of QEMU support is suspected.
         #[cfg_attr(qemu, ignore)]
+        #[cfg(all(feature = "process",feature = "feature"))]
         pub fn gso() {
             require_kernel_version!(udp_offload::gso, ">= 4.18");
 
@@ -367,6 +373,7 @@ mod recvfrom {
         // Disable the test on emulated platforms because it fails in Cirrus-CI.
         // Lack of QEMU support is suspected.
         #[cfg_attr(qemu, ignore)]
+        #[cfg(all(feature = "process",feature = "feature"))]
         pub fn gro() {
             require_kernel_version!(udp_offload::gro, ">= 5.3");
 
@@ -392,6 +399,7 @@ mod recvfrom {
         target_os = "freebsd",
         target_os = "netbsd",
     ))]
+    #[cfg(all(feature = "uio",feature = "net"))]
     #[test]
     pub fn udp_sendmmsg() {
         use std::io::IoSlice;
@@ -459,6 +467,7 @@ mod recvfrom {
         target_os = "freebsd",
         target_os = "netbsd",
     ))]
+    #[cfg(all(feature = "uio",feature = "net"))]
     #[test]
     pub fn udp_recvmmsg() {
         use nix::sys::socket::{recvmmsg, MsgFlags};
@@ -531,6 +540,7 @@ mod recvfrom {
         target_os = "netbsd",
     ))]
     #[test]
+    #[cfg(all(feature = "uio", feature = "net"))]
     pub fn udp_recvmmsg_dontwait_short_read() {
         use nix::sys::socket::{recvmmsg, MsgFlags};
         use std::io::IoSliceMut;
@@ -606,6 +616,7 @@ mod recvfrom {
     }
 
     #[test]
+    #[cfg(feature = "net")]
     pub fn udp_inet6() {
         let addr = std::net::Ipv6Addr::from_str("::1").unwrap();
         let rport = 6789;
@@ -653,6 +664,7 @@ mod recvfrom {
 
 // Test error handling of our recvmsg wrapper
 #[test]
+#[cfg(feature = "uio")]
 pub fn test_recvmsg_ebadf() {
     use nix::errno::Errno;
     use nix::sys::socket::{recvmsg, MsgFlags};
@@ -670,6 +682,7 @@ pub fn test_recvmsg_ebadf() {
 // Disable the test on emulated platforms due to a bug in QEMU versions <
 // 2.12.0.  https://bugs.launchpad.net/qemu/+bug/1701808
 #[cfg_attr(qemu, ignore)]
+#[cfg(feature = "uio")]
 #[test]
 pub fn test_scm_rights() {
     use nix::sys::socket::{
@@ -743,6 +756,7 @@ pub fn test_scm_rights() {
 // Disable the test on emulated platforms due to not enabled support of AF_ALG in QEMU from rust cross
 #[cfg(any(target_os = "linux", target_os = "android"))]
 #[cfg_attr(qemu, ignore)]
+#[cfg(feature = "uio")]
 #[test]
 pub fn test_af_alg_cipher() {
     use nix::sys::socket::sockopt::AlgSetKey;
@@ -822,6 +836,7 @@ pub fn test_af_alg_cipher() {
 // in QEMU from rust cross
 #[cfg(any(target_os = "linux", target_os = "android"))]
 #[cfg_attr(qemu, ignore)]
+#[cfg(all(feature = "uio",feature = "fs"))]
 #[test]
 pub fn test_af_alg_aead() {
     use libc::{ALG_OP_DECRYPT, ALG_OP_ENCRYPT};
@@ -941,6 +956,7 @@ pub fn test_af_alg_aead() {
 // has more than one IP address (since we could select a different address to
 // test from).
 #[cfg(any(target_os = "linux", target_os = "macos", target_os = "netbsd"))]
+#[cfg(all(feature = "uio",feature = "net"))]
 #[test]
 pub fn test_sendmsg_ipv4packetinfo() {
     use cfg_if::cfg_if;
@@ -1000,6 +1016,7 @@ pub fn test_sendmsg_ipv4packetinfo() {
     target_os = "netbsd",
     target_os = "freebsd"
 ))]
+#[cfg(all(feature = "uio",feature = "net"))]
 #[test]
 pub fn test_sendmsg_ipv6packetinfo() {
     use nix::errno::Errno;
@@ -1059,6 +1076,7 @@ pub fn test_sendmsg_ipv6packetinfo() {
     target_os = "openbsd",
     target_os = "dragonfly",
 ))]
+#[cfg(feature = "uio")]
 #[test]
 pub fn test_sendmsg_ipv4sendsrcaddr() {
     use nix::sys::socket::{
@@ -1101,6 +1119,7 @@ pub fn test_sendmsg_ipv4sendsrcaddr() {
 // Disable the test on emulated platforms due to a bug in QEMU versions <
 // 2.12.0.  https://bugs.launchpad.net/qemu/+bug/1701808
 #[cfg_attr(qemu, ignore)]
+#[cfg(feature = "uio")]
 #[test]
 fn test_scm_rights_single_cmsg_multiple_fds() {
     use nix::sys::socket::{
@@ -1160,6 +1179,7 @@ fn test_scm_rights_single_cmsg_multiple_fds() {
 // msg_control field and a msg_controllen of 0 when calling into the
 // raw `sendmsg`.
 #[test]
+#[cfg(feature = "uio")]
 pub fn test_sendmsg_empty_cmsgs() {
     use nix::sys::socket::{
         recvmsg, sendmsg, socketpair, AddressFamily, MsgFlags, SockFlag,
@@ -1215,6 +1235,7 @@ pub fn test_sendmsg_empty_cmsgs() {
     target_os = "freebsd",
     target_os = "dragonfly",
 ))]
+#[cfg(all(feature = "uio",feature = "user",feature = "process"))]
 #[test]
 fn test_scm_credentials() {
     use nix::sys::socket::{
@@ -1295,6 +1316,7 @@ fn test_scm_credentials() {
 // qemu's handling of multiple cmsgs is bugged, ignore tests under emulation
 // see https://bugs.launchpad.net/qemu/+bug/1781280
 #[cfg_attr(qemu, ignore)]
+#[cfg(all(feature = "user",feature = "uio",feature = "process"))]
 #[test]
 fn test_scm_credentials_and_rights() {
     let space = cmsg_space!(libc::ucred, RawFd);
@@ -1307,6 +1329,7 @@ fn test_scm_credentials_and_rights() {
 // qemu's handling of multiple cmsgs is bugged, ignore tests under emulation
 // see https://bugs.launchpad.net/qemu/+bug/1781280
 #[cfg_attr(qemu, ignore)]
+#[cfg(all(feature = "user",feature = "uio",feature = "process"))]
 #[test]
 fn test_too_large_cmsgspace() {
     let space = vec![0u8; 1024];
@@ -1314,6 +1337,7 @@ fn test_too_large_cmsgspace() {
 }
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(all(feature = "user",feature = "uio",feature = "process"))]
 fn test_impl_scm_credentials_and_rights(mut space: Vec<u8>) {
     use libc::ucred;
     use nix::sys::socket::sockopt::PassCred;
@@ -1321,7 +1345,7 @@ fn test_impl_scm_credentials_and_rights(mut space: Vec<u8>) {
         recvmsg, sendmsg, setsockopt, socketpair, ControlMessage,
         ControlMessageOwned, MsgFlags, SockFlag, SockType,
     };
-    use nix::unistd::{close, getgid, getpid, getuid, pipe, write};
+    use nix::unistd::{close, getgid, getpid, getuid, pipe, read, write};
     use std::io::{IoSlice, IoSliceMut};
 
     let (send, recv) = socketpair(
@@ -1536,6 +1560,7 @@ pub fn test_syscontrol() {
     target_os = "netbsd",
     target_os = "openbsd",
 ))]
+#[cfg(feature = "net")]
 fn loopback_address(
     family: AddressFamily,
 ) -> Option<nix::ifaddrs::InterfaceAddress> {
@@ -1581,6 +1606,7 @@ fn loopback_address(
     ),
     ignore
 )]
+#[cfg(all(feature = "uio", feature = "net"))]
 #[test]
 pub fn test_recv_ipv4pktinfo() {
     use nix::net::if_::*;
@@ -1675,6 +1701,7 @@ pub fn test_recv_ipv4pktinfo() {
     ),
     ignore
 )]
+#[cfg(feature = "uio")]
 #[test]
 pub fn test_recvif() {
     use nix::net::if_::*;
@@ -1775,6 +1802,7 @@ pub fn test_recvif() {
 
 #[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
 #[cfg_attr(qemu, ignore)]
+#[cfg(all(feature = "uio",feature = "net"))]
 #[test]
 pub fn test_recvif_ipv4() {
     use nix::sys::socket::sockopt::Ipv4OrigDstAddr;
@@ -1860,6 +1888,7 @@ pub fn test_recvif_ipv4() {
 
 #[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
 #[cfg_attr(qemu, ignore)]
+#[cfg(all(feature = "uio",feature = "net"))]
 #[test]
 pub fn test_recvif_ipv6() {
     use nix::sys::socket::sockopt::Ipv6OrigDstAddr;
@@ -1964,6 +1993,7 @@ pub fn test_recvif_ipv6() {
     ),
     ignore
 )]
+#[cfg(all(feature = "uio",feature = "net"))]
 #[test]
 pub fn test_recv_ipv6pktinfo() {
     use nix::net::if_::*;
@@ -2097,6 +2127,7 @@ pub fn test_vsock() {
 // of QEMU support is suspected.
 #[cfg_attr(qemu, ignore)]
 #[cfg(all(target_os = "linux"))]
+#[cfg(all(feature = "uio",feature = "net"))]
 #[test]
 fn test_recvmsg_timestampns() {
     use nix::sys::socket::*;
@@ -2152,6 +2183,7 @@ fn test_recvmsg_timestampns() {
 // of QEMU support is suspected.
 #[cfg_attr(qemu, ignore)]
 #[cfg(all(target_os = "linux"))]
+#[cfg(all(feature = "uio",feature = "net"))]
 #[test]
 fn test_recvmmsg_timestampns() {
     use nix::sys::socket::*;
@@ -2209,6 +2241,7 @@ fn test_recvmmsg_timestampns() {
 // of QEMU support is suspected.
 #[cfg_attr(qemu, ignore)]
 #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+#[cfg(all(feature = "uio",feature = "net"))]
 #[test]
 fn test_recvmsg_rxq_ovfl() {
     use nix::sys::socket::sockopt::{RcvBuf, RxqOvfl};
@@ -2301,6 +2334,7 @@ fn test_recvmsg_rxq_ovfl() {
 }
 
 #[cfg(any(target_os = "linux", target_os = "android",))]
+#[cfg(all(feature = "uio",feature = "net"))]
 mod linux_errqueue {
     use super::FromStr;
     use nix::sys::socket::*;
@@ -2479,6 +2513,7 @@ mod linux_errqueue {
 // of QEMU support is suspected.
 #[cfg_attr(qemu, ignore)]
 #[cfg(target_os = "linux")]
+#[cfg(all(feature = "uio",feature = "process",feature = "net",feature = "feature",feature = "time"))]
 #[test]
 pub fn test_txtime() {
     use nix::sys::socket::{

@@ -1,9 +1,12 @@
+#![cfg(feature = "poll")]
 use nix::sys::select::*;
+#[cfg(feature = "signal")]
 use nix::sys::signal::SigSet;
 use nix::sys::time::{TimeSpec, TimeValLike};
 use nix::unistd::{pipe, write};
 
 #[test]
+#[cfg(feature = "signal")]
 pub fn test_pselect() {
     let _mtx = crate::SIGNAL_MTX.lock();
 
@@ -26,6 +29,7 @@ pub fn test_pselect() {
 }
 
 #[test]
+#[cfg(feature = "signal")]
 pub fn test_pselect_nfds2() {
     let (r1, w1) = pipe().unwrap();
     write(w1, b"hi!").unwrap();

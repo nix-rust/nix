@@ -1,3 +1,4 @@
+#![cfg(feature = "signal")]
 #[cfg(not(target_os = "redox"))]
 use nix::errno::Errno;
 use nix::sys::signal::*;

@@ -1,3 +1,4 @@
+#![cfg(feature = "inotify")]
 use nix::errno::Errno;
 use nix::sys::inotify::{AddWatchFlags, InitFlags, Inotify};
 use std::ffi::OsString;

@@ -1,3 +1,4 @@
+#![cfg(feature = "term")]
 use std::os::unix::prelude::*;
 use tempfile::tempfile;
 
@@ -91,6 +92,7 @@ fn test_output_flags() {
 
 // Test modifying local flags
 #[test]
+#[cfg(feature = "fs")]
 fn test_local_flags() {
     // openpty uses ptname(3) internally
     let _m = crate::PTSNAME_MTX.lock();

@@ -1,3 +1,4 @@
+#![cfg(feature = "fs")]
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
 use std::fs;
 use std::fs::File;
@@ -392,6 +393,7 @@ fn test_mknod() {
     target_os = "haiku",
     target_os = "redox"
 )))]
+#[cfg(feature = "dir")]
 fn test_mknodat() {
     use fcntl::{AtFlags, OFlag};
     use nix::dir::Dir;

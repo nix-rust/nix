@@ -4,6 +4,7 @@
 #[test]
 #[should_panic(expected = "Dropped an in-progress AioCb")]
 #[cfg(all(
+    feature = "aio",
     not(target_env = "musl"),
     not(target_env = "uclibc"),
     any(

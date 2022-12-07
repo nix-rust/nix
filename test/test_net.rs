@@ -1,3 +1,4 @@
+#![cfg(feature = "net")]
 use nix::net::if_::*;
 
 #[cfg(any(target_os = "android", target_os = "linux"))]

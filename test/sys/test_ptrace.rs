@@ -1,8 +1,10 @@
+#![cfg(feature = "ptrace")]
 #[cfg(all(
     target_os = "linux",
     any(target_arch = "x86_64", target_arch = "x86"),
     target_env = "gnu"
 ))]
+#[cfg(feature = "memoffset")]
 use memoffset::offset_of;
 use nix::errno::Errno;
 use nix::sys::ptrace;
@@ -67,6 +69,7 @@ fn test_ptrace_setsiginfo() {
 }
 
 #[test]
+#[cfg(feature = "signal")]
 fn test_ptrace_cont() {
     use nix::sys::ptrace;
     use nix::sys::signal::{raise, Signal};
@@ -183,6 +186,7 @@ fn test_ptrace_interrupt() {
     target_env = "gnu"
 ))]
 #[test]
+#[cfg(all(feature = "signal",feature = "memoffset"))]
 fn test_ptrace_syscall() {
     use nix::sys::ptrace;
     use nix::sys::signal::kill;

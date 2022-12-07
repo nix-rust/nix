@@ -1122,7 +1122,7 @@ mod sigevent {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test,any(feature = "signal")))]
 mod tests {
     use super::*;
     #[cfg(not(target_os = "redox"))]

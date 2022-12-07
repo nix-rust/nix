@@ -1,3 +1,4 @@
+#![cfg(feature="mqueue")]
 use cfg_if::cfg_if;
 use std::ffi::CString;
 use std::str;

@@ -1,3 +1,4 @@
+#![cfg(all(feature = "aio",feature = "signal"))]
 use std::{
     io::{Read, Seek, Write},
     ops::Deref,

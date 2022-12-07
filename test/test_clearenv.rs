@@ -1,3 +1,4 @@
+#![cfg(feature = "env")]
 use std::env;
 
 #[test]

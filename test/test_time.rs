@@ -1,3 +1,4 @@
+#![cfg(feature = "time")]
 #[cfg(any(
     target_os = "freebsd",
     target_os = "dragonfly",
@@ -5,6 +6,7 @@
     target_os = "android",
     target_os = "emscripten",
 ))]
+#[cfg(feature = "process")]
 use nix::time::clock_getcpuclockid;
 use nix::time::{clock_gettime, ClockId};
 
@@ -26,6 +28,7 @@ pub fn test_clock_gettime() {
     target_os = "android",
     target_os = "emscripten",
 ))]
+#[cfg(feature = "process")]
 #[test]
 pub fn test_clock_getcpuclockid() {
     let clock_id = clock_getcpuclockid(nix::unistd::Pid::this()).unwrap();
@@ -50,6 +53,7 @@ pub fn test_clock_id_now() {
     target_os = "android",
     target_os = "emscripten",
 ))]
+#[cfg(feature = "process")]
 #[test]
 pub fn test_clock_id_pid_cpu_clock_id() {
     ClockId::pid_cpu_clock_id(nix::unistd::Pid::this())

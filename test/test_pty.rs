@@ -1,3 +1,4 @@
+#![cfg(feature = "term")]
 use std::fs::File;
 use std::io::{Read, Write};
 use std::os::unix::prelude::*;
@@ -5,11 +6,16 @@ use std::path::Path;
 use tempfile::tempfile;
 
 use libc::{_exit, STDOUT_FILENO};
-use nix::fcntl::{open, OFlag};
+#[cfg(feature = "fs")]
+use nix::fcntl::open;
+use nix::fcntl::OFlag;
 use nix::pty::*;
+#[cfg(feature = "fs")]
 use nix::sys::stat;
 use nix::sys::termios::*;
-use nix::unistd::{close, pause, write};
+#[cfg(feature = "signal")]
+use nix::unistd::pause;
+use nix::unistd::{close, write};
 
 /// Regression test for Issue #659
 /// This is the correct way to explicitly close a `PtyMaster`
@@ -97,6 +103,7 @@ fn test_ptsname_unique() {
 }
 
 /// Common setup for testing PTTY pairs
+#[cfg(feature = "fs")]
 fn open_ptty_pair() -> (PtyMaster, File) {
     let _m = crate::PTSNAME_MTX.lock();
 
@@ -149,6 +156,7 @@ fn open_ptty_pair() -> (PtyMaster, File) {
 /// themselves. So for this test we perform the basic act of getting a file handle for a
 /// master/slave PTTY pair, then just sanity-check the raw values.
 #[test]
+#[cfg(feature = "fs")]
 fn test_open_ptty_pair() {
     let (master, slave) = open_ptty_pair();
     assert!(master.as_raw_fd() > 0);
@@ -164,6 +172,7 @@ fn make_raw(fd: RawFd) {
 
 /// Test `io::Read` on the PTTY master
 #[test]
+#[cfg(feature = "fs")]
 fn test_read_ptty_pair() {
     let (mut master, mut slave) = open_ptty_pair();
     make_raw(slave.as_raw_fd());
@@ -181,6 +190,7 @@ fn test_read_ptty_pair() {
 
 /// Test `io::Write` on the PTTY master
 #[test]
+#[cfg(feature = "fs")]
 fn test_write_ptty_pair() {
     let (mut master, mut slave) = open_ptty_pair();
     make_raw(slave.as_raw_fd());
@@ -280,6 +290,7 @@ fn test_openpty_with_termios() {
 }
 
 #[test]
+#[cfg(all(feature = "process",feature = "signal"))]
 fn test_forkpty() {
     use nix::sys::signal::*;
     use nix::sys::wait::wait;

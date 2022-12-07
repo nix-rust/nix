@@ -1,3 +1,4 @@
+#![cfg(feature = "poll")]
 use nix::{
     errno::Errno,
     poll::{poll, PollFd, PollFlags},
@@ -43,6 +44,7 @@ fn test_poll() {
     target_os = "freebsd",
     target_os = "linux"
 ))]
+#[cfg(feature = "signal")]
 #[test]
 fn test_ppoll() {
     use nix::poll::ppoll;

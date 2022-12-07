@@ -1801,6 +1801,7 @@ mod test {
     use std::str::FromStr;
 
     #[cfg_attr(qemu, ignore)]
+    #[cfg(all(feature = "net",feature = "time"))]
     #[test]
     fn test_recvmm2() -> crate::Result<()> {
         use crate::sys::socket::{
@@ -2380,6 +2381,7 @@ pub fn shutdown(df: RawFd, how: Shutdown) -> Result<()> {
 #[cfg(test)]
 mod tests {
     #[test]
+    #[cfg(feature = "uio")]
     fn can_use_cmsg_space() {
         let _ = cmsg_space!(u8);
     }

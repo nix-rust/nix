@@ -1,3 +1,4 @@
+#![cfg(feature = "ioctl")]
 #![allow(dead_code)]
 
 // Simple tests to ensure macro generated fns compile

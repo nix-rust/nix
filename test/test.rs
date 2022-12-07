@@ -64,11 +64,15 @@ mod test_time;
 mod test_timer;
 mod test_unistd;
 
-use nix::unistd::{chdir, getcwd, read};
+#[cfg(feature = "fs")]
+use nix::unistd::{chdir, getcwd};
+#[cfg(any(feature = "fs",feature = "term"))]
+use nix::unistd::read;
 use parking_lot::{Mutex, RwLock, RwLockWriteGuard};
 use std::os::unix::io::RawFd;
 use std::path::PathBuf;
 
+#[cfg(any(feature = "fs",feature = "term"))]
 /// Helper function analogous to `std::io::Read::read_exact`, but for `RawFD`s
 fn read_exact(f: RawFd, buf: &mut [u8]) {
     let mut len = 0;
@@ -99,11 +103,13 @@ lazy_static! {
 }
 
 /// RAII object that restores a test's original directory on drop
+#[cfg(feature = "fs")]
 struct DirRestore<'a> {
     d: PathBuf,
     _g: RwLockWriteGuard<'a, ()>,
 }
 
+#[cfg(feature = "fs")]
 impl<'a> DirRestore<'a> {
     fn new() -> Self {
         let guard = crate::CWD_LOCK.write();
@@ -114,6 +120,7 @@ impl<'a> DirRestore<'a> {
     }
 }
 
+#[cfg(feature = "fs")]
 impl<'a> Drop for DirRestore<'a> {
     fn drop(&mut self) {
         let r = chdir(&self.d);

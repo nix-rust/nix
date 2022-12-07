@@ -1,3 +1,4 @@
+#![cfg(feature = "dir")]
 use nix::dir::{Dir, Type};
 use nix::fcntl::OFlag;
 use nix::sys::stat::Mode;

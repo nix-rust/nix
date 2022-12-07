@@ -1,3 +1,4 @@
+#![cfg(feature = "kmod")]
 use crate::*;
 use std::fs::copy;
 use std::path::PathBuf;

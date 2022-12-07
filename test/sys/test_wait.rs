@@ -1,3 +1,4 @@
+#![cfg(feature = "process")]
 use libc::_exit;
 use nix::errno::Errno;
 use nix::sys::signal::*;
@@ -7,6 +8,7 @@ use nix::unistd::*;
 
 #[test]
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
+#[cfg(feature = "signal")]
 fn test_wait_signal() {
     let _m = crate::FORK_MTX.lock();
 
@@ -34,6 +36,7 @@ fn test_wait_signal() {
     all(target_os = "linux", not(target_env = "uclibc")),
 ))]
 #[cfg(not(any(target_arch = "mips", target_arch = "mips64")))]
+#[cfg(feature = "signal")]
 fn test_waitid_signal() {
     let _m = crate::FORK_MTX.lock();
 
@@ -143,6 +146,7 @@ fn test_waitid_pid() {
 #[cfg(any(target_os = "linux", target_os = "android"))]
 // FIXME: qemu-user doesn't implement ptrace on most arches
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+#[cfg(all(feature = "ptrace",feature = "signal"))]
 mod ptrace {
     use crate::*;
     use libc::_exit;

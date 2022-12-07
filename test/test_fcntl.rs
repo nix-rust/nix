@@ -1,3 +1,4 @@
+#![cfg(feature = "fs")]
 #[cfg(not(target_os = "redox"))]
 use nix::errno::*;
 #[cfg(not(target_os = "redox"))]
@@ -252,6 +253,7 @@ mod linux_android {
     #[test]
     // QEMU does not support copy_file_range. Skip under qemu
     #[cfg_attr(qemu, ignore)]
+    #[cfg(feature = "zerocopy")]
     fn test_copy_file_range() {
         const CONTENTS: &[u8] = b"foobarbaz";
 
@@ -280,6 +282,7 @@ mod linux_android {
     }
 
     #[test]
+    #[cfg(feature = "zerocopy")]
     fn test_splice() {
         const CONTENTS: &[u8] = b"abcdef123456";
         let mut tmp = tempfile().unwrap();
@@ -309,6 +312,7 @@ mod linux_android {
     }
 
     #[test]
+    #[cfg(feature = "zerocopy")]
     fn test_tee() {
         let (rd1, wr1) = pipe().unwrap();
         let (rd2, wr2) = pipe().unwrap();
@@ -335,6 +339,7 @@ mod linux_android {
     }
 
     #[test]
+    #[cfg(feature = "zerocopy")]
     fn test_vmsplice() {
         let (rd, wr) = pipe().unwrap();
 

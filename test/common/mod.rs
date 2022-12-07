@@ -78,11 +78,15 @@ macro_rules! skip_if_jailed {
 #[macro_export]
 macro_rules! skip_if_not_root {
     ($name:expr) => {
+        #[cfg(feature = "user")]
         use nix::unistd::Uid;
 
+        #[cfg(feature = "user")]
         if !Uid::current().is_root() {
             skip!("{} requires root privileges. Skipping test.", $name);
         }
+        #[cfg(not(feature = "user"))]
+        skip!("{} requires root privileges and 'user' feature is disabled so the current user cannot be determined. Skipping test.", $name);
     };
 }
 

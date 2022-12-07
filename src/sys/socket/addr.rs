@@ -2317,6 +2317,7 @@ pub mod vsock {
 mod tests {
     use super::*;
 
+    #[cfg(feature = "net")]
     mod types {
         use super::*;
 
@@ -2385,6 +2386,7 @@ mod tests {
             target_endian = "little"
         ))]
         #[test]
+        #[cfg(feature = "net")]
         fn linux_loopback() {
             #[repr(align(2))]
             struct Raw([u8; 20]);
@@ -2465,6 +2467,7 @@ mod tests {
         }
 
         #[test]
+        #[cfg(feature = "net")]
         fn size() {
             #[cfg(any(
                 target_os = "dragonfly",
@@ -2487,6 +2490,7 @@ mod tests {
         }
     }
 
+    #[cfg(feature = "net")]
     mod sockaddr_in {
         use super::*;
         use std::str::FromStr;
@@ -2507,6 +2511,7 @@ mod tests {
         }
     }
 
+    #[cfg(feature = "net")]
     mod sockaddr_in6 {
         use super::*;
         use std::str::FromStr;

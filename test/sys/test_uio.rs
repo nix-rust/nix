@@ -1,3 +1,4 @@
+#![cfg(feature = "uio")]
 use nix::sys::uio::*;
 use nix::unistd::*;
 use rand::distributions::Alphanumeric;
@@ -218,6 +219,7 @@ fn test_preadv() {
 // uclibc doesn't implement process_vm_readv
 // qemu-user doesn't implement process_vm_readv/writev on most arches
 #[cfg_attr(qemu, ignore)]
+#[cfg(all(feature = "process",feature = "signal"))]
 fn test_process_vm_readv() {
     use crate::*;
     use nix::sys::signal::*;

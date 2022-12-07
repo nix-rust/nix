@@ -1,3 +1,4 @@
+#![cfg(feature = "signal")]
 use std::convert::TryFrom;
 
 #[test]

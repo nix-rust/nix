@@ -1,3 +1,4 @@
+#![cfg(feature = "mman")]
 use nix::sys::mman::{mmap, MapFlags, ProtFlags};
 use std::{num::NonZeroUsize, os::unix::io::BorrowedFd};
 

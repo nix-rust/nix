@@ -1,3 +1,4 @@
+#![cfg(feature = "event")]
 #![allow(deprecated)]
 
 use nix::errno::Errno;

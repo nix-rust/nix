@@ -1,3 +1,4 @@
+#![cfg(feature = "socket")]
 #[cfg(any(target_os = "android", target_os = "linux"))]
 use crate::*;
 use nix::sys::socket::{
@@ -92,6 +93,7 @@ fn test_so_buf() {
 }
 
 #[test]
+#[cfg(feature = "net")]
 fn test_so_tcp_maxseg() {
     use nix::sys::socket::{accept, bind, connect, listen, SockaddrIn};
     use nix::unistd::{close, write};
@@ -187,6 +189,7 @@ fn test_so_type_unknown() {
     any(target_arch = "x86", target_arch = "x86_64"),
     any(target_os = "freebsd", target_os = "linux")
 ))]
+#[cfg(feature = "net")]
 fn test_tcp_congestion() {
     use std::ffi::OsString;
 
@@ -231,6 +234,7 @@ fn test_bindtodevice() {
 }
 
 #[test]
+#[cfg(feature = "net")]
 fn test_so_tcp_keepalive() {
     let fd = socket(
         AddressFamily::Inet,
@@ -266,6 +270,7 @@ fn test_so_tcp_keepalive() {
 #[test]
 #[cfg(any(target_os = "android", target_os = "linux"))]
 #[cfg_attr(qemu, ignore)]
+#[cfg(feature = "net")]
 fn test_get_mtu() {
     use nix::sys::socket::{bind, connect, SockaddrIn};
     use std::net::SocketAddrV4;
@@ -384,6 +389,7 @@ fn test_v6dontfrag_opts() {
 
 #[test]
 #[cfg(target_os = "linux")]
+#[cfg(feature = "net")]
 fn test_so_priority() {
     let fd = socket(
         AddressFamily::Inet,
@@ -399,6 +405,7 @@ fn test_so_priority() {
 
 #[test]
 #[cfg(target_os = "linux")]
+#[cfg(feature = "net")]
 fn test_ip_tos() {
     let fd = socket(
         AddressFamily::Inet,
@@ -416,6 +423,7 @@ fn test_ip_tos() {
 #[cfg(target_os = "linux")]
 // Disable the test under emulation because it fails in Cirrus-CI.  Lack
 // of QEMU support is suspected.
+#[cfg(feature = "net")]
 #[cfg_attr(qemu, ignore)]
 fn test_ipv6_tclass() {
     let fd = socket(

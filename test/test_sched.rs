@@ -1,3 +1,4 @@
+#![cfg(feature = "sched")]
 use nix::sched::{sched_getaffinity, sched_getcpu, sched_setaffinity, CpuSet};
 use nix::unistd::Pid;
 

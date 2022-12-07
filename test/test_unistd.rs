@@ -1,22 +1,28 @@
 use libc::{_exit, mode_t, off_t};
 use nix::errno::Errno;
-#[cfg(not(any(target_os = "redox", target_os = "haiku")))]
+#[cfg(all(not(any(target_os = "redox", target_os = "haiku")),feature = "fs"))]
 use nix::fcntl::readlink;
+#[cfg(any(feature = "fs",feature = "term"))]
 use nix::fcntl::OFlag;
 #[cfg(not(target_os = "redox"))]
-use nix::fcntl::{self, open};
-#[cfg(not(any(
+use nix::fcntl;
+#[cfg(all(not(target_os = "redox"),feature = "fs"))]
+use nix::fcntl::open;
+#[cfg(all(not(any(
     target_os = "redox",
     target_os = "fuchsia",
     target_os = "haiku"
-)))]
+)),feature = "term"))]
 use nix::pty::{grantpt, posix_openpt, ptsname, unlockpt};
-#[cfg(not(target_os = "redox"))]
+#[cfg(all(not(target_os = "redox"),feature = "signal"))]
 use nix::sys::signal::{
     sigaction, SaFlags, SigAction, SigHandler, SigSet, Signal,
 };
+#[cfg(feature = "fs")]
 use nix::sys::stat::{self, Mode, SFlag};
+#[cfg(feature = "process")]
 use nix::sys::wait::*;
+#[cfg(feature = "process")]
 use nix::unistd::ForkResult::*;
 use nix::unistd::*;
 use std::env;
@@ -39,6 +45,7 @@ use crate::*;
 
 #[test]
 #[cfg(not(any(target_os = "netbsd")))]
+#[cfg(feature = "process")]
 fn test_fork_and_waitpid() {
     let _m = crate::FORK_MTX.lock();
 
@@ -67,6 +74,7 @@ fn test_fork_and_waitpid() {
 }
 
 #[test]
+#[cfg(feature = "process")]
 fn test_wait() {
     // Grab FORK_MTX so wait doesn't reap a different test's child process
     let _m = crate::FORK_MTX.lock();
@@ -84,6 +92,7 @@ fn test_wait() {
 }
 
 #[test]
+#[cfg(feature = "fs")]
 fn test_mkstemp() {
     let mut path = env::temp_dir();
     path.push("nix_tempfile.XXXXXX");
@@ -99,6 +108,7 @@ fn test_mkstemp() {
 }
 
 #[test]
+#[cfg(feature = "fs")]
 fn test_mkstemp_directory() {
     // mkstemp should fail if a directory is given
     mkstemp(&env::temp_dir()).expect_err("assertion failed");
@@ -106,6 +116,7 @@ fn test_mkstemp_directory() {
 
 #[test]
 #[cfg(not(target_os = "redox"))]
+#[cfg(feature = "fs")]
 fn test_mkfifo() {
     let tempdir = tempdir().unwrap();
     let mkfifo_fifo = tempdir.path().join("mkfifo_fifo");
@@ -119,6 +130,7 @@ fn test_mkfifo() {
 
 #[test]
 #[cfg(not(target_os = "redox"))]
+#[cfg(feature = "fs")]
 fn test_mkfifo_directory() {
     // mkfifo should fail if a directory is given
     mkfifo(&env::temp_dir(), Mode::S_IRUSR).expect_err("assertion failed");
@@ -132,6 +144,7 @@ fn test_mkfifo_directory() {
     target_os = "redox",
     target_os = "haiku"
 )))]
+#[cfg(feature = "fs")]
 fn test_mkfifoat_none() {
     let _m = crate::CWD_LOCK.read();
 
@@ -153,6 +166,7 @@ fn test_mkfifoat_none() {
     target_os = "redox",
     target_os = "haiku"
 )))]
+#[cfg(feature = "fs")]
 fn test_mkfifoat() {
     use nix::fcntl;
 
@@ -176,6 +190,7 @@ fn test_mkfifoat() {
     target_os = "redox",
     target_os = "haiku"
 )))]
+#[cfg(feature = "fs")]
 fn test_mkfifoat_directory_none() {
     let _m = crate::CWD_LOCK.read();
 
@@ -192,6 +207,7 @@ fn test_mkfifoat_directory_none() {
     target_os = "redox",
     target_os = "haiku"
 )))]
+#[cfg(feature = "fs")]
 fn test_mkfifoat_directory() {
     // mkfifoat should fail if a directory is given
     let tempdir = tempdir().unwrap();
@@ -204,6 +220,7 @@ fn test_mkfifoat_directory() {
 }
 
 #[test]
+#[cfg(feature = "process")]
 fn test_getpid() {
     let pid: ::libc::pid_t = getpid().into();
     let ppid: ::libc::pid_t = getppid().into();
@@ -213,6 +230,7 @@ fn test_getpid() {
 
 #[test]
 #[cfg(not(target_os = "redox"))]
+#[cfg(feature = "process")]
 fn test_getsid() {
     let none_sid: ::libc::pid_t = getsid(None).unwrap().into();
     let pid_sid: ::libc::pid_t = getsid(Some(getpid())).unwrap().into();
@@ -220,7 +238,7 @@ fn test_getsid() {
     assert_eq!(none_sid, pid_sid);
 }
 
-#[cfg(any(target_os = "linux", target_os = "android"))]
+#[cfg(all(any(target_os = "linux", target_os = "android"),feature = "process"))]
 mod linux_android {
     use nix::unistd::gettid;
 
@@ -240,6 +258,7 @@ mod linux_android {
     target_os = "fuchsia",
     target_os = "haiku"
 )))]
+#[cfg(feature = "user")]
 fn test_setgroups() {
     // Skip this test when not run as root as `setgroups()` requires root.
     skip_if_not_root!("test_setgroups");
@@ -270,6 +289,7 @@ fn test_setgroups() {
     target_os = "haiku",
     target_os = "illumos"
 )))]
+#[cfg(feature = "user")]
 fn test_initgroups() {
     // Skip this test when not run as root as `initgroups()` and `setgroups()`
     // require root.
@@ -400,6 +420,7 @@ macro_rules! execve_test_factory (
     )
 );
 
+#[cfg(all(feature = "process",feature = "fs"))]
 cfg_if! {
     if #[cfg(target_os = "android")] {
         execve_test_factory!(test_execve, execve, CString::new("/system/bin/sh").unwrap().as_c_str());
@@ -422,9 +443,10 @@ cfg_if! {
     }
 }
 
-#[cfg(any(target_os = "haiku", target_os = "linux", target_os = "openbsd"))]
+#[cfg(all(any(target_os = "haiku", target_os = "linux", target_os = "openbsd"),feature = "process",feature = "fs"))]
 execve_test_factory!(test_execvpe, execvpe, &CString::new("sh").unwrap());
 
+#[cfg(all(feature = "process",feature = "fs"))]
 cfg_if! {
     if #[cfg(target_os = "android")] {
         use nix::fcntl::AtFlags;
@@ -450,6 +472,7 @@ cfg_if! {
 
 #[test]
 #[cfg(not(target_os = "fuchsia"))]
+#[cfg(feature = "fs")]
 fn test_fchdir() {
     // fchdir changes the process's cwd
     let _dr = crate::DirRestore::new();
@@ -465,6 +488,7 @@ fn test_fchdir() {
 }
 
 #[test]
+#[cfg(feature = "fs")]
 fn test_getcwd() {
     // chdir changes the process's cwd
     let _dr = crate::DirRestore::new();
@@ -490,6 +514,7 @@ fn test_getcwd() {
 }
 
 #[test]
+#[cfg(all(feature = "fs",feature = "user"))]
 fn test_chown() {
     // Testing for anything other than our own UID/GID is hard.
     let uid = Some(getuid());
@@ -510,6 +535,7 @@ fn test_chown() {
 }
 
 #[test]
+#[cfg(all(feature = "fs",feature = "user"))]
 fn test_fchown() {
     // Testing for anything other than our own UID/GID is hard.
     let uid = Some(getuid());
@@ -526,6 +552,7 @@ fn test_fchown() {
 
 #[test]
 #[cfg(not(target_os = "redox"))]
+#[cfg(all(feature = "fs",feature = "user"))]
 fn test_fchownat() {
     let _dr = crate::DirRestore::new();
     // Testing for anything other than our own UID/GID is hard.
@@ -551,6 +578,7 @@ fn test_fchownat() {
 }
 
 #[test]
+#[cfg(feature = "fs")]
 fn test_lseek() {
     const CONTENTS: &[u8] = b"abcdef123456";
     let mut tmp = tempfile().unwrap();
@@ -568,6 +596,7 @@ fn test_lseek() {
 }
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
+#[cfg(feature = "fs")]
 #[test]
 fn test_lseek64() {
     const CONTENTS: &[u8] = b"abcdef123456";
@@ -613,6 +642,7 @@ cfg_if! {
     target_os = "fuchsia",
     target_os = "haiku"
 )))]
+#[cfg(feature = "acct")]
 fn test_acct() {
     use std::process::Command;
     use std::{thread, time};
@@ -638,6 +668,7 @@ fn test_acct() {
 }
 
 #[test]
+#[cfg(all(feature = "fs", feature = "feature"))]
 fn test_fpathconf_limited() {
     let f = tempfile().unwrap();
     // AFAIK, PATH_MAX is limited on all platforms, so it makes a good test
@@ -651,6 +682,7 @@ fn test_fpathconf_limited() {
 }
 
 #[test]
+#[cfg(all(feature = "fs", feature = "feature"))]
 fn test_pathconf_limited() {
     // AFAIK, PATH_MAX is limited on all platforms, so it makes a good test
     let path_max = pathconf("/", PathconfVar::PATH_MAX);
@@ -663,6 +695,7 @@ fn test_pathconf_limited() {
 }
 
 #[test]
+#[cfg(feature = "feature")]
 fn test_sysconf_limited() {
     // AFAIK, OPEN_MAX is limited on all platforms, so it makes a good test
     let open_max = sysconf(SysconfVar::OPEN_MAX);
@@ -675,6 +708,7 @@ fn test_sysconf_limited() {
 }
 
 #[cfg(target_os = "freebsd")]
+#[cfg(feature = "feature")]
 #[test]
 fn test_sysconf_unsupported() {
     // I know of no sysconf variables that are unsupported everywhere, but
@@ -691,6 +725,7 @@ fn test_sysconf_unsupported() {
     target_os = "linux",
     target_os = "openbsd"
 ))]
+#[cfg(feature = "user")]
 #[test]
 fn test_getresuid() {
     let resuids = getresuid().unwrap();
@@ -706,6 +741,7 @@ fn test_getresuid() {
     target_os = "linux",
     target_os = "openbsd"
 ))]
+#[cfg(feature = "user")]
 #[test]
 fn test_getresgid() {
     let resgids = getresgid().unwrap();
@@ -717,6 +753,7 @@ fn test_getresgid() {
 // Test that we can create a pair of pipes.  No need to verify that they pass
 // data; that's the domain of the OS, not nix.
 #[test]
+#[cfg(feature = "fs")]
 fn test_pipe() {
     let (fd0, fd1) = pipe().unwrap();
     let m0 = stat::SFlag::from_bits_truncate(
@@ -732,7 +769,7 @@ fn test_pipe() {
 
 // pipe2(2) is the same as pipe(2), except it allows setting some flags.  Check
 // that we can set a flag.
-#[cfg(any(
+#[cfg(all(any(
     target_os = "android",
     target_os = "dragonfly",
     target_os = "emscripten",
@@ -743,7 +780,7 @@ fn test_pipe() {
     target_os = "openbsd",
     target_os = "redox",
     target_os = "solaris"
-))]
+),feature = "fs"))]
 #[test]
 fn test_pipe2() {
     use nix::fcntl::{fcntl, FcntlArg, FdFlag};
@@ -757,6 +794,7 @@ fn test_pipe2() {
 
 #[test]
 #[cfg(not(any(target_os = "redox", target_os = "fuchsia")))]
+#[cfg(feature = "fs")]
 fn test_truncate() {
     let tempdir = tempdir().unwrap();
     let path = tempdir.path().join("file");
@@ -774,6 +812,7 @@ fn test_truncate() {
 }
 
 #[test]
+#[cfg(feature = "fs")]
 fn test_ftruncate() {
     let tempdir = tempdir().unwrap();
     let path = tempdir.path().join("file");
@@ -805,6 +844,7 @@ pub extern "C" fn alarm_signal_handler(raw_signal: libc::c_int) {
 
 #[test]
 #[cfg(not(target_os = "redox"))]
+#[cfg(feature = "signal")]
 fn test_alarm() {
     use std::{
         thread,
@@ -850,6 +890,7 @@ fn test_alarm() {
 
 #[test]
 #[cfg(not(target_os = "redox"))]
+#[cfg(feature = "signal")]
 fn test_canceling_alarm() {
     let _m = crate::SIGNAL_MTX.lock();
 
@@ -861,6 +902,7 @@ fn test_canceling_alarm() {
 
 #[test]
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
+#[cfg(feature = "fs")]
 fn test_symlinkat() {
     let _m = crate::CWD_LOCK.read();
 
@@ -889,6 +931,7 @@ fn test_symlinkat() {
 
 #[test]
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
+#[cfg(feature = "fs")]
 fn test_linkat_file() {
     let tempdir = tempdir().unwrap();
     let oldfilename = "foo.txt";
@@ -919,6 +962,7 @@ fn test_linkat_file() {
 
 #[test]
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
+#[cfg(feature = "fs")]
 fn test_linkat_olddirfd_none() {
     let _dr = crate::DirRestore::new();
 
@@ -956,6 +1000,7 @@ fn test_linkat_olddirfd_none() {
 
 #[test]
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
+#[cfg(feature = "fs")]
 fn test_linkat_newdirfd_none() {
     let _dr = crate::DirRestore::new();
 
@@ -998,6 +1043,7 @@ fn test_linkat_newdirfd_none() {
     target_os = "redox",
     target_os = "haiku"
 )))]
+#[cfg(feature = "fs")]
 fn test_linkat_no_follow_symlink() {
     let _m = crate::CWD_LOCK.read();
 
@@ -1041,6 +1087,7 @@ fn test_linkat_no_follow_symlink() {
 
 #[test]
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
+#[cfg(feature = "fs")]
 fn test_linkat_follow_symlink() {
     let _m = crate::CWD_LOCK.read();
 
@@ -1090,6 +1137,7 @@ fn test_linkat_follow_symlink() {
 
 #[test]
 #[cfg(not(target_os = "redox"))]
+#[cfg(feature = "fs")]
 fn test_unlinkat_dir_noremovedir() {
     let tempdir = tempdir().unwrap();
     let dirname = "foo_dir";
@@ -1111,6 +1159,7 @@ fn test_unlinkat_dir_noremovedir() {
 
 #[test]
 #[cfg(not(target_os = "redox"))]
+#[cfg(feature = "fs")]
 fn test_unlinkat_dir_removedir() {
     let tempdir = tempdir().unwrap();
     let dirname = "foo_dir";
@@ -1131,6 +1180,7 @@ fn test_unlinkat_dir_removedir() {
 
 #[test]
 #[cfg(not(target_os = "redox"))]
+#[cfg(feature = "fs")]
 fn test_unlinkat_file() {
     let tempdir = tempdir().unwrap();
     let filename = "foo.txt";
@@ -1150,6 +1200,7 @@ fn test_unlinkat_file() {
 }
 
 #[test]
+#[cfg(feature = "fs")]
 fn test_access_not_existing() {
     let tempdir = tempdir().unwrap();
     let dir = tempdir.path().join("does_not_exist.txt");
@@ -1160,6 +1211,7 @@ fn test_access_not_existing() {
 }
 
 #[test]
+#[cfg(feature = "fs")]
 fn test_access_file_exists() {
     let tempdir = tempdir().unwrap();
     let path = tempdir.path().join("does_exist.txt");
@@ -1171,6 +1223,7 @@ fn test_access_file_exists() {
 //Clippy false positive https://github.com/rust-lang/rust-clippy/issues/9111
 #[allow(clippy::needless_borrow)]
 #[cfg(not(target_os = "redox"))]
+#[cfg(feature = "user")]
 #[test]
 fn test_user_into_passwd() {
     // get the UID of the "nobody" user
@@ -1187,6 +1240,7 @@ fn test_user_into_passwd() {
 
 /// Tests setting the filesystem UID with `setfsuid`.
 #[cfg(any(target_os = "linux", target_os = "android"))]
+#[cfg(all(feature = "user",feature = "fs"))]
 #[test]
 fn test_setfsuid() {
     use std::os::unix::fs::PermissionsExt;
@@ -1229,6 +1283,7 @@ fn test_setfsuid() {
     target_os = "fuchsia",
     target_os = "haiku"
 )))]
+#[cfg(all(feature = "term",feature = "fs"))]
 fn test_ttyname() {
     let fd = posix_openpt(OFlag::O_RDWR).expect("posix_openpt failed");
     assert!(fd.as_raw_fd() > 0);
@@ -1249,6 +1304,7 @@ fn test_ttyname() {
 
 #[test]
 #[cfg(not(any(target_os = "redox", target_os = "fuchsia")))]
+#[cfg(feature = "term")]
 fn test_ttyname_not_pty() {
     let fd = File::open("/dev/zero").unwrap();
     assert!(fd.as_raw_fd() > 0);
@@ -1261,6 +1317,7 @@ fn test_ttyname_not_pty() {
     target_os = "fuchsia",
     target_os = "haiku"
 )))]
+#[cfg(feature = "term")]
 fn test_ttyname_invalid_fd() {
     assert_eq!(ttyname(-1), Err(Errno::EBADF));
 }
@@ -1299,13 +1356,14 @@ fn test_getpeereid() {
     target_os = "netbsd",
     target_os = "dragonfly",
 ))]
+#[cfg(all(feature = "socket", feature = "user"))]
 fn test_getpeereid_invalid_fd() {
     // getpeereid is not POSIX, so error codes are inconsistent between different Unices.
     getpeereid(-1).expect_err("assertion failed");
 }
 
 #[test]
-#[cfg(not(target_os = "redox"))]
+#[cfg(all(not(target_os = "redox"),feature = "fs"))]
 fn test_faccessat_none_not_existing() {
     use nix::fcntl::AtFlags;
     let tempdir = tempfile::tempdir().unwrap();
@@ -1319,7 +1377,7 @@ fn test_faccessat_none_not_existing() {
 }
 
 #[test]
-#[cfg(not(target_os = "redox"))]
+#[cfg(all(not(target_os = "redox"),feature = "fs"))]
 fn test_faccessat_not_existing() {
     use nix::fcntl::AtFlags;
     let tempdir = tempfile::tempdir().unwrap();
@@ -1339,7 +1397,7 @@ fn test_faccessat_not_existing() {
 }
 
 #[test]
-#[cfg(not(target_os = "redox"))]
+#[cfg(all(not(target_os = "redox"),feature = "fs"))]
 fn test_faccessat_none_file_exists() {
     use nix::fcntl::AtFlags;
     let tempdir = tempfile::tempdir().unwrap();
@@ -1355,7 +1413,7 @@ fn test_faccessat_none_file_exists() {
 }
 
 #[test]
-#[cfg(not(target_os = "redox"))]
+#[cfg(all(not(target_os = "redox"),feature = "fs"))]
 fn test_faccessat_file_exists() {
     use nix::fcntl::AtFlags;
     let tempdir = tempfile::tempdir().unwrap();
@@ -1378,6 +1436,7 @@ fn test_faccessat_file_exists() {
     target_os = "freebsd",
     target_os = "dragonfly"
 ))]
+#[cfg(feature = "fs")]
 fn test_eaccess_not_existing() {
     let tempdir = tempdir().unwrap();
     let dir = tempdir.path().join("does_not_exist.txt");
@@ -1393,6 +1452,7 @@ fn test_eaccess_not_existing() {
     target_os = "freebsd",
     target_os = "dragonfly"
 ))]
+#[cfg(feature = "fs")]
 fn test_eaccess_file_exists() {
     let tempdir = tempdir().unwrap();
     let path = tempdir.path().join("does_exist.txt");

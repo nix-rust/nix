@@ -1,3 +1,4 @@
+#![cfg(feature = "zerocopy")]
 use std::io::prelude::*;
 use std::os::unix::prelude::*;
 

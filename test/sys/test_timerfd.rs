@@ -1,3 +1,4 @@
+#![cfg(feature = "time")]
 use nix::sys::time::{TimeSpec, TimeValLike};
 use nix::sys::timerfd::{
     ClockId, Expiration, TimerFd, TimerFlags, TimerSetTimeFlags,

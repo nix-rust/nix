@@ -1,3 +1,4 @@
+#![cfg(feature = "resource")]
 #[cfg(not(any(
     target_os = "redox",
     target_os = "fuchsia",

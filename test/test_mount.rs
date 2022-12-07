@@ -5,7 +5,7 @@ mod common;
 // namespaces (Linux >= 3.8 compiled with CONFIG_USER_NS), the test should run
 // without root.
 
-#[cfg(target_os = "linux")]
+#[cfg(all(target_os = "linux",feature = "mount",feature = "sched",feature = "user"))]
 mod test_mount {
     use std::fs::{self, File};
     use std::io::{self, Read, Write};
@@ -18,7 +18,9 @@ mod test_mount {
     use nix::errno::Errno;
     use nix::mount::{mount, umount, MsFlags};
     use nix::sched::{unshare, CloneFlags};
+    #[cfg(feature = "fs")]
     use nix::sys::stat::{self, Mode};
+    #[cfg(feature = "user")]
     use nix::unistd::getuid;
 
     static SCRIPT_CONTENTS: &[u8] = b"#!/bin/sh
@@ -28,6 +30,7 @@ exit 23";
 
     const NONE: Option<&'static [u8]> = None;
     #[allow(clippy::bind_instead_of_map)] // False positive
+    #[cfg(feature = "fs")]
     pub fn test_mount_tmpfs_without_flags_allows_rwx() {
         let tempdir = tempfile::tempdir().unwrap();
 
@@ -117,6 +120,7 @@ exit 23";
         umount(tempdir.path()).unwrap_or_else(|e| panic!("umount failed: {e}"));
     }
 
+    #[cfg(feature = "fs")]
     pub fn test_mount_noexec_disallows_exec() {
         let tempdir = tempfile::tempdir().unwrap();
 
@@ -165,6 +169,7 @@ exit 23";
         umount(tempdir.path()).unwrap_or_else(|e| panic!("umount failed: {e}"));
     }
 
+    #[cfg(feature = "fs")]
     pub fn test_mount_bind() {
         let tempdir = tempfile::tempdir().unwrap();
         let file_name = "test";
@@ -230,7 +235,7 @@ exit 23";
 // Test runner
 
 /// Mimic normal test output (hackishly).
-#[cfg(target_os = "linux")]
+#[cfg(all(target_os = "linux",feature = "mount",feature = "sched",feature = "user"))]
 macro_rules! run_tests {
     ( $($test_fn:ident),* ) => {{
         println!();
@@ -245,23 +250,27 @@ macro_rules! run_tests {
     }}
 }
 
-#[cfg(target_os = "linux")]
+#[cfg(all(target_os = "linux",feature = "mount",feature = "sched",feature = "user"))]
 fn main() {
+    #[cfg(feature = "fs")]
+    use test_mount::{test_mount_bind, test_mount_noexec_disallows_exec, test_mount_tmpfs_without_flags_allows_rwx};
     use test_mount::{
-        setup_namespaces, test_mount_bind, test_mount_noexec_disallows_exec,
+        setup_namespaces,
         test_mount_rdonly_disallows_write,
-        test_mount_tmpfs_without_flags_allows_rwx,
     };
     skip_if_cirrus!("Fails for an unknown reason Cirrus CI.  Bug #1351");
     setup_namespaces();
 
+    #[cfg(feature = "fs")]
     run_tests!(
         test_mount_tmpfs_without_flags_allows_rwx,
-        test_mount_rdonly_disallows_write,
         test_mount_noexec_disallows_exec,
         test_mount_bind
     );
+    run_tests!(
+        test_mount_rdonly_disallows_write
+    );
 }
 
-#[cfg(not(target_os = "linux"))]
+#[cfg(not(all(target_os = "linux",feature = "mount",feature = "sched", feature = "user")))]
 fn main() {}
