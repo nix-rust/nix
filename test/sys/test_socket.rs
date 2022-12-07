@@ -1345,7 +1345,12 @@ fn test_impl_scm_credentials_and_rights(mut space: Vec<u8>) {
         recvmsg, sendmsg, setsockopt, socketpair, ControlMessage,
         ControlMessageOwned, MsgFlags, SockFlag, SockType,
     };
-    use nix::unistd::{close, getgid, getpid, getuid, pipe, read, write};
+    // read exists in the unistd submodule without the fs feature,
+    // but with the fs feature it also exists at the top level
+    // and this causes an redundant import warning
+    #[cfg(not(feature = "fs"))]
+    use nix::unistd::read;
+    use nix::unistd::{close, getgid, getpid, getuid, pipe, write};
     use std::io::{IoSlice, IoSliceMut};
 
     let (send, recv) = socketpair(
