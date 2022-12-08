@@ -34,6 +34,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 ### Fixed
 - Fix `SockaddrIn6` bug that was swapping flowinfo and scope_id byte ordering.
   ([#1964](https://github.com/nix-rust/nix/pull/1964))
+- Fix: send ETH_P_ALL in htons format 
+  ([#1925](https://github.com/nix-rust/nix/pull/1925))
 
 ### Removed
 
