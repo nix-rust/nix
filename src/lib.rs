@@ -47,6 +47,7 @@
 #![recursion_limit = "500"]
 #![deny(unused)]
 #![allow(unused_macros)]
+#![allow(unused_imports)]
 #![cfg_attr(not(feature = "default"), allow(unused_imports))]
 #![deny(unstable_features)]
 #![deny(missing_copy_implementations)]
