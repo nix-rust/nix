@@ -20,6 +20,8 @@ use crate::fcntl::{fcntl, FcntlArg::F_SETFD, FdFlag, OFlag};
 use crate::sys::stat::FileFlag;
 #[cfg(feature = "fs")]
 use crate::sys::stat::Mode;
+#[cfg(not(target_os = "redox"))]
+use crate::AsDirFd;
 use crate::{Error, NixPath, Result};
 #[cfg(not(target_os = "redox"))]
 use cfg_if::cfg_if;
@@ -270,7 +272,7 @@ impl ForkResult {
 ///     Ok(ForkResult::Child) => {
 ///         // Unsafe to use `println!` (or `unwrap`) here. See Safety.
 ///         write(
-///             unsafe { &BorrowedFd::borrow_raw(libc::STDOUT_FILENO) },
+///             unsafe { BorrowedFd::borrow_raw(libc::STDOUT_FILENO) },
 ///             "I'm a new child process\n".as_bytes(),
 ///         )
 ///         .ok();
@@ -437,7 +439,7 @@ feature! {
 ///
 /// The two file descriptors do not share file descriptor flags (e.g. `OFlag::FD_CLOEXEC`).
 #[inline]
-pub fn dup<Fd: AsFd>(oldfd: &Fd) -> Result<OwnedFd> {
+pub fn dup<Fd: AsFd>(oldfd: Fd) -> Result<OwnedFd> {
     let res = unsafe { libc::dup(oldfd.as_fd().as_raw_fd()) };
 
     Errno::result(res).map(|fd| unsafe { OwnedFd::from_raw_fd(fd) })
@@ -450,7 +452,7 @@ pub fn dup<Fd: AsFd>(oldfd: &Fd) -> Result<OwnedFd> {
 /// specified fd instead of allocating a new one.  See the man pages for more
 /// detail on the exact behavior of this function.
 #[inline]
-pub fn dup2<Fd: AsFd>(oldfd: &Fd, newfd: &mut OwnedFd) -> Result<()> {
+pub fn dup2<Fd: AsFd>(oldfd: Fd, newfd: &mut OwnedFd) -> Result<()> {
     let res =
         unsafe { libc::dup2(oldfd.as_fd().as_raw_fd(), newfd.as_raw_fd()) };
 
@@ -463,7 +465,7 @@ pub fn dup2<Fd: AsFd>(oldfd: &Fd, newfd: &mut OwnedFd) -> Result<()> {
 /// This function behaves similar to `dup2()` but allows for flags to be
 /// specified.
 pub fn dup3<Fd: AsFd>(
-    oldfd: &Fd,
+    oldfd: Fd,
     newfd: &mut OwnedFd,
     flags: OFlag,
 ) -> Result<()> {
@@ -472,7 +474,7 @@ pub fn dup3<Fd: AsFd>(
 
 #[inline]
 fn dup3_polyfill<Fd: AsFd>(
-    oldfd: &Fd,
+    oldfd: Fd,
     newfd: &mut OwnedFd,
     flags: OFlag,
 ) -> Result<()> {
@@ -510,7 +512,7 @@ pub fn chdir<P: ?Sized + NixPath>(path: &P) -> Result<()> {
 /// pages for additional details on possible failure cases.
 #[inline]
 #[cfg(not(target_os = "fuchsia"))]
-pub fn fchdir<Fd: AsFd>(dirfd: &Fd) -> Result<()> {
+pub fn fchdir<Fd: AsFd>(dirfd: Fd) -> Result<()> {
     let res = unsafe { libc::fchdir(dirfd.as_fd().as_raw_fd()) };
 
     Errno::result(res).map(drop)
@@ -608,14 +610,14 @@ pub fn mkfifo<P: ?Sized + NixPath>(path: &P, mode: Mode) -> Result<()> {
     target_os = "android",
     target_os = "redox"
 )))]
-pub fn mkfifoat<Fd: AsFd, P: ?Sized + NixPath>(
-    dirfd: &Fd,
+pub fn mkfifoat<Fd: AsDirFd, P: ?Sized + NixPath>(
+    dirfd: Fd,
     path: &P,
     mode: Mode,
 ) -> Result<()> {
     let res = path.with_nix_path(|cstr| unsafe {
         libc::mkfifoat(
-            dirfd.as_fd().as_raw_fd(),
+            dirfd.as_dir_fd(),
             cstr.as_ptr(),
             mode.bits() as mode_t,
         )
@@ -634,16 +636,16 @@ pub fn mkfifoat<Fd: AsFd, P: ?Sized + NixPath>(
 ///
 /// See also [symlinkat(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/symlinkat.html).
 #[cfg(not(target_os = "redox"))]
-pub fn symlinkat<P1: ?Sized + NixPath, Fd: AsFd, P2: ?Sized + NixPath>(
+pub fn symlinkat<P1: ?Sized + NixPath, Fd: AsDirFd, P2: ?Sized + NixPath>(
     path1: &P1,
-    dirfd: &Fd,
+    dirfd: Fd,
     path2: &P2,
 ) -> Result<()> {
     let res = path1.with_nix_path(|path1| {
         path2.with_nix_path(|path2| unsafe {
             libc::symlinkat(
                 path1.as_ptr(),
-                dirfd.as_fd().as_raw_fd(),
+                dirfd.as_dir_fd(),
                 path2.as_ptr(),
             )
         })
@@ -767,7 +769,7 @@ pub fn chown<P: ?Sized + NixPath>(
 /// only if `Some` owner/group is provided.
 #[inline]
 pub fn fchown<Fd: AsFd>(
-    fd: &Fd,
+    fd: Fd,
     owner: Option<Uid>,
     group: Option<Gid>,
 ) -> Result<()> {
@@ -805,8 +807,8 @@ pub enum FchownatFlags {
 ///
 /// [fchownat(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/fchownat.html).
 #[cfg(not(target_os = "redox"))]
-pub fn fchownat<Fd: AsFd, P: ?Sized + NixPath>(
-    dirfd: &Fd,
+pub fn fchownat<Fd: AsDirFd, P: ?Sized + NixPath>(
+    dirfd: Fd,
     path: &P,
     owner: Option<Uid>,
     group: Option<Gid>,
@@ -819,7 +821,7 @@ pub fn fchownat<Fd: AsFd, P: ?Sized + NixPath>(
     let res = path.with_nix_path(|cstr| unsafe {
         let (uid, gid) = chown_raw_ids(owner, group);
         libc::fchownat(
-            dirfd.as_fd().as_raw_fd(),
+            dirfd.as_dir_fd(),
             cstr.as_ptr(),
             uid,
             gid,
@@ -944,7 +946,7 @@ pub fn execvpe<SA: AsRef<CStr>, SE: AsRef<CStr>>(
 ))]
 #[inline]
 pub fn fexecve<Fd: AsFd, SA: AsRef<CStr>, SE: AsRef<CStr>>(
-    fd: &Fd,
+    fd: Fd,
     args: &[SA],
     env: &[SE],
 ) -> Result<Infallible> {
@@ -968,8 +970,8 @@ pub fn fexecve<Fd: AsFd, SA: AsRef<CStr>, SE: AsRef<CStr>>(
 /// is referenced as a file descriptor to the base directory plus a path.
 #[cfg(any(target_os = "android", target_os = "linux"))]
 #[inline]
-pub fn execveat<Fd: AsFd, SA: AsRef<CStr>, SE: AsRef<CStr>>(
-    dirfd: &Fd,
+pub fn execveat<Fd: AsDirFd, SA: AsRef<CStr>, SE: AsRef<CStr>>(
+    dirfd: Fd,
     pathname: &CStr,
     args: &[SA],
     env: &[SE],
@@ -981,7 +983,7 @@ pub fn execveat<Fd: AsFd, SA: AsRef<CStr>, SE: AsRef<CStr>>(
     unsafe {
         libc::syscall(
             libc::SYS_execveat,
-            dirfd.as_fd().as_raw_fd(),
+            dirfd.as_dir_fd(),
             pathname.as_ptr(),
             args_p.as_ptr(),
             env_p.as_ptr(),
@@ -1122,7 +1124,7 @@ pub fn close<Fd: IntoRawFd>(fd: Fd) -> Result<()> {
 /// Read from a raw file descriptor.
 ///
 /// See also [read(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/read.html)
-pub fn read<Fd: AsFd>(fd: &Fd, buf: &mut [u8]) -> Result<usize> {
+pub fn read<Fd: AsFd>(fd: Fd, buf: &mut [u8]) -> Result<usize> {
     let res = unsafe {
         libc::read(
             fd.as_fd().as_raw_fd(),
@@ -1137,7 +1139,7 @@ pub fn read<Fd: AsFd>(fd: &Fd, buf: &mut [u8]) -> Result<usize> {
 /// Write to a raw file descriptor.
 ///
 /// See also [write(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/write.html)
-pub fn write<Fd: AsFd>(fd: &Fd, buf: &[u8]) -> Result<usize> {
+pub fn write<Fd: AsFd>(fd: Fd, buf: &[u8]) -> Result<usize> {
     let res = unsafe {
         libc::write(
             fd.as_fd().as_raw_fd(),
@@ -1194,7 +1196,7 @@ pub enum Whence {
 /// Move the read/write file offset.
 ///
 /// See also [lseek(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/lseek.html)
-pub fn lseek<Fd: AsFd>(fd: &Fd, offset: off_t, whence: Whence) -> Result<off_t> {
+pub fn lseek<Fd: AsFd>(fd: Fd, offset: off_t, whence: Whence) -> Result<off_t> {
     let res =
         unsafe { libc::lseek(fd.as_fd().as_raw_fd(), offset, whence as i32) };
 
@@ -1203,7 +1205,7 @@ pub fn lseek<Fd: AsFd>(fd: &Fd, offset: off_t, whence: Whence) -> Result<off_t> 
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 pub fn lseek64<Fd: AsFd>(
-    fd: &Fd,
+    fd: Fd,
     offset: libc::off64_t,
     whence: Whence,
 ) -> Result<libc::off64_t> {
@@ -1293,12 +1295,12 @@ pub fn truncate<P: ?Sized + NixPath>(path: &P, len: off_t) -> Result<()> {
 ///
 /// See also
 /// [ftruncate(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/ftruncate.html)
-pub fn ftruncate<Fd: AsFd>(fd: &Fd, len: off_t) -> Result<()> {
+pub fn ftruncate<Fd: AsFd>(fd: Fd, len: off_t) -> Result<()> {
     Errno::result(unsafe { libc::ftruncate(fd.as_fd().as_raw_fd(), len) })
         .map(drop)
 }
 
-pub fn isatty<Fd: AsFd>(fd: &Fd) -> Result<bool> {
+pub fn isatty<Fd: AsFd>(fd: Fd) -> Result<bool> {
     unsafe {
         // ENOTTY means `fd` is a valid file descriptor, but not a TTY, so
         // we return `Ok(false)`
@@ -1334,10 +1336,10 @@ pub enum LinkatFlags {
 /// # References
 /// See also [linkat(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/linkat.html)
 #[cfg(not(target_os = "redox"))] // RedoxFS does not support symlinks yet
-pub fn linkat<Fd1: AsFd, P1: ?Sized + NixPath, Fd2: AsFd, P2: ?Sized + NixPath>(
-    olddirfd: &Fd1,
+pub fn linkat<Fd1: AsDirFd, P1: ?Sized + NixPath, Fd2: AsDirFd, P2: ?Sized + NixPath>(
+    olddirfd: Fd1,
     oldpath: &P1,
-    newdirfd: &Fd2,
+    newdirfd: Fd2,
     newpath: &P2,
     flag: LinkatFlags,
 ) -> Result<()> {
@@ -1349,9 +1351,9 @@ pub fn linkat<Fd1: AsFd, P1: ?Sized + NixPath, Fd2: AsFd, P2: ?Sized + NixPath>(
     let res = oldpath.with_nix_path(|oldcstr| {
         newpath.with_nix_path(|newcstr| unsafe {
             libc::linkat(
-                olddirfd.as_fd().as_raw_fd(),
+                olddirfd.as_dir_fd(),
                 oldcstr.as_ptr(),
-                newdirfd.as_fd().as_raw_fd(),
+                newdirfd.as_dir_fd(),
                 newcstr.as_ptr(),
                 atflag.bits() as c_int,
             )
@@ -1387,8 +1389,8 @@ pub enum UnlinkatFlags {
 /// # References
 /// See also [unlinkat(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/unlinkat.html)
 #[cfg(not(target_os = "redox"))]
-pub fn unlinkat<Fd: AsFd, P: ?Sized + NixPath>(
-    dirfd: &Fd,
+pub fn unlinkat<Fd: AsDirFd, P: ?Sized + NixPath>(
+    dirfd: Fd,
     path: &P,
     flag: UnlinkatFlags,
 ) -> Result<()> {
@@ -1398,7 +1400,7 @@ pub fn unlinkat<Fd: AsFd, P: ?Sized + NixPath>(
     };
     let res = path.with_nix_path(|cstr| unsafe {
         libc::unlinkat(
-            dirfd.as_fd().as_raw_fd(),
+            dirfd.as_dir_fd(),
             cstr.as_ptr(),
             atflag.bits() as c_int,
         )
@@ -1434,7 +1436,7 @@ pub fn sync() {
 ///
 /// See also [syncfs(2)](https://man7.org/linux/man-pages/man2/sync.2.html)
 #[cfg(target_os = "linux")]
-pub fn syncfs<Fd: AsFd>(fd: &Fd) -> Result<()> {
+pub fn syncfs<Fd: AsFd>(fd: Fd) -> Result<()> {
     let res = unsafe { libc::syncfs(fd.as_fd().as_raw_fd()) };
 
     Errno::result(res).map(drop)
@@ -1444,7 +1446,7 @@ pub fn syncfs<Fd: AsFd>(fd: &Fd) -> Result<()> {
 ///
 /// See also [fsync(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/fsync.html)
 #[inline]
-pub fn fsync<Fd: AsFd>(fd: &Fd) -> Result<()> {
+pub fn fsync<Fd: AsFd>(fd: Fd) -> Result<()> {
     let res = unsafe { libc::fsync(fd.as_fd().as_raw_fd()) };
 
     Errno::result(res).map(drop)
@@ -1466,7 +1468,7 @@ pub fn fsync<Fd: AsFd>(fd: &Fd) -> Result<()> {
     target_os = "solaris"
 ))]
 #[inline]
-pub fn fdatasync<Fd: AsFd>(fd: &Fd) -> Result<()> {
+pub fn fdatasync<Fd: AsFd>(fd: Fd) -> Result<()> {
     let res = unsafe { libc::fdatasync(fd.as_fd().as_raw_fd()) };
 
     Errno::result(res).map(drop)
@@ -3429,15 +3431,15 @@ pub fn access<P: ?Sized + NixPath>(path: &P, amode: AccessFlags) -> Result<()> {
 /// [faccessat(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/faccessat.html)
 // redox: does not appear to support the *at family of syscalls.
 #[cfg(not(target_os = "redox"))]
-pub fn faccessat<Fd: AsFd, P: ?Sized + NixPath>(
-    dirfd: &Fd,
+pub fn faccessat<Fd: AsDirFd, P: ?Sized + NixPath>(
+    dirfd: Fd,
     path: &P,
     mode: AccessFlags,
     flags: AtFlags,
 ) -> Result<()> {
     let res = path.with_nix_path(|cstr| unsafe {
         libc::faccessat(
-            dirfd.as_fd().as_raw_fd(),
+            dirfd.as_dir_fd(),
             cstr.as_ptr(),
             mode.bits(),
             flags.bits(),

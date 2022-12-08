@@ -14,7 +14,7 @@ use libc::mode_t;
 #[cfg(not(any(target_os = "netbsd", target_os = "redox")))]
 use libc::{S_IFLNK, S_IFMT};
 #[cfg(not(target_os = "redox"))]
-use nix::AT_FDCWD;
+use nix::Cwd;
 
 #[cfg(not(target_os = "redox"))]
 use nix::errno::Errno;
@@ -194,7 +194,7 @@ fn test_fchmodat() {
 
     let mut mode2 = Mode::empty();
     mode2.insert(Mode::S_IROTH);
-    fchmodat(AT_FDCWD, filename, mode2, FchmodatFlags::FollowSymlink).unwrap();
+    fchmodat(Cwd, filename, mode2, FchmodatFlags::FollowSymlink).unwrap();
 
     let file_stat2 = stat(&fullpath).unwrap();
     assert_eq!(file_stat2.st_mode as mode_t & 0o7777, mode2.bits());
@@ -305,7 +305,7 @@ fn test_utimensat() {
     chdir(tempdir.path()).unwrap();
 
     utimensat(
-        AT_FDCWD,
+        Cwd,
         filename,
         &TimeSpec::seconds(500),
         &TimeSpec::seconds(800),
@@ -403,7 +403,7 @@ fn test_mknodat() {
     let target_dir =
         Dir::open(tempdir.path(), OFlag::O_DIRECTORY, Mode::S_IRWXU).unwrap();
     mknodat(
-        unsafe { &BorrowedFd::borrow_raw(target_dir.as_raw_fd()) },
+        unsafe { BorrowedFd::borrow_raw(target_dir.as_raw_fd()) },
         file_name,
         SFlag::S_IFREG,
         Mode::S_IRWXU,
@@ -411,7 +411,7 @@ fn test_mknodat() {
     )
     .unwrap();
     let mode = fstatat(
-        unsafe { &BorrowedFd::borrow_raw(target_dir.as_raw_fd()) },
+        unsafe { BorrowedFd::borrow_raw(target_dir.as_raw_fd()) },
         file_name,
         AtFlags::AT_SYMLINK_NOFOLLOW,
     )

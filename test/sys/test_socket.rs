@@ -197,9 +197,9 @@ pub fn test_socketpair() {
         SockFlag::empty(),
     )
     .unwrap();
-    write(unsafe { &BorrowedFd::borrow_raw(fd1) }, b"hello").unwrap();
+    write(unsafe { BorrowedFd::borrow_raw(fd1) }, b"hello").unwrap();
     let mut buf = [0; 5];
-    read(unsafe { &BorrowedFd::borrow_raw(fd2) }, &mut buf).unwrap();
+    read(unsafe { BorrowedFd::borrow_raw(fd2) }, &mut buf).unwrap();
 
     assert_eq!(&buf[..], b"hello");
 }
@@ -736,7 +736,7 @@ pub fn test_scm_rights() {
     // Ensure that the received file descriptor works
     write(&w, b"world").unwrap();
     let mut buf = [0u8; 5];
-    read(unsafe { &BorrowedFd::borrow_raw(received_r) }, &mut buf).unwrap();
+    read(unsafe { BorrowedFd::borrow_raw(received_r) }, &mut buf).unwrap();
     assert_eq!(&buf[..], b"world");
     close(received_r).unwrap();
 }
@@ -798,7 +798,7 @@ pub fn test_af_alg_cipher() {
     // allocate buffer for encrypted data
     let mut encrypted = vec![0u8; payload_len];
     let num_bytes = read(
-        unsafe { &BorrowedFd::borrow_raw(session_socket) },
+        unsafe { BorrowedFd::borrow_raw(session_socket) },
         &mut encrypted,
     )
     .expect("read encrypt");
@@ -818,7 +818,7 @@ pub fn test_af_alg_cipher() {
     // allocate buffer for decrypted data
     let mut decrypted = vec![0u8; payload_len];
     let num_bytes = read(
-        unsafe { &BorrowedFd::borrow_raw(session_socket) },
+        unsafe { BorrowedFd::borrow_raw(session_socket) },
         &mut decrypted,
     )
     .expect("read decrypt");
@@ -903,7 +903,7 @@ pub fn test_af_alg_aead() {
     let mut encrypted =
         vec![0u8; (assoc_size as usize) + payload_len + auth_size];
     let num_bytes = read(
-        unsafe { &BorrowedFd::borrow_raw(session_socket) },
+        unsafe { BorrowedFd::borrow_raw(session_socket) },
         &mut encrypted,
     )
     .expect("read encrypt");
@@ -938,7 +938,7 @@ pub fn test_af_alg_aead() {
     fcntl(session_socket, FcntlArg::F_SETFL(OFlag::O_NONBLOCK))
         .expect("fcntl non_blocking");
     let num_bytes = read(
-        unsafe { &BorrowedFd::borrow_raw(session_socket) },
+        unsafe { BorrowedFd::borrow_raw(session_socket) },
         &mut decrypted,
     )
     .expect("read decrypt");
@@ -1413,7 +1413,7 @@ fn test_impl_scm_credentials_and_rights(mut space: Vec<u8>) {
     // Ensure that the received file descriptor works
     write(&w, b"world").unwrap();
     let mut buf = [0u8; 5];
-    read(unsafe { &BorrowedFd::borrow_raw(received_r) }, &mut buf).unwrap();
+    read(unsafe { BorrowedFd::borrow_raw(received_r) }, &mut buf).unwrap();
     assert_eq!(&buf[..], b"world");
     close(received_r).unwrap();
 }
@@ -1448,7 +1448,7 @@ pub fn test_named_unixdomain() {
         )
         .expect("socket failed");
         connect(s2, &sockaddr).expect("connect failed");
-        write(unsafe { &BorrowedFd::borrow_raw(s2) }, b"hello")
+        write(unsafe { BorrowedFd::borrow_raw(s2) }, b"hello")
             .expect("write failed");
         close(s2).unwrap();
     });
@@ -1456,7 +1456,7 @@ pub fn test_named_unixdomain() {
     let s3 = accept(s1).expect("accept failed");
 
     let mut buf = [0; 5];
-    read(unsafe { &BorrowedFd::borrow_raw(s3) }, &mut buf).unwrap();
+    read(unsafe { BorrowedFd::borrow_raw(s3) }, &mut buf).unwrap();
     close(s3).unwrap();
     close(s1).unwrap();
     thr.join().unwrap();

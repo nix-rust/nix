@@ -162,8 +162,7 @@ pub mod unistd;
 use std::ffi::{CStr, CString, OsStr};
 use std::mem::MaybeUninit;
 use std::os::unix::ffi::OsStrExt;
-#[cfg(not(target_os = "redox"))]
-use std::os::unix::io::BorrowedFd;
+use std::os::unix::io::{AsFd, AsRawFd, RawFd};
 use std::path::{Path, PathBuf};
 use std::{ptr, result, slice};
 
@@ -184,16 +183,40 @@ pub type Result<T> = result::Result<T, Errno>;
 /// ones.
 pub type Error = Errno;
 
-/// A file descriptor representing the current working directory.
+/// A trait representing directory file descriptors, to be used in the
+/// `*at` family of functions.
+pub trait AsDirFd {
+    /// Extracts the raw file descriptor.
+    fn as_dir_fd(&self) -> RawFd;
+}
+
+impl<Fd: AsFd> AsDirFd for Fd {
+    fn as_dir_fd(&self) -> RawFd {
+        self.as_fd().as_raw_fd()
+    }
+}
+
+/// The `AT_FDCWD` marker file descriptor.
+///
+/// # Examples
+///
+/// ```
+/// # use nix::Cwd;
+/// # use nix::fcntl::{OFlag, openat};
+/// # use nix::sys::stat::Mode;
+///
+/// let file = openat(Cwd, "README.md", OFlag::O_RDONLY, Mode::empty());
+/// ```
 #[cfg(not(target_os = "redox"))]
-pub const AT_FDCWD: &BorrowedFd<'static> = unsafe {
-    &BorrowedFd::borrow_raw(if cfg!(target_os = "haiku") {
-        // Hack to work around BorrowedFd not allowing -1
-        -2
-    } else {
+#[derive(Copy, Clone, Debug)]
+pub struct Cwd;
+
+#[cfg(not(target_os = "redox"))]
+impl AsDirFd for Cwd {
+    fn as_dir_fd(&self) -> RawFd {
         libc::AT_FDCWD
-    })
-};
+    }
+}
 
 /// Common trait used to represent file system paths by many Nix functions.
 pub trait NixPath {

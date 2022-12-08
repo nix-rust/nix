@@ -9,6 +9,8 @@ use std::os::unix::io::FromRawFd;
 use std::os::unix::io::OwnedFd;
 use std::os::unix::io::RawFd;
 
+#[cfg(not(target_os = "redox"))]
+use crate::AsDirFd;
 #[cfg(feature = "fs")]
 use crate::{sys::stat::Mode, NixPath, Result};
 #[cfg(any(target_os = "android", target_os = "linux"))]
@@ -211,15 +213,15 @@ pub fn open<P: ?Sized + NixPath>(
 // The conversion is not identical on all operating systems.
 #[allow(clippy::useless_conversion)]
 #[cfg(not(target_os = "redox"))]
-pub fn openat<Fd: AsFd, P: ?Sized + NixPath>(
-    dirfd: &Fd,
+pub fn openat<Fd: AsDirFd, P: ?Sized + NixPath>(
+    dirfd: Fd,
     path: &P,
     oflag: OFlag,
     mode: Mode,
 ) -> Result<OwnedFd> {
     let fd = path.with_nix_path(|cstr| unsafe {
         libc::openat(
-            dirfd.as_fd().as_raw_fd(),
+            dirfd.as_dir_fd(),
             cstr.as_ptr(),
             oflag.bits(),
             mode.bits() as c_uint,
@@ -230,18 +232,18 @@ pub fn openat<Fd: AsFd, P: ?Sized + NixPath>(
 }
 
 #[cfg(not(target_os = "redox"))]
-pub fn renameat<Fd1: AsFd, P1: ?Sized + NixPath, Fd2: AsFd, P2: ?Sized + NixPath>(
-    old_dirfd: &Fd1,
+pub fn renameat<Fd1: AsDirFd, P1: ?Sized + NixPath, Fd2: AsDirFd, P2: ?Sized + NixPath>(
+    old_dirfd: Fd1,
     old_path: &P1,
-    new_dirfd: &Fd2,
+    new_dirfd: Fd2,
     new_path: &P2,
 ) -> Result<()> {
     let res = old_path.with_nix_path(|old_cstr| {
         new_path.with_nix_path(|new_cstr| unsafe {
             libc::renameat(
-                old_dirfd.as_fd().as_raw_fd(),
+                old_dirfd.as_dir_fd(),
                 old_cstr.as_ptr(),
-                new_dirfd.as_fd().as_raw_fd(),
+                new_dirfd.as_dir_fd(),
                 new_cstr.as_ptr(),
             )
         })
@@ -264,19 +266,19 @@ libc_bitflags! {
 feature! {
 #![feature = "fs"]
 #[cfg(all(target_os = "linux", target_env = "gnu"))]
-pub fn renameat2<Fd1: AsFd, P1: ?Sized + NixPath, Fd2: AsFd, P2: ?Sized + NixPath>(
-    old_dirfd: &Fd1,
+pub fn renameat2<Fd1: AsDirFd, P1: ?Sized + NixPath, Fd2: AsDirFd, P2: ?Sized + NixPath>(
+    old_dirfd: Fd1,
     old_path: &P1,
-    new_dirfd: &Fd2,
+    new_dirfd: Fd2,
     new_path: &P2,
     flags: RenameFlags,
 ) -> Result<()> {
     let res = old_path.with_nix_path(|old_cstr| {
         new_path.with_nix_path(|new_cstr| unsafe {
             libc::renameat2(
-                old_dirfd.as_fd().as_raw_fd(),
+                old_dirfd.as_dir_fd(),
                 old_cstr.as_ptr(),
-                new_dirfd.as_fd().as_raw_fd(),
+                new_dirfd.as_dir_fd(),
                 new_cstr.as_ptr(),
                 flags.bits(),
             )
@@ -404,10 +406,10 @@ pub fn readlink<P: ?Sized + NixPath>(path: &P) -> Result<OsString> {
 
 #[cfg(not(target_os = "redox"))]
 pub fn readlinkat<Fd: AsFd, P: ?Sized + NixPath>(
-    dirfd: &Fd,
+    dirfd: Fd,
     path: &P,
 ) -> Result<OsString> {
-    inner_readlink(Some(dirfd), path)
+    inner_readlink(Some(&dirfd), path)
 }
 }
 
@@ -623,9 +625,9 @@ feature! {
 /// returned.
 #[cfg(any(target_os = "android", target_os = "linux"))]
 pub fn copy_file_range<Fd1: AsFd, Fd2: AsFd>(
-    fd_in: &Fd1,
+    fd_in: Fd1,
     off_in: Option<&mut libc::loff_t>,
-    fd_out: &Fd2,
+    fd_out: Fd2,
     off_out: Option<&mut libc::loff_t>,
     len: usize,
 ) -> Result<usize> {
@@ -652,9 +654,9 @@ pub fn copy_file_range<Fd1: AsFd, Fd2: AsFd>(
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 pub fn splice<Fd1: AsFd, Fd2: AsFd>(
-    fd_in: &Fd1,
+    fd_in: Fd1,
     off_in: Option<&mut libc::loff_t>,
-    fd_out: &Fd2,
+    fd_out: Fd2,
     off_out: Option<&mut libc::loff_t>,
     len: usize,
     flags: SpliceFFlags,
@@ -681,8 +683,8 @@ pub fn splice<Fd1: AsFd, Fd2: AsFd>(
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 pub fn tee<Fd1: AsFd, Fd2: AsFd>(
-    fd_in: &Fd1,
-    fd_out: &Fd2,
+    fd_in: Fd1,
+    fd_out: Fd2,
     len: usize,
     flags: SpliceFFlags,
 ) -> Result<usize> {
@@ -699,7 +701,7 @@ pub fn tee<Fd1: AsFd, Fd2: AsFd>(
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 pub fn vmsplice<Fd: AsFd>(
-    fd: &Fd,
+    fd: Fd,
     iov: &[std::io::IoSlice<'_>],
     flags: SpliceFFlags,
 ) -> Result<usize> {
@@ -758,7 +760,7 @@ feature! {
 #[cfg(any(target_os = "linux"))]
 #[cfg(feature = "fs")]
 pub fn fallocate<Fd: AsFd>(
-    fd: &Fd,
+    fd: Fd,
     mode: FallocateFlags,
     offset: libc::off_t,
     len: libc::off_t,
@@ -834,7 +836,7 @@ impl SpacectlRange {
 /// ```
 #[cfg(target_os = "freebsd")]
 pub fn fspacectl<Fd: AsFd>(
-    fd: &Fd,
+    fd: Fd,
     range: SpacectlRange,
 ) -> Result<SpacectlRange> {
     let mut rqsr = libc::spacectl_range {
@@ -885,7 +887,7 @@ pub fn fspacectl<Fd: AsFd>(
 /// ```
 #[cfg(target_os = "freebsd")]
 pub fn fspacectl_all<Fd: AsFd>(
-    fd: &Fd,
+    fd: Fd,
     offset: libc::off_t,
     len: libc::off_t,
 ) -> Result<()> {
@@ -941,7 +943,7 @@ mod posix_fadvise {
     feature! {
     #![feature = "fs"]
     pub fn posix_fadvise<Fd: AsFd>(
-        fd: &Fd,
+        fd: Fd,
         offset: libc::off_t,
         len: libc::off_t,
         advice: PosixFadviseAdvice,
@@ -974,7 +976,7 @@ mod posix_fadvise {
     target_os = "freebsd"
 ))]
 pub fn posix_fallocate<Fd: AsFd>(
-    fd: &Fd,
+    fd: Fd,
     offset: libc::off_t,
     len: libc::off_t,
 ) -> Result<()> {

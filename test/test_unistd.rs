@@ -20,7 +20,7 @@ use nix::sys::wait::*;
 use nix::unistd::ForkResult::*;
 use nix::unistd::*;
 #[cfg(not(target_os = "redox"))]
-use nix::AT_FDCWD;
+use nix::Cwd;
 use std::env;
 #[cfg(not(any(target_os = "fuchsia", target_os = "redox")))]
 use std::ffi::CString;
@@ -140,7 +140,7 @@ fn test_mkfifoat_none() {
     let tempdir = tempdir().unwrap();
     let mkfifoat_fifo = tempdir.path().join("mkfifoat_fifo");
 
-    mkfifoat(AT_FDCWD, &mkfifoat_fifo, Mode::S_IRUSR).unwrap();
+    mkfifoat(Cwd, &mkfifoat_fifo, Mode::S_IRUSR).unwrap();
 
     let stats = stat::stat(&mkfifoat_fifo).unwrap();
     let typ = SFlag::from_bits_truncate(stats.st_mode);
@@ -181,7 +181,7 @@ fn test_mkfifoat_directory_none() {
     let _m = crate::CWD_LOCK.read();
 
     // mkfifoat should fail if a directory is given
-    mkfifoat(AT_FDCWD, &env::temp_dir(), Mode::S_IRUSR)
+    mkfifoat(Cwd, &env::temp_dir(), Mode::S_IRUSR)
         .expect_err("assertion failed");
 }
 
@@ -522,8 +522,7 @@ fn test_fchown() {
     fchown(&path, uid, gid).unwrap();
     fchown(&path, uid, None).unwrap();
     fchown(&path, None, gid).unwrap();
-    fchown(unsafe { &BorrowedFd::borrow_raw(999999999) }, uid, gid)
-        .unwrap_err();
+    fchown(unsafe { BorrowedFd::borrow_raw(999999999) }, uid, gid).unwrap_err();
 }
 
 #[test]
@@ -545,11 +544,10 @@ fn test_fchownat() {
     fchownat(&dirfd, "file", uid, gid, FchownatFlags::FollowSymlink).unwrap();
 
     chdir(tempdir.path()).unwrap();
-    fchownat(AT_FDCWD, "file", uid, gid, FchownatFlags::FollowSymlink).unwrap();
+    fchownat(Cwd, "file", uid, gid, FchownatFlags::FollowSymlink).unwrap();
 
     fs::remove_file(&path).unwrap();
-    fchownat(AT_FDCWD, "file", uid, gid, FchownatFlags::FollowSymlink)
-        .unwrap_err();
+    fchownat(Cwd, "file", uid, gid, FchownatFlags::FollowSymlink).unwrap_err();
 }
 
 #[test]
@@ -862,7 +860,7 @@ fn test_symlinkat() {
 
     let target = tempdir.path().join("a");
     let linkpath = tempdir.path().join("b");
-    symlinkat(&target, AT_FDCWD, &linkpath).unwrap();
+    symlinkat(&target, Cwd, &linkpath).unwrap();
     assert_eq!(
         readlink(&linkpath).unwrap().to_str().unwrap(),
         target.to_str().unwrap()
@@ -932,7 +930,7 @@ fn test_linkat_olddirfd_none() {
     // Attempt hard link file using curent working directory as relative path for old file path
     chdir(tempdir_oldfile.path()).unwrap();
     linkat(
-        AT_FDCWD,
+        Cwd,
         oldfilename,
         &dirfd,
         newfilename,
@@ -967,7 +965,7 @@ fn test_linkat_newdirfd_none() {
     linkat(
         &dirfd,
         oldfilename,
-        AT_FDCWD,
+        Cwd,
         newfilename,
         LinkatFlags::SymlinkFollow,
     )
@@ -999,7 +997,7 @@ fn test_linkat_no_follow_symlink() {
     File::create(&oldfilepath).unwrap();
 
     // Create symlink to file
-    symlinkat(&oldfilepath, AT_FDCWD, &symoldfilepath).unwrap();
+    symlinkat(&oldfilepath, Cwd, &symoldfilepath).unwrap();
 
     // Get file descriptor for base directory
     let dirfd = open(tempdir.path(), OFlag::empty(), Mode::empty()).unwrap();
@@ -1040,7 +1038,7 @@ fn test_linkat_follow_symlink() {
     File::create(&oldfilepath).unwrap();
 
     // Create symlink to file
-    symlinkat(&oldfilepath, AT_FDCWD, &symoldfilepath).unwrap();
+    symlinkat(&oldfilepath, Cwd, &symoldfilepath).unwrap();
 
     // Get file descriptor for base directory
     let dirfd = open(tempdir.path(), OFlag::empty(), Mode::empty()).unwrap();
@@ -1285,7 +1283,7 @@ fn test_faccessat_none_not_existing() {
     let tempdir = tempdir().unwrap();
     let dir = tempdir.path().join("does_not_exist.txt");
     assert_eq!(
-        faccessat(AT_FDCWD, &dir, AccessFlags::F_OK, AtFlags::empty())
+        faccessat(Cwd, &dir, AccessFlags::F_OK, AtFlags::empty())
             .err()
             .unwrap(),
         Errno::ENOENT
@@ -1315,7 +1313,7 @@ fn test_faccessat_none_file_exists() {
     let path = tempdir.path().join("does_exist.txt");
     let _file = File::create(path.clone()).unwrap();
     assert!(faccessat(
-        AT_FDCWD,
+        Cwd,
         &path,
         AccessFlags::R_OK | AccessFlags::W_OK,
         AtFlags::empty(),

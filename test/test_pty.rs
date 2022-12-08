@@ -260,7 +260,7 @@ fn test_forkpty() {
     match pty.fork_result {
         Child => {
             write(
-                unsafe { &BorrowedFd::borrow_raw(STDOUT_FILENO) },
+                unsafe { BorrowedFd::borrow_raw(STDOUT_FILENO) },
                 string.as_bytes(),
             )
             .unwrap();

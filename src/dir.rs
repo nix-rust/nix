@@ -2,11 +2,10 @@
 
 use crate::errno::Errno;
 use crate::fcntl::{self, OFlag};
-use crate::sys;
+use crate::{sys, AsDirFd};
 use crate::{Error, NixPath, Result};
 use cfg_if::cfg_if;
 use std::ffi;
-use std::os::unix::io::AsFd;
 use std::os::unix::io::{AsRawFd, IntoRawFd, RawFd};
 use std::ptr;
 
@@ -44,8 +43,8 @@ impl Dir {
     }
 
     /// Opens the given path as with `fcntl::openat`.
-    pub fn openat<Fd: AsFd, P: ?Sized + NixPath>(
-        dirfd: &Fd,
+    pub fn openat<Fd: AsDirFd, P: ?Sized + NixPath>(
+        dirfd: Fd,
         path: &P,
         oflag: OFlag,
         mode: sys::stat::Mode,
