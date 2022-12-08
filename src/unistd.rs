@@ -4,8 +4,6 @@ use crate::errno::{self, Errno};
 #[cfg(not(target_os = "redox"))]
 #[cfg(feature = "fs")]
 use crate::fcntl::AtFlags;
-#[cfg(feature = "fs")]
-use crate::fcntl::{fcntl, FcntlArg::F_SETFD, FdFlag, OFlag};
 #[cfg(all(
     feature = "fs",
     any(
@@ -459,36 +457,58 @@ pub fn dup2<Fd: AsFd>(oldfd: Fd, newfd: &mut OwnedFd) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
+#[inline]
+pub fn dup2_raw<Fd1: AsFd, Fd2: AsRawFd + IntoRawFd>(
+    oldfd: Fd1,
+    newfd: Fd2,
+) -> Result<OwnedFd> {
+    let res =
+        unsafe { libc::dup2(oldfd.as_fd().as_raw_fd(), newfd.as_raw_fd()) };
+
+    Errno::result(res)
+        .map(|_| unsafe { OwnedFd::from_raw_fd(newfd.into_raw_fd()) })
+}
+
 /// Create a new copy of the specified file descriptor using the specified fd
 /// and flags (see [dup(2)](https://man7.org/linux/man-pages/man2/dup.2.html)).
 ///
 /// This function behaves similar to `dup2()` but allows for flags to be
 /// specified.
+#[cfg(any(target_os = "android", target_os = "linux"))]
 pub fn dup3<Fd: AsFd>(
     oldfd: Fd,
     newfd: &mut OwnedFd,
-    flags: OFlag,
+    flags: crate::fcntl::OFlag,
 ) -> Result<()> {
-    dup3_polyfill(oldfd, newfd, flags)
+    let res = unsafe {
+        libc::syscall(
+            libc::SYS_dup3,
+            oldfd.as_fd().as_raw_fd(),
+            newfd.as_raw_fd(),
+            flags.bits(),
+        )
+    };
+
+    Errno::result(res).map(drop)
 }
 
-#[inline]
-fn dup3_polyfill<Fd: AsFd>(
-    oldfd: Fd,
-    newfd: &mut OwnedFd,
-    flags: OFlag,
-) -> Result<()> {
-    if oldfd.as_fd().as_raw_fd() == newfd.as_raw_fd() {
-        return Err(Errno::EINVAL);
-    }
+#[cfg(any(target_os = "android", target_os = "linux"))]
+pub fn dup3_raw<Fd1: AsFd, Fd2: AsRawFd + IntoRawFd>(
+    oldfd: Fd1,
+    newfd: Fd2,
+    flags: crate::fcntl::OFlag,
+) -> Result<OwnedFd> {
+    let res = unsafe {
+        libc::syscall(
+            libc::SYS_dup3,
+            oldfd.as_fd().as_raw_fd(),
+            newfd.as_raw_fd(),
+            flags.bits(),
+        )
+    };
 
-    dup2(oldfd, newfd)?;
-
-    if flags.contains(OFlag::O_CLOEXEC) {
-        fcntl(newfd.as_raw_fd(), F_SETFD(FdFlag::FD_CLOEXEC))?;
-    }
-
-    Ok(())
+    Errno::result(res)
+        .map(|_| unsafe { OwnedFd::from_raw_fd(newfd.into_raw_fd()) })
 }
 
 /// Change the current working directory of the calling process (see
@@ -1264,7 +1284,7 @@ feature! {
     target_os = "openbsd",
     target_os = "solaris"
 ))]
-pub fn pipe2(flags: OFlag) -> Result<(OwnedFd, OwnedFd)> {
+pub fn pipe2(flags: crate::fcntl::OFlag) -> Result<(OwnedFd, OwnedFd)> {
     let mut fds = mem::MaybeUninit::<[c_int; 2]>::uninit();
 
     let res =
