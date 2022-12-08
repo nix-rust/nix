@@ -555,16 +555,13 @@ fn test_lseek() {
     const CONTENTS: &[u8] = b"abcdef123456";
     let mut tmp = tempfile().unwrap();
     tmp.write_all(CONTENTS).unwrap();
-    let tmpfd = tmp.into_raw_fd();
 
     let offset: off_t = 5;
-    lseek(tmpfd, offset, Whence::SeekSet).unwrap();
+    lseek(tmp.as_raw_fd(), offset, Whence::SeekSet).unwrap();
 
     let mut buf = [0u8; 7];
-    crate::read_exact(tmpfd, &mut buf);
+    crate::read_exact(&tmp, &mut buf);
     assert_eq!(b"f123456", &buf);
-
-    close(tmpfd).unwrap();
 }
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
@@ -573,15 +570,12 @@ fn test_lseek64() {
     const CONTENTS: &[u8] = b"abcdef123456";
     let mut tmp = tempfile().unwrap();
     tmp.write_all(CONTENTS).unwrap();
-    let tmpfd = tmp.into_raw_fd();
 
-    lseek64(tmpfd, 5, Whence::SeekSet).unwrap();
+    lseek64(tmp.as_raw_fd(), 5, Whence::SeekSet).unwrap();
 
     let mut buf = [0u8; 7];
-    crate::read_exact(tmpfd, &mut buf);
+    crate::read_exact(&tmp, &mut buf);
     assert_eq!(b"f123456", &buf);
-
-    close(tmpfd).unwrap();
 }
 
 cfg_if! {

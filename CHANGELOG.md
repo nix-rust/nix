@@ -16,6 +16,9 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   ([#1862](https://github.com/nix-rust/nix/pull/1862))
 - The epoll interface now uses a type.
   ([#1882](https://github.com/nix-rust/nix/pull/1882))
+- With I/O-safe type applied in `pty::OpenptyResult` and `pty::ForkptyResult`,
+  users no longer need to manually close the file descriptors in these types.
+  ([#1921](https://github.com/nix-rust/nix/pull/1921))
 
 ### Fixed
 ### Removed
