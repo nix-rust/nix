@@ -1231,6 +1231,7 @@ pub fn isatty(fd: RawFd) -> Result<bool> {
 libc_bitflags! {
     /// Flags for `linkat` function.
     pub struct LinkatFlags: c_int {
+        #[cfg(not(target_os = "redox"))]
         AT_SYMLINK_FOLLOW;
         #[cfg(any(target_os = "android", target_os = "linux"))]
         AT_EMPTY_PATH;
