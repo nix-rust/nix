@@ -1143,7 +1143,7 @@ pub fn cfmakesane(termios: &mut Termios) {
 /// `tcgetattr()` returns a `Termios` structure with the current configuration for a port. Modifying
 /// this structure *will not* reconfigure the port, instead the modifications should be done to
 /// the `Termios` structure and then the port should be reconfigured using `tcsetattr()`.
-pub fn tcgetattr<Fd: AsFd>(fd: &Fd) -> Result<Termios> {
+pub fn tcgetattr<Fd: AsFd>(fd: Fd) -> Result<Termios> {
     let mut termios = mem::MaybeUninit::uninit();
 
     let res = unsafe {
@@ -1162,7 +1162,7 @@ pub fn tcgetattr<Fd: AsFd>(fd: &Fd) -> Result<Termios> {
 /// takes affect at a time specified by `actions`. Note that this function may return success if
 /// *any* of the parameters were successfully set, not only if all were set successfully.
 pub fn tcsetattr<Fd: AsFd>(
-    fd: &Fd,
+    fd: Fd,
     actions: SetArg,
     termios: &Termios,
 ) -> Result<()> {
@@ -1179,7 +1179,7 @@ pub fn tcsetattr<Fd: AsFd>(
 
 /// Block until all output data is written (see
 /// [tcdrain(3p)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/tcdrain.html)).
-pub fn tcdrain<Fd: AsFd>(fd: &Fd) -> Result<()> {
+pub fn tcdrain<Fd: AsFd>(fd: Fd) -> Result<()> {
     Errno::result(unsafe { libc::tcdrain(fd.as_fd().as_raw_fd()) }).map(drop)
 }
 
@@ -1188,7 +1188,7 @@ pub fn tcdrain<Fd: AsFd>(fd: &Fd) -> Result<()> {
 ///
 /// `tcflow()` suspends of resumes the transmission or reception of data for the given port
 /// depending on the value of `action`.
-pub fn tcflow<Fd: AsFd>(fd: &Fd, action: FlowArg) -> Result<()> {
+pub fn tcflow<Fd: AsFd>(fd: Fd, action: FlowArg) -> Result<()> {
     Errno::result(unsafe {
         libc::tcflow(fd.as_fd().as_raw_fd(), action as c_int)
     })
@@ -1200,7 +1200,7 @@ pub fn tcflow<Fd: AsFd>(fd: &Fd, action: FlowArg) -> Result<()> {
 ///
 /// `tcflush()` will discard data for a terminal port in the input queue, output queue, or both
 /// depending on the value of `action`.
-pub fn tcflush<Fd: AsFd>(fd: &Fd, action: FlushArg) -> Result<()> {
+pub fn tcflush<Fd: AsFd>(fd: Fd, action: FlushArg) -> Result<()> {
     Errno::result(unsafe {
         libc::tcflush(fd.as_fd().as_raw_fd(), action as c_int)
     })
@@ -1212,7 +1212,7 @@ pub fn tcflush<Fd: AsFd>(fd: &Fd, action: FlushArg) -> Result<()> {
 ///
 /// When using asynchronous data transmission `tcsendbreak()` will transmit a continuous stream
 /// of zero-valued bits for an implementation-defined duration.
-pub fn tcsendbreak<Fd: AsFd>(fd: &Fd, duration: c_int) -> Result<()> {
+pub fn tcsendbreak<Fd: AsFd>(fd: Fd, duration: c_int) -> Result<()> {
     Errno::result(unsafe {
         libc::tcsendbreak(fd.as_fd().as_raw_fd(), duration)
     })
@@ -1223,7 +1223,7 @@ feature! {
 #![feature = "process"]
 /// Get the session controlled by the given terminal (see
 /// [tcgetsid(3)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/tcgetsid.html)).
-pub fn tcgetsid<Fd: AsFd>(fd: &Fd) -> Result<Pid> {
+pub fn tcgetsid<Fd: AsFd>(fd: Fd) -> Result<Pid> {
     let res = unsafe { libc::tcgetsid(fd.as_fd().as_raw_fd()) };
 
     Errno::result(res).map(Pid::from_raw)

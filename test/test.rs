@@ -70,7 +70,7 @@ use std::os::unix::io::{AsFd, AsRawFd};
 use std::path::PathBuf;
 
 /// Helper function analogous to `std::io::Read::read_exact`, but for `Fd`s
-fn read_exact<Fd: AsFd>(f: &Fd, buf: &mut [u8]) {
+fn read_exact<Fd: AsFd>(f: Fd, buf: &mut [u8]) {
     let mut len = 0;
     while len < buf.len() {
         // get_mut would be better than split_at_mut, but it requires nightly

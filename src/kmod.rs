@@ -80,7 +80,7 @@ libc_bitflags!(
 ///
 /// See [`man init_module(2)`](https://man7.org/linux/man-pages/man2/init_module.2.html) for more information.
 pub fn finit_module<Fd: AsFd>(
-    fd: &Fd,
+    fd: Fd,
     param_values: &CStr,
     flags: ModuleInitFlags,
 ) -> Result<()> {
