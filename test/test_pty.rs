@@ -136,9 +136,9 @@ fn test_open_ptty_pair() {
 
 /// Put the terminal in raw mode.
 fn make_raw<Fd: AsFd>(fd: Fd) {
-    let mut termios = tcgetattr(fd).unwrap();
+    let mut termios = tcgetattr(&fd).unwrap();
     cfmakeraw(&mut termios);
-    tcsetattr(fd, SetArg::TCSANOW, &termios).unwrap();
+    tcsetattr(&fd, SetArg::TCSANOW, &termios).unwrap();
 }
 
 /// Test `io::Read` on the PTTY master
