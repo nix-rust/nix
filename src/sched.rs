@@ -16,7 +16,7 @@ mod sched_linux_like {
     use libc::{self, c_int, c_void};
     use std::mem;
     use std::option::Option;
-    use std::os::unix::io::RawFd;
+    use std::os::unix::io::{AsFd, AsRawFd};
 
     // For some functions taking with a parameter of type CloneFlags,
     // only a subset of these flags have an effect.
@@ -136,8 +136,8 @@ mod sched_linux_like {
     /// reassociate thread with a namespace
     ///
     /// See also [setns(2)](https://man7.org/linux/man-pages/man2/setns.2.html)
-    pub fn setns(fd: RawFd, nstype: CloneFlags) -> Result<()> {
-        let res = unsafe { libc::setns(fd, nstype.bits()) };
+    pub fn setns<Fd: AsFd>(fd: Fd, nstype: CloneFlags) -> Result<()> {
+        let res = unsafe { libc::setns(fd.as_fd().as_raw_fd(), nstype.bits()) };
 
         Errno::result(res).map(drop)
     }

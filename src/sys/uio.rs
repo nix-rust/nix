@@ -4,12 +4,12 @@ use crate::errno::Errno;
 use crate::Result;
 use libc::{self, c_int, c_void, off_t, size_t};
 use std::io::{IoSlice, IoSliceMut};
-use std::os::unix::io::RawFd;
+use std::os::unix::io::{AsFd, AsRawFd};
 
 /// Low-level vectored write to a raw file descriptor
 ///
 /// See also [writev(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/writev.html)
-pub fn writev(fd: RawFd, iov: &[IoSlice<'_>]) -> Result<usize> {
+pub fn writev<Fd: AsFd>(fd: Fd, iov: &[IoSlice<'_>]) -> Result<usize> {
     // SAFETY: to quote the documentation for `IoSlice`:
     //
     // [IoSlice] is semantically a wrapper around a &[u8], but is
@@ -18,7 +18,7 @@ pub fn writev(fd: RawFd, iov: &[IoSlice<'_>]) -> Result<usize> {
     //
     // Because it is ABI compatible, a pointer cast here is valid
     let res = unsafe {
-        libc::writev(fd, iov.as_ptr() as *const libc::iovec, iov.len() as c_int)
+        libc::writev(fd.as_fd().as_raw_fd(), iov.as_ptr() as *const libc::iovec, iov.len() as c_int)
     };
 
     Errno::result(res).map(|r| r as usize)
@@ -27,10 +27,10 @@ pub fn writev(fd: RawFd, iov: &[IoSlice<'_>]) -> Result<usize> {
 /// Low-level vectored read from a raw file descriptor
 ///
 /// See also [readv(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/readv.html)
-pub fn readv(fd: RawFd, iov: &mut [IoSliceMut<'_>]) -> Result<usize> {
+pub fn readv<Fd: AsFd>(fd: Fd, iov: &mut [IoSliceMut<'_>]) -> Result<usize> {
     // SAFETY: same as in writev(), IoSliceMut is ABI-compatible with iovec
     let res = unsafe {
-        libc::readv(fd, iov.as_ptr() as *const libc::iovec, iov.len() as c_int)
+        libc::readv(fd.as_fd().as_raw_fd(), iov.as_ptr() as *const libc::iovec, iov.len() as c_int)
     };
 
     Errno::result(res).map(|r| r as usize)
@@ -44,14 +44,14 @@ pub fn readv(fd: RawFd, iov: &mut [IoSliceMut<'_>]) -> Result<usize> {
 /// See also: [`writev`](fn.writev.html) and [`pwrite`](fn.pwrite.html)
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
 #[cfg_attr(docsrs, doc(cfg(all())))]
-pub fn pwritev(fd: RawFd, iov: &[IoSlice<'_>], offset: off_t) -> Result<usize> {
+pub fn pwritev<Fd: AsFd>(fd: Fd, iov: &[IoSlice<'_>], offset: off_t) -> Result<usize> {
     #[cfg(target_env = "uclibc")]
     let offset = offset as libc::off64_t; // uclibc doesn't use off_t
 
     // SAFETY: same as in writev()
     let res = unsafe {
         libc::pwritev(
-            fd,
+            fd.as_fd().as_raw_fd(),
             iov.as_ptr() as *const libc::iovec,
             iov.len() as c_int,
             offset,
@@ -70,8 +70,8 @@ pub fn pwritev(fd: RawFd, iov: &[IoSlice<'_>], offset: off_t) -> Result<usize> {
 /// See also: [`readv`](fn.readv.html) and [`pread`](fn.pread.html)
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
 #[cfg_attr(docsrs, doc(cfg(all())))]
-pub fn preadv(
-    fd: RawFd,
+pub fn preadv<Fd: AsFd>(
+    fd: Fd,
     iov: &mut [IoSliceMut<'_>],
     offset: off_t,
 ) -> Result<usize> {
@@ -81,7 +81,7 @@ pub fn preadv(
     // SAFETY: same as in readv()
     let res = unsafe {
         libc::preadv(
-            fd,
+            fd.as_fd().as_raw_fd(),
             iov.as_ptr() as *const libc::iovec,
             iov.len() as c_int,
             offset,
@@ -95,10 +95,10 @@ pub fn preadv(
 ///
 /// See also [pwrite(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/pwrite.html)
 // TODO: move to unistd
-pub fn pwrite(fd: RawFd, buf: &[u8], offset: off_t) -> Result<usize> {
+pub fn pwrite<Fd: AsFd>(fd: Fd, buf: &[u8], offset: off_t) -> Result<usize> {
     let res = unsafe {
         libc::pwrite(
-            fd,
+            fd.as_fd().as_raw_fd(),
             buf.as_ptr() as *const c_void,
             buf.len() as size_t,
             offset,
@@ -112,10 +112,10 @@ pub fn pwrite(fd: RawFd, buf: &[u8], offset: off_t) -> Result<usize> {
 ///
 /// See also [pread(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/pread.html)
 // TODO: move to unistd
-pub fn pread(fd: RawFd, buf: &mut [u8], offset: off_t) -> Result<usize> {
+pub fn pread<Fd: AsFd>(fd: Fd, buf: &mut [u8], offset: off_t) -> Result<usize> {
     let res = unsafe {
         libc::pread(
-            fd,
+            fd.as_fd().as_raw_fd(),
             buf.as_mut_ptr() as *mut c_void,
             buf.len() as size_t,
             offset,

@@ -3,7 +3,7 @@
 //! See [the man pages](https://pubs.opengroup.org/onlinepubs/9699919799/functions/fstatvfs.html)
 //! for more details.
 use std::mem;
-use std::os::unix::io::AsRawFd;
+use std::os::unix::io::{AsFd, AsRawFd};
 
 use libc::{self, c_ulong};
 
@@ -146,11 +146,11 @@ pub fn statvfs<P: ?Sized + NixPath>(path: &P) -> Result<Statvfs> {
 }
 
 /// Return a `Statvfs` object with information about `fd`
-pub fn fstatvfs<T: AsRawFd>(fd: &T) -> Result<Statvfs> {
+pub fn fstatvfs<Fd: AsFd>(fd: Fd) -> Result<Statvfs> {
     unsafe {
         Errno::clear();
         let mut stat = mem::MaybeUninit::<libc::statvfs>::uninit();
-        Errno::result(libc::fstatvfs(fd.as_raw_fd(), stat.as_mut_ptr()))
+        Errno::result(libc::fstatvfs(fd.as_fd().as_raw_fd(), stat.as_mut_ptr()))
             .map(|_| Statvfs(stat.assume_init()))
     }
 }
