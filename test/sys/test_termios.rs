@@ -8,7 +8,7 @@ use nix::sys::termios::{self, tcgetattr, LocalFlags, OutputFlags};
 use nix::unistd::{read, write};
 
 /// Helper function analogous to `std::io::Write::write_all`, but for `Fd`s
-fn write_all<Fd: AsFd>(f: &Fd, buf: &[u8]) {
+fn write_all<Fd: AsFd>(f: Fd, buf: &[u8]) {
     let mut len = 0;
     while len < buf.len() {
         len += write(f.as_fd().as_raw_fd(), &buf[len..]).unwrap();

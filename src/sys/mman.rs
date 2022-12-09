@@ -421,7 +421,7 @@ pub unsafe fn mmap<F: AsFd>(
     length: NonZeroUsize,
     prot: ProtFlags,
     flags: MapFlags,
-    f: Option<&F>,
+    f: Option<F>,
     offset: off_t,
 ) -> Result<*mut c_void> {
     let ptr =

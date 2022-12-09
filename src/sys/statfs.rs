@@ -740,7 +740,7 @@ pub fn statfs<P: ?Sized + NixPath>(path: &P) -> Result<Statfs> {
 /// # Arguments
 ///
 /// `fd` - File descriptor of any open file within the file system to describe
-pub fn fstatfs<Fd: AsFd>(fd: &Fd) -> Result<Statfs> {
+pub fn fstatfs<Fd: AsFd>(fd: Fd) -> Result<Statfs> {
     unsafe {
         let mut stat = mem::MaybeUninit::<type_of_statfs>::uninit();
         Errno::result(LIBC_FSTATFS(fd.as_fd().as_raw_fd(), stat.as_mut_ptr()))
