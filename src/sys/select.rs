@@ -304,6 +304,7 @@ mod tests {
     use super::*;
     use crate::sys::time::{TimeVal, TimeValLike};
     use crate::unistd::{pipe, write};
+    use std::os::unix::io::AsRawFd;
     use std::os::unix::io::RawFd;
 
     #[test]
@@ -385,31 +386,31 @@ mod tests {
     #[test]
     fn test_select() {
         let (r1, w1) = pipe().unwrap();
-        write(w1, b"hi!").unwrap();
+        write(&w1, b"hi!").unwrap();
         let (r2, _w2) = pipe().unwrap();
 
         let mut fd_set = FdSet::new();
-        fd_set.insert(r1);
-        fd_set.insert(r2);
+        fd_set.insert(r1.as_raw_fd());
+        fd_set.insert(r2.as_raw_fd());
 
         let mut timeout = TimeVal::seconds(10);
         assert_eq!(
             1,
             select(None, &mut fd_set, None, None, &mut timeout).unwrap()
         );
-        assert!(fd_set.contains(r1));
-        assert!(!fd_set.contains(r2));
+        assert!(fd_set.contains(r1.as_raw_fd()));
+        assert!(!fd_set.contains(r2.as_raw_fd()));
     }
 
     #[test]
     fn test_select_nfds() {
         let (r1, w1) = pipe().unwrap();
-        write(w1, b"hi!").unwrap();
+        write(&w1, b"hi!").unwrap();
         let (r2, _w2) = pipe().unwrap();
 
         let mut fd_set = FdSet::new();
-        fd_set.insert(r1);
-        fd_set.insert(r2);
+        fd_set.insert(r1.as_raw_fd());
+        fd_set.insert(r2.as_raw_fd());
 
         let mut timeout = TimeVal::seconds(10);
         assert_eq!(
@@ -423,25 +424,25 @@ mod tests {
             )
             .unwrap()
         );
-        assert!(fd_set.contains(r1));
-        assert!(!fd_set.contains(r2));
+        assert!(fd_set.contains(r1.as_raw_fd()));
+        assert!(!fd_set.contains(r2.as_raw_fd()));
     }
 
     #[test]
     fn test_select_nfds2() {
         let (r1, w1) = pipe().unwrap();
-        write(w1, b"hi!").unwrap();
+        write(&w1, b"hi!").unwrap();
         let (r2, _w2) = pipe().unwrap();
 
         let mut fd_set = FdSet::new();
-        fd_set.insert(r1);
-        fd_set.insert(r2);
+        fd_set.insert(r1.as_raw_fd());
+        fd_set.insert(r2.as_raw_fd());
 
         let mut timeout = TimeVal::seconds(10);
         assert_eq!(
             1,
             select(
-                ::std::cmp::max(r1, r2) + 1,
+                std::cmp::max(r1.as_raw_fd(), r2.as_raw_fd()) + 1,
                 &mut fd_set,
                 None,
                 None,
@@ -449,7 +450,7 @@ mod tests {
             )
             .unwrap()
         );
-        assert!(fd_set.contains(r1));
-        assert!(!fd_set.contains(r2));
+        assert!(fd_set.contains(r1.as_raw_fd()));
+        assert!(!fd_set.contains(r2.as_raw_fd()));
     }
 }

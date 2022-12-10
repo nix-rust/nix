@@ -4,14 +4,14 @@ use tempfile::tempfile;
 use nix::errno::Errno;
 use nix::fcntl;
 use nix::pty::openpty;
-use nix::sys::termios::{self, tcgetattr, LocalFlags, OutputFlags};
+use nix::sys::termios::{tcgetattr, LocalFlags, OutputFlags};
 use nix::unistd::{read, write};
 
 /// Helper function analogous to `std::io::Write::write_all`, but for `Fd`s
 fn write_all<Fd: AsFd>(f: Fd, buf: &[u8]) {
     let mut len = 0;
     while len < buf.len() {
-        len += write(f.as_fd().as_raw_fd(), &buf[len..]).unwrap();
+        len += write(&f, &buf[len..]).unwrap();
     }
 }
 
@@ -22,14 +22,14 @@ fn test_tcgetattr_pty() {
     let _m = crate::PTSNAME_MTX.lock();
 
     let pty = openpty(None, None).expect("openpty failed");
-    termios::tcgetattr(&pty.slave).unwrap();
+    tcgetattr(&pty.slave).unwrap();
 }
 
 // Test tcgetattr on something that isn't a terminal
 #[test]
 fn test_tcgetattr_enotty() {
     let file = tempfile().unwrap();
-    assert_eq!(termios::tcgetattr(&file).err(), Some(Errno::ENOTTY));
+    assert_eq!(tcgetattr(&file).err(), Some(Errno::ENOTTY));
 }
 
 // Test modifying output flags
@@ -102,6 +102,6 @@ fn test_local_flags() {
 
     // Try to read from the master, which should not have anything as echoing was disabled.
     let mut buf = [0u8; 10];
-    let read = read(pty.master.as_raw_fd(), &mut buf).unwrap_err();
+    let read = read(&pty.master, &mut buf).unwrap_err();
     assert_eq!(read, Errno::EAGAIN);
 }

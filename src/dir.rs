@@ -2,7 +2,7 @@
 
 use crate::errno::Errno;
 use crate::fcntl::{self, OFlag};
-use crate::sys;
+use crate::{sys, AsDirFd};
 use crate::{Error, NixPath, Result};
 use cfg_if::cfg_if;
 use std::ffi;
@@ -39,18 +39,18 @@ impl Dir {
         mode: sys::stat::Mode,
     ) -> Result<Self> {
         let fd = fcntl::open(path, oflag, mode)?;
-        Dir::from_fd(fd)
+        Dir::from_fd(fd.into_raw_fd())
     }
 
     /// Opens the given path as with `fcntl::openat`.
-    pub fn openat<P: ?Sized + NixPath>(
-        dirfd: RawFd,
+    pub fn openat<Fd: AsDirFd, P: ?Sized + NixPath>(
+        dirfd: Fd,
         path: &P,
         oflag: OFlag,
         mode: sys::stat::Mode,
     ) -> Result<Self> {
         let fd = fcntl::openat(dirfd, path, oflag, mode)?;
-        Dir::from_fd(fd)
+        Dir::from_fd(fd.into_raw_fd())
     }
 
     /// Converts from a descriptor-based object, closing the descriptor on success or failure.

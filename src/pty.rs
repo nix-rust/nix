@@ -46,28 +46,27 @@ pub struct ForkptyResult {
 #[derive(Debug)]
 pub struct PtyMaster(OwnedFd);
 
-impl AsRawFd for PtyMaster {
-    fn as_raw_fd(&self) -> RawFd {
-        self.0.as_raw_fd()
+impl AsFd for PtyMaster {
+    fn as_fd(&self) -> BorrowedFd {
+        self.0.as_fd()
     }
 }
 
 impl IntoRawFd for PtyMaster {
     fn into_raw_fd(self) -> RawFd {
-        let fd = self.0;
-        fd.into_raw_fd()
+        self.0.into_raw_fd()
     }
 }
 
 impl io::Read for PtyMaster {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        unistd::read(self.0.as_raw_fd(), buf).map_err(io::Error::from)
+        unistd::read(self, buf).map_err(io::Error::from)
     }
 }
 
 impl io::Write for PtyMaster {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        unistd::write(self.0.as_raw_fd(), buf).map_err(io::Error::from)
+        unistd::write(self, buf).map_err(io::Error::from)
     }
     fn flush(&mut self) -> io::Result<()> {
         Ok(())
@@ -76,13 +75,13 @@ impl io::Write for PtyMaster {
 
 impl io::Read for &PtyMaster {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        unistd::read(self.0.as_raw_fd(), buf).map_err(io::Error::from)
+        unistd::read(self, buf).map_err(io::Error::from)
     }
 }
 
 impl io::Write for &PtyMaster {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        unistd::write(self.0.as_raw_fd(), buf).map_err(io::Error::from)
+        unistd::write(self, buf).map_err(io::Error::from)
     }
     fn flush(&mut self) -> io::Result<()> {
         Ok(())
@@ -96,7 +95,7 @@ impl io::Write for &PtyMaster {
 /// master pseudoterminal referred to by `fd`. This is a necessary step towards opening the slave.
 #[inline]
 pub fn grantpt(fd: &PtyMaster) -> Result<()> {
-    if unsafe { libc::grantpt(fd.as_raw_fd()) } < 0 {
+    if unsafe { libc::grantpt(fd.0.as_raw_fd()) } < 0 {
         return Err(Errno::last());
     }
 
@@ -165,7 +164,7 @@ pub fn posix_openpt(flags: fcntl::OFlag) -> Result<PtyMaster> {
 /// For a threadsafe and non-`unsafe` alternative on Linux, see `ptsname_r()`.
 #[inline]
 pub unsafe fn ptsname(fd: &PtyMaster) -> Result<String> {
-    let name_ptr = libc::ptsname(fd.as_raw_fd());
+    let name_ptr = libc::ptsname(fd.0.as_raw_fd());
     if name_ptr.is_null() {
         return Err(Errno::last());
     }
@@ -191,7 +190,7 @@ pub fn ptsname_r(fd: &PtyMaster) -> Result<String> {
     let name_buf_ptr = name_buf.as_mut_ptr();
     let cname = unsafe {
         let cap = name_buf.capacity();
-        if libc::ptsname_r(fd.as_raw_fd(), name_buf_ptr, cap) != 0 {
+        if libc::ptsname_r(fd.0.as_raw_fd(), name_buf_ptr, cap) != 0 {
             return Err(crate::Error::last());
         }
         CStr::from_ptr(name_buf.as_ptr())
@@ -209,7 +208,7 @@ pub fn ptsname_r(fd: &PtyMaster) -> Result<String> {
 /// pseudoterminal.
 #[inline]
 pub fn unlockpt(fd: &PtyMaster) -> Result<()> {
-    if unsafe { libc::unlockpt(fd.as_raw_fd()) } < 0 {
+    if unsafe { libc::unlockpt(fd.0.as_raw_fd()) } < 0 {
         return Err(Errno::last());
     }
 

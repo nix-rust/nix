@@ -87,7 +87,7 @@ impl EpollEvent {
 /// epoll.add(&eventfd, EpollEvent::new(EpollFlags::EPOLLIN,DATA))?;
 ///
 /// // Arm eventfd & Time wait
-/// write(eventfd.as_raw_fd(), &1u64.to_ne_bytes())?;
+/// write(&eventfd, &1u64.to_ne_bytes())?;
 /// let now = Instant::now();
 ///
 /// // Wait on event
