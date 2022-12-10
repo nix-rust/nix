@@ -44,7 +44,12 @@ pub const SIGNALFD_SIGINFO_SIZE: usize = mem::size_of::<siginfo>();
 /// signalfd (the default handler will be invoked instead).
 ///
 /// See [the signalfd man page for more information](https://man7.org/linux/man-pages/man2/signalfd.2.html)
+#[deprecated(since = "0.27.0", note = "Use SignalFd instead")]
 pub fn signalfd<F: AsFd>(fd: Option<F>, mask: &SigSet, flags: SfdFlags) -> Result<OwnedFd> {
+    _signalfd(fd, mask, flags)
+}
+
+fn _signalfd<F: AsFd>(fd: Option<F>, mask: &SigSet, flags: SfdFlags) -> Result<OwnedFd> {
     let raw_fd = fd.map_or(-1, |x|x.as_fd().as_raw_fd());
     unsafe {
         Errno::result(libc::signalfd(
@@ -90,13 +95,13 @@ impl SignalFd {
     }
 
     pub fn with_flags(mask: &SigSet, flags: SfdFlags) -> Result<SignalFd> {
-        let fd = signalfd(None::<OwnedFd>, mask, flags)?;
+        let fd = _signalfd(None::<OwnedFd>, mask, flags)?;
 
         Ok(SignalFd(fd))
     }
 
     pub fn set_mask(&mut self, mask: &SigSet) -> Result<()> {
-        signalfd(Some(self.0.as_fd()), mask, SfdFlags::empty()).map(drop)
+        _signalfd(Some(self.0.as_fd()), mask, SfdFlags::empty()).map(drop)
     }
 
     pub fn read_signal(&mut self) -> Result<Option<siginfo>> {
