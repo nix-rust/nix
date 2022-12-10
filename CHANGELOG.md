@@ -19,6 +19,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - With I/O-safe type applied in `pty::OpenptyResult` and `pty::ForkptyResult`,
   users no longer need to manually close the file descriptors in these types.
   ([#1921](https://github.com/nix-rust/nix/pull/1921))
+- The `fd` argument to `sys::signalfd::signalfd` is now of type `Option<impl AsFd>`.
+  ([#1874](https://github.com/nix-rust/nix/pull/1874))
 
 ### Fixed
 ### Removed

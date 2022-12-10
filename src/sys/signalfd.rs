@@ -17,12 +17,11 @@
 //! signal handlers.
 use crate::errno::Errno;
 pub use crate::sys::signal::{self, SigSet};
-use crate::unistd;
 use crate::Result;
 pub use libc::signalfd_siginfo as siginfo;
 
 use std::mem;
-use std::os::unix::io::{AsRawFd, RawFd};
+use std::os::unix::io::{AsRawFd, RawFd, FromRawFd, OwnedFd, AsFd, BorrowedFd};
 
 libc_bitflags! {
     pub struct SfdFlags: libc::c_int {
@@ -31,7 +30,6 @@ libc_bitflags! {
     }
 }
 
-pub const SIGNALFD_NEW: RawFd = -1;
 #[deprecated(since = "0.23.0", note = "use mem::size_of::<siginfo>() instead")]
 pub const SIGNALFD_SIGINFO_SIZE: usize = mem::size_of::<siginfo>();
 
@@ -46,13 +44,14 @@ pub const SIGNALFD_SIGINFO_SIZE: usize = mem::size_of::<siginfo>();
 /// signalfd (the default handler will be invoked instead).
 ///
 /// See [the signalfd man page for more information](https://man7.org/linux/man-pages/man2/signalfd.2.html)
-pub fn signalfd(fd: RawFd, mask: &SigSet, flags: SfdFlags) -> Result<RawFd> {
+pub fn signalfd<F: AsFd>(fd: Option<F>, mask: &SigSet, flags: SfdFlags) -> Result<OwnedFd> {
+    let raw_fd = fd.map_or(-1, |x|x.as_fd().as_raw_fd());
     unsafe {
         Errno::result(libc::signalfd(
-            fd as libc::c_int,
+            raw_fd,
             mask.as_ref(),
             flags.bits(),
-        ))
+        )).map(|raw_fd|FromRawFd::from_raw_fd(raw_fd))
     }
 }
 
@@ -82,8 +81,8 @@ pub fn signalfd(fd: RawFd, mask: &SigSet, flags: SfdFlags) -> Result<RawFd> {
 ///     Err(err) => (), // some error happend
 /// }
 /// ```
-#[derive(Debug, Eq, Hash, PartialEq)]
-pub struct SignalFd(RawFd);
+#[derive(Debug)]
+pub struct SignalFd(OwnedFd);
 
 impl SignalFd {
     pub fn new(mask: &SigSet) -> Result<SignalFd> {
@@ -91,13 +90,13 @@ impl SignalFd {
     }
 
     pub fn with_flags(mask: &SigSet, flags: SfdFlags) -> Result<SignalFd> {
-        let fd = signalfd(SIGNALFD_NEW, mask, flags)?;
+        let fd = signalfd(None::<OwnedFd>, mask, flags)?;
 
         Ok(SignalFd(fd))
     }
 
     pub fn set_mask(&mut self, mask: &SigSet) -> Result<()> {
-        signalfd(self.0, mask, SfdFlags::empty()).map(drop)
+        signalfd(Some(self.0.as_fd()), mask, SfdFlags::empty()).map(drop)
     }
 
     pub fn read_signal(&mut self) -> Result<Option<siginfo>> {
@@ -105,7 +104,7 @@ impl SignalFd {
 
         let size = mem::size_of_val(&buffer);
         let res = Errno::result(unsafe {
-            libc::read(self.0, buffer.as_mut_ptr() as *mut libc::c_void, size)
+            libc::read(self.0.as_raw_fd(), buffer.as_mut_ptr() as *mut libc::c_void, size)
         })
         .map(|r| r as usize);
         match res {
@@ -117,18 +116,14 @@ impl SignalFd {
     }
 }
 
-impl Drop for SignalFd {
-    fn drop(&mut self) {
-        let e = unistd::close(self.0);
-        if !std::thread::panicking() && e == Err(Errno::EBADF) {
-            panic!("Closing an invalid file descriptor!");
-        };
+impl AsFd for SignalFd {
+    fn as_fd(&self) -> BorrowedFd {
+        self.0.as_fd()
     }
 }
-
 impl AsRawFd for SignalFd {
     fn as_raw_fd(&self) -> RawFd {
-        self.0
+        self.0.as_raw_fd()
     }
 }
 
