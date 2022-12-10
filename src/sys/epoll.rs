@@ -2,7 +2,7 @@ use crate::errno::Errno;
 use crate::Result;
 use libc::{self, c_int};
 use std::mem;
-use std::os::unix::io::{FromRawFd,RawFd, OwnedFd, AsFd, AsRawFd};
+use std::os::unix::io::{AsFd, AsRawFd, FromRawFd, OwnedFd, RawFd};
 
 libc_bitflags!(
     pub struct EpollFlags: c_int {
@@ -78,22 +78,22 @@ impl EpollEvent {
 /// # fn main() -> nix::Result<()> {
 /// const DATA: u64 = 17;
 /// const MILLIS: u64 = 100;
-/// 
+///
 /// // Create epoll
 /// let epoll = Epoll::new(EpollCreateFlags::empty())?;
-/// 
+///
 /// // Create eventfd & Add event
 /// let eventfd = unsafe { OwnedFd::from_raw_fd(eventfd(0, EfdFlags::empty())?) };
 /// epoll.add(&eventfd, EpollEvent::new(EpollFlags::EPOLLIN,DATA))?;
-/// 
+///
 /// // Arm eventfd & Time wait
 /// write(eventfd.as_raw_fd(), &1u64.to_ne_bytes())?;
 /// let now = Instant::now();
-/// 
+///
 /// // Wait on event
 /// let mut events = [EpollEvent::empty()];
 /// epoll.wait(&mut events, MILLIS as isize)?;
-/// 
+///
 /// // Assert data correct & timeout didn't occur
 /// assert_eq!(events[0].data(), DATA);
 /// assert!(now.elapsed() < Duration::from_millis(MILLIS));
@@ -104,7 +104,7 @@ impl EpollEvent {
 pub struct Epoll(pub OwnedFd);
 impl Epoll {
     /// Creates a new epoll instance and returns a file descriptor referring to that instance.
-    /// 
+    ///
     /// [`epoll_create1`](https://man7.org/linux/man-pages/man2/epoll_create1.2.html).
     pub fn new(flags: EpollCreateFlags) -> Result<Self> {
         let res = unsafe { libc::epoll_create1(flags.bits()) };
@@ -113,30 +113,38 @@ impl Epoll {
         Ok(Self(owned_fd))
     }
     /// Add an entry to the interest list of the epoll file descriptor for
-    /// specified in events. 
-    /// 
+    /// specified in events.
+    ///
     /// [`epoll_ctl`](https://man7.org/linux/man-pages/man2/epoll_ctl.2.html) with `EPOLL_CTL_ADD`.
     pub fn add<Fd: AsFd>(&self, fd: Fd, mut event: EpollEvent) -> Result<()> {
-        self.epoll_ctl(EpollOp::EpollCtlAdd,fd,&mut event)
+        self.epoll_ctl(EpollOp::EpollCtlAdd, fd, &mut event)
     }
     /// Remove (deregister) the target file descriptor `fd` from the interest list.
-    /// 
+    ///
     /// [`epoll_ctl`](https://man7.org/linux/man-pages/man2/epoll_ctl.2.html) with `EPOLL_CTL_DEL` .
     pub fn delete<Fd: AsFd>(&self, fd: Fd) -> Result<()> {
-        self.epoll_ctl(EpollOp::EpollCtlDel,fd,None)
+        self.epoll_ctl(EpollOp::EpollCtlDel, fd, None)
     }
     /// Change the settings associated with `fd` in the interest list to the new settings specified
     /// in `event`.
-    /// 
+    ///
     /// [`epoll_ctl`](https://man7.org/linux/man-pages/man2/epoll_ctl.2.html) with `EPOLL_CTL_MOD`.
-    pub fn modify<Fd: AsFd>(&self,fd: Fd, event: &mut EpollEvent) -> Result<()> {
-        self.epoll_ctl(EpollOp::EpollCtlMod,fd,event)
+    pub fn modify<Fd: AsFd>(
+        &self,
+        fd: Fd,
+        event: &mut EpollEvent,
+    ) -> Result<()> {
+        self.epoll_ctl(EpollOp::EpollCtlMod, fd, event)
     }
     /// Waits for I/O events, blocking the calling thread if no events are currently available.
     /// (This can be thought of as fetching items from the ready list of the epoll instance.)
-    /// 
+    ///
     /// [`epoll_wait`](https://man7.org/linux/man-pages/man2/epoll_wait.2.html)
-    pub fn wait(&self, events: &mut [EpollEvent], timeout: isize) -> Result<usize> {
+    pub fn wait(
+        &self,
+        events: &mut [EpollEvent],
+        timeout: isize,
+    ) -> Result<usize> {
         let res = unsafe {
             libc::epoll_wait(
                 self.0.as_raw_fd(),
@@ -145,15 +153,15 @@ impl Epoll {
                 timeout as c_int,
             )
         };
-    
+
         Errno::result(res).map(|r| r as usize)
     }
     /// This system call is used to add, modify, or remove entries in the interest list of the epoll
     /// instance referred to by `self`. It requests that the operation `op` be performed for the
     /// target file descriptor, `fd`.
-    /// 
+    ///
     /// When possible prefer [`Epoll::add`], [`Epoll::delete`] and [`Epoll::modify`].
-    /// 
+    ///
     /// [`epoll_ctl`](https://man7.org/linux/man-pages/man2/epoll_ctl.2.html)
     fn epoll_ctl<'a, Fd: AsFd, T>(
         &self,
@@ -165,9 +173,17 @@ impl Epoll {
         T: Into<Option<&'a mut EpollEvent>>,
     {
         let event: Option<&mut EpollEvent> = event.into();
-        let ptr = event.map(|x|&mut x.event as *mut libc::epoll_event).unwrap_or(std::ptr::null_mut());
+        let ptr = event
+            .map(|x| &mut x.event as *mut libc::epoll_event)
+            .unwrap_or(std::ptr::null_mut());
         unsafe {
-            Errno::result(libc::epoll_ctl(self.0.as_raw_fd(), op as c_int, fd.as_fd().as_raw_fd(), ptr)).map(drop)
+            Errno::result(libc::epoll_ctl(
+                self.0.as_raw_fd(),
+                op as c_int,
+                fd.as_fd().as_raw_fd(),
+                ptr,
+            ))
+            .map(drop)
         }
     }
 }

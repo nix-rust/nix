@@ -217,7 +217,6 @@ impl fmt::Display for Pid {
     }
 }
 
-
 /// Represents the successful result of calling `fork`
 ///
 /// When `fork` is called, the process continues execution in the parent process
@@ -230,7 +229,6 @@ pub enum ForkResult {
 }
 
 impl ForkResult {
-
     /// Return `true` if this is the child process of the `fork()`
     #[inline]
     pub fn is_child(self) -> bool {
@@ -478,9 +476,8 @@ fn dup3_polyfill(oldfd: RawFd, newfd: RawFd, flags: OFlag) -> Result<RawFd> {
 /// pages for additional details on possible failure cases.
 #[inline]
 pub fn chdir<P: ?Sized + NixPath>(path: &P) -> Result<()> {
-    let res = path.with_nix_path(|cstr| {
-        unsafe { libc::chdir(cstr.as_ptr()) }
-    })?;
+    let res =
+        path.with_nix_path(|cstr| unsafe { libc::chdir(cstr.as_ptr()) })?;
 
     Errno::result(res).map(drop)
 }
@@ -527,8 +524,8 @@ pub fn fchdir(dirfd: RawFd) -> Result<()> {
 /// ```
 #[inline]
 pub fn mkdir<P: ?Sized + NixPath>(path: &P, mode: Mode) -> Result<()> {
-    let res = path.with_nix_path(|cstr| {
-        unsafe { libc::mkdir(cstr.as_ptr(), mode.bits() as mode_t) }
+    let res = path.with_nix_path(|cstr| unsafe {
+        libc::mkdir(cstr.as_ptr(), mode.bits() as mode_t)
     })?;
 
     Errno::result(res).map(drop)
@@ -566,8 +563,8 @@ pub fn mkdir<P: ?Sized + NixPath>(path: &P, mode: Mode) -> Result<()> {
 #[inline]
 #[cfg(not(target_os = "redox"))] // RedoxFS does not support fifo yet
 pub fn mkfifo<P: ?Sized + NixPath>(path: &P, mode: Mode) -> Result<()> {
-    let res = path.with_nix_path(|cstr| {
-        unsafe { libc::mkfifo(cstr.as_ptr(), mode.bits() as mode_t) }
+    let res = path.with_nix_path(|cstr| unsafe {
+        libc::mkfifo(cstr.as_ptr(), mode.bits() as mode_t)
     })?;
 
     Errno::result(res).map(drop)
@@ -591,7 +588,11 @@ pub fn mkfifo<P: ?Sized + NixPath>(path: &P, mode: Mode) -> Result<()> {
     target_os = "android",
     target_os = "redox"
 )))]
-pub fn mkfifoat<P: ?Sized + NixPath>(dirfd: Option<RawFd>, path: &P, mode: Mode) -> Result<()> {
+pub fn mkfifoat<P: ?Sized + NixPath>(
+    dirfd: Option<RawFd>,
+    path: &P,
+    mode: Mode,
+) -> Result<()> {
     let res = path.with_nix_path(|cstr| unsafe {
         libc::mkfifoat(at_rawfd(dirfd), cstr.as_ptr(), mode.bits() as mode_t)
     })?;
@@ -612,19 +613,17 @@ pub fn mkfifoat<P: ?Sized + NixPath>(dirfd: Option<RawFd>, path: &P, mode: Mode)
 pub fn symlinkat<P1: ?Sized + NixPath, P2: ?Sized + NixPath>(
     path1: &P1,
     dirfd: Option<RawFd>,
-    path2: &P2) -> Result<()> {
-    let res =
-        path1.with_nix_path(|path1| {
-            path2.with_nix_path(|path2| {
-                unsafe {
-                    libc::symlinkat(
-                        path1.as_ptr(),
-                        dirfd.unwrap_or(libc::AT_FDCWD),
-                        path2.as_ptr()
-                    )
-                }
-            })
-        })??;
+    path2: &P2,
+) -> Result<()> {
+    let res = path1.with_nix_path(|path1| {
+        path2.with_nix_path(|path2| unsafe {
+            libc::symlinkat(
+                path1.as_ptr(),
+                dirfd.unwrap_or(libc::AT_FDCWD),
+                path2.as_ptr(),
+            )
+        })
+    })??;
     Errno::result(res).map(drop)
 }
 }
@@ -674,7 +673,9 @@ pub fn getcwd() -> Result<PathBuf> {
             // To safely handle this we start with a reasonable size (512 bytes)
             // and double the buffer size upon every error
             if !libc::getcwd(ptr, buf.capacity()).is_null() {
-                let len = CStr::from_ptr(buf.as_ptr() as *const c_char).to_bytes().len();
+                let len = CStr::from_ptr(buf.as_ptr() as *const c_char)
+                    .to_bytes()
+                    .len();
                 buf.set_len(len);
                 buf.shrink_to_fit();
                 return Ok(PathBuf::from(OsString::from_vec(buf)));
@@ -684,7 +685,7 @@ pub fn getcwd() -> Result<PathBuf> {
                 if error != Errno::ERANGE {
                     return Err(error);
                 }
-           }
+            }
 
             // Trigger the internal buffer resizing logic.
             reserve_double_buffer_size(&mut buf, PATH_MAX as usize)?;
@@ -699,10 +700,7 @@ feature! {
 /// Computes the raw UID and GID values to pass to a `*chown` call.
 // The cast is not unnecessary on all platforms.
 #[allow(clippy::unnecessary_cast)]
-fn chown_raw_ids(
-    owner: Option<Uid>,
-    group: Option<Gid>,
-) -> (uid_t, gid_t) {
+fn chown_raw_ids(owner: Option<Uid>, group: Option<Gid>) -> (uid_t, gid_t) {
     // According to the POSIX specification, -1 is used to indicate that owner and group
     // are not to be changed.  Since uid_t and gid_t are unsigned types, we have to wrap
     // around to get -1.
@@ -792,8 +790,13 @@ pub fn fchownat<P: ?Sized + NixPath>(
     };
     let res = path.with_nix_path(|cstr| unsafe {
         let (uid, gid) = chown_raw_ids(owner, group);
-        libc::fchownat(at_rawfd(dirfd), cstr.as_ptr(), uid, gid,
-                       atflag.bits() as libc::c_int)
+        libc::fchownat(
+            at_rawfd(dirfd),
+            cstr.as_ptr(),
+            uid,
+            gid,
+            atflag.bits() as libc::c_int,
+        )
     })?;
 
     Errno::result(res).map(drop)
@@ -912,13 +915,15 @@ pub fn execvpe<SA: AsRef<CStr>, SE: AsRef<CStr>>(
     target_os = "freebsd"
 ))]
 #[inline]
-pub fn fexecve<SA: AsRef<CStr> ,SE: AsRef<CStr>>(fd: RawFd, args: &[SA], env: &[SE]) -> Result<Infallible> {
+pub fn fexecve<SA: AsRef<CStr>, SE: AsRef<CStr>>(
+    fd: RawFd,
+    args: &[SA],
+    env: &[SE],
+) -> Result<Infallible> {
     let args_p = to_exec_array(args);
     let env_p = to_exec_array(env);
 
-    unsafe {
-        libc::fexecve(fd, args_p.as_ptr(), env_p.as_ptr())
-    };
+    unsafe { libc::fexecve(fd, args_p.as_ptr(), env_p.as_ptr()) };
 
     Err(Errno::last())
 }
@@ -935,14 +940,25 @@ pub fn fexecve<SA: AsRef<CStr> ,SE: AsRef<CStr>>(fd: RawFd, args: &[SA], env: &[
 /// is referenced as a file descriptor to the base directory plus a path.
 #[cfg(any(target_os = "android", target_os = "linux"))]
 #[inline]
-pub fn execveat<SA: AsRef<CStr>,SE: AsRef<CStr>>(dirfd: RawFd, pathname: &CStr, args: &[SA],
-                env: &[SE], flags: super::fcntl::AtFlags) -> Result<Infallible> {
+pub fn execveat<SA: AsRef<CStr>, SE: AsRef<CStr>>(
+    dirfd: RawFd,
+    pathname: &CStr,
+    args: &[SA],
+    env: &[SE],
+    flags: super::fcntl::AtFlags,
+) -> Result<Infallible> {
     let args_p = to_exec_array(args);
     let env_p = to_exec_array(env);
 
     unsafe {
-        libc::syscall(libc::SYS_execveat, dirfd, pathname.as_ptr(),
-                      args_p.as_ptr(), env_p.as_ptr(), flags);
+        libc::syscall(
+            libc::SYS_execveat,
+            dirfd,
+            pathname.as_ptr(),
+            args_p.as_ptr(),
+            env_p.as_ptr(),
+            flags,
+        );
     };
 
     Err(Errno::last())
@@ -1157,7 +1173,11 @@ pub fn lseek(fd: RawFd, offset: off_t, whence: Whence) -> Result<off_t> {
 }
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
-pub fn lseek64(fd: RawFd, offset: libc::off64_t, whence: Whence) -> Result<libc::off64_t> {
+pub fn lseek64(
+    fd: RawFd,
+    offset: libc::off64_t,
+    whence: Whence,
+) -> Result<libc::off64_t> {
     let res = unsafe { libc::lseek64(fd, offset, whence as i32) };
 
     Errno::result(res).map(|r| r as libc::off64_t)
@@ -1211,9 +1231,8 @@ feature! {
 pub fn pipe2(flags: OFlag) -> Result<(RawFd, RawFd)> {
     let mut fds = mem::MaybeUninit::<[c_int; 2]>::uninit();
 
-    let res = unsafe {
-        libc::pipe2(fds.as_mut_ptr() as *mut c_int, flags.bits())
-    };
+    let res =
+        unsafe { libc::pipe2(fds.as_mut_ptr() as *mut c_int, flags.bits()) };
 
     Errno::result(res)?;
 
@@ -1283,27 +1302,22 @@ pub fn linkat<P: ?Sized + NixPath>(
     newpath: &P,
     flag: LinkatFlags,
 ) -> Result<()> {
+    let atflag = match flag {
+        LinkatFlags::SymlinkFollow => AtFlags::AT_SYMLINK_FOLLOW,
+        LinkatFlags::NoSymlinkFollow => AtFlags::empty(),
+    };
 
-    let atflag =
-        match flag {
-            LinkatFlags::SymlinkFollow => AtFlags::AT_SYMLINK_FOLLOW,
-            LinkatFlags::NoSymlinkFollow => AtFlags::empty(),
-        };
-
-    let res =
-        oldpath.with_nix_path(|oldcstr| {
-            newpath.with_nix_path(|newcstr| {
-            unsafe {
-                libc::linkat(
-                    at_rawfd(olddirfd),
-                    oldcstr.as_ptr(),
-                    at_rawfd(newdirfd),
-                    newcstr.as_ptr(),
-                    atflag.bits() as libc::c_int
-                    )
-                }
-            })
-        })??;
+    let res = oldpath.with_nix_path(|oldcstr| {
+        newpath.with_nix_path(|newcstr| unsafe {
+            libc::linkat(
+                at_rawfd(olddirfd),
+                oldcstr.as_ptr(),
+                at_rawfd(newdirfd),
+                newcstr.as_ptr(),
+                atflag.bits() as libc::c_int,
+            )
+        })
+    })??;
     Errno::result(res).map(drop)
 }
 
@@ -1339,15 +1353,16 @@ pub fn unlinkat<P: ?Sized + NixPath>(
     path: &P,
     flag: UnlinkatFlags,
 ) -> Result<()> {
-    let atflag =
-        match flag {
-            UnlinkatFlags::RemoveDir => AtFlags::AT_REMOVEDIR,
-            UnlinkatFlags::NoRemoveDir => AtFlags::empty(),
-        };
-    let res = path.with_nix_path(|cstr| {
-        unsafe {
-            libc::unlinkat(at_rawfd(dirfd), cstr.as_ptr(), atflag.bits() as libc::c_int)
-        }
+    let atflag = match flag {
+        UnlinkatFlags::RemoveDir => AtFlags::AT_REMOVEDIR,
+        UnlinkatFlags::NoRemoveDir => AtFlags::empty(),
+    };
+    let res = path.with_nix_path(|cstr| unsafe {
+        libc::unlinkat(
+            at_rawfd(dirfd),
+            cstr.as_ptr(),
+            atflag.bits() as libc::c_int,
+        )
     })?;
     Errno::result(res).map(drop)
 }
@@ -1562,27 +1577,31 @@ pub fn getgroups() -> Result<Vec<Gid>> {
     // Now actually get the groups. We try multiple times in case the number of
     // groups has changed since the first call to getgroups() and the buffer is
     // now too small.
-    let mut groups = Vec::<Gid>::with_capacity(Errno::result(ngroups)? as usize);
+    let mut groups =
+        Vec::<Gid>::with_capacity(Errno::result(ngroups)? as usize);
     loop {
         // FIXME: On the platforms we currently support, the `Gid` struct has
         // the same representation in memory as a bare `gid_t`. This is not
         // necessarily the case on all Rust platforms, though. See RFC 1785.
         let ngroups = unsafe {
-            libc::getgroups(groups.capacity() as c_int, groups.as_mut_ptr() as *mut gid_t)
+            libc::getgroups(
+                groups.capacity() as c_int,
+                groups.as_mut_ptr() as *mut gid_t,
+            )
         };
 
         match Errno::result(ngroups) {
             Ok(s) => {
                 unsafe { groups.set_len(s as usize) };
                 return Ok(groups);
-            },
+            }
             Err(Errno::EINVAL) => {
                 // EINVAL indicates that the buffer size was too
                 // small, resize it up to ngroups_max as limit.
                 reserve_double_buffer_size(&mut groups, ngroups_max)
                     .or(Err(Errno::EINVAL))?;
-            },
-            Err(e) => return Err(e)
+            }
+            Err(e) => return Err(e),
         }
     }
 }
@@ -1618,7 +1637,12 @@ pub fn getgroups() -> Result<Vec<Gid>> {
 /// #
 /// # try_main().unwrap();
 /// ```
-#[cfg(not(any(target_os = "ios", target_os = "macos", target_os = "redox", target_os = "haiku")))]
+#[cfg(not(any(
+    target_os = "ios",
+    target_os = "macos",
+    target_os = "redox",
+    target_os = "haiku"
+)))]
 pub fn setgroups(groups: &[Gid]) -> Result<()> {
     cfg_if! {
         if #[cfg(any(target_os = "dragonfly",
@@ -1638,7 +1662,10 @@ pub fn setgroups(groups: &[Gid]) -> Result<()> {
     // same representation in memory as a bare `gid_t`. This is not necessarily
     // the case on all Rust platforms, though. See RFC 1785.
     let res = unsafe {
-        libc::setgroups(groups.len() as setgroups_ngroups_t, groups.as_ptr() as *const gid_t)
+        libc::setgroups(
+            groups.len() as setgroups_ngroups_t,
+            groups.as_ptr() as *const gid_t,
+        )
     };
 
     Errno::result(res).map(drop)
@@ -1664,10 +1691,12 @@ pub fn setgroups(groups: &[Gid]) -> Result<()> {
 /// and `setgroups()`. Additionally, while some implementations will return a
 /// partial list of groups when `NGROUPS_MAX` is exceeded, this implementation
 /// will only ever return the complete list or else an error.
-#[cfg(not(any(target_os = "illumos",
-              target_os = "ios",
-              target_os = "macos",
-              target_os = "redox")))]
+#[cfg(not(any(
+    target_os = "illumos",
+    target_os = "ios",
+    target_os = "macos",
+    target_os = "redox"
+)))]
 pub fn getgrouplist(user: &CStr, group: Gid) -> Result<Vec<Gid>> {
     let ngroups_max = match sysconf(SysconfVar::NGROUPS_MAX) {
         Ok(Some(n)) => n as c_int,
@@ -1686,10 +1715,12 @@ pub fn getgrouplist(user: &CStr, group: Gid) -> Result<Vec<Gid>> {
     loop {
         let mut ngroups = groups.capacity() as i32;
         let ret = unsafe {
-            libc::getgrouplist(user.as_ptr(),
-                               gid as getgrouplist_group_t,
-                               groups.as_mut_ptr() as *mut getgrouplist_group_t,
-                               &mut ngroups)
+            libc::getgrouplist(
+                user.as_ptr(),
+                gid as getgrouplist_group_t,
+                groups.as_mut_ptr() as *mut getgrouplist_group_t,
+                &mut ngroups,
+            )
         };
 
         // BSD systems only return 0 or -1, Linux returns ngroups on success.
@@ -1745,7 +1776,12 @@ pub fn getgrouplist(user: &CStr, group: Gid) -> Result<Vec<Gid>> {
 /// #
 /// # try_main().unwrap();
 /// ```
-#[cfg(not(any(target_os = "ios", target_os = "macos", target_os = "redox", target_os = "haiku")))]
+#[cfg(not(any(
+    target_os = "ios",
+    target_os = "macos",
+    target_os = "redox",
+    target_os = "haiku"
+)))]
 pub fn initgroups(user: &CStr, group: Gid) -> Result<()> {
     cfg_if! {
         if #[cfg(any(target_os = "ios", target_os = "macos"))] {
@@ -1755,7 +1791,8 @@ pub fn initgroups(user: &CStr, group: Gid) -> Result<()> {
         }
     }
     let gid: gid_t = group.into();
-    let res = unsafe { libc::initgroups(user.as_ptr(), gid as initgroups_group_t) };
+    let res =
+        unsafe { libc::initgroups(user.as_ptr(), gid as initgroups_group_t) };
 
     Errno::result(res).map(drop)
 }
@@ -1799,8 +1836,8 @@ pub mod alarm {
     //!
     //! Scheduling an alarm and waiting for the signal:
     //!
-#![cfg_attr(target_os = "redox", doc = " ```rust,ignore")]
-#![cfg_attr(not(target_os = "redox"), doc = " ```rust")]
+    #![cfg_attr(target_os = "redox", doc = " ```rust,ignore")]
+    #![cfg_attr(not(target_os = "redox"), doc = " ```rust")]
     //! use std::time::{Duration, Instant};
     //!
     //! use nix::unistd::{alarm, pause};
@@ -1876,17 +1913,16 @@ feature! {
 
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
 pub mod acct {
-    use crate::{Result, NixPath};
     use crate::errno::Errno;
+    use crate::{NixPath, Result};
     use std::ptr;
 
     /// Enable process accounting
     ///
     /// See also [acct(2)](https://linux.die.net/man/2/acct)
     pub fn enable<P: ?Sized + NixPath>(filename: &P) -> Result<()> {
-        let res = filename.with_nix_path(|cstr| {
-            unsafe { libc::acct(cstr.as_ptr()) }
-        })?;
+        let res = filename
+            .with_nix_path(|cstr| unsafe { libc::acct(cstr.as_ptr()) })?;
 
         Errno::result(res).map(drop)
     }
@@ -1928,7 +1964,8 @@ feature! {
 /// ```
 #[inline]
 pub fn mkstemp<P: ?Sized + NixPath>(template: &P) -> Result<(RawFd, PathBuf)> {
-    let mut path = template.with_nix_path(|path| {path.to_bytes_with_nul().to_owned()})?;
+    let mut path =
+        template.with_nix_path(|path| path.to_bytes_with_nul().to_owned())?;
     let p = path.as_mut_ptr() as *mut _;
     let fd = unsafe { libc::mkstemp(p) };
     let last = path.pop(); // drop the trailing nul
@@ -1962,8 +1999,14 @@ feature! {
 #[repr(i32)]
 #[non_exhaustive]
 pub enum PathconfVar {
-    #[cfg(any(target_os = "dragonfly", target_os = "freebsd", target_os = "linux",
-              target_os = "netbsd", target_os = "openbsd", target_os = "redox"))]
+    #[cfg(any(
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "linux",
+        target_os = "netbsd",
+        target_os = "openbsd",
+        target_os = "redox"
+    ))]
     /// Minimum number of bits needed to represent, as a signed integer value,
     /// the maximum size of a regular file allowed in the specified directory.
     #[cfg_attr(docsrs, doc(cfg(all())))]
@@ -1987,42 +2030,86 @@ pub enum PathconfVar {
     /// Maximum number of bytes that is guaranteed to be atomic when writing to
     /// a pipe.
     PIPE_BUF = libc::_PC_PIPE_BUF,
-    #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "illumos",
-              target_os = "linux", target_os = "netbsd", target_os = "openbsd",
-              target_os = "redox", target_os = "solaris"))]
+    #[cfg(any(
+        target_os = "android",
+        target_os = "dragonfly",
+        target_os = "illumos",
+        target_os = "linux",
+        target_os = "netbsd",
+        target_os = "openbsd",
+        target_os = "redox",
+        target_os = "solaris"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// Symbolic links can be created.
     POSIX2_SYMLINKS = libc::_PC_2_SYMLINKS,
-    #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd",
-              target_os = "linux", target_os = "openbsd", target_os = "redox"))]
+    #[cfg(any(
+        target_os = "android",
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "linux",
+        target_os = "openbsd",
+        target_os = "redox"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// Minimum number of bytes of storage actually allocated for any portion of
     /// a file.
     POSIX_ALLOC_SIZE_MIN = libc::_PC_ALLOC_SIZE_MIN,
-    #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd",
-              target_os = "linux", target_os = "openbsd"))]
+    #[cfg(any(
+        target_os = "android",
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "linux",
+        target_os = "openbsd"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// Recommended increment for file transfer sizes between the
     /// `POSIX_REC_MIN_XFER_SIZE` and `POSIX_REC_MAX_XFER_SIZE` values.
     POSIX_REC_INCR_XFER_SIZE = libc::_PC_REC_INCR_XFER_SIZE,
-    #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd",
-              target_os = "linux", target_os = "openbsd", target_os = "redox"))]
+    #[cfg(any(
+        target_os = "android",
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "linux",
+        target_os = "openbsd",
+        target_os = "redox"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// Maximum recommended file transfer size.
     POSIX_REC_MAX_XFER_SIZE = libc::_PC_REC_MAX_XFER_SIZE,
-    #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd",
-              target_os = "linux", target_os = "openbsd", target_os = "redox"))]
+    #[cfg(any(
+        target_os = "android",
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "linux",
+        target_os = "openbsd",
+        target_os = "redox"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// Minimum recommended file transfer size.
     POSIX_REC_MIN_XFER_SIZE = libc::_PC_REC_MIN_XFER_SIZE,
-    #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd",
-              target_os = "linux", target_os = "openbsd", target_os = "redox"))]
+    #[cfg(any(
+        target_os = "android",
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "linux",
+        target_os = "openbsd",
+        target_os = "redox"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     ///  Recommended file transfer buffer alignment.
     POSIX_REC_XFER_ALIGN = libc::_PC_REC_XFER_ALIGN,
-    #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd",
-              target_os = "illumos", target_os = "linux", target_os = "netbsd",
-              target_os = "openbsd", target_os = "redox", target_os = "solaris"))]
+    #[cfg(any(
+        target_os = "android",
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "illumos",
+        target_os = "linux",
+        target_os = "netbsd",
+        target_os = "openbsd",
+        target_os = "redox",
+        target_os = "solaris"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// Maximum number of bytes in a symbolic link.
     SYMLINK_MAX = libc::_PC_SYMLINK_MAX,
@@ -2036,23 +2123,45 @@ pub enum PathconfVar {
     /// This symbol shall be defined to be the value of a character that shall
     /// disable terminal special character handling.
     _POSIX_VDISABLE = libc::_PC_VDISABLE,
-    #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd",
-              target_os = "illumos", target_os = "linux", target_os = "openbsd",
-              target_os = "redox", target_os = "solaris"))]
+    #[cfg(any(
+        target_os = "android",
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "illumos",
+        target_os = "linux",
+        target_os = "openbsd",
+        target_os = "redox",
+        target_os = "solaris"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// Asynchronous input or output operations may be performed for the
     /// associated file.
     _POSIX_ASYNC_IO = libc::_PC_ASYNC_IO,
-    #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd",
-              target_os = "illumos", target_os = "linux", target_os = "openbsd",
-              target_os = "redox", target_os = "solaris"))]
+    #[cfg(any(
+        target_os = "android",
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "illumos",
+        target_os = "linux",
+        target_os = "openbsd",
+        target_os = "redox",
+        target_os = "solaris"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// Prioritized input or output operations may be performed for the
     /// associated file.
     _POSIX_PRIO_IO = libc::_PC_PRIO_IO,
-    #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd",
-              target_os = "illumos", target_os = "linux", target_os = "netbsd",
-              target_os = "openbsd", target_os = "redox", target_os = "solaris"))]
+    #[cfg(any(
+        target_os = "android",
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "illumos",
+        target_os = "linux",
+        target_os = "netbsd",
+        target_os = "openbsd",
+        target_os = "redox",
+        target_os = "solaris"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// Synchronized input or output operations may be performed for the
     /// associated file.
@@ -2060,7 +2169,7 @@ pub enum PathconfVar {
     #[cfg(any(target_os = "dragonfly", target_os = "openbsd"))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The resolution in nanoseconds for all file timestamps.
-    _POSIX_TIMESTAMP_RESOLUTION = libc::_PC_TIMESTAMP_RESOLUTION
+    _POSIX_TIMESTAMP_RESOLUTION = libc::_PC_TIMESTAMP_RESOLUTION,
 }
 
 /// Like `pathconf`, but works with file descriptors instead of paths (see
@@ -2116,12 +2225,13 @@ pub fn fpathconf(fd: RawFd, var: PathconfVar) -> Result<Option<c_long>> {
 /// - `Ok(None)`: the variable has no limit (for limit variables) or is
 ///     unsupported (for option variables)
 /// - `Err(x)`: an error occurred
-pub fn pathconf<P: ?Sized + NixPath>(path: &P, var: PathconfVar) -> Result<Option<c_long>> {
-    let raw = path.with_nix_path(|cstr| {
-        unsafe {
-            Errno::clear();
-            libc::pathconf(cstr.as_ptr(), var as c_int)
-        }
+pub fn pathconf<P: ?Sized + NixPath>(
+    path: &P,
+    var: PathconfVar,
+) -> Result<Option<c_long>> {
+    let raw = path.with_nix_path(|cstr| unsafe {
+        Errno::clear();
+        libc::pathconf(cstr.as_ptr(), var as c_int)
     })?;
     if raw == -1 {
         if errno::errno() == 0 {
@@ -2168,9 +2278,15 @@ pub enum SysconfVar {
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     AIO_MAX = libc::_SC_AIO_MAX,
-    #[cfg(any(target_os="android", target_os="dragonfly", target_os="freebsd",
-              target_os = "ios", target_os="linux", target_os = "macos",
-              target_os="openbsd"))]
+    #[cfg(any(
+        target_os = "android",
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "openbsd"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The maximum amount by which a process can decrease its asynchronous I/O
     /// priority level from its own scheduling priority.
@@ -2215,9 +2331,17 @@ pub enum SysconfVar {
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     EXPR_NEST_MAX = libc::_SC_EXPR_NEST_MAX,
-    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "illumos",
-              target_os = "ios", target_os="linux", target_os = "macos",
-              target_os="netbsd", target_os="openbsd", target_os = "solaris"))]
+    #[cfg(any(
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "illumos",
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "netbsd",
+        target_os = "openbsd",
+        target_os = "solaris"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// Maximum length of a host name (not including the terminating null) as
     /// returned from the `gethostname` function
@@ -2258,14 +2382,28 @@ pub enum SysconfVar {
     /// A value one greater than the maximum value that the system may assign to
     /// a newly-created file descriptor.
     OPEN_MAX = libc::_SC_OPEN_MAX,
-    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
-              target_os="linux", target_os = "macos", target_os="openbsd"))]
+    #[cfg(any(
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "openbsd"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Advisory Information option.
     _POSIX_ADVISORY_INFO = libc::_SC_ADVISORY_INFO,
-    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "illumos",
-              target_os = "ios", target_os="linux", target_os = "macos",
-              target_os="netbsd", target_os="openbsd", target_os = "solaris"))]
+    #[cfg(any(
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "illumos",
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "netbsd",
+        target_os = "openbsd",
+        target_os = "solaris"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports barriers.
     _POSIX_BARRIERS = libc::_SC_BARRIERS,
@@ -2273,15 +2411,31 @@ pub enum SysconfVar {
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_ASYNCHRONOUS_IO = libc::_SC_ASYNCHRONOUS_IO,
-    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "illumos",
-              target_os = "ios", target_os="linux", target_os = "macos",
-              target_os="netbsd", target_os="openbsd", target_os = "solaris"))]
+    #[cfg(any(
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "illumos",
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "netbsd",
+        target_os = "openbsd",
+        target_os = "solaris"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports clock selection.
     _POSIX_CLOCK_SELECTION = libc::_SC_CLOCK_SELECTION,
-    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "illumos",
-              target_os = "ios", target_os="linux", target_os = "macos",
-              target_os="netbsd", target_os="openbsd", target_os = "solaris"))]
+    #[cfg(any(
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "illumos",
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "netbsd",
+        target_os = "openbsd",
+        target_os = "solaris"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Process CPU-Time Clocks option.
     _POSIX_CPUTIME = libc::_SC_CPUTIME,
@@ -2289,9 +2443,16 @@ pub enum SysconfVar {
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_FSYNC = libc::_SC_FSYNC,
-    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "illumos",
-              target_os = "ios", target_os="linux", target_os = "macos",
-              target_os="openbsd", target_os = "solaris"))]
+    #[cfg(any(
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "illumos",
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "openbsd",
+        target_os = "solaris"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the IPv6 option.
     _POSIX_IPV6 = libc::_SC_IPV6,
@@ -2323,9 +2484,17 @@ pub enum SysconfVar {
     #[cfg(not(target_os = "redox"))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_MONOTONIC_CLOCK = libc::_SC_MONOTONIC_CLOCK,
-    #[cfg(any(target_os="android", target_os="dragonfly", target_os="freebsd",
-              target_os = "illumos", target_os = "ios", target_os="linux",
-              target_os = "macos", target_os="openbsd", target_os = "solaris"))]
+    #[cfg(any(
+        target_os = "android",
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "illumos",
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "openbsd",
+        target_os = "solaris"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Prioritized Input and Output option.
     _POSIX_PRIORITIZED_IO = libc::_SC_PRIORITIZED_IO,
@@ -2333,27 +2502,56 @@ pub enum SysconfVar {
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_PRIORITY_SCHEDULING = libc::_SC_PRIORITY_SCHEDULING,
-    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "illumos",
-              target_os = "ios", target_os="linux", target_os = "macos",
-              target_os="openbsd", target_os = "solaris"))]
+    #[cfg(any(
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "illumos",
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "openbsd",
+        target_os = "solaris"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Raw Sockets option.
     _POSIX_RAW_SOCKETS = libc::_SC_RAW_SOCKETS,
-    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "illumos",
-              target_os = "ios", target_os="linux", target_os = "macos",
-              target_os="netbsd", target_os="openbsd", target_os = "solaris"))]
+    #[cfg(any(
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "illumos",
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "netbsd",
+        target_os = "openbsd",
+        target_os = "solaris"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports read-write locks.
     _POSIX_READER_WRITER_LOCKS = libc::_SC_READER_WRITER_LOCKS,
-    #[cfg(any(target_os = "android", target_os="dragonfly", target_os="freebsd",
-              target_os = "ios", target_os="linux", target_os = "macos",
-              target_os = "openbsd"))]
+    #[cfg(any(
+        target_os = "android",
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "openbsd"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports realtime signals.
     _POSIX_REALTIME_SIGNALS = libc::_SC_REALTIME_SIGNALS,
-    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "illumos",
-              target_os = "ios", target_os="linux", target_os = "macos",
-              target_os="netbsd", target_os="openbsd", target_os = "solaris"))]
+    #[cfg(any(
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "illumos",
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "netbsd",
+        target_os = "openbsd",
+        target_os = "solaris"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Regular Expression Handling option.
     _POSIX_REGEXP = libc::_SC_REGEXP,
@@ -2369,31 +2567,59 @@ pub enum SysconfVar {
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_SHARED_MEMORY_OBJECTS = libc::_SC_SHARED_MEMORY_OBJECTS,
-    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
-              target_os="linux", target_os = "macos", target_os="netbsd",
-              target_os="openbsd"))]
+    #[cfg(any(
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the POSIX shell.
     _POSIX_SHELL = libc::_SC_SHELL,
-    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
-              target_os="linux", target_os = "macos", target_os="netbsd",
-              target_os="openbsd"))]
+    #[cfg(any(
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Spawn option.
     _POSIX_SPAWN = libc::_SC_SPAWN,
-    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
-              target_os="linux", target_os = "macos", target_os="netbsd",
-              target_os="openbsd"))]
+    #[cfg(any(
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports spin locks.
     _POSIX_SPIN_LOCKS = libc::_SC_SPIN_LOCKS,
-    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
-              target_os="linux", target_os = "macos", target_os="openbsd"))]
+    #[cfg(any(
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "openbsd"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Process Sporadic Server option.
     _POSIX_SPORADIC_SERVER = libc::_SC_SPORADIC_SERVER,
-    #[cfg(any(target_os = "ios", target_os="linux", target_os = "macos",
-              target_os="openbsd"))]
+    #[cfg(any(
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "openbsd"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_SS_REPL_MAX = libc::_SC_SS_REPL_MAX,
     /// The implementation supports the Synchronized Input and Output option.
@@ -2408,8 +2634,13 @@ pub enum SysconfVar {
     #[cfg(not(target_os = "redox"))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_THREAD_ATTR_STACKSIZE = libc::_SC_THREAD_ATTR_STACKSIZE,
-    #[cfg(any(target_os = "ios", target_os="linux", target_os = "macos",
-              target_os="netbsd", target_os="openbsd"))]
+    #[cfg(any(
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Thread CPU-Time Clocks option.
     _POSIX_THREAD_CPUTIME = libc::_SC_THREAD_CPUTIME,
@@ -2426,18 +2657,32 @@ pub enum SysconfVar {
     #[cfg(not(target_os = "redox"))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_THREAD_PRIORITY_SCHEDULING = libc::_SC_THREAD_PRIORITY_SCHEDULING,
-    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
-              target_os="linux", target_os = "macos", target_os="netbsd",
-              target_os="openbsd"))]
+    #[cfg(any(
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Thread Process-Shared Synchronization
     /// option.
     _POSIX_THREAD_PROCESS_SHARED = libc::_SC_THREAD_PROCESS_SHARED,
-    #[cfg(any(target_os="dragonfly", target_os="linux", target_os="openbsd"))]
+    #[cfg(any(
+        target_os = "dragonfly",
+        target_os = "linux",
+        target_os = "openbsd"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Robust Mutex Priority Inheritance option.
     _POSIX_THREAD_ROBUST_PRIO_INHERIT = libc::_SC_THREAD_ROBUST_PRIO_INHERIT,
-    #[cfg(any(target_os="dragonfly", target_os="linux", target_os="openbsd"))]
+    #[cfg(any(
+        target_os = "dragonfly",
+        target_os = "linux",
+        target_os = "openbsd"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Robust Mutex Priority Protection option.
     _POSIX_THREAD_ROBUST_PRIO_PROTECT = libc::_SC_THREAD_ROBUST_PRIO_PROTECT,
@@ -2445,8 +2690,14 @@ pub enum SysconfVar {
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_THREAD_SAFE_FUNCTIONS = libc::_SC_THREAD_SAFE_FUNCTIONS,
-    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
-              target_os="linux", target_os = "macos", target_os="openbsd"))]
+    #[cfg(any(
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "openbsd"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Thread Sporadic Server option.
     _POSIX_THREAD_SPORADIC_SERVER = libc::_SC_THREAD_SPORADIC_SERVER,
@@ -2454,8 +2705,14 @@ pub enum SysconfVar {
     #[cfg(not(target_os = "redox"))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_THREADS = libc::_SC_THREADS,
-    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
-              target_os="linux", target_os = "macos", target_os="openbsd"))]
+    #[cfg(any(
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "openbsd"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports timeouts.
     _POSIX_TIMEOUTS = libc::_SC_TIMEOUTS,
@@ -2463,44 +2720,90 @@ pub enum SysconfVar {
     #[cfg(not(target_os = "redox"))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_TIMERS = libc::_SC_TIMERS,
-    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
-              target_os="linux", target_os = "macos", target_os="openbsd"))]
+    #[cfg(any(
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "openbsd"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Trace option.
     _POSIX_TRACE = libc::_SC_TRACE,
-    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
-              target_os="linux", target_os = "macos", target_os="openbsd"))]
+    #[cfg(any(
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "openbsd"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Trace Event Filter option.
     _POSIX_TRACE_EVENT_FILTER = libc::_SC_TRACE_EVENT_FILTER,
-    #[cfg(any(target_os = "ios", target_os="linux", target_os = "macos",
-              target_os="openbsd"))]
+    #[cfg(any(
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "openbsd"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_TRACE_EVENT_NAME_MAX = libc::_SC_TRACE_EVENT_NAME_MAX,
-    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
-              target_os="linux", target_os = "macos", target_os="openbsd"))]
+    #[cfg(any(
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "openbsd"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Trace Inherit option.
     _POSIX_TRACE_INHERIT = libc::_SC_TRACE_INHERIT,
-    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
-              target_os="linux", target_os = "macos", target_os="openbsd"))]
+    #[cfg(any(
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "openbsd"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Trace Log option.
     _POSIX_TRACE_LOG = libc::_SC_TRACE_LOG,
-    #[cfg(any(target_os = "ios", target_os="linux", target_os = "macos",
-              target_os="openbsd"))]
+    #[cfg(any(
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "openbsd"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_TRACE_NAME_MAX = libc::_SC_TRACE_NAME_MAX,
-    #[cfg(any(target_os = "ios", target_os="linux", target_os = "macos",
-              target_os="openbsd"))]
+    #[cfg(any(
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "openbsd"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_TRACE_SYS_MAX = libc::_SC_TRACE_SYS_MAX,
-    #[cfg(any(target_os = "ios", target_os="linux", target_os = "macos",
-              target_os="openbsd"))]
+    #[cfg(any(
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "openbsd"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_TRACE_USER_EVENT_MAX = libc::_SC_TRACE_USER_EVENT_MAX,
-    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
-              target_os="linux", target_os = "macos", target_os="openbsd"))]
+    #[cfg(any(
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "openbsd"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Typed Memory Objects option.
     _POSIX_TYPED_MEMORY_OBJECTS = libc::_SC_TYPED_MEMORY_OBJECTS,
@@ -2508,31 +2811,55 @@ pub enum SysconfVar {
     /// to which the implementation conforms. For implementations conforming to
     /// POSIX.1-2008, the value shall be 200809L.
     _POSIX_VERSION = libc::_SC_VERSION,
-    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
-              target_os="linux", target_os = "macos", target_os="netbsd",
-              target_os="openbsd"))]
+    #[cfg(any(
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation provides a C-language compilation environment with
     /// 32-bit `int`, `long`, `pointer`, and `off_t` types.
     _POSIX_V6_ILP32_OFF32 = libc::_SC_V6_ILP32_OFF32,
-    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
-              target_os="linux", target_os = "macos", target_os="netbsd",
-              target_os="openbsd"))]
+    #[cfg(any(
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation provides a C-language compilation environment with
     /// 32-bit `int`, `long`, and pointer types and an `off_t` type using at
     /// least 64 bits.
     _POSIX_V6_ILP32_OFFBIG = libc::_SC_V6_ILP32_OFFBIG,
-    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
-              target_os="linux", target_os = "macos", target_os="netbsd",
-              target_os="openbsd"))]
+    #[cfg(any(
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation provides a C-language compilation environment with
     /// 32-bit `int` and 64-bit `long`, `pointer`, and `off_t` types.
     _POSIX_V6_LP64_OFF64 = libc::_SC_V6_LP64_OFF64,
-    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
-              target_os="linux", target_os = "macos", target_os="netbsd",
-              target_os="openbsd"))]
+    #[cfg(any(
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation provides a C-language compilation environment with an
     /// `int` type using at least 32 bits and `long`, pointer, and `off_t` types
@@ -2563,40 +2890,76 @@ pub enum SysconfVar {
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX2_LOCALEDEF = libc::_SC_2_LOCALEDEF,
-    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
-              target_os="linux", target_os = "macos", target_os="netbsd",
-              target_os="openbsd"))]
+    #[cfg(any(
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Batch Environment Services and Utilities
     /// option.
     _POSIX2_PBS = libc::_SC_2_PBS,
-    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
-              target_os="linux", target_os = "macos", target_os="netbsd",
-              target_os="openbsd"))]
+    #[cfg(any(
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Batch Accounting option.
     _POSIX2_PBS_ACCOUNTING = libc::_SC_2_PBS_ACCOUNTING,
-    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
-              target_os="linux", target_os = "macos", target_os="netbsd",
-              target_os="openbsd"))]
+    #[cfg(any(
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Batch Checkpoint/Restart option.
     _POSIX2_PBS_CHECKPOINT = libc::_SC_2_PBS_CHECKPOINT,
-    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
-              target_os="linux", target_os = "macos", target_os="netbsd",
-              target_os="openbsd"))]
+    #[cfg(any(
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Locate Batch Job Request option.
     _POSIX2_PBS_LOCATE = libc::_SC_2_PBS_LOCATE,
-    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
-              target_os="linux", target_os = "macos", target_os="netbsd",
-              target_os="openbsd"))]
+    #[cfg(any(
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Batch Job Message Request option.
     _POSIX2_PBS_MESSAGE = libc::_SC_2_PBS_MESSAGE,
-    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
-              target_os="linux", target_os = "macos", target_os="netbsd",
-              target_os="openbsd"))]
+    #[cfg(any(
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Track Batch Job Request option.
     _POSIX2_PBS_TRACK = libc::_SC_2_PBS_TRACK,
@@ -2632,28 +2995,52 @@ pub enum SysconfVar {
     PTHREAD_THREADS_MAX = libc::_SC_THREAD_THREADS_MAX,
     #[cfg(not(target_os = "haiku"))]
     RE_DUP_MAX = libc::_SC_RE_DUP_MAX,
-    #[cfg(any(target_os="android", target_os="dragonfly", target_os="freebsd",
-              target_os = "ios", target_os="linux", target_os = "macos",
-              target_os="openbsd"))]
+    #[cfg(any(
+        target_os = "android",
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "openbsd"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     RTSIG_MAX = libc::_SC_RTSIG_MAX,
     #[cfg(not(target_os = "redox"))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     SEM_NSEMS_MAX = libc::_SC_SEM_NSEMS_MAX,
-    #[cfg(any(target_os="android", target_os="dragonfly", target_os="freebsd",
-              target_os = "ios", target_os="linux", target_os = "macos",
-              target_os="openbsd"))]
+    #[cfg(any(
+        target_os = "android",
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "openbsd"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     SEM_VALUE_MAX = libc::_SC_SEM_VALUE_MAX,
-    #[cfg(any(target_os = "android", target_os="dragonfly", target_os="freebsd",
-              target_os = "ios", target_os="linux", target_os = "macos",
-              target_os = "openbsd"))]
+    #[cfg(any(
+        target_os = "android",
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "openbsd"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     SIGQUEUE_MAX = libc::_SC_SIGQUEUE_MAX,
     STREAM_MAX = libc::_SC_STREAM_MAX,
-    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
-              target_os="linux", target_os = "macos", target_os="netbsd",
-              target_os="openbsd"))]
+    #[cfg(any(
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     SYMLOOP_MAX = libc::_SC_SYMLOOP_MAX,
     #[cfg(not(target_os = "redox"))]
@@ -2661,33 +3048,63 @@ pub enum SysconfVar {
     TIMER_MAX = libc::_SC_TIMER_MAX,
     TTY_NAME_MAX = libc::_SC_TTY_NAME_MAX,
     TZNAME_MAX = libc::_SC_TZNAME_MAX,
-    #[cfg(any(target_os="android", target_os="dragonfly", target_os="freebsd",
-              target_os = "ios", target_os="linux", target_os = "macos",
-              target_os="openbsd"))]
+    #[cfg(any(
+        target_os = "android",
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "openbsd"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the X/Open Encryption Option Group.
     _XOPEN_CRYPT = libc::_SC_XOPEN_CRYPT,
-    #[cfg(any(target_os="android", target_os="dragonfly", target_os="freebsd",
-              target_os = "ios", target_os="linux", target_os = "macos",
-              target_os="openbsd"))]
+    #[cfg(any(
+        target_os = "android",
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "openbsd"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Issue 4, Version 2 Enhanced
     /// Internationalization Option Group.
     _XOPEN_ENH_I18N = libc::_SC_XOPEN_ENH_I18N,
-    #[cfg(any(target_os="android", target_os="dragonfly", target_os="freebsd",
-              target_os = "ios", target_os="linux", target_os = "macos",
-              target_os="openbsd"))]
+    #[cfg(any(
+        target_os = "android",
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "openbsd"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     _XOPEN_LEGACY = libc::_SC_XOPEN_LEGACY,
-    #[cfg(any(target_os="android", target_os="dragonfly", target_os="freebsd",
-              target_os = "ios", target_os="linux", target_os = "macos",
-              target_os="openbsd"))]
+    #[cfg(any(
+        target_os = "android",
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "openbsd"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the X/Open Realtime Option Group.
     _XOPEN_REALTIME = libc::_SC_XOPEN_REALTIME,
-    #[cfg(any(target_os="android", target_os="dragonfly", target_os="freebsd",
-              target_os = "ios", target_os="linux", target_os = "macos",
-              target_os="openbsd"))]
+    #[cfg(any(
+        target_os = "android",
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "openbsd"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the X/Open Realtime Threads Option Group.
     _XOPEN_REALTIME_THREADS = libc::_SC_XOPEN_REALTIME_THREADS,
@@ -2696,36 +3113,54 @@ pub enum SysconfVar {
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     _XOPEN_SHM = libc::_SC_XOPEN_SHM,
-    #[cfg(any(target_os="dragonfly", target_os="freebsd", target_os = "ios",
-              target_os="linux", target_os = "macos", target_os="openbsd"))]
+    #[cfg(any(
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "openbsd"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the XSI STREAMS Option Group.
     _XOPEN_STREAMS = libc::_SC_XOPEN_STREAMS,
-    #[cfg(any(target_os="android", target_os="dragonfly", target_os="freebsd",
-              target_os = "ios", target_os="linux", target_os = "macos",
-              target_os="openbsd"))]
+    #[cfg(any(
+        target_os = "android",
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "openbsd"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the XSI option
     _XOPEN_UNIX = libc::_SC_XOPEN_UNIX,
-    #[cfg(any(target_os="android", target_os="dragonfly", target_os="freebsd",
-              target_os = "ios", target_os="linux", target_os = "macos",
-              target_os="openbsd"))]
+    #[cfg(any(
+        target_os = "android",
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "openbsd"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// Integer value indicating version of the X/Open Portability Guide to
     /// which the implementation conforms.
     _XOPEN_VERSION = libc::_SC_XOPEN_VERSION,
     /// The number of pages of physical memory. Note that it is possible for
     /// the product of this value to overflow.
-    #[cfg(any(target_os="android", target_os="linux"))]
+    #[cfg(any(target_os = "android", target_os = "linux"))]
     _PHYS_PAGES = libc::_SC_PHYS_PAGES,
     /// The number of currently available pages of physical memory.
-    #[cfg(any(target_os="android", target_os="linux"))]
+    #[cfg(any(target_os = "android", target_os = "linux"))]
     _AVPHYS_PAGES = libc::_SC_AVPHYS_PAGES,
     /// The number of processors configured.
-    #[cfg(any(target_os="android", target_os="linux"))]
+    #[cfg(any(target_os = "android", target_os = "linux"))]
     _NPROCESSORS_CONF = libc::_SC_NPROCESSORS_CONF,
     /// The number of processors currently online (available).
-    #[cfg(any(target_os="android", target_os="linux"))]
+    #[cfg(any(target_os = "android", target_os = "linux"))]
     _NPROCESSORS_ONLN = libc::_SC_NPROCESSORS_ONLN,
 }
 
@@ -2797,9 +3232,9 @@ mod setres {
     feature! {
     #![feature = "user"]
 
-    use crate::Result;
+    use super::{Gid, Uid};
     use crate::errno::Errno;
-    use super::{Uid, Gid};
+    use crate::Result;
 
     /// Sets the real, effective, and saved uid.
     /// ([see setresuid(2)](https://man7.org/linux/man-pages/man2/setresuid.2.html))
@@ -2812,7 +3247,8 @@ mod setres {
     /// Err is returned if the user doesn't have permission to set this UID.
     #[inline]
     pub fn setresuid(ruid: Uid, euid: Uid, suid: Uid) -> Result<()> {
-        let res = unsafe { libc::setresuid(ruid.into(), euid.into(), suid.into()) };
+        let res =
+            unsafe { libc::setresuid(ruid.into(), euid.into(), suid.into()) };
 
         Errno::result(res).map(drop)
     }
@@ -2828,7 +3264,8 @@ mod setres {
     /// Err is returned if the user doesn't have permission to set this GID.
     #[inline]
     pub fn setresgid(rgid: Gid, egid: Gid, sgid: Gid) -> Result<()> {
-        let res = unsafe { libc::setresgid(rgid.into(), egid.into(), sgid.into()) };
+        let res =
+            unsafe { libc::setresgid(rgid.into(), egid.into(), sgid.into()) };
 
         Errno::result(res).map(drop)
     }
@@ -2846,16 +3283,16 @@ mod getres {
     feature! {
     #![feature = "user"]
 
-    use crate::Result;
+    use super::{Gid, Uid};
     use crate::errno::Errno;
-    use super::{Uid, Gid};
+    use crate::Result;
 
     /// Real, effective and saved user IDs.
     #[derive(Debug, Copy, Clone, Eq, PartialEq)]
     pub struct ResUid {
         pub real: Uid,
         pub effective: Uid,
-        pub saved: Uid
+        pub saved: Uid,
     }
 
     /// Real, effective and saved group IDs.
@@ -2863,7 +3300,7 @@ mod getres {
     pub struct ResGid {
         pub real: Gid,
         pub effective: Gid,
-        pub saved: Gid
+        pub saved: Gid,
     }
 
     /// Gets the real, effective, and saved user IDs.
@@ -2882,7 +3319,11 @@ mod getres {
         let mut suid = libc::uid_t::max_value();
         let res = unsafe { libc::getresuid(&mut ruid, &mut euid, &mut suid) };
 
-        Errno::result(res).map(|_| ResUid{ real: Uid(ruid), effective: Uid(euid), saved: Uid(suid) })
+        Errno::result(res).map(|_| ResUid {
+            real: Uid(ruid),
+            effective: Uid(euid),
+            saved: Uid(suid),
+        })
     }
 
     /// Gets the real, effective, and saved group IDs.
@@ -2901,7 +3342,11 @@ mod getres {
         let mut sgid = libc::gid_t::max_value();
         let res = unsafe { libc::getresgid(&mut rgid, &mut egid, &mut sgid) };
 
-        Errno::result(res).map(|_| ResGid { real: Gid(rgid), effective: Gid(egid), saved: Gid(sgid) } )
+        Errno::result(res).map(|_| ResGid {
+            real: Gid(rgid),
+            effective: Gid(egid),
+            saved: Gid(sgid),
+        })
     }
     }
 }
@@ -2945,11 +3390,19 @@ pub fn access<P: ?Sized + NixPath>(path: &P, amode: AccessFlags) -> Result<()> {
 /// [faccessat(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/faccessat.html)
 // redox: does not appear to support the *at family of syscalls.
 #[cfg(not(target_os = "redox"))]
-pub fn faccessat<P: ?Sized + NixPath>(dirfd: Option<RawFd>, path: &P, mode: AccessFlags, flags: AtFlags) -> Result<()> {
-    let res = path.with_nix_path(|cstr| {
-        unsafe {
-            libc::faccessat(at_rawfd(dirfd), cstr.as_ptr(), mode.bits(), flags.bits())
-        }
+pub fn faccessat<P: ?Sized + NixPath>(
+    dirfd: Option<RawFd>,
+    path: &P,
+    mode: AccessFlags,
+    flags: AtFlags,
+) -> Result<()> {
+    let res = path.with_nix_path(|cstr| unsafe {
+        libc::faccessat(
+            at_rawfd(dirfd),
+            cstr.as_ptr(),
+            mode.bits(),
+            flags.bits(),
+        )
     })?;
     Errno::result(res).map(drop)
 }
@@ -3002,32 +3455,38 @@ pub struct User {
     /// Path to shell
     pub shell: PathBuf,
     /// Login class
-    #[cfg(not(any(target_os = "android",
-                  target_os = "fuchsia",
-                  target_os = "haiku",
-                  target_os = "illumos",
-                  target_os = "linux",
-                  target_os = "solaris")))]
+    #[cfg(not(any(
+        target_os = "android",
+        target_os = "fuchsia",
+        target_os = "haiku",
+        target_os = "illumos",
+        target_os = "linux",
+        target_os = "solaris"
+    )))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     pub class: CString,
     /// Last password change
-    #[cfg(not(any(target_os = "android",
-                  target_os = "fuchsia",
-                  target_os = "haiku",
-                  target_os = "illumos",
-                  target_os = "linux",
-                  target_os = "solaris")))]
+    #[cfg(not(any(
+        target_os = "android",
+        target_os = "fuchsia",
+        target_os = "haiku",
+        target_os = "illumos",
+        target_os = "linux",
+        target_os = "solaris"
+    )))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     pub change: libc::time_t,
     /// Expiration time of account
-    #[cfg(not(any(target_os = "android",
-                  target_os = "fuchsia",
-                  target_os = "haiku",
-                  target_os = "illumos",
-                  target_os = "linux",
-                  target_os = "solaris")))]
+    #[cfg(not(any(
+        target_os = "android",
+        target_os = "fuchsia",
+        target_os = "haiku",
+        target_os = "illumos",
+        target_os = "linux",
+        target_os = "solaris"
+    )))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
-    pub expire: libc::time_t
+    pub expire: libc::time_t,
 }
 
 #[cfg(not(target_os = "redox"))] //RedoxFS does not support passwd
@@ -3035,35 +3494,71 @@ impl From<&libc::passwd> for User {
     fn from(pw: &libc::passwd) -> User {
         unsafe {
             User {
-                name: if pw.pw_name.is_null() { Default::default() } else { CStr::from_ptr(pw.pw_name).to_string_lossy().into_owned() },
-                passwd: if pw.pw_passwd.is_null() { Default::default() } else { CString::new(CStr::from_ptr(pw.pw_passwd).to_bytes()).unwrap() },
-                #[cfg(not(all(target_os = "android", target_pointer_width = "32")))]
-                gecos: if pw.pw_gecos.is_null() { Default::default() } else { CString::new(CStr::from_ptr(pw.pw_gecos).to_bytes()).unwrap() },
-                dir: if pw.pw_dir.is_null() { Default::default() } else { PathBuf::from(OsStr::from_bytes(CStr::from_ptr(pw.pw_dir).to_bytes())) },
-                shell: if pw.pw_shell.is_null() { Default::default() } else { PathBuf::from(OsStr::from_bytes(CStr::from_ptr(pw.pw_shell).to_bytes())) },
+                name: if pw.pw_name.is_null() {
+                    Default::default()
+                } else {
+                    CStr::from_ptr(pw.pw_name).to_string_lossy().into_owned()
+                },
+                passwd: if pw.pw_passwd.is_null() {
+                    Default::default()
+                } else {
+                    CString::new(CStr::from_ptr(pw.pw_passwd).to_bytes())
+                        .unwrap()
+                },
+                #[cfg(not(all(
+                    target_os = "android",
+                    target_pointer_width = "32"
+                )))]
+                gecos: if pw.pw_gecos.is_null() {
+                    Default::default()
+                } else {
+                    CString::new(CStr::from_ptr(pw.pw_gecos).to_bytes())
+                        .unwrap()
+                },
+                dir: if pw.pw_dir.is_null() {
+                    Default::default()
+                } else {
+                    PathBuf::from(OsStr::from_bytes(
+                        CStr::from_ptr(pw.pw_dir).to_bytes(),
+                    ))
+                },
+                shell: if pw.pw_shell.is_null() {
+                    Default::default()
+                } else {
+                    PathBuf::from(OsStr::from_bytes(
+                        CStr::from_ptr(pw.pw_shell).to_bytes(),
+                    ))
+                },
                 uid: Uid::from_raw(pw.pw_uid),
                 gid: Gid::from_raw(pw.pw_gid),
-                #[cfg(not(any(target_os = "android",
-                              target_os = "fuchsia",
-                              target_os = "haiku",
-                              target_os = "illumos",
-                              target_os = "linux",
-                              target_os = "solaris")))]
-                class: CString::new(CStr::from_ptr(pw.pw_class).to_bytes()).unwrap(),
-                #[cfg(not(any(target_os = "android",
-                              target_os = "fuchsia",
-                              target_os = "haiku",
-                              target_os = "illumos",
-                              target_os = "linux",
-                              target_os = "solaris")))]
+                #[cfg(not(any(
+                    target_os = "android",
+                    target_os = "fuchsia",
+                    target_os = "haiku",
+                    target_os = "illumos",
+                    target_os = "linux",
+                    target_os = "solaris"
+                )))]
+                class: CString::new(CStr::from_ptr(pw.pw_class).to_bytes())
+                    .unwrap(),
+                #[cfg(not(any(
+                    target_os = "android",
+                    target_os = "fuchsia",
+                    target_os = "haiku",
+                    target_os = "illumos",
+                    target_os = "linux",
+                    target_os = "solaris"
+                )))]
                 change: pw.pw_change,
-                #[cfg(not(any(target_os = "android",
-                              target_os = "fuchsia",
-                              target_os = "haiku",
-                              target_os = "illumos",
-                              target_os = "linux",
-                              target_os = "solaris")))]
-                expire: pw.pw_expire
+                #[cfg(not(any(
+                    target_os = "android",
+                    target_os = "fuchsia",
+                    target_os = "haiku",
+                    target_os = "illumos",
+                    target_os = "linux",
+                    target_os = "solaris"
+                )))]
+                expire: pw.pw_expire,
             }
         }
     }
@@ -3087,32 +3582,41 @@ impl From<User> for libc::passwd {
         Self {
             pw_name: name,
             pw_passwd: u.passwd.into_raw(),
-            #[cfg(not(all(target_os = "android", target_pointer_width = "32")))]
+            #[cfg(not(all(
+                target_os = "android",
+                target_pointer_width = "32"
+            )))]
             pw_gecos: u.gecos.into_raw(),
             pw_dir: dir,
             pw_shell: shell,
             pw_uid: u.uid.0,
             pw_gid: u.gid.0,
-            #[cfg(not(any(target_os = "android",
-                          target_os = "fuchsia",
-                          target_os = "haiku",
-                          target_os = "illumos",
-                          target_os = "linux",
-                          target_os = "solaris")))]
+            #[cfg(not(any(
+                target_os = "android",
+                target_os = "fuchsia",
+                target_os = "haiku",
+                target_os = "illumos",
+                target_os = "linux",
+                target_os = "solaris"
+            )))]
             pw_class: u.class.into_raw(),
-            #[cfg(not(any(target_os = "android",
-                          target_os = "fuchsia",
-                          target_os = "haiku",
-                          target_os = "illumos",
-                          target_os = "linux",
-                          target_os = "solaris")))]
+            #[cfg(not(any(
+                target_os = "android",
+                target_os = "fuchsia",
+                target_os = "haiku",
+                target_os = "illumos",
+                target_os = "linux",
+                target_os = "solaris"
+            )))]
             pw_change: u.change,
-            #[cfg(not(any(target_os = "android",
-                          target_os = "fuchsia",
-                          target_os = "haiku",
-                          target_os = "illumos",
-                          target_os = "linux",
-                          target_os = "solaris")))]
+            #[cfg(not(any(
+                target_os = "android",
+                target_os = "fuchsia",
+                target_os = "haiku",
+                target_os = "illumos",
+                target_os = "linux",
+                target_os = "solaris"
+            )))]
             pw_expire: u.expire,
             #[cfg(target_os = "illumos")]
             pw_age: CString::new("").unwrap().into_raw(),
@@ -3128,10 +3632,12 @@ impl From<User> for libc::passwd {
 impl User {
     fn from_anything<F>(f: F) -> Result<Option<Self>>
     where
-        F: Fn(*mut libc::passwd,
-              *mut c_char,
-              libc::size_t,
-              *mut *mut libc::passwd) -> libc::c_int
+        F: Fn(
+            *mut libc::passwd,
+            *mut c_char,
+            libc::size_t,
+            *mut *mut libc::passwd,
+        ) -> libc::c_int,
     {
         let buflimit = 1048576;
         let bufsize = match sysconf(SysconfVar::GETPW_R_SIZE_MAX) {
@@ -3144,7 +3650,12 @@ impl User {
         let mut res = ptr::null_mut();
 
         loop {
-            let error = f(pwd.as_mut_ptr(), cbuf.as_mut_ptr(), cbuf.capacity(), &mut res);
+            let error = f(
+                pwd.as_mut_ptr(),
+                cbuf.as_mut_ptr(),
+                cbuf.capacity(),
+                &mut res,
+            );
             if error == 0 {
                 if res.is_null() {
                     return Ok(None);
@@ -3175,8 +3686,8 @@ impl User {
     /// assert_eq!(res.name, "root");
     /// ```
     pub fn from_uid(uid: Uid) -> Result<Option<Self>> {
-        User::from_anything(|pwd, cbuf, cap, res| {
-            unsafe { libc::getpwuid_r(uid.0, pwd, cbuf, cap, res) }
+        User::from_anything(|pwd, cbuf, cap, res| unsafe {
+            libc::getpwuid_r(uid.0, pwd, cbuf, cap, res)
         })
     }
 
@@ -3198,8 +3709,8 @@ impl User {
             Ok(c_str) => c_str,
             Err(_nul_error) => return Ok(None),
         };
-        User::from_anything(|pwd, cbuf, cap, res| {
-            unsafe { libc::getpwnam_r(name.as_ptr(), pwd, cbuf, cap, res) }
+        User::from_anything(|pwd, cbuf, cap, res| unsafe {
+            libc::getpwnam_r(name.as_ptr(), pwd, cbuf, cap, res)
         })
     }
 }
@@ -3215,7 +3726,7 @@ pub struct Group {
     /// Group ID
     pub gid: Gid,
     /// List of Group members
-    pub mem: Vec<String>
+    pub mem: Vec<String>,
 }
 
 #[cfg(not(target_os = "redox"))] // RedoxFS does not support passwd
@@ -3224,9 +3735,10 @@ impl From<&libc::group> for Group {
         unsafe {
             Group {
                 name: CStr::from_ptr(gr.gr_name).to_string_lossy().into_owned(),
-                passwd: CString::new(CStr::from_ptr(gr.gr_passwd).to_bytes()).unwrap(),
+                passwd: CString::new(CStr::from_ptr(gr.gr_passwd).to_bytes())
+                    .unwrap(),
                 gid: Gid::from_raw(gr.gr_gid),
-                mem: Group::members(gr.gr_mem)
+                mem: Group::members(gr.gr_mem),
             }
         }
     }
@@ -3252,10 +3764,12 @@ impl Group {
 
     fn from_anything<F>(f: F) -> Result<Option<Self>>
     where
-        F: Fn(*mut libc::group,
-              *mut c_char,
-              libc::size_t,
-              *mut *mut libc::group) -> libc::c_int
+        F: Fn(
+            *mut libc::group,
+            *mut c_char,
+            libc::size_t,
+            *mut *mut libc::group,
+        ) -> libc::c_int,
     {
         let buflimit = 1048576;
         let bufsize = match sysconf(SysconfVar::GETGR_R_SIZE_MAX) {
@@ -3268,7 +3782,12 @@ impl Group {
         let mut res = ptr::null_mut();
 
         loop {
-            let error = f(grp.as_mut_ptr(), cbuf.as_mut_ptr(), cbuf.capacity(), &mut res);
+            let error = f(
+                grp.as_mut_ptr(),
+                cbuf.as_mut_ptr(),
+                cbuf.capacity(),
+                &mut res,
+            );
             if error == 0 {
                 if res.is_null() {
                     return Ok(None);
@@ -3301,8 +3820,8 @@ impl Group {
     /// assert!(res.name == "root");
     /// ```
     pub fn from_gid(gid: Gid) -> Result<Option<Self>> {
-        Group::from_anything(|grp, cbuf, cap, res| {
-            unsafe { libc::getgrgid_r(gid.0, grp, cbuf, cap, res) }
+        Group::from_anything(|grp, cbuf, cap, res| unsafe {
+            libc::getgrgid_r(gid.0, grp, cbuf, cap, res)
         })
     }
 
@@ -3326,8 +3845,8 @@ impl Group {
             Ok(c_str) => c_str,
             Err(_nul_error) => return Ok(None),
         };
-        Group::from_anything(|grp, cbuf, cap, res| {
-            unsafe { libc::getgrnam_r(name.as_ptr(), grp, cbuf, cap, res) }
+        Group::from_anything(|grp, cbuf, cap, res| unsafe {
+            libc::getgrnam_r(name.as_ptr(), grp, cbuf, cap, res)
         })
     }
 }
