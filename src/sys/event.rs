@@ -8,7 +8,7 @@ use libc::{c_int, c_long, intptr_t, time_t, timespec, uintptr_t};
 use libc::{c_long, intptr_t, size_t, time_t, timespec, uintptr_t};
 use std::convert::TryInto;
 use std::mem;
-use std::os::unix::io::RawFd;
+use std::os::unix::io::{AsFd, AsRawFd, FromRawFd, OwnedFd};
 use std::ptr;
 
 // Redefine kevent in terms of programmer-friendly enums and bitfields.
@@ -207,10 +207,10 @@ libc_bitflags!(
     }
 );
 
-pub fn kqueue() -> Result<RawFd> {
+pub fn kqueue() -> Result<OwnedFd> {
     let res = unsafe { libc::kqueue() };
 
-    Errno::result(res)
+    Errno::result(res).map(|fd| unsafe { OwnedFd::from_raw_fd(fd) })
 }
 
 // KEvent can't derive Send because on some operating systems, udata is defined
@@ -267,8 +267,8 @@ impl KEvent {
     }
 }
 
-pub fn kevent(
-    kq: RawFd,
+pub fn kevent<Fd: AsFd>(
+    kq: Fd,
     changelist: &[KEvent],
     eventlist: &mut [KEvent],
     timeout_ms: usize,
@@ -293,15 +293,15 @@ type type_of_nchanges = c_int;
 #[cfg(target_os = "netbsd")]
 type type_of_nchanges = size_t;
 
-pub fn kevent_ts(
-    kq: RawFd,
+pub fn kevent_ts<Fd: AsFd>(
+    kq: Fd,
     changelist: &[KEvent],
     eventlist: &mut [KEvent],
     timeout_opt: Option<timespec>,
 ) -> Result<usize> {
     let res = unsafe {
         libc::kevent(
-            kq,
+            kq.as_fd().as_raw_fd(),
             changelist.as_ptr() as *const libc::kevent,
             changelist.len() as type_of_nchanges,
             eventlist.as_mut_ptr() as *mut libc::kevent,

@@ -83,7 +83,7 @@ impl EpollEvent {
 /// let epoll = Epoll::new(EpollCreateFlags::empty())?;
 ///
 /// // Create eventfd & Add event
-/// let eventfd = unsafe { OwnedFd::from_raw_fd(eventfd(0, EfdFlags::empty())?) };
+/// let eventfd = eventfd(0, EfdFlags::empty())?;
 /// epoll.add(&eventfd, EpollEvent::new(EpollFlags::EPOLLIN,DATA))?;
 ///
 /// // Arm eventfd & Time wait
