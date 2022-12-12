@@ -1,3 +1,8 @@
+#[cfg(not(target_os = "redox"))]
+use crate::fcntl::{at_rawfd, AtFlags};
+use crate::sys::time::{TimeSpec, TimeVal};
+use crate::unistd::{Gid, Uid};
+use crate::{errno::Errno, NixPath, Result};
 #[cfg(any(target_os = "macos", target_os = "ios", target_os = "openbsd"))]
 pub use libc::c_uint;
 #[cfg(any(
@@ -6,13 +11,7 @@ pub use libc::c_uint;
     target_os = "dragonfly"
 ))]
 pub use libc::c_ulong;
-pub use libc::stat as FileStat;
 pub use libc::{dev_t, mode_t};
-
-#[cfg(not(target_os = "redox"))]
-use crate::fcntl::{at_rawfd, AtFlags};
-use crate::sys::time::{TimeSpec, TimeVal};
-use crate::{errno::Errno, NixPath, Result};
 use std::mem;
 use std::os::unix::io::RawFd;
 
@@ -66,13 +65,135 @@ libc_bitflags! {
 }
 
 #[cfg(any(target_os = "macos", target_os = "ios", target_os = "openbsd"))]
-pub type type_of_file_flag = c_uint;
+pub type type_of_st_flag = c_uint;
 #[cfg(any(
-    target_os = "netbsd",
     target_os = "freebsd",
-    target_os = "dragonfly"
+    target_os = "dragonfly",
+    target_os = "netbsd"
 ))]
-pub type type_of_file_flag = c_ulong;
+pub type type_of_st_flag = c_ulong;
+
+// Type of `st_dev`
+#[cfg(all(
+    target_os = "android",
+    any(target_arch = "arm", target_arch = "armv7", target_arch = "x86")
+))]
+type type_of_st_dev = libc::c_ulonglong;
+#[cfg(all(
+    target_os = "linux",
+    any(target_arch = "mips", target_arch = "mipsel")
+))]
+type type_of_st_dev = c_ulong;
+#[cfg(not(any(
+    all(
+        target_os = "android",
+        any(target_arch = "arm", target_arch = "armv7", target_arch = "x86")
+    ),
+    all(
+        target_os = "linux",
+        any(target_arch = "mips", target_arch = "mipsel")
+    )
+)))]
+type type_of_st_dev = dev_t;
+
+// Type of `st_ino`
+#[cfg(all(
+    target_os = "android",
+    any(target_arch = "arm", target_arch = "armv7", target_arch = "x86")
+))]
+type type_of_st_ino = libc::c_ulonglong;
+#[cfg(not(all(
+    target_os = "android",
+    any(target_arch = "arm", target_arch = "armv7", target_arch = "x86")
+)))]
+type type_of_st_ino = libc::ino_t;
+
+// Type of `st_nlink`
+#[cfg(all(target_os = "android", target_arch = "x86_64"))]
+type type_of_st_nlink = c_ulong;
+#[cfg(not(all(target_os = "android", target_arch = "x86_64")))]
+type type_of_st_nlink = libc::nlink_t;
+
+// Type of `st_mode`
+#[cfg(all(
+    target_os = "android",
+    any(target_arch = "arm", target_arch = "armv7", target_arch = "x86")
+))]
+type type_of_st_mode = c_uint;
+#[cfg(not(all(
+    target_os = "android",
+    any(target_arch = "arm", target_arch = "armv7", target_arch = "x86")
+)))]
+type type_of_st_mode = mode_t;
+
+// Type of `st_rdev`
+#[cfg(all(
+    target_os = "android",
+    any(target_arch = "arm", target_arch = "armv7", target_arch = "x86")
+))]
+type type_of_st_rdev = libc::c_ulonglong;
+#[cfg(all(
+    target_os = "linux",
+    any(target_arch = "mips", target_arch = "mipsel")
+))]
+type type_of_st_rdev = c_ulong;
+#[cfg(not(any(
+    all(
+        target_os = "android",
+        any(target_arch = "arm", target_arch = "armv7", target_arch = "x86")
+    ),
+    all(
+        target_os = "linux",
+        any(target_arch = "mips", target_arch = "mipsel")
+    )
+)))]
+type type_of_st_rdev = dev_t;
+
+// Type of `st_size`
+#[cfg(all(
+    target_os = "android",
+    any(target_arch = "arm", target_arch = "armv7", target_arch = "x86")
+))]
+type type_of_st_size = libc::c_longlong;
+#[cfg(not(all(
+    target_os = "android",
+    any(target_arch = "arm", target_arch = "armv7", target_arch = "x86")
+)))]
+type type_of_st_size = libc::off_t;
+
+// Type of `st_blksize`
+#[cfg(all(target_os = "android", target_arch = "aarch64"))]
+type type_of_st_blksize = libc::c_int;
+#[cfg(all(target_os = "android", target_arch = "x86_64"))]
+type type_of_st_blksize = libc::c_long;
+#[cfg(not(all(
+    target_os = "android",
+    any(target_arch = "aarch64", target_arch = "x86_64")
+)))]
+type type_of_st_blksize = libc::blksize_t;
+
+// Type of `st_blocks`
+#[cfg(all(
+    target_os = "android",
+    any(target_arch = "x86_64", target_arch = "aarch64")
+))]
+type type_of_st_blocks = libc::c_long;
+#[cfg(all(
+    target_os = "android",
+    any(target_arch = "arm", target_arch = "x86", target_arch = "armv7")
+))]
+type type_of_st_blocks = libc::c_ulonglong;
+#[cfg(not(all(
+    target_os = "android",
+    any(
+        target_arch = "aarch64",
+        target_arch = "x86_64",
+        target_arch = "arm",
+        target_arch = "armv7",
+        target_arch = "x86"
+    )
+)))]
+type type_of_st_blocks = libc::blkcnt_t;
 
 #[cfg(any(
     target_os = "openbsd",
@@ -85,7 +206,7 @@ pub type type_of_file_flag = c_ulong;
 libc_bitflags! {
     /// File flags.
     #[cfg_attr(docsrs, doc(cfg(all())))]
-    pub struct FileFlag: type_of_file_flag {
+    pub struct FileFlag: type_of_st_flag {
         /// The file may only be appended to.
         SF_APPEND;
         /// The file has been archived.
@@ -236,6 +357,134 @@ pub fn umask(mode: Mode) -> Mode {
     Mode::from_bits(prev).expect("[BUG] umask returned invalid Mode")
 }
 
+/// File metadata.
+#[repr(transparent)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct FileStat(libc::stat);
+
+impl From<libc::stat> for FileStat {
+    fn from(stat: libc::stat) -> Self {
+        FileStat(stat)
+    }
+}
+
+impl FileStat {
+    /// Returns the ID of device containing this file
+    pub fn dev(&self) -> type_of_st_dev {
+        self.0.st_dev
+    }
+
+    /// Returns the Inode number
+    pub fn ino(&self) -> type_of_st_ino {
+        self.0.st_ino
+    }
+
+    /// Returns the number of hard links
+    pub fn nlink(&self) -> type_of_st_nlink {
+        self.0.st_nlink
+    }
+
+    /// Returns a number encoding `file type` and `permission`
+    pub fn mode(&self) -> type_of_st_mode {
+        self.0.st_mode
+    }
+
+    /// Returns the User ID of the file owner
+    pub fn uid(&self) -> Uid {
+        Uid::from_raw(self.0.st_uid)
+    }
+
+    /// Returns the Group ID of the file owner
+    pub fn gid(&self) -> Gid {
+        Gid::from_raw(self.0.st_gid)
+    }
+
+    /// Returns the device ID (if this is a special file)
+    pub fn rdev(&self) -> type_of_st_rdev {
+        self.0.st_rdev
+    }
+
+    /// Returns the total size, in bytes
+    pub fn size(&self) -> type_of_st_size {
+        self.0.st_size
+    }
+
+    /// Returns the block size
+    pub fn blksize(&self) -> type_of_st_blksize {
+        self.0.st_blksize
+    }
+
+    /// Returns the number of blocks allocated
+    pub fn blocks(&self) -> type_of_st_blocks {
+        self.0.st_blocks
+    }
+
+    /// Returns the time of last access
+    pub fn atime(&self) -> TimeSpec {
+        #[cfg(target_os = "netbsd")]
+        return TimeSpec::new(self.0.st_atime, self.0.st_atimensec);
+        #[cfg(not(target_os = "netbsd"))]
+        return TimeSpec::new(self.0.st_atime, self.0.st_atime_nsec);
+    }
+
+    /// Returns the time of last modification
+    pub fn mtime(&self) -> TimeSpec {
+        #[cfg(target_os = "netbsd")]
+        return TimeSpec::new(self.0.st_mtime, self.0.st_mtimensec);
+        #[cfg(not(target_os = "netbsd"))]
+        return TimeSpec::new(self.0.st_mtime, self.0.st_mtime_nsec);
+    }
+
+    /// Returns the time of last status change
+    pub fn ctime(&self) -> TimeSpec {
+        #[cfg(target_os = "netbsd")]
+        return TimeSpec::new(self.0.st_ctime, self.0.st_ctimensec);
+        #[cfg(not(target_os = "netbsd"))]
+        return TimeSpec::new(self.0.st_ctime, self.0.st_ctime_nsec);
+    }
+
+    #[cfg(any(
+        target_os = "openbsd",
+        target_os = "macos",
+        target_os = "ios",
+        target_os = "freebsd",
+        target_os = "dragonfly",
+        target_os = "netbsd",
+    ))]
+    /// Return the file flags
+    pub fn flags(&self) -> FileFlag {
+        FileFlag::from_bits(self.0.st_flags as _).unwrap()
+    }
+
+    #[cfg(any(
+        target_os = "freebsd",
+        target_os = "dragonfly",
+        target_os = "netbsd",
+        target_os = "openbsd",
+        target_os = "macos",
+        target_os = "ios"
+    ))]
+    /// Returns the Inode generation number
+    pub fn gen(&self) -> u32 {
+        self.0.st_gen
+    }
+
+    #[cfg(any(
+        target_os = "freebsd",
+        target_os = "openbsd",
+        target_os = "macos",
+        target_os = "ios",
+        target_os = "netbsd"
+    ))]
+    /// Returns the birth time
+    pub fn birthtime(&self) -> TimeSpec {
+        #[cfg(target_os = "netbsd")]
+        return TimeSpec::new(self.0.st_birthtime, self.0.st_birthtimensec);
+        #[cfg(not(target_os = "netbsd"))]
+        return TimeSpec::new(self.0.st_birthtime, self.0.st_birthtime_nsec);
+    }
+}
+
 pub fn stat<P: ?Sized + NixPath>(path: &P) -> Result<FileStat> {
     let mut dst = mem::MaybeUninit::uninit();
     let res = path.with_nix_path(|cstr| unsafe {
@@ -244,7 +493,7 @@ pub fn stat<P: ?Sized + NixPath>(path: &P) -> Result<FileStat> {
 
     Errno::result(res)?;
 
-    Ok(unsafe { dst.assume_init() })
+    Ok(unsafe { FileStat(dst.assume_init()) })
 }
 
 pub fn lstat<P: ?Sized + NixPath>(path: &P) -> Result<FileStat> {
@@ -255,7 +504,7 @@ pub fn lstat<P: ?Sized + NixPath>(path: &P) -> Result<FileStat> {
 
     Errno::result(res)?;
 
-    Ok(unsafe { dst.assume_init() })
+    Ok(unsafe { FileStat(dst.assume_init()) })
 }
 
 pub fn fstat(fd: RawFd) -> Result<FileStat> {
@@ -264,7 +513,7 @@ pub fn fstat(fd: RawFd) -> Result<FileStat> {
 
     Errno::result(res)?;
 
-    Ok(unsafe { dst.assume_init() })
+    Ok(unsafe { FileStat(dst.assume_init()) })
 }
 
 #[cfg(not(target_os = "redox"))]
@@ -286,7 +535,7 @@ pub fn fstatat<P: ?Sized + NixPath>(
 
     Errno::result(res)?;
 
-    Ok(unsafe { dst.assume_init() })
+    Ok(unsafe { FileStat(dst.assume_init()) })
 }
 
 /// Change the file permission bits of the file specified by a file descriptor.

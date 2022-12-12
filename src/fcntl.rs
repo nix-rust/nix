@@ -354,7 +354,7 @@ fn inner_readlink<P: ?Sized + NixPath>(
             ),
             None => super::sys::stat::lstat(path),
         }
-        .map(|x| x.st_size)
+        .map(|x| x.size())
         .unwrap_or(0);
 
         if reported_size > 0 {
