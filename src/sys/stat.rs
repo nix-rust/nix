@@ -83,7 +83,7 @@ type type_of_st_dev = libc::c_ulonglong;
     target_os = "linux",
     any(target_arch = "mips", target_arch = "mipsel")
 ))]
-type type_of_st_dev = c_ulong;
+type type_of_st_dev = libc::c_ulong;
 #[cfg(not(any(
     all(
         target_os = "android",
@@ -110,7 +110,7 @@ type type_of_st_ino = libc::ino_t;
 
 // Type of `st_nlink`
 #[cfg(all(target_os = "android", target_arch = "x86_64"))]
-type type_of_st_nlink = c_ulong;
+type type_of_st_nlink = libc::c_ulong;
 #[cfg(not(all(target_os = "android", target_arch = "x86_64")))]
 type type_of_st_nlink = libc::nlink_t;
 
@@ -119,7 +119,7 @@ type type_of_st_nlink = libc::nlink_t;
     target_os = "android",
     any(target_arch = "arm", target_arch = "armv7", target_arch = "x86")
 ))]
-type type_of_st_mode = c_uint;
+type type_of_st_mode = libc::c_uint;
 #[cfg(not(all(
     target_os = "android",
     any(target_arch = "arm", target_arch = "armv7", target_arch = "x86")
@@ -136,7 +136,7 @@ type type_of_st_rdev = libc::c_ulonglong;
     target_os = "linux",
     any(target_arch = "mips", target_arch = "mipsel")
 ))]
-type type_of_st_rdev = c_ulong;
+type type_of_st_rdev = libc::c_ulong;
 #[cfg(not(any(
     all(
         target_os = "android",
