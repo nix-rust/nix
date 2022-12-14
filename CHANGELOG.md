@@ -9,6 +9,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   ([#1867](https://github.com/nix-rust/nix/pull/1867))
 - Added `nix::ucontext` module on `aarch64-unknown-linux-gnu`.
   (#[1662](https://github.com/nix-rust/nix/pull/1662))
+- Added `CanRaw` to `SockProtocol` and `CanBcm` as a separate `SocProtocol` constant.
+  ([#1912](https://github.com/nix-rust/nix/pull/1912))
 
 ### Changed
 

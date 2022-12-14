@@ -218,8 +218,21 @@ pub enum SockProtocol {
     #[cfg(any(target_os = "android", target_os = "linux"))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     EthAll = libc::ETH_P_ALL.to_be(),
+    /// The Controller Area Network raw socket protocol
+    /// ([ref](https://docs.kernel.org/networking/can.html#how-to-use-socketcan))
+    #[cfg(target_os = "linux")]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
+    CanRaw = libc::CAN_RAW,
 }
 
+impl SockProtocol {
+    /// The Controller Area Network broadcast manager protocol
+    /// ([ref](https://docs.kernel.org/networking/can.html#how-to-use-socketcan))
+    #[cfg(target_os = "linux")]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
+    #[allow(non_upper_case_globals)]
+    pub const CanBcm: SockProtocol = SockProtocol::NetlinkUserSock; // Matches libc::CAN_BCM
+}
 #[cfg(any(target_os = "linux"))]
 libc_bitflags! {
     /// Configuration flags for `SO_TIMESTAMPING` interface
