@@ -23,6 +23,10 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   ([#1921](https://github.com/nix-rust/nix/pull/1921))
 
 ### Fixed
+
+- Fixed network byte order of `SockProtocol::EthAll`.
+  ([#1896](https://github.com/nix-rust/nix/pull/1896))
+
 ### Removed
 
 - Removed deprecated IoVec API.

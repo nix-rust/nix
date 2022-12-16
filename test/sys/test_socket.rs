@@ -2516,3 +2516,13 @@ pub fn test_txtime() {
     let mut iov2 = [std::io::IoSliceMut::new(&mut rbuf)];
     recvmsg::<()>(rsock, &mut iov2, None, MsgFlags::empty()).unwrap();
 }
+
+// Test that packet socket protocols are in network byte order in integer form.
+#[test]
+pub fn test_packet_sockprotocol_htons() {
+    use libc::c_int;
+    use nix::sys::socket::SockProtocol;
+    assert_eq!(libc::ETH_P_ALL as c_int, 0x0003);
+    assert_eq!(SockProtocol::EthAll as c_int, 0x0300);
+    assert_ne!(SockProtocol::EthAll as c_int, libc::ETH_P_ALL.to_be());
+}
