@@ -12,7 +12,6 @@ use libc::{
     self, c_int, c_void, iovec, size_t, socklen_t, CMSG_DATA, CMSG_FIRSTHDR,
     CMSG_LEN, CMSG_NXTHDR,
 };
-use std::convert::{TryFrom, TryInto};
 use std::io::{IoSlice, IoSliceMut};
 #[cfg(feature = "net")]
 use std::net;
@@ -32,32 +31,24 @@ pub mod sockopt;
 
 pub use self::addr::{SockaddrLike, SockaddrStorage};
 
-#[cfg(not(any(target_os = "illumos", target_os = "solaris")))]
-#[allow(deprecated)]
-pub use self::addr::{AddressFamily, SockAddr, UnixAddr};
 #[cfg(any(target_os = "illumos", target_os = "solaris"))]
-#[allow(deprecated)]
-pub use self::addr::{AddressFamily, SockAddr, UnixAddr};
-#[allow(deprecated)]
+pub use self::addr::{AddressFamily, UnixAddr};
+#[cfg(not(any(target_os = "illumos", target_os = "solaris")))]
+pub use self::addr::{AddressFamily, UnixAddr};
 #[cfg(not(any(
     target_os = "illumos",
     target_os = "solaris",
     target_os = "haiku"
 )))]
 #[cfg(feature = "net")]
-pub use self::addr::{
-    InetAddr, IpAddr, Ipv4Addr, Ipv6Addr, LinkAddr, SockaddrIn, SockaddrIn6,
-};
-#[allow(deprecated)]
+pub use self::addr::{LinkAddr, SockaddrIn, SockaddrIn6};
 #[cfg(any(
     target_os = "illumos",
     target_os = "solaris",
     target_os = "haiku"
 ))]
 #[cfg(feature = "net")]
-pub use self::addr::{
-    InetAddr, IpAddr, Ipv4Addr, Ipv6Addr, SockaddrIn, SockaddrIn6,
-};
+pub use self::addr::{SockaddrIn, SockaddrIn6};
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
 pub use crate::sys::socket::addr::alg::AlgAddr;
@@ -121,7 +112,7 @@ impl TryFrom<i32> for SockType {
             libc::SOCK_RAW => Ok(Self::Raw),
             #[cfg(not(any(target_os = "haiku")))]
             libc::SOCK_RDM => Ok(Self::Rdm),
-            _ => Err(Errno::EINVAL)
+            _ => Err(Errno::EINVAL),
         }
     }
 }
@@ -227,8 +218,21 @@ pub enum SockProtocol {
     #[cfg(any(target_os = "android", target_os = "linux"))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     EthAll = (libc::ETH_P_ALL as i16).to_be() as c_int,
+    /// The Controller Area Network raw socket protocol
+    /// ([ref](https://docs.kernel.org/networking/can.html#how-to-use-socketcan))
+    #[cfg(target_os = "linux")]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
+    CanRaw = libc::CAN_RAW,
 }
 
+impl SockProtocol {
+    /// The Controller Area Network broadcast manager protocol
+    /// ([ref](https://docs.kernel.org/networking/can.html#how-to-use-socketcan))
+    #[cfg(target_os = "linux")]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
+    #[allow(non_upper_case_globals)]
+    pub const CanBcm: SockProtocol = SockProtocol::NetlinkUserSock; // Matches libc::CAN_BCM
+}
 #[cfg(any(target_os = "linux"))]
 libc_bitflags! {
     /// Configuration flags for `SO_TIMESTAMPING` interface
@@ -292,17 +296,14 @@ libc_bitflags! {
         /// Sends or requests out-of-band data on sockets that support this notion
         /// (e.g., of type [`Stream`](enum.SockType.html)); the underlying protocol must also
         /// support out-of-band data.
-        #[allow(deprecated)]    // Suppress useless warnings from libc PR 2963
         MSG_OOB;
         /// Peeks at an incoming message. The data is treated as unread and the next
         /// [`recv()`](fn.recv.html)
         /// or similar function shall still return this data.
-        #[allow(deprecated)]    // Suppress useless warnings from libc PR 2963
         MSG_PEEK;
         /// Receive operation blocks until the full amount of data can be
         /// returned. The function may return smaller amount of data if a signal
         /// is caught, an error or disconnect occurs.
-        #[allow(deprecated)]    // Suppress useless warnings from libc PR 2963
         MSG_WAITALL;
         /// Enables nonblocking operation; if the operation would block,
         /// `EAGAIN` or `EWOULDBLOCK` is returned.  This provides similar
@@ -314,10 +315,8 @@ libc_bitflags! {
         /// which will affect all threads in
         /// the calling process and as well as other processes that hold
         /// file descriptors referring to the same open file description.
-        #[allow(deprecated)]    // Suppress useless warnings from libc PR 2963
         MSG_DONTWAIT;
         /// Receive flags: Control Data was discarded (buffer too small)
-        #[allow(deprecated)]    // Suppress useless warnings from libc PR 2963
         MSG_CTRUNC;
         /// For raw ([`Packet`](addr/enum.AddressFamily.html)), Internet datagram
         /// (since Linux 2.4.27/2.6.8),
@@ -327,18 +326,15 @@ libc_bitflags! {
         /// domain ([unix(7)](https://linux.die.net/man/7/unix)) sockets.
         ///
         /// For use with Internet stream sockets, see [tcp(7)](https://linux.die.net/man/7/tcp).
-        #[allow(deprecated)]    // Suppress useless warnings from libc PR 2963
         MSG_TRUNC;
         /// Terminates a record (when this notion is supported, as for
         /// sockets of type [`SeqPacket`](enum.SockType.html)).
-        #[allow(deprecated)]    // Suppress useless warnings from libc PR 2963
         MSG_EOR;
         /// This flag specifies that queued errors should be received from
         /// the socket error queue. (For more details, see
         /// [recvfrom(2)](https://linux.die.net/man/2/recvfrom))
         #[cfg(any(target_os = "android", target_os = "linux"))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
-        #[allow(deprecated)]    // Suppress useless warnings from libc PR 2963
         MSG_ERRQUEUE;
         /// Set the `close-on-exec` flag for the file descriptor received via a UNIX domain
         /// file descriptor using the `SCM_RIGHTS` operation (described in
@@ -354,7 +350,6 @@ libc_bitflags! {
                   target_os = "netbsd",
                   target_os = "openbsd"))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
-        #[allow(deprecated)]    // Suppress useless warnings from libc PR 2963
         MSG_CMSG_CLOEXEC;
         /// Requests not to send `SIGPIPE` errors when the other end breaks the connection.
         /// (For more details, see [send(2)](https://linux.die.net/man/2/send)).
@@ -369,7 +364,6 @@ libc_bitflags! {
                   target_os = "openbsd",
                   target_os = "solaris"))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
-        #[allow(deprecated)]    // Suppress useless warnings from libc PR 2963
         MSG_NOSIGNAL;
     }
 }
@@ -1590,8 +1584,7 @@ pub struct MultiHeaders<S> {
     addresses: Box<[mem::MaybeUninit<S>]>,
     // while we are not using it directly - this is used to store control messages
     // and we retain pointers to them inside items array
-    #[allow(dead_code)]
-    cmsg_buffers: Option<Box<[u8]>>,
+    _cmsg_buffers: Option<Box<[u8]>>,
     msg_controllen: usize,
 }
 
@@ -1639,7 +1632,7 @@ impl<S> MultiHeaders<S> {
         Self {
             items: items.into_boxed_slice(),
             addresses,
-            cmsg_buffers,
+            _cmsg_buffers: cmsg_buffers,
             msg_controllen,
         }
     }
@@ -2229,14 +2222,14 @@ pub fn recvfrom<T: SockaddrLike>(
             buf.as_ptr() as *mut c_void,
             buf.len() as size_t,
             0,
-            addr.as_mut_ptr() as *mut libc::sockaddr,
+            addr.as_mut_ptr() as *mut sockaddr,
             &mut len as *mut socklen_t,
         ))? as usize;
 
         Ok((
             ret,
             T::from_raw(
-                addr.assume_init().as_ptr() as *const libc::sockaddr,
+                addr.assume_init().as_ptr() as *const sockaddr,
                 Some(len),
             ),
         ))
@@ -2344,11 +2337,8 @@ pub fn getpeername<T: SockaddrLike>(fd: RawFd) -> Result<T> {
         let mut addr = mem::MaybeUninit::<T>::uninit();
         let mut len = T::size();
 
-        let ret = libc::getpeername(
-            fd,
-            addr.as_mut_ptr() as *mut libc::sockaddr,
-            &mut len,
-        );
+        let ret =
+            libc::getpeername(fd, addr.as_mut_ptr() as *mut sockaddr, &mut len);
 
         Errno::result(ret)?;
 
@@ -2364,90 +2354,12 @@ pub fn getsockname<T: SockaddrLike>(fd: RawFd) -> Result<T> {
         let mut addr = mem::MaybeUninit::<T>::uninit();
         let mut len = T::size();
 
-        let ret = libc::getsockname(
-            fd,
-            addr.as_mut_ptr() as *mut libc::sockaddr,
-            &mut len,
-        );
+        let ret =
+            libc::getsockname(fd, addr.as_mut_ptr() as *mut sockaddr, &mut len);
 
         Errno::result(ret)?;
 
         T::from_raw(addr.assume_init().as_ptr(), Some(len)).ok_or(Errno::EINVAL)
-    }
-}
-
-/// Return the appropriate `SockAddr` type from a `sockaddr_storage` of a
-/// certain size.
-///
-/// In C this would usually be done by casting.  The `len` argument
-/// should be the number of bytes in the `sockaddr_storage` that are actually
-/// allocated and valid.  It must be at least as large as all the useful parts
-/// of the structure.  Note that in the case of a `sockaddr_un`, `len` need not
-/// include the terminating null.
-#[deprecated(
-    since = "0.24.0",
-    note = "use SockaddrLike or SockaddrStorage instead"
-)]
-#[allow(deprecated)]
-pub fn sockaddr_storage_to_addr(
-    addr: &sockaddr_storage,
-    len: usize,
-) -> Result<SockAddr> {
-    assert!(len <= mem::size_of::<sockaddr_storage>());
-    if len < mem::size_of_val(&addr.ss_family) {
-        return Err(Errno::ENOTCONN);
-    }
-
-    match c_int::from(addr.ss_family) {
-        #[cfg(feature = "net")]
-        libc::AF_INET => {
-            assert!(len >= mem::size_of::<sockaddr_in>());
-            let sin = unsafe {
-                *(addr as *const sockaddr_storage as *const sockaddr_in)
-            };
-            Ok(SockAddr::Inet(InetAddr::V4(sin)))
-        }
-        #[cfg(feature = "net")]
-        libc::AF_INET6 => {
-            assert!(len >= mem::size_of::<sockaddr_in6>());
-            let sin6 = unsafe { *(addr as *const _ as *const sockaddr_in6) };
-            Ok(SockAddr::Inet(InetAddr::V6(sin6)))
-        }
-        libc::AF_UNIX => unsafe {
-            let sun = *(addr as *const _ as *const sockaddr_un);
-            let sun_len = len.try_into().unwrap();
-            Ok(SockAddr::Unix(UnixAddr::from_raw_parts(sun, sun_len)))
-        },
-        #[cfg(any(target_os = "android", target_os = "linux"))]
-        #[cfg(feature = "net")]
-        libc::AF_PACKET => {
-            use libc::sockaddr_ll;
-            // Don't assert anything about the size.
-            // Apparently the Linux kernel can return smaller sizes when
-            // the value in the last element of sockaddr_ll (`sll_addr`) is
-            // smaller than the declared size of that field
-            let sll = unsafe { *(addr as *const _ as *const sockaddr_ll) };
-            Ok(SockAddr::Link(LinkAddr(sll)))
-        }
-        #[cfg(any(target_os = "android", target_os = "linux"))]
-        libc::AF_NETLINK => {
-            use libc::sockaddr_nl;
-            let snl = unsafe { *(addr as *const _ as *const sockaddr_nl) };
-            Ok(SockAddr::Netlink(NetlinkAddr(snl)))
-        }
-        #[cfg(any(target_os = "android", target_os = "linux"))]
-        libc::AF_ALG => {
-            use libc::sockaddr_alg;
-            let salg = unsafe { *(addr as *const _ as *const sockaddr_alg) };
-            Ok(SockAddr::Alg(AlgAddr(salg)))
-        }
-        #[cfg(any(target_os = "android", target_os = "linux"))]
-        libc::AF_VSOCK => {
-            use libc::sockaddr_vm;
-            let svm = unsafe { *(addr as *const _ as *const sockaddr_vm) };
-            Ok(SockAddr::Vsock(VsockAddr(svm)))
-        }
-        af => panic!("unexpected address family {}", af),
     }
 }
 
@@ -2485,7 +2397,11 @@ mod tests {
         let _ = cmsg_space!(u8);
     }
 
-    #[cfg(not(any(target_os = "redox", target_os = "linux", target_os = "android")))]
+    #[cfg(not(any(
+        target_os = "redox",
+        target_os = "linux",
+        target_os = "android"
+    )))]
     #[test]
     fn can_open_routing_socket() {
         let _ = super::socket(

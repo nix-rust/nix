@@ -383,7 +383,7 @@ mod linux_android {
         let tmp = NamedTempFile::new().unwrap();
 
         let fd = tmp.as_raw_fd();
-        let statfs = nix::sys::statfs::fstatfs(&tmp).unwrap();
+        let statfs = nix::sys::statfs::fstatfs(tmp.as_file()).unwrap();
         if statfs.filesystem_type() == nix::sys::statfs::OVERLAYFS_SUPER_MAGIC {
             // OverlayFS is a union file system.  It returns one inode value in
             // stat(2), but a different one shows up in /proc/locks.  So we must
@@ -421,7 +421,7 @@ mod linux_android {
         let tmp = NamedTempFile::new().unwrap();
 
         let fd = tmp.as_raw_fd();
-        let statfs = nix::sys::statfs::fstatfs(&tmp).unwrap();
+        let statfs = nix::sys::statfs::fstatfs(tmp.as_file()).unwrap();
         if statfs.filesystem_type() == nix::sys::statfs::OVERLAYFS_SUPER_MAGIC {
             // OverlayFS is a union file system.  It returns one inode value in
             // stat(2), but a different one shows up in /proc/locks.  So we must
@@ -559,7 +559,7 @@ mod test_posix_fallocate {
         let err = posix_fallocate(rd as RawFd, 0, 100).unwrap_err();
         match err {
             Errno::EINVAL | Errno::ENODEV | Errno::ESPIPE | Errno::EBADF => (),
-            errno => panic!("unexpected errno {}", errno,),
+            errno => panic!("unexpected errno {errno}",),
         }
     }
 }

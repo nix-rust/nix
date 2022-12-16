@@ -6,10 +6,7 @@ use crate::Result;
 use cfg_if::cfg_if;
 use libc::{self, c_int, c_void, socklen_t};
 use std::ffi::{OsStr, OsString};
-use std::{
-    convert::TryFrom,
-    mem::{self, MaybeUninit}
-};
+use std::mem::{self, MaybeUninit};
 #[cfg(target_family = "unix")]
 use std::os::unix::ffi::OsStrExt;
 use std::os::unix::io::RawFd;
@@ -107,7 +104,7 @@ macro_rules! getsockopt_impl {
 
                     match <$ty>::try_from(getter.assume_init()) {
                         Err(_) => Err(Errno::EINVAL),
-                        Ok(r) => Ok(r)
+                        Ok(r) => Ok(r),
                     }
                 }
             }
@@ -141,7 +138,6 @@ macro_rules! getsockopt_impl {
 /// * `$getter:ty`: `Get` implementation; optional; only for `GetOnly` and `Both`.
 /// * `$setter:ty`: `Set` implementation; optional; only for `SetOnly` and `Both`.
 // Some targets don't use all rules.
-#[allow(unknown_lints)]
 #[allow(unused_macro_rules)]
 macro_rules! sockopt_impl {
     ($(#[$attr:meta])* $name:ident, GetOnly, $level:expr, $flag:path, bool) => {

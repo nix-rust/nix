@@ -610,7 +610,7 @@ fn test_aio_suspend() {
             let r = aio_suspend(&cbbuf[..], Some(timeout));
             match r {
                 Err(Errno::EINTR) => continue,
-                Err(e) => panic!("aio_suspend returned {:?}", e),
+                Err(e) => panic!("aio_suspend returned {e:?}"),
                 Ok(_) => (),
             };
         }

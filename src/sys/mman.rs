@@ -8,7 +8,7 @@ use crate::Result;
 #[cfg(feature = "fs")]
 use crate::{fcntl::OFlag, sys::stat::Mode};
 use libc::{self, c_int, c_void, off_t, size_t};
-use std::{os::unix::io::RawFd, num::NonZeroUsize};
+use std::{num::NonZeroUsize, os::unix::io::{AsRawFd, AsFd}};
 
 libc_bitflags! {
     /// Desired memory protection of a memory mapping.
@@ -416,20 +416,20 @@ pub fn munlockall() -> Result<()> {
 /// See the [`mmap(2)`] man page for detailed requirements.
 ///
 /// [`mmap(2)`]: https://man7.org/linux/man-pages/man2/mmap.2.html
-pub unsafe fn mmap(
+pub unsafe fn mmap<F: AsFd>(
     addr: Option<NonZeroUsize>,
     length: NonZeroUsize,
     prot: ProtFlags,
     flags: MapFlags,
-    fd: RawFd,
+    f: Option<F>,
     offset: off_t,
 ) -> Result<*mut c_void> {
-    let ptr = addr.map_or(
-        std::ptr::null_mut(),
-        |a| usize::from(a) as *mut c_void
-    );
-    
-    let ret = libc::mmap(ptr, length.into(), prot.bits(), flags.bits(), fd, offset);
+    let ptr =
+        addr.map_or(std::ptr::null_mut(), |a| usize::from(a) as *mut c_void);
+
+    let fd = f.map(|f| f.as_fd().as_raw_fd()).unwrap_or(-1);
+    let ret =
+        libc::mmap(ptr, length.into(), prot.bits(), flags.bits(), fd, offset);
 
     if ret == libc::MAP_FAILED {
         Err(Errno::last())
@@ -519,11 +519,12 @@ pub unsafe fn madvise(
 /// # use nix::libc::size_t;
 /// # use nix::sys::mman::{mmap, mprotect, MapFlags, ProtFlags};
 /// # use std::ptr;
+/// # use std::os::unix::io::BorrowedFd;
 /// const ONE_K: size_t = 1024;
 /// let one_k_non_zero = std::num::NonZeroUsize::new(ONE_K).unwrap();
 /// let mut slice: &mut [u8] = unsafe {
-///     let mem = mmap(None, one_k_non_zero, ProtFlags::PROT_NONE,
-///                    MapFlags::MAP_ANON | MapFlags::MAP_PRIVATE, -1, 0).unwrap();
+///     let mem = mmap::<BorrowedFd>(None, one_k_non_zero, ProtFlags::PROT_NONE,
+///                    MapFlags::MAP_ANON | MapFlags::MAP_PRIVATE, None, 0).unwrap();
 ///     mprotect(mem, ONE_K, ProtFlags::PROT_READ | ProtFlags::PROT_WRITE).unwrap();
 ///     std::slice::from_raw_parts_mut(mem as *mut u8, ONE_K)
 /// };
@@ -567,9 +568,11 @@ pub fn shm_open<P>(
     name: &P,
     flag: OFlag,
     mode: Mode
-    ) -> Result<RawFd>
+    ) -> Result<std::os::unix::io::OwnedFd>
     where P: ?Sized + NixPath
 {
+    use std::os::unix::io::{FromRawFd, OwnedFd};
+
     let ret = name.with_nix_path(|cstr| {
         #[cfg(any(target_os = "macos", target_os = "ios"))]
         unsafe {
@@ -581,7 +584,10 @@ pub fn shm_open<P>(
         }
     })?;
 
-    Errno::result(ret)
+    match ret {
+        -1 => Err(Errno::last()),
+        fd => Ok(unsafe{ OwnedFd::from_raw_fd(fd) })
+    }
 }
 }
 

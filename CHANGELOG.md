@@ -7,10 +7,31 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 ### Added
 - Add `PF_ROUTE` to `SockType` on macOS, iOS, all of the BSDs, Fuchsia, Haiku, Illumos.
   ([#1867](https://github.com/nix-rust/nix/pull/1867))
+- Added `nix::ucontext` module on `aarch64-unknown-linux-gnu`.
+  (#[1662](https://github.com/nix-rust/nix/pull/1662))
+- Added `CanRaw` to `SockProtocol` and `CanBcm` as a separate `SocProtocol` constant.
+  ([#1912](https://github.com/nix-rust/nix/pull/1912))
 
 ### Changed
+
+- The MSRV is now 1.63
+  ([#1862](https://github.com/nix-rust/nix/pull/1862))
+- The epoll interface now uses a type.
+  ([#1882](https://github.com/nix-rust/nix/pull/1882))
+- With I/O-safe type applied in `pty::OpenptyResult` and `pty::ForkptyResult`,
+  users no longer need to manually close the file descriptors in these types.
+  ([#1921](https://github.com/nix-rust/nix/pull/1921))
+
 ### Fixed
 ### Removed
+
+- Removed deprecated IoVec API.
+  ([#1855](https://github.com/nix-rust/nix/pull/1855))
+- Removed deprecated net APIs.
+  ([#1861](https://github.com/nix-rust/nix/pull/1861))
+- `nix::sys::signalfd::signalfd` is deprecated.  Use
+  `nix::sys::signalfd::SignalFd` instead.
+  ([#1938](https://github.com/nix-rust/nix/pull/1938))
 
 ## [0.26.1] - 2022-11-29
 ### Fixed
@@ -213,7 +234,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1563](https://github.com/nix-rust/nix/pull/1563))
 - Added `process_vm_readv` and `process_vm_writev` on Android.
   (#[1557](https://github.com/nix-rust/nix/pull/1557))
-- Added `nix::uncontext` module on s390x.
+- Added `nix::ucontext` module on s390x.
   (#[1662](https://github.com/nix-rust/nix/pull/1662))
 - Implemented `Extend`, `FromIterator`, and `IntoIterator` for `SigSet` and
   added `SigSet::iter` and `SigSetIter`.
