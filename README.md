@@ -46,46 +46,59 @@ limitations. Support for platforms is split into three tiers:
 
 The following targets are supported by `nix`:
 
-Tier 1:
-  * aarch64-apple-darwin
-  * aarch64-unknown-linux-gnu
-  * arm-unknown-linux-gnueabi
-  * armv7-unknown-linux-gnueabihf
-  * i686-unknown-freebsd
-  * i686-unknown-linux-gnu
-  * i686-unknown-linux-musl
-  * mips-unknown-linux-gnu
-  * mips64-unknown-linux-gnuabi64
-  * mips64el-unknown-linux-gnuabi64
-  * mipsel-unknown-linux-gnu
-  * powerpc64le-unknown-linux-gnu
-  * x86_64-unknown-freebsd
-  * x86_64-unknown-linux-gnu
-  * x86_64-unknown-linux-musl
-
-Tier 2:
-  * aarch64-apple-ios
-  * aarch64-linux-android
-  * arm-linux-androideabi
-  * arm-unknown-linux-musleabi
-  * armv7-linux-androideabi
-  * i686-linux-android
-  * powerpc-unknown-linux-gnu
-  * s390x-unknown-linux-gnu
-  * x86_64-apple-ios
-  * x86_64-linux-android
-  * x86_64-apple-darwin
-  * x86_64-unknown-illumos
-  * x86_64-unknown-netbsd
-
-Tier 3:
-  * armv7-unknown-linux-uclibceabihf
-  * x86_64-fuchsia
-  * x86_64-unknown-dragonfly
-  * x86_64-unknown-haiku
-  * x86_64-unknown-linux-gnux32
-  * x86_64-unknown-openbsd
-  * x86_64-unknown-redox
+<table>
+ <tr>
+  <th>Tier 1</th>
+  <th>Tier 2</th>
+  <th>Tier 3</th>
+ </tr>
+ <tr>
+  <td>
+   <ul>
+    <li>aarch64-apple-darwin</li>
+    <li>aarch64-unknown-linux-gnu</li>
+    <li>arm-unknown-linux-gnueabi</li>
+    <li>armv7-unknown-linux-gnueabihf</li>
+    <li>i686-unknown-freebsd</li>
+    <li>i686-unknown-linux-gnu</li>
+    <li>i686-unknown-linux-musl</li>
+    <li>mips-unknown-linux-gnu</li>
+    <li>mips64-unknown-linux-gnuabi64</li>
+    <li>mips64el-unknown-linux-gnuabi64</li>
+    <li>mipsel-unknown-linux-gnu</li>
+    <li>powerpc64le-unknown-linux-gnu</li>
+    <li>x86_64-unknown-freebsd</li>
+    <li>x86_64-unknown-linux-gnu</li>
+    <li>x86_64-unknown-linux-musl</li>
+   </ul>
+  </td>
+  <td>
+   <ul>
+    <li>aarch64-apple-ios</li>
+    <li>aarch64-linux-android</li>
+    <li>arm-linux-androideabi</li>
+    <li>arm-unknown-linux-musleabi</li>
+    <li>armv7-linux-androideabi</li>
+    <li>i686-linux-android</li>
+    <li>powerpc-unknown-linux-gnu</li>
+    <li>s390x-unknown-linux-gnu</li>
+    <li>x86_64-apple-ios</li>
+    <li>x86_64-linux-android</li>
+    <li>x86_64-apple-darwin</li>
+    <li>x86_64-unknown-illumos</li>
+    <li>x86_64-unknown-netbsd</li>
+   </td>
+   <td>
+    <li>armv7-unknown-linux-uclibceabihf</li>
+    <li>x86_64-fuchsia</li>
+    <li>x86_64-unknown-dragonfly</li>
+    <li>x86_64-unknown-haiku</li>
+    <li>x86_64-unknown-linux-gnux32</li>
+    <li>x86_64-unknown-openbsd</li>
+    <li>x86_64-unknown-redox</li>
+   </td>
+  </tr>
+</table>
 
 ## Minimum Supported Rust Version (MSRV)
 
