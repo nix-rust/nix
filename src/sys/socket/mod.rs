@@ -215,9 +215,11 @@ pub enum SockProtocol {
     /// defined in the interface to be received.
     /// ([ref](https://man7.org/linux/man-pages/man7/packet.7.html))
     // The protocol number is fed into the socket syscall in network byte order.
+    // For example, in C, htons(ETH_P_ALL) converts an unsigned _short_ integer
+    // from host byte order to network byte order: https://linux.die.net/man/3/htons
     #[cfg(any(target_os = "android", target_os = "linux"))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
-    EthAll = libc::ETH_P_ALL.to_be(),
+    EthAll = (libc::ETH_P_ALL as i16).to_be() as c_int,
     /// The Controller Area Network raw socket protocol
     /// ([ref](https://docs.kernel.org/networking/can.html#how-to-use-socketcan))
     #[cfg(target_os = "linux")]
