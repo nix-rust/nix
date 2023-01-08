@@ -35,6 +35,7 @@ use std::ffi::{CString, OsStr};
 use std::os::unix::ffi::OsStrExt;
 use std::os::unix::ffi::OsStringExt;
 use std::os::unix::io::RawFd;
+use std::os::unix::io::{AsFd, AsRawFd};
 use std::path::PathBuf;
 use std::{fmt, mem, ptr};
 
@@ -1255,8 +1256,8 @@ pub fn truncate<P: ?Sized + NixPath>(path: &P, len: off_t) -> Result<()> {
 ///
 /// See also
 /// [ftruncate(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/ftruncate.html)
-pub fn ftruncate(fd: RawFd, len: off_t) -> Result<()> {
-    Errno::result(unsafe { libc::ftruncate(fd, len) }).map(drop)
+pub fn ftruncate<Fd: AsFd>(fd: Fd, len: off_t) -> Result<()> {
+    Errno::result(unsafe { libc::ftruncate(fd.as_fd().as_raw_fd(), len) }).map(drop)
 }
 
 pub fn isatty(fd: RawFd) -> Result<bool> {
