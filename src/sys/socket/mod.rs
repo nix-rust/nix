@@ -1292,7 +1292,7 @@ impl<'a> ControlMessage<'a> {
             }
             #[cfg(any(target_os = "android", target_os = "linux"))]
             ControlMessage::AlgSetIv(iv) => {
-                mem::size_of_val(&iv) + iv.len()
+                mem::size_of::<&[u8]>() + iv.len()
             },
             #[cfg(any(target_os = "android", target_os = "linux"))]
             ControlMessage::AlgSetOp(op) => {
