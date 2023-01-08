@@ -612,6 +612,19 @@ impl From<Signal> for SigSet {
     }
 }
 
+
+impl std::ops::BitOr for Signal {
+    type Output = SigSet;
+
+    // rhs is the "right-hand side" of the expression `a | b`
+    fn bitor(self, rhs: Self) -> Self::Output {
+        let mut sigset = SigSet::empty();
+        sigset.add(self);
+        sigset.add(rhs);
+        sigset
+    }
+}
+
 impl std::ops::BitOr for SigSet {
     type Output = Self;
 
