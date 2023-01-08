@@ -15,6 +15,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 - Added `impl From<Signal> for SigSet`.
   ([#1959](https://github.com/nix-rust/nix/pull/1959))
+- Added `impl std::ops::BitOr for SigSet`.
+  ([#1959](https://github.com/nix-rust/nix/pull/1959))
 
 ### Changed
 
