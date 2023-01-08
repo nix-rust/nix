@@ -11,6 +11,10 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 - Fixed the function signature of `recvmmsg`, potentially causing UB
   ([#2119](https://github.com/nix-rust/nix/issues/2119))
+### Added
+
+- Added `impl From<Signal> for SigSet`.
+  ([#1959](https://github.com/nix-rust/nix/pull/1959))
 
 ### Changed
 
