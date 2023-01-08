@@ -772,15 +772,12 @@ fn test_ftruncate() {
     let tempdir = tempdir().unwrap();
     let path = tempdir.path().join("file");
 
-    let tmpfd = {
-        let mut tmp = File::create(&path).unwrap();
-        const CONTENTS: &[u8] = b"12345678";
-        tmp.write_all(CONTENTS).unwrap();
-        tmp.into_raw_fd()
-    };
+    let mut file = File::create(&path).unwrap();
+    const CONTENTS: &[u8] = b"12345678";
+    file.write_all(CONTENTS).unwrap();
 
-    ftruncate(tmpfd, 2).unwrap();
-    close(tmpfd).unwrap();
+    ftruncate(&file, 2).unwrap();
+    drop(file);
 
     let metadata = fs::metadata(&path).unwrap();
     assert_eq!(2, metadata.len());
