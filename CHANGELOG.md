@@ -3,6 +3,15 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased] - ReleaseDate
+### Added
+### Changed
+### Fixed
+- Fix `SockaddrIn6` bug that was swapping flowinfo and scope_id byte ordering.
+  ([#1964](https://github.com/nix-rust/nix/pull/1964))
+
+### Removed
+
 ## [0.26.1] - 2022-11-29
 ### Added
 ### Changed
