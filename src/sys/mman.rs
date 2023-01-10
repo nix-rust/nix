@@ -329,6 +329,7 @@ libc_enum! {
         #[allow(missing_docs)]
         MADV_CAN_REUSE,
     }
+    impl TryFrom<i32>
 }
 
 libc_bitflags! {

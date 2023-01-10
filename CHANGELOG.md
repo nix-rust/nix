@@ -13,6 +13,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   ([#1912](https://github.com/nix-rust/nix/pull/1912))
 - Added `mq_timedreceive` to `::nix::mqueue`.
   ([#1966])(https://github.com/nix-rust/nix/pull/1966)
+- Added `TryFrom<i32>` to `MmapAdvise`.
+  (#[1965](https://github.com/nix-rust/nix/pull/1965))
 
 ### Changed
 
