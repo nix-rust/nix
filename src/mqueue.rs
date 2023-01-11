@@ -197,6 +197,32 @@ pub fn mq_receive(
     Errno::result(res).map(|r| r as usize)
 }
 
+feature! {
+    #![feature = "time"]
+    use crate::sys::time::TimeSpec;
+    /// Receive a message from a message queue with a timeout
+    ///
+    /// See also ['mq_timedreceive(2)'](https://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_receive.html)
+    pub fn mq_timedreceive(
+        mqdes: &MqdT,
+        message: &mut [u8],
+        msg_prio: &mut u32,
+        abstime: &TimeSpec,
+    ) -> Result<usize> {
+        let len = message.len() as size_t;
+        let res = unsafe {
+            libc::mq_timedreceive(
+                mqdes.0,
+                message.as_mut_ptr() as *mut c_char,
+                len,
+                msg_prio as *mut u32,
+                abstime.as_ref(),
+            )
+        };
+        Errno::result(res).map(|r| r as usize)
+    }
+}
+
 /// Send a message to a message queue
 ///
 /// See also [`mq_send(2)`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_send.html)
