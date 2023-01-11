@@ -3,9 +3,13 @@ use std::ffi::CString;
 use std::str;
 
 use nix::errno::Errno;
-use nix::mqueue::{mq_attr_member_t, mq_close, mq_open, mq_receive, mq_send};
+use nix::mqueue::{
+    mq_attr_member_t, mq_close, mq_open, mq_receive, mq_send, mq_timedreceive,
+};
 use nix::mqueue::{MQ_OFlag, MqAttr};
 use nix::sys::stat::Mode;
+use nix::sys::time::{TimeSpec, TimeValLike};
+use nix::time::{clock_gettime, ClockId};
 
 // Defined as a macro such that the error source is reported as the caller's location.
 macro_rules! assert_attr_eq {
@@ -48,6 +52,37 @@ fn test_mq_send_and_receive() {
     let mut buf = [0u8; 32];
     let mut prio = 0u32;
     let len = mq_receive(&mqd1, &mut buf, &mut prio).unwrap();
+    assert_eq!(prio, 1);
+
+    mq_close(mqd1).unwrap();
+    mq_close(mqd0).unwrap();
+    assert_eq!(msg_to_send, str::from_utf8(&buf[0..len]).unwrap());
+}
+
+#[test]
+fn test_mq_timedreceive() {
+    const MSG_SIZE: mq_attr_member_t = 32;
+    let attr = MqAttr::new(0, 10, MSG_SIZE, 0);
+    let mq_name = &CString::new(b"/a_nix_test_queue".as_ref()).unwrap();
+
+    let oflag0 = MQ_OFlag::O_CREAT | MQ_OFlag::O_WRONLY;
+    let mode = Mode::S_IWUSR | Mode::S_IRUSR | Mode::S_IRGRP | Mode::S_IROTH;
+    let r0 = mq_open(mq_name, oflag0, mode, Some(&attr));
+    if let Err(Errno::ENOSYS) = r0 {
+        println!("message queues not supported or module not loaded?");
+        return;
+    };
+    let mqd0 = r0.unwrap();
+    let msg_to_send = "msg_1";
+    mq_send(&mqd0, msg_to_send.as_bytes(), 1).unwrap();
+
+    let oflag1 = MQ_OFlag::O_CREAT | MQ_OFlag::O_RDONLY;
+    let mqd1 = mq_open(mq_name, oflag1, mode, Some(&attr)).unwrap();
+    let mut buf = [0u8; 32];
+    let mut prio = 0u32;
+    let abstime =
+        clock_gettime(ClockId::CLOCK_REALTIME).unwrap() + TimeSpec::seconds(1);
+    let len = mq_timedreceive(&mqd1, &mut buf, &mut prio, &abstime).unwrap();
     assert_eq!(prio, 1);
 
     mq_close(mqd1).unwrap();
