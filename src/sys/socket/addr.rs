@@ -1180,10 +1180,10 @@ impl From<net::SocketAddrV6> for SockaddrIn6 {
 impl From<SockaddrIn6> for net::SocketAddrV6 {
     fn from(addr: SockaddrIn6) -> Self {
         net::SocketAddrV6::new(
-            net::Ipv6Addr::from(addr.0.sin6_addr.s6_addr),
-            u16::from_be(addr.0.sin6_port),
-            u32::from_be(addr.0.sin6_flowinfo),
-            u32::from_be(addr.0.sin6_scope_id),
+            addr.ip(),
+            addr.port(),
+            addr.flowinfo(),
+            addr.scope_id(),
         )
     }
 }
@@ -2489,7 +2489,15 @@ mod tests {
 
     mod sockaddr_in {
         use super::*;
+        use std::net::SocketAddrV4;
         use std::str::FromStr;
+
+        #[test]
+        fn roundtrip_std_socketaddrv4() {
+            let addr = SocketAddrV4::new("1.2.3.4".parse().unwrap(), 0x0102);
+            let s = SockaddrIn::from(addr);
+            assert_eq!(SocketAddrV4::from(s), addr);
+        }
 
         #[test]
         fn display() {
@@ -2509,7 +2517,20 @@ mod tests {
 
     mod sockaddr_in6 {
         use super::*;
+        use std::net::SocketAddrV6;
         use std::str::FromStr;
+
+        #[test]
+        fn roundtrip_std_socketaddrv6() {
+            let addr = SocketAddrV6::new(
+                "1234:5678:90ab:cdef::1111:2222".parse().unwrap(),
+                0x0102,
+                0x01020304,
+                0x01020304,
+            );
+            let s = SockaddrIn6::from(addr);
+            assert_eq!(SocketAddrV6::from(s), addr);
+        }
 
         #[test]
         fn display() {
