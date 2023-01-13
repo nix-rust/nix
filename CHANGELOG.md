@@ -25,6 +25,9 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   ([#1921](https://github.com/nix-rust/nix/pull/1921))
 
 ### Fixed
+- Fix `SockaddrIn6` bug that was swapping flowinfo and scope_id byte ordering.
+  ([#1964](https://github.com/nix-rust/nix/pull/1964))
+
 ### Removed
 
 - Removed deprecated IoVec API.

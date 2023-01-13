@@ -1182,8 +1182,8 @@ impl From<SockaddrIn6> for net::SocketAddrV6 {
         net::SocketAddrV6::new(
             net::Ipv6Addr::from(addr.0.sin6_addr.s6_addr),
             u16::from_be(addr.0.sin6_port),
-            u32::from_be(addr.0.sin6_flowinfo),
-            u32::from_be(addr.0.sin6_scope_id),
+            addr.0.sin6_flowinfo,
+            addr.0.sin6_scope_id,
         )
     }
 }
@@ -2524,6 +2524,18 @@ mod tests {
                 mem::size_of::<libc::sockaddr_in6>(),
                 SockaddrIn6::size() as usize
             );
+        }
+
+        #[test]
+        // Ensure that we can convert to-and-from std::net variants without change.
+        fn to_and_from() {
+            let s = "[1234:5678:90ab:cdef::1111:2222]:8080";
+            let mut nix_sin6 = SockaddrIn6::from_str(s).unwrap();
+            nix_sin6.0.sin6_flowinfo = 0x12345678;
+            nix_sin6.0.sin6_scope_id = 0x9abcdef0;
+
+            let std_sin6 : std::net::SocketAddrV6 = nix_sin6.into();
+            assert_eq!(nix_sin6, std_sin6.into());
         }
     }
 
