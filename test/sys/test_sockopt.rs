@@ -54,7 +54,7 @@ pub fn test_local_peercred_stream() {
     assert_eq!(Gid::from_raw(xucred.groups()[0]), Gid::current());
 }
 
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "ios", target_os = "macos"))]
 #[test]
 pub fn test_local_peer_pid() {
     use nix::sys::socket::socketpair;

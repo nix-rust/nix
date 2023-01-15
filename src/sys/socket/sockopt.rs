@@ -492,7 +492,7 @@ sockopt_impl!(
     libc::LOCAL_PEERCRED,
     super::XuCred
 );
-#[cfg(any(target_os = "macos"))]
+#[cfg(any(target_os = "macos", target_os = "ios"))]
 sockopt_impl!(
     /// Get the PID of the peer process of a connected unix domain socket.
     LocalPeerPid,
