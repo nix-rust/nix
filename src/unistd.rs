@@ -3735,11 +3735,23 @@ impl From<&libc::group> for Group {
     fn from(gr: &libc::group) -> Group {
         unsafe {
             Group {
-                name: CStr::from_ptr(gr.gr_name).to_string_lossy().into_owned(),
-                passwd: CString::new(CStr::from_ptr(gr.gr_passwd).to_bytes())
-                    .unwrap(),
+                name: if gr.gr_name.is_null() {
+                    Default::default()
+                } else {
+                    CStr::from_ptr(gr.gr_name).to_string_lossy().into_owned()
+                },
+                passwd: if gr.gr_passwd.is_null() {
+                    Default::default()
+                } else {
+                    CString::new(CStr::from_ptr(gr.gr_passwd).to_bytes())
+                        .unwrap()
+                },
                 gid: Gid::from_raw(gr.gr_gid),
-                mem: Group::members(gr.gr_mem),
+                mem: if gr.gr_mem.is_null() {
+                    Default::default()
+                } else {
+                    Group::members(gr.gr_mem)
+                },
             }
         }
     }
