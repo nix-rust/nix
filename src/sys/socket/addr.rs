@@ -39,18 +39,17 @@ use std::{fmt, mem, net, ptr, slice};
 /// Convert a std::net::Ipv4Addr into the libc form.
 #[cfg(feature = "net")]
 pub(crate) const fn ipv4addr_to_libc(addr: net::Ipv4Addr) -> libc::in_addr {
-    static_assertions::assert_eq_size!(net::Ipv4Addr, libc::in_addr);
-    // Safe because both types have the same memory layout, and no fancy Drop
-    // impls.
-    unsafe { mem::transmute(addr) }
+    libc::in_addr {
+        s_addr: u32::from_ne_bytes(addr.octets()),
+    }
 }
 
 /// Convert a std::net::Ipv6Addr into the libc form.
 #[cfg(feature = "net")]
 pub(crate) const fn ipv6addr_to_libc(addr: &net::Ipv6Addr) -> libc::in6_addr {
-    static_assertions::assert_eq_size!(net::Ipv6Addr, libc::in6_addr);
-    // Safe because both are Newtype wrappers around the same libc type
-    unsafe { mem::transmute(*addr) }
+    libc::in6_addr {
+        s6_addr: addr.octets(),
+    }
 }
 
 /// These constants specify the protocol family to be used
