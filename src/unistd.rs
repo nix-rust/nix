@@ -3631,7 +3631,12 @@ impl From<User> for libc::passwd {
 
 #[cfg(not(target_os = "redox"))] // RedoxFS does not support passwd
 impl User {
-    fn from_anything<F>(f: F) -> Result<Option<Self>>
+    /// # Safety
+    ///
+    /// If `f` writes to its `*mut *mut libc::passwd` parameter, then it must
+    /// also initialize the value pointed to by its `*mut libc::group`
+    /// parameter.
+    unsafe fn from_anything<F>(f: F) -> Result<Option<Self>>
     where
         F: Fn(
             *mut libc::passwd,
@@ -3661,7 +3666,9 @@ impl User {
                 if res.is_null() {
                     return Ok(None);
                 } else {
-                    let pwd = unsafe { pwd.assume_init() };
+                    // SAFETY: `f` guarantees that `pwd` is initialized if `res`
+                    // is not null.
+                    let pwd = pwd.assume_init();
                     return Ok(Some(User::from(&pwd)));
                 }
             } else if Errno::last() == Errno::ERANGE {
@@ -3687,9 +3694,13 @@ impl User {
     /// assert_eq!(res.name, "root");
     /// ```
     pub fn from_uid(uid: Uid) -> Result<Option<Self>> {
-        User::from_anything(|pwd, cbuf, cap, res| unsafe {
-            libc::getpwuid_r(uid.0, pwd, cbuf, cap, res)
-        })
+        // SAFETY: `getpwuid_r` will write to `res` if it initializes the value
+        // at `pwd`.
+        unsafe {
+            User::from_anything(|pwd, cbuf, cap, res| {
+                libc::getpwuid_r(uid.0, pwd, cbuf, cap, res)
+            })
+        }
     }
 
     /// Get a user by name.
@@ -3710,9 +3721,13 @@ impl User {
             Ok(c_str) => c_str,
             Err(_nul_error) => return Ok(None),
         };
-        User::from_anything(|pwd, cbuf, cap, res| unsafe {
-            libc::getpwnam_r(name.as_ptr(), pwd, cbuf, cap, res)
-        })
+        // SAFETY: `getpwnam_r` will write to `res` if it initializes the value
+        // at `pwd`.
+        unsafe {
+            User::from_anything(|pwd, cbuf, cap, res| {
+                libc::getpwnam_r(name.as_ptr(), pwd, cbuf, cap, res)
+            })
+        }
     }
 }
 
@@ -3763,7 +3778,12 @@ impl Group {
         ret
     }
 
-    fn from_anything<F>(f: F) -> Result<Option<Self>>
+    /// # Safety
+    ///
+    /// If `f` writes to its `*mut *mut libc::group` parameter, then it must
+    /// also initialize the value pointed to by its `*mut libc::group`
+    /// parameter.
+    unsafe fn from_anything<F>(f: F) -> Result<Option<Self>>
     where
         F: Fn(
             *mut libc::group,
@@ -3793,7 +3813,9 @@ impl Group {
                 if res.is_null() {
                     return Ok(None);
                 } else {
-                    let grp = unsafe { grp.assume_init() };
+                    // SAFETY: `f` guarantees that `grp` is initialized if `res`
+                    // is not null.
+                    let grp = grp.assume_init();
                     return Ok(Some(Group::from(&grp)));
                 }
             } else if Errno::last() == Errno::ERANGE {
@@ -3821,9 +3843,13 @@ impl Group {
     /// assert!(res.name == "root");
     /// ```
     pub fn from_gid(gid: Gid) -> Result<Option<Self>> {
-        Group::from_anything(|grp, cbuf, cap, res| unsafe {
-            libc::getgrgid_r(gid.0, grp, cbuf, cap, res)
-        })
+        // SAFETY: `getgrgid_r` will write to `res` if it initializes the value
+        // at `grp`.
+        unsafe {
+            Group::from_anything(|grp, cbuf, cap, res| {
+                libc::getgrgid_r(gid.0, grp, cbuf, cap, res)
+            })
+        }
     }
 
     /// Get a group by name.
@@ -3846,9 +3872,13 @@ impl Group {
             Ok(c_str) => c_str,
             Err(_nul_error) => return Ok(None),
         };
-        Group::from_anything(|grp, cbuf, cap, res| unsafe {
-            libc::getgrnam_r(name.as_ptr(), grp, cbuf, cap, res)
-        })
+        // SAFETY: `getgrnam_r` will write to `res` if it initializes the value
+        // at `grp`.
+        unsafe {
+            Group::from_anything(|grp, cbuf, cap, res| {
+                libc::getgrnam_r(name.as_ptr(), grp, cbuf, cap, res)
+            })
+        }
     }
 }
 }
