@@ -16,6 +16,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Added `mq_timedreceive` to `::nix::mqueue`.
   ([#1966])(https://github.com/nix-rust/nix/pull/1966)
 - Added `LocalPeerPid` to `nix::sys::socket::sockopt` for macOS. ([#1967](https://github.com/nix-rust/nix/pull/1967))
+- Added `setmntent(2)`, `getmntent` and `endmntent` as an iterator for Linux
+  ([#1988](https://github.com/nix-rust/nix/pull/1988))
 
 ### Changed
 

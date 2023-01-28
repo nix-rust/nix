@@ -2,6 +2,9 @@ use crate::errno::Errno;
 use crate::{NixPath, Result};
 use libc::{self, c_int, c_ulong};
 
+#[cfg(target_os = "linux")]
+pub mod mntent;
+
 libc_bitflags!(
     /// Used with [`mount`].
     pub struct MsFlags: c_ulong {
