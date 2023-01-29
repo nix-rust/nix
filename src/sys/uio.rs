@@ -27,7 +27,7 @@ pub fn writev<Fd: AsFd>(fd: Fd, iov: &[IoSlice<'_>]) -> Result<usize> {
 /// Low-level vectored read from a raw file descriptor
 ///
 /// See also [readv(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/readv.html)
-pub fn readv<Fd: AsFd>(fd: Fd, iov: &mut [IoSliceMut<'_>]) -> Result<usize> {
+pub fn readv<Fd: AsFd>(fd: Fd, iov: &[IoSliceMut<'_>]) -> Result<usize> {
     // SAFETY: same as in writev(), IoSliceMut is ABI-compatible with iovec
     let res = unsafe {
         libc::readv(fd.as_fd().as_raw_fd(), iov.as_ptr() as *const libc::iovec, iov.len() as c_int)

@@ -96,7 +96,7 @@ fn test_readv() {
     // removed when pipe(2) becomes I/O-safe.
     let reader = unsafe { OwnedFd::from_raw_fd(reader) };
 
-    let read = readv(&reader, &mut iovecs[..]).expect("read failed");
+    let read = readv(&reader, &iovecs[..]).expect("read failed");
     // Check whether we've read all data
     assert_eq!(to_write.len(), read);
     // Cccumulate data from iovecs

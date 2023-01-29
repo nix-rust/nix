@@ -23,6 +23,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - With I/O-safe type applied in `pty::OpenptyResult` and `pty::ForkptyResult`,
   users no longer need to manually close the file descriptors in these types.
   ([#1921](https://github.com/nix-rust/nix/pull/1921))
+- The `iov` parameter for `readv` that was previously a mutable slice is now an immutable slice.
+  ([#1982](https://github.com/nix-rust/nix/pull/1982))
 
 ### Fixed
 - Fix `SockaddrIn6` bug that was swapping flowinfo and scope_id byte ordering.
