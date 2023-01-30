@@ -7,7 +7,7 @@ use crate::Result;
 #[cfg(not(target_os = "android"))]
 #[cfg(feature = "fs")]
 use crate::{fcntl::OFlag, sys::stat::Mode};
-use libc::{self, c_int, c_void, off_t, size_t};
+use libc::{self, c_int, c_void, key_t, off_t, shmid_ds, size_t};
 use std::{num::NonZeroUsize, os::unix::io::{AsRawFd, AsFd}};
 
 libc_bitflags! {
@@ -602,4 +602,65 @@ pub fn shm_unlink<P: ?Sized + NixPath>(name: &P) -> Result<()> {
         name.with_nix_path(|cstr| unsafe { libc::shm_unlink(cstr.as_ptr()) })?;
 
     Errno::result(ret).map(drop)
+}
+
+/// Creates and returns a new, or returns an existing, System V shared memory
+/// segment identifier.
+///
+/// For more information, see [`shmget(2)`].
+///
+/// [`shmget(2)`]: https://man7.org/linux/man-pages/man2/shmget.2.html
+pub fn shmget(key: key_t, size: size_t, shmflg: c_int) -> Result<c_int> {
+    Errno::result(unsafe { libc::shmget(key, size, shmflg) })
+}
+
+/// Attaches the System V shared memory segment identified by `shmid` to the
+/// address space of the calling process.
+///
+/// For more information, see [`shmat(2)`].
+///
+/// # Safety
+///
+/// `shmid` should be a valid shared memory identifier and
+/// `shmaddr` must meet the requirements described in the [`shmat(2)`] man page.
+///
+/// [`shmat(2)`]: https://man7.org/linux/man-pages/man2/shmat.2.html
+pub unsafe fn shmat(
+    shmid: c_int,
+    shmaddr: *const c_void,
+    shmflg: c_int,
+) -> Result<*mut c_void> {
+    Errno::result(libc::shmat(shmid, shmaddr, shmflg))
+}
+
+/// Performs the reverse of [`shmat`], detaching the shared memory segment at
+/// the given address from the address space of the calling process.
+///
+/// For more information, see [`shmdt(2)`].
+///
+/// # Safety
+///
+/// `shmaddr` must meet the requirements described in the [`shmdt(2)`] man page.
+///
+/// [`shmdt(2)`]: https://man7.org/linux/man-pages/man2/shmdt.2.html
+pub unsafe fn shmdt(shmaddr: *const c_void) -> Result<()> {
+    Errno::result(libc::shmdt(shmaddr)).map(drop)
+}
+
+/// Performs control operation specified by `cmd` on the System V shared
+/// memory segment given by `shmid`.
+///
+/// For more information, see [`shmctl(2)`].
+///
+/// # Safety
+///
+/// All arguments should be valid and meet the requirements described in the [`shmctl(2)`] man page.
+///
+/// [`shmctl(2)`]: https://man7.org/linux/man-pages/man2/shmctl.2.html
+pub unsafe fn shmctl(
+    shmid: c_int,
+    cmd: c_int,
+    buf: *mut shmid_ds,
+) -> Result<c_int> {
+    Errno::result(libc::shmctl(shmid, cmd, buf))
 }
