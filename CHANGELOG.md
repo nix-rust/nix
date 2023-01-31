@@ -36,6 +36,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   ([#2014](https://github.com/nix-rust/nix/pull/2014))
 - Added `SO_TS_CLOCK` for FreeBSD to `nix::sys::socket::sockopt`.
   ([#2093](https://github.com/nix-rust/nix/pull/2093))
+- Made `clone` unsafe, like `fork`
 
 ### Changed
 
