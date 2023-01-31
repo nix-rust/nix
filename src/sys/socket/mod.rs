@@ -1946,6 +1946,9 @@ unsafe fn read_mhdr<'a, 'i, S>(
 /// headers are not used
 ///
 /// Buffers must remain valid for the whole lifetime of msghdr
+///
+/// `address` must be non-null, properly-aligned, and point to a space suitable
+/// for an `S`. It does not have to be initialized.
 unsafe fn pack_mhdr_to_receive<S>(
     iov_buffer: *const IoSliceMut,
     iov_buffer_len: usize,
@@ -1960,7 +1963,7 @@ unsafe fn pack_mhdr_to_receive<S>(
     // initialize it.
     let mut mhdr = mem::MaybeUninit::<msghdr>::zeroed();
     let p = mhdr.as_mut_ptr();
-    (*p).msg_name = (*address).as_mut_ptr() as *mut c_void;
+    (*p).msg_name = S::as_mut_ptr_raw(address) as *mut c_void;
     (*p).msg_namelen = S::size();
     (*p).msg_iov = iov_buffer as *mut iovec;
     (*p).msg_iovlen = iov_buffer_len as _;

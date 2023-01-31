@@ -910,6 +910,10 @@ impl private::SockaddrLikePriv for () {
     fn as_mut_ptr(&mut self) -> *mut libc::sockaddr {
         ptr::null_mut()
     }
+
+    fn as_mut_ptr_raw(_: *mut Self) -> *mut libc::sockaddr {
+        ptr::null_mut()
+    }
 }
 
 /// `()` can be used in place of a real Sockaddr when no address is expected,
@@ -1682,7 +1686,14 @@ mod private {
         /// It is best to use this method only with foreign functions that do
         /// not change the sockaddr type.
         fn as_mut_ptr(&mut self) -> *mut libc::sockaddr {
-            self as *mut Self as *mut libc::sockaddr
+            (self as *mut Self).cast::<libc::sockaddr>()
+        }
+
+        fn as_mut_ptr_raw(this: *mut Self) -> *mut libc::sockaddr
+        where
+            Self: Sized,
+        {
+            this as *mut libc::sockaddr
         }
     }
 }
