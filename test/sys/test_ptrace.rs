@@ -273,3 +273,90 @@ fn test_ptrace_syscall() {
         }
     }
 }
+
+#[cfg(all(
+    target_os = "linux",
+    not(any(target_arch = "mips", target_arch = "mips64"))
+))]
+#[test]
+fn test_ptrace_listen() {
+    use nix::sys::ptrace;
+    use nix::sys::signal::{kill, Signal};
+    use nix::sys::wait::{waitpid, WaitPidFlag, WaitStatus};
+    use nix::unistd::fork;
+    use nix::unistd::ForkResult::*;
+    use std::thread::sleep;
+    use std::time::Duration;
+
+    require_capability!("test_ptrace_listen", CAP_SYS_PTRACE);
+
+    let _m = crate::FORK_MTX.lock();
+
+    match unsafe { fork() }.expect("Error: Fork Failed") {
+        Child => loop {
+            sleep(Duration::from_millis(1000));
+        },
+        Parent { child } => {
+            ptrace::seize(child, ptrace::Options::empty()).unwrap();
+
+            // Send SIGSTOP. First we observe signal-delivery-stop.
+            kill(child, Signal::SIGSTOP).unwrap();
+            assert_eq!(
+                waitpid(child, None),
+                Ok(WaitStatus::Stopped(child, Signal::SIGSTOP))
+            );
+
+            // Then group-stop with PTRACE_EVENT_STOP, thanks to PTRACE_SEIZE.
+            ptrace::cont(child, Signal::SIGSTOP).unwrap();
+            assert_eq!(
+                waitpid(child, None),
+                Ok(WaitStatus::PtraceEvent(
+                    child,
+                    Signal::SIGSTOP,
+                    libc::PTRACE_EVENT_STOP
+                ))
+            );
+
+            // PTRACE_LISTEN restarts the tracee while preventing it from
+            // executing.
+            ptrace::listen(child).unwrap();
+
+            // Send SIGCONT to resume the tracee.
+            // We will get PTRACE_EVENT_STOP with SIGTRAP. This is a behavior
+            // undocumented in the ptrace(2) man page.
+            // https://bugzilla.kernel.org/show_bug.cgi?id=217001
+            // https://stackoverflow.com/a/49468347
+            // https://github.com/torvalds/linux/commit/fb1d910c178ba0c5bc32d3e5a9e82e05b7aad3cd
+            kill(child, Signal::SIGCONT).unwrap();
+            assert_eq!(
+                waitpid(child, None),
+                Ok(WaitStatus::PtraceEvent(
+                    child,
+                    Signal::SIGTRAP,
+                    libc::PTRACE_EVENT_STOP
+                ))
+            );
+
+            // Then we get signal-delivery-stop for SIGCONT.
+            ptrace::cont(child, Signal::SIGCONT).unwrap();
+            assert_eq!(
+                waitpid(child, None),
+                Ok(WaitStatus::Stopped(child, Signal::SIGCONT))
+            );
+
+            // We're done now, terminate the tracee.
+            ptrace::detach(child, Some(Signal::SIGKILL)).unwrap();
+            match waitpid(child, None) {
+                Ok(WaitStatus::Signaled(pid, Signal::SIGKILL, _))
+                    if pid == child =>
+                {
+                    let _ = waitpid(child, Some(WaitPidFlag::WNOHANG));
+                    while ptrace::cont(child, Some(Signal::SIGKILL)).is_ok() {
+                        let _ = waitpid(child, Some(WaitPidFlag::WNOHANG));
+                    }
+                }
+                _ => panic!("The process should have been killed"),
+            }
+        }
+    }
+}

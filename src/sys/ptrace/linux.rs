@@ -424,6 +424,26 @@ pub fn cont<T: Into<Option<Signal>>>(pid: Pid, sig: T) -> Result<()> {
     }
 }
 
+/// Restart the stopped tracee process, as with `ptrace(PTRACE_LISTEN, ...)`
+///
+/// The process with PID `pid` is restarted but prevented from executing as if
+/// it is stopped by SIGSTOP.
+#[cfg(all(
+    target_os = "linux",
+    not(any(target_arch = "mips", target_arch = "mips64"))
+))]
+pub fn listen(pid: Pid) -> Result<()> {
+    unsafe {
+        ptrace_other(
+            Request::PTRACE_LISTEN,
+            pid,
+            ptr::null_mut(),
+            ptr::null_mut(),
+        )
+        .map(drop) // ignore the useless return value
+    }
+}
+
 /// Stop a tracee, as with `ptrace(PTRACE_INTERRUPT, ...)`
 ///
 /// This request is equivalent to `ptrace(PTRACE_INTERRUPT, ...)`
