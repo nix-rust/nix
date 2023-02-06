@@ -571,6 +571,18 @@ impl SigSet {
         })
     }
 
+    /// Replaces the signal mask of the calling thread with this signal mask,
+    /// suspends execution until delivery of a signal whose action is either
+    /// execution of a signal-catching handler or termination of the process.
+    /// In the first case it returns after the handler returned and the signal
+    /// mask is restored to the set that existed prior to the call.
+    /// In the second case, suspend does not return.
+    #[cfg(not(target_os = "redox"))] // Redox does not yet support sigsuspend
+    #[cfg_attr(docsrs, doc(cfg(all())))]
+    pub fn suspend(&self) {
+        unsafe { libc::sigsuspend(&self.sigset as *const libc::sigset_t) };
+    }
+
     /// Converts a `libc::sigset_t` object to a [`SigSet`] without checking  whether the
     /// `libc::sigset_t` is already initialized.
     ///
