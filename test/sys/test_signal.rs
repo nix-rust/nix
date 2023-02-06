@@ -3,7 +3,7 @@ use nix::errno::Errno;
 use nix::sys::signal::*;
 use nix::unistd::*;
 use std::convert::TryFrom;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
 
 #[test]
 fn test_kill_none() {
@@ -142,4 +142,80 @@ fn test_signal() {
 
     // Restore default signal handler
     unsafe { signal(Signal::SIGINT, SigHandler::SigDfl) }.unwrap();
+}
+
+lazy_static! {
+    static ref SIGUSR1CNT: AtomicU8 = AtomicU8::new(0);
+    static ref SIGUSR2CNT: AtomicU8 = AtomicU8::new(0);
+}
+
+extern "C" fn test_suspend_handler(signal: libc::c_int) {
+    let signal = Signal::try_from(signal).unwrap();
+    let rel = Ordering::Relaxed;
+    match signal {
+        Signal::SIGUSR1 =>
+            SIGUSR1CNT.store(SIGUSR1CNT.load(rel) + 1, rel),
+        Signal::SIGUSR2 =>
+            SIGUSR2CNT.store(SIGUSR1CNT.load(rel) + 1, rel),
+        _ => panic!("This handler got an unexpected signal."),
+    }
+}
+
+/// Assert that unblocked sighandlers are executed,
+/// and blocked ones are not.
+#[test]
+#[cfg(feature = "signal")]
+fn test_suspend() {
+    use std::sync::{Arc, Barrier};
+    use std::time::Duration;
+    use std::thread;
+
+    let barrier = Arc::new(Barrier::new(2));
+    let b = Arc::clone(&barrier);
+    let thandle = thread::spawn(move || {
+        // First block SIGUSR{1,2}
+        let mut mask = SigSet::empty();
+        mask.add(SIGUSR1);
+        mask.add(SIGUSR2);
+        mask.thread_set_mask().expect("Cannot block signal.");
+
+        // Set up new handler
+        let act = SigAction::new(
+            SigHandler::Handler(test_suspend_handler),
+            SaFlags::empty(),
+            SigSet::empty(),
+        );
+        unsafe { sigaction(SIGUSR1, &act) }
+            .expect("Could not set handler.");
+        unsafe { sigaction(SIGUSR2, &act) }
+            .expect("Could not set handler.");
+
+        // tell im ready
+        b.wait();
+
+        // Only SIGUSR1 will be blocked.
+        let mut susp_mask = SigSet::empty();
+        susp_mask.add(SIGUSR1);
+
+        susp_mask.suspend();
+
+        // wait before quitting
+//        b.wait();
+    });
+
+    // wait for the handlers being set up.
+    barrier.wait();
+
+    // wait a little
+    thread::sleep(Duration::from_millis(10));
+
+    // TODO
+    //kill( which pid?, SIGUSR1);
+    //kill( which pid?, SIGUSR2);
+
+    thandle.join().expect("The thread should have quit.");
+
+
+    assert_eq!(SIGUSR1CNT.load(Ordering::Relaxed), 0);
+    assert_eq!(SIGUSR2CNT.load(Ordering::Relaxed), 1);
 }
