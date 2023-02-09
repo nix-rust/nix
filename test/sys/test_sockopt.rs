@@ -54,6 +54,22 @@ pub fn test_local_peercred_stream() {
     assert_eq!(Gid::from_raw(xucred.groups()[0]), Gid::current());
 }
 
+#[cfg(any(target_os = "ios", target_os = "macos"))]
+#[test]
+pub fn test_local_peer_pid() {
+    use nix::sys::socket::socketpair;
+
+    let (fd1, _fd2) = socketpair(
+        AddressFamily::Unix,
+        SockType::Stream,
+        None,
+        SockFlag::empty(),
+    )
+    .unwrap();
+    let pid = getsockopt(fd1, sockopt::LocalPeerPid).unwrap();
+    assert_eq!(pid, std::process::id() as _);
+}
+
 #[cfg(target_os = "linux")]
 #[test]
 fn is_so_mark_functional() {
