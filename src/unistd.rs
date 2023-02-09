@@ -1652,8 +1652,8 @@ pub fn setgroups(groups: &[Gid]) -> Result<()> {
                      target_os = "ios",
                      target_os = "macos",
                      target_os = "netbsd",
-                     target_os = "illumos",
-                     target_os = "openbsd"))] {
+                     target_os = "openbsd",
+                     target_os = "solaris"))] {
             type setgroups_ngroups_t = c_int;
         } else {
             type setgroups_ngroups_t = size_t;
