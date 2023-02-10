@@ -132,6 +132,8 @@ macro_rules! libc_enum {
         impl ::std::convert::TryFrom<$repr> for $BitFlags {
             type Error = $crate::Error;
             #[allow(unused_doc_comments)]
+            #[allow(deprecated)]
+            #[allow(unused_attributes)]
             fn try_from(x: $repr) -> $crate::Result<Self> {
                 match x {
                     $($try_froms)*

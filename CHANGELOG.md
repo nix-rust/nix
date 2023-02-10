@@ -24,6 +24,10 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - With I/O-safe type applied in `pty::OpenptyResult` and `pty::ForkptyResult`,
   users no longer need to manually close the file descriptors in these types.
   ([#1921](https://github.com/nix-rust/nix/pull/1921))
+- `sys::event::{kevent, kevent_ts}` are deprecated in favor of
+  `sys::kevent::Kqueue::kevent`, and `sys::event::kqueue` is deprecated in
+  favor of `sys::kevent::Kqueue::new`.
+  ([#1943](https://github.com/nix-rust/nix/pull/1943))
 
 ### Fixed
 - Fix `SockaddrIn6` bug that was swapping flowinfo and scope_id byte ordering.
