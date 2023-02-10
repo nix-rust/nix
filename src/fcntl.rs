@@ -35,7 +35,7 @@ libc_bitflags! {
         AT_NO_AUTOMOUNT;
         #[cfg(any(target_os = "android", target_os = "linux"))]
         AT_EMPTY_PATH;
-        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg(not(target_os = "android"))]
         AT_EACCESS;
     }
 }
