@@ -1,6 +1,6 @@
 //! Iterate over mtab/fstab
 
-use crate::{NixPath, Result};
+use crate::{Errno, NixPath, Result};
 use libc::{endmntent, getmntent, mntent, setmntent, FILE};
 use std::ffi::{CStr, CString};
 
@@ -33,10 +33,10 @@ impl MountEntries {
         })?;
 
         if file.is_null() {
-            panic!("The setmntent call returned NULL");
+            Err(Errno::last())
+        } else {
+            Ok(MountEntries { file })
         }
-
-        Ok(MountEntries { file })
     }
 }
 
@@ -98,7 +98,7 @@ impl Iterator for MountEntries {
 mod tests {
     use super::*;
     use std::io::prelude::*;
-    use tempfile::{self, NamedTempFile};
+    use tempfile::{self, tempdir, NamedTempFile};
 
     #[test]
     fn test_iterate_mtab() {
@@ -138,5 +138,14 @@ mod tests {
         );
 
         assert_eq!(mount_entries.next(), None);
+    }
+    #[test]
+    fn test_failed_to_open() {
+        let tempdir = tempdir().unwrap();
+        let does_not_exist = tempdir.path().join("does_not_exist.txt");
+
+        let mount_entries = MountEntries::new(&does_not_exist, "r".to_string());
+
+        assert_eq!(mount_entries.err().unwrap(), Errno::ENOENT);
     }
 }
