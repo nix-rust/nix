@@ -117,7 +117,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   ([#1824](https://github.com/nix-rust/nix/pull/1824))
 - Workaround XNU bug causing netmasks returned by `getifaddrs` to misbehave.
   ([#1788](https://github.com/nix-rust/nix/pull/1788))
-  
+
 ### Removed
 
 - Removed deprecated error constants and conversions.
