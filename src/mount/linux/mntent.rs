@@ -3,6 +3,7 @@
 use crate::{Errno, NixPath, Result};
 use libc::{endmntent, getmntent, mntent, setmntent, FILE};
 use std::ffi::{CStr, CString};
+use std::sync::Mutex;
 
 #[derive(Debug)]
 /// A wrapper for `libc::mntent`, an iterator for `MountEntry`
@@ -22,6 +23,9 @@ impl MountEntries {
     ///
     /// Returns `Ok(MountEntries)` where `MountEnties` is an iterator for `MountEntry` on success,
     /// or `Err(x)` where `x` is what `fopen(3)` would return.
+    ///
+    /// Because `getmntent(3)` is non-reentrant, the `next` function is single-threaded, protected
+    /// by a mutex.
     ///
     /// # See Also
     /// [`getmntent(3)`](https://www.man7.org/linux/man-pages/man3/getmntent.3.html)
@@ -89,7 +93,16 @@ impl From<&mntent> for MountEntry {
 impl Iterator for MountEntries {
     type Item = MountEntry;
 
+    /// Returns the next mount entry (`MountEntry` structure).
+    ///
+    /// Because `getmntent(3)` is non-reentrant, the `next` function is single-threaded, protected
+    /// by a mutex.
+    ///
+    /// # See Also
+    /// [`getmntent(3)`](https://www.man7.org/linux/man-pages/man3/getmntent.3.html)
     fn next(&mut self) -> Option<Self::Item> {
+        static MUTEX: Mutex<()> = Mutex::new(());
+        let _m = MUTEX.lock();
         unsafe { getmntent(self.file).as_ref().map(MountEntry::from) }
     }
 }
