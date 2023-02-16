@@ -16,6 +16,12 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Added `mq_timedreceive` to `::nix::mqueue`.
   ([#1966])(https://github.com/nix-rust/nix/pull/1966)
 - Added `LocalPeerPid` to `nix::sys::socket::sockopt` for macOS. ([#1967](https://github.com/nix-rust/nix/pull/1967))
+- Added `TcpFastOpen` to `nix::sys::socket::sockopt` for Linux, Android, macOS,
+  iOS and FreeBSD.
+  ([#1995](https://github.com/nix-rust/nix/pull/2002))
+- Added `TcpFastOpenConnect`, `TcpFastOpenKey` and `TcpFastOpenNoCookie` to
+  `nix::sys::socket::sockopt` for Linux and Android.
+  ([#1995](https://github.com/nix-rust/nix/pull/2002))
 
 ### Changed
 
