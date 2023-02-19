@@ -32,7 +32,7 @@ use libc::{c_char, c_int};
 use std::ffi::{CStr, OsStr, OsString};
 use std::mem::{size_of, MaybeUninit};
 use std::os::unix::ffi::OsStrExt;
-use std::os::unix::io::{AsRawFd, FromRawFd, OwnedFd, RawFd};
+use std::os::unix::io::{AsFd, AsRawFd, BorrowedFd, FromRawFd, OwnedFd, RawFd};
 use std::ptr;
 
 libc_bitflags! {
@@ -238,5 +238,11 @@ impl Inotify {
 impl FromRawFd for Inotify {
     unsafe fn from_raw_fd(fd: RawFd) -> Self {
         Inotify { fd: OwnedFd::from_raw_fd(fd) }
+    }
+}
+
+impl AsFd for Inotify {
+    fn as_fd(&'_ self) -> BorrowedFd<'_> {
+        self.fd.as_fd()
     }
 }
