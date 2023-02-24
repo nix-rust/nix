@@ -214,10 +214,11 @@ pub enum SockProtocol {
     /// Non-DIX type protocol number defined for the Ethernet IEEE 802.3 interface that allows packets of all protocols
     /// defined in the interface to be received.
     /// ([ref](https://man7.org/linux/man-pages/man7/packet.7.html))
-    // The protocol number is fed into the socket syscall in network byte order.
+    // The protocol number is fed into the socket syscall in network byte order,
+    // but the byte-flip happens at type u16 (C usage: socket(..., htons(ETH_P_ALL))).
     #[cfg(any(target_os = "android", target_os = "linux"))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
-    EthAll = libc::ETH_P_ALL.to_be(),
+    EthAll = u16::to_be(libc::ETH_P_ALL as u16) as i32,
     /// The Controller Area Network raw socket protocol
     /// ([ref](https://docs.kernel.org/networking/can.html#how-to-use-socketcan))
     #[cfg(target_os = "linux")]
