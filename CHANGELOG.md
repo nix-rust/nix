@@ -34,6 +34,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 ### Fixed
 - Fix `SockaddrIn6` bug that was swapping flowinfo and scope_id byte ordering.
   ([#1964](https://github.com/nix-rust/nix/pull/1964))
+- Fix the discriminant of `SockProtocol::EthAll`.
+  ([#2004](https://github.com/nix-rust/nix/pull/2004))
 
 ### Removed
 
