@@ -48,9 +48,6 @@ pub fn memfd_create(name: &CStr, flags: MemFdCreateFlag) -> Result<OwnedFd> {
                 not(target_os = "android"),
                 any(
                     target_os = "freebsd",
-                    // If the OS is Linux, gnu and musl expose a memfd_create symbol but not uclibc
-                    target_env = "gnu",
-                    target_env = "musl",
                 )))]
             {
                 libc::memfd_create(name.as_ptr(), flags.bits())
