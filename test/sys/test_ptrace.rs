@@ -273,3 +273,96 @@ fn test_ptrace_syscall() {
         }
     }
 }
+
+#[cfg(all(target_os = "linux", target_env = "gnu"))]
+#[test]
+fn test_ptrace_getsyscallinfo() {
+    use nix::sys::ptrace;
+    use nix::sys::ptrace::SyscallInfoOp;
+    use nix::sys::signal::kill;
+    use nix::sys::signal::Signal;
+    use nix::sys::wait::{waitpid, WaitStatus};
+    use nix::unistd::fork;
+    use nix::unistd::getpid;
+    use nix::unistd::ForkResult::*;
+
+    require_capability!("test_ptrace_getsyscallinfo", CAP_SYS_PTRACE);
+
+    let _m = crate::FORK_MTX.lock();
+
+    match unsafe { fork() }.expect("Error: Fork Failed") {
+        Child => {
+            ptrace::traceme().unwrap();
+            // first sigstop until parent is ready to continue
+            let pid = getpid();
+            kill(pid, Signal::SIGSTOP).unwrap();
+            unsafe {
+                // make a test syscall that can be intercepted by the tracer
+                ::libc::syscall(
+                    ::libc::SYS_kill,
+                    pid.as_raw(),
+                    ::libc::SIGKILL,
+                );
+                ::libc::_exit(0);
+            }
+        }
+
+        Parent { child } => {
+            assert_eq!(
+                waitpid(child, None),
+                Ok(WaitStatus::Stopped(child, Signal::SIGSTOP))
+            );
+
+            // set this option to recognize syscall-stops
+            ptrace::setoptions(
+                child,
+                ptrace::Options::PTRACE_O_TRACESYSGOOD
+                    | ptrace::Options::PTRACE_O_EXITKILL,
+            )
+            .unwrap();
+
+            // kill entry
+            ptrace::syscall(child, None).unwrap();
+            assert_eq!(
+                waitpid(child, None),
+                Ok(WaitStatus::PtraceSyscall(child))
+            );
+
+            let syscall_info = ptrace::getsyscallinfo(child);
+
+            if syscall_info == Err(Errno::EIO) {
+                skip!("PTRACE_GET_SYSCALL_INFO is not supported on this platform. Skipping test.");
+            }
+
+            assert!(matches!(
+                syscall_info.unwrap().op,
+                SyscallInfoOp::Entry {
+                    nr,
+                    args: [pid, sig, ..]
+                } if nr == ::libc::SYS_kill as _ && pid == child.as_raw() as _ && sig == ::libc::SIGTERM as _
+            ));
+
+            // kill exit
+            ptrace::syscall(child, None).unwrap();
+            assert_eq!(
+                waitpid(child, None),
+                Ok(WaitStatus::PtraceSyscall(child))
+            );
+
+            assert_eq!(
+                ptrace::getsyscallinfo(child).unwrap().op,
+                SyscallInfoOp::Exit {
+                    ret_val: 0,
+                    is_error: 0
+                }
+            );
+
+            // resume child
+            ptrace::detach(child, None).unwrap();
+            assert_eq!(
+                waitpid(child, None),
+                Ok(WaitStatus::Signaled(child, Signal::SIGTERM, false))
+            );
+        }
+    }
+}

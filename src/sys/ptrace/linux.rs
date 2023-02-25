@@ -22,6 +22,9 @@ pub type AddressType = *mut ::libc::c_void;
 ))]
 use libc::user_regs_struct;
 
+#[cfg(all(target_os = "linux", target_env = "gnu"))]
+use libc::ptrace_syscall_info;
+
 cfg_if! {
     if #[cfg(any(all(target_os = "linux", target_arch = "s390x"),
                  all(target_os = "linux", target_env = "gnu"),
@@ -121,6 +124,8 @@ libc_enum! {
         #[cfg(all(target_os = "linux", target_env = "gnu",
                   any(target_arch = "x86", target_arch = "x86_64")))]
         PTRACE_SYSEMU_SINGLESTEP,
+        #[cfg(all(target_os = "linux", target_env = "gnu"))]
+        PTRACE_GET_SYSCALL_INFO,
     }
 }
 
@@ -149,6 +154,80 @@ libc_enum! {
         /// Stop triggered by the `INTERRUPT` syscall, or a group stop,
         /// or when a new child is attached.
         PTRACE_EVENT_STOP,
+    }
+}
+
+#[cfg(all(target_os = "linux", target_env = "gnu"))]
+#[cfg_attr(docsrs, doc(cfg(all())))]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct SyscallInfo {
+    /// Type of system call stop
+    pub op: SyscallInfoOp,
+    /// AUDIT_ARCH_* value; see seccomp(2)
+    pub arch: u32,
+    /// CPU instruction pointer
+    pub instruction_pointer: u64,
+    /// CPU stack pointer
+    pub stack_pointer: u64,
+}
+
+#[cfg(all(target_os = "linux", target_env = "gnu"))]
+#[cfg_attr(docsrs, doc(cfg(all())))]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum SyscallInfoOp {
+    None,
+    /// System call entry.
+    Entry {
+        /// System call number.
+        nr: u64,
+        /// System call arguments.
+        args: [u64; 6],
+    },
+    /// System call exit.
+    Exit {
+        /// System call return value.
+        ret_val: i64,
+        /// System call error flag.
+        is_error: u8,
+    },
+    /// PTRACE_EVENT_SECCOMP stop.
+    Seccomp {
+        /// System call number.
+        nr: u64,
+        /// System call arguments.
+        args: [u64; 6],
+        /// SECCOMP_RET_DATA portion of SECCOMP_RET_TRACE return value.
+        ret_data: u32,
+    },
+}
+
+#[cfg(all(target_os = "linux", target_env = "gnu"))]
+impl SyscallInfo {
+    pub fn from_raw(raw: ptrace_syscall_info) -> Result<SyscallInfo> {
+        let op = match raw.op {
+            libc::PTRACE_SYSCALL_INFO_NONE => Ok(SyscallInfoOp::None),
+            libc::PTRACE_SYSCALL_INFO_ENTRY => Ok(SyscallInfoOp::Entry {
+                nr: unsafe { raw.u.entry.nr as _ },
+                args: unsafe { raw.u.entry.args },
+            }),
+            libc::PTRACE_SYSCALL_INFO_EXIT => Ok(SyscallInfoOp::Exit {
+                ret_val: unsafe { raw.u.exit.sval },
+                is_error: unsafe { raw.u.exit.is_error },
+            }),
+            libc::PTRACE_SYSCALL_INFO_SECCOMP => Ok(SyscallInfoOp::Seccomp {
+                nr: unsafe { raw.u.seccomp.nr as _ },
+                args: unsafe { raw.u.seccomp.args },
+                ret_data: unsafe { raw.u.seccomp.ret_data },
+            }),
+            _ => Err(Errno::EINVAL),
+        }?;
+
+        Ok(SyscallInfo {
+            op,
+            arch: raw.arch,
+            instruction_pointer: raw.instruction_pointer,
+            stack_pointer: raw.stack_pointer,
+        })
     }
 }
 
@@ -290,6 +369,22 @@ pub fn getevent(pid: Pid) -> Result<c_long> {
 /// Get siginfo as with `ptrace(PTRACE_GETSIGINFO,...)`
 pub fn getsiginfo(pid: Pid) -> Result<siginfo_t> {
     ptrace_get_data::<siginfo_t>(Request::PTRACE_GETSIGINFO, pid)
+}
+
+/// Get ptrace syscall info as with `ptrace(PTRACE_GET_SYSCALL_INFO,...)`
+/// Only available on Linux 5.3+
+#[cfg(all(target_os = "linux", target_env = "gnu"))]
+pub fn getsyscallinfo(pid: Pid) -> Result<SyscallInfo> {
+    let mut data = mem::MaybeUninit::uninit();
+    unsafe {
+        ptrace_other(
+            Request::PTRACE_GET_SYSCALL_INFO,
+            pid,
+            mem::size_of::<ptrace_syscall_info>() as *mut c_void,
+            data.as_mut_ptr() as *mut _ as *mut c_void,
+        )?;
+    }
+    SyscallInfo::from_raw(unsafe { data.assume_init() })
 }
 
 /// Set siginfo as with `ptrace(PTRACE_SETSIGINFO,...)`
