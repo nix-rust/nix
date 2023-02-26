@@ -185,6 +185,11 @@ pub mod unistd;
 #[cfg(any(feature = "poll", feature = "event"))]
 mod poll_timeout;
 
+feature! {
+    #![feature = "process"]
+    pub mod spawn;
+}
+
 use std::ffi::{CStr, CString, OsStr};
 use std::mem::MaybeUninit;
 use std::os::unix::ffi::OsStrExt;
