@@ -318,6 +318,12 @@ sockopt_impl!(
     super::IpMembershipRequest
 );
 #[cfg(feature = "net")]
+#[cfg(not(any(
+    target_os = "fuchsia",
+    target_os = "haiku",
+    target_os = "netbsd",
+    target_os = "openbsd"
+)))]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     /// Join a multicast group and allow receiving data only from specified source
@@ -328,6 +334,12 @@ sockopt_impl!(
     super::IpSourceMembershipRequest
 );
 #[cfg(feature = "net")]
+#[cfg(not(any(
+    target_os = "fuchsia",
+    target_os = "haiku",
+    target_os = "netbsd",
+    target_os = "openbsd"
+)))]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     /// Leave a source-specific group

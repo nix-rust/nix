@@ -534,10 +534,22 @@ impl IpMembershipRequest {
 /// Request for source-specific multicast socket operations
 ///
 /// This is a wrapper type around `ip_mreq_source`.
+#[cfg(not(any(
+    target_os = "fuchsia",
+    target_os = "haiku",
+    target_os = "netbsd",
+    target_os = "openbsd"
+)))]
 #[repr(transparent)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct IpSourceMembershipRequest(libc::ip_mreq_source);
 
+#[cfg(not(any(
+    target_os = "fuchsia",
+    target_os = "haiku",
+    target_os = "netbsd",
+    target_os = "openbsd"
+)))]
 impl IpSourceMembershipRequest {
     /// Instantiate a new `IpSourceMembershipRequest`
     ///
