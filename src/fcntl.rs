@@ -1,11 +1,12 @@
-use crate::errno::Errno;
+use crate::{errno::Errno, RawFd};
 use libc::{self, c_char, c_int, c_uint, size_t, ssize_t};
 use std::ffi::OsString;
 #[cfg(not(target_os = "redox"))]
 use std::os::raw;
+#[cfg(unix)]
 use std::os::unix::ffi::OsStringExt;
-use std::os::unix::io::RawFd;
-
+#[cfg(target_os = "wasi")]
+use std::os::wasi::ffi::OsStringExt;
 #[cfg(feature = "fs")]
 use crate::{sys::stat::Mode, NixPath, Result};
 #[cfg(any(target_os = "android", target_os = "linux"))]
@@ -54,7 +55,7 @@ libc_bitflags!(
         /// Open the file in append-only mode.
         O_APPEND;
         /// Generate a signal when input or output becomes possible.
-        #[cfg(not(any(target_os = "illumos", target_os = "solaris", target_os = "haiku")))]
+        #[cfg(not(any(target_os = "illumos", target_os = "solaris", target_os = "haiku", target_os = "wasi")))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
         O_ASYNC;
         /// Closes the file descriptor once an `execve` call is made.
@@ -124,7 +125,7 @@ libc_bitflags!(
         #[cfg_attr(docsrs, doc(cfg(all())))]
         O_NOCTTY;
         /// Same as `O_NONBLOCK`.
-        #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
+        #[cfg(not(any(target_os = "redox", target_os = "haiku", target_os = "wasi")))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
         O_NDELAY;
         /// `open()` will fail if the given path is a symbolic link.
@@ -190,6 +191,12 @@ libc_bitflags!(
 
 feature! {
 #![feature = "fs"]
+
+#[cfg(unix)]
+pub const PATH_MAX: usize = libc::PATH_MAX;
+
+#[cfg(target_os = "wasi")]
+pub const PATH_MAX: usize = 4096; // max is whatever the host system is... so guess posix?
 
 // The conversion is not identical on all operating systems.
 #[allow(clippy::useless_conversion)]
@@ -441,7 +448,7 @@ libc_bitflags!(
 feature! {
 #![feature = "fs"]
 
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "redox", target_os = "wasi")))]
 #[derive(Debug, Eq, Hash, PartialEq)]
 #[non_exhaustive]
 pub enum FcntlArg<'a> {
@@ -492,9 +499,11 @@ pub enum FcntlArg {
     F_GETFL,
     F_SETFL(OFlag), // O_NONBLOCK
 }
+#[cfg(not(target_os = "wasi"))]
 pub use self::FcntlArg::*;
 
 // TODO: Figure out how to handle value fcntl returns
+#[cfg(not(target_os = "wasi"))]
 pub fn fcntl(fd: RawFd, arg: FcntlArg) -> Result<c_int> {
     let res = unsafe {
         match arg {
@@ -556,7 +565,7 @@ pub enum FlockArg {
     UnlockNonblock,
 }
 
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "redox", target_os = "wasi")))]
 pub fn flock(fd: RawFd, arg: FlockArg) -> Result<()> {
     use self::FlockArg::*;
 
@@ -900,8 +909,7 @@ pub fn fspacectl_all(
 ))]
 mod posix_fadvise {
     use crate::errno::Errno;
-    use crate::Result;
-    use std::os::unix::io::RawFd;
+    use crate::{Result, RawFd};
 
     #[cfg(feature = "fs")]
     libc_enum! {

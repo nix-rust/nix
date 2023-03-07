@@ -1,10 +1,10 @@
 //! Vectored I/O
 
 use crate::errno::Errno;
-use crate::Result;
+use crate::{Result, RawFd};
 use libc::{self, c_int, c_void, off_t, size_t};
 use std::io::{IoSlice, IoSliceMut};
-use std::os::unix::io::{AsFd, AsRawFd};
+use std::os::fd::{AsFd, AsRawFd};
 
 /// Low-level vectored write to a raw file descriptor
 ///

@@ -165,6 +165,7 @@ feature! {
     pub mod statfs;
 }
 
+#[cfg(unix)]
 feature! {
     #![feature = "fs"]
     pub mod statvfs;

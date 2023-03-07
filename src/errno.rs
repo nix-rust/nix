@@ -22,7 +22,8 @@ cfg_if! {
     } else if #[cfg(any(target_os = "linux",
                         target_os = "redox",
                         target_os = "dragonfly",
-                        target_os = "fuchsia"))] {
+                        target_os = "fuchsia",
+                        target_os = "wasi"))] {
         unsafe fn errno_location() -> *mut c_int {
             libc::__errno_location()
         }
@@ -109,6 +110,7 @@ impl ErrnoSentinel for *mut c_void {
     }
 }
 
+#[cfg(not(target_os = "wasi"))]
 impl ErrnoSentinel for libc::sighandler_t {
     fn sentinel() -> Self {
         libc::SIG_ERR
@@ -160,6 +162,7 @@ fn desc(errno: Errno) -> &'static str {
         EACCES => "Permission denied",
         EFAULT => "Bad address",
         #[cfg(not(target_os = "haiku"))]
+        #[cfg(not(target_os = "wasi"))]
         ENOTBLK => "Block device required",
         EBUSY => "Device or resource busy",
         EEXIST => "File exists",
@@ -197,8 +200,10 @@ fn desc(errno: Errno) -> &'static str {
         ENOPROTOOPT => "Protocol not available",
         EPROTONOSUPPORT => "Protocol not supported",
         #[cfg(not(target_os = "haiku"))]
+        #[cfg(not(target_os = "wasi"))]
         ESOCKTNOSUPPORT => "Socket type not supported",
         #[cfg(not(target_os = "haiku"))]
+        #[cfg(not(target_os = "wasi"))]
         EPFNOSUPPORT => "Protocol family not supported",
         #[cfg(not(target_os = "haiku"))]
         EAFNOSUPPORT => "Address family not supported by protocol",
@@ -212,11 +217,14 @@ fn desc(errno: Errno) -> &'static str {
         ENOBUFS => "No buffer space available",
         EISCONN => "Transport endpoint is already connected",
         ENOTCONN => "Transport endpoint is not connected",
+        #[cfg(not(target_os = "wasi"))]
         ESHUTDOWN => "Cannot send after transport endpoint shutdown",
         #[cfg(not(target_os = "haiku"))]
+        #[cfg(not(target_os = "wasi"))]
         ETOOMANYREFS => "Too many references: cannot splice",
         ETIMEDOUT => "Connection timed out",
         ECONNREFUSED => "Connection refused",
+        #[cfg(not(target_os = "wasi"))]
         EHOSTDOWN => "Host is down",
         EHOSTUNREACH => "No route to host",
 
@@ -459,7 +467,8 @@ fn desc(errno: Errno) -> &'static str {
             target_os = "android",
             target_os = "illumos",
             target_os = "solaris",
-            target_os = "fuchsia"
+            target_os = "fuchsia",
+            target_os = "wasi"
         ))]
         EPROTO => "Protocol error",
 
@@ -482,7 +491,8 @@ fn desc(errno: Errno) -> &'static str {
         #[cfg(any(
             target_os = "linux",
             target_os = "android",
-            target_os = "fuchsia"
+            target_os = "fuchsia",
+            target_os = "wasi"
         ))]
         EBADMSG => "Not a data message",
 
@@ -660,7 +670,8 @@ fn desc(errno: Errno) -> &'static str {
         #[cfg(any(
             target_os = "linux",
             target_os = "android",
-            target_os = "fuchsia"
+            target_os = "fuchsia",
+            target_os = "wasi"
         ))]
         EDQUOT => "Quota exceeded",
 
@@ -687,7 +698,8 @@ fn desc(errno: Errno) -> &'static str {
             target_os = "illumos",
             target_os = "solaris",
             target_os = "fuchsia",
-            target_os = "haiku"
+            target_os = "haiku",
+            target_os = "wasi"
         ))]
         ECANCELED => "Operation canceled",
 
@@ -768,7 +780,7 @@ fn desc(errno: Errno) -> &'static str {
         ))]
         ENOLINK => "Link has been severed",
 
-        #[cfg(target_os = "freebsd")]
+        #[cfg(any(target_os = "freebsd", target_os = "wasi"))]
         ENOTCAPABLE => "Capabilities insufficient",
 
         #[cfg(target_os = "freebsd")]
@@ -793,7 +805,8 @@ fn desc(errno: Errno) -> &'static str {
             target_os = "netbsd",
             target_os = "redox",
             target_os = "illumos",
-            target_os = "solaris"
+            target_os = "solaris",
+            target_os = "wasi"
         ))]
         EOVERFLOW => "Value too large to be stored in data type",
 
@@ -804,7 +817,8 @@ fn desc(errno: Errno) -> &'static str {
             target_os = "ios",
             target_os = "netbsd",
             target_os = "redox",
-            target_os = "haiku"
+            target_os = "haiku",
+            target_os = "wasi"
         ))]
         EILSEQ => "Illegal byte sequence",
 
@@ -848,7 +862,8 @@ fn desc(errno: Errno) -> &'static str {
             target_os = "freebsd",
             target_os = "dragonfly",
             target_os = "ios",
-            target_os = "openbsd"
+            target_os = "openbsd",
+            target_os = "wasi"
         ))]
         ENOTRECOVERABLE => "State not recoverable",
 
@@ -857,7 +872,8 @@ fn desc(errno: Errno) -> &'static str {
             target_os = "freebsd",
             target_os = "dragonfly",
             target_os = "ios",
-            target_os = "openbsd"
+            target_os = "openbsd",
+            target_os = "wasi"
         ))]
         EOWNERDEAD => "Previous owner died",
 
@@ -870,7 +886,8 @@ fn desc(errno: Errno) -> &'static str {
             target_os = "netbsd",
             target_os = "illumos",
             target_os = "solaris",
-            target_os = "haiku"
+            target_os = "haiku",
+            target_os = "wasi"
         ))]
         ENOTSUP => "Operation not supported",
 
@@ -919,7 +936,8 @@ fn desc(errno: Errno) -> &'static str {
             target_os = "redox",
             target_os = "illumos",
             target_os = "solaris",
-            target_os = "haiku"
+            target_os = "haiku",
+            target_os = "wasi"
         ))]
         ESTALE => "Stale NFS file handle",
 
@@ -1037,7 +1055,8 @@ fn desc(errno: Errno) -> &'static str {
             target_os = "macos",
             target_os = "ios",
             target_os = "netbsd",
-            target_os = "haiku"
+            target_os = "haiku",
+            target_os = "wasi"
         ))]
         EMULTIHOP => "Reserved",
 
@@ -1053,7 +1072,8 @@ fn desc(errno: Errno) -> &'static str {
             target_os = "macos",
             target_os = "ios",
             target_os = "netbsd",
-            target_os = "haiku"
+            target_os = "haiku",
+            target_os = "wasi"
         ))]
         ENOLINK => "Reserved",
 
@@ -1400,6 +1420,181 @@ mod consts {
             libc::ERFKILL => ERFKILL,
             #[cfg(not(any(target_os = "android", target_arch = "mips")))]
             libc::EHWPOISON => EHWPOISON,
+            _ => UnknownErrno,
+        }
+    }
+}
+
+#[cfg(target_os = "wasi")]
+mod consts {
+    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+    #[repr(i32)]
+    #[non_exhaustive]
+    pub enum Errno {
+        UnknownErrno = 0,
+        E2BIG = libc::E2BIG,
+        EACCES = libc::EACCES,
+        EADDRINUSE = libc::EADDRINUSE,
+        EADDRNOTAVAIL = libc::EADDRNOTAVAIL,
+        EAFNOSUPPORT = libc::EAFNOSUPPORT,
+        EAGAIN = libc::EAGAIN,
+        EALREADY = libc::EALREADY,
+        EBADF = libc::EBADF,
+        EBADMSG = libc::EBADMSG,
+        EBUSY = libc::EBUSY,
+        ECANCELED = libc::ECANCELED,
+        ECHILD = libc::ECHILD,
+        ECONNABORTED = libc::ECONNABORTED,
+        ECONNREFUSED = libc::ECONNREFUSED,
+        ECONNRESET = libc::ECONNRESET,
+        EDEADLK = libc::EDEADLK,
+        EDESTADDRREQ = libc::EDESTADDRREQ,
+        EDOM = libc::EDOM,
+        EDQUOT = libc::EDQUOT,
+        EEXIST = libc::EEXIST,
+        EFAULT = libc::EFAULT,
+        EFBIG = libc::EFBIG,
+        EHOSTUNREACH = libc::EHOSTUNREACH,
+        EIDRM = libc::EIDRM,
+        EILSEQ = libc::EILSEQ,
+        EINPROGRESS = libc::EINPROGRESS,
+        EINTR = libc::EINTR,
+        EINVAL = libc::EINVAL,
+        EIO = libc::EIO,
+        EISCONN = libc::EISCONN,
+        EISDIR = libc::EISDIR,
+        ELOOP = libc::ELOOP,
+        EMFILE = libc::EMFILE,
+        EMLINK = libc::EMLINK,
+        EMSGSIZE = libc::EMSGSIZE,
+        EMULTIHOP = libc::EMULTIHOP,
+        ENAMETOOLONG = libc::ENAMETOOLONG,
+        ENETDOWN = libc::ENETDOWN,
+        ENETRESET = libc::ENETRESET,
+        ENETUNREACH = libc::ENETUNREACH,
+        ENFILE = libc::ENFILE,
+        ENOBUFS = libc::ENOBUFS,
+        ENODEV = libc::ENODEV,
+        ENOENT = libc::ENOENT,
+        ENOEXEC = libc::ENOEXEC,
+        ENOLCK = libc::ENOLCK,
+        ENOLINK = libc::ENOLINK,
+        ENOMEM = libc::ENOMEM,
+        ENOMSG = libc::ENOMSG,
+        ENOPROTOOPT = libc::ENOPROTOOPT,
+        ENOSPC = libc::ENOSPC,
+        ENOSYS = libc::ENOSYS,
+        ENOTCONN = libc::ENOTCONN,
+        ENOTDIR = libc::ENOTDIR,
+        ENOTEMPTY = libc::ENOTEMPTY,
+        ENOTRECOVERABLE = libc::ENOTRECOVERABLE,
+        ENOTSOCK = libc::ENOTSOCK,
+        ENOTSUP = libc::ENOTSUP,
+        ENOTTY = libc::ENOTTY,
+        ENXIO = libc::ENXIO,
+        EOVERFLOW = libc::EOVERFLOW,
+        EOWNERDEAD = libc::EOWNERDEAD,
+        EPERM = libc::EPERM,
+        EPIPE = libc::EPIPE,
+        EPROTO = libc::EPROTO,
+        EPROTONOSUPPORT = libc::EPROTONOSUPPORT,
+        EPROTOTYPE = libc::EPROTOTYPE,
+        ERANGE = libc::ERANGE,
+        EROFS = libc::EROFS,
+        ESPIPE = libc::ESPIPE,
+        ESRCH = libc::ESRCH,
+        ESTALE = libc::ESTALE,
+        ETIMEDOUT = libc::ETIMEDOUT,
+        ETXTBSY = libc::ETXTBSY,
+        EXDEV = libc::EXDEV,
+        ENOTCAPABLE = libc::ENOTCAPABLE,
+    }
+
+    impl Errno {
+        pub const EWOULDBLOCK: Errno = Errno::EAGAIN;
+        pub const ENOTSUP: Errno = Errno::ENOTSUP;
+    }
+
+    pub const fn from_i32(e: i32) -> Errno {
+        use self::Errno::*;
+
+        match e {
+            libc::E2BIG => E2BIG,
+            libc::EACCES => EACCES,
+            libc::EADDRINUSE => EADDRINUSE,
+            libc::EADDRNOTAVAIL => EADDRNOTAVAIL,
+            libc::EAFNOSUPPORT => EAFNOSUPPORT,
+            libc::EAGAIN => EAGAIN,
+            libc::EALREADY => EALREADY,
+            libc::EBADF => EBADF,
+            libc::EBADMSG => EBADMSG,
+            libc::EBUSY => EBUSY,
+            libc::ECANCELED => ECANCELED,
+            libc::ECHILD => ECHILD,
+            libc::ECONNABORTED => ECONNABORTED,
+            libc::ECONNREFUSED => ECONNREFUSED,
+            libc::ECONNRESET => ECONNRESET,
+            libc::EDEADLK => EDEADLK,
+            libc::EDESTADDRREQ => EDESTADDRREQ,
+            libc::EDOM => EDOM,
+            libc::EDQUOT => EDQUOT,
+            libc::EEXIST => EEXIST,
+            libc::EFAULT => EFAULT,
+            libc::EFBIG => EFBIG,
+            libc::EHOSTUNREACH => EHOSTUNREACH,
+            libc::EIDRM => EIDRM,
+            libc::EILSEQ => EILSEQ,
+            libc::EINPROGRESS => EINPROGRESS,
+            libc::EINTR => EINTR,
+            libc::EINVAL => EINVAL,
+            libc::EIO => EIO,
+            libc::EISCONN => EISCONN,
+            libc::EISDIR => EISDIR,
+            libc::ELOOP => ELOOP,
+            libc::EMFILE => EMFILE,
+            libc::EMLINK => EMLINK,
+            libc::EMSGSIZE => EMSGSIZE,
+            libc::EMULTIHOP => EMULTIHOP,
+            libc::ENAMETOOLONG => ENAMETOOLONG,
+            libc::ENETDOWN => ENETDOWN,
+            libc::ENETRESET => ENETRESET,
+            libc::ENETUNREACH => ENETUNREACH,
+            libc::ENFILE => ENFILE,
+            libc::ENOBUFS => ENOBUFS,
+            libc::ENODEV => ENODEV,
+            libc::ENOENT => ENOENT,
+            libc::ENOEXEC => ENOEXEC,
+            libc::ENOLCK => ENOLCK,
+            libc::ENOLINK => ENOLINK,
+            libc::ENOMEM => ENOMEM,
+            libc::ENOMSG => ENOMSG,
+            libc::ENOPROTOOPT => ENOPROTOOPT,
+            libc::ENOSPC => ENOSPC,
+            libc::ENOSYS => ENOSYS,
+            libc::ENOTCONN => ENOTCONN,
+            libc::ENOTDIR => ENOTDIR,
+            libc::ENOTEMPTY => ENOTEMPTY,
+            libc::ENOTRECOVERABLE => ENOTRECOVERABLE,
+            libc::ENOTSOCK => ENOTSOCK,
+            libc::ENOTSUP => ENOTSUP,
+            libc::ENOTTY => ENOTTY,
+            libc::ENXIO => ENXIO,
+            libc::EOVERFLOW => EOVERFLOW,
+            libc::EOWNERDEAD => EOWNERDEAD,
+            libc::EPERM => EPERM,
+            libc::EPIPE => EPIPE,
+            libc::EPROTO => EPROTO,
+            libc::EPROTONOSUPPORT => EPROTONOSUPPORT,
+            libc::EPROTOTYPE => EPROTOTYPE,
+            libc::ERANGE => ERANGE,
+            libc::EROFS => EROFS,
+            libc::ESPIPE => ESPIPE,
+            libc::ESRCH => ESRCH,
+            libc::ESTALE => ESTALE,
+            libc::ETIMEDOUT => ETIMEDOUT,
+            libc::ETXTBSY => ETXTBSY,
+            libc::EXDEV => EXDEV,
+            libc::ENOTCAPABLE => ENOTCAPABLE,
             _ => UnknownErrno,
         }
     }

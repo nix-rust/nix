@@ -40,7 +40,7 @@
 //! * `user` - Stuff relating to users and groups
 //! * `zerocopy` - APIs like `sendfile` and `copy_file_range`
 #![crate_name = "nix"]
-#![cfg(unix)]
+#![cfg(any(unix, target_os = "wasi"))]
 #![cfg_attr(docsrs, doc(cfg(all())))]
 #![allow(non_camel_case_types)]
 #![cfg_attr(test, deny(warnings))]
@@ -161,7 +161,10 @@ pub mod unistd;
 
 use std::ffi::{CStr, CString, OsStr};
 use std::mem::MaybeUninit;
+#[cfg(unix)]
 use std::os::unix::ffi::OsStrExt;
+#[cfg(target_os = "wasi")]
+use std::os::wasi::ffi::OsStrExt;
 use std::path::{Path, PathBuf};
 use std::{ptr, result, slice};
 
@@ -336,3 +339,12 @@ impl NixPath for PathBuf {
         self.as_os_str().with_nix_path(f)
     }
 }
+
+
+/// Raw file descriptors.
+#[cfg(unix)]
+pub type RawFd = std::os::unix::io::RawFd;
+
+/// Raw file descriptors.
+#[cfg(target_os = "wasi")]
+pub type RawFd = std::os::wasi::io::RawFd;

@@ -12,9 +12,8 @@ pub use libc::{dev_t, mode_t};
 #[cfg(not(target_os = "redox"))]
 use crate::fcntl::{at_rawfd, AtFlags};
 use crate::sys::time::{TimeSpec, TimeVal};
-use crate::{errno::Errno, NixPath, Result};
+use crate::{errno::Errno, NixPath, Result, RawFd};
 use std::mem;
-use std::os::unix::io::RawFd;
 
 libc_bitflags!(
     /// "File type" flags for `mknod` and related functions.
@@ -33,6 +32,7 @@ libc_bitflags!(
 libc_bitflags! {
     /// "File mode / permissions" flags.
     pub struct Mode: mode_t {
+        #[cfg(not(target_os = "redox"))]
         /// Read, write and execute for owner.
         S_IRWXU;
         /// Read for owner.
@@ -170,6 +170,7 @@ libc_bitflags! {
 }
 
 /// Create a special or ordinary file, by pathname.
+#[cfg(not(target_os = "wasi"))]
 pub fn mknod<P: ?Sized + NixPath>(
     path: &P,
     kind: SFlag,
@@ -188,7 +189,8 @@ pub fn mknod<P: ?Sized + NixPath>(
     target_os = "ios",
     target_os = "macos",
     target_os = "redox",
-    target_os = "haiku"
+    target_os = "haiku",
+    target_os = "wasi",
 )))]
 #[cfg_attr(docsrs, doc(cfg(all())))]
 pub fn mknodat<P: ?Sized + NixPath>(
@@ -231,6 +233,7 @@ pub const fn makedev(major: u64, minor: u64) -> dev_t {
         | (minor & 0x0000_00ff)
 }
 
+#[cfg(unix)]
 pub fn umask(mode: Mode) -> Mode {
     let prev = unsafe { libc::umask(mode.bits() as mode_t) };
     Mode::from_bits(prev).expect("[BUG] umask returned invalid Mode")
@@ -294,6 +297,7 @@ pub fn fstatat<P: ?Sized + NixPath>(
 /// # References
 ///
 /// [fchmod(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/fchmod.html).
+#[cfg(unix)]
 pub fn fchmod(fd: RawFd, mode: Mode) -> Result<()> {
     let res = unsafe { libc::fchmod(fd, mode.bits() as mode_t) };
 
@@ -323,7 +327,7 @@ pub enum FchmodatFlags {
 /// # References
 ///
 /// [fchmodat(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/fchmodat.html).
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "redox", target_os = "wasi")))]
 #[cfg_attr(docsrs, doc(cfg(all())))]
 pub fn fchmodat<P: ?Sized + NixPath>(
     dirfd: Option<RawFd>,
@@ -357,17 +361,18 @@ pub fn fchmodat<P: ?Sized + NixPath>(
 /// # References
 ///
 /// [utimes(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/utimes.html).
+#[cfg(unix)]
 pub fn utimes<P: ?Sized + NixPath>(
     path: &P,
     atime: &TimeVal,
     mtime: &TimeVal,
 ) -> Result<()> {
-    let times: [libc::timeval; 2] = [*atime.as_ref(), *mtime.as_ref()];
-    let res = path.with_nix_path(|cstr| unsafe {
-        libc::utimes(cstr.as_ptr(), &times[0])
-    })?;
+        let times: [libc::timeval; 2] = [*atime.as_ref(), *mtime.as_ref()];
+        let res = path.with_nix_path(|cstr| unsafe {
+            libc::utimes(cstr.as_ptr(), &times[0])
+        })?;
 
-    Errno::result(res).map(drop)
+        Errno::result(res).map(drop)
 }
 
 /// Change the access and modification times of a file without following symlinks.
