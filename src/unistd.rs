@@ -735,6 +735,27 @@ pub fn chown<P: ?Sized + NixPath>(
     Errno::result(res).map(drop)
 }
 
+/// Change the ownership of the symbolic link at `path` to be owned by the specified
+/// `owner` (user) and `group` (see
+/// [lchown(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/lchown.html)).
+///
+/// The owner/group for the provided path name will not be modified if `None` is
+/// provided for that argument.  Ownership change will be attempted for the path
+/// only if `Some` owner/group is provided.
+#[inline]
+pub fn lchown<P: ?Sized + NixPath>(
+    path: &P,
+    owner: Option<Uid>,
+    group: Option<Gid>,
+) -> Result<()> {
+    let res = path.with_nix_path(|cstr| {
+        let (uid, gid) = chown_raw_ids(owner, group);
+        unsafe { libc::lchown(cstr.as_ptr(), uid, gid) }
+    })?;
+
+    Errno::result(res).map(drop)
+}
+
 /// Change the ownership of the file referred to by the open file descriptor `fd` to be owned by
 /// the specified `owner` (user) and `group` (see
 /// [fchown(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/fchown.html)).
