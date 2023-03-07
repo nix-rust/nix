@@ -1,6 +1,0 @@
-{
-  "rust-analyzer.cargo.target": "wasm32-wasi",
-  "rust-analyzer.cargo.noDefaultFeatures": true,
-  "rust-analyzer.check.allTargets": false,
-  "rust-analyzer.cargo.features": ["fs", "uio", "zerocopy"]
-}

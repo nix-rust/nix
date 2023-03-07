@@ -3917,7 +3917,6 @@ feature! {
 /// (see [`ttyname(3)`](https://man7.org/linux/man-pages/man3/ttyname.3.html)).
 #[cfg(not(target_os = "fuchsia"))]
 pub fn ttyname(fd: RawFd) -> Result<PathBuf> {
-    const PATH_MAX: usize = libc::PATH_MAX as usize;
     let mut buf = vec![0_u8; PATH_MAX];
     let c_buf = buf.as_mut_ptr() as *mut libc::c_char;
 

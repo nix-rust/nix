@@ -193,7 +193,7 @@ feature! {
 #![feature = "fs"]
 
 #[cfg(unix)]
-pub const PATH_MAX: usize = libc::PATH_MAX;
+pub const PATH_MAX: usize = libc::PATH_MAX as usize;
 
 #[cfg(target_os = "wasi")]
 pub const PATH_MAX: usize = 4096; // max is whatever the host system is... so guess posix?
@@ -318,7 +318,7 @@ fn inner_readlink<P: ?Sized + NixPath>(
     dirfd: Option<RawFd>,
     path: &P,
 ) -> Result<OsString> {
-    let mut v = Vec::with_capacity(libc::PATH_MAX as usize);
+    let mut v = Vec::with_capacity(PATH_MAX as usize);
 
     {
         // simple case: result is strictly less than `PATH_MAX`
@@ -371,7 +371,7 @@ fn inner_readlink<P: ?Sized + NixPath>(
         } else {
             // If lstat doesn't cooperate, or reports an error, be a little less
             // precise.
-            (libc::PATH_MAX as usize).max(128) << 1
+            (PATH_MAX as usize).max(128) << 1
         }
     };
 

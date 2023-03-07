@@ -4,7 +4,10 @@ use crate::errno::Errno;
 use crate::{Result, RawFd};
 use libc::{self, c_int, c_void, off_t, size_t};
 use std::io::{IoSlice, IoSliceMut};
-use std::os::fd::{AsFd, AsRawFd};
+#[cfg(unix)]
+use std::os::unix::prelude::{AsFd, AsRawFd};
+#[cfg(target_os = "wasi")]
+use std::os::wasi::prelude::{AsFd, AsRawFd};
 
 /// Low-level vectored write to a raw file descriptor
 ///

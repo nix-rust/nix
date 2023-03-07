@@ -12,7 +12,7 @@ pub use libc::{dev_t, mode_t};
 #[cfg(not(target_os = "redox"))]
 use crate::fcntl::{at_rawfd, AtFlags};
 use crate::sys::time::{TimeSpec, TimeVal};
-use crate::{errno::Errno, NixPath, Result, RawFd};
+use crate::{errno::Errno, NixPath, RawFd, Result};
 use std::mem;
 
 libc_bitflags!(
@@ -32,7 +32,6 @@ libc_bitflags!(
 libc_bitflags! {
     /// "File mode / permissions" flags.
     pub struct Mode: mode_t {
-        #[cfg(not(target_os = "redox"))]
         /// Read, write and execute for owner.
         S_IRWXU;
         /// Read for owner.
@@ -367,12 +366,12 @@ pub fn utimes<P: ?Sized + NixPath>(
     atime: &TimeVal,
     mtime: &TimeVal,
 ) -> Result<()> {
-        let times: [libc::timeval; 2] = [*atime.as_ref(), *mtime.as_ref()];
-        let res = path.with_nix_path(|cstr| unsafe {
-            libc::utimes(cstr.as_ptr(), &times[0])
-        })?;
+    let times: [libc::timeval; 2] = [*atime.as_ref(), *mtime.as_ref()];
+    let res = path.with_nix_path(|cstr| unsafe {
+        libc::utimes(cstr.as_ptr(), &times[0])
+    })?;
 
-        Errno::result(res).map(drop)
+    Errno::result(res).map(drop)
 }
 
 /// Change the access and modification times of a file without following symlinks.
