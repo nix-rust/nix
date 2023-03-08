@@ -1,4 +1,6 @@
 use crate::{errno::Errno, RawFd};
+#[cfg(feature = "fs")]
+use crate::{sys::stat::Mode, NixPath, Result};
 use libc::{self, c_char, c_int, c_uint, size_t, ssize_t};
 use std::ffi::OsString;
 #[cfg(not(target_os = "redox"))]
@@ -7,8 +9,6 @@ use std::os::raw;
 use std::os::unix::ffi::OsStringExt;
 #[cfg(target_os = "wasi")]
 use std::os::wasi::ffi::OsStringExt;
-#[cfg(feature = "fs")]
-use crate::{sys::stat::Mode, NixPath, Result};
 #[cfg(any(target_os = "android", target_os = "linux"))]
 use std::ptr; // For splice and copy_file_range
 

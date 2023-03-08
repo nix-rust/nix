@@ -1,7 +1,7 @@
 //! Vectored I/O
 
 use crate::errno::Errno;
-use crate::{Result, RawFd};
+use crate::Result;
 use libc::{self, c_int, c_void, off_t, size_t};
 use std::io::{IoSlice, IoSliceMut};
 #[cfg(unix)]

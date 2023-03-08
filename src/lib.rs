@@ -340,7 +340,6 @@ impl NixPath for PathBuf {
     }
 }
 
-
 /// Raw file descriptors.
 #[cfg(unix)]
 pub type RawFd = std::os::unix::io::RawFd;

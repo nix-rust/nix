@@ -1,12 +1,12 @@
 //! Safe wrappers around functions found in libc "unistd.h" header
 
 use crate::errno::{self, Errno};
-#[cfg(not(target_os = "wasi"))]
-#[cfg(feature = "fs")]
-use crate::fcntl::{fcntl, FcntlArg::F_SETFD};
 #[cfg(not(target_os = "redox"))]
 #[cfg(feature = "fs")]
 use crate::fcntl::{at_rawfd, AtFlags};
+#[cfg(not(target_os = "wasi"))]
+#[cfg(feature = "fs")]
+use crate::fcntl::{fcntl, FcntlArg::F_SETFD};
 #[cfg(feature = "fs")]
 use crate::fcntl::{FdFlag, OFlag, PATH_MAX};
 #[cfg(all(
@@ -23,12 +23,12 @@ use crate::fcntl::{FdFlag, OFlag, PATH_MAX};
 use crate::sys::stat::FileFlag;
 #[cfg(feature = "fs")]
 use crate::sys::stat::Mode;
-use crate::{Error, NixPath, Result, RawFd};
+use crate::{Error, NixPath, RawFd, Result};
 #[cfg(not(target_os = "redox"))]
 use cfg_if::cfg_if;
 use libc::{
     self, c_char, c_int, c_long, c_uint, c_void, gid_t, mode_t, off_t, pid_t,
-    size_t, uid_t
+    size_t, uid_t,
 };
 use std::convert::Infallible;
 use std::ffi::{CStr, OsString};
@@ -38,12 +38,12 @@ use std::ffi::{CString, OsStr};
 use std::os::unix::ffi::OsStrExt;
 #[cfg(unix)]
 use std::os::unix::ffi::OsStringExt;
+#[cfg(unix)]
+use std::os::unix::io::{AsFd, AsRawFd};
 #[cfg(target_os = "wasi")]
 use std::os::wasi::ffi::{OsStrExt, OsStringExt};
 #[cfg(target_os = "wasi")]
 use std::os::wasi::io::{AsFd, AsRawFd};
-#[cfg(unix)]
-use std::os::unix::io::{AsFd, AsRawFd};
 use std::path::PathBuf;
 use std::{fmt, mem, ptr};
 
