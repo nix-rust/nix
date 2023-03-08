@@ -1,14 +1,15 @@
 //! Safe wrappers around functions found in libc "unistd.h" header
 
 use crate::errno::{self, Errno};
+#[cfg(any(feature = "fs", feature = "term"))]
+use crate::fcntl::PATH_MAX;
 #[cfg(not(target_os = "redox"))]
 #[cfg(feature = "fs")]
 use crate::fcntl::{at_rawfd, AtFlags};
 #[cfg(not(target_os = "wasi"))]
 #[cfg(feature = "fs")]
-use crate::fcntl::{fcntl, FcntlArg::F_SETFD};
+use crate::fcntl::{fcntl, FcntlArg::F_SETFD, FdFlag, OFlag};
 #[cfg(feature = "fs")]
-use crate::fcntl::{FdFlag, OFlag, PATH_MAX};
 #[cfg(all(
     feature = "fs",
     any(
