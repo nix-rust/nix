@@ -110,7 +110,6 @@ feature! {
     pub mod resource;
 }
 
-#[cfg(not(target_os = "redox"))]
 feature! {
     #![feature = "poll"]
     pub mod select;
