@@ -544,13 +544,13 @@ cfg_if! {
         sockopt_impl!(
             /// The maximum segment size for outgoing TCP packets.
             TcpMaxSeg, Both, libc::IPPROTO_TCP, libc::TCP_MAXSEG, u32);
-    } else {
+    } else if #[cfg(not(target_os = "redox"))] {
         sockopt_impl!(
             /// The maximum segment size for outgoing TCP packets.
             TcpMaxSeg, GetOnly, libc::IPPROTO_TCP, libc::TCP_MAXSEG, u32);
     }
 }
-#[cfg(not(any(target_os = "openbsd", target_os = "haiku")))]
+#[cfg(not(any(target_os = "openbsd", target_os = "haiku", target_os = "redox")))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -572,7 +572,7 @@ sockopt_impl!(
     libc::TCP_REPAIR,
     u32
 );
-#[cfg(not(any(target_os = "openbsd", target_os = "haiku")))]
+#[cfg(not(any(target_os = "openbsd", target_os = "haiku", target_os = "redox")))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -693,7 +693,7 @@ sockopt_impl!(
     libc::SO_TIMESTAMPING,
     super::TimestampingFlag
 );
-#[cfg(not(target_os = "haiku"))]
+#[cfg(not(any(target_os = "haiku", target_os = "redox")))]
 sockopt_impl!(
     /// Enable or disable the receiving of the `SO_TIMESTAMP` control message.
     ReceiveTimestamp,

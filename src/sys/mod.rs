@@ -138,7 +138,6 @@ feature! {
     pub mod signalfd;
 }
 
-#[cfg(not(target_os = "redox"))]
 feature! {
     #![feature = "socket"]
     #[allow(missing_docs)]
