@@ -1,18 +1,18 @@
 //! Iterate over mtab/fstab
 
 use crate::{Errno, NixPath, Result};
-use libc::{endmntent, getmntent, mntent, setmntent, FILE};
+use libc::{endmntent, getmntent_r, mntent, setmntent, FILE};
 use std::ffi::{CStr, CString};
-use std::sync::Mutex;
 
 #[derive(Debug)]
 /// A wrapper for `libc::mntent`, an iterator for `MountEntry`
-pub struct MountEntries {
+pub struct MountEntries<const CAPACITY: usize> {
     file: *mut FILE,
 }
 
-impl MountEntries {
-    /// Creates a new `MountEntry iterator, opening the given mtab/fstab
+impl<const CAPACITY: usize> MountEntries<CAPACITY> {
+    /// Creates a new `MountEntry iterator, opening the given mtab/fstab. It is only for the GNU
+    /// libc, because that has a `getmntent_r` re-entrant call.
     ///
     /// # Arguments
     ///
@@ -24,11 +24,8 @@ impl MountEntries {
     /// Returns `Ok(MountEntries)` where `MountEnties` is an iterator for `MountEntry` on success,
     /// or `Err(x)` where `x` is what `fopen(3)` would return.
     ///
-    /// Because `getmntent(3)` is non-reentrant, the `next` function is single-threaded, protected
-    /// by a mutex.
-    ///
     /// # See Also
-    /// [`getmntent(3)`](https://www.man7.org/linux/man-pages/man3/getmntent.3.html)
+    /// [`getmntent_r(3)`](https://www.man7.org/linux/man-pages/man3/getmntent_r.3.html)
     /// [`fopen`(3)](https://www.man7.org/linux/man-pages/man3/fopen.3.html)
     pub fn new<P: ?Sized + NixPath>(path: &P, mode: String) -> Result<Self> {
         let mode = CString::new(mode).unwrap();
@@ -44,7 +41,7 @@ impl MountEntries {
     }
 }
 
-impl Drop for MountEntries {
+impl<const CAPACITY: usize> Drop for MountEntries<CAPACITY> {
     fn drop(&mut self) {
         unsafe { endmntent(self.file) };
     }
@@ -90,20 +87,33 @@ impl From<&mntent> for MountEntry {
     }
 }
 
-impl Iterator for MountEntries {
+impl<const CAPACITY: usize> Iterator for MountEntries<CAPACITY> {
     type Item = MountEntry;
 
     /// Returns the next mount entry (`MountEntry` structure).
     ///
-    /// Because `getmntent(3)` is non-reentrant, the `next` function is single-threaded, protected
-    /// by a mutex.
-    ///
     /// # See Also
-    /// [`getmntent(3)`](https://www.man7.org/linux/man-pages/man3/getmntent.3.html)
+    /// [`getmntent_r(3)`](https://www.man7.org/linux/man-pages/man3/getmntent_r.3.html)
     fn next(&mut self) -> Option<Self::Item> {
-        static MUTEX: Mutex<()> = Mutex::new(());
-        let _m = MUTEX.lock();
-        unsafe { getmntent(self.file).as_ref().map(MountEntry::from) }
+        let mut mntbuf = mntent {
+            mnt_fsname: std::ptr::null_mut(),
+            mnt_dir: std::ptr::null_mut(),
+            mnt_type: std::ptr::null_mut(),
+            mnt_opts: std::ptr::null_mut(),
+            mnt_freq: 0,
+            mnt_passno: 0,
+        };
+        let mut buffer = [0; CAPACITY];
+        unsafe {
+            getmntent_r(
+                self.file,
+                &mut mntbuf,
+                buffer.as_mut_ptr(),
+                CAPACITY as i32,
+            )
+            .as_ref()
+            .map(MountEntry::from)
+        }
     }
 }
 
@@ -124,7 +134,7 @@ mod tests {
         tmp.write_all(CONTENTS).unwrap();
 
         let mut mount_entries =
-            MountEntries::new(tmp.path(), "r".to_string()).unwrap();
+            MountEntries::<100>::new(tmp.path(), "r".to_string()).unwrap();
 
         assert_eq!(
             mount_entries.next(),
@@ -157,7 +167,8 @@ mod tests {
         let tempdir = tempdir().unwrap();
         let does_not_exist = tempdir.path().join("does_not_exist.txt");
 
-        let mount_entries = MountEntries::new(&does_not_exist, "r".to_string());
+        let mount_entries =
+            MountEntries::<100>::new(&does_not_exist, "r".to_string());
 
         assert_eq!(mount_entries.err().unwrap(), Errno::ENOENT);
     }

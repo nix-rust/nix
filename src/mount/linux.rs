@@ -2,7 +2,7 @@ use crate::errno::Errno;
 use crate::{NixPath, Result};
 use libc::{self, c_int, c_ulong};
 
-#[cfg(target_os = "linux")]
+#[cfg(all(target_os = "linux", target_env = "gnu"))]
 pub mod mntent;
 
 libc_bitflags!(
