@@ -1,11 +1,54 @@
 //! Safe wrappers around functions found in POSIX <netdb.h> header
 //! 
 //! https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/netdb.h.html
+use std::fmt::Debug;
+
 use crate::errno::Errno;
+use crate::sys::socket::AddressFamily;
 
 // The <netdb.h> header may define the in_port_t type and the in_addr_t type as described in <netinet/in.h>.
 // Simple integer type aliases, so we rexport
 pub use libc::{in_port_t, in_addr_t};
+
+/// Corresponds to `addrinfo`.
+/// Deliberately is not Clone because we want to own indirect data.
+#[repr(transparent)]
+#[derive(Debug)]
+#[allow(missing_copy_implementations)]
+pub struct AddrInfo(libc::addrinfo);
+impl AddrInfo {
+    /// `ai_flags` Input flags. 
+    pub fn flags(&self) -> Option<AiFlags> {
+        AiFlags::from_bits(self.0.ai_flags)
+    }
+    /// `ai_flags`: set input flags. 
+    pub fn set_flags(&mut self, flags: AiFlags) {
+        self.0.ai_flags = flags.bits();
+    }
+    /// `ai_family`: Address family of socket.
+    pub fn family(&self) -> Option<AddressFamily> {
+        AddressFamily::from_i32(self.0.ai_family)
+    }
+    /// `ai_family`: set address family of socket.
+    pub fn set_family(&mut self, family: AddressFamily) {
+        self.0.ai_family = family as _;
+    }
+    // int               ai_socktype   Socket type. 
+    // int               ai_protocol   Protocol of socket. 
+    // socklen_t         ai_addrlen    Length of socket address. 
+    // struct sockaddr  *ai_addr       Socket address of socket. 
+    // char             *ai_canonname  Canonical name of service location. 
+    /// Pointer to next in list. 
+    pub fn next(&self) -> Option<&Self> {
+        // SAFETY: we are properly initialized and are propagating our lifetime
+        unsafe { self.0.ai_next.cast::<Self>().as_ref() }
+    }
+    /// Mutable pointer to next in list. 
+    pub fn next_mut(&mut self) -> Option<&mut Self> {
+        // SAFETY: we are properly initialized and are propagating our lifetime
+        unsafe { self.0.ai_next.cast::<Self>().as_mut() }
+    } 
+}
 
 libc_bitflags!{
     ///  the flags field of the addrinfo structure
