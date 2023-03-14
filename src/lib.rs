@@ -21,6 +21,7 @@
 //! * `mman` - Stuff relating to memory management
 //! * `mount` - Mount and unmount file systems
 //! * `mqueue` - POSIX message queues
+//! * `netdb` - POSIX definitions for network database operations
 //! * `net` - Networking-related functionality
 //! * `personality` - Set the process execution domain
 //! * `poll` - APIs like `poll` and `select`
@@ -119,6 +120,10 @@ feature! {
 feature! {
     #![feature = "mqueue"]
     pub mod mqueue;
+}
+feature! {
+    #![feature = "netdb"]
+    pub mod netdb;
 }
 feature! {
     #![feature = "poll"]

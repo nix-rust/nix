@@ -22,6 +22,7 @@ mod test_kmod;
 mod test_mq;
 #[cfg(not(target_os = "redox"))]
 mod test_net;
+mod test_netdb;
 mod test_nix_path;
 #[cfg(target_os = "freebsd")]
 mod test_nmount;
