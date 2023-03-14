@@ -95,7 +95,8 @@ libc_bitflags!{
 #[repr(i32)]
 #[non_exhaustive]
 pub enum AddressInfoError {
-    // UnknownErrno = 0,
+    /// An error which is unmapped by this enum
+    Unknown = 0,
     /// The name could not be resolved at this time. Future attempts may succeed.
     EAI_AGAIN = libc::EAI_AGAIN,
     /// The flags had an invalid value.
@@ -117,5 +118,27 @@ pub enum AddressInfoError {
     EAI_SYSTEM(Errno) = libc::EAI_SYSTEM,
     /// An argument buffer overflowed.
     EAI_OVERFLOW = libc::EAI_OVERFLOW,
+}
+impl AddressInfoError {
+    /// interprets the error code and requests extra info from `errno` if nessesary
+    pub fn from_i32_and_errno(e: i32) -> Self {
+        use AddressInfoError::*;
+
+        match e {
+            libc::EAI_AGAIN => EAI_AGAIN,
+            libc::EAI_BADFLAGS => EAI_BADFLAGS,
+            libc::EAI_FAIL => EAI_FAIL,
+            libc::EAI_FAMILY => EAI_FAMILY,
+            libc::EAI_MEMORY => EAI_MEMORY,
+            libc::EAI_NONAME => EAI_NONAME,
+            libc::EAI_SERVICE => EAI_SERVICE,
+            libc::EAI_SOCKTYPE => EAI_SOCKTYPE,
+            libc::EAI_SYSTEM => {
+                EAI_SYSTEM(Errno::last())
+            },
+            libc::EAI_OVERFLOW => EAI_OVERFLOW,
+            _ => Unknown,
+        }
+    }
 }
 pub use libc::socklen_t;
