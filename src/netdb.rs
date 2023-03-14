@@ -2,6 +2,7 @@
 //! 
 //! https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/netdb.h.html
 use std::fmt::Debug;
+use std::ptr::NonNull;
 
 use crate::errno::Errno;
 use crate::sys::socket::AddressFamily;
@@ -48,6 +49,52 @@ impl AddrInfo {
         // SAFETY: we are properly initialized and are propagating our lifetime
         unsafe { self.0.ai_next.cast::<Self>().as_mut() }
     } 
+}
+/// Corresponds to a list of `AddrInfo` returned by `getaddrinfo`.
+/// Deliberately is not Clone because we want to own indirect data.
+#[repr(transparent)]
+#[derive(Eq, PartialEq)]
+#[allow(missing_copy_implementations)]
+pub struct AddrInfoList(NonNull<AddrInfo>);
+impl<'a> IntoIterator for &'a AddrInfoList {
+    type IntoIter = AddrInfoListIter<'a>;
+    type Item = &'a AddrInfo;
+    fn into_iter(self) -> Self::IntoIter {
+        // SAFETY: getaddrinfo returns an owned list of addrinfo elements.
+        AddrInfoListIter(unsafe { Some(self.0.as_ref()) })
+    }
+}
+impl Debug for AddrInfoList {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_list().entries(self.into_iter()).finish()
+    }
+}
+impl Drop for AddrInfoList {
+    fn drop(&mut self) {
+        // SAFETY: getaddrinfo returns an owned list of addrinfo elements.
+        unsafe { libc::freeaddrinfo(self.0.as_ptr().cast()) }
+    }
+}
+/// Corresponds to an iterator for a list of `AddrInfo`.
+/// Deliberately is not Clone because we want to own indirect data.
+#[repr(transparent)]
+#[derive(Copy, Clone)]
+pub struct AddrInfoListIter<'a>(Option<&'a AddrInfo>);
+impl<'a> Iterator for AddrInfoListIter<'a> {
+    type Item = &'a AddrInfo;
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(n) = self.0 {
+            self.0 = n.next();
+            Some(n)
+        } else {
+            None
+        }
+    }
+}
+impl Debug for AddrInfoListIter<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_list().entries(self.into_iter()).finish()
+    }
 }
 
 libc_bitflags!{
