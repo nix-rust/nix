@@ -97,6 +97,18 @@ impl AddrInfoList {
             }
         }
     }
+
+    /// Returns a mutable pointer to the head/first element of this list
+    pub fn head(&mut self) -> &mut AddrInfo {
+        // SAFETY: we are properly initialized and are propagating our lifetime
+        unsafe { self.0.as_mut() }
+    }
+
+    /// Removes the tail of the list and returns it, if not empty
+    pub fn take_tail(&mut self) -> Option<Self> {
+        // SAFETY(drop): The freeaddrinfo() function shall support the freeing of arbitrary sublists of an addrinfo list originally returned by getaddrinfo().
+        NonNull::new(core::mem::replace(&mut self.head().0.ai_next, core::ptr::null_mut()).cast()).map(Self)
+    }
 }
 impl<'a> IntoIterator for &'a AddrInfoList {
     type IntoIter = AddrInfoListIter<'a>;
@@ -114,6 +126,7 @@ impl Debug for AddrInfoList {
 impl Drop for AddrInfoList {
     fn drop(&mut self) {
         // SAFETY: getaddrinfo returns an owned list of addrinfo elements.
+        // SAFETY(take_tail): The freeaddrinfo() function shall support the freeing of arbitrary sublists of an addrinfo list originally returned by getaddrinfo().
         unsafe { libc::freeaddrinfo(self.0.as_ptr().cast()) }
     }
 }
@@ -232,8 +245,19 @@ impl AddressInfoError {
 }
 pub use libc::socklen_t;
 
+/* Functions:
+
+void              endhostent(void);
+void              endnetent(void);
+void              endprotoent(void);
+void              endservent(void);
+const char       *gai_strerror(int);
+*/
+
 /// Just drops the AddrInfoList, drop calls libc
 pub fn freeaddrinfo(_: AddrInfoList) {}
+
+
 
 /// translate the name of a service location (for example, a host name)
 /// and/or a service name and shall return a set of socket addresses
