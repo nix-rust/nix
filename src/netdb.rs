@@ -1,6 +1,7 @@
 //! Safe wrappers around functions found in POSIX <netdb.h> header
 //! 
 //! https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/netdb.h.html
+use std::ffi::CStr;
 use std::fmt::Debug;
 use std::ptr::NonNull;
 
@@ -56,6 +57,30 @@ impl AddrInfo {
 #[derive(Eq, PartialEq)]
 #[allow(missing_copy_implementations)]
 pub struct AddrInfoList(NonNull<AddrInfo>);
+impl AddrInfoList {
+    /// translate the name of a service location (for example, a host name)
+    /// and/or a service name and shall return a set of socket addresses
+    /// and associated information to be used in creating a socket
+    /// with which to address the specified service.
+    /// 
+    ///  https://pubs.opengroup.org/onlinepubs/9699919799/functions/getaddrinfo.html
+    pub fn getaddrinfo(node: Option<&CStr>, service: Option<&CStr>, hints: Option<&AddrInfo>) -> Result<Self, AddressInfoError> {
+        use core::ptr::null;
+        let node = node.map_or(null(), |x| x.as_ptr());
+        let service = service.map_or(null(), |x| x.as_ptr());
+        let hints: *const AddrInfo = hints.map_or(null(), |x| x);
+        unsafe {
+            let mut result: *mut libc::addrinfo = std::ptr::null_mut();
+            match libc::getaddrinfo(node, service, hints.cast(), &mut result) {
+                0 => {
+                    // Upon successful return of getaddrinfo(), ... The list shall include at least one addrinfo structure.
+                    Ok(Self(NonNull::new(result).unwrap().cast()))
+                },
+                x => Err(AddressInfoError::from_i32_and_errno(x)),
+            }
+        }
+    }
+}
 impl<'a> IntoIterator for &'a AddrInfoList {
     type IntoIter = AddrInfoListIter<'a>;
     type Item = &'a AddrInfo;
@@ -189,3 +214,16 @@ impl AddressInfoError {
     }
 }
 pub use libc::socklen_t;
+
+/// Just drops the AddrInfoList, drop calls libc
+pub fn freeaddrinfo(_: AddrInfoList) {}
+
+/// translate the name of a service location (for example, a host name)
+/// and/or a service name and shall return a set of socket addresses
+/// and associated information to be used in creating a socket
+/// with which to address the specified service.
+/// 
+///  https://pubs.opengroup.org/onlinepubs/9699919799/functions/getaddrinfo.html
+pub fn getaddrinfo(node: Option<&CStr>, service: Option<&CStr>, hints: Option<&AddrInfo>) -> Result<AddrInfoList, AddressInfoError> {
+    AddrInfoList::getaddrinfo(node, service, hints)
+}
