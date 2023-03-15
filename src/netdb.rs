@@ -51,6 +51,23 @@ impl AddrInfo {
         unsafe { self.0.ai_next.cast::<Self>().as_mut() }
     } 
 }
+impl Default for AddrInfo {
+    /// POSIX requires AddrInfo be default constructable.
+    fn default() -> Self {
+        // Rust-C interop assumes C default contruction be equivalent to zeroing all fields
+        Self(libc::addrinfo {
+            ai_flags: 0,
+            ai_family: 0,
+            ai_socktype: 0,
+            ai_protocol: 0,
+            ai_addrlen: 0,
+            ai_canonname: core::ptr::null_mut(),
+            ai_addr: core::ptr::null_mut(),
+            ai_next: core::ptr::null_mut(),
+        })
+    }
+}
+
 /// Corresponds to a list of `AddrInfo` returned by `getaddrinfo`.
 /// Deliberately is not Clone because we want to own indirect data.
 #[repr(transparent)]
