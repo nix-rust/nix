@@ -121,6 +121,11 @@ feature! {
     #![feature = "mqueue"]
     pub mod mqueue;
 }
+#[cfg(not(any(
+    target_os = "illumos",
+    target_os = "haiku",
+    target_os = "redox",
+)))]
 feature! {
     #![feature = "netdb"]
     pub mod netdb;

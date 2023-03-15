@@ -163,9 +163,13 @@ libc_bitflags!{
         AI_NUMERICHOST;
         /// Inhibit service name resolution.
         AI_NUMERICSERV;
+        // despite being in POSIX, libc only has it defined on macos
+        #[cfg(target_os = "macos")]
         /// If no IPv6 addresses are found,
         /// query for IPv4 addresses and return them to the caller as IPv4-mapped IPv6 addresses.
         AI_V4MAPPED;
+        // despite being in POSIX, libc only has it defined on macos
+        #[cfg(target_os = "macos")]
         /// Query for both IPv4 and IPv6 addresses.
         AI_ALL;
         /// Query for IPv4 addresses only when an IPv4 address is configured;
@@ -174,6 +178,7 @@ libc_bitflags!{
     }
 }
 
+#[cfg(not(target_os = "dragonfly"))]
 libc_bitflags!{
     ///  the flags argument to getnameinfo():
     pub struct NiFlags: libc::c_int {
@@ -185,6 +190,8 @@ libc_bitflags!{
         NI_NAMEREQD;
         /// The numeric form of the service address is returned instead of its name.
         NI_NUMERICSERV;
+        // despite being in POSIX, libc only has it defined on macos
+        #[cfg(target_os = "macos")]
         /// For IPv6 addresses, the numeric form of the scope identifier is returned instead of its name.
         NI_NUMERICSCOPE;
         /// Indicates that the service is a datagram service (SOCK_DGRAM).
