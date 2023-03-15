@@ -1,6 +1,7 @@
 //! Safe wrappers around functions found in POSIX <netdb.h> header
 //! 
-//! https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/netdb.h.html
+//! See [the man pages](https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/netdb.h.html)
+//! for more details.
 use std::ffi::CStr;
 use std::fmt::Debug;
 use std::ptr::NonNull;
@@ -80,7 +81,7 @@ impl AddrInfoList {
     /// and associated information to be used in creating a socket
     /// with which to address the specified service.
     /// 
-    ///  https://pubs.opengroup.org/onlinepubs/9699919799/functions/getaddrinfo.html
+    ///  [`getaddrinfo`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/getaddrinfo.html)
     pub fn getaddrinfo(node: Option<&CStr>, service: Option<&CStr>, hints: Option<&AddrInfo>) -> Result<Self, AddressInfoError> {
         use core::ptr::null;
         let node = node.map_or(null(), |x| x.as_ptr());
@@ -270,7 +271,7 @@ pub fn freeaddrinfo(_: AddrInfoList) {}
 /// and associated information to be used in creating a socket
 /// with which to address the specified service.
 /// 
-///  https://pubs.opengroup.org/onlinepubs/9699919799/functions/getaddrinfo.html
+///  [`getaddrinfo`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/getaddrinfo.html)
 pub fn getaddrinfo(node: Option<&CStr>, service: Option<&CStr>, hints: Option<&AddrInfo>) -> Result<AddrInfoList, AddressInfoError> {
     AddrInfoList::getaddrinfo(node, service, hints)
 }
