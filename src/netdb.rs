@@ -194,32 +194,31 @@ libc_bitflags!{
 
 /// error values for getaddrinfo() and getnameinfo().
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[repr(i32)]
 #[non_exhaustive]
 pub enum AddressInfoError {
     /// An error which is unmapped by this enum
-    Unknown = 0,
+    Unknown,
     /// The name could not be resolved at this time. Future attempts may succeed.
-    EAI_AGAIN = libc::EAI_AGAIN,
+    EAI_AGAIN,
     /// The flags had an invalid value.
-    EAI_BADFLAGS = libc::EAI_BADFLAGS,
+    EAI_BADFLAGS,
     /// A non-recoverable error occurred.
-    EAI_FAIL = libc::EAI_FAIL,
+    EAI_FAIL,
     /// The address family was not recognized or the address length was invalid for the specified family.
-    EAI_FAMILY = libc::EAI_FAMILY,
+    EAI_FAMILY,
     /// There was a memory allocation failure.
-    EAI_MEMORY = libc::EAI_MEMORY,
+    EAI_MEMORY,
     /// The name does not resolve for the supplied parameters.
     /// NI_NAMEREQD is set and the host's name cannot be located, or both nodename and servname were null.
-    EAI_NONAME = libc::EAI_NONAME,
+    EAI_NONAME,
     /// The service passed was not recognized for the specified socket type.
-    EAI_SERVICE = libc::EAI_SERVICE,
+    EAI_SERVICE,
     /// The intended socket type was not recognized.
-    EAI_SOCKTYPE = libc::EAI_SOCKTYPE,
+    EAI_SOCKTYPE,
     /// A system error occurred. The error code can be found in errno.
-    EAI_SYSTEM(Errno) = libc::EAI_SYSTEM,
+    EAI_SYSTEM(Errno),
     /// An argument buffer overflowed.
-    EAI_OVERFLOW = libc::EAI_OVERFLOW,
+    EAI_OVERFLOW,
 }
 impl AddressInfoError {
     /// interprets the error code and requests extra info from `errno` if nessesary
