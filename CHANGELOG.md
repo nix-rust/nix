@@ -6,7 +6,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased] - ReleaseDate
 ### Added
 - Added a `netdb` module which initially includes `getaddrinfo` and `AddrInfo`. 
-  ([#????](https://github.com/nix-rust/nix/pull/????))
+  ([#2013](https://github.com/nix-rust/nix/pull/2013))
 - Added `AT_EACCESS` to `AtFlags` on all platforms but android
   ([#1995](https://github.com/nix-rust/nix/pull/1995))
 - Add `PF_ROUTE` to `SockType` on macOS, iOS, all of the BSDs, Fuchsia, Haiku, Illumos.
