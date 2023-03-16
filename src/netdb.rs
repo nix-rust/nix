@@ -1,5 +1,5 @@
 //! Safe wrappers around functions found in POSIX <netdb.h> header
-//! 
+//!
 //! See [the man pages](https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/netdb.h.html)
 //! for more details.
 use std::ffi::CStr;
@@ -11,7 +11,7 @@ use crate::sys::socket::AddressFamily;
 
 // The <netdb.h> header may define the in_port_t type and the in_addr_t type as described in <netinet/in.h>.
 // Simple integer type aliases, so we rexport
-pub use libc::{in_port_t, in_addr_t};
+pub use libc::{in_addr_t, in_port_t};
 
 /// Corresponds to `addrinfo`.
 /// Deliberately is not Clone because we want to own indirect data.
@@ -20,11 +20,11 @@ pub use libc::{in_port_t, in_addr_t};
 #[allow(missing_copy_implementations)]
 pub struct AddrInfo(libc::addrinfo);
 impl AddrInfo {
-    /// `ai_flags` Input flags. 
+    /// `ai_flags` Input flags.
     pub fn flags(&self) -> Option<AiFlags> {
         AiFlags::from_bits(self.0.ai_flags)
     }
-    /// `ai_flags`: set input flags. 
+    /// `ai_flags`: set input flags.
     pub fn set_flags(&mut self, flags: AiFlags) {
         self.0.ai_flags = flags.bits();
     }
@@ -36,21 +36,21 @@ impl AddrInfo {
     pub fn set_family(&mut self, family: AddressFamily) {
         self.0.ai_family = family as _;
     }
-    // int               ai_socktype   Socket type. 
-    // int               ai_protocol   Protocol of socket. 
-    // socklen_t         ai_addrlen    Length of socket address. 
-    // struct sockaddr  *ai_addr       Socket address of socket. 
-    // char             *ai_canonname  Canonical name of service location. 
-    /// Pointer to next in list. 
+    // int               ai_socktype   Socket type.
+    // int               ai_protocol   Protocol of socket.
+    // socklen_t         ai_addrlen    Length of socket address.
+    // struct sockaddr  *ai_addr       Socket address of socket.
+    // char             *ai_canonname  Canonical name of service location.
+    /// Pointer to next in list.
     pub fn next(&self) -> Option<&Self> {
         // SAFETY: we are properly initialized and are propagating our lifetime
         unsafe { self.0.ai_next.cast::<Self>().as_ref() }
     }
-    /// Mutable pointer to next in list. 
+    /// Mutable pointer to next in list.
     pub fn next_mut(&mut self) -> Option<&mut Self> {
         // SAFETY: we are properly initialized and are propagating our lifetime
         unsafe { self.0.ai_next.cast::<Self>().as_mut() }
-    } 
+    }
 }
 impl Default for AddrInfo {
     /// POSIX requires AddrInfo be default constructable.
@@ -80,9 +80,13 @@ impl AddrInfoList {
     /// and/or a service name and shall return a set of socket addresses
     /// and associated information to be used in creating a socket
     /// with which to address the specified service.
-    /// 
+    ///
     ///  [`getaddrinfo`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/getaddrinfo.html)
-    pub fn getaddrinfo(node: Option<&CStr>, service: Option<&CStr>, hints: Option<&AddrInfo>) -> Result<Self, AddressInfoError> {
+    pub fn getaddrinfo(
+        node: Option<&CStr>,
+        service: Option<&CStr>,
+        hints: Option<&AddrInfo>,
+    ) -> Result<Self, AddressInfoError> {
         use core::ptr::null;
         let node = node.map_or(null(), |x| x.as_ptr());
         let service = service.map_or(null(), |x| x.as_ptr());
@@ -93,7 +97,7 @@ impl AddrInfoList {
                 0 => {
                     // Upon successful return of getaddrinfo(), ... The list shall include at least one addrinfo structure.
                     Ok(Self(NonNull::new(result).unwrap().cast()))
-                },
+                }
                 x => Err(AddressInfoError::from_i32_and_errno(x)),
             }
         }
@@ -108,7 +112,14 @@ impl AddrInfoList {
     /// Removes the tail of the list and returns it, if not empty
     pub fn take_tail(&mut self) -> Option<Self> {
         // SAFETY(drop): The freeaddrinfo() function shall support the freeing of arbitrary sublists of an addrinfo list originally returned by getaddrinfo().
-        NonNull::new(core::mem::replace(&mut self.head().0.ai_next, core::ptr::null_mut()).cast()).map(Self)
+        NonNull::new(
+            core::mem::replace(
+                &mut self.head().0.ai_next,
+                core::ptr::null_mut(),
+            )
+            .cast(),
+        )
+        .map(Self)
     }
 }
 impl<'a> IntoIterator for &'a AddrInfoList {
@@ -153,7 +164,7 @@ impl Debug for AddrInfoListIter<'_> {
     }
 }
 
-libc_bitflags!{
+libc_bitflags! {
     ///  the flags field of the addrinfo structure
     pub struct AiFlags: libc::c_int {
         /// Socket address is intended for bind().
@@ -180,7 +191,7 @@ libc_bitflags!{
 }
 
 #[cfg(not(target_os = "dragonfly"))]
-libc_bitflags!{
+libc_bitflags! {
     ///  the flags argument to getnameinfo():
     pub struct NiFlags: libc::c_int {
         /// Only the nodename portion of the FQDN is returned for local hosts.
@@ -242,9 +253,7 @@ impl AddressInfoError {
             libc::EAI_NONAME => EAI_NONAME,
             libc::EAI_SERVICE => EAI_SERVICE,
             libc::EAI_SOCKTYPE => EAI_SOCKTYPE,
-            libc::EAI_SYSTEM => {
-                EAI_SYSTEM(Errno::last())
-            },
+            libc::EAI_SYSTEM => EAI_SYSTEM(Errno::last()),
             libc::EAI_OVERFLOW => EAI_OVERFLOW,
             _ => Unknown,
         }
@@ -264,14 +273,16 @@ const char       *gai_strerror(int);
 /// Just drops the AddrInfoList, drop calls libc
 pub fn freeaddrinfo(_: AddrInfoList) {}
 
-
-
 /// translate the name of a service location (for example, a host name)
 /// and/or a service name and shall return a set of socket addresses
 /// and associated information to be used in creating a socket
 /// with which to address the specified service.
-/// 
+///
 ///  [`getaddrinfo`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/getaddrinfo.html)
-pub fn getaddrinfo(node: Option<&CStr>, service: Option<&CStr>, hints: Option<&AddrInfo>) -> Result<AddrInfoList, AddressInfoError> {
+pub fn getaddrinfo(
+    node: Option<&CStr>,
+    service: Option<&CStr>,
+    hints: Option<&AddrInfo>,
+) -> Result<AddrInfoList, AddressInfoError> {
     AddrInfoList::getaddrinfo(node, service, hints)
 }
