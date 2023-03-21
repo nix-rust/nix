@@ -226,7 +226,7 @@ pub enum SockProtocol {
     // The protocol number is fed into the socket syscall in network byte order.
     #[cfg(any(target_os = "android", target_os = "linux"))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
-    EthAll = libc::ETH_P_ALL.to_be(),
+    EthAll = (libc::ETH_P_ALL as u16).to_be() as i32,
 }
 
 #[cfg(any(target_os = "linux"))]
