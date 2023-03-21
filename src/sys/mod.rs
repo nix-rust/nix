@@ -25,7 +25,6 @@ feature! {
               target_os = "macos",
               target_os = "netbsd",
               target_os = "openbsd"))]
-    #[allow(missing_docs)]
     pub mod event;
 
     #[cfg(any(target_os = "android", target_os = "linux"))]

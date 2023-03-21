@@ -64,7 +64,7 @@ fn test_renameat() {
     let old_dirfd =
         open(old_dir.path(), OFlag::empty(), Mode::empty()).unwrap();
     let old_path = old_dir.path().join("old");
-    File::create(&old_path).unwrap();
+    File::create(old_path).unwrap();
     let new_dir = tempfile::tempdir().unwrap();
     let new_dirfd =
         open(new_dir.path(), OFlag::empty(), Mode::empty()).unwrap();
@@ -94,7 +94,7 @@ fn test_renameat2_behaves_like_renameat_with_no_flags() {
     let old_dirfd =
         open(old_dir.path(), OFlag::empty(), Mode::empty()).unwrap();
     let old_path = old_dir.path().join("old");
-    File::create(&old_path).unwrap();
+    File::create(old_path).unwrap();
     let new_dir = tempfile::tempdir().unwrap();
     let new_dirfd =
         open(new_dir.path(), OFlag::empty(), Mode::empty()).unwrap();
@@ -186,12 +186,12 @@ fn test_renameat2_noreplace() {
     let old_dirfd =
         open(old_dir.path(), OFlag::empty(), Mode::empty()).unwrap();
     let old_path = old_dir.path().join("old");
-    File::create(&old_path).unwrap();
+    File::create(old_path).unwrap();
     let new_dir = tempfile::tempdir().unwrap();
     let new_dirfd =
         open(new_dir.path(), OFlag::empty(), Mode::empty()).unwrap();
     let new_path = new_dir.path().join("new");
-    File::create(&new_path).unwrap();
+    File::create(new_path).unwrap();
     assert_eq!(
         renameat2(
             Some(old_dirfd),
@@ -231,7 +231,7 @@ fn test_readlink() {
 mod linux_android {
     use libc::loff_t;
     use std::io::prelude::*;
-    use std::io::{IoSlice, SeekFrom};
+    use std::io::IoSlice;
     use std::os::unix::prelude::*;
 
     use nix::fcntl::*;
@@ -272,7 +272,7 @@ mod linux_android {
         .unwrap();
 
         let mut res: String = String::new();
-        tmp2.seek(SeekFrom::Start(0)).unwrap();
+        tmp2.rewind().unwrap();
         tmp2.read_to_string(&mut res).unwrap();
 
         assert_eq!(res, String::from("bar"));
@@ -383,7 +383,7 @@ mod linux_android {
         let tmp = NamedTempFile::new().unwrap();
 
         let fd = tmp.as_raw_fd();
-        let statfs = nix::sys::statfs::fstatfs(&tmp).unwrap();
+        let statfs = nix::sys::statfs::fstatfs(tmp.as_file()).unwrap();
         if statfs.filesystem_type() == nix::sys::statfs::OVERLAYFS_SUPER_MAGIC {
             // OverlayFS is a union file system.  It returns one inode value in
             // stat(2), but a different one shows up in /proc/locks.  So we must
@@ -421,7 +421,7 @@ mod linux_android {
         let tmp = NamedTempFile::new().unwrap();
 
         let fd = tmp.as_raw_fd();
-        let statfs = nix::sys::statfs::fstatfs(&tmp).unwrap();
+        let statfs = nix::sys::statfs::fstatfs(tmp.as_file()).unwrap();
         if statfs.filesystem_type() == nix::sys::statfs::OVERLAYFS_SUPER_MAGIC {
             // OverlayFS is a union file system.  It returns one inode value in
             // stat(2), but a different one shows up in /proc/locks.  So we must
@@ -559,7 +559,7 @@ mod test_posix_fallocate {
         let err = posix_fallocate(rd as RawFd, 0, 100).unwrap_err();
         match err {
             Errno::EINVAL | Errno::ENODEV | Errno::ESPIPE | Errno::EBADF => (),
-            errno => panic!("unexpected errno {}", errno,),
+            errno => panic!("unexpected errno {errno}",),
         }
     }
 }

@@ -10,7 +10,7 @@ use std::convert::TryFrom;
     target_os = "android",
     all(target_os = "linux", not(target_env = "uclibc")),
 ))]
-use std::os::unix::io::RawFd;
+use std::os::unix::io::{AsRawFd, BorrowedFd};
 
 libc_bitflags!(
     /// Controls the behavior of [`waitpid`].
@@ -135,7 +135,9 @@ impl WaitStatus {
     pub fn pid(&self) -> Option<Pid> {
         use self::WaitStatus::*;
         match *self {
-            Exited(p, _) | Signaled(p, _, _) | Stopped(p, _) | Continued(p) => Some(p),
+            Exited(p, _) | Signaled(p, _, _) | Stopped(p, _) | Continued(p) => {
+                Some(p)
+            }
             StillAlive => None,
             #[cfg(any(target_os = "android", target_os = "linux"))]
             PtraceEvent(p, _, _) | PtraceSyscall(p) => Some(p),
@@ -274,7 +276,9 @@ impl WaitStatus {
                 Signal::try_from(si_status)?,
                 siginfo.si_code == libc::CLD_DUMPED,
             ),
-            libc::CLD_STOPPED => WaitStatus::Stopped(pid, Signal::try_from(si_status)?),
+            libc::CLD_STOPPED => {
+                WaitStatus::Stopped(pid, Signal::try_from(si_status)?)
+            }
             libc::CLD_CONTINUED => WaitStatus::Continued(pid),
             #[cfg(any(target_os = "android", target_os = "linux"))]
             libc::CLD_TRAPPED => {
@@ -298,7 +302,10 @@ impl WaitStatus {
 /// Wait for a process to change status
 ///
 /// See also [waitpid(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/waitpid.html)
-pub fn waitpid<P: Into<Option<Pid>>>(pid: P, options: Option<WaitPidFlag>) -> Result<WaitStatus> {
+pub fn waitpid<P: Into<Option<Pid>>>(
+    pid: P,
+    options: Option<WaitPidFlag>,
+) -> Result<WaitStatus> {
     use self::WaitStatus::*;
 
     let mut status: i32 = 0;
@@ -336,8 +343,8 @@ pub fn wait() -> Result<WaitStatus> {
     target_os = "haiku",
     all(target_os = "linux", not(target_env = "uclibc")),
 ))]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum Id {
+#[derive(Debug)]
+pub enum Id<'fd> {
     /// Wait for any child
     All,
     /// Wait for the child whose process ID matches the given PID
@@ -348,7 +355,11 @@ pub enum Id {
     PGid(Pid),
     /// Wait for the child referred to by the given PID file descriptor
     #[cfg(any(target_os = "android", target_os = "linux"))]
-    PIDFd(RawFd),
+    PIDFd(BorrowedFd<'fd>),
+    /// A helper variant to resolve the unused parameter (`'fd`) problem on platforms
+    /// other than Linux and Android.
+    #[doc(hidden)]
+    _Unreachable(std::marker::PhantomData<&'fd std::convert::Infallible>),
 }
 
 /// Wait for a process to change status
@@ -366,7 +377,8 @@ pub fn waitid(id: Id, flags: WaitPidFlag) -> Result<WaitStatus> {
         Id::Pid(pid) => (libc::P_PID, pid.as_raw() as libc::id_t),
         Id::PGid(pid) => (libc::P_PGID, pid.as_raw() as libc::id_t),
         #[cfg(any(target_os = "android", target_os = "linux"))]
-        Id::PIDFd(fd) => (libc::P_PIDFD, fd as libc::id_t),
+        Id::PIDFd(fd) => (libc::P_PIDFD, fd.as_raw_fd() as libc::id_t),
+        Id::_Unreachable(_) => unreachable!("This variant could never be constructed"),
     };
 
     let siginfo = unsafe {

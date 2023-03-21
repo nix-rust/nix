@@ -95,7 +95,6 @@ macro_rules! libc_bitflags {
 /// }
 /// ```
 // Some targets don't use all rules.
-#[allow(unknown_lints)]
 #[allow(unused_macro_rules)]
 macro_rules! libc_enum {
     // Exit rule.
@@ -133,6 +132,8 @@ macro_rules! libc_enum {
         impl ::std::convert::TryFrom<$repr> for $BitFlags {
             type Error = $crate::Error;
             #[allow(unused_doc_comments)]
+            #[allow(deprecated)]
+            #[allow(unused_attributes)]
             fn try_from(x: $repr) -> $crate::Result<Self> {
                 match x {
                     $($try_froms)*

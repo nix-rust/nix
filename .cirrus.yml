@@ -9,7 +9,7 @@ env:
   RUSTDOCFLAGS: -D warnings
   TOOL: cargo
   # The MSRV
-  TOOLCHAIN: 1.56.1
+  TOOLCHAIN: 1.63.0
   ZFLAGS:
 
 # Tests that don't require executing the build binaries
@@ -42,7 +42,7 @@ task:
   matrix:
     - name: FreeBSD 12 amd64 & i686
       freebsd_instance:
-        image: freebsd-12-3-release-amd64
+        image: freebsd-12-4-release-amd64
     - name: FreeBSD 14 amd64 & i686
       freebsd_instance:
         image_family: freebsd-14-0-snap
@@ -67,13 +67,13 @@ task:
     - if [ -z "$NOHACK" ]; then cargo hack check --each-feature --target i686-unknown-freebsd; fi
   before_cache_script: rm -rf $CARGO_HOME/registry/index
 
-# Test macOS x86_64 in a full VM
+# Test macOS aarch64 in a full VM
 task:
-  name: macOS x86_64
+  name: macOS aarch64
   env:
-    TARGET: x86_64-apple-darwin
-  osx_instance:
-    image: big-sur-xcode
+    TARGET: aarch64-apple-darwin
+  macos_instance:
+    image: ghcr.io/cirruslabs/macos-ventura-base:latest
   setup_script:
     - curl --proto '=https' --tlsv1.2 -sSf -o rustup.sh https://sh.rustup.rs
     - sh rustup.sh -y --profile=minimal --default-toolchain $TOOLCHAIN
@@ -140,18 +140,17 @@ task:
   matrix:
     - name: Linux aarch64
       arm_container:
-        image: rust:1.56
+        image: rust:1.63.0
       env:
-        RUSTFLAGS: --cfg graviton -D warnings
         TARGET: aarch64-unknown-linux-gnu
     - name: Linux x86_64
       container:
-        image: rust:1.56
+        image: rust:1.63.0
       env:
         TARGET: x86_64-unknown-linux-gnu
     - name: Linux x86_64 musl
       container:
-        image: rust:1.56
+        image: rust:1.63.0
       env:
         TARGET: x86_64-unknown-linux-musl
   setup_script:
@@ -176,7 +175,7 @@ task:
 # Tasks for cross-compiling, but no testing
 task:
   container:
-    image: rust:1.56
+    image: rust:1.63.0
   env:
     BUILD: check
     HOST: x86_64-unknown-linux-gnu
@@ -235,9 +234,9 @@ task:
     - name: Linux x32
       env:
         TARGET: x86_64-unknown-linux-gnux32
-    - name: macOS aarch64
+    - name: macOS x86_64
       env:
-        TARGET: aarch64-apple-darwin
+        TARGET: x86_64-apple-darwin
     - name: NetBSD x86_64
       env:
         TARGET: x86_64-unknown-netbsd
@@ -250,7 +249,7 @@ task:
 
 task:
   container:
-    image: rust:1.56
+    image: rust:1.63.0
   env:
     BUILD: check
   name: Redox x86_64
@@ -315,4 +314,4 @@ task:
   container:
     image: rust:latest
   setup_script: rustup +$TOOLCHAIN component add rustfmt
-  test_script: $TOOL +$TOOLCHAIN fmt --all -- --check
+  test_script: $TOOL +$TOOLCHAIN fmt --all -- --check **/*.rs

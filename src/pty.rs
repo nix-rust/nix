@@ -8,87 +8,66 @@ use std::io;
 use std::mem;
 use std::os::unix::prelude::*;
 
+use crate::errno::Errno;
 use crate::sys::termios::Termios;
 #[cfg(feature = "process")]
 use crate::unistd::{ForkResult, Pid};
-use crate::{Result, fcntl, unistd};
-use crate::errno::Errno;
+use crate::{fcntl, unistd, Result};
 
 /// Representation of a master/slave pty pair
 ///
-/// This is returned by `openpty`.  Note that this type does *not* implement `Drop`, so the user
-/// must manually close the file descriptors.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+/// This is returned by [`openpty`].
+#[derive(Debug)]
 pub struct OpenptyResult {
     /// The master port in a virtual pty pair
-    pub master: RawFd,
+    pub master: OwnedFd,
     /// The slave port in a virtual pty pair
-    pub slave: RawFd,
+    pub slave: OwnedFd,
 }
 
 feature! {
 #![feature = "process"]
 /// Representation of a master with a forked pty
 ///
-/// This is returned by `forkpty`. Note that this type does *not* implement `Drop`, so the user
-/// must manually close the file descriptors.
-#[derive(Clone, Copy, Debug)]
+/// This is returned by [`forkpty`].
+#[derive(Debug)]
 pub struct ForkptyResult {
     /// The master port in a virtual pty pair
-    pub master: RawFd,
+    pub master: OwnedFd,
     /// Metadata about forked process
     pub fork_result: ForkResult,
 }
 }
 
-
 /// Representation of the Master device in a master/slave pty pair
 ///
-/// While this datatype is a thin wrapper around `RawFd`, it enforces that the available PTY
-/// functions are given the correct file descriptor. Additionally this type implements `Drop`,
-/// so that when it's consumed or goes out of scope, it's automatically cleaned-up.
-#[derive(Debug, Eq, Hash, PartialEq)]
-pub struct PtyMaster(RawFd);
+/// While this datatype is a thin wrapper around `OwnedFd`, it enforces that the available PTY
+/// functions are given the correct file descriptor.
+#[derive(Debug)]
+pub struct PtyMaster(OwnedFd);
 
 impl AsRawFd for PtyMaster {
     fn as_raw_fd(&self) -> RawFd {
-        self.0
+        self.0.as_raw_fd()
     }
 }
 
 impl IntoRawFd for PtyMaster {
     fn into_raw_fd(self) -> RawFd {
         let fd = self.0;
-        mem::forget(self);
-        fd
-    }
-}
-
-impl Drop for PtyMaster {
-    fn drop(&mut self) {
-        // On drop, we ignore errors like EINTR and EIO because there's no clear
-        // way to handle them, we can't return anything, and (on FreeBSD at
-        // least) the file descriptor is deallocated in these cases.  However,
-        // we must panic on EBADF, because it is always an error to close an
-        // invalid file descriptor.  That frequently indicates a double-close
-        // condition, which can cause confusing errors for future I/O
-        // operations.
-        let e = unistd::close(self.0);
-        if e == Err(Errno::EBADF) {
-            panic!("Closing an invalid file descriptor!");
-        };
+        fd.into_raw_fd()
     }
 }
 
 impl io::Read for PtyMaster {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        unistd::read(self.0, buf).map_err(io::Error::from)
+        unistd::read(self.0.as_raw_fd(), buf).map_err(io::Error::from)
     }
 }
 
 impl io::Write for PtyMaster {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        unistd::write(self.0, buf).map_err(io::Error::from)
+        unistd::write(self.0.as_raw_fd(), buf).map_err(io::Error::from)
     }
     fn flush(&mut self) -> io::Result<()> {
         Ok(())
@@ -97,13 +76,13 @@ impl io::Write for PtyMaster {
 
 impl io::Read for &PtyMaster {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        unistd::read(self.0, buf).map_err(io::Error::from)
+        unistd::read(self.0.as_raw_fd(), buf).map_err(io::Error::from)
     }
 }
 
 impl io::Write for &PtyMaster {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        unistd::write(self.0, buf).map_err(io::Error::from)
+        unistd::write(self.0.as_raw_fd(), buf).map_err(io::Error::from)
     }
     fn flush(&mut self) -> io::Result<()> {
         Ok(())
@@ -159,15 +138,13 @@ pub fn grantpt(fd: &PtyMaster) -> Result<()> {
 /// ```
 #[inline]
 pub fn posix_openpt(flags: fcntl::OFlag) -> Result<PtyMaster> {
-    let fd = unsafe {
-        libc::posix_openpt(flags.bits())
-    };
+    let fd = unsafe { libc::posix_openpt(flags.bits()) };
 
     if fd < 0 {
         return Err(Errno::last());
     }
 
-    Ok(PtyMaster(fd))
+    Ok(PtyMaster(unsafe { OwnedFd::from_raw_fd(fd) }))
 }
 
 /// Get the name of the slave pseudoterminal (see
@@ -239,7 +216,6 @@ pub fn unlockpt(fd: &PtyMaster) -> Result<()> {
     Ok(())
 }
 
-
 /// Create a new pseudoterminal, returning the slave and master file descriptors
 /// in `OpenptyResult`
 /// (see [`openpty`](https://man7.org/linux/man-pages/man3/openpty.3.html)).
@@ -248,7 +224,15 @@ pub fn unlockpt(fd: &PtyMaster) -> Result<()> {
 /// the values in `winsize`. If `termios` is not `None`, the pseudoterminal's
 /// terminal settings of the slave will be set to the values in `termios`.
 #[inline]
-pub fn openpty<'a, 'b, T: Into<Option<&'a Winsize>>, U: Into<Option<&'b Termios>>>(winsize: T, termios: U) -> Result<OpenptyResult> {
+pub fn openpty<
+    'a,
+    'b,
+    T: Into<Option<&'a Winsize>>,
+    U: Into<Option<&'b Termios>>,
+>(
+    winsize: T,
+    termios: U,
+) -> Result<OpenptyResult> {
     use std::ptr;
 
     let mut slave = mem::MaybeUninit::<libc::c_int>::uninit();
@@ -267,17 +251,15 @@ pub fn openpty<'a, 'b, T: Into<Option<&'a Winsize>>, U: Into<Option<&'b Termios>
                     )
                 }
             }
-            (None, Some(winsize)) => {
-                unsafe {
-                    libc::openpty(
-                        master.as_mut_ptr(),
-                        slave.as_mut_ptr(),
-                        ptr::null_mut(),
-                        ptr::null_mut(),
-                        winsize as *const Winsize as *mut _,
-                    )
-                }
-            }
+            (None, Some(winsize)) => unsafe {
+                libc::openpty(
+                    master.as_mut_ptr(),
+                    slave.as_mut_ptr(),
+                    ptr::null_mut(),
+                    ptr::null_mut(),
+                    winsize as *const Winsize as *mut _,
+                )
+            },
             (Some(termios), None) => {
                 let inner_termios = termios.get_libc_termios();
                 unsafe {
@@ -290,17 +272,15 @@ pub fn openpty<'a, 'b, T: Into<Option<&'a Winsize>>, U: Into<Option<&'b Termios>
                     )
                 }
             }
-            (None, None) => {
-                unsafe {
-                    libc::openpty(
-                        master.as_mut_ptr(),
-                        slave.as_mut_ptr(),
-                        ptr::null_mut(),
-                        ptr::null_mut(),
-                        ptr::null_mut(),
-                    )
-                }
-            }
+            (None, None) => unsafe {
+                libc::openpty(
+                    master.as_mut_ptr(),
+                    slave.as_mut_ptr(),
+                    ptr::null_mut(),
+                    ptr::null_mut(),
+                    ptr::null_mut(),
+                )
+            },
         }
     };
 
@@ -308,8 +288,8 @@ pub fn openpty<'a, 'b, T: Into<Option<&'a Winsize>>, U: Into<Option<&'b Termios>
 
     unsafe {
         Ok(OpenptyResult {
-            master: master.assume_init(),
-            slave: slave.assume_init(),
+            master: OwnedFd::from_raw_fd(master.assume_init()),
+            slave: OwnedFd::from_raw_fd(slave.assume_init()),
         })
     }
 }
@@ -364,7 +344,7 @@ pub unsafe fn forkpty<'a, 'b, T: Into<Option<&'a Winsize>>, U: Into<Option<&'b T
     })?;
 
     Ok(ForkptyResult {
-        master: master.assume_init(),
+        master: OwnedFd::from_raw_fd(master.assume_init()),
         fork_result,
     })
 }

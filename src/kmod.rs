@@ -3,7 +3,7 @@
 //! For more details see
 
 use std::ffi::CStr;
-use std::os::unix::io::AsRawFd;
+use std::os::unix::io::{AsFd, AsRawFd};
 
 use crate::errno::Errno;
 use crate::Result;
@@ -79,11 +79,15 @@ libc_bitflags!(
 /// ```
 ///
 /// See [`man init_module(2)`](https://man7.org/linux/man-pages/man2/init_module.2.html) for more information.
-pub fn finit_module<T: AsRawFd>(fd: &T, param_values: &CStr, flags: ModuleInitFlags) -> Result<()> {
+pub fn finit_module<Fd: AsFd>(
+    fd: Fd,
+    param_values: &CStr,
+    flags: ModuleInitFlags,
+) -> Result<()> {
     let res = unsafe {
         libc::syscall(
             libc::SYS_finit_module,
-            fd.as_raw_fd(),
+            fd.as_fd().as_raw_fd(),
             param_values.as_ptr(),
             flags.bits(),
         )
@@ -116,7 +120,9 @@ libc_bitflags!(
 ///
 /// See [`man delete_module(2)`](https://man7.org/linux/man-pages/man2/delete_module.2.html) for more information.
 pub fn delete_module(name: &CStr, flags: DeleteModuleFlags) -> Result<()> {
-    let res = unsafe { libc::syscall(libc::SYS_delete_module, name.as_ptr(), flags.bits()) };
+    let res = unsafe {
+        libc::syscall(libc::SYS_delete_module, name.as_ptr(), flags.bits())
+    };
 
     Errno::result(res).map(drop)
 }

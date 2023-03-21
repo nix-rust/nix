@@ -8,7 +8,8 @@ use libc::c_uint;
 
 /// Resolve an interface into a interface number.
 pub fn if_nametoindex<P: ?Sized + NixPath>(name: &P) -> Result<c_uint> {
-    let if_index = name.with_nix_path(|name| unsafe { libc::if_nametoindex(name.as_ptr()) })?;
+    let if_index = name
+        .with_nix_path(|name| unsafe { libc::if_nametoindex(name.as_ptr()) })?;
 
     if if_index == 0 {
         Err(Error::last())
@@ -333,6 +334,7 @@ libc_bitflags!(
     target_os = "macos",
     target_os = "netbsd",
     target_os = "openbsd",
+    target_os = "illumos",
 ))]
 #[cfg_attr(docsrs, doc(cfg(all())))]
 mod if_nameindex {
@@ -464,5 +466,6 @@ mod if_nameindex {
     target_os = "macos",
     target_os = "netbsd",
     target_os = "openbsd",
+    target_os = "illumos",
 ))]
 pub use if_nameindex::*;

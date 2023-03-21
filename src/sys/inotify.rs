@@ -23,20 +23,17 @@
 //! }
 //! ```
 
-use libc::{
-    c_char,
-    c_int,
-};
-use std::ffi::{OsString,OsStr,CStr};
-use std::os::unix::ffi::OsStrExt;
-use std::mem::{MaybeUninit, size_of};
-use std::os::unix::io::{RawFd,AsRawFd,FromRawFd};
-use std::ptr;
-use crate::unistd::read;
-use crate::Result;
-use crate::NixPath;
 use crate::errno::Errno;
+use crate::unistd::read;
+use crate::NixPath;
+use crate::Result;
 use cfg_if::cfg_if;
+use libc::{c_char, c_int};
+use std::ffi::{CStr, OsStr, OsString};
+use std::mem::{size_of, MaybeUninit};
+use std::os::unix::ffi::OsStrExt;
+use std::os::unix::io::{AsRawFd, FromRawFd, OwnedFd, RawFd};
+use std::ptr;
 
 libc_bitflags! {
     /// Configuration options for [`inotify_add_watch`](fn.inotify_add_watch.html).
@@ -104,9 +101,9 @@ libc_bitflags! {
 
 /// An inotify instance. This is also a file descriptor, you can feed it to
 /// other interfaces consuming file descriptors, epoll for example.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug)]
 pub struct Inotify {
-    fd: RawFd
+    fd: OwnedFd,
 }
 
 /// This object is returned when you create a new watch on an inotify instance.
@@ -114,7 +111,7 @@ pub struct Inotify {
 /// know which watch triggered which event.
 #[derive(Debug, Clone, Copy, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct WatchDescriptor {
-    wd: i32
+    wd: i32,
 }
 
 /// A single inotify event.
@@ -134,7 +131,7 @@ pub struct InotifyEvent {
     pub cookie: u32,
     /// Filename. This field exists only if the event was triggered for a file
     /// inside the watched directory.
-    pub name: Option<OsString>
+    pub name: Option<OsString>,
 }
 
 impl Inotify {
@@ -144,11 +141,9 @@ impl Inotify {
     ///
     /// For more information see, [inotify_init(2)](https://man7.org/linux/man-pages/man2/inotify_init.2.html).
     pub fn init(flags: InitFlags) -> Result<Inotify> {
-        let res = Errno::result(unsafe {
-            libc::inotify_init1(flags.bits())
-        });
+        let res = Errno::result(unsafe { libc::inotify_init1(flags.bits()) });
 
-        res.map(|fd| Inotify { fd })
+        res.map(|fd| Inotify { fd: unsafe { OwnedFd::from_raw_fd(fd) } })
     }
 
     /// Adds a new watch on the target file or directory.
@@ -156,15 +151,13 @@ impl Inotify {
     /// Returns a watch descriptor. This is not a File Descriptor!
     ///
     /// For more information see, [inotify_add_watch(2)](https://man7.org/linux/man-pages/man2/inotify_add_watch.2.html).
-    pub fn add_watch<P: ?Sized + NixPath>(self,
-                                          path: &P,
-                                          mask: AddWatchFlags)
-                                            -> Result<WatchDescriptor>
-    {
-        let res = path.with_nix_path(|cstr| {
-            unsafe {
-                libc::inotify_add_watch(self.fd, cstr.as_ptr(), mask.bits())
-            }
+    pub fn add_watch<P: ?Sized + NixPath>(
+        &self,
+        path: &P,
+        mask: AddWatchFlags,
+    ) -> Result<WatchDescriptor> {
+        let res = path.with_nix_path(|cstr| unsafe {
+            libc::inotify_add_watch(self.fd.as_raw_fd(), cstr.as_ptr(), mask.bits())
         })?;
 
         Errno::result(res).map(|wd| WatchDescriptor { wd })
@@ -176,7 +169,7 @@ impl Inotify {
     /// Returns an EINVAL error if the watch descriptor is invalid.
     ///
     /// For more information see, [inotify_rm_watch(2)](https://man7.org/linux/man-pages/man2/inotify_rm_watch.2.html).
-    pub fn rm_watch(self, wd: WatchDescriptor) -> Result<()> {
+    pub fn rm_watch(&self, wd: WatchDescriptor) -> Result<()> {
         cfg_if! {
             if #[cfg(target_os = "linux")] {
                 let arg = wd.wd;
@@ -184,7 +177,7 @@ impl Inotify {
                 let arg = wd.wd as u32;
             }
         }
-        let res = unsafe { libc::inotify_rm_watch(self.fd, arg) };
+        let res = unsafe { libc::inotify_rm_watch(self.fd.as_raw_fd(), arg) };
 
         Errno::result(res).map(drop)
     }
@@ -195,14 +188,14 @@ impl Inotify {
     ///
     /// Returns as many events as available. If the call was non blocking and no
     /// events could be read then the EAGAIN error is returned.
-    pub fn read_events(self) -> Result<Vec<InotifyEvent>> {
+    pub fn read_events(&self) -> Result<Vec<InotifyEvent>> {
         let header_size = size_of::<libc::inotify_event>();
         const BUFSIZ: usize = 4096;
         let mut buffer = [0u8; BUFSIZ];
         let mut events = Vec::new();
         let mut offset = 0;
 
-        let nread = read(self.fd, &mut buffer)?;
+        let nread = read(self.fd.as_raw_fd(), &mut buffer)?;
 
         while (nread - offset) >= header_size {
             let event = unsafe {
@@ -210,7 +203,7 @@ impl Inotify {
                 ptr::copy_nonoverlapping(
                     buffer.as_ptr().add(offset),
                     event.as_mut_ptr() as *mut u8,
-                    (BUFSIZ - offset).min(header_size)
+                    (BUFSIZ - offset).min(header_size),
                 );
                 event.assume_init()
             };
@@ -219,9 +212,7 @@ impl Inotify {
                 0 => None,
                 _ => {
                     let ptr = unsafe {
-                        buffer
-                            .as_ptr()
-                            .add(offset + header_size)
+                        buffer.as_ptr().add(offset + header_size)
                             as *const c_char
                     };
                     let cstr = unsafe { CStr::from_ptr(ptr) };
@@ -234,7 +225,7 @@ impl Inotify {
                 wd: WatchDescriptor { wd: event.wd },
                 mask: AddWatchFlags::from_bits_truncate(event.mask),
                 cookie: event.cookie,
-                name
+                name,
             });
 
             offset += header_size + event.len as usize;
@@ -244,14 +235,8 @@ impl Inotify {
     }
 }
 
-impl AsRawFd for Inotify {
-    fn as_raw_fd(&self) -> RawFd {
-        self.fd
-    }
-}
-
 impl FromRawFd for Inotify {
     unsafe fn from_raw_fd(fd: RawFd) -> Self {
-        Inotify { fd }
+        Inotify { fd: OwnedFd::from_raw_fd(fd) }
     }
 }

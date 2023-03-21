@@ -54,6 +54,22 @@ pub fn test_local_peercred_stream() {
     assert_eq!(Gid::from_raw(xucred.groups()[0]), Gid::current());
 }
 
+#[cfg(any(target_os = "ios", target_os = "macos"))]
+#[test]
+pub fn test_local_peer_pid() {
+    use nix::sys::socket::socketpair;
+
+    let (fd1, _fd2) = socketpair(
+        AddressFamily::Unix,
+        SockType::Stream,
+        None,
+        SockFlag::empty(),
+    )
+    .unwrap();
+    let pid = getsockopt(fd1, sockopt::LocalPeerPid).unwrap();
+    assert_eq!(pid, std::process::id() as _);
+}
+
 #[cfg(target_os = "linux")]
 #[test]
 fn is_so_mark_functional() {
@@ -151,6 +167,33 @@ fn test_so_tcp_maxseg() {
     close(ssock).unwrap();
 }
 
+#[test]
+fn test_so_type() {
+    let sockfd = socket(
+        AddressFamily::Inet,
+        SockType::Stream,
+        SockFlag::empty(),
+        None,
+    )
+    .unwrap();
+
+    assert_eq!(Ok(SockType::Stream), getsockopt(sockfd, sockopt::SockType));
+}
+
+/// getsockopt(_, sockopt::SockType) should gracefully handle unknown socket
+/// types.  Regression test for https://github.com/nix-rust/nix/issues/1819
+#[cfg(any(target_os = "android", target_os = "linux",))]
+#[test]
+fn test_so_type_unknown() {
+    use nix::errno::Errno;
+
+    require_capability!("test_so_type", CAP_NET_RAW);
+    let sockfd = unsafe { libc::socket(libc::AF_PACKET, libc::SOCK_PACKET, 0) };
+    assert!(sockfd >= 0, "Error opening socket: {}", nix::Error::last());
+
+    assert_eq!(Err(Errno::EINVAL), getsockopt(sockfd, sockopt::SockType));
+}
+
 // The CI doesn't supported getsockopt and setsockopt on emulated processors.
 // It's believed that a QEMU issue, the tests run ok on a fully emulated system.
 // Current CI just run the binary with QEMU but the Kernel remains the same as the host.
@@ -234,6 +277,33 @@ fn test_so_tcp_keepalive() {
         setsockopt(fd, sockopt::TcpKeepInterval, &(x + 1)).unwrap();
         assert_eq!(getsockopt(fd, sockopt::TcpKeepInterval).unwrap(), x + 1);
     }
+}
+
+#[test]
+#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg_attr(qemu, ignore)]
+fn test_get_mtu() {
+    use nix::sys::socket::{bind, connect, SockaddrIn};
+    use std::net::SocketAddrV4;
+    use std::str::FromStr;
+
+    let std_sa = SocketAddrV4::from_str("127.0.0.1:4001").unwrap();
+    let std_sb = SocketAddrV4::from_str("127.0.0.1:4002").unwrap();
+
+    let usock = socket(
+        AddressFamily::Inet,
+        SockType::Datagram,
+        SockFlag::empty(),
+        SockProtocol::Udp,
+    )
+    .unwrap();
+
+    // Bind and initiate connection
+    bind(usock, &SockaddrIn::from(std_sa)).unwrap();
+    connect(usock, &SockaddrIn::from(std_sb)).unwrap();
+
+    // Loopback connections have 2^16 - the maximum - MTU
+    assert_eq!(getsockopt(usock, sockopt::IpMtu), Ok(u16::MAX as i32))
 }
 
 #[test]
@@ -326,4 +396,52 @@ fn test_v6dontfrag_opts() {
     setsockopt(fd6d, sockopt::Ipv6DontFrag, &false).expect(
         "unsetting IPV6_DONTFRAG on an inet6 datagram socket should succeed",
     );
+}
+
+#[test]
+#[cfg(target_os = "linux")]
+fn test_so_priority() {
+    let fd = socket(
+        AddressFamily::Inet,
+        SockType::Stream,
+        SockFlag::empty(),
+        SockProtocol::Tcp,
+    )
+    .unwrap();
+    let priority = 3;
+    setsockopt(fd, sockopt::Priority, &priority).unwrap();
+    assert_eq!(getsockopt(fd, sockopt::Priority).unwrap(), priority);
+}
+
+#[test]
+#[cfg(target_os = "linux")]
+fn test_ip_tos() {
+    let fd = socket(
+        AddressFamily::Inet,
+        SockType::Stream,
+        SockFlag::empty(),
+        SockProtocol::Tcp,
+    )
+    .unwrap();
+    let tos = 0x80; // CS4
+    setsockopt(fd, sockopt::IpTos, &tos).unwrap();
+    assert_eq!(getsockopt(fd, sockopt::IpTos).unwrap(), tos);
+}
+
+#[test]
+#[cfg(target_os = "linux")]
+// Disable the test under emulation because it fails in Cirrus-CI.  Lack
+// of QEMU support is suspected.
+#[cfg_attr(qemu, ignore)]
+fn test_ipv6_tclass() {
+    let fd = socket(
+        AddressFamily::Inet6,
+        SockType::Stream,
+        SockFlag::empty(),
+        SockProtocol::Tcp,
+    )
+    .unwrap();
+    let class = 0x80; // CS4
+    setsockopt(fd, sockopt::Ipv6TClass, &class).unwrap();
+    assert_eq!(getsockopt(fd, sockopt::Ipv6TClass).unwrap(), class);
 }

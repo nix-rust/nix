@@ -641,7 +641,6 @@ impl<'a> IntoIterator for &'a SigSet {
 }
 
 /// A signal handler.
-#[allow(unknown_lints)]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum SigHandler {
     /// Default signal handling.
@@ -1067,7 +1066,7 @@ mod sigevent {
                 SigevNotify::SigevThreadId{..} => libc::SIGEV_THREAD_ID,
                 #[cfg(all(target_os = "linux", target_env = "gnu", not(target_arch = "mips")))]
                 SigevNotify::SigevThreadId{..} => libc::SIGEV_THREAD_ID,
-                #[cfg(all(target_os = "linux", target_env = "uclibc"))]
+                #[cfg(all(target_os = "linux", target_env = "uclibc", not(target_arch = "mips")))]
                 SigevNotify::SigevThreadId{..} => libc::SIGEV_THREAD_ID,
                 #[cfg(any(all(target_os = "linux", target_env = "musl"), target_arch = "mips"))]
                 SigevNotify::SigevThreadId{..} => 4  // No SIGEV_THREAD_ID defined
