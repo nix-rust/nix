@@ -143,7 +143,6 @@ impl Drop for AddrInfoList {
     }
 }
 /// Corresponds to an iterator for a list of `AddrInfo`.
-/// Deliberately is not Clone because we want to own indirect data.
 #[repr(transparent)]
 #[derive(Copy, Clone)]
 pub struct AddrInfoListIter<'a>(Option<&'a AddrInfo>);
