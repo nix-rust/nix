@@ -1,11 +1,15 @@
 //! Safe wrappers around functions found in libc "unistd.h" header
 
 use crate::errno::{self, Errno};
+#[cfg(any(feature = "fs", feature = "term"))]
+use crate::fcntl::PATH_MAX;
 #[cfg(not(target_os = "redox"))]
 #[cfg(feature = "fs")]
 use crate::fcntl::{at_rawfd, AtFlags};
+#[cfg(not(target_os = "wasi"))]
 #[cfg(feature = "fs")]
 use crate::fcntl::{fcntl, FcntlArg::F_SETFD, FdFlag, OFlag};
+#[cfg(feature = "fs")]
 #[cfg(all(
     feature = "fs",
     any(
@@ -20,22 +24,27 @@ use crate::fcntl::{fcntl, FcntlArg::F_SETFD, FdFlag, OFlag};
 use crate::sys::stat::FileFlag;
 #[cfg(feature = "fs")]
 use crate::sys::stat::Mode;
-use crate::{Error, NixPath, Result};
+use crate::{Error, NixPath, RawFd, Result};
 #[cfg(not(target_os = "redox"))]
 use cfg_if::cfg_if;
 use libc::{
     self, c_char, c_int, c_long, c_uint, c_void, gid_t, mode_t, off_t, pid_t,
-    size_t, uid_t, PATH_MAX,
+    size_t, uid_t,
 };
 use std::convert::Infallible;
 use std::ffi::{CStr, OsString};
 #[cfg(not(target_os = "redox"))]
 use std::ffi::{CString, OsStr};
-#[cfg(not(target_os = "redox"))]
+#[cfg(all(unix, not(target_os = "redox")))]
 use std::os::unix::ffi::OsStrExt;
+#[cfg(unix)]
 use std::os::unix::ffi::OsStringExt;
-use std::os::unix::io::RawFd;
+#[cfg(unix)]
 use std::os::unix::io::{AsFd, AsRawFd};
+#[cfg(target_os = "wasi")]
+use std::os::wasi::ffi::{OsStrExt, OsStringExt};
+#[cfg(target_os = "wasi")]
+use std::os::wasi::io::{AsFd, AsRawFd};
 use std::path::PathBuf;
 use std::{fmt, mem, ptr};
 
@@ -424,6 +433,7 @@ feature! {
 ///
 /// The two file descriptors do not share file descriptor flags (e.g. `OFlag::FD_CLOEXEC`).
 #[inline]
+#[cfg(not(target_os = "wasi"))]
 pub fn dup(oldfd: RawFd) -> Result<RawFd> {
     let res = unsafe { libc::dup(oldfd) };
 
@@ -437,6 +447,7 @@ pub fn dup(oldfd: RawFd) -> Result<RawFd> {
 /// specified fd instead of allocating a new one.  See the man pages for more
 /// detail on the exact behavior of this function.
 #[inline]
+#[cfg(not(target_os = "wasi"))]
 pub fn dup2(oldfd: RawFd, newfd: RawFd) -> Result<RawFd> {
     let res = unsafe { libc::dup2(oldfd, newfd) };
 
@@ -448,10 +459,12 @@ pub fn dup2(oldfd: RawFd, newfd: RawFd) -> Result<RawFd> {
 ///
 /// This function behaves similar to `dup2()` but allows for flags to be
 /// specified.
+#[cfg(not(target_os = "wasi"))]
 pub fn dup3(oldfd: RawFd, newfd: RawFd, flags: OFlag) -> Result<RawFd> {
     dup3_polyfill(oldfd, newfd, flags)
 }
 
+#[cfg(not(target_os = "wasi"))]
 #[inline]
 fn dup3_polyfill(oldfd: RawFd, newfd: RawFd, flags: OFlag) -> Result<RawFd> {
     if oldfd == newfd {
@@ -490,7 +503,7 @@ pub fn chdir<P: ?Sized + NixPath>(path: &P) -> Result<()> {
 /// This function may fail in a number of different scenarios.  See the man
 /// pages for additional details on possible failure cases.
 #[inline]
-#[cfg(not(target_os = "fuchsia"))]
+#[cfg(not(any(target_os = "fuchsia", target_os = "wasi")))]
 pub fn fchdir(dirfd: RawFd) -> Result<()> {
     let res = unsafe { libc::fchdir(dirfd) };
 
@@ -562,7 +575,7 @@ pub fn mkdir<P: ?Sized + NixPath>(path: &P, mode: Mode) -> Result<()> {
 /// }
 /// ```
 #[inline]
-#[cfg(not(target_os = "redox"))] // RedoxFS does not support fifo yet
+#[cfg(not(any(target_os = "redox", target_os = "wasi")))] // RedoxFS does not support fifo yet
 pub fn mkfifo<P: ?Sized + NixPath>(path: &P, mode: Mode) -> Result<()> {
     let res = path.with_nix_path(|cstr| unsafe {
         libc::mkfifo(cstr.as_ptr(), mode.bits() as mode_t)
@@ -587,7 +600,8 @@ pub fn mkfifo<P: ?Sized + NixPath>(path: &P, mode: Mode) -> Result<()> {
     target_os = "ios",
     target_os = "haiku",
     target_os = "android",
-    target_os = "redox"
+    target_os = "redox",
+    target_os = "wasi"
 )))]
 pub fn mkfifoat<P: ?Sized + NixPath>(
     dirfd: Option<RawFd>,
@@ -689,7 +703,7 @@ pub fn getcwd() -> Result<PathBuf> {
             }
 
             // Trigger the internal buffer resizing logic.
-            reserve_double_buffer_size(&mut buf, PATH_MAX as usize)?;
+            reserve_double_buffer_size(&mut buf, PATH_MAX)?;
         }
     }
 }
@@ -1188,6 +1202,7 @@ pub fn lseek64(
 /// Create an interprocess channel.
 ///
 /// See also [pipe(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/pipe.html)
+#[cfg(not(target_os = "wasi"))]
 pub fn pipe() -> std::result::Result<(RawFd, RawFd), Error> {
     let mut fds = mem::MaybeUninit::<[c_int; 2]>::uninit();
 
@@ -1369,7 +1384,7 @@ pub fn unlinkat<P: ?Sized + NixPath>(
 }
 
 #[inline]
-#[cfg(not(target_os = "fuchsia"))]
+#[cfg(not(any(target_os = "fuchsia", target_os = "wasi")))]
 pub fn chroot<P: ?Sized + NixPath>(path: &P) -> Result<()> {
     let res =
         path.with_nix_path(|cstr| unsafe { libc::chroot(cstr.as_ptr()) })?;
@@ -1964,6 +1979,7 @@ feature! {
 /// // do something with fd
 /// ```
 #[inline]
+#[cfg(not(target_os = "wasi"))]
 pub fn mkstemp<P: ?Sized + NixPath>(template: &P) -> Result<(RawFd, PathBuf)> {
     let mut path =
         template.with_nix_path(|path| path.to_bytes_with_nul().to_owned())?;
@@ -3902,7 +3918,6 @@ feature! {
 /// (see [`ttyname(3)`](https://man7.org/linux/man-pages/man3/ttyname.3.html)).
 #[cfg(not(target_os = "fuchsia"))]
 pub fn ttyname(fd: RawFd) -> Result<PathBuf> {
-    const PATH_MAX: usize = libc::PATH_MAX as usize;
     let mut buf = vec![0_u8; PATH_MAX];
     let c_buf = buf.as_mut_ptr() as *mut libc::c_char;
 
