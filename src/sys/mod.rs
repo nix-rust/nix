@@ -110,7 +110,6 @@ feature! {
     pub mod resource;
 }
 
-#[cfg(not(target_os = "redox"))]
 feature! {
     #![feature = "poll"]
     pub mod select;
@@ -138,7 +137,6 @@ feature! {
     pub mod signalfd;
 }
 
-#[cfg(not(target_os = "redox"))]
 feature! {
     #![feature = "socket"]
     #[allow(missing_docs)]
