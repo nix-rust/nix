@@ -2148,10 +2148,22 @@ pub fn bind(fd: RawFd, addr: &dyn SockaddrLike) -> Result<()> {
 /// Accept a connection on a socket
 ///
 /// [Further reading](https://pubs.opengroup.org/onlinepubs/9699919799/functions/accept.html)
-pub fn accept(sockfd: RawFd) -> Result<RawFd> {
-    let res = unsafe { libc::accept(sockfd, ptr::null_mut(), ptr::null_mut()) };
+pub fn accept<T: SockaddrLike>(sockfd: RawFd) -> Result<(RawFd, T)> {
+    let mut addr = mem::MaybeUninit::<T>::uninit();
+    let mut len = T::size();
 
-    Errno::result(res)
+    let res = unsafe {
+        libc::accept(sockfd, addr.as_mut_ptr() as *mut sockaddr, &mut len)
+    };
+
+    Errno::result(res)?;
+
+    let addr = unsafe { T::from_raw(addr.assume_init().as_ptr(), Some(len)) };
+
+    match addr {
+        Some(addr) => Ok((res, addr)),
+        None => Err(Errno::EINVAL),
+    }
 }
 
 /// Accept a connection on a socket
