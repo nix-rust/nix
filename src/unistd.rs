@@ -3706,7 +3706,7 @@ impl User {
     /// Get a user by name.
     ///
     /// Internally, this function calls
-    /// [getpwnam_r(3)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/getpwuid_r.html)
+    /// [getpwnam_r(3)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/getpwnam_r.html)
     ///
     /// # Examples
     ///
