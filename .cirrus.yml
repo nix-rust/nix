@@ -111,7 +111,7 @@ task:
     - name: Linux MIPS
       env:
         TARGET: mips-unknown-linux-gnu
-    - name:Linux MIPS64
+    - name: Linux MIPS64
       env:
         TARGET: mips64-unknown-linux-gnuabi64
     - name: Linux MIPS64 el
