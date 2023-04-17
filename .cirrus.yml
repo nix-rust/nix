@@ -105,10 +105,13 @@ task:
     - name: Linux i686 musl
       env:
         TARGET: i686-unknown-linux-musl
+    - name: Linux LoongArch64
+      env:
+        TARGET: loongarch64-unknown-linux-gnu
     - name: Linux MIPS
       env:
         TARGET: mips-unknown-linux-gnu
-    - name: Linux MIPS64
+    - name:Linux MIPS64
       env:
         TARGET: mips64-unknown-linux-gnuabi64
     - name: Linux MIPS64 el
