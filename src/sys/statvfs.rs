@@ -12,7 +12,6 @@ use crate::{errno::Errno, NixPath, Result};
 #[cfg(not(target_os = "redox"))]
 libc_bitflags!(
     /// File system mount Flags
-    #[repr(C)]
     #[derive(Default)]
     pub struct FsFlags: c_ulong {
         /// Read Only
