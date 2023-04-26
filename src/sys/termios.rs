@@ -309,7 +309,7 @@ impl Termios {
         let termios = *self.inner.borrow_mut();
         self.input_flags = InputFlags::from_bits_truncate(termios.c_iflag);
         self.output_flags = OutputFlags::from_bits_truncate(termios.c_oflag);
-        self.control_flags = ControlFlags::from_bits_truncate(termios.c_cflag);
+        self.control_flags = ControlFlags::from_bits_retain(termios.c_cflag);
         self.local_flags = LocalFlags::from_bits_truncate(termios.c_lflag);
         self.control_chars = termios.c_cc;
         #[cfg(any(
