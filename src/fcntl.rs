@@ -2,7 +2,7 @@
 use crate::errno::Errno;
 #[cfg(all(target_os = "freebsd", target_arch = "x86_64"))]
 use core::slice;
-use libc::{c_int, c_uint, size_t, ssize_t};
+use libc::{self, c_int, c_uint, size_t, ssize_t};
 #[cfg(any(
     target_os = "netbsd",
     apple_targets,
@@ -163,8 +163,12 @@ libc_bitflags!(
                   all(target_os = "linux", not(target_env = "musl"), not(target_env = "ohos")),
                   target_os = "redox"))]
         O_FSYNC;
-        /// Allow files whose sizes can't be represented in an `off_t` to be opened.
+        /// On 32-bit Linux, O_LARGEFILE allows the use of file
+        /// offsets greater than 32 bits. Nix accepts the flag for
+        /// compatibility, but always opens files in large file mode
+        /// even if it isn't specified.
         #[cfg(linux_android)]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         O_LARGEFILE;
         /// Do not update the file last access time during `read(2)`s.
         #[cfg(linux_android)]
@@ -249,7 +253,7 @@ pub fn open<P: ?Sized + NixPath>(
     use std::os::fd::FromRawFd;
 
     let fd = path.with_nix_path(|cstr| unsafe {
-        libc::open(cstr.as_ptr(), oflag.bits(), mode.bits() as c_uint)
+        largefile_fn![open](cstr.as_ptr(), oflag.bits(), mode.bits() as c_uint)
     })?;
     Errno::result(fd)?;
 
@@ -280,7 +284,12 @@ pub fn openat<P: ?Sized + NixPath, Fd: std::os::fd::AsFd>(
     use std::os::fd::FromRawFd;
 
     let fd = path.with_nix_path(|cstr| unsafe {
-        libc::openat(dirfd.as_fd().as_raw_fd(), cstr.as_ptr(), oflag.bits(), mode.bits() as c_uint)
+         largefile_fn![openat](
+             dirfd.as_fd().as_raw_fd(),
+             cstr.as_ptr(),
+             oflag.bits(),
+             mode.bits() as c_uint,
+         )
     })?;
     Errno::result(fd)?;
 
@@ -1303,15 +1312,18 @@ feature! {
 /// file referred to by fd.
 #[cfg(target_os = "linux")]
 #[cfg(feature = "fs")]
-pub fn fallocate<Fd: std::os::fd::AsFd>(
+pub fn fallocate<Fd: std::os::fd::AsFd, Off: Into<i64>>(
     fd: Fd,
     mode: FallocateFlags,
-    offset: libc::off_t,
-    len: libc::off_t,
+    offset: Off,
+    len: Off,
 ) -> Result<()> {
     use std::os::fd::AsRawFd;
 
-    let res = unsafe { libc::fallocate(fd.as_fd().as_raw_fd(), mode.bits(), offset, len) };
+    let res = unsafe {
+        largefile_fn![fallocate](
+            fd.as_fd().as_raw_fd(), mode.bits(), offset.into(), len.into())
+    };
     Errno::result(res).map(drop)
 }
 
@@ -1319,7 +1331,7 @@ pub fn fallocate<Fd: std::os::fd::AsFd>(
 /// the file offset, and the second is the length of the region.
 #[cfg(any(target_os = "freebsd"))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct SpacectlRange(pub libc::off_t, pub libc::off_t);
+pub struct SpacectlRange(pub i64, pub i64);
 
 #[cfg(any(target_os = "freebsd"))]
 impl SpacectlRange {
@@ -1334,13 +1346,13 @@ impl SpacectlRange {
 
     /// Remaining length of the range
     #[inline]
-    pub fn len(&self) -> libc::off_t {
+    pub fn len(&self) -> i64 {
         self.1
     }
 
     /// Next file offset to operate on
     #[inline]
-    pub fn offset(&self) -> libc::off_t {
+    pub fn offset(&self) -> i64 {
         self.0
     }
 }
@@ -1437,16 +1449,16 @@ pub fn fspacectl<Fd: std::os::fd::AsFd>(fd: Fd, range: SpacectlRange) -> Result<
 /// ```
 #[cfg(target_os = "freebsd")]
 #[inline] // Delays codegen, preventing linker errors with dylibs and --no-allow-shlib-undefined
-pub fn fspacectl_all<Fd: std::os::fd::AsFd>(
+pub fn fspacectl_all<Fd: std::os::fd::AsFd, Off: Into<i64>>(
     fd: Fd,
-    offset: libc::off_t,
-    len: libc::off_t,
+    offset: Off,
+    len: Off,
 ) -> Result<()> {
     use std::os::fd::AsRawFd;
 
     let mut rqsr = libc::spacectl_range {
-        r_offset: offset,
-        r_len: len,
+        r_offset: offset.into(),
+        r_len: len.into(),
     };
     while rqsr.r_len > 0 {
         let res = unsafe {
@@ -1505,15 +1517,22 @@ mod posix_fadvise {
     ///
     /// # See Also
     /// * [`posix_fadvise`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/posix_fadvise.html)
-    pub fn posix_fadvise<Fd: std::os::fd::AsFd>(
+    pub fn posix_fadvise<Fd: std::os::fd::AsFd, Off: Into<i64>>(
         fd: Fd,
-        offset: libc::off_t,
-        len: libc::off_t,
+        offset: Off,
+        len: Off,
         advice: PosixFadviseAdvice,
     ) -> Result<()> {
         use std::os::fd::AsRawFd;
 
-        let res = unsafe { libc::posix_fadvise(fd.as_fd().as_raw_fd(), offset, len, advice as libc::c_int) };
+        let res = unsafe {
+            largefile_fn![posix_fadvise](
+                fd.as_fd().as_raw_fd(),
+                offset.into(),
+                len.into(),
+                advice as libc::c_int,
+            )
+        };
 
         if res == 0 {
             Ok(())
@@ -1535,14 +1554,20 @@ mod posix_fadvise {
     target_os = "fuchsia",
     target_os = "wasi",
 ))]
-pub fn posix_fallocate<Fd: std::os::fd::AsFd>(
+pub fn posix_fallocate<Fd: std::os::fd::AsFd, Off: Into<i64>>(
     fd: Fd,
-    offset: libc::off_t,
-    len: libc::off_t,
+    offset: Off,
+    len: Off,
 ) -> Result<()> {
     use std::os::fd::AsRawFd;
 
-    let res = unsafe { libc::posix_fallocate(fd.as_fd().as_raw_fd(), offset, len) };
+    let res = unsafe {
+        largefile_fn![posix_fallocate](
+            fd.as_fd().as_raw_fd(),
+            offset.into(),
+            len.into(),
+        )
+    };
     match Errno::result(res) {
         Err(err) => Err(err),
         Ok(0) => Ok(()),

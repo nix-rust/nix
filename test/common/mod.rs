@@ -32,6 +32,29 @@ cfg_if! {
     }
 }
 
+/// Skip the test if we cannot handle offsets larger than 32 bits.
+///
+/// This is generally the case if libc::off_t::MAX is 1 << 32 or less.
+/// However, some platforms (e.g. glibc on Linux) provide variants of
+/// the standard I/O functions that do support 64-bit offsets
+/// (e.g. lseek64 instead of lseek).
+#[macro_export]
+macro_rules! require_largefile {
+    ($name:expr) => {
+        #[cfg(not(any(
+            all(target_os = "linux", target_env = "gnu"),
+            target_os = "android",
+        )))]
+        if (libc::off_t::MAX >> 31) <= 1 {
+            $crate::skip!(
+                "{} requires file offsets \
+                          larger than 32 bits. Skipping test.",
+                $name
+            );
+        }
+    };
+}
+
 /// Skip the test if we don't have the ability to mount file systems.
 #[cfg(target_os = "freebsd")]
 #[macro_export]
