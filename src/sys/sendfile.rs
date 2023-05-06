@@ -4,9 +4,10 @@ use cfg_if::cfg_if;
 use std::os::unix::io::{AsFd, AsRawFd};
 use std::ptr;
 
-use libc::{self, off_t};
+use libc;
 
 use crate::errno::Errno;
+use crate::off_t;
 use crate::Result;
 
 /// Copy up to `count` bytes to `out_fd` from `in_fd` starting at `offset`.
@@ -33,7 +34,7 @@ pub fn sendfile<F1: AsFd, F2: AsFd>(
         .map(|offset| offset as *mut _)
         .unwrap_or(ptr::null_mut());
     let ret = unsafe {
-        libc::sendfile(
+        largefile_fn![libc::sendfile](
             out_fd.as_fd().as_raw_fd(),
             in_fd.as_fd().as_raw_fd(),
             offset,
@@ -125,8 +126,6 @@ cfg_if! {
 
 cfg_if! {
     if #[cfg(target_os = "freebsd")] {
-        use libc::c_int;
-
         libc_bitflags!{
             /// Configuration options for [`sendfile`.](fn.sendfile.html)
             pub struct SfFlags: c_int {

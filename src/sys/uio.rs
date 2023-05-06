@@ -1,8 +1,9 @@
 //! Vectored I/O
 
 use crate::errno::Errno;
+use crate::off_t;
 use crate::Result;
-use libc::{self, c_int, c_void, off_t, size_t};
+use libc::{self, c_int, c_void, size_t};
 use std::io::{IoSlice, IoSliceMut};
 use std::os::unix::io::{AsFd, AsRawFd};
 
@@ -50,7 +51,7 @@ pub fn pwritev<Fd: AsFd>(fd: Fd, iov: &[IoSlice<'_>], offset: off_t) -> Result<u
 
     // SAFETY: same as in writev()
     let res = unsafe {
-        libc::pwritev(
+        largefile_fn![libc::pwritev](
             fd.as_fd().as_raw_fd(),
             iov.as_ptr() as *const libc::iovec,
             iov.len() as c_int,
@@ -80,7 +81,7 @@ pub fn preadv<Fd: AsFd>(
 
     // SAFETY: same as in readv()
     let res = unsafe {
-        libc::preadv(
+        largefile_fn![libc::preadv](
             fd.as_fd().as_raw_fd(),
             iov.as_ptr() as *const libc::iovec,
             iov.len() as c_int,
@@ -97,7 +98,7 @@ pub fn preadv<Fd: AsFd>(
 // TODO: move to unistd
 pub fn pwrite<Fd: AsFd>(fd: Fd, buf: &[u8], offset: off_t) -> Result<usize> {
     let res = unsafe {
-        libc::pwrite(
+        largefile_fn![libc::pwrite](
             fd.as_fd().as_raw_fd(),
             buf.as_ptr() as *const c_void,
             buf.len() as size_t,
@@ -114,7 +115,7 @@ pub fn pwrite<Fd: AsFd>(fd: Fd, buf: &[u8], offset: off_t) -> Result<usize> {
 // TODO: move to unistd
 pub fn pread<Fd: AsFd>(fd: Fd, buf: &mut [u8], offset: off_t) -> Result<usize> {
     let res = unsafe {
-        libc::pread(
+        largefile_fn![libc::pread](
             fd.as_fd().as_raw_fd(),
             buf.as_mut_ptr() as *mut c_void,
             buf.len() as size_t,

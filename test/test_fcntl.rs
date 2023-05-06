@@ -1,3 +1,4 @@
+use crate::require_largefile;
 #[cfg(not(target_os = "redox"))]
 use nix::errno::*;
 #[cfg(not(target_os = "redox"))]
@@ -18,7 +19,7 @@ use nix::fcntl::{renameat2, RenameFlags};
 #[cfg(not(target_os = "redox"))]
 use nix::sys::stat::Mode;
 #[cfg(not(target_os = "redox"))]
-use nix::unistd::{close, read};
+use nix::unistd::{close, lseek, read, write, Whence};
 #[cfg(not(target_os = "redox"))]
 use std::fs::File;
 #[cfg(not(target_os = "redox"))]
@@ -26,7 +27,28 @@ use std::io::prelude::*;
 #[cfg(not(target_os = "redox"))]
 use std::os::unix::fs;
 #[cfg(not(target_os = "redox"))]
-use tempfile::{self, NamedTempFile};
+use tempfile::{self, tempdir, NamedTempFile};
+
+#[test]
+fn test_open_largefile() {
+    // Checks that files opened with open can grow beyond 32-bit file size.
+    // On some platforms, this requires opening the file with an alternative
+    // open() function or a flag.
+    require_largefile!("test_open_largefile");
+
+    let tempdir = tempdir().unwrap();
+    let path = tempdir.path().join("file");
+    File::create(&path).unwrap();
+    let fd = open(&path, OFlag::O_WRONLY, Mode::empty()).unwrap();
+    // Seek to a position that requires more than 32 bits to represent.
+    let pos = (0x1_0000_0004u64).try_into().unwrap();
+    let result = lseek(fd, pos, Whence::SeekSet);
+    assert_eq!(result, Ok(pos));
+    // Write a byte there, close the file, and check its size.
+    write(fd, b"x").unwrap();
+    close(fd).unwrap();
+    assert_eq!(std::fs::metadata(&path).unwrap().len(), 0x1_0000_0005);
+}
 
 #[test]
 #[cfg(not(target_os = "redox"))]
@@ -55,6 +77,29 @@ fn test_openat() {
 
     close(fd).unwrap();
     close(dirfd).unwrap();
+}
+
+#[test]
+#[cfg(not(target_os = "redox"))]
+// QEMU does not handle openat well enough to satisfy this test
+// https://gitlab.com/qemu-project/qemu/-/issues/829
+#[cfg_attr(qemu, ignore)]
+fn test_openat_largefile() {
+    require_largefile!("test_openat_largefile");
+
+    let tempdir = tempdir().unwrap();
+    let dirfd = open(tempdir.path(), OFlag::empty(), Mode::empty()).unwrap();
+    let path = tempdir.path().join("file");
+    File::create(&path).unwrap();
+    let fd = openat(dirfd, "file", OFlag::O_WRONLY, Mode::empty()).unwrap();
+    // Seek to a position that requires more than 32 bits to represent.
+    let pos = (0x1_0000_0004u64).try_into().unwrap();
+    let result = lseek(fd, pos, Whence::SeekSet);
+    assert_eq!(result, Ok(pos));
+    // Write a byte there, close the file, and check its size.
+    write(fd, b"x").unwrap();
+    close(fd).unwrap();
+    assert_eq!(std::fs::metadata(&path).unwrap().len(), 0x1_0000_0005);
 }
 
 #[test]
@@ -485,8 +530,11 @@ mod test_posix_fadvise {
     use nix::errno::Errno;
     use nix::fcntl::*;
     use nix::unistd::pipe;
+    use std::io::{Seek, Write};
     use std::os::unix::io::{AsRawFd, RawFd};
     use tempfile::NamedTempFile;
+
+    use crate::require_largefile;
 
     #[test]
     fn test_success() {
@@ -507,6 +555,22 @@ mod test_posix_fadvise {
         );
         assert_eq!(res, Err(Errno::ESPIPE));
     }
+
+    #[test]
+    fn test_posix_fadvise_largefile() {
+        require_largefile!("test_posix_fadvise_largefile");
+
+        let mut tmp = tempfile::tempfile().unwrap();
+        tmp.seek(std::io::SeekFrom::Start(0xfffffffc)).unwrap();
+        tmp.write_all(b"forty-two").unwrap();
+        assert!(posix_fadvise(
+            tmp.as_raw_fd(),
+            0,
+            0x1_0000_0004u64.try_into().unwrap(),
+            PosixFadviseAdvice::POSIX_FADV_DONTNEED,
+        )
+        .is_ok());
+    }
 }
 
 #[cfg(any(
@@ -522,6 +586,7 @@ mod test_posix_fallocate {
 
     use nix::errno::Errno;
     use nix::fcntl::*;
+    use nix::off_t;
     use nix::unistd::pipe;
     use std::{
         io::Read,
@@ -534,7 +599,7 @@ mod test_posix_fallocate {
         const LEN: usize = 100;
         let mut tmp = NamedTempFile::new().unwrap();
         let fd = tmp.as_raw_fd();
-        let res = posix_fallocate(fd, 0, LEN as libc::off_t);
+        let res = posix_fallocate(fd, 0, LEN as off_t);
         match res {
             Ok(_) => {
                 let mut data = [1u8; LEN];

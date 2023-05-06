@@ -6,6 +6,7 @@ use crate::errno::{self, Errno};
 use crate::fcntl::{at_rawfd, AtFlags};
 #[cfg(feature = "fs")]
 use crate::fcntl::{fcntl, FcntlArg::F_SETFD, FdFlag, OFlag};
+use crate::off_t;
 #[cfg(all(
     feature = "fs",
     any(
@@ -24,8 +25,8 @@ use crate::{Error, NixPath, Result};
 #[cfg(not(target_os = "redox"))]
 use cfg_if::cfg_if;
 use libc::{
-    self, c_char, c_int, c_long, c_uint, c_void, gid_t, mode_t, off_t, pid_t,
-    size_t, uid_t, PATH_MAX,
+    self, c_char, c_int, c_long, c_uint, c_void, gid_t, mode_t, pid_t, size_t,
+    uid_t, PATH_MAX,
 };
 use std::convert::Infallible;
 use std::ffi::{CStr, OsString};
@@ -1168,7 +1169,7 @@ pub enum Whence {
 ///
 /// See also [lseek(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/lseek.html)
 pub fn lseek(fd: RawFd, offset: off_t, whence: Whence) -> Result<off_t> {
-    let res = unsafe { libc::lseek(fd, offset, whence as i32) };
+    let res = unsafe { largefile_fn![libc::lseek](fd, offset, whence as i32) };
 
     Errno::result(res).map(|r| r as off_t)
 }
@@ -1247,7 +1248,9 @@ pub fn pipe2(flags: OFlag) -> Result<(RawFd, RawFd)> {
 #[cfg(not(any(target_os = "redox", target_os = "fuchsia")))]
 pub fn truncate<P: ?Sized + NixPath>(path: &P, len: off_t) -> Result<()> {
     let res = path
-        .with_nix_path(|cstr| unsafe { libc::truncate(cstr.as_ptr(), len) })?;
+        .with_nix_path(|cstr| unsafe {
+            largefile_fn![libc::truncate](cstr.as_ptr(), len)
+        })?;
 
     Errno::result(res).map(drop)
 }
@@ -1257,7 +1260,9 @@ pub fn truncate<P: ?Sized + NixPath>(path: &P, len: off_t) -> Result<()> {
 /// See also
 /// [ftruncate(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/ftruncate.html)
 pub fn ftruncate<Fd: AsFd>(fd: Fd, len: off_t) -> Result<()> {
-    Errno::result(unsafe { libc::ftruncate(fd.as_fd().as_raw_fd(), len) }).map(drop)
+    Errno::result(unsafe {
+        largefile_fn![libc::ftruncate](fd.as_fd().as_raw_fd(), len)
+    }).map(drop)
 }
 
 pub fn isatty(fd: RawFd) -> Result<bool> {

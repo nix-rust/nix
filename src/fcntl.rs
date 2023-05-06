@@ -1,4 +1,5 @@
 use crate::errno::Errno;
+use crate::off_t;
 use libc::{self, c_char, c_int, c_uint, size_t, ssize_t};
 use std::ffi::OsString;
 #[cfg(not(target_os = "redox"))]
@@ -199,7 +200,7 @@ pub fn open<P: ?Sized + NixPath>(
     mode: Mode,
 ) -> Result<RawFd> {
     let fd = path.with_nix_path(|cstr| unsafe {
-        libc::open(cstr.as_ptr(), oflag.bits(), mode.bits() as c_uint)
+        largefile_fn![libc::open](cstr.as_ptr(), oflag.bits(), mode.bits() as c_uint)
     })?;
 
     Errno::result(fd)
@@ -215,7 +216,7 @@ pub fn openat<P: ?Sized + NixPath>(
     mode: Mode,
 ) -> Result<RawFd> {
     let fd = path.with_nix_path(|cstr| unsafe {
-        libc::openat(dirfd, cstr.as_ptr(), oflag.bits(), mode.bits() as c_uint)
+        largefile_fn![libc::openat](dirfd, cstr.as_ptr(), oflag.bits(), mode.bits() as c_uint)
     })?;
     Errno::result(fd)
 }
@@ -746,10 +747,10 @@ feature! {
 pub fn fallocate(
     fd: RawFd,
     mode: FallocateFlags,
-    offset: libc::off_t,
-    len: libc::off_t,
+    offset: off_t,
+    len: off_t,
 ) -> Result<()> {
-    let res = unsafe { libc::fallocate(fd, mode.bits(), offset, len) };
+    let res = unsafe { largefile_fn![libc::fallocate](fd, mode.bits(), offset, len) };
     Errno::result(res).map(drop)
 }
 
@@ -901,6 +902,7 @@ pub fn fspacectl_all(
 mod posix_fadvise {
     use crate::errno::Errno;
     use crate::Result;
+    use crate::off_t;
     use std::os::unix::io::RawFd;
 
     #[cfg(feature = "fs")]
@@ -922,11 +924,13 @@ mod posix_fadvise {
     #![feature = "fs"]
     pub fn posix_fadvise(
         fd: RawFd,
-        offset: libc::off_t,
-        len: libc::off_t,
+        offset: off_t,
+        len: off_t,
         advice: PosixFadviseAdvice,
     ) -> Result<()> {
-        let res = unsafe { libc::posix_fadvise(fd, offset, len, advice as libc::c_int) };
+        let res = unsafe {
+            largefile_fn![libc::posix_fadvise](fd, offset, len, advice as libc::c_int)
+        };
 
         if res == 0 {
             Ok(())
@@ -948,10 +952,10 @@ mod posix_fadvise {
 ))]
 pub fn posix_fallocate(
     fd: RawFd,
-    offset: libc::off_t,
-    len: libc::off_t,
+    offset: off_t,
+    len: off_t,
 ) -> Result<()> {
-    let res = unsafe { libc::posix_fallocate(fd, offset, len) };
+    let res = unsafe { largefile_fn![libc::posix_fallocate](fd, offset, len) };
     match Errno::result(res) {
         Err(err) => Err(err),
         Ok(0) => Ok(()),

@@ -1,10 +1,11 @@
-use libc::{_exit, mode_t, off_t};
+use libc::{_exit, mode_t};
 use nix::errno::Errno;
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
 use nix::fcntl::readlink;
 use nix::fcntl::OFlag;
 #[cfg(not(target_os = "redox"))]
 use nix::fcntl::{self, open};
+use nix::off_t;
 #[cfg(not(any(
     target_os = "redox",
     target_os = "fuchsia",
@@ -25,7 +26,7 @@ use std::ffi::CString;
 #[cfg(not(target_os = "redox"))]
 use std::fs::DirBuilder;
 use std::fs::{self, File};
-use std::io::Write;
+use std::io::{Seek, Write};
 use std::os::unix::prelude::*;
 #[cfg(not(any(
     target_os = "fuchsia",
@@ -564,6 +565,32 @@ fn test_lseek() {
     assert_eq!(b"f123456", &buf);
 }
 
+#[test]
+fn test_lseek_largefile() {
+    require_largefile!("test_lseek_largefile");
+
+    const CONTENTS: &[u8] = b"The example text";
+    let mut tmp = tempfile().unwrap();
+    let start: u64 = 0xffff_fffc; // 4 bytes before exceeding 32-bit capacity
+    let offset: off_t = (start + 4).try_into().unwrap();
+
+    // The version of seek in std::io supports 64-bit offsets, so we
+    // use that to write contents to the file. Many platforms and filesystems
+    // support files with holes, which allows them to avoid writing the ~4GiB
+    // before the content we are writing. However, it is possible for the seek
+    // or write to fail (e.g. on platforms that actually do not support large
+    // files), in which case we provide a descriptive message to indicate that
+    // we were unable to test the part we're actually interested in.
+    tmp.seek(std::io::SeekFrom::Start(start))
+        .expect("Cannot test lseek with large offsets: std::io seek failed");
+    tmp.write_all(CONTENTS)
+        .expect("Cannot test lseek with large offsets: write_all failed");
+    assert!(lseek(tmp.as_raw_fd(), offset, Whence::SeekSet).is_ok());
+    let mut buf = [0u8; 12];
+    crate::read_exact(&tmp, &mut buf);
+    assert_eq!(b"example text", &buf);
+}
+
 #[cfg(any(target_os = "linux", target_os = "android"))]
 #[test]
 fn test_lseek64() {
@@ -768,6 +795,20 @@ fn test_truncate() {
 }
 
 #[test]
+#[cfg(not(any(target_os = "redox", target_os = "fuchsia")))]
+fn test_truncate_largefile() {
+    require_largefile!("test_truncate_largefile");
+
+    let tempdir = tempdir().unwrap();
+    let path = tempdir.path().join("file");
+    File::create(&path).unwrap();
+    let length = (0x1_0000_0008u64).try_into().unwrap();
+    truncate(&path, length).unwrap();
+    let metadata = fs::metadata(&path).unwrap();
+    assert_eq!(0x1_0000_0008, metadata.len());
+}
+
+#[test]
 fn test_ftruncate() {
     let tempdir = tempdir().unwrap();
     let path = tempdir.path().join("file");
@@ -781,6 +822,17 @@ fn test_ftruncate() {
 
     let metadata = fs::metadata(&path).unwrap();
     assert_eq!(2, metadata.len());
+}
+
+#[test]
+fn test_ftruncate_largefile() {
+    require_largefile!("test_ftruncate_largefile");
+
+    let tmp = tempfile().unwrap();
+    let length = (0x1_0000_000cu64).try_into().unwrap();
+    ftruncate(&tmp, length).unwrap();
+    let metadata = tmp.metadata().unwrap();
+    assert_eq!(0x1_0000_000c, metadata.len());
 }
 
 // Used in `test_alarm`.

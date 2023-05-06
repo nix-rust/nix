@@ -1,13 +1,14 @@
 //! Memory management declarations.
 
 use crate::errno::Errno;
+use crate::off_t;
 #[cfg(not(target_os = "android"))]
 use crate::NixPath;
 use crate::Result;
 #[cfg(not(target_os = "android"))]
 #[cfg(feature = "fs")]
 use crate::{fcntl::OFlag, sys::stat::Mode};
-use libc::{self, c_int, c_void, off_t, size_t};
+use libc::{self, c_int, c_void, size_t};
 use std::{num::NonZeroUsize, os::unix::io::{AsRawFd, AsFd}};
 
 libc_bitflags! {
@@ -428,8 +429,13 @@ pub unsafe fn mmap<F: AsFd>(
         addr.map_or(std::ptr::null_mut(), |a| usize::from(a) as *mut c_void);
 
     let fd = f.map(|f| f.as_fd().as_raw_fd()).unwrap_or(-1);
-    let ret =
-        libc::mmap(ptr, length.into(), prot.bits(), flags.bits(), fd, offset);
+    let ret = largefile_fn![libc::mmap](
+        ptr, length.into(),
+        prot.bits(),
+        flags.bits(),
+        fd,
+        offset,
+    );
 
     if ret == libc::MAP_FAILED {
         Err(Errno::last())

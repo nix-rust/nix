@@ -32,6 +32,20 @@ cfg_if! {
     }
 }
 
+/// Skip the test if we cannot handle offsets larger than 32 bits.
+#[macro_export]
+macro_rules! require_largefile {
+    ($name:expr) => {
+        if (nix::off_t::MAX >> 31) <= 1 {
+            crate::skip!(
+                "{} requires file offsets \
+                          larger than 32 bits. Skipping test.",
+                $name
+            );
+        }
+    };
+}
+
 /// Skip the test if we don't have the ability to mount file systems.
 #[cfg(target_os = "freebsd")]
 #[macro_export]
