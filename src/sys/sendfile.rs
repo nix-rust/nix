@@ -126,6 +126,8 @@ cfg_if! {
 
 cfg_if! {
     if #[cfg(target_os = "freebsd")] {
+        use libc::c_int;
+
         libc_bitflags!{
             /// Configuration options for [`sendfile`.](fn.sendfile.html)
             pub struct SfFlags: c_int {
