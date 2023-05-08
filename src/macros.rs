@@ -343,20 +343,20 @@ cfg_if! {
         /// identifier of the corresponding I/O function with large file
         /// support.
         macro_rules! largefile_fn {
-            [libc::fallocate] => (libc::fallocate64);
-            [libc::ftruncate] => (libc::ftruncate64);
-            [libc::lseek] => (libc::lseek64);
-            [libc::mmap] => (libc::mmap64);
-            [libc::open] => (libc::open64);
-            [libc::openat] => (libc::openat64);
-            [libc::posix_fadvise] => (libc::posix_fadvise64);
-            [libc::posix_fallocate] => (libc::posix_fallocate64);
-            [libc::pread] => (libc::pread64);
-            [libc::preadv] => (libc::preadv64);
-            [libc::pwrite] => (libc::pwrite64);
-            [libc::pwritev] => (libc::pwritev64);
-            [libc::sendfile] => (libc::sendfile64);
-            [libc::truncate] => (libc::truncate64);
+            [fallocate] => (libc::fallocate64);
+            [ftruncate] => (libc::ftruncate64);
+            [lseek] => (libc::lseek64);
+            [mmap] => (libc::mmap64);
+            [open] => (libc::open64);
+            [openat] => (libc::openat64);
+            [posix_fadvise] => (libc::posix_fadvise64);
+            [posix_fallocate] => (libc::posix_fallocate64);
+            [pread] => (libc::pread64);
+            [preadv] => (libc::preadv64);
+            [pwrite] => (libc::pwrite64);
+            [pwritev] => (libc::pwritev64);
+            [sendfile] => (libc::sendfile64);
+            [truncate] => (libc::truncate64);
         }
     } else {
         /// Function variant that supports large file positions.

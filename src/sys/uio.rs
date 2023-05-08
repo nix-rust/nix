@@ -51,7 +51,7 @@ pub fn pwritev<Fd: AsFd>(fd: Fd, iov: &[IoSlice<'_>], offset: off_t) -> Result<u
 
     // SAFETY: same as in writev()
     let res = unsafe {
-        largefile_fn![libc::pwritev](
+        largefile_fn![pwritev](
             fd.as_fd().as_raw_fd(),
             iov.as_ptr() as *const libc::iovec,
             iov.len() as c_int,
@@ -81,7 +81,7 @@ pub fn preadv<Fd: AsFd>(
 
     // SAFETY: same as in readv()
     let res = unsafe {
-        largefile_fn![libc::preadv](
+        largefile_fn![preadv](
             fd.as_fd().as_raw_fd(),
             iov.as_ptr() as *const libc::iovec,
             iov.len() as c_int,
@@ -98,7 +98,7 @@ pub fn preadv<Fd: AsFd>(
 // TODO: move to unistd
 pub fn pwrite<Fd: AsFd>(fd: Fd, buf: &[u8], offset: off_t) -> Result<usize> {
     let res = unsafe {
-        largefile_fn![libc::pwrite](
+        largefile_fn![pwrite](
             fd.as_fd().as_raw_fd(),
             buf.as_ptr() as *const c_void,
             buf.len() as size_t,
@@ -115,7 +115,7 @@ pub fn pwrite<Fd: AsFd>(fd: Fd, buf: &[u8], offset: off_t) -> Result<usize> {
 // TODO: move to unistd
 pub fn pread<Fd: AsFd>(fd: Fd, buf: &mut [u8], offset: off_t) -> Result<usize> {
     let res = unsafe {
-        largefile_fn![libc::pread](
+        largefile_fn![pread](
             fd.as_fd().as_raw_fd(),
             buf.as_mut_ptr() as *mut c_void,
             buf.len() as size_t,

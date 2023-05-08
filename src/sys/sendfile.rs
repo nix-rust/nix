@@ -34,7 +34,7 @@ pub fn sendfile<F1: AsFd, F2: AsFd>(
         .map(|offset| offset as *mut _)
         .unwrap_or(ptr::null_mut());
     let ret = unsafe {
-        largefile_fn![libc::sendfile](
+        largefile_fn![sendfile](
             out_fd.as_fd().as_raw_fd(),
             in_fd.as_fd().as_raw_fd(),
             offset,

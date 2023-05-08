@@ -429,7 +429,7 @@ pub unsafe fn mmap<F: AsFd>(
         addr.map_or(std::ptr::null_mut(), |a| usize::from(a) as *mut c_void);
 
     let fd = f.map(|f| f.as_fd().as_raw_fd()).unwrap_or(-1);
-    let ret = largefile_fn![libc::mmap](
+    let ret = largefile_fn![mmap](
         ptr, length.into(),
         prot.bits(),
         flags.bits(),

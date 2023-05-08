@@ -200,7 +200,7 @@ pub fn open<P: ?Sized + NixPath>(
     mode: Mode,
 ) -> Result<RawFd> {
     let fd = path.with_nix_path(|cstr| unsafe {
-        largefile_fn![libc::open](cstr.as_ptr(), oflag.bits(), mode.bits() as c_uint)
+        largefile_fn![open](cstr.as_ptr(), oflag.bits(), mode.bits() as c_uint)
     })?;
 
     Errno::result(fd)
@@ -216,7 +216,7 @@ pub fn openat<P: ?Sized + NixPath>(
     mode: Mode,
 ) -> Result<RawFd> {
     let fd = path.with_nix_path(|cstr| unsafe {
-        largefile_fn![libc::openat](dirfd, cstr.as_ptr(), oflag.bits(), mode.bits() as c_uint)
+        largefile_fn![openat](dirfd, cstr.as_ptr(), oflag.bits(), mode.bits() as c_uint)
     })?;
     Errno::result(fd)
 }
@@ -750,7 +750,7 @@ pub fn fallocate(
     offset: off_t,
     len: off_t,
 ) -> Result<()> {
-    let res = unsafe { largefile_fn![libc::fallocate](fd, mode.bits(), offset, len) };
+    let res = unsafe { largefile_fn![fallocate](fd, mode.bits(), offset, len) };
     Errno::result(res).map(drop)
 }
 
@@ -929,7 +929,7 @@ mod posix_fadvise {
         advice: PosixFadviseAdvice,
     ) -> Result<()> {
         let res = unsafe {
-            largefile_fn![libc::posix_fadvise](fd, offset, len, advice as libc::c_int)
+            largefile_fn![posix_fadvise](fd, offset, len, advice as libc::c_int)
         };
 
         if res == 0 {
@@ -955,7 +955,7 @@ pub fn posix_fallocate(
     offset: off_t,
     len: off_t,
 ) -> Result<()> {
-    let res = unsafe { largefile_fn![libc::posix_fallocate](fd, offset, len) };
+    let res = unsafe { largefile_fn![posix_fallocate](fd, offset, len) };
     match Errno::result(res) {
         Err(err) => Err(err),
         Ok(0) => Ok(()),

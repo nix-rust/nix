@@ -1169,7 +1169,7 @@ pub enum Whence {
 ///
 /// See also [lseek(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/lseek.html)
 pub fn lseek(fd: RawFd, offset: off_t, whence: Whence) -> Result<off_t> {
-    let res = unsafe { largefile_fn![libc::lseek](fd, offset, whence as i32) };
+    let res = unsafe { largefile_fn![lseek](fd, offset, whence as i32) };
 
     Errno::result(res).map(|r| r as off_t)
 }
@@ -1249,7 +1249,7 @@ pub fn pipe2(flags: OFlag) -> Result<(RawFd, RawFd)> {
 pub fn truncate<P: ?Sized + NixPath>(path: &P, len: off_t) -> Result<()> {
     let res = path
         .with_nix_path(|cstr| unsafe {
-            largefile_fn![libc::truncate](cstr.as_ptr(), len)
+            largefile_fn![truncate](cstr.as_ptr(), len)
         })?;
 
     Errno::result(res).map(drop)
@@ -1261,7 +1261,7 @@ pub fn truncate<P: ?Sized + NixPath>(path: &P, len: off_t) -> Result<()> {
 /// [ftruncate(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/ftruncate.html)
 pub fn ftruncate<Fd: AsFd>(fd: Fd, len: off_t) -> Result<()> {
     Errno::result(unsafe {
-        largefile_fn![libc::ftruncate](fd.as_fd().as_raw_fd(), len)
+        largefile_fn![ftruncate](fd.as_fd().as_raw_fd(), len)
     }).map(drop)
 }
 
