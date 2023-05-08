@@ -38,6 +38,8 @@ fn test_mmap_largefile() {
     }
     as i64;
     let pages_in_32bits = 1_0000_0000i64 / pagesize;
+    // Silence Clippy warning - offset's type varies by platform.
+    #[allow(clippy::useless_conversion)]
     let offset = ((pages_in_32bits + 2) * pagesize).try_into().unwrap();
     // Create a file, seek to offset, and write some bytes.
     let file = tempfile().unwrap();
