@@ -342,6 +342,7 @@ cfg_if! {
         /// the identifier of a standard I/O function and returns the
         /// identifier of the corresponding I/O function with large file
         /// support.
+        #[allow(unused_macro_rules)]
         macro_rules! largefile_fn {
             [fallocate] => (libc::fallocate64);
             [ftruncate] => (libc::ftruncate64);
