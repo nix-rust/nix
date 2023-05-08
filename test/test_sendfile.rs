@@ -1,3 +1,4 @@
+#[cfg(any(target_os = "android", target_os = "linux"))]
 use crate::require_largefile;
 use std::io::prelude::*;
 #[cfg(any(target_os = "android", target_os = "linux"))]
