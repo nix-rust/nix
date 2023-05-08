@@ -37,7 +37,7 @@ cfg_if! {
 macro_rules! require_largefile {
     ($name:expr) => {
         if (nix::off_t::MAX >> 31) <= 1 {
-            crate::skip!(
+            $crate::skip!(
                 "{} requires file offsets \
                           larger than 32 bits. Skipping test.",
                 $name
