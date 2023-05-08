@@ -369,7 +369,7 @@ cfg_if! {
         /// identifier of the corresponding I/O function with large file
         /// support.
         macro_rules! largefile_fn {
-            [$id:ident] => ($id);
+            [$id:ident] => (libc::$id);
         }
     }
 }
