@@ -30,13 +30,13 @@ fn test_mmap_largefile() {
 
     // Calculate an offset that requires more than 32 bits to represent
     // and is a multiple of the page size.
+    #[allow(clippy::unnecessary_cast)] // Some platforms need the cast.
     let pagesize = match sysconf(SysconfVar::PAGE_SIZE) {
         Ok(Some(x)) => x,
         _ => {
             skip!("test_mmap_largefile: Could not determine page size. Skipping test.");
         }
-    }
-    as i64;
+    } as i64;
     let pages_in_32bits = 1_0000_0000i64 / pagesize;
     // Silence Clippy warning - offset's type varies by platform.
     #[allow(clippy::useless_conversion)]
