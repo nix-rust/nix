@@ -1,5 +1,4 @@
 use crate::errno::Errno;
-use crate::off_t;
 use libc::{self, c_char, c_int, c_uint, size_t, ssize_t};
 use std::ffi::OsString;
 #[cfg(not(target_os = "redox"))]
@@ -11,6 +10,17 @@ use std::os::unix::io::RawFd;
 use crate::{sys::stat::Mode, NixPath, Result};
 #[cfg(any(target_os = "android", target_os = "linux"))]
 use std::ptr; // For splice and copy_file_range
+
+#[cfg(any(
+    target_os = "linux",
+    target_os = "android",
+    target_os = "dragonfly",
+    target_os = "emscripten",
+    target_os = "fuchsia",
+    target_os = "wasi",
+    target_os = "freebsd"
+))]
+use crate::off_t;
 
 #[cfg(any(
     target_os = "linux",
@@ -758,7 +768,7 @@ pub fn fallocate(
 /// the file offset, and the second is the length of the region.
 #[cfg(any(target_os = "freebsd"))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct SpacectlRange(pub libc::off_t, pub libc::off_t);
+pub struct SpacectlRange(pub off_t, pub off_t);
 
 #[cfg(any(target_os = "freebsd"))]
 impl SpacectlRange {
@@ -768,12 +778,12 @@ impl SpacectlRange {
     }
 
     #[inline]
-    pub fn len(&self) -> libc::off_t {
+    pub fn len(&self) -> off_t {
         self.1
     }
 
     #[inline]
-    pub fn offset(&self) -> libc::off_t {
+    pub fn offset(&self) -> off_t {
         self.0
     }
 }
@@ -868,8 +878,8 @@ pub fn fspacectl(fd: RawFd, range: SpacectlRange) -> Result<SpacectlRange> {
 #[cfg(target_os = "freebsd")]
 pub fn fspacectl_all(
     fd: RawFd,
-    offset: libc::off_t,
-    len: libc::off_t,
+    offset: off_t,
+    len: off_t,
 ) -> Result<()> {
     let mut rqsr = libc::spacectl_range {
         r_offset: offset,
