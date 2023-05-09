@@ -1,16 +1,18 @@
+#[cfg(not(target_os = "redox"))]
 use crate::require_largefile;
 use nix::sys::uio::*;
 use nix::unistd::*;
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
 use std::fs::OpenOptions;
-use std::io::{IoSlice, Read, Seek, SeekFrom, Write};
+use std::io::{IoSlice, Write};
+#[cfg(not(target_os = "redox"))]
 use std::os::unix::fs::FileExt;
 use std::os::unix::io::{FromRawFd, OwnedFd};
 use std::{cmp, iter};
 
 #[cfg(not(target_os = "redox"))]
-use std::io::IoSliceMut;
+use std::io::{IoSliceMut, Read, Seek, SeekFrom};
 
 use tempfile::tempdir;
 #[cfg(not(target_os = "redox"))]

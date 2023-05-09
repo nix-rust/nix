@@ -1,3 +1,4 @@
+use cfg_if::cfg_if;
 use libc::{_exit, mode_t};
 use nix::errno::Errno;
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]

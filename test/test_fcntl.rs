@@ -1,3 +1,4 @@
+#[cfg(not(target_os = "redox"))]
 use crate::require_largefile;
 #[cfg(not(target_os = "redox"))]
 use nix::errno::*;
@@ -30,6 +31,7 @@ use std::os::unix::fs;
 use tempfile::{self, tempdir, NamedTempFile};
 
 #[test]
+#[cfg(not(target_os = "redox"))]
 fn test_open_largefile() {
     // Checks that files opened with open can grow beyond 32-bit file size.
     // On some platforms, this requires opening the file with an alternative
