@@ -1,5 +1,6 @@
 #[cfg(any(target_os = "android", target_os = "linux"))]
 use crate::require_largefile;
+use cfg_if::cfg_if;
 use std::io::prelude::*;
 #[cfg(any(target_os = "android", target_os = "linux"))]
 use std::os::unix::io::{AsRawFd, FromRawFd, OwnedFd};
