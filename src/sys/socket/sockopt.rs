@@ -1059,6 +1059,138 @@ sockopt_impl!(
     bool
 );
 
+// Documented on `man 7 netlink`
+#[cfg(any(target_os = "android", target_os = "linux"))]
+sockopt_impl!(
+    /// Add socket to group
+    NetlinkAddMembership,
+    SetOnly,
+    libc::SOL_NETLINK,
+    libc::NETLINK_ADD_MEMBERSHIP,
+    libc::c_uint
+);
+#[cfg(any(target_os = "android", target_os = "linux"))]
+sockopt_impl!(
+    /// Drop socket from group
+    NetlinkDropMembership,
+    SetOnly,
+    libc::SOL_NETLINK,
+    libc::NETLINK_DROP_MEMBERSHIP,
+    libc::c_uint
+);
+#[cfg(any(target_os = "android", target_os = "linux"))]
+sockopt_impl!(
+    /// Enable packet info control messages
+    NetlinkPacketInfo,
+    Both,
+    libc::SOL_NETLINK,
+    libc::NETLINK_PKTINFO,
+    bool
+);
+#[cfg(any(target_os = "android", target_os = "linux"))]
+sockopt_impl!(
+    /// Send broadcast errors
+    NetlinkBroadcastError,
+    Both,
+    libc::SOL_NETLINK,
+    libc::NETLINK_BROADCAST_ERROR,
+    bool
+);
+#[cfg(any(target_os = "android", target_os = "linux"))]
+sockopt_impl!(
+    /// Avoid receiving 'ENOBUFS' errors
+    NetlinkNoEnobufs,
+    Both,
+    libc::SOL_NETLINK,
+    libc::NETLINK_NO_ENOBUFS,
+    bool
+);
+#[cfg(any(target_os = "android", target_os = "linux"))]
+sockopt_impl!(
+    /// Listen to notifications from all network namespaces
+    NetlinkListenAllNsid,
+    SetOnly,
+    libc::SOL_NETLINK,
+    libc::NETLINK_LISTEN_ALL_NSID,
+    bool
+);
+#[cfg(any(target_os = "android", target_os = "linux"))]
+sockopt_impl!(
+    /// Trim the extack if needed
+    NetlinkCapAck,
+    Both,
+    libc::SOL_NETLINK,
+    libc::NETLINK_CAP_ACK,
+    bool
+);
+#[cfg(any(target_os = "android", target_os = "linux"))]
+sockopt_impl!(
+    /// Always send extack
+    NetlinkExtAck,
+    Both,
+    libc::SOL_NETLINK,
+    libc::NETLINK_EXT_ACK,
+    bool
+);
+#[cfg(any(target_os = "android", target_os = "linux"))]
+sockopt_impl!(
+    /// Get strict check
+    NetlinkGetStrictCheck,
+    Both,
+    libc::SOL_NETLINK,
+    libc::NETLINK_GET_STRICT_CHK,
+    bool
+);
+
+/// List netlink groups
+/// The returned Vec contains a bit set in chunks of u32.
+#[cfg(any(target_os = "android", target_os = "linux"))]
+#[derive(Copy, Clone, Debug)]
+pub struct NetlinkListMemberships;
+
+#[cfg(any(target_os = "android", target_os = "linux"))]
+impl GetSockOpt for NetlinkListMemberships {
+    type Val = Vec<u32>;
+
+    fn get<F: AsFd>(&self, fd: &F) -> Result<Self::Val> {
+        let mut len = 0;
+        // Get membership length
+        let res = unsafe {
+            libc::getsockopt(
+                fd.as_fd().as_raw_fd(),
+                libc::SOL_NETLINK,
+                libc::NETLINK_LIST_MEMBERSHIPS,
+                ::std::ptr::null_mut(),
+                &mut len,
+            )
+        };
+        Errno::result(res)?;
+        loop {
+            let mut val = vec![0u32; (len as usize) / mem::size_of::<u32>()];
+            if !val.is_empty() {
+                let old_len = len;
+                // Get the members
+                let res = unsafe {
+                    libc::getsockopt(
+                        fd.as_fd().as_raw_fd(),
+                        libc::SOL_NETLINK,
+                        libc::NETLINK_LIST_MEMBERSHIPS,
+                        val.as_mut_ptr() as *mut libc::c_void,
+                        &mut len,
+                    )
+                };
+                if old_len != len {
+                    continue;
+                } else {
+                    return Errno::result(res).and(Ok(val));
+                }
+            } else {
+                return Ok(val);
+            }
+        }
+    }
+}
+
 #[allow(missing_docs)]
 // Not documented by Linux!
 #[cfg(any(target_os = "android", target_os = "linux"))]
@@ -1474,5 +1606,54 @@ mod test {
         listen(&s, 10).unwrap();
         let s_listening2 = getsockopt(&s, super::AcceptConn).unwrap();
         assert!(s_listening2);
+    }
+
+    #[cfg_attr(qemu, ignore)]
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[test]
+    fn netlink_list_memberships() {
+        use super::super::*;
+        use crate::unistd::close;
+
+        let s = socket(
+            AddressFamily::Netlink,
+            SockType::Raw,
+            SockFlag::empty(),
+            SockProtocol::NetlinkRoute,
+        )
+        .unwrap();
+
+        let groups = {
+            setsockopt(&s, super::NetlinkAddMembership, &22).unwrap();
+            setsockopt(&s, super::NetlinkAddMembership, &27).unwrap();
+            getsockopt(&s, super::NetlinkListMemberships).unwrap()
+        };
+
+        let bitfield = 0b0000_0100_0010_0000_0000_0000_0000_0000;
+
+        assert!((groups[0] ^ bitfield) == 0);
+
+        close(s.as_fd().as_raw_fd()).unwrap();
+    }
+
+    #[cfg_attr(qemu, ignore)]
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[test]
+    fn netlink_empty_list_memberships() {
+        use super::super::*;
+        use crate::unistd::close;
+
+        let s = socket(
+            AddressFamily::Netlink,
+            SockType::Raw,
+            SockFlag::empty(),
+            SockProtocol::NetlinkRoute,
+        )
+        .unwrap();
+
+        let groups = getsockopt(&s, super::NetlinkListMemberships).unwrap();
+        assert!(groups.is_empty());
+
+        close(s.as_fd().as_raw_fd()).unwrap();
     }
 }

@@ -48,6 +48,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   ([#2097](https://github.com/nix-rust/nix/pull/2097))
 - Add the ability to set `kevent_flags` on `SigEvent`.
   ([#1731](https://github.com/nix-rust/nix/pull/1731))
+- Added Netlink socket options for Android and Linux.
+  ([#2036](https://github.com/nix-rust/nix/pull/2036))
 
 ### Changed
 
