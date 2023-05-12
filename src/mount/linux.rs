@@ -2,6 +2,9 @@ use crate::errno::Errno;
 use crate::{NixPath, Result};
 use libc::{self, c_int, c_ulong};
 
+#[cfg(all(target_os = "linux", target_env = "gnu"))]
+pub mod mntent;
+
 libc_bitflags!(
     /// Used with [`mount`].
     pub struct MsFlags: c_ulong {
@@ -85,7 +88,7 @@ libc_bitflags!(
         MNT_DETACH;
         /// Mark the mount point as expired.
         MNT_EXPIRE;
-        /// Don't dereference `target` if it is a symlink.  
+        /// Don't dereference `target` if it is a symlink.
         UMOUNT_NOFOLLOW;
     }
 );

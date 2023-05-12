@@ -16,6 +16,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Added `mq_timedreceive` to `::nix::mqueue`.
   ([#1966])(https://github.com/nix-rust/nix/pull/1966)
 - Added `LocalPeerPid` to `nix::sys::socket::sockopt` for macOS. ([#1967](https://github.com/nix-rust/nix/pull/1967))
+- Added `setmntent(2)`, `getmntent` and `endmntent` as an iterator for Linux
+  ([#1988](https://github.com/nix-rust/nix/pull/1988))
 
 ### Changed
 
@@ -117,7 +119,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   ([#1824](https://github.com/nix-rust/nix/pull/1824))
 - Workaround XNU bug causing netmasks returned by `getifaddrs` to misbehave.
   ([#1788](https://github.com/nix-rust/nix/pull/1788))
-  
+
 ### Removed
 
 - Removed deprecated error constants and conversions.
