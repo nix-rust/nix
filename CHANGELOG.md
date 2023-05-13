@@ -34,6 +34,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   ([#1943](https://github.com/nix-rust/nix/pull/1943))
 - `nix::socket` and `nix::select` are now available on Redox.
   ([#2012](https://github.com/nix-rust/nix/pull/2012))
+- `sendmmsg` now lets you to specify different control messages for every address
+  ([#2038](https://github.com/nix-rust/nix/pull/2038))
 
 ### Fixed
 - Fix: send `ETH_P_ALL` in htons format 
