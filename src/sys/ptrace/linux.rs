@@ -115,10 +115,10 @@ libc_enum! {
         #[cfg(all(target_os = "linux", not(any(target_arch = "mips",
                                                target_arch = "mips64"))))]
         PTRACE_PEEKSIGINFO,
-        #[cfg(all(target_os = "linux", target_env = "gnu",
+        #[cfg(all(target_os = "linux", any(target_env = "gnu", target_env="musl"),
                   any(target_arch = "x86", target_arch = "x86_64")))]
         PTRACE_SYSEMU,
-        #[cfg(all(target_os = "linux", target_env = "gnu",
+        #[cfg(all(target_os = "linux", any(target_env = "gnu", target_env="musl"),
                   any(target_arch = "x86", target_arch = "x86_64")))]
         PTRACE_SYSEMU_SINGLESTEP,
     }
@@ -347,7 +347,7 @@ pub fn syscall<T: Into<Option<Signal>>>(pid: Pid, sig: T) -> Result<()> {
 /// optionally delivering a signal specified by `sig`.
 #[cfg(all(
     target_os = "linux",
-    target_env = "gnu",
+    any(target_env = "gnu", target_env = "musl"),
     any(target_arch = "x86", target_arch = "x86_64")
 ))]
 pub fn sysemu<T: Into<Option<Signal>>>(pid: Pid, sig: T) -> Result<()> {
@@ -498,7 +498,7 @@ pub fn step<T: Into<Option<Signal>>>(pid: Pid, sig: T) -> Result<()> {
 /// Optionally, the signal specified by `sig` is delivered to the tracee upon continuation.
 #[cfg(all(
     target_os = "linux",
-    target_env = "gnu",
+    any(target_env = "gnu", target_env = "musl"),
     any(target_arch = "x86", target_arch = "x86_64")
 ))]
 pub fn sysemu_step<T: Into<Option<Signal>>>(pid: Pid, sig: T) -> Result<()> {
