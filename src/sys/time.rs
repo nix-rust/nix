@@ -93,6 +93,7 @@ pub(crate) mod timer {
         /// Flags that are used for arming the timer.
         pub struct TimerSetTimeFlags: libc::c_int {
             const TFD_TIMER_ABSTIME = libc::TFD_TIMER_ABSTIME;
+            const TFD_TIMER_CANCEL_ON_SET = libc::TFD_TIMER_CANCEL_ON_SET;
         }
     }
     #[cfg(any(
