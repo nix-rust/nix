@@ -1609,7 +1609,7 @@ impl<S> MultiHeaders<S> {
     {
         // we will be storing pointers to addresses inside mhdr - convert it into boxed
         // slice so it can'be changed later by pushing anything into self.addresses
-        let mut addresses = vec![std::mem::MaybeUninit::uninit(); num_slices].into_boxed_slice();
+        let mut addresses = vec![std::mem::MaybeUninit::<S>::uninit(); num_slices].into_boxed_slice();
 
         let msg_controllen = cmsg_buffer.as_ref().map_or(0, |v| v.capacity());
 
@@ -1626,7 +1626,9 @@ impl<S> MultiHeaders<S> {
                     Some(v) => ((&v[ix * msg_controllen] as *const u8), msg_controllen),
                     None => (std::ptr::null(), 0),
                 };
-                let msg_hdr = unsafe { pack_mhdr_to_receive(std::ptr::null(), 0, ptr, cap, address.as_mut_ptr()) };
+                let msg_hdr = unsafe {
+                    pack_mhdr_to_receive(std::ptr::null(), 0, ptr, cap, <S as addr::private::SockaddrLikePriv>::as_mut_ptr(address.assume_init_mut()).cast())
+                };
                 libc::mmsghdr {
                     msg_hdr,
                     msg_len: 0,
@@ -1761,7 +1763,7 @@ where
                 mmsghdr.msg_hdr,
                 mmsghdr.msg_len as isize,
                 self.rmm.msg_controllen,
-                address,
+                Some(address),
             )
         })
     }
@@ -1914,7 +1916,7 @@ unsafe fn read_mhdr<'a, 'i, S>(
     mhdr: msghdr,
     r: isize,
     msg_controllen: usize,
-    address: S,
+    address: Option<S>,
 ) -> RecvMsg<'a, 'i, S>
     where S: SockaddrLike
 {
@@ -1933,7 +1935,7 @@ unsafe fn read_mhdr<'a, 'i, S>(
     RecvMsg {
         bytes: r as usize,
         cmsghdr,
-        address: Some(address),
+        address,
         flags: MsgFlags::from_bits_truncate(mhdr.msg_flags),
         mhdr,
         iobufs: std::marker::PhantomData,
@@ -1951,22 +1953,19 @@ unsafe fn read_mhdr<'a, 'i, S>(
 /// headers are not used
 ///
 /// Buffers must remain valid for the whole lifetime of msghdr
-unsafe fn pack_mhdr_to_receive<S>(
+unsafe fn pack_mhdr_to_receive(
     iov_buffer: *const IoSliceMut,
     iov_buffer_len: usize,
     cmsg_buffer: *const u8,
     cmsg_capacity: usize,
-    address: *mut S,
-) -> msghdr
-    where
-        S: SockaddrLike
-{
+    address: *mut libc::sockaddr_storage,
+) -> msghdr {
     // Musl's msghdr has private fields, so this is the only way to
     // initialize it.
     let mut mhdr = mem::MaybeUninit::<msghdr>::zeroed();
     let p = mhdr.as_mut_ptr();
-    (*p).msg_name = (*address).as_mut_ptr() as *mut c_void;
-    (*p).msg_namelen = S::size();
+    (*p).msg_name = address as *mut c_void;
+    (*p).msg_namelen = mem::size_of::<libc::sockaddr_storage>() as u32;
     (*p).msg_iov = iov_buffer as *mut iovec;
     (*p).msg_iovlen = iov_buffer_len as _;
     (*p).msg_control = cmsg_buffer as *mut c_void;
@@ -2048,20 +2047,23 @@ pub fn recvmsg<'a, 'outer, 'inner, S>(fd: RawFd, iov: &'outer mut [IoSliceMut<'i
     where S: SockaddrLike + 'a,
     'inner: 'outer
 {
-    let mut address = mem::MaybeUninit::uninit();
+    let mut address: libc::sockaddr_storage = unsafe { mem::MaybeUninit::zeroed().assume_init() };
+    let address_ptr: *mut libc::sockaddr_storage = &mut address as *mut libc::sockaddr_storage;
 
     let (msg_control, msg_controllen) = cmsg_buffer.as_mut()
         .map(|v| (v.as_mut_ptr(), v.capacity()))
         .unwrap_or((ptr::null_mut(), 0));
     let mut mhdr = unsafe {
-        pack_mhdr_to_receive(iov.as_ref().as_ptr(), iov.len(), msg_control, msg_controllen, address.as_mut_ptr())
+        pack_mhdr_to_receive(iov.as_ref().as_ptr(), iov.len(), msg_control, msg_controllen, address_ptr)
     };
 
     let ret = unsafe { libc::recvmsg(fd, &mut mhdr, flags.bits()) };
 
     let r = Errno::result(ret)?;
 
-    Ok(unsafe { read_mhdr(mhdr, r, msg_controllen, address.assume_init()) })
+    let address = unsafe { S::from_raw(address_ptr.cast::<libc::sockaddr>(), Some(mhdr.msg_namelen)) };
+
+    Ok(unsafe { read_mhdr(mhdr, r, msg_controllen, address) })
 }
 }
 

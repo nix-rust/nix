@@ -1679,7 +1679,7 @@ impl PartialEq for SockaddrStorage {
     }
 }
 
-mod private {
+pub(super) mod private {
     pub trait SockaddrLikePriv {
         /// Returns a mutable raw pointer to the inner structure.
         ///
