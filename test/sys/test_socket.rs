@@ -203,6 +203,50 @@ pub fn test_socketpair() {
 }
 
 #[test]
+pub fn test_recvmsg_sockaddr_un() {
+    use nix::sys::socket::{
+        self, bind, socket, AddressFamily, MsgFlags, SockFlag, SockType,
+    };
+
+    let tempdir = tempfile::tempdir().unwrap();
+    let sockname = tempdir.path().join("sock");
+    let sock = socket(
+        AddressFamily::Unix,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )
+    .expect("socket failed");
+    let sockaddr = UnixAddr::new(&sockname).unwrap();
+    bind(sock, &sockaddr).expect("bind failed");
+
+    // Send a message
+    let send_buffer = "hello".as_bytes();
+    if let Err(e) = socket::sendmsg(
+        sock,
+        &[std::io::IoSlice::new(send_buffer)],
+        &[],
+        MsgFlags::empty(),
+        Some(&sockaddr),
+    ) {
+        print!("Couldn't send ({e:?}), so skipping test");
+        return;
+    }
+
+    // Receive the message
+    let mut recv_buffer = [0u8; 32];
+    let received = socket::recvmsg(
+        sock,
+        &mut [std::io::IoSliceMut::new(&mut recv_buffer)],
+        None,
+        MsgFlags::empty(),
+    )
+    .unwrap();
+    // Check the address in the received message
+    assert_eq!(sockaddr, received.address.unwrap());
+}
+
+#[test]
 pub fn test_std_conversions() {
     use nix::sys::socket::*;
 
