@@ -678,7 +678,7 @@ sockopt_impl!(
     libc::IP6T_SO_ORIGINAL_DST,
     libc::sockaddr_in6
 );
-#[cfg(any(target_os = "linux"))]
+#[cfg(target_os = "linux")]
 sockopt_impl!(
     /// Specifies exact type of timestamping information collected by the kernel
     /// [Further reading](https://www.kernel.org/doc/html/latest/networking/timestamping.html)
@@ -697,7 +697,7 @@ sockopt_impl!(
     libc::SO_TIMESTAMP,
     bool
 );
-#[cfg(all(target_os = "linux"))]
+#[cfg(target_os = "linux")]
 sockopt_impl!(
     /// Enable or disable the receiving of the `SO_TIMESTAMPNS` control message.
     ReceiveTimestampns,

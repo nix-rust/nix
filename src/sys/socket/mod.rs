@@ -229,7 +229,7 @@ pub enum SockProtocol {
     EthAll = (libc::ETH_P_ALL as u16).to_be() as i32,
 }
 
-#[cfg(any(target_os = "linux"))]
+#[cfg(target_os = "linux")]
 libc_bitflags! {
     /// Configuration flags for `SO_TIMESTAMPING` interface
     ///
