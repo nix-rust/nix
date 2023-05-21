@@ -236,7 +236,7 @@ impl SockProtocol {
     #[allow(non_upper_case_globals)]
     pub const CanBcm: SockProtocol = SockProtocol::NetlinkUserSock; // Matches libc::CAN_BCM
 }
-#[cfg(any(target_os = "linux"))]
+#[cfg(target_os = "linux")]
 libc_bitflags! {
     /// Configuration flags for `SO_TIMESTAMPING` interface
     ///
