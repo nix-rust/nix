@@ -1933,7 +1933,7 @@ unsafe fn read_mhdr<'a, 'i, S>(
     // Ignore errors if this socket address has statically-known length
     //
     // This is to ensure that unix socket addresses have their length set appropriately.
-    let _ = unsafe { address.set_length(mhdr.msg_namelen as usize) };
+    let _ = address.set_length(mhdr.msg_namelen as usize);
 
     RecvMsg {
         bytes: r as usize,
