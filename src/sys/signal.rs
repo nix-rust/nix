@@ -9,7 +9,7 @@ use cfg_if::cfg_if;
 use std::fmt;
 use std::mem;
 #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
-use std::os::unix::io::RawFd;
+use std::os::unix::io::BorrowedFd;
 use std::ptr;
 use std::str::FromStr;
 
@@ -980,8 +980,8 @@ pub type type_of_thread_id = libc::pid_t;
 // as a pointer, because neither libc nor the kernel ever dereference it.  nix
 // therefore presents it as an intptr_t, which is how kevent uses it.
 #[cfg(not(any(target_os = "openbsd", target_os = "redox")))]
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub enum SigevNotify {
+#[derive(Clone, Copy, Debug)]
+pub enum SigevNotify <'fd> {
     /// No notification will be delivered
     SigevNone,
     /// Notify by delivering a signal to the process.
@@ -999,7 +999,7 @@ pub enum SigevNotify {
     #[cfg_attr(docsrs, doc(cfg(all())))]
     SigevKevent {
         /// File descriptor of the kqueue to notify.
-        kq: RawFd,
+        kq: BorrowedFd<'fd>,
         /// Will be contained in the kevent's `udata` field.
         udata: libc::intptr_t
     },
@@ -1015,6 +1015,10 @@ pub enum SigevNotify {
         /// structure of the queued signal.
         si_value: libc::intptr_t
     },
+    /// A helper variant to resolve the unused parameter (`'fd`) problem on platforms
+    /// other than FreeBSD and DragonFly.
+    #[doc(hidden)]
+    _Unreachable(std::marker::PhantomData<&'fd std::convert::Infallible>),
 }
 }
 
@@ -1029,6 +1033,8 @@ mod sigevent {
     use super::SigevNotify;
     #[cfg(any(target_os = "freebsd", target_os = "linux"))]
     use super::type_of_thread_id;
+    #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
+    use std::os::unix::io::AsRawFd;
 
     /// Used to request asynchronous notification of the completion of certain
     /// events, such as POSIX AIO and timers.
@@ -1069,12 +1075,13 @@ mod sigevent {
                 #[cfg(all(target_os = "linux", target_env = "uclibc", not(target_arch = "mips")))]
                 SigevNotify::SigevThreadId{..} => libc::SIGEV_THREAD_ID,
                 #[cfg(any(all(target_os = "linux", target_env = "musl"), target_arch = "mips"))]
-                SigevNotify::SigevThreadId{..} => 4  // No SIGEV_THREAD_ID defined
+                SigevNotify::SigevThreadId{..} => 4, // No SIGEV_THREAD_ID defined
+                SigevNotify::_Unreachable(_) => unreachable!("This variant could never be constructed")
             };
             sev.sigev_signo = match sigev_notify {
                 SigevNotify::SigevSignal{ signal, .. } => signal as libc::c_int,
                 #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
-                SigevNotify::SigevKevent{ kq, ..} => kq,
+                SigevNotify::SigevKevent{ kq, ..} => kq.as_raw_fd(),
                 #[cfg(any(target_os = "linux", target_os = "freebsd"))]
                 SigevNotify::SigevThreadId{ signal, .. } => signal as libc::c_int,
                 _ => 0
@@ -1086,6 +1093,7 @@ mod sigevent {
                 SigevNotify::SigevKevent{ udata, .. } => udata as *mut libc::c_void,
                 #[cfg(any(target_os = "freebsd", target_os = "linux"))]
                 SigevNotify::SigevThreadId{ si_value, .. } => si_value as *mut libc::c_void,
+                SigevNotify::_Unreachable(_) => unreachable!("This variant could never be constructed")
             };
             SigEvent::set_tid(&mut sev, &sigev_notify);
             SigEvent{sigevent: sev}
