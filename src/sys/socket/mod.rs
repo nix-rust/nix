@@ -1626,9 +1626,7 @@ impl<S> MultiHeaders<S> {
                     Some(v) => ((&v[ix * msg_controllen] as *const u8), msg_controllen),
                     None => (std::ptr::null(), 0),
                 };
-                let msg_hdr = unsafe {
-                    pack_mhdr_to_receive(std::ptr::null(), 0, ptr, cap, address.assume_init_mut())
-                };
+                let msg_hdr = unsafe { pack_mhdr_to_receive(std::ptr::null(), 0, ptr, cap, address.as_mut_ptr()) };
                 libc::mmsghdr {
                     msg_hdr,
                     msg_len: 0,
@@ -1964,7 +1962,10 @@ unsafe fn pack_mhdr_to_receive<S>(
     cmsg_buffer: *const u8,
     cmsg_capacity: usize,
     address: *mut S,
-) -> msghdr where S: SockaddrLike {
+) -> msghdr
+    where
+        S: SockaddrLike
+{
     // Musl's msghdr has private fields, so this is the only way to
     // initialize it.
     let mut mhdr = mem::MaybeUninit::<msghdr>::zeroed();
@@ -2052,7 +2053,7 @@ pub fn recvmsg<'a, 'outer, 'inner, S>(fd: RawFd, iov: &'outer mut [IoSliceMut<'i
     where S: SockaddrLike + 'a,
     'inner: 'outer
 {
-    let mut address: mem::MaybeUninit<S> = mem::MaybeUninit::zeroed();
+    let mut address = mem::MaybeUninit::zeroed();
 
     let (msg_control, msg_controllen) = cmsg_buffer.as_mut()
         .map(|v| (v.as_mut_ptr(), v.capacity()))
