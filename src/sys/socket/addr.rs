@@ -763,6 +763,22 @@ impl SockaddrLike for UnixAddr {
     {
         mem::size_of::<libc::sockaddr_un>() as libc::socklen_t
     }
+
+    unsafe fn set_length(&mut self, new_length: usize) -> std::result::Result<(), SocketAddressLengthNotDynamic> {
+        cfg_if! {
+            if #[cfg(any(target_os = "android",
+                         target_os = "fuchsia",
+                         target_os = "illumos",
+                         target_os = "linux",
+                         target_os = "redox",
+                ))] {
+                self.sun_len = new_length as u8;
+            } else {
+                self.sun.sun_len = new_length as u8;
+            }
+        };
+        Ok(())
+    }
 }
 
 impl AsRef<libc::sockaddr_un> for UnixAddr {
@@ -912,7 +928,29 @@ pub trait SockaddrLike: private::SockaddrLikePriv {
     {
         mem::size_of::<Self>() as libc::socklen_t
     }
+
+    /// Set the length of this socket address
+    ///
+    /// This method may only be called on socket addresses whose lenghts are dynamic, and it
+    /// returns an error if called on a type whose length is static.
+    ///
+    /// # Safety
+    ///
+    /// `new_length` must be a valid length for this type of address. Specifically, reads of that
+    /// length from `self` must be valid.
+    unsafe fn set_length(&mut self, new_length: usize) -> std::result::Result<(), SocketAddressLengthNotDynamic>;
 }
+
+/// The error returned by [`SockaddrLike::set_length`] on an address whose length is statically
+/// fixed.
+#[derive(Copy, Clone, Debug)]
+pub struct SocketAddressLengthNotDynamic;
+impl fmt::Display for SocketAddressLengthNotDynamic {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("Attempted to set length on socket whose length is statically fixed")
+    }
+}
+impl std::error::Error for SocketAddressLengthNotDynamic {}
 
 impl private::SockaddrLikePriv for () {
     fn as_mut_ptr(&mut self) -> *mut libc::sockaddr {
@@ -945,6 +983,10 @@ impl SockaddrLike for () {
 
     fn len(&self) -> libc::socklen_t {
         0
+    }
+
+    unsafe fn set_length(&mut self, _new_length: usize) -> std::result::Result<(), SocketAddressLengthNotDynamic> {
+        Err(SocketAddressLengthNotDynamic)
     }
 }
 
@@ -1014,6 +1056,10 @@ impl SockaddrLike for SockaddrIn {
             return None;
         }
         Some(Self(ptr::read_unaligned(addr as *const _)))
+    }
+
+    unsafe fn set_length(&mut self, _new_length: usize) -> std::result::Result<(), SocketAddressLengthNotDynamic> {
+        Err(SocketAddressLengthNotDynamic)
     }
 }
 
@@ -1133,6 +1179,10 @@ impl SockaddrLike for SockaddrIn6 {
             return None;
         }
         Some(Self(ptr::read_unaligned(addr as *const _)))
+    }
+
+    unsafe fn set_length(&mut self, _new_length: usize) -> std::result::Result<(), SocketAddressLengthNotDynamic> {
+        Err(SocketAddressLengthNotDynamic)
     }
 }
 
@@ -1359,6 +1409,27 @@ impl SockaddrLike for SockaddrStorage {
             Some(ua) => ua.len(),
             // For all else, we're just a boring SockaddrStorage
             None => mem::size_of_val(self) as libc::socklen_t,
+        }
+    }
+
+    unsafe fn set_length(&mut self, new_length: usize) -> std::result::Result<(), SocketAddressLengthNotDynamic> {
+        match self.as_unix_addr_mut() {
+            Some(addr) => {
+                cfg_if! {
+                    if #[cfg(any(target_os = "android",
+                                 target_os = "fuchsia",
+                                 target_os = "illumos",
+                                 target_os = "linux",
+                                 target_os = "redox",
+                        ))] {
+                        addr.sun_len = new_length as u8;
+                    } else {
+                        addr.sun.sun_len = new_length as u8;
+                    }
+                }
+                Ok(())
+            },
+            None => Err(SocketAddressLengthNotDynamic),
         }
     }
 }
@@ -1754,6 +1825,10 @@ pub mod netlink {
             }
             Some(Self(ptr::read_unaligned(addr as *const _)))
         }
+
+        unsafe fn set_length(&mut self, _new_length: usize) -> std::result::Result<(), SocketAddressLengthNotDynamic> {
+            Err(SocketAddressLengthNotDynamic)
+        }
     }
 
     impl AsRef<libc::sockaddr_nl> for NetlinkAddr {
@@ -1802,6 +1877,10 @@ pub mod alg {
                 return None;
             }
             Some(Self(ptr::read_unaligned(addr as *const _)))
+        }
+
+        unsafe fn set_length(&mut self, _new_length: usize) -> std::result::Result<(), SocketAddressLengthNotDynamic> {
+            Err(SocketAddressLengthNotDynamic)
         }
     }
 
@@ -1902,7 +1981,7 @@ pub mod sys_control {
     use std::{fmt, mem, ptr};
     use std::os::unix::io::RawFd;
     use crate::{Errno, Result};
-    use super::{private, SockaddrLike};
+    use super::{private, SockaddrLike, SocketAddressLengthNotDynamic};
 
     // FIXME: Move type into `libc`
     #[repr(C)]
@@ -1942,6 +2021,10 @@ pub mod sys_control {
                 return None;
             }
             Some(Self(ptr::read_unaligned(addr as *const _)))
+        }
+
+        unsafe fn set_length(&mut self, _new_length: usize) -> std::result::Result<(), SocketAddressLengthNotDynamic> {
+            Err(SocketAddressLengthNotDynamic)
         }
     }
 
@@ -2007,7 +2090,7 @@ pub mod sys_control {
 mod datalink {
     feature! {
     #![feature = "net"]
-    use super::{fmt, mem, private, ptr, SockaddrLike};
+    use super::{fmt, mem, private, ptr, SockaddrLike, SocketAddressLengthNotDynamic};
 
     /// Hardware Address
     #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -2085,6 +2168,10 @@ mod datalink {
             }
             Some(Self(ptr::read_unaligned(addr as *const _)))
         }
+
+        unsafe fn set_length(&mut self, _new_length: usize) -> std::result::Result<(), SocketAddressLengthNotDynamic> {
+            Err(SocketAddressLengthNotDynamic)
+        }
     }
 
     impl AsRef<libc::sockaddr_ll> for LinkAddr {
@@ -2110,7 +2197,7 @@ mod datalink {
 mod datalink {
     feature! {
     #![feature = "net"]
-    use super::{fmt, mem, private, ptr, SockaddrLike};
+    use super::{fmt, mem, private, ptr, SockaddrLike, SocketAddressLengthNotDynamic};
 
     /// Hardware Address
     #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -2209,6 +2296,10 @@ mod datalink {
             }
             Some(Self(ptr::read_unaligned(addr as *const _)))
         }
+
+        unsafe fn set_length(&mut self, _new_length: usize) -> std::result::Result<(), SocketAddressLengthNotDynamic> {
+            Err(SocketAddressLengthNotDynamic)
+        }
     }
 
     impl AsRef<libc::sockaddr_dl> for LinkAddr {
@@ -2256,6 +2347,10 @@ pub mod vsock {
                 return None;
             }
             Some(Self(ptr::read_unaligned(addr as *const _)))
+        }
+
+        unsafe fn set_length(&mut self, _new_length: usize) -> std::result::Result<(), SocketAddressLengthNotDynamic> {
+            Err(SocketAddressLengthNotDynamic)
         }
     }
 

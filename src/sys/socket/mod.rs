@@ -1627,7 +1627,7 @@ impl<S> MultiHeaders<S> {
                     None => (std::ptr::null(), 0),
                 };
                 let msg_hdr = unsafe {
-                    pack_mhdr_to_receive(std::ptr::null(), 0, ptr, cap, <S as addr::private::SockaddrLikePriv>::as_mut_ptr(address.assume_init_mut()).cast())
+                    pack_mhdr_to_receive(std::ptr::null(), 0, ptr, cap, address.assume_init_mut())
                 };
                 libc::mmsghdr {
                     msg_hdr,
@@ -1763,7 +1763,7 @@ where
                 mmsghdr.msg_hdr,
                 mmsghdr.msg_len as isize,
                 self.rmm.msg_controllen,
-                Some(address),
+                address,
             )
         })
     }
@@ -1916,7 +1916,7 @@ unsafe fn read_mhdr<'a, 'i, S>(
     mhdr: msghdr,
     r: isize,
     msg_controllen: usize,
-    address: Option<S>,
+    mut address: S,
 ) -> RecvMsg<'a, 'i, S>
     where S: SockaddrLike
 {
@@ -1932,10 +1932,15 @@ unsafe fn read_mhdr<'a, 'i, S>(
         }.as_ref()
     };
 
+    // Ignore errors if this socket address has statically-known length
+    //
+    // This is to ensure that unix socket addresses have their length set appropriately.
+    let _ = unsafe { address.set_length(mhdr.msg_namelen as usize) };
+
     RecvMsg {
         bytes: r as usize,
         cmsghdr,
-        address,
+        address: Some(address),
         flags: MsgFlags::from_bits_truncate(mhdr.msg_flags),
         mhdr,
         iobufs: std::marker::PhantomData,
@@ -1953,19 +1958,19 @@ unsafe fn read_mhdr<'a, 'i, S>(
 /// headers are not used
 ///
 /// Buffers must remain valid for the whole lifetime of msghdr
-unsafe fn pack_mhdr_to_receive(
+unsafe fn pack_mhdr_to_receive<S>(
     iov_buffer: *const IoSliceMut,
     iov_buffer_len: usize,
     cmsg_buffer: *const u8,
     cmsg_capacity: usize,
-    address: *mut libc::sockaddr_storage,
-) -> msghdr {
+    address: *mut S,
+) -> msghdr where S: SockaddrLike {
     // Musl's msghdr has private fields, so this is the only way to
     // initialize it.
     let mut mhdr = mem::MaybeUninit::<msghdr>::zeroed();
     let p = mhdr.as_mut_ptr();
     (*p).msg_name = address as *mut c_void;
-    (*p).msg_namelen = mem::size_of::<libc::sockaddr_storage>() as u32;
+    (*p).msg_namelen = S::size();
     (*p).msg_iov = iov_buffer as *mut iovec;
     (*p).msg_iovlen = iov_buffer_len as _;
     (*p).msg_control = cmsg_buffer as *mut c_void;
@@ -2047,23 +2052,20 @@ pub fn recvmsg<'a, 'outer, 'inner, S>(fd: RawFd, iov: &'outer mut [IoSliceMut<'i
     where S: SockaddrLike + 'a,
     'inner: 'outer
 {
-    let mut address: libc::sockaddr_storage = unsafe { mem::MaybeUninit::zeroed().assume_init() };
-    let address_ptr: *mut libc::sockaddr_storage = &mut address as *mut libc::sockaddr_storage;
+    let mut address: mem::MaybeUninit<S> = mem::MaybeUninit::zeroed();
 
     let (msg_control, msg_controllen) = cmsg_buffer.as_mut()
         .map(|v| (v.as_mut_ptr(), v.capacity()))
         .unwrap_or((ptr::null_mut(), 0));
     let mut mhdr = unsafe {
-        pack_mhdr_to_receive(iov.as_ref().as_ptr(), iov.len(), msg_control, msg_controllen, address_ptr)
+        pack_mhdr_to_receive(iov.as_ref().as_ptr(), iov.len(), msg_control, msg_controllen, address.as_mut_ptr())
     };
 
     let ret = unsafe { libc::recvmsg(fd, &mut mhdr, flags.bits()) };
 
     let r = Errno::result(ret)?;
 
-    let address = unsafe { S::from_raw(address_ptr.cast::<libc::sockaddr>(), Some(mhdr.msg_namelen)) };
-
-    Ok(unsafe { read_mhdr(mhdr, r, msg_controllen, address) })
+    Ok(unsafe { read_mhdr(mhdr, r, msg_controllen, address.assume_init()) })
 }
 }
 
