@@ -606,6 +606,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   ([#2097](https://github.com/nix-rust/nix/pull/2097))
 - Add the ability to set `kevent_flags` on `SigEvent`.
   ([#1731](https://github.com/nix-rust/nix/pull/1731))
+- Added `IpAddSourceMembership`, `IpDropSourceMembership` to `nix::sys::socket::sockopt` on all platforms except Fuchsia, Haiku, NetBSD, OpenBSD.
+  ([#2008])(https://github.com/nix-rust/nix/pull/2008)
 
 ### Changed
 
