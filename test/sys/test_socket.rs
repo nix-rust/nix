@@ -229,8 +229,7 @@ pub fn test_recvmsg_sockaddr_un() {
         MsgFlags::empty(),
         Some(&sockaddr),
     ) {
-        print!("Couldn't send ({e:?}), so skipping test");
-        return;
+        crate::skip!("Couldn't send ({e:?}), so skipping test");
     }
 
     // Receive the message
