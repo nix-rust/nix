@@ -468,11 +468,11 @@ fn test_source_membership_opts() {
     );
 
     setsockopt(fd, sockopt::IpDropSourceMembership, &request)
-        .expect_err("drop not exist multicast membership sould fail");
+        .expect_err("drop not exist multicast membership should fail");
 
     setsockopt(fd, sockopt::IpAddSourceMembership, &request)
-        .expect("add source specific multicast membership sould succeed");
+        .expect("add source specific multicast membership should succeed");
 
     setsockopt(fd, sockopt::IpDropSourceMembership, &request)
-        .expect("drop source specific multicast membership sould succeed");
+        .expect("drop source specific multicast membership should succeed");
 }
