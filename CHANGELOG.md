@@ -16,6 +16,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Added `mq_timedreceive` to `::nix::mqueue`.
   ([#1966])(https://github.com/nix-rust/nix/pull/1966)
 - Added `LocalPeerPid` to `nix::sys::socket::sockopt` for macOS. ([#1967](https://github.com/nix-rust/nix/pull/1967))
+- Added `IpAddSourceMembership`, `IpDropSourceMembership` to `nix::sys::socket::sockopt` on all platforms except Fuchsia, Haiku, NetBSD, OpenBSD.
+  ([#2008])(https://github.com/nix-rust/nix/pull/2008)
 
 ### Changed
 

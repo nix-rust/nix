@@ -445,3 +445,34 @@ fn test_ipv6_tclass() {
     setsockopt(fd, sockopt::Ipv6TClass, &class).unwrap();
     assert_eq!(getsockopt(fd, sockopt::Ipv6TClass).unwrap(), class);
 }
+
+#[test]
+#[cfg(not(any(
+    target_os = "fuchsia",
+    target_os = "haiku",
+    target_os = "netbsd",
+    target_os = "openbsd"
+)))]
+fn test_source_membership_opts() {
+    let fd = socket(
+        AddressFamily::Inet,
+        SockType::Datagram,
+        SockFlag::empty(),
+        SockProtocol::Udp,
+    )
+    .unwrap();
+    let request = nix::sys::socket::IpSourceMembershipRequest::new(
+        "224.0.0.0".parse().unwrap(),
+        "127.0.0.1".parse().unwrap(),
+        None,
+    );
+
+    setsockopt(fd, sockopt::IpDropSourceMembership, &request)
+        .expect_err("drop not exist multicast membership sould fail");
+
+    setsockopt(fd, sockopt::IpAddSourceMembership, &request)
+        .expect("add source specific multicast membership sould succeed");
+
+    setsockopt(fd, sockopt::IpDropSourceMembership, &request)
+        .expect("drop source specific multicast membership sould succeed");
+}
