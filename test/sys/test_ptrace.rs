@@ -1,7 +1,12 @@
 #[cfg(all(
     target_os = "linux",
-    any(target_arch = "x86_64", target_arch = "x86"),
-    target_env = "gnu"
+    target_env = "gnu",
+    any(
+        target_arch = "x86_64",
+        target_arch = "x86",
+        target_arch = "aarch64",
+        target_arch = "riscv64",
+    )
 ))]
 use memoffset::offset_of;
 use nix::errno::Errno;
@@ -179,8 +184,13 @@ fn test_ptrace_interrupt() {
 // ptrace::{setoptions, getregs} are only available in these platforms
 #[cfg(all(
     target_os = "linux",
-    any(target_arch = "x86_64", target_arch = "x86"),
-    target_env = "gnu"
+    target_env = "gnu",
+    any(
+        target_arch = "x86_64",
+        target_arch = "x86",
+        target_arch = "aarch64",
+        target_arch = "riscv64",
+    )
 ))]
 #[test]
 fn test_ptrace_syscall() {
@@ -226,14 +236,28 @@ fn test_ptrace_syscall() {
             let get_syscall_id =
                 || ptrace::getregs(child).unwrap().orig_eax as libc::c_long;
 
+            #[cfg(target_arch = "aarch64")]
+            let get_syscall_id =
+                || ptrace::getregs(child).unwrap().regs[8] as libc::c_long;
+
+            #[cfg(target_arch = "riscv64")]
+            let get_syscall_id =
+                || ptrace::getregs(child).unwrap().a7 as libc::c_long;
+
             // this duplicates `get_syscall_id` for the purpose of testing `ptrace::read_user`.
             #[cfg(target_arch = "x86_64")]
             let rax_offset = offset_of!(libc::user_regs_struct, orig_rax);
             #[cfg(target_arch = "x86")]
             let rax_offset = offset_of!(libc::user_regs_struct, orig_eax);
+            #[cfg(target_arch = "aarch64")]
+            let rax_offset = offset_of!(libc::user_regs_struct, regs)
+                + 8 * mem::size_of::<libc::c_ulonglong>();
+            #[cfg(target_arch = "riscv64")]
+            let rax_offset = offset_of!(libc::user_regs_struct, a7);
 
             let get_syscall_from_user_area = || {
                 // Find the offset of `user.regs.rax` (or `user.regs.eax` for x86)
+                #[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
                 let rax_offset = offset_of!(libc::user, regs) + rax_offset;
                 ptrace::read_user(child, rax_offset as _).unwrap()
                     as libc::c_long
