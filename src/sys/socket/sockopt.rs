@@ -576,13 +576,13 @@ cfg_if! {
         sockopt_impl!(
             /// The maximum segment size for outgoing TCP packets.
             TcpMaxSeg, Both, libc::IPPROTO_TCP, libc::TCP_MAXSEG, u32);
-    } else {
+    } else if #[cfg(not(target_os = "redox"))] {
         sockopt_impl!(
             /// The maximum segment size for outgoing TCP packets.
             TcpMaxSeg, GetOnly, libc::IPPROTO_TCP, libc::TCP_MAXSEG, u32);
     }
 }
-#[cfg(not(any(target_os = "openbsd", target_os = "haiku")))]
+#[cfg(not(any(target_os = "openbsd", target_os = "haiku", target_os = "redox")))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -604,7 +604,7 @@ sockopt_impl!(
     libc::TCP_REPAIR,
     u32
 );
-#[cfg(not(any(target_os = "openbsd", target_os = "haiku")))]
+#[cfg(not(any(target_os = "openbsd", target_os = "haiku", target_os = "redox")))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -715,7 +715,7 @@ sockopt_impl!(
     libc::IP6T_SO_ORIGINAL_DST,
     libc::sockaddr_in6
 );
-#[cfg(any(target_os = "linux"))]
+#[cfg(target_os = "linux")]
 sockopt_impl!(
     /// Specifies exact type of timestamping information collected by the kernel
     /// [Further reading](https://www.kernel.org/doc/html/latest/networking/timestamping.html)
@@ -725,7 +725,7 @@ sockopt_impl!(
     libc::SO_TIMESTAMPING,
     super::TimestampingFlag
 );
-#[cfg(not(target_os = "haiku"))]
+#[cfg(not(any(target_os = "haiku", target_os = "redox")))]
 sockopt_impl!(
     /// Enable or disable the receiving of the `SO_TIMESTAMP` control message.
     ReceiveTimestamp,
@@ -734,7 +734,7 @@ sockopt_impl!(
     libc::SO_TIMESTAMP,
     bool
 );
-#[cfg(all(target_os = "linux"))]
+#[cfg(target_os = "linux")]
 sockopt_impl!(
     /// Enable or disable the receiving of the `SO_TIMESTAMPNS` control message.
     ReceiveTimestampns,

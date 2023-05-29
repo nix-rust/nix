@@ -135,6 +135,13 @@ impl TimerFd {
     /// Then the one shot TimeSpec and the delay TimeSpec of the delayed
     /// interval are going to be interpreted as absolute.
     ///
+    /// # Cancel on a clock change
+    ///
+    /// If you set a `TFD_TIMER_CANCEL_ON_SET` alongside `TFD_TIMER_ABSTIME`
+    /// and the clock for this timer is `CLOCK_REALTIME` or `CLOCK_REALTIME_ALARM`,
+    /// then this timer is marked as cancelable if the real-time clock undergoes
+    /// a discontinuous change.
+    ///
     /// # Disabling alarms
     ///
     /// Note: Only one alarm can be set for any given timer. Setting a new alarm
@@ -202,6 +209,9 @@ impl TimerFd {
     /// Note: If the alarm is unset, then you will wait forever.
     pub fn wait(&self) -> Result<()> {
         while let Err(e) = read(self.fd.as_fd().as_raw_fd(), &mut [0u8; 8]) {
+            if e == Errno::ECANCELED {
+                break;
+            }
             if e != Errno::EINTR {
                 return Err(e);
             }

@@ -100,8 +100,10 @@ pub enum AddressFamily {
     #[cfg_attr(docsrs, doc(cfg(all())))]
     Ax25 = libc::AF_AX25,
     /// IPX - Novell protocols
+    #[cfg(not(target_os = "redox"))]
     Ipx = libc::AF_IPX,
     /// AppleTalk
+    #[cfg(not(target_os = "redox"))]
     AppleTalk = libc::AF_APPLETALK,
     /// AX.25 packet layer protocol.
     /// (see [netrom(4)](https://www.unix.com/man-page/linux/4/netrom/))
@@ -130,7 +132,7 @@ pub enum AddressFamily {
     #[cfg_attr(docsrs, doc(cfg(all())))]
     Rose = libc::AF_ROSE,
     /// DECet protocol sockets.
-    #[cfg(not(target_os = "haiku"))]
+    #[cfg(not(any(target_os = "haiku", target_os = "redox")))]
     Decnet = libc::AF_DECnet,
     /// Reserved for "802.2LLC project"; never used.
     #[cfg(any(target_os = "android", target_os = "linux"))]
@@ -162,7 +164,7 @@ pub enum AddressFamily {
     #[cfg_attr(docsrs, doc(cfg(all())))]
     Rds = libc::AF_RDS,
     /// IBM SNA
-    #[cfg(not(target_os = "haiku"))]
+    #[cfg(not(any(target_os = "haiku", target_os = "redox")))]
     Sna = libc::AF_SNA,
     /// Socket interface over IrDA
     #[cfg(any(target_os = "android", target_os = "linux"))]
@@ -202,7 +204,8 @@ pub enum AddressFamily {
         target_os = "illumos",
         target_os = "ios",
         target_os = "macos",
-        target_os = "solaris"
+        target_os = "solaris",
+        target_os = "redox",
     )))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     Bluetooth = libc::AF_BLUETOOTH,
@@ -219,7 +222,8 @@ pub enum AddressFamily {
     #[cfg(not(any(
         target_os = "illumos",
         target_os = "solaris",
-        target_os = "haiku"
+        target_os = "haiku",
+        target_os = "redox",
     )))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     Isdn = libc::AF_ISDN,
@@ -460,7 +464,8 @@ pub struct UnixAddr {
         target_os = "android",
         target_os = "fuchsia",
         target_os = "illumos",
-        target_os = "linux"
+        target_os = "linux",
+        target_os = "redox",
     ))]
     sun_len: u8,
 }
@@ -624,7 +629,8 @@ impl UnixAddr {
             if #[cfg(any(target_os = "android",
                      target_os = "fuchsia",
                      target_os = "illumos",
-                     target_os = "linux"
+                     target_os = "linux",
+                     target_os = "redox",
                 ))]
             {
                 UnixAddr { sun, sun_len }
@@ -690,7 +696,8 @@ impl UnixAddr {
             if #[cfg(any(target_os = "android",
                      target_os = "fuchsia",
                      target_os = "illumos",
-                     target_os = "linux"
+                     target_os = "linux",
+                     target_os = "redox",
                 ))]
             {
                 self.sun_len
@@ -736,7 +743,8 @@ impl SockaddrLike for UnixAddr {
             if #[cfg(any(target_os = "android",
                          target_os = "fuchsia",
                          target_os = "illumos",
-                         target_os = "linux"
+                         target_os = "linux",
+                         target_os = "redox",
                 ))] {
                 let su_len = len.unwrap_or(
                     mem::size_of::<libc::sockaddr_un>() as libc::socklen_t
@@ -1221,7 +1229,7 @@ pub union SockaddrStorage {
     #[cfg(any(target_os = "android", target_os = "linux"))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     alg: AlgAddr,
-    #[cfg(feature = "net")]
+    #[cfg(all(feature = "net", not(target_os = "redox")))]
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     dl: LinkAddr,
     #[cfg(any(target_os = "android", target_os = "linux"))]
@@ -2338,6 +2346,7 @@ mod tests {
         }
     }
 
+    #[cfg(not(target_os = "redox"))]
     mod link {
         #![allow(clippy::cast_ptr_alignment)]
 
@@ -2534,7 +2543,7 @@ mod tests {
             nix_sin6.0.sin6_flowinfo = 0x12345678;
             nix_sin6.0.sin6_scope_id = 0x9abcdef0;
 
-            let std_sin6 : std::net::SocketAddrV6 = nix_sin6.into();
+            let std_sin6: std::net::SocketAddrV6 = nix_sin6.into();
             assert_eq!(nix_sin6, std_sin6.into());
         }
     }

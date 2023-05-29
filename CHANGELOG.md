@@ -18,6 +18,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Added `LocalPeerPid` to `nix::sys::socket::sockopt` for macOS. ([#1967](https://github.com/nix-rust/nix/pull/1967))
 - Added `IpAddSourceMembership`, `IpDropSourceMembership` to `nix::sys::socket::sockopt` on all platforms except Fuchsia, Haiku, NetBSD, OpenBSD.
   ([#2008])(https://github.com/nix-rust/nix/pull/2008)
+- Added `TFD_TIMER_CANCEL_ON_SET` to `::nix::sys::time::TimerSetTimeFlags` on Linux and Android.
+  ([#2040](https://github.com/nix-rust/nix/pull/2040))
 
 ### Changed
 
@@ -32,10 +34,14 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   `sys::kevent::Kqueue::kevent`, and `sys::event::kqueue` is deprecated in
   favor of `sys::kevent::Kqueue::new`.
   ([#1943](https://github.com/nix-rust/nix/pull/1943))
+- `nix::socket` and `nix::select` are now available on Redox.
+  ([#2012](https://github.com/nix-rust/nix/pull/2012))
 
 ### Fixed
 - Fix `SockaddrIn6` bug that was swapping flowinfo and scope_id byte ordering.
   ([#1964](https://github.com/nix-rust/nix/pull/1964))
+- Fix: send ETH_P_ALL in htons format 
+  ([#1925](https://github.com/nix-rust/nix/pull/1925))
 
 ### Removed
 
