@@ -110,9 +110,6 @@ changed in the future without bumping the major or minor version.
 Contributions are very welcome.  Please See [CONTRIBUTING](CONTRIBUTING.md) for
 additional details.
 
-Feel free to join us in [the nix-rust/nix](https://gitter.im/nix-rust/nix) channel on Gitter to
-discuss `nix` development.
-
 ## License
 
 Nix is licensed under the MIT license.  See [LICENSE](LICENSE) for more details.
