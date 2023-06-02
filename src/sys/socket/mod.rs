@@ -255,6 +255,10 @@ libc_bitflags! {
         SOF_TIMESTAMPING_RX_HARDWARE;
         /// Collect receiving timestamps as reported by software
         SOF_TIMESTAMPING_RX_SOFTWARE;
+        /// Generate a unique identifier along with each transmitted packet
+        SOF_TIMESTAMPING_OPT_ID;
+        /// Return transmit timestamps alongside an empty packet instead of the original packet
+        SOF_TIMESTAMPING_OPT_TSONLY;
     }
 }
 
