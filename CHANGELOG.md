@@ -18,6 +18,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Added `LocalPeerPid` to `nix::sys::socket::sockopt` for macOS. ([#1967](https://github.com/nix-rust/nix/pull/1967))
 - Added `TFD_TIMER_CANCEL_ON_SET` to `::nix::sys::time::TimerSetTimeFlags` on Linux and Android.
   ([#2040](https://github.com/nix-rust/nix/pull/2040))
+- Added `ptrace::listen` for Linux.
+  (#[1996](https://github.com/nix-rust/nix/pull/1996))
 
 ### Changed
 
@@ -119,7 +121,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   ([#1824](https://github.com/nix-rust/nix/pull/1824))
 - Workaround XNU bug causing netmasks returned by `getifaddrs` to misbehave.
   ([#1788](https://github.com/nix-rust/nix/pull/1788))
-  
+
 ### Removed
 
 - Removed deprecated error constants and conversions.
