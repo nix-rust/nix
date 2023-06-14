@@ -747,6 +747,14 @@ pub enum ControlMessageOwned {
     #[cfg(feature = "net")]
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv6PacketInfo(libc::in6_pktinfo),
+    #[cfg(any(linux_android, apple_targets, target_os = "freebsd"))]
+    #[cfg(feature = "net")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
+    Ipv4Tos(u8),
+    #[cfg(any(linux_android, apple_targets, netbsdlike, target_os = "freebsd"))]
+    #[cfg(feature = "net")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
+    Ipv6TClass(u32),
     #[cfg(bsd)]
     #[cfg(feature = "net")]
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -929,6 +937,18 @@ impl ControlMessageOwned {
             (libc::IPPROTO_IP, libc::IP_PKTINFO) => {
                 let info = unsafe { ptr::read_unaligned(p as *const libc::in_pktinfo) };
                 ControlMessageOwned::Ipv4PacketInfo(info)
+            }
+            #[cfg(any(linux_android, apple_targets, target_os = "freebsd"))]
+            #[cfg(feature = "net")]
+            (libc::IPPROTO_IP, libc::IP_TOS) => {
+                let tos = unsafe { ptr::read_unaligned(p as *const u8) };
+                ControlMessageOwned::Ipv4Tos(tos)
+            }
+            #[cfg(any(linux_android, apple_targets, netbsdlike, target_os = "freebsd"))]
+            #[cfg(feature = "net")]
+            (libc::IPPROTO_IPV6, libc::IPV6_TCLASS) => {
+                let tclass = unsafe { ptr::read_unaligned(p as *const u32) };
+                ControlMessageOwned::Ipv6TClass(tclass)
             }
             #[cfg(bsd)]
             #[cfg(feature = "net")]

@@ -2220,6 +2220,162 @@ pub fn test_recv_ipv6pktinfo() {
     }
 }
 
+#[cfg(target_os = "linux")]
+#[test]
+pub fn test_tos_ipv4() {
+    use nix::sys::socket::sockopt::{IpTos, Ipv4RecvTos};
+    use nix::sys::socket::{bind, SockFlag, SockType, SockaddrIn};
+    use nix::sys::socket::{getsockname, setsockopt, socket};
+    use nix::sys::socket::{recvmsg, sendmsg, ControlMessageOwned, MsgFlags};
+    use std::io::{IoSlice, IoSliceMut};
+
+    let lo_ifaddr = loopback_address(AddressFamily::Inet);
+    let (_lo_name, lo) = match lo_ifaddr {
+        Some(ifaddr) => (
+            ifaddr.interface_name,
+            ifaddr.address.expect("Expect IPv4 address on interface"),
+        ),
+        None => return,
+    };
+    let receive = socket(
+        AddressFamily::Inet,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )
+    .expect("receive socket failed");
+    bind(receive.as_raw_fd(), &lo).expect("bind failed");
+    let sa: SockaddrIn =
+        getsockname(receive.as_raw_fd()).expect("getsockname failed");
+    setsockopt(&receive, Ipv4RecvTos, &true).expect("setsockopt failed");
+
+    let send_tos = 42;
+    {
+        let slice = [1u8, 2, 3, 4, 5, 6, 7, 8];
+        let iov = [IoSlice::new(&slice)];
+
+        let send = socket(
+            AddressFamily::Inet,
+            SockType::Datagram,
+            SockFlag::empty(),
+            None,
+        )
+        .expect("send socket failed");
+        setsockopt(&send, IpTos, &send_tos).expect("setsockopt failed");
+        sendmsg(send.as_raw_fd(), &iov, &[], MsgFlags::empty(), Some(&sa))
+            .expect("sendmsg failed");
+    }
+
+    {
+        let mut buf = [0u8; 8];
+        let mut iovec = [IoSliceMut::new(&mut buf)];
+
+        let mut space = cmsg_space!(u8);
+        let msg = recvmsg::<()>(
+            receive.as_raw_fd(),
+            &mut iovec,
+            Some(&mut space),
+            MsgFlags::empty(),
+        )
+        .expect("recvmsg failed");
+        assert!(!msg
+            .flags
+            .intersects(MsgFlags::MSG_TRUNC | MsgFlags::MSG_CTRUNC));
+
+        let mut cmsgs = msg.cmsgs();
+        let recv_tos = match cmsgs.next().expect("no control msg received") {
+            ControlMessageOwned::Ipv4Tos(value) => value,
+            cmsg => panic!("received unexpected control msg {:?}", cmsg),
+        };
+        assert_eq!(
+            recv_tos as libc::c_int, send_tos,
+            "unexpected tos (expected {}, got {})",
+            send_tos, recv_tos
+        );
+        assert!(cmsgs.next().is_none(), "unexpected additional control msg");
+        assert_eq!(msg.bytes, 8);
+        assert_eq!(*iovec[0], [1u8, 2, 3, 4, 5, 6, 7, 8]);
+    }
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+pub fn test_tclass_ipv6() {
+    use nix::sys::socket::sockopt::{Ipv6RecvTClass, Ipv6TClass};
+    use nix::sys::socket::{bind, SockFlag, SockType, SockaddrIn6};
+    use nix::sys::socket::{getsockname, setsockopt, socket};
+    use nix::sys::socket::{recvmsg, sendmsg, ControlMessageOwned, MsgFlags};
+    use std::io::{IoSlice, IoSliceMut};
+
+    let lo_ifaddr = loopback_address(AddressFamily::Inet6);
+    let (_lo_name, lo) = match lo_ifaddr {
+        Some(ifaddr) => (
+            ifaddr.interface_name,
+            ifaddr.address.expect("Expect IPv6 address on interface"),
+        ),
+        None => return,
+    };
+    let receive = socket(
+        AddressFamily::Inet6,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )
+    .expect("receive socket failed");
+    bind(receive.as_raw_fd(), &lo).expect("bind failed");
+    let sa: SockaddrIn6 =
+        getsockname(receive.as_raw_fd()).expect("getsockname failed");
+    setsockopt(&receive, Ipv6RecvTClass, &true).expect("setsockopt failed");
+
+    let send_tclass = 42;
+    {
+        let slice = [1u8, 2, 3, 4, 5, 6, 7, 8];
+        let iov = [IoSlice::new(&slice)];
+
+        let send = socket(
+            AddressFamily::Inet6,
+            SockType::Datagram,
+            SockFlag::empty(),
+            None,
+        )
+        .expect("send socket failed");
+        setsockopt(&send, Ipv6TClass, &send_tclass).expect("setsockopt failed");
+        sendmsg(send.as_raw_fd(), &iov, &[], MsgFlags::empty(), Some(&sa))
+            .expect("sendmsg failed");
+    }
+
+    {
+        let mut buf = [0u8; 8];
+        let mut iovec = [IoSliceMut::new(&mut buf)];
+
+        let mut space = cmsg_space!(u32);
+        let msg = recvmsg::<()>(
+            receive.as_raw_fd(),
+            &mut iovec,
+            Some(&mut space),
+            MsgFlags::empty(),
+        )
+        .expect("recvmsg failed");
+        assert!(!msg
+            .flags
+            .intersects(MsgFlags::MSG_TRUNC | MsgFlags::MSG_CTRUNC));
+
+        let mut cmsgs = msg.cmsgs();
+        let recv_tclass = match cmsgs.next().expect("no control msg received") {
+            ControlMessageOwned::Ipv6TClass(value) => value,
+            cmsg => panic!("received unexpected control msg {:?}", cmsg),
+        };
+        assert_eq!(
+            recv_tclass as libc::c_int, send_tclass,
+            "unexpected tclass (expected {}, got {})",
+            send_tclass, recv_tclass
+        );
+        assert!(cmsgs.next().is_none(), "unexpected additional control msg");
+        assert_eq!(msg.bytes, 8);
+        assert_eq!(*iovec[0], [1u8, 2, 3, 4, 5, 6, 7, 8]);
+    }
+}
+
 #[cfg(linux_android)]
 #[test]
 pub fn test_vsock() {
