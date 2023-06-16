@@ -116,7 +116,8 @@ mod os {
     apple_targets,
     target_os = "fuchsia",
     target_os = "haiku",
-    target_os = "solaris"
+    target_os = "solaris",
+    target_os = "nto",
 ))]
 mod os {
     /// Check if the OS supports atomic close-on-exec for sockets

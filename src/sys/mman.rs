@@ -76,8 +76,8 @@ libc_bitflags! {
         MAP_LOCKED;
         /// Do not reserve swap space for this mapping.
         ///
-        /// This was removed in FreeBSD 11 and is unused in DragonFlyBSD.
-        #[cfg(not(any(freebsdlike, target_os = "aix", target_os = "hurd")))]
+        /// This was removed in FreeBSD 11 and is unused in DragonFlyBSD and QNX Neutrino.
+        #[cfg(not(any(freebsdlike, target_os = "aix", target_os = "hurd", target_os = "nto",)))]
         MAP_NORESERVE;
         /// Populate page tables for a mapping.
         #[cfg(linux_android)]
@@ -206,6 +206,7 @@ libc_bitflags! {
     }
 }
 
+#[cfg(not(target_os = "nto"))]
 libc_enum! {
     /// Usage information for a range of memory to allow for performance optimizations by the kernel.
     ///
@@ -304,6 +305,27 @@ libc_enum! {
         #[cfg(apple_targets)]
         #[allow(missing_docs)]
         MADV_CAN_REUSE,
+    }
+}
+
+#[cfg(target_os = "nto")]
+libc_enum! {
+    /// Usage information for a range of memory to allow for performance optimizations by the kernel.
+    ///
+    /// Used by [`madvise`](./fn.madvise.html).
+    #[repr(i32)]
+    #[non_exhaustive]
+    pub enum MmapAdvise {
+        /// No further special treatment. This is the default.
+        POSIX_MADV_NORMAL,
+        /// Expect random page references.
+        POSIX_MADV_RANDOM,
+        /// Expect sequential page references.
+        POSIX_MADV_SEQUENTIAL,
+        /// Expect access in the near future.
+        POSIX_MADV_WILLNEED,
+        /// Do not expect access in the near future.
+        POSIX_MADV_DONTNEED,
     }
 }
 
@@ -523,8 +545,14 @@ pub unsafe fn madvise(
     length: size_t,
     advise: MmapAdvise,
 ) -> Result<()> {
+    #[cfg(not(target_os = "nto"))]
     unsafe {
         Errno::result(libc::madvise(addr.as_ptr(), length, advise as i32))
+            .map(drop)
+    }
+    #[cfg(target_os = "nto")]
+    unsafe {
+        Errno::result(libc::posix_madvise(addr.as_ptr(), length, advise as i32))
             .map(drop)
     }
 }

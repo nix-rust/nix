@@ -29,6 +29,7 @@ libc_bitflags!(
                   target_os = "freebsd",
                   target_os = "haiku",
                   target_os = "redox",
+                  target_os = "nto",
                   target_os = "netbsd"))]
         WEXITED;
         /// Report the status of selected processes that have continued from a
@@ -41,6 +42,7 @@ libc_bitflags!(
                   target_os = "freebsd",
                   target_os = "haiku",
                   target_os = "redox",
+                  target_os = "nto",
                   target_os = "netbsd"))]
         WSTOPPED;
         /// Don't reap, just poll status.
@@ -49,6 +51,7 @@ libc_bitflags!(
                   target_os = "freebsd",
                   target_os = "haiku",
                   target_os = "redox",
+                  target_os = "nto",
                   target_os = "netbsd"))]
         WNOWAIT;
         /// Don't wait on children of other threads in this group

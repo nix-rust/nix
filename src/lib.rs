@@ -140,7 +140,12 @@ feature! {
     #![feature = "mount"]
     pub mod mount;
 }
-#[cfg(any(freebsdlike, target_os = "linux", target_os = "netbsd"))]
+#[cfg(any(
+    freebsdlike,
+    target_os = "linux",
+    target_os = "netbsd",
+    target_os = "nto",
+))]
 feature! {
     #![feature = "mqueue"]
     pub mod mqueue;

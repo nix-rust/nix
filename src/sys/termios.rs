@@ -299,7 +299,7 @@ libc_enum! {
         B115200,
         #[cfg(solarish)]
         B153600,
-        #[cfg(not(target_os = "aix"))]
+        #[cfg(not(any(target_os = "aix", target_os = "nto",)))]
         B230400,
         #[cfg(solarish)]
         B307200,
@@ -425,7 +425,7 @@ libc_enum! {
         #[cfg(not(target_os = "haiku"))]
         VLNEXT,
         #[cfg(not(any(all(target_os = "linux", target_arch = "sparc64"),
-                solarish, target_os = "aix", target_os = "haiku")))]
+                solarish, target_os = "aix", target_os = "haiku", target_os = "nto",)))]
         VMIN,
         VQUIT,
         #[cfg(not(target_os = "haiku"))]
@@ -437,10 +437,10 @@ libc_enum! {
         VSUSP,
         #[cfg(target_os = "linux")]
         VSWTC,
-        #[cfg(any(solarish, target_os = "haiku"))]
+        #[cfg(any(solarish, target_os = "haiku", target_os = "nto",))]
         VSWTCH,
         #[cfg(not(any(all(target_os = "linux", target_arch = "sparc64"),
-                solarish, target_os = "aix", target_os = "haiku")))]
+                solarish, target_os = "aix", target_os = "haiku", target_os = "nto",)))]
         VTIME,
         #[cfg(not(any(target_os = "aix", target_os = "haiku")))]
         VWERASE,
@@ -482,7 +482,7 @@ libc_bitflags! {
         IXANY;
         #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
         IMAXBEL;
-        #[cfg(any(linux_android, apple_targets))]
+        #[cfg(any(linux_android, apple_targets, target_os = "nto"))]
         IUTF8;
     }
 }
@@ -493,7 +493,8 @@ libc_bitflags! {
         OPOST;
         #[cfg(any(linux_android,
                   target_os = "haiku",
-                  target_os = "openbsd"))]
+                  target_os = "openbsd",
+                  target_os = "nto",))]
         OLCUC;
         ONLCR;
         OCRNL as tcflag_t;
@@ -501,74 +502,91 @@ libc_bitflags! {
         ONLRET as tcflag_t;
         #[cfg(any(linux_android,
                   target_os = "haiku",
-                  apple_targets))]
+                  apple_targets,
+                  target_os = "nto",))]
         OFDEL as tcflag_t;
         #[cfg(any(linux_android,
                   target_os = "haiku",
-                  apple_targets))]
+                  apple_targets,
+                  target_os = "nto",))]
         NL0 as tcflag_t;
         #[cfg(any(linux_android,
                   target_os = "haiku",
+                  target_os = "nto",
                   apple_targets))]
         NL1 as tcflag_t;
         #[cfg(any(linux_android,
                   target_os = "haiku",
+                  target_os = "nto",
                   apple_targets))]
         CR0 as tcflag_t;
         #[cfg(any(linux_android,
                   target_os = "haiku",
+                  target_os = "nto",
                   apple_targets))]
         CR1 as tcflag_t;
         #[cfg(any(linux_android,
                   target_os = "haiku",
+                  target_os = "nto",
                   apple_targets))]
         CR2 as tcflag_t;
         #[cfg(any(linux_android,
                   target_os = "haiku",
+                  target_os = "nto",
                   apple_targets))]
         CR3 as tcflag_t;
         #[cfg(any(linux_android,
                   target_os = "freebsd",
                   target_os = "haiku",
+                  target_os = "nto",
                   apple_targets))]
         TAB0 as tcflag_t;
         #[cfg(any(linux_android,
                   target_os = "haiku",
+                  target_os = "nto",
                   apple_targets))]
         TAB1 as tcflag_t;
         #[cfg(any(linux_android,
                   target_os = "haiku",
+                  target_os = "nto",
                   apple_targets))]
         TAB2 as tcflag_t;
         #[cfg(any(linux_android,
                   target_os = "freebsd",
                   target_os = "haiku",
+                  target_os = "nto",
                   apple_targets))]
         TAB3 as tcflag_t;
         #[cfg(linux_android)]
         XTABS;
         #[cfg(any(linux_android,
                   target_os = "haiku",
+                  target_os = "nto",
                   apple_targets))]
         BS0 as tcflag_t;
         #[cfg(any(linux_android,
                   target_os = "haiku",
+                  target_os = "nto",
                   apple_targets))]
         BS1 as tcflag_t;
         #[cfg(any(linux_android,
                   target_os = "haiku",
+                  target_os = "nto",
                   apple_targets))]
         VT0 as tcflag_t;
         #[cfg(any(linux_android,
                   target_os = "haiku",
+                  target_os = "nto",
                   apple_targets))]
         VT1 as tcflag_t;
         #[cfg(any(linux_android,
                   target_os = "haiku",
+                  target_os = "nto",
                   apple_targets))]
         FF0 as tcflag_t;
         #[cfg(any(linux_android,
                   target_os = "haiku",
+                  target_os = "nto",
                   apple_targets))]
         FF1 as tcflag_t;
         #[cfg(bsd)]
@@ -582,27 +600,33 @@ libc_bitflags! {
 
         #[cfg(any(linux_android,
                   target_os = "haiku",
+                  target_os = "nto",
                   apple_targets))]
         NLDLY as tcflag_t; // FIXME: Datatype needs to be corrected in libc for mac
         #[cfg(any(linux_android,
                   target_os = "haiku",
+                  target_os = "nto",
                   apple_targets))]
         CRDLY as tcflag_t;
         #[cfg(any(linux_android,
                   target_os = "freebsd",
                   target_os = "haiku",
+                  target_os = "nto",
                   apple_targets))]
         TABDLY as tcflag_t;
         #[cfg(any(linux_android,
                   target_os = "haiku",
+                  target_os = "nto",
                   apple_targets))]
         BSDLY as tcflag_t;
         #[cfg(any(linux_android,
                   target_os = "haiku",
+                  target_os = "nto",
                   apple_targets))]
         VTDLY as tcflag_t;
         #[cfg(any(linux_android,
                   target_os = "haiku",
+                  target_os = "nto",
                   apple_targets))]
         FFDLY as tcflag_t;
     }
@@ -623,7 +647,7 @@ libc_bitflags! {
         PARODD;
         HUPCL;
         CLOCAL;
-        #[cfg(not(any(target_os = "redox", target_os = "aix")))]
+        #[cfg(not(any(target_os = "redox", target_os = "aix", target_os = "nto",)))]
         CRTSCTS;
         #[cfg(linux_android)]
         CBAUD;
@@ -667,7 +691,7 @@ libc_bitflags! {
         ECHOK;
         ECHO;
         ECHONL;
-        #[cfg(not(target_os = "redox"))]
+        #[cfg(not(any(target_os = "redox", target_os = "nto")))]
         ECHOPRT;
         #[cfg(not(target_os = "redox"))]
         ECHOCTL;
@@ -676,14 +700,14 @@ libc_bitflags! {
         #[cfg(bsd)]
         ALTWERASE;
         IEXTEN;
-        #[cfg(not(any(target_os = "redox", target_os = "haiku", target_os = "aix")))]
+        #[cfg(not(any(target_os = "redox", target_os = "haiku", target_os = "aix", target_os = "nto",)))]
         EXTPROC;
         TOSTOP;
-        #[cfg(not(target_os = "redox"))]
+        #[cfg(not(any(target_os = "redox", target_os = "nto")))]
         FLUSHO;
         #[cfg(bsd)]
         NOKERNINFO;
-        #[cfg(not(target_os = "redox"))]
+        #[cfg(not(any(target_os = "redox", target_os = "nto")))]
         PENDIN;
         NOFLSH;
     }
@@ -740,6 +764,7 @@ cfg_if! {
         ///
         /// `cfsetspeed()` sets the input and output baud rate in the given termios structure. Note that
         /// this is part of the 4.4BSD standard and not part of POSIX.
+        #[cfg(not(target_os = "nto"))]
         pub fn cfsetspeed<T: Into<u32>>(termios: &mut Termios, baud: T) -> Result<()> {
             let inner_termios = unsafe { termios.get_libc_termios_mut() };
             let res = unsafe { libc::cfsetspeed(inner_termios, baud.into() as libc::speed_t) };
@@ -810,6 +835,7 @@ cfg_if! {
 /// `cfmakeraw()` configures the termios structure such that input is available character-by-
 /// character, echoing is disabled, and all special input and output processing is disabled. Note
 /// that this is a non-standard function, but is available on Linux and BSDs.
+#[cfg(not(target_os = "nto"))]
 pub fn cfmakeraw(termios: &mut Termios) {
     let inner_termios = unsafe { termios.get_libc_termios_mut() };
     unsafe {

@@ -102,7 +102,7 @@ libc_enum! {
         #[cfg(not(target_os = "haiku"))]
         SIGIO,
         #[cfg(any(linux_android, target_os = "emscripten",
-                  target_os = "fuchsia", target_os = "aix"))]
+                  target_os = "fuchsia", target_os = "aix", target_os = "nto",))]
         /// Power failure imminent.
         SIGPWR,
         /// Bad system call
@@ -114,7 +114,7 @@ libc_enum! {
         SIGEMT,
         #[cfg(not(any(linux_android, target_os = "emscripten",
                       target_os = "fuchsia", target_os = "redox",
-                      target_os = "haiku", target_os = "aix")))]
+                      target_os = "haiku", target_os = "aix", target_os = "nto",)))]
         /// Information request
         SIGINFO,
     }
@@ -174,6 +174,7 @@ impl FromStr for Signal {
                 linux_android,
                 target_os = "emscripten",
                 target_os = "fuchsia",
+                target_os = "nto",
             ))]
             "SIGPWR" => Signal::SIGPWR,
             "SIGSYS" => Signal::SIGSYS,
@@ -191,7 +192,8 @@ impl FromStr for Signal {
                 target_os = "fuchsia",
                 target_os = "redox",
                 target_os = "aix",
-                target_os = "haiku"
+                target_os = "haiku",
+                target_os = "nto",
             )))]
             "SIGINFO" => Signal::SIGINFO,
             _ => return Err(Errno::EINVAL),
@@ -257,6 +259,7 @@ impl Signal {
                 target_os = "emscripten",
                 target_os = "fuchsia",
                 target_os = "aix",
+                target_os = "nto",
             ))]
             Signal::SIGPWR => "SIGPWR",
             Signal::SIGSYS => "SIGSYS",
@@ -274,7 +277,8 @@ impl Signal {
                 target_os = "fuchsia",
                 target_os = "redox",
                 target_os = "aix",
-                target_os = "haiku"
+                target_os = "haiku",
+                target_os = "nto",
             )))]
             Signal::SIGINFO => "SIGINFO",
         }
@@ -331,14 +335,17 @@ const SIGNALS: [Signal; 31] = [
     SIGCONT, SIGSTOP, SIGTSTP, SIGTTIN, SIGTTOU, SIGURG, SIGXCPU, SIGXFSZ,
     SIGVTALRM, SIGPROF, SIGWINCH, SIGIO, SIGPWR, SIGSYS,
 ];
-#[cfg(all(
-    any(linux_android, target_os = "emscripten", target_os = "fuchsia"),
-    any(
-        target_arch = "mips",
-        target_arch = "mips32r6",
-        target_arch = "mips64",
-        target_arch = "mips64r6",
-        target_arch = "sparc64"
+#[cfg(any(
+    target_os = "nto",
+    all(
+        any(linux_android, target_os = "emscripten", target_os = "fuchsia"),
+        any(
+            target_arch = "mips",
+            target_arch = "mips32r6",
+            target_arch = "mips64",
+            target_arch = "mips64r6",
+            target_arch = "sparc64"
+        )
     )
 ))]
 #[cfg(feature = "signal")]
@@ -362,7 +369,8 @@ const SIGNALS: [Signal; 30] = [
     target_os = "emscripten",
     target_os = "aix",
     target_os = "redox",
-    target_os = "haiku"
+    target_os = "haiku",
+    target_os = "nto",
 )))]
 #[cfg(feature = "signal")]
 const SIGNALS: [Signal; 31] = [
@@ -439,12 +447,14 @@ libc_bitflags! {
         SA_NODEFER;
         /// The system will deliver the signal to the process on a signal stack,
         /// specified by each thread with sigaltstack(2).
+        #[cfg(not(target_os = "nto"))]
         SA_ONSTACK;
         /// The handler is reset back to the default at the moment the signal is
         /// delivered.
         SA_RESETHAND;
         /// Requests that certain system calls restart if interrupted by this
         /// signal.  See the man page for complete details.
+        #[cfg(not(target_os = "nto"))]
         SA_RESTART;
         /// This flag is controlled internally by Nix.
         SA_SIGINFO;

@@ -80,7 +80,7 @@ libc_enum! {
         /// this process may establish.
         RLIMIT_LOCKS,
 
-        #[cfg(any(linux_android, target_os = "freebsd", netbsdlike))]
+        #[cfg(any(linux_android, target_os = "freebsd", netbsdlike, target_os = "nto",))]
         /// The maximum size (in bytes) which a process may lock into memory
         /// using the mlock(2) system call.
         RLIMIT_MEMLOCK,
@@ -100,6 +100,7 @@ libc_enum! {
             target_os = "freebsd",
             netbsdlike,
             target_os = "aix",
+            target_os = "nto",
         ))]
         /// The maximum number of simultaneous processes for this user id.
         RLIMIT_NPROC,

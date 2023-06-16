@@ -5,6 +5,7 @@
     target_os = "haiku",
     target_os = "fuchsia",
     target_os = "aix",
+    target_os = "nto",
 ))]
 #[cfg(feature = "net")]
 pub use self::datalink::LinkAddr;
@@ -824,7 +825,7 @@ impl SockaddrIn {
                 bsd,
                 target_os = "aix",
                 target_os = "haiku",
-                target_os = "hurd"
+                target_os = "hurd",
             ))]
             sin_len: Self::size() as u8,
             sin_family: AddressFamily::Inet as sa_family_t,
@@ -898,7 +899,8 @@ impl From<net::SocketAddrV4> for SockaddrIn {
                 bsd,
                 target_os = "haiku",
                 target_os = "hermit",
-                target_os = "hurd"
+                target_os = "hurd",
+                target_os = "nto",
             ))]
             sin_len: mem::size_of::<libc::sockaddr_in>() as u8,
             sin_family: AddressFamily::Inet as sa_family_t,
@@ -1050,7 +1052,8 @@ impl From<net::SocketAddrV6> for SockaddrIn6 {
                 bsd,
                 target_os = "haiku",
                 target_os = "hermit",
-                target_os = "hurd"
+                target_os = "hurd",
+                target_os = "nto",
             ))]
             sin6_len: mem::size_of::<libc::sockaddr_in6>() as u8,
             sin6_family: AddressFamily::Inet6 as sa_family_t,

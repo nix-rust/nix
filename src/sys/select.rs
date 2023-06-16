@@ -307,11 +307,25 @@ where
     let readfds = readfds.map(|set| set as *mut _ as *mut libc::fd_set).unwrap_or(null_mut());
     let writefds = writefds.map(|set| set as *mut _ as *mut libc::fd_set).unwrap_or(null_mut());
     let errorfds = errorfds.map(|set| set as *mut _ as *mut libc::fd_set).unwrap_or(null_mut());
-    let timeout = timeout.map(|ts| ts.as_ref() as *const libc::timespec).unwrap_or(null());
     let sigmask = sigmask.map(|sm| sm.as_ref() as *const libc::sigset_t).unwrap_or(null());
 
-    let res = unsafe {
-        libc::pselect(nfds, readfds, writefds, errorfds, timeout, sigmask)
+    #[cfg(target_os = "nto")]
+    let res = match timeout {
+        Some(t) => {
+            let mut timeout = t.clone();
+            unsafe {libc::pselect(nfds, readfds, writefds, errorfds, timeout.as_mut() as *mut libc::timespec, sigmask)}
+        },
+        _ => {
+            unsafe {libc::pselect(nfds, readfds, writefds, errorfds, null_mut(), sigmask)}
+        },
+    };
+
+    #[cfg(not(target_os = "nto"))]
+    let res = {
+        let timeout = timeout.map(|ts| ts.as_ref() as *const libc::timespec).unwrap_or(null());
+        unsafe {
+            libc::pselect(nfds, readfds, writefds, errorfds, timeout, sigmask)
+        }
     };
 
     Errno::result(res)

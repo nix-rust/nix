@@ -882,7 +882,7 @@ pub fn execvp<S: AsRef<CStr>>(
 /// This functions like a combination of `execvp(2)` and `execve(2)` to pass an
 /// environment and have a search path. See these two for additional
 /// information.
-#[cfg(any(target_os = "haiku", target_os = "hurd", target_os = "linux", target_os = "openbsd"))]
+#[cfg(any(target_os = "haiku", target_os = "hurd", target_os = "linux", target_os = "openbsd", target_os = "nto",))]
 pub fn execvpe<SA: AsRef<CStr>, SE: AsRef<CStr>>(
     filename: &CStr,
     args: &[SA],
@@ -989,7 +989,8 @@ pub fn execveat<SA: AsRef<CStr>, SE: AsRef<CStr>>(
         linux_android,
         freebsdlike,
         solarish,
-        netbsdlike
+        netbsdlike,
+        target_os = "nto",
 ))]
 pub fn daemon(nochdir: bool, noclose: bool) -> Result<()> {
     let res = unsafe { libc::daemon(nochdir as c_int, noclose as c_int) };
@@ -1377,7 +1378,7 @@ pub fn chroot<P: ?Sized + NixPath>(path: &P) -> Result<()> {
 /// Commit filesystem caches to disk
 ///
 /// See also [sync(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/sync.html)
-#[cfg(any(bsd, linux_android, solarish, target_os = "haiku", target_os = "aix", target_os = "hurd"))]
+#[cfg(any(bsd, linux_android, solarish, target_os = "haiku", target_os = "aix", target_os = "hurd", target_os = "nto"))]
 pub fn sync() {
     unsafe { libc::sync() };
 }
@@ -1908,7 +1909,7 @@ feature! {
 #![feature = "acct"]
 
 /// Process accounting
-#[cfg(not(any(target_os = "redox", target_os = "haiku")))]
+#[cfg(not(any(target_os = "redox", target_os = "haiku", target_os = "nto",)))]
 pub mod acct {
     use crate::errno::Errno;
     use crate::{NixPath, Result};
@@ -2032,6 +2033,7 @@ pub enum PathconfVar {
         freebsdlike,
         netbsdlike,
         target_os = "linux",
+        target_os = "nto",
         target_os = "redox"
     ))]
     /// Minimum number of bits needed to represent, as a signed integer value,
@@ -2075,6 +2077,9 @@ pub enum PathconfVar {
         netbsdlike,
         target_os = "dragonfly",
         target_os = "redox",
+        target_os = "nto",
+        target_os = "solaris",
+        target_os = "nto",
     ))]
     /// Symbolic links can be created.
     POSIX2_SYMLINKS = libc::_PC_2_SYMLINKS,
@@ -2090,7 +2095,8 @@ pub enum PathconfVar {
     #[cfg(any(
         freebsdlike,
         linux_android,
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     /// Recommended increment for file transfer sizes between the
     /// `POSIX_REC_MIN_XFER_SIZE` and `POSIX_REC_MAX_XFER_SIZE` values.
@@ -2099,7 +2105,8 @@ pub enum PathconfVar {
         linux_android,
         freebsdlike,
         target_os = "openbsd",
-        target_os = "redox"
+        target_os = "redox",
+        target_os = "nto",
     ))]
     /// Maximum recommended file transfer size.
     POSIX_REC_MAX_XFER_SIZE = libc::_PC_REC_MAX_XFER_SIZE,
@@ -2107,7 +2114,8 @@ pub enum PathconfVar {
         linux_android,
         freebsdlike,
         target_os = "openbsd",
-        target_os = "redox"
+        target_os = "redox",
+        target_os = "nto",
     ))]
     /// Minimum recommended file transfer size.
     POSIX_REC_MIN_XFER_SIZE = libc::_PC_REC_MIN_XFER_SIZE,
@@ -2115,7 +2123,8 @@ pub enum PathconfVar {
         linux_android,
         freebsdlike,
         target_os = "openbsd",
-        target_os = "redox"
+        target_os = "redox",
+        target_os = "nto",
     ))]
     ///  Recommended file transfer buffer alignment.
     POSIX_REC_XFER_ALIGN = libc::_PC_REC_XFER_ALIGN,
@@ -2125,6 +2134,7 @@ pub enum PathconfVar {
         solarish,
         netbsdlike,
         target_os = "redox",
+        target_os = "nto",
     ))]
     /// Maximum number of bytes in a symbolic link.
     SYMLINK_MAX = libc::_PC_SYMLINK_MAX,
@@ -2144,6 +2154,7 @@ pub enum PathconfVar {
         solarish,
         target_os = "openbsd",
         target_os = "redox",
+        target_os = "nto",
     ))]
     /// Asynchronous input or output operations may be performed for the
     /// associated file.
@@ -2154,6 +2165,7 @@ pub enum PathconfVar {
         solarish,
         target_os = "openbsd",
         target_os = "redox",
+        target_os = "nto",
     ))]
     /// Prioritized input or output operations may be performed for the
     /// associated file.
@@ -2281,7 +2293,8 @@ pub enum SysconfVar {
         linux_android,
         freebsdlike,
         apple_targets,
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     /// The maximum amount by which a process can decrease its asynchronous I/O
     /// priority level from its own scheduling priority.
@@ -2356,6 +2369,7 @@ pub enum SysconfVar {
         freebsdlike,
         apple_targets,
         target_os = "linux",
+        target_os = "nto",
         target_os = "openbsd"
     ))]
     /// The implementation supports the Advisory Information option.
@@ -2381,6 +2395,7 @@ pub enum SysconfVar {
         solarish,
         target_os = "linux",
         target_os = "openbsd",
+        target_os = "nto",
     ))]
     /// The implementation supports the IPv6 option.
     _POSIX_IPV6 = libc::_SC_IPV6,
@@ -2411,6 +2426,7 @@ pub enum SysconfVar {
         solarish,
         apple_targets,
         target_os = "openbsd",
+        target_os = "nto",
     ))]
     /// The implementation supports the Prioritized Input and Output option.
     _POSIX_PRIORITIZED_IO = libc::_SC_PRIORITIZED_IO,
@@ -2423,6 +2439,7 @@ pub enum SysconfVar {
         apple_targets,
         target_os = "linux",
         target_os = "openbsd",
+        target_os = "nto",
     ))]
     /// The implementation supports the Raw Sockets option.
     _POSIX_RAW_SOCKETS = libc::_SC_RAW_SOCKETS,
@@ -2437,7 +2454,8 @@ pub enum SysconfVar {
         linux_android,
         freebsdlike,
         apple_targets,
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     /// The implementation supports realtime signals.
     _POSIX_REALTIME_SIGNALS = libc::_SC_REALTIME_SIGNALS,
@@ -2479,6 +2497,7 @@ pub enum SysconfVar {
     #[cfg(any(
         apple_targets,
         target_os = "linux",
+        target_os = "nto",
         target_os = "openbsd"
     ))]
     _POSIX_SS_REPL_MAX = libc::_SC_SS_REPL_MAX,
@@ -2494,6 +2513,7 @@ pub enum SysconfVar {
     #[cfg(any(
         apple_targets,
         target_os = "linux",
+        target_os = "nto",
         netbsdlike,
     ))]
     /// The implementation supports the Thread CPU-Time Clocks option.
@@ -2533,6 +2553,7 @@ pub enum SysconfVar {
         freebsdlike,
         apple_targets,
         target_os = "linux",
+        target_os = "nto",
         target_os = "openbsd"
     ))]
     /// The implementation supports the Thread Sporadic Server option.
@@ -2544,6 +2565,7 @@ pub enum SysconfVar {
         freebsdlike,
         apple_targets,
         target_os = "linux",
+        target_os = "nto",
         target_os = "openbsd"
     ))]
     /// The implementation supports timeouts.
@@ -2555,6 +2577,7 @@ pub enum SysconfVar {
         freebsdlike,
         apple_targets,
         target_os = "linux",
+        target_os = "nto",
         target_os = "openbsd"
     ))]
     /// The implementation supports the Trace option.
@@ -2571,6 +2594,7 @@ pub enum SysconfVar {
     #[cfg(any(
         apple_targets,
         target_os = "linux",
+        target_os = "nto",
         target_os = "openbsd"
     ))]
     _POSIX_TRACE_EVENT_NAME_MAX = libc::_SC_TRACE_EVENT_NAME_MAX,
@@ -2578,6 +2602,7 @@ pub enum SysconfVar {
         freebsdlike,
         apple_targets,
         target_os = "linux",
+        target_os = "nto",
         target_os = "openbsd"
     ))]
     /// The implementation supports the Trace Inherit option.
@@ -2586,6 +2611,7 @@ pub enum SysconfVar {
         freebsdlike,
         apple_targets,
         target_os = "linux",
+        target_os = "nto",
         target_os = "openbsd"
     ))]
     /// The implementation supports the Trace Log option.
@@ -2594,6 +2620,7 @@ pub enum SysconfVar {
     #[cfg(any(
         apple_targets,
         target_os = "linux",
+        target_os = "nto",
         target_os = "openbsd"
     ))]
     _POSIX_TRACE_NAME_MAX = libc::_SC_TRACE_NAME_MAX,
@@ -2602,6 +2629,7 @@ pub enum SysconfVar {
     #[cfg(any(
         apple_targets,
         target_os = "linux",
+        target_os = "nto",
         target_os = "openbsd"
     ))]
     _POSIX_TRACE_SYS_MAX = libc::_SC_TRACE_SYS_MAX,
@@ -2609,6 +2637,7 @@ pub enum SysconfVar {
     #[cfg(any(
         apple_targets,
         target_os = "linux",
+        target_os = "nto",
         target_os = "openbsd"
     ))]
     _POSIX_TRACE_USER_EVENT_MAX = libc::_SC_TRACE_USER_EVENT_MAX,
@@ -2616,6 +2645,7 @@ pub enum SysconfVar {
         freebsdlike,
         apple_targets,
         target_os = "linux",
+        target_os = "nto",
         target_os = "openbsd"
     ))]
     /// The implementation supports the Typed Memory Objects option.
@@ -2659,7 +2689,7 @@ pub enum SysconfVar {
     _POSIX2_FORT_RUN = libc::_SC_2_FORT_RUN,
     /// The implementation supports the creation of locales by the localedef
     /// utility.
-    #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
+    #[cfg(not(any(target_os = "redox", target_os = "haiku", target_os = "nto",)))]
     _POSIX2_LOCALEDEF = libc::_SC_2_LOCALEDEF,
     #[cfg(any(bsd, target_os = "linux"))]
     /// The implementation supports the Batch Environment Services and Utilities
@@ -2717,6 +2747,7 @@ pub enum SysconfVar {
         linux_android,
         freebsdlike,
         apple_targets,
+        target_os = "nto",
         target_os = "openbsd"
     ))]
     RTSIG_MAX = libc::_SC_RTSIG_MAX,
@@ -2728,6 +2759,7 @@ pub enum SysconfVar {
         linux_android,
         freebsdlike,
         apple_targets,
+        target_os = "nto",
         target_os = "openbsd"
     ))]
     SEM_VALUE_MAX = libc::_SC_SEM_VALUE_MAX,
@@ -2737,6 +2769,7 @@ pub enum SysconfVar {
         linux_android,
         freebsdlike,
         apple_targets,
+        target_os = "nto",
         target_os = "openbsd"
     ))]
     SIGQUEUE_MAX = libc::_SC_SIGQUEUE_MAX,
@@ -2757,6 +2790,7 @@ pub enum SysconfVar {
         linux_android,
         freebsdlike,
         apple_targets,
+        target_os = "nto",
         target_os = "openbsd"
     ))]
     /// The implementation supports the X/Open Encryption Option Group.
@@ -2765,6 +2799,7 @@ pub enum SysconfVar {
         linux_android,
         freebsdlike,
         apple_targets,
+        target_os = "nto",
         target_os = "openbsd"
     ))]
     /// The implementation supports the Issue 4, Version 2 Enhanced
@@ -2784,6 +2819,7 @@ pub enum SysconfVar {
         linux_android,
         freebsdlike,
         apple_targets,
+        target_os = "nto",
         target_os = "openbsd"
     ))]
     /// The implementation supports the X/Open Realtime Option Group.
@@ -2792,6 +2828,7 @@ pub enum SysconfVar {
         linux_android,
         freebsdlike,
         apple_targets,
+        target_os = "nto",
         target_os = "openbsd"
     ))]
     /// The implementation supports the X/Open Realtime Threads Option Group.
@@ -2804,6 +2841,7 @@ pub enum SysconfVar {
         freebsdlike,
         apple_targets,
         target_os = "linux",
+        target_os = "nto",
         target_os = "openbsd"
     ))]
     /// The implementation supports the XSI STREAMS Option Group.
@@ -2812,6 +2850,7 @@ pub enum SysconfVar {
         linux_android,
         freebsdlike,
         apple_targets,
+        target_os = "nto",
         target_os = "openbsd"
     ))]
     /// The implementation supports the XSI option
@@ -2820,6 +2859,7 @@ pub enum SysconfVar {
         linux_android,
         freebsdlike,
         apple_targets,
+        target_os = "nto",
         target_os = "openbsd"
     ))]
     /// Integer value indicating version of the X/Open Portability Guide to
@@ -3190,6 +3230,7 @@ pub struct User {
         target_os = "fuchsia",
         target_os = "haiku",
         target_os = "hurd",
+        target_os = "nto",
     )))]
     pub class: CString,
     /// Last password change
@@ -3200,6 +3241,7 @@ pub struct User {
         target_os = "fuchsia",
         target_os = "haiku",
         target_os = "hurd",
+        target_os = "nto",
     )))]
     pub change: libc::time_t,
     /// Expiration time of account
@@ -3210,6 +3252,7 @@ pub struct User {
         target_os = "fuchsia",
         target_os = "haiku",
         target_os = "hurd",
+        target_os = "nto",
     )))]
     pub expire: libc::time_t,
 }
@@ -3263,6 +3306,7 @@ impl From<&libc::passwd> for User {
                     target_os = "fuchsia",
                     target_os = "haiku",
                     target_os = "hurd",
+                    target_os = "nto",
                 )))]
                 class: CString::new(CStr::from_ptr(pw.pw_class).to_bytes())
                     .unwrap(),
@@ -3273,6 +3317,7 @@ impl From<&libc::passwd> for User {
                     target_os = "fuchsia",
                     target_os = "haiku",
                     target_os = "hurd",
+                    target_os = "nto",
                 )))]
                 change: pw.pw_change,
                 #[cfg(not(any(
@@ -3282,6 +3327,7 @@ impl From<&libc::passwd> for User {
                     target_os = "fuchsia",
                     target_os = "haiku",
                     target_os = "hurd",
+                    target_os = "nto",
                 )))]
                 expire: pw.pw_expire,
             }
@@ -3323,6 +3369,7 @@ impl From<User> for libc::passwd {
                 target_os = "fuchsia",
                 target_os = "haiku",
                 target_os = "hurd",
+                target_os = "nto",
             )))]
             pw_class: u.class.into_raw(),
             #[cfg(not(any(
@@ -3332,6 +3379,7 @@ impl From<User> for libc::passwd {
                 target_os = "fuchsia",
                 target_os = "haiku",
                 target_os = "hurd",
+                target_os = "nto",
             )))]
             pw_change: u.change,
             #[cfg(not(any(
@@ -3343,9 +3391,9 @@ impl From<User> for libc::passwd {
                 target_os = "hurd",
             )))]
             pw_expire: u.expire,
-            #[cfg(solarish)]
+            #[cfg(any(solarish, target_os = "nto",))]
             pw_age: CString::new("").unwrap().into_raw(),
-            #[cfg(solarish)]
+            #[cfg(any(solarish, target_os = "nto",))]
             pw_comment: CString::new("").unwrap().into_raw(),
             #[cfg(freebsdlike)]
             pw_fields: 0,

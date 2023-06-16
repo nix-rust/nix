@@ -38,7 +38,8 @@ use crate::{sys::stat::Mode, NixPath, Result};
     target_os = "fuchsia",
     target_os = "wasi",
     target_env = "uclibc",
-    target_os = "freebsd"
+    target_os = "freebsd",
+    target_os = "nto",
 ))]
 #[cfg(feature = "fs")]
 pub use self::posix_fadvise::{posix_fadvise, PosixFadviseAdvice};
@@ -114,7 +115,7 @@ libc_bitflags!(
         /// If the specified path isn't a directory, fail.
         O_DIRECTORY;
         /// Implicitly follow each `write()` with an `fdatasync()`.
-        #[cfg(any(linux_android, apple_targets, netbsdlike))]
+        #[cfg(any(linux_android, apple_targets, netbsdlike, target_os = "nto",))]
         O_DSYNC;
         /// Error out if a file was not created.
         O_EXCL;
@@ -162,7 +163,7 @@ libc_bitflags!(
         /// This should not be combined with `O_WRONLY` or `O_RDONLY`.
         O_RDWR;
         /// Similar to `O_DSYNC` but applies to `read`s instead.
-        #[cfg(any(target_os = "linux", netbsdlike))]
+        #[cfg(any(target_os = "linux", netbsdlike, target_os = "nto",))]
         O_RSYNC;
         /// Open directory for search only. Skip search permission checks on
         /// later `openat()` calls using the obtained file descriptor.
@@ -464,12 +465,12 @@ fn readlink_maybe_at<P: ?Sized + NixPath>(
                 cstr.as_ptr(),
                 v.as_mut_ptr().cast(),
                 v.capacity() as size_t,
-            ),
+            ) as _,
             None => libc::readlink(
                 cstr.as_ptr(),
                 v.as_mut_ptr().cast(),
                 v.capacity() as size_t,
-            ),
+            ) as _,
         }
     })
 }
@@ -1323,7 +1324,8 @@ pub fn fspacectl_all(
     target_os = "fuchsia",
     target_os = "wasi",
     target_env = "uclibc",
-    target_os = "freebsd"
+    target_os = "freebsd",
+    target_os = "nto",
 ))]
 mod posix_fadvise {
     use crate::errno::Errno;
@@ -1387,6 +1389,7 @@ mod posix_fadvise {
     target_os = "emscripten",
     target_os = "fuchsia",
     target_os = "wasi",
+    target_os = "nto",
 ))]
 pub fn posix_fallocate(
     fd: RawFd,
