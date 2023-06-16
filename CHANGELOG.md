@@ -21,6 +21,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Added `SOF_TIMESTAMPING_OPT_ID` and `SOF_TIMESTAMPING_OPT_TSONLY` to `nix::sys::socket::TimestampingFlag`.
   ([#2048](https://github.com/nix-rust/nix/pull/2048))
 - Enabled socket timestamping options on Android. ([#2077](https://github.com/nix-rust/nix/pull/2077))
+- Added vsock support for macOS ([#2056](https://github.com/nix-rust/nix/pull/2056))
 
 ### Changed
 

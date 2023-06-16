@@ -13,7 +13,7 @@
 ))]
 #[cfg(feature = "net")]
 pub use self::datalink::LinkAddr;
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(any(target_os = "android", target_os = "linux", target_os = "macos"))]
 pub use self::vsock::VsockAddr;
 use super::sa_family_t;
 use crate::errno::Errno;
@@ -248,7 +248,7 @@ pub enum AddressFamily {
     #[cfg_attr(docsrs, doc(cfg(all())))]
     Nfc = libc::AF_NFC,
     /// VMWare VSockets protocol for hypervisor-guest interaction.
-    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(any(target_os = "android", target_os = "linux", target_os = "macos"))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     Vsock = libc::AF_VSOCK,
     /// ARPANet IMP addresses
@@ -443,7 +443,7 @@ impl AddressFamily {
                 target_os = "openbsd"
             ))]
             libc::AF_LINK => Some(AddressFamily::Link),
-            #[cfg(any(target_os = "android", target_os = "linux"))]
+            #[cfg(any(target_os = "android", target_os = "linux", target_os = "macos"))]
             libc::AF_VSOCK => Some(AddressFamily::Vsock),
             _ => None,
         }
@@ -1286,7 +1286,7 @@ pub union SockaddrStorage {
     sin6: SockaddrIn6,
     ss: libc::sockaddr_storage,
     su: UnixAddr,
-    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(any(target_os = "android", target_os = "linux", target_os = "macos" ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     vsock: VsockAddr,
 }
@@ -1378,7 +1378,7 @@ impl SockaddrLike for SockaddrStorage {
                 libc::AF_SYSTEM => {
                     SysControlAddr::from_raw(addr, l).map(|sctl| Self { sctl })
                 }
-                #[cfg(any(target_os = "android", target_os = "linux"))]
+                #[cfg(any(target_os = "android", target_os = "linux", target_os = "macos" ))]
                 libc::AF_VSOCK => {
                     VsockAddr::from_raw(addr, l).map(|vsock| Self { vsock })
                 }
@@ -1554,7 +1554,7 @@ impl SockaddrStorage {
     accessors! {as_sys_control_addr, as_sys_control_addr_mut, SysControlAddr,
     AddressFamily::System, libc::sockaddr_ctl, sctl}
 
-    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(any(target_os = "android", target_os = "linux", target_os = "macos"))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     accessors! {as_vsock_addr, as_vsock_addr_mut, VsockAddr,
     AddressFamily::Vsock, libc::sockaddr_vm, vsock}
@@ -1604,7 +1604,7 @@ impl fmt::Display for SockaddrStorage {
                 #[cfg(feature = "ioctl")]
                 libc::AF_SYSTEM => self.sctl.fmt(f),
                 libc::AF_UNIX => self.su.fmt(f),
-                #[cfg(any(target_os = "android", target_os = "linux"))]
+                #[cfg(any(target_os = "android", target_os = "linux", target_os = "macos"))]
                 libc::AF_VSOCK => self.vsock.fmt(f),
                 _ => "<Address family unspecified>".fmt(f),
             }
@@ -1678,7 +1678,7 @@ impl Hash for SockaddrStorage {
                 #[cfg(feature = "ioctl")]
                 libc::AF_SYSTEM => self.sctl.hash(s),
                 libc::AF_UNIX => self.su.hash(s),
-                #[cfg(any(target_os = "android", target_os = "linux"))]
+                #[cfg(any(target_os = "android", target_os = "linux", target_os = "macos"))]
                 libc::AF_VSOCK => self.vsock.hash(s),
                 _ => self.ss.hash(s),
             }
@@ -1720,7 +1720,7 @@ impl PartialEq for SockaddrStorage {
                 #[cfg(feature = "ioctl")]
                 (libc::AF_SYSTEM, libc::AF_SYSTEM) => self.sctl == other.sctl,
                 (libc::AF_UNIX, libc::AF_UNIX) => self.su == other.su,
-                #[cfg(any(target_os = "android", target_os = "linux"))]
+                #[cfg(any(target_os = "android", target_os = "linux", target_os = "macos"))]
                 (libc::AF_VSOCK, libc::AF_VSOCK) => self.vsock == other.vsock,
                 _ => false,
             }
@@ -2268,7 +2268,7 @@ mod datalink {
     }
 }
 
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(any(target_os = "android", target_os = "linux", target_os = "macos"))]
 #[cfg_attr(docsrs, doc(cfg(all())))]
 pub mod vsock {
     use super::*;
@@ -2314,19 +2314,32 @@ pub mod vsock {
     }
 
     impl PartialEq for VsockAddr {
+        #[cfg(any(target_os = "android", target_os = "linux"))]
         fn eq(&self, other: &Self) -> bool {
             let (inner, other) = (self.0, other.0);
             (inner.svm_family, inner.svm_cid, inner.svm_port)
                 == (other.svm_family, other.svm_cid, other.svm_port)
+        }
+        #[cfg(target_os = "macos")]
+        fn eq(&self, other: &Self) -> bool {
+            let (inner, other) = (self.0, other.0);
+            (inner.svm_family, inner.svm_cid, inner.svm_port, inner.svm_len)
+                == (other.svm_family, other.svm_cid, other.svm_port, inner.svm_len)
         }
     }
 
     impl Eq for VsockAddr {}
 
     impl Hash for VsockAddr {
+        #[cfg(any(target_os = "android", target_os = "linux"))]
         fn hash<H: Hasher>(&self, s: &mut H) {
             let inner = self.0;
             (inner.svm_family, inner.svm_cid, inner.svm_port).hash(s);
+        }
+        #[cfg(target_os = "macos")]
+        fn hash<H: Hasher>(&self, s: &mut H) {
+            let inner = self.0;
+            (inner.svm_family, inner.svm_cid, inner.svm_port, inner.svm_len).hash(s);
         }
     }
 
@@ -2342,6 +2355,10 @@ pub mod vsock {
             addr.svm_cid = cid;
             addr.svm_port = port;
 
+            #[cfg(target_os = "macos")]
+            {
+             addr.svm_len =  std::mem::size_of::<sockaddr_vm>() as u8;
+            }
             VsockAddr(addr)
         }
 
