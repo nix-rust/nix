@@ -883,7 +883,7 @@ pub fn execvp<S: AsRef<CStr>>(
 /// This functions like a combination of `execvp(2)` and `execve(2)` to pass an
 /// environment and have a search path. See these two for additional
 /// information.
-#[cfg(any(target_os = "haiku", target_os = "linux", target_os = "openbsd"))]
+#[cfg(any(target_os = "haiku", target_os = "linux", target_os = "openbsd", target_os = "nto"))]
 pub fn execvpe<SA: AsRef<CStr>, SE: AsRef<CStr>>(
     filename: &CStr,
     args: &[SA],
@@ -998,7 +998,8 @@ pub fn execveat<SA: AsRef<CStr>, SE: AsRef<CStr>>(
     target_os = "linux",
     target_os = "netbsd",
     target_os = "openbsd",
-    target_os = "solaris"
+    target_os = "solaris",
+    target_os = "nto",
 ))]
 pub fn daemon(nochdir: bool, noclose: bool) -> Result<()> {
     let res = unsafe { libc::daemon(nochdir as c_int, noclose as c_int) };
@@ -1385,7 +1386,8 @@ pub fn chroot<P: ?Sized + NixPath>(path: &P) -> Result<()> {
     target_os = "freebsd",
     target_os = "linux",
     target_os = "netbsd",
-    target_os = "openbsd"
+    target_os = "openbsd",
+    target_os = "nto",
 ))]
 pub fn sync() {
     unsafe { libc::sync() };
@@ -1653,7 +1655,9 @@ pub fn setgroups(groups: &[Gid]) -> Result<()> {
                      target_os = "macos",
                      target_os = "netbsd",
                      target_os = "openbsd",
-                     target_os = "solaris"))] {
+                     target_os = "solaris",
+                     target_os = "nto",
+            ))] {
             type setgroups_ngroups_t = c_int;
         } else {
             type setgroups_ngroups_t = size_t;
@@ -1912,7 +1916,7 @@ pub fn sleep(seconds: c_uint) -> c_uint {
 feature! {
 #![feature = "acct"]
 
-#[cfg(not(any(target_os = "redox", target_os = "haiku")))]
+#[cfg(not(any(target_os = "redox", target_os = "haiku", target_os = "nto")))]
 pub mod acct {
     use crate::errno::Errno;
     use crate::{NixPath, Result};
@@ -2006,7 +2010,8 @@ pub enum PathconfVar {
         target_os = "linux",
         target_os = "netbsd",
         target_os = "openbsd",
-        target_os = "redox"
+        target_os = "redox",
+        target_os = "nto",
     ))]
     /// Minimum number of bits needed to represent, as a signed integer value,
     /// the maximum size of a regular file allowed in the specified directory.
@@ -2039,7 +2044,8 @@ pub enum PathconfVar {
         target_os = "netbsd",
         target_os = "openbsd",
         target_os = "redox",
-        target_os = "solaris"
+        target_os = "solaris",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// Symbolic links can be created.
@@ -2061,7 +2067,8 @@ pub enum PathconfVar {
         target_os = "dragonfly",
         target_os = "freebsd",
         target_os = "linux",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// Recommended increment for file transfer sizes between the
@@ -2073,7 +2080,8 @@ pub enum PathconfVar {
         target_os = "freebsd",
         target_os = "linux",
         target_os = "openbsd",
-        target_os = "redox"
+        target_os = "redox",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// Maximum recommended file transfer size.
@@ -2084,7 +2092,8 @@ pub enum PathconfVar {
         target_os = "freebsd",
         target_os = "linux",
         target_os = "openbsd",
-        target_os = "redox"
+        target_os = "redox",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// Minimum recommended file transfer size.
@@ -2095,7 +2104,8 @@ pub enum PathconfVar {
         target_os = "freebsd",
         target_os = "linux",
         target_os = "openbsd",
-        target_os = "redox"
+        target_os = "redox",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     ///  Recommended file transfer buffer alignment.
@@ -2109,7 +2119,8 @@ pub enum PathconfVar {
         target_os = "netbsd",
         target_os = "openbsd",
         target_os = "redox",
-        target_os = "solaris"
+        target_os = "solaris",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// Maximum number of bytes in a symbolic link.
@@ -2132,7 +2143,8 @@ pub enum PathconfVar {
         target_os = "linux",
         target_os = "openbsd",
         target_os = "redox",
-        target_os = "solaris"
+        target_os = "solaris",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// Asynchronous input or output operations may be performed for the
@@ -2146,7 +2158,8 @@ pub enum PathconfVar {
         target_os = "linux",
         target_os = "openbsd",
         target_os = "redox",
-        target_os = "solaris"
+        target_os = "solaris",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// Prioritized input or output operations may be performed for the
@@ -2286,7 +2299,8 @@ pub enum SysconfVar {
         target_os = "ios",
         target_os = "linux",
         target_os = "macos",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The maximum amount by which a process can decrease its asynchronous I/O
@@ -2341,7 +2355,8 @@ pub enum SysconfVar {
         target_os = "macos",
         target_os = "netbsd",
         target_os = "openbsd",
-        target_os = "solaris"
+        target_os = "solaris",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// Maximum length of a host name (not including the terminating null) as
@@ -2389,7 +2404,8 @@ pub enum SysconfVar {
         target_os = "ios",
         target_os = "linux",
         target_os = "macos",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Advisory Information option.
@@ -2403,7 +2419,8 @@ pub enum SysconfVar {
         target_os = "macos",
         target_os = "netbsd",
         target_os = "openbsd",
-        target_os = "solaris"
+        target_os = "solaris",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports barriers.
@@ -2421,7 +2438,8 @@ pub enum SysconfVar {
         target_os = "macos",
         target_os = "netbsd",
         target_os = "openbsd",
-        target_os = "solaris"
+        target_os = "solaris",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports clock selection.
@@ -2435,7 +2453,8 @@ pub enum SysconfVar {
         target_os = "macos",
         target_os = "netbsd",
         target_os = "openbsd",
-        target_os = "solaris"
+        target_os = "solaris",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Process CPU-Time Clocks option.
@@ -2452,7 +2471,8 @@ pub enum SysconfVar {
         target_os = "linux",
         target_os = "macos",
         target_os = "openbsd",
-        target_os = "solaris"
+        target_os = "solaris",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the IPv6 option.
@@ -2494,7 +2514,8 @@ pub enum SysconfVar {
         target_os = "linux",
         target_os = "macos",
         target_os = "openbsd",
-        target_os = "solaris"
+        target_os = "solaris",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Prioritized Input and Output option.
@@ -2511,7 +2532,8 @@ pub enum SysconfVar {
         target_os = "linux",
         target_os = "macos",
         target_os = "openbsd",
-        target_os = "solaris"
+        target_os = "solaris",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Raw Sockets option.
@@ -2537,7 +2559,8 @@ pub enum SysconfVar {
         target_os = "ios",
         target_os = "linux",
         target_os = "macos",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports realtime signals.
@@ -2551,7 +2574,8 @@ pub enum SysconfVar {
         target_os = "macos",
         target_os = "netbsd",
         target_os = "openbsd",
-        target_os = "solaris"
+        target_os = "solaris",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Regular Expression Handling option.
@@ -2587,7 +2611,8 @@ pub enum SysconfVar {
         target_os = "linux",
         target_os = "macos",
         target_os = "netbsd",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Spawn option.
@@ -2599,7 +2624,8 @@ pub enum SysconfVar {
         target_os = "linux",
         target_os = "macos",
         target_os = "netbsd",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports spin locks.
@@ -2619,7 +2645,8 @@ pub enum SysconfVar {
         target_os = "ios",
         target_os = "linux",
         target_os = "macos",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_SS_REPL_MAX = libc::_SC_SS_REPL_MAX,
@@ -2640,7 +2667,8 @@ pub enum SysconfVar {
         target_os = "linux",
         target_os = "macos",
         target_os = "netbsd",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Thread CPU-Time Clocks option.
@@ -2665,7 +2693,8 @@ pub enum SysconfVar {
         target_os = "linux",
         target_os = "macos",
         target_os = "netbsd",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Thread Process-Shared Synchronization
@@ -2697,7 +2726,8 @@ pub enum SysconfVar {
         target_os = "ios",
         target_os = "linux",
         target_os = "macos",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Thread Sporadic Server option.
@@ -2712,7 +2742,8 @@ pub enum SysconfVar {
         target_os = "ios",
         target_os = "linux",
         target_os = "macos",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports timeouts.
@@ -2727,7 +2758,8 @@ pub enum SysconfVar {
         target_os = "ios",
         target_os = "linux",
         target_os = "macos",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Trace option.
@@ -2747,7 +2779,8 @@ pub enum SysconfVar {
         target_os = "ios",
         target_os = "linux",
         target_os = "macos",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_TRACE_EVENT_NAME_MAX = libc::_SC_TRACE_EVENT_NAME_MAX,
@@ -2757,7 +2790,8 @@ pub enum SysconfVar {
         target_os = "ios",
         target_os = "linux",
         target_os = "macos",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Trace Inherit option.
@@ -2768,7 +2802,8 @@ pub enum SysconfVar {
         target_os = "ios",
         target_os = "linux",
         target_os = "macos",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Trace Log option.
@@ -2777,7 +2812,8 @@ pub enum SysconfVar {
         target_os = "ios",
         target_os = "linux",
         target_os = "macos",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_TRACE_NAME_MAX = libc::_SC_TRACE_NAME_MAX,
@@ -2785,7 +2821,8 @@ pub enum SysconfVar {
         target_os = "ios",
         target_os = "linux",
         target_os = "macos",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_TRACE_SYS_MAX = libc::_SC_TRACE_SYS_MAX,
@@ -2793,7 +2830,8 @@ pub enum SysconfVar {
         target_os = "ios",
         target_os = "linux",
         target_os = "macos",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_TRACE_USER_EVENT_MAX = libc::_SC_TRACE_USER_EVENT_MAX,
@@ -2803,7 +2841,8 @@ pub enum SysconfVar {
         target_os = "ios",
         target_os = "linux",
         target_os = "macos",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Typed Memory Objects option.
@@ -2819,7 +2858,8 @@ pub enum SysconfVar {
         target_os = "linux",
         target_os = "macos",
         target_os = "netbsd",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation provides a C-language compilation environment with
@@ -2832,7 +2872,8 @@ pub enum SysconfVar {
         target_os = "linux",
         target_os = "macos",
         target_os = "netbsd",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation provides a C-language compilation environment with
@@ -2846,7 +2887,8 @@ pub enum SysconfVar {
         target_os = "linux",
         target_os = "macos",
         target_os = "netbsd",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation provides a C-language compilation environment with
@@ -2859,7 +2901,8 @@ pub enum SysconfVar {
         target_os = "linux",
         target_os = "macos",
         target_os = "netbsd",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation provides a C-language compilation environment with an
@@ -2888,7 +2931,7 @@ pub enum SysconfVar {
     _POSIX2_FORT_RUN = libc::_SC_2_FORT_RUN,
     /// The implementation supports the creation of locales by the localedef
     /// utility.
-    #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
+    #[cfg(not(any(target_os = "redox", target_os = "haiku", target_os = "nto")))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX2_LOCALEDEF = libc::_SC_2_LOCALEDEF,
     #[cfg(any(
@@ -2898,7 +2941,8 @@ pub enum SysconfVar {
         target_os = "linux",
         target_os = "macos",
         target_os = "netbsd",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Batch Environment Services and Utilities
@@ -2911,7 +2955,8 @@ pub enum SysconfVar {
         target_os = "linux",
         target_os = "macos",
         target_os = "netbsd",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Batch Accounting option.
@@ -2923,7 +2968,8 @@ pub enum SysconfVar {
         target_os = "linux",
         target_os = "macos",
         target_os = "netbsd",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Batch Checkpoint/Restart option.
@@ -2935,7 +2981,8 @@ pub enum SysconfVar {
         target_os = "linux",
         target_os = "macos",
         target_os = "netbsd",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Locate Batch Job Request option.
@@ -2947,7 +2994,8 @@ pub enum SysconfVar {
         target_os = "linux",
         target_os = "macos",
         target_os = "netbsd",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Batch Job Message Request option.
@@ -2959,7 +3007,8 @@ pub enum SysconfVar {
         target_os = "linux",
         target_os = "macos",
         target_os = "netbsd",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Track Batch Job Request option.
@@ -3003,7 +3052,8 @@ pub enum SysconfVar {
         target_os = "ios",
         target_os = "linux",
         target_os = "macos",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     RTSIG_MAX = libc::_SC_RTSIG_MAX,
@@ -3017,7 +3067,8 @@ pub enum SysconfVar {
         target_os = "ios",
         target_os = "linux",
         target_os = "macos",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     SEM_VALUE_MAX = libc::_SC_SEM_VALUE_MAX,
@@ -3028,7 +3079,8 @@ pub enum SysconfVar {
         target_os = "ios",
         target_os = "linux",
         target_os = "macos",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     SIGQUEUE_MAX = libc::_SC_SIGQUEUE_MAX,
@@ -3040,7 +3092,8 @@ pub enum SysconfVar {
         target_os = "linux",
         target_os = "macos",
         target_os = "netbsd",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     SYMLOOP_MAX = libc::_SC_SYMLOOP_MAX,
@@ -3056,7 +3109,8 @@ pub enum SysconfVar {
         target_os = "ios",
         target_os = "linux",
         target_os = "macos",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the X/Open Encryption Option Group.
@@ -3068,7 +3122,8 @@ pub enum SysconfVar {
         target_os = "ios",
         target_os = "linux",
         target_os = "macos",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Issue 4, Version 2 Enhanced
@@ -3092,7 +3147,8 @@ pub enum SysconfVar {
         target_os = "ios",
         target_os = "linux",
         target_os = "macos",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the X/Open Realtime Option Group.
@@ -3104,7 +3160,8 @@ pub enum SysconfVar {
         target_os = "ios",
         target_os = "linux",
         target_os = "macos",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the X/Open Realtime Threads Option Group.
@@ -3120,7 +3177,8 @@ pub enum SysconfVar {
         target_os = "ios",
         target_os = "linux",
         target_os = "macos",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the XSI STREAMS Option Group.
@@ -3132,7 +3190,8 @@ pub enum SysconfVar {
         target_os = "ios",
         target_os = "linux",
         target_os = "macos",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the XSI option
@@ -3144,7 +3203,8 @@ pub enum SysconfVar {
         target_os = "ios",
         target_os = "linux",
         target_os = "macos",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// Integer value indicating version of the X/Open Portability Guide to
@@ -3462,7 +3522,8 @@ pub struct User {
         target_os = "haiku",
         target_os = "illumos",
         target_os = "linux",
-        target_os = "solaris"
+        target_os = "solaris",
+        target_os = "nto",
     )))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     pub class: CString,
@@ -3473,7 +3534,8 @@ pub struct User {
         target_os = "haiku",
         target_os = "illumos",
         target_os = "linux",
-        target_os = "solaris"
+        target_os = "solaris",
+        target_os = "nto",
     )))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     pub change: libc::time_t,
@@ -3484,7 +3546,8 @@ pub struct User {
         target_os = "haiku",
         target_os = "illumos",
         target_os = "linux",
-        target_os = "solaris"
+        target_os = "solaris",
+        target_os = "nto",
     )))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     pub expire: libc::time_t,
@@ -3538,7 +3601,8 @@ impl From<&libc::passwd> for User {
                     target_os = "haiku",
                     target_os = "illumos",
                     target_os = "linux",
-                    target_os = "solaris"
+                    target_os = "solaris",
+                    target_os = "nto",
                 )))]
                 class: CString::new(CStr::from_ptr(pw.pw_class).to_bytes())
                     .unwrap(),
@@ -3548,7 +3612,8 @@ impl From<&libc::passwd> for User {
                     target_os = "haiku",
                     target_os = "illumos",
                     target_os = "linux",
-                    target_os = "solaris"
+                    target_os = "solaris",
+                    target_os = "nto",
                 )))]
                 change: pw.pw_change,
                 #[cfg(not(any(
@@ -3557,7 +3622,8 @@ impl From<&libc::passwd> for User {
                     target_os = "haiku",
                     target_os = "illumos",
                     target_os = "linux",
-                    target_os = "solaris"
+                    target_os = "solaris",
+                    target_os = "nto",
                 )))]
                 expire: pw.pw_expire,
             }
@@ -3598,7 +3664,8 @@ impl From<User> for libc::passwd {
                 target_os = "haiku",
                 target_os = "illumos",
                 target_os = "linux",
-                target_os = "solaris"
+                target_os = "solaris",
+                target_os = "nto",
             )))]
             pw_class: u.class.into_raw(),
             #[cfg(not(any(
@@ -3607,7 +3674,8 @@ impl From<User> for libc::passwd {
                 target_os = "haiku",
                 target_os = "illumos",
                 target_os = "linux",
-                target_os = "solaris"
+                target_os = "solaris",
+                target_os = "nto",
             )))]
             pw_change: u.change,
             #[cfg(not(any(
@@ -3616,12 +3684,13 @@ impl From<User> for libc::passwd {
                 target_os = "haiku",
                 target_os = "illumos",
                 target_os = "linux",
-                target_os = "solaris"
+                target_os = "solaris",
+                target_os = "nto",
             )))]
             pw_expire: u.expire,
-            #[cfg(target_os = "illumos")]
+            #[cfg(any(target_os = "illumos", target_os = "nto"))]
             pw_age: CString::new("").unwrap().into_raw(),
-            #[cfg(target_os = "illumos")]
+            #[cfg(any(target_os = "illumos", target_os = "nto"))]
             pw_comment: CString::new("").unwrap().into_raw(),
             #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
             pw_fields: 0,
@@ -3930,6 +3999,7 @@ feature! {
     target_os = "openbsd",
     target_os = "netbsd",
     target_os = "dragonfly",
+    target_os = "nto",
 ))]
 pub fn getpeereid(fd: RawFd) -> Result<(Uid, Gid)> {
     let mut uid = 1;

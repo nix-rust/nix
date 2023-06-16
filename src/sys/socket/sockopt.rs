@@ -336,7 +336,9 @@ cfg_if! {
                         target_os = "macos",
                         target_os = "netbsd",
                         target_os = "openbsd",
-                        target_os = "solaris"))] {
+                        target_os = "solaris",
+                        target_os = "nto",
+              ))] {
         #[cfg(feature = "net")]
         sockopt_impl!(
             #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -550,7 +552,12 @@ cfg_if! {
             TcpMaxSeg, GetOnly, libc::IPPROTO_TCP, libc::TCP_MAXSEG, u32);
     }
 }
-#[cfg(not(any(target_os = "openbsd", target_os = "haiku", target_os = "redox")))]
+#[cfg(not(any(
+    target_os = "openbsd",
+    target_os = "haiku",
+    target_os = "redox",
+    target_os = "nto",
+)))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -572,7 +579,12 @@ sockopt_impl!(
     libc::TCP_REPAIR,
     u32
 );
-#[cfg(not(any(target_os = "openbsd", target_os = "haiku", target_os = "redox")))]
+#[cfg(not(any(
+    target_os = "openbsd",
+    target_os = "haiku",
+    target_os = "redox",
+    target_os = "nto",
+)))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -784,6 +796,7 @@ sockopt_impl!(
     target_os = "linux",
     target_os = "macos",
     target_os = "netbsd",
+    target_os = "nto",
 ))]
 #[cfg(feature = "net")]
 sockopt_impl!(
@@ -804,6 +817,7 @@ sockopt_impl!(
     target_os = "macos",
     target_os = "netbsd",
     target_os = "openbsd",
+    target_os = "nto",
 ))]
 #[cfg(feature = "net")]
 sockopt_impl!(
@@ -822,6 +836,7 @@ sockopt_impl!(
     target_os = "macos",
     target_os = "netbsd",
     target_os = "openbsd",
+    target_os = "nto",
 ))]
 #[cfg(feature = "net")]
 sockopt_impl!(
@@ -840,6 +855,7 @@ sockopt_impl!(
     target_os = "macos",
     target_os = "netbsd",
     target_os = "openbsd",
+    target_os = "nto",
 ))]
 #[cfg(feature = "net")]
 sockopt_impl!(
@@ -946,7 +962,12 @@ sockopt_impl!(
     libc::IP_MTU,
     libc::c_int
 );
-#[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
+#[cfg(any(
+    target_os = "android",
+    target_os = "freebsd",
+    target_os = "linux",
+    target_os = "nto",
+))]
 sockopt_impl!(
     /// Set or retrieve the current time-to-live field that is used in every
     /// packet sent from this socket.
@@ -956,7 +977,12 @@ sockopt_impl!(
     libc::IP_TTL,
     libc::c_int
 );
-#[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
+#[cfg(any(
+    target_os = "android",
+    target_os = "freebsd",
+    target_os = "linux",
+    target_os = "nto",
+))]
 sockopt_impl!(
     /// Set the unicast hop limit for the socket.
     Ipv6Ttl,

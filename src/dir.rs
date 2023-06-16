@@ -230,7 +230,9 @@ impl Entry {
                          target_os = "l4re",
                          target_os = "linux",
                          target_os = "macos",
-                         target_os = "solaris"))] {
+                         target_os = "solaris",
+                         target_os = "nto",
+               ))] {
                 self.0.d_ino as u64
             } else {
                 u64::from(self.0.d_fileno)
@@ -252,7 +254,8 @@ impl Entry {
         #[cfg(not(any(
             target_os = "illumos",
             target_os = "solaris",
-            target_os = "haiku"
+            target_os = "haiku",
+            target_os = "nto",
         )))]
         match self.0.d_type {
             libc::DT_FIFO => Some(Type::Fifo),
@@ -269,7 +272,8 @@ impl Entry {
         #[cfg(any(
             target_os = "illumos",
             target_os = "solaris",
-            target_os = "haiku"
+            target_os = "haiku",
+            target_os = "nto",
         ))]
         None
     }

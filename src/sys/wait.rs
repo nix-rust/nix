@@ -31,7 +31,9 @@ libc_bitflags!(
                   target_os = "linux",
                   target_os = "redox",
                   target_os = "macos",
-                  target_os = "netbsd"))]
+                  target_os = "netbsd",
+                  target_os = "nto",
+        ))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
         WEXITED;
         /// Report the status of selected processes that have continued from a
@@ -46,7 +48,9 @@ libc_bitflags!(
                   target_os = "linux",
                   target_os = "redox",
                   target_os = "macos",
-                  target_os = "netbsd"))]
+                  target_os = "netbsd",
+                  target_os = "nto",
+        ))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
         WSTOPPED;
         /// Don't reap, just poll status.
@@ -57,7 +61,9 @@ libc_bitflags!(
                   target_os = "linux",
                   target_os = "redox",
                   target_os = "macos",
-                  target_os = "netbsd"))]
+                  target_os = "netbsd",
+                  target_os = "nto",
+        ))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
         WNOWAIT;
         /// Don't wait on children of other threads in this group

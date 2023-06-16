@@ -18,7 +18,8 @@ use std::ptr; // For splice and copy_file_range
     target_os = "fuchsia",
     target_os = "wasi",
     target_env = "uclibc",
-    target_os = "freebsd"
+    target_os = "freebsd",
+    target_os = "nto",
 ))]
 #[cfg(feature = "fs")]
 pub use self::posix_fadvise::{posix_fadvise, PosixFadviseAdvice};
@@ -81,7 +82,9 @@ libc_bitflags!(
                   target_os = "linux",
                   target_os = "macos",
                   target_os = "netbsd",
-                  target_os = "openbsd"))]
+                  target_os = "openbsd",
+                  target_os = "nto",
+        ))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
         O_DSYNC;
         /// Error out if a file was not created.
@@ -150,7 +153,11 @@ libc_bitflags!(
         /// This should not be combined with `O_WRONLY` or `O_RDONLY`.
         O_RDWR;
         /// Similar to `O_DSYNC` but applies to `read`s instead.
-        #[cfg(any(target_os = "linux", target_os = "netbsd", target_os = "openbsd"))]
+        #[cfg(any(target_os = "linux",
+                  target_os = "netbsd",
+                  target_os = "openbsd",
+                  target_os = "nto",
+        ))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
         O_RSYNC;
         /// Skip search permission checks.
@@ -297,12 +304,12 @@ fn readlink_maybe_at<P: ?Sized + NixPath>(
                 cstr.as_ptr(),
                 v.as_mut_ptr() as *mut c_char,
                 v.capacity() as size_t,
-            ),
+            ) as _,
             None => libc::readlink(
                 cstr.as_ptr(),
                 v.as_mut_ptr() as *mut c_char,
                 v.capacity() as size_t,
-            ),
+            ) as _,
         }
     })
 }
@@ -896,7 +903,8 @@ pub fn fspacectl_all(
     target_os = "fuchsia",
     target_os = "wasi",
     target_env = "uclibc",
-    target_os = "freebsd"
+    target_os = "freebsd",
+    target_os = "nto",
 ))]
 mod posix_fadvise {
     use crate::errno::Errno;
@@ -944,7 +952,8 @@ mod posix_fadvise {
     target_os = "emscripten",
     target_os = "fuchsia",
     target_os = "wasi",
-    target_os = "freebsd"
+    target_os = "freebsd",
+    target_os = "nto",
 ))]
 pub fn posix_fallocate(
     fd: RawFd,
