@@ -868,6 +868,11 @@ pub enum ControlMessageOwned {
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv6RecvErr(libc::sock_extended_err, Option<sockaddr_in6>),
 
+    /// `SOL_TLS` messages of type `TLS_GET_RECORD_TYPE`, containing the TLS message content type,
+    /// normally one of change_cipher_spec(20), alert(21), handshake(22) (for TLS 1.3
+    /// resumption tickets), application_data(23)
+    TlsGetRecordType(u8),
+
     /// Catch-all variant for unimplemented cmsg types.
     #[doc(hidden)]
     Unknown(UnknownCmsg),
@@ -884,6 +889,12 @@ pub struct Timestamps {
     /// hardware based timestamp
     pub hw_raw: TimeSpec,
 }
+
+// Defined in `linux/tls.h`
+#[cfg(all(target_os = "linux"))]
+const TLS_GET_RECORD_TYPE: c_int = 2;
+
+const SOL_TLS: c_int = 282;
 
 impl ControlMessageOwned {
     /// Decodes a `ControlMessageOwned` from raw bytes.
@@ -1026,6 +1037,11 @@ impl ControlMessageOwned {
             (libc::IPPROTO_IPV6, libc::IPV6_ORIGDSTADDR) => {
                 let dl = ptr::read_unaligned(p as *const libc::sockaddr_in6);
                 ControlMessageOwned::Ipv6OrigDstAddr(dl)
+            },
+            #[cfg(all(target_os = "linux"))]
+            (SOL_TLS, TLS_GET_RECORD_TYPE) => {
+                let content_type = ptr::read_unaligned(p as *const u8);
+                ControlMessageOwned::TlsGetRecordType(content_type)
             },
             (_, _) => {
                 let sl = std::slice::from_raw_parts(p, len);
