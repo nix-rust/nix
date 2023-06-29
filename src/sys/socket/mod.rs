@@ -1497,9 +1497,11 @@ pub fn sendmsg<S>(fd: RawFd, iov: &[IoSlice<'_>], cmsgs: &[ControlMessage],
 ///
 /// # Arguments
 ///
-/// * `fd`:             Socket file descriptor
-/// * `data`:           Struct that implements `IntoIterator` with `SendMmsgData` items
-/// * `flags`:          Optional flags passed directly to the operating system.
+/// * `fd`: Socket file descriptor
+/// * `data`: Preallocated headers - they don't hold any data
+/// * `slices`: an iterator of slices to send
+/// * `cmsgs_iter`: an iterator of control messages
+/// * `flags`: Optional flags passed directly to the operating system.
 ///
 /// # Returns
 /// `Vec` with numbers of sent bytes on each sent message.
