@@ -40,6 +40,11 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   ([#1964](https://github.com/nix-rust/nix/pull/1964))
 - Fix: send ETH_P_ALL in htons format 
   ([#1925](https://github.com/nix-rust/nix/pull/1925))
+- Fix potentially invalid conversions in
+  `SockaddrIn::from<std::net::SocketAddrV4>`,
+  `SockaddrIn6::from<std::net::SockaddrV6>`, `IpMembershipRequest::new`, and
+  `Ipv6MembershipRequest::new` with future Rust versions.
+  ([#2061](https://github.com/nix-rust/nix/pull/2061))
 
 ### Removed
 
