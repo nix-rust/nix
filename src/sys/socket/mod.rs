@@ -894,6 +894,7 @@ pub struct Timestamps {
 #[cfg(all(target_os = "linux"))]
 const TLS_GET_RECORD_TYPE: c_int = 2;
 
+#[cfg(all(target_os = "linux"))]
 const SOL_TLS: c_int = 282;
 
 impl ControlMessageOwned {
