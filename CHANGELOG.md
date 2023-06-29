@@ -36,9 +36,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   ([#2012](https://github.com/nix-rust/nix/pull/2012))
 
 ### Fixed
-- Fix `SockaddrIn6` bug that was swapping flowinfo and scope_id byte ordering.
-  ([#1964](https://github.com/nix-rust/nix/pull/1964))
-- Fix: send ETH_P_ALL in htons format 
+- Fix: send `ETH_P_ALL` in htons format 
   ([#1925](https://github.com/nix-rust/nix/pull/1925))
 - Fix potentially invalid conversions in
   `SockaddrIn::from<std::net::SocketAddrV4>`,
@@ -55,6 +53,14 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - `nix::sys::signalfd::signalfd` is deprecated.  Use
   `nix::sys::signalfd::SignalFd` instead.
   ([#1938](https://github.com/nix-rust/nix/pull/1938))
+
+## [0.26.2] - 2023-01-18
+
+### Fixed
+
+- Fix `SockaddrIn6` bug that was swapping `flowinfo` and `scope_id` byte
+  ordering.
+  ([#1964](https://github.com/nix-rust/nix/pull/1964))
 
 ## [0.26.1] - 2022-11-29
 ### Fixed
