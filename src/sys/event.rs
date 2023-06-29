@@ -71,7 +71,7 @@ impl Kqueue {
                     timeout as *const timespec
                 } else {
                     ptr::null()
-                }
+                },
             )
         };
         Errno::result(res).map(|r| r as usize)
