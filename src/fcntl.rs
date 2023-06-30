@@ -122,7 +122,10 @@ libc_bitflags!(
                   target_os = "redox"))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
         O_FSYNC;
-        /// Allow files whose sizes can't be represented in an `off_t` to be opened.
+        /// On 32-bit Linux, O_LARGEFILE allows the use of file
+        /// offsets greater than 32 bits. Nix accepts the flag for
+        /// compatibility, but always opens files in large file mode
+        /// even if it isn't specified.
         #[cfg(any(target_os = "android", target_os = "linux"))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
         O_LARGEFILE;
