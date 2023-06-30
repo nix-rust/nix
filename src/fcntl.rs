@@ -757,13 +757,20 @@ feature! {
 /// file referred to by fd.
 #[cfg(target_os = "linux")]
 #[cfg(feature = "fs")]
-pub fn fallocate(
+pub fn fallocate<Off: Into<off_t>>(
     fd: RawFd,
     mode: FallocateFlags,
-    offset: off_t,
-    len: off_t,
+    offset: Off,
+    len: Off,
 ) -> Result<()> {
-    let res = unsafe { largefile_fn![fallocate](fd, mode.bits(), offset, len) };
+    let res = unsafe {
+        largefile_fn![fallocate](
+            fd,
+            mode.bits(),
+            offset.into(),
+            len.into(),
+        )
+    };
     Errno::result(res).map(drop)
 }
 
@@ -935,14 +942,19 @@ mod posix_fadvise {
 
     feature! {
     #![feature = "fs"]
-    pub fn posix_fadvise(
+    pub fn posix_fadvise<Off: Into<off_t>>(
         fd: RawFd,
-        offset: off_t,
-        len: off_t,
+        offset: Off,
+        len: Off,
         advice: PosixFadviseAdvice,
     ) -> Result<()> {
         let res = unsafe {
-            largefile_fn![posix_fadvise](fd, offset, len, advice as libc::c_int)
+            largefile_fn![posix_fadvise](
+                fd,
+                offset.into(),
+                len.into(),
+                advice as libc::c_int,
+            )
         };
 
         if res == 0 {
@@ -963,12 +975,18 @@ mod posix_fadvise {
     target_os = "wasi",
     target_os = "freebsd"
 ))]
-pub fn posix_fallocate(
+pub fn posix_fallocate<Off: Into<off_t>>(
     fd: RawFd,
-    offset: off_t,
-    len: off_t,
+    offset: Off,
+    len: Off,
 ) -> Result<()> {
-    let res = unsafe { largefile_fn![posix_fallocate](fd, offset, len) };
+    let res = unsafe {
+        largefile_fn![posix_fallocate](
+            fd,
+            offset.into(),
+            len.into(),
+        )
+    };
     match Errno::result(res) {
         Err(err) => Err(err),
         Ok(0) => Ok(()),

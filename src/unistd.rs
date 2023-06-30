@@ -1168,8 +1168,12 @@ pub enum Whence {
 /// Move the read/write file offset.
 ///
 /// See also [lseek(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/lseek.html)
-pub fn lseek(fd: RawFd, offset: off_t, whence: Whence) -> Result<off_t> {
-    let res = unsafe { largefile_fn![lseek](fd, offset, whence as i32) };
+pub fn lseek<Off: Into<off_t>>(
+    fd: RawFd,
+    offset: Off,
+    whence: Whence,
+) -> Result<off_t> {
+    let res = unsafe { largefile_fn![lseek](fd, offset.into(), whence as i32) };
 
     Errno::result(res).map(|r| r as off_t)
 }
@@ -1246,10 +1250,13 @@ pub fn pipe2(flags: OFlag) -> Result<(RawFd, RawFd)> {
 /// See also
 /// [truncate(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/truncate.html)
 #[cfg(not(any(target_os = "redox", target_os = "fuchsia")))]
-pub fn truncate<P: ?Sized + NixPath>(path: &P, len: off_t) -> Result<()> {
+pub fn truncate<P: ?Sized + NixPath, Off: Into<off_t>>(
+    path: &P,
+    len: Off,
+) -> Result<()> {
     let res = path
         .with_nix_path(|cstr| unsafe {
-            largefile_fn![truncate](cstr.as_ptr(), len)
+            largefile_fn![truncate](cstr.as_ptr(), len.into())
         })?;
 
     Errno::result(res).map(drop)
@@ -1259,9 +1266,9 @@ pub fn truncate<P: ?Sized + NixPath>(path: &P, len: off_t) -> Result<()> {
 ///
 /// See also
 /// [ftruncate(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/ftruncate.html)
-pub fn ftruncate<Fd: AsFd>(fd: Fd, len: off_t) -> Result<()> {
+pub fn ftruncate<Fd: AsFd, Off: Into<off_t>>(fd: Fd, len: Off) -> Result<()> {
     Errno::result(unsafe {
-        largefile_fn![ftruncate](fd.as_fd().as_raw_fd(), len)
+        largefile_fn![ftruncate](fd.as_fd().as_raw_fd(), len.into())
     }).map(drop)
 }
 

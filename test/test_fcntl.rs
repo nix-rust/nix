@@ -565,10 +565,11 @@ mod test_posix_fadvise {
         let mut tmp = tempfile::tempfile().unwrap();
         tmp.seek(std::io::SeekFrom::Start(0xfffffffc)).unwrap();
         tmp.write_all(b"forty-two").unwrap();
+        let pos: nix::off_t = 0x1_0000_0004u64.try_into().unwrap();
         assert!(posix_fadvise(
             tmp.as_raw_fd(),
             0,
-            0x1_0000_0004u64.try_into().unwrap(),
+            pos,
             PosixFadviseAdvice::POSIX_FADV_DONTNEED,
         )
         .is_ok());

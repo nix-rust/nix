@@ -803,7 +803,7 @@ fn test_truncate_largefile() {
     let tempdir = tempdir().unwrap();
     let path = tempdir.path().join("file");
     File::create(&path).unwrap();
-    let length = (0x1_0000_0008u64).try_into().unwrap();
+    let length: off_t = (0x1_0000_0008u64).try_into().unwrap();
     truncate(&path, length).unwrap();
     let metadata = fs::metadata(&path).unwrap();
     assert_eq!(0x1_0000_0008, metadata.len());
@@ -830,7 +830,7 @@ fn test_ftruncate_largefile() {
     require_largefile!("test_ftruncate_largefile");
 
     let tmp = tempfile().unwrap();
-    let length = (0x1_0000_000cu64).try_into().unwrap();
+    let length: off_t = (0x1_0000_000cu64).try_into().unwrap();
     ftruncate(&tmp, length).unwrap();
     let metadata = tmp.metadata().unwrap();
     assert_eq!(0x1_0000_000c, metadata.len());
