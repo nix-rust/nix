@@ -50,8 +50,11 @@ pub fn pwritev<Fd: AsFd, Off: Into<off_t>>(
     iov: &[IoSlice<'_>],
     offset: Off,
 ) -> Result<usize> {
+    let offset = offset.into();
+    // uclibc uses 64-bit offsets for pwritev even if it otherwise uses
+    // 32-bit file offsets.
     #[cfg(target_env = "uclibc")]
-    let offset = offset as libc::off64_t; // uclibc doesn't use off_t
+    let offset = offset as libc::off64_t;
 
     // SAFETY: same as in writev()
     let res = unsafe {
@@ -59,7 +62,7 @@ pub fn pwritev<Fd: AsFd, Off: Into<off_t>>(
             fd.as_fd().as_raw_fd(),
             iov.as_ptr() as *const libc::iovec,
             iov.len() as c_int,
-            offset.into(),
+            offset,
         )
     };
 
@@ -80,8 +83,11 @@ pub fn preadv<Fd: AsFd, Off: Into<off_t>>(
     iov: &mut [IoSliceMut<'_>],
     offset: Off,
 ) -> Result<usize> {
+    let offset = offset.into();
+    // uclibc uses 64-bit offsets for preadv even if it otherwise uses
+    // 32-bit file offsets.
     #[cfg(target_env = "uclibc")]
-    let offset = offset as libc::off64_t; // uclibc doesn't use off_t
+    let offset = offset as libc::off64_t;
 
     // SAFETY: same as in readv()
     let res = unsafe {
@@ -89,7 +95,7 @@ pub fn preadv<Fd: AsFd, Off: Into<off_t>>(
             fd.as_fd().as_raw_fd(),
             iov.as_ptr() as *const libc::iovec,
             iov.len() as c_int,
-            offset.into(),
+            offset,
         )
     };
 
