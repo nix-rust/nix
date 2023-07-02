@@ -565,7 +565,7 @@ mod test_posix_fadvise {
         let mut tmp = tempfile::tempfile().unwrap();
         tmp.seek(std::io::SeekFrom::Start(0xfffffffc)).unwrap();
         tmp.write_all(b"forty-two").unwrap();
-        let pos: nix::off_t = 0x1_0000_0004u64.try_into().unwrap();
+        let pos = 0x1_0000_0004i64;
         assert!(posix_fadvise(
             tmp.as_raw_fd(),
             0,
@@ -589,7 +589,6 @@ mod test_posix_fallocate {
 
     use nix::errno::Errno;
     use nix::fcntl::*;
-    use nix::off_t;
     use nix::unistd::pipe;
     use std::{
         io::Read,
@@ -602,7 +601,7 @@ mod test_posix_fallocate {
         const LEN: usize = 100;
         let mut tmp = NamedTempFile::new().unwrap();
         let fd = tmp.as_raw_fd();
-        let res = posix_fallocate(fd, 0, LEN as off_t);
+        let res = posix_fallocate(fd, 0, LEN as i64);
         match res {
             Ok(_) => {
                 let mut data = [1u8; LEN];

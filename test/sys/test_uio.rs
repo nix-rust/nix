@@ -1,7 +1,6 @@
 #[cfg(not(target_os = "redox"))]
 use crate::require_largefile;
 #[cfg(not(target_os = "redox"))]
-use nix::off_t;
 use nix::sys::uio::*;
 use nix::unistd::*;
 use rand::distributions::Alphanumeric;
@@ -137,7 +136,7 @@ fn test_pwrite_largefile() {
 
     let mut file = tempfile().unwrap();
     let buf = [255u8; 1];
-    let pos: off_t = 0x1_0000_0002u64.try_into().unwrap();
+    let pos = 0x1_0000_0002i64;
     assert_eq!(pwrite(&file, &buf, pos), Ok(1));
     assert_eq!(file.metadata().unwrap().len(), 0x1_0000_0003);
     file.seek(SeekFrom::End(-1)).unwrap();
@@ -175,7 +174,7 @@ fn test_pread_largefile() {
     let file = tempfile().unwrap();
     file.write_all_at(b"The text", 0x1_0000_0005).unwrap();
     let mut buf = [0u8; 4];
-    let pos: off_t = 0x1_0000_0009u64.try_into().unwrap();
+    let pos = 0x1_0000_0009i64;
     assert_eq!(pread(&file, &mut buf, pos), Ok(4));
     assert_eq!(&buf, b"text");
 }

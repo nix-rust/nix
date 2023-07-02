@@ -55,32 +55,12 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![deny(clippy::cast_ptr_alignment)]
 
-use cfg_if::cfg_if;
-
 // Re-exported external crates
 pub use libc;
 
 // Private internal modules
 #[macro_use]
 mod macros;
-
-// On some platforms, libc::off_t is not large enough to represent all file
-// offsets the platform supports, but the platform provides a different
-// type that allows larger offsets to be used. We define our own off_t type
-// that is large enough to represent all file offsets the platform supports.
-cfg_if! {
-    if #[cfg(all(target_os = "linux", target_env = "gnu"))] {
-        /// Used to represent offsets in files. May differ from libc::off_t
-        /// on platforms where libc::off_t cannot represent the full range
-        /// of file offsets.
-        pub type off_t = libc::off64_t;
-    } else {
-        /// Used to represent offsets in files. May differ from libc::off_t
-        /// on platforms where libc::off_t cannot represent the full range
-        /// of file offsets.
-        pub type off_t = libc::off_t;
-    }
-}
 
 // Public crates
 #[cfg(not(target_os = "redox"))]

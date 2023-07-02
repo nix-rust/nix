@@ -1,7 +1,6 @@
 //! Memory management declarations.
 
 use crate::errno::Errno;
-use crate::off_t;
 #[cfg(not(target_os = "android"))]
 use crate::NixPath;
 use crate::Result;
@@ -423,7 +422,7 @@ pub unsafe fn mmap<F: AsFd>(
     prot: ProtFlags,
     flags: MapFlags,
     f: Option<F>,
-    offset: off_t,
+    offset: i64,
 ) -> Result<*mut c_void> {
     let ptr =
         addr.map_or(std::ptr::null_mut(), |a| usize::from(a) as *mut c_void);

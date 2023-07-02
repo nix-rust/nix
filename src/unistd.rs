@@ -6,7 +6,6 @@ use crate::errno::{self, Errno};
 use crate::fcntl::{at_rawfd, AtFlags};
 #[cfg(feature = "fs")]
 use crate::fcntl::{fcntl, FcntlArg::F_SETFD, FdFlag, OFlag};
-use crate::off_t;
 #[cfg(all(
     feature = "fs",
     any(
@@ -1168,14 +1167,14 @@ pub enum Whence {
 /// Move the read/write file offset.
 ///
 /// See also [lseek(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/lseek.html)
-pub fn lseek<Off: Into<off_t>>(
+pub fn lseek<Off: Into<i64>>(
     fd: RawFd,
     offset: Off,
     whence: Whence,
-) -> Result<off_t> {
+) -> Result<i64> {
     let res = unsafe { largefile_fn![lseek](fd, offset.into(), whence as i32) };
 
-    Errno::result(res).map(|r| r as off_t)
+    Errno::result(res).map(|r| r as i64)
 }
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
@@ -1250,7 +1249,7 @@ pub fn pipe2(flags: OFlag) -> Result<(RawFd, RawFd)> {
 /// See also
 /// [truncate(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/truncate.html)
 #[cfg(not(any(target_os = "redox", target_os = "fuchsia")))]
-pub fn truncate<P: ?Sized + NixPath, Off: Into<off_t>>(
+pub fn truncate<P: ?Sized + NixPath, Off: Into<i64>>(
     path: &P,
     len: Off,
 ) -> Result<()> {
@@ -1266,7 +1265,7 @@ pub fn truncate<P: ?Sized + NixPath, Off: Into<off_t>>(
 ///
 /// See also
 /// [ftruncate(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/ftruncate.html)
-pub fn ftruncate<Fd: AsFd, Off: Into<off_t>>(fd: Fd, len: Off) -> Result<()> {
+pub fn ftruncate<Fd: AsFd, Off: Into<i64>>(fd: Fd, len: Off) -> Result<()> {
     Errno::result(unsafe {
         largefile_fn![ftruncate](fd.as_fd().as_raw_fd(), len.into())
     }).map(drop)

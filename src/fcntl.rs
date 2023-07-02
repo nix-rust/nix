@@ -1,5 +1,7 @@
 use crate::errno::Errno;
 use libc::{self, c_char, c_int, c_uint, size_t, ssize_t};
+#[cfg(any(target_os = "freebsd"))]
+use libc::off_t;
 use std::ffi::OsString;
 #[cfg(not(target_os = "redox"))]
 use std::os::raw;
@@ -10,17 +12,6 @@ use std::os::unix::io::RawFd;
 use crate::{sys::stat::Mode, NixPath, Result};
 #[cfg(any(target_os = "android", target_os = "linux"))]
 use std::ptr; // For splice and copy_file_range
-
-#[cfg(any(
-    target_os = "linux",
-    target_os = "android",
-    target_os = "dragonfly",
-    target_os = "emscripten",
-    target_os = "fuchsia",
-    target_os = "wasi",
-    target_os = "freebsd"
-))]
-use crate::off_t;
 
 #[cfg(any(
     target_os = "linux",
@@ -757,7 +748,7 @@ feature! {
 /// file referred to by fd.
 #[cfg(target_os = "linux")]
 #[cfg(feature = "fs")]
-pub fn fallocate<Off: Into<off_t>>(
+pub fn fallocate<Off: Into<i64>>(
     fd: RawFd,
     mode: FallocateFlags,
     offset: Off,
@@ -922,7 +913,6 @@ pub fn fspacectl_all(
 mod posix_fadvise {
     use crate::errno::Errno;
     use crate::Result;
-    use crate::off_t;
     use std::os::unix::io::RawFd;
 
     #[cfg(feature = "fs")]
@@ -942,7 +932,7 @@ mod posix_fadvise {
 
     feature! {
     #![feature = "fs"]
-    pub fn posix_fadvise<Off: Into<off_t>>(
+    pub fn posix_fadvise<Off: Into<i64>>(
         fd: RawFd,
         offset: Off,
         len: Off,
@@ -975,7 +965,7 @@ mod posix_fadvise {
     target_os = "wasi",
     target_os = "freebsd"
 ))]
-pub fn posix_fallocate<Off: Into<off_t>>(
+pub fn posix_fallocate<Off: Into<i64>>(
     fd: RawFd,
     offset: Off,
     len: Off,

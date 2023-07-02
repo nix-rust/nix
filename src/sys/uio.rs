@@ -1,7 +1,6 @@
 //! Vectored I/O
 
 use crate::errno::Errno;
-use crate::off_t;
 use crate::Result;
 use libc::{self, c_int, c_void, size_t};
 use std::io::{IoSlice, IoSliceMut};
@@ -45,7 +44,7 @@ pub fn readv<Fd: AsFd>(fd: Fd, iov: &mut [IoSliceMut<'_>]) -> Result<usize> {
 /// See also: [`writev`](fn.writev.html) and [`pwrite`](fn.pwrite.html)
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
 #[cfg_attr(docsrs, doc(cfg(all())))]
-pub fn pwritev<Fd: AsFd, Off: Into<off_t>>(
+pub fn pwritev<Fd: AsFd, Off: Into<i64>>(
     fd: Fd,
     iov: &[IoSlice<'_>],
     offset: Off,
@@ -78,7 +77,7 @@ pub fn pwritev<Fd: AsFd, Off: Into<off_t>>(
 /// See also: [`readv`](fn.readv.html) and [`pread`](fn.pread.html)
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
 #[cfg_attr(docsrs, doc(cfg(all())))]
-pub fn preadv<Fd: AsFd, Off: Into<off_t>>(
+pub fn preadv<Fd: AsFd, Off: Into<i64>>(
     fd: Fd,
     iov: &mut [IoSliceMut<'_>],
     offset: Off,
@@ -106,7 +105,7 @@ pub fn preadv<Fd: AsFd, Off: Into<off_t>>(
 ///
 /// See also [pwrite(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/pwrite.html)
 // TODO: move to unistd
-pub fn pwrite<Fd: AsFd, Off: Into<off_t>>(
+pub fn pwrite<Fd: AsFd, Off: Into<i64>>(
     fd: Fd,
     buf: &[u8],
     offset: Off,
@@ -127,7 +126,7 @@ pub fn pwrite<Fd: AsFd, Off: Into<off_t>>(
 ///
 /// See also [pread(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/pread.html)
 // TODO: move to unistd
-pub fn pread<Fd: AsFd, Off: Into<off_t>>(
+pub fn pread<Fd: AsFd, Off: Into<i64>>(
     fd: Fd,
     buf: &mut [u8],
     offset: Off,

@@ -5,7 +5,6 @@ use std::io::prelude::*;
 #[cfg(any(target_os = "android", target_os = "linux"))]
 use std::os::unix::io::{AsRawFd, FromRawFd, OwnedFd};
 
-use nix::off_t;
 use nix::sys::sendfile::*;
 use tempfile::tempfile;
 
@@ -13,6 +12,7 @@ cfg_if! {
     if #[cfg(any(target_os = "android", target_os = "linux"))] {
         use nix::unistd::{close, pipe, read};
     } else if #[cfg(any(target_os = "dragonfly", target_os = "freebsd", target_os = "ios", target_os = "macos"))] {
+        use libc::off_t;
         use std::net::Shutdown;
         use std::os::unix::net::UnixStream;
     }
@@ -26,7 +26,7 @@ fn test_sendfile_linux() {
     tmp.write_all(CONTENTS).unwrap();
 
     let (rd, wr) = pipe().unwrap();
-    let mut offset: off_t = 5;
+    let mut offset: i64 = 5;
     // The construct of this `OwnedFd` is a temporary workaround, when `pipe(2)`
     // becomes I/O-safe:
     // pub fn pipe() -> std::result::Result<(OwnedFd, OwnedFd), Error>
@@ -49,7 +49,7 @@ fn test_sendfile_linux() {
 fn test_sendfile_largefile() {
     require_largefile!("test_sendfile_largefile");
 
-    let mut offset: off_t = (0x100000000u64).try_into().unwrap();
+    let mut offset = 0x100000000i64;
     let start: u64 = (offset - 4).try_into().unwrap();
     let mut src = tempfile().unwrap();
     let mut dst = tempfile().unwrap();
