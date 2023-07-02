@@ -586,7 +586,7 @@ fn test_lseek_largefile() {
         .expect("Cannot test lseek with large offsets: std::io seek failed");
     tmp.write_all(CONTENTS)
         .expect("Cannot test lseek with large offsets: write_all failed");
-    assert!(lseek(tmp.as_raw_fd(), offset, Whence::SeekSet).is_ok());
+    assert_eq!(lseek(tmp.as_raw_fd(), offset, Whence::SeekSet), Ok(offset));
     let mut buf = [0u8; 12];
     crate::read_exact(&tmp, &mut buf);
     assert_eq!(b"example text", &buf);
