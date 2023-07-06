@@ -16,7 +16,7 @@
 //! * `fs` - File system functionality
 //! * `hostname` - Get and set the system's hostname
 //! * `inotify` - Linux's `inotify` file system notification API
-//! * `ioctl` - The `ioctl` syscall, and wrappers for my specific instances
+//! * `ioctl` - The `ioctl` syscall, and wrappers for many specific instances
 //! * `kmod` - Load and unload kernel modules
 //! * `mman` - Stuff relating to memory management
 //! * `mount` - Mount and unmount file systems

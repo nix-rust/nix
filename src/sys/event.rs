@@ -71,7 +71,7 @@ impl Kqueue {
                     timeout as *const timespec
                 } else {
                     ptr::null()
-                }
+                },
             )
         };
         Errno::result(res).map(|r| r as usize)
@@ -86,7 +86,7 @@ impl Kqueue {
     target_os = "openbsd"
 ))]
 type type_of_udata = *mut libc::c_void;
-#[cfg(any(target_os = "netbsd"))]
+#[cfg(target_os = "netbsd")]
 type type_of_udata = intptr_t;
 
 #[cfg(target_os = "netbsd")]
@@ -171,7 +171,7 @@ libc_enum! {
 ))]
 #[doc(hidden)]
 pub type type_of_event_flag = u16;
-#[cfg(any(target_os = "netbsd"))]
+#[cfg(target_os = "netbsd")]
 #[doc(hidden)]
 pub type type_of_event_flag = u32;
 libc_bitflags! {

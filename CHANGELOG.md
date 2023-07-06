@@ -16,6 +16,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Added `mq_timedreceive` to `::nix::mqueue`.
   ([#1966])(https://github.com/nix-rust/nix/pull/1966)
 - Added `LocalPeerPid` to `nix::sys::socket::sockopt` for macOS. ([#1967](https://github.com/nix-rust/nix/pull/1967))
+- Added `TFD_TIMER_CANCEL_ON_SET` to `::nix::sys::time::TimerSetTimeFlags` on Linux and Android.
+  ([#2040](https://github.com/nix-rust/nix/pull/2040))
 - Added `PTRACE_GETFPREGS` and `PTRACE_SETFPREGS` on Linux
   ([#1844](https://github.com/nix-rust/nix/pull/1844))
 
@@ -32,12 +34,17 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   `sys::kevent::Kqueue::kevent`, and `sys::event::kqueue` is deprecated in
   favor of `sys::kevent::Kqueue::new`.
   ([#1943](https://github.com/nix-rust/nix/pull/1943))
+- `nix::socket` and `nix::select` are now available on Redox.
+  ([#2012](https://github.com/nix-rust/nix/pull/2012))
 
 ### Fixed
-- Fix `SockaddrIn6` bug that was swapping flowinfo and scope_id byte ordering.
-  ([#1964](https://github.com/nix-rust/nix/pull/1964))
-- Fix: send ETH_P_ALL in htons format 
+- Fix: send `ETH_P_ALL` in htons format 
   ([#1925](https://github.com/nix-rust/nix/pull/1925))
+- Fix potentially invalid conversions in
+  `SockaddrIn::from<std::net::SocketAddrV4>`,
+  `SockaddrIn6::from<std::net::SockaddrV6>`, `IpMembershipRequest::new`, and
+  `Ipv6MembershipRequest::new` with future Rust versions.
+  ([#2061](https://github.com/nix-rust/nix/pull/2061))
 
 ### Removed
 
@@ -48,6 +55,14 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - `nix::sys::signalfd::signalfd` is deprecated.  Use
   `nix::sys::signalfd::SignalFd` instead.
   ([#1938](https://github.com/nix-rust/nix/pull/1938))
+
+## [0.26.2] - 2023-01-18
+
+### Fixed
+
+- Fix `SockaddrIn6` bug that was swapping `flowinfo` and `scope_id` byte
+  ordering.
+  ([#1964](https://github.com/nix-rust/nix/pull/1964))
 
 ## [0.26.1] - 2022-11-29
 ### Fixed

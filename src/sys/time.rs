@@ -91,8 +91,10 @@ pub(crate) mod timer {
     #[cfg(any(target_os = "android", target_os = "linux"))]
     bitflags! {
         /// Flags that are used for arming the timer.
+        #[derive(Copy, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
         pub struct TimerSetTimeFlags: libc::c_int {
             const TFD_TIMER_ABSTIME = libc::TFD_TIMER_ABSTIME;
+            const TFD_TIMER_CANCEL_ON_SET = libc::TFD_TIMER_CANCEL_ON_SET;
         }
     }
     #[cfg(any(
@@ -103,6 +105,7 @@ pub(crate) mod timer {
     ))]
     bitflags! {
         /// Flags that are used for arming the timer.
+        #[derive(Copy, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
         pub struct TimerSetTimeFlags: libc::c_int {
             const TFD_TIMER_ABSTIME = libc::TIMER_ABSTIME;
         }

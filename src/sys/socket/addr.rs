@@ -39,18 +39,17 @@ use std::{fmt, mem, net, ptr, slice};
 /// Convert a std::net::Ipv4Addr into the libc form.
 #[cfg(feature = "net")]
 pub(crate) const fn ipv4addr_to_libc(addr: net::Ipv4Addr) -> libc::in_addr {
-    static_assertions::assert_eq_size!(net::Ipv4Addr, libc::in_addr);
-    // Safe because both types have the same memory layout, and no fancy Drop
-    // impls.
-    unsafe { mem::transmute(addr) }
+    libc::in_addr {
+        s_addr: u32::from_ne_bytes(addr.octets())
+    }
 }
 
 /// Convert a std::net::Ipv6Addr into the libc form.
 #[cfg(feature = "net")]
 pub(crate) const fn ipv6addr_to_libc(addr: &net::Ipv6Addr) -> libc::in6_addr {
-    static_assertions::assert_eq_size!(net::Ipv6Addr, libc::in6_addr);
-    // Safe because both are Newtype wrappers around the same libc type
-    unsafe { mem::transmute(*addr) }
+    libc::in6_addr {
+        s6_addr: addr.octets()
+    }
 }
 
 /// These constants specify the protocol family to be used
@@ -100,8 +99,10 @@ pub enum AddressFamily {
     #[cfg_attr(docsrs, doc(cfg(all())))]
     Ax25 = libc::AF_AX25,
     /// IPX - Novell protocols
+    #[cfg(not(target_os = "redox"))]
     Ipx = libc::AF_IPX,
     /// AppleTalk
+    #[cfg(not(target_os = "redox"))]
     AppleTalk = libc::AF_APPLETALK,
     /// AX.25 packet layer protocol.
     /// (see [netrom(4)](https://www.unix.com/man-page/linux/4/netrom/))
@@ -130,7 +131,7 @@ pub enum AddressFamily {
     #[cfg_attr(docsrs, doc(cfg(all())))]
     Rose = libc::AF_ROSE,
     /// DECet protocol sockets.
-    #[cfg(not(target_os = "haiku"))]
+    #[cfg(not(any(target_os = "haiku", target_os = "redox")))]
     Decnet = libc::AF_DECnet,
     /// Reserved for "802.2LLC project"; never used.
     #[cfg(any(target_os = "android", target_os = "linux"))]
@@ -162,7 +163,7 @@ pub enum AddressFamily {
     #[cfg_attr(docsrs, doc(cfg(all())))]
     Rds = libc::AF_RDS,
     /// IBM SNA
-    #[cfg(not(target_os = "haiku"))]
+    #[cfg(not(any(target_os = "haiku", target_os = "redox")))]
     Sna = libc::AF_SNA,
     /// Socket interface over IrDA
     #[cfg(any(target_os = "android", target_os = "linux"))]
@@ -202,7 +203,8 @@ pub enum AddressFamily {
         target_os = "illumos",
         target_os = "ios",
         target_os = "macos",
-        target_os = "solaris"
+        target_os = "solaris",
+        target_os = "redox",
     )))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     Bluetooth = libc::AF_BLUETOOTH,
@@ -219,7 +221,8 @@ pub enum AddressFamily {
     #[cfg(not(any(
         target_os = "illumos",
         target_os = "solaris",
-        target_os = "haiku"
+        target_os = "haiku",
+        target_os = "redox",
     )))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     Isdn = libc::AF_ISDN,
@@ -460,7 +463,8 @@ pub struct UnixAddr {
         target_os = "android",
         target_os = "fuchsia",
         target_os = "illumos",
-        target_os = "linux"
+        target_os = "linux",
+        target_os = "redox",
     ))]
     sun_len: u8,
 }
@@ -624,7 +628,8 @@ impl UnixAddr {
             if #[cfg(any(target_os = "android",
                      target_os = "fuchsia",
                      target_os = "illumos",
-                     target_os = "linux"
+                     target_os = "linux",
+                     target_os = "redox",
                 ))]
             {
                 UnixAddr { sun, sun_len }
@@ -690,7 +695,8 @@ impl UnixAddr {
             if #[cfg(any(target_os = "android",
                      target_os = "fuchsia",
                      target_os = "illumos",
-                     target_os = "linux"
+                     target_os = "linux",
+                     target_os = "redox",
                 ))]
             {
                 self.sun_len
@@ -736,7 +742,8 @@ impl SockaddrLike for UnixAddr {
             if #[cfg(any(target_os = "android",
                          target_os = "fuchsia",
                          target_os = "illumos",
-                         target_os = "linux"
+                         target_os = "linux",
+                         target_os = "redox",
                 ))] {
                 let su_len = len.unwrap_or(
                     mem::size_of::<libc::sockaddr_un>() as libc::socklen_t
@@ -941,9 +948,6 @@ impl SockaddrLike for () {
 }
 
 /// An IPv4 socket address
-// This is identical to net::SocketAddrV4.  But the standard library
-// doesn't allow direct access to the libc fields, which we need.  So we
-// reimplement it here.
 #[cfg(feature = "net")]
 #[repr(transparent)]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -1221,7 +1225,7 @@ pub union SockaddrStorage {
     #[cfg(any(target_os = "android", target_os = "linux"))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     alg: AlgAddr,
-    #[cfg(feature = "net")]
+    #[cfg(all(feature = "net", not(target_os = "redox")))]
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     dl: LinkAddr,
     #[cfg(any(target_os = "android", target_os = "linux"))]
@@ -2338,6 +2342,7 @@ mod tests {
         }
     }
 
+    #[cfg(not(target_os = "redox"))]
     mod link {
         #![allow(clippy::cast_ptr_alignment)]
 
@@ -2534,7 +2539,7 @@ mod tests {
             nix_sin6.0.sin6_flowinfo = 0x12345678;
             nix_sin6.0.sin6_scope_id = 0x9abcdef0;
 
-            let std_sin6 : std::net::SocketAddrV6 = nix_sin6.into();
+            let std_sin6: std::net::SocketAddrV6 = nix_sin6.into();
             assert_eq!(nix_sin6, std_sin6.into());
         }
     }
