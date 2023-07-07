@@ -142,9 +142,9 @@ impl From<SockProtocol> for SockProtocolInt {
     }
 }
 
-/// Automatic conversion from SockProtocol to Option<SockProtocolInt> for backward compatability.
-/// This is necessary because the functions that use SockProtocolInt are generic over From<Option<SockProtocolInt>>
-/// and not From<SockProtocolInt>.
+/// Automatic conversion from SockProtocol to `Option<SockProtocolInt>` for backward compatability.
+/// This is necessary because the functions that use SockProtocolInt are generic over `From<Option<SockProtocolInt>>`
+/// and not `From<SockProtocolInt>`.
 impl From<SockProtocol> for Option<SockProtocolInt> {
     fn from(value: SockProtocol) -> Self {
         Some(SockProtocolInt::from(value))
