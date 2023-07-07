@@ -34,6 +34,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   ([#1943](https://github.com/nix-rust/nix/pull/1943))
 - `nix::socket` and `nix::select` are now available on Redox.
   ([#2012](https://github.com/nix-rust/nix/pull/2012))
+- `nix::socket` uses `nix::socket::SockProtocolInt` for most of its functionality, `nix::socket::SockProtocol` can still be used as usual. ([#2068](https://github.com/nix-rust/nix/pull/2068))
 
 ### Fixed
 - Fix: send `ETH_P_ALL` in htons format 
