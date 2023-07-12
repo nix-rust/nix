@@ -53,9 +53,8 @@ libc_enum! {
         /// do it like `fsync`
         O_SYNC,
         /// on supported operating systems only, do it like `fdatasync`
-        #[cfg(any(target_os = "ios",
+        #[cfg(any(apple_targets,
                   target_os = "linux",
-                  target_os = "macos",
                   target_os = "netbsd",
                   target_os = "openbsd"))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
@@ -1055,7 +1054,8 @@ pub fn aio_suspend(
     // generic, and accepting arguments like &[AioWrite].  But that would
     // prevent using aio_suspend to wait on a heterogeneous list of mixed
     // operations.
-    let v = list.iter()
+    let v = list
+        .iter()
         .map(|x| x.as_ref() as *const libc::aiocb)
         .collect::<Vec<*const libc::aiocb>>();
     let p = v.as_ptr();
@@ -1175,7 +1175,10 @@ pub fn aio_suspend(
 /// // notification, we know that all operations are complete.
 /// assert_eq!(aiow.as_mut().aio_return().unwrap(), WBUF.len());
 /// ```
-#[deprecated(since = "0.27.0", note = "https://github.com/nix-rust/nix/issues/2017")]
+#[deprecated(
+    since = "0.27.0",
+    note = "https://github.com/nix-rust/nix/issues/2017"
+)]
 pub fn lio_listio(
     mode: LioMode,
     list: &mut [Pin<&mut dyn AsMut<libc::aiocb>>],

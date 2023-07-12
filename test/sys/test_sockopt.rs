@@ -29,12 +29,7 @@ pub fn test_local_peercred_seqpacket() {
     assert_eq!(Gid::from_raw(xucred.groups()[0]), Gid::current());
 }
 
-#[cfg(any(
-    target_os = "dragonfly",
-    target_os = "freebsd",
-    target_os = "macos",
-    target_os = "ios"
-))]
+#[cfg(any(target_os = "dragonfly", target_os = "freebsd", apple_targets))]
 #[test]
 pub fn test_local_peercred_stream() {
     use nix::{
@@ -55,7 +50,7 @@ pub fn test_local_peercred_stream() {
     assert_eq!(Gid::from_raw(xucred.groups()[0]), Gid::current());
 }
 
-#[cfg(any(target_os = "ios", target_os = "macos"))]
+#[cfg(apple_targets)]
 #[test]
 pub fn test_local_peer_pid() {
     use nix::sys::socket::socketpair;
@@ -331,7 +326,7 @@ fn test_ttl_opts() {
 }
 
 #[test]
-#[cfg(any(target_os = "ios", target_os = "macos"))]
+#[cfg(apple_targets)]
 fn test_dontfrag_opts() {
     let fd4 = socket(
         AddressFamily::Inet,
@@ -361,12 +356,7 @@ fn test_dontfrag_opts() {
 }
 
 #[test]
-#[cfg(any(
-    target_os = "android",
-    target_os = "ios",
-    target_os = "linux",
-    target_os = "macos",
-))]
+#[cfg(any(target_os = "android", apple_targets, target_os = "linux",))]
 // Disable the test under emulation because it fails in Cirrus-CI.  Lack
 // of QEMU support is suspected.
 #[cfg_attr(qemu, ignore)]

@@ -83,6 +83,9 @@ caps = "0.5.3"
 [target.'cfg(target_os = "freebsd")'.dev-dependencies]
 sysctl = "0.4"
 
+[build-dependencies]
+cfg_aliases = "0.1.1"
+
 [[test]]
 name = "test"
 path = "test/test.rs"

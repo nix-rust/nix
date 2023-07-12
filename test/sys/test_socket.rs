@@ -1604,7 +1604,7 @@ pub fn test_unnamed_unixdomain_autobind() {
 }
 
 // Test creating and using named system control sockets
-#[cfg(any(target_os = "macos", target_os = "ios"))]
+#[cfg(apple_targets)]
 #[test]
 pub fn test_syscontrol() {
     use nix::errno::Errno;
@@ -1633,9 +1633,8 @@ pub fn test_syscontrol() {
 #[cfg(any(
     target_os = "android",
     target_os = "freebsd",
-    target_os = "ios",
+    apple_targets,
     target_os = "linux",
-    target_os = "macos",
     target_os = "netbsd",
     target_os = "openbsd",
 ))]
@@ -1667,9 +1666,8 @@ fn loopback_address(
 
 #[cfg(any(
     target_os = "android",
-    target_os = "ios",
+    apple_targets,
     target_os = "linux",
-    target_os = "macos",
     target_os = "netbsd",
 ))]
 // qemu doesn't seem to be emulating this correctly in these architectures
@@ -1762,8 +1760,7 @@ pub fn test_recv_ipv4pktinfo() {
 
 #[cfg(any(
     target_os = "freebsd",
-    target_os = "ios",
-    target_os = "macos",
+    apple_targets,
     target_os = "netbsd",
     target_os = "openbsd",
 ))]
@@ -2053,9 +2050,8 @@ pub fn test_recvif_ipv6() {
 #[cfg(any(
     target_os = "android",
     target_os = "freebsd",
-    target_os = "ios",
+    apple_targets,
     target_os = "linux",
-    target_os = "macos",
     target_os = "netbsd",
     target_os = "openbsd",
 ))]

@@ -2,9 +2,8 @@
     target_os = "android",
     target_os = "dragonfly",
     target_os = "freebsd",
-    target_os = "ios",
+    apple_targets,
     target_os = "linux",
-    target_os = "macos",
     target_os = "illumos",
     target_os = "netbsd",
     target_os = "openbsd",
@@ -14,7 +13,11 @@
 ))]
 #[cfg(feature = "net")]
 pub use self::datalink::LinkAddr;
-#[cfg(any(target_os = "android", target_os = "linux", target_os = "macos"))]
+#[cfg(any(
+    target_os = "android",
+    target_os = "linux",
+    target_os = "macos"
+))]
 pub use self::vsock::VsockAddr;
 use super::sa_family_t;
 use crate::errno::Errno;
@@ -22,10 +25,7 @@ use crate::errno::Errno;
 use crate::sys::socket::addr::alg::AlgAddr;
 #[cfg(any(target_os = "android", target_os = "linux"))]
 use crate::sys::socket::addr::netlink::NetlinkAddr;
-#[cfg(all(
-    feature = "ioctl",
-    any(target_os = "ios", target_os = "macos")
-))]
+#[cfg(all(feature = "ioctl", apple_targets))]
 use crate::sys::socket::addr::sys_control::SysControlAddr;
 use crate::{NixPath, Result};
 use cfg_if::cfg_if;
@@ -33,16 +33,16 @@ use memoffset::offset_of;
 use std::convert::TryInto;
 use std::ffi::OsStr;
 use std::hash::{Hash, Hasher};
+use std::net::{Ipv4Addr, Ipv6Addr};
 use std::os::unix::ffi::OsStrExt;
 use std::path::Path;
 use std::{fmt, mem, net, ptr, slice};
-use std::net::{Ipv4Addr,Ipv6Addr};
 
 /// Convert a std::net::Ipv4Addr into the libc form.
 #[cfg(feature = "net")]
 pub(crate) const fn ipv4addr_to_libc(addr: net::Ipv4Addr) -> libc::in_addr {
     libc::in_addr {
-        s_addr: u32::from_ne_bytes(addr.octets())
+        s_addr: u32::from_ne_bytes(addr.octets()),
     }
 }
 
@@ -50,7 +50,7 @@ pub(crate) const fn ipv4addr_to_libc(addr: net::Ipv4Addr) -> libc::in_addr {
 #[cfg(feature = "net")]
 pub(crate) const fn ipv6addr_to_libc(addr: &net::Ipv6Addr) -> libc::in6_addr {
     libc::in6_addr {
-        s6_addr: addr.octets()
+        s6_addr: addr.octets(),
     }
 }
 
@@ -93,7 +93,7 @@ pub enum AddressFamily {
     #[cfg_attr(docsrs, doc(cfg(all())))]
     Packet = libc::AF_PACKET,
     /// KEXT Controls and Notifications
-    #[cfg(any(target_os = "ios", target_os = "macos"))]
+    #[cfg(apple_targets)]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     System = libc::AF_SYSTEM,
     /// Amateur radio AX.25 protocol
@@ -205,8 +205,7 @@ pub enum AddressFamily {
     #[cfg(not(any(
         target_os = "aix",
         target_os = "illumos",
-        target_os = "ios",
-        target_os = "macos",
+        apple_targets,
         target_os = "solaris",
         target_os = "redox",
     )))]
@@ -253,15 +252,18 @@ pub enum AddressFamily {
     #[cfg_attr(docsrs, doc(cfg(all())))]
     Nfc = libc::AF_NFC,
     /// VMWare VSockets protocol for hypervisor-guest interaction.
-    #[cfg(any(target_os = "android", target_os = "linux", target_os = "macos"))]
+    #[cfg(any(
+        target_os = "android",
+        target_os = "linux",
+        target_os = "macos"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     Vsock = libc::AF_VSOCK,
     /// ARPANet IMP addresses
     #[cfg(any(
         target_os = "dragonfly",
         target_os = "freebsd",
-        target_os = "ios",
-        target_os = "macos",
+        apple_targets,
         target_os = "netbsd",
         target_os = "openbsd"
     ))]
@@ -271,8 +273,7 @@ pub enum AddressFamily {
     #[cfg(any(
         target_os = "dragonfly",
         target_os = "freebsd",
-        target_os = "ios",
-        target_os = "macos",
+        apple_targets,
         target_os = "netbsd",
         target_os = "openbsd"
     ))]
@@ -282,28 +283,21 @@ pub enum AddressFamily {
     #[cfg(any(
         target_os = "dragonfly",
         target_os = "freebsd",
-        target_os = "ios",
-        target_os = "macos",
+        apple_targets,
         target_os = "netbsd",
         target_os = "openbsd"
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     Chaos = libc::AF_CHAOS,
     /// Novell and Xerox protocol
-    #[cfg(any(
-        target_os = "ios",
-        target_os = "macos",
-        target_os = "netbsd",
-        target_os = "openbsd"
-    ))]
+    #[cfg(any(apple_targets, target_os = "netbsd", target_os = "openbsd"))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     Ns = libc::AF_NS,
     #[allow(missing_docs)] // Not documented anywhere that I can find
     #[cfg(any(
         target_os = "dragonfly",
         target_os = "freebsd",
-        target_os = "ios",
-        target_os = "macos",
+        apple_targets,
         target_os = "netbsd",
         target_os = "openbsd"
     ))]
@@ -313,8 +307,7 @@ pub enum AddressFamily {
     #[cfg(any(
         target_os = "dragonfly",
         target_os = "freebsd",
-        target_os = "ios",
-        target_os = "macos",
+        apple_targets,
         target_os = "netbsd",
         target_os = "openbsd"
     ))]
@@ -324,8 +317,7 @@ pub enum AddressFamily {
     #[cfg(any(
         target_os = "dragonfly",
         target_os = "freebsd",
-        target_os = "ios",
-        target_os = "macos",
+        apple_targets,
         target_os = "netbsd",
         target_os = "openbsd"
     ))]
@@ -335,8 +327,7 @@ pub enum AddressFamily {
     #[cfg(any(
         target_os = "dragonfly",
         target_os = "freebsd",
-        target_os = "ios",
-        target_os = "macos",
+        apple_targets,
         target_os = "netbsd",
         target_os = "openbsd"
     ))]
@@ -346,8 +337,7 @@ pub enum AddressFamily {
     #[cfg(any(
         target_os = "dragonfly",
         target_os = "freebsd",
-        target_os = "ios",
-        target_os = "macos",
+        apple_targets,
         target_os = "netbsd",
         target_os = "openbsd"
     ))]
@@ -357,8 +347,7 @@ pub enum AddressFamily {
     #[cfg(any(
         target_os = "dragonfly",
         target_os = "freebsd",
-        target_os = "ios",
-        target_os = "macos",
+        apple_targets,
         target_os = "netbsd",
         target_os = "openbsd"
     ))]
@@ -368,8 +357,7 @@ pub enum AddressFamily {
     #[cfg(any(
         target_os = "dragonfly",
         target_os = "freebsd",
-        target_os = "ios",
-        target_os = "macos",
+        apple_targets,
         target_os = "illumos",
         target_os = "netbsd",
         target_os = "openbsd"
@@ -380,8 +368,7 @@ pub enum AddressFamily {
     #[cfg(any(
         target_os = "dragonfly",
         target_os = "freebsd",
-        target_os = "ios",
-        target_os = "macos",
+        apple_targets,
         target_os = "netbsd",
         target_os = "openbsd"
     ))]
@@ -391,8 +378,7 @@ pub enum AddressFamily {
     #[cfg(any(
         target_os = "dragonfly",
         target_os = "freebsd",
-        target_os = "ios",
-        target_os = "macos",
+        apple_targets,
         target_os = "netbsd",
         target_os = "openbsd"
     ))]
@@ -402,8 +388,7 @@ pub enum AddressFamily {
     #[cfg(any(
         target_os = "dragonfly",
         target_os = "freebsd",
-        target_os = "ios",
-        target_os = "macos",
+        apple_targets,
         target_os = "netbsd",
         target_os = "openbsd"
     ))]
@@ -441,14 +426,17 @@ impl AddressFamily {
             #[cfg(any(
                 target_os = "dragonfly",
                 target_os = "freebsd",
-                target_os = "ios",
-                target_os = "macos",
+                apple_targets,
                 target_os = "netbsd",
                 target_os = "illumos",
                 target_os = "openbsd"
             ))]
             libc::AF_LINK => Some(AddressFamily::Link),
-            #[cfg(any(target_os = "android", target_os = "linux", target_os = "macos"))]
+            #[cfg(any(
+                target_os = "android",
+                target_os = "linux",
+                target_os = "macos"
+            ))]
             libc::AF_VSOCK => Some(AddressFamily::Vsock),
             _ => None,
         }
@@ -489,7 +477,7 @@ enum UnixAddrKind<'a> {
 }
 impl<'a> UnixAddrKind<'a> {
     /// Safety: sun & sun_len must be valid
-    #[allow(clippy::unnecessary_cast)]   // Not unnecessary on all platforms
+    #[allow(clippy::unnecessary_cast)] // Not unnecessary on all platforms
     unsafe fn get(sun: &'a libc::sockaddr_un, sun_len: u8) -> Self {
         assert!(sun_len as usize >= offset_of!(libc::sockaddr_un, sun_path));
         let path_len =
@@ -526,7 +514,7 @@ impl<'a> UnixAddrKind<'a> {
 
 impl UnixAddr {
     /// Create a new sockaddr_un representing a filesystem path.
-    #[allow(clippy::unnecessary_cast)]   // Not unnecessary on all platforms
+    #[allow(clippy::unnecessary_cast)] // Not unnecessary on all platforms
     pub fn new<P: ?Sized + NixPath>(path: &P) -> Result<UnixAddr> {
         path.with_nix_path(|cstr| unsafe {
             let mut ret = libc::sockaddr_un {
@@ -548,8 +536,7 @@ impl UnixAddr {
             #[cfg(any(
                 target_os = "dragonfly",
                 target_os = "freebsd",
-                target_os = "ios",
-                target_os = "macos",
+                apple_targets,
                 target_os = "netbsd",
                 target_os = "openbsd"
             ))]
@@ -574,7 +561,7 @@ impl UnixAddr {
     /// processes to communicate with processes having a different filesystem view.
     #[cfg(any(target_os = "android", target_os = "linux"))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
-    #[allow(clippy::unnecessary_cast)]   // Not unnecessary on all platforms
+    #[allow(clippy::unnecessary_cast)] // Not unnecessary on all platforms
     pub fn new_abstract(path: &[u8]) -> Result<UnixAddr> {
         unsafe {
             let mut ret = libc::sockaddr_un {
@@ -771,7 +758,10 @@ impl SockaddrLike for UnixAddr {
         mem::size_of::<libc::sockaddr_un>() as libc::socklen_t
     }
 
-    unsafe fn set_length(&mut self, new_length: usize) -> std::result::Result<(), SocketAddressLengthNotDynamic> {
+    unsafe fn set_length(
+        &mut self,
+        new_length: usize,
+    ) -> std::result::Result<(), SocketAddressLengthNotDynamic> {
         // `new_length` is only used on some platforms, so it must be provided even when not used
         #![allow(unused_variables)]
         cfg_if! {
@@ -897,8 +887,7 @@ pub trait SockaddrLike: private::SockaddrLikePriv {
     cfg_if! {
         if #[cfg(any(target_os = "dragonfly",
                   target_os = "freebsd",
-                  target_os = "ios",
-                  target_os = "macos",
+                  apple_targets,
                   target_os = "netbsd",
                   target_os = "openbsd"))] {
             /// Return the length of valid data in the sockaddr structure.
@@ -947,7 +936,10 @@ pub trait SockaddrLike: private::SockaddrLikePriv {
     /// `new_length` must be a valid length for this type of address. Specifically, reads of that
     /// length from `self` must be valid.
     #[doc(hidden)]
-    unsafe fn set_length(&mut self, _new_length: usize) -> std::result::Result<(), SocketAddressLengthNotDynamic> {
+    unsafe fn set_length(
+        &mut self,
+        _new_length: usize,
+    ) -> std::result::Result<(), SocketAddressLengthNotDynamic> {
         Err(SocketAddressLengthNotDynamic)
     }
 }
@@ -1019,8 +1011,7 @@ impl SockaddrIn {
             #[cfg(any(
                 target_os = "dragonfly",
                 target_os = "freebsd",
-                target_os = "ios",
-                target_os = "macos",
+                apple_targets,
                 target_os = "netbsd",
                 target_os = "aix",
                 target_os = "haiku",
@@ -1099,8 +1090,7 @@ impl From<net::SocketAddrV4> for SockaddrIn {
                 target_os = "freebsd",
                 target_os = "haiku",
                 target_os = "hermit",
-                target_os = "ios",
-                target_os = "macos",
+                apple_targets,
                 target_os = "netbsd",
                 target_os = "openbsd"
             ))]
@@ -1148,14 +1138,15 @@ impl SockaddrIn6 {
     /// Returns the IP address associated with this socket address.
     pub const fn ip(&self) -> net::Ipv6Addr {
         let bytes = self.0.sin6_addr.s6_addr;
-        let (a, b, c, d, e, f, g, h) = (((bytes[0] as u16) << 8) | bytes[1] as u16,
+        let (a, b, c, d, e, f, g, h) = (
+            ((bytes[0] as u16) << 8) | bytes[1] as u16,
             ((bytes[2] as u16) << 8) | bytes[3] as u16,
             ((bytes[4] as u16) << 8) | bytes[5] as u16,
             ((bytes[6] as u16) << 8) | bytes[7] as u16,
             ((bytes[8] as u16) << 8) | bytes[9] as u16,
             ((bytes[10] as u16) << 8) | bytes[11] as u16,
             ((bytes[12] as u16) << 8) | bytes[13] as u16,
-            ((bytes[14] as u16) << 8) | bytes[15] as u16
+            ((bytes[14] as u16) << 8) | bytes[15] as u16,
         );
         Ipv6Addr::new(a, b, c, d, e, f, g, h)
     }
@@ -1227,8 +1218,7 @@ impl From<net::SocketAddrV6> for SockaddrIn6 {
                 target_os = "freebsd",
                 target_os = "haiku",
                 target_os = "hermit",
-                target_os = "ios",
-                target_os = "macos",
+                apple_targets,
                 target_os = "netbsd",
                 target_os = "openbsd"
             ))]
@@ -1294,10 +1284,7 @@ pub union SockaddrStorage {
     dl: LinkAddr,
     #[cfg(any(target_os = "android", target_os = "linux"))]
     nl: NetlinkAddr,
-    #[cfg(all(
-        feature = "ioctl",
-        any(target_os = "ios", target_os = "macos")
-    ))]
+    #[cfg(all(feature = "ioctl", apple_targets))]
     #[cfg_attr(docsrs, doc(cfg(feature = "ioctl")))]
     sctl: SysControlAddr,
     #[cfg(feature = "net")]
@@ -1306,7 +1293,11 @@ pub union SockaddrStorage {
     sin6: SockaddrIn6,
     ss: libc::sockaddr_storage,
     su: UnixAddr,
-    #[cfg(any(target_os = "android", target_os = "linux", target_os = "macos" ))]
+    #[cfg(any(
+        target_os = "android",
+        target_os = "linux",
+        target_os = "macos"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     vsock: VsockAddr,
 }
@@ -1367,8 +1358,7 @@ impl SockaddrLike for SockaddrStorage {
                 #[cfg(any(
                     target_os = "dragonfly",
                     target_os = "freebsd",
-                    target_os = "ios",
-                    target_os = "macos",
+                    apple_targets,
                     target_os = "illumos",
                     target_os = "netbsd",
                     target_os = "haiku",
@@ -1391,14 +1381,15 @@ impl SockaddrLike for SockaddrStorage {
                 libc::AF_PACKET => {
                     LinkAddr::from_raw(addr, l).map(|dl| Self { dl })
                 }
-                #[cfg(all(
-                    feature = "ioctl",
-                    any(target_os = "ios", target_os = "macos")
-                ))]
+                #[cfg(all(feature = "ioctl", apple_targets))]
                 libc::AF_SYSTEM => {
                     SysControlAddr::from_raw(addr, l).map(|sctl| Self { sctl })
                 }
-                #[cfg(any(target_os = "android", target_os = "linux", target_os = "macos" ))]
+                #[cfg(any(
+                    target_os = "android",
+                    target_os = "linux",
+                    target_os = "macos"
+                ))]
                 libc::AF_VSOCK => {
                     VsockAddr::from_raw(addr, l).map(|vsock| Self { vsock })
                 }
@@ -1422,11 +1413,12 @@ impl SockaddrLike for SockaddrStorage {
         }
     }
 
-    unsafe fn set_length(&mut self, new_length: usize) -> std::result::Result<(), SocketAddressLengthNotDynamic> {
+    unsafe fn set_length(
+        &mut self,
+        new_length: usize,
+    ) -> std::result::Result<(), SocketAddressLengthNotDynamic> {
         match self.as_unix_addr_mut() {
-            Some(addr) => {
-                addr.set_length(new_length)
-            },
+            Some(addr) => addr.set_length(new_length),
             None => Err(SocketAddressLengthNotDynamic),
         }
     }
@@ -1544,8 +1536,7 @@ impl SockaddrStorage {
     #[cfg(any(
         target_os = "dragonfly",
         target_os = "freebsd",
-        target_os = "ios",
-        target_os = "macos",
+        apple_targets,
         target_os = "illumos",
         target_os = "netbsd",
         target_os = "openbsd"
@@ -1569,12 +1560,16 @@ impl SockaddrStorage {
     accessors! {as_netlink_addr, as_netlink_addr_mut, NetlinkAddr,
     AddressFamily::Netlink, libc::sockaddr_nl, nl}
 
-    #[cfg(all(feature = "ioctl", any(target_os = "ios", target_os = "macos")))]
+    #[cfg(all(feature = "ioctl", apple_targets))]
     #[cfg_attr(docsrs, doc(cfg(feature = "ioctl")))]
     accessors! {as_sys_control_addr, as_sys_control_addr_mut, SysControlAddr,
     AddressFamily::System, libc::sockaddr_ctl, sctl}
 
-    #[cfg(any(target_os = "android", target_os = "linux", target_os = "macos"))]
+    #[cfg(any(
+        target_os = "android",
+        target_os = "linux",
+        target_os = "macos"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     accessors! {as_vsock_addr, as_vsock_addr_mut, VsockAddr,
     AddressFamily::Vsock, libc::sockaddr_vm, vsock}
@@ -1603,8 +1598,7 @@ impl fmt::Display for SockaddrStorage {
                 #[cfg(any(
                     target_os = "dragonfly",
                     target_os = "freebsd",
-                    target_os = "ios",
-                    target_os = "macos",
+                    apple_targets,
                     target_os = "illumos",
                     target_os = "netbsd",
                     target_os = "openbsd"
@@ -1620,11 +1614,15 @@ impl fmt::Display for SockaddrStorage {
                 ))]
                 #[cfg(feature = "net")]
                 libc::AF_PACKET => self.dl.fmt(f),
-                #[cfg(any(target_os = "ios", target_os = "macos"))]
+                #[cfg(apple_targets)]
                 #[cfg(feature = "ioctl")]
                 libc::AF_SYSTEM => self.sctl.fmt(f),
                 libc::AF_UNIX => self.su.fmt(f),
-                #[cfg(any(target_os = "android", target_os = "linux", target_os = "macos"))]
+                #[cfg(any(
+                    target_os = "android",
+                    target_os = "linux",
+                    target_os = "macos"
+                ))]
                 libc::AF_VSOCK => self.vsock.fmt(f),
                 _ => "<Address family unspecified>".fmt(f),
             }
@@ -1677,8 +1675,7 @@ impl Hash for SockaddrStorage {
                 #[cfg(any(
                     target_os = "dragonfly",
                     target_os = "freebsd",
-                    target_os = "ios",
-                    target_os = "macos",
+                    apple_targets,
                     target_os = "illumos",
                     target_os = "netbsd",
                     target_os = "openbsd"
@@ -1694,11 +1691,15 @@ impl Hash for SockaddrStorage {
                 ))]
                 #[cfg(feature = "net")]
                 libc::AF_PACKET => self.dl.hash(s),
-                #[cfg(any(target_os = "ios", target_os = "macos"))]
+                #[cfg(apple_targets)]
                 #[cfg(feature = "ioctl")]
                 libc::AF_SYSTEM => self.sctl.hash(s),
                 libc::AF_UNIX => self.su.hash(s),
-                #[cfg(any(target_os = "android", target_os = "linux", target_os = "macos"))]
+                #[cfg(any(
+                    target_os = "android",
+                    target_os = "linux",
+                    target_os = "macos"
+                ))]
                 libc::AF_VSOCK => self.vsock.hash(s),
                 _ => self.ss.hash(s),
             }
@@ -1719,8 +1720,7 @@ impl PartialEq for SockaddrStorage {
                 #[cfg(any(
                     target_os = "dragonfly",
                     target_os = "freebsd",
-                    target_os = "ios",
-                    target_os = "macos",
+                    apple_targets,
                     target_os = "illumos",
                     target_os = "netbsd",
                     target_os = "openbsd"
@@ -1736,11 +1736,15 @@ impl PartialEq for SockaddrStorage {
                 ))]
                 #[cfg(feature = "net")]
                 (libc::AF_PACKET, libc::AF_PACKET) => self.dl == other.dl,
-                #[cfg(any(target_os = "ios", target_os = "macos"))]
+                #[cfg(apple_targets)]
                 #[cfg(feature = "ioctl")]
                 (libc::AF_SYSTEM, libc::AF_SYSTEM) => self.sctl == other.sctl,
                 (libc::AF_UNIX, libc::AF_UNIX) => self.su == other.su,
-                #[cfg(any(target_os = "android", target_os = "linux", target_os = "macos"))]
+                #[cfg(any(
+                    target_os = "android",
+                    target_os = "linux",
+                    target_os = "macos"
+                ))]
                 (libc::AF_VSOCK, libc::AF_VSOCK) => self.vsock == other.vsock,
                 _ => false,
             }
@@ -1931,16 +1935,12 @@ pub mod alg {
 
         /// Return the socket's cipher type, for example `hash` or `aead`.
         pub fn alg_type(&self) -> &CStr {
-            unsafe {
-                CStr::from_ptr(self.0.salg_type.as_ptr().cast())
-            }
+            unsafe { CStr::from_ptr(self.0.salg_type.as_ptr().cast()) }
         }
 
         /// Return the socket's cipher name, for example `sha1`.
         pub fn alg_name(&self) -> &CStr {
-            unsafe {
-                CStr::from_ptr(self.0.salg_name.as_ptr().cast())
-            }
+            unsafe { CStr::from_ptr(self.0.salg_name.as_ptr().cast()) }
         }
     }
 
@@ -1964,7 +1964,7 @@ pub mod alg {
 
 feature! {
 #![feature = "ioctl"]
-#[cfg(any(target_os = "ios", target_os = "macos"))]
+#[cfg(apple_targets)]
 pub mod sys_control {
     use crate::sys::socket::addr::AddressFamily;
     use libc::{self, c_uchar};
@@ -2168,8 +2168,7 @@ mod datalink {
 #[cfg(any(
     target_os = "dragonfly",
     target_os = "freebsd",
-    target_os = "ios",
-    target_os = "macos",
+    apple_targets,
     target_os = "illumos",
     target_os = "netbsd",
     target_os = "haiku",
@@ -2344,8 +2343,17 @@ pub mod vsock {
         #[cfg(target_os = "macos")]
         fn eq(&self, other: &Self) -> bool {
             let (inner, other) = (self.0, other.0);
-            (inner.svm_family, inner.svm_cid, inner.svm_port, inner.svm_len)
-                == (other.svm_family, other.svm_cid, other.svm_port, inner.svm_len)
+            (
+                inner.svm_family,
+                inner.svm_cid,
+                inner.svm_port,
+                inner.svm_len,
+            ) == (
+                other.svm_family,
+                other.svm_cid,
+                other.svm_port,
+                inner.svm_len,
+            )
         }
     }
 
@@ -2360,7 +2368,13 @@ pub mod vsock {
         #[cfg(target_os = "macos")]
         fn hash<H: Hasher>(&self, s: &mut H) {
             let inner = self.0;
-            (inner.svm_family, inner.svm_cid, inner.svm_port, inner.svm_len).hash(s);
+            (
+                inner.svm_family,
+                inner.svm_cid,
+                inner.svm_port,
+                inner.svm_len,
+            )
+                .hash(s);
         }
     }
 
@@ -2378,7 +2392,7 @@ pub mod vsock {
 
             #[cfg(target_os = "macos")]
             {
-             addr.svm_len =  std::mem::size_of::<sockaddr_vm>() as u8;
+                addr.svm_len = std::mem::size_of::<sockaddr_vm>() as u8;
             }
             VsockAddr(addr)
         }
@@ -2436,11 +2450,7 @@ mod tests {
     mod link {
         #![allow(clippy::cast_ptr_alignment)]
 
-        #[cfg(any(
-            target_os = "ios",
-            target_os = "macos",
-            target_os = "illumos"
-        ))]
+        #[cfg(any(apple_targets, target_os = "illumos"))]
         use super::super::super::socklen_t;
         use super::*;
 
@@ -2448,8 +2458,7 @@ mod tests {
         #[cfg(any(
             target_os = "dragonfly",
             target_os = "freebsd",
-            target_os = "ios",
-            target_os = "macos",
+            apple_targets,
             target_os = "netbsd",
             target_os = "openbsd"
         ))]
@@ -2498,7 +2507,7 @@ mod tests {
             }
         }
 
-        #[cfg(any(target_os = "ios", target_os = "macos"))]
+        #[cfg(apple_targets)]
         #[test]
         fn macos_loopback() {
             let bytes =
@@ -2516,7 +2525,7 @@ mod tests {
             }
         }
 
-        #[cfg(any(target_os = "ios", target_os = "macos"))]
+        #[cfg(apple_targets)]
         #[test]
         fn macos_tap() {
             let bytes = [
@@ -2565,8 +2574,7 @@ mod tests {
                 target_os = "aix",
                 target_os = "dragonfly",
                 target_os = "freebsd",
-                target_os = "ios",
-                target_os = "macos",
+                apple_targets,
                 target_os = "netbsd",
                 target_os = "illumos",
                 target_os = "openbsd",
@@ -2634,7 +2642,6 @@ mod tests {
             let s = "[1234:5678:90ab:cdef::1111:2222]:8080";
             let ip = SockaddrIn6::from_str(s).unwrap().ip();
             assert_eq!("1234:5678:90ab:cdef::1111:2222", format!("{ip}"));
-
         }
 
         #[test]

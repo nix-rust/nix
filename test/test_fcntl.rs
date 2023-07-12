@@ -562,12 +562,7 @@ mod test_posix_fallocate {
     }
 }
 
-#[cfg(any(
-    target_os = "dragonfly",
-    target_os = "netbsd",
-    target_os = "macos",
-    target_os = "ios"
-))]
+#[cfg(any(target_os = "dragonfly", target_os = "netbsd", apple_targets))]
 #[test]
 fn test_f_get_path() {
     use nix::fcntl::*;
@@ -585,7 +580,7 @@ fn test_f_get_path() {
     );
 }
 
-#[cfg(any(target_os = "macos", target_os = "ios"))]
+#[cfg(apple_targets)]
 #[test]
 fn test_f_get_path_nofirmlink() {
     use nix::fcntl::*;

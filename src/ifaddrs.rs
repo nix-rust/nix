@@ -4,7 +4,7 @@
 //! of interfaces and their associated addresses.
 
 use cfg_if::cfg_if;
-#[cfg(any(target_os = "ios", target_os = "macos"))]
+#[cfg(apple_targets)]
 use std::convert::TryFrom;
 use std::ffi;
 use std::iter::Iterator;
@@ -53,7 +53,7 @@ cfg_if! {
 /// ss_len field to sizeof(sockaddr_storage). This is supposedly valid as all
 /// members of the sockaddr_storage are "ok" with being zeroed out (there are
 /// no pointers).
-#[cfg(any(target_os = "ios", target_os = "macos"))]
+#[cfg(apple_targets)]
 unsafe fn workaround_xnu_bug(info: &libc::ifaddrs) -> Option<SockaddrStorage> {
     let src_sock = info.ifa_netmask;
     if src_sock.is_null() {
@@ -85,9 +85,9 @@ impl InterfaceAddress {
     fn from_libc_ifaddrs(info: &libc::ifaddrs) -> InterfaceAddress {
         let ifname = unsafe { ffi::CStr::from_ptr(info.ifa_name) };
         let address = unsafe { SockaddrStorage::from_raw(info.ifa_addr, None) };
-        #[cfg(any(target_os = "ios", target_os = "macos"))]
+        #[cfg(apple_targets)]
         let netmask = unsafe { workaround_xnu_bug(info) };
-        #[cfg(not(any(target_os = "ios", target_os = "macos")))]
+        #[cfg(not(apple_targets))]
         let netmask =
             unsafe { SockaddrStorage::from_raw(info.ifa_netmask, None) };
         let mut addr = InterfaceAddress {

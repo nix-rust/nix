@@ -21,8 +21,7 @@ use nix::errno::Errno;
 use nix::fcntl;
 #[cfg(any(
     target_os = "linux",
-    target_os = "ios",
-    target_os = "macos",
+    apple_targets,
     target_os = "freebsd",
     target_os = "netbsd"
 ))]
@@ -235,8 +234,7 @@ fn test_utimes() {
 #[test]
 #[cfg(any(
     target_os = "linux",
-    target_os = "ios",
-    target_os = "macos",
+    apple_targets,
     target_os = "freebsd",
     target_os = "netbsd"
 ))]
@@ -365,8 +363,7 @@ fn test_mkdirat_fail() {
 #[cfg(not(any(
     target_os = "dragonfly",
     target_os = "freebsd",
-    target_os = "ios",
-    target_os = "macos",
+    apple_targets,
     target_os = "haiku",
     target_os = "redox"
 )))]
@@ -387,8 +384,7 @@ fn test_mknod() {
     target_os = "dragonfly",
     target_os = "freebsd",
     target_os = "illumos",
-    target_os = "ios",
-    target_os = "macos",
+    apple_targets,
     target_os = "haiku",
     target_os = "redox"
 )))]

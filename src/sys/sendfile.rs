@@ -80,8 +80,7 @@ pub fn sendfile64<F1: AsFd, F2: AsFd>(
 cfg_if! {
     if #[cfg(any(target_os = "dragonfly",
                  target_os = "freebsd",
-                 target_os = "ios",
-                 target_os = "macos"))] {
+                 apple_targets,))] {
         use std::io::IoSlice;
 
         #[derive(Clone, Debug)]
@@ -244,7 +243,7 @@ cfg_if! {
             };
             (Errno::result(return_code).and(Ok(())), bytes_sent)
         }
-    } else if #[cfg(any(target_os = "ios", target_os = "macos"))] {
+    } else if #[cfg(apple_targets)] {
         /// Read bytes from `in_fd` starting at `offset` and write up to `count` bytes to
         /// `out_sock`.
         ///

@@ -302,8 +302,7 @@ impl Statfs {
     #[cfg(not(any(
         target_os = "openbsd",
         target_os = "dragonfly",
-        target_os = "ios",
-        target_os = "macos"
+        apple_targets,
     )))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn filesystem_type(&self) -> FsType {
@@ -319,7 +318,7 @@ impl Statfs {
     }
 
     /// Optimal transfer block size
-    #[cfg(any(target_os = "ios", target_os = "macos"))]
+    #[cfg(apple_targets)]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn optimal_transfer_size(&self) -> i32 {
         self.0.f_iosize
@@ -385,7 +384,7 @@ impl Statfs {
     }
 
     /// Size of a block
-    #[cfg(any(target_os = "ios", target_os = "macos", target_os = "openbsd"))]
+    #[cfg(any(apple_targets, target_os = "openbsd"))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn block_size(&self) -> u32 {
         self.0.f_bsize
@@ -528,8 +527,7 @@ impl Statfs {
 
     /// Total data blocks in filesystem
     #[cfg(any(
-        target_os = "ios",
-        target_os = "macos",
+        apple_targets,
         target_os = "android",
         target_os = "freebsd",
         target_os = "fuchsia",
@@ -557,8 +555,7 @@ impl Statfs {
 
     /// Free blocks in filesystem
     #[cfg(any(
-        target_os = "ios",
-        target_os = "macos",
+        apple_targets,
         target_os = "android",
         target_os = "freebsd",
         target_os = "fuchsia",
@@ -586,8 +583,7 @@ impl Statfs {
 
     /// Free blocks available to unprivileged user
     #[cfg(any(
-        target_os = "ios",
-        target_os = "macos",
+        apple_targets,
         target_os = "android",
         target_os = "fuchsia",
         target_os = "linux",
@@ -620,8 +616,7 @@ impl Statfs {
 
     /// Total file nodes in filesystem
     #[cfg(any(
-        target_os = "ios",
-        target_os = "macos",
+        apple_targets,
         target_os = "android",
         target_os = "freebsd",
         target_os = "fuchsia",
@@ -649,8 +644,7 @@ impl Statfs {
 
     /// Free file nodes in filesystem
     #[cfg(any(
-        target_os = "ios",
-        target_os = "macos",
+        apple_targets,
         target_os = "android",
         target_os = "fuchsia",
         target_os = "openbsd",
