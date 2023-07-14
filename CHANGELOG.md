@@ -49,6 +49,10 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Added `Icmp` and `IcmpV6` to `SockProtocol`.
   (#[2103](https://github.com/nix-rust/nix/pull/2103))
 
+- Added `Ipv6HopLimit` to `::nix::sys::socket::ControlMessage` for Linux,
+  MacOS, FreeBSD, DragonflyBSD, Android, iOS and Haiku.
+  ([#2074](https://github.com/nix-rust/nix/pull/2074))
+
 ## [0.27.1] - 2023-08-28
 
 ### Fixed

@@ -18,7 +18,7 @@ use libc::{
 use std::io::{IoSlice, IoSliceMut};
 #[cfg(feature = "net")]
 use std::net;
-use std::os::unix::io::{AsFd, AsRawFd, FromRawFd, RawFd, OwnedFd};
+use std::os::unix::io::{AsFd, AsRawFd, FromRawFd, OwnedFd, RawFd};
 use std::{mem, ptr};
 
 #[deny(missing_docs)]
@@ -62,7 +62,11 @@ pub use crate::sys::socket::addr::netlink::NetlinkAddr;
 #[cfg(any(target_os = "ios", target_os = "macos"))]
 #[cfg(feature = "ioctl")]
 pub use crate::sys::socket::addr::sys_control::SysControlAddr;
-#[cfg(any(target_os = "android", target_os = "linux", target_os = "macos"))]
+#[cfg(any(
+    target_os = "android",
+    target_os = "linux",
+    target_os = "macos"
+))]
 pub use crate::sys::socket::addr::vsock::VsockAddr;
 
 #[cfg(all(feature = "uio", not(target_os = "redox")))]
@@ -1147,7 +1151,7 @@ pub enum ControlMessage<'a> {
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     UdpGsoSegments(&'a u16),
 
-    /// Configure the sending addressing and interface for v4
+    /// Configure the sending addressing and interface for v4.
     ///
     /// For further information, please refer to the
     /// [`ip(7)`](https://man7.org/linux/man-pages/man7/ip.7.html) man page.
@@ -1160,7 +1164,7 @@ pub enum ControlMessage<'a> {
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv4PacketInfo(&'a libc::in_pktinfo),
 
-    /// Configure the sending addressing and interface for v6
+    /// Configure the sending addressing and interface for v6.
     ///
     /// For further information, please refer to the
     /// [`ipv6(7)`](https://man7.org/linux/man-pages/man7/ipv6.7.html) man page.
@@ -1184,6 +1188,22 @@ pub enum ControlMessage<'a> {
     #[cfg(feature = "net")]
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv4SendSrcAddr(&'a libc::in_addr),
+
+    /// Configure the hop limit for v6 multicast traffic.
+    ///
+    /// Set the IPv6 hop limit for this message. The argument is an integer
+    /// between 0 and 255. A value of -1 will set the hop limit to the route
+    /// default if possible on the interface. Without this cmsg,  packets sent
+    /// with sendmsg have a hop limit of 1 and will not leave the local network.
+    /// For further information, please refer to the
+    /// [`ipv6(7)`](https://man7.org/linux/man-pages/man7/ipv6.7.html) man page.
+    #[cfg(any(target_os = "linux", target_os = "macos",
+              target_os = "freebsd", target_os = "dragonfly",
+              target_os = "android", target_os = "ios",
+              target_os = "haiku"))]
+    #[cfg(feature = "net")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
+    Ipv6HopLimit(&'a libc::c_int),
 
     /// SO_RXQ_OVFL indicates that an unsigned 32 bit value
     /// ancilliary msg (cmsg) should be attached to recieved
@@ -1298,6 +1318,12 @@ impl<'a> ControlMessage<'a> {
                       target_os = "openbsd", target_os = "dragonfly"))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv4SendSrcAddr(addr) => addr as *const _ as *const u8,
+            #[cfg(any(target_os = "linux", target_os = "macos",
+                      target_os = "freebsd", target_os = "dragonfly",
+                      target_os = "android", target_os = "ios",
+                      target_os = "haiku"))]
+            #[cfg(feature = "net")]
+            ControlMessage::Ipv6HopLimit(limit) => limit as *const _ as *const u8,
             #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
             ControlMessage::RxqOvfl(drop_count) => {
                 drop_count as *const _ as *const u8
@@ -1361,6 +1387,14 @@ impl<'a> ControlMessage<'a> {
                       target_os = "openbsd", target_os = "dragonfly"))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv4SendSrcAddr(addr) => mem::size_of_val(addr),
+            #[cfg(any(target_os = "linux", target_os = "macos",
+                      target_os = "freebsd", target_os = "dragonfly",
+                      target_os = "android", target_os = "ios",
+                      target_os = "haiku"))]
+            #[cfg(feature = "net")]
+            ControlMessage::Ipv6HopLimit(limit) => {
+                mem::size_of_val(limit)
+            },
             #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
             ControlMessage::RxqOvfl(drop_count) => {
                 mem::size_of_val(drop_count)
@@ -1400,6 +1434,12 @@ impl<'a> ControlMessage<'a> {
                       target_os = "openbsd", target_os = "dragonfly"))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv4SendSrcAddr(_) => libc::IPPROTO_IP,
+            #[cfg(any(target_os = "linux", target_os = "macos",
+                      target_os = "freebsd", target_os = "dragonfly",
+                      target_os = "android", target_os = "ios",
+                      target_os = "haiku"))]
+            #[cfg(feature = "net")]
+            ControlMessage::Ipv6HopLimit(_) => libc::IPPROTO_IPV6,
             #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
             ControlMessage::RxqOvfl(_) => libc::SOL_SOCKET,
             #[cfg(target_os = "linux")]
@@ -1446,6 +1486,12 @@ impl<'a> ControlMessage<'a> {
                       target_os = "openbsd", target_os = "dragonfly"))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv4SendSrcAddr(_) => libc::IP_SENDSRCADDR,
+            #[cfg(any(target_os = "linux", target_os = "macos",
+                      target_os = "freebsd", target_os = "dragonfly",
+                      target_os = "android", target_os = "ios",
+                      target_os = "haiku"))]
+            #[cfg(feature = "net")]
+            ControlMessage::Ipv6HopLimit(_) => libc::IPV6_HOPLIMIT,
             #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
             ControlMessage::RxqOvfl(_) => {
                 libc::SO_RXQ_OVFL
@@ -2186,9 +2232,7 @@ pub fn socketpair<T: Into<Option<SockProtocol>>>(
     Errno::result(res)?;
 
     // Safe because socketpair returned success.
-    unsafe {
-        Ok((OwnedFd::from_raw_fd(fds[0]), OwnedFd::from_raw_fd(fds[1])))
-    }
+    unsafe { Ok((OwnedFd::from_raw_fd(fds[0]), OwnedFd::from_raw_fd(fds[1]))) }
 }
 
 /// Listen for connections on a socket
@@ -2296,13 +2340,7 @@ pub fn recvfrom<T: SockaddrLike>(
             &mut len as *mut socklen_t,
         ))? as usize;
 
-        Ok((
-            ret,
-            T::from_raw(
-                addr.assume_init().as_ptr(),
-                Some(len),
-            ),
-        ))
+        Ok((ret, T::from_raw(addr.assume_init().as_ptr(), Some(len))))
     }
 }
 
