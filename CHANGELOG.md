@@ -18,6 +18,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Added `LocalPeerPid` to `nix::sys::socket::sockopt` for macOS. ([#1967](https://github.com/nix-rust/nix/pull/1967))
 - Added `TFD_TIMER_CANCEL_ON_SET` to `::nix::sys::time::TimerSetTimeFlags` on Linux and Android.
   ([#2040](https://github.com/nix-rust/nix/pull/2040))
+- Added `SOF_TIMESTAMPING_OPT_ID` and `SOF_TIMESTAMPING_OPT_TSONLY` to `nix::sys::socket::TimestampingFlag`.
+  ([#2048](https://github.com/nix-rust/nix/pull/2048))
 
 ### Changed
 
