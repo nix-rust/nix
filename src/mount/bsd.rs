@@ -391,7 +391,7 @@ impl<'a> Nmount<'a> {
         });
 
         let niov = self.iov.len() as c_uint;
-        let iovp = self.iov.as_mut_ptr() as *mut libc::iovec;
+        let iovp = self.iov.as_mut_ptr();
         let res = unsafe { libc::nmount(iovp, niov, flags.bits()) };
         match Errno::result(res) {
             Ok(_) => Ok(()),

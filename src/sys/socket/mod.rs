@@ -2234,7 +2234,7 @@ pub fn recvfrom<T: SockaddrLike>(
         Ok((
             ret,
             T::from_raw(
-                addr.assume_init().as_ptr() as *const sockaddr,
+                addr.assume_init().as_ptr(),
                 Some(len),
             ),
         ))
