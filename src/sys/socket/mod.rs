@@ -120,8 +120,40 @@ impl TryFrom<i32> for SockType {
     }
 }
 
+/// Specify a SockProtocol with a cint (i32) instead of an enum.
+/// The enum is kept for comptability with older versions of nix.
+#[repr(transparent)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct SockProtocolInt(pub i32);
+
+impl SockProtocolInt {
+    /// The Controller Area Network broadcast manager protocol
+    /// ([ref](https://docs.kernel.org/networking/can.html#how-to-use-socketcan))
+    #[cfg(target_os = "linux")]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
+    #[allow(non_upper_case_globals)]
+    pub const CanBcm: SockProtocol = SockProtocol::NetlinkUserSock; // Matches libc::CAN_BCM
+}
+
+/// Automatic conversion from SockProtocol to SockProtocolInt for backward compatability.
+impl From<SockProtocol> for SockProtocolInt {
+    fn from(value: SockProtocol) -> Self {
+        Self(value as i32)
+    }
+}
+
+/// Automatic conversion from SockProtocol to `Option<SockProtocolInt>` for backward compatability.
+/// This is necessary because the functions that use SockProtocolInt are generic over `From<Option<SockProtocolInt>>`
+/// and not `From<SockProtocolInt>`.
+impl From<SockProtocol> for Option<SockProtocolInt> {
+    fn from(value: SockProtocol) -> Self {
+        Some(SockProtocolInt::from(value))
+    }
+}
+
 /// Constants used in [`socket`](fn.socket.html) and [`socketpair`](fn.socketpair.html)
-/// to specify the protocol to use.
+/// to specify the protocol to use. Consider using [`SockProtocolInt`](struct.SockProtocolInt.html)
+/// instead to specify an integer protocol directly.
 #[repr(i32)]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 #[non_exhaustive]
@@ -228,14 +260,6 @@ pub enum SockProtocol {
     CanRaw = libc::CAN_RAW,
 }
 
-impl SockProtocol {
-    /// The Controller Area Network broadcast manager protocol
-    /// ([ref](https://docs.kernel.org/networking/can.html#how-to-use-socketcan))
-    #[cfg(target_os = "linux")]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
-    #[allow(non_upper_case_globals)]
-    pub const CanBcm: SockProtocol = SockProtocol::NetlinkUserSock; // Matches libc::CAN_BCM
-}
 #[cfg(target_os = "linux")]
 libc_bitflags! {
     /// Configuration flags for `SO_TIMESTAMPING` interface
@@ -2079,7 +2103,7 @@ pub fn recvmsg<'a, 'outer, 'inner, S>(fd: RawFd, iov: &'outer mut [IoSliceMut<'i
 /// specified in this manner.
 ///
 /// [Further reading](https://pubs.opengroup.org/onlinepubs/9699919799/functions/socket.html)
-pub fn socket<T: Into<Option<SockProtocol>>>(
+pub fn socket<T: Into<Option<SockProtocolInt>>>(
     domain: AddressFamily,
     ty: SockType,
     flags: SockFlag,
@@ -2087,7 +2111,7 @@ pub fn socket<T: Into<Option<SockProtocol>>>(
 ) -> Result<RawFd> {
     let protocol = match protocol.into() {
         None => 0,
-        Some(p) => p as c_int,
+        Some(p) => p.0,
     };
 
     // SockFlags are usually embedded into `ty`, but we don't do that in `nix` because it's a
@@ -2104,7 +2128,7 @@ pub fn socket<T: Into<Option<SockProtocol>>>(
 /// Create a pair of connected sockets
 ///
 /// [Further reading](https://pubs.opengroup.org/onlinepubs/9699919799/functions/socketpair.html)
-pub fn socketpair<T: Into<Option<SockProtocol>>>(
+pub fn socketpair<T: Into<Option<SockProtocolInt>>>(
     domain: AddressFamily,
     ty: SockType,
     protocol: T,
@@ -2112,7 +2136,7 @@ pub fn socketpair<T: Into<Option<SockProtocol>>>(
 ) -> Result<(RawFd, RawFd)> {
     let protocol = match protocol.into() {
         None => 0,
-        Some(p) => p as c_int,
+        Some(p) => p.0,
     };
 
     // SockFlags are usually embedded into `ty`, but we don't do that in `nix` because it's a
