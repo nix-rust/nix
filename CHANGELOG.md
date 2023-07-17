@@ -41,6 +41,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 ### Fixed
 - Fix: send `ETH_P_ALL` in htons format 
   ([#1925](https://github.com/nix-rust/nix/pull/1925))
+- Fix: `recvmsg` now sets the length of the received `sockaddr_un` field
+  correctly on Linux platforms. ([#2041](https://github.com/nix-rust/nix/pull/2041))
 - Fix potentially invalid conversions in
   `SockaddrIn::from<std::net::SocketAddrV4>`,
   `SockaddrIn6::from<std::net::SockaddrV6>`, `IpMembershipRequest::new`, and
