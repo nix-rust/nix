@@ -1611,7 +1611,7 @@ impl<S> MultiHeaders<S> {
     {
         // we will be storing pointers to addresses inside mhdr - convert it into boxed
         // slice so it can'be changed later by pushing anything into self.addresses
-        let mut addresses = vec![std::mem::MaybeUninit::uninit(); num_slices].into_boxed_slice();
+        let mut addresses = vec![std::mem::MaybeUninit::<S>::uninit(); num_slices].into_boxed_slice();
 
         let msg_controllen = cmsg_buffer.as_ref().map_or(0, |v| v.capacity());
 
@@ -1916,7 +1916,7 @@ unsafe fn read_mhdr<'a, 'i, S>(
     mhdr: msghdr,
     r: isize,
     msg_controllen: usize,
-    address: S,
+    mut address: S,
 ) -> RecvMsg<'a, 'i, S>
     where S: SockaddrLike
 {
@@ -1931,6 +1931,11 @@ unsafe fn read_mhdr<'a, 'i, S>(
             ptr::null()
         }.as_ref()
     };
+
+    // Ignore errors if this socket address has statically-known length
+    //
+    // This is to ensure that unix socket addresses have their length set appropriately.
+    let _ = address.set_length(mhdr.msg_namelen as usize);
 
     RecvMsg {
         bytes: r as usize,
@@ -1967,7 +1972,7 @@ unsafe fn pack_mhdr_to_receive<S>(
     // initialize it.
     let mut mhdr = mem::MaybeUninit::<msghdr>::zeroed();
     let p = mhdr.as_mut_ptr();
-    (*p).msg_name = (*address).as_mut_ptr() as *mut c_void;
+    (*p).msg_name = address as *mut c_void;
     (*p).msg_namelen = S::size();
     (*p).msg_iov = iov_buffer as *mut iovec;
     (*p).msg_iovlen = iov_buffer_len as _;

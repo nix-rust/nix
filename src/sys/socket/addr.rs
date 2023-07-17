@@ -1049,6 +1049,22 @@ impl SockaddrLike for UnixAddr {
     {
         mem::size_of::<libc::sockaddr_un>() as libc::socklen_t
     }
+
+    unsafe fn set_length(&mut self, new_length: usize) -> std::result::Result<(), SocketAddressLengthNotDynamic> {
+        // `new_length` is only used on some platforms, so it must be provided even when not used
+        #![allow(unused_variables)]
+        cfg_if! {
+            if #[cfg(any(target_os = "android",
+                         target_os = "fuchsia",
+                         target_os = "illumos",
+                         target_os = "linux",
+                         target_os = "redox",
+                ))] {
+                self.sun_len = new_length as u8;
+            }
+        };
+        Ok(())
+    }
 }
 
 impl AsRef<libc::sockaddr_un> for UnixAddr {
@@ -1198,7 +1214,32 @@ pub trait SockaddrLike: private::SockaddrLikePriv {
     {
         mem::size_of::<Self>() as libc::socklen_t
     }
+
+    /// Set the length of this socket address
+    ///
+    /// This method may only be called on socket addresses whose lengths are dynamic, and it
+    /// returns an error if called on a type whose length is static.
+    ///
+    /// # Safety
+    ///
+    /// `new_length` must be a valid length for this type of address. Specifically, reads of that
+    /// length from `self` must be valid.
+    #[doc(hidden)]
+    unsafe fn set_length(&mut self, _new_length: usize) -> std::result::Result<(), SocketAddressLengthNotDynamic> {
+        Err(SocketAddressLengthNotDynamic)
+    }
 }
+
+/// The error returned by [`SockaddrLike::set_length`] on an address whose length is statically
+/// fixed.
+#[derive(Copy, Clone, Debug)]
+pub struct SocketAddressLengthNotDynamic;
+impl fmt::Display for SocketAddressLengthNotDynamic {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("Attempted to set length on socket whose length is statically fixed")
+    }
+}
+impl std::error::Error for SocketAddressLengthNotDynamic {}
 
 impl private::SockaddrLikePriv for () {
     fn as_mut_ptr(&mut self) -> *mut libc::sockaddr {
@@ -1645,6 +1686,15 @@ impl SockaddrLike for SockaddrStorage {
             None => mem::size_of_val(self) as libc::socklen_t
         }
     }
+
+    unsafe fn set_length(&mut self, new_length: usize) -> std::result::Result<(), SocketAddressLengthNotDynamic> {
+        match self.as_unix_addr_mut() {
+            Some(addr) => {
+                addr.set_length(new_length)
+            },
+            None => Err(SocketAddressLengthNotDynamic),
+        }
+    }
 }
 
 macro_rules! accessors {
@@ -1961,7 +2011,7 @@ impl PartialEq for SockaddrStorage {
     }
 }
 
-mod private {
+pub(super) mod private {
     pub trait SockaddrLikePriv {
         /// Returns a mutable raw pointer to the inner structure.
         ///
@@ -2850,7 +2900,6 @@ mod datalink {
             &self.0
         }
     }
-
     }
 }
 
