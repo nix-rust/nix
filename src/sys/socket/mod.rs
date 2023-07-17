@@ -2053,7 +2053,7 @@ pub fn recvmsg<'a, 'outer, 'inner, S>(fd: RawFd, iov: &'outer mut [IoSliceMut<'i
     where S: SockaddrLike + 'a,
     'inner: 'outer
 {
-    let mut address = mem::MaybeUninit::zeroed();
+    let mut address = mem::MaybeUninit::uninit();
 
     let (msg_control, msg_controllen) = cmsg_buffer.as_mut()
         .map(|v| (v.as_mut_ptr(), v.capacity()))

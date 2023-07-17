@@ -40,6 +40,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   ([#1964](https://github.com/nix-rust/nix/pull/1964))
 - Fix: send ETH_P_ALL in htons format 
   ([#1925](https://github.com/nix-rust/nix/pull/1925))
+- Fix: `recvmsg` now sets the length of the received `sockaddr_un` field
+  correctly on Linux platforms. ([#2041](https://github.com/nix-rust/nix/pull/2041))
 
 ### Removed
 
