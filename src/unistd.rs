@@ -3375,7 +3375,7 @@ feature! {
 /// See [access(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/access.html)
 pub fn access<P: ?Sized + NixPath>(path: &P, amode: AccessFlags) -> Result<()> {
     let res = path.with_nix_path(|cstr| unsafe {
-        libc::access(cstr.as_ptr(), amode.bits)
+        libc::access(cstr.as_ptr(), amode.bits())
     })?;
     Errno::result(res).map(drop)
 }
@@ -3422,7 +3422,7 @@ pub fn faccessat<P: ?Sized + NixPath>(
 ))]
 pub fn eaccess<P: ?Sized + NixPath>(path: &P, mode: AccessFlags) -> Result<()> {
     let res = path.with_nix_path(|cstr| unsafe {
-        libc::eaccess(cstr.as_ptr(), mode.bits)
+        libc::eaccess(cstr.as_ptr(), mode.bits())
     })?;
     Errno::result(res).map(drop)
 }

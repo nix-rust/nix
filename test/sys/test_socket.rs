@@ -10,7 +10,7 @@ use std::path::Path;
 use std::slice;
 use std::str::FromStr;
 
-#[cfg(any(target_os = "linux"))]
+#[cfg(target_os = "linux")]
 #[cfg_attr(qemu, ignore)]
 #[test]
 pub fn test_timestamping() {
@@ -2125,7 +2125,7 @@ pub fn test_vsock() {
 // Disable the test on emulated platforms because it fails in Cirrus-CI.  Lack
 // of QEMU support is suspected.
 #[cfg_attr(qemu, ignore)]
-#[cfg(all(target_os = "linux"))]
+#[cfg(target_os = "linux")]
 #[test]
 fn test_recvmsg_timestampns() {
     use nix::sys::socket::*;
@@ -2180,7 +2180,7 @@ fn test_recvmsg_timestampns() {
 // Disable the test on emulated platforms because it fails in Cirrus-CI.  Lack
 // of QEMU support is suspected.
 #[cfg_attr(qemu, ignore)]
-#[cfg(all(target_os = "linux"))]
+#[cfg(target_os = "linux")]
 #[test]
 fn test_recvmmsg_timestampns() {
     use nix::sys::socket::*;

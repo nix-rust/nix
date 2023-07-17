@@ -18,6 +18,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Added `LocalPeerPid` to `nix::sys::socket::sockopt` for macOS. ([#1967](https://github.com/nix-rust/nix/pull/1967))
 - Added `TFD_TIMER_CANCEL_ON_SET` to `::nix::sys::time::TimerSetTimeFlags` on Linux and Android.
   ([#2040](https://github.com/nix-rust/nix/pull/2040))
+- Added `SOF_TIMESTAMPING_OPT_ID` and `SOF_TIMESTAMPING_OPT_TSONLY` to `nix::sys::socket::TimestampingFlag`.
+  ([#2048](https://github.com/nix-rust/nix/pull/2048))
 
 ### Changed
 
@@ -36,12 +38,15 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   ([#2012](https://github.com/nix-rust/nix/pull/2012))
 
 ### Fixed
-- Fix `SockaddrIn6` bug that was swapping flowinfo and scope_id byte ordering.
-  ([#1964](https://github.com/nix-rust/nix/pull/1964))
-- Fix: send ETH_P_ALL in htons format 
+- Fix: send `ETH_P_ALL` in htons format 
   ([#1925](https://github.com/nix-rust/nix/pull/1925))
 - Fix: `recvmsg` now sets the length of the received `sockaddr_un` field
   correctly on Linux platforms. ([#2041](https://github.com/nix-rust/nix/pull/2041))
+- Fix potentially invalid conversions in
+  `SockaddrIn::from<std::net::SocketAddrV4>`,
+  `SockaddrIn6::from<std::net::SockaddrV6>`, `IpMembershipRequest::new`, and
+  `Ipv6MembershipRequest::new` with future Rust versions.
+  ([#2061](https://github.com/nix-rust/nix/pull/2061))
 
 ### Removed
 
@@ -52,6 +57,14 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - `nix::sys::signalfd::signalfd` is deprecated.  Use
   `nix::sys::signalfd::SignalFd` instead.
   ([#1938](https://github.com/nix-rust/nix/pull/1938))
+
+## [0.26.2] - 2023-01-18
+
+### Fixed
+
+- Fix `SockaddrIn6` bug that was swapping `flowinfo` and `scope_id` byte
+  ordering.
+  ([#1964](https://github.com/nix-rust/nix/pull/1964))
 
 ## [0.26.1] - 2022-11-29
 ### Fixed
