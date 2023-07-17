@@ -767,6 +767,8 @@ impl SockaddrLike for UnixAddr {
     }
 
     unsafe fn set_length(&mut self, new_length: usize) -> std::result::Result<(), SocketAddressLengthNotDynamic> {
+        // `new_length` is only used on some platforms, so it must be provided even when not used
+        #![allow(unused_variables)]
         cfg_if! {
             if #[cfg(any(target_os = "android",
                          target_os = "fuchsia",
