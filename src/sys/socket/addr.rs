@@ -775,8 +775,6 @@ impl SockaddrLike for UnixAddr {
                          target_os = "redox",
                 ))] {
                 self.sun_len = new_length as u8;
-            } else {
-                self.sun.sun_len = new_length as u8;
             }
         };
         Ok(())
