@@ -2,7 +2,7 @@
 
 use crate::errno::Errno;
 use crate::Result;
-use libc::{self, c_int, c_void, off_t, size_t};
+use libc::{self, c_int, c_void, size_t};
 use std::io::{IoSlice, IoSliceMut};
 use std::os::unix::io::{AsFd, AsRawFd};
 
@@ -44,13 +44,20 @@ pub fn readv<Fd: AsFd>(fd: Fd, iov: &mut [IoSliceMut<'_>]) -> Result<usize> {
 /// See also: [`writev`](fn.writev.html) and [`pwrite`](fn.pwrite.html)
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
 #[cfg_attr(docsrs, doc(cfg(all())))]
-pub fn pwritev<Fd: AsFd>(fd: Fd, iov: &[IoSlice<'_>], offset: off_t) -> Result<usize> {
+pub fn pwritev<Fd: AsFd, Off: Into<i64>>(
+    fd: Fd,
+    iov: &[IoSlice<'_>],
+    offset: Off,
+) -> Result<usize> {
+    let offset = offset.into();
+    // uclibc uses 64-bit offsets for pwritev even if it otherwise uses
+    // 32-bit file offsets.
     #[cfg(target_env = "uclibc")]
-    let offset = offset as libc::off64_t; // uclibc doesn't use off_t
+    let offset = offset as libc::off64_t;
 
     // SAFETY: same as in writev()
     let res = unsafe {
-        libc::pwritev(
+        largefile_fn![pwritev](
             fd.as_fd().as_raw_fd(),
             iov.as_ptr() as *const libc::iovec,
             iov.len() as c_int,
@@ -70,17 +77,20 @@ pub fn pwritev<Fd: AsFd>(fd: Fd, iov: &[IoSlice<'_>], offset: off_t) -> Result<u
 /// See also: [`readv`](fn.readv.html) and [`pread`](fn.pread.html)
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
 #[cfg_attr(docsrs, doc(cfg(all())))]
-pub fn preadv<Fd: AsFd>(
+pub fn preadv<Fd: AsFd, Off: Into<i64>>(
     fd: Fd,
     iov: &mut [IoSliceMut<'_>],
-    offset: off_t,
+    offset: Off,
 ) -> Result<usize> {
+    let offset = offset.into();
+    // uclibc uses 64-bit offsets for preadv even if it otherwise uses
+    // 32-bit file offsets.
     #[cfg(target_env = "uclibc")]
-    let offset = offset as libc::off64_t; // uclibc doesn't use off_t
+    let offset = offset as libc::off64_t;
 
     // SAFETY: same as in readv()
     let res = unsafe {
-        libc::preadv(
+        largefile_fn![preadv](
             fd.as_fd().as_raw_fd(),
             iov.as_ptr() as *const libc::iovec,
             iov.len() as c_int,
@@ -95,13 +105,17 @@ pub fn preadv<Fd: AsFd>(
 ///
 /// See also [pwrite(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/pwrite.html)
 // TODO: move to unistd
-pub fn pwrite<Fd: AsFd>(fd: Fd, buf: &[u8], offset: off_t) -> Result<usize> {
+pub fn pwrite<Fd: AsFd, Off: Into<i64>>(
+    fd: Fd,
+    buf: &[u8],
+    offset: Off,
+) -> Result<usize> {
     let res = unsafe {
-        libc::pwrite(
+        largefile_fn![pwrite](
             fd.as_fd().as_raw_fd(),
             buf.as_ptr() as *const c_void,
             buf.len() as size_t,
-            offset,
+            offset.into(),
         )
     };
 
@@ -112,13 +126,17 @@ pub fn pwrite<Fd: AsFd>(fd: Fd, buf: &[u8], offset: off_t) -> Result<usize> {
 ///
 /// See also [pread(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/pread.html)
 // TODO: move to unistd
-pub fn pread<Fd: AsFd>(fd: Fd, buf: &mut [u8], offset: off_t) -> Result<usize> {
+pub fn pread<Fd: AsFd, Off: Into<i64>>(
+    fd: Fd,
+    buf: &mut [u8],
+    offset: Off,
+) -> Result<usize> {
     let res = unsafe {
-        libc::pread(
+        largefile_fn![pread](
             fd.as_fd().as_raw_fd(),
             buf.as_mut_ptr() as *mut c_void,
             buf.len() as size_t,
-            offset,
+            offset.into(),
         )
     };
 

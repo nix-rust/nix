@@ -1,3 +1,5 @@
+use cfg_if::cfg_if;
+
 // Thanks to Tokio for this macro
 macro_rules! feature {
     (
@@ -328,4 +330,46 @@ macro_rules! libc_enum {
             $($vals)*
         }
     };
+}
+
+cfg_if! {
+    if #[cfg(all(target_os = "linux", target_env = "gnu"))] {
+        /// Function variant that supports large file positions.
+        ///
+        /// On some platforms, the standard I/O functions support a limited
+        /// range of file positions, and there is an alternate set of
+        /// functions that support larger file positions. This macro takes
+        /// the identifier of a standard I/O function and returns the
+        /// identifier of the corresponding I/O function with large file
+        /// support.
+        #[allow(unused_macro_rules)]
+        macro_rules! largefile_fn {
+            [fallocate] => (libc::fallocate64);
+            [ftruncate] => (libc::ftruncate64);
+            [lseek] => (libc::lseek64);
+            [mmap] => (libc::mmap64);
+            [open] => (libc::open64);
+            [openat] => (libc::openat64);
+            [posix_fadvise] => (libc::posix_fadvise64);
+            [posix_fallocate] => (libc::posix_fallocate64);
+            [pread] => (libc::pread64);
+            [preadv] => (libc::preadv64);
+            [pwrite] => (libc::pwrite64);
+            [pwritev] => (libc::pwritev64);
+            [sendfile] => (libc::sendfile64);
+            [truncate] => (libc::truncate64);
+        }
+    } else {
+        /// Function variant that supports large file positions.
+        ///
+        /// On some platforms, the standard I/O functions support a limited
+        /// range of file positions, and there is an alternate set of
+        /// functions that support larger file positions. This macro takes
+        /// the identifier of a standard I/O function and returns the
+        /// identifier of the corresponding I/O function with large file
+        /// support.
+        macro_rules! largefile_fn {
+            [$id:ident] => (libc::$id);
+        }
+    }
 }

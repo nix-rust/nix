@@ -24,8 +24,8 @@ use crate::{Error, NixPath, Result};
 #[cfg(not(target_os = "redox"))]
 use cfg_if::cfg_if;
 use libc::{
-    self, c_char, c_int, c_long, c_uint, c_void, gid_t, mode_t, off_t, pid_t,
-    size_t, uid_t, PATH_MAX,
+    self, c_char, c_int, c_long, c_uint, c_void, gid_t, mode_t, pid_t, size_t,
+    uid_t, PATH_MAX,
 };
 use std::convert::Infallible;
 use std::ffi::{CStr, OsString};
@@ -1167,10 +1167,14 @@ pub enum Whence {
 /// Move the read/write file offset.
 ///
 /// See also [lseek(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/lseek.html)
-pub fn lseek(fd: RawFd, offset: off_t, whence: Whence) -> Result<off_t> {
-    let res = unsafe { libc::lseek(fd, offset, whence as i32) };
+pub fn lseek<Off: Into<i64>>(
+    fd: RawFd,
+    offset: Off,
+    whence: Whence,
+) -> Result<i64> {
+    let res = unsafe { largefile_fn![lseek](fd, offset.into(), whence as i32) };
 
-    Errno::result(res).map(|r| r as off_t)
+    Errno::result(res).map(|r| r as i64)
 }
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
@@ -1245,9 +1249,14 @@ pub fn pipe2(flags: OFlag) -> Result<(RawFd, RawFd)> {
 /// See also
 /// [truncate(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/truncate.html)
 #[cfg(not(any(target_os = "redox", target_os = "fuchsia")))]
-pub fn truncate<P: ?Sized + NixPath>(path: &P, len: off_t) -> Result<()> {
+pub fn truncate<P: ?Sized + NixPath, Off: Into<i64>>(
+    path: &P,
+    len: Off,
+) -> Result<()> {
     let res = path
-        .with_nix_path(|cstr| unsafe { libc::truncate(cstr.as_ptr(), len) })?;
+        .with_nix_path(|cstr| unsafe {
+            largefile_fn![truncate](cstr.as_ptr(), len.into())
+        })?;
 
     Errno::result(res).map(drop)
 }
@@ -1256,8 +1265,10 @@ pub fn truncate<P: ?Sized + NixPath>(path: &P, len: off_t) -> Result<()> {
 ///
 /// See also
 /// [ftruncate(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/ftruncate.html)
-pub fn ftruncate<Fd: AsFd>(fd: Fd, len: off_t) -> Result<()> {
-    Errno::result(unsafe { libc::ftruncate(fd.as_fd().as_raw_fd(), len) }).map(drop)
+pub fn ftruncate<Fd: AsFd, Off: Into<i64>>(fd: Fd, len: Off) -> Result<()> {
+    Errno::result(unsafe {
+        largefile_fn![ftruncate](fd.as_fd().as_raw_fd(), len.into())
+    }).map(drop)
 }
 
 pub fn isatty(fd: RawFd) -> Result<bool> {
