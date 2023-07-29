@@ -26,6 +26,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   ([#2085](https://github.com/nix-rust/nix/pull/2085))
 - Added `SO_RTABLE` for OpenBSD and `SO_ACCEPTFILTER` for FreeBSD/NetBSD to `nix::sys::socket::sockopt`.
   ([#2085](https://github.com/nix-rust/nix/pull/2085))
+- Removed `flock` from `::nix::fcntl` on Solaris. ([#2082](https://github.com/nix-rust/nix/pull/2082))
 
 ### Changed
 
