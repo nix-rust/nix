@@ -2122,6 +2122,49 @@ pub fn test_vsock() {
     assert_eq!(addr3.as_ref().svm_port, addr1.port());
 }
 
+#[cfg(target_os = "macos")]
+#[test]
+pub fn test_vsock() {
+    use nix::sys::socket::SockaddrLike;
+    use nix::sys::socket::{AddressFamily, VsockAddr};
+    use std::mem;
+
+    let port: u32 = 3000;
+
+    // macOS doesn't have a VMADDR_CID_LOCAL, so test with host again
+    let addr_host = VsockAddr::new(libc::VMADDR_CID_HOST, port);
+    assert_eq!(addr_host.cid(), libc::VMADDR_CID_HOST);
+    assert_eq!(addr_host.port(), port);
+
+    let addr_any = VsockAddr::new(libc::VMADDR_CID_ANY, libc::VMADDR_PORT_ANY);
+    assert_eq!(addr_any.cid(), libc::VMADDR_CID_ANY);
+    assert_eq!(addr_any.port(), libc::VMADDR_PORT_ANY);
+
+    assert_ne!(addr_host, addr_any);
+    assert_ne!(calculate_hash(&addr_host), calculate_hash(&addr_any));
+
+    let addr1 = VsockAddr::new(libc::VMADDR_CID_HOST, port);
+    let addr2 = VsockAddr::new(libc::VMADDR_CID_HOST, port);
+    assert_eq!(addr1, addr2);
+    assert_eq!(calculate_hash(&addr1), calculate_hash(&addr2));
+
+    let addr3 = unsafe {
+        VsockAddr::from_raw(
+            addr2.as_ref() as *const libc::sockaddr_vm as *const libc::sockaddr,
+            Some(mem::size_of::<libc::sockaddr_vm>().try_into().unwrap()),
+        )
+    }
+    .unwrap();
+    assert_eq!(
+        addr3.as_ref().svm_family,
+        AddressFamily::Vsock as libc::sa_family_t
+    );
+    let cid = addr3.as_ref().svm_cid;
+    let port = addr3.as_ref().svm_port;
+    assert_eq!(cid, addr1.cid());
+    assert_eq!(port, addr1.port());
+}
+
 // Disable the test on emulated platforms because it fails in Cirrus-CI.  Lack
 // of QEMU support is suspected.
 #[cfg_attr(qemu, ignore)]
