@@ -27,6 +27,9 @@ pub fn writev<Fd: AsFd>(fd: Fd, iov: &[IoSlice<'_>]) -> Result<usize> {
 /// Low-level vectored read from a raw file descriptor
 ///
 /// See also [readv(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/readv.html)
+// Clippy doesn't know that we need to pass iov mutably only because the
+// mutation happens after converting iov to a pointer
+#[allow(clippy::needless_pass_by_ref_mut)]
 pub fn readv<Fd: AsFd>(fd: Fd, iov: &mut [IoSliceMut<'_>]) -> Result<usize> {
     // SAFETY: same as in writev(), IoSliceMut is ABI-compatible with iovec
     let res = unsafe {
@@ -70,6 +73,9 @@ pub fn pwritev<Fd: AsFd>(fd: Fd, iov: &[IoSlice<'_>], offset: off_t) -> Result<u
 /// See also: [`readv`](fn.readv.html) and [`pread`](fn.pread.html)
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
 #[cfg_attr(docsrs, doc(cfg(all())))]
+// Clippy doesn't know that we need to pass iov mutably only because the
+// mutation happens after converting iov to a pointer
+#[allow(clippy::needless_pass_by_ref_mut)]
 pub fn preadv<Fd: AsFd>(
     fd: Fd,
     iov: &mut [IoSliceMut<'_>],
