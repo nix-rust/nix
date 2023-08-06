@@ -24,6 +24,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Added vsock support for macOS ([#2056](https://github.com/nix-rust/nix/pull/2056))
 - Added `SO_SETFIB` and `SO_USER_COOKIE` to `nix::sys::socket::sockopt` for FreeBSD.
   ([#2085](https://github.com/nix-rust/nix/pull/2085))
+- Added `SO_RTABLE` for OpenBSD and `SO_ACCEPTFILTER` for FreeBSD/NetBSD to `nix::sys::socket::sockopt`.
+  ([#2085](https://github.com/nix-rust/nix/pull/2085))
 
 ### Changed
 

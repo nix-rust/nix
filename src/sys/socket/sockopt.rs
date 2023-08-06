@@ -766,6 +766,26 @@ sockopt_impl!(
     libc::SO_USER_COOKIE,
     u32
 );
+#[cfg(target_os = "openbsd")]
+sockopt_impl!(
+    /// Set the route table for this socket, needs a privileged user if
+    /// the process/socket had been set to the non default route.
+    Rtable,
+    SetOnly,
+    libc::SOL_SOCKET,
+    libc::SO_RTABLE,
+    i32
+);
+#[cfg(any(target_os = "freebsd", target_os = "netbsd"))]
+sockopt_impl!(
+    /// Get/set a filter on this socket before accepting connections similarly
+    /// to Linux's TCP_DEFER_ACCEPT but after the listen's call.
+    AcceptFilter,
+    Both,
+    libc::SOL_SOCKET,
+    libc::SO_ACCEPTFILTER,
+    libc::accept_filter_arg
+);
 #[cfg(target_os = "linux")]
 sockopt_impl!(
     /// Set the mark for each packet sent through this socket (similar to the
