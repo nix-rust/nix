@@ -224,7 +224,8 @@ impl Entry {
     #[allow(clippy::unnecessary_cast)]
     pub fn ino(&self) -> u64 {
         cfg_if! {
-            if #[cfg(any(target_os = "android",
+            if #[cfg(any(target_os = "aix",
+                         target_os = "android",
                          target_os = "emscripten",
                          target_os = "fuchsia",
                          target_os = "haiku",
@@ -253,6 +254,7 @@ impl Entry {
     /// `fstat` if this returns `None`.
     pub fn file_type(&self) -> Option<Type> {
         #[cfg(not(any(
+            target_os = "aix",
             target_os = "illumos",
             target_os = "solaris",
             target_os = "haiku"
@@ -270,6 +272,7 @@ impl Entry {
 
         // illumos, Solaris, and Haiku systems do not have the d_type member at all:
         #[cfg(any(
+            target_os = "aix",
             target_os = "illumos",
             target_os = "solaris",
             target_os = "haiku"
