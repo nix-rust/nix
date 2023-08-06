@@ -1051,8 +1051,14 @@ pub fn aio_suspend(
     list: &[&dyn AsRef<libc::aiocb>],
     timeout: Option<TimeSpec>,
 ) -> Result<()> {
-    let p = list as *const [&dyn AsRef<libc::aiocb>]
-        as *const [*const libc::aiocb] as *const *const libc::aiocb;
+    // Note that this allocation could be eliminated by making the argument
+    // generic, and accepting arguments like &[AioWrite].  But that would
+    // prevent using aio_suspend to wait on a heterogeneous list of mixed
+    // operations.
+    let v = list.iter()
+        .map(|x| x.as_ref() as *const libc::aiocb)
+        .collect::<Vec<*const libc::aiocb>>();
+    let p = v.as_ptr();
     let timep = match timeout {
         None => ptr::null::<libc::timespec>(),
         Some(x) => x.as_ref() as *const libc::timespec,
@@ -1172,6 +1178,7 @@ pub fn aio_suspend(
 /// // notification, we know that all operations are complete.
 /// assert_eq!(aiow.as_mut().aio_return().unwrap(), WBUF.len());
 /// ```
+#[deprecated(since = "0.27.0", note = "https://github.com/nix-rust/nix/issues/2017")]
 pub fn lio_listio(
     mode: LioMode,
     list: &mut [Pin<&mut dyn AsMut<libc::aiocb>>],
