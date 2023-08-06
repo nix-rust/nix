@@ -101,6 +101,9 @@ impl Drop for Dir {
     }
 }
 
+// The pass by mut is technically needless only because the inner NonNull is
+// Copy.  But philosophically we're mutating the Dir, so we pass by mut.
+#[allow(clippy::needless_pass_by_ref_mut)]
 fn next(dir: &mut Dir) -> Option<Result<Entry>> {
     unsafe {
         // Note: POSIX specifies that portable applications should dynamically allocate a

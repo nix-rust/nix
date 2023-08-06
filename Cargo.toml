@@ -82,7 +82,9 @@ assert-impl = "0.1"
 lazy_static = "1.4"
 parking_lot = "0.12"
 rand = "0.8"
-tempfile = "3.3.0"
+# tempfile 3.7.0 doesn't build on Haiku
+# https://github.com/Stebalien/tempfile/issues/246
+tempfile = ">=3.3.0, < 3.7.0"
 semver = "1.0.7"
 
 [target.'cfg(any(target_os = "android", target_os = "linux"))'.dev-dependencies]
