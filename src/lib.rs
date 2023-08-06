@@ -93,7 +93,9 @@ feature! {
               target_os = "macos",
               target_os = "netbsd",
               target_os = "illumos",
-              target_os = "openbsd"))]
+              target_os = "openbsd",
+              target_os = "nto",
+    ))]
     #[deny(missing_docs)]
     pub mod ifaddrs;
     #[cfg(not(target_os = "redox"))]
@@ -114,7 +116,8 @@ feature! {
     target_os = "dragonfly",
     target_os = "freebsd",
     target_os = "linux",
-    target_os = "netbsd"
+    target_os = "netbsd",
+    target_os = "nto",
 ))]
 feature! {
     #![feature = "mqueue"]

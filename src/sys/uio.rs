@@ -45,7 +45,7 @@ pub fn readv<Fd: AsFd>(fd: Fd, iov: &mut [IoSliceMut<'_>]) -> Result<usize> {
 /// or an error occurs. The file offset is not changed.
 ///
 /// See also: [`writev`](fn.writev.html) and [`pwrite`](fn.pwrite.html)
-#[cfg(not(any(target_os = "redox", target_os = "haiku")))]
+#[cfg(not(any(target_os = "redox", target_os = "haiku", target_os = "nto")))]
 #[cfg_attr(docsrs, doc(cfg(all())))]
 pub fn pwritev<Fd: AsFd>(fd: Fd, iov: &[IoSlice<'_>], offset: off_t) -> Result<usize> {
     #[cfg(target_env = "uclibc")]
@@ -71,7 +71,7 @@ pub fn pwritev<Fd: AsFd>(fd: Fd, iov: &[IoSlice<'_>], offset: off_t) -> Result<u
 /// changed.
 ///
 /// See also: [`readv`](fn.readv.html) and [`pread`](fn.pread.html)
-#[cfg(not(any(target_os = "redox", target_os = "haiku")))]
+#[cfg(not(any(target_os = "redox", target_os = "haiku", target_os = "nto")))]
 #[cfg_attr(docsrs, doc(cfg(all())))]
 // Clippy doesn't know that we need to pass iov mutably only because the
 // mutation happens after converting iov to a pointer

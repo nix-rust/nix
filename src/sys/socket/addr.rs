@@ -9,7 +9,8 @@
     target_os = "netbsd",
     target_os = "openbsd",
     target_os = "haiku",
-    target_os = "fuchsia"
+    target_os = "fuchsia",
+    target_os = "nto",
 ))]
 #[cfg(feature = "net")]
 pub use self::datalink::LinkAddr;
@@ -258,7 +259,8 @@ pub enum AddressFamily {
         target_os = "ios",
         target_os = "macos",
         target_os = "netbsd",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     ImpLink = libc::AF_IMPLINK,
@@ -269,7 +271,8 @@ pub enum AddressFamily {
         target_os = "ios",
         target_os = "macos",
         target_os = "netbsd",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     Pup = libc::AF_PUP,
@@ -280,7 +283,8 @@ pub enum AddressFamily {
         target_os = "ios",
         target_os = "macos",
         target_os = "netbsd",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     Chaos = libc::AF_CHAOS,
@@ -289,7 +293,8 @@ pub enum AddressFamily {
         target_os = "ios",
         target_os = "macos",
         target_os = "netbsd",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     Ns = libc::AF_NS,
@@ -300,7 +305,8 @@ pub enum AddressFamily {
         target_os = "ios",
         target_os = "macos",
         target_os = "netbsd",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     Iso = libc::AF_ISO,
@@ -311,7 +317,8 @@ pub enum AddressFamily {
         target_os = "ios",
         target_os = "macos",
         target_os = "netbsd",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     Datakit = libc::AF_DATAKIT,
@@ -322,7 +329,8 @@ pub enum AddressFamily {
         target_os = "ios",
         target_os = "macos",
         target_os = "netbsd",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     Ccitt = libc::AF_CCITT,
@@ -333,7 +341,8 @@ pub enum AddressFamily {
         target_os = "ios",
         target_os = "macos",
         target_os = "netbsd",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     Dli = libc::AF_DLI,
@@ -344,7 +353,8 @@ pub enum AddressFamily {
         target_os = "ios",
         target_os = "macos",
         target_os = "netbsd",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     Lat = libc::AF_LAT,
@@ -355,7 +365,8 @@ pub enum AddressFamily {
         target_os = "ios",
         target_os = "macos",
         target_os = "netbsd",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     Hylink = libc::AF_HYLINK,
@@ -367,7 +378,8 @@ pub enum AddressFamily {
         target_os = "macos",
         target_os = "illumos",
         target_os = "netbsd",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     Link = libc::AF_LINK,
@@ -378,7 +390,8 @@ pub enum AddressFamily {
         target_os = "ios",
         target_os = "macos",
         target_os = "netbsd",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     Coip = libc::AF_COIP,
@@ -389,7 +402,8 @@ pub enum AddressFamily {
         target_os = "ios",
         target_os = "macos",
         target_os = "netbsd",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     Cnt = libc::AF_CNT,
@@ -400,7 +414,8 @@ pub enum AddressFamily {
         target_os = "ios",
         target_os = "macos",
         target_os = "netbsd",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     Natm = libc::AF_NATM,
@@ -440,7 +455,8 @@ impl AddressFamily {
                 target_os = "macos",
                 target_os = "netbsd",
                 target_os = "illumos",
-                target_os = "openbsd"
+                target_os = "openbsd",
+                target_os = "nto",
             ))]
             libc::AF_LINK => Some(AddressFamily::Link),
             #[cfg(any(target_os = "android", target_os = "linux", target_os = "macos"))]
@@ -546,7 +562,8 @@ impl UnixAddr {
                 target_os = "ios",
                 target_os = "macos",
                 target_os = "netbsd",
-                target_os = "openbsd"
+                target_os = "openbsd",
+                target_os = "nto",
             ))]
             {
                 ret.sun_len = sun_len;
@@ -894,7 +911,9 @@ pub trait SockaddrLike: private::SockaddrLikePriv {
                   target_os = "ios",
                   target_os = "macos",
                   target_os = "netbsd",
-                  target_os = "openbsd"))] {
+                  target_os = "openbsd",
+                  target_os = "nto",
+                ))] {
             /// Return the length of valid data in the sockaddr structure.
             ///
             /// For fixed-size sockaddrs, this should be the size of the
@@ -1015,7 +1034,8 @@ impl SockaddrIn {
                 target_os = "macos",
                 target_os = "netbsd",
                 target_os = "haiku",
-                target_os = "openbsd"
+                target_os = "openbsd",
+                target_os = "nto",
             ))]
             sin_len: Self::size() as u8,
             sin_family: AddressFamily::Inet as sa_family_t,
@@ -1093,7 +1113,8 @@ impl From<net::SocketAddrV4> for SockaddrIn {
                 target_os = "ios",
                 target_os = "macos",
                 target_os = "netbsd",
-                target_os = "openbsd"
+                target_os = "openbsd",
+                target_os = "nto",
             ))]
             sin_len: mem::size_of::<libc::sockaddr_in>() as u8,
             sin_family: AddressFamily::Inet as sa_family_t,
@@ -1211,7 +1232,8 @@ impl From<net::SocketAddrV6> for SockaddrIn6 {
                 target_os = "ios",
                 target_os = "macos",
                 target_os = "netbsd",
-                target_os = "openbsd"
+                target_os = "openbsd",
+                target_os = "nto",
             ))]
             sin6_len: mem::size_of::<libc::sockaddr_in6>() as u8,
             sin6_family: AddressFamily::Inet6 as sa_family_t,
@@ -1352,7 +1374,8 @@ impl SockaddrLike for SockaddrStorage {
                     target_os = "illumos",
                     target_os = "netbsd",
                     target_os = "haiku",
-                    target_os = "openbsd"
+                    target_os = "openbsd",
+                    target_os = "nto",
                 ))]
                 #[cfg(feature = "net")]
                 libc::AF_LINK => {
@@ -1528,7 +1551,8 @@ impl SockaddrStorage {
         target_os = "macos",
         target_os = "illumos",
         target_os = "netbsd",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "nto",
     ))]
     #[cfg(feature = "net")]
     accessors! {
@@ -1587,7 +1611,8 @@ impl fmt::Display for SockaddrStorage {
                     target_os = "macos",
                     target_os = "illumos",
                     target_os = "netbsd",
-                    target_os = "openbsd"
+                    target_os = "openbsd",
+                    target_os = "nto",
                 ))]
                 #[cfg(feature = "net")]
                 libc::AF_LINK => self.dl.fmt(f),
@@ -1661,7 +1686,8 @@ impl Hash for SockaddrStorage {
                     target_os = "macos",
                     target_os = "illumos",
                     target_os = "netbsd",
-                    target_os = "openbsd"
+                    target_os = "openbsd",
+                    target_os = "nto",
                 ))]
                 #[cfg(feature = "net")]
                 libc::AF_LINK => self.dl.hash(s),
@@ -1703,7 +1729,8 @@ impl PartialEq for SockaddrStorage {
                     target_os = "macos",
                     target_os = "illumos",
                     target_os = "netbsd",
-                    target_os = "openbsd"
+                    target_os = "openbsd",
+                    target_os = "nto",
                 ))]
                 #[cfg(feature = "net")]
                 (libc::AF_LINK, libc::AF_LINK) => self.dl == other.dl,
@@ -2153,7 +2180,8 @@ mod datalink {
     target_os = "illumos",
     target_os = "netbsd",
     target_os = "haiku",
-    target_os = "openbsd"
+    target_os = "openbsd",
+    target_os = "nto",
 ))]
 #[cfg_attr(docsrs, doc(cfg(all())))]
 mod datalink {
@@ -2430,7 +2458,8 @@ mod tests {
             target_os = "ios",
             target_os = "macos",
             target_os = "netbsd",
-            target_os = "openbsd"
+            target_os = "openbsd",
+            target_os = "nto",
         ))]
         #[test]
         fn test_datalink_display() {
@@ -2548,7 +2577,8 @@ mod tests {
                 target_os = "netbsd",
                 target_os = "illumos",
                 target_os = "openbsd",
-                target_os = "haiku"
+                target_os = "haiku",
+                target_os = "nto",
             ))]
             let l = mem::size_of::<libc::sockaddr_dl>();
             #[cfg(any(

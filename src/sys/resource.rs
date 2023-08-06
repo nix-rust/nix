@@ -20,6 +20,7 @@ cfg_if! {
         target_os = "ios",
         target_os = "android",
         target_os = "dragonfly",
+        target_os = "nto",
         all(target_os = "linux", not(target_env = "gnu"))
     ))]{
         use libc::rlimit;
@@ -51,6 +52,7 @@ libc_enum! {
             target_os = "ios",
             target_os = "android",
             target_os = "dragonfly",
+            target_os = "nto",
             all(target_os = "linux", not(any(target_env = "gnu", target_env = "uclibc")))
         ), repr(i32))]
     #[non_exhaustive]
@@ -90,7 +92,8 @@ libc_enum! {
             target_os = "freebsd",
             target_os = "openbsd",
             target_os = "linux",
-            target_os = "netbsd"
+            target_os = "netbsd",
+            target_os = "nto",
         ))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
         /// The maximum size (in bytes) which a process may lock into memory
@@ -115,6 +118,7 @@ libc_enum! {
             target_os = "netbsd",
             target_os = "openbsd",
             target_os = "linux",
+            target_os = "nto",
         ))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
         /// The maximum number of simultaneous processes for this user id.
