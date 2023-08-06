@@ -746,6 +746,26 @@ sockopt_impl!(
     libc::IP_BINDANY,
     bool
 );
+#[cfg(target_os = "freebsd")]
+sockopt_impl!(
+    /// Set the route table (FIB) for this socket up to the `net.fibs` OID limit
+    /// (more specific than the setfib command line/call which are process based).
+    Fib,
+    SetOnly,
+    libc::SOL_SOCKET,
+    libc::SO_SETFIB,
+    i32
+);
+#[cfg(target_os = "freebsd")]
+sockopt_impl!(
+    /// Set `so_user_cookie` for this socket allowing network traffic based
+    /// upon it, similar to Linux's netfilter MARK.
+    UserCookie,
+    SetOnly,
+    libc::SOL_SOCKET,
+    libc::SO_USER_COOKIE,
+    u32
+);
 #[cfg(target_os = "linux")]
 sockopt_impl!(
     /// Set the mark for each packet sent through this socket (similar to the
