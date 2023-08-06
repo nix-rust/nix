@@ -5,6 +5,7 @@ cargo_cache:
 env:
   # Build by default; don't just check
   BUILD: build
+  CLIPPYFLAGS: -D warnings -A unknown-lints
   RUSTFLAGS: -D warnings
   RUSTDOCFLAGS: -D warnings
   TOOL: cargo
@@ -19,7 +20,7 @@ build: &BUILD
     - rustc -Vv
     - $TOOL $BUILD $ZFLAGS --target $TARGET --all-targets
     - $TOOL doc $ZFLAGS --no-deps --target $TARGET
-    - $TOOL clippy $ZFLAGS --target $TARGET --all-targets -- -D warnings
+    - $TOOL clippy $ZFLAGS --target $TARGET --all-targets -- $CLIPPYFLAGS
     - if [ -z "$NOHACK" ]; then mkdir -p $HOME/.cargo/bin; export PATH=$HOME/.cargo/bin:$PATH; fi
     - if [ -z "$NOHACK" ]; then curl -LsSf https://github.com/taiki-e/cargo-hack/releases/latest/download/cargo-hack-${HOST:-$TARGET}.tar.gz | tar xzf - -C ~/.cargo/bin; fi
     - if [ -z "$NOHACK" ]; then $TOOL hack $ZFLAGS check --target $TARGET --each-feature; fi
@@ -253,6 +254,7 @@ task:
   env:
     HOST: x86_64-unknown-linux-gnu
     TARGET: x86_64-unknown-redox
+    CLIPPYFLAGS: -D warnings
   setup_script:
     - rustup target add $TARGET
     - rustup component add clippy
@@ -267,6 +269,7 @@ task:
     BUILD: check
     HOST: x86_64-unknown-linux-gnu
     ZFLAGS: -Zbuild-std
+    CLIPPYFLAGS: -D warnings
   matrix:
     - name: DragonFly BSD x86_64
       env:
