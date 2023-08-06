@@ -1619,18 +1619,18 @@ impl<S> MultiHeaders<S> {
 
         // we'll need a cmsg_buffer for each slice, we preallocate a vector and split
         // it into "slices" parts
-        let cmsg_buffers =
+        let mut cmsg_buffers =
             cmsg_buffer.map(|v| vec![0u8; v.capacity() * num_slices].into_boxed_slice());
 
         let items = addresses
             .iter_mut()
             .enumerate()
             .map(|(ix, address)| {
-                let (ptr, cap) = match &cmsg_buffers {
-                    Some(v) => ((&v[ix * msg_controllen] as *const u8), msg_controllen),
-                    None => (std::ptr::null(), 0),
+                let (ptr, cap) = match &mut cmsg_buffers {
+                    Some(v) => ((&mut v[ix * msg_controllen] as *mut u8), msg_controllen),
+                    None => (std::ptr::null_mut(), 0),
                 };
-                let msg_hdr = unsafe { pack_mhdr_to_receive(std::ptr::null(), 0, ptr, cap, address.as_mut_ptr()) };
+                let msg_hdr = unsafe { pack_mhdr_to_receive(std::ptr::null_mut(), 0, ptr, cap, address.as_mut_ptr()) };
                 libc::mmsghdr {
                     msg_hdr,
                     msg_len: 0,
@@ -1961,9 +1961,9 @@ unsafe fn read_mhdr<'a, 'i, S>(
 ///
 /// Buffers must remain valid for the whole lifetime of msghdr
 unsafe fn pack_mhdr_to_receive<S>(
-    iov_buffer: *const IoSliceMut,
+    iov_buffer: *mut IoSliceMut,
     iov_buffer_len: usize,
-    cmsg_buffer: *const u8,
+    cmsg_buffer: *mut u8,
     cmsg_capacity: usize,
     address: *mut S,
 ) -> msghdr
@@ -1999,7 +1999,7 @@ fn pack_mhdr_to_send<'a, I, C, S>(
 
     // The message header must be initialized before the individual cmsgs.
     let cmsg_ptr = if capacity > 0 {
-        cmsg_buffer.as_ptr() as *mut c_void
+        cmsg_buffer.as_mut_ptr() as *mut c_void
     } else {
         ptr::null_mut()
     };
@@ -2063,7 +2063,7 @@ pub fn recvmsg<'a, 'outer, 'inner, S>(fd: RawFd, iov: &'outer mut [IoSliceMut<'i
         .map(|v| (v.as_mut_ptr(), v.capacity()))
         .unwrap_or((ptr::null_mut(), 0));
     let mut mhdr = unsafe {
-        pack_mhdr_to_receive(iov.as_ref().as_ptr(), iov.len(), msg_control, msg_controllen, address.as_mut_ptr())
+        pack_mhdr_to_receive(iov.as_mut().as_mut_ptr(), iov.len(), msg_control, msg_controllen, address.as_mut_ptr())
     };
 
     let ret = unsafe { libc::recvmsg(fd, &mut mhdr, flags.bits()) };
@@ -2209,7 +2209,7 @@ pub fn recv(sockfd: RawFd, buf: &mut [u8], flags: MsgFlags) -> Result<usize> {
     unsafe {
         let ret = libc::recv(
             sockfd,
-            buf.as_ptr() as *mut c_void,
+            buf.as_mut_ptr() as *mut c_void,
             buf.len() as size_t,
             flags.bits(),
         );
@@ -2233,7 +2233,7 @@ pub fn recvfrom<T: SockaddrLike>(
 
         let ret = Errno::result(libc::recvfrom(
             sockfd,
-            buf.as_ptr() as *mut c_void,
+            buf.as_mut_ptr() as *mut c_void,
             buf.len() as size_t,
             0,
             addr.as_mut_ptr() as *mut sockaddr,

@@ -22,6 +22,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   ([#2048](https://github.com/nix-rust/nix/pull/2048))
 - Enabled socket timestamping options on Android. ([#2077](https://github.com/nix-rust/nix/pull/2077))
 - Added vsock support for macOS ([#2056](https://github.com/nix-rust/nix/pull/2056))
+- Added `SO_SETFIB` and `SO_USER_COOKIE` to `nix::sys::socket::sockopt` for FreeBSD.
+  ([#2085](https://github.com/nix-rust/nix/pull/2085))
 
 ### Changed
 
@@ -59,6 +61,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - `nix::sys::signalfd::signalfd` is deprecated.  Use
   `nix::sys::signalfd::SignalFd` instead.
   ([#1938](https://github.com/nix-rust/nix/pull/1938))
+- Removed `SigEvent` support on Fuchsia, where it was unsound.
+  ([#2079](https://github.com/nix-rust/nix/pull/2079))
 
 ## [0.26.2] - 2023-01-18
 
