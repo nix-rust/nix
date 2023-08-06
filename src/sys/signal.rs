@@ -13,7 +13,11 @@ use std::os::unix::io::RawFd;
 use std::ptr;
 use std::str::FromStr;
 
-#[cfg(not(any(target_os = "openbsd", target_os = "redox")))]
+#[cfg(not(any(
+    target_os = "fuchsia",
+    target_os = "openbsd",
+    target_os = "redox"
+)))]
 #[cfg(any(feature = "aio", feature = "signal"))]
 pub use self::sigevent::*;
 
@@ -979,7 +983,7 @@ pub type type_of_thread_id = libc::pid_t;
 // sigval is actually a union of a int and a void*.  But it's never really used
 // as a pointer, because neither libc nor the kernel ever dereference it.  nix
 // therefore presents it as an intptr_t, which is how kevent uses it.
-#[cfg(not(any(target_os = "openbsd", target_os = "redox")))]
+#[cfg(not(any(target_os = "fuchsia", target_os = "openbsd", target_os = "redox")))]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum SigevNotify {
     /// No notification will be delivered
@@ -1018,7 +1022,11 @@ pub enum SigevNotify {
 }
 }
 
-#[cfg(not(any(target_os = "openbsd", target_os = "redox")))]
+#[cfg(not(any(
+    target_os = "fuchsia",
+    target_os = "openbsd",
+    target_os = "redox"
+)))]
 #[cfg_attr(docsrs, doc(cfg(all())))]
 mod sigevent {
     feature! {
@@ -1052,9 +1060,6 @@ mod sigevent {
         /// Linux, Solaris, and portable programs should prefer `SIGEV_THREAD_ID` or
         /// `SIGEV_SIGNAL`.  That field is part of a union that shares space with the
         /// more genuinely useful `sigev_notify_thread_id`
-        // Allow invalid_value warning on Fuchsia only.
-        // See https://github.com/nix-rust/nix/issues/1441
-        #[cfg_attr(target_os = "fuchsia", allow(invalid_value))]
         pub fn new(sigev_notify: SigevNotify) -> SigEvent {
             let mut sev = unsafe { mem::MaybeUninit::<libc::sigevent>::zeroed().assume_init() };
             sev.sigev_notify = match sigev_notify {

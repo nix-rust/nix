@@ -58,6 +58,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - `nix::sys::signalfd::signalfd` is deprecated.  Use
   `nix::sys::signalfd::SignalFd` instead.
   ([#1938](https://github.com/nix-rust/nix/pull/1938))
+- Removed `SigEvent` support on Fuchsia, where it was unsound.
+  ([#2079](https://github.com/nix-rust/nix/pull/2079))
 
 ## [0.26.2] - 2023-01-18
 
