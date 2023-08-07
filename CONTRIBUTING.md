@@ -79,32 +79,22 @@ environment. We also have [continuous integration set up on
 Cirrus-CI][cirrus-ci], which might find some issues on other platforms. The CI
 will run once you open a pull request.
 
-There is also infrastructure for running tests for other targets
-locally.  More information is available in the [CI Readme][ci-readme].
-
 [cirrus-ci]: https://cirrus-ci.com/github/nix-rust/nix
-[ci-readme]: ci/README.md
 
 ### Disabling a test in the CI environment
 
-Sometimes there are features that cannot be tested in the CI environment.
-To stop a test from running under CI, add `skip_if_cirrus!()` to it. Please
+Sometimes there are features that cannot be tested in the CI environment.  To
+stop a test from running under CI, add `skip_if_cirrus!()` to it. Please
 describe the reason it shouldn't run under CI, and a link to an issue if
-possible!
+possible!  Other tests cannot be run under QEMU, which is used for some
+architectures.  To skip them, add a `#[cfg_attr(qemu, ignore)]` attribute to
+the test.
 
-## bors, the bot who merges all the PRs
+## GitHub Merge Queues
 
-All pull requests are merged via [bors], an integration bot. After the
-pull request has been reviewed, the reviewer will leave a comment like
-
-> bors r+
-
-to let bors know that it was approved. Then bors will check that it passes
-tests when merged with the latest changes in the `master` branch, and
-merge if the tests succeed.
-
-[bors]: https://bors-ng.github.io/
-
+We use GitHub merge queues to ensure that subtle merge conflicts won't result
+in failing code.  If you add or remove a CI job, remember to adjust the
+required status checks in the repository's branch protection rules!
 
 ## API conventions
 
