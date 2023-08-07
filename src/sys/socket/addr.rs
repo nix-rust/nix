@@ -875,9 +875,10 @@ pub trait SockaddrLike: private::SockaddrLikePriv {
     /// One common use is to match on the family of a union type, like this:
     /// ```
     /// # use nix::sys::socket::*;
+    /// # use std::os::unix::io::AsRawFd;
     /// let fd = socket(AddressFamily::Inet, SockType::Stream,
     ///     SockFlag::empty(), None).unwrap();
-    /// let ss: SockaddrStorage = getsockname(fd).unwrap();
+    /// let ss: SockaddrStorage = getsockname(fd.as_raw_fd()).unwrap();
     /// match ss.family().unwrap() {
     ///     AddressFamily::Inet => println!("{}", ss.as_sockaddr_in().unwrap()),
     ///     AddressFamily::Inet6 => println!("{}", ss.as_sockaddr_in6().unwrap()),
@@ -1261,11 +1262,12 @@ impl std::str::FromStr for SockaddrIn6 {
 /// ```
 /// # use nix::sys::socket::*;
 /// # use std::str::FromStr;
+/// # use std::os::unix::io::AsRawFd;
 /// let localhost = SockaddrIn::from_str("127.0.0.1:8081").unwrap();
 /// let fd = socket(AddressFamily::Inet, SockType::Stream, SockFlag::empty(),
 ///     None).unwrap();
-/// bind(fd, &localhost).expect("bind");
-/// let ss: SockaddrStorage = getsockname(fd).expect("getsockname");
+/// bind(fd.as_raw_fd(), &localhost).expect("bind");
+/// let ss: SockaddrStorage = getsockname(fd.as_raw_fd()).expect("getsockname");
 /// assert_eq!(&localhost, ss.as_sockaddr_in().unwrap());
 /// ```
 #[derive(Clone, Copy, Eq)]
