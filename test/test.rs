@@ -22,6 +22,12 @@ mod test_kmod;
 mod test_mq;
 #[cfg(not(target_os = "redox"))]
 mod test_net;
+#[cfg(not(any(
+    target_os = "illumos",
+    target_os = "haiku",
+    target_os = "redox",
+)))]
+mod test_netdb;
 mod test_nix_path;
 #[cfg(target_os = "freebsd")]
 mod test_nmount;
