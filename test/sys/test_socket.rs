@@ -478,7 +478,14 @@ mod recvfrom {
                     addrs.push(Some(sock_addr2));
                 }
 
-                let res = sendmmsg(s, &mut data, &iovs, addrs, [], flags)?;
+                let res = sendmmsg(
+                    s,
+                    &mut data,
+                    &iovs,
+                    addrs,
+                    std::iter::repeat([]),
+                    flags,
+                )?;
                 let mut sent_messages = 0;
                 let mut sent_bytes = 0;
                 for item in res {

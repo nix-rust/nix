@@ -1503,9 +1503,11 @@ pub fn sendmsg<S>(fd: RawFd, iov: &[IoSlice<'_>], cmsgs: &[ControlMessage],
 ///
 /// # Arguments
 ///
-/// * `fd`:             Socket file descriptor
-/// * `data`:           Struct that implements `IntoIterator` with `SendMmsgData` items
-/// * `flags`:          Optional flags passed directly to the operating system.
+/// * `fd`: Socket file descriptor
+/// * `data`: Preallocated headers - they don't hold any data
+/// * `slices`: an iterator of slices to send
+/// * `cmsgs_iter`: an iterator of control messages
+/// * `flags`: Optional flags passed directly to the operating system.
 ///
 /// # Returns
 /// `Vec` with numbers of sent bytes on each sent message.
@@ -1518,28 +1520,32 @@ pub fn sendmsg<S>(fd: RawFd, iov: &[IoSlice<'_>], cmsgs: &[ControlMessage],
     target_os = "freebsd",
     target_os = "netbsd",
 ))]
-pub fn sendmmsg<'a, XS, AS, C, I, S>(
+pub fn sendmmsg<'a, XS, AS, C, CM, I, S>(
     fd: RawFd,
     data: &'a mut MultiHeaders<S>,
     slices: XS,
     // one address per group of slices
     addrs: AS,
-    // shared across all the messages
-    cmsgs: C,
+    // one group of messages per address
+    cmsgs_iter: C,
     flags: MsgFlags
 ) -> crate::Result<MultiResults<'a, S>>
     where
         XS: IntoIterator<Item = &'a I>,
         AS: AsRef<[Option<S>]>,
         I: AsRef<[IoSlice<'a>]> + 'a,
-        C: AsRef<[ControlMessage<'a>]> + 'a,
+        C: IntoIterator<Item= CM> + 'a,
+        CM: AsRef<[ControlMessage<'a>]> + 'a,
         S: SockaddrLike + 'a
 {
 
     let mut count = 0;
 
 
-    for (i, ((slice, addr), mmsghdr)) in slices.into_iter().zip(addrs.as_ref()).zip(data.items.iter_mut() ).enumerate() {
+    for (i, (((slice, addr), mmsghdr), cmsgs)) in
+                slices.into_iter()
+                .zip(addrs.as_ref())
+                .zip(data.items.iter_mut()).zip(cmsgs_iter.into_iter()).enumerate() {
         let p = &mut mmsghdr.msg_hdr;
         p.msg_iov = slice.as_ref().as_ptr() as *mut libc::iovec;
         p.msg_iovlen = slice.as_ref().len() as _;
