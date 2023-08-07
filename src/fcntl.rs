@@ -559,7 +559,7 @@ pub enum FlockArg {
     UnlockNonblock,
 }
 
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "redox", target_os = "solaris")))]
 pub fn flock(fd: RawFd, arg: FlockArg) -> Result<()> {
     use self::FlockArg::*;
 
