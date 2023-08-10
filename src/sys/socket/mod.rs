@@ -158,6 +158,11 @@ pub enum SockProtocol {
     #[cfg(any(target_os = "android", target_os = "linux"))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     NetlinkSockDiag = libc::NETLINK_SOCK_DIAG,
+    /// Netfilter/iptables ULOG.
+    /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
+    NetlinkNFLOG = libc::NETLINK_NFLOG,
     /// SELinux event notifications.
     /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
     #[cfg(any(target_os = "android", target_os = "linux"))]
@@ -208,6 +213,11 @@ pub enum SockProtocol {
     #[cfg(any(target_os = "android", target_os = "linux"))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     NetlinkKObjectUEvent = libc::NETLINK_KOBJECT_UEVENT,
+    /// Generic netlink family for simplified netlink usage.
+    /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
+    NetlinkGeneric = libc::NETLINK_GENERIC,
     /// Netlink interface to request information about ciphers registered with the kernel crypto API as well as allow
     /// configuration of the kernel crypto API.
     /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
