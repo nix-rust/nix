@@ -200,7 +200,7 @@ mod aio_read {
             assert_eq!(err, Ok(()));
             assert_eq!(aior.as_mut().aio_return().unwrap(), EXPECT.len());
         }
-        assert_eq!(EXPECT, rbuf.deref().deref());
+        assert_eq!(EXPECT, rbuf.deref());
     }
 
     // Like ok, but allocates the structure on the stack.
@@ -223,7 +223,7 @@ mod aio_read {
             assert_eq!(err, Ok(()));
             assert_eq!(aior.as_mut().aio_return().unwrap(), EXPECT.len());
         }
-        assert_eq!(EXPECT, rbuf.deref().deref());
+        assert_eq!(EXPECT, rbuf.deref());
     }
 }
 
