@@ -2058,7 +2058,7 @@ fn pack_mhdr_to_send<'a, I, C, S>(
 /// [recvmsg(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/recvmsg.html)
 pub fn recvmsg<'a, 'outer, 'inner, S>(fd: RawFd, iov: &'outer mut [IoSliceMut<'inner>],
                    mut cmsg_buffer: Option<&'a mut Vec<u8>>,
-                   flags: MsgFlags) -> Result<RecvMsg<'a, 'inner, S>>
+                   flags: MsgFlags) -> Result<RecvMsg<'a, 'outer, S>>
     where S: SockaddrLike + 'a,
     'inner: 'outer
 {
