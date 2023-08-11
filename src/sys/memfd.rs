@@ -40,6 +40,7 @@ libc_bitflags!(
 /// For more information, see [`memfd_create(2)`].
 ///
 /// [`memfd_create(2)`]: https://man7.org/linux/man-pages/man2/memfd_create.2.html
+#[inline] // Delays codegen, preventing linker errors with dylibs and --no-allow-shlib-undefined
 pub fn memfd_create(name: &CStr, flags: MemFdCreateFlag) -> Result<OwnedFd> {
     let res = unsafe {
         cfg_if! {
