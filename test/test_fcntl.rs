@@ -26,7 +26,7 @@ use std::io::prelude::*;
 #[cfg(not(target_os = "redox"))]
 use std::os::unix::fs;
 #[cfg(not(target_os = "redox"))]
-use tempfile::{self, NamedTempFile};
+use tempfile::NamedTempFile;
 
 #[test]
 #[cfg(not(target_os = "redox"))]
@@ -227,6 +227,51 @@ fn test_readlink() {
     );
 }
 
+/// This test creates a temporary file containing the contents
+/// 'foobarbaz' and uses the `copy_file_range` call to transfer
+/// 3 bytes at offset 3 (`bar`) to another empty file at offset 0. The
+/// resulting file is read and should contain the contents `bar`.
+/// The from_offset should be updated by the call to reflect
+/// the 3 bytes read (6).
+#[cfg(any(
+        target_os = "linux",
+        // Not available until FreeBSD 13.0
+        all(target_os = "freebsd", fbsd14),
+        target_os = "android"
+))]
+#[test]
+// QEMU does not support copy_file_range. Skip under qemu
+#[cfg_attr(qemu, ignore)]
+fn test_copy_file_range() {
+    use nix::fcntl::copy_file_range;
+    use std::os::unix::io::AsFd;
+
+    const CONTENTS: &[u8] = b"foobarbaz";
+
+    let mut tmp1 = tempfile::tempfile().unwrap();
+    let mut tmp2 = tempfile::tempfile().unwrap();
+
+    tmp1.write_all(CONTENTS).unwrap();
+    tmp1.flush().unwrap();
+
+    let mut from_offset: i64 = 3;
+    copy_file_range(
+        tmp1.as_fd(),
+        Some(&mut from_offset),
+        tmp2.as_fd(),
+        None,
+        3,
+    )
+    .unwrap();
+
+    let mut res: String = String::new();
+    tmp2.rewind().unwrap();
+    tmp2.read_to_string(&mut res).unwrap();
+
+    assert_eq!(res, String::from("bar"));
+    assert_eq!(from_offset, 6);
+}
+
 #[cfg(any(target_os = "linux", target_os = "android"))]
 mod linux_android {
     use libc::loff_t;
@@ -242,42 +287,6 @@ mod linux_android {
     use tempfile::NamedTempFile;
 
     use crate::*;
-
-    /// This test creates a temporary file containing the contents
-    /// 'foobarbaz' and uses the `copy_file_range` call to transfer
-    /// 3 bytes at offset 3 (`bar`) to another empty file at offset 0. The
-    /// resulting file is read and should contain the contents `bar`.
-    /// The from_offset should be updated by the call to reflect
-    /// the 3 bytes read (6).
-    #[test]
-    // QEMU does not support copy_file_range. Skip under qemu
-    #[cfg_attr(qemu, ignore)]
-    fn test_copy_file_range() {
-        const CONTENTS: &[u8] = b"foobarbaz";
-
-        let mut tmp1 = tempfile().unwrap();
-        let mut tmp2 = tempfile().unwrap();
-
-        tmp1.write_all(CONTENTS).unwrap();
-        tmp1.flush().unwrap();
-
-        let mut from_offset: i64 = 3;
-        copy_file_range(
-            tmp1.as_raw_fd(),
-            Some(&mut from_offset),
-            tmp2.as_raw_fd(),
-            None,
-            3,
-        )
-        .unwrap();
-
-        let mut res: String = String::new();
-        tmp2.rewind().unwrap();
-        tmp2.read_to_string(&mut res).unwrap();
-
-        assert_eq!(res, String::from("bar"));
-        assert_eq!(from_offset, 6);
-    }
 
     #[test]
     fn test_splice() {

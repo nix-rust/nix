@@ -5,11 +5,19 @@ use std::ffi::OsString;
 use std::os::raw;
 use std::os::unix::ffi::OsStringExt;
 use std::os::unix::io::RawFd;
+// For splice and copy_file_range
+#[cfg(any(
+    target_os = "android",
+    target_os = "freebsd",
+    target_os = "linux"
+))]
+use std::{
+    os::unix::io::{AsFd, AsRawFd},
+    ptr,
+};
 
 #[cfg(feature = "fs")]
 use crate::{sys::stat::Mode, NixPath, Result};
-#[cfg(any(target_os = "android", target_os = "linux"))]
-use std::ptr; // For splice and copy_file_range
 
 #[cfg(any(
     target_os = "linux",
@@ -612,44 +620,65 @@ feature! {
 ///
 /// The `copy_file_range` system call performs an in-kernel copy between
 /// file descriptors `fd_in` and `fd_out` without the additional cost of
-/// transferring data from the kernel to user space and then back into the
-/// kernel. It copies up to `len` bytes of data from file descriptor `fd_in` to
-/// file descriptor `fd_out`, overwriting any data that exists within the
-/// requested range of the target file.
+/// transferring data from the kernel to user space and back again. There may be
+/// additional optimizations for specific file systems.  It copies up to `len`
+/// bytes of data from file descriptor `fd_in` to file descriptor `fd_out`,
+/// overwriting any data that exists within the requested range of the target
+/// file.
 ///
 /// If the `off_in` and/or `off_out` arguments are used, the values
 /// will be mutated to reflect the new position within the file after
-/// copying. If they are not used, the relevant filedescriptors will be seeked
+/// copying. If they are not used, the relevant file descriptors will be seeked
 /// to the new position.
 ///
 /// On successful completion the number of bytes actually copied will be
 /// returned.
-#[cfg(any(target_os = "android", target_os = "linux"))]
-pub fn copy_file_range(
-    fd_in: RawFd,
-    off_in: Option<&mut libc::loff_t>,
-    fd_out: RawFd,
-    off_out: Option<&mut libc::loff_t>,
+// Note: FreeBSD defines the offset argument as "off_t".  Linux and Android
+// define it as "loff_t".  But on both OSes, on all supported platforms, those
+// are 64 bits.  So Nix uses i64 to make the docs simple and consistent.
+#[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
+pub fn copy_file_range<Fd1: AsFd, Fd2: AsFd>(
+    fd_in: Fd1,
+    off_in: Option<&mut i64>,
+    fd_out: Fd2,
+    off_out: Option<&mut i64>,
     len: usize,
 ) -> Result<usize> {
     let off_in = off_in
-        .map(|offset| offset as *mut libc::loff_t)
+        .map(|offset| offset as *mut i64)
         .unwrap_or(ptr::null_mut());
     let off_out = off_out
-        .map(|offset| offset as *mut libc::loff_t)
+        .map(|offset| offset as *mut i64)
         .unwrap_or(ptr::null_mut());
 
-    let ret = unsafe {
-        libc::syscall(
-            libc::SYS_copy_file_range,
-            fd_in,
-            off_in,
-            fd_out,
-            off_out,
-            len,
-            0,
-        )
-    };
+    cfg_if::cfg_if! {
+        if #[cfg(target_os = "freebsd")] {
+            let ret = unsafe {
+                libc::copy_file_range(
+                    fd_in.as_fd().as_raw_fd(),
+                    off_in,
+                    fd_out.as_fd().as_raw_fd(),
+                    off_out,
+                    len,
+                    0,
+                )
+            };
+        } else {
+            // May Linux distros still don't include copy_file_range in their
+            // libc implementations, so we need to make a direct syscall.
+            let ret = unsafe {
+                libc::syscall(
+                    libc::SYS_copy_file_range,
+                    fd_in,
+                    off_in,
+                    fd_out.as_fd().as_raw_fd(),
+                    off_out,
+                    len,
+                    0,
+                )
+            };
+        }
+    }
     Errno::result(ret).map(|r| r as usize)
 }
 

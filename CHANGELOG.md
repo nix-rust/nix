@@ -27,6 +27,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Added `SO_RTABLE` for OpenBSD and `SO_ACCEPTFILTER` for FreeBSD/NetBSD to `nix::sys::socket::sockopt`.
   ([#2085](https://github.com/nix-rust/nix/pull/2085))
 - Removed `flock` from `::nix::fcntl` on Solaris. ([#2082](https://github.com/nix-rust/nix/pull/2082))
+- Use I/O safety with `copy_file_range`, and expose it on FreeBSD.
+  (#[1906](https://github.com/nix-rust/nix/pull/1906))
 
 ### Changed
 
@@ -43,6 +45,15 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   ([#1943](https://github.com/nix-rust/nix/pull/1943))
 - `nix::socket` and `nix::select` are now available on Redox.
   ([#2012](https://github.com/nix-rust/nix/pull/2012))
+
+- Implemented I/O safety.  Many public functions argument and return types have
+  changed:
+  | Original Type | New Type              |
+  | ------------- | --------------------- |
+  | AsRawFd       | AsFd                  |
+  | RawFd         | BorrowedFd or OwnedFd |
+
+  (#[1906](https://github.com/nix-rust/nix/pull/1906))
 
 ### Fixed
 - Fix: send `ETH_P_ALL` in htons format 
