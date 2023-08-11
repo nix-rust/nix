@@ -711,6 +711,16 @@ sockopt_impl!(
     libc::SO_TIMESTAMPNS,
     bool
 );
+#[cfg(target_os = "freebsd")]
+sockopt_impl!(
+    /// Sets a specific timestamp format instead of the classic `SCM_TIMESTAMP`,
+    /// to follow up after `SO_TIMESTAMP` is set.
+    TsClock,
+    SetOnly,
+    libc::SOL_SOCKET,
+    libc::SO_TS_CLOCK,
+    i32
+);
 #[cfg(any(target_os = "android", target_os = "linux"))]
 #[cfg(feature = "net")]
 sockopt_impl!(
