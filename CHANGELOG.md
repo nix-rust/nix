@@ -45,6 +45,9 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   ([#1943](https://github.com/nix-rust/nix/pull/1943))
 - `nix::socket` and `nix::select` are now available on Redox.
   ([#2012](https://github.com/nix-rust/nix/pull/2012))
+- All features have been removed from the default set. Users will need to specify
+  which features they depend on in their Cargo.toml.
+  ([#2091](https://github.com/nix-rust/nix/pull/2091))
 
 - Implemented I/O safety.  Many public functions argument and return types have
   changed:

@@ -34,13 +34,7 @@ pin-utils = { version = "0.1.0", optional = true }
 memoffset = { version = "0.9", optional = true }
 
 [features]
-default = [
-  "acct", "aio", "dir", "env", "event", "feature", "fs",
-  "hostname", "inotify", "ioctl", "kmod", "mman", "mount", "mqueue",
-  "net", "personality", "poll", "process", "pthread", "ptrace", "quota",
-  "reboot", "resource", "sched", "signal", "socket", "term", "time",
-  "ucontext", "uio", "user", "zerocopy",
-]
+default = []
 
 acct = []
 aio = ["pin-utils"]
