@@ -57,6 +57,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   | RawFd         | BorrowedFd or OwnedFd |
 
   (#[1906](https://github.com/nix-rust/nix/pull/1906))
+- Implemented AsFd, AsRawFd, FromRawFd, and IntoRawFd for `mqueue::MqdT`.
 
 ### Fixed
 - Fix: send `ETH_P_ALL` in htons format 
