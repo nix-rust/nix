@@ -43,7 +43,8 @@ mod consts {
     target_arch = "aarch64",
     target_arch = "riscv32",
     target_arch = "riscv64",
-    target_arch = "loongarch64"
+    target_arch = "loongarch64",
+    target_arch = "csky"
 ))]
 mod consts {
     #[doc(hidden)]
