@@ -37,8 +37,8 @@ use crate::sys::stat::Mode;
 use libc::{self, c_char, mqd_t, size_t};
 use std::ffi::CStr;
 use std::mem;
-#[cfg(target_os = "linux")]
-use std::os::fd::{AsFd, AsRawFd, BorrowedFd, FromRawFd, IntoRawFd, RawFd};
+#[cfg(all(unix, target_os = "linux"))]
+use std::os::unix::io::{AsFd, AsRawFd, BorrowedFd, FromRawFd, IntoRawFd, RawFd};
 
 libc_bitflags! {
     /// Used with [`mq_open`].
@@ -303,7 +303,7 @@ pub fn mq_remove_nonblock(mqd: &MqdT) -> Result<MqAttr> {
     mq_setattr(mqd, &newattr)
 }
 
-#[cfg(target_os = "linux")]
+#[cfg(all(unix, target_os = "linux"))]
 impl AsFd for MqdT {
 	/// Borrow the underlying message queue descriptor.
 	fn as_fd(&self) -> BorrowedFd {
@@ -312,7 +312,7 @@ impl AsFd for MqdT {
 	}
 }
 
-#[cfg(target_os = "linux")]
+#[cfg(all(unix, target_os = "linux"))]
 impl AsRawFd for MqdT {
 	/// Return the underlying message queue descriptor.
 	///
@@ -323,7 +323,7 @@ impl AsRawFd for MqdT {
 	}
 }
 
-#[cfg(target_os = "linux")]
+#[cfg(all(unix, target_os = "linux"))]
 impl FromRawFd for MqdT {
 	/// Construct an [MqdT] from [RawFd].
 	///
@@ -335,7 +335,7 @@ impl FromRawFd for MqdT {
 	}
 }
 
-#[cfg(target_os = "linux")]
+#[cfg(all(unix, target_os = "linux"))]
 impl IntoRawFd for MqdT {
 	/// Consume this [MqdT] and return a [RawFd].
 	fn into_raw_fd(self) -> RawFd {
