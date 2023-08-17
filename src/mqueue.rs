@@ -305,40 +305,40 @@ pub fn mq_remove_nonblock(mqd: &MqdT) -> Result<MqAttr> {
 
 #[cfg(all(unix, target_os = "linux"))]
 impl AsFd for MqdT {
-	/// Borrow the underlying message queue descriptor.
-	fn as_fd(&self) -> BorrowedFd {
-		// SAFETY: [MqdT] will only contain a valid fd by construction.
-		unsafe { BorrowedFd::borrow_raw(self.0) }
-	}
+    /// Borrow the underlying message queue descriptor.
+    fn as_fd(&self) -> BorrowedFd {
+        // SAFETY: [MqdT] will only contain a valid fd by construction.
+        unsafe { BorrowedFd::borrow_raw(self.0) }
+    }
 }
 
 #[cfg(all(unix, target_os = "linux"))]
 impl AsRawFd for MqdT {
-	/// Return the underlying message queue descriptor.
-	///
-	/// Returned descriptor is a "shallow copy" of the descriptor, so it refers
-	///  to the same underlying kernel object as `self`.
-	fn as_raw_fd(&self) -> RawFd {
-		self.0
-	}
+    /// Return the underlying message queue descriptor.
+    ///
+    /// Returned descriptor is a "shallow copy" of the descriptor, so it refers
+    ///  to the same underlying kernel object as `self`.
+    fn as_raw_fd(&self) -> RawFd {
+        self.0
+    }
 }
 
 #[cfg(all(unix, target_os = "linux"))]
 impl FromRawFd for MqdT {
-	/// Construct an [MqdT] from [RawFd].
-	///
-	/// # Safety
-	/// The `fd` given must be a valid and open file descriptor for a message
-	///  queue.
-	unsafe fn from_raw_fd(fd: RawFd) -> MqdT {
-		MqdT(fd)
-	}
+    /// Construct an [MqdT] from [RawFd].
+    ///
+    /// # Safety
+    /// The `fd` given must be a valid and open file descriptor for a message
+    ///  queue.
+    unsafe fn from_raw_fd(fd: RawFd) -> MqdT {
+        MqdT(fd)
+    }
 }
 
 #[cfg(all(unix, target_os = "linux"))]
 impl IntoRawFd for MqdT {
-	/// Consume this [MqdT] and return a [RawFd].
-	fn into_raw_fd(self) -> RawFd {
-		self.0
-	}
+    /// Consume this [MqdT] and return a [RawFd].
+    fn into_raw_fd(self) -> RawFd {
+        self.0
+    }
 }
