@@ -39,7 +39,7 @@ use std::ffi::CStr;
 use std::mem;
 #[cfg(all(unix, target_os = "linux"))]
 use std::os::unix::io::{
-    AsFd, AsRawFd, BorrowedFd, FromRawFd, IntoRawFd, RawFd
+    AsFd, AsRawFd, BorrowedFd, FromRawFd, IntoRawFd, RawFd,
 };
 
 libc_bitflags! {
