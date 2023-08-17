@@ -38,7 +38,9 @@ use libc::{self, c_char, mqd_t, size_t};
 use std::ffi::CStr;
 use std::mem;
 #[cfg(all(unix, target_os = "linux"))]
-use std::os::unix::io::{AsFd, AsRawFd, BorrowedFd, FromRawFd, IntoRawFd, RawFd};
+use std::os::unix::io::{
+    AsFd, AsRawFd, BorrowedFd, FromRawFd, IntoRawFd, RawFd
+};
 
 libc_bitflags! {
     /// Used with [`mq_open`].
