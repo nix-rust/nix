@@ -10,7 +10,7 @@ use crate::sys::time::TimeSpec;
 use crate::unistd::Pid;
 use crate::{Errno, Result};
 use libc::{self, clockid_t};
-use std::mem::MaybeUninit;
+use core::mem::MaybeUninit;
 
 /// Clock identifier
 ///
@@ -214,9 +214,9 @@ impl From<clockid_t> for ClockId {
     }
 }
 
-impl std::fmt::Display for ClockId {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        std::fmt::Display::fmt(&self.0, f)
+impl core::fmt::Display for ClockId {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        core::fmt::Display::fmt(&self.0, f)
     }
 }
 

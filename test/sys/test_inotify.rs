@@ -1,7 +1,7 @@
+use core::ffi::CString;
+use core::fs::{rename, File};
 use nix::errno::Errno;
 use nix::sys::inotify::{AddWatchFlags, InitFlags, Inotify};
-use std::ffi::OsString;
-use std::fs::{rename, File};
 
 #[test]
 pub fn test_inotify() {
@@ -18,7 +18,7 @@ pub fn test_inotify() {
     File::create(tempdir.path().join("test")).unwrap();
 
     let events = instance.read_events().unwrap();
-    assert_eq!(events[0].name, Some(OsString::from("test")));
+    assert_eq!(events[0].name, Some(CString::from("test")));
 }
 
 #[test]
@@ -47,19 +47,19 @@ pub fn test_inotify_multi_events() {
     assert_eq!(events.len(), 5);
 
     assert_eq!(events[0].mask, AddWatchFlags::IN_CREATE);
-    assert_eq!(events[0].name, Some(OsString::from("test")));
+    assert_eq!(events[0].name, Some(CString::from("test")));
 
     assert_eq!(events[1].mask, AddWatchFlags::IN_OPEN);
-    assert_eq!(events[1].name, Some(OsString::from("test")));
+    assert_eq!(events[1].name, Some(CString::from("test")));
 
     assert_eq!(events[2].mask, AddWatchFlags::IN_CLOSE_WRITE);
-    assert_eq!(events[2].name, Some(OsString::from("test")));
+    assert_eq!(events[2].name, Some(CString::from("test")));
 
     assert_eq!(events[3].mask, AddWatchFlags::IN_MOVED_FROM);
-    assert_eq!(events[3].name, Some(OsString::from("test")));
+    assert_eq!(events[3].name, Some(CString::from("test")));
 
     assert_eq!(events[4].mask, AddWatchFlags::IN_MOVED_TO);
-    assert_eq!(events[4].name, Some(OsString::from("test2")));
+    assert_eq!(events[4].name, Some(CString::from("test2")));
 
     assert_eq!(events[3].cookie, events[4].cookie);
 }

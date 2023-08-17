@@ -5,9 +5,13 @@ use crate::fcntl::{self, OFlag};
 use crate::sys;
 use crate::{Error, NixPath, Result};
 use cfg_if::cfg_if;
-use std::ffi;
-use std::os::unix::io::{AsRawFd, IntoRawFd, RawFd};
-use std::ptr;
+use core::ffi;
+#[cfg(feature="no_std")]
+use crate::os::fd::{AsRawFd, IntoRawFd, RawFd};
+#[cfg(not(feature="no_std"))]
+use std::unix::io::{AsRawFd, IntoRawFd, RawFd};
+
+use core::ptr;
 
 #[cfg(target_os = "linux")]
 use libc::{dirent64 as dirent, readdir64_r as readdir_r};
@@ -17,7 +21,7 @@ use libc::{dirent, readdir_r};
 
 /// An open directory.
 ///
-/// This is a lower-level interface than `std::fs::ReadDir`. Notable differences:
+/// This is a lower-level interface than `core::fs::ReadDir`. Notable differences:
 ///    * can be opened from a file descriptor (as returned by `openat`, perhaps before knowing
 ///      if the path represents a file or directory).
 ///    * implements `AsRawFd`, so it can be passed to `fstat`, `openat`, etc.
@@ -95,7 +99,7 @@ impl AsRawFd for Dir {
 impl Drop for Dir {
     fn drop(&mut self) {
         let e = Errno::result(unsafe { libc::closedir(self.0.as_ptr()) });
-        if !std::thread::panicking() && e == Err(Errno::EBADF) {
+        if e == Err(Errno::EBADF) {
             panic!("Closing an invalid file descriptor!");
         };
     }
@@ -108,7 +112,7 @@ fn next(dir: &mut Dir) -> Option<Result<Entry>> {
         // for the NUL byte. It doesn't look like the std library does this; it just uses
         // fixed-sized buffers (and libc's dirent seems to be sized so this is appropriate).
         // Probably fine here too then.
-        let mut ent = std::mem::MaybeUninit::<dirent>::uninit();
+        let mut ent = core::mem::MaybeUninit::<dirent>::uninit();
         let mut result = ptr::null_mut();
         if let Err(e) = Errno::result(readdir_r(
             dir.0.as_ptr(),
@@ -176,7 +180,7 @@ impl IntoIterator for Dir {
     ///
     /// ```
     /// use nix::{dir::Dir, fcntl::OFlag, sys::stat::Mode};
-    /// use std::{iter::Iterator, string::String};
+    /// use core::{iter::Iterator, string::String};
     ///
     /// fn ls_upper(dirname: &str) -> impl Iterator<Item=String> {
     ///     let d = Dir::open(dirname, OFlag::O_DIRECTORY, Mode::S_IXUSR).unwrap();
@@ -188,7 +192,7 @@ impl IntoIterator for Dir {
     }
 }
 
-/// A directory entry, similar to `std::fs::DirEntry`.
+/// A directory entry, similar to `core::fs::DirEntry`.
 ///
 /// Note that unlike the std version, this may represent the `.` or `..` entries.
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]

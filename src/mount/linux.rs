@@ -120,7 +120,7 @@ pub fn mount<
     {
         match p {
             Some(path) => path.with_nix_path(|p_str| f(p_str.as_ptr())),
-            None => Ok(f(std::ptr::null())),
+            None => Ok(f(core::ptr::null())),
         }
     }
 

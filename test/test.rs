@@ -64,12 +64,12 @@ mod test_time;
 mod test_timer;
 mod test_unistd;
 
+use crate::os::fd::{AsFd, AsRawFd};
+use core::path::PathBuf;
 use nix::unistd::{chdir, getcwd, read};
 use parking_lot::{Mutex, RwLock, RwLockWriteGuard};
-use std::os::unix::io::{AsFd, AsRawFd};
-use std::path::PathBuf;
 
-/// Helper function analogous to `std::io::Read::read_exact`, but for `Fd`s
+/// Helper function analogous to `core::io::Read::read_exact`, but for `Fd`s
 fn read_exact<Fd: AsFd>(f: Fd, buf: &mut [u8]) {
     let mut len = 0;
     while len < buf.len() {
@@ -117,7 +117,7 @@ impl<'a> DirRestore<'a> {
 impl<'a> Drop for DirRestore<'a> {
     fn drop(&mut self) {
         let r = chdir(&self.d);
-        if std::thread::panicking() {
+        if core::thread::panicking() {
             r.unwrap();
         }
     }

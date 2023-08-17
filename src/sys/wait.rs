@@ -5,12 +5,12 @@ use crate::unistd::Pid;
 use crate::Result;
 use cfg_if::cfg_if;
 use libc::{self, c_int};
-use std::convert::TryFrom;
+use core::convert::TryFrom;
 #[cfg(any(
     target_os = "android",
     all(target_os = "linux", not(target_env = "uclibc")),
 ))]
-use std::os::unix::io::{AsRawFd, BorrowedFd};
+use crate::os::fd::{AsRawFd, BorrowedFd};
 
 libc_bitflags!(
     /// Controls the behavior of [`waitpid`].
@@ -359,7 +359,7 @@ pub enum Id<'fd> {
     /// A helper variant to resolve the unused parameter (`'fd`) problem on platforms
     /// other than Linux and Android.
     #[doc(hidden)]
-    _Unreachable(std::marker::PhantomData<&'fd std::convert::Infallible>),
+    _Unreachable(core::marker::PhantomData<&'fd core::convert::Infallible>),
 }
 
 /// Wait for a process to change status
@@ -384,7 +384,7 @@ pub fn waitid(id: Id, flags: WaitPidFlag) -> Result<WaitStatus> {
     let siginfo = unsafe {
         // Memory is zeroed rather than uninitialized, as not all platforms
         // initialize the memory in the StillAlive case
-        let mut siginfo: libc::siginfo_t = std::mem::zeroed();
+        let mut siginfo: libc::siginfo_t = core::mem::zeroed();
         Errno::result(libc::waitid(idtype, idval, &mut siginfo, flags.bits()))?;
         siginfo
     };

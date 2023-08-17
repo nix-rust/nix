@@ -24,17 +24,16 @@
 //! [`aio_cancel_all`](fn.aio_cancel_all.html), though the operating system may
 //! not support this for all filesystems and devices.
 #[cfg(target_os = "freebsd")]
-use std::io::{IoSlice, IoSliceMut};
-use std::{
+use core::io::{libc::iovec, libc::iovec};
+use core::{
     convert::TryFrom,
     fmt::{self, Debug},
     marker::{PhantomData, PhantomPinned},
     mem,
-    os::unix::io::RawFd,
     pin::Pin,
-    ptr, thread,
+    ptr,
 };
-
+use crate::os::fd::RawFd;
 use libc::{c_void, off_t};
 use pin_utils::unsafe_pinned;
 
@@ -198,17 +197,6 @@ impl Debug for AioCb {
     }
 }
 
-impl Drop for AioCb {
-    /// If the `AioCb` has no remaining state in the kernel, just drop it.
-    /// Otherwise, dropping constitutes a resource leak, which is an error
-    fn drop(&mut self) {
-        assert!(
-            thread::panicking() || !self.in_progress,
-            "Dropped an in-progress AioCb"
-        );
-    }
-}
-
 /// Methods common to all AIO operations
 pub trait Aio {
     /// The return type of [`Aio::aio_return`].
@@ -244,9 +232,9 @@ pub trait Aio {
     /// # use nix::Error;
     /// # use nix::sys::aio::*;
     /// # use nix::sys::signal::SigevNotify;
-    /// # use std::{thread, time};
-    /// # use std::io::Write;
-    /// # use std::os::unix::io::AsRawFd;
+    /// # use core::{thread, time};
+    /// # use core::io::Write;
+    /// # use crate::os::fd::AsRawFd;
     /// # use tempfile::tempfile;
     /// let wbuf = b"CDEF";
     /// let mut f = tempfile().unwrap();
@@ -286,8 +274,8 @@ pub trait Aio {
     /// # use nix::Error;
     /// # use nix::sys::aio::*;
     /// # use nix::sys::signal::SigevNotify;
-    /// # use std::{thread, time};
-    /// # use std::os::unix::io::AsRawFd;
+    /// # use core::{thread, time};
+    /// # use crate::os::fd::AsRawFd;
     /// # use tempfile::tempfile;
     /// const WBUF: &[u8] = b"abcdef123456";
     /// let mut f = tempfile().unwrap();
@@ -323,8 +311,8 @@ pub trait Aio {
     /// # use nix::Error;
     /// # use nix::sys::aio::*;
     /// # use nix::sys::signal::SigevNotify::SigevNone;
-    /// # use std::{thread, time};
-    /// # use std::os::unix::io::AsRawFd;
+    /// # use core::{thread, time};
+    /// # use crate::os::fd::AsRawFd;
     /// # use tempfile::tempfile;
     /// let f = tempfile().unwrap();
     /// let mut aiof = Box::pin(AioFsync::new(f.as_raw_fd(), AioFsyncMode::O_SYNC,
@@ -415,8 +403,8 @@ macro_rules! aio_methods {
 /// # use nix::Error;
 /// # use nix::sys::aio::*;
 /// # use nix::sys::signal::SigevNotify::SigevNone;
-/// # use std::{thread, time};
-/// # use std::os::unix::io::AsRawFd;
+/// # use core::{thread, time};
+/// # use crate::os::fd::AsRawFd;
 /// # use tempfile::tempfile;
 /// let f = tempfile().unwrap();
 /// let mut aiof = Box::pin(AioFsync::new(f.as_raw_fd(), AioFsyncMode::O_SYNC,
@@ -513,9 +501,9 @@ impl AsRef<libc::aiocb> for AioFsync {
 /// # use nix::Error;
 /// # use nix::sys::aio::*;
 /// # use nix::sys::signal::SigevNotify;
-/// # use std::{thread, time};
-/// # use std::io::Write;
-/// # use std::os::unix::io::AsRawFd;
+/// # use core::{thread, time};
+/// # use core::io::Write;
+/// # use crate::os::fd::AsRawFd;
 /// # use tempfile::tempfile;
 /// const INITIAL: &[u8] = b"abcdef123456";
 /// const LEN: usize = 4;
@@ -630,15 +618,15 @@ impl<'a> AsRef<libc::aiocb> for AioRead<'a> {
 /// # use nix::Error;
 /// # use nix::sys::aio::*;
 /// # use nix::sys::signal::SigevNotify;
-/// # use std::{thread, time};
-/// # use std::io::{IoSliceMut, Write};
-/// # use std::os::unix::io::AsRawFd;
+/// # use core::{thread, time};
+/// # use core::io::{libc::iovec, Write};
+/// # use crate::os::fd::AsRawFd;
 /// # use tempfile::tempfile;
 /// const INITIAL: &[u8] = b"abcdef123456";
 /// let mut rbuf0 = vec![0; 4];
 /// let mut rbuf1 = vec![0; 2];
 /// let expected_len = rbuf0.len() + rbuf1.len();
-/// let mut rbufs = [IoSliceMut::new(&mut rbuf0), IoSliceMut::new(&mut rbuf1)];
+/// let mut rbufs = [libc::iovec::new(&mut rbuf0), libc::iovec::new(&mut rbuf1)];
 /// let mut f = tempfile().unwrap();
 /// f.write_all(INITIAL).unwrap();
 /// {
@@ -694,7 +682,7 @@ impl<'a> AioReadv<'a> {
     pub fn new(
         fd: RawFd,
         offs: off_t,
-        bufs: &mut [IoSliceMut<'a>],
+        bufs: &mut [libc::iovec<'a>],
         prio: i32,
         sigev_notify: SigevNotify,
     ) -> Self {
@@ -752,8 +740,8 @@ impl<'a> AsRef<libc::aiocb> for AioReadv<'a> {
 /// # use nix::Error;
 /// # use nix::sys::aio::*;
 /// # use nix::sys::signal::SigevNotify;
-/// # use std::{thread, time};
-/// # use std::os::unix::io::AsRawFd;
+/// # use core::{thread, time};
+/// # use crate::os::fd::AsRawFd;
 /// # use tempfile::tempfile;
 /// const WBUF: &[u8] = b"abcdef123456";
 /// let mut f = tempfile().unwrap();
@@ -865,14 +853,14 @@ impl<'a> AsRef<libc::aiocb> for AioWrite<'a> {
 /// # use nix::Error;
 /// # use nix::sys::aio::*;
 /// # use nix::sys::signal::SigevNotify;
-/// # use std::{thread, time};
-/// # use std::io::IoSlice;
-/// # use std::os::unix::io::AsRawFd;
+/// # use core::{thread, time};
+/// # use core::io::libc::iovec;
+/// # use crate::os::fd::AsRawFd;
 /// # use tempfile::tempfile;
 /// const wbuf0: &[u8] = b"abcdef";
 /// const wbuf1: &[u8] = b"123456";
 /// let len = wbuf0.len() + wbuf1.len();
-/// let wbufs = [IoSlice::new(wbuf0), IoSlice::new(wbuf1)];
+/// let wbufs = [libc::iovec::new(wbuf0), libc::iovec::new(wbuf1)];
 /// let mut f = tempfile().unwrap();
 /// let mut aiow = Box::pin(
 ///     AioWritev::new(
@@ -923,7 +911,7 @@ impl<'a> AioWritev<'a> {
     pub fn new(
         fd: RawFd,
         offs: off_t,
-        bufs: &[IoSlice<'a>],
+        bufs: &[libc::iovec<'a>],
         prio: i32,
         sigev_notify: SigevNotify,
     ) -> Self {
@@ -984,9 +972,9 @@ impl<'a> AsRef<libc::aiocb> for AioWritev<'a> {
 /// # use nix::Error;
 /// # use nix::sys::aio::*;
 /// # use nix::sys::signal::SigevNotify;
-/// # use std::{thread, time};
-/// # use std::io::Write;
-/// # use std::os::unix::io::AsRawFd;
+/// # use core::{thread, time};
+/// # use core::io::Write;
+/// # use crate::os::fd::AsRawFd;
 /// # use tempfile::tempfile;
 /// let wbuf = b"CDEF";
 /// let mut f = tempfile().unwrap();
@@ -1031,7 +1019,7 @@ pub fn aio_cancel_all(fd: RawFd) -> Result<AioCancelStat> {
 /// ```
 /// # use nix::sys::aio::*;
 /// # use nix::sys::signal::SigevNotify;
-/// # use std::os::unix::io::AsRawFd;
+/// # use crate::os::fd::AsRawFd;
 /// # use tempfile::tempfile;
 /// const WBUF: &[u8] = b"abcdef123456";
 /// let mut f = tempfile().unwrap();
@@ -1074,7 +1062,7 @@ pub fn aio_suspend(
 /// This mode is useful for otherwise-synchronous programs that want to execute
 /// a handful of I/O operations in parallel.
 /// ```
-/// # use std::os::unix::io::AsRawFd;
+/// # use crate::os::fd::AsRawFd;
 /// # use nix::sys::aio::*;
 /// # use nix::sys::signal::SigevNotify;
 /// # use tempfile::tempfile;
@@ -1098,9 +1086,9 @@ pub fn aio_suspend(
 /// technique for reducing overall context-switch overhead, especially when
 /// combined with kqueue.
 /// ```
-/// # use std::os::unix::io::AsRawFd;
-/// # use std::thread;
-/// # use std::time;
+/// # use crate::os::fd::AsRawFd;
+/// # use core::thread;
+/// # use core::time;
 /// # use nix::errno::Errno;
 /// # use nix::sys::aio::*;
 /// # use nix::sys::signal::SigevNotify;
@@ -1132,10 +1120,10 @@ pub fn aio_suspend(
 /// possibly resubmit some.
 /// ```
 /// # use libc::c_int;
-/// # use std::os::unix::io::AsRawFd;
-/// # use std::sync::atomic::{AtomicBool, Ordering};
-/// # use std::thread;
-/// # use std::time;
+/// # use crate::os::fd::AsRawFd;
+/// # use core::sync::atomic::{AtomicBool, Ordering};
+/// # use core::thread;
+/// # use core::time;
 /// # use lazy_static::lazy_static;
 /// # use nix::errno::Errno;
 /// # use nix::sys::aio::*;
@@ -1223,7 +1211,7 @@ mod t {
         let sev = SigevNotify::SigevNone;
 
         let mut rbuf = [];
-        let mut rbufs = [IoSliceMut::new(&mut rbuf)];
+        let mut rbufs = [libc::iovec::new(&mut rbuf)];
         let aiorv = AioReadv::new(666, 0, &mut rbufs[..], 0, sev);
         assert_eq!(
             aiorv.as_ref() as *const libc::aiocb,
@@ -1231,7 +1219,7 @@ mod t {
         );
 
         let wbuf = [];
-        let wbufs = [IoSlice::new(&wbuf)];
+        let wbufs = [libc::iovec::new(&wbuf)];
         let aiowv = AioWritev::new(666, 0, &wbufs, 0, sev);
         assert_eq!(
             aiowv.as_ref() as *const libc::aiocb,

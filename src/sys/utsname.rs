@@ -1,9 +1,9 @@
 //! Get system identification
 use crate::{Errno, Result};
 use libc::c_char;
-use std::ffi::OsStr;
-use std::mem;
-use std::os::unix::ffi::OsStrExt;
+use core::ffi::CStr;
+use core::mem;
+use core::os::unix::ffi::CStrExt;
 
 /// Describes the running system.  Return type of [`uname`].
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -12,33 +12,33 @@ pub struct UtsName(libc::utsname);
 
 impl UtsName {
     /// Name of the operating system implementation.
-    pub fn sysname(&self) -> &OsStr {
+    pub fn sysname(&self) -> &CStr {
         cast_and_trim(&self.0.sysname)
     }
 
     /// Network name of this machine.
-    pub fn nodename(&self) -> &OsStr {
+    pub fn nodename(&self) -> &CStr {
         cast_and_trim(&self.0.nodename)
     }
 
     /// Release level of the operating system.
-    pub fn release(&self) -> &OsStr {
+    pub fn release(&self) -> &CStr {
         cast_and_trim(&self.0.release)
     }
 
     /// Version level of the operating system.
-    pub fn version(&self) -> &OsStr {
+    pub fn version(&self) -> &CStr {
         cast_and_trim(&self.0.version)
     }
 
     /// Machine hardware platform.
-    pub fn machine(&self) -> &OsStr {
+    pub fn machine(&self) -> &CStr {
         cast_and_trim(&self.0.machine)
     }
 
     /// NIS or YP domain name of this machine.
     #[cfg(any(target_os = "android", target_os = "linux"))]
-    pub fn domainname(&self) -> &OsStr {
+    pub fn domainname(&self) -> &CStr {
         cast_and_trim(&self.0.domainname)
     }
 }
@@ -52,15 +52,15 @@ pub fn uname() -> Result<UtsName> {
     }
 }
 
-fn cast_and_trim(slice: &[c_char]) -> &OsStr {
+fn cast_and_trim(slice: &[c_char]) -> &CStr {
     let length = slice
         .iter()
         .position(|&byte| byte == 0)
         .unwrap_or(slice.len());
     let bytes =
-        unsafe { std::slice::from_raw_parts(slice.as_ptr().cast(), length) };
+        unsafe { core::slice::from_raw_parts(slice.as_ptr().cast(), length) };
 
-    OsStr::from_bytes(bytes)
+    CStr::from_bytes(bytes)
 }
 
 #[cfg(test)]

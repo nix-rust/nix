@@ -7,11 +7,11 @@ mod common;
 
 #[cfg(target_os = "linux")]
 mod test_mount {
-    use std::fs::{self, File};
-    use std::io::{self, Read, Write};
-    use std::os::unix::fs::OpenOptionsExt;
-    use std::os::unix::fs::PermissionsExt;
-    use std::process::{self, Command};
+    use core::fs::{self, File};
+    use core::io::{self, Read, Write};
+    use core::os::unix::fs::OpenOptionsExt;
+    use core::os::unix::fs::PermissionsExt;
+    use core::process::{self, Command};
 
     use libc::{EACCES, EROFS};
 

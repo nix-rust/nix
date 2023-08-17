@@ -76,7 +76,7 @@ macro_rules! request_code_write_int {
             $crate::sys::ioctl::VOID,
             $g,
             $n,
-            ::std::mem::size_of::<$crate::libc::c_int>()
+            ::core::mem::size_of::<$crate::libc::c_int>()
         )
     };
 }

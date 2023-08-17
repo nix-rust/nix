@@ -3,7 +3,7 @@ use cfg_if::cfg_if;
 #[macro_export]
 macro_rules! skip {
     ($($reason: expr),+) => {
-        use ::std::io::{self, Write};
+        use ::core::io::{self, Write};
 
         let stderr = io::stderr();
         let mut handle = stderr.lock();
@@ -55,7 +55,7 @@ macro_rules! require_mount {
 #[macro_export]
 macro_rules! skip_if_cirrus {
     ($reason:expr) => {
-        if std::env::var_os("CIRRUS_CI").is_some() {
+        if core::env::var_os("CIRRUS_CI").is_some() {
             skip!("{}", $reason);
         }
     };
@@ -90,7 +90,7 @@ cfg_if! {
     if #[cfg(any(target_os = "android", target_os = "linux"))] {
         #[macro_export] macro_rules! skip_if_seccomp {
             ($name:expr) => {
-                if let Ok(s) = std::fs::read_to_string("/proc/self/status") {
+                if let Ok(s) = core::fs::read_to_string("/proc/self/status") {
                     for l in s.lines() {
                         let mut fields = l.split_whitespace();
                         if fields.next() == Some("Seccomp:") &&

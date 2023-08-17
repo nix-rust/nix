@@ -5,11 +5,12 @@
 
 use cfg_if::cfg_if;
 #[cfg(any(target_os = "ios", target_os = "macos"))]
-use std::convert::TryFrom;
-use std::ffi;
-use std::iter::Iterator;
-use std::mem;
-use std::option::Option;
+use core::convert::TryFrom;
+use core::ffi;
+use core::iter::Iterator;
+use core::mem;
+use core::option::Option;
+use alloc::string::String;
 
 use crate::net::if_::*;
 use crate::sys::socket::{SockaddrLike, SockaddrStorage};
@@ -63,7 +64,7 @@ unsafe fn workaround_xnu_bug(info: &libc::ifaddrs) -> Option<SockaddrStorage> {
     let mut dst_sock = mem::MaybeUninit::<libc::sockaddr_storage>::zeroed();
 
     // memcpy only sa_len bytes, assume the rest is zero
-    std::ptr::copy_nonoverlapping(
+    core::ptr::copy_nonoverlapping(
         src_sock as *const u8,
         dst_sock.as_mut_ptr() as *mut u8,
         (*src_sock).sa_len.into(),

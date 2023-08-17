@@ -4,7 +4,7 @@ use crate::sys::signal::SigSet;
 #[cfg(not(target_env = "musl"))]
 use crate::Result;
 #[cfg(not(target_env = "musl"))]
-use std::mem;
+use core::mem;
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct UContext {

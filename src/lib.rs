@@ -39,21 +39,24 @@
 //! * `uio` - Vectored I/O
 //! * `user` - Stuff relating to users and groups
 //! * `zerocopy` - APIs like `sendfile` and `copy_file_range`
-#![crate_name = "nix"]
-#![cfg(unix)]
 #![cfg_attr(docsrs, doc(cfg(all())))]
 #![allow(non_camel_case_types)]
-#![cfg_attr(test, deny(warnings))]
-#![recursion_limit = "500"]
-#![deny(unused)]
 #![allow(unused_macros)]
 #![cfg_attr(not(feature = "default"), allow(unused_imports))]
-#![deny(unstable_features)]
-#![deny(missing_copy_implementations)]
-#![deny(missing_debug_implementations)]
+#![warn(missing_copy_implementations)]
+#![warn(missing_debug_implementations)]
 #![warn(missing_docs)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![deny(clippy::cast_ptr_alignment)]
+#![no_std]
+// #![cfg_attr(feature = "no_std", enable(error_in_core))]
+#![feature(ip_in_core)]
+#![feature(error_in_core)]
+
+extern crate alloc;
+
+#[cfg(feature = "no_std")]
+pub mod os;
 
 // Re-exported external crates
 pub use libc;
@@ -159,11 +162,12 @@ feature! {
 #[allow(missing_docs)]
 pub mod unistd;
 
-use std::ffi::{CStr, CString, OsStr};
-use std::mem::MaybeUninit;
-use std::os::unix::ffi::OsStrExt;
-use std::path::{Path, PathBuf};
-use std::{ptr, result, slice};
+use crate::os::unix::ffi::CStrExt;
+use alloc::ffi::CString;
+use core::ffi::CStr;
+use core::mem::MaybeUninit;
+use core::path::{Path, PathBuf};
+use core::{ptr, result, slice};
 
 use errno::Errno;
 
@@ -173,7 +177,7 @@ pub type Result<T> = result::Result<T, Errno>;
 /// Nix's main error type.
 ///
 /// It's a wrapper around Errno.  As such, it's very interoperable with
-/// [`std::io::Error`], but it has the advantages of:
+/// [`core::io::Error`], but it has the advantages of:
 /// * `Clone`
 /// * `Copy`
 /// * `Eq`
@@ -200,22 +204,22 @@ pub trait NixPath {
 
 impl NixPath for str {
     fn is_empty(&self) -> bool {
-        NixPath::is_empty(OsStr::new(self))
+        NixPath::is_empty(CStr::new(self))
     }
 
     fn len(&self) -> usize {
-        NixPath::len(OsStr::new(self))
+        NixPath::len(CStr::new(self))
     }
 
     fn with_nix_path<T, F>(&self, f: F) -> Result<T>
     where
         F: FnOnce(&CStr) -> T,
     {
-        OsStr::new(self).with_nix_path(f)
+        CStr::new(self).with_nix_path(f)
     }
 }
 
-impl NixPath for OsStr {
+impl NixPath for CStr {
     fn is_empty(&self) -> bool {
         self.as_bytes().is_empty()
     }

@@ -2,8 +2,8 @@
 
 use crate::errno::Errno;
 use crate::Result;
-use std::convert::Infallible;
-use std::mem::drop;
+use core::convert::Infallible;
+use core::mem::drop;
 
 libc_enum! {
     /// How exactly should the system be rebooted.

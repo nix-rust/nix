@@ -67,7 +67,7 @@ pub fn test_local_peer_pid() {
     )
     .unwrap();
     let pid = getsockopt(fd1, sockopt::LocalPeerPid).unwrap();
-    assert_eq!(pid, std::process::id() as _);
+    assert_eq!(pid, core::process::id() as _);
 }
 
 #[cfg(target_os = "linux")]
@@ -109,10 +109,10 @@ fn test_so_buf() {
 
 #[test]
 fn test_so_tcp_maxseg() {
+    use core::net::SocketAddrV4;
+    use core::str::FromStr;
     use nix::sys::socket::{accept, bind, connect, listen, SockaddrIn};
     use nix::unistd::{close, write};
-    use std::net::SocketAddrV4;
-    use std::str::FromStr;
 
     let std_sa = SocketAddrV4::from_str("127.0.0.1:4001").unwrap();
     let sock_addr = SockaddrIn::from(std_sa);
@@ -204,7 +204,7 @@ fn test_so_type_unknown() {
     any(target_os = "freebsd", target_os = "linux")
 ))]
 fn test_tcp_congestion() {
-    use std::ffi::OsString;
+    use core::ffi::CString;
 
     let fd = socket(
         AddressFamily::Inet,
@@ -220,7 +220,7 @@ fn test_tcp_congestion() {
     setsockopt(
         fd,
         sockopt::TcpCongestion,
-        &OsString::from("tcp_congestion_does_not_exist"),
+        &CString::from("tcp_congestion_does_not_exist"),
     )
     .unwrap_err();
 
@@ -283,9 +283,9 @@ fn test_so_tcp_keepalive() {
 #[cfg(any(target_os = "android", target_os = "linux"))]
 #[cfg_attr(qemu, ignore)]
 fn test_get_mtu() {
+    use core::net::SocketAddrV4;
+    use core::str::FromStr;
     use nix::sys::socket::{bind, connect, SockaddrIn};
-    use std::net::SocketAddrV4;
-    use std::str::FromStr;
 
     let std_sa = SocketAddrV4::from_str("127.0.0.1:4001").unwrap();
     let std_sb = SocketAddrV4::from_str("127.0.0.1:4002").unwrap();

@@ -9,7 +9,7 @@
 //!
 //! Create a new one-shot timer that expires after 1 second.
 //! ```
-//! # use std::os::unix::io::AsRawFd;
+//! # use crate::os::fd::AsRawFd;
 //! # use nix::sys::timerfd::{TimerFd, ClockId, TimerFlags, TimerSetTimeFlags,
 //! #    Expiration};
 //! # use nix::sys::time::{TimeSpec, TimeValLike};
@@ -33,7 +33,7 @@ pub use crate::sys::time::timer::{Expiration, TimerSetTimeFlags};
 use crate::unistd::read;
 use crate::{errno::Errno, Result};
 use libc::c_int;
-use std::os::unix::io::{AsFd, AsRawFd, BorrowedFd, FromRawFd, OwnedFd, RawFd};
+use crate::os::fd::{AsFd, AsRawFd, BorrowedFd, FromRawFd, OwnedFd, RawFd};
 
 /// A timerfd instance. This is also a file descriptor, you can feed it to
 /// other interfaces taking file descriptors as arguments, [`epoll`] for example.
@@ -161,7 +161,7 @@ impl TimerFd {
                 self.fd.as_fd().as_raw_fd(),
                 flags.bits(),
                 timerspec.as_ref(),
-                std::ptr::null_mut(),
+                core::ptr::null_mut(),
             )
         })
         .map(drop)
@@ -198,7 +198,7 @@ impl TimerFd {
                 self.fd.as_fd().as_raw_fd(),
                 TimerSetTimeFlags::empty().bits(),
                 TimerSpec::none().as_ref(),
-                std::ptr::null_mut(),
+                core::ptr::null_mut(),
             )
         })
         .map(drop)

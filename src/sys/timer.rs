@@ -15,10 +15,10 @@
 //! use nix::sys::signal::{self, SigEvent, SigHandler, SigevNotify, Signal};
 //! use nix::sys::timer::{Expiration, Timer, TimerSetTimeFlags};
 //! use nix::time::ClockId;
-//! use std::convert::TryFrom;
-//! use std::sync::atomic::{AtomicU64, Ordering};
-//! use std::thread::yield_now;
-//! use std::time::Duration;
+//! use core::convert::TryFrom;
+//! use core::sync::atomic::{AtomicU64, Ordering};
+//! use core::thread::yield_now;
+//! use core::time::Duration;
 //!
 //! const SIG: Signal = Signal::SIGALRM;
 //! static ALARMS: AtomicU64 = AtomicU64::new(0);
@@ -177,11 +177,9 @@ impl Timer {
 
 impl Drop for Timer {
     fn drop(&mut self) {
-        if !std::thread::panicking() {
-            let result = Errno::result(unsafe { libc::timer_delete(self.0) });
-            if let Err(Errno::EINVAL) = result {
-                panic!("close of Timer encountered EINVAL");
-            }
+        let result = Errno::result(unsafe { libc::timer_delete(self.0) });
+        if let Err(Errno::EINVAL) = result {
+            panic!("close of Timer encountered EINVAL");
         }
     }
 }

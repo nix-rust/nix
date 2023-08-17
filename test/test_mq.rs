@@ -1,6 +1,6 @@
 use cfg_if::cfg_if;
-use std::ffi::CString;
-use std::str;
+use core::ffi::CString;
+use core::str;
 
 use nix::errno::Errno;
 use nix::mqueue::{

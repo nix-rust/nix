@@ -1,16 +1,16 @@
+use core::convert::From;
+use core::time::Duration;
+use core::{cmp, fmt, ops};
 #[cfg_attr(target_env = "musl", allow(deprecated))]
 // https://github.com/rust-lang/libc/issues/1848
 pub use libc::{suseconds_t, time_t};
 use libc::{timespec, timeval};
-use std::convert::From;
-use std::time::Duration;
-use std::{cmp, fmt, ops};
 
 const fn zero_init_timespec() -> timespec {
-    // `std::mem::MaybeUninit::zeroed()` is not yet a const fn
+    // `core::mem::MaybeUninit::zeroed()` is not yet a const fn
     // (https://github.com/rust-lang/rust/issues/91850) so we will instead initialize an array of
     // the appropriate size to zero and then transmute it to a timespec value.
-    unsafe { std::mem::transmute([0u8; std::mem::size_of::<timespec>()]) }
+    unsafe { core::mem::transmute([0u8; core::mem::size_of::<timespec>()]) }
 }
 
 #[cfg(any(
@@ -714,7 +714,7 @@ fn div_rem_64(this: i64, other: i64) -> (i64, i64) {
 #[cfg(test)]
 mod test {
     use super::{TimeSpec, TimeVal, TimeValLike};
-    use std::time::Duration;
+    use core::time::Duration;
 
     #[test]
     pub fn test_timespec() {

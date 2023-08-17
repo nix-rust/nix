@@ -1,7 +1,7 @@
+use core::fs::File;
 use nix::dir::{Dir, Type};
 use nix::fcntl::OFlag;
 use nix::sys::stat::Mode;
-use std::fs::File;
 use tempfile::tempdir;
 
 #[cfg(test)]
@@ -20,7 +20,7 @@ fn flags() -> OFlag {
 fn read() {
     let tmp = tempdir().unwrap();
     File::create(tmp.path().join("foo")).unwrap();
-    std::os::unix::fs::symlink("foo", tmp.path().join("bar")).unwrap();
+    core::os::unix::fs::symlink("foo", tmp.path().join("bar")).unwrap();
     let mut dir = Dir::open(tmp.path(), flags(), Mode::empty()).unwrap();
     let mut entries: Vec<_> = dir.iter().map(|e| e.unwrap()).collect();
     entries.sort_by(|a, b| a.file_name().cmp(b.file_name()));

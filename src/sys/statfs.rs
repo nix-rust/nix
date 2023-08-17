@@ -2,10 +2,10 @@
 //!
 //! See [`statvfs`](crate::sys::statvfs) for a portable alternative.
 #[cfg(not(any(target_os = "linux", target_os = "android")))]
-use std::ffi::CStr;
-use std::fmt::{self, Debug};
-use std::mem;
-use std::os::unix::io::{AsFd, AsRawFd};
+use core::ffi::CStr;
+use core::fmt::{self, Debug};
+use core::mem;
+use crate::os::fd::{AsFd, AsRawFd};
 
 use cfg_if::cfg_if;
 
@@ -750,11 +750,11 @@ pub fn fstatfs<Fd: AsFd>(fd: Fd) -> Result<Statfs> {
 
 #[cfg(test)]
 mod test {
-    use std::fs::File;
+    use core::fs::File;
 
     use crate::sys::statfs::*;
     use crate::sys::statvfs::*;
-    use std::path::Path;
+    use core::path::Path;
 
     #[test]
     fn statfs_call() {

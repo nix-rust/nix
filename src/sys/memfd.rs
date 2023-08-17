@@ -1,11 +1,11 @@
 //! Interfaces for managing memory-backed files.
 
 use cfg_if::cfg_if;
-use std::os::unix::io::{FromRawFd, OwnedFd, RawFd};
+use crate::os::fd::{FromRawFd, OwnedFd, RawFd};
 
 use crate::errno::Errno;
 use crate::Result;
-use std::ffi::CStr;
+use core::ffi::CStr;
 
 libc_bitflags!(
     /// Options that change the behavior of [`memfd_create`].

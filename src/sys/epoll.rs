@@ -1,8 +1,8 @@
 use crate::errno::Errno;
 use crate::Result;
 use libc::{self, c_int};
-use std::mem;
-use std::os::unix::io::{AsFd, AsRawFd, FromRawFd, OwnedFd, RawFd};
+use core::mem;
+use crate::os::fd::{AsFd, AsRawFd, FromRawFd, OwnedFd, RawFd};
 
 libc_bitflags!(
     pub struct EpollFlags: c_int {
@@ -73,8 +73,8 @@ impl EpollEvent {
 /// ```
 /// # use nix::sys::{epoll::{Epoll, EpollEvent, EpollFlags, EpollCreateFlags}, eventfd::{eventfd, EfdFlags}};
 /// # use nix::unistd::write;
-/// # use std::os::unix::io::{OwnedFd, FromRawFd, AsRawFd, AsFd};
-/// # use std::time::{Instant, Duration};
+/// # use crate::os::fd::{OwnedFd, FromRawFd, AsRawFd, AsFd};
+/// # use core::time::{Instant, Duration};
 /// # fn main() -> nix::Result<()> {
 /// const DATA: u64 = 17;
 /// const MILLIS: u64 = 100;
@@ -175,7 +175,7 @@ impl Epoll {
         let event: Option<&mut EpollEvent> = event.into();
         let ptr = event
             .map(|x| &mut x.event as *mut libc::epoll_event)
-            .unwrap_or(std::ptr::null_mut());
+            .unwrap_or(core::ptr::null_mut());
         unsafe {
             Errno::result(libc::epoll_ctl(
                 self.0.as_raw_fd(),
@@ -223,7 +223,7 @@ where
             if let Some(ref mut event) = event {
                 libc::epoll_ctl(epfd, op as c_int, fd, &mut event.event)
             } else {
-                libc::epoll_ctl(epfd, op as c_int, fd, std::ptr::null_mut())
+                libc::epoll_ctl(epfd, op as c_int, fd, core::ptr::null_mut())
             }
         };
         Errno::result(res).map(drop)

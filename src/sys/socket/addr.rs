@@ -29,14 +29,13 @@ use crate::sys::socket::addr::sys_control::SysControlAddr;
 use crate::{NixPath, Result};
 use cfg_if::cfg_if;
 use memoffset::offset_of;
-use std::convert::TryInto;
-use std::ffi::OsStr;
-use std::hash::{Hash, Hasher};
-use std::os::unix::ffi::OsStrExt;
-use std::path::Path;
-use std::{fmt, mem, net, ptr, slice};
+use core::convert::TryInto;
+use core::ffi::CStr;
+use core::hash::{Hash, Hasher};
+use core::os::unix::ffi::CStrExt;
+use core::{fmt, mem, net, ptr, slice};
 
-/// Convert a std::net::Ipv4Addr into the libc form.
+/// Convert a core::net::Ipv4Addr into the libc form.
 #[cfg(feature = "net")]
 pub(crate) const fn ipv4addr_to_libc(addr: net::Ipv4Addr) -> libc::in_addr {
     static_assertions::assert_eq_size!(net::Ipv4Addr, libc::in_addr);
@@ -45,7 +44,7 @@ pub(crate) const fn ipv4addr_to_libc(addr: net::Ipv4Addr) -> libc::in_addr {
     unsafe { mem::transmute(addr) }
 }
 
-/// Convert a std::net::Ipv6Addr into the libc form.
+/// Convert a core::net::Ipv6Addr into the libc form.
 #[cfg(feature = "net")]
 pub(crate) const fn ipv6addr_to_libc(addr: &net::Ipv6Addr) -> libc::in6_addr {
     static_assertions::assert_eq_size!(net::Ipv6Addr, libc::in6_addr);
@@ -478,7 +477,7 @@ pub struct UnixAddr {
 // what we call path_len = addrlen - offsetof(struct sockaddr_un, sun_path)
 #[derive(PartialEq, Eq, Hash)]
 enum UnixAddrKind<'a> {
-    Pathname(&'a Path),
+    Pathname(&'a CStr),
     Unnamed,
     #[cfg(any(target_os = "android", target_os = "linux"))]
     Abstract(&'a [u8]),
@@ -510,11 +509,11 @@ impl<'a> UnixAddrKind<'a> {
             // getsockname() (the BSDs do not do that).  So we need to filter
             // out any trailing NUL here, so sockaddrs can round-trip through
             // the kernel and still compare equal.
-            Self::Pathname(Path::new(OsStr::from_bytes(
+            Self::Pathname(CStr::from_bytes(
                 &pathname[0..pathname.len() - 1],
-            )))
+            ))
         } else {
-            Self::Pathname(Path::new(OsStr::from_bytes(pathname)))
+            Self::Pathname(CStr::from_bytes(pathname))
         }
     }
 }
@@ -647,7 +646,7 @@ impl UnixAddr {
     }
 
     /// If this address represents a filesystem path, return that path.
-    pub fn path(&self) -> Option<&Path> {
+    pub fn path(&self) -> Option<&CStr> {
         match self.kind() {
             UnixAddrKind::Pathname(path) => Some(path),
             _ => None,
@@ -1075,10 +1074,10 @@ impl From<SockaddrIn> for net::SocketAddrV4 {
 }
 
 #[cfg(feature = "net")]
-impl std::str::FromStr for SockaddrIn {
+impl core::str::FromStr for SockaddrIn {
     type Err = net::AddrParseError;
 
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+    fn from_str(s: &str) -> core::result::Result<Self, Self::Err> {
         net::SocketAddrV4::from_str(s).map(SockaddrIn::from)
     }
 }
@@ -1197,10 +1196,10 @@ impl From<SockaddrIn6> for net::SocketAddrV6 {
 }
 
 #[cfg(feature = "net")]
-impl std::str::FromStr for SockaddrIn6 {
+impl core::str::FromStr for SockaddrIn6 {
     type Err = net::AddrParseError;
 
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+    fn from_str(s: &str) -> core::result::Result<Self, Self::Err> {
         net::SocketAddrV6::from_str(s).map(SockaddrIn6::from)
     }
 }
@@ -1215,7 +1214,7 @@ impl std::str::FromStr for SockaddrIn6 {
 /// # Example
 /// ```
 /// # use nix::sys::socket::*;
-/// # use std::str::FromStr;
+/// # use core::str::FromStr;
 /// let localhost = SockaddrIn::from_str("127.0.0.1:8081").unwrap();
 /// let fd = socket(AddressFamily::Inet, SockType::Stream, SockFlag::empty(),
 ///     None).unwrap();
@@ -1701,7 +1700,7 @@ pub mod netlink {
     use super::*;
     use crate::sys::socket::addr::AddressFamily;
     use libc::{sa_family_t, sockaddr_nl};
-    use std::{fmt, mem};
+    use core::{fmt, mem};
 
     /// Address for the Linux kernel user interface device.
     ///
@@ -1774,9 +1773,9 @@ pub mod netlink {
 pub mod alg {
     use super::*;
     use libc::{c_char, sockaddr_alg, AF_ALG};
-    use std::ffi::CStr;
-    use std::hash::{Hash, Hasher};
-    use std::{fmt, mem, str};
+    use core::ffi::CStr;
+    use core::hash::{Hash, Hasher};
+    use core::{fmt, mem, str};
 
     /// Socket address for the Linux kernel crypto API
     #[derive(Copy, Clone)]
@@ -1899,8 +1898,8 @@ feature! {
 pub mod sys_control {
     use crate::sys::socket::addr::AddressFamily;
     use libc::{self, c_uchar};
-    use std::{fmt, mem, ptr};
-    use std::os::unix::io::RawFd;
+    use core::{fmt, mem, ptr};
+    use crate::os::fd::RawFd;
     use crate::{Errno, Result};
     use super::{private, SockaddrLike};
 
@@ -2226,8 +2225,8 @@ pub mod vsock {
     use super::*;
     use crate::sys::socket::addr::AddressFamily;
     use libc::{sa_family_t, sockaddr_vm};
-    use std::hash::{Hash, Hasher};
-    use std::{fmt, mem};
+    use core::hash::{Hash, Hasher};
+    use core::{fmt, mem};
 
     /// Socket address for VMWare VSockets protocol
     ///
@@ -2330,14 +2329,14 @@ mod tests {
 
         #[test]
         fn test_ipv4addr_to_libc() {
-            let s = std::net::Ipv4Addr::new(1, 2, 3, 4);
+            let s = core::net::Ipv4Addr::new(1, 2, 3, 4);
             let l = ipv4addr_to_libc(s);
             assert_eq!(l.s_addr, u32::to_be(0x01020304));
         }
 
         #[test]
         fn test_ipv6addr_to_libc() {
-            let s = std::net::Ipv6Addr::new(1, 2, 3, 4, 5, 6, 7, 8);
+            let s = core::net::Ipv6Addr::new(1, 2, 3, 4, 5, 6, 7, 8);
             let l = ipv6addr_to_libc(&s);
             assert_eq!(
                 l.s6_addr,
@@ -2370,7 +2369,7 @@ mod tests {
         #[test]
         fn test_datalink_display() {
             use super::super::LinkAddr;
-            use std::mem;
+            use core::mem;
 
             let la = LinkAddr(libc::sockaddr_dl {
                 sdl_len: 56,
@@ -2498,7 +2497,7 @@ mod tests {
 
     mod sockaddr_in {
         use super::*;
-        use std::str::FromStr;
+        use core::str::FromStr;
 
         #[test]
         fn display() {
@@ -2518,7 +2517,7 @@ mod tests {
 
     mod sockaddr_in6 {
         use super::*;
-        use std::str::FromStr;
+        use core::str::FromStr;
 
         #[test]
         fn display() {
@@ -2536,14 +2535,14 @@ mod tests {
         }
 
         #[test]
-        // Ensure that we can convert to-and-from std::net variants without change.
+        // Ensure that we can convert to-and-from core::net variants without change.
         fn to_and_from() {
             let s = "[1234:5678:90ab:cdef::1111:2222]:8080";
             let mut nix_sin6 = SockaddrIn6::from_str(s).unwrap();
             nix_sin6.0.sin6_flowinfo = 0x12345678;
             nix_sin6.0.sin6_scope_id = 0x9abcdef0;
 
-            let std_sin6: std::net::SocketAddrV6 = nix_sin6.into();
+            let std_sin6: core::net::SocketAddrV6 = nix_sin6.into();
             assert_eq!(nix_sin6, std_sin6.into());
         }
     }

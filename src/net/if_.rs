@@ -340,10 +340,10 @@ libc_bitflags!(
 mod if_nameindex {
     use super::*;
 
-    use std::ffi::CStr;
-    use std::fmt;
-    use std::marker::PhantomData;
-    use std::ptr::NonNull;
+    use core::ffi::CStr;
+    use core::fmt;
+    use core::marker::PhantomData;
+    use core::ptr::NonNull;
 
     /// A network interface. Has a name like "eth0" or "wlp4s0" or "wlan0", as well as an index
     /// (1, 2, 3, etc) that identifies it in the OS's networking stack.
@@ -390,7 +390,7 @@ mod if_nameindex {
         pub fn to_slice(&self) -> &[Interface] {
             let ifs = self.ptr.as_ptr() as *const Interface;
             let len = self.iter().count();
-            unsafe { std::slice::from_raw_parts(ifs, len) }
+            unsafe { core::slice::from_raw_parts(ifs, len) }
         }
     }
 

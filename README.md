@@ -24,8 +24,8 @@ call:
 // libc api (unsafe, requires handling return code/errno)
 pub unsafe extern fn gethostname(name: *mut c_char, len: size_t) -> c_int;
 
-// nix api (returns a nix::Result<OsString>)
-pub fn gethostname() -> Result<OsString>;
+// nix api (returns a nix::Result<CString>)
+pub fn gethostname() -> Result<CString>;
 ```
 
 ## Supported Platforms

@@ -1,4 +1,10 @@
 #[cfg(not(target_os = "redox"))]
+use core::fs::File;
+#[cfg(not(target_os = "redox"))]
+use core::io::prelude::*;
+#[cfg(not(target_os = "redox"))]
+use core::os::unix::fs;
+#[cfg(not(target_os = "redox"))]
 use nix::errno::*;
 #[cfg(not(target_os = "redox"))]
 use nix::fcntl::{open, readlink, OFlag};
@@ -19,12 +25,6 @@ use nix::fcntl::{renameat2, RenameFlags};
 use nix::sys::stat::Mode;
 #[cfg(not(target_os = "redox"))]
 use nix::unistd::{close, read};
-#[cfg(not(target_os = "redox"))]
-use std::fs::File;
-#[cfg(not(target_os = "redox"))]
-use std::io::prelude::*;
-#[cfg(not(target_os = "redox"))]
-use std::os::unix::fs;
 #[cfg(not(target_os = "redox"))]
 use tempfile::{self, NamedTempFile};
 
@@ -229,10 +229,10 @@ fn test_readlink() {
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 mod linux_android {
+    use core::io::prelude::*;
+    use core::io::libc::iovec;
+    use core::os::unix::prelude::*;
     use libc::loff_t;
-    use std::io::prelude::*;
-    use std::io::IoSlice;
-    use std::os::unix::prelude::*;
 
     use nix::fcntl::*;
     use nix::unistd::{close, pipe, read, write};
@@ -340,7 +340,7 @@ mod linux_android {
 
         let buf1 = b"abcdef";
         let buf2 = b"defghi";
-        let iovecs = vec![IoSlice::new(&buf1[0..3]), IoSlice::new(&buf2[0..3])];
+        let iovecs = vec![libc::iovec::new(&buf1[0..3]), libc::iovec::new(&buf2[0..3])];
 
         let res = vmsplice(wr, &iovecs[..], SpliceFFlags::empty()).unwrap();
 
@@ -377,8 +377,8 @@ mod linux_android {
     #[cfg(all(target_os = "linux", not(target_env = "musl")))]
     #[cfg_attr(target_env = "uclibc", ignore)] // uclibc doesn't support OFD locks, but the test should still compile
     fn test_ofd_write_lock() {
+        use core::mem;
         use nix::sys::stat::fstat;
-        use std::mem;
 
         let tmp = NamedTempFile::new().unwrap();
 
@@ -415,8 +415,8 @@ mod linux_android {
     #[cfg(all(target_os = "linux", not(target_env = "musl")))]
     #[cfg_attr(target_env = "uclibc", ignore)] // uclibc doesn't support OFD locks, but the test should still compile
     fn test_ofd_read_lock() {
+        use core::mem;
         use nix::sys::stat::fstat;
-        use std::mem;
 
         let tmp = NamedTempFile::new().unwrap();
 
@@ -451,7 +451,7 @@ mod linux_android {
 
     #[cfg(all(target_os = "linux", not(target_env = "musl")))]
     fn lock_info(inode: usize) -> Option<(String, String)> {
-        use std::{fs::File, io::BufReader};
+        use core::{fs::File, io::BufReader};
 
         let file = File::open("/proc/locks").expect("open /proc/locks failed");
         let buf = BufReader::new(file);
@@ -482,10 +482,10 @@ mod linux_android {
 ))]
 mod test_posix_fadvise {
 
+    use crate::os::fd::{AsRawFd, RawFd};
     use nix::errno::Errno;
     use nix::fcntl::*;
     use nix::unistd::pipe;
-    use std::os::unix::io::{AsRawFd, RawFd};
     use tempfile::NamedTempFile;
 
     #[test]
@@ -520,13 +520,13 @@ mod test_posix_fadvise {
 ))]
 mod test_posix_fallocate {
 
-    use nix::errno::Errno;
-    use nix::fcntl::*;
-    use nix::unistd::pipe;
-    use std::{
+    use core::{
         io::Read,
         os::unix::io::{AsRawFd, RawFd},
     };
+    use nix::errno::Errno;
+    use nix::fcntl::*;
+    use nix::unistd::pipe;
     use tempfile::NamedTempFile;
 
     #[test]

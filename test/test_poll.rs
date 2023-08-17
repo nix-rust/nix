@@ -1,9 +1,9 @@
+use crate::os::fd::{BorrowedFd, FromRawFd, OwnedFd};
 use nix::{
     errno::Errno,
     poll::{poll, PollFd, PollFlags},
     unistd::{close, pipe, write},
 };
-use std::os::unix::io::{BorrowedFd, FromRawFd, OwnedFd};
 
 macro_rules! loop_while_eintr {
     ($poll_expr: expr) => {

@@ -1,8 +1,8 @@
+use core::time::Instant;
 use nix::sys::time::{TimeSpec, TimeValLike};
 use nix::sys::timerfd::{
     ClockId, Expiration, TimerFd, TimerFlags, TimerSetTimeFlags,
 };
-use std::time::Instant;
 
 #[test]
 pub fn test_timerfd_oneshot() {

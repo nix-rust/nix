@@ -1,15 +1,16 @@
 use crate::errno::Errno;
-use libc::{self, c_char, c_int, c_uint, size_t, ssize_t};
-use std::ffi::OsString;
+use crate::os::fd::RawFd;
+use alloc::vec::Vec;
+use core::ffi::{CStr, CString};
 #[cfg(not(target_os = "redox"))]
-use std::os::raw;
-use std::os::unix::ffi::OsStringExt;
-use std::os::unix::io::RawFd;
+use core::os::raw;
+use core::os::unix::ffi::CStringExt;
+use libc::{self, c_char, c_int, c_uint, size_t, ssize_t};
 
 #[cfg(feature = "fs")]
 use crate::{sys::stat::Mode, NixPath, Result};
 #[cfg(any(target_os = "android", target_os = "linux"))]
-use std::ptr; // For splice and copy_file_range
+use core::ptr; // For splice and copy_file_range
 
 #[cfg(any(
     target_os = "linux",
@@ -193,14 +194,14 @@ feature! {
 
 // The conversion is not identical on all operating systems.
 #[allow(clippy::useless_conversion)]
-pub fn open<P: ?Sized + NixPath>(
-    path: &P,
+pub fn open(
+    path: CStr,
     oflag: OFlag,
     mode: Mode,
 ) -> Result<RawFd> {
-    let fd = path.with_nix_path(|cstr| unsafe {
-        libc::open(cstr.as_ptr(), oflag.bits(), mode.bits() as c_uint)
-    })?;
+    let fd = unsafe {
+        libc::open(path.as_ptr(), oflag.bits(), mode.bits() as c_uint)
+    };
 
     Errno::result(fd)
 }
@@ -276,10 +277,10 @@ pub fn renameat2<P1: ?Sized + NixPath, P2: ?Sized + NixPath>(
     Errno::result(res).map(drop)
 }
 
-fn wrap_readlink_result(mut v: Vec<u8>, len: ssize_t) -> Result<OsString> {
+fn wrap_readlink_result(mut v: Vec<u8>, len: ssize_t) -> Result<CString> {
     unsafe { v.set_len(len as usize) }
     v.shrink_to_fit();
-    Ok(OsString::from_vec(v.to_vec()))
+    Ok(CString::from_vec(v.to_vec()))
 }
 
 fn readlink_maybe_at<P: ?Sized + NixPath>(
@@ -310,7 +311,7 @@ fn readlink_maybe_at<P: ?Sized + NixPath>(
 fn inner_readlink<P: ?Sized + NixPath>(
     dirfd: Option<RawFd>,
     path: &P,
-) -> Result<OsString> {
+) -> Result<CString> {
     let mut v = Vec::with_capacity(libc::PATH_MAX as usize);
 
     {
@@ -389,7 +390,7 @@ fn inner_readlink<P: ?Sized + NixPath>(
     }
 }
 
-pub fn readlink<P: ?Sized + NixPath>(path: &P) -> Result<OsString> {
+pub fn readlink<P: ?Sized + NixPath>(path: &P) -> Result<CString> {
     inner_readlink(None, path)
 }
 
@@ -397,7 +398,7 @@ pub fn readlink<P: ?Sized + NixPath>(path: &P) -> Result<OsString> {
 pub fn readlinkat<P: ?Sized + NixPath>(
     dirfd: RawFd,
     path: &P,
-) -> Result<OsString> {
+) -> Result<CString> {
     inner_readlink(Some(dirfd), path)
 }
 
@@ -686,7 +687,7 @@ pub fn tee(
 #[cfg(any(target_os = "linux", target_os = "android"))]
 pub fn vmsplice(
     fd: RawFd,
-    iov: &[std::io::IoSlice<'_>],
+    iov: *mut libc::iovec,
     flags: SpliceFFlags,
 ) -> Result<usize> {
     let ret = unsafe {
@@ -800,9 +801,9 @@ impl SpacectlRange {
 ///
 #[cfg_attr(fbsd14, doc = " ```")]
 #[cfg_attr(not(fbsd14), doc = " ```no_run")]
-/// # use std::io::Write;
-/// # use std::os::unix::fs::FileExt;
-/// # use std::os::unix::io::AsRawFd;
+/// # use core::io::Write;
+/// # use core::os::unix::fs::FileExt;
+/// # use crate::os::fd::AsRawFd;
 /// # use nix::fcntl::*;
 /// # use tempfile::tempfile;
 /// const INITIAL: &[u8] = b"0123456789abcdef";
@@ -851,9 +852,9 @@ pub fn fspacectl(fd: RawFd, range: SpacectlRange) -> Result<SpacectlRange> {
 ///
 #[cfg_attr(fbsd14, doc = " ```")]
 #[cfg_attr(not(fbsd14), doc = " ```no_run")]
-/// # use std::io::Write;
-/// # use std::os::unix::fs::FileExt;
-/// # use std::os::unix::io::AsRawFd;
+/// # use core::io::Write;
+/// # use core::os::unix::fs::FileExt;
+/// # use crate::os::fd::AsRawFd;
 /// # use nix::fcntl::*;
 /// # use tempfile::tempfile;
 /// const INITIAL: &[u8] = b"0123456789abcdef";
@@ -901,7 +902,7 @@ pub fn fspacectl_all(
 mod posix_fadvise {
     use crate::errno::Errno;
     use crate::Result;
-    use std::os::unix::io::RawFd;
+    use crate::os::fd::RawFd;
 
     #[cfg(feature = "fs")]
     libc_enum! {

@@ -5,11 +5,12 @@ use crate::sys::time::TimeVal;
 use crate::Result;
 use cfg_if::cfg_if;
 use libc::{self, c_int, c_void, socklen_t};
-use std::ffi::{OsStr, OsString};
-use std::mem::{self, MaybeUninit};
+use alloc::ffi::CString;
+use core::ffi::CStr;
+use core::mem::{self, MaybeUninit};
 #[cfg(target_family = "unix")]
-use std::os::unix::ffi::OsStrExt;
-use std::os::unix::io::RawFd;
+use core::os::unix::ffi::CStrExt;
+use crate::os::fd::RawFd;
 
 // Constants
 // TCP_CA_NAME_MAX isn't defined in user space include files
@@ -186,11 +187,11 @@ macro_rules! sockopt_impl {
     };
 
     ($(#[$attr:meta])* $name:ident, Both, $level:expr, $flag:path,
-     OsString<$array:ty>) =>
+     CString<$array:ty>) =>
     {
         sockopt_impl!($(#[$attr])*
-                      $name, Both, $level, $flag, OsString, GetOsString<$array>,
-                      SetOsString);
+                      $name, Both, $level, $flag, CString, GetCString<$array>,
+                      SetCString);
     };
 
     /*
@@ -659,7 +660,7 @@ sockopt_impl!(
     Both,
     libc::SOL_SOCKET,
     libc::SO_BINDTODEVICE,
-    OsString<[u8; libc::IFNAMSIZ]>
+    CString<[u8; libc::IFNAMSIZ]>
 );
 #[cfg(any(target_os = "android", target_os = "linux"))]
 #[cfg(feature = "net")]
@@ -776,7 +777,7 @@ sockopt_impl!(
     Both,
     libc::IPPROTO_TCP,
     libc::TCP_CONGESTION,
-    OsString<[u8; TCP_CA_NAME_MAX]>
+    CString<[u8; TCP_CA_NAME_MAX]>
 );
 #[cfg(any(
     target_os = "android",
@@ -1019,7 +1020,7 @@ impl SetSockOpt for AlgSetAeadAuthSize {
                 fd,
                 libc::SOL_ALG,
                 libc::ALG_SET_AEAD_AUTHSIZE,
-                ::std::ptr::null(),
+                ::core::ptr::null(),
                 *val as libc::socklen_t,
             );
             Errno::result(res).map(drop)
@@ -1031,7 +1032,7 @@ impl SetSockOpt for AlgSetAeadAuthSize {
 // Not documented by Linux!
 #[cfg(any(target_os = "android", target_os = "linux"))]
 #[derive(Clone, Debug)]
-pub struct AlgSetKey<T>(::std::marker::PhantomData<T>);
+pub struct AlgSetKey<T>(::core::marker::PhantomData<T>);
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
 impl<T> Default for AlgSetKey<T> {
@@ -1299,15 +1300,15 @@ impl<'a> Set<'a, usize> for SetUsize {
     }
 }
 
-/// Getter for a `OsString` value.
-struct GetOsString<T: AsMut<[u8]>> {
+/// Getter for a `CString` value.
+struct GetCString<T: AsMut<[u8]>> {
     len: socklen_t,
     val: MaybeUninit<T>,
 }
 
-impl<T: AsMut<[u8]>> Get<OsString> for GetOsString<T> {
+impl<T: AsMut<[u8]>> Get<CString> for GetCString<T> {
     fn uninit() -> Self {
-        GetOsString {
+        GetCString {
             len: mem::size_of::<T>() as socklen_t,
             val: MaybeUninit::uninit(),
         }
@@ -1321,21 +1322,21 @@ impl<T: AsMut<[u8]>> Get<OsString> for GetOsString<T> {
         &mut self.len
     }
 
-    unsafe fn assume_init(self) -> OsString {
+    unsafe fn assume_init(self) -> CString {
         let len = self.len as usize;
         let mut v = self.val.assume_init();
-        OsStr::from_bytes(&v.as_mut()[0..len]).to_owned()
+        CStr::from_bytes(&v.as_mut()[0..len]).to_owned()
     }
 }
 
-/// Setter for a `OsString` value.
-struct SetOsString<'a> {
-    val: &'a OsStr,
+/// Setter for a `CString` value.
+struct SetCString<'a> {
+    val: &'a CStr,
 }
 
-impl<'a> Set<'a, OsString> for SetOsString<'a> {
-    fn new(val: &'a OsString) -> SetOsString {
-        SetOsString {
+impl<'a> Set<'a, CString> for SetCString<'a> {
+    fn new(val: &'a CString) -> SetCString {
+        SetCString {
             val: val.as_os_str(),
         }
     }

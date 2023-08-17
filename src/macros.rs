@@ -129,7 +129,7 @@ macro_rules! libc_enum {
         $v enum $BitFlags {
             $($entries)*
         }
-        impl ::std::convert::TryFrom<$repr> for $BitFlags {
+        impl ::core::convert::TryFrom<$repr> for $BitFlags {
             type Error = $crate::Error;
             #[allow(unused_doc_comments)]
             #[allow(deprecated)]

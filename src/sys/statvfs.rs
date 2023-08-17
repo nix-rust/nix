@@ -2,8 +2,8 @@
 //!
 //! See [the man pages](https://pubs.opengroup.org/onlinepubs/9699919799/functions/fstatvfs.html)
 //! for more details.
-use std::mem;
-use std::os::unix::io::{AsFd, AsRawFd};
+use core::mem;
+use crate::os::fd::{AsFd, AsRawFd};
 
 use libc::{self, c_ulong};
 
@@ -158,7 +158,7 @@ pub fn fstatvfs<Fd: AsFd>(fd: Fd) -> Result<Statvfs> {
 #[cfg(test)]
 mod test {
     use crate::sys::statvfs::*;
-    use std::fs::File;
+    use core::fs::File;
 
     #[test]
     fn statvfs_call() {

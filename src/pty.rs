@@ -3,16 +3,18 @@
 pub use libc::pid_t as SessionId;
 pub use libc::winsize as Winsize;
 
-use std::ffi::CStr;
-use std::io;
-use std::mem;
-use std::os::unix::prelude::*;
+use core::ffi::CStr;
+use core::mem;
+use core::os::unix::prelude::*;
+use alloc::vec::Vec;
+use alloc::string::String;
 
 use crate::errno::Errno;
 use crate::sys::termios::Termios;
 #[cfg(feature = "process")]
 use crate::unistd::{ForkResult, Pid};
 use crate::{fcntl, unistd, Result};
+use crate::os::fd::{OwnedFd,RawFd};
 
 /// Representation of a master/slave pty pair
 ///
@@ -46,13 +48,13 @@ pub struct ForkptyResult {
 #[derive(Debug)]
 pub struct PtyMaster(OwnedFd);
 
-impl AsRawFd for PtyMaster {
+impl crate::os::fd::AsRawFd for PtyMaster {
     fn as_raw_fd(&self) -> RawFd {
         self.0.as_raw_fd()
     }
 }
 
-impl IntoRawFd for PtyMaster {
+impl crate::os::fd::IntoRawFd for PtyMaster {
     fn into_raw_fd(self) -> RawFd {
         let fd = self.0;
         fd.into_raw_fd()
@@ -114,7 +116,7 @@ pub fn grantpt(fd: &PtyMaster) -> Result<()> {
 /// done as follows:
 ///
 /// ```
-/// use std::path::Path;
+/// use core::path::Path;
 /// use nix::fcntl::{OFlag, open};
 /// use nix::pty::{grantpt, posix_openpt, ptsname, unlockpt};
 /// use nix::sys::stat::Mode;
@@ -233,7 +235,7 @@ pub fn openpty<
     winsize: T,
     termios: U,
 ) -> Result<OpenptyResult> {
-    use std::ptr;
+    use core::ptr;
 
     let mut slave = mem::MaybeUninit::<libc::c_int>::uninit();
     let mut master = mem::MaybeUninit::<libc::c_int>::uninit();
@@ -319,7 +321,7 @@ pub unsafe fn forkpty<'a, 'b, T: Into<Option<&'a Winsize>>, U: Into<Option<&'b T
     winsize: T,
     termios: U,
 ) -> Result<ForkptyResult> {
-    use std::ptr;
+    use core::ptr;
 
     let mut master = mem::MaybeUninit::<libc::c_int>::uninit();
 

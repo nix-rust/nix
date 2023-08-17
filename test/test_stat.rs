@@ -1,15 +1,15 @@
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
-use std::fs;
-use std::fs::File;
+use core::fs;
+use core::fs::File;
 #[cfg(not(target_os = "redox"))]
-use std::os::unix::fs::symlink;
+use core::os::unix::fs::symlink;
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
-use std::os::unix::fs::PermissionsExt;
-use std::os::unix::prelude::AsRawFd;
+use core::os::unix::fs::PermissionsExt;
+use core::os::unix::prelude::AsRawFd;
 #[cfg(not(target_os = "redox"))]
-use std::path::Path;
+use core::path::Path;
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
-use std::time::{Duration, UNIX_EPOCH};
+use core::time::{Duration, UNIX_EPOCH};
 
 use libc::mode_t;
 #[cfg(not(any(target_os = "netbsd", target_os = "redox")))]

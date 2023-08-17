@@ -25,7 +25,7 @@
 //! ```
 //! # use self::nix::sys::termios::SpecialCharacterIndices::VEOF;
 //! # use self::nix::sys::termios::{_POSIX_VDISABLE, Termios};
-//! # let mut termios: Termios = unsafe { std::mem::zeroed() };
+//! # let mut termios: Termios = unsafe { core::mem::zeroed() };
 //! termios.control_chars[VEOF as usize] = _POSIX_VDISABLE;
 //! ```
 //!
@@ -38,7 +38,7 @@
 //!
 //! ```
 //! # use self::nix::sys::termios::{ControlFlags, Termios};
-//! # let mut termios: Termios = unsafe { std::mem::zeroed() };
+//! # let mut termios: Termios = unsafe { core::mem::zeroed() };
 //! termios.control_flags & ControlFlags::CSIZE == ControlFlags::CS5;
 //! termios.control_flags |= ControlFlags::CS5;
 //! ```
@@ -63,7 +63,7 @@
 //! ```rust
 //! # use nix::sys::termios::{BaudRate, cfsetispeed, cfsetospeed, cfsetspeed, Termios};
 //! # fn main() {
-//! # let mut t: Termios = unsafe { std::mem::zeroed() };
+//! # let mut t: Termios = unsafe { core::mem::zeroed() };
 //! cfsetispeed(&mut t, BaudRate::B9600).unwrap();
 //! cfsetospeed(&mut t, BaudRate::B9600).unwrap();
 //! cfsetspeed(&mut t, BaudRate::B9600).unwrap();
@@ -75,7 +75,7 @@
 //! ```rust
 //! # use nix::sys::termios::{BaudRate, cfgetispeed, cfgetospeed, cfsetispeed, cfsetspeed, Termios};
 //! # fn main() {
-//! # let mut t: Termios = unsafe { std::mem::zeroed() };
+//! # let mut t: Termios = unsafe { core::mem::zeroed() };
 //! # cfsetspeed(&mut t, BaudRate::B9600).unwrap();
 //! let speed = cfgetispeed(&t);
 //! assert_eq!(speed, cfgetospeed(&t));
@@ -109,7 +109,7 @@
 )]
 //! # use nix::sys::termios::{BaudRate, cfgetispeed, cfgetospeed, cfsetspeed, Termios};
 //! # fn main() {
-//! # let mut t: Termios = unsafe { std::mem::zeroed() };
+//! # let mut t: Termios = unsafe { core::mem::zeroed() };
 //! # cfsetspeed(&mut t, BaudRate::B9600);
 //! assert_eq!(cfgetispeed(&t), BaudRate::B9600);
 //! assert_eq!(cfgetospeed(&t), BaudRate::B9600);
@@ -142,7 +142,7 @@
 )]
 //! # use nix::sys::termios::{BaudRate, cfgetispeed, cfgetospeed, cfsetspeed, Termios};
 //! # fn main() {
-//! # let mut t: Termios = unsafe { std::mem::zeroed() };
+//! # let mut t: Termios = unsafe { core::mem::zeroed() };
 //! # cfsetspeed(&mut t, 9600u32);
 //! assert_eq!(cfgetispeed(&t), 9600u32);
 //! assert_eq!(cfgetospeed(&t), 9600u32);
@@ -175,7 +175,7 @@
 )]
 //! # use nix::sys::termios::{BaudRate, cfgetispeed, cfsetspeed, Termios};
 //! # fn main() {
-//! # let mut t: Termios = unsafe { std::mem::zeroed() };
+//! # let mut t: Termios = unsafe { core::mem::zeroed() };
 //! # cfsetspeed(&mut t, 9600u32);
 //! assert_eq!(cfgetispeed(&t), BaudRate::B9600.into());
 //! assert_eq!(u32::from(BaudRate::B9600), 9600u32);
@@ -209,7 +209,7 @@
 )]
 //! # use nix::sys::termios::{cfsetispeed, cfsetospeed, cfsetspeed, Termios};
 //! # fn main() {
-//! # let mut t: Termios = unsafe { std::mem::zeroed() };
+//! # let mut t: Termios = unsafe { core::mem::zeroed() };
 //! cfsetispeed(&mut t, 9600u32);
 //! cfsetospeed(&mut t, 9600u32);
 //! cfsetspeed(&mut t, 9600u32);
@@ -219,10 +219,10 @@ use crate::errno::Errno;
 use crate::Result;
 use cfg_if::cfg_if;
 use libc::{self, c_int, tcflag_t};
-use std::cell::{Ref, RefCell};
-use std::convert::From;
-use std::mem;
-use std::os::unix::io::{AsFd, AsRawFd};
+use core::cell::{Ref, RefCell};
+use core::convert::From;
+use core::mem;
+use crate::os::fd::{AsFd, AsRawFd};
 
 #[cfg(feature = "process")]
 use crate::unistd::Pid;
@@ -1052,7 +1052,7 @@ cfg_if! {
             Errno::result(res).map(drop)
         }
     } else {
-        use std::convert::TryInto;
+        use core::convert::TryInto;
 
         /// Get input baud rate (see
         /// [cfgetispeed(3p)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/cfgetispeed.html)).
@@ -1233,7 +1233,7 @@ pub fn tcgetsid<Fd: AsFd>(fd: Fd) -> Result<Pid> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use std::convert::TryFrom;
+    use core::convert::TryFrom;
 
     #[test]
     fn try_from() {

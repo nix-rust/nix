@@ -1,14 +1,14 @@
+use crate::os::fd::{FromRawFd, OwnedFd};
+use core::fs::OpenOptions;
+use core::io::libc::iovec;
+use core::{cmp, iter};
 use nix::sys::uio::*;
 use nix::unistd::*;
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
-use std::fs::OpenOptions;
-use std::io::IoSlice;
-use std::os::unix::io::{FromRawFd, OwnedFd};
-use std::{cmp, iter};
 
 #[cfg(not(target_os = "redox"))]
-use std::io::IoSliceMut;
+use core::io::libc::iovec;
 
 use tempfile::tempdir;
 #[cfg(not(target_os = "redox"))]
@@ -37,7 +37,7 @@ fn test_writev() {
             thread_rng().gen_range(64..cmp::min(256, left))
         };
         let b = &to_write[consumed..consumed + slice_len];
-        iovecs.push(IoSlice::new(b));
+        iovecs.push(libc::iovec::new(b));
         consumed += slice_len;
     }
     let (reader, writer) = pipe().expect("Couldn't create pipe");
@@ -86,7 +86,7 @@ fn test_readv() {
     }
     let mut iovecs = Vec::with_capacity(storage.len());
     for v in &mut storage {
-        iovecs.push(IoSliceMut::new(&mut v[..]));
+        iovecs.push(libc::iovec::new(&mut v[..]));
     }
     let (reader, writer) = pipe().expect("couldn't create pipe");
     // Blocking io, should write all data.
@@ -114,7 +114,7 @@ fn test_readv() {
 #[test]
 #[cfg(not(target_os = "redox"))]
 fn test_pwrite() {
-    use std::io::Read;
+    use core::io::Read;
 
     let mut file = tempfile().unwrap();
     let buf = [1u8; 8];
@@ -128,7 +128,7 @@ fn test_pwrite() {
 
 #[test]
 fn test_pread() {
-    use std::io::Write;
+    use core::io::Write;
 
     let tempdir = tempdir().unwrap();
 
@@ -152,15 +152,15 @@ fn test_pread() {
 #[test]
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
 fn test_pwritev() {
-    use std::io::Read;
+    use core::io::Read;
 
     let to_write: Vec<u8> = (0..128).collect();
     let expected: Vec<u8> = [vec![0; 100], to_write.clone()].concat();
 
     let iovecs = [
-        IoSlice::new(&to_write[0..17]),
-        IoSlice::new(&to_write[17..64]),
-        IoSlice::new(&to_write[64..128]),
+        libc::iovec::new(&to_write[0..17]),
+        libc::iovec::new(&to_write[17..64]),
+        libc::iovec::new(&to_write[64..128]),
     ];
 
     let tempdir = tempdir().unwrap();
@@ -187,7 +187,7 @@ fn test_pwritev() {
 #[test]
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
 fn test_preadv() {
-    use std::io::Write;
+    use core::io::Write;
 
     let to_write: Vec<u8> = (0..200).collect();
     let expected: Vec<u8> = (100..200).collect();
@@ -211,7 +211,7 @@ fn test_preadv() {
         // Borrow the buffers into IoVecs and preadv into them
         let mut iovecs: Vec<_> = buffers
             .iter_mut()
-            .map(|buf| IoSliceMut::new(&mut buf[..]))
+            .map(|buf| libc::iovec::new(&mut buf[..]))
             .collect();
         assert_eq!(Ok(100), preadv(&file, &mut iovecs, 100));
     }
@@ -252,7 +252,7 @@ fn test_process_vm_readv() {
 
             let ret = process_vm_readv(
                 child,
-                &mut [IoSliceMut::new(&mut buf)],
+                &mut [libc::iovec::new(&mut buf)],
                 &[remote_iov],
             );
 

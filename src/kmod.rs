@@ -2,8 +2,8 @@
 //!
 //! For more details see
 
-use std::ffi::CStr;
-use std::os::unix::io::{AsFd, AsRawFd};
+use core::ffi::CStr;
+use crate::os::fd::{AsFd, AsRawFd};
 
 use crate::errno::Errno;
 use crate::Result;
@@ -30,9 +30,9 @@ use crate::Result;
 /// # Example
 ///
 /// ```no_run
-/// use std::fs::File;
-/// use std::io::Read;
-/// use std::ffi::CString;
+/// use core::fs::File;
+/// use core::io::Read;
+/// use core::ffi::CString;
 /// use nix::kmod::init_module;
 ///
 /// let mut f = File::open("mykernel.ko").unwrap();
@@ -70,8 +70,8 @@ libc_bitflags!(
 /// # Example
 ///
 /// ```no_run
-/// use std::fs::File;
-/// use std::ffi::CString;
+/// use core::fs::File;
+/// use core::ffi::CString;
 /// use nix::kmod::{finit_module, ModuleInitFlags};
 ///
 /// let f = File::open("mymod.ko").unwrap();
@@ -112,7 +112,7 @@ libc_bitflags!(
 /// # Example
 ///
 /// ```no_run
-/// use std::ffi::CString;
+/// use core::ffi::CString;
 /// use nix::kmod::{delete_module, DeleteModuleFlags};
 ///
 /// delete_module(&CString::new("mymod").unwrap(), DeleteModuleFlags::O_NONBLOCK).unwrap();

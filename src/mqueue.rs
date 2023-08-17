@@ -4,7 +4,7 @@
 //!
 // no_run because a kernel module may be required.
 //! ```no_run
-//! # use std::ffi::CString;
+//! # use core::ffi::CString;
 //! # use nix::mqueue::*;
 //! use nix::sys::stat::Mode;
 //!
@@ -35,8 +35,8 @@ use crate::Result;
 
 use crate::sys::stat::Mode;
 use libc::{self, c_char, mqd_t, size_t};
-use std::ffi::CStr;
-use std::mem;
+use core::ffi::CStr;
+use core::mem;
 
 libc_bitflags! {
     /// Used with [`mq_open`].

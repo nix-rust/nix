@@ -1,4 +1,4 @@
-use std::{
+use core::{
     io::{Read, Seek, Write},
     ops::Deref,
     os::unix::io::AsRawFd,
@@ -71,7 +71,7 @@ mod aio_fsync {
     #[test]
     #[cfg(any(target_os = "freebsd", target_os = "macos"))]
     fn error() {
-        use std::mem;
+        use core::mem;
 
         const INITIAL: &[u8] = b"abcdef123456";
         // Create an invalid AioFsyncMode
@@ -230,7 +230,7 @@ mod aio_read {
 #[cfg(target_os = "freebsd")]
 #[cfg(fbsd14)]
 mod aio_readv {
-    use std::io::IoSliceMut;
+    use core::io::libc::iovec;
 
     use super::*;
 
@@ -239,7 +239,7 @@ mod aio_readv {
         let mut rbuf0 = vec![0; 4];
         let mut rbuf1 = vec![0; 8];
         let mut rbufs =
-            [IoSliceMut::new(&mut rbuf0), IoSliceMut::new(&mut rbuf1)];
+            [libc::iovec::new(&mut rbuf0), libc::iovec::new(&mut rbuf1)];
         let aiocb = AioReadv::new(
             1001,
             2, //offset
@@ -266,7 +266,7 @@ mod aio_readv {
         let mut rbuf0 = vec![0; 4];
         let mut rbuf1 = vec![0; 2];
         let mut rbufs =
-            [IoSliceMut::new(&mut rbuf0), IoSliceMut::new(&mut rbuf1)];
+            [libc::iovec::new(&mut rbuf0), libc::iovec::new(&mut rbuf1)];
         const EXPECT0: &[u8] = b"cdef";
         const EXPECT1: &[u8] = b"12";
         let mut f = tempfile().unwrap();
@@ -431,7 +431,7 @@ mod aio_write {
 #[cfg(target_os = "freebsd")]
 #[cfg(fbsd14)]
 mod aio_writev {
-    use std::io::IoSlice;
+    use core::io::libc::iovec;
 
     use super::*;
 
@@ -439,7 +439,7 @@ mod aio_writev {
     fn test_accessors() {
         let wbuf0 = vec![0; 4];
         let wbuf1 = vec![0; 8];
-        let wbufs = [IoSlice::new(&wbuf0), IoSlice::new(&wbuf1)];
+        let wbufs = [libc::iovec::new(&wbuf0), libc::iovec::new(&wbuf1)];
         let aiocb = AioWritev::new(
             1001,
             2, //offset
@@ -467,7 +467,7 @@ mod aio_writev {
         const INITIAL: &[u8] = b"abcdef123456";
         let wbuf0 = b"BC";
         let wbuf1 = b"DEF";
-        let wbufs = [IoSlice::new(wbuf0), IoSlice::new(wbuf1)];
+        let wbufs = [libc::iovec::new(wbuf0), libc::iovec::new(wbuf1)];
         let wlen = wbuf0.len() + wbuf1.len();
         let mut rbuf = Vec::new();
         const EXPECT: &[u8] = b"aBCDEF123456";

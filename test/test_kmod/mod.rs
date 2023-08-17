@@ -1,7 +1,7 @@
 use crate::*;
-use std::fs::copy;
-use std::path::PathBuf;
-use std::process::Command;
+use core::fs::copy;
+use core::path::PathBuf;
+use core::process::Command;
 use tempfile::{tempdir, TempDir};
 
 fn compile_kernel_module() -> (PathBuf, String, TempDir) {
@@ -32,12 +32,12 @@ fn compile_kernel_module() -> (PathBuf, String, TempDir) {
     (tmp_dir.path().join("hello.ko"), "hello".to_owned(), tmp_dir)
 }
 
+use core::ffi::CString;
+use core::fs::File;
+use core::io::Read;
 use nix::errno::Errno;
 use nix::kmod::{delete_module, DeleteModuleFlags};
 use nix::kmod::{finit_module, init_module, ModuleInitFlags};
-use std::ffi::CString;
-use std::fs::File;
-use std::io::Read;
 
 #[test]
 fn test_finit_and_delete_module() {

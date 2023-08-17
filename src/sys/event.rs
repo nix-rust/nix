@@ -8,10 +8,10 @@ use crate::{Errno, Result};
 use libc::{c_int, c_long, intptr_t, time_t, timespec, uintptr_t};
 #[cfg(target_os = "netbsd")]
 use libc::{c_long, intptr_t, size_t, time_t, timespec, uintptr_t};
-use std::convert::TryInto;
-use std::mem;
-use std::os::unix::io::{AsRawFd, FromRawFd, OwnedFd};
-use std::ptr;
+use core::convert::TryInto;
+use core::mem;
+use crate::os::fd::{AsRawFd, FromRawFd, OwnedFd};
+use core::ptr;
 
 /// A kernel event queue.  Used to notify a process of various asynchronous
 /// events.
@@ -487,7 +487,7 @@ pub fn ev_set(
 
 #[test]
 fn test_struct_kevent() {
-    use std::mem;
+    use core::mem;
 
     let udata: intptr_t = 12345;
 

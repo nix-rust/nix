@@ -14,9 +14,10 @@ mod sched_linux_like {
     use crate::unistd::Pid;
     use crate::Result;
     use libc::{self, c_int, c_void};
-    use std::mem;
-    use std::option::Option;
-    use std::os::unix::io::{AsFd, AsRawFd};
+    use core::mem;
+    use core::option::Option;
+    use crate::os::fd::{AsFd, AsRawFd};
+    use alloc::boxed::Box;
 
     // For some functions taking with a parameter of type CloneFlags,
     // only a subset of these flags have an effect.
@@ -161,7 +162,7 @@ mod sched_affinity {
     use crate::errno::Errno;
     use crate::unistd::Pid;
     use crate::Result;
-    use std::mem;
+    use core::mem;
 
     /// CpuSet represent a bit-mask of CPUs.
     /// CpuSets are used by sched_setaffinity and

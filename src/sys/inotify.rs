@@ -29,11 +29,13 @@ use crate::NixPath;
 use crate::Result;
 use cfg_if::cfg_if;
 use libc::{c_char, c_int};
-use std::ffi::{CStr, OsStr, OsString};
-use std::mem::{size_of, MaybeUninit};
-use std::os::unix::ffi::OsStrExt;
-use std::os::unix::io::{AsFd, AsRawFd, BorrowedFd, FromRawFd, OwnedFd, RawFd};
-use std::ptr;
+use alloc::ffi::CString;
+use core::ffi::CStr;
+use core::mem::{size_of, MaybeUninit};
+use core::os::unix::ffi::CStrExt;
+use crate::os::fd::{AsFd, AsRawFd, BorrowedFd, FromRawFd, OwnedFd, RawFd};
+use core::ptr;
+use alloc::vec::Vec;
 
 libc_bitflags! {
     /// Configuration options for [`inotify_add_watch`](fn.inotify_add_watch.html).
@@ -131,7 +133,7 @@ pub struct InotifyEvent {
     pub cookie: u32,
     /// Filename. This field exists only if the event was triggered for a file
     /// inside the watched directory.
-    pub name: Option<OsString>,
+    pub name: Option<CString>,
 }
 
 impl Inotify {
@@ -217,7 +219,7 @@ impl Inotify {
                     };
                     let cstr = unsafe { CStr::from_ptr(ptr) };
 
-                    Some(OsStr::from_bytes(cstr.to_bytes()).to_owned())
+                    Some(CStr::from_bytes(cstr.to_bytes()).to_owned())
                 }
             };
 

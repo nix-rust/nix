@@ -195,8 +195,8 @@ mod bsd {
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
 mod linux_ioctls {
-    use std::mem;
-    use std::os::unix::io::AsRawFd;
+    use crate::os::fd::AsRawFd;
+    use core::mem;
 
     use libc::{termios, TCGETS, TCSBRK, TCSETS, TIOCNXCL};
     use tempfile::tempfile;
@@ -334,8 +334,8 @@ mod linux_ioctls {
 
 #[cfg(target_os = "freebsd")]
 mod freebsd_ioctls {
-    use std::mem;
-    use std::os::unix::io::AsRawFd;
+    use crate::os::fd::AsRawFd;
+    use core::mem;
 
     use libc::termios;
     use tempfile::tempfile;

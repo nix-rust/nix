@@ -1,8 +1,8 @@
 //! Send data from a file to a socket, bypassing userland.
 
 use cfg_if::cfg_if;
-use std::os::unix::io::{AsFd, AsRawFd};
-use std::ptr;
+use crate::os::fd::{AsFd, AsRawFd};
+use core::ptr;
 
 use libc::{self, off_t};
 
@@ -82,13 +82,13 @@ cfg_if! {
                  target_os = "freebsd",
                  target_os = "ios",
                  target_os = "macos"))] {
-        use std::io::IoSlice;
+        use core::io::libc::iovec;
 
         #[derive(Clone, Debug)]
         struct SendfileHeaderTrailer<'a>(
             libc::sf_hdtr,
-            Option<Vec<IoSlice<'a>>>,
-            Option<Vec<IoSlice<'a>>>,
+            Option<Vec<libc::iovec<'a>>>,
+            Option<Vec<libc::iovec<'a>>>,
         );
 
         impl<'a> SendfileHeaderTrailer<'a> {
@@ -96,10 +96,10 @@ cfg_if! {
                 headers: Option<&'a [&'a [u8]]>,
                 trailers: Option<&'a [&'a [u8]]>
             ) -> SendfileHeaderTrailer<'a> {
-                let header_iovecs: Option<Vec<IoSlice<'_>>> =
-                    headers.map(|s| s.iter().map(|b| IoSlice::new(b)).collect());
-                let trailer_iovecs: Option<Vec<IoSlice<'_>>> =
-                    trailers.map(|s| s.iter().map(|b| IoSlice::new(b)).collect());
+                let header_iovecs: Option<Vec<libc::iovec<'_>>> =
+                    headers.map(|s| s.iter().map(|b| libc::iovec::new(b)).collect());
+                let trailer_iovecs: Option<Vec<libc::iovec<'_>>> =
+                    trailers.map(|s| s.iter().map(|b| libc::iovec::new(b)).collect());
                 SendfileHeaderTrailer(
                     libc::sf_hdtr {
                         headers: {

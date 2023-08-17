@@ -1,7 +1,7 @@
-use std::fs::File;
-use std::io::{Read, Write};
-use std::os::unix::prelude::*;
-use std::path::Path;
+use core::fs::File;
+use core::io::{Read, Write};
+use core::os::unix::prelude::*;
+use core::path::Path;
 
 use libc::{_exit, STDOUT_FILENO};
 use nix::fcntl::{open, OFlag};

@@ -1,4 +1,4 @@
-use std::env;
+use core::env;
 
 #[test]
 fn clearenv() {

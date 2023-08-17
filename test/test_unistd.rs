@@ -1,3 +1,17 @@
+use core::env;
+#[cfg(not(any(target_os = "fuchsia", target_os = "redox")))]
+use core::ffi::CString;
+#[cfg(not(target_os = "redox"))]
+use core::fs::DirBuilder;
+use core::fs::{self, File};
+use core::io::Write;
+use core::os::unix::prelude::*;
+#[cfg(not(any(
+    target_os = "fuchsia",
+    target_os = "redox",
+    target_os = "haiku"
+)))]
+use core::path::Path;
 use libc::{_exit, mode_t, off_t};
 use nix::errno::Errno;
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
@@ -19,20 +33,6 @@ use nix::sys::stat::{self, Mode, SFlag};
 use nix::sys::wait::*;
 use nix::unistd::ForkResult::*;
 use nix::unistd::*;
-use std::env;
-#[cfg(not(any(target_os = "fuchsia", target_os = "redox")))]
-use std::ffi::CString;
-#[cfg(not(target_os = "redox"))]
-use std::fs::DirBuilder;
-use std::fs::{self, File};
-use std::io::Write;
-use std::os::unix::prelude::*;
-#[cfg(not(any(
-    target_os = "fuchsia",
-    target_os = "redox",
-    target_os = "haiku"
-)))]
-use std::path::Path;
 use tempfile::{tempdir, tempfile};
 
 use crate::*;
@@ -305,7 +305,7 @@ macro_rules! execve_test_factory (
 
     #[cfg(test)]
     mod $test_name {
-    use std::ffi::CStr;
+    use core::ffi::CStr;
     use super::*;
 
     const EMPTY: &'static [u8] = b"\0";
@@ -314,7 +314,7 @@ macro_rules! execve_test_factory (
     const FOO: &'static [u8] = b"foo=bar\0";
     const BAZ: &'static [u8] = b"baz=quux\0";
 
-    fn syscall_cstr_ref() -> Result<std::convert::Infallible, nix::Error> {
+    fn syscall_cstr_ref() -> Result<core::convert::Infallible, nix::Error> {
         $syscall(
             $exe,
             $(CString::new($pathname).unwrap().as_c_str(), )*
@@ -326,7 +326,7 @@ macro_rules! execve_test_factory (
             $(, $flags)*)
     }
 
-    fn syscall_cstring() -> Result<std::convert::Infallible, nix::Error> {
+    fn syscall_cstring() -> Result<core::convert::Infallible, nix::Error> {
         $syscall(
             $exe,
             $(CString::new($pathname).unwrap().as_c_str(), )*
@@ -338,7 +338,7 @@ macro_rules! execve_test_factory (
             $(, $flags)*)
     }
 
-    fn common_test(syscall: fn() -> Result<std::convert::Infallible, nix::Error>) {
+    fn common_test(syscall: fn() -> Result<core::convert::Infallible, nix::Error>) {
         if "execveat" == stringify!($syscall) {
             // Though undocumented, Docker's default seccomp profile seems to
             // block this syscall.  https://github.com/nix-rust/nix/issues/1122
@@ -358,7 +358,7 @@ macro_rules! execve_test_factory (
                 // Make `writer` be the stdout of the new process.
                 dup2(writer, 1).unwrap();
                 let r = syscall();
-                let _ = std::io::stderr()
+                let _ = core::io::stderr()
                     .write_all(format!("{:?}", r).as_bytes());
                 // Should only get here in event of error
                 unsafe{ _exit(1) };
@@ -608,8 +608,8 @@ cfg_if! {
     target_os = "haiku"
 )))]
 fn test_acct() {
-    use std::process::Command;
-    use std::{thread, time};
+    use core::process::Command;
+    use core::{thread, time};
     use tempfile::NamedTempFile;
 
     let _m = crate::FORK_MTX.lock();
@@ -797,7 +797,7 @@ pub extern "C" fn alarm_signal_handler(raw_signal: libc::c_int) {
 #[test]
 #[cfg(not(target_os = "redox"))]
 fn test_alarm() {
-    use std::{
+    use core::{
         thread,
         time::{Duration, Instant},
     };
@@ -1180,8 +1180,8 @@ fn test_user_into_passwd() {
 #[cfg(any(target_os = "linux", target_os = "android"))]
 #[test]
 fn test_setfsuid() {
-    use std::os::unix::fs::PermissionsExt;
-    use std::{fs, io, thread};
+    use core::os::unix::fs::PermissionsExt;
+    use core::{fs, io, thread};
     require_capability!("test_setfsuid", CAP_SETUID);
 
     // get the UID of the "nobody" user
@@ -1266,7 +1266,7 @@ fn test_ttyname_invalid_fd() {
     target_os = "dragonfly",
 ))]
 fn test_getpeereid() {
-    use std::os::unix::net::UnixStream;
+    use core::os::unix::net::UnixStream;
     let (sock_a, sock_b) = UnixStream::pair().unwrap();
 
     let (uid_a, gid_a) = getpeereid(sock_a.as_raw_fd()).unwrap();

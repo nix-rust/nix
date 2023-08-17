@@ -6,7 +6,7 @@ use crate::unistd::Pid;
 use crate::Result;
 use cfg_if::cfg_if;
 use libc::{self, c_long, c_void, siginfo_t};
-use std::{mem, ptr};
+use core::{mem, ptr};
 
 pub type AddressType = *mut ::libc::c_void;
 

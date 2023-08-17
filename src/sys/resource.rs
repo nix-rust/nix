@@ -7,7 +7,7 @@ use crate::sys::time::TimeVal;
 use crate::Result;
 pub use libc::rlim_t;
 pub use libc::RLIM_INFINITY;
-use std::mem;
+use core::mem;
 
 cfg_if! {
     if #[cfg(all(target_os = "linux", any(target_env = "gnu", target_env = "uclibc")))]{

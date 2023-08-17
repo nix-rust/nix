@@ -1,4 +1,4 @@
-use std::os::unix::io::{AsFd, AsRawFd};
+use crate::os::fd::{AsFd, AsRawFd};
 use tempfile::tempfile;
 
 use nix::errno::Errno;
@@ -7,7 +7,7 @@ use nix::pty::openpty;
 use nix::sys::termios::{self, tcgetattr, LocalFlags, OutputFlags};
 use nix::unistd::{read, write};
 
-/// Helper function analogous to `std::io::Write::write_all`, but for `Fd`s
+/// Helper function analogous to `core::io::Write::write_all`, but for `Fd`s
 fn write_all<Fd: AsFd>(f: Fd, buf: &[u8]) {
     let mut len = 0;
     while len < buf.len() {

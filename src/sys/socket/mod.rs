@@ -2,28 +2,16 @@
 //!
 //! [Further reading](https://man7.org/linux/man-pages/man7/socket.7.html)
 #[cfg(target_os = "linux")]
-#[cfg(feature = "uio")]
-use crate::sys::time::TimeSpec;
 #[cfg(not(target_os = "redox"))]
-#[cfg(feature = "uio")]
-use crate::sys::time::TimeVal;
 use crate::{errno::Errno, Result};
 use cfg_if::cfg_if;
 use libc::{self, c_int, c_void, size_t, socklen_t};
-#[cfg(all(feature = "uio", not(target_os = "redox")))]
-use libc::{
-    iovec, CMSG_DATA, CMSG_FIRSTHDR, CMSG_LEN, CMSG_NXTHDR, CMSG_SPACE,
-};
-#[cfg(not(target_os = "redox"))]
-use std::io::{IoSlice, IoSliceMut};
 #[cfg(feature = "net")]
-use std::net;
-use std::os::unix::io::RawFd;
-use std::{mem, ptr};
+use core::net;
+use crate::os::fd::RawFd;
+use core::{mem, ptr};
 
-#[deny(missing_docs)]
 mod addr;
-#[deny(missing_docs)]
 pub mod sockopt;
 
 /*
@@ -459,7 +447,7 @@ cfg_if! {
             /// Returns a list group identifiers (the first one being the effective GID)
             pub fn groups(&self) -> &[libc::gid_t] {
                 unsafe {
-                    std::slice::from_raw_parts(
+                    core::slice::from_raw_parts(
                         self.0.cmcred_groups.as_ptr() as *const libc::gid_t,
                         self.0.cmcred_ngroups as _
                     )
@@ -564,7 +552,7 @@ feature! {
 /// ```
 /// # #[macro_use] extern crate nix;
 /// # use nix::sys::time::TimeVal;
-/// # use std::os::unix::io::RawFd;
+/// # use crate::os::fd::RawFd;
 /// # fn main() {
 /// // Create a buffer for a `ControlMessageOwned::ScmTimestamp` message
 /// let _ = cmsg_space!(TimeVal);
@@ -605,7 +593,7 @@ pub struct RecvMsg<'a, 's, S> {
     cmsghdr: Option<&'a cmsghdr>,
     pub address: Option<S>,
     pub flags: MsgFlags,
-    iobufs: std::marker::PhantomData<& 's()>,
+    iobufs: core::marker::PhantomData<& 's()>,
     mhdr: msghdr,
 }
 
@@ -684,9 +672,9 @@ pub enum ControlMessageOwned {
     /// # #[macro_use] extern crate nix;
     /// # use nix::sys::socket::*;
     /// # use nix::sys::time::*;
-    /// # use std::io::{IoSlice, IoSliceMut};
-    /// # use std::time::*;
-    /// # use std::str::FromStr;
+    /// # use core::io::{libc::iovec, libc::iovec};
+    /// # use core::time::*;
+    /// # use core::str::FromStr;
     /// # fn main() {
     /// // Set up
     /// let message = "Ohayō!".as_bytes();
@@ -702,14 +690,14 @@ pub enum ControlMessageOwned {
     /// // Get initial time
     /// let time0 = SystemTime::now();
     /// // Send the message
-    /// let iov = [IoSlice::new(message)];
+    /// let iov = [libc::iovec::new(message)];
     /// let flags = MsgFlags::empty();
     /// let l = sendmsg(in_socket, &iov, &[], flags, Some(&address)).unwrap();
     /// assert_eq!(message.len(), l);
     /// // Receive the message
     /// let mut buffer = vec![0u8; message.len()];
     /// let mut cmsgspace = cmsg_space!(TimeVal);
-    /// let mut iov = [IoSliceMut::new(&mut buffer)];
+    /// let mut iov = [libc::iovec::new(&mut buffer)];
     /// let r = recvmsg::<SockaddrIn>(in_socket, &mut iov, Some(&mut cmsgspace), flags)
     ///     .unwrap();
     /// let rtime = match r.cmsgs().next() {
@@ -989,7 +977,7 @@ impl ControlMessageOwned {
                 ControlMessageOwned::Ipv6OrigDstAddr(dl)
             },
             (_, _) => {
-                let sl = std::slice::from_raw_parts(p, len);
+                let sl = core::slice::from_raw_parts(p, len);
                 let ucmsg = UnknownCmsg(*header, Vec::<u8>::from(sl));
                 ControlMessageOwned::Unknown(ucmsg)
             }
@@ -1444,13 +1432,13 @@ impl<'a> ControlMessage<'a> {
 /// ```
 /// # use nix::sys::socket::*;
 /// # use nix::unistd::pipe;
-/// # use std::io::IoSlice;
+/// # use core::io::libc::iovec;
 /// let (fd1, fd2) = socketpair(AddressFamily::Unix, SockType::Stream, None,
 ///     SockFlag::empty())
 ///     .unwrap();
 /// let (r, w) = pipe().unwrap();
 ///
-/// let iov = [IoSlice::new(b"hello")];
+/// let iov = [libc::iovec::new(b"hello")];
 /// let fds = [r];
 /// let cmsg = ControlMessage::ScmRights(&fds);
 /// sendmsg::<()>(fd1, &iov, &[cmsg], MsgFlags::empty(), None).unwrap();
@@ -1459,19 +1447,19 @@ impl<'a> ControlMessage<'a> {
 /// ```
 /// # use nix::sys::socket::*;
 /// # use nix::unistd::pipe;
-/// # use std::io::IoSlice;
-/// # use std::str::FromStr;
+/// # use core::io::libc::iovec;
+/// # use core::str::FromStr;
 /// let localhost = SockaddrIn::from_str("1.2.3.4:8080").unwrap();
 /// let fd = socket(AddressFamily::Inet, SockType::Datagram, SockFlag::empty(),
 ///     None).unwrap();
 /// let (r, w) = pipe().unwrap();
 ///
-/// let iov = [IoSlice::new(b"hello")];
+/// let iov = [libc::iovec::new(b"hello")];
 /// let fds = [r];
 /// let cmsg = ControlMessage::ScmRights(&fds);
 /// sendmsg(fd, &iov, &[cmsg], MsgFlags::empty(), Some(&localhost)).unwrap();
 /// ```
-pub fn sendmsg<S>(fd: RawFd, iov: &[IoSlice<'_>], cmsgs: &[ControlMessage],
+pub fn sendmsg<S>(fd: RawFd, iov: *mut libc::iovec, cmsgs: &[ControlMessage],
                flags: MsgFlags, addr: Option<&S>) -> Result<usize>
     where S: SockaddrLike
 {
@@ -1525,7 +1513,7 @@ pub fn sendmmsg<'a, XS, AS, C, I, S>(
     where
         XS: IntoIterator<Item = &'a I>,
         AS: AsRef<[Option<S>]>,
-        I: AsRef<[IoSlice<'a>]> + 'a,
+        I: AsRef<[libc::iovec<'a>]> + 'a,
         C: AsRef<[ControlMessage<'a>]> + 'a,
         S: SockaddrLike + 'a
 {
@@ -1609,7 +1597,7 @@ impl<S> MultiHeaders<S> {
     {
         // we will be storing pointers to addresses inside mhdr - convert it into boxed
         // slice so it can'be changed later by pushing anything into self.addresses
-        let mut addresses = vec![std::mem::MaybeUninit::uninit(); num_slices].into_boxed_slice();
+        let mut addresses = vec![core::mem::MaybeUninit::uninit(); num_slices].into_boxed_slice();
 
         let msg_controllen = cmsg_buffer.as_ref().map_or(0, |v| v.capacity());
 
@@ -1624,9 +1612,9 @@ impl<S> MultiHeaders<S> {
             .map(|(ix, address)| {
                 let (ptr, cap) = match &cmsg_buffers {
                     Some(v) => ((&v[ix * msg_controllen] as *const u8), msg_controllen),
-                    None => (std::ptr::null(), 0),
+                    None => (core::ptr::null(), 0),
                 };
-                let msg_hdr = unsafe { pack_mhdr_to_receive(std::ptr::null(), 0, ptr, cap, address.as_mut_ptr()) };
+                let msg_hdr = unsafe { pack_mhdr_to_receive(core::ptr::null(), 0, ptr, cap, address.as_mut_ptr()) };
                 libc::mmsghdr {
                     msg_hdr,
                     msg_len: 0,
@@ -1650,7 +1638,7 @@ impl<S> MultiHeaders<S> {
 /// This method performs no allocations.
 ///
 /// Returns an iterator producing [`RecvMsg`], one per received messages. Each `RecvMsg` can produce
-/// iterators over [`IoSlice`] with [`iovs`][RecvMsg::iovs`] and
+/// iterators over [`libc::iovec`] with [`iovs`][RecvMsg::iovs`] and
 /// `ControlMessageOwned` with [`cmsgs`][RecvMsg::cmsgs].
 ///
 /// # Bugs (in underlying implementation, at least in Linux)
@@ -1683,7 +1671,7 @@ pub fn recvmmsg<'a, XS, S, I>(
 ) -> crate::Result<MultiResults<'a, S>>
 where
     XS: IntoIterator<Item = &'a I>,
-    I: AsRef<[IoSliceMut<'a>]> + 'a,
+    I: AsRef<[libc::iovec<'a>]> + 'a,
 {
     let mut count = 0;
     for (i, (slice, mmsghdr)) in slices.into_iter().zip(data.items.iter_mut()).enumerate() {
@@ -1695,7 +1683,7 @@ where
 
     let timeout_ptr = timeout
         .as_mut()
-        .map_or_else(std::ptr::null_mut, |t| t as *mut _ as *mut libc::timespec);
+        .map_or_else(core::ptr::null_mut, |t| t as *mut _ as *mut libc::timespec);
 
     let received = Errno::result(unsafe {
         libc::recvmmsg(
@@ -1769,29 +1757,29 @@ where
 
 impl<'a, S> RecvMsg<'_, 'a, S> {
     /// Iterate over the filled io slices pointed by this msghdr
-    pub fn iovs(&self) -> IoSliceIterator<'a> {
-        IoSliceIterator {
+    pub fn iovs(&self) -> libc::iovecIterator<'a> {
+        libc::iovecIterator {
             index: 0,
             remaining: self.bytes,
             slices: unsafe {
                 // safe for as long as mgdr is properly initialized and references are valid.
                 // for multi messages API we initialize it with an empty
                 // slice and replace with a concrete buffer
-                // for single message API we hold a lifetime reference to ioslices
-                std::slice::from_raw_parts(self.mhdr.msg_iov as *const _, self.mhdr.msg_iovlen as _)
+                // for single message API we hold a lifetime reference to libc::iovecs
+                core::slice::from_raw_parts(self.mhdr.msg_iov as *const _, self.mhdr.msg_iovlen as _)
             },
         }
     }
 }
 
 #[derive(Debug)]
-pub struct IoSliceIterator<'a> {
+pub struct libc::iovecIterator<'a> {
     index: usize,
     remaining: usize,
-    slices: &'a [IoSlice<'a>],
+    slices: &'a [libc::iovec<'a>],
 }
 
-impl<'a> Iterator for IoSliceIterator<'a> {
+impl<'a> Iterator for libc::iovecIterator<'a> {
     type Item = &'a [u8];
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -1816,7 +1804,7 @@ impl<'a> Iterator for IoSliceIterator<'a> {
 mod test {
     use crate::sys::socket::{AddressFamily, ControlMessageOwned};
     use crate::*;
-    use std::str::FromStr;
+    use core::str::FromStr;
 
     #[cfg_attr(qemu, ignore)]
     #[test]
@@ -1825,7 +1813,7 @@ mod test {
             sendmsg, setsockopt, socket, sockopt::Timestamping, MsgFlags, SockFlag, SockType,
             SockaddrIn, TimestampingFlag,
         };
-        use std::io::{IoSlice, IoSliceMut};
+        use core::io::{libc::iovec, libc::iovec};
 
         let sock_addr = SockaddrIn::from_str("127.0.0.1:6790").unwrap();
 
@@ -1855,7 +1843,7 @@ mod test {
         let mut pkt_iovs = Vec::new();
 
         for (ix, chunk) in recv_buf.chunks_mut(256).enumerate() {
-            pkt_iovs.push(IoSliceMut::new(chunk));
+            pkt_iovs.push(libc::iovec::new(chunk));
             if ix % 2 == 1 {
                 recv_iovs.push(pkt_iovs);
                 pkt_iovs = Vec::new();
@@ -1864,14 +1852,14 @@ mod test {
         drop(pkt_iovs);
 
         let flags = MsgFlags::empty();
-        let iov1 = [IoSlice::new(&sbuf)];
+        let iov1 = [libc::iovec::new(&sbuf)];
 
         let cmsg = cmsg_space!(crate::sys::socket::Timestamps);
         sendmsg(ssock, &iov1, &[], flags, Some(&sock_addr)).unwrap();
 
         let mut data = super::MultiHeaders::<()>::preallocate(recv_iovs.len(), Some(cmsg));
 
-        let t = sys::time::TimeSpec::from_duration(std::time::Duration::from_secs(10));
+        let t = sys::time::TimeSpec::from_duration(core::time::Duration::from_secs(10));
 
         let recv = super::recvmmsg(rsock, &mut data, recv_iovs.iter(), flags, Some(t))?;
 
@@ -1890,7 +1878,7 @@ mod test {
                     } else {
                         sys_time - ts
                     };
-                    assert!(std::time::Duration::from(diff).as_secs() < 60);
+                    assert!(core::time::Duration::from(diff).as_secs() < 60);
                     #[cfg(not(any(qemu, target_arch = "aarch64")))]
                     {
                         saw_time = true;
@@ -1936,7 +1924,7 @@ unsafe fn read_mhdr<'a, 'i, S>(
         address: Some(address),
         flags: MsgFlags::from_bits_truncate(mhdr.msg_flags),
         mhdr,
-        iobufs: std::marker::PhantomData,
+        iobufs: core::marker::PhantomData,
     }
 }
 
@@ -1944,7 +1932,7 @@ unsafe fn read_mhdr<'a, 'i, S>(
 ///
 /// # Safety
 /// `iov_buffer` and `iov_buffer_len` must point to a slice
-/// of `IoSliceMut` and number of available elements or be a null pointer and 0
+/// of `libc::iovec` and number of available elements or be a null pointer and 0
 ///
 /// `cmsg_buffer` and `cmsg_capacity` must point to a byte buffer used
 /// to store control headers later or be a null pointer and 0 if control
@@ -1952,7 +1940,7 @@ unsafe fn read_mhdr<'a, 'i, S>(
 ///
 /// Buffers must remain valid for the whole lifetime of msghdr
 unsafe fn pack_mhdr_to_receive<S>(
-    iov_buffer: *const IoSliceMut,
+    iov_buffer: *const libc::iovec,
     iov_buffer_len: usize,
     cmsg_buffer: *const u8,
     cmsg_capacity: usize,
@@ -1977,12 +1965,11 @@ unsafe fn pack_mhdr_to_receive<S>(
 
 fn pack_mhdr_to_send<'a, I, C, S>(
     cmsg_buffer: &mut [u8],
-    iov: I,
+    iov: *mut libc::iovec,
     cmsgs: C,
     addr: Option<&S>
 ) -> msghdr
     where
-        I: AsRef<[IoSlice<'a>]>,
         C: AsRef<[ControlMessage<'a>]>,
         S: SockaddrLike + 'a
 {
@@ -2042,7 +2029,7 @@ fn pack_mhdr_to_send<'a, I, C, S>(
 ///
 /// # References
 /// [recvmsg(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/recvmsg.html)
-pub fn recvmsg<'a, 'outer, 'inner, S>(fd: RawFd, iov: &'outer mut [IoSliceMut<'inner>],
+pub fn recvmsg<'a, 'outer, 'inner, S>(fd: RawFd, iov: *mut libc::iovec,
                    mut cmsg_buffer: Option<&'a mut Vec<u8>>,
                    flags: MsgFlags) -> Result<RecvMsg<'a, 'inner, S>>
     where S: SockaddrLike + 'a,
@@ -2318,8 +2305,8 @@ pub fn getsockopt<O: GetSockOpt>(fd: RawFd, opt: O) -> Result<O::Val> {
 /// ```
 /// use nix::sys::socket::setsockopt;
 /// use nix::sys::socket::sockopt::KeepAlive;
-/// use std::net::TcpListener;
-/// use std::os::unix::io::AsRawFd;
+/// use core::net::TcpListener;
+/// use crate::os::fd::AsRawFd;
 ///
 /// let listener = TcpListener::bind("0.0.0.0:0").unwrap();
 /// let fd = listener.as_raw_fd();

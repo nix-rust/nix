@@ -8,7 +8,7 @@ use crate::Result;
 #[cfg(feature = "fs")]
 use crate::{fcntl::OFlag, sys::stat::Mode};
 use libc::{self, c_int, c_void, off_t, size_t};
-use std::{num::NonZeroUsize, os::unix::io::{AsRawFd, AsFd}};
+use core::{num::NonZeroUsize, os::unix::io::{AsRawFd, AsFd}};
 
 libc_bitflags! {
     /// Desired memory protection of a memory mapping.
@@ -425,7 +425,7 @@ pub unsafe fn mmap<F: AsFd>(
     offset: off_t,
 ) -> Result<*mut c_void> {
     let ptr =
-        addr.map_or(std::ptr::null_mut(), |a| usize::from(a) as *mut c_void);
+        addr.map_or(core::ptr::null_mut(), |a| usize::from(a) as *mut c_void);
 
     let fd = f.map(|f| f.as_fd().as_raw_fd()).unwrap_or(-1);
     let ret =
@@ -459,13 +459,13 @@ pub unsafe fn mremap(
         old_size,
         new_size,
         flags.bits(),
-        new_address.unwrap_or(std::ptr::null_mut()),
+        new_address.unwrap_or(core::ptr::null_mut()),
     );
     #[cfg(target_os = "netbsd")]
     let ret = libc::mremap(
         addr,
         old_size,
-        new_address.unwrap_or(std::ptr::null_mut()),
+        new_address.unwrap_or(core::ptr::null_mut()),
         new_size,
         flags.bits(),
     );
@@ -518,15 +518,15 @@ pub unsafe fn madvise(
 /// ```
 /// # use nix::libc::size_t;
 /// # use nix::sys::mman::{mmap, mprotect, MapFlags, ProtFlags};
-/// # use std::ptr;
-/// # use std::os::unix::io::BorrowedFd;
+/// # use core::ptr;
+/// # use crate::os::fd::BorrowedFd;
 /// const ONE_K: size_t = 1024;
-/// let one_k_non_zero = std::num::NonZeroUsize::new(ONE_K).unwrap();
+/// let one_k_non_zero = core::num::NonZeroUsize::new(ONE_K).unwrap();
 /// let mut slice: &mut [u8] = unsafe {
 ///     let mem = mmap::<BorrowedFd>(None, one_k_non_zero, ProtFlags::PROT_NONE,
 ///                    MapFlags::MAP_ANON | MapFlags::MAP_PRIVATE, None, 0).unwrap();
 ///     mprotect(mem, ONE_K, ProtFlags::PROT_READ | ProtFlags::PROT_WRITE).unwrap();
-///     std::slice::from_raw_parts_mut(mem as *mut u8, ONE_K)
+///     core::slice::from_raw_parts_mut(mem as *mut u8, ONE_K)
 /// };
 /// assert_eq!(slice[0], 0x00);
 /// slice[0] = 0xFF;
@@ -568,10 +568,10 @@ pub fn shm_open<P>(
     name: &P,
     flag: OFlag,
     mode: Mode
-    ) -> Result<std::os::unix::io::OwnedFd>
+    ) -> Result<crate::os::fd::OwnedFd>
     where P: ?Sized + NixPath
 {
-    use std::os::unix::io::{FromRawFd, OwnedFd};
+    use crate::os::fd::{FromRawFd, OwnedFd};
 
     let ret = name.with_nix_path(|cstr| {
         #[cfg(any(target_os = "macos", target_os = "ios"))]

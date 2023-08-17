@@ -1,6 +1,6 @@
 //! Environment variables
 use cfg_if::cfg_if;
-use std::fmt;
+use core::fmt;
 
 /// Indicates that [`clearenv`] failed for some unknown reason
 #[derive(Clone, Copy, Debug)]
@@ -12,7 +12,7 @@ impl fmt::Display for ClearEnvError {
     }
 }
 
-impl std::error::Error for ClearEnvError {}
+impl core::error::Error for ClearEnvError {}
 
 /// Clear the environment of all name-value pairs.
 ///
@@ -28,17 +28,17 @@ impl std::error::Error for ClearEnvError {}
 /// # Safety
 ///
 /// This function is not threadsafe and can cause undefined behavior in
-/// combination with `std::env` or other program components that access the
-/// environment. See, for example, the discussion on `std::env::remove_var`; this
+/// combination with `core::env` or other program components that access the
+/// environment. See, for example, the discussion on `core::env::remove_var`; this
 /// function is a case of an "inherently unsafe non-threadsafe API" dealing with
 /// the environment.
 ///
 ///  The caller must ensure no other threads access the process environment while
 ///  this function executes and that no raw pointers to an element of libc's
 ///  `environ` is currently held. The latter is not an issue if the only other
-///  environment access in the program is via `std::env`, but the requirement on
+///  environment access in the program is via `core::env`, but the requirement on
 ///  thread safety must still be upheld.
-pub unsafe fn clearenv() -> std::result::Result<(), ClearEnvError> {
+pub unsafe fn clearenv() -> core::result::Result<(), ClearEnvError> {
     cfg_if! {
         if #[cfg(any(target_os = "fuchsia",
                      target_os = "wasi",
@@ -48,7 +48,7 @@ pub unsafe fn clearenv() -> std::result::Result<(), ClearEnvError> {
                      target_os = "emscripten"))] {
             let ret = libc::clearenv();
         } else {
-            use std::env;
+            use core::env;
             for (name, _) in env::vars_os() {
                 env::remove_var(name);
             }

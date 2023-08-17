@@ -76,7 +76,7 @@ to parameters of functions by [enumerations][enum].
 
 Whenever we need to use a [libc][libc] function to properly initialize a
 variable and said function allows us to use uninitialized memory, we use
-[`std::mem::MaybeUninit`][std_MaybeUninit] when defining the variable. This
+[`core::mem::MaybeUninit`][std_MaybeUninit] when defining the variable. This
 allows us to avoid the overhead incurred by zeroing or otherwise initializing
 the variable.
 

@@ -1,9 +1,9 @@
+use core::convert::TryFrom;
+use core::sync::atomic::{AtomicBool, Ordering};
 #[cfg(not(target_os = "redox"))]
 use nix::errno::Errno;
 use nix::sys::signal::*;
 use nix::unistd::*;
-use std::convert::TryFrom;
-use std::sync::atomic::{AtomicBool, Ordering};
 
 #[test]
 fn test_kill_none() {

@@ -3,11 +3,11 @@
 #[cfg(target_os = "freebsd")]
 #[test]
 fn test_chflags() {
+    use crate::os::fd::AsRawFd;
     use nix::{
         sys::stat::{fstat, FileFlag},
         unistd::chflags,
     };
-    use std::os::unix::io::AsRawFd;
     use tempfile::NamedTempFile;
 
     let f = NamedTempFile::new().unwrap();

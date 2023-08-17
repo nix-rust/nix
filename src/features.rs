@@ -5,8 +5,8 @@ pub use self::os::*;
 mod os {
     use crate::sys::utsname::uname;
     use crate::Result;
-    use std::os::unix::ffi::OsStrExt;
-    use std::sync::atomic::{AtomicUsize, Ordering};
+    use core::os::unix::ffi::CStrExt;
+    use core::sync::atomic::{AtomicUsize, Ordering};
 
     // Features:
     // * atomic cloexec on socket: 2.6.27

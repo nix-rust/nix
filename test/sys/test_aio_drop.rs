@@ -15,9 +15,9 @@
     )
 ))]
 fn test_drop() {
+    use crate::os::fd::AsRawFd;
     use nix::sys::aio::*;
     use nix::sys::signal::*;
-    use std::os::unix::io::AsRawFd;
     use tempfile::tempfile;
 
     const WBUF: &[u8] = b"CDEF";

@@ -144,8 +144,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1713](https://github.com/nix-rust/nix/pull/1713))
 - impl `From<uid_t>` for `Uid` and `From<gid_t>` for `Gid`
   (#[1727](https://github.com/nix-rust/nix/pull/1727))
-- impl `From<SockaddrIn>` for `std::net::SocketAddrV4` and
-  impl `From<SockaddrIn6>` for `std::net::SocketAddrV6`.
+- impl `From<SockaddrIn>` for `core::net::SocketAddrV4` and
+  impl `From<SockaddrIn6>` for `core::net::SocketAddrV6`.
   (#[1711](https://github.com/nix-rust/nix/pull/1711))
 - Added support for the `x86_64-unknown-haiku` target.
   (#[1703](https://github.com/nix-rust/nix/pull/1703))
@@ -177,7 +177,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1713](https://github.com/nix-rust/nix/pull/1713))
 - `nix::poll::ppoll`: `sigmask` parameter is now optional.
   (#[1739](https://github.com/nix-rust/nix/pull/1739))
-- Changed `gethostname` to return an owned `OsString`.
+- Changed `gethostname` to return an owned `CString`.
   (#[1745](https://github.com/nix-rust/nix/pull/1745))
 - `signal:SigSet` is now marked as `repr(transparent)`.
   (#[1741](https://github.com/nix-rust/nix/pull/1741))
@@ -275,7 +275,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   Accessors take this type by reference, not by value.
   (#[1639](https://github.com/nix-rust/nix/pull/1639))
 - Removed `SigSet::extend` in favor of `<SigSet as Extend<Signal>>::extend`.
-  Because of this change, you now need `use std::iter::Extend` to call `extend`
+  Because of this change, you now need `use core::iter::Extend` to call `extend`
   on a `SigSet`.
   (#[1553](https://github.com/nix-rust/nix/pull/1553))
 - Removed the the `PATH_MAX` restriction from APIs accepting paths. Paths
@@ -293,10 +293,10 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1685](https://github.com/nix-rust/nix/pull/1685))
 - `uname` now returns a `Result<UtsName>` instead of just a `UtsName` and
   ignoring failures from libc.  And getters on the `UtsName` struct now return
-  an `&OsStr` instead of `&str`.
+  an `&CStr` instead of `&str`.
   (#[1672](https://github.com/nix-rust/nix/pull/1672))
-- Replaced `IoVec` with `IoSlice` and `IoSliceMut`, and replaced `IoVec::from_slice` with
-  `IoSlice::new`. (#[1643](https://github.com/nix-rust/nix/pull/1643))
+- Replaced `IoVec` with `libc::iovec` and `libc::iovec`, and replaced `IoVec::from_slice` with
+  `libc::iovec::new`. (#[1643](https://github.com/nix-rust/nix/pull/1643))
 
 ### Fixed
 
@@ -481,7 +481,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   just like `ptsname`.
   ([#1446](https://github.com/nix-rust/nix/pull/1446))
 - Nix's error type is now a simple wrapper around the platform's Errno.  This
-  means it is now `Into<std::io::Error>`.  It's also `Clone`, `Copy`, `Eq`, and
+  means it is now `Into<core::io::Error>`.  It's also `Clone`, `Copy`, `Eq`, and
   has a small fixed size.  It also requires less typing.  For example, the old
   enum variant `nix::Error::Sys(nix::errno::Errno::EINVAL)` is now simply
   `nix::Error::EINVAL`.
@@ -520,7 +520,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1429](https://github.com/nix-rust/nix/pull/1429))
 - `AioCb` is now always pinned.  Once a `libc::aiocb` gets sent to the kernel,
   its address in memory must not change.  Nix now enforces that by using
-  `std::pin`.  Most users won't need to change anything, except when using
+  `core::pin`.  Most users won't need to change anything, except when using
   `aio_suspend`.  See that method's documentation for the new usage.
   (#[1440](https://github.com/nix-rust/nix/pull/1440))
 - `LioCb` is now constructed using a distinct `LioCbBuilder` struct.  This
@@ -643,7 +643,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1195](https://github.com/nix-rust/nix/pull/1195))
 - Added `env::clearenv()`: calls `libc::clearenv` on platforms
   where it's available, and clears the environment of all variables
-  via `std::env::vars` and `std::env::remove_var` on others.
+  via `core::env::vars` and `core::env::remove_var` on others.
   (#[1185](https://github.com/nix-rust/nix/pull/1185))
 - `FsType` inner value made public.
   (#[1187](https://github.com/nix-rust/nix/pull/1187))
@@ -809,21 +809,21 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - `Signal::from_c_int` has been replaced by `Signal::try_from`
   ([#1113](https://github.com/nix-rust/nix/pull/1113))
 
-- Changed `readlink` and `readlinkat` to return `OsString`
+- Changed `readlink` and `readlinkat` to return `CString`
   ([#1109](https://github.com/nix-rust/nix/pull/1109))
 
   ```rust
   # use nix::fcntl::{readlink, readlinkat};
   // the buffer argument of `readlink` and `readlinkat` has been removed,
-  // and the return value is now an owned type (`OsString`).
+  // and the return value is now an owned type (`CString`).
   // Existing code can be updated by removing the buffer argument
   // and removing any clone or similar operation on the output
 
   // old code `readlink(&path, &mut buf)` can be replaced with the following
-  let _: OsString = readlink(&path);
+  let _: CString = readlink(&path);
 
   // old code `readlinkat(dirfd, &path, &mut buf)` can be replaced with the following
-  let _: OsString = readlinkat(dirfd, &path);
+  let _: CString = readlinkat(dirfd, &path);
   ```
 
 - Minimum supported Rust version is now 1.36.0.
@@ -1621,7 +1621,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   ([#357](https://github.com/nix-rust/nix/pull/357))
 
 ### Fixed
-- Improved the conversion from `std::net::SocketAddr` to `InetAddr` in
+- Improved the conversion from `core::net::SocketAddr` to `InetAddr` in
   `::nix::sys::socket::addr`.
   ([#335](https://github.com/nix-rust/nix/pull/335))
 

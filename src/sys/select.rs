@@ -3,12 +3,12 @@ use crate::errno::Errno;
 use crate::sys::time::{TimeSpec, TimeVal};
 use crate::Result;
 use libc::{self, c_int};
-use std::convert::TryFrom;
-use std::iter::FusedIterator;
-use std::mem;
-use std::ops::Range;
-use std::os::unix::io::{AsFd, AsRawFd, BorrowedFd, RawFd};
-use std::ptr::{null, null_mut};
+use core::convert::TryFrom;
+use core::iter::FusedIterator;
+use core::mem;
+use core::ops::Range;
+use crate::os::fd::{AsFd, AsRawFd, BorrowedFd, RawFd};
+use core::ptr::{null, null_mut};
 
 pub use libc::FD_SETSIZE;
 
@@ -17,7 +17,7 @@ pub use libc::FD_SETSIZE;
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct FdSet<'fd> {
     set: libc::fd_set,
-    _fd: std::marker::PhantomData<BorrowedFd<'fd>>,
+    _fd: core::marker::PhantomData<BorrowedFd<'fd>>,
 }
 
 fn assert_fd_valid(fd: RawFd) {
@@ -35,7 +35,7 @@ impl<'fd> FdSet<'fd> {
             libc::FD_ZERO(fdset.as_mut_ptr());
             Self {
                 set: fdset.assume_init(),
-                _fd: std::marker::PhantomData,
+                _fd: core::marker::PhantomData,
             }
         }
     }
@@ -72,7 +72,7 @@ impl<'fd> FdSet<'fd> {
     /// # Example
     ///
     /// ```
-    /// # use std::os::unix::io::{AsRawFd, BorrowedFd};
+    /// # use crate::os::fd::{AsRawFd, BorrowedFd};
     /// # use nix::sys::select::FdSet;
     /// let fd_four = unsafe {BorrowedFd::borrow_raw(4)};
     /// let fd_nine = unsafe {BorrowedFd::borrow_raw(9)};
@@ -97,7 +97,7 @@ impl<'fd> FdSet<'fd> {
     ///
     /// ```
     /// # use nix::sys::select::FdSet;
-    /// # use std::os::unix::io::{AsRawFd, BorrowedFd, RawFd};
+    /// # use crate::os::fd::{AsRawFd, BorrowedFd, RawFd};
     /// let mut set = FdSet::new();
     /// let fd_four = unsafe {BorrowedFd::borrow_raw(4)};
     /// let fd_nine = unsafe {BorrowedFd::borrow_raw(9)};
@@ -323,7 +323,7 @@ mod tests {
     use super::*;
     use crate::sys::time::{TimeVal, TimeValLike};
     use crate::unistd::{close, pipe, write};
-    use std::os::unix::io::{FromRawFd, OwnedFd, RawFd};
+    use crate::os::fd::{FromRawFd, OwnedFd, RawFd};
 
     #[test]
     fn fdset_insert() {
@@ -539,7 +539,7 @@ mod tests {
         assert_eq!(
             1,
             select(
-                std::cmp::max(r1.as_raw_fd(), r2.as_raw_fd()) + 1,
+                core::cmp::max(r1.as_raw_fd(), r2.as_raw_fd()) + 1,
                 &mut fd_set,
                 None,
                 None,

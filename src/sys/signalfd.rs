@@ -20,8 +20,8 @@ pub use crate::sys::signal::{self, SigSet};
 use crate::Result;
 pub use libc::signalfd_siginfo as siginfo;
 
-use std::mem;
-use std::os::unix::io::{AsRawFd, RawFd, FromRawFd, OwnedFd, AsFd, BorrowedFd};
+use core::mem;
+use crate::os::fd::{AsRawFd, RawFd, FromRawFd, OwnedFd, AsFd, BorrowedFd};
 
 libc_bitflags! {
     pub struct SfdFlags: libc::c_int {

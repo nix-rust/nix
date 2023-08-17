@@ -13,8 +13,8 @@ pub use libc::{dev_t, mode_t};
 use crate::fcntl::{at_rawfd, AtFlags};
 use crate::sys::time::{TimeSpec, TimeVal};
 use crate::{errno::Errno, NixPath, Result};
-use std::mem;
-use std::os::unix::io::RawFd;
+use core::mem;
+use crate::os::fd::RawFd;
 
 libc_bitflags!(
     /// "File type" flags for `mknod` and related functions.

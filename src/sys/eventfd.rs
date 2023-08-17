@@ -1,6 +1,6 @@
 use crate::errno::Errno;
 use crate::Result;
-use std::os::unix::io::{FromRawFd, OwnedFd};
+use crate::os::fd::{FromRawFd, OwnedFd};
 
 libc_bitflags! {
     pub struct EfdFlags: libc::c_int {

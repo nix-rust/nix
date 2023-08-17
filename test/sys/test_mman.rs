@@ -1,5 +1,5 @@
+use core::{num::NonZeroUsize, os::unix::io::BorrowedFd};
 use nix::sys::mman::{mmap, MapFlags, ProtFlags};
-use std::{num::NonZeroUsize, os::unix::io::BorrowedFd};
 
 #[test]
 fn test_mmap_anonymous() {
@@ -38,7 +38,7 @@ fn test_mremap_grow() {
             0,
         )
         .unwrap();
-        std::slice::from_raw_parts_mut(mem as *mut u8, ONE_K)
+        core::slice::from_raw_parts_mut(mem as *mut u8, ONE_K)
     };
     assert_eq!(slice[ONE_K - 1], 0x00);
     slice[ONE_K - 1] = 0xFF;
@@ -63,7 +63,7 @@ fn test_mremap_grow() {
             None,
         )
         .unwrap();
-        std::slice::from_raw_parts_mut(mem as *mut u8, 10 * ONE_K)
+        core::slice::from_raw_parts_mut(mem as *mut u8, 10 * ONE_K)
     };
 
     // The first KB should still have the old data in it.
@@ -80,9 +80,9 @@ fn test_mremap_grow() {
 // Segfaults for unknown reasons under QEMU for 32-bit targets
 #[cfg_attr(all(target_pointer_width = "32", qemu), ignore)]
 fn test_mremap_shrink() {
+    use core::num::NonZeroUsize;
     use nix::libc::{c_void, size_t};
     use nix::sys::mman::{mremap, MRemapFlags};
-    use std::num::NonZeroUsize;
 
     const ONE_K: size_t = 1024;
     let ten_one_k = NonZeroUsize::new(10 * ONE_K).unwrap();
@@ -96,7 +96,7 @@ fn test_mremap_shrink() {
             0,
         )
         .unwrap();
-        std::slice::from_raw_parts_mut(mem as *mut u8, ONE_K)
+        core::slice::from_raw_parts_mut(mem as *mut u8, ONE_K)
     };
     assert_eq!(slice[ONE_K - 1], 0x00);
     slice[ONE_K - 1] = 0xFF;
@@ -114,7 +114,7 @@ fn test_mremap_shrink() {
         // Since we didn't supply MREMAP_MAYMOVE, the address should be the
         // same.
         assert_eq!(mem, slice.as_mut_ptr() as *mut c_void);
-        std::slice::from_raw_parts_mut(mem as *mut u8, ONE_K)
+        core::slice::from_raw_parts_mut(mem as *mut u8, ONE_K)
     };
 
     // The first KB should still be accessible and have the old data in it.

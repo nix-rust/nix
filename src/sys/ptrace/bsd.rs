@@ -4,7 +4,7 @@ use crate::unistd::Pid;
 use crate::Result;
 use cfg_if::cfg_if;
 use libc::{self, c_int};
-use std::ptr;
+use core::ptr;
 
 pub type RequestType = c_int;
 

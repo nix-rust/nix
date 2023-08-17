@@ -1,5 +1,5 @@
 //! Wait for events to trigger on specific file descriptors
-use std::os::unix::io::{AsFd, AsRawFd, BorrowedFd};
+use crate::os::fd::{AsFd, AsRawFd, BorrowedFd};
 
 use crate::errno::Errno;
 use crate::Result;
@@ -16,7 +16,7 @@ use crate::Result;
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct PollFd<'fd> {
     pollfd: libc::pollfd,
-    _fd: std::marker::PhantomData<BorrowedFd<'fd>>,
+    _fd: core::marker::PhantomData<BorrowedFd<'fd>>,
 }
 
 impl<'fd> PollFd<'fd> {
@@ -43,7 +43,7 @@ impl<'fd> PollFd<'fd> {
                 events: events.bits(),
                 revents: PollFlags::empty().bits(),
             },
-            _fd: std::marker::PhantomData,
+            _fd: core::marker::PhantomData,
         }
     }
 

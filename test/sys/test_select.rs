@@ -1,8 +1,8 @@
+use crate::os::fd::{AsRawFd, BorrowedFd, FromRawFd, OwnedFd};
 use nix::sys::select::*;
 use nix::sys::signal::SigSet;
 use nix::sys::time::{TimeSpec, TimeValLike};
 use nix::unistd::{pipe, write};
-use std::os::unix::io::{AsRawFd, BorrowedFd, FromRawFd, OwnedFd};
 
 #[test]
 pub fn test_pselect() {
@@ -44,7 +44,7 @@ pub fn test_pselect_nfds2() {
     assert_eq!(
         1,
         pselect(
-            std::cmp::max(r1.as_raw_fd(), r2.as_raw_fd()) + 1,
+            core::cmp::max(r1.as_raw_fd(), r2.as_raw_fd()) + 1,
             &mut fd_set,
             None,
             None,
@@ -72,7 +72,7 @@ macro_rules! generate_fdset_bad_fd_tests {
 
 mod test_fdset_too_large_fd {
     use super::*;
-    use std::convert::TryInto;
+    use core::convert::TryInto;
     generate_fdset_bad_fd_tests!(
         FD_SETSIZE.try_into().unwrap(),
         insert,

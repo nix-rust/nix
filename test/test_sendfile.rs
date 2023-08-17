@@ -1,6 +1,6 @@
-use std::io::prelude::*;
 #[cfg(any(target_os = "android", target_os = "linux"))]
-use std::os::unix::io::{FromRawFd, OwnedFd};
+use crate::os::fd::{FromRawFd, OwnedFd};
+use core::io::prelude::*;
 
 use libc::off_t;
 use nix::sys::sendfile::*;
@@ -10,8 +10,8 @@ cfg_if! {
     if #[cfg(any(target_os = "android", target_os = "linux"))] {
         use nix::unistd::{close, pipe, read};
     } else if #[cfg(any(target_os = "dragonfly", target_os = "freebsd", target_os = "ios", target_os = "macos"))] {
-        use std::net::Shutdown;
-        use std::os::unix::net::UnixStream;
+        use core::net::Shutdown;
+        use core::os::unix::net::UnixStream;
     }
 }
 
@@ -26,7 +26,7 @@ fn test_sendfile_linux() {
     let mut offset: off_t = 5;
     // The construct of this `OwnedFd` is a temporary workaround, when `pipe(2)`
     // becomes I/O-safe:
-    // pub fn pipe() -> std::result::Result<(OwnedFd, OwnedFd), Error>
+    // pub fn pipe() -> core::result::Result<(OwnedFd, OwnedFd), Error>
     // then it is no longer needed.
     let wr = unsafe { OwnedFd::from_raw_fd(wr) };
     let res = sendfile(&wr, &tmp, Some(&mut offset), 2).unwrap();
@@ -52,7 +52,7 @@ fn test_sendfile64_linux() {
     let mut offset: libc::off64_t = 5;
     // The construct of this `OwnedFd` is a temporary workaround, when `pipe(2)`
     // becomes I/O-safe:
-    // pub fn pipe() -> std::result::Result<(OwnedFd, OwnedFd), Error>
+    // pub fn pipe() -> core::result::Result<(OwnedFd, OwnedFd), Error>
     // then it is no longer needed.
     let wr = unsafe { OwnedFd::from_raw_fd(wr) };
     let res = sendfile64(&wr, &tmp, Some(&mut offset), 2).unwrap();

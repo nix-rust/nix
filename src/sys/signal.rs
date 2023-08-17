@@ -4,14 +4,14 @@
 //! Operating system signals.
 
 use crate::errno::Errno;
+#[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
+use crate::os::fd::RawFd;
 use crate::{Error, Result};
 use cfg_if::cfg_if;
-use std::fmt;
-use std::mem;
-#[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
-use std::os::unix::io::RawFd;
-use std::ptr;
-use std::str::FromStr;
+use core::fmt;
+use core::mem;
+use core::ptr;
+use core::str::FromStr;
 
 #[cfg(not(any(target_os = "openbsd", target_os = "redox")))]
 #[cfg(any(feature = "aio", feature = "signal"))]
@@ -460,9 +460,9 @@ feature! {
 #![feature = "signal"]
 
 use crate::unistd::Pid;
-use std::iter::Extend;
-use std::iter::FromIterator;
-use std::iter::IntoIterator;
+use core::iter::Extend;
+use core::iter::FromIterator;
+use core::iter::IntoIterator;
 
 /// Specifies a set of [`Signal`]s that may be blocked, waited for, etc.
 // We are using `transparent` here to be super sure that `SigSet`
@@ -561,7 +561,7 @@ impl SigSet {
     #[cfg(not(target_os = "redox"))] // RedoxFS does not yet support sigwait
     #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn wait(&self) -> Result<Signal> {
-        use std::convert::TryFrom;
+        use core::convert::TryFrom;
 
         let mut signum = mem::MaybeUninit::uninit();
         let res = unsafe { libc::sigwait(&self.sigset as *const libc::sigset_t, signum.as_mut_ptr()) };
@@ -792,8 +792,8 @@ pub unsafe fn sigaction(signal: Signal, sigaction: &SigAction) -> Result<SigActi
 ///
 /// ```no_run
 /// # #[macro_use] extern crate lazy_static;
-/// # use std::convert::TryFrom;
-/// # use std::sync::atomic::{AtomicBool, Ordering};
+/// # use core::convert::TryFrom;
+/// # use core::sync::atomic::{AtomicBool, Ordering};
 /// # use nix::sys::signal::{self, Signal, SigHandler};
 /// lazy_static! {
 ///    static ref SIGNALED: AtomicBool = AtomicBool::new(false);
@@ -1024,8 +1024,8 @@ mod sigevent {
     feature! {
     #![any(feature = "aio", feature = "signal")]
 
-    use std::mem;
-    use std::ptr;
+    use core::mem;
+    use core::ptr;
     use super::SigevNotify;
     #[cfg(any(target_os = "freebsd", target_os = "linux"))]
     use super::type_of_thread_id;
@@ -1126,7 +1126,7 @@ mod sigevent {
 mod tests {
     use super::*;
     #[cfg(not(target_os = "redox"))]
-    use std::thread;
+    use core::thread;
 
     #[test]
     fn test_contains() {

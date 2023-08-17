@@ -11,7 +11,7 @@ use nix::sys::ptrace::Options;
 use nix::unistd::getpid;
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
-use std::mem;
+use core::mem;
 
 use crate::*;
 
@@ -131,13 +131,13 @@ fn test_ptrace_cont() {
 #[cfg(target_os = "linux")]
 #[test]
 fn test_ptrace_interrupt() {
+    use core::thread::sleep;
+    use core::time::Duration;
     use nix::sys::ptrace;
     use nix::sys::signal::Signal;
     use nix::sys::wait::{waitpid, WaitPidFlag, WaitStatus};
     use nix::unistd::fork;
     use nix::unistd::ForkResult::*;
-    use std::thread::sleep;
-    use std::time::Duration;
 
     require_capability!("test_ptrace_interrupt", CAP_SYS_PTRACE);
 

@@ -1,9 +1,9 @@
 use crate::*;
+use core::{ffi::CString, fs::File, path::Path};
 use nix::{
     errno::Errno,
     mount::{unmount, MntFlags, Nmount},
 };
-use std::{ffi::CString, fs::File, path::Path};
 use tempfile::tempdir;
 
 #[test]

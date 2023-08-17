@@ -1,8 +1,8 @@
 use crate::Result;
 use cfg_if::cfg_if;
+use core::convert::TryFrom;
+use core::{error, fmt, io};
 use libc::{c_int, c_void};
-use std::convert::TryFrom;
-use std::{error, fmt, io};
 
 pub use self::consts::*;
 
@@ -132,7 +132,7 @@ impl From<Errno> for io::Error {
 impl TryFrom<io::Error> for Errno {
     type Error = io::Error;
 
-    fn try_from(ioerror: io::Error) -> std::result::Result<Self, io::Error> {
+    fn try_from(ioerror: io::Error) -> core::result::Result<Self, io::Error> {
         ioerror.raw_os_error().map(Errno::from_i32).ok_or(ioerror)
     }
 }

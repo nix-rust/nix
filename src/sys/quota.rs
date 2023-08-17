@@ -15,8 +15,8 @@
 use crate::errno::Errno;
 use crate::{NixPath, Result};
 use libc::{self, c_char, c_int};
-use std::default::Default;
-use std::{mem, ptr};
+use core::default::Default;
+use core::{mem, ptr};
 
 struct QuotaCmd(QuotaSubCmd, QuotaType);
 

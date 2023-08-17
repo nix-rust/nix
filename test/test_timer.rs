@@ -1,13 +1,13 @@
+use core::convert::TryFrom;
+use core::sync::atomic::{AtomicBool, Ordering};
+use core::thread;
+use core::time::{Duration, Instant};
 use nix::sys::signal::{
     sigaction, SaFlags, SigAction, SigEvent, SigHandler, SigSet, SigevNotify,
     Signal,
 };
 use nix::sys::timer::{Expiration, Timer, TimerSetTimeFlags};
 use nix::time::ClockId;
-use std::convert::TryFrom;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::thread;
-use std::time::{Duration, Instant};
 
 const SIG: Signal = Signal::SIGALRM;
 static ALARM_CALLED: AtomicBool = AtomicBool::new(false);

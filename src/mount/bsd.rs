@@ -5,7 +5,7 @@ use libc::c_int;
 #[cfg(target_os = "freebsd")]
 use libc::{c_char, c_uint, c_void};
 #[cfg(target_os = "freebsd")]
-use std::{
+use core::{
     borrow::Cow,
     ffi::{CStr, CString},
     fmt, io,
@@ -135,7 +135,7 @@ impl NmountError {
 }
 
 #[cfg(target_os = "freebsd")]
-impl std::error::Error for NmountError {}
+impl core::error::Error for NmountError {}
 
 #[cfg(target_os = "freebsd")]
 impl fmt::Display for NmountError {
@@ -157,7 +157,7 @@ impl From<NmountError> for io::Error {
 
 /// Result type of [`Nmount::nmount`].
 #[cfg(target_os = "freebsd")]
-pub type NmountResult = std::result::Result<(), NmountError>;
+pub type NmountResult = core::result::Result<(), NmountError>;
 
 /// Mount a FreeBSD file system.
 ///
@@ -177,7 +177,7 @@ pub type NmountResult = std::result::Result<(), NmountError>;
 /// #     return;
 /// # };
 /// use nix::mount::{MntFlags, Nmount, unmount};
-/// use std::ffi::CString;
+/// use core::ffi::CString;
 /// use tempfile::tempdir;
 ///
 /// let mountpoint = tempdir().unwrap();
@@ -262,8 +262,8 @@ impl<'a> Nmount<'a> {
     /// ```
     /// use libc::c_void;
     /// use nix::mount::Nmount;
-    /// use std::ffi::CString;
-    /// use std::mem;
+    /// use core::ffi::CString;
+    /// use core::mem;
     ///
     /// // Note that flags outlives name
     /// let mut flags: u32 = 0xdeadbeef;
@@ -289,7 +289,7 @@ impl<'a> Nmount<'a> {
     /// # Examples
     /// ```
     /// use nix::mount::Nmount;
-    /// use std::ffi::CString;
+    /// use core::ffi::CString;
     ///
     /// let read_only = CString::new("ro").unwrap();
     /// Nmount::new()
@@ -331,7 +331,7 @@ impl<'a> Nmount<'a> {
     /// # Examples
     /// ```
     /// use nix::mount::Nmount;
-    /// use std::ffi::CString;
+    /// use core::ffi::CString;
     ///
     /// let fstype = CString::new("fstype").unwrap();
     /// let nullfs = CString::new("nullfs").unwrap();
@@ -353,7 +353,7 @@ impl<'a> Nmount<'a> {
     /// # Examples
     /// ```
     /// use nix::mount::Nmount;
-    /// use std::path::Path;
+    /// use core::path::Path;
     ///
     /// let mountpoint = Path::new("/mnt");
     /// Nmount::new()

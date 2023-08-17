@@ -1,6 +1,15 @@
 //! Safe wrappers around functions found in libc "unistd.h" header
 
 use crate::errno::{self, Errno};
+
+#[cfg(feature = "no_std")]
+type Vec<T> = alloc::collections::VecDeque<T>;
+
+#[cfg(feature = "no_std")]
+use alloc::string::String;
+
+use core::clone::Clone;
+
 #[cfg(not(target_os = "redox"))]
 #[cfg(feature = "fs")]
 use crate::fcntl::{at_rawfd, AtFlags};
@@ -21,23 +30,23 @@ use crate::sys::stat::FileFlag;
 #[cfg(feature = "fs")]
 use crate::sys::stat::Mode;
 use crate::{Error, NixPath, Result};
+use alloc::ffi::CString;
+use alloc::vec;
 #[cfg(not(target_os = "redox"))]
 use cfg_if::cfg_if;
+use core::convert::Infallible;
+use core::ffi::CStr;
 use libc::{
     self, c_char, c_int, c_long, c_uint, c_void, gid_t, mode_t, off_t, pid_t,
     size_t, uid_t, PATH_MAX,
 };
-use std::convert::Infallible;
-use std::ffi::{CStr, OsString};
-#[cfg(not(target_os = "redox"))]
-use std::ffi::{CString, OsStr};
-#[cfg(not(target_os = "redox"))]
-use std::os::unix::ffi::OsStrExt;
-use std::os::unix::ffi::OsStringExt;
-use std::os::unix::io::RawFd;
-use std::os::unix::io::{AsFd, AsRawFd};
-use std::path::PathBuf;
-use std::{fmt, mem, ptr};
+
+#[cfg(feature = "no_std")]
+use crate::os::fd::{AsFd, AsRawFd, RawFd};
+#[cfg(not(feature = "no_std"))]
+use std::os::unix::io::{AsFd, AsRawFd, RawFd};
+
+use core::{fmt, mem, ptr};
 
 feature! {
     #![feature = "fs"]
@@ -633,7 +642,7 @@ pub fn symlinkat<P1: ?Sized + NixPath, P2: ?Sized + NixPath>(
 // reached the limit, return Errno::ERANGE.
 #[cfg(any(feature = "fs", feature = "user"))]
 fn reserve_double_buffer_size<T>(buf: &mut Vec<T>, limit: usize) -> Result<()> {
-    use std::cmp::min;
+    use core::cmp::min;
 
     if buf.capacity() >= limit {
         return Err(Errno::ERANGE);
@@ -648,7 +657,7 @@ fn reserve_double_buffer_size<T>(buf: &mut Vec<T>, limit: usize) -> Result<()> {
 feature! {
 #![feature = "fs"]
 
-/// Returns the current directory as a `PathBuf`
+/// Returns the current directory as a `CString`
 ///
 /// Err is returned if the current user doesn't have the permission to read or search a component
 /// of the current path.
@@ -663,7 +672,7 @@ feature! {
 /// println!("The current directory is {:?}", dir);
 /// ```
 #[inline]
-pub fn getcwd() -> Result<PathBuf> {
+pub fn getcwd() -> Result<CString> {
     let mut buf = Vec::with_capacity(512);
     loop {
         unsafe {
@@ -679,7 +688,7 @@ pub fn getcwd() -> Result<PathBuf> {
                     .len();
                 buf.set_len(len);
                 buf.shrink_to_fit();
-                return Ok(PathBuf::from(OsString::from_vec(buf)));
+                return Ok(CString::from(buf));
             } else {
                 let error = Errno::last();
                 // ERANGE means buffer was too small to store directory name
@@ -807,7 +816,7 @@ pub fn fchownat<P: ?Sized + NixPath>(
 feature! {
 #![feature = "process"]
 fn to_exec_array<S: AsRef<CStr>>(args: &[S]) -> Vec<*const c_char> {
-    use std::iter::once;
+    use core::iter::once;
     args.iter()
         .map(|s| s.as_ref().as_ptr())
         .chain(once(ptr::null()))
@@ -838,7 +847,7 @@ pub fn execv<S: AsRef<CStr>>(path: &CStr, argv: &[S]) -> Result<Infallible> {
 /// the new program will run until it exits.
 ///
 /// `::nix::unistd::execv` and `::nix::unistd::execve` take as arguments a slice
-/// of `::std::ffi::CString`s for `args` and `env` (for `execve`). Each element
+/// of `::core::ffi::CString`s for `args` and `env` (for `execve`). Each element
 /// in the `args` list is an argument to the new process. Each element in the
 /// `env` list should be a string in the form "key=value".
 #[inline]
@@ -1017,7 +1026,7 @@ feature! {
 /// will be returned if the name is not valid or the current process does not
 /// have permissions to update the host name.
 #[cfg(not(target_os = "redox"))]
-pub fn sethostname<S: AsRef<OsStr>>(name: S) -> Result<()> {
+pub fn sethostname<S: AsRef<CStr>>(name: S) -> Result<()> {
     // Handle some differences in type of the len arg across platforms.
     cfg_if! {
         if #[cfg(any(target_os = "dragonfly",
@@ -1039,11 +1048,11 @@ pub fn sethostname<S: AsRef<OsStr>>(name: S) -> Result<()> {
 }
 
 /// Get the host name and store it in an internally allocated buffer, returning an
-/// `OsString` on success (see
+/// `CString` on success (see
 /// [gethostname(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/gethostname.html)).
 ///
 /// This function call attempts to get the host name for the running system and
-/// store it in an internal buffer, returning it as an `OsString` if successful.
+/// store it in an internal buffer, returning it as an `CString` if successful.
 ///
 /// ```no_run
 /// use nix::unistd;
@@ -1052,7 +1061,7 @@ pub fn sethostname<S: AsRef<OsStr>>(name: S) -> Result<()> {
 /// let hostname = hostname.into_string().expect("Hostname wasn't valid UTF-8");
 /// println!("Hostname: {}", hostname);
 /// ```
-pub fn gethostname() -> Result<OsString> {
+pub fn gethostname() -> Result<CString> {
     // The capacity is the max length of a hostname plus the NUL terminator.
     let mut buffer: Vec<u8> = Vec::with_capacity(256);
     let ptr = buffer.as_mut_ptr() as *mut c_char;
@@ -1065,7 +1074,7 @@ pub fn gethostname() -> Result<OsString> {
             let len = CStr::from_ptr(buffer.as_ptr() as *const c_char).len();
             buffer.set_len(len);
         }
-        OsString::from_vec(buffer)
+        CString::from_vec(buffer)
     })
 }
 }
@@ -1073,7 +1082,7 @@ pub fn gethostname() -> Result<OsString> {
 /// Close a raw file descriptor
 ///
 /// Be aware that many Rust types implicitly close-on-drop, including
-/// `std::fs::File`.  Explicitly closing them with this method too can result in
+/// `core::fs::File`.  Explicitly closing them with this method too can result in
 /// a double-close condition, which can cause confusing `EBADF` errors in
 /// seemingly unrelated code.  Caveat programmer.  See also
 /// [close(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/close.html).
@@ -1081,7 +1090,7 @@ pub fn gethostname() -> Result<OsString> {
 /// # Examples
 ///
 /// ```no_run
-/// use std::os::unix::io::AsRawFd;
+/// use crate::os::fd::AsRawFd;
 /// use nix::unistd::close;
 ///
 /// let f = tempfile::tempfile().unwrap();
@@ -1089,7 +1098,7 @@ pub fn gethostname() -> Result<OsString> {
 /// ```
 ///
 /// ```rust
-/// use std::os::unix::io::IntoRawFd;
+/// use crate::os::fd::IntoRawFd;
 /// use nix::unistd::close;
 ///
 /// let f = tempfile::tempfile().unwrap();
@@ -1188,7 +1197,7 @@ pub fn lseek64(
 /// Create an interprocess channel.
 ///
 /// See also [pipe(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/pipe.html)
-pub fn pipe() -> std::result::Result<(RawFd, RawFd), Error> {
+pub fn pipe() -> core::result::Result<(RawFd, RawFd), Error> {
     let mut fds = mem::MaybeUninit::<[c_int; 2]>::uninit();
 
     let res = unsafe { libc::pipe(fds.as_mut_ptr() as *mut c_int) };
@@ -1623,7 +1632,7 @@ pub fn getgroups() -> Result<Vec<Gid>> {
 /// follows:
 ///
 /// ```rust,no_run
-/// # use std::error::Error;
+/// # use core::error::Error;
 /// # use nix::unistd::*;
 /// #
 /// # fn try_main() -> Result<(), Box<dyn Error>> {
@@ -1703,7 +1712,7 @@ pub fn getgrouplist(user: &CStr, group: Gid) -> Result<Vec<Gid>> {
         Ok(Some(n)) => n as c_int,
         Ok(None) | Err(_) => <c_int>::max_value(),
     };
-    use std::cmp::min;
+    use core::cmp::min;
     let mut groups = Vec::<Gid>::with_capacity(min(ngroups_max, 8) as usize);
     cfg_if! {
         if #[cfg(any(target_os = "ios", target_os = "macos"))] {
@@ -1760,8 +1769,8 @@ pub fn getgrouplist(user: &CStr, group: Gid) -> Result<Vec<Gid>> {
 /// respectively, one could switch the user as follows:
 ///
 /// ```rust,no_run
-/// # use std::error::Error;
-/// # use std::ffi::CString;
+/// # use core::error::Error;
+/// # use core::ffi::CString;
 /// # use nix::unistd::*;
 /// #
 /// # fn try_main() -> Result<(), Box<dyn Error>> {
@@ -1839,7 +1848,7 @@ pub mod alarm {
     //!
     #![cfg_attr(target_os = "redox", doc = " ```rust,ignore")]
     #![cfg_attr(not(target_os = "redox"), doc = " ```rust")]
-    //! use std::time::{Duration, Instant};
+    //! use core::time::{Duration, Instant};
     //!
     //! use nix::unistd::{alarm, pause};
     //! use nix::sys::signal::*;
@@ -1916,7 +1925,7 @@ feature! {
 pub mod acct {
     use crate::errno::Errno;
     use crate::{NixPath, Result};
-    use std::ptr;
+    use core::ptr;
 
     /// Enable process accounting
     ///
@@ -1964,16 +1973,16 @@ feature! {
 /// // do something with fd
 /// ```
 #[inline]
-pub fn mkstemp<P: ?Sized + NixPath>(template: &P) -> Result<(RawFd, PathBuf)> {
+pub fn mkstemp<P: ?Sized + NixPath>(template: &P) -> Result<(RawFd, CString)> {
     let mut path =
         template.with_nix_path(|path| path.to_bytes_with_nul().to_owned())?;
     let p = path.as_mut_ptr() as *mut _;
     let fd = unsafe { libc::mkstemp(p) };
     let last = path.pop(); // drop the trailing nul
     debug_assert!(last == Some(b'\0'));
-    let pathname = OsString::from_vec(path);
+    let pathname = CString::from_vec(path);
     Errno::result(fd)?;
-    Ok((fd, PathBuf::from(pathname)))
+    Ok((fd, CString::from(pathname)))
 }
 }
 
@@ -3452,9 +3461,9 @@ pub struct User {
     #[cfg(not(all(target_os = "android", target_pointer_width = "32")))]
     pub gecos: CString,
     /// Home directory
-    pub dir: PathBuf,
+    pub dir: CString,
     /// Path to shell
-    pub shell: PathBuf,
+    pub shell: CString,
     /// Login class
     #[cfg(not(any(
         target_os = "android",
@@ -3519,14 +3528,14 @@ impl From<&libc::passwd> for User {
                 dir: if pw.pw_dir.is_null() {
                     Default::default()
                 } else {
-                    PathBuf::from(OsStr::from_bytes(
+                    CString::from(CStr::from_bytes(
                         CStr::from_ptr(pw.pw_dir).to_bytes(),
                     ))
                 },
                 shell: if pw.pw_shell.is_null() {
                     Default::default()
                 } else {
-                    PathBuf::from(OsStr::from_bytes(
+                    CString::from(CStr::from_bytes(
                         CStr::from_ptr(pw.pw_shell).to_bytes(),
                     ))
                 },
@@ -3901,7 +3910,7 @@ feature! {
 /// Get the name of the terminal device that is open on file descriptor fd
 /// (see [`ttyname(3)`](https://man7.org/linux/man-pages/man3/ttyname.3.html)).
 #[cfg(not(target_os = "fuchsia"))]
-pub fn ttyname(fd: RawFd) -> Result<PathBuf> {
+pub fn ttyname(fd: RawFd) -> Result<CString> {
     const PATH_MAX: usize = libc::PATH_MAX as usize;
     let mut buf = vec![0_u8; PATH_MAX];
     let c_buf = buf.as_mut_ptr() as *mut libc::c_char;
@@ -3913,7 +3922,7 @@ pub fn ttyname(fd: RawFd) -> Result<PathBuf> {
 
     let nul = buf.iter().position(|c| *c == b'\0').unwrap();
     buf.truncate(nul);
-    Ok(OsString::from_vec(buf).into())
+    Ok(CString::from_vec(buf).into())
 }
 }
 
