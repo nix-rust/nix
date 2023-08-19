@@ -37,7 +37,10 @@ use crate::sys::stat::Mode;
 use libc::{self, c_char, mqd_t, size_t};
 use std::ffi::CStr;
 use std::mem;
-#[cfg(all(unix, target_os = "linux"))]
+#[cfg(all(
+    unix,
+    any(target_os = "linux", target_os = "netbsd", target_os = "dragonfly")
+))]
 use std::os::unix::io::{
     AsFd, AsRawFd, BorrowedFd, FromRawFd, IntoRawFd, RawFd,
 };
@@ -305,7 +308,10 @@ pub fn mq_remove_nonblock(mqd: &MqdT) -> Result<MqAttr> {
     mq_setattr(mqd, &newattr)
 }
 
-#[cfg(all(unix, target_os = "linux"))]
+#[cfg(all(
+    unix,
+    any(target_os = "linux", target_os = "netbsd", target_os = "dragonfly")
+))]
 impl AsFd for MqdT {
     /// Borrow the underlying message queue descriptor.
     fn as_fd(&self) -> BorrowedFd {
@@ -314,7 +320,10 @@ impl AsFd for MqdT {
     }
 }
 
-#[cfg(all(unix, target_os = "linux"))]
+#[cfg(all(
+    unix,
+    any(target_os = "linux", target_os = "netbsd", target_os = "dragonfly")
+))]
 impl AsRawFd for MqdT {
     /// Return the underlying message queue descriptor.
     ///
@@ -325,7 +334,10 @@ impl AsRawFd for MqdT {
     }
 }
 
-#[cfg(all(unix, target_os = "linux"))]
+#[cfg(all(
+    unix,
+    any(target_os = "linux", target_os = "netbsd", target_os = "dragonfly")
+))]
 impl FromRawFd for MqdT {
     /// Construct an [MqdT] from [RawFd].
     ///
@@ -337,7 +349,10 @@ impl FromRawFd for MqdT {
     }
 }
 
-#[cfg(all(unix, target_os = "linux"))]
+#[cfg(all(
+    unix,
+    any(target_os = "linux", target_os = "netbsd", target_os = "dragonfly")
+))]
 impl IntoRawFd for MqdT {
     /// Consume this [MqdT] and return a [RawFd].
     fn into_raw_fd(self) -> RawFd {
