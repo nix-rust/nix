@@ -239,13 +239,10 @@ pub fn test_recvmsg_sockaddr_un() {
 
     // Receive the message
     let mut recv_buffer = [0u8; 32];
-    let received = socket::recvmsg(
-        sock.as_raw_fd(),
-        &mut [std::io::IoSliceMut::new(&mut recv_buffer)],
-        None,
-        MsgFlags::empty(),
-    )
-    .unwrap();
+    let mut iov = [std::io::IoSliceMut::new(&mut recv_buffer)];
+    let received =
+        socket::recvmsg(sock.as_raw_fd(), &mut iov, None, MsgFlags::empty())
+            .unwrap();
     // Check the address in the received message
     assert_eq!(sockaddr, received.address.unwrap());
 }

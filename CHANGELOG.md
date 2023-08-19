@@ -68,6 +68,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   `SockaddrIn6::from<std::net::SockaddrV6>`, `IpMembershipRequest::new`, and
   `Ipv6MembershipRequest::new` with future Rust versions.
   ([#2061](https://github.com/nix-rust/nix/pull/2061))
+- Fixed an incorrect lifetime returned from `recvmsg`.
+  ([#2095](https://github.com/nix-rust/nix/pull/2095))
 
 ### Removed
 
