@@ -30,7 +30,7 @@ pub fn gethostname() -> Result<OsString>;
 
 ## Supported Platforms
 
-nix target support consists of two tiers. While nix attempts to support all
+nix target support consists of three tiers. While nix attempts to support all
 platforms supported by [libc](https://github.com/rust-lang/libc), only some
 platforms are actively supported due to either technical or manpower
 limitations. Support for platforms is split into three tiers:
@@ -41,8 +41,12 @@ limitations. Support for platforms is split into three tiers:
              blocks the inclusion of new code. Tests may be run, but failures
              in tests don't block the inclusion of new code.
   * Tier 3 - Builds for this target are run in CI. Failures during the build
-             *do not* block the inclusion of new code. Testing may be run, but
-             failures in tests don't block the inclusion of new code.
+             *do not* necessarily block the inclusion of new code.  That is, at
+             our discretion a Tier 3 target may be dropped at any time, if it
+             would otherwise block development.
+
+Platforms not listed are supported on a best-effort basis, relying on our users
+to report any problems.
 
 The following targets are supported by `nix`:
 
@@ -80,16 +84,14 @@ The following targets are supported by `nix`:
     <li>arm-unknown-linux-musleabi</li>
     <li>armv7-linux-androideabi</li>
     <li>i686-linux-android</li>
-    <li>powerpc-unknown-linux-gnu</li>
     <li>s390x-unknown-linux-gnu</li>
-    <li>x86_64-apple-ios</li>
     <li>x86_64-linux-android</li>
-    <li>x86_64-apple-darwin</li>
     <li>x86_64-unknown-illumos</li>
     <li>x86_64-unknown-netbsd</li>
    </td>
    <td>
     <li>armv7-unknown-linux-uclibceabihf</li>
+    <li>powerpc64-unknown-linux-gnu</li>
     <li>x86_64-fuchsia</li>
     <li>x86_64-unknown-dragonfly</li>
     <li>x86_64-unknown-haiku</li>
