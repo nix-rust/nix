@@ -1096,12 +1096,137 @@ mod sigevent {
     use std::mem;
     use super::SigevNotify;
 
+    #[cfg(target_os = "freebsd")]
+    pub(crate) use ffi::sigevent as libc_sigevent;
+    #[cfg(not(target_os = "freebsd"))]
+    pub(crate) use libc::sigevent as libc_sigevent;
+
+    // For FreeBSD only, we define the C structure here.  Because the structure
+    // defined in libc isn't correct.  The real sigevent contains union fields,
+    // but libc could not represent those when sigevent was originally added, so
+    // instead libc simply defined the most useful field.  Now that Rust can
+    // represent unions, there's a PR to libc to fix it.  However, it's stuck
+    // forever due to backwards compatibility concerns.  Even though there's a
+    // workaround, libc refuses to merge it.  I think it's just too complicated
+    // for them to want to think about right now, because that project is
+    // short-staffed.  So we define it here instead, so we won't have to wait on
+    // libc.
+    // https://github.com/rust-lang/libc/pull/2813
+    #[cfg(target_os = "freebsd")]
+    mod ffi {
+        use std::{fmt, hash};
+
+        #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+        #[repr(C)]
+        pub struct __c_anonymous_sigev_thread {
+            pub _function: *mut libc::c_void,   // Actually a function pointer
+            pub _attribute: *mut libc::pthread_attr_t,
+        }
+        #[derive(Clone, Copy)]
+        // This will never be used on its own, and its parent has a Debug impl,
+        // so it doesn't need one.
+        #[allow(missing_debug_implementations)]
+        #[repr(C)]
+        pub union __c_anonymous_sigev_un {
+            pub _threadid: libc::__lwpid_t,
+            pub _sigev_thread: __c_anonymous_sigev_thread,
+            pub _kevent_flags: libc::c_ushort,
+            __spare__: [libc::c_long; 8],
+        }
+
+        #[derive(Clone, Copy)]
+        #[repr(C)]
+        pub struct sigevent {
+            pub sigev_notify: libc::c_int,
+            pub sigev_signo: libc::c_int,
+            pub sigev_value: libc::sigval,
+            pub _sigev_un: __c_anonymous_sigev_un,
+        }
+
+        impl fmt::Debug for sigevent {
+            fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+                let mut ds = f.debug_struct("sigevent");
+                ds.field("sigev_notify", &self.sigev_notify)
+                    .field("sigev_signo", &self.sigev_signo)
+                    .field("sigev_value", &self.sigev_value);
+                // Safe because we check the sigev_notify discriminant
+                unsafe {
+                    match self.sigev_notify {
+                        libc::SIGEV_KEVENT => {
+                            ds.field("sigev_notify_kevent_flags", &self._sigev_un._kevent_flags);
+                        }
+                        libc::SIGEV_THREAD_ID => {
+                            ds.field("sigev_notify_thread_id", &self._sigev_un._threadid);
+                        }
+                        libc::SIGEV_THREAD => {
+                            ds.field("sigev_notify_function", &self._sigev_un._sigev_thread._function);
+                            ds.field("sigev_notify_attributes", &self._sigev_un._sigev_thread._attribute);
+                        }
+                        _ => ()
+                    };
+                }
+                ds.finish()
+            }
+        }
+
+        impl PartialEq for sigevent {
+            fn eq(&self, other: &Self) -> bool {
+                let mut equals = self.sigev_notify == other.sigev_notify;
+                equals &= self.sigev_signo == other.sigev_signo;
+                equals &= self.sigev_value == other.sigev_value;
+                // Safe because we check the sigev_notify discriminant
+                unsafe {
+                    match self.sigev_notify {
+                        libc::SIGEV_KEVENT => {
+                            equals &= self._sigev_un._kevent_flags == other._sigev_un._kevent_flags;
+                        }
+                        libc::SIGEV_THREAD_ID => {
+                            equals &= self._sigev_un._threadid == other._sigev_un._threadid;
+                        }
+                        libc::SIGEV_THREAD => {
+                            equals &= self._sigev_un._sigev_thread == other._sigev_un._sigev_thread;
+                        }
+                        _ => /* The union field is don't care */ ()
+                    }
+                }
+                equals
+            }
+        }
+
+        impl Eq for sigevent {}
+
+        impl hash::Hash for sigevent {
+            fn hash<H: hash::Hasher>(&self, s: &mut H) {
+                self.sigev_notify.hash(s);
+                self.sigev_signo.hash(s);
+                self.sigev_value.hash(s);
+                // Safe because we check the sigev_notify discriminant
+                unsafe {
+                    match self.sigev_notify {
+                        libc::SIGEV_KEVENT => {
+                            self._sigev_un._kevent_flags.hash(s);
+                        }
+                        libc::SIGEV_THREAD_ID => {
+                            self._sigev_un._threadid.hash(s);
+                        }
+                        libc::SIGEV_THREAD => {
+                            self._sigev_un._sigev_thread.hash(s);
+                        }
+                        _ => /* The union field is don't care */ ()
+                    }
+                }
+            }
+        }
+    }
+
     /// Used to request asynchronous notification of the completion of certain
     /// events, such as POSIX AIO and timers.
     #[repr(C)]
-    #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+    #[derive(Clone, Debug, Eq, Hash, PartialEq)]
+    // It can't be Copy on all platforms.
+    #[allow(missing_copy_implementations)]
     pub struct SigEvent {
-        sigevent: libc::sigevent
+        sigevent: libc_sigevent
     }
 
     impl SigEvent {
@@ -1119,7 +1244,7 @@ mod sigevent {
         /// `SIGEV_SIGNAL`.  That field is part of a union that shares space with the
         /// more genuinely useful `sigev_notify_thread_id`
         pub fn new(sigev_notify: SigevNotify) -> SigEvent {
-            let mut sev: libc::sigevent = unsafe { mem::zeroed() };
+            let mut sev: libc_sigevent = unsafe { mem::zeroed() };
             match sigev_notify {
                 SigevNotify::SigevNone => {
                     sev.sigev_notify = libc::SIGEV_NONE;
@@ -1155,24 +1280,54 @@ mod sigevent {
                     sev.sigev_notify = libc::SIGEV_THREAD_ID;
                     sev.sigev_signo = signal as libc::c_int;
                     sev.sigev_value.sival_ptr = si_value as *mut libc::c_void;
-                    sev._sigev_un._tid = thread_id;
+                    sev.sigev_notify_thread_id = thread_id;
                 }
             }
             SigEvent{sigevent: sev}
         }
 
         /// Return a copy of the inner structure
+        #[cfg(target_os = "freebsd")]
+        pub fn sigevent(&self) -> libc::sigevent {
+            // Safe because they're really the same structure.  See
+            // https://github.com/rust-lang/libc/pull/2813
+            unsafe {
+                mem::transmute::<libc_sigevent, libc::sigevent>(self.sigevent)
+            }
+        }
+
+        /// Return a copy of the inner structure
+        #[cfg(not(target_os = "freebsd"))]
         pub fn sigevent(&self) -> libc::sigevent {
             self.sigevent
         }
 
         /// Returns a mutable pointer to the `sigevent` wrapped by `self`
+        #[cfg(target_os = "freebsd")]
+        pub fn as_mut_ptr(&mut self) -> *mut libc::sigevent {
+            // Safe because they're really the same structure.  See
+            // https://github.com/rust-lang/libc/pull/2813
+            &mut self.sigevent as *mut libc_sigevent as *mut libc::sigevent
+        }
+
+        /// Returns a mutable pointer to the `sigevent` wrapped by `self`
+        #[cfg(not(target_os = "freebsd"))]
         pub fn as_mut_ptr(&mut self) -> *mut libc::sigevent {
             &mut self.sigevent
         }
     }
 
     impl<'a> From<&'a libc::sigevent> for SigEvent {
+        #[cfg(target_os = "freebsd")]
+        fn from(sigevent: &libc::sigevent) -> Self {
+            // Safe because they're really the same structure.  See
+            // https://github.com/rust-lang/libc/pull/2813
+            let sigevent = unsafe {
+                mem::transmute::<libc::sigevent, libc_sigevent>(*sigevent)
+            };
+            SigEvent{ sigevent }
+        }
+        #[cfg(not(target_os = "freebsd"))]
         fn from(sigevent: &libc::sigevent) -> Self {
             SigEvent{ sigevent: *sigevent }
         }
