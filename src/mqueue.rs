@@ -13,12 +13,12 @@
 //!
 //! let oflag0 = MQ_OFlag::O_CREAT | MQ_OFlag::O_WRONLY;
 //! let mode = Mode::S_IWUSR | Mode::S_IRUSR | Mode::S_IRGRP | Mode::S_IROTH;
-//! let mqd0 = mq_open(&mq_name, oflag0, mode, None).unwrap();
+//! let mqd0 = mq_open(mq_name, oflag0, mode, None).unwrap();
 //! let msg_to_send = b"msg_1";
 //! mq_send(&mqd0, msg_to_send, 1).unwrap();
 //!
 //! let oflag1 = MQ_OFlag::O_CREAT | MQ_OFlag::O_RDONLY;
-//! let mqd1 = mq_open(&mq_name, oflag1, mode, None).unwrap();
+//! let mqd1 = mq_open(mq_name, oflag1, mode, None).unwrap();
 //! let mut buf = [0u8; 32];
 //! let mut prio = 0u32;
 //! let len = mq_receive(&mqd1, &mut buf, &mut prio).unwrap();
