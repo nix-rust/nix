@@ -40,12 +40,10 @@ task:
   env:
     TARGET: x86_64-unknown-freebsd
   matrix:
-    - name: FreeBSD 12 amd64 & i686
-      freebsd_instance:
-        image: freebsd-12-4-release-amd64
     - name: FreeBSD 14 amd64 & i686
       freebsd_instance:
         image_family: freebsd-14-0-snap
+        cpu: 1
       # Enable tests that would fail on FreeBSD 12
       RUSTFLAGS: --cfg fbsd14 -D warnings
       RUSTDOCFLAGS: --cfg fbsd14
@@ -85,6 +83,14 @@ task:
 # Use cross for QEMU-based testing
 # cross needs to execute Docker, so we must use Cirrus's Docker Builder task.
 task:
+  depends_on:
+    - FreeBSD 14 amd64 & i686
+    - Linux x86_64
+    - macOS aarch64
+    - Rust Formatter
+    - OpenBSD x86_64
+    - Minver
+    - Rust Stable
   env:
     RUST_TEST_THREADS: 1            # QEMU works best with 1 thread
     HOME: /tmp/home
@@ -141,16 +147,35 @@ task:
     - name: Linux aarch64
       arm_container:
         image: rust:1.63.0
+        cpu: 1
+      depends_on:
+        - FreeBSD 14 amd64 & i686
+        - Linux x86_64
+        - macOS aarch64
+        - Rust Formatter
+        - OpenBSD x86_64
+        - Minver
+        - Rust Stable
       env:
         TARGET: aarch64-unknown-linux-gnu
     - name: Linux x86_64
       container:
         image: rust:1.63.0
+        cpu: 1
       env:
         TARGET: x86_64-unknown-linux-gnu
     - name: Linux x86_64 musl
       container:
         image: rust:1.63.0
+        cpu: 1
+      depends_on:
+        - FreeBSD 14 amd64 & i686
+        - Linux x86_64
+        - macOS aarch64
+        - Rust Formatter
+        - OpenBSD x86_64
+        - Minver
+        - Rust Stable
       env:
         TARGET: x86_64-unknown-linux-musl
   setup_script:
@@ -163,6 +188,7 @@ task:
   name: Rust Stable
   container:
     image: rust:latest
+    cpu: 1
   env:
     TARGET: x86_64-unknown-linux-gnu
   setup_script:
@@ -174,6 +200,15 @@ task:
 task:
   container:
     image: rust:1.63.0
+    cpu: 1
+  depends_on:
+    - FreeBSD 14 amd64 & i686
+    - Linux x86_64
+    - macOS aarch64
+    - Rust Formatter
+    - OpenBSD x86_64
+    - Minver
+    - Rust Stable
   env:
     BUILD: check
     HOST: x86_64-unknown-linux-gnu
@@ -211,16 +246,6 @@ task:
         # cargo hack tries to invoke the iphonesimulator SDK for iOS
         NOHACK: 1
         TARGET: aarch64-apple-ios
-    - name: iOS x86_64
-      env:
-        # cargo hack tries to invoke the iphonesimulator SDK for iOS
-        NOHACK: 1
-        TARGET: x86_64-apple-ios
-    # Cross testing on powerpc fails with "undefined reference to renameat2".
-    # Perhaps cross is using too-old a version?
-    - name: Linux powerpc
-      env:
-        TARGET: powerpc-unknown-linux-gnu
     # Cross claims to support Linux powerpc64, but it really doesn't.
     # https://github.com/rust-embedded/cross/issues/441
     - name: Linux powerpc64
@@ -232,9 +257,6 @@ task:
     - name: Linux x32
       env:
         TARGET: x86_64-unknown-linux-gnux32
-    - name: macOS x86_64
-      env:
-        TARGET: x86_64-apple-darwin
     - name: NetBSD x86_64
       env:
         TARGET: x86_64-unknown-netbsd
@@ -248,6 +270,15 @@ task:
   container:
     # Redox's MSRV policy is unclear.  Until they define it, use nightly.
     image: rustlang/rust:nightly
+    cpu: 1
+  depends_on:
+    - FreeBSD 14 amd64 & i686
+    - Linux x86_64
+    - macOS aarch64
+    - Rust Formatter
+    - OpenBSD x86_64
+    - Minver
+    - Rust Stable
   env:
     BUILD: check
   name: Redox x86_64
@@ -265,6 +296,7 @@ task:
 task:
   container:
     image: rustlang/rust:nightly
+    cpu: 1
   env:
     BUILD: check
     HOST: x86_64-unknown-linux-gnu
@@ -272,15 +304,39 @@ task:
     CLIPPYFLAGS: -D warnings
   matrix:
     - name: DragonFly BSD x86_64
+      depends_on:
+        - FreeBSD 14 amd64 & i686
+        - Linux x86_64
+        - macOS aarch64
+        - Rust Formatter
+        - OpenBSD x86_64
+        - Minver
+        - Rust Stable
       env:
         TARGET: x86_64-unknown-dragonfly
     - name: OpenBSD x86_64
       env:
         TARGET: x86_64-unknown-openbsd
     - name: Linux armv7 uclibceabihf
+      depends_on:
+        - FreeBSD 14 amd64 & i686
+        - Linux x86_64
+        - macOS aarch64
+        - Rust Formatter
+        - OpenBSD x86_64
+        - Minver
+        - Rust Stable
       env:
         TARGET: armv7-unknown-linux-uclibceabihf
     - name: Haiku x86_64
+      depends_on:
+        - FreeBSD 14 amd64 & i686
+        - Linux x86_64
+        - macOS aarch64
+        - Rust Formatter
+        - OpenBSD x86_64
+        - Minver
+        - Rust Stable
       env:
         TARGET: x86_64-unknown-haiku
   setup_script:
@@ -297,6 +353,7 @@ task:
     HOST: x86_64-unknown-linux-gnu
   container:
     image: rustlang/rust:nightly
+    cpu: 1
   setup_script:
     - cargo update -Zminimal-versions
   check_script:
@@ -308,5 +365,6 @@ task:
   name: Rust Formatter
   container:
     image: rust:latest
+    cpu: 1
   setup_script: rustup component add rustfmt
   test_script: cargo fmt --all -- --check **/*.rs
