@@ -9,7 +9,7 @@
 //! use nix::sys::stat::Mode;
 //!
 //! const MSG_SIZE: mq_attr_member_t = 32;
-//! let mq_name= CString::new("/a_nix_test_queue").unwrap();
+//! let mq_name= "/a_nix_test_queue";
 //!
 //! let oflag0 = MQ_OFlag::O_CREAT | MQ_OFlag::O_WRONLY;
 //! let mode = Mode::S_IWUSR | Mode::S_IRUSR | Mode::S_IRGRP | Mode::S_IROTH;
