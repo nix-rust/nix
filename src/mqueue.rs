@@ -31,11 +31,11 @@
 //! [Further reading and details on the C API](https://man7.org/linux/man-pages/man7/mq_overview.7.html)
 
 use crate::errno::Errno;
+use crate::NixPath;
 use crate::Result;
 
 use crate::sys::stat::Mode;
 use libc::{self, c_char, mqd_t, size_t};
-use std::ffi::CStr;
 use std::mem;
 #[cfg(any(
     target_os = "linux",
@@ -149,31 +149,39 @@ impl MqAttr {
 /// See also [`mq_open(2)`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_open.html)
 // The mode.bits() cast is only lossless on some OSes
 #[allow(clippy::cast_lossless)]
-pub fn mq_open(
-    name: &CStr,
+pub fn mq_open<P>(
+    name: &P,
     oflag: MQ_OFlag,
     mode: Mode,
     attr: Option<&MqAttr>,
-) -> Result<MqdT> {
-    let res = match attr {
+) -> Result<MqdT>
+where
+    P: ?Sized + NixPath,
+{
+    let res = name.with_nix_path(|cstr| match attr {
         Some(mq_attr) => unsafe {
             libc::mq_open(
-                name.as_ptr(),
+                cstr.as_ptr(),
                 oflag.bits(),
                 mode.bits() as libc::c_int,
                 &mq_attr.mq_attr as *const libc::mq_attr,
             )
         },
-        None => unsafe { libc::mq_open(name.as_ptr(), oflag.bits()) },
-    };
+        None => unsafe { libc::mq_open(cstr.as_ptr(), oflag.bits()) },
+    })?;
+
     Errno::result(res).map(MqdT)
 }
 
 /// Remove a message queue
 ///
 /// See also [`mq_unlink(2)`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_unlink.html)
-pub fn mq_unlink(name: &CStr) -> Result<()> {
-    let res = unsafe { libc::mq_unlink(name.as_ptr()) };
+pub fn mq_unlink<P>(name: &P) -> Result<()>
+where
+    P: ?Sized + NixPath,
+{
+    let res =
+        name.with_nix_path(|cstr| unsafe { libc::mq_unlink(cstr.as_ptr()) })?;
     Errno::result(res).map(drop)
 }
 
