@@ -132,11 +132,6 @@ pub enum SockProtocol {
     Udp = libc::IPPROTO_UDP,
     /// Raw sockets ([raw(7)](https://man7.org/linux/man-pages/man7/raw.7.html))
     Raw = libc::IPPROTO_RAW,
-    /// Allows applications and other KEXTs to be notified when certain kernel events occur
-    /// ([ref](https://developer.apple.com/library/content/documentation/Darwin/Conceptual/NKEConceptual/control/control.html))
-    #[cfg(any(target_os = "ios", target_os = "macos"))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
-    KextEvent = libc::SYSPROTO_EVENT,
     /// Allows applications to configure and control a KEXT
     /// ([ref](https://developer.apple.com/library/content/documentation/Darwin/Conceptual/NKEConceptual/control/control.html))
     #[cfg(any(target_os = "ios", target_os = "macos"))]
@@ -231,20 +226,33 @@ pub enum SockProtocol {
     #[cfg(any(target_os = "android", target_os = "linux"))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     EthAll = (libc::ETH_P_ALL as u16).to_be() as i32,
+    /// ICMP protocol ([icmp(7)](https://man7.org/linux/man-pages/man7/icmp.7.html))
+    Icmp = libc::IPPROTO_ICMP,
+    /// ICMPv6 protocol (ICMP over IPv6)
+    IcmpV6 = libc::IPPROTO_ICMPV6,
+}
+
+impl SockProtocol {
     /// The Controller Area Network raw socket protocol
     /// ([ref](https://docs.kernel.org/networking/can.html#how-to-use-socketcan))
     #[cfg(target_os = "linux")]
     #[cfg_attr(docsrs, doc(cfg(all())))]
-    CanRaw = libc::CAN_RAW,
-}
+    #[allow(non_upper_case_globals)]
+    pub const CanRaw: SockProtocol = SockProtocol::Icmp; // Matches libc::CAN_RAW
 
-impl SockProtocol {
     /// The Controller Area Network broadcast manager protocol
     /// ([ref](https://docs.kernel.org/networking/can.html#how-to-use-socketcan))
     #[cfg(target_os = "linux")]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     #[allow(non_upper_case_globals)]
     pub const CanBcm: SockProtocol = SockProtocol::NetlinkUserSock; // Matches libc::CAN_BCM
+
+    /// Allows applications and other KEXTs to be notified when certain kernel events occur
+    /// ([ref](https://developer.apple.com/library/content/documentation/Darwin/Conceptual/NKEConceptual/control/control.html))
+    #[cfg(any(target_os = "ios", target_os = "macos"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
+    #[allow(non_upper_case_globals)]
+    pub const KextEvent: SockProtocol = SockProtocol::Icmp;  // Matches libc::SYSPROTO_EVENT
 }
 #[cfg(any(target_os = "android", target_os = "linux"))]
 libc_bitflags! {

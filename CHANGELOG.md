@@ -22,6 +22,10 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
   ([#2137](https://github.com/nix-rust/nix/pull/2137))
 
+### Added
+- Added `Icmp` and `IcmpV6` to `SockProtocol`.
+  (#[2103](https://github.com/nix-rust/nix/pull/2103))
+
 ## [0.27.1] - 2023-08-28
 
 ### Fixed
