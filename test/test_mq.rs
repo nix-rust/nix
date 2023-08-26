@@ -1,5 +1,4 @@
 use cfg_if::cfg_if;
-use std::ffi::CString;
 use std::str;
 
 use nix::errno::Errno;
@@ -34,7 +33,7 @@ macro_rules! assert_attr_eq {
 fn test_mq_send_and_receive() {
     const MSG_SIZE: mq_attr_member_t = 32;
     let attr = MqAttr::new(0, 10, MSG_SIZE, 0);
-    let mq_name = &CString::new(b"/a_nix_test_queue".as_ref()).unwrap();
+    let mq_name = "/a_nix_test_queue";
 
     let oflag0 = MQ_OFlag::O_CREAT | MQ_OFlag::O_WRONLY;
     let mode = Mode::S_IWUSR | Mode::S_IRUSR | Mode::S_IRGRP | Mode::S_IROTH;
@@ -63,7 +62,7 @@ fn test_mq_send_and_receive() {
 fn test_mq_timedreceive() {
     const MSG_SIZE: mq_attr_member_t = 32;
     let attr = MqAttr::new(0, 10, MSG_SIZE, 0);
-    let mq_name = &CString::new(b"/a_nix_test_queue".as_ref()).unwrap();
+    let mq_name = "/a_nix_test_queue";
 
     let oflag0 = MQ_OFlag::O_CREAT | MQ_OFlag::O_WRONLY;
     let mode = Mode::S_IWUSR | Mode::S_IRUSR | Mode::S_IRGRP | Mode::S_IROTH;
@@ -95,7 +94,7 @@ fn test_mq_getattr() {
     use nix::mqueue::mq_getattr;
     const MSG_SIZE: mq_attr_member_t = 32;
     let initial_attr = MqAttr::new(0, 10, MSG_SIZE, 0);
-    let mq_name = &CString::new(b"/attr_test_get_attr".as_ref()).unwrap();
+    let mq_name = "/attr_test_get_attr";
     let oflag = MQ_OFlag::O_CREAT | MQ_OFlag::O_WRONLY;
     let mode = Mode::S_IWUSR | Mode::S_IRUSR | Mode::S_IRGRP | Mode::S_IROTH;
     let r = mq_open(mq_name, oflag, mode, Some(&initial_attr));
@@ -120,7 +119,7 @@ fn test_mq_setattr() {
     use nix::mqueue::{mq_getattr, mq_setattr};
     const MSG_SIZE: mq_attr_member_t = 32;
     let initial_attr = MqAttr::new(0, 10, MSG_SIZE, 0);
-    let mq_name = &CString::new(b"/attr_test_get_attr".as_ref()).unwrap();
+    let mq_name = "/attr_test_get_attr";
     let oflag = MQ_OFlag::O_CREAT | MQ_OFlag::O_WRONLY;
     let mode = Mode::S_IWUSR | Mode::S_IRUSR | Mode::S_IRGRP | Mode::S_IROTH;
     let r = mq_open(mq_name, oflag, mode, Some(&initial_attr));
@@ -170,7 +169,7 @@ fn test_mq_set_nonblocking() {
     use nix::mqueue::{mq_getattr, mq_remove_nonblock, mq_set_nonblock};
     const MSG_SIZE: mq_attr_member_t = 32;
     let initial_attr = MqAttr::new(0, 10, MSG_SIZE, 0);
-    let mq_name = &CString::new(b"/attr_test_get_attr".as_ref()).unwrap();
+    let mq_name = "/attr_test_get_attr";
     let oflag = MQ_OFlag::O_CREAT | MQ_OFlag::O_WRONLY;
     let mode = Mode::S_IWUSR | Mode::S_IRUSR | Mode::S_IRGRP | Mode::S_IROTH;
     let r = mq_open(mq_name, oflag, mode, Some(&initial_attr));
@@ -194,10 +193,9 @@ fn test_mq_unlink() {
     use nix::mqueue::mq_unlink;
     const MSG_SIZE: mq_attr_member_t = 32;
     let initial_attr = MqAttr::new(0, 10, MSG_SIZE, 0);
-    let mq_name_opened = &CString::new(b"/mq_unlink_test".as_ref()).unwrap();
+    let mq_name_opened = "/mq_unlink_test";
     #[cfg(not(any(target_os = "dragonfly", target_os = "netbsd")))]
-    let mq_name_not_opened =
-        &CString::new(b"/mq_unlink_test".as_ref()).unwrap();
+    let mq_name_not_opened = "/mq_unlink_test";
     let oflag = MQ_OFlag::O_CREAT | MQ_OFlag::O_WRONLY;
     let mode = Mode::S_IWUSR | Mode::S_IRUSR | Mode::S_IRGRP | Mode::S_IROTH;
     let r = mq_open(mq_name_opened, oflag, mode, Some(&initial_attr));

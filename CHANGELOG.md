@@ -63,6 +63,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (#[1906](https://github.com/nix-rust/nix/pull/1906))
 - Implemented AsFd, AsRawFd, FromRawFd, and IntoRawFd for `mqueue::MqdT`.
    See ([#2097](https://github.com/nix-rust/nix/pull/2097))
+- Refactored `name` parameter of `mq_open` and `mq_unlink` to be generic over
+   `NixPath`. See ([#2102](https://github.com/nix-rust/nix/pull/2102)).
 
 ### Fixed
 - Fix: send `ETH_P_ALL` in htons format 
