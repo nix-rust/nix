@@ -374,6 +374,17 @@ libc_bitflags! {
                   target_os = "solaris"))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
         MSG_NOSIGNAL;
+        /// Turns on [`MSG_DONTWAIT`] after the first message has been received (only for
+        /// `recvmmsg()`).
+        #[cfg(any(target_os = "android",
+                  target_os = "fuchsia",
+                  target_os = "linux",
+                  target_os = "netbsd",
+                  target_os = "freebsd",
+                  target_os = "openbsd",
+                  target_os = "solaris"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
+        MSG_WAITFORONE;
     }
 }
 
