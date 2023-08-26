@@ -34,6 +34,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Added `MSG_WAITFORONE` to `MsgFlags` on Android, Fuchsia, Linux, NetBSD,
   FreeBSD, OpenBSD, and Solaris.
   ([#2014](https://github.com/nix-rust/nix/pull/2014))
+- Added `SO_TS_CLOCK` for FreeBSD to `nix::sys::socket::sockopt`.
+  ([#2093](https://github.com/nix-rust/nix/pull/2093))
 
 ### Changed
 
