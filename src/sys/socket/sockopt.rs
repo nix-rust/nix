@@ -716,7 +716,7 @@ sockopt_impl!(
     /// Sets a specific timestamp format instead of the classic `SCM_TIMESTAMP`,
     /// to follow up after `SO_TIMESTAMP` is set.
     TsClock,
-    SetOnly,
+    Both,
     libc::SOL_SOCKET,
     libc::SO_TS_CLOCK,
     i32
