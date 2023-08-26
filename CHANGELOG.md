@@ -32,8 +32,9 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
-- The MSRV is now 1.63
+- The MSRV is now 1.65
   ([#1862](https://github.com/nix-rust/nix/pull/1862))
+  ([#2104](https://github.com/nix-rust/nix/pull/2104))
 - The epoll interface now uses a type.
   ([#1882](https://github.com/nix-rust/nix/pull/1882))
 - With I/O-safe type applied in `pty::OpenptyResult` and `pty::ForkptyResult`,
