@@ -2,8 +2,6 @@
 extern crate cfg_if;
 #[cfg_attr(not(any(target_os = "redox", target_os = "haiku")), macro_use)]
 extern crate nix;
-#[macro_use]
-extern crate lazy_static;
 
 mod common;
 mod sys;
@@ -79,24 +77,22 @@ fn read_exact<Fd: AsFd>(f: Fd, buf: &mut [u8]) {
     }
 }
 
-lazy_static! {
-    /// Any test that changes the process's current working directory must grab
-    /// the RwLock exclusively.  Any process that cares about the current
-    /// working directory must grab it shared.
-    pub static ref CWD_LOCK: RwLock<()> = RwLock::new(());
-    /// Any test that creates child processes must grab this mutex, regardless
-    /// of what it does with those children.
-    pub static ref FORK_MTX: Mutex<()> = Mutex::new(());
-    /// Any test that changes the process's supplementary groups must grab this
-    /// mutex
-    pub static ref GROUPS_MTX: Mutex<()> = Mutex::new(());
-    /// Any tests that loads or unloads kernel modules must grab this mutex
-    pub static ref KMOD_MTX: Mutex<()> = Mutex::new(());
-    /// Any test that calls ptsname(3) must grab this mutex.
-    pub static ref PTSNAME_MTX: Mutex<()> = Mutex::new(());
-    /// Any test that alters signal handling must grab this mutex.
-    pub static ref SIGNAL_MTX: Mutex<()> = Mutex::new(());
-}
+/// Any test that creates child processes must grab this mutex, regardless
+/// of what it does with those children.
+pub static FORK_MTX: std::sync::Mutex<()> = std::sync::Mutex::new(());
+/// Any test that changes the process's current working directory must grab
+/// the RwLock exclusively.  Any process that cares about the current
+/// working directory must grab it shared.
+pub static CWD_LOCK: RwLock<()> = RwLock::new(());
+/// Any test that changes the process's supplementary groups must grab this
+/// mutex
+pub static GROUPS_MTX: Mutex<()> = Mutex::new(());
+/// Any tests that loads or unloads kernel modules must grab this mutex
+pub static KMOD_MTX: Mutex<()> = Mutex::new(());
+/// Any test that calls ptsname(3) must grab this mutex.
+pub static PTSNAME_MTX: Mutex<()> = Mutex::new(());
+/// Any test that alters signal handling must grab this mutex.
+pub static SIGNAL_MTX: Mutex<()> = Mutex::new(());
 
 /// RAII object that restores a test's original directory on drop
 struct DirRestore<'a> {

@@ -78,9 +78,7 @@ fn test_sigprocmask() {
         .expect("expect to be able to block signals");
 }
 
-lazy_static! {
-    static ref SIGNALED: AtomicBool = AtomicBool::new(false);
-}
+static SIGNALED: AtomicBool = AtomicBool::new(false);
 
 extern "C" fn test_sigaction_handler(signal: libc::c_int) {
     let signal = Signal::try_from(signal).unwrap();
