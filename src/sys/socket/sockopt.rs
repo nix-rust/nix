@@ -798,6 +798,16 @@ sockopt_impl!(
 );
 #[cfg(target_os = "linux")]
 sockopt_impl!(
+    /// Ackwnoledges only when data arrives on this socket.
+    /// Get/Set the number of seconds to complete the connection.
+    TcpDeferAccept,
+    Both,
+    libc::IPPROTO_TCP,
+    libc::TCP_DEFER_ACCEPT,
+    i32
+);
+#[cfg(target_os = "linux")]
+sockopt_impl!(
     /// Set the mark for each packet sent through this socket (similar to the
     /// netfilter MARK target but socket-based).
     Mark,
