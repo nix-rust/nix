@@ -36,7 +36,6 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   ([#2014](https://github.com/nix-rust/nix/pull/2014))
 - Added `SO_TS_CLOCK` for FreeBSD to `nix::sys::socket::sockopt`.
   ([#2093](https://github.com/nix-rust/nix/pull/2093))
-- Made `clone` unsafe, like `fork`
 
 ### Changed
 
@@ -70,6 +69,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
    See ([#2097](https://github.com/nix-rust/nix/pull/2097))
 - Refactored `name` parameter of `mq_open` and `mq_unlink` to be generic over
    `NixPath`. See ([#2102](https://github.com/nix-rust/nix/pull/2102)).
+- Made `clone` unsafe, like `fork`.
+  ([#1993](https://github.com/nix-rust/nix/pull/1993))
 
 ### Fixed
 - Fix: send `ETH_P_ALL` in htons format 
