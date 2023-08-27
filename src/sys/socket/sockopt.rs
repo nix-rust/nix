@@ -798,6 +798,17 @@ sockopt_impl!(
 );
 #[cfg(target_os = "linux")]
 sockopt_impl!(
+    /// Defers completion on accept so only when data arrives.
+    /// Get/Set x number of seconds/attempts to complete the connection.
+    /// To be set before or after listen(2), the latter is better for portable workflows.
+    TcpDeferAccept,
+    Both,
+    libc::IPPROTO_TCP,
+    libc::TCP_DEFER_ACCEPT,
+    i32
+);
+#[cfg(target_os = "linux")]
+sockopt_impl!(
     /// Set the mark for each packet sent through this socket (similar to the
     /// netfilter MARK target but socket-based).
     Mark,
