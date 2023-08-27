@@ -201,7 +201,7 @@ impl<'a> IoVec<&'a mut [u8]> {
     pub fn from_mut_slice(buf: &'a mut [u8]) -> IoVec<&'a mut [u8]> {
         IoVec(
             libc::iovec {
-                iov_base: buf.as_ptr() as *mut c_void,
+                iov_base: buf.as_mut_ptr() as *mut c_void,
                 iov_len: buf.len() as size_t,
             },
             PhantomData,
