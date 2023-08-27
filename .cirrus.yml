@@ -131,7 +131,7 @@ task:
     - curl --proto '=https' --tlsv1.2 -sSf -o rustup.sh https://sh.rustup.rs
     - sh rustup.sh -y --profile=minimal --default-toolchain $MSRV
     - . $HOME/.cargo/env
-    - cargo install cross --version 0.2.1 # cross 0.2.2 bumped the MSRV to 1.58.1
+    - cargo install cross --version 0.2.1 --locked # cross 0.2.2 bumped the MSRV to 1.58.1
   << : *TEST
   before_cache_script: rm -rf $CARGO_HOME/registry/index
 
