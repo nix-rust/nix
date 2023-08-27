@@ -5,32 +5,32 @@ cargo_cache:
 env:
   # Build by default; don't just check
   BUILD: build
+  CLIPPYFLAGS: -D warnings -A unknown-lints
   RUSTFLAGS: -D warnings
   RUSTDOCFLAGS: -D warnings
   TOOL: cargo
-  # The MSRV
-  TOOLCHAIN: 1.56.1
+  MSRV: 1.56.1
   ZFLAGS:
 
 # Tests that don't require executing the build binaries
 build: &BUILD
   build_script:
     - . $HOME/.cargo/env || true
-    - $TOOL +$TOOLCHAIN -Vv
-    - rustc +$TOOLCHAIN -Vv
-    - $TOOL +$TOOLCHAIN $BUILD $ZFLAGS --target $TARGET --all-targets
-    - $TOOL +$TOOLCHAIN doc $ZFLAGS --no-deps --target $TARGET
-    - $TOOL +$TOOLCHAIN clippy $ZFLAGS --target $TARGET --all-targets -- -D warnings
+    - $TOOL -Vv
+    - rustc -Vv
+    - $TOOL $BUILD $ZFLAGS --target $TARGET --all-targets
+    - $TOOL doc $ZFLAGS --no-deps --target $TARGET
+    - $TOOL clippy $ZFLAGS --target $TARGET --all-targets -- $CLIPPYFLAGS
     - if [ -z "$NOHACK" ]; then mkdir -p $HOME/.cargo/bin; export PATH=$HOME/.cargo/bin:$PATH; fi
     - if [ -z "$NOHACK" ]; then curl -LsSf https://github.com/taiki-e/cargo-hack/releases/latest/download/cargo-hack-${HOST:-$TARGET}.tar.gz | tar xzf - -C ~/.cargo/bin; fi
-    - if [ -z "$NOHACK" ]; then $TOOL +$TOOLCHAIN hack $ZFLAGS check --target $TARGET --each-feature; fi
+    - if [ -z "$NOHACK" ]; then $TOOL hack $ZFLAGS check --target $TARGET --each-feature; fi
 
 # Tests that do require executing the binaries
 test: &TEST
   << : *BUILD
   test_script:
     - . $HOME/.cargo/env || true
-    - $TOOL +$TOOLCHAIN test --target $TARGET
+    - $TOOL test --target $TARGET
 
 # Test FreeBSD in a full VM.  Test the i686 target too, in the
 # same VM.  The binary will be built in 32-bit mode, but will execute on a
@@ -52,10 +52,10 @@ task:
   setup_script:
     - kldload mqueuefs
     - fetch https://sh.rustup.rs -o rustup.sh
-    - sh rustup.sh -y --profile=minimal --default-toolchain $TOOLCHAIN
+    - sh rustup.sh -y --profile=minimal --default-toolchain $MSRV
     - . $HOME/.cargo/env
     - rustup target add i686-unknown-freebsd
-    - rustup component add --toolchain $TOOLCHAIN clippy
+    - rustup component add clippy
   << : *TEST
   i386_test_script:
     - . $HOME/.cargo/env
@@ -76,9 +76,9 @@ task:
     image: ghcr.io/cirruslabs/macos-ventura-base:latest
   setup_script:
     - curl --proto '=https' --tlsv1.2 -sSf -o rustup.sh https://sh.rustup.rs
-    - sh rustup.sh -y --profile=minimal --default-toolchain $TOOLCHAIN
+    - sh rustup.sh -y --profile=minimal --default-toolchain $MSRV
     - . $HOME/.cargo/env
-    - rustup component add --toolchain $TOOLCHAIN clippy
+    - rustup component add clippy
   << : *TEST
   before_cache_script: rm -rf $CARGO_HOME/registry/index
 
@@ -129,9 +129,9 @@ task:
   setup_script:
     - mkdir /tmp/home
     - curl --proto '=https' --tlsv1.2 -sSf -o rustup.sh https://sh.rustup.rs
-    - sh rustup.sh -y --profile=minimal --default-toolchain $TOOLCHAIN
+    - sh rustup.sh -y --profile=minimal --default-toolchain $MSRV
     - . $HOME/.cargo/env
-    - cargo install cross --version 0.2.1 # cross 0.2.2 bumped the MSRV to 1.58.1
+    - cargo install cross --version 0.2.1 --locked # cross 0.2.2 bumped the MSRV to 1.58.1
   << : *TEST
   before_cache_script: rm -rf $CARGO_HOME/registry/index
 
@@ -142,7 +142,6 @@ task:
       arm_container:
         image: rust:1.56
       env:
-        RUSTFLAGS: --cfg graviton -D warnings
         TARGET: aarch64-unknown-linux-gnu
     - name: Linux x86_64
       container:
@@ -166,9 +165,7 @@ task:
     image: rust:latest
   env:
     TARGET: x86_64-unknown-linux-gnu
-    TOOLCHAIN:
   setup_script:
-    - rustup target add $TARGET
     - rustup component add clippy
   << : *TEST
   before_cache_script: rm -rf $CARGO_HOME/registry/index
@@ -243,38 +240,36 @@ task:
         TARGET: x86_64-unknown-netbsd
   setup_script:
     - rustup target add $TARGET
-    - rustup toolchain install $TOOLCHAIN --profile minimal --target $TARGET
-    - rustup component add --toolchain $TOOLCHAIN clippy
+    - rustup component add clippy
   << : *BUILD
   before_cache_script: rm -rf $CARGO_HOME/registry/index
 
 task:
   container:
-    image: rust:1.56
+    # Redox's MSRV policy is unclear.  Until they define it, use nightly.
+    image: rustlang/rust:nightly
   env:
     BUILD: check
   name: Redox x86_64
   env:
     HOST: x86_64-unknown-linux-gnu
     TARGET: x86_64-unknown-redox
-    # Redox's MSRV policy is unclear.  Until they define it, use nightly.
-    TOOLCHAIN: nightly
+    CLIPPYFLAGS: -D warnings
   setup_script:
     - rustup target add $TARGET
-    - rustup toolchain install $TOOLCHAIN --profile minimal --target $TARGET
-    - rustup component add --toolchain $TOOLCHAIN clippy
+    - rustup component add clippy
   << : *BUILD
   before_cache_script: rm -rf $CARGO_HOME/registry/index
 
-# Rust Tier 3 targets can't use Rustup
+## Rust Tier 3 targets can't use Rustup
 task:
   container:
     image: rustlang/rust:nightly
   env:
     BUILD: check
     HOST: x86_64-unknown-linux-gnu
-    TOOLCHAIN: nightly
     ZFLAGS: -Zbuild-std
+    CLIPPYFLAGS: -D warnings
   matrix:
     - name: DragonFly BSD x86_64
       env:
@@ -300,7 +295,6 @@ task:
   name: Minver
   env:
     HOST: x86_64-unknown-linux-gnu
-    TOOLCHAIN: nightly
   container:
     image: rustlang/rust:nightly
   setup_script:
@@ -314,5 +308,5 @@ task:
   name: Rust Formatter
   container:
     image: rust:latest
-  setup_script: rustup +$TOOLCHAIN component add rustfmt
-  test_script: $TOOL +$TOOLCHAIN fmt --all -- --check **/*.rs
+  setup_script: rustup component add rustfmt
+  test_script: cargo fmt --all -- --check **/*.rs

@@ -26,7 +26,7 @@ pub struct KEvent {
     target_os = "openbsd"
 ))]
 type type_of_udata = *mut libc::c_void;
-#[cfg(any(target_os = "netbsd"))]
+#[cfg(target_os = "netbsd")]
 type type_of_udata = intptr_t;
 
 #[cfg(target_os = "netbsd")]
@@ -87,7 +87,7 @@ libc_enum! {
     target_os = "openbsd"
 ))]
 pub type type_of_event_flag = u16;
-#[cfg(any(target_os = "netbsd"))]
+#[cfg(target_os = "netbsd")]
 pub type type_of_event_flag = u32;
 libc_bitflags! {
     pub struct EventFlag: type_of_event_flag {

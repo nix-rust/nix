@@ -63,6 +63,8 @@ macro_rules! libc_bitflags {
         }
     ) => {
         ::bitflags::bitflags! {
+            #[derive(Copy, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+            #[repr(transparent)]
             $(#[$outer])*
             pub struct $BitFlags: $T {
                 $(

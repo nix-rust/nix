@@ -63,10 +63,10 @@ fn test_sendfile64_linux() {
 fn test_sendfile_freebsd() {
     // Declare the content
     let header_strings =
-        vec!["HTTP/1.1 200 OK\n", "Content-Type: text/plain\n", "\n"];
+        ["HTTP/1.1 200 OK\n", "Content-Type: text/plain\n", "\n"];
     let body = "Xabcdef123456";
     let body_offset = 1;
-    let trailer_strings = vec!["\n", "Served by Make Believe\n"];
+    let trailer_strings = ["\n", "Served by Make Believe\n"];
 
     // Write the body to a file
     let mut tmp = tempfile().unwrap();
@@ -114,10 +114,10 @@ fn test_sendfile_freebsd() {
 fn test_sendfile_dragonfly() {
     // Declare the content
     let header_strings =
-        vec!["HTTP/1.1 200 OK\n", "Content-Type: text/plain\n", "\n"];
+        ["HTTP/1.1 200 OK\n", "Content-Type: text/plain\n", "\n"];
     let body = "Xabcdef123456";
     let body_offset = 1;
-    let trailer_strings = vec!["\n", "Served by Make Believe\n"];
+    let trailer_strings = ["\n", "Served by Make Believe\n"];
 
     // Write the body to a file
     let mut tmp = tempfile().unwrap();

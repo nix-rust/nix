@@ -226,10 +226,10 @@ pub enum SockProtocol {
     // The protocol number is fed into the socket syscall in network byte order.
     #[cfg(any(target_os = "android", target_os = "linux"))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
-    EthAll = libc::ETH_P_ALL.to_be(),
+    EthAll = (libc::ETH_P_ALL as u16).to_be() as i32,
 }
 
-#[cfg(any(target_os = "linux"))]
+#[cfg(target_os = "linux")]
 libc_bitflags! {
     /// Configuration flags for `SO_TIMESTAMPING` interface
     ///
@@ -1535,7 +1535,7 @@ pub fn sendmmsg<'a, XS, AS, C, I, S>(
 
 
     for (i, ((slice, addr), mmsghdr)) in slices.into_iter().zip(addrs.as_ref()).zip(data.items.iter_mut() ).enumerate() {
-        let mut p = &mut mmsghdr.msg_hdr;
+        let p = &mut mmsghdr.msg_hdr;
         p.msg_iov = slice.as_ref().as_ptr() as *mut libc::iovec;
         p.msg_iovlen = slice.as_ref().len() as _;
 
@@ -1611,24 +1611,24 @@ impl<S> MultiHeaders<S> {
     {
         // we will be storing pointers to addresses inside mhdr - convert it into boxed
         // slice so it can'be changed later by pushing anything into self.addresses
-        let mut addresses = vec![std::mem::MaybeUninit::uninit(); num_slices].into_boxed_slice();
+        let mut addresses = vec![std::mem::MaybeUninit::<S>::uninit(); num_slices].into_boxed_slice();
 
         let msg_controllen = cmsg_buffer.as_ref().map_or(0, |v| v.capacity());
 
         // we'll need a cmsg_buffer for each slice, we preallocate a vector and split
         // it into "slices" parts
-        let cmsg_buffers =
+        let mut cmsg_buffers =
             cmsg_buffer.map(|v| vec![0u8; v.capacity() * num_slices].into_boxed_slice());
 
         let items = addresses
             .iter_mut()
             .enumerate()
             .map(|(ix, address)| {
-                let (ptr, cap) = match &cmsg_buffers {
-                    Some(v) => ((&v[ix * msg_controllen] as *const u8), msg_controllen),
-                    None => (std::ptr::null(), 0),
+                let (ptr, cap) = match &mut cmsg_buffers {
+                    Some(v) => ((&mut v[ix * msg_controllen] as *mut u8), msg_controllen),
+                    None => (std::ptr::null_mut(), 0),
                 };
-                let msg_hdr = unsafe { pack_mhdr_to_receive(std::ptr::null(), 0, ptr, cap, address.as_mut_ptr()) };
+                let msg_hdr = unsafe { pack_mhdr_to_receive(std::ptr::null_mut(), 0, ptr, cap, address.as_mut_ptr()) };
                 libc::mmsghdr {
                     msg_hdr,
                     msg_len: 0,
@@ -1689,7 +1689,7 @@ where
 {
     let mut count = 0;
     for (i, (slice, mmsghdr)) in slices.into_iter().zip(data.items.iter_mut()).enumerate() {
-        let mut p = &mut mmsghdr.msg_hdr;
+        let p = &mut mmsghdr.msg_hdr;
         p.msg_iov = slice.as_ref().as_ptr() as *mut libc::iovec;
         p.msg_iovlen = slice.as_ref().len() as _;
         count = i + 1;
@@ -1916,7 +1916,7 @@ unsafe fn read_mhdr<'a, 'i, S>(
     mhdr: msghdr,
     r: isize,
     msg_controllen: usize,
-    address: S,
+    mut address: S,
 ) -> RecvMsg<'a, 'i, S>
     where S: SockaddrLike
 {
@@ -1931,6 +1931,11 @@ unsafe fn read_mhdr<'a, 'i, S>(
             ptr::null()
         }.as_ref()
     };
+
+    // Ignore errors if this socket address has statically-known length
+    //
+    // This is to ensure that unix socket addresses have their length set appropriately.
+    let _ = address.set_length(mhdr.msg_namelen as usize);
 
     RecvMsg {
         bytes: r as usize,
@@ -1954,9 +1959,9 @@ unsafe fn read_mhdr<'a, 'i, S>(
 ///
 /// Buffers must remain valid for the whole lifetime of msghdr
 unsafe fn pack_mhdr_to_receive<S>(
-    iov_buffer: *const IoSliceMut,
+    iov_buffer: *mut IoSliceMut,
     iov_buffer_len: usize,
-    cmsg_buffer: *const u8,
+    cmsg_buffer: *mut u8,
     cmsg_capacity: usize,
     address: *mut S,
 ) -> msghdr
@@ -1967,7 +1972,7 @@ unsafe fn pack_mhdr_to_receive<S>(
     // initialize it.
     let mut mhdr = mem::MaybeUninit::<msghdr>::zeroed();
     let p = mhdr.as_mut_ptr();
-    (*p).msg_name = (*address).as_mut_ptr() as *mut c_void;
+    (*p).msg_name = address as *mut c_void;
     (*p).msg_namelen = S::size();
     (*p).msg_iov = iov_buffer as *mut iovec;
     (*p).msg_iovlen = iov_buffer_len as _;
@@ -1992,7 +1997,7 @@ fn pack_mhdr_to_send<'a, I, C, S>(
 
     // The message header must be initialized before the individual cmsgs.
     let cmsg_ptr = if capacity > 0 {
-        cmsg_buffer.as_ptr() as *mut c_void
+        cmsg_buffer.as_mut_ptr() as *mut c_void
     } else {
         ptr::null_mut()
     };
@@ -2046,7 +2051,7 @@ fn pack_mhdr_to_send<'a, I, C, S>(
 /// [recvmsg(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/recvmsg.html)
 pub fn recvmsg<'a, 'outer, 'inner, S>(fd: RawFd, iov: &'outer mut [IoSliceMut<'inner>],
                    mut cmsg_buffer: Option<&'a mut Vec<u8>>,
-                   flags: MsgFlags) -> Result<RecvMsg<'a, 'inner, S>>
+                   flags: MsgFlags) -> Result<RecvMsg<'a, 'outer, S>>
     where S: SockaddrLike + 'a,
     'inner: 'outer
 {
@@ -2056,7 +2061,7 @@ pub fn recvmsg<'a, 'outer, 'inner, S>(fd: RawFd, iov: &'outer mut [IoSliceMut<'i
         .map(|v| (v.as_mut_ptr(), v.capacity()))
         .unwrap_or((ptr::null_mut(), 0));
     let mut mhdr = unsafe {
-        pack_mhdr_to_receive(iov.as_ref().as_ptr(), iov.len(), msg_control, msg_controllen, address.as_mut_ptr())
+        pack_mhdr_to_receive(iov.as_mut().as_mut_ptr(), iov.len(), msg_control, msg_controllen, address.as_mut_ptr())
     };
 
     let ret = unsafe { libc::recvmsg(fd, &mut mhdr, flags.bits()) };
@@ -2202,7 +2207,7 @@ pub fn recv(sockfd: RawFd, buf: &mut [u8], flags: MsgFlags) -> Result<usize> {
     unsafe {
         let ret = libc::recv(
             sockfd,
-            buf.as_ptr() as *mut c_void,
+            buf.as_mut_ptr() as *mut c_void,
             buf.len() as size_t,
             flags.bits(),
         );
@@ -2226,7 +2231,7 @@ pub fn recvfrom<T: SockaddrLike>(
 
         let ret = Errno::result(libc::recvfrom(
             sockfd,
-            buf.as_ptr() as *mut c_void,
+            buf.as_mut_ptr() as *mut c_void,
             buf.len() as size_t,
             0,
             addr.as_mut_ptr() as *mut libc::sockaddr,
@@ -2236,7 +2241,7 @@ pub fn recvfrom<T: SockaddrLike>(
         Ok((
             ret,
             T::from_raw(
-                addr.assume_init().as_ptr() as *const libc::sockaddr,
+                addr.assume_init().as_ptr(),
                 Some(len),
             ),
         ))

@@ -68,7 +68,7 @@ pub fn test_inetv4_addr_roundtrip_sockaddr_storage_to_addr() {
     assert_eq!(from_storage, sockaddr);
 }
 
-#[cfg(any(target_os = "linux"))]
+#[cfg(target_os = "linux")]
 #[cfg_attr(qemu, ignore)]
 #[test]
 pub fn test_timestamping() {
@@ -296,6 +296,45 @@ pub fn test_socketpair() {
     read(fd2, &mut buf).unwrap();
 
     assert_eq!(&buf[..], b"hello");
+}
+
+#[test]
+pub fn test_recvmsg_sockaddr_un() {
+    use nix::sys::socket::{
+        self, bind, socket, AddressFamily, MsgFlags, SockFlag, SockType,
+    };
+
+    let tempdir = tempfile::tempdir().unwrap();
+    let sockname = tempdir.path().join("sock");
+    let sock = socket(
+        AddressFamily::Unix,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )
+    .expect("socket failed");
+    let sockaddr = UnixAddr::new(&sockname).unwrap();
+    bind(sock, &sockaddr).expect("bind failed");
+
+    // Send a message
+    let send_buffer = "hello".as_bytes();
+    if let Err(e) = socket::sendmsg(
+        sock,
+        &[std::io::IoSlice::new(send_buffer)],
+        &[],
+        MsgFlags::empty(),
+        Some(&sockaddr),
+    ) {
+        crate::skip!("Couldn't send ({:?}), so skipping test", e);
+    }
+
+    // Receive the message
+    let mut recv_buffer = [0u8; 32];
+    let mut iov = [std::io::IoSliceMut::new(&mut recv_buffer)];
+    let received =
+        socket::recvmsg(sock, &mut iov, None, MsgFlags::empty()).unwrap();
+    // Check the address in the received message
+    assert_eq!(sockaddr, received.address.unwrap());
 }
 
 #[test]
@@ -2136,63 +2175,50 @@ pub fn test_recv_ipv6pktinfo() {
 }
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
-#[cfg_attr(graviton, ignore = "Not supported by the CI environment")]
 #[test]
 pub fn test_vsock() {
-    use nix::errno::Errno;
-    use nix::sys::socket::{
-        bind, connect, listen, socket, AddressFamily, SockFlag, SockType,
-        VsockAddr,
-    };
-    use nix::unistd::close;
-    use std::thread;
+    use nix::sys::socket::SockaddrLike;
+    use nix::sys::socket::{AddressFamily, VsockAddr};
+    use std::convert::TryInto;
+    use std::mem;
 
     let port: u32 = 3000;
 
-    let s1 = socket(
-        AddressFamily::Vsock,
-        SockType::Stream,
-        SockFlag::empty(),
-        None,
-    )
-    .expect("socket failed");
+    let addr_local = VsockAddr::new(libc::VMADDR_CID_LOCAL, port);
+    assert_eq!(addr_local.cid(), libc::VMADDR_CID_LOCAL);
+    assert_eq!(addr_local.port(), port);
 
-    // VMADDR_CID_HYPERVISOR is reserved, so we expect an EADDRNOTAVAIL error.
-    let sockaddr_hv = VsockAddr::new(libc::VMADDR_CID_HYPERVISOR, port);
-    assert_eq!(bind(s1, &sockaddr_hv).err(), Some(Errno::EADDRNOTAVAIL));
+    let addr_any = VsockAddr::new(libc::VMADDR_CID_ANY, libc::VMADDR_PORT_ANY);
+    assert_eq!(addr_any.cid(), libc::VMADDR_CID_ANY);
+    assert_eq!(addr_any.port(), libc::VMADDR_PORT_ANY);
 
-    let sockaddr_any = VsockAddr::new(libc::VMADDR_CID_ANY, port);
-    assert_eq!(bind(s1, &sockaddr_any), Ok(()));
-    listen(s1, 10).expect("listen failed");
+    assert_ne!(addr_local, addr_any);
+    assert_ne!(calculate_hash(&addr_local), calculate_hash(&addr_any));
 
-    let thr = thread::spawn(move || {
-        let cid: u32 = libc::VMADDR_CID_HOST;
+    let addr1 = VsockAddr::new(libc::VMADDR_CID_HOST, port);
+    let addr2 = VsockAddr::new(libc::VMADDR_CID_HOST, port);
+    assert_eq!(addr1, addr2);
+    assert_eq!(calculate_hash(&addr1), calculate_hash(&addr2));
 
-        let s2 = socket(
-            AddressFamily::Vsock,
-            SockType::Stream,
-            SockFlag::empty(),
-            None,
+    let addr3 = unsafe {
+        VsockAddr::from_raw(
+            addr2.as_ref() as *const libc::sockaddr_vm as *const libc::sockaddr,
+            Some(mem::size_of::<libc::sockaddr_vm>().try_into().unwrap()),
         )
-        .expect("socket failed");
-
-        let sockaddr_host = VsockAddr::new(cid, port);
-
-        // The current implementation does not support loopback devices, so,
-        // for now, we expect a failure on the connect.
-        assert_ne!(connect(s2, &sockaddr_host), Ok(()));
-
-        close(s2).unwrap();
-    });
-
-    close(s1).unwrap();
-    thr.join().unwrap();
+    }
+    .unwrap();
+    assert_eq!(
+        addr3.as_ref().svm_family,
+        AddressFamily::Vsock as libc::sa_family_t
+    );
+    assert_eq!(addr3.as_ref().svm_cid, addr1.cid());
+    assert_eq!(addr3.as_ref().svm_port, addr1.port());
 }
 
 // Disable the test on emulated platforms because it fails in Cirrus-CI.  Lack
 // of QEMU support is suspected.
 #[cfg_attr(qemu, ignore)]
-#[cfg(all(target_os = "linux"))]
+#[cfg(target_os = "linux")]
 #[test]
 fn test_recvmsg_timestampns() {
     use nix::sys::socket::*;
@@ -2247,7 +2273,7 @@ fn test_recvmsg_timestampns() {
 // Disable the test on emulated platforms because it fails in Cirrus-CI.  Lack
 // of QEMU support is suspected.
 #[cfg_attr(qemu, ignore)]
-#[cfg(all(target_os = "linux"))]
+#[cfg(target_os = "linux")]
 #[test]
 fn test_recvmmsg_timestampns() {
     use nix::sys::socket::*;

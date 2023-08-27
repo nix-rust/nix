@@ -638,7 +638,7 @@ pub fn vmsplice(
 }
 }
 
-#[cfg(any(target_os = "linux"))]
+#[cfg(target_os = "linux")]
 #[cfg(feature = "fs")]
 libc_bitflags!(
     /// Mode argument flags for fallocate determining operation performed on a given range.
@@ -678,7 +678,7 @@ feature! {
 ///
 /// Allows the caller to directly manipulate the allocated disk space for the
 /// file referred to by fd.
-#[cfg(any(target_os = "linux"))]
+#[cfg(target_os = "linux")]
 #[cfg(feature = "fs")]
 pub fn fallocate(
     fd: RawFd,

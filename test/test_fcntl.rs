@@ -238,7 +238,7 @@ mod linux_android {
     use nix::unistd::{close, pipe, read, write};
 
     use tempfile::tempfile;
-    #[cfg(any(target_os = "linux"))]
+    #[cfg(target_os = "linux")]
     use tempfile::NamedTempFile;
 
     use crate::*;
@@ -340,7 +340,7 @@ mod linux_android {
 
         let buf1 = b"abcdef";
         let buf2 = b"defghi";
-        let iovecs = vec![IoSlice::new(&buf1[0..3]), IoSlice::new(&buf2[0..3])];
+        let iovecs = [IoSlice::new(&buf1[0..3]), IoSlice::new(&buf2[0..3])];
 
         let res = vmsplice(wr, &iovecs[..], SpliceFFlags::empty()).unwrap();
 
@@ -355,7 +355,7 @@ mod linux_android {
         close(wr).unwrap();
     }
 
-    #[cfg(any(target_os = "linux"))]
+    #[cfg(target_os = "linux")]
     #[test]
     fn test_fallocate() {
         let tmp = NamedTempFile::new().unwrap();

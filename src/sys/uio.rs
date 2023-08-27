@@ -28,6 +28,9 @@ pub fn writev(fd: RawFd, iov: &[IoSlice<'_>]) -> Result<usize> {
 /// Low-level vectored read from a raw file descriptor
 ///
 /// See also [readv(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/readv.html)
+// Clippy doesn't know that we need to pass iov mutably only because the
+// mutation happens after converting iov to a pointer
+#[allow(clippy::needless_pass_by_ref_mut)]
 pub fn readv(fd: RawFd, iov: &mut [IoSliceMut<'_>]) -> Result<usize> {
     // SAFETY: same as in writev(), IoSliceMut is ABI-compatible with iovec
     let res = unsafe {
@@ -71,6 +74,9 @@ pub fn pwritev(fd: RawFd, iov: &[IoSlice<'_>], offset: off_t) -> Result<usize> {
 /// See also: [`readv`](fn.readv.html) and [`pread`](fn.pread.html)
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
 #[cfg_attr(docsrs, doc(cfg(all())))]
+// Clippy doesn't know that we need to pass iov mutably only because the
+// mutation happens after converting iov to a pointer
+#[allow(clippy::needless_pass_by_ref_mut)]
 pub fn preadv(
     fd: RawFd,
     iov: &mut [IoSliceMut<'_>],
@@ -201,7 +207,7 @@ impl<'a> IoVec<&'a mut [u8]> {
     pub fn from_mut_slice(buf: &'a mut [u8]) -> IoVec<&'a mut [u8]> {
         IoVec(
             libc::iovec {
-                iov_base: buf.as_ptr() as *mut c_void,
+                iov_base: buf.as_mut_ptr() as *mut c_void,
                 iov_len: buf.len() as size_t,
             },
             PhantomData,

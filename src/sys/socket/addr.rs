@@ -41,21 +41,16 @@ use std::{fmt, mem, net, ptr, slice};
 /// Convert a std::net::Ipv4Addr into the libc form.
 #[cfg(feature = "net")]
 pub(crate) const fn ipv4addr_to_libc(addr: net::Ipv4Addr) -> libc::in_addr {
-    static_assertions::assert_eq_size!(net::Ipv4Addr, libc::in_addr);
-    // Safe because both types have the same memory layout, and no fancy Drop
-    // impls.
-    unsafe {
-        mem::transmute(addr)
+    libc::in_addr {
+        s_addr: u32::from_ne_bytes(addr.octets())
     }
 }
 
 /// Convert a std::net::Ipv6Addr into the libc form.
 #[cfg(feature = "net")]
 pub(crate) const fn ipv6addr_to_libc(addr: &net::Ipv6Addr) -> libc::in6_addr {
-    static_assertions::assert_eq_size!(net::Ipv6Addr, libc::in6_addr);
-    // Safe because both are Newtype wrappers around the same libc type
-    unsafe {
-        mem::transmute(*addr)
+    libc::in6_addr {
+        s6_addr: addr.octets()
     }
 }
 
@@ -775,6 +770,7 @@ enum UnixAddrKind<'a> {
 }
 impl<'a> UnixAddrKind<'a> {
     /// Safety: sun & sun_len must be valid
+    #[allow(clippy::unnecessary_cast)]   // Not unnecessary on all platforms
     unsafe fn get(sun: &'a libc::sockaddr_un, sun_len: u8) -> Self {
         assert!(sun_len as usize >= offset_of!(libc::sockaddr_un, sun_path));
         let path_len =
@@ -811,6 +807,7 @@ impl<'a> UnixAddrKind<'a> {
 
 impl UnixAddr {
     /// Create a new sockaddr_un representing a filesystem path.
+    #[allow(clippy::unnecessary_cast)]   // Not unnecessary on all platforms
     pub fn new<P: ?Sized + NixPath>(path: &P) -> Result<UnixAddr> {
         path.with_nix_path(|cstr| unsafe {
             let mut ret = libc::sockaddr_un {
@@ -858,6 +855,7 @@ impl UnixAddr {
     /// processes to communicate with processes having a different filesystem view.
     #[cfg(any(target_os = "android", target_os = "linux"))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
+    #[allow(clippy::unnecessary_cast)]   // Not unnecessary on all platforms
     pub fn new_abstract(path: &[u8]) -> Result<UnixAddr> {
         unsafe {
             let mut ret = libc::sockaddr_un {
@@ -1049,6 +1047,22 @@ impl SockaddrLike for UnixAddr {
     {
         mem::size_of::<libc::sockaddr_un>() as libc::socklen_t
     }
+
+    unsafe fn set_length(&mut self, new_length: usize) -> std::result::Result<(), SocketAddressLengthNotDynamic> {
+        // `new_length` is only used on some platforms, so it must be provided even when not used
+        #![allow(unused_variables)]
+        cfg_if! {
+            if #[cfg(any(target_os = "android",
+                         target_os = "fuchsia",
+                         target_os = "illumos",
+                         target_os = "linux",
+                         target_os = "redox",
+                ))] {
+                self.sun_len = new_length as u8;
+            }
+        };
+        Ok(())
+    }
 }
 
 impl AsRef<libc::sockaddr_un> for UnixAddr {
@@ -1198,7 +1212,32 @@ pub trait SockaddrLike: private::SockaddrLikePriv {
     {
         mem::size_of::<Self>() as libc::socklen_t
     }
+
+    /// Set the length of this socket address
+    ///
+    /// This method may only be called on socket addresses whose lengths are dynamic, and it
+    /// returns an error if called on a type whose length is static.
+    ///
+    /// # Safety
+    ///
+    /// `new_length` must be a valid length for this type of address. Specifically, reads of that
+    /// length from `self` must be valid.
+    #[doc(hidden)]
+    unsafe fn set_length(&mut self, _new_length: usize) -> std::result::Result<(), SocketAddressLengthNotDynamic> {
+        Err(SocketAddressLengthNotDynamic)
+    }
 }
+
+/// The error returned by [`SockaddrLike::set_length`] on an address whose length is statically
+/// fixed.
+#[derive(Copy, Clone, Debug)]
+pub struct SocketAddressLengthNotDynamic;
+impl fmt::Display for SocketAddressLengthNotDynamic {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("Attempted to set length on socket whose length is statically fixed")
+    }
+}
+impl std::error::Error for SocketAddressLengthNotDynamic {}
 
 impl private::SockaddrLikePriv for () {
     fn as_mut_ptr(&mut self) -> *mut libc::sockaddr {
@@ -1235,9 +1274,6 @@ impl SockaddrLike for () {
 }
 
 /// An IPv4 socket address
-// This is identical to net::SocketAddrV4.  But the standard library
-// doesn't allow direct access to the libc fields, which we need.  So we
-// reimplement it here.
 #[cfg(feature = "net")]
 #[repr(transparent)]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -1645,6 +1681,15 @@ impl SockaddrLike for SockaddrStorage {
             None => mem::size_of_val(self) as libc::socklen_t
         }
     }
+
+    unsafe fn set_length(&mut self, new_length: usize) -> std::result::Result<(), SocketAddressLengthNotDynamic> {
+        match self.as_unix_addr_mut() {
+            Some(addr) => {
+                addr.set_length(new_length)
+            },
+            None => Err(SocketAddressLengthNotDynamic),
+        }
+    }
 }
 
 macro_rules! accessors {
@@ -1961,7 +2006,7 @@ impl PartialEq for SockaddrStorage {
     }
 }
 
-mod private {
+pub(super) mod private {
     pub trait SockaddrLikePriv {
         /// Returns a mutable raw pointer to the inner structure.
         ///
@@ -2850,7 +2895,6 @@ mod datalink {
             &self.0
         }
     }
-
     }
 }
 
