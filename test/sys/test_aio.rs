@@ -21,9 +21,7 @@ use nix::{
 };
 use tempfile::tempfile;
 
-lazy_static! {
-    pub static ref SIGNALED: AtomicBool = AtomicBool::new(false);
-}
+pub static SIGNALED: AtomicBool = AtomicBool::new(false);
 
 extern "C" fn sigfunc(_: c_int) {
     SIGNALED.store(true, Ordering::Relaxed);

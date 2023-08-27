@@ -841,13 +841,10 @@ pub unsafe fn sigaction(signal: Signal, sigaction: &SigAction) -> Result<SigActi
 /// Use a signal handler to set a flag variable:
 ///
 /// ```no_run
-/// # #[macro_use] extern crate lazy_static;
 /// # use std::convert::TryFrom;
 /// # use std::sync::atomic::{AtomicBool, Ordering};
 /// # use nix::sys::signal::{self, Signal, SigHandler};
-/// lazy_static! {
-///    static ref SIGNALED: AtomicBool = AtomicBool::new(false);
-/// }
+/// static SIGNALED: AtomicBool = AtomicBool::new(false);
 ///
 /// extern fn handle_sigint(signal: libc::c_int) {
 ///     let signal = Signal::try_from(signal).unwrap();

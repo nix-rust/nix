@@ -1142,14 +1142,11 @@ pub fn aio_suspend(
 /// # use std::sync::atomic::{AtomicBool, Ordering};
 /// # use std::thread;
 /// # use std::time;
-/// # use lazy_static::lazy_static;
 /// # use nix::errno::Errno;
 /// # use nix::sys::aio::*;
 /// # use nix::sys::signal::*;
 /// # use tempfile::tempfile;
-/// lazy_static! {
-///     pub static ref SIGNALED: AtomicBool = AtomicBool::new(false);
-/// }
+/// pub static SIGNALED: AtomicBool = AtomicBool::new(false);
 ///
 /// extern fn sigfunc(_: c_int) {
 ///     SIGNALED.store(true, Ordering::Relaxed);

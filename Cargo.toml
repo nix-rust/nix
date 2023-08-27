@@ -71,7 +71,6 @@ zerocopy = ["fs", "uio"]
 
 [dev-dependencies]
 assert-impl = "0.1"
-lazy_static = "1.4"
 parking_lot = "0.12"
 rand = "0.8"
 tempfile = "3.7.1"
