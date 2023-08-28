@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased] - ReleaseDate
+
+### Fixed
+
+- Fixed an unintended API change in release 0.26.3, due to the upgrade of the
+  bitflags dependency.
+  ([#2117](https://github.com/nix-rust/nix/pull/2117))
+
 ## [0.26.3] - 2023-08-27
 
 ### Fixed
