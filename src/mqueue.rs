@@ -139,7 +139,7 @@ impl MqAttr {
 /// Open a message queue
 ///
 /// See also [`mq_open(2)`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_open.html)
-// The mode.bits() cast is only lossless on some OSes
+// The mode.bits cast is only lossless on some OSes
 #[allow(clippy::cast_lossless)]
 pub fn mq_open(
     name: &CStr,

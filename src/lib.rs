@@ -54,6 +54,7 @@
 #![warn(missing_docs)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![deny(clippy::cast_ptr_alignment)]
+#![allow(clippy::bad_bit_mask)]
 
 // Re-exported external crates
 pub use libc;
