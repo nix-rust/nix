@@ -309,7 +309,7 @@ impl Termios {
         let termios = *self.inner.borrow_mut();
         self.input_flags = InputFlags::from_bits_truncate(termios.c_iflag);
         self.output_flags = OutputFlags::from_bits_truncate(termios.c_oflag);
-        self.control_flags = ControlFlags::from_bits_retain(termios.c_cflag);
+        self.control_flags = ControlFlags::from_bits_truncate(termios.c_cflag);
         self.local_flags = LocalFlags::from_bits_truncate(termios.c_lflag);
         self.control_chars = termios.c_cc;
         #[cfg(any(
@@ -355,9 +355,9 @@ libc_enum! {
     /// enum.
     ///
     /// B0 is special and will disable the port.
-    #[cfg_attr(target_os = "haiku", repr(u8))]
+    #[cfg_attr(all(any(target_os = "haiku"), target_pointer_width = "64"), repr(u8))]
     #[cfg_attr(all(any(target_os = "ios", target_os = "macos"), target_pointer_width = "64"), repr(u64))]
-    #[cfg_attr(all(not(all(any(target_os = "ios", target_os = "macos"), target_pointer_width = "64")), not(target_os = "haiku")), repr(u32))]
+    #[cfg_attr(not(all(any(target_os = "ios", target_os = "macos", target_os = "haiku"), target_pointer_width = "64")), repr(u32))]
     #[non_exhaustive]
     pub enum BaudRate {
         B0,
