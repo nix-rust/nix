@@ -905,16 +905,29 @@ sockopt_impl!(
     libc::IP_PKTINFO,
     bool
 );
-#[cfg(any(linux_android, target_os = "freebsd", apple_targets, netbsdlike))]
+#[cfg(any(linux_android))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
-    /// Set delivery of the `IPV6_PKTINFO` control message on incoming
+    /// Set delivery of the `IPV6_RECVPKTINFO` control message on incoming
     /// datagrams.
     Ipv6RecvPacketInfo,
     Both,
     libc::IPPROTO_IPV6,
     libc::IPV6_RECVPKTINFO,
+    bool
+);
+
+#[cfg(any(linux_android, bsd))]
+#[cfg(feature = "net")]
+sockopt_impl!(
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
+    /// Set delivery of the `IPV6_PKTINFO` control message on incoming
+    /// datagrams.
+    Ipv6PacketInfo,
+    Both,
+    libc::IPPROTO_IPV6,
+    libc::IPV6_PKTINFO,
     bool
 );
 #[cfg(bsd)]
