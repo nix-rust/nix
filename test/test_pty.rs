@@ -1,9 +1,9 @@
 use std::fs::File;
-use std::io::{Read, Write};
+use std::io::{stdout, Read, Write};
 use std::os::unix::prelude::*;
 use std::path::Path;
 
-use libc::{_exit, STDOUT_FILENO};
+use libc::_exit;
 use nix::fcntl::{open, OFlag};
 use nix::pty::*;
 use nix::sys::stat;
@@ -185,7 +185,7 @@ fn test_openpty() {
     // Writing to one should be readable on the other one
     let string = "foofoofoo\n";
     let mut buf = [0u8; 10];
-    write(pty.master.as_raw_fd(), string.as_bytes()).unwrap();
+    write(&pty.master, string.as_bytes()).unwrap();
     crate::read_exact(&pty.slave, &mut buf);
 
     assert_eq!(&buf, string.as_bytes());
@@ -199,7 +199,7 @@ fn test_openpty() {
     let string2 = "barbarbarbar\n";
     let echoed_string2 = "barbarbarbar\r\n";
     let mut buf = [0u8; 14];
-    write(pty.slave.as_raw_fd(), string2.as_bytes()).unwrap();
+    write(&pty.slave, string2.as_bytes()).unwrap();
     crate::read_exact(&pty.master, &mut buf);
 
     assert_eq!(&buf, echoed_string2.as_bytes());
@@ -224,7 +224,7 @@ fn test_openpty_with_termios() {
     // Writing to one should be readable on the other one
     let string = "foofoofoo\n";
     let mut buf = [0u8; 10];
-    write(pty.master.as_raw_fd(), string.as_bytes()).unwrap();
+    write(&pty.master, string.as_bytes()).unwrap();
     crate::read_exact(&pty.slave, &mut buf);
 
     assert_eq!(&buf, string.as_bytes());
@@ -237,7 +237,7 @@ fn test_openpty_with_termios() {
     let string2 = "barbarbarbar\n";
     let echoed_string2 = "barbarbarbar\n";
     let mut buf = [0u8; 13];
-    write(pty.slave.as_raw_fd(), string2.as_bytes()).unwrap();
+    write(&pty.slave, string2.as_bytes()).unwrap();
     crate::read_exact(&pty.master, &mut buf);
 
     assert_eq!(&buf, echoed_string2.as_bytes());
@@ -258,7 +258,7 @@ fn test_forkpty() {
     let pty = unsafe { forkpty(None, None).unwrap() };
     match pty.fork_result {
         Child => {
-            write(STDOUT_FILENO, string.as_bytes()).unwrap();
+            write(stdout(), string.as_bytes()).unwrap();
             pause(); // we need the child to stay alive until the parent calls read
             unsafe {
                 _exit(0);

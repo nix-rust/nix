@@ -356,7 +356,7 @@ macro_rules! execve_test_factory (
         match unsafe{fork()}.unwrap() {
             Child => {
                 // Make `writer` be the stdout of the new process.
-                dup2(writer, 1).unwrap();
+                dup2(writer.as_raw_fd(), 1).unwrap();
                 let r = syscall();
                 let _ = std::io::stderr()
                     .write_all(format!("{:?}", r).as_bytes());
@@ -370,7 +370,7 @@ macro_rules! execve_test_factory (
                 assert_eq!(ws, Ok(WaitStatus::Exited(child, 0)));
                 // Read 1024 bytes.
                 let mut buf = [0u8; 1024];
-                read(reader, &mut buf).unwrap();
+                read(reader.as_raw_fd(), &mut buf).unwrap();
                 // It should contain the things we printed using `/bin/sh`.
                 let string = String::from_utf8_lossy(&buf);
                 assert!(string.contains("nix!!!"));
@@ -714,12 +714,12 @@ fn test_getresgid() {
 fn test_pipe() {
     let (fd0, fd1) = pipe().unwrap();
     let m0 = stat::SFlag::from_bits_truncate(
-        stat::fstat(fd0).unwrap().st_mode as mode_t,
+        stat::fstat(fd0.as_raw_fd()).unwrap().st_mode as mode_t,
     );
     // S_IFIFO means it's a pipe
     assert_eq!(m0, SFlag::S_IFIFO);
     let m1 = stat::SFlag::from_bits_truncate(
-        stat::fstat(fd1).unwrap().st_mode as mode_t,
+        stat::fstat(fd1.as_raw_fd()).unwrap().st_mode as mode_t,
     );
     assert_eq!(m1, SFlag::S_IFIFO);
 }
@@ -743,9 +743,13 @@ fn test_pipe2() {
     use nix::fcntl::{fcntl, FcntlArg, FdFlag};
 
     let (fd0, fd1) = pipe2(OFlag::O_CLOEXEC).unwrap();
-    let f0 = FdFlag::from_bits_truncate(fcntl(fd0, FcntlArg::F_GETFD).unwrap());
+    let f0 = FdFlag::from_bits_truncate(
+        fcntl(fd0.as_raw_fd(), FcntlArg::F_GETFD).unwrap(),
+    );
     assert!(f0.contains(FdFlag::FD_CLOEXEC));
-    let f1 = FdFlag::from_bits_truncate(fcntl(fd1, FcntlArg::F_GETFD).unwrap());
+    let f1 = FdFlag::from_bits_truncate(
+        fcntl(fd1.as_raw_fd(), FcntlArg::F_GETFD).unwrap(),
+    );
     assert!(f1.contains(FdFlag::FD_CLOEXEC));
 }
 
