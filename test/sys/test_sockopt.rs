@@ -303,7 +303,7 @@ fn test_get_mtu() {
 }
 
 #[test]
-#[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
+#[cfg(any(linux_android, target_os = "freebsd"))]
 fn test_ttl_opts() {
     let fd4 = socket(
         AddressFamily::Inet,
@@ -323,6 +323,34 @@ fn test_ttl_opts() {
     .unwrap();
     setsockopt(&fd6, sockopt::Ipv6Ttl, &1)
         .expect("setting ipv6ttl on an inet6 socket should succeed");
+}
+
+#[test]
+#[cfg(any(linux_android, target_os = "freebsd"))]
+fn test_multicast_ttl_opts_ipv4() {
+    let fd4 = socket(
+        AddressFamily::Inet,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )
+    .unwrap();
+    setsockopt(&fd4, sockopt::IpMulticastTtl, &2)
+        .expect("setting ipmulticastttl on an inet socket should succeed");
+}
+
+#[test]
+#[cfg(linux_android)]
+fn test_multicast_ttl_opts_ipv6() {
+    let fd6 = socket(
+        AddressFamily::Inet6,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )
+    .unwrap();
+    setsockopt(&fd6, sockopt::IpMulticastTtl, &2)
+        .expect("setting ipmulticastttl on an inet6 socket should succeed");
 }
 
 #[test]
