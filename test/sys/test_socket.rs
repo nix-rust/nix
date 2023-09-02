@@ -564,7 +564,7 @@ mod recvfrom {
         let res: Vec<RecvMsg<SockaddrIn>> = recvmmsg(
             rsock.as_raw_fd(),
             &mut data,
-            msgs.iter(),
+            msgs.iter_mut(),
             MsgFlags::empty(),
             None,
         )
@@ -652,7 +652,7 @@ mod recvfrom {
         let res: Vec<RecvMsg<SockaddrIn>> = recvmmsg(
             rsock.as_raw_fd(),
             &mut data,
-            msgs.iter(),
+            msgs.iter_mut(),
             MsgFlags::MSG_DONTWAIT,
             None,
         )
@@ -2324,12 +2324,17 @@ fn test_recvmmsg_timestampns() {
     // Receive the message
     let mut buffer = vec![0u8; message.len()];
     let cmsgspace = nix::cmsg_space!(TimeSpec);
-    let iov = vec![[IoSliceMut::new(&mut buffer)]];
+    let mut iov = vec![[IoSliceMut::new(&mut buffer)]];
     let mut data = MultiHeaders::preallocate(1, Some(cmsgspace));
-    let r: Vec<RecvMsg<()>> =
-        recvmmsg(in_socket.as_raw_fd(), &mut data, iov.iter(), flags, None)
-            .unwrap()
-            .collect();
+    let r: Vec<RecvMsg<()>> = recvmmsg(
+        in_socket.as_raw_fd(),
+        &mut data,
+        iov.iter_mut(),
+        flags,
+        None,
+    )
+    .unwrap()
+    .collect();
     let rtime = match r[0].cmsgs().next() {
         Some(ControlMessageOwned::ScmTimestampns(rtime)) => rtime,
         Some(_) => panic!("Unexpected control message"),
