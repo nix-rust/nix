@@ -67,6 +67,37 @@ fn test_fork_and_waitpid() {
 }
 
 #[test]
+#[cfg(target_os = "freebsd")]
+fn test_rfork_and_waitpid() {
+    let _m = crate::FORK_MTX.lock();
+
+    // Safe: Child only calls `_exit`, which is signal-safe
+    match unsafe { rfork(RforkFlags::RFPROC | RforkFlags::RFTHREAD) }
+        .expect("Error: Rfork Failed")
+    {
+        Child => unsafe { _exit(0) },
+        Parent { child } => {
+            // assert that child was created and pid > 0
+            let child_raw: ::libc::pid_t = child.into();
+            assert!(child_raw > 0);
+            let wait_status = waitpid(child, None);
+            match wait_status {
+                // assert that waitpid returned correct status and the pid is the one of the child
+                Ok(WaitStatus::Exited(pid_t, _)) => assert_eq!(pid_t, child),
+
+                // panic, must never happen
+                s @ Ok(_) => {
+                    panic!("Child exited {s:?}, should never happen")
+                }
+
+                // panic, waitpid should never fail
+                Err(s) => panic!("Error: waitpid returned Err({s:?}"),
+            }
+        }
+    }
+}
+
+#[test]
 fn test_wait() {
     // Grab FORK_MTX so wait doesn't reap a different test's child process
     let _m = crate::FORK_MTX.lock();
