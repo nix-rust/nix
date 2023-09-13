@@ -890,13 +890,6 @@ pub struct Timestamps {
     pub hw_raw: TimeSpec,
 }
 
-// Defined in `linux/tls.h`
-#[cfg(all(target_os = "linux"))]
-const TLS_GET_RECORD_TYPE: c_int = 2;
-
-#[cfg(all(target_os = "linux"))]
-const SOL_TLS: c_int = 282;
-
 impl ControlMessageOwned {
     /// Decodes a `ControlMessageOwned` from raw bytes.
     ///
@@ -1040,7 +1033,7 @@ impl ControlMessageOwned {
                 ControlMessageOwned::Ipv6OrigDstAddr(dl)
             },
             #[cfg(all(target_os = "linux"))]
-            (SOL_TLS, TLS_GET_RECORD_TYPE) => {
+            (libc::SOL_TLS, libc::TLS_GET_RECORD_TYPE) => {
                 let content_type = ptr::read_unaligned(p as *const u8);
                 ControlMessageOwned::TlsGetRecordType(content_type)
             },
