@@ -1529,7 +1529,7 @@ pub fn sendmmsg<'a, XS, AS, C, I, S>(
 
 
     for (i, ((slice, addr), mmsghdr)) in slices.into_iter().zip(addrs.as_ref()).zip(data.items.iter_mut() ).enumerate() {
-        let mut p = &mut mmsghdr.msg_hdr;
+        let p = &mut mmsghdr.msg_hdr;
         p.msg_iov = slice.as_ref().as_ptr() as *mut libc::iovec;
         p.msg_iovlen = slice.as_ref().len() as _;
 
@@ -1682,7 +1682,7 @@ where
 {
     let mut count = 0;
     for (i, (slice, mmsghdr)) in slices.into_iter().zip(data.items.iter_mut()).enumerate() {
-        let mut p = &mut mmsghdr.msg_hdr;
+        let p = &mut mmsghdr.msg_hdr;
         p.msg_iov = slice.as_ref().as_ptr() as *mut libc::iovec;
         p.msg_iovlen = slice.as_ref().len() as _;
         count = i + 1;
