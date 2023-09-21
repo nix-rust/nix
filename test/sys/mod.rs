@@ -15,7 +15,8 @@ mod test_aio;
 #[cfg(not(any(
     target_os = "redox",
     target_os = "fuchsia",
-    target_os = "haiku"
+    target_os = "haiku",
+    target_os = "hurd"
 )))]
 mod test_ioctl;
 #[cfg(not(target_os = "redox"))]

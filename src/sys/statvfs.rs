@@ -104,7 +104,13 @@ impl Statvfs {
     }
 
     /// Get the file system id
+    #[cfg(not(target_os = "hurd"))]
     pub fn filesystem_id(&self) -> c_ulong {
+        self.0.f_fsid
+    }
+    /// Get the file system id
+    #[cfg(target_os = "hurd")]
+    pub fn filesystem_id(&self) -> u64 {
         self.0.f_fsid
     }
 
