@@ -2,6 +2,7 @@
 
 [![Cirrus Build Status](https://api.cirrus-ci.com/github/nix-rust/nix.svg)](https://cirrus-ci.com/github/nix-rust/nix)
 [![crates.io](https://img.shields.io/crates/v/nix.svg)](https://crates.io/crates/nix)
+[![maintenance-status](https://img.shields.io/badge/maintenance-looking--for--maintainer-orange.svg)](https://github.com/nix-rust/nix/issues/2132)
 
 [Documentation (Releases)](https://docs.rs/nix/)
 
