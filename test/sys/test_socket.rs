@@ -1302,7 +1302,7 @@ pub fn test_sendmsg_empty_cmsgs() {
         )
         .unwrap();
 
-        for _ in msg.cmsgs() {
+        if msg.cmsgs().next().is_some() {
             panic!("unexpected cmsg");
         }
         assert!(!msg
