@@ -41,19 +41,19 @@ impl<'fd> FdSet<'fd> {
     }
 
     /// Add a file descriptor to an `FdSet`
-    pub fn insert<Fd: AsFd>(&mut self, fd: &'fd Fd) {
+    pub fn insert<Fd: AsFd + 'fd>(&mut self, fd: Fd) {
         assert_fd_valid(fd.as_fd().as_raw_fd());
         unsafe { libc::FD_SET(fd.as_fd().as_raw_fd(), &mut self.set) };
     }
 
     /// Remove a file descriptor from an `FdSet`
-    pub fn remove<Fd: AsFd>(&mut self, fd: &'fd Fd) {
+    pub fn remove<Fd: AsFd + 'fd>(&mut self, fd: Fd) {
         assert_fd_valid(fd.as_fd().as_raw_fd());
         unsafe { libc::FD_CLR(fd.as_fd().as_raw_fd(), &mut self.set) };
     }
 
     /// Test an `FdSet` for the presence of a certain file descriptor.
-    pub fn contains<Fd: AsFd>(&self, fd: &'fd Fd) -> bool {
+    pub fn contains<Fd: AsFd + 'fd>(&self, fd: Fd) -> bool {
         assert_fd_valid(fd.as_fd().as_raw_fd());
         unsafe { libc::FD_ISSET(fd.as_fd().as_raw_fd(), &self.set) }
     }
