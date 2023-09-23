@@ -22,21 +22,37 @@ pub struct PollFd<'fd> {
 impl<'fd> PollFd<'fd> {
     /// Creates a new `PollFd` specifying the events of interest
     /// for a given file descriptor.
-    //
+    ///
+    /// # Examples
+    /// ```no_run
+    /// # use std::os::fd::{AsFd, AsRawFd, FromRawFd, OwnedFd};
+    /// # use nix::{
+    /// #     poll::{PollFd, PollFlags, poll},
+    /// #     unistd::{pipe, read}
+    /// # };
+    /// let (r, w) = pipe().unwrap();
+    /// let r = unsafe { OwnedFd::from_raw_fd(r) };
+    /// let pfd = PollFd::new(&r.as_fd(), PollFlags::POLLIN);
+    /// let mut fds = [pfd];
+    /// poll(&mut fds, -1).unwrap();
+    /// let mut buf = [0u8; 80];
+    /// read(r.as_raw_fd(), &mut buf[..]);
+    /// ```
+    // Unlike I/O functions, constructors like this must take `AsFd` by
+    // reference.  Otherwise, an `OwnedFd` argument would be dropped at the end
+    // of the method, leaving the structure referencing a closed file
+    // descriptor.
     // Different from other I/O-safe interfaces, here, we have to take `AsFd`
     // by reference to prevent the case where the `fd` is closed but it is
     // still in use. For example:
     //
     // ```rust
-    // let (reader, _) = pipe().unwrap();
-    //
-    // // If `PollFd::new()` takes `AsFd` by value, then `reader` will be consumed,
-    // // but the file descriptor of `reader` will still be in use.
-    // let pollfd = PollFd::new(reader, flag);
-    //
+    // let (r, _) = pipe().unwrap();
+    // let reader: OwnedFd = unsafe { OwnedFd::from_raw_fd(r) };
+    // let pollfd = PollFd::new(reader, flag);  // Drops the OwnedFd
     // // Do something with `pollfd`, which uses the CLOSED fd.
     // ```
-    pub fn new<Fd: AsFd>(fd: &'fd Fd, events: PollFlags) -> PollFd<'fd> {
+    pub fn new<Fd: AsFd + 'fd>(fd: &Fd, events: PollFlags) -> PollFd<'fd> {
         PollFd {
             pollfd: libc::pollfd {
                 fd: fd.as_fd().as_raw_fd(),
