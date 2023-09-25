@@ -1269,8 +1269,8 @@ fn test_getpeereid() {
     use std::os::unix::net::UnixStream;
     let (sock_a, sock_b) = UnixStream::pair().unwrap();
 
-    let (uid_a, gid_a) = getpeereid(&sock_a).unwrap();
-    let (uid_b, gid_b) = getpeereid(&sock_b).unwrap();
+    let (uid_a, gid_a) = getpeereid(sock_a).unwrap();
+    let (uid_b, gid_b) = getpeereid(sock_b).unwrap();
 
     let uid = geteuid();
     let gid = getegid();

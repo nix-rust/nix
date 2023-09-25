@@ -3943,7 +3943,7 @@ feature! {
     target_os = "netbsd",
     target_os = "dragonfly",
 ))]
-pub fn getpeereid<F: AsFd>(fd: &F) -> Result<(Uid, Gid)> {
+pub fn getpeereid<F: AsFd>(fd: F) -> Result<(Uid, Gid)> {
     let mut uid = 1;
     let mut gid = 1;
 
