@@ -635,7 +635,7 @@ fn test_acct() {
 fn test_fpathconf_limited() {
     let f = tempfile().unwrap();
     // AFAIK, PATH_MAX is limited on all platforms, so it makes a good test
-    let path_max = fpathconf(f.as_raw_fd(), PathconfVar::PATH_MAX);
+    let path_max = fpathconf(f, PathconfVar::PATH_MAX);
     assert!(
         path_max
             .expect("fpathconf failed")
@@ -1230,9 +1230,11 @@ fn test_ttyname() {
     grantpt(&fd).expect("grantpt failed");
     unlockpt(&fd).expect("unlockpt failed");
     let sname = unsafe { ptsname(&fd) }.expect("ptsname failed");
-    let fds = open(Path::new(&sname), OFlag::O_RDWR, stat::Mode::empty())
+    let fds = fs::OpenOptions::new()
+        .read(true)
+        .write(true)
+        .open(Path::new(&sname))
         .expect("open failed");
-    assert!(fds > 0);
 
     let name = ttyname(fds).expect("ttyname failed");
     assert!(name.starts_with("/dev"));
@@ -1242,18 +1244,7 @@ fn test_ttyname() {
 #[cfg(not(any(target_os = "redox", target_os = "fuchsia")))]
 fn test_ttyname_not_pty() {
     let fd = File::open("/dev/zero").unwrap();
-    assert!(fd.as_raw_fd() > 0);
-    assert_eq!(ttyname(fd.as_raw_fd()), Err(Errno::ENOTTY));
-}
-
-#[test]
-#[cfg(not(any(
-    target_os = "redox",
-    target_os = "fuchsia",
-    target_os = "haiku"
-)))]
-fn test_ttyname_invalid_fd() {
-    assert_eq!(ttyname(-1), Err(Errno::EBADF));
+    assert_eq!(ttyname(fd), Err(Errno::ENOTTY));
 }
 
 #[test]
