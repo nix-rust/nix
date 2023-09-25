@@ -3943,11 +3943,11 @@ feature! {
     target_os = "netbsd",
     target_os = "dragonfly",
 ))]
-pub fn getpeereid(fd: RawFd) -> Result<(Uid, Gid)> {
+pub fn getpeereid<F: AsFd>(fd: &F) -> Result<(Uid, Gid)> {
     let mut uid = 1;
     let mut gid = 1;
 
-    let ret = unsafe { libc::getpeereid(fd, &mut uid, &mut gid) };
+    let ret = unsafe { libc::getpeereid(fd.as_fd().as_raw_fd(), &mut uid, &mut gid) };
 
     Errno::result(ret).map(|_| (Uid(uid), Gid(gid)))
 }
