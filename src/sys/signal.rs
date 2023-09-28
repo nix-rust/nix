@@ -67,7 +67,10 @@ libc_enum! {
         /// Stack fault (obsolete)
         #[cfg(all(any(target_os = "android", target_os = "emscripten",
                       target_os = "fuchsia", target_os = "linux"),
-                  not(any(target_arch = "mips", target_arch = "mips64",
+                  not(any(target_arch = "mips",
+                          target_arch = "mips32r6",
+                          target_arch = "mips64",
+                          target_arch = "mips64r6",
                           target_arch = "sparc64"))))]
         SIGSTKFLT,
         /// To parent on child stop or exit
@@ -152,7 +155,9 @@ impl FromStr for Signal {
                 ),
                 not(any(
                     target_arch = "mips",
+                    target_arch = "mips32r6",
                     target_arch = "mips64",
+                    target_arch = "mips64r6",
                     target_arch = "sparc64"
                 ))
             ))]
@@ -236,7 +241,9 @@ impl Signal {
                 ),
                 not(any(
                     target_arch = "mips",
+                    target_arch = "mips32r6",
                     target_arch = "mips64",
+                    target_arch = "mips64r6",
                     target_arch = "sparc64"
                 ))
             ))]
@@ -329,7 +336,9 @@ const SIGNALS: [Signal; 28] = [
     ),
     not(any(
         target_arch = "mips",
+        target_arch = "mips32r6",
         target_arch = "mips64",
+        target_arch = "mips64r6",
         target_arch = "sparc64"
     ))
 ))]
@@ -347,7 +356,13 @@ const SIGNALS: [Signal; 31] = [
         target_os = "emscripten",
         target_os = "fuchsia"
     ),
-    any(target_arch = "mips", target_arch = "mips64", target_arch = "sparc64")
+    any(
+        target_arch = "mips",
+        target_arch = "mips32r6",
+        target_arch = "mips64",
+        target_arch = "mips64r6",
+        target_arch = "sparc64"
+    )
 ))]
 #[cfg(feature = "signal")]
 const SIGNALS: [Signal; 30] = [
