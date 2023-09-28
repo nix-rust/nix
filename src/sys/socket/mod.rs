@@ -59,6 +59,8 @@ pub use self::addr::{SockaddrIn, SockaddrIn6};
 pub use crate::sys::socket::addr::alg::AlgAddr;
 #[cfg(any(target_os = "android", target_os = "linux"))]
 pub use crate::sys::socket::addr::netlink::NetlinkAddr;
+#[cfg(target_os = "linux")]
+pub use crate::sys::socket::addr::can::CanAddr;
 #[cfg(any(target_os = "ios", target_os = "macos"))]
 #[cfg(feature = "ioctl")]
 pub use crate::sys::socket::addr::sys_control::SysControlAddr;
