@@ -1098,6 +1098,36 @@ pub fn close(fd: RawFd) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
+#[cfg(target_os = "linux")]
+libc_bitflags! {
+    /// Options for close_range()
+    pub struct CloseRangeFlags : c_uint {
+        /// Unshare file descriptors before closing them.
+        CLOSE_RANGE_UNSHARE;
+        /// Set close-on-exec instead of closing file descriptors.
+        CLOSE_RANGE_CLOEXEC;
+    }
+}
+
+/// Close a range of raw file descriptors.
+/// [close_range(2)](https://man7.org/linux/man-pages/man2/close_range.2.html).
+#[cfg(target_os = "linux")]
+pub fn close_range(
+    first: RawFd,
+    last: RawFd,
+    flags: CloseRangeFlags,
+) -> Result<()> {
+    let res = unsafe {
+        libc::syscall(
+            libc::SYS_close_range,
+            first as libc::c_uint,
+            last as libc::c_uint,
+            flags.bits(),
+        )
+    };
+    Errno::result(res).map(drop)
+}
+
 /// Read from a raw file descriptor.
 ///
 /// See also [read(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/read.html)
