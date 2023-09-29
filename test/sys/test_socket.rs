@@ -78,9 +78,8 @@ pub fn test_path_to_sock_addr() {
     let actual = Path::new(path);
     let addr = UnixAddr::new(actual).unwrap();
 
-    let expect: &[c_char] = unsafe {
-        slice::from_raw_parts(path.as_ptr() as *const c_char, path.len())
-    };
+    let expect: &[c_char] =
+        unsafe { slice::from_raw_parts(path.as_ptr().cast(), path.len()) };
     assert_eq!(unsafe { &(*addr.as_ptr()).sun_path[..8] }, expect);
 
     assert_eq!(addr.path(), Some(actual));

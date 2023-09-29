@@ -373,6 +373,7 @@ mod if_nameindex {
     }
 
     /// A list of the network interfaces available on this system. Obtained from [`if_nameindex()`].
+    #[repr(transparent)]
     pub struct Interfaces {
         ptr: NonNull<libc::if_nameindex>,
     }
@@ -388,7 +389,7 @@ mod if_nameindex {
         /// null-terminated, so calling this calculates the length. If random access isn't needed,
         /// [`Interfaces::iter()`] should be used instead.
         pub fn to_slice(&self) -> &[Interface] {
-            let ifs = self.ptr.as_ptr() as *const Interface;
+            let ifs = self.ptr.as_ptr().cast();
             let len = self.iter().count();
             unsafe { std::slice::from_raw_parts(ifs, len) }
         }

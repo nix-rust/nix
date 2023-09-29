@@ -96,22 +96,24 @@ cfg_if! {
                 headers: Option<&'a [&'a [u8]]>,
                 trailers: Option<&'a [&'a [u8]]>
             ) -> SendfileHeaderTrailer<'a> {
-                let header_iovecs: Option<Vec<IoSlice<'_>>> =
+                let mut header_iovecs: Option<Vec<IoSlice<'_>>> =
                     headers.map(|s| s.iter().map(|b| IoSlice::new(b)).collect());
-                let trailer_iovecs: Option<Vec<IoSlice<'_>>> =
+                let mut trailer_iovecs: Option<Vec<IoSlice<'_>>> =
                     trailers.map(|s| s.iter().map(|b| IoSlice::new(b)).collect());
                 SendfileHeaderTrailer(
                     libc::sf_hdtr {
                         headers: {
                             header_iovecs
-                                .as_ref()
-                                .map_or(ptr::null(), |v| v.as_ptr()) as *mut libc::iovec
+                                .as_mut()
+                                .map_or(ptr::null_mut(), |v| v.as_mut_ptr())
+                                .cast()
                         },
                         hdr_cnt: header_iovecs.as_ref().map(|v| v.len()).unwrap_or(0) as i32,
                         trailers: {
                             trailer_iovecs
-                                .as_ref()
-                                .map_or(ptr::null(), |v| v.as_ptr()) as *mut libc::iovec
+                                .as_mut()
+                                .map_or(ptr::null_mut(), |v| v.as_mut_ptr())
+                                .cast()
                         },
                         trl_cnt: trailer_iovecs.as_ref().map(|v| v.len()).unwrap_or(0) as i32
                     },
