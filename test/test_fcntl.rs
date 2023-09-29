@@ -42,7 +42,7 @@ fn test_openat() {
         open(tmp.path().parent().unwrap(), OFlag::empty(), Mode::empty())
             .unwrap();
     let fd = openat(
-        dirfd,
+        Some(dirfd),
         tmp.path().file_name().unwrap(),
         OFlag::O_RDONLY,
         Mode::empty(),
