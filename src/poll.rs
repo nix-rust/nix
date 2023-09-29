@@ -25,26 +25,22 @@ impl<'fd> PollFd<'fd> {
     ///
     /// # Examples
     /// ```no_run
-    /// # use std::os::fd::{AsFd, AsRawFd, FromRawFd, OwnedFd};
+    /// # use std::os::unix::io::{AsFd, AsRawFd, FromRawFd};
     /// # use nix::{
     /// #     poll::{PollFd, PollFlags, poll},
     /// #     unistd::{pipe, read}
     /// # };
     /// let (r, w) = pipe().unwrap();
-    /// let r = unsafe { OwnedFd::from_raw_fd(r) };
-    /// let pfd = PollFd::new(&r.as_fd(), PollFlags::POLLIN);
+    /// let pfd = PollFd::new(r.as_fd(), PollFlags::POLLIN);
     /// let mut fds = [pfd];
     /// poll(&mut fds, -1).unwrap();
     /// let mut buf = [0u8; 80];
     /// read(r.as_raw_fd(), &mut buf[..]);
     /// ```
-    // Unlike I/O functions, constructors like this must take `AsFd` by
-    // reference.  Otherwise, an `OwnedFd` argument would be dropped at the end
-    // of the method, leaving the structure referencing a closed file
-    // descriptor.
-    // Different from other I/O-safe interfaces, here, we have to take `AsFd`
-    // by reference to prevent the case where the `fd` is closed but it is
-    // still in use. For example:
+    // Unlike I/O functions, constructors like this must take `BorrowedFd`
+    // instead of AsFd or &AsFd.  Otherwise, an `OwnedFd` argument would be
+    // dropped at the end of the method, leaving the structure referencing a
+    // closed file descriptor.  For example:
     //
     // ```rust
     // let (r, _) = pipe().unwrap();
@@ -52,10 +48,10 @@ impl<'fd> PollFd<'fd> {
     // let pollfd = PollFd::new(reader, flag);  // Drops the OwnedFd
     // // Do something with `pollfd`, which uses the CLOSED fd.
     // ```
-    pub fn new<Fd: AsFd + 'fd>(fd: &Fd, events: PollFlags) -> PollFd<'fd> {
+    pub fn new(fd: BorrowedFd<'fd>, events: PollFlags) -> PollFd<'fd> {
         PollFd {
             pollfd: libc::pollfd {
-                fd: fd.as_fd().as_raw_fd(),
+                fd: fd.as_raw_fd(),
                 events: events.bits(),
                 revents: PollFlags::empty().bits(),
             },
