@@ -849,6 +849,7 @@ impl SpacectlRange {
 /// assert_eq!(buf, b"012\0\0\0\0\0\09abcdef");
 /// ```
 #[cfg(target_os = "freebsd")]
+#[inline] // Delays codegen, preventing linker errors with dylibs and --no-allow-shlib-undefined
 pub fn fspacectl(fd: RawFd, range: SpacectlRange) -> Result<SpacectlRange> {
     let mut rqsr = libc::spacectl_range {
         r_offset: range.0,
@@ -897,6 +898,7 @@ pub fn fspacectl(fd: RawFd, range: SpacectlRange) -> Result<SpacectlRange> {
 /// assert_eq!(buf, b"012\0\0\0\0\0\09abcdef");
 /// ```
 #[cfg(target_os = "freebsd")]
+#[inline] // Delays codegen, preventing linker errors with dylibs and --no-allow-shlib-undefined
 pub fn fspacectl_all(
     fd: RawFd,
     offset: libc::off_t,
