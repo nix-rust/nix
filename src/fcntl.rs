@@ -489,6 +489,8 @@ pub enum FcntlArg<'a> {
     F_GETPIPE_SZ,
     #[cfg(any(target_os = "linux", target_os = "android"))]
     F_SETPIPE_SZ(c_int),
+    #[cfg(any(target_os = "netbsd", target_os = "macos", target_os = "ios"))]
+    F_GETPATH(Vec<u8>),
     // TODO: Rest of flags
 }
 
@@ -549,6 +551,11 @@ pub fn fcntl(fd: RawFd, arg: FcntlArg) -> Result<c_int> {
             F_GETPIPE_SZ => libc::fcntl(fd, libc::F_GETPIPE_SZ),
             #[cfg(any(target_os = "linux", target_os = "android"))]
             F_SETPIPE_SZ(size) => libc::fcntl(fd, libc::F_SETPIPE_SZ, size),
+            #[cfg(any(target_os = "netbsd", target_os = "macos", target_os = "ios"))]
+            F_GETPATH(path) => {
+                path.resize(libc::PATH_MAX);
+                libc::fcntl(fd, libc::F_GETPATH, path.as_ptr())
+            },
         }
     };
 

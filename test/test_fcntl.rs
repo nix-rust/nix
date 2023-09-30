@@ -561,3 +561,21 @@ mod test_posix_fallocate {
         }
     }
 }
+
+#[test]
+#[cfg(any(target_os = "netbsd", target_os = "macos", target_os = "ios"))]
+mod test_apple_netbsd {
+    use nix::fcntl::*;
+    use tempfile::NamedTempFile;
+
+    #[test]
+    fn test_path() {
+        let mut tmp = NamedTempFile::new().unwrap();
+        let fd = tmp.as_raw_fd();
+        let mut path: Vec<u8> = Vec::new();
+        let res = fcntl(fd, FcntlArg::F_GETPATH(path)).expect("get path failed");
+        assert_eq!(
+            path.len() > 0
+        );
+    }
+}
