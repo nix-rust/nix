@@ -487,7 +487,7 @@ cfg_if! {
             pub fn groups(&self) -> &[libc::gid_t] {
                 unsafe {
                     std::slice::from_raw_parts(
-                        self.0.cmcred_groups.as_ptr().cast(),
+                        self.0.cmcred_groups.as_ptr(),
                         self.0.cmcred_ngroups as _
                     )
                 }
