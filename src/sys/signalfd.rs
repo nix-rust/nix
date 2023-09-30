@@ -101,7 +101,7 @@ impl SignalFd {
     }
 
     pub fn set_mask(&mut self, mask: &SigSet) -> Result<()> {
-        _signalfd(Some(self.0.as_fd()), mask, SfdFlags::empty()).map(drop)
+        self.update(mask, SfdFlags::empty())
     }
 
     pub fn read_signal(&mut self) -> Result<Option<siginfo>> {
@@ -117,6 +117,17 @@ impl SignalFd {
             Ok(_) => unreachable!("partial read on signalfd"),
             Err(Errno::EAGAIN) => Ok(None),
             Err(error) => Err(error),
+        }
+    }
+
+    fn update(&self, mask: &SigSet, flags: SfdFlags) -> Result<()> {
+        let raw_fd = self.0.as_raw_fd();
+        unsafe {
+            Errno::result(libc::signalfd(
+                raw_fd,
+                mask.as_ref(),
+                flags.bits(),
+            )).map(drop)
         }
     }
 }

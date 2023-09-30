@@ -12,6 +12,10 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Fixed the function signature of `recvmmsg`, potentially causing UB
   ([#2119](https://github.com/nix-rust/nix/issues/2119))
 
+- Fix `SignalFd::set_mask`.  In 0.27.0 it would actually close the file
+  descriptor.
+  ([#2141](https://github.com/nix-rust/nix/pull/2141))
+
 ### Changed
 
 - The following APIs now take an implementation of `AsFd` rather than a
