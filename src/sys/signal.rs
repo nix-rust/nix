@@ -7,6 +7,7 @@ use crate::errno::Errno;
 use crate::{Error, Result};
 use cfg_if::cfg_if;
 use std::fmt;
+use std::hash::{Hash, Hasher};
 use std::mem;
 #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
 use std::os::unix::io::RawFd;
@@ -486,7 +487,7 @@ use std::iter::IntoIterator;
 // We are using `transparent` here to be super sure that `SigSet`
 // is represented exactly like the `sigset_t` struct from C.
 #[repr(transparent)]
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq)]
 pub struct SigSet {
     sigset: libc::sigset_t
 }
@@ -625,6 +626,27 @@ impl FromIterator<Signal> for SigSet {
         let mut sigset = SigSet::empty();
         sigset.extend(iter);
         sigset
+    }
+}
+
+impl PartialEq for SigSet {
+    fn eq(&self, other: &Self) -> bool {
+        for signal in Signal::iterator() {
+            if self.contains(signal) != other.contains(signal) {
+                return false;
+            }
+        }
+        true
+    }
+}
+
+impl Hash for SigSet {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        for signal in Signal::iterator() {
+            if self.contains(signal) {
+                signal.hash(state);
+            }
+        }
     }
 }
 
@@ -1553,5 +1575,49 @@ mod tests {
         for signal in Signal::iterator() {
             assert!(set.contains(signal));
         }
+    }
+
+    #[test]
+    fn test_eq_empty() {
+        let set0 = SigSet::empty();
+        let set1 = SigSet::empty();
+        assert_eq!(set0, set1);
+    }
+
+    #[test]
+    fn test_eq_all() {
+        let set0 = SigSet::all();
+        let set1 = SigSet::all();
+        assert_eq!(set0, set1);
+    }
+
+    #[test]
+    fn test_hash_empty() {
+        use std::collections::hash_map::DefaultHasher;
+
+        let set0 = SigSet::empty();
+        let mut h0 = DefaultHasher::new();
+        set0.hash(&mut h0);
+
+        let set1 = SigSet::empty();
+        let mut h1 = DefaultHasher::new();
+        set1.hash(&mut h1);
+
+        assert_eq!(h0.finish(), h1.finish());
+    }
+
+    #[test]
+    fn test_hash_all() {
+        use std::collections::hash_map::DefaultHasher;
+
+        let set0 = SigSet::all();
+        let mut h0 = DefaultHasher::new();
+        set0.hash(&mut h0);
+
+        let set1 = SigSet::all();
+        let mut h1 = DefaultHasher::new();
+        set1.hash(&mut h1);
+
+        assert_eq!(h0.finish(), h1.finish());
     }
 }

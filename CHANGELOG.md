@@ -5,6 +5,10 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased] - ReleaseDate
 
+### Fixed
+- Fix `SigSet` incorrect implementation of `Eq`, `PartialEq` and `Hash`
+  ([#1946](https://github.com/nix-rust/nix/pull/1946))
+
 ### Changed
 
 - The following APIs now take an implementation of `AsFd` rather than a
