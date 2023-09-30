@@ -7,8 +7,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
-- Changed `openat()` and `Dir::openat()` now take optional `dirfd`s
-  ([#1850](https://github.com/nix-rust/nix/pull/2139))
+- Changed `openat()` and `Dir::openat()`, now take optional `dirfd`s
+  ([#2139](https://github.com/nix-rust/nix/pull/2139))
 
 
 ## [0.27.1] - 2023-08-28
