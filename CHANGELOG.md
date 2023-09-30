@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased] - 2023-09-30
+
+### Changed
+
+- Changed `openat()` and `Dir::openat()` now take optional `dirfd`s
+  ([#1850](https://github.com/nix-rust/nix/pull/2139))
+
+
 ## [0.27.1] - 2023-08-28
 
 ### Fixed
@@ -99,7 +107,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 ## [0.26.3] - 2023-08-27
 
 ### Fixed
-- Fix: send `ETH_P_ALL` in htons format 
+- Fix: send `ETH_P_ALL` in htons format
   ([#1925](https://github.com/nix-rust/nix/pull/1925))
 - Fix: `recvmsg` now sets the length of the received `sockaddr_un` field
   correctly on Linux platforms. ([#2041](https://github.com/nix-rust/nix/pull/2041))
@@ -187,7 +195,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   ([#1824](https://github.com/nix-rust/nix/pull/1824))
 - Workaround XNU bug causing netmasks returned by `getifaddrs` to misbehave.
   ([#1788](https://github.com/nix-rust/nix/pull/1788))
-  
+
 ### Removed
 
 - Removed deprecated error constants and conversions.
