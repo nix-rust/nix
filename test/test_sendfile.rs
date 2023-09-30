@@ -1,6 +1,4 @@
 use std::io::prelude::*;
-#[cfg(any(target_os = "android", target_os = "linux"))]
-use std::os::unix::io::{FromRawFd, OwnedFd};
 
 use libc::off_t;
 use nix::sys::sendfile::*;
@@ -8,7 +6,8 @@ use tempfile::tempfile;
 
 cfg_if! {
     if #[cfg(any(target_os = "android", target_os = "linux"))] {
-        use nix::unistd::{close, pipe, read};
+        use nix::unistd::{pipe, read};
+        use std::os::unix::io::AsRawFd;
     } else if #[cfg(any(target_os = "dragonfly", target_os = "freebsd", target_os = "ios", target_os = "macos"))] {
         use std::net::Shutdown;
         use std::os::unix::net::UnixStream;
@@ -24,21 +23,14 @@ fn test_sendfile_linux() {
 
     let (rd, wr) = pipe().unwrap();
     let mut offset: off_t = 5;
-    // The construct of this `OwnedFd` is a temporary workaround, when `pipe(2)`
-    // becomes I/O-safe:
-    // pub fn pipe() -> std::result::Result<(OwnedFd, OwnedFd), Error>
-    // then it is no longer needed.
-    let wr = unsafe { OwnedFd::from_raw_fd(wr) };
     let res = sendfile(&wr, &tmp, Some(&mut offset), 2).unwrap();
 
     assert_eq!(2, res);
 
     let mut buf = [0u8; 1024];
-    assert_eq!(2, read(rd, &mut buf).unwrap());
+    assert_eq!(2, read(rd.as_raw_fd(), &mut buf).unwrap());
     assert_eq!(b"f1", &buf[0..2]);
     assert_eq!(7, offset);
-
-    close(rd).unwrap();
 }
 
 #[cfg(target_os = "linux")]
@@ -50,21 +42,14 @@ fn test_sendfile64_linux() {
 
     let (rd, wr) = pipe().unwrap();
     let mut offset: libc::off64_t = 5;
-    // The construct of this `OwnedFd` is a temporary workaround, when `pipe(2)`
-    // becomes I/O-safe:
-    // pub fn pipe() -> std::result::Result<(OwnedFd, OwnedFd), Error>
-    // then it is no longer needed.
-    let wr = unsafe { OwnedFd::from_raw_fd(wr) };
     let res = sendfile64(&wr, &tmp, Some(&mut offset), 2).unwrap();
 
     assert_eq!(2, res);
 
     let mut buf = [0u8; 1024];
-    assert_eq!(2, read(rd, &mut buf).unwrap());
+    assert_eq!(2, read(rd.as_raw_fd(), &mut buf).unwrap());
     assert_eq!(b"f1", &buf[0..2]);
     assert_eq!(7, offset);
-
-    close(rd).unwrap();
 }
 
 #[cfg(target_os = "freebsd")]

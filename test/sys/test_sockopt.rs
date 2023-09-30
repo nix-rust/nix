@@ -5,7 +5,7 @@ use nix::sys::socket::{
     SockProtocol, SockType,
 };
 use rand::{thread_rng, Rng};
-use std::os::unix::io::AsRawFd;
+use std::os::unix::io::{AsRawFd, FromRawFd, OwnedFd};
 
 // NB: FreeBSD supports LOCAL_PEERCRED for SOCK_SEQPACKET, but OSX does not.
 #[cfg(any(target_os = "dragonfly", target_os = "freebsd",))]
@@ -151,7 +151,8 @@ fn test_so_tcp_maxseg() {
     .unwrap();
     connect(ssock.as_raw_fd(), &sock_addr).unwrap();
     let rsess = accept(rsock.as_raw_fd()).unwrap();
-    write(rsess, b"hello").unwrap();
+    let rsess = unsafe { OwnedFd::from_raw_fd(rsess) };
+    write(&rsess, b"hello").unwrap();
     let actual = getsockopt(&ssock, sockopt::TcpMaxSeg).unwrap();
     // Actual max segment size takes header lengths into account, max IPv4 options (60 bytes) + max
     // TCP options (40 bytes) are subtracted from the requested maximum as a lower boundary.
@@ -185,7 +186,6 @@ fn test_so_type() {
 #[test]
 fn test_so_type_unknown() {
     use nix::errno::Errno;
-    use std::os::unix::io::{FromRawFd, OwnedFd};
 
     require_capability!("test_so_type", CAP_NET_RAW);
     let raw_fd = unsafe { libc::socket(libc::AF_PACKET, libc::SOCK_PACKET, 0) };

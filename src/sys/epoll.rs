@@ -73,7 +73,7 @@ impl EpollEvent {
 /// ```
 /// # use nix::sys::{epoll::{Epoll, EpollEvent, EpollFlags, EpollCreateFlags}, eventfd::{eventfd, EfdFlags}};
 /// # use nix::unistd::write;
-/// # use std::os::unix::io::{OwnedFd, FromRawFd, AsRawFd, AsFd};
+/// # use std::os::unix::io::{OwnedFd, FromRawFd, AsFd};
 /// # use std::time::{Instant, Duration};
 /// # fn main() -> nix::Result<()> {
 /// const DATA: u64 = 17;
@@ -87,7 +87,7 @@ impl EpollEvent {
 /// epoll.add(&eventfd, EpollEvent::new(EpollFlags::EPOLLIN,DATA))?;
 ///
 /// // Arm eventfd & Time wait
-/// write(eventfd.as_raw_fd(), &1u64.to_ne_bytes())?;
+/// write(&eventfd, &1u64.to_ne_bytes())?;
 /// let now = Instant::now();
 ///
 /// // Wait on event

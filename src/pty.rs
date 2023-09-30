@@ -71,7 +71,7 @@ impl io::Read for PtyMaster {
 
 impl io::Write for PtyMaster {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        unistd::write(self.0.as_raw_fd(), buf).map_err(io::Error::from)
+        unistd::write(&self.0, buf).map_err(io::Error::from)
     }
     fn flush(&mut self) -> io::Result<()> {
         Ok(())
@@ -86,7 +86,7 @@ impl io::Read for &PtyMaster {
 
 impl io::Write for &PtyMaster {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        unistd::write(self.0.as_raw_fd(), buf).map_err(io::Error::from)
+        unistd::write(&self.0, buf).map_err(io::Error::from)
     }
     fn flush(&mut self) -> io::Result<()> {
         Ok(())

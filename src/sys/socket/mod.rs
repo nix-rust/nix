@@ -1479,7 +1479,7 @@ impl<'a> ControlMessage<'a> {
 /// let (r, w) = pipe().unwrap();
 ///
 /// let iov = [IoSlice::new(b"hello")];
-/// let fds = [r];
+/// let fds = [r.as_raw_fd()];
 /// let cmsg = ControlMessage::ScmRights(&fds);
 /// sendmsg::<()>(fd1.as_raw_fd(), &iov, &[cmsg], MsgFlags::empty(), None).unwrap();
 /// ```
@@ -1496,7 +1496,7 @@ impl<'a> ControlMessage<'a> {
 /// let (r, w) = pipe().unwrap();
 ///
 /// let iov = [IoSlice::new(b"hello")];
-/// let fds = [r];
+/// let fds = [r.as_raw_fd()];
 /// let cmsg = ControlMessage::ScmRights(&fds);
 /// sendmsg(fd.as_raw_fd(), &iov, &[cmsg], MsgFlags::empty(), Some(&localhost)).unwrap();
 /// ```

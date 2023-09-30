@@ -35,7 +35,7 @@ use std::ffi::{CString, OsStr};
 use std::os::unix::ffi::OsStrExt;
 use std::os::unix::ffi::OsStringExt;
 use std::os::unix::io::RawFd;
-use std::os::unix::io::{AsFd, AsRawFd};
+use std::os::unix::io::{AsFd, AsRawFd, OwnedFd};
 use std::path::PathBuf;
 use std::{fmt, mem, ptr};
 
@@ -260,7 +260,7 @@ impl ForkResult {
 ///    }
 ///    Ok(ForkResult::Child) => {
 ///        // Unsafe to use `println!` (or `unwrap`) here. See Safety.
-///        write(libc::STDOUT_FILENO, "I'm a new child process\n".as_bytes()).ok();
+///        write(std::io::stdout(), "I'm a new child process\n".as_bytes()).ok();
 ///        unsafe { libc::_exit(0) };
 ///    }
 ///    Err(_) => println!("Fork failed"),
@@ -1115,9 +1115,13 @@ pub fn read(fd: RawFd, buf: &mut [u8]) -> Result<usize> {
 /// Write to a raw file descriptor.
 ///
 /// See also [write(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/write.html)
-pub fn write(fd: RawFd, buf: &[u8]) -> Result<usize> {
+pub fn write<Fd: AsFd>(fd: Fd, buf: &[u8]) -> Result<usize> {
     let res = unsafe {
-        libc::write(fd, buf.as_ptr() as *const c_void, buf.len() as size_t)
+        libc::write(
+            fd.as_fd().as_raw_fd(),
+            buf.as_ptr() as *const c_void,
+            buf.len() as size_t,
+        )
     };
 
     Errno::result(res).map(|r| r as usize)
@@ -1189,14 +1193,15 @@ pub fn lseek64(
 /// Create an interprocess channel.
 ///
 /// See also [pipe(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/pipe.html)
-pub fn pipe() -> std::result::Result<(RawFd, RawFd), Error> {
-    let mut fds = mem::MaybeUninit::<[c_int; 2]>::uninit();
+pub fn pipe() -> std::result::Result<(OwnedFd, OwnedFd), Error> {
+    let mut fds = mem::MaybeUninit::<[OwnedFd; 2]>::uninit();
 
     let res = unsafe { libc::pipe(fds.as_mut_ptr() as *mut c_int) };
 
     Error::result(res)?;
 
-    unsafe { Ok((fds.assume_init()[0], fds.assume_init()[1])) }
+    let [read, write] = unsafe { fds.assume_init() };
+    Ok((read, write))
 }
 
 feature! {
@@ -1230,15 +1235,16 @@ feature! {
     target_os = "openbsd",
     target_os = "solaris"
 ))]
-pub fn pipe2(flags: OFlag) -> Result<(RawFd, RawFd)> {
-    let mut fds = mem::MaybeUninit::<[c_int; 2]>::uninit();
+pub fn pipe2(flags: OFlag) -> Result<(OwnedFd, OwnedFd)> {
+    let mut fds = mem::MaybeUninit::<[OwnedFd; 2]>::uninit();
 
     let res =
         unsafe { libc::pipe2(fds.as_mut_ptr() as *mut c_int, flags.bits()) };
 
     Errno::result(res)?;
 
-    unsafe { Ok((fds.assume_init()[0], fds.assume_init()[1])) }
+    let [read, write] = unsafe { fds.assume_init() };
+    Ok((read, write))
 }
 
 /// Truncate a file to a specified length

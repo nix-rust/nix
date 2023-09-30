@@ -200,7 +200,7 @@ pub fn test_socketpair() {
         SockFlag::empty(),
     )
     .unwrap();
-    write(fd1.as_raw_fd(), b"hello").unwrap();
+    write(&fd1, b"hello").unwrap();
     let mut buf = [0; 5];
     read(fd2.as_raw_fd(), &mut buf).unwrap();
 
@@ -757,7 +757,7 @@ pub fn test_scm_rights() {
 
     {
         let iov = [IoSlice::new(b"hello")];
-        let fds = [r];
+        let fds = [r.as_raw_fd()];
         let cmsg = ControlMessage::ScmRights(&fds);
         assert_eq!(
             sendmsg::<()>(
@@ -770,7 +770,6 @@ pub fn test_scm_rights() {
             .unwrap(),
             5
         );
-        close(r).unwrap();
     }
 
     {
@@ -803,12 +802,11 @@ pub fn test_scm_rights() {
 
     let received_r = received_r.expect("Did not receive passed fd");
     // Ensure that the received file descriptor works
-    write(w.as_raw_fd(), b"world").unwrap();
+    write(&w, b"world").unwrap();
     let mut buf = [0u8; 5];
     read(received_r.as_raw_fd(), &mut buf).unwrap();
     assert_eq!(&buf[..], b"world");
     close(received_r).unwrap();
-    close(w).unwrap();
 }
 
 // Disable the test on emulated platforms due to not enabled support of AF_ALG in QEMU from rust cross
@@ -1451,7 +1449,7 @@ fn test_impl_scm_credentials_and_rights(mut space: Vec<u8>) {
             gid: getgid().as_raw(),
         }
         .into();
-        let fds = [r];
+        let fds = [r.as_raw_fd()];
         let cmsgs = [
             ControlMessage::ScmCredentials(&cred),
             ControlMessage::ScmRights(&fds),
@@ -1467,7 +1465,6 @@ fn test_impl_scm_credentials_and_rights(mut space: Vec<u8>) {
             .unwrap(),
             5
         );
-        close(r).unwrap();
     }
 
     {
@@ -1510,12 +1507,11 @@ fn test_impl_scm_credentials_and_rights(mut space: Vec<u8>) {
 
     let received_r = received_r.expect("Did not receive passed fd");
     // Ensure that the received file descriptor works
-    write(w.as_raw_fd(), b"world").unwrap();
+    write(&w, b"world").unwrap();
     let mut buf = [0u8; 5];
     read(received_r.as_raw_fd(), &mut buf).unwrap();
     assert_eq!(&buf[..], b"world");
     close(received_r).unwrap();
-    close(w).unwrap();
 }
 
 // Test creating and using named unix domain sockets
@@ -1548,7 +1544,7 @@ pub fn test_named_unixdomain() {
         )
         .expect("socket failed");
         connect(s2.as_raw_fd(), &sockaddr).expect("connect failed");
-        write(s2.as_raw_fd(), b"hello").expect("write failed");
+        write(&s2, b"hello").expect("write failed");
     });
 
     let s3 = accept(s1.as_raw_fd()).expect("accept failed");

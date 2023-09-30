@@ -322,8 +322,8 @@ where
 mod tests {
     use super::*;
     use crate::sys::time::{TimeVal, TimeValLike};
-    use crate::unistd::{close, pipe, write};
-    use std::os::unix::io::{FromRawFd, OwnedFd, RawFd};
+    use crate::unistd::{pipe, write};
+    use std::os::unix::io::RawFd;
 
     #[test]
     fn fdset_insert() {
@@ -466,12 +466,9 @@ mod tests {
     #[test]
     fn test_select() {
         let (r1, w1) = pipe().unwrap();
-        let r1 = unsafe { OwnedFd::from_raw_fd(r1) };
-        let w1 = unsafe { OwnedFd::from_raw_fd(w1) };
         let (r2, _w2) = pipe().unwrap();
-        let r2 = unsafe { OwnedFd::from_raw_fd(r2) };
 
-        write(w1.as_raw_fd(), b"hi!").unwrap();
+        write(&w1, b"hi!").unwrap();
         let mut fd_set = FdSet::new();
         fd_set.insert(&r1);
         fd_set.insert(&r2);
@@ -483,18 +480,14 @@ mod tests {
         );
         assert!(fd_set.contains(&r1));
         assert!(!fd_set.contains(&r2));
-        close(_w2).unwrap();
     }
 
     #[test]
     fn test_select_nfds() {
         let (r1, w1) = pipe().unwrap();
         let (r2, _w2) = pipe().unwrap();
-        let r1 = unsafe { OwnedFd::from_raw_fd(r1) };
-        let w1 = unsafe { OwnedFd::from_raw_fd(w1) };
-        let r2 = unsafe { OwnedFd::from_raw_fd(r2) };
 
-        write(w1.as_raw_fd(), b"hi!").unwrap();
+        write(&w1, b"hi!").unwrap();
         let mut fd_set = FdSet::new();
         fd_set.insert(&r1);
         fd_set.insert(&r2);
@@ -521,16 +514,13 @@ mod tests {
         }
         assert!(fd_set.contains(&r1));
         assert!(!fd_set.contains(&r2));
-        close(_w2).unwrap();
     }
 
     #[test]
     fn test_select_nfds2() {
         let (r1, w1) = pipe().unwrap();
-        write(w1, b"hi!").unwrap();
+        write(&w1, b"hi!").unwrap();
         let (r2, _w2) = pipe().unwrap();
-        let r1 = unsafe { OwnedFd::from_raw_fd(r1) };
-        let r2 = unsafe { OwnedFd::from_raw_fd(r2) };
         let mut fd_set = FdSet::new();
         fd_set.insert(&r1);
         fd_set.insert(&r2);
@@ -549,6 +539,5 @@ mod tests {
         );
         assert!(fd_set.contains(&r1));
         assert!(!fd_set.contains(&r2));
-        close(_w2).unwrap();
     }
 }
