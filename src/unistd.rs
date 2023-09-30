@@ -366,8 +366,8 @@ feature! {
 /// Get the group process id (GPID) of the foreground process group on the
 /// terminal associated to file descriptor (FD).
 #[inline]
-pub fn tcgetpgrp(fd: c_int) -> Result<Pid> {
-    let res = unsafe { libc::tcgetpgrp(fd) };
+pub fn tcgetpgrp<F: AsFd>(fd: F) -> Result<Pid> {
+    let res = unsafe { libc::tcgetpgrp(fd.as_fd().as_raw_fd()) };
     Errno::result(res).map(Pid)
 }
 /// Set the terminal foreground process group (see
@@ -376,8 +376,8 @@ pub fn tcgetpgrp(fd: c_int) -> Result<Pid> {
 /// Get the group process id (PGID) to the foreground process group on the
 /// terminal associated to file descriptor (FD).
 #[inline]
-pub fn tcsetpgrp(fd: c_int, pgrp: Pid) -> Result<()> {
-    let res = unsafe { libc::tcsetpgrp(fd, pgrp.into()) };
+pub fn tcsetpgrp<F: AsFd>(fd: F, pgrp: Pid) -> Result<()> {
+    let res = unsafe { libc::tcsetpgrp(fd.as_fd().as_raw_fd(), pgrp.into()) };
     Errno::result(res).map(drop)
 }
 }
@@ -2192,10 +2192,10 @@ pub enum PathconfVar {
 /// - `Ok(None)`: the variable has no limit (for limit variables) or is
 ///     unsupported (for option variables)
 /// - `Err(x)`: an error occurred
-pub fn fpathconf(fd: RawFd, var: PathconfVar) -> Result<Option<c_long>> {
+pub fn fpathconf<F: AsFd>(fd: F, var: PathconfVar) -> Result<Option<c_long>> {
     let raw = unsafe {
         Errno::clear();
-        libc::fpathconf(fd, var as c_int)
+        libc::fpathconf(fd.as_fd().as_raw_fd(), var as c_int)
     };
     if raw == -1 {
         if errno::errno() == 0 {
@@ -3913,12 +3913,12 @@ feature! {
 /// Get the name of the terminal device that is open on file descriptor fd
 /// (see [`ttyname(3)`](https://man7.org/linux/man-pages/man3/ttyname.3.html)).
 #[cfg(not(target_os = "fuchsia"))]
-pub fn ttyname(fd: RawFd) -> Result<PathBuf> {
+pub fn ttyname<F: AsFd>(fd: F) -> Result<PathBuf> {
     const PATH_MAX: usize = libc::PATH_MAX as usize;
     let mut buf = vec![0_u8; PATH_MAX];
     let c_buf = buf.as_mut_ptr() as *mut libc::c_char;
 
-    let ret = unsafe { libc::ttyname_r(fd, c_buf, buf.len()) };
+    let ret = unsafe { libc::ttyname_r(fd.as_fd().as_raw_fd(), c_buf, buf.len()) };
     if ret != 0 {
         return Err(Errno::from_i32(ret));
     }
@@ -3943,11 +3943,11 @@ feature! {
     target_os = "netbsd",
     target_os = "dragonfly",
 ))]
-pub fn getpeereid(fd: RawFd) -> Result<(Uid, Gid)> {
+pub fn getpeereid<F: AsFd>(fd: F) -> Result<(Uid, Gid)> {
     let mut uid = 1;
     let mut gid = 1;
 
-    let ret = unsafe { libc::getpeereid(fd, &mut uid, &mut gid) };
+    let ret = unsafe { libc::getpeereid(fd.as_fd().as_raw_fd(), &mut uid, &mut gid) };
 
     Errno::result(ret).map(|_| (Uid(uid), Gid(gid)))
 }

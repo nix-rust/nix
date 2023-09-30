@@ -550,7 +550,11 @@ cfg_if! {
             TcpMaxSeg, GetOnly, libc::IPPROTO_TCP, libc::TCP_MAXSEG, u32);
     }
 }
-#[cfg(not(any(target_os = "openbsd", target_os = "haiku", target_os = "redox")))]
+#[cfg(not(any(
+    target_os = "openbsd",
+    target_os = "haiku",
+    target_os = "redox"
+)))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -572,7 +576,11 @@ sockopt_impl!(
     libc::TCP_REPAIR,
     u32
 );
-#[cfg(not(any(target_os = "openbsd", target_os = "haiku", target_os = "redox")))]
+#[cfg(not(any(
+    target_os = "openbsd",
+    target_os = "haiku",
+    target_os = "redox"
+)))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
