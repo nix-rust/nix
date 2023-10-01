@@ -2685,3 +2685,36 @@ pub fn test_txtime() {
     recvmsg::<()>(rsock.as_raw_fd(), &mut iov2, None, MsgFlags::empty())
         .unwrap();
 }
+
+// cfg needed for capability check.
+#[cfg(any(target_os = "android", target_os = "linux"))]
+#[test]
+fn test_icmp_protocol() {
+    use nix::sys::socket::{
+        sendto, socket, AddressFamily, MsgFlags, SockFlag, SockProtocol,
+        SockType, SockaddrIn,
+    };
+
+    require_capability!("test_icmp_protocol", CAP_NET_RAW);
+
+    let owned_fd = socket(
+        AddressFamily::Inet,
+        SockType::Raw,
+        SockFlag::empty(),
+        SockProtocol::Icmp,
+    )
+    .unwrap();
+
+    // Send a minimal ICMP packet with no payload.
+    let packet = [
+        0x08, // Type
+        0x00, // Code
+        0x84, 0x85, // Checksum
+        0x73, 0x8a, // ID
+        0x00, 0x00, // Sequence Number
+    ];
+
+    let dest_addr = SockaddrIn::new(127, 0, 0, 1, 0);
+    sendto(owned_fd.as_raw_fd(), &packet, &dest_addr, MsgFlags::empty())
+        .unwrap();
+}
