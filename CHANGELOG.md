@@ -21,6 +21,9 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   - `unistd::getpeereid`
 
   ([#2137](https://github.com/nix-rust/nix/pull/2137))
+  
+- Changed `openat()` and `Dir::openat()`, now take optional `dirfd`s
+  ([#2139](https://github.com/nix-rust/nix/pull/2139))
 
 - `FdSet::{insert, remove, contains}` now take `BorrowedFd` arguments, and have
   relaxed lifetime requirements relative to 0.27.1.

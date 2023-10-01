@@ -44,7 +44,7 @@ impl Dir {
 
     /// Opens the given path as with `fcntl::openat`.
     pub fn openat<P: ?Sized + NixPath>(
-        dirfd: RawFd,
+        dirfd: Option<RawFd>,
         path: &P,
         oflag: OFlag,
         mode: sys::stat::Mode,

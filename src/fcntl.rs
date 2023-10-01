@@ -220,13 +220,13 @@ pub fn open<P: ?Sized + NixPath>(
 #[allow(clippy::useless_conversion)]
 #[cfg(not(target_os = "redox"))]
 pub fn openat<P: ?Sized + NixPath>(
-    dirfd: RawFd,
+    dirfd: Option<RawFd>,
     path: &P,
     oflag: OFlag,
     mode: Mode,
 ) -> Result<RawFd> {
     let fd = path.with_nix_path(|cstr| unsafe {
-        libc::openat(dirfd, cstr.as_ptr(), oflag.bits(), mode.bits() as c_uint)
+        libc::openat(at_rawfd(dirfd), cstr.as_ptr(), oflag.bits(), mode.bits() as c_uint)
     })?;
     Errno::result(fd)
 }
