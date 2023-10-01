@@ -72,7 +72,7 @@ impl<'fd> FdSet<'fd> {
     /// # Example
     ///
     /// ```
-    /// # use std::os::unix::io::{AsFd, AsRawFd, BorrowedFd};
+    /// # use std::os::unix::io::{AsRawFd, BorrowedFd};
     /// # use nix::sys::select::FdSet;
     /// let fd_four = unsafe {BorrowedFd::borrow_raw(4)};
     /// let fd_nine = unsafe {BorrowedFd::borrow_raw(9)};
@@ -97,7 +97,7 @@ impl<'fd> FdSet<'fd> {
     ///
     /// ```
     /// # use nix::sys::select::FdSet;
-    /// # use std::os::unix::io::{AsFd, AsRawFd, BorrowedFd, RawFd};
+    /// # use std::os::unix::io::{AsRawFd, BorrowedFd, RawFd};
     /// let mut set = FdSet::new();
     /// let fd_four = unsafe {BorrowedFd::borrow_raw(4)};
     /// let fd_nine = unsafe {BorrowedFd::borrow_raw(9)};
