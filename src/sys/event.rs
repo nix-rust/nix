@@ -63,9 +63,9 @@ impl Kqueue {
         let res = unsafe {
             libc::kevent(
                 self.0.as_raw_fd(),
-                changelist.as_ptr() as *const libc::kevent,
+                changelist.as_ptr().cast(),
                 changelist.len() as type_of_nchanges,
-                eventlist.as_mut_ptr() as *mut libc::kevent,
+                eventlist.as_mut_ptr().cast(),
                 eventlist.len() as type_of_nchanges,
                 if let Some(ref timeout) = timeout_opt {
                     timeout as *const timespec

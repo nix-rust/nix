@@ -35,7 +35,7 @@ use std::{
     ptr, thread,
 };
 
-use libc::{c_void, off_t};
+use libc::off_t;
 use pin_utils::unsafe_pinned;
 
 use crate::{
@@ -581,7 +581,7 @@ impl<'a> AioRead<'a> {
     ) -> Self {
         let mut aiocb = AioCb::common_init(fd, prio, sigev_notify);
         aiocb.aiocb.0.aio_nbytes = buf.len();
-        aiocb.aiocb.0.aio_buf = buf.as_mut_ptr() as *mut c_void;
+        aiocb.aiocb.0.aio_buf = buf.as_mut_ptr().cast();
         aiocb.aiocb.0.aio_lio_opcode = libc::LIO_READ;
         aiocb.aiocb.0.aio_offset = offs;
         AioRead {
@@ -702,7 +702,7 @@ impl<'a> AioReadv<'a> {
         // In vectored mode, aio_nbytes stores the length of the iovec array,
         // not the byte count.
         aiocb.aiocb.0.aio_nbytes = bufs.len();
-        aiocb.aiocb.0.aio_buf = bufs.as_mut_ptr() as *mut c_void;
+        aiocb.aiocb.0.aio_buf = bufs.as_mut_ptr().cast();
         aiocb.aiocb.0.aio_lio_opcode = libc::LIO_READV;
         aiocb.aiocb.0.aio_offset = offs;
         AioReadv {
@@ -817,7 +817,7 @@ impl<'a> AioWrite<'a> {
         // but technically its only unsafe to dereference it, not to create
         // it.  Type Safety guarantees that we'll never pass aiocb to
         // aio_read or aio_readv.
-        aiocb.aiocb.0.aio_buf = buf.as_ptr() as *mut c_void;
+        aiocb.aiocb.0.aio_buf = buf.as_ptr().cast_mut().cast();
         aiocb.aiocb.0.aio_lio_opcode = libc::LIO_WRITE;
         aiocb.aiocb.0.aio_offset = offs;
         AioWrite {
@@ -935,7 +935,7 @@ impl<'a> AioWritev<'a> {
         // but technically its only unsafe to dereference it, not to create
         // it.  Type Safety guarantees that we'll never pass aiocb to
         // aio_read or aio_readv.
-        aiocb.aiocb.0.aio_buf = bufs.as_ptr() as *mut c_void;
+        aiocb.aiocb.0.aio_buf = bufs.as_ptr().cast_mut().cast();
         aiocb.aiocb.0.aio_lio_opcode = libc::LIO_WRITEV;
         aiocb.aiocb.0.aio_offset = offs;
         AioWritev {

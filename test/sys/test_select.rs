@@ -2,17 +2,15 @@ use nix::sys::select::*;
 use nix::sys::signal::SigSet;
 use nix::sys::time::{TimeSpec, TimeValLike};
 use nix::unistd::{pipe, write};
-use std::os::unix::io::{AsRawFd, BorrowedFd, FromRawFd, OwnedFd};
+use std::os::unix::io::{AsRawFd, BorrowedFd};
 
 #[test]
 pub fn test_pselect() {
     let _mtx = crate::SIGNAL_MTX.lock();
 
     let (r1, w1) = pipe().unwrap();
-    write(w1, b"hi!").unwrap();
-    let r1 = unsafe { OwnedFd::from_raw_fd(r1) };
+    write(&w1, b"hi!").unwrap();
     let (r2, _w2) = pipe().unwrap();
-    let r2 = unsafe { OwnedFd::from_raw_fd(r2) };
 
     let mut fd_set = FdSet::new();
     fd_set.insert(&r1);
@@ -31,10 +29,8 @@ pub fn test_pselect() {
 #[test]
 pub fn test_pselect_nfds2() {
     let (r1, w1) = pipe().unwrap();
-    write(w1, b"hi!").unwrap();
-    let r1 = unsafe { OwnedFd::from_raw_fd(r1) };
+    write(&w1, b"hi!").unwrap();
     let (r2, _w2) = pipe().unwrap();
-    let r2 = unsafe { OwnedFd::from_raw_fd(r2) };
 
     let mut fd_set = FdSet::new();
     fd_set.insert(&r1);

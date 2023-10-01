@@ -1,5 +1,5 @@
 use crate::errno::Errno;
-use libc::{self, c_char, c_int, c_uint, size_t, ssize_t};
+use libc::{self, c_int, c_uint, size_t, ssize_t};
 use std::ffi::OsString;
 #[cfg(not(target_os = "redox"))]
 use std::os::raw;
@@ -306,12 +306,12 @@ fn readlink_maybe_at<P: ?Sized + NixPath>(
             Some(dirfd) => libc::readlinkat(
                 dirfd,
                 cstr.as_ptr(),
-                v.as_mut_ptr() as *mut c_char,
+                v.as_mut_ptr().cast(),
                 v.capacity() as size_t,
             ),
             None => libc::readlink(
                 cstr.as_ptr(),
-                v.as_mut_ptr() as *mut c_char,
+                v.as_mut_ptr().cast(),
                 v.capacity() as size_t,
             ),
         }
@@ -724,7 +724,7 @@ pub fn vmsplice(
     let ret = unsafe {
         libc::vmsplice(
             fd,
-            iov.as_ptr() as *const libc::iovec,
+            iov.as_ptr().cast(),
             iov.len(),
             flags.bits(),
         )
@@ -849,6 +849,7 @@ impl SpacectlRange {
 /// assert_eq!(buf, b"012\0\0\0\0\0\09abcdef");
 /// ```
 #[cfg(target_os = "freebsd")]
+#[inline] // Delays codegen, preventing linker errors with dylibs and --no-allow-shlib-undefined
 pub fn fspacectl(fd: RawFd, range: SpacectlRange) -> Result<SpacectlRange> {
     let mut rqsr = libc::spacectl_range {
         r_offset: range.0,
@@ -897,6 +898,7 @@ pub fn fspacectl(fd: RawFd, range: SpacectlRange) -> Result<SpacectlRange> {
 /// assert_eq!(buf, b"012\0\0\0\0\0\09abcdef");
 /// ```
 #[cfg(target_os = "freebsd")]
+#[inline] // Delays codegen, preventing linker errors with dylibs and --no-allow-shlib-undefined
 pub fn fspacectl_all(
     fd: RawFd,
     offset: libc::off_t,

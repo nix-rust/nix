@@ -11,7 +11,7 @@ use nix::unistd::{read, write};
 fn write_all<Fd: AsFd>(f: Fd, buf: &[u8]) {
     let mut len = 0;
     while len < buf.len() {
-        len += write(f.as_fd().as_raw_fd(), &buf[len..]).unwrap();
+        len += write(f.as_fd(), &buf[len..]).unwrap();
     }
 }
 

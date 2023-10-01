@@ -24,8 +24,8 @@ use crate::{Error, NixPath, Result};
 #[cfg(not(target_os = "redox"))]
 use cfg_if::cfg_if;
 use libc::{
-    self, c_char, c_int, c_long, c_uint, c_void, gid_t, mode_t, off_t, pid_t,
-    size_t, uid_t, PATH_MAX,
+    self, c_char, c_int, c_long, c_uint, gid_t, mode_t, off_t, pid_t, size_t,
+    uid_t, PATH_MAX,
 };
 use std::convert::Infallible;
 use std::ffi::{CStr, OsString};
@@ -35,7 +35,7 @@ use std::ffi::{CString, OsStr};
 use std::os::unix::ffi::OsStrExt;
 use std::os::unix::ffi::OsStringExt;
 use std::os::unix::io::RawFd;
-use std::os::unix::io::{AsFd, AsRawFd};
+use std::os::unix::io::{AsFd, AsRawFd, OwnedFd};
 use std::path::PathBuf;
 use std::{fmt, mem, ptr};
 
@@ -260,7 +260,7 @@ impl ForkResult {
 ///    }
 ///    Ok(ForkResult::Child) => {
 ///        // Unsafe to use `println!` (or `unwrap`) here. See Safety.
-///        write(libc::STDOUT_FILENO, "I'm a new child process\n".as_bytes()).ok();
+///        write(std::io::stdout(), "I'm a new child process\n".as_bytes()).ok();
 ///        unsafe { libc::_exit(0) };
 ///    }
 ///    Err(_) => println!("Fork failed"),
@@ -366,8 +366,8 @@ feature! {
 /// Get the group process id (GPID) of the foreground process group on the
 /// terminal associated to file descriptor (FD).
 #[inline]
-pub fn tcgetpgrp(fd: c_int) -> Result<Pid> {
-    let res = unsafe { libc::tcgetpgrp(fd) };
+pub fn tcgetpgrp<F: AsFd>(fd: F) -> Result<Pid> {
+    let res = unsafe { libc::tcgetpgrp(fd.as_fd().as_raw_fd()) };
     Errno::result(res).map(Pid)
 }
 /// Set the terminal foreground process group (see
@@ -376,8 +376,8 @@ pub fn tcgetpgrp(fd: c_int) -> Result<Pid> {
 /// Get the group process id (PGID) to the foreground process group on the
 /// terminal associated to file descriptor (FD).
 #[inline]
-pub fn tcsetpgrp(fd: c_int, pgrp: Pid) -> Result<()> {
-    let res = unsafe { libc::tcsetpgrp(fd, pgrp.into()) };
+pub fn tcsetpgrp<F: AsFd>(fd: F, pgrp: Pid) -> Result<()> {
+    let res = unsafe { libc::tcsetpgrp(fd.as_fd().as_raw_fd(), pgrp.into()) };
     Errno::result(res).map(drop)
 }
 }
@@ -664,17 +664,17 @@ feature! {
 /// ```
 #[inline]
 pub fn getcwd() -> Result<PathBuf> {
-    let mut buf = Vec::with_capacity(512);
+    let mut buf = Vec::<u8>::with_capacity(512);
     loop {
         unsafe {
-            let ptr = buf.as_mut_ptr() as *mut c_char;
+            let ptr = buf.as_mut_ptr().cast();
 
             // The buffer must be large enough to store the absolute pathname plus
             // a terminating null byte, or else null is returned.
             // To safely handle this we start with a reasonable size (512 bytes)
             // and double the buffer size upon every error
             if !libc::getcwd(ptr, buf.capacity()).is_null() {
-                let len = CStr::from_ptr(buf.as_ptr() as *const c_char)
+                let len = CStr::from_ptr(buf.as_ptr().cast())
                     .to_bytes()
                     .len();
                 buf.set_len(len);
@@ -1032,7 +1032,7 @@ pub fn sethostname<S: AsRef<OsStr>>(name: S) -> Result<()> {
             type sethostname_len_t = size_t;
         }
     }
-    let ptr = name.as_ref().as_bytes().as_ptr() as *const c_char;
+    let ptr = name.as_ref().as_bytes().as_ptr().cast();
     let len = name.as_ref().len() as sethostname_len_t;
 
     let res = unsafe { libc::sethostname(ptr, len) };
@@ -1056,14 +1056,14 @@ pub fn sethostname<S: AsRef<OsStr>>(name: S) -> Result<()> {
 pub fn gethostname() -> Result<OsString> {
     // The capacity is the max length of a hostname plus the NUL terminator.
     let mut buffer: Vec<u8> = Vec::with_capacity(256);
-    let ptr = buffer.as_mut_ptr() as *mut c_char;
+    let ptr = buffer.as_mut_ptr().cast();
     let len = buffer.capacity() as size_t;
 
     let res = unsafe { libc::gethostname(ptr, len) };
     Errno::result(res).map(|_| {
         unsafe {
             buffer.as_mut_ptr().wrapping_add(len - 1).write(0); // ensure always null-terminated
-            let len = CStr::from_ptr(buffer.as_ptr() as *const c_char).len();
+            let len = CStr::from_ptr(buffer.as_ptr().cast()).len();
             buffer.set_len(len);
         }
         OsString::from_vec(buffer)
@@ -1105,9 +1105,8 @@ pub fn close(fd: RawFd) -> Result<()> {
 ///
 /// See also [read(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/read.html)
 pub fn read(fd: RawFd, buf: &mut [u8]) -> Result<usize> {
-    let res = unsafe {
-        libc::read(fd, buf.as_mut_ptr() as *mut c_void, buf.len() as size_t)
-    };
+    let res =
+        unsafe { libc::read(fd, buf.as_mut_ptr().cast(), buf.len() as size_t) };
 
     Errno::result(res).map(|r| r as usize)
 }
@@ -1115,9 +1114,13 @@ pub fn read(fd: RawFd, buf: &mut [u8]) -> Result<usize> {
 /// Write to a raw file descriptor.
 ///
 /// See also [write(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/write.html)
-pub fn write(fd: RawFd, buf: &[u8]) -> Result<usize> {
+pub fn write<Fd: AsFd>(fd: Fd, buf: &[u8]) -> Result<usize> {
     let res = unsafe {
-        libc::write(fd, buf.as_ptr() as *const c_void, buf.len() as size_t)
+        libc::write(
+            fd.as_fd().as_raw_fd(),
+            buf.as_ptr().cast(),
+            buf.len() as size_t,
+        )
     };
 
     Errno::result(res).map(|r| r as usize)
@@ -1189,14 +1192,15 @@ pub fn lseek64(
 /// Create an interprocess channel.
 ///
 /// See also [pipe(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/pipe.html)
-pub fn pipe() -> std::result::Result<(RawFd, RawFd), Error> {
-    let mut fds = mem::MaybeUninit::<[c_int; 2]>::uninit();
+pub fn pipe() -> std::result::Result<(OwnedFd, OwnedFd), Error> {
+    let mut fds = mem::MaybeUninit::<[OwnedFd; 2]>::uninit();
 
-    let res = unsafe { libc::pipe(fds.as_mut_ptr() as *mut c_int) };
+    let res = unsafe { libc::pipe(fds.as_mut_ptr().cast()) };
 
     Error::result(res)?;
 
-    unsafe { Ok((fds.assume_init()[0], fds.assume_init()[1])) }
+    let [read, write] = unsafe { fds.assume_init() };
+    Ok((read, write))
 }
 
 feature! {
@@ -1230,15 +1234,16 @@ feature! {
     target_os = "openbsd",
     target_os = "solaris"
 ))]
-pub fn pipe2(flags: OFlag) -> Result<(RawFd, RawFd)> {
-    let mut fds = mem::MaybeUninit::<[c_int; 2]>::uninit();
+pub fn pipe2(flags: OFlag) -> Result<(OwnedFd, OwnedFd)> {
+    let mut fds = mem::MaybeUninit::<[OwnedFd; 2]>::uninit();
 
     let res =
-        unsafe { libc::pipe2(fds.as_mut_ptr() as *mut c_int, flags.bits()) };
+        unsafe { libc::pipe2(fds.as_mut_ptr().cast(), flags.bits()) };
 
     Errno::result(res)?;
 
-    unsafe { Ok((fds.assume_init()[0], fds.assume_init()[1])) }
+    let [read, write] = unsafe { fds.assume_init() };
+    Ok((read, write))
 }
 
 /// Truncate a file to a specified length
@@ -1588,7 +1593,7 @@ pub fn getgroups() -> Result<Vec<Gid>> {
         let ngroups = unsafe {
             libc::getgroups(
                 groups.capacity() as c_int,
-                groups.as_mut_ptr() as *mut gid_t,
+                groups.as_mut_ptr().cast(),
             )
         };
 
@@ -1667,7 +1672,7 @@ pub fn setgroups(groups: &[Gid]) -> Result<()> {
     let res = unsafe {
         libc::setgroups(
             groups.len() as setgroups_ngroups_t,
-            groups.as_ptr() as *const gid_t,
+            groups.as_ptr().cast(),
         )
     };
 
@@ -1722,7 +1727,7 @@ pub fn getgrouplist(user: &CStr, group: Gid) -> Result<Vec<Gid>> {
             libc::getgrouplist(
                 user.as_ptr(),
                 gid as getgrouplist_group_t,
-                groups.as_mut_ptr() as *mut getgrouplist_group_t,
+                groups.as_mut_ptr().cast(),
                 &mut ngroups,
             )
         };
@@ -1970,7 +1975,7 @@ feature! {
 pub fn mkstemp<P: ?Sized + NixPath>(template: &P) -> Result<(RawFd, PathBuf)> {
     let mut path =
         template.with_nix_path(|path| path.to_bytes_with_nul().to_owned())?;
-    let p = path.as_mut_ptr() as *mut _;
+    let p = path.as_mut_ptr().cast();
     let fd = unsafe { libc::mkstemp(p) };
     let last = path.pop(); // drop the trailing nul
     debug_assert!(last == Some(b'\0'));
@@ -2192,10 +2197,10 @@ pub enum PathconfVar {
 /// - `Ok(None)`: the variable has no limit (for limit variables) or is
 ///     unsupported (for option variables)
 /// - `Err(x)`: an error occurred
-pub fn fpathconf(fd: RawFd, var: PathconfVar) -> Result<Option<c_long>> {
+pub fn fpathconf<F: AsFd>(fd: F, var: PathconfVar) -> Result<Option<c_long>> {
     let raw = unsafe {
         Errno::clear();
-        libc::fpathconf(fd, var as c_int)
+        libc::fpathconf(fd.as_fd().as_raw_fd(), var as c_int)
     };
     if raw == -1 {
         if errno::errno() == 0 {
@@ -3913,12 +3918,12 @@ feature! {
 /// Get the name of the terminal device that is open on file descriptor fd
 /// (see [`ttyname(3)`](https://man7.org/linux/man-pages/man3/ttyname.3.html)).
 #[cfg(not(target_os = "fuchsia"))]
-pub fn ttyname(fd: RawFd) -> Result<PathBuf> {
+pub fn ttyname<F: AsFd>(fd: F) -> Result<PathBuf> {
     const PATH_MAX: usize = libc::PATH_MAX as usize;
     let mut buf = vec![0_u8; PATH_MAX];
-    let c_buf = buf.as_mut_ptr() as *mut libc::c_char;
+    let c_buf = buf.as_mut_ptr().cast();
 
-    let ret = unsafe { libc::ttyname_r(fd, c_buf, buf.len()) };
+    let ret = unsafe { libc::ttyname_r(fd.as_fd().as_raw_fd(), c_buf, buf.len()) };
     if ret != 0 {
         return Err(Errno::from_i32(ret));
     }
@@ -3943,11 +3948,11 @@ feature! {
     target_os = "netbsd",
     target_os = "dragonfly",
 ))]
-pub fn getpeereid(fd: RawFd) -> Result<(Uid, Gid)> {
+pub fn getpeereid<F: AsFd>(fd: F) -> Result<(Uid, Gid)> {
     let mut uid = 1;
     let mut gid = 1;
 
-    let ret = unsafe { libc::getpeereid(fd, &mut uid, &mut gid) };
+    let ret = unsafe { libc::getpeereid(fd.as_fd().as_raw_fd(), &mut uid, &mut gid) };
 
     Errno::result(ret).map(|_| (Uid(uid), Gid(gid)))
 }

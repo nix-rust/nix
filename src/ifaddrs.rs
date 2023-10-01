@@ -65,7 +65,7 @@ unsafe fn workaround_xnu_bug(info: &libc::ifaddrs) -> Option<SockaddrStorage> {
     // memcpy only sa_len bytes, assume the rest is zero
     std::ptr::copy_nonoverlapping(
         src_sock as *const u8,
-        dst_sock.as_mut_ptr() as *mut u8,
+        dst_sock.as_mut_ptr().cast(),
         (*src_sock).sa_len.into(),
     );
 

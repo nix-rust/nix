@@ -311,7 +311,7 @@ impl NixPath for [u8] {
         }
 
         let mut buf = MaybeUninit::<[u8; MAX_STACK_ALLOCATION]>::uninit();
-        let buf_ptr = buf.as_mut_ptr() as *mut u8;
+        let buf_ptr = buf.as_mut_ptr().cast();
 
         unsafe {
             ptr::copy_nonoverlapping(self.as_ptr(), buf_ptr, self.len());

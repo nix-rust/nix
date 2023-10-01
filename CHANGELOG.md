@@ -3,13 +3,27 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased] - 2023-09-30
+## [Unreleased] - ReleaseDate
+
+### Fixed
+- Fix `SigSet` incorrect implementation of `Eq`, `PartialEq` and `Hash`
+  ([#1946](https://github.com/nix-rust/nix/pull/1946))
 
 ### Changed
 
+- The following APIs now take an implementation of `AsFd` rather than a
+  `RawFd`:
+
+  - `unistd::tcgetpgrp`
+  - `unistd::tcsetpgrp`
+  - `unistd::fpathconf`
+  - `unistd::ttyname`
+  - `unistd::getpeereid`
+
+  ([#2137](https://github.com/nix-rust/nix/pull/2137))
+  
 - Changed `openat()` and `Dir::openat()`, now take optional `dirfd`s
   ([#2139](https://github.com/nix-rust/nix/pull/2139))
-
 
 ## [0.27.1] - 2023-08-28
 

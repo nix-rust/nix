@@ -550,7 +550,11 @@ cfg_if! {
             TcpMaxSeg, GetOnly, libc::IPPROTO_TCP, libc::TCP_MAXSEG, u32);
     }
 }
-#[cfg(not(any(target_os = "openbsd", target_os = "haiku", target_os = "redox")))]
+#[cfg(not(any(
+    target_os = "openbsd",
+    target_os = "haiku",
+    target_os = "redox"
+)))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -572,7 +576,11 @@ sockopt_impl!(
     libc::TCP_REPAIR,
     u32
 );
-#[cfg(not(any(target_os = "openbsd", target_os = "haiku", target_os = "redox")))]
+#[cfg(not(any(
+    target_os = "openbsd",
+    target_os = "haiku",
+    target_os = "redox"
+)))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -1103,7 +1111,7 @@ where
                 fd.as_fd().as_raw_fd(),
                 libc::SOL_ALG,
                 libc::ALG_SET_KEY,
-                val.as_ref().as_ptr() as *const _,
+                val.as_ref().as_ptr().cast(),
                 val.as_ref().len() as libc::socklen_t,
             );
             Errno::result(res).map(drop)
@@ -1158,7 +1166,7 @@ impl<T> Get<T> for GetStruct<T> {
     }
 
     fn ffi_ptr(&mut self) -> *mut c_void {
-        self.val.as_mut_ptr() as *mut c_void
+        self.val.as_mut_ptr().cast()
     }
 
     fn ffi_len(&mut self) -> *mut socklen_t {
@@ -1209,7 +1217,7 @@ impl Get<bool> for GetBool {
     }
 
     fn ffi_ptr(&mut self) -> *mut c_void {
-        self.val.as_mut_ptr() as *mut c_void
+        self.val.as_mut_ptr().cast()
     }
 
     fn ffi_len(&mut self) -> *mut socklen_t {
@@ -1262,7 +1270,7 @@ impl Get<u8> for GetU8 {
     }
 
     fn ffi_ptr(&mut self) -> *mut c_void {
-        self.val.as_mut_ptr() as *mut c_void
+        self.val.as_mut_ptr().cast()
     }
 
     fn ffi_len(&mut self) -> *mut socklen_t {
@@ -1313,7 +1321,7 @@ impl Get<usize> for GetUsize {
     }
 
     fn ffi_ptr(&mut self) -> *mut c_void {
-        self.val.as_mut_ptr() as *mut c_void
+        self.val.as_mut_ptr().cast()
     }
 
     fn ffi_len(&mut self) -> *mut socklen_t {
@@ -1364,7 +1372,7 @@ impl<T: AsMut<[u8]>> Get<OsString> for GetOsString<T> {
     }
 
     fn ffi_ptr(&mut self) -> *mut c_void {
-        self.val.as_mut_ptr() as *mut c_void
+        self.val.as_mut_ptr().cast()
     }
 
     fn ffi_len(&mut self) -> *mut socklen_t {
@@ -1391,7 +1399,7 @@ impl<'a> Set<'a, OsString> for SetOsString<'a> {
     }
 
     fn ffi_ptr(&self) -> *const c_void {
-        self.val.as_bytes().as_ptr() as *const c_void
+        self.val.as_bytes().as_ptr().cast()
     }
 
     fn ffi_len(&self) -> socklen_t {
