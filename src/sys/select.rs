@@ -7,7 +7,7 @@ use std::convert::TryFrom;
 use std::iter::FusedIterator;
 use std::mem;
 use std::ops::Range;
-use std::os::unix::io::{AsFd, AsRawFd, BorrowedFd, RawFd};
+use std::os::unix::io::{AsRawFd, BorrowedFd, RawFd};
 use std::ptr::{null, null_mut};
 
 pub use libc::FD_SETSIZE;
@@ -41,21 +41,21 @@ impl<'fd> FdSet<'fd> {
     }
 
     /// Add a file descriptor to an `FdSet`
-    pub fn insert<Fd: AsFd>(&mut self, fd: &'fd Fd) {
-        assert_fd_valid(fd.as_fd().as_raw_fd());
-        unsafe { libc::FD_SET(fd.as_fd().as_raw_fd(), &mut self.set) };
+    pub fn insert(&mut self, fd: BorrowedFd<'fd>) {
+        assert_fd_valid(fd.as_raw_fd());
+        unsafe { libc::FD_SET(fd.as_raw_fd(), &mut self.set) };
     }
 
     /// Remove a file descriptor from an `FdSet`
-    pub fn remove<Fd: AsFd>(&mut self, fd: &'fd Fd) {
-        assert_fd_valid(fd.as_fd().as_raw_fd());
-        unsafe { libc::FD_CLR(fd.as_fd().as_raw_fd(), &mut self.set) };
+    pub fn remove(&mut self, fd: BorrowedFd<'fd>) {
+        assert_fd_valid(fd.as_raw_fd());
+        unsafe { libc::FD_CLR(fd.as_raw_fd(), &mut self.set) };
     }
 
     /// Test an `FdSet` for the presence of a certain file descriptor.
-    pub fn contains<Fd: AsFd>(&self, fd: &'fd Fd) -> bool {
-        assert_fd_valid(fd.as_fd().as_raw_fd());
-        unsafe { libc::FD_ISSET(fd.as_fd().as_raw_fd(), &self.set) }
+    pub fn contains(&self, fd: BorrowedFd<'fd>) -> bool {
+        assert_fd_valid(fd.as_raw_fd());
+        unsafe { libc::FD_ISSET(fd.as_raw_fd(), &self.set) }
     }
 
     /// Remove all file descriptors from this `FdSet`.
@@ -77,8 +77,8 @@ impl<'fd> FdSet<'fd> {
     /// let fd_four = unsafe {BorrowedFd::borrow_raw(4)};
     /// let fd_nine = unsafe {BorrowedFd::borrow_raw(9)};
     /// let mut set = FdSet::new();
-    /// set.insert(&fd_four);
-    /// set.insert(&fd_nine);
+    /// set.insert(fd_four);
+    /// set.insert(fd_nine);
     /// assert_eq!(set.highest().map(|borrowed_fd|borrowed_fd.as_raw_fd()), Some(9));
     /// ```
     ///
@@ -101,8 +101,8 @@ impl<'fd> FdSet<'fd> {
     /// let mut set = FdSet::new();
     /// let fd_four = unsafe {BorrowedFd::borrow_raw(4)};
     /// let fd_nine = unsafe {BorrowedFd::borrow_raw(9)};
-    /// set.insert(&fd_four);
-    /// set.insert(&fd_nine);
+    /// set.insert(fd_four);
+    /// set.insert(fd_nine);
     /// let fds: Vec<RawFd> = set.fds(None).map(|borrowed_fd|borrowed_fd.as_raw_fd()).collect();
     /// assert_eq!(fds, vec![4, 9]);
     /// ```
@@ -134,7 +134,7 @@ impl<'a, 'fd> Iterator for Fds<'a, 'fd> {
     fn next(&mut self) -> Option<Self::Item> {
         for i in &mut self.range {
             let borrowed_i = unsafe { BorrowedFd::borrow_raw(i as RawFd) };
-            if self.set.contains(&borrowed_i) {
+            if self.set.contains(borrowed_i) {
                 return Some(borrowed_i);
             }
         }
@@ -153,7 +153,7 @@ impl<'a, 'fd> DoubleEndedIterator for Fds<'a, 'fd> {
     fn next_back(&mut self) -> Option<BorrowedFd<'fd>> {
         while let Some(i) = self.range.next_back() {
             let borrowed_i = unsafe { BorrowedFd::borrow_raw(i as RawFd) };
-            if self.set.contains(&borrowed_i) {
+            if self.set.contains(borrowed_i) {
                 return Some(borrowed_i);
             }
         }
@@ -323,7 +323,7 @@ mod tests {
     use super::*;
     use crate::sys::time::{TimeVal, TimeValLike};
     use crate::unistd::{pipe, write};
-    use std::os::unix::io::RawFd;
+    use std::os::unix::io::{AsFd, RawFd};
 
     #[test]
     fn fdset_insert() {
@@ -331,13 +331,13 @@ mod tests {
 
         for i in 0..FD_SETSIZE {
             let borrowed_i = unsafe { BorrowedFd::borrow_raw(i as RawFd) };
-            assert!(!fd_set.contains(&borrowed_i));
+            assert!(!fd_set.contains(borrowed_i));
         }
 
         let fd_seven = unsafe { BorrowedFd::borrow_raw(7) };
-        fd_set.insert(&fd_seven);
+        fd_set.insert(fd_seven);
 
-        assert!(fd_set.contains(&fd_seven));
+        assert!(fd_set.contains(fd_seven));
     }
 
     #[test]
@@ -346,16 +346,16 @@ mod tests {
 
         for i in 0..FD_SETSIZE {
             let borrowed_i = unsafe { BorrowedFd::borrow_raw(i as RawFd) };
-            assert!(!fd_set.contains(&borrowed_i));
+            assert!(!fd_set.contains(borrowed_i));
         }
 
         let fd_seven = unsafe { BorrowedFd::borrow_raw(7) };
-        fd_set.insert(&fd_seven);
-        fd_set.remove(&fd_seven);
+        fd_set.insert(fd_seven);
+        fd_set.remove(fd_seven);
 
         for i in 0..FD_SETSIZE {
             let borrowed_i = unsafe { BorrowedFd::borrow_raw(i as RawFd) };
-            assert!(!fd_set.contains(&borrowed_i));
+            assert!(!fd_set.contains(borrowed_i));
         }
     }
 
@@ -364,19 +364,19 @@ mod tests {
     fn fdset_clear() {
         let mut fd_set = FdSet::new();
         let fd_one = unsafe { BorrowedFd::borrow_raw(1) };
-        let fd_FD_SETSIZE_devided_by_two =
+        let fd_FD_SETSIZE_divided_by_two =
             unsafe { BorrowedFd::borrow_raw((FD_SETSIZE / 2) as RawFd) };
         let fd_FD_SETSIZE_minus_one =
             unsafe { BorrowedFd::borrow_raw((FD_SETSIZE - 1) as RawFd) };
-        fd_set.insert(&fd_one);
-        fd_set.insert(&fd_FD_SETSIZE_devided_by_two);
-        fd_set.insert(&fd_FD_SETSIZE_minus_one);
+        fd_set.insert(fd_one);
+        fd_set.insert(fd_FD_SETSIZE_divided_by_two);
+        fd_set.insert(fd_FD_SETSIZE_minus_one);
 
         fd_set.clear();
 
         for i in 0..FD_SETSIZE {
             let borrowed_i = unsafe { BorrowedFd::borrow_raw(i as RawFd) };
-            assert!(!fd_set.contains(&borrowed_i));
+            assert!(!fd_set.contains(borrowed_i));
         }
     }
 
@@ -389,22 +389,22 @@ mod tests {
         );
         let fd_zero = unsafe { BorrowedFd::borrow_raw(0) };
         let fd_ninety = unsafe { BorrowedFd::borrow_raw(90) };
-        set.insert(&fd_zero);
+        set.insert(fd_zero);
         assert_eq!(
             set.highest().map(|borrowed_fd| borrowed_fd.as_raw_fd()),
             Some(0)
         );
-        set.insert(&fd_ninety);
+        set.insert(fd_ninety);
         assert_eq!(
             set.highest().map(|borrowed_fd| borrowed_fd.as_raw_fd()),
             Some(90)
         );
-        set.remove(&fd_zero);
+        set.remove(fd_zero);
         assert_eq!(
             set.highest().map(|borrowed_fd| borrowed_fd.as_raw_fd()),
             Some(90)
         );
-        set.remove(&fd_ninety);
+        set.remove(fd_ninety);
         assert_eq!(
             set.highest().map(|borrowed_fd| borrowed_fd.as_raw_fd()),
             None
@@ -413,9 +413,9 @@ mod tests {
         let fd_four = unsafe { BorrowedFd::borrow_raw(4) };
         let fd_five = unsafe { BorrowedFd::borrow_raw(5) };
         let fd_seven = unsafe { BorrowedFd::borrow_raw(7) };
-        set.insert(&fd_four);
-        set.insert(&fd_five);
-        set.insert(&fd_seven);
+        set.insert(fd_four);
+        set.insert(fd_five);
+        set.insert(fd_seven);
         assert_eq!(
             set.highest().map(|borrowed_fd| borrowed_fd.as_raw_fd()),
             Some(7)
@@ -433,14 +433,14 @@ mod tests {
                 .collect::<Vec<_>>(),
             vec![]
         );
-        set.insert(&fd_zero);
+        set.insert(fd_zero);
         assert_eq!(
             set.fds(None)
                 .map(|borrowed_fd| borrowed_fd.as_raw_fd())
                 .collect::<Vec<_>>(),
             vec![0]
         );
-        set.insert(&fd_ninety);
+        set.insert(fd_ninety);
         assert_eq!(
             set.fds(None)
                 .map(|borrowed_fd| borrowed_fd.as_raw_fd())
@@ -470,16 +470,16 @@ mod tests {
 
         write(&w1, b"hi!").unwrap();
         let mut fd_set = FdSet::new();
-        fd_set.insert(&r1);
-        fd_set.insert(&r2);
+        fd_set.insert(r1.as_fd());
+        fd_set.insert(r2.as_fd());
 
         let mut timeout = TimeVal::seconds(10);
         assert_eq!(
             1,
             select(None, &mut fd_set, None, None, &mut timeout).unwrap()
         );
-        assert!(fd_set.contains(&r1));
-        assert!(!fd_set.contains(&r2));
+        assert!(fd_set.contains(r1.as_fd()));
+        assert!(!fd_set.contains(r2.as_fd()));
     }
 
     #[test]
@@ -489,8 +489,8 @@ mod tests {
 
         write(&w1, b"hi!").unwrap();
         let mut fd_set = FdSet::new();
-        fd_set.insert(&r1);
-        fd_set.insert(&r2);
+        fd_set.insert(r1.as_fd());
+        fd_set.insert(r2.as_fd());
 
         let mut timeout = TimeVal::seconds(10);
         {
@@ -512,8 +512,8 @@ mod tests {
                 .unwrap()
             );
         }
-        assert!(fd_set.contains(&r1));
-        assert!(!fd_set.contains(&r2));
+        assert!(fd_set.contains(r1.as_fd()));
+        assert!(!fd_set.contains(r2.as_fd()));
     }
 
     #[test]
@@ -522,8 +522,8 @@ mod tests {
         write(&w1, b"hi!").unwrap();
         let (r2, _w2) = pipe().unwrap();
         let mut fd_set = FdSet::new();
-        fd_set.insert(&r1);
-        fd_set.insert(&r2);
+        fd_set.insert(r1.as_fd());
+        fd_set.insert(r2.as_fd());
 
         let mut timeout = TimeVal::seconds(10);
         assert_eq!(
@@ -537,7 +537,7 @@ mod tests {
             )
             .unwrap()
         );
-        assert!(fd_set.contains(&r1));
-        assert!(!fd_set.contains(&r2));
+        assert!(fd_set.contains(r1.as_fd()));
+        assert!(!fd_set.contains(r2.as_fd()));
     }
 }
