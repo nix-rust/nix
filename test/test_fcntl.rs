@@ -568,20 +568,19 @@ mod test_posix_fallocate {
     target_os = "macos",
     target_os = "ios"
 ))]
-mod test_apple_netbsd {
+#[test]
+fn test_f_get_path() {
     use nix::fcntl::*;
-    use std::os::unix::io::AsRawFd;
-    use std::path::PathBuf;
-    use tempfile::NamedTempFile;
+    use std::{os::unix::io::AsRawFd, path::PathBuf};
 
-    #[test]
-    fn test_path() {
-        let tmp = NamedTempFile::new().unwrap();
-        let fd = tmp.as_raw_fd();
-        let mut path = PathBuf::new();
-        let res =
-            fcntl(fd, FcntlArg::F_GETPATH(&mut path)).expect("get path failed");
-        assert_ne!(res, -1);
-        assert_eq!(path, tmp.path());
-    }
+    let tmp = NamedTempFile::new().unwrap();
+    let fd = tmp.as_raw_fd();
+    let mut path = PathBuf::new();
+    let res =
+        fcntl(fd, FcntlArg::F_GETPATH(&mut path)).expect("get path failed");
+    assert_ne!(res, -1);
+    assert_eq!(
+        path.as_path().canonicalize().unwrap(),
+        tmp.path().canonicalize().unwrap()
+    );
 }
