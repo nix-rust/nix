@@ -44,8 +44,7 @@ impl<'fd> PollFd<'fd> {
     //
     // ```rust
     // let (r, _) = pipe().unwrap();
-    // let reader: OwnedFd = unsafe { OwnedFd::from_raw_fd(r) };
-    // let pollfd = PollFd::new(reader, flag);  // Drops the OwnedFd
+    // let pollfd = PollFd::new(r, flag);  // Drops the OwnedFd
     // // Do something with `pollfd`, which uses the CLOSED fd.
     // ```
     pub fn new(fd: BorrowedFd<'fd>, events: PollFlags) -> PollFd<'fd> {
