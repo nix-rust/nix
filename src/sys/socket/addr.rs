@@ -499,13 +499,13 @@ impl<'a> UnixAddrKind<'a> {
         #[cfg(any(target_os = "android", target_os = "linux"))]
         if sun.sun_path[0] == 0 {
             let name = slice::from_raw_parts(
-                sun.sun_path.as_ptr().add(1) as *const u8,
+                sun.sun_path.as_ptr().add(1).cast(),
                 path_len - 1,
             );
             return Self::Abstract(name);
         }
         let pathname =
-            slice::from_raw_parts(sun.sun_path.as_ptr() as *const u8, path_len);
+            slice::from_raw_parts(sun.sun_path.as_ptr().cast(), path_len);
         if pathname.last() == Some(&0) {
             // A trailing NUL is not considered part of the path, and it does
             // not need to be included in the addrlen passed to functions like
@@ -557,7 +557,7 @@ impl UnixAddr {
             }
             ptr::copy_nonoverlapping(
                 bytes.as_ptr(),
-                ret.sun_path.as_mut_ptr() as *mut u8,
+                ret.sun_path.as_mut_ptr().cast(),
                 bytes.len(),
             );
 
@@ -593,7 +593,7 @@ impl UnixAddr {
             // b'\0', so copy starting one byte in.
             ptr::copy_nonoverlapping(
                 path.as_ptr(),
-                ret.sun_path.as_mut_ptr().offset(1) as *mut u8,
+                ret.sun_path.as_mut_ptr().offset(1).cast(),
                 path.len(),
             );
 
@@ -1829,7 +1829,7 @@ pub mod netlink {
 #[cfg_attr(docsrs, doc(cfg(all())))]
 pub mod alg {
     use super::*;
-    use libc::{c_char, sockaddr_alg, AF_ALG};
+    use libc::{sockaddr_alg, AF_ALG};
     use std::ffi::CStr;
     use std::hash::{Hash, Hasher};
     use std::{fmt, mem, str};
@@ -1919,14 +1919,14 @@ pub mod alg {
         /// Return the socket's cipher type, for example `hash` or `aead`.
         pub fn alg_type(&self) -> &CStr {
             unsafe {
-                CStr::from_ptr(self.0.salg_type.as_ptr() as *const c_char)
+                CStr::from_ptr(self.0.salg_type.as_ptr().cast())
             }
         }
 
         /// Return the socket's cipher name, for example `sha1`.
         pub fn alg_name(&self) -> &CStr {
             unsafe {
-                CStr::from_ptr(self.0.salg_name.as_ptr() as *const c_char)
+                CStr::from_ptr(self.0.salg_name.as_ptr().cast())
             }
         }
     }
@@ -2474,7 +2474,7 @@ mod tests {
             let bytes = Raw([
                 17u8, 0, 0, 0, 1, 0, 0, 0, 4, 3, 0, 6, 1, 2, 3, 4, 5, 6, 0, 0,
             ]);
-            let sa = bytes.0.as_ptr() as *const libc::sockaddr;
+            let sa = bytes.0.as_ptr().cast();
             let len = None;
             let sock_addr =
                 unsafe { SockaddrStorage::from_raw(sa, len) }.unwrap();
@@ -2490,7 +2490,7 @@ mod tests {
         fn macos_loopback() {
             let bytes =
                 [20i8, 18, 1, 0, 24, 3, 0, 0, 108, 111, 48, 0, 0, 0, 0, 0];
-            let sa = bytes.as_ptr() as *const libc::sockaddr;
+            let sa = bytes.as_ptr().cast();
             let len = Some(bytes.len() as socklen_t);
             let sock_addr =
                 unsafe { SockaddrStorage::from_raw(sa, len) }.unwrap();
@@ -2628,7 +2628,7 @@ mod tests {
         #[test]
         fn from_sockaddr_un_named() {
             let ua = UnixAddr::new("/var/run/mysock").unwrap();
-            let ptr = ua.as_ptr() as *const libc::sockaddr;
+            let ptr = ua.as_ptr().cast();
             let ss = unsafe { SockaddrStorage::from_raw(ptr, Some(ua.len())) }
                 .unwrap();
             assert_eq!(ss.len(), ua.len());
@@ -2639,7 +2639,7 @@ mod tests {
         fn from_sockaddr_un_abstract_named() {
             let name = String::from("nix\0abstract\0test");
             let ua = UnixAddr::new_abstract(name.as_bytes()).unwrap();
-            let ptr = ua.as_ptr() as *const libc::sockaddr;
+            let ptr = ua.as_ptr().cast();
             let ss = unsafe { SockaddrStorage::from_raw(ptr, Some(ua.len())) }
                 .unwrap();
             assert_eq!(ss.len(), ua.len());
@@ -2649,7 +2649,7 @@ mod tests {
         #[test]
         fn from_sockaddr_un_abstract_unnamed() {
             let ua = UnixAddr::new_unnamed();
-            let ptr = ua.as_ptr() as *const libc::sockaddr;
+            let ptr = ua.as_ptr().cast();
             let ss = unsafe { SockaddrStorage::from_raw(ptr, Some(ua.len())) }
                 .unwrap();
             assert_eq!(ss.len(), ua.len());
