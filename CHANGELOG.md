@@ -14,6 +14,9 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- The MSRV is now 1.69
+  ([#2144](https://github.com/nix-rust/nix/pull/2144))
+
 - The following APIs now take an implementation of `AsFd` rather than a
   `RawFd`:
 
