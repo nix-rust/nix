@@ -22,7 +22,7 @@ fn test_mmap_anonymous() {
 #[test]
 #[cfg(any(target_os = "linux", target_os = "netbsd"))]
 fn test_mremap_grow() {
-    use nix::libc::{c_void, size_t};
+    use nix::libc::size_t;
     use nix::sys::mman::{mremap, MRemapFlags};
 
     const ONE_K: size_t = 1024;
@@ -47,7 +47,7 @@ fn test_mremap_grow() {
     let slice: &mut [u8] = unsafe {
         #[cfg(target_os = "linux")]
         let mem = mremap(
-            slice.as_mut_ptr() as *mut c_void,
+            slice.as_mut_ptr().cast(),
             ONE_K,
             10 * ONE_K,
             MRemapFlags::MREMAP_MAYMOVE,
@@ -56,7 +56,7 @@ fn test_mremap_grow() {
         .unwrap();
         #[cfg(target_os = "netbsd")]
         let mem = mremap(
-            slice.as_mut_ptr() as *mut c_void,
+            slice.as_mut_ptr().cast(),
             ONE_K,
             10 * ONE_K,
             MRemapFlags::MAP_REMAPDUP,
@@ -80,7 +80,7 @@ fn test_mremap_grow() {
 // Segfaults for unknown reasons under QEMU for 32-bit targets
 #[cfg_attr(all(target_pointer_width = "32", qemu), ignore)]
 fn test_mremap_shrink() {
-    use nix::libc::{c_void, size_t};
+    use nix::libc::size_t;
     use nix::sys::mman::{mremap, MRemapFlags};
     use std::num::NonZeroUsize;
 
@@ -104,7 +104,7 @@ fn test_mremap_shrink() {
 
     let slice: &mut [u8] = unsafe {
         let mem = mremap(
-            slice.as_mut_ptr() as *mut c_void,
+            slice.as_mut_ptr().cast(),
             ten_one_k.into(),
             ONE_K,
             MRemapFlags::empty(),
@@ -113,7 +113,7 @@ fn test_mremap_shrink() {
         .unwrap();
         // Since we didn't supply MREMAP_MAYMOVE, the address should be the
         // same.
-        assert_eq!(mem, slice.as_mut_ptr() as *mut c_void);
+        assert_eq!(mem, slice.as_mut_ptr().cast());
         std::slice::from_raw_parts_mut(mem as *mut u8, ONE_K)
     };
 

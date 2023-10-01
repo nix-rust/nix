@@ -215,7 +215,7 @@ impl<'a> Nmount<'a> {
     /// Helper function to push a slice onto the `iov` array.
     fn push_slice(&mut self, val: &'a [u8], is_owned: bool) {
         self.iov.push(libc::iovec {
-            iov_base: val.as_ptr() as *mut _,
+            iov_base: val.as_ptr().cast_mut().cast(),
             iov_len: val.len(),
         });
         self.is_owned.push(is_owned);
@@ -386,7 +386,7 @@ impl<'a> Nmount<'a> {
         // SAFETY: we are pushing a mutable iovec here, so we can't use
         //         the above method
         self.iov.push(libc::iovec {
-            iov_base: errmsg.as_mut_ptr() as *mut c_void,
+            iov_base: errmsg.as_mut_ptr().cast(),
             iov_len: errmsg.len(),
         });
 

@@ -9,10 +9,10 @@ use crate::sys::time::TimeSpec;
 use crate::sys::time::TimeVal;
 use crate::{errno::Errno, Result};
 use cfg_if::cfg_if;
-use libc::{self, c_int, c_void, size_t, socklen_t};
+use libc::{self, c_int, size_t, socklen_t};
 #[cfg(all(feature = "uio", not(target_os = "redox")))]
 use libc::{
-    iovec, CMSG_DATA, CMSG_FIRSTHDR, CMSG_LEN, CMSG_NXTHDR, CMSG_SPACE,
+    c_void, iovec, CMSG_DATA, CMSG_FIRSTHDR, CMSG_LEN, CMSG_NXTHDR, CMSG_SPACE,
 };
 #[cfg(not(target_os = "redox"))]
 use std::io::{IoSlice, IoSliceMut};
@@ -487,7 +487,7 @@ cfg_if! {
             pub fn groups(&self) -> &[libc::gid_t] {
                 unsafe {
                     std::slice::from_raw_parts(
-                        self.0.cmcred_groups.as_ptr() as *const libc::gid_t,
+                        self.0.cmcred_groups.as_ptr(),
                         self.0.cmcred_ngroups as _
                     )
                 }
@@ -2025,7 +2025,7 @@ fn pack_mhdr_to_send<'a, I, C, S>(
 
     // The message header must be initialized before the individual cmsgs.
     let cmsg_ptr = if capacity > 0 {
-        cmsg_buffer.as_mut_ptr() as *mut c_void
+        cmsg_buffer.as_mut_ptr().cast()
     } else {
         ptr::null_mut()
     };
@@ -2035,11 +2035,11 @@ fn pack_mhdr_to_send<'a, I, C, S>(
         // initialize it.
         let mut mhdr = mem::MaybeUninit::<msghdr>::zeroed();
         let p = mhdr.as_mut_ptr();
-        (*p).msg_name = addr.map(S::as_ptr).unwrap_or(ptr::null()) as *mut _;
+        (*p).msg_name = addr.map(S::as_ptr).unwrap_or(ptr::null()).cast_mut().cast();
         (*p).msg_namelen = addr.map(S::len).unwrap_or(0);
         // transmute iov into a mutable pointer.  sendmsg doesn't really mutate
         // the buffer, but the standard says that it takes a mutable pointer
-        (*p).msg_iov = iov.as_ref().as_ptr() as *mut _;
+        (*p).msg_iov = iov.as_ref().as_ptr().cast_mut().cast();
         (*p).msg_iovlen = iov.as_ref().len() as _;
         (*p).msg_control = cmsg_ptr;
         (*p).msg_controllen = capacity as _;
@@ -2245,7 +2245,7 @@ pub fn recv(sockfd: RawFd, buf: &mut [u8], flags: MsgFlags) -> Result<usize> {
     unsafe {
         let ret = libc::recv(
             sockfd,
-            buf.as_mut_ptr() as *mut c_void,
+            buf.as_mut_ptr().cast(),
             buf.len() as size_t,
             flags.bits(),
         );
@@ -2269,10 +2269,10 @@ pub fn recvfrom<T: SockaddrLike>(
 
         let ret = Errno::result(libc::recvfrom(
             sockfd,
-            buf.as_mut_ptr() as *mut c_void,
+            buf.as_mut_ptr().cast(),
             buf.len() as size_t,
             0,
-            addr.as_mut_ptr() as *mut sockaddr,
+            addr.as_mut_ptr().cast(),
             &mut len as *mut socklen_t,
         ))? as usize;
 
@@ -2298,7 +2298,7 @@ pub fn sendto(
     let ret = unsafe {
         libc::sendto(
             fd,
-            buf.as_ptr() as *const c_void,
+            buf.as_ptr().cast(),
             buf.len() as size_t,
             flags.bits(),
             addr.as_ptr(),
@@ -2316,7 +2316,7 @@ pub fn send(fd: RawFd, buf: &[u8], flags: MsgFlags) -> Result<usize> {
     let ret = unsafe {
         libc::send(
             fd,
-            buf.as_ptr() as *const c_void,
+            buf.as_ptr().cast(),
             buf.len() as size_t,
             flags.bits(),
         )
@@ -2387,7 +2387,7 @@ pub fn getpeername<T: SockaddrLike>(fd: RawFd) -> Result<T> {
         let mut len = T::size();
 
         let ret =
-            libc::getpeername(fd, addr.as_mut_ptr() as *mut sockaddr, &mut len);
+            libc::getpeername(fd, addr.as_mut_ptr().cast(), &mut len);
 
         Errno::result(ret)?;
 
@@ -2404,7 +2404,7 @@ pub fn getsockname<T: SockaddrLike>(fd: RawFd) -> Result<T> {
         let mut len = T::size();
 
         let ret =
-            libc::getsockname(fd, addr.as_mut_ptr() as *mut sockaddr, &mut len);
+            libc::getsockname(fd, addr.as_mut_ptr().cast(), &mut len);
 
         Errno::result(ret)?;
 

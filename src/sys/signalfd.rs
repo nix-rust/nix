@@ -109,7 +109,7 @@ impl SignalFd {
 
         let size = mem::size_of_val(&buffer);
         let res = Errno::result(unsafe {
-            libc::read(self.0.as_raw_fd(), buffer.as_mut_ptr() as *mut libc::c_void, size)
+            libc::read(self.0.as_raw_fd(), buffer.as_mut_ptr().cast(), size)
         })
         .map(|r| r as usize);
         match res {

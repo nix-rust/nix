@@ -24,8 +24,8 @@ use crate::{Error, NixPath, Result};
 #[cfg(not(target_os = "redox"))]
 use cfg_if::cfg_if;
 use libc::{
-    self, c_char, c_int, c_long, c_uint, c_void, gid_t, mode_t, off_t, pid_t,
-    size_t, uid_t, PATH_MAX,
+    self, c_char, c_int, c_long, c_uint, gid_t, mode_t, off_t, pid_t, size_t,
+    uid_t, PATH_MAX,
 };
 use std::convert::Infallible;
 use std::ffi::{CStr, OsString};
@@ -664,17 +664,17 @@ feature! {
 /// ```
 #[inline]
 pub fn getcwd() -> Result<PathBuf> {
-    let mut buf = Vec::with_capacity(512);
+    let mut buf = Vec::<u8>::with_capacity(512);
     loop {
         unsafe {
-            let ptr = buf.as_mut_ptr() as *mut c_char;
+            let ptr = buf.as_mut_ptr().cast();
 
             // The buffer must be large enough to store the absolute pathname plus
             // a terminating null byte, or else null is returned.
             // To safely handle this we start with a reasonable size (512 bytes)
             // and double the buffer size upon every error
             if !libc::getcwd(ptr, buf.capacity()).is_null() {
-                let len = CStr::from_ptr(buf.as_ptr() as *const c_char)
+                let len = CStr::from_ptr(buf.as_ptr().cast())
                     .to_bytes()
                     .len();
                 buf.set_len(len);
@@ -1032,7 +1032,7 @@ pub fn sethostname<S: AsRef<OsStr>>(name: S) -> Result<()> {
             type sethostname_len_t = size_t;
         }
     }
-    let ptr = name.as_ref().as_bytes().as_ptr() as *const c_char;
+    let ptr = name.as_ref().as_bytes().as_ptr().cast();
     let len = name.as_ref().len() as sethostname_len_t;
 
     let res = unsafe { libc::sethostname(ptr, len) };
@@ -1056,14 +1056,14 @@ pub fn sethostname<S: AsRef<OsStr>>(name: S) -> Result<()> {
 pub fn gethostname() -> Result<OsString> {
     // The capacity is the max length of a hostname plus the NUL terminator.
     let mut buffer: Vec<u8> = Vec::with_capacity(256);
-    let ptr = buffer.as_mut_ptr() as *mut c_char;
+    let ptr = buffer.as_mut_ptr().cast();
     let len = buffer.capacity() as size_t;
 
     let res = unsafe { libc::gethostname(ptr, len) };
     Errno::result(res).map(|_| {
         unsafe {
             buffer.as_mut_ptr().wrapping_add(len - 1).write(0); // ensure always null-terminated
-            let len = CStr::from_ptr(buffer.as_ptr() as *const c_char).len();
+            let len = CStr::from_ptr(buffer.as_ptr().cast()).len();
             buffer.set_len(len);
         }
         OsString::from_vec(buffer)
@@ -1105,9 +1105,8 @@ pub fn close(fd: RawFd) -> Result<()> {
 ///
 /// See also [read(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/read.html)
 pub fn read(fd: RawFd, buf: &mut [u8]) -> Result<usize> {
-    let res = unsafe {
-        libc::read(fd, buf.as_mut_ptr() as *mut c_void, buf.len() as size_t)
-    };
+    let res =
+        unsafe { libc::read(fd, buf.as_mut_ptr().cast(), buf.len() as size_t) };
 
     Errno::result(res).map(|r| r as usize)
 }
@@ -1119,7 +1118,7 @@ pub fn write<Fd: AsFd>(fd: Fd, buf: &[u8]) -> Result<usize> {
     let res = unsafe {
         libc::write(
             fd.as_fd().as_raw_fd(),
-            buf.as_ptr() as *const c_void,
+            buf.as_ptr().cast(),
             buf.len() as size_t,
         )
     };
@@ -1196,7 +1195,7 @@ pub fn lseek64(
 pub fn pipe() -> std::result::Result<(OwnedFd, OwnedFd), Error> {
     let mut fds = mem::MaybeUninit::<[OwnedFd; 2]>::uninit();
 
-    let res = unsafe { libc::pipe(fds.as_mut_ptr() as *mut c_int) };
+    let res = unsafe { libc::pipe(fds.as_mut_ptr().cast()) };
 
     Error::result(res)?;
 
@@ -1239,7 +1238,7 @@ pub fn pipe2(flags: OFlag) -> Result<(OwnedFd, OwnedFd)> {
     let mut fds = mem::MaybeUninit::<[OwnedFd; 2]>::uninit();
 
     let res =
-        unsafe { libc::pipe2(fds.as_mut_ptr() as *mut c_int, flags.bits()) };
+        unsafe { libc::pipe2(fds.as_mut_ptr().cast(), flags.bits()) };
 
     Errno::result(res)?;
 
@@ -1594,7 +1593,7 @@ pub fn getgroups() -> Result<Vec<Gid>> {
         let ngroups = unsafe {
             libc::getgroups(
                 groups.capacity() as c_int,
-                groups.as_mut_ptr() as *mut gid_t,
+                groups.as_mut_ptr().cast(),
             )
         };
 
@@ -1673,7 +1672,7 @@ pub fn setgroups(groups: &[Gid]) -> Result<()> {
     let res = unsafe {
         libc::setgroups(
             groups.len() as setgroups_ngroups_t,
-            groups.as_ptr() as *const gid_t,
+            groups.as_ptr().cast(),
         )
     };
 
@@ -1728,7 +1727,7 @@ pub fn getgrouplist(user: &CStr, group: Gid) -> Result<Vec<Gid>> {
             libc::getgrouplist(
                 user.as_ptr(),
                 gid as getgrouplist_group_t,
-                groups.as_mut_ptr() as *mut getgrouplist_group_t,
+                groups.as_mut_ptr().cast(),
                 &mut ngroups,
             )
         };
@@ -1976,7 +1975,7 @@ feature! {
 pub fn mkstemp<P: ?Sized + NixPath>(template: &P) -> Result<(RawFd, PathBuf)> {
     let mut path =
         template.with_nix_path(|path| path.to_bytes_with_nul().to_owned())?;
-    let p = path.as_mut_ptr() as *mut _;
+    let p = path.as_mut_ptr().cast();
     let fd = unsafe { libc::mkstemp(p) };
     let last = path.pop(); // drop the trailing nul
     debug_assert!(last == Some(b'\0'));
@@ -3922,7 +3921,7 @@ feature! {
 pub fn ttyname<F: AsFd>(fd: F) -> Result<PathBuf> {
     const PATH_MAX: usize = libc::PATH_MAX as usize;
     let mut buf = vec![0_u8; PATH_MAX];
-    let c_buf = buf.as_mut_ptr() as *mut libc::c_char;
+    let c_buf = buf.as_mut_ptr().cast();
 
     let ret = unsafe { libc::ttyname_r(fd.as_fd().as_raw_fd(), c_buf, buf.len()) };
     if ret != 0 {

@@ -26,6 +26,10 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   requirements relative to the previous version.
   ([#2134](https://github.com/nix-rust/nix/pull/2134))
 
+- `FdSet::{insert, remove, contains}` now take `BorrowedFd` arguments, and have
+  relaxed lifetime requirements relative to 0.27.1.
+  ([#2136](https://github.com/nix-rust/nix/pull/2136))
+
 ## [0.27.1] - 2023-08-28
 
 ### Fixed

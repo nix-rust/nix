@@ -201,11 +201,7 @@ libc_bitflags! {
 /// ready.
 pub fn poll(fds: &mut [PollFd], timeout: libc::c_int) -> Result<libc::c_int> {
     let res = unsafe {
-        libc::poll(
-            fds.as_mut_ptr() as *mut libc::pollfd,
-            fds.len() as libc::nfds_t,
-            timeout,
-        )
+        libc::poll(fds.as_mut_ptr().cast(), fds.len() as libc::nfds_t, timeout)
     };
 
     Errno::result(res)
@@ -234,7 +230,7 @@ pub fn ppoll(
     let timeout = timeout.as_ref().map_or(core::ptr::null(), |r| r.as_ref());
     let sigmask = sigmask.as_ref().map_or(core::ptr::null(), |r| r.as_ref());
     let res = unsafe {
-        libc::ppoll(fds.as_mut_ptr() as *mut libc::pollfd,
+        libc::ppoll(fds.as_mut_ptr().cast(),
                     fds.len() as libc::nfds_t,
                     timeout,
                     sigmask)

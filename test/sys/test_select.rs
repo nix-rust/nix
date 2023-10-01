@@ -2,7 +2,7 @@ use nix::sys::select::*;
 use nix::sys::signal::SigSet;
 use nix::sys::time::{TimeSpec, TimeValLike};
 use nix::unistd::{pipe, write};
-use std::os::unix::io::{AsRawFd, BorrowedFd};
+use std::os::unix::io::{AsFd, AsRawFd, BorrowedFd};
 
 #[test]
 pub fn test_pselect() {
@@ -13,8 +13,8 @@ pub fn test_pselect() {
     let (r2, _w2) = pipe().unwrap();
 
     let mut fd_set = FdSet::new();
-    fd_set.insert(&r1);
-    fd_set.insert(&r2);
+    fd_set.insert(r1.as_fd());
+    fd_set.insert(r2.as_fd());
 
     let timeout = TimeSpec::seconds(10);
     let sigmask = SigSet::empty();
@@ -22,8 +22,8 @@ pub fn test_pselect() {
         1,
         pselect(None, &mut fd_set, None, None, &timeout, &sigmask).unwrap()
     );
-    assert!(fd_set.contains(&r1));
-    assert!(!fd_set.contains(&r2));
+    assert!(fd_set.contains(r1.as_fd()));
+    assert!(!fd_set.contains(r2.as_fd()));
 }
 
 #[test]
@@ -33,8 +33,8 @@ pub fn test_pselect_nfds2() {
     let (r2, _w2) = pipe().unwrap();
 
     let mut fd_set = FdSet::new();
-    fd_set.insert(&r1);
-    fd_set.insert(&r2);
+    fd_set.insert(r1.as_fd());
+    fd_set.insert(r2.as_fd());
 
     let timeout = TimeSpec::seconds(10);
     assert_eq!(
@@ -49,8 +49,8 @@ pub fn test_pselect_nfds2() {
         )
         .unwrap()
     );
-    assert!(fd_set.contains(&r1));
-    assert!(!fd_set.contains(&r2));
+    assert!(fd_set.contains(r1.as_fd()));
+    assert!(!fd_set.contains(r2.as_fd()));
 }
 
 macro_rules! generate_fdset_bad_fd_tests {
@@ -60,7 +60,7 @@ macro_rules! generate_fdset_bad_fd_tests {
             #[should_panic]
             fn $method() {
                 let bad_fd = unsafe{BorrowedFd::borrow_raw($fd)};
-                FdSet::new().$method(&bad_fd);
+                FdSet::new().$method(bad_fd);
             }
         )*
     }

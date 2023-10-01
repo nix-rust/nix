@@ -35,7 +35,7 @@ use crate::NixPath;
 use crate::Result;
 
 use crate::sys::stat::Mode;
-use libc::{self, c_char, mqd_t, size_t};
+use libc::{self, mqd_t, size_t};
 use std::mem;
 #[cfg(any(
     target_os = "linux",
@@ -205,7 +205,7 @@ pub fn mq_receive(
     let res = unsafe {
         libc::mq_receive(
             mqdes.0,
-            message.as_mut_ptr() as *mut c_char,
+            message.as_mut_ptr().cast(),
             len,
             msg_prio as *mut u32,
         )
@@ -229,7 +229,7 @@ feature! {
         let res = unsafe {
             libc::mq_timedreceive(
                 mqdes.0,
-                message.as_mut_ptr() as *mut c_char,
+                message.as_mut_ptr().cast(),
                 len,
                 msg_prio as *mut u32,
                 abstime.as_ref(),
@@ -244,12 +244,7 @@ feature! {
 /// See also [`mq_send(2)`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_send.html)
 pub fn mq_send(mqdes: &MqdT, message: &[u8], msq_prio: u32) -> Result<()> {
     let res = unsafe {
-        libc::mq_send(
-            mqdes.0,
-            message.as_ptr() as *const c_char,
-            message.len(),
-            msq_prio,
-        )
+        libc::mq_send(mqdes.0, message.as_ptr().cast(), message.len(), msq_prio)
     };
     Errno::result(res).map(drop)
 }

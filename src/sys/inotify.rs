@@ -202,7 +202,7 @@ impl Inotify {
                 let mut event = MaybeUninit::<libc::inotify_event>::uninit();
                 ptr::copy_nonoverlapping(
                     buffer.as_ptr().add(offset),
-                    event.as_mut_ptr() as *mut u8,
+                    event.as_mut_ptr().cast(),
                     (BUFSIZ - offset).min(header_size),
                 );
                 event.assume_init()
