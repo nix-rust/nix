@@ -9,6 +9,7 @@ use cfg_if::cfg_if;
 use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::mem;
+use std::ops::BitOr;
 #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
 use std::os::unix::io::RawFd;
 use std::ptr;
@@ -612,11 +613,9 @@ impl From<Signal> for SigSet {
     }
 }
 
-
-impl std::ops::BitOr for Signal {
+impl BitOr for Signal {
     type Output = SigSet;
 
-    // rhs is the "right-hand side" of the expression `a | b`
     fn bitor(self, rhs: Self) -> Self::Output {
         let mut sigset = SigSet::empty();
         sigset.add(self);
@@ -625,7 +624,16 @@ impl std::ops::BitOr for Signal {
     }
 }
 
-impl std::ops::BitOr for SigSet {
+impl BitOr<Signal> for SigSet {
+    type Output = SigSet;
+
+    fn bitor(mut self, rhs: Signal) -> Self::Output {
+        self.add(rhs);
+        self
+    }
+}
+
+impl BitOr for SigSet {
     type Output = Self;
 
     fn bitor(self, rhs: Self) -> Self::Output {
