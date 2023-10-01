@@ -25,6 +25,10 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Changed `openat()` and `Dir::openat()`, now take optional `dirfd`s
   ([#2139](https://github.com/nix-rust/nix/pull/2139))
 
+- `PollFd::new` now takes a `BorrowedFd` argument, with relaxed lifetime
+  requirements relative to the previous version.
+  ([#2134](https://github.com/nix-rust/nix/pull/2134))
+
 - `FdSet::{insert, remove, contains}` now take `BorrowedFd` arguments, and have
   relaxed lifetime requirements relative to 0.27.1.
   ([#2136](https://github.com/nix-rust/nix/pull/2136))
