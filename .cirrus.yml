@@ -235,7 +235,7 @@ task:
         TARGET: arm-unknown-linux-musleabi
     - name: Fuchsia x86_64
       env:
-        TARGET: x86_64-fuchsia
+        TARGET: x86_64-unknown-fuchsia
     - name: Illumos
       env:
         TARGET: x86_64-unknown-illumos
