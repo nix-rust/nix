@@ -190,6 +190,31 @@ libc_bitflags! {
     }
 }
 
+impl MapFlags {
+    /// Create `MAP_HUGETLB` with provided size of huge page.
+    ///
+    /// Under the hood it computes `MAP_HUGETLB | (huge_page_size_log2 << libc::MAP_HUGE_SHIFT`).
+    /// `huge_page_size_log2` denotes logarithm of huge page size to use and should be
+    /// between 16 and 63 (inclusively).
+    ///
+    /// ```
+    /// # use nix::sys::mman::MapFlags;
+    /// let f = MapFlags::map_hugetlb_with_size_log2(30).unwrap();
+    /// assert_eq!(f, MapFlags::MAP_HUGETLB | MapFlags::MAP_HUGE_1GB);
+    /// ```
+    #[cfg(target_os = "linux")]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
+    pub fn map_hugetlb_with_size_log2(huge_page_size_log2: u32) -> Option<Self> {
+        if (16..=63).contains(&huge_page_size_log2) {
+            let flag = libc::MAP_HUGETLB
+                | (huge_page_size_log2 << libc::MAP_HUGE_SHIFT) as i32;
+            Some(Self(flag.into()))
+        } else {
+            None
+        }
+    }
+}
+
 #[cfg(any(target_os = "linux", target_os = "netbsd"))]
 libc_bitflags! {
     /// Options for [`mremap`].
