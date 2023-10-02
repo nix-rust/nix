@@ -28,14 +28,11 @@ use libc::{
     uid_t, PATH_MAX,
 };
 use std::convert::Infallible;
-use std::ffi::{CStr, OsString};
 #[cfg(not(target_os = "redox"))]
-use std::ffi::{CString, OsStr};
-#[cfg(not(target_os = "redox"))]
-use std::os::unix::ffi::OsStrExt;
-use std::os::unix::ffi::OsStringExt;
-use std::os::unix::io::RawFd;
-use std::os::unix::io::{AsFd, AsRawFd, OwnedFd};
+use std::ffi::CString;
+use std::ffi::{CStr, OsStr, OsString};
+use std::os::unix::ffi::{OsStrExt, OsStringExt};
+use std::os::unix::io::{AsFd, AsRawFd, OwnedFd, RawFd};
 use std::path::PathBuf;
 use std::{fmt, mem, ptr};
 
@@ -3928,9 +3925,9 @@ pub fn ttyname<F: AsFd>(fd: F) -> Result<PathBuf> {
         return Err(Errno::from_i32(ret));
     }
 
-    let nul = buf.iter().position(|c| *c == b'\0').unwrap();
-    buf.truncate(nul);
-    Ok(OsString::from_vec(buf).into())
+    CStr::from_bytes_until_nul(&buf[..])
+        .map(|s| OsStr::from_bytes(s.to_bytes()).into())
+        .map_err(|_| Errno::EINVAL)
 }
 }
 

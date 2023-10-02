@@ -9,7 +9,7 @@ env:
   RUSTFLAGS: -D warnings
   RUSTDOCFLAGS: -D warnings
   TOOL: cargo
-  MSRV: 1.65.0
+  MSRV: 1.69.0
   ZFLAGS:
 
 # Tests that don't require executing the build binaries
@@ -146,7 +146,7 @@ task:
   matrix:
     - name: Linux aarch64
       arm_container:
-        image: rust:1.65.0
+        image: rust:1.69.0
         cpu: 1
       depends_on:
         - FreeBSD 14 amd64 & i686
@@ -160,13 +160,13 @@ task:
         TARGET: aarch64-unknown-linux-gnu
     - name: Linux x86_64
       container:
-        image: rust:1.65.0
+        image: rust:1.69.0
         cpu: 1
       env:
         TARGET: x86_64-unknown-linux-gnu
     - name: Linux x86_64 musl
       container:
-        image: rust:1.65.0
+        image: rust:1.69.0
         cpu: 1
       depends_on:
         - FreeBSD 14 amd64 & i686
@@ -199,7 +199,7 @@ task:
 # Tasks for cross-compiling, but no testing
 task:
   container:
-    image: rust:1.65.0
+    image: rust:1.69.0
     cpu: 1
   depends_on:
     - FreeBSD 14 amd64 & i686
@@ -235,7 +235,7 @@ task:
         TARGET: arm-unknown-linux-musleabi
     - name: Fuchsia x86_64
       env:
-        TARGET: x86_64-fuchsia
+        TARGET: x86_64-unknown-fuchsia
     - name: Illumos
       env:
         TARGET: x86_64-unknown-illumos

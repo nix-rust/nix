@@ -396,13 +396,10 @@ impl<'a> Nmount<'a> {
         match Errno::result(res) {
             Ok(_) => Ok(()),
             Err(error) => {
-                let errmsg = match errmsg.iter().position(|&x| x == 0) {
-                    None => None,
-                    Some(0) => None,
-                    Some(n) => {
-                        let sl = &errmsg[0..n + 1];
-                        Some(CStr::from_bytes_with_nul(sl).unwrap())
-                    }
+                let errmsg = if errmsg[0] == 0 {
+                    None
+                } else {
+                    CStr::from_bytes_until_nul(&errmsg[..]).ok()
                 };
                 Err(NmountError::new(error, errmsg))
             }
