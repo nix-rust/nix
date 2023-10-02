@@ -151,11 +151,11 @@ pub fn get_name() -> Result<CString> {
 
     let res = unsafe { libc::prctl(libc::PR_GET_NAME, &buf, 0, 0, 0) };
 
-    Errno::result(res).map(|_| {
+    Errno::result(res).and_then(|_| {
         CStr::from_bytes_until_nul(&buf)
             .map(CStr::to_owned)
             .map_err(|_| Errno::EINVAL)
-    }).flatten()
+    })
 }
 
 /// Sets the timer slack value for the calling thread. Timer slack is used by the kernel to group

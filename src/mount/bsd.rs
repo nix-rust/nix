@@ -396,7 +396,11 @@ impl<'a> Nmount<'a> {
         match Errno::result(res) {
             Ok(_) => Ok(()),
             Err(error) => {
-                let errmsg = CStr::from_bytes_until_nul(&errmsg[..]).ok();
+                let errmsg = if errmsg[0] == 0 {
+                    None
+                } else {
+                    CStr::from_bytes_until_nul(&errmsg[..]).ok()
+                };
                 Err(NmountError::new(error, errmsg))
             }
         }
