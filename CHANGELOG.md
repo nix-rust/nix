@@ -18,6 +18,9 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- Changed funtion `Ipv4Addr::ip()` to return a type ``std::net::Ipv4Add``
+(#)
+
 - The MSRV is now 1.69
   ([#2144](https://github.com/nix-rust/nix/pull/2144))
 
@@ -31,7 +34,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   - `unistd::getpeereid`
 
   ([#2137](https://github.com/nix-rust/nix/pull/2137))
-  
+
 - Changed `openat()` and `Dir::openat()`, now take optional `dirfd`s
   ([#2139](https://github.com/nix-rust/nix/pull/2139))
 
@@ -51,7 +54,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 - Added `F_GETPATH` FcntlFlags entry on Apple/NetBSD/DragonflyBSD for `::nix::fcntl`.
   ([#2142](https://github.com/nix-rust/nix/pull/2142))
-  
+
 - Added `Ipv6HopLimit` to `::nix::sys::socket::ControlMessage` for Linux,
   MacOS, FreeBSD, DragonflyBSD, Android, iOS and Haiku.
   ([#2074](https://github.com/nix-rust/nix/pull/2074))

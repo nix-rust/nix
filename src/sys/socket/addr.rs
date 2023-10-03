@@ -13,35 +13,39 @@
     target_os = "aix",
 ))]
 #[cfg(feature = "net")]
-pub use self::datalink::LinkAddr;
-#[cfg(any(target_os = "android", target_os = "linux", target_os = "macos"))]
-pub use self::vsock::VsockAddr;
+pub use self::datalink::linkaddr;
+#[cfg(any(
+    target_os = "android",
+    target_os = "linux",
+    target_os = "macos"
+))]
+pub use self::vsock::vsockaddr;
 use super::sa_family_t;
-use crate::errno::Errno;
+use crate::errno::errno;
 #[cfg(any(target_os = "android", target_os = "linux"))]
-use crate::sys::socket::addr::alg::AlgAddr;
+use crate::sys::socket::addr::alg::algaddr;
 #[cfg(any(target_os = "android", target_os = "linux"))]
-use crate::sys::socket::addr::netlink::NetlinkAddr;
+use crate::sys::socket::addr::netlink::netlinkaddr;
 #[cfg(all(
     feature = "ioctl",
     any(target_os = "ios", target_os = "macos")
 ))]
-use crate::sys::socket::addr::sys_control::SysControlAddr;
-use crate::{NixPath, Result};
+use crate::sys::socket::addr::sys_control::syscontroladdr;
+use crate::{nixpath, result};
 use cfg_if::cfg_if;
 use memoffset::offset_of;
-use std::convert::TryInto;
-use std::ffi::OsStr;
-use std::hash::{Hash, Hasher};
-use std::os::unix::ffi::OsStrExt;
-use std::path::Path;
+use std::convert::tryinto;
+use std::ffi::osstr;
+use std::hash::{hash, hasher};
+use std::os::unix::ffi::osstrext;
+use std::path::path;
 use std::{fmt, mem, net, ptr, slice};
 
 /// Convert a std::net::Ipv4Addr into the libc form.
 #[cfg(feature = "net")]
 pub(crate) const fn ipv4addr_to_libc(addr: net::Ipv4Addr) -> libc::in_addr {
     libc::in_addr {
-        s_addr: u32::from_ne_bytes(addr.octets())
+        s_addr: u32::from_ne_bytes(addr.octets()),
     }
 }
 
@@ -49,7 +53,7 @@ pub(crate) const fn ipv4addr_to_libc(addr: net::Ipv4Addr) -> libc::in_addr {
 #[cfg(feature = "net")]
 pub(crate) const fn ipv6addr_to_libc(addr: &net::Ipv6Addr) -> libc::in6_addr {
     libc::in6_addr {
-        s6_addr: addr.octets()
+        s6_addr: addr.octets(),
     }
 }
 
@@ -252,7 +256,11 @@ pub enum AddressFamily {
     #[cfg_attr(docsrs, doc(cfg(all())))]
     Nfc = libc::AF_NFC,
     /// VMWare VSockets protocol for hypervisor-guest interaction.
-    #[cfg(any(target_os = "android", target_os = "linux", target_os = "macos"))]
+    #[cfg(any(
+        target_os = "android",
+        target_os = "linux",
+        target_os = "macos"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     Vsock = libc::AF_VSOCK,
     /// ARPANet IMP addresses
@@ -447,7 +455,11 @@ impl AddressFamily {
                 target_os = "openbsd"
             ))]
             libc::AF_LINK => Some(AddressFamily::Link),
-            #[cfg(any(target_os = "android", target_os = "linux", target_os = "macos"))]
+            #[cfg(any(
+                target_os = "android",
+                target_os = "linux",
+                target_os = "macos"
+            ))]
             libc::AF_VSOCK => Some(AddressFamily::Vsock),
             _ => None,
         }
@@ -488,7 +500,7 @@ enum UnixAddrKind<'a> {
 }
 impl<'a> UnixAddrKind<'a> {
     /// Safety: sun & sun_len must be valid
-    #[allow(clippy::unnecessary_cast)]   // Not unnecessary on all platforms
+    #[allow(clippy::unnecessary_cast)] // Not unnecessary on all platforms
     unsafe fn get(sun: &'a libc::sockaddr_un, sun_len: u8) -> Self {
         assert!(sun_len as usize >= offset_of!(libc::sockaddr_un, sun_path));
         let path_len =
@@ -525,7 +537,7 @@ impl<'a> UnixAddrKind<'a> {
 
 impl UnixAddr {
     /// Create a new sockaddr_un representing a filesystem path.
-    #[allow(clippy::unnecessary_cast)]   // Not unnecessary on all platforms
+    #[allow(clippy::unnecessary_cast)] // Not unnecessary on all platforms
     pub fn new<P: ?Sized + NixPath>(path: &P) -> Result<UnixAddr> {
         path.with_nix_path(|cstr| unsafe {
             let mut ret = libc::sockaddr_un {
@@ -573,7 +585,7 @@ impl UnixAddr {
     /// processes to communicate with processes having a different filesystem view.
     #[cfg(any(target_os = "android", target_os = "linux"))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
-    #[allow(clippy::unnecessary_cast)]   // Not unnecessary on all platforms
+    #[allow(clippy::unnecessary_cast)] // Not unnecessary on all platforms
     pub fn new_abstract(path: &[u8]) -> Result<UnixAddr> {
         unsafe {
             let mut ret = libc::sockaddr_un {
@@ -770,7 +782,10 @@ impl SockaddrLike for UnixAddr {
         mem::size_of::<libc::sockaddr_un>() as libc::socklen_t
     }
 
-    unsafe fn set_length(&mut self, new_length: usize) -> std::result::Result<(), SocketAddressLengthNotDynamic> {
+    unsafe fn set_length(
+        &mut self,
+        new_length: usize,
+    ) -> std::result::Result<(), SocketAddressLengthNotDynamic> {
         // `new_length` is only used on some platforms, so it must be provided even when not used
         #![allow(unused_variables)]
         cfg_if! {
@@ -946,7 +961,10 @@ pub trait SockaddrLike: private::SockaddrLikePriv {
     /// `new_length` must be a valid length for this type of address. Specifically, reads of that
     /// length from `self` must be valid.
     #[doc(hidden)]
-    unsafe fn set_length(&mut self, _new_length: usize) -> std::result::Result<(), SocketAddressLengthNotDynamic> {
+    unsafe fn set_length(
+        &mut self,
+        _new_length: usize,
+    ) -> std::result::Result<(), SocketAddressLengthNotDynamic> {
         Err(SocketAddressLengthNotDynamic)
     }
 }
@@ -1006,8 +1024,8 @@ pub struct SockaddrIn(libc::sockaddr_in);
 impl SockaddrIn {
     /// Returns the IP address associated with this socket address, in native
     /// endian.
-    pub const fn ip(&self) -> libc::in_addr_t {
-        u32::from_be(self.0.sin_addr.s_addr)
+    pub const fn ip(&self) -> std::net::Ipv4Addr {
+        net::Ipv4Addr::from(self.0.sin_addr.s_addr)
     }
 
     /// Creates a new socket address from IPv4 octets and a port number.
@@ -1293,7 +1311,11 @@ pub union SockaddrStorage {
     sin6: SockaddrIn6,
     ss: libc::sockaddr_storage,
     su: UnixAddr,
-    #[cfg(any(target_os = "android", target_os = "linux", target_os = "macos" ))]
+    #[cfg(any(
+        target_os = "android",
+        target_os = "linux",
+        target_os = "macos"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     vsock: VsockAddr,
 }
@@ -1385,7 +1407,11 @@ impl SockaddrLike for SockaddrStorage {
                 libc::AF_SYSTEM => {
                     SysControlAddr::from_raw(addr, l).map(|sctl| Self { sctl })
                 }
-                #[cfg(any(target_os = "android", target_os = "linux", target_os = "macos" ))]
+                #[cfg(any(
+                    target_os = "android",
+                    target_os = "linux",
+                    target_os = "macos"
+                ))]
                 libc::AF_VSOCK => {
                     VsockAddr::from_raw(addr, l).map(|vsock| Self { vsock })
                 }
@@ -1409,11 +1435,12 @@ impl SockaddrLike for SockaddrStorage {
         }
     }
 
-    unsafe fn set_length(&mut self, new_length: usize) -> std::result::Result<(), SocketAddressLengthNotDynamic> {
+    unsafe fn set_length(
+        &mut self,
+        new_length: usize,
+    ) -> std::result::Result<(), SocketAddressLengthNotDynamic> {
         match self.as_unix_addr_mut() {
-            Some(addr) => {
-                addr.set_length(new_length)
-            },
+            Some(addr) => addr.set_length(new_length),
             None => Err(SocketAddressLengthNotDynamic),
         }
     }
@@ -1561,7 +1588,11 @@ impl SockaddrStorage {
     accessors! {as_sys_control_addr, as_sys_control_addr_mut, SysControlAddr,
     AddressFamily::System, libc::sockaddr_ctl, sctl}
 
-    #[cfg(any(target_os = "android", target_os = "linux", target_os = "macos"))]
+    #[cfg(any(
+        target_os = "android",
+        target_os = "linux",
+        target_os = "macos"
+    ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     accessors! {as_vsock_addr, as_vsock_addr_mut, VsockAddr,
     AddressFamily::Vsock, libc::sockaddr_vm, vsock}
@@ -1611,7 +1642,11 @@ impl fmt::Display for SockaddrStorage {
                 #[cfg(feature = "ioctl")]
                 libc::AF_SYSTEM => self.sctl.fmt(f),
                 libc::AF_UNIX => self.su.fmt(f),
-                #[cfg(any(target_os = "android", target_os = "linux", target_os = "macos"))]
+                #[cfg(any(
+                    target_os = "android",
+                    target_os = "linux",
+                    target_os = "macos"
+                ))]
                 libc::AF_VSOCK => self.vsock.fmt(f),
                 _ => "<Address family unspecified>".fmt(f),
             }
@@ -1685,7 +1720,11 @@ impl Hash for SockaddrStorage {
                 #[cfg(feature = "ioctl")]
                 libc::AF_SYSTEM => self.sctl.hash(s),
                 libc::AF_UNIX => self.su.hash(s),
-                #[cfg(any(target_os = "android", target_os = "linux", target_os = "macos"))]
+                #[cfg(any(
+                    target_os = "android",
+                    target_os = "linux",
+                    target_os = "macos"
+                ))]
                 libc::AF_VSOCK => self.vsock.hash(s),
                 _ => self.ss.hash(s),
             }
@@ -1727,7 +1766,11 @@ impl PartialEq for SockaddrStorage {
                 #[cfg(feature = "ioctl")]
                 (libc::AF_SYSTEM, libc::AF_SYSTEM) => self.sctl == other.sctl,
                 (libc::AF_UNIX, libc::AF_UNIX) => self.su == other.su,
-                #[cfg(any(target_os = "android", target_os = "linux", target_os = "macos"))]
+                #[cfg(any(
+                    target_os = "android",
+                    target_os = "linux",
+                    target_os = "macos"
+                ))]
                 (libc::AF_VSOCK, libc::AF_VSOCK) => self.vsock == other.vsock,
                 _ => false,
             }
@@ -1918,16 +1961,12 @@ pub mod alg {
 
         /// Return the socket's cipher type, for example `hash` or `aead`.
         pub fn alg_type(&self) -> &CStr {
-            unsafe {
-                CStr::from_ptr(self.0.salg_type.as_ptr().cast())
-            }
+            unsafe { CStr::from_ptr(self.0.salg_type.as_ptr().cast()) }
         }
 
         /// Return the socket's cipher name, for example `sha1`.
         pub fn alg_name(&self) -> &CStr {
-            unsafe {
-                CStr::from_ptr(self.0.salg_name.as_ptr().cast())
-            }
+            unsafe { CStr::from_ptr(self.0.salg_name.as_ptr().cast()) }
         }
     }
 
@@ -2331,8 +2370,17 @@ pub mod vsock {
         #[cfg(target_os = "macos")]
         fn eq(&self, other: &Self) -> bool {
             let (inner, other) = (self.0, other.0);
-            (inner.svm_family, inner.svm_cid, inner.svm_port, inner.svm_len)
-                == (other.svm_family, other.svm_cid, other.svm_port, inner.svm_len)
+            (
+                inner.svm_family,
+                inner.svm_cid,
+                inner.svm_port,
+                inner.svm_len,
+            ) == (
+                other.svm_family,
+                other.svm_cid,
+                other.svm_port,
+                inner.svm_len,
+            )
         }
     }
 
@@ -2347,7 +2395,13 @@ pub mod vsock {
         #[cfg(target_os = "macos")]
         fn hash<H: Hasher>(&self, s: &mut H) {
             let inner = self.0;
-            (inner.svm_family, inner.svm_cid, inner.svm_port, inner.svm_len).hash(s);
+            (
+                inner.svm_family,
+                inner.svm_cid,
+                inner.svm_port,
+                inner.svm_len,
+            )
+                .hash(s);
         }
     }
 
@@ -2365,7 +2419,7 @@ pub mod vsock {
 
             #[cfg(target_os = "macos")]
             {
-             addr.svm_len =  std::mem::size_of::<sockaddr_vm>() as u8;
+                addr.svm_len = std::mem::size_of::<sockaddr_vm>() as u8;
             }
             VsockAddr(addr)
         }
