@@ -2588,6 +2588,13 @@ mod tests {
                 SockaddrIn::size() as usize
             );
         }
+
+        #[test]
+        fn ip() {
+            let s = "127.0.0.1:8080";
+            let ip = SockaddrIn::from_str(s).unwrap().ip();
+            assert_eq!("127.0.0.1", format!("{ip}"));
+        }
     }
 
     mod sockaddr_in6 {
