@@ -1006,8 +1006,8 @@ pub struct SockaddrIn(libc::sockaddr_in);
 impl SockaddrIn {
     /// Returns the IP address associated with this socket address, in native
     /// endian.
-    pub const fn ip(&self) -> libc::in_addr_t {
-        u32::from_be(self.0.sin_addr.s_addr)
+    pub fn ip(&self) -> net::Ipv4Addr {
+        net::Ipv4Addr::from(addr.0.sin_addr.s_addr.to_ne_bytes())
     }
 
     /// Creates a new socket address from IPv4 octets and a port number.
