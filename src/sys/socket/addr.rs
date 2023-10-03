@@ -1007,7 +1007,7 @@ impl SockaddrIn {
     /// Returns the IP address associated with this socket address, in native
     /// endian.
     pub fn ip(&self) -> net::Ipv4Addr {
-        net::Ipv4Addr::from(addr.0.sin_addr.s_addr.to_ne_bytes())
+        net::Ipv4Addr::from(self.0.sin_addr.s_addr.to_ne_bytes())
     }
 
     /// Creates a new socket address from IPv4 octets and a port number.
