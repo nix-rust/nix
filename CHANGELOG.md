@@ -19,7 +19,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 ### Changed
 
 - Changed funtion `Ipv4Addr::ip()` to return a type ``std::net::Ipv4Add``
-(#)
+([#2147](https://github.com/nix-rust/nix/pull/2147))
 
 - The MSRV is now 1.69
   ([#2144](https://github.com/nix-rust/nix/pull/2144))
