@@ -19,7 +19,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 ### Changed
 
 - Changed function `SockaddrIn::ip()` to return `net::Ipv4Addr`
-  ([#])(https://github.com/nix-rust/nix/pull/2xxx))
+  ([#2151](https://github.com/nix-rust/nix/pull/2151))
 
 - The MSRV is now 1.69
   ([#2144](https://github.com/nix-rust/nix/pull/2144))
