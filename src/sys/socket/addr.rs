@@ -36,7 +36,7 @@ use cfg_if::cfg_if;
 use memoffset::offset_of;
 use std::convert::tryinto;
 use std::ffi::osstr;
-use std::hash::{hash, hasher};
+use std::hash::{hash, hasher, Hash};
 use std::os::unix::ffi::osstrext;
 use std::path::path;
 use std::{fmt, mem, net, ptr, slice};
