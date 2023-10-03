@@ -1,10 +1,13 @@
 use crate::errno::Errno;
+#[cfg(all(target_os = "freebsd", target_arch = "x86_64"))]
+use core::slice;
 use libc::{self, c_int, c_uint, size_t, ssize_t};
 #[cfg(any(
     target_os = "netbsd",
     target_os = "macos",
     target_os = "ios",
     target_os = "dragonfly",
+    all(target_os = "freebsd", target_arch = "x86_64"),
 ))]
 use std::ffi::CStr;
 use std::ffi::OsString;
@@ -18,6 +21,7 @@ use std::os::unix::io::RawFd;
     target_os = "macos",
     target_os = "ios",
     target_os = "dragonfly",
+    all(target_os = "freebsd", target_arch = "x86_64"),
 ))]
 use std::path::PathBuf;
 #[cfg(any(
@@ -505,6 +509,8 @@ pub enum FcntlArg<'a> {
     F_SETPIPE_SZ(c_int),
     #[cfg(any(target_os = "netbsd", target_os = "dragonfly", target_os = "macos", target_os = "ios"))]
     F_GETPATH(&'a mut PathBuf),
+    #[cfg(all(target_os = "freebsd", target_arch = "x86_64"))]
+    F_KINFO(&'a mut PathBuf),
     // TODO: Rest of flags
 }
 
@@ -571,6 +577,18 @@ pub fn fcntl(fd: RawFd, arg: FcntlArg) -> Result<c_int> {
                 let res = libc::fcntl(fd, libc::F_GETPATH, buffer.as_mut_ptr());
                 let ok_res = Errno::result(res)?;
                 let optr = CStr::from_bytes_until_nul(&buffer).unwrap();
+                *path = PathBuf::from(OsString::from(optr.to_str().unwrap()));
+                return Ok(ok_res)
+            },
+            #[cfg(all(target_os = "freebsd", target_arch = "x86_64"))]
+            F_KINFO(path) => {
+                let mut info: libc::kinfo_file = std::mem::zeroed();
+                info.kf_structsize = std::mem::size_of::<libc::kinfo_file>() as i32;
+                let res = libc::fcntl(fd, libc::F_KINFO, &mut info);
+                let ok_res = Errno::result(res)?;
+                let p = info.kf_path;
+                let u8_slice = slice::from_raw_parts(p.as_ptr().cast(), p.len());
+                let optr = CStr::from_bytes_until_nul(u8_slice).unwrap();
                 *path = PathBuf::from(OsString::from(optr.to_str().unwrap()));
                 return Ok(ok_res)
             },
