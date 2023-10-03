@@ -1,11 +1,25 @@
 use crate::errno::Errno;
 use libc::{self, c_int, c_uint, size_t, ssize_t};
+#[cfg(any(
+    target_os = "netbsd",
+    target_os = "macos",
+    target_os = "ios",
+    target_os = "dragonfly",
+))]
+use std::ffi::CStr;
 use std::ffi::OsString;
 #[cfg(not(target_os = "redox"))]
 use std::os::raw;
 use std::os::unix::ffi::OsStringExt;
 use std::os::unix::io::RawFd;
 // For splice and copy_file_range
+#[cfg(any(
+    target_os = "netbsd",
+    target_os = "macos",
+    target_os = "ios",
+    target_os = "dragonfly",
+))]
+use std::path::PathBuf;
 #[cfg(any(
     target_os = "android",
     target_os = "freebsd",
@@ -489,6 +503,8 @@ pub enum FcntlArg<'a> {
     F_GETPIPE_SZ,
     #[cfg(any(target_os = "linux", target_os = "android"))]
     F_SETPIPE_SZ(c_int),
+    #[cfg(any(target_os = "netbsd", target_os = "dragonfly", target_os = "macos", target_os = "ios"))]
+    F_GETPATH(&'a mut PathBuf),
     // TODO: Rest of flags
 }
 
@@ -549,6 +565,15 @@ pub fn fcntl(fd: RawFd, arg: FcntlArg) -> Result<c_int> {
             F_GETPIPE_SZ => libc::fcntl(fd, libc::F_GETPIPE_SZ),
             #[cfg(any(target_os = "linux", target_os = "android"))]
             F_SETPIPE_SZ(size) => libc::fcntl(fd, libc::F_SETPIPE_SZ, size),
+            #[cfg(any(target_os = "dragonfly", target_os = "netbsd", target_os = "macos", target_os = "ios"))]
+            F_GETPATH(path) => {
+                let mut buffer = vec![0; libc::PATH_MAX as usize];
+                let res = libc::fcntl(fd, libc::F_GETPATH, buffer.as_mut_ptr());
+                let ok_res = Errno::result(res)?;
+                let optr = CStr::from_bytes_until_nul(&buffer).unwrap();
+                *path = PathBuf::from(OsString::from(optr.to_str().unwrap()));
+                return Ok(ok_res)
+            },
         }
     };
 

@@ -561,3 +561,26 @@ mod test_posix_fallocate {
         }
     }
 }
+
+#[cfg(any(
+    target_os = "dragonfly",
+    target_os = "netbsd",
+    target_os = "macos",
+    target_os = "ios"
+))]
+#[test]
+fn test_f_get_path() {
+    use nix::fcntl::*;
+    use std::{os::unix::io::AsRawFd, path::PathBuf};
+
+    let tmp = NamedTempFile::new().unwrap();
+    let fd = tmp.as_raw_fd();
+    let mut path = PathBuf::new();
+    let res =
+        fcntl(fd, FcntlArg::F_GETPATH(&mut path)).expect("get path failed");
+    assert_ne!(res, -1);
+    assert_eq!(
+        path.as_path().canonicalize().unwrap(),
+        tmp.path().canonicalize().unwrap()
+    );
+}
