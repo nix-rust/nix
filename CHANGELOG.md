@@ -57,6 +57,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   ([#2074](https://github.com/nix-rust/nix/pull/2074))
 
 - Added `close_range(2)` on Linux
+  ([#2153](https://github.com/nix-rust/nix/pull/2153))
 
 ## [0.27.1] - 2023-08-28
 
