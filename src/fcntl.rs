@@ -504,6 +504,8 @@ pub enum FcntlArg<'a> {
     F_GET_SEALS,
     #[cfg(any(target_os = "macos", target_os = "ios"))]
     F_FULLFSYNC,
+    #[cfg(any(target_os = "macos", target_os = "ios"))]
+    F_BARRIERFSYNC,
     #[cfg(any(target_os = "linux", target_os = "android"))]
     F_GETPIPE_SZ,
     #[cfg(any(target_os = "linux", target_os = "android"))]
@@ -512,6 +514,8 @@ pub enum FcntlArg<'a> {
     F_GETPATH(&'a mut PathBuf),
     #[cfg(all(target_os = "freebsd", target_arch = "x86_64"))]
     F_KINFO(&'a mut PathBuf),
+    #[cfg(any(target_os = "macos", target_os = "ios"))]
+    F_GETPATH_NOFIRMLINK(&'a mut PathBuf),
     // TODO: Rest of flags
 }
 
@@ -568,6 +572,8 @@ pub fn fcntl(fd: RawFd, arg: FcntlArg) -> Result<c_int> {
             F_GET_SEALS => libc::fcntl(fd, libc::F_GET_SEALS),
             #[cfg(any(target_os = "macos", target_os = "ios"))]
             F_FULLFSYNC => libc::fcntl(fd, libc::F_FULLFSYNC),
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
+            F_BARRIERFSYNC => libc::fcntl(fd, libc::F_BARRIERFSYNC),
             #[cfg(any(target_os = "linux", target_os = "android"))]
             F_GETPIPE_SZ => libc::fcntl(fd, libc::F_GETPIPE_SZ),
             #[cfg(any(target_os = "linux", target_os = "android"))]
@@ -590,6 +596,15 @@ pub fn fcntl(fd: RawFd, arg: FcntlArg) -> Result<c_int> {
                 let p = info.kf_path;
                 let u8_slice = slice::from_raw_parts(p.as_ptr().cast(), p.len());
                 let optr = CStr::from_bytes_until_nul(u8_slice).unwrap();
+                *path = PathBuf::from(OsString::from(optr.to_str().unwrap()));
+                return Ok(ok_res)
+            },
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
+            F_GETPATH_NOFIRMLINK(path) => {
+                let mut buffer = vec![0; libc::PATH_MAX as usize];
+                let res = libc::fcntl(fd, libc::F_GETPATH_NOFIRMLINK, buffer.as_mut_ptr());
+                let ok_res = Errno::result(res)?;
+                let optr = CStr::from_bytes_until_nul(&buffer).unwrap();
                 *path = PathBuf::from(OsString::from(optr.to_str().unwrap()));
                 return Ok(ok_res)
             },
