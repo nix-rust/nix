@@ -36,6 +36,8 @@ use std::hash::{Hash, Hasher};
 use std::os::unix::ffi::OsStrExt;
 use std::path::Path;
 use std::{fmt, mem, net, ptr, slice};
+use std::net::{Ipv4Addr,Ipv6Addr};
+use core::mem::transmute;
 
 /// Convert a std::net::Ipv4Addr into the libc form.
 #[cfg(feature = "net")]
@@ -1006,8 +1008,10 @@ pub struct SockaddrIn(libc::sockaddr_in);
 impl SockaddrIn {
     /// Returns the IP address associated with this socket address, in native
     /// endian.
-    pub fn ip(&self) -> net::Ipv4Addr {
-        net::Ipv4Addr::from(self.0.sin_addr.s_addr.to_ne_bytes())
+    pub const fn ip(&self) -> net::Ipv4Addr {
+        let bytes = self.0.sin_addr.s_addr.to_ne_bytes();
+        let (a, b, c, d) = (bytes[0], bytes[1], bytes[2], bytes[3]);
+        Ipv4Addr::new(a, b, c, d)
     }
 
     /// Creates a new socket address from IPv4 octets and a port number.
@@ -1143,8 +1147,24 @@ impl SockaddrIn6 {
     }
 
     /// Returns the IP address associated with this socket address.
-    pub fn ip(&self) -> net::Ipv6Addr {
-        net::Ipv6Addr::from(self.0.sin6_addr.s6_addr)
+    pub const fn ip(&self) -> net::Ipv6Addr {
+        let bytes = self.0.sin6_addr.s6_addr;
+        let [a, b, c, d, e, f, g, h] =
+            unsafe { transmute::<_, [u16; 8]>(bytes) };
+        
+        // Ipv6Addr::new() takes segments in native endian, convert them here
+        let [a, b, c, d, e, f, g, h] = [
+            u16::from_be(a),
+            u16::from_be(b),
+            u16::from_be(c),
+            u16::from_be(d),
+            u16::from_be(e),
+            u16::from_be(f),
+            u16::from_be(g),
+            u16::from_be(h),
+        ];
+
+        Ipv6Addr::new(a, b, c, d, e, f, g, h)
     }
 
     /// Returns the port number associated with this socket address, in native
