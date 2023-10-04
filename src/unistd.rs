@@ -1111,6 +1111,30 @@ libc_bitflags! {
 
 /// Close a range of raw file descriptors.
 /// [close_range(2)](https://man7.org/linux/man-pages/man2/close_range.2.html).
+///
+/// Be aware that many Rust types implicitly close-on-drop, including
+/// `std::fs::File`.  Explicitly closing them with this method too can result in
+/// a double-close condition, which can cause confusing `EBADF` errors in
+/// seemingly unrelated code.  Caveat programmer.
+///
+/// # Examples
+///
+/// ```no_run
+/// use std::os::unix::io::AsRawFd;
+/// use nix::unistd::{close_range, CloseRangeFlags};
+///
+/// let f = tempfile::tempfile().unwrap();
+/// close_range(f.as_raw_fd(), f.as_raw_fd(), CloseRangeFlags::empty()).unwrap();   // Bad!  f will also close on drop!
+/// ```
+///
+/// ```rust
+/// use std::os::unix::io::IntoRawFd;
+/// use nix::unistd::{close_range, CloseRangeFlags};
+///
+/// let f = tempfile::tempfile().unwrap();
+/// let fd = f.into_raw_fd(); // Good.  into_raw_fd consumes f
+/// close_range(fd, fd, CloseRangeFlags::empty()).unwrap();
+/// ```
 #[cfg(target_os = "linux")]
 pub fn close_range(
     first: RawFd,
