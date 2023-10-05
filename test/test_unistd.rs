@@ -163,7 +163,8 @@ fn test_mkfifoat() {
     mkfifoat(Some(dirfd), mkfifoat_name, Mode::S_IRUSR).unwrap();
 
     let stats =
-        stat::fstatat(dirfd, mkfifoat_name, fcntl::AtFlags::empty()).unwrap();
+        stat::fstatat(Some(dirfd), mkfifoat_name, fcntl::AtFlags::empty())
+            .unwrap();
     let typ = stat::SFlag::from_bits_truncate(stats.st_mode);
     assert_eq!(typ, SFlag::S_IFIFO);
 }
@@ -197,7 +198,7 @@ fn test_mkfifoat_directory() {
     let tempdir = tempdir().unwrap();
     let dirfd = open(tempdir.path(), OFlag::empty(), Mode::empty()).unwrap();
     let mkfifoat_dir = "mkfifoat_dir";
-    stat::mkdirat(dirfd, mkfifoat_dir, Mode::S_IRUSR).unwrap();
+    stat::mkdirat(Some(dirfd), mkfifoat_dir, Mode::S_IRUSR).unwrap();
 
     mkfifoat(Some(dirfd), mkfifoat_dir, Mode::S_IRUSR)
         .expect_err("assertion failed");
@@ -439,11 +440,11 @@ cfg_if! {
                              "/system/bin/sh", AtFlags::empty());
     } else if #[cfg(all(target_os = "linux", any(target_arch ="x86_64", target_arch ="x86")))] {
         use nix::fcntl::AtFlags;
-        execve_test_factory!(test_execveat_empty, execveat, File::open("/bin/sh").unwrap().into_raw_fd(),
+        execve_test_factory!(test_execveat_empty, execveat, Some(File::open("/bin/sh").unwrap().into_raw_fd()),
                              "", AtFlags::AT_EMPTY_PATH);
-        execve_test_factory!(test_execveat_relative, execveat, File::open("/bin/").unwrap().into_raw_fd(),
+        execve_test_factory!(test_execveat_relative, execveat, Some(File::open("/bin/").unwrap().into_raw_fd()),
                              "./sh", AtFlags::empty());
-        execve_test_factory!(test_execveat_absolute, execveat, File::open("/").unwrap().into_raw_fd(),
+        execve_test_factory!(test_execveat_absolute, execveat, Some(File::open("/").unwrap().into_raw_fd()),
                              "/bin/sh", AtFlags::empty());
     }
 }

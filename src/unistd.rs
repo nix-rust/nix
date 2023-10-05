@@ -939,12 +939,13 @@ pub fn fexecve<SA: AsRef<CStr>, SE: AsRef<CStr>>(
 #[cfg(any(target_os = "android", target_os = "linux"))]
 #[inline]
 pub fn execveat<SA: AsRef<CStr>, SE: AsRef<CStr>>(
-    dirfd: RawFd,
+    dirfd: Option<RawFd>,
     pathname: &CStr,
     args: &[SA],
     env: &[SE],
     flags: super::fcntl::AtFlags,
 ) -> Result<Infallible> {
+    let dirfd = at_rawfd(dirfd);
     let args_p = to_exec_array(args);
     let env_p = to_exec_array(env);
 

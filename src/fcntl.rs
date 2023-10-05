@@ -366,7 +366,7 @@ fn inner_readlink<P: ?Sized + NixPath>(
                     AtFlags::empty()
                 };
                 super::sys::stat::fstatat(
-                    dirfd,
+                    Some(dirfd),
                     path,
                     flags | AtFlags::AT_SYMLINK_NOFOLLOW,
                 )
@@ -424,9 +424,10 @@ pub fn readlink<P: ?Sized + NixPath>(path: &P) -> Result<OsString> {
 
 #[cfg(not(target_os = "redox"))]
 pub fn readlinkat<P: ?Sized + NixPath>(
-    dirfd: RawFd,
+    dirfd: Option<RawFd>,
     path: &P,
 ) -> Result<OsString> {
+    let dirfd = at_rawfd(dirfd);
     inner_readlink(Some(dirfd), path)
 }
 
