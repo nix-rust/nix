@@ -1,9 +1,16 @@
 //! Safe wrappers around functions found in libc "unistd.h" header
 
 use crate::errno::{self, Errno};
+
+#[cfg(any(
+    all(feature = "fs", not(target_os = "redox")),
+    all(feature = "process", any(target_os = "android", target_os = "linux"))
+))]
+use crate::fcntl::at_rawfd;
 #[cfg(not(target_os = "redox"))]
-#[cfg(any(feature = "fs", feature = "process"))]
-use crate::fcntl::{at_rawfd, AtFlags};
+#[cfg(feature = "fs")]
+use crate::fcntl::AtFlags;
+
 #[cfg(feature = "fs")]
 use crate::fcntl::{fcntl, FcntlArg::F_SETFD, FdFlag, OFlag};
 #[cfg(all(
