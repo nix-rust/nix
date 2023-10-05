@@ -430,13 +430,13 @@ cfg_if! {
     if #[cfg(target_os = "android")] {
         use nix::fcntl::AtFlags;
         execve_test_factory!(test_execveat_empty, execveat,
-                             File::open("/system/bin/sh").unwrap().into_raw_fd(),
+                             Some(File::open("/system/bin/sh").unwrap().into_raw_fd()),
                              "", AtFlags::AT_EMPTY_PATH);
         execve_test_factory!(test_execveat_relative, execveat,
-                             File::open("/system/bin/").unwrap().into_raw_fd(),
+                             Some(File::open("/system/bin/").unwrap().into_raw_fd()),
                              "./sh", AtFlags::empty());
         execve_test_factory!(test_execveat_absolute, execveat,
-                             File::open("/").unwrap().into_raw_fd(),
+                             Some(File::open("/").unwrap().into_raw_fd()),
                              "/system/bin/sh", AtFlags::empty());
     } else if #[cfg(all(target_os = "linux", any(target_arch ="x86_64", target_arch ="x86")))] {
         use nix::fcntl::AtFlags;
