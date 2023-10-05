@@ -1124,7 +1124,7 @@ libc_bitflags! {
 /// use nix::unistd::{close_range, CloseRangeFlags};
 ///
 /// let f = tempfile::tempfile().unwrap();
-/// close_range(f.as_raw_fd(), f.as_raw_fd(), CloseRangeFlags::empty()).unwrap();   // Bad!  f will also close on drop!
+/// unsafe { close_range(f.as_raw_fd(), f.as_raw_fd(), CloseRangeFlags::empty()).unwrap() };   // Bad!  f will also close on drop!
 /// ```
 ///
 /// ```rust
@@ -1133,10 +1133,10 @@ libc_bitflags! {
 ///
 /// let f = tempfile::tempfile().unwrap();
 /// let fd = f.into_raw_fd(); // Good.  into_raw_fd consumes f
-/// close_range(fd, fd, CloseRangeFlags::empty()).unwrap();
+/// unsafe { close_range(fd, fd, CloseRangeFlags::empty()).unwrap(); }
 /// ```
 #[cfg(target_os = "linux")]
-pub fn close_range(
+pub unsafe fn close_range(
     first: RawFd,
     last: RawFd,
     flags: CloseRangeFlags,
