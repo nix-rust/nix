@@ -1112,6 +1112,8 @@ libc_bitflags! {
 /// Close a range of raw file descriptors.
 /// [close_range(2)](https://man7.org/linux/man-pages/man2/close_range.2.html).
 ///
+/// # Safety
+///
 /// Be aware that many Rust types implicitly close-on-drop, including
 /// `std::fs::File`.  Explicitly closing them with this method too can result in
 /// a double-close condition, which can cause confusing `EBADF` errors in
