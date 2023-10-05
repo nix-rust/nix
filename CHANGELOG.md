@@ -11,6 +11,16 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 - Fixed the function signature of `recvmmsg`, potentially causing UB
   ([#2119](https://github.com/nix-rust/nix/issues/2119))
+### Added
+
+- Added `impl From<Signal> for SigSet`.
+  ([#1959](https://github.com/nix-rust/nix/pull/1959))
+- Added `impl std::ops::BitOr for SigSet`.
+  ([#1959](https://github.com/nix-rust/nix/pull/1959))
+- Added `impl std::ops::BitOr for Signal`.
+  ([#1959](https://github.com/nix-rust/nix/pull/1959))
+- Added `impl std::ops::BitOr<Signal> for SigSet`
+  ([#1959](https://github.com/nix-rust/nix/pull/1959))
 
 - Fix `SignalFd::set_mask`.  In 0.27.0 it would actually close the file
   descriptor.
