@@ -2,7 +2,7 @@
 
 use crate::errno::{self, Errno};
 #[cfg(not(target_os = "redox"))]
-#[cfg(feature = "fs")]
+#[cfg(any(feature = "fs", feature = "process"))]
 use crate::fcntl::{at_rawfd, AtFlags};
 #[cfg(feature = "fs")]
 use crate::fcntl::{fcntl, FcntlArg::F_SETFD, FdFlag, OFlag};
