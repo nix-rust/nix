@@ -15,16 +15,32 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 - Added `impl From<Signal> for SigSet`.
   ([#1959](https://github.com/nix-rust/nix/pull/1959))
+
 - Added `impl std::ops::BitOr for SigSet`.
   ([#1959](https://github.com/nix-rust/nix/pull/1959))
+
 - Added `impl std::ops::BitOr for Signal`.
   ([#1959](https://github.com/nix-rust/nix/pull/1959))
+
 - Added `impl std::ops::BitOr<Signal> for SigSet`
   ([#1959](https://github.com/nix-rust/nix/pull/1959))
 
 - Fix `SignalFd::set_mask`.  In 0.27.0 it would actually close the file
   descriptor.
   ([#2141](https://github.com/nix-rust/nix/pull/2141))
+
+- Added `Icmp` and `IcmpV6` to `SockProtocol`.
+  (#[2103](https://github.com/nix-rust/nix/pull/2103))
+
+- Added `F_GETPATH` FcntlFlags entry on Apple/NetBSD/DragonflyBSD for `::nix::fcntl`.
+  ([#2142](https://github.com/nix-rust/nix/pull/2142))
+  
+- Added `Ipv6HopLimit` to `::nix::sys::socket::ControlMessage` for Linux,
+  MacOS, FreeBSD, DragonflyBSD, Android, iOS and Haiku.
+  ([#2074](https://github.com/nix-rust/nix/pull/2074))
+  
+- Added `F_KINFO` FcntlFlags entry on FreeBSD for `::nix::fcntl`.
+  ([#2152](https://github.com/nix-rust/nix/pull/2152))
 
 ### Changed
 
@@ -54,20 +70,6 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   ([#2136](https://github.com/nix-rust/nix/pull/2136))
 
 - Simplified the function signatures of `recvmmsg` and `sendmmsg`
-
-### Added
-- Added `Icmp` and `IcmpV6` to `SockProtocol`.
-  (#[2103](https://github.com/nix-rust/nix/pull/2103))
-
-- Added `F_GETPATH` FcntlFlags entry on Apple/NetBSD/DragonflyBSD for `::nix::fcntl`.
-  ([#2142](https://github.com/nix-rust/nix/pull/2142))
-  
-- Added `Ipv6HopLimit` to `::nix::sys::socket::ControlMessage` for Linux,
-  MacOS, FreeBSD, DragonflyBSD, Android, iOS and Haiku.
-  ([#2074](https://github.com/nix-rust/nix/pull/2074))
-
-- Added `F_KINFO` FcntlFlags entry on FreeBSD for `::nix::fcntl`.
-  ([#2152](https://github.com/nix-rust/nix/pull/2152))
 
 ## [0.27.1] - 2023-08-28
 
