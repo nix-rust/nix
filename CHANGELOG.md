@@ -69,8 +69,6 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   relaxed lifetime requirements relative to 0.27.1.
   ([#2136](https://github.com/nix-rust/nix/pull/2136))
 
-- Simplified the function signatures of `recvmmsg` and `sendmmsg`
-
 ## [0.27.1] - 2023-08-28
 
 ### Fixed
