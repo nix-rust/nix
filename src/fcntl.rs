@@ -223,10 +223,7 @@ libc_bitflags!(
     all(feature = "process", any(target_os = "android", target_os = "linux"))
 ))]
 pub(crate) fn at_rawfd(fd: Option<RawFd>) -> raw::c_int {
-    match fd {
-        None => libc::AT_FDCWD,
-        Some(fd) => fd,
-    }
+    fd.unwrap_or(libc::AT_FDCWD)
 }
 
 feature! {
