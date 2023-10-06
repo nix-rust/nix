@@ -1,6 +1,7 @@
+use std::os::unix::io::{AsFd, AsRawFd, FromRawFd, OwnedFd, RawFd};
 use crate::errno::Errno;
 use crate::{NixPath, Result};
-use libc::{self, c_int, c_ulong};
+use libc::{self, c_int, c_uint, c_ulong};
 
 libc_bitflags!(
     /// Used with [`mount`].
@@ -160,4 +161,37 @@ pub fn umount2<P: ?Sized + NixPath>(target: &P, flags: MntFlags) -> Result<()> {
     })?;
 
     Errno::result(res).map(drop)
+}
+
+libc_bitflags!(
+    /// Flags for [`open_tree()`].
+    pub struct OpenTreeFlags: c_uint {
+        /// Directly query the mount attached to the file descriptor.
+        AT_EMPTY_PATH as c_uint;
+        /// Do not trigger an automount target.
+        AT_NO_AUTOMOUNT as c_uint;
+        /// When cloning, also clone nested mount subtrees.
+        AT_RECURSIVE as c_uint;
+        /// If target is a symbolic link, do not dereference it.
+        AT_SYMLINK_NOFOLLOW as c_uint;
+        /// Clone the mount object.
+        OPEN_TREE_CLONE as c_uint;
+        /// Set the close-on-exec flag for the returned file descriptor.
+        OPEN_TREE_CLOEXEC as c_uint;
+    }
+);
+
+/// Find the mount object for the target path, and return it as a file-descriptor.
+///
+/// The returned FD behaves in the same way as those opened via `O_PATH`.
+pub fn open_tree<Fd: AsFd, P: ?Sized + NixPath>(
+    dirfd: Option<Fd>,
+    pathname: &P,
+    flags: OpenTreeFlags,
+) -> Result<OwnedFd> {
+    let res = pathname.with_nix_path(|cstr| unsafe {
+        let fd = dirfd.map(|v| v.as_fd().as_raw_fd()).unwrap_or(-1);
+        libc::syscall(libc::SYS_open_tree, fd, cstr.as_ptr(), flags.bits())
+    })?;
+    Errno::result(res).map(|r| unsafe { OwnedFd::from_raw_fd(r as RawFd) })
 }
