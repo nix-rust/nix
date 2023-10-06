@@ -1,7 +1,8 @@
-use std::os::unix::io::{AsFd, AsRawFd, FromRawFd, OwnedFd, RawFd};
 use crate::errno::Errno;
+use crate::fcntl::at_rawfd;
 use crate::{NixPath, Result};
 use libc::{self, c_int, c_uint, c_ulong};
+use std::os::unix::io::{AsFd, AsRawFd, FromRawFd, OwnedFd, RawFd};
 
 libc_bitflags!(
     /// Used with [`mount`].
@@ -86,7 +87,7 @@ libc_bitflags!(
         MNT_DETACH;
         /// Mark the mount point as expired.
         MNT_EXPIRE;
-        /// Don't dereference `target` if it is a symlink.  
+        /// Don't dereference `target` if it is a symlink.
         UMOUNT_NOFOLLOW;
     }
 );
@@ -190,8 +191,13 @@ pub fn open_tree<Fd: AsFd, P: ?Sized + NixPath>(
     flags: OpenTreeFlags,
 ) -> Result<OwnedFd> {
     let res = pathname.with_nix_path(|cstr| unsafe {
-        let fd = dirfd.map(|v| v.as_fd().as_raw_fd()).unwrap_or(-1);
-        libc::syscall(libc::SYS_open_tree, fd, cstr.as_ptr(), flags.bits())
+        let raw_dirfd = at_rawfd(dirfd.map(|v| v.as_fd().as_raw_fd()));
+        libc::syscall(
+            libc::SYS_open_tree,
+            raw_dirfd,
+            cstr.as_ptr(),
+            flags.bits(),
+        )
     })?;
     Errno::result(res).map(|r| unsafe { OwnedFd::from_raw_fd(r as RawFd) })
 }
