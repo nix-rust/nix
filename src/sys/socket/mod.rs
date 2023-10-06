@@ -1606,9 +1606,9 @@ pub fn sendmmsg<'a, XS, AS, C, I, S>(
     flags: MsgFlags
 ) -> crate::Result<MultiResults<'a, S>>
     where
-        XS: IntoIterator<Item = I>,
+        XS: IntoIterator<Item = &'a I>,
         AS: AsRef<[Option<S>]>,
-        I: AsRef<[IoSlice<'a>]>,
+        I: AsRef<[IoSlice<'a>]> + 'a,
         C: AsRef<[ControlMessage<'a>]>,
         S: SockaddrLike,
 {
@@ -1772,11 +1772,11 @@ pub fn recvmmsg<'a, XS, S, I>(
     mut timeout: Option<crate::sys::time::TimeSpec>,
 ) -> crate::Result<MultiResults<'a, S>>
 where
-    XS: IntoIterator<Item = I>,
-    I: AsMut<[IoSliceMut<'a>]>,
+    XS: IntoIterator<Item = &'a mut I>,
+    I: AsMut<[IoSliceMut<'a>]> + 'a,
 {
     let mut count = 0;
-    for (i, (mut slice, mmsghdr)) in slices.into_iter().zip(data.items.iter_mut()).enumerate() {
+    for (i, (slice, mmsghdr)) in slices.into_iter().zip(data.items.iter_mut()).enumerate() {
         let p = &mut mmsghdr.msg_hdr;
         p.msg_iov = slice.as_mut().as_mut_ptr().cast();
         p.msg_iovlen = slice.as_mut().len() as _;
