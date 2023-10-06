@@ -42,6 +42,9 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Added `F_KINFO` FcntlFlags entry on FreeBSD for `::nix::fcntl`.
   ([#2152](https://github.com/nix-rust/nix/pull/2152))
 
+- Added `mount::open_tree()` helper on Linux.
+  ([#1958](https://github.com/nix-rust/nix/pull/1958))
+
 ### Changed
 
 - The MSRV is now 1.69

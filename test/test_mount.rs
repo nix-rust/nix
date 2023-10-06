@@ -11,12 +11,13 @@ mod test_mount {
     use std::io::{self, Read, Write};
     use std::os::unix::fs::OpenOptionsExt;
     use std::os::unix::fs::PermissionsExt;
+    use std::os::unix::io::{IntoRawFd, OwnedFd};
     use std::process::{self, Command};
 
     use libc::{EACCES, EROFS};
 
     use nix::errno::Errno;
-    use nix::mount::{mount, umount, MsFlags};
+    use nix::mount::{mount, open_tree, umount, MsFlags, OpenTreeFlags};
     use nix::sched::{unshare, CloneFlags};
     use nix::sys::stat::{self, Mode};
     use nix::unistd::getuid;
@@ -203,6 +204,31 @@ exit 23";
         assert_eq!(buf, SCRIPT_CONTENTS);
     }
 
+    pub(crate) fn test_open_tree() {
+        let tempdir = tempfile::tempdir().unwrap();
+        let abs_path = tempdir.path();
+        let res = open_tree(
+            Option::<OwnedFd>::None,
+            abs_path,
+            OpenTreeFlags::empty(),
+        );
+        let mount_fd = match res {
+            Ok(fd) => fd,
+            Err(e) if e == Errno::ENOSYS => {
+                let stderr = io::stderr();
+                let mut handle = stderr.lock();
+                writeln!(
+                    handle,
+                    "Detected kernel without `open_tree` syscall, skipping test."
+                )
+                .unwrap();
+                return;
+            }
+            Err(e) => panic!("{}", e),
+        };
+        nix::unistd::close(mount_fd.into_raw_fd()).unwrap()
+    }
+
     pub fn setup_namespaces() {
         // Hold on to the uid in the parent namespace.
         let uid = getuid();
@@ -250,12 +276,13 @@ fn main() {
     use test_mount::{
         setup_namespaces, test_mount_bind, test_mount_noexec_disallows_exec,
         test_mount_rdonly_disallows_write,
-        test_mount_tmpfs_without_flags_allows_rwx,
+        test_mount_tmpfs_without_flags_allows_rwx, test_open_tree,
     };
     skip_if_cirrus!("Fails for an unknown reason Cirrus CI.  Bug #1351");
     setup_namespaces();
 
     run_tests!(
+        test_open_tree,
         test_mount_tmpfs_without_flags_allows_rwx,
         test_mount_rdonly_disallows_write,
         test_mount_noexec_disallows_exec,
