@@ -38,6 +38,9 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Added `Ipv6HopLimit` to `::nix::sys::socket::ControlMessage` for Linux,
   MacOS, FreeBSD, DragonflyBSD, Android, iOS and Haiku.
   ([#2074](https://github.com/nix-rust/nix/pull/2074))
+  
+- Added `F_KINFO` FcntlFlags entry on FreeBSD for `::nix::fcntl`.
+  ([#2152](https://github.com/nix-rust/nix/pull/2152))
 
 ### Changed
 
