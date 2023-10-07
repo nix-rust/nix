@@ -1,0 +1,27 @@
+# towncrier configuration document: 
+# https://towncrier.readthedocs.io/en/stable/configuration.html
+
+[tool.towncrier]
+# Read news fragments from this directory
+directory = "changelog"
+# Concatenate fragments, and prepend to this file
+filename = "CHANGELOG.md"
+title_format = "## [{version}] - {project_date}"
+# Used to disable towncrier's "=====" title header
+underlines = ["", "", ""]
+# Wrap news fragments to a line length of 79
+wrap = true
+# Every news fragement under the `changelog` directory is named "<id>.<type>.md",
+# this `id` field, is called issue/ticket number in towncrier's term
+# `issue_format` controls how this will be rendered in the final CHANGELOG
+# We use this for Pull Request even though it is called "issue"
+issue_format = "[#{issue}](https://github.com/nix-rust/nix/pull/{issue})"
+# Ask towncrier to add new notes after this
+start_string = "# Change Log\n"
+
+# nix's change log typs (in alphabetical order)
+# These types will be capitalized by default.
+[tool.towncrier.fragment.added]
+[tool.towncrier.fragment.changed]
+[tool.towncrier.fragment.fixed]
+[tool.towncrier.fragment.removed]
