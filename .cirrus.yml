@@ -151,7 +151,6 @@ task:
         - FreeBSD 14 amd64 & i686
         - Linux x86_64
         - macOS aarch64
-        - Rust Formatter
         - OpenBSD x86_64
         - Minver
         - Rust Stable
@@ -171,7 +170,6 @@ task:
         - FreeBSD 14 amd64 & i686
         - Linux x86_64
         - macOS aarch64
-        - Rust Formatter
         - OpenBSD x86_64
         - Minver
         - Rust Stable
@@ -204,7 +202,6 @@ task:
     - FreeBSD 14 amd64 & i686
     - Linux x86_64
     - macOS aarch64
-    - Rust Formatter
     - OpenBSD x86_64
     - Minver
     - Rust Stable
@@ -274,7 +271,6 @@ task:
     - FreeBSD 14 amd64 & i686
     - Linux x86_64
     - macOS aarch64
-    - Rust Formatter
     - OpenBSD x86_64
     - Minver
     - Rust Stable
@@ -307,7 +303,6 @@ task:
         - FreeBSD 14 amd64 & i686
         - Linux x86_64
         - macOS aarch64
-        - Rust Formatter
         - OpenBSD x86_64
         - Minver
         - Rust Stable
@@ -321,7 +316,6 @@ task:
         - FreeBSD 14 amd64 & i686
         - Linux x86_64
         - macOS aarch64
-        - Rust Formatter
         - OpenBSD x86_64
         - Minver
         - Rust Stable
@@ -332,7 +326,6 @@ task:
         - FreeBSD 14 amd64 & i686
         - Linux x86_64
         - macOS aarch64
-        - Rust Formatter
         - OpenBSD x86_64
         - Minver
         - Rust Stable
