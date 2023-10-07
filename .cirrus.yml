@@ -359,12 +359,3 @@ task:
   check_script:
     - cargo check
   before_cache_script: rm -rf $CARGO_HOME/registry/index
-
-# Tasks that checks if the code is formatted right using `cargo fmt` tool
-task:
-  name: Rust Formatter
-  container:
-    image: rust:latest
-    cpu: 1
-  setup_script: rustup component add rustfmt
-  test_script: cargo fmt --all -- --check **/*.rs

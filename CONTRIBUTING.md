@@ -60,10 +60,50 @@ pull' model described there.
 
 Please make pull requests against the `master` branch.
 
+## Check your code format
+
+We use [git pre-commit hook](https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks)
+to automate code formatting. However, you need to manually link our script to the correct 
+location first, assume you are in the root of the nix project:
+
+```sh
+ln -s  ../../pre-commit.sh .git/hooks/pre-commit
+```
+
+Let's add some a commit:
+
+```shell
+$ git add {CHANGES}
+$ git commit -m "Some commit message"
+```
+
+If your code is not formatted, then you will see a message like this:
+
+```shell
+INFO: Checking code format...
+WARN: Unformatted code detected
+INFO: Formatting...
+FAIL: git commit ABORTED, please have a look and run git add/commit again
+```
+
+Our `pre-commit` script will find code that is not formatted and format it for
+you, your commit operation will be aborted, add the changes and commit again:
+
+```shell
+$ git add {CHANGES_MADE_BY_THE_FORMATTER}
+$ git commit -m "Some commit message"
+INFO: Checking code format...
+INFO: Check passed
+```
+Since the code has been formatted by the formatter, the check will pass and you
+are good to go!
+
+## CHANGELOG
+
 If you change the API by way of adding, removing or changing something or if
 you fix a bug, please add an appropriate note, every note should be a new markdown 
 file under the [changelog directory][cl] stating the change made by your pull request, 
-the filename should be in the following foramt:
+the filename should be in the following format:
 
 ```
 <PULL_REQUEST_ID>.<TYPE>.md
@@ -108,6 +148,19 @@ describe the reason it shouldn't run under CI, and a link to an issue if
 possible!  Other tests cannot be run under QEMU, which is used for some
 architectures.  To skip them, add a `#[cfg_attr(qemu, ignore)]` attribute to
 the test.
+
+### Skip the CI
+
+It is highly recommended to skip the CI if your PR doesn't change nix's code 
+as this will save our CI usage.
+
+To do this, add:
+
+```
+[skip ci]
+```
+to your PR description, just like [#2158](https://github.com/nix-rust/nix/pull/2158) 
+does.
 
 ## GitHub Merge Queues
 
