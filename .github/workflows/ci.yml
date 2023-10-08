@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read 
+
+env: 
+  MSRV: 1.69.0
+
+jobs:
+
+  macos:
+    runs-on: macos-13
+    env: 
+      TARGET: x86_64-apple-darwin
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: setup Rust
+        uses: dtolnay/rust-toolchain@master
+        with: 
+          toolchain: '${{ env.MSRV }}'
+          components: clippy
+
+      - name: build
+        uses: ./.github/actions/build
+        with:
+          TARGET: '${{ env.TARGET }}'
+
+      - name: test
+        uses: ./.github/actions/test
+        with:
+          TARGET: '${{ env.TARGET }}'
+
+      - name: before_cache_script
+        run: rm -rf $CARGO_HOME/registry/index
+

@@ -1,0 +1,66 @@
+name: 'Build'
+description: 'Build nix'
+inputs:
+  # This is required
+  TARGET:
+    required: true
+
+  BUILD:
+    required: false
+    default: build
+   
+  CLIPPYFLAGS: 
+    required: false
+    default: -D warnings -A unknown-lints
+
+  RUSTFLAGS: 
+    required: false
+    default: -D warnings -A unknown-lints
+
+  RUSTDOCFLAGS: 
+    required: false
+    default: -D warnings
+
+  TOOL: 
+    description: 'Tool used to involve the BUILD command, can be cargo or cross'
+    required: false
+    default: cargo
+
+  ZFLAGS:
+    required: false
+    default: 
+
+  NOHACK:
+    description: "whether to run cargo hack"
+    required: false
+    default: false
+
+runs:
+  using: "composite"
+  steps:
+    - name: debug info
+      shell: bash
+      run: |
+        ${{ inputs.TOOL }} -Vv
+        rustc -Vv
+
+    - name: build
+      shell: bash
+      run: ${{ inputs.TOOL }} ${{ inputs.BUILD }} ${{ inputs.ZFLAGS }} --target ${{ inputs.TARGET }} --all-targets --all-features  
+
+    - name: doc
+      shell: bash
+      run: ${{ inputs.TOOL }} doc ${{ inputs.ZFLAGS }} --no-deps --target ${{ inputs.TARGET }} --all-features
+
+    - name: clippy
+      shell: bash
+      run: ${{ inputs.TOOL}} clippy ${{ inputs.ZFLAGS }} --target ${{ inputs.TARGET }} --all-targets --all-features -- ${{ inputs.CLIPPYFLAGS }}
+
+    - name: Set up cargo-hack
+      if: inputs.NOHACK == 'false'
+      uses: taiki-e/install-action@cargo-hack
+
+    - name: run cargo hack
+      shell: bash
+      if: inputs.NOHACK == 'false'
+      run: ${{ inputs.TOOL }} hack ${{ inputs.ZFLAGS }} check --target ${{ inputs.TARGET }} --each-feature
