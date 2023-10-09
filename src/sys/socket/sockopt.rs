@@ -1119,6 +1119,53 @@ where
     }
 }
 
+/// Linux Security Context
+#[cfg(any(target_os = "android", target_os = "linux"))]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct PeerSecurity;
+
+#[cfg(any(target_os = "android", target_os = "linux"))]
+impl GetSockOpt for PeerSecurity {
+    type Val = OsString;
+
+    fn get(&self, fd: RawFd) -> Result<OsString> {
+        unsafe {
+            // NAME_MAX on Linux is 255
+            let mut getter: GetOsString<[u8; 255]> = Get::uninit();
+
+            let res = libc::getsockopt(
+                fd,
+                libc::SOL_SOCKET,
+                libc::SO_PEERSEC,
+                getter.ffi_ptr(),
+                getter.ffi_len(),
+            );
+
+            if res == 0 || Errno::last() != Errno::ERANGE {
+                Errno::result(res)?;
+
+                return Ok(getter.assume_init());
+            }
+
+            let mut len: socklen_t = getter.len;
+            let mut getter = Vec::<u8>::with_capacity(getter.len as usize);
+
+            let res = libc::getsockopt(
+                fd,
+                libc::SOL_SOCKET,
+                libc::SO_PEERSEC,
+                getter.as_mut_ptr() as *mut c_void,
+                &mut len,
+            );
+
+            Errno::result(res)?;
+
+            let slice = std::slice::from_raw_parts(getter.as_ptr(), len as usize);
+            Ok(OsStr::from_bytes(slice).to_owned())
+        }
+    }
+}
+
 /*
  *
  * ===== Accessor helpers =====
@@ -1425,6 +1472,22 @@ mod test {
         let b_cred = getsockopt(&b, super::PeerCredentials).unwrap();
         assert_eq!(a_cred, b_cred);
         assert_ne!(a_cred.pid(), 0);
+    }
+
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[test]
+    fn can_get_peersec_on_unix_socket() {
+        use super::super::*;
+
+        let (a, b) = socketpair(AddressFamily::Unix, SockType::Stream, None, SockFlag::empty()).unwrap();
+        let a_cred = getsockopt(a, super::PeerSecurity);
+        let b_cred = getsockopt(b, super::PeerSecurity);
+        match (a_cred, b_cred) {
+            (Ok(a_cred), Ok(b_cred)) => {
+                assert_eq!(a_cred, b_cred);
+            }
+            _ => {}
+        }
     }
 
     #[test]
