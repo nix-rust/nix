@@ -61,16 +61,35 @@ pull' model described there.
 Please make pull requests against the `master` branch.
 
 If you change the API by way of adding, removing or changing something or if
-you fix a bug, please add an appropriate note to the [change log][cl]. We
-follow the conventions of [Keep A CHANGELOG][kacl].
+you fix a bug, please add an appropriate note, every note should be a new markdown 
+file under the [changelog directory][cl] stating the change made by your pull request, 
+the filename should be in the following foramt:
 
-[cl]: https://github.com/nix-rust/nix/blob/master/CHANGELOG.md
-[kacl]: https://github.com/olivierlacan/keep-a-changelog/tree/18adb5f5be7a898d046f6a4acb93e39dcf40c4ad
+```
+<PULL_REQUEST_ID>.<TYPE>.md
+```
+
+These are 4 `TYPE`s available:
+
+1. `added`
+2. `changed`
+3. `fixed`
+4. `removed`
+
+Let's say you have added a new API to nix, then a change log like this should
+be added (assume it is PR #0)
+
+```md
+# file: 0.added.md
+Added a new API xxx
+```
+
+[cl]: https://github.com/nix-rust/nix/tree/master/changelog
 [pr-docs]: https://help.github.com/articles/using-pull-requests/
 
 ## Testing
 
-nix has a test suite that you can run with `cargo test`. Ideally, we'd like pull
+nix has a test suite that you can run with `cargo test --all-features`. Ideally, we'd like pull
 requests to include tests where they make sense. For example, when fixing a bug,
 add a test that would have failed without the fix.
 

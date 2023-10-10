@@ -13,6 +13,9 @@ The release is prepared as follows:
 
 - Ask for a new libc version if, necessary. It usually is.  Then update the
   dependency in Cargo.toml accordingly.
+- Update the version number in `Cargo.toml`
+- Generate `CHANGELOG.md` for this release by 
+  `towncrier build --version=<VERSION> --yes`
 - Confirm that everything's ready for a release by running
   `cargo release <patch|minor|major>`
 - Create the release with `cargo release -x <patch|minor|major>`

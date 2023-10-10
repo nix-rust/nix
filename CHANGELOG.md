@@ -1,5 +1,3 @@
-# Change Log
-
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
@@ -58,6 +56,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Added `Ipv6HopLimit` to `::nix::sys::socket::ControlMessage` for Linux,
   MacOS, FreeBSD, DragonflyBSD, Android, iOS and Haiku.
   ([#2074](https://github.com/nix-rust/nix/pull/2074))
+# Change Log
 
 ## [0.27.1] - 2023-08-28
 
