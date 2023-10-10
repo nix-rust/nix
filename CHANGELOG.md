@@ -16,7 +16,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
-- Changed function `SockaddrIn::ip()` to return `net::Ipv4Addr`
+- Changed function `SockaddrIn::ip()` to return `net::Ipv4Addr` and 
+  refactored `SocketAddrV6::ip()` to use `const`
   ([#2151](https://github.com/nix-rust/nix/pull/2151))
 
 - The MSRV is now 1.69
