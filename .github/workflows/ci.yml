@@ -82,12 +82,14 @@ jobs:
         with:
           TARGET: '${{ matrix.target }}'
           TOOL: cross
+          RUSTFLAGS: --cfg qemu -D warnings
 
       - name: test
         uses: ./.github/actions/test
         with:
           TARGET: '${{ matrix.target }}'
           TOOL: cross
+          RUSTFLAGS: --cfg qemu -D warnings
 
       - name: before_cache_script
         run: rm -rf $CARGO_HOME/registry/index

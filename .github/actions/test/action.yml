@@ -10,9 +10,18 @@ inputs:
     required: false
     default: cargo
 
+  RUSTFLAGS: 
+    required: false
+    default: -D warnings -A unknown-lints
+
 runs:
   using: "composite"
   steps:
+    - name: set up Rust env
+      shell: bash
+      run: |
+        echo "RUSTFLAGS=${{ inputs.RUSTFLAGS }}" >> $GITHUB_ENV
+
     - name: test
       shell: bash
       run: ${{ inputs.TOOL }} test --target ${{ inputs.TARGET }} --all-features

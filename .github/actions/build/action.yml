@@ -38,6 +38,12 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - name: set up Rust env
+      shell: bash
+      run: |
+        echo "RUSTFLAGS=${{ inputs.RUSTFLAGS }}" >> $GITHUB_ENV
+        echo "RUSTDOCFLAGS=${{ inputs.RUSTDOCFLAGS }}" >> $GITHUB_ENV
+
     - name: debug info
       shell: bash
       run: |
