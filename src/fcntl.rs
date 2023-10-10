@@ -634,7 +634,7 @@ pub fn flock(fd: RawFd, arg: FlockArg) -> Result<()> {
 
 /// Represents a file lock on a particular [RawFd], which unlocks when dropped.
 ///
-/// See [fcntl::flock] for details on locking semantics.
+/// See [flock] for details on locking semantics.
 #[cfg(not(any(target_os = "redox", target_os = "solaris")))]
 #[derive(Debug, Eq, Hash, PartialEq)]
 pub struct Flock(RawFd);
