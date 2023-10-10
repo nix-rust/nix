@@ -37,7 +37,6 @@ use std::os::unix::ffi::OsStrExt;
 use std::path::Path;
 use std::{fmt, mem, net, ptr, slice};
 use std::net::{Ipv4Addr,Ipv6Addr};
-use core::mem::transmute;
 
 /// Convert a std::net::Ipv4Addr into the libc form.
 #[cfg(feature = "net")]
@@ -1149,21 +1148,15 @@ impl SockaddrIn6 {
     /// Returns the IP address associated with this socket address.
     pub const fn ip(&self) -> net::Ipv6Addr {
         let bytes = self.0.sin6_addr.s6_addr;
-        let [a, b, c, d, e, f, g, h] =
-            unsafe { transmute::<_, [u16; 8]>(bytes) };
-        
-        // Ipv6Addr::new() takes segments in native endian, convert them here
-        let [a, b, c, d, e, f, g, h] = [
-            u16::from_be(a),
-            u16::from_be(b),
-            u16::from_be(c),
-            u16::from_be(d),
-            u16::from_be(e),
-            u16::from_be(f),
-            u16::from_be(g),
-            u16::from_be(h),
-        ];
-
+        let (a, b, c, d, e, f, g, h) = (((bytes[0] as u16) << 8) | bytes[1] as u16,
+            ((bytes[2] as u16) << 8) | bytes[3] as u16,
+            ((bytes[4] as u16) << 8) | bytes[5] as u16,
+            ((bytes[6] as u16) << 8) | bytes[7] as u16,
+            ((bytes[8] as u16) << 8) | bytes[9] as u16,
+            ((bytes[10] as u16) << 8) | bytes[11] as u16,
+            ((bytes[12] as u16) << 8) | bytes[13] as u16,
+            ((bytes[14] as u16) << 8) | bytes[15] as u16
+        );
         Ipv6Addr::new(a, b, c, d, e, f, g, h)
     }
 
@@ -2634,6 +2627,14 @@ mod tests {
                 mem::size_of::<libc::sockaddr_in6>(),
                 SockaddrIn6::size() as usize
             );
+        }
+
+        #[test]
+        fn ip() {
+            let s = "[1234:5678:90ab:cdef::1111:2222]:8080";
+            let ip = SockaddrIn6::from_str(s).unwrap().ip();
+            assert_eq!("1234:5678:90ab:cdef::1111:2222", format!("{ip}"));
+
         }
 
         #[test]
