@@ -631,6 +631,42 @@ pub fn flock(fd: RawFd, arg: FlockArg) -> Result<()> {
 
     Errno::result(res).map(drop)
 }
+
+/// Represents a file lock on a particular [RawFd], which unlocks when dropped.
+///
+/// See [fcntl::flock] for details on locking semantics.
+#[cfg(not(any(target_os = "redox", target_os = "solaris")))]
+#[derive(Debug, Eq, Hash, PartialEq)]
+pub struct Flock(RawFd);
+
+#[cfg(not(any(target_os = "redox", target_os = "solaris")))]
+impl Drop for Flock {
+    fn drop(&mut self) {
+        _ = flock(self.0, FlockArg::Unlock);
+    }
+}
+
+#[cfg(not(any(target_os = "redox", target_os = "solaris")))]
+impl Flock {
+    /// Lock the given `fd` using [flock].
+    ///
+    /// # Example
+    /// ```
+    /// # use std::os::fd::RawFd;
+    /// # use nix::fcntl::{Flock, FlockArg};
+    /// fn do_stuff(fd: RawFd) -> nix::Result<()> {
+    ///     let lock = Flock::lock(fd, FlockArg::LockExclusive)?;
+    ///
+    ///     // Do stuff
+    ///
+    ///     Ok(())
+    /// } // File is unlocked once `lock` goes out of scope.
+    pub fn lock(fd: RawFd, args: FlockArg) -> Result<Self> {
+        flock(fd, args)?;
+
+        Ok(Self(fd))
+    }
+}
 }
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
