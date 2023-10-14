@@ -24,11 +24,20 @@ use std::os::unix::io::{OwnedFd, RawFd};
     all(target_os = "freebsd", target_arch = "x86_64"),
 ))]
 use std::path::PathBuf;
-#[cfg(unix)]
+#[cfg(any(
+    target_os = "android",
+    target_os = "freebsd",
+    target_os = "linux"
+))]
 use std::{
-    os::unix::io::{AsFd, AsRawFd},
+    os::unix::io::AsFd,
     ptr,
 };
+#[cfg(all(
+    not(any(target_os = "redox", target_os = "solaris")),
+    unix
+))]
+use std::os::unix::io::AsRawFd;
 
 #[cfg(feature = "fs")]
 use crate::{sys::stat::Mode, NixPath, Result};
