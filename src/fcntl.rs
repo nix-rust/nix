@@ -16,6 +16,8 @@ use std::os::raw;
 use std::os::unix::ffi::OsStringExt;
 use std::os::unix::io::{OwnedFd, RawFd};
 // For splice and copy_file_range
+#[cfg(all(not(any(target_os = "redox", target_os = "solaris")), unix))]
+use std::os::unix::io::AsRawFd;
 #[cfg(any(
     target_os = "netbsd",
     target_os = "macos",
@@ -29,15 +31,7 @@ use std::path::PathBuf;
     target_os = "freebsd",
     target_os = "linux"
 ))]
-use std::{
-    os::unix::io::AsFd,
-    ptr,
-};
-#[cfg(all(
-    not(any(target_os = "redox", target_os = "solaris")),
-    unix
-))]
-use std::os::unix::io::AsRawFd;
+use std::{os::unix::io::AsFd, ptr};
 
 #[cfg(feature = "fs")]
 use crate::{sys::stat::Mode, NixPath, Result};
