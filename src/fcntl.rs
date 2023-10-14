@@ -642,7 +642,7 @@ pub struct Flock(OwnedFd);
 #[cfg(not(any(target_os = "redox", target_os = "solaris")))]
 impl Drop for Flock {
     fn drop(&mut self) {
-		// Result is ignored because flock has no documented failure cases.
+        // Result is ignored because flock has no documented failure cases.
         _ = flock(self.0.as_raw_fd(), FlockArg::Unlock);
     }
 }
