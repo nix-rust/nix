@@ -14,7 +14,7 @@ use std::ffi::OsString;
 #[cfg(not(target_os = "redox"))]
 use std::os::raw;
 use std::os::unix::ffi::OsStringExt;
-use std::os::unix::io::RawFd;
+use std::os::unix::io::{OwnedFd, RawFd};
 // For splice and copy_file_range
 #[cfg(any(
     target_os = "netbsd",
@@ -611,7 +611,7 @@ pub enum FlockArg {
 }
 
 #[cfg(not(any(target_os = "redox", target_os = "solaris")))]
-pub fn flock(fd: RawFd, arg: FlockArg) -> Result<()> {
+fn flock(fd: RawFd, arg: FlockArg) -> Result<()> {
     use self::FlockArg::*;
 
     let res = unsafe {
@@ -636,13 +636,14 @@ pub fn flock(fd: RawFd, arg: FlockArg) -> Result<()> {
 ///
 /// See [flock] for details on locking semantics.
 #[cfg(not(any(target_os = "redox", target_os = "solaris")))]
-#[derive(Debug, Eq, Hash, PartialEq)]
-pub struct Flock(RawFd);
+#[derive(Debug)]
+pub struct Flock(OwnedFd);
 
 #[cfg(not(any(target_os = "redox", target_os = "solaris")))]
 impl Drop for Flock {
     fn drop(&mut self) {
-        _ = flock(self.0, FlockArg::Unlock);
+		// Result is ignored because flock has no documented failure cases.
+        _ = flock(self.0.as_raw_fd(), FlockArg::Unlock);
     }
 }
 
@@ -652,17 +653,17 @@ impl Flock {
     ///
     /// # Example
     /// ```
-    /// # use std::os::fd::RawFd;
+    /// # use std::os::unix::io::OwnedFd;
     /// # use nix::fcntl::{Flock, FlockArg};
-    /// fn do_stuff(fd: RawFd) -> nix::Result<()> {
+    /// fn do_stuff(fd: OwnedFd) -> nix::Result<()> {
     ///     let lock = Flock::lock(fd, FlockArg::LockExclusive)?;
     ///
     ///     // Do stuff
     ///
     ///     Ok(())
     /// } // File is unlocked once `lock` goes out of scope.
-    pub fn lock(fd: RawFd, args: FlockArg) -> Result<Self> {
-        flock(fd, args)?;
+    pub fn lock(fd: OwnedFd, args: FlockArg) -> Result<Self> {
+        flock(fd.as_raw_fd(), args)?;
 
         Ok(Self(fd))
     }
