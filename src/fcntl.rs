@@ -24,11 +24,7 @@ use std::os::unix::io::{OwnedFd, RawFd};
     all(target_os = "freebsd", target_arch = "x86_64"),
 ))]
 use std::path::PathBuf;
-#[cfg(any(
-    target_os = "android",
-    target_os = "freebsd",
-    target_os = "linux"
-))]
+#[cfg(unix)]
 use std::{
     os::unix::io::{AsFd, AsRawFd},
     ptr,
@@ -634,7 +630,7 @@ fn flock(fd: RawFd, arg: FlockArg) -> Result<()> {
 
 /// Represents a file lock on a particular [RawFd], which unlocks when dropped.
 ///
-/// See [flock] for details on locking semantics.
+/// See flock(2) for details on locking semantics.
 #[cfg(not(any(target_os = "redox", target_os = "solaris")))]
 #[derive(Debug)]
 pub struct Flock(OwnedFd);
@@ -649,7 +645,7 @@ impl Drop for Flock {
 
 #[cfg(not(any(target_os = "redox", target_os = "solaris")))]
 impl Flock {
-    /// Lock the given `fd` using [flock].
+    /// Lock the given `fd`.
     ///
     /// # Example
     /// ```
