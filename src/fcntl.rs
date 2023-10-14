@@ -14,10 +14,10 @@ use std::ffi::OsString;
 #[cfg(not(target_os = "redox"))]
 use std::os::raw;
 use std::os::unix::ffi::OsStringExt;
-use std::os::unix::io::{OwnedFd, RawFd};
+use std::os::unix::io::RawFd;
 // For splice and copy_file_range
 #[cfg(all(not(any(target_os = "redox", target_os = "solaris")), unix))]
-use std::os::unix::io::AsRawFd;
+use std::os::unix::io::{AsRawFd, OwnedFd};
 #[cfg(any(
     target_os = "netbsd",
     target_os = "macos",
