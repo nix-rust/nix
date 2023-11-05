@@ -1032,7 +1032,7 @@ impl ControlMessageOwned {
                 let dl = ptr::read_unaligned(p as *const libc::sockaddr_in6);
                 ControlMessageOwned::Ipv6OrigDstAddr(dl)
             },
-            #[cfg(all(target_os = "linux"))]
+            #[cfg(any(target_os = "android", target_os = "linux"))]
             (libc::SOL_TLS, libc::TLS_GET_RECORD_TYPE) => {
                 let content_type = ptr::read_unaligned(p as *const u8);
                 ControlMessageOwned::TlsGetRecordType(content_type)
