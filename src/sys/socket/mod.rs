@@ -868,10 +868,8 @@ pub enum ControlMessageOwned {
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv6RecvErr(libc::sock_extended_err, Option<sockaddr_in6>),
 
-    /// `SOL_TLS` messages of type `TLS_GET_RECORD_TYPE`, containing the TLS message content type,
-    /// normally one of change_cipher_spec(20), alert(21), handshake(22) (for TLS 1.3
-    /// resumption tickets), application_data(23)
-    TlsGetRecordType(u8),
+    /// `SOL_TLS` messages of type `TLS_GET_RECORD_TYPE`
+    TlsGetRecordType(TlsGetRecordType),
 
     /// Catch-all variant for unimplemented cmsg types.
     #[doc(hidden)]
@@ -888,6 +886,33 @@ pub struct Timestamps {
     pub hw_trans: TimeSpec,
     /// hardware based timestamp
     pub hw_raw: TimeSpec,
+}
+
+/// These constants correspond to TLS 1.2 message types, as defined in
+/// RFC 5246, Appendix A.1
+#[cfg(any(target_os = "android", target_os = "linux"))]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[repr(u8)]
+#[non_exhaustive]
+pub enum TlsGetRecordType {
+    ChangeCipherSpec ,
+    Alert,
+    Handshake,
+    ApplicationData,
+    Unknown(u8),
+}
+
+#[cfg(any(target_os = "android", target_os = "linux"))]
+impl From<u8> for TlsGetRecordType {
+    fn from(x: u8) -> Self {
+        match x {
+            20 => TlsGetRecordType::ChangeCipherSpec,
+            21 => TlsGetRecordType::Alert,
+            22 => TlsGetRecordType::Handshake,
+            23 => TlsGetRecordType::ApplicationData,
+            _ => TlsGetRecordType::Unknown(x),
+        }
+    }
 }
 
 impl ControlMessageOwned {
@@ -1035,7 +1060,7 @@ impl ControlMessageOwned {
             #[cfg(any(target_os = "android", target_os = "linux"))]
             (libc::SOL_TLS, libc::TLS_GET_RECORD_TYPE) => {
                 let content_type = ptr::read_unaligned(p as *const u8);
-                ControlMessageOwned::TlsGetRecordType(content_type)
+                ControlMessageOwned::TlsGetRecordType(content_type.into())
             },
             (_, _) => {
                 let sl = std::slice::from_raw_parts(p, len);
