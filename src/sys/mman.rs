@@ -411,7 +411,9 @@ pub fn munlockall() -> Result<()> {
     unsafe { Errno::result(libc::munlockall()) }.map(drop)
 }
 
-/// allocate memory, or map files or devices into memory
+/// Allocate memory, or map files or devices into memory
+///
+/// For anonymous mappings (`MAP_ANON`/`MAP_ANONYMOUS`), see [mmap_anonymous].
 ///
 /// # Safety
 ///
@@ -423,15 +425,42 @@ pub unsafe fn mmap<F: AsFd>(
     length: NonZeroUsize,
     prot: ProtFlags,
     flags: MapFlags,
-    f: Option<F>,
+    f: F,
     offset: off_t,
 ) -> Result<*mut c_void> {
-    let ptr =
-        addr.map_or(std::ptr::null_mut(), |a| usize::from(a) as *mut c_void);
+    let ptr = addr.map_or(std::ptr::null_mut(), |a| a.get() as *mut c_void);
 
-    let fd = f.map(|f| f.as_fd().as_raw_fd()).unwrap_or(-1);
+    let fd = f.as_fd().as_raw_fd();
     let ret =
         libc::mmap(ptr, length.into(), prot.bits(), flags.bits(), fd, offset);
+
+    if ret == libc::MAP_FAILED {
+        Err(Errno::last())
+    } else {
+        Ok(ret)
+    }
+}
+
+/// Create an anonymous memory mapping.
+///
+/// This function is a wrapper around [`mmap`]:
+/// `mmap(ptr, len, prot, MAP_ANONYMOUS | flags, -1, 0)`.
+///
+/// # Safety
+///
+/// See the [`mmap(2)`] man page for detailed requirements.
+///
+/// [`mmap(2)`]: https://man7.org/linux/man-pages/man2/mmap.2.html
+pub unsafe fn mmap_anonymous(
+    addr: Option<NonZeroUsize>,
+    length: NonZeroUsize,
+    prot: ProtFlags,
+    flags: MapFlags,
+) -> Result<*mut c_void> {
+    let ptr = addr.map_or(std::ptr::null_mut(), |a| a.get() as *mut c_void);
+
+    let flags = MapFlags::MAP_ANONYMOUS | flags;
+    let ret = libc::mmap(ptr, length.into(), prot.bits(), flags.bits(), -1, 0);
 
     if ret == libc::MAP_FAILED {
         Err(Errno::last())
@@ -519,14 +548,14 @@ pub unsafe fn madvise(
 ///
 /// ```
 /// # use nix::libc::size_t;
-/// # use nix::sys::mman::{mmap, mprotect, MapFlags, ProtFlags};
+/// # use nix::sys::mman::{mmap_anonymous, mprotect, MapFlags, ProtFlags};
 /// # use std::ptr;
 /// # use std::os::unix::io::BorrowedFd;
 /// const ONE_K: size_t = 1024;
 /// let one_k_non_zero = std::num::NonZeroUsize::new(ONE_K).unwrap();
 /// let mut slice: &mut [u8] = unsafe {
-///     let mem = mmap::<BorrowedFd>(None, one_k_non_zero, ProtFlags::PROT_NONE,
-///                    MapFlags::MAP_ANON | MapFlags::MAP_PRIVATE, None, 0).unwrap();
+///     let mem = mmap_anonymous(None, one_k_non_zero, ProtFlags::PROT_NONE, MapFlags::MAP_PRIVATE)
+///         .unwrap();
 ///     mprotect(mem, ONE_K, ProtFlags::PROT_READ | ProtFlags::PROT_WRITE).unwrap();
 ///     std::slice::from_raw_parts_mut(mem as *mut u8, ONE_K)
 /// };

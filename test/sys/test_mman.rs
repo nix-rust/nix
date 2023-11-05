@@ -1,16 +1,14 @@
-use nix::sys::mman::{mmap, MapFlags, ProtFlags};
-use std::{num::NonZeroUsize, os::unix::io::BorrowedFd};
+use nix::sys::mman::{mmap_anonymous, MapFlags, ProtFlags};
+use std::num::NonZeroUsize;
 
 #[test]
 fn test_mmap_anonymous() {
     unsafe {
-        let ptr = mmap::<BorrowedFd>(
+        let ptr = mmap_anonymous(
             None,
             NonZeroUsize::new(1).unwrap(),
             ProtFlags::PROT_READ | ProtFlags::PROT_WRITE,
-            MapFlags::MAP_PRIVATE | MapFlags::MAP_ANONYMOUS,
-            None,
-            0,
+            MapFlags::MAP_PRIVATE,
         )
         .unwrap() as *mut u8;
         assert_eq!(*ptr, 0x00u8);
@@ -29,13 +27,11 @@ fn test_mremap_grow() {
     let one_k_non_zero = NonZeroUsize::new(ONE_K).unwrap();
 
     let slice: &mut [u8] = unsafe {
-        let mem = mmap::<BorrowedFd>(
+        let mem = mmap_anonymous(
             None,
             one_k_non_zero,
             ProtFlags::PROT_READ | ProtFlags::PROT_WRITE,
-            MapFlags::MAP_ANONYMOUS | MapFlags::MAP_PRIVATE,
-            None,
-            0,
+            MapFlags::MAP_PRIVATE,
         )
         .unwrap();
         std::slice::from_raw_parts_mut(mem as *mut u8, ONE_K)
@@ -87,13 +83,11 @@ fn test_mremap_shrink() {
     const ONE_K: size_t = 1024;
     let ten_one_k = NonZeroUsize::new(10 * ONE_K).unwrap();
     let slice: &mut [u8] = unsafe {
-        let mem = mmap::<BorrowedFd>(
+        let mem = mmap_anonymous(
             None,
             ten_one_k,
             ProtFlags::PROT_READ | ProtFlags::PROT_WRITE,
-            MapFlags::MAP_ANONYMOUS | MapFlags::MAP_PRIVATE,
-            None,
-            0,
+            MapFlags::MAP_PRIVATE,
         )
         .unwrap();
         std::slice::from_raw_parts_mut(mem as *mut u8, ONE_K)
