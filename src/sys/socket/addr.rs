@@ -36,6 +36,7 @@ use std::hash::{Hash, Hasher};
 use std::os::unix::ffi::OsStrExt;
 use std::path::Path;
 use std::{fmt, mem, net, ptr, slice};
+use std::net::{Ipv4Addr,Ipv6Addr};
 
 /// Convert a std::net::Ipv4Addr into the libc form.
 #[cfg(feature = "net")]
@@ -1006,8 +1007,10 @@ pub struct SockaddrIn(libc::sockaddr_in);
 impl SockaddrIn {
     /// Returns the IP address associated with this socket address, in native
     /// endian.
-    pub const fn ip(&self) -> libc::in_addr_t {
-        u32::from_be(self.0.sin_addr.s_addr)
+    pub const fn ip(&self) -> net::Ipv4Addr {
+        let bytes = self.0.sin_addr.s_addr.to_ne_bytes();
+        let (a, b, c, d) = (bytes[0], bytes[1], bytes[2], bytes[3]);
+        Ipv4Addr::new(a, b, c, d)
     }
 
     /// Creates a new socket address from IPv4 octets and a port number.
@@ -1143,8 +1146,18 @@ impl SockaddrIn6 {
     }
 
     /// Returns the IP address associated with this socket address.
-    pub fn ip(&self) -> net::Ipv6Addr {
-        net::Ipv6Addr::from(self.0.sin6_addr.s6_addr)
+    pub const fn ip(&self) -> net::Ipv6Addr {
+        let bytes = self.0.sin6_addr.s6_addr;
+        let (a, b, c, d, e, f, g, h) = (((bytes[0] as u16) << 8) | bytes[1] as u16,
+            ((bytes[2] as u16) << 8) | bytes[3] as u16,
+            ((bytes[4] as u16) << 8) | bytes[5] as u16,
+            ((bytes[6] as u16) << 8) | bytes[7] as u16,
+            ((bytes[8] as u16) << 8) | bytes[9] as u16,
+            ((bytes[10] as u16) << 8) | bytes[11] as u16,
+            ((bytes[12] as u16) << 8) | bytes[13] as u16,
+            ((bytes[14] as u16) << 8) | bytes[15] as u16
+        );
+        Ipv6Addr::new(a, b, c, d, e, f, g, h)
     }
 
     /// Returns the port number associated with this socket address, in native
@@ -2588,6 +2601,13 @@ mod tests {
                 SockaddrIn::size() as usize
             );
         }
+
+        #[test]
+        fn ip() {
+            let s = "127.0.0.1:8080";
+            let ip = SockaddrIn::from_str(s).unwrap().ip();
+            assert_eq!("127.0.0.1", format!("{ip}"));
+        }
     }
 
     mod sockaddr_in6 {
@@ -2607,6 +2627,14 @@ mod tests {
                 mem::size_of::<libc::sockaddr_in6>(),
                 SockaddrIn6::size() as usize
             );
+        }
+
+        #[test]
+        fn ip() {
+            let s = "[1234:5678:90ab:cdef::1111:2222]:8080";
+            let ip = SockaddrIn6::from_str(s).unwrap().ip();
+            assert_eq!("1234:5678:90ab:cdef::1111:2222", format!("{ip}"));
+
         }
 
         #[test]
