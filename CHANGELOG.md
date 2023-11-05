@@ -2,68 +2,6 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
 # Change Log
-## [Unreleased] - ReleaseDate
-
-### Fixed
-- Fix `SigSet` incorrect implementation of `Eq`, `PartialEq` and `Hash`
-  ([#1946](https://github.com/nix-rust/nix/pull/1946))
-
-- Fixed the function signature of `recvmmsg`, potentially causing UB
-  ([#2119](https://github.com/nix-rust/nix/issues/2119))
-
-- Fix `SignalFd::set_mask`.  In 0.27.0 it would actually close the file
-  descriptor.
-  ([#2141](https://github.com/nix-rust/nix/pull/2141))
-
-### Changed
-
-- The MSRV is now 1.69
-  ([#2144](https://github.com/nix-rust/nix/pull/2144))
-
-- The following APIs now take an implementation of `AsFd` rather than a
-  `RawFd`:
-
-  - `unistd::tcgetpgrp`
-  - `unistd::tcsetpgrp`
-  - `unistd::fpathconf`
-  - `unistd::ttyname`
-  - `unistd::getpeereid`
-
-  ([#2137](https://github.com/nix-rust/nix/pull/2137))
-  
-- Changed `openat()` and `Dir::openat()`, now take optional `dirfd`s
-  ([#2139](https://github.com/nix-rust/nix/pull/2139))
-
-- `PollFd::new` now takes a `BorrowedFd` argument, with relaxed lifetime
-  requirements relative to the previous version.
-  ([#2134](https://github.com/nix-rust/nix/pull/2134))
-
-- `FdSet::{insert, remove, contains}` now take `BorrowedFd` arguments, and have
-  relaxed lifetime requirements relative to 0.27.1.
-  ([#2136](https://github.com/nix-rust/nix/pull/2136))
-
-- Simplified the function signatures of `recvmmsg` and `sendmmsg`
-
-- The following APIs now take optional `dirfd`s:
-
-  - `readlinkat()`
-  - `fstatat()`
-  - `mknodat()`
-  - `mkdirat()`
-  - `execveat()`
-
-  ([#2157](https://github.com/nix-rust/nix/pull/2157))
-
-### Added
-- Added `Icmp` and `IcmpV6` to `SockProtocol`.
-  (#[2103](https://github.com/nix-rust/nix/pull/2103))
-
-- Added `F_GETPATH` FcntlFlags entry on Apple/NetBSD/DragonflyBSD for `::nix::fcntl`.
-  ([#2142](https://github.com/nix-rust/nix/pull/2142))
-  
-- Added `Ipv6HopLimit` to `::nix::sys::socket::ControlMessage` for Linux,
-  MacOS, FreeBSD, DragonflyBSD, Android, iOS and Haiku.
-  ([#2074](https://github.com/nix-rust/nix/pull/2074))
 
 ## [0.27.1] - 2023-08-28
 
