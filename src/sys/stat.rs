@@ -192,12 +192,13 @@ pub fn mknod<P: ?Sized + NixPath>(
 )))]
 #[cfg_attr(docsrs, doc(cfg(all())))]
 pub fn mknodat<P: ?Sized + NixPath>(
-    dirfd: RawFd,
+    dirfd: Option<RawFd>,
     path: &P,
     kind: SFlag,
     perm: Mode,
     dev: dev_t,
 ) -> Result<()> {
+    let dirfd = at_rawfd(dirfd);
     let res = path.with_nix_path(|cstr| unsafe {
         libc::mknodat(
             dirfd,
@@ -270,10 +271,11 @@ pub fn fstat(fd: RawFd) -> Result<FileStat> {
 #[cfg(not(target_os = "redox"))]
 #[cfg_attr(docsrs, doc(cfg(all())))]
 pub fn fstatat<P: ?Sized + NixPath>(
-    dirfd: RawFd,
+    dirfd: Option<RawFd>,
     pathname: &P,
     f: AtFlags,
 ) -> Result<FileStat> {
+    let dirfd = at_rawfd(dirfd);
     let mut dst = mem::MaybeUninit::uninit();
     let res = pathname.with_nix_path(|cstr| unsafe {
         libc::fstatat(
@@ -468,10 +470,11 @@ pub fn utimensat<P: ?Sized + NixPath>(
 #[cfg(not(target_os = "redox"))]
 #[cfg_attr(docsrs, doc(cfg(all())))]
 pub fn mkdirat<P: ?Sized + NixPath>(
-    fd: RawFd,
+    fd: Option<RawFd>,
     path: &P,
     mode: Mode,
 ) -> Result<()> {
+    let fd = at_rawfd(fd);
     let res = path.with_nix_path(|cstr| unsafe {
         libc::mkdirat(fd, cstr.as_ptr(), mode.bits() as mode_t)
     })?;

@@ -217,6 +217,15 @@ libc_bitflags!(
     }
 );
 
+/// Computes the raw fd consumed by a function of the form `*at`.
+#[cfg(any(
+    all(feature = "fs", not(target_os = "redox")),
+    all(feature = "process", any(target_os = "android", target_os = "linux"))
+))]
+pub(crate) fn at_rawfd(fd: Option<RawFd>) -> raw::c_int {
+    fd.unwrap_or(libc::AT_FDCWD)
+}
+
 feature! {
 #![feature = "fs"]
 
@@ -366,7 +375,7 @@ fn inner_readlink<P: ?Sized + NixPath>(
                     AtFlags::empty()
                 };
                 super::sys::stat::fstatat(
-                    dirfd,
+                    Some(dirfd),
                     path,
                     flags | AtFlags::AT_SYMLINK_NOFOLLOW,
                 )
@@ -377,7 +386,7 @@ fn inner_readlink<P: ?Sized + NixPath>(
                 target_os = "redox"
             )))]
             Some(dirfd) => super::sys::stat::fstatat(
-                dirfd,
+                Some(dirfd),
                 path,
                 AtFlags::AT_SYMLINK_NOFOLLOW,
             ),
@@ -424,19 +433,11 @@ pub fn readlink<P: ?Sized + NixPath>(path: &P) -> Result<OsString> {
 
 #[cfg(not(target_os = "redox"))]
 pub fn readlinkat<P: ?Sized + NixPath>(
-    dirfd: RawFd,
+    dirfd: Option<RawFd>,
     path: &P,
 ) -> Result<OsString> {
+    let dirfd = at_rawfd(dirfd);
     inner_readlink(Some(dirfd), path)
-}
-
-/// Computes the raw fd consumed by a function of the form `*at`.
-#[cfg(not(target_os = "redox"))]
-pub(crate) fn at_rawfd(fd: Option<RawFd>) -> raw::c_int {
-    match fd {
-        None => libc::AT_FDCWD,
-        Some(fd) => fd,
-    }
 }
 }
 

@@ -222,7 +222,7 @@ fn test_readlink() {
 
     assert_eq!(readlink(&dst).unwrap().to_str().unwrap(), expected_dir);
     assert_eq!(
-        readlinkat(dirfd, "b").unwrap().to_str().unwrap(),
+        readlinkat(Some(dirfd), "b").unwrap().to_str().unwrap(),
         expected_dir
     );
 }
