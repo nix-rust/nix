@@ -49,7 +49,7 @@ jobs:
     runs-on: ubuntu-20.04 
     needs: [rustfmt, minver, macos, linux_native_builds, rust_stable]
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         target: [
           arm-unknown-linux-gnueabi,
@@ -74,8 +74,10 @@ jobs:
           components: clippy
 
       # cross relies on docker or podman, GitHub Acton already has it installed.
-      - name: setup cross
-        run: cargo install cross --version 0.2.5
+      - name: Set up cross
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cross@0.2.5
 
       - name: build
         uses: ./.github/actions/build
@@ -101,7 +103,7 @@ jobs:
   linux_native_builds:
     runs-on: ubuntu-20.04
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         target: [
           x86_64-unknown-linux-gnu,
@@ -169,7 +171,7 @@ jobs:
     env:
       BUILD: check
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         include:
           # Cross claims to support Android, but when it tries to run Nix's tests it
@@ -258,7 +260,7 @@ jobs:
       ZFLAGS: -Zbuild-std
       CLIPPYFLAGS: -D warnings
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         include:
           - target: x86_64-unknown-dragonfly
