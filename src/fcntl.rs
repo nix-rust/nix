@@ -1,11 +1,29 @@
 use crate::errno::Errno;
+#[cfg(all(target_os = "freebsd", target_arch = "x86_64"))]
+use core::slice;
 use libc::{self, c_int, c_uint, size_t, ssize_t};
+#[cfg(any(
+    target_os = "netbsd",
+    target_os = "macos",
+    target_os = "ios",
+    target_os = "dragonfly",
+    all(target_os = "freebsd", target_arch = "x86_64"),
+))]
+use std::ffi::CStr;
 use std::ffi::OsString;
 #[cfg(not(target_os = "redox"))]
 use std::os::raw;
 use std::os::unix::ffi::OsStringExt;
 use std::os::unix::io::RawFd;
 // For splice and copy_file_range
+#[cfg(any(
+    target_os = "netbsd",
+    target_os = "macos",
+    target_os = "ios",
+    target_os = "dragonfly",
+    all(target_os = "freebsd", target_arch = "x86_64"),
+))]
+use std::path::PathBuf;
 #[cfg(any(
     target_os = "android",
     target_os = "freebsd",
@@ -199,6 +217,15 @@ libc_bitflags!(
     }
 );
 
+/// Computes the raw fd consumed by a function of the form `*at`.
+#[cfg(any(
+    all(feature = "fs", not(target_os = "redox")),
+    all(feature = "process", any(target_os = "android", target_os = "linux"))
+))]
+pub(crate) fn at_rawfd(fd: Option<RawFd>) -> raw::c_int {
+    fd.unwrap_or(libc::AT_FDCWD)
+}
+
 feature! {
 #![feature = "fs"]
 
@@ -348,7 +375,7 @@ fn inner_readlink<P: ?Sized + NixPath>(
                     AtFlags::empty()
                 };
                 super::sys::stat::fstatat(
-                    dirfd,
+                    Some(dirfd),
                     path,
                     flags | AtFlags::AT_SYMLINK_NOFOLLOW,
                 )
@@ -359,7 +386,7 @@ fn inner_readlink<P: ?Sized + NixPath>(
                 target_os = "redox"
             )))]
             Some(dirfd) => super::sys::stat::fstatat(
-                dirfd,
+                Some(dirfd),
                 path,
                 AtFlags::AT_SYMLINK_NOFOLLOW,
             ),
@@ -406,19 +433,11 @@ pub fn readlink<P: ?Sized + NixPath>(path: &P) -> Result<OsString> {
 
 #[cfg(not(target_os = "redox"))]
 pub fn readlinkat<P: ?Sized + NixPath>(
-    dirfd: RawFd,
+    dirfd: Option<RawFd>,
     path: &P,
 ) -> Result<OsString> {
+    let dirfd = at_rawfd(dirfd);
     inner_readlink(Some(dirfd), path)
-}
-
-/// Computes the raw fd consumed by a function of the form `*at`.
-#[cfg(not(target_os = "redox"))]
-pub(crate) fn at_rawfd(fd: Option<RawFd>) -> raw::c_int {
-    match fd {
-        None => libc::AT_FDCWD,
-        Some(fd) => fd,
-    }
 }
 }
 
@@ -489,6 +508,10 @@ pub enum FcntlArg<'a> {
     F_GETPIPE_SZ,
     #[cfg(any(target_os = "linux", target_os = "android"))]
     F_SETPIPE_SZ(c_int),
+    #[cfg(any(target_os = "netbsd", target_os = "dragonfly", target_os = "macos", target_os = "ios"))]
+    F_GETPATH(&'a mut PathBuf),
+    #[cfg(all(target_os = "freebsd", target_arch = "x86_64"))]
+    F_KINFO(&'a mut PathBuf),
     // TODO: Rest of flags
 }
 
@@ -549,6 +572,27 @@ pub fn fcntl(fd: RawFd, arg: FcntlArg) -> Result<c_int> {
             F_GETPIPE_SZ => libc::fcntl(fd, libc::F_GETPIPE_SZ),
             #[cfg(any(target_os = "linux", target_os = "android"))]
             F_SETPIPE_SZ(size) => libc::fcntl(fd, libc::F_SETPIPE_SZ, size),
+            #[cfg(any(target_os = "dragonfly", target_os = "netbsd", target_os = "macos", target_os = "ios"))]
+            F_GETPATH(path) => {
+                let mut buffer = vec![0; libc::PATH_MAX as usize];
+                let res = libc::fcntl(fd, libc::F_GETPATH, buffer.as_mut_ptr());
+                let ok_res = Errno::result(res)?;
+                let optr = CStr::from_bytes_until_nul(&buffer).unwrap();
+                *path = PathBuf::from(OsString::from(optr.to_str().unwrap()));
+                return Ok(ok_res)
+            },
+            #[cfg(all(target_os = "freebsd", target_arch = "x86_64"))]
+            F_KINFO(path) => {
+                let mut info: libc::kinfo_file = std::mem::zeroed();
+                info.kf_structsize = std::mem::size_of::<libc::kinfo_file>() as i32;
+                let res = libc::fcntl(fd, libc::F_KINFO, &mut info);
+                let ok_res = Errno::result(res)?;
+                let p = info.kf_path;
+                let u8_slice = slice::from_raw_parts(p.as_ptr().cast(), p.len());
+                let optr = CStr::from_bytes_until_nul(u8_slice).unwrap();
+                *path = PathBuf::from(OsString::from(optr.to_str().unwrap()));
+                return Ok(ok_res)
+            },
         }
     };
 

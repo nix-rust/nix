@@ -222,7 +222,7 @@ fn test_readlink() {
 
     assert_eq!(readlink(&dst).unwrap().to_str().unwrap(), expected_dir);
     assert_eq!(
-        readlinkat(dirfd, "b").unwrap().to_str().unwrap(),
+        readlinkat(Some(dirfd), "b").unwrap().to_str().unwrap(),
         expected_dir
     );
 }
@@ -560,4 +560,46 @@ mod test_posix_fallocate {
             errno => panic!("unexpected errno {errno}",),
         }
     }
+}
+
+#[cfg(any(
+    target_os = "dragonfly",
+    target_os = "netbsd",
+    target_os = "macos",
+    target_os = "ios"
+))]
+#[test]
+fn test_f_get_path() {
+    use nix::fcntl::*;
+    use std::{os::unix::io::AsRawFd, path::PathBuf};
+
+    let tmp = NamedTempFile::new().unwrap();
+    let fd = tmp.as_raw_fd();
+    let mut path = PathBuf::new();
+    let res =
+        fcntl(fd, FcntlArg::F_GETPATH(&mut path)).expect("get path failed");
+    assert_ne!(res, -1);
+    assert_eq!(
+        path.as_path().canonicalize().unwrap(),
+        tmp.path().canonicalize().unwrap()
+    );
+}
+
+#[cfg(all(target_os = "freebsd", target_arch = "x86_64"))]
+#[test]
+fn test_f_kinfo() {
+    use nix::fcntl::*;
+    use std::{os::unix::io::AsRawFd, path::PathBuf};
+
+    let tmp = NamedTempFile::new().unwrap();
+    // With TMPDIR set with UFS, the vnode name is not entered
+    // into the name cache thus path is always empty.
+    // Therefore, we reopen the tempfile a second time for the test
+    // to pass.
+    let tmp2 = File::open(tmp.path()).unwrap();
+    let fd = tmp2.as_raw_fd();
+    let mut path = PathBuf::new();
+    let res = fcntl(fd, FcntlArg::F_KINFO(&mut path)).expect("get path failed");
+    assert_ne!(res, -1);
+    assert_eq!(path, tmp.path());
 }

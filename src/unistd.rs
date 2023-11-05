@@ -1,9 +1,16 @@
 //! Safe wrappers around functions found in libc "unistd.h" header
 
 use crate::errno::{self, Errno};
+
+#[cfg(any(
+    all(feature = "fs", not(target_os = "redox")),
+    all(feature = "process", any(target_os = "android", target_os = "linux"))
+))]
+use crate::fcntl::at_rawfd;
 #[cfg(not(target_os = "redox"))]
 #[cfg(feature = "fs")]
-use crate::fcntl::{at_rawfd, AtFlags};
+use crate::fcntl::AtFlags;
+
 #[cfg(feature = "fs")]
 use crate::fcntl::{fcntl, FcntlArg::F_SETFD, FdFlag, OFlag};
 #[cfg(all(
@@ -939,12 +946,13 @@ pub fn fexecve<SA: AsRef<CStr>, SE: AsRef<CStr>>(
 #[cfg(any(target_os = "android", target_os = "linux"))]
 #[inline]
 pub fn execveat<SA: AsRef<CStr>, SE: AsRef<CStr>>(
-    dirfd: RawFd,
+    dirfd: Option<RawFd>,
     pathname: &CStr,
     args: &[SA],
     env: &[SE],
     flags: super::fcntl::AtFlags,
 ) -> Result<Infallible> {
+    let dirfd = at_rawfd(dirfd);
     let args_p = to_exec_array(args);
     let env_p = to_exec_array(env);
 

@@ -1,0 +1,5 @@
+Do not remove this file. This is used to keep the `changelog` dir around after
+generating new changelog file.
+
+Without this, `towncrier` would remove the changelog files as well as the 
+directory if it is empty.
