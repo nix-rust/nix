@@ -869,6 +869,7 @@ pub enum ControlMessageOwned {
     Ipv6RecvErr(libc::sock_extended_err, Option<sockaddr_in6>),
 
     /// `SOL_TLS` messages of type `TLS_GET_RECORD_TYPE`
+    #[cfg(any(target_os = "android", target_os = "linux"))]
     TlsGetRecordType(TlsGetRecordType),
 
     /// Catch-all variant for unimplemented cmsg types.
