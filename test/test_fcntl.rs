@@ -585,6 +585,38 @@ fn test_f_get_path() {
     );
 }
 
+#[cfg(any(target_os = "macos", target_os = "ios"))]
+#[test]
+fn test_f_get_path_nofirmlink() {
+    use nix::fcntl::*;
+    use std::{os::unix::io::AsRawFd, path::PathBuf};
+
+    let tmp = NamedTempFile::new().unwrap();
+    let fd = tmp.as_raw_fd();
+    let mut path = PathBuf::new();
+    let res = fcntl(fd, FcntlArg::F_GETPATH_NOFIRMLINK(&mut path))
+        .expect("get path failed");
+    let mut tmpstr = String::from("/System/Volumes/Data");
+    tmpstr.push_str(
+        &tmp.path()
+            .canonicalize()
+            .unwrap()
+            .into_os_string()
+            .into_string()
+            .unwrap(),
+    );
+    assert_ne!(res, -1);
+    assert_eq!(
+        path.as_path()
+            .canonicalize()
+            .unwrap()
+            .into_os_string()
+            .into_string()
+            .unwrap(),
+        tmpstr
+    );
+}
+
 #[cfg(all(target_os = "freebsd", target_arch = "x86_64"))]
 #[test]
 fn test_f_kinfo() {
