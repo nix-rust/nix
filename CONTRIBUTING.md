@@ -84,6 +84,8 @@ be added (assume it is PR #0)
 Added a new API xxx
 ```
 
+And having multiple change logs for one PR is allowed.
+
 [cl]: https://github.com/nix-rust/nix/tree/master/changelog
 [pr-docs]: https://help.github.com/articles/using-pull-requests/
 
