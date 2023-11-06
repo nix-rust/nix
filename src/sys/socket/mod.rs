@@ -869,7 +869,7 @@ pub enum ControlMessageOwned {
     Ipv6RecvErr(libc::sock_extended_err, Option<sockaddr_in6>),
 
     /// `SOL_TLS` messages of type `TLS_GET_RECORD_TYPE`
-    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(any(target_os = "linux"))]
     TlsGetRecordType(TlsGetRecordType),
 
     /// Catch-all variant for unimplemented cmsg types.
@@ -891,7 +891,7 @@ pub struct Timestamps {
 
 /// These constants correspond to TLS 1.2 message types, as defined in
 /// RFC 5246, Appendix A.1
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(any(target_os = "linux"))]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 #[repr(u8)]
 #[non_exhaustive]
@@ -903,7 +903,7 @@ pub enum TlsGetRecordType {
     Unknown(u8),
 }
 
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(any(target_os = "linux"))]
 impl From<u8> for TlsGetRecordType {
     fn from(x: u8) -> Self {
         match x {
@@ -1058,7 +1058,7 @@ impl ControlMessageOwned {
                 let dl = ptr::read_unaligned(p as *const libc::sockaddr_in6);
                 ControlMessageOwned::Ipv6OrigDstAddr(dl)
             },
-            #[cfg(any(target_os = "android", target_os = "linux"))]
+            #[cfg(any(target_os = "linux"))]
             (libc::SOL_TLS, libc::TLS_GET_RECORD_TYPE) => {
                 let content_type = ptr::read_unaligned(p as *const u8);
                 ControlMessageOwned::TlsGetRecordType(content_type.into())
