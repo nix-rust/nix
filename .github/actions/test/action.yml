@@ -1,0 +1,27 @@
+name: 'Test'
+description: 'Test nix'
+inputs:
+  # This is required
+  TARGET:
+    required: true
+
+  TOOL: 
+    description: 'Tool used to involve the test command, can be cargo or cross'
+    required: false
+    default: cargo
+
+  RUSTFLAGS: 
+    required: false
+    default: -D warnings -A unknown-lints
+
+runs:
+  using: "composite"
+  steps:
+    - name: set up Rust env
+      shell: bash
+      run: |
+        echo "RUSTFLAGS=${{ inputs.RUSTFLAGS }}" >> $GITHUB_ENV
+
+    - name: test
+      shell: bash
+      run: ${{ inputs.TOOL }} test --target ${{ inputs.TARGET }} --all-features
