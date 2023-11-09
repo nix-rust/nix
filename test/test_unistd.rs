@@ -126,8 +126,7 @@ fn test_mkfifo_directory() {
 
 #[test]
 #[cfg(not(any(
-    target_os = "macos",
-    target_os = "ios",
+    apple_targets,
     target_os = "android",
     target_os = "redox",
     target_os = "haiku"
@@ -147,8 +146,7 @@ fn test_mkfifoat_none() {
 
 #[test]
 #[cfg(not(any(
-    target_os = "macos",
-    target_os = "ios",
+    apple_targets,
     target_os = "android",
     target_os = "redox",
     target_os = "haiku"
@@ -171,8 +169,7 @@ fn test_mkfifoat() {
 
 #[test]
 #[cfg(not(any(
-    target_os = "macos",
-    target_os = "ios",
+    apple_targets,
     target_os = "android",
     target_os = "redox",
     target_os = "haiku"
@@ -187,8 +184,7 @@ fn test_mkfifoat_directory_none() {
 
 #[test]
 #[cfg(not(any(
-    target_os = "macos",
-    target_os = "ios",
+    apple_targets,
     target_os = "android",
     target_os = "redox",
     target_os = "haiku"
@@ -235,8 +231,7 @@ mod linux_android {
 #[test]
 // `getgroups()` and `setgroups()` do not behave as expected on Apple platforms
 #[cfg(not(any(
-    target_os = "ios",
-    target_os = "macos",
+    apple_targets,
     target_os = "redox",
     target_os = "fuchsia",
     target_os = "haiku"
@@ -264,8 +259,7 @@ fn test_setgroups() {
 #[test]
 // `getgroups()` and `setgroups()` do not behave as expected on Apple platforms
 #[cfg(not(any(
-    target_os = "ios",
-    target_os = "macos",
+    apple_targets,
     target_os = "redox",
     target_os = "fuchsia",
     target_os = "haiku",
@@ -413,8 +407,7 @@ cfg_if! {
         execve_test_factory!(test_execve, execve, CString::new("/bin/sh").unwrap().as_c_str());
         execve_test_factory!(test_fexecve, fexecve, File::open("/bin/sh").unwrap().into_raw_fd());
     } else if #[cfg(any(target_os = "illumos",
-                        target_os = "ios",
-                        target_os = "macos",
+                        apple_targets,
                         target_os = "netbsd",
                         target_os = "openbsd",
                         target_os = "solaris"))] {
@@ -988,12 +981,7 @@ fn test_linkat_newdirfd_none() {
 }
 
 #[test]
-#[cfg(not(any(
-    target_os = "ios",
-    target_os = "macos",
-    target_os = "redox",
-    target_os = "haiku"
-)))]
+#[cfg(not(any(apple_targets, target_os = "redox", target_os = "haiku")))]
 fn test_linkat_no_follow_symlink() {
     let _m = crate::CWD_LOCK.read();
 
@@ -1254,8 +1242,7 @@ fn test_ttyname_not_pty() {
 
 #[test]
 #[cfg(any(
-    target_os = "macos",
-    target_os = "ios",
+    apple_targets,
     target_os = "freebsd",
     target_os = "openbsd",
     target_os = "netbsd",

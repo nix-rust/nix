@@ -238,8 +238,7 @@ pub use self::linux::*;
     target_os = "dragonfly",
     target_os = "freebsd",
     target_os = "illumos",
-    target_os = "ios",
-    target_os = "macos",
+    apple_targets,
     target_os = "netbsd",
     target_os = "haiku",
     target_os = "openbsd"
@@ -251,8 +250,7 @@ mod bsd;
     target_os = "dragonfly",
     target_os = "freebsd",
     target_os = "illumos",
-    target_os = "ios",
-    target_os = "macos",
+    apple_targets,
     target_os = "netbsd",
     target_os = "haiku",
     target_os = "openbsd"

@@ -1,4 +1,4 @@
-#[cfg(any(target_os = "macos", target_os = "ios", target_os = "openbsd"))]
+#[cfg(any(apple_targets, target_os = "openbsd"))]
 pub use libc::c_uint;
 #[cfg(any(
     target_os = "netbsd",
@@ -65,7 +65,7 @@ libc_bitflags! {
     }
 }
 
-#[cfg(any(target_os = "macos", target_os = "ios", target_os = "openbsd"))]
+#[cfg(any(apple_targets, target_os = "openbsd"))]
 pub type type_of_file_flag = c_uint;
 #[cfg(any(
     target_os = "netbsd",
@@ -79,8 +79,7 @@ pub type type_of_file_flag = c_ulong;
     target_os = "netbsd",
     target_os = "freebsd",
     target_os = "dragonfly",
-    target_os = "macos",
-    target_os = "ios"
+    apple_targets
 ))]
 libc_bitflags! {
     /// File flags.
@@ -121,14 +120,13 @@ libc_bitflags! {
         #[cfg(any(target_os = "dragonfly"))]
         UF_CACHE;
         /// File is compressed at the file system level.
-        #[cfg(any(target_os = "macos", target_os = "ios"))]
+        #[cfg(apple_targets)]
         UF_COMPRESSED;
         /// The file may be hidden from directory listings at the application's
         /// discretion.
         #[cfg(any(
             target_os = "freebsd",
-            target_os = "macos",
-            target_os = "ios",
+            apple_targets,
         ))]
         UF_HIDDEN;
         /// The file may not be changed.
@@ -162,7 +160,7 @@ libc_bitflags! {
         #[cfg(any(target_os = "freebsd"))]
         UF_SYSTEM;
         /// File renames and deletes are tracked.
-        #[cfg(any(target_os = "macos", target_os = "ios"))]
+        #[cfg(apple_targets)]
         UF_TRACKED;
         #[cfg(any(target_os = "dragonfly"))]
         UF_XLINK;
@@ -184,12 +182,7 @@ pub fn mknod<P: ?Sized + NixPath>(
 }
 
 /// Create a special or ordinary file, relative to a given directory.
-#[cfg(not(any(
-    target_os = "ios",
-    target_os = "macos",
-    target_os = "redox",
-    target_os = "haiku"
-)))]
+#[cfg(not(any(apple_targets, target_os = "redox", target_os = "haiku")))]
 #[cfg_attr(docsrs, doc(cfg(all())))]
 pub fn mknodat<P: ?Sized + NixPath>(
     dirfd: Option<RawFd>,
@@ -385,8 +378,7 @@ pub fn utimes<P: ?Sized + NixPath>(
 #[cfg(any(
     target_os = "linux",
     target_os = "haiku",
-    target_os = "ios",
-    target_os = "macos",
+    apple_targets,
     target_os = "freebsd",
     target_os = "netbsd"
 ))]

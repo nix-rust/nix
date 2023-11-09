@@ -20,8 +20,7 @@ use crate::fcntl::{fcntl, FcntlArg::F_SETFD, FdFlag, OFlag};
         target_os = "netbsd",
         target_os = "freebsd",
         target_os = "dragonfly",
-        target_os = "macos",
-        target_os = "ios"
+        apple_targets,
     )
 ))]
 use crate::sys::stat::FileFlag;
@@ -587,8 +586,7 @@ pub fn mkfifo<P: ?Sized + NixPath>(path: &P, mode: Mode) -> Result<()> {
 // mkfifoat is not implemented in OSX or android
 #[inline]
 #[cfg(not(any(
-    target_os = "macos",
-    target_os = "ios",
+    apple_targets,
     target_os = "haiku",
     target_os = "android",
     target_os = "redox"
@@ -1028,8 +1026,7 @@ pub fn sethostname<S: AsRef<OsStr>>(name: S) -> Result<()> {
         if #[cfg(any(target_os = "dragonfly",
                      target_os = "freebsd",
                      target_os = "illumos",
-                     target_os = "ios",
-                     target_os = "macos",
+                     apple_targets,
                      target_os = "aix",
                      target_os = "solaris", ))] {
             type sethostname_len_t = c_int;
@@ -1565,7 +1562,7 @@ feature! {
 /// **Note:** This function is not available for Apple platforms. On those
 /// platforms, checking group membership should be achieved via communication
 /// with the `opendirectoryd` service.
-#[cfg(not(any(target_os = "ios", target_os = "macos")))]
+#[cfg(not(apple_targets))]
 pub fn getgroups() -> Result<Vec<Gid>> {
     // First get the maximum number of groups. The value returned
     // shall always be greater than or equal to one and less than or
@@ -1650,8 +1647,7 @@ pub fn getgroups() -> Result<Vec<Gid>> {
 /// # try_main().unwrap();
 /// ```
 #[cfg(not(any(
-    target_os = "ios",
-    target_os = "macos",
+    apple_targets,
     target_os = "redox",
     target_os = "haiku"
 )))]
@@ -1661,8 +1657,7 @@ pub fn setgroups(groups: &[Gid]) -> Result<()> {
                      target_os = "dragonfly",
                      target_os = "freebsd",
                      target_os = "illumos",
-                     target_os = "ios",
-                     target_os = "macos",
+                     apple_targets,
                      target_os = "netbsd",
                      target_os = "openbsd",
                      target_os = "solaris"))] {
@@ -1707,8 +1702,7 @@ pub fn setgroups(groups: &[Gid]) -> Result<()> {
 #[cfg(not(any(
     target_os = "aix",
     target_os = "illumos",
-    target_os = "ios",
-    target_os = "macos",
+    apple_targets,
     target_os = "redox"
 )))]
 pub fn getgrouplist(user: &CStr, group: Gid) -> Result<Vec<Gid>> {
@@ -1719,7 +1713,7 @@ pub fn getgrouplist(user: &CStr, group: Gid) -> Result<Vec<Gid>> {
     use std::cmp::min;
     let mut groups = Vec::<Gid>::with_capacity(min(ngroups_max, 8) as usize);
     cfg_if! {
-        if #[cfg(any(target_os = "ios", target_os = "macos"))] {
+        if #[cfg(apple_targets)] {
             type getgrouplist_group_t = c_int;
         } else {
             type getgrouplist_group_t = gid_t;
@@ -1791,14 +1785,13 @@ pub fn getgrouplist(user: &CStr, group: Gid) -> Result<Vec<Gid>> {
 /// # try_main().unwrap();
 /// ```
 #[cfg(not(any(
-    target_os = "ios",
-    target_os = "macos",
+    apple_targets,
     target_os = "redox",
     target_os = "haiku"
 )))]
 pub fn initgroups(user: &CStr, group: Gid) -> Result<()> {
     cfg_if! {
-        if #[cfg(any(target_os = "ios", target_os = "macos"))] {
+        if #[cfg(apple_targets)] {
             type initgroups_group_t = c_int;
         } else {
             type initgroups_group_t = gid_t;
@@ -2296,9 +2289,8 @@ pub enum SysconfVar {
         target_os = "android",
         target_os = "dragonfly",
         target_os = "freebsd",
-        target_os = "ios",
+        apple_targets,
         target_os = "linux",
-        target_os = "macos",
         target_os = "openbsd"
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
@@ -2349,9 +2341,8 @@ pub enum SysconfVar {
         target_os = "dragonfly",
         target_os = "freebsd",
         target_os = "illumos",
-        target_os = "ios",
+        apple_targets,
         target_os = "linux",
-        target_os = "macos",
         target_os = "netbsd",
         target_os = "openbsd",
         target_os = "solaris"
@@ -2399,9 +2390,8 @@ pub enum SysconfVar {
     #[cfg(any(
         target_os = "dragonfly",
         target_os = "freebsd",
-        target_os = "ios",
+        apple_targets,
         target_os = "linux",
-        target_os = "macos",
         target_os = "openbsd"
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
@@ -2411,9 +2401,8 @@ pub enum SysconfVar {
         target_os = "dragonfly",
         target_os = "freebsd",
         target_os = "illumos",
-        target_os = "ios",
+        apple_targets,
         target_os = "linux",
-        target_os = "macos",
         target_os = "netbsd",
         target_os = "openbsd",
         target_os = "solaris"
@@ -2429,9 +2418,8 @@ pub enum SysconfVar {
         target_os = "dragonfly",
         target_os = "freebsd",
         target_os = "illumos",
-        target_os = "ios",
+        apple_targets,
         target_os = "linux",
-        target_os = "macos",
         target_os = "netbsd",
         target_os = "openbsd",
         target_os = "solaris"
@@ -2443,9 +2431,8 @@ pub enum SysconfVar {
         target_os = "dragonfly",
         target_os = "freebsd",
         target_os = "illumos",
-        target_os = "ios",
+        apple_targets,
         target_os = "linux",
-        target_os = "macos",
         target_os = "netbsd",
         target_os = "openbsd",
         target_os = "solaris"
@@ -2461,9 +2448,8 @@ pub enum SysconfVar {
         target_os = "dragonfly",
         target_os = "freebsd",
         target_os = "illumos",
-        target_os = "ios",
+        apple_targets,
         target_os = "linux",
-        target_os = "macos",
         target_os = "openbsd",
         target_os = "solaris"
     ))]
@@ -2503,9 +2489,8 @@ pub enum SysconfVar {
         target_os = "dragonfly",
         target_os = "freebsd",
         target_os = "illumos",
-        target_os = "ios",
+        apple_targets,
         target_os = "linux",
-        target_os = "macos",
         target_os = "openbsd",
         target_os = "solaris"
     ))]
@@ -2520,9 +2505,8 @@ pub enum SysconfVar {
         target_os = "dragonfly",
         target_os = "freebsd",
         target_os = "illumos",
-        target_os = "ios",
+        apple_targets,
         target_os = "linux",
-        target_os = "macos",
         target_os = "openbsd",
         target_os = "solaris"
     ))]
@@ -2533,9 +2517,8 @@ pub enum SysconfVar {
         target_os = "dragonfly",
         target_os = "freebsd",
         target_os = "illumos",
-        target_os = "ios",
+        apple_targets,
         target_os = "linux",
-        target_os = "macos",
         target_os = "netbsd",
         target_os = "openbsd",
         target_os = "solaris"
@@ -2547,9 +2530,8 @@ pub enum SysconfVar {
         target_os = "android",
         target_os = "dragonfly",
         target_os = "freebsd",
-        target_os = "ios",
+        apple_targets,
         target_os = "linux",
-        target_os = "macos",
         target_os = "openbsd"
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
@@ -2559,9 +2541,8 @@ pub enum SysconfVar {
         target_os = "dragonfly",
         target_os = "freebsd",
         target_os = "illumos",
-        target_os = "ios",
+        apple_targets,
         target_os = "linux",
-        target_os = "macos",
         target_os = "netbsd",
         target_os = "openbsd",
         target_os = "solaris"
@@ -2584,9 +2565,8 @@ pub enum SysconfVar {
     #[cfg(any(
         target_os = "dragonfly",
         target_os = "freebsd",
-        target_os = "ios",
+        apple_targets,
         target_os = "linux",
-        target_os = "macos",
         target_os = "netbsd",
         target_os = "openbsd"
     ))]
@@ -2596,9 +2576,8 @@ pub enum SysconfVar {
     #[cfg(any(
         target_os = "dragonfly",
         target_os = "freebsd",
-        target_os = "ios",
+        apple_targets,
         target_os = "linux",
-        target_os = "macos",
         target_os = "netbsd",
         target_os = "openbsd"
     ))]
@@ -2608,9 +2587,8 @@ pub enum SysconfVar {
     #[cfg(any(
         target_os = "dragonfly",
         target_os = "freebsd",
-        target_os = "ios",
+        apple_targets,
         target_os = "linux",
-        target_os = "macos",
         target_os = "netbsd",
         target_os = "openbsd"
     ))]
@@ -2620,18 +2598,16 @@ pub enum SysconfVar {
     #[cfg(any(
         target_os = "dragonfly",
         target_os = "freebsd",
-        target_os = "ios",
+        apple_targets,
         target_os = "linux",
-        target_os = "macos",
         target_os = "openbsd"
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Process Sporadic Server option.
     _POSIX_SPORADIC_SERVER = libc::_SC_SPORADIC_SERVER,
     #[cfg(any(
-        target_os = "ios",
+        apple_targets,
         target_os = "linux",
-        target_os = "macos",
         target_os = "openbsd"
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
@@ -2649,9 +2625,8 @@ pub enum SysconfVar {
     #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_THREAD_ATTR_STACKSIZE = libc::_SC_THREAD_ATTR_STACKSIZE,
     #[cfg(any(
-        target_os = "ios",
+        apple_targets,
         target_os = "linux",
-        target_os = "macos",
         target_os = "netbsd",
         target_os = "openbsd"
     ))]
@@ -2674,9 +2649,8 @@ pub enum SysconfVar {
     #[cfg(any(
         target_os = "dragonfly",
         target_os = "freebsd",
-        target_os = "ios",
+        apple_targets,
         target_os = "linux",
-        target_os = "macos",
         target_os = "netbsd",
         target_os = "openbsd"
     ))]
@@ -2707,9 +2681,8 @@ pub enum SysconfVar {
     #[cfg(any(
         target_os = "dragonfly",
         target_os = "freebsd",
-        target_os = "ios",
+        apple_targets,
         target_os = "linux",
-        target_os = "macos",
         target_os = "openbsd"
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
@@ -2722,9 +2695,8 @@ pub enum SysconfVar {
     #[cfg(any(
         target_os = "dragonfly",
         target_os = "freebsd",
-        target_os = "ios",
+        apple_targets,
         target_os = "linux",
-        target_os = "macos",
         target_os = "openbsd"
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
@@ -2737,9 +2709,8 @@ pub enum SysconfVar {
     #[cfg(any(
         target_os = "dragonfly",
         target_os = "freebsd",
-        target_os = "ios",
+        apple_targets,
         target_os = "linux",
-        target_os = "macos",
         target_os = "openbsd"
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
@@ -2748,18 +2719,16 @@ pub enum SysconfVar {
     #[cfg(any(
         target_os = "dragonfly",
         target_os = "freebsd",
-        target_os = "ios",
+        apple_targets,
         target_os = "linux",
-        target_os = "macos",
         target_os = "openbsd"
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Trace Event Filter option.
     _POSIX_TRACE_EVENT_FILTER = libc::_SC_TRACE_EVENT_FILTER,
     #[cfg(any(
-        target_os = "ios",
+        apple_targets,
         target_os = "linux",
-        target_os = "macos",
         target_os = "openbsd"
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
@@ -2767,9 +2736,8 @@ pub enum SysconfVar {
     #[cfg(any(
         target_os = "dragonfly",
         target_os = "freebsd",
-        target_os = "ios",
+        apple_targets,
         target_os = "linux",
-        target_os = "macos",
         target_os = "openbsd"
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
@@ -2778,34 +2746,30 @@ pub enum SysconfVar {
     #[cfg(any(
         target_os = "dragonfly",
         target_os = "freebsd",
-        target_os = "ios",
+        apple_targets,
         target_os = "linux",
-        target_os = "macos",
         target_os = "openbsd"
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Trace Log option.
     _POSIX_TRACE_LOG = libc::_SC_TRACE_LOG,
     #[cfg(any(
-        target_os = "ios",
+        apple_targets,
         target_os = "linux",
-        target_os = "macos",
         target_os = "openbsd"
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_TRACE_NAME_MAX = libc::_SC_TRACE_NAME_MAX,
     #[cfg(any(
-        target_os = "ios",
+        apple_targets,
         target_os = "linux",
-        target_os = "macos",
         target_os = "openbsd"
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_TRACE_SYS_MAX = libc::_SC_TRACE_SYS_MAX,
     #[cfg(any(
-        target_os = "ios",
+        apple_targets,
         target_os = "linux",
-        target_os = "macos",
         target_os = "openbsd"
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
@@ -2813,9 +2777,8 @@ pub enum SysconfVar {
     #[cfg(any(
         target_os = "dragonfly",
         target_os = "freebsd",
-        target_os = "ios",
+        apple_targets,
         target_os = "linux",
-        target_os = "macos",
         target_os = "openbsd"
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
@@ -2828,9 +2791,8 @@ pub enum SysconfVar {
     #[cfg(any(
         target_os = "dragonfly",
         target_os = "freebsd",
-        target_os = "ios",
+        apple_targets,
         target_os = "linux",
-        target_os = "macos",
         target_os = "netbsd",
         target_os = "openbsd"
     ))]
@@ -2841,9 +2803,8 @@ pub enum SysconfVar {
     #[cfg(any(
         target_os = "dragonfly",
         target_os = "freebsd",
-        target_os = "ios",
+        apple_targets,
         target_os = "linux",
-        target_os = "macos",
         target_os = "netbsd",
         target_os = "openbsd"
     ))]
@@ -2855,9 +2816,8 @@ pub enum SysconfVar {
     #[cfg(any(
         target_os = "dragonfly",
         target_os = "freebsd",
-        target_os = "ios",
+        apple_targets,
         target_os = "linux",
-        target_os = "macos",
         target_os = "netbsd",
         target_os = "openbsd"
     ))]
@@ -2868,9 +2828,8 @@ pub enum SysconfVar {
     #[cfg(any(
         target_os = "dragonfly",
         target_os = "freebsd",
-        target_os = "ios",
+        apple_targets,
         target_os = "linux",
-        target_os = "macos",
         target_os = "netbsd",
         target_os = "openbsd"
     ))]
@@ -2907,9 +2866,8 @@ pub enum SysconfVar {
     #[cfg(any(
         target_os = "dragonfly",
         target_os = "freebsd",
-        target_os = "ios",
+        apple_targets,
         target_os = "linux",
-        target_os = "macos",
         target_os = "netbsd",
         target_os = "openbsd"
     ))]
@@ -2920,9 +2878,8 @@ pub enum SysconfVar {
     #[cfg(any(
         target_os = "dragonfly",
         target_os = "freebsd",
-        target_os = "ios",
+        apple_targets,
         target_os = "linux",
-        target_os = "macos",
         target_os = "netbsd",
         target_os = "openbsd"
     ))]
@@ -2932,9 +2889,8 @@ pub enum SysconfVar {
     #[cfg(any(
         target_os = "dragonfly",
         target_os = "freebsd",
-        target_os = "ios",
+        apple_targets,
         target_os = "linux",
-        target_os = "macos",
         target_os = "netbsd",
         target_os = "openbsd"
     ))]
@@ -2944,9 +2900,8 @@ pub enum SysconfVar {
     #[cfg(any(
         target_os = "dragonfly",
         target_os = "freebsd",
-        target_os = "ios",
+        apple_targets,
         target_os = "linux",
-        target_os = "macos",
         target_os = "netbsd",
         target_os = "openbsd"
     ))]
@@ -2956,9 +2911,8 @@ pub enum SysconfVar {
     #[cfg(any(
         target_os = "dragonfly",
         target_os = "freebsd",
-        target_os = "ios",
+        apple_targets,
         target_os = "linux",
-        target_os = "macos",
         target_os = "netbsd",
         target_os = "openbsd"
     ))]
@@ -2968,9 +2922,8 @@ pub enum SysconfVar {
     #[cfg(any(
         target_os = "dragonfly",
         target_os = "freebsd",
-        target_os = "ios",
+        apple_targets,
         target_os = "linux",
-        target_os = "macos",
         target_os = "netbsd",
         target_os = "openbsd"
     ))]
@@ -3013,9 +2966,8 @@ pub enum SysconfVar {
         target_os = "android",
         target_os = "dragonfly",
         target_os = "freebsd",
-        target_os = "ios",
+        apple_targets,
         target_os = "linux",
-        target_os = "macos",
         target_os = "openbsd"
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
@@ -3027,9 +2979,8 @@ pub enum SysconfVar {
         target_os = "android",
         target_os = "dragonfly",
         target_os = "freebsd",
-        target_os = "ios",
+        apple_targets,
         target_os = "linux",
-        target_os = "macos",
         target_os = "openbsd"
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
@@ -3038,9 +2989,8 @@ pub enum SysconfVar {
         target_os = "android",
         target_os = "dragonfly",
         target_os = "freebsd",
-        target_os = "ios",
+        apple_targets,
         target_os = "linux",
-        target_os = "macos",
         target_os = "openbsd"
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
@@ -3049,9 +2999,8 @@ pub enum SysconfVar {
     #[cfg(any(
         target_os = "dragonfly",
         target_os = "freebsd",
-        target_os = "ios",
+        apple_targets,
         target_os = "linux",
-        target_os = "macos",
         target_os = "netbsd",
         target_os = "openbsd"
     ))]
@@ -3066,9 +3015,8 @@ pub enum SysconfVar {
         target_os = "android",
         target_os = "dragonfly",
         target_os = "freebsd",
-        target_os = "ios",
+        apple_targets,
         target_os = "linux",
-        target_os = "macos",
         target_os = "openbsd"
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
@@ -3078,9 +3026,8 @@ pub enum SysconfVar {
         target_os = "android",
         target_os = "dragonfly",
         target_os = "freebsd",
-        target_os = "ios",
+        apple_targets,
         target_os = "linux",
-        target_os = "macos",
         target_os = "openbsd"
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
@@ -3091,9 +3038,8 @@ pub enum SysconfVar {
         target_os = "android",
         target_os = "dragonfly",
         target_os = "freebsd",
-        target_os = "ios",
+        apple_targets,
         target_os = "linux",
-        target_os = "macos",
         target_os = "openbsd"
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
@@ -3102,9 +3048,8 @@ pub enum SysconfVar {
         target_os = "android",
         target_os = "dragonfly",
         target_os = "freebsd",
-        target_os = "ios",
+        apple_targets,
         target_os = "linux",
-        target_os = "macos",
         target_os = "openbsd"
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
@@ -3114,9 +3059,8 @@ pub enum SysconfVar {
         target_os = "android",
         target_os = "dragonfly",
         target_os = "freebsd",
-        target_os = "ios",
+        apple_targets,
         target_os = "linux",
-        target_os = "macos",
         target_os = "openbsd"
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
@@ -3130,9 +3074,8 @@ pub enum SysconfVar {
     #[cfg(any(
         target_os = "dragonfly",
         target_os = "freebsd",
-        target_os = "ios",
+        apple_targets,
         target_os = "linux",
-        target_os = "macos",
         target_os = "openbsd"
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
@@ -3142,9 +3085,8 @@ pub enum SysconfVar {
         target_os = "android",
         target_os = "dragonfly",
         target_os = "freebsd",
-        target_os = "ios",
+        apple_targets,
         target_os = "linux",
-        target_os = "macos",
         target_os = "openbsd"
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
@@ -3154,9 +3096,8 @@ pub enum SysconfVar {
         target_os = "android",
         target_os = "dragonfly",
         target_os = "freebsd",
-        target_os = "ios",
+        apple_targets,
         target_os = "linux",
-        target_os = "macos",
         target_os = "openbsd"
     ))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
@@ -3946,8 +3887,7 @@ feature! {
 ///
 /// See also [getpeereid(3)](https://www.freebsd.org/cgi/man.cgi?query=getpeereid)
 #[cfg(any(
-    target_os = "macos",
-    target_os = "ios",
+    apple_targets,
     target_os = "freebsd",
     target_os = "openbsd",
     target_os = "netbsd",
@@ -3974,8 +3914,7 @@ feature! {
     target_os = "netbsd",
     target_os = "freebsd",
     target_os = "dragonfly",
-    target_os = "macos",
-    target_os = "ios"
+    apple_targets
 ))]
 pub fn chflags<P: ?Sized + NixPath>(path: &P, flags: FileFlag) -> Result<()> {
     let res = path.with_nix_path(|cstr| unsafe {

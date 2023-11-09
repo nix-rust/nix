@@ -4,8 +4,7 @@ use core::slice;
 use libc::{self, c_int, c_uint, size_t, ssize_t};
 #[cfg(any(
     target_os = "netbsd",
-    target_os = "macos",
-    target_os = "ios",
+    apple_targets,
     target_os = "dragonfly",
     all(target_os = "freebsd", target_arch = "x86_64"),
 ))]
@@ -18,8 +17,7 @@ use std::os::unix::io::RawFd;
 // For splice and copy_file_range
 #[cfg(any(
     target_os = "netbsd",
-    target_os = "macos",
-    target_os = "ios",
+    apple_targets,
     target_os = "dragonfly",
     all(target_os = "freebsd", target_arch = "x86_64"),
 ))]
@@ -106,9 +104,8 @@ libc_bitflags!(
         O_DIRECTORY;
         /// Implicitly follow each `write()` with an `fdatasync()`.
         #[cfg(any(target_os = "android",
-                  target_os = "ios",
+                  apple_targets,
                   target_os = "linux",
-                  target_os = "macos",
                   target_os = "netbsd",
                   target_os = "openbsd"))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
@@ -122,8 +119,7 @@ libc_bitflags!(
         /// Open with an exclusive file lock.
         #[cfg(any(target_os = "dragonfly",
                   target_os = "freebsd",
-                  target_os = "ios",
-                  target_os = "macos",
+                  apple_targets,
                   target_os = "netbsd",
                   target_os = "openbsd",
                   target_os = "redox"))]
@@ -132,9 +128,8 @@ libc_bitflags!(
         /// Same as `O_SYNC`.
         #[cfg(any(target_os = "dragonfly",
                   target_os = "freebsd",
-                  target_os = "ios",
+                  apple_targets,
                   all(target_os = "linux", not(target_env = "musl")),
-                  target_os = "macos",
                   target_os = "netbsd",
                   target_os = "openbsd",
                   target_os = "redox"))]
@@ -189,8 +184,7 @@ libc_bitflags!(
         /// Open with a shared file lock.
         #[cfg(any(target_os = "dragonfly",
                   target_os = "freebsd",
-                  target_os = "ios",
-                  target_os = "macos",
+                  apple_targets,
                   target_os = "netbsd",
                   target_os = "openbsd",
                   target_os = "redox"))]
@@ -502,19 +496,23 @@ pub enum FcntlArg<'a> {
         target_os = "freebsd"
     ))]
     F_GET_SEALS,
-    #[cfg(any(target_os = "macos", target_os = "ios"))]
+    #[cfg(apple_targets)]
     F_FULLFSYNC,
-    #[cfg(any(target_os = "macos", target_os = "ios"))]
+    #[cfg(apple_targets)]
     F_BARRIERFSYNC,
     #[cfg(any(target_os = "linux", target_os = "android"))]
     F_GETPIPE_SZ,
     #[cfg(any(target_os = "linux", target_os = "android"))]
     F_SETPIPE_SZ(c_int),
-    #[cfg(any(target_os = "netbsd", target_os = "dragonfly", target_os = "macos", target_os = "ios"))]
+    #[cfg(any(
+        target_os = "netbsd",
+        target_os = "dragonfly",
+        apple_targets,
+    ))]
     F_GETPATH(&'a mut PathBuf),
     #[cfg(all(target_os = "freebsd", target_arch = "x86_64"))]
     F_KINFO(&'a mut PathBuf),
-    #[cfg(any(target_os = "macos", target_os = "ios"))]
+    #[cfg(apple_targets)]
     F_GETPATH_NOFIRMLINK(&'a mut PathBuf),
     // TODO: Rest of flags
 }
@@ -570,15 +568,19 @@ pub fn fcntl(fd: RawFd, arg: FcntlArg) -> Result<c_int> {
                 target_os = "freebsd"
             ))]
             F_GET_SEALS => libc::fcntl(fd, libc::F_GET_SEALS),
-            #[cfg(any(target_os = "macos", target_os = "ios"))]
+            #[cfg(apple_targets)]
             F_FULLFSYNC => libc::fcntl(fd, libc::F_FULLFSYNC),
-            #[cfg(any(target_os = "macos", target_os = "ios"))]
+            #[cfg(apple_targets)]
             F_BARRIERFSYNC => libc::fcntl(fd, libc::F_BARRIERFSYNC),
             #[cfg(any(target_os = "linux", target_os = "android"))]
             F_GETPIPE_SZ => libc::fcntl(fd, libc::F_GETPIPE_SZ),
             #[cfg(any(target_os = "linux", target_os = "android"))]
             F_SETPIPE_SZ(size) => libc::fcntl(fd, libc::F_SETPIPE_SZ, size),
-            #[cfg(any(target_os = "dragonfly", target_os = "netbsd", target_os = "macos", target_os = "ios"))]
+            #[cfg(any(
+                target_os = "dragonfly",
+                target_os = "netbsd",
+                apple_targets,
+            ))]
             F_GETPATH(path) => {
                 let mut buffer = vec![0; libc::PATH_MAX as usize];
                 let res = libc::fcntl(fd, libc::F_GETPATH, buffer.as_mut_ptr());
@@ -599,7 +601,7 @@ pub fn fcntl(fd: RawFd, arg: FcntlArg) -> Result<c_int> {
                 *path = PathBuf::from(OsString::from(optr.to_str().unwrap()));
                 return Ok(ok_res)
             },
-            #[cfg(any(target_os = "macos", target_os = "ios"))]
+            #[cfg(apple_targets)]
             F_GETPATH_NOFIRMLINK(path) => {
                 let mut buffer = vec![0; libc::PATH_MAX as usize];
                 let res = libc::fcntl(fd, libc::F_GETPATH_NOFIRMLINK, buffer.as_mut_ptr());

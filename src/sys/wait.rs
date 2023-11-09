@@ -27,10 +27,9 @@ libc_bitflags!(
         #[cfg(any(target_os = "android",
                   target_os = "freebsd",
                   target_os = "haiku",
-                  target_os = "ios",
+                  apple_targets,
                   target_os = "linux",
                   target_os = "redox",
-                  target_os = "macos",
                   target_os = "netbsd"))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
         WEXITED;
@@ -42,10 +41,9 @@ libc_bitflags!(
         #[cfg(any(target_os = "android",
                   target_os = "freebsd",
                   target_os = "haiku",
-                  target_os = "ios",
+                  apple_targets,
                   target_os = "linux",
                   target_os = "redox",
-                  target_os = "macos",
                   target_os = "netbsd"))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
         WSTOPPED;
@@ -53,10 +51,9 @@ libc_bitflags!(
         #[cfg(any(target_os = "android",
                   target_os = "freebsd",
                   target_os = "haiku",
-                  target_os = "ios",
+                  apple_targets,
                   target_os = "linux",
                   target_os = "redox",
-                  target_os = "macos",
                   target_os = "netbsd"))]
         #[cfg_attr(docsrs, doc(cfg(all())))]
         WNOWAIT;
@@ -378,7 +375,9 @@ pub fn waitid(id: Id, flags: WaitPidFlag) -> Result<WaitStatus> {
         Id::PGid(pid) => (libc::P_PGID, pid.as_raw() as libc::id_t),
         #[cfg(any(target_os = "android", target_os = "linux"))]
         Id::PIDFd(fd) => (libc::P_PIDFD, fd.as_raw_fd() as libc::id_t),
-        Id::_Unreachable(_) => unreachable!("This variant could never be constructed"),
+        Id::_Unreachable(_) => {
+            unreachable!("This variant could never be constructed")
+        }
     };
 
     let siginfo = unsafe {

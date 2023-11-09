@@ -7,9 +7,8 @@ mod test_signal;
 // cases on DragonFly.
 #[cfg(any(
     target_os = "freebsd",
-    target_os = "ios",
+    apple_targets,
     all(target_os = "linux", not(target_env = "uclibc")),
-    target_os = "macos",
     target_os = "netbsd"
 ))]
 mod test_aio;

@@ -137,8 +137,7 @@ mod linux {
 #[cfg(any(
     target_os = "dragonfly",
     target_os = "freebsd",
-    target_os = "ios",
-    target_os = "macos",
+    apple_targets,
     target_os = "netbsd",
     target_os = "openbsd"
 ))]

@@ -54,12 +54,7 @@ impl ClockId {
     }
 
     /// Sets time to `timespec` on the clock id
-    #[cfg(not(any(
-        target_os = "macos",
-        target_os = "ios",
-        target_os = "redox",
-        target_os = "hermit",
-    )))]
+    #[cfg(not(any(apple_targets, target_os = "redox", target_os = "hermit",)))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     pub fn set_time(self, timespec: TimeSpec) -> Result<()> {
         clock_settime(self, timespec)
@@ -117,8 +112,7 @@ impl ClockId {
         target_os = "android",
         target_os = "emscripten",
         target_os = "fuchsia",
-        target_os = "macos",
-        target_os = "ios",
+        apple_targets,
         target_os = "freebsd",
         target_os = "dragonfly",
         target_os = "redox",
@@ -178,8 +172,7 @@ impl ClockId {
         target_os = "android",
         target_os = "emscripten",
         target_os = "fuchsia",
-        target_os = "ios",
-        target_os = "macos",
+        apple_targets,
         target_os = "freebsd",
         target_os = "dragonfly",
         target_os = "linux"
@@ -246,12 +239,7 @@ pub fn clock_gettime(clock_id: ClockId) -> Result<TimeSpec> {
 
 /// Set the time of the specified clock, (see
 /// [clock_settime(2)](https://pubs.opengroup.org/onlinepubs/7908799/xsh/clock_settime.html)).
-#[cfg(not(any(
-    target_os = "macos",
-    target_os = "ios",
-    target_os = "redox",
-    target_os = "hermit",
-)))]
+#[cfg(not(any(apple_targets, target_os = "redox", target_os = "hermit",)))]
 #[cfg_attr(docsrs, doc(cfg(all())))]
 pub fn clock_settime(clock_id: ClockId, timespec: TimeSpec) -> Result<()> {
     let ret =

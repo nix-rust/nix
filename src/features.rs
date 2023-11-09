@@ -114,8 +114,7 @@ mod os {
 
 #[cfg(any(
     target_os = "aix",
-    target_os = "macos",
-    target_os = "ios",
+    apple_targets,
     target_os = "fuchsia",
     target_os = "haiku",
     target_os = "solaris"
