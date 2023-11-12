@@ -194,6 +194,11 @@ feature! {
 #[allow(missing_docs)]
 pub mod unistd;
 
+feature! {
+    #![feature = "process"]
+    pub mod spawn;
+}
+
 use std::ffi::{CStr, CString, OsStr};
 use std::mem::MaybeUninit;
 use std::os::unix::ffi::OsStrExt;
