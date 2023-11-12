@@ -388,8 +388,8 @@ pub unsafe fn mlock(addr: *const c_void, length: size_t) -> Result<()> {
 /// page.
 ///
 /// [`munlock(2)`]: https://man7.org/linux/man-pages/man2/munlock.2.html
-pub unsafe fn munlock(addr: *const c_void, length: size_t) -> Result<()> {
-    Errno::result(libc::munlock(addr, length)).map(drop)
+pub unsafe fn munlock(addr: NonNull<c_void>, length: size_t) -> Result<()> {
+    Errno::result(libc::munlock(addr.as_ptr(), length)).map(drop)
 }
 
 /// Locks all memory pages mapped into this process' address space.
