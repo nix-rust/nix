@@ -96,9 +96,9 @@ requests to include tests where they make sense. For example, when fixing a bug,
 add a test that would have failed without the fix.
 
 After you've made your change, make sure the tests pass in your development
-environment. We also have [continuous integration set up on
-Cirrus-CI][cirrus-ci], which might find some issues on other platforms. The CI
-will run once you open a pull request.
+environment. We also have continuous integration set up on [Cirrus-CI][cirrus-ci]
+and GitHub Action, which might find some issues on other platforms. The CI will
+run once you open a pull request.
 
 [cirrus-ci]: https://cirrus-ci.com/github/nix-rust/nix
 
