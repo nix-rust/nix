@@ -564,7 +564,7 @@ pub unsafe fn madvise(
 /// let mut slice: &mut [u8] = unsafe {
 ///     let mem = mmap_anonymous(None, one_k_non_zero, ProtFlags::PROT_NONE, MapFlags::MAP_PRIVATE)
 ///         .unwrap();
-///     mprotect(mem.as_ptr(), ONE_K, ProtFlags::PROT_READ | ProtFlags::PROT_WRITE).unwrap();
+///     mprotect(mem, ONE_K, ProtFlags::PROT_READ | ProtFlags::PROT_WRITE).unwrap();
 ///     std::slice::from_raw_parts_mut(mem.as_ptr().cast(), ONE_K)
 /// };
 /// assert_eq!(slice[0], 0x00);
@@ -572,11 +572,11 @@ pub unsafe fn madvise(
 /// assert_eq!(slice[0], 0xFF);
 /// ```
 pub unsafe fn mprotect(
-    addr: *mut c_void,
+    addr: NonNull<c_void>,
     length: size_t,
     prot: ProtFlags,
 ) -> Result<()> {
-    Errno::result(libc::mprotect(addr, length, prot.bits())).map(drop)
+    Errno::result(libc::mprotect(addr.as_ptr(), length, prot.bits())).map(drop)
 }
 
 /// synchronize a mapped region
