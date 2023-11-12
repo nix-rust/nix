@@ -588,11 +588,11 @@ pub unsafe fn mprotect(
 ///
 /// [`msync(2)`]: https://man7.org/linux/man-pages/man2/msync.2.html
 pub unsafe fn msync(
-    addr: *mut c_void,
+    addr: NonNull<c_void>,
     length: size_t,
     flags: MsFlags,
 ) -> Result<()> {
-    Errno::result(libc::msync(addr, length, flags.bits())).map(drop)
+    Errno::result(libc::msync(addr.as_ptr(), length, flags.bits())).map(drop)
 }
 
 #[cfg(not(target_os = "android"))]
