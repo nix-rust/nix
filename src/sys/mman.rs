@@ -537,11 +537,11 @@ pub unsafe fn munmap(addr: NonNull<c_void>, len: size_t) -> Result<()> {
 ///
 /// [`madvise(2)`]: https://man7.org/linux/man-pages/man2/madvise.2.html
 pub unsafe fn madvise(
-    addr: *mut c_void,
+    addr: NonNull<c_void>,
     length: size_t,
     advise: MmapAdvise,
 ) -> Result<()> {
-    Errno::result(libc::madvise(addr, length, advise as i32)).map(drop)
+    Errno::result(libc::madvise(addr.as_ptr(), length, advise as i32)).map(drop)
 }
 
 /// Set protection of memory mapping.
