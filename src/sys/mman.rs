@@ -375,8 +375,8 @@ libc_bitflags! {
 /// `addr` must meet all the requirements described in the [`mlock(2)`] man page.
 ///
 /// [`mlock(2)`]: https://man7.org/linux/man-pages/man2/mlock.2.html
-pub unsafe fn mlock(addr: *const c_void, length: size_t) -> Result<()> {
-    Errno::result(libc::mlock(addr, length)).map(drop)
+pub unsafe fn mlock(addr: NonNull<c_void>, length: size_t) -> Result<()> {
+    Errno::result(libc::mlock(addr.as_ptr(), length)).map(drop)
 }
 
 /// Unlocks all memory pages that contain part of the address range with
