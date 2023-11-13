@@ -4,16 +4,17 @@ use std::num::NonZeroUsize;
 #[test]
 fn test_mmap_anonymous() {
     unsafe {
-        let ptr = mmap_anonymous(
+        let mut ptr = mmap_anonymous(
             None,
             NonZeroUsize::new(1).unwrap(),
             ProtFlags::PROT_READ | ProtFlags::PROT_WRITE,
             MapFlags::MAP_PRIVATE,
         )
-        .unwrap() as *mut u8;
-        assert_eq!(*ptr, 0x00u8);
-        *ptr = 0xffu8;
-        assert_eq!(*ptr, 0xffu8);
+        .unwrap()
+        .cast::<u8>();
+        assert_eq!(*ptr.as_ref(), 0x00u8);
+        *ptr.as_mut() = 0xffu8;
+        assert_eq!(*ptr.as_ref(), 0xffu8);
     }
 }
 
@@ -34,7 +35,7 @@ fn test_mremap_grow() {
             MapFlags::MAP_PRIVATE,
         )
         .unwrap();
-        std::slice::from_raw_parts_mut(mem as *mut u8, ONE_K)
+        std::slice::from_raw_parts_mut(mem.as_ptr().cast(), ONE_K)
     };
     assert_eq!(slice[ONE_K - 1], 0x00);
     slice[ONE_K - 1] = 0xFF;
@@ -90,7 +91,7 @@ fn test_mremap_shrink() {
             MapFlags::MAP_PRIVATE,
         )
         .unwrap();
-        std::slice::from_raw_parts_mut(mem as *mut u8, ONE_K)
+        std::slice::from_raw_parts_mut(mem.as_ptr().cast(), ONE_K)
     };
     assert_eq!(slice[ONE_K - 1], 0x00);
     slice[ONE_K - 1] = 0xFF;

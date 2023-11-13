@@ -8,10 +8,8 @@ use crate::Result;
 #[cfg(feature = "fs")]
 use crate::{fcntl::OFlag, sys::stat::Mode};
 use libc::{self, c_int, c_void, off_t, size_t};
-use std::{
-    num::NonZeroUsize,
-    os::unix::io::{AsFd, AsRawFd},
-};
+use std::{num::NonZeroUsize, os::unix::io::{AsRawFd, AsFd}};
+use std::ptr::NonNull;
 
 libc_bitflags! {
     /// Desired memory protection of a memory mapping.
@@ -430,7 +428,7 @@ pub unsafe fn mmap<F: AsFd>(
     flags: MapFlags,
     f: F,
     offset: off_t,
-) -> Result<*mut c_void> {
+) -> Result<NonNull<c_void>> {
     let ptr = addr.map_or(std::ptr::null_mut(), |a| a.get() as *mut c_void);
 
     let fd = f.as_fd().as_raw_fd();
@@ -439,9 +437,12 @@ pub unsafe fn mmap<F: AsFd>(
 
     if ret == libc::MAP_FAILED {
         Err(Errno::last())
-    } else {
-        Ok(ret)
     }
+    else {
+        // SAFETY: `libc::mmap` returns a valid non-null pointer or `libc::MAP_FAILED`, thus `ret`
+        // will be non-null here.
+        Ok(unsafe { NonNull::new_unchecked(ret) })
+    } 
 }
 
 /// Create an anonymous memory mapping.
@@ -459,7 +460,7 @@ pub unsafe fn mmap_anonymous(
     length: NonZeroUsize,
     prot: ProtFlags,
     flags: MapFlags,
-) -> Result<*mut c_void> {
+) -> Result<NonNull<c_void>> {
     let ptr = addr.map_or(std::ptr::null_mut(), |a| a.get() as *mut c_void);
 
     let flags = MapFlags::MAP_ANONYMOUS | flags;
@@ -468,7 +469,9 @@ pub unsafe fn mmap_anonymous(
     if ret == libc::MAP_FAILED {
         Err(Errno::last())
     } else {
-        Ok(ret)
+        // SAFETY: `libc::mmap` returns a valid non-null pointer or `libc::MAP_FAILED`, thus `ret`
+        // will be non-null here.
+        Ok(unsafe { NonNull::new_unchecked(ret) })
     }
 }
 
@@ -559,8 +562,8 @@ pub unsafe fn madvise(
 /// let mut slice: &mut [u8] = unsafe {
 ///     let mem = mmap_anonymous(None, one_k_non_zero, ProtFlags::PROT_NONE, MapFlags::MAP_PRIVATE)
 ///         .unwrap();
-///     mprotect(mem, ONE_K, ProtFlags::PROT_READ | ProtFlags::PROT_WRITE).unwrap();
-///     std::slice::from_raw_parts_mut(mem as *mut u8, ONE_K)
+///     mprotect(mem.as_ptr(), ONE_K, ProtFlags::PROT_READ | ProtFlags::PROT_WRITE).unwrap();
+///     std::slice::from_raw_parts_mut(mem.as_ptr().cast(), ONE_K)
 /// };
 /// assert_eq!(slice[0], 0x00);
 /// slice[0] = 0xFF;
