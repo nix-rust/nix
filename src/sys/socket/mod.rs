@@ -410,6 +410,25 @@ libc_bitflags! {
     }
 }
 
+#[cfg(any(target_os = "freebsd"))]
+libc_enum! {
+    /// A selector for which clock to use when generating packet timestamps.
+	/// Used when setting [`TsClock`](crate::sys::socket::sockopt::TsClock) on a socket.
+	/// (For more details, see [setsockopt(2)](https://man.freebsd.org/cgi/man.cgi?setsockopt)).
+    #[repr(i32)]
+    #[non_exhaustive]
+    pub enum SocketTimestamp {
+        /// Microsecond resolution, realtime. This is the default.
+        SO_TS_REALTIME_MICRO,
+		/// Sub-nanosecond resolution, realtime.
+        SO_TS_BINTIME,
+        /// Nanosecond resolution, realtime.
+        SO_TS_REALTIME,
+        /// Nanosecond resolution, monotonic.
+        SO_TS_MONOTONIC,
+    }
+}
+
 cfg_if! {
     if #[cfg(any(target_os = "android", target_os = "linux"))] {
         /// Unix credentials of the sending process.
