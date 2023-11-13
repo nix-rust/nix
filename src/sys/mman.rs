@@ -484,25 +484,25 @@ pub unsafe fn mmap_anonymous(
 /// detailed requirements.
 #[cfg(any(target_os = "linux", target_os = "netbsd"))]
 pub unsafe fn mremap(
-    addr: *mut c_void,
+    addr: NonNull<c_void>,
     old_size: size_t,
     new_size: size_t,
     flags: MRemapFlags,
-    new_address: Option<*mut c_void>,
-) -> Result<*mut c_void> {
+    new_address: Option<NonNull<c_void>>,
+) -> Result<NonNull<c_void>> {
     #[cfg(target_os = "linux")]
     let ret = libc::mremap(
-        addr,
+        addr.as_ptr(),
         old_size,
         new_size,
         flags.bits(),
-        new_address.unwrap_or(std::ptr::null_mut()),
+        new_address.map(NonNull::as_ptr).unwrap_or(std::ptr::null_mut()),
     );
     #[cfg(target_os = "netbsd")]
     let ret = libc::mremap(
-        addr,
+        addr.as_ptr(),
         old_size,
-        new_address.unwrap_or(std::ptr::null_mut()),
+        new_address.map(NonNull::as_ptr).unwrap_or(std::ptr::null_mut()),
         new_size,
         flags.bits(),
     );
@@ -510,7 +510,9 @@ pub unsafe fn mremap(
     if ret == libc::MAP_FAILED {
         Err(Errno::last())
     } else {
-        Ok(ret)
+        // SAFETY: `libc::mremap` returns a valid non-null pointer or `libc::MAP_FAILED`, thus `ret`
+        // will be non-null here.
+        Ok(unsafe { NonNull::new_unchecked(ret) })
     }
 }
 
