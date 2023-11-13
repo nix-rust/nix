@@ -522,8 +522,8 @@ pub unsafe fn mremap(
 /// page.
 ///
 /// [`munmap(2)`]: https://man7.org/linux/man-pages/man2/munmap.2.html
-pub unsafe fn munmap(addr: *mut c_void, len: size_t) -> Result<()> {
-    Errno::result(libc::munmap(addr, len)).map(drop)
+pub unsafe fn munmap(addr: NonNull<c_void>, len: size_t) -> Result<()> {
+    Errno::result(libc::munmap(addr.as_ptr(), len)).map(drop)
 }
 
 /// give advice about use of memory
