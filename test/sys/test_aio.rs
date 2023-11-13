@@ -498,7 +498,9 @@ mod aio_writev {
     any(
         all(target_env = "musl", target_arch = "x86_64"),
         target_arch = "mips",
-        target_arch = "mips64"
+        target_arch = "mips32r6",
+        target_arch = "mips64",
+        target_arch = "mips64r6"
     ),
     ignore
 )]

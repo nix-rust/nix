@@ -53,28 +53,36 @@ libc_enum! {
         #[cfg(any(all(target_os = "android", target_pointer_width = "32"),
                   all(target_os = "linux", any(target_env = "musl",
                                                target_arch = "mips",
+                                               target_arch = "mips32r6",
                                                target_arch = "mips64",
+                                               target_arch = "mips64r6",
                                                target_arch = "x86_64",
                                                target_pointer_width = "32"))))]
         PTRACE_GETREGS,
         #[cfg(any(all(target_os = "android", target_pointer_width = "32"),
                   all(target_os = "linux", any(target_env = "musl",
                                                target_arch = "mips",
+                                               target_arch = "mips32r6",
                                                target_arch = "mips64",
+                                               target_arch = "mips64r6",
                                                target_arch = "x86_64",
                                                target_pointer_width = "32"))))]
         PTRACE_SETREGS,
         #[cfg(any(all(target_os = "android", target_pointer_width = "32"),
                   all(target_os = "linux", any(target_env = "musl",
                                                target_arch = "mips",
+                                               target_arch = "mips32r6",
                                                target_arch = "mips64",
+                                               target_arch = "mips64r6",
                                                target_arch = "x86_64",
                                                target_pointer_width = "32"))))]
         PTRACE_GETFPREGS,
         #[cfg(any(all(target_os = "android", target_pointer_width = "32"),
                   all(target_os = "linux", any(target_env = "musl",
                                                target_arch = "mips",
+                                               target_arch = "mips32r6",
                                                target_arch = "mips64",
+                                               target_arch = "mips64r6",
                                                target_arch = "x86_64",
                                                target_pointer_width = "32"))))]
         PTRACE_SETFPREGS,
@@ -82,13 +90,17 @@ libc_enum! {
         PTRACE_DETACH,
         #[cfg(all(target_os = "linux", any(target_env = "musl",
                                            target_arch = "mips",
+                                           target_arch = "mips32r6",
                                            target_arch = "mips64",
+                                           target_arch = "mips64r6",
                                            target_arch = "x86",
                                            target_arch = "x86_64")))]
         PTRACE_GETFPXREGS,
         #[cfg(all(target_os = "linux", any(target_env = "musl",
                                            target_arch = "mips",
+                                           target_arch = "mips32r6",
                                            target_arch = "mips64",
+                                           target_arch = "mips64r6",
                                            target_arch = "x86",
                                            target_arch = "x86_64")))]
         PTRACE_SETFPXREGS,
@@ -98,10 +110,14 @@ libc_enum! {
         PTRACE_GETSIGINFO,
         PTRACE_SETSIGINFO,
         #[cfg(all(target_os = "linux", not(any(target_arch = "mips",
-                                               target_arch = "mips64"))))]
+                                               target_arch = "mips32r6",
+                                               target_arch = "mips64",
+                                               target_arch = "mips64r6"))))]
         PTRACE_GETREGSET,
         #[cfg(all(target_os = "linux", not(any(target_arch = "mips",
-                                               target_arch = "mips64"))))]
+                                               target_arch = "mips32r6",
+                                               target_arch = "mips64",
+                                               target_arch = "mips64r6"))))]
         PTRACE_SETREGSET,
         #[cfg(target_os = "linux")]
         #[cfg_attr(docsrs, doc(cfg(all())))]
@@ -110,10 +126,14 @@ libc_enum! {
         #[cfg_attr(docsrs, doc(cfg(all())))]
         PTRACE_INTERRUPT,
         #[cfg(all(target_os = "linux", not(any(target_arch = "mips",
-                                               target_arch = "mips64"))))]
+                                               target_arch = "mips32r6",
+                                               target_arch = "mips64",
+                                               target_arch = "mips64r6"))))]
         PTRACE_LISTEN,
         #[cfg(all(target_os = "linux", not(any(target_arch = "mips",
-                                               target_arch = "mips64"))))]
+                                               target_arch = "mips32r6",
+                                               target_arch = "mips64",
+                                               target_arch = "mips64r6"))))]
         PTRACE_PEEKSIGINFO,
         #[cfg(all(target_os = "linux", target_env = "gnu",
                   any(target_arch = "x86", target_arch = "x86_64")))]
