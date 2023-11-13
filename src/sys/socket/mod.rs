@@ -1,7 +1,7 @@
 //! Socket interface functions
 //!
 //! [Further reading](https://man7.org/linux/man-pages/man7/socket.7.html)
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
 #[cfg(feature = "uio")]
 use crate::sys::time::TimeSpec;
 #[cfg(not(target_os = "redox"))]
@@ -779,6 +779,18 @@ pub enum ControlMessageOwned {
     #[cfg(any(target_os = "android", target_os = "linux"))]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     ScmTimestampns(TimeSpec),
+    /// Realtime clock timestamp
+    ///
+    /// [Further reading](https://man.freebsd.org/cgi/man.cgi?setsockopt)
+    #[cfg(any(target_os = "freebsd"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
+    ScmRealtime(TimeSpec),
+    /// Monotonic clock timestamp
+    ///
+    /// [Further reading](https://man.freebsd.org/cgi/man.cgi?setsockopt)
+    #[cfg(any(target_os = "freebsd"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
+    ScmMonotonic(TimeSpec),
     #[cfg(any(
         target_os = "android",
         apple_targets,
@@ -957,6 +969,16 @@ impl ControlMessageOwned {
             (libc::SOL_SOCKET, libc::SCM_TIMESTAMPNS) => {
                 let ts: libc::timespec = ptr::read_unaligned(p as *const _);
                 ControlMessageOwned::ScmTimestampns(TimeSpec::from(ts))
+            }
+            #[cfg(any(target_os = "freebsd"))]
+            (libc::SOL_SOCKET, libc::SCM_REALTIME) => {
+                let ts: libc::timespec = ptr::read_unaligned(p as *const _);
+                ControlMessageOwned::ScmRealtime(TimeSpec::from(ts))
+            }
+            #[cfg(any(target_os = "freebsd"))]
+            (libc::SOL_SOCKET, libc::SCM_MONOTONIC) => {
+                let ts: libc::timespec = ptr::read_unaligned(p as *const _);
+                ControlMessageOwned::ScmMonotonic(TimeSpec::from(ts))
             }
             #[cfg(any(target_os = "android", target_os = "linux"))]
             (libc::SOL_SOCKET, libc::SCM_TIMESTAMPING) => {
