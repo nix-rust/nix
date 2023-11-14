@@ -410,7 +410,7 @@ libc_bitflags! {
     }
 }
 
-#[cfg(any(target_os = "freebsd"))]
+#[cfg(target_os = "freebsd")]
 libc_enum! {
     /// A selector for which clock to use when generating packet timestamps.
     /// Used when setting [`TsClock`](crate::sys::socket::sockopt::TsClock) on a socket.
@@ -801,13 +801,13 @@ pub enum ControlMessageOwned {
     /// Realtime clock timestamp
     ///
     /// [Further reading](https://man.freebsd.org/cgi/man.cgi?setsockopt)
-    #[cfg(any(target_os = "freebsd"))]
+    #[cfg(target_os = "freebsd")]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     ScmRealtime(TimeSpec),
     /// Monotonic clock timestamp
     ///
     /// [Further reading](https://man.freebsd.org/cgi/man.cgi?setsockopt)
-    #[cfg(any(target_os = "freebsd"))]
+    #[cfg(target_os = "freebsd")]
     #[cfg_attr(docsrs, doc(cfg(all())))]
     ScmMonotonic(TimeSpec),
     #[cfg(any(
@@ -989,12 +989,12 @@ impl ControlMessageOwned {
                 let ts: libc::timespec = ptr::read_unaligned(p as *const _);
                 ControlMessageOwned::ScmTimestampns(TimeSpec::from(ts))
             }
-            #[cfg(any(target_os = "freebsd"))]
+            #[cfg(target_os = "freebsd")]
             (libc::SOL_SOCKET, libc::SCM_REALTIME) => {
                 let ts: libc::timespec = ptr::read_unaligned(p as *const _);
                 ControlMessageOwned::ScmRealtime(TimeSpec::from(ts))
             }
-            #[cfg(any(target_os = "freebsd"))]
+            #[cfg(target_os = "freebsd")]
             (libc::SOL_SOCKET, libc::SCM_MONOTONIC) => {
                 let ts: libc::timespec = ptr::read_unaligned(p as *const _);
                 ControlMessageOwned::ScmMonotonic(TimeSpec::from(ts))
