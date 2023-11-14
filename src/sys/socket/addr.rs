@@ -1225,10 +1225,12 @@ pub union SockaddrStorage {
     #[cfg(any(target_os = "android", target_os = "linux"))]
     alg: AlgAddr,
     #[cfg(all(feature = "net", not(target_os = "redox")))]
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     dl: LinkAddr,
     #[cfg(any(target_os = "android", target_os = "linux"))]
     nl: NetlinkAddr,
     #[cfg(all(feature = "ioctl", apple_targets))]
+    #[cfg_attr(docsrs, doc(cfg(feature = "ioctl")))]
     sctl: SysControlAddr,
     #[cfg(feature = "net")]
     sin: SockaddrIn,
@@ -1503,6 +1505,7 @@ impl SockaddrStorage {
     AddressFamily::Netlink, libc::sockaddr_nl, nl}
 
     #[cfg(all(feature = "ioctl", apple_targets))]
+    #[cfg_attr(docsrs, doc(cfg(feature = "ioctl")))]
     accessors! {as_sys_control_addr, as_sys_control_addr_mut, SysControlAddr,
     AddressFamily::System, libc::sockaddr_ctl, sctl}
 
