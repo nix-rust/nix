@@ -55,6 +55,8 @@ fn test_current_sigaction() {
         unsafe { sigaction_current(SIGINT) }.unwrap().handler(),
         SigHandler::SigDfl
     );
+    assert!(sigaction_is_default(SIGINT).unwrap());
+    assert!(!sigaction_is_ignore(SIGINT).unwrap());
 
     unsafe {
         sigaction(
@@ -72,6 +74,8 @@ fn test_current_sigaction() {
         unsafe { sigaction_current(SIGINT) }.unwrap().handler(),
         SigHandler::SigIgn
     );
+    assert!(!sigaction_is_default(SIGINT).unwrap());
+    assert!(sigaction_is_ignore(SIGINT).unwrap());
 
     // restore original
     unsafe { sigaction(SIGINT, &oact) }.unwrap();

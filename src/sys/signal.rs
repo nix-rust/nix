@@ -911,6 +911,22 @@ pub unsafe fn sigaction_current(signal: Signal) -> Result<SigAction> {
     sigaction_inner(signal, None)
 }
 
+/// Whether the specified signal currently has its default action.
+///
+/// `signal` can be any signal except `SIGKILL` or `SIGSTOP`.
+pub fn sigaction_is_default(signal: Signal) -> Result<bool> {
+    // SAFETY: fetching the current action is safe if the handler isn't called
+    unsafe { sigaction_current(signal) }.map(|sigaction| sigaction.handler() == SigHandler::SigDfl)
+}
+
+/// Whether the specified signal is currently ignored.
+///
+/// `signal` can be any signal except `SIGKILL` or `SIGSTOP`.
+pub fn sigaction_is_ignore(signal: Signal) -> Result<bool> {
+    // SAFETY: fetching the current action is safe if the handler isn't called
+    unsafe { sigaction_current(signal) }.map(|sigaction| sigaction.handler() == SigHandler::SigIgn)
+}
+
 /// Signal management (see [signal(3p)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/signal.html))
 ///
 /// Installs `handler` for the given `signal`, returning the previous signal
