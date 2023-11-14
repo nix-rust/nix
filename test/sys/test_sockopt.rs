@@ -12,12 +12,12 @@ use std::os::unix::io::{AsRawFd, FromRawFd, OwnedFd};
 #[test]
 pub fn test_local_peercred_seqpacket() {
     use nix::{
-        sys::socket::socketpair,
+        sys::socket::{socketpair, AddressFamily},
         unistd::{Gid, Uid},
     };
 
     let (fd1, _fd2) = socketpair(
-        AddressFamily::Unix,
+        AddressFamily::UNIX,
         SockType::SeqPacket,
         None,
         SockFlag::empty(),
@@ -29,16 +29,21 @@ pub fn test_local_peercred_seqpacket() {
     assert_eq!(Gid::from_raw(xucred.groups()[0]), Gid::current());
 }
 
-#[cfg(any(target_os = "dragonfly", target_os = "freebsd", apple_targets))]
+#[cfg(any(
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "macos",
+    target_os = "ios"
+))]
 #[test]
 pub fn test_local_peercred_stream() {
     use nix::{
-        sys::socket::socketpair,
+        sys::socket::{socketpair, AddressFamily},
         unistd::{Gid, Uid},
     };
 
     let (fd1, _fd2) = socketpair(
-        AddressFamily::Unix,
+        AddressFamily::UNIX,
         SockType::Stream,
         None,
         SockFlag::empty(),
@@ -50,13 +55,13 @@ pub fn test_local_peercred_stream() {
     assert_eq!(Gid::from_raw(xucred.groups()[0]), Gid::current());
 }
 
-#[cfg(apple_targets)]
+#[cfg(any(target_os = "ios", target_os = "macos"))]
 #[test]
 pub fn test_local_peer_pid() {
-    use nix::sys::socket::socketpair;
+    use nix::sys::socket::{socketpair, AddressFamily};
 
     let (fd1, _fd2) = socketpair(
-        AddressFamily::Unix,
+        AddressFamily::UNIX,
         SockType::Stream,
         None,
         SockFlag::empty(),
@@ -74,7 +79,7 @@ fn is_so_mark_functional() {
     require_capability!("is_so_mark_functional", CAP_NET_ADMIN);
 
     let s = socket(
-        AddressFamily::Inet,
+        AddressFamily::INET,
         SockType::Stream,
         SockFlag::empty(),
         None,
@@ -88,7 +93,7 @@ fn is_so_mark_functional() {
 #[test]
 fn test_so_buf() {
     let fd = socket(
-        AddressFamily::Inet,
+        AddressFamily::INET,
         SockType::Datagram,
         SockFlag::empty(),
         SockProtocol::Udp,
@@ -105,22 +110,22 @@ fn test_so_buf() {
 
 #[test]
 fn test_so_tcp_maxseg() {
-    use nix::sys::socket::{accept, bind, connect, listen, SockaddrIn};
+    use nix::sys::socket::{accept, bind, connect, listen, Ipv4Address};
     use nix::unistd::write;
     use std::net::SocketAddrV4;
     use std::str::FromStr;
 
     let std_sa = SocketAddrV4::from_str("127.0.0.1:4001").unwrap();
-    let sock_addr = SockaddrIn::from(std_sa);
+    let sock_addr = Ipv4Address::from(std_sa);
 
     let rsock = socket(
-        AddressFamily::Inet,
+        AddressFamily::INET,
         SockType::Stream,
         SockFlag::empty(),
         SockProtocol::Tcp,
     )
     .unwrap();
-    bind(rsock.as_raw_fd(), &sock_addr).unwrap();
+    bind(rsock.as_raw_fd(), sock_addr).unwrap();
     listen(&rsock, 10).unwrap();
     let initial = getsockopt(&rsock, sockopt::TcpMaxSeg).unwrap();
     // Initial MSS is expected to be 536 (https://tools.ietf.org/html/rfc879#section-1) but some
@@ -138,13 +143,13 @@ fn test_so_tcp_maxseg() {
 
     // Connect and check the MSS that was advertised
     let ssock = socket(
-        AddressFamily::Inet,
+        AddressFamily::INET,
         SockType::Stream,
         SockFlag::empty(),
         SockProtocol::Tcp,
     )
     .unwrap();
-    connect(ssock.as_raw_fd(), &sock_addr).unwrap();
+    connect(ssock.as_raw_fd(), sock_addr).unwrap();
     let rsess = accept(rsock.as_raw_fd()).unwrap();
     let rsess = unsafe { OwnedFd::from_raw_fd(rsess) };
     write(&rsess, b"hello").unwrap();
@@ -165,7 +170,7 @@ fn test_so_tcp_maxseg() {
 #[test]
 fn test_so_type() {
     let sockfd = socket(
-        AddressFamily::Inet,
+        AddressFamily::INET,
         SockType::Stream,
         SockFlag::empty(),
         None,
@@ -203,7 +208,7 @@ fn test_tcp_congestion() {
     use std::ffi::OsString;
 
     let fd = socket(
-        AddressFamily::Inet,
+        AddressFamily::INET,
         SockType::Stream,
         SockFlag::empty(),
         None,
@@ -229,7 +234,7 @@ fn test_bindtodevice() {
     skip_if_not_root!("test_bindtodevice");
 
     let fd = socket(
-        AddressFamily::Inet,
+        AddressFamily::INET,
         SockType::Stream,
         SockFlag::empty(),
         None,
@@ -245,7 +250,7 @@ fn test_bindtodevice() {
 #[test]
 fn test_so_tcp_keepalive() {
     let fd = socket(
-        AddressFamily::Inet,
+        AddressFamily::INET,
         SockType::Stream,
         SockFlag::empty(),
         SockProtocol::Tcp,
@@ -279,7 +284,7 @@ fn test_so_tcp_keepalive() {
 #[cfg(any(target_os = "android", target_os = "linux"))]
 #[cfg_attr(qemu, ignore)]
 fn test_get_mtu() {
-    use nix::sys::socket::{bind, connect, SockaddrIn};
+    use nix::sys::socket::{bind, connect, Ipv4Address};
     use std::net::SocketAddrV4;
     use std::str::FromStr;
 
@@ -287,7 +292,7 @@ fn test_get_mtu() {
     let std_sb = SocketAddrV4::from_str("127.0.0.1:4002").unwrap();
 
     let usock = socket(
-        AddressFamily::Inet,
+        AddressFamily::INET,
         SockType::Datagram,
         SockFlag::empty(),
         SockProtocol::Udp,
@@ -295,8 +300,8 @@ fn test_get_mtu() {
     .unwrap();
 
     // Bind and initiate connection
-    bind(usock.as_raw_fd(), &SockaddrIn::from(std_sa)).unwrap();
-    connect(usock.as_raw_fd(), &SockaddrIn::from(std_sb)).unwrap();
+    bind(usock.as_raw_fd(), Ipv4Address::from(std_sa)).unwrap();
+    connect(usock.as_raw_fd(), Ipv4Address::from(std_sb)).unwrap();
 
     // Loopback connections have 2^16 - the maximum - MTU
     assert_eq!(getsockopt(&usock, sockopt::IpMtu), Ok(u16::MAX as i32))
@@ -306,7 +311,7 @@ fn test_get_mtu() {
 #[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
 fn test_ttl_opts() {
     let fd4 = socket(
-        AddressFamily::Inet,
+        AddressFamily::INET,
         SockType::Datagram,
         SockFlag::empty(),
         None,
@@ -315,7 +320,7 @@ fn test_ttl_opts() {
     setsockopt(&fd4, sockopt::Ipv4Ttl, &1)
         .expect("setting ipv4ttl on an inet socket should succeed");
     let fd6 = socket(
-        AddressFamily::Inet6,
+        AddressFamily::INET6,
         SockType::Datagram,
         SockFlag::empty(),
         None,
@@ -326,10 +331,10 @@ fn test_ttl_opts() {
 }
 
 #[test]
-#[cfg(apple_targets)]
+#[cfg(any(target_os = "ios", target_os = "macos"))]
 fn test_dontfrag_opts() {
     let fd4 = socket(
-        AddressFamily::Inet,
+        AddressFamily::INET,
         SockType::Stream,
         SockFlag::empty(),
         SockProtocol::Tcp,
@@ -341,7 +346,7 @@ fn test_dontfrag_opts() {
         "unsetting IP_DONTFRAG on an inet stream socket should succeed",
     );
     let fd4d = socket(
-        AddressFamily::Inet,
+        AddressFamily::INET,
         SockType::Datagram,
         SockFlag::empty(),
         None,
@@ -356,13 +361,18 @@ fn test_dontfrag_opts() {
 }
 
 #[test]
-#[cfg(any(target_os = "android", apple_targets, target_os = "linux",))]
+#[cfg(any(
+    target_os = "android",
+    target_os = "ios",
+    target_os = "linux",
+    target_os = "macos",
+))]
 // Disable the test under emulation because it fails in Cirrus-CI.  Lack
 // of QEMU support is suspected.
 #[cfg_attr(qemu, ignore)]
 fn test_v6dontfrag_opts() {
     let fd6 = socket(
-        AddressFamily::Inet6,
+        AddressFamily::INET6,
         SockType::Stream,
         SockFlag::empty(),
         SockProtocol::Tcp,
@@ -375,7 +385,7 @@ fn test_v6dontfrag_opts() {
         "unsetting IPV6_DONTFRAG on an inet6 stream socket should succeed",
     );
     let fd6d = socket(
-        AddressFamily::Inet6,
+        AddressFamily::INET6,
         SockType::Datagram,
         SockFlag::empty(),
         None,
@@ -393,7 +403,7 @@ fn test_v6dontfrag_opts() {
 #[cfg(target_os = "linux")]
 fn test_so_priority() {
     let fd = socket(
-        AddressFamily::Inet,
+        AddressFamily::INET,
         SockType::Stream,
         SockFlag::empty(),
         SockProtocol::Tcp,
@@ -408,7 +418,7 @@ fn test_so_priority() {
 #[cfg(target_os = "linux")]
 fn test_ip_tos() {
     let fd = socket(
-        AddressFamily::Inet,
+        AddressFamily::INET,
         SockType::Stream,
         SockFlag::empty(),
         SockProtocol::Tcp,
@@ -426,7 +436,7 @@ fn test_ip_tos() {
 #[cfg_attr(qemu, ignore)]
 fn test_ipv6_tclass() {
     let fd = socket(
-        AddressFamily::Inet6,
+        AddressFamily::INET6,
         SockType::Stream,
         SockFlag::empty(),
         SockProtocol::Tcp,

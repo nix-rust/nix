@@ -1,5 +1,33 @@
 //! Socket interface functions
 //!
+//! # Addresses
+//!
+//! All socket addresses consist of three parts:
+//!
+//! - An [`AddressFamily`], which specifies the format of the address.
+//!
+//! - A length, even if isn't embedded into the libc address type. It indicates the number of bytes
+//! of the address that should be read when interpreting it.
+//!
+//! - The address itself.
+//!
+//! ## `Address` vs `Addr`
+//!
+//! Socket addresses come in two flavors:
+//!
+//! - Addresses ending with `Address` are sized and safely convertible to libc's address types, regardless
+//! of their length. Their address length is bounded by `[2, SIZE]` with `SIZE` being the libc address type's size.
+//! The only exception is [`Address`], where the length can also be zero, indicating an empty, uninitialized address.
+//!
+//! - Addresses ending with `Addr` are unsized. They are generally *not* directly convertible to libc's address
+//! types (they are convertible if and only if the address length matches the libc address type's size). Their address
+//! length is bounded by `[2, MAX]` with `MAX` being the maximum address length, i.e. the size of [`sockaddr_storage`].
+//! Similar to above, [`Addr`] can also have a length of zero. Trying to instantiate or using an address with a length
+//! greater than `MAX` can result in a panic.
+//!
+//! **Note**: Not all addresses have a dyn-sized variant, in fact, only a few do. That's because most addresses are fixed in
+//! size and wouldn't benefit from a dyn-sized alternative. Only those with a variable length have a dyn-sized variant.
+//!
 //! [Further reading](https://man7.org/linux/man-pages/man7/socket.7.html)
 #[cfg(any(target_os = "android", target_os = "linux"))]
 #[cfg(feature = "uio")]
@@ -11,14 +39,16 @@ use crate::{errno::Errno, Result};
 use cfg_if::cfg_if;
 use libc::{self, c_int, size_t, socklen_t};
 #[cfg(all(feature = "uio", not(target_os = "redox")))]
-use libc::{
-    c_void, iovec, CMSG_DATA, CMSG_FIRSTHDR, CMSG_LEN, CMSG_NXTHDR, CMSG_SPACE,
-};
+use libc::{CMSG_DATA, CMSG_FIRSTHDR, CMSG_LEN, CMSG_NXTHDR, CMSG_SPACE};
 #[cfg(not(target_os = "redox"))]
 use std::io::{IoSlice, IoSliceMut};
+#[allow(unused)]
+use std::mem::MaybeUninit;
 #[cfg(feature = "net")]
 use std::net;
 use std::os::unix::io::{AsFd, AsRawFd, FromRawFd, OwnedFd, RawFd};
+#[cfg(not(target_os = "redox"))]
+use std::ptr::addr_of_mut;
 use std::{mem, ptr};
 
 #[deny(missing_docs)]
@@ -32,42 +62,44 @@ pub mod sockopt;
  *
  */
 
-pub use self::addr::{SockaddrLike, SockaddrStorage};
+pub use self::addr::{
+    Addr, Address, AddressFamily, InvalidAddressFamilyError, RawAddr, UnixAddr,
+    UnixAddress,
+};
 
-#[cfg(any(target_os = "illumos", target_os = "solaris"))]
-pub use self::addr::{AddressFamily, UnixAddr};
-#[cfg(not(any(target_os = "illumos", target_os = "solaris")))]
-pub use self::addr::{AddressFamily, UnixAddr};
-#[cfg(not(any(
-    target_os = "illumos",
-    target_os = "solaris",
-    target_os = "haiku",
-    target_os = "redox",
-)))]
-#[cfg(feature = "net")]
-pub use self::addr::{LinkAddr, SockaddrIn, SockaddrIn6};
 #[cfg(any(
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "ios",
+    target_os = "macos",
     target_os = "illumos",
-    target_os = "solaris",
+    target_os = "netbsd",
     target_os = "haiku",
-    target_os = "redox",
+    target_os = "aix",
+    target_os = "openbsd"
 ))]
 #[cfg(feature = "net")]
-pub use self::addr::{SockaddrIn, SockaddrIn6};
+pub use self::addr::LinkAddr;
+#[cfg(any(target_os = "solaris", target_os = "redox",))]
+#[cfg(feature = "net")]
+pub use self::addr::{Ipv4Address, Ipv6Address};
+#[cfg(not(any(target_os = "solaris", target_os = "redox",)))]
+#[cfg(feature = "net")]
+pub use self::addr::{Ipv4Address, Ipv6Address, LinkAddress};
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
-pub use crate::sys::socket::addr::alg::AlgAddr;
+pub use crate::sys::socket::addr::alg::AlgAddress;
 #[cfg(any(target_os = "android", target_os = "linux"))]
-pub use crate::sys::socket::addr::netlink::NetlinkAddr;
-#[cfg(apple_targets)]
+pub use crate::sys::socket::addr::netlink::NetlinkAddress;
+#[cfg(any(target_os = "ios", target_os = "macos"))]
 #[cfg(feature = "ioctl")]
-pub use crate::sys::socket::addr::sys_control::SysControlAddr;
+pub use crate::sys::socket::addr::sys_control::SysControlAddress;
 #[cfg(any(
     target_os = "android",
     target_os = "linux",
     target_os = "macos"
 ))]
-pub use crate::sys::socket::addr::vsock::VsockAddr;
+pub use crate::sys::socket::addr::vsock::VsockAddress;
 
 #[cfg(all(feature = "uio", not(target_os = "redox")))]
 pub use libc::{cmsghdr, msghdr};
@@ -323,7 +355,7 @@ libc_bitflags! {
         MSG_DONTWAIT;
         /// Receive flags: Control Data was discarded (buffer too small)
         MSG_CTRUNC;
-        /// For raw ([`Packet`](addr/enum.AddressFamily.html)), Internet datagram
+        /// For raw (`AF_PACKET`), Internet datagram
         /// (since Linux 2.4.27/2.6.8),
         /// netlink (since Linux 2.6.22) and UNIX datagram (since Linux 3.4)
         /// sockets: return the real length of the packet or datagram, even
@@ -488,7 +520,8 @@ cfg_if! {
     if #[cfg(any(
                 target_os = "dragonfly",
                 target_os = "freebsd",
-                apple_targets
+                target_os = "macos",
+                target_os = "ios"
         ))] {
         /// Return type of [`LocalPeerCred`](crate::sys::socket::sockopt::LocalPeerCred)
         #[repr(transparent)]
@@ -564,75 +597,60 @@ impl Ipv6MembershipRequest {
 feature! {
 #![feature = "uio"]
 
-/// Create a buffer large enough for storing some control messages as returned
-/// by [`recvmsg`](fn.recvmsg.html).
+/// Calculates the space needed for the provided arguments.
 ///
-/// # Examples
-///
-/// ```
-/// # #[macro_use] extern crate nix;
-/// # use nix::sys::time::TimeVal;
-/// # use std::os::unix::io::RawFd;
-/// # fn main() {
-/// // Create a buffer for a `ControlMessageOwned::ScmTimestamp` message
-/// let _ = cmsg_space!(TimeVal);
-/// // Create a buffer big enough for a `ControlMessageOwned::ScmRights` message
-/// // with two file descriptors
-/// let _ = cmsg_space!([RawFd; 2]);
-/// // Create a buffer big enough for a `ControlMessageOwned::ScmRights` message
-/// // and a `ControlMessageOwned::ScmTimestamp` message
-/// let _ = cmsg_space!(RawFd, TimeVal);
-/// # }
-/// ```
-// Unfortunately, CMSG_SPACE isn't a const_fn, or else we could return a
-// stack-allocated array.
+/// The arguments are the names of the variants of [`ControlMessageOwnedSpace`]. This macro
+/// is const-evaluable.
 #[macro_export]
 macro_rules! cmsg_space {
-    ( $( $x:ty ),* ) => {
-        {
-            let space = 0 $(+ $crate::sys::socket::cmsg_space::<$x>())*;
-            Vec::<u8>::with_capacity(space)
-        }
-    }
+    ($($x:ident $(($arg:expr))? ),* $(,)?) => {{
+        0usize $(
+            + <$crate::sys::socket::ControlMessageOwnedSpace>::$x $(($arg))?.space()
+        )*
+    }};
 }
 
-#[inline]
-#[doc(hidden)]
-pub fn cmsg_space<T>() -> usize {
-    // SAFETY: CMSG_SPACE is always safe
-    unsafe { libc::CMSG_SPACE(mem::size_of::<T>() as libc::c_uint) as usize }
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-/// Contains outcome of sending or receiving a message
+/// Creates a [`CmsgBuf`] with the capacity needed for **receiving**
+/// the provided arguments.
 ///
-/// Use [`cmsgs`][RecvMsg::cmsgs] to access all the control messages present, and
-/// [`iovs`][RecvMsg::iovs`] to access underlying io slices.
-pub struct RecvMsg<'a, 's, S> {
-    pub bytes: usize,
-    cmsghdr: Option<&'a cmsghdr>,
-    pub address: Option<S>,
-    pub flags: MsgFlags,
-    iobufs: std::marker::PhantomData<& 's()>,
-    mhdr: msghdr,
+/// The arguments are the names of the variants of [`ControlMessageOwnedSpace`].
+///
+/// # Example
+///
+/// ```
+/// # use nix::{cmsg_space, cmsg_buf};
+/// let cmsg = cmsg_buf![ScmRights(2), ScmTimestamp];
+///
+/// assert_eq!(cmsg.capacity(), cmsg_space![ScmRights(2), ScmTimestamp]);
+/// ```
+#[macro_export]
+macro_rules! cmsg_buf {
+    ($($x:ident $(($arg:expr))? ),* $(,)?) => {{
+        const SPACE: usize = $crate::cmsg_space![$($x $(($arg))? ),*];
+
+        <$crate::sys::socket::CmsgBuf>::with_capacity(SPACE)
+    }};
 }
 
-impl<'a, S> RecvMsg<'a, '_, S> {
-    /// Iterate over the valid control messages pointed to by this
-    /// msghdr.
-    pub fn cmsgs(&self) -> CmsgIterator {
-        CmsgIterator {
-            cmsghdr: self.cmsghdr,
-            mhdr: &self.mhdr
-        }
-    }
+// FIXME (2023-11-13): the module-internal test `recvmmsg2` requires a version of the macro without
+// an absolute path to `cmsg_space!`. This workaround is necessary until the macro resolution
+// of the compiler isn't as horrendous as it is currently.
+macro_rules! cmsg_vec_internal {
+    ($($x:ident $(($arg:expr))? ),* $(,)?) => {{
+        const SPACE: usize = cmsg_space![$($x $(($arg))? ),*];
+
+        <$crate::sys::socket::CmsgBuf>::with_capacity(SPACE)
+    }};
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+/// An iterator created by [`CmsgBuf::iter`], yielding control messages of type
+/// [`ControlMessageOwned`].
+#[derive(Clone, Copy, Debug)]
 pub struct CmsgIterator<'a> {
     /// Control message buffer to decode from. Must adhere to cmsg alignment.
     cmsghdr: Option<&'a cmsghdr>,
-    mhdr: &'a msghdr
+    // SAFETY: `msg_control` and `msg_controllen` must be initialized.
+    mhdr: MaybeUninit<msghdr>,
 }
 
 impl<'a> Iterator for CmsgIterator<'a> {
@@ -648,7 +666,7 @@ impl<'a> Iterator for CmsgIterator<'a> {
                 // Advance the internal pointer.  Safe if mhdr and cmsghdr point
                 // to valid data returned by recvmsg(2)
                 self.cmsghdr = unsafe {
-                    let p = CMSG_NXTHDR(self.mhdr as *const _, hdr as *const _);
+                    let p = CMSG_NXTHDR(self.mhdr.as_ptr(), hdr as *const _);
                     p.as_ref()
                 };
                 cm
@@ -660,7 +678,11 @@ impl<'a> Iterator for CmsgIterator<'a> {
 /// A type-safe wrapper around a single control message, as used with
 /// [`recvmsg`](#fn.recvmsg).
 ///
+/// **Note**: This is *not* the owned version of [`ControlMessage`] as they don't
+/// necessarily have the same variants.
+///
 /// [Further reading](https://man7.org/linux/man-pages/man3/cmsg.3.html)
+
 //  Nix version 0.13.0 and earlier used ControlMessage for both recvmsg and
 //  sendmsg.  However, on some platforms the messages returned by recvmsg may be
 //  unaligned.  ControlMessageOwned takes those messages by copy, obviating any
@@ -698,28 +720,38 @@ pub enum ControlMessageOwned {
     /// // Set up
     /// let message = "Ohayō!".as_bytes();
     /// let in_socket = socket(
-    ///     AddressFamily::Inet,
+    ///     AddressFamily::INET,
     ///     SockType::Datagram,
     ///     SockFlag::empty(),
     ///     None).unwrap();
     /// setsockopt(&in_socket, sockopt::ReceiveTimestamp, &true).unwrap();
-    /// let localhost = SockaddrIn::from_str("127.0.0.1:0").unwrap();
+    /// let localhost = Ipv4Address::from_str("127.0.0.1:0").unwrap();
     /// bind(in_socket.as_raw_fd(), &localhost).unwrap();
-    /// let address: SockaddrIn = getsockname(in_socket.as_raw_fd()).unwrap();
+    /// let address = getsockname(in_socket.as_raw_fd()).unwrap();
     /// // Get initial time
     /// let time0 = SystemTime::now();
     /// // Send the message
     /// let iov = [IoSlice::new(message)];
     /// let flags = MsgFlags::empty();
-    /// let l = sendmsg(in_socket.as_raw_fd(), &iov, &[], flags, Some(&address)).unwrap();
+    /// let l = sendmsg(
+    ///     in_socket.as_raw_fd(),
+    ///     &address,
+    ///     &iov,
+    ///     CmsgStr::empty(),
+    ///     flags,
+    /// ).unwrap().bytes();
     /// assert_eq!(message.len(), l);
     /// // Receive the message
     /// let mut buffer = vec![0u8; message.len()];
-    /// let mut cmsgspace = cmsg_space!(TimeVal);
+    /// let mut cmsg = cmsg_buf![ScmTimestamp];
     /// let mut iov = [IoSliceMut::new(&mut buffer)];
-    /// let r = recvmsg::<SockaddrIn>(in_socket.as_raw_fd(), &mut iov, Some(&mut cmsgspace), flags)
-    ///     .unwrap();
-    /// let rtime = match r.cmsgs().next() {
+    /// let _ = recvmsg(
+    ///     in_socket.as_raw_fd(),
+    ///     &mut iov,
+    ///     cmsg.handle(),
+    ///     flags,
+    /// ).unwrap();
+    /// let rtime = match cmsg.iter().next() {
     ///     Some(ControlMessageOwned::ScmTimestamp(rtime)) => rtime,
     ///     Some(_) => panic!("Unexpected control message"),
     ///     None => panic!("No control message")
@@ -748,50 +780,48 @@ pub enum ControlMessageOwned {
     ScmTimestampns(TimeSpec),
     #[cfg(any(
         target_os = "android",
-        apple_targets,
+        target_os = "ios",
         target_os = "linux",
+        target_os = "macos",
         target_os = "netbsd",
     ))]
     #[cfg(feature = "net")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv4PacketInfo(libc::in_pktinfo),
     #[cfg(any(
         target_os = "android",
         target_os = "dragonfly",
         target_os = "freebsd",
-        apple_targets,
+        target_os = "ios",
         target_os = "linux",
+        target_os = "macos",
         target_os = "openbsd",
         target_os = "netbsd",
     ))]
     #[cfg(feature = "net")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv6PacketInfo(libc::in6_pktinfo),
     #[cfg(any(
         target_os = "freebsd",
-        apple_targets,
+        target_os = "ios",
+        target_os = "macos",
         target_os = "netbsd",
         target_os = "openbsd",
     ))]
     #[cfg(feature = "net")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv4RecvIf(libc::sockaddr_dl),
     #[cfg(any(
         target_os = "freebsd",
-        apple_targets,
+        target_os = "ios",
+        target_os = "macos",
         target_os = "netbsd",
         target_os = "openbsd",
     ))]
     #[cfg(feature = "net")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv4RecvDstAddr(libc::in_addr),
     #[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
     #[cfg(feature = "net")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv4OrigDstAddr(libc::sockaddr_in),
     #[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
     #[cfg(feature = "net")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv6OrigDstAddr(libc::sockaddr_in6),
 
     /// UDP Generic Receive Offload (GRO) allows receiving multiple UDP
@@ -804,7 +834,6 @@ pub enum ControlMessageOwned {
     /// to allow receiving GRO packets.
     #[cfg(target_os = "linux")]
     #[cfg(feature = "net")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     UdpGroSegments(u16),
 
     /// SO_RXQ_OVFL indicates that an unsigned 32 bit value
@@ -821,16 +850,14 @@ pub enum ControlMessageOwned {
     /// Socket error queue control messages read with the `MSG_ERRQUEUE` flag.
     #[cfg(any(target_os = "android", target_os = "linux"))]
     #[cfg(feature = "net")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv4RecvErr(libc::sock_extended_err, Option<sockaddr_in>),
     /// Socket error queue control messages read with the `MSG_ERRQUEUE` flag.
     #[cfg(any(target_os = "android", target_os = "linux"))]
     #[cfg(feature = "net")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv6RecvErr(libc::sock_extended_err, Option<sockaddr_in6>),
 
     /// `SOL_TLS` messages of type `TLS_GET_RECORD_TYPE`
-    #[cfg(any(target_os = "linux"))]
+    #[cfg(target_os = "linux")]
     TlsGetRecordType(TlsGetRecordType),
 
     /// Catch-all variant for unimplemented cmsg types.
@@ -852,7 +879,7 @@ pub struct Timestamps {
 
 /// These constants correspond to TLS 1.2 message types, as defined in
 /// RFC 5246, Appendix A.1
-#[cfg(any(target_os = "linux"))]
+#[cfg(target_os = "linux")]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 #[repr(u8)]
 #[non_exhaustive]
@@ -890,6 +917,7 @@ impl ControlMessageOwned {
     unsafe fn decode_from(header: &cmsghdr) -> ControlMessageOwned
     {
         let p = unsafe { CMSG_DATA(header) };
+
         // The cast is not unnecessary on all platforms.
         #[allow(clippy::unnecessary_cast)]
         let len = header as *const _ as usize + header.cmsg_len as usize
@@ -941,8 +969,9 @@ impl ControlMessageOwned {
             #[cfg(any(
                 target_os = "android",
                 target_os = "freebsd",
-                apple_targets,
-                target_os = "linux"
+                target_os = "ios",
+                target_os = "linux",
+                target_os = "macos"
             ))]
             #[cfg(feature = "net")]
             (libc::IPPROTO_IPV6, libc::IPV6_PKTINFO) => {
@@ -951,8 +980,9 @@ impl ControlMessageOwned {
             }
             #[cfg(any(
                 target_os = "android",
-                apple_targets,
+                target_os = "ios",
                 target_os = "linux",
+                target_os = "macos",
                 target_os = "netbsd",
             ))]
             #[cfg(feature = "net")]
@@ -962,7 +992,8 @@ impl ControlMessageOwned {
             }
             #[cfg(any(
                 target_os = "freebsd",
-                apple_targets,
+                target_os = "ios",
+                target_os = "macos",
                 target_os = "netbsd",
                 target_os = "openbsd",
             ))]
@@ -973,7 +1004,8 @@ impl ControlMessageOwned {
             },
             #[cfg(any(
                 target_os = "freebsd",
-                apple_targets,
+                target_os = "ios",
+                target_os = "macos",
                 target_os = "netbsd",
                 target_os = "openbsd",
             ))]
@@ -1101,7 +1133,7 @@ pub enum ControlMessage<'a> {
     /// Set IV for `AF_ALG` crypto API.
     ///
     /// For further information, please refer to the
-    /// [`documentation`](https://kernel.readthedocs.io/en/sphinx-samples/crypto-API.html)
+    /// [`documentation`](https://docs.kernel.org/crypto/userspace-if.html)
     #[cfg(any(
         target_os = "android",
         target_os = "linux",
@@ -1111,7 +1143,7 @@ pub enum ControlMessage<'a> {
     /// `ALG_OP_ENCRYPT` or `ALG_OP_DECRYPT`
     ///
     /// For further information, please refer to the
-    /// [`documentation`](https://kernel.readthedocs.io/en/sphinx-samples/crypto-API.html)
+    /// [`documentation`](https://docs.kernel.org/crypto/userspace-if.html)
     #[cfg(any(
         target_os = "android",
         target_os = "linux",
@@ -1121,7 +1153,7 @@ pub enum ControlMessage<'a> {
     /// for `AF_ALG` crypto API.
     ///
     /// For further information, please refer to the
-    /// [`documentation`](https://kernel.readthedocs.io/en/sphinx-samples/crypto-API.html)
+    /// [`documentation`](https://docs.kernel.org/crypto/userspace-if.html)
     #[cfg(any(
         target_os = "android",
         target_os = "linux",
@@ -1138,7 +1170,6 @@ pub enum ControlMessage<'a> {
     /// following one by one, and the last, possibly smaller one.
     #[cfg(target_os = "linux")]
     #[cfg(feature = "net")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     UdpGsoSegments(&'a u16),
 
     /// Configure the sending addressing and interface for v4.
@@ -1146,11 +1177,11 @@ pub enum ControlMessage<'a> {
     /// For further information, please refer to the
     /// [`ip(7)`](https://man7.org/linux/man-pages/man7/ip.7.html) man page.
     #[cfg(any(target_os = "linux",
+              target_os = "macos",
               target_os = "netbsd",
               target_os = "android",
-              apple_targets))]
+              target_os = "ios",))]
     #[cfg(feature = "net")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv4PacketInfo(&'a libc::in_pktinfo),
 
     /// Configure the sending addressing and interface for v6.
@@ -1158,12 +1189,12 @@ pub enum ControlMessage<'a> {
     /// For further information, please refer to the
     /// [`ipv6(7)`](https://man7.org/linux/man-pages/man7/ipv6.7.html) man page.
     #[cfg(any(target_os = "linux",
+              target_os = "macos",
               target_os = "netbsd",
               target_os = "freebsd",
               target_os = "android",
-              apple_targets))]
+              target_os = "ios",))]
     #[cfg(feature = "net")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv6PacketInfo(&'a libc::in6_pktinfo),
 
     /// Configure the IPv4 source address with `IP_SENDSRCADDR`.
@@ -1174,7 +1205,6 @@ pub enum ControlMessage<'a> {
         target_os = "dragonfly",
     ))]
     #[cfg(feature = "net")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv4SendSrcAddr(&'a libc::in_addr),
 
     /// Configure the hop limit for v6 multicast traffic.
@@ -1185,11 +1215,11 @@ pub enum ControlMessage<'a> {
     /// with sendmsg have a hop limit of 1 and will not leave the local network.
     /// For further information, please refer to the
     /// [`ipv6(7)`](https://man7.org/linux/man-pages/man7/ipv6.7.html) man page.
-    #[cfg(any(target_os = "linux", target_os = "freebsd",
-              target_os = "dragonfly", target_os = "android",
-              apple_targets, target_os = "haiku"))]
+    #[cfg(any(target_os = "linux", target_os = "macos",
+              target_os = "freebsd", target_os = "dragonfly",
+              target_os = "android", target_os = "ios",
+              target_os = "haiku"))]
     #[cfg(feature = "net")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv6HopLimit(&'a libc::c_int),
 
     /// SO_RXQ_OVFL indicates that an unsigned 32 bit value
@@ -1290,22 +1320,24 @@ impl<'a> ControlMessage<'a> {
             ControlMessage::UdpGsoSegments(gso_size) => {
                 gso_size as *const _ as *const u8
             },
-            #[cfg(any(target_os = "linux", target_os = "netbsd",
-                      target_os = "android", apple_targets))]
+            #[cfg(any(target_os = "linux", target_os = "macos",
+                      target_os = "netbsd", target_os = "android",
+                      target_os = "ios",))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv4PacketInfo(info) => info as *const _ as *const u8,
-            #[cfg(any(target_os = "linux", target_os = "netbsd",
-                      target_os = "freebsd", target_os = "android",
-                      apple_targets))]
+            #[cfg(any(target_os = "linux", target_os = "macos",
+                      target_os = "netbsd", target_os = "freebsd",
+                      target_os = "android", target_os = "ios",))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv6PacketInfo(info) => info as *const _ as *const u8,
             #[cfg(any(target_os = "netbsd", target_os = "freebsd",
                       target_os = "openbsd", target_os = "dragonfly"))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv4SendSrcAddr(addr) => addr as *const _ as *const u8,
-            #[cfg(any(target_os = "linux", target_os = "freebsd",
-                      target_os = "dragonfly", target_os = "android",
-                      apple_targets, target_os = "haiku"))]
+            #[cfg(any(target_os = "linux", target_os = "macos",
+                      target_os = "freebsd", target_os = "dragonfly",
+                      target_os = "android", target_os = "ios",
+                      target_os = "haiku"))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv6HopLimit(limit) => limit as *const _ as *const u8,
             #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
@@ -1357,22 +1389,24 @@ impl<'a> ControlMessage<'a> {
             ControlMessage::UdpGsoSegments(gso_size) => {
                 mem::size_of_val(gso_size)
             },
-            #[cfg(any(target_os = "linux", target_os = "netbsd",
-                      target_os = "android", apple_targets))]
+            #[cfg(any(target_os = "linux", target_os = "macos",
+              target_os = "netbsd", target_os = "android",
+              target_os = "ios",))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv4PacketInfo(info) => mem::size_of_val(info),
-            #[cfg(any(target_os = "linux", target_os = "netbsd",
-                      target_os = "freebsd", target_os = "android",
-                      apple_targets))]
+            #[cfg(any(target_os = "linux", target_os = "macos",
+              target_os = "netbsd", target_os = "freebsd",
+              target_os = "android", target_os = "ios",))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv6PacketInfo(info) => mem::size_of_val(info),
             #[cfg(any(target_os = "netbsd", target_os = "freebsd",
                       target_os = "openbsd", target_os = "dragonfly"))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv4SendSrcAddr(addr) => mem::size_of_val(addr),
-            #[cfg(any(target_os = "linux", target_os = "freebsd",
-                      target_os = "dragonfly", target_os = "android",
-                      apple_targets, target_os = "haiku"))]
+            #[cfg(any(target_os = "linux", target_os = "macos",
+                      target_os = "freebsd", target_os = "dragonfly",
+                      target_os = "android", target_os = "ios",
+                      target_os = "haiku"))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv6HopLimit(limit) => {
                 mem::size_of_val(limit)
@@ -1402,22 +1436,24 @@ impl<'a> ControlMessage<'a> {
             #[cfg(target_os = "linux")]
             #[cfg(feature = "net")]
             ControlMessage::UdpGsoSegments(_) => libc::SOL_UDP,
-            #[cfg(any(target_os = "linux", target_os = "netbsd",
-                      target_os = "android", apple_targets,))]
+            #[cfg(any(target_os = "linux", target_os = "macos",
+                      target_os = "netbsd", target_os = "android",
+                      target_os = "ios",))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv4PacketInfo(_) => libc::IPPROTO_IP,
-            #[cfg(any(target_os = "linux", target_os = "netbsd",
-                      target_os = "freebsd", target_os = "android",
-                      apple_targets))]
+            #[cfg(any(target_os = "linux", target_os = "macos",
+              target_os = "netbsd", target_os = "freebsd",
+              target_os = "android", target_os = "ios",))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv6PacketInfo(_) => libc::IPPROTO_IPV6,
             #[cfg(any(target_os = "netbsd", target_os = "freebsd",
                       target_os = "openbsd", target_os = "dragonfly"))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv4SendSrcAddr(_) => libc::IPPROTO_IP,
-            #[cfg(any(target_os = "linux", target_os = "freebsd",
-                      target_os = "dragonfly", target_os = "android",
-                      apple_targets, target_os = "haiku"))]
+            #[cfg(any(target_os = "linux", target_os = "macos",
+                      target_os = "freebsd", target_os = "dragonfly",
+                      target_os = "android", target_os = "ios",
+                      target_os = "haiku"))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv6HopLimit(_) => libc::IPPROTO_IPV6,
             #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
@@ -1452,22 +1488,24 @@ impl<'a> ControlMessage<'a> {
             ControlMessage::UdpGsoSegments(_) => {
                 libc::UDP_SEGMENT
             },
-            #[cfg(any(target_os = "linux", target_os = "netbsd",
-                      target_os = "android", apple_targets))]
+            #[cfg(any(target_os = "linux", target_os = "macos",
+                      target_os = "netbsd", target_os = "android",
+                      target_os = "ios",))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv4PacketInfo(_) => libc::IP_PKTINFO,
-            #[cfg(any(target_os = "linux", target_os = "netbsd",
-                      target_os = "freebsd", target_os = "android",
-                      apple_targets))]
+            #[cfg(any(target_os = "linux", target_os = "macos",
+                      target_os = "netbsd", target_os = "freebsd",
+                      target_os = "android", target_os = "ios",))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv6PacketInfo(_) => libc::IPV6_PKTINFO,
             #[cfg(any(target_os = "netbsd", target_os = "freebsd",
                       target_os = "openbsd", target_os = "dragonfly"))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv4SendSrcAddr(_) => libc::IP_SENDSRCADDR,
-            #[cfg(any(target_os = "linux", target_os = "freebsd",
-                      target_os = "dragonfly", target_os = "android",
-                      apple_targets, target_os = "haiku"))]
+            #[cfg(any(target_os = "linux", target_os = "macos",
+                      target_os = "freebsd", target_os = "dragonfly",
+                      target_os = "android", target_os = "ios",
+                      target_os = "haiku"))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv6HopLimit(_) => libc::IPV6_HOPLIMIT,
             #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
@@ -1493,433 +1531,1552 @@ impl<'a> ControlMessage<'a> {
     }
 }
 
-
-/// Send data in scatter-gather vectors to a socket, possibly accompanied
-/// by ancillary data. Optionally direct the message at the given address,
-/// as with sendto.
+/// Variants to be used with [`cmsg_space!`].
 ///
-/// Allocates if cmsgs is nonempty.
+/// You shouldn't need to use this type directly.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[non_exhaustive]
+pub enum ControlMessageOwnedSpace {
+    /// See [`ControlMessageOwned::ScmRights`].
+    ///
+    /// Argument is the number of file descriptors.
+    ScmRights(usize),
+    /// See [`ControlMessageOwned::ScmCredentials`].
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    ScmCredentials,
+    /// See [`ControlMessageOwned::ScmCreds`].
+    #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
+    ScmCreds,
+    /// See [`ControlMessageOwned::ScmTimestamp`].
+    ScmTimestamp,
+    /// See [`ControlMessageOwned::ScmTimestampns`].
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    ScmTimestampsns,
+    /// See [`ControlMessageOwned::ScmTimestampns`].
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    ScmTimestampns,
+    /// See [`ControlMessageOwned::Ipv4PacketInfo`].
+    #[cfg(any(
+        target_os = "android",
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "netbsd",
+    ))]
+    #[cfg(feature = "net")]
+    Ipv4PacketInfo,
+    /// See [`ControlMessageOwned::Ipv6PacketInfo`].
+    #[cfg(any(
+        target_os = "android",
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "openbsd",
+        target_os = "netbsd",
+    ))]
+    #[cfg(feature = "net")]
+    Ipv6PacketInfo,
+    /// See [`ControlMessageOwned::Ipv4RecvIf`].
+    #[cfg(any(
+        target_os = "freebsd",
+        target_os = "ios",
+        target_os = "macos",
+        target_os = "netbsd",
+        target_os = "openbsd",
+    ))]
+    #[cfg(feature = "net")]
+    Ipv4RecvIf,
+    /// See [`ControlMessageOwned::Ipv4RecvDstAddr`].
+    #[cfg(any(
+        target_os = "freebsd",
+        target_os = "ios",
+        target_os = "macos",
+        target_os = "netbsd",
+        target_os = "openbsd",
+    ))]
+    #[cfg(feature = "net")]
+    Ipv4RecvDstAddr,
+    /// See [`ControlMessageOwned::Ipv4OrigDstAddr`].
+    #[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
+    #[cfg(feature = "net")]
+    Ipv4OrigDstAddr,
+    /// See [`ControlMessageOwned::Ipv6OrigDstAddr`].
+    #[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
+    #[cfg(feature = "net")]
+    Ipv6OrigDstAddr,
+    /// See [`ControlMessageOwned::UdpGroSegments`].
+    #[cfg(target_os = "linux")]
+    #[cfg(feature = "net")]
+    UdpGroSegments,
+    /// See [`ControlMessageOwned::RxqOvfl`].
+    #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+    RxqOvfl,
+    /// See [`ControlMessageOwned::Ipv4RecvErr`].
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(feature = "net")]
+    Ipv4RecvErr,
+    /// See [`ControlMessageOwned::Ipv6RecvErr`].
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(feature = "net")]
+    Ipv6RecvErr,
+    /// See [`ControlMessageOwned::TlsGetRecordType`].
+    #[cfg(target_os = "linux")]
+    TlsGetRecordType,
+}
+
+impl ControlMessageOwnedSpace {
+    const fn len(self) -> usize {
+        match self {
+            Self::ScmRights(n) => n * mem::size_of::<RawFd>(),
+            #[cfg(any(target_os = "android", target_os = "linux"))]
+            Self::ScmCredentials => mem::size_of::<UnixCredentials>(),
+            #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
+            Self::ScmCreds => mem::size_of::<UnixCredentials>(),
+            Self::ScmTimestamp => mem::size_of::<TimeVal>(),
+            #[cfg(any(target_os = "android", target_os = "linux"))]
+            Self::ScmTimestampsns => mem::size_of::<Timestamps>(),
+            #[cfg(any(target_os = "android", target_os = "linux"))]
+            Self::ScmTimestampns => mem::size_of::<TimeSpec>(),
+            #[cfg(any(
+                target_os = "android",
+                target_os = "ios",
+                target_os = "linux",
+                target_os = "macos",
+                target_os = "netbsd",
+            ))]
+            #[cfg(feature = "net")]
+            Self::Ipv4PacketInfo => mem::size_of::<libc::in_pktinfo>(),
+            #[cfg(any(
+                target_os = "android",
+                target_os = "dragonfly",
+                target_os = "freebsd",
+                target_os = "ios",
+                target_os = "linux",
+                target_os = "macos",
+                target_os = "openbsd",
+                target_os = "netbsd",
+            ))]
+            #[cfg(feature = "net")]
+            Self::Ipv6PacketInfo => mem::size_of::<libc::in6_pktinfo>(),
+            #[cfg(any(
+                target_os = "freebsd",
+                target_os = "ios",
+                target_os = "macos",
+                target_os = "netbsd",
+                target_os = "openbsd",
+            ))]
+            #[cfg(feature = "net")]
+            Self::Ipv4RecvIf => mem::size_of::<libc::sockaddr_dl>(),
+            #[cfg(any(
+                target_os = "freebsd",
+                target_os = "ios",
+                target_os = "macos",
+                target_os = "netbsd",
+                target_os = "openbsd",
+            ))]
+            #[cfg(feature = "net")]
+            Self::Ipv4RecvDstAddr => mem::size_of::<libc::in_addr>(),
+            #[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
+            #[cfg(feature = "net")]
+            Self::Ipv4OrigDstAddr => mem::size_of::<libc::sockaddr_in>(),
+            #[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
+            #[cfg(feature = "net")]
+            Self::Ipv6OrigDstAddr => mem::size_of::<libc::sockaddr_in6>(),
+            #[cfg(target_os = "linux")]
+            #[cfg(feature = "net")]
+            Self::UdpGroSegments => mem::size_of::<u16>(),
+            #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+            Self::RxqOvfl => mem::size_of::<u32>(),
+            #[cfg(any(target_os = "android", target_os = "linux"))]
+            #[cfg(feature = "net")]
+            Self::Ipv4RecvErr => {
+                mem::size_of::<libc::sock_extended_err>() + mem::size_of::<libc::sockaddr_in>()
+            }
+            #[cfg(any(target_os = "android", target_os = "linux"))]
+            #[cfg(feature = "net")]
+            Self::Ipv6RecvErr => {
+                mem::size_of::<libc::sock_extended_err>() + mem::size_of::<libc::sockaddr_in6>()
+            }
+            #[cfg(target_os = "linux")]
+            Self::TlsGetRecordType => mem::size_of::<TlsGetRecordType>(),
+        }
+    }
+
+    #[doc(hidden)]
+    pub const fn space(self) -> usize {
+        // SAFETY: CMSG_SPACE has no sideeffects and is always safe.
+        unsafe { CMSG_SPACE(self.len() as libc::c_uint) as usize }
+    }
+}
+
+/// Sends a message through a connection-mode or connectionless-mode socket.
+///
+/// If the socket is a connectionless-mode socket, the message will *usually* be sent
+/// to the address passed in `addr`. Click [here] for more information.
+///
+/// If the socket is connection-mode, `addr` will be ignored. In that case, using
+/// [`Addr::empty`] for `addr` is recommended.
+///
+/// Additionally to [`sendto`], it also allows to send control messages.
+///
+/// [Further reading]
 ///
 /// # Examples
-/// When not directing to any specific address, use `()` for the generic type
-/// ```
-/// # use nix::sys::socket::*;
-/// # use nix::unistd::pipe;
-/// # use std::io::IoSlice;
-/// # use std::os::unix::io::AsRawFd;
-/// let (fd1, fd2) = socketpair(AddressFamily::Unix, SockType::Stream, None,
-///     SockFlag::empty())
-///     .unwrap();
-/// let (r, w) = pipe().unwrap();
 ///
-/// let iov = [IoSlice::new(b"hello")];
-/// let fds = [r.as_raw_fd()];
-/// let cmsg = ControlMessage::ScmRights(&fds);
-/// sendmsg::<()>(fd1.as_raw_fd(), &iov, &[cmsg], MsgFlags::empty(), None).unwrap();
-/// ```
-/// When directing to a specific address, the generic type will be inferred.
-/// ```
-/// # use nix::sys::socket::*;
-/// # use nix::unistd::pipe;
-/// # use std::io::IoSlice;
-/// # use std::str::FromStr;
-/// # use std::os::unix::io::AsRawFd;
-/// let localhost = SockaddrIn::from_str("1.2.3.4:8080").unwrap();
-/// let fd = socket(AddressFamily::Inet, SockType::Datagram, SockFlag::empty(),
-///     None).unwrap();
-/// let (r, w) = pipe().unwrap();
+/// See [`recvmsg`] for an example using both functions.
 ///
-/// let iov = [IoSlice::new(b"hello")];
-/// let fds = [r.as_raw_fd()];
-/// let cmsg = ControlMessage::ScmRights(&fds);
-/// sendmsg(fd.as_raw_fd(), &iov, &[cmsg], MsgFlags::empty(), Some(&localhost)).unwrap();
-/// ```
-pub fn sendmsg<S>(fd: RawFd, iov: &[IoSlice<'_>], cmsgs: &[ControlMessage],
-               flags: MsgFlags, addr: Option<&S>) -> Result<usize>
-    where S: SockaddrLike
-{
-    let capacity = cmsgs.iter().map(|c| c.space()).sum();
-
-    // First size the buffer needed to hold the cmsgs.  It must be zeroed,
-    // because subsequent code will not clear the padding bytes.
-    let mut cmsg_buffer = vec![0u8; capacity];
-
-    let mhdr = pack_mhdr_to_send(&mut cmsg_buffer[..], iov, cmsgs, addr);
-
-    let ret = unsafe { libc::sendmsg(fd, &mhdr, flags.bits()) };
-
-    Errno::result(ret).map(|r| r as usize)
-}
-
-
-/// An extension of `sendmsg` that allows the caller to transmit multiple
-/// messages on a socket using a single system call. This has performance
-/// benefits for some applications.
-///
-/// Allocations are performed for cmsgs and to build `msghdr` buffer
-///
-/// # Arguments
-///
-/// * `fd`:             Socket file descriptor
-/// * `data`:           Struct that implements `IntoIterator` with `SendMmsgData` items
-/// * `flags`:          Optional flags passed directly to the operating system.
-///
-/// # Returns
-/// `Vec` with numbers of sent bytes on each sent message.
-///
-/// # References
-/// [`sendmsg`](fn.sendmsg.html)
-#[cfg(any(
-    target_os = "linux",
-    target_os = "android",
-    target_os = "freebsd",
-    target_os = "netbsd",
-))]
-pub fn sendmmsg<'a, XS, AS, C, I, S>(
+/// [here]: https://pubs.opengroup.org/onlinepubs/9699919799/functions/sendmsg.html
+/// [Further reading]: https://pubs.opengroup.org/onlinepubs/9699919799/functions/sendmsg.html
+pub fn sendmsg<'a, A, I>(
     fd: RawFd,
-    data: &'a mut MultiHeaders<S>,
-    slices: XS,
-    // one address per group of slices
-    addrs: AS,
-    // shared across all the messages
-    cmsgs: C,
-    flags: MsgFlags
-) -> crate::Result<MultiResults<'a, S>>
-    where
-        XS: IntoIterator<Item = I>,
-        AS: AsRef<[Option<S>]>,
-        I: AsRef<[IoSlice<'a>]>,
-        C: AsRef<[ControlMessage<'a>]>,
-        S: SockaddrLike,
+    addr: A,
+    iov: &I,
+    cmsgs: &CmsgStr,
+    flags: MsgFlags,
+) -> Result<SendMsgResult>
+where
+    A: AsRef<Addr>,
+    I: AsRef<[IoSlice<'a>]>,
 {
+    let header = sendmsg_header(addr.as_ref(), iov.as_ref(), cmsgs);
 
-    let mut count = 0;
+    let ret = unsafe { libc::sendmsg(fd, &header, flags.bits()) };
 
+    let bytes = Errno::result(ret).map(|x| x as usize)?;
 
-    for (i, ((slice, addr), mmsghdr)) in slices.into_iter().zip(addrs.as_ref()).zip(data.items.iter_mut() ).enumerate() {
-        let p = &mut mmsghdr.msg_hdr;
-        p.msg_iov = slice.as_ref().as_ptr().cast_mut().cast();
-        p.msg_iovlen = slice.as_ref().len() as _;
+    Ok(SendMsgResult { bytes })
+}
 
-        p.msg_namelen = addr.as_ref().map_or(0, S::len);
-        p.msg_name = addr.as_ref().map_or(ptr::null(), S::as_ptr).cast_mut().cast();
+/// Receives a message from a connection-mode or connectionless-mode socket.
+///
+/// It is normally used with connectionless-mode sockets because it permits the application to
+/// retrieve the source address of received data.
+///
+/// Additionally to [`recvfrom`], it also allows to receive control messages.
+///
+/// [Further reading]
+///
+/// # Examples
+///
+/// The following example runs on Linux and Android only.
+///
+#[cfg_attr(any(target_os = "linux", target_os = "android"), doc = "```")]
+#[cfg_attr(not(any(target_os = "linux", target_os = "android")), doc = "```ignore")]
+/// # use nix::sys::socket::*;
+/// # use nix::cmsg_buf;
+/// # use nix::sys::socket::sockopt::Timestamping;
+/// # use std::os::fd::AsRawFd;
+/// # use std::io::{IoSlice, IoSliceMut};
+/// // We use connectionless UDP sockets.
+/// let send = socket(
+///     AddressFamily::INET,
+///     SockType::Datagram,
+///     SockFlag::empty(),
+///     Some(SockProtocol::Udp),
+/// )?;
+///
+/// let recv = socket(
+///     AddressFamily::INET,
+///     SockType::Datagram,
+///     SockFlag::empty(),
+///     Some(SockProtocol::Udp),
+/// )?;
+///
+/// // We enable timestamping on the receiving socket. They will be sent as
+/// // control messages by the kernel.
+/// setsockopt(&recv, Timestamping, &TimestampingFlag::all())?;
+///
+/// // This is the address we are going to send the message.
+/// let addr = "127.0.0.1:6069".parse::<Ipv4Address>().unwrap();
+///
+/// bind(recv.as_raw_fd(), &addr)?;
+///
+/// // The message we are trying to send: [0, 1, 2, ...].
+/// let msg: [u8; 1500] = std::array::from_fn(|i| i as u8);
+///
+/// // Send `msg` on `send` without control messages.
+/// //
+/// // On connectionless sockets like UDP, the destination address is required.
+/// // On connection-oriented sockets like TCP, `addr` would be ignored
+/// // and `None` is usually passed instead.
+/// let send_res = sendmsg(
+///     send.as_raw_fd(),
+///     &addr,
+///     &[IoSlice::new(&msg)],
+///     CmsgStr::empty(),
+///     MsgFlags::empty(),
+/// )?;
+///
+/// // We have actually sent 1500 bytes.
+/// assert_eq!(send_res.bytes(), 1500);
+///
+/// // Initialize a buffer to receive `msg`.
+/// let mut buf = [0u8; 1500];
+///
+/// // The timestamps will land here. The control message type is `ScmTimestampsns`.
+/// let mut cmsg = cmsg_buf![ScmTimestampsns];
+///
+/// // Receive `msg` on `recv`.
+/// let recv_res = recvmsg(
+///     recv.as_raw_fd(),
+///     &mut [IoSliceMut::new(&mut buf)],
+///     cmsg.handle(),
+///     MsgFlags::empty(),
+/// )?;
+///
+/// // We have actually received 1500 bytes.
+/// assert_eq!(recv_res.bytes(), 1500);
+///
+/// // Since this is a connectionless socket, the sender address is returned.
+/// // On connection-oriented sockets like TCP, this would be `None`.
+/// assert!(recv_res.address().family() == AddressFamily::INET);
+///
+/// // The received message is identical to the sent one.
+/// assert_eq!(buf, msg);
+///
+/// // We have received a control message containing a timestamp.
+/// assert!(matches!(
+///     cmsg.iter().next(),
+///     Some(ControlMessageOwned::ScmTimestampsns(_)),
+/// ));
+/// # Ok::<(), nix::Error>(())
+/// ```
+///
+/// [Further reading]: https://pubs.opengroup.org/onlinepubs/9699919799/functions/recvmsg.html
+pub fn recvmsg(
+    fd: RawFd,
+    iov: &mut [IoSliceMut<'_>],
+    mut cmsg_buffer: CmsgBufHandle<'_>,
+    flags: MsgFlags,
+) -> Result<RecvMsgResult> {
+    let mut addr_buf = Address::default();
 
-        // Encode each cmsg.  This must happen after initializing the header because
-        // CMSG_NEXT_HDR and friends read the msg_control and msg_controllen fields.
-        // CMSG_FIRSTHDR is always safe
-        let mut pmhdr: *mut cmsghdr = unsafe { CMSG_FIRSTHDR(p) };
-        for cmsg in cmsgs.as_ref() {
-            assert_ne!(pmhdr, ptr::null_mut());
-            // Safe because we know that pmhdr is valid, and we initialized it with
-            // sufficient space
-            unsafe { cmsg.encode_into(pmhdr) };
-            // Safe because mhdr is valid
-            pmhdr = unsafe { CMSG_NXTHDR(p, pmhdr) };
-        }
+    let mut header = recvmsg_header(addr_buf.as_mut_ptr(), iov, &mut cmsg_buffer);
 
-        // Doing an unchecked addition is alright here, as the only way to obtain an instance of `MultiHeaders`
-        // is through the `preallocate` function, which takes an `usize` as an argument to define its size,
-        // which also provides an upper bound for the size of this zipped iterator. Thus, `i < usize::MAX` or in
-        // other words: `count` doesn't overflow
-        count = i + 1;
+    let ret = unsafe { libc::recvmsg(fd, &mut header, flags.bits()) };
+
+    let bytes = Errno::result(ret).map(|x| x as usize)?;
+
+    if let Some(len) = cmsg_buffer.len {
+        *len = header.msg_controllen as _;
     }
 
-    // SAFETY: all pointers are guaranteed to be valid for the scope of this function. `count` does represent the
-    // maximum number of messages that can be sent safely (i.e. `count` is the minimum of the sizes of `slices`,
-    // `data.items` and `addrs`)
-    let sent = Errno::result(unsafe {
-        libc::sendmmsg(
-            fd,
-            data.items.as_mut_ptr(),
-            count as _,
-            flags.bits() as _
-        )
-    })? as usize;
+    cfg_if! {
+        if #[cfg(any(
+            target_os = "android",
+            target_os = "fuchsia",
+            target_os = "illumos",
+            target_os = "linux",
+            target_os = "redox",
+        ))] {
+            addr_buf.len = header.msg_namelen as _;
+        }
+    }
 
-    Ok(MultiResults {
-        rmm: data,
-        current_index: 0,
-        received: sent
-    })
-
+    Ok(RecvMsgResult { bytes, hdr: header, addr_buf })
 }
 
-
-#[cfg(any(
-    target_os = "linux",
-    target_os = "android",
-    target_os = "freebsd",
-    target_os = "netbsd",
-))]
-#[derive(Debug)]
-/// Preallocated structures needed for [`recvmmsg`] and [`sendmmsg`] functions
-pub struct MultiHeaders<S> {
-    // preallocated boxed slice of mmsghdr
-    items: Box<[libc::mmsghdr]>,
-    addresses: Box<[mem::MaybeUninit<S>]>,
-    // while we are not using it directly - this is used to store control messages
-    // and we retain pointers to them inside items array
-    _cmsg_buffers: Option<Box<[u8]>>,
-    msg_controllen: usize,
+/// Primitive for encoded control messages that can be **sent**.
+#[derive(Debug, PartialEq, Eq, Hash)]
+#[cfg_attr(not(doc), repr(transparent))]
+pub struct CmsgStr {
+    slice: [u8],
 }
 
-#[cfg(any(
-    target_os = "linux",
-    target_os = "android",
-    target_os = "freebsd",
-    target_os = "netbsd",
-))]
-impl<S> MultiHeaders<S> {
-    /// Preallocate structure used by [`recvmmsg`] and [`sendmmsg`] takes number of headers to preallocate
+impl CmsgStr {
+    /// Creates an empty [`CmsgStr`] with zero length.
+    pub const fn empty() -> &'static Self {
+        unsafe { Self::from_bytes_unchecked(&[]) }
+    }
+
+    /// Creates a new [`CmsgStr`] from the given bytes.
     ///
-    /// `cmsg_buffer` should be created with [`cmsg_space!`] if needed
-    pub fn preallocate(num_slices: usize, cmsg_buffer: Option<Vec<u8>>) -> Self
+    /// [`write_cmsg_into`] can be used to encode an iterator of [`ControlMessage`]s
+    /// into a buffer.
+    ///
+    /// # Safety
+    ///
+    /// The given bytes must contain valid encoded control messages.
+    pub const unsafe fn from_bytes_unchecked(bytes: &[u8]) -> &Self {
+        unsafe { &*(bytes as *const [u8] as *const Self) }
+    }
+
+    /// Returns a raw pointer to the buffer.
+    pub const fn as_ptr(&self) -> *const u8 {
+        self.slice.as_ptr()
+    }
+
+    /// Returns the length of the buffer.
+    pub const fn len(&self) -> usize {
+        self.slice.len()
+    }
+
+    /// Returns whether the buffer is empty.
+    pub const fn is_empty(&self) -> bool {
+        self.slice.len() == 0
+    }
+}
+
+impl Default for &CmsgStr {
+    fn default() -> Self {
+        CmsgStr::empty()
+    }
+}
+
+/// Mutable handle to an control message buffer to be used with [`recvmsg`].
+///
+/// The handle contains a mutable reference to the (uninitialized) buffer and a
+/// mutable reference to the length of the buffer, which is used to update the
+/// length of valid control messages.
+#[derive(Debug)]
+pub struct CmsgBufHandle<'a> {
+    buf: &'a mut [MaybeUninit<u8>],
+    // Invariant: `len` is always `Some` if `buf` is not empty.
+    len: Option<&'a mut usize>,
+}
+
+impl<'a> CmsgBufHandle<'a> {
+    /// An empty handle.
+    ///
+    /// Use this if no control messages are needed.
+    pub fn empty() -> Self {
+        Self { buf: &mut [], len: None }
+    }
+
+    /// Creates a new handle for the given buffer and length.
+    ///
+    /// # Safety
+    ///
+    /// Normally casting a `&mut [u8]` to `&mut [MaybeUninit<u8>]` would be unsound,
+    /// as that allows us to write uninitialised bytes to the buffer. However this
+    /// implementation promises to not write uninitialised bytes to the buffer and
+    /// passes it directly to the system call. This promise ensures that this
+    /// function can be called using a buffer of type `&mut [u8]`.
+
+    // Safety doc based on https://docs.rs/socket2/latest/socket2/struct.Socket.html#safety.
+    pub fn new(buf: &'a mut [MaybeUninit<u8>], len: &'a mut usize) -> Self {
+        Self { buf, len: Some(len) }
+    }
+
+    fn capacity(&self) -> usize {
+        self.buf.len()
+    }
+
+    fn as_mut_ptr(&mut self) -> *mut u8 {
+        self.buf.as_mut_ptr().cast()
+    }
+}
+
+impl Default for CmsgBufHandle<'_> {
+    fn default() -> Self {
+        Self::empty()
+    }
+}
+
+/// Writes the given control messages into the given buffer.
+///
+/// Buffers are zero-initialized before writing. If the buffer is already zero-initialized,
+/// consider using [`write_cmsg_into_unchecked`] instead.
+///
+/// Returns the number of bytes written into the buffer. If the buffer was too small,
+/// the first control message that didn't fit in is returned additionally.
+pub fn write_cmsg_into<'a, I>(
+    buf: &mut [u8],
+    cmsg: I,
+) -> std::result::Result<usize, (usize, ControlMessage<'a>)>
+where
+    I: IntoIterator<Item = ControlMessage<'a>>,
+{
+    buf.iter_mut().for_each(|b| *b = 0);
+
+    // SAFETY: `buf` has been zero-initialized.
+    unsafe {
+        write_cmsg_into_unchecked(buf, cmsg)
+    }
+}
+
+/// Writes the given control messages into the given buffer.
+///
+/// Returns the number of bytes written into the buffer. If the buffer was too small,
+/// the first control message that didn't fit in is returned additionally.
+///
+/// # Safety
+///
+/// `buf` must be zero-initialized before calling this function.
+pub unsafe fn write_cmsg_into_unchecked<'a, I>(
+    buf: &mut [u8],
+    cmsg: I,
+) -> std::result::Result<usize, (usize, ControlMessage<'a>)>
+where
+    I: IntoIterator<Item = ControlMessage<'a>>,
+{
+    let mut mhdr = cmsg_dummy_mhdr(buf.as_mut_ptr(), buf.len());
+
+    // SAFETY: call to extern function without sideeffects. We need to start from a mutable
+    // reference before casting it to a `*const` as we want to use the resulting pointer mutably.
+    let mut cmsg_ptr = unsafe { CMSG_FIRSTHDR(mhdr.as_mut_ptr().cast_const()) };
+
+    let mut written = 0;
+
+    let mut cmsg = cmsg.into_iter();
+
+    for c in cmsg.by_ref() {
+        if cmsg_ptr.is_null() || c.space() > buf.len() - written {
+            return Err((written, c));
+        }
+
+        written += c.space();
+
+        // SAFETY: we checked that there is enough space in `buf`.
+        // Additionally, relies on `CMSG_FIRSTHDR` and `CMSG_NXTHDR` for safety.
+        // `CMSG_FIRSTHDR` and `CMSG_NXTHDR` shouldn't care about the other
+        // uninitialized fields of `mhdr`.
+        //
+        // See https://man7.org/linux/man-pages/man3/cmsg.3.html.
+        unsafe {
+            c.encode_into(cmsg_ptr.cast());
+        }
+
+        // SAFETY: call to extern function without sideeffects. We need to start from a mutable
+        // reference before casting it to a `*const` as we want to use the resulting pointer mutably.
+        cmsg_ptr = unsafe { CMSG_NXTHDR(mhdr.as_mut_ptr().cast_const(), cmsg_ptr) };
+    }
+
+    Ok(written)
+}
+
+// FIXME: make `const` once possible in stable rust. Last checked: 1.73.0.
+fn cmsg_dummy_mhdr(buf: *mut u8, len: usize) -> MaybeUninit<libc::msghdr> {
+    let mut mhdr = MaybeUninit::<libc::msghdr>::zeroed();
+
+    // SAFETY: using `ptr::write` to not drop the old uninitialized value and `addr_of_mut`
+    // to not create references of `libc::msghdr` along the way.
+    unsafe {
+        addr_of_mut!((*mhdr.as_mut_ptr()).msg_control).write(buf.cast());
+        addr_of_mut!((*mhdr.as_mut_ptr()).msg_controllen).write(len as _);
+    }
+
+    mhdr
+}
+
+/// Returns the exact number of bytes required to hold the given control messages.
+pub fn cmsg_space_iter<'a, I>(cmsg: I) -> usize
+where
+    I: IntoIterator<Item = ControlMessage<'a>>,
+{
+    cmsg.into_iter().map(|c| c.space()).sum()
+}
+
+/// Non-extendable heap-allocated container for holding control messages
+/// that can be **sent**.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct CmsgVec {
+    inner: Vec<u8>,
+}
+
+impl CmsgVec {
+    /// Returns an empty [`CmsgVec`].
+    ///
+    /// No allocations are performed. Use this if no control messages are needed.
+    pub const fn empty() -> Self {
+        Self { inner: Vec::new() }
+    }
+
+    /// Returns an empty [`CmsgVec`] with the given capacity.
+    pub fn with_capacity(cap: usize) -> Self {
+        Self { inner: Vec::with_capacity(cap) }
+    }
+
+    /// Allocates a buffer that contains the given control messages.
+    ///
+    /// The `size` parameter determines the size of the allocation in bytes.
+    /// [`cmsg_space_iter`] can be used to calculate the exact number of bytes required to
+    /// hold the control messages.
+    ///
+    /// If `size` is too small, the first control message that didn't fit in is returned additionally.
+    pub fn from_iter<'a, I>(
+        cmsg: I,
+        size: usize,
+    ) -> std::result::Result<Self, (Self, ControlMessage<'a>)>
     where
-        S: Copy + SockaddrLike,
+        I: IntoIterator<Item = ControlMessage<'a>>,
     {
-        // we will be storing pointers to addresses inside mhdr - convert it into boxed
-        // slice so it can'be changed later by pushing anything into self.addresses
-        let mut addresses = vec![std::mem::MaybeUninit::<S>::uninit(); num_slices].into_boxed_slice();
+        let mut cmsg_buf = vec![0; size];
 
-        let msg_controllen = cmsg_buffer.as_ref().map_or(0, |v| v.capacity());
+        // SAFETY: `cmsg_buf` is zero-initialized.
+        match unsafe { write_cmsg_into_unchecked(&mut cmsg_buf, cmsg) } {
+            Ok(written) => {
+                cmsg_buf.truncate(written);
 
-        // we'll need a cmsg_buffer for each slice, we preallocate a vector and split
-        // it into "slices" parts
-        let mut cmsg_buffers =
-            cmsg_buffer.map(|v| vec![0u8; v.capacity() * num_slices].into_boxed_slice());
+                Ok(Self {
+                    inner: cmsg_buf,
+                })
+            }
+            Err((written, i)) => {
+                cmsg_buf.truncate(written);
 
-        let items = addresses
-            .iter_mut()
-            .enumerate()
-            .map(|(ix, address)| {
-                let (ptr, cap) = match &mut cmsg_buffers {
-                    Some(v) => ((&mut v[ix * msg_controllen] as *mut u8), msg_controllen),
-                    None => (std::ptr::null_mut(), 0),
-                };
-                let msg_hdr = unsafe { pack_mhdr_to_receive(std::ptr::null_mut(), 0, ptr, cap, address.as_mut_ptr()) };
-                libc::mmsghdr {
-                    msg_hdr,
-                    msg_len: 0,
-                }
-            })
-            .collect::<Vec<_>>();
+                Err((
+                    Self {
+                        inner: cmsg_buf,
+                    },
+                    i,
+                ))
+            }
+        }
+    }
 
-        Self {
-            items: items.into_boxed_slice(),
-            addresses,
-            _cmsg_buffers: cmsg_buffers,
-            msg_controllen,
+    /// Allocates a buffer that contains the given control messages.
+    ///
+    /// This is a shorthand for calling [`cmsg_space_iter`] with the cloned iterator,
+    /// followed by [`Self::from_iter`].
+    pub fn from_iter_clone<'a, I>(cmsg: I) -> Self
+    where
+        I: IntoIterator<Item = ControlMessage<'a>>,
+        I::IntoIter: Clone,
+    {
+        let cmsg = cmsg.into_iter();
+
+        let len = cmsg_space_iter(cmsg.clone());
+
+        Self::from_iter(cmsg, len).unwrap()
+    }
+
+    /// Writes the given control messages into the buffer, replacing the previous contents.
+    ///
+    /// The `size` parameter determines the minimum size of the allocation in bytes, but the internal
+    /// storage might allocate more. [`cmsg_space_iter`] can be used to calculate the exact number of
+    /// bytes required to hold the control messages.
+    ///
+    /// If `size` is too small, the first control message that didn't fit in is returned additionally.
+    ///
+    /// This function does not allocate if `size` is smaller than the current capacity.
+    pub fn write_iter<'a, I>(
+        &mut self,
+        cmsg: I,
+        size: usize,
+    ) -> std::result::Result<(), ControlMessage<'a>>
+    where
+        I: IntoIterator<Item = ControlMessage<'a>>,
+    {
+        self.inner.clear();
+        self.inner.reserve(size);
+
+        (0..size).for_each(|_| self.inner.push(0));
+
+        match unsafe { write_cmsg_into_unchecked(&mut self.inner, cmsg) } {
+            Ok(written) => {
+                self.inner.truncate(written);
+
+                Ok(())
+            }
+            Err((written, i)) => {
+                self.inner.truncate(written);
+
+                Err(i)
+            }
+        }
+    }
+
+    /// Writes the given control messages into the buffer, replacing the previous contents.
+    ///
+    /// This is a shorthand for calling [`cmsg_space_iter`] with the cloned iterator,
+    /// followed by [`Self::write_iter`].
+    ///
+    /// This function does not allocate if the calculated size is smaller than the current capacity.
+    pub fn write_iter_clone<'a, I>(&mut self, cmsg: I)
+    where
+        I: IntoIterator<Item = ControlMessage<'a>>,
+        I::IntoIter: Clone,
+    {
+        let cmsg = cmsg.into_iter();
+
+        let len = cmsg_space_iter(cmsg.clone());
+
+        self.write_iter(cmsg, len).unwrap();
+    }
+
+    /// Writes the given control messages into the buffer, replacing the previous contents.
+    ///
+    /// This function does not allocate. If the current allocation can't hold all control messages,
+    /// the first control message that didn't fit in is returned additionally.
+    pub fn write_iter_in_place<'a, I>(&mut self, cmsg: I) -> std::result::Result<(), ControlMessage<'a>>
+    where
+        I: IntoIterator<Item = ControlMessage<'a>>,
+    {
+        self.write_iter(cmsg, self.inner.capacity())
+    }
+
+    /// Returns the length of the buffer.
+    ///
+    /// This is number of bytes that contain valid control messages.
+    pub fn len(&self) -> usize {
+        self.inner.len()
+    }
+
+    /// Returns true if the buffer contains no control messages.
+    pub fn is_empty(&self) -> bool {
+        self.inner.is_empty()
+    }
+
+    /// Returns the capacity of the buffer.
+    ///
+    /// This is the number of bytes that can be written to the buffer.
+    pub fn capacity(&self) -> usize {
+        self.inner.capacity()
+    }
+
+    /// Clears the buffer, removing all control messages.
+    pub fn clear(&mut self) {
+        self.inner.clear();
+    }
+
+    /// Reserves extra capacity for the buffer.
+    ///
+    /// The buffer will be able to hold at least `additional` more bytes
+    /// than its current length.
+    /// If there is already sufficient space, nothing happens.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the new capacity exceeds `isize::MAX`.
+    pub fn reserve(&mut self, additional: usize) {
+        self.inner.reserve(additional);
+    }
+
+    /// Shrinks the capacity of the buffer to at least the maximum of its length
+    /// and the given minimum capacity.
+    pub fn shrink_to(&mut self, min_capacity: usize) {
+        self.inner.shrink_to(min_capacity);
+    }
+
+    /// Shrinks the capacity of the buffer as close as possible to its length.
+    pub fn shrink_to_fit(&mut self) {
+        self.inner.shrink_to_fit();
+    }
+}
+
+impl std::ops::Deref for CmsgVec {
+    type Target = CmsgStr;
+
+    fn deref(&self) -> &Self::Target {
+        // SAFETY: `CmsgVecWrite` is a newtype wrapper around `Vec<u8>`.
+        // `self.inner[..]` is guaranteed to be a valid `CmsgStr`.
+        unsafe { CmsgStr::from_bytes_unchecked(&self.inner) }
+    }
+}
+
+/// Heap-allocated buffer for **receiving** control messages.
+///
+/// # Cloning
+///
+/// In the current implementation, when cloning the buffer, the capacity
+/// is cloned as well, meaning that the cloned allocation will have the same
+/// size as the original one. **This could change in future versions of nix**,
+/// but not without increasing its major version.
+#[derive(Debug, Clone)]
+pub struct CmsgBuf {
+    inner: Vec<MaybeUninit<u8>>,
+    len: usize,
+}
+
+impl CmsgBuf {
+    /// Returns an empty [`CmsgBuf`].
+    ///
+    /// This function doesn't allocate.
+    pub const fn empty() -> Self {
+        Self { inner: Vec::new(), len: 0 }
+    }
+
+    /// Returns an empty [`CmsgBuf`] with the given capacity.
+    pub fn with_capacity(cap: usize) -> Self {
+        let mut inner = Vec::with_capacity(cap);
+
+        // SAFETY: `MaybeUninit` doesn't require initialization, and the length matches
+        // the capacity.
+        unsafe {
+            inner.set_len(cap);
+        }
+
+        Self { inner, len: 0 }
+    }
+
+    /// Returns the capacity of the buffer.
+    pub fn capacity(&self) -> usize {
+        debug_assert_eq!(self.inner.len(), self.inner.capacity());
+
+        self.inner.capacity()
+    }
+
+    /// Returns the length of the buffer with valid control messages.
+    pub fn len(&self) -> usize {
+        self.len
+    }
+
+    /// Returns true if the buffer contains no control messages.
+    pub fn is_empty(&self) -> bool {
+        self.len == 0
+    }
+
+    /// Returns a mutable handle to the buffer to be used with [`recvmsg`].
+    pub fn handle(&mut self) -> CmsgBufHandle<'_> {
+        CmsgBufHandle::new(&mut self.inner, &mut self.len)
+    }
+
+    /// Returns an iterator over the control messages in the buffer.
+    pub fn iter(&self) -> CmsgIterator<'_> {
+        if self.len == 0 {
+            let mhdr = cmsg_dummy_mhdr(ptr::null_mut(), 0);
+
+            return CmsgIterator { cmsghdr: None, mhdr };
+        }
+
+        let mhdr = cmsg_dummy_mhdr(self.inner.as_ptr().cast_mut().cast(), self.len);
+
+        CmsgIterator {
+            cmsghdr: unsafe { CMSG_FIRSTHDR(mhdr.as_ptr()).as_ref() },
+            mhdr,
         }
     }
 }
 
-/// An extension of recvmsg that allows the caller to receive multiple messages from a socket using a single system call.
+impl Default for CmsgBuf {
+    fn default() -> Self {
+        Self::empty()
+    }
+}
+
+fn sendmsg_header(
+    addr: &Addr,
+    iov: &[IoSlice<'_>],
+    cmsg: &CmsgStr,
+) -> libc::msghdr {
+    let (addr_ptr, addr_len) = if addr.len() == 0 {
+        (ptr::null(), 0)
+    } else {
+        (addr.as_ptr(), addr.len())
+    };
+
+    let (iov_ptr, iov_len) = (iov.as_ptr(), iov.len());
+    let (cmsg_ptr, cmsg_len) = if cmsg.is_empty() {
+        (ptr::null(), 0)
+    } else {
+        (cmsg.as_ptr(), cmsg.len())
+    };
+
+    let mut msg_hdr = MaybeUninit::<libc::msghdr>::zeroed();
+    let msg_hdr_ptr = msg_hdr.as_mut_ptr();
+
+    unsafe {
+        addr_of_mut!((*msg_hdr_ptr).msg_name).write(addr_ptr.cast_mut().cast());
+        addr_of_mut!((*msg_hdr_ptr).msg_namelen).write(addr_len as _);
+        addr_of_mut!((*msg_hdr_ptr).msg_iov).write(iov_ptr.cast_mut().cast());
+        addr_of_mut!((*msg_hdr_ptr).msg_iovlen).write(iov_len as _);
+        addr_of_mut!((*msg_hdr_ptr).msg_control).write(cmsg_ptr.cast_mut().cast());
+        addr_of_mut!((*msg_hdr_ptr).msg_controllen).write(cmsg_len as _);
+    }
+
+    unsafe { msg_hdr.assume_init() }
+}
+
+fn recvmsg_header(
+    addr: *mut libc::sockaddr_storage,
+    iov: &mut [IoSliceMut<'_>],
+    cmsg: &mut CmsgBufHandle<'_>,
+) -> libc::msghdr {
+    let (iov_ptr, iov_len) = (iov.as_mut().as_mut_ptr(), iov.as_mut().len());
+    let (cmsg_ptr, cmsg_len) = if cmsg.capacity() == 0 {
+        (ptr::null_mut(), 0)
+    } else {
+        (cmsg.as_mut_ptr(), cmsg.capacity())
+    };
+
+    let addr_size = mem::size_of::<libc::sockaddr_storage>();
+
+    let (addr_ptr, addr_len) = if addr_size == 0 {
+        (ptr::null_mut(), 0)
+    } else {
+        (addr.cast(), addr_size)
+    };
+
+    let mut msg_hdr = MaybeUninit::<libc::msghdr>::zeroed();
+    let msg_hdr_ptr = msg_hdr.as_mut_ptr();
+
+    unsafe {
+        addr_of_mut!((*msg_hdr_ptr).msg_name).write(addr_ptr);
+        addr_of_mut!((*msg_hdr_ptr).msg_namelen).write(addr_len as _);
+        addr_of_mut!((*msg_hdr_ptr).msg_iov).write(iov_ptr.cast());
+        addr_of_mut!((*msg_hdr_ptr).msg_iovlen).write(iov_len as _);
+        addr_of_mut!((*msg_hdr_ptr).msg_control).write(cmsg_ptr.cast());
+        addr_of_mut!((*msg_hdr_ptr).msg_controllen).write(cmsg_len as _);
+    }
+
+    unsafe { msg_hdr.assume_init() }
+}
+
+/// Growable container holding the headers for [`sendmmsg`].
+///
+/// This allocation can be reused when calling [`sendmmsg`] multiple times,
+/// which can be beneficial for performance.
+#[cfg(any(
+    target_os = "linux",
+    target_os = "android",
+    target_os = "freebsd",
+    target_os = "netbsd",
+))]
+#[derive(Debug, Clone, Default)]
+pub struct SendMmsgHeaders {
+    mmsghdrs: Vec<libc::mmsghdr>,
+    sent: usize,
+}
+
+#[cfg(any(
+    target_os = "linux",
+    target_os = "android",
+    target_os = "freebsd",
+    target_os = "netbsd",
+))]
+impl SendMmsgHeaders {
+    /// Creates a new container for the mmsg-headers.
+    ///
+    /// No allocations are performed.
+    pub const fn new() -> Self {
+        Self {
+            mmsghdrs: Vec::new(),
+            sent: 0,
+        }
+    }
+
+    /// Creates a new container and reserves space for `cap` mmsg-headers.
+    pub fn with_capacity(cap: usize) -> Self {
+        Self {
+            mmsghdrs: Vec::with_capacity(cap),
+            sent: 0,
+        }
+    }
+
+    /// Returns an iterator over [`SendMsgResult`], which contains the
+    /// metadata of the sent messages.
+    pub fn iter(&self) -> SendMmsgIter<'_> {
+        SendMmsgIter { hdrs: self.mmsghdrs[..self.sent].iter() }
+    }
+
+    fn fill_send<'a, I>(&mut self, mut items: I)
+    where
+        I: Iterator<Item = (&'a Addr, &'a [IoSlice<'a>], &'a CmsgStr)> + ExactSizeIterator,
+    {
+        // For panic-safety
+        self.sent = 0;
+
+        let len = items.len();
+
+        self.mmsghdrs.clear();
+        self.mmsghdrs.reserve(len);
+
+        let mut total = 0;
+
+        for (i, (addr, iov, cmsg)) in items.by_ref().take(len).enumerate() {
+            let mmsg_hdr = libc::mmsghdr {
+                msg_hdr: sendmsg_header(addr, iov, cmsg),
+                msg_len: 0,
+            };
+
+            self.mmsghdrs.push(mmsg_hdr);
+
+            total = i + 1;
+        }
+
+
+        if total != len || items.next().is_some() {
+            panic!("Len returned by exact size iterator was not accurate");
+        }
+    }
+}
+
+#[cfg(any(
+    target_os = "linux",
+    target_os = "android",
+    target_os = "freebsd",
+    target_os = "netbsd",
+))]
+unsafe impl Send for SendMmsgHeaders {}
+
+#[cfg(any(
+    target_os = "linux",
+    target_os = "android",
+    target_os = "freebsd",
+    target_os = "netbsd",
+))]
+unsafe impl Sync for SendMmsgHeaders {}
+
+/// An iterator returned by [`SendMmsgHeaders::iter`].
+#[cfg(any(
+    target_os = "linux",
+    target_os = "android",
+    target_os = "freebsd",
+    target_os = "netbsd",
+))]
+#[derive(Debug, Clone)]
+pub struct SendMmsgIter<'a> {
+    hdrs: std::slice::Iter<'a, libc::mmsghdr>,
+}
+
+#[cfg(any(
+    target_os = "linux",
+    target_os = "android",
+    target_os = "freebsd",
+    target_os = "netbsd",
+))]
+impl<'a> Iterator for SendMmsgIter<'a> {
+    type Item = SendMsgResult;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.hdrs.next().map(|hdr| SendMsgResult { bytes: hdr.msg_len as _ })
+    }
+}
+
+#[cfg(any(
+    target_os = "linux",
+    target_os = "android",
+    target_os = "freebsd",
+    target_os = "netbsd",
+))]
+unsafe impl Send for SendMmsgIter<'_> {}
+
+#[cfg(any(
+    target_os = "linux",
+    target_os = "android",
+    target_os = "freebsd",
+    target_os = "netbsd",
+))]
+unsafe impl Sync for SendMmsgIter<'_> {}
+
+/// Growable container holding the headers for [`recvmmsg`].
+///
+/// This allocation can be reused when calling [`recvmmsg`] multiple times,
+/// which can be beneficial for performance.
+#[cfg(any(
+    target_os = "linux",
+    target_os = "android",
+    target_os = "freebsd",
+    target_os = "netbsd",
+))]
+#[derive(Debug, Default)]
+pub struct RecvMmsgHeaders {
+    mmsghdrs: Vec<libc::mmsghdr>,
+    addresses: Vec<Address>,
+    cmsg_len_ptrs: Vec<*mut usize>,
+    recv: usize,
+}
+
+#[cfg(any(
+    target_os = "linux",
+    target_os = "android",
+    target_os = "freebsd",
+    target_os = "netbsd",
+))]
+impl RecvMmsgHeaders {
+    /// Creates a new container for the mmsg-headers.
+    ///
+    /// No allocations are performed.
+    pub const fn new() -> Self {
+        Self {
+            mmsghdrs: Vec::new(),
+            addresses: Vec::new(),
+            cmsg_len_ptrs: Vec::new(),
+            recv: 0,
+        }
+    }
+
+    /// Creates a new container and reserves space for `cap` mmsg-headers.
+    pub fn with_capacity(cap: usize) -> Self {
+        Self {
+            mmsghdrs: Vec::with_capacity(cap),
+            addresses: Vec::with_capacity(cap),
+            cmsg_len_ptrs: Vec::with_capacity(cap),
+            recv: 0,
+        }
+    }
+
+    /// Returns an iterator over [`RecvMsgResult`], which contains the
+    /// metadata of the received messages.
+    pub fn iter(&self) -> RecvMmsgIter<'_> {
+        RecvMmsgIter {
+            hdrs: self.mmsghdrs[..self.recv].iter(),
+            addr: self.addresses[..self.recv].iter(),
+        }
+    }
+
+    fn fill_recv<'a, 'b, I>(&mut self, mut items: I)
+    where
+        'b: 'a,
+        I: Iterator<Item = (&'a mut [IoSliceMut<'b>], CmsgBufHandle<'a>)> + ExactSizeIterator,
+    {
+        // For panic-safety
+        self.recv = 0;
+
+        let len = items.len();
+
+        self.mmsghdrs.clear();
+        self.mmsghdrs.reserve(len);
+
+        self.addresses.clear();
+        self.addresses.reserve(len);
+
+        self.cmsg_len_ptrs.clear();
+        self.cmsg_len_ptrs.reserve(len);
+
+        for _ in 0..len {
+            // FIXME: maybe mem-setting the address buffers to zero is faster?
+            self.addresses.push(Address::default());
+        }
+
+        let mut addresses = self.addresses.iter_mut().map(Address::as_mut_ptr);
+
+        let mut total = 0;
+
+        for (i, (iov, mut cmsg)) in items.by_ref().take(len).enumerate() {
+            let mmsg_hdr = libc::mmsghdr {
+                msg_hdr: recvmsg_header(addresses.next().unwrap(), iov, &mut cmsg),
+                msg_len: 0,
+            };
+
+            self.mmsghdrs.push(mmsg_hdr);
+
+            self.cmsg_len_ptrs.push(cmsg.len.map_or(ptr::null_mut(), |l| l as *mut _));
+
+            total = i + 1;
+        }
+
+        if total != len || items.next().is_some() {
+            panic!("Len returned by exact size iterator was not accurate");
+        }
+    }
+
+    unsafe fn update_lens(&mut self) {
+        for ((mhdr, len), _addr) in self
+            .mmsghdrs
+            .iter()
+            .zip(self.cmsg_len_ptrs.iter_mut())
+            .zip(self.addresses.iter_mut())
+            .take(self.recv)
+        {
+            unsafe {
+                if let Some(len) = len.as_mut() {
+                    *len = mhdr.msg_hdr.msg_controllen as _;
+                }
+            }
+
+            cfg_if! {
+                if #[cfg(any(
+                    target_os = "android",
+                    target_os = "fuchsia",
+                    target_os = "illumos",
+                    target_os = "linux",
+                    target_os = "redox",
+                ))] {
+                    _addr.len = mhdr.msg_hdr.msg_namelen as _;
+                }
+            }
+        }
+    }
+}
+
+#[cfg(any(
+    target_os = "linux",
+    target_os = "android",
+    target_os = "freebsd",
+    target_os = "netbsd",
+))]
+unsafe impl Send for RecvMmsgHeaders {}
+
+#[cfg(any(
+    target_os = "linux",
+    target_os = "android",
+    target_os = "freebsd",
+    target_os = "netbsd",
+))]
+unsafe impl Sync for RecvMmsgHeaders {}
+
+/// An iterator returned by [`RecvMmsgHeaders::iter`].
+#[cfg(any(
+    target_os = "linux",
+    target_os = "android",
+    target_os = "freebsd",
+    target_os = "netbsd",
+))]
+#[derive(Debug, Clone)]
+pub struct RecvMmsgIter<'a> {
+    addr: std::slice::Iter<'a, Address>,
+    hdrs: std::slice::Iter<'a, libc::mmsghdr>,
+}
+
+#[cfg(any(
+    target_os = "linux",
+    target_os = "android",
+    target_os = "freebsd",
+    target_os = "netbsd",
+))]
+impl Iterator for RecvMmsgIter<'_> {
+    type Item = RecvMsgResult;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let hdr = *self.hdrs.next()?;
+        let bytes = hdr.msg_len as _;
+        let addr_buf = *self.addr.next().unwrap();
+
+        Some(RecvMsgResult { bytes, hdr: hdr.msg_hdr, addr_buf })
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.hdrs.size_hint()
+    }
+}
+
+#[cfg(any(
+    target_os = "linux",
+    target_os = "android",
+    target_os = "freebsd",
+    target_os = "netbsd",
+))]
+unsafe impl Send for RecvMmsgIter<'_> {}
+
+#[cfg(any(
+    target_os = "linux",
+    target_os = "android",
+    target_os = "freebsd",
+    target_os = "netbsd",
+))]
+unsafe impl Sync for RecvMmsgIter<'_> {}
+
+/// An extension of [`sendmsg`] that allows the caller to transmit multiple messages on a socket
+/// using a single system call.
 ///
 /// This has performance benefits for some applications.
 ///
-/// This method performs no allocations.
+/// Returns an iterator producing [`SendMsgResult`], one per sent message.
 ///
-/// Returns an iterator producing [`RecvMsg`], one per received messages. Each `RecvMsg` can produce
-/// iterators over [`IoSlice`] with [`iovs`][RecvMsg::iovs`] and
-/// `ControlMessageOwned` with [`cmsgs`][RecvMsg::cmsgs].
+/// # Panics
+///
+/// This function panics if:
+///
+/// - The length of the [`ExactSizeIterator`] is not accurate.
+/// - The number of messages exceeds `u32::MAX` (not applicable for FreeBSD).
 ///
 /// # Bugs (in underlying implementation, at least in Linux)
-/// The timeout argument does not work as intended. The timeout is checked only after the receipt
-/// of each datagram, so that if up to `vlen`-1 datagrams are received before the timeout expires,
-/// but then no further datagrams are received, the call will block forever.
 ///
-/// If an error occurs after at least one message has been received, the call succeeds, and returns
-/// the number of messages received. The error code is expected to be returned on a subsequent
-/// call to recvmmsg(). In the current implementation, however, the error code can be
-/// overwritten in the meantime by an unrelated network event on a socket, for example an
-/// incoming ICMP packet.
-
-// On aarch64 linux using recvmmsg and trying to get hardware/kernel timestamps might not
-// always produce the desired results - see https://github.com/nix-rust/nix/pull/1744 for more
-// details
-
+/// If an error occurs after at least one message has been sent, the
+/// call succeeds, and returns the number of messages sent.  The
+/// error code is lost.  The caller can retry the transmission,
+/// starting at the first failed message, but there is no guarantee
+/// that, if an error is returned, it will be the same as the one
+/// that was lost on the previous call.
+///
+/// # Examples
+///
+/// See [`recvmmsg`] for an example using both functions.
 #[cfg(any(
     target_os = "linux",
     target_os = "android",
     target_os = "freebsd",
     target_os = "netbsd",
 ))]
-pub fn recvmmsg<'a, XS, S, I>(
+pub fn sendmmsg<'a, J, A, I>(
     fd: RawFd,
-    data: &'a mut MultiHeaders<S>,
-    slices: XS,
+    headers: &mut SendMmsgHeaders,
+    items: J,
+    flags: MsgFlags,
+) -> crate::Result<usize>
+where
+    J: IntoIterator<Item = (&'a A, &'a I, &'a CmsgStr)>,
+    J::IntoIter: ExactSizeIterator,
+    A: AsRef<Addr> + ?Sized + 'a,
+    I: AsRef<[IoSlice<'a>]> + ?Sized + 'a,
+{
+    headers.fill_send(items.into_iter().map(|(addr, iov, cmsg)| (addr.as_ref(), iov.as_ref(), cmsg)));
+
+    #[cfg(not(target_os = "freebsd"))]
+    let mmsghdrs_len = headers.mmsghdrs.len().try_into().unwrap();
+
+    #[cfg(target_os = "freebsd")]
+    let mmsghdrs_len = headers.mmsghdrs.len() as _;
+
+    let sent = Errno::result(unsafe {
+        libc::sendmmsg(
+            fd,
+            headers.mmsghdrs.as_mut_ptr(),
+            mmsghdrs_len,
+            flags.bits() as _,
+        )
+    })? as usize;
+
+    headers.sent = sent;
+
+    Ok(sent)
+}
+
+/// An extension of [`recvmsg`] that allows the caller to receive multiple messages from a socket
+/// using a single system call.
+///
+/// This has performance benefits for some applications. A further extension over [`recvmsg`] is
+/// support for a timeout on the receive operation.
+///
+/// Returns the number of messages received. The metadata, such as the sender address and length
+/// of the messages, can be accessed by calling [`RecvMmsgHeaders::iter`].
+///
+/// # Panics
+///
+/// This function panics if:
+///
+/// - The length of the [`ExactSizeIterator`] is not accurate.
+/// - The number of messages exceeds `u32::MAX` (not applicable for FreeBSD).
+///
+/// # Bugs (in underlying implementation, at least in Linux)
+///
+/// The timeout argument does not work as intended.  The timeout is
+/// checked only after the receipt of each datagram, so that if not all
+/// datagrams are received before the timeout expires, but
+/// then no further datagrams are received, the call will block
+/// forever.
+///
+/// If an error occurs after at least one message has been received,
+/// the call succeeds, and returns the number of messages received.
+/// The error code is expected to be returned on a subsequent call to
+/// [`recvmmsg`].  In the current implementation, however, the error
+/// code can be overwritten in the meantime by an unrelated network
+/// event on a socket, for example an incoming ICMP packet.
+///
+/// # Examples
+///
+/// ```
+/// # use nix::sys::socket::*;
+/// # use std::os::fd::AsRawFd;
+/// # use std::io::{IoSlice, IoSliceMut};
+/// // We use connectionless UDP sockets.
+/// let send = socket(
+///     AddressFamily::INET,
+///     SockType::Datagram,
+///     SockFlag::empty(),
+///     Some(SockProtocol::Udp),
+/// )?;
+///
+/// let recv = socket(
+///     AddressFamily::INET,
+///     SockType::Datagram,
+///     SockFlag::empty(),
+///     Some(SockProtocol::Udp),
+/// )?;
+///
+/// // This is the address we are going to send the message.
+/// let addr = "127.0.0.1:6069".parse::<Ipv4Address>().unwrap();
+///
+/// bind(recv.as_raw_fd(), &addr)?;
+///
+/// // The two messages we are trying to send: [0, 1, 2, ...] and [0, 2, 4, ...].
+/// let msg_1: [u8; 1500] = std::array::from_fn(|i| i as u8);
+/// let send_iov_1 = [IoSlice::new(&msg_1)];
+///
+/// let msg_2: [u8; 1500] = std::array::from_fn(|i| (i * 2) as u8);
+/// let send_iov_2 = [IoSlice::new(&msg_2)];
+///
+/// // We preallocate headers for 2 messages.
+/// let mut send_headers = SendMmsgHeaders::with_capacity(2);
+///
+/// // Zip everything together.
+/// //
+/// // On connectionless sockets like UDP, destination addresses are required.
+/// // Each message can be sent to a different address.
+/// let send_items = [
+///     (&addr, &send_iov_1, CmsgStr::empty()),
+///     (&addr, &send_iov_2, CmsgStr::empty()),
+/// ];
+///
+/// // Send the messages on the send socket.
+/// let mut sent = sendmmsg(
+///     send.as_raw_fd(),
+///     &mut send_headers,
+///     send_items,
+///     MsgFlags::empty(),
+/// )?;
+///
+/// // We have actually sent 2 messages.
+/// assert_eq!(sent, 2);
+///
+/// // We have actually sent 1500 bytes per message.
+/// assert!(send_headers.iter().all(|res| res.bytes() == 1500));
+///
+/// // Initialize buffers to receive the messages.
+/// let mut buf_1 = [0u8; 1500];
+/// let mut recv_iov_1 = [IoSliceMut::new(&mut buf_1)];
+///
+/// let mut buf_2 = [0u8; 1500];
+/// let mut recv_iov_2 = [IoSliceMut::new(&mut buf_2)];
+///
+/// // We preallocate headers for 2 messages.
+/// let mut recv_headers = RecvMmsgHeaders::new();
+///
+/// // Zip everything together.
+/// let mut recv_items = [
+///     (&mut recv_iov_1, Default::default()),
+///     (&mut recv_iov_2, Default::default()),
+/// ];
+///
+/// // Receive `msg` on `recv`.
+/// let mut recv = recvmmsg(
+///     recv.as_raw_fd(),
+///     &mut recv_headers,
+///     recv_items,
+///     MsgFlags::empty(),
+///     None,
+/// )?;
+///
+/// // We have actually received two messages.
+/// assert_eq!(recv, 2);
+///
+/// // We have actually received 1500 bytes per message.
+/// // Since this is a connectionless socket, the sender address is returned as well.
+/// assert!(recv_headers.iter().all(|res| {
+///     res.bytes() == 1500 && res.address().family() == AddressFamily::INET
+/// }));
+///
+/// // The received messages are identical to the sent ones.
+/// assert_eq!(buf_1, msg_1);
+/// assert_eq!(buf_2, msg_2);
+///
+/// # Ok::<(), nix::Error>(())
+/// ```
+#[cfg(any(
+    target_os = "linux",
+    target_os = "android",
+    target_os = "freebsd",
+    target_os = "netbsd",
+))]
+pub fn recvmmsg<'a, 'b, J, I>(
+    fd: RawFd,
+    headers: &mut RecvMmsgHeaders,
+    items: J,
     flags: MsgFlags,
     mut timeout: Option<crate::sys::time::TimeSpec>,
-) -> crate::Result<MultiResults<'a, S>>
+) -> crate::Result<usize>
 where
-    XS: IntoIterator<Item = I>,
-    I: AsMut<[IoSliceMut<'a>]>,
+    J: IntoIterator<Item = (&'a mut I, CmsgBufHandle<'a>)>,
+    J::IntoIter: ExactSizeIterator,
+    I: AsMut<[IoSliceMut<'b>]> + ?Sized + 'a,
 {
-    let mut count = 0;
-    for (i, (mut slice, mmsghdr)) in slices.into_iter().zip(data.items.iter_mut()).enumerate() {
-        let p = &mut mmsghdr.msg_hdr;
-        p.msg_iov = slice.as_mut().as_mut_ptr().cast();
-        p.msg_iovlen = slice.as_mut().len() as _;
-
-        // Doing an unchecked addition is alright here, as the only way to obtain an instance of `MultiHeaders`
-        // is through the `preallocate` function, which takes an `usize` as an argument to define its size,
-        // which also provides an upper bound for the size of this zipped iterator. Thus, `i < usize::MAX` or in
-        // other words: `count` doesn't overflow
-        count = i + 1;
-    }
+    headers.fill_recv(items.into_iter().map(|(iov, cmsg)| (iov.as_mut(), cmsg)));
 
     let timeout_ptr = timeout
         .as_mut()
         .map_or_else(std::ptr::null_mut, |t| t as *mut _ as *mut libc::timespec);
 
-    // SAFETY: all pointers are guaranteed to be valid for the scope of this function. `count` does represent the
-    // maximum number of messages that can be received safely (i.e. `count` is the minimum of the sizes of `slices` and `data.items`)
-    let received = Errno::result(unsafe {
+    #[cfg(not(target_os = "freebsd"))]
+    let mmsghdrs_len = headers.mmsghdrs.len().try_into().unwrap();
+
+    #[cfg(target_os = "freebsd")]
+    let mmsghdrs_len = headers.mmsghdrs.len() as _;
+
+    let recv = Errno::result(unsafe {
         libc::recvmmsg(
             fd,
-            data.items.as_mut_ptr(),
-            count as _,
+            headers.mmsghdrs.as_mut_ptr(),
+            mmsghdrs_len,
             flags.bits() as _,
             timeout_ptr,
         )
     })? as usize;
 
-    Ok(MultiResults {
-        rmm: data,
-        current_index: 0,
-        received,
-    })
+    headers.recv = recv;
+
+    unsafe {
+        headers.update_lens();
+    }
+
+    Ok(recv)
 }
 
-/// Iterator over results of [`recvmmsg`]/[`sendmmsg`]
-#[cfg(any(
-    target_os = "linux",
-    target_os = "android",
-    target_os = "freebsd",
-    target_os = "netbsd",
-))]
-#[derive(Debug)]
-pub struct MultiResults<'a, S> {
-    // preallocated structures
-    rmm: &'a MultiHeaders<S>,
-    current_index: usize,
-    received: usize,
+/// Contains the metadata for the sent message.
+#[derive(Debug, Clone, Copy)]
+pub struct SendMsgResult {
+    bytes: usize,
 }
 
-#[cfg(any(
-    target_os = "linux",
-    target_os = "android",
-    target_os = "freebsd",
-    target_os = "netbsd",
-))]
-impl<'a, S> Iterator for MultiResults<'a, S>
-where
-    S: Copy + SockaddrLike,
-{
-    type Item = RecvMsg<'a, 'a, S>;
-
-    // The cast is not unnecessary on all platforms.
-    #[allow(clippy::unnecessary_cast)]
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.current_index >= self.received {
-            return None;
-        }
-        let mmsghdr = self.rmm.items[self.current_index];
-
-        // as long as we are not reading past the index writen by recvmmsg - address
-        // will be initialized
-        let address = unsafe { self.rmm.addresses[self.current_index].assume_init() };
-
-        self.current_index += 1;
-        Some(unsafe {
-            read_mhdr(
-                mmsghdr.msg_hdr,
-                mmsghdr.msg_len as isize,
-                self.rmm.msg_controllen,
-                address,
-            )
-        })
+impl SendMsgResult {
+    /// Returns the number of bytes sent.
+    pub fn bytes(&self) -> usize {
+        self.bytes
     }
 }
 
-impl<'a, S> RecvMsg<'_, 'a, S> {
-    /// Iterate over the filled io slices pointed by this msghdr
-    pub fn iovs(&self) -> IoSliceIterator<'a> {
-        IoSliceIterator {
-            index: 0,
-            remaining: self.bytes,
-            slices: unsafe {
-                // safe for as long as mgdr is properly initialized and references are valid.
-                // for multi messages API we initialize it with an empty
-                // slice and replace with a concrete buffer
-                // for single message API we hold a lifetime reference to ioslices
-                std::slice::from_raw_parts(self.mhdr.msg_iov as *const _, self.mhdr.msg_iovlen as _)
-            },
-        }
+unsafe impl Send for SendMsgResult {}
+
+unsafe impl Sync for SendMsgResult {}
+
+/// Contains the metadata for the received message.
+#[derive(Debug, Clone, Copy)]
+pub struct RecvMsgResult {
+    bytes: usize,
+    hdr: libc::msghdr,
+    addr_buf: Address,
+}
+
+impl RecvMsgResult {
+    /// Returns the number of bytes received.
+    pub fn bytes(&self) -> usize {
+        self.bytes
+    }
+
+    /// Returns the address of the sender.
+    ///
+    /// **Note**: This method should only be called if the socket is connectionless.
+    /// When using connection-mode sockets (like TCP), the address of the peer is already known,
+    /// thus the kernel will not return it.
+    pub fn address(&self) -> Address {
+        self.addr_buf
+    }
+
+    /// Returns the received flags of the message from the kernel.
+    pub fn flags(&self) -> MsgFlags {
+        MsgFlags::from_bits_truncate(self.hdr.msg_flags as _)
     }
 }
 
-#[derive(Debug)]
-pub struct IoSliceIterator<'a> {
-    index: usize,
-    remaining: usize,
-    slices: &'a [IoSlice<'a>],
-}
+unsafe impl Send for RecvMsgResult {}
 
-impl<'a> Iterator for IoSliceIterator<'a> {
-    type Item = &'a [u8];
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.index >= self.slices.len() {
-            return None;
-        }
-        let slice = &self.slices[self.index][..self.remaining.min(self.slices[self.index].len())];
-        self.remaining -= slice.len();
-        self.index += 1;
-        if slice.is_empty() {
-            return None;
-        }
-
-        Some(slice)
-    }
-}
+unsafe impl Sync for RecvMsgResult {}
 
 // test contains both recvmmsg and timestaping which is linux only
 // there are existing tests for recvmmsg only in tests/
 #[cfg(target_os = "linux")]
 #[cfg(test)]
 mod test {
-    use crate::sys::socket::{AddressFamily, ControlMessageOwned};
     use crate::*;
     use std::str::FromStr;
-    use std::os::unix::io::AsRawFd;
 
     #[cfg_attr(qemu, ignore)]
     #[test]
-    fn test_recvmm2() -> crate::Result<()> {
-        use crate::sys::socket::{
-            sendmsg, setsockopt, socket, sockopt::Timestamping, MsgFlags, SockFlag, SockType,
-            SockaddrIn, TimestampingFlag,
-        };
+    fn test_recvmm_2() -> crate::Result<()> {
+        use crate::sys::socket::sockopt::Timestamping;
+        use crate::sys::socket::*;
         use std::io::{IoSlice, IoSliceMut};
 
-        let sock_addr = SockaddrIn::from_str("127.0.0.1:6790").unwrap();
+        let sock_addr = Ipv4Address::from_str("127.0.0.1:6791").unwrap();
 
         let ssock = socket(
-            AddressFamily::Inet,
+            AddressFamily::INET,
             SockType::Datagram,
             SockFlag::empty(),
             None,
         )?;
 
         let rsock = socket(
-            AddressFamily::Inet,
+            AddressFamily::INET,
             SockType::Datagram,
             SockFlag::SOCK_NONBLOCK,
             None,
         )?;
 
-        crate::sys::socket::bind(rsock.as_raw_fd(), &sock_addr)?;
+        crate::sys::socket::bind(rsock.as_raw_fd(), sock_addr)?;
 
         setsockopt(&rsock, Timestamping, &TimestampingFlag::all())?;
 
@@ -1942,20 +3099,27 @@ mod test {
         let flags = MsgFlags::empty();
         let iov1 = [IoSlice::new(&sbuf)];
 
-        let cmsg = cmsg_space!(crate::sys::socket::Timestamps);
-        sendmsg(ssock.as_raw_fd(), &iov1, &[], flags, Some(&sock_addr)).unwrap();
+        sendmsg(ssock.as_raw_fd(), sock_addr, &iov1, Default::default(), flags).unwrap();
 
-        let mut data = super::MultiHeaders::<()>::preallocate(recv_iovs.len(), Some(cmsg));
+        let mut headers = super::RecvMmsgHeaders::with_capacity(recv_iovs.len());
+
+        let mut cmsgs = Vec::with_capacity(recv_iovs.len());
+
+        for _ in 0..recv_iovs.len() {
+            cmsgs.push(cmsg_vec_internal![ScmTimestampsns]);
+        }
 
         let t = sys::time::TimeSpec::from_duration(std::time::Duration::from_secs(10));
 
-        let recv = super::recvmmsg(rsock.as_raw_fd(), &mut data, recv_iovs.iter_mut(), flags, Some(t))?;
+        let items = recv_iovs.iter_mut().zip(cmsgs.iter_mut().map(CmsgBuf::handle));
 
-        for rmsg in recv {
+        let _ = super::recvmmsg(rsock.as_raw_fd(), &mut headers, items, flags, Some(t))?;
+
+        for (i, rmsg) in headers.iter().enumerate() {
             #[cfg(not(any(qemu, target_arch = "aarch64")))]
             let mut saw_time = false;
-            let mut recvd = 0;
-            for cmsg in rmsg.cmsgs() {
+
+            for cmsg in cmsgs[i].iter() {
                 if let ControlMessageOwned::ScmTimestampsns(timestamps) = cmsg {
                     let ts = timestamps.system;
 
@@ -1977,178 +3141,11 @@ mod test {
             #[cfg(not(any(qemu, target_arch = "aarch64")))]
             assert!(saw_time);
 
-            for iov in rmsg.iovs() {
-                recvd += iov.len();
-            }
-            assert_eq!(recvd, 400);
+            assert_eq!(rmsg.bytes(), 400);
         }
 
         Ok(())
     }
-}
-unsafe fn read_mhdr<'a, 'i, S>(
-    mhdr: msghdr,
-    r: isize,
-    msg_controllen: usize,
-    mut address: S,
-) -> RecvMsg<'a, 'i, S>
-    where S: SockaddrLike
-{
-    // The cast is not unnecessary on all platforms.
-    #[allow(clippy::unnecessary_cast)]
-    let cmsghdr = {
-        let ptr = if mhdr.msg_controllen > 0 {
-            debug_assert!(!mhdr.msg_control.is_null());
-            debug_assert!(msg_controllen >= mhdr.msg_controllen as usize);
-            unsafe { CMSG_FIRSTHDR(&mhdr as *const msghdr) }
-        } else {
-            ptr::null()
-        };
-
-        unsafe {
-            ptr.as_ref()
-        }
-    };
-
-    // Ignore errors if this socket address has statically-known length
-    //
-    // This is to ensure that unix socket addresses have their length set appropriately.
-    let _ = unsafe { address.set_length(mhdr.msg_namelen as usize) };
-
-    RecvMsg {
-        bytes: r as usize,
-        cmsghdr,
-        address: Some(address),
-        flags: MsgFlags::from_bits_truncate(mhdr.msg_flags),
-        mhdr,
-        iobufs: std::marker::PhantomData,
-    }
-}
-
-/// Pack pointers to various structures into into msghdr
-///
-/// # Safety
-/// `iov_buffer` and `iov_buffer_len` must point to a slice
-/// of `IoSliceMut` and number of available elements or be a null pointer and 0
-///
-/// `cmsg_buffer` and `cmsg_capacity` must point to a byte buffer used
-/// to store control headers later or be a null pointer and 0 if control
-/// headers are not used
-///
-/// Buffers must remain valid for the whole lifetime of msghdr
-unsafe fn pack_mhdr_to_receive<S>(
-    iov_buffer: *mut IoSliceMut,
-    iov_buffer_len: usize,
-    cmsg_buffer: *mut u8,
-    cmsg_capacity: usize,
-    address: *mut S,
-) -> msghdr
-    where
-        S: SockaddrLike
-{
-    // Musl's msghdr has private fields, so this is the only way to
-    // initialize it.
-    let mut mhdr = mem::MaybeUninit::<msghdr>::zeroed();
-    let p = mhdr.as_mut_ptr();
-    unsafe {
-        (*p).msg_name = address as *mut c_void;
-        (*p).msg_namelen = S::size();
-        (*p).msg_iov = iov_buffer as *mut iovec;
-        (*p).msg_iovlen = iov_buffer_len as _;
-        (*p).msg_control = cmsg_buffer as *mut c_void;
-        (*p).msg_controllen = cmsg_capacity as _;
-        (*p).msg_flags = 0;
-        mhdr.assume_init()
-    }
-}
-
-fn pack_mhdr_to_send<'a, I, C, S>(
-    cmsg_buffer: &mut [u8],
-    iov: I,
-    cmsgs: C,
-    addr: Option<&S>
-) -> msghdr
-    where
-        I: AsRef<[IoSlice<'a>]>,
-        C: AsRef<[ControlMessage<'a>]>,
-        S: SockaddrLike + 'a
-{
-    let capacity = cmsg_buffer.len();
-
-    // The message header must be initialized before the individual cmsgs.
-    let cmsg_ptr = if capacity > 0 {
-        cmsg_buffer.as_mut_ptr().cast()
-    } else {
-        ptr::null_mut()
-    };
-
-    let mhdr = unsafe {
-        // Musl's msghdr has private fields, so this is the only way to
-        // initialize it.
-        let mut mhdr = mem::MaybeUninit::<msghdr>::zeroed();
-        let p = mhdr.as_mut_ptr();
-        (*p).msg_name = addr.map(S::as_ptr).unwrap_or(ptr::null()).cast_mut().cast();
-        (*p).msg_namelen = addr.map(S::len).unwrap_or(0);
-        // transmute iov into a mutable pointer.  sendmsg doesn't really mutate
-        // the buffer, but the standard says that it takes a mutable pointer
-        (*p).msg_iov = iov.as_ref().as_ptr().cast_mut().cast();
-        (*p).msg_iovlen = iov.as_ref().len() as _;
-        (*p).msg_control = cmsg_ptr;
-        (*p).msg_controllen = capacity as _;
-        (*p).msg_flags = 0;
-        mhdr.assume_init()
-    };
-
-    // Encode each cmsg.  This must happen after initializing the header because
-    // CMSG_NEXT_HDR and friends read the msg_control and msg_controllen fields.
-    // CMSG_FIRSTHDR is always safe
-    let mut pmhdr: *mut cmsghdr = unsafe { CMSG_FIRSTHDR(&mhdr as *const msghdr) };
-    for cmsg in cmsgs.as_ref() {
-        assert_ne!(pmhdr, ptr::null_mut());
-        // Safe because we know that pmhdr is valid, and we initialized it with
-        // sufficient space
-        unsafe { cmsg.encode_into(pmhdr) };
-        // Safe because mhdr is valid
-        pmhdr = unsafe { CMSG_NXTHDR(&mhdr as *const msghdr, pmhdr) };
-    }
-
-    mhdr
-}
-
-/// Receive message in scatter-gather vectors from a socket, and
-/// optionally receive ancillary data into the provided buffer.
-/// If no ancillary data is desired, use () as the type parameter.
-///
-/// # Arguments
-///
-/// * `fd`:             Socket file descriptor
-/// * `iov`:            Scatter-gather list of buffers to receive the message
-/// * `cmsg_buffer`:    Space to receive ancillary data.  Should be created by
-///                     [`cmsg_space!`](../../macro.cmsg_space.html)
-/// * `flags`:          Optional flags passed directly to the operating system.
-///
-/// # References
-/// [recvmsg(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/recvmsg.html)
-pub fn recvmsg<'a, 'outer, 'inner, S>(fd: RawFd, iov: &'outer mut [IoSliceMut<'inner>],
-                   mut cmsg_buffer: Option<&'a mut Vec<u8>>,
-                   flags: MsgFlags) -> Result<RecvMsg<'a, 'outer, S>>
-    where S: SockaddrLike + 'a,
-    'inner: 'outer
-{
-    let mut address = mem::MaybeUninit::uninit();
-
-    let (msg_control, msg_controllen) = cmsg_buffer.as_mut()
-        .map(|v| (v.as_mut_ptr(), v.capacity()))
-        .unwrap_or((ptr::null_mut(), 0));
-    let mut mhdr = unsafe {
-        pack_mhdr_to_receive(iov.as_mut().as_mut_ptr(), iov.len(), msg_control, msg_controllen, address.as_mut_ptr())
-    };
-
-    let ret = unsafe { libc::recvmsg(fd, &mut mhdr, flags.bits()) };
-
-    let r = Errno::result(ret)?;
-
-    Ok(unsafe { read_mhdr(mhdr, r, msg_controllen, address.assume_init()) })
 }
 }
 
@@ -2179,7 +3176,7 @@ pub fn socket<T: Into<Option<SockProtocol>>>(
     let mut ty = ty as c_int;
     ty |= flags.bits();
 
-    let res = unsafe { libc::socket(domain as c_int, ty, protocol) };
+    let res = unsafe { libc::socket(domain.family(), ty, protocol) };
 
     match res {
         -1 => Err(Errno::last()),
@@ -2213,7 +3210,7 @@ pub fn socketpair<T: Into<Option<SockProtocol>>>(
     let mut fds = [-1, -1];
 
     let res = unsafe {
-        libc::socketpair(domain as c_int, ty, protocol, fds.as_mut_ptr())
+        libc::socketpair(domain.family(), ty, protocol, fds.as_mut_ptr())
     };
     Errno::result(res)?;
 
@@ -2234,8 +3231,13 @@ pub fn listen<F: AsFd>(sock: &F, backlog: usize) -> Result<()> {
 /// Bind a name to a socket
 ///
 /// [Further reading](https://pubs.opengroup.org/onlinepubs/9699919799/functions/bind.html)
-pub fn bind(fd: RawFd, addr: &dyn SockaddrLike) -> Result<()> {
-    let res = unsafe { libc::bind(fd, addr.as_ptr(), addr.len()) };
+pub fn bind<A>(fd: RawFd, addr: A) -> Result<()>
+where
+    A: AsRef<Addr>,
+{
+    let res = unsafe {
+        libc::bind(fd, addr.as_ref().as_ptr().cast(), addr.as_ref().len() as _)
+    };
 
     Errno::result(res).map(drop)
 }
@@ -2281,8 +3283,17 @@ pub fn accept4(sockfd: RawFd, flags: SockFlag) -> Result<RawFd> {
 /// Initiate a connection on a socket
 ///
 /// [Further reading](https://pubs.opengroup.org/onlinepubs/9699919799/functions/connect.html)
-pub fn connect(fd: RawFd, addr: &dyn SockaddrLike) -> Result<()> {
-    let res = unsafe { libc::connect(fd, addr.as_ptr(), addr.len()) };
+pub fn connect<A>(fd: RawFd, addr: A) -> Result<()>
+where
+    A: AsRef<Addr>,
+{
+    let res = unsafe {
+        libc::connect(
+            fd,
+            addr.as_ref().as_ptr().cast(),
+            addr.as_ref().len() as _,
+        )
+    };
 
     Errno::result(res).map(drop)
 }
@@ -2309,13 +3320,10 @@ pub fn recv(sockfd: RawFd, buf: &mut [u8], flags: MsgFlags) -> Result<usize> {
 /// address of the sender.
 ///
 /// [Further reading](https://pubs.opengroup.org/onlinepubs/9699919799/functions/recvfrom.html)
-pub fn recvfrom<T: SockaddrLike>(
-    sockfd: RawFd,
-    buf: &mut [u8],
-) -> Result<(usize, Option<T>)> {
+pub fn recvfrom(sockfd: RawFd, buf: &mut [u8]) -> Result<(usize, Address)> {
     unsafe {
-        let mut addr = mem::MaybeUninit::<T>::uninit();
-        let mut len = mem::size_of_val(&addr) as socklen_t;
+        let mut addr = Address::default();
+        let mut len = mem::size_of::<libc::sockaddr_storage>() as socklen_t;
 
         let ret = Errno::result(libc::recvfrom(
             sockfd,
@@ -2326,27 +3334,42 @@ pub fn recvfrom<T: SockaddrLike>(
             &mut len as *mut socklen_t,
         ))? as usize;
 
-        Ok((ret, T::from_raw(addr.assume_init().as_ptr(), Some(len))))
+        cfg_if! {
+            if #[cfg(any(
+                target_os = "android",
+                target_os = "fuchsia",
+                target_os = "illumos",
+                target_os = "linux",
+                target_os = "redox",
+            ))] {
+                addr.len = len as _;
+            }
+        }
+
+        Ok((ret, addr))
     }
 }
 
 /// Send a message to a socket
 ///
 /// [Further reading](https://pubs.opengroup.org/onlinepubs/9699919799/functions/sendto.html)
-pub fn sendto(
+pub fn sendto<A>(
     fd: RawFd,
     buf: &[u8],
-    addr: &dyn SockaddrLike,
+    addr: A,
     flags: MsgFlags,
-) -> Result<usize> {
+) -> Result<usize>
+where
+    A: AsRef<Addr>,
+{
     let ret = unsafe {
         libc::sendto(
             fd,
             buf.as_ptr().cast(),
             buf.len() as size_t,
             flags.bits(),
-            addr.as_ptr(),
-            addr.len(),
+            addr.as_ref().as_ptr().cast(),
+            addr.as_ref().len() as _,
         )
     };
 
@@ -2420,32 +3443,57 @@ pub fn setsockopt<F: AsFd, O: SetSockOpt>(
 /// Get the address of the peer connected to the socket `fd`.
 ///
 /// [Further reading](https://pubs.opengroup.org/onlinepubs/9699919799/functions/getpeername.html)
-pub fn getpeername<T: SockaddrLike>(fd: RawFd) -> Result<T> {
+pub fn getpeername(fd: RawFd) -> Result<Address> {
     unsafe {
-        let mut addr = mem::MaybeUninit::<T>::uninit();
-        let mut len = T::size();
+        let mut addr = Address::default();
+        let mut len = mem::size_of::<libc::sockaddr_storage>() as _;
 
         let ret = libc::getpeername(fd, addr.as_mut_ptr().cast(), &mut len);
 
         Errno::result(ret)?;
 
-        T::from_raw(addr.assume_init().as_ptr(), Some(len)).ok_or(Errno::EINVAL)
+        cfg_if! {
+            if #[cfg(any(
+                target_os = "android",
+                target_os = "fuchsia",
+                target_os = "illumos",
+                target_os = "linux",
+                target_os = "redox",
+            ))] {
+                addr.len = len as _;
+            }
+        }
+
+        Ok(addr)
     }
 }
 
 /// Get the current address to which the socket `fd` is bound.
 ///
 /// [Further reading](https://pubs.opengroup.org/onlinepubs/9699919799/functions/getsockname.html)
-pub fn getsockname<T: SockaddrLike>(fd: RawFd) -> Result<T> {
+pub fn getsockname(fd: RawFd) -> Result<Address> {
     unsafe {
-        let mut addr = mem::MaybeUninit::<T>::uninit();
-        let mut len = T::size();
+        let mut addr = Address::default();
+
+        let mut len = mem::size_of::<libc::sockaddr_storage>() as _;
 
         let ret = libc::getsockname(fd, addr.as_mut_ptr().cast(), &mut len);
 
         Errno::result(ret)?;
 
-        T::from_raw(addr.assume_init().as_ptr(), Some(len)).ok_or(Errno::EINVAL)
+        cfg_if! {
+            if #[cfg(any(
+                target_os = "android",
+                target_os = "fuchsia",
+                target_os = "illumos",
+                target_os = "linux",
+                target_os = "redox",
+            ))] {
+                addr.len = len as _;
+            }
+        }
+
+        Ok(addr)
     }
 }
 
@@ -2481,7 +3529,7 @@ mod tests {
     #[cfg(not(target_os = "redox"))]
     #[test]
     fn can_use_cmsg_space() {
-        let _ = cmsg_space!(u8);
+        let _ = cmsg_space!(ScmTimestamp);
     }
 
     #[cfg(not(any(
@@ -2492,7 +3540,7 @@ mod tests {
     #[test]
     fn can_open_routing_socket() {
         let _ = super::socket(
-            super::AddressFamily::Route,
+            super::AddressFamily::ROUTE,
             super::SockType::Raw,
             super::SockFlag::empty(),
             None,
