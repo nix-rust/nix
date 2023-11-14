@@ -964,6 +964,22 @@ pub unsafe fn signal(signal: Signal, handler: SigHandler) -> Result<SigHandler> 
     })
 }
 
+/// Reset the specified signal to its default action.
+///
+/// `signal` can be any signal except `SIGKILL` or `SIGSTOP`.
+pub fn signal_default(signal: Signal) -> Result<()> {
+    // SAFETY: restoring a default handler is safe if the old handler isn't called
+    unsafe { self::signal(signal, SigHandler::SigDfl) }.map(drop)
+}
+
+/// Ignore the specified signal.
+///
+/// `signal` can be any signal except `SIGKILL` or `SIGSTOP`.
+pub fn signal_ignore(signal: Signal) -> Result<()> {
+    // SAFETY: ignoring a signal is safe if the old handler isn't called
+    unsafe { self::signal(signal, SigHandler::SigIgn) }.map(drop)
+}
+
 fn do_pthread_sigmask(how: SigmaskHow,
                        set: Option<&SigSet>,
                        oldset: Option<*mut libc::sigset_t>) -> Result<()> {
