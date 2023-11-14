@@ -17,36 +17,29 @@ libc_bitflags!(
     pub struct MntFlags: c_int {
         /// ACL support enabled.
         #[cfg(any(target_os = "netbsd", target_os = "freebsd"))]
-        #[cfg_attr(docsrs, doc(cfg(all())))]
         MNT_ACLS;
         /// All I/O to the file system should be done asynchronously.
         MNT_ASYNC;
         /// dir should instead be a file system ID encoded as “FSID:val0:val1”.
         #[cfg(target_os = "freebsd")]
-        #[cfg_attr(docsrs, doc(cfg(all())))]
         MNT_BYFSID;
         /// Force a read-write mount even if the file system appears to be
         /// unclean.
         MNT_FORCE;
         /// GEOM journal support enabled.
         #[cfg(target_os = "freebsd")]
-        #[cfg_attr(docsrs, doc(cfg(all())))]
         MNT_GJOURNAL;
         /// MAC support for objects.
         #[cfg(any(target_os = "macos", target_os = "freebsd"))]
-        #[cfg_attr(docsrs, doc(cfg(all())))]
         MNT_MULTILABEL;
         /// Disable read clustering.
         #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
-        #[cfg_attr(docsrs, doc(cfg(all())))]
         MNT_NOCLUSTERR;
         /// Disable write clustering.
         #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
-        #[cfg_attr(docsrs, doc(cfg(all())))]
         MNT_NOCLUSTERW;
         /// Enable NFS version 4 ACLs.
         #[cfg(target_os = "freebsd")]
-        #[cfg_attr(docsrs, doc(cfg(all())))]
         MNT_NFS4ACLS;
         /// Do not update access times.
         MNT_NOATIME;
@@ -56,7 +49,6 @@ libc_bitflags!(
         MNT_NOSUID;
         /// Do not follow symlinks.
         #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
-        #[cfg_attr(docsrs, doc(cfg(all())))]
         MNT_NOSYMFOLLOW;
         /// Mount read-only.
         MNT_RDONLY;
@@ -67,7 +59,6 @@ libc_bitflags!(
         ///
         /// See [mksnap_ffs(8)](https://www.freebsd.org/cgi/man.cgi?query=mksnap_ffs)
         #[cfg(any(target_os = "macos", target_os = "freebsd"))]
-        #[cfg_attr(docsrs, doc(cfg(all())))]
         MNT_SNAPSHOT;
         /// Using soft updates.
         #[cfg(any(
@@ -76,12 +67,10 @@ libc_bitflags!(
                 target_os = "netbsd",
                 target_os = "openbsd"
         ))]
-        #[cfg_attr(docsrs, doc(cfg(all())))]
         MNT_SOFTDEP;
         /// Directories with the SUID bit set chown new files to their own
         /// owner.
         #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
-        #[cfg_attr(docsrs, doc(cfg(all())))]
         MNT_SUIDDIR;
         /// All I/O to the file system should be done synchronously.
         MNT_SYNCHRONOUS;
@@ -91,14 +80,12 @@ libc_bitflags!(
                 target_os = "freebsd",
                 target_os = "netbsd"
         ))]
-        #[cfg_attr(docsrs, doc(cfg(all())))]
         MNT_UNION;
         /// Indicates that the mount command is being applied to an already
         /// mounted file system.
         MNT_UPDATE;
         /// Check vnode use counts.
         #[cfg(target_os = "freebsd")]
-        #[cfg_attr(docsrs, doc(cfg(all())))]
         MNT_NONBUSY;
     }
 );
@@ -198,7 +185,6 @@ pub type NmountResult = std::result::Result<(), NmountError>;
 /// * [`nmount(2)`](https://www.freebsd.org/cgi/man.cgi?query=nmount)
 /// * [`nullfs(5)`](https://www.freebsd.org/cgi/man.cgi?query=nullfs)
 #[cfg(target_os = "freebsd")]
-#[cfg_attr(docsrs, doc(cfg(all())))]
 #[derive(Debug, Default)]
 pub struct Nmount<'a> {
     // n.b. notgull: In reality, this is a list that contains
@@ -210,7 +196,6 @@ pub struct Nmount<'a> {
 }
 
 #[cfg(target_os = "freebsd")]
-#[cfg_attr(docsrs, doc(cfg(all())))]
 impl<'a> Nmount<'a> {
     /// Helper function to push a slice onto the `iov` array.
     fn push_slice(&mut self, val: &'a [u8], is_owned: bool) {
