@@ -57,7 +57,6 @@ libc_enum! {
                   target_os = "linux",
                   target_os = "netbsd",
                   target_os = "openbsd"))]
-        #[cfg_attr(docsrs, doc(cfg(all())))]
         O_DSYNC
     }
     impl TryFrom<i32>

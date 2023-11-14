@@ -2016,7 +2016,6 @@ pub enum PathconfVar {
     ))]
     /// Minimum number of bits needed to represent, as a signed integer value,
     /// the maximum size of a regular file allowed in the specified directory.
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     FILESIZEBITS = libc::_PC_FILESIZEBITS,
     /// Maximum number of links to a single file.
     LINK_MAX = libc::_PC_LINK_MAX,
@@ -2047,7 +2046,6 @@ pub enum PathconfVar {
         target_os = "redox",
         target_os = "solaris"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     /// Symbolic links can be created.
     POSIX2_SYMLINKS = libc::_PC_2_SYMLINKS,
     #[cfg(any(
@@ -2058,7 +2056,6 @@ pub enum PathconfVar {
         target_os = "openbsd",
         target_os = "redox"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     /// Minimum number of bytes of storage actually allocated for any portion of
     /// a file.
     POSIX_ALLOC_SIZE_MIN = libc::_PC_ALLOC_SIZE_MIN,
@@ -2069,7 +2066,6 @@ pub enum PathconfVar {
         target_os = "linux",
         target_os = "openbsd"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     /// Recommended increment for file transfer sizes between the
     /// `POSIX_REC_MIN_XFER_SIZE` and `POSIX_REC_MAX_XFER_SIZE` values.
     POSIX_REC_INCR_XFER_SIZE = libc::_PC_REC_INCR_XFER_SIZE,
@@ -2081,7 +2077,6 @@ pub enum PathconfVar {
         target_os = "openbsd",
         target_os = "redox"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     /// Maximum recommended file transfer size.
     POSIX_REC_MAX_XFER_SIZE = libc::_PC_REC_MAX_XFER_SIZE,
     #[cfg(any(
@@ -2092,7 +2087,6 @@ pub enum PathconfVar {
         target_os = "openbsd",
         target_os = "redox"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     /// Minimum recommended file transfer size.
     POSIX_REC_MIN_XFER_SIZE = libc::_PC_REC_MIN_XFER_SIZE,
     #[cfg(any(
@@ -2103,7 +2097,6 @@ pub enum PathconfVar {
         target_os = "openbsd",
         target_os = "redox"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     ///  Recommended file transfer buffer alignment.
     POSIX_REC_XFER_ALIGN = libc::_PC_REC_XFER_ALIGN,
     #[cfg(any(
@@ -2117,7 +2110,6 @@ pub enum PathconfVar {
         target_os = "redox",
         target_os = "solaris"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     /// Maximum number of bytes in a symbolic link.
     SYMLINK_MAX = libc::_PC_SYMLINK_MAX,
     /// The use of `chown` and `fchown` is restricted to a process with
@@ -2140,7 +2132,6 @@ pub enum PathconfVar {
         target_os = "redox",
         target_os = "solaris"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     /// Asynchronous input or output operations may be performed for the
     /// associated file.
     _POSIX_ASYNC_IO = libc::_PC_ASYNC_IO,
@@ -2154,7 +2145,6 @@ pub enum PathconfVar {
         target_os = "redox",
         target_os = "solaris"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     /// Prioritized input or output operations may be performed for the
     /// associated file.
     _POSIX_PRIO_IO = libc::_PC_PRIO_IO,
@@ -2169,12 +2159,10 @@ pub enum PathconfVar {
         target_os = "redox",
         target_os = "solaris"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     /// Synchronized input or output operations may be performed for the
     /// associated file.
     _POSIX_SYNC_IO = libc::_PC_SYNC_IO,
     #[cfg(any(target_os = "dragonfly", target_os = "openbsd"))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The resolution in nanoseconds for all file timestamps.
     _POSIX_TIMESTAMP_RESOLUTION = libc::_PC_TIMESTAMP_RESOLUTION,
 }
@@ -2278,12 +2266,10 @@ pub enum SysconfVar {
     /// Maximum number of I/O operations in a single list I/O call supported by
     /// the implementation.
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     AIO_LISTIO_MAX = libc::_SC_AIO_LISTIO_MAX,
     /// Maximum number of outstanding asynchronous I/O operations supported by
     /// the implementation.
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     AIO_MAX = libc::_SC_AIO_MAX,
     #[cfg(any(
         target_os = "android",
@@ -2293,7 +2279,6 @@ pub enum SysconfVar {
         target_os = "linux",
         target_os = "openbsd"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The maximum amount by which a process can decrease its asynchronous I/O
     /// priority level from its own scheduling priority.
     AIO_PRIO_DELTA_MAX = libc::_SC_AIO_PRIO_DELTA_MAX,
@@ -2301,23 +2286,18 @@ pub enum SysconfVar {
     ARG_MAX = libc::_SC_ARG_MAX,
     /// Maximum number of functions that may be registered with `atexit`.
     #[cfg(not(target_os = "redox"))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     ATEXIT_MAX = libc::_SC_ATEXIT_MAX,
     /// Maximum obase values allowed by the bc utility.
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     BC_BASE_MAX = libc::_SC_BC_BASE_MAX,
     /// Maximum number of elements permitted in an array by the bc utility.
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     BC_DIM_MAX = libc::_SC_BC_DIM_MAX,
     /// Maximum scale value allowed by the bc utility.
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     BC_SCALE_MAX = libc::_SC_BC_SCALE_MAX,
     /// Maximum length of a string constant accepted by the bc utility.
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     BC_STRING_MAX = libc::_SC_BC_STRING_MAX,
     /// Maximum number of simultaneous processes per real user ID.
     CHILD_MAX = libc::_SC_CHILD_MAX,
@@ -2326,16 +2306,13 @@ pub enum SysconfVar {
     /// Maximum number of weights that can be assigned to an entry of the
     /// LC_COLLATE order keyword in the locale definition file
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     COLL_WEIGHTS_MAX = libc::_SC_COLL_WEIGHTS_MAX,
     /// Maximum number of timer expiration overruns.
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     DELAYTIMER_MAX = libc::_SC_DELAYTIMER_MAX,
     /// Maximum number of expressions that can be nested within parentheses by
     /// the expr utility.
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     EXPR_NEST_MAX = libc::_SC_EXPR_NEST_MAX,
     #[cfg(any(
         target_os = "dragonfly",
@@ -2347,21 +2324,18 @@ pub enum SysconfVar {
         target_os = "openbsd",
         target_os = "solaris"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     /// Maximum length of a host name (not including the terminating null) as
     /// returned from the `gethostname` function
     HOST_NAME_MAX = libc::_SC_HOST_NAME_MAX,
     /// Maximum number of iovec structures that one process has available for
     /// use with `readv` or `writev`.
     #[cfg(not(target_os = "redox"))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     IOV_MAX = libc::_SC_IOV_MAX,
     /// Unless otherwise noted, the maximum length, in bytes, of a utility's
     /// input line (either standard input or another file), when the utility is
     /// described as processing text files. The length includes room for the
     /// trailing newline.
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     LINE_MAX = libc::_SC_LINE_MAX,
     /// Maximum length of a login name.
     #[cfg(not(target_os = "haiku"))]
@@ -2370,19 +2344,15 @@ pub enum SysconfVar {
     NGROUPS_MAX = libc::_SC_NGROUPS_MAX,
     /// Initial size of `getgrgid_r` and `getgrnam_r` data buffers
     #[cfg(not(target_os = "redox"))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     GETGR_R_SIZE_MAX = libc::_SC_GETGR_R_SIZE_MAX,
     /// Initial size of `getpwuid_r` and `getpwnam_r` data buffers
     #[cfg(not(target_os = "redox"))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     GETPW_R_SIZE_MAX = libc::_SC_GETPW_R_SIZE_MAX,
     /// The maximum number of open message queue descriptors a process may hold.
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     MQ_OPEN_MAX = libc::_SC_MQ_OPEN_MAX,
     /// The maximum number of message priorities supported by the implementation.
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     MQ_PRIO_MAX = libc::_SC_MQ_PRIO_MAX,
     /// A value one greater than the maximum value that the system may assign to
     /// a newly-created file descriptor.
@@ -2394,7 +2364,6 @@ pub enum SysconfVar {
         target_os = "linux",
         target_os = "openbsd"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Advisory Information option.
     _POSIX_ADVISORY_INFO = libc::_SC_ADVISORY_INFO,
     #[cfg(any(
@@ -2407,12 +2376,10 @@ pub enum SysconfVar {
         target_os = "openbsd",
         target_os = "solaris"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports barriers.
     _POSIX_BARRIERS = libc::_SC_BARRIERS,
     /// The implementation supports asynchronous input and output.
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_ASYNCHRONOUS_IO = libc::_SC_ASYNCHRONOUS_IO,
     #[cfg(any(
         target_os = "dragonfly",
@@ -2424,7 +2391,6 @@ pub enum SysconfVar {
         target_os = "openbsd",
         target_os = "solaris"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports clock selection.
     _POSIX_CLOCK_SELECTION = libc::_SC_CLOCK_SELECTION,
     #[cfg(any(
@@ -2437,12 +2403,10 @@ pub enum SysconfVar {
         target_os = "openbsd",
         target_os = "solaris"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Process CPU-Time Clocks option.
     _POSIX_CPUTIME = libc::_SC_CPUTIME,
     /// The implementation supports the File Synchronization option.
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_FSYNC = libc::_SC_FSYNC,
     #[cfg(any(
         target_os = "dragonfly",
@@ -2453,36 +2417,28 @@ pub enum SysconfVar {
         target_os = "openbsd",
         target_os = "solaris"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the IPv6 option.
     _POSIX_IPV6 = libc::_SC_IPV6,
     /// The implementation supports job control.
     #[cfg(not(target_os = "redox"))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_JOB_CONTROL = libc::_SC_JOB_CONTROL,
     /// The implementation supports memory mapped Files.
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_MAPPED_FILES = libc::_SC_MAPPED_FILES,
     /// The implementation supports the Process Memory Locking option.
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_MEMLOCK = libc::_SC_MEMLOCK,
     /// The implementation supports the Range Memory Locking option.
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_MEMLOCK_RANGE = libc::_SC_MEMLOCK_RANGE,
     /// The implementation supports memory protection.
     #[cfg(not(target_os = "redox"))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_MEMORY_PROTECTION = libc::_SC_MEMORY_PROTECTION,
     /// The implementation supports the Message Passing option.
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_MESSAGE_PASSING = libc::_SC_MESSAGE_PASSING,
     /// The implementation supports the Monotonic Clock option.
     #[cfg(not(target_os = "redox"))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_MONOTONIC_CLOCK = libc::_SC_MONOTONIC_CLOCK,
     #[cfg(any(
         target_os = "android",
@@ -2494,12 +2450,10 @@ pub enum SysconfVar {
         target_os = "openbsd",
         target_os = "solaris"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Prioritized Input and Output option.
     _POSIX_PRIORITIZED_IO = libc::_SC_PRIORITIZED_IO,
     /// The implementation supports the Process Scheduling option.
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_PRIORITY_SCHEDULING = libc::_SC_PRIORITY_SCHEDULING,
     #[cfg(any(
         target_os = "dragonfly",
@@ -2510,7 +2464,6 @@ pub enum SysconfVar {
         target_os = "openbsd",
         target_os = "solaris"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Raw Sockets option.
     _POSIX_RAW_SOCKETS = libc::_SC_RAW_SOCKETS,
     #[cfg(any(
@@ -2523,7 +2476,6 @@ pub enum SysconfVar {
         target_os = "openbsd",
         target_os = "solaris"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports read-write locks.
     _POSIX_READER_WRITER_LOCKS = libc::_SC_READER_WRITER_LOCKS,
     #[cfg(any(
@@ -2534,7 +2486,6 @@ pub enum SysconfVar {
         target_os = "linux",
         target_os = "openbsd"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports realtime signals.
     _POSIX_REALTIME_SIGNALS = libc::_SC_REALTIME_SIGNALS,
     #[cfg(any(
@@ -2547,20 +2498,16 @@ pub enum SysconfVar {
         target_os = "openbsd",
         target_os = "solaris"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Regular Expression Handling option.
     _POSIX_REGEXP = libc::_SC_REGEXP,
     /// Each process has a saved set-user-ID and a saved set-group-ID.
     #[cfg(not(target_os = "redox"))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_SAVED_IDS = libc::_SC_SAVED_IDS,
     /// The implementation supports semaphores.
     #[cfg(not(target_os = "redox"))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_SEMAPHORES = libc::_SC_SEMAPHORES,
     /// The implementation supports the Shared Memory Objects option.
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_SHARED_MEMORY_OBJECTS = libc::_SC_SHARED_MEMORY_OBJECTS,
     #[cfg(any(
         target_os = "dragonfly",
@@ -2570,7 +2517,6 @@ pub enum SysconfVar {
         target_os = "netbsd",
         target_os = "openbsd"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the POSIX shell.
     _POSIX_SHELL = libc::_SC_SHELL,
     #[cfg(any(
@@ -2581,7 +2527,6 @@ pub enum SysconfVar {
         target_os = "netbsd",
         target_os = "openbsd"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Spawn option.
     _POSIX_SPAWN = libc::_SC_SPAWN,
     #[cfg(any(
@@ -2592,7 +2537,6 @@ pub enum SysconfVar {
         target_os = "netbsd",
         target_os = "openbsd"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports spin locks.
     _POSIX_SPIN_LOCKS = libc::_SC_SPIN_LOCKS,
     #[cfg(any(
@@ -2602,7 +2546,6 @@ pub enum SysconfVar {
         target_os = "linux",
         target_os = "openbsd"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Process Sporadic Server option.
     _POSIX_SPORADIC_SERVER = libc::_SC_SPORADIC_SERVER,
     #[cfg(any(
@@ -2610,19 +2553,15 @@ pub enum SysconfVar {
         target_os = "linux",
         target_os = "openbsd"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_SS_REPL_MAX = libc::_SC_SS_REPL_MAX,
     /// The implementation supports the Synchronized Input and Output option.
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_SYNCHRONIZED_IO = libc::_SC_SYNCHRONIZED_IO,
     /// The implementation supports the Thread Stack Address Attribute option.
     #[cfg(not(target_os = "redox"))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_THREAD_ATTR_STACKADDR = libc::_SC_THREAD_ATTR_STACKADDR,
     /// The implementation supports the Thread Stack Size Attribute option.
     #[cfg(not(target_os = "redox"))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_THREAD_ATTR_STACKSIZE = libc::_SC_THREAD_ATTR_STACKSIZE,
     #[cfg(any(
         apple_targets,
@@ -2630,21 +2569,17 @@ pub enum SysconfVar {
         target_os = "netbsd",
         target_os = "openbsd"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Thread CPU-Time Clocks option.
     _POSIX_THREAD_CPUTIME = libc::_SC_THREAD_CPUTIME,
     /// The implementation supports the Non-Robust Mutex Priority Inheritance
     /// option.
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_THREAD_PRIO_INHERIT = libc::_SC_THREAD_PRIO_INHERIT,
     /// The implementation supports the Non-Robust Mutex Priority Protection option.
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_THREAD_PRIO_PROTECT = libc::_SC_THREAD_PRIO_PROTECT,
     /// The implementation supports the Thread Execution Scheduling option.
     #[cfg(not(target_os = "redox"))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_THREAD_PRIORITY_SCHEDULING = libc::_SC_THREAD_PRIORITY_SCHEDULING,
     #[cfg(any(
         target_os = "dragonfly",
@@ -2654,7 +2589,6 @@ pub enum SysconfVar {
         target_os = "netbsd",
         target_os = "openbsd"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Thread Process-Shared Synchronization
     /// option.
     _POSIX_THREAD_PROCESS_SHARED = libc::_SC_THREAD_PROCESS_SHARED,
@@ -2663,7 +2597,6 @@ pub enum SysconfVar {
         target_os = "linux",
         target_os = "openbsd"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Robust Mutex Priority Inheritance option.
     _POSIX_THREAD_ROBUST_PRIO_INHERIT = libc::_SC_THREAD_ROBUST_PRIO_INHERIT,
     #[cfg(any(
@@ -2671,12 +2604,10 @@ pub enum SysconfVar {
         target_os = "linux",
         target_os = "openbsd"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Robust Mutex Priority Protection option.
     _POSIX_THREAD_ROBUST_PRIO_PROTECT = libc::_SC_THREAD_ROBUST_PRIO_PROTECT,
     /// The implementation supports thread-safe functions.
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_THREAD_SAFE_FUNCTIONS = libc::_SC_THREAD_SAFE_FUNCTIONS,
     #[cfg(any(
         target_os = "dragonfly",
@@ -2685,12 +2616,10 @@ pub enum SysconfVar {
         target_os = "linux",
         target_os = "openbsd"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Thread Sporadic Server option.
     _POSIX_THREAD_SPORADIC_SERVER = libc::_SC_THREAD_SPORADIC_SERVER,
     /// The implementation supports threads.
     #[cfg(not(target_os = "redox"))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_THREADS = libc::_SC_THREADS,
     #[cfg(any(
         target_os = "dragonfly",
@@ -2699,12 +2628,10 @@ pub enum SysconfVar {
         target_os = "linux",
         target_os = "openbsd"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports timeouts.
     _POSIX_TIMEOUTS = libc::_SC_TIMEOUTS,
     /// The implementation supports timers.
     #[cfg(not(target_os = "redox"))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_TIMERS = libc::_SC_TIMERS,
     #[cfg(any(
         target_os = "dragonfly",
@@ -2713,7 +2640,6 @@ pub enum SysconfVar {
         target_os = "linux",
         target_os = "openbsd"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Trace option.
     _POSIX_TRACE = libc::_SC_TRACE,
     #[cfg(any(
@@ -2723,7 +2649,6 @@ pub enum SysconfVar {
         target_os = "linux",
         target_os = "openbsd"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Trace Event Filter option.
     _POSIX_TRACE_EVENT_FILTER = libc::_SC_TRACE_EVENT_FILTER,
     #[cfg(any(
@@ -2731,7 +2656,6 @@ pub enum SysconfVar {
         target_os = "linux",
         target_os = "openbsd"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_TRACE_EVENT_NAME_MAX = libc::_SC_TRACE_EVENT_NAME_MAX,
     #[cfg(any(
         target_os = "dragonfly",
@@ -2740,7 +2664,6 @@ pub enum SysconfVar {
         target_os = "linux",
         target_os = "openbsd"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Trace Inherit option.
     _POSIX_TRACE_INHERIT = libc::_SC_TRACE_INHERIT,
     #[cfg(any(
@@ -2750,7 +2673,6 @@ pub enum SysconfVar {
         target_os = "linux",
         target_os = "openbsd"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Trace Log option.
     _POSIX_TRACE_LOG = libc::_SC_TRACE_LOG,
     #[cfg(any(
@@ -2758,21 +2680,18 @@ pub enum SysconfVar {
         target_os = "linux",
         target_os = "openbsd"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_TRACE_NAME_MAX = libc::_SC_TRACE_NAME_MAX,
     #[cfg(any(
         apple_targets,
         target_os = "linux",
         target_os = "openbsd"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_TRACE_SYS_MAX = libc::_SC_TRACE_SYS_MAX,
     #[cfg(any(
         apple_targets,
         target_os = "linux",
         target_os = "openbsd"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX_TRACE_USER_EVENT_MAX = libc::_SC_TRACE_USER_EVENT_MAX,
     #[cfg(any(
         target_os = "dragonfly",
@@ -2781,7 +2700,6 @@ pub enum SysconfVar {
         target_os = "linux",
         target_os = "openbsd"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Typed Memory Objects option.
     _POSIX_TYPED_MEMORY_OBJECTS = libc::_SC_TYPED_MEMORY_OBJECTS,
     /// Integer value indicating version of this standard (C-language binding)
@@ -2796,7 +2714,6 @@ pub enum SysconfVar {
         target_os = "netbsd",
         target_os = "openbsd"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation provides a C-language compilation environment with
     /// 32-bit `int`, `long`, `pointer`, and `off_t` types.
     _POSIX_V6_ILP32_OFF32 = libc::_SC_V6_ILP32_OFF32,
@@ -2808,7 +2725,6 @@ pub enum SysconfVar {
         target_os = "netbsd",
         target_os = "openbsd"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation provides a C-language compilation environment with
     /// 32-bit `int`, `long`, and pointer types and an `off_t` type using at
     /// least 64 bits.
@@ -2821,7 +2737,6 @@ pub enum SysconfVar {
         target_os = "netbsd",
         target_os = "openbsd"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation provides a C-language compilation environment with
     /// 32-bit `int` and 64-bit `long`, `pointer`, and `off_t` types.
     _POSIX_V6_LP64_OFF64 = libc::_SC_V6_LP64_OFF64,
@@ -2833,35 +2748,28 @@ pub enum SysconfVar {
         target_os = "netbsd",
         target_os = "openbsd"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation provides a C-language compilation environment with an
     /// `int` type using at least 32 bits and `long`, pointer, and `off_t` types
     /// using at least 64 bits.
     _POSIX_V6_LPBIG_OFFBIG = libc::_SC_V6_LPBIG_OFFBIG,
     /// The implementation supports the C-Language Binding option.
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX2_C_BIND = libc::_SC_2_C_BIND,
     /// The implementation supports the C-Language Development Utilities option.
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX2_C_DEV = libc::_SC_2_C_DEV,
     /// The implementation supports the Terminal Characteristics option.
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX2_CHAR_TERM = libc::_SC_2_CHAR_TERM,
     /// The implementation supports the FORTRAN Development Utilities option.
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX2_FORT_DEV = libc::_SC_2_FORT_DEV,
     /// The implementation supports the FORTRAN Runtime Utilities option.
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX2_FORT_RUN = libc::_SC_2_FORT_RUN,
     /// The implementation supports the creation of locales by the localedef
     /// utility.
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX2_LOCALEDEF = libc::_SC_2_LOCALEDEF,
     #[cfg(any(
         target_os = "dragonfly",
@@ -2871,7 +2779,6 @@ pub enum SysconfVar {
         target_os = "netbsd",
         target_os = "openbsd"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Batch Environment Services and Utilities
     /// option.
     _POSIX2_PBS = libc::_SC_2_PBS,
@@ -2883,7 +2790,6 @@ pub enum SysconfVar {
         target_os = "netbsd",
         target_os = "openbsd"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Batch Accounting option.
     _POSIX2_PBS_ACCOUNTING = libc::_SC_2_PBS_ACCOUNTING,
     #[cfg(any(
@@ -2894,7 +2800,6 @@ pub enum SysconfVar {
         target_os = "netbsd",
         target_os = "openbsd"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Batch Checkpoint/Restart option.
     _POSIX2_PBS_CHECKPOINT = libc::_SC_2_PBS_CHECKPOINT,
     #[cfg(any(
@@ -2905,7 +2810,6 @@ pub enum SysconfVar {
         target_os = "netbsd",
         target_os = "openbsd"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Locate Batch Job Request option.
     _POSIX2_PBS_LOCATE = libc::_SC_2_PBS_LOCATE,
     #[cfg(any(
@@ -2916,7 +2820,6 @@ pub enum SysconfVar {
         target_os = "netbsd",
         target_os = "openbsd"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Batch Job Message Request option.
     _POSIX2_PBS_MESSAGE = libc::_SC_2_PBS_MESSAGE,
     #[cfg(any(
@@ -2927,21 +2830,17 @@ pub enum SysconfVar {
         target_os = "netbsd",
         target_os = "openbsd"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Track Batch Job Request option.
     _POSIX2_PBS_TRACK = libc::_SC_2_PBS_TRACK,
     /// The implementation supports the Software Development Utilities option.
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX2_SW_DEV = libc::_SC_2_SW_DEV,
     /// The implementation supports the User Portability Utilities option.
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX2_UPE = libc::_SC_2_UPE,
     /// Integer value indicating version of the Shell and Utilities volume of
     /// POSIX.1 to which the implementation conforms.
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     _POSIX2_VERSION = libc::_SC_2_VERSION,
     /// The size of a system page in bytes.
     ///
@@ -2949,16 +2848,12 @@ pub enum SysconfVar {
     /// enum constants to have the same value, so nix omits `PAGESIZE`.
     PAGE_SIZE = libc::_SC_PAGE_SIZE,
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     PTHREAD_DESTRUCTOR_ITERATIONS = libc::_SC_THREAD_DESTRUCTOR_ITERATIONS,
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     PTHREAD_KEYS_MAX = libc::_SC_THREAD_KEYS_MAX,
     #[cfg(not(target_os = "redox"))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     PTHREAD_STACK_MIN = libc::_SC_THREAD_STACK_MIN,
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     PTHREAD_THREADS_MAX = libc::_SC_THREAD_THREADS_MAX,
     #[cfg(not(target_os = "haiku"))]
     RE_DUP_MAX = libc::_SC_RE_DUP_MAX,
@@ -2970,10 +2865,8 @@ pub enum SysconfVar {
         target_os = "linux",
         target_os = "openbsd"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     RTSIG_MAX = libc::_SC_RTSIG_MAX,
     #[cfg(not(target_os = "redox"))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     SEM_NSEMS_MAX = libc::_SC_SEM_NSEMS_MAX,
     #[cfg(any(
         target_os = "android",
@@ -2983,7 +2876,6 @@ pub enum SysconfVar {
         target_os = "linux",
         target_os = "openbsd"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     SEM_VALUE_MAX = libc::_SC_SEM_VALUE_MAX,
     #[cfg(any(
         target_os = "android",
@@ -2993,7 +2885,6 @@ pub enum SysconfVar {
         target_os = "linux",
         target_os = "openbsd"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     SIGQUEUE_MAX = libc::_SC_SIGQUEUE_MAX,
     STREAM_MAX = libc::_SC_STREAM_MAX,
     #[cfg(any(
@@ -3004,10 +2895,8 @@ pub enum SysconfVar {
         target_os = "netbsd",
         target_os = "openbsd"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     SYMLOOP_MAX = libc::_SC_SYMLOOP_MAX,
     #[cfg(not(target_os = "redox"))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     TIMER_MAX = libc::_SC_TIMER_MAX,
     TTY_NAME_MAX = libc::_SC_TTY_NAME_MAX,
     TZNAME_MAX = libc::_SC_TZNAME_MAX,
@@ -3019,7 +2908,6 @@ pub enum SysconfVar {
         target_os = "linux",
         target_os = "openbsd"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the X/Open Encryption Option Group.
     _XOPEN_CRYPT = libc::_SC_XOPEN_CRYPT,
     #[cfg(any(
@@ -3030,7 +2918,6 @@ pub enum SysconfVar {
         target_os = "linux",
         target_os = "openbsd"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the Issue 4, Version 2 Enhanced
     /// Internationalization Option Group.
     _XOPEN_ENH_I18N = libc::_SC_XOPEN_ENH_I18N,
@@ -3042,7 +2929,6 @@ pub enum SysconfVar {
         target_os = "linux",
         target_os = "openbsd"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     _XOPEN_LEGACY = libc::_SC_XOPEN_LEGACY,
     #[cfg(any(
         target_os = "android",
@@ -3052,7 +2938,6 @@ pub enum SysconfVar {
         target_os = "linux",
         target_os = "openbsd"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the X/Open Realtime Option Group.
     _XOPEN_REALTIME = libc::_SC_XOPEN_REALTIME,
     #[cfg(any(
@@ -3063,13 +2948,11 @@ pub enum SysconfVar {
         target_os = "linux",
         target_os = "openbsd"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the X/Open Realtime Threads Option Group.
     _XOPEN_REALTIME_THREADS = libc::_SC_XOPEN_REALTIME_THREADS,
     /// The implementation supports the Issue 4, Version 2 Shared Memory Option
     /// Group.
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     _XOPEN_SHM = libc::_SC_XOPEN_SHM,
     #[cfg(any(
         target_os = "dragonfly",
@@ -3078,7 +2961,6 @@ pub enum SysconfVar {
         target_os = "linux",
         target_os = "openbsd"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the XSI STREAMS Option Group.
     _XOPEN_STREAMS = libc::_SC_XOPEN_STREAMS,
     #[cfg(any(
@@ -3089,7 +2971,6 @@ pub enum SysconfVar {
         target_os = "linux",
         target_os = "openbsd"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     /// The implementation supports the XSI option
     _XOPEN_UNIX = libc::_SC_XOPEN_UNIX,
     #[cfg(any(
@@ -3100,7 +2981,6 @@ pub enum SysconfVar {
         target_os = "linux",
         target_os = "openbsd"
     ))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     /// Integer value indicating version of the X/Open Portability Guide to
     /// which the implementation conforms.
     _XOPEN_VERSION = libc::_SC_XOPEN_VERSION,
@@ -3419,7 +3299,6 @@ pub struct User {
         target_os = "linux",
         target_os = "solaris"
     )))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub class: CString,
     /// Last password change
     #[cfg(not(any(
@@ -3431,7 +3310,6 @@ pub struct User {
         target_os = "linux",
         target_os = "solaris"
     )))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub change: libc::time_t,
     /// Expiration time of account
     #[cfg(not(any(
@@ -3443,7 +3321,6 @@ pub struct User {
         target_os = "linux",
         target_os = "solaris"
     )))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub expire: libc::time_t,
 }
 
