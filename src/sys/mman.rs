@@ -144,6 +144,9 @@ libc_bitflags! {
         MAP_NOCACHE;
         /// Allows the W/X bit on the page, it's necessary on aarch64 architecture.
         #[cfg(apple_targets)]
+        MAP_JIT;
+        /// Allows to use large pages, underlying alignment based on size.
+        #[cfg(target_os = "freebsd")]
         MAP_ALIGNED_SUPER;
         /// Pages will be discarded in the core dumps.
         #[cfg(target_os = "openbsd")]
