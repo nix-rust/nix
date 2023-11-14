@@ -29,8 +29,10 @@ fn test_old_sigaction_flags() {
     );
     let oact = unsafe { sigaction(SIGINT, &act) }.unwrap();
     let _flags = oact.flags();
-    let oact = unsafe { sigaction(SIGINT, &act) }.unwrap();
-    let _flags = oact.flags();
+    let _flags = unsafe { sigaction(SIGINT, &act) }.unwrap().flags();
+
+    // restore original
+    unsafe { sigaction(SIGINT, &oact) }.unwrap();
 }
 
 #[test]
