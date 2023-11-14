@@ -802,13 +802,11 @@ pub enum ControlMessageOwned {
     ///
     /// [Further reading](https://man.freebsd.org/cgi/man.cgi?setsockopt)
     #[cfg(target_os = "freebsd")]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     ScmRealtime(TimeSpec),
     /// Monotonic clock timestamp
     ///
     /// [Further reading](https://man.freebsd.org/cgi/man.cgi?setsockopt)
     #[cfg(target_os = "freebsd")]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     ScmMonotonic(TimeSpec),
     #[cfg(any(
         target_os = "android",
