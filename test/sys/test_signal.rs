@@ -36,6 +36,48 @@ fn test_old_sigaction_flags() {
 }
 
 #[test]
+fn test_current_sigaction() {
+    let _m = crate::SIGNAL_MTX.lock();
+
+    let oact = unsafe {
+        sigaction(
+            SIGINT,
+            &SigAction::new(
+                SigHandler::SigDfl,
+                SaFlags::empty(),
+                SigSet::empty(),
+            ),
+        )
+    }
+    .unwrap();
+
+    assert_eq!(
+        unsafe { sigaction_current(SIGINT) }.unwrap().handler(),
+        SigHandler::SigDfl
+    );
+
+    unsafe {
+        sigaction(
+            SIGINT,
+            &SigAction::new(
+                SigHandler::SigIgn,
+                SaFlags::empty(),
+                SigSet::empty(),
+            ),
+        )
+    }
+    .unwrap();
+
+    assert_eq!(
+        unsafe { sigaction_current(SIGINT) }.unwrap().handler(),
+        SigHandler::SigIgn
+    );
+
+    // restore original
+    unsafe { sigaction(SIGINT, &oact) }.unwrap();
+}
+
+#[test]
 fn test_sigprocmask_noop() {
     sigprocmask(SigmaskHow::SIG_BLOCK, None, None)
         .expect("this should be an effective noop");
