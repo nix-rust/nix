@@ -858,6 +858,16 @@ impl SigAction {
     }
 }
 
+unsafe fn sigaction_inner(signal: Signal, sigaction: Option<&SigAction>) -> Result<SigAction> {
+    let mut oldact = mem::MaybeUninit::<libc::sigaction>::uninit();
+
+    let res = libc::sigaction(signal as libc::c_int,
+            sigaction.map_or(ptr::null(), |sigaction| &sigaction.sigaction as *const libc::sigaction),
+                              oldact.as_mut_ptr());
+
+    Errno::result(res).map(|_| SigAction { sigaction: oldact.assume_init() })
+}
+
 /// Changes the action taken by a process on receipt of a specific signal.
 ///
 /// `signal` can be any signal except `SIGKILL` or `SIGSTOP`. On success, it returns the previous
@@ -876,13 +886,39 @@ impl SigAction {
 ///   pointer is valid.  In that case, this function effectively dereferences a
 ///   raw pointer of unknown provenance.
 pub unsafe fn sigaction(signal: Signal, sigaction: &SigAction) -> Result<SigAction> {
-    let mut oldact = mem::MaybeUninit::<libc::sigaction>::uninit();
+    sigaction_inner(signal, Some(sigaction))
+}
 
-    let res = libc::sigaction(signal as libc::c_int,
-                              &sigaction.sigaction as *const libc::sigaction,
-                              oldact.as_mut_ptr());
+/// Gets the current action a process will take on receipt of a specific signal.
+///
+/// `signal` can be any signal except `SIGKILL` or `SIGSTOP`. On success, it returns the current
+/// action for the given signal. The current action will always remain in place, unchanged.
+///
+/// # Safety
+///
+/// There is no guarantee that the old signal handler was installed
+/// correctly.  If it was installed by this crate, it will be.  But if it was
+/// installed by, for example, C code, then there is no guarantee its function
+/// pointer is valid.  In that case, this function effectively dereferences a
+/// raw pointer of unknown provenance.
+pub unsafe fn sigaction_current(signal: Signal) -> Result<SigAction> {
+    sigaction_inner(signal, None)
+}
 
-    Errno::result(res).map(|_| SigAction { sigaction: oldact.assume_init() })
+/// Whether the specified signal currently has its default action.
+///
+/// `signal` can be any signal except `SIGKILL` or `SIGSTOP`.
+pub fn sigaction_is_default(signal: Signal) -> Result<bool> {
+    // SAFETY: fetching the current action is safe if the handler isn't called
+    unsafe { sigaction_current(signal) }.map(|sigaction| sigaction.handler() == SigHandler::SigDfl)
+}
+
+/// Whether the specified signal is currently ignored.
+///
+/// `signal` can be any signal except `SIGKILL` or `SIGSTOP`.
+pub fn sigaction_is_ignore(signal: Signal) -> Result<bool> {
+    // SAFETY: fetching the current action is safe if the handler isn't called
+    unsafe { sigaction_current(signal) }.map(|sigaction| sigaction.handler() == SigHandler::SigIgn)
 }
 
 /// Signal management (see [signal(3p)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/signal.html))

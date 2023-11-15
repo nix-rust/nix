@@ -29,8 +29,56 @@ fn test_old_sigaction_flags() {
     );
     let oact = unsafe { sigaction(SIGINT, &act) }.unwrap();
     let _flags = oact.flags();
-    let oact = unsafe { sigaction(SIGINT, &act) }.unwrap();
-    let _flags = oact.flags();
+    let _flags = unsafe { sigaction(SIGINT, &act) }.unwrap().flags();
+
+    // restore original
+    unsafe { sigaction(SIGINT, &oact) }.unwrap();
+}
+
+#[test]
+fn test_current_sigaction() {
+    let _m = crate::SIGNAL_MTX.lock();
+
+    let oact = unsafe {
+        sigaction(
+            SIGINT,
+            &SigAction::new(
+                SigHandler::SigDfl,
+                SaFlags::empty(),
+                SigSet::empty(),
+            ),
+        )
+    }
+    .unwrap();
+
+    assert_eq!(
+        unsafe { sigaction_current(SIGINT) }.unwrap().handler(),
+        SigHandler::SigDfl
+    );
+    assert!(sigaction_is_default(SIGINT).unwrap());
+    assert!(!sigaction_is_ignore(SIGINT).unwrap());
+
+    unsafe {
+        sigaction(
+            SIGINT,
+            &SigAction::new(
+                SigHandler::SigIgn,
+                SaFlags::empty(),
+                SigSet::empty(),
+            ),
+        )
+    }
+    .unwrap();
+
+    assert_eq!(
+        unsafe { sigaction_current(SIGINT) }.unwrap().handler(),
+        SigHandler::SigIgn
+    );
+    assert!(!sigaction_is_default(SIGINT).unwrap());
+    assert!(sigaction_is_ignore(SIGINT).unwrap());
+
+    // restore original
+    unsafe { sigaction(SIGINT, &oact) }.unwrap();
 }
 
 #[test]
