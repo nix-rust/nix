@@ -1,6 +1,7 @@
 //! pidfd related functionality
 
 use crate::errno::Errno;
+use crate::unistd::Pid;
 use crate::Result;
 use std::convert::TryFrom;
 use std::os::unix::io::{AsFd, AsRawFd, FromRawFd, OwnedFd};
@@ -34,6 +35,32 @@ pub fn pidfd_getfd<PFd: AsFd, TFd: AsFd>(
             pid.as_fd().as_raw_fd(),
             target.as_fd().as_raw_fd(),
             0,
+        )
+    } {
+        -1 => Err(Errno::last()),
+        fd @ 0.. => {
+            Ok(unsafe { OwnedFd::from_raw_fd(i32::try_from(fd).unwrap()) })
+        }
+        _ => unreachable!(),
+    }
+}
+
+/// Creates a file descriptor that refers to the process whose PID is specified in `pid`.  The file
+/// descriptor is returned as the function result; the close-on-exec flag is set on the file
+/// descriptor.
+///
+/// If `nonblock == true` returns a nonblocking file descriptor.  If the process
+/// referred to by the file descriptor has not yet terminated,
+/// then an attempt to wait on the file descriptor using
+/// waitid(2) will immediately return the error EAGAIN rather
+/// than blocking.
+pub fn pid_open(pid: Pid, nonblock: bool) -> Result<OwnedFd> {
+    #[allow(clippy::useless_conversion)] // Not useless on all OSes
+    match unsafe {
+        libc::syscall(
+            libc::SYS_pidfd_open,
+            pid,
+            if nonblock { libc::PIDFD_NONBLOCK } else { 0 },
         )
     } {
         -1 => Err(Errno::last()),
