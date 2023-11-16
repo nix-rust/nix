@@ -1,6 +1,7 @@
 //! pidfd related functionality
 
 use crate::errno::Errno;
+use crate::sys::signal::Signal;
 use crate::unistd::Pid;
 use crate::Result;
 use std::convert::TryFrom;
@@ -67,6 +68,48 @@ pub fn pid_open(pid: Pid, nonblock: bool) -> Result<OwnedFd> {
         fd @ 0.. => {
             Ok(unsafe { OwnedFd::from_raw_fd(i32::try_from(fd).unwrap()) })
         }
+        _ => unreachable!(),
+    }
+}
+
+/// Sends the signal `sig` to the target process referred to by `pid`, a PID file descriptor that
+/// refers to a process.
+///
+/// If the info argument is some [`libc::siginfo_t`] buffer, that buffer should be populated as
+/// described in [rt_sigqueueinfo(2)](https://man7.org/linux/man-pages/man2/rt_sigqueueinfo.2.html).
+///
+/// If the info argument is `None`, this is equivalent to specifying a pointer to a `siginfo_t`
+/// buffer whose fields match the values that are implicitly supplied when a signal is sent using
+/// [`crate::sys::signal::kill`]:
+///
+/// -  `si_signo` is set to the signal number;
+/// -  `si_errno` is set to 0;
+/// -  `si_code` is set to SI_USER;
+/// -  `si_pid` is set to the caller's PID; and
+/// -  `si_uid` is set to the caller's real user ID.
+///
+/// The calling process must either be in the same PID namespace as the process referred to by
+/// pidfd, or be in an ancestor of that namespace.
+pub fn pidfd_send_signal<Fd: AsFd>(
+    pid: Fd,
+    sig: Signal,
+    info: Option<libc::siginfo_t>,
+) -> Result<()> {
+    let info = match info {
+        Some(i) => &i,
+        None => std::ptr::null(),
+    };
+    match unsafe {
+        libc::syscall(
+            libc::SYS_pidfd_send_signal,
+            pid.as_fd().as_raw_fd(),
+            sig as i32,
+            info,
+            0u32,
+        )
+    } {
+        -1 => Err(Errno::last()),
+        0 => Ok(()),
         _ => unreachable!(),
     }
 }
