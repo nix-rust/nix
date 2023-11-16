@@ -193,3 +193,6 @@ feature! {
     #![feature = "time"]
     pub mod timer;
 }
+
+#[cfg(target_os = "linux")]
+pub mod pidfd;
