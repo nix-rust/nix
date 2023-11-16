@@ -69,6 +69,7 @@ ucontext = ["signal"]
 uio = []
 user = ["feature"]
 zerocopy = ["fs", "uio"]
+futex = []
 
 [dev-dependencies]
 assert-impl = "0.1"
