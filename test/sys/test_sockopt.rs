@@ -448,7 +448,7 @@ fn test_receive_timestamp() {
     )
     .unwrap();
     setsockopt(&fd, sockopt::ReceiveTimestamp, &true).unwrap();
-    assert_eq!(getsockopt(&fd, sockopt::ReceiveTimestamp).unwrap(), true);
+    assert!(getsockopt(&fd, sockopt::ReceiveTimestamp).unwrap());
 }
 
 #[test]
