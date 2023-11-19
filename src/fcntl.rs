@@ -728,6 +728,7 @@ impl<T: Flockable> Flock<T> {
 }
 
 // Safety: `File` is not [std::clone::Clone].
+#[cfg(not(any(target_os = "redox", target_os = "solaris")))]
 unsafe impl Flockable for std::fs::File {}
 }
 
