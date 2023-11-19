@@ -244,7 +244,7 @@ impl Inotify {
 impl FromRawFd for Inotify {
     unsafe fn from_raw_fd(fd: RawFd) -> Self {
         Inotify {
-            fd: OwnedFd::from_raw_fd(fd),
+            fd: unsafe { OwnedFd::from_raw_fd(fd) },
         }
     }
 }

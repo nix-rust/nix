@@ -46,7 +46,7 @@ pub unsafe fn clearenv() -> std::result::Result<(), ClearEnvError> {
                      target_os = "linux",
                      target_os = "android",
                      target_os = "emscripten"))] {
-            let ret = libc::clearenv();
+            let ret = unsafe { libc::clearenv() };
         } else {
             use std::env;
             for (name, _) in env::vars_os() {

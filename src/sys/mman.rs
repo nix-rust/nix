@@ -8,8 +8,11 @@ use crate::Result;
 #[cfg(feature = "fs")]
 use crate::{fcntl::OFlag, sys::stat::Mode};
 use libc::{self, c_int, c_void, off_t, size_t};
-use std::{num::NonZeroUsize, os::unix::io::{AsRawFd, AsFd}};
 use std::ptr::NonNull;
+use std::{
+    num::NonZeroUsize,
+    os::unix::io::{AsFd, AsRawFd},
+};
 
 libc_bitflags! {
     /// Desired memory protection of a memory mapping.
@@ -170,7 +173,9 @@ impl MapFlags {
     // will be released
     #[cfg(target_os = "linux")]
     #[cfg_attr(docsrs, doc(cfg(all())))]
-    pub fn map_hugetlb_with_size_log2(huge_page_size_log2: u32) -> Option<Self> {
+    pub fn map_hugetlb_with_size_log2(
+        huge_page_size_log2: u32,
+    ) -> Option<Self> {
         if (16..=63).contains(&huge_page_size_log2) {
             let flag = libc::MAP_HUGETLB
                 | (huge_page_size_log2 << libc::MAP_HUGE_SHIFT) as i32;
@@ -341,7 +346,7 @@ libc_bitflags! {
 ///
 /// [`mlock(2)`]: https://man7.org/linux/man-pages/man2/mlock.2.html
 pub unsafe fn mlock(addr: NonNull<c_void>, length: size_t) -> Result<()> {
-    Errno::result(libc::mlock(addr.as_ptr(), length)).map(drop)
+    unsafe { Errno::result(libc::mlock(addr.as_ptr(), length)).map(drop) }
 }
 
 /// Unlocks all memory pages that contain part of the address range with
@@ -354,7 +359,7 @@ pub unsafe fn mlock(addr: NonNull<c_void>, length: size_t) -> Result<()> {
 ///
 /// [`munlock(2)`]: https://man7.org/linux/man-pages/man2/munlock.2.html
 pub unsafe fn munlock(addr: NonNull<c_void>, length: size_t) -> Result<()> {
-    Errno::result(libc::munlock(addr.as_ptr(), length)).map(drop)
+    unsafe { Errno::result(libc::munlock(addr.as_ptr(), length)).map(drop) }
 }
 
 /// Locks all memory pages mapped into this process' address space.
@@ -397,17 +402,17 @@ pub unsafe fn mmap<F: AsFd>(
     let ptr = addr.map_or(std::ptr::null_mut(), |a| a.get() as *mut c_void);
 
     let fd = f.as_fd().as_raw_fd();
-    let ret =
-        libc::mmap(ptr, length.into(), prot.bits(), flags.bits(), fd, offset);
+    let ret = unsafe {
+        libc::mmap(ptr, length.into(), prot.bits(), flags.bits(), fd, offset)
+    };
 
     if ret == libc::MAP_FAILED {
         Err(Errno::last())
-    }
-    else {
+    } else {
         // SAFETY: `libc::mmap` returns a valid non-null pointer or `libc::MAP_FAILED`, thus `ret`
         // will be non-null here.
         Ok(unsafe { NonNull::new_unchecked(ret) })
-    } 
+    }
 }
 
 /// Create an anonymous memory mapping.
@@ -429,7 +434,9 @@ pub unsafe fn mmap_anonymous(
     let ptr = addr.map_or(std::ptr::null_mut(), |a| a.get() as *mut c_void);
 
     let flags = MapFlags::MAP_ANONYMOUS | flags;
-    let ret = libc::mmap(ptr, length.into(), prot.bits(), flags.bits(), -1, 0);
+    let ret = unsafe {
+        libc::mmap(ptr, length.into(), prot.bits(), flags.bits(), -1, 0)
+    };
 
     if ret == libc::MAP_FAILED {
         Err(Errno::last())
@@ -456,21 +463,29 @@ pub unsafe fn mremap(
     new_address: Option<NonNull<c_void>>,
 ) -> Result<NonNull<c_void>> {
     #[cfg(target_os = "linux")]
-    let ret = libc::mremap(
-        addr.as_ptr(),
-        old_size,
-        new_size,
-        flags.bits(),
-        new_address.map(NonNull::as_ptr).unwrap_or(std::ptr::null_mut()),
-    );
+    let ret = unsafe {
+        libc::mremap(
+            addr.as_ptr(),
+            old_size,
+            new_size,
+            flags.bits(),
+            new_address
+                .map(NonNull::as_ptr)
+                .unwrap_or(std::ptr::null_mut()),
+        )
+    };
     #[cfg(target_os = "netbsd")]
-    let ret = libc::mremap(
-        addr.as_ptr(),
-        old_size,
-        new_address.map(NonNull::as_ptr).unwrap_or(std::ptr::null_mut()),
-        new_size,
-        flags.bits(),
-    );
+    let ret = unsafe {
+        libc::mremap(
+            addr.as_ptr(),
+            old_size,
+            new_address
+                .map(NonNull::as_ptr)
+                .unwrap_or(std::ptr::null_mut()),
+            new_size,
+            flags.bits(),
+        )
+    };
 
     if ret == libc::MAP_FAILED {
         Err(Errno::last())
@@ -490,7 +505,7 @@ pub unsafe fn mremap(
 ///
 /// [`munmap(2)`]: https://man7.org/linux/man-pages/man2/munmap.2.html
 pub unsafe fn munmap(addr: NonNull<c_void>, len: size_t) -> Result<()> {
-    Errno::result(libc::munmap(addr.as_ptr(), len)).map(drop)
+    unsafe { Errno::result(libc::munmap(addr.as_ptr(), len)).map(drop) }
 }
 
 /// give advice about use of memory
@@ -506,7 +521,10 @@ pub unsafe fn madvise(
     length: size_t,
     advise: MmapAdvise,
 ) -> Result<()> {
-    Errno::result(libc::madvise(addr.as_ptr(), length, advise as i32)).map(drop)
+    unsafe {
+        Errno::result(libc::madvise(addr.as_ptr(), length, advise as i32))
+            .map(drop)
+    }
 }
 
 /// Set protection of memory mapping.
@@ -541,7 +559,10 @@ pub unsafe fn mprotect(
     length: size_t,
     prot: ProtFlags,
 ) -> Result<()> {
-    Errno::result(libc::mprotect(addr.as_ptr(), length, prot.bits())).map(drop)
+    unsafe {
+        Errno::result(libc::mprotect(addr.as_ptr(), length, prot.bits()))
+            .map(drop)
+    }
 }
 
 /// synchronize a mapped region
@@ -557,7 +578,10 @@ pub unsafe fn msync(
     length: size_t,
     flags: MsFlags,
 ) -> Result<()> {
-    Errno::result(libc::msync(addr.as_ptr(), length, flags.bits())).map(drop)
+    unsafe {
+        Errno::result(libc::msync(addr.as_ptr(), length, flags.bits()))
+            .map(drop)
+    }
 }
 
 #[cfg(not(target_os = "android"))]

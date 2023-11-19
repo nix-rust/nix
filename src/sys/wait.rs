@@ -248,7 +248,7 @@ impl WaitStatus {
         all(target_os = "linux", not(target_env = "uclibc")),
     ))]
     unsafe fn from_siginfo(siginfo: &libc::siginfo_t) -> Result<WaitStatus> {
-        let si_pid = siginfo.si_pid();
+        let si_pid = unsafe { siginfo.si_pid() };
         if si_pid == 0 {
             return Ok(WaitStatus::StillAlive);
         }
@@ -256,7 +256,7 @@ impl WaitStatus {
         assert_eq!(siginfo.si_signo, libc::SIGCHLD);
 
         let pid = Pid::from_raw(si_pid);
-        let si_status = siginfo.si_status();
+        let si_status = unsafe { siginfo.si_status() };
 
         let status = match siginfo.si_code {
             libc::CLD_EXITED => WaitStatus::Exited(pid, si_status),

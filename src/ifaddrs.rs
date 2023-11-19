@@ -62,22 +62,24 @@ unsafe fn workaround_xnu_bug(info: &libc::ifaddrs) -> Option<SockaddrStorage> {
 
     let mut dst_sock = mem::MaybeUninit::<libc::sockaddr_storage>::zeroed();
 
-    // memcpy only sa_len bytes, assume the rest is zero
-    std::ptr::copy_nonoverlapping(
-        src_sock as *const u8,
-        dst_sock.as_mut_ptr().cast(),
-        (*src_sock).sa_len.into(),
-    );
+    let dst_sock = unsafe {
+        // memcpy only sa_len bytes, assume the rest is zero
+        std::ptr::copy_nonoverlapping(
+            src_sock as *const u8,
+            dst_sock.as_mut_ptr().cast(),
+            (*src_sock).sa_len.into(),
+        );
 
-    // Initialize ss_len to sizeof(libc::sockaddr_storage).
-    (*dst_sock.as_mut_ptr()).ss_len =
-        u8::try_from(mem::size_of::<libc::sockaddr_storage>()).unwrap();
-    let dst_sock = dst_sock.assume_init();
+        // Initialize ss_len to sizeof(libc::sockaddr_storage).
+        (*dst_sock.as_mut_ptr()).ss_len =
+            u8::try_from(mem::size_of::<libc::sockaddr_storage>()).unwrap();
+        dst_sock.assume_init()
+    };
 
     let dst_sock_ptr =
         &dst_sock as *const libc::sockaddr_storage as *const libc::sockaddr;
 
-    SockaddrStorage::from_raw(dst_sock_ptr, None)
+    unsafe { SockaddrStorage::from_raw(dst_sock_ptr, None) }
 }
 
 impl InterfaceAddress {

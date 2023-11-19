@@ -169,12 +169,12 @@ pub fn posix_openpt(flags: fcntl::OFlag) -> Result<PtyMaster> {
 /// For a threadsafe and non-`unsafe` alternative on Linux, see `ptsname_r()`.
 #[inline]
 pub unsafe fn ptsname(fd: &PtyMaster) -> Result<String> {
-    let name_ptr = libc::ptsname(fd.as_raw_fd());
+    let name_ptr = unsafe { libc::ptsname(fd.as_raw_fd()) };
     if name_ptr.is_null() {
         return Err(Errno::last());
     }
 
-    let name = CStr::from_ptr(name_ptr);
+    let name = unsafe { CStr::from_ptr(name_ptr) };
     Ok(name.to_string_lossy().into_owned())
 }
 
@@ -341,7 +341,7 @@ pub unsafe fn forkpty<'a, 'b, T: Into<Option<&'a Winsize>>, U: Into<Option<&'b T
         .map(|ws| ws as *const Winsize as *mut _)
         .unwrap_or(ptr::null_mut());
 
-    let res = libc::forkpty(master.as_mut_ptr(), ptr::null_mut(), term, win);
+    let res = unsafe { libc::forkpty(master.as_mut_ptr(), ptr::null_mut(), term, win) };
 
     let fork_result = Errno::result(res).map(|res| match res {
         0 => ForkResult::Child,
@@ -349,7 +349,7 @@ pub unsafe fn forkpty<'a, 'b, T: Into<Option<&'a Winsize>>, U: Into<Option<&'b T
     })?;
 
     Ok(ForkptyResult {
-        master: OwnedFd::from_raw_fd(master.assume_init()),
+        master: unsafe { OwnedFd::from_raw_fd( master.assume_init() ) },
         fork_result,
     })
 }

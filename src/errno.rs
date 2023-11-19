@@ -10,32 +10,32 @@ cfg_if! {
     if #[cfg(any(target_os = "freebsd",
                  apple_targets,))] {
         unsafe fn errno_location() -> *mut c_int {
-            libc::__error()
+            unsafe { libc::__error() }
         }
     } else if #[cfg(any(target_os = "android",
                         target_os = "netbsd",
                         target_os = "openbsd"))] {
         unsafe fn errno_location() -> *mut c_int {
-            libc::__errno()
+            unsafe { libc::__errno() }
         }
     } else if #[cfg(any(target_os = "linux",
                         target_os = "redox",
                         target_os = "dragonfly",
                         target_os = "fuchsia"))] {
         unsafe fn errno_location() -> *mut c_int {
-            libc::__errno_location()
+            unsafe { libc::__errno_location() }
         }
     } else if #[cfg(any(target_os = "illumos", target_os = "solaris"))] {
         unsafe fn errno_location() -> *mut c_int {
-            libc::___errno()
+            unsafe { libc::___errno() }
         }
     } else if #[cfg(any(target_os = "haiku",))] {
         unsafe fn errno_location() -> *mut c_int {
-            libc::_errnop()
+            unsafe { libc::_errnop() }
         }
     } else if #[cfg(any(target_os = "aix"))] {
         unsafe fn errno_location() -> *mut c_int {
-            libc::_Errno()
+            unsafe { libc::_Errno() }
         }
     }
 }
