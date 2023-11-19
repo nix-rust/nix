@@ -110,7 +110,7 @@ fn test_so_tcp_maxseg() {
     use std::net::SocketAddrV4;
     use std::str::FromStr;
 
-    let std_sa = SocketAddrV4::from_str("127.0.0.1:4001").unwrap();
+    let std_sa = SocketAddrV4::from_str("127.0.0.1:4003").unwrap();
     let sock_addr = SockaddrIn::from(std_sa);
 
     let rsock = socket(

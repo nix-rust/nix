@@ -2550,7 +2550,7 @@ mod tests {
 
         #[test]
         fn ip() {
-            let s = "127.0.0.1:8080";
+            let s = "127.0.0.1:8082";
             let ip = SockaddrIn::from_str(s).unwrap().ip();
             assert_eq!("127.0.0.1", format!("{ip}"));
         }

@@ -21,7 +21,7 @@ pub fn test_timestamping() {
     };
     use std::io::{IoSlice, IoSliceMut};
 
-    let sock_addr = SockaddrIn::from_str("127.0.0.1:6790").unwrap();
+    let sock_addr = SockaddrIn::from_str("127.0.0.1:6797").unwrap();
 
     let ssock = socket(
         AddressFamily::Inet,
@@ -314,7 +314,7 @@ mod recvfrom {
 
     #[test]
     pub fn udp() {
-        let std_sa = SocketAddrV4::from_str("127.0.0.1:6789").unwrap();
+        let std_sa = SocketAddrV4::from_str("127.0.0.1:6795").unwrap();
         let sock_addr = SockaddrIn::from(std_sa);
         let rsock = socket(
             AddressFamily::Inet,
@@ -673,10 +673,10 @@ mod recvfrom {
     #[test]
     pub fn udp_inet6() {
         let addr = std::net::Ipv6Addr::from_str("::1").unwrap();
-        let rport = 6789;
+        let rport = 6796;
         let rstd_sa = SocketAddrV6::new(addr, rport, 0, 0);
         let raddr = SockaddrIn6::from(rstd_sa);
-        let sport = 6790;
+        let sport = 6798;
         let sstd_sa = SocketAddrV6::new(addr, sport, 0, 0);
         let saddr = SockaddrIn6::from(sstd_sa);
         let rsock = socket(
