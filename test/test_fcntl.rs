@@ -632,7 +632,7 @@ mod test_flock {
         std::mem::drop(lock1);
 
         // Attempt to lock second handle again (but successfully)
-        if let Err(_) = Flock::lock(file2, FlockArg::LockExclusiveNonblock) {
+        if Flock::lock(file2, FlockArg::LockExclusiveNonblock).is_err() {
             panic!("Expected locking to be successful.");
         }
     }
@@ -652,7 +652,7 @@ mod test_flock {
         let _file1 = lock1.unlock();
 
         // Attempt to lock second handle.
-        if let Err(_) = Flock::lock(file2, FlockArg::LockExclusiveNonblock) {
+        if Flock::lock(file2, FlockArg::LockExclusiveNonblock).is_err() {
             panic!("Expected locking to be successful.");
         }
     }
