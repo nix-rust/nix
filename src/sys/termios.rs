@@ -512,13 +512,12 @@ libc_enum! {
 }
 
 // TODO: Make this usable directly as a slice index.
-#[cfg(not(target_os = "haiku"))]
 libc_enum! {
     /// Indices into the `termios.c_cc` array for special characters.
     #[repr(usize)]
     #[non_exhaustive]
     pub enum SpecialCharacterIndices {
-        #[cfg(not(target_os = "aix"))]
+        #[cfg(not(any(target_os = "aix", target_os = "haiku")))]
         VDISCARD,
         #[cfg(any(target_os = "dragonfly",
                 target_os = "freebsd",
@@ -540,11 +539,13 @@ libc_enum! {
         VERASE2,
         VINTR,
         VKILL,
+        #[cfg(not(target_os = "haiku"))]
         VLNEXT,
         #[cfg(not(any(all(target_os = "linux", target_arch = "sparc64"),
-                target_os = "illumos", target_os = "solaris", target_os = "aix")))]
+                target_os = "illumos", target_os = "solaris", target_os = "aix", target_os = "haiku")))]
         VMIN,
         VQUIT,
+        #[cfg(not(target_os = "haiku"))]
         VREPRINT,
         VSTART,
         #[cfg(any(target_os = "dragonfly",
@@ -562,9 +563,9 @@ libc_enum! {
         #[cfg(any(target_os = "haiku", target_os = "illumos", target_os = "solaris"))]
         VSWTCH,
         #[cfg(not(any(all(target_os = "linux", target_arch = "sparc64"),
-                target_os = "illumos", target_os = "solaris", target_os = "aix")))]
+                target_os = "illumos", target_os = "solaris", target_os = "aix", target_os = "haiku")))]
         VTIME,
-        #[cfg(not(target_os = "aix"))]
+        #[cfg(not(any(target_os = "aix", target_os = "haiku")))]
         VWERASE,
         #[cfg(target_os = "dragonfly")]
         VCHECKPT,
@@ -576,6 +577,7 @@ libc_enum! {
     target_os = "illumos",
     target_os = "solaris",
     target_os = "aix",
+    target_os = "haiku",
 ))]
 impl SpecialCharacterIndices {
     pub const VMIN: SpecialCharacterIndices = SpecialCharacterIndices::VEOF;
