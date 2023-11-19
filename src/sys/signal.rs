@@ -757,23 +757,27 @@ impl SigAction {
     pub fn new(handler: SigHandler, flags: SaFlags, mask: SigSet) -> SigAction {
         #[cfg(not(target_os = "aix"))]
         unsafe fn install_sig(p: *mut libc::sigaction, handler: SigHandler) {
-            (*p).sa_sigaction = match handler {
-                SigHandler::SigDfl => libc::SIG_DFL,
-                SigHandler::SigIgn => libc::SIG_IGN,
-                SigHandler::Handler(f) => f as *const extern fn(libc::c_int) as usize,
-                #[cfg(not(target_os = "redox"))]
-                SigHandler::SigAction(f) => f as *const extern fn(libc::c_int, *mut libc::siginfo_t, *mut libc::c_void) as usize,
-            };
+            unsafe {
+                 (*p).sa_sigaction = match handler {
+                    SigHandler::SigDfl => libc::SIG_DFL,
+                    SigHandler::SigIgn => libc::SIG_IGN,
+                    SigHandler::Handler(f) => f as *const extern fn(libc::c_int) as usize,
+                    #[cfg(not(target_os = "redox"))]
+                    SigHandler::SigAction(f) => f as *const extern fn(libc::c_int, *mut libc::siginfo_t, *mut libc::c_void) as usize,
+                };
+            }
         }
 
         #[cfg(target_os = "aix")]
         unsafe fn install_sig(p: *mut libc::sigaction, handler: SigHandler) {
-            (*p).sa_union.__su_sigaction = match handler {
-                SigHandler::SigDfl => mem::transmute::<usize, extern "C" fn(libc::c_int, *mut libc::siginfo_t, *mut libc::c_void)>(libc::SIG_DFL),
-                SigHandler::SigIgn => mem::transmute::<usize, extern "C" fn(libc::c_int, *mut libc::siginfo_t, *mut libc::c_void)>(libc::SIG_IGN),
-                SigHandler::Handler(f) => mem::transmute::<extern "C" fn(i32), extern "C" fn(i32, *mut libc::siginfo_t, *mut libc::c_void)>(f),
-                SigHandler::SigAction(f) => f,
-            };
+            unsafe {
+                (*p).sa_union.__su_sigaction = match handler {
+                    SigHandler::SigDfl => unsafe { mem::transmute::<usize, extern "C" fn(libc::c_int, *mut libc::siginfo_t, *mut libc::c_void)>(libc::SIG_DFL) },
+                    SigHandler::SigIgn => unsafe { mem::transmute::<usize, extern "C" fn(libc::c_int, *mut libc::siginfo_t, *mut libc::c_void)>(libc::SIG_IGN) },
+                    SigHandler::Handler(f) => unsafe { mem::transmute::<extern "C" fn(i32), extern "C" fn(i32, *mut libc::siginfo_t, *mut libc::c_void)>(f) },
+                    SigHandler::SigAction(f) => f,
+                };
+            }
         }
 
         let mut s = mem::MaybeUninit::<libc::sigaction>::uninit();
@@ -878,11 +882,11 @@ impl SigAction {
 pub unsafe fn sigaction(signal: Signal, sigaction: &SigAction) -> Result<SigAction> {
     let mut oldact = mem::MaybeUninit::<libc::sigaction>::uninit();
 
-    let res = libc::sigaction(signal as libc::c_int,
+    let res = unsafe { libc::sigaction(signal as libc::c_int,
                               &sigaction.sigaction as *const libc::sigaction,
-                              oldact.as_mut_ptr());
+                              oldact.as_mut_ptr()) };
 
-    Errno::result(res).map(|_| SigAction { sigaction: oldact.assume_init() })
+    Errno::result(res).map(|_| SigAction { sigaction: unsafe { oldact.assume_init() } })
 }
 
 /// Signal management (see [signal(3p)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/signal.html))
@@ -940,9 +944,9 @@ pub unsafe fn sigaction(signal: Signal, sigaction: &SigAction) -> Result<SigActi
 pub unsafe fn signal(signal: Signal, handler: SigHandler) -> Result<SigHandler> {
     let signal = signal as libc::c_int;
     let res = match handler {
-        SigHandler::SigDfl => libc::signal(signal, libc::SIG_DFL),
-        SigHandler::SigIgn => libc::signal(signal, libc::SIG_IGN),
-        SigHandler::Handler(handler) => libc::signal(signal, handler as libc::sighandler_t),
+        SigHandler::SigDfl => unsafe { libc::signal(signal, libc::SIG_DFL) },
+        SigHandler::SigIgn => unsafe { libc::signal(signal, libc::SIG_IGN) },
+        SigHandler::Handler(handler) => unsafe { libc::signal(signal, handler as libc::sighandler_t) },
         #[cfg(not(target_os = "redox"))]
         SigHandler::SigAction(_) => return Err(Errno::ENOTSUP),
     };
@@ -951,9 +955,7 @@ pub unsafe fn signal(signal: Signal, handler: SigHandler) -> Result<SigHandler> 
             libc::SIG_DFL => SigHandler::SigDfl,
             libc::SIG_IGN => SigHandler::SigIgn,
             p => SigHandler::Handler(
-                *(&p as *const usize
-                     as *const extern fn(libc::c_int))
-                as extern fn(libc::c_int)),
+                unsafe { *(&p as *const usize as *const extern fn(libc::c_int)) } as extern fn(libc::c_int)),
         }
     })
 }

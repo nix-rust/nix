@@ -293,7 +293,7 @@ impl ForkResult {
 #[inline]
 pub unsafe fn fork() -> Result<ForkResult> {
     use self::ForkResult::*;
-    let res = libc::fork();
+    let res = unsafe { libc::fork() };
 
     Errno::result(res).map(|res| match res {
         0 => Child,
@@ -3508,7 +3508,7 @@ impl User {
                 } else {
                     // SAFETY: `f` guarantees that `pwd` is initialized if `res`
                     // is not null.
-                    let pwd = pwd.assume_init();
+                    let pwd = unsafe { pwd.assume_init() };
                     return Ok(Some(User::from(&pwd)));
                 }
             } else if Errno::last() == Errno::ERANGE {
@@ -3618,11 +3618,11 @@ impl Group {
         let mut ret = Vec::new();
 
         for i in 0.. {
-            let u = mem.offset(i);
-            if (*u).is_null() {
+            let u = unsafe { mem.offset(i) };
+            if unsafe { (*u).is_null() } {
                 break;
             } else {
-                let s = CStr::from_ptr(*u).to_string_lossy().into_owned();
+                let s = unsafe {CStr::from_ptr(*u).to_string_lossy().into_owned()};
                 ret.push(s);
             }
         }
@@ -3667,7 +3667,7 @@ impl Group {
                 } else {
                     // SAFETY: `f` guarantees that `grp` is initialized if `res`
                     // is not null.
-                    let grp = grp.assume_init();
+                    let grp = unsafe { grp.assume_init() };
                     return Ok(Some(Group::from(&grp)));
                 }
             } else if Errno::last() == Errno::ERANGE {

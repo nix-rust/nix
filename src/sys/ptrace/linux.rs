@@ -278,13 +278,15 @@ unsafe fn ptrace_other(
     addr: AddressType,
     data: *mut c_void,
 ) -> Result<c_long> {
-    Errno::result(libc::ptrace(
-        request as RequestType,
-        libc::pid_t::from(pid),
-        addr,
-        data,
-    ))
-    .map(|_| 0)
+    unsafe {
+        Errno::result(libc::ptrace(
+            request as RequestType,
+            libc::pid_t::from(pid),
+            addr,
+            data,
+        ))
+        .map(|_| 0)
+    }
 }
 
 /// Set options, as with `ptrace(PTRACE_SETOPTIONS, ...)`.
@@ -551,7 +553,7 @@ pub unsafe fn write(
     addr: AddressType,
     data: *mut c_void,
 ) -> Result<()> {
-    ptrace_other(Request::PTRACE_POKEDATA, pid, addr, data).map(drop)
+    unsafe { ptrace_other(Request::PTRACE_POKEDATA, pid, addr, data).map(drop) }
 }
 
 /// Reads a word from a user area at `offset`, as with ptrace(PTRACE_PEEKUSER, ...).
@@ -572,5 +574,7 @@ pub unsafe fn write_user(
     offset: AddressType,
     data: *mut c_void,
 ) -> Result<()> {
-    ptrace_other(Request::PTRACE_POKEUSER, pid, offset, data).map(drop)
+    unsafe {
+        ptrace_other(Request::PTRACE_POKEUSER, pid, offset, data).map(drop)
+    }
 }

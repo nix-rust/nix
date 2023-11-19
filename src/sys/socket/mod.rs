@@ -889,7 +889,7 @@ impl ControlMessageOwned {
     #[allow(clippy::cast_ptr_alignment)]
     unsafe fn decode_from(header: &cmsghdr) -> ControlMessageOwned
     {
-        let p = CMSG_DATA(header);
+        let p = unsafe { CMSG_DATA(header) };
         // The cast is not unnecessary on all platforms.
         #[allow(clippy::unnecessary_cast)]
         let len = header as *const _ as usize + header.cmsg_len as usize
@@ -899,39 +899,41 @@ impl ControlMessageOwned {
                 let n = len / mem::size_of::<RawFd>();
                 let mut fds = Vec::with_capacity(n);
                 for i in 0..n {
-                    let fdp = (p as *const RawFd).add(i);
-                    fds.push(ptr::read_unaligned(fdp));
+                    unsafe {
+                        let fdp = (p as *const RawFd).add(i);
+                        fds.push(ptr::read_unaligned(fdp));
+                    }
                 }
                 ControlMessageOwned::ScmRights(fds)
             },
             #[cfg(any(target_os = "android", target_os = "linux"))]
             (libc::SOL_SOCKET, libc::SCM_CREDENTIALS) => {
-                let cred: libc::ucred = ptr::read_unaligned(p as *const _);
+                let cred: libc::ucred = unsafe { ptr::read_unaligned(p as *const _) };
                 ControlMessageOwned::ScmCredentials(cred.into())
             }
             #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
             (libc::SOL_SOCKET, libc::SCM_CREDS) => {
-                let cred: libc::cmsgcred = ptr::read_unaligned(p as *const _);
+                let cred: libc::cmsgcred = unsafe { ptr::read_unaligned(p as *const _) };
                 ControlMessageOwned::ScmCreds(cred.into())
             }
             #[cfg(not(any(target_os = "aix", target_os = "haiku")))]
             (libc::SOL_SOCKET, libc::SCM_TIMESTAMP) => {
-                let tv: libc::timeval = ptr::read_unaligned(p as *const _);
+                let tv: libc::timeval = unsafe { ptr::read_unaligned(p as *const _) };
                 ControlMessageOwned::ScmTimestamp(TimeVal::from(tv))
             },
             #[cfg(any(target_os = "android", target_os = "linux"))]
             (libc::SOL_SOCKET, libc::SCM_TIMESTAMPNS) => {
-                let ts: libc::timespec = ptr::read_unaligned(p as *const _);
+                let ts: libc::timespec = unsafe { ptr::read_unaligned(p as *const _) };
                 ControlMessageOwned::ScmTimestampns(TimeSpec::from(ts))
             }
             #[cfg(any(target_os = "android", target_os = "linux"))]
             (libc::SOL_SOCKET, libc::SCM_TIMESTAMPING) => {
                 let tp = p as *const libc::timespec;
-                let ts: libc::timespec = ptr::read_unaligned(tp);
+                let ts: libc::timespec = unsafe { ptr::read_unaligned(tp) };
                 let system = TimeSpec::from(ts);
-                let ts: libc::timespec = ptr::read_unaligned(tp.add(1));
+                let ts: libc::timespec = unsafe { ptr::read_unaligned(tp.add(1)) };
                 let hw_trans = TimeSpec::from(ts);
-                let ts: libc::timespec = ptr::read_unaligned(tp.add(2));
+                let ts: libc::timespec = unsafe { ptr::read_unaligned(tp.add(2)) };
                 let hw_raw = TimeSpec::from(ts);
                 let timestamping = Timestamps { system, hw_trans, hw_raw };
                 ControlMessageOwned::ScmTimestampsns(timestamping)
@@ -944,7 +946,7 @@ impl ControlMessageOwned {
             ))]
             #[cfg(feature = "net")]
             (libc::IPPROTO_IPV6, libc::IPV6_PKTINFO) => {
-                let info = ptr::read_unaligned(p as *const libc::in6_pktinfo);
+                let info = unsafe { ptr::read_unaligned(p as *const libc::in6_pktinfo) };
                 ControlMessageOwned::Ipv6PacketInfo(info)
             }
             #[cfg(any(
@@ -955,7 +957,7 @@ impl ControlMessageOwned {
             ))]
             #[cfg(feature = "net")]
             (libc::IPPROTO_IP, libc::IP_PKTINFO) => {
-                let info = ptr::read_unaligned(p as *const libc::in_pktinfo);
+                let info = unsafe { ptr::read_unaligned(p as *const libc::in_pktinfo) };
                 ControlMessageOwned::Ipv4PacketInfo(info)
             }
             #[cfg(any(
@@ -966,7 +968,7 @@ impl ControlMessageOwned {
             ))]
             #[cfg(feature = "net")]
             (libc::IPPROTO_IP, libc::IP_RECVIF) => {
-                let dl = ptr::read_unaligned(p as *const libc::sockaddr_dl);
+                let dl = unsafe { ptr::read_unaligned(p as *const libc::sockaddr_dl) };
                 ControlMessageOwned::Ipv4RecvIf(dl)
             },
             #[cfg(any(
@@ -977,51 +979,51 @@ impl ControlMessageOwned {
             ))]
             #[cfg(feature = "net")]
             (libc::IPPROTO_IP, libc::IP_RECVDSTADDR) => {
-                let dl = ptr::read_unaligned(p as *const libc::in_addr);
+                let dl = unsafe { ptr::read_unaligned(p as *const libc::in_addr) };
                 ControlMessageOwned::Ipv4RecvDstAddr(dl)
             },
             #[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
             #[cfg(feature = "net")]
             (libc::IPPROTO_IP, libc::IP_ORIGDSTADDR) => {
-                let dl = ptr::read_unaligned(p as *const libc::sockaddr_in);
+                let dl = unsafe { ptr::read_unaligned(p as *const libc::sockaddr_in) };
                 ControlMessageOwned::Ipv4OrigDstAddr(dl)
             },
             #[cfg(target_os = "linux")]
             #[cfg(feature = "net")]
             (libc::SOL_UDP, libc::UDP_GRO) => {
-                let gso_size: u16 = ptr::read_unaligned(p as *const _);
+                let gso_size: u16 = unsafe { ptr::read_unaligned(p as *const _) };
                 ControlMessageOwned::UdpGroSegments(gso_size)
             },
             #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
             (libc::SOL_SOCKET, libc::SO_RXQ_OVFL) => {
-                let drop_counter = ptr::read_unaligned(p as *const u32);
+                let drop_counter = unsafe { ptr::read_unaligned(p as *const u32) };
                 ControlMessageOwned::RxqOvfl(drop_counter)
             },
             #[cfg(any(target_os = "android", target_os = "linux"))]
             #[cfg(feature = "net")]
             (libc::IPPROTO_IP, libc::IP_RECVERR) => {
-                let (err, addr) = Self::recv_err_helper::<sockaddr_in>(p, len);
+                let (err, addr) = unsafe { Self::recv_err_helper::<sockaddr_in>(p, len) };
                 ControlMessageOwned::Ipv4RecvErr(err, addr)
             },
             #[cfg(any(target_os = "android", target_os = "linux"))]
             #[cfg(feature = "net")]
             (libc::IPPROTO_IPV6, libc::IPV6_RECVERR) => {
-                let (err, addr) = Self::recv_err_helper::<sockaddr_in6>(p, len);
+                let (err, addr) = unsafe { Self::recv_err_helper::<sockaddr_in6>(p, len) };
                 ControlMessageOwned::Ipv6RecvErr(err, addr)
             },
             #[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
             #[cfg(feature = "net")]
             (libc::IPPROTO_IPV6, libc::IPV6_ORIGDSTADDR) => {
-                let dl = ptr::read_unaligned(p as *const libc::sockaddr_in6);
+                let dl = unsafe { ptr::read_unaligned(p as *const libc::sockaddr_in6) };
                 ControlMessageOwned::Ipv6OrigDstAddr(dl)
             },
             #[cfg(any(target_os = "linux"))]
             (libc::SOL_TLS, libc::TLS_GET_RECORD_TYPE) => {
-                let content_type = ptr::read_unaligned(p as *const u8);
+                let content_type = unsafe { ptr::read_unaligned(p as *const u8) };
                 ControlMessageOwned::TlsGetRecordType(content_type.into())
             },
             (_, _) => {
-                let sl = std::slice::from_raw_parts(p, len);
+                let sl = unsafe { std::slice::from_raw_parts(p, len) };
                 let ucmsg = UnknownCmsg(*header, Vec::<u8>::from(sl));
                 ControlMessageOwned::Unknown(ucmsg)
             }
@@ -1033,18 +1035,18 @@ impl ControlMessageOwned {
     #[allow(clippy::cast_ptr_alignment)]    // False positive
     unsafe fn recv_err_helper<T>(p: *mut libc::c_uchar, len: usize) -> (libc::sock_extended_err, Option<T>) {
         let ee = p as *const libc::sock_extended_err;
-        let err = ptr::read_unaligned(ee);
+        let err = unsafe { ptr::read_unaligned(ee) };
 
         // For errors originating on the network, SO_EE_OFFENDER(ee) points inside the p[..len]
         // CMSG_DATA buffer.  For local errors, there is no address included in the control
         // message, and SO_EE_OFFENDER(ee) points beyond the end of the buffer.  So, we need to
         // validate that the address object is in-bounds before we attempt to copy it.
-        let addrp = libc::SO_EE_OFFENDER(ee) as *const T;
+        let addrp = unsafe { libc::SO_EE_OFFENDER(ee) as *const T };
 
-        if addrp.offset(1) as usize - (p as usize) > len {
+        if unsafe { addrp.offset(1) } as usize - (p as usize) > len {
             (err, None)
         } else {
-            (err, Some(ptr::read_unaligned(addrp)))
+            (err, Some(unsafe { ptr::read_unaligned(addrp) }))
         }
     }
 }
@@ -1482,10 +1484,12 @@ impl<'a> ControlMessage<'a> {
     // Unsafe: cmsg must point to a valid cmsghdr with enough space to
     // encode self.
     unsafe fn encode_into(&self, cmsg: *mut cmsghdr) {
-        (*cmsg).cmsg_level = self.cmsg_level();
-        (*cmsg).cmsg_type = self.cmsg_type();
-        (*cmsg).cmsg_len = self.cmsg_len();
-        self.copy_to_cmsg_data(CMSG_DATA(cmsg));
+        unsafe {
+            (*cmsg).cmsg_level = self.cmsg_level();
+            (*cmsg).cmsg_type = self.cmsg_type();
+            (*cmsg).cmsg_len = self.cmsg_len();
+            self.copy_to_cmsg_data( CMSG_DATA(cmsg) );
+        }
     }
 }
 
@@ -1993,19 +1997,23 @@ unsafe fn read_mhdr<'a, 'i, S>(
     // The cast is not unnecessary on all platforms.
     #[allow(clippy::unnecessary_cast)]
     let cmsghdr = {
-        if mhdr.msg_controllen > 0 {
+        let ptr = if mhdr.msg_controllen > 0 {
             debug_assert!(!mhdr.msg_control.is_null());
             debug_assert!(msg_controllen >= mhdr.msg_controllen as usize);
-            CMSG_FIRSTHDR(&mhdr as *const msghdr)
+            unsafe { CMSG_FIRSTHDR(&mhdr as *const msghdr) }
         } else {
             ptr::null()
-        }.as_ref()
+        };
+
+        unsafe {
+            ptr.as_ref()
+        }
     };
 
     // Ignore errors if this socket address has statically-known length
     //
     // This is to ensure that unix socket addresses have their length set appropriately.
-    let _ = address.set_length(mhdr.msg_namelen as usize);
+    let _ = unsafe { address.set_length(mhdr.msg_namelen as usize) };
 
     RecvMsg {
         bytes: r as usize,
@@ -2042,14 +2050,16 @@ unsafe fn pack_mhdr_to_receive<S>(
     // initialize it.
     let mut mhdr = mem::MaybeUninit::<msghdr>::zeroed();
     let p = mhdr.as_mut_ptr();
-    (*p).msg_name = address as *mut c_void;
-    (*p).msg_namelen = S::size();
-    (*p).msg_iov = iov_buffer as *mut iovec;
-    (*p).msg_iovlen = iov_buffer_len as _;
-    (*p).msg_control = cmsg_buffer as *mut c_void;
-    (*p).msg_controllen = cmsg_capacity as _;
-    (*p).msg_flags = 0;
-    mhdr.assume_init()
+    unsafe {
+        (*p).msg_name = address as *mut c_void;
+        (*p).msg_namelen = S::size();
+        (*p).msg_iov = iov_buffer as *mut iovec;
+        (*p).msg_iovlen = iov_buffer_len as _;
+        (*p).msg_control = cmsg_buffer as *mut c_void;
+        (*p).msg_controllen = cmsg_capacity as _;
+        (*p).msg_flags = 0;
+        mhdr.assume_init()
+    }
 }
 
 fn pack_mhdr_to_send<'a, I, C, S>(

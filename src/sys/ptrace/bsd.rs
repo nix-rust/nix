@@ -61,13 +61,15 @@ unsafe fn ptrace_other(
     addr: AddressType,
     data: c_int,
 ) -> Result<c_int> {
-    Errno::result(libc::ptrace(
-        request as RequestType,
-        libc::pid_t::from(pid),
-        addr,
-        data,
-    ))
-    .map(|_| 0)
+    unsafe {
+        Errno::result(libc::ptrace(
+            request as RequestType,
+            libc::pid_t::from(pid),
+            addr,
+            data,
+        ))
+            .map(|_| 0)
+    }
 }
 
 /// Sets the process as traceable, as with `ptrace(PT_TRACEME, ...)`

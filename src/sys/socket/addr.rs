@@ -437,14 +437,17 @@ impl<'a> UnixAddrKind<'a> {
         }
         #[cfg(any(target_os = "android", target_os = "linux"))]
         if sun.sun_path[0] == 0 {
-            let name = slice::from_raw_parts(
-                sun.sun_path.as_ptr().add(1).cast(),
-                path_len - 1,
-            );
+            let name = unsafe {
+                slice::from_raw_parts(
+                    sun.sun_path.as_ptr().add(1).cast(),
+                    path_len - 1,
+                )
+            };
             return Self::Abstract(name);
         }
-        let pathname =
-            slice::from_raw_parts(sun.sun_path.as_ptr().cast(), path_len);
+        let pathname = unsafe {
+            slice::from_raw_parts(sun.sun_path.as_ptr().cast(), path_len)
+        };
         if pathname.last() == Some(&0) {
             // A trailing NUL is not considered part of the path, and it does
             // not need to be included in the addrlen passed to functions like
@@ -674,10 +677,10 @@ impl SockaddrLike for UnixAddr {
                 return None;
             }
         }
-        if (*addr).sa_family as i32 != libc::AF_UNIX {
+        if unsafe { (*addr).sa_family as i32 != libc::AF_UNIX } {
             return None;
         }
-        let mut su: libc::sockaddr_un = mem::zeroed();
+        let mut su: libc::sockaddr_un = unsafe { mem::zeroed() };
         let sup = &mut su as *mut libc::sockaddr_un as *mut u8;
         cfg_if! {
             if #[cfg(any(target_os = "android",
@@ -690,11 +693,11 @@ impl SockaddrLike for UnixAddr {
                     mem::size_of::<libc::sockaddr_un>() as libc::socklen_t
                 );
             } else {
-                let su_len = len.unwrap_or((*addr).sa_len as libc::socklen_t);
+                let su_len = unsafe { len.unwrap_or((*addr).sa_len as libc::socklen_t) };
             }
-        };
-        ptr::copy(addr as *const u8, sup, su_len as usize);
-        Some(Self::from_raw_parts(su, su_len as u8))
+        }
+        unsafe { ptr::copy(addr as *const u8, sup, su_len as usize) };
+        Some(unsafe { Self::from_raw_parts(su, su_len as u8) })
     }
 
     fn size() -> libc::socklen_t
@@ -996,10 +999,10 @@ impl SockaddrLike for SockaddrIn {
                 return None;
             }
         }
-        if (*addr).sa_family as i32 != libc::AF_INET {
+        if unsafe { (*addr).sa_family as i32 != libc::AF_INET } {
             return None;
         }
-        Some(Self(ptr::read_unaligned(addr as *const _)))
+        Some(Self(unsafe { ptr::read_unaligned(addr as *const _) }))
     }
 }
 
@@ -1125,10 +1128,10 @@ impl SockaddrLike for SockaddrIn6 {
                 return None;
             }
         }
-        if (*addr).sa_family as i32 != libc::AF_INET6 {
+        if unsafe { (*addr).sa_family as i32 != libc::AF_INET6 } {
             return None;
         }
-        Some(Self(ptr::read_unaligned(addr as *const _)))
+        Some(Self(unsafe { ptr::read_unaligned(addr as *const _) }))
     }
 }
 
@@ -1264,9 +1267,9 @@ impl SockaddrLike for SockaddrStorage {
             {
                 None
             } else {
-                let mut ss: libc::sockaddr_storage = mem::zeroed();
+                let mut ss: libc::sockaddr_storage = unsafe { mem::zeroed() };
                 let ssp = &mut ss as *mut libc::sockaddr_storage as *mut u8;
-                ptr::copy(addr as *const u8, ssp, len as usize);
+                unsafe { ptr::copy(addr as *const u8, ssp, len as usize) };
                 #[cfg(any(
                     target_os = "android",
                     target_os = "fuchsia",
@@ -1276,9 +1279,11 @@ impl SockaddrLike for SockaddrStorage {
                 if i32::from(ss.ss_family) == libc::AF_UNIX {
                     // Safe because we UnixAddr is strictly smaller than
                     // SockaddrStorage, and we just initialized the structure.
-                    (*(&mut ss as *mut libc::sockaddr_storage
-                        as *mut UnixAddr))
-                        .sun_len = len as u8;
+                    unsafe {
+                        (*(&mut ss as *mut libc::sockaddr_storage
+                            as *mut UnixAddr))
+                            .sun_len = len as u8;
+                    }
                 }
                 Some(Self { ss })
             }
@@ -1286,19 +1291,19 @@ impl SockaddrLike for SockaddrStorage {
             // If length is not available and addr is of a fixed-length type,
             // copy it.  If addr is of a variable length type and len is not
             // available, then there's nothing we can do.
-            match (*addr).sa_family as i32 {
+            match unsafe { (*addr).sa_family as i32 } {
                 #[cfg(any(target_os = "android", target_os = "linux"))]
-                libc::AF_ALG => {
+                libc::AF_ALG => unsafe {
                     AlgAddr::from_raw(addr, l).map(|alg| Self { alg })
-                }
+                },
                 #[cfg(feature = "net")]
-                libc::AF_INET => {
+                libc::AF_INET => unsafe {
                     SockaddrIn::from_raw(addr, l).map(|sin| Self { sin })
-                }
+                },
                 #[cfg(feature = "net")]
-                libc::AF_INET6 => {
+                libc::AF_INET6 => unsafe {
                     SockaddrIn6::from_raw(addr, l).map(|sin6| Self { sin6 })
-                }
+                },
                 #[cfg(any(
                     target_os = "dragonfly",
                     target_os = "freebsd",
@@ -1309,34 +1314,30 @@ impl SockaddrLike for SockaddrStorage {
                     target_os = "openbsd"
                 ))]
                 #[cfg(feature = "net")]
-                libc::AF_LINK => {
+                libc::AF_LINK => unsafe {
                     LinkAddr::from_raw(addr, l).map(|dl| Self { dl })
                 }
                 #[cfg(any(target_os = "android", target_os = "linux"))]
-                libc::AF_NETLINK => {
+                libc::AF_NETLINK => unsafe {
                     NetlinkAddr::from_raw(addr, l).map(|nl| Self { nl })
-                }
+                },
                 #[cfg(any(
                     target_os = "android",
                     target_os = "fuchsia",
                     target_os = "linux"
                 ))]
                 #[cfg(feature = "net")]
-                libc::AF_PACKET => {
+                libc::AF_PACKET => unsafe {
                     LinkAddr::from_raw(addr, l).map(|dl| Self { dl })
                 }
                 #[cfg(all(feature = "ioctl", apple_targets))]
-                libc::AF_SYSTEM => {
+                libc::AF_SYSTEM => unsafe {
                     SysControlAddr::from_raw(addr, l).map(|sctl| Self { sctl })
                 }
-                #[cfg(any(
-                    target_os = "android",
-                    target_os = "linux",
-                    target_os = "macos"
-                ))]
-                libc::AF_VSOCK => {
+                #[cfg(any(target_os = "android", target_os = "linux", target_os = "macos" ))]
+                libc::AF_VSOCK => unsafe {
                     VsockAddr::from_raw(addr, l).map(|vsock| Self { vsock })
-                }
+                },
                 _ => None,
             }
         }
@@ -1362,7 +1363,7 @@ impl SockaddrLike for SockaddrStorage {
         new_length: usize,
     ) -> std::result::Result<(), SocketAddressLengthNotDynamic> {
         match self.as_unix_addr_mut() {
-            Some(addr) => addr.set_length(new_length),
+            Some(addr) => unsafe { addr.set_length(new_length) },
             None => Err(SocketAddressLengthNotDynamic),
         }
     }
@@ -1764,10 +1765,10 @@ pub mod netlink {
                     return None;
                 }
             }
-            if (*addr).sa_family as i32 != libc::AF_NETLINK {
+            if unsafe { (*addr).sa_family as i32 != libc::AF_NETLINK } {
                 return None;
             }
-            Some(Self(ptr::read_unaligned(addr as *const _)))
+            Some(Self(unsafe { ptr::read_unaligned(addr as *const _) }))
         }
     }
 
@@ -1812,10 +1813,10 @@ pub mod alg {
                     return None;
                 }
             }
-            if (*addr).sa_family as i32 != libc::AF_ALG {
+            if unsafe { (*addr).sa_family as i32 != libc::AF_ALG } {
                 return None;
             }
-            Some(Self(ptr::read_unaligned(addr as *const _)))
+            Some(Self(unsafe { ptr::read_unaligned(addr as *const _) }))
         }
     }
 
@@ -1948,10 +1949,10 @@ pub mod sys_control {
                     return None;
                 }
             }
-            if (*addr).sa_family as i32 != libc::AF_SYSTEM {
+            if unsafe { (*addr).sa_family as i32 != libc::AF_SYSTEM } {
                 return None;
             }
-            Some(Self(ptr::read_unaligned(addr as *const _)))
+            Some(Self(unsafe { ptr::read_unaligned(addr as *const _) } ))
         }
     }
 
@@ -2089,10 +2090,10 @@ mod datalink {
                     return None;
                 }
             }
-            if (*addr).sa_family as i32 != libc::AF_PACKET {
+            if unsafe { (*addr).sa_family as i32 != libc::AF_PACKET } {
                 return None;
             }
-            Some(Self(ptr::read_unaligned(addr as *const _)))
+            Some(Self(unsafe { ptr::read_unaligned(addr as *const _) }))
         }
     }
 
@@ -2212,10 +2213,10 @@ mod datalink {
                     return None;
                 }
             }
-            if (*addr).sa_family as i32 != libc::AF_LINK {
+            if unsafe { (*addr).sa_family as i32 != libc::AF_LINK } {
                 return None;
             }
-            Some(Self(ptr::read_unaligned(addr as *const _)))
+            Some(Self(unsafe { ptr::read_unaligned(addr as *const _) }))
         }
     }
 
@@ -2258,10 +2259,10 @@ pub mod vsock {
                     return None;
                 }
             }
-            if (*addr).sa_family as i32 != libc::AF_VSOCK {
+            if unsafe { (*addr).sa_family as i32 != libc::AF_VSOCK } {
                 return None;
             }
-            Some(Self(ptr::read_unaligned(addr as *const _)))
+            unsafe { Some(Self(ptr::read_unaligned(addr as *const _))) }
         }
     }
 
