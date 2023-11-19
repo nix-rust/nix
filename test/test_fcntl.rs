@@ -603,3 +603,57 @@ fn test_f_kinfo() {
     assert_ne!(res, -1);
     assert_eq!(path, tmp.path());
 }
+
+/// Test `Flock` and associated functions.
+///
+#[cfg(not(any(target_os = "redox", target_os = "solaris")))]
+mod test_flock {
+    use nix::fcntl::*;
+    use tempfile::NamedTempFile;
+
+    /// Verify that `Flock::lock()` correctly obtains a lock, and subsequently unlocks upon drop.
+    #[test]
+    fn verify_lock_and_drop() {
+        // Get 2 `File` handles to same underlying file.
+        let file1 = NamedTempFile::new().unwrap();
+        let file2 = file1.reopen().unwrap();
+        let file1 = file1.into_file();
+
+        // Lock first handle
+        let lock1 = Flock::lock(file1, FlockArg::LockExclusive).unwrap();
+
+        // Attempt to lock second handle
+        let file2 = match Flock::lock(file2, FlockArg::LockExclusiveNonblock) {
+            Ok(_) => panic!("Expected second exclusive lock to fail."),
+            Err((f, _)) => f,
+        };
+
+        // Drop first lock
+        std::mem::drop(lock1);
+
+        // Attempt to lock second handle again (but successfully)
+        if let Err(_) = Flock::lock(file2, FlockArg::LockExclusiveNonblock) {
+            panic!("Expected locking to be successful.");
+        }
+    }
+
+    /// Verify that `Flock::unlock()` correctly obtains unlocks.
+    #[test]
+    fn verify_unlock() {
+        // Get 2 `File` handles to same underlying file.
+        let file1 = NamedTempFile::new().unwrap();
+        let file2 = file1.reopen().unwrap();
+        let file1 = file1.into_file();
+
+        // Lock first handle
+        let lock1 = Flock::lock(file1, FlockArg::LockExclusive).unwrap();
+
+        // Unlock and retain file so any erroneous flocks also remain present.
+        let _file1 = lock1.unlock();
+
+        // Attempt to lock second handle.
+        if let Err(_) = Flock::lock(file2, FlockArg::LockExclusiveNonblock) {
+            panic!("Expected locking to be successful.");
+        }
+    }
+}

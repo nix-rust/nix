@@ -11,13 +11,17 @@ use libc::{self, c_int, c_uint, size_t, ssize_t};
 ))]
 use std::ffi::CStr;
 use std::ffi::OsString;
+#[cfg(not(any(target_os = "redox", target_os = "solaris")))]
+use std::mem::ManuallyDrop;
+#[cfg(not(any(target_os = "redox", target_os = "solaris")))]
+use std::ops::{Deref, DerefMut};
 #[cfg(not(target_os = "redox"))]
 use std::os::raw;
 use std::os::unix::ffi::OsStringExt;
 use std::os::unix::io::RawFd;
 // For splice and copy_file_range
 #[cfg(all(not(any(target_os = "redox", target_os = "solaris")), unix))]
-use std::os::unix::io::{AsRawFd, OwnedFd};
+use std::os::unix::io::AsRawFd;
 #[cfg(any(
     target_os = "netbsd",
     target_os = "macos",
@@ -631,15 +635,22 @@ fn flock(fd: RawFd, arg: FlockArg) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
-/// Represents a file lock on a particular [RawFd], which unlocks when dropped.
+/// Represents valid types for flock.
+///
+/// # Safety
+/// `T` must be `!Clone`.
+pub unsafe trait Flockable: AsRawFd {}
+
+/// Represents an owned flock, which unlocks on drop.
 ///
 /// See flock(2) for details on locking semantics.
+// `ManuallyDrop` is necessary to circumvent move out of `Drop` type error.
 #[cfg(not(any(target_os = "redox", target_os = "solaris")))]
 #[derive(Debug)]
-pub struct Flock(OwnedFd);
+pub struct Flock<T: Flockable>(ManuallyDrop<T>);
 
 #[cfg(not(any(target_os = "redox", target_os = "solaris")))]
-impl Drop for Flock {
+impl<T: Flockable> Drop for Flock<T> {
     fn drop(&mut self) {
         // Result is ignored because flock has no documented failure cases.
         _ = flock(self.0.as_raw_fd(), FlockArg::Unlock);
@@ -647,26 +658,76 @@ impl Drop for Flock {
 }
 
 #[cfg(not(any(target_os = "redox", target_os = "solaris")))]
-impl Flock {
-    /// Lock the given `fd`.
+impl<T: Flockable> Deref for Flock<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+#[cfg(not(any(target_os = "redox", target_os = "solaris")))]
+impl<T: Flockable> DerefMut for Flock<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+#[cfg(not(any(target_os = "redox", target_os = "solaris")))]
+impl<T: Flockable> Flock<T> {
+    /// Obtain a/an flock.
     ///
     /// # Example
     /// ```
-    /// # use std::os::unix::io::OwnedFd;
+    /// # use std::fs::File;
     /// # use nix::fcntl::{Flock, FlockArg};
-    /// fn do_stuff(fd: OwnedFd) -> nix::Result<()> {
-    ///     let lock = Flock::lock(fd, FlockArg::LockExclusive)?;
+    /// fn do_stuff(file: File) -> nix::Result<()> {
+    ///     let lock = match Flock::lock(file, FlockArg::LockExclusive) {
+    ///         Ok(l) => l,
+    ///         Err((_, e)) => return Err(e),
+    ///     };
     ///
     ///     // Do stuff
     ///
     ///     Ok(())
     /// } // File is unlocked once `lock` goes out of scope.
-    pub fn lock(fd: OwnedFd, args: FlockArg) -> Result<Self> {
-        flock(fd.as_raw_fd(), args)?;
+    pub fn lock(t: T, args: FlockArg) -> std::result::Result<Self, (T, Errno)> {
+        match flock(t.as_raw_fd(), args) {
+            Ok(_) => Ok(Self(ManuallyDrop::new(t))),
+            Err(e) => Err((t, e)),
+        }
+    }
 
-        Ok(Self(fd))
+    /// Remove the lock and return the object wrapped within.
+    ///
+    /// # Example
+    /// ```
+    /// # use std::fs::File;
+    /// # use nix::fcntl::{Flock, FlockArg};
+    /// fn do_stuff(file: File) -> nix::Result<()> {
+    ///     let lock = match Flock::lock(file, FlockArg::LockExclusive) {
+    ///         Ok(l) => l,
+    ///         Err((_,e)) => return Err(e),
+    ///     };
+    ///
+    ///     // Do critical section
+    ///
+    ///     // Unlock
+    ///     let file = lock.unlock();
+    ///
+    ///     // Do anything else
+    ///
+    ///     Ok(())
+    /// } // File is unlocked once `lock` goes out of scope.
+    pub fn unlock(mut self) -> T {
+        _ = flock(self.0.as_raw_fd(), FlockArg::Unlock);
+
+        // Safety: `self.0` never used again.
+        unsafe { ManuallyDrop::take(&mut self.0) }
     }
 }
+
+// Safety: `File` is not [std::clone::Clone].
+unsafe impl Flockable for std::fs::File {}
 }
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
