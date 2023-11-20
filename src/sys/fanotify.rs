@@ -170,7 +170,7 @@ pub struct FanotifyEvent {
     /// Version number for the structure. It must be compared to
     /// `FANOTIFY_METADATA_VERSION` to verify compile version and runtime
     /// version does match. It can be done with the
-    /// `FanotifyEvent::has_compile_version` method.
+    /// `FanotifyEvent::check_version` method.
     pub version: u8,
     /// Mask flags of the events.
     pub mask: MaskFlags,
@@ -186,7 +186,7 @@ pub struct FanotifyEvent {
 impl FanotifyEvent {
     /// Checks that compile fanotify API version is equal to the version of the
     /// event.
-    pub fn has_compile_version(&self) -> bool {
+    pub fn check_version(&self) -> bool {
         self.version == FANOTIFY_METADATA_VERSION
     }
 }

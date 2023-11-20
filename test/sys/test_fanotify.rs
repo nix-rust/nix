@@ -40,7 +40,7 @@ fn test_fanotify_notifications() {
     let [event] = &group.read_events().unwrap()[..] else {
         panic!("should have read exactly one event");
     };
-    assert!(event.has_compile_version());
+    assert!(event.check_version());
     assert_eq!(event.mask, MaskFlags::FAN_OPEN | MaskFlags::FAN_CLOSE_WRITE);
     let fd = event.fd.as_ref().unwrap();
     let path = read_link(format!("/proc/self/fd/{}", fd.as_raw_fd())).unwrap();
@@ -55,7 +55,7 @@ fn test_fanotify_notifications() {
     let [event] = &group.read_events().unwrap()[..] else {
         panic!("should have read exactly one event");
     };
-    assert!(event.has_compile_version());
+    assert!(event.check_version());
     assert_eq!(
         event.mask,
         MaskFlags::FAN_OPEN
@@ -76,7 +76,7 @@ fn test_fanotify_notifications() {
     let [event] = &group.read_events().unwrap()[..] else {
         panic!("should have read exactly one event");
     };
-    assert!(event.has_compile_version());
+    assert!(event.check_version());
     assert_eq!(
         event.mask,
         MaskFlags::FAN_OPEN | MaskFlags::FAN_CLOSE_NOWRITE
@@ -118,7 +118,7 @@ fn test_fanotify_responses() {
     let [event] = &group.read_events().unwrap()[..] else {
         panic!("should have read exactly one event");
     };
-    assert!(event.has_compile_version());
+    assert!(event.check_version());
     assert_eq!(event.mask, MaskFlags::FAN_OPEN_PERM);
     let fd = event.fd.as_ref().unwrap();
     let path = read_link(format!("/proc/self/fd/{}", fd.as_raw_fd())).unwrap();
@@ -134,7 +134,7 @@ fn test_fanotify_responses() {
     let [event] = &group.read_events().unwrap()[..] else {
         panic!("should have read exactly one event");
     };
-    assert!(event.has_compile_version());
+    assert!(event.check_version());
     assert_eq!(event.mask, MaskFlags::FAN_OPEN_PERM);
     let fd = event.fd.as_ref().unwrap();
     let path = read_link(format!("/proc/self/fd/{}", fd.as_raw_fd())).unwrap();
