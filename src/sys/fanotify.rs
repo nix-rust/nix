@@ -354,7 +354,7 @@ impl Fanotify {
 
 impl FromRawFd for Fanotify {
     unsafe fn from_raw_fd(fd: RawFd) -> Self {
-        Fanotify { fd: OwnedFd::from_raw_fd(fd) }
+        Fanotify { fd: unsafe { OwnedFd::from_raw_fd(fd) }}
     }
 }
 
