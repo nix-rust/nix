@@ -804,6 +804,21 @@ pub enum ControlMessageOwned {
     #[cfg(any(target_os = "linux"))]
     TlsGetRecordType(TlsGetRecordType),
 
+    #[cfg(any(
+        target_os = "freebsd",
+        apple_targets,
+        target_os = "netbsd",
+        target_os = "openbsd",
+    ))]
+    IpTos(u8),
+    #[cfg(any(
+        target_os = "freebsd",
+        apple_targets,
+        target_os = "netbsd",
+        target_os = "openbsd",
+    ))]
+    Ipv6TClass(u8),
+
     /// Catch-all variant for unimplemented cmsg types.
     #[doc(hidden)]
     Unknown(UnknownCmsg),
@@ -983,6 +998,31 @@ impl ControlMessageOwned {
                 let content_type = unsafe { ptr::read_unaligned(p as *const u8) };
                 ControlMessageOwned::TlsGetRecordType(content_type.into())
             },
+            #[cfg(any(
+                apple_targets,
+                target_os = "freebsd",
+                target_os = "netbsd",
+                target_os = "openbsd",
+            ))]
+            (libc::IPPROTO_IP, libc::IP_RECVTOS) => {
+                let tos = ptr::read_unaligned(p as *const u8);
+                ControlMessageOwned::IpTos(tos.into())
+            },
+            #[cfg(any(target_os = "android", target_os = "linux"))]
+            (libc::IPPROTO_IP, libc::IP_TOS) => {
+                let tos = ptr::read_unaligned(p as *const u8);
+                ControlMessageOwned::IpTos(tos.into())
+            },
+            #[cfg(any(
+                target_os = "freebsd",
+                apple_targets,
+                target_os = "netbsd",
+                target_os = "openbsd",
+            ))]
+            (libc::IPPROTO_IPV6, libc::IPV6_TCLASS) => {
+                let tclass = ptr::read_unaligned(p as *const u8);
+                ControlMessageOwned::Ipv6TClass(tclass.into())
+            },
             (_, _) => {
                 let sl = unsafe { std::slice::from_raw_parts(p, len) };
                 let ucmsg = UnknownCmsg(*header, Vec::<u8>::from(sl));
@@ -1148,6 +1188,21 @@ pub enum ControlMessage<'a> {
     /// page.
     #[cfg(target_os = "linux")]
     TxTime(&'a u64),
+
+    #[cfg(any(
+        target_os = "freebsd",
+        apple_targets,
+        target_os = "netbsd",
+        target_os = "openbsd",
+    ))]
+    IpTos(&'a libc::c_int),
+    #[cfg(any(
+        target_os = "freebsd",
+        apple_targets,
+        target_os = "netbsd",
+        target_os = "openbsd",
+    ))]
+    Ipv6TClass(&'a libc::c_int),
 }
 
 // An opaque structure used to prevent cmsghdr from being a public type
@@ -1252,6 +1307,24 @@ impl<'a> ControlMessage<'a> {
             ControlMessage::TxTime(tx_time) => {
                 tx_time as *const _ as *const u8
             },
+            #[cfg(any(
+                target_os = "freebsd",
+                apple_targets,
+                target_os = "netbsd",
+                target_os = "openbsd",
+            ))]
+            ControlMessage::IpTos(tos) => {
+                tos as *const _ as *const u8
+            },
+            #[cfg(any(
+                target_os = "freebsd",
+                apple_targets,
+                target_os = "netbsd",
+                target_os = "openbsd",
+            ))]
+            ControlMessage::Ipv6TClass(tclass) => {
+                tclass as *const _ as *const u8
+            },
         };
         unsafe {
             ptr::copy_nonoverlapping(
@@ -1316,6 +1389,24 @@ impl<'a> ControlMessage<'a> {
             ControlMessage::TxTime(tx_time) => {
                 mem::size_of_val(tx_time)
             },
+            #[cfg(any(
+                target_os = "freebsd",
+                apple_targets,
+                target_os = "netbsd",
+                target_os = "openbsd",
+            ))]
+            ControlMessage::IpTos(tos) => {
+                mem::size_of_val(tos)
+            },
+            #[cfg(any(
+                target_os = "freebsd",
+                apple_targets,
+                target_os = "netbsd",
+                target_os = "openbsd",
+            ))]
+            ControlMessage::Ipv6TClass(tclass) => {
+                mem::size_of_val(tclass)
+            },
         }
     }
 
@@ -1350,6 +1441,20 @@ impl<'a> ControlMessage<'a> {
             ControlMessage::RxqOvfl(_) => libc::SOL_SOCKET,
             #[cfg(target_os = "linux")]
             ControlMessage::TxTime(_) => libc::SOL_SOCKET,
+            #[cfg(any(
+                target_os = "freebsd",
+                apple_targets,
+                target_os = "netbsd",
+                target_os = "openbsd",
+            ))]
+            ControlMessage::IpTos(_) => libc::IPPROTO_IP,
+            #[cfg(any(
+                target_os = "freebsd",
+                apple_targets,
+                target_os = "netbsd",
+                target_os = "openbsd",
+            ))]
+            ControlMessage::Ipv6TClass(_) => libc::IPPROTO_IPV6,
         }
     }
 
@@ -1399,6 +1504,20 @@ impl<'a> ControlMessage<'a> {
             ControlMessage::TxTime(_) => {
                 libc::SCM_TXTIME
             },
+            #[cfg(any(
+                target_os = "freebsd",
+                apple_targets,
+                target_os = "netbsd",
+                target_os = "openbsd",
+            ))]
+            ControlMessage::IpTos(_) => libc::IP_TOS,
+            #[cfg(any(
+                target_os = "freebsd",
+                apple_targets,
+                target_os = "netbsd",
+                target_os = "openbsd",
+            ))]
+            ControlMessage::Ipv6TClass(_) => libc::IPV6_TCLASS,
         }
     }
 

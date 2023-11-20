@@ -388,7 +388,14 @@ sockopt_impl!(
     libc::SO_PRIORITY,
     libc::c_int
 );
-#[cfg(target_os = "linux")]
+#[cfg(any(
+    apple_targets,
+    target_os = "freebsd",
+    target_os = "netbsd",
+    target_os = "openbsd",
+    target_os = "android",
+    target_os = "linux",
+))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -400,7 +407,33 @@ sockopt_impl!(
     libc::IP_TOS,
     libc::c_int
 );
-#[cfg(target_os = "linux")]
+#[cfg(any(
+    apple_targets,
+    target_os = "freebsd",
+    target_os = "netbsd",
+    target_os = "openbsd",
+    target_os = "android",
+    target_os = "linux",
+))]
+#[cfg(feature = "net")]
+sockopt_impl!(
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
+    /// Receive the Type-Of-Service (TOS) field for
+    /// every IP packet on this socket
+    IpRecvTos,
+    Both,
+    libc::IPPROTO_IP,
+    libc::IP_RECVTOS,
+    bool
+);
+#[cfg(any(
+    apple_targets,
+    target_os = "freebsd",
+    target_os = "netbsd",
+    target_os = "openbsd",
+    target_os = "android",
+    target_os = "linux",
+))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -410,6 +443,24 @@ sockopt_impl!(
     libc::IPPROTO_IPV6,
     libc::IPV6_TCLASS,
     libc::c_int
+);
+#[cfg(any(
+    apple_targets,
+    linux_android
+    target_os = "freebsd",
+    target_os = "netbsd",
+    target_os = "openbsd",
+))]
+#[cfg(feature = "net")]
+sockopt_impl!(
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
+    /// Receive the traffic class field for
+    /// every IP packet on this socket
+    Ipv6RecvTClass,
+    Both,
+    libc::IPPROTO_IPV6,
+    libc::IPV6_RECVTCLASS,
+    bool
 );
 #[cfg(any(linux_android, target_os = "fuchsia"))]
 #[cfg(feature = "net")]
@@ -1005,7 +1056,13 @@ sockopt_impl!(
     libc::IP_MTU,
     libc::c_int
 );
-#[cfg(any(linux_android, target_os = "freebsd"))]
+#[cfg(any(
+    apple_targets,
+    linux_android
+    target_os = "freebsd",
+    target_os = "netbsd",
+    target_os = "openbsd",
+))]
 sockopt_impl!(
     /// Set or retrieve the current time-to-live field that is used in every
     /// packet sent from this socket.
@@ -1015,7 +1072,13 @@ sockopt_impl!(
     libc::IP_TTL,
     libc::c_int
 );
-#[cfg(any(linux_android, target_os = "freebsd"))]
+#[cfg(any(
+    apple_targets,
+    linux_android,
+    target_os = "freebsd",
+    target_os = "netbsd",
+    target_os = "openbsd",
+))]
 sockopt_impl!(
     /// Set the unicast hop limit for the socket.
     Ipv6Ttl,
