@@ -198,7 +198,8 @@ libc_bitflags!(
 /// Computes the raw fd consumed by a function of the form `*at`.
 #[cfg(any(
     all(feature = "fs", not(target_os = "redox")),
-    all(feature = "process", any(target_os = "android", target_os = "linux"))
+    all(feature = "process", any(target_os = "android", target_os = "linux")),
+    all(feature = "fanotify", target_os = "linux")
 ))]
 pub(crate) fn at_rawfd(fd: Option<RawFd>) -> raw::c_int {
     fd.unwrap_or(libc::AT_FDCWD)

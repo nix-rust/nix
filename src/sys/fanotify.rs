@@ -12,7 +12,7 @@
 
 use crate::{NixPath, Result};
 use crate::errno::Errno;
-use crate::fcntl::OFlag;
+use crate::fcntl::{OFlag, at_rawfd};
 use crate::unistd::{read, write};
 use std::os::unix::io::{AsFd, AsRawFd, BorrowedFd, FromRawFd, OwnedFd, RawFd};
 use std::mem::{MaybeUninit, size_of};
@@ -274,7 +274,7 @@ impl Fanotify {
                 self.fd.as_raw_fd(),
                 flags.bits(),
                 mask.bits(),
-                dirfd.unwrap_or(libc::AT_FDCWD),
+                at_rawfd(dirfd),
                 p,
             )
         })?;
