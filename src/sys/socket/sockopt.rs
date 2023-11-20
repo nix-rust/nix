@@ -1099,7 +1099,13 @@ sockopt_impl!(
     libc::IPV6_ORIGDSTADDR,
     bool
 );
-#[cfg(apple_targets)]
+#[cfg(any(
+    apple_targets,
+    target_os = "freebsd",
+    target_os = "netbsd",
+    target_os = "openbsd",
+))]
+#[cfg(feature = "net")]
 sockopt_impl!(
     /// Set "don't fragment packet" flag on the IP packet.
     IpDontFrag,
@@ -1108,7 +1114,24 @@ sockopt_impl!(
     libc::IP_DONTFRAG,
     bool
 );
-#[cfg(any(linux_android, apple_targets))]
+#[cfg(linux_android)]
+#[cfg(feature = "net")]
+sockopt_impl!(
+    /// Set "don't fragment packet" flag on the IP packet.
+    IpDontFrag,
+    Both,
+    libc::IPPROTO_IP,
+    libc::IP_MTU_DISCOVER,
+    bool
+);
+#[cfg(any(
+    apple_targets,
+    linux_android
+    target_os = "freebsd",
+    target_os = "netbsd",
+    target_os = "openbsd",
+))]
+#[cfg(feature = "net")]
 sockopt_impl!(
     /// Set "don't fragment packet" flag on the IPv6 packet.
     Ipv6DontFrag,
