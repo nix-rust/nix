@@ -354,7 +354,7 @@ impl Fanotify {
                     MaybeUninit::<libc::fanotify_event_metadata>::uninit();
                 ptr::copy_nonoverlapping(
                     buffer.as_ptr().add(offset),
-                    metadata.as_mut_ptr() as *mut u8,
+                    metadata.as_mut_ptr().cast(),
                     (BUFSIZ - offset).min(metadata_size),
                 );
                 metadata.assume_init()
@@ -384,7 +384,7 @@ impl Fanotify {
             self.fd.as_fd(),
             unsafe {
                 std::slice::from_raw_parts(
-                    (&response.inner as *const _) as *const u8,
+                    (&response.inner as *const libc::fanotify_response).cast(),
                     size_of::<libc::fanotify_response>(),
                 )
             },
