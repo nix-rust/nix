@@ -71,7 +71,7 @@ mod test {
         assert_eq!(super::uname().unwrap().sysname(), "Linux");
     }
 
-    #[cfg(any(target_os = "macos", target_os = "ios"))]
+    #[cfg(apple_targets)]
     #[test]
     pub fn test_uname_darwin() {
         assert_eq!(super::uname().unwrap().sysname(), "Darwin");

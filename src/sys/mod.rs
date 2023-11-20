@@ -2,9 +2,8 @@
 #[cfg(any(
     target_os = "dragonfly",
     target_os = "freebsd",
-    target_os = "ios",
     all(target_os = "linux", not(target_env = "uclibc")),
-    target_os = "macos",
+    apple_targets,
     target_os = "netbsd"
 ))]
 feature! {
@@ -21,8 +20,7 @@ feature! {
 
     #[cfg(any(target_os = "dragonfly",
               target_os = "freebsd",
-              target_os = "ios",
-              target_os = "macos",
+              apple_targets,
               target_os = "netbsd",
               target_os = "openbsd"))]
     pub mod event;
@@ -36,10 +34,9 @@ feature! {
     target_os = "android",
     target_os = "dragonfly",
     target_os = "freebsd",
-    target_os = "ios",
+    apple_targets,
     target_os = "linux",
     target_os = "redox",
-    target_os = "macos",
     target_os = "netbsd",
     target_os = "illumos",
     target_os = "openbsd"
@@ -125,9 +122,8 @@ feature! {
     target_os = "android",
     target_os = "dragonfly",
     target_os = "freebsd",
-    target_os = "ios",
+    apple_targets,
     target_os = "linux",
-    target_os = "macos"
 ))]
 feature! {
     #![feature = "zerocopy"]
@@ -159,9 +155,8 @@ feature! {
     target_os = "android",
     target_os = "dragonfly",
     target_os = "freebsd",
-    target_os = "ios",
+    apple_targets,
     target_os = "linux",
-    target_os = "macos",
     target_os = "openbsd"
 ))]
 feature! {
@@ -175,7 +170,6 @@ feature! {
 }
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
-#[cfg_attr(docsrs, doc(cfg(all())))]
 #[allow(missing_docs)]
 pub mod sysinfo;
 

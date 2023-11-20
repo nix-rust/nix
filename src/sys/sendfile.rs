@@ -22,7 +22,6 @@ use crate::Result;
 ///
 /// For more information, see [the sendfile(2) man page.](https://man7.org/linux/man-pages/man2/sendfile.2.html)
 #[cfg(any(target_os = "android", target_os = "linux"))]
-#[cfg_attr(docsrs, doc(cfg(all())))]
 pub fn sendfile<F1: AsFd, F2: AsFd>(
     out_fd: F1,
     in_fd: F2,
@@ -56,7 +55,6 @@ pub fn sendfile<F1: AsFd, F2: AsFd>(
 ///
 /// For more information, see [the sendfile(2) man page.](https://man7.org/linux/man-pages/man2/sendfile.2.html)
 #[cfg(target_os = "linux")]
-#[cfg_attr(docsrs, doc(cfg(all())))]
 pub fn sendfile64<F1: AsFd, F2: AsFd>(
     out_fd: F1,
     in_fd: F2,
@@ -80,8 +78,7 @@ pub fn sendfile64<F1: AsFd, F2: AsFd>(
 cfg_if! {
     if #[cfg(any(target_os = "dragonfly",
                  target_os = "freebsd",
-                 target_os = "ios",
-                 target_os = "macos"))] {
+                 apple_targets,))] {
         use std::io::IoSlice;
 
         #[derive(Clone, Debug)]
@@ -244,7 +241,7 @@ cfg_if! {
             };
             (Errno::result(return_code).and(Ok(())), bytes_sent)
         }
-    } else if #[cfg(any(target_os = "ios", target_os = "macos"))] {
+    } else if #[cfg(apple_targets)] {
         /// Read bytes from `in_fd` starting at `offset` and write up to `count` bytes to
         /// `out_sock`.
         ///

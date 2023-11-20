@@ -143,7 +143,9 @@ impl Inotify {
     pub fn init(flags: InitFlags) -> Result<Inotify> {
         let res = Errno::result(unsafe { libc::inotify_init1(flags.bits()) });
 
-        res.map(|fd| Inotify { fd: unsafe { OwnedFd::from_raw_fd(fd) } })
+        res.map(|fd| Inotify {
+            fd: unsafe { OwnedFd::from_raw_fd(fd) },
+        })
     }
 
     /// Adds a new watch on the target file or directory.
@@ -157,7 +159,11 @@ impl Inotify {
         mask: AddWatchFlags,
     ) -> Result<WatchDescriptor> {
         let res = path.with_nix_path(|cstr| unsafe {
-            libc::inotify_add_watch(self.fd.as_raw_fd(), cstr.as_ptr(), mask.bits())
+            libc::inotify_add_watch(
+                self.fd.as_raw_fd(),
+                cstr.as_ptr(),
+                mask.bits(),
+            )
         })?;
 
         Errno::result(res).map(|wd| WatchDescriptor { wd })
@@ -237,7 +243,9 @@ impl Inotify {
 
 impl FromRawFd for Inotify {
     unsafe fn from_raw_fd(fd: RawFd) -> Self {
-        Inotify { fd: OwnedFd::from_raw_fd(fd) }
+        Inotify {
+            fd: unsafe { OwnedFd::from_raw_fd(fd) },
+        }
     }
 }
 

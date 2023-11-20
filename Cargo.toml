@@ -3,7 +3,7 @@ name        = "nix"
 description = "Rust friendly bindings to *nix APIs"
 edition     = "2021"
 version     = "0.27.1"
-rust-version = "1.65"
+rust-version = "1.69"
 authors     = ["The nix-rust Project Developers"]
 repository  = "https://github.com/nix-rust/nix"
 license     = "MIT"
@@ -28,7 +28,7 @@ targets = [
 ]
 
 [dependencies]
-libc = { version = "0.2.147", features = ["extra_traits"] }
+libc = { version = "0.2.148", features = ["extra_traits"] }
 bitflags = "2.3.1"
 cfg-if = "1.0"
 pin-utils = { version = "0.1.0", optional = true }
@@ -82,6 +82,9 @@ caps = "0.5.3"
 
 [target.'cfg(target_os = "freebsd")'.dev-dependencies]
 sysctl = "0.4"
+
+[build-dependencies]
+cfg_aliases = "0.1.1"
 
 [[test]]
 name = "test"

@@ -4,8 +4,7 @@ use core::slice;
 use libc::{self, c_int, c_uint, size_t, ssize_t};
 #[cfg(any(
     target_os = "netbsd",
-    target_os = "macos",
-    target_os = "ios",
+    apple_targets,
     target_os = "dragonfly",
     all(target_os = "freebsd", target_arch = "x86_64"),
 ))]
@@ -24,8 +23,7 @@ use std::os::unix::io::RawFd;
 use std::os::unix::io::AsRawFd;
 #[cfg(any(
     target_os = "netbsd",
-    target_os = "macos",
-    target_os = "ios",
+    apple_targets,
     target_os = "dragonfly",
     all(target_os = "freebsd", target_arch = "x86_64"),
 ))]
@@ -78,7 +76,6 @@ libc_bitflags!(
         O_ACCMODE;
         /// Use alternate I/O semantics.
         #[cfg(target_os = "netbsd")]
-        #[cfg_attr(docsrs, doc(cfg(all())))]
         O_ALT_IO;
         /// Open the file in append-only mode.
         O_APPEND;
@@ -87,7 +84,6 @@ libc_bitflags!(
                       target_os = "illumos",
                       target_os = "solaris",
                       target_os = "haiku")))]
-        #[cfg_attr(docsrs, doc(cfg(all())))]
         O_ASYNC;
         /// Closes the file descriptor once an `execve` call is made.
         ///
@@ -101,63 +97,50 @@ libc_bitflags!(
                   target_os = "freebsd",
                   target_os = "linux",
                   target_os = "netbsd"))]
-        #[cfg_attr(docsrs, doc(cfg(all())))]
         O_DIRECT;
         /// If the specified path isn't a directory, fail.
         #[cfg(not(any(target_os = "illumos", target_os = "solaris")))]
-        #[cfg_attr(docsrs, doc(cfg(all())))]
         O_DIRECTORY;
         /// Implicitly follow each `write()` with an `fdatasync()`.
         #[cfg(any(target_os = "android",
-                  target_os = "ios",
+                  apple_targets,
                   target_os = "linux",
-                  target_os = "macos",
                   target_os = "netbsd",
                   target_os = "openbsd"))]
-        #[cfg_attr(docsrs, doc(cfg(all())))]
         O_DSYNC;
         /// Error out if a file was not created.
         O_EXCL;
         /// Open for execute only.
         #[cfg(target_os = "freebsd")]
-        #[cfg_attr(docsrs, doc(cfg(all())))]
         O_EXEC;
         /// Open with an exclusive file lock.
         #[cfg(any(target_os = "dragonfly",
                   target_os = "freebsd",
-                  target_os = "ios",
-                  target_os = "macos",
+                  apple_targets,
                   target_os = "netbsd",
                   target_os = "openbsd",
                   target_os = "redox"))]
-        #[cfg_attr(docsrs, doc(cfg(all())))]
         O_EXLOCK;
         /// Same as `O_SYNC`.
         #[cfg(any(target_os = "dragonfly",
                   target_os = "freebsd",
-                  target_os = "ios",
+                  apple_targets,
                   all(target_os = "linux", not(target_env = "musl")),
-                  target_os = "macos",
                   target_os = "netbsd",
                   target_os = "openbsd",
                   target_os = "redox"))]
-        #[cfg_attr(docsrs, doc(cfg(all())))]
         O_FSYNC;
         /// Allow files whose sizes can't be represented in an `off_t` to be opened.
         #[cfg(any(target_os = "android", target_os = "linux"))]
-        #[cfg_attr(docsrs, doc(cfg(all())))]
         O_LARGEFILE;
         /// Do not update the file last access time during `read(2)`s.
         #[cfg(any(target_os = "android", target_os = "linux"))]
-        #[cfg_attr(docsrs, doc(cfg(all())))]
         O_NOATIME;
         /// Don't attach the device as the process' controlling terminal.
         #[cfg(not(target_os = "redox"))]
-        #[cfg_attr(docsrs, doc(cfg(all())))]
         O_NOCTTY;
         /// Same as `O_NONBLOCK`.
         #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
-        #[cfg_attr(docsrs, doc(cfg(all())))]
         O_NDELAY;
         /// `open()` will fail if the given path is a symbolic link.
         O_NOFOLLOW;
@@ -165,13 +148,11 @@ libc_bitflags!(
         O_NONBLOCK;
         /// Don't deliver `SIGPIPE`.
         #[cfg(target_os = "netbsd")]
-        #[cfg_attr(docsrs, doc(cfg(all())))]
         O_NOSIGPIPE;
         /// Obtain a file descriptor for low-level access.
         ///
         /// The file itself is not opened and other file operations will fail.
         #[cfg(any(target_os = "android", target_os = "linux", target_os = "redox"))]
-        #[cfg_attr(docsrs, doc(cfg(all())))]
         O_PATH;
         /// Only allow reading.
         ///
@@ -183,35 +164,28 @@ libc_bitflags!(
         O_RDWR;
         /// Similar to `O_DSYNC` but applies to `read`s instead.
         #[cfg(any(target_os = "linux", target_os = "netbsd", target_os = "openbsd"))]
-        #[cfg_attr(docsrs, doc(cfg(all())))]
         O_RSYNC;
         /// Skip search permission checks.
         #[cfg(target_os = "netbsd")]
-        #[cfg_attr(docsrs, doc(cfg(all())))]
         O_SEARCH;
         /// Open with a shared file lock.
         #[cfg(any(target_os = "dragonfly",
                   target_os = "freebsd",
-                  target_os = "ios",
-                  target_os = "macos",
+                  apple_targets,
                   target_os = "netbsd",
                   target_os = "openbsd",
                   target_os = "redox"))]
-        #[cfg_attr(docsrs, doc(cfg(all())))]
         O_SHLOCK;
         /// Implicitly follow each `write()` with an `fsync()`.
         #[cfg(not(target_os = "redox"))]
-        #[cfg_attr(docsrs, doc(cfg(all())))]
         O_SYNC;
         /// Create an unnamed temporary file.
         #[cfg(any(target_os = "android", target_os = "linux"))]
-        #[cfg_attr(docsrs, doc(cfg(all())))]
         O_TMPFILE;
         /// Truncate an existing regular file to 0 length if it allows writing.
         O_TRUNC;
         /// Restore default TTY attributes.
         #[cfg(target_os = "freebsd")]
-        #[cfg_attr(docsrs, doc(cfg(all())))]
         O_TTY_INIT;
         /// Only allow writing.
         ///
@@ -219,6 +193,15 @@ libc_bitflags!(
         O_WRONLY;
     }
 );
+
+/// Computes the raw fd consumed by a function of the form `*at`.
+#[cfg(any(
+    all(feature = "fs", not(target_os = "redox")),
+    all(feature = "process", any(target_os = "android", target_os = "linux"))
+))]
+pub(crate) fn at_rawfd(fd: Option<RawFd>) -> raw::c_int {
+    fd.unwrap_or(libc::AT_FDCWD)
+}
 
 feature! {
 #![feature = "fs"]
@@ -369,7 +352,7 @@ fn inner_readlink<P: ?Sized + NixPath>(
                     AtFlags::empty()
                 };
                 super::sys::stat::fstatat(
-                    dirfd,
+                    Some(dirfd),
                     path,
                     flags | AtFlags::AT_SYMLINK_NOFOLLOW,
                 )
@@ -380,7 +363,7 @@ fn inner_readlink<P: ?Sized + NixPath>(
                 target_os = "redox"
             )))]
             Some(dirfd) => super::sys::stat::fstatat(
-                dirfd,
+                Some(dirfd),
                 path,
                 AtFlags::AT_SYMLINK_NOFOLLOW,
             ),
@@ -427,19 +410,11 @@ pub fn readlink<P: ?Sized + NixPath>(path: &P) -> Result<OsString> {
 
 #[cfg(not(target_os = "redox"))]
 pub fn readlinkat<P: ?Sized + NixPath>(
-    dirfd: RawFd,
+    dirfd: Option<RawFd>,
     path: &P,
 ) -> Result<OsString> {
+    let dirfd = at_rawfd(dirfd);
     inner_readlink(Some(dirfd), path)
-}
-
-/// Computes the raw fd consumed by a function of the form `*at`.
-#[cfg(not(target_os = "redox"))]
-pub(crate) fn at_rawfd(fd: Option<RawFd>) -> raw::c_int {
-    match fd {
-        None => libc::AT_FDCWD,
-        Some(fd) => fd,
-    }
 }
 }
 
@@ -504,16 +479,24 @@ pub enum FcntlArg<'a> {
         target_os = "freebsd"
     ))]
     F_GET_SEALS,
-    #[cfg(any(target_os = "macos", target_os = "ios"))]
+    #[cfg(apple_targets)]
     F_FULLFSYNC,
+    #[cfg(apple_targets)]
+    F_BARRIERFSYNC,
     #[cfg(any(target_os = "linux", target_os = "android"))]
     F_GETPIPE_SZ,
     #[cfg(any(target_os = "linux", target_os = "android"))]
     F_SETPIPE_SZ(c_int),
-    #[cfg(any(target_os = "netbsd", target_os = "dragonfly", target_os = "macos", target_os = "ios"))]
+    #[cfg(any(
+        target_os = "netbsd",
+        target_os = "dragonfly",
+        apple_targets,
+    ))]
     F_GETPATH(&'a mut PathBuf),
     #[cfg(all(target_os = "freebsd", target_arch = "x86_64"))]
     F_KINFO(&'a mut PathBuf),
+    #[cfg(apple_targets)]
+    F_GETPATH_NOFIRMLINK(&'a mut PathBuf),
     // TODO: Rest of flags
 }
 
@@ -568,13 +551,19 @@ pub fn fcntl(fd: RawFd, arg: FcntlArg) -> Result<c_int> {
                 target_os = "freebsd"
             ))]
             F_GET_SEALS => libc::fcntl(fd, libc::F_GET_SEALS),
-            #[cfg(any(target_os = "macos", target_os = "ios"))]
+            #[cfg(apple_targets)]
             F_FULLFSYNC => libc::fcntl(fd, libc::F_FULLFSYNC),
+            #[cfg(apple_targets)]
+            F_BARRIERFSYNC => libc::fcntl(fd, libc::F_BARRIERFSYNC),
             #[cfg(any(target_os = "linux", target_os = "android"))]
             F_GETPIPE_SZ => libc::fcntl(fd, libc::F_GETPIPE_SZ),
             #[cfg(any(target_os = "linux", target_os = "android"))]
             F_SETPIPE_SZ(size) => libc::fcntl(fd, libc::F_SETPIPE_SZ, size),
-            #[cfg(any(target_os = "dragonfly", target_os = "netbsd", target_os = "macos", target_os = "ios"))]
+            #[cfg(any(
+                target_os = "dragonfly",
+                target_os = "netbsd",
+                apple_targets,
+            ))]
             F_GETPATH(path) => {
                 let mut buffer = vec![0; libc::PATH_MAX as usize];
                 let res = libc::fcntl(fd, libc::F_GETPATH, buffer.as_mut_ptr());
@@ -592,6 +581,15 @@ pub fn fcntl(fd: RawFd, arg: FcntlArg) -> Result<c_int> {
                 let p = info.kf_path;
                 let u8_slice = slice::from_raw_parts(p.as_ptr().cast(), p.len());
                 let optr = CStr::from_bytes_until_nul(u8_slice).unwrap();
+                *path = PathBuf::from(OsString::from(optr.to_str().unwrap()));
+                return Ok(ok_res)
+            },
+            #[cfg(apple_targets)]
+            F_GETPATH_NOFIRMLINK(path) => {
+                let mut buffer = vec![0; libc::PATH_MAX as usize];
+                let res = libc::fcntl(fd, libc::F_GETPATH_NOFIRMLINK, buffer.as_mut_ptr());
+                let ok_res = Errno::result(res)?;
+                let optr = CStr::from_bytes_until_nul(&buffer).unwrap();
                 *path = PathBuf::from(OsString::from(optr.to_str().unwrap()));
                 return Ok(ok_res)
             },
@@ -811,7 +809,7 @@ pub fn copy_file_range<Fd1: AsFd, Fd2: AsFd>(
             let ret = unsafe {
                 libc::syscall(
                     libc::SYS_copy_file_range,
-                    fd_in,
+                    fd_in.as_fd().as_raw_fd(),
                     off_in,
                     fd_out.as_fd().as_raw_fd(),
                     off_out,

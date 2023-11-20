@@ -88,11 +88,9 @@ pub struct MqdT(mqd_t);
 // See https://sourceware.org/bugzilla/show_bug.cgi?id=21279
 /// Size of a message queue attribute member
 #[cfg(all(target_arch = "x86_64", target_pointer_width = "32"))]
-#[cfg_attr(docsrs, doc(cfg(all())))]
 pub type mq_attr_member_t = i64;
 /// Size of a message queue attribute member
 #[cfg(not(all(target_arch = "x86_64", target_pointer_width = "32")))]
-#[cfg_attr(docsrs, doc(cfg(all())))]
 pub type mq_attr_member_t = libc::c_long;
 
 impl MqAttr {

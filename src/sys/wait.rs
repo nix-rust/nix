@@ -27,12 +27,10 @@ libc_bitflags!(
         #[cfg(any(target_os = "android",
                   target_os = "freebsd",
                   target_os = "haiku",
-                  target_os = "ios",
+                  apple_targets,
                   target_os = "linux",
                   target_os = "redox",
-                  target_os = "macos",
                   target_os = "netbsd"))]
-        #[cfg_attr(docsrs, doc(cfg(all())))]
         WEXITED;
         /// Report the status of selected processes that have continued from a
         /// job control stop by receiving a
@@ -42,35 +40,28 @@ libc_bitflags!(
         #[cfg(any(target_os = "android",
                   target_os = "freebsd",
                   target_os = "haiku",
-                  target_os = "ios",
+                  apple_targets,
                   target_os = "linux",
                   target_os = "redox",
-                  target_os = "macos",
                   target_os = "netbsd"))]
-        #[cfg_attr(docsrs, doc(cfg(all())))]
         WSTOPPED;
         /// Don't reap, just poll status.
         #[cfg(any(target_os = "android",
                   target_os = "freebsd",
                   target_os = "haiku",
-                  target_os = "ios",
+                  apple_targets,
                   target_os = "linux",
                   target_os = "redox",
-                  target_os = "macos",
                   target_os = "netbsd"))]
-        #[cfg_attr(docsrs, doc(cfg(all())))]
         WNOWAIT;
         /// Don't wait on children of other threads in this group
         #[cfg(any(target_os = "android", target_os = "linux", target_os = "redox"))]
-        #[cfg_attr(docsrs, doc(cfg(all())))]
         __WNOTHREAD;
         /// Wait on all children, regardless of type
         #[cfg(any(target_os = "android", target_os = "linux", target_os = "redox"))]
-        #[cfg_attr(docsrs, doc(cfg(all())))]
         __WALL;
         /// Wait for "clone" children only.
         #[cfg(any(target_os = "android", target_os = "linux", target_os = "redox"))]
-        #[cfg_attr(docsrs, doc(cfg(all())))]
         __WCLONE;
     }
 );
@@ -108,7 +99,6 @@ pub enum WaitStatus {
     /// [`nix::sys::ptrace`]: ../ptrace/index.html
     /// [`ptrace`(2)]: https://man7.org/linux/man-pages/man2/ptrace.2.html
     #[cfg(any(target_os = "linux", target_os = "android"))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     PtraceEvent(Pid, Signal, c_int),
     /// The traced process was stopped by execution of a system call,
     /// and `PTRACE_O_TRACESYSGOOD` is in effect. See [`ptrace`(2)] for
@@ -116,7 +106,6 @@ pub enum WaitStatus {
     ///
     /// [`ptrace`(2)]: https://man7.org/linux/man-pages/man2/ptrace.2.html
     #[cfg(any(target_os = "linux", target_os = "android"))]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     PtraceSyscall(Pid),
     /// The process was previously stopped but has resumed execution
     /// after receiving a `SIGCONT` signal. This is only reported if
@@ -259,7 +248,7 @@ impl WaitStatus {
         all(target_os = "linux", not(target_env = "uclibc")),
     ))]
     unsafe fn from_siginfo(siginfo: &libc::siginfo_t) -> Result<WaitStatus> {
-        let si_pid = siginfo.si_pid();
+        let si_pid = unsafe { siginfo.si_pid() };
         if si_pid == 0 {
             return Ok(WaitStatus::StillAlive);
         }
@@ -267,7 +256,7 @@ impl WaitStatus {
         assert_eq!(siginfo.si_signo, libc::SIGCHLD);
 
         let pid = Pid::from_raw(si_pid);
-        let si_status = siginfo.si_status();
+        let si_status = unsafe { siginfo.si_status() };
 
         let status = match siginfo.si_code {
             libc::CLD_EXITED => WaitStatus::Exited(pid, si_status),
@@ -378,7 +367,9 @@ pub fn waitid(id: Id, flags: WaitPidFlag) -> Result<WaitStatus> {
         Id::PGid(pid) => (libc::P_PGID, pid.as_raw() as libc::id_t),
         #[cfg(any(target_os = "android", target_os = "linux"))]
         Id::PIDFd(fd) => (libc::P_PIDFD, fd.as_raw_fd() as libc::id_t),
-        Id::_Unreachable(_) => unreachable!("This variant could never be constructed"),
+        Id::_Unreachable(_) => {
+            unreachable!("This variant could never be constructed")
+        }
     };
 
     let siginfo = unsafe {

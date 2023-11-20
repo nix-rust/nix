@@ -18,7 +18,11 @@ pub fn writev<Fd: AsFd>(fd: Fd, iov: &[IoSlice<'_>]) -> Result<usize> {
     //
     // Because it is ABI compatible, a pointer cast here is valid
     let res = unsafe {
-        libc::writev(fd.as_fd().as_raw_fd(), iov.as_ptr().cast(), iov.len() as c_int)
+        libc::writev(
+            fd.as_fd().as_raw_fd(),
+            iov.as_ptr().cast(),
+            iov.len() as c_int,
+        )
     };
 
     Errno::result(res).map(|r| r as usize)
@@ -33,7 +37,11 @@ pub fn writev<Fd: AsFd>(fd: Fd, iov: &[IoSlice<'_>]) -> Result<usize> {
 pub fn readv<Fd: AsFd>(fd: Fd, iov: &mut [IoSliceMut<'_>]) -> Result<usize> {
     // SAFETY: same as in writev(), IoSliceMut is ABI-compatible with iovec
     let res = unsafe {
-        libc::readv(fd.as_fd().as_raw_fd(), iov.as_ptr().cast(), iov.len() as c_int)
+        libc::readv(
+            fd.as_fd().as_raw_fd(),
+            iov.as_ptr().cast(),
+            iov.len() as c_int,
+        )
     };
 
     Errno::result(res).map(|r| r as usize)
@@ -46,8 +54,11 @@ pub fn readv<Fd: AsFd>(fd: Fd, iov: &mut [IoSliceMut<'_>]) -> Result<usize> {
 ///
 /// See also: [`writev`](fn.writev.html) and [`pwrite`](fn.pwrite.html)
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
-#[cfg_attr(docsrs, doc(cfg(all())))]
-pub fn pwritev<Fd: AsFd>(fd: Fd, iov: &[IoSlice<'_>], offset: off_t) -> Result<usize> {
+pub fn pwritev<Fd: AsFd>(
+    fd: Fd,
+    iov: &[IoSlice<'_>],
+    offset: off_t,
+) -> Result<usize> {
     #[cfg(target_env = "uclibc")]
     let offset = offset as libc::off64_t; // uclibc doesn't use off_t
 
@@ -72,7 +83,6 @@ pub fn pwritev<Fd: AsFd>(fd: Fd, iov: &[IoSlice<'_>], offset: off_t) -> Result<u
 ///
 /// See also: [`readv`](fn.readv.html) and [`pread`](fn.pread.html)
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
-#[cfg_attr(docsrs, doc(cfg(all())))]
 // Clippy doesn't know that we need to pass iov mutably only because the
 // mutation happens after converting iov to a pointer
 #[allow(clippy::needless_pass_by_ref_mut)]
@@ -140,7 +150,6 @@ pub fn pread<Fd: AsFd>(fd: Fd, buf: &mut [u8], offset: off_t) -> Result<usize> {
 /// is used with [`process_vm_readv`](fn.process_vm_readv.html)
 /// and [`process_vm_writev`](fn.process_vm_writev.html).
 #[cfg(any(target_os = "linux", target_os = "android"))]
-#[cfg_attr(docsrs, doc(cfg(all())))]
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct RemoteIoVec {

@@ -81,8 +81,7 @@ impl Kqueue {
 #[cfg(any(
     target_os = "dragonfly",
     target_os = "freebsd",
-    target_os = "ios",
-    target_os = "macos",
+    apple_targets,
     target_os = "openbsd"
 ))]
 type type_of_udata = *mut libc::c_void;
@@ -111,8 +110,7 @@ libc_enum! {
         EVFILT_EXCEPT,
         #[cfg(any(target_os = "dragonfly",
                   target_os = "freebsd",
-                  target_os = "ios",
-                  target_os = "macos"))]
+                  apple_targets))]
         /// Establishes a file system monitor.
         EVFILT_FS,
         #[cfg(target_os = "freebsd")]
@@ -120,7 +118,7 @@ libc_enum! {
         /// # See Also
         /// [lio_listio(2)](https://www.freebsd.org/cgi/man.cgi?query=lio_listio)
         EVFILT_LIO,
-        #[cfg(any(target_os = "ios", target_os = "macos"))]
+        #[cfg(apple_targets)]
         /// Mach portsets
         EVFILT_MACHPORT,
         /// Notifies when a process performs one or more of the requested
@@ -146,11 +144,10 @@ libc_enum! {
         EVFILT_TIMER,
         #[cfg(any(target_os = "dragonfly",
                   target_os = "freebsd",
-                  target_os = "ios",
-                  target_os = "macos"))]
+                  apple_targets))]
         /// Notifies only when explicitly requested by the user.
         EVFILT_USER,
-        #[cfg(any(target_os = "ios", target_os = "macos"))]
+        #[cfg(apple_targets)]
         /// Virtual memory events
         EVFILT_VM,
         /// Notifies when a requested event happens on a specified file.
@@ -165,8 +162,7 @@ libc_enum! {
 #[cfg(any(
     target_os = "dragonfly",
     target_os = "freebsd",
-    target_os = "ios",
-    target_os = "macos",
+    apple_targets,
     target_os = "openbsd"
 ))]
 #[doc(hidden)]
@@ -188,7 +184,7 @@ libc_bitflags! {
         #[allow(missing_docs)]
         EV_DISABLE;
         #[cfg(any(target_os = "dragonfly", target_os = "freebsd",
-                  target_os = "ios", target_os = "macos",
+                  apple_targets,
                   target_os = "netbsd", target_os = "openbsd"))]
         #[allow(missing_docs)]
         EV_DISPATCH;
@@ -201,7 +197,7 @@ libc_bitflags! {
         EV_EOF;
         #[allow(missing_docs)]
         EV_ERROR;
-        #[cfg(any(target_os = "macos", target_os = "ios"))]
+        #[cfg(apple_targets)]
         #[allow(missing_docs)]
         EV_FLAG0;
         #[allow(missing_docs)]
@@ -211,14 +207,14 @@ libc_bitflags! {
         EV_NODATA;
         #[allow(missing_docs)]
         EV_ONESHOT;
-        #[cfg(any(target_os = "macos", target_os = "ios"))]
+        #[cfg(any(target_os = "macos", target_os = "tvos"))]
         #[allow(missing_docs)]
         EV_OOBAND;
-        #[cfg(any(target_os = "macos", target_os = "ios"))]
+        #[cfg(apple_targets)]
         #[allow(missing_docs)]
         EV_POLL;
         #[cfg(any(target_os = "dragonfly", target_os = "freebsd",
-                  target_os = "ios", target_os = "macos",
+                  apple_targets,
                   target_os = "netbsd", target_os = "openbsd"))]
         #[allow(missing_docs)]
         EV_RECEIPT;
@@ -231,7 +227,7 @@ libc_bitflags!(
     // that wouldn't simply be repeating the man page.
     #[allow(missing_docs)]
     pub struct FilterFlag: u32 {
-        #[cfg(any(target_os = "macos", target_os = "ios"))]
+        #[cfg(apple_targets)]
         #[allow(missing_docs)]
         NOTE_ABSOLUTE;
         #[allow(missing_docs)]
@@ -247,43 +243,37 @@ libc_bitflags!(
         NOTE_EXEC;
         #[allow(missing_docs)]
         NOTE_EXIT;
-        #[cfg(any(target_os = "macos", target_os = "ios"))]
+        #[cfg(apple_targets)]
         #[allow(missing_docs)]
         NOTE_EXITSTATUS;
         #[allow(missing_docs)]
         NOTE_EXTEND;
-        #[cfg(any(target_os = "macos",
-                  target_os = "ios",
+        #[cfg(any(apple_targets,
                   target_os = "freebsd",
                   target_os = "dragonfly"))]
         #[allow(missing_docs)]
         NOTE_FFAND;
-        #[cfg(any(target_os = "macos",
-                  target_os = "ios",
+        #[cfg(any(apple_targets,
                   target_os = "freebsd",
                   target_os = "dragonfly"))]
         #[allow(missing_docs)]
         NOTE_FFCOPY;
-        #[cfg(any(target_os = "macos",
-                  target_os = "ios",
+        #[cfg(any(apple_targets,
                   target_os = "freebsd",
                   target_os = "dragonfly"))]
         #[allow(missing_docs)]
         NOTE_FFCTRLMASK;
-        #[cfg(any(target_os = "macos",
-                  target_os = "ios",
+        #[cfg(any(apple_targets,
                   target_os = "freebsd",
                   target_os = "dragonfly"))]
         #[allow(missing_docs)]
         NOTE_FFLAGSMASK;
-        #[cfg(any(target_os = "macos",
-                  target_os = "ios",
+        #[cfg(any(apple_targets,
                   target_os = "freebsd",
                   target_os = "dragonfly"))]
         #[allow(missing_docs)]
         NOTE_FFNOP;
-        #[cfg(any(target_os = "macos",
-                  target_os = "ios",
+        #[cfg(any(apple_targets,
                   target_os = "freebsd",
                   target_os = "dragonfly"))]
         #[allow(missing_docs)]
@@ -297,10 +287,12 @@ libc_bitflags!(
         #[cfg(target_os = "freebsd")]
         #[allow(missing_docs)]
         NOTE_MSECONDS;
-        #[cfg(any(target_os = "macos", target_os = "ios"))]
+        #[cfg(apple_targets)]
         #[allow(missing_docs)]
         NOTE_NONE;
-        #[cfg(any(target_os = "macos", target_os = "ios", target_os = "freebsd"))]
+        #[cfg(any(
+            apple_targets,
+            target_os = "freebsd"))]
         #[allow(missing_docs)]
         NOTE_NSECONDS;
         #[cfg(target_os = "dragonfly")]
@@ -314,18 +306,19 @@ libc_bitflags!(
         NOTE_RENAME;
         #[allow(missing_docs)]
         NOTE_REVOKE;
-        #[cfg(any(target_os = "macos", target_os = "ios", target_os = "freebsd"))]
+        #[cfg(any(
+            apple_targets,
+            target_os = "freebsd"))]
         #[allow(missing_docs)]
         NOTE_SECONDS;
-        #[cfg(any(target_os = "macos", target_os = "ios"))]
+        #[cfg(apple_targets)]
         #[allow(missing_docs)]
         NOTE_SIGNAL;
         #[allow(missing_docs)]
         NOTE_TRACK;
         #[allow(missing_docs)]
         NOTE_TRACKERR;
-        #[cfg(any(target_os = "macos",
-                  target_os = "ios",
+        #[cfg(any(apple_targets,
                   target_os = "freebsd",
                   target_os = "dragonfly"))]
         #[allow(missing_docs)]
@@ -333,19 +326,21 @@ libc_bitflags!(
         #[cfg(target_os = "openbsd")]
         #[allow(missing_docs)]
         NOTE_TRUNCATE;
-        #[cfg(any(target_os = "macos", target_os = "ios", target_os = "freebsd"))]
+        #[cfg(any(
+            apple_targets,
+            target_os = "freebsd"))]
         #[allow(missing_docs)]
         NOTE_USECONDS;
-        #[cfg(any(target_os = "macos", target_os = "ios"))]
+        #[cfg(apple_targets)]
         #[allow(missing_docs)]
         NOTE_VM_ERROR;
-        #[cfg(any(target_os = "macos", target_os = "ios"))]
+        #[cfg(apple_targets)]
         #[allow(missing_docs)]
         NOTE_VM_PRESSURE;
-        #[cfg(any(target_os = "macos", target_os = "ios"))]
+        #[cfg(apple_targets)]
         #[allow(missing_docs)]
         NOTE_VM_PRESSURE_SUDDEN_TERMINATE;
-        #[cfg(any(target_os = "macos", target_os = "ios"))]
+        #[cfg(apple_targets)]
         #[allow(missing_docs)]
         NOTE_VM_PRESSURE_TERMINATE;
         #[allow(missing_docs)]
@@ -444,8 +439,7 @@ pub fn kevent(
 }
 
 #[cfg(any(
-    target_os = "macos",
-    target_os = "ios",
+    apple_targets,
     target_os = "freebsd",
     target_os = "dragonfly",
     target_os = "openbsd"

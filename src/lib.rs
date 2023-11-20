@@ -41,7 +41,6 @@
 //! * `zerocopy` - APIs like `sendfile` and `copy_file_range`
 #![crate_name = "nix"]
 #![cfg(unix)]
-#![cfg_attr(docsrs, doc(cfg(all())))]
 #![allow(non_camel_case_types)]
 #![cfg_attr(test, deny(warnings))]
 #![recursion_limit = "500"]
@@ -90,6 +89,7 @@
 #![warn(missing_docs)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![deny(clippy::cast_ptr_alignment)]
+#![deny(unsafe_op_in_unsafe_fn)]
 
 // Re-exported external crates
 pub use libc;
@@ -124,9 +124,8 @@ feature! {
     #[cfg(any(target_os = "android",
               target_os = "dragonfly",
               target_os = "freebsd",
-              target_os = "ios",
+              apple_targets,
               target_os = "linux",
-              target_os = "macos",
               target_os = "netbsd",
               target_os = "illumos",
               target_os = "openbsd"))]

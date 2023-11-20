@@ -126,8 +126,7 @@ fn test_mkfifo_directory() {
 
 #[test]
 #[cfg(not(any(
-    target_os = "macos",
-    target_os = "ios",
+    apple_targets,
     target_os = "android",
     target_os = "redox",
     target_os = "haiku"
@@ -147,8 +146,7 @@ fn test_mkfifoat_none() {
 
 #[test]
 #[cfg(not(any(
-    target_os = "macos",
-    target_os = "ios",
+    apple_targets,
     target_os = "android",
     target_os = "redox",
     target_os = "haiku"
@@ -163,15 +161,15 @@ fn test_mkfifoat() {
     mkfifoat(Some(dirfd), mkfifoat_name, Mode::S_IRUSR).unwrap();
 
     let stats =
-        stat::fstatat(dirfd, mkfifoat_name, fcntl::AtFlags::empty()).unwrap();
+        stat::fstatat(Some(dirfd), mkfifoat_name, fcntl::AtFlags::empty())
+            .unwrap();
     let typ = stat::SFlag::from_bits_truncate(stats.st_mode);
     assert_eq!(typ, SFlag::S_IFIFO);
 }
 
 #[test]
 #[cfg(not(any(
-    target_os = "macos",
-    target_os = "ios",
+    apple_targets,
     target_os = "android",
     target_os = "redox",
     target_os = "haiku"
@@ -186,8 +184,7 @@ fn test_mkfifoat_directory_none() {
 
 #[test]
 #[cfg(not(any(
-    target_os = "macos",
-    target_os = "ios",
+    apple_targets,
     target_os = "android",
     target_os = "redox",
     target_os = "haiku"
@@ -197,7 +194,7 @@ fn test_mkfifoat_directory() {
     let tempdir = tempdir().unwrap();
     let dirfd = open(tempdir.path(), OFlag::empty(), Mode::empty()).unwrap();
     let mkfifoat_dir = "mkfifoat_dir";
-    stat::mkdirat(dirfd, mkfifoat_dir, Mode::S_IRUSR).unwrap();
+    stat::mkdirat(Some(dirfd), mkfifoat_dir, Mode::S_IRUSR).unwrap();
 
     mkfifoat(Some(dirfd), mkfifoat_dir, Mode::S_IRUSR)
         .expect_err("assertion failed");
@@ -234,8 +231,7 @@ mod linux_android {
 #[test]
 // `getgroups()` and `setgroups()` do not behave as expected on Apple platforms
 #[cfg(not(any(
-    target_os = "ios",
-    target_os = "macos",
+    apple_targets,
     target_os = "redox",
     target_os = "fuchsia",
     target_os = "haiku"
@@ -263,8 +259,7 @@ fn test_setgroups() {
 #[test]
 // `getgroups()` and `setgroups()` do not behave as expected on Apple platforms
 #[cfg(not(any(
-    target_os = "ios",
-    target_os = "macos",
+    apple_targets,
     target_os = "redox",
     target_os = "fuchsia",
     target_os = "haiku",
@@ -412,8 +407,7 @@ cfg_if! {
         execve_test_factory!(test_execve, execve, CString::new("/bin/sh").unwrap().as_c_str());
         execve_test_factory!(test_fexecve, fexecve, File::open("/bin/sh").unwrap().into_raw_fd());
     } else if #[cfg(any(target_os = "illumos",
-                        target_os = "ios",
-                        target_os = "macos",
+                        apple_targets,
                         target_os = "netbsd",
                         target_os = "openbsd",
                         target_os = "solaris"))] {
@@ -429,21 +423,21 @@ cfg_if! {
     if #[cfg(target_os = "android")] {
         use nix::fcntl::AtFlags;
         execve_test_factory!(test_execveat_empty, execveat,
-                             File::open("/system/bin/sh").unwrap().into_raw_fd(),
+                             Some(File::open("/system/bin/sh").unwrap().into_raw_fd()),
                              "", AtFlags::AT_EMPTY_PATH);
         execve_test_factory!(test_execveat_relative, execveat,
-                             File::open("/system/bin/").unwrap().into_raw_fd(),
+                             Some(File::open("/system/bin/").unwrap().into_raw_fd()),
                              "./sh", AtFlags::empty());
         execve_test_factory!(test_execveat_absolute, execveat,
-                             File::open("/").unwrap().into_raw_fd(),
+                             Some(File::open("/").unwrap().into_raw_fd()),
                              "/system/bin/sh", AtFlags::empty());
     } else if #[cfg(all(target_os = "linux", any(target_arch ="x86_64", target_arch ="x86")))] {
         use nix::fcntl::AtFlags;
-        execve_test_factory!(test_execveat_empty, execveat, File::open("/bin/sh").unwrap().into_raw_fd(),
+        execve_test_factory!(test_execveat_empty, execveat, Some(File::open("/bin/sh").unwrap().into_raw_fd()),
                              "", AtFlags::AT_EMPTY_PATH);
-        execve_test_factory!(test_execveat_relative, execveat, File::open("/bin/").unwrap().into_raw_fd(),
+        execve_test_factory!(test_execveat_relative, execveat, Some(File::open("/bin/").unwrap().into_raw_fd()),
                              "./sh", AtFlags::empty());
-        execve_test_factory!(test_execveat_absolute, execveat, File::open("/").unwrap().into_raw_fd(),
+        execve_test_factory!(test_execveat_absolute, execveat, Some(File::open("/").unwrap().into_raw_fd()),
                              "/bin/sh", AtFlags::empty());
     }
 }
@@ -987,12 +981,7 @@ fn test_linkat_newdirfd_none() {
 }
 
 #[test]
-#[cfg(not(any(
-    target_os = "ios",
-    target_os = "macos",
-    target_os = "redox",
-    target_os = "haiku"
-)))]
+#[cfg(not(any(apple_targets, target_os = "redox", target_os = "haiku")))]
 fn test_linkat_no_follow_symlink() {
     let _m = crate::CWD_LOCK.read();
 
@@ -1253,8 +1242,7 @@ fn test_ttyname_not_pty() {
 
 #[test]
 #[cfg(any(
-    target_os = "macos",
-    target_os = "ios",
+    apple_targets,
     target_os = "freebsd",
     target_os = "openbsd",
     target_os = "netbsd",

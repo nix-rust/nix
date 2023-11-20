@@ -1,4 +1,4 @@
-#[cfg(any(target_os = "macos", target_os = "ios", target_os = "openbsd"))]
+#[cfg(any(apple_targets, target_os = "openbsd"))]
 pub use libc::c_uint;
 #[cfg(any(
     target_os = "netbsd",
@@ -65,7 +65,7 @@ libc_bitflags! {
     }
 }
 
-#[cfg(any(target_os = "macos", target_os = "ios", target_os = "openbsd"))]
+#[cfg(any(apple_targets, target_os = "openbsd"))]
 pub type type_of_file_flag = c_uint;
 #[cfg(any(
     target_os = "netbsd",
@@ -79,12 +79,10 @@ pub type type_of_file_flag = c_ulong;
     target_os = "netbsd",
     target_os = "freebsd",
     target_os = "dragonfly",
-    target_os = "macos",
-    target_os = "ios"
+    apple_targets
 ))]
 libc_bitflags! {
     /// File flags.
-    #[cfg_attr(docsrs, doc(cfg(all())))]
     pub struct FileFlag: type_of_file_flag {
         /// The file may only be appended to.
         SF_APPEND;
@@ -121,14 +119,13 @@ libc_bitflags! {
         #[cfg(any(target_os = "dragonfly"))]
         UF_CACHE;
         /// File is compressed at the file system level.
-        #[cfg(any(target_os = "macos", target_os = "ios"))]
+        #[cfg(apple_targets)]
         UF_COMPRESSED;
         /// The file may be hidden from directory listings at the application's
         /// discretion.
         #[cfg(any(
             target_os = "freebsd",
-            target_os = "macos",
-            target_os = "ios",
+            apple_targets,
         ))]
         UF_HIDDEN;
         /// The file may not be changed.
@@ -162,7 +159,7 @@ libc_bitflags! {
         #[cfg(any(target_os = "freebsd"))]
         UF_SYSTEM;
         /// File renames and deletes are tracked.
-        #[cfg(any(target_os = "macos", target_os = "ios"))]
+        #[cfg(apple_targets)]
         UF_TRACKED;
         #[cfg(any(target_os = "dragonfly"))]
         UF_XLINK;
@@ -184,20 +181,15 @@ pub fn mknod<P: ?Sized + NixPath>(
 }
 
 /// Create a special or ordinary file, relative to a given directory.
-#[cfg(not(any(
-    target_os = "ios",
-    target_os = "macos",
-    target_os = "redox",
-    target_os = "haiku"
-)))]
-#[cfg_attr(docsrs, doc(cfg(all())))]
+#[cfg(not(any(apple_targets, target_os = "redox", target_os = "haiku")))]
 pub fn mknodat<P: ?Sized + NixPath>(
-    dirfd: RawFd,
+    dirfd: Option<RawFd>,
     path: &P,
     kind: SFlag,
     perm: Mode,
     dev: dev_t,
 ) -> Result<()> {
+    let dirfd = at_rawfd(dirfd);
     let res = path.with_nix_path(|cstr| unsafe {
         libc::mknodat(
             dirfd,
@@ -211,19 +203,16 @@ pub fn mknodat<P: ?Sized + NixPath>(
 }
 
 #[cfg(target_os = "linux")]
-#[cfg_attr(docsrs, doc(cfg(all())))]
 pub const fn major(dev: dev_t) -> u64 {
     ((dev >> 32) & 0xffff_f000) | ((dev >> 8) & 0x0000_0fff)
 }
 
 #[cfg(target_os = "linux")]
-#[cfg_attr(docsrs, doc(cfg(all())))]
 pub const fn minor(dev: dev_t) -> u64 {
     ((dev >> 12) & 0xffff_ff00) | ((dev) & 0x0000_00ff)
 }
 
 #[cfg(target_os = "linux")]
-#[cfg_attr(docsrs, doc(cfg(all())))]
 pub const fn makedev(major: u64, minor: u64) -> dev_t {
     ((major & 0xffff_f000) << 32)
         | ((major & 0x0000_0fff) << 8)
@@ -268,12 +257,12 @@ pub fn fstat(fd: RawFd) -> Result<FileStat> {
 }
 
 #[cfg(not(target_os = "redox"))]
-#[cfg_attr(docsrs, doc(cfg(all())))]
 pub fn fstatat<P: ?Sized + NixPath>(
-    dirfd: RawFd,
+    dirfd: Option<RawFd>,
     pathname: &P,
     f: AtFlags,
 ) -> Result<FileStat> {
+    let dirfd = at_rawfd(dirfd);
     let mut dst = mem::MaybeUninit::uninit();
     let res = pathname.with_nix_path(|cstr| unsafe {
         libc::fstatat(
@@ -324,7 +313,6 @@ pub enum FchmodatFlags {
 ///
 /// [fchmodat(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/fchmodat.html).
 #[cfg(not(target_os = "redox"))]
-#[cfg_attr(docsrs, doc(cfg(all())))]
 pub fn fchmodat<P: ?Sized + NixPath>(
     dirfd: Option<RawFd>,
     path: &P,
@@ -383,12 +371,10 @@ pub fn utimes<P: ?Sized + NixPath>(
 #[cfg(any(
     target_os = "linux",
     target_os = "haiku",
-    target_os = "ios",
-    target_os = "macos",
+    apple_targets,
     target_os = "freebsd",
     target_os = "netbsd"
 ))]
-#[cfg_attr(docsrs, doc(cfg(all())))]
 pub fn lutimes<P: ?Sized + NixPath>(
     path: &P,
     atime: &TimeVal,
@@ -440,7 +426,6 @@ pub enum UtimensatFlags {
 ///
 /// [utimensat(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/utimens.html).
 #[cfg(not(target_os = "redox"))]
-#[cfg_attr(docsrs, doc(cfg(all())))]
 pub fn utimensat<P: ?Sized + NixPath>(
     dirfd: Option<RawFd>,
     path: &P,
@@ -466,12 +451,12 @@ pub fn utimensat<P: ?Sized + NixPath>(
 }
 
 #[cfg(not(target_os = "redox"))]
-#[cfg_attr(docsrs, doc(cfg(all())))]
 pub fn mkdirat<P: ?Sized + NixPath>(
-    fd: RawFd,
+    fd: Option<RawFd>,
     path: &P,
     mode: Mode,
 ) -> Result<()> {
+    let fd = at_rawfd(fd);
     let res = path.with_nix_path(|cstr| unsafe {
         libc::mkdirat(fd, cstr.as_ptr(), mode.bits() as mode_t)
     })?;

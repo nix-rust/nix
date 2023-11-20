@@ -8,35 +8,34 @@ pub use self::consts::*;
 
 cfg_if! {
     if #[cfg(any(target_os = "freebsd",
-                 target_os = "ios",
-                 target_os = "macos"))] {
+                 apple_targets,))] {
         unsafe fn errno_location() -> *mut c_int {
-            libc::__error()
+            unsafe { libc::__error() }
         }
     } else if #[cfg(any(target_os = "android",
                         target_os = "netbsd",
                         target_os = "openbsd"))] {
         unsafe fn errno_location() -> *mut c_int {
-            libc::__errno()
+            unsafe { libc::__errno() }
         }
     } else if #[cfg(any(target_os = "linux",
                         target_os = "redox",
                         target_os = "dragonfly",
                         target_os = "fuchsia"))] {
         unsafe fn errno_location() -> *mut c_int {
-            libc::__errno_location()
+            unsafe { libc::__errno_location() }
         }
     } else if #[cfg(any(target_os = "illumos", target_os = "solaris"))] {
         unsafe fn errno_location() -> *mut c_int {
-            libc::___errno()
+            unsafe { libc::___errno() }
         }
     } else if #[cfg(any(target_os = "haiku",))] {
         unsafe fn errno_location() -> *mut c_int {
-            libc::_errnop()
+            unsafe { libc::_errnop() }
         }
     } else if #[cfg(any(target_os = "aix"))] {
         unsafe fn errno_location() -> *mut c_int {
-            libc::_Errno()
+            unsafe { libc::_Errno() }
         }
     }
 }
@@ -796,20 +795,18 @@ fn desc(errno: Errno) -> &'static str {
         ECAPMODE => "Not permitted in capability mode",
 
         #[cfg(any(
-            target_os = "macos",
             target_os = "freebsd",
             target_os = "dragonfly",
-            target_os = "ios",
+            apple_targets,
             target_os = "openbsd",
             target_os = "netbsd"
         ))]
         ENEEDAUTH => "Need authenticator",
 
         #[cfg(any(
-            target_os = "macos",
             target_os = "freebsd",
             target_os = "dragonfly",
-            target_os = "ios",
+            apple_targets,
             target_os = "openbsd",
             target_os = "netbsd",
             target_os = "redox",
@@ -819,10 +816,9 @@ fn desc(errno: Errno) -> &'static str {
         EOVERFLOW => "Value too large to be stored in data type",
 
         #[cfg(any(
-            target_os = "macos",
             target_os = "freebsd",
             target_os = "dragonfly",
-            target_os = "ios",
+            apple_targets,
             target_os = "netbsd",
             target_os = "redox",
             target_os = "haiku"
@@ -830,10 +826,9 @@ fn desc(errno: Errno) -> &'static str {
         EILSEQ => "Illegal byte sequence",
 
         #[cfg(any(
-            target_os = "macos",
             target_os = "freebsd",
             target_os = "dragonfly",
-            target_os = "ios",
+            apple_targets,
             target_os = "openbsd",
             target_os = "netbsd",
             target_os = "haiku"
@@ -841,10 +836,9 @@ fn desc(errno: Errno) -> &'static str {
         ENOATTR => "Attribute not found",
 
         #[cfg(any(
-            target_os = "macos",
             target_os = "freebsd",
             target_os = "dragonfly",
-            target_os = "ios",
+            apple_targets,
             target_os = "openbsd",
             target_os = "netbsd",
             target_os = "redox",
@@ -853,10 +847,9 @@ fn desc(errno: Errno) -> &'static str {
         EBADMSG => "Bad message",
 
         #[cfg(any(
-            target_os = "macos",
             target_os = "freebsd",
             target_os = "dragonfly",
-            target_os = "ios",
+            apple_targets,
             target_os = "openbsd",
             target_os = "netbsd",
             target_os = "redox",
@@ -865,28 +858,25 @@ fn desc(errno: Errno) -> &'static str {
         EPROTO => "Protocol error",
 
         #[cfg(any(
-            target_os = "macos",
             target_os = "freebsd",
             target_os = "dragonfly",
-            target_os = "ios",
+            apple_targets,
             target_os = "openbsd"
         ))]
         ENOTRECOVERABLE => "State not recoverable",
 
         #[cfg(any(
-            target_os = "macos",
             target_os = "freebsd",
             target_os = "dragonfly",
-            target_os = "ios",
+            apple_targets,
             target_os = "openbsd"
         ))]
         EOWNERDEAD => "Previous owner died",
 
         #[cfg(any(
-            target_os = "macos",
             target_os = "freebsd",
             target_os = "dragonfly",
-            target_os = "ios",
+            apple_targets,
             target_os = "openbsd",
             target_os = "netbsd",
             target_os = "aix",
@@ -897,10 +887,9 @@ fn desc(errno: Errno) -> &'static str {
         ENOTSUP => "Operation not supported",
 
         #[cfg(any(
-            target_os = "macos",
             target_os = "freebsd",
             target_os = "dragonfly",
-            target_os = "ios",
+            apple_targets,
             target_os = "aix",
             target_os = "openbsd",
             target_os = "netbsd"
@@ -908,10 +897,9 @@ fn desc(errno: Errno) -> &'static str {
         EPROCLIM => "Too many processes",
 
         #[cfg(any(
-            target_os = "macos",
             target_os = "freebsd",
             target_os = "dragonfly",
-            target_os = "ios",
+            apple_targets,
             target_os = "aix",
             target_os = "openbsd",
             target_os = "netbsd",
@@ -920,10 +908,9 @@ fn desc(errno: Errno) -> &'static str {
         EUSERS => "Too many users",
 
         #[cfg(any(
-            target_os = "macos",
             target_os = "freebsd",
             target_os = "dragonfly",
-            target_os = "ios",
+            apple_targets,
             target_os = "openbsd",
             target_os = "netbsd",
             target_os = "redox",
@@ -935,10 +922,9 @@ fn desc(errno: Errno) -> &'static str {
         EDQUOT => "Disc quota exceeded",
 
         #[cfg(any(
-            target_os = "macos",
             target_os = "freebsd",
             target_os = "dragonfly",
-            target_os = "ios",
+            apple_targets,
             target_os = "openbsd",
             target_os = "netbsd",
             target_os = "redox",
@@ -950,10 +936,9 @@ fn desc(errno: Errno) -> &'static str {
         ESTALE => "Stale NFS file handle",
 
         #[cfg(any(
-            target_os = "macos",
             target_os = "freebsd",
             target_os = "dragonfly",
-            target_os = "ios",
+            apple_targets,
             target_os = "aix",
             target_os = "openbsd",
             target_os = "netbsd",
@@ -962,80 +947,72 @@ fn desc(errno: Errno) -> &'static str {
         EREMOTE => "Too many levels of remote in path",
 
         #[cfg(any(
-            target_os = "macos",
             target_os = "freebsd",
             target_os = "dragonfly",
-            target_os = "ios",
+            apple_targets,
             target_os = "openbsd",
             target_os = "netbsd"
         ))]
         EBADRPC => "RPC struct is bad",
 
         #[cfg(any(
-            target_os = "macos",
             target_os = "freebsd",
             target_os = "dragonfly",
-            target_os = "ios",
+            apple_targets,
             target_os = "openbsd",
             target_os = "netbsd"
         ))]
         ERPCMISMATCH => "RPC version wrong",
 
         #[cfg(any(
-            target_os = "macos",
             target_os = "freebsd",
             target_os = "dragonfly",
-            target_os = "ios",
+            apple_targets,
             target_os = "openbsd",
             target_os = "netbsd"
         ))]
         EPROGUNAVAIL => "RPC prog. not avail",
 
         #[cfg(any(
-            target_os = "macos",
             target_os = "freebsd",
             target_os = "dragonfly",
-            target_os = "ios",
+            apple_targets,
             target_os = "openbsd",
             target_os = "netbsd"
         ))]
         EPROGMISMATCH => "Program version wrong",
 
         #[cfg(any(
-            target_os = "macos",
             target_os = "freebsd",
             target_os = "dragonfly",
-            target_os = "ios",
+            apple_targets,
             target_os = "openbsd",
             target_os = "netbsd"
         ))]
         EPROCUNAVAIL => "Bad procedure for program",
 
         #[cfg(any(
-            target_os = "macos",
             target_os = "freebsd",
             target_os = "dragonfly",
-            target_os = "ios",
+            apple_targets,
             target_os = "openbsd",
             target_os = "netbsd"
         ))]
         EFTYPE => "Inappropriate file type or format",
 
         #[cfg(any(
-            target_os = "macos",
             target_os = "freebsd",
             target_os = "dragonfly",
-            target_os = "ios",
+            apple_targets,
             target_os = "openbsd",
             target_os = "netbsd"
         ))]
         EAUTH => "Authentication error",
 
         #[cfg(any(
-            target_os = "macos",
             target_os = "freebsd",
             target_os = "dragonfly",
-            target_os = "ios",
+            apple_targets,
             target_os = "aix",
             target_os = "openbsd",
             target_os = "netbsd",
@@ -1043,52 +1020,40 @@ fn desc(errno: Errno) -> &'static str {
         ))]
         ECANCELED => "Operation canceled",
 
-        #[cfg(any(target_os = "macos", target_os = "ios"))]
+        #[cfg(apple_targets)]
         EPWROFF => "Device power is off",
 
-        #[cfg(any(target_os = "macos", target_os = "ios"))]
+        #[cfg(apple_targets)]
         EDEVERR => "Device error, e.g. paper out",
 
-        #[cfg(any(target_os = "macos", target_os = "ios"))]
+        #[cfg(apple_targets)]
         EBADEXEC => "Bad executable",
 
-        #[cfg(any(target_os = "macos", target_os = "ios"))]
+        #[cfg(apple_targets)]
         EBADARCH => "Bad CPU type in executable",
 
-        #[cfg(any(target_os = "macos", target_os = "ios"))]
+        #[cfg(apple_targets)]
         ESHLIBVERS => "Shared library version mismatch",
 
-        #[cfg(any(target_os = "macos", target_os = "ios"))]
+        #[cfg(apple_targets)]
         EBADMACHO => "Malformed Macho file",
 
-        #[cfg(any(
-            target_os = "macos",
-            target_os = "ios",
-            target_os = "netbsd",
-            target_os = "haiku"
-        ))]
+        #[cfg(any(apple_targets, target_os = "netbsd", target_os = "haiku"))]
         EMULTIHOP => "Reserved",
 
         #[cfg(any(
-            target_os = "macos",
-            target_os = "ios",
+            apple_targets,
             target_os = "aix",
             target_os = "netbsd",
             target_os = "redox"
         ))]
         ENODATA => "No message available on STREAM",
 
-        #[cfg(any(
-            target_os = "macos",
-            target_os = "ios",
-            target_os = "netbsd",
-            target_os = "haiku"
-        ))]
+        #[cfg(any(apple_targets, target_os = "netbsd", target_os = "haiku"))]
         ENOLINK => "Reserved",
 
         #[cfg(any(
-            target_os = "macos",
-            target_os = "ios",
+            apple_targets,
             target_os = "aix",
             target_os = "netbsd",
             target_os = "redox"
@@ -1096,8 +1061,7 @@ fn desc(errno: Errno) -> &'static str {
         ENOSR => "No STREAM resources",
 
         #[cfg(any(
-            target_os = "macos",
-            target_os = "ios",
+            apple_targets,
             target_os = "aix",
             target_os = "netbsd",
             target_os = "redox"
@@ -1105,8 +1069,7 @@ fn desc(errno: Errno) -> &'static str {
         ENOSTR => "Not a STREAM",
 
         #[cfg(any(
-            target_os = "macos",
-            target_os = "ios",
+            apple_targets,
             target_os = "aix",
             target_os = "netbsd",
             target_os = "redox"
@@ -1114,18 +1077,17 @@ fn desc(errno: Errno) -> &'static str {
         ETIME => "STREAM ioctl timeout",
 
         #[cfg(any(
-            target_os = "macos",
-            target_os = "ios",
+            apple_targets,
             target_os = "aix",
             target_os = "illumos",
             target_os = "solaris"
         ))]
         EOPNOTSUPP => "Operation not supported on socket",
 
-        #[cfg(any(target_os = "macos", target_os = "ios"))]
+        #[cfg(apple_targets)]
         ENOPOLICY => "No such policy registered",
 
-        #[cfg(any(target_os = "macos", target_os = "ios"))]
+        #[cfg(apple_targets)]
         EQFULL => "Interface output queue is full",
 
         #[cfg(target_os = "openbsd")]
@@ -1438,7 +1400,7 @@ mod consts {
     }
 }
 
-#[cfg(any(target_os = "macos", target_os = "ios"))]
+#[cfg(apple_targets)]
 mod consts {
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     #[repr(i32)]

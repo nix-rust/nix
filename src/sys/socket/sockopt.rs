@@ -332,8 +332,7 @@ cfg_if! {
     } else if #[cfg(any(target_os = "dragonfly",
                         target_os = "freebsd",
                         target_os = "illumos",
-                        target_os = "ios",
-                        target_os = "macos",
+                        apple_targets,
                         target_os = "netbsd",
                         target_os = "openbsd",
                         target_os = "solaris"))] {
@@ -477,12 +476,7 @@ sockopt_impl!(
     libc::SO_KEEPALIVE,
     bool
 );
-#[cfg(any(
-    target_os = "dragonfly",
-    target_os = "freebsd",
-    target_os = "macos",
-    target_os = "ios"
-))]
+#[cfg(any(target_os = "dragonfly", target_os = "freebsd", apple_targets))]
 sockopt_impl!(
     /// Get the credentials of the peer process of a connected unix domain
     /// socket.
@@ -492,7 +486,7 @@ sockopt_impl!(
     libc::LOCAL_PEERCRED,
     super::XuCred
 );
-#[cfg(any(target_os = "macos", target_os = "ios"))]
+#[cfg(apple_targets)]
 sockopt_impl!(
     /// Get the PID of the peer process of a connected unix domain socket.
     LocalPeerPid,
@@ -510,7 +504,7 @@ sockopt_impl!(
     libc::SO_PEERCRED,
     super::UnixCredentials
 );
-#[cfg(any(target_os = "ios", target_os = "macos"))]
+#[cfg(apple_targets)]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -838,9 +832,8 @@ sockopt_impl!(
 );
 #[cfg(any(
     target_os = "android",
-    target_os = "ios",
+    apple_targets,
     target_os = "linux",
-    target_os = "macos",
     target_os = "netbsd",
 ))]
 #[cfg(feature = "net")]
@@ -857,9 +850,8 @@ sockopt_impl!(
 #[cfg(any(
     target_os = "android",
     target_os = "freebsd",
-    target_os = "ios",
+    apple_targets,
     target_os = "linux",
-    target_os = "macos",
     target_os = "netbsd",
     target_os = "openbsd",
 ))]
@@ -876,8 +868,7 @@ sockopt_impl!(
 );
 #[cfg(any(
     target_os = "freebsd",
-    target_os = "ios",
-    target_os = "macos",
+    apple_targets,
     target_os = "netbsd",
     target_os = "openbsd",
 ))]
@@ -894,8 +885,7 @@ sockopt_impl!(
 );
 #[cfg(any(
     target_os = "freebsd",
-    target_os = "ios",
-    target_os = "macos",
+    apple_targets,
     target_os = "netbsd",
     target_os = "openbsd",
 ))]
@@ -1035,7 +1025,7 @@ sockopt_impl!(
     libc::IPV6_ORIGDSTADDR,
     bool
 );
-#[cfg(any(target_os = "ios", target_os = "macos"))]
+#[cfg(apple_targets)]
 sockopt_impl!(
     /// Set "don't fragment packet" flag on the IP packet.
     IpDontFrag,
@@ -1044,12 +1034,7 @@ sockopt_impl!(
     libc::IP_DONTFRAG,
     bool
 );
-#[cfg(any(
-    target_os = "android",
-    target_os = "ios",
-    target_os = "linux",
-    target_os = "macos",
-))]
+#[cfg(any(target_os = "android", apple_targets, target_os = "linux",))]
 sockopt_impl!(
     /// Set "don't fragment packet" flag on the IPv6 packet.
     Ipv6DontFrag,
@@ -1179,7 +1164,7 @@ impl<T> Get<T> for GetStruct<T> {
             mem::size_of::<T>(),
             "invalid getsockopt implementation"
         );
-        self.val.assume_init()
+        unsafe { self.val.assume_init() }
     }
 }
 
@@ -1230,7 +1215,7 @@ impl Get<bool> for GetBool {
             mem::size_of::<c_int>(),
             "invalid getsockopt implementation"
         );
-        self.val.assume_init() != 0
+        unsafe { self.val.assume_init() != 0 }
     }
 }
 
@@ -1283,7 +1268,7 @@ impl Get<u8> for GetU8 {
             mem::size_of::<u8>(),
             "invalid getsockopt implementation"
         );
-        self.val.assume_init()
+        unsafe { self.val.assume_init() }
     }
 }
 
@@ -1334,7 +1319,7 @@ impl Get<usize> for GetUsize {
             mem::size_of::<c_int>(),
             "invalid getsockopt implementation"
         );
-        self.val.assume_init() as usize
+        unsafe { self.val.assume_init() as usize }
     }
 }
 
@@ -1381,7 +1366,7 @@ impl<T: AsMut<[u8]>> Get<OsString> for GetOsString<T> {
 
     unsafe fn assume_init(self) -> OsString {
         let len = self.len as usize;
-        let mut v = self.val.assume_init();
+        let mut v = unsafe { self.val.assume_init() };
         OsStr::from_bytes(&v.as_mut()[0..len]).to_owned()
     }
 }

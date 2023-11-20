@@ -222,7 +222,7 @@ fn test_readlink() {
 
     assert_eq!(readlink(&dst).unwrap().to_str().unwrap(), expected_dir);
     assert_eq!(
-        readlinkat(dirfd, "b").unwrap().to_str().unwrap(),
+        readlinkat(Some(dirfd), "b").unwrap().to_str().unwrap(),
         expected_dir
     );
 }
@@ -562,12 +562,7 @@ mod test_posix_fallocate {
     }
 }
 
-#[cfg(any(
-    target_os = "dragonfly",
-    target_os = "netbsd",
-    target_os = "macos",
-    target_os = "ios"
-))]
+#[cfg(any(target_os = "dragonfly", target_os = "netbsd", apple_targets))]
 #[test]
 fn test_f_get_path() {
     use nix::fcntl::*;
@@ -582,6 +577,38 @@ fn test_f_get_path() {
     assert_eq!(
         path.as_path().canonicalize().unwrap(),
         tmp.path().canonicalize().unwrap()
+    );
+}
+
+#[cfg(apple_targets)]
+#[test]
+fn test_f_get_path_nofirmlink() {
+    use nix::fcntl::*;
+    use std::{os::unix::io::AsRawFd, path::PathBuf};
+
+    let tmp = NamedTempFile::new().unwrap();
+    let fd = tmp.as_raw_fd();
+    let mut path = PathBuf::new();
+    let res = fcntl(fd, FcntlArg::F_GETPATH_NOFIRMLINK(&mut path))
+        .expect("get path failed");
+    let mut tmpstr = String::from("/System/Volumes/Data");
+    tmpstr.push_str(
+        &tmp.path()
+            .canonicalize()
+            .unwrap()
+            .into_os_string()
+            .into_string()
+            .unwrap(),
+    );
+    assert_ne!(res, -1);
+    assert_eq!(
+        path.as_path()
+            .canonicalize()
+            .unwrap()
+            .into_os_string()
+            .into_string()
+            .unwrap(),
+        tmpstr
     );
 }
 

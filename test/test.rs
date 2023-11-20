@@ -42,9 +42,8 @@ mod test_sched;
     target_os = "android",
     target_os = "dragonfly",
     target_os = "freebsd",
-    target_os = "ios",
+    apple_targets,
     target_os = "linux",
-    target_os = "macos"
 ))]
 mod test_sendfile;
 mod test_stat;

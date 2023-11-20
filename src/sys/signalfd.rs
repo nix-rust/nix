@@ -21,7 +21,7 @@ use crate::Result;
 pub use libc::signalfd_siginfo as siginfo;
 
 use std::mem;
-use std::os::unix::io::{AsRawFd, RawFd, FromRawFd, OwnedFd, AsFd, BorrowedFd};
+use std::os::unix::io::{AsFd, AsRawFd, BorrowedFd, FromRawFd, OwnedFd, RawFd};
 
 libc_bitflags! {
     pub struct SfdFlags: libc::c_int {
@@ -45,18 +45,23 @@ pub const SIGNALFD_SIGINFO_SIZE: usize = mem::size_of::<siginfo>();
 ///
 /// See [the signalfd man page for more information](https://man7.org/linux/man-pages/man2/signalfd.2.html)
 #[deprecated(since = "0.27.0", note = "Use SignalFd instead")]
-pub fn signalfd<F: AsFd>(fd: Option<F>, mask: &SigSet, flags: SfdFlags) -> Result<OwnedFd> {
+pub fn signalfd<F: AsFd>(
+    fd: Option<F>,
+    mask: &SigSet,
+    flags: SfdFlags,
+) -> Result<OwnedFd> {
     _signalfd(fd, mask, flags)
 }
 
-fn _signalfd<F: AsFd>(fd: Option<F>, mask: &SigSet, flags: SfdFlags) -> Result<OwnedFd> {
-    let raw_fd = fd.map_or(-1, |x|x.as_fd().as_raw_fd());
+fn _signalfd<F: AsFd>(
+    fd: Option<F>,
+    mask: &SigSet,
+    flags: SfdFlags,
+) -> Result<OwnedFd> {
+    let raw_fd = fd.map_or(-1, |x| x.as_fd().as_raw_fd());
     unsafe {
-        Errno::result(libc::signalfd(
-            raw_fd,
-            mask.as_ref(),
-            flags.bits(),
-        )).map(|raw_fd|FromRawFd::from_raw_fd(raw_fd))
+        Errno::result(libc::signalfd(raw_fd, mask.as_ref(), flags.bits()))
+            .map(|raw_fd| FromRawFd::from_raw_fd(raw_fd))
     }
 }
 
@@ -123,11 +128,8 @@ impl SignalFd {
     fn update(&self, mask: &SigSet, flags: SfdFlags) -> Result<()> {
         let raw_fd = self.0.as_raw_fd();
         unsafe {
-            Errno::result(libc::signalfd(
-                raw_fd,
-                mask.as_ref(),
-                flags.bits(),
-            )).map(drop)
+            Errno::result(libc::signalfd(raw_fd, mask.as_ref(), flags.bits()))
+                .map(drop)
         }
     }
 }

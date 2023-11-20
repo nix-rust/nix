@@ -230,10 +230,9 @@ impl Entry {
                          target_os = "fuchsia",
                          target_os = "haiku",
                          target_os = "illumos",
-                         target_os = "ios",
+                         apple_targets,
                          target_os = "l4re",
                          target_os = "linux",
-                         target_os = "macos",
                          target_os = "solaris"))] {
                 self.0.d_ino as u64
             } else {
