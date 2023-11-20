@@ -718,7 +718,7 @@ impl<T: Flockable> Flock<T> {
     ///     // Do anything else
     ///
     ///     Ok(())
-    /// } // File is unlocked once `lock` goes out of scope.
+    /// }
     pub fn unlock(mut self) -> T {
         _ = flock(self.0.as_raw_fd(), FlockArg::Unlock);
 
