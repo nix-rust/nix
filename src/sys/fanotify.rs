@@ -25,11 +25,11 @@ libc_bitflags! {
         FAN_ACCESS;
         /// File was modified.
         FAN_MODIFY;
-        /// Metadata changed. Since Linux 5.1.
+        /// Metadata has changed. Since Linux 5.1.
         FAN_ATTRIB;
-        /// Writtable file closed.
+        /// Writtable file was closed.
         FAN_CLOSE_WRITE;
-        /// Unwrittable file closed.
+        /// Unwrittable file was closed.
         FAN_CLOSE_NOWRITE;
         /// File was opened.
         FAN_OPEN;
@@ -45,19 +45,19 @@ libc_bitflags! {
         FAN_DELETE_SELF;
         /// Self was moved. Since Linux 5.1.
         FAN_MOVE_SELF;
-        /// File was opened for exec. Since Linux 5.0.
+        /// File was opened for execution. Since Linux 5.0.
         FAN_OPEN_EXEC;
 
-        /// Event queued overflowed.
+        /// Event queue overflowed.
         FAN_Q_OVERFLOW;
         /// Filesystem error. Since Linux 5.16.
         FAN_FS_ERROR;
 
-        /// File open in perm check.
+        /// Permission to open file was requested.
         FAN_OPEN_PERM;
-        /// File accessed in perm check.
+        /// Permission to access file was requested.
         FAN_ACCESS_PERM;
-        /// File open/exec in perm check. Since Linux 5.0.
+        /// Permission to open file for execution was requested. Since Linux 5.0.
         FAN_OPEN_EXEC_PERM;
 
         /// Interested in child events.
@@ -66,7 +66,7 @@ libc_bitflags! {
         /// File was renamed. Since Linux 5.17.
         FAN_RENAME;
 
-        /// Event occured against dir.
+        /// Event occurred against dir.
         FAN_ONDIR;
 
         /// Combination of `FAN_CLOSE_WRITE` and `FAN_CLOSE_NOWRITE`.
