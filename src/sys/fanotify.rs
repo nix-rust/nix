@@ -59,7 +59,8 @@ libc_bitflags! {
         FAN_OPEN_PERM;
         /// Permission to access file was requested.
         FAN_ACCESS_PERM;
-        /// Permission to open file for execution was requested. Since Linux 5.0.
+        /// Permission to open file for execution was requested. Since Linux
+        /// 5.0.
         FAN_OPEN_EXEC_PERM;
 
         /// Interested in child events.
@@ -99,6 +100,11 @@ libc_bitflags! {
         FAN_UNLIMITED_QUEUE;
         /// Remove the limit of 8192 marks.
         FAN_UNLIMITED_MARKS;
+
+        /// Make `FanotifyEvent::pid` return pidfd. Since Linux 5.15.
+        FAN_REPORT_PIDFD;
+        /// Make `FanotifyEvent::pid` return thread id. Since Linux 4.20.
+        FAN_REPORT_TID;
     }
 }
 
