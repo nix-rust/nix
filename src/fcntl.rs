@@ -71,7 +71,7 @@ libc_bitflags! {
 ))]
 libc_bitflags!(
     /// Configuration options for opened files.
-    #[cfg_attr(docsrs, doc(cfg(any(feature = "fs", feature = "term"))))]
+    #[cfg_attr(docsrs, doc(cfg(any(feature = "fs", feature = "term", all(feature = "fanotify", target_os = "linux")))))]
     pub struct OFlag: c_int {
         /// Mask for the access mode of the file.
         O_ACCMODE;
