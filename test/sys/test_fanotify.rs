@@ -42,8 +42,12 @@ fn test_fanotify_notifications() {
         panic!("should have read exactly one event");
     };
     assert!(event.check_version());
-    assert_eq!(event.mask, MaskFlags::FAN_OPEN | MaskFlags::FAN_CLOSE_WRITE);
-    let fd = event.fd.as_ref().unwrap();
+    assert_eq!(
+        event.mask(),
+        MaskFlags::FAN_OPEN | MaskFlags::FAN_CLOSE_WRITE
+    );
+    let fd_opt = event.fd();
+    let fd = fd_opt.as_ref().unwrap();
     let path = read_link(format!("/proc/self/fd/{}", fd.as_raw_fd())).unwrap();
     assert_eq!(path, tempfile);
 
@@ -58,12 +62,13 @@ fn test_fanotify_notifications() {
     };
     assert!(event.check_version());
     assert_eq!(
-        event.mask,
+        event.mask(),
         MaskFlags::FAN_OPEN
             | MaskFlags::FAN_MODIFY
             | MaskFlags::FAN_CLOSE_WRITE
     );
-    let fd = event.fd.as_ref().unwrap();
+    let fd_opt = event.fd();
+    let fd = fd_opt.as_ref().unwrap();
     let path = read_link(format!("/proc/self/fd/{}", fd.as_raw_fd())).unwrap();
     assert_eq!(path, tempfile);
 
@@ -79,10 +84,11 @@ fn test_fanotify_notifications() {
     };
     assert!(event.check_version());
     assert_eq!(
-        event.mask,
+        event.mask(),
         MaskFlags::FAN_OPEN | MaskFlags::FAN_CLOSE_NOWRITE
     );
-    let fd = event.fd.as_ref().unwrap();
+    let fd_opt = event.fd();
+    let fd = fd_opt.as_ref().unwrap();
     let path = read_link(format!("/proc/self/fd/{}", fd.as_raw_fd())).unwrap();
     assert_eq!(path, tempfile);
 }
@@ -121,8 +127,9 @@ fn test_fanotify_responses() {
         panic!("should have read exactly one event");
     };
     assert!(event.check_version());
-    assert_eq!(event.mask, MaskFlags::FAN_OPEN_PERM);
-    let fd = event.fd.as_ref().unwrap();
+    assert_eq!(event.mask(), MaskFlags::FAN_OPEN_PERM);
+    let fd_opt = event.fd();
+    let fd = fd_opt.as_ref().unwrap();
     let path = read_link(format!("/proc/self/fd/{}", fd.as_raw_fd())).unwrap();
     assert_eq!(path, tempfname);
     group
@@ -137,8 +144,9 @@ fn test_fanotify_responses() {
         panic!("should have read exactly one event");
     };
     assert!(event.check_version());
-    assert_eq!(event.mask, MaskFlags::FAN_OPEN_PERM);
-    let fd = event.fd.as_ref().unwrap();
+    assert_eq!(event.mask(), MaskFlags::FAN_OPEN_PERM);
+    let fd_opt = event.fd();
+    let fd = fd_opt.as_ref().unwrap();
     let path = read_link(format!("/proc/self/fd/{}", fd.as_raw_fd())).unwrap();
     assert_eq!(path, tempfname);
     group

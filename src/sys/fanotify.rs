@@ -13,7 +13,7 @@
 use crate::{NixPath, Result};
 use crate::errno::Errno;
 use crate::fcntl::{OFlag, at_rawfd};
-use crate::unistd::{read, write};
+use crate::unistd::{close, read, write};
 use std::os::unix::io::{AsFd, AsRawFd, BorrowedFd, FromRawFd, OwnedFd, RawFd};
 use std::mem::{MaybeUninit, size_of};
 use std::ptr;
@@ -178,31 +178,61 @@ libc_bitflags! {
 /// Compile version number of fanotify API.
 pub const FANOTIFY_METADATA_VERSION: u8 = libc::FANOTIFY_METADATA_VERSION;
 
-#[derive(Debug)]
 /// Abstract over `libc::fanotify_event_metadata`, which represents an event
 /// received via `Fanotify::read_events`.
-pub struct FanotifyEvent {
+// Is not Clone due to fd field, to avoid use-after-close scenarios.
+#[derive(Debug, Eq, Hash, PartialEq)]
+#[repr(transparent)]
+#[allow(missing_copy_implementations)]
+pub struct FanotifyEvent(libc::fanotify_event_metadata);
+
+impl FanotifyEvent {
     /// Version number for the structure. It must be compared to
     /// `FANOTIFY_METADATA_VERSION` to verify compile version and runtime
     /// version does match. It can be done with the
     /// `FanotifyEvent::check_version` method.
-    pub version: u8,
-    /// Mask flags of the events.
-    pub mask: MaskFlags,
-    /// The file descriptor of the event. If the value is `None` when reading
-    /// from the fanotify group, this event is to notify that a group queue
-    /// overflow occured.
-    pub fd: Option<OwnedFd>,
-    /// PID of the process that caused the event. TID in case flag
-    /// `FAN_REPORT_TID` was set at group initialization.
-    pub pid: i32,
-}
+    pub fn version(&self) -> u8 {
+        self.0.vers
+    }
 
-impl FanotifyEvent {
     /// Checks that compile fanotify API version is equal to the version of the
     /// event.
     pub fn check_version(&self) -> bool {
-        self.version == FANOTIFY_METADATA_VERSION
+        self.version() == FANOTIFY_METADATA_VERSION
+    }
+
+    /// Mask flags of the events.
+    pub fn mask(&self) -> MaskFlags {
+        MaskFlags::from_bits_truncate(self.0.mask)
+    }
+
+    /// The file descriptor of the event. If the value is `None` when reading
+    /// from the fanotify group, this event is to notify that a group queue
+    /// overflow occured.
+    pub fn fd(&self) -> Option<BorrowedFd> {
+        if self.0.fd == libc::FAN_NOFD {
+            None
+        } else {
+            // SAFETY: self.0.fd will be opened for the lifetime of `Self`,
+            // which is longer than the lifetime of the returned BorrowedFd, so
+            // it is safe.
+            Some(unsafe { BorrowedFd::borrow_raw(self.0.fd) })
+        }
+    }
+
+    /// PID of the process that caused the event. TID in case flag
+    /// `FAN_REPORT_TID` was set at group initialization.
+    pub fn pid(&self) -> i32 {
+        self.0.pid
+    }
+}
+
+impl Drop for FanotifyEvent {
+    fn drop(&mut self) {
+        let e = close(self.0.fd);
+        if !std::thread::panicking() && e == Err(Errno::EBADF) {
+            panic!("Closing an invalid file descriptor!");
+        };
     }
 }
 
@@ -316,17 +346,7 @@ impl Fanotify {
                 metadata.assume_init()
             };
 
-            let fd = (metadata.fd != libc::FAN_NOFD).then(|| unsafe {
-                OwnedFd::from_raw_fd(metadata.fd)
-            });
-
-            events.push(FanotifyEvent {
-                version: metadata.vers,
-                mask: MaskFlags::from_bits_truncate(metadata.mask),
-                fd,
-                pid: metadata.pid,
-            });
-
+            events.push(FanotifyEvent(metadata));
             offset += metadata.event_len as usize;
         }
 
