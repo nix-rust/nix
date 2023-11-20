@@ -14,8 +14,9 @@ use crate::{NixPath, Result};
 use crate::errno::Errno;
 use crate::fcntl::{OFlag, at_rawfd};
 use crate::unistd::{close, read, write};
-use std::os::unix::io::{AsFd, AsRawFd, BorrowedFd, FromRawFd, OwnedFd, RawFd};
+use std::marker::PhantomData;
 use std::mem::{MaybeUninit, size_of};
+use std::os::unix::io::{AsFd, AsRawFd, BorrowedFd, FromRawFd, OwnedFd, RawFd};
 use std::ptr;
 
 libc_bitflags! {
@@ -236,23 +237,36 @@ impl Drop for FanotifyEvent {
     }
 }
 
-#[derive(Debug)]
 /// Abstraction over the structure to be sent to allow or deny a given event.
-pub struct FanotifyResponse<'e> {
-    /// A borrow of the file descriptor from the structure `FanotifyEvent`.
-    pub fd: BorrowedFd<'e>,
-    /// Indication whether or not the permission is to be granted.
-    pub response: Response,
+#[derive(Debug)]
+#[repr(transparent)]
+pub struct FanotifyResponse<'a> {
+    inner: libc::fanotify_response,
+    _borrowed_fd: PhantomData<BorrowedFd<'a>>,
 }
 
-#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
-/// Response to be wrapped in `FanotifyResponse` and sent to the `Fanotify`
-/// group to allow or deny an event.
-pub enum Response {
-    /// Allow the event.
-    Allow,
-    /// Deny the event.
-    Deny,
+impl<'a> FanotifyResponse<'a> {
+    /// Create a new response.
+    pub fn new(fd: BorrowedFd<'a>, response: Response) -> Self {
+        Self {
+            inner: libc::fanotify_response {
+                fd: fd.as_raw_fd(),
+                response: response.bits(),
+            },
+            _borrowed_fd: PhantomData,
+        }
+    }
+}
+
+libc_bitflags! {
+    /// Response to be wrapped in `FanotifyResponse` and sent to the `Fanotify`
+    /// group to allow or deny an event.
+    pub struct Response: u32 {
+        /// Allow the event.
+        FAN_ALLOW;
+        /// Deny the event.
+        FAN_DENY;
+    }
 }
 
 /// A fanotify group. This is also a file descriptor that can feed to other
@@ -366,19 +380,11 @@ impl Fanotify {
     /// available on a group that has been initialized with the flag
     /// `InitFlags::FAN_NONBLOCK`, thus making this method nonblocking.
     pub fn write_response(&self, response: FanotifyResponse) -> Result<()> {
-        let response_value = match response.response {
-            Response::Allow => libc::FAN_ALLOW,
-            Response::Deny => libc::FAN_DENY,
-        };
-        let resp = libc::fanotify_response {
-            fd: response.fd.as_raw_fd(),
-            response: response_value,
-        };
         write(
             self.fd.as_fd(),
             unsafe {
                 std::slice::from_raw_parts(
-                    (&resp as *const _) as *const u8,
+                    (&response.inner as *const _) as *const u8,
                     size_of::<libc::fanotify_response>(),
                 )
             },

@@ -6,7 +6,7 @@ use nix::sys::fanotify::{
 use std::fs::{read_link, File, OpenOptions};
 use std::io::ErrorKind;
 use std::io::{Read, Write};
-use std::os::fd::{AsFd, AsRawFd};
+use std::os::fd::AsRawFd;
 use std::thread;
 
 #[test]
@@ -133,10 +133,7 @@ fn test_fanotify_responses() {
     let path = read_link(format!("/proc/self/fd/{}", fd.as_raw_fd())).unwrap();
     assert_eq!(path, tempfname);
     group
-        .write_response(FanotifyResponse {
-            fd: fd.as_fd(),
-            response: Response::Deny,
-        })
+        .write_response(FanotifyResponse::new(*fd, Response::FAN_DENY))
         .unwrap();
 
     //// Allow the second open try
@@ -150,10 +147,7 @@ fn test_fanotify_responses() {
     let path = read_link(format!("/proc/self/fd/{}", fd.as_raw_fd())).unwrap();
     assert_eq!(path, tempfname);
     group
-        .write_response(FanotifyResponse {
-            fd: fd.as_fd(),
-            response: Response::Allow,
-        })
+        .write_response(FanotifyResponse::new(*fd, Response::FAN_ALLOW))
         .unwrap();
 
     file_thread.join().unwrap();
