@@ -64,7 +64,11 @@ libc_bitflags! {
     }
 }
 
-#[cfg(any(feature = "fs", feature = "term"))]
+#[cfg(any(
+    feature = "fs",
+    feature = "term",
+    all(feature = "fanotify", target_os = "linux")
+))]
 libc_bitflags!(
     /// Configuration options for opened files.
     #[cfg_attr(docsrs, doc(cfg(any(feature = "fs", feature = "term"))))]

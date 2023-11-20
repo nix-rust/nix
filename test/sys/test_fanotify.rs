@@ -1,6 +1,6 @@
 use crate::*;
 use nix::sys::fanotify::{
-    Fanotify, FanotifyResponse, InitFlags, MarkFlags, MaskFlags, OFlags,
+    EventFFlags, Fanotify, FanotifyResponse, InitFlags, MarkFlags, MaskFlags,
     Response,
 };
 use std::fs::{read_link, File, OpenOptions};
@@ -20,7 +20,8 @@ pub fn test_fanotify() {
 
 fn test_fanotify_notifications() {
     let group =
-        Fanotify::init(InitFlags::FAN_CLASS_NOTIF, OFlags::O_RDONLY).unwrap();
+        Fanotify::init(InitFlags::FAN_CLASS_NOTIF, EventFFlags::O_RDONLY)
+            .unwrap();
     let tempdir = tempfile::tempdir().unwrap();
 
     group
@@ -88,7 +89,8 @@ fn test_fanotify_notifications() {
 
 fn test_fanotify_responses() {
     let group =
-        Fanotify::init(InitFlags::FAN_CLASS_CONTENT, OFlags::O_RDONLY).unwrap();
+        Fanotify::init(InitFlags::FAN_CLASS_CONTENT, EventFFlags::O_RDONLY)
+            .unwrap();
     let tempdir = tempfile::tempdir().unwrap();
 
     group

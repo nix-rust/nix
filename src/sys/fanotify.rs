@@ -12,6 +12,7 @@
 
 use crate::{NixPath, Result};
 use crate::errno::Errno;
+use crate::fcntl::OFlag;
 use crate::unistd::{read, write};
 use std::os::unix::io::{AsFd, AsRawFd, BorrowedFd, FromRawFd, OwnedFd, RawFd};
 use std::mem::{MaybeUninit, size_of};
@@ -102,7 +103,7 @@ libc_bitflags! {
 
 libc_bitflags! {
     /// File status flags for fanotify events file descriptors.
-    pub struct OFlags: libc::c_uint {
+    pub struct EventFFlags: libc::c_uint {
         /// Read only access.
         O_RDONLY as libc::c_uint;
         /// Write only access.
@@ -123,6 +124,20 @@ libc_bitflags! {
         O_NONBLOCK as libc::c_uint;
         /// Synchronized I/O file integrity completion.
         O_SYNC as libc::c_uint;
+    }
+}
+
+impl TryFrom<OFlag> for EventFFlags {
+    type Error = Errno;
+
+    fn try_from(o_flag: OFlag) -> Result<Self> {
+        EventFFlags::from_bits(o_flag.bits() as u32).ok_or(Errno::EINVAL)
+    }
+}
+
+impl From<EventFFlags> for OFlag {
+    fn from(event_f_flags: EventFFlags) -> Self {
+        OFlag::from_bits_retain(event_f_flags.bits() as i32)
     }
 }
 
@@ -223,7 +238,7 @@ impl Fanotify {
     /// Returns a Result containing a Fanotify instance.
     ///
     /// For more information, see [fanotify_init(2)](https://man7.org/linux/man-pages/man7/fanotify_init.2.html).
-    pub fn init(flags: InitFlags, event_f_flags: OFlags) -> Result<Fanotify> {
+    pub fn init(flags: InitFlags, event_f_flags: EventFFlags) -> Result<Fanotify> {
         let res = Errno::result(unsafe {
             libc::fanotify_init(flags.bits(), event_f_flags.bits())
         });
