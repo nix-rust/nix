@@ -1009,11 +1009,18 @@ impl ControlMessageOwned {
                 target_os = "freebsd",
                 target_os = "netbsd",
                 target_os = "openbsd",
+            ))]
+            #[cfg(feature = "net")]
+            (libc::IPPROTO_IP, libc::IP_RECVTOS) => {
+                let tos = unsafe { ptr::read_unaligned(p as *const u8) };
+                ControlMessageOwned::IpTos(tos.into())
+            },
+            #[cfg(any(
                 target_os = "android",
                 target_os = "linux",
             ))]
             #[cfg(feature = "net")]
-            (libc::IPPROTO_IP, libc::IP_RECVTOS) => {
+            (libc::IPPROTO_IP, libc::IP_TOS) => {
                 let tos = unsafe { ptr::read_unaligned(p as *const u8) };
                 ControlMessageOwned::IpTos(tos.into())
             },
