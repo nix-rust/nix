@@ -188,11 +188,7 @@ pub fn test_timestamping_monotonic() {
     let sys_time =
         ::nix::time::clock_gettime(::nix::time::ClockId::CLOCK_MONOTONIC)
             .unwrap();
-    let diff = if ts > sys_time {
-        ts - sys_time
-    } else {
-        sys_time - ts
-    };
+    let diff = sys_time - ts; // Monotonic clock sys_time must be greater
     assert!(std::time::Duration::from(diff).as_secs() < 60);
 }
 
