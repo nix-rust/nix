@@ -82,7 +82,7 @@ pub fn test_timestamping_realtime() {
     };
     use std::io::{IoSlice, IoSliceMut};
 
-    let sock_addr = SockaddrIn::from_str("127.0.0.1:6790").unwrap();
+    let sock_addr = SockaddrIn::from_str("127.0.0.1:6791").unwrap();
 
     let ssock = socket(
         AddressFamily::Inet,
@@ -144,7 +144,7 @@ pub fn test_timestamping_monotonic() {
     };
     use std::io::{IoSlice, IoSliceMut};
 
-    let sock_addr = SockaddrIn::from_str("127.0.0.1:6790").unwrap();
+    let sock_addr = SockaddrIn::from_str("127.0.0.1:6792").unwrap();
 
     let ssock = socket(
         AddressFamily::Inet,
