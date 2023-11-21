@@ -825,6 +825,27 @@ pub enum ControlMessageOwned {
     #[cfg(feature = "net")]
     Ipv6TClass(u8),
 
+    #[cfg(any(
+        target_os = "freebsd",
+        apple_targets,
+        target_os = "netbsd",
+        target_os = "openbsd",
+        target_os = "android",
+        target_os = "linux",
+    ))]
+    #[cfg(feature = "net")]
+    IpTtl(u8),
+    #[cfg(any(
+        target_os = "freebsd",
+        apple_targets,
+        target_os = "netbsd",
+        target_os = "openbsd",
+        target_os = "android",
+        target_os = "linux",
+    ))]
+    #[cfg(feature = "net")]
+    Ipv6HopLimit(u8),
+
     /// Catch-all variant for unimplemented cmsg types.
     #[doc(hidden)]
     Unknown(UnknownCmsg),
@@ -1037,6 +1058,39 @@ impl ControlMessageOwned {
                 let tclass = unsafe { ptr::read_unaligned(p as *const u8) };
                 ControlMessageOwned::Ipv6TClass(tclass.into())
             },
+            #[cfg(any(
+                apple_targets,
+                target_os = "freebsd",
+                target_os = "netbsd",
+                target_os = "openbsd",
+            ))]
+            #[cfg(feature = "net")]
+            (libc::IPPROTO_IP, libc::IP_RECVTTL) => {
+                let ttl = unsafe { ptr::read_unaligned(p as *const u8) };
+                ControlMessageOwned::IpTtl(ttl.into())
+            },
+            #[cfg(any(
+                target_os = "android",
+                target_os = "linux",
+            ))]
+            #[cfg(feature = "net")]
+            (libc::IPPROTO_IP, libc::IP_TTL) => {
+                let ttl = unsafe { ptr::read_unaligned(p as *const u8) };
+                ControlMessageOwned::IpTtl(ttl.into())
+            },
+            #[cfg(any(
+                target_os = "freebsd",
+                apple_targets,
+                target_os = "netbsd",
+                target_os = "openbsd",
+                target_os = "android",
+                target_os = "linux",
+            ))]
+            #[cfg(feature = "net")]
+            (libc::IPPROTO_IPV6, libc::IPV6_HOPLIMIT) => {
+                let hop_limit = unsafe { ptr::read_unaligned(p as *const u8) };
+                ControlMessageOwned::Ipv6HopLimit(hop_limit.into())
+            },
             (_, _) => {
                 let sl = unsafe { std::slice::from_raw_parts(p, len) };
                 let ucmsg = UnknownCmsg(*header, Vec::<u8>::from(sl));
@@ -1223,6 +1277,17 @@ pub enum ControlMessage<'a> {
     ))]
     #[cfg(feature = "net")]
     Ipv6TClass(&'a libc::c_int),
+
+    #[cfg(any(
+        target_os = "freebsd",
+        apple_targets,
+        target_os = "netbsd",
+        target_os = "openbsd",
+        target_os = "android",
+        target_os = "linux",
+    ))]
+    #[cfg(feature = "net")]
+    IpTtl(&'a libc::c_int),
 }
 
 // An opaque structure used to prevent cmsghdr from being a public type
@@ -1351,6 +1416,18 @@ impl<'a> ControlMessage<'a> {
             ControlMessage::Ipv6TClass(tclass) => {
                 tclass as *const _ as *const u8
             },
+            #[cfg(any(
+                target_os = "freebsd",
+                apple_targets,
+                target_os = "netbsd",
+                target_os = "openbsd",
+                target_os = "android",
+                target_os = "linux",
+            ))]
+            #[cfg(feature = "net")]
+            ControlMessage::IpTtl(ttl) => {
+                ttl as *const _ as *const u8
+            },
         };
         unsafe {
             ptr::copy_nonoverlapping(
@@ -1439,6 +1516,18 @@ impl<'a> ControlMessage<'a> {
             ControlMessage::Ipv6TClass(tclass) => {
                 mem::size_of_val(tclass)
             },
+            #[cfg(any(
+                target_os = "freebsd",
+                apple_targets,
+                target_os = "netbsd",
+                target_os = "openbsd",
+                target_os = "android",
+                target_os = "linux",
+            ))]
+            #[cfg(feature = "net")]
+            ControlMessage::IpTtl(ttl) => {
+                mem::size_of_val(ttl)
+            },
         }
     }
 
@@ -1493,6 +1582,16 @@ impl<'a> ControlMessage<'a> {
             ))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv6TClass(_) => libc::IPPROTO_IPV6,
+            #[cfg(any(
+                target_os = "freebsd",
+                apple_targets,
+                target_os = "netbsd",
+                target_os = "openbsd",
+                target_os = "android",
+                target_os = "linux",
+            ))]
+            #[cfg(feature = "net")]
+            ControlMessage::IpTtl(_) => libc::IPPROTO_IP,
         }
     }
 
@@ -1562,6 +1661,16 @@ impl<'a> ControlMessage<'a> {
             ))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv6TClass(_) => libc::IPV6_TCLASS,
+            #[cfg(any(
+                target_os = "freebsd",
+                apple_targets,
+                target_os = "netbsd",
+                target_os = "openbsd",
+                target_os = "android",
+                target_os = "linux",
+            ))]
+            #[cfg(feature = "net")]
+            ControlMessage::IpTtl(_) => libc::IP_TTL,
         }
     }
 

@@ -1079,6 +1079,68 @@ sockopt_impl!(
     target_os = "netbsd",
     target_os = "openbsd",
 ))]
+#[cfg(feature = "net")]
+sockopt_impl!(
+    /// Retrieve the current time-to-live field for every
+    /// IPv4 packet received on this socket.
+    IpRecvTtl,
+    Both,
+    libc::IPPROTO_IP,
+    libc::IP_RECVTTL,
+    bool
+);
+#[cfg(any(
+    apple_targets,
+    linux_android,
+    target_os = "freebsd",
+    target_os = "netbsd",
+    target_os = "openbsd",
+))]
+#[cfg(feature = "net")]
+sockopt_impl!(
+    /// Retrieve the current time-to-live field for every
+    /// IPv4 packet received on this socket.
+    IpTtl,
+    Both,
+    libc::IPPROTO_IP,
+    libc::IP_TTL,
+    bool
+);
+#[cfg(any(
+    apple_targets,
+    linux_android,
+    target_os = "freebsd",
+    target_os = "netbsd",
+    target_os = "openbsd",
+))]
+#[cfg(feature = "net")]
+sockopt_impl!(
+    /// Retrieve the current hop limit field for every
+    /// IPv6 packet received on this socket.
+    Ipv6RecvHopLimit,
+    Both,
+    libc::IPPROTO_IPV6,
+    libc::IPV6_RECVHOPLIMIT,
+    bool
+);
+#[cfg(any(
+    apple_targets,
+    linux_android,
+    target_os = "freebsd",
+    target_os = "netbsd",
+    target_os = "openbsd",
+))]
+#[cfg(feature = "net")]
+sockopt_impl!(
+    /// Retrieve the current hop limit field for every
+    /// IPv6 packet received on this socket.
+    Ipv6HopLimit,
+    Both,
+    libc::IPPROTO_IPV6,
+    libc::IPV6_HOPLIMIT,
+    bool
+);
+#[cfg(any(linux_android, target_os = "freebsd"))]
 sockopt_impl!(
     /// Set the unicast hop limit for the socket.
     Ipv6Ttl,
