@@ -73,7 +73,6 @@ pub fn test_timestamping() {
 }
 
 #[cfg(target_os = "freebsd")]
-#[cfg_attr(qemu, ignore)]
 #[test]
 pub fn test_timestamping_realtime() {
     use nix::sys::socket::{
@@ -136,7 +135,6 @@ pub fn test_timestamping_realtime() {
 }
 
 #[cfg(target_os = "freebsd")]
-#[cfg_attr(qemu, ignore)]
 #[test]
 pub fn test_timestamping_monotonic() {
     use nix::sys::socket::{
