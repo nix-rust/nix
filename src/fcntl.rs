@@ -16,8 +16,7 @@ use std::ops::{Deref, DerefMut};
 use std::os::raw;
 use std::os::unix::ffi::OsStringExt;
 use std::os::unix::io::RawFd;
-// For splice and copy_file_range
-#[cfg(all(not(any(target_os = "redox", target_os = "solaris")), unix))]
+#[cfg(not(any(target_os = "redox", target_os = "solaris")))]
 use std::os::unix::io::{AsRawFd, OwnedFd};
 #[cfg(any(
     target_os = "netbsd",
@@ -616,7 +615,6 @@ pub unsafe trait Flockable: AsRawFd {}
 /// Represents an owned flock, which unlocks on drop.
 ///
 /// See flock(2) for details on locking semantics.
-// `ManuallyDrop` is necessary to circumvent move out of `Drop` type error.
 #[cfg(not(any(target_os = "redox", target_os = "solaris")))]
 #[derive(Debug)]
 pub struct Flock<T: Flockable>(Option<T>);
@@ -667,7 +665,7 @@ impl<T: Flockable> Flock<T> {
     ///     // Do stuff
     ///
     ///     Ok(())
-    /// } // File is unlocked once `lock` goes out of scope.
+    /// }
     pub fn lock(t: T, args: FlockArg) -> std::result::Result<Self, (T, Errno)> {
         let flags = match args {
             FlockArg::LockShared => libc::LOCK_SH,
