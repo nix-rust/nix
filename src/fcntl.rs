@@ -601,8 +601,33 @@ pub fn fcntl(fd: RawFd, arg: FcntlArg) -> Result<c_int> {
 pub enum FlockArg {
     LockShared,
     LockExclusive,
+    Unlock,
     LockSharedNonblock,
     LockExclusiveNonblock,
+    UnlockNonblock,
+}
+
+#[cfg(not(any(target_os = "redox", target_os = "solaris")))]
+#[deprecated = "`fcntl::Flock` should be used instead."]
+pub fn flock(fd: RawFd, arg: FlockArg) -> Result<()> {
+    use self::FlockArg::*;
+
+    let res = unsafe {
+        match arg {
+            LockShared => libc::flock(fd, libc::LOCK_SH),
+            LockExclusive => libc::flock(fd, libc::LOCK_EX),
+            Unlock => libc::flock(fd, libc::LOCK_UN),
+            LockSharedNonblock => {
+                libc::flock(fd, libc::LOCK_SH | libc::LOCK_NB)
+            }
+            LockExclusiveNonblock => {
+                libc::flock(fd, libc::LOCK_EX | libc::LOCK_NB)
+            }
+            UnlockNonblock => libc::flock(fd, libc::LOCK_UN | libc::LOCK_NB),
+        }
+    };
+
+    Errno::result(res).map(drop)
 }
 
 /// Represents valid types for flock.
@@ -675,6 +700,7 @@ impl<T: Flockable> Flock<T> {
             FlockArg::LockExclusive => libc::LOCK_EX,
             FlockArg::LockSharedNonblock => libc::LOCK_SH | libc::LOCK_NB,
             FlockArg::LockExclusiveNonblock => libc::LOCK_EX | libc::LOCK_NB,
+            FlockArg::Unlock | FlockArg::UnlockNonblock => return Err((t, Errno::EINVAL)),
         };
         match Errno::result(unsafe { libc::flock(t.as_raw_fd(), flags) }) {
             Ok(_) => Ok(Self(Some(t))),
