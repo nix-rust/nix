@@ -636,7 +636,7 @@ fn flock(fd: RawFd, arg: FlockArg) -> Result<()> {
 /// Represents valid types for flock.
 ///
 /// # Safety
-/// `T` must be `!Clone`.
+/// Types implementing this must be `!Clone`.
 #[cfg(not(any(target_os = "redox", target_os = "solaris")))]
 pub unsafe trait Flockable: AsRawFd {}
 
