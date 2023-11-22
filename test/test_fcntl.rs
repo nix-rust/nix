@@ -676,7 +676,7 @@ mod test_flock {
         let lock1 = Flock::lock(file1, FlockArg::LockExclusive).unwrap();
 
         // Unlock and retain file so any erroneous flocks also remain present.
-        let _file1 = lock1.unlock();
+        let _file1 = lock1.unlock(false).unwrap();
 
         // Attempt to lock second handle.
         if Flock::lock(file2, FlockArg::LockExclusiveNonblock).is_err() {

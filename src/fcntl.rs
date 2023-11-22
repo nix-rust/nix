@@ -623,8 +623,11 @@ pub struct Flock<T: Flockable>(Option<T>);
 impl<T: Flockable> Drop for Flock<T> {
     fn drop(&mut self) {
        if let Some(ref t) = self.0 {
-           // Result is ignored because flock has no documented failure cases.
-           _ = unsafe { libc::flock(t.as_raw_fd(), libc::LOCK_UN) };
+           if let Err(_) = Errno::result(unsafe { libc::flock(t.as_raw_fd(), libc::LOCK_UN) }) {
+               if !std::thread::panicking() {
+                   panic!("Failed to remove flock.");
+               }
+           }
        }
     }
 }
@@ -693,17 +696,26 @@ impl<T: Flockable> Flock<T> {
     ///
     ///     // Do critical section
     ///
-    ///     // Unlock
-    ///     let file = lock.unlock();
+    ///     // Unlock (don't continue until unlocked)
+    ///     let file = loop {
+    ///         if let Ok(f) = lock.unlock(false) {
+    ///             break f
+    ///         }
+    ///     };
     ///
     ///     // Do anything else
     ///
     ///     Ok(())
     /// }
-    pub fn unlock(mut self) -> T {
-        _ = unsafe { libc::flock(self.0.as_ref().unwrap().as_raw_fd(), libc::LOCK_UN) };
-
-        self.0.take().unwrap()
+    pub fn unlock(mut self, nonblock: bool) -> Result<T> {
+        let flag = match nonblock {
+            true => libc::LOCK_UN | libc::LOCK_NB,
+            false => libc::LOCK_UN,
+        };
+        match Errno::result(unsafe { libc::flock(self.0.as_ref().unwrap().as_raw_fd(), flag) }) {
+            Ok(_) => Ok(self.0.take().unwrap()),
+            Err(errno) => Err(errno),
+        }
     }
 }
 
