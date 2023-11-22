@@ -671,9 +671,9 @@ impl<T: Flockable> Flock<T> {
             FlockArg::LockSharedNonblock => libc::LOCK_SH | libc::LOCK_NB,
             FlockArg::LockExclusiveNonblock => libc::LOCK_EX | libc::LOCK_NB,
         };
-        match unsafe { libc::flock(t.as_raw_fd(), flags) } {
-            0 => Ok(Self(ManuallyDrop::new(t))),
-            e => Err((t, Errno::from_i32(e))),
+        match Errno::result(unsafe { libc::flock(t.as_raw_fd(), flags) }) {
+            Ok(_) => Ok(Self(ManuallyDrop::new(t))),
+            Err(errno) => Err((t, errno)),
         }
     }
 
