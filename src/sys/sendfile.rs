@@ -20,8 +20,9 @@ use crate::Result;
 ///
 /// `in_fd` must support `mmap`-like operations and therefore cannot be a socket.
 ///
-/// For more information, see [the sendfile(2) man page.](https://man7.org/linux/man-pages/man2/sendfile.2.html)
-#[cfg(any(target_os = "android", target_os = "linux"))]
+/// For more information, see [the sendfile(2) man page.](https://man7.org/linux/man-pages/man2/sendfile.2.html) for Linux,
+/// see [the sendfile(2) man page.](https://docs.oracle.com/cd/E88353_01/html/E37843/sendfile-3c.html) for Solaris.
+#[cfg(any(target_os = "android", target_os = "linux", target_os = "solaris", target_os = "illumos"))]
 pub fn sendfile<F1: AsFd, F2: AsFd>(
     out_fd: F1,
     in_fd: F2,
