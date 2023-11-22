@@ -599,38 +599,13 @@ pub fn fcntl(fd: RawFd, arg: FcntlArg) -> Result<c_int> {
     Errno::result(res)
 }
 
-// TODO: convert to libc_enum
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 #[non_exhaustive]
 pub enum FlockArg {
     LockShared,
     LockExclusive,
-    Unlock,
     LockSharedNonblock,
     LockExclusiveNonblock,
-    UnlockNonblock,
-}
-
-#[cfg(not(any(target_os = "redox", target_os = "solaris")))]
-fn flock(fd: RawFd, arg: FlockArg) -> Result<()> {
-    use self::FlockArg::*;
-
-    let res = unsafe {
-        match arg {
-            LockShared => libc::flock(fd, libc::LOCK_SH),
-            LockExclusive => libc::flock(fd, libc::LOCK_EX),
-            Unlock => libc::flock(fd, libc::LOCK_UN),
-            LockSharedNonblock => {
-                libc::flock(fd, libc::LOCK_SH | libc::LOCK_NB)
-            }
-            LockExclusiveNonblock => {
-                libc::flock(fd, libc::LOCK_EX | libc::LOCK_NB)
-            }
-            UnlockNonblock => libc::flock(fd, libc::LOCK_UN | libc::LOCK_NB),
-        }
-    };
-
-    Errno::result(res).map(drop)
 }
 
 /// Represents valid types for flock.
@@ -652,7 +627,7 @@ pub struct Flock<T: Flockable>(ManuallyDrop<T>);
 impl<T: Flockable> Drop for Flock<T> {
     fn drop(&mut self) {
         // Result is ignored because flock has no documented failure cases.
-        _ = flock(self.0.as_raw_fd(), FlockArg::Unlock);
+        _ = unsafe { libc::flock(self.0.as_raw_fd(), libc::LOCK_UN) };
     }
 }
 
@@ -690,9 +665,15 @@ impl<T: Flockable> Flock<T> {
     ///     Ok(())
     /// } // File is unlocked once `lock` goes out of scope.
     pub fn lock(t: T, args: FlockArg) -> std::result::Result<Self, (T, Errno)> {
-        match flock(t.as_raw_fd(), args) {
-            Ok(_) => Ok(Self(ManuallyDrop::new(t))),
-            Err(e) => Err((t, e)),
+        let flags = match args {
+            FlockArg::LockShared => libc::LOCK_SH,
+            FlockArg::LockExclusive => libc::LOCK_EX,
+            FlockArg::LockSharedNonblock => libc::LOCK_SH | libc::LOCK_NB,
+            FlockArg::LockExclusiveNonblock => libc::LOCK_EX | libc::LOCK_NB,
+        };
+        match unsafe { libc::flock(t.as_raw_fd(), flags) } {
+            0 => Ok(Self(ManuallyDrop::new(t))),
+            e @ _ => Err((t, Errno::from_i32(e))),
         }
     }
 
@@ -718,7 +699,7 @@ impl<T: Flockable> Flock<T> {
     ///     Ok(())
     /// }
     pub fn unlock(mut self) -> T {
-        _ = flock(self.0.as_raw_fd(), FlockArg::Unlock);
+        _ = unsafe { libc::flock(self.0.as_raw_fd(), libc::LOCK_UN) };
 
         // Safety: `self.0` never used again.
         unsafe { ManuallyDrop::take(&mut self.0) }
