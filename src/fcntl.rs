@@ -673,7 +673,7 @@ impl<T: Flockable> Flock<T> {
         };
         match unsafe { libc::flock(t.as_raw_fd(), flags) } {
             0 => Ok(Self(ManuallyDrop::new(t))),
-            e @ _ => Err((t, Errno::from_i32(e))),
+            e => Err((t, Errno::from_i32(e))),
         }
     }
 
