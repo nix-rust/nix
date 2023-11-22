@@ -624,12 +624,9 @@ pub struct Flock<T: Flockable>(Option<T>);
 #[cfg(not(any(target_os = "redox", target_os = "solaris")))]
 impl<T: Flockable> Drop for Flock<T> {
     fn drop(&mut self) {
-       match self.0 {
-           Some(ref t) => {
-               // Result is ignored because flock has no documented failure cases.
-               _ = unsafe { libc::flock(t.as_raw_fd(), libc::LOCK_UN) };
-           },
-           None => {}
+       if let Some(ref t) = self.0 {
+           // Result is ignored because flock has no documented failure cases.
+           _ = unsafe { libc::flock(t.as_raw_fd(), libc::LOCK_UN) };
        }
     }
 }
@@ -639,18 +636,17 @@ impl<T: Flockable> Deref for Flock<T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
-        match self.0 {
-            Some(ref t) => t,
-            None => unreachable!(),
-        }    }
+        if let Some(ref t) = self.0 {
+            t
+        } else { unreachable!() }
+    }
 }
 #[cfg(not(any(target_os = "redox", target_os = "solaris")))]
 impl<T: Flockable> DerefMut for Flock<T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        match self.0 {
-            Some(ref mut t) => t,
-            None => unreachable!(),
-        }
+        if let Some(ref mut t) = self.0 {
+            t
+        } else { unreachable!() }
     }
 }
 
