@@ -20,7 +20,7 @@ use std::os::unix::ffi::OsStringExt;
 use std::os::unix::io::RawFd;
 // For splice and copy_file_range
 #[cfg(all(not(any(target_os = "redox", target_os = "solaris")), unix))]
-use std::os::unix::io::AsRawFd;
+use std::os::unix::io::{AsRawFd, OwnedFd};
 #[cfg(any(
     target_os = "netbsd",
     apple_targets,
@@ -709,6 +709,10 @@ impl<T: Flockable> Flock<T> {
 // Safety: `File` is not [std::clone::Clone].
 #[cfg(not(any(target_os = "redox", target_os = "solaris")))]
 unsafe impl Flockable for std::fs::File {}
+
+// Safety: `OwnedFd` is not [std::clone::Clone].
+#[cfg(not(any(target_os = "redox", target_os = "solaris")))]
+unsafe impl Flockable for OwnedFd {}
 }
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
