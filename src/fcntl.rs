@@ -11,8 +11,6 @@ use libc::{self, c_int, c_uint, size_t, ssize_t};
 use std::ffi::CStr;
 use std::ffi::OsString;
 #[cfg(not(any(target_os = "redox", target_os = "solaris")))]
-use std::mem::ManuallyDrop;
-#[cfg(not(any(target_os = "redox", target_os = "solaris")))]
 use std::ops::{Deref, DerefMut};
 #[cfg(not(target_os = "redox"))]
 use std::os::raw;
@@ -621,16 +619,18 @@ pub unsafe trait Flockable: AsRawFd {}
 // `ManuallyDrop` is necessary to circumvent move out of `Drop` type error.
 #[cfg(not(any(target_os = "redox", target_os = "solaris")))]
 #[derive(Debug)]
-pub struct Flock<T: Flockable>(ManuallyDrop<T>);
+pub struct Flock<T: Flockable>(Option<T>);
 
 #[cfg(not(any(target_os = "redox", target_os = "solaris")))]
 impl<T: Flockable> Drop for Flock<T> {
     fn drop(&mut self) {
-        // Result is ignored because flock has no documented failure cases.
-        _ = unsafe { libc::flock(self.0.as_raw_fd(), libc::LOCK_UN) };
-
-        // Safety: Neither `self` nor `self.0` will be used again.
-        unsafe { ManuallyDrop::drop(&mut self.0); }
+       match self.0 {
+           Some(ref t) => {
+               // Result is ignored because flock has no documented failure cases.
+               _ = unsafe { libc::flock(t.as_raw_fd(), libc::LOCK_UN) };
+           },
+           None => {}
+       }
     }
 }
 
@@ -639,13 +639,18 @@ impl<T: Flockable> Deref for Flock<T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
-        &self.0
-    }
+        match self.0 {
+            Some(ref t) => t,
+            None => unreachable!(),
+        }    }
 }
 #[cfg(not(any(target_os = "redox", target_os = "solaris")))]
 impl<T: Flockable> DerefMut for Flock<T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
+        match self.0 {
+            Some(ref mut t) => t,
+            None => unreachable!(),
+        }
     }
 }
 
@@ -675,7 +680,7 @@ impl<T: Flockable> Flock<T> {
             FlockArg::LockExclusiveNonblock => libc::LOCK_EX | libc::LOCK_NB,
         };
         match Errno::result(unsafe { libc::flock(t.as_raw_fd(), flags) }) {
-            Ok(_) => Ok(Self(ManuallyDrop::new(t))),
+            Ok(_) => Ok(Self(Some(t))),
             Err(errno) => Err((t, errno)),
         }
     }
@@ -702,10 +707,9 @@ impl<T: Flockable> Flock<T> {
     ///     Ok(())
     /// }
     pub fn unlock(mut self) -> T {
-        _ = unsafe { libc::flock(self.0.as_raw_fd(), libc::LOCK_UN) };
+        _ = unsafe { libc::flock(self.0.as_ref().unwrap().as_raw_fd(), libc::LOCK_UN) };
 
-        // Safety: `self.0` never used again.
-        unsafe { ManuallyDrop::take(&mut self.0) }
+        self.0.take().unwrap()
     }
 }
 
