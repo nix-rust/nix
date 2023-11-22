@@ -628,6 +628,9 @@ impl<T: Flockable> Drop for Flock<T> {
     fn drop(&mut self) {
         // Result is ignored because flock has no documented failure cases.
         _ = unsafe { libc::flock(self.0.as_raw_fd(), libc::LOCK_UN) };
+
+        // Safety: Neither `self` nor `self.0` will be used again.
+        unsafe { ManuallyDrop::drop(&mut self.0); }
     }
 }
 
