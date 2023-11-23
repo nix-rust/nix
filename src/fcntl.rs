@@ -707,7 +707,7 @@ impl<T: Flockable> Flock<T> {
     /// # use std::fs::File;
     /// # use nix::fcntl::{Flock, FlockArg};
     /// fn do_stuff(file: File) -> nix::Result<()> {
-    ///     let lock = match Flock::lock(file, FlockArg::LockExclusive) {
+    ///     let mut lock = match Flock::lock(file, FlockArg::LockExclusive) {
     ///         Ok(l) => l,
     ///         Err((_,e)) => return Err(e),
     ///     };
@@ -716,26 +716,25 @@ impl<T: Flockable> Flock<T> {
     ///
     ///     // Unlock (don't continue until unlocked)
     ///     let file = loop {
-    ///         if let Ok(f) = lock.unlock(false) {
-    ///             break f
-    ///         }
+    ///         lock = match lock.unlock(false) {
+    ///             Ok(f) => break f,
+    ///             Err((l,_)) => l,
+    ///         };
     ///     };
     ///
     ///     // Do anything else
     ///
     ///     Ok(())
     /// }
-    pub fn unlock(self, nonblock: bool) -> Result<T> {
+    pub fn unlock(self, nonblock: bool) -> std::result::Result<T, (Self, Errno)> {
         let flag = match nonblock {
             true => libc::LOCK_UN | libc::LOCK_NB,
             false => libc::LOCK_UN,
         };
-        let inner = unsafe {
-            match Errno::result(libc::flock(self.0.as_raw_fd(), flag)) {
-                Ok(_) => std::ptr::read(&self.0),
-                Err(errno) => return Err(errno),
-            }
-        };
+        let inner = unsafe { match Errno::result(libc::flock(self.0.as_raw_fd(), flag)) {
+            Ok(_) => std::ptr::read(&self.0),
+            Err(errno) => return Err((self, errno)),
+        }};
 
         std::mem::forget(self);
         Ok(inner)
