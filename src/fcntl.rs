@@ -647,10 +647,8 @@ pub struct Flock<T: Flockable>(T);
 #[cfg(not(any(target_os = "redox", target_os = "solaris")))]
 impl<T: Flockable> Drop for Flock<T> {
     fn drop(&mut self) {
-       if Errno::result(unsafe { libc::flock(self.0.as_raw_fd(), libc::LOCK_UN) }).is_err() {
-           if !std::thread::panicking() {
-               panic!("Failed to remove flock.");
-           }
+       if Errno::result(unsafe { libc::flock(self.0.as_raw_fd(), libc::LOCK_UN) }).is_err() && !std::thread::panicking() {
+           panic!("Failed to remove flock.");
        }
     }
 }
