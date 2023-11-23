@@ -642,16 +642,14 @@ pub unsafe trait Flockable: AsRawFd {}
 /// See flock(2) for details on locking semantics.
 #[cfg(not(any(target_os = "redox", target_os = "solaris")))]
 #[derive(Debug)]
-pub struct Flock<T: Flockable>(Option<T>);
+pub struct Flock<T: Flockable>(T);
 
 #[cfg(not(any(target_os = "redox", target_os = "solaris")))]
 impl<T: Flockable> Drop for Flock<T> {
     fn drop(&mut self) {
-       if let Some(ref t) = self.0 {
-           if let Err(_) = Errno::result(unsafe { libc::flock(t.as_raw_fd(), libc::LOCK_UN) }) {
-               if !std::thread::panicking() {
-                   panic!("Failed to remove flock.");
-               }
+       if let Err(_) = Errno::result(unsafe { libc::flock(self.0.as_raw_fd(), libc::LOCK_UN) }) {
+           if !std::thread::panicking() {
+               panic!("Failed to remove flock.");
            }
        }
     }
@@ -662,17 +660,13 @@ impl<T: Flockable> Deref for Flock<T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
-        if let Some(ref t) = self.0 {
-            t
-        } else { unreachable!() }
+        &self.0
     }
 }
 #[cfg(not(any(target_os = "redox", target_os = "solaris")))]
 impl<T: Flockable> DerefMut for Flock<T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        if let Some(ref mut t) = self.0 {
-            t
-        } else { unreachable!() }
+        &mut self.0
     }
 }
 
@@ -703,7 +697,7 @@ impl<T: Flockable> Flock<T> {
             FlockArg::Unlock | FlockArg::UnlockNonblock => return Err((t, Errno::EINVAL)),
         };
         match Errno::result(unsafe { libc::flock(t.as_raw_fd(), flags) }) {
-            Ok(_) => Ok(Self(Some(t))),
+            Ok(_) => Ok(Self(t)),
             Err(errno) => Err((t, errno)),
         }
     }
@@ -738,10 +732,15 @@ impl<T: Flockable> Flock<T> {
             true => libc::LOCK_UN | libc::LOCK_NB,
             false => libc::LOCK_UN,
         };
-        match Errno::result(unsafe { libc::flock(self.0.as_ref().unwrap().as_raw_fd(), flag) }) {
-            Ok(_) => Ok(self.0.take().unwrap()),
-            Err(errno) => Err(errno),
-        }
+        let inner = unsafe {
+            match Errno::result(libc::flock(self.0.as_raw_fd(), flag)) {
+                Ok(_) => std::ptr::read(&mut self.0),
+                Err(errno) => return Err(errno),
+            }
+        };
+
+        std::mem::forget(self);
+        Ok(inner)
     }
 }
 
