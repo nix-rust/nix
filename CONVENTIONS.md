@@ -88,8 +88,8 @@ the variable.
 ## Pointer type casting
 
 We prefer [`cast()`], [`cast_mut()`] and [`cast_const()`] to cast pointer types
-over the `as` keyword because it is way more easier to change both type and 
-mutability accidentally.
+over the `as` keyword because they are much more difficult to change both type 
+and mutability accidentally.
 
 [`cast()`]: https://doc.rust-lang.org/std/primitive.pointer.html#method.cast
 [`cast_mut()`]: https://doc.rust-lang.org/std/primitive.pointer.html#method.cast_mut
