@@ -124,6 +124,8 @@ feature! {
     target_os = "freebsd",
     apple_targets,
     target_os = "linux",
+    target_os = "solaris",
+    target_os = "illumos",
 ))]
 feature! {
     #![feature = "zerocopy"]
