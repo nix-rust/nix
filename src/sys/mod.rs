@@ -30,6 +30,12 @@ feature! {
     pub mod eventfd;
 }
 
+#[cfg(target_os = "linux")]
+feature! {
+    #![feature = "fanotify"]
+    pub mod fanotify;
+}
+
 #[cfg(any(
     target_os = "android",
     target_os = "dragonfly",

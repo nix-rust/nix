@@ -12,6 +12,7 @@
 //! * `dir` - Stuff relating to directory iteration
 //! * `env` - Manipulate environment variables
 //! * `event` - Event-driven APIs, like `kqueue` and `epoll`
+//! * `fanotify` - Linux's `fanotify` filesystem events monitoring API
 //! * `feature` - Query characteristics of the OS at runtime
 //! * `fs` - File system functionality
 //! * `hostname` - Get and set the system's hostname
@@ -53,6 +54,7 @@
         feature = "dir",
         feature = "env",
         feature = "event",
+        feature = "fanotify",
         feature = "feature",
         feature = "fs",
         feature = "hostname",

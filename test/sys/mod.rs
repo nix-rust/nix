@@ -43,6 +43,8 @@ mod test_wait;
 #[cfg(any(target_os = "android", target_os = "linux"))]
 mod test_epoll;
 #[cfg(target_os = "linux")]
+mod test_fanotify;
+#[cfg(target_os = "linux")]
 mod test_inotify;
 mod test_pthread;
 #[cfg(any(
