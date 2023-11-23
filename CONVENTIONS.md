@@ -84,3 +84,13 @@ the variable.
 [enum]: https://doc.rust-lang.org/reference.html#enumerations
 [libc]: https://crates.io/crates/libc/
 [std_MaybeUninit]: https://doc.rust-lang.org/stable/std/mem/union.MaybeUninit.html
+
+## Pointer type casting
+
+We prefer [`cast()`], [`cast_mut()`] and [`cast_const()`] to cast pointer types
+over the `as` keyword because it is much more difficult to accidentally change
+type or mutability that way.
+
+[`cast()`]: https://doc.rust-lang.org/std/primitive.pointer.html#method.cast
+[`cast_mut()`]: https://doc.rust-lang.org/std/primitive.pointer.html#method.cast_mut
+[`cast_const()`]: https://doc.rust-lang.org/std/primitive.pointer.html#method.cast_const
