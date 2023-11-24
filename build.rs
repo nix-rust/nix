@@ -15,6 +15,6 @@ fn main() {
         apple_targets: { any(ios, macos, watchos, tvos) },
         bsd: { any(freebsd, dragonfly, netbsd, openbsd, apple_targets) },
         linux_android: { any(android, linux) },
-        freebsdlike: { any(dragonfly, freebsd)}
+        freebsdlike: { any(dragonfly, freebsd) }
     }
 }
