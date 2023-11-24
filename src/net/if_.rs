@@ -79,7 +79,7 @@ libc_bitflags!(
                   target_os = "openbsd"))]
         IFF_OACTIVE;
         /// Protocol code on board.
-        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg(solarish)]
         IFF_INTELLIGENT;
         /// Slave of a load balancing bundle. (see
         /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
@@ -99,7 +99,7 @@ libc_bitflags!(
         #[cfg(bsd)]
         IFF_LINK0;
         /// Multicast using broadcast.
-        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg(solarish)]
         IFF_MULTI_BCAST;
         /// Is able to select media type via ifmap. (see
         /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
@@ -109,7 +109,7 @@ libc_bitflags!(
         #[cfg(bsd)]
         IFF_LINK1;
         /// Non-unique address.
-        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg(solarish)]
         IFF_UNNUMBERED;
         /// Auto media selection active. (see
         /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
@@ -124,14 +124,14 @@ libc_bitflags!(
                   apple_targets,))]
         IFF_ALTPHYS;
         /// DHCP controls interface.
-        #[cfg(any(target_os = "solaris", target_os = "illumos"))]
+        #[cfg(solarish)]
         IFF_DHCPRUNNING;
         /// The addresses are lost when the interface goes down. (see
         /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
         #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
         IFF_DYNAMIC;
         /// Do not advertise.
-        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg(solarish)]
         IFF_PRIVATE;
         /// Driver signals L1 up. Volatile.
         #[cfg(any(target_os = "fuchsia", target_os = "linux"))]
@@ -143,7 +143,7 @@ libc_bitflags!(
         #[cfg(any(target_os = "freebsd"))]
         IFF_CANTCONFIG;
         /// Do not transmit packets.
-        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg(solarish)]
         IFF_NOXMIT;
         /// Driver signals dormant. Volatile.
         #[cfg(any(target_os = "fuchsia", target_os = "linux"))]
@@ -152,7 +152,7 @@ libc_bitflags!(
         #[cfg(freebsdlike)]
         IFF_PPROMISC;
         /// Just on-link subnet.
-        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg(solarish)]
         IFF_NOLOCAL;
         /// Echo sent packets. Volatile.
         #[cfg(any(target_os = "fuchsia", target_os = "linux"))]
@@ -161,19 +161,19 @@ libc_bitflags!(
         #[cfg(freebsdlike)]
         IFF_MONITOR;
         /// Address is deprecated.
-        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg(solarish)]
         IFF_DEPRECATED;
         /// Static ARP.
         #[cfg(freebsdlike)]
         IFF_STATICARP;
         /// Address from stateless addrconf.
-        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg(solarish)]
         IFF_ADDRCONF;
         /// Interface is in polling mode.
         #[cfg(any(target_os = "dragonfly"))]
         IFF_NPOLLING;
         /// Router on interface.
-        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg(solarish)]
         IFF_ROUTER;
         /// Interface is in polling mode.
         #[cfg(any(target_os = "dragonfly"))]
@@ -182,16 +182,16 @@ libc_bitflags!(
         #[cfg(any(target_os = "freebsd"))]
         IFF_DYING;
         /// No NUD on interface.
-        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg(solarish)]
         IFF_NONUD;
         /// Interface is being renamed
         #[cfg(any(target_os = "freebsd"))]
         IFF_RENAMING;
         /// Anycast address.
-        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg(solarish)]
         IFF_ANYCAST;
         /// Don't exchange routing info.
-        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg(solarish)]
         IFF_NORTEXCH;
         /// Do not provide packet information
         #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
@@ -203,25 +203,25 @@ libc_bitflags!(
         #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
         IFF_TAP as libc::c_int;
         /// IPv4 interface.
-        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg(solarish)]
         IFF_IPV4;
         /// IPv6 interface.
-        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg(solarish)]
         IFF_IPV6;
         /// in.mpathd test address
-        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg(solarish)]
         IFF_NOFAILOVER;
         /// Interface has failed
-        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg(solarish)]
         IFF_FAILED;
         /// Interface is a hot-spare
-        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg(solarish)]
         IFF_STANDBY;
         /// Functioning but not used
-        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg(solarish)]
         IFF_INACTIVE;
         /// Interface is offline
-        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg(solarish)]
         IFF_OFFLINE;
         #[cfg(target_os = "solaris")]
         IFF_COS_ENABLED;

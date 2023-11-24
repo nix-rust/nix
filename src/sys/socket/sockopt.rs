@@ -261,7 +261,7 @@ sockopt_impl!(
     libc::SO_REUSEADDR,
     bool
 );
-#[cfg(not(any(target_os = "illumos", target_os = "solaris")))]
+#[cfg(not(solarish))]
 sockopt_impl!(
     /// Permits multiple AF_INET or AF_INET6 sockets to be bound to an
     /// identical socket address.

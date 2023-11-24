@@ -124,7 +124,7 @@ fn test_signal() {
     raise(Signal::SIGINT).unwrap();
     assert!(SIGNALED.load(Ordering::Relaxed));
 
-    #[cfg(not(any(target_os = "illumos", target_os = "solaris")))]
+    #[cfg(not(solarish))]
     assert_eq!(
         unsafe { signal(Signal::SIGINT, SigHandler::SigDfl) }.unwrap(),
         handler
@@ -132,7 +132,7 @@ fn test_signal() {
 
     // System V based OSes (e.g. illumos and Solaris) always resets the
     // disposition to SIG_DFL prior to calling the signal handler
-    #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+    #[cfg(solarish)]
     assert_eq!(
         unsafe { signal(Signal::SIGINT, SigHandler::SigDfl) }.unwrap(),
         SigHandler::SigDfl

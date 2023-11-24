@@ -25,7 +25,7 @@ cfg_if! {
         unsafe fn errno_location() -> *mut c_int {
             unsafe { libc::__errno_location() }
         }
-    } else if #[cfg(any(target_os = "illumos", target_os = "solaris"))] {
+    } else if #[cfg(solarish)] {
         unsafe fn errno_location() -> *mut c_int {
             unsafe { libc::___errno() }
         }
@@ -501,7 +501,7 @@ fn desc(errno: Errno) -> &'static str {
         ))]
         EBADMSG => "Not a data message",
 
-        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg(solarish)]
         EBADMSG => "Trying to read unreadable message",
 
         #[cfg(any(
@@ -745,7 +745,7 @@ fn desc(errno: Errno) -> &'static str {
         ))]
         EOWNERDEAD => "Owner died",
 
-        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg(solarish)]
         EOWNERDEAD => "Process died with lock",
 
         #[cfg(any(
@@ -756,7 +756,7 @@ fn desc(errno: Errno) -> &'static str {
         ))]
         ENOTRECOVERABLE => "State not recoverable",
 
-        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg(solarish)]
         ENOTRECOVERABLE => "Lock is not recoverable",
 
         #[cfg(any(
@@ -981,13 +981,13 @@ fn desc(errno: Errno) -> &'static str {
         #[cfg(target_os = "dragonfly")]
         EASYNC => "Async",
 
-        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg(solarish)]
         EDEADLOCK => "Resource deadlock would occur",
 
-        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg(solarish)]
         ELOCKUNMAPPED => "Locked lock was unmapped",
 
-        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg(solarish)]
         ENOTACTIVE => "Facility is not active",
     }
 }
@@ -2570,7 +2570,7 @@ mod consts {
     }
 }
 
-#[cfg(any(target_os = "illumos", target_os = "solaris"))]
+#[cfg(solarish)]
 mod consts {
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     #[repr(i32)]

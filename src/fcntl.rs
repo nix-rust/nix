@@ -100,7 +100,7 @@ libc_bitflags!(
                   target_os = "netbsd"))]
         O_DIRECT;
         /// If the specified path isn't a directory, fail.
-        #[cfg(not(any(target_os = "illumos", target_os = "solaris")))]
+        #[cfg(not(solarish))]
         O_DIRECTORY;
         /// Implicitly follow each `write()` with an `fdatasync()`.
         #[cfg(any(target_os = "android",

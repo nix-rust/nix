@@ -34,9 +34,9 @@ pub mod sockopt;
 
 pub use self::addr::{SockaddrLike, SockaddrStorage};
 
-#[cfg(any(target_os = "illumos", target_os = "solaris"))]
+#[cfg(solarish)]
 pub use self::addr::{AddressFamily, UnixAddr};
-#[cfg(not(any(target_os = "illumos", target_os = "solaris")))]
+#[cfg(not(solarish))]
 pub use self::addr::{AddressFamily, UnixAddr};
 #[cfg(not(any(
     target_os = "illumos",

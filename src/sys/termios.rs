@@ -324,11 +324,11 @@ libc_enum! {
         B76800,
         #[cfg(not(target_os = "aix"))]
         B115200,
-        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg(solarish)]
         B153600,
         #[cfg(not(target_os = "aix"))]
         B230400,
-        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg(solarish)]
         B307200,
         #[cfg(any(target_os = "android",
                   target_os = "freebsd",
