@@ -37,7 +37,7 @@ impl UtsName {
     }
 
     /// NIS or YP domain name of this machine.
-    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(linux_android)]
     pub fn domainname(&self) -> &OsStr {
         cast_and_trim(&self.0.domainname)
     }

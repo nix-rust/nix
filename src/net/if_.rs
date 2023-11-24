@@ -53,14 +53,10 @@ libc_bitflags!(
         /// Resources allocated. (see
         /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
         #[cfg(any(target_os = "android",
-                  target_os = "dragonfly",
-                  target_os = "freebsd",
+                  bsd,
                   target_os = "fuchsia",
                   target_os = "illumos",
-                  apple_targets,
                   target_os = "linux",
-                  target_os = "netbsd",
-                  target_os = "openbsd",
                   target_os = "solaris"))]
         IFF_RUNNING;
         /// No arp protocol, L2 destination address not set. (see
@@ -100,11 +96,7 @@ libc_bitflags!(
         /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
         IFF_MULTICAST;
         /// Per link layer defined bit.
-        #[cfg(any(target_os = "dragonfly",
-                  target_os = "freebsd",
-                  apple_targets,
-                  target_os = "netbsd",
-                  target_os = "openbsd"))]
+        #[cfg(bsd)]
         IFF_LINK0;
         /// Multicast using broadcast.
         #[cfg(any(target_os = "illumos", target_os = "solaris"))]
@@ -114,11 +106,7 @@ libc_bitflags!(
         #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
         IFF_PORTSEL;
         /// Per link layer defined bit.
-        #[cfg(any(target_os = "dragonfly",
-                  target_os = "freebsd",
-                  apple_targets,
-                  target_os = "netbsd",
-                  target_os = "openbsd"))]
+        #[cfg(bsd)]
         IFF_LINK1;
         /// Non-unique address.
         #[cfg(any(target_os = "illumos", target_os = "solaris"))]
@@ -128,11 +116,7 @@ libc_bitflags!(
         #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
         IFF_AUTOMEDIA;
         /// Per link layer defined bit.
-        #[cfg(any(target_os = "dragonfly",
-                  target_os = "freebsd",
-                  apple_targets,
-                  target_os = "netbsd",
-                  target_os = "openbsd"))]
+        #[cfg(bsd)]
         IFF_LINK2;
         /// Use alternate physical connection.
         #[cfg(any(target_os = "dragonfly",
@@ -165,7 +149,7 @@ libc_bitflags!(
         #[cfg(any(target_os = "fuchsia", target_os = "linux"))]
         IFF_DORMANT;
         /// User-requested promisc mode.
-        #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
+        #[cfg(freebsdlike)]
         IFF_PPROMISC;
         /// Just on-link subnet.
         #[cfg(any(target_os = "illumos", target_os = "solaris"))]
@@ -174,13 +158,13 @@ libc_bitflags!(
         #[cfg(any(target_os = "fuchsia", target_os = "linux"))]
         IFF_ECHO;
         /// User-requested monitor mode.
-        #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
+        #[cfg(freebsdlike)]
         IFF_MONITOR;
         /// Address is deprecated.
         #[cfg(any(target_os = "illumos", target_os = "solaris"))]
         IFF_DEPRECATED;
         /// Static ARP.
-        #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
+        #[cfg(freebsdlike)]
         IFF_STATICARP;
         /// Address from stateless addrconf.
         #[cfg(any(target_os = "illumos", target_os = "solaris"))]
@@ -263,13 +247,9 @@ libc_bitflags!(
 );
 
 #[cfg(any(
-    target_os = "dragonfly",
-    target_os = "freebsd",
+    bsd,
     target_os = "fuchsia",
-    apple_targets,
     target_os = "linux",
-    target_os = "netbsd",
-    target_os = "openbsd",
     target_os = "illumos",
 ))]
 mod if_nameindex {
@@ -394,13 +374,9 @@ mod if_nameindex {
     }
 }
 #[cfg(any(
-    target_os = "dragonfly",
-    target_os = "freebsd",
+    bsd,
     target_os = "fuchsia",
-    apple_targets,
     target_os = "linux",
-    target_os = "netbsd",
-    target_os = "openbsd",
     target_os = "illumos",
 ))]
 pub use if_nameindex::*;

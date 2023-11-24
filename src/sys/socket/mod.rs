@@ -1,7 +1,7 @@
 //! Socket interface functions
 //!
 //! [Further reading](https://man7.org/linux/man-pages/man7/socket.7.html)
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(linux_android)]
 #[cfg(feature = "uio")]
 use crate::sys::time::TimeSpec;
 #[cfg(not(target_os = "redox"))]
@@ -55,9 +55,9 @@ pub use self::addr::{LinkAddr, SockaddrIn, SockaddrIn6};
 #[cfg(feature = "net")]
 pub use self::addr::{SockaddrIn, SockaddrIn6};
 
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(linux_android)]
 pub use crate::sys::socket::addr::alg::AlgAddr;
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(linux_android)]
 pub use crate::sys::socket::addr::netlink::NetlinkAddr;
 #[cfg(apple_targets)]
 #[cfg(feature = "ioctl")]
@@ -143,74 +143,74 @@ pub enum SockProtocol {
     /// Receives routing and link updates and may be used to modify the routing tables (both IPv4 and IPv6), IP addresses, link
     // parameters, neighbor setups, queueing disciplines, traffic classes and packet classifiers
     /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
-    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(linux_android)]
     NetlinkRoute = libc::NETLINK_ROUTE,
     /// Reserved for user-mode socket protocols
     /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
-    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(linux_android)]
     NetlinkUserSock = libc::NETLINK_USERSOCK,
     /// Query information about sockets of various protocol families from the kernel
     /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
-    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(linux_android)]
     NetlinkSockDiag = libc::NETLINK_SOCK_DIAG,
     /// Netfilter/iptables ULOG.
     /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
-    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(linux_android)]
     NetlinkNFLOG = libc::NETLINK_NFLOG,
     /// SELinux event notifications.
     /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
-    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(linux_android)]
     NetlinkSELinux = libc::NETLINK_SELINUX,
     /// Open-iSCSI
     /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
-    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(linux_android)]
     NetlinkISCSI = libc::NETLINK_ISCSI,
     /// Auditing
     /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
-    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(linux_android)]
     NetlinkAudit = libc::NETLINK_AUDIT,
     /// Access to FIB lookup from user space
     /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
-    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(linux_android)]
     NetlinkFIBLookup = libc::NETLINK_FIB_LOOKUP,
     /// Netfilter subsystem
     /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
-    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(linux_android)]
     NetlinkNetFilter = libc::NETLINK_NETFILTER,
     /// SCSI Transports
     /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
-    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(linux_android)]
     NetlinkSCSITransport = libc::NETLINK_SCSITRANSPORT,
     /// Infiniband RDMA
     /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
-    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(linux_android)]
     NetlinkRDMA = libc::NETLINK_RDMA,
     /// Transport IPv6 packets from netfilter to user space.  Used by ip6_queue kernel module.
     /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
-    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(linux_android)]
     NetlinkIPv6Firewall = libc::NETLINK_IP6_FW,
     /// DECnet routing messages
     /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
-    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(linux_android)]
     NetlinkDECNetRoutingMessage = libc::NETLINK_DNRTMSG,
     /// Kernel messages to user space
     /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
-    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(linux_android)]
     NetlinkKObjectUEvent = libc::NETLINK_KOBJECT_UEVENT,
     /// Generic netlink family for simplified netlink usage.
     /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
-    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(linux_android)]
     NetlinkGeneric = libc::NETLINK_GENERIC,
     /// Netlink interface to request information about ciphers registered with the kernel crypto API as well as allow
     /// configuration of the kernel crypto API.
     /// ([ref](https://www.man7.org/linux/man-pages/man7/netlink.7.html))
-    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(linux_android)]
     NetlinkCrypto = libc::NETLINK_CRYPTO,
     /// Non-DIX type protocol number defined for the Ethernet IEEE 802.3 interface that allows packets of all protocols
     /// defined in the interface to be received.
     /// ([ref](https://man7.org/linux/man-pages/man7/packet.7.html))
     // The protocol number is fed into the socket syscall in network byte order.
-    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(linux_android)]
     EthAll = (libc::ETH_P_ALL as u16).to_be() as i32,
     /// ICMP protocol ([icmp(7)](https://man7.org/linux/man-pages/man7/icmp.7.html))
     Icmp = libc::IPPROTO_ICMP,
@@ -237,7 +237,7 @@ impl SockProtocol {
     #[allow(non_upper_case_globals)]
     pub const KextEvent: SockProtocol = SockProtocol::Icmp; // Matches libc::SYSPROTO_EVENT
 }
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(linux_android)]
 libc_bitflags! {
     /// Configuration flags for `SO_TIMESTAMPING` interface
     ///
@@ -338,7 +338,7 @@ libc_bitflags! {
         /// This flag specifies that queued errors should be received from
         /// the socket error queue. (For more details, see
         /// [recvfrom(2)](https://linux.die.net/man/2/recvfrom))
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(linux_android)]
         MSG_ERRQUEUE;
         /// Set the `close-on-exec` flag for the file descriptor received via a UNIX domain
         /// file descriptor using the `SCM_RIGHTS` operation (described in
@@ -381,7 +381,7 @@ libc_bitflags! {
 }
 
 cfg_if! {
-    if #[cfg(any(target_os = "android", target_os = "linux"))] {
+    if #[cfg(linux_android)] {
         /// Unix credentials of the sending process.
         ///
         /// This struct is used with the `SO_PEERCRED` ancillary message
@@ -436,7 +436,7 @@ cfg_if! {
                 uc.0
             }
         }
-    } else if #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))] {
+    } else if #[cfg(freebsdlike)] {
         /// Unix credentials of the sending process.
         ///
         /// This struct is used with the `SCM_CREDS` ancillary message for UNIX sockets.
@@ -673,10 +673,10 @@ pub enum ControlMessageOwned {
     /// Received version of [`ControlMessage::ScmRights`]
     ScmRights(Vec<RawFd>),
     /// Received version of [`ControlMessage::ScmCredentials`]
-    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(linux_android)]
     ScmCredentials(UnixCredentials),
     /// Received version of [`ControlMessage::ScmCreds`]
-    #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
+    #[cfg(freebsdlike)]
     ScmCreds(UnixCredentials),
     /// A message of type `SCM_TIMESTAMP`, containing the time the
     /// packet was received by the kernel.
@@ -739,12 +739,12 @@ pub enum ControlMessageOwned {
     /// A set of nanosecond resolution timestamps
     ///
     /// [Further reading](https://www.kernel.org/doc/html/latest/networking/timestamping.html)
-    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(linux_android)]
     ScmTimestampsns(Timestamps),
     /// Nanoseconds resolution timestamp
     ///
     /// [Further reading](https://www.kernel.org/doc/html/latest/networking/timestamping.html)
-    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(linux_android)]
     ScmTimestampns(TimeSpec),
     #[cfg(any(
         target_os = "android",
@@ -757,12 +757,8 @@ pub enum ControlMessageOwned {
     Ipv4PacketInfo(libc::in_pktinfo),
     #[cfg(any(
         target_os = "android",
-        target_os = "dragonfly",
-        target_os = "freebsd",
-        apple_targets,
+        bsd,
         target_os = "linux",
-        target_os = "openbsd",
-        target_os = "netbsd",
     ))]
     #[cfg(feature = "net")]
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -819,12 +815,12 @@ pub enum ControlMessageOwned {
     RxqOvfl(u32),
 
     /// Socket error queue control messages read with the `MSG_ERRQUEUE` flag.
-    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(linux_android)]
     #[cfg(feature = "net")]
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv4RecvErr(libc::sock_extended_err, Option<sockaddr_in>),
     /// Socket error queue control messages read with the `MSG_ERRQUEUE` flag.
-    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(linux_android)]
     #[cfg(feature = "net")]
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv6RecvErr(libc::sock_extended_err, Option<sockaddr_in6>),
@@ -839,7 +835,7 @@ pub enum ControlMessageOwned {
 }
 
 /// For representing packet timestamps via `SO_TIMESTAMPING` interface
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(linux_android)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct Timestamps {
     /// software based timestamp, usually one containing data
@@ -906,12 +902,12 @@ impl ControlMessageOwned {
                 }
                 ControlMessageOwned::ScmRights(fds)
             },
-            #[cfg(any(target_os = "android", target_os = "linux"))]
+            #[cfg(linux_android)]
             (libc::SOL_SOCKET, libc::SCM_CREDENTIALS) => {
                 let cred: libc::ucred = unsafe { ptr::read_unaligned(p as *const _) };
                 ControlMessageOwned::ScmCredentials(cred.into())
             }
-            #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
+            #[cfg(freebsdlike)]
             (libc::SOL_SOCKET, libc::SCM_CREDS) => {
                 let cred: libc::cmsgcred = unsafe { ptr::read_unaligned(p as *const _) };
                 ControlMessageOwned::ScmCreds(cred.into())
@@ -921,12 +917,12 @@ impl ControlMessageOwned {
                 let tv: libc::timeval = unsafe { ptr::read_unaligned(p as *const _) };
                 ControlMessageOwned::ScmTimestamp(TimeVal::from(tv))
             },
-            #[cfg(any(target_os = "android", target_os = "linux"))]
+            #[cfg(linux_android)]
             (libc::SOL_SOCKET, libc::SCM_TIMESTAMPNS) => {
                 let ts: libc::timespec = unsafe { ptr::read_unaligned(p as *const _) };
                 ControlMessageOwned::ScmTimestampns(TimeSpec::from(ts))
             }
-            #[cfg(any(target_os = "android", target_os = "linux"))]
+            #[cfg(linux_android)]
             (libc::SOL_SOCKET, libc::SCM_TIMESTAMPING) => {
                 let tp = p as *const libc::timespec;
                 let ts: libc::timespec = unsafe { ptr::read_unaligned(tp) };
@@ -999,13 +995,13 @@ impl ControlMessageOwned {
                 let drop_counter = unsafe { ptr::read_unaligned(p as *const u32) };
                 ControlMessageOwned::RxqOvfl(drop_counter)
             },
-            #[cfg(any(target_os = "android", target_os = "linux"))]
+            #[cfg(linux_android)]
             #[cfg(feature = "net")]
             (libc::IPPROTO_IP, libc::IP_RECVERR) => {
                 let (err, addr) = unsafe { Self::recv_err_helper::<sockaddr_in>(p, len) };
                 ControlMessageOwned::Ipv4RecvErr(err, addr)
             },
-            #[cfg(any(target_os = "android", target_os = "linux"))]
+            #[cfg(linux_android)]
             #[cfg(feature = "net")]
             (libc::IPPROTO_IPV6, libc::IPV6_RECVERR) => {
                 let (err, addr) = unsafe { Self::recv_err_helper::<sockaddr_in6>(p, len) };
@@ -1030,7 +1026,7 @@ impl ControlMessageOwned {
         }
     }
 
-    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(linux_android)]
     #[cfg(feature = "net")]
     #[allow(clippy::cast_ptr_alignment)]    // False positive
     unsafe fn recv_err_helper<T>(p: *mut libc::c_uchar, len: usize) -> (libc::sock_extended_err, Option<T>) {
@@ -1081,7 +1077,7 @@ pub enum ControlMessage<'a> {
     ///
     /// For further information, please refer to the
     /// [`unix(7)`](https://man7.org/linux/man-pages/man7/unix.7.html) man page.
-    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(linux_android)]
     ScmCredentials(&'a UnixCredentials),
     /// A message of type `SCM_CREDS`, containing the pid, uid, euid, gid and groups of
     /// a process connected to the socket.
@@ -1095,7 +1091,7 @@ pub enum ControlMessage<'a> {
     ///
     /// For further information, please refer to the
     /// [`unix(4)`](https://www.freebsd.org/cgi/man.cgi?query=unix) man page.
-    #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
+    #[cfg(freebsdlike)]
     ScmCreds,
 
     /// Set IV for `AF_ALG` crypto API.
@@ -1241,18 +1237,18 @@ impl<'a> ControlMessage<'a> {
             ControlMessage::ScmRights(fds) => {
                 fds as *const _ as *const u8
             },
-            #[cfg(any(target_os = "android", target_os = "linux"))]
+            #[cfg(linux_android)]
             ControlMessage::ScmCredentials(creds) => {
                 &creds.0 as *const libc::ucred as *const u8
             }
-            #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
+            #[cfg(freebsdlike)]
             ControlMessage::ScmCreds => {
                 // The kernel overwrites the data, we just zero it
                 // to make sure it's not uninitialized memory
                 unsafe { ptr::write_bytes(cmsg_data, 0, self.len()) };
                 return
             }
-            #[cfg(any(target_os = "android", target_os = "linux"))]
+            #[cfg(linux_android)]
             ControlMessage::AlgSetIv(iv) => {
                 #[allow(deprecated)] // https://github.com/rust-lang/libc/issues/1501
                 let af_alg_iv = libc::af_alg_iv {
@@ -1277,11 +1273,11 @@ impl<'a> ControlMessage<'a> {
 
                 return
             },
-            #[cfg(any(target_os = "android", target_os = "linux"))]
+            #[cfg(linux_android)]
             ControlMessage::AlgSetOp(op) => {
                 op as *const _ as *const u8
             },
-            #[cfg(any(target_os = "android", target_os = "linux"))]
+            #[cfg(linux_android)]
             ControlMessage::AlgSetAeadAssoclen(len) => {
                 len as *const _ as *const u8
             },
@@ -1332,23 +1328,23 @@ impl<'a> ControlMessage<'a> {
             ControlMessage::ScmRights(fds) => {
                 mem::size_of_val(fds)
             },
-            #[cfg(any(target_os = "android", target_os = "linux"))]
+            #[cfg(linux_android)]
             ControlMessage::ScmCredentials(creds) => {
                 mem::size_of_val(creds)
             }
-            #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
+            #[cfg(freebsdlike)]
             ControlMessage::ScmCreds => {
                 mem::size_of::<libc::cmsgcred>()
             }
-            #[cfg(any(target_os = "android", target_os = "linux"))]
+            #[cfg(linux_android)]
             ControlMessage::AlgSetIv(iv) => {
                 mem::size_of::<&[u8]>() + iv.len()
             },
-            #[cfg(any(target_os = "android", target_os = "linux"))]
+            #[cfg(linux_android)]
             ControlMessage::AlgSetOp(op) => {
                 mem::size_of_val(op)
             },
-            #[cfg(any(target_os = "android", target_os = "linux"))]
+            #[cfg(linux_android)]
             ControlMessage::AlgSetAeadAssoclen(len) => {
                 mem::size_of_val(len)
             },
@@ -1392,11 +1388,11 @@ impl<'a> ControlMessage<'a> {
     fn cmsg_level(&self) -> libc::c_int {
         match *self {
             ControlMessage::ScmRights(_) => libc::SOL_SOCKET,
-            #[cfg(any(target_os = "android", target_os = "linux"))]
+            #[cfg(linux_android)]
             ControlMessage::ScmCredentials(_) => libc::SOL_SOCKET,
-            #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
+            #[cfg(freebsdlike)]
             ControlMessage::ScmCreds => libc::SOL_SOCKET,
-            #[cfg(any(target_os = "android", target_os = "linux"))]
+            #[cfg(linux_android)]
             ControlMessage::AlgSetIv(_) | ControlMessage::AlgSetOp(_) |
                 ControlMessage::AlgSetAeadAssoclen(_) => libc::SOL_ALG,
             #[cfg(target_os = "linux")]
@@ -1431,19 +1427,19 @@ impl<'a> ControlMessage<'a> {
     fn cmsg_type(&self) -> libc::c_int {
         match *self {
             ControlMessage::ScmRights(_) => libc::SCM_RIGHTS,
-            #[cfg(any(target_os = "android", target_os = "linux"))]
+            #[cfg(linux_android)]
             ControlMessage::ScmCredentials(_) => libc::SCM_CREDENTIALS,
-            #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
+            #[cfg(freebsdlike)]
             ControlMessage::ScmCreds => libc::SCM_CREDS,
-            #[cfg(any(target_os = "android", target_os = "linux"))]
+            #[cfg(linux_android)]
             ControlMessage::AlgSetIv(_) => {
                 libc::ALG_SET_IV
             },
-            #[cfg(any(target_os = "android", target_os = "linux"))]
+            #[cfg(linux_android)]
             ControlMessage::AlgSetOp(_) => {
                 libc::ALG_SET_OP
             },
-            #[cfg(any(target_os = "android", target_os = "linux"))]
+            #[cfg(linux_android)]
             ControlMessage::AlgSetAeadAssoclen(_) => {
                 libc::ALG_SET_AEAD_ASSOCLEN
             },

@@ -183,9 +183,7 @@ libc_bitflags! {
         EV_DELETE;
         #[allow(missing_docs)]
         EV_DISABLE;
-        #[cfg(any(target_os = "dragonfly", target_os = "freebsd",
-                  apple_targets,
-                  target_os = "netbsd", target_os = "openbsd"))]
+        #[cfg(bsd)]
         #[allow(missing_docs)]
         EV_DISPATCH;
         #[cfg(target_os = "freebsd")]
@@ -213,9 +211,7 @@ libc_bitflags! {
         #[cfg(apple_targets)]
         #[allow(missing_docs)]
         EV_POLL;
-        #[cfg(any(target_os = "dragonfly", target_os = "freebsd",
-                  apple_targets,
-                  target_os = "netbsd", target_os = "openbsd"))]
+        #[cfg(bsd)]
         #[allow(missing_docs)]
         EV_RECEIPT;
     }

@@ -13,16 +13,7 @@ use crate::fcntl::AtFlags;
 
 #[cfg(feature = "fs")]
 use crate::fcntl::{fcntl, FcntlArg::F_SETFD, FdFlag, OFlag};
-#[cfg(all(
-    feature = "fs",
-    any(
-        target_os = "openbsd",
-        target_os = "netbsd",
-        target_os = "freebsd",
-        target_os = "dragonfly",
-        apple_targets,
-    )
-))]
+#[cfg(all(feature = "fs", bsd))]
 use crate::sys::stat::FileFlag;
 #[cfg(feature = "fs")]
 use crate::sys::stat::Mode;
@@ -44,7 +35,7 @@ use std::{fmt, mem, ptr};
 
 feature! {
     #![feature = "fs"]
-    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(linux_android)]
     pub use self::pivot_root::*;
 }
 
@@ -407,7 +398,7 @@ pub fn getpgrp() -> Pid {
 ///
 /// No error handling is required as a thread id should always exist for any
 /// process, even if threads are not being used.
-#[cfg(any(target_os = "linux", target_os = "android"))]
+#[cfg(linux_android)]
 #[inline]
 pub fn gettid() -> Pid {
     Pid(unsafe { libc::syscall(libc::SYS_gettid) as pid_t })
@@ -941,7 +932,7 @@ pub fn fexecve<SA: AsRef<CStr>, SE: AsRef<CStr>>(
 ///
 /// This function is similar to `execve`, except that the program to be executed
 /// is referenced as a file descriptor to the base directory plus a path.
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(linux_android)]
 #[inline]
 pub fn execveat<SA: AsRef<CStr>, SE: AsRef<CStr>>(
     dirfd: Option<RawFd>,
@@ -1179,7 +1170,7 @@ pub fn lseek(fd: RawFd, offset: off_t, whence: Whence) -> Result<off_t> {
     Errno::result(res).map(|r| r as off_t)
 }
 
-#[cfg(any(target_os = "linux", target_os = "android"))]
+#[cfg(linux_android)]
 pub fn lseek64(
     fd: RawFd,
     offset: libc::off64_t,
@@ -1534,7 +1525,7 @@ feature! {
 /// ID of the caller.
 ///
 /// See also [setfsuid(2)](https://man7.org/linux/man-pages/man2/setfsuid.2.html)
-#[cfg(any(target_os = "linux", target_os = "android"))]
+#[cfg(linux_android)]
 pub fn setfsuid(uid: Uid) -> Uid {
     let prev_fsuid = unsafe { libc::setfsuid(uid.into()) };
     Uid::from_raw(prev_fsuid as uid_t)
@@ -1545,7 +1536,7 @@ pub fn setfsuid(uid: Uid) -> Uid {
 /// ID of the caller.
 ///
 /// See also [setfsgid(2)](https://man7.org/linux/man-pages/man2/setfsgid.2.html)
-#[cfg(any(target_os = "linux", target_os = "android"))]
+#[cfg(linux_android)]
 pub fn setfsgid(gid: Gid) -> Gid {
     let prev_fsgid = unsafe { libc::setfsgid(gid.into()) };
     Gid::from_raw(prev_fsgid as gid_t)
@@ -1653,13 +1644,9 @@ pub fn getgroups() -> Result<Vec<Gid>> {
 )))]
 pub fn setgroups(groups: &[Gid]) -> Result<()> {
     cfg_if! {
-        if #[cfg(any(target_os = "aix",
-                     target_os = "dragonfly",
-                     target_os = "freebsd",
+        if #[cfg(any(bsd,
+                     target_os = "aix",
                      target_os = "illumos",
-                     apple_targets,
-                     target_os = "netbsd",
-                     target_os = "openbsd",
                      target_os = "solaris"))] {
             type setgroups_ngroups_t = c_int;
         } else {
@@ -2315,13 +2302,9 @@ pub enum SysconfVar {
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     EXPR_NEST_MAX = libc::_SC_EXPR_NEST_MAX,
     #[cfg(any(
-        target_os = "dragonfly",
-        target_os = "freebsd",
+        bsd,
         target_os = "illumos",
-        apple_targets,
         target_os = "linux",
-        target_os = "netbsd",
-        target_os = "openbsd",
         target_os = "solaris"
     ))]
     /// Maximum length of a host name (not including the terminating null) as
@@ -2367,13 +2350,9 @@ pub enum SysconfVar {
     /// The implementation supports the Advisory Information option.
     _POSIX_ADVISORY_INFO = libc::_SC_ADVISORY_INFO,
     #[cfg(any(
-        target_os = "dragonfly",
-        target_os = "freebsd",
+        bsd,
         target_os = "illumos",
-        apple_targets,
         target_os = "linux",
-        target_os = "netbsd",
-        target_os = "openbsd",
         target_os = "solaris"
     ))]
     /// The implementation supports barriers.
@@ -2382,25 +2361,17 @@ pub enum SysconfVar {
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     _POSIX_ASYNCHRONOUS_IO = libc::_SC_ASYNCHRONOUS_IO,
     #[cfg(any(
-        target_os = "dragonfly",
-        target_os = "freebsd",
+        bsd,
         target_os = "illumos",
-        apple_targets,
         target_os = "linux",
-        target_os = "netbsd",
-        target_os = "openbsd",
         target_os = "solaris"
     ))]
     /// The implementation supports clock selection.
     _POSIX_CLOCK_SELECTION = libc::_SC_CLOCK_SELECTION,
     #[cfg(any(
-        target_os = "dragonfly",
-        target_os = "freebsd",
+        bsd,
         target_os = "illumos",
-        apple_targets,
         target_os = "linux",
-        target_os = "netbsd",
-        target_os = "openbsd",
         target_os = "solaris"
     ))]
     /// The implementation supports the Process CPU-Time Clocks option.
@@ -2467,13 +2438,9 @@ pub enum SysconfVar {
     /// The implementation supports the Raw Sockets option.
     _POSIX_RAW_SOCKETS = libc::_SC_RAW_SOCKETS,
     #[cfg(any(
-        target_os = "dragonfly",
-        target_os = "freebsd",
+        bsd,
         target_os = "illumos",
-        apple_targets,
         target_os = "linux",
-        target_os = "netbsd",
-        target_os = "openbsd",
         target_os = "solaris"
     ))]
     /// The implementation supports read-write locks.
@@ -2489,13 +2456,9 @@ pub enum SysconfVar {
     /// The implementation supports realtime signals.
     _POSIX_REALTIME_SIGNALS = libc::_SC_REALTIME_SIGNALS,
     #[cfg(any(
-        target_os = "dragonfly",
-        target_os = "freebsd",
+        bsd,
         target_os = "illumos",
-        apple_targets,
         target_os = "linux",
-        target_os = "netbsd",
-        target_os = "openbsd",
         target_os = "solaris"
     ))]
     /// The implementation supports the Regular Expression Handling option.
@@ -2509,34 +2472,13 @@ pub enum SysconfVar {
     /// The implementation supports the Shared Memory Objects option.
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     _POSIX_SHARED_MEMORY_OBJECTS = libc::_SC_SHARED_MEMORY_OBJECTS,
-    #[cfg(any(
-        target_os = "dragonfly",
-        target_os = "freebsd",
-        apple_targets,
-        target_os = "linux",
-        target_os = "netbsd",
-        target_os = "openbsd"
-    ))]
+    #[cfg(any(bsd, target_os = "linux",))]
     /// The implementation supports the POSIX shell.
     _POSIX_SHELL = libc::_SC_SHELL,
-    #[cfg(any(
-        target_os = "dragonfly",
-        target_os = "freebsd",
-        apple_targets,
-        target_os = "linux",
-        target_os = "netbsd",
-        target_os = "openbsd"
-    ))]
+    #[cfg(any(bsd, target_os = "linux",))]
     /// The implementation supports the Spawn option.
     _POSIX_SPAWN = libc::_SC_SPAWN,
-    #[cfg(any(
-        target_os = "dragonfly",
-        target_os = "freebsd",
-        apple_targets,
-        target_os = "linux",
-        target_os = "netbsd",
-        target_os = "openbsd"
-    ))]
+    #[cfg(any(bsd, target_os = "linux",))]
     /// The implementation supports spin locks.
     _POSIX_SPIN_LOCKS = libc::_SC_SPIN_LOCKS,
     #[cfg(any(
@@ -2581,14 +2523,7 @@ pub enum SysconfVar {
     /// The implementation supports the Thread Execution Scheduling option.
     #[cfg(not(target_os = "redox"))]
     _POSIX_THREAD_PRIORITY_SCHEDULING = libc::_SC_THREAD_PRIORITY_SCHEDULING,
-    #[cfg(any(
-        target_os = "dragonfly",
-        target_os = "freebsd",
-        apple_targets,
-        target_os = "linux",
-        target_os = "netbsd",
-        target_os = "openbsd"
-    ))]
+    #[cfg(any(bsd, target_os = "linux"))]
     /// The implementation supports the Thread Process-Shared Synchronization
     /// option.
     _POSIX_THREAD_PROCESS_SHARED = libc::_SC_THREAD_PROCESS_SHARED,
@@ -2706,48 +2641,20 @@ pub enum SysconfVar {
     /// to which the implementation conforms. For implementations conforming to
     /// POSIX.1-2008, the value shall be 200809L.
     _POSIX_VERSION = libc::_SC_VERSION,
-    #[cfg(any(
-        target_os = "dragonfly",
-        target_os = "freebsd",
-        apple_targets,
-        target_os = "linux",
-        target_os = "netbsd",
-        target_os = "openbsd"
-    ))]
+    #[cfg(any(bsd, target_os = "linux"))]
     /// The implementation provides a C-language compilation environment with
     /// 32-bit `int`, `long`, `pointer`, and `off_t` types.
     _POSIX_V6_ILP32_OFF32 = libc::_SC_V6_ILP32_OFF32,
-    #[cfg(any(
-        target_os = "dragonfly",
-        target_os = "freebsd",
-        apple_targets,
-        target_os = "linux",
-        target_os = "netbsd",
-        target_os = "openbsd"
-    ))]
+    #[cfg(any(bsd, target_os = "linux"))]
     /// The implementation provides a C-language compilation environment with
     /// 32-bit `int`, `long`, and pointer types and an `off_t` type using at
     /// least 64 bits.
     _POSIX_V6_ILP32_OFFBIG = libc::_SC_V6_ILP32_OFFBIG,
-    #[cfg(any(
-        target_os = "dragonfly",
-        target_os = "freebsd",
-        apple_targets,
-        target_os = "linux",
-        target_os = "netbsd",
-        target_os = "openbsd"
-    ))]
+    #[cfg(any(bsd, target_os = "linux"))]
     /// The implementation provides a C-language compilation environment with
     /// 32-bit `int` and 64-bit `long`, `pointer`, and `off_t` types.
     _POSIX_V6_LP64_OFF64 = libc::_SC_V6_LP64_OFF64,
-    #[cfg(any(
-        target_os = "dragonfly",
-        target_os = "freebsd",
-        apple_targets,
-        target_os = "linux",
-        target_os = "netbsd",
-        target_os = "openbsd"
-    ))]
+    #[cfg(any(bsd, target_os = "linux"))]
     /// The implementation provides a C-language compilation environment with an
     /// `int` type using at least 32 bits and `long`, pointer, and `off_t` types
     /// using at least 64 bits.
@@ -2771,65 +2678,23 @@ pub enum SysconfVar {
     /// utility.
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     _POSIX2_LOCALEDEF = libc::_SC_2_LOCALEDEF,
-    #[cfg(any(
-        target_os = "dragonfly",
-        target_os = "freebsd",
-        apple_targets,
-        target_os = "linux",
-        target_os = "netbsd",
-        target_os = "openbsd"
-    ))]
+    #[cfg(any(bsd, target_os = "linux"))]
     /// The implementation supports the Batch Environment Services and Utilities
     /// option.
     _POSIX2_PBS = libc::_SC_2_PBS,
-    #[cfg(any(
-        target_os = "dragonfly",
-        target_os = "freebsd",
-        apple_targets,
-        target_os = "linux",
-        target_os = "netbsd",
-        target_os = "openbsd"
-    ))]
+    #[cfg(any(bsd, target_os = "linux"))]
     /// The implementation supports the Batch Accounting option.
     _POSIX2_PBS_ACCOUNTING = libc::_SC_2_PBS_ACCOUNTING,
-    #[cfg(any(
-        target_os = "dragonfly",
-        target_os = "freebsd",
-        apple_targets,
-        target_os = "linux",
-        target_os = "netbsd",
-        target_os = "openbsd"
-    ))]
+    #[cfg(any(bsd, target_os = "linux"))]
     /// The implementation supports the Batch Checkpoint/Restart option.
     _POSIX2_PBS_CHECKPOINT = libc::_SC_2_PBS_CHECKPOINT,
-    #[cfg(any(
-        target_os = "dragonfly",
-        target_os = "freebsd",
-        apple_targets,
-        target_os = "linux",
-        target_os = "netbsd",
-        target_os = "openbsd"
-    ))]
+    #[cfg(any(bsd, target_os = "linux"))]
     /// The implementation supports the Locate Batch Job Request option.
     _POSIX2_PBS_LOCATE = libc::_SC_2_PBS_LOCATE,
-    #[cfg(any(
-        target_os = "dragonfly",
-        target_os = "freebsd",
-        apple_targets,
-        target_os = "linux",
-        target_os = "netbsd",
-        target_os = "openbsd"
-    ))]
+    #[cfg(any(bsd, target_os = "linux"))]
     /// The implementation supports the Batch Job Message Request option.
     _POSIX2_PBS_MESSAGE = libc::_SC_2_PBS_MESSAGE,
-    #[cfg(any(
-        target_os = "dragonfly",
-        target_os = "freebsd",
-        apple_targets,
-        target_os = "linux",
-        target_os = "netbsd",
-        target_os = "openbsd"
-    ))]
+    #[cfg(any(bsd, target_os = "linux"))]
     /// The implementation supports the Track Batch Job Request option.
     _POSIX2_PBS_TRACK = libc::_SC_2_PBS_TRACK,
     /// The implementation supports the Software Development Utilities option.
@@ -2887,14 +2752,7 @@ pub enum SysconfVar {
     ))]
     SIGQUEUE_MAX = libc::_SC_SIGQUEUE_MAX,
     STREAM_MAX = libc::_SC_STREAM_MAX,
-    #[cfg(any(
-        target_os = "dragonfly",
-        target_os = "freebsd",
-        apple_targets,
-        target_os = "linux",
-        target_os = "netbsd",
-        target_os = "openbsd"
-    ))]
+    #[cfg(any(bsd, target_os = "linux"))]
     SYMLOOP_MAX = libc::_SC_SYMLOOP_MAX,
     #[cfg(not(target_os = "redox"))]
     TIMER_MAX = libc::_SC_TIMER_MAX,
@@ -2986,16 +2844,16 @@ pub enum SysconfVar {
     _XOPEN_VERSION = libc::_SC_XOPEN_VERSION,
     /// The number of pages of physical memory. Note that it is possible for
     /// the product of this value to overflow.
-    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(linux_android)]
     _PHYS_PAGES = libc::_SC_PHYS_PAGES,
     /// The number of currently available pages of physical memory.
-    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(linux_android)]
     _AVPHYS_PAGES = libc::_SC_AVPHYS_PAGES,
     /// The number of processors configured.
-    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(linux_android)]
     _NPROCESSORS_CONF = libc::_SC_NPROCESSORS_CONF,
     /// The number of processors currently online (available).
-    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(linux_android)]
     _NPROCESSORS_ONLN = libc::_SC_NPROCESSORS_ONLN,
 }
 
@@ -3032,7 +2890,7 @@ pub fn sysconf(var: SysconfVar) -> Result<Option<c_long>> {
 }
 }
 
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(linux_android)]
 #[cfg(feature = "fs")]
 mod pivot_root {
     use crate::errno::Errno;
@@ -3463,7 +3321,7 @@ impl From<User> for libc::passwd {
             pw_age: CString::new("").unwrap().into_raw(),
             #[cfg(target_os = "illumos")]
             pw_comment: CString::new("").unwrap().into_raw(),
-            #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
+            #[cfg(freebsdlike)]
             pw_fields: 0,
         }
     }
@@ -3763,13 +3621,7 @@ feature! {
 /// Get the effective user ID and group ID associated with a Unix domain socket.
 ///
 /// See also [getpeereid(3)](https://www.freebsd.org/cgi/man.cgi?query=getpeereid)
-#[cfg(any(
-    apple_targets,
-    target_os = "freebsd",
-    target_os = "openbsd",
-    target_os = "netbsd",
-    target_os = "dragonfly",
-))]
+#[cfg(bsd)]
 pub fn getpeereid<F: AsFd>(fd: F) -> Result<(Uid, Gid)> {
     let mut uid = 1;
     let mut gid = 1;

@@ -13,12 +13,8 @@ cfg_if! {
     if #[cfg(all(target_os = "linux", any(target_env = "gnu", target_env = "uclibc")))]{
         use libc::{__rlimit_resource_t, rlimit};
     } else if #[cfg(any(
-        target_os = "freebsd",
-        target_os = "openbsd",
-        target_os = "netbsd",
-        apple_targets,
+        bsd,
         target_os = "android",
-        target_os = "dragonfly",
         target_os = "aix",
         all(target_os = "linux", not(target_env = "gnu"))
     ))]{
@@ -44,12 +40,8 @@ libc_enum! {
     // https://github.com/rust-lang/libc/blob/master/src/unix/linux_like/linux/gnu/mod.rs
     #[cfg_attr(all(target_os = "linux", any(target_env = "gnu", target_env = "uclibc")), repr(u32))]
     #[cfg_attr(any(
-            target_os = "freebsd",
-            target_os = "openbsd",
-            target_os = "netbsd",
-            apple_targets,
+            bsd,
             target_os = "android",
-            target_os = "dragonfly",
             target_os = "aix",
             all(target_os = "linux", not(any(target_env = "gnu", target_env = "uclibc")))
         ), repr(i32))]
@@ -77,7 +69,7 @@ libc_enum! {
         /// The maximum number of kqueues this user id is allowed to create.
         RLIMIT_KQUEUES,
 
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(linux_android)]
         /// A limit on the combined number of flock locks and fcntl leases that
         /// this process may establish.
         RLIMIT_LOCKS,
@@ -93,12 +85,12 @@ libc_enum! {
         /// using the mlock(2) system call.
         RLIMIT_MEMLOCK,
 
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(linux_android)]
         /// A limit on the number of bytes that can be allocated for POSIX
         /// message queues  for  the  real  user  ID  of  the  calling process.
         RLIMIT_MSGQUEUE,
 
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(linux_android)]
         /// A ceiling to which the process's nice value can be raised using
         /// setpriority or nice.
         RLIMIT_NICE,
@@ -130,7 +122,7 @@ libc_enum! {
         /// eviction of a process' resident pages beyond this amount (in bytes).
         RLIMIT_RSS,
 
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(linux_android)]
         /// A ceiling on the real-time priority that may be set for this process
         /// using sched_setscheduler and  sched_set‐ param.
         RLIMIT_RTPRIO,
@@ -141,12 +133,12 @@ libc_enum! {
         /// making a blocking system call.
         RLIMIT_RTTIME,
 
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(linux_android)]
         /// A limit on the number of signals that may be queued for the real
         /// user ID of the  calling  process.
         RLIMIT_SIGPENDING,
 
-        #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
+        #[cfg(freebsdlike)]
         /// The maximum size (in bytes) of socket buffer usage for this user.
         RLIMIT_SBSIZE,
 

@@ -10,7 +10,7 @@ use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::mem;
 use std::ops::BitOr;
-#[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
+#[cfg(freebsdlike)]
 use std::os::unix::io::RawFd;
 use std::ptr;
 use std::str::FromStr;
@@ -1111,7 +1111,7 @@ pub enum SigevNotify {
     },
     // Note: SIGEV_THREAD is not implemented, but could be if desired.
     /// Notify by delivering an event to a kqueue.
-    #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
+    #[cfg(freebsdlike)]
     SigevKevent {
         /// File descriptor of the kqueue to notify.
         kq: RawFd,
@@ -1317,7 +1317,7 @@ mod sigevent {
                     sev.sigev_signo = signal as libc::c_int;
                     sev.sigev_value.sival_ptr = si_value as *mut libc::c_void
                 },
-                #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
+                #[cfg(freebsdlike)]
                 SigevNotify::SigevKevent{kq, udata} => {
                     sev.sigev_notify = libc::SIGEV_KEVENT;
                     sev.sigev_signo = kq;

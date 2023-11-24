@@ -1,9 +1,9 @@
 //! Provides helpers for making ptrace system calls
 
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(linux_android)]
 mod linux;
 
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(linux_android)]
 pub use self::linux::*;
 
 #[cfg(any(

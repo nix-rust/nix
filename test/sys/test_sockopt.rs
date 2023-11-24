@@ -1,4 +1,4 @@
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(linux_android)]
 use crate::*;
 use nix::sys::socket::{
     getsockopt, setsockopt, socket, sockopt, AddressFamily, SockFlag,
@@ -8,7 +8,7 @@ use rand::{thread_rng, Rng};
 use std::os::unix::io::{AsRawFd, FromRawFd, OwnedFd};
 
 // NB: FreeBSD supports LOCAL_PEERCRED for SOCK_SEQPACKET, but OSX does not.
-#[cfg(any(target_os = "dragonfly", target_os = "freebsd",))]
+#[cfg(freebsdlike)]
 #[test]
 pub fn test_local_peercred_seqpacket() {
     use nix::{
@@ -29,7 +29,7 @@ pub fn test_local_peercred_seqpacket() {
     assert_eq!(Gid::from_raw(xucred.groups()[0]), Gid::current());
 }
 
-#[cfg(any(target_os = "dragonfly", target_os = "freebsd", apple_targets))]
+#[cfg(any(freebsdlike, apple_targets))]
 #[test]
 pub fn test_local_peercred_stream() {
     use nix::{
@@ -224,7 +224,7 @@ fn test_tcp_congestion() {
 }
 
 #[test]
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(linux_android)]
 fn test_bindtodevice() {
     skip_if_not_root!("test_bindtodevice");
 
@@ -276,7 +276,7 @@ fn test_so_tcp_keepalive() {
 }
 
 #[test]
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(linux_android)]
 #[cfg_attr(qemu, ignore)]
 fn test_get_mtu() {
     use nix::sys::socket::{bind, connect, SockaddrIn};

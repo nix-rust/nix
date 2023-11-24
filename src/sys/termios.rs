@@ -85,26 +85,8 @@
 //!
 //! On non-BSDs, `cfgetispeed()` and `cfgetospeed()` both return a `BaudRate`:
 //!
-#![cfg_attr(
-    any(
-        target_os = "freebsd",
-        target_os = "dragonfly",
-        apple_targets,
-        target_os = "netbsd",
-        target_os = "openbsd"
-    ),
-    doc = " ```rust,ignore"
-)]
-#![cfg_attr(
-    not(any(
-        target_os = "freebsd",
-        target_os = "dragonfly",
-        apple_targets,
-        target_os = "netbsd",
-        target_os = "openbsd"
-    )),
-    doc = " ```rust"
-)]
+#![cfg_attr(bsd, doc = " ```rust,ignore")]
+#![cfg_attr(not(bsd), doc = " ```rust")]
 //! # use nix::sys::termios::{BaudRate, cfgetispeed, cfgetospeed, cfsetspeed, Termios};
 //! # fn main() {
 //! # let mut t: Termios = unsafe { std::mem::zeroed() };
@@ -116,26 +98,8 @@
 //!
 //! But on the BSDs, `cfgetispeed()` and `cfgetospeed()` both return `u32`s:
 //!
-#![cfg_attr(
-    any(
-        target_os = "freebsd",
-        target_os = "dragonfly",
-        apple_targets,
-        target_os = "netbsd",
-        target_os = "openbsd"
-    ),
-    doc = " ```rust"
-)]
-#![cfg_attr(
-    not(any(
-        target_os = "freebsd",
-        target_os = "dragonfly",
-        apple_targets,
-        target_os = "netbsd",
-        target_os = "openbsd"
-    )),
-    doc = " ```rust,ignore"
-)]
+#![cfg_attr(bsd, doc = " ```rust")]
+#![cfg_attr(not(bsd), doc = " ```rust,ignore")]
 //! # use nix::sys::termios::{BaudRate, cfgetispeed, cfgetospeed, cfsetspeed, Termios};
 //! # fn main() {
 //! # let mut t: Termios = unsafe { std::mem::zeroed() };
@@ -147,26 +111,8 @@
 //!
 //! It's trivial to convert from a `BaudRate` to a `u32` on BSDs:
 //!
-#![cfg_attr(
-    any(
-        target_os = "freebsd",
-        target_os = "dragonfly",
-        apple_targets,
-        target_os = "netbsd",
-        target_os = "openbsd"
-    ),
-    doc = " ```rust"
-)]
-#![cfg_attr(
-    not(any(
-        target_os = "freebsd",
-        target_os = "dragonfly",
-        apple_targets,
-        target_os = "netbsd",
-        target_os = "openbsd"
-    )),
-    doc = " ```rust,ignore"
-)]
+#![cfg_attr(bsd, doc = " ```rust")]
+#![cfg_attr(not(bsd), doc = " ```rust,ignore")]
 //! # use nix::sys::termios::{BaudRate, cfgetispeed, cfsetspeed, Termios};
 //! # fn main() {
 //! # let mut t: Termios = unsafe { std::mem::zeroed() };
@@ -179,26 +125,8 @@
 //! And on BSDs you can specify arbitrary baud rates (**note** this depends on hardware support)
 //! by specifying baud rates directly using `u32`s:
 //!
-#![cfg_attr(
-    any(
-        target_os = "freebsd",
-        target_os = "dragonfly",
-        apple_targets,
-        target_os = "netbsd",
-        target_os = "openbsd"
-    ),
-    doc = " ```rust"
-)]
-#![cfg_attr(
-    not(any(
-        target_os = "freebsd",
-        target_os = "dragonfly",
-        apple_targets,
-        target_os = "netbsd",
-        target_os = "openbsd"
-    )),
-    doc = " ```rust,ignore"
-)]
+#![cfg_attr(bsd, doc = " ```rust")]
+#![cfg_attr(not(bsd), doc = " ```rust,ignore")]
 //! # use nix::sys::termios::{cfsetispeed, cfsetospeed, cfsetspeed, Termios};
 //! # fn main() {
 //! # let mut t: Termios = unsafe { std::mem::zeroed() };
@@ -409,9 +337,9 @@ libc_enum! {
                   target_os = "netbsd",
                   target_os = "solaris"))]
         B460800,
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(linux_android)]
         B500000,
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(linux_android)]
         B576000,
         #[cfg(any(target_os = "android",
                   target_os = "freebsd",
@@ -420,13 +348,13 @@ libc_enum! {
                   target_os = "netbsd",
                   target_os = "solaris"))]
         B921600,
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(linux_android)]
         B1000000,
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(linux_android)]
         B1152000,
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(linux_android)]
         B1500000,
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(linux_android)]
         B2000000,
         #[cfg(any(target_os = "android", all(target_os = "linux", not(target_arch = "sparc64"))))]
         B2500000,
@@ -440,13 +368,7 @@ libc_enum! {
     impl TryFrom<libc::speed_t>
 }
 
-#[cfg(any(
-    target_os = "freebsd",
-    target_os = "dragonfly",
-    apple_targets,
-    target_os = "netbsd",
-    target_os = "openbsd"
-))]
+#[cfg(bsd)]
 impl From<BaudRate> for u32 {
     fn from(b: BaudRate) -> u32 {
         b as u32
@@ -690,7 +612,7 @@ libc_bitflags! {
                   target_os = "linux",
                   apple_targets))]
         TAB3 as tcflag_t;
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(linux_android)]
         XTABS;
         #[cfg(any(target_os = "android",
                   target_os = "haiku",
@@ -722,11 +644,7 @@ libc_bitflags! {
                   target_os = "linux",
                   apple_targets))]
         FF1 as tcflag_t;
-        #[cfg(any(target_os = "freebsd",
-                  target_os = "dragonfly",
-                  apple_targets,
-                  target_os = "netbsd",
-                  target_os = "openbsd"))]
+        #[cfg(bsd)]
         OXTABS;
         #[cfg(any(target_os = "freebsd",
                   target_os = "dragonfly",
@@ -776,11 +694,7 @@ libc_bitflags! {
 libc_bitflags! {
     /// Flags for setting the control mode of a terminal
     pub struct ControlFlags: tcflag_t {
-        #[cfg(any(target_os = "dragonfly",
-                  target_os = "freebsd",
-                  apple_targets,
-                  target_os = "netbsd",
-                  target_os = "openbsd"))]
+        #[cfg(bsd)]
         CIGNORE;
         CS5;
         CS6;
@@ -794,7 +708,7 @@ libc_bitflags! {
         CLOCAL;
         #[cfg(not(any(target_os = "redox", target_os = "aix")))]
         CRTSCTS;
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(linux_android)]
         CBAUD;
         #[cfg(any(target_os = "android", all(target_os = "linux", not(target_arch = "mips"))))]
         CMSPAR;
@@ -802,7 +716,7 @@ libc_bitflags! {
                   all(target_os = "linux",
                       not(any(target_arch = "powerpc", target_arch = "powerpc64")))))]
         CIBAUD;
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(linux_android)]
         CBAUDEX;
         #[cfg(any(target_os = "dragonfly",
                   target_os = "freebsd",
@@ -855,11 +769,7 @@ libc_bitflags! {
         ECHOCTL;
         ISIG;
         ICANON;
-        #[cfg(any(target_os = "freebsd",
-                  target_os = "dragonfly",
-                  apple_targets,
-                  target_os = "netbsd",
-                  target_os = "openbsd"))]
+        #[cfg(bsd)]
         ALTWERASE;
         IEXTEN;
         #[cfg(not(any(target_os = "redox", target_os = "haiku", target_os = "aix")))]
@@ -867,11 +777,7 @@ libc_bitflags! {
         TOSTOP;
         #[cfg(not(target_os = "redox"))]
         FLUSHO;
-        #[cfg(any(target_os = "freebsd",
-                  target_os = "dragonfly",
-                  apple_targets,
-                  target_os = "netbsd",
-                  target_os = "openbsd"))]
+        #[cfg(bsd)]
         NOKERNINFO;
         #[cfg(not(target_os = "redox"))]
         PENDIN;
@@ -880,11 +786,7 @@ libc_bitflags! {
 }
 
 cfg_if! {
-    if #[cfg(any(target_os = "freebsd",
-                 target_os = "dragonfly",
-                 apple_targets,
-                 target_os = "netbsd",
-                 target_os = "openbsd"))] {
+    if #[cfg(bsd)] {
         /// Get input baud rate (see
         /// [cfgetispeed(3p)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/cfgetispeed.html)).
         ///

@@ -74,13 +74,7 @@ pub type type_of_file_flag = c_uint;
 ))]
 pub type type_of_file_flag = c_ulong;
 
-#[cfg(any(
-    target_os = "openbsd",
-    target_os = "netbsd",
-    target_os = "freebsd",
-    target_os = "dragonfly",
-    apple_targets
-))]
+#[cfg(bsd)]
 libc_bitflags! {
     /// File flags.
     pub struct FileFlag: type_of_file_flag {
@@ -99,7 +93,7 @@ libc_bitflags! {
         #[cfg(any(target_os = "dragonfly"))]
         SF_NOHISTORY;
         /// The file may not be renamed or deleted.
-        #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
+        #[cfg(freebsdlike)]
         SF_NOUNLINK;
         /// Mask of superuser changeable flags
         SF_SETTABLE;
@@ -135,7 +129,7 @@ libc_bitflags! {
         #[cfg(any(target_os = "dragonfly"))]
         UF_NOHISTORY;
         /// The file may not be renamed or deleted.
-        #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
+        #[cfg(freebsdlike)]
         UF_NOUNLINK;
         /// The file is offline, or has the Windows and CIFS
         /// `FILE_ATTRIBUTE_OFFLINE` attribute.

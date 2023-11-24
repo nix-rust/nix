@@ -26,10 +26,10 @@ libc_bitflags! {
         /// Pages can be executed
         PROT_EXEC;
         /// Apply protection up to the end of a mapping that grows upwards.
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(linux_android)]
         PROT_GROWSDOWN;
         /// Apply protection down to the beginning of a mapping that grows downwards.
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(linux_android)]
         PROT_GROWSUP;
     }
 }
@@ -63,30 +63,30 @@ libc_bitflags! {
                   all(target_os = "freebsd", target_pointer_width = "64")))]
         MAP_32BIT;
         /// Used for stacks; indicates to the kernel that the mapping should extend downward in memory.
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(linux_android)]
         MAP_GROWSDOWN;
         /// Compatibility flag. Ignored.
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(linux_android)]
         MAP_DENYWRITE;
         /// Compatibility flag. Ignored.
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(linux_android)]
         MAP_EXECUTABLE;
         /// Mark the mmaped region to be locked in the same way as `mlock(2)`.
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(linux_android)]
         MAP_LOCKED;
         /// Do not reserve swap space for this mapping.
         ///
         /// This was removed in FreeBSD 11 and is unused in DragonFlyBSD.
-        #[cfg(not(any(target_os = "dragonfly", target_os = "freebsd", target_os = "aix")))]
+        #[cfg(not(any(freebsdlike, target_os = "aix")))]
         MAP_NORESERVE;
         /// Populate page tables for a mapping.
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(linux_android)]
         MAP_POPULATE;
         /// Only meaningful when used with `MAP_POPULATE`. Don't perform read-ahead.
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(linux_android)]
         MAP_NONBLOCK;
         /// Allocate the mapping using "huge pages."
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(linux_android)]
         MAP_HUGETLB;
         /// Make use of 64KB huge page (must be supported by the system)
         #[cfg(target_os = "linux")]
@@ -129,7 +129,7 @@ libc_bitflags! {
         #[cfg(target_os = "netbsd")]
         MAP_WIRED;
         /// Causes dirtied data in the specified range to be flushed to disk only when necessary.
-        #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
+        #[cfg(freebsdlike)]
         MAP_NOSYNC;
         /// Rename private pages to a file.
         ///
@@ -137,10 +137,10 @@ libc_bitflags! {
         #[cfg(any(target_os = "netbsd", target_os = "openbsd"))]
         MAP_RENAME;
         /// Region may contain semaphores.
-        #[cfg(any(target_os = "dragonfly", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+        #[cfg(any(freebsdlike, target_os = "netbsd", target_os = "openbsd"))]
         MAP_HASSEMAPHORE;
         /// Region grows down, like a stack.
-        #[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd", target_os = "linux", target_os = "openbsd"))]
+        #[cfg(any(target_os = "android", freebsdlike, target_os = "linux", target_os = "openbsd"))]
         MAP_STACK;
         /// Pages in this mapping are not retained in the kernel's memory cache.
         #[cfg(apple_targets)]
@@ -223,24 +223,24 @@ libc_enum! {
         /// Do not expect access in the near future.
         MADV_DONTNEED,
         /// Free up a given range of pages and its associated backing store.
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(linux_android)]
         MADV_REMOVE,
         /// Do not make pages in this range available to the child after a `fork(2)`.
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(linux_android)]
         MADV_DONTFORK,
         /// Undo the effect of `MADV_DONTFORK`.
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(linux_android)]
         MADV_DOFORK,
         /// Poison the given pages.
         ///
         /// Subsequent references to those pages are treated like hardware memory corruption.
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(linux_android)]
         MADV_HWPOISON,
         /// Enable Kernel Samepage Merging (KSM) for the given pages.
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(linux_android)]
         MADV_MERGEABLE,
         /// Undo the effect of `MADV_MERGEABLE`
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(linux_android)]
         MADV_UNMERGEABLE,
         /// Preserve the memory of each page but offline the original page.
         #[cfg(any(target_os = "android",
@@ -255,31 +255,31 @@ libc_enum! {
                 target_arch = "sparc64"))))]
         MADV_SOFT_OFFLINE,
         /// Enable Transparent Huge Pages (THP) for pages in the given range.
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(linux_android)]
         MADV_HUGEPAGE,
         /// Undo the effect of `MADV_HUGEPAGE`.
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(linux_android)]
         MADV_NOHUGEPAGE,
         /// Exclude the given range from a core dump.
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(linux_android)]
         MADV_DONTDUMP,
         /// Undo the effect of an earlier `MADV_DONTDUMP`.
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(linux_android)]
         MADV_DODUMP,
         /// Specify that the application no longer needs the pages in the given range.
         #[cfg(not(target_os = "aix"))]
         MADV_FREE,
         /// Request that the system not flush the current range to disk unless it needs to.
-        #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
+        #[cfg(freebsdlike)]
         MADV_NOSYNC,
         /// Undoes the effects of `MADV_NOSYNC` for any future pages dirtied within the given range.
-        #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
+        #[cfg(freebsdlike)]
         MADV_AUTOSYNC,
         /// Region is not included in a core file.
-        #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
+        #[cfg(freebsdlike)]
         MADV_NOCORE,
         /// Include region in a core file
-        #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
+        #[cfg(freebsdlike)]
         MADV_CORE,
         /// This process should not be killed when swap space is exhausted.
         #[cfg(any(target_os = "freebsd"))]

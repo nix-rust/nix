@@ -121,11 +121,11 @@
 //!
 //! ```
 //! # #[macro_use] extern crate nix;
-//! # #[cfg(any(target_os = "android", target_os = "linux"))]
+//! # #[cfg(linux_android)]
 //! # use nix::libc::TCGETS as TCGETS;
-//! # #[cfg(any(target_os = "android", target_os = "linux"))]
+//! # #[cfg(linux_android)]
 //! # use nix::libc::termios as termios;
-//! # #[cfg(any(target_os = "android", target_os = "linux"))]
+//! # #[cfg(linux_android)]
 //! ioctl_read_bad!(tcgets, TCGETS, termios);
 //! # fn main() {}
 //! ```
@@ -238,27 +238,11 @@ mod linux;
 ))]
 pub use self::linux::*;
 
-#[cfg(any(
-    target_os = "dragonfly",
-    target_os = "freebsd",
-    target_os = "illumos",
-    apple_targets,
-    target_os = "netbsd",
-    target_os = "haiku",
-    target_os = "openbsd"
-))]
+#[cfg(any(bsd, target_os = "illumos", target_os = "haiku",))]
 #[macro_use]
 mod bsd;
 
-#[cfg(any(
-    target_os = "dragonfly",
-    target_os = "freebsd",
-    target_os = "illumos",
-    apple_targets,
-    target_os = "netbsd",
-    target_os = "haiku",
-    target_os = "openbsd"
-))]
+#[cfg(any(bsd, target_os = "illumos", target_os = "haiku",))]
 pub use self::bsd::*;
 
 /// Convert raw ioctl return value to a Nix result
@@ -416,7 +400,7 @@ macro_rules! ioctl_read {
 ///
 /// ```
 /// # #[macro_use] extern crate nix;
-/// # #[cfg(any(target_os = "android", target_os = "linux"))]
+/// # #[cfg(linux_android)]
 /// ioctl_read_bad!(tcgets, libc::TCGETS, libc::termios);
 /// # fn main() {}
 /// ```
@@ -493,7 +477,7 @@ macro_rules! ioctl_write_ptr {
 ///
 /// ```
 /// # #[macro_use] extern crate nix;
-/// # #[cfg(any(target_os = "android", target_os = "linux"))]
+/// # #[cfg(linux_android)]
 /// ioctl_write_ptr_bad!(tcsets, libc::TCSETS, libc::termios);
 /// # fn main() {}
 /// ```
@@ -512,7 +496,7 @@ macro_rules! ioctl_write_ptr_bad {
 }
 
 cfg_if! {
-    if #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))] {
+    if #[cfg(freebsdlike)] {
         /// Generates a wrapper function for a ioctl that writes an integer to the kernel.
         ///
         /// The arguments to this macro are:
@@ -618,7 +602,7 @@ cfg_if! {
 ///
 /// ```
 /// # #[macro_use] extern crate nix;
-/// # #[cfg(any(target_os = "android", target_os = "linux"))]
+/// # #[cfg(linux_android)]
 /// ioctl_write_int_bad!(tcsbrk, libc::TCSBRK);
 /// # fn main() {}
 /// ```

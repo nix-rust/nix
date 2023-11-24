@@ -86,10 +86,10 @@ impl ClockId {
     ))]
     pub const CLOCK_MONOTONIC_COARSE: ClockId =
         ClockId(libc::CLOCK_MONOTONIC_COARSE);
-    #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
+    #[cfg(freebsdlike)]
     pub const CLOCK_MONOTONIC_FAST: ClockId =
         ClockId(libc::CLOCK_MONOTONIC_FAST);
-    #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
+    #[cfg(freebsdlike)]
     pub const CLOCK_MONOTONIC_PRECISE: ClockId =
         ClockId(libc::CLOCK_MONOTONIC_PRECISE);
     #[cfg(any(
@@ -111,7 +111,7 @@ impl ClockId {
     ))]
     pub const CLOCK_PROCESS_CPUTIME_ID: ClockId =
         ClockId(libc::CLOCK_PROCESS_CPUTIME_ID);
-    #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
+    #[cfg(freebsdlike)]
     pub const CLOCK_PROF: ClockId = ClockId(libc::CLOCK_PROF);
     pub const CLOCK_REALTIME: ClockId = ClockId(libc::CLOCK_REALTIME);
     #[cfg(any(
@@ -130,12 +130,12 @@ impl ClockId {
     ))]
     pub const CLOCK_REALTIME_COARSE: ClockId =
         ClockId(libc::CLOCK_REALTIME_COARSE);
-    #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
+    #[cfg(freebsdlike)]
     pub const CLOCK_REALTIME_FAST: ClockId = ClockId(libc::CLOCK_REALTIME_FAST);
-    #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
+    #[cfg(freebsdlike)]
     pub const CLOCK_REALTIME_PRECISE: ClockId =
         ClockId(libc::CLOCK_REALTIME_PRECISE);
-    #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
+    #[cfg(freebsdlike)]
     pub const CLOCK_SECOND: ClockId = ClockId(libc::CLOCK_SECOND);
     #[cfg(any(
         target_os = "emscripten",
@@ -161,14 +161,14 @@ impl ClockId {
     ))]
     pub const CLOCK_THREAD_CPUTIME_ID: ClockId =
         ClockId(libc::CLOCK_THREAD_CPUTIME_ID);
-    #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
+    #[cfg(freebsdlike)]
     pub const CLOCK_UPTIME: ClockId = ClockId(libc::CLOCK_UPTIME);
-    #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
+    #[cfg(freebsdlike)]
     pub const CLOCK_UPTIME_FAST: ClockId = ClockId(libc::CLOCK_UPTIME_FAST);
-    #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
+    #[cfg(freebsdlike)]
     pub const CLOCK_UPTIME_PRECISE: ClockId =
         ClockId(libc::CLOCK_UPTIME_PRECISE);
-    #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
+    #[cfg(freebsdlike)]
     pub const CLOCK_VIRTUAL: ClockId = ClockId(libc::CLOCK_VIRTUAL);
 }
 

@@ -88,7 +88,7 @@ pub(crate) mod timer {
         Interval(TimeSpec),
     }
 
-    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(linux_android)]
     bitflags! {
         /// Flags that are used for arming the timer.
         #[derive(Copy, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]

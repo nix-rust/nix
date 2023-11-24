@@ -14,18 +14,14 @@ feature! {
 feature! {
     #![feature = "event"]
 
-    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(linux_android)]
     #[allow(missing_docs)]
     pub mod epoll;
 
-    #[cfg(any(target_os = "dragonfly",
-              target_os = "freebsd",
-              apple_targets,
-              target_os = "netbsd",
-              target_os = "openbsd"))]
+    #[cfg(bsd)]
     pub mod event;
 
-    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(linux_android)]
     #[allow(missing_docs)]
     pub mod eventfd;
 }
@@ -37,15 +33,11 @@ feature! {
 }
 
 #[cfg(any(
+    bsd,
     target_os = "android",
-    target_os = "dragonfly",
-    target_os = "freebsd",
-    apple_targets,
     target_os = "linux",
     target_os = "redox",
-    target_os = "netbsd",
     target_os = "illumos",
-    target_os = "openbsd"
 ))]
 #[cfg(feature = "ioctl")]
 #[cfg_attr(docsrs, doc(cfg(feature = "ioctl")))]
@@ -140,7 +132,7 @@ feature! {
 
 pub mod signal;
 
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(linux_android)]
 feature! {
     #![feature = "signal"]
     #[allow(missing_docs)]
@@ -177,7 +169,7 @@ feature! {
     pub mod statvfs;
 }
 
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(linux_android)]
 #[allow(missing_docs)]
 pub mod sysinfo;
 
@@ -205,13 +197,13 @@ feature! {
     pub mod wait;
 }
 
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(linux_android)]
 feature! {
     #![feature = "inotify"]
     pub mod inotify;
 }
 
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(linux_android)]
 feature! {
     #![feature = "time"]
     pub mod timerfd;
