@@ -12,6 +12,7 @@ cfg_if! {
         target_os = "dragonfly",
         target_os = "freebsd",
         apple_targets,
+        solarish
     ))] {
         use std::net::Shutdown;
         use std::os::unix::net::UnixStream;
@@ -202,5 +203,64 @@ fn test_sendfile_darwin() {
     let mut read_string = String::new();
     let bytes_read = rd.read_to_string(&mut read_string).unwrap();
     assert_eq!(bytes_written as usize, bytes_read);
+    assert_eq!(expected_string, read_string);
+}
+
+#[cfg(solarish)]
+#[test]
+fn test_sendfilev() {
+    use std::os::fd::AsFd;
+    // Declare the content
+    let header_strings =
+        ["HTTP/1.1 200 OK\n", "Content-Type: text/plain\n", "\n"];
+    let body = "Xabcdef123456";
+    let body_offset = 1usize;
+    let trailer_strings = ["\n", "Served by Make Believe\n"];
+
+    // Write data to files
+    let mut header_data = tempfile().unwrap();
+    header_data
+        .write_all(header_strings.concat().as_bytes())
+        .unwrap();
+    let mut body_data = tempfile().unwrap();
+    body_data.write_all(body.as_bytes()).unwrap();
+    let mut trailer_data = tempfile().unwrap();
+    trailer_data
+        .write_all(trailer_strings.concat().as_bytes())
+        .unwrap();
+    let (mut rd, wr) = UnixStream::pair().unwrap();
+    let vec: &[SendfileVec] = &[
+        SendfileVec::new(
+            header_data.as_fd(),
+            0,
+            header_strings.iter().map(|s| s.len()).sum(),
+        ),
+        SendfileVec::new(
+            body_data.as_fd(),
+            body_offset as off_t,
+            body.len() - body_offset,
+        ),
+        SendfileVec::new(
+            trailer_data.as_fd(),
+            0,
+            trailer_strings.iter().map(|s| s.len()).sum(),
+        ),
+    ];
+
+    let (res, bytes_written) = sendfilev(&wr, vec);
+    assert!(res.is_ok());
+    wr.shutdown(Shutdown::Both).unwrap();
+
+    // Prepare the expected result
+    let expected_string = header_strings.concat()
+        + &body[body_offset..]
+        + &trailer_strings.concat();
+
+    // Verify the message that was sent
+    assert_eq!(bytes_written, expected_string.as_bytes().len());
+
+    let mut read_string = String::new();
+    let bytes_read = rd.read_to_string(&mut read_string).unwrap();
+    assert_eq!(bytes_written, bytes_read);
     assert_eq!(expected_string, read_string);
 }
