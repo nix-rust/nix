@@ -993,12 +993,12 @@ impl ControlMessageOwned {
             }
             #[cfg(target_os = "freebsd")]
             (libc::SOL_SOCKET, libc::SCM_REALTIME) => {
-                let ts: libc::timespec = ptr::read_unaligned(p as *const _);
+                let ts: libc::timespec = unsafe { ptr::read_unaligned(p as *const _) };
                 ControlMessageOwned::ScmRealtime(TimeSpec::from(ts))
             }
             #[cfg(target_os = "freebsd")]
             (libc::SOL_SOCKET, libc::SCM_MONOTONIC) => {
-                let ts: libc::timespec = ptr::read_unaligned(p as *const _);
+                let ts: libc::timespec = unsafe { ptr::read_unaligned(p as *const _) };
                 ControlMessageOwned::ScmMonotonic(TimeSpec::from(ts))
             }
             #[cfg(any(target_os = "android", target_os = "linux"))]
