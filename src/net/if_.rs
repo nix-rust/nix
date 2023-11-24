@@ -3,6 +3,7 @@
 //! Uses Linux and/or POSIX functions to resolve interface names like "eth0"
 //! or "socan1" into device numbers.
 
+use std::fmt;
 use crate::{Error, NixPath, Result};
 use libc::c_uint;
 
@@ -245,6 +246,13 @@ libc_bitflags!(
         IFF_IPMP;
     }
 );
+
+impl fmt::Display for InterfaceFlags {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        bitflags::parser::to_writer(self, f)
+    }
+}
+
 
 #[cfg(any(
     bsd,
