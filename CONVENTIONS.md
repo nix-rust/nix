@@ -37,6 +37,12 @@ impl SigSet {
 
 When creating newtypes, we use Rust's `CamelCase` type naming convention.
 
+## cfg gates
+
+When creating operating-system-specific functionality, we gate it by
+`#[cfg(target_os = ...)]`.  If more than one operating system is affected, we
+prefer to use the cfg aliases defined in build.rs, like `#[cfg(bsd)]`.
+
 ## Bitflags
 
 Many C functions have flags parameters that are combined from constants using
