@@ -13,7 +13,7 @@ fn main() {
         watchos: { target_os = "watchos" },
         tvos: { target_os = "tvos" },
         apple_targets: { any(ios, macos, watchos, tvos) },
-        bsd: { any(freebsd, dragonfly, ios, macos, netbsd, openbsd, tvos, watchos) },
+        bsd: { any(freebsd, dragonfly, netbsd, openbsd, apple_targets) },
         linux_android: { any(android, linux) },
         freebsdlike: { any(dragonfly, freebsd)}
     }
