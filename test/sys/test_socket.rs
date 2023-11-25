@@ -72,6 +72,126 @@ pub fn test_timestamping() {
     assert!(std::time::Duration::from(diff).as_secs() < 60);
 }
 
+#[cfg(target_os = "freebsd")]
+#[test]
+pub fn test_timestamping_realtime() {
+    use nix::sys::socket::{
+        recvmsg, sendmsg, setsockopt, socket, sockopt::ReceiveTimestamp,
+        sockopt::TsClock, ControlMessageOwned, MsgFlags, SockFlag, SockType,
+        SockaddrIn, SocketTimestamp,
+    };
+    use std::io::{IoSlice, IoSliceMut};
+
+    let sock_addr = SockaddrIn::from_str("127.0.0.1:6792").unwrap();
+
+    let ssock = socket(
+        AddressFamily::Inet,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )
+    .expect("send socket failed");
+
+    let rsock = socket(
+        AddressFamily::Inet,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )
+    .unwrap();
+    nix::sys::socket::bind(rsock.as_raw_fd(), &sock_addr).unwrap();
+
+    setsockopt(&rsock, ReceiveTimestamp, &true).unwrap();
+    setsockopt(&rsock, TsClock, &SocketTimestamp::SO_TS_REALTIME).unwrap();
+
+    let sbuf = [0u8; 2048];
+    let mut rbuf = [0u8; 2048];
+    let flags = MsgFlags::empty();
+    let iov1 = [IoSlice::new(&sbuf)];
+    let mut iov2 = [IoSliceMut::new(&mut rbuf)];
+
+    let mut cmsg = cmsg_space!(nix::sys::time::TimeVal);
+    sendmsg(ssock.as_raw_fd(), &iov1, &[], flags, Some(&sock_addr)).unwrap();
+    let recv =
+        recvmsg::<()>(rsock.as_raw_fd(), &mut iov2, Some(&mut cmsg), flags)
+            .unwrap();
+
+    let mut ts = None;
+    for c in recv.cmsgs() {
+        if let ControlMessageOwned::ScmRealtime(timeval) = c {
+            ts = Some(timeval);
+        }
+    }
+    let ts = ts.expect("ScmRealtime is present");
+    let sys_time =
+        ::nix::time::clock_gettime(::nix::time::ClockId::CLOCK_REALTIME)
+            .unwrap();
+    let diff = if ts > sys_time {
+        ts - sys_time
+    } else {
+        sys_time - ts
+    };
+    assert!(std::time::Duration::from(diff).as_secs() < 60);
+}
+
+#[cfg(target_os = "freebsd")]
+#[test]
+pub fn test_timestamping_monotonic() {
+    use nix::sys::socket::{
+        recvmsg, sendmsg, setsockopt, socket, sockopt::ReceiveTimestamp,
+        sockopt::TsClock, ControlMessageOwned, MsgFlags, SockFlag, SockType,
+        SockaddrIn, SocketTimestamp,
+    };
+    use std::io::{IoSlice, IoSliceMut};
+
+    let sock_addr = SockaddrIn::from_str("127.0.0.1:6803").unwrap();
+
+    let ssock = socket(
+        AddressFamily::Inet,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )
+    .expect("send socket failed");
+
+    let rsock = socket(
+        AddressFamily::Inet,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )
+    .unwrap();
+    nix::sys::socket::bind(rsock.as_raw_fd(), &sock_addr).unwrap();
+
+    setsockopt(&rsock, ReceiveTimestamp, &true).unwrap();
+    setsockopt(&rsock, TsClock, &SocketTimestamp::SO_TS_MONOTONIC).unwrap();
+
+    let sbuf = [0u8; 2048];
+    let mut rbuf = [0u8; 2048];
+    let flags = MsgFlags::empty();
+    let iov1 = [IoSlice::new(&sbuf)];
+    let mut iov2 = [IoSliceMut::new(&mut rbuf)];
+
+    let mut cmsg = cmsg_space!(nix::sys::time::TimeVal);
+    sendmsg(ssock.as_raw_fd(), &iov1, &[], flags, Some(&sock_addr)).unwrap();
+    let recv =
+        recvmsg::<()>(rsock.as_raw_fd(), &mut iov2, Some(&mut cmsg), flags)
+            .unwrap();
+
+    let mut ts = None;
+    for c in recv.cmsgs() {
+        if let ControlMessageOwned::ScmMonotonic(timeval) = c {
+            ts = Some(timeval);
+        }
+    }
+    let ts = ts.expect("ScmMonotonic is present");
+    let sys_time =
+        ::nix::time::clock_gettime(::nix::time::ClockId::CLOCK_MONOTONIC)
+            .unwrap();
+    let diff = sys_time - ts; // Monotonic clock sys_time must be greater
+    assert!(std::time::Duration::from(diff).as_secs() < 60);
+}
+
 #[test]
 pub fn test_path_to_sock_addr() {
     let path = "/foo/bar";
