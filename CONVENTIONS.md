@@ -100,3 +100,20 @@ type or mutability that way.
 [`cast()`]: https://doc.rust-lang.org/std/primitive.pointer.html#method.cast
 [`cast_mut()`]: https://doc.rust-lang.org/std/primitive.pointer.html#method.cast_mut
 [`cast_const()`]: https://doc.rust-lang.org/std/primitive.pointer.html#method.cast_const
+
+## Remove/deprecate an interface
+
+In Nix, if we want to remove something, we don't do it immediately, instead, we
+deprecate it for at least one release before removing it.
+
+To deprecate an interface, put the following attribute on the top of it:
+
+```
+#[deprecated(since = "<Version>", note = "<Note to our user>")]
+```
+
+`<Version>` is the version where this interface will be deprecated, in most 
+cases, it will be the version of the next release. And a user-friendly note 
+should be added. Normally, there should be a new interface that will replace
+the old one, so a note should be something like: "<New Interface> should be 
+used instead".
