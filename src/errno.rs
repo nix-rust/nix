@@ -842,8 +842,7 @@ fn desc(errno: Errno) -> &'static str {
         #[cfg(any(
             bsd,
             target_os = "aix",
-            target_os = "illumos",
-            target_os = "solaris",
+            solarish,
             target_os = "haiku"
         ))]
         ENOTSUP => "Operation not supported",
