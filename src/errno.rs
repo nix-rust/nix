@@ -797,11 +797,7 @@ fn desc(errno: Errno) -> &'static str {
         #[cfg(bsd)]
         ENEEDAUTH => "Need authenticator",
 
-        #[cfg(any(
-            bsd,
-            target_os = "redox",
-            solarish
-        ))]
+        #[cfg(any(bsd, target_os = "redox", solarish))]
         EOVERFLOW => "Value too large to be stored in data type",
 
         #[cfg(any(
@@ -839,12 +835,7 @@ fn desc(errno: Errno) -> &'static str {
         ))]
         EOWNERDEAD => "Previous owner died",
 
-        #[cfg(any(
-            bsd,
-            target_os = "aix",
-            solarish,
-            target_os = "haiku"
-        ))]
+        #[cfg(any(bsd, target_os = "aix", solarish, target_os = "haiku"))]
         ENOTSUP => "Operation not supported",
 
         #[cfg(any(bsd, target_os = "aix"))]
