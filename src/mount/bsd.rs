@@ -33,10 +33,10 @@ libc_bitflags!(
         #[cfg(any(target_os = "macos", target_os = "freebsd"))]
         MNT_MULTILABEL;
         /// Disable read clustering.
-        #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
+        #[cfg(freebsdlike)]
         MNT_NOCLUSTERR;
         /// Disable write clustering.
-        #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
+        #[cfg(freebsdlike)]
         MNT_NOCLUSTERW;
         /// Enable NFS version 4 ACLs.
         #[cfg(target_os = "freebsd")]
@@ -48,7 +48,7 @@ libc_bitflags!(
         /// Do not honor setuid or setgid bits on files when executing them.
         MNT_NOSUID;
         /// Do not follow symlinks.
-        #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
+        #[cfg(freebsdlike)]
         MNT_NOSYMFOLLOW;
         /// Mount read-only.
         MNT_RDONLY;
@@ -70,7 +70,7 @@ libc_bitflags!(
         MNT_SOFTDEP;
         /// Directories with the SUID bit set chown new files to their own
         /// owner.
-        #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
+        #[cfg(freebsdlike)]
         MNT_SUIDDIR;
         /// All I/O to the file system should be done synchronously.
         MNT_SYNCHRONOUS;

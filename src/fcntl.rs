@@ -55,9 +55,9 @@ libc_bitflags! {
         AT_REMOVEDIR;
         AT_SYMLINK_FOLLOW;
         AT_SYMLINK_NOFOLLOW;
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(linux_android)]
         AT_NO_AUTOMOUNT;
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(linux_android)]
         AT_EMPTY_PATH;
         #[cfg(not(target_os = "android"))]
         AT_EACCESS;
@@ -100,7 +100,7 @@ libc_bitflags!(
                   target_os = "netbsd"))]
         O_DIRECT;
         /// If the specified path isn't a directory, fail.
-        #[cfg(not(any(target_os = "illumos", target_os = "solaris")))]
+        #[cfg(not(solarish))]
         O_DIRECTORY;
         /// Implicitly follow each `write()` with an `fdatasync()`.
         #[cfg(any(target_os = "android",
@@ -115,27 +115,18 @@ libc_bitflags!(
         #[cfg(target_os = "freebsd")]
         O_EXEC;
         /// Open with an exclusive file lock.
-        #[cfg(any(target_os = "dragonfly",
-                  target_os = "freebsd",
-                  apple_targets,
-                  target_os = "netbsd",
-                  target_os = "openbsd",
-                  target_os = "redox"))]
+        #[cfg(any(bsd, target_os = "redox"))]
         O_EXLOCK;
         /// Same as `O_SYNC`.
-        #[cfg(any(target_os = "dragonfly",
-                  target_os = "freebsd",
-                  apple_targets,
+        #[cfg(any(bsd,
                   all(target_os = "linux", not(target_env = "musl")),
-                  target_os = "netbsd",
-                  target_os = "openbsd",
                   target_os = "redox"))]
         O_FSYNC;
         /// Allow files whose sizes can't be represented in an `off_t` to be opened.
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(linux_android)]
         O_LARGEFILE;
         /// Do not update the file last access time during `read(2)`s.
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(linux_android)]
         O_NOATIME;
         /// Don't attach the device as the process' controlling terminal.
         #[cfg(not(target_os = "redox"))]
@@ -170,18 +161,13 @@ libc_bitflags!(
         #[cfg(target_os = "netbsd")]
         O_SEARCH;
         /// Open with a shared file lock.
-        #[cfg(any(target_os = "dragonfly",
-                  target_os = "freebsd",
-                  apple_targets,
-                  target_os = "netbsd",
-                  target_os = "openbsd",
-                  target_os = "redox"))]
+        #[cfg(any(bsd, target_os = "redox"))]
         O_SHLOCK;
         /// Implicitly follow each `write()` with an `fsync()`.
         #[cfg(not(target_os = "redox"))]
         O_SYNC;
         /// Create an unnamed temporary file.
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(linux_android)]
         O_TMPFILE;
         /// Truncate an existing regular file to 0 length if it allows writing.
         O_TRUNC;
@@ -346,7 +332,7 @@ fn inner_readlink<P: ?Sized + NixPath>(
         let reported_size = match dirfd {
             #[cfg(target_os = "redox")]
             Some(_) => unreachable!(),
-            #[cfg(any(target_os = "android", target_os = "linux"))]
+            #[cfg(linux_android)]
             Some(dirfd) => {
                 let flags = if path.is_empty() {
                     AtFlags::AT_EMPTY_PATH
@@ -463,11 +449,11 @@ pub enum FcntlArg<'a> {
     F_SETLK(&'a libc::flock),
     F_SETLKW(&'a libc::flock),
     F_GETLK(&'a mut libc::flock),
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(linux_android)]
     F_OFD_SETLK(&'a libc::flock),
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(linux_android)]
     F_OFD_SETLKW(&'a libc::flock),
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(linux_android)]
     F_OFD_GETLK(&'a mut libc::flock),
     #[cfg(any(
         target_os = "android",
@@ -485,9 +471,9 @@ pub enum FcntlArg<'a> {
     F_FULLFSYNC,
     #[cfg(apple_targets)]
     F_BARRIERFSYNC,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(linux_android)]
     F_GETPIPE_SZ,
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg(linux_android)]
     F_SETPIPE_SZ(c_int),
     #[cfg(any(
         target_os = "netbsd",
@@ -533,11 +519,11 @@ pub fn fcntl(fd: RawFd, arg: FcntlArg) -> Result<c_int> {
             F_SETLKW(flock) => libc::fcntl(fd, libc::F_SETLKW, flock),
             #[cfg(not(target_os = "redox"))]
             F_GETLK(flock) => libc::fcntl(fd, libc::F_GETLK, flock),
-            #[cfg(any(target_os = "android", target_os = "linux"))]
+            #[cfg(linux_android)]
             F_OFD_SETLK(flock) => libc::fcntl(fd, libc::F_OFD_SETLK, flock),
-            #[cfg(any(target_os = "android", target_os = "linux"))]
+            #[cfg(linux_android)]
             F_OFD_SETLKW(flock) => libc::fcntl(fd, libc::F_OFD_SETLKW, flock),
-            #[cfg(any(target_os = "android", target_os = "linux"))]
+            #[cfg(linux_android)]
             F_OFD_GETLK(flock) => libc::fcntl(fd, libc::F_OFD_GETLK, flock),
             #[cfg(any(
                 target_os = "android",
@@ -557,9 +543,9 @@ pub fn fcntl(fd: RawFd, arg: FcntlArg) -> Result<c_int> {
             F_FULLFSYNC => libc::fcntl(fd, libc::F_FULLFSYNC),
             #[cfg(apple_targets)]
             F_BARRIERFSYNC => libc::fcntl(fd, libc::F_BARRIERFSYNC),
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(linux_android)]
             F_GETPIPE_SZ => libc::fcntl(fd, libc::F_GETPIPE_SZ),
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            #[cfg(linux_android)]
             F_SETPIPE_SZ(size) => libc::fcntl(fd, libc::F_SETPIPE_SZ, size),
             #[cfg(any(
                 target_os = "dragonfly",
@@ -636,7 +622,7 @@ pub fn flock(fd: RawFd, arg: FlockArg) -> Result<()> {
 }
 }
 
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(linux_android)]
 #[cfg(feature = "zerocopy")]
 libc_bitflags! {
     /// Additional flags to `splice` and friends.
@@ -728,7 +714,7 @@ pub fn copy_file_range<Fd1: AsFd, Fd2: AsFd>(
     Errno::result(ret).map(|r| r as usize)
 }
 
-#[cfg(any(target_os = "linux", target_os = "android"))]
+#[cfg(linux_android)]
 pub fn splice(
     fd_in: RawFd,
     off_in: Option<&mut libc::loff_t>,
@@ -750,7 +736,7 @@ pub fn splice(
     Errno::result(ret).map(|r| r as usize)
 }
 
-#[cfg(any(target_os = "linux", target_os = "android"))]
+#[cfg(linux_android)]
 pub fn tee(
     fd_in: RawFd,
     fd_out: RawFd,
@@ -761,7 +747,7 @@ pub fn tee(
     Errno::result(ret).map(|r| r as usize)
 }
 
-#[cfg(any(target_os = "linux", target_os = "android"))]
+#[cfg(linux_android)]
 pub fn vmsplice(
     fd: RawFd,
     iov: &[std::io::IoSlice<'_>],

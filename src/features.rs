@@ -1,7 +1,7 @@
 //! Feature tests for OS functionality
 pub use self::os::*;
 
-#[cfg(any(target_os = "linux", target_os = "android"))]
+#[cfg(linux_android)]
 mod os {
     use crate::sys::utsname::uname;
     use crate::Result;

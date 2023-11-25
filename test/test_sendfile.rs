@@ -18,7 +18,7 @@ cfg_if! {
     }
 }
 
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(linux_android)]
 #[test]
 fn test_sendfile_linux() {
     const CONTENTS: &[u8] = b"abcdef123456";

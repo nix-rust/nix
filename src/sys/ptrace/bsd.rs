@@ -154,7 +154,7 @@ pub fn kill(pid: Pid) -> Result<()> {
 /// }
 /// ```
 #[cfg(any(
-    any(target_os = "dragonfly", target_os = "freebsd", target_os = "macos"),
+    any(freebsdlike, target_os = "macos"),
     all(target_os = "openbsd", target_arch = "x86_64"),
     all(
         target_os = "netbsd",

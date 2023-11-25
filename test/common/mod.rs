@@ -51,7 +51,7 @@ macro_rules! require_mount {
     };
 }
 
-#[cfg(any(target_os = "linux", target_os = "android"))]
+#[cfg(linux_android)]
 #[macro_export]
 macro_rules! skip_if_cirrus {
     ($reason:expr) => {

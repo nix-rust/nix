@@ -217,7 +217,7 @@ fn test_getsid() {
     assert_eq!(none_sid, pid_sid);
 }
 
-#[cfg(any(target_os = "linux", target_os = "android"))]
+#[cfg(linux_android)]
 mod linux_android {
     use nix::unistd::gettid;
 
@@ -558,7 +558,7 @@ fn test_lseek() {
     assert_eq!(b"f123456", &buf);
 }
 
-#[cfg(any(target_os = "linux", target_os = "android"))]
+#[cfg(linux_android)]
 #[test]
 fn test_lseek64() {
     const CONTENTS: &[u8] = b"abcdef123456";
@@ -1170,7 +1170,7 @@ fn test_user_into_passwd() {
 }
 
 /// Tests setting the filesystem UID with `setfsuid`.
-#[cfg(any(target_os = "linux", target_os = "android"))]
+#[cfg(linux_android)]
 #[test]
 fn test_setfsuid() {
     use std::os::unix::fs::PermissionsExt;
@@ -1241,13 +1241,7 @@ fn test_ttyname_not_pty() {
 }
 
 #[test]
-#[cfg(any(
-    apple_targets,
-    target_os = "freebsd",
-    target_os = "openbsd",
-    target_os = "netbsd",
-    target_os = "dragonfly",
-))]
+#[cfg(bsd)]
 fn test_getpeereid() {
     use std::os::unix::net::UnixStream;
     let (sock_a, sock_b) = UnixStream::pair().unwrap();

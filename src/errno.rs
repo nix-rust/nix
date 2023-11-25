@@ -25,7 +25,7 @@ cfg_if! {
         unsafe fn errno_location() -> *mut c_int {
             unsafe { libc::__errno_location() }
         }
-    } else if #[cfg(any(target_os = "illumos", target_os = "solaris"))] {
+    } else if #[cfg(solarish)] {
         unsafe fn errno_location() -> *mut c_int {
             unsafe { libc::___errno() }
         }
@@ -501,7 +501,7 @@ fn desc(errno: Errno) -> &'static str {
         ))]
         EBADMSG => "Not a data message",
 
-        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg(solarish)]
         EBADMSG => "Trying to read unreadable message",
 
         #[cfg(any(
@@ -745,7 +745,7 @@ fn desc(errno: Errno) -> &'static str {
         ))]
         EOWNERDEAD => "Owner died",
 
-        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg(solarish)]
         EOWNERDEAD => "Process died with lock",
 
         #[cfg(any(
@@ -756,7 +756,7 @@ fn desc(errno: Errno) -> &'static str {
         ))]
         ENOTRECOVERABLE => "State not recoverable",
 
-        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg(solarish)]
         ENOTRECOVERABLE => "Lock is not recoverable",
 
         #[cfg(any(
@@ -794,25 +794,10 @@ fn desc(errno: Errno) -> &'static str {
         #[cfg(target_os = "freebsd")]
         ECAPMODE => "Not permitted in capability mode",
 
-        #[cfg(any(
-            target_os = "freebsd",
-            target_os = "dragonfly",
-            apple_targets,
-            target_os = "openbsd",
-            target_os = "netbsd"
-        ))]
+        #[cfg(bsd)]
         ENEEDAUTH => "Need authenticator",
 
-        #[cfg(any(
-            target_os = "freebsd",
-            target_os = "dragonfly",
-            apple_targets,
-            target_os = "openbsd",
-            target_os = "netbsd",
-            target_os = "redox",
-            target_os = "illumos",
-            target_os = "solaris"
-        ))]
+        #[cfg(any(bsd, target_os = "redox", solarish))]
         EOVERFLOW => "Value too large to be stored in data type",
 
         #[cfg(any(
@@ -825,36 +810,13 @@ fn desc(errno: Errno) -> &'static str {
         ))]
         EILSEQ => "Illegal byte sequence",
 
-        #[cfg(any(
-            target_os = "freebsd",
-            target_os = "dragonfly",
-            apple_targets,
-            target_os = "openbsd",
-            target_os = "netbsd",
-            target_os = "haiku"
-        ))]
+        #[cfg(any(bsd, target_os = "haiku"))]
         ENOATTR => "Attribute not found",
 
-        #[cfg(any(
-            target_os = "freebsd",
-            target_os = "dragonfly",
-            apple_targets,
-            target_os = "openbsd",
-            target_os = "netbsd",
-            target_os = "redox",
-            target_os = "haiku"
-        ))]
+        #[cfg(any(bsd, target_os = "redox", target_os = "haiku"))]
         EBADMSG => "Bad message",
 
-        #[cfg(any(
-            target_os = "freebsd",
-            target_os = "dragonfly",
-            apple_targets,
-            target_os = "openbsd",
-            target_os = "netbsd",
-            target_os = "redox",
-            target_os = "haiku"
-        ))]
+        #[cfg(any(bsd, target_os = "redox", target_os = "haiku"))]
         EPROTO => "Protocol error",
 
         #[cfg(any(
@@ -873,46 +835,17 @@ fn desc(errno: Errno) -> &'static str {
         ))]
         EOWNERDEAD => "Previous owner died",
 
-        #[cfg(any(
-            target_os = "freebsd",
-            target_os = "dragonfly",
-            apple_targets,
-            target_os = "openbsd",
-            target_os = "netbsd",
-            target_os = "aix",
-            target_os = "illumos",
-            target_os = "solaris",
-            target_os = "haiku"
-        ))]
+        #[cfg(any(bsd, target_os = "aix", solarish, target_os = "haiku"))]
         ENOTSUP => "Operation not supported",
 
-        #[cfg(any(
-            target_os = "freebsd",
-            target_os = "dragonfly",
-            apple_targets,
-            target_os = "aix",
-            target_os = "openbsd",
-            target_os = "netbsd"
-        ))]
+        #[cfg(any(bsd, target_os = "aix"))]
         EPROCLIM => "Too many processes",
 
-        #[cfg(any(
-            target_os = "freebsd",
-            target_os = "dragonfly",
-            apple_targets,
-            target_os = "aix",
-            target_os = "openbsd",
-            target_os = "netbsd",
-            target_os = "redox"
-        ))]
+        #[cfg(any(bsd, target_os = "aix", target_os = "redox"))]
         EUSERS => "Too many users",
 
         #[cfg(any(
-            target_os = "freebsd",
-            target_os = "dragonfly",
-            apple_targets,
-            target_os = "openbsd",
-            target_os = "netbsd",
+            bsd,
             target_os = "redox",
             target_os = "aix",
             target_os = "illumos",
@@ -922,11 +855,7 @@ fn desc(errno: Errno) -> &'static str {
         EDQUOT => "Disc quota exceeded",
 
         #[cfg(any(
-            target_os = "freebsd",
-            target_os = "dragonfly",
-            apple_targets,
-            target_os = "openbsd",
-            target_os = "netbsd",
+            bsd,
             target_os = "redox",
             target_os = "aix",
             target_os = "illumos",
@@ -935,89 +864,31 @@ fn desc(errno: Errno) -> &'static str {
         ))]
         ESTALE => "Stale NFS file handle",
 
-        #[cfg(any(
-            target_os = "freebsd",
-            target_os = "dragonfly",
-            apple_targets,
-            target_os = "aix",
-            target_os = "openbsd",
-            target_os = "netbsd",
-            target_os = "redox"
-        ))]
+        #[cfg(any(bsd, target_os = "aix", target_os = "redox"))]
         EREMOTE => "Too many levels of remote in path",
 
-        #[cfg(any(
-            target_os = "freebsd",
-            target_os = "dragonfly",
-            apple_targets,
-            target_os = "openbsd",
-            target_os = "netbsd"
-        ))]
+        #[cfg(bsd)]
         EBADRPC => "RPC struct is bad",
 
-        #[cfg(any(
-            target_os = "freebsd",
-            target_os = "dragonfly",
-            apple_targets,
-            target_os = "openbsd",
-            target_os = "netbsd"
-        ))]
+        #[cfg(bsd)]
         ERPCMISMATCH => "RPC version wrong",
 
-        #[cfg(any(
-            target_os = "freebsd",
-            target_os = "dragonfly",
-            apple_targets,
-            target_os = "openbsd",
-            target_os = "netbsd"
-        ))]
+        #[cfg(bsd)]
         EPROGUNAVAIL => "RPC prog. not avail",
 
-        #[cfg(any(
-            target_os = "freebsd",
-            target_os = "dragonfly",
-            apple_targets,
-            target_os = "openbsd",
-            target_os = "netbsd"
-        ))]
+        #[cfg(bsd)]
         EPROGMISMATCH => "Program version wrong",
 
-        #[cfg(any(
-            target_os = "freebsd",
-            target_os = "dragonfly",
-            apple_targets,
-            target_os = "openbsd",
-            target_os = "netbsd"
-        ))]
+        #[cfg(bsd)]
         EPROCUNAVAIL => "Bad procedure for program",
 
-        #[cfg(any(
-            target_os = "freebsd",
-            target_os = "dragonfly",
-            apple_targets,
-            target_os = "openbsd",
-            target_os = "netbsd"
-        ))]
+        #[cfg(bsd)]
         EFTYPE => "Inappropriate file type or format",
 
-        #[cfg(any(
-            target_os = "freebsd",
-            target_os = "dragonfly",
-            apple_targets,
-            target_os = "openbsd",
-            target_os = "netbsd"
-        ))]
+        #[cfg(bsd)]
         EAUTH => "Authentication error",
 
-        #[cfg(any(
-            target_os = "freebsd",
-            target_os = "dragonfly",
-            apple_targets,
-            target_os = "aix",
-            target_os = "openbsd",
-            target_os = "netbsd",
-            target_os = "redox"
-        ))]
+        #[cfg(any(bsd, target_os = "aix", target_os = "redox"))]
         ECANCELED => "Operation canceled",
 
         #[cfg(apple_targets)]
@@ -1099,13 +970,13 @@ fn desc(errno: Errno) -> &'static str {
         #[cfg(target_os = "dragonfly")]
         EASYNC => "Async",
 
-        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg(solarish)]
         EDEADLOCK => "Resource deadlock would occur",
 
-        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg(solarish)]
         ELOCKUNMAPPED => "Locked lock was unmapped",
 
-        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg(solarish)]
         ENOTACTIVE => "Facility is not active",
     }
 }
@@ -2688,7 +2559,7 @@ mod consts {
     }
 }
 
-#[cfg(any(target_os = "illumos", target_os = "solaris"))]
+#[cfg(solarish)]
 mod consts {
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     #[repr(i32)]

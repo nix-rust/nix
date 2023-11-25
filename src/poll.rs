@@ -224,7 +224,7 @@ feature! {
 /// so in that case `ppoll` differs from `poll` only in the precision of the
 /// timeout argument.
 ///
-#[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd", target_os = "linux"))]
+#[cfg(any(target_os = "android", freebsdlike, target_os = "linux"))]
 pub fn ppoll(
     fds: &mut [PollFd],
     timeout: Option<crate::sys::time::TimeSpec>,

@@ -124,20 +124,16 @@ feature! {
     #![feature = "net"]
 
     #[cfg(any(target_os = "android",
-              target_os = "dragonfly",
-              target_os = "freebsd",
-              apple_targets,
+              bsd,
               target_os = "linux",
-              target_os = "netbsd",
-              target_os = "illumos",
-              target_os = "openbsd"))]
+              target_os = "illumos"))]
     #[deny(missing_docs)]
     pub mod ifaddrs;
     #[cfg(not(target_os = "redox"))]
     #[deny(missing_docs)]
     pub mod net;
 }
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(linux_android)]
 feature! {
     #![feature = "kmod"]
     #[allow(missing_docs)]

@@ -8,7 +8,7 @@ mod sys;
 #[cfg(not(target_os = "redox"))]
 mod test_dir;
 mod test_fcntl;
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(linux_android)]
 mod test_kmod;
 #[cfg(any(
     target_os = "dragonfly",
