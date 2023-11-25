@@ -192,6 +192,9 @@ feature! {
 #[allow(missing_docs)]
 pub mod unistd;
 
+#[cfg(any(feature = "poll", feature = "event"))]
+mod poll_timeout;
+
 use std::ffi::{CStr, CString, OsStr};
 use std::mem::MaybeUninit;
 use std::os::unix::ffi::OsStrExt;

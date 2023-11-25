@@ -717,7 +717,7 @@ sockopt_impl!(
     Both,
     libc::SOL_SOCKET,
     libc::SO_TS_CLOCK,
-    i32
+    super::SocketTimestamp
 );
 #[cfg(linux_android)]
 #[cfg(feature = "net")]

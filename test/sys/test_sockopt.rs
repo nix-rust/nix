@@ -436,3 +436,116 @@ fn test_ipv6_tclass() {
     setsockopt(&fd, sockopt::Ipv6TClass, &class).unwrap();
     assert_eq!(getsockopt(&fd, sockopt::Ipv6TClass).unwrap(), class);
 }
+
+#[test]
+#[cfg(target_os = "freebsd")]
+fn test_receive_timestamp() {
+    let fd = socket(
+        AddressFamily::Inet6,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )
+    .unwrap();
+    setsockopt(&fd, sockopt::ReceiveTimestamp, &true).unwrap();
+    assert!(getsockopt(&fd, sockopt::ReceiveTimestamp).unwrap());
+}
+
+#[test]
+#[cfg(target_os = "freebsd")]
+fn test_ts_clock_realtime_micro() {
+    use nix::sys::socket::SocketTimestamp;
+
+    let fd = socket(
+        AddressFamily::Inet6,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )
+    .unwrap();
+
+    // FreeBSD setsockopt docs say to set SO_TS_CLOCK after setting SO_TIMESTAMP.
+    setsockopt(&fd, sockopt::ReceiveTimestamp, &true).unwrap();
+
+    setsockopt(
+        &fd,
+        sockopt::TsClock,
+        &SocketTimestamp::SO_TS_REALTIME_MICRO,
+    )
+    .unwrap();
+    assert_eq!(
+        getsockopt(&fd, sockopt::TsClock).unwrap(),
+        SocketTimestamp::SO_TS_REALTIME_MICRO
+    );
+}
+
+#[test]
+#[cfg(target_os = "freebsd")]
+fn test_ts_clock_bintime() {
+    use nix::sys::socket::SocketTimestamp;
+
+    let fd = socket(
+        AddressFamily::Inet6,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )
+    .unwrap();
+
+    // FreeBSD setsockopt docs say to set SO_TS_CLOCK after setting SO_TIMESTAMP.
+    setsockopt(&fd, sockopt::ReceiveTimestamp, &true).unwrap();
+
+    setsockopt(&fd, sockopt::TsClock, &SocketTimestamp::SO_TS_BINTIME).unwrap();
+    assert_eq!(
+        getsockopt(&fd, sockopt::TsClock).unwrap(),
+        SocketTimestamp::SO_TS_BINTIME
+    );
+}
+
+#[test]
+#[cfg(target_os = "freebsd")]
+fn test_ts_clock_realtime() {
+    use nix::sys::socket::SocketTimestamp;
+
+    let fd = socket(
+        AddressFamily::Inet6,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )
+    .unwrap();
+
+    // FreeBSD setsockopt docs say to set SO_TS_CLOCK after setting SO_TIMESTAMP.
+    setsockopt(&fd, sockopt::ReceiveTimestamp, &true).unwrap();
+
+    setsockopt(&fd, sockopt::TsClock, &SocketTimestamp::SO_TS_REALTIME)
+        .unwrap();
+    assert_eq!(
+        getsockopt(&fd, sockopt::TsClock).unwrap(),
+        SocketTimestamp::SO_TS_REALTIME
+    );
+}
+
+#[test]
+#[cfg(target_os = "freebsd")]
+fn test_ts_clock_monotonic() {
+    use nix::sys::socket::SocketTimestamp;
+
+    let fd = socket(
+        AddressFamily::Inet6,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )
+    .unwrap();
+
+    // FreeBSD setsockopt docs say to set SO_TS_CLOCK after setting SO_TIMESTAMP.
+    setsockopt(&fd, sockopt::ReceiveTimestamp, &true).unwrap();
+
+    setsockopt(&fd, sockopt::TsClock, &SocketTimestamp::SO_TS_MONOTONIC)
+        .unwrap();
+    assert_eq!(
+        getsockopt(&fd, sockopt::TsClock).unwrap(),
+        SocketTimestamp::SO_TS_MONOTONIC
+    );
+}
