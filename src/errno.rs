@@ -800,8 +800,7 @@ fn desc(errno: Errno) -> &'static str {
         #[cfg(any(
             bsd,
             target_os = "redox",
-            target_os = "illumos",
-            target_os = "solaris"
+            solarish
         ))]
         EOVERFLOW => "Value too large to be stored in data type",
 
