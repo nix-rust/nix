@@ -24,7 +24,7 @@ pub fn test_timestamping() {
     let sock_addr = SockaddrIn::from_str("127.0.0.1:6790").unwrap();
 
     let ssock = socket(
-        AddressFamily::Inet,
+        AddressFamily::INET,
         SockType::Datagram,
         SockFlag::empty(),
         None,
@@ -32,7 +32,7 @@ pub fn test_timestamping() {
     .expect("send socket failed");
 
     let rsock = socket(
-        AddressFamily::Inet,
+        AddressFamily::INET,
         SockType::Datagram,
         SockFlag::empty(),
         None,
@@ -85,7 +85,7 @@ pub fn test_timestamping_realtime() {
     let sock_addr = SockaddrIn::from_str("127.0.0.1:6792").unwrap();
 
     let ssock = socket(
-        AddressFamily::Inet,
+        AddressFamily::INET,
         SockType::Datagram,
         SockFlag::empty(),
         None,
@@ -93,7 +93,7 @@ pub fn test_timestamping_realtime() {
     .expect("send socket failed");
 
     let rsock = socket(
-        AddressFamily::Inet,
+        AddressFamily::INET,
         SockType::Datagram,
         SockFlag::empty(),
         None,
@@ -147,7 +147,7 @@ pub fn test_timestamping_monotonic() {
     let sock_addr = SockaddrIn::from_str("127.0.0.1:6803").unwrap();
 
     let ssock = socket(
-        AddressFamily::Inet,
+        AddressFamily::INET,
         SockType::Datagram,
         SockFlag::empty(),
         None,
@@ -155,7 +155,7 @@ pub fn test_timestamping_monotonic() {
     .expect("send socket failed");
 
     let rsock = socket(
-        AddressFamily::Inet,
+        AddressFamily::INET,
         SockType::Datagram,
         SockFlag::empty(),
         None,
@@ -293,7 +293,7 @@ pub fn test_getsockname() {
     let tempdir = tempfile::tempdir().unwrap();
     let sockname = tempdir.path().join("sock");
     let sock = socket(
-        AddressFamily::Unix,
+        AddressFamily::UNIX,
         SockType::Stream,
         SockFlag::empty(),
         None,
@@ -313,7 +313,7 @@ pub fn test_socketpair() {
     use nix::unistd::{read, write};
 
     let (fd1, fd2) = socketpair(
-        AddressFamily::Unix,
+        AddressFamily::UNIX,
         SockType::Stream,
         None,
         SockFlag::empty(),
@@ -335,7 +335,7 @@ pub fn test_recvmsg_sockaddr_un() {
     let tempdir = tempfile::tempdir().unwrap();
     let sockname = tempdir.path().join("sock");
     let sock = socket(
-        AddressFamily::Unix,
+        AddressFamily::UNIX,
         SockType::Datagram,
         SockFlag::empty(),
         None,
@@ -422,7 +422,7 @@ mod recvfrom {
     #[test]
     pub fn stream() {
         let (fd2, fd1) = socketpair(
-            AddressFamily::Unix,
+            AddressFamily::UNIX,
             SockType::Stream,
             None,
             SockFlag::empty(),
@@ -437,7 +437,7 @@ mod recvfrom {
         let std_sa = SocketAddrV4::from_str("127.0.0.1:6789").unwrap();
         let sock_addr = SockaddrIn::from(std_sa);
         let rsock = socket(
-            AddressFamily::Inet,
+            AddressFamily::INET,
             SockType::Datagram,
             SockFlag::empty(),
             None,
@@ -445,7 +445,7 @@ mod recvfrom {
         .unwrap();
         bind(rsock.as_raw_fd(), &sock_addr).unwrap();
         let ssock = socket(
-            AddressFamily::Inet,
+            AddressFamily::INET,
             SockType::Datagram,
             SockFlag::empty(),
             None,
@@ -458,7 +458,7 @@ mod recvfrom {
             |_, _| {},
         );
         // UDP sockets should set the from address
-        assert_eq!(AddressFamily::Inet, from.unwrap().family().unwrap());
+        assert_eq!(AddressFamily::INET, from.unwrap().family());
     }
 
     #[cfg(target_os = "linux")]
@@ -481,7 +481,7 @@ mod recvfrom {
 
             let sock_addr = SockaddrIn::new(127, 0, 0, 1, 6791);
             let rsock = socket(
-                AddressFamily::Inet,
+                AddressFamily::INET,
                 SockType::Datagram,
                 SockFlag::empty(),
                 None,
@@ -493,7 +493,7 @@ mod recvfrom {
 
             bind(rsock.as_raw_fd(), &sock_addr).unwrap();
             let ssock = socket(
-                AddressFamily::Inet,
+                AddressFamily::INET,
                 SockType::Datagram,
                 SockFlag::empty(),
                 None,
@@ -544,7 +544,7 @@ mod recvfrom {
             // that `setsockopt` doesn't fail with error
 
             let rsock = socket(
-                AddressFamily::Inet,
+                AddressFamily::INET,
                 SockType::Datagram,
                 SockFlag::empty(),
                 None,
@@ -572,7 +572,7 @@ mod recvfrom {
         let sock_addr2 = SockaddrIn::from(std_sa2);
 
         let rsock = socket(
-            AddressFamily::Inet,
+            AddressFamily::INET,
             SockType::Datagram,
             SockFlag::empty(),
             None,
@@ -580,7 +580,7 @@ mod recvfrom {
         .unwrap();
         bind(rsock.as_raw_fd(), &sock_addr).unwrap();
         let ssock = socket(
-            AddressFamily::Inet,
+            AddressFamily::INET,
             SockType::Datagram,
             SockFlag::empty(),
             None,
@@ -620,7 +620,7 @@ mod recvfrom {
             |_, _| {},
         );
         // UDP sockets should set the from address
-        assert_eq!(AddressFamily::Inet, from.unwrap().family().unwrap());
+        assert_eq!(AddressFamily::INET, from.unwrap().family());
     }
 
     #[cfg(any(
@@ -641,7 +641,7 @@ mod recvfrom {
         let sock_addr = SockaddrIn::from(inet_addr);
 
         let rsock = socket(
-            AddressFamily::Inet,
+            AddressFamily::INET,
             SockType::Datagram,
             SockFlag::empty(),
             None,
@@ -649,7 +649,7 @@ mod recvfrom {
         .unwrap();
         bind(rsock.as_raw_fd(), &sock_addr).unwrap();
         let ssock = socket(
-            AddressFamily::Inet,
+            AddressFamily::INET,
             SockType::Datagram,
             SockFlag::empty(),
             None,
@@ -693,7 +693,7 @@ mod recvfrom {
         assert_eq!(res.len(), DATA.len());
 
         for RecvMsg { address, bytes, .. } in res.into_iter() {
-            assert_eq!(AddressFamily::Inet, address.unwrap().family().unwrap());
+            assert_eq!(AddressFamily::INET, address.unwrap().family());
             assert_eq!(DATA.len(), bytes);
         }
 
@@ -722,7 +722,7 @@ mod recvfrom {
         let sock_addr = SockaddrIn::from(inet_addr);
 
         let rsock = socket(
-            AddressFamily::Inet,
+            AddressFamily::INET,
             SockType::Datagram,
             SockFlag::empty(),
             None,
@@ -730,7 +730,7 @@ mod recvfrom {
         .unwrap();
         bind(rsock.as_raw_fd(), &sock_addr).unwrap();
         let ssock = socket(
-            AddressFamily::Inet,
+            AddressFamily::INET,
             SockType::Datagram,
             SockFlag::empty(),
             None,
@@ -781,7 +781,7 @@ mod recvfrom {
         assert_eq!(res.len(), NUM_MESSAGES_SENT);
 
         for RecvMsg { address, bytes, .. } in res.into_iter() {
-            assert_eq!(AddressFamily::Inet, address.unwrap().family().unwrap());
+            assert_eq!(AddressFamily::INET, address.unwrap().family());
             assert_eq!(DATA.len(), bytes);
         }
 
@@ -800,7 +800,7 @@ mod recvfrom {
         let sstd_sa = SocketAddrV6::new(addr, sport, 0, 0);
         let saddr = SockaddrIn6::from(sstd_sa);
         let rsock = socket(
-            AddressFamily::Inet6,
+            AddressFamily::INET6,
             SockType::Datagram,
             SockFlag::empty(),
             None,
@@ -815,7 +815,7 @@ mod recvfrom {
             Ok(()) => (),
         }
         let ssock = socket(
-            AddressFamily::Inet6,
+            AddressFamily::INET6,
             SockType::Datagram,
             SockFlag::empty(),
             None,
@@ -828,7 +828,7 @@ mod recvfrom {
             move |s, m, flags| sendto(s.as_raw_fd(), m, &raddr, flags),
             |_, _| {},
         );
-        assert_eq!(AddressFamily::Inet6, from.unwrap().family().unwrap());
+        assert_eq!(AddressFamily::INET6, from.unwrap().family());
         let osent_addr = from.unwrap();
         let sent_addr = osent_addr.as_sockaddr_in6().unwrap();
         assert_eq!(sent_addr.ip(), addr);
@@ -865,7 +865,7 @@ pub fn test_scm_rights() {
     use std::io::{IoSlice, IoSliceMut};
 
     let (fd1, fd2) = socketpair(
-        AddressFamily::Unix,
+        AddressFamily::UNIX,
         SockType::Stream,
         None,
         SockFlag::empty(),
@@ -958,7 +958,7 @@ pub fn test_af_alg_cipher() {
     let payload = vec![2u8; payload_len];
 
     let sock = socket(
-        AddressFamily::Alg,
+        AddressFamily::ALG,
         SockType::SeqPacket,
         SockFlag::empty(),
         None,
@@ -1067,7 +1067,7 @@ pub fn test_af_alg_aead() {
     }
 
     let sock = socket(
-        AddressFamily::Alg,
+        AddressFamily::ALG,
         SockType::SeqPacket,
         SockFlag::empty(),
         None,
@@ -1167,7 +1167,7 @@ pub fn test_sendmsg_ipv4packetinfo() {
     use std::io::IoSlice;
 
     let sock = socket(
-        AddressFamily::Inet,
+        AddressFamily::INET,
         SockType::Datagram,
         SockFlag::empty(),
         None,
@@ -1232,7 +1232,7 @@ pub fn test_sendmsg_ipv6packetinfo() {
     use std::io::IoSlice;
 
     let sock = socket(
-        AddressFamily::Inet6,
+        AddressFamily::INET6,
         SockType::Datagram,
         SockFlag::empty(),
         None,
@@ -1290,7 +1290,7 @@ pub fn test_sendmsg_ipv4sendsrcaddr() {
     use std::io::IoSlice;
 
     let sock = socket(
-        AddressFamily::Inet,
+        AddressFamily::INET,
         SockType::Datagram,
         SockFlag::empty(),
         None,
@@ -1390,7 +1390,7 @@ pub fn test_sendmsg_empty_cmsgs() {
     use std::io::{IoSlice, IoSliceMut};
 
     let (fd1, fd2) = socketpair(
-        AddressFamily::Unix,
+        AddressFamily::UNIX,
         SockType::Stream,
         None,
         SockFlag::empty(),
@@ -1447,7 +1447,7 @@ fn test_scm_credentials() {
     use std::io::{IoSlice, IoSliceMut};
 
     let (send, recv) = socketpair(
-        AddressFamily::Unix,
+        AddressFamily::UNIX,
         SockType::Stream,
         None,
         SockFlag::empty(),
@@ -1549,7 +1549,7 @@ fn test_impl_scm_credentials_and_rights(mut space: Vec<u8>) {
     use std::io::{IoSlice, IoSliceMut};
 
     let (send, recv) = socketpair(
-        AddressFamily::Unix,
+        AddressFamily::UNIX,
         SockType::Stream,
         None,
         SockFlag::empty(),
@@ -1644,7 +1644,7 @@ pub fn test_named_unixdomain() {
     let tempdir = tempfile::tempdir().unwrap();
     let sockname = tempdir.path().join("sock");
     let s1 = socket(
-        AddressFamily::Unix,
+        AddressFamily::UNIX,
         SockType::Stream,
         SockFlag::empty(),
         None,
@@ -1656,7 +1656,7 @@ pub fn test_named_unixdomain() {
 
     let thr = thread::spawn(move || {
         let s2 = socket(
-            AddressFamily::Unix,
+            AddressFamily::UNIX,
             SockType::Stream,
             SockFlag::empty(),
             None,
@@ -1683,7 +1683,7 @@ pub fn test_unnamed_unixdomain() {
     use nix::sys::socket::{SockFlag, SockType};
 
     let (fd_1, _fd_2) = socketpair(
-        AddressFamily::Unix,
+        AddressFamily::UNIX,
         SockType::Stream,
         None,
         SockFlag::empty(),
@@ -1703,7 +1703,7 @@ pub fn test_unnamed_unixdomain_autobind() {
     use nix::sys::socket::{SockFlag, SockType};
 
     let fd = socket(
-        AddressFamily::Unix,
+        AddressFamily::UNIX,
         SockType::Stream,
         SockFlag::empty(),
         None,
@@ -1733,7 +1733,7 @@ pub fn test_syscontrol() {
     };
 
     let fd = socket(
-        AddressFamily::System,
+        AddressFamily::SYSTEM,
         SockType::Datagram,
         SockFlag::empty(),
         SockProtocol::KextControl,
@@ -1779,8 +1779,7 @@ fn loopback_address(
     // return first address matching family
     addrs.find(|ifaddr| {
         ifaddr.flags.contains(InterfaceFlags::IFF_LOOPBACK)
-            && ifaddr.address.as_ref().and_then(SockaddrLike::family)
-                == Some(family)
+            && ifaddr.address.as_ref().map(SockaddrLike::family) == Some(family)
     })
 }
 
@@ -1813,7 +1812,7 @@ pub fn test_recv_ipv4pktinfo() {
     use nix::sys::socket::{recvmsg, sendmsg, ControlMessageOwned, MsgFlags};
     use std::io::{IoSlice, IoSliceMut};
 
-    let lo_ifaddr = loopback_address(AddressFamily::Inet);
+    let lo_ifaddr = loopback_address(AddressFamily::INET);
     let (lo_name, lo) = match lo_ifaddr {
         Some(ifaddr) => (
             ifaddr.interface_name,
@@ -1822,7 +1821,7 @@ pub fn test_recv_ipv4pktinfo() {
         None => return,
     };
     let receive = socket(
-        AddressFamily::Inet,
+        AddressFamily::INET,
         SockType::Datagram,
         SockFlag::empty(),
         None,
@@ -1838,7 +1837,7 @@ pub fn test_recv_ipv4pktinfo() {
         let iov = [IoSlice::new(&slice)];
 
         let send = socket(
-            AddressFamily::Inet,
+            AddressFamily::INET,
             SockType::Datagram,
             SockFlag::empty(),
             None,
@@ -1909,7 +1908,7 @@ pub fn test_recvif() {
     use nix::sys::socket::{recvmsg, sendmsg, ControlMessageOwned, MsgFlags};
     use std::io::{IoSlice, IoSliceMut};
 
-    let lo_ifaddr = loopback_address(AddressFamily::Inet);
+    let lo_ifaddr = loopback_address(AddressFamily::INET);
     let (lo_name, lo) = match lo_ifaddr {
         Some(ifaddr) => (
             ifaddr.interface_name,
@@ -1918,7 +1917,7 @@ pub fn test_recvif() {
         None => return,
     };
     let receive = socket(
-        AddressFamily::Inet,
+        AddressFamily::INET,
         SockType::Datagram,
         SockFlag::empty(),
         None,
@@ -1937,7 +1936,7 @@ pub fn test_recvif() {
         let iov = [IoSlice::new(&slice)];
 
         let send = socket(
-            AddressFamily::Inet,
+            AddressFamily::INET,
             SockType::Datagram,
             SockFlag::empty(),
             None,
@@ -2009,7 +2008,7 @@ pub fn test_recvif_ipv4() {
     use nix::sys::socket::{recvmsg, sendmsg, ControlMessageOwned, MsgFlags};
     use std::io::{IoSlice, IoSliceMut};
 
-    let lo_ifaddr = loopback_address(AddressFamily::Inet);
+    let lo_ifaddr = loopback_address(AddressFamily::INET);
     let (_lo_name, lo) = match lo_ifaddr {
         Some(ifaddr) => (
             ifaddr.interface_name,
@@ -2018,7 +2017,7 @@ pub fn test_recvif_ipv4() {
         None => return,
     };
     let receive = socket(
-        AddressFamily::Inet,
+        AddressFamily::INET,
         SockType::Datagram,
         SockFlag::empty(),
         None,
@@ -2035,7 +2034,7 @@ pub fn test_recvif_ipv4() {
         let iov = [IoSlice::new(&slice)];
 
         let send = socket(
-            AddressFamily::Inet,
+            AddressFamily::INET,
             SockType::Datagram,
             SockFlag::empty(),
             None,
@@ -2095,7 +2094,7 @@ pub fn test_recvif_ipv6() {
     use nix::sys::socket::{recvmsg, sendmsg, ControlMessageOwned, MsgFlags};
     use std::io::{IoSlice, IoSliceMut};
 
-    let lo_ifaddr = loopback_address(AddressFamily::Inet6);
+    let lo_ifaddr = loopback_address(AddressFamily::INET6);
     let (_lo_name, lo) = match lo_ifaddr {
         Some(ifaddr) => (
             ifaddr.interface_name,
@@ -2104,7 +2103,7 @@ pub fn test_recvif_ipv6() {
         None => return,
     };
     let receive = socket(
-        AddressFamily::Inet6,
+        AddressFamily::INET6,
         SockType::Datagram,
         SockFlag::empty(),
         None,
@@ -2121,7 +2120,7 @@ pub fn test_recvif_ipv6() {
         let iov = [IoSlice::new(&slice)];
 
         let send = socket(
-            AddressFamily::Inet6,
+            AddressFamily::INET6,
             SockType::Datagram,
             SockFlag::empty(),
             None,
@@ -2202,7 +2201,7 @@ pub fn test_recv_ipv6pktinfo() {
     use nix::sys::socket::{recvmsg, sendmsg, ControlMessageOwned, MsgFlags};
     use std::io::{IoSlice, IoSliceMut};
 
-    let lo_ifaddr = loopback_address(AddressFamily::Inet6);
+    let lo_ifaddr = loopback_address(AddressFamily::INET6);
     let (lo_name, lo) = match lo_ifaddr {
         Some(ifaddr) => (
             ifaddr.interface_name,
@@ -2211,7 +2210,7 @@ pub fn test_recv_ipv6pktinfo() {
         None => return,
     };
     let receive = socket(
-        AddressFamily::Inet6,
+        AddressFamily::INET6,
         SockType::Datagram,
         SockFlag::empty(),
         None,
@@ -2227,7 +2226,7 @@ pub fn test_recv_ipv6pktinfo() {
         let iov = [IoSlice::new(&slice)];
 
         let send = socket(
-            AddressFamily::Inet6,
+            AddressFamily::INET6,
             SockType::Datagram,
             SockFlag::empty(),
             None,
@@ -2303,7 +2302,7 @@ pub fn test_vsock() {
     .unwrap();
     assert_eq!(
         addr3.as_ref().svm_family,
-        AddressFamily::Vsock as libc::sa_family_t
+        AddressFamily::VSOCK.family() as libc::sa_family_t
     );
     assert_eq!(addr3.as_ref().svm_cid, addr1.cid());
     assert_eq!(addr3.as_ref().svm_port, addr1.port());
@@ -2344,7 +2343,7 @@ pub fn test_vsock() {
     .unwrap();
     assert_eq!(
         addr3.as_ref().svm_family,
-        AddressFamily::Vsock as libc::sa_family_t
+        AddressFamily::VSOCK.family() as libc::sa_family_t
     );
     let cid = addr3.as_ref().svm_cid;
     let port = addr3.as_ref().svm_port;
@@ -2366,7 +2365,7 @@ fn test_recvmsg_timestampns() {
     // Set up
     let message = "Ohayō!".as_bytes();
     let in_socket = socket(
-        AddressFamily::Inet,
+        AddressFamily::INET,
         SockType::Datagram,
         SockFlag::empty(),
         None,
@@ -2425,7 +2424,7 @@ fn test_recvmmsg_timestampns() {
     // Set up
     let message = "Ohayō!".as_bytes();
     let in_socket = socket(
-        AddressFamily::Inet,
+        AddressFamily::INET,
         SockType::Datagram,
         SockFlag::empty(),
         None,
@@ -2487,14 +2486,14 @@ fn test_recvmsg_rxq_ovfl() {
     let bufsize = message.len() * 2;
 
     let in_socket = socket(
-        AddressFamily::Inet,
+        AddressFamily::INET,
         SockType::Datagram,
         SockFlag::empty(),
         None,
     )
     .unwrap();
     let out_socket = socket(
-        AddressFamily::Inet,
+        AddressFamily::INET,
         SockType::Datagram,
         SockFlag::empty(),
         None,
@@ -2593,7 +2592,7 @@ mod linux_errqueue {
 
         test_recverr_impl::<sockaddr_in, _, _>(
             "127.0.0.1:6800",
-            AddressFamily::Inet,
+            AddressFamily::INET,
             sockopt::Ipv4RecvErr,
             libc::SO_EE_ORIGIN_ICMP,
             IcmpTypes::DestUnreach as u8,
@@ -2606,7 +2605,10 @@ mod linux_errqueue {
                 {
                     if let Some(origin) = err_addr {
                         // Validate that our network error originated from 127.0.0.1:0.
-                        assert_eq!(origin.sin_family, AddressFamily::Inet as _);
+                        assert_eq!(
+                            origin.sin_family,
+                            AddressFamily::INET.family() as _
+                        );
                         assert_eq!(
                             origin.sin_addr.s_addr,
                             u32::from_be(0x7f000001)
@@ -2641,7 +2643,7 @@ mod linux_errqueue {
 
         test_recverr_impl::<sockaddr_in6, _, _>(
             "[::1]:6801",
-            AddressFamily::Inet6,
+            AddressFamily::INET6,
             sockopt::Ipv6RecvErr,
             libc::SO_EE_ORIGIN_ICMP6,
             IcmpV6Types::DestUnreach as u8,
@@ -2656,7 +2658,7 @@ mod linux_errqueue {
                         // Validate that our network error originated from localhost:0.
                         assert_eq!(
                             origin.sin6_family,
-                            AddressFamily::Inet6 as _
+                            AddressFamily::INET6.family() as _
                         );
                         assert_eq!(
                             origin.sin6_addr.s6_addr,
@@ -2763,7 +2765,7 @@ pub fn test_txtime() {
     let sock_addr = SockaddrIn::from_str("127.0.0.1:6802").unwrap();
 
     let ssock = socket(
-        AddressFamily::Inet,
+        AddressFamily::INET,
         SockType::Datagram,
         SockFlag::empty(),
         None,
@@ -2777,7 +2779,7 @@ pub fn test_txtime() {
     setsockopt(&ssock, sockopt::TxTime, &txtime_cfg).unwrap();
 
     let rsock = socket(
-        AddressFamily::Inet,
+        AddressFamily::INET,
         SockType::Datagram,
         SockFlag::empty(),
         None,
@@ -2820,7 +2822,7 @@ fn test_icmp_protocol() {
     require_capability!("test_icmp_protocol", CAP_NET_RAW);
 
     let owned_fd = socket(
-        AddressFamily::Inet,
+        AddressFamily::INET,
         SockType::Raw,
         SockFlag::empty(),
         SockProtocol::Icmp,

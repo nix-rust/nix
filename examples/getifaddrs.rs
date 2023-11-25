@@ -29,7 +29,7 @@ fn main() {
         let family = addr
             .address
             .as_ref()
-            .and_then(SockaddrStorage::family)
+            .map(SockaddrStorage::family)
             .map(|af| format!("{:?}", af))
             .unwrap_or("".to_owned());
         match (

@@ -17,7 +17,7 @@ pub fn test_local_peercred_seqpacket() {
     };
 
     let (fd1, _fd2) = socketpair(
-        AddressFamily::Unix,
+        AddressFamily::UNIX,
         SockType::SeqPacket,
         None,
         SockFlag::empty(),
@@ -38,7 +38,7 @@ pub fn test_local_peercred_stream() {
     };
 
     let (fd1, _fd2) = socketpair(
-        AddressFamily::Unix,
+        AddressFamily::UNIX,
         SockType::Stream,
         None,
         SockFlag::empty(),
@@ -56,7 +56,7 @@ pub fn test_local_peer_pid() {
     use nix::sys::socket::socketpair;
 
     let (fd1, _fd2) = socketpair(
-        AddressFamily::Unix,
+        AddressFamily::UNIX,
         SockType::Stream,
         None,
         SockFlag::empty(),
@@ -74,7 +74,7 @@ fn is_so_mark_functional() {
     require_capability!("is_so_mark_functional", CAP_NET_ADMIN);
 
     let s = socket(
-        AddressFamily::Inet,
+        AddressFamily::INET,
         SockType::Stream,
         SockFlag::empty(),
         None,
@@ -88,7 +88,7 @@ fn is_so_mark_functional() {
 #[test]
 fn test_so_buf() {
     let fd = socket(
-        AddressFamily::Inet,
+        AddressFamily::INET,
         SockType::Datagram,
         SockFlag::empty(),
         SockProtocol::Udp,
@@ -114,7 +114,7 @@ fn test_so_tcp_maxseg() {
     let sock_addr = SockaddrIn::from(std_sa);
 
     let rsock = socket(
-        AddressFamily::Inet,
+        AddressFamily::INET,
         SockType::Stream,
         SockFlag::empty(),
         SockProtocol::Tcp,
@@ -138,7 +138,7 @@ fn test_so_tcp_maxseg() {
 
     // Connect and check the MSS that was advertised
     let ssock = socket(
-        AddressFamily::Inet,
+        AddressFamily::INET,
         SockType::Stream,
         SockFlag::empty(),
         SockProtocol::Tcp,
@@ -165,7 +165,7 @@ fn test_so_tcp_maxseg() {
 #[test]
 fn test_so_type() {
     let sockfd = socket(
-        AddressFamily::Inet,
+        AddressFamily::INET,
         SockType::Stream,
         SockFlag::empty(),
         None,
@@ -203,7 +203,7 @@ fn test_tcp_congestion() {
     use std::ffi::OsString;
 
     let fd = socket(
-        AddressFamily::Inet,
+        AddressFamily::INET,
         SockType::Stream,
         SockFlag::empty(),
         None,
@@ -229,7 +229,7 @@ fn test_bindtodevice() {
     skip_if_not_root!("test_bindtodevice");
 
     let fd = socket(
-        AddressFamily::Inet,
+        AddressFamily::INET,
         SockType::Stream,
         SockFlag::empty(),
         None,
@@ -245,7 +245,7 @@ fn test_bindtodevice() {
 #[test]
 fn test_so_tcp_keepalive() {
     let fd = socket(
-        AddressFamily::Inet,
+        AddressFamily::INET,
         SockType::Stream,
         SockFlag::empty(),
         SockProtocol::Tcp,
@@ -287,7 +287,7 @@ fn test_get_mtu() {
     let std_sb = SocketAddrV4::from_str("127.0.0.1:4002").unwrap();
 
     let usock = socket(
-        AddressFamily::Inet,
+        AddressFamily::INET,
         SockType::Datagram,
         SockFlag::empty(),
         SockProtocol::Udp,
@@ -306,7 +306,7 @@ fn test_get_mtu() {
 #[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
 fn test_ttl_opts() {
     let fd4 = socket(
-        AddressFamily::Inet,
+        AddressFamily::INET,
         SockType::Datagram,
         SockFlag::empty(),
         None,
@@ -315,7 +315,7 @@ fn test_ttl_opts() {
     setsockopt(&fd4, sockopt::Ipv4Ttl, &1)
         .expect("setting ipv4ttl on an inet socket should succeed");
     let fd6 = socket(
-        AddressFamily::Inet6,
+        AddressFamily::INET6,
         SockType::Datagram,
         SockFlag::empty(),
         None,
@@ -329,7 +329,7 @@ fn test_ttl_opts() {
 #[cfg(apple_targets)]
 fn test_dontfrag_opts() {
     let fd4 = socket(
-        AddressFamily::Inet,
+        AddressFamily::INET,
         SockType::Stream,
         SockFlag::empty(),
         SockProtocol::Tcp,
@@ -341,7 +341,7 @@ fn test_dontfrag_opts() {
         "unsetting IP_DONTFRAG on an inet stream socket should succeed",
     );
     let fd4d = socket(
-        AddressFamily::Inet,
+        AddressFamily::INET,
         SockType::Datagram,
         SockFlag::empty(),
         None,
@@ -362,7 +362,7 @@ fn test_dontfrag_opts() {
 #[cfg_attr(qemu, ignore)]
 fn test_v6dontfrag_opts() {
     let fd6 = socket(
-        AddressFamily::Inet6,
+        AddressFamily::INET6,
         SockType::Stream,
         SockFlag::empty(),
         SockProtocol::Tcp,
@@ -375,7 +375,7 @@ fn test_v6dontfrag_opts() {
         "unsetting IPV6_DONTFRAG on an inet6 stream socket should succeed",
     );
     let fd6d = socket(
-        AddressFamily::Inet6,
+        AddressFamily::INET6,
         SockType::Datagram,
         SockFlag::empty(),
         None,
@@ -393,7 +393,7 @@ fn test_v6dontfrag_opts() {
 #[cfg(target_os = "linux")]
 fn test_so_priority() {
     let fd = socket(
-        AddressFamily::Inet,
+        AddressFamily::INET,
         SockType::Stream,
         SockFlag::empty(),
         SockProtocol::Tcp,
@@ -408,7 +408,7 @@ fn test_so_priority() {
 #[cfg(target_os = "linux")]
 fn test_ip_tos() {
     let fd = socket(
-        AddressFamily::Inet,
+        AddressFamily::INET,
         SockType::Stream,
         SockFlag::empty(),
         SockProtocol::Tcp,
@@ -426,7 +426,7 @@ fn test_ip_tos() {
 #[cfg_attr(qemu, ignore)]
 fn test_ipv6_tclass() {
     let fd = socket(
-        AddressFamily::Inet6,
+        AddressFamily::INET6,
         SockType::Stream,
         SockFlag::empty(),
         SockProtocol::Tcp,
@@ -441,7 +441,7 @@ fn test_ipv6_tclass() {
 #[cfg(target_os = "freebsd")]
 fn test_receive_timestamp() {
     let fd = socket(
-        AddressFamily::Inet6,
+        AddressFamily::INET6,
         SockType::Datagram,
         SockFlag::empty(),
         None,
@@ -457,7 +457,7 @@ fn test_ts_clock_realtime_micro() {
     use nix::sys::socket::SocketTimestamp;
 
     let fd = socket(
-        AddressFamily::Inet6,
+        AddressFamily::INET6,
         SockType::Datagram,
         SockFlag::empty(),
         None,
@@ -485,7 +485,7 @@ fn test_ts_clock_bintime() {
     use nix::sys::socket::SocketTimestamp;
 
     let fd = socket(
-        AddressFamily::Inet6,
+        AddressFamily::INET6,
         SockType::Datagram,
         SockFlag::empty(),
         None,
@@ -508,7 +508,7 @@ fn test_ts_clock_realtime() {
     use nix::sys::socket::SocketTimestamp;
 
     let fd = socket(
-        AddressFamily::Inet6,
+        AddressFamily::INET6,
         SockType::Datagram,
         SockFlag::empty(),
         None,
@@ -532,7 +532,7 @@ fn test_ts_clock_monotonic() {
     use nix::sys::socket::SocketTimestamp;
 
     let fd = socket(
-        AddressFamily::Inet6,
+        AddressFamily::INET6,
         SockType::Datagram,
         SockFlag::empty(),
         None,

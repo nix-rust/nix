@@ -45,233 +45,434 @@ pub(crate) const fn ipv6addr_to_libc(addr: &net::Ipv6Addr) -> libc::in6_addr {
     }
 }
 
-/// These constants specify the protocol family to be used
-/// in [`socket`](fn.socket.html) and [`socketpair`](fn.socketpair.html)
-///
-/// # References
-///
-/// [address_families(7)](https://man7.org/linux/man-pages/man7/address_families.7.html)
-// Should this be u8?
-#[repr(i32)]
-#[non_exhaustive]
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Hash)]
-pub enum AddressFamily {
-    /// Local communication (see [`unix(7)`](https://man7.org/linux/man-pages/man7/unix.7.html))
-    Unix = libc::AF_UNIX,
-    /// IPv4 Internet protocols (see [`ip(7)`](https://man7.org/linux/man-pages/man7/ip.7.html))
-    Inet = libc::AF_INET,
-    /// IPv6 Internet protocols (see [`ipv6(7)`](https://man7.org/linux/man-pages/man7/ipv6.7.html))
-    Inet6 = libc::AF_INET6,
-    /// Kernel user interface device (see [`netlink(7)`](https://man7.org/linux/man-pages/man7/netlink.7.html))
-    #[cfg(linux_android)]
-    Netlink = libc::AF_NETLINK,
-    /// Kernel interface for interacting with the routing table
-    #[cfg(not(any(linux_android, target_os = "redox")))]
-    Route = libc::PF_ROUTE,
-    /// Low level packet interface (see [`packet(7)`](https://man7.org/linux/man-pages/man7/packet.7.html))
-    #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
-    Packet = libc::AF_PACKET,
-    /// KEXT Controls and Notifications
-    #[cfg(apple_targets)]
-    System = libc::AF_SYSTEM,
-    /// Amateur radio AX.25 protocol
-    #[cfg(linux_android)]
-    Ax25 = libc::AF_AX25,
-    /// IPX - Novell protocols
-    #[cfg(not(any(target_os = "aix", target_os = "redox")))]
-    Ipx = libc::AF_IPX,
-    /// AppleTalk
-    #[cfg(not(target_os = "redox"))]
-    AppleTalk = libc::AF_APPLETALK,
-    /// AX.25 packet layer protocol.
-    /// (see [netrom(4)](https://www.unix.com/man-page/linux/4/netrom/))
-    #[cfg(linux_android)]
-    NetRom = libc::AF_NETROM,
-    /// Can't be used for creating sockets; mostly used for bridge
-    /// links in
-    /// [rtnetlink(7)](https://man7.org/linux/man-pages/man7/rtnetlink.7.html)
-    /// protocol commands.
-    #[cfg(linux_android)]
-    Bridge = libc::AF_BRIDGE,
-    /// Access to raw ATM PVCs
-    #[cfg(linux_android)]
-    AtmPvc = libc::AF_ATMPVC,
-    /// ITU-T X.25 / ISO-8208 protocol (see [`x25(7)`](https://man7.org/linux/man-pages/man7/x25.7.html))
-    #[cfg(linux_android)]
-    X25 = libc::AF_X25,
-    /// RATS (Radio Amateur Telecommunications Society) Open
-    /// Systems environment (ROSE) AX.25 packet layer protocol.
-    /// (see [netrom(4)](https://www.unix.com/man-page/linux/4/netrom/))
-    #[cfg(linux_android)]
-    Rose = libc::AF_ROSE,
-    /// DECet protocol sockets.
-    #[cfg(not(any(target_os = "haiku", target_os = "redox")))]
-    Decnet = libc::AF_DECnet,
-    /// Reserved for "802.2LLC project"; never used.
-    #[cfg(linux_android)]
-    NetBeui = libc::AF_NETBEUI,
-    /// This was a short-lived (between Linux 2.1.30 and
-    /// 2.1.99pre2) protocol family for firewall upcalls.
-    #[cfg(linux_android)]
-    Security = libc::AF_SECURITY,
-    /// Key management protocol.
-    #[cfg(linux_android)]
-    Key = libc::AF_KEY,
-    #[allow(missing_docs)] // Not documented anywhere that I can find
-    #[cfg(linux_android)]
-    Ash = libc::AF_ASH,
-    /// Acorn Econet protocol
-    #[cfg(linux_android)]
-    Econet = libc::AF_ECONET,
-    /// Access to ATM Switched Virtual Circuits
-    #[cfg(linux_android)]
-    AtmSvc = libc::AF_ATMSVC,
-    /// Reliable Datagram Sockets (RDS) protocol
-    #[cfg(linux_android)]
-    Rds = libc::AF_RDS,
-    /// IBM SNA
-    #[cfg(not(any(target_os = "haiku", target_os = "redox")))]
-    Sna = libc::AF_SNA,
-    /// Socket interface over IrDA
-    #[cfg(linux_android)]
-    Irda = libc::AF_IRDA,
-    /// Generic PPP transport layer, for setting up L2 tunnels (L2TP and PPPoE)
-    #[cfg(linux_android)]
-    Pppox = libc::AF_PPPOX,
-    /// Legacy protocol for wide area network (WAN) connectivity that was used
-    /// by Sangoma WAN cards
-    #[cfg(linux_android)]
-    Wanpipe = libc::AF_WANPIPE,
-    /// Logical link control (IEEE 802.2 LLC) protocol
-    #[cfg(linux_android)]
-    Llc = libc::AF_LLC,
-    /// InfiniBand native addressing
-    #[cfg(all(target_os = "linux", not(target_env = "uclibc")))]
-    Ib = libc::AF_IB,
-    /// Multiprotocol Label Switching
-    #[cfg(all(target_os = "linux", not(target_env = "uclibc")))]
-    Mpls = libc::AF_MPLS,
-    /// Controller Area Network automotive bus protocol
-    #[cfg(linux_android)]
-    Can = libc::AF_CAN,
-    /// TIPC, "cluster domain sockets" protocol
-    #[cfg(linux_android)]
-    Tipc = libc::AF_TIPC,
-    /// Bluetooth low-level socket protocol
-    #[cfg(not(any(
-        target_os = "aix",
-        solarish,
-        apple_targets,
-        target_os = "redox",
-    )))]
-    Bluetooth = libc::AF_BLUETOOTH,
-    /// IUCV (inter-user communication vehicle) z/VM protocol for
-    /// hypervisor-guest interaction
-    #[cfg(linux_android)]
-    Iucv = libc::AF_IUCV,
-    /// Rx, Andrew File System remote procedure call protocol
-    #[cfg(linux_android)]
-    RxRpc = libc::AF_RXRPC,
-    /// New "modular ISDN" driver interface protocol
-    #[cfg(not(any(
-        target_os = "aix",
-        solarish,
-        target_os = "haiku",
-        target_os = "redox",
-    )))]
-    Isdn = libc::AF_ISDN,
-    /// Nokia cellular modem IPC/RPC interface
-    #[cfg(linux_android)]
-    Phonet = libc::AF_PHONET,
-    /// IEEE 802.15.4 WPAN (wireless personal area network) raw packet protocol
-    #[cfg(linux_android)]
-    Ieee802154 = libc::AF_IEEE802154,
-    /// Ericsson's Communication CPU to Application CPU interface (CAIF)
-    /// protocol.
-    #[cfg(linux_android)]
-    Caif = libc::AF_CAIF,
-    /// Interface to kernel crypto API
-    #[cfg(linux_android)]
-    Alg = libc::AF_ALG,
-    /// Near field communication
-    #[cfg(target_os = "linux")]
-    Nfc = libc::AF_NFC,
-    /// VMWare VSockets protocol for hypervisor-guest interaction.
-    #[cfg(any(linux_android, target_os = "macos"))]
-    Vsock = libc::AF_VSOCK,
-    /// ARPANet IMP addresses
-    #[cfg(bsd)]
-    ImpLink = libc::AF_IMPLINK,
-    /// PUP protocols, e.g. BSP
-    #[cfg(bsd)]
-    Pup = libc::AF_PUP,
-    /// MIT CHAOS protocols
-    #[cfg(bsd)]
-    Chaos = libc::AF_CHAOS,
-    /// Novell and Xerox protocol
-    #[cfg(any(apple_targets, target_os = "netbsd", target_os = "openbsd"))]
-    Ns = libc::AF_NS,
-    #[allow(missing_docs)] // Not documented anywhere that I can find
-    #[cfg(bsd)]
-    Iso = libc::AF_ISO,
-    /// Bell Labs virtual circuit switch ?
-    #[cfg(bsd)]
-    Datakit = libc::AF_DATAKIT,
-    /// CCITT protocols, X.25 etc
-    #[cfg(bsd)]
-    Ccitt = libc::AF_CCITT,
-    /// DEC Direct data link interface
-    #[cfg(bsd)]
-    Dli = libc::AF_DLI,
-    #[allow(missing_docs)] // Not documented anywhere that I can find
-    #[cfg(bsd)]
-    Lat = libc::AF_LAT,
-    /// NSC Hyperchannel
-    #[cfg(bsd)]
-    Hylink = libc::AF_HYLINK,
-    /// Link layer interface
-    #[cfg(any(bsd, target_os = "illumos"))]
-    Link = libc::AF_LINK,
-    /// connection-oriented IP, aka ST II
-    #[cfg(bsd)]
-    Coip = libc::AF_COIP,
-    /// Computer Network Technology
-    #[cfg(bsd)]
-    Cnt = libc::AF_CNT,
-    /// Native ATM access
-    #[cfg(bsd)]
-    Natm = libc::AF_NATM,
-    /// Unspecified address family, (see [`getaddrinfo(3)`](https://man7.org/linux/man-pages/man3/getaddrinfo.3.html))
-    #[cfg(linux_android)]
-    Unspec = libc::AF_UNSPEC,
+/// A possible error when converting a c_int to [`AddressFamily`].
+#[derive(Debug, Clone, Copy)]
+pub struct InvalidAddressFamilyError;
+
+/// Address families, corresponding to `AF_*` constants in libc.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct AddressFamily(libc::c_int);
+
+impl AddressFamily {
+    /// Converts a c_int to an address family.
+    ///
+    /// The argument must fit into `sa_family_t`.
+    pub const fn new(
+        family: libc::c_int,
+    ) -> std::result::Result<Self, InvalidAddressFamilyError> {
+        if family > libc::sa_family_t::MAX as _ {
+            return Err(InvalidAddressFamilyError);
+        }
+
+        Ok(Self(family))
+    }
+
+    /// Returns the c_int representation of the address family.
+    pub const fn family(&self) -> libc::c_int {
+        self.0
+    }
+
+    const fn of(addr: &libc::sockaddr) -> Self {
+        Self(addr.sa_family as _)
+    }
 }
 
 impl AddressFamily {
-    /// Create a new `AddressFamily` from an integer value retrieved from `libc`, usually from
-    /// the `sa_family` field of a `sockaddr`.
-    ///
-    /// Currently only supports these address families: Unix, Inet (v4 & v6), Netlink, Link/Packet
-    /// and System. Returns None for unsupported or unknown address families.
-    pub const fn from_i32(family: i32) -> Option<AddressFamily> {
-        match family {
-            libc::AF_UNIX => Some(AddressFamily::Unix),
-            libc::AF_INET => Some(AddressFamily::Inet),
-            libc::AF_INET6 => Some(AddressFamily::Inet6),
-            #[cfg(linux_android)]
-            libc::AF_NETLINK => Some(AddressFamily::Netlink),
-            #[cfg(target_os = "macos")]
-            libc::AF_SYSTEM => Some(AddressFamily::System),
-            #[cfg(not(any(linux_android, target_os = "redox")))]
-            libc::PF_ROUTE => Some(AddressFamily::Route),
-            #[cfg(linux_android)]
-            libc::AF_PACKET => Some(AddressFamily::Packet),
-            #[cfg(any(bsd, target_os = "illumos"))]
-            libc::AF_LINK => Some(AddressFamily::Link),
-            #[cfg(any(linux_android, target_os = "macos"))]
-            libc::AF_VSOCK => Some(AddressFamily::Vsock),
-            _ => None,
-        }
-    }
+    /// Represents `AF_802`.
+    #[cfg(solarish)]
+    pub const _802: Self = Self(libc::AF_802);
+    /// Represents `AF_ALG`.
+    #[cfg(any(linux_android, target_os = "fuchsia"))]
+    pub const ALG: Self = Self(libc::AF_ALG);
+    /// Represents `AF_APPLETALK`.
+    #[cfg(any(
+        apple_targets,
+        freebsdlike,
+        linux_android,
+        netbsdlike,
+        solarish,
+        target_os = "fuchsia",
+        target_os = "haiku",
+    ))]
+    pub const APPLETALK: Self = Self(libc::AF_APPLETALK);
+    /// Represents `AF_ARP`.
+    #[cfg(any(target_os = "freebsd", target_os = "netbsd"))]
+    pub const ARP: Self = Self(libc::AF_ARP);
+    /// Represents `AF_ASH`.
+    #[cfg(any(linux_android, target_os = "fuchsia"))]
+    pub const ASH: Self = Self(libc::AF_ASH);
+    /// Represents `AF_ATM`.
+    #[cfg(freebsdlike)]
+    pub const ATM: Self = Self(libc::AF_ATM);
+    /// Represents `AF_ATMPVC`.
+    #[cfg(any(linux_android, target_os = "fuchsia"))]
+    pub const ATMPVC: Self = Self(libc::AF_ATMPVC);
+    /// Represents `AF_ATMSVC`.
+    #[cfg(any(linux_android, target_os = "fuchsia"))]
+    pub const ATMSVC: Self = Self(libc::AF_ATMSVC);
+    /// Represents `AF_AX25`.
+    #[cfg(any(linux_android, target_os = "fuchsia"))]
+    pub const AX25: Self = Self(libc::AF_AX25);
+    /// Represents `AF_BLUETOOTH`.
+    #[cfg(any(
+        linux_android,
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "fuchsia",
+        target_os = "haiku",
+        target_os = "netbsd",
+        target_os = "openbsd",
+    ))]
+    pub const BLUETOOTH: Self = Self(libc::AF_BLUETOOTH);
+    /// Represents `AF_BRIDGE`.
+    #[cfg(any(linux_android, target_os = "fuchsia"))]
+    pub const BRIDGE: Self = Self(libc::AF_BRIDGE);
+    /// Represents `AF_CAIF`.
+    #[cfg(any(linux_android, target_os = "fuchsia"))]
+    pub const CAIF: Self = Self(libc::AF_CAIF);
+    /// Represents `AF_CAN`.
+    #[cfg(any(linux_android, target_os = "fuchsia"))]
+    pub const CAN: Self = Self(libc::AF_CAN);
+    /// Represents `AF_CCITT`.
+    #[cfg(any(apple_targets, freebsdlike, netbsdlike, solarish))]
+    pub const CCITT: Self = Self(libc::AF_CCITT);
+    /// Represents `AF_CHAOS`.
+    #[cfg(any(apple_targets, freebsdlike, netbsdlike, solarish))]
+    pub const CHAOS: Self = Self(libc::AF_CHAOS);
+    /// Represents `AF_CNT`.
+    #[cfg(any(apple_targets, freebsdlike, netbsdlike))]
+    pub const CNT: Self = Self(libc::AF_CNT);
+    /// Represents `AF_COIP`.
+    #[cfg(any(apple_targets, freebsdlike, netbsdlike))]
+    pub const COIP: Self = Self(libc::AF_COIP);
+    /// Represents `AF_DATAKIT`.
+    #[cfg(any(apple_targets, freebsdlike, netbsdlike, solarish))]
+    pub const DATAKIT: Self = Self(libc::AF_DATAKIT);
+    /// Represents `AF_DECnet`.
+    #[cfg(any(
+        apple_targets,
+        freebsdlike,
+        linux_android,
+        netbsdlike,
+        solarish,
+        target_os = "fuchsia",
+    ))]
+    pub const DECNET: Self = Self(libc::AF_DECnet);
+    /// Represents `AF_DLI`.
+    #[cfg(any(
+        apple_targets,
+        freebsdlike,
+        netbsdlike,
+        solarish,
+        target_os = "haiku",
+    ))]
+    pub const DLI: Self = Self(libc::AF_DLI);
+    /// Represents `AF_E164`.
+    #[cfg(any(apple_targets, freebsdlike, netbsdlike))]
+    pub const E164: Self = Self(libc::AF_E164);
+    /// Represents `AF_ECMA`.
+    #[cfg(any(apple_targets, freebsdlike, solarish, target_os = "openbsd"))]
+    pub const ECMA: Self = Self(libc::AF_ECMA);
+    /// Represents `AF_ECONET`.
+    #[cfg(any(linux_android, target_os = "fuchsia"))]
+    pub const ECONET: Self = Self(libc::AF_ECONET);
+    /// Represents `AF_ENCAP`.
+    #[cfg(target_os = "openbsd")]
+    pub const ENCAP: Self = Self(libc::AF_ENCAP);
+    /// Represents `AF_FILE`.
+    #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+    pub const FILE: Self = Self(libc::AF_FILE);
+    /// Represents `AF_GOSIP`.
+    #[cfg(solarish)]
+    pub const GOSIP: Self = Self(libc::AF_GOSIP);
+    /// Represents `AF_HYLINK`.
+    #[cfg(any(apple_targets, freebsdlike, netbsdlike, solarish))]
+    pub const HYLINK: Self = Self(libc::AF_HYLINK);
+    /// Represents `AF_IB`.
+    #[cfg(all(target_os = "linux", not(target_env = "uclibc")))]
+    pub const IB: Self = Self(libc::AF_IB);
+    /// Represents `AF_IEEE80211`.
+    #[cfg(any(
+        apple_targets,
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "netbsd",
+    ))]
+    pub const IEEE80211: Self = Self(libc::AF_IEEE80211);
+    /// Represents `AF_IEEE802154`.
+    #[cfg(any(linux_android, target_os = "fuchsia"))]
+    pub const IEEE802154: Self = Self(libc::AF_IEEE802154);
+    /// Represents `AF_IMPLINK`.
+    #[cfg(any(apple_targets, freebsdlike, netbsdlike, solarish))]
+    pub const IMPLINK: Self = Self(libc::AF_IMPLINK);
+    /// Represents `AF_INET`.
+    #[cfg(any(
+        apple_targets,
+        freebsdlike,
+        linux_android,
+        netbsdlike,
+        solarish,
+        target_os = "fuchsia",
+        target_os = "haiku",
+        target_os = "redox",
+    ))]
+    pub const INET: Self = Self(libc::AF_INET);
+    /// Represents `AF_INET6`.
+    #[cfg(any(
+        apple_targets,
+        freebsdlike,
+        linux_android,
+        netbsdlike,
+        solarish,
+        target_os = "fuchsia",
+        target_os = "haiku",
+        target_os = "redox",
+    ))]
+    pub const INET6: Self = Self(libc::AF_INET6);
+    /// Represents `AF_INET6_SDP`.
+    #[cfg(target_os = "freebsd")]
+    pub const INET6_SDP: Self = Self(libc::AF_INET6_SDP);
+    /// Represents `AF_INET_OFFLOAD`.
+    #[cfg(solarish)]
+    pub const INET_OFFLOAD: Self = Self(libc::AF_INET_OFFLOAD);
+    /// Represents `AF_INET_SDP`.
+    #[cfg(target_os = "freebsd")]
+    pub const INET_SDP: Self = Self(libc::AF_INET_SDP);
+    /// Represents `AF_IPX`.
+    #[cfg(any(
+        apple_targets,
+        freebsdlike,
+        linux_android,
+        netbsdlike,
+        solarish,
+        target_os = "fuchsia",
+        target_os = "haiku",
+    ))]
+    pub const IPX: Self = Self(libc::AF_IPX);
+    /// Represents `AF_IRDA`.
+    #[cfg(any(linux_android, target_os = "fuchsia"))]
+    pub const IRDA: Self = Self(libc::AF_IRDA);
+    /// Represents `AF_ISDN`.
+    #[cfg(any(
+        apple_targets,
+        freebsdlike,
+        linux_android,
+        netbsdlike,
+        target_os = "fuchsia",
+    ))]
+    pub const ISDN: Self = Self(libc::AF_ISDN);
+    /// Represents `AF_ISO`.
+    #[cfg(any(apple_targets, freebsdlike, netbsdlike))]
+    pub const ISO: Self = Self(libc::AF_ISO);
+    /// Represents `AF_IUCV`.
+    #[cfg(any(linux_android, target_os = "fuchsia"))]
+    pub const IUCV: Self = Self(libc::AF_IUCV);
+    /// Represents `AF_KEY`.
+    #[cfg(any(
+        linux_android,
+        solarish,
+        target_os = "fuchsia",
+        target_os = "openbsd",
+    ))]
+    pub const KEY: Self = Self(libc::AF_KEY);
+    /// Represents `AF_LAT`.
+    #[cfg(any(apple_targets, freebsdlike, netbsdlike, solarish))]
+    pub const LAT: Self = Self(libc::AF_LAT);
+    /// Represents `AF_LINK`.
+    #[cfg(any(
+        apple_targets,
+        freebsdlike,
+        netbsdlike,
+        solarish,
+        target_os = "haiku",
+    ))]
+    pub const LINK: Self = Self(libc::AF_LINK);
+    /// Represents `AF_LLC`.
+    #[cfg(any(linux_android, target_os = "fuchsia"))]
+    pub const LLC: Self = Self(libc::AF_LLC);
+    /// Represents `AF_LOCAL`.
+    #[cfg(any(
+        apple_targets,
+        freebsdlike,
+        linux_android,
+        netbsdlike,
+        target_os = "fuchsia",
+        target_os = "haiku",
+        target_os = "illumos",
+        target_os = "solaris",
+    ))]
+    pub const LOCAL: Self = Self(libc::AF_LOCAL);
+    /// Represents `AF_MPLS`.
+    #[cfg(all(
+        any(
+            target_os = "dragonfly",
+            target_os = "linux",
+            target_os = "netbsd",
+            target_os = "openbsd",
+        ),
+        not(target_env = "uclibc"),
+    ))]
+    pub const MPLS: Self = Self(libc::AF_MPLS);
+    /// Represents `AF_NATM`.
+    #[cfg(any(apple_targets, freebsdlike, netbsdlike))]
+    pub const NATM: Self = Self(libc::AF_NATM);
+    /// Represents `AF_NBS`.
+    #[cfg(solarish)]
+    pub const NBS: Self = Self(libc::AF_NBS);
+    /// Represents `AF_NCA`.
+    #[cfg(solarish)]
+    pub const NCA: Self = Self(libc::AF_NCA);
+    /// Represents `AF_NDRV`.
+    #[cfg(apple_targets)]
+    pub const NDRV: Self = Self(libc::AF_NDRV);
+    /// Represents `AF_NETBEUI`.
+    #[cfg(any(linux_android, target_os = "fuchsia"))]
+    pub const NETBEUI: Self = Self(libc::AF_NETBEUI);
+    /// Represents `AF_NETBIOS`.
+    #[cfg(any(apple_targets, freebsdlike))]
+    pub const NETBIOS: Self = Self(libc::AF_NETBIOS);
+    /// Represents `AF_NETGRAPH`.
+    #[cfg(freebsdlike)]
+    pub const NETGRAPH: Self = Self(libc::AF_NETGRAPH);
+    /// Represents `AF_NETLINK`.
+    #[cfg(any(linux_android, target_os = "fuchsia"))]
+    pub const NETLINK: Self = Self(libc::AF_NETLINK);
+    /// Represents `AF_NETROM`.
+    #[cfg(any(linux_android, target_os = "fuchsia"))]
+    pub const NETROM: Self = Self(libc::AF_NETROM);
+    /// Represents `AF_NFC`.
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    pub const NFC: Self = Self(libc::AF_NFC);
+    /// Represents `AF_NIT`.
+    #[cfg(solarish)]
+    pub const NIT: Self = Self(libc::AF_NIT);
+    /// Represents `AF_NOTIFY`.
+    #[cfg(target_os = "haiku")]
+    pub const NOTIFY: Self = Self(libc::AF_NOTIFY);
+    /// Represents `AF_NS`.
+    #[cfg(any(apple_targets, netbsdlike, solarish))]
+    pub const NS: Self = Self(libc::AF_NS);
+    /// Represents `AF_OROUTE`.
+    #[cfg(target_os = "netbsd")]
+    pub const OROUTE: Self = Self(libc::AF_OROUTE);
+    /// Represents `AF_OSI`.
+    #[cfg(any(apple_targets, freebsdlike, netbsdlike, solarish))]
+    pub const OSI: Self = Self(libc::AF_OSI);
+    /// Represents `AF_OSINET`.
+    #[cfg(solarish)]
+    pub const OSINET: Self = Self(libc::AF_OSINET);
+    /// Represents `AF_PACKET`.
+    #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
+    pub const PACKET: Self = Self(libc::AF_PACKET);
+    /// Represents `AF_PHONET`.
+    #[cfg(any(linux_android, target_os = "fuchsia"))]
+    pub const PHONET: Self = Self(libc::AF_PHONET);
+    /// Represents `AF_POLICY`.
+    #[cfg(solarish)]
+    pub const POLICY: Self = Self(libc::AF_POLICY);
+    /// Represents `AF_PPP`.
+    #[cfg(apple_targets)]
+    pub const PPP: Self = Self(libc::AF_PPP);
+    /// Represents `AF_PPPOX`.
+    #[cfg(any(linux_android, target_os = "fuchsia"))]
+    pub const PPPOX: Self = Self(libc::AF_PPPOX);
+    /// Represents `AF_PUP`.
+    #[cfg(any(apple_targets, freebsdlike, netbsdlike, solarish))]
+    pub const PUP: Self = Self(libc::AF_PUP);
+    /// Represents `AF_RDS`.
+    #[cfg(any(linux_android, target_os = "fuchsia"))]
+    pub const RDS: Self = Self(libc::AF_RDS);
+    /// Represents `AF_ROSE`.
+    #[cfg(any(linux_android, target_os = "fuchsia"))]
+    pub const ROSE: Self = Self(libc::AF_ROSE);
+    /// Represents `AF_ROUTE`.
+    #[cfg(any(
+        apple_targets,
+        freebsdlike,
+        linux_android,
+        solarish,
+        target_os = "fuchsia",
+        target_os = "haiku",
+        target_os = "netbsd",
+        target_os = "openbsd",
+    ))]
+    pub const ROUTE: Self = Self(libc::AF_ROUTE);
+    /// Represents `AF_RXRPC`.
+    #[cfg(any(linux_android, target_os = "fuchsia"))]
+    pub const RXRPC: Self = Self(libc::AF_RXRPC);
+    /// Represents `AF_SCLUSTER`.
+    #[cfg(target_os = "freebsd")]
+    pub const SCLUSTER: Self = Self(libc::AF_SCLUSTER);
+    /// Represents `AF_SECURITY`.
+    #[cfg(any(linux_android, target_os = "fuchsia"))]
+    pub const SECURITY: Self = Self(libc::AF_SECURITY);
+    /// Represents `AF_SIP`.
+    #[cfg(any(apple_targets, freebsdlike, target_os = "openbsd"))]
+    pub const SIP: Self = Self(libc::AF_SIP);
+    /// Represents `AF_SLOW`.
+    #[cfg(target_os = "freebsd")]
+    pub const SLOW: Self = Self(libc::AF_SLOW);
+    /// Represents `AF_SNA`.
+    #[cfg(any(
+        apple_targets,
+        freebsdlike,
+        linux_android,
+        netbsdlike,
+        solarish,
+        target_os = "fuchsia",
+    ))]
+    pub const SNA: Self = Self(libc::AF_SNA);
+    /// Represents `AF_SYSTEM`.
+    #[cfg(apple_targets)]
+    pub const SYSTEM: Self = Self(libc::AF_SYSTEM);
+    /// Represents `AF_SYS_CONTROL`.
+    #[cfg(apple_targets)]
+    pub const SYS_CONTROL: Self = Self(libc::AF_SYS_CONTROL);
+    /// Represents `AF_TIPC`.
+    #[cfg(any(linux_android, target_os = "fuchsia"))]
+    pub const TIPC: Self = Self(libc::AF_TIPC);
+    /// Represents `AF_TRILL`.
+    #[cfg(solarish)]
+    pub const TRILL: Self = Self(libc::AF_TRILL);
+    /// Represents `AF_UNIX`.
+    #[cfg(any(
+        apple_targets,
+        freebsdlike,
+        linux_android,
+        netbsdlike,
+        solarish,
+        target_os = "fuchsia",
+        target_os = "haiku",
+        target_os = "redox",
+    ))]
+    pub const UNIX: Self = Self(libc::AF_UNIX);
+    /// Represents `AF_UNSPEC`.
+    #[cfg(any(
+        apple_targets,
+        freebsdlike,
+        linux_android,
+        netbsdlike,
+        solarish,
+        target_os = "fuchsia",
+        target_os = "haiku",
+        target_os = "redox",
+    ))]
+    pub const UNSPEC: Self = Self(libc::AF_UNSPEC);
+    /// Represents `AF_UTUN`.
+    #[cfg(apple_targets)]
+    pub const UTUN: Self = Self(libc::AF_UTUN);
+    /// Represents `AF_VSOCK`.
+    #[cfg(any(apple_targets, target_os = "android", target_os = "linux"))]
+    pub const VSOCK: Self = Self(libc::AF_VSOCK);
+    /// Represents `AF_WANPIPE`.
+    #[cfg(any(linux_android, target_os = "fuchsia"))]
+    pub const WANPIPE: Self = Self(libc::AF_WANPIPE);
+    /// Represents `AF_X25`.
+    #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
+    pub const X25: Self = Self(libc::AF_X25);
+    /// Represents `AF_XDP`.
+    #[cfg(all(target_os = "linux", not(target_env = "uclibc")))]
+    pub const XDP: Self = Self(libc::AF_XDP);
 }
 
 /// A wrapper around `sockaddr_un`.
@@ -351,7 +552,7 @@ impl UnixAddr {
     pub fn new<P: ?Sized + NixPath>(path: &P) -> Result<UnixAddr> {
         path.with_nix_path(|cstr| unsafe {
             let mut ret = libc::sockaddr_un {
-                sun_family: AddressFamily::Unix as sa_family_t,
+                sun_family: AddressFamily::UNIX.family() as sa_family_t,
                 ..mem::zeroed()
             };
 
@@ -391,7 +592,7 @@ impl UnixAddr {
     pub fn new_abstract(path: &[u8]) -> Result<UnixAddr> {
         unsafe {
             let mut ret = libc::sockaddr_un {
-                sun_family: AddressFamily::Unix as sa_family_t,
+                sun_family: AddressFamily::UNIX.family() as sa_family_t,
                 ..mem::zeroed()
             };
 
@@ -419,7 +620,7 @@ impl UnixAddr {
     #[cfg(linux_android)]
     pub fn new_unnamed() -> UnixAddr {
         let ret = libc::sockaddr_un {
-            sun_family: AddressFamily::Unix as sa_family_t,
+            sun_family: AddressFamily::UNIX.family() as sa_family_t,
             ..unsafe { mem::zeroed() }
         };
 
@@ -681,21 +882,18 @@ pub trait SockaddrLike: private::SockaddrLikePriv {
     /// ```
     /// # use nix::sys::socket::*;
     /// # use std::os::unix::io::AsRawFd;
-    /// let fd = socket(AddressFamily::Inet, SockType::Stream,
+    /// let fd = socket(AddressFamily::INET, SockType::Stream,
     ///     SockFlag::empty(), None).unwrap();
     /// let ss: SockaddrStorage = getsockname(fd.as_raw_fd()).unwrap();
-    /// match ss.family().unwrap() {
-    ///     AddressFamily::Inet => println!("{}", ss.as_sockaddr_in().unwrap()),
-    ///     AddressFamily::Inet6 => println!("{}", ss.as_sockaddr_in6().unwrap()),
+    /// match ss.family() {
+    ///     AddressFamily::INET => println!("{}", ss.as_sockaddr_in().unwrap()),
+    ///     AddressFamily::INET6 => println!("{}", ss.as_sockaddr_in6().unwrap()),
     ///     _ => println!("Unexpected address family")
     /// }
     /// ```
-    fn family(&self) -> Option<AddressFamily> {
-        // Safe since all implementors have a sa_family field at the same
-        // address, and they're all repr(C)
-        AddressFamily::from_i32(unsafe {
-            (*(self as *const Self as *const libc::sockaddr)).sa_family as i32
-        })
+    fn family(&self) -> AddressFamily {
+        // SAFETY: `&self` must be castable to a `libc::sockaddr` pointer by contract.
+        AddressFamily::of(unsafe { &*self.as_ptr() })
     }
 
     cfg_if! {
@@ -790,8 +988,8 @@ impl SockaddrLike for () {
         None
     }
 
-    fn family(&self) -> Option<AddressFamily> {
-        None
+    fn family(&self) -> AddressFamily {
+        AddressFamily::UNSPEC
     }
 
     fn len(&self) -> libc::socklen_t {
@@ -820,7 +1018,7 @@ impl SockaddrIn {
         Self(libc::sockaddr_in {
             #[cfg(any(bsd, target_os = "aix", target_os = "haiku"))]
             sin_len: Self::size() as u8,
-            sin_family: AddressFamily::Inet as sa_family_t,
+            sin_family: AddressFamily::INET.family() as sa_family_t,
             sin_port: u16::to_be(port),
             sin_addr: libc::in_addr {
                 s_addr: u32::from_ne_bytes([a, b, c, d]),
@@ -889,7 +1087,7 @@ impl From<net::SocketAddrV4> for SockaddrIn {
         Self(libc::sockaddr_in {
             #[cfg(any(bsd, target_os = "haiku", target_os = "hermit"))]
             sin_len: mem::size_of::<libc::sockaddr_in>() as u8,
-            sin_family: AddressFamily::Inet as sa_family_t,
+            sin_family: AddressFamily::INET.family() as sa_family_t,
             sin_port: addr.port().to_be(), // network byte order
             sin_addr: ipv4addr_to_libc(*addr.ip()),
             ..unsafe { mem::zeroed() }
@@ -1009,7 +1207,7 @@ impl From<net::SocketAddrV6> for SockaddrIn6 {
         Self(libc::sockaddr_in6 {
             #[cfg(any(bsd, target_os = "haiku", target_os = "hermit"))]
             sin6_len: mem::size_of::<libc::sockaddr_in6>() as u8,
-            sin6_family: AddressFamily::Inet6 as sa_family_t,
+            sin6_family: AddressFamily::INET6.family() as sa_family_t,
             sin6_port: addr.port().to_be(), // network byte order
             sin6_addr: ipv6addr_to_libc(addr.ip()),
             sin6_flowinfo: addr.flowinfo(), // host byte order
@@ -1053,7 +1251,7 @@ impl std::str::FromStr for SockaddrIn6 {
 /// # use std::str::FromStr;
 /// # use std::os::unix::io::AsRawFd;
 /// let localhost = SockaddrIn::from_str("127.0.0.1:8081").unwrap();
-/// let fd = socket(AddressFamily::Inet, SockType::Stream, SockFlag::empty(),
+/// let fd = socket(AddressFamily::INET, SockType::Stream, SockFlag::empty(),
 ///     None).unwrap();
 /// bind(fd.as_raw_fd(), &localhost).expect("bind");
 /// let ss: SockaddrStorage = getsockname(fd.as_raw_fd()).expect("getsockname");
@@ -1194,7 +1392,7 @@ macro_rules! accessors {
         $field:ident) => {
         /// Safely and falliably downcast to an immutable reference
         pub fn $fname(&self) -> Option<&$sockty> {
-            if self.family() == Some($family)
+            if self.family() == $family
                 && self.len() >= mem::size_of::<$libc_ty>() as libc::socklen_t
             {
                 // Safe because family and len are validated
@@ -1206,7 +1404,7 @@ macro_rules! accessors {
 
         /// Safely and falliably downcast to a mutable reference
         pub fn $fname_mut(&mut self) -> Option<&mut $sockty> {
-            if self.family() == Some($family)
+            if self.family() == $family
                 && self.len() >= mem::size_of::<$libc_ty>() as libc::socklen_t
             {
                 // Safe because family and len are validated
@@ -1238,7 +1436,7 @@ impl SockaddrStorage {
             }
         }
         // Sanity checks
-        if self.family() != Some(AddressFamily::Unix)
+        if self.family() != AddressFamily::UNIX
             || len < offset_of!(libc::sockaddr_un, sun_path)
             || len > mem::size_of::<libc::sockaddr_un>()
         {
@@ -1267,7 +1465,7 @@ impl SockaddrStorage {
             }
         }
         // Sanity checks
-        if self.family() != Some(AddressFamily::Unix)
+        if self.family() != AddressFamily::UNIX
             || len < offset_of!(libc::sockaddr_un, sun_path)
             || len > mem::size_of::<libc::sockaddr_un>()
         {
@@ -1279,42 +1477,42 @@ impl SockaddrStorage {
 
     #[cfg(linux_android)]
     accessors! {as_alg_addr, as_alg_addr_mut, AlgAddr,
-    AddressFamily::Alg, libc::sockaddr_alg, alg}
+    AddressFamily::ALG, libc::sockaddr_alg, alg}
 
     #[cfg(any(linux_android, target_os = "fuchsia"))]
     #[cfg(feature = "net")]
     accessors! {
     as_link_addr, as_link_addr_mut, LinkAddr,
-    AddressFamily::Packet, libc::sockaddr_ll, dl}
+    AddressFamily::PACKET, libc::sockaddr_ll, dl}
 
     #[cfg(any(bsd, target_os = "illumos"))]
     #[cfg(feature = "net")]
     accessors! {
     as_link_addr, as_link_addr_mut, LinkAddr,
-    AddressFamily::Link, libc::sockaddr_dl, dl}
+    AddressFamily::LINK, libc::sockaddr_dl, dl}
 
     #[cfg(feature = "net")]
     accessors! {
     as_sockaddr_in, as_sockaddr_in_mut, SockaddrIn,
-    AddressFamily::Inet, libc::sockaddr_in, sin}
+    AddressFamily::INET, libc::sockaddr_in, sin}
 
     #[cfg(feature = "net")]
     accessors! {
     as_sockaddr_in6, as_sockaddr_in6_mut, SockaddrIn6,
-    AddressFamily::Inet6, libc::sockaddr_in6, sin6}
+    AddressFamily::INET6, libc::sockaddr_in6, sin6}
 
     #[cfg(linux_android)]
     accessors! {as_netlink_addr, as_netlink_addr_mut, NetlinkAddr,
-    AddressFamily::Netlink, libc::sockaddr_nl, nl}
+    AddressFamily::NETLINK, libc::sockaddr_nl, nl}
 
     #[cfg(all(feature = "ioctl", apple_targets))]
     #[cfg_attr(docsrs, doc(cfg(feature = "ioctl")))]
     accessors! {as_sys_control_addr, as_sys_control_addr_mut, SysControlAddr,
-    AddressFamily::System, libc::sockaddr_ctl, sctl}
+    AddressFamily::SYSTEM, libc::sockaddr_ctl, sctl}
 
     #[cfg(any(linux_android, target_os = "macos"))]
     accessors! {as_vsock_addr, as_vsock_addr_mut, VsockAddr,
-    AddressFamily::Vsock, libc::sockaddr_vm, vsock}
+    AddressFamily::VSOCK, libc::sockaddr_vm, vsock}
 }
 
 impl fmt::Debug for SockaddrStorage {
@@ -1486,7 +1684,7 @@ pub mod netlink {
         /// mask.
         pub fn new(pid: u32, groups: u32) -> NetlinkAddr {
             let mut addr: sockaddr_nl = unsafe { mem::zeroed() };
-            addr.nl_family = AddressFamily::Netlink as sa_family_t;
+            addr.nl_family = AddressFamily::NETLINK.family() as sa_family_t;
             addr.nl_pid = pid;
             addr.nl_groups = groups;
 
@@ -1721,7 +1919,7 @@ pub mod sys_control {
         pub const fn new(id: u32, unit: u32) -> SysControlAddr {
             let addr = libc::sockaddr_ctl {
                 sc_len: mem::size_of::<libc::sockaddr_ctl>() as c_uchar,
-                sc_family: AddressFamily::System as c_uchar,
+                sc_family: AddressFamily::SYSTEM.family() as c_uchar,
                 ss_sysaddr: libc::AF_SYS_CONTROL as u16,
                 sc_id: id,
                 sc_unit: unit,
@@ -2069,7 +2267,7 @@ pub mod vsock {
         /// Construct a `VsockAddr` from its raw fields.
         pub fn new(cid: u32, port: u32) -> VsockAddr {
             let mut addr: sockaddr_vm = unsafe { mem::zeroed() };
-            addr.svm_family = AddressFamily::Vsock as sa_family_t;
+            addr.svm_family = AddressFamily::VSOCK.family() as sa_family_t;
             addr.svm_cid = cid;
             addr.svm_port = port;
 
@@ -2173,7 +2371,7 @@ mod tests {
             let len = None;
             let sock_addr =
                 unsafe { SockaddrStorage::from_raw(sa, len) }.unwrap();
-            assert_eq!(sock_addr.family(), Some(AddressFamily::Packet));
+            assert_eq!(sock_addr.family(), AddressFamily::PACKET);
             match sock_addr.as_link_addr() {
                 Some(dl) => assert_eq!(dl.addr(), Some([1, 2, 3, 4, 5, 6])),
                 None => panic!("Can't unwrap sockaddr storage"),
@@ -2189,7 +2387,7 @@ mod tests {
             let len = Some(bytes.len() as socklen_t);
             let sock_addr =
                 unsafe { SockaddrStorage::from_raw(sa, len) }.unwrap();
-            assert_eq!(sock_addr.family(), Some(AddressFamily::Link));
+            assert_eq!(sock_addr.family(), AddressFamily::LINK);
             match sock_addr.as_link_addr() {
                 Some(dl) => {
                     assert!(dl.addr().is_none());
@@ -2211,7 +2409,7 @@ mod tests {
 
             let sock_addr =
                 unsafe { SockaddrStorage::from_raw(sa, len).unwrap() };
-            assert_eq!(sock_addr.family(), Some(AddressFamily::Link));
+            assert_eq!(sock_addr.family(), AddressFamily::LINK);
             match sock_addr.as_link_addr() {
                 Some(dl) => {
                     assert_eq!(dl.addr(), Some([24u8, 101, 144, 221, 76, 176]))
@@ -2233,7 +2431,7 @@ mod tests {
 
             let sock_addr = _sock_addr.unwrap();
 
-            assert_eq!(sock_addr.family().unwrap(), AddressFamily::Link);
+            assert_eq!(sock_addr.family(), AddressFamily::LINK);
 
             assert_eq!(
                 sock_addr.as_link_addr().unwrap().addr(),

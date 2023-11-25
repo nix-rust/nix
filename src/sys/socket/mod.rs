@@ -689,7 +689,7 @@ pub enum ControlMessageOwned {
     /// // Set up
     /// let message = "Ohayō!".as_bytes();
     /// let in_socket = socket(
-    ///     AddressFamily::Inet,
+    ///     AddressFamily::INET,
     ///     SockType::Datagram,
     ///     SockFlag::empty(),
     ///     None).unwrap();
@@ -1458,7 +1458,7 @@ impl<'a> ControlMessage<'a> {
 /// # use nix::unistd::pipe;
 /// # use std::io::IoSlice;
 /// # use std::os::unix::io::AsRawFd;
-/// let (fd1, fd2) = socketpair(AddressFamily::Unix, SockType::Stream, None,
+/// let (fd1, fd2) = socketpair(AddressFamily::UNIX, SockType::Stream, None,
 ///     SockFlag::empty())
 ///     .unwrap();
 /// let (r, w) = pipe().unwrap();
@@ -1476,7 +1476,7 @@ impl<'a> ControlMessage<'a> {
 /// # use std::str::FromStr;
 /// # use std::os::unix::io::AsRawFd;
 /// let localhost = SockaddrIn::from_str("1.2.3.4:8080").unwrap();
-/// let fd = socket(AddressFamily::Inet, SockType::Datagram, SockFlag::empty(),
+/// let fd = socket(AddressFamily::INET, SockType::Datagram, SockFlag::empty(),
 ///     None).unwrap();
 /// let (r, w) = pipe().unwrap();
 ///
@@ -1827,14 +1827,14 @@ mod test {
         let sock_addr = SockaddrIn::from_str("127.0.0.1:6790").unwrap();
 
         let ssock = socket(
-            AddressFamily::Inet,
+            AddressFamily::INET,
             SockType::Datagram,
             SockFlag::empty(),
             None,
         )?;
 
         let rsock = socket(
-            AddressFamily::Inet,
+            AddressFamily::INET,
             SockType::Datagram,
             SockFlag::SOCK_NONBLOCK,
             None,
@@ -2100,7 +2100,7 @@ pub fn socket<T: Into<Option<SockProtocol>>>(
     let mut ty = ty as c_int;
     ty |= flags.bits();
 
-    let res = unsafe { libc::socket(domain as c_int, ty, protocol) };
+    let res = unsafe { libc::socket(domain.family(), ty, protocol) };
 
     match res {
         -1 => Err(Errno::last()),
@@ -2134,7 +2134,7 @@ pub fn socketpair<T: Into<Option<SockProtocol>>>(
     let mut fds = [-1, -1];
 
     let res = unsafe {
-        libc::socketpair(domain as c_int, ty, protocol, fds.as_mut_ptr())
+        libc::socketpair(domain.family(), ty, protocol, fds.as_mut_ptr())
     };
     Errno::result(res)?;
 
@@ -2408,7 +2408,7 @@ mod tests {
     #[test]
     fn can_open_routing_socket() {
         let _ = super::socket(
-            super::AddressFamily::Route,
+            super::AddressFamily::ROUTE,
             super::SockType::Raw,
             super::SockFlag::empty(),
             None,
