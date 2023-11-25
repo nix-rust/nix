@@ -68,7 +68,7 @@ unsafe fn ptrace_other(
             addr,
             data,
         ))
-            .map(|_| 0)
+        .map(|_| 0)
     }
 }
 

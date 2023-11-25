@@ -332,7 +332,8 @@ cfg_if! {
     } else if #[cfg(any(target_os = "dragonfly",
                         target_os = "freebsd",
                         target_os = "illumos",
-                        apple_targets,
+                        target_os = "ios",
+                        target_os = "macos",
                         target_os = "netbsd",
                         target_os = "openbsd",
                         target_os = "solaris"))] {
@@ -476,7 +477,12 @@ sockopt_impl!(
     libc::SO_KEEPALIVE,
     bool
 );
-#[cfg(any(target_os = "dragonfly", target_os = "freebsd", apple_targets))]
+#[cfg(any(
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "macos",
+    target_os = "ios"
+))]
 sockopt_impl!(
     /// Get the credentials of the peer process of a connected unix domain
     /// socket.
@@ -486,7 +492,7 @@ sockopt_impl!(
     libc::LOCAL_PEERCRED,
     super::XuCred
 );
-#[cfg(apple_targets)]
+#[cfg(any(target_os = "macos", target_os = "ios"))]
 sockopt_impl!(
     /// Get the PID of the peer process of a connected unix domain socket.
     LocalPeerPid,
@@ -504,7 +510,7 @@ sockopt_impl!(
     libc::SO_PEERCRED,
     super::UnixCredentials
 );
-#[cfg(apple_targets)]
+#[cfg(any(target_os = "ios", target_os = "macos"))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -832,8 +838,9 @@ sockopt_impl!(
 );
 #[cfg(any(
     target_os = "android",
-    apple_targets,
+    target_os = "ios",
     target_os = "linux",
+    target_os = "macos",
     target_os = "netbsd",
 ))]
 #[cfg(feature = "net")]
@@ -850,8 +857,9 @@ sockopt_impl!(
 #[cfg(any(
     target_os = "android",
     target_os = "freebsd",
-    apple_targets,
+    target_os = "ios",
     target_os = "linux",
+    target_os = "macos",
     target_os = "netbsd",
     target_os = "openbsd",
 ))]
@@ -868,7 +876,8 @@ sockopt_impl!(
 );
 #[cfg(any(
     target_os = "freebsd",
-    apple_targets,
+    target_os = "ios",
+    target_os = "macos",
     target_os = "netbsd",
     target_os = "openbsd",
 ))]
@@ -885,7 +894,8 @@ sockopt_impl!(
 );
 #[cfg(any(
     target_os = "freebsd",
-    apple_targets,
+    target_os = "ios",
+    target_os = "macos",
     target_os = "netbsd",
     target_os = "openbsd",
 ))]
@@ -1025,7 +1035,7 @@ sockopt_impl!(
     libc::IPV6_ORIGDSTADDR,
     bool
 );
-#[cfg(apple_targets)]
+#[cfg(any(target_os = "ios", target_os = "macos"))]
 sockopt_impl!(
     /// Set "don't fragment packet" flag on the IP packet.
     IpDontFrag,
@@ -1034,7 +1044,12 @@ sockopt_impl!(
     libc::IP_DONTFRAG,
     bool
 );
-#[cfg(any(target_os = "android", apple_targets, target_os = "linux",))]
+#[cfg(any(
+    target_os = "android",
+    target_os = "ios",
+    target_os = "linux",
+    target_os = "macos",
+))]
 sockopt_impl!(
     /// Set "don't fragment packet" flag on the IPv6 packet.
     Ipv6DontFrag,
@@ -1400,7 +1415,7 @@ mod test {
         use super::super::*;
 
         let (a, b) = socketpair(
-            AddressFamily::Unix,
+            AddressFamily::UNIX,
             SockType::Stream,
             None,
             SockFlag::empty(),
@@ -1417,7 +1432,7 @@ mod test {
         use super::super::*;
 
         let (a, _b) = socketpair(
-            AddressFamily::Unix,
+            AddressFamily::UNIX,
             SockType::Stream,
             None,
             SockFlag::empty(),
@@ -1432,7 +1447,7 @@ mod test {
         use super::super::*;
 
         let s = socket(
-            AddressFamily::Inet,
+            AddressFamily::INET,
             SockType::Datagram,
             SockFlag::empty(),
             None,
@@ -1448,7 +1463,7 @@ mod test {
         use super::super::*;
 
         let s = socket(
-            AddressFamily::Inet,
+            AddressFamily::INET,
             SockType::Stream,
             SockFlag::empty(),
             None,
