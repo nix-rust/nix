@@ -251,10 +251,7 @@ pub enum AddressFamily {
     #[cfg(bsd)]
     Hylink = libc::AF_HYLINK,
     /// Link layer interface
-    #[cfg(any(
-        bsd,
-        target_os = "illumos",
-    ))]
+    #[cfg(any(bsd, target_os = "illumos"))]
     Link = libc::AF_LINK,
     /// connection-oriented IP, aka ST II
     #[cfg(bsd)]
@@ -293,10 +290,7 @@ impl AddressFamily {
             libc::PF_ROUTE => Some(AddressFamily::Route),
             #[cfg(linux_android)]
             libc::AF_PACKET => Some(AddressFamily::Packet),
-            #[cfg(any(
-                bsd,
-                target_os = "illumos",
-            ))]
+            #[cfg(any(bsd, target_os = "illumos"))]
             libc::AF_LINK => Some(AddressFamily::Link),
             #[cfg(any(
                 target_os = "android",
@@ -863,11 +857,7 @@ impl SockaddrIn {
     /// Creates a new socket address from IPv4 octets and a port number.
     pub fn new(a: u8, b: u8, c: u8, d: u8, port: u16) -> Self {
         Self(libc::sockaddr_in {
-            #[cfg(any(
-                bsd,
-                target_os = "aix",
-                target_os = "haiku",
-            ))]
+            #[cfg(any(bsd, target_os = "aix", target_os = "haiku"))]
             sin_len: Self::size() as u8,
             sin_family: AddressFamily::Inet as sa_family_t,
             sin_port: u16::to_be(port),
@@ -936,11 +926,7 @@ impl fmt::Display for SockaddrIn {
 impl From<net::SocketAddrV4> for SockaddrIn {
     fn from(addr: net::SocketAddrV4) -> Self {
         Self(libc::sockaddr_in {
-            #[cfg(any(
-                bsd,
-                target_os = "haiku",
-                target_os = "hermit",
-            ))]
+            #[cfg(any(bsd, target_os = "haiku", target_os = "hermit"))]
             sin_len: mem::size_of::<libc::sockaddr_in>() as u8,
             sin_family: AddressFamily::Inet as sa_family_t,
             sin_port: addr.port().to_be(), // network byte order
@@ -1060,11 +1046,7 @@ impl From<net::SocketAddrV6> for SockaddrIn6 {
     fn from(addr: net::SocketAddrV6) -> Self {
         #[allow(clippy::needless_update)] // It isn't needless on Illumos
         Self(libc::sockaddr_in6 {
-            #[cfg(any(
-                bsd,
-                target_os = "haiku",
-                target_os = "hermit",
-            ))]
+            #[cfg(any(bsd, target_os = "haiku", target_os = "hermit"))]
             sin6_len: mem::size_of::<libc::sockaddr_in6>() as u8,
             sin6_family: AddressFamily::Inet6 as sa_family_t,
             sin6_port: addr.port().to_be(), // network byte order
@@ -1198,15 +1180,11 @@ impl SockaddrLike for SockaddrStorage {
                 libc::AF_INET6 => unsafe {
                     SockaddrIn6::from_raw(addr, l).map(|sin6| Self { sin6 })
                 },
-                #[cfg(any(
-                    bsd,
-                    target_os = "illumos",
-                    target_os = "haiku",
-                ))]
+                #[cfg(any(bsd, target_os = "illumos", target_os = "haiku"))]
                 #[cfg(feature = "net")]
                 libc::AF_LINK => unsafe {
                     LinkAddr::from_raw(addr, l).map(|dl| Self { dl })
-                }
+                },
                 #[cfg(linux_android)]
                 libc::AF_NETLINK => unsafe {
                     NetlinkAddr::from_raw(addr, l).map(|nl| Self { nl })
@@ -1219,12 +1197,16 @@ impl SockaddrLike for SockaddrStorage {
                 #[cfg(feature = "net")]
                 libc::AF_PACKET => unsafe {
                     LinkAddr::from_raw(addr, l).map(|dl| Self { dl })
-                }
+                },
                 #[cfg(all(feature = "ioctl", apple_targets))]
                 libc::AF_SYSTEM => unsafe {
                     SysControlAddr::from_raw(addr, l).map(|sctl| Self { sctl })
-                }
-                #[cfg(any(target_os = "android", target_os = "linux", target_os = "macos" ))]
+                },
+                #[cfg(any(
+                    target_os = "android",
+                    target_os = "linux",
+                    target_os = "macos",
+                ))]
                 libc::AF_VSOCK => unsafe {
                     VsockAddr::from_raw(addr, l).map(|vsock| Self { vsock })
                 },
@@ -1368,10 +1350,7 @@ impl SockaddrStorage {
     as_link_addr, as_link_addr_mut, LinkAddr,
     AddressFamily::Packet, libc::sockaddr_ll, dl}
 
-    #[cfg(any(
-        bsd,
-        target_os = "illumos",
-    ))]
+    #[cfg(any(bsd, target_os = "illumos"))]
     #[cfg(feature = "net")]
     accessors! {
     as_link_addr, as_link_addr_mut, LinkAddr,
@@ -1425,10 +1404,7 @@ impl fmt::Display for SockaddrStorage {
                 libc::AF_INET => self.sin.fmt(f),
                 #[cfg(feature = "net")]
                 libc::AF_INET6 => self.sin6.fmt(f),
-                #[cfg(any(
-                    bsd,
-                    target_os = "illumos",
-                ))]
+                #[cfg(any(bsd, target_os = "illumos"))]
                 #[cfg(feature = "net")]
                 libc::AF_LINK => self.dl.fmt(f),
                 #[cfg(linux_android)]
@@ -1498,10 +1474,7 @@ impl Hash for SockaddrStorage {
                 libc::AF_INET => self.sin.hash(s),
                 #[cfg(feature = "net")]
                 libc::AF_INET6 => self.sin6.hash(s),
-                #[cfg(any(
-                    bsd,
-                    target_os = "illumos",
-                ))]
+                #[cfg(any(bsd, target_os = "illumos"))]
                 #[cfg(feature = "net")]
                 libc::AF_LINK => self.dl.hash(s),
                 #[cfg(linux_android)]
@@ -1539,10 +1512,7 @@ impl PartialEq for SockaddrStorage {
                 (libc::AF_INET, libc::AF_INET) => self.sin == other.sin,
                 #[cfg(feature = "net")]
                 (libc::AF_INET6, libc::AF_INET6) => self.sin6 == other.sin6,
-                #[cfg(any(
-                    bsd,
-                    target_os = "illumos",
-                ))]
+                #[cfg(any(bsd, target_os = "illumos"))]
                 #[cfg(feature = "net")]
                 (libc::AF_LINK, libc::AF_LINK) => self.dl == other.dl,
                 #[cfg(linux_android)]
@@ -1980,12 +1950,7 @@ mod datalink {
     }
 }
 
-#[cfg(any(
-    bsd,
-    target_os = "illumos",
-    target_os = "haiku",
-    target_os = "aix",
-))]
+#[cfg(any(bsd, target_os = "illumos", target_os = "haiku", target_os = "aix"))]
 mod datalink {
     feature! {
     #![feature = "net"]

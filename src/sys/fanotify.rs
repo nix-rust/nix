@@ -10,12 +10,12 @@
 //! For more documentation, please read
 //! [fanotify(7)](https://man7.org/linux/man-pages/man7/fanotify.7.html).
 
-use crate::{NixPath, Result};
 use crate::errno::Errno;
-use crate::fcntl::{OFlag, at_rawfd};
+use crate::fcntl::{at_rawfd, OFlag};
 use crate::unistd::{close, read, write};
+use crate::{NixPath, Result};
 use std::marker::PhantomData;
-use std::mem::{MaybeUninit, size_of};
+use std::mem::{size_of, MaybeUninit};
 use std::os::unix::io::{AsFd, AsRawFd, BorrowedFd, FromRawFd, OwnedFd, RawFd};
 use std::ptr;
 
@@ -288,11 +288,16 @@ impl Fanotify {
     /// Returns a Result containing a Fanotify instance.
     ///
     /// For more information, see [fanotify_init(2)](https://man7.org/linux/man-pages/man7/fanotify_init.2.html).
-    pub fn init(flags: InitFlags, event_f_flags: EventFFlags) -> Result<Fanotify> {
+    pub fn init(
+        flags: InitFlags,
+        event_f_flags: EventFFlags,
+    ) -> Result<Fanotify> {
         let res = Errno::result(unsafe {
             libc::fanotify_init(flags.bits(), event_f_flags.bits())
         });
-        res.map(|fd| Fanotify { fd: unsafe { OwnedFd::from_raw_fd(fd) }})
+        res.map(|fd| Fanotify {
+            fd: unsafe { OwnedFd::from_raw_fd(fd) },
+        })
     }
 
     /// Add, remove, or modify an fanotify mark on a filesystem object.
@@ -386,22 +391,21 @@ impl Fanotify {
     /// available on a group that has been initialized with the flag
     /// `InitFlags::FAN_NONBLOCK`, thus making this method nonblocking.
     pub fn write_response(&self, response: FanotifyResponse) -> Result<()> {
-        write(
-            self.fd.as_fd(),
-            unsafe {
-                std::slice::from_raw_parts(
-                    (&response.inner as *const libc::fanotify_response).cast(),
-                    size_of::<libc::fanotify_response>(),
-                )
-            },
-        )?;
+        write(self.fd.as_fd(), unsafe {
+            std::slice::from_raw_parts(
+                (&response.inner as *const libc::fanotify_response).cast(),
+                size_of::<libc::fanotify_response>(),
+            )
+        })?;
         Ok(())
     }
 }
 
 impl FromRawFd for Fanotify {
     unsafe fn from_raw_fd(fd: RawFd) -> Self {
-        Fanotify { fd: unsafe { OwnedFd::from_raw_fd(fd) }}
+        Fanotify {
+            fd: unsafe { OwnedFd::from_raw_fd(fd) },
+        }
     }
 }
 
