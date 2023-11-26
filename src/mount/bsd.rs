@@ -62,8 +62,7 @@ libc_bitflags!(
         MNT_SNAPSHOT;
         /// Using soft updates.
         #[cfg(any(
-                target_os = "dragonfly",
-                target_os = "freebsd",
+                freebsdlike,
                 target_os = "netbsd",
                 target_os = "openbsd"
         ))]
