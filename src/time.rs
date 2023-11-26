@@ -1,11 +1,5 @@
 use crate::sys::time::TimeSpec;
-#[cfg(any(
-    target_os = "freebsd",
-    target_os = "dragonfly",
-    target_os = "linux",
-    target_os = "android",
-    target_os = "emscripten",
-))]
+#[cfg(any(freebsdlike, linux_android, target_os = "emscripten"))]
 #[cfg(feature = "process")]
 use crate::unistd::Pid;
 use crate::{Errno, Result};
@@ -29,10 +23,8 @@ impl ClockId {
     #![feature = "process"]
     /// Returns `ClockId` of a `pid` CPU-time clock
     #[cfg(any(
-        target_os = "freebsd",
-        target_os = "dragonfly",
-        target_os = "linux",
-        target_os = "android",
+        freebsdlike,
+        linux_android,
         target_os = "emscripten",
     ))]
     pub fn pid_cpu_clock_id(pid: Pid) -> Result<Self> {
@@ -62,28 +54,13 @@ impl ClockId {
         self.0
     }
 
-    #[cfg(any(
-        target_os = "android",
-        target_os = "emscripten",
-        target_os = "fuchsia",
-        target_os = "linux"
-    ))]
+    #[cfg(any(linux_android, target_os = "emscripten", target_os = "fuchsia"))]
     pub const CLOCK_BOOTTIME: ClockId = ClockId(libc::CLOCK_BOOTTIME);
-    #[cfg(any(
-        target_os = "android",
-        target_os = "emscripten",
-        target_os = "fuchsia",
-        target_os = "linux"
-    ))]
+    #[cfg(any(linux_android, target_os = "emscripten", target_os = "fuchsia"))]
     pub const CLOCK_BOOTTIME_ALARM: ClockId =
         ClockId(libc::CLOCK_BOOTTIME_ALARM);
     pub const CLOCK_MONOTONIC: ClockId = ClockId(libc::CLOCK_MONOTONIC);
-    #[cfg(any(
-        target_os = "android",
-        target_os = "emscripten",
-        target_os = "fuchsia",
-        target_os = "linux"
-    ))]
+    #[cfg(any(linux_android, target_os = "emscripten", target_os = "fuchsia"))]
     pub const CLOCK_MONOTONIC_COARSE: ClockId =
         ClockId(libc::CLOCK_MONOTONIC_COARSE);
     #[cfg(freebsdlike)]
@@ -92,42 +69,25 @@ impl ClockId {
     #[cfg(freebsdlike)]
     pub const CLOCK_MONOTONIC_PRECISE: ClockId =
         ClockId(libc::CLOCK_MONOTONIC_PRECISE);
-    #[cfg(any(
-        target_os = "android",
-        target_os = "emscripten",
-        target_os = "fuchsia",
-        target_os = "linux"
-    ))]
+    #[cfg(any(linux_android, target_os = "emscripten", target_os = "fuchsia"))]
     pub const CLOCK_MONOTONIC_RAW: ClockId = ClockId(libc::CLOCK_MONOTONIC_RAW);
     #[cfg(any(
-        target_os = "android",
+        linux_android,
+        apple_targets,
+        freebsdlike,
         target_os = "emscripten",
         target_os = "fuchsia",
-        apple_targets,
-        target_os = "freebsd",
-        target_os = "dragonfly",
         target_os = "redox",
-        target_os = "linux"
     ))]
     pub const CLOCK_PROCESS_CPUTIME_ID: ClockId =
         ClockId(libc::CLOCK_PROCESS_CPUTIME_ID);
     #[cfg(freebsdlike)]
     pub const CLOCK_PROF: ClockId = ClockId(libc::CLOCK_PROF);
     pub const CLOCK_REALTIME: ClockId = ClockId(libc::CLOCK_REALTIME);
-    #[cfg(any(
-        target_os = "android",
-        target_os = "emscripten",
-        target_os = "fuchsia",
-        target_os = "linux"
-    ))]
+    #[cfg(any(linux_android, target_os = "emscripten", target_os = "fuchsia"))]
     pub const CLOCK_REALTIME_ALARM: ClockId =
         ClockId(libc::CLOCK_REALTIME_ALARM);
-    #[cfg(any(
-        target_os = "android",
-        target_os = "emscripten",
-        target_os = "fuchsia",
-        target_os = "linux"
-    ))]
+    #[cfg(any(linux_android, target_os = "emscripten", target_os = "fuchsia"))]
     pub const CLOCK_REALTIME_COARSE: ClockId =
         ClockId(libc::CLOCK_REALTIME_COARSE);
     #[cfg(freebsdlike)]
@@ -143,21 +103,14 @@ impl ClockId {
         all(target_os = "linux", target_env = "musl")
     ))]
     pub const CLOCK_SGI_CYCLE: ClockId = ClockId(libc::CLOCK_SGI_CYCLE);
-    #[cfg(any(
-        target_os = "android",
-        target_os = "emscripten",
-        target_os = "fuchsia",
-        target_os = "linux"
-    ))]
+    #[cfg(any(linux_android, target_os = "emscripten", target_os = "fuchsia"))]
     pub const CLOCK_TAI: ClockId = ClockId(libc::CLOCK_TAI);
     #[cfg(any(
-        target_os = "android",
+        linux_android,
+        apple_targets,
+        freebsdlike,
         target_os = "emscripten",
         target_os = "fuchsia",
-        apple_targets,
-        target_os = "freebsd",
-        target_os = "dragonfly",
-        target_os = "linux"
     ))]
     pub const CLOCK_THREAD_CPUTIME_ID: ClockId =
         ClockId(libc::CLOCK_THREAD_CPUTIME_ID);
@@ -224,13 +177,7 @@ pub fn clock_settime(clock_id: ClockId, timespec: TimeSpec) -> Result<()> {
 
 /// Get the clock id of the specified process id, (see
 /// [clock_getcpuclockid(3)](https://pubs.opengroup.org/onlinepubs/009695399/functions/clock_getcpuclockid.html)).
-#[cfg(any(
-    target_os = "freebsd",
-    target_os = "dragonfly",
-    target_os = "linux",
-    target_os = "android",
-    target_os = "emscripten",
-))]
+#[cfg(any(freebsdlike, linux_android, target_os = "emscripten"))]
 #[cfg(feature = "process")]
 #[cfg_attr(docsrs, doc(cfg(feature = "process")))]
 pub fn clock_getcpuclockid(pid: Pid) -> Result<ClockId> {
