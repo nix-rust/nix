@@ -22,11 +22,7 @@ impl ClockId {
     feature! {
     #![feature = "process"]
     /// Returns `ClockId` of a `pid` CPU-time clock
-    #[cfg(any(
-        freebsdlike,
-        linux_android,
-        target_os = "emscripten",
-    ))]
+    #[cfg(any(freebsdlike, linux_android, target_os = "emscripten"))]
     pub fn pid_cpu_clock_id(pid: Pid) -> Result<Self> {
         clock_getcpuclockid(pid)
     }

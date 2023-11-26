@@ -22,11 +22,7 @@ use std::os::unix::io::RawFd;
     all(target_os = "freebsd", target_arch = "x86_64"),
 ))]
 use std::path::PathBuf;
-#[cfg(any(
-    target_os = "android",
-    target_os = "freebsd",
-    target_os = "linux"
-))]
+#[cfg(any(linux_android, target_os = "freebsd"))]
 use std::{
     os::unix::io::{AsFd, AsRawFd},
     ptr,
@@ -36,8 +32,7 @@ use std::{
 use crate::{sys::stat::Mode, NixPath, Result};
 
 #[cfg(any(
-    target_os = "linux",
-    target_os = "android",
+    linux_android,
     target_os = "emscripten",
     target_os = "fuchsia",
     target_os = "wasi",
@@ -81,10 +76,11 @@ libc_bitflags!(
         /// Open the file in append-only mode.
         O_APPEND;
         /// Generate a signal when input or output becomes possible.
-        #[cfg(not(any(target_os = "aix",
-                      target_os = "illumos",
-                      target_os = "solaris",
-                      target_os = "haiku")))]
+        #[cfg(not(any(
+            solarish,
+            target_os = "aix",
+            target_os = "haiku"
+        )))]
         O_ASYNC;
         /// Closes the file descriptor once an `execve` call is made.
         ///
@@ -93,19 +89,18 @@ libc_bitflags!(
         /// Create the file if it does not exist.
         O_CREAT;
         /// Try to minimize cache effects of the I/O for this file.
-        #[cfg(any(target_os = "android",
-                  target_os = "dragonfly",
-                  target_os = "freebsd",
-                  target_os = "linux",
-                  target_os = "netbsd"))]
+        #[cfg(any(
+            freebsdlike,
+            linux_android,
+            target_os = "netbsd"
+        ))]
         O_DIRECT;
         /// If the specified path isn't a directory, fail.
         #[cfg(not(solarish))]
         O_DIRECTORY;
         /// Implicitly follow each `write()` with an `fdatasync()`.
-        #[cfg(any(target_os = "android",
+        #[cfg(any(linux_android,
                   apple_targets,
-                  target_os = "linux",
                   target_os = "netbsd",
                   target_os = "openbsd"))]
         O_DSYNC;
@@ -144,7 +139,7 @@ libc_bitflags!(
         /// Obtain a file descriptor for low-level access.
         ///
         /// The file itself is not opened and other file operations will fail.
-        #[cfg(any(target_os = "android", target_os = "linux", target_os = "redox"))]
+        #[cfg(any(linux_android, target_os = "redox"))]
         O_PATH;
         /// Only allow reading.
         ///
@@ -184,7 +179,7 @@ libc_bitflags!(
 /// Computes the raw fd consumed by a function of the form `*at`.
 #[cfg(any(
     all(feature = "fs", not(target_os = "redox")),
-    all(feature = "process", any(target_os = "android", target_os = "linux")),
+    all(feature = "process", linux_android),
     all(feature = "fanotify", target_os = "linux")
 ))]
 pub(crate) fn at_rawfd(fd: Option<RawFd>) -> raw::c_int {
@@ -346,8 +341,7 @@ fn inner_readlink<P: ?Sized + NixPath>(
                 )
             }
             #[cfg(not(any(
-                target_os = "android",
-                target_os = "linux",
+                linux_android,
                 target_os = "redox"
             )))]
             Some(dirfd) => super::sys::stat::fstatat(
@@ -406,7 +400,7 @@ pub fn readlinkat<P: ?Sized + NixPath>(
 }
 }
 
-#[cfg(any(target_os = "android", target_os = "linux", target_os = "freebsd"))]
+#[cfg(any(linux_android, target_os = "freebsd"))]
 #[cfg(feature = "fs")]
 libc_bitflags!(
     /// Additional flags for file sealing, which allows for limiting operations on a file.
@@ -460,14 +454,12 @@ pub enum FcntlArg<'a> {
     #[cfg(linux_android)]
     F_OFD_GETLK(&'a mut libc::flock),
     #[cfg(any(
-        target_os = "android",
-        target_os = "linux",
+        linux_android,
         target_os = "freebsd"
     ))]
     F_ADD_SEALS(SealFlag),
     #[cfg(any(
-        target_os = "android",
-        target_os = "linux",
+        linux_android,
         target_os = "freebsd"
     ))]
     F_GET_SEALS,
@@ -530,16 +522,14 @@ pub fn fcntl(fd: RawFd, arg: FcntlArg) -> Result<c_int> {
             #[cfg(linux_android)]
             F_OFD_GETLK(flock) => libc::fcntl(fd, libc::F_OFD_GETLK, flock),
             #[cfg(any(
-                target_os = "android",
-                target_os = "linux",
+                linux_android,
                 target_os = "freebsd"
             ))]
             F_ADD_SEALS(flag) => {
                 libc::fcntl(fd, libc::F_ADD_SEALS, flag.bits())
             }
             #[cfg(any(
-                target_os = "android",
-                target_os = "linux",
+                linux_android,
                 target_os = "freebsd"
             ))]
             F_GET_SEALS => libc::fcntl(fd, libc::F_GET_SEALS),
@@ -672,7 +662,7 @@ feature! {
 // Note: FreeBSD defines the offset argument as "off_t".  Linux and Android
 // define it as "loff_t".  But on both OSes, on all supported platforms, those
 // are 64 bits.  So Nix uses i64 to make the docs simple and consistent.
-#[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
+#[cfg(any(linux_android, target_os = "freebsd"))]
 pub fn copy_file_range<Fd1: AsFd, Fd2: AsFd>(
     fd_in: Fd1,
     off_in: Option<&mut i64>,
@@ -960,8 +950,7 @@ pub fn fspacectl_all(
 }
 
 #[cfg(any(
-    target_os = "linux",
-    target_os = "android",
+    linux_android,
     target_os = "emscripten",
     target_os = "fuchsia",
     target_os = "wasi",
@@ -1008,13 +997,11 @@ mod posix_fadvise {
 }
 
 #[cfg(any(
-    target_os = "linux",
-    target_os = "android",
-    target_os = "dragonfly",
+    linux_android,
+    freebsdlike,
     target_os = "emscripten",
     target_os = "fuchsia",
     target_os = "wasi",
-    target_os = "freebsd"
 ))]
 pub fn posix_fallocate(
     fd: RawFd,
