@@ -1,6 +1,6 @@
 use crate::errno::Errno;
-use crate::Result;
 pub use crate::poll_timeout::PollTimeout as EpollTimeout;
+use crate::Result;
 use libc::{self, c_int};
 use std::mem;
 use std::os::unix::io::{AsFd, AsRawFd, FromRawFd, OwnedFd, RawFd};
