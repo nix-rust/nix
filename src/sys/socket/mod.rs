@@ -38,20 +38,10 @@ pub use self::addr::{SockaddrLike, SockaddrStorage};
 pub use self::addr::{AddressFamily, UnixAddr};
 #[cfg(not(solarish))]
 pub use self::addr::{AddressFamily, UnixAddr};
-#[cfg(not(any(
-    target_os = "illumos",
-    target_os = "solaris",
-    target_os = "haiku",
-    target_os = "redox",
-)))]
+#[cfg(not(any(solarish, target_os = "haiku", target_os = "redox")))]
 #[cfg(feature = "net")]
 pub use self::addr::{LinkAddr, SockaddrIn, SockaddrIn6};
-#[cfg(any(
-    target_os = "illumos",
-    target_os = "solaris",
-    target_os = "haiku",
-    target_os = "redox",
-))]
+#[cfg(any(solarish, target_os = "haiku", target_os = "redox"))]
 #[cfg(feature = "net")]
 pub use self::addr::{SockaddrIn, SockaddrIn6};
 
@@ -62,11 +52,7 @@ pub use crate::sys::socket::addr::netlink::NetlinkAddr;
 #[cfg(apple_targets)]
 #[cfg(feature = "ioctl")]
 pub use crate::sys::socket::addr::sys_control::SysControlAddr;
-#[cfg(any(
-    target_os = "android",
-    target_os = "linux",
-    target_os = "macos"
-))]
+#[cfg(any(linux_android, target_os = "macos"))]
 pub use crate::sys::socket::addr::vsock::VsockAddr;
 
 #[cfg(all(feature = "uio", not(target_os = "redox")))]
@@ -267,20 +253,16 @@ libc_bitflags! {
     /// Additional socket options
     pub struct SockFlag: c_int {
         /// Set non-blocking mode on the new socket
-        #[cfg(any(target_os = "android",
-                  target_os = "dragonfly",
-                  target_os = "freebsd",
+        #[cfg(any(linux_android,
+                  freebsdlike,
                   target_os = "illumos",
-                  target_os = "linux",
                   target_os = "netbsd",
                   target_os = "openbsd"))]
         SOCK_NONBLOCK;
         /// Set close-on-exec on the new descriptor
-        #[cfg(any(target_os = "android",
-                  target_os = "dragonfly",
-                  target_os = "freebsd",
+        #[cfg(any(linux_android,
+                  freebsdlike,
                   target_os = "illumos",
-                  target_os = "linux",
                   target_os = "netbsd",
                   target_os = "openbsd"))]
         SOCK_CLOEXEC;
@@ -347,31 +329,25 @@ libc_bitflags! {
         /// [open(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/open.html).
         ///
         /// Only used in [`recvmsg`](fn.recvmsg.html) function.
-        #[cfg(any(target_os = "android",
-                  target_os = "dragonfly",
-                  target_os = "freebsd",
-                  target_os = "linux",
+        #[cfg(any(linux_android,
+                  freebsdlike,
                   target_os = "netbsd",
                   target_os = "openbsd"))]
         MSG_CMSG_CLOEXEC;
         /// Requests not to send `SIGPIPE` errors when the other end breaks the connection.
         /// (For more details, see [send(2)](https://linux.die.net/man/2/send)).
-        #[cfg(any(target_os = "android",
-                  target_os = "dragonfly",
-                  target_os = "freebsd",
+        #[cfg(any(linux_android,
+                  freebsdlike,
+                  solarish,
                   target_os = "fuchsia",
                   target_os = "haiku",
-                  target_os = "illumos",
-                  target_os = "linux",
                   target_os = "netbsd",
-                  target_os = "openbsd",
-                  target_os = "solaris"))]
+                  target_os = "openbsd"))]
         MSG_NOSIGNAL;
         /// Turns on [`MSG_DONTWAIT`] after the first message has been received (only for
         /// `recvmmsg()`).
-        #[cfg(any(target_os = "android",
+        #[cfg(any(linux_android,
                   target_os = "fuchsia",
-                  target_os = "linux",
                   target_os = "netbsd",
                   target_os = "freebsd",
                   target_os = "openbsd",
@@ -504,11 +480,7 @@ cfg_if! {
 }
 
 cfg_if! {
-    if #[cfg(any(
-                target_os = "dragonfly",
-                target_os = "freebsd",
-                apple_targets
-        ))] {
+    if #[cfg(any(freebsdlike, apple_targets))] {
         /// Return type of [`LocalPeerCred`](crate::sys::socket::sockopt::LocalPeerCred)
         #[repr(transparent)]
         #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -775,20 +747,11 @@ pub enum ControlMessageOwned {
     /// [Further reading](https://man.freebsd.org/cgi/man.cgi?setsockopt)
     #[cfg(target_os = "freebsd")]
     ScmMonotonic(TimeSpec),
-    #[cfg(any(
-        target_os = "android",
-        apple_targets,
-        target_os = "linux",
-        target_os = "netbsd",
-    ))]
+    #[cfg(any(linux_android, apple_targets, target_os = "netbsd"))]
     #[cfg(feature = "net")]
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv4PacketInfo(libc::in_pktinfo),
-    #[cfg(any(
-        target_os = "android",
-        bsd,
-        target_os = "linux",
-    ))]
+    #[cfg(any(linux_android, bsd))]
     #[cfg(feature = "net")]
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv6PacketInfo(libc::in6_pktinfo),
@@ -810,11 +773,11 @@ pub enum ControlMessageOwned {
     #[cfg(feature = "net")]
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv4RecvDstAddr(libc::in_addr),
-    #[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
+    #[cfg(any(linux_android, target_os = "freebsd"))]
     #[cfg(feature = "net")]
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv4OrigDstAddr(libc::sockaddr_in),
-    #[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
+    #[cfg(any(linux_android, target_os = "freebsd"))]
     #[cfg(feature = "net")]
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv6OrigDstAddr(libc::sockaddr_in6),
@@ -840,7 +803,7 @@ pub enum ControlMessageOwned {
     ///
     /// `RxqOvfl` socket option should be enabled on a socket
     /// to allow receiving the drop counter.
-    #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+    #[cfg(any(linux_android, target_os = "fuchsia"))]
     RxqOvfl(u32),
 
     /// Socket error queue control messages read with the `MSG_ERRQUEUE` flag.
@@ -973,23 +936,13 @@ impl ControlMessageOwned {
                 let timestamping = Timestamps { system, hw_trans, hw_raw };
                 ControlMessageOwned::ScmTimestampsns(timestamping)
             }
-            #[cfg(any(
-                target_os = "android",
-                target_os = "freebsd",
-                apple_targets,
-                target_os = "linux"
-            ))]
+            #[cfg(any(target_os = "freebsd", linux_android, apple_targets))]
             #[cfg(feature = "net")]
             (libc::IPPROTO_IPV6, libc::IPV6_PKTINFO) => {
                 let info = unsafe { ptr::read_unaligned(p as *const libc::in6_pktinfo) };
                 ControlMessageOwned::Ipv6PacketInfo(info)
             }
-            #[cfg(any(
-                target_os = "android",
-                apple_targets,
-                target_os = "linux",
-                target_os = "netbsd",
-            ))]
+            #[cfg(any(linux_android, apple_targets, target_os = "netbsd"))]
             #[cfg(feature = "net")]
             (libc::IPPROTO_IP, libc::IP_PKTINFO) => {
                 let info = unsafe { ptr::read_unaligned(p as *const libc::in_pktinfo) };
@@ -1017,7 +970,7 @@ impl ControlMessageOwned {
                 let dl = unsafe { ptr::read_unaligned(p as *const libc::in_addr) };
                 ControlMessageOwned::Ipv4RecvDstAddr(dl)
             },
-            #[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
+            #[cfg(any(linux_android, target_os = "freebsd"))]
             #[cfg(feature = "net")]
             (libc::IPPROTO_IP, libc::IP_ORIGDSTADDR) => {
                 let dl = unsafe { ptr::read_unaligned(p as *const libc::sockaddr_in) };
@@ -1029,7 +982,7 @@ impl ControlMessageOwned {
                 let gso_size: u16 = unsafe { ptr::read_unaligned(p as *const _) };
                 ControlMessageOwned::UdpGroSegments(gso_size)
             },
-            #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+            #[cfg(any(linux_android, target_os = "fuchsia"))]
             (libc::SOL_SOCKET, libc::SO_RXQ_OVFL) => {
                 let drop_counter = unsafe { ptr::read_unaligned(p as *const u32) };
                 ControlMessageOwned::RxqOvfl(drop_counter)
@@ -1046,7 +999,7 @@ impl ControlMessageOwned {
                 let (err, addr) = unsafe { Self::recv_err_helper::<sockaddr_in6>(p, len) };
                 ControlMessageOwned::Ipv6RecvErr(err, addr)
             },
-            #[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
+            #[cfg(any(linux_android, target_os = "freebsd"))]
             #[cfg(feature = "net")]
             (libc::IPPROTO_IPV6, libc::IPV6_ORIGDSTADDR) => {
                 let dl = unsafe { ptr::read_unaligned(p as *const libc::sockaddr_in6) };
@@ -1137,30 +1090,21 @@ pub enum ControlMessage<'a> {
     ///
     /// For further information, please refer to the
     /// [`documentation`](https://kernel.readthedocs.io/en/sphinx-samples/crypto-API.html)
-    #[cfg(any(
-        target_os = "android",
-        target_os = "linux",
-    ))]
+    #[cfg(linux_android)]
     AlgSetIv(&'a [u8]),
     /// Set crypto operation for `AF_ALG` crypto API. It may be one of
     /// `ALG_OP_ENCRYPT` or `ALG_OP_DECRYPT`
     ///
     /// For further information, please refer to the
     /// [`documentation`](https://kernel.readthedocs.io/en/sphinx-samples/crypto-API.html)
-    #[cfg(any(
-        target_os = "android",
-        target_os = "linux",
-    ))]
+    #[cfg(linux_android)]
     AlgSetOp(&'a libc::c_int),
     /// Set the length of associated authentication data (AAD) (applicable only to AEAD algorithms)
     /// for `AF_ALG` crypto API.
     ///
     /// For further information, please refer to the
     /// [`documentation`](https://kernel.readthedocs.io/en/sphinx-samples/crypto-API.html)
-    #[cfg(any(
-        target_os = "android",
-        target_os = "linux",
-    ))]
+    #[cfg(linux_android)]
     AlgSetAeadAssoclen(&'a u32),
 
     /// UDP GSO makes it possible for applications to generate network packets
@@ -1192,22 +1136,16 @@ pub enum ControlMessage<'a> {
     ///
     /// For further information, please refer to the
     /// [`ipv6(7)`](https://man7.org/linux/man-pages/man7/ipv6.7.html) man page.
-    #[cfg(any(target_os = "linux",
+    #[cfg(any(linux_android,
               target_os = "netbsd",
               target_os = "freebsd",
-              target_os = "android",
               apple_targets))]
     #[cfg(feature = "net")]
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv6PacketInfo(&'a libc::in6_pktinfo),
 
     /// Configure the IPv4 source address with `IP_SENDSRCADDR`.
-    #[cfg(any(
-        target_os = "netbsd",
-        target_os = "freebsd",
-        target_os = "openbsd",
-        target_os = "dragonfly",
-    ))]
+    #[cfg(any(freebsdlike, target_os = "netbsd", target_os = "openbsd"))]
     #[cfg(feature = "net")]
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv4SendSrcAddr(&'a libc::in_addr),
@@ -1220,9 +1158,7 @@ pub enum ControlMessage<'a> {
     /// with sendmsg have a hop limit of 1 and will not leave the local network.
     /// For further information, please refer to the
     /// [`ipv6(7)`](https://man7.org/linux/man-pages/man7/ipv6.7.html) man page.
-    #[cfg(any(target_os = "linux", target_os = "freebsd",
-              target_os = "dragonfly", target_os = "android",
-              apple_targets, target_os = "haiku"))]
+    #[cfg(any(linux_android, freebsdlike, apple_targets, target_os = "haiku"))]
     #[cfg(feature = "net")]
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv6HopLimit(&'a libc::c_int),
@@ -1232,7 +1168,7 @@ pub enum ControlMessage<'a> {
     /// skbs indicating the number of packets dropped by the
     /// socket between the last recieved packet and this
     /// received packet.
-    #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+    #[cfg(any(linux_android, target_os = "fuchsia"))]
     RxqOvfl(&'a u32),
 
     /// Configure the transmission time of packets.
@@ -1325,25 +1261,20 @@ impl<'a> ControlMessage<'a> {
             ControlMessage::UdpGsoSegments(gso_size) => {
                 gso_size as *const _ as *const u8
             },
-            #[cfg(any(target_os = "linux", target_os = "netbsd",
-                      target_os = "android", apple_targets))]
+            #[cfg(any(linux_android, target_os = "netbsd", apple_targets))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv4PacketInfo(info) => info as *const _ as *const u8,
-            #[cfg(any(target_os = "linux", target_os = "netbsd",
-                      target_os = "freebsd", target_os = "android",
-                      apple_targets))]
+            #[cfg(any(linux_android, target_os = "netbsd",
+                      target_os = "freebsd", apple_targets))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv6PacketInfo(info) => info as *const _ as *const u8,
-            #[cfg(any(target_os = "netbsd", target_os = "freebsd",
-                      target_os = "openbsd", target_os = "dragonfly"))]
+            #[cfg(any(freebsdlike, target_os = "netbsd", target_os = "openbsd"))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv4SendSrcAddr(addr) => addr as *const _ as *const u8,
-            #[cfg(any(target_os = "linux", target_os = "freebsd",
-                      target_os = "dragonfly", target_os = "android",
-                      apple_targets, target_os = "haiku"))]
+            #[cfg(any(linux_android, freebsdlike, apple_targets, target_os = "haiku"))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv6HopLimit(limit) => limit as *const _ as *const u8,
-            #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+            #[cfg(any(linux_android, target_os = "fuchsia"))]
             ControlMessage::RxqOvfl(drop_count) => {
                 drop_count as *const _ as *const u8
             },
@@ -1392,27 +1323,22 @@ impl<'a> ControlMessage<'a> {
             ControlMessage::UdpGsoSegments(gso_size) => {
                 mem::size_of_val(gso_size)
             },
-            #[cfg(any(target_os = "linux", target_os = "netbsd",
-                      target_os = "android", apple_targets))]
+            #[cfg(any(linux_android, target_os = "netbsd", apple_targets))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv4PacketInfo(info) => mem::size_of_val(info),
-            #[cfg(any(target_os = "linux", target_os = "netbsd",
-                      target_os = "freebsd", target_os = "android",
-                      apple_targets))]
+            #[cfg(any(linux_android, target_os = "netbsd",
+                      target_os = "freebsd", apple_targets))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv6PacketInfo(info) => mem::size_of_val(info),
-            #[cfg(any(target_os = "netbsd", target_os = "freebsd",
-                      target_os = "openbsd", target_os = "dragonfly"))]
+            #[cfg(any(freebsdlike, target_os = "netbsd", target_os = "openbsd"))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv4SendSrcAddr(addr) => mem::size_of_val(addr),
-            #[cfg(any(target_os = "linux", target_os = "freebsd",
-                      target_os = "dragonfly", target_os = "android",
-                      apple_targets, target_os = "haiku"))]
+            #[cfg(any(linux_android, freebsdlike, apple_targets, target_os = "haiku"))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv6HopLimit(limit) => {
                 mem::size_of_val(limit)
             },
-            #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+            #[cfg(any(linux_android, target_os = "fuchsia"))]
             ControlMessage::RxqOvfl(drop_count) => {
                 mem::size_of_val(drop_count)
             },
@@ -1437,25 +1363,20 @@ impl<'a> ControlMessage<'a> {
             #[cfg(target_os = "linux")]
             #[cfg(feature = "net")]
             ControlMessage::UdpGsoSegments(_) => libc::SOL_UDP,
-            #[cfg(any(target_os = "linux", target_os = "netbsd",
-                      target_os = "android", apple_targets,))]
+            #[cfg(any(linux_android, target_os = "netbsd", apple_targets))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv4PacketInfo(_) => libc::IPPROTO_IP,
-            #[cfg(any(target_os = "linux", target_os = "netbsd",
-                      target_os = "freebsd", target_os = "android",
-                      apple_targets))]
+            #[cfg(any(linux_android, target_os = "netbsd",
+                      target_os = "freebsd", apple_targets))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv6PacketInfo(_) => libc::IPPROTO_IPV6,
-            #[cfg(any(target_os = "netbsd", target_os = "freebsd",
-                      target_os = "openbsd", target_os = "dragonfly"))]
+            #[cfg(any(freebsdlike, target_os = "netbsd", target_os = "openbsd"))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv4SendSrcAddr(_) => libc::IPPROTO_IP,
-            #[cfg(any(target_os = "linux", target_os = "freebsd",
-                      target_os = "dragonfly", target_os = "android",
-                      apple_targets, target_os = "haiku"))]
+            #[cfg(any(linux_android, freebsdlike, apple_targets, target_os = "haiku"))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv6HopLimit(_) => libc::IPPROTO_IPV6,
-            #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+            #[cfg(any(linux_android, target_os = "fuchsia"))]
             ControlMessage::RxqOvfl(_) => libc::SOL_SOCKET,
             #[cfg(target_os = "linux")]
             ControlMessage::TxTime(_) => libc::SOL_SOCKET,
@@ -1487,25 +1408,20 @@ impl<'a> ControlMessage<'a> {
             ControlMessage::UdpGsoSegments(_) => {
                 libc::UDP_SEGMENT
             },
-            #[cfg(any(target_os = "linux", target_os = "netbsd",
-                      target_os = "android", apple_targets))]
+            #[cfg(any(linux_android, target_os = "netbsd", apple_targets))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv4PacketInfo(_) => libc::IP_PKTINFO,
-            #[cfg(any(target_os = "linux", target_os = "netbsd",
-                      target_os = "freebsd", target_os = "android",
-                      apple_targets))]
+            #[cfg(any(linux_android, target_os = "netbsd",
+                      target_os = "freebsd", apple_targets))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv6PacketInfo(_) => libc::IPV6_PKTINFO,
-            #[cfg(any(target_os = "netbsd", target_os = "freebsd",
-                      target_os = "openbsd", target_os = "dragonfly"))]
+            #[cfg(any(freebsdlike, target_os = "netbsd", target_os = "openbsd"))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv4SendSrcAddr(_) => libc::IP_SENDSRCADDR,
-            #[cfg(any(target_os = "linux", target_os = "freebsd",
-                      target_os = "dragonfly", target_os = "android",
-                      apple_targets, target_os = "haiku"))]
+            #[cfg(any(linux_android, freebsdlike, apple_targets, target_os = "haiku"))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv6HopLimit(_) => libc::IPV6_HOPLIMIT,
-            #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+            #[cfg(any(linux_android, target_os = "fuchsia"))]
             ControlMessage::RxqOvfl(_) => {
                 libc::SO_RXQ_OVFL
             },
@@ -1604,12 +1520,7 @@ pub fn sendmsg<S>(fd: RawFd, iov: &[IoSlice<'_>], cmsgs: &[ControlMessage],
 ///
 /// # References
 /// [`sendmsg`](fn.sendmsg.html)
-#[cfg(any(
-    target_os = "linux",
-    target_os = "android",
-    target_os = "freebsd",
-    target_os = "netbsd",
-))]
+#[cfg(any(linux_android, target_os = "freebsd", target_os = "netbsd"))]
 pub fn sendmmsg<'a, XS, AS, C, I, S>(
     fd: RawFd,
     data: &'a mut MultiHeaders<S>,
@@ -1680,12 +1591,7 @@ pub fn sendmmsg<'a, XS, AS, C, I, S>(
 }
 
 
-#[cfg(any(
-    target_os = "linux",
-    target_os = "android",
-    target_os = "freebsd",
-    target_os = "netbsd",
-))]
+#[cfg(any(linux_android, target_os = "freebsd", target_os = "netbsd"))]
 #[derive(Debug)]
 /// Preallocated structures needed for [`recvmmsg`] and [`sendmmsg`] functions
 pub struct MultiHeaders<S> {
@@ -1698,12 +1604,7 @@ pub struct MultiHeaders<S> {
     msg_controllen: usize,
 }
 
-#[cfg(any(
-    target_os = "linux",
-    target_os = "android",
-    target_os = "freebsd",
-    target_os = "netbsd",
-))]
+#[cfg(any(linux_android, target_os = "freebsd", target_os = "netbsd"))]
 impl<S> MultiHeaders<S> {
     /// Preallocate structure used by [`recvmmsg`] and [`sendmmsg`] takes number of headers to preallocate
     ///
@@ -1773,12 +1674,7 @@ impl<S> MultiHeaders<S> {
 // always produce the desired results - see https://github.com/nix-rust/nix/pull/1744 for more
 // details
 
-#[cfg(any(
-    target_os = "linux",
-    target_os = "android",
-    target_os = "freebsd",
-    target_os = "netbsd",
-))]
+#[cfg(any(linux_android, target_os = "freebsd", target_os = "netbsd"))]
 pub fn recvmmsg<'a, XS, S, I>(
     fd: RawFd,
     data: &'a mut MultiHeaders<S>,
@@ -1827,12 +1723,7 @@ where
 }
 
 /// Iterator over results of [`recvmmsg`]/[`sendmmsg`]
-#[cfg(any(
-    target_os = "linux",
-    target_os = "android",
-    target_os = "freebsd",
-    target_os = "netbsd",
-))]
+#[cfg(any(linux_android, target_os = "freebsd", target_os = "netbsd"))]
 #[derive(Debug)]
 pub struct MultiResults<'a, S> {
     // preallocated structures
@@ -1841,12 +1732,7 @@ pub struct MultiResults<'a, S> {
     received: usize,
 }
 
-#[cfg(any(
-    target_os = "linux",
-    target_os = "android",
-    target_os = "freebsd",
-    target_os = "netbsd",
-))]
+#[cfg(any(linux_android, target_os = "freebsd", target_os = "netbsd"))]
 impl<'a, S> Iterator for MultiResults<'a, S>
 where
     S: Copy + SockaddrLike,
@@ -2296,9 +2182,8 @@ pub fn accept(sockfd: RawFd) -> Result<RawFd> {
             target_arch = "x86_64"
         )
     ),
-    target_os = "dragonfly",
+    freebsdlike,
     target_os = "emscripten",
-    target_os = "freebsd",
     target_os = "fuchsia",
     target_os = "illumos",
     target_os = "linux",
@@ -2519,11 +2404,7 @@ mod tests {
         let _ = cmsg_space!(u8);
     }
 
-    #[cfg(not(any(
-        target_os = "redox",
-        target_os = "linux",
-        target_os = "android"
-    )))]
+    #[cfg(not(any(linux_android, target_os = "redox")))]
     #[test]
     fn can_open_routing_socket() {
         let _ = super::socket(
