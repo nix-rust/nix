@@ -230,8 +230,7 @@ impl Entry {
                          target_os = "haiku",
                          solarish,
                          linux_android,
-                         apple_targets,
-                         target_os = "l4re"))] {
+                         apple_targets))] {
                 self.0.d_ino as u64
             } else {
                 u64::from(self.0.d_fileno)
