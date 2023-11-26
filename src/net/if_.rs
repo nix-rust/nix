@@ -40,25 +40,23 @@ libc_bitflags!(
         IFF_POINTOPOINT;
         /// Avoid use of trailers. (see
         /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
-        #[cfg(any(target_os = "android",
-                  target_os = "fuchsia",
+        #[cfg(any(
+                  linux_android,
+                  solarish,
                   apple_targets,
-                  target_os = "linux",
-                  target_os = "netbsd",
-                  target_os = "illumos",
-                  target_os = "solaris"))]
+                  target_os = "fuchsia",
+                  target_os = "netbsd"))]
         IFF_NOTRAILERS;
         /// Interface manages own routes.
         #[cfg(any(target_os = "dragonfly"))]
         IFF_SMART;
         /// Resources allocated. (see
         /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
-        #[cfg(any(target_os = "android",
+        #[cfg(any(
+                  linux_android,
                   bsd,
-                  target_os = "fuchsia",
-                  target_os = "illumos",
-                  target_os = "linux",
-                  target_os = "solaris"))]
+                  solarish,
+                  target_os = "fuchsia"))]
         IFF_RUNNING;
         /// No arp protocol, L2 destination address not set. (see
         /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
@@ -71,7 +69,7 @@ libc_bitflags!(
         IFF_ALLMULTI;
         /// Master of a load balancing bundle. (see
         /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
-        #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+        #[cfg(any(linux_android, target_os = "fuchsia"))]
         IFF_MASTER;
         /// transmission in progress, tx hardware queue is full
         #[cfg(any(target_os = "freebsd",
@@ -84,11 +82,10 @@ libc_bitflags!(
         IFF_INTELLIGENT;
         /// Slave of a load balancing bundle. (see
         /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
-        #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+        #[cfg(any(linux_android, target_os = "fuchsia"))]
         IFF_SLAVE;
         /// Can't hear own transmissions.
-        #[cfg(any(target_os = "dragonfly",
-                  target_os = "freebsd",
+        #[cfg(any(freebsdlike,
                   target_os = "macos",
                   target_os = "netbsd",
                   target_os = "openbsd"))]
@@ -104,7 +101,7 @@ libc_bitflags!(
         IFF_MULTI_BCAST;
         /// Is able to select media type via ifmap. (see
         /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
-        #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+        #[cfg(any(linux_android, target_os = "fuchsia"))]
         IFF_PORTSEL;
         /// Per link layer defined bit.
         #[cfg(bsd)]
@@ -114,22 +111,20 @@ libc_bitflags!(
         IFF_UNNUMBERED;
         /// Auto media selection active. (see
         /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
-        #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+        #[cfg(any(linux_android, target_os = "fuchsia"))]
         IFF_AUTOMEDIA;
         /// Per link layer defined bit.
         #[cfg(bsd)]
         IFF_LINK2;
         /// Use alternate physical connection.
-        #[cfg(any(target_os = "dragonfly",
-                  target_os = "freebsd",
-                  apple_targets,))]
+        #[cfg(any(freebsdlike, apple_targets))]
         IFF_ALTPHYS;
         /// DHCP controls interface.
         #[cfg(solarish)]
         IFF_DHCPRUNNING;
         /// The addresses are lost when the interface goes down. (see
         /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
-        #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+        #[cfg(any(linux_android, target_os = "fuchsia"))]
         IFF_DYNAMIC;
         /// Do not advertise.
         #[cfg(solarish)]
@@ -195,13 +190,13 @@ libc_bitflags!(
         #[cfg(solarish)]
         IFF_NORTEXCH;
         /// Do not provide packet information
-        #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+        #[cfg(any(linux_android, target_os = "fuchsia"))]
         IFF_NO_PI as libc::c_int;
         /// TUN device (no Ethernet headers)
-        #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+        #[cfg(any(linux_android, target_os = "fuchsia"))]
         IFF_TUN as libc::c_int;
         /// TAP device
-        #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+        #[cfg(any(linux_android, target_os = "fuchsia"))]
         IFF_TAP as libc::c_int;
         /// IPv4 interface.
         #[cfg(solarish)]

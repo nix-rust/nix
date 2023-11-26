@@ -6,8 +6,7 @@ mod linux;
 pub use self::linux::*;
 
 #[cfg(any(
-    target_os = "dragonfly",
-    target_os = "freebsd",
+    freebsdlike,
     target_os = "macos",
     target_os = "netbsd",
     target_os = "openbsd"
@@ -15,8 +14,7 @@ pub use self::linux::*;
 mod bsd;
 
 #[cfg(any(
-    target_os = "dragonfly",
-    target_os = "freebsd",
+    freebsdlike,
     target_os = "macos",
     target_os = "netbsd",
     target_os = "openbsd"
