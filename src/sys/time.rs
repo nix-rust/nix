@@ -97,11 +97,7 @@ pub(crate) mod timer {
             const TFD_TIMER_CANCEL_ON_SET = libc::TFD_TIMER_CANCEL_ON_SET;
         }
     }
-    #[cfg(any(
-        freebsdlike,
-        target_os = "netbsd",
-        target_os = "illumos"
-    ))]
+    #[cfg(any(freebsdlike, target_os = "netbsd", target_os = "illumos"))]
     bitflags! {
         /// Flags that are used for arming the timer.
         #[derive(Copy, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
