@@ -1,7 +1,6 @@
 //! Mostly platform-specific functionality
 #[cfg(any(
-    target_os = "dragonfly",
-    target_os = "freebsd",
+    freebsdlike,
     all(target_os = "linux", not(target_env = "uclibc")),
     apple_targets,
     target_os = "netbsd"
@@ -32,19 +31,13 @@ feature! {
     pub mod fanotify;
 }
 
-#[cfg(any(
-    bsd,
-    target_os = "android",
-    target_os = "linux",
-    target_os = "redox",
-    target_os = "illumos",
-))]
+#[cfg(any(bsd, linux_android, target_os = "redox", target_os = "illumos"))]
 #[cfg(feature = "ioctl")]
 #[cfg_attr(docsrs, doc(cfg(feature = "ioctl")))]
 #[macro_use]
 pub mod ioctl;
 
-#[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
+#[cfg(any(linux_android, target_os = "freebsd"))]
 feature! {
     #![feature = "fs"]
     pub mod memfd;
@@ -74,10 +67,8 @@ feature! {
 }
 
 #[cfg(any(
-    target_os = "android",
-    target_os = "dragonfly",
-    target_os = "freebsd",
-    target_os = "linux",
+    linux_android,
+    freebsdlike,
     target_os = "macos",
     target_os = "netbsd",
     target_os = "openbsd"
@@ -116,15 +107,7 @@ feature! {
     pub mod select;
 }
 
-#[cfg(any(
-    target_os = "android",
-    target_os = "dragonfly",
-    target_os = "freebsd",
-    apple_targets,
-    target_os = "linux",
-    target_os = "solaris",
-    target_os = "illumos",
-))]
+#[cfg(any(linux_android, freebsdlike, apple_targets, solarish))]
 feature! {
     #![feature = "zerocopy"]
     pub mod sendfile;
@@ -151,14 +134,7 @@ feature! {
     pub mod stat;
 }
 
-#[cfg(any(
-    target_os = "android",
-    target_os = "dragonfly",
-    target_os = "freebsd",
-    apple_targets,
-    target_os = "linux",
-    target_os = "openbsd"
-))]
+#[cfg(any(linux_android, freebsdlike, apple_targets, target_os = "openbsd"))]
 feature! {
     #![feature = "fs"]
     pub mod statfs;

@@ -75,10 +75,9 @@ libc_enum! {
         RLIMIT_LOCKS,
 
         #[cfg(any(
-            target_os = "android",
+            linux_android,
             target_os = "freebsd",
             target_os = "openbsd",
-            target_os = "linux",
             target_os = "netbsd"
         ))]
         /// The maximum size (in bytes) which a process may lock into memory
@@ -96,11 +95,10 @@ libc_enum! {
         RLIMIT_NICE,
 
         #[cfg(any(
-            target_os = "android",
+            linux_android,
             target_os = "freebsd",
             target_os = "netbsd",
             target_os = "openbsd",
-            target_os = "linux",
             target_os = "aix",
         ))]
         /// The maximum number of simultaneous processes for this user id.
@@ -111,11 +109,10 @@ libc_enum! {
         /// create.
         RLIMIT_NPTS,
 
-        #[cfg(any(target_os = "android",
+        #[cfg(any(linux_android,
             target_os = "freebsd",
             target_os = "netbsd",
             target_os = "openbsd",
-            target_os = "linux",
             target_os = "aix",
         ))]
         /// When there is memory pressure and swap is available, prioritize

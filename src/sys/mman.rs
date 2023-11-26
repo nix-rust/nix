@@ -57,7 +57,7 @@ libc_bitflags! {
         /// The mapping is not backed by any file.
         MAP_ANONYMOUS;
         /// Put the mapping into the first 2GB of the process address space.
-        #[cfg(any(all(any(target_os = "android", target_os = "linux"),
+        #[cfg(any(all(linux_android,
                       any(target_arch = "x86", target_arch = "x86_64")),
                   all(target_os = "linux", target_env = "musl", any(target_arch = "x86", target_arch = "x86_64")),
                   all(target_os = "freebsd", target_pointer_width = "64")))]
@@ -140,7 +140,7 @@ libc_bitflags! {
         #[cfg(any(freebsdlike, target_os = "netbsd", target_os = "openbsd"))]
         MAP_HASSEMAPHORE;
         /// Region grows down, like a stack.
-        #[cfg(any(target_os = "android", freebsdlike, target_os = "linux", target_os = "openbsd"))]
+        #[cfg(any(linux_android, freebsdlike, target_os = "openbsd"))]
         MAP_STACK;
         /// Pages in this mapping are not retained in the kernel's memory cache.
         #[cfg(apple_targets)]
