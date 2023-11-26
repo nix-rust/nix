@@ -1,10 +1,6 @@
 #[cfg(any(apple_targets, target_os = "openbsd"))]
 pub use libc::c_uint;
-#[cfg(any(
-    target_os = "netbsd",
-    target_os = "freebsd",
-    target_os = "dragonfly"
-))]
+#[cfg(any(target_os = "netbsd", freebsdlike))]
 pub use libc::c_ulong;
 pub use libc::stat as FileStat;
 pub use libc::{dev_t, mode_t};
@@ -67,11 +63,7 @@ libc_bitflags! {
 
 #[cfg(any(apple_targets, target_os = "openbsd"))]
 pub type type_of_file_flag = c_uint;
-#[cfg(any(
-    target_os = "netbsd",
-    target_os = "freebsd",
-    target_os = "dragonfly"
-))]
+#[cfg(any(freebsdlike, target_os = "netbsd"))]
 pub type type_of_file_flag = c_ulong;
 
 #[cfg(bsd)]

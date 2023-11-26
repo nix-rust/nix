@@ -1,7 +1,7 @@
 //! Get filesystem statistics, non-portably
 //!
 //! See [`statvfs`](crate::sys::statvfs) for a portable alternative.
-#[cfg(not(any(target_os = "linux", target_os = "android")))]
+#[cfg(not(linux_android))]
 use std::ffi::CStr;
 use std::fmt::{self, Debug};
 use std::mem;
@@ -12,8 +12,7 @@ use cfg_if::cfg_if;
 #[cfg(all(
     feature = "mount",
     any(
-        target_os = "dragonfly",
-        target_os = "freebsd",
+        freebsdlike,
         target_os = "macos",
         target_os = "netbsd",
         target_os = "openbsd"
@@ -32,7 +31,7 @@ pub type fsid_t = libc::__fsid_t;
 pub type fsid_t = libc::fsid_t;
 
 cfg_if! {
-    if #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))] {
+    if #[cfg(any(linux_android, target_os = "fuchsia"))] {
         type type_of_statfs = libc::statfs64;
         const LIBC_FSTATFS: unsafe extern fn
             (fd: libc::c_int, buf: *mut type_of_statfs) -> libc::c_int
@@ -288,10 +287,7 @@ pub const XENFS_SUPER_MAGIC: FsType =
 #[cfg(linux_android)]
 #[allow(missing_docs)]
 pub const NSFS_MAGIC: FsType = FsType(libc::NSFS_MAGIC as fs_type_t);
-#[cfg(all(
-    any(target_os = "linux", target_os = "android"),
-    not(target_env = "musl")
-))]
+#[cfg(all(linux_android, not(target_env = "musl")))]
 #[allow(missing_docs)]
 pub const XFS_SUPER_MAGIC: FsType = FsType(libc::XFS_SUPER_MAGIC as fs_type_t);
 
@@ -307,7 +303,7 @@ impl Statfs {
     }
 
     /// Magic code defining system type
-    #[cfg(not(any(target_os = "linux", target_os = "android")))]
+    #[cfg(not(linux_android))]
     pub fn filesystem_type_name(&self) -> &str {
         let c_str = unsafe { CStr::from_ptr(self.0.f_fstypename.as_ptr()) };
         c_str.to_str().unwrap()
@@ -434,8 +430,7 @@ impl Statfs {
     #[cfg(all(
         feature = "mount",
         any(
-            target_os = "dragonfly",
-            target_os = "freebsd",
+            freebsdlike,
             target_os = "macos",
             target_os = "netbsd",
             target_os = "openbsd"
@@ -500,11 +495,10 @@ impl Statfs {
     /// Total data blocks in filesystem
     #[cfg(any(
         apple_targets,
-        target_os = "android",
+        linux_android,
         target_os = "freebsd",
         target_os = "fuchsia",
         target_os = "openbsd",
-        target_os = "linux",
     ))]
     pub fn blocks(&self) -> u64 {
         self.0.f_blocks
@@ -525,11 +519,10 @@ impl Statfs {
     /// Free blocks in filesystem
     #[cfg(any(
         apple_targets,
-        target_os = "android",
+        linux_android,
         target_os = "freebsd",
         target_os = "fuchsia",
         target_os = "openbsd",
-        target_os = "linux",
     ))]
     pub fn blocks_free(&self) -> u64 {
         self.0.f_bfree
@@ -548,12 +541,7 @@ impl Statfs {
     }
 
     /// Free blocks available to unprivileged user
-    #[cfg(any(
-        apple_targets,
-        target_os = "android",
-        target_os = "fuchsia",
-        target_os = "linux",
-    ))]
+    #[cfg(any(apple_targets, linux_android, target_os = "fuchsia"))]
     pub fn blocks_available(&self) -> u64 {
         self.0.f_bavail
     }
@@ -579,11 +567,10 @@ impl Statfs {
     /// Total file nodes in filesystem
     #[cfg(any(
         apple_targets,
-        target_os = "android",
+        linux_android,
         target_os = "freebsd",
         target_os = "fuchsia",
         target_os = "openbsd",
-        target_os = "linux",
     ))]
     pub fn files(&self) -> u64 {
         self.0.f_files
@@ -604,10 +591,9 @@ impl Statfs {
     /// Free file nodes in filesystem
     #[cfg(any(
         apple_targets,
-        target_os = "android",
+        linux_android,
         target_os = "fuchsia",
         target_os = "openbsd",
-        target_os = "linux",
     ))]
     pub fn files_free(&self) -> u64 {
         self.0.f_ffree
@@ -651,8 +637,7 @@ impl Debug for Statfs {
         #[cfg(all(
             feature = "mount",
             any(
-                target_os = "dragonfly",
-                target_os = "freebsd",
+                freebsdlike,
                 target_os = "macos",
                 target_os = "netbsd",
                 target_os = "openbsd"
