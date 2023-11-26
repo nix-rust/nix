@@ -7,7 +7,6 @@ use cfg_if::cfg_if;
 use libc::{self, c_int, c_void, socklen_t};
 use std::ffi::{OsStr, OsString};
 use std::mem::{self, MaybeUninit};
-#[cfg(target_family = "unix")]
 use std::os::unix::ffi::OsStrExt;
 use std::os::unix::io::{AsFd, AsRawFd};
 
@@ -329,9 +328,7 @@ cfg_if! {
             #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
             /// Leave an IPv6 multicast group.
             Ipv6DropMembership, SetOnly, libc::IPPROTO_IPV6, libc::IPV6_DROP_MEMBERSHIP, super::Ipv6MembershipRequest);
-    } else if #[cfg(any(bsd,
-                        target_os = "illumos",
-                        target_os = "solaris"))] {
+    } else if #[cfg(any(bsd, solarish))] {
         #[cfg(feature = "net")]
         sockopt_impl!(
             #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -403,7 +400,7 @@ sockopt_impl!(
     libc::IPV6_TCLASS,
     libc::c_int
 );
-#[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+#[cfg(any(linux_android, target_os = "fuchsia"))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -512,12 +509,7 @@ sockopt_impl!(
     libc::TCP_KEEPALIVE,
     u32
 );
-#[cfg(any(
-    target_os = "android",
-    target_os = "dragonfly",
-    target_os = "freebsd",
-    target_os = "linux"
-))]
+#[cfg(any(freebsdlike, linux_android))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -556,7 +548,7 @@ sockopt_impl!(
     libc::TCP_KEEPCNT,
     u32
 );
-#[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+#[cfg(any(linux_android, target_os = "fuchsia"))]
 sockopt_impl!(
     #[allow(missing_docs)]
     // Not documented by Linux!
@@ -826,12 +818,7 @@ sockopt_impl!(
     libc::TCP_CONGESTION,
     OsString<[u8; TCP_CA_NAME_MAX]>
 );
-#[cfg(any(
-    target_os = "android",
-    apple_targets,
-    target_os = "linux",
-    target_os = "netbsd",
-))]
+#[cfg(any(linux_android, apple_targets, target_os = "netbsd"))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -844,10 +831,9 @@ sockopt_impl!(
     bool
 );
 #[cfg(any(
-    target_os = "android",
+    linux_android,
     target_os = "freebsd",
     apple_targets,
-    target_os = "linux",
     target_os = "netbsd",
     target_os = "openbsd",
 ))]
@@ -896,7 +882,7 @@ sockopt_impl!(
     libc::IP_RECVDSTADDR,
     bool
 );
-#[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
+#[cfg(any(linux_android, target_os = "freebsd"))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -942,7 +928,7 @@ sockopt_impl!(
     libc::SO_TXTIME,
     libc::sock_txtime
 );
-#[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+#[cfg(any(linux_android, target_os = "fuchsia"))]
 sockopt_impl!(
     /// Indicates that an unsigned 32-bit value ancillary message (cmsg) should
     /// be attached to received skbs indicating the number of packets dropped by
@@ -990,7 +976,7 @@ sockopt_impl!(
     libc::IP_MTU,
     libc::c_int
 );
-#[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
+#[cfg(any(linux_android, target_os = "freebsd"))]
 sockopt_impl!(
     /// Set or retrieve the current time-to-live field that is used in every
     /// packet sent from this socket.
@@ -1000,7 +986,7 @@ sockopt_impl!(
     libc::IP_TTL,
     libc::c_int
 );
-#[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
+#[cfg(any(linux_android, target_os = "freebsd"))]
 sockopt_impl!(
     /// Set the unicast hop limit for the socket.
     Ipv6Ttl,
@@ -1009,7 +995,7 @@ sockopt_impl!(
     libc::IPV6_UNICAST_HOPS,
     libc::c_int
 );
-#[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
+#[cfg(any(linux_android, target_os = "freebsd"))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -1030,7 +1016,7 @@ sockopt_impl!(
     libc::IP_DONTFRAG,
     bool
 );
-#[cfg(any(target_os = "android", apple_targets, target_os = "linux",))]
+#[cfg(any(linux_android, apple_targets))]
 sockopt_impl!(
     /// Set "don't fragment packet" flag on the IPv6 packet.
     Ipv6DontFrag,
