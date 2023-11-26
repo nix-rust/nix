@@ -19,6 +19,7 @@ fn main() {
         bsd: { any(freebsd, dragonfly, netbsd, openbsd, apple_targets) },
         linux_android: { any(android, linux) },
         freebsdlike: { any(dragonfly, freebsd) },
+        netbsdlike: { any(netbsd, openbsd) },
         solarish: { any(illumos, solaris) },
     }
 }
