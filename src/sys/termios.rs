@@ -166,7 +166,7 @@ pub struct Termios {
     /// Control characters (see `termios.c_cc` documentation)
     pub control_chars: [libc::cc_t; NCCS],
     /// Line discipline (see `termios.c_line` documentation)
-    #[cfg(any(target_os = "linux", target_os = "android",))]
+    #[cfg(linux_android)]
     pub line_discipline: libc::cc_t,
     /// Line discipline (see `termios.c_line` documentation)
     #[cfg(target_os = "haiku")]
@@ -186,11 +186,7 @@ impl Termios {
             termios.c_cflag = self.control_flags.bits();
             termios.c_lflag = self.local_flags.bits();
             termios.c_cc = self.control_chars;
-            #[cfg(any(
-                target_os = "linux",
-                target_os = "android",
-                target_os = "haiku",
-            ))]
+            #[cfg(any(linux_android, target_os = "haiku"))]
             {
                 termios.c_line = self.line_discipline;
             }
@@ -212,11 +208,7 @@ impl Termios {
             termios.c_cflag = self.control_flags.bits();
             termios.c_lflag = self.local_flags.bits();
             termios.c_cc = self.control_chars;
-            #[cfg(any(
-                target_os = "linux",
-                target_os = "android",
-                target_os = "haiku",
-            ))]
+            #[cfg(any(linux_android, target_os = "haiku"))]
             {
                 termios.c_line = self.line_discipline;
             }
@@ -232,11 +224,7 @@ impl Termios {
         self.control_flags = ControlFlags::from_bits_retain(termios.c_cflag);
         self.local_flags = LocalFlags::from_bits_truncate(termios.c_lflag);
         self.control_chars = termios.c_cc;
-        #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
-            target_os = "haiku",
-        ))]
+        #[cfg(any(linux_android, target_os = "haiku"))]
         {
             self.line_discipline = termios.c_line;
         }
@@ -252,11 +240,7 @@ impl From<libc::termios> for Termios {
             control_flags: ControlFlags::from_bits_truncate(termios.c_cflag),
             local_flags: LocalFlags::from_bits_truncate(termios.c_lflag),
             control_chars: termios.c_cc,
-            #[cfg(any(
-                target_os = "linux",
-                target_os = "android",
-                target_os = "haiku",
-            ))]
+            #[cfg(any(linux_android, target_os = "haiku"))]
             line_discipline: termios.c_line,
         }
     }
@@ -293,22 +277,19 @@ libc_enum! {
         B1800,
         B2400,
         B4800,
-        #[cfg(any(target_os = "dragonfly",
-                target_os = "freebsd",
+        #[cfg(any(freebsdlike,
                 target_os = "macos",
                 target_os = "netbsd",
                 target_os = "openbsd"))]
         B7200,
         B9600,
-        #[cfg(any(target_os = "dragonfly",
-                target_os = "freebsd",
+        #[cfg(any(freebsdlike,
                 target_os = "macos",
                 target_os = "netbsd",
                 target_os = "openbsd"))]
         B14400,
         B19200,
-        #[cfg(any(target_os = "dragonfly",
-                target_os = "freebsd",
+        #[cfg(any(freebsdlike,
                 target_os = "macos",
                 target_os = "netbsd",
                 target_os = "openbsd"))]
@@ -316,8 +297,7 @@ libc_enum! {
         B38400,
         #[cfg(not(target_os = "aix"))]
         B57600,
-        #[cfg(any(target_os = "dragonfly",
-                target_os = "freebsd",
+        #[cfg(any(freebsdlike,
                 target_os = "macos",
                 target_os = "netbsd",
                 target_os = "openbsd"))]
@@ -330,23 +310,19 @@ libc_enum! {
         B230400,
         #[cfg(solarish)]
         B307200,
-        #[cfg(any(target_os = "android",
+        #[cfg(any(linux_android,
+                  solarish,
                   target_os = "freebsd",
-                  target_os = "illumos",
-                  target_os = "linux",
-                  target_os = "netbsd",
-                  target_os = "solaris"))]
+                  target_os = "netbsd"))]
         B460800,
         #[cfg(linux_android)]
         B500000,
         #[cfg(linux_android)]
         B576000,
-        #[cfg(any(target_os = "android",
+        #[cfg(any(linux_android,
+                  solarish,
                   target_os = "freebsd",
-                  target_os = "illumos",
-                  target_os = "linux",
-                  target_os = "netbsd",
-                  target_os = "solaris"))]
+                  target_os = "netbsd"))]
         B921600,
         #[cfg(linux_android)]
         B1000000,
@@ -441,51 +417,44 @@ libc_enum! {
     pub enum SpecialCharacterIndices {
         #[cfg(not(any(target_os = "aix", target_os = "haiku")))]
         VDISCARD,
-        #[cfg(any(target_os = "dragonfly",
-                target_os = "freebsd",
-                target_os = "illumos",
+        #[cfg(any(freebsdlike,
+                solarish,
                 target_os = "macos",
                 target_os = "netbsd",
                 target_os = "openbsd",
-                target_os = "aix",
-                target_os = "solaris"))]
+                target_os = "aix"))]
         VDSUSP,
         VEOF,
         VEOL,
         VEOL2,
         VERASE,
-        #[cfg(any(target_os = "dragonfly",
-                  target_os = "freebsd",
-                  target_os = "illumos",
-                  target_os = "solaris"))]
+        #[cfg(any(freebsdlike, solarish))]
         VERASE2,
         VINTR,
         VKILL,
         #[cfg(not(target_os = "haiku"))]
         VLNEXT,
         #[cfg(not(any(all(target_os = "linux", target_arch = "sparc64"),
-                target_os = "illumos", target_os = "solaris", target_os = "aix", target_os = "haiku")))]
+                solarish, target_os = "aix", target_os = "haiku")))]
         VMIN,
         VQUIT,
         #[cfg(not(target_os = "haiku"))]
         VREPRINT,
         VSTART,
-        #[cfg(any(target_os = "dragonfly",
-                target_os = "freebsd",
-                target_os = "illumos",
+        #[cfg(any(freebsdlike,
+                solarish,
                 target_os = "macos",
                 target_os = "netbsd",
-                target_os = "openbsd",
-                target_os = "solaris"))]
+                target_os = "openbsd"))]
         VSTATUS,
         VSTOP,
         VSUSP,
         #[cfg(target_os = "linux")]
         VSWTC,
-        #[cfg(any(target_os = "haiku", target_os = "illumos", target_os = "solaris"))]
+        #[cfg(any(solarish, target_os = "haiku"))]
         VSWTCH,
         #[cfg(not(any(all(target_os = "linux", target_arch = "sparc64"),
-                target_os = "illumos", target_os = "solaris", target_os = "aix", target_os = "haiku")))]
+                solarish, target_os = "aix", target_os = "haiku")))]
         VTIME,
         #[cfg(not(any(target_os = "aix", target_os = "haiku")))]
         VWERASE,
@@ -496,8 +465,7 @@ libc_enum! {
 
 #[cfg(any(
     all(target_os = "linux", target_arch = "sparc64"),
-    target_os = "illumos",
-    target_os = "solaris",
+    solarish,
     target_os = "aix",
     target_os = "haiku",
 ))]
@@ -508,10 +476,8 @@ impl SpecialCharacterIndices {
 
 pub use libc::NCCS;
 #[cfg(any(
-    target_os = "android",
-    target_os = "dragonfly",
-    target_os = "freebsd",
-    target_os = "linux",
+    linux_android,
+    freebsdlike,
     target_os = "aix",
     target_os = "macos",
     target_os = "netbsd",
@@ -537,7 +503,7 @@ libc_bitflags! {
         IXANY;
         #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
         IMAXBEL;
-        #[cfg(any(target_os = "android", target_os = "linux", target_os = "macos"))]
+        #[cfg(any(linux_android, target_os = "macos"))]
         IUTF8;
     }
 }
@@ -546,108 +512,89 @@ libc_bitflags! {
     /// Flags for configuring the output mode of a terminal
     pub struct OutputFlags: tcflag_t {
         OPOST;
-        #[cfg(any(target_os = "android",
+        #[cfg(any(linux_android,
                   target_os = "haiku",
-                  target_os = "linux",
                   target_os = "openbsd"))]
         OLCUC;
         ONLCR;
         OCRNL as tcflag_t;
         ONOCR as tcflag_t;
         ONLRET as tcflag_t;
-        #[cfg(any(target_os = "android",
+        #[cfg(any(linux_android,
                   target_os = "haiku",
-                  target_os = "linux",
                   apple_targets))]
         OFDEL as tcflag_t;
-        #[cfg(any(target_os = "android",
+        #[cfg(any(linux_android,
                   target_os = "haiku",
-                  target_os = "linux",
                   apple_targets))]
         NL0 as tcflag_t;
-        #[cfg(any(target_os = "android",
+        #[cfg(any(linux_android,
                   target_os = "haiku",
-                  target_os = "linux",
                   apple_targets))]
         NL1 as tcflag_t;
-        #[cfg(any(target_os = "android",
+        #[cfg(any(linux_android,
                   target_os = "haiku",
-                  target_os = "linux",
                   apple_targets))]
         CR0 as tcflag_t;
-        #[cfg(any(target_os = "android",
+        #[cfg(any(linux_android,
                   target_os = "haiku",
-                  target_os = "linux",
                   apple_targets))]
         CR1 as tcflag_t;
-        #[cfg(any(target_os = "android",
+        #[cfg(any(linux_android,
                   target_os = "haiku",
-                  target_os = "linux",
                   apple_targets))]
         CR2 as tcflag_t;
-        #[cfg(any(target_os = "android",
+        #[cfg(any(linux_android,
                   target_os = "haiku",
-                  target_os = "linux",
                   apple_targets))]
         CR3 as tcflag_t;
-        #[cfg(any(target_os = "android",
+        #[cfg(any(linux_android,
                   target_os = "freebsd",
                   target_os = "haiku",
-                  target_os = "linux",
                   apple_targets))]
         TAB0 as tcflag_t;
-        #[cfg(any(target_os = "android",
+        #[cfg(any(linux_android,
                   target_os = "haiku",
-                  target_os = "linux",
                   apple_targets))]
         TAB1 as tcflag_t;
-        #[cfg(any(target_os = "android",
+        #[cfg(any(linux_android,
                   target_os = "haiku",
-                  target_os = "linux",
                   apple_targets))]
         TAB2 as tcflag_t;
-        #[cfg(any(target_os = "android",
+        #[cfg(any(linux_android,
                   target_os = "freebsd",
                   target_os = "haiku",
-                  target_os = "linux",
                   apple_targets))]
         TAB3 as tcflag_t;
         #[cfg(linux_android)]
         XTABS;
-        #[cfg(any(target_os = "android",
+        #[cfg(any(linux_android,
                   target_os = "haiku",
-                  target_os = "linux",
                   apple_targets))]
         BS0 as tcflag_t;
-        #[cfg(any(target_os = "android",
+        #[cfg(any(linux_android,
                   target_os = "haiku",
-                  target_os = "linux",
                   apple_targets))]
         BS1 as tcflag_t;
-        #[cfg(any(target_os = "android",
+        #[cfg(any(linux_android,
                   target_os = "haiku",
-                  target_os = "linux",
                   apple_targets))]
         VT0 as tcflag_t;
-        #[cfg(any(target_os = "android",
+        #[cfg(any(linux_android,
                   target_os = "haiku",
-                  target_os = "linux",
                   apple_targets))]
         VT1 as tcflag_t;
-        #[cfg(any(target_os = "android",
+        #[cfg(any(linux_android,
                   target_os = "haiku",
-                  target_os = "linux",
                   apple_targets))]
         FF0 as tcflag_t;
-        #[cfg(any(target_os = "android",
+        #[cfg(any(linux_android,
                   target_os = "haiku",
-                  target_os = "linux",
                   apple_targets))]
         FF1 as tcflag_t;
         #[cfg(bsd)]
         OXTABS;
-        #[cfg(any(target_os = "freebsd",
-                  target_os = "dragonfly",
+        #[cfg(any(freebsdlike,
                   target_os = "macos",
                   target_os = "netbsd",
                   target_os = "openbsd"))]
@@ -657,35 +604,29 @@ libc_bitflags! {
         // These should be moved to be a mask once https://github.com/rust-lang-nursery/bitflags/issues/110
         // is resolved.
 
-        #[cfg(any(target_os = "android",
+        #[cfg(any(linux_android,
                   target_os = "haiku",
-                  target_os = "linux",
                   apple_targets))]
         NLDLY as tcflag_t; // FIXME: Datatype needs to be corrected in libc for mac
-        #[cfg(any(target_os = "android",
+        #[cfg(any(linux_android,
                   target_os = "haiku",
-                  target_os = "linux",
                   apple_targets))]
         CRDLY as tcflag_t;
-        #[cfg(any(target_os = "android",
+        #[cfg(any(linux_android,
                   target_os = "freebsd",
                   target_os = "haiku",
-                  target_os = "linux",
                   apple_targets))]
         TABDLY as tcflag_t;
-        #[cfg(any(target_os = "android",
+        #[cfg(any(linux_android,
                   target_os = "haiku",
-                  target_os = "linux",
                   apple_targets))]
         BSDLY as tcflag_t;
-        #[cfg(any(target_os = "android",
+        #[cfg(any(linux_android,
                   target_os = "haiku",
-                  target_os = "linux",
                   apple_targets))]
         VTDLY as tcflag_t;
-        #[cfg(any(target_os = "android",
+        #[cfg(any(linux_android,
                   target_os = "haiku",
-                  target_os = "linux",
                   apple_targets))]
         FFDLY as tcflag_t;
     }
@@ -718,32 +659,26 @@ libc_bitflags! {
         CIBAUD;
         #[cfg(linux_android)]
         CBAUDEX;
-        #[cfg(any(target_os = "dragonfly",
-                  target_os = "freebsd",
+        #[cfg(any(freebsdlike,
                   target_os = "macos",
                   target_os = "netbsd",
                   target_os = "openbsd"))]
         MDMBUF;
         #[cfg(any(target_os = "netbsd", target_os = "openbsd"))]
         CHWFLOW;
-        #[cfg(any(target_os = "dragonfly",
-                  target_os = "freebsd",
+        #[cfg(any(freebsdlike,
                   target_os = "netbsd",
                   target_os = "openbsd"))]
         CCTS_OFLOW;
-        #[cfg(any(target_os = "dragonfly",
-                  target_os = "freebsd",
+        #[cfg(any(freebsdlike,
                   target_os = "netbsd",
                   target_os = "openbsd"))]
         CRTS_IFLOW;
-        #[cfg(any(target_os = "dragonfly",
-                  target_os = "freebsd"))]
+        #[cfg(freebsdlike)]
         CDTR_IFLOW;
-        #[cfg(any(target_os = "dragonfly",
-                  target_os = "freebsd"))]
+        #[cfg(freebsdlike)]
         CDSR_OFLOW;
-        #[cfg(any(target_os = "dragonfly",
-                  target_os = "freebsd"))]
+        #[cfg(freebsdlike)]
         CCAR_OFLOW;
 
         // Bitmasks for use with ControlFlags to select specific settings
