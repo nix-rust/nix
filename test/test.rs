@@ -60,6 +60,7 @@ mod test_time;
 ))]
 mod test_timer;
 mod test_unistd;
+mod test_clearenv;
 
 use nix::unistd::{chdir, getcwd, read};
 use parking_lot::{Mutex, RwLock, RwLockWriteGuard};

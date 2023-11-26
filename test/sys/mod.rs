@@ -59,3 +59,6 @@ mod test_pthread;
 mod test_ptrace;
 #[cfg(linux_android)]
 mod test_timerfd;
+
+#[cfg(target_os="linux")]
+mod test_prctl;
