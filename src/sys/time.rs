@@ -98,9 +98,8 @@ pub(crate) mod timer {
         }
     }
     #[cfg(any(
-        target_os = "freebsd",
+        freebsdlike,
         target_os = "netbsd",
-        target_os = "dragonfly",
         target_os = "illumos"
     ))]
     bitflags! {
