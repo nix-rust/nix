@@ -420,6 +420,10 @@ libc_bitflags!(
         F_SEAL_GROW;
         /// The file contents cannot be modified.
         F_SEAL_WRITE;
+        /// The file contents cannot be modified, except via shared writable mappings that were
+        /// created prior to the seal being set. Since Linux 5.1.
+        #[cfg(any(target_os = "linux", target_os = "android"))]
+        F_SEAL_FUTURE_WRITE;
     }
 );
 
