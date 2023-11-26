@@ -98,7 +98,7 @@ mod os {
 }
 
 #[cfg(any(
-        freebsdlike,                // FreeBSD since ??? DragonFlyBSD since 10.0
+        freebsdlike,                // FreeBSD since 10.0 DragonFlyBSD since ???
         target_os = "illumos",      // Since ???
         target_os = "netbsd",       // Since 6.0
         target_os = "openbsd",      // Since 5.7
