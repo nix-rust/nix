@@ -9,10 +9,7 @@ use std::ptr;
 pub type RequestType = c_int;
 
 cfg_if! {
-    if #[cfg(any(target_os = "dragonfly",
-                 target_os = "freebsd",
-                 target_os = "macos",
-                 target_os = "openbsd"))] {
+    if #[cfg(any(freebsdlike, target_os = "macos", target_os = "openbsd"))] {
         #[doc(hidden)]
         pub type AddressType = *mut ::libc::c_char;
     } else {
@@ -37,9 +34,7 @@ libc_enum! {
         PT_WRITE_U,
         PT_CONTINUE,
         PT_KILL,
-        #[cfg(any(any(target_os = "dragonfly",
-                  target_os = "freebsd",
-                  target_os = "macos"),
+        #[cfg(any(any(freebsdlike, target_os = "macos"),
                   all(target_os = "openbsd", target_arch = "x86_64"),
                   all(target_os = "netbsd", any(target_arch = "x86_64",
                                                 target_arch = "powerpc"))))]

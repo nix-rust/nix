@@ -227,15 +227,11 @@
 //! ```
 use cfg_if::cfg_if;
 
-#[cfg(any(target_os = "android", target_os = "linux", target_os = "redox"))]
+#[cfg(any(linux_android, target_os = "redox"))]
 #[macro_use]
 mod linux;
 
-#[cfg(any(
-    target_os = "android",
-    target_os = "linux",
-    target_os = "redox"
-))]
+#[cfg(any(linux_android, target_os = "redox"))]
 pub use self::linux::*;
 
 #[cfg(any(bsd, target_os = "illumos", target_os = "haiku",))]
