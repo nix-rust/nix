@@ -182,7 +182,7 @@ feature! {
 /// [ptrace]: ../ptrace/index.html
 /// [`IoSlice`]: https://doc.rust-lang.org/std/io/struct.IoSlice.html
 /// [`RemoteIoVec`]: struct.RemoteIoVec.html
-#[cfg(all(any(target_os = "linux", target_os = "android"), not(target_env = "uclibc")))]
+#[cfg(all(linux_android, not(target_env = "uclibc")))]
 pub fn process_vm_writev(
     pid: crate::unistd::Pid,
     local_iov: &[IoSlice<'_>],
@@ -217,7 +217,7 @@ pub fn process_vm_writev(
 /// [`ptrace`]: ../ptrace/index.html
 /// [`IoSliceMut`]: https://doc.rust-lang.org/std/io/struct.IoSliceMut.html
 /// [`RemoteIoVec`]: struct.RemoteIoVec.html
-#[cfg(all(any(target_os = "linux", target_os = "android"), not(target_env = "uclibc")))]
+#[cfg(all(linux_android, not(target_env = "uclibc")))]
 pub fn process_vm_readv(
     pid: crate::unistd::Pid,
     local_iov: &mut [IoSliceMut<'_>],

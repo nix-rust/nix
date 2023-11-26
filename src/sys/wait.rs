@@ -24,11 +24,10 @@ libc_bitflags!(
         /// [`SIGSTOP`](crate::sys::signal::Signal::SIGSTOP) signal.
         WUNTRACED;
         /// Report the status of selected processes which have terminated.
-        #[cfg(any(target_os = "android",
+        #[cfg(any(linux_android,
+                  apple_targets,
                   target_os = "freebsd",
                   target_os = "haiku",
-                  apple_targets,
-                  target_os = "linux",
                   target_os = "redox",
                   target_os = "netbsd"))]
         WEXITED;
@@ -37,31 +36,29 @@ libc_bitflags!(
         /// [`SIGCONT`](crate::sys::signal::Signal::SIGCONT) signal.
         WCONTINUED;
         /// An alias for WUNTRACED.
-        #[cfg(any(target_os = "android",
+        #[cfg(any(linux_android,
+                  apple_targets,
                   target_os = "freebsd",
                   target_os = "haiku",
-                  apple_targets,
-                  target_os = "linux",
                   target_os = "redox",
                   target_os = "netbsd"))]
         WSTOPPED;
         /// Don't reap, just poll status.
-        #[cfg(any(target_os = "android",
+        #[cfg(any(linux_android,
+                  apple_targets,
                   target_os = "freebsd",
                   target_os = "haiku",
-                  apple_targets,
-                  target_os = "linux",
                   target_os = "redox",
                   target_os = "netbsd"))]
         WNOWAIT;
         /// Don't wait on children of other threads in this group
-        #[cfg(any(target_os = "android", target_os = "linux", target_os = "redox"))]
+        #[cfg(any(linux_android, target_os = "redox"))]
         __WNOTHREAD;
         /// Wait on all children, regardless of type
-        #[cfg(any(target_os = "android", target_os = "linux", target_os = "redox"))]
+        #[cfg(any(linux_android, target_os = "redox"))]
         __WALL;
         /// Wait for "clone" children only.
-        #[cfg(any(target_os = "android", target_os = "linux", target_os = "redox"))]
+        #[cfg(any(linux_android, target_os = "redox"))]
         __WCLONE;
     }
 );
@@ -205,7 +202,7 @@ impl WaitStatus {
             WaitStatus::Signaled(pid, term_signal(status)?, dumped_core(status))
         } else if stopped(status) {
             cfg_if! {
-                if #[cfg(any(target_os = "android", target_os = "linux"))] {
+                if #[cfg(linux_android)] {
                     fn decode_stopped(pid: Pid, status: i32) -> Result<WaitStatus> {
                         let status_additional = stop_additional(status);
                         Ok(if syscall_stop(status) {
