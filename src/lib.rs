@@ -123,9 +123,8 @@ pub mod fcntl;
 feature! {
     #![feature = "net"]
 
-    #[cfg(any(target_os = "android",
+    #[cfg(any(linux_android,
               bsd,
-              target_os = "linux",
               target_os = "illumos"))]
     #[deny(missing_docs)]
     pub mod ifaddrs;
@@ -143,12 +142,7 @@ feature! {
     #![feature = "mount"]
     pub mod mount;
 }
-#[cfg(any(
-    target_os = "dragonfly",
-    target_os = "freebsd",
-    target_os = "linux",
-    target_os = "netbsd"
-))]
+#[cfg(any(freebsdlike, target_os = "linux", target_os = "netbsd"))]
 feature! {
     #![feature = "mqueue"]
     pub mod mqueue;
