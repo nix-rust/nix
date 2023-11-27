@@ -255,16 +255,14 @@ libc_bitflags! {
         /// Set non-blocking mode on the new socket
         #[cfg(any(linux_android,
                   freebsdlike,
-                  target_os = "illumos",
-                  target_os = "netbsd",
-                  target_os = "openbsd"))]
+                  netbsdlike,
+                  target_os = "illumos"))]
         SOCK_NONBLOCK;
         /// Set close-on-exec on the new descriptor
         #[cfg(any(linux_android,
                   freebsdlike,
-                  target_os = "illumos",
-                  target_os = "netbsd",
-                  target_os = "openbsd"))]
+                  netbsdlike,
+                  target_os = "illumos"))]
         SOCK_CLOEXEC;
         /// Return `EPIPE` instead of raising `SIGPIPE`
         #[cfg(target_os = "netbsd")]
@@ -329,28 +327,23 @@ libc_bitflags! {
         /// [open(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/open.html).
         ///
         /// Only used in [`recvmsg`](fn.recvmsg.html) function.
-        #[cfg(any(linux_android,
-                  freebsdlike,
-                  target_os = "netbsd",
-                  target_os = "openbsd"))]
+        #[cfg(any(linux_android, freebsdlike, netbsdlike))]
         MSG_CMSG_CLOEXEC;
         /// Requests not to send `SIGPIPE` errors when the other end breaks the connection.
         /// (For more details, see [send(2)](https://linux.die.net/man/2/send)).
         #[cfg(any(linux_android,
                   freebsdlike,
                   solarish,
+                  netbsdlike,
                   target_os = "fuchsia",
-                  target_os = "haiku",
-                  target_os = "netbsd",
-                  target_os = "openbsd"))]
+                  target_os = "haiku"))]
         MSG_NOSIGNAL;
         /// Turns on [`MSG_DONTWAIT`] after the first message has been received (only for
         /// `recvmmsg()`).
         #[cfg(any(linux_android,
+                  netbsdlike,
                   target_os = "fuchsia",
-                  target_os = "netbsd",
                   target_os = "freebsd",
-                  target_os = "openbsd",
                   target_os = "solaris"))]
         MSG_WAITFORONE;
     }
@@ -755,21 +748,11 @@ pub enum ControlMessageOwned {
     #[cfg(feature = "net")]
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv6PacketInfo(libc::in6_pktinfo),
-    #[cfg(any(
-        target_os = "freebsd",
-        apple_targets,
-        target_os = "netbsd",
-        target_os = "openbsd",
-    ))]
+    #[cfg(any(target_os = "freebsd", apple_targets, netbsdlike))]
     #[cfg(feature = "net")]
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv4RecvIf(libc::sockaddr_dl),
-    #[cfg(any(
-        target_os = "freebsd",
-        apple_targets,
-        target_os = "netbsd",
-        target_os = "openbsd",
-    ))]
+    #[cfg(any(target_os = "freebsd", apple_targets, netbsdlike))]
     #[cfg(feature = "net")]
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv4RecvDstAddr(libc::in_addr),
@@ -948,23 +931,13 @@ impl ControlMessageOwned {
                 let info = unsafe { ptr::read_unaligned(p as *const libc::in_pktinfo) };
                 ControlMessageOwned::Ipv4PacketInfo(info)
             }
-            #[cfg(any(
-                target_os = "freebsd",
-                apple_targets,
-                target_os = "netbsd",
-                target_os = "openbsd",
-            ))]
+            #[cfg(any(target_os = "freebsd", apple_targets, netbsdlike))]
             #[cfg(feature = "net")]
             (libc::IPPROTO_IP, libc::IP_RECVIF) => {
                 let dl = unsafe { ptr::read_unaligned(p as *const libc::sockaddr_dl) };
                 ControlMessageOwned::Ipv4RecvIf(dl)
             },
-            #[cfg(any(
-                target_os = "freebsd",
-                apple_targets,
-                target_os = "netbsd",
-                target_os = "openbsd",
-            ))]
+            #[cfg(any(target_os = "freebsd", apple_targets, netbsdlike))]
             #[cfg(feature = "net")]
             (libc::IPPROTO_IP, libc::IP_RECVDSTADDR) => {
                 let dl = unsafe { ptr::read_unaligned(p as *const libc::in_addr) };
@@ -1124,10 +1097,7 @@ pub enum ControlMessage<'a> {
     ///
     /// For further information, please refer to the
     /// [`ip(7)`](https://man7.org/linux/man-pages/man7/ip.7.html) man page.
-    #[cfg(any(target_os = "linux",
-              target_os = "netbsd",
-              target_os = "android",
-              apple_targets))]
+    #[cfg(any(linux_android, target_os = "netbsd", apple_targets))]
     #[cfg(feature = "net")]
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv4PacketInfo(&'a libc::in_pktinfo),
@@ -1145,7 +1115,7 @@ pub enum ControlMessage<'a> {
     Ipv6PacketInfo(&'a libc::in6_pktinfo),
 
     /// Configure the IPv4 source address with `IP_SENDSRCADDR`.
-    #[cfg(any(freebsdlike, target_os = "netbsd", target_os = "openbsd"))]
+    #[cfg(any(freebsdlike, netbsdlike))]
     #[cfg(feature = "net")]
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv4SendSrcAddr(&'a libc::in_addr),
@@ -1268,7 +1238,7 @@ impl<'a> ControlMessage<'a> {
                       target_os = "freebsd", apple_targets))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv6PacketInfo(info) => info as *const _ as *const u8,
-            #[cfg(any(freebsdlike, target_os = "netbsd", target_os = "openbsd"))]
+            #[cfg(any(freebsdlike, netbsdlike))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv4SendSrcAddr(addr) => addr as *const _ as *const u8,
             #[cfg(any(linux_android, freebsdlike, apple_targets, target_os = "haiku"))]
@@ -1330,7 +1300,7 @@ impl<'a> ControlMessage<'a> {
                       target_os = "freebsd", apple_targets))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv6PacketInfo(info) => mem::size_of_val(info),
-            #[cfg(any(freebsdlike, target_os = "netbsd", target_os = "openbsd"))]
+            #[cfg(any(freebsdlike, netbsdlike))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv4SendSrcAddr(addr) => mem::size_of_val(addr),
             #[cfg(any(linux_android, freebsdlike, apple_targets, target_os = "haiku"))]
@@ -1370,7 +1340,7 @@ impl<'a> ControlMessage<'a> {
                       target_os = "freebsd", apple_targets))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv6PacketInfo(_) => libc::IPPROTO_IPV6,
-            #[cfg(any(freebsdlike, target_os = "netbsd", target_os = "openbsd"))]
+            #[cfg(any(freebsdlike, netbsdlike))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv4SendSrcAddr(_) => libc::IPPROTO_IP,
             #[cfg(any(linux_android, freebsdlike, apple_targets, target_os = "haiku"))]
@@ -1415,7 +1385,7 @@ impl<'a> ControlMessage<'a> {
                       target_os = "freebsd", apple_targets))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv6PacketInfo(_) => libc::IPV6_PKTINFO,
-            #[cfg(any(freebsdlike, target_os = "netbsd", target_os = "openbsd"))]
+            #[cfg(any(freebsdlike, netbsdlike))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv4SendSrcAddr(_) => libc::IP_SENDSRCADDR,
             #[cfg(any(linux_android, freebsdlike, apple_targets, target_os = "haiku"))]
@@ -2183,12 +2153,11 @@ pub fn accept(sockfd: RawFd) -> Result<RawFd> {
         )
     ),
     freebsdlike,
+    netbsdlike,
     target_os = "emscripten",
     target_os = "fuchsia",
     target_os = "illumos",
     target_os = "linux",
-    target_os = "netbsd",
-    target_os = "openbsd"
 ))]
 pub fn accept4(sockfd: RawFd, flags: SockFlag) -> Result<RawFd> {
     let res = unsafe {

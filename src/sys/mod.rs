@@ -66,13 +66,7 @@ feature! {
     pub mod pthread;
 }
 
-#[cfg(any(
-    linux_android,
-    freebsdlike,
-    target_os = "macos",
-    target_os = "netbsd",
-    target_os = "openbsd"
-))]
+#[cfg(any(linux_android, freebsdlike, target_os = "macos", netbsdlike))]
 feature! {
     #![feature = "ptrace"]
     #[allow(missing_docs)]

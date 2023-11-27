@@ -47,7 +47,7 @@ libc_enum! {
         ), repr(i32))]
     #[non_exhaustive]
     pub enum Resource {
-        #[cfg(not(any(target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")))]
+        #[cfg(not(any(target_os = "freebsd", netbsdlike)))]
         /// The maximum amount (in bytes) of virtual memory the process is
         /// allowed to map.
         RLIMIT_AS,
@@ -74,12 +74,7 @@ libc_enum! {
         /// this process may establish.
         RLIMIT_LOCKS,
 
-        #[cfg(any(
-            linux_android,
-            target_os = "freebsd",
-            target_os = "openbsd",
-            target_os = "netbsd"
-        ))]
+        #[cfg(any(linux_android, target_os = "freebsd", netbsdlike))]
         /// The maximum size (in bytes) which a process may lock into memory
         /// using the mlock(2) system call.
         RLIMIT_MEMLOCK,
@@ -97,8 +92,7 @@ libc_enum! {
         #[cfg(any(
             linux_android,
             target_os = "freebsd",
-            target_os = "netbsd",
-            target_os = "openbsd",
+            netbsdlike,
             target_os = "aix",
         ))]
         /// The maximum number of simultaneous processes for this user id.
@@ -111,8 +105,7 @@ libc_enum! {
 
         #[cfg(any(linux_android,
             target_os = "freebsd",
-            target_os = "netbsd",
-            target_os = "openbsd",
+            netbsdlike,
             target_os = "aix",
         ))]
         /// When there is memory pressure and swap is available, prioritize

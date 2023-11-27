@@ -11,12 +11,7 @@ use cfg_if::cfg_if;
 
 #[cfg(all(
     feature = "mount",
-    any(
-        freebsdlike,
-        target_os = "macos",
-        target_os = "netbsd",
-        target_os = "openbsd"
-    )
+    any(freebsdlike, target_os = "macos", netbsdlike)
 ))]
 use crate::mount::MntFlags;
 #[cfg(target_os = "linux")]
@@ -429,12 +424,7 @@ impl Statfs {
     /// Get the mount flags
     #[cfg(all(
         feature = "mount",
-        any(
-            freebsdlike,
-            target_os = "macos",
-            target_os = "netbsd",
-            target_os = "openbsd"
-        )
+        any(freebsdlike, target_os = "macos", netbsdlike)
     ))]
     #[allow(clippy::unnecessary_cast)] // Not unnecessary on all arches
     pub fn flags(&self) -> MntFlags {
@@ -636,12 +626,7 @@ impl Debug for Statfs {
         ds.field("filesystem_id", &self.filesystem_id());
         #[cfg(all(
             feature = "mount",
-            any(
-                freebsdlike,
-                target_os = "macos",
-                target_os = "netbsd",
-                target_os = "openbsd"
-            )
+            any(freebsdlike, target_os = "macos", netbsdlike)
         ))]
         ds.field("flags", &self.flags());
         ds.finish()

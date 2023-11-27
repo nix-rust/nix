@@ -6,18 +6,8 @@ mod linux;
 #[cfg(linux_android)]
 pub use self::linux::*;
 
-#[cfg(any(
-    freebsdlike,
-    target_os = "macos",
-    target_os = "netbsd",
-    target_os = "openbsd"
-))]
+#[cfg(any(freebsdlike, netbsdlike, target_os = "macos"))]
 mod bsd;
 
-#[cfg(any(
-    freebsdlike,
-    target_os = "macos",
-    target_os = "netbsd",
-    target_os = "openbsd"
-))]
+#[cfg(any(freebsdlike, netbsdlike, target_os = "macos"))]
 pub use self::bsd::*;

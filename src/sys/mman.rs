@@ -134,10 +134,10 @@ libc_bitflags! {
         /// Rename private pages to a file.
         ///
         /// This was removed in FreeBSD 11 and is unused in DragonFlyBSD.
-        #[cfg(any(target_os = "netbsd", target_os = "openbsd"))]
+        #[cfg(netbsdlike)]
         MAP_RENAME;
         /// Region may contain semaphores.
-        #[cfg(any(freebsdlike, target_os = "netbsd", target_os = "openbsd"))]
+        #[cfg(any(freebsdlike, netbsdlike))]
         MAP_HASSEMAPHORE;
         /// Region grows down, like a stack.
         #[cfg(any(linux_android, freebsdlike, target_os = "openbsd"))]

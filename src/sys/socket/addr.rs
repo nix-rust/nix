@@ -209,7 +209,7 @@ pub enum AddressFamily {
     #[cfg(bsd)]
     Chaos = libc::AF_CHAOS,
     /// Novell and Xerox protocol
-    #[cfg(any(apple_targets, target_os = "netbsd", target_os = "openbsd"))]
+    #[cfg(any(apple_targets, netbsdlike))]
     Ns = libc::AF_NS,
     #[allow(missing_docs)] // Not documented anywhere that I can find
     #[cfg(bsd)]
