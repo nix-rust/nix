@@ -107,3 +107,6 @@ harness = false
 [[test]]
 name = "test-prctl"
 path = "test/sys/test_prctl.rs"
+
+[patch.crates-io]
+libc = { git = "https://github.com/larseggert/libc.git", branch = "feat-ttl" }
