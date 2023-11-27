@@ -556,12 +556,7 @@ mod recvfrom {
         }
     }
 
-    #[cfg(any(
-        target_os = "linux",
-        target_os = "android",
-        target_os = "freebsd",
-        target_os = "netbsd",
-    ))]
+    #[cfg(any(linux_android, target_os = "freebsd", target_os = "netbsd"))]
     #[test]
     pub fn udp_sendmmsg() {
         use std::io::IoSlice;

@@ -5,15 +5,10 @@ use nix::sys::sendfile::*;
 use tempfile::tempfile;
 
 cfg_if! {
-    if #[cfg(any(target_os = "android", target_os = "linux"))] {
+    if #[cfg(linux_android)] {
         use nix::unistd::{pipe, read};
         use std::os::unix::io::AsRawFd;
-    } else if #[cfg(any(
-        target_os = "dragonfly",
-        target_os = "freebsd",
-        apple_targets,
-        solarish
-    ))] {
+    } else if #[cfg(any(freebsdlike, apple_targets, solarish))] {
         use std::net::Shutdown;
         use std::os::unix::net::UnixStream;
     }

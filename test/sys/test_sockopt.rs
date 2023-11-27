@@ -127,7 +127,7 @@ fn test_so_tcp_maxseg() {
     // platforms keep it even lower. This might fail if you've tuned your initial MSS to be larger
     // than 700
     cfg_if! {
-        if #[cfg(any(target_os = "android", target_os = "linux"))] {
+        if #[cfg(linux_android)] {
             let segsize: u32 = 873;
             assert!(initial < segsize);
             setsockopt(&rsock, sockopt::TcpMaxSeg, &segsize).unwrap();
@@ -152,7 +152,7 @@ fn test_so_tcp_maxseg() {
     // Actual max segment size takes header lengths into account, max IPv4 options (60 bytes) + max
     // TCP options (40 bytes) are subtracted from the requested maximum as a lower boundary.
     cfg_if! {
-        if #[cfg(any(target_os = "android", target_os = "linux"))] {
+        if #[cfg(linux_android)] {
             assert!((segsize - 100) <= actual);
             assert!(actual <= segsize);
         } else {
@@ -177,7 +177,7 @@ fn test_so_type() {
 
 /// getsockopt(_, sockopt::SockType) should gracefully handle unknown socket
 /// types.  Regression test for https://github.com/nix-rust/nix/issues/1819
-#[cfg(any(target_os = "android", target_os = "linux",))]
+#[cfg(linux_android)]
 #[test]
 fn test_so_type_unknown() {
     use nix::errno::Errno;
@@ -254,12 +254,7 @@ fn test_so_tcp_keepalive() {
     setsockopt(&fd, sockopt::KeepAlive, &true).unwrap();
     assert!(getsockopt(&fd, sockopt::KeepAlive).unwrap());
 
-    #[cfg(any(
-        target_os = "android",
-        target_os = "dragonfly",
-        target_os = "freebsd",
-        target_os = "linux"
-    ))]
+    #[cfg(any(linux_android, freebsdlike))]
     {
         let x = getsockopt(&fd, sockopt::TcpKeepIdle).unwrap();
         setsockopt(&fd, sockopt::TcpKeepIdle, &(x + 1)).unwrap();
@@ -303,7 +298,7 @@ fn test_get_mtu() {
 }
 
 #[test]
-#[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
+#[cfg(any(linux_android, target_os = "freebsd"))]
 fn test_ttl_opts() {
     let fd4 = socket(
         AddressFamily::Inet,
@@ -369,7 +364,7 @@ fn test_dontfrag_opts() {
 }
 
 #[test]
-#[cfg(any(target_os = "android", apple_targets, target_os = "linux",))]
+#[cfg(any(linux_android, apple_targets))]
 // Disable the test under emulation because it fails in Cirrus-CI.  Lack
 // of QEMU support is suspected.
 #[cfg_attr(qemu, ignore)]
