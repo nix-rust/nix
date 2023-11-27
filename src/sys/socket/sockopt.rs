@@ -446,7 +446,7 @@ sockopt_impl!(
 );
 #[cfg(any(
     apple_targets,
-    linux_android
+    linux_android,
     target_os = "freebsd",
     target_os = "netbsd",
     target_os = "openbsd",
@@ -1058,7 +1058,7 @@ sockopt_impl!(
 );
 #[cfg(any(
     apple_targets,
-    linux_android
+    linux_android,
     target_os = "freebsd",
     target_os = "netbsd",
     target_os = "openbsd",
@@ -1188,7 +1188,7 @@ sockopt_impl!(
 );
 #[cfg(any(
     apple_targets,
-    linux_android
+    linux_android,
     target_os = "freebsd",
     target_os = "netbsd",
     target_os = "openbsd",
