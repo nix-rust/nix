@@ -2828,3 +2828,83 @@ fn test_icmp_protocol() {
     sendto(owned_fd.as_raw_fd(), &packet, &dest_addr, MsgFlags::empty())
         .unwrap();
 }
+
+#[cfg(any(
+    apple_targets,
+    linux_android,
+    target_os = "freebsd",
+    target_os = "netbsd",
+    target_os = "openbsd",
+))]
+#[test]
+pub fn test_recv_iptos_ipttl() {
+    use nix::sys::socket::sockopt::{IpRecvTos, IpRecvTtl};
+    use nix::sys::socket::{bind, SockFlag, SockType, SockaddrIn};
+    use nix::sys::socket::{getsockname, setsockopt, socket};
+    use nix::sys::socket::{recvmsg, sendmsg, ControlMessageOwned, MsgFlags};
+    use std::io::{IoSlice, IoSliceMut};
+
+    let lo_ifaddr = loopback_address(AddressFamily::Inet);
+    let (lo_name, lo) = match lo_ifaddr {
+        Some(ifaddr) => (
+            ifaddr.interface_name,
+            ifaddr.address.expect("Expect IPv4 address on interface"),
+        ),
+        None => return,
+    };
+    let receive = socket(
+        AddressFamily::Inet,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )
+    .expect("receive socket failed");
+    bind(receive.as_raw_fd(), &lo).expect("bind failed");
+    let sa: SockaddrIn =
+        getsockname(receive.as_raw_fd()).expect("getsockname failed");
+    setsockopt(&receive, IpRecvTos, &true).expect("setsockopt failed");
+    setsockopt(&receive, IpRecvTtl, &true).expect("setsockopt failed");
+
+    {
+        let slice = [1u8, 2, 3, 4, 5, 6, 7, 8];
+        let iov = [IoSlice::new(&slice)];
+
+        let send = socket(
+            AddressFamily::Inet,
+            SockType::Datagram,
+            SockFlag::empty(),
+            None,
+        )
+        .expect("send socket failed");
+        sendmsg(send.as_raw_fd(), &iov, &[], MsgFlags::empty(), Some(&sa))
+            .expect("sendmsg failed");
+    }
+
+    {
+        let mut buf = [0u8; 8];
+        let mut iovec = [IoSliceMut::new(&mut buf)];
+
+        let mut space = cmsg_space!(IpTos, IpTtl);
+        let msg = recvmsg::<()>(
+            receive.as_raw_fd(),
+            &mut iovec,
+            Some(&mut space),
+            MsgFlags::empty(),
+        )
+        .expect("recvmsg failed");
+        assert!(!msg
+            .flags
+            .intersects(MsgFlags::MSG_TRUNC | MsgFlags::MSG_CTRUNC));
+
+        for cmsg in msg.cmsgs() {
+            match cmsg {
+                ControlMessageOwned::IpTos(t) => continue,
+                ControlMessageOwned::IpTtl(t) => continue,
+                _ => panic!("unexpected control msg"),
+            };
+        }
+
+        assert_eq!(msg.bytes, 8);
+        assert_eq!(*iovec[0], [1u8, 2, 3, 4, 5, 6, 7, 8]);
+    }
+}
