@@ -435,10 +435,7 @@ cfg_if! {
         // https://github.com/nix-rust/nix/issues/555
         execve_test_factory!(test_execve, execve, CString::new("/bin/sh").unwrap().as_c_str());
         execve_test_factory!(test_fexecve, fexecve, File::open("/bin/sh").unwrap().into_raw_fd());
-    } else if #[cfg(any(solarish,
-                        apple_targets,
-                        target_os = "netbsd",
-                        target_os = "openbsd"))] {
+    } else if #[cfg(any(solarish, apple_targets, netbsdlike))] {
         execve_test_factory!(test_execve, execve, CString::new("/bin/sh").unwrap().as_c_str());
         // No fexecve() on ios, macos, NetBSD, OpenBSD.
     }
