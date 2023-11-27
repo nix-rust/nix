@@ -805,43 +805,41 @@ pub enum ControlMessageOwned {
     TlsGetRecordType(TlsGetRecordType),
 
     #[cfg(any(
-        target_os = "freebsd",
         apple_targets,
+        linux_android
+        target_os = "freebsd",
         target_os = "netbsd",
         target_os = "openbsd",
-        target_os = "android",
-        target_os = "linux",
     ))]
     #[cfg(feature = "net")]
     IpTos(u8),
+
     #[cfg(any(
-        target_os = "freebsd",
         apple_targets,
+        linux_android
+        target_os = "freebsd",
         target_os = "netbsd",
         target_os = "openbsd",
-        target_os = "android",
-        target_os = "linux",
     ))]
     #[cfg(feature = "net")]
     Ipv6TClass(u8),
 
     #[cfg(any(
-        target_os = "freebsd",
         apple_targets,
+        linux_android
+        target_os = "freebsd",
         target_os = "netbsd",
         target_os = "openbsd",
-        target_os = "android",
-        target_os = "linux",
     ))]
     #[cfg(feature = "net")]
     IpTtl(u8),
+
     #[cfg(any(
-        target_os = "freebsd",
         apple_targets,
+        linux_android
+        target_os = "freebsd",
         target_os = "netbsd",
         target_os = "openbsd",
-        target_os = "android",
-        target_os = "linux",
     ))]
     #[cfg(feature = "net")]
     Ipv6HopLimit(u8),
@@ -1036,22 +1034,18 @@ impl ControlMessageOwned {
                 let tos = unsafe { ptr::read_unaligned(p as *const u8) };
                 ControlMessageOwned::IpTos(tos.into())
             },
-            #[cfg(any(
-                target_os = "android",
-                target_os = "linux",
-            ))]
+            #[cfg(linux_android)]
             #[cfg(feature = "net")]
             (libc::IPPROTO_IP, libc::IP_TOS) => {
                 let tos = unsafe { ptr::read_unaligned(p as *const u8) };
                 ControlMessageOwned::IpTos(tos.into())
             },
             #[cfg(any(
-                target_os = "freebsd",
                 apple_targets,
+                linux_android
+                target_os = "freebsd",
                 target_os = "netbsd",
                 target_os = "openbsd",
-                target_os = "android",
-                target_os = "linux",
             ))]
             #[cfg(feature = "net")]
             (libc::IPPROTO_IPV6, libc::IPV6_TCLASS) => {
@@ -1069,22 +1063,18 @@ impl ControlMessageOwned {
                 let ttl = unsafe { ptr::read_unaligned(p as *const u8) };
                 ControlMessageOwned::IpTtl(ttl.into())
             },
-            #[cfg(any(
-                target_os = "android",
-                target_os = "linux",
-            ))]
+            #[cfg(linux_android)]
             #[cfg(feature = "net")]
             (libc::IPPROTO_IP, libc::IP_TTL) => {
                 let ttl = unsafe { ptr::read_unaligned(p as *const u8) };
                 ControlMessageOwned::IpTtl(ttl.into())
             },
             #[cfg(any(
-                target_os = "freebsd",
                 apple_targets,
+                linux_android
+                target_os = "freebsd",
                 target_os = "netbsd",
                 target_os = "openbsd",
-                target_os = "android",
-                target_os = "linux",
             ))]
             #[cfg(feature = "net")]
             (libc::IPPROTO_IPV6, libc::IPV6_HOPLIMIT) => {
@@ -1258,33 +1248,31 @@ pub enum ControlMessage<'a> {
     TxTime(&'a u64),
 
     #[cfg(any(
-        target_os = "freebsd",
         apple_targets,
+        linux_android,
+        target_os = "freebsd",
         target_os = "netbsd",
         target_os = "openbsd",
-        target_os = "android",
-        target_os = "linux",
     ))]
     #[cfg(feature = "net")]
     IpTos(&'a libc::c_int),
+
     #[cfg(any(
-        target_os = "freebsd",
         apple_targets,
+        linux_android,
+        target_os = "freebsd",
         target_os = "netbsd",
         target_os = "openbsd",
-        target_os = "android",
-        target_os = "linux",
     ))]
     #[cfg(feature = "net")]
     Ipv6TClass(&'a libc::c_int),
 
     #[cfg(any(
-        target_os = "freebsd",
         apple_targets,
+        linux_android,
+        target_os = "freebsd",
         target_os = "netbsd",
         target_os = "openbsd",
-        target_os = "android",
-        target_os = "linux",
     ))]
     #[cfg(feature = "net")]
     IpTtl(&'a libc::c_int),
@@ -1393,36 +1381,33 @@ impl<'a> ControlMessage<'a> {
                 tx_time as *const _ as *const u8
             },
             #[cfg(any(
-                target_os = "freebsd",
                 apple_targets,
+                linux_android,
+                target_os = "freebsd",
                 target_os = "netbsd",
                 target_os = "openbsd",
-                target_os = "android",
-                target_os = "linux",
             ))]
             #[cfg(feature = "net")]
             ControlMessage::IpTos(tos) => {
                 tos as *const _ as *const u8
             },
             #[cfg(any(
-                target_os = "freebsd",
                 apple_targets,
+                linux_android,
+                target_os = "freebsd",
                 target_os = "netbsd",
                 target_os = "openbsd",
-                target_os = "android",
-                target_os = "linux",
             ))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv6TClass(tclass) => {
                 tclass as *const _ as *const u8
             },
             #[cfg(any(
-                target_os = "freebsd",
                 apple_targets,
+                linux_android,
+                target_os = "freebsd",
                 target_os = "netbsd",
                 target_os = "openbsd",
-                target_os = "android",
-                target_os = "linux",
             ))]
             #[cfg(feature = "net")]
             ControlMessage::IpTtl(ttl) => {
@@ -1493,36 +1478,33 @@ impl<'a> ControlMessage<'a> {
                 mem::size_of_val(tx_time)
             },
             #[cfg(any(
-                target_os = "freebsd",
                 apple_targets,
+                linux_android,
+                target_os = "freebsd",
                 target_os = "netbsd",
                 target_os = "openbsd",
-                target_os = "android",
-                target_os = "linux",
             ))]
             #[cfg(feature = "net")]
             ControlMessage::IpTos(tos) => {
                 mem::size_of_val(tos)
             },
             #[cfg(any(
-                target_os = "freebsd",
                 apple_targets,
+                linux_android,
+                target_os = "freebsd",
                 target_os = "netbsd",
                 target_os = "openbsd",
-                target_os = "android",
-                target_os = "linux",
             ))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv6TClass(tclass) => {
                 mem::size_of_val(tclass)
             },
             #[cfg(any(
-                target_os = "freebsd",
                 apple_targets,
+                linux_android,
+                target_os = "freebsd",
                 target_os = "netbsd",
                 target_os = "openbsd",
-                target_os = "android",
-                target_os = "linux",
             ))]
             #[cfg(feature = "net")]
             ControlMessage::IpTtl(ttl) => {
@@ -1563,32 +1545,29 @@ impl<'a> ControlMessage<'a> {
             #[cfg(target_os = "linux")]
             ControlMessage::TxTime(_) => libc::SOL_SOCKET,
             #[cfg(any(
-                target_os = "freebsd",
                 apple_targets,
+                linux_android,
+                target_os = "freebsd",
                 target_os = "netbsd",
                 target_os = "openbsd",
-                target_os = "android",
-                target_os = "linux",
             ))]
             #[cfg(feature = "net")]
             ControlMessage::IpTos(_) => libc::IPPROTO_IP,
             #[cfg(any(
-                target_os = "freebsd",
                 apple_targets,
+                linux_android,
+                target_os = "freebsd",
                 target_os = "netbsd",
                 target_os = "openbsd",
-                target_os = "android",
-                target_os = "linux",
             ))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv6TClass(_) => libc::IPPROTO_IPV6,
             #[cfg(any(
-                target_os = "freebsd",
                 apple_targets,
+                linux_android,
+                target_os = "freebsd",
                 target_os = "netbsd",
                 target_os = "openbsd",
-                target_os = "android",
-                target_os = "linux",
             ))]
             #[cfg(feature = "net")]
             ControlMessage::IpTtl(_) => libc::IPPROTO_IP,
@@ -1642,32 +1621,29 @@ impl<'a> ControlMessage<'a> {
                 libc::SCM_TXTIME
             },
             #[cfg(any(
-                target_os = "freebsd",
                 apple_targets,
+                linux_android,
+                target_os = "freebsd",
                 target_os = "netbsd",
                 target_os = "openbsd",
-                target_os = "android",
-                target_os = "linux",
             ))]
             #[cfg(feature = "net")]
             ControlMessage::IpTos(_) => libc::IP_TOS,
             #[cfg(any(
-                target_os = "freebsd",
                 apple_targets,
+                linux_android,
+                target_os = "freebsd",
                 target_os = "netbsd",
                 target_os = "openbsd",
-                target_os = "android",
-                target_os = "linux",
             ))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv6TClass(_) => libc::IPV6_TCLASS,
             #[cfg(any(
-                target_os = "freebsd",
                 apple_targets,
+                linux_android,
+                target_os = "freebsd",
                 target_os = "netbsd",
                 target_os = "openbsd",
-                target_os = "android",
-                target_os = "linux",
             ))]
             #[cfg(feature = "net")]
             ControlMessage::IpTtl(_) => libc::IP_TTL,
