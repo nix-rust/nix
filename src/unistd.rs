@@ -1956,7 +1956,6 @@ pub enum PathconfVar {
         freebsdlike,
         netbsdlike,
         target_os = "linux",
-        target_os = "openbsd",
         target_os = "redox"
     ))]
     /// Minimum number of bits needed to represent, as a signed integer value,
