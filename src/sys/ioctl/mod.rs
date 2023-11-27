@@ -589,8 +589,12 @@ cfg_if! {
 /// The generated function has the following signature:
 ///
 /// ```rust,ignore
-/// pub unsafe fn FUNCTION_NAME(fd: libc::c_int, data: libc::c_int) -> Result<libc::c_int>
+/// pub unsafe fn FUNCTION_NAME(fd: libc::c_int, data: nix::sys::ioctl::ioctl_param_type) -> Result<libc::c_int>
 /// ```
+///
+/// `nix::sys::ioctl::ioctl_param_type` depends on the OS:
+/// *   BSD - `libc::c_int`
+/// *   Linux - `libc::c_ulong`
 ///
 /// For a more in-depth explanation of ioctls, see [`::sys::ioctl`](sys/ioctl/index.html).
 ///
@@ -614,7 +618,7 @@ macro_rules! ioctl_write_int_bad {
     ($(#[$attr:meta])* $name:ident, $nr:expr) => (
         $(#[$attr])*
         pub unsafe fn $name(fd: $crate::libc::c_int,
-                            data: $crate::libc::c_int)
+                            data: $crate::sys::ioctl::ioctl_param_type)
                             -> $crate::Result<$crate::libc::c_int> {
             unsafe {
                 convert_ioctl_res!($crate::libc::ioctl(fd, $nr as $crate::sys::ioctl::ioctl_num_type, data))
