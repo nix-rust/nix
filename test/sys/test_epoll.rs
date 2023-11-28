@@ -13,7 +13,7 @@ pub fn test_epoll_errno() {
 }
 
 #[test]
-pub fn test_epoll_ctl() {
+pub fn test_epoll_add_delete() {
     let epoll = Epoll::new(EpollCreateFlags::empty()).unwrap();
     let event = EpollEvent::new(EpollFlags::EPOLLIN | EpollFlags::EPOLLERR, 1);
     let fd_1 = unsafe { BorrowedFd::borrow_raw(1) };
