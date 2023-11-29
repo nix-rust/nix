@@ -357,6 +357,17 @@ sockopt_impl!(
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
+    /// Set or read the hop limit value of outgoing IPv6 multicast packets for
+    /// this socket.
+    Ipv6MulticastHops,
+    Both,
+    libc::IPPROTO_IPV6,
+    libc::IPV6_MULTICAST_HOPS,
+    libc::c_int
+);
+#[cfg(feature = "net")]
+sockopt_impl!(
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     /// Set or read a boolean integer argument that determines whether sent
     /// multicast packets should be looped back to the local sockets.
     IpMulticastLoop,
