@@ -32,7 +32,7 @@ pub mod sockopt;
  *
  */
 
-pub use self::addr::{SockaddrLike, SockaddrStorage};
+pub use self::addr::{SockaddrFromRaw, SockaddrLike, SockaddrStorage};
 
 #[cfg(solarish)]
 pub use self::addr::{AddressFamily, UnixAddr};

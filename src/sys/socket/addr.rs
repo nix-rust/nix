@@ -754,6 +754,14 @@ pub trait SockaddrLike: private::SockaddrLikePriv {
     }
 }
 
+/// Checked conversion from a socket address pointer.
+///
+/// **Note**: This trait is [sealed] and its functionality is hidden.
+/// It cannot be implemented outside of nix.
+///
+/// [sealed]: https://rust-lang.github.io/api-guidelines/future-proofing.html#sealed-traits-protect-against-downstream-implementations-c-sealed
+pub trait SockaddrFromRaw: private::SockaddrFromRawPriv {}
+
 /// The error returned by [`SockaddrLike::set_length`] on an address whose length is statically
 /// fixed.
 #[derive(Copy, Clone, Debug)]
@@ -1450,6 +1458,8 @@ impl PartialEq for SockaddrStorage {
 }
 
 pub(super) mod private {
+    use std::mem::MaybeUninit;
+
     pub trait SockaddrLikePriv {
         /// Returns a mutable raw pointer to the inner structure.
         ///
@@ -1461,6 +1471,52 @@ pub(super) mod private {
         /// not change the sockaddr type.
         fn as_mut_ptr(&mut self) -> *mut libc::sockaddr {
             self as *mut Self as *mut libc::sockaddr
+        }
+    }
+
+    /// Checked conversion from a socket address pointer.
+    pub trait SockaddrFromRawPriv {
+        /// The libc storage type for this socket address.
+        type Storage: Copy + Send + Sync + 'static;
+
+        /// Unsafe constructor from a variable length source.
+        ///
+        /// **Note**: This method must run the invalidity checks setuped by [`Self::init_storage`]. For these checks,
+        /// it must only access the fields that have been initialized by [`Self::init_storage`], the other fields
+        /// could be uninitialized.
+        ///
+        /// **Note**: Implementors should not forget that `len` can be larger than the size of
+        /// `Self::Storage`, so usually a bounds check on the passed length of the
+        /// address is mandatory, too.
+        ///
+        /// # Safety
+        ///
+        /// One of the following must be true:
+        ///
+        /// - `addr` must be dereferencable to `Self::Storage`.
+        ///
+        /// - `addr` has been initialized with `Self::init_storage`.
+        ///
+        /// - `addr` has been zeroed.
+        ///
+        /// Additionally, if `addr` is dereferencable to `Self::Storage`, then `len` must indicate
+        /// the actual length of the address.
+        unsafe fn from_raw(
+            addr: *const Self::Storage,
+            len: usize,
+        ) -> Self
+        where
+            Self: Sized;
+
+        /// Initialize the storage for this socket address, such that after calling this function,
+        /// the memory representation of the argument is either valid or *provably* invalid for `Self`.
+        ///
+        /// Provably means that the invalidity must be detectable by only reading fields that have been
+        /// initialized by this function.
+        fn init_storage(buf: &mut MaybeUninit<Self::Storage>) {
+            unsafe {
+                buf.as_mut_ptr().write_bytes(0u8, 1);
+            }
         }
     }
 }
