@@ -200,11 +200,10 @@ mod tests {
             } else {
                 continue;
             };
-            if sock.family() == Some(crate::sys::socket::AddressFamily::Inet) {
+            if sock.family() == crate::sys::socket::AddressFamily::INET {
                 let _ = sock.as_sockaddr_in().unwrap();
                 return;
-            } else if sock.family()
-                == Some(crate::sys::socket::AddressFamily::Inet6)
+            } else if sock.family() == crate::sys::socket::AddressFamily::INET6
             {
                 let _ = sock.as_sockaddr_in6().unwrap();
                 return;
