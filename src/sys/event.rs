@@ -191,7 +191,7 @@ libc_bitflags! {
         EV_NODATA;
         #[allow(missing_docs)]
         EV_ONESHOT;
-        #[cfg(any(target_os = "macos", target_os = "tvos"))]
+        #[cfg(apple_targets)]
         #[allow(missing_docs)]
         EV_OOBAND;
         #[cfg(apple_targets)]

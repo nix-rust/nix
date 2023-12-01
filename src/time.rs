@@ -40,7 +40,11 @@ impl ClockId {
     }
 
     /// Sets time to `timespec` on the clock id
-    #[cfg(not(any(apple_targets, target_os = "redox", target_os = "hermit",)))]
+    #[cfg(not(any(
+        target_os = "macos",
+        target_os = "redox",
+        target_os = "hermit"
+    )))]
     pub fn set_time(self, timespec: TimeSpec) -> Result<()> {
         clock_settime(self, timespec)
     }

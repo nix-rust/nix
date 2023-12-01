@@ -52,7 +52,7 @@ pub use crate::sys::socket::addr::netlink::NetlinkAddr;
 #[cfg(apple_targets)]
 #[cfg(feature = "ioctl")]
 pub use crate::sys::socket::addr::sys_control::SysControlAddr;
-#[cfg(any(linux_android, target_os = "macos"))]
+#[cfg(any(linux_android, apple_targets))]
 pub use crate::sys::socket::addr::vsock::VsockAddr;
 
 #[cfg(all(feature = "uio", not(target_os = "redox")))]

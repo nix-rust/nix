@@ -67,7 +67,7 @@ mod aio_fsync {
     // Skip on Linux, because Linux's AIO implementation can't detect errors
     // synchronously
     #[test]
-    #[cfg(any(target_os = "freebsd", target_os = "macos"))]
+    #[cfg(any(target_os = "freebsd", apple_targets))]
     fn error() {
         use std::mem;
 
@@ -157,7 +157,7 @@ mod aio_read {
     // Skip on Linux, because Linux's AIO implementation can't detect errors
     // synchronously
     #[test]
-    #[cfg(any(target_os = "freebsd", target_os = "macos"))]
+    #[cfg(any(target_os = "freebsd", apple_targets))]
     fn error() {
         const INITIAL: &[u8] = b"abcdef123456";
         let mut rbuf = vec![0; 4];
@@ -411,7 +411,7 @@ mod aio_write {
     // Skip on Linux, because Linux's AIO implementation can't detect errors
     // synchronously
     #[test]
-    #[cfg(any(target_os = "freebsd", target_os = "macos"))]
+    #[cfg(any(target_os = "freebsd", apple_targets))]
     fn error() {
         let wbuf = "CDEF".to_string().into_bytes();
         let mut aiow = Box::pin(AioWrite::new(
@@ -574,7 +574,7 @@ fn test_aio_cancel_all() {
 #[cfg_attr(target_os = "linux", ignore)]
 // On Cirrus, aio_suspend is failing with EINVAL
 // https://github.com/nix-rust/nix/issues/1361
-#[cfg_attr(target_os = "macos", ignore)]
+#[cfg_attr(apple_targets, ignore)]
 fn test_aio_suspend() {
     const INITIAL: &[u8] = b"abcdef123456";
     const WBUF: &[u8] = b"CDEFG";

@@ -8,7 +8,7 @@
 ))]
 #[cfg(feature = "net")]
 pub use self::datalink::LinkAddr;
-#[cfg(any(linux_android, target_os = "macos"))]
+#[cfg(any(linux_android, apple_targets))]
 pub use self::vsock::VsockAddr;
 use super::sa_family_t;
 use crate::errno::Errno;
@@ -197,7 +197,7 @@ pub enum AddressFamily {
     #[cfg(target_os = "linux")]
     Nfc = libc::AF_NFC,
     /// VMWare VSockets protocol for hypervisor-guest interaction.
-    #[cfg(any(linux_android, target_os = "macos"))]
+    #[cfg(any(linux_android, apple_targets))]
     Vsock = libc::AF_VSOCK,
     /// ARPANet IMP addresses
     #[cfg(bsd)]
@@ -259,7 +259,7 @@ impl AddressFamily {
             libc::AF_INET6 => Some(AddressFamily::Inet6),
             #[cfg(linux_android)]
             libc::AF_NETLINK => Some(AddressFamily::Netlink),
-            #[cfg(target_os = "macos")]
+            #[cfg(apple_targets)]
             libc::AF_SYSTEM => Some(AddressFamily::System),
             #[cfg(not(any(linux_android, target_os = "redox")))]
             libc::PF_ROUTE => Some(AddressFamily::Route),
@@ -267,7 +267,7 @@ impl AddressFamily {
             libc::AF_PACKET => Some(AddressFamily::Packet),
             #[cfg(any(bsd, target_os = "illumos"))]
             libc::AF_LINK => Some(AddressFamily::Link),
-            #[cfg(any(linux_android, target_os = "macos"))]
+            #[cfg(any(linux_android, apple_targets))]
             libc::AF_VSOCK => Some(AddressFamily::Vsock),
             _ => None,
         }
@@ -1078,7 +1078,7 @@ pub union SockaddrStorage {
     sin6: SockaddrIn6,
     ss: libc::sockaddr_storage,
     su: UnixAddr,
-    #[cfg(any(linux_android, target_os = "macos"))]
+    #[cfg(any(linux_android, apple_targets))]
     vsock: VsockAddr,
 }
 impl private::SockaddrLikePriv for SockaddrStorage {}
@@ -1154,7 +1154,7 @@ impl SockaddrLike for SockaddrStorage {
                 libc::AF_SYSTEM => unsafe {
                     SysControlAddr::from_raw(addr, l).map(|sctl| Self { sctl })
                 },
-                #[cfg(any(linux_android, target_os = "macos"))]
+                #[cfg(any(linux_android, apple_targets))]
                 libc::AF_VSOCK => unsafe {
                     VsockAddr::from_raw(addr, l).map(|vsock| Self { vsock })
                 },
@@ -1312,7 +1312,7 @@ impl SockaddrStorage {
     accessors! {as_sys_control_addr, as_sys_control_addr_mut, SysControlAddr,
     AddressFamily::System, libc::sockaddr_ctl, sctl}
 
-    #[cfg(any(linux_android, target_os = "macos"))]
+    #[cfg(any(linux_android, apple_targets))]
     accessors! {as_vsock_addr, as_vsock_addr_mut, VsockAddr,
     AddressFamily::Vsock, libc::sockaddr_vm, vsock}
 }
@@ -1349,7 +1349,7 @@ impl fmt::Display for SockaddrStorage {
                 #[cfg(feature = "ioctl")]
                 libc::AF_SYSTEM => self.sctl.fmt(f),
                 libc::AF_UNIX => self.su.fmt(f),
-                #[cfg(any(linux_android, target_os = "macos"))]
+                #[cfg(any(linux_android, apple_targets))]
                 libc::AF_VSOCK => self.vsock.fmt(f),
                 _ => "<Address family unspecified>".fmt(f),
             }
@@ -1411,7 +1411,7 @@ impl Hash for SockaddrStorage {
                 #[cfg(feature = "ioctl")]
                 libc::AF_SYSTEM => self.sctl.hash(s),
                 libc::AF_UNIX => self.su.hash(s),
-                #[cfg(any(linux_android, target_os = "macos"))]
+                #[cfg(any(linux_android, apple_targets))]
                 libc::AF_VSOCK => self.vsock.hash(s),
                 _ => self.ss.hash(s),
             }
@@ -1441,7 +1441,7 @@ impl PartialEq for SockaddrStorage {
                 #[cfg(feature = "ioctl")]
                 (libc::AF_SYSTEM, libc::AF_SYSTEM) => self.sctl == other.sctl,
                 (libc::AF_UNIX, libc::AF_UNIX) => self.su == other.su,
-                #[cfg(any(linux_android, target_os = "macos"))]
+                #[cfg(any(linux_android, apple_targets))]
                 (libc::AF_VSOCK, libc::AF_VSOCK) => self.vsock == other.vsock,
                 _ => false,
             }
@@ -1972,7 +1972,7 @@ mod datalink {
     }
 }
 
-#[cfg(any(linux_android, target_os = "macos"))]
+#[cfg(any(linux_android, apple_targets))]
 pub mod vsock {
     use super::*;
     use crate::sys::socket::addr::AddressFamily;
@@ -2023,7 +2023,7 @@ pub mod vsock {
             (inner.svm_family, inner.svm_cid, inner.svm_port)
                 == (other.svm_family, other.svm_cid, other.svm_port)
         }
-        #[cfg(target_os = "macos")]
+        #[cfg(apple_targets)]
         fn eq(&self, other: &Self) -> bool {
             let (inner, other) = (self.0, other.0);
             (
@@ -2048,7 +2048,7 @@ pub mod vsock {
             let inner = self.0;
             (inner.svm_family, inner.svm_cid, inner.svm_port).hash(s);
         }
-        #[cfg(target_os = "macos")]
+        #[cfg(apple_targets)]
         fn hash<H: Hasher>(&self, s: &mut H) {
             let inner = self.0;
             (
@@ -2073,7 +2073,7 @@ pub mod vsock {
             addr.svm_cid = cid;
             addr.svm_port = port;
 
-            #[cfg(target_os = "macos")]
+            #[cfg(apple_targets)]
             {
                 addr.svm_len = std::mem::size_of::<sockaddr_vm>() as u8;
             }
