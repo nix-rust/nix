@@ -1750,7 +1750,7 @@ pub fn test_syscontrol() {
     // connect(fd.as_raw_fd(), &sockaddr).expect("connect failed");
 }
 
-#[cfg(bsd)]
+#[cfg(bsd, linux_android)]
 fn loopback_address(
     family: AddressFamily,
 ) -> Option<nix::ifaddrs::InterfaceAddress> {
