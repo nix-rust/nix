@@ -61,11 +61,7 @@ libc_bitflags!(
         #[cfg(any(target_os = "macos", target_os = "freebsd"))]
         MNT_SNAPSHOT;
         /// Using soft updates.
-        #[cfg(any(
-                freebsdlike,
-                target_os = "netbsd",
-                target_os = "openbsd"
-        ))]
+        #[cfg(any(freebsdlike, netbsdlike))]
         MNT_SOFTDEP;
         /// Directories with the SUID bit set chown new files to their own
         /// owner.

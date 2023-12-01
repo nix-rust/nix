@@ -971,8 +971,7 @@ pub fn execveat<SA: AsRef<CStr>, SE: AsRef<CStr>>(
         linux_android,
         freebsdlike,
         solarish,
-        target_os = "netbsd",
-        target_os = "openbsd",
+        netbsdlike
 ))]
 pub fn daemon(nochdir: bool, noclose: bool) -> Result<()> {
     let res = unsafe { libc::daemon(nochdir as c_int, noclose as c_int) };
@@ -1195,8 +1194,7 @@ feature! {
     solarish,
     target_os = "emscripten",
     target_os = "redox",
-    target_os = "netbsd",
-    target_os = "openbsd",
+    netbsdlike,
 ))]
 pub fn pipe2(flags: OFlag) -> Result<(OwnedFd, OwnedFd)> {
     let mut fds = mem::MaybeUninit::<[OwnedFd; 2]>::uninit();
@@ -1350,12 +1348,7 @@ pub fn chroot<P: ?Sized + NixPath>(path: &P) -> Result<()> {
 /// Commit filesystem caches to disk
 ///
 /// See also [sync(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/sync.html)
-#[cfg(any(
-    freebsdlike,
-    target_os = "linux",
-    target_os = "netbsd",
-    target_os = "openbsd"
-))]
+#[cfg(any(freebsdlike, target_os = "linux", netbsdlike))]
 pub fn sync() {
     unsafe { libc::sync() };
 }
@@ -1388,11 +1381,10 @@ pub fn fsync(fd: RawFd) -> Result<()> {
 #[cfg(any(
     linux_android,
     solarish,
+    netbsdlike,
     target_os = "freebsd",
     target_os = "emscripten",
     target_os = "fuchsia",
-    target_os = "netbsd",
-    target_os = "openbsd",
 ))]
 #[inline]
 pub fn fdatasync(fd: RawFd) -> Result<()> {
@@ -1962,9 +1954,8 @@ feature! {
 pub enum PathconfVar {
     #[cfg(any(
         freebsdlike,
+        netbsdlike,
         target_os = "linux",
-        target_os = "netbsd",
-        target_os = "openbsd",
         target_os = "redox"
     ))]
     /// Minimum number of bits needed to represent, as a signed integer value,
@@ -1992,9 +1983,8 @@ pub enum PathconfVar {
     #[cfg(any(
         linux_android,
         solarish,
+        netbsdlike,
         target_os = "dragonfly",
-        target_os = "netbsd",
-        target_os = "openbsd",
         target_os = "redox",
     ))]
     /// Symbolic links can be created.
@@ -2044,8 +2034,7 @@ pub enum PathconfVar {
         linux_android,
         freebsdlike,
         solarish,
-        target_os = "netbsd",
-        target_os = "openbsd",
+        netbsdlike,
         target_os = "redox",
     ))]
     /// Maximum number of bytes in a symbolic link.
@@ -2084,8 +2073,7 @@ pub enum PathconfVar {
         linux_android,
         freebsdlike,
         solarish,
-        target_os = "netbsd",
-        target_os = "openbsd",
+        netbsdlike,
         target_os = "redox",
     ))]
     /// Synchronized input or output operations may be performed for the
@@ -2415,8 +2403,7 @@ pub enum SysconfVar {
     #[cfg(any(
         apple_targets,
         target_os = "linux",
-        target_os = "netbsd",
-        target_os = "openbsd"
+        netbsdlike,
     ))]
     /// The implementation supports the Thread CPU-Time Clocks option.
     _POSIX_THREAD_CPUTIME = libc::_SC_THREAD_CPUTIME,

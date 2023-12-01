@@ -99,10 +99,7 @@ libc_bitflags!(
         #[cfg(not(solarish))]
         O_DIRECTORY;
         /// Implicitly follow each `write()` with an `fdatasync()`.
-        #[cfg(any(linux_android,
-                  apple_targets,
-                  target_os = "netbsd",
-                  target_os = "openbsd"))]
+        #[cfg(any(linux_android, apple_targets, netbsdlike))]
         O_DSYNC;
         /// Error out if a file was not created.
         O_EXCL;
@@ -150,7 +147,7 @@ libc_bitflags!(
         /// This should not be combined with `O_WRONLY` or `O_RDONLY`.
         O_RDWR;
         /// Similar to `O_DSYNC` but applies to `read`s instead.
-        #[cfg(any(target_os = "linux", target_os = "netbsd", target_os = "openbsd"))]
+        #[cfg(any(target_os = "linux", netbsdlike))]
         O_RSYNC;
         /// Skip search permission checks.
         #[cfg(target_os = "netbsd")]

@@ -99,9 +99,8 @@ mod os {
 
 #[cfg(any(
         freebsdlike,                // FreeBSD since 10.0 DragonFlyBSD since ???
+        netbsdlike,                 // NetBSD since 6.0 OpenBSD since 5.7
         target_os = "illumos",      // Since ???
-        target_os = "netbsd",       // Since 6.0
-        target_os = "openbsd",      // Since 5.7
         target_os = "redox",        // Since 1-july-2020
 ))]
 mod os {

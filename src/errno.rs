@@ -12,9 +12,7 @@ cfg_if! {
         unsafe fn errno_location() -> *mut c_int {
             unsafe { libc::__error() }
         }
-    } else if #[cfg(any(target_os = "android",
-                        target_os = "netbsd",
-                        target_os = "openbsd"))] {
+    } else if #[cfg(any(target_os = "android", netbsdlike))] {
         unsafe fn errno_location() -> *mut c_int {
             unsafe { libc::__errno() }
         }

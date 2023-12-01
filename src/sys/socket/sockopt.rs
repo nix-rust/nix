@@ -830,13 +830,7 @@ sockopt_impl!(
     libc::IP_PKTINFO,
     bool
 );
-#[cfg(any(
-    linux_android,
-    target_os = "freebsd",
-    apple_targets,
-    target_os = "netbsd",
-    target_os = "openbsd",
-))]
+#[cfg(any(linux_android, target_os = "freebsd", apple_targets, netbsdlike))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -848,12 +842,7 @@ sockopt_impl!(
     libc::IPV6_RECVPKTINFO,
     bool
 );
-#[cfg(any(
-    target_os = "freebsd",
-    apple_targets,
-    target_os = "netbsd",
-    target_os = "openbsd",
-))]
+#[cfg(any(target_os = "freebsd", apple_targets, netbsdlike))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -865,12 +854,7 @@ sockopt_impl!(
     libc::IP_RECVIF,
     bool
 );
-#[cfg(any(
-    target_os = "freebsd",
-    apple_targets,
-    target_os = "netbsd",
-    target_os = "openbsd",
-))]
+#[cfg(any(target_os = "freebsd", apple_targets, netbsdlike))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]

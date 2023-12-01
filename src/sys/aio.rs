@@ -55,8 +55,7 @@ libc_enum! {
         /// on supported operating systems only, do it like `fdatasync`
         #[cfg(any(apple_targets,
                   target_os = "linux",
-                  target_os = "netbsd",
-                  target_os = "openbsd"))]
+                  netbsdlike))]
         O_DSYNC
     }
     impl TryFrom<i32>

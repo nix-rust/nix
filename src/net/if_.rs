@@ -72,10 +72,7 @@ libc_bitflags!(
         #[cfg(any(linux_android, target_os = "fuchsia"))]
         IFF_MASTER;
         /// transmission in progress, tx hardware queue is full
-        #[cfg(any(target_os = "freebsd",
-                  apple_targets,
-                  target_os = "netbsd",
-                  target_os = "openbsd"))]
+        #[cfg(any(target_os = "freebsd", apple_targets, netbsdlike))]
         IFF_OACTIVE;
         /// Protocol code on board.
         #[cfg(solarish)]
@@ -85,10 +82,7 @@ libc_bitflags!(
         #[cfg(any(linux_android, target_os = "fuchsia"))]
         IFF_SLAVE;
         /// Can't hear own transmissions.
-        #[cfg(any(freebsdlike,
-                  target_os = "macos",
-                  target_os = "netbsd",
-                  target_os = "openbsd"))]
+        #[cfg(any(freebsdlike, netbsdlike, target_os = "macos"))]
         IFF_SIMPLEX;
         /// Supports multicast. (see
         /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
