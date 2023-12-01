@@ -92,7 +92,6 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![deny(clippy::cast_ptr_alignment)]
 #![deny(unsafe_op_in_unsafe_fn)]
-#![allow(clippy::mismatched_target_os)]
 
 // Re-exported external crates
 pub use libc;
