@@ -2373,7 +2373,7 @@ mod tests {
         let _ = cmsg_space!(u8);
     }
 
-    #[cfg(not(any(linux_android, target_os = "redox")))]
+    #[cfg(not(any(linux_android, target_os = "redox", target_os = "haiku")))]
     #[test]
     fn can_open_routing_socket() {
         let _ = super::socket(
