@@ -748,11 +748,11 @@ pub enum ControlMessageOwned {
     #[cfg(feature = "net")]
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv6PacketInfo(libc::in6_pktinfo),
-    #[cfg(any(target_os = "freebsd", apple_targets, netbsdlike))]
+    #[cfg(bsd)]
     #[cfg(feature = "net")]
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv4RecvIf(libc::sockaddr_dl),
-    #[cfg(any(target_os = "freebsd", apple_targets, netbsdlike))]
+    #[cfg(bsd)]
     #[cfg(feature = "net")]
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv4RecvDstAddr(libc::in_addr),
@@ -931,13 +931,13 @@ impl ControlMessageOwned {
                 let info = unsafe { ptr::read_unaligned(p as *const libc::in_pktinfo) };
                 ControlMessageOwned::Ipv4PacketInfo(info)
             }
-            #[cfg(any(target_os = "freebsd", apple_targets, netbsdlike))]
+            #[cfg(bsd)]
             #[cfg(feature = "net")]
             (libc::IPPROTO_IP, libc::IP_RECVIF) => {
                 let dl = unsafe { ptr::read_unaligned(p as *const libc::sockaddr_dl) };
                 ControlMessageOwned::Ipv4RecvIf(dl)
             },
-            #[cfg(any(target_os = "freebsd", apple_targets, netbsdlike))]
+            #[cfg(bsd)]
             #[cfg(feature = "net")]
             (libc::IPPROTO_IP, libc::IP_RECVDSTADDR) => {
                 let dl = unsafe { ptr::read_unaligned(p as *const libc::in_addr) };

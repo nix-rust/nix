@@ -1880,12 +1880,7 @@ pub fn test_recv_ipv4pktinfo() {
     }
 }
 
-#[cfg(any(
-    target_os = "freebsd",
-    apple_targets,
-    target_os = "netbsd",
-    target_os = "openbsd",
-))]
+#[cfg(bsd)]
 // qemu doesn't seem to be emulating this correctly in these architectures
 #[cfg_attr(
     all(
