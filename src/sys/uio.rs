@@ -149,7 +149,7 @@ pub fn pread<Fd: AsFd>(fd: Fd, buf: &mut [u8], offset: off_t) -> Result<usize> {
 /// therefore not represented in Rust by an actual slice as `IoSlice` is. It
 /// is used with [`process_vm_readv`](fn.process_vm_readv.html)
 /// and [`process_vm_writev`](fn.process_vm_writev.html).
-#[cfg(any(target_os = "linux", target_os = "android"))]
+#[cfg(linux_android)]
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct RemoteIoVec {
@@ -182,7 +182,7 @@ feature! {
 /// [ptrace]: ../ptrace/index.html
 /// [`IoSlice`]: https://doc.rust-lang.org/std/io/struct.IoSlice.html
 /// [`RemoteIoVec`]: struct.RemoteIoVec.html
-#[cfg(all(any(target_os = "linux", target_os = "android"), not(target_env = "uclibc")))]
+#[cfg(all(linux_android, not(target_env = "uclibc")))]
 pub fn process_vm_writev(
     pid: crate::unistd::Pid,
     local_iov: &[IoSlice<'_>],
@@ -217,7 +217,7 @@ pub fn process_vm_writev(
 /// [`ptrace`]: ../ptrace/index.html
 /// [`IoSliceMut`]: https://doc.rust-lang.org/std/io/struct.IoSliceMut.html
 /// [`RemoteIoVec`]: struct.RemoteIoVec.html
-#[cfg(all(any(target_os = "linux", target_os = "android"), not(target_env = "uclibc")))]
+#[cfg(all(linux_android, not(target_env = "uclibc")))]
 pub fn process_vm_readv(
     pid: crate::unistd::Pid,
     local_iov: &mut [IoSliceMut<'_>],

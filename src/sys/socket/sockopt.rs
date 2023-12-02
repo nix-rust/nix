@@ -7,7 +7,6 @@ use cfg_if::cfg_if;
 use libc::{self, c_int, c_void, socklen_t};
 use std::ffi::{OsStr, OsString};
 use std::mem::{self, MaybeUninit};
-#[cfg(target_family = "unix")]
 use std::os::unix::ffi::OsStrExt;
 use std::os::unix::io::{AsFd, AsRawFd};
 
@@ -261,7 +260,7 @@ sockopt_impl!(
     libc::SO_REUSEADDR,
     bool
 );
-#[cfg(not(any(target_os = "illumos", target_os = "solaris")))]
+#[cfg(not(solarish))]
 sockopt_impl!(
     /// Permits multiple AF_INET or AF_INET6 sockets to be bound to an
     /// identical socket address.
@@ -318,7 +317,7 @@ sockopt_impl!(
     super::IpMembershipRequest
 );
 cfg_if! {
-    if #[cfg(any(target_os = "android", target_os = "linux"))] {
+    if #[cfg(linux_android)] {
         #[cfg(feature = "net")]
         sockopt_impl!(
             #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -329,13 +328,7 @@ cfg_if! {
             #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
             /// Leave an IPv6 multicast group.
             Ipv6DropMembership, SetOnly, libc::IPPROTO_IPV6, libc::IPV6_DROP_MEMBERSHIP, super::Ipv6MembershipRequest);
-    } else if #[cfg(any(target_os = "dragonfly",
-                        target_os = "freebsd",
-                        target_os = "illumos",
-                        apple_targets,
-                        target_os = "netbsd",
-                        target_os = "openbsd",
-                        target_os = "solaris"))] {
+    } else if #[cfg(any(bsd, solarish))] {
         #[cfg(feature = "net")]
         sockopt_impl!(
             #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -407,7 +400,7 @@ sockopt_impl!(
     libc::IPV6_TCLASS,
     libc::c_int
 );
-#[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+#[cfg(any(linux_android, target_os = "fuchsia"))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -476,7 +469,7 @@ sockopt_impl!(
     libc::SO_KEEPALIVE,
     bool
 );
-#[cfg(any(target_os = "dragonfly", target_os = "freebsd", apple_targets))]
+#[cfg(any(freebsdlike, apple_targets))]
 sockopt_impl!(
     /// Get the credentials of the peer process of a connected unix domain
     /// socket.
@@ -495,7 +488,7 @@ sockopt_impl!(
     libc::LOCAL_PEERPID,
     libc::c_int
 );
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(linux_android)]
 sockopt_impl!(
     /// Return the credentials of the foreign process connected to this socket.
     PeerCredentials,
@@ -516,12 +509,7 @@ sockopt_impl!(
     libc::TCP_KEEPALIVE,
     u32
 );
-#[cfg(any(
-    target_os = "android",
-    target_os = "dragonfly",
-    target_os = "freebsd",
-    target_os = "linux"
-))]
+#[cfg(any(freebsdlike, linux_android))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -534,7 +522,7 @@ sockopt_impl!(
     u32
 );
 cfg_if! {
-    if #[cfg(any(target_os = "android", target_os = "linux"))] {
+    if #[cfg(linux_android)] {
         sockopt_impl!(
             /// The maximum segment size for outgoing TCP packets.
             TcpMaxSeg, Both, libc::IPPROTO_TCP, libc::TCP_MAXSEG, u32);
@@ -560,7 +548,7 @@ sockopt_impl!(
     libc::TCP_KEEPCNT,
     u32
 );
-#[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+#[cfg(any(linux_android, target_os = "fuchsia"))]
 sockopt_impl!(
     #[allow(missing_docs)]
     // Not documented by Linux!
@@ -614,7 +602,7 @@ sockopt_impl!(
     libc::SO_SNDBUF,
     usize
 );
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(linux_android)]
 sockopt_impl!(
     /// Using this socket option, a privileged (`CAP_NET_ADMIN`) process can
     /// perform the same task as `SO_RCVBUF`, but the `rmem_max limit` can be
@@ -625,7 +613,7 @@ sockopt_impl!(
     libc::SO_RCVBUFFORCE,
     usize
 );
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(linux_android)]
 sockopt_impl!(
     /// Using this socket option, a privileged (`CAP_NET_ADMIN`)  process can
     /// perform the same task as `SO_SNDBUF`, but the `wmem_max` limit can be
@@ -654,7 +642,7 @@ sockopt_impl!(
     libc::SO_ACCEPTCONN,
     bool
 );
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(linux_android)]
 sockopt_impl!(
     /// Bind this socket to a particular device like “eth0”.
     BindToDevice,
@@ -663,7 +651,7 @@ sockopt_impl!(
     libc::SO_BINDTODEVICE,
     OsString<[u8; libc::IFNAMSIZ]>
 );
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(linux_android)]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -675,7 +663,7 @@ sockopt_impl!(
     libc::SO_ORIGINAL_DST,
     libc::sockaddr_in
 );
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(linux_android)]
 sockopt_impl!(
     #[allow(missing_docs)]
     // Not documented by Linux!
@@ -685,7 +673,7 @@ sockopt_impl!(
     libc::IP6T_SO_ORIGINAL_DST,
     libc::sockaddr_in6
 );
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(linux_android)]
 sockopt_impl!(
     /// Specifies exact type of timestamping information collected by the kernel
     /// [Further reading](https://www.kernel.org/doc/html/latest/networking/timestamping.html)
@@ -704,7 +692,7 @@ sockopt_impl!(
     libc::SO_TIMESTAMP,
     bool
 );
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(linux_android)]
 sockopt_impl!(
     /// Enable or disable the receiving of the `SO_TIMESTAMPNS` control message.
     ReceiveTimestampns,
@@ -721,9 +709,9 @@ sockopt_impl!(
     Both,
     libc::SOL_SOCKET,
     libc::SO_TS_CLOCK,
-    i32
+    super::SocketTimestamp
 );
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(linux_android)]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -808,7 +796,7 @@ sockopt_impl!(
     libc::SO_MARK,
     u32
 );
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(linux_android)]
 sockopt_impl!(
     /// Enable or disable the receiving of the `SCM_CREDENTIALS` control
     /// message.
@@ -830,12 +818,7 @@ sockopt_impl!(
     libc::TCP_CONGESTION,
     OsString<[u8; TCP_CA_NAME_MAX]>
 );
-#[cfg(any(
-    target_os = "android",
-    apple_targets,
-    target_os = "linux",
-    target_os = "netbsd",
-))]
+#[cfg(any(linux_android, apple_targets, target_os = "netbsd"))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -847,14 +830,7 @@ sockopt_impl!(
     libc::IP_PKTINFO,
     bool
 );
-#[cfg(any(
-    target_os = "android",
-    target_os = "freebsd",
-    apple_targets,
-    target_os = "linux",
-    target_os = "netbsd",
-    target_os = "openbsd",
-))]
+#[cfg(any(linux_android, target_os = "freebsd", apple_targets, netbsdlike))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -866,12 +842,7 @@ sockopt_impl!(
     libc::IPV6_RECVPKTINFO,
     bool
 );
-#[cfg(any(
-    target_os = "freebsd",
-    apple_targets,
-    target_os = "netbsd",
-    target_os = "openbsd",
-))]
+#[cfg(any(target_os = "freebsd", apple_targets, netbsdlike))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -883,12 +854,7 @@ sockopt_impl!(
     libc::IP_RECVIF,
     bool
 );
-#[cfg(any(
-    target_os = "freebsd",
-    apple_targets,
-    target_os = "netbsd",
-    target_os = "openbsd",
-))]
+#[cfg(any(target_os = "freebsd", apple_targets, netbsdlike))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -900,7 +866,7 @@ sockopt_impl!(
     libc::IP_RECVDSTADDR,
     bool
 );
-#[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
+#[cfg(any(linux_android, target_os = "freebsd"))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -946,7 +912,7 @@ sockopt_impl!(
     libc::SO_TXTIME,
     libc::sock_txtime
 );
-#[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+#[cfg(any(linux_android, target_os = "fuchsia"))]
 sockopt_impl!(
     /// Indicates that an unsigned 32-bit value ancillary message (cmsg) should
     /// be attached to received skbs indicating the number of packets dropped by
@@ -967,7 +933,7 @@ sockopt_impl!(
     libc::IPV6_V6ONLY,
     bool
 );
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(linux_android)]
 sockopt_impl!(
     /// Enable extended reliable error message passing.
     Ipv4RecvErr,
@@ -976,7 +942,7 @@ sockopt_impl!(
     libc::IP_RECVERR,
     bool
 );
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(linux_android)]
 sockopt_impl!(
     /// Control receiving of asynchronous error options.
     Ipv6RecvErr,
@@ -985,7 +951,7 @@ sockopt_impl!(
     libc::IPV6_RECVERR,
     bool
 );
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(linux_android)]
 sockopt_impl!(
     /// Fetch the current system-estimated Path MTU.
     IpMtu,
@@ -994,7 +960,7 @@ sockopt_impl!(
     libc::IP_MTU,
     libc::c_int
 );
-#[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
+#[cfg(any(linux_android, target_os = "freebsd"))]
 sockopt_impl!(
     /// Set or retrieve the current time-to-live field that is used in every
     /// packet sent from this socket.
@@ -1004,7 +970,7 @@ sockopt_impl!(
     libc::IP_TTL,
     libc::c_int
 );
-#[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
+#[cfg(any(linux_android, target_os = "freebsd"))]
 sockopt_impl!(
     /// Set the unicast hop limit for the socket.
     Ipv6Ttl,
@@ -1013,7 +979,7 @@ sockopt_impl!(
     libc::IPV6_UNICAST_HOPS,
     libc::c_int
 );
-#[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
+#[cfg(any(linux_android, target_os = "freebsd"))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -1034,7 +1000,7 @@ sockopt_impl!(
     libc::IP_DONTFRAG,
     bool
 );
-#[cfg(any(target_os = "android", apple_targets, target_os = "linux",))]
+#[cfg(any(linux_android, apple_targets))]
 sockopt_impl!(
     /// Set "don't fragment packet" flag on the IPv6 packet.
     Ipv6DontFrag,
@@ -1046,13 +1012,13 @@ sockopt_impl!(
 
 #[allow(missing_docs)]
 // Not documented by Linux!
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(linux_android)]
 #[derive(Copy, Clone, Debug)]
 pub struct AlgSetAeadAuthSize;
 
 // ALG_SET_AEAD_AUTH_SIZE read the length from passed `option_len`
 // See https://elixir.bootlin.com/linux/v4.4/source/crypto/af_alg.c#L222
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(linux_android)]
 impl SetSockOpt for AlgSetAeadAuthSize {
     type Val = usize;
 
@@ -1072,18 +1038,18 @@ impl SetSockOpt for AlgSetAeadAuthSize {
 
 #[allow(missing_docs)]
 // Not documented by Linux!
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(linux_android)]
 #[derive(Clone, Debug)]
 pub struct AlgSetKey<T>(::std::marker::PhantomData<T>);
 
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(linux_android)]
 impl<T> Default for AlgSetKey<T> {
     fn default() -> Self {
         AlgSetKey(Default::default())
     }
 }
 
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(linux_android)]
 impl<T> SetSockOpt for AlgSetKey<T>
 where
     T: AsRef<[u8]> + Clone,
@@ -1394,7 +1360,7 @@ impl<'a> Set<'a, OsString> for SetOsString<'a> {
 
 #[cfg(test)]
 mod test {
-    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(linux_android)]
     #[test]
     fn can_get_peercred_on_unix_socket() {
         use super::super::*;

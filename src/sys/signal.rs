@@ -10,7 +10,7 @@ use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::mem;
 use std::ops::BitOr;
-#[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
+#[cfg(freebsdlike)]
 use std::os::unix::io::RawFd;
 use std::ptr;
 use std::str::FromStr;
@@ -65,8 +65,8 @@ libc_enum! {
         /// Software termination signal from kill
         SIGTERM,
         /// Stack fault (obsolete)
-        #[cfg(all(any(target_os = "android", target_os = "emscripten",
-                      target_os = "fuchsia", target_os = "linux"),
+        #[cfg(all(any(linux_android, target_os = "emscripten",
+                      target_os = "fuchsia"),
                   not(any(target_arch = "mips",
                           target_arch = "mips32r6",
                           target_arch = "mips64",
@@ -100,22 +100,20 @@ libc_enum! {
         /// Input/output possible signal
         #[cfg(not(target_os = "haiku"))]
         SIGIO,
-        #[cfg(any(target_os = "android", target_os = "emscripten",
-                  target_os = "fuchsia", target_os = "linux",
-                  target_os = "aix"))]
+        #[cfg(any(linux_android, target_os = "emscripten",
+                  target_os = "fuchsia", target_os = "aix"))]
         /// Power failure imminent.
         SIGPWR,
         /// Bad system call
         SIGSYS,
-        #[cfg(not(any(target_os = "android", target_os = "emscripten",
-                      target_os = "fuchsia", target_os = "linux",
+        #[cfg(not(any(linux_android, target_os = "emscripten",
+                      target_os = "fuchsia",
                       target_os = "redox", target_os = "haiku")))]
         /// Emulator trap
         SIGEMT,
-        #[cfg(not(any(target_os = "android", target_os = "emscripten",
-                      target_os = "fuchsia", target_os = "linux",
-                      target_os = "redox", target_os = "haiku",
-                      target_os = "aix")))]
+        #[cfg(not(any(linux_android, target_os = "emscripten",
+                      target_os = "fuchsia", target_os = "redox",
+                      target_os = "haiku", target_os = "aix")))]
         /// Information request
         SIGINFO,
     }
@@ -144,10 +142,9 @@ impl FromStr for Signal {
             "SIGTERM" => Signal::SIGTERM,
             #[cfg(all(
                 any(
-                    target_os = "android",
+                    linux_android,
                     target_os = "emscripten",
                     target_os = "fuchsia",
-                    target_os = "linux"
                 ),
                 not(any(
                     target_arch = "mips",
@@ -173,27 +170,24 @@ impl FromStr for Signal {
             #[cfg(not(target_os = "haiku"))]
             "SIGIO" => Signal::SIGIO,
             #[cfg(any(
-                target_os = "android",
+                linux_android,
                 target_os = "emscripten",
                 target_os = "fuchsia",
-                target_os = "linux"
             ))]
             "SIGPWR" => Signal::SIGPWR,
             "SIGSYS" => Signal::SIGSYS,
             #[cfg(not(any(
-                target_os = "android",
+                linux_android,
                 target_os = "emscripten",
                 target_os = "fuchsia",
-                target_os = "linux",
                 target_os = "redox",
                 target_os = "haiku"
             )))]
             "SIGEMT" => Signal::SIGEMT,
             #[cfg(not(any(
-                target_os = "android",
+                linux_android,
                 target_os = "emscripten",
                 target_os = "fuchsia",
-                target_os = "linux",
                 target_os = "redox",
                 target_os = "aix",
                 target_os = "haiku"
@@ -230,10 +224,9 @@ impl Signal {
             Signal::SIGTERM => "SIGTERM",
             #[cfg(all(
                 any(
-                    target_os = "android",
+                    linux_android,
                     target_os = "emscripten",
                     target_os = "fuchsia",
-                    target_os = "linux"
                 ),
                 not(any(
                     target_arch = "mips",
@@ -259,28 +252,25 @@ impl Signal {
             #[cfg(not(target_os = "haiku"))]
             Signal::SIGIO => "SIGIO",
             #[cfg(any(
-                target_os = "android",
+                linux_android,
                 target_os = "emscripten",
                 target_os = "fuchsia",
                 target_os = "aix",
-                target_os = "linux"
             ))]
             Signal::SIGPWR => "SIGPWR",
             Signal::SIGSYS => "SIGSYS",
             #[cfg(not(any(
-                target_os = "android",
+                linux_android,
                 target_os = "emscripten",
                 target_os = "fuchsia",
-                target_os = "linux",
                 target_os = "redox",
                 target_os = "haiku"
             )))]
             Signal::SIGEMT => "SIGEMT",
             #[cfg(not(any(
-                target_os = "android",
+                linux_android,
                 target_os = "emscripten",
                 target_os = "fuchsia",
-                target_os = "linux",
                 target_os = "redox",
                 target_os = "aix",
                 target_os = "haiku"
@@ -324,12 +314,7 @@ const SIGNALS: [Signal; 28] = [
     SIGPROF, SIGWINCH, SIGSYS,
 ];
 #[cfg(all(
-    any(
-        target_os = "linux",
-        target_os = "android",
-        target_os = "emscripten",
-        target_os = "fuchsia"
-    ),
+    any(linux_android, target_os = "emscripten", target_os = "fuchsia"),
     not(any(
         target_arch = "mips",
         target_arch = "mips32r6",
@@ -346,12 +331,7 @@ const SIGNALS: [Signal; 31] = [
     SIGVTALRM, SIGPROF, SIGWINCH, SIGIO, SIGPWR, SIGSYS,
 ];
 #[cfg(all(
-    any(
-        target_os = "linux",
-        target_os = "android",
-        target_os = "emscripten",
-        target_os = "fuchsia"
-    ),
+    any(linux_android, target_os = "emscripten", target_os = "fuchsia"),
     any(
         target_arch = "mips",
         target_arch = "mips32r6",
@@ -376,8 +356,7 @@ const SIGNALS: [Signal; 30] = [
     SIGVTALRM, SIGPROF, SIGXCPU, SIGXFSZ, SIGTRAP,
 ];
 #[cfg(not(any(
-    target_os = "linux",
-    target_os = "android",
+    linux_android,
     target_os = "fuchsia",
     target_os = "emscripten",
     target_os = "aix",
@@ -1111,7 +1090,7 @@ pub enum SigevNotify {
     },
     // Note: SIGEV_THREAD is not implemented, but could be if desired.
     /// Notify by delivering an event to a kqueue.
-    #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
+    #[cfg(freebsdlike)]
     SigevKevent {
         /// File descriptor of the kqueue to notify.
         kq: RawFd,
@@ -1317,7 +1296,7 @@ mod sigevent {
                     sev.sigev_signo = signal as libc::c_int;
                     sev.sigev_value.sival_ptr = si_value as *mut libc::c_void
                 },
-                #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
+                #[cfg(freebsdlike)]
                 SigevNotify::SigevKevent{kq, udata} => {
                     sev.sigev_notify = libc::SIGEV_KEVENT;
                     sev.sigev_signo = kq;

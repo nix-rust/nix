@@ -225,15 +225,12 @@ impl Entry {
     pub fn ino(&self) -> u64 {
         cfg_if! {
             if #[cfg(any(target_os = "aix",
-                         target_os = "android",
                          target_os = "emscripten",
                          target_os = "fuchsia",
                          target_os = "haiku",
-                         target_os = "illumos",
-                         apple_targets,
-                         target_os = "l4re",
-                         target_os = "linux",
-                         target_os = "solaris"))] {
+                         solarish,
+                         linux_android,
+                         apple_targets))] {
                 self.0.d_ino as u64
             } else {
                 u64::from(self.0.d_fileno)
@@ -252,12 +249,7 @@ impl Entry {
     /// notably, some Linux filesystems don't implement this. The caller should use `stat` or
     /// `fstat` if this returns `None`.
     pub fn file_type(&self) -> Option<Type> {
-        #[cfg(not(any(
-            target_os = "aix",
-            target_os = "illumos",
-            target_os = "solaris",
-            target_os = "haiku"
-        )))]
+        #[cfg(not(any(solarish, target_os = "aix", target_os = "haiku")))]
         match self.0.d_type {
             libc::DT_FIFO => Some(Type::Fifo),
             libc::DT_CHR => Some(Type::CharacterDevice),
@@ -270,12 +262,7 @@ impl Entry {
         }
 
         // illumos, Solaris, and Haiku systems do not have the d_type member at all:
-        #[cfg(any(
-            target_os = "aix",
-            target_os = "illumos",
-            target_os = "solaris",
-            target_os = "haiku"
-        ))]
+        #[cfg(any(solarish, target_os = "aix", target_os = "haiku"))]
         None
     }
 }

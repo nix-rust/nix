@@ -78,12 +78,7 @@ impl Kqueue {
     }
 }
 
-#[cfg(any(
-    target_os = "dragonfly",
-    target_os = "freebsd",
-    apple_targets,
-    target_os = "openbsd"
-))]
+#[cfg(any(freebsdlike, apple_targets, target_os = "openbsd"))]
 type type_of_udata = *mut libc::c_void;
 #[cfg(target_os = "netbsd")]
 type type_of_udata = intptr_t;
@@ -108,9 +103,7 @@ libc_enum! {
         /// Takes a descriptor as the identifier, and returns whenever one of
         /// the specified exceptional conditions has occurred on the descriptor.
         EVFILT_EXCEPT,
-        #[cfg(any(target_os = "dragonfly",
-                  target_os = "freebsd",
-                  apple_targets))]
+        #[cfg(any(freebsdlike, apple_targets))]
         /// Establishes a file system monitor.
         EVFILT_FS,
         #[cfg(target_os = "freebsd")]
@@ -142,9 +135,7 @@ libc_enum! {
         EVFILT_SIGNAL,
         /// Establishes a timer and notifies when the timer expires.
         EVFILT_TIMER,
-        #[cfg(any(target_os = "dragonfly",
-                  target_os = "freebsd",
-                  apple_targets))]
+        #[cfg(any(freebsdlike, apple_targets))]
         /// Notifies only when explicitly requested by the user.
         EVFILT_USER,
         #[cfg(apple_targets)]
@@ -159,12 +150,7 @@ libc_enum! {
     impl TryFrom<type_of_event_filter>
 }
 
-#[cfg(any(
-    target_os = "dragonfly",
-    target_os = "freebsd",
-    apple_targets,
-    target_os = "openbsd"
-))]
+#[cfg(any(freebsdlike, apple_targets, target_os = "openbsd"))]
 #[doc(hidden)]
 pub type type_of_event_flag = u16;
 #[cfg(target_os = "netbsd")]
@@ -183,9 +169,7 @@ libc_bitflags! {
         EV_DELETE;
         #[allow(missing_docs)]
         EV_DISABLE;
-        #[cfg(any(target_os = "dragonfly", target_os = "freebsd",
-                  apple_targets,
-                  target_os = "netbsd", target_os = "openbsd"))]
+        #[cfg(bsd)]
         #[allow(missing_docs)]
         EV_DISPATCH;
         #[cfg(target_os = "freebsd")]
@@ -213,9 +197,7 @@ libc_bitflags! {
         #[cfg(apple_targets)]
         #[allow(missing_docs)]
         EV_POLL;
-        #[cfg(any(target_os = "dragonfly", target_os = "freebsd",
-                  apple_targets,
-                  target_os = "netbsd", target_os = "openbsd"))]
+        #[cfg(bsd)]
         #[allow(missing_docs)]
         EV_RECEIPT;
     }
@@ -248,34 +230,22 @@ libc_bitflags!(
         NOTE_EXITSTATUS;
         #[allow(missing_docs)]
         NOTE_EXTEND;
-        #[cfg(any(apple_targets,
-                  target_os = "freebsd",
-                  target_os = "dragonfly"))]
+        #[cfg(any(apple_targets, freebsdlike))]
         #[allow(missing_docs)]
         NOTE_FFAND;
-        #[cfg(any(apple_targets,
-                  target_os = "freebsd",
-                  target_os = "dragonfly"))]
+        #[cfg(any(apple_targets, freebsdlike))]
         #[allow(missing_docs)]
         NOTE_FFCOPY;
-        #[cfg(any(apple_targets,
-                  target_os = "freebsd",
-                  target_os = "dragonfly"))]
+        #[cfg(any(apple_targets, freebsdlike))]
         #[allow(missing_docs)]
         NOTE_FFCTRLMASK;
-        #[cfg(any(apple_targets,
-                  target_os = "freebsd",
-                  target_os = "dragonfly"))]
+        #[cfg(any(apple_targets, freebsdlike))]
         #[allow(missing_docs)]
         NOTE_FFLAGSMASK;
-        #[cfg(any(apple_targets,
-                  target_os = "freebsd",
-                  target_os = "dragonfly"))]
+        #[cfg(any(apple_targets, freebsdlike))]
         #[allow(missing_docs)]
         NOTE_FFNOP;
-        #[cfg(any(apple_targets,
-                  target_os = "freebsd",
-                  target_os = "dragonfly"))]
+        #[cfg(any(apple_targets, freebsdlike))]
         #[allow(missing_docs)]
         NOTE_FFOR;
         #[allow(missing_docs)]
@@ -318,9 +288,7 @@ libc_bitflags!(
         NOTE_TRACK;
         #[allow(missing_docs)]
         NOTE_TRACKERR;
-        #[cfg(any(apple_targets,
-                  target_os = "freebsd",
-                  target_os = "dragonfly"))]
+        #[cfg(any(apple_targets, freebsdlike))]
         #[allow(missing_docs)]
         NOTE_TRIGGER;
         #[cfg(target_os = "openbsd")]
@@ -438,12 +406,7 @@ pub fn kevent(
     kq.kevent(changelist, eventlist, Some(timeout))
 }
 
-#[cfg(any(
-    apple_targets,
-    target_os = "freebsd",
-    target_os = "dragonfly",
-    target_os = "openbsd"
-))]
+#[cfg(any(apple_targets, freebsdlike, target_os = "openbsd"))]
 type type_of_nchanges = c_int;
 #[cfg(target_os = "netbsd")]
 type type_of_nchanges = size_t;

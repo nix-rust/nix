@@ -2,6 +2,7 @@
 use std::os::unix::io::{AsFd, AsRawFd, BorrowedFd};
 
 use crate::errno::Errno;
+pub use crate::poll_timeout::PollTimeout;
 use crate::Result;
 
 /// This is a wrapper around `libc::pollfd`.
@@ -27,13 +28,13 @@ impl<'fd> PollFd<'fd> {
     /// ```no_run
     /// # use std::os::unix::io::{AsFd, AsRawFd, FromRawFd};
     /// # use nix::{
-    /// #     poll::{PollFd, PollFlags, poll},
+    /// #     poll::{PollTimeout, PollFd, PollFlags, poll},
     /// #     unistd::{pipe, read}
     /// # };
     /// let (r, w) = pipe().unwrap();
     /// let pfd = PollFd::new(r.as_fd(), PollFlags::POLLIN);
     /// let mut fds = [pfd];
-    /// poll(&mut fds, -1).unwrap();
+    /// poll(&mut fds, PollTimeout::NONE).unwrap();
     /// let mut buf = [0u8; 80];
     /// read(r.as_raw_fd(), &mut buf[..]);
     /// ```
@@ -191,13 +192,20 @@ libc_bitflags! {
 ///
 /// Note that the timeout interval will be rounded up to the system clock
 /// granularity, and kernel scheduling delays mean that the blocking
-/// interval may overrun by a small amount.  Specifying a negative value
-/// in timeout means an infinite timeout.  Specifying a timeout of zero
-/// causes `poll()` to return immediately, even if no file descriptors are
-/// ready.
-pub fn poll(fds: &mut [PollFd], timeout: libc::c_int) -> Result<libc::c_int> {
+/// interval may overrun by a small amount.  Specifying a [`PollTimeout::NONE`]
+/// in timeout means an infinite timeout.  Specifying a timeout of
+/// [`PollTimeout::ZERO`] causes `poll()` to return immediately, even if no file
+/// descriptors are ready.
+pub fn poll<T: Into<PollTimeout>>(
+    fds: &mut [PollFd],
+    timeout: T,
+) -> Result<libc::c_int> {
     let res = unsafe {
-        libc::poll(fds.as_mut_ptr().cast(), fds.len() as libc::nfds_t, timeout)
+        libc::poll(
+            fds.as_mut_ptr().cast(),
+            fds.len() as libc::nfds_t,
+            i32::from(timeout.into()),
+        )
     };
 
     Errno::result(res)
@@ -216,7 +224,7 @@ feature! {
 /// so in that case `ppoll` differs from `poll` only in the precision of the
 /// timeout argument.
 ///
-#[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd", target_os = "linux"))]
+#[cfg(any(linux_android, freebsdlike))]
 pub fn ppoll(
     fds: &mut [PollFd],
     timeout: Option<crate::sys::time::TimeSpec>,

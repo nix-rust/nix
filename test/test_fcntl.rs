@@ -272,7 +272,7 @@ fn test_copy_file_range() {
     assert_eq!(from_offset, 6);
 }
 
-#[cfg(any(target_os = "linux", target_os = "android"))]
+#[cfg(linux_android)]
 mod linux_android {
     use libc::loff_t;
     use std::io::prelude::*;

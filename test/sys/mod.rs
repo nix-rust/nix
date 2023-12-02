@@ -29,7 +29,7 @@ mod test_socket;
 #[cfg(not(any(target_os = "redox")))]
 mod test_sockopt;
 mod test_stat;
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(linux_android)]
 mod test_sysinfo;
 #[cfg(not(any(
     target_os = "redox",
@@ -40,8 +40,10 @@ mod test_termios;
 mod test_uio;
 mod test_wait;
 
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(linux_android)]
 mod test_epoll;
+#[cfg(target_os = "linux")]
+mod test_fanotify;
 #[cfg(target_os = "linux")]
 mod test_inotify;
 mod test_pthread;
@@ -55,5 +57,5 @@ mod test_pthread;
     target_os = "openbsd"
 ))]
 mod test_ptrace;
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(linux_android)]
 mod test_timerfd;

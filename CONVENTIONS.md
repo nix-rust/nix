@@ -37,6 +37,12 @@ impl SigSet {
 
 When creating newtypes, we use Rust's `CamelCase` type naming convention.
 
+## cfg gates
+
+When creating operating-system-specific functionality, we gate it by
+`#[cfg(target_os = ...)]`.  If more than one operating system is affected, we
+prefer to use the cfg aliases defined in build.rs, like `#[cfg(bsd)]`.
+
 ## Bitflags
 
 Many C functions have flags parameters that are combined from constants using
@@ -84,3 +90,30 @@ the variable.
 [enum]: https://doc.rust-lang.org/reference.html#enumerations
 [libc]: https://crates.io/crates/libc/
 [std_MaybeUninit]: https://doc.rust-lang.org/stable/std/mem/union.MaybeUninit.html
+
+## Pointer type casting
+
+We prefer [`cast()`], [`cast_mut()`] and [`cast_const()`] to cast pointer types
+over the `as` keyword because it is much more difficult to accidentally change
+type or mutability that way.
+
+[`cast()`]: https://doc.rust-lang.org/std/primitive.pointer.html#method.cast
+[`cast_mut()`]: https://doc.rust-lang.org/std/primitive.pointer.html#method.cast_mut
+[`cast_const()`]: https://doc.rust-lang.org/std/primitive.pointer.html#method.cast_const
+
+## Remove/deprecate an interface
+
+In Nix, if we want to remove something, we don't do it immediately, instead, we
+deprecate it for at least one release before removing it.
+
+To deprecate an interface, put the following attribute on the top of it:
+
+```
+#[deprecated(since = "<Version>", note = "<Note to our user>")]
+```
+
+`<Version>` is the version where this interface will be deprecated, in most 
+cases, it will be the version of the next release. And a user-friendly note 
+should be added. Normally, there should be a new interface that will replace
+the old one, so a note should be something like: "<New Interface> should be 
+used instead".

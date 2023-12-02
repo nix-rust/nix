@@ -88,7 +88,7 @@ pub(crate) mod timer {
         Interval(TimeSpec),
     }
 
-    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(linux_android)]
     bitflags! {
         /// Flags that are used for arming the timer.
         #[derive(Copy, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
@@ -97,12 +97,7 @@ pub(crate) mod timer {
             const TFD_TIMER_CANCEL_ON_SET = libc::TFD_TIMER_CANCEL_ON_SET;
         }
     }
-    #[cfg(any(
-        target_os = "freebsd",
-        target_os = "netbsd",
-        target_os = "dragonfly",
-        target_os = "illumos"
-    ))]
+    #[cfg(any(freebsdlike, target_os = "netbsd", target_os = "illumos"))]
     bitflags! {
         /// Flags that are used for arming the timer.
         #[derive(Copy, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]

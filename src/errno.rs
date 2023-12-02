@@ -12,9 +12,7 @@ cfg_if! {
         unsafe fn errno_location() -> *mut c_int {
             unsafe { libc::__error() }
         }
-    } else if #[cfg(any(target_os = "android",
-                        target_os = "netbsd",
-                        target_os = "openbsd"))] {
+    } else if #[cfg(any(target_os = "android", netbsdlike))] {
         unsafe fn errno_location() -> *mut c_int {
             unsafe { libc::__errno() }
         }
@@ -25,7 +23,7 @@ cfg_if! {
         unsafe fn errno_location() -> *mut c_int {
             unsafe { libc::__errno_location() }
         }
-    } else if #[cfg(any(target_os = "illumos", target_os = "solaris"))] {
+    } else if #[cfg(solarish)] {
         unsafe fn errno_location() -> *mut c_int {
             unsafe { libc::___errno() }
         }
@@ -224,467 +222,239 @@ fn desc(errno: Errno) -> &'static str {
         EHOSTUNREACH => "No route to host",
 
         #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
+            linux_android,
+            solarish,
             target_os = "aix",
-            target_os = "illumos",
-            target_os = "solaris",
             target_os = "fuchsia"
         ))]
         ECHRNG => "Channel number out of range",
 
         #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
+            linux_android,
+            solarish,
             target_os = "aix",
-            target_os = "illumos",
-            target_os = "solaris",
             target_os = "fuchsia"
         ))]
         EL2NSYNC => "Level 2 not synchronized",
 
         #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
+            linux_android,
+            solarish,
             target_os = "aix",
-            target_os = "illumos",
-            target_os = "solaris",
             target_os = "fuchsia"
         ))]
         EL3HLT => "Level 3 halted",
 
         #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
+            linux_android,
+            solarish,
             target_os = "aix",
-            target_os = "illumos",
-            target_os = "solaris",
             target_os = "fuchsia"
         ))]
         EL3RST => "Level 3 reset",
 
         #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
+            linux_android,
+            solarish,
             target_os = "aix",
-            target_os = "illumos",
-            target_os = "solaris",
             target_os = "fuchsia"
         ))]
         ELNRNG => "Link number out of range",
 
         #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
+            linux_android,
+            solarish,
             target_os = "aix",
-            target_os = "illumos",
-            target_os = "solaris",
             target_os = "fuchsia"
         ))]
         EUNATCH => "Protocol driver not attached",
 
         #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
+            linux_android,
+            solarish,
             target_os = "aix",
-            target_os = "illumos",
-            target_os = "solaris",
             target_os = "fuchsia"
         ))]
         ENOCSI => "No CSI structure available",
 
         #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
+            linux_android,
+            solarish,
             target_os = "aix",
-            target_os = "illumos",
-            target_os = "solaris",
             target_os = "fuchsia"
         ))]
         EL2HLT => "Level 2 halted",
 
-        #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
-            target_os = "illumos",
-            target_os = "solaris",
-            target_os = "fuchsia"
-        ))]
+        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
         EBADE => "Invalid exchange",
 
-        #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
-            target_os = "illumos",
-            target_os = "solaris",
-            target_os = "fuchsia"
-        ))]
+        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
         EBADR => "Invalid request descriptor",
 
-        #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
-            target_os = "illumos",
-            target_os = "solaris",
-            target_os = "fuchsia"
-        ))]
+        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
         EXFULL => "Exchange full",
 
-        #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
-            target_os = "illumos",
-            target_os = "solaris",
-            target_os = "fuchsia"
-        ))]
+        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
         ENOANO => "No anode",
 
-        #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
-            target_os = "illumos",
-            target_os = "solaris",
-            target_os = "fuchsia"
-        ))]
+        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
         EBADRQC => "Invalid request code",
 
-        #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
-            target_os = "illumos",
-            target_os = "solaris",
-            target_os = "fuchsia"
-        ))]
+        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
         EBADSLT => "Invalid slot",
 
-        #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
-            target_os = "illumos",
-            target_os = "solaris",
-            target_os = "fuchsia"
-        ))]
+        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
         EBFONT => "Bad font file format",
 
-        #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
-            target_os = "illumos",
-            target_os = "solaris",
-            target_os = "fuchsia"
-        ))]
+        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
         ENOSTR => "Device not a stream",
 
-        #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
-            target_os = "illumos",
-            target_os = "solaris",
-            target_os = "fuchsia"
-        ))]
+        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
         ENODATA => "No data available",
 
-        #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
-            target_os = "illumos",
-            target_os = "solaris",
-            target_os = "fuchsia"
-        ))]
+        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
         ETIME => "Timer expired",
 
-        #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
-            target_os = "illumos",
-            target_os = "solaris",
-            target_os = "fuchsia"
-        ))]
+        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
         ENOSR => "Out of streams resources",
 
-        #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
-            target_os = "illumos",
-            target_os = "solaris",
-            target_os = "fuchsia"
-        ))]
+        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
         ENONET => "Machine is not on the network",
 
-        #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
-            target_os = "illumos",
-            target_os = "solaris",
-            target_os = "fuchsia"
-        ))]
+        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
         ENOPKG => "Package not installed",
 
-        #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
-            target_os = "illumos",
-            target_os = "solaris",
-            target_os = "fuchsia"
-        ))]
+        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
         EREMOTE => "Object is remote",
 
         #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
+            linux_android,
+            solarish,
             target_os = "aix",
-            target_os = "illumos",
-            target_os = "solaris",
             target_os = "fuchsia"
         ))]
         ENOLINK => "Link has been severed",
 
-        #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
-            target_os = "illumos",
-            target_os = "solaris",
-            target_os = "fuchsia"
-        ))]
+        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
         EADV => "Advertise error",
 
-        #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
-            target_os = "illumos",
-            target_os = "solaris",
-            target_os = "fuchsia"
-        ))]
+        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
         ESRMNT => "Srmount error",
 
-        #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
-            target_os = "illumos",
-            target_os = "solaris",
-            target_os = "fuchsia"
-        ))]
+        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
         ECOMM => "Communication error on send",
 
         #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
+            linux_android,
+            solarish,
             target_os = "aix",
-            target_os = "illumos",
-            target_os = "solaris",
             target_os = "fuchsia"
         ))]
         EPROTO => "Protocol error",
 
         #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
+            linux_android,
+            solarish,
             target_os = "aix",
-            target_os = "illumos",
-            target_os = "solaris",
             target_os = "fuchsia"
         ))]
         EMULTIHOP => "Multihop attempted",
 
-        #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
-            target_os = "fuchsia"
-        ))]
+        #[cfg(any(linux_android, target_os = "fuchsia"))]
         EDOTDOT => "RFS specific error",
 
-        #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
-            target_os = "aix",
-            target_os = "fuchsia"
-        ))]
+        #[cfg(any(linux_android, target_os = "aix", target_os = "fuchsia"))]
         EBADMSG => "Not a data message",
 
-        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg(solarish)]
         EBADMSG => "Trying to read unreadable message",
 
         #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
+            linux_android,
             target_os = "aix",
             target_os = "fuchsia",
             target_os = "haiku"
         ))]
         EOVERFLOW => "Value too large for defined data type",
 
-        #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
-            target_os = "illumos",
-            target_os = "solaris",
-            target_os = "fuchsia"
-        ))]
+        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
         ENOTUNIQ => "Name not unique on network",
 
-        #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
-            target_os = "illumos",
-            target_os = "solaris",
-            target_os = "fuchsia"
-        ))]
+        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
         EBADFD => "File descriptor in bad state",
 
-        #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
-            target_os = "illumos",
-            target_os = "solaris",
-            target_os = "fuchsia"
-        ))]
+        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
         EREMCHG => "Remote address changed",
 
-        #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
-            target_os = "illumos",
-            target_os = "solaris",
-            target_os = "fuchsia"
-        ))]
+        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
         ELIBACC => "Can not access a needed shared library",
 
-        #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
-            target_os = "illumos",
-            target_os = "solaris",
-            target_os = "fuchsia"
-        ))]
+        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
         ELIBBAD => "Accessing a corrupted shared library",
 
-        #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
-            target_os = "illumos",
-            target_os = "solaris",
-            target_os = "fuchsia"
-        ))]
+        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
         ELIBSCN => ".lib section in a.out corrupted",
 
-        #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
-            target_os = "illumos",
-            target_os = "solaris",
-            target_os = "fuchsia"
-        ))]
+        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
         ELIBMAX => "Attempting to link in too many shared libraries",
 
-        #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
-            target_os = "illumos",
-            target_os = "solaris",
-            target_os = "fuchsia"
-        ))]
+        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
         ELIBEXEC => "Cannot exec a shared library directly",
 
         #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
+            linux_android,
+            solarish,
             target_os = "aix",
-            target_os = "illumos",
-            target_os = "solaris",
             target_os = "fuchsia",
             target_os = "openbsd"
         ))]
         EILSEQ => "Illegal byte sequence",
 
         #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
+            linux_android,
+            solarish,
             target_os = "aix",
-            target_os = "illumos",
-            target_os = "solaris",
             target_os = "fuchsia"
         ))]
         ERESTART => "Interrupted system call should be restarted",
 
-        #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
-            target_os = "illumos",
-            target_os = "solaris",
-            target_os = "fuchsia"
-        ))]
+        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
         ESTRPIPE => "Streams pipe error",
 
-        #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
-            target_os = "illumos",
-            target_os = "solaris",
-            target_os = "fuchsia"
-        ))]
+        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
         EUSERS => "Too many users",
 
         #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
+            linux_android,
             target_os = "fuchsia",
             target_os = "netbsd",
             target_os = "redox"
         ))]
         EOPNOTSUPP => "Operation not supported on transport endpoint",
 
-        #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
-            target_os = "fuchsia"
-        ))]
+        #[cfg(any(linux_android, target_os = "fuchsia"))]
         ESTALE => "Stale file handle",
 
-        #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
-            target_os = "fuchsia"
-        ))]
+        #[cfg(any(linux_android, target_os = "fuchsia"))]
         EUCLEAN => "Structure needs cleaning",
 
-        #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
-            target_os = "fuchsia"
-        ))]
+        #[cfg(any(linux_android, target_os = "fuchsia"))]
         ENOTNAM => "Not a XENIX named type file",
 
-        #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
-            target_os = "fuchsia"
-        ))]
+        #[cfg(any(linux_android, target_os = "fuchsia"))]
         ENAVAIL => "No XENIX semaphores available",
 
-        #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
-            target_os = "fuchsia"
-        ))]
+        #[cfg(any(linux_android, target_os = "fuchsia"))]
         EISNAM => "Is a named type file",
 
-        #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
-            target_os = "fuchsia"
-        ))]
+        #[cfg(any(linux_android, target_os = "fuchsia"))]
         EREMOTEIO => "Remote I/O error",
 
-        #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
-            target_os = "fuchsia"
-        ))]
+        #[cfg(any(linux_android, target_os = "fuchsia"))]
         EDQUOT => "Quota exceeded",
 
         #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
+            linux_android,
             target_os = "fuchsia",
             target_os = "openbsd",
             target_os = "dragonfly"
@@ -692,71 +462,42 @@ fn desc(errno: Errno) -> &'static str {
         ENOMEDIUM => "No medium found",
 
         #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
+            linux_android,
             target_os = "fuchsia",
             target_os = "openbsd"
         ))]
         EMEDIUMTYPE => "Wrong medium type",
 
         #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
-            target_os = "illumos",
-            target_os = "solaris",
+            linux_android,
+            solarish,
             target_os = "fuchsia",
             target_os = "haiku"
         ))]
         ECANCELED => "Operation canceled",
 
-        #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
-            target_os = "fuchsia"
-        ))]
+        #[cfg(any(linux_android, target_os = "fuchsia"))]
         ENOKEY => "Required key not available",
 
-        #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
-            target_os = "fuchsia"
-        ))]
+        #[cfg(any(linux_android, target_os = "fuchsia"))]
         EKEYEXPIRED => "Key has expired",
 
-        #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
-            target_os = "fuchsia"
-        ))]
+        #[cfg(any(linux_android, target_os = "fuchsia"))]
         EKEYREVOKED => "Key has been revoked",
 
-        #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
-            target_os = "fuchsia"
-        ))]
+        #[cfg(any(linux_android, target_os = "fuchsia"))]
         EKEYREJECTED => "Key was rejected by service",
 
-        #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
-            target_os = "aix",
-            target_os = "fuchsia"
-        ))]
+        #[cfg(any(linux_android, target_os = "aix", target_os = "fuchsia"))]
         EOWNERDEAD => "Owner died",
 
-        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg(solarish)]
         EOWNERDEAD => "Process died with lock",
 
-        #[cfg(any(
-            target_os = "linux",
-            target_os = "android",
-            target_os = "aix",
-            target_os = "fuchsia"
-        ))]
+        #[cfg(any(linux_android, target_os = "aix", target_os = "fuchsia"))]
         ENOTRECOVERABLE => "State not recoverable",
 
-        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg(solarish)]
         ENOTRECOVERABLE => "Lock is not recoverable",
 
         #[cfg(any(
@@ -771,21 +512,13 @@ fn desc(errno: Errno) -> &'static str {
         ))]
         EHWPOISON => "Memory page has hardware error",
 
-        #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
+        #[cfg(freebsdlike)]
         EDOOFUS => "Programming error",
 
-        #[cfg(any(
-            target_os = "freebsd",
-            target_os = "dragonfly",
-            target_os = "redox"
-        ))]
+        #[cfg(any(freebsdlike, target_os = "redox"))]
         EMULTIHOP => "Multihop attempted",
 
-        #[cfg(any(
-            target_os = "freebsd",
-            target_os = "dragonfly",
-            target_os = "redox"
-        ))]
+        #[cfg(any(freebsdlike, target_os = "redox"))]
         ENOLINK => "Link has been severed",
 
         #[cfg(target_os = "freebsd")]
@@ -794,30 +527,14 @@ fn desc(errno: Errno) -> &'static str {
         #[cfg(target_os = "freebsd")]
         ECAPMODE => "Not permitted in capability mode",
 
-        #[cfg(any(
-            target_os = "freebsd",
-            target_os = "dragonfly",
-            apple_targets,
-            target_os = "openbsd",
-            target_os = "netbsd"
-        ))]
+        #[cfg(bsd)]
         ENEEDAUTH => "Need authenticator",
 
-        #[cfg(any(
-            target_os = "freebsd",
-            target_os = "dragonfly",
-            apple_targets,
-            target_os = "openbsd",
-            target_os = "netbsd",
-            target_os = "redox",
-            target_os = "illumos",
-            target_os = "solaris"
-        ))]
+        #[cfg(any(bsd, target_os = "redox", solarish))]
         EOVERFLOW => "Value too large to be stored in data type",
 
         #[cfg(any(
-            target_os = "freebsd",
-            target_os = "dragonfly",
+            freebsdlike,
             apple_targets,
             target_os = "netbsd",
             target_os = "redox",
@@ -825,199 +542,73 @@ fn desc(errno: Errno) -> &'static str {
         ))]
         EILSEQ => "Illegal byte sequence",
 
-        #[cfg(any(
-            target_os = "freebsd",
-            target_os = "dragonfly",
-            apple_targets,
-            target_os = "openbsd",
-            target_os = "netbsd",
-            target_os = "haiku"
-        ))]
+        #[cfg(any(bsd, target_os = "haiku"))]
         ENOATTR => "Attribute not found",
 
-        #[cfg(any(
-            target_os = "freebsd",
-            target_os = "dragonfly",
-            apple_targets,
-            target_os = "openbsd",
-            target_os = "netbsd",
-            target_os = "redox",
-            target_os = "haiku"
-        ))]
+        #[cfg(any(bsd, target_os = "redox", target_os = "haiku"))]
         EBADMSG => "Bad message",
 
-        #[cfg(any(
-            target_os = "freebsd",
-            target_os = "dragonfly",
-            apple_targets,
-            target_os = "openbsd",
-            target_os = "netbsd",
-            target_os = "redox",
-            target_os = "haiku"
-        ))]
+        #[cfg(any(bsd, target_os = "redox", target_os = "haiku"))]
         EPROTO => "Protocol error",
 
-        #[cfg(any(
-            target_os = "freebsd",
-            target_os = "dragonfly",
-            apple_targets,
-            target_os = "openbsd"
-        ))]
+        #[cfg(any(freebsdlike, apple_targets, target_os = "openbsd"))]
         ENOTRECOVERABLE => "State not recoverable",
 
-        #[cfg(any(
-            target_os = "freebsd",
-            target_os = "dragonfly",
-            apple_targets,
-            target_os = "openbsd"
-        ))]
+        #[cfg(any(freebsdlike, apple_targets, target_os = "openbsd"))]
         EOWNERDEAD => "Previous owner died",
 
-        #[cfg(any(
-            target_os = "freebsd",
-            target_os = "dragonfly",
-            apple_targets,
-            target_os = "openbsd",
-            target_os = "netbsd",
-            target_os = "aix",
-            target_os = "illumos",
-            target_os = "solaris",
-            target_os = "haiku"
-        ))]
+        #[cfg(any(bsd, target_os = "aix", solarish, target_os = "haiku"))]
         ENOTSUP => "Operation not supported",
 
-        #[cfg(any(
-            target_os = "freebsd",
-            target_os = "dragonfly",
-            apple_targets,
-            target_os = "aix",
-            target_os = "openbsd",
-            target_os = "netbsd"
-        ))]
+        #[cfg(any(bsd, target_os = "aix"))]
         EPROCLIM => "Too many processes",
 
-        #[cfg(any(
-            target_os = "freebsd",
-            target_os = "dragonfly",
-            apple_targets,
-            target_os = "aix",
-            target_os = "openbsd",
-            target_os = "netbsd",
-            target_os = "redox"
-        ))]
+        #[cfg(any(bsd, target_os = "aix", target_os = "redox"))]
         EUSERS => "Too many users",
 
         #[cfg(any(
-            target_os = "freebsd",
-            target_os = "dragonfly",
-            apple_targets,
-            target_os = "openbsd",
-            target_os = "netbsd",
+            bsd,
+            solarish,
             target_os = "redox",
             target_os = "aix",
-            target_os = "illumos",
-            target_os = "solaris",
             target_os = "haiku"
         ))]
         EDQUOT => "Disc quota exceeded",
 
         #[cfg(any(
-            target_os = "freebsd",
-            target_os = "dragonfly",
-            apple_targets,
-            target_os = "openbsd",
-            target_os = "netbsd",
+            bsd,
+            solarish,
             target_os = "redox",
             target_os = "aix",
-            target_os = "illumos",
-            target_os = "solaris",
             target_os = "haiku"
         ))]
         ESTALE => "Stale NFS file handle",
 
-        #[cfg(any(
-            target_os = "freebsd",
-            target_os = "dragonfly",
-            apple_targets,
-            target_os = "aix",
-            target_os = "openbsd",
-            target_os = "netbsd",
-            target_os = "redox"
-        ))]
+        #[cfg(any(bsd, target_os = "aix", target_os = "redox"))]
         EREMOTE => "Too many levels of remote in path",
 
-        #[cfg(any(
-            target_os = "freebsd",
-            target_os = "dragonfly",
-            apple_targets,
-            target_os = "openbsd",
-            target_os = "netbsd"
-        ))]
+        #[cfg(bsd)]
         EBADRPC => "RPC struct is bad",
 
-        #[cfg(any(
-            target_os = "freebsd",
-            target_os = "dragonfly",
-            apple_targets,
-            target_os = "openbsd",
-            target_os = "netbsd"
-        ))]
+        #[cfg(bsd)]
         ERPCMISMATCH => "RPC version wrong",
 
-        #[cfg(any(
-            target_os = "freebsd",
-            target_os = "dragonfly",
-            apple_targets,
-            target_os = "openbsd",
-            target_os = "netbsd"
-        ))]
+        #[cfg(bsd)]
         EPROGUNAVAIL => "RPC prog. not avail",
 
-        #[cfg(any(
-            target_os = "freebsd",
-            target_os = "dragonfly",
-            apple_targets,
-            target_os = "openbsd",
-            target_os = "netbsd"
-        ))]
+        #[cfg(bsd)]
         EPROGMISMATCH => "Program version wrong",
 
-        #[cfg(any(
-            target_os = "freebsd",
-            target_os = "dragonfly",
-            apple_targets,
-            target_os = "openbsd",
-            target_os = "netbsd"
-        ))]
+        #[cfg(bsd)]
         EPROCUNAVAIL => "Bad procedure for program",
 
-        #[cfg(any(
-            target_os = "freebsd",
-            target_os = "dragonfly",
-            apple_targets,
-            target_os = "openbsd",
-            target_os = "netbsd"
-        ))]
+        #[cfg(bsd)]
         EFTYPE => "Inappropriate file type or format",
 
-        #[cfg(any(
-            target_os = "freebsd",
-            target_os = "dragonfly",
-            apple_targets,
-            target_os = "openbsd",
-            target_os = "netbsd"
-        ))]
+        #[cfg(bsd)]
         EAUTH => "Authentication error",
 
-        #[cfg(any(
-            target_os = "freebsd",
-            target_os = "dragonfly",
-            apple_targets,
-            target_os = "aix",
-            target_os = "openbsd",
-            target_os = "netbsd",
-            target_os = "redox"
-        ))]
+        #[cfg(any(bsd, target_os = "aix", target_os = "redox"))]
         ECANCELED => "Operation canceled",
 
         #[cfg(apple_targets)]
@@ -1076,12 +667,7 @@ fn desc(errno: Errno) -> &'static str {
         ))]
         ETIME => "STREAM ioctl timeout",
 
-        #[cfg(any(
-            apple_targets,
-            target_os = "aix",
-            target_os = "illumos",
-            target_os = "solaris"
-        ))]
+        #[cfg(any(apple_targets, solarish, target_os = "aix"))]
         EOPNOTSUPP => "Operation not supported on socket",
 
         #[cfg(apple_targets)]
@@ -1099,18 +685,18 @@ fn desc(errno: Errno) -> &'static str {
         #[cfg(target_os = "dragonfly")]
         EASYNC => "Async",
 
-        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg(solarish)]
         EDEADLOCK => "Resource deadlock would occur",
 
-        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg(solarish)]
         ELOCKUNMAPPED => "Locked lock was unmapped",
 
-        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg(solarish)]
         ENOTACTIVE => "Facility is not active",
     }
 }
 
-#[cfg(any(target_os = "linux", target_os = "android", target_os = "fuchsia"))]
+#[cfg(any(linux_android, target_os = "fuchsia"))]
 mod consts {
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     #[repr(i32)]
@@ -2688,7 +2274,7 @@ mod consts {
     }
 }
 
-#[cfg(any(target_os = "illumos", target_os = "solaris"))]
+#[cfg(solarish)]
 mod consts {
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     #[repr(i32)]
