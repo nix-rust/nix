@@ -27,7 +27,7 @@ use std::os::unix::io::{AsRawFd, OwnedFd};
 use std::path::PathBuf;
 #[cfg(any(linux_android, target_os = "freebsd"))]
 use std::{
-    os::unix::io::{AsFd, AsRawFd},
+    os::unix::io::AsFd,
     ptr,
 };
 
