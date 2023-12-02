@@ -608,7 +608,7 @@ pub enum FlockArg {
 }
 
 #[cfg(not(any(target_os = "redox", target_os = "solaris")))]
-#[deprecated = "`fcntl::Flock` should be used instead."]
+#[deprecated(since = "0.28.0", note = "`fcntl::Flock` should be used instead.")]
 pub fn flock(fd: RawFd, arg: FlockArg) -> Result<()> {
     use self::FlockArg::*;
 
@@ -633,13 +633,13 @@ pub fn flock(fd: RawFd, arg: FlockArg) -> Result<()> {
 /// Represents valid types for flock.
 ///
 /// # Safety
-/// Types implementing this must be `!Clone`.
+/// Types implementing this must not be `Clone`.
 #[cfg(not(any(target_os = "redox", target_os = "solaris")))]
 pub unsafe trait Flockable: AsRawFd {}
 
 /// Represents an owned flock, which unlocks on drop.
 ///
-/// See flock(2) for details on locking semantics.
+/// See [flock(2)](https://linux.die.net/man/2/flock) for details on locking semantics.
 #[cfg(not(any(target_os = "redox", target_os = "solaris")))]
 #[derive(Debug)]
 pub struct Flock<T: Flockable>(T);
@@ -647,9 +647,10 @@ pub struct Flock<T: Flockable>(T);
 #[cfg(not(any(target_os = "redox", target_os = "solaris")))]
 impl<T: Flockable> Drop for Flock<T> {
     fn drop(&mut self) {
-       if Errno::result(unsafe { libc::flock(self.0.as_raw_fd(), libc::LOCK_UN) }).is_err() && !std::thread::panicking() {
-           panic!("Failed to remove flock.");
-       }
+        let res = Errno::result(unsafe { libc::flock(self.0.as_raw_fd(), libc::LOCK_UN) });
+        if res.is_err() && !std::thread::panicking() {
+            panic!("Failed to remove flock: {}", res.unwrap_err());
+        }
     }
 }
 
@@ -674,18 +675,20 @@ impl<T: Flockable> Flock<T> {
     ///
     /// # Example
     /// ```
+    /// # use std::io::Write;
     /// # use std::fs::File;
     /// # use nix::fcntl::{Flock, FlockArg};
-    /// fn do_stuff(file: File) -> nix::Result<()> {
-    ///     let lock = match Flock::lock(file, FlockArg::LockExclusive) {
-    ///         Ok(l) => l,
-    ///         Err((_, e)) => return Err(e),
-    ///     };
+    /// # fn do_stuff(file: File) {
+    ///   let mut file = match Flock::lock(file, FlockArg::LockExclusive) {
+    ///       Ok(l) => l,
+    ///       Err(_) => return,
+    ///   };
     ///
-    ///     // Do stuff
-    ///
-    ///     Ok(())
-    /// }
+    ///   // Do stuff
+    ///   let data = "Foo bar";
+    ///   _ = file.write(data.as_bytes());
+    ///   _ = file.sync_data();
+    /// # }
     pub fn lock(t: T, args: FlockArg) -> std::result::Result<Self, (T, Errno)> {
         let flags = match args {
             FlockArg::LockShared => libc::LOCK_SH,
@@ -714,24 +717,18 @@ impl<T: Flockable> Flock<T> {
     ///
     ///     // Do critical section
     ///
-    ///     // Unlock (don't continue until unlocked)
-    ///     let file = loop {
-    ///         lock = match lock.unlock(false) {
-    ///             Ok(f) => break f,
-    ///             Err((l,_)) => l,
-    ///         };
+    ///     // Unlock
+    ///     let file = match lock.unlock() {
+    ///         Ok(f) => f,
+    ///         Err((_, e)) => return Err(e),
     ///     };
     ///
     ///     // Do anything else
     ///
     ///     Ok(())
     /// }
-    pub fn unlock(self, nonblock: bool) -> std::result::Result<T, (Self, Errno)> {
-        let flag = match nonblock {
-            true => libc::LOCK_UN | libc::LOCK_NB,
-            false => libc::LOCK_UN,
-        };
-        let inner = unsafe { match Errno::result(libc::flock(self.0.as_raw_fd(), flag)) {
+    pub fn unlock(self) -> std::result::Result<T, (Self, Errno)> {
+        let inner = unsafe { match Errno::result(libc::flock(self.0.as_raw_fd(), libc::LOCK_UN)) {
             Ok(_) => std::ptr::read(&self.0),
             Err(errno) => return Err((self, errno)),
         }};
