@@ -26,10 +26,7 @@ use std::os::unix::io::{AsRawFd, OwnedFd};
 ))]
 use std::path::PathBuf;
 #[cfg(any(linux_android, target_os = "freebsd"))]
-use std::{
-    os::unix::io::AsFd,
-    ptr,
-};
+use std::{os::unix::io::AsFd, ptr};
 
 #[cfg(feature = "fs")]
 use crate::{sys::stat::Mode, NixPath, Result};
