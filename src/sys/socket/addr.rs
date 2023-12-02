@@ -283,12 +283,7 @@ pub struct UnixAddr {
     /// The length of the valid part of `sun`, including the sun_family field
     /// but excluding any trailing nul.
     // On the BSDs, this field is built into sun
-    #[cfg(any(
-        linux_android,
-        target_os = "fuchsia",
-        target_os = "illumos",
-        target_os = "redox",
-    ))]
+    #[cfg(not(any(bsd, target_os = "haiku")))]
     sun_len: u8,
 }
 
@@ -366,7 +361,7 @@ impl UnixAddr {
             .try_into()
             .unwrap();
 
-            #[cfg(bsd)]
+            #[cfg(any(bsd, target_os = "haiku"))]
             {
                 ret.sun_len = sun_len;
             }
@@ -447,7 +442,7 @@ impl UnixAddr {
         cfg_if! {
             if #[cfg(any(linux_android,
                      target_os = "fuchsia",
-                     target_os = "illumos",
+                     solarish,
                      target_os = "redox",
                 ))]
             {
@@ -525,7 +520,7 @@ impl UnixAddr {
 
 impl private::SockaddrLikePriv for UnixAddr {}
 impl SockaddrLike for UnixAddr {
-    #[cfg(any(linux_android, target_os = "fuchsia", target_os = "illumos"))]
+    #[cfg(any(linux_android, target_os = "fuchsia", solarish, target_os = "redox"))]
     fn len(&self) -> libc::socklen_t {
         self.sun_len.into()
     }
@@ -2246,7 +2241,7 @@ mod tests {
             #[cfg(any(
                 bsd,
                 target_os = "aix",
-                target_os = "illumos",
+                solarish,
                 target_os = "haiku"
             ))]
             let l = mem::size_of::<libc::sockaddr_dl>();
