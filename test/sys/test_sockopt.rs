@@ -549,3 +549,30 @@ fn test_ts_clock_monotonic() {
         SocketTimestamp::SO_TS_MONOTONIC
     );
 }
+
+#[test]
+#[cfg(linux_android)]
+// Disable the test under emulation because it failsi with ENOPROTOOPT in CI
+// on cross target. Lack of QEMU support is suspected.
+#[cfg_attr(qemu, ignore)]
+fn test_ip_bind_address_no_port() {
+    let fd = socket(
+        AddressFamily::Inet,
+        SockType::Stream,
+        SockFlag::empty(),
+        SockProtocol::Tcp,
+    )
+    .unwrap();
+    setsockopt(&fd, sockopt::IpBindAddressNoPort, &true).expect(
+        "setting IP_BIND_ADDRESS_NO_PORT on an inet stream socket should succeed",
+    );
+    assert!(getsockopt(&fd, sockopt::IpBindAddressNoPort).expect(
+        "getting IP_BIND_ADDRESS_NO_PORT on an inet stream socket should succeed",
+    ));
+    setsockopt(&fd, sockopt::IpBindAddressNoPort, &false).expect(
+        "unsetting IP_BIND_ADDRESS_NO_PORT on an inet stream socket should succeed",
+    );
+    assert!(!getsockopt(&fd, sockopt::IpBindAddressNoPort).expect(
+        "getting IP_BIND_ADDRESS_NO_PORT on an inet stream socket should succeed",
+    ));
+}
