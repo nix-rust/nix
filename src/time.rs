@@ -41,7 +41,9 @@ impl ClockId {
 
     /// Sets time to `timespec` on the clock id
     #[cfg(not(any(
-        target_os = "macos",
+        target_os = "ios",
+        target_os = "tvos",
+        target_os = "watchos",
         target_os = "redox",
         target_os = "hermit"
     )))]
