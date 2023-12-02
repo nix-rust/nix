@@ -277,18 +277,18 @@ libc_enum! {
         B1800,
         B2400,
         B4800,
-        #[cfg(any(freebsdlike, target_os = "macos", netbsdlike))]
+        #[cfg(bsd)]
         B7200,
         B9600,
-        #[cfg(any(freebsdlike, target_os = "macos", netbsdlike))]
+        #[cfg(bsd)]
         B14400,
         B19200,
-        #[cfg(any(freebsdlike, target_os = "macos", netbsdlike))]
+        #[cfg(bsd)]
         B28800,
         B38400,
         #[cfg(not(target_os = "aix"))]
         B57600,
-        #[cfg(any(freebsdlike, target_os = "macos", netbsdlike))]
+        #[cfg(bsd)]
         B76800,
         #[cfg(not(target_os = "aix"))]
         B115200,
@@ -405,10 +405,8 @@ libc_enum! {
     pub enum SpecialCharacterIndices {
         #[cfg(not(any(target_os = "aix", target_os = "haiku")))]
         VDISCARD,
-        #[cfg(any(freebsdlike,
+        #[cfg(any(bsd,
                 solarish,
-                target_os = "macos",
-                netbsdlike,
                 target_os = "aix"))]
         VDSUSP,
         VEOF,
@@ -428,10 +426,7 @@ libc_enum! {
         #[cfg(not(target_os = "haiku"))]
         VREPRINT,
         VSTART,
-        #[cfg(any(freebsdlike,
-                solarish,
-                target_os = "macos",
-                netbsdlike))]
+        #[cfg(any(bsd, solarish))]
         VSTATUS,
         VSTOP,
         VSUSP,
@@ -461,13 +456,7 @@ impl SpecialCharacterIndices {
 }
 
 pub use libc::NCCS;
-#[cfg(any(
-    linux_android,
-    freebsdlike,
-    target_os = "aix",
-    target_os = "macos",
-    netbsdlike
-))]
+#[cfg(any(linux_android, target_os = "aix", bsd))]
 pub use libc::_POSIX_VDISABLE;
 
 libc_bitflags! {
@@ -488,7 +477,7 @@ libc_bitflags! {
         IXANY;
         #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
         IMAXBEL;
-        #[cfg(any(linux_android, target_os = "macos"))]
+        #[cfg(any(linux_android, apple_targets))]
         IUTF8;
     }
 }
@@ -579,7 +568,7 @@ libc_bitflags! {
         FF1 as tcflag_t;
         #[cfg(bsd)]
         OXTABS;
-        #[cfg(any(freebsdlike, target_os = "macos", netbsdlike))]
+        #[cfg(bsd)]
         ONOEOT as tcflag_t;
 
         // Bitmasks for use with OutputFlags to select specific settings
@@ -641,7 +630,7 @@ libc_bitflags! {
         CIBAUD;
         #[cfg(linux_android)]
         CBAUDEX;
-        #[cfg(any(freebsdlike, target_os = "macos", netbsdlike))]
+        #[cfg(bsd)]
         MDMBUF;
         #[cfg(netbsdlike)]
         CHWFLOW;

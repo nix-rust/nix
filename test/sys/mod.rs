@@ -52,7 +52,7 @@ mod test_pthread;
     target_os = "dragonfly",
     target_os = "freebsd",
     target_os = "linux",
-    target_os = "macos",
+    apple_targets,
     target_os = "netbsd",
     target_os = "openbsd"
 ))]

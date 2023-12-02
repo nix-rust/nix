@@ -9,7 +9,7 @@ use std::ptr;
 pub type RequestType = c_int;
 
 cfg_if! {
-    if #[cfg(any(freebsdlike, target_os = "macos", target_os = "openbsd"))] {
+    if #[cfg(any(freebsdlike, apple_targets, target_os = "openbsd"))] {
         #[doc(hidden)]
         pub type AddressType = *mut ::libc::c_char;
     } else {
@@ -26,26 +26,26 @@ libc_enum! {
         PT_TRACE_ME,
         PT_READ_I,
         PT_READ_D,
-        #[cfg(target_os = "macos")]
+        #[cfg(apple_targets)]
         PT_READ_U,
         PT_WRITE_I,
         PT_WRITE_D,
-        #[cfg(target_os = "macos")]
+        #[cfg(apple_targets)]
         PT_WRITE_U,
         PT_CONTINUE,
         PT_KILL,
-        #[cfg(any(any(freebsdlike, target_os = "macos"),
+        #[cfg(any(any(freebsdlike, apple_targets),
                   all(target_os = "openbsd", target_arch = "x86_64"),
                   all(target_os = "netbsd", any(target_arch = "x86_64",
                                                 target_arch = "powerpc"))))]
         PT_STEP,
         PT_ATTACH,
         PT_DETACH,
-        #[cfg(target_os = "macos")]
+        #[cfg(apple_targets)]
         PT_SIGEXC,
-        #[cfg(target_os = "macos")]
+        #[cfg(apple_targets)]
         PT_THUPDATE,
-        #[cfg(target_os = "macos")]
+        #[cfg(apple_targets)]
         PT_ATTACHEXC
     }
 }
@@ -149,7 +149,7 @@ pub fn kill(pid: Pid) -> Result<()> {
 /// }
 /// ```
 #[cfg(any(
-    any(freebsdlike, target_os = "macos"),
+    any(freebsdlike, apple_targets),
     all(target_os = "openbsd", target_arch = "x86_64"),
     all(
         target_os = "netbsd",

@@ -1156,7 +1156,7 @@ pub fn test_af_alg_aead() {
 // This would be a more interesting test if we could assume that the test host
 // has more than one IP address (since we could select a different address to
 // test from).
-#[cfg(any(target_os = "linux", target_os = "macos", target_os = "netbsd"))]
+#[cfg(any(target_os = "linux", apple_targets, target_os = "netbsd"))]
 #[test]
 pub fn test_sendmsg_ipv4packetinfo() {
     use cfg_if::cfg_if;
@@ -1218,7 +1218,7 @@ pub fn test_sendmsg_ipv4packetinfo() {
 // test from).
 #[cfg(any(
     target_os = "linux",
-    target_os = "macos",
+    apple_targets,
     target_os = "netbsd",
     target_os = "freebsd"
 ))]
@@ -2309,7 +2309,7 @@ pub fn test_vsock() {
     assert_eq!(addr3.as_ref().svm_port, addr1.port());
 }
 
-#[cfg(target_os = "macos")]
+#[cfg(apple_targets)]
 #[test]
 pub fn test_vsock() {
     use nix::sys::socket::SockaddrLike;

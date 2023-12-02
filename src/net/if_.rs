@@ -82,7 +82,7 @@ libc_bitflags!(
         #[cfg(any(linux_android, target_os = "fuchsia"))]
         IFF_SLAVE;
         /// Can't hear own transmissions.
-        #[cfg(any(freebsdlike, netbsdlike, target_os = "macos"))]
+        #[cfg(bsd)]
         IFF_SIMPLEX;
         /// Supports multicast. (see
         /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))

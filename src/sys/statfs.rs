@@ -9,10 +9,7 @@ use std::os::unix::io::{AsFd, AsRawFd};
 
 use cfg_if::cfg_if;
 
-#[cfg(all(
-    feature = "mount",
-    any(freebsdlike, target_os = "macos", netbsdlike)
-))]
+#[cfg(all(feature = "mount", bsd))]
 use crate::mount::MntFlags;
 #[cfg(target_os = "linux")]
 use crate::sys::statvfs::FsFlags;
@@ -422,10 +419,7 @@ impl Statfs {
     }
 
     /// Get the mount flags
-    #[cfg(all(
-        feature = "mount",
-        any(freebsdlike, target_os = "macos", netbsdlike)
-    ))]
+    #[cfg(all(feature = "mount", bsd))]
     #[allow(clippy::unnecessary_cast)] // Not unnecessary on all arches
     pub fn flags(&self) -> MntFlags {
         MntFlags::from_bits_truncate(self.0.f_flags as i32)
@@ -624,10 +618,7 @@ impl Debug for Statfs {
         ds.field("files", &self.files());
         ds.field("files_free", &self.files_free());
         ds.field("filesystem_id", &self.filesystem_id());
-        #[cfg(all(
-            feature = "mount",
-            any(freebsdlike, target_os = "macos", netbsdlike)
-        ))]
+        #[cfg(all(feature = "mount", bsd))]
         ds.field("flags", &self.flags());
         ds.finish()
     }
