@@ -412,6 +412,20 @@ sockopt_impl!(
     libc::IP_FREEBIND,
     bool
 );
+#[cfg(linux_android)]
+#[cfg(feature = "net")]
+sockopt_impl!(
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
+    /// If enabled, the kernel will not reserve an ephemeral port when binding
+    /// socket with a port number of 0. The port will later be automatically
+    /// chosen at connect time, in a way that allows sharing a source port as
+    /// long as the 4-tuple is unique.
+    IpBindAddressNoPort,
+    Both,
+    libc::IPPROTO_IP,
+    libc::IP_BIND_ADDRESS_NO_PORT,
+    bool
+);
 sockopt_impl!(
     /// Specify the receiving timeout until reporting an error.
     ReceiveTimeout,
