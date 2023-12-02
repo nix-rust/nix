@@ -170,7 +170,13 @@ pub fn clock_gettime(clock_id: ClockId) -> Result<TimeSpec> {
 
 /// Set the time of the specified clock, (see
 /// [clock_settime(2)](https://pubs.opengroup.org/onlinepubs/7908799/xsh/clock_settime.html)).
-#[cfg(not(any(apple_targets, target_os = "redox", target_os = "hermit",)))]
+#[cfg(not(any(
+    target_os = "ios",
+    target_os = "tvos",
+    target_os = "watchos",
+    target_os = "redox",
+    target_os = "hermit"
+)))]
 pub fn clock_settime(clock_id: ClockId, timespec: TimeSpec) -> Result<()> {
     let ret =
         unsafe { libc::clock_settime(clock_id.as_raw(), timespec.as_ref()) };
