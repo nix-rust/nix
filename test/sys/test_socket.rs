@@ -1750,14 +1750,7 @@ pub fn test_syscontrol() {
     // connect(fd.as_raw_fd(), &sockaddr).expect("connect failed");
 }
 
-#[cfg(any(
-    target_os = "android",
-    target_os = "freebsd",
-    apple_targets,
-    target_os = "linux",
-    target_os = "netbsd",
-    target_os = "openbsd",
-))]
+#[cfg(any(bsd, linux_android))]
 fn loopback_address(
     family: AddressFamily,
 ) -> Option<nix::ifaddrs::InterfaceAddress> {
@@ -1880,12 +1873,7 @@ pub fn test_recv_ipv4pktinfo() {
     }
 }
 
-#[cfg(any(
-    target_os = "freebsd",
-    apple_targets,
-    target_os = "netbsd",
-    target_os = "openbsd",
-))]
+#[cfg(bsd)]
 // qemu doesn't seem to be emulating this correctly in these architectures
 #[cfg_attr(
     all(

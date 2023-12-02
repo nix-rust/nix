@@ -842,7 +842,7 @@ sockopt_impl!(
     libc::IPV6_RECVPKTINFO,
     bool
 );
-#[cfg(any(target_os = "freebsd", apple_targets, netbsdlike))]
+#[cfg(bsd)]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -854,7 +854,7 @@ sockopt_impl!(
     libc::IP_RECVIF,
     bool
 );
-#[cfg(any(target_os = "freebsd", apple_targets, netbsdlike))]
+#[cfg(bsd)]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
