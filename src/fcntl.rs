@@ -10,11 +10,14 @@ use libc::{self, c_int, c_uint, size_t, ssize_t};
 ))]
 use std::ffi::CStr;
 use std::ffi::OsString;
+#[cfg(not(any(target_os = "redox", target_os = "solaris")))]
+use std::ops::{Deref, DerefMut};
 #[cfg(not(target_os = "redox"))]
 use std::os::raw;
 use std::os::unix::ffi::OsStringExt;
 use std::os::unix::io::RawFd;
-// For splice and copy_file_range
+#[cfg(not(any(target_os = "redox", target_os = "solaris")))]
+use std::os::unix::io::{AsRawFd, OwnedFd};
 #[cfg(any(
     target_os = "netbsd",
     apple_targets,
@@ -23,10 +26,7 @@ use std::os::unix::io::RawFd;
 ))]
 use std::path::PathBuf;
 #[cfg(any(linux_android, target_os = "freebsd"))]
-use std::{
-    os::unix::io::{AsFd, AsRawFd},
-    ptr,
-};
+use std::{os::unix::io::AsFd, ptr};
 
 #[cfg(feature = "fs")]
 use crate::{sys::stat::Mode, NixPath, Result};
@@ -578,7 +578,6 @@ pub fn fcntl(fd: RawFd, arg: FcntlArg) -> Result<c_int> {
     Errno::result(res)
 }
 
-// TODO: convert to libc_enum
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 #[non_exhaustive]
 pub enum FlockArg {
@@ -591,6 +590,7 @@ pub enum FlockArg {
 }
 
 #[cfg(not(any(target_os = "redox", target_os = "solaris")))]
+#[deprecated(since = "0.28.0", note = "`fcntl::Flock` should be used instead.")]
 pub fn flock(fd: RawFd, arg: FlockArg) -> Result<()> {
     use self::FlockArg::*;
 
@@ -611,6 +611,122 @@ pub fn flock(fd: RawFd, arg: FlockArg) -> Result<()> {
 
     Errno::result(res).map(drop)
 }
+
+/// Represents valid types for flock.
+///
+/// # Safety
+/// Types implementing this must not be `Clone`.
+#[cfg(not(any(target_os = "redox", target_os = "solaris")))]
+pub unsafe trait Flockable: AsRawFd {}
+
+/// Represents an owned flock, which unlocks on drop.
+///
+/// See [flock(2)](https://linux.die.net/man/2/flock) for details on locking semantics.
+#[cfg(not(any(target_os = "redox", target_os = "solaris")))]
+#[derive(Debug)]
+pub struct Flock<T: Flockable>(T);
+
+#[cfg(not(any(target_os = "redox", target_os = "solaris")))]
+impl<T: Flockable> Drop for Flock<T> {
+    fn drop(&mut self) {
+        let res = Errno::result(unsafe { libc::flock(self.0.as_raw_fd(), libc::LOCK_UN) });
+        if res.is_err() && !std::thread::panicking() {
+            panic!("Failed to remove flock: {}", res.unwrap_err());
+        }
+    }
+}
+
+#[cfg(not(any(target_os = "redox", target_os = "solaris")))]
+impl<T: Flockable> Deref for Flock<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+#[cfg(not(any(target_os = "redox", target_os = "solaris")))]
+impl<T: Flockable> DerefMut for Flock<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+#[cfg(not(any(target_os = "redox", target_os = "solaris")))]
+impl<T: Flockable> Flock<T> {
+    /// Obtain a/an flock.
+    ///
+    /// # Example
+    /// ```
+    /// # use std::io::Write;
+    /// # use std::fs::File;
+    /// # use nix::fcntl::{Flock, FlockArg};
+    /// # fn do_stuff(file: File) {
+    ///   let mut file = match Flock::lock(file, FlockArg::LockExclusive) {
+    ///       Ok(l) => l,
+    ///       Err(_) => return,
+    ///   };
+    ///
+    ///   // Do stuff
+    ///   let data = "Foo bar";
+    ///   _ = file.write(data.as_bytes());
+    ///   _ = file.sync_data();
+    /// # }
+    pub fn lock(t: T, args: FlockArg) -> std::result::Result<Self, (T, Errno)> {
+        let flags = match args {
+            FlockArg::LockShared => libc::LOCK_SH,
+            FlockArg::LockExclusive => libc::LOCK_EX,
+            FlockArg::LockSharedNonblock => libc::LOCK_SH | libc::LOCK_NB,
+            FlockArg::LockExclusiveNonblock => libc::LOCK_EX | libc::LOCK_NB,
+            FlockArg::Unlock | FlockArg::UnlockNonblock => return Err((t, Errno::EINVAL)),
+        };
+        match Errno::result(unsafe { libc::flock(t.as_raw_fd(), flags) }) {
+            Ok(_) => Ok(Self(t)),
+            Err(errno) => Err((t, errno)),
+        }
+    }
+
+    /// Remove the lock and return the object wrapped within.
+    ///
+    /// # Example
+    /// ```
+    /// # use std::fs::File;
+    /// # use nix::fcntl::{Flock, FlockArg};
+    /// fn do_stuff(file: File) -> nix::Result<()> {
+    ///     let mut lock = match Flock::lock(file, FlockArg::LockExclusive) {
+    ///         Ok(l) => l,
+    ///         Err((_,e)) => return Err(e),
+    ///     };
+    ///
+    ///     // Do critical section
+    ///
+    ///     // Unlock
+    ///     let file = match lock.unlock() {
+    ///         Ok(f) => f,
+    ///         Err((_, e)) => return Err(e),
+    ///     };
+    ///
+    ///     // Do anything else
+    ///
+    ///     Ok(())
+    /// }
+    pub fn unlock(self) -> std::result::Result<T, (Self, Errno)> {
+        let inner = unsafe { match Errno::result(libc::flock(self.0.as_raw_fd(), libc::LOCK_UN)) {
+            Ok(_) => std::ptr::read(&self.0),
+            Err(errno) => return Err((self, errno)),
+        }};
+
+        std::mem::forget(self);
+        Ok(inner)
+    }
+}
+
+// Safety: `File` is not [std::clone::Clone].
+#[cfg(not(any(target_os = "redox", target_os = "solaris")))]
+unsafe impl Flockable for std::fs::File {}
+
+// Safety: `OwnedFd` is not [std::clone::Clone].
+#[cfg(not(any(target_os = "redox", target_os = "solaris")))]
+unsafe impl Flockable for OwnedFd {}
 }
 
 #[cfg(linux_android)]
