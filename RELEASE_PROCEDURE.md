@@ -16,8 +16,8 @@ The release is prepared as follows:
  
   ```toml
   [dependencies]
-  -libc = { git = "https://github.com/rust-lang/libc", rev = "<Revision>", features = ["extra_traits"] }
-  +libc = { version = "<New Version>", features = ["extra_traits"] }
+  - libc = { git = "https://github.com/rust-lang/libc", rev = "<Revision>", features = ["extra_traits"] }
+  + libc = { version = "<New Version>", features = ["extra_traits"] }
   ```
   
 - Update the version number in `Cargo.toml`
