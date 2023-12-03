@@ -14,10 +14,10 @@ The release is prepared as follows:
 - Ask for a new libc version if, necessary. It usually is. Then update the
   dependency in `Cargo.toml` to rely on a release from crates.io.
  
-  ```toml
+  ```diff
   [dependencies]
-  - libc = { git = "https://github.com/rust-lang/libc", rev = "<Revision>", features = ["extra_traits"] }
-  + libc = { version = "<New Version>", features = ["extra_traits"] }
+  -libc = { git = "https://github.com/rust-lang/libc", rev = "<Revision>", features = ["extra_traits"] }
+  +libc = { version = "<New Version>", features = ["extra_traits"] }
   ```
   
 - Update the version number in `Cargo.toml`
