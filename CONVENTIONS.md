@@ -18,7 +18,13 @@ We follow the conventions laid out in [Keep A CHANGELOG][kacl].
 ## libc constants, functions and structs
 
 We do not define integer constants ourselves, but use or reexport them from the
-[libc crate][libc].
+[libc crate][libc], if your PR uses something that does not exist in the libc crate,
+you should add it to libc first, once your libc PR gets merged, you can adjust
+the `rev` number in our `Cargo.toml` to include that libc change.
+
+```toml
+libc = { git = "https://github.com/rust-lang/libc", rev = "the commit includes your libc PR", ... }
+```
 
 We use the functions exported from [libc][libc] instead of writing our own
 `extern` declarations.
@@ -115,5 +121,5 @@ To deprecate an interface, put the following attribute on the top of it:
 `<Version>` is the version where this interface will be deprecated, in most 
 cases, it will be the version of the next release. And a user-friendly note 
 should be added. Normally, there should be a new interface that will replace
-the old one, so a note should be something like: "<New Interface> should be 
+the old one, so a note should be something like: "`<New Interface>` should be 
 used instead".
