@@ -1,7 +1,7 @@
 #[cfg(any(
     bsd,
     linux_android,
-    target_os = "illumos",
+    solarish,
     target_os = "haiku",
     target_os = "fuchsia",
     target_os = "aix",
@@ -230,7 +230,7 @@ pub enum AddressFamily {
     #[cfg(bsd)]
     Hylink = libc::AF_HYLINK,
     /// Link layer interface
-    #[cfg(any(bsd, target_os = "illumos"))]
+    #[cfg(any(bsd, solarish))]
     Link = libc::AF_LINK,
     /// connection-oriented IP, aka ST II
     #[cfg(bsd)]
@@ -265,7 +265,7 @@ impl AddressFamily {
             libc::PF_ROUTE => Some(AddressFamily::Route),
             #[cfg(linux_android)]
             libc::AF_PACKET => Some(AddressFamily::Packet),
-            #[cfg(any(bsd, target_os = "illumos"))]
+            #[cfg(any(bsd, solarish))]
             libc::AF_LINK => Some(AddressFamily::Link),
             #[cfg(any(linux_android, apple_targets))]
             libc::AF_VSOCK => Some(AddressFamily::Vsock),
@@ -506,7 +506,7 @@ impl UnixAddr {
         cfg_if! {
             if #[cfg(any(linux_android,
                      target_os = "fuchsia",
-                     target_os = "illumos",
+                     solarish,
                      target_os = "redox",
                 ))]
             {
@@ -547,7 +547,7 @@ impl SockaddrLike for UnixAddr {
         cfg_if! {
             if #[cfg(any(linux_android,
                          target_os = "fuchsia",
-                         target_os = "illumos",
+                         solarish,
                          target_os = "redox",
                 ))] {
                 let su_len = len.unwrap_or(
@@ -577,7 +577,7 @@ impl SockaddrLike for UnixAddr {
         cfg_if! {
             if #[cfg(any(linux_android,
                          target_os = "fuchsia",
-                         target_os = "illumos",
+                         solarish,
                          target_os = "redox",
                 ))] {
                 self.sun_len = new_length as u8;
@@ -1101,7 +1101,7 @@ impl SockaddrLike for SockaddrStorage {
                 #[cfg(any(
                     linux_android,
                     target_os = "fuchsia",
-                    target_os = "illumos",
+                    solarish,
                 ))]
                 if i32::from(ss.ss_family) == libc::AF_UNIX {
                     // Safe because we UnixAddr is strictly smaller than
@@ -1131,7 +1131,7 @@ impl SockaddrLike for SockaddrStorage {
                 libc::AF_INET6 => unsafe {
                     SockaddrIn6::from_raw(addr, l).map(|sin6| Self { sin6 })
                 },
-                #[cfg(any(bsd, target_os = "illumos", target_os = "haiku"))]
+                #[cfg(any(bsd, solarish, target_os = "haiku"))]
                 #[cfg(feature = "net")]
                 libc::AF_LINK => unsafe {
                     LinkAddr::from_raw(addr, l).map(|dl| Self { dl })
@@ -1158,7 +1158,7 @@ impl SockaddrLike for SockaddrStorage {
         }
     }
 
-    #[cfg(any(linux_android, target_os = "fuchsia", target_os = "illumos"))]
+    #[cfg(any(linux_android, target_os = "fuchsia", solarish))]
     fn len(&self) -> libc::socklen_t {
         match self.as_unix_addr() {
             // The UnixAddr type knows its own length
@@ -1219,7 +1219,7 @@ impl SockaddrStorage {
         cfg_if! {
             if #[cfg(any(linux_android,
                      target_os = "fuchsia",
-                     target_os = "illumos",
+                     solarish,
                 ))]
             {
                 let p = unsafe{ &self.ss as *const libc::sockaddr_storage };
@@ -1248,7 +1248,7 @@ impl SockaddrStorage {
         cfg_if! {
             if #[cfg(any(linux_android,
                      target_os = "fuchsia",
-                     target_os = "illumos",
+                     solarish,
                 ))]
             {
                 let p = unsafe{ &self.ss as *const libc::sockaddr_storage };
@@ -1282,7 +1282,7 @@ impl SockaddrStorage {
     as_link_addr, as_link_addr_mut, LinkAddr,
     AddressFamily::Packet, libc::sockaddr_ll, dl}
 
-    #[cfg(any(bsd, target_os = "illumos"))]
+    #[cfg(any(bsd, solarish))]
     #[cfg(feature = "net")]
     accessors! {
     as_link_addr, as_link_addr_mut, LinkAddr,
@@ -1332,7 +1332,7 @@ impl fmt::Display for SockaddrStorage {
                 libc::AF_INET => self.sin.fmt(f),
                 #[cfg(feature = "net")]
                 libc::AF_INET6 => self.sin6.fmt(f),
-                #[cfg(any(bsd, target_os = "illumos"))]
+                #[cfg(any(bsd, solarish))]
                 #[cfg(feature = "net")]
                 libc::AF_LINK => self.dl.fmt(f),
                 #[cfg(linux_android)]
@@ -1394,7 +1394,7 @@ impl Hash for SockaddrStorage {
                 libc::AF_INET => self.sin.hash(s),
                 #[cfg(feature = "net")]
                 libc::AF_INET6 => self.sin6.hash(s),
-                #[cfg(any(bsd, target_os = "illumos"))]
+                #[cfg(any(bsd, solarish))]
                 #[cfg(feature = "net")]
                 libc::AF_LINK => self.dl.hash(s),
                 #[cfg(linux_android)]
@@ -1424,7 +1424,7 @@ impl PartialEq for SockaddrStorage {
                 (libc::AF_INET, libc::AF_INET) => self.sin == other.sin,
                 #[cfg(feature = "net")]
                 (libc::AF_INET6, libc::AF_INET6) => self.sin6 == other.sin6,
-                #[cfg(any(bsd, target_os = "illumos"))]
+                #[cfg(any(bsd, solarish))]
                 #[cfg(feature = "net")]
                 (libc::AF_LINK, libc::AF_LINK) => self.dl == other.dl,
                 #[cfg(linux_android)]
@@ -1854,7 +1854,7 @@ mod datalink {
     }
 }
 
-#[cfg(any(bsd, target_os = "illumos", target_os = "haiku", target_os = "aix"))]
+#[cfg(any(bsd, solarish, target_os = "haiku", target_os = "aix"))]
 mod datalink {
     feature! {
     #![feature = "net"]
@@ -2128,7 +2128,7 @@ mod tests {
     mod link {
         #![allow(clippy::cast_ptr_alignment)]
 
-        #[cfg(any(apple_targets, target_os = "illumos"))]
+        #[cfg(any(apple_targets, solarish))]
         use super::super::super::socklen_t;
         use super::*;
 
@@ -2215,9 +2215,9 @@ mod tests {
             }
         }
 
-        #[cfg(target_os = "illumos")]
+        #[cfg(solarish)]
         #[test]
-        fn illumos_tap() {
+        fn solarish_tap() {
             let bytes = [25u8, 0, 0, 0, 6, 0, 6, 0, 24, 101, 144, 221, 76, 176];
             let ptr = bytes.as_ptr();
             let sa = ptr as *const libc::sockaddr;

@@ -18,7 +18,7 @@ const fn zero_init_timespec() -> timespec {
     all(
         any(
             target_os = "freebsd",
-            target_os = "illumos",
+            solarish,
             target_os = "linux",
             target_os = "netbsd"
         ),
@@ -97,7 +97,7 @@ pub(crate) mod timer {
             const TFD_TIMER_CANCEL_ON_SET = libc::TFD_TIMER_CANCEL_ON_SET;
         }
     }
-    #[cfg(any(freebsdlike, target_os = "netbsd", target_os = "illumos"))]
+    #[cfg(any(freebsdlike, target_os = "netbsd", solarish))]
     bitflags! {
         /// Flags that are used for arming the timer.
         #[derive(Copy, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]

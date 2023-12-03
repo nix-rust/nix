@@ -256,13 +256,13 @@ libc_bitflags! {
         #[cfg(any(linux_android,
                   freebsdlike,
                   netbsdlike,
-                  target_os = "illumos"))]
+                  solarish))]
         SOCK_NONBLOCK;
         /// Set close-on-exec on the new descriptor
         #[cfg(any(linux_android,
                   freebsdlike,
                   netbsdlike,
-                  target_os = "illumos"))]
+                  solarish))]
         SOCK_CLOEXEC;
         /// Return `EPIPE` instead of raising `SIGPIPE`
         #[cfg(target_os = "netbsd")]
@@ -343,8 +343,7 @@ libc_bitflags! {
         #[cfg(any(linux_android,
                   netbsdlike,
                   target_os = "fuchsia",
-                  target_os = "freebsd",
-                  target_os = "solaris"))]
+                  target_os = "freebsd"))]
         MSG_WAITFORONE;
     }
 }
@@ -2156,7 +2155,7 @@ pub fn accept(sockfd: RawFd) -> Result<RawFd> {
     netbsdlike,
     target_os = "emscripten",
     target_os = "fuchsia",
-    target_os = "illumos",
+    solarish,
     target_os = "linux",
 ))]
 pub fn accept4(sockfd: RawFd, flags: SockFlag) -> Result<RawFd> {

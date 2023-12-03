@@ -234,11 +234,11 @@ mod linux;
 #[cfg(any(linux_android, target_os = "redox"))]
 pub use self::linux::*;
 
-#[cfg(any(bsd, target_os = "illumos", target_os = "haiku",))]
+#[cfg(any(bsd, solarish, target_os = "haiku",))]
 #[macro_use]
 mod bsd;
 
-#[cfg(any(bsd, target_os = "illumos", target_os = "haiku",))]
+#[cfg(any(bsd, solarish, target_os = "haiku",))]
 pub use self::bsd::*;
 
 /// Convert raw ioctl return value to a Nix result

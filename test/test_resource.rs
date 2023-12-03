@@ -1,7 +1,7 @@
 #[cfg(not(any(
     target_os = "redox",
     target_os = "fuchsia",
-    target_os = "illumos",
+    solarish,
     target_os = "haiku"
 )))]
 use nix::sys::resource::{getrlimit, setrlimit, Resource};
@@ -18,7 +18,7 @@ use nix::sys::resource::{getrlimit, setrlimit, Resource};
 #[cfg(not(any(
     target_os = "redox",
     target_os = "fuchsia",
-    target_os = "illumos",
+    solarish,
     target_os = "haiku"
 )))]
 pub fn test_resource_limits_nofile() {
