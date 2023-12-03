@@ -169,10 +169,7 @@ impl MapFlags {
     /// let f = MapFlags::map_hugetlb_with_size_log2(30).unwrap();
     /// assert_eq!(f, MapFlags::MAP_HUGETLB | MapFlags::MAP_HUGE_1GB);
     /// ```
-    // TODO: support Andorid and Fuchsia when https://github.com/rust-lang/libc/pull/3444
-    // will be released
-    #[cfg(target_os = "linux")]
-    #[cfg_attr(docsrs, doc(cfg(all())))]
+    #[cfg(any(linux_android, target_os = "fuchsia"))]
     pub fn map_hugetlb_with_size_log2(
         huge_page_size_log2: u32,
     ) -> Option<Self> {
