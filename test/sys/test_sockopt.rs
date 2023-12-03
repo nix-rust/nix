@@ -576,3 +576,27 @@ fn test_ip_bind_address_no_port() {
         "getting IP_BIND_ADDRESS_NO_PORT on an inet stream socket should succeed",
     ));
 }
+
+#[test]
+#[cfg(linux_android)]
+fn test_tcp_fast_open_connect() {
+    let fd = socket(
+        AddressFamily::Inet,
+        SockType::Stream,
+        SockFlag::empty(),
+        SockProtocol::Tcp,
+    )
+    .unwrap();
+    setsockopt(&fd, sockopt::TcpFastOpenConnect, &true).expect(
+        "setting TCP_FASTOPEN_CONNECT on an inet stream socket should succeed",
+    );
+    assert!(getsockopt(&fd, sockopt::TcpFastOpenConnect).expect(
+        "getting TCP_FASTOPEN_CONNECT on an inet stream socket should succeed",
+    ));
+    setsockopt(&fd, sockopt::TcpFastOpenConnect, &false).expect(
+        "unsetting TCP_FASTOPEN_CONNECT on an inet stream socket should succeed",
+    );
+    assert!(!getsockopt(&fd, sockopt::TcpFastOpenConnect).expect(
+        "getting TCP_FASTOPEN_CONNECT on an inet stream socket should succeed",
+    ));
+}
