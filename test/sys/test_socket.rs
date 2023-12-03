@@ -2915,3 +2915,87 @@ fn can_open_routing_socket() {
         socket(AddressFamily::Route, SockType::Raw, SockFlag::empty(), None)
             .expect("Failed to open routing socket");
 }
+
+#[test]
+fn test_recvmsg_wrong_addr_type() {
+    use std::io::{IoSlice, IoSliceMut};
+
+    use nix::sys::socket::*;
+
+    let send = socket(
+        AddressFamily::Inet,
+        SockType::Datagram,
+        SockFlag::empty(),
+        SockProtocol::Udp,
+    )
+    .unwrap();
+
+    let recv = socket(
+        AddressFamily::Inet,
+        SockType::Datagram,
+        SockFlag::empty(),
+        SockProtocol::Udp,
+    )
+    .unwrap();
+
+    let addr = "127.0.0.1:6803".parse::<SockaddrIn>().unwrap();
+
+    bind(recv.as_raw_fd(), &addr).unwrap();
+
+    sendmsg(
+        send.as_raw_fd(),
+        &[IoSlice::new(&[0x69; 42][..])],
+        &[],
+        MsgFlags::empty(),
+        Some(&addr),
+    )
+    .unwrap();
+
+    // To make apple happy
+    let mut buf = [0u8; 42];
+    let mut iov = [IoSliceMut::new(&mut buf)];
+
+    let r = recvmsg::<UnixAddr>(
+        recv.as_raw_fd(),
+        &mut iov,
+        None,
+        MsgFlags::empty(),
+    )
+    .unwrap();
+
+    assert!(r.address.is_none());
+}
+
+#[test]
+fn test_recvfrom_wrong_addr_type() {
+    use nix::sys::socket::*;
+
+    let send = socket(
+        AddressFamily::Inet,
+        SockType::Datagram,
+        SockFlag::empty(),
+        SockProtocol::Udp,
+    )
+    .unwrap();
+
+    let recv = socket(
+        AddressFamily::Inet,
+        SockType::Datagram,
+        SockFlag::empty(),
+        SockProtocol::Udp,
+    )
+    .unwrap();
+
+    let addr = "127.0.0.1:6804".parse::<SockaddrIn>().unwrap();
+
+    bind(recv.as_raw_fd(), &addr).unwrap();
+
+    sendto(send.as_raw_fd(), &[0x69; 42], &addr, MsgFlags::empty()).unwrap();
+
+    // To make apple happy
+    let mut buf = [0u8; 42];
+
+    let (_, addr) = recvfrom::<UnixAddr>(recv.as_raw_fd(), &mut buf).unwrap();
+
+    assert!(addr.is_none());
+}

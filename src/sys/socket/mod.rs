@@ -1718,7 +1718,7 @@ where
 
         // as long as we are not reading past the index writen by recvmmsg - address
         // will be initialized
-        let address = unsafe { self.rmm.addresses[self.current_index].assume_init() };
+        let address = self.rmm.addresses[self.current_index];
 
         self.current_index += 1;
         Some(unsafe {
@@ -1726,7 +1726,7 @@ where
                 mmsghdr.msg_hdr,
                 mmsghdr.msg_len as isize,
                 self.rmm.msg_controllen,
-                address,
+                &address,
             )
         })
     }
@@ -1778,7 +1778,7 @@ unsafe fn read_mhdr<'a, 'i, S>(
     mhdr: msghdr,
     r: isize,
     msg_controllen: usize,
-    mut address: S,
+    address: &mem::MaybeUninit<S>,
 ) -> RecvMsg<'a, 'i, S>
     where S: SockaddrLike
 {
@@ -1798,15 +1798,16 @@ unsafe fn read_mhdr<'a, 'i, S>(
         }
     };
 
-    // Ignore errors if this socket address has statically-known length
-    //
-    // This is to ensure that unix socket addresses have their length set appropriately.
-    let _ = unsafe { address.set_length(mhdr.msg_namelen as usize) };
+    let addr_len = mhdr.msg_namelen;
+
+    let address = unsafe {
+        S::from_raw(address.as_ptr().cast(), Some(addr_len))
+    };
 
     RecvMsg {
         bytes: r as usize,
         cmsghdr,
-        address: Some(address),
+        address,
         flags: MsgFlags::from_bits_truncate(mhdr.msg_flags),
         mhdr,
         iobufs: std::marker::PhantomData,
@@ -1936,7 +1937,7 @@ pub fn recvmsg<'a, 'outer, 'inner, S>(fd: RawFd, iov: &'outer mut [IoSliceMut<'i
 
     let r = Errno::result(ret)?;
 
-    Ok(unsafe { read_mhdr(mhdr, r, msg_controllen, address.assume_init()) })
+    Ok(unsafe { read_mhdr(mhdr, r, msg_controllen, &address) })
 }
 }
 
@@ -2112,7 +2113,7 @@ pub fn recvfrom<T: SockaddrLike>(
             &mut len as *mut socklen_t,
         ))? as usize;
 
-        Ok((ret, T::from_raw(addr.assume_init().as_ptr(), Some(len))))
+        Ok((ret, T::from_raw(addr.as_ptr().cast(), Some(len))))
     }
 }
 
