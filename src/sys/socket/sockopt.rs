@@ -600,6 +600,26 @@ sockopt_impl!(
     libc::TCP_USER_TIMEOUT,
     u32
 );
+#[cfg(linux_android)]
+#[cfg(feature = "net")]
+sockopt_impl!(
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
+    /// Enables TCP Fast Open (RFC 7413) on a connecting socket. If a fast open
+    /// cookie is not available (first attempt to connect), `connect` syscall
+    /// will behave as usual, except for internally trying to solicit a cookie
+    /// from remote peer. When cookie is available, the next `connect` syscall
+    /// will immediately succeed without actually establishing TCP connection.
+    /// The connection establishment will be defered till the next `write` or
+    /// `sendmsg` syscalls on the socket, allowing TCP prtocol to establish
+    /// connection and send data in the same packets. Note: calling `read` right
+    /// after `connect` without `write` on the socket will cause the blocking
+    /// socket to be blocked forever.
+    TcpFastOpenConnect,
+    Both,
+    libc::IPPROTO_TCP,
+    libc::TCP_FASTOPEN_CONNECT,
+    bool
+);
 sockopt_impl!(
     /// Sets or gets the maximum socket receive buffer in bytes.
     RcvBuf,
