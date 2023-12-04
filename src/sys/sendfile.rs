@@ -118,6 +118,42 @@ cfg_if! {
                 )
             }
         }
+    } else if #[cfg(solarish)] {
+        use std::os::unix::io::BorrowedFd;
+        use std::marker::PhantomData;
+
+        #[derive(Debug, Copy, Clone)]
+        /// Mapping of the raw C sendfilevec_t struct
+        pub struct SendfileVec<'fd> {
+            raw: libc::sendfilevec_t,
+            phantom: PhantomData<BorrowedFd<'fd>>
+        }
+
+        impl<'fd> SendfileVec<'fd> {
+            /// initialises SendfileVec to send data directly from the process's address space
+            /// same in C with sfv_fd set to SFV_FD_SELF.
+            pub fn newself(
+                off: off_t,
+                len: usize
+            ) -> Self {
+                Self{raw: libc::sendfilevec_t{sfv_fd: libc::SFV_FD_SELF, sfv_flag: 0, sfv_off: off, sfv_len: len}, phantom: PhantomData}
+            }
+
+            /// initialises SendfileVec to send data from `fd`.
+            pub fn new(
+                fd: BorrowedFd<'fd>,
+                off: off_t,
+                len: usize
+            ) -> SendfileVec<'fd> {
+                Self{raw: libc::sendfilevec_t{sfv_fd: fd.as_raw_fd(), sfv_flag: 0, sfv_off:off, sfv_len: len}, phantom: PhantomData}
+            }
+        }
+
+        impl From<SendfileVec<'_>> for libc::sendfilevec_t {
+            fn from<'fd>(vec: SendfileVec) -> libc::sendfilevec_t {
+                vec.raw
+            }
+        }
     }
 }
 
@@ -282,6 +318,31 @@ cfg_if! {
                                &mut len as *mut off_t,
                                hdtr_ptr as *mut libc::sf_hdtr,
                                0)
+            };
+            (Errno::result(return_code).and(Ok(())), len)
+        }
+    } else if #[cfg(solarish)] {
+        /// Write data from the vec arrays to `out_sock` and returns a `Result` and a
+        /// count of bytes written.
+        ///
+        /// Each `SendfileVec` set needs to be instantiated either with `SendfileVec::new` or
+        /// `SendfileVec::newself`.
+        ///
+        /// The former allows to send data from a file descriptor through `fd`,
+        ///  from an offset `off` and for a given amount of data `len`.
+        ///
+        /// The latter allows to send data from the process's address space, from an offset `off`
+        /// and for a given amount of data `len`.
+        ///
+        /// For more information, see
+        /// [the sendfilev(3) man page.](https://illumos.org/man/3EXT/sendfilev)
+        pub fn sendfilev<F: AsFd>(
+            out_sock: F,
+            vec: &[SendfileVec]
+        ) -> (Result<()>, usize) {
+            let mut len = 0usize;
+            let return_code = unsafe {
+                libc::sendfilev(out_sock.as_fd().as_raw_fd(), vec.as_ptr() as *const libc::sendfilevec_t, vec.len() as i32, &mut len)
             };
             (Errno::result(return_code).and(Ok(())), len)
         }

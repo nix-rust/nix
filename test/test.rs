@@ -44,6 +44,7 @@ mod test_sched;
     target_os = "freebsd",
     apple_targets,
     target_os = "linux",
+    solarish
 ))]
 mod test_sendfile;
 mod test_stat;
