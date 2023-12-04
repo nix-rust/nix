@@ -1026,8 +1026,6 @@ impl ControlMessageOwned {
             #[cfg(any(
                 apple_targets,
                 target_os = "freebsd",
-                target_os = "netbsd",
-                target_os = "openbsd",
             ))]
             #[cfg(feature = "net")]
             (libc::IPPROTO_IP, libc::IP_RECVTOS) => {
@@ -1055,8 +1053,6 @@ impl ControlMessageOwned {
             #[cfg(any(
                 apple_targets,
                 target_os = "freebsd",
-                target_os = "netbsd",
-                target_os = "openbsd",
             ))]
             #[cfg(feature = "net")]
             (libc::IPPROTO_IP, libc::IP_RECVTTL) => {
@@ -1073,8 +1069,6 @@ impl ControlMessageOwned {
                 apple_targets,
                 linux_android,
                 target_os = "freebsd",
-                target_os = "netbsd",
-                target_os = "openbsd",
             ))]
             #[cfg(feature = "net")]
             (libc::IPPROTO_IPV6, libc::IPV6_HOPLIMIT) => {
