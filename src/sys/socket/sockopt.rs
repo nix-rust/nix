@@ -1070,8 +1070,6 @@ sockopt_impl!(
     apple_targets,
     linux_android,
     target_os = "freebsd",
-    target_os = "netbsd",
-    target_os = "openbsd",
 ))]
 #[cfg(feature = "net")]
 sockopt_impl!(
