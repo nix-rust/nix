@@ -2838,14 +2838,14 @@ fn test_icmp_protocol() {
 ))]
 #[test]
 pub fn test_recv_iptos_ipttl() {
-    use nix::sys::socket::sockopt::{IpRecvTos, IpRecvTtl};
+    use nix::sys::socket::sockopt::{IpRecvTos, IpRecvTtl, IpTos, IpTtl};
     use nix::sys::socket::{bind, SockFlag, SockType, SockaddrIn};
     use nix::sys::socket::{getsockname, setsockopt, socket};
     use nix::sys::socket::{recvmsg, sendmsg, ControlMessageOwned, MsgFlags};
     use std::io::{IoSlice, IoSliceMut};
 
     let lo_ifaddr = loopback_address(AddressFamily::Inet);
-    let (lo_name, lo) = match lo_ifaddr {
+    let (_, lo) = match lo_ifaddr {
         Some(ifaddr) => (
             ifaddr.interface_name,
             ifaddr.address.expect("Expect IPv4 address on interface"),
@@ -2898,8 +2898,8 @@ pub fn test_recv_iptos_ipttl() {
 
         for cmsg in msg.cmsgs() {
             match cmsg {
-                ControlMessageOwned::IpTos(t) => continue,
-                ControlMessageOwned::IpTtl(t) => continue,
+                ControlMessageOwned::IpTos(_) => continue,
+                ControlMessageOwned::IpTtl(_) => continue,
                 _ => panic!("unexpected control msg"),
             };
         }
