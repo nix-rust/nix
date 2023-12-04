@@ -2898,6 +2898,54 @@ mod getres {
     }
 }
 
+#[cfg(feature = "process")]
+#[cfg(target_os = "freebsd")]
+libc_bitflags! {
+    /// Flags for [`rfork`]
+    ///
+    /// subset of flags supported by FreeBSD 12.x and onwards
+    /// with a safe outcome, thus as `RFMEM` can possibly lead to undefined behavior,
+    /// it is not in the list. And `rfork_thread` is deprecated.
+    pub struct RforkFlags: libc::c_int {
+        /// creates a new process.
+        RFPROC;
+        /// the child process will detach from the parent.
+        /// however, no status will be emitted at child's exit.
+        RFNOWAIT;
+        /// the file descriptor's table will be copied
+        RFFDG;
+        /// a new file descriptor's table will be created
+        RFCFDG;
+        /// force sharing the sigacts structure between
+        /// the child and the parent.
+        RFSIGSHARE;
+        /// enables kernel thread support.
+        RFTHREAD;
+        /// sets a status to emit at child's exit.
+        RFTSIGZMB;
+        /// linux's behavior compatibility setting.
+        /// emits SIGUSR1 as opposed to SIGCHLD upon child's exit.
+        RFLINUXTHPN;
+    }
+}
+
+feature! {
+#![feature = "process"]
+#[cfg(target_os = "freebsd")]
+/// rfork can be used to have a tigher control about which resources child
+/// and parent process will be sharing, file descriptors, address spaces
+/// and child exit's behavior.
+pub unsafe fn rfork(flags: RforkFlags) -> Result<ForkResult> {
+    use ForkResult::*;
+    let res = unsafe { libc::rfork(flags.bits()) };
+
+    Errno::result(res).map(|res| match res {
+        0 => Child,
+        res => Parent { child: Pid(res) },
+    })
+}
+}
+
 #[cfg(feature = "fs")]
 libc_bitflags! {
     /// Options for access()
