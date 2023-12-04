@@ -326,6 +326,19 @@ fn test_ttl_opts() {
 }
 
 #[test]
+fn test_ipv6_multicast_hops() {
+    let fd6 = socket(
+        AddressFamily::Inet6,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )
+    .unwrap();
+    setsockopt(&fd6, sockopt::Ipv6MulticastHops, &7)
+        .expect("setting ipv6multicasthops on an inet6 socket should succeed");
+}
+
+#[test]
 #[cfg(apple_targets)]
 fn test_dontfrag_opts() {
     let fd4 = socket(
