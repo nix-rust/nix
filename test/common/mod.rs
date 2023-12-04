@@ -2,14 +2,14 @@ use cfg_if::cfg_if;
 
 #[macro_export]
 macro_rules! skip {
-    ($($reason: expr),+) => {
+    ($($reason: expr),+) => {{
         use ::std::io::{self, Write};
 
         let stderr = io::stderr();
         let mut handle = stderr.lock();
         writeln!(handle, $($reason),+).unwrap();
         return;
-    }
+    }}
 }
 
 cfg_if! {

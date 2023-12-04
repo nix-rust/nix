@@ -127,7 +127,7 @@ macro_rules! getsockopt_impl {
 ///    both of them.
 /// * `$name:ident`: name of type `GetSockOpt`/`SetSockOpt` will be implemented for.
 /// * `$level:expr` : socket layer, or a `protocol level`: could be *raw sockets*
-///    (`lic::SOL_SOCKET`), *ip protocol* (libc::IPPROTO_IP), *tcp protocol* (`libc::IPPROTO_TCP`),
+///    (`libc::SOL_SOCKET`), *ip protocol* (libc::IPPROTO_IP), *tcp protocol* (`libc::IPPROTO_TCP`),
 ///    and more. Please refer to your system manual for more options. Will be passed as the second
 ///    argument (`level`) to the `getsockopt`/`setsockopt` call.
 /// * `$flag:path`: a flag name to set. Some examples: `libc::SO_REUSEADDR`, `libc::TCP_NODELAY`,
@@ -1125,6 +1125,160 @@ where
         }
     }
 }
+
+/// Set the Upper Layer Protocol (ULP) on the TCP socket.
+///
+/// For example, to enable the TLS ULP on a socket, the C function call would be:
+///
+/// ```c
+/// setsockopt(sock, SOL_TCP, TCP_ULP, "tls", sizeof("tls"));
+/// ```
+///
+/// ... and the `nix` equivalent is:
+///
+/// ```ignore,rust
+/// setsockopt(sock, TcpUlp::default(), b"tls");
+/// ```
+///
+/// Note that the ULP name does not need a trailing NUL terminator (`\0`).
+#[cfg(linux_android)]
+#[derive(Clone, Debug)]
+pub struct TcpUlp<T>(::std::marker::PhantomData<T>);
+
+#[cfg(linux_android)]
+impl<T> Default for TcpUlp<T> {
+    fn default() -> Self {
+        TcpUlp(Default::default())
+    }
+}
+
+#[cfg(linux_android)]
+impl<T> SetSockOpt for TcpUlp<T>
+where
+    T: AsRef<[u8]> + Clone,
+{
+    type Val = T;
+
+    fn set<F: AsFd>(&self, fd: &F, val: &Self::Val) -> Result<()> {
+        unsafe {
+            let res = libc::setsockopt(
+                fd.as_fd().as_raw_fd(),
+                libc::SOL_TCP,
+                libc::TCP_ULP,
+                val.as_ref().as_ptr().cast(),
+                val.as_ref().len() as libc::socklen_t,
+            );
+            Errno::result(res).map(drop)
+        }
+    }
+}
+
+/// Value used with the [`TcpTlsTx`] and [`TcpTlsRx`] socket options.
+#[cfg(target_os = "linux")]
+#[derive(Copy, Clone, Debug)]
+pub enum TlsCryptoInfo {
+    /// AES-128-GCM
+    Aes128Gcm(libc::tls12_crypto_info_aes_gcm_128),
+
+    /// AES-256-GCM
+    Aes256Gcm(libc::tls12_crypto_info_aes_gcm_256),
+
+    /// CHACHA20-POLY1305
+    Chacha20Poly1305(libc::tls12_crypto_info_chacha20_poly1305),
+}
+
+/// Set the Kernel TLS write parameters on the TCP socket.
+///
+/// For example, the C function call would be:
+///
+/// ```c
+/// setsockopt(sock, SOL_TLS, TLS_TX, &crypto_info, sizeof(crypto_info));
+/// ```
+///
+/// ... and the `nix` equivalent is:
+///
+/// ```ignore,rust
+/// setsockopt(sock, TcpTlsTx, &crypto_info);
+/// ```
+#[cfg(target_os = "linux")]
+#[derive(Copy, Clone, Debug)]
+pub struct TcpTlsTx;
+
+#[cfg(target_os = "linux")]
+impl SetSockOpt for TcpTlsTx {
+    type Val = TlsCryptoInfo;
+
+    fn set<F: AsFd>(&self, fd: &F, val: &Self::Val) -> Result<()> {
+        let (ffi_ptr, ffi_len) = match val {
+            TlsCryptoInfo::Aes128Gcm(crypto_info) => {
+                (<*const _>::cast(crypto_info), mem::size_of_val(crypto_info))
+            }
+            TlsCryptoInfo::Aes256Gcm(crypto_info) => {
+                (<*const _>::cast(crypto_info), mem::size_of_val(crypto_info))
+            }
+            TlsCryptoInfo::Chacha20Poly1305(crypto_info) => {
+                (<*const _>::cast(crypto_info), mem::size_of_val(crypto_info))
+            }
+        };
+        unsafe {
+            let res = libc::setsockopt(
+                fd.as_fd().as_raw_fd(),
+                libc::SOL_TLS,
+                libc::TLS_TX,
+                ffi_ptr,
+                ffi_len as libc::socklen_t,
+            );
+            Errno::result(res).map(drop)
+        }
+    }
+}
+
+/// Set the Kernel TLS read parameters on the TCP socket.
+///
+/// For example, the C function call would be:
+///
+/// ```c
+/// setsockopt(sock, SOL_TLS, TLS_RX, &crypto_info, sizeof(crypto_info));
+/// ```
+///
+/// ... and the `nix` equivalent is:
+///
+/// ```ignore,rust
+/// setsockopt(sock, TcpTlsRx, &crypto_info);
+/// ```
+#[cfg(target_os = "linux")]
+#[derive(Copy, Clone, Debug)]
+pub struct TcpTlsRx;
+
+#[cfg(target_os = "linux")]
+impl SetSockOpt for TcpTlsRx {
+    type Val = TlsCryptoInfo;
+
+    fn set<F: AsFd>(&self, fd: &F, val: &Self::Val) -> Result<()> {
+        let (ffi_ptr, ffi_len) = match val {
+            TlsCryptoInfo::Aes128Gcm(crypto_info) => {
+                (<*const _>::cast(crypto_info), mem::size_of_val(crypto_info))
+            }
+            TlsCryptoInfo::Aes256Gcm(crypto_info) => {
+                (<*const _>::cast(crypto_info), mem::size_of_val(crypto_info))
+            }
+            TlsCryptoInfo::Chacha20Poly1305(crypto_info) => {
+                (<*const _>::cast(crypto_info), mem::size_of_val(crypto_info))
+            }
+        };
+        unsafe {
+            let res = libc::setsockopt(
+                fd.as_fd().as_raw_fd(),
+                libc::SOL_TLS,
+                libc::TLS_RX,
+                ffi_ptr,
+                ffi_len as libc::socklen_t,
+            );
+            Errno::result(res).map(drop)
+        }
+    }
+}
+
 
 /*
  *
