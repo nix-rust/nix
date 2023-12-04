@@ -17,10 +17,11 @@ We follow the conventions laid out in [Keep A CHANGELOG][kacl].
 
 ## libc constants, functions and structs
 
-We do not define integer constants ourselves, but use or reexport them from the
-[libc crate][libc], if your PR uses something that does not exist in the libc crate,
-you should add it to libc first, once your libc PR gets merged, you can adjust
-the `rev` number in our `Cargo.toml` to include that libc change.
+We do not define ffi functions or their associated constants and types ourselves,
+but use or reexport them from the [libc crate][libc], if your PR uses something 
+that does not exist in the libc crate, you should add it to libc first. Once 
+your libc PR gets merged, you can adjust our `libc` dependency to include that 
+libc change. Use a git dependency if necessary.
 
 ```toml
 libc = { git = "https://github.com/rust-lang/libc", rev = "the commit includes your libc PR", ... }
@@ -46,7 +47,7 @@ When creating newtypes, we use Rust's `CamelCase` type naming convention.
 ## cfg gates
 
 When creating operating-system-specific functionality, we gate it by
-`#[cfg(target_os = ...)]`.  If more than one operating system is affected, we
+`#[cfg(target_os = ...)]`. If more than one operating system is affected, we
 prefer to use the cfg aliases defined in build.rs, like `#[cfg(bsd)]`.
 
 ## Bitflags
