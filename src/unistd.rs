@@ -1520,7 +1520,7 @@ pub fn getgroups() -> Result<Vec<Gid>> {
     // equal to the value of {NGROUPS_MAX} + 1.
     let ngroups_max = match sysconf(SysconfVar::NGROUPS_MAX) {
         Ok(Some(n)) => (n + 1) as usize,
-        Ok(None) | Err(_) => <usize>::max_value(),
+        Ok(None) | Err(_) => usize::MAX,
     };
 
     // Next, get the number of groups so we can size our Vec
@@ -1654,7 +1654,7 @@ pub fn setgroups(groups: &[Gid]) -> Result<()> {
 pub fn getgrouplist(user: &CStr, group: Gid) -> Result<Vec<Gid>> {
     let ngroups_max = match sysconf(SysconfVar::NGROUPS_MAX) {
         Ok(Some(n)) => n as c_int,
-        Ok(None) | Err(_) => <c_int>::max_value(),
+        Ok(None) | Err(_) => c_int::MAX,
     };
     use std::cmp::min;
     let mut groups = Vec::<Gid>::with_capacity(min(ngroups_max, 8) as usize);
@@ -2861,9 +2861,9 @@ mod getres {
     ///
     #[inline]
     pub fn getresuid() -> Result<ResUid> {
-        let mut ruid = libc::uid_t::max_value();
-        let mut euid = libc::uid_t::max_value();
-        let mut suid = libc::uid_t::max_value();
+        let mut ruid = libc::uid_t::MAX;
+        let mut euid = libc::uid_t::MAX;
+        let mut suid = libc::uid_t::MAX;
         let res = unsafe { libc::getresuid(&mut ruid, &mut euid, &mut suid) };
 
         Errno::result(res).map(|_| ResUid {
@@ -2884,9 +2884,9 @@ mod getres {
     ///
     #[inline]
     pub fn getresgid() -> Result<ResGid> {
-        let mut rgid = libc::gid_t::max_value();
-        let mut egid = libc::gid_t::max_value();
-        let mut sgid = libc::gid_t::max_value();
+        let mut rgid = libc::gid_t::MAX;
+        let mut egid = libc::gid_t::MAX;
+        let mut sgid = libc::gid_t::MAX;
         let res = unsafe { libc::getresgid(&mut rgid, &mut egid, &mut sgid) };
 
         Errno::result(res).map(|_| ResGid {

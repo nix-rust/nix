@@ -1599,7 +1599,7 @@ impl<S> MultiHeaders<S> {
             .enumerate()
             .map(|(ix, address)| {
                 let (ptr, cap) = match &mut cmsg_buffers {
-                    Some(v) => ((&mut v[ix * msg_controllen] as *mut u8), msg_controllen),
+                    Some(v) => (&mut v[ix * msg_controllen] as *mut u8, msg_controllen),
                     None => (std::ptr::null_mut(), 0),
                 };
                 let msg_hdr = unsafe { pack_mhdr_to_receive(std::ptr::null_mut(), 0, ptr, cap, address.as_mut_ptr()) };
