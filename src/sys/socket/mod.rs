@@ -1032,13 +1032,13 @@ impl ControlMessageOwned {
             #[cfg(feature = "net")]
             (libc::IPPROTO_IP, libc::IP_RECVTOS) => {
                 let tos = unsafe { ptr::read_unaligned(p as *const u8) };
-                ControlMessageOwned::IpTos(tos.into())
+                ControlMessageOwned::IpTos(tos)
             },
             #[cfg(linux_android)]
             #[cfg(feature = "net")]
             (libc::IPPROTO_IP, libc::IP_TOS) => {
                 let tos = unsafe { ptr::read_unaligned(p as *const u8) };
-                ControlMessageOwned::IpTos(tos.into())
+                ControlMessageOwned::IpTos(tos)
             },
             #[cfg(any(
                 apple_targets,
@@ -1050,7 +1050,7 @@ impl ControlMessageOwned {
             #[cfg(feature = "net")]
             (libc::IPPROTO_IPV6, libc::IPV6_TCLASS) => {
                 let tclass = unsafe { ptr::read_unaligned(p as *const u8) };
-                ControlMessageOwned::Ipv6TClass(tclass.into())
+                ControlMessageOwned::Ipv6TClass(tclass)
             },
             #[cfg(any(
                 apple_targets,
@@ -1061,13 +1061,13 @@ impl ControlMessageOwned {
             #[cfg(feature = "net")]
             (libc::IPPROTO_IP, libc::IP_RECVTTL) => {
                 let ttl = unsafe { ptr::read_unaligned(p as *const u8) };
-                ControlMessageOwned::IpTtl(ttl.into())
+                ControlMessageOwned::IpTtl(ttl)
             },
             #[cfg(linux_android)]
             #[cfg(feature = "net")]
             (libc::IPPROTO_IP, libc::IP_TTL) => {
                 let ttl = unsafe { ptr::read_unaligned(p as *const u8) };
-                ControlMessageOwned::IpTtl(ttl.into())
+                ControlMessageOwned::IpTtl(ttl)
             },
             #[cfg(any(
                 apple_targets,
@@ -1079,7 +1079,7 @@ impl ControlMessageOwned {
             #[cfg(feature = "net")]
             (libc::IPPROTO_IPV6, libc::IPV6_HOPLIMIT) => {
                 let hop_limit = unsafe { ptr::read_unaligned(p as *const u8) };
-                ControlMessageOwned::Ipv6HopLimit(hop_limit.into())
+                ControlMessageOwned::Ipv6HopLimit(hop_limit)
             },
             (_, _) => {
                 let sl = unsafe { std::slice::from_raw_parts(p, len) };
