@@ -2832,7 +2832,7 @@ fn test_icmp_protocol() {
 #[cfg(any(apple_targets, linux_android, target_os = "freebsd",))]
 #[test]
 pub fn test_recv_iptos_ipttl() {
-    use nix::sys::socket::sockopt::{IpRecvTos, IpRecvTtl, IpTos, IpTtl};
+    use nix::sys::socket::sockopt::{IpRecvTos, IpRecvTtl}; //, IpTos, IpTtl};
     use nix::sys::socket::{bind, SockFlag, SockType, SockaddrIn};
     use nix::sys::socket::{getsockname, setsockopt, socket};
     use nix::sys::socket::{recvmsg, sendmsg, ControlMessageOwned, MsgFlags};
