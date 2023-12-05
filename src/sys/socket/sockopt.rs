@@ -388,14 +388,7 @@ sockopt_impl!(
     libc::SO_PRIORITY,
     libc::c_int
 );
-#[cfg(any(
-    apple_targets,
-    target_os = "freebsd",
-    target_os = "netbsd",
-    target_os = "openbsd",
-    target_os = "android",
-    target_os = "linux",
-))]
+#[cfg(any(apple_targets, linux_android, target_os = "freebsd",))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -407,11 +400,7 @@ sockopt_impl!(
     libc::IP_TOS,
     libc::c_int
 );
-#[cfg(any(
-    apple_targets,
-    linux_android,
-    target_os = "freebsd",
-))]
+#[cfg(any(apple_targets, linux_android, target_os = "freebsd",))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -423,11 +412,7 @@ sockopt_impl!(
     libc::IP_RECVTOS,
     bool
 );
-#[cfg(any(
-    apple_targets,
-    linux_android,
-    target_os = "freebsd",
-))]
+#[cfg(any(apple_targets, linux_android, target_os = "freebsd",))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -438,13 +423,7 @@ sockopt_impl!(
     libc::IPV6_TCLASS,
     libc::c_int
 );
-#[cfg(any(
-    apple_targets,
-    linux_android,
-    target_os = "freebsd",
-    target_os = "netbsd",
-    target_os = "openbsd",
-))]
+#[cfg(any(apple_targets, linux_android, target_os = "freebsd",))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -1050,13 +1029,7 @@ sockopt_impl!(
     libc::IP_MTU,
     libc::c_int
 );
-#[cfg(any(
-    apple_targets,
-    linux_android,
-    target_os = "freebsd",
-    target_os = "netbsd",
-    target_os = "openbsd",
-))]
+#[cfg(any(apple_targets, linux_android, target_os = "freebsd",))]
 sockopt_impl!(
     /// Set or retrieve the current time-to-live field that is used in every
     /// packet sent from this socket.
@@ -1066,11 +1039,7 @@ sockopt_impl!(
     libc::IP_TTL,
     libc::c_int
 );
-#[cfg(any(
-    apple_targets,
-    linux_android,
-    target_os = "freebsd",
-))]
+#[cfg(any(apple_targets, linux_android, target_os = "freebsd",))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     /// Retrieve the current time-to-live field for every
@@ -1081,13 +1050,7 @@ sockopt_impl!(
     libc::IP_RECVTTL,
     bool
 );
-#[cfg(any(
-    apple_targets,
-    linux_android,
-    target_os = "freebsd",
-    target_os = "netbsd",
-    target_os = "openbsd",
-))]
+#[cfg(any(apple_targets, linux_android, target_os = "freebsd",))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     /// Retrieve the current time-to-live field for every
@@ -1096,13 +1059,9 @@ sockopt_impl!(
     Both,
     libc::IPPROTO_IP,
     libc::IP_TTL,
-    bool
+    libc::c_int
 );
-#[cfg(any(
-    apple_targets,
-    linux_android,
-    target_os = "freebsd",
-))]
+#[cfg(any(apple_targets, linux_android, target_os = "freebsd",))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     /// Retrieve the current hop limit field for every
@@ -1113,11 +1072,7 @@ sockopt_impl!(
     libc::IPV6_RECVHOPLIMIT,
     bool
 );
-#[cfg(any(
-    apple_targets,
-    linux_android,
-    target_os = "freebsd",
-))]
+#[cfg(any(apple_targets, linux_android, target_os = "freebsd",))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     /// Retrieve the current hop limit field for every
@@ -1126,7 +1081,7 @@ sockopt_impl!(
     Both,
     libc::IPPROTO_IPV6,
     libc::IPV6_HOPLIMIT,
-    bool
+    libc::c_int
 );
 #[cfg(any(linux_android, target_os = "freebsd"))]
 sockopt_impl!(
@@ -1149,10 +1104,7 @@ sockopt_impl!(
     libc::IPV6_ORIGDSTADDR,
     bool
 );
-#[cfg(any(
-    apple_targets,
-    target_os = "freebsd",
-))]
+#[cfg(any(apple_targets, target_os = "freebsd",))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     /// Set "don't fragment packet" flag on the IP packet.
@@ -1172,11 +1124,7 @@ sockopt_impl!(
     libc::IP_MTU_DISCOVER,
     bool
 );
-#[cfg(any(
-    apple_targets,
-    linux_android,
-    target_os = "freebsd",
-))]
+#[cfg(any(apple_targets, linux_android, target_os = "freebsd",))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     /// Set "don't fragment packet" flag on the IPv6 packet.

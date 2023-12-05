@@ -2829,13 +2829,7 @@ fn test_icmp_protocol() {
         .unwrap();
 }
 
-#[cfg(any(
-    apple_targets,
-    linux_android,
-    target_os = "freebsd",
-    target_os = "netbsd",
-    target_os = "openbsd",
-))]
+#[cfg(any(apple_targets, linux_android, target_os = "freebsd",))]
 #[test]
 pub fn test_recv_iptos_ipttl() {
     use nix::sys::socket::sockopt::{IpRecvTos, IpRecvTtl, IpTos, IpTtl};
@@ -2884,7 +2878,9 @@ pub fn test_recv_iptos_ipttl() {
         let mut buf = [0u8; 8];
         let mut iovec = [IoSliceMut::new(&mut buf)];
 
-        let mut space = cmsg_space!(IpTos, IpTtl);
+        // FIXME: When passing in IpTos and IpTtl, cmsg_space returns too little space?
+        // let mut space = cmsg_space!(IpTos, IpTtl);
+        let mut space = cmsg_space!(libc::c_int, libc::c_int);
         let msg = recvmsg::<()>(
             receive.as_raw_fd(),
             &mut iovec,
@@ -2896,13 +2892,21 @@ pub fn test_recv_iptos_ipttl() {
             .flags
             .intersects(MsgFlags::MSG_TRUNC | MsgFlags::MSG_CTRUNC));
 
+        let mut found = 0;
         for cmsg in msg.cmsgs() {
             match cmsg {
-                ControlMessageOwned::IpTos(_) => continue,
-                ControlMessageOwned::IpTtl(_) => continue,
+                ControlMessageOwned::IpTos(_) => {
+                    found += 1;
+                    continue;
+                }
+                ControlMessageOwned::IpTtl(_) => {
+                    found += 2;
+                    continue;
+                }
                 _ => panic!("unexpected control msg"),
             };
         }
+        assert_eq!(found, 3);
 
         assert_eq!(msg.bytes, 8);
         assert_eq!(*iovec[0], [1u8, 2, 3, 4, 5, 6, 7, 8]);
