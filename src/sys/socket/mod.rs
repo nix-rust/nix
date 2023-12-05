@@ -1042,7 +1042,6 @@ impl ControlMessageOwned {
             },
             #[cfg(any(
                 apple_targets,
-                target_os = "freebsd",
             ))]
             #[cfg(feature = "net")]
             (libc::IPPROTO_IP, libc::IP_RECVTTL) => {
