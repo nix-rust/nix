@@ -932,4 +932,28 @@ mod test {
         #[cfg(target_os = "haiku")]
         BaudRate::try_from(99).expect_err("assertion failed");
     }
+
+    #[test]
+    fn roundtrip_termios() {
+        // A fake termios including flag bits which we don't recognise.
+        let original = libc::termios {
+            c_iflag: 0xf00f,
+            c_oflag: 0xd00d,
+            c_cflag: 0x6642,
+            c_lflag: 0x1234,
+            #[cfg(any(linux_android, target_os = "haiku"))]
+            c_line: 0x00,
+            c_cc: [0; NCCS],
+            c_ispeed: 0,
+            c_ospeed: 0,
+        };
+
+        let mut attrs: Termios = original.into();
+        let before_update = attrs.get_libc_termios().to_owned();
+        attrs.update_wrapper();
+        let after_update = attrs.get_libc_termios().to_owned();
+
+        assert_eq!(before_update, original);
+        assert_eq!(after_update, original);
+    }
 }
