@@ -941,17 +941,8 @@ mod test {
             c_oflag: 0xd00d,
             c_cflag: 0x6642,
             c_lflag: 0x1234,
-            #[cfg(any(linux_android, target_os = "haiku"))]
-            c_line: 0x00,
             c_cc: [0; NCCS],
-            #[cfg(not(target_env = "musl"))]
-            c_ispeed: 0,
-            #[cfg(not(target_env = "musl"))]
-            c_ospeed: 0,
-            #[cfg(target_env = "musl")]
-            __c_ispeed: 0,
-            #[cfg(target_env = "musl")]
-            __c_ospeed: 0,
+            ..unsafe { std::mem::zeroed() }
         };
 
         let mut attrs: Termios = original.into();
