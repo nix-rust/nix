@@ -944,8 +944,14 @@ mod test {
             #[cfg(any(linux_android, target_os = "haiku"))]
             c_line: 0x00,
             c_cc: [0; NCCS],
+            #[cfg(not(target_env = "musl"))]
             c_ispeed: 0,
+            #[cfg(not(target_env = "musl"))]
             c_ospeed: 0,
+            #[cfg(target_env = "musl")]
+            __c_ispeed: 0,
+            #[cfg(target_env = "musl")]
+            __c_ospeed: 0,
         };
 
         let mut attrs: Termios = original.into();
