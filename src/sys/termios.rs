@@ -219,10 +219,10 @@ impl Termios {
     /// Updates the wrapper values from the internal `libc::termios` data structure.
     pub(crate) fn update_wrapper(&mut self) {
         let termios = *self.inner.borrow_mut();
-        self.input_flags = InputFlags::from_bits_truncate(termios.c_iflag);
-        self.output_flags = OutputFlags::from_bits_truncate(termios.c_oflag);
+        self.input_flags = InputFlags::from_bits_retain(termios.c_iflag);
+        self.output_flags = OutputFlags::from_bits_retain(termios.c_oflag);
         self.control_flags = ControlFlags::from_bits_retain(termios.c_cflag);
-        self.local_flags = LocalFlags::from_bits_truncate(termios.c_lflag);
+        self.local_flags = LocalFlags::from_bits_retain(termios.c_lflag);
         self.control_chars = termios.c_cc;
         #[cfg(any(linux_android, target_os = "haiku"))]
         {
@@ -235,10 +235,10 @@ impl From<libc::termios> for Termios {
     fn from(termios: libc::termios) -> Self {
         Termios {
             inner: RefCell::new(termios),
-            input_flags: InputFlags::from_bits_truncate(termios.c_iflag),
-            output_flags: OutputFlags::from_bits_truncate(termios.c_oflag),
-            control_flags: ControlFlags::from_bits_truncate(termios.c_cflag),
-            local_flags: LocalFlags::from_bits_truncate(termios.c_lflag),
+            input_flags: InputFlags::from_bits_retain(termios.c_iflag),
+            output_flags: OutputFlags::from_bits_retain(termios.c_oflag),
+            control_flags: ControlFlags::from_bits_retain(termios.c_cflag),
+            local_flags: LocalFlags::from_bits_retain(termios.c_lflag),
             control_chars: termios.c_cc,
             #[cfg(any(linux_android, target_os = "haiku"))]
             line_discipline: termios.c_line,
