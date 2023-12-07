@@ -936,6 +936,7 @@ mod test {
     #[test]
     fn roundtrip_termios() {
         // A fake termios including flag bits which we don't recognise.
+        #[allow(clippy::needless_update)]
         let original = libc::termios {
             c_iflag: 0xf00f,
             c_oflag: 0xd00d,
