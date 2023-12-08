@@ -1653,7 +1653,7 @@ pub fn setgroups(groups: &[Gid]) -> Result<()> {
 /// will only ever return the complete list or else an error.
 #[cfg(not(any(
     target_os = "aix",
-    target_os = "illumos",
+    solarish,
     apple_targets,
     target_os = "redox"
 )))]
@@ -3215,9 +3215,9 @@ impl From<User> for libc::passwd {
                 target_os = "hurd",
             )))]
             pw_expire: u.expire,
-            #[cfg(target_os = "illumos")]
+            #[cfg(solarish)]
             pw_age: CString::new("").unwrap().into_raw(),
-            #[cfg(target_os = "illumos")]
+            #[cfg(solarish)]
             pw_comment: CString::new("").unwrap().into_raw(),
             #[cfg(freebsdlike)]
             pw_fields: 0,

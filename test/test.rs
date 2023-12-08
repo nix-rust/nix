@@ -52,7 +52,7 @@ mod test_time;
 #[cfg(all(
     any(
         target_os = "freebsd",
-        target_os = "illumos",
+        solarish,
         target_os = "linux",
         target_os = "netbsd"
     ),

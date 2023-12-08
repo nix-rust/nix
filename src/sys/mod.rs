@@ -31,7 +31,7 @@ feature! {
     pub mod fanotify;
 }
 
-#[cfg(any(bsd, linux_android, target_os = "redox", target_os = "illumos"))]
+#[cfg(any(bsd, linux_android, target_os = "redox", solarish))]
 #[cfg(feature = "ioctl")]
 #[cfg_attr(docsrs, doc(cfg(feature = "ioctl")))]
 #[macro_use]
@@ -88,7 +88,7 @@ feature! {
 #[cfg(not(any(
     target_os = "redox",
     target_os = "fuchsia",
-    target_os = "illumos",
+    solarish,
     target_os = "haiku"
 )))]
 feature! {
@@ -182,7 +182,7 @@ feature! {
 #[cfg(all(
     any(
         target_os = "freebsd",
-        target_os = "illumos",
+        solarish,
         target_os = "linux",
         target_os = "netbsd"
     ),

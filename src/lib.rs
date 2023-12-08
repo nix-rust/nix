@@ -125,7 +125,7 @@ feature! {
 
     #[cfg(any(linux_android,
               bsd,
-              target_os = "illumos"))]
+              solarish))]
     #[deny(missing_docs)]
     pub mod ifaddrs;
     #[cfg(not(target_os = "redox"))]

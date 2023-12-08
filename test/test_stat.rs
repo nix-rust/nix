@@ -383,7 +383,7 @@ fn test_mknod() {
 #[cfg(not(any(
     target_os = "dragonfly",
     target_os = "freebsd",
-    target_os = "illumos",
+    solarish,
     apple_targets,
     target_os = "haiku",
     target_os = "redox"

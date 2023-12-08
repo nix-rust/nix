@@ -294,7 +294,7 @@ fn test_setgroups() {
     target_os = "redox",
     target_os = "fuchsia",
     target_os = "haiku",
-    target_os = "illumos"
+    solarish
 )))]
 fn test_initgroups() {
     // Skip this test when not run as root as `initgroups()` and `setgroups()`
@@ -438,7 +438,7 @@ cfg_if! {
         // https://github.com/nix-rust/nix/issues/555
         execve_test_factory!(test_execve, execve, CString::new("/bin/sh").unwrap().as_c_str());
         execve_test_factory!(test_fexecve, fexecve, File::open("/bin/sh").unwrap().into_raw_fd());
-    } else if #[cfg(any(target_os = "illumos",
+    } else if #[cfg(any(solarish,
                         apple_targets,
                         target_os = "netbsd",
                         target_os = "openbsd",
@@ -765,7 +765,7 @@ fn test_pipe() {
     target_os = "dragonfly",
     target_os = "emscripten",
     target_os = "freebsd",
-    target_os = "illumos",
+    solarish,
     target_os = "linux",
     target_os = "netbsd",
     target_os = "openbsd",

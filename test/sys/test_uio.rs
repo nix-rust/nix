@@ -140,7 +140,11 @@ fn test_pread() {
 }
 
 #[test]
-#[cfg(not(any(target_os = "redox", target_os = "haiku")))]
+#[cfg(not(any(
+    target_os = "redox",
+    target_os = "haiku",
+    target_os = "solaris"
+)))]
 fn test_pwritev() {
     use std::io::Read;
 
@@ -175,7 +179,11 @@ fn test_pwritev() {
 }
 
 #[test]
-#[cfg(not(any(target_os = "redox", target_os = "haiku")))]
+#[cfg(not(any(
+    target_os = "redox",
+    target_os = "haiku",
+    target_os = "solaris"
+)))]
 fn test_preadv() {
     use std::io::Write;
 
