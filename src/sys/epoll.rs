@@ -3,7 +3,8 @@ pub use crate::poll_timeout::PollTimeout as EpollTimeout;
 use crate::Result;
 use libc::{self, c_int};
 use std::mem;
-use std::os::unix::io::{AsFd, AsRawFd, FromRawFd, OwnedFd, RawFd};
+use std::os::fd::{AsFd, BorrowedFd};
+use std::os::unix::io::{AsRawFd, FromRawFd, OwnedFd, RawFd};
 
 libc_bitflags!(
     pub struct EpollFlags: c_int {
@@ -85,7 +86,7 @@ impl EpollEvent {
 ///
 /// // Create eventfd & Add event
 /// let eventfd = eventfd(0, EfdFlags::empty())?;
-/// epoll.add(&eventfd, EpollEvent::new(EpollFlags::EPOLLIN,DATA))?;
+/// epoll.add(eventfd.as_fd(), EpollEvent::new(EpollFlags::EPOLLIN,DATA))?;
 ///
 /// // Arm eventfd & Time wait
 /// write(&eventfd, &1u64.to_ne_bytes())?;
@@ -102,8 +103,13 @@ impl EpollEvent {
 /// # }
 /// ```
 #[derive(Debug)]
-pub struct Epoll(pub OwnedFd);
-impl Epoll {
+#[repr(transparent)]
+pub struct Epoll<'fd> {
+    epoll_fd: OwnedFd,
+    _fds: std::marker::PhantomData<*mut &'fd ()>,
+}
+
+impl<'fd> Epoll<'fd> {
     /// Creates a new epoll instance and returns a file descriptor referring to that instance.
     ///
     /// [`epoll_create1`](https://man7.org/linux/man-pages/man2/epoll_create1.2.html).
@@ -111,28 +117,36 @@ impl Epoll {
         let res = unsafe { libc::epoll_create1(flags.bits()) };
         let fd = Errno::result(res)?;
         let owned_fd = unsafe { OwnedFd::from_raw_fd(fd) };
-        Ok(Self(owned_fd))
+
+        Ok(Self {
+            epoll_fd: owned_fd,
+            _fds: std::marker::PhantomData,
+        })
     }
     /// Add an entry to the interest list of the epoll file descriptor for
     /// specified in events.
     ///
     /// [`epoll_ctl`](https://man7.org/linux/man-pages/man2/epoll_ctl.2.html) with `EPOLL_CTL_ADD`.
-    pub fn add<Fd: AsFd>(&self, fd: Fd, mut event: EpollEvent) -> Result<()> {
+    pub fn add(
+        &self,
+        fd: BorrowedFd<'fd>,
+        mut event: EpollEvent,
+    ) -> Result<()> {
         self.epoll_ctl(EpollOp::EpollCtlAdd, fd, &mut event)
     }
     /// Remove (deregister) the target file descriptor `fd` from the interest list.
     ///
     /// [`epoll_ctl`](https://man7.org/linux/man-pages/man2/epoll_ctl.2.html) with `EPOLL_CTL_DEL` .
-    pub fn delete<Fd: AsFd>(&self, fd: Fd) -> Result<()> {
+    pub fn delete(&self, fd: BorrowedFd<'fd>) -> Result<()> {
         self.epoll_ctl(EpollOp::EpollCtlDel, fd, None)
     }
     /// Change the settings associated with `fd` in the interest list to the new settings specified
     /// in `event`.
     ///
     /// [`epoll_ctl`](https://man7.org/linux/man-pages/man2/epoll_ctl.2.html) with `EPOLL_CTL_MOD`.
-    pub fn modify<Fd: AsFd>(
+    pub fn modify(
         &self,
-        fd: Fd,
+        fd: BorrowedFd<'fd>,
         event: &mut EpollEvent,
     ) -> Result<()> {
         self.epoll_ctl(EpollOp::EpollCtlMod, fd, event)
@@ -148,7 +162,7 @@ impl Epoll {
     ) -> Result<usize> {
         let res = unsafe {
             libc::epoll_wait(
-                self.0.as_raw_fd(),
+                self.epoll_fd.as_raw_fd(),
                 events.as_mut_ptr().cast(),
                 events.len() as c_int,
                 timeout.into().into(),
@@ -164,10 +178,10 @@ impl Epoll {
     /// When possible prefer [`Epoll::add`], [`Epoll::delete`] and [`Epoll::modify`].
     ///
     /// [`epoll_ctl`](https://man7.org/linux/man-pages/man2/epoll_ctl.2.html)
-    fn epoll_ctl<'a, Fd: AsFd, T>(
+    fn epoll_ctl<'a, T>(
         &self,
         op: EpollOp,
-        fd: Fd,
+        fd: BorrowedFd<'fd>,
         event: T,
     ) -> Result<()>
     where
@@ -179,13 +193,19 @@ impl Epoll {
             .unwrap_or(std::ptr::null_mut());
         unsafe {
             Errno::result(libc::epoll_ctl(
-                self.0.as_raw_fd(),
+                self.epoll_fd.as_raw_fd(),
                 op as c_int,
-                fd.as_fd().as_raw_fd(),
+                fd.as_raw_fd(),
                 ptr,
             ))
             .map(drop)
         }
+    }
+}
+
+impl AsFd for Epoll<'_> {
+    fn as_fd(&self) -> BorrowedFd<'_> {
+        self.epoll_fd.as_fd()
     }
 }
 
