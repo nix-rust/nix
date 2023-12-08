@@ -14,7 +14,7 @@ impl PollTimeout {
     /// > Specifying a timeout of zero causes poll() to return immediately, even if no file
     /// > descriptors are ready.
     pub const ZERO: Self = Self(0);
-    /// Blocks for at most [`std::i32::MAX`] milliseconds.
+    /// Blocks for at most [`i32::MAX`] milliseconds.
     pub const MAX: Self = Self(i32::MAX);
     /// Returns if `self` equals [`PollTimeout::NONE`].
     pub fn is_none(&self) -> bool {

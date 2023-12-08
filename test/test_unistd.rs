@@ -1103,8 +1103,8 @@ fn test_linkat_follow_symlink() {
 
     // Check the file type of the new link
     assert_eq!(
-        (stat::SFlag::from_bits_truncate(newfilestat.st_mode as mode_t)
-            & SFlag::S_IFMT),
+        stat::SFlag::from_bits_truncate(newfilestat.st_mode as mode_t)
+            & SFlag::S_IFMT,
         SFlag::S_IFREG
     );
 
