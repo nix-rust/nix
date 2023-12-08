@@ -63,7 +63,7 @@ Please make pull requests against the `master` branch.
 If you change the API by way of adding, removing or changing something or if
 you fix a bug, please add an appropriate note, every note should be a new markdown 
 file under the [changelog directory][cl] stating the change made by your pull request, 
-the filename should be in the following foramt:
+the filename should be in the following format:
 
 ```
 <PULL_REQUEST_ID>.<TYPE>.md
@@ -104,17 +104,17 @@ run once you open a pull request.
 
 ### Disabling a test in the CI environment
 
-Sometimes there are features that cannot be tested in the CI environment.  To
+Sometimes there are features that cannot be tested in the CI environment. To
 stop a test from running under CI, add `skip_if_cirrus!()` to it. Please
 describe the reason it shouldn't run under CI, and a link to an issue if
-possible!  Other tests cannot be run under QEMU, which is used for some
-architectures.  To skip them, add a `#[cfg_attr(qemu, ignore)]` attribute to
+possible! Other tests cannot be run under QEMU, which is used for some
+architectures. To skip them, add a `#[cfg_attr(qemu, ignore)]` attribute to
 the test.
 
 ## GitHub Merge Queues
 
 We use GitHub merge queues to ensure that subtle merge conflicts won't result
-in failing code.  If you add or remove a CI job, remember to adjust the
+in failing code. If you add or remove a CI job, remember to adjust the
 required status checks in the repository's branch protection rules!
 
 ## API conventions
