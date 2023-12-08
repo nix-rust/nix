@@ -728,7 +728,7 @@ sockopt_impl!(
     libc::SO_TIMESTAMPING,
     super::TimestampingFlag
 );
-#[cfg(not(any(target_os = "aix", target_os = "haiku", target_os = "redox")))]
+#[cfg(not(any(target_os = "aix", target_os = "haiku", target_os = "hurd", target_os = "redox")))]
 sockopt_impl!(
     /// Enable or disable the receiving of the `SO_TIMESTAMP` control message.
     ReceiveTimestamp,

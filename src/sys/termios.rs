@@ -260,8 +260,13 @@ libc_enum! {
     ///
     /// B0 is special and will disable the port.
     #[cfg_attr(target_os = "haiku", repr(u8))]
+    #[cfg_attr(target_os = "hurd", repr(i32))]
     #[cfg_attr(all(apple_targets, target_pointer_width = "64"), repr(u64))]
-    #[cfg_attr(all(not(all(apple_targets, target_pointer_width = "64")), not(target_os = "haiku")), repr(u32))]
+    #[cfg_attr(all(
+        not(all(apple_targets, target_pointer_width = "64")),
+        not(target_os = "haiku"),
+        not(target_os = "hurd")
+        ), repr(u32))]
     #[non_exhaustive]
     pub enum BaudRate {
         B0,

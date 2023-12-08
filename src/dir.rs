@@ -228,6 +228,7 @@ impl Entry {
                          target_os = "emscripten",
                          target_os = "fuchsia",
                          target_os = "haiku",
+                         target_os = "hurd",
                          solarish,
                          linux_android,
                          apple_targets))] {

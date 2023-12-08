@@ -17,6 +17,7 @@ use std::str::FromStr;
 
 #[cfg(not(any(
     target_os = "fuchsia",
+    target_os = "hurd",
     target_os = "openbsd",
     target_os = "redox"
 )))]
@@ -431,6 +432,7 @@ libc_bitflags! {
         SA_NOCLDSTOP;
         /// When catching a [`Signal::SIGCHLD`] signal, the system will not
         /// create zombie processes when children of the calling process exit.
+        #[cfg(not(target_os = "hurd"))]
         SA_NOCLDWAIT;
         /// Further occurrences of the delivered signal are not masked during
         /// the execution of the handler.
@@ -1068,14 +1070,14 @@ feature! {
 #[cfg(target_os = "freebsd")]
 pub type type_of_thread_id = libc::lwpid_t;
 /// Identifies a thread for [`SigevNotify::SigevThreadId`]
-#[cfg(any(target_env = "gnu", target_env = "uclibc"))]
+#[cfg(all(not(target_os = "hurd"), any(target_env = "gnu", target_env = "uclibc")))]
 pub type type_of_thread_id = libc::pid_t;
 
 /// Specifies the notification method used by a [`SigEvent`]
 // sigval is actually a union of a int and a void*.  But it's never really used
 // as a pointer, because neither libc nor the kernel ever dereference it.  nix
 // therefore presents it as an intptr_t, which is how kevent uses it.
-#[cfg(not(any(target_os = "fuchsia", target_os = "openbsd", target_os = "redox")))]
+#[cfg(not(any(target_os = "fuchsia", target_os = "hurd", target_os = "openbsd", target_os = "redox")))]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum SigevNotify {
     /// No notification will be delivered
@@ -1128,6 +1130,7 @@ pub enum SigevNotify {
 
 #[cfg(not(any(
     target_os = "fuchsia",
+    target_os = "hurd",
     target_os = "openbsd",
     target_os = "redox"
 )))]

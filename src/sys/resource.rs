@@ -10,7 +10,10 @@ pub use libc::RLIM_INFINITY;
 use std::mem;
 
 cfg_if! {
-    if #[cfg(all(target_os = "linux", any(target_env = "gnu", target_env = "uclibc")))]{
+    if #[cfg(any(
+        all(target_os = "linux", any(target_env = "gnu", target_env = "uclibc")),
+        target_os = "hurd"
+    ))]{
         use libc::{__rlimit_resource_t, rlimit};
     } else if #[cfg(any(
         bsd,
@@ -38,7 +41,10 @@ libc_enum! {
     //
     // https://gcc.gnu.org/legacy-ml/gcc/2015-08/msg00441.html
     // https://github.com/rust-lang/libc/blob/master/src/unix/linux_like/linux/gnu/mod.rs
-    #[cfg_attr(all(target_os = "linux", any(target_env = "gnu", target_env = "uclibc")), repr(u32))]
+    #[cfg_attr(any(
+            all(target_os = "linux", any(target_env = "gnu", target_env = "uclibc")),
+            target_os = "hurd"
+        ), repr(u32))]
     #[cfg_attr(any(
             bsd,
             target_os = "android",
@@ -171,7 +177,10 @@ pub fn getrlimit(resource: Resource) -> Result<(rlim_t, rlim_t)> {
     let mut old_rlim = mem::MaybeUninit::<rlimit>::uninit();
 
     cfg_if! {
-        if #[cfg(all(target_os = "linux", any(target_env = "gnu", target_env = "uclibc")))]{
+        if #[cfg(any(
+            all(target_os = "linux", any(target_env = "gnu", target_env = "uclibc")),
+            target_os = "hurd"
+        ))] {
             let res = unsafe { libc::getrlimit(resource as __rlimit_resource_t, old_rlim.as_mut_ptr()) };
         } else {
             let res = unsafe { libc::getrlimit(resource as c_int, old_rlim.as_mut_ptr()) };
@@ -224,7 +233,10 @@ pub fn setrlimit(
         rlim_max: hard_limit,
     };
     cfg_if! {
-        if #[cfg(all(target_os = "linux", any(target_env = "gnu", target_env = "uclibc")))]{
+        if #[cfg(any(
+            all(target_os = "linux", any(target_env = "gnu", target_env = "uclibc")),
+            target_os = "hurd",
+        ))]{
             let res = unsafe { libc::setrlimit(resource as __rlimit_resource_t, &new_rlim as *const rlimit) };
         }else{
             let res = unsafe { libc::setrlimit(resource as c_int, &new_rlim as *const rlimit) };

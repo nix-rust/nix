@@ -22,7 +22,7 @@ use crate::{Error, NixPath, Result};
 use cfg_if::cfg_if;
 use libc::{
     self, c_char, c_int, c_long, c_uint, gid_t, mode_t, off_t, pid_t, size_t,
-    uid_t, PATH_MAX,
+    uid_t,
 };
 use std::convert::Infallible;
 #[cfg(not(target_os = "redox"))]
@@ -669,8 +669,13 @@ pub fn getcwd() -> Result<PathBuf> {
                 }
             }
 
+            #[cfg(not(target_os = "hurd"))]
+            const PATH_MAX: usize = libc::PATH_MAX as usize;
+            #[cfg(target_os = "hurd")]
+            const PATH_MAX: usize = 1024; // Hurd does not define a hard limit, so try a guess first
+
             // Trigger the internal buffer resizing logic.
-            reserve_double_buffer_size(&mut buf, PATH_MAX as usize)?;
+            reserve_double_buffer_size(&mut buf, PATH_MAX)?;
         }
     }
 }
@@ -864,7 +869,7 @@ pub fn execvp<S: AsRef<CStr>>(
 /// This functions like a combination of `execvp(2)` and `execve(2)` to pass an
 /// environment and have a search path. See these two for additional
 /// information.
-#[cfg(any(target_os = "haiku", target_os = "linux", target_os = "openbsd"))]
+#[cfg(any(target_os = "haiku", target_os = "hurd", target_os = "linux", target_os = "openbsd"))]
 pub fn execvpe<SA: AsRef<CStr>, SE: AsRef<CStr>>(
     filename: &CStr,
     args: &[SA],
@@ -890,7 +895,7 @@ pub fn execvpe<SA: AsRef<CStr>, SE: AsRef<CStr>>(
 ///
 /// This function is similar to `execve`, except that the program to be executed
 /// is referenced as a file descriptor instead of a path.
-#[cfg(any(linux_android, freebsdlike))]
+#[cfg(any(linux_android, freebsdlike, target_os = "hurd"))]
 #[inline]
 pub fn fexecve<SA: AsRef<CStr>, SE: AsRef<CStr>>(
     fd: RawFd,
@@ -1193,6 +1198,7 @@ feature! {
     freebsdlike,
     solarish,
     target_os = "emscripten",
+    target_os = "hurd",
     target_os = "redox",
     netbsdlike,
 ))]
@@ -3055,6 +3061,7 @@ pub struct User {
         target_os = "aix",
         target_os = "fuchsia",
         target_os = "haiku",
+        target_os = "hurd",
     )))]
     pub class: CString,
     /// Last password change
@@ -3064,6 +3071,7 @@ pub struct User {
         target_os = "aix",
         target_os = "fuchsia",
         target_os = "haiku",
+        target_os = "hurd",
     )))]
     pub change: libc::time_t,
     /// Expiration time of account
@@ -3073,6 +3081,7 @@ pub struct User {
         target_os = "aix",
         target_os = "fuchsia",
         target_os = "haiku",
+        target_os = "hurd",
     )))]
     pub expire: libc::time_t,
 }
@@ -3125,6 +3134,7 @@ impl From<&libc::passwd> for User {
                     target_os = "aix",
                     target_os = "fuchsia",
                     target_os = "haiku",
+                    target_os = "hurd",
                 )))]
                 class: CString::new(CStr::from_ptr(pw.pw_class).to_bytes())
                     .unwrap(),
@@ -3134,6 +3144,7 @@ impl From<&libc::passwd> for User {
                     target_os = "aix",
                     target_os = "fuchsia",
                     target_os = "haiku",
+                    target_os = "hurd",
                 )))]
                 change: pw.pw_change,
                 #[cfg(not(any(
@@ -3142,6 +3153,7 @@ impl From<&libc::passwd> for User {
                     target_os = "aix",
                     target_os = "fuchsia",
                     target_os = "haiku",
+                    target_os = "hurd",
                 )))]
                 expire: pw.pw_expire,
             }
@@ -3182,6 +3194,7 @@ impl From<User> for libc::passwd {
                 target_os = "aix",
                 target_os = "fuchsia",
                 target_os = "haiku",
+                target_os = "hurd",
             )))]
             pw_class: u.class.into_raw(),
             #[cfg(not(any(
@@ -3190,6 +3203,7 @@ impl From<User> for libc::passwd {
                 target_os = "aix",
                 target_os = "fuchsia",
                 target_os = "haiku",
+                target_os = "hurd",
             )))]
             pw_change: u.change,
             #[cfg(not(any(
@@ -3198,6 +3212,7 @@ impl From<User> for libc::passwd {
                 target_os = "aix",
                 target_os = "fuchsia",
                 target_os = "haiku",
+                target_os = "hurd",
             )))]
             pw_expire: u.expire,
             #[cfg(target_os = "illumos")]
@@ -3483,7 +3498,10 @@ feature! {
 /// (see [`ttyname(3)`](https://man7.org/linux/man-pages/man3/ttyname.3.html)).
 #[cfg(not(target_os = "fuchsia"))]
 pub fn ttyname<F: AsFd>(fd: F) -> Result<PathBuf> {
+    #[cfg(not(target_os = "hurd"))]
     const PATH_MAX: usize = libc::PATH_MAX as usize;
+    #[cfg(target_os = "hurd")]
+    const PATH_MAX: usize = 1024; // Hurd does not define a hard limit, so try a guess first
     let mut buf = vec![0_u8; PATH_MAX];
     let c_buf = buf.as_mut_ptr().cast();
 

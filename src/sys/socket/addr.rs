@@ -162,6 +162,7 @@ pub enum AddressFamily {
         target_os = "aix",
         solarish,
         apple_targets,
+        target_os = "hurd",
         target_os = "redox",
     )))]
     Bluetooth = libc::AF_BLUETOOTH,
@@ -177,6 +178,7 @@ pub enum AddressFamily {
         target_os = "aix",
         solarish,
         target_os = "haiku",
+        target_os = "hurd",
         target_os = "redox",
     )))]
     Isdn = libc::AF_ISDN,
@@ -283,7 +285,7 @@ pub struct UnixAddr {
     /// The length of the valid part of `sun`, including the sun_family field
     /// but excluding any trailing nul.
     // On the BSDs, this field is built into sun
-    #[cfg(not(any(bsd, target_os = "haiku")))]
+    #[cfg(not(any(bsd, target_os = "haiku", target_os = "hurd")))]
     sun_len: u8,
 }
 
@@ -361,7 +363,7 @@ impl UnixAddr {
             .try_into()
             .unwrap();
 
-            #[cfg(any(bsd, target_os = "haiku"))]
+            #[cfg(any(bsd, target_os = "haiku", target_os = "hurd"))]
             {
                 ret.sun_len = sun_len;
             }
@@ -520,7 +522,12 @@ impl UnixAddr {
 
 impl private::SockaddrLikePriv for UnixAddr {}
 impl SockaddrLike for UnixAddr {
-    #[cfg(any(linux_android, target_os = "fuchsia", solarish, target_os = "redox"))]
+    #[cfg(any(
+        linux_android,
+        target_os = "fuchsia",
+        solarish,
+        target_os = "redox"
+    ))]
     fn len(&self) -> libc::socklen_t {
         self.sun_len.into()
     }
@@ -813,7 +820,12 @@ impl SockaddrIn {
     /// Creates a new socket address from IPv4 octets and a port number.
     pub fn new(a: u8, b: u8, c: u8, d: u8, port: u16) -> Self {
         Self(libc::sockaddr_in {
-            #[cfg(any(bsd, target_os = "aix", target_os = "haiku"))]
+            #[cfg(any(
+                bsd,
+                target_os = "aix",
+                target_os = "haiku",
+                target_os = "hurd"
+            ))]
             sin_len: Self::size() as u8,
             sin_family: AddressFamily::Inet as sa_family_t,
             sin_port: u16::to_be(port),
@@ -882,7 +894,12 @@ impl fmt::Display for SockaddrIn {
 impl From<net::SocketAddrV4> for SockaddrIn {
     fn from(addr: net::SocketAddrV4) -> Self {
         Self(libc::sockaddr_in {
-            #[cfg(any(bsd, target_os = "haiku", target_os = "hermit"))]
+            #[cfg(any(
+                bsd,
+                target_os = "haiku",
+                target_os = "hermit",
+                target_os = "hurd"
+            ))]
             sin_len: mem::size_of::<libc::sockaddr_in>() as u8,
             sin_family: AddressFamily::Inet as sa_family_t,
             sin_port: addr.port().to_be(), // network byte order
@@ -1002,7 +1019,12 @@ impl From<net::SocketAddrV6> for SockaddrIn6 {
     fn from(addr: net::SocketAddrV6) -> Self {
         #[allow(clippy::needless_update)] // It isn't needless on Illumos
         Self(libc::sockaddr_in6 {
-            #[cfg(any(bsd, target_os = "haiku", target_os = "hermit"))]
+            #[cfg(any(
+                bsd,
+                target_os = "haiku",
+                target_os = "hermit",
+                target_os = "hurd"
+            ))]
             sin6_len: mem::size_of::<libc::sockaddr_in6>() as u8,
             sin6_family: AddressFamily::Inet6 as sa_family_t,
             sin6_port: addr.port().to_be(), // network byte order
@@ -1059,7 +1081,10 @@ impl std::str::FromStr for SockaddrIn6 {
 pub union SockaddrStorage {
     #[cfg(linux_android)]
     alg: AlgAddr,
-    #[cfg(all(feature = "net", not(target_os = "redox")))]
+    #[cfg(all(
+        feature = "net",
+        not(any(target_os = "hurd", target_os = "redox"))
+    ))]
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     dl: LinkAddr,
     #[cfg(linux_android)]
@@ -2124,7 +2149,7 @@ mod tests {
         }
     }
 
-    #[cfg(not(target_os = "redox"))]
+    #[cfg(not(any(target_os = "hurd", target_os = "redox")))]
     mod link {
         #![allow(clippy::cast_ptr_alignment)]
 
@@ -2238,12 +2263,7 @@ mod tests {
 
         #[test]
         fn size() {
-            #[cfg(any(
-                bsd,
-                target_os = "aix",
-                solarish,
-                target_os = "haiku"
-            ))]
+            #[cfg(any(bsd, target_os = "aix", solarish, target_os = "haiku"))]
             let l = mem::size_of::<libc::sockaddr_dl>();
             #[cfg(any(linux_android, target_os = "fuchsia"))]
             let l = mem::size_of::<libc::sockaddr_ll>();

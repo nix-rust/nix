@@ -306,7 +306,11 @@ fn inner_readlink<P: ?Sized + NixPath>(
     dirfd: Option<RawFd>,
     path: &P,
 ) -> Result<OsString> {
-    let mut v = Vec::with_capacity(libc::PATH_MAX as usize);
+    #[cfg(not(target_os = "hurd"))]
+    const PATH_MAX: usize = libc::PATH_MAX as usize;
+    #[cfg(target_os = "hurd")]
+    const PATH_MAX: usize = 1024; // Hurd does not define a hard limit, so try a guess first
+    let mut v = Vec::with_capacity(PATH_MAX);
 
     {
         // simple case: result is strictly less than `PATH_MAX`
@@ -358,7 +362,7 @@ fn inner_readlink<P: ?Sized + NixPath>(
         } else {
             // If lstat doesn't cooperate, or reports an error, be a little less
             // precise.
-            (libc::PATH_MAX as usize).max(128) << 1
+            PATH_MAX.max(128) << 1
         }
     };
 
