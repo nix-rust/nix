@@ -321,6 +321,34 @@ fn test_ttl_opts() {
 }
 
 #[test]
+#[cfg(any(linux_android, target_os = "freebsd"))]
+fn test_multicast_ttl_opts_ipv4() {
+    let fd4 = socket(
+        AddressFamily::Inet,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )
+    .unwrap();
+    setsockopt(&fd4, sockopt::IpMulticastTtl, &2)
+        .expect("setting ipmulticastttl on an inet socket should succeed");
+}
+
+#[test]
+#[cfg(linux_android)]
+fn test_multicast_ttl_opts_ipv6() {
+    let fd6 = socket(
+        AddressFamily::Inet6,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )
+    .unwrap();
+    setsockopt(&fd6, sockopt::IpMulticastTtl, &2)
+        .expect("setting ipmulticastttl on an inet6 socket should succeed");
+}
+
+#[test]
 fn test_ipv6_multicast_hops() {
     let fd6 = socket(
         AddressFamily::Inet6,

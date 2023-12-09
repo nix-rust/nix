@@ -1247,7 +1247,7 @@ impl<'a> Set<'a, bool> for SetBool {
     }
 
     fn ffi_len(&self) -> socklen_t {
-        mem::size_of::<c_int>() as socklen_t
+        mem::size_of_val(&self.val) as socklen_t
     }
 }
 
@@ -1298,7 +1298,7 @@ impl<'a> Set<'a, u8> for SetU8 {
     }
 
     fn ffi_len(&self) -> socklen_t {
-        mem::size_of::<c_int>() as socklen_t
+        mem::size_of_val(&self.val) as socklen_t
     }
 }
 
@@ -1349,7 +1349,7 @@ impl<'a> Set<'a, usize> for SetUsize {
     }
 
     fn ffi_len(&self) -> socklen_t {
-        mem::size_of::<c_int>() as socklen_t
+        mem::size_of_val(&self.val) as socklen_t
     }
 }
 
