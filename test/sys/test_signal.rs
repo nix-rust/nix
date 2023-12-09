@@ -141,3 +141,19 @@ fn test_signal() {
     // Restore default signal handler
     unsafe { signal(Signal::SIGINT, SigHandler::SigDfl) }.unwrap();
 }
+
+#[test]
+fn test_safe_signal() {
+    let _m = crate::SIGNAL_MTX.lock();
+
+    signal_ignore(SIGINT).unwrap();
+    raise(Signal::SIGINT).unwrap();
+
+    signal_default(SIGINT).unwrap();
+
+    // Ensure default was restored
+    assert_eq!(
+        unsafe { signal(Signal::SIGINT, SigHandler::SigDfl) }.unwrap(),
+        SigHandler::SigDfl
+    );
+}
