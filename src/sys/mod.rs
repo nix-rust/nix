@@ -79,7 +79,7 @@ feature! {
     pub mod quota;
 }
 
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", netbsdlike))]
 feature! {
     #![feature = "reboot"]
     pub mod reboot;
