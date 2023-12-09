@@ -361,8 +361,7 @@ fn test_mkdirat_fail() {
 
 #[test]
 #[cfg(not(any(
-    target_os = "dragonfly",
-    target_os = "freebsd",
+    freebsdlike,
     apple_targets,
     target_os = "haiku",
     target_os = "redox"
@@ -381,9 +380,8 @@ fn test_mknod() {
 
 #[test]
 #[cfg(not(any(
-    target_os = "dragonfly",
-    target_os = "freebsd",
     solarish,
+    freebsdlike,
     apple_targets,
     target_os = "haiku",
     target_os = "redox"

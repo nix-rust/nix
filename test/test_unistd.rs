@@ -430,19 +430,12 @@ cfg_if! {
     if #[cfg(target_os = "android")] {
         execve_test_factory!(test_execve, execve, CString::new("/system/bin/sh").unwrap().as_c_str());
         execve_test_factory!(test_fexecve, fexecve, File::open("/system/bin/sh").unwrap().into_raw_fd());
-    } else if #[cfg(any(target_os = "dragonfly",
-                        target_os = "freebsd",
-                        target_os = "hurd",
-                        target_os = "linux"))] {
+    } else if #[cfg(any(freebsdlike, target_os = "linux", target_os = "hurd"))] {
         // These tests frequently fail on musl, probably due to
         // https://github.com/nix-rust/nix/issues/555
         execve_test_factory!(test_execve, execve, CString::new("/bin/sh").unwrap().as_c_str());
         execve_test_factory!(test_fexecve, fexecve, File::open("/bin/sh").unwrap().into_raw_fd());
-    } else if #[cfg(any(solarish,
-                        apple_targets,
-                        target_os = "netbsd",
-                        target_os = "openbsd",
-                        target_os = "solaris"))] {
+    } else if #[cfg(any(solarish, apple_targets, netbsdlike))] {
         execve_test_factory!(test_execve, execve, CString::new("/bin/sh").unwrap().as_c_str());
         // No fexecve() on ios, macos, NetBSD, OpenBSD.
     }
@@ -610,7 +603,7 @@ fn test_lseek64() {
 }
 
 cfg_if! {
-    if #[cfg(any(target_os = "android", target_os = "linux"))] {
+    if #[cfg(linux_android)] {
         macro_rules! require_acct{
             () => {
                 require_capability!("test_acct", CAP_SYS_PACCT);
@@ -712,13 +705,7 @@ fn test_sysconf_unsupported() {
     assert!(open_max.expect("sysconf failed").is_none())
 }
 
-#[cfg(any(
-    target_os = "android",
-    target_os = "dragonfly",
-    target_os = "freebsd",
-    target_os = "linux",
-    target_os = "openbsd"
-))]
+#[cfg(any(linux_android, freebsdlike, target_os = "openbsd"))]
 #[test]
 fn test_getresuid() {
     let resuids = getresuid().unwrap();
@@ -727,13 +714,7 @@ fn test_getresuid() {
     assert_ne!(resuids.saved.as_raw(), libc::uid_t::MAX);
 }
 
-#[cfg(any(
-    target_os = "android",
-    target_os = "dragonfly",
-    target_os = "freebsd",
-    target_os = "linux",
-    target_os = "openbsd"
-))]
+#[cfg(any(linux_android, freebsdlike, target_os = "openbsd"))]
 #[test]
 fn test_getresgid() {
     let resgids = getresgid().unwrap();
@@ -761,16 +742,12 @@ fn test_pipe() {
 // pipe2(2) is the same as pipe(2), except it allows setting some flags.  Check
 // that we can set a flag.
 #[cfg(any(
-    target_os = "android",
-    target_os = "dragonfly",
-    target_os = "emscripten",
-    target_os = "freebsd",
+    linux_android,
+    freebsdlike,
     solarish,
-    target_os = "linux",
-    target_os = "netbsd",
-    target_os = "openbsd",
+    netbsdlike,
+    target_os = "emscripten",
     target_os = "redox",
-    target_os = "solaris"
 ))]
 #[test]
 fn test_pipe2() {
@@ -1367,11 +1344,7 @@ fn test_faccessat_file_exists() {
 }
 
 #[test]
-#[cfg(any(
-    all(target_os = "linux", not(target_env = "uclibc")),
-    target_os = "freebsd",
-    target_os = "dragonfly"
-))]
+#[cfg(any(all(target_os = "linux", not(target_env = "uclibc")), freebsdlike))]
 fn test_eaccess_not_existing() {
     let tempdir = tempdir().unwrap();
     let dir = tempdir.path().join("does_not_exist.txt");
@@ -1382,11 +1355,7 @@ fn test_eaccess_not_existing() {
 }
 
 #[test]
-#[cfg(any(
-    all(target_os = "linux", not(target_env = "uclibc")),
-    target_os = "freebsd",
-    target_os = "dragonfly"
-))]
+#[cfg(any(all(target_os = "linux", not(target_env = "uclibc")), freebsdlike))]
 fn test_eaccess_file_exists() {
     let tempdir = tempdir().unwrap();
     let path = tempdir.path().join("does_exist.txt");

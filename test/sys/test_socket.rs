@@ -556,12 +556,7 @@ mod recvfrom {
         }
     }
 
-    #[cfg(any(
-        target_os = "linux",
-        target_os = "android",
-        target_os = "freebsd",
-        target_os = "netbsd",
-    ))]
+    #[cfg(any(linux_android, target_os = "freebsd", target_os = "netbsd"))]
     #[test]
     pub fn udp_sendmmsg() {
         use std::io::IoSlice;
@@ -623,12 +618,7 @@ mod recvfrom {
         assert_eq!(AddressFamily::Inet, from.unwrap().family().unwrap());
     }
 
-    #[cfg(any(
-        target_os = "linux",
-        target_os = "android",
-        target_os = "freebsd",
-        target_os = "netbsd",
-    ))]
+    #[cfg(any(linux_android, target_os = "freebsd", target_os = "netbsd"))]
     #[test]
     pub fn udp_recvmmsg() {
         use nix::sys::socket::{recvmmsg, MsgFlags};
@@ -704,12 +694,7 @@ mod recvfrom {
         send_thread.join().unwrap();
     }
 
-    #[cfg(any(
-        target_os = "linux",
-        target_os = "android",
-        target_os = "freebsd",
-        target_os = "netbsd",
-    ))]
+    #[cfg(any(linux_android, target_os = "freebsd", target_os = "netbsd"))]
     #[test]
     pub fn udp_recvmmsg_dontwait_short_read() {
         use nix::sys::socket::{recvmmsg, MsgFlags};
@@ -1275,12 +1260,7 @@ pub fn test_sendmsg_ipv6packetinfo() {
 //
 // Note that binding to 0.0.0.0 is *required* on FreeBSD; sendmsg
 // returns EINVAL otherwise. (See FreeBSD's ip(4) man page.)
-#[cfg(any(
-    target_os = "netbsd",
-    target_os = "freebsd",
-    target_os = "openbsd",
-    target_os = "dragonfly",
-))]
+#[cfg(any(freebsdlike, netbsdlike))]
 #[test]
 pub fn test_sendmsg_ipv4sendsrcaddr() {
     use nix::sys::socket::{
@@ -1429,12 +1409,7 @@ pub fn test_sendmsg_empty_cmsgs() {
     }
 }
 
-#[cfg(any(
-    target_os = "android",
-    target_os = "linux",
-    target_os = "freebsd",
-    target_os = "dragonfly",
-))]
+#[cfg(any(linux_android, freebsdlike))]
 #[test]
 fn test_scm_credentials() {
     use nix::sys::socket::{
@@ -1777,12 +1752,7 @@ fn loopback_address(
     })
 }
 
-#[cfg(any(
-    target_os = "android",
-    apple_targets,
-    target_os = "linux",
-    target_os = "netbsd",
-))]
+#[cfg(any(linux_android, apple_targets, target_os = "netbsd"))]
 // qemu doesn't seem to be emulating this correctly in these architectures
 #[cfg_attr(
     all(
@@ -1987,7 +1957,7 @@ pub fn test_recvif() {
     }
 }
 
-#[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
+#[cfg(any(linux_android, target_os = "freebsd"))]
 #[cfg_attr(qemu, ignore)]
 #[test]
 pub fn test_recvif_ipv4() {
@@ -2073,7 +2043,7 @@ pub fn test_recvif_ipv4() {
     }
 }
 
-#[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
+#[cfg(any(linux_android, target_os = "freebsd"))]
 #[cfg_attr(qemu, ignore)]
 #[test]
 pub fn test_recvif_ipv6() {
@@ -2159,14 +2129,7 @@ pub fn test_recvif_ipv6() {
     }
 }
 
-#[cfg(any(
-    target_os = "android",
-    target_os = "freebsd",
-    apple_targets,
-    target_os = "linux",
-    target_os = "netbsd",
-    target_os = "openbsd",
-))]
+#[cfg(any(linux_android, target_os = "freebsd", apple_targets, netbsdlike))]
 // qemu doesn't seem to be emulating this correctly in these architectures
 #[cfg_attr(
     all(
@@ -2463,7 +2426,7 @@ fn test_recvmmsg_timestampns() {
 // Disable the test on emulated platforms because it fails in Cirrus-CI.  Lack
 // of QEMU support is suspected.
 #[cfg_attr(qemu, ignore)]
-#[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+#[cfg(any(linux_android, target_os = "fuchsia"))]
 #[test]
 fn test_recvmsg_rxq_ovfl() {
     use nix::sys::socket::sockopt::{RcvBuf, RxqOvfl};
@@ -2557,7 +2520,7 @@ fn test_recvmsg_rxq_ovfl() {
     assert_eq!(drop_counter, 1);
 }
 
-#[cfg(any(target_os = "linux", target_os = "android",))]
+#[cfg(linux_android)]
 mod linux_errqueue {
     use super::FromStr;
     use nix::sys::socket::*;

@@ -48,15 +48,8 @@ mod test_fanotify;
 #[cfg(target_os = "linux")]
 mod test_inotify;
 mod test_pthread;
-#[cfg(any(
-    target_os = "android",
-    target_os = "dragonfly",
-    target_os = "freebsd",
-    target_os = "linux",
-    apple_targets,
-    target_os = "netbsd",
-    target_os = "openbsd"
-))]
+
+#[cfg(any(linux_android, freebsdlike, netbsdlike, apple_targets))]
 mod test_ptrace;
 #[cfg(linux_android)]
 mod test_timerfd;
