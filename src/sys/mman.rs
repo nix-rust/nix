@@ -154,6 +154,36 @@ libc_bitflags! {
         /// Pages will be discarded in the core dumps.
         #[cfg(target_os = "openbsd")]
         MAP_CONCEAL;
+        /// Pages aligned on 64kb
+        #[cfg(target_os = "netbsd")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
+        MAP_ALIGNMENT_64KB;
+        /// Pages aligned on 16mb
+        #[cfg(target_os = "netbsd")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
+        MAP_ALIGNMENT_16MB;
+        /// Pages aligned on 4gb
+        #[cfg(target_os = "netbsd")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
+        MAP_ALIGNMENT_4GB;
+        /// Pages aligned on 1tb
+        #[cfg(target_os = "netbsd")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
+        MAP_ALIGNMENT_1TB;
+        /// Pages aligned on 256tb
+        #[cfg(target_os = "netbsd")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
+        MAP_ALIGNMENT_256TB;
+        /// Pages aligned on 64pb
+        #[cfg(target_os = "netbsd")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
+        MAP_ALIGNMENT_64PB;
+        /// Right operand value for the page alignment bitshift calculation
+        #[cfg(target_os = "netbsd")]
+        MAP_ALIGNMENT_SHIFT;
+        /// Mask to get the page alignment (as `(flags & align mask) >> align shift`)
+        #[cfg(target_os = "netbsd")]
+        MAP_ALIGNMENT_MASK;
     }
 }
 
@@ -628,4 +658,24 @@ pub fn shm_unlink<P: ?Sized + NixPath>(name: &P) -> Result<()> {
         name.with_nix_path(|cstr| unsafe { libc::shm_unlink(cstr.as_ptr()) })?;
 
     Errno::result(ret).map(drop)
+}
+
+/// Matches BSD's `MAP_ALIGNED(x)` macro, x being ilog2(alignment).
+///
+/// For more information, see [`mmap(2)`].
+///
+/// [`mmap(2)`]: https://man.freebsd.org/cgi/man.cgi?mmap(2)
+#[cfg(target_os = "netbsd")]
+pub const fn map_aligned(v: u32) -> u32 {
+    v << MapFlags::MAP_ALIGNMENT_SHIFT.bits()
+}
+
+/// Handy call to get the alignment set by `map_aligned`.
+///
+/// For more information, see [`mmap(2)`].
+///
+/// [`mmap(2)`]: https://man.freebsd.org/cgi/man.cgi?mmap(2)
+#[cfg(target_os = "netbsd")]
+pub const fn map_alignment(flags: u32) -> u32 {
+    (flags & MapFlags::MAP_ALIGNMENT_MASK.bits() as u32) >> MapFlags::MAP_ALIGNMENT_SHIFT.bits()
 }

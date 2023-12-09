@@ -119,3 +119,14 @@ fn test_mremap_shrink() {
     // The first KB should still be accessible and have the old data in it.
     assert_eq!(slice[ONE_K - 1], 0xFF);
 }
+
+#[test]
+#[cfg(target_os = "netbsd")]
+pub fn test_map_aligned() {
+    use nix::sys::mman::{map_aligned, map_alignment};
+
+    let aligned = map_aligned(16);
+    let flags = libc::MAP_PRIVATE as u32 | libc::MAP_ANONYMOUS as u32 | aligned;
+    assert_eq!(aligned, libc::MAP_ALIGNED(16) as u32);
+    assert_eq!(map_alignment(flags), 16);
+}
