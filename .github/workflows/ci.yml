@@ -272,6 +272,8 @@ jobs:
           #- target: armv7-unknown-linux-uclibceabihf
           - target: x86_64-unknown-haiku
           - target: i686-unknown-hurd-gnu
+          - target: sparc64-unknown-linux-gnu
+          - target: x86_64-unknown-linux-gnux32
     steps:
       - name: checkout
         uses: actions/checkout@v4
