@@ -448,7 +448,6 @@ fn test_futimens_unchanged() {
     assert_eq!(old_mtime, new_mtime);
 }
 
-
 #[test]
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
 fn test_utimensat_unchanged() {
@@ -476,7 +475,7 @@ fn test_utimensat_unchanged() {
         &TimeSpec::UTIME_OMIT,
         UtimensatFlags::NoFollowSymlink,
     )
-        .unwrap();
+    .unwrap();
     let new_atime = fs::metadata(fullpath.as_path())
         .unwrap()
         .accessed()
