@@ -441,4 +441,3 @@ pub fn ev_set(
     ev.kevent.data = 0;
     ev.kevent.udata = udata as type_of_udata;
 }
-

@@ -2910,9 +2910,9 @@ fn can_use_cmsg_space() {
 #[test]
 fn can_open_routing_socket() {
     let _ = nix::sys::socket(
-        super::AddressFamily::Route,
-        super::SockType::Raw,
-        super::SockFlag::empty(),
+        AddressFamily::Route,
+        SockType::Raw,
+        SockFlag::empty(),
         None,
     )
     .expect("Failed to open routing socket");
