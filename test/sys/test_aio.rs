@@ -654,6 +654,8 @@ fn casting() {
 #[cfg(target_os = "freebsd")]
 #[test]
 fn casting_vectored() {
+    use std::io::{IoSlice, IoSliceMut};
+
     let sev = SigevNotify::SigevNone;
 
     let mut rbuf = [];

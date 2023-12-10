@@ -1,4 +1,3 @@
-#[cfg(not(target_os = "redox"))]
 use nix::errno::Errno;
 use nix::sys::signal::*;
 use nix::unistd::*;
