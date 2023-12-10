@@ -10,6 +10,7 @@ use libc::{c_int, c_long, intptr_t, time_t, timespec, uintptr_t};
 use libc::{c_long, intptr_t, size_t, time_t, timespec, uintptr_t};
 use std::convert::TryInto;
 use std::mem;
+use std::os::fd::{AsFd, BorrowedFd};
 use std::os::unix::io::{AsRawFd, FromRawFd, OwnedFd};
 use std::ptr;
 
@@ -28,6 +29,18 @@ pub struct KEvent {
 #[repr(transparent)]
 #[derive(Debug)]
 pub struct Kqueue(OwnedFd);
+
+impl AsFd for Kqueue {
+    fn as_fd(&self) -> BorrowedFd<'_> {
+        self.0.as_fd()
+    }
+}
+
+impl From<Kqueue> for OwnedFd {
+    fn from(value: Kqueue) -> Self {
+        value.0
+    }
+}
 
 impl Kqueue {
     /// Create a new kernel event queue.
