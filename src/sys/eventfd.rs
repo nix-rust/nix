@@ -4,9 +4,9 @@ use std::os::unix::io::{FromRawFd, OwnedFd, AsRawFd, AsFd, RawFd, BorrowedFd};
 
 libc_bitflags! {
     pub struct EfdFlags: libc::c_int {
-        EFD_CLOEXEC; // Since Linux 2.6.27
-        EFD_NONBLOCK; // Since Linux 2.6.27
-        EFD_SEMAPHORE; // Since Linux 2.6.30
+        EFD_CLOEXEC; // Since Linux 2.6.27/FreeBSD 13.0
+        EFD_NONBLOCK; // Since Linux 2.6.27/FreeBSD 13.0
+        EFD_SEMAPHORE; // Since Linux 2.6.30/FreeBSD 13.0
     }
 }
 
