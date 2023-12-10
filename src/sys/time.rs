@@ -329,6 +329,17 @@ impl TimeValLike for TimeSpec {
 }
 
 impl TimeSpec {
+    /// Leave the timestamp unchanged.
+    #[cfg(not(target_os = "redox"))]
+    // At the time of writing this PR, redox does not support this feature
+    pub const UTIME_OMIT: TimeSpec =
+        TimeSpec::new(0, libc::UTIME_OMIT as timespec_tv_nsec_t);
+    /// Update the timestamp to `Now`
+    // At the time of writing this PR, redox does not support this feature
+    #[cfg(not(target_os = "redox"))]
+    pub const UTIME_NOW: TimeSpec =
+        TimeSpec::new(0, libc::UTIME_NOW as timespec_tv_nsec_t);
+
     /// Construct a new `TimeSpec` from its components
     #[cfg_attr(target_env = "musl", allow(deprecated))] // https://github.com/rust-lang/libc/issues/1848
     pub const fn new(seconds: time_t, nanoseconds: timespec_tv_nsec_t) -> Self {

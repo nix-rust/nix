@@ -376,6 +376,9 @@ pub fn lutimes<P: ?Sized + NixPath>(
 
 /// Change the access and modification times of the file specified by a file descriptor.
 ///
+/// If you want to set the timestamp to now, use `TimeSpec::UTIME_NOW`. Use
+/// `TimeSpec::UTIME_OMIT` if you don't want to change it.
+///
 /// # References
 ///
 /// [futimens(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/futimens.html).
@@ -407,6 +410,9 @@ pub enum UtimensatFlags {
 /// `utimensat(None, path, times, UtimensatFlags::FollowSymlink)` is identical to
 /// `utimes(path, times)`. The latter is a deprecated API so prefer using the
 /// former if the platforms you care about support it.
+///
+/// If you want to set the timestamp to now, use `TimeSpec::UTIME_NOW`. Use
+/// `TimeSpec::UTIME_OMIT` if you don't want to change it.
 ///
 /// # References
 ///
