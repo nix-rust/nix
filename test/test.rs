@@ -29,7 +29,6 @@ mod test_poll;
     target_os = "haiku"
 )))]
 mod test_pty;
-mod test_resource;
 #[cfg(any(
     linux_android,
     target_os = "dragonfly",
@@ -40,17 +39,6 @@ mod test_sched;
 mod test_sendfile;
 mod test_stat;
 mod test_time;
-#[cfg(all(
-    any(
-        target_os = "freebsd",
-        solarish,
-        target_os = "linux",
-        target_os = "netbsd"
-    ),
-    feature = "time",
-    feature = "signal"
-))]
-mod test_timer;
 mod test_unistd;
 
 use nix::unistd::{chdir, getcwd, read};

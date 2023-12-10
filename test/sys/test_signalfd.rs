@@ -1,6 +1,40 @@
 use std::convert::TryFrom;
 
 #[test]
+fn create_signalfd() {
+    use nix::sys::{signal::SigSet, signalfd::SignalFd};
+
+    let mask = SigSet::empty();
+    SignalFd::new(&mask).unwrap();
+}
+
+#[test]
+fn create_signalfd_with_opts() {
+    use nix::sys::{
+        signal::SigSet,
+        signalfd::{SfdFlags, SignalFd},
+    };
+
+    let mask = SigSet::empty();
+    SignalFd::with_flags(&mask, SfdFlags::SFD_CLOEXEC | SfdFlags::SFD_NONBLOCK)
+        .unwrap();
+}
+
+#[test]
+fn read_empty_signalfd() {
+    use nix::sys::{
+        signal::SigSet,
+        signalfd::{SfdFlags, SignalFd},
+    };
+
+    let mask = SigSet::empty();
+    let mut fd = SignalFd::with_flags(&mask, SfdFlags::SFD_NONBLOCK).unwrap();
+
+    let res = fd.read_signal();
+    assert!(res.unwrap().is_none());
+}
+
+#[test]
 fn test_signalfd() {
     use nix::sys::signal::{self, raise, SigSet, Signal};
     use nix::sys::signalfd::SignalFd;

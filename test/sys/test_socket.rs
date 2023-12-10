@@ -2791,3 +2791,129 @@ fn test_icmp_protocol() {
     sendto(owned_fd.as_raw_fd(), &packet, &dest_addr, MsgFlags::empty())
         .unwrap();
 }
+
+// test contains both recvmmsg and timestaping which is linux only
+// there are existing tests for recvmmsg only in tests/
+#[cfg_attr(qemu, ignore)]
+#[cfg(target_os = "linux")]
+#[test]
+fn test_recvmm2() -> nix::Result<()> {
+    use nix::sys::{
+        socket::{
+            bind, recvmmsg, sendmsg, setsockopt, socket, sockopt::Timestamping,
+            AddressFamily, ControlMessageOwned, MsgFlags, MultiHeaders,
+            SockFlag, SockType, SockaddrIn, TimestampingFlag, Timestamps,
+        },
+        time::TimeSpec,
+    };
+    use std::io::{IoSlice, IoSliceMut};
+    use std::os::unix::io::AsRawFd;
+    use std::str::FromStr;
+
+    let sock_addr = SockaddrIn::from_str("127.0.0.1:6790").unwrap();
+
+    let ssock = socket(
+        AddressFamily::Inet,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )?;
+
+    let rsock = socket(
+        AddressFamily::Inet,
+        SockType::Datagram,
+        SockFlag::SOCK_NONBLOCK,
+        None,
+    )?;
+
+    bind(rsock.as_raw_fd(), &sock_addr)?;
+
+    setsockopt(&rsock, Timestamping, &TimestampingFlag::all())?;
+
+    let sbuf = (0..400).map(|i| i as u8).collect::<Vec<_>>();
+
+    let mut recv_buf = vec![0; 1024];
+
+    let mut recv_iovs = Vec::new();
+    let mut pkt_iovs = Vec::new();
+
+    for (ix, chunk) in recv_buf.chunks_mut(256).enumerate() {
+        pkt_iovs.push(IoSliceMut::new(chunk));
+        if ix % 2 == 1 {
+            recv_iovs.push(pkt_iovs);
+            pkt_iovs = Vec::new();
+        }
+    }
+    drop(pkt_iovs);
+
+    let flags = MsgFlags::empty();
+    let iov1 = [IoSlice::new(&sbuf)];
+
+    let cmsg = cmsg_space!(Timestamps);
+    sendmsg(ssock.as_raw_fd(), &iov1, &[], flags, Some(&sock_addr)).unwrap();
+
+    let mut data = MultiHeaders::<()>::preallocate(recv_iovs.len(), Some(cmsg));
+
+    let t = TimeSpec::from_duration(std::time::Duration::from_secs(10));
+
+    let recv = recvmmsg(
+        rsock.as_raw_fd(),
+        &mut data,
+        recv_iovs.iter_mut(),
+        flags,
+        Some(t),
+    )?;
+
+    for rmsg in recv {
+        #[cfg(not(any(qemu, target_arch = "aarch64")))]
+        let mut saw_time = false;
+        let mut recvd = 0;
+        for cmsg in rmsg.cmsgs() {
+            if let ControlMessageOwned::ScmTimestampsns(timestamps) = cmsg {
+                let ts = timestamps.system;
+
+                let sys_time = nix::time::clock_gettime(
+                    nix::time::ClockId::CLOCK_REALTIME,
+                )?;
+                let diff = if ts > sys_time {
+                    ts - sys_time
+                } else {
+                    sys_time - ts
+                };
+                assert!(std::time::Duration::from(diff).as_secs() < 60);
+                #[cfg(not(any(qemu, target_arch = "aarch64")))]
+                {
+                    saw_time = true;
+                }
+            }
+        }
+
+        #[cfg(not(any(qemu, target_arch = "aarch64")))]
+        assert!(saw_time);
+
+        for iov in rmsg.iovs() {
+            recvd += iov.len();
+        }
+        assert_eq!(recvd, 400);
+    }
+
+    Ok(())
+}
+
+#[cfg(not(target_os = "redox"))]
+#[test]
+fn can_use_cmsg_space() {
+    let _ = cmsg_space!(u8);
+}
+
+#[cfg(not(any(linux_android, target_os = "redox", target_os = "haiku")))]
+#[test]
+fn can_open_routing_socket() {
+    let _ = nix::sys::socket(
+        super::AddressFamily::Route,
+        super::SockType::Raw,
+        super::SockFlag::empty(),
+        None,
+    )
+    .expect("Failed to open routing socket");
+}

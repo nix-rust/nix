@@ -1,10 +1,11 @@
+use std::convert::TryFrom;
 use std::os::unix::io::{AsFd, AsRawFd};
 use tempfile::tempfile;
 
 use nix::errno::Errno;
 use nix::fcntl;
 use nix::pty::openpty;
-use nix::sys::termios::{self, tcgetattr, LocalFlags, OutputFlags};
+use nix::sys::termios::{self, tcgetattr, BaudRate, LocalFlags, OutputFlags};
 use nix::unistd::{read, write};
 
 /// Helper function analogous to `std::io::Write::write_all`, but for `Fd`s
@@ -13,6 +14,15 @@ fn write_all<Fd: AsFd>(f: Fd, buf: &[u8]) {
     while len < buf.len() {
         len += write(f.as_fd(), &buf[len..]).unwrap();
     }
+}
+
+#[test]
+fn test_baudrate_try_from() {
+    assert_eq!(Ok(BaudRate::B0), BaudRate::try_from(libc::B0));
+    #[cfg(not(target_os = "haiku"))]
+    BaudRate::try_from(999999999).expect_err("assertion failed");
+    #[cfg(target_os = "haiku")]
+    BaudRate::try_from(99).expect_err("assertion failed");
 }
 
 // Test tcgetattr on a terminal
