@@ -20,7 +20,7 @@ feature! {
     #[cfg(bsd)]
     pub mod event;
 
-    #[cfg(linux_android)]
+    #[cfg(any(linux_android, target_os = "freebsd"))]
     #[allow(missing_docs)]
     pub mod eventfd;
 }
