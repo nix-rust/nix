@@ -154,6 +154,10 @@ libc_bitflags! {
         /// Pages will be discarded in the core dumps.
         #[cfg(target_os = "openbsd")]
         MAP_CONCEAL;
+        /// Attempt to place the mapping at exactly the address specified in `addr`.
+        /// it's a default behavior on OpenBSD.
+        #[cfg(netbsdlike)]
+        MAP_TRYFIXED;
     }
 }
 
