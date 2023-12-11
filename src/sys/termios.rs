@@ -923,18 +923,3 @@ pub fn tcgetsid<Fd: AsFd>(fd: Fd) -> Result<Pid> {
     Errno::result(res).map(Pid::from_raw)
 }
 }
-
-#[cfg(test)]
-mod test {
-    use super::*;
-    use std::convert::TryFrom;
-
-    #[test]
-    fn try_from() {
-        assert_eq!(Ok(BaudRate::B0), BaudRate::try_from(libc::B0));
-        #[cfg(not(target_os = "haiku"))]
-        BaudRate::try_from(999999999).expect_err("assertion failed");
-        #[cfg(target_os = "haiku")]
-        BaudRate::try_from(99).expect_err("assertion failed");
-    }
-}

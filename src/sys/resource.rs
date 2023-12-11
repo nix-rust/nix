@@ -396,28 +396,3 @@ pub fn getrusage(who: UsageWho) -> Result<Usage> {
         Errno::result(res).map(|_| Usage(rusage.assume_init()))
     }
 }
-
-#[cfg(test)]
-mod test {
-    use super::{getrusage, UsageWho};
-
-    #[test]
-    pub fn test_self_cpu_time() {
-        // Make sure some CPU time is used.
-        let mut numbers: Vec<i32> = (1..1_000_000).collect();
-        numbers.iter_mut().for_each(|item| *item *= 2);
-
-        // FIXME: this is here to help ensure the compiler does not optimize the whole
-        // thing away. Replace the assert with test::black_box once stabilized.
-        assert_eq!(numbers[100..200].iter().sum::<i32>(), 30_100);
-
-        let usage = getrusage(UsageWho::RUSAGE_SELF)
-            .expect("Failed to call getrusage for SELF");
-        let rusage = usage.as_ref();
-
-        let user = usage.user_time();
-        assert!(user.tv_sec() > 0 || user.tv_usec() > 0);
-        assert_eq!(user.tv_sec(), rusage.ru_utime.tv_sec);
-        assert_eq!(user.tv_usec(), rusage.ru_utime.tv_usec);
-    }
-}

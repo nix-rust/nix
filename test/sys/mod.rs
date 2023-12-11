@@ -53,3 +53,32 @@ mod test_pthread;
 mod test_ptrace;
 #[cfg(linux_android)]
 mod test_timerfd;
+
+#[cfg(all(
+    any(
+        target_os = "freebsd",
+        solarish,
+        target_os = "linux",
+        target_os = "netbsd"
+    ),
+    feature = "time",
+    feature = "signal"
+))]
+mod test_timer;
+
+#[cfg(bsd)]
+mod test_event;
+mod test_statvfs;
+mod test_time;
+mod test_utsname;
+
+#[cfg(any(linux_android, freebsdlike, apple_targets, target_os = "openbsd"))]
+mod test_statfs;
+
+#[cfg(not(any(
+    target_os = "redox",
+    target_os = "fuchsia",
+    solarish,
+    target_os = "haiku"
+)))]
+mod test_resource;

@@ -124,3 +124,10 @@ cases, it will be the version of the next release. And a user-friendly note
 should be added. Normally, there should be a new interface that will replace
 the old one, so a note should be something like: "`<New Interface>` should be 
 used instead".
+
+## Where to put a test
+
+If you want to add a test for a feature that is in `xxx.rs`, then the test should
+be put in the corresponding `test_xxx.rs` file unless you cannot do this, e.g.,
+the test involves private stuff and thus cannot be added outside of Nix, then
+it is allowed to leave the test in `xxx.rs`.

@@ -636,3 +636,74 @@ fn test_tcp_fast_open_connect() {
         "getting TCP_FASTOPEN_CONNECT on an inet stream socket should succeed",
     ));
 }
+
+#[cfg(linux_android)]
+#[test]
+fn can_get_peercred_on_unix_socket() {
+    use nix::sys::socket::{socketpair, sockopt, SockFlag, SockType};
+
+    let (a, b) = socketpair(
+        AddressFamily::Unix,
+        SockType::Stream,
+        None,
+        SockFlag::empty(),
+    )
+    .unwrap();
+    let a_cred = getsockopt(&a, sockopt::PeerCredentials).unwrap();
+    let b_cred = getsockopt(&b, sockopt::PeerCredentials).unwrap();
+    assert_eq!(a_cred, b_cred);
+    assert_ne!(a_cred.pid(), 0);
+}
+
+#[test]
+fn is_socket_type_unix() {
+    use nix::sys::socket::{socketpair, sockopt, SockFlag, SockType};
+
+    let (a, _b) = socketpair(
+        AddressFamily::Unix,
+        SockType::Stream,
+        None,
+        SockFlag::empty(),
+    )
+    .unwrap();
+    let a_type = getsockopt(&a, sockopt::SockType).unwrap();
+    assert_eq!(a_type, SockType::Stream);
+}
+
+#[test]
+fn is_socket_type_dgram() {
+    use nix::sys::socket::{
+        getsockopt, sockopt, AddressFamily, SockFlag, SockType,
+    };
+
+    let s = socket(
+        AddressFamily::Inet,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )
+    .unwrap();
+    let s_type = getsockopt(&s, sockopt::SockType).unwrap();
+    assert_eq!(s_type, SockType::Datagram);
+}
+
+#[cfg(any(target_os = "freebsd", target_os = "linux"))]
+#[test]
+fn can_get_listen_on_tcp_socket() {
+    use nix::sys::socket::{
+        getsockopt, listen, socket, sockopt, AddressFamily, SockFlag, SockType,
+    };
+
+    let s = socket(
+        AddressFamily::Inet,
+        SockType::Stream,
+        SockFlag::empty(),
+        None,
+    )
+    .unwrap();
+    let s_listening = getsockopt(&s, sockopt::AcceptConn).unwrap();
+    assert!(!s_listening);
+    listen(&s, 10).unwrap();
+    let s_listening2 = getsockopt(&s, sockopt::AcceptConn).unwrap();
+    assert!(s_listening2);
+}
