@@ -219,10 +219,10 @@ impl Termios {
     /// Updates the wrapper values from the internal `libc::termios` data structure.
     pub(crate) fn update_wrapper(&mut self) {
         let termios = *self.inner.borrow_mut();
-        self.input_flags = InputFlags::from_bits_truncate(termios.c_iflag);
-        self.output_flags = OutputFlags::from_bits_truncate(termios.c_oflag);
+        self.input_flags = InputFlags::from_bits_retain(termios.c_iflag);
+        self.output_flags = OutputFlags::from_bits_retain(termios.c_oflag);
         self.control_flags = ControlFlags::from_bits_retain(termios.c_cflag);
-        self.local_flags = LocalFlags::from_bits_truncate(termios.c_lflag);
+        self.local_flags = LocalFlags::from_bits_retain(termios.c_lflag);
         self.control_chars = termios.c_cc;
         #[cfg(any(linux_android, target_os = "haiku"))]
         {
@@ -235,10 +235,10 @@ impl From<libc::termios> for Termios {
     fn from(termios: libc::termios) -> Self {
         Termios {
             inner: RefCell::new(termios),
-            input_flags: InputFlags::from_bits_truncate(termios.c_iflag),
-            output_flags: OutputFlags::from_bits_truncate(termios.c_oflag),
-            control_flags: ControlFlags::from_bits_truncate(termios.c_cflag),
-            local_flags: LocalFlags::from_bits_truncate(termios.c_lflag),
+            input_flags: InputFlags::from_bits_retain(termios.c_iflag),
+            output_flags: OutputFlags::from_bits_retain(termios.c_oflag),
+            control_flags: ControlFlags::from_bits_retain(termios.c_cflag),
+            local_flags: LocalFlags::from_bits_retain(termios.c_lflag),
             control_chars: termios.c_cc,
             #[cfg(any(linux_android, target_os = "haiku"))]
             line_discipline: termios.c_line,
@@ -936,5 +936,27 @@ mod test {
         BaudRate::try_from(999999999).expect_err("assertion failed");
         #[cfg(target_os = "haiku")]
         BaudRate::try_from(99).expect_err("assertion failed");
+    }
+
+    #[test]
+    fn roundtrip_termios() {
+        // A fake termios including flag bits which we don't recognise.
+        #[allow(clippy::needless_update)]
+        let original = libc::termios {
+            c_iflag: 0xf00f,
+            c_oflag: 0xd00d,
+            c_cflag: 0x6642,
+            c_lflag: 0x1234,
+            c_cc: [0; NCCS],
+            ..unsafe { std::mem::zeroed() }
+        };
+
+        let mut attrs: Termios = original.into();
+        let before_update = attrs.get_libc_termios().to_owned();
+        attrs.update_wrapper();
+        let after_update = attrs.get_libc_termios().to_owned();
+
+        assert_eq!(before_update, original);
+        assert_eq!(after_update, original);
     }
 }
