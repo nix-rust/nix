@@ -569,12 +569,6 @@ fn test_aio_cancel_all() {
 }
 
 #[test]
-// On Cirrus on Linux, this test fails due to a glibc bug.
-// https://github.com/nix-rust/nix/issues/1099
-#[cfg_attr(target_os = "linux", ignore)]
-// On Cirrus, aio_suspend is failing with EINVAL
-// https://github.com/nix-rust/nix/issues/1361
-#[cfg_attr(apple_targets, ignore)]
 fn test_aio_suspend() {
     const INITIAL: &[u8] = b"abcdef123456";
     const WBUF: &[u8] = b"CDEFG";
