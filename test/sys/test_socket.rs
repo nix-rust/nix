@@ -2832,8 +2832,8 @@ fn test_icmp_protocol() {
 #[cfg(any(apple_targets, linux_android))]
 #[test]
 pub fn test_recv_iptos_ipttl() {
-    use nix::sys::socket::sockopt::{IpRecvTos, IpRecvTtl}; //, IpTos, IpTtl};
-    use nix::sys::socket::{bind, SockFlag, SockType, SockaddrIn};
+    use nix::sys::socket::sockopt::{IpRecvTos, IpRecvTtl};
+    use nix::sys::socket::{bind, SockFlag, SockType, SockaddrIn, ControlMessage};
     use nix::sys::socket::{getsockname, setsockopt, socket};
     use nix::sys::socket::{recvmsg, sendmsg, ControlMessageOwned, MsgFlags};
     use std::io::{IoSlice, IoSliceMut};
@@ -2862,6 +2862,8 @@ pub fn test_recv_iptos_ipttl() {
     {
         let slice = [1u8, 2, 3, 4, 5, 6, 7, 8];
         let iov = [IoSlice::new(&slice)];
+        let cmsg_tos = ControlMessage::IpTos(&0b10);
+        let cmsg_ttl = ControlMessage::IpTtl(&128);
 
         let send = socket(
             AddressFamily::Inet,
@@ -2870,7 +2872,7 @@ pub fn test_recv_iptos_ipttl() {
             None,
         )
         .expect("send socket failed");
-        sendmsg(send.as_raw_fd(), &iov, &[], MsgFlags::empty(), Some(&sa))
+        sendmsg(send.as_raw_fd(), &iov, &[cmsg_tos, cmsg_ttl], MsgFlags::empty(), Some(&sa))
             .expect("sendmsg failed");
     }
 
@@ -2878,9 +2880,7 @@ pub fn test_recv_iptos_ipttl() {
         let mut buf = [0u8; 8];
         let mut iovec = [IoSliceMut::new(&mut buf)];
 
-        // FIXME: When passing in IpTos and IpTtl, cmsg_space returns too little space?
-        // let mut space = cmsg_space!(IpTos, IpTtl);
-        let mut space = cmsg_space!(libc::c_int, libc::c_int);
+        let mut space = cmsg_space!(u8, u8);
         let msg = recvmsg::<()>(
             receive.as_raw_fd(),
             &mut iovec,
@@ -2892,21 +2892,26 @@ pub fn test_recv_iptos_ipttl() {
             .flags
             .intersects(MsgFlags::MSG_TRUNC | MsgFlags::MSG_CTRUNC));
 
-        let mut found = 0;
+        let (mut found_tos, mut found_ttl) = (false, false);
         for cmsg in msg.cmsgs() {
             match cmsg {
-                ControlMessageOwned::IpTos(_) => {
-                    found += 1;
+                ControlMessageOwned::IpTos(tos) => {
+                    assert_eq!(tos, 0b10);
+                    found_tos = true;
                     continue;
                 }
-                ControlMessageOwned::IpTtl(_) => {
-                    found += 2;
+                ControlMessageOwned::IpTtl(ttl) => {
+                    #[cfg(not(apple_targets))]
+                    // Apple has a kernel bug causing it to not honor IP_TTL on send,
+                    // so the received packet will have the default TTL.
+                    assert_eq!(ttl, 128);
+                    found_ttl = true;
                     continue;
                 }
                 _ => panic!("unexpected control msg"),
             };
         }
-        assert_eq!(found, 3);
+        assert_eq!(found_tos && found_ttl, true);
 
         assert_eq!(msg.bytes, 8);
         assert_eq!(*iovec[0], [1u8, 2, 3, 4, 5, 6, 7, 8]);
