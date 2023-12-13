@@ -1020,14 +1020,14 @@ impl ControlMessageOwned {
             ))]
             #[cfg(feature = "net")]
             (libc::IPPROTO_IP, libc::IP_RECVTOS) => {
-                let tos = unsafe { ptr::read_unaligned(p as *const libc::c_int) };
-                ControlMessageOwned::IpTos(tos)
+                let tos = unsafe { ptr::read_unaligned(p as *const u8) };
+                ControlMessageOwned::IpTos(tos as libc::c_int)
             },
             #[cfg(linux_android)]
             #[cfg(feature = "net")]
             (libc::IPPROTO_IP, libc::IP_TOS) => {
-                let tos = unsafe { ptr::read_unaligned(p as *const libc::c_int) };
-                ControlMessageOwned::IpTos(tos)
+                let tos = unsafe { ptr::read_unaligned(p as *const u8) };
+                ControlMessageOwned::IpTos(tos as libc::c_int)
             },
             #[cfg(any(
                 apple_targets,

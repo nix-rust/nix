@@ -2987,11 +2987,16 @@ pub fn test_recv_iptos_ipttl() {
                     found_tos = true;
                     continue;
                 }
+                #[cfg(not(apple_targets))]
                 ControlMessageOwned::IpTtl(ttl) => {
-                    #[cfg(not(apple_targets))]
+                    assert_eq!(ttl, 128);
+                    found_ttl = true;
+                    continue;
+                }
+                #[cfg(apple_targets)]
+                ControlMessageOwned::IpTtl(_) => {
                     // Apple has a kernel bug causing it to not honor IP_TTL on send,
                     // so the received packet will have the default TTL.
-                    assert_eq!(ttl, 128);
                     found_ttl = true;
                     continue;
                 }
