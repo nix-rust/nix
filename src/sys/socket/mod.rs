@@ -38,10 +38,10 @@ pub use self::addr::{SockaddrLike, SockaddrStorage};
 pub use self::addr::{AddressFamily, UnixAddr};
 #[cfg(not(solarish))]
 pub use self::addr::{AddressFamily, UnixAddr};
-#[cfg(not(any(solarish, target_os = "haiku", target_os = "redox")))]
+#[cfg(not(any(solarish, target_os = "haiku", target_os = "hurd", target_os = "redox")))]
 #[cfg(feature = "net")]
 pub use self::addr::{LinkAddr, SockaddrIn, SockaddrIn6};
-#[cfg(any(solarish, target_os = "haiku", target_os = "redox"))]
+#[cfg(any(solarish, target_os = "haiku", target_os = "hurd", target_os = "redox"))]
 #[cfg(feature = "net")]
 pub use self::addr::{SockaddrIn, SockaddrIn6};
 
@@ -256,13 +256,13 @@ libc_bitflags! {
         #[cfg(any(linux_android,
                   freebsdlike,
                   netbsdlike,
-                  target_os = "illumos"))]
+                  solarish))]
         SOCK_NONBLOCK;
         /// Set close-on-exec on the new descriptor
         #[cfg(any(linux_android,
                   freebsdlike,
                   netbsdlike,
-                  target_os = "illumos"))]
+                  solarish))]
         SOCK_CLOEXEC;
         /// Return `EPIPE` instead of raising `SIGPIPE`
         #[cfg(target_os = "netbsd")]
@@ -343,8 +343,7 @@ libc_bitflags! {
         #[cfg(any(linux_android,
                   netbsdlike,
                   target_os = "fuchsia",
-                  target_os = "freebsd",
-                  target_os = "solaris"))]
+                  target_os = "freebsd"))]
         MSG_WAITFORONE;
     }
 }
@@ -1798,7 +1797,7 @@ impl<S> MultiHeaders<S> {
             .enumerate()
             .map(|(ix, address)| {
                 let (ptr, cap) = match &mut cmsg_buffers {
-                    Some(v) => ((&mut v[ix * msg_controllen] as *mut u8), msg_controllen),
+                    Some(v) => (&mut v[ix * msg_controllen] as *mut u8, msg_controllen),
                     None => (std::ptr::null_mut(), 0),
                 };
                 let msg_hdr = unsafe { pack_mhdr_to_receive(std::ptr::null_mut(), 0, ptr, cap, address.as_mut_ptr()) };
@@ -1974,108 +1973,6 @@ impl<'a> Iterator for IoSliceIterator<'a> {
     }
 }
 
-// test contains both recvmmsg and timestaping which is linux only
-// there are existing tests for recvmmsg only in tests/
-#[cfg(target_os = "linux")]
-#[cfg(test)]
-mod test {
-    use crate::sys::socket::{AddressFamily, ControlMessageOwned};
-    use crate::*;
-    use std::str::FromStr;
-    use std::os::unix::io::AsRawFd;
-
-    #[cfg_attr(qemu, ignore)]
-    #[test]
-    fn test_recvmm2() -> crate::Result<()> {
-        use crate::sys::socket::{
-            sendmsg, setsockopt, socket, sockopt::Timestamping, MsgFlags, SockFlag, SockType,
-            SockaddrIn, TimestampingFlag,
-        };
-        use std::io::{IoSlice, IoSliceMut};
-
-        let sock_addr = SockaddrIn::from_str("127.0.0.1:6790").unwrap();
-
-        let ssock = socket(
-            AddressFamily::Inet,
-            SockType::Datagram,
-            SockFlag::empty(),
-            None,
-        )?;
-
-        let rsock = socket(
-            AddressFamily::Inet,
-            SockType::Datagram,
-            SockFlag::SOCK_NONBLOCK,
-            None,
-        )?;
-
-        crate::sys::socket::bind(rsock.as_raw_fd(), &sock_addr)?;
-
-        setsockopt(&rsock, Timestamping, &TimestampingFlag::all())?;
-
-        let sbuf = (0..400).map(|i| i as u8).collect::<Vec<_>>();
-
-        let mut recv_buf = vec![0; 1024];
-
-        let mut recv_iovs = Vec::new();
-        let mut pkt_iovs = Vec::new();
-
-        for (ix, chunk) in recv_buf.chunks_mut(256).enumerate() {
-            pkt_iovs.push(IoSliceMut::new(chunk));
-            if ix % 2 == 1 {
-                recv_iovs.push(pkt_iovs);
-                pkt_iovs = Vec::new();
-            }
-        }
-        drop(pkt_iovs);
-
-        let flags = MsgFlags::empty();
-        let iov1 = [IoSlice::new(&sbuf)];
-
-        let cmsg = cmsg_space!(crate::sys::socket::Timestamps);
-        sendmsg(ssock.as_raw_fd(), &iov1, &[], flags, Some(&sock_addr)).unwrap();
-
-        let mut data = super::MultiHeaders::<()>::preallocate(recv_iovs.len(), Some(cmsg));
-
-        let t = sys::time::TimeSpec::from_duration(std::time::Duration::from_secs(10));
-
-        let recv = super::recvmmsg(rsock.as_raw_fd(), &mut data, recv_iovs.iter_mut(), flags, Some(t))?;
-
-        for rmsg in recv {
-            #[cfg(not(any(qemu, target_arch = "aarch64")))]
-            let mut saw_time = false;
-            let mut recvd = 0;
-            for cmsg in rmsg.cmsgs() {
-                if let ControlMessageOwned::ScmTimestampsns(timestamps) = cmsg {
-                    let ts = timestamps.system;
-
-                    let sys_time =
-                        crate::time::clock_gettime(crate::time::ClockId::CLOCK_REALTIME)?;
-                    let diff = if ts > sys_time {
-                        ts - sys_time
-                    } else {
-                        sys_time - ts
-                    };
-                    assert!(std::time::Duration::from(diff).as_secs() < 60);
-                    #[cfg(not(any(qemu, target_arch = "aarch64")))]
-                    {
-                        saw_time = true;
-                    }
-                }
-            }
-
-            #[cfg(not(any(qemu, target_arch = "aarch64")))]
-            assert!(saw_time);
-
-            for iov in rmsg.iovs() {
-                recvd += iov.len();
-            }
-            assert_eq!(recvd, 400);
-        }
-
-        Ok(())
-    }
-}
 unsafe fn read_mhdr<'a, 'i, S>(
     mhdr: msghdr,
     r: isize,
@@ -2355,7 +2252,7 @@ pub fn accept(sockfd: RawFd) -> Result<RawFd> {
     netbsdlike,
     target_os = "emscripten",
     target_os = "fuchsia",
-    target_os = "illumos",
+    solarish,
     target_os = "linux",
 ))]
 pub fn accept4(sockfd: RawFd, flags: SockFlag) -> Result<RawFd> {
@@ -2564,23 +2461,3 @@ pub fn shutdown(df: RawFd, how: Shutdown) -> Result<()> {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    #[cfg(not(target_os = "redox"))]
-    #[test]
-    fn can_use_cmsg_space() {
-        let _ = cmsg_space!(u8);
-    }
-
-    #[cfg(not(any(linux_android, target_os = "redox", target_os = "haiku")))]
-    #[test]
-    fn can_open_routing_socket() {
-        let _ = super::socket(
-            super::AddressFamily::Route,
-            super::SockType::Raw,
-            super::SockFlag::empty(),
-            None,
-        )
-        .expect("Failed to open routing socket");
-    }
-}

@@ -77,7 +77,7 @@ libc_bitflags! {
         /// Do not reserve swap space for this mapping.
         ///
         /// This was removed in FreeBSD 11 and is unused in DragonFlyBSD.
-        #[cfg(not(any(freebsdlike, target_os = "aix")))]
+        #[cfg(not(any(freebsdlike, target_os = "aix", target_os = "hurd")))]
         MAP_NORESERVE;
         /// Populate page tables for a mapping.
         #[cfg(linux_android)]
@@ -154,6 +154,10 @@ libc_bitflags! {
         /// Pages will be discarded in the core dumps.
         #[cfg(target_os = "openbsd")]
         MAP_CONCEAL;
+        /// Attempt to place the mapping at exactly the address specified in `addr`.
+        /// it's a default behavior on OpenBSD.
+        #[cfg(netbsdlike)]
+        MAP_TRYFIXED;
     }
 }
 
@@ -264,7 +268,7 @@ libc_enum! {
         #[cfg(linux_android)]
         MADV_DODUMP,
         /// Specify that the application no longer needs the pages in the given range.
-        #[cfg(not(target_os = "aix"))]
+        #[cfg(not(any(target_os = "aix", target_os = "hurd")))]
         MADV_FREE,
         /// Request that the system not flush the current range to disk unless it needs to.
         #[cfg(freebsdlike)]
@@ -513,6 +517,7 @@ pub unsafe fn munmap(addr: NonNull<c_void>, len: size_t) -> Result<()> {
 /// [`MmapAdvise::MADV_FREE`].
 ///
 /// [`madvise(2)`]: https://man7.org/linux/man-pages/man2/madvise.2.html
+#[allow(rustdoc::broken_intra_doc_links)] // For Hurd as `MADV_FREE` is not available on it
 pub unsafe fn madvise(
     addr: NonNull<c_void>,
     length: size_t,

@@ -361,8 +361,7 @@ fn test_mkdirat_fail() {
 
 #[test]
 #[cfg(not(any(
-    target_os = "dragonfly",
-    target_os = "freebsd",
+    freebsdlike,
     apple_targets,
     target_os = "haiku",
     target_os = "redox"
@@ -381,9 +380,8 @@ fn test_mknod() {
 
 #[test]
 #[cfg(not(any(
-    target_os = "dragonfly",
-    target_os = "freebsd",
-    target_os = "illumos",
+    solarish,
+    freebsdlike,
     apple_targets,
     target_os = "haiku",
     target_os = "redox"
@@ -414,4 +412,76 @@ fn test_mknodat() {
     .st_mode as mode_t;
     assert_eq!(mode & libc::S_IFREG, libc::S_IFREG);
     assert_eq!(mode & libc::S_IRWXU, libc::S_IRWXU);
+}
+
+#[test]
+#[cfg(not(any(target_os = "redox", target_os = "haiku")))]
+fn test_futimens_unchanged() {
+    let tempdir = tempfile::tempdir().unwrap();
+    let fullpath = tempdir.path().join("file");
+    drop(File::create(&fullpath).unwrap());
+    let fd = fcntl::open(&fullpath, fcntl::OFlag::empty(), stat::Mode::empty())
+        .unwrap();
+
+    let old_atime = fs::metadata(fullpath.as_path())
+        .unwrap()
+        .accessed()
+        .unwrap();
+    let old_mtime = fs::metadata(fullpath.as_path())
+        .unwrap()
+        .modified()
+        .unwrap();
+
+    futimens(fd, &TimeSpec::UTIME_OMIT, &TimeSpec::UTIME_OMIT).unwrap();
+
+    let new_atime = fs::metadata(fullpath.as_path())
+        .unwrap()
+        .accessed()
+        .unwrap();
+    let new_mtime = fs::metadata(fullpath.as_path())
+        .unwrap()
+        .modified()
+        .unwrap();
+    assert_eq!(old_atime, new_atime);
+    assert_eq!(old_mtime, new_mtime);
+}
+
+#[test]
+#[cfg(not(any(target_os = "redox", target_os = "haiku")))]
+fn test_utimensat_unchanged() {
+    let _dr = crate::DirRestore::new();
+    let tempdir = tempfile::tempdir().unwrap();
+    let filename = "foo.txt";
+    let fullpath = tempdir.path().join(filename);
+    drop(File::create(&fullpath).unwrap());
+    let dirfd =
+        fcntl::open(tempdir.path(), fcntl::OFlag::empty(), stat::Mode::empty())
+            .unwrap();
+
+    let old_atime = fs::metadata(fullpath.as_path())
+        .unwrap()
+        .accessed()
+        .unwrap();
+    let old_mtime = fs::metadata(fullpath.as_path())
+        .unwrap()
+        .modified()
+        .unwrap();
+    utimensat(
+        Some(dirfd),
+        filename,
+        &TimeSpec::UTIME_OMIT,
+        &TimeSpec::UTIME_OMIT,
+        UtimensatFlags::NoFollowSymlink,
+    )
+    .unwrap();
+    let new_atime = fs::metadata(fullpath.as_path())
+        .unwrap()
+        .accessed()
+        .unwrap();
+    let new_mtime = fs::metadata(fullpath.as_path())
+        .unwrap()
+        .modified()
+        .unwrap();
+    assert_eq!(old_atime, new_atime);
+    assert_eq!(old_mtime, new_mtime);
 }

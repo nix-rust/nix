@@ -234,10 +234,9 @@ fn test_readlink() {
 /// The from_offset should be updated by the call to reflect
 /// the 3 bytes read (6).
 #[cfg(any(
-        target_os = "linux",
+        linux_android,
         // Not available until FreeBSD 13.0
         all(target_os = "freebsd", fbsd14),
-        target_os = "android"
 ))]
 #[test]
 // QEMU does not support copy_file_range. Skip under qemu
@@ -473,8 +472,7 @@ mod linux_android {
 }
 
 #[cfg(any(
-    target_os = "linux",
-    target_os = "android",
+    linux_android,
     target_os = "emscripten",
     target_os = "fuchsia",
     target_os = "wasi",
@@ -511,13 +509,11 @@ mod test_posix_fadvise {
 }
 
 #[cfg(any(
-    target_os = "linux",
-    target_os = "android",
-    target_os = "dragonfly",
+    linux_android,
+    freebsdlike,
     target_os = "emscripten",
     target_os = "fuchsia",
     target_os = "wasi",
-    target_os = "freebsd"
 ))]
 mod test_posix_fallocate {
 

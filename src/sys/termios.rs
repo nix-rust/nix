@@ -260,8 +260,13 @@ libc_enum! {
     ///
     /// B0 is special and will disable the port.
     #[cfg_attr(target_os = "haiku", repr(u8))]
+    #[cfg_attr(target_os = "hurd", repr(i32))]
     #[cfg_attr(all(apple_targets, target_pointer_width = "64"), repr(u64))]
-    #[cfg_attr(all(not(all(apple_targets, target_pointer_width = "64")), not(target_os = "haiku")), repr(u32))]
+    #[cfg_attr(all(
+        not(all(apple_targets, target_pointer_width = "64")),
+        not(target_os = "haiku"),
+        not(target_os = "hurd")
+        ), repr(u32))]
     #[non_exhaustive]
     pub enum BaudRate {
         B0,
@@ -917,19 +922,4 @@ pub fn tcgetsid<Fd: AsFd>(fd: Fd) -> Result<Pid> {
 
     Errno::result(res).map(Pid::from_raw)
 }
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-    use std::convert::TryFrom;
-
-    #[test]
-    fn try_from() {
-        assert_eq!(Ok(BaudRate::B0), BaudRate::try_from(libc::B0));
-        #[cfg(not(target_os = "haiku"))]
-        BaudRate::try_from(999999999).expect_err("assertion failed");
-        #[cfg(target_os = "haiku")]
-        BaudRate::try_from(99).expect_err("assertion failed");
-    }
 }

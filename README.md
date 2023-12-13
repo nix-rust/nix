@@ -99,6 +99,7 @@ The following targets are supported by `nix`:
     <li>x86_64-unknown-linux-gnux32</li>
     <li>x86_64-unknown-openbsd</li>
     <li>x86_64-unknown-redox</li>
+    <li>i686-unknown-hurd-gnu</li>
    </td>
   </tr>
 </table>

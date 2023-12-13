@@ -10,7 +10,10 @@ pub use libc::RLIM_INFINITY;
 use std::mem;
 
 cfg_if! {
-    if #[cfg(all(target_os = "linux", any(target_env = "gnu", target_env = "uclibc")))]{
+    if #[cfg(any(
+        all(target_os = "linux", any(target_env = "gnu", target_env = "uclibc")),
+        target_os = "hurd"
+    ))]{
         use libc::{__rlimit_resource_t, rlimit};
     } else if #[cfg(any(
         bsd,
@@ -38,7 +41,10 @@ libc_enum! {
     //
     // https://gcc.gnu.org/legacy-ml/gcc/2015-08/msg00441.html
     // https://github.com/rust-lang/libc/blob/master/src/unix/linux_like/linux/gnu/mod.rs
-    #[cfg_attr(all(target_os = "linux", any(target_env = "gnu", target_env = "uclibc")), repr(u32))]
+    #[cfg_attr(any(
+            all(target_os = "linux", any(target_env = "gnu", target_env = "uclibc")),
+            target_os = "hurd"
+        ), repr(u32))]
     #[cfg_attr(any(
             bsd,
             target_os = "android",
@@ -171,7 +177,10 @@ pub fn getrlimit(resource: Resource) -> Result<(rlim_t, rlim_t)> {
     let mut old_rlim = mem::MaybeUninit::<rlimit>::uninit();
 
     cfg_if! {
-        if #[cfg(all(target_os = "linux", any(target_env = "gnu", target_env = "uclibc")))]{
+        if #[cfg(any(
+            all(target_os = "linux", any(target_env = "gnu", target_env = "uclibc")),
+            target_os = "hurd"
+        ))] {
             let res = unsafe { libc::getrlimit(resource as __rlimit_resource_t, old_rlim.as_mut_ptr()) };
         } else {
             let res = unsafe { libc::getrlimit(resource as c_int, old_rlim.as_mut_ptr()) };
@@ -224,7 +233,10 @@ pub fn setrlimit(
         rlim_max: hard_limit,
     };
     cfg_if! {
-        if #[cfg(all(target_os = "linux", any(target_env = "gnu", target_env = "uclibc")))]{
+        if #[cfg(any(
+            all(target_os = "linux", any(target_env = "gnu", target_env = "uclibc")),
+            target_os = "hurd",
+        ))]{
             let res = unsafe { libc::setrlimit(resource as __rlimit_resource_t, &new_rlim as *const rlimit) };
         }else{
             let res = unsafe { libc::setrlimit(resource as c_int, &new_rlim as *const rlimit) };
@@ -382,30 +394,5 @@ pub fn getrusage(who: UsageWho) -> Result<Usage> {
         let mut rusage = mem::MaybeUninit::<rusage>::uninit();
         let res = libc::getrusage(who as c_int, rusage.as_mut_ptr());
         Errno::result(res).map(|_| Usage(rusage.assume_init()))
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::{getrusage, UsageWho};
-
-    #[test]
-    pub fn test_self_cpu_time() {
-        // Make sure some CPU time is used.
-        let mut numbers: Vec<i32> = (1..1_000_000).collect();
-        numbers.iter_mut().for_each(|item| *item *= 2);
-
-        // FIXME: this is here to help ensure the compiler does not optimize the whole
-        // thing away. Replace the assert with test::black_box once stabilized.
-        assert_eq!(numbers[100..200].iter().sum::<i32>(), 30_100);
-
-        let usage = getrusage(UsageWho::RUSAGE_SELF)
-            .expect("Failed to call getrusage for SELF");
-        let rusage = usage.as_ref();
-
-        let user = usage.user_time();
-        assert!(user.tv_sec() > 0 || user.tv_usec() > 0);
-        assert_eq!(user.tv_sec(), rusage.ru_utime.tv_sec);
-        assert_eq!(user.tv_usec(), rusage.ru_utime.tv_usec);
     }
 }

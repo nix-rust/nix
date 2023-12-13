@@ -569,12 +569,6 @@ fn test_aio_cancel_all() {
 }
 
 #[test]
-// On Cirrus on Linux, this test fails due to a glibc bug.
-// https://github.com/nix-rust/nix/issues/1099
-#[cfg_attr(target_os = "linux", ignore)]
-// On Cirrus, aio_suspend is failing with EINVAL
-// https://github.com/nix-rust/nix/issues/1361
-#[cfg_attr(apple_targets, ignore)]
 fn test_aio_suspend() {
     const INITIAL: &[u8] = b"abcdef123456";
     const WBUF: &[u8] = b"CDEFG";
@@ -623,4 +617,54 @@ fn test_aio_suspend() {
 
     assert_eq!(wcb.as_mut().aio_return().unwrap(), WBUF.len());
     assert_eq!(rcb.as_mut().aio_return().unwrap(), rlen);
+}
+
+/// aio_suspend relies on casting Rust Aio* struct pointers to libc::aiocb
+/// pointers.  This test ensures that such casts are valid.
+#[test]
+fn casting() {
+    let sev = SigevNotify::SigevNone;
+    let aiof = AioFsync::new(666, AioFsyncMode::O_SYNC, 0, sev);
+    assert_eq!(
+        aiof.as_ref() as *const libc::aiocb,
+        &aiof as *const AioFsync as *const libc::aiocb
+    );
+
+    let mut rbuf = [];
+    let aior = AioRead::new(666, 0, &mut rbuf, 0, sev);
+    assert_eq!(
+        aior.as_ref() as *const libc::aiocb,
+        &aior as *const AioRead as *const libc::aiocb
+    );
+
+    let wbuf = [];
+    let aiow = AioWrite::new(666, 0, &wbuf, 0, sev);
+    assert_eq!(
+        aiow.as_ref() as *const libc::aiocb,
+        &aiow as *const AioWrite as *const libc::aiocb
+    );
+}
+
+#[cfg(target_os = "freebsd")]
+#[test]
+fn casting_vectored() {
+    use std::io::{IoSlice, IoSliceMut};
+
+    let sev = SigevNotify::SigevNone;
+
+    let mut rbuf = [];
+    let mut rbufs = [IoSliceMut::new(&mut rbuf)];
+    let aiorv = AioReadv::new(666, 0, &mut rbufs[..], 0, sev);
+    assert_eq!(
+        aiorv.as_ref() as *const libc::aiocb,
+        &aiorv as *const AioReadv as *const libc::aiocb
+    );
+
+    let wbuf = [];
+    let wbufs = [IoSlice::new(&wbuf)];
+    let aiowv = AioWritev::new(666, 0, &wbufs, 0, sev);
+    assert_eq!(
+        aiowv.as_ref() as *const libc::aiocb,
+        &aiowv as *const AioWritev as *const libc::aiocb
+    );
 }

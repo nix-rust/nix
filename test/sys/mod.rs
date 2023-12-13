@@ -15,7 +15,8 @@ mod test_aio;
 #[cfg(not(any(
     target_os = "redox",
     target_os = "fuchsia",
-    target_os = "haiku"
+    target_os = "haiku",
+    target_os = "hurd"
 )))]
 mod test_ioctl;
 #[cfg(not(target_os = "redox"))]
@@ -47,15 +48,37 @@ mod test_fanotify;
 #[cfg(target_os = "linux")]
 mod test_inotify;
 mod test_pthread;
-#[cfg(any(
-    target_os = "android",
-    target_os = "dragonfly",
-    target_os = "freebsd",
-    target_os = "linux",
-    apple_targets,
-    target_os = "netbsd",
-    target_os = "openbsd"
-))]
+
+#[cfg(any(linux_android, freebsdlike, netbsdlike, apple_targets))]
 mod test_ptrace;
 #[cfg(linux_android)]
 mod test_timerfd;
+
+#[cfg(all(
+    any(
+        target_os = "freebsd",
+        solarish,
+        target_os = "linux",
+        target_os = "netbsd"
+    ),
+    feature = "time",
+    feature = "signal"
+))]
+mod test_timer;
+
+#[cfg(bsd)]
+mod test_event;
+mod test_statvfs;
+mod test_time;
+mod test_utsname;
+
+#[cfg(any(linux_android, freebsdlike, apple_targets, target_os = "openbsd"))]
+mod test_statfs;
+
+#[cfg(not(any(
+    target_os = "redox",
+    target_os = "fuchsia",
+    solarish,
+    target_os = "haiku"
+)))]
+mod test_resource;

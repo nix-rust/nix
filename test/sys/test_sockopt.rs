@@ -127,7 +127,7 @@ fn test_so_tcp_maxseg() {
     // platforms keep it even lower. This might fail if you've tuned your initial MSS to be larger
     // than 700
     cfg_if! {
-        if #[cfg(any(target_os = "android", target_os = "linux"))] {
+        if #[cfg(linux_android)] {
             let segsize: u32 = 873;
             assert!(initial < segsize);
             setsockopt(&rsock, sockopt::TcpMaxSeg, &segsize).unwrap();
@@ -152,7 +152,7 @@ fn test_so_tcp_maxseg() {
     // Actual max segment size takes header lengths into account, max IPv4 options (60 bytes) + max
     // TCP options (40 bytes) are subtracted from the requested maximum as a lower boundary.
     cfg_if! {
-        if #[cfg(any(target_os = "android", target_os = "linux"))] {
+        if #[cfg(linux_android)] {
             assert!((segsize - 100) <= actual);
             assert!(actual <= segsize);
         } else {
@@ -177,7 +177,7 @@ fn test_so_type() {
 
 /// getsockopt(_, sockopt::SockType) should gracefully handle unknown socket
 /// types.  Regression test for https://github.com/nix-rust/nix/issues/1819
-#[cfg(any(target_os = "android", target_os = "linux",))]
+#[cfg(linux_android)]
 #[test]
 fn test_so_type_unknown() {
     use nix::errno::Errno;
@@ -254,12 +254,7 @@ fn test_so_tcp_keepalive() {
     setsockopt(&fd, sockopt::KeepAlive, &true).unwrap();
     assert!(getsockopt(&fd, sockopt::KeepAlive).unwrap());
 
-    #[cfg(any(
-        target_os = "android",
-        target_os = "dragonfly",
-        target_os = "freebsd",
-        target_os = "linux"
-    ))]
+    #[cfg(any(linux_android, freebsdlike))]
     {
         let x = getsockopt(&fd, sockopt::TcpKeepIdle).unwrap();
         setsockopt(&fd, sockopt::TcpKeepIdle, &(x + 1)).unwrap();
@@ -303,7 +298,7 @@ fn test_get_mtu() {
 }
 
 #[test]
-#[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
+#[cfg(any(linux_android, target_os = "freebsd"))]
 fn test_ttl_opts() {
     let fd4 = socket(
         AddressFamily::Inet,
@@ -323,6 +318,34 @@ fn test_ttl_opts() {
     .unwrap();
     setsockopt(&fd6, sockopt::Ipv6Ttl, &1)
         .expect("setting ipv6ttl on an inet6 socket should succeed");
+}
+
+#[test]
+#[cfg(any(linux_android, target_os = "freebsd"))]
+fn test_multicast_ttl_opts_ipv4() {
+    let fd4 = socket(
+        AddressFamily::Inet,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )
+    .unwrap();
+    setsockopt(&fd4, sockopt::IpMulticastTtl, &2)
+        .expect("setting ipmulticastttl on an inet socket should succeed");
+}
+
+#[test]
+#[cfg(linux_android)]
+fn test_multicast_ttl_opts_ipv6() {
+    let fd6 = socket(
+        AddressFamily::Inet6,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )
+    .unwrap();
+    setsockopt(&fd6, sockopt::IpMulticastTtl, &2)
+        .expect("setting ipmulticastttl on an inet6 socket should succeed");
 }
 
 #[test]
@@ -369,7 +392,7 @@ fn test_dontfrag_opts() {
 }
 
 #[test]
-#[cfg(any(target_os = "android", apple_targets, target_os = "linux",))]
+#[cfg(any(linux_android, apple_targets))]
 // Disable the test under emulation because it fails in Cirrus-CI.  Lack
 // of QEMU support is suspected.
 #[cfg_attr(qemu, ignore)]
@@ -612,4 +635,75 @@ fn test_tcp_fast_open_connect() {
     assert!(!getsockopt(&fd, sockopt::TcpFastOpenConnect).expect(
         "getting TCP_FASTOPEN_CONNECT on an inet stream socket should succeed",
     ));
+}
+
+#[cfg(linux_android)]
+#[test]
+fn can_get_peercred_on_unix_socket() {
+    use nix::sys::socket::{socketpair, sockopt, SockFlag, SockType};
+
+    let (a, b) = socketpair(
+        AddressFamily::Unix,
+        SockType::Stream,
+        None,
+        SockFlag::empty(),
+    )
+    .unwrap();
+    let a_cred = getsockopt(&a, sockopt::PeerCredentials).unwrap();
+    let b_cred = getsockopt(&b, sockopt::PeerCredentials).unwrap();
+    assert_eq!(a_cred, b_cred);
+    assert_ne!(a_cred.pid(), 0);
+}
+
+#[test]
+fn is_socket_type_unix() {
+    use nix::sys::socket::{socketpair, sockopt, SockFlag, SockType};
+
+    let (a, _b) = socketpair(
+        AddressFamily::Unix,
+        SockType::Stream,
+        None,
+        SockFlag::empty(),
+    )
+    .unwrap();
+    let a_type = getsockopt(&a, sockopt::SockType).unwrap();
+    assert_eq!(a_type, SockType::Stream);
+}
+
+#[test]
+fn is_socket_type_dgram() {
+    use nix::sys::socket::{
+        getsockopt, sockopt, AddressFamily, SockFlag, SockType,
+    };
+
+    let s = socket(
+        AddressFamily::Inet,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )
+    .unwrap();
+    let s_type = getsockopt(&s, sockopt::SockType).unwrap();
+    assert_eq!(s_type, SockType::Datagram);
+}
+
+#[cfg(any(target_os = "freebsd", target_os = "linux"))]
+#[test]
+fn can_get_listen_on_tcp_socket() {
+    use nix::sys::socket::{
+        getsockopt, listen, socket, sockopt, AddressFamily, SockFlag, SockType,
+    };
+
+    let s = socket(
+        AddressFamily::Inet,
+        SockType::Stream,
+        SockFlag::empty(),
+        None,
+    )
+    .unwrap();
+    let s_listening = getsockopt(&s, sockopt::AcceptConn).unwrap();
+    assert!(!s_listening);
+    listen(&s, 10).unwrap();
+    let s_listening2 = getsockopt(&s, sockopt::AcceptConn).unwrap();
+    assert!(s_listening2);
 }

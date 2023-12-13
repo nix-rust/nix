@@ -13,7 +13,7 @@ macro_rules! skip {
 }
 
 cfg_if! {
-    if #[cfg(any(target_os = "android", target_os = "linux"))] {
+    if #[cfg(linux_android)] {
         #[macro_export] macro_rules! require_capability {
             ($name:expr, $capname:ident) => {
                 use ::caps::{Capability, CapSet, has_cap};
@@ -87,7 +87,7 @@ macro_rules! skip_if_not_root {
 }
 
 cfg_if! {
-    if #[cfg(any(target_os = "android", target_os = "linux"))] {
+    if #[cfg(linux_android)] {
         #[macro_export] macro_rules! skip_if_seccomp {
             ($name:expr) => {
                 if let Ok(s) = std::fs::read_to_string("/proc/self/status") {

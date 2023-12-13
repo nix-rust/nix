@@ -96,7 +96,7 @@ fn open_ptty_pair() -> (PtyMaster, File) {
         open(Path::new(&slave_name), OFlag::O_RDWR, stat::Mode::empty())
             .unwrap();
 
-    #[cfg(target_os = "illumos")]
+    #[cfg(solarish)]
     // TODO: rewrite using ioctl!
     #[allow(clippy::comparison_chain)]
     {

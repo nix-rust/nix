@@ -752,7 +752,7 @@ sockopt_impl!(
     libc::SO_TIMESTAMPING,
     super::TimestampingFlag
 );
-#[cfg(not(any(target_os = "aix", target_os = "haiku", target_os = "redox")))]
+#[cfg(not(any(target_os = "aix", target_os = "haiku", target_os = "hurd", target_os = "redox")))]
 sockopt_impl!(
     /// Enable or disable the receiving of the `SO_TIMESTAMP` control message.
     ReceiveTimestamp,
@@ -1327,7 +1327,7 @@ impl<'a> Set<'a, bool> for SetBool {
     }
 
     fn ffi_len(&self) -> socklen_t {
-        mem::size_of::<c_int>() as socklen_t
+        mem::size_of_val(&self.val) as socklen_t
     }
 }
 
@@ -1378,7 +1378,7 @@ impl<'a> Set<'a, u8> for SetU8 {
     }
 
     fn ffi_len(&self) -> socklen_t {
-        mem::size_of::<c_int>() as socklen_t
+        mem::size_of_val(&self.val) as socklen_t
     }
 }
 
@@ -1429,7 +1429,7 @@ impl<'a> Set<'a, usize> for SetUsize {
     }
 
     fn ffi_len(&self) -> socklen_t {
-        mem::size_of::<c_int>() as socklen_t
+        mem::size_of_val(&self.val) as socklen_t
     }
 }
 
@@ -1483,72 +1483,3 @@ impl<'a> Set<'a, OsString> for SetOsString<'a> {
     }
 }
 
-#[cfg(test)]
-mod test {
-    #[cfg(linux_android)]
-    #[test]
-    fn can_get_peercred_on_unix_socket() {
-        use super::super::*;
-
-        let (a, b) = socketpair(
-            AddressFamily::Unix,
-            SockType::Stream,
-            None,
-            SockFlag::empty(),
-        )
-        .unwrap();
-        let a_cred = getsockopt(&a, super::PeerCredentials).unwrap();
-        let b_cred = getsockopt(&b, super::PeerCredentials).unwrap();
-        assert_eq!(a_cred, b_cred);
-        assert_ne!(a_cred.pid(), 0);
-    }
-
-    #[test]
-    fn is_socket_type_unix() {
-        use super::super::*;
-
-        let (a, _b) = socketpair(
-            AddressFamily::Unix,
-            SockType::Stream,
-            None,
-            SockFlag::empty(),
-        )
-        .unwrap();
-        let a_type = getsockopt(&a, super::SockType).unwrap();
-        assert_eq!(a_type, SockType::Stream);
-    }
-
-    #[test]
-    fn is_socket_type_dgram() {
-        use super::super::*;
-
-        let s = socket(
-            AddressFamily::Inet,
-            SockType::Datagram,
-            SockFlag::empty(),
-            None,
-        )
-        .unwrap();
-        let s_type = getsockopt(&s, super::SockType).unwrap();
-        assert_eq!(s_type, SockType::Datagram);
-    }
-
-    #[cfg(any(target_os = "freebsd", target_os = "linux"))]
-    #[test]
-    fn can_get_listen_on_tcp_socket() {
-        use super::super::*;
-
-        let s = socket(
-            AddressFamily::Inet,
-            SockType::Stream,
-            SockFlag::empty(),
-            None,
-        )
-        .unwrap();
-        let s_listening = getsockopt(&s, super::AcceptConn).unwrap();
-        assert!(!s_listening);
-        listen(&s, 10).unwrap();
-        let s_listening2 = getsockopt(&s, super::AcceptConn).unwrap();
-        assert!(s_listening2);
-    }
-}

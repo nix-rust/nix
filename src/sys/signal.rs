@@ -17,6 +17,7 @@ use std::str::FromStr;
 
 #[cfg(not(any(
     target_os = "fuchsia",
+    target_os = "hurd",
     target_os = "openbsd",
     target_os = "redox"
 )))]
@@ -431,6 +432,7 @@ libc_bitflags! {
         SA_NOCLDSTOP;
         /// When catching a [`Signal::SIGCHLD`] signal, the system will not
         /// create zombie processes when children of the calling process exit.
+        #[cfg(not(target_os = "hurd"))]
         SA_NOCLDWAIT;
         /// Further occurrences of the delivered signal are not masked during
         /// the execution of the handler.
@@ -1068,14 +1070,14 @@ feature! {
 #[cfg(target_os = "freebsd")]
 pub type type_of_thread_id = libc::lwpid_t;
 /// Identifies a thread for [`SigevNotify::SigevThreadId`]
-#[cfg(any(target_env = "gnu", target_env = "uclibc"))]
+#[cfg(all(not(target_os = "hurd"), any(target_env = "gnu", target_env = "uclibc")))]
 pub type type_of_thread_id = libc::pid_t;
 
 /// Specifies the notification method used by a [`SigEvent`]
 // sigval is actually a union of a int and a void*.  But it's never really used
 // as a pointer, because neither libc nor the kernel ever dereference it.  nix
 // therefore presents it as an intptr_t, which is how kevent uses it.
-#[cfg(not(any(target_os = "fuchsia", target_os = "openbsd", target_os = "redox")))]
+#[cfg(not(any(target_os = "fuchsia", target_os = "hurd", target_os = "openbsd", target_os = "redox")))]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum SigevNotify {
     /// No notification will be delivered
@@ -1128,6 +1130,7 @@ pub enum SigevNotify {
 
 #[cfg(not(any(
     target_os = "fuchsia",
+    target_os = "hurd",
     target_os = "openbsd",
     target_os = "redox"
 )))]
@@ -1374,273 +1377,5 @@ mod sigevent {
             SigEvent{ sigevent: *sigevent }
         }
     }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    #[cfg(not(target_os = "redox"))]
-    use std::thread;
-
-    #[test]
-    fn test_contains() {
-        let mut mask = SigSet::empty();
-        mask.add(SIGUSR1);
-
-        assert!(mask.contains(SIGUSR1));
-        assert!(!mask.contains(SIGUSR2));
-
-        let all = SigSet::all();
-        assert!(all.contains(SIGUSR1));
-        assert!(all.contains(SIGUSR2));
-    }
-
-    #[test]
-    fn test_clear() {
-        let mut set = SigSet::all();
-        set.clear();
-        for signal in Signal::iterator() {
-            assert!(!set.contains(signal));
-        }
-    }
-
-    #[test]
-    fn test_from_str_round_trips() {
-        for signal in Signal::iterator() {
-            assert_eq!(signal.as_ref().parse::<Signal>().unwrap(), signal);
-            assert_eq!(signal.to_string().parse::<Signal>().unwrap(), signal);
-        }
-    }
-
-    #[test]
-    fn test_from_str_invalid_value() {
-        let errval = Err(Errno::EINVAL);
-        assert_eq!("NOSIGNAL".parse::<Signal>(), errval);
-        assert_eq!("kill".parse::<Signal>(), errval);
-        assert_eq!("9".parse::<Signal>(), errval);
-    }
-
-    #[test]
-    fn test_extend() {
-        let mut one_signal = SigSet::empty();
-        one_signal.add(SIGUSR1);
-
-        let mut two_signals = SigSet::empty();
-        two_signals.add(SIGUSR2);
-        two_signals.extend(&one_signal);
-
-        assert!(two_signals.contains(SIGUSR1));
-        assert!(two_signals.contains(SIGUSR2));
-    }
-
-    #[test]
-    #[cfg(not(target_os = "redox"))]
-    fn test_thread_signal_set_mask() {
-        thread::spawn(|| {
-            let prev_mask = SigSet::thread_get_mask()
-                .expect("Failed to get existing signal mask!");
-
-            let mut test_mask = prev_mask;
-            test_mask.add(SIGUSR1);
-
-            test_mask.thread_set_mask().expect("assertion failed");
-            let new_mask =
-                SigSet::thread_get_mask().expect("Failed to get new mask!");
-
-            assert!(new_mask.contains(SIGUSR1));
-            assert!(!new_mask.contains(SIGUSR2));
-
-            prev_mask
-                .thread_set_mask()
-                .expect("Failed to revert signal mask!");
-        })
-        .join()
-        .unwrap();
-    }
-
-    #[test]
-    #[cfg(not(target_os = "redox"))]
-    fn test_thread_signal_block() {
-        thread::spawn(|| {
-            let mut mask = SigSet::empty();
-            mask.add(SIGUSR1);
-
-            mask.thread_block().expect("assertion failed");
-
-            assert!(SigSet::thread_get_mask().unwrap().contains(SIGUSR1));
-        })
-        .join()
-        .unwrap();
-    }
-
-    #[test]
-    #[cfg(not(target_os = "redox"))]
-    fn test_thread_signal_unblock() {
-        thread::spawn(|| {
-            let mut mask = SigSet::empty();
-            mask.add(SIGUSR1);
-
-            mask.thread_unblock().expect("assertion failed");
-
-            assert!(!SigSet::thread_get_mask().unwrap().contains(SIGUSR1));
-        })
-        .join()
-        .unwrap();
-    }
-
-    #[test]
-    #[cfg(not(target_os = "redox"))]
-    fn test_thread_signal_swap() {
-        thread::spawn(|| {
-            let mut mask = SigSet::empty();
-            mask.add(SIGUSR1);
-            mask.thread_block().unwrap();
-
-            assert!(SigSet::thread_get_mask().unwrap().contains(SIGUSR1));
-
-            let mut mask2 = SigSet::empty();
-            mask2.add(SIGUSR2);
-
-            let oldmask =
-                mask2.thread_swap_mask(SigmaskHow::SIG_SETMASK).unwrap();
-
-            assert!(oldmask.contains(SIGUSR1));
-            assert!(!oldmask.contains(SIGUSR2));
-
-            assert!(SigSet::thread_get_mask().unwrap().contains(SIGUSR2));
-        })
-        .join()
-        .unwrap();
-    }
-
-    #[test]
-    fn test_from_and_into_iterator() {
-        let sigset = SigSet::from_iter(vec![Signal::SIGUSR1, Signal::SIGUSR2]);
-        let signals = sigset.into_iter().collect::<Vec<Signal>>();
-        assert_eq!(signals, [Signal::SIGUSR1, Signal::SIGUSR2]);
-    }
-
-    #[test]
-    #[cfg(not(target_os = "redox"))]
-    fn test_sigaction() {
-        thread::spawn(|| {
-            extern "C" fn test_sigaction_handler(_: libc::c_int) {}
-            extern "C" fn test_sigaction_action(
-                _: libc::c_int,
-                _: *mut libc::siginfo_t,
-                _: *mut libc::c_void,
-            ) {
-            }
-
-            let handler_sig = SigHandler::Handler(test_sigaction_handler);
-
-            let flags =
-                SaFlags::SA_ONSTACK | SaFlags::SA_RESTART | SaFlags::SA_SIGINFO;
-
-            let mut mask = SigSet::empty();
-            mask.add(SIGUSR1);
-
-            let action_sig = SigAction::new(handler_sig, flags, mask);
-
-            assert_eq!(
-                action_sig.flags(),
-                SaFlags::SA_ONSTACK | SaFlags::SA_RESTART
-            );
-            assert_eq!(action_sig.handler(), handler_sig);
-
-            mask = action_sig.mask();
-            assert!(mask.contains(SIGUSR1));
-            assert!(!mask.contains(SIGUSR2));
-
-            let handler_act = SigHandler::SigAction(test_sigaction_action);
-            let action_act = SigAction::new(handler_act, flags, mask);
-            assert_eq!(action_act.handler(), handler_act);
-
-            let action_dfl = SigAction::new(SigHandler::SigDfl, flags, mask);
-            assert_eq!(action_dfl.handler(), SigHandler::SigDfl);
-
-            let action_ign = SigAction::new(SigHandler::SigIgn, flags, mask);
-            assert_eq!(action_ign.handler(), SigHandler::SigIgn);
-        })
-        .join()
-        .unwrap();
-    }
-
-    #[test]
-    #[cfg(not(target_os = "redox"))]
-    fn test_sigwait() {
-        thread::spawn(|| {
-            let mut mask = SigSet::empty();
-            mask.add(SIGUSR1);
-            mask.add(SIGUSR2);
-            mask.thread_block().unwrap();
-
-            raise(SIGUSR1).unwrap();
-            assert_eq!(mask.wait().unwrap(), SIGUSR1);
-        })
-        .join()
-        .unwrap();
-    }
-
-    #[test]
-    fn test_from_sigset_t_unchecked() {
-        let src_set = SigSet::empty();
-        let set = unsafe { SigSet::from_sigset_t_unchecked(src_set.sigset) };
-
-        for signal in Signal::iterator() {
-            assert!(!set.contains(signal));
-        }
-
-        let src_set = SigSet::all();
-        let set = unsafe { SigSet::from_sigset_t_unchecked(src_set.sigset) };
-
-        for signal in Signal::iterator() {
-            assert!(set.contains(signal));
-        }
-    }
-
-    #[test]
-    fn test_eq_empty() {
-        let set0 = SigSet::empty();
-        let set1 = SigSet::empty();
-        assert_eq!(set0, set1);
-    }
-
-    #[test]
-    fn test_eq_all() {
-        let set0 = SigSet::all();
-        let set1 = SigSet::all();
-        assert_eq!(set0, set1);
-    }
-
-    #[test]
-    fn test_hash_empty() {
-        use std::collections::hash_map::DefaultHasher;
-
-        let set0 = SigSet::empty();
-        let mut h0 = DefaultHasher::new();
-        set0.hash(&mut h0);
-
-        let set1 = SigSet::empty();
-        let mut h1 = DefaultHasher::new();
-        set1.hash(&mut h1);
-
-        assert_eq!(h0.finish(), h1.finish());
-    }
-
-    #[test]
-    fn test_hash_all() {
-        use std::collections::hash_map::DefaultHasher;
-
-        let set0 = SigSet::all();
-        let mut h0 = DefaultHasher::new();
-        set0.hash(&mut h0);
-
-        let set1 = SigSet::all();
-        let mut h1 = DefaultHasher::new();
-        set1.hash(&mut h1);
-
-        assert_eq!(h0.finish(), h1.finish());
     }
 }

@@ -104,7 +104,13 @@ impl Statvfs {
     }
 
     /// Get the file system id
+    #[cfg(not(target_os = "hurd"))]
     pub fn filesystem_id(&self) -> c_ulong {
+        self.0.f_fsid
+    }
+    /// Get the file system id
+    #[cfg(target_os = "hurd")]
+    pub fn filesystem_id(&self) -> u64 {
         self.0.f_fsid
     }
 
@@ -140,22 +146,5 @@ pub fn fstatvfs<Fd: AsFd>(fd: Fd) -> Result<Statvfs> {
         let mut stat = mem::MaybeUninit::<libc::statvfs>::uninit();
         Errno::result(libc::fstatvfs(fd.as_fd().as_raw_fd(), stat.as_mut_ptr()))
             .map(|_| Statvfs(stat.assume_init()))
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use crate::sys::statvfs::*;
-    use std::fs::File;
-
-    #[test]
-    fn statvfs_call() {
-        statvfs(&b"/"[..]).unwrap();
-    }
-
-    #[test]
-    fn fstatvfs_call() {
-        let root = File::open("/").unwrap();
-        fstatvfs(&root).unwrap();
     }
 }
