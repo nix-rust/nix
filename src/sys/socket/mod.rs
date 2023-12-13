@@ -1039,7 +1039,7 @@ impl ControlMessageOwned {
                 let tclass = unsafe { ptr::read_unaligned(p as *const libc::c_int) };
                 ControlMessageOwned::Ipv6TClass(tclass)
             },
-            #[cfg(any(apple_targets, target_os = "freebsd"))]
+            #[cfg(any(apple_targets))]
             #[cfg(feature = "net")]
             (libc::IPPROTO_IP, libc::IP_RECVTTL) => {
                 let ttl = unsafe { ptr::read_unaligned(p as *const libc::c_int) };
