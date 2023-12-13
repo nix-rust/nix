@@ -1364,6 +1364,7 @@ impl<'a> ControlMessage<'a> {
                 target_os = "freebsd",
             ))]
             #[cfg(feature = "net")]
+            #[allow(clippy::unnecessary_cast)]
             ControlMessage::IpTos(tos) => {
                 tos as *const _ as *const u8
             },
