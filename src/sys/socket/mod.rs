@@ -1229,11 +1229,15 @@ pub enum ControlMessage<'a> {
 
     #[cfg(any(
         apple_targets,
-        linux_android,
         target_os = "freebsd",
     ))]
     #[cfg(feature = "net")]
     IpTos(&'a libc::c_int),
+    #[cfg(any(
+        linux_android,
+    ))]
+    #[cfg(feature = "net")]
+    IpTos(&'a u8),
 
     #[cfg(any(
         apple_targets,
