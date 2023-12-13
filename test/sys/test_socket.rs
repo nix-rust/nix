@@ -2920,7 +2920,9 @@ fn can_open_routing_socket() {
 #[test]
 pub fn test_recv_iptos_ipttl() {
     use nix::sys::socket::sockopt::{IpRecvTos, IpRecvTtl};
-    use nix::sys::socket::{bind, SockFlag, SockType, SockaddrIn, ControlMessage};
+    use nix::sys::socket::{
+        bind, ControlMessage, SockFlag, SockType, SockaddrIn,
+    };
     use nix::sys::socket::{getsockname, setsockopt, socket};
     use nix::sys::socket::{recvmsg, sendmsg, ControlMessageOwned, MsgFlags};
     use std::io::{IoSlice, IoSliceMut};
@@ -2959,8 +2961,14 @@ pub fn test_recv_iptos_ipttl() {
             None,
         )
         .expect("send socket failed");
-        sendmsg(send.as_raw_fd(), &iov, &[cmsg_tos, cmsg_ttl], MsgFlags::empty(), Some(&sa))
-            .expect("sendmsg failed");
+        sendmsg(
+            send.as_raw_fd(),
+            &iov,
+            &[cmsg_tos, cmsg_ttl],
+            MsgFlags::empty(),
+            Some(&sa),
+        )
+        .expect("sendmsg failed");
     }
 
     {
@@ -3003,7 +3011,7 @@ pub fn test_recv_iptos_ipttl() {
                 _ => panic!("unexpected control msg"),
             };
         }
-        assert_eq!(found_tos && found_ttl, true);
+        assert!(found_tos && found_ttl);
 
         assert_eq!(msg.bytes, 8);
         assert_eq!(*iovec[0], [1u8, 2, 3, 4, 5, 6, 7, 8]);
