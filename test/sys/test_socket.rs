@@ -2917,6 +2917,20 @@ fn can_open_routing_socket() {
 }
 
 #[cfg(any(apple_targets, linux_android))]
+// qemu doesn't seem to be emulating this correctly in these architectures
+#[cfg_attr(
+    all(
+        qemu,
+        any(
+            target_arch = "mips",
+            target_arch = "mips32r6",
+            target_arch = "mips64",
+            target_arch = "mips64r6",
+            target_arch = "powerpc64",
+        )
+    ),
+    ignore
+)]
 #[test]
 pub fn test_recv_iptos_ipttl() {
     use nix::sys::socket::sockopt::{IpRecvTos, IpRecvTtl};
@@ -2952,7 +2966,7 @@ pub fn test_recv_iptos_ipttl() {
         let slice = [1u8, 2, 3, 4, 5, 6, 7, 8];
         let iov = [IoSlice::new(&slice)];
         let cmsg_tos = ControlMessage::IpTos(&0b10);
-        // let cmsg_ttl = ControlMessage::IpTtl(&128);
+        let cmsg_ttl = ControlMessage::IpTtl(&128);
 
         let send = socket(
             AddressFamily::Inet,
@@ -2964,8 +2978,7 @@ pub fn test_recv_iptos_ipttl() {
         sendmsg(
             send.as_raw_fd(),
             &iov,
-            // &[cmsg_tos, cmsg_ttl],
-            &[cmsg_tos],
+            &[cmsg_tos, cmsg_ttl],
             MsgFlags::empty(),
             Some(&sa),
         )
@@ -2997,8 +3010,8 @@ pub fn test_recv_iptos_ipttl() {
                     continue;
                 }
                 #[cfg(not(apple_targets))]
-                ControlMessageOwned::IpTtl(_ttl) => {
-                    // assert_eq!(ttl, 128);
+                ControlMessageOwned::IpTtl(ttl) => {
+                    assert_eq!(ttl, 128);
                     found_ttl = true;
                     continue;
                 }
