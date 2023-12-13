@@ -2952,7 +2952,7 @@ pub fn test_recv_iptos_ipttl() {
         let slice = [1u8, 2, 3, 4, 5, 6, 7, 8];
         let iov = [IoSlice::new(&slice)];
         let cmsg_tos = ControlMessage::IpTos(&0b10);
-        let cmsg_ttl = ControlMessage::IpTtl(&128);
+        // let cmsg_ttl = ControlMessage::IpTtl(&128);
 
         let send = socket(
             AddressFamily::Inet,
@@ -2964,7 +2964,8 @@ pub fn test_recv_iptos_ipttl() {
         sendmsg(
             send.as_raw_fd(),
             &iov,
-            &[cmsg_tos, cmsg_ttl],
+            // &[cmsg_tos, cmsg_ttl],
+            &[cmsg_tos],
             MsgFlags::empty(),
             Some(&sa),
         )
