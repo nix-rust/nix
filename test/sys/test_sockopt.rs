@@ -103,6 +103,31 @@ fn test_so_buf() {
     assert!(actual >= bufsize);
 }
 
+#[cfg(target_os = "freebsd")]
+#[test]
+fn test_so_listen_q_limit() {
+    use nix::sys::socket::{bind, listen, SockaddrIn};
+    use std::net::SocketAddrV4;
+    use std::str::FromStr;
+
+    let std_sa = SocketAddrV4::from_str("127.0.0.1:4004").unwrap();
+    let sock_addr = SockaddrIn::from(std_sa);
+
+    let rsock = socket(
+        AddressFamily::Inet,
+        SockType::Stream,
+        SockFlag::empty(),
+        SockProtocol::Tcp,
+    )
+    .unwrap();
+    bind(rsock.as_raw_fd(), &sock_addr).unwrap();
+    let pre_limit = getsockopt(&rsock, sockopt::ListenQLimit).unwrap();
+    assert_eq!(pre_limit, 0);
+    listen(&rsock, 42).unwrap();
+    let post_limit = getsockopt(&rsock, sockopt::ListenQLimit).unwrap();
+    assert_eq!(post_limit, 42);
+}
+
 #[test]
 fn test_so_tcp_maxseg() {
     use nix::sys::socket::{accept, bind, connect, listen, SockaddrIn};

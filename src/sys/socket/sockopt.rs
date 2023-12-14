@@ -522,6 +522,17 @@ sockopt_impl!(
     libc::SO_PEERCRED,
     super::UnixCredentials
 );
+#[cfg(target_os = "freebsd")]
+#[cfg(feature = "net")]
+sockopt_impl!(
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
+    /// Get backlog limit of the socket
+    ListenQLimit,
+    GetOnly,
+    libc::SOL_SOCKET,
+    libc::SO_LISTENQLIMIT,
+    u32
+);
 #[cfg(apple_targets)]
 #[cfg(feature = "net")]
 sockopt_impl!(
