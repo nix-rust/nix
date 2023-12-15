@@ -1054,6 +1054,15 @@ sockopt_impl!(
     libc::IPV6_DONTFRAG,
     bool
 );
+#[cfg(any(target_os = "netbsd", target_os = "freebsd"))]
+sockopt_impl!(
+    /// Get the underlying TCP session information.
+    TcpInfo,
+    GetOnly,
+    libc::IPPROTO_TCP,
+    libc::TCP_INFO,
+    libc::tcp_info
+);
 
 #[allow(missing_docs)]
 // Not documented by Linux!
