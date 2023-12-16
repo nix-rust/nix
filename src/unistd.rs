@@ -12,6 +12,16 @@ use crate::fcntl::at_rawfd;
 use crate::fcntl::AtFlags;
 
 #[cfg(feature = "fs")]
+#[cfg(any(
+    linux_android,
+    freebsdlike,
+    solarish,
+    netbsdlike,
+    target_os = "emscripten",
+    target_os = "fuchsia",
+    target_os = "hurd",
+    target_os = "redox",
+))]
 use crate::fcntl::OFlag;
 #[cfg(all(feature = "fs", bsd))]
 use crate::sys::stat::FileFlag;
