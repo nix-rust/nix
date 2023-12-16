@@ -12,7 +12,7 @@ use crate::fcntl::at_rawfd;
 use crate::fcntl::AtFlags;
 
 #[cfg(feature = "fs")]
-use crate::fcntl::{fcntl, FcntlArg::F_SETFD, FdFlag, OFlag};
+use crate::fcntl::OFlag;
 #[cfg(all(feature = "fs", bsd))]
 use crate::sys::stat::FileFlag;
 #[cfg(feature = "fs")]
@@ -426,30 +426,22 @@ pub fn dup2(oldfd: RawFd, newfd: RawFd) -> Result<RawFd> {
 }
 
 /// Create a new copy of the specified file descriptor using the specified fd
-/// and flags (see [dup(2)](https://man7.org/linux/man-pages/man2/dup.2.html)).
+/// and flags (see [`dup(2)`](https://man7.org/linux/man-pages/man2/dup.2.html)).
 ///
 /// This function behaves similar to `dup2()` but allows for flags to be
 /// specified.
+#[cfg(any(
+    netbsdlike,
+    solarish,
+    target_os = "freebsd",
+    target_os = "fuchsia",
+    target_os = "hurd",
+    target_os = "linux"
+))]
 pub fn dup3(oldfd: RawFd, newfd: RawFd, flags: OFlag) -> Result<RawFd> {
-    dup3_polyfill(oldfd, newfd, flags)
-}
+    let res = unsafe { libc::dup3(oldfd, newfd, flags.bits()) };
 
-#[inline]
-fn dup3_polyfill(oldfd: RawFd, newfd: RawFd, flags: OFlag) -> Result<RawFd> {
-    if oldfd == newfd {
-        return Err(Errno::EINVAL);
-    }
-
-    let fd = dup2(oldfd, newfd)?;
-
-    if flags.contains(OFlag::O_CLOEXEC) {
-        if let Err(e) = fcntl(fd, F_SETFD(FdFlag::FD_CLOEXEC)) {
-            let _ = close(fd);
-            return Err(e);
-        }
-    }
-
-    Ok(fd)
+    Errno::result(res)
 }
 
 /// Change the current working directory of the calling process (see
