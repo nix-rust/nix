@@ -1,25 +1,18 @@
+#[macro_use]
 mod common;
-
-// Implementation note: to allow unprivileged users to run it, this test makes
-// use of user and mount namespaces. On systems that allow unprivileged user
-// namespaces (Linux >= 3.8 compiled with CONFIG_USER_NS), the test should run
-// without root.
 
 #[cfg(target_os = "linux")]
 mod test_mount {
     use std::fs::{self, File};
-    use std::io::{self, Read, Write};
+    use std::io::{Read, Write};
     use std::os::unix::fs::OpenOptionsExt;
     use std::os::unix::fs::PermissionsExt;
-    use std::process::{self, Command};
+    use std::process::Command;
 
     use libc::{EACCES, EROFS};
 
-    use nix::errno::Errno;
     use nix::mount::{mount, umount, MsFlags};
-    use nix::sched::{unshare, CloneFlags};
     use nix::sys::stat::{self, Mode};
-    use nix::unistd::getuid;
 
     static SCRIPT_CONTENTS: &[u8] = b"#!/bin/sh
 exit 23";
@@ -27,8 +20,13 @@ exit 23";
     const EXPECTED_STATUS: i32 = 23;
 
     const NONE: Option<&'static [u8]> = None;
-    #[allow(clippy::bind_instead_of_map)] // False positive
-    pub fn test_mount_tmpfs_without_flags_allows_rwx() {
+
+    #[test]
+    fn test_mount_tmpfs_without_flags_allows_rwx() {
+        require_capability!(
+            "test_mount_tmpfs_without_flags_allows_rwx",
+            CAP_SYS_ADMIN
+        );
         let tempdir = tempfile::tempdir().unwrap();
 
         mount(
@@ -48,28 +46,6 @@ exit 23";
             .write(true)
             .mode((Mode::S_IRWXU | Mode::S_IRWXG | Mode::S_IRWXO).bits())
             .open(&test_path)
-            .or_else(|e| {
-                if Errno::from_raw(e.raw_os_error().unwrap())
-                    == Errno::EOVERFLOW
-                {
-                    // Skip tests on certain Linux kernels which have a bug
-                    // regarding tmpfs in namespaces.
-                    // Ubuntu 14.04 and 16.04 are known to be affected; 16.10 is
-                    // not.  There is no legitimate reason for open(2) to return
-                    // EOVERFLOW here.
-                    // https://bugs.launchpad.net/ubuntu/+source/linux/+bug/1659087
-                    let stderr = io::stderr();
-                    let mut handle = stderr.lock();
-                    writeln!(
-                        handle,
-                        "Buggy Linux kernel detected.  Skipping test."
-                    )
-                    .unwrap();
-                    process::exit(0);
-                } else {
-                    panic!("open failed: {e}");
-                }
-            })
             .and_then(|mut f| f.write(SCRIPT_CONTENTS))
             .unwrap_or_else(|e| panic!("write failed: {e}"));
 
@@ -93,7 +69,9 @@ exit 23";
         umount(tempdir.path()).unwrap_or_else(|e| panic!("umount failed: {e}"));
     }
 
-    pub fn test_mount_rdonly_disallows_write() {
+    #[test]
+    fn test_mount_rdonly_disallows_write() {
+        require_capability!("test_mount_rdonly_disallows_write", CAP_SYS_ADMIN);
         let tempdir = tempfile::tempdir().unwrap();
 
         mount(
@@ -117,7 +95,9 @@ exit 23";
         umount(tempdir.path()).unwrap_or_else(|e| panic!("umount failed: {e}"));
     }
 
-    pub fn test_mount_noexec_disallows_exec() {
+    #[test]
+    fn test_mount_noexec_disallows_exec() {
+        require_capability!("test_mount_noexec_disallows_exec", CAP_SYS_ADMIN);
         let tempdir = tempfile::tempdir().unwrap();
 
         mount(
@@ -165,7 +145,9 @@ exit 23";
         umount(tempdir.path()).unwrap_or_else(|e| panic!("umount failed: {e}"));
     }
 
-    pub fn test_mount_bind() {
+    #[test]
+    fn test_mount_bind() {
+        require_capability!("test_mount_bind", CAP_SYS_ADMIN);
         let tempdir = tempfile::tempdir().unwrap();
         let file_name = "test";
 
@@ -202,66 +184,4 @@ exit 23";
             .unwrap_or_else(|e| panic!("read failed: {e}"));
         assert_eq!(buf, SCRIPT_CONTENTS);
     }
-
-    pub fn setup_namespaces() {
-        // Hold on to the uid in the parent namespace.
-        let uid = getuid();
-
-        unshare(CloneFlags::CLONE_NEWNS | CloneFlags::CLONE_NEWUSER).unwrap_or_else(|e| {
-            let stderr = io::stderr();
-            let mut handle = stderr.lock();
-            writeln!(handle,
-                     "unshare failed: {e}. Are unprivileged user namespaces available?").unwrap();
-            writeln!(handle, "mount is not being tested").unwrap();
-            // Exit with success because not all systems support unprivileged user namespaces, and
-            // that's not what we're testing for.
-            process::exit(0);
-        });
-
-        // Map user as uid 1000.
-        fs::OpenOptions::new()
-            .write(true)
-            .open("/proc/self/uid_map")
-            .and_then(|mut f| f.write(format!("1000 {uid} 1\n").as_bytes()))
-            .unwrap_or_else(|e| panic!("could not write uid map: {e}"));
-    }
 }
-
-// Test runner
-
-/// Mimic normal test output (hackishly).
-#[cfg(target_os = "linux")]
-macro_rules! run_tests {
-    ( $($test_fn:ident),* ) => {{
-        println!();
-
-        $(
-            print!("test test_mount::{} ... ", stringify!($test_fn));
-            $test_fn();
-            println!("ok");
-        )*
-
-        println!();
-    }}
-}
-
-#[cfg(target_os = "linux")]
-fn main() {
-    use test_mount::{
-        setup_namespaces, test_mount_bind, test_mount_noexec_disallows_exec,
-        test_mount_rdonly_disallows_write,
-        test_mount_tmpfs_without_flags_allows_rwx,
-    };
-    skip_if_cirrus!("Fails for an unknown reason Cirrus CI.  Bug #1351");
-    setup_namespaces();
-
-    run_tests!(
-        test_mount_tmpfs_without_flags_allows_rwx,
-        test_mount_rdonly_disallows_write,
-        test_mount_noexec_disallows_exec,
-        test_mount_bind
-    );
-}
-
-#[cfg(not(target_os = "linux"))]
-fn main() {}
