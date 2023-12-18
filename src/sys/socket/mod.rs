@@ -38,10 +38,20 @@ pub use self::addr::{SockaddrLike, SockaddrStorage};
 pub use self::addr::{AddressFamily, UnixAddr};
 #[cfg(not(solarish))]
 pub use self::addr::{AddressFamily, UnixAddr};
-#[cfg(not(any(solarish, target_os = "haiku", target_os = "hurd", target_os = "redox")))]
+#[cfg(not(any(
+    solarish,
+    target_os = "haiku",
+    target_os = "hurd",
+    target_os = "redox"
+)))]
 #[cfg(feature = "net")]
 pub use self::addr::{LinkAddr, SockaddrIn, SockaddrIn6};
-#[cfg(any(solarish, target_os = "haiku", target_os = "hurd", target_os = "redox"))]
+#[cfg(any(
+    solarish,
+    target_os = "haiku",
+    target_os = "hurd",
+    target_os = "redox"
+))]
 #[cfg(feature = "net")]
 pub use self::addr::{SockaddrIn, SockaddrIn6};
 
@@ -827,11 +837,7 @@ pub enum ControlMessageOwned {
     #[cfg(feature = "net")]
     IpTtl(libc::c_int),
 
-    #[cfg(any(
-        apple_targets,
-        linux_android,
-        target_os = "freebsd",
-    ))]
+    #[cfg(any(linux_android, freebsdlike, apple_targets, target_os = "haiku"))]
     #[cfg(feature = "net")]
     Ipv6HopLimit(libc::c_int),
 
@@ -1229,15 +1235,11 @@ pub enum ControlMessage<'a> {
 
     #[cfg(any(
         apple_targets,
+        linux_android,
         target_os = "freebsd",
     ))]
     #[cfg(feature = "net")]
     IpTos(&'a libc::c_int),
-    #[cfg(any(
-        linux_android,
-    ))]
-    #[cfg(feature = "net")]
-    IpTos(&'a u8),
 
     #[cfg(any(
         apple_targets,
@@ -2465,4 +2467,3 @@ pub fn shutdown(df: RawFd, how: Shutdown) -> Result<()> {
         Errno::result(shutdown(df, how)).map(drop)
     }
 }
-
