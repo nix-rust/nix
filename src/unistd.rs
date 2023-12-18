@@ -1938,6 +1938,38 @@ pub fn mkstemp<P: ?Sized + NixPath>(template: &P) -> Result<(RawFd, PathBuf)> {
 feature! {
 #![all(feature = "fs", feature = "feature")]
 
+/// Creates a directory which persists even after process termination
+///
+/// * `template`: a path whose rightmost characters contain some number of X, e.g. `/tmp/tmpdir_XXXXXX`
+/// * returns: filename
+///
+/// Err is returned either if no temporary filename could be created or the template had insufficient X
+///
+/// See also [mkstemp(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/mkdtemp.html)
+///
+/// ```
+/// use nix::unistd;
+///
+/// match unistd::mkdtemp("/tmp/tempdir_XXXXXX") {
+///     Ok(_path) => {
+///         // do something with directory
+///     }
+///     Err(e) => panic!("mkdtemp failed: {}", e)
+/// };
+/// ```
+pub fn mkdtemp<P: ?Sized + NixPath>(template: &P) -> Result<PathBuf> {
+    let mut path = template.with_nix_path(|path| {path.to_bytes_with_nul().to_owned()})?;
+    let p = path.as_mut_ptr() as *mut _;
+    let p = unsafe { libc::mkdtemp(p) };
+    if p.is_null() {
+        return Err(Errno::last());
+    }
+    let last = path.pop(); // drop the trailing nul
+    debug_assert!(last == Some(b'\0'));
+    let pathname = OsString::from_vec(path);
+    Ok(PathBuf::from(pathname))
+}
+
 /// Variable names for `pathconf`
 ///
 /// Nix uses the same naming convention for these variables as the
