@@ -52,7 +52,7 @@ libc_bitflags! {
         AT_SYMLINK_NOFOLLOW;
         #[cfg(linux_android)]
         AT_NO_AUTOMOUNT;
-        #[cfg(linux_android)]
+        #[cfg(any(linux_android, target_os = "freebsd", target_os = "hurd"))]
         AT_EMPTY_PATH;
         #[cfg(not(target_os = "android"))]
         AT_EACCESS;
@@ -328,7 +328,7 @@ fn inner_readlink<P: ?Sized + NixPath>(
         let reported_size = match dirfd {
             #[cfg(target_os = "redox")]
             Some(_) => unreachable!(),
-            #[cfg(linux_android)]
+            #[cfg(any(linux_android, target_os = "freebsd", target_os = "hurd"))]
             Some(dirfd) => {
                 let flags = if path.is_empty() {
                     AtFlags::AT_EMPTY_PATH
@@ -343,7 +343,9 @@ fn inner_readlink<P: ?Sized + NixPath>(
             }
             #[cfg(not(any(
                 linux_android,
-                target_os = "redox"
+                target_os = "redox",
+                target_os = "freebsd",
+                target_os = "hurd"
             )))]
             Some(dirfd) => super::sys::stat::fstatat(
                 Some(dirfd),
