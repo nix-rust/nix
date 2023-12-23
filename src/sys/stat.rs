@@ -39,7 +39,7 @@ libc_bitflags! {
         S_IXUSR;
         /// Read write and execute for group.
         S_IRWXG;
-        /// Read fr group.
+        /// Read for group.
         S_IRGRP;
         /// Write for group.
         S_IWGRP;
