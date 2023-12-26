@@ -96,7 +96,6 @@ libc_bitflags!(
         ))]
         O_DIRECT;
         /// If the specified path isn't a directory, fail.
-        #[cfg(not(solarish))]
         O_DIRECTORY;
         /// Implicitly follow each `write()` with an `fdatasync()`.
         #[cfg(any(linux_android, apple_targets, netbsdlike))]
