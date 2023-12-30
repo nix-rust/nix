@@ -2009,12 +2009,48 @@ pub fn socketpair<T: Into<Option<SockProtocol>>>(
     unsafe { Ok((OwnedFd::from_raw_fd(fds[0]), OwnedFd::from_raw_fd(fds[1]))) }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Backlog(i32);
+
+impl Backlog {
+    /// Sets the listen queue size to system `SOMAXCONN` value
+    pub const MAXCONN: Self = Self(libc::SOMAXCONN);
+    /// Sets the listen queue size to -1 for system supporting it
+    #[cfg(any(target_os = "linux", target_os = "freebsd"))]
+    pub const MAXALLOWABLE: Self = Self(-1);
+
+    /// Create a `Backlog`, an `EINVAL` will be returned if `val` is invalid.
+    pub fn new<I: Into<i32>>(val: I) -> Result<Self> {
+        cfg_if! {
+            if #[cfg(any(target_os = "linux", target_os = "freebsd"))] {
+                const MIN: i32 = -1;
+            } else {
+                const MIN: i32 = 0;
+            }
+        }
+
+        let val = val.into();
+
+        if !(MIN..Self::MAXCONN.0).contains(&val) {
+            return Err(Errno::EINVAL);
+        }
+
+        Ok(Self(val))
+    }
+}
+
+impl From<Backlog> for i32 {
+    fn from(backlog: Backlog) -> Self {
+        backlog.0
+    }
+}
+
 /// Listen for connections on a socket
 ///
 /// [Further reading](https://pubs.opengroup.org/onlinepubs/9699919799/functions/listen.html)
-pub fn listen<F: AsFd>(sock: &F, backlog: usize) -> Result<()> {
+pub fn listen<F: AsFd>(sock: &F, backlog: Backlog) -> Result<()> {
     let fd = sock.as_fd().as_raw_fd();
-    let res = unsafe { libc::listen(fd, backlog as c_int) };
+    let res = unsafe { libc::listen(fd, backlog.into()) };
 
     Errno::result(res).map(drop)
 }

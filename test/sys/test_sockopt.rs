@@ -106,7 +106,7 @@ fn test_so_buf() {
 #[cfg(target_os = "freebsd")]
 #[test]
 fn test_so_listen_q_limit() {
-    use nix::sys::socket::{bind, listen, SockaddrIn};
+    use nix::sys::socket::{bind, listen, Backlog, SockaddrIn};
     use std::net::SocketAddrV4;
     use std::str::FromStr;
 
@@ -123,14 +123,16 @@ fn test_so_listen_q_limit() {
     bind(rsock.as_raw_fd(), &sock_addr).unwrap();
     let pre_limit = getsockopt(&rsock, sockopt::ListenQLimit).unwrap();
     assert_eq!(pre_limit, 0);
-    listen(&rsock, 42).unwrap();
+    listen(&rsock, Backlog::new(42).unwrap()).unwrap();
     let post_limit = getsockopt(&rsock, sockopt::ListenQLimit).unwrap();
     assert_eq!(post_limit, 42);
 }
 
 #[test]
 fn test_so_tcp_maxseg() {
-    use nix::sys::socket::{accept, bind, connect, listen, SockaddrIn};
+    use nix::sys::socket::{
+        accept, bind, connect, listen, Backlog, SockaddrIn,
+    };
     use nix::unistd::write;
     use std::net::SocketAddrV4;
     use std::str::FromStr;
@@ -146,7 +148,7 @@ fn test_so_tcp_maxseg() {
     )
     .unwrap();
     bind(rsock.as_raw_fd(), &sock_addr).unwrap();
-    listen(&rsock, 10).unwrap();
+    listen(&rsock, Backlog::new(10).unwrap()).unwrap();
     let initial = getsockopt(&rsock, sockopt::TcpMaxSeg).unwrap();
     // Initial MSS is expected to be 536 (https://tools.ietf.org/html/rfc879#section-1) but some
     // platforms keep it even lower. This might fail if you've tuned your initial MSS to be larger
@@ -716,7 +718,8 @@ fn is_socket_type_dgram() {
 #[test]
 fn can_get_listen_on_tcp_socket() {
     use nix::sys::socket::{
-        getsockopt, listen, socket, sockopt, AddressFamily, SockFlag, SockType,
+        getsockopt, listen, socket, sockopt, AddressFamily, Backlog, SockFlag,
+        SockType,
     };
 
     let s = socket(
@@ -728,7 +731,7 @@ fn can_get_listen_on_tcp_socket() {
     .unwrap();
     let s_listening = getsockopt(&s, sockopt::AcceptConn).unwrap();
     assert!(!s_listening);
-    listen(&s, 10).unwrap();
+    listen(&s, Backlog::new(10).unwrap()).unwrap();
     let s_listening2 = getsockopt(&s, sockopt::AcceptConn).unwrap();
     assert!(s_listening2);
 }

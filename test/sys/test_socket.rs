@@ -1611,7 +1611,9 @@ fn test_impl_scm_credentials_and_rights(mut space: Vec<u8>) {
 // Test creating and using named unix domain sockets
 #[test]
 pub fn test_named_unixdomain() {
-    use nix::sys::socket::{accept, bind, connect, listen, socket, UnixAddr};
+    use nix::sys::socket::{
+        accept, bind, connect, listen, socket, Backlog, UnixAddr,
+    };
     use nix::sys::socket::{SockFlag, SockType};
     use nix::unistd::{read, write};
     use std::thread;
@@ -1627,7 +1629,7 @@ pub fn test_named_unixdomain() {
     .expect("socket failed");
     let sockaddr = UnixAddr::new(&sockname).unwrap();
     bind(s1.as_raw_fd(), &sockaddr).expect("bind failed");
-    listen(&s1, 10).expect("listen failed");
+    listen(&s1, Backlog::new(10).unwrap()).expect("listen failed");
 
     let thr = thread::spawn(move || {
         let s2 = socket(
@@ -1648,6 +1650,14 @@ pub fn test_named_unixdomain() {
     thr.join().unwrap();
 
     assert_eq!(&buf[..], b"hello");
+}
+
+#[test]
+pub fn test_listen_wrongbacklog() {
+    use nix::sys::socket::Backlog;
+
+    assert!(Backlog::new(libc::SOMAXCONN + 1).is_err());
+    assert!(Backlog::new(-2).is_err());
 }
 
 // Test using unnamed unix domain addresses
