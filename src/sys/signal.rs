@@ -1017,9 +1017,9 @@ pub fn sigsuspend(set : &SigSet) -> Result<()> {
         libc::sigsuspend(&set.sigset as *const libc::sigset_t)
     };
     match Errno::result(res).map(drop) {
-        Ok(_) => Ok(()),
         Err(Errno::EINTR) => Ok(()),
         Err(e) => Err(e),
+        Ok(_) => unreachable!(),
     }
 }
 
