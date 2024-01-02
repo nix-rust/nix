@@ -3,7 +3,10 @@ use nix::sys::signal::*;
 use nix::unistd::*;
 use std::convert::TryFrom;
 use std::hash::{Hash, Hasher};
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    Arc,
+};
 #[cfg(not(target_os = "redox"))]
 use std::thread;
 
@@ -78,6 +81,84 @@ fn test_sigprocmask() {
     // Reset the signal.
     sigprocmask(SigmaskHow::SIG_UNBLOCK, Some(&signal_set), None)
         .expect("expect to be able to block signals");
+}
+
+static SIGSUSPEND_SIGNALED: AtomicBool = AtomicBool::new(false);
+
+extern "C" fn test_sigsuspend_handler(_: libc::c_int) {
+    assert_eq!(SIGSUSPEND_SIGNALED.swap(true, Ordering::SeqCst), false);
+}
+
+#[cfg(any(
+    target_os = "linux",
+    target_os = "android",
+    target_os = "hurd",
+    target_os = "nto",
+    target_os = "aix",
+    target_os = "fushsia"
+))]
+#[test]
+fn test_sigsuspend() {
+    let _m = crate::SIGNAL_MTX.lock();
+
+    const SIGNAL: Signal = Signal::SIGUSR1;
+
+    let mut old_signal_set = SigSet::empty();
+
+    // Block the signal and retrieve old signals.
+    let mut signal_set = SigSet::empty();
+    signal_set.add(SIGNAL);
+    sigprocmask(
+        SigmaskHow::SIG_BLOCK,
+        Some(&SigSet::all()),
+        Some(&mut old_signal_set),
+    )
+    .expect("expect to be able to block signals and get old signal masks");
+
+    let thread_waked = Arc::new(AtomicBool::new(false));
+    let sended_signal = Arc::new(AtomicBool::new(false));
+    SIGSUSPEND_SIGNALED.store(false, Ordering::SeqCst);
+    let act = SigAction::new(
+        SigHandler::Handler(test_sigsuspend_handler),
+        SaFlags::empty(),
+        SigSet::empty(),
+    );
+    let old_act = unsafe {
+        sigaction(SIGNAL, &act)
+            .expect("expect to be able to set action and get old action")
+    };
+
+    let h = {
+        let sended_signal = Arc::clone(&sended_signal);
+        let thread_waked = Arc::clone(&thread_waked);
+        thread::spawn(move || {
+            thread_waked.store(true, Ordering::SeqCst);
+            let mut not_wait_set = SigSet::all();
+            not_wait_set.remove(SIGNAL);
+            while !sended_signal.load(Ordering::SeqCst) {
+                thread::yield_now();
+            }
+            assert_eq!(SIGSUSPEND_SIGNALED.load(Ordering::SeqCst), false);
+            sigsuspend(&not_wait_set).unwrap();
+            assert_eq!(SIGSUSPEND_SIGNALED.load(Ordering::SeqCst), true);
+        })
+    };
+    while !thread_waked.load(Ordering::SeqCst) {
+        thread::yield_now();
+    }
+    kill(nix::unistd::Pid::this(), Some(SIGNAL))
+        .expect("expect be able to send signal");
+    sended_signal.store(true, Ordering::SeqCst);
+
+    h.join().unwrap();
+
+    unsafe {
+        sigaction(SIGNAL, &old_act)
+            .expect("expect to be able to set action and get old action")
+    };
+    // Reset the signal.
+    sigprocmask(SigmaskHow::SIG_SETMASK, Some(&old_signal_set), None)
+        .expect("expect to be able to set mask of signals");
 }
 
 static SIGNALED: AtomicBool = AtomicBool::new(false);
