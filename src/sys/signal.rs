@@ -1003,6 +1003,18 @@ pub fn sigprocmask(how: SigmaskHow, set: Option<&SigSet>, oldset: Option<&mut Si
     Errno::result(res).map(drop)
 }
 
+/// Wait for a signal
+pub fn sigsuspend(set : &SigSet) -> Result<()> {
+    let res = unsafe {
+        libc::sigsuspend(&set.sigset as *const libc::sigset_t)
+    };
+    match Errno::result(res).map(drop) {
+        Ok(_) => Ok(()),
+        Err(Errno::EINTR) => Ok(()),
+        Err(e) => Err(e),
+    }
+}
+
 /// Send a signal to a process
 ///
 /// # Arguments
