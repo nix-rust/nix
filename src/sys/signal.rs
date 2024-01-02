@@ -1008,7 +1008,8 @@ pub fn sigprocmask(how: SigmaskHow, set: Option<&SigSet>, oldset: Option<&mut Si
     target_os = "android",
     target_os = "hurd",
     target_os = "nto",
-    target_os = "aix"
+    target_os = "aix",
+    target_os = "fushsia"
 ))]
 /// Wait for a signal
 pub fn sigsuspend(set : &SigSet) -> Result<()> {
