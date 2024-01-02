@@ -1003,6 +1003,13 @@ pub fn sigprocmask(how: SigmaskHow, set: Option<&SigSet>, oldset: Option<&mut Si
     Errno::result(res).map(drop)
 }
 
+#[cfg(any(
+    target_os = "linux",
+    target_os = "android",
+    target_os = "hurd",
+    target_os = "nto",
+    target_os = "aix"
+))]
 /// Wait for a signal
 pub fn sigsuspend(set : &SigSet) -> Result<()> {
     let res = unsafe {
