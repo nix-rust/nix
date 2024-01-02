@@ -3,10 +3,16 @@ use nix::sys::signal::*;
 use nix::unistd::*;
 use std::convert::TryFrom;
 use std::hash::{Hash, Hasher};
-use std::sync::{
-    atomic::{AtomicBool, Ordering},
-    Arc,
-};
+use std::sync::atomic::{AtomicBool, Ordering};
+#[cfg(any(
+    target_os = "linux",
+    target_os = "android",
+    target_os = "hurd",
+    target_os = "nto",
+    target_os = "aix",
+    target_os = "fushsia"
+))]
+use std::sync::Arc;
 #[cfg(not(target_os = "redox"))]
 use std::thread;
 
@@ -83,10 +89,26 @@ fn test_sigprocmask() {
         .expect("expect to be able to block signals");
 }
 
+#[cfg(any(
+    target_os = "linux",
+    target_os = "android",
+    target_os = "hurd",
+    target_os = "nto",
+    target_os = "aix",
+    target_os = "fushsia"
+))]
 static SIGSUSPEND_SIGNALED: AtomicBool = AtomicBool::new(false);
 
+#[cfg(any(
+    target_os = "linux",
+    target_os = "android",
+    target_os = "hurd",
+    target_os = "nto",
+    target_os = "aix",
+    target_os = "fushsia"
+))]
 extern "C" fn test_sigsuspend_handler(_: libc::c_int) {
-    assert_eq!(SIGSUSPEND_SIGNALED.swap(true, Ordering::SeqCst), false);
+    assert!(!SIGSUSPEND_SIGNALED.swap(true, Ordering::SeqCst));
 }
 
 #[cfg(any(
@@ -138,9 +160,9 @@ fn test_sigsuspend() {
             while !sended_signal.load(Ordering::SeqCst) {
                 thread::yield_now();
             }
-            assert_eq!(SIGSUSPEND_SIGNALED.load(Ordering::SeqCst), false);
+            assert!(!SIGSUSPEND_SIGNALED.load(Ordering::SeqCst));
             sigsuspend(&not_wait_set).unwrap();
-            assert_eq!(SIGSUSPEND_SIGNALED.load(Ordering::SeqCst), true);
+            assert!(SIGSUSPEND_SIGNALED.load(Ordering::SeqCst));
         })
     };
     while !thread_waked.load(Ordering::SeqCst) {
