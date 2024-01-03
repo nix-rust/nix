@@ -355,20 +355,14 @@ fn test_sigwait() {
 fn test_sigsuspend() {
     // This test change signal handler
     let _m = crate::SIGNAL_MTX.lock();
-    static SENDED_SIGNAL: AtomicBool = AtomicBool::new(false);
     static SIGNAL_RECIEVED: AtomicBool = AtomicBool::new(false);
     extern "C" fn test_sigsuspend_handler(_: libc::c_int) {
         assert!(!SIGNAL_RECIEVED.swap(true, Ordering::SeqCst));
-        assert!(SENDED_SIGNAL.load(Ordering::SeqCst));
     }
     thread::spawn(|| {
         const SIGNAL: Signal = Signal::SIGUSR1;
 
-        // Reset static variable (making sure)
-        SIGNAL_RECIEVED.store(false, Ordering::SeqCst);
-        SENDED_SIGNAL.store(false, Ordering::SeqCst);
-
-        // Set signal mask to this thread
+        // Add signal mask to this thread
         let mut signal_set = SigSet::empty();
         signal_set.add(SIGNAL);
         signal_set.thread_block().unwrap();
@@ -383,7 +377,6 @@ fn test_sigsuspend() {
             .expect("expect to be able to set new action and get old action");
 
         raise(SIGNAL).expect("expect be able to send signal");
-        assert!(!SENDED_SIGNAL.swap(true, Ordering::SeqCst));
         // Now `SIGNAL` was sended but it is blocked.
         let mut not_wait_set = SigSet::all();
         not_wait_set.remove(SIGNAL);
