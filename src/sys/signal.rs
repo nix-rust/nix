@@ -1012,6 +1012,13 @@ pub fn sigprocmask(how: SigmaskHow, set: Option<&SigSet>, oldset: Option<&mut Si
     target_os = "fushsia"
 ))]
 /// Wait for a signal
+///
+/// # Return value
+/// If `sigsuspend(2)` is interrupted (EINTR), this function returns `Ok`.
+/// If `sigsuspend(2)` set other error, this function returns `Err`.
+///
+/// For more information see the
+/// [`sigsuspend(2)`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/sigsuspend.html).
 pub fn sigsuspend(set : &SigSet) -> Result<()> {
     let res = unsafe {
         libc::sigsuspend(&set.sigset as *const libc::sigset_t)
