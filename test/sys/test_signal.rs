@@ -357,7 +357,7 @@ fn test_sigsuspend() {
     let _m = crate::SIGNAL_MTX.lock();
     static SIGNAL_RECIEVED: AtomicBool = AtomicBool::new(false);
     extern "C" fn test_sigsuspend_handler(_: libc::c_int) {
-        assert!(!SIGNAL_RECIEVED.swap(true, Ordering::SeqCst));
+        assert!(!SIGNAL_RECIEVED.swap(true, Ordering::AcqRel));
     }
     thread::spawn(|| {
         const SIGNAL: Signal = Signal::SIGUSR1;
@@ -381,9 +381,9 @@ fn test_sigsuspend() {
         let mut not_wait_set = SigSet::all();
         not_wait_set.remove(SIGNAL);
         // signal handler must run in SigSet::suspend()
-        assert!(!SIGNAL_RECIEVED.load(Ordering::SeqCst));
+        assert!(!SIGNAL_RECIEVED.load(Ordering::Acquire));
         not_wait_set.suspend().unwrap();
-        assert!(SIGNAL_RECIEVED.load(Ordering::SeqCst));
+        assert!(SIGNAL_RECIEVED.load(Ordering::Acquire));
 
         // Restore the signal handler.
         unsafe { sigaction(SIGNAL, &old_act) }
