@@ -582,6 +582,35 @@ impl SigSet {
         })
     }
 
+    #[cfg(any(
+        target_os = "linux",
+        target_os = "android",
+        target_os = "hurd",
+        target_os = "nto",
+        target_os = "aix",
+        target_os = "fushsia"
+    ))]
+    #[doc(alias("sigsuspend"))]
+    /// Wait for a signal
+    ///
+    /// # Return value
+    /// If `sigsuspend(2)` is interrupted (EINTR), this function returns `Ok`.
+    /// If `sigsuspend(2)` set other error, this function returns `Err`.
+    ///
+    /// For more information see the
+    /// [`sigsuspend(2)`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/sigsuspend.html).
+    pub fn suspend(&self) -> Result<()> {
+        let res = unsafe {
+            libc::sigsuspend(&self.sigset as *const libc::sigset_t)
+        };
+        match Errno::result(res).map(drop) {
+            Err(Errno::EINTR) => Ok(()),
+            Err(e) => Err(e),
+            Ok(_) => unreachable!(),
+        }
+    }
+
+
     /// Converts a `libc::sigset_t` object to a [`SigSet`] without checking  whether the
     /// `libc::sigset_t` is already initialized.
     ///
@@ -1001,33 +1030,6 @@ pub fn sigprocmask(how: SigmaskHow, set: Option<&SigSet>, oldset: Option<&mut Si
     };
 
     Errno::result(res).map(drop)
-}
-
-#[cfg(any(
-    target_os = "linux",
-    target_os = "android",
-    target_os = "hurd",
-    target_os = "nto",
-    target_os = "aix",
-    target_os = "fushsia"
-))]
-/// Wait for a signal
-///
-/// # Return value
-/// If `sigsuspend(2)` is interrupted (EINTR), this function returns `Ok`.
-/// If `sigsuspend(2)` set other error, this function returns `Err`.
-///
-/// For more information see the
-/// [`sigsuspend(2)`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/sigsuspend.html).
-pub fn sigsuspend(set : &SigSet) -> Result<()> {
-    let res = unsafe {
-        libc::sigsuspend(&set.sigset as *const libc::sigset_t)
-    };
-    match Errno::result(res).map(drop) {
-        Err(Errno::EINTR) => Ok(()),
-        Err(e) => Err(e),
-        Ok(_) => unreachable!(),
-    }
 }
 
 /// Send a signal to a process

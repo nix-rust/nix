@@ -131,7 +131,7 @@ fn test_sigsuspend() {
     not_wait_set.remove(SIGNAL);
     assert!(!SIGNAL_RECIEVED.load(Ordering::SeqCst));
     // signal must be recived in sigsuspend
-    sigsuspend(&not_wait_set).unwrap();
+    not_wait_set.suspend().unwrap();
     assert!(SIGNAL_RECIEVED.load(Ordering::SeqCst));
 
     // Restore the signal mask and handler.
