@@ -131,14 +131,14 @@ fn test_so_listen_q_limit() {
 #[test]
 fn test_so_tcp_maxseg() {
     use nix::sys::socket::{
-        accept, bind, connect, listen, Backlog, SockaddrIn,
+        accept, bind, connect, getsockname, listen, Backlog, SockaddrIn,
     };
     use nix::unistd::write;
     use std::net::SocketAddrV4;
     use std::str::FromStr;
 
-    let std_sa = SocketAddrV4::from_str("127.0.0.1:4003").unwrap();
-    let sock_addr = SockaddrIn::from(std_sa);
+    let std_sa = SocketAddrV4::from_str("127.0.0.1:0").unwrap();
+    let mut sock_addr = SockaddrIn::from(std_sa);
 
     let rsock = socket(
         AddressFamily::Inet,
@@ -148,6 +148,7 @@ fn test_so_tcp_maxseg() {
     )
     .unwrap();
     bind(rsock.as_raw_fd(), &sock_addr).unwrap();
+    sock_addr = getsockname(rsock.as_raw_fd()).unwrap();
     listen(&rsock, Backlog::new(10).unwrap()).unwrap();
     let initial = getsockopt(&rsock, sockopt::TcpMaxSeg).unwrap();
     // Initial MSS is expected to be 536 (https://tools.ietf.org/html/rfc879#section-1) but some
@@ -305,7 +306,7 @@ fn test_get_mtu() {
     use std::net::SocketAddrV4;
     use std::str::FromStr;
 
-    let std_sa = SocketAddrV4::from_str("127.0.0.1:4001").unwrap();
+    let std_sa = SocketAddrV4::from_str("127.0.0.1:0").unwrap();
     let std_sb = SocketAddrV4::from_str("127.0.0.1:4002").unwrap();
 
     let usock = socket(
@@ -615,7 +616,7 @@ fn test_ts_clock_monotonic() {
 
 #[test]
 #[cfg(linux_android)]
-// Disable the test under emulation because it failsi with ENOPROTOOPT in CI
+// Disable the test under emulation because it fails with ENOPROTOOPT in CI
 // on cross target. Lack of QEMU support is suspected.
 #[cfg_attr(qemu, ignore)]
 fn test_ip_bind_address_no_port() {
@@ -734,4 +735,96 @@ fn can_get_listen_on_tcp_socket() {
     listen(&s, Backlog::new(10).unwrap()).unwrap();
     let s_listening2 = getsockopt(&s, sockopt::AcceptConn).unwrap();
     assert!(s_listening2);
+}
+
+#[cfg(target_os = "linux")]
+// Some architectures running under cross don't support `setsockopt(SOL_TCP, TCP_ULP)`
+// because the cross image is based on Ubuntu 16.04 which predates TCP ULP support
+// (it was added in kernel v4.13 released in 2017). For these architectures,
+// the `setsockopt(SOL_TCP, TCP_ULP, "tls", sizeof("tls"))` call succeeds
+// but the subsequent `setsockopt(SOL_TLS, TLS_TX, ...)` call fails with `ENOPROTOOPT`.
+// It's as if the first `setsockopt` call enabled some other option, not `TCP_ULP`.
+// For example, `strace` says:
+//
+//     [pid   813] setsockopt(4, SOL_TCP, 0x1f /* TCP_??? */, [7564404], 4) = 0
+//
+// It's not clear why `setsockopt(SOL_TCP, TCP_ULP)` succeeds if the container image libc doesn't support it,
+// but in any case we can't run the test on such an architecture, so skip it.
+#[cfg_attr(qemu, ignore)]
+#[test]
+fn test_ktls() {
+    use nix::sys::socket::{
+        accept, bind, connect, getsockname, listen, Backlog, SockaddrIn,
+    };
+    use std::net::SocketAddrV4;
+    use std::str::FromStr;
+
+    let std_sa = SocketAddrV4::from_str("127.0.0.1:0").unwrap();
+    let mut sock_addr = SockaddrIn::from(std_sa);
+
+    let rsock = socket(
+        AddressFamily::Inet,
+        SockType::Stream,
+        SockFlag::empty(),
+        SockProtocol::Tcp,
+    )
+    .unwrap();
+    bind(rsock.as_raw_fd(), &sock_addr).unwrap();
+    sock_addr = getsockname(rsock.as_raw_fd()).unwrap();
+    listen(&rsock, Backlog::new(10).unwrap()).unwrap();
+
+    let ssock = socket(
+        AddressFamily::Inet,
+        SockType::Stream,
+        SockFlag::empty(),
+        SockProtocol::Tcp,
+    )
+    .unwrap();
+    connect(ssock.as_raw_fd(), &sock_addr).unwrap();
+
+    let _rsess = accept(rsock.as_raw_fd()).unwrap();
+
+    match setsockopt(&ssock, sockopt::TcpUlp::default(), b"tls") {
+        Ok(()) => (),
+
+        // TLS ULP is not enabled, so we can't test kTLS.
+        Err(nix::Error::ENOENT) => skip!("TLS ULP is not enabled"),
+
+        Err(err) => panic!("{err:?}"),
+    }
+
+    // In real life we would do a TLS handshake and extract the protocol version and secrets.
+    // For this test we just make some up.
+
+    let tx = sockopt::TlsCryptoInfo::Aes128Gcm(libc::tls12_crypto_info_aes_gcm_128 {
+        info: libc::tls_crypto_info {
+            version: libc::TLS_1_2_VERSION,
+            cipher_type: libc::TLS_CIPHER_AES_GCM_128,
+        },
+        iv: *b"\x04\x05\x06\x07\x08\x09\x0a\x0b",
+        key: *b"\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f",
+        salt: *b"\x00\x01\x02\x03",
+        rec_seq: *b"\x00\x00\x00\x00\x00\x00\x00\x00",
+    });
+    setsockopt(&ssock, sockopt::TcpTlsTx, &tx)
+        .expect("setting TLS_TX after enabling TLS ULP should succeed");
+
+    let rx = sockopt::TlsCryptoInfo::Aes128Gcm(libc::tls12_crypto_info_aes_gcm_128 {
+        info: libc::tls_crypto_info {
+            version: libc::TLS_1_2_VERSION,
+            cipher_type: libc::TLS_CIPHER_AES_GCM_128,
+        },
+        iv: *b"\xf4\xf5\xf6\xf7\xf8\xf9\xfa\xfb",
+        key: *b"\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed\xee\xef",
+        salt: *b"\xf0\xf1\xf2\xf3",
+        rec_seq: *b"\x00\x00\x00\x00\x00\x00\x00\x00",
+    });
+    match setsockopt(&ssock, sockopt::TcpTlsRx, &rx) {
+        Ok(()) => (),
+        Err(nix::Error::ENOPROTOOPT) => {
+            // TLS_TX was added in v4.13 and TLS_RX in v4.17, so we appear to be between that range.
+            // It's good enough that TLS_TX worked, so let the test succeed.
+        }
+        Err(err) => panic!("{err:?}"),
+    }
 }
