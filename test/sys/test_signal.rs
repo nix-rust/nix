@@ -80,67 +80,6 @@ fn test_sigprocmask() {
         .expect("expect to be able to block signals");
 }
 
-#[cfg(any(
-    target_os = "linux",
-    target_os = "android",
-    target_os = "hurd",
-    target_os = "nto",
-    target_os = "aix",
-    target_os = "fushsia"
-))]
-#[test]
-fn test_sigsuspend() {
-    static SENDED_SIGNAL: AtomicBool = AtomicBool::new(false);
-    static SIGNAL_RECIEVED: AtomicBool = AtomicBool::new(false);
-    extern "C" fn test_sigsuspend_handler(_: libc::c_int) {
-        assert!(!SIGNAL_RECIEVED.swap(true, Ordering::SeqCst));
-        assert!(SENDED_SIGNAL.load(Ordering::SeqCst));
-    }
-
-    let _m = crate::SIGNAL_MTX.lock();
-
-    const SIGNAL: Signal = Signal::SIGUSR1;
-
-    // Reset static variable (making sure)
-    SIGNAL_RECIEVED.store(false, Ordering::SeqCst);
-    SENDED_SIGNAL.store(false, Ordering::SeqCst);
-
-    // Set signal mask and handler and save old ones.
-    let mut old_signal_set = SigSet::empty();
-    let mut signal_set = SigSet::empty();
-    signal_set.add(SIGNAL);
-    sigprocmask(
-        SigmaskHow::SIG_BLOCK,
-        Some(&signal_set),
-        Some(&mut old_signal_set),
-    )
-    .expect("expect to be able to add signal mask and get old signal masks");
-    let act = SigAction::new(
-        SigHandler::Handler(test_sigsuspend_handler),
-        SaFlags::empty(),
-        SigSet::empty(),
-    );
-    let old_act = unsafe { sigaction(SIGNAL, &act) }
-        .expect("expect to be able to set new action and get old action");
-
-    raise(SIGNAL).expect("expect be able to send signal");
-    assert!(!SENDED_SIGNAL.swap(true, Ordering::SeqCst));
-    thread::sleep(std::time::Duration::from_millis(10));
-    // Now `SIGNAL` was sended but it is blocked.
-    let mut not_wait_set = SigSet::all();
-    not_wait_set.remove(SIGNAL);
-    assert!(!SIGNAL_RECIEVED.load(Ordering::SeqCst));
-    // signal must be recived in sigsuspend
-    not_wait_set.suspend().unwrap();
-    assert!(SIGNAL_RECIEVED.load(Ordering::SeqCst));
-
-    // Restore the signal mask and handler.
-    unsafe { sigaction(SIGNAL, &old_act) }
-        .expect("expect to be able to restore old action ");
-    sigprocmask(SigmaskHow::SIG_SETMASK, Some(&old_signal_set), None)
-        .expect("expect to be able to restore old signal mask");
-}
-
 static SIGNALED: AtomicBool = AtomicBool::new(false);
 
 extern "C" fn test_sigaction_handler(signal: libc::c_int) {
@@ -399,6 +338,63 @@ fn test_sigwait() {
 
         raise(SIGUSR1).unwrap();
         assert_eq!(mask.wait().unwrap(), SIGUSR1);
+    })
+    .join()
+    .unwrap();
+}
+
+#[cfg(any(
+    target_os = "linux",
+    target_os = "android",
+    target_os = "hurd",
+    target_os = "nto",
+    target_os = "aix",
+    target_os = "fushsia"
+))]
+#[test]
+fn test_sigsuspend() {
+    // This test change signal handler
+    let _m = crate::SIGNAL_MTX.lock();
+    static SENDED_SIGNAL: AtomicBool = AtomicBool::new(false);
+    static SIGNAL_RECIEVED: AtomicBool = AtomicBool::new(false);
+    extern "C" fn test_sigsuspend_handler(_: libc::c_int) {
+        assert!(!SIGNAL_RECIEVED.swap(true, Ordering::SeqCst));
+        assert!(SENDED_SIGNAL.load(Ordering::SeqCst));
+    }
+    thread::spawn(|| {
+        const SIGNAL: Signal = Signal::SIGUSR1;
+
+        // Reset static variable (making sure)
+        SIGNAL_RECIEVED.store(false, Ordering::SeqCst);
+        SENDED_SIGNAL.store(false, Ordering::SeqCst);
+
+        // Set signal mask to this thread
+        let mut signal_set = SigSet::empty();
+        signal_set.add(SIGNAL);
+        signal_set.thread_block().unwrap();
+
+        // Set signal handler and save old one.
+        let act = SigAction::new(
+            SigHandler::Handler(test_sigsuspend_handler),
+            SaFlags::empty(),
+            SigSet::empty(),
+        );
+        let old_act = unsafe { sigaction(SIGNAL, &act) }
+            .expect("expect to be able to set new action and get old action");
+
+        raise(SIGNAL).expect("expect be able to send signal");
+        assert!(!SENDED_SIGNAL.swap(true, Ordering::SeqCst));
+        // Now `SIGNAL` was sended but it is blocked.
+        let mut not_wait_set = SigSet::all();
+        not_wait_set.remove(SIGNAL);
+        // signal handler must run in SigSet::suspend()
+        assert!(!SIGNAL_RECIEVED.load(Ordering::SeqCst));
+        not_wait_set.suspend().unwrap();
+        assert!(SIGNAL_RECIEVED.load(Ordering::SeqCst));
+
+        // Restore the signal handler.
+        unsafe { sigaction(SIGNAL, &old_act) }
+            .expect("expect to be able to restore old action ");
     })
     .join()
     .unwrap();
