@@ -582,6 +582,14 @@ impl SigSet {
         })
     }
 
+    /// Wait for a signal
+    ///
+    /// # Return value
+    /// If `sigsuspend(2)` is interrupted (EINTR), this function returns `Ok`.
+    /// If `sigsuspend(2)` set other error, this function returns `Err`.
+    ///
+    /// For more information see the
+    /// [`sigsuspend(2)`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/sigsuspend.html).
     #[cfg(any(
         target_os = "linux",
         target_os = "android",
@@ -591,14 +599,6 @@ impl SigSet {
         target_os = "fushsia"
     ))]
     #[doc(alias("sigsuspend"))]
-    /// Wait for a signal
-    ///
-    /// # Return value
-    /// If `sigsuspend(2)` is interrupted (EINTR), this function returns `Ok`.
-    /// If `sigsuspend(2)` set other error, this function returns `Err`.
-    ///
-    /// For more information see the
-    /// [`sigsuspend(2)`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/sigsuspend.html).
     pub fn suspend(&self) -> Result<()> {
         let res = unsafe {
             libc::sigsuspend(&self.sigset as *const libc::sigset_t)
@@ -609,7 +609,6 @@ impl SigSet {
             Ok(_) => unreachable!(),
         }
     }
-
 
     /// Converts a `libc::sigset_t` object to a [`SigSet`] without checking  whether the
     /// `libc::sigset_t` is already initialized.
