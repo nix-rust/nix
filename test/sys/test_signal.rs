@@ -125,6 +125,7 @@ fn test_sigsuspend() {
 
     raise(SIGNAL).expect("expect be able to send signal");
     assert!(!SENDED_SIGNAL.swap(true, Ordering::SeqCst));
+    thread::sleep(std::time::Duration::from_millis(10));
     // Now `SIGNAL` was sended but it is blocked.
     let mut not_wait_set = SigSet::all();
     not_wait_set.remove(SIGNAL);
