@@ -606,7 +606,7 @@ impl SigSet {
         match Errno::result(res).map(drop) {
             Err(Errno::EINTR) => Ok(()),
             Err(e) => Err(e),
-            Ok(_) => unreachable!(),
+            Ok(_) => unreachable!("because this syscall always returns -1 if returns"),
         }
     }
 
