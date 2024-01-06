@@ -52,6 +52,14 @@ pub fn errno() -> i32 {
     unsafe { *errno_location() }
 }
 
+/// Sets the platform-specific value of errno.
+pub fn set_errno(errno: Errno) {
+    // Safe because errno is a thread-local variable
+    unsafe {
+        *errno_location() = errno as i32;
+    }
+}
+
 impl Errno {
     pub fn last() -> Self {
         last()
