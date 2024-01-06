@@ -81,11 +81,11 @@ cfg_if! {
         use std::io::IoSlice;
 
         #[derive(Clone, Debug)]
-        struct SendfileHeaderTrailer<'a>(
-            libc::sf_hdtr,
-            Option<Vec<IoSlice<'a>>>,
-            Option<Vec<IoSlice<'a>>>,
-        );
+        struct SendfileHeaderTrailer<'a> {
+            raw: libc::sf_hdtr,
+            _headers: Option<Vec<IoSlice<'a>>>,
+            _trailers: Option<Vec<IoSlice<'a>>>,
+        }
 
         impl<'a> SendfileHeaderTrailer<'a> {
             fn new(
@@ -96,8 +96,9 @@ cfg_if! {
                     headers.map(|s| s.iter().map(|b| IoSlice::new(b)).collect());
                 let mut trailer_iovecs: Option<Vec<IoSlice<'_>>> =
                     trailers.map(|s| s.iter().map(|b| IoSlice::new(b)).collect());
-                SendfileHeaderTrailer(
-                    libc::sf_hdtr {
+
+                SendfileHeaderTrailer {
+                    raw: libc::sf_hdtr {
                         headers: {
                             header_iovecs
                                 .as_mut()
@@ -113,9 +114,9 @@ cfg_if! {
                         },
                         trl_cnt: trailer_iovecs.as_ref().map(|v| v.len()).unwrap_or(0) as i32
                     },
-                    header_iovecs,
-                    trailer_iovecs,
-                )
+                    _headers: header_iovecs,
+                    _trailers: trailer_iovecs,
+                }
             }
         }
     } else if #[cfg(solarish)] {
@@ -221,7 +222,7 @@ cfg_if! {
             let flags: u32 = (ra32 << 16) | (flags.bits() as u32);
             let mut bytes_sent: off_t = 0;
             let hdtr = headers.or(trailers).map(|_| SendfileHeaderTrailer::new(headers, trailers));
-            let hdtr_ptr = hdtr.as_ref().map_or(ptr::null(), |s| &s.0 as *const libc::sf_hdtr);
+            let hdtr_ptr = hdtr.as_ref().map_or(ptr::null(), |s| &s.raw as *const libc::sf_hdtr);
             let return_code = unsafe {
                 libc::sendfile(in_fd.as_fd().as_raw_fd(),
                                out_sock.as_fd().as_raw_fd(),
@@ -264,7 +265,7 @@ cfg_if! {
         ) -> (Result<()>, off_t) {
             let mut bytes_sent: off_t = 0;
             let hdtr = headers.or(trailers).map(|_| SendfileHeaderTrailer::new(headers, trailers));
-            let hdtr_ptr = hdtr.as_ref().map_or(ptr::null(), |s| &s.0 as *const libc::sf_hdtr);
+            let hdtr_ptr = hdtr.as_ref().map_or(ptr::null(), |s| &s.raw as *const libc::sf_hdtr);
             let return_code = unsafe {
                 libc::sendfile(in_fd.as_fd().as_raw_fd(),
                                out_sock.as_fd().as_raw_fd(),
@@ -310,7 +311,7 @@ cfg_if! {
         ) -> (Result<()>, off_t) {
             let mut len = count.unwrap_or(0);
             let hdtr = headers.or(trailers).map(|_| SendfileHeaderTrailer::new(headers, trailers));
-            let hdtr_ptr = hdtr.as_ref().map_or(ptr::null(), |s| &s.0 as *const libc::sf_hdtr);
+            let hdtr_ptr = hdtr.as_ref().map_or(ptr::null(), |s| &s.raw as *const libc::sf_hdtr);
             let return_code = unsafe {
                 libc::sendfile(in_fd.as_fd().as_raw_fd(),
                                out_sock.as_fd().as_raw_fd(),
