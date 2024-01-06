@@ -591,8 +591,7 @@ impl SigSet {
     /// For more information see the
     /// [`sigsuspend(2)`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/sigsuspend.html).
     #[cfg(any(
-        target_os = "linux",
-        target_os = "android",
+        linux_android,
         target_os = "hurd",
         target_os = "nto",
         target_os = "aix",

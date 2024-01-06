@@ -344,8 +344,7 @@ fn test_sigwait() {
 }
 
 #[cfg(any(
-    target_os = "linux",
-    target_os = "android",
+    linux_android,
     target_os = "hurd",
     target_os = "nto",
     target_os = "aix",
