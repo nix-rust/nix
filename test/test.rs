@@ -7,6 +7,7 @@ mod common;
 mod sys;
 #[cfg(not(target_os = "redox"))]
 mod test_dir;
+mod test_errno;
 mod test_fcntl;
 #[cfg(linux_android)]
 mod test_kmod;
