@@ -122,10 +122,7 @@ impl Errno {
     /// assert_eq!(err, Errno::from_raw(0));
     /// ```
     pub fn clear() {
-        // Safe because errno is a thread-local variable
-        unsafe {
-            *errno_location() = 0;
-        }
+        Self::set_raw(0)
     }
 
     /// Returns `Ok(value)` if it does not contain the sentinel value. This
