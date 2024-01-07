@@ -591,7 +591,10 @@ impl SigSet {
     /// For more information see the
     /// [`sigsuspend(2)`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/sigsuspend.html).
     #[cfg(any(
+        bsd,
         linux_android,
+        solarish,
+        target_os = "haiku",
         target_os = "hurd",
         target_os = "aix",
         target_os = "fushsia"
