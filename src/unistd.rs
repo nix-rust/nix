@@ -1253,11 +1253,16 @@ pub fn isatty(fd: RawFd) -> Result<bool> {
     }
 }
 
-/// Flags for `linkat` function.
-#[derive(Clone, Copy, Debug)]
-pub enum LinkatFlags {
-    SymlinkFollow,
-    NoSymlinkFollow,
+#[cfg(not(target_os = "redox"))]
+pub type LinkatFlags = AtFlags;
+#[cfg(not(target_os = "redox"))]
+impl LinkatFlags {
+    #[deprecated(since = "0.28.0", note = "The variant is deprecated, please use `AtFlags` instead")]
+    #[allow(non_upper_case_globals)]
+    pub const SymlinkFollow: LinkatFlags = LinkatFlags::AT_SYMLINK_FOLLOW;
+    #[deprecated(since = "0.28.0", note = "The variant is deprecated, please use `AtFlags` instead")]
+    #[allow(non_upper_case_globals)]
+    pub const NoSymlinkFollow: LinkatFlags = LinkatFlags::empty();
 }
 
 /// Link one file to another file
@@ -1265,7 +1270,7 @@ pub enum LinkatFlags {
 /// Creates a new link (directory entry) at `newpath` for the existing file at `oldpath`. In the
 /// case of a relative `oldpath`, the path is interpreted relative to the directory associated
 /// with file descriptor `olddirfd` instead of the current working directory and similiarly for
-/// `newpath` and file descriptor `newdirfd`. In case `flag` is LinkatFlags::SymlinkFollow and
+/// `newpath` and file descriptor `newdirfd`. In case `flag` is `AtFlags::AT_SYMLINK_FOLLOW` and
 /// `oldpath` names a symoblic link, a new link for the target of the symbolic link is created.
 /// If either `olddirfd` or `newdirfd` is `None`, `AT_FDCWD` is used respectively where `oldpath`
 /// and/or `newpath` is then interpreted relative to the current working directory of the calling
@@ -1279,13 +1284,8 @@ pub fn linkat<P: ?Sized + NixPath>(
     oldpath: &P,
     newdirfd: Option<RawFd>,
     newpath: &P,
-    flag: LinkatFlags,
+    flag: AtFlags,
 ) -> Result<()> {
-    let atflag = match flag {
-        LinkatFlags::SymlinkFollow => AtFlags::AT_SYMLINK_FOLLOW,
-        LinkatFlags::NoSymlinkFollow => AtFlags::empty(),
-    };
-
     let res = oldpath.with_nix_path(|oldcstr| {
         newpath.with_nix_path(|newcstr| unsafe {
             libc::linkat(
@@ -1293,7 +1293,7 @@ pub fn linkat<P: ?Sized + NixPath>(
                 oldcstr.as_ptr(),
                 at_rawfd(newdirfd),
                 newcstr.as_ptr(),
-                atflag.bits() as libc::c_int,
+                flag.bits(),
             )
         })
     })??;

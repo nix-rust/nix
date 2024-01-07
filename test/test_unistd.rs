@@ -918,7 +918,7 @@ fn test_linkat_file() {
         oldfilename,
         Some(dirfd),
         newfilename,
-        LinkatFlags::SymlinkFollow,
+        AtFlags::AT_SYMLINK_FOLLOW,
     )
     .unwrap();
     assert!(newfilepath.exists());
@@ -955,7 +955,7 @@ fn test_linkat_olddirfd_none() {
         oldfilename,
         Some(dirfd),
         newfilename,
-        LinkatFlags::SymlinkFollow,
+        AtFlags::AT_SYMLINK_FOLLOW,
     )
     .unwrap();
     assert!(newfilepath.exists());
@@ -992,7 +992,7 @@ fn test_linkat_newdirfd_none() {
         oldfilename,
         None,
         newfilename,
-        LinkatFlags::SymlinkFollow,
+        AtFlags::AT_SYMLINK_FOLLOW,
     )
     .unwrap();
     assert!(newfilepath.exists());
@@ -1030,7 +1030,7 @@ fn test_linkat_no_follow_symlink() {
         symoldfilename,
         Some(dirfd),
         newfilename,
-        LinkatFlags::NoSymlinkFollow,
+        AtFlags::empty(),
     )
     .unwrap();
 
@@ -1073,7 +1073,7 @@ fn test_linkat_follow_symlink() {
         symoldfilename,
         Some(dirfd),
         newfilename,
-        LinkatFlags::SymlinkFollow,
+        AtFlags::AT_SYMLINK_FOLLOW,
     )
     .unwrap();
 
