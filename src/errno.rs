@@ -2,13 +2,13 @@
 //!
 //! # Example
 //! ```
-//! use nix::errno::{Errno, set_errno};
+//! use nix::errno::Errno;
 //!
-//! set_errno(Errno::EIO);
+//! Errno::set(Errno::EIO);
 //! assert_eq!(Errno::last(), Errno::EIO);
 //!
 //! Errno::clear();
-//! assert_eq!(Errno::last(), Errno::from_i32(0));
+//! assert_eq!(Errno::last(), Errno::from_raw(0));
 //! ```
 
 use crate::Result;
@@ -52,47 +52,57 @@ cfg_if! {
     }
 }
 
-/// Sets the platform-specific errno to no-error
-fn clear() {
-    // Safe because errno is a thread-local variable
-    unsafe {
-        *errno_location() = 0;
-    }
-}
-
 /// Returns the platform-specific value of errno
+#[deprecated(note = "please use `Errno::last_raw()` instead")]
 pub fn errno() -> i32 {
-    unsafe { *errno_location() }
-}
-
-/// Sets the platform-specific value of errno.
-///
-/// # Example
-/// ```
-/// use nix::errno::{Errno, set_errno};
-///
-/// set_errno(Errno::EIO);
-///
-/// assert_eq!(Errno::last(), Errno::EIO);
-/// ```
-pub fn set_errno(errno: Errno) {
-    // Safe because errno is a thread-local variable
-    unsafe {
-        *errno_location() = errno as i32;
-    }
+    Errno::last_raw()
 }
 
 impl Errno {
+    /// Returns the current value of errno
     pub fn last() -> Self {
-        last()
+        Self::from_raw(Self::last_raw())
+    }
+
+    /// Returns the current raw i32 value of errno
+    pub fn last_raw() -> i32 {
+        unsafe { *errno_location() }
+    }
+
+    /// Sets the value of errno.
+    ///
+    /// # Example
+    /// ```
+    /// use nix::errno::Errno;
+    ///
+    /// Errno::set(Errno::EIO);
+    ///
+    /// assert_eq!(Errno::last(), Errno::EIO);
+    /// ```
+    pub fn set(errno: Self) {
+        Self::set_raw(errno as i32)
+    }
+
+    /// Sets the raw i32 value of errno.
+    pub fn set_raw(errno: i32) {
+        // Safe because errno is a thread-local variable
+        unsafe {
+            *errno_location() = errno;
+        }
+    }
+
+    #[deprecated(note = "please use `Errno::from_raw()` instead")]
+    pub const fn from_i32(err: i32) -> Errno {
+        Self::from_raw(err)
+    }
+
+    pub const fn from_raw(err: i32) -> Errno {
+        #[allow(deprecated)]
+        from_i32(err)
     }
 
     pub fn desc(self) -> &'static str {
         desc(self)
-    }
-
-    pub const fn from_i32(err: i32) -> Errno {
-        from_i32(err)
     }
 
     /// Sets the platform-specific errno to no-error
@@ -106,10 +116,13 @@ impl Errno {
     ///
     /// let err = Errno::last();
     /// assert_ne!(err, Errno::EIO);
-    /// assert_eq!(err, Errno::from_i32(0));
+    /// assert_eq!(err, Errno::from_raw(0));
     /// ```
     pub fn clear() {
-        clear()
+        // Safe because errno is a thread-local variable
+        unsafe {
+            *errno_location() = 0;
+        }
     }
 
     /// Returns `Ok(value)` if it does not contain the sentinel value. This
@@ -178,12 +191,8 @@ impl TryFrom<io::Error> for Errno {
     type Error = io::Error;
 
     fn try_from(ioerror: io::Error) -> std::result::Result<Self, io::Error> {
-        ioerror.raw_os_error().map(Errno::from_i32).ok_or(ioerror)
+        ioerror.raw_os_error().map(Errno::from_raw).ok_or(ioerror)
     }
-}
-
-fn last() -> Errno {
-    Errno::from_i32(errno())
 }
 
 fn desc(errno: Errno) -> &'static str {
@@ -972,6 +981,7 @@ mod consts {
         pub const ENOTSUP: Errno = Errno::EOPNOTSUPP;
     }
 
+    #[deprecated(note = "please use `Errno::from_raw()` instead")]
     pub const fn from_i32(e: i32) -> Errno {
         use self::Errno::*;
 
@@ -1235,6 +1245,7 @@ mod consts {
         pub const EDEADLOCK: Errno = Errno::EDEADLK;
     }
 
+    #[deprecated(note = "please use `Errno::from_raw()` instead")]
     pub const fn from_i32(e: i32) -> Errno {
         use self::Errno::*;
 
@@ -1462,6 +1473,7 @@ mod consts {
         pub const EOPNOTSUPP: Errno = Errno::ENOTSUP;
     }
 
+    #[deprecated(note = "please use `Errno::from_raw()` instead")]
     pub const fn from_i32(e: i32) -> Errno {
         use self::Errno::*;
 
@@ -1679,6 +1691,7 @@ mod consts {
         pub const EOPNOTSUPP: Errno = Errno::ENOTSUP;
     }
 
+    #[deprecated(note = "please use `Errno::from_raw()` instead")]
     pub const fn from_i32(e: i32) -> Errno {
         use self::Errno::*;
 
@@ -1891,6 +1904,7 @@ mod consts {
         pub const EWOULDBLOCK: Errno = Errno::EAGAIN;
     }
 
+    #[deprecated(note = "please use `Errno::from_raw()` instead")]
     pub const fn from_i32(e: i32) -> Errno {
         use self::Errno::*;
 
@@ -2105,6 +2119,7 @@ mod consts {
         pub const EWOULDBLOCK: Errno = Errno::EAGAIN;
     }
 
+    #[deprecated(note = "please use `Errno::from_raw()` instead")]
     pub const fn from_i32(e: i32) -> Errno {
         use self::Errno::*;
 
@@ -2308,6 +2323,7 @@ mod consts {
         pub const EWOULDBLOCK: Errno = Errno::EAGAIN;
     }
 
+    #[deprecated(note = "please use `Errno::from_raw()` instead")]
     pub const fn from_i32(e: i32) -> Errno {
         use self::Errno::*;
 
@@ -2537,6 +2553,7 @@ mod consts {
         pub const EWOULDBLOCK: Errno = Errno::EAGAIN;
     }
 
+    #[deprecated(note = "please use `Errno::from_raw()` instead")]
     pub const fn from_i32(e: i32) -> Errno {
         use self::Errno::*;
 
@@ -2757,6 +2774,7 @@ mod consts {
         pub const EOPNOTSUPP: Errno = Errno::ENOTSUP;
     }
 
+    #[deprecated(note = "please use `Errno::from_raw()` instead")]
     pub const fn from_i32(e: i32) -> Errno {
         use self::Errno::*;
 
@@ -2948,6 +2966,7 @@ mod consts {
         EOPNOTSUPP = libc::EOPNOTSUPP,
     }
 
+    #[deprecated(note = "please use `Errno::from_raw()` instead")]
     pub const fn from_i32(e: i32) -> Errno {
         use self::Errno::*;
 
@@ -3171,6 +3190,7 @@ mod consts {
         pub const EWOULDBLOCK: Errno = Errno::EAGAIN;
     }
 
+    #[deprecated(note = "please use `Errno::from_raw()` instead")]
     pub const fn from_i32(e: i32) -> Errno {
         use self::Errno::*;
 
