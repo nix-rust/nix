@@ -108,9 +108,9 @@ impl Errno {
     /// Sets the platform-specific errno to no-error
     ///
     /// ```
-    /// use nix::errno::{Errno, set_errno};
+    /// use nix::errno::Errno;
     ///
-    /// set_errno(Errno::EIO);
+    /// Errno::set(Errno::EIO);
     ///
     /// Errno::clear();
     ///
