@@ -567,8 +567,6 @@ feature! {
 /// let _ = cmsg_space!(RawFd, TimeVal);
 /// # }
 /// ```
-// Unfortunately, CMSG_SPACE isn't a const_fn, or else we could return a
-// stack-allocated array.
 #[macro_export]
 macro_rules! cmsg_space {
     ( $( $x:ty ),* ) => {
@@ -581,7 +579,7 @@ macro_rules! cmsg_space {
 
 #[inline]
 #[doc(hidden)]
-pub fn cmsg_space<T>() -> usize {
+pub const fn cmsg_space<T>() -> usize {
     // SAFETY: CMSG_SPACE is always safe
     unsafe { libc::CMSG_SPACE(mem::size_of::<T>() as libc::c_uint) as usize }
 }
