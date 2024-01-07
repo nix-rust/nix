@@ -582,6 +582,35 @@ impl SigSet {
         })
     }
 
+    /// Wait for a signal
+    ///
+    /// # Return value
+    /// If `sigsuspend(2)` is interrupted (EINTR), this function returns `Ok`.
+    /// If `sigsuspend(2)` set other error, this function returns `Err`.
+    ///
+    /// For more information see the
+    /// [`sigsuspend(2)`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/sigsuspend.html).
+    #[cfg(any(
+        bsd,
+        linux_android,
+        solarish,
+        target_os = "haiku",
+        target_os = "hurd",
+        target_os = "aix",
+        target_os = "fushsia"
+    ))]
+    #[doc(alias("sigsuspend"))]
+    pub fn suspend(&self) -> Result<()> {
+        let res = unsafe {
+            libc::sigsuspend(&self.sigset as *const libc::sigset_t)
+        };
+        match Errno::result(res).map(drop) {
+            Err(Errno::EINTR) => Ok(()),
+            Err(e) => Err(e),
+            Ok(_) => unreachable!("because this syscall always returns -1 if returns"),
+        }
+    }
+
     /// Converts a `libc::sigset_t` object to a [`SigSet`] without checking  whether the
     /// `libc::sigset_t` is already initialized.
     ///
