@@ -79,8 +79,8 @@ impl Errno {
     ///
     /// assert_eq!(Errno::last(), Errno::EIO);
     /// ```
-    pub fn set(errno: Self) {
-        Self::set_raw(errno as i32)
+    pub fn set(self) {
+        Self::set_raw(self as i32)
     }
 
     /// Sets the raw i32 value of errno.
