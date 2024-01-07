@@ -248,6 +248,6 @@ pub fn clock_nanosleep(
     if ret == 0 {
         Ok(remain)
     } else {
-        Err(Errno::from_i32(ret))
+        Err(Errno::from_raw(ret))
     }
 }
