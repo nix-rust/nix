@@ -1,3 +1,16 @@
+//! Safe wrappers around errno functions
+//!
+//! # Example
+//! ```
+//! use nix::errno::{Errno, set_errno};
+//!
+//! set_errno(Errno::EIO);
+//! assert_eq!(Errno::last(), Errno::EIO);
+//!
+//! Errno::clear();
+//! assert_eq!(Errno::last(), Errno::from_i32(0));
+//! ```
+
 use crate::Result;
 use cfg_if::cfg_if;
 use libc::{c_int, c_void};
@@ -53,6 +66,15 @@ pub fn errno() -> i32 {
 }
 
 /// Sets the platform-specific value of errno.
+///
+/// # Example
+/// ```
+/// use nix::errno::{Errno, set_errno};
+///
+/// set_errno(Errno::EIO);
+///
+/// assert_eq!(Errno::last(), Errno::EIO);
+/// ```
 pub fn set_errno(errno: Errno) {
     // Safe because errno is a thread-local variable
     unsafe {
@@ -73,6 +95,19 @@ impl Errno {
         from_i32(err)
     }
 
+    /// Sets the platform-specific errno to no-error
+    ///
+    /// ```
+    /// use nix::errno::{Errno, set_errno};
+    ///
+    /// set_errno(Errno::EIO);
+    ///
+    /// Errno::clear();
+    ///
+    /// let err = Errno::last();
+    /// assert_ne!(err, Errno::EIO);
+    /// assert_eq!(err, Errno::from_i32(0));
+    /// ```
     pub fn clear() {
         clear()
     }
