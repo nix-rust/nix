@@ -43,7 +43,7 @@ use crate::{sys::stat::Mode, NixPath, Result};
 pub use self::posix_fadvise::{posix_fadvise, PosixFadviseAdvice};
 
 #[cfg(not(target_os = "redox"))]
-#[cfg(any(feature = "fs", feature = "process"))]
+#[cfg(any(feature = "fs", feature = "process", feature = "user"))]
 libc_bitflags! {
     #[cfg_attr(docsrs, doc(cfg(any(feature = "fs", feature = "process"))))]
     pub struct AtFlags: c_int {
