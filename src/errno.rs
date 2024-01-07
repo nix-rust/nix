@@ -53,7 +53,7 @@ cfg_if! {
 }
 
 /// Returns the platform-specific value of errno
-#[deprecated(note = "please use `Errno::last_raw()` instead")]
+#[deprecated(since = "0.28.0", note = "please use `Errno::last_raw()` instead")]
 pub fn errno() -> i32 {
     Errno::last_raw()
 }
@@ -91,7 +91,10 @@ impl Errno {
         }
     }
 
-    #[deprecated(note = "please use `Errno::from_raw()` instead")]
+    #[deprecated(
+        since = "0.28.0",
+        note = "please use `Errno::from_raw()` instead"
+    )]
     pub const fn from_i32(err: i32) -> Errno {
         Self::from_raw(err)
     }
@@ -981,7 +984,10 @@ mod consts {
         pub const ENOTSUP: Errno = Errno::EOPNOTSUPP;
     }
 
-    #[deprecated(note = "please use `Errno::from_raw()` instead")]
+    #[deprecated(
+        since = "0.28.0",
+        note = "please use `Errno::from_raw()` instead"
+    )]
     pub const fn from_i32(e: i32) -> Errno {
         use self::Errno::*;
 
@@ -1245,7 +1251,10 @@ mod consts {
         pub const EDEADLOCK: Errno = Errno::EDEADLK;
     }
 
-    #[deprecated(note = "please use `Errno::from_raw()` instead")]
+    #[deprecated(
+        since = "0.28.0",
+        note = "please use `Errno::from_raw()` instead"
+    )]
     pub const fn from_i32(e: i32) -> Errno {
         use self::Errno::*;
 
@@ -1473,7 +1482,10 @@ mod consts {
         pub const EOPNOTSUPP: Errno = Errno::ENOTSUP;
     }
 
-    #[deprecated(note = "please use `Errno::from_raw()` instead")]
+    #[deprecated(
+        since = "0.28.0",
+        note = "please use `Errno::from_raw()` instead"
+    )]
     pub const fn from_i32(e: i32) -> Errno {
         use self::Errno::*;
 
@@ -1691,7 +1703,10 @@ mod consts {
         pub const EOPNOTSUPP: Errno = Errno::ENOTSUP;
     }
 
-    #[deprecated(note = "please use `Errno::from_raw()` instead")]
+    #[deprecated(
+        since = "0.28.0",
+        note = "please use `Errno::from_raw()` instead"
+    )]
     pub const fn from_i32(e: i32) -> Errno {
         use self::Errno::*;
 
@@ -1904,7 +1919,10 @@ mod consts {
         pub const EWOULDBLOCK: Errno = Errno::EAGAIN;
     }
 
-    #[deprecated(note = "please use `Errno::from_raw()` instead")]
+    #[deprecated(
+        since = "0.28.0",
+        note = "please use `Errno::from_raw()` instead"
+    )]
     pub const fn from_i32(e: i32) -> Errno {
         use self::Errno::*;
 
@@ -2119,7 +2137,10 @@ mod consts {
         pub const EWOULDBLOCK: Errno = Errno::EAGAIN;
     }
 
-    #[deprecated(note = "please use `Errno::from_raw()` instead")]
+    #[deprecated(
+        since = "0.28.0",
+        note = "please use `Errno::from_raw()` instead"
+    )]
     pub const fn from_i32(e: i32) -> Errno {
         use self::Errno::*;
 
@@ -2323,7 +2344,10 @@ mod consts {
         pub const EWOULDBLOCK: Errno = Errno::EAGAIN;
     }
 
-    #[deprecated(note = "please use `Errno::from_raw()` instead")]
+    #[deprecated(
+        since = "0.28.0",
+        note = "please use `Errno::from_raw()` instead"
+    )]
     pub const fn from_i32(e: i32) -> Errno {
         use self::Errno::*;
 
@@ -2553,7 +2577,10 @@ mod consts {
         pub const EWOULDBLOCK: Errno = Errno::EAGAIN;
     }
 
-    #[deprecated(note = "please use `Errno::from_raw()` instead")]
+    #[deprecated(
+        since = "0.28.0",
+        note = "please use `Errno::from_raw()` instead"
+    )]
     pub const fn from_i32(e: i32) -> Errno {
         use self::Errno::*;
 
@@ -2774,7 +2801,10 @@ mod consts {
         pub const EOPNOTSUPP: Errno = Errno::ENOTSUP;
     }
 
-    #[deprecated(note = "please use `Errno::from_raw()` instead")]
+    #[deprecated(
+        since = "0.28.0",
+        note = "please use `Errno::from_raw()` instead"
+    )]
     pub const fn from_i32(e: i32) -> Errno {
         use self::Errno::*;
 
@@ -2966,7 +2996,10 @@ mod consts {
         EOPNOTSUPP = libc::EOPNOTSUPP,
     }
 
-    #[deprecated(note = "please use `Errno::from_raw()` instead")]
+    #[deprecated(
+        since = "0.28.0",
+        note = "please use `Errno::from_raw()` instead"
+    )]
     pub const fn from_i32(e: i32) -> Errno {
         use self::Errno::*;
 
@@ -3190,7 +3223,10 @@ mod consts {
         pub const EWOULDBLOCK: Errno = Errno::EAGAIN;
     }
 
-    #[deprecated(note = "please use `Errno::from_raw()` instead")]
+    #[deprecated(
+        since = "0.28.0",
+        note = "please use `Errno::from_raw()` instead"
+    )]
     pub const fn from_i32(e: i32) -> Errno {
         use self::Errno::*;
 
