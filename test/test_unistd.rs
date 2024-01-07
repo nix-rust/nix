@@ -551,6 +551,8 @@ fn test_fchown() {
 #[test]
 #[cfg(not(target_os = "redox"))]
 fn test_fchownat() {
+    use nix::fcntl::AtFlags;
+
     let _dr = crate::DirRestore::new();
     // Testing for anything other than our own UID/GID is hard.
     let uid = Some(getuid());
@@ -564,14 +566,13 @@ fn test_fchownat() {
 
     let dirfd = open(tempdir.path(), OFlag::empty(), Mode::empty()).unwrap();
 
-    fchownat(Some(dirfd), "file", uid, gid, FchownatFlags::FollowSymlink)
-        .unwrap();
+    fchownat(Some(dirfd), "file", uid, gid, AtFlags::empty()).unwrap();
 
     chdir(tempdir.path()).unwrap();
-    fchownat(None, "file", uid, gid, FchownatFlags::FollowSymlink).unwrap();
+    fchownat(None, "file", uid, gid, AtFlags::empty()).unwrap();
 
     fs::remove_file(&path).unwrap();
-    fchownat(None, "file", uid, gid, FchownatFlags::FollowSymlink).unwrap_err();
+    fchownat(None, "file", uid, gid, AtFlags::empty()).unwrap_err();
 }
 
 #[test]

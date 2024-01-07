@@ -737,11 +737,17 @@ pub fn fchown(fd: RawFd, owner: Option<Uid>, group: Option<Gid>) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
-/// Flags for `fchownat` function.
-#[derive(Clone, Copy, Debug)]
-pub enum FchownatFlags {
-    FollowSymlink,
-    NoFollowSymlink,
+// Just a wrapper around `AtFlags` so that we can help our users migrate.
+#[cfg(not(target_os = "redox"))]
+pub type FchownatFlags = AtFlags;
+#[cfg(not(target_os = "redox"))]
+impl FchownatFlags {
+    #[deprecated(since = "0.28.0", note = "The variant is deprecated, please use `AtFlags` instead")]
+    #[allow(non_upper_case_globals)]
+    pub const FollowSymlink: FchownatFlags = FchownatFlags::empty();
+    #[deprecated(since = "0.28.0", note = "The variant is deprecated, please use `AtFlags` instead")]
+    #[allow(non_upper_case_globals)]
+    pub const NoFollowSymlink: FchownatFlags = FchownatFlags::AT_SYMLINK_NOFOLLOW;
 }
 
 /// Change the ownership of the file at `path` to be owned by the specified
@@ -755,10 +761,10 @@ pub enum FchownatFlags {
 /// with the file descriptor `dirfd` or the current working directory
 /// if `dirfd` is `None`.
 ///
-/// If `flag` is `FchownatFlags::NoFollowSymlink` and `path` names a symbolic link,
+/// If `flag` is `AtFlags::AT_SYMLINK_NOFOLLOW` and `path` names a symbolic link,
 /// then the mode of the symbolic link is changed.
 ///
-/// `fchownat(None, path, owner, group, FchownatFlags::NoFollowSymlink)` is identical to
+/// `fchownat(None, path, owner, group, AtFlags::AT_SYMLINK_NOFOLLOW)` is identical to
 /// a call `libc::lchown(path, owner, group)`.  That's why `lchown` is unimplemented in
 /// the `nix` crate.
 ///
@@ -771,12 +777,8 @@ pub fn fchownat<P: ?Sized + NixPath>(
     path: &P,
     owner: Option<Uid>,
     group: Option<Gid>,
-    flag: FchownatFlags,
+    flag: AtFlags,
 ) -> Result<()> {
-    let atflag = match flag {
-        FchownatFlags::FollowSymlink => AtFlags::empty(),
-        FchownatFlags::NoFollowSymlink => AtFlags::AT_SYMLINK_NOFOLLOW,
-    };
     let res = path.with_nix_path(|cstr| unsafe {
         let (uid, gid) = chown_raw_ids(owner, group);
         libc::fchownat(
@@ -784,7 +786,7 @@ pub fn fchownat<P: ?Sized + NixPath>(
             cstr.as_ptr(),
             uid,
             gid,
-            atflag.bits() as libc::c_int,
+            flag.bits()
         )
     })?;
 
