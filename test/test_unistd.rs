@@ -897,6 +897,8 @@ fn test_symlinkat() {
 #[test]
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
 fn test_linkat_file() {
+    use nix::fcntl::AtFlags;
+
     let tempdir = tempdir().unwrap();
     let oldfilename = "foo.txt";
     let oldfilepath = tempdir.path().join(oldfilename);
@@ -927,6 +929,8 @@ fn test_linkat_file() {
 #[test]
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
 fn test_linkat_olddirfd_none() {
+    use nix::fcntl::AtFlags;
+
     let _dr = crate::DirRestore::new();
 
     let tempdir_oldfile = tempdir().unwrap();
@@ -964,6 +968,8 @@ fn test_linkat_olddirfd_none() {
 #[test]
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
 fn test_linkat_newdirfd_none() {
+    use nix::fcntl::AtFlags;
+
     let _dr = crate::DirRestore::new();
 
     let tempdir_oldfile = tempdir().unwrap();
@@ -1001,6 +1007,8 @@ fn test_linkat_newdirfd_none() {
 #[test]
 #[cfg(not(any(apple_targets, target_os = "redox", target_os = "haiku")))]
 fn test_linkat_no_follow_symlink() {
+    use nix::fcntl::AtFlags;
+
     let _m = crate::CWD_LOCK.read();
 
     let tempdir = tempdir().unwrap();
@@ -1044,6 +1052,8 @@ fn test_linkat_no_follow_symlink() {
 #[test]
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
 fn test_linkat_follow_symlink() {
+    use nix::fcntl::AtFlags;
+
     let _m = crate::CWD_LOCK.read();
 
     let tempdir = tempdir().unwrap();
