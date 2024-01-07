@@ -4,7 +4,7 @@
 //! ```
 //! use nix::errno::Errno;
 //!
-//! Errno::set(Errno::EIO);
+//! Errno::EIO.set();
 //! assert_eq!(Errno::last(), Errno::EIO);
 //!
 //! Errno::clear();
@@ -75,7 +75,7 @@ impl Errno {
     /// ```
     /// use nix::errno::Errno;
     ///
-    /// Errno::set(Errno::EIO);
+    /// Errno::EIO.set();
     ///
     /// assert_eq!(Errno::last(), Errno::EIO);
     /// ```
@@ -113,7 +113,7 @@ impl Errno {
     /// ```
     /// use nix::errno::Errno;
     ///
-    /// Errno::set(Errno::EIO);
+    /// Errno::EIO.set();
     ///
     /// Errno::clear();
     ///
