@@ -199,3 +199,55 @@ pub fn clock_getcpuclockid(pid: Pid) -> Result<ClockId> {
         Err(Errno::from_i32(ret))
     }
 }
+
+#[cfg(any(
+    linux_android,
+    solarish,
+    freebsdlike,
+    target_os = "netbsd",
+    target_os = "hurd",
+    target_os = "aix"
+))]
+libc_bitflags! {
+    /// Flags that are used for arming the timer.
+    pub struct ClockNanosleepFlags: libc::c_int {
+        TIMER_ABSTIME;
+    }
+}
+
+/// Suspend execution of this thread for the amount of time specified by `request`
+/// and measured against the clock speficied by `clock_id`. If `flags` is
+/// `TIMER_ABSTIME`, this function will suspend execution until the time value of
+/// clock_id reaches the absolute time specified by `request`. If a signal is caught
+/// by a signal-catching function, or a signal causes the process to terminate,
+/// this sleep is interrrupted.
+///
+/// see also [man 3 clock_nanosleep](https://pubs.opengroup.org/onlinepubs/009695399/functions/clock_nanosleep.html)
+#[cfg(any(
+    linux_android,
+    solarish,
+    freebsdlike,
+    target_os = "netbsd",
+    target_os = "hurd",
+    target_os = "aix"
+))]
+pub fn clock_nanosleep(
+    clock_id: ClockId,
+    flags: ClockNanosleepFlags,
+    request: &TimeSpec,
+) -> Result<TimeSpec> {
+    let mut remain = TimeSpec::new(0, 0);
+    let ret = unsafe {
+        libc::clock_nanosleep(
+            clock_id.as_raw(),
+            flags.bits(),
+            request.as_ref() as *const _,
+            remain.as_mut() as *mut _,
+        )
+    };
+    if ret == 0 {
+        Ok(remain)
+    } else {
+        Err(Errno::from_i32(ret))
+    }
+}
