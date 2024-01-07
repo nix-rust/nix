@@ -158,7 +158,7 @@ impl AioCb {
         let r = unsafe { libc::aio_error(&self.aiocb().0) };
         match r {
             0 => Ok(()),
-            num if num > 0 => Err(Errno::from_i32(num)),
+            num if num > 0 => Err(Errno::from_raw(num)),
             -1 => Err(Errno::last()),
             num => panic!("unknown aio_error return value {num:?}"),
         }

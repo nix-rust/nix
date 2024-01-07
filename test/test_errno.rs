@@ -1,8 +1,8 @@
-use nix::errno::{set_errno, Errno};
+use nix::errno::Errno;
 
 #[test]
 fn errno_set_and_read() {
     Errno::clear();
-    set_errno(Errno::ENFILE);
+    Errno::set(Errno::ENFILE);
     assert_eq!(Errno::last(), Errno::ENFILE);
 }
