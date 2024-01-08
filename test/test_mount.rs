@@ -49,7 +49,7 @@ exit 23";
             .mode((Mode::S_IRWXU | Mode::S_IRWXG | Mode::S_IRWXO).bits())
             .open(&test_path)
             .or_else(|e| {
-                if Errno::from_i32(e.raw_os_error().unwrap())
+                if Errno::from_raw(e.raw_os_error().unwrap())
                     == Errno::EOVERFLOW
                 {
                     // Skip tests on certain Linux kernels which have a bug

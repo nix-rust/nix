@@ -1109,7 +1109,7 @@ mod posix_fadvise {
         if res == 0 {
             Ok(())
         } else {
-            Err(Errno::from_i32(res))
+            Err(Errno::from_raw(res))
         }
     }
     }
@@ -1131,7 +1131,7 @@ pub fn posix_fallocate(
     match Errno::result(res) {
         Err(err) => Err(err),
         Ok(0) => Ok(()),
-        Ok(errno) => Err(Errno::from_i32(errno)),
+        Ok(errno) => Err(Errno::from_raw(errno)),
     }
 }
 }

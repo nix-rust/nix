@@ -1,6 +1,6 @@
 //! Safe wrappers around functions found in libc "unistd.h" header
 
-use crate::errno::{self, Errno};
+use crate::errno::Errno;
 
 #[cfg(any(
     all(feature = "fs", not(target_os = "redox")),
@@ -2148,7 +2148,7 @@ pub fn fpathconf<F: AsFd>(fd: F, var: PathconfVar) -> Result<Option<c_long>> {
         libc::fpathconf(fd.as_fd().as_raw_fd(), var as c_int)
     };
     if raw == -1 {
-        if errno::errno() == 0 {
+        if Errno::last_raw() == 0 {
             Ok(None)
         } else {
             Err(Errno::last())
@@ -2188,7 +2188,7 @@ pub fn pathconf<P: ?Sized + NixPath>(
         libc::pathconf(cstr.as_ptr(), var as c_int)
     })?;
     if raw == -1 {
-        if errno::errno() == 0 {
+        if Errno::last_raw() == 0 {
             Ok(None)
         } else {
             Err(Errno::last())
@@ -2787,7 +2787,7 @@ pub fn sysconf(var: SysconfVar) -> Result<Option<c_long>> {
         libc::sysconf(var as c_int)
     };
     if raw == -1 {
-        if errno::errno() == 0 {
+        if Errno::last_raw() == 0 {
             Ok(None)
         } else {
             Err(Errno::last())
@@ -3543,7 +3543,7 @@ pub fn ttyname<F: AsFd>(fd: F) -> Result<PathBuf> {
 
     let ret = unsafe { libc::ttyname_r(fd.as_fd().as_raw_fd(), c_buf, buf.len()) };
     if ret != 0 {
-        return Err(Errno::from_i32(ret));
+        return Err(Errno::from_raw(ret));
     }
 
     CStr::from_bytes_until_nul(&buf[..])

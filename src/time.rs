@@ -196,7 +196,7 @@ pub fn clock_getcpuclockid(pid: Pid) -> Result<ClockId> {
         let res = unsafe { clk_id.assume_init() };
         Ok(ClockId::from(res))
     } else {
-        Err(Errno::from_i32(ret))
+        Err(Errno::from_raw(ret))
     }
 }
 
@@ -248,6 +248,6 @@ pub fn clock_nanosleep(
     if ret == 0 {
         Ok(remain)
     } else {
-        Err(Errno::from_i32(ret))
+        Err(Errno::from_raw(ret))
     }
 }
