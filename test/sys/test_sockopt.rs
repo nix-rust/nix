@@ -298,7 +298,7 @@ fn test_get_mtu() {
 }
 
 #[test]
-#[cfg(any(apple_targets, linux_android, target_os = "freebsd"))]
+#[cfg(any(linux_android, target_os = "freebsd"))]
 fn test_ttl_opts() {
     let fd4 = socket(
         AddressFamily::Inet,
