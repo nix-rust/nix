@@ -1039,7 +1039,7 @@ sockopt_impl!(
     libc::IP_TTL,
     libc::c_int
 );
-#[cfg(any(apple_targets, linux_android, target_os = "freebsd"))]
+#[cfg(any(apple_targets, linux_android))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     /// Retrieve the current time-to-live field for every
@@ -1061,7 +1061,7 @@ sockopt_impl!(
     libc::IP_TTL,
     libc::c_int
 );
-#[cfg(any(apple_targets, linux_android, target_os = "freebsd"))]
+#[cfg(any(apple_targets, linux_android))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     /// Retrieve the current hop limit field for every
