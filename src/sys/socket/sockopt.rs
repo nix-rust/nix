@@ -1042,8 +1042,8 @@ sockopt_impl!(
 #[cfg(any(apple_targets, linux_android))]
 #[cfg(feature = "net")]
 sockopt_impl!(
-    /// Retrieve the current time-to-live field for every
-    /// IPv4 packet received on this socket.
+    /// Retrieve the current time-to-live field via an ancillary message (cmsg)
+    /// for every IPv4 packet received on this socket.
     IpRecvTtl,
     Both,
     libc::IPPROTO_IP,
@@ -1053,8 +1053,8 @@ sockopt_impl!(
 #[cfg(any(apple_targets, linux_android, target_os = "freebsd"))]
 #[cfg(feature = "net")]
 sockopt_impl!(
-    /// Retrieve the current time-to-live field for every
-    /// IPv4 packet received on this socket.
+    /// Retrieve the current time-to-live field via an ancillary message (cmsg)
+    /// for every IPv4 packet received on this socket.
     IpTtl,
     Both,
     libc::IPPROTO_IP,
@@ -1064,8 +1064,8 @@ sockopt_impl!(
 #[cfg(any(apple_targets, linux_android))]
 #[cfg(feature = "net")]
 sockopt_impl!(
-    /// Retrieve the current hop limit field for every
-    /// IPv6 packet received on this socket.
+    /// Retrieve the current hop limit field via an ancillary message (cmsg)
+    /// for every IPv6 packet received on this socket.
     Ipv6RecvHopLimit,
     Both,
     libc::IPPROTO_IPV6,
