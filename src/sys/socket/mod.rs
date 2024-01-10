@@ -639,7 +639,7 @@ impl<'a> Iterator for CmsgIterator<'a> {
 }
 
 /// A type-safe wrapper around a single control message, as used with
-/// [`recvmsg`](#fn.recvmsg).
+/// [`recvmsg`].
 ///
 /// [Further reading](https://man7.org/linux/man-pages/man3/cmsg.3.html)
 //  Nix version 0.13.0 and earlier used ControlMessage for both recvmsg and
@@ -1009,9 +1009,9 @@ impl ControlMessageOwned {
     }
 }
 
-/// A type-safe zero-copy wrapper around a single control message, as used wih
-/// [`sendmsg`](#fn.sendmsg).  More types may be added to this enum; do not
-/// exhaustively pattern-match it.
+/// A type-safe zero-copy wrapper around a single control message, as used with
+/// [`sendmsg`].  More types may be added to this enum; do not exhaustively
+/// pattern-match it.
 ///
 /// [Further reading](https://man7.org/linux/man-pages/man3/cmsg.3.html)
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
