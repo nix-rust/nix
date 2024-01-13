@@ -326,9 +326,9 @@ fn test_get_mtu() {
 }
 
 #[test]
-#[cfg(any(apple_targets, linux_android, target_os = "freebsd"))]
+#[cfg(any(linux_android, target_os = "freebsd"))]
 fn test_ttl_opts() {
-    /* let fd4 = socket(
+    let fd4 = socket(
         AddressFamily::Inet,
         SockType::Datagram,
         SockFlag::empty(),
@@ -336,8 +336,7 @@ fn test_ttl_opts() {
     )
     .unwrap();
     setsockopt(&fd4, sockopt::Ipv4Ttl, &1)
-        .expect("setting ipv4ttl on an inet socket should succeed"); */
-
+        .expect("setting ipv4ttl on an inet socket should succeed");
     let fd6 = socket(
         AddressFamily::Inet6,
         SockType::Datagram,
