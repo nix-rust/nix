@@ -115,7 +115,6 @@ pub mod errno;
 feature! {
     #![feature = "feature"]
 
-    #[deny(missing_docs)]
     pub mod features;
 }
 #[allow(missing_docs)]
