@@ -10,6 +10,7 @@ use nix::sys::resource::{getrusage, UsageWho};
 /// to put the new soft limit in effect, and then getrlimit() once more to ensure the limits have
 /// been updated.
 #[test]
+#[cfg_attr(miri, ignore)]
 pub fn test_resource_limits_nofile() {
     let (mut soft_limit, hard_limit) =
         getrlimit(Resource::RLIMIT_NOFILE).unwrap();
@@ -22,7 +23,9 @@ pub fn test_resource_limits_nofile() {
     assert_eq!(new_soft_limit, soft_limit);
 }
 
+// does not flare well in CI's context with miri (running for min.)
 #[test]
+#[cfg_attr(miri, ignore)]
 pub fn test_self_cpu_time() {
     // Make sure some CPU time is used.
     let mut numbers: Vec<i32> = (1..1_000_000).collect();

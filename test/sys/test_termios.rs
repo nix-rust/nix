@@ -27,6 +27,7 @@ fn test_baudrate_try_from() {
 
 // Test tcgetattr on a terminal
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_tcgetattr_pty() {
     // openpty uses ptname(3) internally
     let _m = crate::PTSNAME_MTX.lock();
@@ -37,6 +38,7 @@ fn test_tcgetattr_pty() {
 
 // Test tcgetattr on something that isn't a terminal
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_tcgetattr_enotty() {
     let file = tempfile().unwrap();
     assert_eq!(termios::tcgetattr(&file).err(), Some(Errno::ENOTTY));
@@ -44,6 +46,7 @@ fn test_tcgetattr_enotty() {
 
 // Test modifying output flags
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_output_flags() {
     // openpty uses ptname(3) internally
     let _m = crate::PTSNAME_MTX.lock();
@@ -81,6 +84,7 @@ fn test_output_flags() {
 
 // Test modifying local flags
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_local_flags() {
     // openpty uses ptname(3) internally
     let _m = crate::PTSNAME_MTX.lock();

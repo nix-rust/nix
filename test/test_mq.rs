@@ -30,6 +30,7 @@ macro_rules! assert_attr_eq {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_mq_send_and_receive() {
     const MSG_SIZE: mq_attr_member_t = 32;
     let attr = MqAttr::new(0, 10, MSG_SIZE, 0);
@@ -59,6 +60,7 @@ fn test_mq_send_and_receive() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_mq_timedreceive() {
     const MSG_SIZE: mq_attr_member_t = 32;
     let attr = MqAttr::new(0, 10, MSG_SIZE, 0);
@@ -90,6 +92,7 @@ fn test_mq_timedreceive() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_mq_getattr() {
     use nix::mqueue::mq_getattr;
     const MSG_SIZE: mq_attr_member_t = 32;
@@ -123,6 +126,7 @@ fn test_mq_getattr() {
     ),
     ignore
 )]
+#[cfg_attr(miri, ignore)]
 fn test_mq_setattr() {
     use nix::mqueue::{mq_getattr, mq_setattr};
     const MSG_SIZE: mq_attr_member_t = 32;
@@ -181,6 +185,7 @@ fn test_mq_setattr() {
     ),
     ignore
 )]
+#[cfg_attr(miri, ignore)]
 fn test_mq_set_nonblocking() {
     use nix::mqueue::{mq_getattr, mq_remove_nonblock, mq_set_nonblock};
     const MSG_SIZE: mq_attr_member_t = 32;
@@ -205,6 +210,7 @@ fn test_mq_set_nonblocking() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_mq_unlink() {
     use nix::mqueue::mq_unlink;
     const MSG_SIZE: mq_attr_member_t = 32;

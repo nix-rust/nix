@@ -92,6 +92,7 @@ mod os {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     pub fn test_parsing_kernel_version() {
         assert!(kernel_version().unwrap() > 0);
     }

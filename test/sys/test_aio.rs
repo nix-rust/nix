@@ -87,7 +87,10 @@ mod aio_fsync {
     }
 
     #[test]
-    #[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
+    #[cfg_attr(
+        any(miri, all(target_env = "musl", target_arch = "x86_64")),
+        ignore
+    )]
     fn ok() {
         const INITIAL: &[u8] = b"abcdef123456";
         let mut f = tempfile().unwrap();
@@ -134,7 +137,10 @@ mod aio_read {
     // only our bindings.  So it's sufficient to check that cancel
     // returned any AioCancelStat value.
     #[test]
-    #[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
+    #[cfg_attr(
+        any(miri, all(target_env = "musl", target_arch = "x86_64")),
+        ignore
+    )]
     fn cancel() {
         const INITIAL: &[u8] = b"abcdef123456";
         let mut rbuf = vec![0; 4];
@@ -176,7 +182,10 @@ mod aio_read {
     // Test a simple aio operation with no completion notification.  We must
     // poll for completion
     #[test]
-    #[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
+    #[cfg_attr(
+        any(miri, all(target_env = "musl", target_arch = "x86_64")),
+        ignore
+    )]
     fn ok() {
         const INITIAL: &[u8] = b"abcdef123456";
         let mut rbuf = vec![0; 4];
@@ -203,7 +212,10 @@ mod aio_read {
 
     // Like ok, but allocates the structure on the stack.
     #[test]
-    #[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
+    #[cfg_attr(
+        any(miri, all(target_env = "musl", target_arch = "x86_64")),
+        ignore
+    )]
     fn on_stack() {
         const INITIAL: &[u8] = b"abcdef123456";
         let mut rbuf = vec![0; 4];
@@ -258,7 +270,10 @@ mod aio_readv {
     }
 
     #[test]
-    #[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
+    #[cfg_attr(
+        any(miri, all(target_env = "musl", target_arch = "x86_64")),
+        ignore
+    )]
     fn ok() {
         const INITIAL: &[u8] = b"abcdef123456";
         let mut rbuf0 = vec![0; 4];
@@ -321,7 +336,7 @@ mod aio_write {
     // only our bindings.  So it's sufficient to check that cancel
     // returned any AioCancelStat value.
     #[test]
-    #[cfg_attr(target_env = "musl", ignore)]
+    #[cfg_attr(any(miri, target_env = "musl"), ignore)]
     fn cancel() {
         let wbuf: &[u8] = b"CDEF";
 
@@ -347,7 +362,10 @@ mod aio_write {
     // Test a simple aio operation with no completion notification.  We must
     // poll for completion.
     #[test]
-    #[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
+    #[cfg_attr(
+        any(miri, all(target_env = "musl", target_arch = "x86_64")),
+        ignore
+    )]
     fn ok() {
         const INITIAL: &[u8] = b"abcdef123456";
         let wbuf = "CDEF".to_string().into_bytes();
@@ -377,7 +395,10 @@ mod aio_write {
 
     // Like ok, but allocates the structure on the stack.
     #[test]
-    #[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
+    #[cfg_attr(
+        any(miri, all(target_env = "musl", target_arch = "x86_64")),
+        ignore
+    )]
     fn on_stack() {
         const INITIAL: &[u8] = b"abcdef123456";
         let wbuf = "CDEF".to_string().into_bytes();
@@ -460,7 +481,10 @@ mod aio_writev {
     // Test a simple aio operation with no completion notification.  We must
     // poll for completion.
     #[test]
-    #[cfg_attr(all(target_env = "musl", target_arch = "x86_64"), ignore)]
+    #[cfg_attr(
+        any(miri, all(target_env = "musl", target_arch = "x86_64")),
+        ignore
+    )]
     fn ok() {
         const INITIAL: &[u8] = b"abcdef123456";
         let wbuf0 = b"BC";
@@ -504,6 +528,7 @@ mod aio_writev {
     ),
     ignore
 )]
+#[cfg_attr(miri, ignore)]
 fn sigev_signal() {
     let _m = crate::SIGNAL_MTX.lock();
     let sa = SigAction::new(
@@ -545,7 +570,7 @@ fn sigev_signal() {
 
 // Tests using aio_cancel_all for all outstanding IOs.
 #[test]
-#[cfg_attr(target_env = "musl", ignore)]
+#[cfg_attr(any(miri, target_env = "musl"), ignore)]
 fn test_aio_cancel_all() {
     let wbuf: &[u8] = b"CDEF";
 
@@ -569,6 +594,7 @@ fn test_aio_cancel_all() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_aio_suspend() {
     const INITIAL: &[u8] = b"abcdef123456";
     const WBUF: &[u8] = b"CDEFG";

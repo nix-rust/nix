@@ -15,6 +15,7 @@ use tempfile::tempdir;
 use tempfile::tempfile;
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_writev() {
     let mut to_write = Vec::with_capacity(16 * 128);
     for _ in 0..16 {
@@ -59,6 +60,7 @@ fn test_writev() {
 
 #[test]
 #[cfg(not(target_os = "redox"))]
+#[cfg_attr(miri, ignore)]
 fn test_readv() {
     let s: String = thread_rng()
         .sample_iter(&Alphanumeric)
@@ -103,6 +105,7 @@ fn test_readv() {
 
 #[test]
 #[cfg(not(target_os = "redox"))]
+#[cfg_attr(miri, ignore)]
 fn test_pwrite() {
     use std::io::Read;
 
@@ -117,6 +120,7 @@ fn test_pwrite() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_pread() {
     use std::io::Write;
 
@@ -145,6 +149,7 @@ fn test_pread() {
     target_os = "haiku",
     target_os = "solaris"
 )))]
+#[cfg_attr(miri, ignore)]
 fn test_pwritev() {
     use std::io::Read;
 
@@ -184,6 +189,7 @@ fn test_pwritev() {
     target_os = "haiku",
     target_os = "solaris"
 )))]
+#[cfg_attr(miri, ignore)]
 fn test_preadv() {
     use std::io::Write;
 
@@ -222,7 +228,7 @@ fn test_preadv() {
 #[cfg(all(target_os = "linux", not(target_env = "uclibc")))]
 // uclibc doesn't implement process_vm_readv
 // qemu-user doesn't implement process_vm_readv/writev on most arches
-#[cfg_attr(qemu, ignore)]
+#[cfg_attr(any(miri, qemu), ignore)]
 fn test_process_vm_readv() {
     use crate::*;
     use nix::sys::signal::*;

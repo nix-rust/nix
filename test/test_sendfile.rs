@@ -16,6 +16,7 @@ cfg_if! {
 
 #[cfg(linux_android)]
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_sendfile_linux() {
     const CONTENTS: &[u8] = b"abcdef123456";
     let mut tmp = tempfile().unwrap();
@@ -35,6 +36,7 @@ fn test_sendfile_linux() {
 
 #[cfg(target_os = "linux")]
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_sendfile64_linux() {
     const CONTENTS: &[u8] = b"abcdef123456";
     let mut tmp = tempfile().unwrap();

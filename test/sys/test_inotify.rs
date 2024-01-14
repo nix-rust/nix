@@ -4,6 +4,7 @@ use std::ffi::OsString;
 use std::fs::{rename, File};
 
 #[test]
+#[cfg_attr(miri, ignore)]
 pub fn test_inotify() {
     let instance = Inotify::init(InitFlags::IN_NONBLOCK).unwrap();
     let tempdir = tempfile::tempdir().unwrap();
@@ -22,6 +23,7 @@ pub fn test_inotify() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 pub fn test_inotify_multi_events() {
     let instance = Inotify::init(InitFlags::IN_NONBLOCK).unwrap();
     let tempdir = tempfile::tempdir().unwrap();

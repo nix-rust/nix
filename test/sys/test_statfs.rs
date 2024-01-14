@@ -50,6 +50,7 @@ fn assert_fs_equals(fs: Statfs, vfs: Statvfs) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn statfs_call() {
     check_statfs("/tmp");
     check_statfs("/dev");
@@ -58,6 +59,7 @@ fn statfs_call() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn fstatfs_call() {
     check_fstatfs("/tmp");
     check_fstatfs("/dev");

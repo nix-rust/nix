@@ -212,6 +212,7 @@ mod linux_ioctls {
 
     ioctl_none_bad!(tiocnxcl, TIOCNXCL);
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_ioctl_none_bad() {
         let file = tempfile().unwrap();
         let res = unsafe { tiocnxcl(file.as_raw_fd()) };
@@ -220,6 +221,7 @@ mod linux_ioctls {
 
     ioctl_read_bad!(tcgets, TCGETS, termios);
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_ioctl_read_bad() {
         let file = tempfile().unwrap();
         let mut termios = unsafe { mem::zeroed() };
@@ -229,6 +231,7 @@ mod linux_ioctls {
 
     ioctl_write_int_bad!(tcsbrk, TCSBRK);
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_ioctl_write_int_bad() {
         let file = tempfile().unwrap();
         let res = unsafe { tcsbrk(file.as_raw_fd(), 0) };
@@ -237,6 +240,7 @@ mod linux_ioctls {
 
     ioctl_write_ptr_bad!(tcsets, TCSETS, termios);
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_ioctl_write_ptr_bad() {
         let file = tempfile().unwrap();
         let termios: termios = unsafe { mem::zeroed() };
@@ -249,6 +253,7 @@ mod linux_ioctls {
     // From linux/videodev2.h
     ioctl_none!(log_status, b'V', 70);
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_ioctl_none() {
         let file = tempfile().unwrap();
         let res = unsafe { log_status(file.as_raw_fd()) };
@@ -267,6 +272,7 @@ mod linux_ioctls {
     // From linux/videodev2.h
     ioctl_write_ptr!(s_audio, b'V', 34, v4l2_audio);
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_ioctl_write_ptr() {
         let file = tempfile().unwrap();
         let data: v4l2_audio = unsafe { mem::zeroed() };
@@ -279,6 +285,7 @@ mod linux_ioctls {
     const HCI_IOC_HCIDEVUP: u8 = 201;
     ioctl_write_int!(hcidevup, HCI_IOC_MAGIC, HCI_IOC_HCIDEVUP);
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_ioctl_write_int() {
         let file = tempfile().unwrap();
         let res = unsafe { hcidevup(file.as_raw_fd(), 0) };
@@ -288,6 +295,7 @@ mod linux_ioctls {
     // From linux/videodev2.h
     ioctl_read!(g_audio, b'V', 33, v4l2_audio);
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_ioctl_read() {
         let file = tempfile().unwrap();
         let mut data: v4l2_audio = unsafe { mem::zeroed() };
@@ -298,6 +306,7 @@ mod linux_ioctls {
     // From linux/videodev2.h
     ioctl_readwrite!(enum_audio, b'V', 65, v4l2_audio);
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_ioctl_readwrite() {
         let file = tempfile().unwrap();
         let mut data: v4l2_audio = unsafe { mem::zeroed() };
@@ -329,6 +338,7 @@ mod linux_ioctls {
         spi_ioc_transfer
     );
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_ioctl_write_buf() {
         let file = tempfile().unwrap();
         let data: [spi_ioc_transfer; 4] = unsafe { mem::zeroed() };
@@ -357,6 +367,7 @@ mod freebsd_ioctls {
 
     ioctl_none!(tiocnxcl, TTY_IOC_MAGIC, TTY_IOC_TYPE_NXCL);
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_ioctl_none() {
         let file = tempfile().unwrap();
         let res = unsafe { tiocnxcl(file.as_raw_fd()) };
@@ -365,6 +376,7 @@ mod freebsd_ioctls {
 
     ioctl_read!(tiocgeta, TTY_IOC_MAGIC, TTY_IOC_TYPE_GETA, termios);
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_ioctl_read() {
         let file = tempfile().unwrap();
         let mut termios = unsafe { mem::zeroed() };
@@ -374,6 +386,7 @@ mod freebsd_ioctls {
 
     ioctl_write_ptr!(tiocseta, TTY_IOC_MAGIC, TTY_IOC_TYPE_SETA, termios);
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_ioctl_write_ptr() {
         let file = tempfile().unwrap();
         let termios: termios = unsafe { mem::zeroed() };

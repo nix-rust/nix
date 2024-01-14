@@ -20,6 +20,7 @@ pub extern "C" fn handle_sigalarm(raw_signal: libc::c_int) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn alarm_fires() {
     // Avoid interfering with other signal using tests by taking a mutex shared
     // among other tests in this crate.

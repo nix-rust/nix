@@ -187,6 +187,7 @@ mod tests {
 
     // Only checks if `getifaddrs` can be invoked without panicking.
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_getifaddrs() {
         let _ = getifaddrs();
     }
@@ -194,6 +195,7 @@ mod tests {
     // Ensures getting the netmask works, and in particular that
     // `workaround_xnu_bug` works properly.
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_getifaddrs_netmask_correct() {
         let addrs = getifaddrs().unwrap();
         for iface in addrs {

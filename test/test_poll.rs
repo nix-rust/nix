@@ -18,6 +18,7 @@ macro_rules! loop_while_eintr {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_poll() {
     let (r, w) = pipe().unwrap();
     let mut fds = [PollFd::new(r.as_fd(), PollFlags::POLLIN)];
@@ -40,6 +41,7 @@ fn test_poll() {
 // bindings are correct.
 #[cfg(any(linux_android, freebsdlike))]
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_ppoll() {
     use nix::poll::ppoll;
     use nix::sys::signal::SigSet;
@@ -64,6 +66,7 @@ fn test_ppoll() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_pollfd_events() {
     let fd_zero = unsafe { BorrowedFd::borrow_raw(0) };
     let mut pfd = PollFd::new(fd_zero.as_fd(), PollFlags::POLLIN);

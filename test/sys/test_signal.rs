@@ -8,18 +8,21 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_kill_none() {
     kill(getpid(), None).expect("Should be able to send signal to myself.");
 }
 
 #[test]
 #[cfg(not(target_os = "fuchsia"))]
+#[cfg_attr(miri, ignore)]
 fn test_killpg_none() {
     killpg(getpgrp(), None)
         .expect("Should be able to send signal to my process group.");
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_old_sigaction_flags() {
     let _m = crate::SIGNAL_MTX.lock();
 
@@ -42,6 +45,7 @@ fn test_sigprocmask_noop() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_sigprocmask() {
     let _m = crate::SIGNAL_MTX.lock();
 
@@ -97,6 +101,7 @@ extern "C" fn test_sigaction_action(
 
 #[test]
 #[cfg(not(target_os = "redox"))]
+#[cfg_attr(miri, ignore)]
 fn test_signal_sigaction() {
     let _m = crate::SIGNAL_MTX.lock();
 
@@ -108,6 +113,7 @@ fn test_signal_sigaction() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_signal() {
     let _m = crate::SIGNAL_MTX.lock();
 
@@ -145,6 +151,7 @@ fn test_signal() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_contains() {
     let mut mask = SigSet::empty();
     mask.add(SIGUSR1);
@@ -158,6 +165,7 @@ fn test_contains() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_clear() {
     let mut set = SigSet::all();
     set.clear();
@@ -183,6 +191,7 @@ fn test_from_str_invalid_value() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_extend() {
     let mut one_signal = SigSet::empty();
     one_signal.add(SIGUSR1);
@@ -197,6 +206,7 @@ fn test_extend() {
 
 #[test]
 #[cfg(not(target_os = "redox"))]
+#[cfg_attr(miri, ignore)]
 fn test_thread_signal_set_mask() {
     thread::spawn(|| {
         let prev_mask = SigSet::thread_get_mask()
@@ -222,6 +232,7 @@ fn test_thread_signal_set_mask() {
 
 #[test]
 #[cfg(not(target_os = "redox"))]
+#[cfg_attr(miri, ignore)]
 fn test_thread_signal_block() {
     thread::spawn(|| {
         let mut mask = SigSet::empty();
@@ -237,6 +248,7 @@ fn test_thread_signal_block() {
 
 #[test]
 #[cfg(not(target_os = "redox"))]
+#[cfg_attr(miri, ignore)]
 fn test_thread_signal_unblock() {
     thread::spawn(|| {
         let mut mask = SigSet::empty();
@@ -252,6 +264,7 @@ fn test_thread_signal_unblock() {
 
 #[test]
 #[cfg(not(target_os = "redox"))]
+#[cfg_attr(miri, ignore)]
 fn test_thread_signal_swap() {
     thread::spawn(|| {
         let mut mask = SigSet::empty();
@@ -275,6 +288,7 @@ fn test_thread_signal_swap() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_from_and_into_iterator() {
     let sigset = SigSet::from_iter(vec![Signal::SIGUSR1, Signal::SIGUSR2]);
     let signals = sigset.into_iter().collect::<Vec<Signal>>();
@@ -283,6 +297,7 @@ fn test_from_and_into_iterator() {
 
 #[test]
 #[cfg(not(target_os = "redox"))]
+#[cfg_attr(miri, ignore)]
 fn test_sigaction() {
     thread::spawn(|| {
         extern "C" fn test_sigaction_handler(_: libc::c_int) {}
@@ -329,6 +344,7 @@ fn test_sigaction() {
 
 #[test]
 #[cfg(not(target_os = "redox"))]
+#[cfg_attr(miri, ignore)]
 fn test_sigwait() {
     thread::spawn(|| {
         let mut mask = SigSet::empty();
@@ -353,6 +369,7 @@ fn test_sigwait() {
     target_os = "fushsia"
 ))]
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_sigsuspend() {
     // This test change signal handler
     let _m = crate::SIGNAL_MTX.lock();
@@ -395,6 +412,7 @@ fn test_sigsuspend() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_from_sigset_t_unchecked() {
     let src_set = SigSet::empty();
     let set = unsafe { SigSet::from_sigset_t_unchecked(*src_set.as_ref()) };
@@ -412,6 +430,7 @@ fn test_from_sigset_t_unchecked() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_eq_empty() {
     let set0 = SigSet::empty();
     let set1 = SigSet::empty();
@@ -419,6 +438,7 @@ fn test_eq_empty() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_eq_all() {
     let set0 = SigSet::all();
     let set1 = SigSet::all();
@@ -426,6 +446,7 @@ fn test_eq_all() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_hash_empty() {
     use std::collections::hash_map::DefaultHasher;
 
@@ -441,6 +462,7 @@ fn test_hash_empty() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_hash_all() {
     use std::collections::hash_map::DefaultHasher;
 

@@ -10,6 +10,7 @@ const LOOPBACK: &[u8] = b"lo0";
 const LOOPBACK: &[u8] = b"loop";
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_if_nametoindex() {
     if_nametoindex(LOOPBACK).expect("assertion failed");
 }

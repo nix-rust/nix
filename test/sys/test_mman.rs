@@ -22,6 +22,7 @@ fn test_mmap_anonymous() {
 
 #[test]
 #[cfg(any(target_os = "linux", target_os = "netbsd"))]
+#[cfg_attr(miri, ignore)]
 fn test_mremap_grow() {
     use nix::libc::size_t;
     use nix::sys::mman::{mremap, MRemapFlags};
@@ -78,7 +79,7 @@ fn test_mremap_grow() {
 #[test]
 #[cfg(any(target_os = "linux", target_os = "netbsd"))]
 // Segfaults for unknown reasons under QEMU for 32-bit targets
-#[cfg_attr(all(target_pointer_width = "32", qemu), ignore)]
+#[cfg_attr(any(miri, all(target_pointer_width = "32", qemu)), ignore)]
 fn test_mremap_shrink() {
     use nix::libc::size_t;
     use nix::sys::mman::{mremap, MRemapFlags};

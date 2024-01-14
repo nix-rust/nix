@@ -11,7 +11,7 @@ use std::slice;
 use std::str::FromStr;
 
 #[cfg(target_os = "linux")]
-#[cfg_attr(qemu, ignore)]
+#[cfg_attr(any(miri, qemu), ignore)]
 #[test]
 pub fn test_timestamping() {
     use nix::sys::socket::{
@@ -286,6 +286,7 @@ pub fn test_unnamed_uds_addr() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 pub fn test_getsockname() {
     use nix::sys::socket::bind;
     use nix::sys::socket::{socket, AddressFamily, SockFlag, SockType};
@@ -308,6 +309,7 @@ pub fn test_getsockname() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 pub fn test_socketpair() {
     use nix::sys::socket::{socketpair, AddressFamily, SockFlag, SockType};
     use nix::unistd::{read, write};
@@ -327,6 +329,7 @@ pub fn test_socketpair() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 pub fn test_recvmsg_sockaddr_un() {
     use nix::sys::socket::{
         self, bind, socket, AddressFamily, MsgFlags, SockFlag, SockType,
@@ -420,6 +423,7 @@ mod recvfrom {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     pub fn stream() {
         let (fd2, fd1) = socketpair(
             AddressFamily::Unix,
@@ -433,6 +437,7 @@ mod recvfrom {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     pub fn udp() {
         let std_sa = SocketAddrV4::from_str("127.0.0.1:6795").unwrap();
         let sock_addr = SockaddrIn::from(std_sa);
@@ -470,7 +475,7 @@ mod recvfrom {
         #[test]
         // Disable the test under emulation because it fails in Cirrus-CI.  Lack
         // of QEMU support is suspected.
-        #[cfg_attr(qemu, ignore)]
+        #[cfg_attr(any(miri, qemu), ignore)]
         pub fn gso() {
             require_kernel_version!(udp_offload::gso, ">= 4.18");
 
@@ -536,7 +541,7 @@ mod recvfrom {
         #[test]
         // Disable the test on emulated platforms because it fails in Cirrus-CI.
         // Lack of QEMU support is suspected.
-        #[cfg_attr(qemu, ignore)]
+        #[cfg_attr(any(miri, qemu), ignore)]
         pub fn gro() {
             require_kernel_version!(udp_offload::gro, ">= 5.3");
 
@@ -558,6 +563,7 @@ mod recvfrom {
 
     #[cfg(any(linux_android, target_os = "freebsd", target_os = "netbsd"))]
     #[test]
+    #[cfg_attr(miri, ignore)]
     pub fn udp_sendmmsg() {
         use std::io::IoSlice;
 
@@ -620,6 +626,7 @@ mod recvfrom {
 
     #[cfg(any(linux_android, target_os = "freebsd", target_os = "netbsd"))]
     #[test]
+    #[cfg_attr(miri, ignore)]
     pub fn udp_recvmmsg() {
         use nix::sys::socket::{recvmmsg, MsgFlags};
         use std::io::IoSliceMut;
@@ -696,6 +703,7 @@ mod recvfrom {
 
     #[cfg(any(linux_android, target_os = "freebsd", target_os = "netbsd"))]
     #[test]
+    #[cfg_attr(miri, ignore)]
     pub fn udp_recvmmsg_dontwait_short_read() {
         use nix::sys::socket::{recvmmsg, MsgFlags};
         use std::io::IoSliceMut;
@@ -776,6 +784,7 @@ mod recvfrom {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     pub fn udp_inet6() {
         let addr = std::net::Ipv6Addr::from_str("::1").unwrap();
         let rport = 6796;
@@ -823,6 +832,7 @@ mod recvfrom {
 
 // Test error handling of our recvmsg wrapper
 #[test]
+#[cfg_attr(miri, ignore)]
 pub fn test_recvmsg_ebadf() {
     use nix::errno::Errno;
     use nix::sys::socket::{recvmsg, MsgFlags};
@@ -839,7 +849,7 @@ pub fn test_recvmsg_ebadf() {
 
 // Disable the test on emulated platforms due to a bug in QEMU versions <
 // 2.12.0.  https://bugs.launchpad.net/qemu/+bug/1701808
-#[cfg_attr(qemu, ignore)]
+#[cfg_attr(any(miri, qemu), ignore)]
 #[test]
 pub fn test_scm_rights() {
     use nix::sys::socket::{
@@ -915,7 +925,7 @@ pub fn test_scm_rights() {
 
 // Disable the test on emulated platforms due to not enabled support of AF_ALG in QEMU from rust cross
 #[cfg(linux_android)]
-#[cfg_attr(qemu, ignore)]
+#[cfg_attr(any(miri, qemu), ignore)]
 #[test]
 pub fn test_af_alg_cipher() {
     use nix::sys::socket::sockopt::AlgSetKey;
@@ -1008,7 +1018,7 @@ pub fn test_af_alg_cipher() {
 // Disable the test on emulated platforms due to not enabled support of AF_ALG
 // in QEMU from rust cross
 #[cfg(linux_android)]
-#[cfg_attr(qemu, ignore)]
+#[cfg_attr(any(miri, qemu), ignore)]
 #[test]
 pub fn test_af_alg_aead() {
     use libc::{ALG_OP_DECRYPT, ALG_OP_ENCRYPT};
@@ -1143,6 +1153,7 @@ pub fn test_af_alg_aead() {
 // test from).
 #[cfg(any(target_os = "linux", apple_targets, target_os = "netbsd"))]
 #[test]
+#[cfg_attr(miri, ignore)]
 pub fn test_sendmsg_ipv4packetinfo() {
     use cfg_if::cfg_if;
     use nix::sys::socket::{
@@ -1208,6 +1219,7 @@ pub fn test_sendmsg_ipv4packetinfo() {
     target_os = "freebsd"
 ))]
 #[test]
+#[cfg_attr(miri, ignore)]
 pub fn test_sendmsg_ipv6packetinfo() {
     use nix::errno::Errno;
     use nix::sys::socket::{
@@ -1302,7 +1314,7 @@ pub fn test_sendmsg_ipv4sendsrcaddr() {
 /// Tests that passing multiple fds using a single `ControlMessage` works.
 // Disable the test on emulated platforms due to a bug in QEMU versions <
 // 2.12.0.  https://bugs.launchpad.net/qemu/+bug/1701808
-#[cfg_attr(qemu, ignore)]
+#[cfg_attr(any(miri, qemu), ignore)]
 #[test]
 fn test_scm_rights_single_cmsg_multiple_fds() {
     use nix::sys::socket::{
@@ -1362,6 +1374,7 @@ fn test_scm_rights_single_cmsg_multiple_fds() {
 // msg_control field and a msg_controllen of 0 when calling into the
 // raw `sendmsg`.
 #[test]
+#[cfg_attr(miri, ignore)]
 pub fn test_sendmsg_empty_cmsgs() {
     use nix::sys::socket::{
         recvmsg, sendmsg, socketpair, AddressFamily, MsgFlags, SockFlag,
@@ -1411,6 +1424,7 @@ pub fn test_sendmsg_empty_cmsgs() {
 
 #[cfg(any(linux_android, freebsdlike))]
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_scm_credentials() {
     use nix::sys::socket::{
         recvmsg, sendmsg, socketpair, AddressFamily, ControlMessage,
@@ -1493,7 +1507,7 @@ fn test_scm_credentials() {
 #[cfg(linux_android)]
 // qemu's handling of multiple cmsgs is bugged, ignore tests under emulation
 // see https://bugs.launchpad.net/qemu/+bug/1781280
-#[cfg_attr(qemu, ignore)]
+#[cfg_attr(any(miri, qemu), ignore)]
 #[test]
 fn test_scm_credentials_and_rights() {
     let space = cmsg_space!(libc::ucred, RawFd);
@@ -1505,7 +1519,7 @@ fn test_scm_credentials_and_rights() {
 #[cfg(linux_android)]
 // qemu's handling of multiple cmsgs is bugged, ignore tests under emulation
 // see https://bugs.launchpad.net/qemu/+bug/1781280
-#[cfg_attr(qemu, ignore)]
+#[cfg_attr(any(miri, qemu), ignore)]
 #[test]
 fn test_too_large_cmsgspace() {
     let space = vec![0u8; 1024];
@@ -1610,6 +1624,7 @@ fn test_impl_scm_credentials_and_rights(mut space: Vec<u8>) {
 
 // Test creating and using named unix domain sockets
 #[test]
+#[cfg_attr(miri, ignore)]
 pub fn test_named_unixdomain() {
     use nix::sys::socket::{
         accept, bind, connect, listen, socket, Backlog, UnixAddr,
@@ -1663,6 +1678,7 @@ pub fn test_listen_wrongbacklog() {
 // Test using unnamed unix domain addresses
 #[cfg(linux_android)]
 #[test]
+#[cfg_attr(miri, ignore)]
 pub fn test_unnamed_unixdomain() {
     use nix::sys::socket::{getsockname, socketpair};
     use nix::sys::socket::{SockFlag, SockType};
@@ -1683,6 +1699,7 @@ pub fn test_unnamed_unixdomain() {
 // Test creating and using unnamed unix domain addresses for autobinding sockets
 #[cfg(linux_android)]
 #[test]
+#[cfg_attr(miri, ignore)]
 pub fn test_unnamed_unixdomain_autobind() {
     use nix::sys::socket::{bind, getsockname, socket};
     use nix::sys::socket::{SockFlag, SockType};
@@ -1778,6 +1795,7 @@ fn loopback_address(
     ignore
 )]
 #[test]
+#[cfg_attr(miri, ignore)]
 pub fn test_recv_ipv4pktinfo() {
     use nix::net::if_::*;
     use nix::sys::socket::sockopt::Ipv4PacketInfo;
@@ -1968,7 +1986,7 @@ pub fn test_recvif() {
 }
 
 #[cfg(any(linux_android, target_os = "freebsd"))]
-#[cfg_attr(qemu, ignore)]
+#[cfg_attr(any(miri, qemu), ignore)]
 #[test]
 pub fn test_recvif_ipv4() {
     use nix::sys::socket::sockopt::Ipv4OrigDstAddr;
@@ -2054,7 +2072,7 @@ pub fn test_recvif_ipv4() {
 }
 
 #[cfg(any(linux_android, target_os = "freebsd"))]
-#[cfg_attr(qemu, ignore)]
+#[cfg_attr(any(miri, qemu), ignore)]
 #[test]
 pub fn test_recvif_ipv6() {
     use nix::sys::socket::sockopt::Ipv6OrigDstAddr;
@@ -2155,6 +2173,7 @@ pub fn test_recvif_ipv6() {
     ignore
 )]
 #[test]
+#[cfg_attr(miri, ignore)]
 pub fn test_recv_ipv6pktinfo() {
     use nix::net::if_::*;
     use nix::sys::socket::sockopt::Ipv6RecvPacketInfo;
@@ -2315,7 +2334,7 @@ pub fn test_vsock() {
 
 // Disable the test on emulated platforms because it fails in Cirrus-CI.  Lack
 // of QEMU support is suspected.
-#[cfg_attr(qemu, ignore)]
+#[cfg_attr(any(miri, qemu), ignore)]
 #[cfg(target_os = "linux")]
 #[test]
 fn test_recvmsg_timestampns() {
@@ -2374,7 +2393,7 @@ fn test_recvmsg_timestampns() {
 
 // Disable the test on emulated platforms because it fails in Cirrus-CI.  Lack
 // of QEMU support is suspected.
-#[cfg_attr(qemu, ignore)]
+#[cfg_attr(any(miri, qemu), ignore)]
 #[cfg(target_os = "linux")]
 #[test]
 fn test_recvmmsg_timestampns() {
@@ -2435,7 +2454,7 @@ fn test_recvmmsg_timestampns() {
 
 // Disable the test on emulated platforms because it fails in Cirrus-CI.  Lack
 // of QEMU support is suspected.
-#[cfg_attr(qemu, ignore)]
+#[cfg_attr(any(miri, qemu), ignore)]
 #[cfg(any(linux_android, target_os = "fuchsia"))]
 #[test]
 fn test_recvmsg_rxq_ovfl() {
@@ -2540,7 +2559,7 @@ mod linux_errqueue {
     //
     // Disable the test on QEMU because QEMU emulation of IP_RECVERR is broken (as documented on PR
     // #1514).
-    #[cfg_attr(qemu, ignore)]
+    #[cfg_attr(any(miri, qemu), ignore)]
     #[test]
     fn test_recverr_v4() {
         #[repr(u8)]
@@ -2588,7 +2607,7 @@ mod linux_errqueue {
     //
     // Disable the test on QEMU because QEMU emulation of IPV6_RECVERR is broken (as documented on
     // PR #1514).
-    #[cfg_attr(qemu, ignore)]
+    #[cfg_attr(any(miri, qemu), ignore)]
     #[test]
     fn test_recverr_v6() {
         #[repr(u8)]
@@ -2708,7 +2727,7 @@ mod linux_errqueue {
 
 // Disable the test on emulated platforms because it fails in Cirrus-CI.  Lack
 // of QEMU support is suspected.
-#[cfg_attr(qemu, ignore)]
+#[cfg_attr(any(miri, qemu), ignore)]
 #[cfg(target_os = "linux")]
 #[test]
 pub fn test_txtime() {
@@ -2772,6 +2791,7 @@ pub fn test_txtime() {
 // cfg needed for capability check.
 #[cfg(linux_android)]
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_icmp_protocol() {
     use nix::sys::socket::{
         sendto, socket, AddressFamily, MsgFlags, SockFlag, SockProtocol,
@@ -2804,7 +2824,7 @@ fn test_icmp_protocol() {
 
 // test contains both recvmmsg and timestaping which is linux only
 // there are existing tests for recvmmsg only in tests/
-#[cfg_attr(qemu, ignore)]
+#[cfg_attr(any(miri, qemu), ignore)]
 #[cfg(target_os = "linux")]
 #[test]
 fn test_recvmm2() -> nix::Result<()> {

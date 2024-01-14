@@ -5,6 +5,7 @@ use nix::unistd::{pipe, write};
 use std::os::unix::io::{AsFd, AsRawFd, BorrowedFd, RawFd};
 
 #[test]
+#[cfg_attr(miri, ignore)]
 pub fn test_pselect() {
     let _mtx = crate::SIGNAL_MTX.lock();
 
@@ -27,6 +28,7 @@ pub fn test_pselect() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 pub fn test_pselect_nfds2() {
     let (r1, w1) = pipe().unwrap();
     write(&w1, b"hi!").unwrap();
@@ -216,6 +218,7 @@ fn fdset_fds() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_select() {
     let (r1, w1) = pipe().unwrap();
     let (r2, _w2) = pipe().unwrap();
@@ -235,6 +238,7 @@ fn test_select() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_select_nfds() {
     let (r1, w1) = pipe().unwrap();
     let (r2, _w2) = pipe().unwrap();
@@ -269,6 +273,7 @@ fn test_select_nfds() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_select_nfds2() {
     let (r1, w1) = pipe().unwrap();
     write(&w1, b"hi!").unwrap();

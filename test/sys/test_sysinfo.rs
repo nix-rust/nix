@@ -1,6 +1,7 @@
 use nix::sys::sysinfo::*;
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn sysinfo_works() {
     let info = sysinfo().unwrap();
 

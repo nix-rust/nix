@@ -13,6 +13,7 @@ use nix::unistd::{pause, write};
 /// Test equivalence of `ptsname` and `ptsname_r`
 #[test]
 #[cfg(linux_android)]
+#[cfg_attr(miri, ignore)]
 fn test_ptsname_equivalence() {
     let _m = crate::PTSNAME_MTX.lock();
 
@@ -30,6 +31,7 @@ fn test_ptsname_equivalence() {
 // TODO need to run in a subprocess, since ptsname is non-reentrant
 #[test]
 #[cfg(linux_android)]
+#[cfg_attr(miri, ignore)]
 fn test_ptsname_copy() {
     let _m = crate::PTSNAME_MTX.lock();
 
@@ -48,6 +50,7 @@ fn test_ptsname_copy() {
 /// Test data copying of `ptsname_r`
 #[test]
 #[cfg(linux_android)]
+#[cfg_attr(miri, ignore)]
 fn test_ptsname_r_copy() {
     // Open a new PTTY master
     let master_fd = posix_openpt(OFlag::O_RDWR).unwrap();
@@ -62,6 +65,7 @@ fn test_ptsname_r_copy() {
 /// Test that `ptsname` returns different names for different devices
 #[test]
 #[cfg(linux_android)]
+#[cfg_attr(miri, ignore)]
 fn test_ptsname_unique() {
     let _m = crate::PTSNAME_MTX.lock();
 
@@ -130,6 +134,7 @@ fn open_ptty_pair() -> (PtyMaster, File) {
 /// themselves. So for this test we perform the basic act of getting a file handle for a
 /// master/slave PTTY pair.
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_open_ptty_pair() {
     let (_, _) = open_ptty_pair();
 }
@@ -143,6 +148,7 @@ fn make_raw<Fd: AsFd>(fd: Fd) {
 
 /// Test `io::Read` on the PTTY master
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_read_ptty_pair() {
     let (mut master, mut slave) = open_ptty_pair();
     make_raw(&slave);
@@ -160,6 +166,7 @@ fn test_read_ptty_pair() {
 
 /// Test `io::Write` on the PTTY master
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_write_ptty_pair() {
     let (mut master, mut slave) = open_ptty_pair();
     make_raw(&slave);
@@ -176,6 +183,7 @@ fn test_write_ptty_pair() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_openpty() {
     // openpty uses ptname(3) internally
     let _m = crate::PTSNAME_MTX.lock();
@@ -206,6 +214,7 @@ fn test_openpty() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_openpty_with_termios() {
     // openpty uses ptname(3) internally
     let _m = crate::PTSNAME_MTX.lock();
@@ -244,6 +253,7 @@ fn test_openpty_with_termios() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_forkpty() {
     use nix::sys::signal::*;
     use nix::sys::wait::wait;

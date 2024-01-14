@@ -32,7 +32,7 @@ use tempfile::NamedTempFile;
 #[cfg(not(target_os = "redox"))]
 // QEMU does not handle openat well enough to satisfy this test
 // https://gitlab.com/qemu-project/qemu/-/issues/829
-#[cfg_attr(qemu, ignore)]
+#[cfg_attr(any(miri, qemu), ignore)]
 fn test_openat() {
     const CONTENTS: &[u8] = b"abcd";
     let mut tmp = NamedTempFile::new().unwrap();
@@ -59,6 +59,7 @@ fn test_openat() {
 
 #[test]
 #[cfg(not(target_os = "redox"))]
+#[cfg_attr(miri, ignore)]
 fn test_renameat() {
     let old_dir = tempfile::tempdir().unwrap();
     let old_dirfd =
@@ -89,6 +90,7 @@ fn test_renameat() {
         target_arch = "s390x"
     )
 ))]
+#[cfg_attr(miri, ignore)]
 fn test_renameat2_behaves_like_renameat_with_no_flags() {
     let old_dir = tempfile::tempdir().unwrap();
     let old_dirfd =
@@ -133,6 +135,7 @@ fn test_renameat2_behaves_like_renameat_with_no_flags() {
         target_arch = "s390x"
     )
 ))]
+#[cfg_attr(miri, ignore)]
 fn test_renameat2_exchange() {
     let old_dir = tempfile::tempdir().unwrap();
     let old_dirfd =
@@ -181,6 +184,7 @@ fn test_renameat2_exchange() {
         target_arch = "s390x"
     )
 ))]
+#[cfg_attr(miri, ignore)]
 fn test_renameat2_noreplace() {
     let old_dir = tempfile::tempdir().unwrap();
     let old_dirfd =
@@ -211,6 +215,7 @@ fn test_renameat2_noreplace() {
 
 #[test]
 #[cfg(not(target_os = "redox"))]
+#[cfg_attr(miri, ignore)]
 fn test_readlink() {
     let tempdir = tempfile::tempdir().unwrap();
     let src = tempdir.path().join("a");
@@ -240,7 +245,7 @@ fn test_readlink() {
 ))]
 #[test]
 // QEMU does not support copy_file_range. Skip under qemu
-#[cfg_attr(qemu, ignore)]
+#[cfg_attr(any(miri, qemu), ignore)]
 fn test_copy_file_range() {
     use nix::fcntl::copy_file_range;
     use std::os::unix::io::AsFd;
@@ -288,6 +293,7 @@ mod linux_android {
     use crate::*;
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_splice() {
         const CONTENTS: &[u8] = b"abcdef123456";
         let mut tmp = tempfile().unwrap();
@@ -314,6 +320,7 @@ mod linux_android {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_tee() {
         let (rd1, wr1) = pipe().unwrap();
         let (rd2, wr2) = pipe().unwrap();
@@ -337,6 +344,7 @@ mod linux_android {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_vmsplice() {
         let (rd, wr) = pipe().unwrap();
 
@@ -357,6 +365,7 @@ mod linux_android {
 
     #[cfg(target_os = "linux")]
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_fallocate() {
         let tmp = NamedTempFile::new().unwrap();
 
@@ -375,7 +384,7 @@ mod linux_android {
 
     #[test]
     #[cfg(all(target_os = "linux", not(target_env = "musl")))]
-    #[cfg_attr(target_env = "uclibc", ignore)] // uclibc doesn't support OFD locks, but the test should still compile
+    #[cfg_attr(any(miri, target_env = "uclibc"), ignore)] // uclibc doesn't support OFD locks, but the test should still compile
     fn test_ofd_write_lock() {
         use nix::sys::stat::fstat;
         use std::mem;
@@ -413,7 +422,7 @@ mod linux_android {
 
     #[test]
     #[cfg(all(target_os = "linux", not(target_env = "musl")))]
-    #[cfg_attr(target_env = "uclibc", ignore)] // uclibc doesn't support OFD locks, but the test should still compile
+    #[cfg_attr(any(miri, target_env = "uclibc"), ignore)] // uclibc doesn't support OFD locks, but the test should still compile
     fn test_ofd_read_lock() {
         use nix::sys::stat::fstat;
         use std::mem;
@@ -496,6 +505,7 @@ mod test_posix_fadvise {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_errno() {
         let (rd, _wr) = pipe().unwrap();
         let res = posix_fadvise(
@@ -524,6 +534,7 @@ mod test_posix_fallocate {
     use tempfile::NamedTempFile;
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn success() {
         const LEN: usize = 100;
         let mut tmp = NamedTempFile::new().unwrap();
@@ -548,6 +559,7 @@ mod test_posix_fallocate {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn errno() {
         let (rd, _wr) = pipe().unwrap();
         let err = posix_fallocate(rd.as_raw_fd(), 0, 100).unwrap_err();
@@ -636,6 +648,7 @@ mod test_flock {
 
     /// Verify that `Flock::lock()` correctly obtains a lock, and subsequently unlocks upon drop.
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn verify_lock_and_drop() {
         // Get 2 `File` handles to same underlying file.
         let file1 = NamedTempFile::new().unwrap();
@@ -662,6 +675,7 @@ mod test_flock {
 
     /// Verify that `Flock::unlock()` correctly obtains unlocks.
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn verify_unlock() {
         // Get 2 `File` handles to same underlying file.
         let file1 = NamedTempFile::new().unwrap();

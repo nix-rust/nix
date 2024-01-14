@@ -2182,6 +2182,7 @@ mod tests {
             target_endian = "little"
         ))]
         #[test]
+        #[cfg_attr(miri, ignore)]
         fn linux_loopback() {
             #[repr(align(2))]
             struct Raw([u8; 20]);

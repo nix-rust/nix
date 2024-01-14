@@ -5,6 +5,7 @@ use nix::sys::timerfd::{
 use std::time::Instant;
 
 #[test]
+#[cfg_attr(miri, ignore)]
 pub fn test_timerfd_oneshot() {
     let timer =
         TimerFd::new(ClockId::CLOCK_MONOTONIC, TimerFlags::empty()).unwrap();
@@ -25,6 +26,7 @@ pub fn test_timerfd_oneshot() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 pub fn test_timerfd_interval() {
     let timer =
         TimerFd::new(ClockId::CLOCK_MONOTONIC, TimerFlags::empty()).unwrap();
@@ -52,6 +54,7 @@ pub fn test_timerfd_interval() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 pub fn test_timerfd_unset() {
     let timer =
         TimerFd::new(ClockId::CLOCK_MONOTONIC, TimerFlags::empty()).unwrap();

@@ -10,6 +10,7 @@ use std::os::fd::AsRawFd;
 use std::thread;
 
 #[test]
+#[cfg_attr(miri, ignore)]
 /// Run fanotify tests sequentially to avoid tmp files races
 pub fn test_fanotify() {
     require_capability!("test_fanotify", CAP_SYS_ADMIN);

@@ -16,6 +16,7 @@ use std::mem;
 use crate::*;
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_ptrace() {
     // Just make sure ptrace can be called at all, for now.
     // FIXME: qemu-user doesn't implement ptrace on all arches, so permit ENOSYS
@@ -29,6 +30,7 @@ fn test_ptrace() {
 // Just make sure ptrace_setoptions can be called at all, for now.
 #[test]
 #[cfg(linux_android)]
+#[cfg_attr(miri, ignore)]
 fn test_ptrace_setoptions() {
     require_capability!("test_ptrace_setoptions", CAP_SYS_PTRACE);
     let err = ptrace::setoptions(getpid(), Options::PTRACE_O_TRACESYSGOOD)
@@ -39,6 +41,7 @@ fn test_ptrace_setoptions() {
 // Just make sure ptrace_getevent can be called at all, for now.
 #[test]
 #[cfg(linux_android)]
+#[cfg_attr(miri, ignore)]
 fn test_ptrace_getevent() {
     require_capability!("test_ptrace_getevent", CAP_SYS_PTRACE);
     let err = ptrace::getevent(getpid()).unwrap_err();
@@ -48,6 +51,7 @@ fn test_ptrace_getevent() {
 // Just make sure ptrace_getsiginfo can be called at all, for now.
 #[test]
 #[cfg(linux_android)]
+#[cfg_attr(miri, ignore)]
 fn test_ptrace_getsiginfo() {
     require_capability!("test_ptrace_getsiginfo", CAP_SYS_PTRACE);
     if let Err(Errno::EOPNOTSUPP) = ptrace::getsiginfo(getpid()) {
@@ -58,6 +62,7 @@ fn test_ptrace_getsiginfo() {
 // Just make sure ptrace_setsiginfo can be called at all, for now.
 #[test]
 #[cfg(linux_android)]
+#[cfg_attr(miri, ignore)]
 fn test_ptrace_setsiginfo() {
     require_capability!("test_ptrace_setsiginfo", CAP_SYS_PTRACE);
     let siginfo = unsafe { mem::zeroed() };
@@ -67,6 +72,7 @@ fn test_ptrace_setsiginfo() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_ptrace_cont() {
     use nix::sys::ptrace;
     use nix::sys::signal::{raise, Signal};
@@ -130,6 +136,7 @@ fn test_ptrace_cont() {
 
 #[cfg(target_os = "linux")]
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_ptrace_interrupt() {
     use nix::sys::ptrace;
     use nix::sys::signal::Signal;
@@ -183,6 +190,7 @@ fn test_ptrace_interrupt() {
     target_env = "gnu"
 ))]
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_ptrace_syscall() {
     use nix::sys::ptrace;
     use nix::sys::signal::kill;

@@ -1,6 +1,7 @@
 use std::convert::TryFrom;
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn create_signalfd() {
     use nix::sys::{signal::SigSet, signalfd::SignalFd};
 
@@ -9,6 +10,7 @@ fn create_signalfd() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn create_signalfd_with_opts() {
     use nix::sys::{
         signal::SigSet,
@@ -21,6 +23,7 @@ fn create_signalfd_with_opts() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn read_empty_signalfd() {
     use nix::sys::{
         signal::SigSet,
@@ -35,6 +38,7 @@ fn read_empty_signalfd() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_signalfd() {
     use nix::sys::signal::{self, raise, SigSet, Signal};
     use nix::sys::signalfd::SignalFd;
@@ -62,6 +66,7 @@ fn test_signalfd() {
 
 /// Update the signal mask of an already existing signalfd.
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_signalfd_setmask() {
     use nix::sys::signal::{self, raise, SigSet, Signal};
     use nix::sys::signalfd::SignalFd;

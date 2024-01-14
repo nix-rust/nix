@@ -7,6 +7,7 @@ use nix::unistd::*;
 
 #[test]
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
+#[cfg_attr(miri, ignore)]
 fn test_wait_signal() {
     let _m = crate::FORK_MTX.lock();
 
@@ -39,6 +40,7 @@ fn test_wait_signal() {
     target_arch = "mips64",
     target_arch = "mips64r6"
 )))]
+#[cfg_attr(miri, ignore)]
 fn test_waitid_signal() {
     let _m = crate::FORK_MTX.lock();
 
@@ -59,6 +61,7 @@ fn test_waitid_signal() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_wait_exit() {
     let _m = crate::FORK_MTX.lock();
 
@@ -87,6 +90,7 @@ fn test_wait_exit() {
     target_arch = "mips64",
     target_arch = "mips64r6"
 )))]
+#[cfg_attr(miri, ignore)]
 fn test_waitid_exit() {
     let _m = crate::FORK_MTX.lock();
 
@@ -119,6 +123,7 @@ fn test_waitstatus_from_raw() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_waitstatus_pid() {
     let _m = crate::FORK_MTX.lock();
 
@@ -138,6 +143,7 @@ fn test_waitstatus_pid() {
     target_os = "haiku",
     all(target_os = "linux", not(target_env = "uclibc")),
 ))]
+#[cfg_attr(miri, ignore)]
 fn test_waitid_pid() {
     let _m = crate::FORK_MTX.lock();
 
@@ -243,6 +249,7 @@ mod ptrace {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_wait_ptrace() {
         require_capability!("test_wait_ptrace", CAP_SYS_PTRACE);
         let _m = crate::FORK_MTX.lock();
@@ -255,6 +262,7 @@ mod ptrace {
 
     #[test]
     #[cfg(not(target_env = "uclibc"))]
+    #[cfg_attr(miri, ignore)]
     fn test_waitid_ptrace() {
         require_capability!("test_waitid_ptrace", CAP_SYS_PTRACE);
         let _m = crate::FORK_MTX.lock();

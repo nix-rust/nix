@@ -39,6 +39,7 @@ use crate::*;
 
 #[test]
 #[cfg(not(any(target_os = "netbsd")))]
+#[cfg_attr(miri, ignore)]
 fn test_fork_and_waitpid() {
     let _m = crate::FORK_MTX.lock();
 
@@ -68,6 +69,7 @@ fn test_fork_and_waitpid() {
 
 #[test]
 #[cfg(target_os = "freebsd")]
+#[cfg_attr(miri, ignore)]
 fn test_rfork_and_waitpid() {
     let _m = crate::FORK_MTX.lock();
 
@@ -98,6 +100,7 @@ fn test_rfork_and_waitpid() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_wait() {
     // Grab FORK_MTX so wait doesn't reap a different test's child process
     let _m = crate::FORK_MTX.lock();
@@ -137,6 +140,7 @@ fn test_mkstemp_directory() {
 
 #[test]
 #[cfg(not(target_os = "redox"))]
+#[cfg_attr(miri, ignore)]
 fn test_mkfifo() {
     let tempdir = tempdir().unwrap();
     let mkfifo_fifo = tempdir.path().join("mkfifo_fifo");
@@ -150,6 +154,7 @@ fn test_mkfifo() {
 
 #[test]
 #[cfg(not(target_os = "redox"))]
+#[cfg_attr(miri, ignore)]
 fn test_mkfifo_directory() {
     // mkfifo should fail if a directory is given
     mkfifo(&env::temp_dir(), Mode::S_IRUSR).expect_err("assertion failed");
@@ -162,6 +167,7 @@ fn test_mkfifo_directory() {
     target_os = "redox",
     target_os = "haiku"
 )))]
+#[cfg_attr(miri, ignore)]
 fn test_mkfifoat_none() {
     let _m = crate::CWD_LOCK.read();
 
@@ -182,6 +188,7 @@ fn test_mkfifoat_none() {
     target_os = "redox",
     target_os = "haiku"
 )))]
+#[cfg_attr(miri, ignore)]
 fn test_mkfifoat() {
     use nix::fcntl;
 
@@ -205,6 +212,7 @@ fn test_mkfifoat() {
     target_os = "redox",
     target_os = "haiku"
 )))]
+#[cfg_attr(miri, ignore)]
 fn test_mkfifoat_directory_none() {
     let _m = crate::CWD_LOCK.read();
 
@@ -220,6 +228,7 @@ fn test_mkfifoat_directory_none() {
     target_os = "redox",
     target_os = "haiku"
 )))]
+#[cfg_attr(miri, ignore)]
 fn test_mkfifoat_directory() {
     // mkfifoat should fail if a directory is given
     let tempdir = tempdir().unwrap();
@@ -232,6 +241,7 @@ fn test_mkfifoat_directory() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_getpid() {
     let pid: ::libc::pid_t = getpid().into();
     let ppid: ::libc::pid_t = getppid().into();
@@ -241,6 +251,7 @@ fn test_getpid() {
 
 #[test]
 #[cfg(not(target_os = "redox"))]
+#[cfg_attr(miri, ignore)]
 fn test_getsid() {
     let none_sid: ::libc::pid_t = getsid(None).unwrap().into();
     let pid_sid: ::libc::pid_t = getsid(Some(getpid())).unwrap().into();
@@ -253,6 +264,7 @@ mod linux_android {
     use nix::unistd::gettid;
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_gettid() {
         let tid: ::libc::pid_t = gettid().into();
         assert!(tid > 0);
@@ -267,6 +279,7 @@ mod linux_android {
     target_os = "fuchsia",
     target_os = "haiku"
 )))]
+#[cfg_attr(miri, ignore)]
 fn test_setgroups() {
     // Skip this test when not run as root as `setgroups()` requires root.
     skip_if_not_root!("test_setgroups");
@@ -296,6 +309,7 @@ fn test_setgroups() {
     target_os = "haiku",
     solarish
 )))]
+#[cfg_attr(miri, ignore)]
 fn test_initgroups() {
     // Skip this test when not run as root as `initgroups()` and `setgroups()`
     // require root.
@@ -410,6 +424,7 @@ macro_rules! execve_test_factory (
         // https://github.com/nix-rust/nix/issues/555
     #[cfg_attr(target_env = "musl", ignore)]
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_cstr_ref() {
         common_test(syscall_cstr_ref);
     }
@@ -418,6 +433,7 @@ macro_rules! execve_test_factory (
         // https://github.com/nix-rust/nix/issues/555
     #[cfg_attr(target_env = "musl", ignore)]
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_cstring() {
         common_test(syscall_cstring);
     }
@@ -474,6 +490,7 @@ cfg_if! {
 
 #[test]
 #[cfg(not(target_os = "fuchsia"))]
+#[cfg_attr(miri, ignore)]
 fn test_fchdir() {
     // fchdir changes the process's cwd
     let _dr = crate::DirRestore::new();
@@ -489,6 +506,7 @@ fn test_fchdir() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_getcwd() {
     // chdir changes the process's cwd
     let _dr = crate::DirRestore::new();
@@ -514,6 +532,7 @@ fn test_getcwd() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_chown() {
     // Testing for anything other than our own UID/GID is hard.
     let uid = Some(getuid());
@@ -534,6 +553,7 @@ fn test_chown() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_fchown() {
     // Testing for anything other than our own UID/GID is hard.
     let uid = Some(getuid());
@@ -550,6 +570,7 @@ fn test_fchown() {
 
 #[test]
 #[cfg(not(target_os = "redox"))]
+#[cfg_attr(miri, ignore)]
 fn test_fchownat() {
     use nix::fcntl::AtFlags;
 
@@ -576,6 +597,7 @@ fn test_fchownat() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_lseek() {
     const CONTENTS: &[u8] = b"abcdef123456";
     let mut tmp = tempfile().unwrap();
@@ -591,6 +613,7 @@ fn test_lseek() {
 
 #[cfg(linux_android)]
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_lseek64() {
     const CONTENTS: &[u8] = b"abcdef123456";
     let mut tmp = tempfile().unwrap();
@@ -632,6 +655,7 @@ cfg_if! {
     target_os = "fuchsia",
     target_os = "haiku"
 )))]
+#[cfg_attr(miri, ignore)]
 fn test_acct() {
     use std::process::Command;
     use std::{thread, time};
@@ -658,6 +682,7 @@ fn test_acct() {
 
 #[cfg_attr(target_os = "hurd", ignore)]
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_fpathconf_limited() {
     let f = tempfile().unwrap();
     // PATH_MAX is limited on most platforms, so it makes a good test
@@ -672,6 +697,7 @@ fn test_fpathconf_limited() {
 
 #[cfg_attr(target_os = "hurd", ignore)]
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_pathconf_limited() {
     // PATH_MAX is limited on most platforms, so it makes a good test
     let path_max = pathconf("/", PathconfVar::PATH_MAX);
@@ -685,6 +711,7 @@ fn test_pathconf_limited() {
 
 #[cfg_attr(target_os = "hurd", ignore)]
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_sysconf_limited() {
     // OPEN_MAX is limited on most platforms, so it makes a good test
     let open_max = sysconf(SysconfVar::OPEN_MAX);
@@ -698,6 +725,7 @@ fn test_sysconf_limited() {
 
 #[cfg(target_os = "freebsd")]
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_sysconf_unsupported() {
     // I know of no sysconf variables that are unsupported everywhere, but
     // _XOPEN_CRYPT is unsupported on FreeBSD 11.0, which is one of the platforms
@@ -708,6 +736,7 @@ fn test_sysconf_unsupported() {
 
 #[cfg(any(linux_android, freebsdlike, target_os = "openbsd"))]
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_getresuid() {
     let resuids = getresuid().unwrap();
     assert_ne!(resuids.real.as_raw(), libc::uid_t::MAX);
@@ -717,6 +746,7 @@ fn test_getresuid() {
 
 #[cfg(any(linux_android, freebsdlike, target_os = "openbsd"))]
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_getresgid() {
     let resgids = getresgid().unwrap();
     assert_ne!(resgids.real.as_raw(), libc::gid_t::MAX);
@@ -727,6 +757,7 @@ fn test_getresgid() {
 // Test that we can create a pair of pipes.  No need to verify that they pass
 // data; that's the domain of the OS, not nix.
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_pipe() {
     let (fd0, fd1) = pipe().unwrap();
     let m0 = stat::SFlag::from_bits_truncate(
@@ -751,6 +782,7 @@ fn test_pipe() {
     target_os = "redox",
 ))]
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_pipe2() {
     use nix::fcntl::{fcntl, FcntlArg, FdFlag};
 
@@ -767,6 +799,7 @@ fn test_pipe2() {
 
 #[test]
 #[cfg(not(any(target_os = "redox", target_os = "fuchsia")))]
+#[cfg_attr(miri, ignore)]
 fn test_truncate() {
     let tempdir = tempdir().unwrap();
     let path = tempdir.path().join("file");
@@ -784,6 +817,7 @@ fn test_truncate() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_ftruncate() {
     let tempdir = tempdir().unwrap();
     let path = tempdir.path().join("file");
@@ -812,6 +846,7 @@ pub extern "C" fn alarm_signal_handler(raw_signal: libc::c_int) {
 
 #[test]
 #[cfg(not(target_os = "redox"))]
+#[cfg_attr(miri, ignore)]
 fn test_alarm() {
     use std::{
         thread,
@@ -857,6 +892,7 @@ fn test_alarm() {
 
 #[test]
 #[cfg(not(target_os = "redox"))]
+#[cfg_attr(miri, ignore)]
 fn test_canceling_alarm() {
     let _m = crate::SIGNAL_MTX.lock();
 
@@ -868,6 +904,7 @@ fn test_canceling_alarm() {
 
 #[test]
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
+#[cfg_attr(miri, ignore)]
 fn test_symlinkat() {
     let _m = crate::CWD_LOCK.read();
 
@@ -896,6 +933,7 @@ fn test_symlinkat() {
 
 #[test]
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
+#[cfg_attr(miri, ignore)]
 fn test_linkat_file() {
     use nix::fcntl::AtFlags;
 
@@ -928,6 +966,7 @@ fn test_linkat_file() {
 
 #[test]
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
+#[cfg_attr(miri, ignore)]
 fn test_linkat_olddirfd_none() {
     use nix::fcntl::AtFlags;
 
@@ -967,6 +1006,7 @@ fn test_linkat_olddirfd_none() {
 
 #[test]
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
+#[cfg_attr(miri, ignore)]
 fn test_linkat_newdirfd_none() {
     use nix::fcntl::AtFlags;
 
@@ -1006,6 +1046,7 @@ fn test_linkat_newdirfd_none() {
 
 #[test]
 #[cfg(not(any(apple_targets, target_os = "redox", target_os = "haiku")))]
+#[cfg_attr(miri, ignore)]
 fn test_linkat_no_follow_symlink() {
     use nix::fcntl::AtFlags;
 
@@ -1051,6 +1092,7 @@ fn test_linkat_no_follow_symlink() {
 
 #[test]
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
+#[cfg_attr(miri, ignore)]
 fn test_linkat_follow_symlink() {
     use nix::fcntl::AtFlags;
 
@@ -1102,6 +1144,7 @@ fn test_linkat_follow_symlink() {
 
 #[test]
 #[cfg(not(target_os = "redox"))]
+#[cfg_attr(miri, ignore)]
 fn test_unlinkat_dir_noremovedir() {
     let tempdir = tempdir().unwrap();
     let dirname = "foo_dir";
@@ -1123,6 +1166,7 @@ fn test_unlinkat_dir_noremovedir() {
 
 #[test]
 #[cfg(not(target_os = "redox"))]
+#[cfg_attr(miri, ignore)]
 fn test_unlinkat_dir_removedir() {
     let tempdir = tempdir().unwrap();
     let dirname = "foo_dir";
@@ -1143,6 +1187,7 @@ fn test_unlinkat_dir_removedir() {
 
 #[test]
 #[cfg(not(target_os = "redox"))]
+#[cfg_attr(miri, ignore)]
 fn test_unlinkat_file() {
     let tempdir = tempdir().unwrap();
     let filename = "foo.txt";
@@ -1162,6 +1207,7 @@ fn test_unlinkat_file() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_access_not_existing() {
     let tempdir = tempdir().unwrap();
     let dir = tempdir.path().join("does_not_exist.txt");
@@ -1172,6 +1218,7 @@ fn test_access_not_existing() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_access_file_exists() {
     let tempdir = tempdir().unwrap();
     let path = tempdir.path().join("does_exist.txt");
@@ -1184,6 +1231,7 @@ fn test_access_file_exists() {
 #[allow(clippy::needless_borrow)]
 #[cfg(not(target_os = "redox"))]
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_user_into_passwd() {
     // get the UID of the "nobody" user
     #[cfg(not(target_os = "haiku"))]
@@ -1200,6 +1248,7 @@ fn test_user_into_passwd() {
 /// Tests setting the filesystem UID with `setfsuid`.
 #[cfg(linux_android)]
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_setfsuid() {
     use std::os::unix::fs::PermissionsExt;
     use std::{fs, io, thread};
@@ -1241,6 +1290,7 @@ fn test_setfsuid() {
     target_os = "fuchsia",
     target_os = "haiku"
 )))]
+#[cfg_attr(miri, ignore)]
 fn test_ttyname() {
     let fd = posix_openpt(OFlag::O_RDWR).expect("posix_openpt failed");
     assert!(fd.as_raw_fd() > 0);
@@ -1263,6 +1313,7 @@ fn test_ttyname() {
 
 #[test]
 #[cfg(not(any(target_os = "redox", target_os = "fuchsia")))]
+#[cfg_attr(miri, ignore)]
 fn test_ttyname_not_pty() {
     let fd = File::open("/dev/zero").unwrap();
     assert_eq!(ttyname(fd), Err(Errno::ENOTTY));
@@ -1288,6 +1339,7 @@ fn test_getpeereid() {
 
 #[test]
 #[cfg(not(target_os = "redox"))]
+#[cfg_attr(miri, ignore)]
 fn test_faccessat_none_not_existing() {
     use nix::fcntl::AtFlags;
     let tempdir = tempfile::tempdir().unwrap();
@@ -1302,6 +1354,7 @@ fn test_faccessat_none_not_existing() {
 
 #[test]
 #[cfg(not(target_os = "redox"))]
+#[cfg_attr(miri, ignore)]
 fn test_faccessat_not_existing() {
     use nix::fcntl::AtFlags;
     let tempdir = tempfile::tempdir().unwrap();
@@ -1322,6 +1375,7 @@ fn test_faccessat_not_existing() {
 
 #[test]
 #[cfg(not(target_os = "redox"))]
+#[cfg_attr(miri, ignore)]
 fn test_faccessat_none_file_exists() {
     use nix::fcntl::AtFlags;
     let tempdir = tempfile::tempdir().unwrap();
@@ -1338,6 +1392,7 @@ fn test_faccessat_none_file_exists() {
 
 #[test]
 #[cfg(not(target_os = "redox"))]
+#[cfg_attr(miri, ignore)]
 fn test_faccessat_file_exists() {
     use nix::fcntl::AtFlags;
     let tempdir = tempfile::tempdir().unwrap();
@@ -1356,6 +1411,7 @@ fn test_faccessat_file_exists() {
 
 #[test]
 #[cfg(any(all(target_os = "linux", not(target_env = "uclibc")), freebsdlike))]
+#[cfg_attr(miri, ignore)]
 fn test_eaccess_not_existing() {
     let tempdir = tempdir().unwrap();
     let dir = tempdir.path().join("does_not_exist.txt");
@@ -1367,6 +1423,7 @@ fn test_eaccess_not_existing() {
 
 #[test]
 #[cfg(any(all(target_os = "linux", not(target_env = "uclibc")), freebsdlike))]
+#[cfg_attr(miri, ignore)]
 fn test_eaccess_file_exists() {
     let tempdir = tempdir().unwrap();
     let path = tempdir.path().join("does_exist.txt");

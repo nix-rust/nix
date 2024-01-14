@@ -40,6 +40,7 @@ use std::fs::File;
 use std::io::Read;
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_finit_and_delete_module() {
     require_capability!("test_finit_and_delete_module", CAP_SYS_MODULE);
     let _m0 = crate::KMOD_MTX.lock();
@@ -59,6 +60,7 @@ fn test_finit_and_delete_module() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_finit_and_delete_module_with_params() {
     require_capability!(
         "test_finit_and_delete_module_with_params",
@@ -85,6 +87,7 @@ fn test_finit_and_delete_module_with_params() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_init_and_delete_module() {
     require_capability!("test_init_and_delete_module", CAP_SYS_MODULE);
     let _m0 = crate::KMOD_MTX.lock();
@@ -107,6 +110,7 @@ fn test_init_and_delete_module() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_init_and_delete_module_with_params() {
     require_capability!(
         "test_init_and_delete_module_with_params",
@@ -132,6 +136,7 @@ fn test_init_and_delete_module_with_params() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_finit_module_invalid() {
     require_capability!("test_finit_module_invalid", CAP_SYS_MODULE);
     let _m0 = crate::KMOD_MTX.lock();
@@ -147,6 +152,7 @@ fn test_finit_module_invalid() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_finit_module_twice_and_delete_module() {
     require_capability!(
         "test_finit_module_twice_and_delete_module",
@@ -174,6 +180,7 @@ fn test_finit_module_twice_and_delete_module() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_delete_module_not_loaded() {
     require_capability!("test_delete_module_not_loaded", CAP_SYS_MODULE);
     let _m0 = crate::KMOD_MTX.lock();

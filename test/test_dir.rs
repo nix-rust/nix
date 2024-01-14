@@ -17,6 +17,7 @@ fn flags() -> OFlag {
 
 #[test]
 #[allow(clippy::unnecessary_sort_by)] // False positive
+#[cfg_attr(miri, ignore)]
 fn read() {
     let tmp = tempdir().unwrap();
     File::create(tmp.path().join("foo")).unwrap();
@@ -39,6 +40,7 @@ fn read() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn rewind() {
     let tmp = tempdir().unwrap();
     let mut dir = Dir::open(tmp.path(), flags(), Mode::empty()).unwrap();
@@ -60,6 +62,7 @@ fn rewind() {
 
 #[cfg(not(target_os = "haiku"))]
 #[test]
+#[cfg_attr(miri, ignore)]
 fn ebadf() {
     assert_eq!(Dir::from_fd(-1).unwrap_err(), nix::Error::EBADF);
 }

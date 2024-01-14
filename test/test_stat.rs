@@ -92,6 +92,7 @@ fn assert_lstat_results(stat_result: Result<FileStat>) {
 
 #[test]
 #[cfg(not(any(target_os = "netbsd", target_os = "redox")))]
+#[cfg_attr(miri, ignore)]
 fn test_stat_and_fstat() {
     use nix::sys::stat::fstat;
 
@@ -108,6 +109,7 @@ fn test_stat_and_fstat() {
 
 #[test]
 #[cfg(not(any(target_os = "netbsd", target_os = "redox")))]
+#[cfg_attr(miri, ignore)]
 fn test_fstatat() {
     let tempdir = tempfile::tempdir().unwrap();
     let filename = tempdir.path().join("foo.txt");
@@ -122,6 +124,7 @@ fn test_fstatat() {
 
 #[test]
 #[cfg(not(any(target_os = "netbsd", target_os = "redox")))]
+#[cfg_attr(miri, ignore)]
 fn test_stat_fstat_lstat() {
     use nix::sys::stat::{fstat, lstat};
 
@@ -146,6 +149,7 @@ fn test_stat_fstat_lstat() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_fchmod() {
     let tempdir = tempfile::tempdir().unwrap();
     let filename = tempdir.path().join("foo.txt");
@@ -169,6 +173,7 @@ fn test_fchmod() {
 
 #[test]
 #[cfg(not(target_os = "redox"))]
+#[cfg_attr(miri, ignore)]
 fn test_fchmodat() {
     let _dr = crate::DirRestore::new();
     let tempdir = tempfile::tempdir().unwrap();
@@ -221,6 +226,7 @@ fn assert_times_eq(
 
 #[test]
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
+#[cfg_attr(miri, ignore)]
 fn test_utimes() {
     let tempdir = tempfile::tempdir().unwrap();
     let fullpath = tempdir.path().join("file");
@@ -238,6 +244,7 @@ fn test_utimes() {
     target_os = "freebsd",
     target_os = "netbsd"
 ))]
+#[cfg_attr(miri, ignore)]
 fn test_lutimes() {
     let tempdir = tempfile::tempdir().unwrap();
     let target = tempdir.path().join("target");
@@ -265,6 +272,7 @@ fn test_lutimes() {
 
 #[test]
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
+#[cfg_attr(miri, ignore)]
 fn test_futimens() {
     let tempdir = tempfile::tempdir().unwrap();
     let fullpath = tempdir.path().join("file");
@@ -279,6 +287,7 @@ fn test_futimens() {
 
 #[test]
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
+#[cfg_attr(miri, ignore)]
 fn test_utimensat() {
     let _dr = crate::DirRestore::new();
     let tempdir = tempfile::tempdir().unwrap();
@@ -315,6 +324,7 @@ fn test_utimensat() {
 
 #[test]
 #[cfg(not(target_os = "redox"))]
+#[cfg_attr(miri, ignore)]
 fn test_mkdirat_success_path() {
     let tempdir = tempfile::tempdir().unwrap();
     let filename = "example_subdir";
@@ -327,6 +337,7 @@ fn test_mkdirat_success_path() {
 
 #[test]
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
+#[cfg_attr(miri, ignore)]
 fn test_mkdirat_success_mode() {
     let expected_bits =
         stat::SFlag::S_IFDIR.bits() | stat::Mode::S_IRWXU.bits();
@@ -345,6 +356,7 @@ fn test_mkdirat_success_mode() {
 
 #[test]
 #[cfg(not(target_os = "redox"))]
+#[cfg_attr(miri, ignore)]
 fn test_mkdirat_fail() {
     let tempdir = tempfile::tempdir().unwrap();
     let not_dir_filename = "example_not_dir";
@@ -366,6 +378,7 @@ fn test_mkdirat_fail() {
     target_os = "haiku",
     target_os = "redox"
 )))]
+#[cfg_attr(miri, ignore)]
 fn test_mknod() {
     use stat::{lstat, mknod, SFlag};
 
@@ -386,6 +399,7 @@ fn test_mknod() {
     target_os = "haiku",
     target_os = "redox"
 )))]
+#[cfg_attr(miri, ignore)]
 fn test_mknodat() {
     use fcntl::{AtFlags, OFlag};
     use nix::dir::Dir;
@@ -416,6 +430,7 @@ fn test_mknodat() {
 
 #[test]
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
+#[cfg_attr(miri, ignore)]
 fn test_futimens_unchanged() {
     let tempdir = tempfile::tempdir().unwrap();
     let fullpath = tempdir.path().join("file");
@@ -448,6 +463,7 @@ fn test_futimens_unchanged() {
 
 #[test]
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
+#[cfg_attr(miri, ignore)]
 fn test_utimensat_unchanged() {
     let _dr = crate::DirRestore::new();
     let tempdir = tempfile::tempdir().unwrap();

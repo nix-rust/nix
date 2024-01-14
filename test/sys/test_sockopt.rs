@@ -52,6 +52,7 @@ pub fn test_local_peercred_stream() {
 
 #[cfg(apple_targets)]
 #[test]
+#[cfg_attr(miri, ignore)]
 pub fn test_local_peer_pid() {
     use nix::sys::socket::socketpair;
 
@@ -68,6 +69,7 @@ pub fn test_local_peer_pid() {
 
 #[cfg(target_os = "linux")]
 #[test]
+#[cfg_attr(miri, ignore)]
 fn is_so_mark_functional() {
     use nix::sys::socket::sockopt;
 
@@ -86,6 +88,7 @@ fn is_so_mark_functional() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_so_buf() {
     let fd = socket(
         AddressFamily::Inet,
@@ -105,6 +108,7 @@ fn test_so_buf() {
 
 #[cfg(target_os = "freebsd")]
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_so_listen_q_limit() {
     use nix::sys::socket::{bind, listen, Backlog, SockaddrIn};
     use std::net::SocketAddrV4;
@@ -129,6 +133,7 @@ fn test_so_listen_q_limit() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_so_tcp_maxseg() {
     use nix::sys::socket::{
         accept, bind, connect, getsockname, listen, Backlog, SockaddrIn,
@@ -191,6 +196,7 @@ fn test_so_tcp_maxseg() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_so_type() {
     let sockfd = socket(
         AddressFamily::Inet,
@@ -207,6 +213,7 @@ fn test_so_type() {
 /// types.  Regression test for https://github.com/nix-rust/nix/issues/1819
 #[cfg(linux_android)]
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_so_type_unknown() {
     use nix::errno::Errno;
 
@@ -227,6 +234,7 @@ fn test_so_type_unknown() {
     any(target_arch = "x86", target_arch = "x86_64"),
     any(target_os = "freebsd", target_os = "linux")
 ))]
+#[cfg_attr(miri, ignore)]
 fn test_tcp_congestion() {
     use std::ffi::OsString;
 
@@ -253,6 +261,7 @@ fn test_tcp_congestion() {
 
 #[test]
 #[cfg(linux_android)]
+#[cfg_attr(miri, ignore)]
 fn test_bindtodevice() {
     skip_if_not_root!("test_bindtodevice");
 
@@ -271,6 +280,7 @@ fn test_bindtodevice() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_so_tcp_keepalive() {
     let fd = socket(
         AddressFamily::Inet,
@@ -300,7 +310,7 @@ fn test_so_tcp_keepalive() {
 
 #[test]
 #[cfg(linux_android)]
-#[cfg_attr(qemu, ignore)]
+#[cfg_attr(any(miri, qemu), ignore)]
 fn test_get_mtu() {
     use nix::sys::socket::{bind, connect, SockaddrIn};
     use std::net::SocketAddrV4;
@@ -327,6 +337,7 @@ fn test_get_mtu() {
 
 #[test]
 #[cfg(any(linux_android, target_os = "freebsd"))]
+#[cfg_attr(miri, ignore)]
 fn test_ttl_opts() {
     let fd4 = socket(
         AddressFamily::Inet,
@@ -350,6 +361,7 @@ fn test_ttl_opts() {
 
 #[test]
 #[cfg(any(linux_android, target_os = "freebsd"))]
+#[cfg_attr(miri, ignore)]
 fn test_multicast_ttl_opts_ipv4() {
     let fd4 = socket(
         AddressFamily::Inet,
@@ -364,6 +376,7 @@ fn test_multicast_ttl_opts_ipv4() {
 
 #[test]
 #[cfg(linux_android)]
+#[cfg_attr(miri, ignore)]
 fn test_multicast_ttl_opts_ipv6() {
     let fd6 = socket(
         AddressFamily::Inet6,
@@ -377,6 +390,7 @@ fn test_multicast_ttl_opts_ipv6() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_ipv6_multicast_hops() {
     let fd6 = socket(
         AddressFamily::Inet6,
@@ -391,6 +405,7 @@ fn test_ipv6_multicast_hops() {
 
 #[test]
 #[cfg(apple_targets)]
+#[cfg_attr(miri, ignore)]
 fn test_dontfrag_opts() {
     let fd4 = socket(
         AddressFamily::Inet,
@@ -423,7 +438,7 @@ fn test_dontfrag_opts() {
 #[cfg(any(linux_android, apple_targets))]
 // Disable the test under emulation because it fails in Cirrus-CI.  Lack
 // of QEMU support is suspected.
-#[cfg_attr(qemu, ignore)]
+#[cfg_attr(any(miri, qemu), ignore)]
 fn test_v6dontfrag_opts() {
     let fd6 = socket(
         AddressFamily::Inet6,
@@ -455,6 +470,7 @@ fn test_v6dontfrag_opts() {
 
 #[test]
 #[cfg(target_os = "linux")]
+#[cfg_attr(miri, ignore)]
 fn test_so_priority() {
     let fd = socket(
         AddressFamily::Inet,
@@ -470,6 +486,7 @@ fn test_so_priority() {
 
 #[test]
 #[cfg(target_os = "linux")]
+#[cfg_attr(miri, ignore)]
 fn test_ip_tos() {
     let fd = socket(
         AddressFamily::Inet,
@@ -487,7 +504,7 @@ fn test_ip_tos() {
 #[cfg(target_os = "linux")]
 // Disable the test under emulation because it fails in Cirrus-CI.  Lack
 // of QEMU support is suspected.
-#[cfg_attr(qemu, ignore)]
+#[cfg_attr(any(miri, qemu), ignore)]
 fn test_ipv6_tclass() {
     let fd = socket(
         AddressFamily::Inet6,
@@ -616,6 +633,7 @@ fn test_ts_clock_monotonic() {
 
 #[test]
 #[cfg(linux_android)]
+#[cfg_attr(miri, ignore)]
 // Disable the test under emulation because it fails with ENOPROTOOPT in CI
 // on cross target. Lack of QEMU support is suspected.
 #[cfg_attr(qemu, ignore)]
@@ -643,6 +661,7 @@ fn test_ip_bind_address_no_port() {
 
 #[test]
 #[cfg(linux_android)]
+#[cfg_attr(miri, ignore)]
 fn test_tcp_fast_open_connect() {
     let fd = socket(
         AddressFamily::Inet,
@@ -667,6 +686,7 @@ fn test_tcp_fast_open_connect() {
 
 #[cfg(linux_android)]
 #[test]
+#[cfg_attr(miri, ignore)]
 fn can_get_peercred_on_unix_socket() {
     use nix::sys::socket::{socketpair, sockopt, SockFlag, SockType};
 
@@ -684,6 +704,7 @@ fn can_get_peercred_on_unix_socket() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn is_socket_type_unix() {
     use nix::sys::socket::{socketpair, sockopt, SockFlag, SockType};
 
@@ -699,6 +720,7 @@ fn is_socket_type_unix() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn is_socket_type_dgram() {
     use nix::sys::socket::{
         getsockopt, sockopt, AddressFamily, SockFlag, SockType,
@@ -717,6 +739,7 @@ fn is_socket_type_dgram() {
 
 #[cfg(any(target_os = "freebsd", target_os = "linux"))]
 #[test]
+#[cfg_attr(miri, ignore)]
 fn can_get_listen_on_tcp_socket() {
     use nix::sys::socket::{
         getsockopt, listen, socket, sockopt, AddressFamily, Backlog, SockFlag,
@@ -750,7 +773,7 @@ fn can_get_listen_on_tcp_socket() {
 //
 // It's not clear why `setsockopt(SOL_TCP, TCP_ULP)` succeeds if the container image libc doesn't support it,
 // but in any case we can't run the test on such an architecture, so skip it.
-#[cfg_attr(qemu, ignore)]
+#[cfg_attr(any(miri, qemu), ignore)]
 #[test]
 fn test_ktls() {
     use nix::sys::socket::{
