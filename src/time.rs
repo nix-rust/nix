@@ -1,3 +1,4 @@
+//! Sleep, query system clocks, and set system closk
 use crate::sys::time::TimeSpec;
 #[cfg(any(freebsdlike, linux_android, target_os = "emscripten"))]
 #[cfg(feature = "process")]
@@ -8,8 +9,7 @@ use std::mem::MaybeUninit;
 
 /// Clock identifier
 ///
-/// Newtype pattern around `clockid_t` (which is just alias). It prevents bugs caused by
-/// accidentally passing wrong value.
+/// Newtype pattern around [`libc::clockid_t`].
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct ClockId(clockid_t);
 
@@ -57,20 +57,30 @@ impl ClockId {
     }
 
     #[cfg(any(linux_android, target_os = "emscripten", target_os = "fuchsia"))]
+    /// Starts at zero when the kernel boots and increments monotonically in SI seconds while the
+    /// machine is running.
     pub const CLOCK_BOOTTIME: ClockId = ClockId(libc::CLOCK_BOOTTIME);
+    /// Like [`CLOCK_BOOTTIME`](ClockId::CLOCK_BOOTTIME), but will wake the  system  if  it  is
+    /// suspended..
     #[cfg(any(linux_android, target_os = "emscripten", target_os = "fuchsia"))]
     pub const CLOCK_BOOTTIME_ALARM: ClockId =
         ClockId(libc::CLOCK_BOOTTIME_ALARM);
+    /// Increments in SI seconds.
     pub const CLOCK_MONOTONIC: ClockId = ClockId(libc::CLOCK_MONOTONIC);
+    /// Like [`CLOCK_MONOTONIC`](ClockId::CLOCK_MONOTONIC), but optimized for execution time at the expense of accuracy.
     #[cfg(any(linux_android, target_os = "emscripten", target_os = "fuchsia"))]
     pub const CLOCK_MONOTONIC_COARSE: ClockId =
         ClockId(libc::CLOCK_MONOTONIC_COARSE);
     #[cfg(freebsdlike)]
+    /// Like [`CLOCK_MONOTONIC`](ClockId::CLOCK_MONOTONIC), but optimized for execution time at the expense of accuracy.
     pub const CLOCK_MONOTONIC_FAST: ClockId =
         ClockId(libc::CLOCK_MONOTONIC_FAST);
     #[cfg(freebsdlike)]
+    /// Like [`CLOCK_MONOTONIC`](ClockId::CLOCK_MONOTONIC), but optimized for accuracy at the expense of execution time.
     pub const CLOCK_MONOTONIC_PRECISE: ClockId =
         ClockId(libc::CLOCK_MONOTONIC_PRECISE);
+    /// Similar to [`CLOCK_MONOTONIC`](ClockId::CLOCK_MONOTONIC), but provides access to a raw
+    /// hardware-based time that  is  not subject  to  NTP adjustments.
     #[cfg(any(linux_android, target_os = "emscripten", target_os = "fuchsia"))]
     pub const CLOCK_MONOTONIC_RAW: ClockId = ClockId(libc::CLOCK_MONOTONIC_RAW);
     #[cfg(any(
@@ -81,30 +91,43 @@ impl ClockId {
         target_os = "fuchsia",
         target_os = "redox",
     ))]
+    /// Returns the execution time of the calling process.
     pub const CLOCK_PROCESS_CPUTIME_ID: ClockId =
         ClockId(libc::CLOCK_PROCESS_CPUTIME_ID);
     #[cfg(freebsdlike)]
+    /// Increments when the CPU is running in user or kernel mode
     pub const CLOCK_PROF: ClockId = ClockId(libc::CLOCK_PROF);
+    /// Increments as a wall clock should.
     pub const CLOCK_REALTIME: ClockId = ClockId(libc::CLOCK_REALTIME);
+    /// Like [`CLOCK_REALTIME`](ClockId::CLOCK_REALTIME), but not settable.
     #[cfg(any(linux_android, target_os = "emscripten", target_os = "fuchsia"))]
     pub const CLOCK_REALTIME_ALARM: ClockId =
         ClockId(libc::CLOCK_REALTIME_ALARM);
+    /// Like [`CLOCK_REALTIME`](ClockId::CLOCK_REALTIME), but optimized for execution time at the expense of accuracy.
     #[cfg(any(linux_android, target_os = "emscripten", target_os = "fuchsia"))]
     pub const CLOCK_REALTIME_COARSE: ClockId =
         ClockId(libc::CLOCK_REALTIME_COARSE);
     #[cfg(freebsdlike)]
+    /// Like [`CLOCK_REALTIME`](ClockId::CLOCK_REALTIME), but optimized for execution time at the expense of accuracy.
     pub const CLOCK_REALTIME_FAST: ClockId = ClockId(libc::CLOCK_REALTIME_FAST);
     #[cfg(freebsdlike)]
+    /// Like [`CLOCK_REALTIME`](ClockId::CLOCK_REALTIME), but optimized for accuracy at the expense of execution time.
     pub const CLOCK_REALTIME_PRECISE: ClockId =
         ClockId(libc::CLOCK_REALTIME_PRECISE);
     #[cfg(freebsdlike)]
+    /// Returns the current second without performing a full time counter query, using an in-kernel
+    /// cached value of the current second.
     pub const CLOCK_SECOND: ClockId = ClockId(libc::CLOCK_SECOND);
+    #[allow(missing_docs)] // Undocumented on Linux!
     #[cfg(any(
         target_os = "emscripten",
         target_os = "fuchsia",
         all(target_os = "linux", target_env = "musl")
     ))]
     pub const CLOCK_SGI_CYCLE: ClockId = ClockId(libc::CLOCK_SGI_CYCLE);
+    /// International Atomic Time.
+    ///
+    /// A  nonsettable  system-wide  clock derived from wall-clock time but ignoring leap seconds.
     #[cfg(any(linux_android, target_os = "emscripten", target_os = "fuchsia"))]
     pub const CLOCK_TAI: ClockId = ClockId(libc::CLOCK_TAI);
     #[cfg(any(
@@ -114,16 +137,22 @@ impl ClockId {
         target_os = "emscripten",
         target_os = "fuchsia",
     ))]
+    /// Returns the execution time of the calling thread.
     pub const CLOCK_THREAD_CPUTIME_ID: ClockId =
         ClockId(libc::CLOCK_THREAD_CPUTIME_ID);
     #[cfg(freebsdlike)]
+    /// Starts at zero when the kernel boots and increments monotonically in SI seconds while the
+    /// machine is running.
     pub const CLOCK_UPTIME: ClockId = ClockId(libc::CLOCK_UPTIME);
     #[cfg(freebsdlike)]
+    /// Like [`CLOCK_UPTIME`](ClockId::CLOCK_UPTIME), but optimized for execution time at the expense of accuracy.
     pub const CLOCK_UPTIME_FAST: ClockId = ClockId(libc::CLOCK_UPTIME_FAST);
     #[cfg(freebsdlike)]
+    /// Like [`CLOCK_UPTIME`](ClockId::CLOCK_UPTIME), but optimized for accuracy at the expense of execution time.
     pub const CLOCK_UPTIME_PRECISE: ClockId =
         ClockId(libc::CLOCK_UPTIME_PRECISE);
     #[cfg(freebsdlike)]
+    /// Increments only when the CPU is running in user mode on behalf of the calling process.
     pub const CLOCK_VIRTUAL: ClockId = ClockId(libc::CLOCK_VIRTUAL);
 }
 
@@ -211,15 +240,18 @@ pub fn clock_getcpuclockid(pid: Pid) -> Result<ClockId> {
 libc_bitflags! {
     /// Flags that are used for arming the timer.
     pub struct ClockNanosleepFlags: libc::c_int {
+        /// Indicates that a requested time value should be treated as absolute instead of
+        /// relative.
         TIMER_ABSTIME;
     }
 }
 
 /// Suspend execution of this thread for the amount of time specified by `request`
-/// and measured against the clock speficied by `clock_id`. If `flags` is
-/// `TIMER_ABSTIME`, this function will suspend execution until the time value of
-/// clock_id reaches the absolute time specified by `request`. If a signal is caught
-/// by a signal-catching function, or a signal causes the process to terminate,
+/// and measured against the clock speficied by `clock_id`.
+///
+/// If `flags` is [`TIMER_ABSTIME`](ClockNanosleepFlags::TIMER_ABSTIME), this function will suspend
+/// execution until the time value of clock_id reaches the absolute time specified by `request`. If
+/// a signal is caught by a signal-catching function, or a signal causes the process to terminate,
 /// this sleep is interrrupted.
 ///
 /// see also [man 3 clock_nanosleep](https://pubs.opengroup.org/onlinepubs/009695399/functions/clock_nanosleep.html)

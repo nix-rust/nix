@@ -1,3 +1,4 @@
+//! file control options
 use crate::errno::Errno;
 #[cfg(all(target_os = "freebsd", target_arch = "x86_64"))]
 use core::slice;
@@ -45,15 +46,28 @@ pub use self::posix_fadvise::{posix_fadvise, PosixFadviseAdvice};
 #[cfg(not(target_os = "redox"))]
 #[cfg(any(feature = "fs", feature = "process", feature = "user"))]
 libc_bitflags! {
+    /// Flags that control how the various *at syscalls behave.
     #[cfg_attr(docsrs, doc(cfg(any(feature = "fs", feature = "process"))))]
     pub struct AtFlags: c_int {
+        /// Used with [`unlink`](crate::unistd::unlink) to indicate that the path to remove is a
+        /// directory, and not a regular file.
         AT_REMOVEDIR;
+        /// Used with [`linkat`](crate::unistd::linkat`) to create a link to a symbolic link's
+        /// target, instead of to the symbolic link itself.
         AT_SYMLINK_FOLLOW;
+        /// Used with [`linkat`](crate::unistd::linkat`) to create a link to a symbolic link
+        /// itself, instead of to the symbolic link's target.
         AT_SYMLINK_NOFOLLOW;
+        /// Don't automount the terminal ("basename") component of pathname if it is a directory
+        /// that is an automount point.
         #[cfg(linux_android)]
         AT_NO_AUTOMOUNT;
+        /// If the provided path is an empty string, operate on the provided directory file
+        /// descriptor instead.
         #[cfg(any(linux_android, target_os = "freebsd", target_os = "hurd"))]
         AT_EMPTY_PATH;
+        /// Used with [`faccessat`](crate::unistd::faccessat), the checks for accessibility are
+        /// performed using the effective user and group IDs instead of the real user and group ID
         #[cfg(not(target_os = "android"))]
         AT_EACCESS;
     }
@@ -186,6 +200,10 @@ pub(crate) fn at_rawfd(fd: Option<RawFd>) -> raw::c_int {
 feature! {
 #![feature = "fs"]
 
+/// open or create a file for reading, writing or executing
+///
+/// # See Also
+/// [`open`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/open.html)
 // The conversion is not identical on all operating systems.
 #[allow(clippy::useless_conversion)]
 pub fn open<P: ?Sized + NixPath>(
@@ -200,6 +218,14 @@ pub fn open<P: ?Sized + NixPath>(
     Errno::result(fd)
 }
 
+/// open or create a file for reading, writing or executing
+///
+/// The `openat` function is equivalent to the [`open`] function except in the case where the path
+/// specifies a relative path.  In that case, the file to be opened is determined relative to the
+/// directory associated with the file descriptor `fd`.
+///
+/// # See Also
+/// [`openat`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/openat.html)
 // The conversion is not identical on all operating systems.
 #[allow(clippy::useless_conversion)]
 #[cfg(not(target_os = "redox"))]
@@ -215,6 +241,14 @@ pub fn openat<P: ?Sized + NixPath>(
     Errno::result(fd)
 }
 
+/// Change the name of a file.
+///
+/// The `renameat` function is equivalent to `rename` except in the case where either `old_path`
+/// or `new_path` specifies a relative path.  In such cases, the file to be renamed (or the its new
+/// name, respectively) is located relative to `old_dirfd` or `new_dirfd`, respectively
+///
+/// # See Also
+/// [`renameat`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/rename.html)
 #[cfg(not(target_os = "redox"))]
 pub fn renameat<P1: ?Sized + NixPath, P2: ?Sized + NixPath>(
     old_dirfd: Option<RawFd>,
@@ -239,16 +273,30 @@ pub fn renameat<P1: ?Sized + NixPath, P2: ?Sized + NixPath>(
 #[cfg(all(target_os = "linux", target_env = "gnu"))]
 #[cfg(feature = "fs")]
 libc_bitflags! {
+    /// Flags for use with [`renameat2`].
     #[cfg_attr(docsrs, doc(cfg(feature = "fs")))]
     pub struct RenameFlags: u32 {
+        /// Atomically exchange `old_path` and `new_path`.
         RENAME_EXCHANGE;
+        /// Don't overwrite `new_path` of the rename.  Return an error if `new_path` already
+        /// exists.
         RENAME_NOREPLACE;
+        /// creates a "whiteout" object at the source of the rename at the same time as performing
+        /// the rename.
+        ///
+        /// This operation makes sense only for overlay/union filesystem implementations.
         RENAME_WHITEOUT;
     }
 }
 
 feature! {
 #![feature = "fs"]
+/// Like [`renameat`], but with an additional `flags` argument.
+///
+/// A `renameat2` call with a zero flags argument is equivalent to `renameat`.
+///
+/// # See Also
+/// * [`rename`](https://man7.org/linux/man-pages/man2/rename.2.html)
 #[cfg(all(target_os = "linux", target_env = "gnu"))]
 pub fn renameat2<P1: ?Sized + NixPath, P2: ?Sized + NixPath>(
     old_dirfd: Option<RawFd>,
@@ -389,10 +437,21 @@ fn inner_readlink<P: ?Sized + NixPath>(
     }
 }
 
+/// Read value of a symbolic link
+///
+/// # See Also
+/// * [`readlink`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/readlink.html)
 pub fn readlink<P: ?Sized + NixPath>(path: &P) -> Result<OsString> {
     inner_readlink(None, path)
 }
 
+/// Read value of a symbolic link.
+///
+/// Equivalent to [`readlink` ] except where `path` specifies a relative path.  In that case,
+/// interpret `path` relative to open file specified by `dirfd`.
+///
+/// # See Also
+/// * [`readlink`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/readlink.html)
 #[cfg(not(target_os = "redox"))]
 pub fn readlinkat<P: ?Sized + NixPath>(
     dirfd: Option<RawFd>,
@@ -437,69 +496,105 @@ libc_bitflags!(
 feature! {
 #![feature = "fs"]
 
+/// Commands for use with [`fcntl`].
 #[cfg(not(target_os = "redox"))]
 #[derive(Debug, Eq, Hash, PartialEq)]
 #[non_exhaustive]
 pub enum FcntlArg<'a> {
+    /// Duplicate the provided file descriptor
     F_DUPFD(RawFd),
+    /// Duplicate the provided file descriptor and set the `FD_CLOEXEC` flag on it.
     F_DUPFD_CLOEXEC(RawFd),
+    /// Get the close-on-exec flag associated with the file descriptor
     F_GETFD,
+    /// Set the close-on-exec flag associated with the file descriptor
     F_SETFD(FdFlag), // FD_FLAGS
+    /// Get descriptor status flags
     F_GETFL,
+    /// Set descriptor status flags
     F_SETFL(OFlag), // O_NONBLOCK
+    /// Set or clear a file segment lock
     F_SETLK(&'a libc::flock),
+    /// Like [`F_SETLK`](FcntlArg::F_SETLK) except that if a shared or exclusive lock is blocked by
+    /// other locks, the process waits until the request can be satisfied.
     F_SETLKW(&'a libc::flock),
+    /// Get the first lock that blocks the lock description
     F_GETLK(&'a mut libc::flock),
+    /// Acquire or release an open file description lock
     #[cfg(linux_android)]
     F_OFD_SETLK(&'a libc::flock),
+    /// Like [`F_OFD_SETLK`](FcntlArg::F_OFD_SETLK) except that if a conflicting lock is held on
+    /// the file, then wait for that lock to be released.
     #[cfg(linux_android)]
     F_OFD_SETLKW(&'a libc::flock),
+    /// Determine whether it would be possible to create the given lock.  If not, return details
+    /// about one existing lock that would prevent it.
     #[cfg(linux_android)]
     F_OFD_GETLK(&'a mut libc::flock),
+    /// Add seals to the file
     #[cfg(any(
         linux_android,
         target_os = "freebsd"
     ))]
     F_ADD_SEALS(SealFlag),
+    /// Get seals associated with the file
     #[cfg(any(
         linux_android,
         target_os = "freebsd"
     ))]
     F_GET_SEALS,
+    /// Asks the drive to flush all buffered data to permanent storage.
     #[cfg(apple_targets)]
     F_FULLFSYNC,
+    /// fsync + issue barrier to drive
     #[cfg(apple_targets)]
     F_BARRIERFSYNC,
+    /// Return the capacity of a pipe
     #[cfg(linux_android)]
     F_GETPIPE_SZ,
+    /// Change the capacity of a pipe
     #[cfg(linux_android)]
     F_SETPIPE_SZ(c_int),
+    /// Look up the path of an open file descriptor, if possible.
     #[cfg(any(
         target_os = "netbsd",
         target_os = "dragonfly",
         apple_targets,
     ))]
     F_GETPATH(&'a mut PathBuf),
+    /// Look up the path of an open file descriptor, if possible.
     #[cfg(all(target_os = "freebsd", target_arch = "x86_64"))]
     F_KINFO(&'a mut PathBuf),
+    /// Return the full path without firmlinks of the fd.
     #[cfg(apple_targets)]
     F_GETPATH_NOFIRMLINK(&'a mut PathBuf),
     // TODO: Rest of flags
 }
 
+/// Commands for use with [`fcntl`].
 #[cfg(target_os = "redox")]
 #[derive(Debug, Clone, Copy, Eq, Hash, PartialEq)]
 #[non_exhaustive]
 pub enum FcntlArg {
+    /// Duplicate the provided file descriptor
     F_DUPFD(RawFd),
+    /// Duplicate the provided file descriptor and set the `FD_CLOEXEC` flag on it.
     F_DUPFD_CLOEXEC(RawFd),
+    /// Get the close-on-exec flag associated with the file descriptor
     F_GETFD,
+    /// Set the close-on-exec flag associated with the file descriptor
     F_SETFD(FdFlag), // FD_FLAGS
+    /// Get descriptor status flags
     F_GETFL,
+    /// Set descriptor status flags
     F_SETFL(OFlag), // O_NONBLOCK
 }
 pub use self::FcntlArg::*;
 
+/// Perform various operations on open file descriptors.
+///
+/// # See Also
+/// * [`fcntl`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/fcntl.html)
 // TODO: Figure out how to handle value fcntl returns
 pub fn fcntl(fd: RawFd, arg: FcntlArg) -> Result<c_int> {
     let res = unsafe {
@@ -584,17 +679,27 @@ pub fn fcntl(fd: RawFd, arg: FcntlArg) -> Result<c_int> {
     Errno::result(res)
 }
 
+/// Operations for use with [`flock`].
+#[cfg(not(any(target_os = "redox", target_os = "solaris")))]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 #[non_exhaustive]
 pub enum FlockArg {
+    /// shared file lock
     LockShared,
+    /// exclusive file lock
     LockExclusive,
+    /// Unlock file
     Unlock,
+    /// Shared lock.  Do not block when locking.
     LockSharedNonblock,
+    /// Exclusive lock.  Do not block when locking.
     LockExclusiveNonblock,
+    #[allow(missing_docs)]
+    #[deprecated(since = "0.28.0", note = "Use FlockArg::Unlock instead")]
     UnlockNonblock,
 }
 
+#[allow(missing_docs)]
 #[cfg(not(any(target_os = "redox", target_os = "solaris")))]
 #[deprecated(since = "0.28.0", note = "`fcntl::Flock` should be used instead.")]
 pub fn flock(fd: RawFd, arg: FlockArg) -> Result<()> {
@@ -611,6 +716,7 @@ pub fn flock(fd: RawFd, arg: FlockArg) -> Result<()> {
             LockExclusiveNonblock => {
                 libc::flock(fd, libc::LOCK_EX | libc::LOCK_NB)
             }
+            #[allow(deprecated)]
             UnlockNonblock => libc::flock(fd, libc::LOCK_UN | libc::LOCK_NB),
         }
     };
@@ -683,6 +789,7 @@ impl<T: Flockable> Flock<T> {
             FlockArg::LockExclusive => libc::LOCK_EX,
             FlockArg::LockSharedNonblock => libc::LOCK_SH | libc::LOCK_NB,
             FlockArg::LockExclusiveNonblock => libc::LOCK_EX | libc::LOCK_NB,
+            #[allow(deprecated)]
             FlockArg::Unlock | FlockArg::UnlockNonblock => return Err((t, Errno::EINVAL)),
         };
         match Errno::result(unsafe { libc::flock(t.as_raw_fd(), flags) }) {
@@ -827,6 +934,10 @@ pub fn copy_file_range<Fd1: AsFd, Fd2: AsFd>(
     Errno::result(ret).map(|r| r as usize)
 }
 
+/// Splice data to/from a pipe
+///
+/// # See Also
+/// *[`splice`](https://man7.org/linux/man-pages/man2/splice.2.html)
 #[cfg(linux_android)]
 pub fn splice(
     fd_in: RawFd,
@@ -849,6 +960,10 @@ pub fn splice(
     Errno::result(ret).map(|r| r as usize)
 }
 
+/// Duplicate pipe content
+///
+/// # See Also
+/// *[`tee`](https://man7.org/linux/man-pages/man2/tee.2.html)
 #[cfg(linux_android)]
 pub fn tee(
     fd_in: RawFd,
@@ -860,6 +975,10 @@ pub fn tee(
     Errno::result(ret).map(|r| r as usize)
 }
 
+/// Splice user pages to/from a pipe
+///
+/// # See Also
+/// *[`vmsplice`](https://man7.org/linux/man-pages/man2/vmsplice.2.html)
 #[cfg(linux_android)]
 pub fn vmsplice(
     fd: RawFd,
@@ -938,16 +1057,22 @@ pub struct SpacectlRange(pub libc::off_t, pub libc::off_t);
 
 #[cfg(any(target_os = "freebsd"))]
 impl SpacectlRange {
+    /// Is the range empty?
+    ///
+    /// After a successful call to [`fspacectl`], A value of `true` for `SpacectlRange::is_empty`
+    /// indicates that the operation is complete.
     #[inline]
     pub fn is_empty(&self) -> bool {
         self.1 == 0
     }
 
+    /// Remaining length of the range
     #[inline]
     pub fn len(&self) -> libc::off_t {
         self.1
     }
 
+    /// Next file offset to operate on
     #[inline]
     pub fn offset(&self) -> libc::off_t {
         self.0
@@ -1083,21 +1208,34 @@ mod posix_fadvise {
 
     #[cfg(feature = "fs")]
     libc_enum! {
+        /// The specific advice provided to [`posix_fadvise`].
         #[repr(i32)]
         #[non_exhaustive]
         #[cfg_attr(docsrs, doc(cfg(feature = "fs")))]
         pub enum PosixFadviseAdvice {
+            /// Revert to the default data access behavior.
             POSIX_FADV_NORMAL,
+            /// The file data will be accessed sequentially.
             POSIX_FADV_SEQUENTIAL,
+            /// A hint that file data will be accessed randomly, and prefetching is likely not
+            /// advantageous.
             POSIX_FADV_RANDOM,
+            /// The specified data will only be accessed once and then not reused.
             POSIX_FADV_NOREUSE,
+            /// The specified data will be accessed in the near future.
             POSIX_FADV_WILLNEED,
+            /// The specified data will not be accessed in the near future.
             POSIX_FADV_DONTNEED,
         }
     }
 
     feature! {
     #![feature = "fs"]
+    /// Allows a process to describe to the system its data access behavior for an open file
+    /// descriptor.
+    ///
+    /// # See Also
+    /// * [`posix_fadvise`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/posix_fadvise.html)
     pub fn posix_fadvise(
         fd: RawFd,
         offset: libc::off_t,
@@ -1115,6 +1253,10 @@ mod posix_fadvise {
     }
 }
 
+/// Pre-allocate storage for a range in a file
+///
+/// # See Also
+/// * [`posix_fallocate`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/posix_fallocate.html)
 #[cfg(any(
     linux_android,
     freebsdlike,
