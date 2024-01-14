@@ -217,7 +217,12 @@ impl fmt::Display for Pid {
 /// you are now executing in the parent process or in the child.
 #[derive(Clone, Copy, Debug)]
 pub enum ForkResult {
-    Parent { child: Pid },
+    /// This is the parent process of the fork.
+    Parent {
+        /// The PID of the fork's child process
+        child: Pid
+    },
+    /// This is the child process of the fork.
     Child,
 }
 
@@ -324,6 +329,9 @@ pub fn setpgid(pid: Pid, pgid: Pid) -> Result<()> {
     let res = unsafe { libc::setpgid(pid.into(), pgid.into()) };
     Errno::result(res).map(drop)
 }
+/// Get process group
+///
+/// See Also [`getpgid`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/getpgid.html)
 #[inline]
 pub fn getpgid(pid: Option<Pid>) -> Result<Pid> {
     let res = unsafe { libc::getpgid(pid.unwrap_or(Pid(0)).into()) };
@@ -738,8 +746,10 @@ pub fn fchown(fd: RawFd, owner: Option<Uid>, group: Option<Gid>) -> Result<()> {
 }
 
 // Just a wrapper around `AtFlags` so that we can help our users migrate.
+#[allow(missing_docs)]
 #[cfg(not(target_os = "redox"))]
 pub type FchownatFlags = AtFlags;
+#[allow(missing_docs)]
 #[cfg(not(target_os = "redox"))]
 impl FchownatFlags {
     #[deprecated(since = "0.28.0", note = "The variant is deprecated, please use `AtFlags` instead")]
@@ -1152,6 +1162,10 @@ pub fn lseek(fd: RawFd, offset: off_t, whence: Whence) -> Result<off_t> {
     Errno::result(res).map(|r| r as off_t)
 }
 
+/// Move the read/write file offset.
+///
+/// Unlike [`lseek`], it takes a 64-bit argument even on platforms where [`libc::off_t`] is
+/// 32 bits.
 #[cfg(linux_android)]
 pub fn lseek64(
     fd: RawFd,
@@ -1238,6 +1252,7 @@ pub fn ftruncate<Fd: AsFd>(fd: Fd, len: off_t) -> Result<()> {
     Errno::result(unsafe { libc::ftruncate(fd.as_fd().as_raw_fd(), len) }).map(drop)
 }
 
+/// Determines if the file descriptor refers to a valid terminal type device.
 pub fn isatty(fd: RawFd) -> Result<bool> {
     unsafe {
         // ENOTTY means `fd` is a valid file descriptor, but not a TTY, so
@@ -1253,8 +1268,10 @@ pub fn isatty(fd: RawFd) -> Result<bool> {
     }
 }
 
+#[allow(missing_docs)]
 #[cfg(not(target_os = "redox"))]
 pub type LinkatFlags = AtFlags;
+#[allow(missing_docs)]
 #[cfg(not(target_os = "redox"))]
 impl LinkatFlags {
     #[deprecated(since = "0.28.0", note = "The variant is deprecated, please use `AtFlags` instead")]
@@ -1312,7 +1329,9 @@ pub fn unlink<P: ?Sized + NixPath>(path: &P) -> Result<()> {
 /// Flags for `unlinkat` function.
 #[derive(Clone, Copy, Debug)]
 pub enum UnlinkatFlags {
+    /// Remove the directory entry as a directory, not a normal file
     RemoveDir,
+    /// Remove the directory entry as a normal file, not a directory
     NoRemoveDir,
 }
 
@@ -1346,6 +1365,7 @@ pub fn unlinkat<P: ?Sized + NixPath>(
     Errno::result(res).map(drop)
 }
 
+/// Change a process's root directory
 #[inline]
 #[cfg(not(target_os = "fuchsia"))]
 pub fn chroot<P: ?Sized + NixPath>(path: &P) -> Result<()> {
@@ -1874,6 +1894,7 @@ pub fn sleep(seconds: c_uint) -> c_uint {
 feature! {
 #![feature = "acct"]
 
+/// Process accounting
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
 pub mod acct {
     use crate::errno::Errno;
@@ -2258,7 +2279,7 @@ pub enum SysconfVar {
     BC_STRING_MAX = libc::_SC_BC_STRING_MAX,
     /// Maximum number of simultaneous processes per real user ID.
     CHILD_MAX = libc::_SC_CHILD_MAX,
-    // The number of clock ticks per second.
+    /// The frequency of the statistics clock in ticks per second.
     CLK_TCK = libc::_SC_CLK_TCK,
     /// Maximum number of weights that can be assigned to an entry of the
     /// LC_COLLATE order keyword in the locale definition file
@@ -2427,6 +2448,8 @@ pub enum SysconfVar {
     ))]
     /// The implementation supports the Process Sporadic Server option.
     _POSIX_SPORADIC_SERVER = libc::_SC_SPORADIC_SERVER,
+    /// The number of replenishment operations that can be simultaneously pending for a particular
+    /// sporadic server scheduler.
     #[cfg(any(
         apple_targets,
         target_os = "linux",
@@ -2518,6 +2541,7 @@ pub enum SysconfVar {
     ))]
     /// The implementation supports the Trace Event Filter option.
     _POSIX_TRACE_EVENT_FILTER = libc::_SC_TRACE_EVENT_FILTER,
+    /// Maximum size of a trace event name in characters.
     #[cfg(any(
         apple_targets,
         target_os = "linux",
@@ -2540,18 +2564,22 @@ pub enum SysconfVar {
     ))]
     /// The implementation supports the Trace Log option.
     _POSIX_TRACE_LOG = libc::_SC_TRACE_LOG,
+    /// The length in bytes of a trace generation version string or a trace stream name.
     #[cfg(any(
         apple_targets,
         target_os = "linux",
         target_os = "openbsd"
     ))]
     _POSIX_TRACE_NAME_MAX = libc::_SC_TRACE_NAME_MAX,
+    /// Maximum number of times `posix_trace_create` may be called from the same or different
+    /// processes.
     #[cfg(any(
         apple_targets,
         target_os = "linux",
         target_os = "openbsd"
     ))]
     _POSIX_TRACE_SYS_MAX = libc::_SC_TRACE_SYS_MAX,
+    /// Maximum number of user trace event type identifiers for a single process.
     #[cfg(any(
         apple_targets,
         target_os = "linux",
@@ -2641,16 +2669,24 @@ pub enum SysconfVar {
     /// POSIX also defines an alias named `PAGESIZE`, but Rust does not allow two
     /// enum constants to have the same value, so nix omits `PAGESIZE`.
     PAGE_SIZE = libc::_SC_PAGE_SIZE,
+    /// Maximum number of attempts made to destroy a thread's thread-specific data values on thread
+    /// exit.
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     PTHREAD_DESTRUCTOR_ITERATIONS = libc::_SC_THREAD_DESTRUCTOR_ITERATIONS,
+    /// Maximum number of data keys that can be created by a process.
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     PTHREAD_KEYS_MAX = libc::_SC_THREAD_KEYS_MAX,
+    /// Minimum size in bytes of thread stack storage.
     #[cfg(not(target_os = "redox"))]
     PTHREAD_STACK_MIN = libc::_SC_THREAD_STACK_MIN,
+    /// Maximum number of threads that can be created per process.
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     PTHREAD_THREADS_MAX = libc::_SC_THREAD_THREADS_MAX,
+    /// The maximum number of repeated occurrences of a regular expression permitted when using
+    /// interval notation.
     #[cfg(not(target_os = "haiku"))]
     RE_DUP_MAX = libc::_SC_RE_DUP_MAX,
+    /// Maximum number of realtime signals reserved for application use.
     #[cfg(any(
         linux_android,
         freebsdlike,
@@ -2658,8 +2694,10 @@ pub enum SysconfVar {
         target_os = "openbsd"
     ))]
     RTSIG_MAX = libc::_SC_RTSIG_MAX,
+    /// Maximum number of semaphores that a process may have.
     #[cfg(not(target_os = "redox"))]
     SEM_NSEMS_MAX = libc::_SC_SEM_NSEMS_MAX,
+    /// The maximum value a semaphore may have.
     #[cfg(any(
         linux_android,
         freebsdlike,
@@ -2667,6 +2705,8 @@ pub enum SysconfVar {
         target_os = "openbsd"
     ))]
     SEM_VALUE_MAX = libc::_SC_SEM_VALUE_MAX,
+    /// Maximum number of queued signals that a process may send and have pending at the
+    /// receiver(s) at any time.
     #[cfg(any(
         linux_android,
         freebsdlike,
@@ -2674,12 +2714,18 @@ pub enum SysconfVar {
         target_os = "openbsd"
     ))]
     SIGQUEUE_MAX = libc::_SC_SIGQUEUE_MAX,
+    /// The minimum maximum number of streams that a process may have open at any one time.
     STREAM_MAX = libc::_SC_STREAM_MAX,
+    /// Maximum number of symbolic links that can be reliably traversed in the resolution of a
+    /// pathname in the absence of a loop.
     #[cfg(any(bsd, target_os = "linux"))]
     SYMLOOP_MAX = libc::_SC_SYMLOOP_MAX,
+    /// Maximum number of timers per process supported.
     #[cfg(not(target_os = "redox"))]
     TIMER_MAX = libc::_SC_TIMER_MAX,
+    /// Maximum length of terminal device name.
     TTY_NAME_MAX = libc::_SC_TTY_NAME_MAX,
+    /// The minimum maximum number of types supported for the name of a timezone.
     TZNAME_MAX = libc::_SC_TZNAME_MAX,
     #[cfg(any(
         linux_android,
@@ -2704,6 +2750,9 @@ pub enum SysconfVar {
         apple_targets,
         target_os = "openbsd"
     ))]
+    /// The implementation supports the XOpen Legacy Option group.
+    ///
+    /// See Also <https://pubs.opengroup.org/onlinepubs/007904975/basedefs/xbd_chap02.html>
     _XOPEN_LEGACY = libc::_SC_XOPEN_LEGACY,
     #[cfg(any(
         linux_android,
@@ -2804,6 +2853,9 @@ mod pivot_root {
     use crate::errno::Errno;
     use crate::{NixPath, Result};
 
+    /// Change the root file system.
+    ///
+    /// See Also [`pivot_root`](https://man7.org/linux/man-pages/man2/pivot_root.2.html)
     pub fn pivot_root<P1: ?Sized + NixPath, P2: ?Sized + NixPath>(
         new_root: &P1,
         put_old: &P2,
@@ -2879,16 +2931,22 @@ mod getres {
     /// Real, effective and saved user IDs.
     #[derive(Debug, Copy, Clone, Eq, PartialEq)]
     pub struct ResUid {
+        /// Real UID
         pub real: Uid,
+        /// effective UID
         pub effective: Uid,
+        /// Saved UID
         pub saved: Uid,
     }
 
     /// Real, effective and saved group IDs.
     #[derive(Debug, Copy, Clone, Eq, PartialEq)]
     pub struct ResGid {
+        /// Real GID
         pub real: Gid,
+        /// Effective GID
         pub effective: Gid,
+        /// Saved GID
         pub saved: Gid,
     }
 

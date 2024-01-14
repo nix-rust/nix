@@ -183,7 +183,6 @@ feature! {
     #[allow(missing_docs)]
     pub mod ucontext;
 }
-#[allow(missing_docs)]
 pub mod unistd;
 
 #[cfg(any(feature = "poll", feature = "event"))]
