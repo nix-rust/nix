@@ -2933,7 +2933,7 @@ mod getres {
     pub struct ResUid {
         /// Real UID
         pub real: Uid,
-        /// effective UID
+        /// Effective UID
         pub effective: Uid,
         /// Saved UID
         pub saved: Uid,
