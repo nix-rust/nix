@@ -135,7 +135,6 @@ feature! {
 #[cfg(linux_android)]
 feature! {
     #![feature = "kmod"]
-    #[allow(missing_docs)]
     pub mod kmod;
 }
 feature! {
