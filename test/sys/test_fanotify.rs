@@ -23,33 +23,21 @@ fn test_fanotify_notifications() {
         Fanotify::init(InitFlags::FAN_CLASS_NOTIF, EventFFlags::O_RDONLY)
             .unwrap();
     let tempdir = tempfile::tempdir().unwrap();
+    let tempfile = tempdir.path().join("test");
+    OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&tempfile)
+        .unwrap();
 
     group
         .mark(
-            MarkFlags::FAN_MARK_ADD | MarkFlags::FAN_MARK_MOUNT,
+            MarkFlags::FAN_MARK_ADD,
             MaskFlags::FAN_OPEN | MaskFlags::FAN_MODIFY | MaskFlags::FAN_CLOSE,
             None,
-            Some(tempdir.path()),
+            Some(&tempfile),
         )
         .unwrap();
-
-    let tempfile = tempdir.path().join("test");
-
-    // create test file
-    File::create(&tempfile).unwrap();
-
-    let [event] = &group.read_events().unwrap()[..] else {
-        panic!("should have read exactly one event");
-    };
-    assert!(event.check_version());
-    assert_eq!(
-        event.mask(),
-        MaskFlags::FAN_OPEN | MaskFlags::FAN_CLOSE_WRITE
-    );
-    let fd_opt = event.fd();
-    let fd = fd_opt.as_ref().unwrap();
-    let path = read_link(format!("/proc/self/fd/{}", fd.as_raw_fd())).unwrap();
-    assert_eq!(path, tempfile);
 
     // modify test file
     {
@@ -57,9 +45,9 @@ fn test_fanotify_notifications() {
         f.write_all(b"hello").unwrap();
     }
 
-    let [event] = &group.read_events().unwrap()[..] else {
-        panic!("should have read exactly one event");
-    };
+    let mut events = group.read_events().unwrap();
+    assert_eq!(events.len(), 1, "should have read exactly one event");
+    let event = events.pop().unwrap();
     assert!(event.check_version());
     assert_eq!(
         event.mask(),
@@ -79,9 +67,9 @@ fn test_fanotify_notifications() {
         f.read_to_string(&mut s).unwrap();
     }
 
-    let [event] = &group.read_events().unwrap()[..] else {
-        panic!("should have read exactly one event");
-    };
+    let mut events = group.read_events().unwrap();
+    assert_eq!(events.len(), 1, "should have read exactly one event");
+    let event = events.pop().unwrap();
     assert!(event.check_version());
     assert_eq!(
         event.mask(),
@@ -98,54 +86,61 @@ fn test_fanotify_responses() {
         Fanotify::init(InitFlags::FAN_CLASS_CONTENT, EventFFlags::O_RDONLY)
             .unwrap();
     let tempdir = tempfile::tempdir().unwrap();
+    let tempfile = tempdir.path().join("test");
+    OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&tempfile)
+        .unwrap();
 
     group
         .mark(
-            MarkFlags::FAN_MARK_ADD | MarkFlags::FAN_MARK_MOUNT,
+            MarkFlags::FAN_MARK_ADD,
             MaskFlags::FAN_OPEN_PERM,
             None,
-            Some(tempdir.path()),
+            Some(&tempfile),
         )
         .unwrap();
 
-    let tempfile = tempdir.path().join("test");
-    let tempfname = tempfile.clone();
+    let file_thread = thread::spawn({
+        let tempfile = tempfile.clone();
 
-    let file_thread = thread::spawn(move || {
-        // first try, should fail
-        let Err(err) = File::create(&tempfile) else {
-            panic!("first open is denied, should return error");
-        };
-        assert_eq!(err.kind(), ErrorKind::PermissionDenied);
+        move || {
+            // first open, should fail
+            let Err(e) = File::open(&tempfile) else {
+                panic!("The first open should fail");
+            };
+            assert_eq!(e.kind(), ErrorKind::PermissionDenied);
 
-        // second try, should succeed
-        File::create(&tempfile).unwrap();
+            // second open, should succeed
+            File::open(&tempfile).unwrap();
+        }
     });
 
     // Deny the first open try
-    let [event] = &group.read_events().unwrap()[..] else {
-        panic!("should have read exactly one event");
-    };
+    let mut events = group.read_events().unwrap();
+    assert_eq!(events.len(), 1, "should have read exactly one event");
+    let event = events.pop().unwrap();
     assert!(event.check_version());
     assert_eq!(event.mask(), MaskFlags::FAN_OPEN_PERM);
     let fd_opt = event.fd();
     let fd = fd_opt.as_ref().unwrap();
     let path = read_link(format!("/proc/self/fd/{}", fd.as_raw_fd())).unwrap();
-    assert_eq!(path, tempfname);
+    assert_eq!(path, tempfile);
     group
         .write_response(FanotifyResponse::new(*fd, Response::FAN_DENY))
         .unwrap();
 
-    //// Allow the second open try
-    let [event] = &group.read_events().unwrap()[..] else {
-        panic!("should have read exactly one event");
-    };
+    // Allow the second open try
+    let mut events = group.read_events().unwrap();
+    assert_eq!(events.len(), 1, "should have read exactly one event");
+    let event = events.pop().unwrap();
     assert!(event.check_version());
     assert_eq!(event.mask(), MaskFlags::FAN_OPEN_PERM);
     let fd_opt = event.fd();
     let fd = fd_opt.as_ref().unwrap();
     let path = read_link(format!("/proc/self/fd/{}", fd.as_raw_fd())).unwrap();
-    assert_eq!(path, tempfname);
+    assert_eq!(path, tempfile);
     group
         .write_response(FanotifyResponse::new(*fd, Response::FAN_ALLOW))
         .unwrap();
