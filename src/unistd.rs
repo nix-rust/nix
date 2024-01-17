@@ -1378,7 +1378,7 @@ pub fn chroot<P: ?Sized + NixPath>(path: &P) -> Result<()> {
 /// Commit filesystem caches to disk
 ///
 /// See also [sync(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/sync.html)
-#[cfg(any(freebsdlike, target_os = "linux", netbsdlike))]
+#[cfg(any(freebsdlike, linux_android, netbsdlike))]
 pub fn sync() {
     unsafe { libc::sync() };
 }
@@ -1387,7 +1387,7 @@ pub fn sync() {
 /// descriptor `fd` to disk
 ///
 /// See also [syncfs(2)](https://man7.org/linux/man-pages/man2/sync.2.html)
-#[cfg(target_os = "linux")]
+#[cfg(linux_android)]
 pub fn syncfs(fd: RawFd) -> Result<()> {
     let res = unsafe { libc::syncfs(fd) };
 
