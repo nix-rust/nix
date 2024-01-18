@@ -72,8 +72,6 @@ task:
       arm_container:
         image: rust:1.69.0
         cpu: 1
-      depends_on:
-        - FreeBSD 14 amd64 & i686
       env:
         TARGET: aarch64-unknown-linux-gnu
   setup_script:
