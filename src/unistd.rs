@@ -2974,9 +2974,17 @@ libc_bitflags! {
 feature! {
 #![feature = "process"]
 #[cfg(target_os = "freebsd")]
-/// rfork can be used to have a tigher control about which resources child
-/// and parent process will be sharing, file descriptors, address spaces
-/// and child exit's behavior.
+/// Like [`fork`], `rfork` can be used to have a tigher control about which
+/// resources child and parent process will be sharing, file descriptors,
+/// address spaces and child exit's behavior.
+///
+/// # Safety
+///
+/// The same restrictions apply as for [`fork`].
+///
+/// # See Also
+///
+/// * [rfork(2)](https://man.freebsd.org/cgi/man.cgi?query=rfork)
 pub unsafe fn rfork(flags: RforkFlags) -> Result<ForkResult> {
     use ForkResult::*;
     let res = unsafe { libc::rfork(flags.bits()) };
