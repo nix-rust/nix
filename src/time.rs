@@ -1,4 +1,4 @@
-//! Sleep, query system clocks, and set system closk
+//! Sleep, query system clocks, and set system clock
 use crate::sys::time::TimeSpec;
 #[cfg(any(freebsdlike, linux_android, target_os = "emscripten"))]
 #[cfg(feature = "process")]
@@ -60,7 +60,7 @@ impl ClockId {
     /// Starts at zero when the kernel boots and increments monotonically in SI seconds while the
     /// machine is running.
     pub const CLOCK_BOOTTIME: ClockId = ClockId(libc::CLOCK_BOOTTIME);
-    /// Like [`CLOCK_BOOTTIME`](ClockId::CLOCK_BOOTTIME), but will wake the  system  if  it  is
+    /// Like [`CLOCK_BOOTTIME`](ClockId::CLOCK_BOOTTIME), but will wake the system if it is
     /// suspended..
     #[cfg(any(linux_android, target_os = "emscripten", target_os = "fuchsia"))]
     pub const CLOCK_BOOTTIME_ALARM: ClockId =
@@ -80,7 +80,7 @@ impl ClockId {
     pub const CLOCK_MONOTONIC_PRECISE: ClockId =
         ClockId(libc::CLOCK_MONOTONIC_PRECISE);
     /// Similar to [`CLOCK_MONOTONIC`](ClockId::CLOCK_MONOTONIC), but provides access to a raw
-    /// hardware-based time that  is  not subject  to  NTP adjustments.
+    /// hardware-based time that is not subject to NTP adjustments.
     #[cfg(any(linux_android, target_os = "emscripten", target_os = "fuchsia"))]
     pub const CLOCK_MONOTONIC_RAW: ClockId = ClockId(libc::CLOCK_MONOTONIC_RAW);
     #[cfg(any(
@@ -127,7 +127,7 @@ impl ClockId {
     pub const CLOCK_SGI_CYCLE: ClockId = ClockId(libc::CLOCK_SGI_CYCLE);
     /// International Atomic Time.
     ///
-    /// A  nonsettable  system-wide  clock derived from wall-clock time but ignoring leap seconds.
+    /// A nonsettable system-wide clock derived from wall-clock time but ignoring leap seconds.
     #[cfg(any(linux_android, target_os = "emscripten", target_os = "fuchsia"))]
     pub const CLOCK_TAI: ClockId = ClockId(libc::CLOCK_TAI);
     #[cfg(any(

@@ -49,14 +49,15 @@ libc_bitflags! {
     /// Flags that control how the various *at syscalls behave.
     #[cfg_attr(docsrs, doc(cfg(any(feature = "fs", feature = "process"))))]
     pub struct AtFlags: c_int {
-        /// Used with [`unlink`](crate::unistd::unlink) to indicate that the path to remove is a
-        /// directory, and not a regular file.
+        #[allow(missing_docs)]
+        #[doc(hidden)]
+        // Should not be used by the public API, but only internally.
         AT_REMOVEDIR;
         /// Used with [`linkat`](crate::unistd::linkat`) to create a link to a symbolic link's
         /// target, instead of to the symbolic link itself.
         AT_SYMLINK_FOLLOW;
-        /// Used with [`linkat`](crate::unistd::linkat`) to create a link to a symbolic link
-        /// itself, instead of to the symbolic link's target.
+        /// Used with functions like [`fstatat`](crate::sys::stat::fstatat`) to operate on a link
+        /// itself, instead of the symbolic link's target.
         AT_SYMLINK_NOFOLLOW;
         /// Don't automount the terminal ("basename") component of pathname if it is a directory
         /// that is an automount point.
@@ -293,7 +294,7 @@ feature! {
 #![feature = "fs"]
 /// Like [`renameat`], but with an additional `flags` argument.
 ///
-/// A `renameat2` call with a zero flags argument is equivalent to `renameat`.
+/// A `renameat2` call with an empty flags argument is equivalent to `renameat`.
 ///
 /// # See Also
 /// * [`rename`](https://man7.org/linux/man-pages/man2/rename.2.html)
@@ -679,7 +680,7 @@ pub fn fcntl(fd: RawFd, arg: FcntlArg) -> Result<c_int> {
     Errno::result(res)
 }
 
-/// Operations for use with [`flock`].
+/// Operations for use with [`Flock::lock`].
 #[cfg(not(any(target_os = "redox", target_os = "solaris")))]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 #[non_exhaustive]
