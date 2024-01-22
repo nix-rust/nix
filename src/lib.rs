@@ -118,7 +118,6 @@ feature! {
     #[deny(missing_docs)]
     pub mod features;
 }
-#[allow(missing_docs)]
 pub mod fcntl;
 feature! {
     #![feature = "net"]
@@ -163,7 +162,6 @@ feature! {
 pub mod sys;
 feature! {
     #![feature = "time"]
-    #[allow(missing_docs)]
     pub mod time;
 }
 // This can be implemented for other platforms as soon as libc
