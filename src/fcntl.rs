@@ -126,7 +126,7 @@ libc_bitflags!(
         O_EXLOCK;
         /// Same as `O_SYNC`.
         #[cfg(any(bsd,
-                  all(target_os = "linux", not(target_env = "musl")),
+                  all(target_os = "linux", not(target_env = "musl"), not(target_env = "ohos")),
                   target_os = "redox"))]
         O_FSYNC;
         /// Allow files whose sizes can't be represented in an `off_t` to be opened.

@@ -48,7 +48,7 @@ libc_bitflags!(
         #[cfg(linux_android)]
         ST_NODIRATIME;
         /// Update access time relative to modify/change time
-        #[cfg(any(target_os = "android", all(target_os = "linux", not(target_env = "musl"))))]
+        #[cfg(any(target_os = "android", all(target_os = "linux", not(target_env = "musl"), not(target_env = "ohos"))))]
         ST_RELATIME;
     }
 );
