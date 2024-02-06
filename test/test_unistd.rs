@@ -1180,8 +1180,6 @@ fn test_access_file_exists() {
         .expect("assertion failed");
 }
 
-//Clippy false positive https://github.com/rust-lang/rust-clippy/issues/9111
-#[allow(clippy::needless_borrow)]
 #[cfg(not(target_os = "redox"))]
 #[test]
 fn test_user_into_passwd() {
