@@ -11,6 +11,8 @@ mod test_errno;
 mod test_fcntl;
 #[cfg(linux_android)]
 mod test_kmod;
+#[cfg(target_os = "linux")]
+mod test_mount;
 #[cfg(any(
     freebsdlike,
     target_os = "fushsia",

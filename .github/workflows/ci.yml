@@ -92,6 +92,7 @@ jobs:
         uses: ./.github/actions/test
         with:
           TARGET: '${{ matrix.target }}'
+          SUDO: ""
           TOOL: cross
           RUSTFLAGS: --cfg qemu -D warnings
 

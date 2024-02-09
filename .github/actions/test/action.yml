@@ -5,6 +5,11 @@ inputs:
   TARGET:
     required: true
 
+  SUDO:
+    description: 'Set it to an empty string to run the tests as the current user, leave it with the default value to test with "sudo"'
+    required: false
+    default: sudo --preserve-env=HOME 
+
   TOOL: 
     description: 'Tool used to involve the test command, can be cargo or cross'
     required: false
@@ -24,4 +29,4 @@ runs:
 
     - name: test
       shell: bash
-      run: ${{ inputs.TOOL }} test --target ${{ inputs.TARGET }} --all-features
+      run: ${{ inputs.SUDO }} $(which ${{ inputs.TOOL }}) test --target ${{ inputs.TARGET }} --all-features
