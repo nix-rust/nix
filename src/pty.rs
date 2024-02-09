@@ -326,7 +326,7 @@ pub unsafe fn forkpty<'a, 'b, T: Into<Option<&'a Winsize>>, U: Into<Option<&'b T
 ) -> Result<ForkptyResult> {
     use std::ptr;
 
-    let mut master = mem::MaybeUninit::<libc::c_int>::uninit();
+    let mut master = mem::MaybeUninit::<libc::c_int>::zeroed();
 
     let term = match termios.into() {
         Some(termios) => {
