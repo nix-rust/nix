@@ -633,3 +633,117 @@ pub fn shm_unlink<P: ?Sized + NixPath>(name: &P) -> Result<()> {
 
     Errno::result(ret).map(drop)
 }
+
+
+libc_bitflags! {
+    pub struct ShmgetFlag: c_int
+    {
+        IPC_PRIVATE;
+        IPC_CREAT;
+        IPC_EXCL;
+        SHM_HUGETLB;
+        SHM_NORESERVE;
+    }
+}
+/// Creates and returns a new, or returns an existing, System V shared memory
+/// segment identifier.
+///
+/// For more information, see [`shmget(2)`].
+///
+/// [`shmget(2)`]: https://man7.org/linux/man-pages/man2/shmget.2.html
+pub fn shmget(
+    key: key_t,
+    size: size_t,
+    shmflg: Vec<ShmgetFlag>,
+) -> Result<i32> {
+    let mut flags: c_int = ShmgetFlag::empty().bits();
+    for flag in shmflg {
+        flags |= flag.bits;
+    }
+    Errno::result(unsafe { libc::shmget(key, size, flags) })
+}
+
+libc_bitflags! {
+    pub struct ShmatFlag: c_int
+    {
+        SHM_EXEC;
+        SHM_RND;
+        SHM_RDONLY;
+        #[cfg(any(target_os = "linux"))]
+        SHM_REMAP;
+    }
+}
+/// Attaches the System V shared memory segment identified by `shmid` to the
+/// address space of the calling process.
+///
+/// For more information, see [`shmat(2)`].
+///
+/// # Safety
+///
+/// `shmid` should be a valid shared memory identifier and
+/// `shmaddr` must meet the requirements described in the [`shmat(2)`] man page.
+///
+/// [`shmat(2)`]: https://man7.org/linux/man-pages/man2/shmat.2.html
+pub fn shmat(
+    shmid: c_int,
+    shmaddr: *const c_void,
+    shmflg: Vec<ShmatFlag>,
+) -> Result<*mut c_void> {
+    let mut flags: c_int = ShmatFlag::empty().bits();
+    for flag in shmflg {
+        flags |= flag.bits;
+    }
+    Errno::result(unsafe { libc::shmat(shmid, shmaddr, flags) })
+}
+
+/// Performs the reverse of [`shmat`], detaching the shared memory segment at
+/// the given address from the address space of the calling process.
+///
+/// For more information, see [`shmdt(2)`].
+///
+/// # Safety
+///
+/// `shmaddr` must meet the requirements described in the [`shmdt(2)`] man page.
+///
+/// [`shmdt(2)`]: https://man7.org/linux/man-pages/man2/shmdt.2.html
+pub fn shmdt(shmaddr: *const c_void) -> Result<()> {
+    Errno::result(unsafe {libc::shmdt(shmaddr)}).map(drop)
+}
+
+libc_bitflags! {
+    pub struct ShmctlFlag: c_int {
+        #[cfg(any(target_os = "linux"))]
+        IPC_INFO;
+        IPC_SET;
+        IPC_STAT;
+        IPC_RMID;
+        // not available in libc but should be?
+        // #[cfg(any(target_os = "linux"))]
+        // SHM_INFO;
+        // #[cfg(any(target_os = "linux"))]
+        // SHM_STAT;
+        // #[cfg(any(target_os = "linux"))]
+        // SHM_STAT_ANY;
+        #[cfg(any(target_os = "linux"))]
+        SHM_LOCK;
+        #[cfg(any(target_os = "linux"))]
+        SHM_UNLOCK;
+    }
+}
+/// Performs control operation specified by `cmd` on the System V shared
+/// memory segment given by `shmid`.
+///
+/// For more information, see [`shmctl(2)`].
+///
+/// # Safety
+///
+/// All arguments should be valid and meet the requirements described in the [`shmctl(2)`] man page.
+///
+/// [`shmctl(2)`]: https://man7.org/linux/man-pages/man2/shmctl.2.html
+pub fn shmctl(
+    shmid: c_int,
+    cmd: c_int,
+    buf: *mut shmid_ds,
+) -> Result<c_int> {
+    Errno::result(unsafe {libc::shmctl(shmid, cmd, buf)} )
+}
