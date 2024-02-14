@@ -634,14 +634,85 @@ pub fn shm_unlink<P: ?Sized + NixPath>(name: &P) -> Result<()> {
     Errno::result(ret).map(drop)
 }
 
+#[derive(Debug, Default, Clone, Copy)]
+/// Type used to transform a raw number to an octal permission, while performing a clamp to u9
+///
+/// # Example
+///
+/// ```
+/// # use nix::errno::Errno;
+/// # use nix::sys::mman::Permissions;
+///
+/// # fn main() -> Result<(), Errno> {
+/// assert_eq!(Permissions::new(511)?.get_permission(), &(0o0777 as u16));
+/// assert_eq!(Permissions::new(512).expect_err("512 is bigger than what u9 can store"), Errno::E2BIG);
+/// # Ok(())
+/// # }
+/// ```
+pub struct Permissions {
+    permission: u16,
+}
+
+impl Permissions {
+    /// Create a new Permissions object
+    ///
+    /// Clamp to a u9 size, return Errno::E2BIG if it fails
+    ///
+    pub fn new(octal: u16) -> Result<Self> {
+        if octal >= 2_u16.pow(9) {
+            return Err(Errno::E2BIG);
+        }
+        Ok(Permissions { permission: octal })
+    }
+
+    pub fn get_permission(&self) -> &u16 {
+        &self.permission
+    }
+
+    /// Using the current stored permission, do a bitor operation on the
+    /// bitflags enums given
+    ///
+    pub fn to_octal<T: bitflags::Flags<Bits = i32>>(
+        &self,
+        vec_flags: Vec<T>,
+    ) -> c_int {
+        let mut flags: c_int = T::empty().bits();
+        for flag in vec_flags {
+            flags |= flag.bits();
+        }
+        flags |= self.permission as i32;
+        flags
+    }
+}
 
 libc_bitflags! {
+    /// Different flags for the command `shmget`
     pub struct ShmgetFlag: c_int
     {
+        /// A new shared memory segment is created if key has this value
         IPC_PRIVATE;
+        /// Create a new segment. If this flag is not used, then shmget() will
+        /// find the segment associated with key and check to see if the user
+        /// has permission to access the segment.
         IPC_CREAT;
+        /// This flag is used with IPC_CREAT to ensure that this call creates
+        /// the segment.  If the segment already exists, the call fails.
         IPC_EXCL;
+        /// Allocate the segment using "huge" pages.  See the Linux kernel
+        /// source file Documentation/admin-guide/mm/hugetlbpage.rst for
+        /// further information.
+        #[cfg(any(target_os = "linux"))]
         SHM_HUGETLB;
+        // Does not exist in libc but should
+        // SHM_HUGE_2MB;
+        // SHM_HUGE_1GB;
+        /// This flag serves the same purpose as the mmap(2) MAP_NORESERVE flag.
+        /// Do not reserve swap space for this segment. When swap space is
+        /// reserved, one has the guarantee that it is possible to modify the
+        /// segment. When swap space is not reserved one might get SIGSEGV upon
+        /// a write if no physical memory is available. See also the discussion
+        /// of the file /proc/sys/vm/overcommit_memory in proc(5).
+        #[cfg(any(target_os = "linux"))]
         SHM_NORESERVE;
     }
 }
@@ -655,11 +726,9 @@ pub fn shmget(
     key: key_t,
     size: size_t,
     shmflg: Vec<ShmgetFlag>,
+    permission: Permissions,
 ) -> Result<i32> {
-    let mut flags: c_int = ShmgetFlag::empty().bits();
-    for flag in shmflg {
-        flags |= flag.bits;
-    }
+    let flags = permission.to_octal(shmflg);
     Errno::result(unsafe { libc::shmget(key, size, flags) })
 }
 
@@ -688,11 +757,9 @@ pub fn shmat(
     shmid: c_int,
     shmaddr: *const c_void,
     shmflg: Vec<ShmatFlag>,
+    permission: Permissions,
 ) -> Result<*mut c_void> {
-    let mut flags: c_int = ShmatFlag::empty().bits();
-    for flag in shmflg {
-        flags |= flag.bits;
-    }
+    let flags = permission.to_octal(shmflg);
     Errno::result(unsafe { libc::shmat(shmid, shmaddr, flags) })
 }
 
@@ -707,7 +774,7 @@ pub fn shmat(
 ///
 /// [`shmdt(2)`]: https://man7.org/linux/man-pages/man2/shmdt.2.html
 pub fn shmdt(shmaddr: *const c_void) -> Result<()> {
-    Errno::result(unsafe {libc::shmdt(shmaddr)}).map(drop)
+    Errno::result(unsafe { libc::shmdt(shmaddr) }).map(drop)
 }
 
 libc_bitflags! {
@@ -742,8 +809,11 @@ libc_bitflags! {
 /// [`shmctl(2)`]: https://man7.org/linux/man-pages/man2/shmctl.2.html
 pub fn shmctl(
     shmid: c_int,
-    cmd: c_int,
+    cmd: ShmctlFlag,
     buf: *mut shmid_ds,
+    permission: Permissions,
 ) -> Result<c_int> {
-    Errno::result(unsafe {libc::shmctl(shmid, cmd, buf)} )
+    let command = permission.to_octal(vec![cmd]);
+    Errno::result(unsafe { libc::shmctl(shmid, command, buf) })
 }
+
