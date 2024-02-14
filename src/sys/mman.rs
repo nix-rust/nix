@@ -7,7 +7,10 @@ use crate::Result;
 #[cfg(not(target_os = "android"))]
 #[cfg(feature = "fs")]
 use crate::{fcntl::OFlag, sys::stat::Mode};
-use libc::{self, c_int, c_void, off_t, size_t};
+use libc::{
+    self, c_int, c_short, c_void, key_t, off_t, semid_ds, seminfo, shmid_ds,
+    size_t,
+};
 use std::ptr::NonNull;
 use std::{
     num::NonZeroUsize,
@@ -733,6 +736,30 @@ pub fn shmget(
 }
 
 libc_bitflags! {
+    pub struct SemgetFlag: c_int
+    {
+        IPC_PRIVATE;
+        IPC_CREAT;
+        IPC_EXCL;
+    }
+}
+/// Creates and return a new, or returns an existing, System V shared memory
+/// semaphore identifier.
+///
+/// For more information, see [`semget(2)`].
+///
+/// [`semget(2)`]: https://man7.org/linux/man-pages/man2/semget.2.html
+pub fn semget(
+    key: key_t,
+    size: i32,
+    semflg: Vec<SemgetFlag>,
+    permission: Permissions,
+) -> Result<i32> {
+    let flags = permission.to_octal(semflg);
+    Errno::result(unsafe { libc::semget(key, size, flags) })
+}
+
+libc_bitflags! {
     pub struct ShmatFlag: c_int
     {
         SHM_EXEC;
@@ -784,7 +811,7 @@ libc_bitflags! {
         IPC_SET;
         IPC_STAT;
         IPC_RMID;
-        // not available in libc but should be?
+        // not available in libc/linux, but should be?
         // #[cfg(any(target_os = "linux"))]
         // SHM_INFO;
         // #[cfg(any(target_os = "linux"))]
@@ -817,3 +844,61 @@ pub fn shmctl(
     Errno::result(unsafe { libc::shmctl(shmid, command, buf) })
 }
 
+
+libc_bitflags! {
+    pub struct SemctlCmd: c_int {
+        IPC_STAT;
+        IPC_SET;
+        IPC_RMID;
+        #[cfg(any(target_os = "linux"))]
+        IPC_INFO;
+        // #[cfg(any(target_os = "linux"))]
+        // SEM_INFO;
+        // #[cfg(any(target_os = "linux"))]
+        // SEM_STAT;
+        // #[cfg(any(target_os = "linux"))]
+        // SEM_STAT_ANY;
+        // GETALL;
+        // GETNCNT;
+        // GETPID;
+        // GETVAL;
+        // GETZCNT;
+        // SETALL;
+        // SETVAL;
+    }
+}
+
+#[derive(Debug)]
+pub enum Semun {
+    /// Value for SETVAL
+    val(c_int),
+    /// Buffer for IPC_STAT, IPC_SET
+    buf(*mut semid_ds),
+    /// Array for GETALL, SETALL
+    array(*mut c_short),
+    /// Buffer for IPC_INFO
+    #[cfg(any(target_os = "linux"))]
+    __buf(*mut seminfo),
+}
+
+/// Performs control operation specified by `cmd` on the System V shared
+/// semaphore segment given by `semid`.
+///
+/// For more information, see [`semctl(2)`].
+///
+/// #
+///
+/// [`semctl(2)`]: https://man7.org/linux/man-pages/man2/semctl.2.html
+pub fn semctl(
+    semid: c_int,
+    semnum: c_int,
+    cmd: SemctlCmd,
+    permission: Permissions,
+    semun: Option<Semun>,
+) -> Result<c_int> {
+    let command = permission.to_octal(vec![cmd]);
+    if semun.is_none() {
+        return Errno::result(unsafe { libc::semctl(semid, semnum, command) });
+    }
+    Errno::result(unsafe { libc::semctl(semid, semnum, command, semun) })
+}
