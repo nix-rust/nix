@@ -44,6 +44,32 @@ jobs:
       - name: before_cache_script
         run: rm -rf $CARGO_HOME/registry/index
 
+  macos-aarch64:
+    runs-on: macos-14
+    env:
+      TARGET: aarch64-apple-darwin
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: setup Rust
+        uses: dtolnay/rust-toolchain@master
+        with: 
+          toolchain: '${{ env.MSRV }}'
+          components: clippy
+
+      - name: build
+        uses: ./.github/actions/build
+        with:
+          TARGET: "${{ env.TARGET }}"
+
+      - name: test
+        uses: ./.github/actions/test
+        with:
+          TARGET: "${{ env.TARGET }}"
+
+      - name: before_cache_script
+        run: rm -rf $CARGO_HOME/registry/index
 
   # Use cross for QEMU-based testing
   # cross needs to execute Docker, GitHub Action already has it installed

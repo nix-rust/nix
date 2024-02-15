@@ -3476,18 +3476,17 @@ impl Group {
         let mut ret = Vec::new();
 
         for i in 0.. {
-            let u = unsafe { mem.offset(i) };
-            if unsafe { (*u).is_null() } {
+            let u = unsafe { mem.offset(i).read_unaligned() };
+            if u.is_null() {
                 break;
             } else {
-                let s = unsafe {CStr::from_ptr(*u).to_string_lossy().into_owned()};
+                let s = unsafe {CStr::from_ptr(u).to_string_lossy().into_owned()};
                 ret.push(s);
             }
         }
 
         ret
     }
-
     /// # Safety
     ///
     /// If `f` writes to its `*mut *mut libc::group` parameter, then it must
