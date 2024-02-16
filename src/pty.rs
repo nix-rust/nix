@@ -354,6 +354,9 @@ pub unsafe fn forkpty<'a, 'b, T: Into<Option<&'a Winsize>>, U: Into<Option<&'b T
         0 => ForkptyResult::Child,
         // In the parent process
         child_pid => {
+            // SAFETY:
+            // 1. The master buffer is guaranteed to be initialized in the parent process
+            // 2. OwnedFd::from_raw_fd won't panic as the fd is a valid file descriptor
             let master = unsafe { OwnedFd::from_raw_fd( master.assume_init() ) };
             ForkptyResult::Parent {
                     master,
