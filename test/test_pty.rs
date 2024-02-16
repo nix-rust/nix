@@ -8,6 +8,7 @@ use nix::fcntl::{open, OFlag};
 use nix::pty::*;
 use nix::sys::stat;
 use nix::sys::termios::*;
+use nix::sys::wait::WaitStatus;
 use nix::unistd::{pause, write};
 
 /// Test equivalence of `ptsname` and `ptsname_r`
@@ -247,7 +248,6 @@ fn test_openpty_with_termios() {
 fn test_forkpty() {
     use nix::sys::signal::*;
     use nix::sys::wait::wait;
-    use nix::unistd::ForkResult::*;
     // forkpty calls openpty which uses ptname(3) internally.
     let _m0 = crate::PTSNAME_MTX.lock();
     // forkpty spawns a child process
@@ -255,21 +255,22 @@ fn test_forkpty() {
 
     let string = "naninani\n";
     let echoed_string = "naninani\r\n";
-    let pty = unsafe { forkpty(None, None).unwrap() };
-    match pty.fork_result {
-        Child => {
+    let res = unsafe { forkpty(None, None).unwrap() };
+    match res {
+        ForkptyResult::Child => {
             write(stdout(), string.as_bytes()).unwrap();
             pause(); // we need the child to stay alive until the parent calls read
             unsafe {
                 _exit(0);
             }
         }
-        Parent { child } => {
+        ForkptyResult::Parent { child, master } => {
             let mut buf = [0u8; 10];
             assert!(child.as_raw() > 0);
-            crate::read_exact(&pty.master, &mut buf);
+            crate::read_exact(&master, &mut buf);
             kill(child, SIGTERM).unwrap();
-            wait().unwrap(); // keep other tests using generic wait from getting our child
+            let status = wait().unwrap(); // keep other tests using generic wait from getting our child
+            assert_eq!(status, WaitStatus::Signaled(child, SIGTERM, false));
             assert_eq!(&buf, echoed_string.as_bytes());
         }
     }
