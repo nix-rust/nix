@@ -1372,3 +1372,14 @@ fn test_eaccess_file_exists() {
     eaccess(&path, AccessFlags::R_OK | AccessFlags::W_OK)
         .expect("assertion failed");
 }
+
+#[test]
+#[cfg(bsd)]
+fn test_group_from() {
+    let group = Group::from_name("wheel").unwrap().unwrap();
+    assert!(group.name == "wheel");
+    let group_id = group.gid;
+    let group = Group::from_gid(group_id).unwrap().unwrap();
+    assert_eq!(group.gid, group_id);
+    assert_eq!(group.name, "wheel");
+}
