@@ -143,6 +143,9 @@ feature! {
 #[allow(missing_docs)]
 pub mod sysinfo;
 
+#[allow(missing_docs)]
+pub mod system_v;
+
 feature! {
     #![feature = "term"]
     #[allow(missing_docs)]
