@@ -55,7 +55,7 @@ impl Drop for FixtureSystemV {
             None,
             Permissions::new(0o0).expect("Octal is smaller than u9"),
         )
-        .inspect_err(|_| panic!("Failed to delete the test IPC"));
+        .map_err(|_| panic!("Failed to delete the test IPC"));
         let _ = semctl(
             self.id_sem,
             0,
@@ -63,7 +63,7 @@ impl Drop for FixtureSystemV {
             Permissions::new(0o0).expect("Octal is smaller than u9"),
             None,
         )
-        .inspect_err(|_| panic!("Failed to delete the test semaphore"));
+        .map_err(|_| panic!("Failed to delete the test semaphore"));
     }
 }
 
