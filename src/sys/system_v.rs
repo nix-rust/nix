@@ -288,11 +288,12 @@ pub enum Semun {
     /// Value for SETVAL
     val(c_int),
     /// Buffer for IPC_STAT, IPC_SET
+    #[cfg(all(target_os = "linux", target_env = "gnu"))]
     buf(*mut semid_ds),
     /// Array for GETALL, SETALL
     array(*mut c_short),
     /// Buffer for IPC_INFO
-    #[cfg(any(target_os = "linux"))]
+    #[cfg(all(target_os = "linux", target_env = "gnu"))]
     __buf(*mut seminfo),
 }
 libc_bitflags! {
