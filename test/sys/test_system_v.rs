@@ -5,14 +5,14 @@ use crate::SYSTEMV_MTX;
 const IPC_TEST: i32 = 1337;
 
 /// Test struct used to try storing data on the IPC
-/// 
+///
 struct IpcStruct {
-    pub test_info: i64
+    pub test_info: i64,
 }
 
 #[derive(Debug)]
 /// RAII fixture that delete the SystemV IPC and Semaphore on drop
-/// 
+///
 struct FixtureSystemV {
     pub id_ipc: i32,
     pub id_sem: i32,
@@ -32,18 +32,22 @@ impl FixtureSystemV {
             vec![SemgetFlag::IPC_CREAT, SemgetFlag::IPC_EXCL],
             Permissions::new(0o0777).expect("Octal is smaller than u9"),
         )?;
-        Ok(Self {id_ipc: shmget(
-            IPC_TEST,
-            0,
-            vec![],
-            Permissions::new(0o0).expect("Octal is smaller than u9"),
-        ).expect("IPC exist"), id_sem: semget(
-            IPC_TEST,
-            0,
-            vec![],
-            Permissions::new(0o0).expect("Octal is smaller than u9"),
-        )
-        .expect("Sem exist")})
+        Ok(Self {
+            id_ipc: shmget(
+                IPC_TEST,
+                0,
+                vec![],
+                Permissions::new(0o0).expect("Octal is smaller than u9"),
+            )
+            .expect("IPC exist"),
+            id_sem: semget(
+                IPC_TEST,
+                0,
+                vec![],
+                Permissions::new(0o0).expect("Octal is smaller than u9"),
+            )
+            .expect("Sem exist"),
+        })
     }
 }
 
@@ -97,14 +101,15 @@ fn create_ipc_and_get_value() -> Result<()> {
         ipc.id_ipc,
         None,
         vec![],
-        Permissions::new(0o0).expect("Octal is smaller than u9")
-    )?.cast();
+        Permissions::new(0o0).expect("Octal is smaller than u9"),
+    )?
+    .cast();
 
     let expected = 0xDEADBEEF;
     unsafe {
         mem.as_mut().unwrap().test_info = expected;
         assert_eq!(expected, mem.read().test_info);
     }
-    
+
     Ok(())
 }
