@@ -3,9 +3,9 @@ use std::ptr::{null, null_mut};
 use crate::errno::Errno;
 use crate::Result;
 
-use libc::{self, c_int, c_short, c_void, key_t, size_t};
+use libc::{self, c_int, c_short, c_void, key_t, size_t, shmid_ds};
 #[cfg(target_env = "gnu")]
-use libc::{shmid_ds, semid_ds, seminfo};
+use libc::{semid_ds, seminfo};
 
 #[derive(Debug, Default, Clone, Copy)]
 /// Type used to transform a raw number to an octal permission, while performing a clamp to u9
