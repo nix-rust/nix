@@ -60,7 +60,7 @@ impl Permissions {
     }
 }
 
-libc_bitflags! {
+libc_bitflags!(
     /// Valid flags for the third parameter of the function [`shmget`]
     pub struct ShmgetFlag: c_int
     {
@@ -90,7 +90,7 @@ libc_bitflags! {
         /// of the file /proc/sys/vm/overcommit_memory in proc(5).
         SHM_NORESERVE;
     }
-}
+);
 /// Creates and returns a new, or returns an existing, System V shared memory
 /// segment identifier.
 ///
@@ -107,7 +107,7 @@ pub fn shmget(
     Errno::result(unsafe { libc::shmget(key, size, flags) })
 }
 
-libc_bitflags! {
+libc_bitflags!(
     /// Valid flags for the third parameter of the function [`semget`]
     pub struct SemgetFlag: c_int
     {
@@ -122,7 +122,7 @@ libc_bitflags! {
         /// the segment. If the segment already exists, the call fails.
         IPC_EXCL;
     }
-}
+);
 /// Creates and return a new, or returns an existing, System V shared memory
 /// semaphore identifier.
 ///
@@ -203,7 +203,7 @@ pub fn shmdt(shmaddr: c_void) -> Result<()> {
     Errno::result(unsafe { libc::shmdt(shmaddr_ptr) }).map(drop)
 }
 
-libc_bitflags! {
+libc_bitflags!(
     /// Valid flags for the second parameter of the function [`shmctl`]
     pub struct ShmctlFlag: c_int {
         /// Returns the index of the highest used entry in the kernel's internal
@@ -257,7 +257,7 @@ libc_bitflags! {
         /// Unlock the segment, allowing it to be swapped out.
         SHM_UNLOCK;
     }
-}
+);
 /// Performs control operation specified by `cmd` on the System V shared
 /// memory segment given by `shmid`.
 ///
@@ -297,7 +297,7 @@ pub enum Semun {
     #[cfg(target_env = "gnu")]
     __buf(*mut seminfo),
 }
-libc_bitflags! {
+libc_bitflags! (
     /// Valid flags for the third parameter of the function [`shmctl`]
     pub struct SemctlCmd: c_int {
         /// Copy information from the kernel data structure associated with
@@ -339,7 +339,7 @@ libc_bitflags! {
         // SETALL;
         // SETVAL;
     }
-}
+);
 /// Performs control operation specified by `cmd` on the System V shared
 /// semaphore segment given by `semid`.
 ///
