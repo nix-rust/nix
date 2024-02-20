@@ -14,7 +14,7 @@ use libc::{semid_ds, seminfo};
 ///
 /// ```
 /// # use nix::errno::Errno;
-/// # use nix::sys::mman::Permissions;
+/// # use nix::sys::system_v::Permissions;
 ///
 /// # fn main() -> Result<(), Errno> {
 /// assert_eq!(Permissions::new(511)?.get_permission(), &(0o0777 as u16));
