@@ -292,7 +292,7 @@ pub fn shmctl(
 
 #[derive(Debug)]
 /// Called as the fourth parameter of the function [`semctl`]
-/// 
+///
 pub enum Semun {
     /// Value for SETVAL
     val(c_int),
@@ -315,11 +315,11 @@ libc_bitflags! {
         /// Write the values of some members of the semid_ds structure pointed
         /// to by arg.buf to the kernel data structure associated with this
         /// semaphore set, updating also its sem_ctime member.
-        /// 
+        ///
         /// The following members of the structure are updated:
         /// sem_perm.uid, sem_perm.gid, and (the least significant 9 bits of)
         /// sem_perm.mode.
-        /// 
+        ///
         /// The effective UID of the calling process must match the owner
         /// (sem_perm.uid) or creator (sem_perm.cuid) of the semaphore set,
         /// or the caller must be privileged. The argument semnum is ignored.
