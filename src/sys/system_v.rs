@@ -3,9 +3,9 @@ use std::ptr::{null, null_mut};
 use crate::errno::Errno;
 use crate::Result;
 
-use libc::{self, c_int, c_short, c_void, key_t, shmid_ds, size_t};
-#[cfg(all(target_os = "linux", target_env = "gnu"))]
-use libc::{semid_ds, seminfo};
+use libc::{self, c_int, c_short, c_void, key_t, size_t};
+#[cfg(target_env = "gnu")]
+use libc::{shmid_ds, semid_ds, seminfo};
 
 #[derive(Debug, Default, Clone, Copy)]
 /// Type used to transform a raw number to an octal permission, while performing a clamp to u9
@@ -77,7 +77,6 @@ libc_bitflags! {
         /// Allocate the segment using "huge" pages.  See the Linux kernel
         /// source file Documentation/admin-guide/mm/hugetlbpage.rst for
         /// further information.
-        #[cfg(any(target_os = "linux"))]
         SHM_HUGETLB;
         // TODO: Does not exist in libc/linux, but should? Maybe open an issue in their repo
         // SHM_HUGE_2MB;
@@ -89,7 +88,6 @@ libc_bitflags! {
         /// segment. When swap space is not reserved one might get SIGSEGV upon
         /// a write if no physical memory is available. See also the discussion
         /// of the file /proc/sys/vm/overcommit_memory in proc(5).
-        #[cfg(any(target_os = "linux"))]
         SHM_NORESERVE;
     }
 }
@@ -147,9 +145,7 @@ libc_bitflags! {
     {
         /// Allow the contents of the segment to be executed. The caller must
         /// have execute permission on the segment.
-        #[cfg(any(target_os = "linux"))]
         SHM_EXEC;
-        #[cfg(any(target_os = "linux"))]
         /// This flag specifies that the mapping of the segment should replace
         /// any existing mapping in the range starting at shmaddr and
         /// continuing for the size of the segment.
@@ -210,7 +206,6 @@ pub fn shmdt(shmaddr: c_void) -> Result<()> {
 libc_bitflags! {
     /// Valid flags for the second parameter of the function [`shmctl`]
     pub struct ShmctlFlag: c_int {
-        #[cfg(any(target_os = "linux"))]
         /// Returns the index of the highest used entry in the kernel's internal
         /// array recording information about all shared memory segment
         IPC_INFO;
@@ -249,13 +244,9 @@ libc_bitflags! {
         /// in proc(5).
         IPC_RMID;
         // not available in libc/linux, but should be?
-        // #[cfg(any(target_os = "linux"))]
         // SHM_INFO;
-        // #[cfg(any(target_os = "linux"))]
         // SHM_STAT;
-        // #[cfg(any(target_os = "linux"))]
         // SHM_STAT_ANY;
-        #[cfg(any(target_os = "linux"))]
         /// Prevent swapping of the shared memory segment. The caller must
         /// fault in any pages that are required to be present after locking is
         /// enabled.
@@ -263,7 +254,6 @@ libc_bitflags! {
         /// flag of the shm_perm.mode field in the associated data structure
         /// retrieved by IPC_STAT will be set.
         SHM_LOCK;
-        #[cfg(any(target_os = "linux"))]
         /// Unlock the segment, allowing it to be swapped out.
         SHM_UNLOCK;
     }
@@ -299,12 +289,12 @@ pub enum Semun {
     /// Value for SETVAL
     val(c_int),
     /// Buffer for IPC_STAT, IPC_SET
-    #[cfg(all(target_os = "linux", target_env = "gnu"))]
+    #[cfg(target_env = "gnu")]
     buf(*mut semid_ds),
     /// Array for GETALL, SETALL
     array(*mut c_short),
     /// Buffer for IPC_INFO
-    #[cfg(all(target_os = "linux", target_env = "gnu"))]
+    #[cfg(target_env = "gnu")]
     __buf(*mut seminfo),
 }
 libc_bitflags! {
@@ -333,17 +323,13 @@ libc_bitflags! {
         /// or owner of the semaphore set, or the caller must be privileged.
         /// The argument semnum is ignored.
         IPC_RMID;
-        #[cfg(any(target_os = "linux"))]
         /// Return information about system-wide semaphore limits and
         /// parameters in the structure pointed to by arg.__buf. This structure
         /// is of type [`seminfo`].
         IPC_INFO;
-        // TODO: None of the one following are defined in libc
-        // #[cfg(any(target_os = "linux"))]
+        // TODO: None of the one following are defined in libc/linux
         // SEM_INFO;
-        // #[cfg(any(target_os = "linux"))]
         // SEM_STAT;
-        // #[cfg(any(target_os = "linux"))]
         // SEM_STAT_ANY;
         // GETALL;
         // GETNCNT;
