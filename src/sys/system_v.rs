@@ -178,12 +178,16 @@ libc_bitflags! {
 /// [`shmat(2)`]: https://man7.org/linux/man-pages/man2/shmat.2.html
 pub fn shmat(
     shmid: c_int,
-    shmaddr: *const c_void,
+    shmaddr: Option<c_void>,
     shmflg: Vec<ShmatFlag>,
     permission: Permissions,
 ) -> Result<*mut c_void> {
+    let shmaddr_ptr: *const c_void = match shmaddr {
+        Some(_) => &mut shmaddr.unwrap(),
+        None => null(),
+    };
     let flags = permission.to_octal(shmflg);
-    Errno::result(unsafe { libc::shmat(shmid, shmaddr, flags) })
+    Errno::result(unsafe { libc::shmat(shmid, shmaddr_ptr, flags) })
 }
 
 /// Performs the reverse of [`shmat`], detaching the shared memory segment at
@@ -196,8 +200,9 @@ pub fn shmat(
 /// `shmaddr` must meet the requirements described in the [`shmdt(2)`] man page.
 ///
 /// [`shmdt(2)`]: https://man7.org/linux/man-pages/man2/shmdt.2.html
-pub fn shmdt(shmaddr: *const c_void) -> Result<()> {
-    Errno::result(unsafe { libc::shmdt(shmaddr) }).map(drop)
+pub fn shmdt(shmaddr: c_void) -> Result<()> {
+    let shmaddr_ptr: *const c_void = &shmaddr;
+    Errno::result(unsafe { libc::shmdt(shmaddr_ptr) }).map(drop)
 }
 
 libc_bitflags! {
@@ -274,11 +279,15 @@ libc_bitflags! {
 pub fn shmctl(
     shmid: c_int,
     cmd: ShmctlFlag,
-    buf: *mut shmid_ds,
+    buf: Option<shmid_ds>,
     permission: Permissions,
 ) -> Result<c_int> {
+    let buf_ptr: *mut shmid_ds = match buf {
+        Some(_) => &mut buf.unwrap(),
+        None => null_mut(),
+    };
     let command = permission.to_octal(vec![cmd]);
-    Errno::result(unsafe { libc::shmctl(shmid, command, buf) })
+    Errno::result(unsafe { libc::shmctl(shmid, command, buf_ptr) })
 }
 
 #[derive(Debug)]
