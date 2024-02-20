@@ -77,6 +77,7 @@ libc_bitflags!(
         /// Allocate the segment using "huge" pages.  See the Linux kernel
         /// source file Documentation/admin-guide/mm/hugetlbpage.rst for
         /// further information.
+        #[cfg(linux)]
         SHM_HUGETLB;
         // TODO: Does not exist in libc/linux, but should? Maybe open an issue in their repo
         // SHM_HUGE_2MB;
@@ -88,6 +89,7 @@ libc_bitflags!(
         /// segment. When swap space is not reserved one might get SIGSEGV upon
         /// a write if no physical memory is available. See also the discussion
         /// of the file /proc/sys/vm/overcommit_memory in proc(5).
+        #[cfg(linux)]
         SHM_NORESERVE;
     }
 );
@@ -145,6 +147,7 @@ libc_bitflags! {
     {
         /// Allow the contents of the segment to be executed. The caller must
         /// have execute permission on the segment.
+        #[cfg(linux)]
         SHM_EXEC;
         /// This flag specifies that the mapping of the segment should replace
         /// any existing mapping in the range starting at shmaddr and
@@ -152,6 +155,7 @@ libc_bitflags! {
         /// (Normally, an EINVAL error would result if a mapping already exists
         /// in this address range.)
         /// In this case, shmaddr must not be NULL.
+        #[cfg(linux)]
         SHM_REMAP;
         /// Attach the segment for read-only access. The process must have read
         /// permission for the segment. If this flag is not specified, the
@@ -208,6 +212,7 @@ libc_bitflags!(
     pub struct ShmctlFlag: c_int {
         /// Returns the index of the highest used entry in the kernel's internal
         /// array recording information about all shared memory segment
+        #[cfg(linux)]
         IPC_INFO;
         /// Write the values of some members of the shmid_ds structure pointed
         /// to by buf to the kernel data structure associated with this shared
@@ -253,8 +258,10 @@ libc_bitflags!(
         /// If a segment has been locked, then the (nonstandard) SHM_LOCKED
         /// flag of the shm_perm.mode field in the associated data structure
         /// retrieved by IPC_STAT will be set.
+        #[cfg(linux)]
         SHM_LOCK;
         /// Unlock the segment, allowing it to be swapped out.
+        #[cfg(linux)]
         SHM_UNLOCK;
     }
 );
@@ -281,6 +288,20 @@ pub fn shmctl(
     let command = permission.to_octal(vec![cmd]);
     Errno::result(unsafe { libc::shmctl(shmid, command, buf_ptr) })
 }
+
+libc_bitflags! {
+    /// Valid flags for the fourth parameter of the function [`semop`]
+    pub struct SemopFlag: c_int {
+        /// Fail the operation instead of blocking if it can't be done.
+        /// If it fails, return [`Errno::EAGAIN`]
+        IPC_NOWAIT;
+        // TODO: Not available in libc
+        // SEM_UNDO;
+    }
+}
+// pub fn semop(semid: c_int, semopflg: Vec<SemopFlag>, sops: *mut sembuf, nsops: size_t) -> Result<()> {
+//     Errno::result(unsafe { libc::semop(semid, sops, nsops) })
+// }
 
 #[derive(Debug)]
 /// Called as the fourth parameter of the function [`semctl`]
@@ -326,6 +347,7 @@ libc_bitflags! (
         /// Return information about system-wide semaphore limits and
         /// parameters in the structure pointed to by arg.__buf. This structure
         /// is of type [`seminfo`].
+        #[cfg(linux)]
         IPC_INFO;
         // TODO: None of the one following are defined in libc/linux
         // SEM_INFO;
