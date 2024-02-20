@@ -144,10 +144,7 @@ feature! {
 pub mod sysinfo;
 
 #[allow(missing_docs)]
-#[cfg(any(
-    target_os = "linux",
-    not(linux_android)
-))]
+#[cfg(any(bsd, target_os = "linux", not(target_os = "android")))]
 pub mod system_v;
 
 feature! {
