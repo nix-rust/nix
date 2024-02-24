@@ -1,4 +1,3 @@
-use std::convert::TryFrom;
 use std::os::unix::io::{AsFd, AsRawFd};
 use tempfile::tempfile;
 

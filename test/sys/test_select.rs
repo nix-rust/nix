@@ -68,7 +68,6 @@ macro_rules! generate_fdset_bad_fd_tests {
 
 mod test_fdset_too_large_fd {
     use super::*;
-    use std::convert::TryInto;
     generate_fdset_bad_fd_tests!(
         FD_SETSIZE.try_into().unwrap(),
         insert,
