@@ -11,6 +11,9 @@ major bump.
 
 The release is prepared as follows:
 
+> NOTE: the following procedure should be done directly against the master 
+> branch of the repo.
+
 - Ask for a new libc version if, necessary. It usually is. Then update the
   dependency in `Cargo.toml` to rely on a release from crates.io.
  
@@ -23,7 +26,12 @@ The release is prepared as follows:
 - Update the version number in `Cargo.toml`
 - Generate `CHANGELOG.md` for this release by 
   `towncrier build --version=<VERSION> --yes`
+
+- Ensure you have a crates.io token 
+  1. With the `publich-update` scope
+  2. Can be used for crate `nix`
+  3. It is set via `cargo login`
+
 - Confirm that everything's ready for a release by running
   `cargo release <patch|minor|major>`
 - Create the release with `cargo release -x <patch|minor|major>`
-- Push the created tag to GitHub.
