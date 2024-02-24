@@ -2,7 +2,7 @@
 use crate::errno::Errno;
 #[cfg(all(target_os = "freebsd", target_arch = "x86_64"))]
 use core::slice;
-use libc::{self, c_int, c_uint, size_t, ssize_t};
+use libc::{c_int, c_uint, size_t, ssize_t};
 #[cfg(any(
     target_os = "netbsd",
     apple_targets,

@@ -1,7 +1,6 @@
 use nix::errno::Errno;
 use nix::sys::signal::*;
 use nix::unistd::*;
-use std::convert::TryFrom;
 use std::hash::{Hash, Hasher};
 use std::sync::atomic::{AtomicBool, Ordering};
 #[cfg(not(target_os = "redox"))]
