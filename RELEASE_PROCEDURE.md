@@ -11,6 +11,9 @@ major bump.
 
 The release is prepared as follows:
 
+> NOTE: the following procedure should be done directly against the master 
+> branch of the repo.
+
 - Ask for a new libc version if, necessary. It usually is. Then update the
   dependency in `Cargo.toml` to rely on a release from crates.io.
  
