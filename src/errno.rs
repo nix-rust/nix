@@ -14,7 +14,6 @@
 use crate::Result;
 use cfg_if::cfg_if;
 use libc::{c_int, c_void};
-use std::convert::TryFrom;
 use std::{error, fmt, io};
 
 pub use self::consts::*;

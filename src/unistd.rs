@@ -31,8 +31,7 @@ use crate::{Error, NixPath, Result};
 #[cfg(not(target_os = "redox"))]
 use cfg_if::cfg_if;
 use libc::{
-    self, c_char, c_int, c_long, c_uint, gid_t, mode_t, off_t, pid_t, size_t,
-    uid_t,
+    c_char, c_int, c_long, c_uint, gid_t, mode_t, off_t, pid_t, size_t, uid_t,
 };
 use std::convert::Infallible;
 #[cfg(not(target_os = "redox"))]

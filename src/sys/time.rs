@@ -2,7 +2,6 @@
 // https://github.com/rust-lang/libc/issues/1848
 pub use libc::{suseconds_t, time_t};
 use libc::{timespec, timeval};
-use std::convert::From;
 use std::time::Duration;
 use std::{cmp, fmt, ops};
 
