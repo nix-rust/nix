@@ -85,7 +85,7 @@ caps = "0.5.3"
 sysctl = "0.4"
 
 [build-dependencies]
-cfg_aliases = "0.1.1"
+cfg_aliases = "0.2"
 
 [[test]]
 name = "test"
