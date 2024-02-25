@@ -388,7 +388,7 @@ sockopt_impl!(
     libc::SO_PRIORITY,
     libc::c_int
 );
-#[cfg(target_os = "linux")]
+#[cfg(any(apple_targets, linux_android, target_os = "freebsd"))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -400,7 +400,19 @@ sockopt_impl!(
     libc::IP_TOS,
     libc::c_int
 );
-#[cfg(target_os = "linux")]
+#[cfg(any(apple_targets, linux_android, target_os = "freebsd"))]
+#[cfg(feature = "net")]
+sockopt_impl!(
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
+    /// Receive the Type-Of-Service (TOS) field for
+    /// every IP packet on this socket
+    IpRecvTos,
+    Both,
+    libc::IPPROTO_IP,
+    libc::IP_RECVTOS,
+    bool
+);
+#[cfg(any(apple_targets, linux_android, target_os = "freebsd"))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -410,6 +422,18 @@ sockopt_impl!(
     libc::IPPROTO_IPV6,
     libc::IPV6_TCLASS,
     libc::c_int
+);
+#[cfg(any(apple_targets, linux_android, target_os = "freebsd"))]
+#[cfg(feature = "net")]
+sockopt_impl!(
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
+    /// Receive the traffic class field for
+    /// every IP packet on this socket
+    Ipv6RecvTClass,
+    Both,
+    libc::IPPROTO_IPV6,
+    libc::IPV6_RECVTCLASS,
+    bool
 );
 #[cfg(any(linux_android, target_os = "fuchsia"))]
 #[cfg(feature = "net")]
@@ -1016,7 +1040,7 @@ sockopt_impl!(
     libc::IP_MTU,
     libc::c_int
 );
-#[cfg(any(linux_android, target_os = "freebsd"))]
+#[cfg(any(apple_targets, linux_android, target_os = "freebsd"))]
 sockopt_impl!(
     /// Set or retrieve the current time-to-live field that is used in every
     /// packet sent from this socket.
@@ -1024,6 +1048,50 @@ sockopt_impl!(
     Both,
     libc::IPPROTO_IP,
     libc::IP_TTL,
+    libc::c_int
+);
+#[cfg(any(apple_targets, linux_android))]
+#[cfg(feature = "net")]
+sockopt_impl!(
+    /// Retrieve the current time-to-live field via an ancillary message (cmsg)
+    /// for every IPv4 packet received on this socket.
+    IpRecvTtl,
+    Both,
+    libc::IPPROTO_IP,
+    libc::IP_RECVTTL,
+    bool
+);
+#[cfg(any(apple_targets, linux_android, target_os = "freebsd"))]
+#[cfg(feature = "net")]
+sockopt_impl!(
+    /// Retrieve the current time-to-live field via an ancillary message (cmsg)
+    /// for every IPv4 packet received on this socket.
+    IpTtl,
+    Both,
+    libc::IPPROTO_IP,
+    libc::IP_TTL,
+    libc::c_int
+);
+#[cfg(any(apple_targets, linux_android))]
+#[cfg(feature = "net")]
+sockopt_impl!(
+    /// Retrieve the current hop limit field via an ancillary message (cmsg)
+    /// for every IPv6 packet received on this socket.
+    Ipv6RecvHopLimit,
+    Both,
+    libc::IPPROTO_IPV6,
+    libc::IPV6_RECVHOPLIMIT,
+    bool
+);
+#[cfg(any(apple_targets, linux_android, target_os = "freebsd"))]
+#[cfg(feature = "net")]
+sockopt_impl!(
+    /// Retrieve the current hop limit field for every
+    /// IPv6 packet received on this socket.
+    Ipv6HopLimit,
+    Both,
+    libc::IPPROTO_IPV6,
+    libc::IPV6_HOPLIMIT,
     libc::c_int
 );
 #[cfg(any(linux_android, target_os = "freebsd"))]
@@ -1047,7 +1115,8 @@ sockopt_impl!(
     libc::IPV6_ORIGDSTADDR,
     bool
 );
-#[cfg(apple_targets)]
+#[cfg(any(apple_targets, target_os = "freebsd"))]
+#[cfg(feature = "net")]
 sockopt_impl!(
     /// Set "don't fragment packet" flag on the IP packet.
     IpDontFrag,
@@ -1056,7 +1125,18 @@ sockopt_impl!(
     libc::IP_DONTFRAG,
     bool
 );
-#[cfg(any(linux_android, apple_targets))]
+#[cfg(linux_android)]
+#[cfg(feature = "net")]
+sockopt_impl!(
+    /// Set "don't fragment packet" flag on the IP packet.
+    IpDontFrag,
+    Both,
+    libc::IPPROTO_IP,
+    libc::IP_MTU_DISCOVER,
+    bool
+);
+#[cfg(any(apple_targets, linux_android, target_os = "freebsd"))]
+#[cfg(feature = "net")]
 sockopt_impl!(
     /// Set "don't fragment packet" flag on the IPv6 packet.
     Ipv6DontFrag,

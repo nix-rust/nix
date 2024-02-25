@@ -326,7 +326,7 @@ fn test_get_mtu() {
 }
 
 #[test]
-#[cfg(any(linux_android, target_os = "freebsd"))]
+#[cfg(any(apple_targets, linux_android, target_os = "freebsd"))]
 fn test_ttl_opts() {
     let fd4 = socket(
         AddressFamily::Inet,
@@ -469,7 +469,7 @@ fn test_so_priority() {
 }
 
 #[test]
-#[cfg(target_os = "linux")]
+#[cfg(any(apple_targets, target_os = "linux", target_os = "freebsd"))]
 fn test_ip_tos() {
     let fd = socket(
         AddressFamily::Inet,
@@ -484,7 +484,7 @@ fn test_ip_tos() {
 }
 
 #[test]
-#[cfg(target_os = "linux")]
+#[cfg(any(apple_targets, target_os = "linux", target_os = "freebsd"))]
 // Disable the test under emulation because it fails in Cirrus-CI.  Lack
 // of QEMU support is suspected.
 #[cfg_attr(qemu, ignore)]
