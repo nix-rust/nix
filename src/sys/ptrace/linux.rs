@@ -543,17 +543,15 @@ pub fn read(pid: Pid, addr: AddressType) -> Result<c_long> {
 
 /// Writes a word into the processes memory at the given address, as with
 /// ptrace(PTRACE_POKEDATA, ...)
-///
-/// # Safety
-///
-/// The `data` argument is passed directly to `ptrace(2)`.  Read that man page
-/// for guidance.
-pub unsafe fn write(
-    pid: Pid,
-    addr: AddressType,
-    data: *mut c_void,
-) -> Result<()> {
-    unsafe { ptrace_other(Request::PTRACE_POKEDATA, pid, addr, data).map(drop) }
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
+pub fn write(pid: Pid, addr: AddressType, data: c_long) -> Result<()> {
+    unsafe {
+        // Safety(not_unsafe_ptr_arg_deref):
+        // `ptrace_other` is a common abstract
+        // but in `PTRACE_POKEDATA` situation, `data` is exactly what will be wtitten
+        ptrace_other(Request::PTRACE_POKEDATA, pid, addr, data as *mut c_void)
+            .map(drop)
+    }
 }
 
 /// Reads a word from a user area at `offset`, as with ptrace(PTRACE_PEEKUSER, ...).
@@ -564,17 +562,13 @@ pub fn read_user(pid: Pid, offset: AddressType) -> Result<c_long> {
 
 /// Writes a word to a user area at `offset`, as with ptrace(PTRACE_POKEUSER, ...).
 /// The user struct definition can be found in `/usr/include/sys/user.h`.
-///
-/// # Safety
-///
-/// The `data` argument is passed directly to `ptrace(2)`.  Read that man page
-/// for guidance.
-pub unsafe fn write_user(
-    pid: Pid,
-    offset: AddressType,
-    data: *mut c_void,
-) -> Result<()> {
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
+pub fn write_user(pid: Pid, offset: AddressType, data: c_long) -> Result<()> {
     unsafe {
-        ptrace_other(Request::PTRACE_POKEUSER, pid, offset, data).map(drop)
+        // Safety(not_unsafe_ptr_arg_deref):
+        // `ptrace_other` is a common abstract
+        // but in `PTRACE_POKEDATA` situation, `data` is exactly what will be wtitten
+        ptrace_other(Request::PTRACE_POKEUSER, pid, offset, data as *mut c_void)
+            .map(drop)
     }
 }
