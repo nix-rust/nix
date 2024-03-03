@@ -753,9 +753,23 @@ pub enum SigHandler {
 }
 
 /// Action to take on receipt of a signal. Corresponds to `sigaction`.
+#[repr(transparent)]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct SigAction {
     sigaction: libc::sigaction
+}
+
+impl From<libc::sigaction> for SigAction {
+    fn from(value: libc::sigaction) -> Self {
+        Self {
+            sigaction: value
+        }
+    }
+}
+impl Into<libc::sigaction> for SigAction {
+    fn into(self) -> libc::sigaction {
+        self.sigaction
+    }
 }
 
 impl SigAction {
