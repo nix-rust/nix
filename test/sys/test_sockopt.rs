@@ -828,3 +828,34 @@ fn test_ktls() {
         Err(err) => panic!("{err:?}"),
     }
 }
+
+#[test]
+#[cfg(apple_targets)]
+fn test_utun_ifname() {
+    use nix::sys::socket::connect;
+    use nix::sys::socket::SysControlAddr;
+
+    let fd = socket(
+        AddressFamily::System,
+        SockType::Datagram,
+        SockFlag::empty(),
+        SockProtocol::KextControl,
+    )
+    .unwrap();
+
+    let unit = 123;
+    let addr = SysControlAddr::from_name(
+        fd.as_raw_fd(),
+        "com.apple.net.utun_control",
+        unit,
+    )
+    .unwrap();
+
+    connect(fd.as_raw_fd(), &addr).unwrap();
+
+    let name = getsockopt(&fd, sockopt::UtunIfname)
+        .expect("getting UTUN_OPT_IFNAME on a utun interface should succeed");
+
+    let expected_name = format!("utun{}\0", unit - 1);
+    assert_eq!(name.into_string(), Ok(expected_name));
+}

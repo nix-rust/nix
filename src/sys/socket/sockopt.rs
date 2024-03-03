@@ -1065,6 +1065,17 @@ sockopt_impl!(
     libc::IPV6_DONTFRAG,
     bool
 );
+#[cfg(apple_targets)]
+#[cfg(feature = "net")]
+sockopt_impl!(
+    /// Get the utun interface name.
+    UtunIfname,
+    GetOnly,
+    libc::SYSPROTO_CONTROL,
+    libc::UTUN_OPT_IFNAME,
+    OsString,
+    GetOsString<[u8; libc::IFNAMSIZ]>
+);
 
 #[allow(missing_docs)]
 // Not documented by Linux!
