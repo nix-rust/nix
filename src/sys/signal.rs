@@ -766,9 +766,9 @@ impl From<libc::sigaction> for SigAction {
         }
     }
 }
-impl Into<libc::sigaction> for SigAction {
-    fn into(self) -> libc::sigaction {
-        self.sigaction
+impl From<SigAction> for libc::sigaction {
+    fn from(value: SigAction) -> libc::sigaction {
+        value.sigaction
     }
 }
 
