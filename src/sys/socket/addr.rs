@@ -920,6 +920,19 @@ impl From<SockaddrIn> for net::SocketAddrV4 {
 }
 
 #[cfg(feature = "net")]
+impl From<SockaddrIn> for libc::sockaddr_in {
+    fn from(sin: SockaddrIn) -> libc::sockaddr_in {
+        sin.0
+    }
+}
+#[cfg(feature = "net")]
+impl From<libc::sockaddr_in> for SockaddrIn {
+    fn from(sin: libc::sockaddr_in) -> SockaddrIn {
+        SockaddrIn(sin)
+    }
+}
+
+#[cfg(feature = "net")]
 impl std::str::FromStr for SockaddrIn {
     type Err = net::AddrParseError;
 
@@ -966,6 +979,20 @@ impl SockaddrIn6 {
     /// Returns the scope ID associated with this address.
     pub const fn scope_id(&self) -> u32 {
         self.0.sin6_scope_id
+    }
+}
+
+#[cfg(feature = "net")]
+impl From<SockaddrIn6> for libc::sockaddr_in6 {
+    fn from(sin6: SockaddrIn6) -> libc::sockaddr_in6 {
+        sin6.0
+    }
+}
+
+#[cfg(feature = "net")]
+impl From<libc::sockaddr_in6> for SockaddrIn6 {
+    fn from(sin6: libc::sockaddr_in6) -> SockaddrIn6 {
+        SockaddrIn6(sin6)
     }
 }
 
