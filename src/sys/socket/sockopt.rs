@@ -1073,8 +1073,8 @@ sockopt_impl!(
     GetOnly,
     libc::SYSPROTO_CONTROL,
     libc::UTUN_OPT_IFNAME,
-    OsString,
-    GetOsString<[u8; libc::IFNAMSIZ]>
+    CString,
+    GetCString<[u8; libc::IFNAMSIZ]>
 );
 
 #[allow(missing_docs)]

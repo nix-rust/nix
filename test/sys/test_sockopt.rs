@@ -856,6 +856,6 @@ fn test_utun_ifname() {
     let name = getsockopt(&fd, sockopt::UtunIfname)
         .expect("getting UTUN_OPT_IFNAME on a utun interface should succeed");
 
-    let expected_name = format!("utun{}\0", unit - 1);
+    let expected_name = format!("utun{}", unit - 1);
     assert_eq!(name.into_string(), Ok(expected_name));
 }
