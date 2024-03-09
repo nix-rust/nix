@@ -2177,9 +2177,8 @@ mod tests {
     }
 
     #[cfg(not(any(target_os = "hurd", target_os = "redox")))]
+    #[allow(clippy::cast_ptr_alignment)]
     mod link {
-        #![allow(clippy::cast_ptr_alignment)]
-
         #[cfg(any(apple_targets, solarish))]
         use super::super::super::socklen_t;
         use super::*;
