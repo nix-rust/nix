@@ -270,6 +270,16 @@ sockopt_impl!(
     libc::SO_REUSEPORT,
     bool
 );
+#[cfg(target_os = "freebsd")]
+sockopt_impl!(
+    /// Enables incoming connections to be distributed among N sockets (up to 256)
+    /// via a Load-Balancing hash based algorithm.
+    ReusePortLb,
+    Both,
+    libc::SOL_SOCKET,
+    libc::SO_REUSEPORT_LB,
+    bool
+);
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]

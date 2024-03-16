@@ -859,3 +859,19 @@ fn test_utun_ifname() {
     let expected_name = format!("utun{}", unit - 1);
     assert_eq!(name.into_string(), Ok(expected_name));
 }
+
+#[test]
+#[cfg(target_os = "freebsd")]
+fn test_reuseport_lb() {
+    let fd = socket(
+        AddressFamily::Inet6,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )
+    .unwrap();
+    setsockopt(&fd, sockopt::ReusePortLb, &false).unwrap();
+    assert!(!getsockopt(&fd, sockopt::ReusePortLb).unwrap());
+    setsockopt(&fd, sockopt::ReusePortLb, &true).unwrap();
+    assert!(getsockopt(&fd, sockopt::ReusePortLb).unwrap());
+}
