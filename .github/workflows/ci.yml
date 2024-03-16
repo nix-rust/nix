@@ -292,7 +292,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - target: x86_64-unknown-dragonfly
+          # Temporarily disable DragonFlyBSD
+          # https://github.com/nix-rust/nix/issues/2337
+          # - target: x86_64-unknown-dragonfly
           - target: x86_64-unknown-openbsd
           # Temporarily disable armv7-unknown-linux-uclibceabihf
           # https://github.com/nix-rust/nix/issues/2200
