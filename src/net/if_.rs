@@ -32,7 +32,7 @@ pub fn if_indextoname(index: c_uint) -> Result<CString> {
     let mut buf = vec![0u8; IF_NAMESIZE];
 
     let return_buf = unsafe {
-        libc::if_indextoname(index, buf.as_mut_ptr() as *mut i8)
+        libc::if_indextoname(index, buf.as_mut_ptr() as *mut _)
     };
 
     if return_buf.is_null() {
