@@ -3,9 +3,9 @@
 //! Uses Linux and/or POSIX functions to resolve interface names like "eth0"
 //! or "socan1" into device numbers.
 
-use std::fmt;
+use std::{ffi::{CStr, CString}, fmt};
 use crate::{Error, NixPath, Result};
-use libc::c_uint;
+use libc::{c_uint, IF_NAMESIZE};
 
 #[cfg(not(solarish))]
 /// type alias for InterfaceFlags
@@ -14,7 +14,7 @@ pub type IflagsType = libc::c_int;
 /// type alias for InterfaceFlags
 pub type IflagsType = libc::c_longlong;
 
-/// Resolve an interface into a interface number.
+/// Resolve an interface into an interface number.
 pub fn if_nametoindex<P: ?Sized + NixPath>(name: &P) -> Result<c_uint> {
     let if_index = name
         .with_nix_path(|name| unsafe { libc::if_nametoindex(name.as_ptr()) })?;
@@ -23,6 +23,22 @@ pub fn if_nametoindex<P: ?Sized + NixPath>(name: &P) -> Result<c_uint> {
         Err(Error::last())
     } else {
         Ok(if_index)
+    }
+}
+
+/// Resolve an interface number into an interface.
+pub fn if_indextoname(index: c_uint) -> Result<CString> {
+    // We need to allocate this anyway, so doing it directly is faster.
+    let mut buf = vec![0u8; IF_NAMESIZE];
+
+    let return_buf = unsafe {
+        libc::if_indextoname(index, buf.as_mut_ptr() as *mut i8)
+    };
+
+    if return_buf.is_null() {
+        Err(Error::last())
+    } else {
+        Ok(CStr::from_bytes_until_nul(buf.as_slice()).unwrap().to_owned())
     }
 }
 
