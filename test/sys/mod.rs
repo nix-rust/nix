@@ -32,8 +32,6 @@ mod test_sockopt;
 mod test_stat;
 #[cfg(linux_android)]
 mod test_sysinfo;
-#[cfg(any(bsd, target_os = "linux", not(target_os = "android")))]
-mod test_system_v;
 #[cfg(not(any(
     target_os = "redox",
     target_os = "fuchsia",
