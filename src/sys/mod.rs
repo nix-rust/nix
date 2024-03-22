@@ -143,9 +143,11 @@ feature! {
 #[allow(missing_docs)]
 pub mod sysinfo;
 
-#[allow(missing_docs)]
-#[cfg(any(bsd, target_os = "linux", not(target_os = "android")))]
-pub mod system_v;
+#[cfg(any(bsd, target_os = "linux"))]
+feature! {
+    #![feature = "system_v"]
+    pub mod system_v;
+}
 
 feature! {
     #![feature = "term"]
