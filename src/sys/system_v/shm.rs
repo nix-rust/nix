@@ -127,7 +127,7 @@ impl<T> SharedMemory<T> {
     /// # Example
     ///
     /// ## Creating a shared memory zone
-    /// 
+    ///
     /// ```no_run
     /// # use nix::errno::Errno;
     /// # use nix::sys::system_v::shm::*;
@@ -145,7 +145,6 @@ impl<T> SharedMemory<T> {
     /// ```
     ///
     /// [`shmget(2)`]: https://man7.org/linux/man-pages/man2/shmget.2.html
-    ///
     pub fn shmget(
         key: key_t,
         shmget_flag: ShmgetFlag,
@@ -164,7 +163,7 @@ impl<T> SharedMemory<T> {
     /// # Example
     ///
     /// ## Deleting a shared memory zone
-    /// 
+    ///
     /// ```no_run
     /// # use nix::errno::Errno;
     /// # use nix::sys::system_v::shm::*;
@@ -205,7 +204,7 @@ impl<T> SharedMemory<T> {
     /// address space of the calling process.
     ///
     /// This is called automatically on [`SharedMemory::new`].
-    /// 
+    ///
     /// For more information, see [`shmat(2)`].
     ///
     /// [`shmat(2)`]: https://man7.org/linux/man-pages/man2/shmat.2.html
@@ -228,7 +227,7 @@ impl<T> SharedMemory<T> {
     /// the given address from the address space of the calling process.
     ///
     /// This is called automatically on [`Drop`].
-    /// 
+    ///
     /// For more information, see [`shmdt(2)`].
     ///
     /// [`shmdt(2)`]: https://man7.org/linux/man-pages/man2/shmdt.2.html
