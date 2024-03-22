@@ -6,23 +6,23 @@ use std::mem;
 use std::os::unix::io::{AsFd, AsRawFd, FromRawFd, OwnedFd, RawFd};
 
 libc_bitflags!(
-    pub struct EpollFlags: c_int {
-        EPOLLIN;
-        EPOLLPRI;
-        EPOLLOUT;
-        EPOLLRDNORM;
-        EPOLLRDBAND;
-        EPOLLWRNORM;
-        EPOLLWRBAND;
-        EPOLLMSG;
-        EPOLLERR;
-        EPOLLHUP;
-        EPOLLRDHUP;
-        EPOLLEXCLUSIVE;
+    pub struct EpollFlags: u32 {
+        EPOLLIN as u32;
+        EPOLLPRI as u32;
+        EPOLLOUT as u32;
+        EPOLLRDNORM as u32;
+        EPOLLRDBAND as u32;
+        EPOLLWRNORM as u32;
+        EPOLLWRBAND as u32;
+        EPOLLMSG as u32;
+        EPOLLERR as u32;
+        EPOLLHUP as u32;
+        EPOLLRDHUP as u32;
+        EPOLLEXCLUSIVE as u32;
         #[cfg(not(target_arch = "mips"))]
-        EPOLLWAKEUP;
-        EPOLLONESHOT;
-        EPOLLET;
+        EPOLLWAKEUP as u32;
+        EPOLLONESHOT as u32;
+        EPOLLET as u32;
     }
 );
 
@@ -51,7 +51,7 @@ impl EpollEvent {
     pub fn new(events: EpollFlags, data: u64) -> Self {
         EpollEvent {
             event: libc::epoll_event {
-                events: events.bits() as u32,
+                events: events.bits(),
                 u64: data,
             },
         }
@@ -62,7 +62,7 @@ impl EpollEvent {
     }
 
     pub fn events(&self) -> EpollFlags {
-        EpollFlags::from_bits(self.event.events as c_int).unwrap()
+        EpollFlags::from_bits(self.event.events).unwrap()
     }
 
     pub fn data(&self) -> u64 {
