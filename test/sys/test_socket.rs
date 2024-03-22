@@ -2407,7 +2407,7 @@ fn test_recvmmsg_timestampns() {
     // Receive the message
     let mut buffer = vec![0u8; message.len()];
     let cmsgspace = nix::cmsg_space!(TimeSpec);
-    let mut iov = vec![[IoSliceMut::new(&mut buffer)]];
+    let mut iov = [[IoSliceMut::new(&mut buffer)]];
     let mut data = MultiHeaders::preallocate(1, Some(cmsgspace));
     let r: Vec<RecvMsg<()>> = recvmmsg(
         in_socket.as_raw_fd(),
