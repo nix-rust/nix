@@ -95,7 +95,7 @@ impl<T> SharedMemory<T> {
     /// const MY_KEY: i32 = 1337;
     ///
     /// let mut shared_memory = SharedMemory::<MyData>::new(
-    ///     id,
+    ///     MY_KEY,
     ///     None,
     ///     ShmatFlag::empty(),
     ///     Mode::empty(),
@@ -180,7 +180,7 @@ impl<T> SharedMemory<T> {
     ///     Mode::empty(),
     /// )?;
     ///
-    /// shared_memory.shmctl(ShmctlFlag::IPC_RMID, None, Mode::empty()) = 0xDEADBEEF;
+    /// let _ = shared_memory.shmctl(ShmctlFlag::IPC_RMID, None, Mode::empty())?;
     /// # Ok::<(), Errno>(())
     /// ```
     ///
