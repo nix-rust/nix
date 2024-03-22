@@ -12,7 +12,7 @@ use crate::{errno::Errno, sys::stat::Mode};
 
 use libc::{self, c_int, c_void, key_t, shmid_ds};
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 /// Safe wrapper around a SystemV shared memory segment
 ///
 /// The shared memory segment size is equal to the size of T.
