@@ -436,7 +436,14 @@ mod tests {
         let mut sem = FixtureShm::setup()?;
         let expected = 0xDEADBEEF;
         sem.ipc.data = expected;
-        assert_eq!(expected, sem.ipc.data);
+
+        let actual = SharedMemory::<TestData>::new(
+            sem.ipc.id,
+            None,
+            ShmatFlag::empty(),
+            Mode::empty(),
+        )?.data;
+        assert_eq!(expected, actual);
         Ok(())
     }
 }
