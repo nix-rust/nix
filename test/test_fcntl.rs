@@ -4,6 +4,10 @@ use nix::errno::*;
 use nix::fcntl::{open, readlink, OFlag};
 #[cfg(not(target_os = "redox"))]
 use nix::fcntl::{openat, readlinkat, renameat};
+
+#[cfg(target_os = "linux")]
+use nix::fcntl::{openat2, OpenHow, ResolveFlag};
+
 #[cfg(all(
     target_os = "linux",
     target_env = "gnu",
@@ -55,6 +59,64 @@ fn test_openat() {
 
     close(fd).unwrap();
     close(dirfd).unwrap();
+}
+
+#[test]
+#[cfg(target_os = "linux")]
+// QEMU does not handle openat well enough to satisfy this test
+// https://gitlab.com/qemu-project/qemu/-/issues/829
+#[cfg_attr(qemu, ignore)]
+fn test_openat2() {
+    const CONTENTS: &[u8] = b"abcd";
+    let mut tmp = NamedTempFile::new().unwrap();
+    tmp.write_all(CONTENTS).unwrap();
+
+    let dirfd =
+        open(tmp.path().parent().unwrap(), OFlag::empty(), Mode::empty())
+            .unwrap();
+
+    let fd = openat2(
+        dirfd,
+        tmp.path().file_name().unwrap(),
+        OpenHow::new()
+            .flags(OFlag::O_RDONLY)
+            .mode(Mode::empty())
+            .resolve(ResolveFlag::RESOLVE_BENEATH),
+    )
+    .unwrap();
+
+    let mut buf = [0u8; 1024];
+    assert_eq!(4, read(fd, &mut buf).unwrap());
+    assert_eq!(CONTENTS, &buf[0..4]);
+
+    close(fd).unwrap();
+    close(dirfd).unwrap();
+}
+
+#[test]
+#[cfg(target_os = "linux")]
+// QEMU does not handle openat well enough to satisfy this test
+// https://gitlab.com/qemu-project/qemu/-/issues/829
+#[cfg_attr(qemu, ignore)]
+fn test_openat2_forbidden() {
+    let mut tmp = NamedTempFile::new().unwrap();
+    tmp.write_all(b"let me out").unwrap();
+
+    let dirfd =
+        open(tmp.path().parent().unwrap(), OFlag::empty(), Mode::empty())
+            .unwrap();
+
+    let escape_attempt =
+        tmp.path().parent().unwrap().join("../../../hello.txt");
+
+    let res = openat2(
+        dirfd,
+        &escape_attempt,
+        OpenHow::new()
+            .flags(OFlag::O_RDONLY)
+            .resolve(ResolveFlag::RESOLVE_BENEATH),
+    );
+    assert_eq!(Err(Errno::EXDEV), res);
 }
 
 #[test]

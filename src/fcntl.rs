@@ -242,6 +242,119 @@ pub fn openat<P: ?Sized + NixPath>(
     Errno::result(fd)
 }
 
+cfg_if::cfg_if! {
+    if #[cfg(target_os = "linux")] {
+        libc_bitflags! {
+            /// Path resolution flags.
+            ///
+            /// See [path resolution(7)](https://man7.org/linux/man-pages/man7/path_resolution.7.html)
+            /// for details of the resolution process.
+            pub struct ResolveFlag: libc::c_ulonglong {
+                /// Do not permit the path resolution to succeed if any component of
+                /// the resolution is not a descendant of the directory indicated by
+                /// dirfd.  This causes absolute symbolic links (and absolute values of
+                /// pathname) to be rejected.
+                RESOLVE_BENEATH;
+
+                /// Treat the directory referred to by dirfd as the root directory
+                /// while resolving pathname.
+                RESOLVE_IN_ROOT;
+
+                /// Disallow all magic-link resolution during path resolution. Magic
+                /// links are symbolic link-like objects that are most notably found
+                /// in proc(5);  examples include `/proc/[pid]/exe` and `/proc/[pid]/fd/*`.
+                ///
+                /// See symlink(7) for more details.
+                RESOLVE_NO_MAGICLINKS;
+
+                /// Disallow resolution of symbolic links during path resolution. This
+                /// option implies RESOLVE_NO_MAGICLINKS.
+                RESOLVE_NO_SYMLINKS;
+
+                /// Disallow traversal of mount points during path resolution (including
+                /// all bind mounts).
+                RESOLVE_NO_XDEV;
+            }
+        }
+
+        /// Specifies how [openat2] should open a pathname.
+        ///
+        /// See <https://man7.org/linux/man-pages/man2/open_how.2type.html>
+        #[repr(transparent)]
+        #[derive(Clone, Copy, Debug)]
+        pub struct OpenHow(libc::open_how);
+
+        impl OpenHow {
+            /// Create a new zero-filled `open_how`.
+            pub fn new() -> Self {
+                // safety: according to the man page, open_how MUST be zero-initialized
+                // on init so that unknown fields are also zeroed.
+                Self(unsafe {
+                    std::mem::MaybeUninit::zeroed().assume_init()
+                })
+            }
+
+            /// Set the open flags used to open a file, completely overwriting any
+            /// existing flags.
+            pub fn flags(mut self, flags: OFlag) -> Self {
+                let flags = flags.bits() as libc::c_ulonglong;
+                self.0.flags = flags;
+                self
+            }
+
+            /// Set the file mode new files will be created with, overwriting any
+            /// existing flags.
+            pub fn mode(mut self, mode: Mode) -> Self {
+                let mode = mode.bits() as libc::c_ulonglong;
+                self.0.mode = mode;
+                self
+            }
+
+            /// Set resolve flags, completely overwriting any existing flags.
+            ///
+            /// See [ResolveFlag] for more detail.
+            pub fn resolve(mut self, resolve: ResolveFlag) -> Self {
+                let resolve = resolve.bits();
+                self.0.resolve = resolve;
+                self
+            }
+        }
+
+        // safety: default isn't derivable because libc::open_how must be zeroed
+        impl Default for OpenHow {
+            fn default() -> Self {
+                Self::new()
+            }
+        }
+
+        /// Open or create a file for reading, writing or executing.
+        ///
+        /// `openat2` is an extension of the [`openat`] function that allows the caller
+        /// to control how path resolution happens.
+        ///
+        /// # See also
+        ///
+        /// [openat2](https://man7.org/linux/man-pages/man2/openat2.2.html)
+        pub fn openat2<P: ?Sized + NixPath>(
+            dirfd: RawFd,
+            path: &P,
+            mut how: OpenHow,
+        ) -> Result<RawFd> {
+            let fd = path.with_nix_path(|cstr| unsafe {
+                libc::syscall(
+                    libc::SYS_openat2,
+                    dirfd,
+                    cstr.as_ptr(),
+                    &mut how as *mut OpenHow,
+                    std::mem::size_of::<libc::open_how>(),
+                )
+            })?;
+
+            Errno::result(fd as RawFd)
+        }
+    }
+}
+
 /// Change the name of a file.
 ///
 /// The `renameat` function is equivalent to `rename` except in the case where either `old_path`
