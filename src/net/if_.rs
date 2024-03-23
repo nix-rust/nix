@@ -4,7 +4,7 @@
 //! or "socan1" into device numbers.
 
 use std::{ffi::{CStr, CString}, fmt};
-use crate::{Error, NixPath, Result};
+use crate::{errno::Errno, Error, NixPath, Result};
 use libc::{c_uint, IF_NAMESIZE};
 
 #[cfg(not(solarish))]
@@ -32,14 +32,11 @@ pub fn if_indextoname(index: c_uint) -> Result<CString> {
     let mut buf = vec![0u8; IF_NAMESIZE];
 
     let return_buf = unsafe {
-        libc::if_indextoname(index, buf.as_mut_ptr() as *mut _)
+        libc::if_indextoname(index, buf.as_mut_ptr().cast())
     };
 
-    if return_buf.is_null() {
-        Err(Error::last())
-    } else {
-        Ok(CStr::from_bytes_until_nul(buf.as_slice()).unwrap().to_owned())
-    }
+    Errno::result(return_buf.cast())?;
+    Ok(CStr::from_bytes_until_nul(buf.as_slice()).unwrap().to_owned())
 }
 
 libc_bitflags!(
