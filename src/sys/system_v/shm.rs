@@ -238,7 +238,7 @@ impl<T> SharedMemory<T> {
     ///
     /// # Example
     ///
-    /// ## Deleting a shared memory zone
+    /// ## Deleting a shared memory segment
     ///
     /// ```no_run
     /// # use nix::errno::Errno;
@@ -246,32 +246,29 @@ impl<T> SharedMemory<T> {
     /// # use nix::sys::stat::Mode;
     /// #
     /// struct MyData(i64);
-    /// const ID: i32 = 1337;
+    /// const MY_KEY: i32 = 1337;
     ///
-    /// let mut shared_memory = SharedMemory::<MyData>::new(
-    ///     ID,
-    ///     None,
-    ///     ShmatFlag::empty(),
-    ///     Mode::empty(),
+    /// let mem_segment = Shm::<MyData>::create_and_connect(
+    ///     MY_KEY,
+    ///     Mode::S_IRWXU | Mode::S_IRWXG | Mode::S_IRWXO,
     /// )?;
+    /// let shared_memory = mem_segment.attach(ShmatFlag::empty())?;
     ///
-    /// let _ = shared_memory.shmctl(ShmctlFlag::IPC_RMID, None, Mode::empty())?;
+    /// let _ = shared_memory.shmctl(ShmctlFlag::IPC_RMID, None)?;
     /// # Ok::<(), Errno>(())
     /// ```
     ///
     /// [`shmctl(2)`]: https://man7.org/linux/man-pages/man2/shmctl.2.html
     pub fn shmctl(
         &self,
-        shmctl_flag: ShmctlFlag,
-        buf: Option<shmid_ds>,
-        mode: Mode,
+        shm_cmd: ShmctlFlag,
+        buf: Option<&mut shmid_ds>,
     ) -> Result<c_int> {
         let buf_ptr: *mut shmid_ds = match buf {
-            Some(mut ptr) => &mut ptr,
-            None => null_mut(),
+            Some(ptr) => ptr::from_mut(ptr),
+            None => ptr::null_mut(),
         };
-        let flags = mode.bits() as i32 | shmctl_flag.bits();
-        Errno::result(unsafe { libc::shmctl(self.id, flags, buf_ptr) })
+        Errno::result(unsafe { libc::shmctl(self.id, shm_cmd.bits(), buf_ptr) })
     }
 
     // -- Private --
