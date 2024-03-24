@@ -70,9 +70,9 @@ libc_bitflags!{
         PROT_READ;
         PROT_WRITE;
         PROT_EXEC;
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(linux_android)]
         PROT_GROWSDOWN;
-        #[cfg(any(target_os = "linux", target_os = "android"))]
+        #[cfg(linux_android)]
         PROT_GROWSUP;
     }
 }
