@@ -75,8 +75,6 @@ pub static KMOD_MTX: Mutex<()> = Mutex::new(());
 pub static PTSNAME_MTX: Mutex<()> = Mutex::new(());
 /// Any test that alters signal handling must grab this mutex.
 pub static SIGNAL_MTX: Mutex<()> = Mutex::new(());
-/// Any test that use SystemV must grab this mutex.
-pub static SYSTEMV_MTX: Mutex<()> = Mutex::new(());
 
 /// RAII object that restores a test's original directory on drop
 struct DirRestore<'a> {
