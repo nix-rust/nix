@@ -1,6 +1,8 @@
 use crate::errno::Errno;
-use crate::{Result,unistd};
-use std::os::unix::io::{FromRawFd, OwnedFd, AsRawFd, AsFd, RawFd, BorrowedFd};
+use crate::Result;
+use libc::eventfd_t;
+use std::mem::MaybeUninit;
+use std::os::unix::io::{AsFd, AsRawFd, BorrowedFd, FromRawFd, OwnedFd, RawFd};
 
 libc_bitflags! {
     pub struct EfdFlags: libc::c_int {
@@ -57,14 +59,20 @@ impl EventFd {
     /// The next `value` calls to `poll`, `select` or `epoll` will return immediately.
     /// 
     /// [`EventFd::write`] with `value`.
-    pub fn write(&self, value: u64) -> Result<usize> { 
-        unistd::write(&self.0,&value.to_ne_bytes())
+    pub fn write(&self, value: eventfd_t) -> Result<usize> {
+        let res = unsafe { libc::eventfd_write(self.0.as_raw_fd(), value) };
+        Errno::result(res).map(|res| res as usize)
     }
     // Reads the value from the file descriptor.
-    pub fn read(&self) -> Result<u64> {
-        let mut arr = [0; std::mem::size_of::<u64>()];
-        unistd::read(self.0.as_raw_fd(),&mut arr)?;
-        Ok(u64::from_ne_bytes(arr))
+    pub fn read(&self) -> Result<eventfd_t> {
+        let mut buf = MaybeUninit::uninit();
+        let res =
+            unsafe { libc::eventfd_read(self.0.as_raw_fd(), buf.as_mut_ptr()) };
+        Errno::result(res)?;
+
+        // SAFETY:
+        // It is guaranteed to be initialized by the `eventfd_read()` function.
+        Ok(unsafe { buf.assume_init() })
     }
 }
 impl AsFd for EventFd {
