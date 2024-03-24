@@ -329,22 +329,12 @@ libc_bitflags! {
         /// have execute permission on the segment.
         #[cfg(linux)]
         SHM_EXEC;
-        /// This flag specifies that the mapping of the segment should replace
-        /// any existing mapping in the range starting at shmaddr and
-        /// continuing for the size of the segment.
-        /// (Normally, an EINVAL error would result if a mapping already exists
-        /// in this address range.)
-        /// In this case, shmaddr must not be NULL.
-        #[cfg(linux)]
-        SHM_REMAP;
         /// Attach the segment for read-only access. The process must have read
         /// permission for the segment. If this flag is not specified, the
         /// segment is attached for read and write access, and the process must
         /// have read and write permission for the segment.
         /// There is no notion of a write-only shared memory segment.
         SHM_RDONLY;
-        /// TODO: I have no clue at what this does
-        SHM_RND;
     }
 }
 
