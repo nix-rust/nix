@@ -174,15 +174,16 @@ impl<T> Shm<T> {
     }
 }
 
+#[derive(Debug)]
+/// Safe wrapper around a SystemV shared memory segment data
 ///
 /// This is a smart pointer, and so implement the [`Deref`] and [`DerefMut`] traits.
-/// This means that you can work with the shared memory zone like you would with a [`Box`].
+/// This means that you can work with the shared memory segment like you would with a [`Box`].
 ///
-/// This type does not automatically create or destroy a shared memory segment,
-/// but only attach and detach from them using RAII.
+/// This type does not automatically destroy the shared memory segment, but
+/// only detach from it using RAII.
 ///
-/// To create one, use [`SharedMemory::shmget`], with the key [`ShmgetFlag::IPC_CREAT`].\
-/// To delete one, use [`SharedMemory::shmctl`], with the key [`ShmctlFlag::IPC_RMID`].
+/// To delete a shared memory segment, use [`SharedMemory::shmctl`], with the key [`ShmctlFlag::IPC_RMID`].
 ///
 /// # Example
 ///
@@ -194,17 +195,11 @@ impl<T> Shm<T> {
 /// struct MyData(i64);
 /// const MY_KEY: i32 = 1337;
 ///
-/// let id = SharedMemory::<MyData>::shmget(
+/// let mem_segment = Shm::<MyData>::create_and_connect(
 ///     MY_KEY,
-///     ShmgetFlag::IPC_CREAT | ShmgetFlag::IPC_EXCL,
 ///     Mode::S_IRWXU | Mode::S_IRWXG | Mode::S_IRWXO,
 /// )?;
-/// let mut shared_memory = SharedMemory::<MyData>::new(
-///     id,
-///     None,
-///     ShmatFlag::empty(),
-///     Mode::empty(),
-/// )?;
+/// let mut shared_memory = mem_segment.attach(ShmatFlag::empty())?;
 ///
 /// // This is writing to the stored [`MyData`] struct
 /// shared_memory.0 = 0xDEADBEEF;
@@ -212,7 +207,7 @@ impl<T> Shm<T> {
 /// ```
 ///
 pub struct SharedMemory<T> {
-    id: i32,
+    id: c_int,
     shm: ManuallyDrop<Box<T>>,
 }
 
@@ -236,83 +231,6 @@ impl<T> Drop for SharedMemory<T> {
 }
 
 impl<T> SharedMemory<T> {
-    /// Create a new SharedMemory object
-    ///
-    /// Attach to an existing SystemV shared memory segment.
-    ///
-    /// To create a new segment, use [`SharedMemory::shmget`], with the key [`ShmgetFlag::IPC_CREAT`].
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// # use nix::errno::Errno;
-    /// # use nix::sys::system_v::shm::*;
-    /// # use nix::sys::stat::Mode;
-    /// #
-    /// struct MyData(i64);
-    /// const MY_KEY: i32 = 1337;
-    ///
-    /// let mut shared_memory = SharedMemory::<MyData>::new(
-    ///     MY_KEY,
-    ///     None,
-    ///     ShmatFlag::empty(),
-    ///     Mode::empty(),
-    /// )?;
-    /// # Ok::<(), Errno>(())
-    /// ```
-    ///
-    pub fn new(
-        shmid: c_int,
-        shmaddr: Option<c_void>,
-        shmat_flag: ShmatFlag,
-        mode: Mode,
-    ) -> Result<Self> {
-        unsafe {
-            Ok(Self {
-                id: shmid,
-                shm: ManuallyDrop::new(Box::from_raw(Self::shmat(
-                    shmid, shmaddr, shmat_flag, mode,
-                )?)),
-            })
-        }
-    }
-
-    /// Creates and returns a new, or returns an existing, System V shared memory
-    /// segment identifier.
-    ///
-    /// For more information, see [`shmget(2)`].
-    ///
-    /// # Example
-    ///
-    /// ## Creating a shared memory zone
-    ///
-    /// ```no_run
-    /// # use nix::errno::Errno;
-    /// # use nix::sys::system_v::shm::*;
-    /// # use nix::sys::stat::Mode;
-    /// #
-    /// struct MyData(i64);
-    /// const MY_KEY: i32 = 1337;
-    ///
-    /// let id = SharedMemory::<MyData>::shmget(
-    ///     MY_KEY,
-    ///     ShmgetFlag::IPC_CREAT | ShmgetFlag::IPC_EXCL,
-    ///     Mode::S_IRWXU | Mode::S_IRWXG | Mode::S_IRWXO,
-    /// )?;
-    /// # Ok::<(), Errno>(())
-    /// ```
-    ///
-    /// [`shmget(2)`]: https://man7.org/linux/man-pages/man2/shmget.2.html
-    pub fn shmget(
-        key: key_t,
-        shmget_flag: ShmgetFlag,
-        mode: Mode,
-    ) -> Result<i32> {
-        let size = std::mem::size_of::<T>();
-        let flags = mode.bits() as i32 | shmget_flag.bits();
-        Errno::result(unsafe { libc::shmget(key, size, flags) })
-    }
-
     /// Performs control operation specified by `cmd` on the System V shared
     /// memory segment given by `shmid`.
     ///
@@ -357,29 +275,6 @@ impl<T> SharedMemory<T> {
     }
 
     // -- Private --
-
-    /// Attaches the System V shared memory segment identified by `shmid` to the
-    /// address space of the calling process.
-    ///
-    /// This is called automatically on [`SharedMemory::new`].
-    ///
-    /// For more information, see [`shmat(2)`].
-    ///
-    /// [`shmat(2)`]: https://man7.org/linux/man-pages/man2/shmat.2.html
-    fn shmat(
-        shmid: c_int,
-        shmaddr: Option<c_void>,
-        shmat_flag: ShmatFlag,
-        mode: Mode,
-    ) -> Result<*mut T> {
-        let shmaddr_ptr: *const c_void = match shmaddr {
-            Some(mut ptr) => &mut ptr,
-            None => null(),
-        };
-        let flags = mode.bits() as i32 | shmat_flag.bits();
-        Errno::result(unsafe { libc::shmat(shmid, shmaddr_ptr, flags) })
-            .map(|ok| ok.cast::<T>())
-    }
 
     /// Performs the reverse of [`SharedMemory::shmat`], detaching the shared memory segment at
     /// the given address from the address space of the calling process.
