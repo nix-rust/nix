@@ -82,3 +82,6 @@ mod test_statfs;
     target_os = "haiku"
 )))]
 mod test_resource;
+
+#[cfg(all(target_os = "linux", feature = "signal", feature = "process"))]
+pub mod test_pidfd;
