@@ -336,6 +336,20 @@ libc_bitflags! {
     }
 }
 
+#[cfg(target_os = "netbsd")]
+impl ProtFlags {
+    /// Adds additional permission flags, mostly for PaX purpose.
+    /// e.g. a page having exclusive read permission then
+    /// switching to write/executable permissions useful for JIT engines.
+    ///
+    /// one use case would be for set PROT_MPROTECT(PROT_READ) | PROT_READ
+    /// for a map then mprotect would fail with PROT_WRITE | PROT_READ flags.
+    #[allow(non_snake_case)] 
+    pub fn PROT_MPROTECT(&self, flags: ProtFlags) -> c_int {
+        self.bits() | unsafe { libc::PROT_MPROTECT(flags.bits()) }
+    }
+}
+
 /// Locks all memory pages that contain part of the address range with `length`
 /// bytes starting at `addr`.
 ///
