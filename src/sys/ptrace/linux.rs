@@ -17,8 +17,10 @@ pub type AddressType = *mut ::libc::c_void;
             target_arch = "x86_64",
             any(target_env = "gnu", target_env = "musl")
         ),
-        all(target_arch = "x86", target_env = "gnu")
-    )
+        all(target_arch = "x86", target_env = "gnu"),
+        all(target_arch = "aarch64", target_env = "gnu"),
+        all(target_arch = "riscv64", target_env = "gnu"),
+    ),
 ))]
 use libc::user_regs_struct;
 
@@ -170,6 +172,29 @@ libc_enum! {
     }
 }
 
+libc_enum! {
+    #[cfg(all(
+        target_os = "linux",
+        target_env = "gnu",
+        any(
+            target_arch = "x86_64",
+            target_arch = "x86",
+            target_arch = "aarch64",
+            target_arch = "riscv64",
+        )
+    ))]
+    #[repr(i32)]
+    /// Defining a specific register set, as used in [`getregset`] and [`setregset`].
+    #[non_exhaustive]
+    pub enum RegisterSet {
+        NT_PRSTATUS,
+        NT_PRFPREG,
+        NT_PRPSINFO,
+        NT_TASKSTRUCT,
+        NT_AUXV,
+    }
+}
+
 libc_bitflags! {
     /// Ptrace options used in conjunction with the PTRACE_SETOPTIONS request.
     /// See `man ptrace` for more details.
@@ -231,6 +256,48 @@ pub fn getregs(pid: Pid) -> Result<user_regs_struct> {
     ptrace_get_data::<user_regs_struct>(Request::PTRACE_GETREGS, pid)
 }
 
+/// Get user registers, as with `ptrace(PTRACE_GETREGSET, pid, NT_PRSTATUS, ...)`
+#[cfg(all(
+    target_os = "linux",
+    target_env = "gnu",
+    any(
+        target_arch = "aarch64",
+        target_arch = "riscv64",
+    )
+))]
+pub fn getregs(pid: Pid) -> Result<user_regs_struct> {
+    getregset(pid, RegisterSet::NT_PRSTATUS)
+}
+
+/// Get a particular set of user registers, as with `ptrace(PTRACE_GETREGSET, ...)`
+#[cfg(all(
+    target_os = "linux",
+    target_env = "gnu",
+    any(
+        target_arch = "x86_64",
+        target_arch = "x86",
+        target_arch = "aarch64",
+        target_arch = "riscv64",
+    )
+))]
+pub fn getregset(pid: Pid, set: RegisterSet) -> Result<user_regs_struct> {
+    let request = Request::PTRACE_GETREGSET;
+    let mut data = mem::MaybeUninit::<user_regs_struct>::uninit();
+    let mut iov = libc::iovec {
+        iov_base: data.as_mut_ptr() as *mut _,
+        iov_len: mem::size_of::<user_regs_struct>(),
+    };
+    unsafe {
+        ptrace_other(
+            request,
+            pid,
+            set as i32 as AddressType,
+            &mut iov as *mut _ as *mut c_void,
+        )?;
+    };
+    Ok(unsafe { data.assume_init() })
+}
+
 /// Set user registers, as with `ptrace(PTRACE_SETREGS, ...)`
 #[cfg(all(
     target_os = "linux",
@@ -252,6 +319,50 @@ pub fn setregs(pid: Pid, regs: user_regs_struct) -> Result<()> {
         )
     };
     Errno::result(res).map(drop)
+}
+
+/// Set user registers, as with `ptrace(PTRACE_SETREGSET, pid, NT_PRSTATUS, ...)`
+#[cfg(all(
+    target_os = "linux",
+    target_env = "gnu",
+    any(
+        target_arch = "aarch64",
+        target_arch = "riscv64",
+    )
+))]
+pub fn setregs(pid: Pid, regs: user_regs_struct) -> Result<()> {
+    setregset(pid, RegisterSet::NT_PRSTATUS, regs)
+}
+
+/// Set a particular set of user registers, as with `ptrace(PTRACE_SETREGSET, ...)`
+#[cfg(all(
+    target_os = "linux",
+    target_env = "gnu",
+    any(
+        target_arch = "x86_64",
+        target_arch = "x86",
+        target_arch = "aarch64",
+        target_arch = "riscv64",
+    )
+))]
+pub fn setregset(
+    pid: Pid,
+    set: RegisterSet,
+    regs: user_regs_struct,
+) -> Result<()> {
+    let iov = libc::iovec {
+        iov_base: &regs as *const _ as *mut c_void,
+        iov_len: mem::size_of::<user_regs_struct>(),
+    };
+    unsafe {
+        ptrace_other(
+            Request::PTRACE_SETREGSET,
+            pid,
+            set as i32 as AddressType,
+            &iov as *const _ as *mut c_void,
+        )?;
+    }
+    Ok(())
 }
 
 /// Function for ptrace requests that return values from the data field.
