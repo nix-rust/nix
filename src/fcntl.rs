@@ -1278,3 +1278,6 @@ pub fn posix_fallocate(
     }
 }
 }
+
+#[cfg(all(feature="fs", any(target_os = "android", target_os = "linux")))]
+pub mod statx;
