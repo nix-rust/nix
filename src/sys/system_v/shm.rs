@@ -13,9 +13,167 @@ use crate::{errno::Errno, sys::stat::Mode};
 use libc::{self, c_int, c_void, key_t, shmid_ds};
 
 #[derive(Debug)]
-/// Safe wrapper around a SystemV shared memory segment
+/// Safe wrapper to create and connect to a SystemV shared memory segment.
 ///
-/// The shared memory segment size is equal to the size of T.
+/// # Example
+///
+/// ```no_run
+/// # use nix::errno::Errno;
+/// # use nix::sys::system_v::shm::*;
+/// # use nix::sys::stat::Mode;
+/// #
+/// struct MyData(i64);
+///
+/// const MY_KEY: i32 = 1337;
+/// let mem_segment = Shm::<MyData>::create_and_connect(
+///     MY_KEY,
+///     Mode::S_IRWXU | Mode::S_IRWXG | Mode::S_IRWXO,
+/// )?;
+/// let mut shared_memory = mem_segment.attach(ShmatFlag::empty())?;
+/// # Ok::<(), Errno>(())
+/// ```
+///
+pub struct Shm<T> {
+    id: c_int,
+    _phantom: PhantomData<T>,
+}
+
+impl<T> Shm<T> {
+    /// Attach to the current SystemV shared memory segment.
+///
+    /// To create a new segment, use [`Shm::create_and_connect`].\
+    /// If you need more customisation, use the unsafe version,
+    /// [`Shm::shmget`], with the key [`ShmgetFlag::IPC_CREAT`].
+    ///
+    /// Attaching a segment to a specific adress isn't supported. This is
+    /// because there is no way to create a void pointer on rust.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # use nix::errno::Errno;
+    /// # use nix::sys::system_v::shm::*;
+    /// # use nix::sys::stat::Mode;
+    /// #
+    /// struct MyData(i64);
+    ///
+    /// const MY_KEY: i32 = 1337;
+    /// let mem_segment = Shm::<MyData>::create_and_connect(
+    ///     MY_KEY,
+    ///     Mode::S_IRWXU | Mode::S_IRWXG | Mode::S_IRWXO,
+    /// )?;
+    /// let mut shared_memory = mem_segment.attach(ShmatFlag::empty())?;
+    /// # Ok::<(), Errno>(())
+    /// ```
+    ///
+    pub fn attach(&self, shmat_flag: ShmatFlag) -> Result<SharedMemory<T>> {
+        unsafe {
+            Ok(SharedMemory::<T> {
+                id: self.id,
+                shm: ManuallyDrop::new(Box::from_raw(self.shmat(shmat_flag)?)),
+            })
+        }
+    }
+
+    /// Creates and returns a new System V shared memory segment identifier.
+    ///
+    /// # Example
+    /// ```no_run
+    /// # use nix::errno::Errno;
+    /// # use nix::sys::system_v::shm::*;
+    /// # use nix::sys::stat::Mode;
+    /// #
+    /// struct MyData(i64);
+    /// const MY_KEY: i32 = 1337;
+    ///
+    /// let mem_segment = Shm::<MyData>::create_and_connect(
+    ///     MY_KEY,
+    ///     Mode::S_IRWXU | Mode::S_IRWXG | Mode::S_IRWXO,
+    /// )?;
+    /// # Ok::<(), Errno>(())
+    /// ```
+    ///
+    pub fn create_and_connect(key: key_t, mode: Mode) -> Result<Self> {
+        let size = std::mem::size_of::<T>();
+        // This is the main difference between this function and [`Shm::shmget`]
+        // Because we are always creating a new segment, we can be sure that the size match
+        let shmget_flag = ShmgetFlag::IPC_CREAT | ShmgetFlag::IPC_EXCL;
+        let flags = mode.bits() as i32 | shmget_flag.bits();
+        let id = Errno::result(unsafe { libc::shmget(key, size, flags) })?;
+        Ok(Self {
+            id,
+            _phantom: PhantomData,
+        })
+    }
+
+    /// Creates and returns a new, or returns an existing, System V shared memory
+    /// segment identifier.
+    ///
+    /// For more information, see [`shmget(2)`].
+    ///
+    /// # Safety
+    ///
+    /// If you are using this function to connect to an existing memory segment,
+    /// care must be taken that the generic type `T` matches what is actually
+    /// stored on the memory segment.\
+    /// For example, if a memory segment of size 4 bytes exist, and you connect
+    /// with a type of size 8 bytes, then undefined behaviour will be invoked.
+    ///
+    /// # Example
+    ///
+    /// ## Connecting to an existing shared memory segment
+    ///
+    /// ```no_run
+    /// # use nix::errno::Errno;
+    /// # use nix::sys::system_v::shm::*;
+    /// # use nix::sys::stat::Mode;
+    /// #
+    /// struct MyData(i64);
+    /// const MY_KEY: i32 = 1337;
+    ///
+    /// unsafe {
+    ///     let mem_segment = Shm::<MyData>::shmget(
+    ///         MY_KEY,
+    ///         ShmgetFlag::empty(),
+    ///         Mode::S_IRWXU | Mode::S_IRWXG | Mode::S_IRWXO,
+    ///     )?;
+    /// }
+    /// # Ok::<(), Errno>(())
+    /// ```
+    ///
+    /// [`shmget(2)`]: https://man7.org/linux/man-pages/man2/shmget.2.html
+    pub unsafe fn shmget(
+        key: key_t,
+        shmget_flag: ShmgetFlag,
+        mode: Mode,
+    ) -> Result<Self> {
+        let size = std::mem::size_of::<T>();
+        let flags = mode.bits() as i32 | shmget_flag.bits();
+        let id = Errno::result(unsafe { libc::shmget(key, size, flags) })?;
+        Ok(Self {
+            id,
+            _phantom: PhantomData,
+        })
+    }
+
+    // -- Private --
+
+    /// Attaches the System V shared memory segment identified by `shmid` to the
+    /// address space of the calling process.
+    ///
+    /// This is called automatically on [`Shm::attach`].
+    ///
+    /// For more information, see [`shmat(2)`].
+    ///
+    /// [`shmat(2)`]: https://man7.org/linux/man-pages/man2/shmat.2.html
+    fn shmat(&self, shmat_flag: ShmatFlag) -> Result<*mut T> {
+        Errno::result(unsafe {
+            libc::shmat(self.id, ptr::null(), shmat_flag.bits())
+        })
+        .map(|ok| ok.cast::<T>())
+    }
+}
+
 ///
 /// This is a smart pointer, and so implement the [`Deref`] and [`DerefMut`] traits.
 /// This means that you can work with the shared memory zone like you would with a [`Box`].
