@@ -2,9 +2,10 @@
 //!
 
 use std::{
+    marker::PhantomData,
     mem::ManuallyDrop,
     ops::{Deref, DerefMut},
-    ptr::{null, null_mut},
+    ptr,
 };
 
 use crate::Result;
@@ -40,7 +41,7 @@ pub struct Shm<T> {
 
 impl<T> Shm<T> {
     /// Attach to the current SystemV shared memory segment.
-///
+    ///
     /// To create a new segment, use [`Shm::create_and_connect`].\
     /// If you need more customisation, use the unsafe version,
     /// [`Shm::shmget`], with the key [`ShmgetFlag::IPC_CREAT`].
