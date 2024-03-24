@@ -71,6 +71,8 @@ type fs_type_t = libc::c_int;
 type fs_type_t = libc::__fsword_t;
 
 /// Describes the file system type as known by the operating system.
+// false positive, see: https://github.com/rust-lang/rust-clippy/issues/12537
+#[allow(clippy::duplicated_attributes)]
 #[cfg(any(
     target_os = "freebsd",
     target_os = "android",
