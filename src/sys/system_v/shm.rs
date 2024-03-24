@@ -266,7 +266,7 @@ impl<T> SharedMemory<T> {
         buf: Option<&mut shmid_ds>,
     ) -> Result<c_int> {
         let buf_ptr: *mut shmid_ds = match buf {
-            Some(ptr) => ptr::from_mut(ptr),
+            Some(ptr) => ptr,
             None => ptr::null_mut(),
         };
         Errno::result(unsafe { libc::shmctl(self.id, shm_cmd.bits(), buf_ptr) })
