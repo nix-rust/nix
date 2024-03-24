@@ -407,7 +407,7 @@ mod tests {
     const SHM_TEST: i32 = 1337;
 
     #[derive(Debug)]
-    /// Test struct used to store some data on the shared memory zone
+    /// Test struct used to store some data on the shared memory segment
     ///
     struct TestData {
         data: i64,
@@ -415,34 +415,26 @@ mod tests {
 
     #[derive(Debug)]
     struct FixtureShm {
-        ipc: SharedMemory<TestData>,
+        shm: Shm<TestData>,
+        memory: SharedMemory<TestData>,
     }
 
     impl FixtureShm {
         fn setup() -> Result<Self> {
-            let id = SharedMemory::<TestData>::shmget(
+            let shm = Shm::<TestData>::create_and_connect(
                 SHM_TEST,
-                ShmgetFlag::IPC_CREAT | ShmgetFlag::IPC_EXCL,
                 Mode::S_IRWXU | Mode::S_IRWXG | Mode::S_IRWXO,
             )?;
-            Ok(Self {
-                ipc: SharedMemory::<TestData>::new(
-                    id,
-                    None,
-                    ShmatFlag::empty(),
-                    Mode::empty(),
-                )?,
-            })
+            let memory = shm.attach(ShmatFlag::empty())?;
+            Ok(Self { shm, memory })
         }
     }
 
     impl Drop for FixtureShm {
         fn drop(&mut self) {
-            let _ = self
-                .ipc
-                .shmctl(ShmctlFlag::IPC_RMID, None, Mode::empty())
-                .map_err(|_| {
-                    panic!("Failed to delete the test shared memory zone")
+            let _ =
+                self.memory.shmctl(ShmctlFlag::IPC_RMID, None).map_err(|_| {
+                    panic!("Failed to delete the test shared memory segment")
                 });
         }
     }
@@ -460,7 +452,7 @@ mod tests {
         let _m = SHM_MTX.lock();
 
         // Keep the IPC in scope, so we don't destroy it
-        let _ipc = FixtureShm::setup()?;
+        let _fixture = FixtureShm::setup()?;
         let expected = Errno::EEXIST;
         let actual = FixtureShm::setup().expect_err("Return EExist");
 
@@ -472,16 +464,11 @@ mod tests {
     fn create_ipc_and_get_value() -> Result<()> {
         let _m = SHM_MTX.lock();
 
-        let mut sem = FixtureShm::setup()?;
+        let mut fixture = FixtureShm::setup()?;
         let expected = 0xDEADBEEF;
-        sem.ipc.data = expected;
+        fixture.memory.data = expected;
 
-        let actual = SharedMemory::<TestData>::new(
-            sem.ipc.id,
-            None,
-            ShmatFlag::empty(),
-            Mode::empty(),
-        )?.data;
+        let actual = fixture.shm.attach(ShmatFlag::empty())?.data;
         assert_eq!(expected, actual);
         Ok(())
     }
