@@ -44,7 +44,10 @@ impl<T> Shm<T> {
     ///
     /// To create a new segment, use [`Shm::create_and_connect`].\
     /// If you need more customisation, use the unsafe version,
-    /// [`Shm::shmget`], with the key [`ShmgetFlag::IPC_CREAT`].
+    /// [`Shm::shmget`], with the key [`ShmgetFlag::IPC_CREAT`].\
+    ///
+    /// To delete a shared memory segment, use [`Shm::shmctl`], with the key [`ShmctlFlag::IPC_RMID`].
+    ///
     ///
     /// # Example
     ///
@@ -228,8 +231,6 @@ impl<T> Shm<T> {
 ///
 /// This type does not automatically destroy the shared memory segment, but
 /// only detach from it using RAII.
-///
-/// To delete a shared memory segment, use [`SharedMemory::shmctl`], with the key [`ShmctlFlag::IPC_RMID`].
 ///
 /// # Example
 ///
