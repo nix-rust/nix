@@ -107,6 +107,13 @@ feature! {
     pub mod sendfile;
 }
 
+#[cfg(any(bsd, target_os = "linux"))]
+feature! {
+    #![feature = "sysvipc"]
+    pub mod sem;
+    pub mod shm;
+}
+
 pub mod signal;
 
 #[cfg(linux_android)]
@@ -142,12 +149,6 @@ feature! {
 #[cfg(linux_android)]
 #[allow(missing_docs)]
 pub mod sysinfo;
-
-#[cfg(any(bsd, target_os = "linux"))]
-feature! {
-    #![feature = "system_v"]
-    pub mod system_v;
-}
 
 feature! {
     #![feature = "term"]
