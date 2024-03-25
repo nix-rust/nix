@@ -18,6 +18,7 @@ use libc::{self, c_int, c_void, key_t, shmid_ds};
 /// # Example
 ///
 /// ```no_run
+/// # use std::ptr;
 /// # use nix::errno::Errno;
 /// # use nix::sys::system_v::shm::*;
 /// # use nix::sys::stat::Mode;
@@ -29,7 +30,7 @@ use libc::{self, c_int, c_void, key_t, shmid_ds};
 ///     MY_KEY,
 ///     Mode::S_IRWXU | Mode::S_IRWXG | Mode::S_IRWXO,
 /// )?;
-/// let mut shared_memory = mem_segment.attach(ShmatFlag::empty())?;
+/// let mut shared_memory = mem_segment.attach(ptr::null(), ShmatFlag::empty())?;
 /// # Ok::<(), Errno>(())
 /// ```
 ///
@@ -48,6 +49,7 @@ impl<T> Shm<T> {
     /// # Example
     ///
     /// ```no_run
+    /// # use std::ptr;
     /// # use nix::errno::Errno;
     /// # use nix::sys::system_v::shm::*;
     /// # use nix::sys::stat::Mode;
@@ -233,6 +235,7 @@ impl<T> Shm<T> {
 /// # Example
 ///
 /// ```no_run
+/// # use std::ptr;
 /// # use nix::errno::Errno;
 /// # use nix::sys::system_v::shm::*;
 /// # use nix::sys::stat::Mode;
@@ -244,7 +247,7 @@ impl<T> Shm<T> {
 ///     MY_KEY,
 ///     Mode::S_IRWXU | Mode::S_IRWXG | Mode::S_IRWXO,
 /// )?;
-/// let mut shared_memory = mem_segment.attach(ShmatFlag::empty())?;
+/// let mut shared_memory = mem_segment.attach(ptr::null(), ShmatFlag::empty())?;
 ///
 /// // This is writing to the stored [`MyData`] struct
 /// shared_memory.0 = 0xDEADBEEF;
