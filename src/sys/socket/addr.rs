@@ -768,7 +768,7 @@ impl fmt::Display for SocketAddressLengthNotDynamic {
 impl std::error::Error for SocketAddressLengthNotDynamic {}
 
 impl private::SockaddrLikePriv for () {
-    fn as_mut_ptr(&mut self) -> *mut libc::sockaddr {
+    fn as_mut_ptr(_: &mut std::mem::MaybeUninit<Self>) -> *mut libc::sockaddr {
         ptr::null_mut()
     }
 }
@@ -1498,16 +1498,13 @@ impl PartialEq for SockaddrStorage {
 
 pub(super) mod private {
     pub trait SockaddrLikePriv {
-        /// Returns a mutable raw pointer to the inner structure.
-        ///
-        /// # Safety
-        ///
-        /// This method is technically safe, but modifying the inner structure's
-        /// `family` or `len` fields may result in violating Nix's invariants.
-        /// It is best to use this method only with foreign functions that do
-        /// not change the sockaddr type.
-        fn as_mut_ptr(&mut self) -> *mut libc::sockaddr {
-            self as *mut Self as *mut libc::sockaddr
+        fn as_mut_ptr(
+            s: &mut std::mem::MaybeUninit<Self>,
+        ) -> *mut libc::sockaddr
+        where
+            Self: Sized,
+        {
+            s.as_mut_ptr().cast()
         }
     }
 }
