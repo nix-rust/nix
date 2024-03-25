@@ -1,4 +1,11 @@
+use std::ptr;
+
+use nix::errno::Errno;
 use nix::sys::shm::*;
+use nix::sys::stat::Mode;
+use nix::Result;
+
+use crate::SYSTEMV_MTX;
 
 const SHM_TEST: i32 = 1337;
 
@@ -44,7 +51,7 @@ fn create_ipc() -> Result<()> {
 
 #[test]
 fn create_ipc_already_exist() -> Result<()> {
-    let _m = SHM_MTX.lock();
+    let _m = SYSTEMV_MTX.lock();
 
     // Keep the IPC in scope, so we don't destroy it
     let _fixture = FixtureShm::setup()?;
@@ -57,7 +64,7 @@ fn create_ipc_already_exist() -> Result<()> {
 
 #[test]
 fn create_ipc_and_get_value() -> Result<()> {
-    let _m = SHM_MTX.lock();
+    let _m = SYSTEMV_MTX.lock();
 
     let mut fixture = FixtureShm::setup()?;
     let expected = 0xDEADBEEF;
