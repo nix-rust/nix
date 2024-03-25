@@ -161,8 +161,8 @@ impl<T> Shm<T> {
 
     // -- Private --
 
-    /// Attaches the System V shared memory segment identified by `shmid` to the
-    /// address space of the calling process.
+    /// Attaches the System V shared memory segment identified by a shmid to
+    /// the address space of the calling process.
     ///
     /// This is called automatically on [`Shm::attach`].
     ///
@@ -184,7 +184,7 @@ impl<T> Shm<T> {
 #[derive(Debug)]
 /// Safe wrapper around a SystemV shared memory segment data
 ///
-/// This is a smart pointer, and so implement the [`Deref`] and [`DerefMut`] traits.
+/// This is a smart pointer, and so implements the [`Deref`] and [`DerefMut`] traits.
 /// This means that you can work with the shared memory segment like you would with a [`Box`].
 ///
 /// This type does not automatically destroy the shared memory segment, but
@@ -238,8 +238,8 @@ impl<T> Drop for SharedMemory<T> {
 }
 
 impl<T> SharedMemory<T> {
-    /// Performs control operation specified by `cmd` on the System V shared
-    /// memory segment given by `shmid`.
+    /// Performs control operation specified by `cmd` on the current System V
+    /// shared memory segment.
     ///
     /// For more information, see [`shmctl(2)`].
     ///
@@ -280,7 +280,7 @@ impl<T> SharedMemory<T> {
 
     // -- Private --
 
-    /// Performs the reverse of [`SharedMemory::shmat`], detaching the shared memory segment at
+    /// Performs the reverse of [`Shm::shmat`], detaching the shared memory segment at
     /// the given address from the address space of the calling process.
     ///
     /// This is called automatically on [`Drop`].
@@ -296,7 +296,7 @@ impl<T> SharedMemory<T> {
 }
 
 libc_bitflags!(
-    /// Valid flags for the third parameter of the function [`shmget`]
+    /// Valid flags for the third parameter of the function [`Shm::shmget`].
     pub struct ShmgetFlag: c_int
     {
         /// A new shared memory segment is created if key has this value.
