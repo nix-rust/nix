@@ -47,8 +47,12 @@ When creating newtypes, we use Rust's `CamelCase` type naming convention.
 ## cfg gates
 
 When creating operating-system-specific functionality, we gate it by
-`#[cfg(target_os = ...)]`. If more than one operating system is affected, we
+`#[cfg(target_os = ...)]`. If **MORE THAN ONE operating system** is affected, we
 prefer to use the cfg aliases defined in build.rs, like `#[cfg(bsd)]`.
+
+Please **DO NOT** use cfg aliases for **ONLY ONE** system as [they are bad][mismatched_target_os].
+
+[mismatched_target_os]: https://rust-lang.github.io/rust-clippy/master/index.html#/mismatched_target_os
 
 ## Bitflags
 

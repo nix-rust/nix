@@ -15,6 +15,8 @@ fn main() {
         watchos: { target_os = "watchos" },
         tvos: { target_os = "tvos" },
 
+
+        // cfg aliases we would like to use
         apple_targets: { any(ios, macos, watchos, tvos) },
         bsd: { any(freebsd, dragonfly, netbsd, openbsd, apple_targets) },
         linux_android: { any(android, linux) },
