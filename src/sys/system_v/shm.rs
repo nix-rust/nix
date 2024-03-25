@@ -312,7 +312,7 @@ libc_bitflags!(
         /// Allocate the segment using "huge" pages.  See the Linux kernel
         /// source file Documentation/admin-guide/mm/hugetlbpage.rst for
         /// further information.
-        #[cfg(linux)]
+        #[cfg(target_os = "linux")]
         SHM_HUGETLB;
         // TODO: Does not exist in libc/linux, but should? Maybe open an issue in their repo
         // SHM_HUGE_2MB;
@@ -324,7 +324,7 @@ libc_bitflags!(
         /// segment. When swap space is not reserved one might get SIGSEGV upon
         /// a write if no physical memory is available. See also the discussion
         /// of the file /proc/sys/vm/overcommit_memory in proc(5).
-        #[cfg(linux)]
+        #[cfg(target_os = "linux")]
         SHM_NORESERVE;
     }
 );
@@ -334,7 +334,7 @@ libc_bitflags! {
     {
         /// Allow the contents of the segment to be executed. The caller must
         /// have execute permission on the segment.
-        #[cfg(linux)]
+        #[cfg(target_os = "linux")]
         SHM_EXEC;
         /// This flag specifies that the mapping of the segment should replace
         /// any existing mapping in the range starting at shmaddr and
@@ -362,7 +362,7 @@ libc_bitflags!(
     pub struct ShmctlFlag: c_int {
         /// Returns the index of the highest used entry in the kernel's internal
         /// array recording information about all shared memory segment
-        #[cfg(linux)]
+        #[cfg(target_os = "linux")]
         IPC_INFO;
         /// Write the values of some members of the shmid_ds structure pointed
         /// to by buf to the kernel data structure associated with this shared
@@ -408,10 +408,10 @@ libc_bitflags!(
         /// If a segment has been locked, then the (nonstandard) SHM_LOCKED
         /// flag of the shm_perm.mode field in the associated data structure
         /// retrieved by IPC_STAT will be set.
-        #[cfg(linux)]
+        #[cfg(target_os = "linux")]
         SHM_LOCK;
         /// Unlock the segment, allowing it to be swapped out.
-        #[cfg(linux)]
+        #[cfg(target_os = "linux")]
         SHM_UNLOCK;
     }
 );
