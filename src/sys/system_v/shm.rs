@@ -45,9 +45,6 @@ impl<T> Shm<T> {
     /// If you need more customisation, use the unsafe version,
     /// [`Shm::shmget`], with the key [`ShmgetFlag::IPC_CREAT`].
     ///
-    /// Attaching a segment to a specific adress isn't supported. This is
-    /// because there is no way to create a void pointer on rust.
-    ///
     /// # Example
     ///
     /// ```no_run
@@ -62,15 +59,21 @@ impl<T> Shm<T> {
     ///     MY_KEY,
     ///     Mode::S_IRWXU | Mode::S_IRWXG | Mode::S_IRWXO,
     /// )?;
-    /// let mut shared_memory = mem_segment.attach(ShmatFlag::empty())?;
+    /// let mut shared_memory = mem_segment.attach(ptr::null(), ShmatFlag::empty())?;
     /// # Ok::<(), Errno>(())
     /// ```
     ///
-    pub fn attach(&self, shmat_flag: ShmatFlag) -> Result<SharedMemory<T>> {
+    pub fn attach(
+        &self,
+        shmaddr: *const c_void,
+        shmat_flag: ShmatFlag,
+    ) -> Result<SharedMemory<T>> {
         unsafe {
             Ok(SharedMemory::<T> {
                 id: self.id,
-                shm: ManuallyDrop::new(Box::from_raw(self.shmat(shmat_flag)?)),
+                shm: ManuallyDrop::new(Box::from_raw(
+                    self.shmat(shmaddr, shmat_flag)?,
+                )),
             })
         }
     }
@@ -166,9 +169,13 @@ impl<T> Shm<T> {
     /// For more information, see [`shmat(2)`].
     ///
     /// [`shmat(2)`]: https://man7.org/linux/man-pages/man2/shmat.2.html
-    fn shmat(&self, shmat_flag: ShmatFlag) -> Result<*mut T> {
+    fn shmat(
+        &self,
+        shmaddr: *const c_void,
+        shmat_flag: ShmatFlag,
+    ) -> Result<*mut T> {
         Errno::result(unsafe {
-            libc::shmat(self.id, ptr::null(), shmat_flag.bits())
+            libc::shmat(self.id, shmaddr, shmat_flag.bits())
         })
         .map(|ok| ok.cast::<T>())
     }
@@ -329,12 +336,24 @@ libc_bitflags! {
         /// have execute permission on the segment.
         #[cfg(linux)]
         SHM_EXEC;
+        /// This flag specifies that the mapping of the segment should replace
+        /// any existing mapping in the range starting at shmaddr and
+        /// continuing for the size of the segment.
+        /// (Normally, an EINVAL error would result if a mapping already exists
+        /// in this address range.)
+        /// In this case, shmaddr must not be NULL.
+        #[cfg(target_os = "linux")]
+        SHM_REMAP;
         /// Attach the segment for read-only access. The process must have read
         /// permission for the segment. If this flag is not specified, the
         /// segment is attached for read and write access, and the process must
         /// have read and write permission for the segment.
         /// There is no notion of a write-only shared memory segment.
         SHM_RDONLY;
+        /// If shmaddr isn't NULL and SHM_RND is specified in shmflg, the
+        /// attach occurs at the address equal to shmaddr rounded down to the
+        /// nearest multiple of SHMLBA.
+        SHM_RND;
     }
 }
 
