@@ -298,8 +298,6 @@ libc_bitflags!(
     /// Valid flags for the third parameter of the function [`Shm::shmget`].
     pub struct ShmgetFlag: c_int
     {
-        /// A new shared memory segment is created if key has this value.
-        IPC_PRIVATE;
         /// Create a new segment.
         /// If this flag is not used, then shmget() will find the segment
         /// associated with key and check to see if the user has permission
