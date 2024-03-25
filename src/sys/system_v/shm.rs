@@ -1,5 +1,4 @@
 //! Safe wrapper around a SystemV shared memory segment
-//!
 
 use std::{
     marker::PhantomData,
