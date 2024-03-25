@@ -20,7 +20,7 @@ use libc::{self, c_int, c_void, key_t, shmid_ds};
 /// ```no_run
 /// # use std::ptr;
 /// # use nix::errno::Errno;
-/// # use nix::sys::system_v::shm::*;
+/// # use nix::sys::shm::*;
 /// # use nix::sys::stat::Mode;
 /// #
 /// struct MyData(i64);
@@ -51,7 +51,7 @@ impl<T> Shm<T> {
     /// ```no_run
     /// # use std::ptr;
     /// # use nix::errno::Errno;
-    /// # use nix::sys::system_v::shm::*;
+    /// # use nix::sys::shm::*;
     /// # use nix::sys::stat::Mode;
     /// #
     /// struct MyData(i64);
@@ -84,7 +84,7 @@ impl<T> Shm<T> {
     /// # Example
     /// ```no_run
     /// # use nix::errno::Errno;
-    /// # use nix::sys::system_v::shm::*;
+    /// # use nix::sys::shm::*;
     /// # use nix::sys::stat::Mode;
     /// #
     /// struct MyData(i64);
@@ -121,7 +121,7 @@ impl<T> Shm<T> {
     ///
     /// ```no_run
     /// # use nix::errno::Errno;
-    /// # use nix::sys::system_v::shm::*;
+    /// # use nix::sys::shm::*;
     /// # use nix::sys::stat::Mode;
     /// #
     /// struct MyData(i64);
@@ -167,7 +167,7 @@ impl<T> Shm<T> {
     ///
     /// ```no_run
     /// # use nix::errno::Errno;
-    /// # use nix::sys::system_v::shm::*;
+    /// # use nix::sys::shm::*;
     /// # use nix::sys::stat::Mode;
     /// #
     /// struct MyData(i64);
@@ -236,7 +236,7 @@ impl<T> Shm<T> {
 /// ```no_run
 /// # use std::ptr;
 /// # use nix::errno::Errno;
-/// # use nix::sys::system_v::shm::*;
+/// # use nix::sys::shm::*;
 /// # use nix::sys::stat::Mode;
 /// #
 /// struct MyData(i64);
