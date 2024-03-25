@@ -72,7 +72,6 @@ impl<T> Shm<T> {
     ) -> Result<SharedMemory<T>> {
         unsafe {
             Ok(SharedMemory::<T> {
-                id: self.id,
                 shm: ManuallyDrop::new(Box::from_raw(
                     self.shmat(shmaddr, shmat_flag)?,
                 )),
@@ -255,7 +254,6 @@ impl<T> Shm<T> {
 /// ```
 ///
 pub struct SharedMemory<T> {
-    id: c_int,
     shm: ManuallyDrop<Box<T>>,
 }
 
