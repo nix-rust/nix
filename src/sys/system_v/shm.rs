@@ -109,6 +109,44 @@ impl<T> Shm<T> {
         })
     }
 
+    /// Performs control operation specified by `cmd` on the current System V
+    /// shared memory segment.
+    ///
+    /// For more information, see [`shmctl(2)`].
+    ///
+    /// # Example
+    ///
+    /// ## Deleting a shared memory segment
+    ///
+    /// ```no_run
+    /// # use nix::errno::Errno;
+    /// # use nix::sys::system_v::shm::*;
+    /// # use nix::sys::stat::Mode;
+    /// #
+    /// struct MyData(i64);
+    /// const MY_KEY: i32 = 1337;
+    ///
+    /// let mem_segment = Shm::<MyData>::create_and_connect(
+    ///     MY_KEY,
+    ///     Mode::S_IRWXU | Mode::S_IRWXG | Mode::S_IRWXO,
+    /// )?;
+    /// let _ = mem_segment.shmctl(ShmctlFlag::IPC_RMID, None)?;
+    /// # Ok::<(), Errno>(())
+    /// ```
+    ///
+    /// [`shmctl(2)`]: https://man7.org/linux/man-pages/man2/shmctl.2.html
+    pub fn shmctl(
+        &self,
+        shm_cmd: ShmctlFlag,
+        buf: Option<&mut shmid_ds>,
+    ) -> Result<c_int> {
+        let buf_ptr: *mut shmid_ds = match buf {
+            Some(ptr) => ptr,
+            None => ptr::null_mut(),
+        };
+        Errno::result(unsafe { libc::shmctl(self.id, shm_cmd.bits(), buf_ptr) })
+    }
+
     /// Creates and returns a new, or returns an existing, System V shared memory
     /// segment identifier.
     ///
@@ -238,46 +276,6 @@ impl<T> Drop for SharedMemory<T> {
 }
 
 impl<T> SharedMemory<T> {
-    /// Performs control operation specified by `cmd` on the current System V
-    /// shared memory segment.
-    ///
-    /// For more information, see [`shmctl(2)`].
-    ///
-    /// # Example
-    ///
-    /// ## Deleting a shared memory segment
-    ///
-    /// ```no_run
-    /// # use nix::errno::Errno;
-    /// # use nix::sys::system_v::shm::*;
-    /// # use nix::sys::stat::Mode;
-    /// #
-    /// struct MyData(i64);
-    /// const MY_KEY: i32 = 1337;
-    ///
-    /// let mem_segment = Shm::<MyData>::create_and_connect(
-    ///     MY_KEY,
-    ///     Mode::S_IRWXU | Mode::S_IRWXG | Mode::S_IRWXO,
-    /// )?;
-    /// let shared_memory = mem_segment.attach(ShmatFlag::empty())?;
-    ///
-    /// let _ = shared_memory.shmctl(ShmctlFlag::IPC_RMID, None)?;
-    /// # Ok::<(), Errno>(())
-    /// ```
-    ///
-    /// [`shmctl(2)`]: https://man7.org/linux/man-pages/man2/shmctl.2.html
-    pub fn shmctl(
-        &self,
-        shm_cmd: ShmctlFlag,
-        buf: Option<&mut shmid_ds>,
-    ) -> Result<c_int> {
-        let buf_ptr: *mut shmid_ds = match buf {
-            Some(ptr) => ptr,
-            None => ptr::null_mut(),
-        };
-        Errno::result(unsafe { libc::shmctl(self.id, shm_cmd.bits(), buf_ptr) })
-    }
-
     // -- Private --
 
     /// Performs the reverse of [`Shm::shmat`], detaching the shared memory segment at
