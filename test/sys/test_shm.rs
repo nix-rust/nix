@@ -42,7 +42,7 @@ impl Drop for FixtureShm {
 }
 
 #[test]
-fn create_ipc() -> Result<()> {
+fn create_shm() -> Result<()> {
     let _m = SYSTEMV_MTX.lock();
 
     FixtureShm::setup()?;
@@ -50,10 +50,10 @@ fn create_ipc() -> Result<()> {
 }
 
 #[test]
-fn create_ipc_already_exist() -> Result<()> {
+fn create_shm_already_exist() -> Result<()> {
     let _m = SYSTEMV_MTX.lock();
 
-    // Keep the IPC in scope, so we don't destroy it
+    // Keep the fixture in scope, so we don't destroy it
     let _fixture = FixtureShm::setup()?;
     let expected = Errno::EEXIST;
     let actual = FixtureShm::setup().expect_err("Return EExist");
@@ -63,7 +63,7 @@ fn create_ipc_already_exist() -> Result<()> {
 }
 
 #[test]
-fn create_ipc_and_get_value() -> Result<()> {
+fn create_shm_and_get_value() -> Result<()> {
     let _m = SYSTEMV_MTX.lock();
 
     let mut fixture = FixtureShm::setup()?;
@@ -71,6 +71,29 @@ fn create_ipc_and_get_value() -> Result<()> {
     fixture.memory.data = expected;
 
     let actual = fixture.shm.attach(ptr::null(), ShmatFlag::empty())?.data;
+    assert_eq!(expected, actual);
+    Ok(())
+}
+
+#[test]
+fn connect_already_existing_shm() -> Result<()> {
+    let _m = SYSTEMV_MTX.lock();
+
+    let mut fixture = FixtureShm::setup()?;
+    let expected = 0xDEADBEEF;
+    fixture.memory.data = expected;
+
+    let existing_mem_segment = unsafe {
+        Shm::<TestData>::shmget(
+            SHM_TEST,
+            ShmgetFlag::empty(),
+            Mode::S_IRWXU | Mode::S_IRWXG | Mode::S_IRWXO,
+        )
+    }?;
+    let actual = existing_mem_segment
+        .attach(ptr::null(), ShmatFlag::empty())?
+        .data;
+
     assert_eq!(expected, actual);
     Ok(())
 }
