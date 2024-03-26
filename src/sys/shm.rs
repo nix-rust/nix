@@ -30,10 +30,10 @@ use libc::{self, c_int, c_void, key_t, shmid_ds};
 ///     MY_KEY,
 ///     Mode::S_IRWXU | Mode::S_IRWXG | Mode::S_IRWXO,
 /// )?;
-/// let mut shared_memory = mem_segment.attach(ptr::null(), ShmatFlag::empty())?;
+/// let shared_memory = mem_segment.attach(ptr::null(), ShmatFlag::empty())?;
+/// // Do stuff with shared memory...
 /// # Ok::<(), Errno>(())
 /// ```
-///
 pub struct Shm<T> {
     id: c_int,
     _phantom: PhantomData<T>,
@@ -67,7 +67,6 @@ impl<T> Shm<T> {
     /// let mut shared_memory = mem_segment.attach(ptr::null(), ShmatFlag::empty())?;
     /// # Ok::<(), Errno>(())
     /// ```
-    ///
     pub fn attach(
         &self,
         shmaddr: *const c_void,
@@ -99,7 +98,6 @@ impl<T> Shm<T> {
     /// )?;
     /// # Ok::<(), Errno>(())
     /// ```
-    ///
     pub fn create_and_connect(key: key_t, mode: Mode) -> Result<Self> {
         let size = std::mem::size_of::<T>();
         // This is the main difference between this function and [`Shm::shmget`]
@@ -176,13 +174,11 @@ impl<T> Shm<T> {
     /// struct MyData(i64);
     /// const MY_KEY: i32 = 1337;
     ///
-    /// unsafe {
-    ///     let mem_segment = Shm::<MyData>::shmget(
-    ///         MY_KEY,
-    ///         ShmgetFlag::empty(),
-    ///         Mode::S_IRWXU | Mode::S_IRWXG | Mode::S_IRWXO,
-    ///     )?;
-    /// }
+    /// let mem_segment = unsafe { Shm::<MyData>::shmget(
+    ///     MY_KEY,
+    ///     ShmgetFlag::empty(),
+    ///     Mode::S_IRWXU | Mode::S_IRWXG | Mode::S_IRWXO,
+    /// )}?;
     /// # Ok::<(), Errno>(())
     /// ```
     ///
@@ -251,6 +247,8 @@ impl<T> Shm<T> {
 ///
 /// // This is writing to the stored [`MyData`] struct
 /// shared_memory.0 = 0xDEADBEEF;
+///
+/// // Detach here on shared_memory being dropped
 /// # Ok::<(), Errno>(())
 /// ```
 ///
