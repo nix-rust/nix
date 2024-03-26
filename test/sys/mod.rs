@@ -23,6 +23,8 @@ mod test_ioctl;
 mod test_mman;
 #[cfg(not(target_os = "redox"))]
 mod test_select;
+#[cfg(all(any(bsd, target_os = "linux",), feature = "sysvipc",))]
+mod test_shm;
 #[cfg(target_os = "linux")]
 mod test_signalfd;
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
