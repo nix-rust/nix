@@ -26,7 +26,7 @@ mod test_select;
 #[cfg(target_os = "linux")]
 mod test_signalfd;
 #[cfg(all(any(bsd, target_os = "linux",), feature = "sysvipc",))]
-mod test_smh;
+mod test_shm;
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
 mod test_socket;
 #[cfg(not(any(target_os = "redox")))]
