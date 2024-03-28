@@ -66,6 +66,7 @@ macro_rules! generate_fdset_bad_fd_tests {
     }
 }
 
+#[allow(clippy::useless_conversion)] // Not unnecessary with libc 0.2.153
 mod test_fdset_too_large_fd {
     use super::*;
     generate_fdset_bad_fd_tests!(

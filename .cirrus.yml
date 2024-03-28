@@ -9,7 +9,7 @@ env:
   RUSTFLAGS: -D warnings
   RUSTDOCFLAGS: -D warnings
   TOOL: cargo
-  MSRV: 1.69.0
+  MSRV: 1.71.0
   ZFLAGS:
 
 # Tests that don't require executing the build binaries
@@ -70,7 +70,7 @@ task:
   matrix:
     - name: Linux aarch64
       arm_container:
-        image: rust:1.69.0
+        image: rust:1.71.0
         cpu: 1
       env:
         TARGET: aarch64-unknown-linux-gnu

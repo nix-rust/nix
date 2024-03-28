@@ -106,7 +106,7 @@ The following targets are supported by `nix`:
 
 ## Minimum Supported Rust Version (MSRV)
 
-nix is supported on Rust 1.69 and higher.  Its MSRV will not be
+nix is supported on Rust 1.71 and higher.  Its MSRV will not be
 changed in the future without bumping the major or minor version.
 
 ## Contributing

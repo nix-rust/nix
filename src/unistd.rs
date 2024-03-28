@@ -823,7 +823,12 @@ fn to_exec_array<S: AsRef<CStr>>(args: &[S]) -> Vec<*const c_char> {
 pub fn execv<S: AsRef<CStr>>(path: &CStr, argv: &[S]) -> Result<Infallible> {
     let args_p = to_exec_array(argv);
 
-    unsafe { libc::execv(path.as_ptr(), args_p.as_ptr()) };
+    // SAFETY:
+    // The const cast looks unsafe.  But it's actually fine.  The problem is that POSIX requires
+    // "execv" and friends to take mutable pointers in their signatures, even while it prohibits
+    // them from actually modifying those arguments.  See discussion at
+    // https://github.com/rust-lang/libc/issues/1272 .
+    unsafe { libc::execv(path.as_ptr(), args_p.as_ptr() as *const _) };
 
     Err(Errno::last())
 }
@@ -849,7 +854,12 @@ pub fn execve<SA: AsRef<CStr>, SE: AsRef<CStr>>(
     let args_p = to_exec_array(args);
     let env_p = to_exec_array(env);
 
-    unsafe { libc::execve(path.as_ptr(), args_p.as_ptr(), env_p.as_ptr()) };
+    // SAFETY:
+    // The const cast looks unsafe.  But it's actually fine.  The problem is that POSIX requires
+    // "execv" and friends to take mutable pointers in their signatures, even while it prohibits
+    // them from actually modifying those arguments.  See discussion at
+    // https://github.com/rust-lang/libc/issues/1272 .
+    unsafe { libc::execve(path.as_ptr(), args_p.as_ptr() as *const _, env_p.as_ptr() as *const _) };
 
     Err(Errno::last())
 }
@@ -870,7 +880,12 @@ pub fn execvp<S: AsRef<CStr>>(
 ) -> Result<Infallible> {
     let args_p = to_exec_array(args);
 
-    unsafe { libc::execvp(filename.as_ptr(), args_p.as_ptr()) };
+    // SAFETY:
+    // The const cast looks unsafe.  But it's actually fine.  The problem is that POSIX requires
+    // "execv" and friends to take mutable pointers in their signatures, even while it prohibits
+    // them from actually modifying those arguments.  See discussion at
+    // https://github.com/rust-lang/libc/issues/1272 .
+    unsafe { libc::execvp(filename.as_ptr(), args_p.as_ptr() as *const _) };
 
     Err(Errno::last())
 }
@@ -891,8 +906,13 @@ pub fn execvpe<SA: AsRef<CStr>, SE: AsRef<CStr>>(
     let args_p = to_exec_array(args);
     let env_p = to_exec_array(env);
 
+    // SAFETY:
+    // The const cast looks unsafe.  But it's actually fine.  The problem is that POSIX requires
+    // "execv" and friends to take mutable pointers in their signatures, even while it prohibits
+    // them from actually modifying those arguments.  See discussion at
+    // https://github.com/rust-lang/libc/issues/1272 .
     unsafe {
-        libc::execvpe(filename.as_ptr(), args_p.as_ptr(), env_p.as_ptr())
+        libc::execvpe(filename.as_ptr(), args_p.as_ptr() as *const _, env_p.as_ptr() as *const _)
     };
 
     Err(Errno::last())
@@ -918,7 +938,12 @@ pub fn fexecve<SA: AsRef<CStr>, SE: AsRef<CStr>>(
     let args_p = to_exec_array(args);
     let env_p = to_exec_array(env);
 
-    unsafe { libc::fexecve(fd, args_p.as_ptr(), env_p.as_ptr()) };
+    // SAFETY:
+    // The const cast looks unsafe.  But it's actually fine.  The problem is that POSIX requires
+    // "execv" and friends to take mutable pointers in their signatures, even while it prohibits
+    // them from actually modifying those arguments.  See discussion at
+    // https://github.com/rust-lang/libc/issues/1272 .
+    unsafe { libc::fexecve(fd, args_p.as_ptr() as *const _, env_p.as_ptr() as *const _) };
 
     Err(Errno::last())
 }

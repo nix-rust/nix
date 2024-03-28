@@ -4,7 +4,6 @@ use nix::sys::signal::{
 };
 use nix::sys::timer::{Expiration, Timer, TimerSetTimeFlags};
 use nix::time::ClockId;
-use std::convert::TryFrom;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 use std::time::{Duration, Instant};

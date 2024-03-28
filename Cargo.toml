@@ -28,7 +28,7 @@ targets = [
 ]
 
 [dependencies]
-libc = { version = "0.2.153", features = ["extra_traits"] }
+libc = { git = "https://github.com/rust-lang/libc", rev = "a0f5b4b21391252fe38b2df9310dc65e37b07d9f", features = ["extra_traits", "const-extern-fn"] }
 bitflags = "2.3.1"
 cfg-if = "1.0"
 pin-utils = { version = "0.1.0", optional = true }
