@@ -4,6 +4,36 @@ use libc::c_int;
 libc_bitflags!(
     /// Used with [`Nmount::nmount`].
     pub struct MntFlags: c_int {
+        /// Do not interpret special files on the filesystem.
+        MNT_NODEV;
+        /// file system supports content protection
+        MNT_CPROTECT;
+        /// filesystem is stored locally
+        MNT_QUARANTINE;
+        /// filesystem is stored locally
+        MNT_LOCAL;
+        /// quotas are enabled on filesystem
+        MNT_QUOTA;
+        /// identifies the root filesystem
+        MNT_ROOTFS;
+        /// FS supports volfs (deprecated flag in Mac OS X 10.5)
+        MNT_DOVOLFS;
+        /// file system is not appropriate path to user data
+        MNT_DONTBROWSE;
+        /// VFS will ignore ownership information on filesystem objects
+        MNT_IGNORE_OWNERSHIP;
+        /// filesystem was mounted by automounter
+        MNT_AUTOMOUNTED;
+        /// filesystem is journaled
+        MNT_JOURNALED;
+        /// Don't allow user extended attributes 
+        MNT_NOUSERXATTR;
+        /// filesystem should defer writes 
+        MNT_DEFWRITE;
+        /// don't block unmount if not responding
+        MNT_NOBLOCK;
+        /// file system is exported
+        MNT_EXPORTED;
         /// All I/O to the file system should be done asynchronously.
         MNT_ASYNC;
         /// Force a read-write mount even if the file system appears to be
@@ -11,12 +41,6 @@ libc_bitflags!(
         MNT_FORCE;
         /// MAC support for objects.
         MNT_MULTILABEL;
-        /// Disable read clustering.
-        #[cfg(freebsdlike)]
-        MNT_NOCLUSTERR;
-        /// Disable write clustering.
-        #[cfg(freebsdlike)]
-        MNT_NOCLUSTERW;
         /// Do not update access times.
         MNT_NOATIME;
         /// Disallow program execution.
@@ -41,19 +65,6 @@ libc_bitflags!(
     }
 );
 
-
-libc_bitflags!(
-    /// Used with [`mount`].
-    pub struct MsFlags: c_int {
-        MS_ASYNC;
-        MS_INVALIDATE;
-        MS_SYNC;
-        MS_KILLPAGES;
-        MS_DEACTIVATE;
-    }
-);
-
-
 /// Mount a file system.
 ///
 /// # Arguments
@@ -71,7 +82,7 @@ pub fn mount<
     source: Option<&P1>,
     target: &P2,
     fstype: Option<&P3>,
-    flags: MsFlags,
+    flags: MntFlags,
     data: Option<&P4>,
 ) -> Result<()> {
     fn with_opt_nix_path<P, T, F>(p: Option<&P>, f: F) -> Result<T>
