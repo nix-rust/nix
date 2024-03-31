@@ -73,17 +73,17 @@ libc_bitflags!(
 /// - `flags` -     Optional flags controlling the mount.
 /// - `data` -      Optional file system specific data.
 ///
+/// # see also
+/// [`mount`](https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man2/mount.2.html]
 pub fn mount<
     P1: ?Sized + NixPath,
     P2: ?Sized + NixPath,
     P3: ?Sized + NixPath,
-    P4: ?Sized + NixPath,
 >(
-    source: Option<&P1>,
+    source: &P1,
     target: &P2,
-    fstype: Option<&P3>,
     flags: MntFlags,
-    data: Option<&P4>,
+    data: Option<&P3>,
 ) -> Result<()> {
     fn with_opt_nix_path<P, T, F>(p: Option<&P>, f: F) -> Result<T>
     where
@@ -96,26 +96,24 @@ pub fn mount<
         }
     }
 
-    let res = with_opt_nix_path(source, |s| {
+    let res = source.with_nix_path(|s|
         target.with_nix_path(|t| {
-            with_opt_nix_path(fstype, |_| {
-                with_opt_nix_path(data, |d| unsafe {
-                    libc::mount(
-                        s,
-                        t.as_ptr(),
-                        flags.bits(),
-                        d as *mut libc::c_void,
-                    )
-                })
+            with_opt_nix_path(data, |d| unsafe {
+                println!("mounting {:?} to {:?}", s, t);
+                libc::mount(
+                    s.as_ptr(),
+                    t.as_ptr(),
+                    flags.bits(),
+                    d as *mut libc::c_void,
+                )
             })
-        })
-    })????;
+        }))???;
 
     Errno::result(res).map(drop)
 }
 
-/// Unmount the file system mounted at `target`.
-pub fn unmount<P>(mountpoint: &P, flags: MntFlags) -> Result<()>
+/// Umount the file system mounted at `target`.
+pub fn umount<P>(mountpoint: &P, flags: MntFlags) -> Result<()>
 where
     P: ?Sized + NixPath,
 {
