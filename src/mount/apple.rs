@@ -74,7 +74,7 @@ libc_bitflags!(
 /// - `data` -      Optional file system specific data.
 ///
 /// # see also
-/// [`mount`](https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man2/mount.2.html]
+/// [`mount`](https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man2/mount.2.html)
 pub fn mount<
     P1: ?Sized + NixPath,
     P2: ?Sized + NixPath,
