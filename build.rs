@@ -15,6 +15,7 @@ fn main() {
         watchos: { target_os = "watchos" },
         tvos: { target_os = "tvos" },
         visionos: { target_os = "visionos" },
+        nto_qnx: { target_os = "nto"},
 
 
         // cfg aliases we would like to use

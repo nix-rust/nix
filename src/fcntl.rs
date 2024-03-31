@@ -459,18 +459,26 @@ fn readlink_maybe_at<P: ?Sized + NixPath>(
         match dirfd {
             #[cfg(target_os = "redox")]
             Some(_) => unreachable!(),
-            #[cfg(not(target_os = "redox"))]
+            #[cfg(not(any(target_os = "redox", target_os = "nto")))]
             Some(dirfd) => libc::readlinkat(
                 dirfd,
                 cstr.as_ptr(),
                 v.as_mut_ptr().cast(),
                 v.capacity() as size_t,
-            ) as _,
+            ),
+            // On Neutrino QNX, libc::readlinkat returns an `int` instead of ssize_t
+            #[cfg(target_os = "nto")]
+            Some(dirfd) => libc::readlinkat(
+                dirfd,
+                cstr.as_ptr(),
+                v.as_mut_ptr().cast(),
+                v.capacity() as size_t,
+            ) as libc::ssize_t,
             None => libc::readlink(
                 cstr.as_ptr(),
                 v.as_mut_ptr().cast(),
                 v.capacity() as size_t,
-            ) as _,
+            ),
         }
     })
 }
