@@ -185,6 +185,14 @@ pub mod unistd;
 #[cfg(any(feature = "poll", feature = "event"))]
 mod poll_timeout;
 
+#[cfg(any(
+    target_os = "freebsd",
+    target_os = "haiku",
+    target_os = "linux",
+    target_os = "netbsd",
+    target_os = "macos",
+    target_os = "ios"
+))]
 feature! {
     #![feature = "process"]
     pub mod spawn;
