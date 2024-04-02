@@ -2031,6 +2031,18 @@ pub enum PathconfVar {
     /// queue; therefore, the maximum number of bytes a conforming application
     /// may require to be typed as input before reading them.
     MAX_INPUT = libc::_PC_MAX_INPUT,
+    #[cfg(any(
+        solarish,
+        freebsdlike,
+        target_os = "netbsd",
+    ))]
+    /// If a file system supports the reporting of holes (see lseek(2)),
+    /// pathconf() and fpathconf() return a positive number that represents the
+    /// minimum hole size returned in bytes.  The offsets of holes returned will
+    /// be aligned to this same value.  A special value of 1 is returned if the
+    /// file system does not specify the minimum hole size but still reports
+    /// holes.
+    MIN_HOLE_SIZE = libc::_PC_MIN_HOLE_SIZE,
     /// Maximum number of bytes in a filename (not including the terminating
     /// null of a filename string).
     NAME_MAX = libc::_PC_NAME_MAX,
