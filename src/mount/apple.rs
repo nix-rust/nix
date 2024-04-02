@@ -24,9 +24,9 @@ libc_bitflags!(
         MNT_AUTOMOUNTED;
         /// filesystem is journaled
         MNT_JOURNALED;
-        /// Don't allow user extended attributes 
+        /// Don't allow user extended attributes
         MNT_NOUSERXATTR;
-        /// filesystem should defer writes 
+        /// filesystem should defer writes
         MNT_DEFWRITE;
         /// don't block unmount if not responding
         MNT_NOBLOCK;
@@ -93,17 +93,18 @@ pub fn mount<
         }
     }
 
-    let res = source.with_nix_path(|s|
+    let res = source.with_nix_path(|s| {
         target.with_nix_path(|t| {
             with_opt_nix_path(data, |d| unsafe {
                 libc::mount(
                     s.as_ptr(),
                     t.as_ptr(),
                     flags.bits(),
-                    d.cast_mut() as *mut libc::c_void,
+                    d.cast_mut().cast(),
                 )
             })
-        }))???;
+        })
+    })???;
 
     Errno::result(res).map(drop)
 }
