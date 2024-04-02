@@ -2,13 +2,13 @@ use crate::{Errno, NixPath, Result};
 use libc::c_int;
 
 libc_bitflags!(
-    /// Used with [`Nmount::nmount`].
+    /// Used with [`mount()`] and [`unmount()`].
     pub struct MntFlags: c_int {
         /// Do not interpret special files on the filesystem.
         MNT_NODEV;
-        /// file system supports content protection
+        /// Enable data protection on the filesystem if the filesystem is configured for it.
         MNT_CPROTECT;
-        /// filesystem is stored locally
+        /// file system is quarantined
         MNT_QUARANTINE;
         /// filesystem is stored locally
         MNT_LOCAL;
@@ -16,8 +16,6 @@ libc_bitflags!(
         MNT_QUOTA;
         /// identifies the root filesystem
         MNT_ROOTFS;
-        /// FS supports volfs (deprecated flag in Mac OS X 10.5)
-        MNT_DOVOLFS;
         /// file system is not appropriate path to user data
         MNT_DONTBROWSE;
         /// VFS will ignore ownership information on filesystem objects
@@ -34,7 +32,7 @@ libc_bitflags!(
         MNT_NOBLOCK;
         /// file system is exported
         MNT_EXPORTED;
-        /// All I/O to the file system should be done asynchronously.
+        /// file system written asynchronously
         MNT_ASYNC;
         /// Force a read-write mount even if the file system appears to be
         /// unclean.
@@ -53,7 +51,6 @@ libc_bitflags!(
         /// the specified already mounted file system.
         MNT_RELOAD;
         /// Create a snapshot of the file system.
-        ///
         MNT_SNAPSHOT;
         /// All I/O to the file system should be done synchronously.
         MNT_SYNCHRONOUS;
@@ -99,12 +96,11 @@ pub fn mount<
     let res = source.with_nix_path(|s|
         target.with_nix_path(|t| {
             with_opt_nix_path(data, |d| unsafe {
-                println!("mounting {:?} to {:?}", s, t);
                 libc::mount(
                     s.as_ptr(),
                     t.as_ptr(),
                     flags.bits(),
-                    d as *mut libc::c_void,
+                    d.cast_mut() as *mut libc::c_void,
                 )
             })
         }))???;
@@ -113,11 +109,11 @@ pub fn mount<
 }
 
 /// Umount the file system mounted at `target`.
-pub fn umount<P>(mountpoint: &P, flags: MntFlags) -> Result<()>
+pub fn unmount<P>(target: &P, flags: MntFlags) -> Result<()>
 where
     P: ?Sized + NixPath,
 {
-    let res = mountpoint.with_nix_path(|cstr| unsafe {
+    let res = target.with_nix_path(|cstr| unsafe {
         libc::unmount(cstr.as_ptr(), flags.bits())
     })?;
 

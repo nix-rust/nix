@@ -5,7 +5,7 @@ mod linux;
 #[cfg(linux_android)]
 pub use self::linux::*;
 
-#[cfg(bsd_without_macos)]
+#[cfg(bsd_without_apple)]
 mod bsd;
 
 #[cfg(bsd_without_macos)]
