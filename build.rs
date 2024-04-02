@@ -19,6 +19,7 @@ fn main() {
         // cfg aliases we would like to use
         apple_targets: { any(ios, macos, watchos, tvos) },
         bsd: { any(freebsd, dragonfly, netbsd, openbsd, apple_targets) },
+        bsd_without_apple: { any(freebsd, dragonfly, netbsd, openbsd) },
         linux_android: { any(android, linux) },
         freebsdlike: { any(dragonfly, freebsd) },
         netbsdlike: { any(netbsd, openbsd) },

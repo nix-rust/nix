@@ -4,6 +4,7 @@ extern crate cfg_if;
 extern crate nix;
 
 mod common;
+mod mount;
 mod sys;
 #[cfg(not(target_os = "redox"))]
 mod test_dir;
@@ -11,8 +12,6 @@ mod test_errno;
 mod test_fcntl;
 #[cfg(linux_android)]
 mod test_kmod;
-#[cfg(target_os = "linux")]
-mod test_mount;
 #[cfg(any(
     freebsdlike,
     target_os = "fushsia",
@@ -23,8 +22,6 @@ mod test_mq;
 #[cfg(not(target_os = "redox"))]
 mod test_net;
 mod test_nix_path;
-#[cfg(target_os = "freebsd")]
-mod test_nmount;
 mod test_poll;
 #[cfg(not(any(
     target_os = "redox",
