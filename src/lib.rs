@@ -366,6 +366,10 @@ impl NixPath for PathBuf {
 /// Like `NixPath::with_nix_path()`, but allow the `path` argument to be optional.
 ///
 /// A NULL pointer will be provided if `path.is_none()`.
+#[cfg(any(
+    all(apple_targets, feature = "mount"),
+    all(target_os = "linux", any(feature = "mount", feature = "fanotify"))
+))]
 pub(crate) fn with_opt_nix_path<P, T, F>(path: Option<&P>, f: F) -> Result<T>
 where
     P: ?Sized + NixPath,
