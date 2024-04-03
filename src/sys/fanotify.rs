@@ -313,18 +313,7 @@ impl Fanotify {
         dirfd: Option<RawFd>,
         path: Option<&P>,
     ) -> Result<()> {
-        fn with_opt_nix_path<P, T, F>(p: Option<&P>, f: F) -> Result<T>
-        where
-            P: ?Sized + NixPath,
-            F: FnOnce(*const libc::c_char) -> T,
-        {
-            match p {
-                Some(path) => path.with_nix_path(|p_str| f(p_str.as_ptr())),
-                None => Ok(f(std::ptr::null())),
-            }
-        }
-
-        let res = with_opt_nix_path(path, |p| unsafe {
+        let res = crate::with_opt_nix_path(path, |p| unsafe {
             libc::fanotify_mark(
                 self.fd.as_raw_fd(),
                 flags.bits(),
