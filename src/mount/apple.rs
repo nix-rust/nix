@@ -82,20 +82,9 @@ pub fn mount<
     flags: MntFlags,
     data: Option<&P3>,
 ) -> Result<()> {
-    fn with_opt_nix_path<P, T, F>(p: Option<&P>, f: F) -> Result<T>
-    where
-        P: ?Sized + NixPath,
-        F: FnOnce(*const libc::c_char) -> T,
-    {
-        match p {
-            Some(path) => path.with_nix_path(|p_str| f(p_str.as_ptr())),
-            None => Ok(f(std::ptr::null())),
-        }
-    }
-
     let res = source.with_nix_path(|s| {
         target.with_nix_path(|t| {
-            with_opt_nix_path(data, |d| unsafe {
+            crate::with_opt_nix_path(data, |d| unsafe {
                 libc::mount(
                     s.as_ptr(),
                     t.as_ptr(),
