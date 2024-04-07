@@ -17,9 +17,10 @@ use nix::unistd::{pause, write};
 fn test_ptsname_equivalence() {
     let _m = crate::PTSNAME_MTX.lock();
 
-    // Open a new PTTY master
+    // Open a new PTY master
     let master_fd = posix_openpt(OFlag::O_RDWR).unwrap();
     assert!(master_fd.as_raw_fd() > 0);
+    assert!(master_fd.as_fd().as_raw_fd() == master_fd.as_raw_fd());
 
     // Get the name of the slave
     let slave_name = unsafe { ptsname(&master_fd) }.unwrap();

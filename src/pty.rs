@@ -58,6 +58,12 @@ impl AsRawFd for PtyMaster {
     }
 }
 
+impl AsFd for PtyMaster {
+    fn as_fd(&self) -> BorrowedFd<'_> {
+        self.0.as_fd()
+    }
+}
+
 impl IntoRawFd for PtyMaster {
     fn into_raw_fd(self) -> RawFd {
         let fd = self.0;
