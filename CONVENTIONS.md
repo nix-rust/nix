@@ -135,3 +135,20 @@ If you want to add a test for a feature that is in `xxx.rs`, then the test shoul
 be put in the corresponding `test_xxx.rs` file unless you cannot do this, e.g.,
 the test involves private stuff and thus cannot be added outside of Nix, then
 it is allowed to leave the test in `xxx.rs`.
+
+## Syscall/libc function error handling
+
+Most syscall and libc functions return an [`ErrnoSentinel`][trait] value on error,
+we has a nice utility function [`Errno::result()`][util] to convert it to the 
+Rusty `Result<T, Errno>` type, e.g., here is how `dup(2)` uses it:
+
+```rs
+pub fn dup(oldfd: RawFd) -> Result<RawFd> {
+    let res = unsafe { libc::dup(oldfd) };
+
+    Errno::result(res)
+}
+```
+
+[trait]: https://docs.rs/nix/latest/nix/errno/trait.ErrnoSentinel.html
+[util]: https://docs.rs/nix/latest/nix/errno/enum.Errno.html#method.result
