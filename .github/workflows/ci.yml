@@ -292,16 +292,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Temporarily disable DragonFlyBSD
-          # https://github.com/nix-rust/nix/issues/2337
-          # - target: x86_64-unknown-dragonfly
+          - target: x86_64-unknown-dragonfly
           - target: x86_64-unknown-openbsd
           # Temporarily disable armv7-unknown-linux-uclibceabihf
           # https://github.com/nix-rust/nix/issues/2200
           #- target: armv7-unknown-linux-uclibceabihf
-          # Temporarily disable x86_64-unknown-haiku
-          # https://github.com/nix-rust/nix/issues/2350
-          #- target: x86_64-unknown-haiku
+          - target: x86_64-unknown-haiku
           # Disable hurd due to
           # https://github.com/nix-rust/nix/issues/2306
           # - target: i686-unknown-hurd-gnu
