@@ -16,7 +16,7 @@ env:
   MSRV: 1.69.0
 
 jobs:
-  check_changelog:
+  check_new_changelog:
     runs-on: ubuntu-20.04
     steps:
       - name: checkout
