@@ -22,7 +22,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v4
 
-      - name: check CHANGELOG
+      - name: check new CHANGELOG
         uses: ./.github/actions/check_new_changelog
 
   macos:
