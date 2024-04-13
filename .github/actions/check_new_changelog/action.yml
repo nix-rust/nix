@@ -1,5 +1,5 @@
-name: 'Check CHANGELOG'
-description: 'Check CHANGELOG kind and PR number'
+name: 'Check new CHANGELOG'
+description: 'Check new CHANGELOG kind and PR number'
 
 runs:
   using: "composite"
@@ -11,7 +11,7 @@ runs:
         # Only checek the files under the `changelog` directory 
         files: changelog/** 
 
-    - name: List added CHANGELOGs
+    - name: Check them
       shell: bash
       if: steps.new-changelogs.outputs.added_files_count != 0
       env:
