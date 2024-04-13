@@ -16,6 +16,14 @@ env:
   MSRV: 1.69.0
 
 jobs:
+  check_new_changelog:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: check new CHANGELOG
+        uses: ./.github/actions/check_new_changelog
 
   macos:
     runs-on: macos-13

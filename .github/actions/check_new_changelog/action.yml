@@ -1,0 +1,42 @@
+name: 'Check new CHANGELOG'
+description: 'Check new CHANGELOG kind and PR number'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Get newly added CHANGELOGs
+      id: new-changelogs
+      uses: tj-actions/changed-files@v44
+      with:
+        # Only checek the files under the `changelog` directory 
+        files: changelog/** 
+
+    - name: Check them
+      shell: bash
+      if: steps.new-changelogs.outputs.added_files_count != 0
+      env:
+        NEW_CHANGELOGS: ${{ steps.new-changelogs.outputs.added_files }}
+        PR_NUMBER: ${{ github.event.number }}
+      run: |
+        for cl in ${NEW_CHANGELOGS}; do
+          # parse it
+          IFS='.' read id kind file_extension <<< "${cl}"
+
+          # Check the kind field
+          if [ "$kind" != "added" ] && [ "$kind" != "changed" ] && [ "$kind" != "fixed" ] && [ "$kind" != "removed" ]; then
+            echo "Invalid CHANGELOG kind [${kind}] from [${cl}], available options are [added, changed, fixed, removed]";
+            exit 1;
+          fi
+
+          # Check the file extension
+          if [ "$file_extension" != "md" ]; then
+            echo "Invalid file extension [${file_extension}] from [${cl}], it should be [md]";
+            exit 1;
+          fi
+
+          # Check PR number
+          if [ "$id" != "$PR_NUMBER" ]; then
+            echo "Mismatched PR number [${id}] from [${cl}], it should be ${PR_NUMBER}";
+            exit 1;
+          fi
+        done
