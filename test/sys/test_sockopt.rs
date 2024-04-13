@@ -832,6 +832,8 @@ fn test_ktls() {
 #[test]
 #[cfg(apple_targets)]
 fn test_utun_ifname() {
+    skip_if_not_root!("test_utun_ifname");
+
     use nix::sys::socket::connect;
     use nix::sys::socket::SysControlAddr;
 

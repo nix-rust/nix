@@ -3,6 +3,7 @@ extern crate cfg_if;
 #[cfg_attr(not(any(target_os = "redox", target_os = "haiku")), macro_use)]
 extern crate nix;
 
+#[macro_use]
 mod common;
 mod mount;
 mod sys;
