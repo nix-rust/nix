@@ -16,6 +16,11 @@ env:
   MSRV: 1.69.0
 
 jobs:
+  check_changelog:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: chceck CHANGELOG
+        uses: ./.github/actions/check_changelog
 
   macos:
     runs-on: macos-13
