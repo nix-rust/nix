@@ -19,7 +19,10 @@ jobs:
   check_changelog:
     runs-on: ubuntu-20.04
     steps:
-      - name: chceck CHANGELOG
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: check CHANGELOG
         uses: ./.github/actions/check_changelog
 
   macos:
