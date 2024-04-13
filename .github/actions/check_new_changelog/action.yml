@@ -18,7 +18,11 @@ runs:
         NEW_CHANGELOGS: ${{ steps.new-changelogs.outputs.added_files }}
         PR_NUMBER: ${{ github.event.number }}
       run: |
+        # `cl` will be something like "changelog/1.added.md"
         for cl in ${NEW_CHANGELOGS}; do
+          # Trim the directory name
+          prefix="changelog/"; trimmed_cl=${cl/#$prefix}; cl="${trimmed_cl}";
+
           # parse it
           IFS='.' read id kind file_extension <<< "${cl}"
 
