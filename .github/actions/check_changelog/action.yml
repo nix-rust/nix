@@ -12,6 +12,7 @@ runs:
         files: changelog/** 
 
     - name: List added CHANGELOGs
+      shell: bash
       if: steps.new-changelogs.outputs.added_files_count != 0
       env:
         NEW_CHANGELOGS: ${{ steps.new-changelogs.outputs.added_files }}
