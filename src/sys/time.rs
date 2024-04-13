@@ -12,8 +12,6 @@ const fn zero_init_timespec() -> timespec {
     unsafe { std::mem::transmute([0u8; std::mem::size_of::<timespec>()]) }
 }
 
-// false positive, see: https://github.com/rust-lang/rust-clippy/issues/12537
-#[allow(clippy::duplicated_attributes)]
 #[cfg(any(
     all(feature = "time", any(target_os = "android", target_os = "linux")),
     all(
