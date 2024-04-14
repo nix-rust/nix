@@ -1,7 +1,7 @@
 #[cfg(all(
     target_os = "linux",
-    any(target_arch = "x86_64", target_arch = "x86"),
-    target_env = "gnu"
+    target_env = "gnu",
+    any(target_arch = "x86_64", target_arch = "x86")
 ))]
 use memoffset::offset_of;
 use nix::errno::Errno;
@@ -179,8 +179,13 @@ fn test_ptrace_interrupt() {
 // ptrace::{setoptions, getregs} are only available in these platforms
 #[cfg(all(
     target_os = "linux",
-    any(target_arch = "x86_64", target_arch = "x86"),
-    target_env = "gnu"
+    target_env = "gnu",
+    any(
+        target_arch = "x86_64",
+        target_arch = "x86",
+        target_arch = "aarch64",
+        target_arch = "riscv64",
+    )
 ))]
 #[test]
 fn test_ptrace_syscall() {
@@ -226,12 +231,21 @@ fn test_ptrace_syscall() {
             let get_syscall_id =
                 || ptrace::getregs(child).unwrap().orig_eax as libc::c_long;
 
+            #[cfg(target_arch = "aarch64")]
+            let get_syscall_id =
+                || ptrace::getregs(child).unwrap().regs[8] as libc::c_long;
+
+            #[cfg(target_arch = "riscv64")]
+            let get_syscall_id =
+                || ptrace::getregs(child).unwrap().a7 as libc::c_long;
+
             // this duplicates `get_syscall_id` for the purpose of testing `ptrace::read_user`.
             #[cfg(target_arch = "x86_64")]
             let rax_offset = offset_of!(libc::user_regs_struct, orig_rax);
             #[cfg(target_arch = "x86")]
             let rax_offset = offset_of!(libc::user_regs_struct, orig_eax);
 
+            #[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
             let get_syscall_from_user_area = || {
                 // Find the offset of `user.regs.rax` (or `user.regs.eax` for x86)
                 let rax_offset = offset_of!(libc::user, regs) + rax_offset;
@@ -246,6 +260,7 @@ fn test_ptrace_syscall() {
                 Ok(WaitStatus::PtraceSyscall(child))
             );
             assert_eq!(get_syscall_id(), ::libc::SYS_kill);
+            #[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
             assert_eq!(get_syscall_from_user_area(), ::libc::SYS_kill);
 
             // kill exit
@@ -255,6 +270,7 @@ fn test_ptrace_syscall() {
                 Ok(WaitStatus::PtraceSyscall(child))
             );
             assert_eq!(get_syscall_id(), ::libc::SYS_kill);
+            #[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
             assert_eq!(get_syscall_from_user_area(), ::libc::SYS_kill);
 
             // receive signal
@@ -270,6 +286,79 @@ fn test_ptrace_syscall() {
                 waitpid(child, None),
                 Ok(WaitStatus::Signaled(child, Signal::SIGTERM, false))
             );
+        }
+    }
+}
+
+#[cfg(all(
+    target_os = "linux",
+    target_env = "gnu",
+    any(
+        target_arch = "x86_64",
+        target_arch = "x86",
+        target_arch = "aarch64",
+        target_arch = "riscv64",
+    )
+))]
+#[test]
+fn test_ptrace_regsets() {
+    use nix::sys::ptrace::{self, getregset, setregset, RegisterSet};
+    use nix::sys::signal::*;
+    use nix::sys::wait::{waitpid, WaitStatus};
+    use nix::unistd::fork;
+    use nix::unistd::ForkResult::*;
+
+    require_capability!("test_ptrace_regsets", CAP_SYS_PTRACE);
+
+    let _m = crate::FORK_MTX.lock();
+
+    match unsafe { fork() }.expect("Error: Fork Failed") {
+        Child => {
+            ptrace::traceme().unwrap();
+            // As recommended by ptrace(2), raise SIGTRAP to pause the child
+            // until the parent is ready to continue
+            loop {
+                raise(Signal::SIGTRAP).unwrap();
+            }
+        }
+
+        Parent { child } => {
+            assert_eq!(
+                waitpid(child, None),
+                Ok(WaitStatus::Stopped(child, Signal::SIGTRAP))
+            );
+            let mut regstruct =
+                getregset(child, RegisterSet::NT_PRSTATUS).unwrap();
+
+            #[cfg(target_arch = "x86_64")]
+            let reg = &mut regstruct.r15;
+            #[cfg(target_arch = "x86")]
+            let reg = &mut regstruct.edx;
+            #[cfg(target_arch = "aarch64")]
+            let reg = &mut regstruct.regs[16];
+            #[cfg(target_arch = "riscv64")]
+            let reg = &mut regstruct.regs[16];
+
+            *reg = 0xdeadbeefu32 as _;
+            let _ = setregset(child, RegisterSet::NT_PRSTATUS, regstruct);
+            regstruct = getregset(child, RegisterSet::NT_PRSTATUS).unwrap();
+
+            #[cfg(target_arch = "x86_64")]
+            let reg = regstruct.r15;
+            #[cfg(target_arch = "x86")]
+            let reg = regstruct.edx;
+            #[cfg(target_arch = "aarch64")]
+            let reg = regstruct.regs[16];
+            #[cfg(target_arch = "riscv64")]
+            let reg = regstruct.regs[16];
+            assert_eq!(reg, 0xdeadbeefu32 as _);
+
+            ptrace::cont(child, Some(Signal::SIGKILL)).unwrap();
+            match waitpid(child, None) {
+                Ok(WaitStatus::Signaled(pid, Signal::SIGKILL, _))
+                    if pid == child => {}
+                _ => panic!("The process should have been killed"),
+            }
         }
     }
 }
