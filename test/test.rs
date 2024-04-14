@@ -59,7 +59,7 @@ fn read_exact<Fd: AsFd>(f: Fd, buf: &mut [u8]) {
 
 /// Any test that creates child processes must grab this mutex, regardless
 /// of what it does with those children.
-pub static FORK_MTX: std::sync::Mutex<()> = std::sync::Mutex::new(());
+pub static FORK_MTX: Mutex<()> = Mutex::new(());
 /// Any test that changes the process's current working directory must grab
 /// the RwLock exclusively.  Any process that cares about the current
 /// working directory must grab it shared.
