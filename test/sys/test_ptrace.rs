@@ -302,7 +302,7 @@ fn test_ptrace_syscall() {
 ))]
 #[test]
 fn test_ptrace_regsets() {
-    use nix::sys::ptrace::{self, getregset, setregset, RegisterSet};
+    use nix::sys::ptrace::{self, getregset, regset, setregset};
     use nix::sys::signal::*;
     use nix::sys::wait::{waitpid, WaitStatus};
     use nix::unistd::fork;
@@ -328,30 +328,39 @@ fn test_ptrace_regsets() {
                 Ok(WaitStatus::Stopped(child, Signal::SIGTRAP))
             );
             let mut regstruct =
-                getregset(child, RegisterSet::NT_PRSTATUS).unwrap();
+                getregset::<regset::NT_PRSTATUS>(child).unwrap();
+            let mut fpregstruct =
+                getregset::<regset::NT_PRFPREG>(child).unwrap();
 
             #[cfg(target_arch = "x86_64")]
-            let reg = &mut regstruct.r15;
+            let (reg, fpreg) =
+                (&mut regstruct.r15, &mut fpregstruct.st_space[5]);
             #[cfg(target_arch = "x86")]
-            let reg = &mut regstruct.edx;
+            let (reg, fpreg) =
+                (&mut regstruct.edx, &mut fpregstruct.st_space[5]);
             #[cfg(target_arch = "aarch64")]
-            let reg = &mut regstruct.regs[16];
+            let (reg, fpreg) =
+                (&mut regstruct.regs[16], &mut fpregstruct.vregs[5]);
             #[cfg(target_arch = "riscv64")]
-            let reg = &mut regstruct.regs[16];
+            let (reg, fpreg) = (&mut regstruct.t1, &mut fpregstruct.__f[5]);
 
             *reg = 0xdeadbeefu32 as _;
-            let _ = setregset(child, RegisterSet::NT_PRSTATUS, regstruct);
-            regstruct = getregset(child, RegisterSet::NT_PRSTATUS).unwrap();
+            *fpreg = 0xfeedfaceu32 as _;
+            let _ = setregset::<regset::NT_PRSTATUS>(child, regstruct);
+            regstruct = getregset::<regset::NT_PRSTATUS>(child).unwrap();
+            let _ = setregset::<regset::NT_PRFPREG>(child, fpregstruct);
+            fpregstruct = getregset::<regset::NT_PRFPREG>(child).unwrap();
 
             #[cfg(target_arch = "x86_64")]
-            let reg = regstruct.r15;
+            let (reg, fpreg) = (regstruct.r15, fpregstruct.st_space[5]);
             #[cfg(target_arch = "x86")]
-            let reg = regstruct.edx;
+            let (reg, fpreg) = (regstruct.edx, fpregstruct.st_space[5]);
             #[cfg(target_arch = "aarch64")]
-            let reg = regstruct.regs[16];
+            let (reg, fpreg) = (regstruct.regs[16], fpregstruct.vregs[5]);
             #[cfg(target_arch = "riscv64")]
-            let reg = regstruct.regs[16];
+            let (reg, fpreg) = (regstruct.t1, fpregstruct.__f[5]);
             assert_eq!(reg, 0xdeadbeefu32 as _);
+            assert_eq!(fpreg, 0xfeedfaceu32 as _);
 
             ptrace::cont(child, Some(Signal::SIGKILL)).unwrap();
             match waitpid(child, None) {
