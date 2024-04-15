@@ -165,7 +165,7 @@ libc_bitflags!(
         #[cfg(any(target_os = "linux", netbsdlike))]
         O_RSYNC;
         /// Skip search permission checks.
-        #[cfg(target_os = "netbsd")]
+        #[cfg(any(target_os = "netbsd"), freebsd, solarish)]
         O_SEARCH;
         /// Open with a shared file lock.
         #[cfg(any(bsd, target_os = "redox"))]
