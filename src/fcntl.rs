@@ -164,7 +164,8 @@ libc_bitflags!(
         /// Similar to `O_DSYNC` but applies to `read`s instead.
         #[cfg(any(target_os = "linux", netbsdlike))]
         O_RSYNC;
-        /// Skip search permission checks.
+        /// Open directory for search only. Skip search permission checks on
+        /// later `openat()` calls using the obtained file descriptor.
         #[cfg(any(target_os = "netbsd"), freebsd, solarish)]
         O_SEARCH;
         /// Open with a shared file lock.
