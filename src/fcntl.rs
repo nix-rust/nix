@@ -166,7 +166,7 @@ libc_bitflags!(
         O_RSYNC;
         /// Open directory for search only. Skip search permission checks on
         /// later `openat()` calls using the obtained file descriptor.
-        #[cfg(any(target_os = "netbsd", freebsd, solarish))]
+        #[cfg(any(target_os = "netbsd", freebsd, solarish, target_os = "fuchsia"))]
         O_SEARCH;
         /// Open with a shared file lock.
         #[cfg(any(bsd, target_os = "redox"))]
