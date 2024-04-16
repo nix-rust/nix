@@ -1,0 +1,32 @@
+name: 'Test repeated'
+description: 'Test nix repeated'
+inputs:
+  # This is required
+  TARGET:
+    required: true
+
+  SUDO:
+    description: 'Set it to an empty string to run the tests as the current user, leave it with the default value to test with "sudo"'
+    required: false
+    default: sudo --preserve-env=HOME 
+
+  TOOL: 
+    description: 'Tool used to involve the test command, can be cargo or cross'
+    required: false
+    default: cargo
+
+  RUSTFLAGS: 
+    required: false
+    default: -D warnings -A unknown-lints
+
+runs:
+  using: "composite"
+  steps:
+    - name: set up Rust env
+      shell: bash
+      run: |
+        echo "RUSTFLAGS=${{ inputs.RUSTFLAGS }}" >> $GITHUB_ENV
+
+    - name: test more
+      shell: bash
+      run: for i in $(seq 50); do ${{ inputs.SUDO }} $(which ${{ inputs.TOOL }}) test --target ${{ inputs.TARGET }} --all-features ; done
