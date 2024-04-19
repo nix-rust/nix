@@ -321,6 +321,28 @@ pub fn fchmodat<P: ?Sized + NixPath>(
     Errno::result(res).map(drop)
 }
 
+/// Change the file permission bits of the file specified by a file descriptor.
+///
+/// # References
+///
+/// [lchmod(3)](https://man.freebsd.org/cgi/man.cgi?query=lchmod&sektion=2).
+#[cfg(any(
+    target_os = "macos",
+    freebsdlike,
+    target_os = "openbsd",
+))]
+pub fn lchmod<P: ?Sized + NixPath>(path: P, mode: Mode) -> Result<()> {
+    extern "C" {
+        fn lchmod(path: *const libc::c_char, mode: libc::mode_t) -> libc::c_int;
+    }
+
+    let res = path.with_nix_path(|cstr| unsafe {
+        lchmod(cstr.as_ptr(), mode.bits() as mode_t)
+    })?;
+
+    Errno::result(res).map(drop)
+}
+
 /// Change the access and modification times of a file.
 ///
 /// `utimes(path, times)` is identical to
