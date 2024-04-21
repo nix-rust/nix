@@ -1411,6 +1411,7 @@ pub fn fsync(fd: RawFd) -> Result<()> {
     linux_android,
     solarish,
     netbsdlike,
+    apple_targets,
     target_os = "freebsd",
     target_os = "emscripten",
     target_os = "fuchsia",
@@ -1419,7 +1420,18 @@ pub fn fsync(fd: RawFd) -> Result<()> {
 ))]
 #[inline]
 pub fn fdatasync(fd: RawFd) -> Result<()> {
-    let res = unsafe { libc::fdatasync(fd) };
+    cfg_if! {
+        // apple libc supports fdatasync too, albeit not being present in its headers
+        // [fdatasync](https://github.com/apple/darwin-xnu/blob/2ff845c2e033bd0ff64b5b6aa6063a1f8f65aa32/bsd/vfs/vfs_syscalls.c#L7728)
+        if #[cfg(apple_targets)] {
+            extern "C" {
+                fn fdatasync(fd: libc::c_int) -> libc::c_int;
+            }
+        } else {
+            use libc::fdatasync as fdatasync;
+        }
+    }
+    let res = unsafe { fdatasync(fd) };
 
     Errno::result(res).map(drop)
 }
