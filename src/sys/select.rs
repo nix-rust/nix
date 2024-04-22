@@ -7,7 +7,7 @@ use std::convert::TryFrom;
 use std::iter::FusedIterator;
 use std::mem;
 use std::ops::Range;
-use std::os::unix::io::{AsRawFd, BorrowedFd, RawFd};
+use std::os::unix::io::{AsFd, AsRawFd, BorrowedFd, RawFd};
 use std::ptr::{null, null_mut};
 
 pub use libc::FD_SETSIZE;
@@ -162,6 +162,24 @@ impl<'a, 'fd> DoubleEndedIterator for Fds<'a, 'fd> {
 }
 
 impl<'a, 'fd> FusedIterator for Fds<'a, 'fd> {}
+
+impl<'fd, F> FromIterator<F> for FdSet<'fd> where F: 'fd + AsFd {
+    fn from_iter<T>(iter: T) -> Self where T: IntoIterator<Item = F> {
+        let mut result = FdSet::new();
+        for fd in iter.into_iter() {
+            let fd = fd.as_fd();
+            assert_fd_valid(fd.as_raw_fd());
+            unsafe { libc::FD_SET(fd.as_raw_fd(), &mut result.set) };
+        }
+        result
+    }
+}
+
+impl<'fd, T, F> From<T> for FdSet<'fd> where T: IntoIterator<Item = F>, F: 'fd + AsFd {
+    fn from(value: T) -> Self {
+        value.into_iter().collect()
+    }
+}
 
 /// Monitors file descriptors for readiness
 ///
