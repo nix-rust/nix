@@ -296,10 +296,25 @@ fn test_select_nfds2() {
 fn test_fdset_from_iterable() {
     let (r1, w1) = pipe().unwrap();
     let (r2, w2) = pipe().unwrap();
-    let reads = [r1, r2].into_iter().map(|fd| (fd.as_raw_fd(), fd)).collect::<std::collections::HashMap<_, _>>();
+    let reads = [r1, r2]
+        .into_iter()
+        .map(|fd| (fd.as_raw_fd(), fd))
+        .collect::<std::collections::HashMap<_, _>>();
     let writes = vec![w1, w2];
     let reads_fdset: FdSet = reads.values().into();
     let writes_fdset: FdSet = writes.iter().into();
-    assert_eq!(reads_fdset.fds(None).map(|fd| fd.as_raw_fd()).collect::<std::collections::HashSet<_>>(), reads.values().map(|fd| fd.as_raw_fd()).collect());
-    assert_eq!(writes_fdset.fds(None).map(|fd| fd.as_raw_fd()).collect::<std::collections::HashSet<_>>(), writes.iter().map(|fd| fd.as_raw_fd()).collect());
+    assert_eq!(
+        reads_fdset
+            .fds(None)
+            .map(|fd| fd.as_raw_fd())
+            .collect::<std::collections::HashSet<_>>(),
+        reads.values().map(|fd| fd.as_raw_fd()).collect()
+    );
+    assert_eq!(
+        writes_fdset
+            .fds(None)
+            .map(|fd| fd.as_raw_fd())
+            .collect::<std::collections::HashSet<_>>(),
+        writes.iter().map(|fd| fd.as_raw_fd()).collect()
+    );
 }
