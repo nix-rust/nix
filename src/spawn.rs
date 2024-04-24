@@ -85,11 +85,11 @@ impl PosixSpawnAttr {
     /// Get spawn flags. See
     /// [posix_spawnattr_getflags](https://pubs.opengroup.org/onlinepubs/9699919799/functions/posix_spawnattr_getflags.html).
     #[doc(alias("posix_spawnattr_getflags"))]
-    pub fn flags(&mut self) -> Result<PosixSpawnFlags> {
+    pub fn flags(&self) -> Result<PosixSpawnFlags> {
         let mut flags: libc::c_short = 0;
         let res = unsafe {
             libc::posix_spawnattr_getflags(
-                &mut self.attr as *mut libc::posix_spawnattr_t,
+                &self.attr as *const libc::posix_spawnattr_t,
                 &mut flags,
             )
         };
@@ -120,12 +120,12 @@ impl PosixSpawnAttr {
     /// Get spawn pgroup. See
     /// [posix_spawnattr_getpgroup](https://pubs.opengroup.org/onlinepubs/9699919799/functions/posix_spawnattr_getpgroup.html).
     #[doc(alias("posix_spawnattr_getpgroup"))]
-    pub fn pgroup(&mut self) -> Result<Pid> {
+    pub fn pgroup(&self) -> Result<Pid> {
         let mut pid: libc::pid_t = 0;
 
         let res = unsafe {
             libc::posix_spawnattr_getpgroup(
-                &mut self.attr as *mut libc::posix_spawnattr_t,
+                &self.attr as *const libc::posix_spawnattr_t,
                 &mut pid,
             )
         };
@@ -158,12 +158,12 @@ impl PosixSpawnAttr {
     /// Get spawn sigdefault. See
     /// [posix_spawnattr_getsigdefault](https://pubs.opengroup.org/onlinepubs/9699919799/functions/posix_spawnattr_getsigdefault.html).
     #[doc(alias("posix_spawnattr_getsigdefault"))]
-    pub fn sigdefault(&mut self) -> Result<SigSet> {
+    pub fn sigdefault(&self) -> Result<SigSet> {
         let mut sigset = mem::MaybeUninit::uninit();
 
         let res = unsafe {
             libc::posix_spawnattr_getsigdefault(
-                &mut self.attr as *mut libc::posix_spawnattr_t,
+                &self.attr as *const libc::posix_spawnattr_t,
                 sigset.as_mut_ptr(),
             )
         };
@@ -196,12 +196,12 @@ impl PosixSpawnAttr {
     /// Get spawn sigmask. See
     /// [posix_spawnattr_getsigmask](https://pubs.opengroup.org/onlinepubs/9699919799/functions/posix_spawnattr_getsigmask.html).
     #[doc(alias("posix_spawnattr_getsigmask"))]
-    pub fn sigmask(&mut self) -> Result<SigSet> {
+    pub fn sigmask(&self) -> Result<SigSet> {
         let mut sigset = mem::MaybeUninit::uninit();
 
         let res = unsafe {
             libc::posix_spawnattr_getsigmask(
-                &mut self.attr as *mut libc::posix_spawnattr_t,
+                &self.attr as *const libc::posix_spawnattr_t,
                 sigset.as_mut_ptr(),
             )
         };
@@ -387,14 +387,19 @@ impl Drop for PosixSpawnFileActions {
     }
 }
 
-// Specifically for use with posix_spawn and posix_spawnp.
-// https://github.com/rust-lang/libc/issues/1272
+// The POSIX standard requires those `args` and `envp` to be of type `*const *mut [c_char]`,
+// but implementations won't modify them, making the `mut` type redundant. Considering this,
+// Nix does not expose this mutability, but we have to change the interface when calling the
+// underlying libc interfaces , this helper function does the conversion job.
+//
+// SAFETY:
+// It is safe to add the mutability in types as implementations won't mutable them.
 unsafe fn to_exec_array<S: AsRef<CStr>>(args: &[S]) -> Vec<*mut libc::c_char> {
     let mut v: Vec<*mut libc::c_char> = args
         .iter()
-        .map(|s| s.as_ref().as_ptr() as *mut libc::c_char)
+        .map(|s| s.as_ref().as_ptr().cast_mut())
         .collect();
-    v.push(std::ptr::null::<libc::c_char>() as *mut libc::c_char);
+    v.push(std::ptr::null_mut());
     v
 }
 

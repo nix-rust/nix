@@ -190,8 +190,7 @@ mod poll_timeout;
     target_os = "haiku",
     target_os = "linux",
     target_os = "netbsd",
-    target_os = "macos",
-    target_os = "ios"
+    apple_targets
 ))]
 feature! {
     #![feature = "process"]
