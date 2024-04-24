@@ -91,8 +91,6 @@ fn test_mount_rdonly_disallows_write() {
             .unwrap()
     );
 
-    // wait for child processes to prevent EBUSY
-    let _m = FORK_MTX.lock();
     umount(tempdir.path()).unwrap_or_else(|e| panic!("umount failed: {e}"));
 }
 
