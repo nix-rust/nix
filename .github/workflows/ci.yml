@@ -13,7 +13,7 @@ permissions:
   contents: read 
 
 env: 
-  MSRV: 1.69.0
+  MSRV: 1.71.0
 
 jobs:
   macos:
