@@ -357,15 +357,9 @@ mod linux_android {
 
         let (rd, wr) = pipe().unwrap();
         let mut offset: loff_t = 5;
-        let res = splice(
-            tmp.as_raw_fd(),
-            Some(&mut offset),
-            wr.as_raw_fd(),
-            None,
-            2,
-            SpliceFFlags::empty(),
-        )
-        .unwrap();
+        let res =
+            splice(tmp, Some(&mut offset), wr, None, 2, SpliceFFlags::empty())
+                .unwrap();
 
         assert_eq!(2, res);
 
@@ -381,9 +375,8 @@ mod linux_android {
         let (rd2, wr2) = pipe().unwrap();
 
         write(wr1, b"abc").unwrap();
-        let res =
-            tee(rd1.as_raw_fd(), wr2.as_raw_fd(), 2, SpliceFFlags::empty())
-                .unwrap();
+        let res = tee(rd1.try_clone().unwrap(), wr2, 2, SpliceFFlags::empty())
+            .unwrap();
 
         assert_eq!(2, res);
 
@@ -406,8 +399,7 @@ mod linux_android {
         let buf2 = b"defghi";
         let iovecs = [IoSlice::new(&buf1[0..3]), IoSlice::new(&buf2[0..3])];
 
-        let res = vmsplice(wr.as_raw_fd(), &iovecs[..], SpliceFFlags::empty())
-            .unwrap();
+        let res = vmsplice(wr, &iovecs[..], SpliceFFlags::empty()).unwrap();
 
         assert_eq!(6, res);
 
