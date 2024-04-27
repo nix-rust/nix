@@ -2046,6 +2046,7 @@ pub enum PathconfVar {
     /// may require to be typed as input before reading them.
     MAX_INPUT = libc::_PC_MAX_INPUT,
     #[cfg(any(
+        apple_targets,
         solarish,
         freebsdlike,
         target_os = "netbsd",
