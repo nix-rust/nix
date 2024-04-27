@@ -1054,10 +1054,10 @@ pub fn copy_file_range<Fd1: AsFd, Fd2: AsFd>(
 /// # See Also
 /// *[`splice`](https://man7.org/linux/man-pages/man2/splice.2.html)
 #[cfg(linux_android)]
-pub fn splice(
-    fd_in: RawFd,
+pub fn splice<Fd1: AsFd, Fd2: AsFd>(
+    fd_in: Fd1,
     off_in: Option<&mut libc::loff_t>,
-    fd_out: RawFd,
+    fd_out: Fd2,
     off_out: Option<&mut libc::loff_t>,
     len: usize,
     flags: SpliceFFlags,
@@ -1070,7 +1070,7 @@ pub fn splice(
         .unwrap_or(ptr::null_mut());
 
     let ret = unsafe {
-        libc::splice(fd_in, off_in, fd_out, off_out, len, flags.bits())
+        libc::splice(fd_in.as_fd().as_raw_fd(), off_in, fd_out.as_fd().as_raw_fd(), off_out, len, flags.bits())
     };
     Errno::result(ret).map(|r| r as usize)
 }
@@ -1080,13 +1080,13 @@ pub fn splice(
 /// # See Also
 /// *[`tee`](https://man7.org/linux/man-pages/man2/tee.2.html)
 #[cfg(linux_android)]
-pub fn tee(
-    fd_in: RawFd,
-    fd_out: RawFd,
+pub fn tee<Fd1: AsFd, Fd2: AsFd>(
+    fd_in: Fd1,
+    fd_out: Fd2,
     len: usize,
     flags: SpliceFFlags,
 ) -> Result<usize> {
-    let ret = unsafe { libc::tee(fd_in, fd_out, len, flags.bits()) };
+    let ret = unsafe { libc::tee(fd_in.as_fd().as_raw_fd(), fd_out.as_fd().as_raw_fd(), len, flags.bits()) };
     Errno::result(ret).map(|r| r as usize)
 }
 
@@ -1095,14 +1095,14 @@ pub fn tee(
 /// # See Also
 /// *[`vmsplice`](https://man7.org/linux/man-pages/man2/vmsplice.2.html)
 #[cfg(linux_android)]
-pub fn vmsplice(
-    fd: RawFd,
+pub fn vmsplice<F: AsFd>(
+    fd: F,
     iov: &[std::io::IoSlice<'_>],
     flags: SpliceFFlags,
 ) -> Result<usize> {
     let ret = unsafe {
         libc::vmsplice(
-            fd,
+            fd.as_fd().as_raw_fd(),
             iov.as_ptr().cast(),
             iov.len(),
             flags.bits(),
