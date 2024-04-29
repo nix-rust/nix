@@ -14,10 +14,11 @@ fn main() {
         solaris: { target_os = "solaris" },
         watchos: { target_os = "watchos" },
         tvos: { target_os = "tvos" },
+        visionos: { target_os = "visionos" },
 
 
         // cfg aliases we would like to use
-        apple_targets: { any(ios, macos, watchos, tvos) },
+        apple_targets: { any(ios, macos, watchos, tvos, visionos) },
         bsd: { any(freebsd, dragonfly, netbsd, openbsd, apple_targets) },
         bsd_without_apple: { any(freebsd, dragonfly, netbsd, openbsd) },
         linux_android: { any(android, linux) },
