@@ -9,7 +9,10 @@ use std::ptr;
 pub type RequestType = c_int;
 
 cfg_if! {
-    if #[cfg(any(freebsdlike, apple_targets, target_os = "openbsd"))] {
+    if #[cfg(any(target_os = "dragonfly",
+                 target_os = "freebsd",
+                 target_os = "macos",
+                 target_os = "openbsd"))] {
         #[doc(hidden)]
         pub type AddressType = *mut ::libc::c_char;
     } else {
@@ -26,26 +29,33 @@ libc_enum! {
         PT_TRACE_ME,
         PT_READ_I,
         PT_READ_D,
-        #[cfg(apple_targets)]
+        #[cfg(target_os = "macos")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         PT_READ_U,
         PT_WRITE_I,
         PT_WRITE_D,
-        #[cfg(apple_targets)]
+        #[cfg(target_os = "macos")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         PT_WRITE_U,
         PT_CONTINUE,
         PT_KILL,
-        #[cfg(any(any(freebsdlike, apple_targets),
+        #[cfg(any(any(target_os = "dragonfly",
+                  target_os = "freebsd",
+                  target_os = "macos"),
                   all(target_os = "openbsd", target_arch = "x86_64"),
                   all(target_os = "netbsd", any(target_arch = "x86_64",
                                                 target_arch = "powerpc"))))]
         PT_STEP,
         PT_ATTACH,
         PT_DETACH,
-        #[cfg(apple_targets)]
+        #[cfg(target_os = "macos")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         PT_SIGEXC,
-        #[cfg(apple_targets)]
+        #[cfg(target_os = "macos")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         PT_THUPDATE,
-        #[cfg(apple_targets)]
+        #[cfg(target_os = "macos")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         PT_ATTACHEXC
     }
 }
@@ -56,15 +66,13 @@ unsafe fn ptrace_other(
     addr: AddressType,
     data: c_int,
 ) -> Result<c_int> {
-    unsafe {
-        Errno::result(libc::ptrace(
-            request as RequestType,
-            libc::pid_t::from(pid),
-            addr,
-            data,
-        ))
-        .map(|_| 0)
-    }
+    Errno::result(libc::ptrace(
+        request as RequestType,
+        libc::pid_t::from(pid),
+        addr,
+        data,
+    ))
+    .map(|_| 0)
 }
 
 /// Sets the process as traceable, as with `ptrace(PT_TRACEME, ...)`
@@ -149,7 +157,7 @@ pub fn kill(pid: Pid) -> Result<()> {
 /// }
 /// ```
 #[cfg(any(
-    any(freebsdlike, apple_targets),
+    any(target_os = "dragonfly", target_os = "freebsd", target_os = "macos"),
     all(target_os = "openbsd", target_arch = "x86_64"),
     all(
         target_os = "netbsd",

@@ -3,18 +3,10 @@
 //! Uses Linux and/or POSIX functions to resolve interface names like "eth0"
 //! or "socan1" into device numbers.
 
-use std::{ffi::{CStr, CString}, fmt};
-use crate::{errno::Errno, Error, NixPath, Result};
-use libc::{c_uint, IF_NAMESIZE};
+use crate::{Error, NixPath, Result};
+use libc::c_uint;
 
-#[cfg(not(solarish))]
-/// type alias for InterfaceFlags
-pub type IflagsType = libc::c_int;
-#[cfg(solarish)]
-/// type alias for InterfaceFlags
-pub type IflagsType = libc::c_longlong;
-
-/// Resolve an interface into an interface number.
+/// Resolve an interface into a interface number.
 pub fn if_nametoindex<P: ?Sized + NixPath>(name: &P) -> Result<c_uint> {
     let if_index = name
         .with_nix_path(|name| unsafe { libc::if_nametoindex(name.as_ptr()) })?;
@@ -26,251 +18,325 @@ pub fn if_nametoindex<P: ?Sized + NixPath>(name: &P) -> Result<c_uint> {
     }
 }
 
-/// Resolve an interface number into an interface.
-pub fn if_indextoname(index: c_uint) -> Result<CString> {
-    // We need to allocate this anyway, so doing it directly is faster.
-    let mut buf = vec![0u8; IF_NAMESIZE];
-
-    let return_buf = unsafe {
-        libc::if_indextoname(index, buf.as_mut_ptr().cast())
-    };
-
-    Errno::result(return_buf.cast())?;
-    Ok(CStr::from_bytes_until_nul(buf.as_slice()).unwrap().to_owned())
-}
-
 libc_bitflags!(
     /// Standard interface flags, used by `getifaddrs`
-    pub struct InterfaceFlags: IflagsType {
-    
+    pub struct InterfaceFlags: libc::c_int {
         /// Interface is running. (see
         /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
-        IFF_UP as IflagsType;
+        IFF_UP;
         /// Valid broadcast address set. (see
         /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
-        IFF_BROADCAST as IflagsType;
+        IFF_BROADCAST;
         /// Internal debugging flag. (see
         /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
         #[cfg(not(target_os = "haiku"))]
-        IFF_DEBUG as IflagsType;
+        IFF_DEBUG;
         /// Interface is a loopback interface. (see
         /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
-        IFF_LOOPBACK as IflagsType;
+        IFF_LOOPBACK;
         /// Interface is a point-to-point link. (see
         /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
-        IFF_POINTOPOINT as IflagsType;
+        IFF_POINTOPOINT;
         /// Avoid use of trailers. (see
         /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
-        #[cfg(any(
-                  linux_android,
-                  solarish,
-                  apple_targets,
+        #[cfg(any(target_os = "android",
                   target_os = "fuchsia",
-                  target_os = "netbsd"))]
-        IFF_NOTRAILERS as IflagsType;
+                  target_os = "ios",
+                  target_os = "linux",
+                  target_os = "macos",
+                  target_os = "netbsd",
+                  target_os = "illumos",
+                  target_os = "solaris"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
+        IFF_NOTRAILERS;
         /// Interface manages own routes.
         #[cfg(any(target_os = "dragonfly"))]
-        IFF_SMART as IflagsType;
+        #[cfg_attr(docsrs, doc(cfg(all())))]
+        IFF_SMART;
         /// Resources allocated. (see
         /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
-        #[cfg(any(
-                  linux_android,
-                  bsd,
-                  solarish,
-                  target_os = "fuchsia"))]
-        IFF_RUNNING as IflagsType;
+        #[cfg(any(target_os = "android",
+                  target_os = "dragonfly",
+                  target_os = "freebsd",
+                  target_os = "fuchsia",
+                  target_os = "illumos",
+                  target_os = "ios",
+                  target_os = "linux",
+                  target_os = "macos",
+                  target_os = "netbsd",
+                  target_os = "openbsd",
+                  target_os = "solaris"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
+        IFF_RUNNING;
         /// No arp protocol, L2 destination address not set. (see
         /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
-        IFF_NOARP as IflagsType;
+        IFF_NOARP;
         /// Interface is in promiscuous mode. (see
         /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
-        IFF_PROMISC as IflagsType;
+        IFF_PROMISC;
         /// Receive all multicast packets. (see
         /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
-        IFF_ALLMULTI as IflagsType;
+        IFF_ALLMULTI;
         /// Master of a load balancing bundle. (see
         /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
-        #[cfg(any(linux_android, target_os = "fuchsia"))]
+        #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         IFF_MASTER;
         /// transmission in progress, tx hardware queue is full
-        #[cfg(any(target_os = "freebsd", apple_targets, netbsdlike))]
+        #[cfg(any(target_os = "freebsd",
+                  target_os = "macos",
+                  target_os = "netbsd",
+                  target_os = "openbsd",
+                  target_os = "ios"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         IFF_OACTIVE;
         /// Protocol code on board.
-        #[cfg(solarish)]
-        IFF_INTELLIGENT as IflagsType;
+        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
+        IFF_INTELLIGENT;
         /// Slave of a load balancing bundle. (see
         /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
-        #[cfg(any(linux_android, target_os = "fuchsia"))]
+        #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         IFF_SLAVE;
         /// Can't hear own transmissions.
-        #[cfg(bsd)]
+        #[cfg(any(target_os = "dragonfly",
+                  target_os = "freebsd",
+                  target_os = "macos",
+                  target_os = "netbsd",
+                  target_os = "openbsd"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         IFF_SIMPLEX;
         /// Supports multicast. (see
         /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
-        IFF_MULTICAST as IflagsType;
+        IFF_MULTICAST;
         /// Per link layer defined bit.
-        #[cfg(bsd)]
+        #[cfg(any(target_os = "dragonfly",
+                  target_os = "freebsd",
+                  target_os = "macos",
+                  target_os = "netbsd",
+                  target_os = "openbsd",
+                  target_os = "ios"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         IFF_LINK0;
         /// Multicast using broadcast.
-        #[cfg(solarish)]
-        IFF_MULTI_BCAST as IflagsType;
+        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
+        IFF_MULTI_BCAST;
         /// Is able to select media type via ifmap. (see
         /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
-        #[cfg(any(linux_android, target_os = "fuchsia"))]
+        #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         IFF_PORTSEL;
         /// Per link layer defined bit.
-        #[cfg(bsd)]
+        #[cfg(any(target_os = "dragonfly",
+                  target_os = "freebsd",
+                  target_os = "macos",
+                  target_os = "netbsd",
+                  target_os = "openbsd",
+                  target_os = "ios"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         IFF_LINK1;
         /// Non-unique address.
-        #[cfg(solarish)]
-        IFF_UNNUMBERED as IflagsType;
+        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
+        IFF_UNNUMBERED;
         /// Auto media selection active. (see
         /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
-        #[cfg(any(linux_android, target_os = "fuchsia"))]
+        #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         IFF_AUTOMEDIA;
         /// Per link layer defined bit.
-        #[cfg(bsd)]
+        #[cfg(any(target_os = "dragonfly",
+                  target_os = "freebsd",
+                  target_os = "macos",
+                  target_os = "netbsd",
+                  target_os = "openbsd",
+                  target_os = "ios"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         IFF_LINK2;
         /// Use alternate physical connection.
-        #[cfg(any(freebsdlike, apple_targets))]
+        #[cfg(any(target_os = "dragonfly",
+                  target_os = "freebsd",
+                  target_os = "macos",
+                  target_os = "ios"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         IFF_ALTPHYS;
         /// DHCP controls interface.
-        #[cfg(solarish)]
-        IFF_DHCPRUNNING as IflagsType;
+        #[cfg(any(target_os = "solaris", target_os = "illumos"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
+        IFF_DHCPRUNNING;
         /// The addresses are lost when the interface goes down. (see
         /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
-        #[cfg(any(linux_android, target_os = "fuchsia"))]
+        #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         IFF_DYNAMIC;
         /// Do not advertise.
-        #[cfg(solarish)]
-        IFF_PRIVATE as IflagsType;
+        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
+        IFF_PRIVATE;
         /// Driver signals L1 up. Volatile.
         #[cfg(any(target_os = "fuchsia", target_os = "linux"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         IFF_LOWER_UP;
         /// Interface is in polling mode.
         #[cfg(any(target_os = "dragonfly"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         IFF_POLLING_COMPAT;
         /// Unconfigurable using ioctl(2).
         #[cfg(any(target_os = "freebsd"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         IFF_CANTCONFIG;
         /// Do not transmit packets.
-        #[cfg(solarish)]
-        IFF_NOXMIT as IflagsType;
+        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
+        IFF_NOXMIT;
         /// Driver signals dormant. Volatile.
         #[cfg(any(target_os = "fuchsia", target_os = "linux"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         IFF_DORMANT;
         /// User-requested promisc mode.
-        #[cfg(freebsdlike)]
+        #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         IFF_PPROMISC;
         /// Just on-link subnet.
-        #[cfg(solarish)]
-        IFF_NOLOCAL as IflagsType;
+        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
+        IFF_NOLOCAL;
         /// Echo sent packets. Volatile.
         #[cfg(any(target_os = "fuchsia", target_os = "linux"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         IFF_ECHO;
         /// User-requested monitor mode.
-        #[cfg(freebsdlike)]
+        #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         IFF_MONITOR;
         /// Address is deprecated.
-        #[cfg(solarish)]
-        IFF_DEPRECATED as IflagsType;
+        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
+        IFF_DEPRECATED;
         /// Static ARP.
-        #[cfg(freebsdlike)]
+        #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         IFF_STATICARP;
         /// Address from stateless addrconf.
-        #[cfg(solarish)]
-        IFF_ADDRCONF as IflagsType;
+        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
+        IFF_ADDRCONF;
         /// Interface is in polling mode.
         #[cfg(any(target_os = "dragonfly"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         IFF_NPOLLING;
         /// Router on interface.
-        #[cfg(solarish)]
-        IFF_ROUTER as IflagsType;
+        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
+        IFF_ROUTER;
         /// Interface is in polling mode.
         #[cfg(any(target_os = "dragonfly"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         IFF_IDIRECT;
         /// Interface is winding down
         #[cfg(any(target_os = "freebsd"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         IFF_DYING;
         /// No NUD on interface.
-        #[cfg(solarish)]
-        IFF_NONUD as IflagsType;
+        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
+        IFF_NONUD;
         /// Interface is being renamed
         #[cfg(any(target_os = "freebsd"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         IFF_RENAMING;
         /// Anycast address.
-        #[cfg(solarish)]
-        IFF_ANYCAST as IflagsType;
+        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
+        IFF_ANYCAST;
         /// Don't exchange routing info.
-        #[cfg(solarish)]
-        IFF_NORTEXCH as IflagsType;
+        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
+        IFF_NORTEXCH;
         /// Do not provide packet information
-        #[cfg(any(linux_android, target_os = "fuchsia"))]
-        IFF_NO_PI as IflagsType;
+        #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
+        IFF_NO_PI as libc::c_int;
         /// TUN device (no Ethernet headers)
-        #[cfg(any(linux_android, target_os = "fuchsia"))]
-        IFF_TUN as IflagsType;
+        #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
+        IFF_TUN as libc::c_int;
         /// TAP device
-        #[cfg(any(linux_android, target_os = "fuchsia"))]
-        IFF_TAP as IflagsType;
+        #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
+        IFF_TAP as libc::c_int;
         /// IPv4 interface.
-        #[cfg(solarish)]
-        IFF_IPV4 as IflagsType;
+        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
+        IFF_IPV4;
         /// IPv6 interface.
-        #[cfg(solarish)]
-        IFF_IPV6 as IflagsType;
+        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
+        IFF_IPV6;
         /// in.mpathd test address
-        #[cfg(solarish)]
-        IFF_NOFAILOVER as IflagsType;
+        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
+        IFF_NOFAILOVER;
         /// Interface has failed
-        #[cfg(solarish)]
-        IFF_FAILED as IflagsType;
+        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
+        IFF_FAILED;
         /// Interface is a hot-spare
-        #[cfg(solarish)]
-        IFF_STANDBY as IflagsType;
+        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
+        IFF_STANDBY;
         /// Functioning but not used
-        #[cfg(solarish)]
-        IFF_INACTIVE as IflagsType;
+        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
+        IFF_INACTIVE;
         /// Interface is offline
-        #[cfg(solarish)]
-        IFF_OFFLINE as IflagsType;
-        /// Has CoS marking supported
-        #[cfg(solarish)]
-        IFF_COS_ENABLED as IflagsType;
-        /// Prefer as source addr
-        #[cfg(solarish)]
-        IFF_PREFERRED as IflagsType;
+        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
+        IFF_OFFLINE;
+        #[cfg(target_os = "solaris")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
+        IFF_COS_ENABLED;
+        /// Prefer as source addr.
+        #[cfg(target_os = "solaris")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
+        IFF_PREFERRED;
         /// RFC3041
-        #[cfg(solarish)]
-        IFF_TEMPORARY as IflagsType;
-        /// MTU set
-        #[cfg(solarish)]
-        IFF_FIXEDMTU as IflagsType;
-        /// Cannot send/receive packets
-        #[cfg(solarish)]
-        IFF_VIRTUAL as IflagsType;
+        #[cfg(target_os = "solaris")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
+        IFF_TEMPORARY;
+        /// MTU set with SIOCSLIFMTU
+        #[cfg(target_os = "solaris")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
+        IFF_FIXEDMTU;
+        /// Cannot send / receive packets
+        #[cfg(target_os = "solaris")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
+        IFF_VIRTUAL;
         /// Local address in use
-        #[cfg(solarish)]
-        IFF_DUPLICATE as IflagsType;
+        #[cfg(target_os = "solaris")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
+        IFF_DUPLICATE;
         /// IPMP IP interface
-        #[cfg(solarish)]
-        IFF_IPMP as IflagsType;
+        #[cfg(target_os = "solaris")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
+        IFF_IPMP;
     }
 );
 
-impl fmt::Display for InterfaceFlags {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        bitflags::parser::to_writer(self, f)
-    }
-}
-
-
 #[cfg(any(
-    bsd,
+    target_os = "dragonfly",
+    target_os = "freebsd",
     target_os = "fuchsia",
+    target_os = "ios",
     target_os = "linux",
-    solarish,
+    target_os = "macos",
+    target_os = "netbsd",
+    target_os = "openbsd",
+    target_os = "illumos",
 ))]
+#[cfg_attr(docsrs, doc(cfg(all())))]
 mod if_nameindex {
     use super::*;
 
@@ -307,7 +373,6 @@ mod if_nameindex {
     }
 
     /// A list of the network interfaces available on this system. Obtained from [`if_nameindex()`].
-    #[repr(transparent)]
     pub struct Interfaces {
         ptr: NonNull<libc::if_nameindex>,
     }
@@ -323,7 +388,7 @@ mod if_nameindex {
         /// null-terminated, so calling this calculates the length. If random access isn't needed,
         /// [`Interfaces::iter()`] should be used instead.
         pub fn to_slice(&self) -> &[Interface] {
-            let ifs = self.ptr.as_ptr().cast();
+            let ifs = self.ptr.as_ptr() as *const Interface;
             let len = self.iter().count();
             unsafe { std::slice::from_raw_parts(ifs, len) }
         }
@@ -393,9 +458,14 @@ mod if_nameindex {
     }
 }
 #[cfg(any(
-    bsd,
+    target_os = "dragonfly",
+    target_os = "freebsd",
     target_os = "fuchsia",
+    target_os = "ios",
     target_os = "linux",
-    solarish,
+    target_os = "macos",
+    target_os = "netbsd",
+    target_os = "openbsd",
+    target_os = "illumos",
 ))]
 pub use if_nameindex::*;

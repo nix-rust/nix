@@ -2,7 +2,6 @@
 use std::os::unix::io::{AsFd, AsRawFd, BorrowedFd};
 
 use crate::errno::Errno;
-pub use crate::poll_timeout::PollTimeout;
 use crate::Result;
 
 /// This is a wrapper around `libc::pollfd`.
@@ -23,35 +22,24 @@ pub struct PollFd<'fd> {
 impl<'fd> PollFd<'fd> {
     /// Creates a new `PollFd` specifying the events of interest
     /// for a given file descriptor.
-    ///
-    /// # Examples
-    /// ```no_run
-    /// # use std::os::unix::io::{AsFd, AsRawFd, FromRawFd};
-    /// # use nix::{
-    /// #     poll::{PollTimeout, PollFd, PollFlags, poll},
-    /// #     unistd::{pipe, read}
-    /// # };
-    /// let (r, w) = pipe().unwrap();
-    /// let pfd = PollFd::new(r.as_fd(), PollFlags::POLLIN);
-    /// let mut fds = [pfd];
-    /// poll(&mut fds, PollTimeout::NONE).unwrap();
-    /// let mut buf = [0u8; 80];
-    /// read(r.as_raw_fd(), &mut buf[..]);
-    /// ```
-    // Unlike I/O functions, constructors like this must take `BorrowedFd`
-    // instead of AsFd or &AsFd.  Otherwise, an `OwnedFd` argument would be
-    // dropped at the end of the method, leaving the structure referencing a
-    // closed file descriptor.  For example:
+    //
+    // Different from other I/O-safe interfaces, here, we have to take `AsFd`
+    // by reference to prevent the case where the `fd` is closed but it is
+    // still in use. For example:
     //
     // ```rust
-    // let (r, _) = pipe().unwrap();
-    // let pollfd = PollFd::new(r, flag);  // Drops the OwnedFd
+    // let (reader, _) = pipe().unwrap();
+    //
+    // // If `PollFd::new()` takes `AsFd` by value, then `reader` will be consumed,
+    // // but the file descriptor of `reader` will still be in use.
+    // let pollfd = PollFd::new(reader, flag);
+    //
     // // Do something with `pollfd`, which uses the CLOSED fd.
     // ```
-    pub fn new(fd: BorrowedFd<'fd>, events: PollFlags) -> PollFd<'fd> {
+    pub fn new<Fd: AsFd>(fd: &'fd Fd, events: PollFlags) -> PollFd<'fd> {
         PollFd {
             pollfd: libc::pollfd {
-                fd: fd.as_raw_fd(),
+                fd: fd.as_fd().as_raw_fd(),
                 events: events.bits(),
                 revents: PollFlags::empty().bits(),
             },
@@ -145,15 +133,19 @@ libc_bitflags! {
         POLLOUT;
         /// Equivalent to [`POLLIN`](constant.POLLIN.html)
         #[cfg(not(target_os = "redox"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         POLLRDNORM;
         #[cfg(not(target_os = "redox"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         /// Equivalent to [`POLLOUT`](constant.POLLOUT.html)
         POLLWRNORM;
         /// Priority band data can be read (generally unused on Linux).
         #[cfg(not(target_os = "redox"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         POLLRDBAND;
         /// Priority data may be written.
         #[cfg(not(target_os = "redox"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         POLLWRBAND;
         /// Error condition (only returned in
         /// [`PollFd::revents`](struct.PollFd.html#method.revents);
@@ -192,19 +184,16 @@ libc_bitflags! {
 ///
 /// Note that the timeout interval will be rounded up to the system clock
 /// granularity, and kernel scheduling delays mean that the blocking
-/// interval may overrun by a small amount.  Specifying a [`PollTimeout::NONE`]
-/// in timeout means an infinite timeout.  Specifying a timeout of
-/// [`PollTimeout::ZERO`] causes `poll()` to return immediately, even if no file
-/// descriptors are ready.
-pub fn poll<T: Into<PollTimeout>>(
-    fds: &mut [PollFd],
-    timeout: T,
-) -> Result<libc::c_int> {
+/// interval may overrun by a small amount.  Specifying a negative value
+/// in timeout means an infinite timeout.  Specifying a timeout of zero
+/// causes `poll()` to return immediately, even if no file descriptors are
+/// ready.
+pub fn poll(fds: &mut [PollFd], timeout: libc::c_int) -> Result<libc::c_int> {
     let res = unsafe {
         libc::poll(
-            fds.as_mut_ptr().cast(),
+            fds.as_mut_ptr() as *mut libc::pollfd,
             fds.len() as libc::nfds_t,
-            i32::from(timeout.into()),
+            timeout,
         )
     };
 
@@ -224,7 +213,7 @@ feature! {
 /// so in that case `ppoll` differs from `poll` only in the precision of the
 /// timeout argument.
 ///
-#[cfg(any(linux_android, freebsdlike))]
+#[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd", target_os = "linux"))]
 pub fn ppoll(
     fds: &mut [PollFd],
     timeout: Option<crate::sys::time::TimeSpec>,
@@ -234,7 +223,7 @@ pub fn ppoll(
     let timeout = timeout.as_ref().map_or(core::ptr::null(), |r| r.as_ref());
     let sigmask = sigmask.as_ref().map_or(core::ptr::null(), |r| r.as_ref());
     let res = unsafe {
-        libc::ppoll(fds.as_mut_ptr().cast(),
+        libc::ppoll(fds.as_mut_ptr() as *mut libc::pollfd,
                     fds.len() as libc::nfds_t,
                     timeout,
                     sigmask)

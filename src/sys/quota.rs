@@ -264,7 +264,7 @@ pub fn quotactl_on<P: ?Sized + NixPath>(
 ) -> Result<()> {
     quota_file.with_nix_path(|path| {
         let mut path_copy = path.to_bytes_with_nul().to_owned();
-        let p: *mut c_char = path_copy.as_mut_ptr().cast();
+        let p: *mut c_char = path_copy.as_mut_ptr() as *mut c_char;
         quotactl(
             QuotaCmd(QuotaSubCmd::Q_QUOTAON, which),
             Some(special),
@@ -308,12 +308,12 @@ pub fn quotactl_get<P: ?Sized + NixPath>(
     special: &P,
     id: c_int,
 ) -> Result<Dqblk> {
-    let mut dqblk = mem::MaybeUninit::<libc::dqblk>::uninit();
+    let mut dqblk = mem::MaybeUninit::uninit();
     quotactl(
         QuotaCmd(QuotaSubCmd::Q_GETQUOTA, which),
         Some(special),
         id,
-        dqblk.as_mut_ptr().cast(),
+        dqblk.as_mut_ptr() as *mut c_char,
     )?;
     Ok(unsafe { Dqblk(dqblk.assume_init()) })
 }

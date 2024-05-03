@@ -1,5 +1,4 @@
 use crate::errno::Errno;
-pub use crate::poll_timeout::PollTimeout as EpollTimeout;
 use crate::Result;
 use libc::{self, c_int};
 use std::mem;
@@ -72,32 +71,32 @@ impl EpollEvent {
 
 /// A safe wrapper around [`epoll`](https://man7.org/linux/man-pages/man7/epoll.7.html).
 /// ```
-/// # use nix::sys::{epoll::{EpollTimeout, Epoll, EpollEvent, EpollFlags, EpollCreateFlags}, eventfd::{EventFd, EfdFlags}};
+/// # use nix::sys::{epoll::{Epoll, EpollEvent, EpollFlags, EpollCreateFlags}, eventfd::{eventfd, EfdFlags}};
 /// # use nix::unistd::write;
-/// # use std::os::unix::io::{OwnedFd, FromRawFd, AsFd};
+/// # use std::os::unix::io::{OwnedFd, FromRawFd, AsRawFd, AsFd};
 /// # use std::time::{Instant, Duration};
 /// # fn main() -> nix::Result<()> {
 /// const DATA: u64 = 17;
-/// const MILLIS: u8 = 100;
+/// const MILLIS: u64 = 100;
 ///
 /// // Create epoll
 /// let epoll = Epoll::new(EpollCreateFlags::empty())?;
 ///
 /// // Create eventfd & Add event
-/// let eventfd = EventFd::new()?;
+/// let eventfd = eventfd(0, EfdFlags::empty())?;
 /// epoll.add(&eventfd, EpollEvent::new(EpollFlags::EPOLLIN,DATA))?;
 ///
 /// // Arm eventfd & Time wait
-/// eventfd.arm()?;
+/// write(eventfd.as_raw_fd(), &1u64.to_ne_bytes())?;
 /// let now = Instant::now();
 ///
 /// // Wait on event
 /// let mut events = [EpollEvent::empty()];
-/// epoll.wait(&mut events, MILLIS)?;
+/// epoll.wait(&mut events, MILLIS as isize)?;
 ///
 /// // Assert data correct & timeout didn't occur
 /// assert_eq!(events[0].data(), DATA);
-/// assert!(now.elapsed().as_millis() < MILLIS.into());
+/// assert!(now.elapsed() < Duration::from_millis(MILLIS));
 /// # Ok(())
 /// # }
 /// ```
@@ -141,17 +140,17 @@ impl Epoll {
     /// (This can be thought of as fetching items from the ready list of the epoll instance.)
     ///
     /// [`epoll_wait`](https://man7.org/linux/man-pages/man2/epoll_wait.2.html)
-    pub fn wait<T: Into<EpollTimeout>>(
+    pub fn wait(
         &self,
         events: &mut [EpollEvent],
-        timeout: T,
+        timeout: isize,
     ) -> Result<usize> {
         let res = unsafe {
             libc::epoll_wait(
                 self.0.as_raw_fd(),
-                events.as_mut_ptr().cast(),
+                events.as_mut_ptr() as *mut libc::epoll_event,
                 events.len() as c_int,
-                timeout.into().into(),
+                timeout as c_int,
             )
         };
 
@@ -241,7 +240,7 @@ pub fn epoll_wait(
     let res = unsafe {
         libc::epoll_wait(
             epfd,
-            events.as_mut_ptr().cast(),
+            events.as_mut_ptr() as *mut libc::epoll_event,
             events.len() as c_int,
             timeout_ms as c_int,
         )

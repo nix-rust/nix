@@ -12,7 +12,6 @@
 //! * `dir` - Stuff relating to directory iteration
 //! * `env` - Manipulate environment variables
 //! * `event` - Event-driven APIs, like `kqueue` and `epoll`
-//! * `fanotify` - Linux's `fanotify` filesystem events monitoring API
 //! * `feature` - Query characteristics of the OS at runtime
 //! * `fs` - File system functionality
 //! * `hostname` - Get and set the system's hostname
@@ -42,6 +41,7 @@
 //! * `zerocopy` - APIs like `sendfile` and `copy_file_range`
 #![crate_name = "nix"]
 #![cfg(unix)]
+#![cfg_attr(docsrs, doc(cfg(all())))]
 #![allow(non_camel_case_types)]
 #![cfg_attr(test, deny(warnings))]
 #![recursion_limit = "500"]
@@ -54,7 +54,6 @@
         feature = "dir",
         feature = "env",
         feature = "event",
-        feature = "fanotify",
         feature = "feature",
         feature = "fs",
         feature = "hostname",
@@ -91,7 +90,6 @@
 #![warn(missing_docs)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![deny(clippy::cast_ptr_alignment)]
-#![deny(unsafe_op_in_unsafe_fn)]
 
 // Re-exported external crates
 pub use libc;
@@ -118,29 +116,44 @@ feature! {
     #[deny(missing_docs)]
     pub mod features;
 }
+#[allow(missing_docs)]
 pub mod fcntl;
 feature! {
     #![feature = "net"]
 
-    #[cfg(any(linux_android,
-              bsd,
-              solarish))]
+    #[cfg(any(target_os = "android",
+              target_os = "dragonfly",
+              target_os = "freebsd",
+              target_os = "ios",
+              target_os = "linux",
+              target_os = "macos",
+              target_os = "netbsd",
+              target_os = "illumos",
+              target_os = "openbsd",
+              target_os = "nto"))]
     #[deny(missing_docs)]
     pub mod ifaddrs;
     #[cfg(not(target_os = "redox"))]
     #[deny(missing_docs)]
     pub mod net;
 }
-#[cfg(linux_android)]
+#[cfg(any(target_os = "android", target_os = "linux"))]
 feature! {
     #![feature = "kmod"]
+    #[allow(missing_docs)]
     pub mod kmod;
 }
 feature! {
     #![feature = "mount"]
     pub mod mount;
 }
-#[cfg(any(freebsdlike, target_os = "linux", target_os = "netbsd"))]
+#[cfg(any(
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "linux",
+    target_os = "netbsd",
+    target_os = "nto"
+))]
 feature! {
     #![feature = "mqueue"]
     pub mod mqueue;
@@ -162,6 +175,7 @@ feature! {
 pub mod sys;
 feature! {
     #![feature = "time"]
+    #[allow(missing_docs)]
     pub mod time;
 }
 // This can be implemented for other platforms as soon as libc
@@ -180,10 +194,8 @@ feature! {
     #[allow(missing_docs)]
     pub mod ucontext;
 }
+#[allow(missing_docs)]
 pub mod unistd;
-
-#[cfg(any(feature = "poll", feature = "event"))]
-mod poll_timeout;
 
 use std::ffi::{CStr, CString, OsStr};
 use std::mem::MaybeUninit;
@@ -301,7 +313,7 @@ impl NixPath for [u8] {
         }
 
         let mut buf = MaybeUninit::<[u8; MAX_STACK_ALLOCATION]>::uninit();
-        let buf_ptr = buf.as_mut_ptr().cast();
+        let buf_ptr = buf.as_mut_ptr() as *mut u8;
 
         unsafe {
             ptr::copy_nonoverlapping(self.as_ptr(), buf_ptr, self.len());
@@ -360,23 +372,5 @@ impl NixPath for PathBuf {
         F: FnOnce(&CStr) -> T,
     {
         self.as_os_str().with_nix_path(f)
-    }
-}
-
-/// Like `NixPath::with_nix_path()`, but allow the `path` argument to be optional.
-///
-/// A NULL pointer will be provided if `path.is_none()`.
-#[cfg(any(
-    all(apple_targets, feature = "mount"),
-    all(linux_android, any(feature = "mount", feature = "fanotify"))
-))]
-pub(crate) fn with_opt_nix_path<P, T, F>(path: Option<&P>, f: F) -> Result<T>
-where
-    P: ?Sized + NixPath,
-    F: FnOnce(*const libc::c_char) -> T,
-{
-    match path {
-        Some(path) => path.with_nix_path(|p_str| f(p_str.as_ptr())),
-        None => Ok(f(ptr::null())),
     }
 }

@@ -1,8 +1,10 @@
 //! Mostly platform-specific functionality
 #[cfg(any(
-    freebsdlike,
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "ios",
     all(target_os = "linux", not(target_env = "uclibc")),
-    apple_targets,
+    target_os = "macos",
     target_os = "netbsd"
 ))]
 feature! {
@@ -13,31 +15,42 @@ feature! {
 feature! {
     #![feature = "event"]
 
-    #[cfg(linux_android)]
+    #[cfg(any(target_os = "android", target_os = "linux"))]
     #[allow(missing_docs)]
     pub mod epoll;
 
-    #[cfg(bsd)]
+    #[cfg(any(target_os = "dragonfly",
+              target_os = "freebsd",
+              target_os = "ios",
+              target_os = "macos",
+              target_os = "netbsd",
+              target_os = "openbsd"))]
     pub mod event;
 
-    #[cfg(any(linux_android, target_os = "freebsd"))]
+    #[cfg(any(target_os = "android", target_os = "linux"))]
     #[allow(missing_docs)]
     pub mod eventfd;
 }
 
-#[cfg(target_os = "linux")]
-feature! {
-    #![feature = "fanotify"]
-    pub mod fanotify;
-}
-
-#[cfg(any(bsd, linux_android, target_os = "redox", solarish))]
+#[cfg(any(
+    target_os = "android",
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "ios",
+    target_os = "linux",
+    target_os = "redox",
+    target_os = "macos",
+    target_os = "netbsd",
+    target_os = "illumos",
+    target_os = "nto",
+    target_os = "openbsd"
+))]
 #[cfg(feature = "ioctl")]
 #[cfg_attr(docsrs, doc(cfg(feature = "ioctl")))]
 #[macro_use]
 pub mod ioctl;
 
-#[cfg(any(linux_android, target_os = "freebsd"))]
+#[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
 feature! {
     #![feature = "fs"]
     pub mod memfd;
@@ -66,7 +79,15 @@ feature! {
     pub mod pthread;
 }
 
-#[cfg(any(linux_android, bsd))]
+#[cfg(any(
+    target_os = "android",
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "linux",
+    target_os = "macos",
+    target_os = "netbsd",
+    target_os = "openbsd"
+))]
 feature! {
     #![feature = "ptrace"]
     #[allow(missing_docs)]
@@ -79,7 +100,7 @@ feature! {
     pub mod quota;
 }
 
-#[cfg(any(target_os = "linux", netbsdlike))]
+#[cfg(target_os = "linux")]
 feature! {
     #![feature = "reboot"]
     pub mod reboot;
@@ -88,7 +109,7 @@ feature! {
 #[cfg(not(any(
     target_os = "redox",
     target_os = "fuchsia",
-    solarish,
+    target_os = "illumos",
     target_os = "haiku"
 )))]
 feature! {
@@ -101,7 +122,14 @@ feature! {
     pub mod select;
 }
 
-#[cfg(any(linux_android, freebsdlike, apple_targets, solarish))]
+#[cfg(any(
+    target_os = "android",
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "ios",
+    target_os = "linux",
+    target_os = "macos"
+))]
 feature! {
     #![feature = "zerocopy"]
     pub mod sendfile;
@@ -109,7 +137,7 @@ feature! {
 
 pub mod signal;
 
-#[cfg(linux_android)]
+#[cfg(any(target_os = "android", target_os = "linux"))]
 feature! {
     #![feature = "signal"]
     #[allow(missing_docs)]
@@ -128,7 +156,15 @@ feature! {
     pub mod stat;
 }
 
-#[cfg(any(linux_android, freebsdlike, apple_targets, target_os = "openbsd"))]
+#[cfg(any(
+    target_os = "android",
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "ios",
+    target_os = "linux",
+    target_os = "macos",
+    target_os = "openbsd"
+))]
 feature! {
     #![feature = "fs"]
     pub mod statfs;
@@ -139,7 +175,8 @@ feature! {
     pub mod statvfs;
 }
 
-#[cfg(linux_android)]
+#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg_attr(docsrs, doc(cfg(all())))]
 #[allow(missing_docs)]
 pub mod sysinfo;
 
@@ -167,13 +204,13 @@ feature! {
     pub mod wait;
 }
 
-#[cfg(linux_android)]
+#[cfg(any(target_os = "android", target_os = "linux"))]
 feature! {
     #![feature = "inotify"]
     pub mod inotify;
 }
 
-#[cfg(linux_android)]
+#[cfg(any(target_os = "android", target_os = "linux"))]
 feature! {
     #![feature = "time"]
     pub mod timerfd;
@@ -182,7 +219,7 @@ feature! {
 #[cfg(all(
     any(
         target_os = "freebsd",
-        solarish,
+        target_os = "illumos",
         target_os = "linux",
         target_os = "netbsd"
     ),

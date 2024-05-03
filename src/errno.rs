@@ -1,127 +1,78 @@
-//! Safe wrappers around errno functions
-//!
-//! # Example
-//! ```
-//! use nix::errno::Errno;
-//!
-//! Errno::EIO.set();
-//! assert_eq!(Errno::last(), Errno::EIO);
-//!
-//! Errno::clear();
-//! assert_eq!(Errno::last(), Errno::from_raw(0));
-//! ```
-
 use crate::Result;
 use cfg_if::cfg_if;
 use libc::{c_int, c_void};
+use std::convert::TryFrom;
 use std::{error, fmt, io};
 
 pub use self::consts::*;
 
 cfg_if! {
     if #[cfg(any(target_os = "freebsd",
-                 apple_targets,))] {
+                 target_os = "ios",
+                 target_os = "macos"))] {
         unsafe fn errno_location() -> *mut c_int {
-            unsafe { libc::__error() }
+            libc::__error()
         }
-    } else if #[cfg(any(target_os = "android", netbsdlike))] {
+    } else if #[cfg(any(target_os = "android",
+                        target_os = "netbsd",
+                        target_os = "openbsd"))] {
         unsafe fn errno_location() -> *mut c_int {
-            unsafe { libc::__errno() }
+            libc::__errno()
         }
     } else if #[cfg(any(target_os = "linux",
                         target_os = "redox",
                         target_os = "dragonfly",
-                        target_os = "fuchsia",
-                        target_os = "hurd"))] {
+                        target_os = "fuchsia"))] {
         unsafe fn errno_location() -> *mut c_int {
-            unsafe { libc::__errno_location() }
+            libc::__errno_location()
         }
-    } else if #[cfg(solarish)] {
+    } else if #[cfg(any(target_os = "nto",))] {
         unsafe fn errno_location() -> *mut c_int {
-            unsafe { libc::___errno() }
+            libc::__get_errno_ptr()
+        }
+    } else if #[cfg(any(target_os = "illumos", target_os = "solaris"))] {
+        unsafe fn errno_location() -> *mut c_int {
+            libc::___errno()
         }
     } else if #[cfg(any(target_os = "haiku",))] {
         unsafe fn errno_location() -> *mut c_int {
-            unsafe { libc::_errnop() }
+            libc::_errnop()
         }
     } else if #[cfg(any(target_os = "aix"))] {
         unsafe fn errno_location() -> *mut c_int {
-            unsafe { libc::_Errno() }
+            libc::_Errno()
         }
+    }
+}
+
+/// Sets the platform-specific errno to no-error
+fn clear() {
+    // Safe because errno is a thread-local variable
+    unsafe {
+        *errno_location() = 0;
     }
 }
 
 /// Returns the platform-specific value of errno
-#[deprecated(since = "0.28.0", note = "please use `Errno::last_raw()` instead")]
 pub fn errno() -> i32 {
-    Errno::last_raw()
+    unsafe { *errno_location() }
 }
 
 impl Errno {
-    /// Returns the current value of errno
     pub fn last() -> Self {
-        Self::from_raw(Self::last_raw())
-    }
-
-    /// Returns the current raw i32 value of errno
-    pub fn last_raw() -> i32 {
-        unsafe { *errno_location() }
-    }
-
-    /// Sets the value of errno.
-    ///
-    /// # Example
-    /// ```
-    /// use nix::errno::Errno;
-    ///
-    /// Errno::EIO.set();
-    ///
-    /// assert_eq!(Errno::last(), Errno::EIO);
-    /// ```
-    pub fn set(self) {
-        Self::set_raw(self as i32)
-    }
-
-    /// Sets the raw i32 value of errno.
-    pub fn set_raw(errno: i32) {
-        // Safe because errno is a thread-local variable
-        unsafe {
-            *errno_location() = errno;
-        }
-    }
-
-    #[deprecated(
-        since = "0.28.0",
-        note = "please use `Errno::from_raw()` instead"
-    )]
-    pub const fn from_i32(err: i32) -> Errno {
-        Self::from_raw(err)
-    }
-
-    pub const fn from_raw(err: i32) -> Errno {
-        #[allow(deprecated)]
-        from_i32(err)
+        last()
     }
 
     pub fn desc(self) -> &'static str {
         desc(self)
     }
 
-    /// Sets the platform-specific errno to no-error
-    ///
-    /// ```
-    /// use nix::errno::Errno;
-    ///
-    /// Errno::EIO.set();
-    ///
-    /// Errno::clear();
-    ///
-    /// let err = Errno::last();
-    /// assert_ne!(err, Errno::EIO);
-    /// assert_eq!(err, Errno::from_raw(0));
-    /// ```
+    pub const fn from_i32(err: i32) -> Errno {
+        from_i32(err)
+    }
+
     pub fn clear() {
-        Self::set_raw(0)
+        clear()
     }
 
     /// Returns `Ok(value)` if it does not contain the sentinel value. This
@@ -190,8 +141,12 @@ impl TryFrom<io::Error> for Errno {
     type Error = io::Error;
 
     fn try_from(ioerror: io::Error) -> std::result::Result<Self, io::Error> {
-        ioerror.raw_os_error().map(Errno::from_raw).ok_or(ioerror)
+        ioerror.raw_os_error().map(Errno::from_i32).ok_or(ioerror)
     }
+}
+
+fn last() -> Errno {
+    Errno::from_i32(errno())
 }
 
 fn desc(errno: Errno) -> &'static str {
@@ -274,270 +229,468 @@ fn desc(errno: Errno) -> &'static str {
         EHOSTUNREACH => "No route to host",
 
         #[cfg(any(
-            linux_android,
-            solarish,
+            target_os = "linux",
+            target_os = "android",
             target_os = "aix",
+            target_os = "illumos",
+            target_os = "solaris",
             target_os = "fuchsia"
         ))]
         ECHRNG => "Channel number out of range",
 
         #[cfg(any(
-            linux_android,
-            solarish,
+            target_os = "linux",
+            target_os = "android",
             target_os = "aix",
+            target_os = "illumos",
+            target_os = "solaris",
             target_os = "fuchsia"
         ))]
         EL2NSYNC => "Level 2 not synchronized",
 
         #[cfg(any(
-            linux_android,
-            solarish,
+            target_os = "linux",
+            target_os = "android",
             target_os = "aix",
+            target_os = "illumos",
+            target_os = "solaris",
             target_os = "fuchsia"
         ))]
         EL3HLT => "Level 3 halted",
 
         #[cfg(any(
-            linux_android,
-            solarish,
+            target_os = "linux",
+            target_os = "android",
             target_os = "aix",
+            target_os = "illumos",
+            target_os = "solaris",
             target_os = "fuchsia"
         ))]
         EL3RST => "Level 3 reset",
 
         #[cfg(any(
-            linux_android,
-            solarish,
+            target_os = "linux",
+            target_os = "android",
             target_os = "aix",
+            target_os = "illumos",
+            target_os = "solaris",
             target_os = "fuchsia"
         ))]
         ELNRNG => "Link number out of range",
 
         #[cfg(any(
-            linux_android,
-            solarish,
+            target_os = "linux",
+            target_os = "android",
             target_os = "aix",
+            target_os = "illumos",
+            target_os = "solaris",
             target_os = "fuchsia"
         ))]
         EUNATCH => "Protocol driver not attached",
 
         #[cfg(any(
-            linux_android,
-            solarish,
+            target_os = "linux",
+            target_os = "android",
             target_os = "aix",
+            target_os = "illumos",
+            target_os = "solaris",
             target_os = "fuchsia"
         ))]
         ENOCSI => "No CSI structure available",
 
         #[cfg(any(
-            linux_android,
-            solarish,
+            target_os = "linux",
+            target_os = "android",
             target_os = "aix",
+            target_os = "illumos",
+            target_os = "solaris",
             target_os = "fuchsia"
         ))]
         EL2HLT => "Level 2 halted",
 
-        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
+        #[cfg(any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "illumos",
+            target_os = "solaris",
+            target_os = "fuchsia"
+        ))]
         EBADE => "Invalid exchange",
 
-        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
+        #[cfg(any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "illumos",
+            target_os = "solaris",
+            target_os = "fuchsia"
+        ))]
         EBADR => "Invalid request descriptor",
 
-        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
+        #[cfg(any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "illumos",
+            target_os = "solaris",
+            target_os = "fuchsia"
+        ))]
         EXFULL => "Exchange full",
 
-        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
+        #[cfg(any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "illumos",
+            target_os = "solaris",
+            target_os = "fuchsia"
+        ))]
         ENOANO => "No anode",
 
-        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
+        #[cfg(any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "illumos",
+            target_os = "solaris",
+            target_os = "fuchsia"
+        ))]
         EBADRQC => "Invalid request code",
 
-        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
+        #[cfg(any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "illumos",
+            target_os = "solaris",
+            target_os = "fuchsia"
+        ))]
         EBADSLT => "Invalid slot",
 
-        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
+        #[cfg(any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "illumos",
+            target_os = "solaris",
+            target_os = "fuchsia"
+        ))]
         EBFONT => "Bad font file format",
 
         #[cfg(any(
-            linux_android,
-            solarish,
-            target_os = "fuchsia",
-            target_os = "hurd"
+            target_os = "linux",
+            target_os = "android",
+            target_os = "illumos",
+            target_os = "solaris",
+            target_os = "fuchsia"
         ))]
         ENOSTR => "Device not a stream",
 
         #[cfg(any(
-            linux_android,
-            solarish,
-            target_os = "fuchsia",
-            target_os = "hurd"
+            target_os = "linux",
+            target_os = "android",
+            target_os = "illumos",
+            target_os = "solaris",
+            target_os = "fuchsia"
         ))]
         ENODATA => "No data available",
 
         #[cfg(any(
-            linux_android,
-            solarish,
-            target_os = "fuchsia",
-            target_os = "hurd"
+            target_os = "linux",
+            target_os = "android",
+            target_os = "illumos",
+            target_os = "solaris",
+            target_os = "fuchsia"
         ))]
         ETIME => "Timer expired",
 
         #[cfg(any(
-            linux_android,
-            solarish,
-            target_os = "fuchsia",
-            target_os = "hurd"
+            target_os = "linux",
+            target_os = "android",
+            target_os = "illumos",
+            target_os = "solaris",
+            target_os = "fuchsia"
         ))]
         ENOSR => "Out of streams resources",
 
-        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
+        #[cfg(any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "illumos",
+            target_os = "solaris",
+            target_os = "fuchsia"
+        ))]
         ENONET => "Machine is not on the network",
 
-        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
+        #[cfg(any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "illumos",
+            target_os = "solaris",
+            target_os = "fuchsia"
+        ))]
         ENOPKG => "Package not installed",
 
         #[cfg(any(
-            linux_android,
-            solarish,
-            target_os = "fuchsia",
-            target_os = "hurd"
+            target_os = "linux",
+            target_os = "android",
+            target_os = "illumos",
+            target_os = "solaris",
+            target_os = "fuchsia"
         ))]
         EREMOTE => "Object is remote",
 
         #[cfg(any(
-            linux_android,
-            solarish,
+            target_os = "linux",
+            target_os = "android",
             target_os = "aix",
+            target_os = "illumos",
+            target_os = "solaris",
             target_os = "fuchsia"
         ))]
         ENOLINK => "Link has been severed",
 
-        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
+        #[cfg(any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "illumos",
+            target_os = "solaris",
+            target_os = "fuchsia"
+        ))]
         EADV => "Advertise error",
 
-        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
+        #[cfg(any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "illumos",
+            target_os = "solaris",
+            target_os = "fuchsia"
+        ))]
         ESRMNT => "Srmount error",
 
-        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
+        #[cfg(any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "illumos",
+            target_os = "solaris",
+            target_os = "fuchsia"
+        ))]
         ECOMM => "Communication error on send",
 
         #[cfg(any(
-            linux_android,
-            solarish,
+            target_os = "linux",
+            target_os = "android",
             target_os = "aix",
-            target_os = "fuchsia",
+            target_os = "illumos",
+            target_os = "solaris",
+            target_os = "fuchsia"
         ))]
         EPROTO => "Protocol error",
 
         #[cfg(any(
-            linux_android,
-            solarish,
+            target_os = "linux",
+            target_os = "android",
             target_os = "aix",
+            target_os = "illumos",
+            target_os = "solaris",
+            target_os = "nto",
             target_os = "fuchsia"
         ))]
         EMULTIHOP => "Multihop attempted",
 
-        #[cfg(any(linux_android, target_os = "fuchsia"))]
+        #[cfg(any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "fuchsia"
+        ))]
         EDOTDOT => "RFS specific error",
 
-        #[cfg(any(linux_android, target_os = "aix", target_os = "fuchsia"))]
+        #[cfg(any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "aix",
+            target_os = "fuchsia"
+        ))]
         EBADMSG => "Not a data message",
 
-        #[cfg(solarish)]
+        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
         EBADMSG => "Trying to read unreadable message",
 
         #[cfg(any(
-            linux_android,
+            target_os = "linux",
+            target_os = "android",
             target_os = "aix",
             target_os = "fuchsia",
-            target_os = "haiku",
-            target_os = "hurd"
+            target_os = "haiku"
         ))]
         EOVERFLOW => "Value too large for defined data type",
 
-        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
+        #[cfg(any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "illumos",
+            target_os = "solaris",
+            target_os = "fuchsia"
+        ))]
         ENOTUNIQ => "Name not unique on network",
 
-        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
+        #[cfg(any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "illumos",
+            target_os = "solaris",
+            target_os = "fuchsia"
+        ))]
         EBADFD => "File descriptor in bad state",
 
-        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
+        #[cfg(any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "illumos",
+            target_os = "solaris",
+            target_os = "fuchsia"
+        ))]
         EREMCHG => "Remote address changed",
 
-        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
+        #[cfg(any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "illumos",
+            target_os = "solaris",
+            target_os = "fuchsia"
+        ))]
         ELIBACC => "Can not access a needed shared library",
 
-        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
+        #[cfg(any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "illumos",
+            target_os = "solaris",
+            target_os = "fuchsia"
+        ))]
         ELIBBAD => "Accessing a corrupted shared library",
 
-        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
+        #[cfg(any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "illumos",
+            target_os = "solaris",
+            target_os = "fuchsia"
+        ))]
         ELIBSCN => ".lib section in a.out corrupted",
 
-        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
+        #[cfg(any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "illumos",
+            target_os = "solaris",
+            target_os = "fuchsia"
+        ))]
         ELIBMAX => "Attempting to link in too many shared libraries",
 
         #[cfg(any(
-            linux_android,
-            solarish,
-            target_os = "fuchsia",
-            target_os = "hurd"
+            target_os = "linux",
+            target_os = "android",
+            target_os = "illumos",
+            target_os = "solaris",
+            target_os = "fuchsia"
         ))]
         ELIBEXEC => "Cannot exec a shared library directly",
 
         #[cfg(any(
-            linux_android,
-            solarish,
+            target_os = "linux",
+            target_os = "android",
             target_os = "aix",
+            target_os = "illumos",
+            target_os = "solaris",
             target_os = "fuchsia",
             target_os = "openbsd"
         ))]
         EILSEQ => "Illegal byte sequence",
 
         #[cfg(any(
-            linux_android,
-            solarish,
+            target_os = "linux",
+            target_os = "android",
             target_os = "aix",
+            target_os = "illumos",
+            target_os = "solaris",
             target_os = "fuchsia"
         ))]
         ERESTART => "Interrupted system call should be restarted",
 
-        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
+        #[cfg(any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "illumos",
+            target_os = "solaris",
+            target_os = "fuchsia"
+        ))]
         ESTRPIPE => "Streams pipe error",
 
-        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
+        #[cfg(any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "illumos",
+            target_os = "solaris",
+            target_os = "fuchsia"
+        ))]
         EUSERS => "Too many users",
 
         #[cfg(any(
-            linux_android,
+            target_os = "linux",
+            target_os = "android",
             target_os = "fuchsia",
             target_os = "netbsd",
             target_os = "redox"
         ))]
         EOPNOTSUPP => "Operation not supported on transport endpoint",
 
-        #[cfg(any(linux_android, target_os = "fuchsia", target_os = "hurd"))]
+        #[cfg(any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "fuchsia"
+        ))]
         ESTALE => "Stale file handle",
 
-        #[cfg(any(linux_android, target_os = "fuchsia"))]
+        #[cfg(any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "fuchsia"
+        ))]
         EUCLEAN => "Structure needs cleaning",
 
-        #[cfg(any(linux_android, target_os = "fuchsia"))]
+        #[cfg(any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "fuchsia"
+        ))]
         ENOTNAM => "Not a XENIX named type file",
 
-        #[cfg(any(linux_android, target_os = "fuchsia"))]
+        #[cfg(any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "fuchsia"
+        ))]
         ENAVAIL => "No XENIX semaphores available",
 
-        #[cfg(any(linux_android, target_os = "fuchsia"))]
+        #[cfg(any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "fuchsia"
+        ))]
         EISNAM => "Is a named type file",
 
-        #[cfg(any(linux_android, target_os = "fuchsia"))]
+        #[cfg(any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "fuchsia"
+        ))]
         EREMOTEIO => "Remote I/O error",
 
-        #[cfg(any(linux_android, target_os = "fuchsia"))]
+        #[cfg(any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "fuchsia"
+        ))]
         EDQUOT => "Quota exceeded",
 
         #[cfg(any(
-            linux_android,
+            target_os = "linux",
+            target_os = "android",
             target_os = "fuchsia",
             target_os = "openbsd",
             target_os = "dragonfly"
@@ -545,47 +698,71 @@ fn desc(errno: Errno) -> &'static str {
         ENOMEDIUM => "No medium found",
 
         #[cfg(any(
-            linux_android,
+            target_os = "linux",
+            target_os = "android",
             target_os = "fuchsia",
             target_os = "openbsd"
         ))]
         EMEDIUMTYPE => "Wrong medium type",
 
         #[cfg(any(
-            linux_android,
-            solarish,
+            target_os = "linux",
+            target_os = "android",
+            target_os = "illumos",
+            target_os = "solaris",
             target_os = "fuchsia",
             target_os = "haiku"
         ))]
         ECANCELED => "Operation canceled",
 
-        #[cfg(any(linux_android, target_os = "fuchsia"))]
+        #[cfg(any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "fuchsia"
+        ))]
         ENOKEY => "Required key not available",
 
-        #[cfg(any(linux_android, target_os = "fuchsia"))]
+        #[cfg(any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "fuchsia"
+        ))]
         EKEYEXPIRED => "Key has expired",
 
-        #[cfg(any(linux_android, target_os = "fuchsia"))]
+        #[cfg(any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "fuchsia"
+        ))]
         EKEYREVOKED => "Key has been revoked",
 
-        #[cfg(any(linux_android, target_os = "fuchsia"))]
+        #[cfg(any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "fuchsia"
+        ))]
         EKEYREJECTED => "Key was rejected by service",
 
         #[cfg(any(
-            linux_android,
+            target_os = "linux",
+            target_os = "android",
             target_os = "aix",
-            target_os = "fuchsia",
-            target_os = "hurd"
+            target_os = "fuchsia"
         ))]
         EOWNERDEAD => "Owner died",
 
-        #[cfg(solarish)]
+        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
         EOWNERDEAD => "Process died with lock",
 
-        #[cfg(any(linux_android, target_os = "aix", target_os = "fuchsia"))]
+        #[cfg(any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "aix",
+            target_os = "fuchsia"
+        ))]
         ENOTRECOVERABLE => "State not recoverable",
 
-        #[cfg(solarish)]
+        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
         ENOTRECOVERABLE => "Lock is not recoverable",
 
         #[cfg(any(
@@ -600,13 +777,22 @@ fn desc(errno: Errno) -> &'static str {
         ))]
         EHWPOISON => "Memory page has hardware error",
 
-        #[cfg(freebsdlike)]
+        #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
         EDOOFUS => "Programming error",
 
-        #[cfg(any(freebsdlike, target_os = "hurd", target_os = "redox"))]
+        #[cfg(any(
+            target_os = "freebsd",
+            target_os = "dragonfly",
+            target_os = "redox"
+        ))]
         EMULTIHOP => "Multihop attempted",
 
-        #[cfg(any(freebsdlike, target_os = "hurd", target_os = "redox"))]
+        #[cfg(any(
+            target_os = "freebsd",
+            target_os = "dragonfly",
+            target_os = "nto",
+            target_os = "redox"
+        ))]
         ENOLINK => "Link has been severed",
 
         #[cfg(target_os = "freebsd")]
@@ -615,189 +801,360 @@ fn desc(errno: Errno) -> &'static str {
         #[cfg(target_os = "freebsd")]
         ECAPMODE => "Not permitted in capability mode",
 
-        #[cfg(any(bsd, target_os = "hurd"))]
+        #[cfg(any(
+            target_os = "macos",
+            target_os = "freebsd",
+            target_os = "dragonfly",
+            target_os = "ios",
+            target_os = "openbsd",
+            target_os = "netbsd"
+        ))]
         ENEEDAUTH => "Need authenticator",
 
-        #[cfg(any(bsd, target_os = "redox", solarish))]
+        #[cfg(any(
+            target_os = "macos",
+            target_os = "freebsd",
+            target_os = "dragonfly",
+            target_os = "ios",
+            target_os = "openbsd",
+            target_os = "netbsd",
+            target_os = "redox",
+            target_os = "illumos",
+            target_os = "nto",
+            target_os = "solaris"
+        ))]
         EOVERFLOW => "Value too large to be stored in data type",
 
         #[cfg(any(
-            freebsdlike,
-            apple_targets,
+            target_os = "macos",
+            target_os = "freebsd",
+            target_os = "dragonfly",
+            target_os = "ios",
             target_os = "netbsd",
             target_os = "redox",
-            target_os = "haiku",
-            target_os = "hurd"
+            target_os = "nto",
+            target_os = "haiku"
         ))]
         EILSEQ => "Illegal byte sequence",
 
-        #[cfg(any(bsd, target_os = "haiku"))]
+        #[cfg(any(
+            target_os = "macos",
+            target_os = "freebsd",
+            target_os = "dragonfly",
+            target_os = "ios",
+            target_os = "openbsd",
+            target_os = "netbsd",
+            target_os = "haiku"
+        ))]
         ENOATTR => "Attribute not found",
 
         #[cfg(any(
-            bsd,
+            target_os = "macos",
+            target_os = "freebsd",
+            target_os = "dragonfly",
+            target_os = "ios",
+            target_os = "openbsd",
+            target_os = "netbsd",
             target_os = "redox",
-            target_os = "haiku",
-            target_os = "hurd"
+            target_os = "nto",
+            target_os = "haiku"
         ))]
         EBADMSG => "Bad message",
 
         #[cfg(any(
-            bsd,
-            target_os = "haiku",
-            target_os = "hurd",
-            target_os = "redox"
+            target_os = "macos",
+            target_os = "freebsd",
+            target_os = "dragonfly",
+            target_os = "ios",
+            target_os = "openbsd",
+            target_os = "netbsd",
+            target_os = "redox",
+            target_os = "nto",
+            target_os = "haiku"
         ))]
         EPROTO => "Protocol error",
 
         #[cfg(any(
-            freebsdlike,
-            apple_targets,
-            target_os = "openbsd",
-            target_os = "hurd"
+            target_os = "macos",
+            target_os = "freebsd",
+            target_os = "dragonfly",
+            target_os = "ios",
+            target_os = "openbsd"
         ))]
         ENOTRECOVERABLE => "State not recoverable",
 
-        #[cfg(any(freebsdlike, apple_targets, target_os = "openbsd"))]
+        #[cfg(any(
+            target_os = "macos",
+            target_os = "freebsd",
+            target_os = "dragonfly",
+            target_os = "ios",
+            target_os = "openbsd"
+        ))]
         EOWNERDEAD => "Previous owner died",
 
         #[cfg(any(
-            bsd,
+            target_os = "macos",
+            target_os = "freebsd",
+            target_os = "dragonfly",
+            target_os = "ios",
+            target_os = "openbsd",
+            target_os = "netbsd",
             target_os = "aix",
-            solarish,
-            target_os = "haiku",
-            target_os = "hurd"
+            target_os = "illumos",
+            target_os = "solaris",
+            target_os = "nto",
+            target_os = "haiku"
         ))]
         ENOTSUP => "Operation not supported",
 
-        #[cfg(any(bsd, target_os = "aix", target_os = "hurd"))]
+        #[cfg(any(
+            target_os = "macos",
+            target_os = "freebsd",
+            target_os = "dragonfly",
+            target_os = "ios",
+            target_os = "aix",
+            target_os = "openbsd",
+            target_os = "netbsd"
+        ))]
         EPROCLIM => "Too many processes",
 
         #[cfg(any(
-            bsd,
+            target_os = "macos",
+            target_os = "freebsd",
+            target_os = "dragonfly",
+            target_os = "ios",
             target_os = "aix",
-            target_os = "hurd",
+            target_os = "openbsd",
+            target_os = "netbsd",
+            target_os = "nto",
             target_os = "redox"
         ))]
         EUSERS => "Too many users",
 
         #[cfg(any(
-            bsd,
-            solarish,
+            target_os = "macos",
+            target_os = "freebsd",
+            target_os = "dragonfly",
+            target_os = "ios",
+            target_os = "openbsd",
+            target_os = "netbsd",
             target_os = "redox",
             target_os = "aix",
-            target_os = "haiku",
-            target_os = "hurd"
+            target_os = "illumos",
+            target_os = "solaris",
+            target_os = "nto",
+            target_os = "haiku"
         ))]
         EDQUOT => "Disc quota exceeded",
 
         #[cfg(any(
-            bsd,
-            solarish,
+            target_os = "macos",
+            target_os = "freebsd",
+            target_os = "dragonfly",
+            target_os = "ios",
+            target_os = "openbsd",
+            target_os = "netbsd",
             target_os = "redox",
             target_os = "aix",
+            target_os = "illumos",
+            target_os = "solaris",
+            target_os = "nto",
             target_os = "haiku"
         ))]
         ESTALE => "Stale NFS file handle",
 
-        #[cfg(any(bsd, target_os = "aix", target_os = "redox"))]
+        #[cfg(any(
+            target_os = "macos",
+            target_os = "freebsd",
+            target_os = "dragonfly",
+            target_os = "ios",
+            target_os = "aix",
+            target_os = "openbsd",
+            target_os = "netbsd",
+            target_os = "nto",
+            target_os = "redox"
+        ))]
         EREMOTE => "Too many levels of remote in path",
 
-        #[cfg(any(bsd, target_os = "hurd"))]
+        #[cfg(any(
+            target_os = "macos",
+            target_os = "freebsd",
+            target_os = "dragonfly",
+            target_os = "ios",
+            target_os = "openbsd",
+            target_os = "nto",
+            target_os = "netbsd"
+        ))]
         EBADRPC => "RPC struct is bad",
 
-        #[cfg(any(bsd, target_os = "hurd"))]
+        #[cfg(any(
+            target_os = "macos",
+            target_os = "freebsd",
+            target_os = "dragonfly",
+            target_os = "ios",
+            target_os = "openbsd",
+            target_os = "nto",
+            target_os = "netbsd"
+        ))]
         ERPCMISMATCH => "RPC version wrong",
 
-        #[cfg(any(bsd, target_os = "hurd"))]
+        #[cfg(any(
+            target_os = "macos",
+            target_os = "freebsd",
+            target_os = "dragonfly",
+            target_os = "ios",
+            target_os = "openbsd",
+            target_os = "nto",
+            target_os = "netbsd"
+        ))]
         EPROGUNAVAIL => "RPC prog. not avail",
 
-        #[cfg(any(bsd, target_os = "hurd"))]
+        #[cfg(any(
+            target_os = "macos",
+            target_os = "freebsd",
+            target_os = "dragonfly",
+            target_os = "ios",
+            target_os = "openbsd",
+            target_os = "nto",
+            target_os = "netbsd"
+        ))]
         EPROGMISMATCH => "Program version wrong",
 
-        #[cfg(any(bsd, target_os = "hurd"))]
+        #[cfg(any(
+            target_os = "macos",
+            target_os = "freebsd",
+            target_os = "dragonfly",
+            target_os = "ios",
+            target_os = "openbsd",
+            target_os = "nto",
+            target_os = "netbsd"
+        ))]
         EPROCUNAVAIL => "Bad procedure for program",
 
-        #[cfg(any(bsd, target_os = "hurd"))]
+        #[cfg(any(
+            target_os = "macos",
+            target_os = "freebsd",
+            target_os = "dragonfly",
+            target_os = "ios",
+            target_os = "openbsd",
+            target_os = "netbsd"
+        ))]
         EFTYPE => "Inappropriate file type or format",
 
-        #[cfg(any(bsd, target_os = "hurd"))]
+        #[cfg(any(
+            target_os = "macos",
+            target_os = "freebsd",
+            target_os = "dragonfly",
+            target_os = "ios",
+            target_os = "openbsd",
+            target_os = "netbsd"
+        ))]
         EAUTH => "Authentication error",
 
         #[cfg(any(
-            bsd,
+            target_os = "macos",
+            target_os = "freebsd",
+            target_os = "dragonfly",
+            target_os = "ios",
             target_os = "aix",
-            target_os = "hurd",
+            target_os = "openbsd",
+            target_os = "netbsd",
+            target_os = "nto",
             target_os = "redox"
         ))]
         ECANCELED => "Operation canceled",
 
-        #[cfg(apple_targets)]
+        #[cfg(any(target_os = "macos", target_os = "ios"))]
         EPWROFF => "Device power is off",
 
-        #[cfg(apple_targets)]
+        #[cfg(any(target_os = "macos", target_os = "ios"))]
         EDEVERR => "Device error, e.g. paper out",
 
-        #[cfg(apple_targets)]
+        #[cfg(any(target_os = "macos", target_os = "ios"))]
         EBADEXEC => "Bad executable",
 
-        #[cfg(apple_targets)]
+        #[cfg(any(target_os = "macos", target_os = "ios"))]
         EBADARCH => "Bad CPU type in executable",
 
-        #[cfg(apple_targets)]
+        #[cfg(any(target_os = "macos", target_os = "ios"))]
         ESHLIBVERS => "Shared library version mismatch",
 
-        #[cfg(apple_targets)]
+        #[cfg(any(target_os = "macos", target_os = "ios"))]
         EBADMACHO => "Malformed Macho file",
 
-        #[cfg(any(apple_targets, target_os = "netbsd", target_os = "haiku"))]
+        #[cfg(any(
+            target_os = "macos",
+            target_os = "ios",
+            target_os = "netbsd",
+            target_os = "haiku"
+        ))]
         EMULTIHOP => "Reserved",
 
         #[cfg(any(
-            apple_targets,
+            target_os = "macos",
+            target_os = "ios",
             target_os = "aix",
             target_os = "netbsd",
+            target_os = "nto",
             target_os = "redox"
         ))]
         ENODATA => "No message available on STREAM",
 
-        #[cfg(any(apple_targets, target_os = "netbsd", target_os = "haiku"))]
+        #[cfg(any(
+            target_os = "macos",
+            target_os = "ios",
+            target_os = "netbsd",
+            target_os = "haiku"
+        ))]
         ENOLINK => "Reserved",
 
         #[cfg(any(
-            apple_targets,
+            target_os = "macos",
+            target_os = "ios",
             target_os = "aix",
             target_os = "netbsd",
+            target_os = "nto",
             target_os = "redox"
         ))]
         ENOSR => "No STREAM resources",
 
         #[cfg(any(
-            apple_targets,
+            target_os = "macos",
+            target_os = "ios",
             target_os = "aix",
             target_os = "netbsd",
+            target_os = "nto",
             target_os = "redox"
         ))]
         ENOSTR => "Not a STREAM",
 
         #[cfg(any(
-            apple_targets,
+            target_os = "macos",
+            target_os = "ios",
             target_os = "aix",
             target_os = "netbsd",
+            target_os = "nto",
             target_os = "redox"
         ))]
         ETIME => "STREAM ioctl timeout",
 
-        #[cfg(any(apple_targets, solarish, target_os = "aix"))]
+        #[cfg(any(
+            target_os = "macos",
+            target_os = "ios",
+            target_os = "aix",
+            target_os = "illumos",
+            target_os = "nto",
+            target_os = "solaris"
+        ))]
         EOPNOTSUPP => "Operation not supported on socket",
 
-        #[cfg(apple_targets)]
+        #[cfg(any(target_os = "macos", target_os = "ios"))]
         ENOPOLICY => "No such policy registered",
 
-        #[cfg(apple_targets)]
+        #[cfg(any(target_os = "macos", target_os = "ios"))]
         EQFULL => "Interface output queue is full",
 
-        #[cfg(any(target_os = "openbsd", target_os = "hurd"))]
+        #[cfg(target_os = "openbsd")]
         EOPNOTSUPP => "Operation not supported",
 
         #[cfg(target_os = "openbsd")]
@@ -806,33 +1163,18 @@ fn desc(errno: Errno) -> &'static str {
         #[cfg(target_os = "dragonfly")]
         EASYNC => "Async",
 
-        #[cfg(solarish)]
+        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
         EDEADLOCK => "Resource deadlock would occur",
 
-        #[cfg(solarish)]
+        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
         ELOCKUNMAPPED => "Locked lock was unmapped",
 
-        #[cfg(solarish)]
+        #[cfg(any(target_os = "illumos", target_os = "solaris"))]
         ENOTACTIVE => "Facility is not active",
-
-        #[cfg(target_os = "hurd")]
-        EBACKGROUND => "Inappropriate operation for background process",
-
-        #[cfg(target_os = "hurd")]
-        EDIED => "Translator died",
-
-        #[cfg(target_os = "hurd")]
-        EGREGIOUS => "You really blew it this time",
-
-        #[cfg(target_os = "hurd")]
-        EIEIO => "Computer bought the farm",
-
-        #[cfg(target_os = "hurd")]
-        EGRATUITOUS => "Gratuitous error",
     }
 }
 
-#[cfg(any(linux_android, target_os = "fuchsia"))]
+#[cfg(any(target_os = "linux", target_os = "android", target_os = "fuchsia"))]
 mod consts {
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     #[repr(i32)]
@@ -980,10 +1322,6 @@ mod consts {
         pub const ENOTSUP: Errno = Errno::EOPNOTSUPP;
     }
 
-    #[deprecated(
-        since = "0.28.0",
-        note = "please use `Errno::from_raw()` instead"
-    )]
     pub const fn from_i32(e: i32) -> Errno {
         use self::Errno::*;
 
@@ -1126,7 +1464,7 @@ mod consts {
     }
 }
 
-#[cfg(apple_targets)]
+#[cfg(any(target_os = "macos", target_os = "ios"))]
 mod consts {
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     #[repr(i32)]
@@ -1247,10 +1585,6 @@ mod consts {
         pub const EDEADLOCK: Errno = Errno::EDEADLK;
     }
 
-    #[deprecated(
-        since = "0.28.0",
-        note = "please use `Errno::from_raw()` instead"
-    )]
     pub const fn from_i32(e: i32) -> Errno {
         use self::Errno::*;
 
@@ -1478,10 +1812,6 @@ mod consts {
         pub const EOPNOTSUPP: Errno = Errno::ENOTSUP;
     }
 
-    #[deprecated(
-        since = "0.28.0",
-        note = "please use `Errno::from_raw()` instead"
-    )]
     pub const fn from_i32(e: i32) -> Errno {
         use self::Errno::*;
 
@@ -1699,10 +2029,6 @@ mod consts {
         pub const EOPNOTSUPP: Errno = Errno::ENOTSUP;
     }
 
-    #[deprecated(
-        since = "0.28.0",
-        note = "please use `Errno::from_raw()` instead"
-    )]
     pub const fn from_i32(e: i32) -> Errno {
         use self::Errno::*;
 
@@ -1915,10 +2241,6 @@ mod consts {
         pub const EWOULDBLOCK: Errno = Errno::EAGAIN;
     }
 
-    #[deprecated(
-        since = "0.28.0",
-        note = "please use `Errno::from_raw()` instead"
-    )]
     pub const fn from_i32(e: i32) -> Errno {
         use self::Errno::*;
 
@@ -2133,10 +2455,6 @@ mod consts {
         pub const EWOULDBLOCK: Errno = Errno::EAGAIN;
     }
 
-    #[deprecated(
-        since = "0.28.0",
-        note = "please use `Errno::from_raw()` instead"
-    )]
     pub const fn from_i32(e: i32) -> Errno {
         use self::Errno::*;
 
@@ -2340,10 +2658,6 @@ mod consts {
         pub const EWOULDBLOCK: Errno = Errno::EAGAIN;
     }
 
-    #[deprecated(
-        since = "0.28.0",
-        note = "please use `Errno::from_raw()` instead"
-    )]
     pub const fn from_i32(e: i32) -> Errno {
         use self::Errno::*;
 
@@ -2438,7 +2752,7 @@ mod consts {
     }
 }
 
-#[cfg(solarish)]
+#[cfg(any(target_os = "illumos", target_os = "solaris"))]
 mod consts {
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     #[repr(i32)]
@@ -2573,10 +2887,6 @@ mod consts {
         pub const EWOULDBLOCK: Errno = Errno::EAGAIN;
     }
 
-    #[deprecated(
-        since = "0.28.0",
-        note = "please use `Errno::from_raw()` instead"
-    )]
     pub const fn from_i32(e: i32) -> Errno {
         use self::Errno::*;
 
@@ -2797,10 +3107,6 @@ mod consts {
         pub const EOPNOTSUPP: Errno = Errno::ENOTSUP;
     }
 
-    #[deprecated(
-        since = "0.28.0",
-        note = "please use `Errno::from_raw()` instead"
-    )]
     pub const fn from_i32(e: i32) -> Errno {
         use self::Errno::*;
 
@@ -2877,6 +3183,211 @@ mod consts {
             libc::EILSEQ => EILSEQ,
             libc::ENOATTR => ENOATTR,
             libc::EBADMSG => EBADMSG,
+            libc::EMULTIHOP => EMULTIHOP,
+            libc::ENOLINK => ENOLINK,
+            libc::EPROTO => EPROTO,
+            _ => UnknownErrno,
+        }
+    }
+}
+
+#[cfg(target_os = "nto")]
+mod consts {
+    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+    #[repr(i32)]
+    #[non_exhaustive]
+    pub enum Errno {
+        UnknownErrno = 0,
+        EPERM = libc::EPERM,
+        ENOENT = libc::ENOENT,
+        ESRCH = libc::ESRCH,
+        EINTR = libc::EINTR,
+        EIO = libc::EIO,
+        ENXIO = libc::ENXIO,
+        E2BIG = libc::E2BIG,
+        ENOEXEC = libc::ENOEXEC,
+        EBADF = libc::EBADF,
+        ECHILD = libc::ECHILD,
+        EDEADLK = libc::EDEADLK,
+        ENOMEM = libc::ENOMEM,
+        EACCES = libc::EACCES,
+        EFAULT = libc::EFAULT,
+        ENOTBLK = libc::ENOTBLK,
+        EBUSY = libc::EBUSY,
+        EEXIST = libc::EEXIST,
+        EXDEV = libc::EXDEV,
+        ENODEV = libc::ENODEV,
+        ENOTDIR = libc::ENOTDIR,
+        EISDIR = libc::EISDIR,
+        EINVAL = libc::EINVAL,
+        ENFILE = libc::ENFILE,
+        EMFILE = libc::EMFILE,
+        ENOTTY = libc::ENOTTY,
+        ETXTBSY = libc::ETXTBSY,
+        EFBIG = libc::EFBIG,
+        ENOSPC = libc::ENOSPC,
+        ESPIPE = libc::ESPIPE,
+        EROFS = libc::EROFS,
+        EMLINK = libc::EMLINK,
+        EPIPE = libc::EPIPE,
+        EDOM = libc::EDOM,
+        ERANGE = libc::ERANGE,
+        EAGAIN = libc::EAGAIN,
+        EINPROGRESS = libc::EINPROGRESS,
+        EALREADY = libc::EALREADY,
+        ENOTSOCK = libc::ENOTSOCK,
+        EDESTADDRREQ = libc::EDESTADDRREQ,
+        EMSGSIZE = libc::EMSGSIZE,
+        EPROTOTYPE = libc::EPROTOTYPE,
+        ENOPROTOOPT = libc::ENOPROTOOPT,
+        EPROTONOSUPPORT = libc::EPROTONOSUPPORT,
+        ESOCKTNOSUPPORT = libc::ESOCKTNOSUPPORT,
+        EOPNOTSUPP = libc::EOPNOTSUPP,
+        EPFNOSUPPORT = libc::EPFNOSUPPORT,
+        EAFNOSUPPORT = libc::EAFNOSUPPORT,
+        EADDRINUSE = libc::EADDRINUSE,
+        EADDRNOTAVAIL = libc::EADDRNOTAVAIL,
+        ENETDOWN = libc::ENETDOWN,
+        ENETUNREACH = libc::ENETUNREACH,
+        ENETRESET = libc::ENETRESET,
+        ECONNABORTED = libc::ECONNABORTED,
+        ECONNRESET = libc::ECONNRESET,
+        ENOBUFS = libc::ENOBUFS,
+        EISCONN = libc::EISCONN,
+        ENOTCONN = libc::ENOTCONN,
+        ESHUTDOWN = libc::ESHUTDOWN,
+        ETOOMANYREFS = libc::ETOOMANYREFS,
+        ETIMEDOUT = libc::ETIMEDOUT,
+        ECONNREFUSED = libc::ECONNREFUSED,
+        ELOOP = libc::ELOOP,
+        ENAMETOOLONG = libc::ENAMETOOLONG,
+        EHOSTDOWN = libc::EHOSTDOWN,
+        EHOSTUNREACH = libc::EHOSTUNREACH,
+        ENOTEMPTY = libc::ENOTEMPTY,
+        EUSERS = libc::EUSERS,
+        EDQUOT = libc::EDQUOT,
+        ESTALE = libc::ESTALE,
+        EREMOTE = libc::EREMOTE,
+        EBADRPC = libc::EBADRPC,
+        ERPCMISMATCH = libc::ERPCMISMATCH,
+        EPROGUNAVAIL = libc::EPROGUNAVAIL,
+        EPROGMISMATCH = libc::EPROGMISMATCH,
+        EPROCUNAVAIL = libc::EPROCUNAVAIL,
+        ENOLCK = libc::ENOLCK,
+        ENOSYS = libc::ENOSYS,
+        EIDRM = libc::EIDRM,
+        ENOMSG = libc::ENOMSG,
+        EOVERFLOW = libc::EOVERFLOW,
+        EILSEQ = libc::EILSEQ,
+        ENOTSUP = libc::ENOTSUP,
+        ECANCELED = libc::ECANCELED,
+        EBADMSG = libc::EBADMSG,
+        ENODATA = libc::ENODATA,
+        ENOSR = libc::ENOSR,
+        ENOSTR = libc::ENOSTR,
+        ETIME = libc::ETIME,
+        EMULTIHOP = libc::EMULTIHOP,
+        ENOLINK = libc::ENOLINK,
+        EPROTO = libc::EPROTO,
+    }
+
+    impl Errno {
+        pub const ELAST: Errno = Errno::ENOTSUP;
+        pub const EWOULDBLOCK: Errno = Errno::EAGAIN;
+    }
+
+    pub const fn from_i32(e: i32) -> Errno {
+        use self::Errno::*;
+
+        match e {
+            libc::EPERM => EPERM,
+            libc::ENOENT => ENOENT,
+            libc::ESRCH => ESRCH,
+            libc::EINTR => EINTR,
+            libc::EIO => EIO,
+            libc::ENXIO => ENXIO,
+            libc::E2BIG => E2BIG,
+            libc::ENOEXEC => ENOEXEC,
+            libc::EBADF => EBADF,
+            libc::ECHILD => ECHILD,
+            libc::EDEADLK => EDEADLK,
+            libc::ENOMEM => ENOMEM,
+            libc::EACCES => EACCES,
+            libc::EFAULT => EFAULT,
+            libc::ENOTBLK => ENOTBLK,
+            libc::EBUSY => EBUSY,
+            libc::EEXIST => EEXIST,
+            libc::EXDEV => EXDEV,
+            libc::ENODEV => ENODEV,
+            libc::ENOTDIR => ENOTDIR,
+            libc::EISDIR => EISDIR,
+            libc::EINVAL => EINVAL,
+            libc::ENFILE => ENFILE,
+            libc::EMFILE => EMFILE,
+            libc::ENOTTY => ENOTTY,
+            libc::ETXTBSY => ETXTBSY,
+            libc::EFBIG => EFBIG,
+            libc::ENOSPC => ENOSPC,
+            libc::ESPIPE => ESPIPE,
+            libc::EROFS => EROFS,
+            libc::EMLINK => EMLINK,
+            libc::EPIPE => EPIPE,
+            libc::EDOM => EDOM,
+            libc::ERANGE => ERANGE,
+            libc::EAGAIN => EAGAIN,
+            libc::EINPROGRESS => EINPROGRESS,
+            libc::EALREADY => EALREADY,
+            libc::ENOTSOCK => ENOTSOCK,
+            libc::EDESTADDRREQ => EDESTADDRREQ,
+            libc::EMSGSIZE => EMSGSIZE,
+            libc::EPROTOTYPE => EPROTOTYPE,
+            libc::ENOPROTOOPT => ENOPROTOOPT,
+            libc::EPROTONOSUPPORT => EPROTONOSUPPORT,
+            libc::ESOCKTNOSUPPORT => ESOCKTNOSUPPORT,
+            libc::EOPNOTSUPP => EOPNOTSUPP,
+            libc::EPFNOSUPPORT => EPFNOSUPPORT,
+            libc::EAFNOSUPPORT => EAFNOSUPPORT,
+            libc::EADDRINUSE => EADDRINUSE,
+            libc::EADDRNOTAVAIL => EADDRNOTAVAIL,
+            libc::ENETDOWN => ENETDOWN,
+            libc::ENETUNREACH => ENETUNREACH,
+            libc::ENETRESET => ENETRESET,
+            libc::ECONNABORTED => ECONNABORTED,
+            libc::ECONNRESET => ECONNRESET,
+            libc::ENOBUFS => ENOBUFS,
+            libc::EISCONN => EISCONN,
+            libc::ENOTCONN => ENOTCONN,
+            libc::ESHUTDOWN => ESHUTDOWN,
+            libc::ETOOMANYREFS => ETOOMANYREFS,
+            libc::ETIMEDOUT => ETIMEDOUT,
+            libc::ECONNREFUSED => ECONNREFUSED,
+            libc::ELOOP => ELOOP,
+            libc::ENAMETOOLONG => ENAMETOOLONG,
+            libc::EHOSTDOWN => EHOSTDOWN,
+            libc::EHOSTUNREACH => EHOSTUNREACH,
+            libc::ENOTEMPTY => ENOTEMPTY,
+            libc::EUSERS => EUSERS,
+            libc::EDQUOT => EDQUOT,
+            libc::ESTALE => ESTALE,
+            libc::EREMOTE => EREMOTE,
+            libc::EBADRPC => EBADRPC,
+            libc::ERPCMISMATCH => ERPCMISMATCH,
+            libc::EPROGUNAVAIL => EPROGUNAVAIL,
+            libc::EPROGMISMATCH => EPROGMISMATCH,
+            libc::EPROCUNAVAIL => EPROCUNAVAIL,
+            libc::ENOLCK => ENOLCK,
+            libc::ENOSYS => ENOSYS,
+            libc::EIDRM => EIDRM,
+            libc::ENOMSG => ENOMSG,
+            libc::EOVERFLOW => EOVERFLOW,
+            libc::EILSEQ => EILSEQ,
+            libc::ENOTSUP => ENOTSUP,
+            libc::ECANCELED => ECANCELED,
+            libc::EBADMSG => EBADMSG,
+            libc::ENODATA => ENODATA,
+            libc::ENOSR => ENOSR,
+            libc::ENOSTR => ENOSTR,
+            libc::ETIME => ETIME,
             libc::EMULTIHOP => EMULTIHOP,
             libc::ENOLINK => ENOLINK,
             libc::EPROTO => EPROTO,
@@ -2992,10 +3503,6 @@ mod consts {
         EOPNOTSUPP = libc::EOPNOTSUPP,
     }
 
-    #[deprecated(
-        since = "0.28.0",
-        note = "please use `Errno::from_raw()` instead"
-    )]
     pub const fn from_i32(e: i32) -> Errno {
         use self::Errno::*;
 
@@ -3098,238 +3605,6 @@ mod consts {
             libc::ENOSTR => ENOSTR,
             libc::ETIME => ETIME,
             libc::EOPNOTSUPP => EOPNOTSUPP,
-            _ => UnknownErrno,
-        }
-    }
-}
-
-#[cfg(target_os = "hurd")]
-mod consts {
-    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-    #[repr(i32)]
-    #[non_exhaustive]
-    pub enum Errno {
-        UnknownErrno = 0,
-        EPERM = libc::EPERM,
-        ENOENT = libc::ENOENT,
-        ESRCH = libc::ESRCH,
-        EINTR = libc::EINTR,
-        EIO = libc::EIO,
-        ENXIO = libc::ENXIO,
-        E2BIG = libc::E2BIG,
-        ENOEXEC = libc::ENOEXEC,
-        EBADF = libc::EBADF,
-        ECHILD = libc::ECHILD,
-        EDEADLK = libc::EDEADLK,
-        ENOMEM = libc::ENOMEM,
-        EACCES = libc::EACCES,
-        EFAULT = libc::EFAULT,
-        ENOTBLK = libc::ENOTBLK,
-        EBUSY = libc::EBUSY,
-        EEXIST = libc::EEXIST,
-        EXDEV = libc::EXDEV,
-        ENODEV = libc::ENODEV,
-        ENOTDIR = libc::ENOTDIR,
-        EISDIR = libc::EISDIR,
-        EINVAL = libc::EINVAL,
-        EMFILE = libc::EMFILE,
-        ENFILE = libc::ENFILE,
-        ENOTTY = libc::ENOTTY,
-        ETXTBSY = libc::ETXTBSY,
-        EFBIG = libc::EFBIG,
-        ENOSPC = libc::ENOSPC,
-        ESPIPE = libc::ESPIPE,
-        EROFS = libc::EROFS,
-        EMLINK = libc::EMLINK,
-        EPIPE = libc::EPIPE,
-        EDOM = libc::EDOM,
-        ERANGE = libc::ERANGE,
-        EAGAIN = libc::EAGAIN,
-        EINPROGRESS = libc::EINPROGRESS,
-        EALREADY = libc::EALREADY,
-        ENOTSOCK = libc::ENOTSOCK,
-        EMSGSIZE = libc::EMSGSIZE,
-        EPROTOTYPE = libc::EPROTOTYPE,
-        ENOPROTOOPT = libc::ENOPROTOOPT,
-        EPROTONOSUPPORT = libc::EPROTONOSUPPORT,
-        ESOCKTNOSUPPORT = libc::ESOCKTNOSUPPORT,
-        EOPNOTSUPP = libc::EOPNOTSUPP,
-        EPFNOSUPPORT = libc::EPFNOSUPPORT,
-        EAFNOSUPPORT = libc::EAFNOSUPPORT,
-        EADDRINUSE = libc::EADDRINUSE,
-        EADDRNOTAVAIL = libc::EADDRNOTAVAIL,
-        ENETDOWN = libc::ENETDOWN,
-        ENETUNREACH = libc::ENETUNREACH,
-        ENETRESET = libc::ENETRESET,
-        ECONNABORTED = libc::ECONNABORTED,
-        ECONNRESET = libc::ECONNRESET,
-        ENOBUFS = libc::ENOBUFS,
-        EISCONN = libc::EISCONN,
-        ENOTCONN = libc::ENOTCONN,
-        EDESTADDRREQ = libc::EDESTADDRREQ,
-        ESHUTDOWN = libc::ESHUTDOWN,
-        ETOOMANYREFS = libc::ETOOMANYREFS,
-        ETIMEDOUT = libc::ETIMEDOUT,
-        ECONNREFUSED = libc::ECONNREFUSED,
-        ELOOP = libc::ELOOP,
-        ENAMETOOLONG = libc::ENAMETOOLONG,
-        EHOSTDOWN = libc::EHOSTDOWN,
-        EHOSTUNREACH = libc::EHOSTUNREACH,
-        ENOTEMPTY = libc::ENOTEMPTY,
-        EPROCLIM = libc::EPROCLIM,
-        EUSERS = libc::EUSERS,
-        EDQUOT = libc::EDQUOT,
-        ESTALE = libc::ESTALE,
-        EREMOTE = libc::EREMOTE,
-        EBADRPC = libc::EBADRPC,
-        ERPCMISMATCH = libc::ERPCMISMATCH,
-        EPROGUNAVAIL = libc::EPROGUNAVAIL,
-        EPROGMISMATCH = libc::EPROGMISMATCH,
-        EPROCUNAVAIL = libc::EPROCUNAVAIL,
-        ENOLCK = libc::ENOLCK,
-        EFTYPE = libc::EFTYPE,
-        EAUTH = libc::EAUTH,
-        ENEEDAUTH = libc::ENEEDAUTH,
-        ENOSYS = libc::ENOSYS,
-        ELIBEXEC = libc::ELIBEXEC,
-        ENOTSUP = libc::ENOTSUP,
-        EILSEQ = libc::EILSEQ,
-        EBACKGROUND = libc::EBACKGROUND,
-        EDIED = libc::EDIED,
-        EGREGIOUS = libc::EGREGIOUS,
-        EIEIO = libc::EIEIO,
-        EGRATUITOUS = libc::EGRATUITOUS,
-        EBADMSG = libc::EBADMSG,
-        EIDRM = libc::EIDRM,
-        EMULTIHOP = libc::EMULTIHOP,
-        ENODATA = libc::ENODATA,
-        ENOLINK = libc::ENOLINK,
-        ENOMSG = libc::ENOMSG,
-        ENOSR = libc::ENOSR,
-        ENOSTR = libc::ENOSTR,
-        EOVERFLOW = libc::EOVERFLOW,
-        EPROTO = libc::EPROTO,
-        ETIME = libc::ETIME,
-        ECANCELED = libc::ECANCELED,
-        EOWNERDEAD = libc::EOWNERDEAD,
-        ENOTRECOVERABLE = libc::ENOTRECOVERABLE,
-    }
-
-    impl Errno {
-        pub const EWOULDBLOCK: Errno = Errno::EAGAIN;
-    }
-
-    #[deprecated(
-        since = "0.28.0",
-        note = "please use `Errno::from_raw()` instead"
-    )]
-    pub const fn from_i32(e: i32) -> Errno {
-        use self::Errno::*;
-
-        match e {
-            libc::EPERM => EPERM,
-            libc::ENOENT => ENOENT,
-            libc::ESRCH => ESRCH,
-            libc::EINTR => EINTR,
-            libc::EIO => EIO,
-            libc::ENXIO => ENXIO,
-            libc::E2BIG => E2BIG,
-            libc::ENOEXEC => ENOEXEC,
-            libc::EBADF => EBADF,
-            libc::ECHILD => ECHILD,
-            libc::EDEADLK => EDEADLK,
-            libc::ENOMEM => ENOMEM,
-            libc::EACCES => EACCES,
-            libc::EFAULT => EFAULT,
-            libc::ENOTBLK => ENOTBLK,
-            libc::EBUSY => EBUSY,
-            libc::EEXIST => EEXIST,
-            libc::EXDEV => EXDEV,
-            libc::ENODEV => ENODEV,
-            libc::ENOTDIR => ENOTDIR,
-            libc::EISDIR => EISDIR,
-            libc::EINVAL => EINVAL,
-            libc::EMFILE => EMFILE,
-            libc::ENFILE => ENFILE,
-            libc::ENOTTY => ENOTTY,
-            libc::ETXTBSY => ETXTBSY,
-            libc::EFBIG => EFBIG,
-            libc::ENOSPC => ENOSPC,
-            libc::ESPIPE => ESPIPE,
-            libc::EROFS => EROFS,
-            libc::EMLINK => EMLINK,
-            libc::EPIPE => EPIPE,
-            libc::EDOM => EDOM,
-            libc::ERANGE => ERANGE,
-            libc::EAGAIN => EAGAIN,
-            libc::EINPROGRESS => EINPROGRESS,
-            libc::EALREADY => EALREADY,
-            libc::ENOTSOCK => ENOTSOCK,
-            libc::EMSGSIZE => EMSGSIZE,
-            libc::EPROTOTYPE => EPROTOTYPE,
-            libc::ENOPROTOOPT => ENOPROTOOPT,
-            libc::EPROTONOSUPPORT => EPROTONOSUPPORT,
-            libc::ESOCKTNOSUPPORT => ESOCKTNOSUPPORT,
-            libc::EOPNOTSUPP => EOPNOTSUPP,
-            libc::EPFNOSUPPORT => EPFNOSUPPORT,
-            libc::EAFNOSUPPORT => EAFNOSUPPORT,
-            libc::EADDRINUSE => EADDRINUSE,
-            libc::EADDRNOTAVAIL => EADDRNOTAVAIL,
-            libc::ENETDOWN => ENETDOWN,
-            libc::ENETUNREACH => ENETUNREACH,
-            libc::ENETRESET => ENETRESET,
-            libc::ECONNABORTED => ECONNABORTED,
-            libc::ECONNRESET => ECONNRESET,
-            libc::ENOBUFS => ENOBUFS,
-            libc::EISCONN => EISCONN,
-            libc::ENOTCONN => ENOTCONN,
-            libc::EDESTADDRREQ => EDESTADDRREQ,
-            libc::ESHUTDOWN => ESHUTDOWN,
-            libc::ETOOMANYREFS => ETOOMANYREFS,
-            libc::ETIMEDOUT => ETIMEDOUT,
-            libc::ECONNREFUSED => ECONNREFUSED,
-            libc::ELOOP => ELOOP,
-            libc::ENAMETOOLONG => ENAMETOOLONG,
-            libc::EHOSTDOWN => EHOSTDOWN,
-            libc::EHOSTUNREACH => EHOSTUNREACH,
-            libc::ENOTEMPTY => ENOTEMPTY,
-            libc::EPROCLIM => EPROCLIM,
-            libc::EUSERS => EUSERS,
-            libc::EDQUOT => EDQUOT,
-            libc::ESTALE => ESTALE,
-            libc::EREMOTE => EREMOTE,
-            libc::EBADRPC => EBADRPC,
-            libc::ERPCMISMATCH => ERPCMISMATCH,
-            libc::EPROGUNAVAIL => EPROGUNAVAIL,
-            libc::EPROGMISMATCH => EPROGMISMATCH,
-            libc::EPROCUNAVAIL => EPROCUNAVAIL,
-            libc::ENOLCK => ENOLCK,
-            libc::EFTYPE => EFTYPE,
-            libc::EAUTH => EAUTH,
-            libc::ENEEDAUTH => ENEEDAUTH,
-            libc::ENOSYS => ENOSYS,
-            libc::ELIBEXEC => ELIBEXEC,
-            libc::ENOTSUP => ENOTSUP,
-            libc::EILSEQ => EILSEQ,
-            libc::EBACKGROUND => EBACKGROUND,
-            libc::EDIED => EDIED,
-            libc::EGREGIOUS => EGREGIOUS,
-            libc::EIEIO => EIEIO,
-            libc::EGRATUITOUS => EGRATUITOUS,
-            libc::EBADMSG => EBADMSG,
-            libc::EIDRM => EIDRM,
-            libc::EMULTIHOP => EMULTIHOP,
-            libc::ENODATA => ENODATA,
-            libc::ENOLINK => ENOLINK,
-            libc::ENOMSG => ENOMSG,
-            libc::ENOSR => ENOSR,
-            libc::ENOSTR => ENOSTR,
-            libc::EOVERFLOW => EOVERFLOW,
-            libc::EPROTO => EPROTO,
-            libc::ETIME => ETIME,
-            libc::ECANCELED => ECANCELED,
-            libc::EOWNERDEAD => EOWNERDEAD,
-            libc::ENOTRECOVERABLE => ENOTRECOVERABLE,
             _ => UnknownErrno,
         }
     }
