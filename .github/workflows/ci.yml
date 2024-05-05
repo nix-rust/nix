@@ -41,7 +41,7 @@ jobs:
           TARGET: '${{ env.TARGET }}'
 
       - name: before_cache_script
-        run: rm -rf $CARGO_HOME/registry/index
+        run: sudo rm -rf $CARGO_HOME/registry/index
 
   macos-aarch64:
     runs-on: macos-14
@@ -68,7 +68,7 @@ jobs:
           TARGET: "${{ env.TARGET }}"
 
       - name: before_cache_script
-        run: rm -rf $CARGO_HOME/registry/index
+        run: sudo rm -rf $CARGO_HOME/registry/index
 
   # Use cross for QEMU-based testing
   # cross needs to execute Docker, GitHub Action already has it installed
@@ -162,7 +162,7 @@ jobs:
           TARGET: '${{ matrix.TARGET }}'
 
       - name: before_cache_script
-        run: rm -rf $CARGO_HOME/registry/index
+        run: sudo rm -rf $CARGO_HOME/registry/index;
 
   rust_stable:
     runs-on: ubuntu-20.04
@@ -188,7 +188,7 @@ jobs:
           TARGET: '${{ env.TARGET }}'
 
       - name: before_cache_script
-        run: rm -rf $CARGO_HOME/registry/index
+        run: sudo rm -rf $CARGO_HOME/registry/index
 
 
 
