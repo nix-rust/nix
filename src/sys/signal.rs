@@ -597,7 +597,7 @@ impl SigSet {
         target_os = "haiku",
         target_os = "hurd",
         target_os = "aix",
-        target_os = "fushsia"
+        target_os = "fuchsia"
     ))]
     #[doc(alias("sigsuspend"))]
     pub fn suspend(&self) -> Result<()> {

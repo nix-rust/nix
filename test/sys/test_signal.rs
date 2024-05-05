@@ -350,7 +350,7 @@ fn test_sigwait() {
     target_os = "haiku",
     target_os = "hurd",
     target_os = "aix",
-    target_os = "fushsia"
+    target_os = "fuchsia"
 ))]
 #[test]
 fn test_sigsuspend() {

@@ -13,7 +13,6 @@ use nix::fcntl::{openat2, OpenHow, ResolveFlag};
     target_env = "gnu",
     any(
         target_arch = "x86_64",
-        target_arch = "x32",
         target_arch = "powerpc",
         target_arch = "s390x"
     )
@@ -146,7 +145,6 @@ fn test_renameat() {
     target_env = "gnu",
     any(
         target_arch = "x86_64",
-        target_arch = "x32",
         target_arch = "powerpc",
         target_arch = "s390x"
     )
@@ -190,7 +188,6 @@ fn test_renameat2_behaves_like_renameat_with_no_flags() {
     target_env = "gnu",
     any(
         target_arch = "x86_64",
-        target_arch = "x32",
         target_arch = "powerpc",
         target_arch = "s390x"
     )
@@ -238,7 +235,6 @@ fn test_renameat2_exchange() {
     target_env = "gnu",
     any(
         target_arch = "x86_64",
-        target_arch = "x32",
         target_arch = "powerpc",
         target_arch = "s390x"
     )

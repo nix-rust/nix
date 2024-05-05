@@ -15,7 +15,7 @@ mod test_fcntl;
 mod test_kmod;
 #[cfg(any(
     freebsdlike,
-    target_os = "fushsia",
+    target_os = "fuchsia",
     target_os = "linux",
     target_os = "netbsd"
 ))]
