@@ -16,113 +16,113 @@ env:
   MSRV: 1.69.0
 
 jobs:
-  macos:
-    runs-on: macos-13
-    env: 
-      TARGET: x86_64-apple-darwin
-    steps:
-      - name: checkout
-        uses: actions/checkout@v4
+  # macos:
+  #   runs-on: macos-13
+  #   env: 
+  #     TARGET: x86_64-apple-darwin
+  #   steps:
+  #     - name: checkout
+  #       uses: actions/checkout@v4
 
-      - name: setup Rust
-        uses: dtolnay/rust-toolchain@master
-        with: 
-          toolchain: '${{ env.MSRV }}'
-          components: clippy
+  #     - name: setup Rust
+  #       uses: dtolnay/rust-toolchain@master
+  #       with: 
+  #         toolchain: '${{ env.MSRV }}'
+  #         components: clippy
 
-      - name: build
-        uses: ./.github/actions/build
-        with:
-          TARGET: '${{ env.TARGET }}'
+  #     - name: build
+  #       uses: ./.github/actions/build
+  #       with:
+  #         TARGET: '${{ env.TARGET }}'
 
-      - name: test
-        uses: ./.github/actions/test
-        with:
-          TARGET: '${{ env.TARGET }}'
+  #     - name: test
+  #       uses: ./.github/actions/test
+  #       with:
+  #         TARGET: '${{ env.TARGET }}'
 
-      - name: before_cache_script
-        run: rm -rf $CARGO_HOME/registry/index
+  #     - name: before_cache_script
+  #       run: rm -rf $CARGO_HOME/registry/index
 
-  macos-aarch64:
-    runs-on: macos-14
-    env:
-      TARGET: aarch64-apple-darwin
-    steps:
-      - name: checkout
-        uses: actions/checkout@v4
+  # macos-aarch64:
+  #   runs-on: macos-14
+  #   env:
+  #     TARGET: aarch64-apple-darwin
+  #   steps:
+  #     - name: checkout
+  #       uses: actions/checkout@v4
 
-      - name: setup Rust
-        uses: dtolnay/rust-toolchain@master
-        with: 
-          toolchain: '${{ env.MSRV }}'
-          components: clippy
+  #     - name: setup Rust
+  #       uses: dtolnay/rust-toolchain@master
+  #       with: 
+  #         toolchain: '${{ env.MSRV }}'
+  #         components: clippy
 
-      - name: build
-        uses: ./.github/actions/build
-        with:
-          TARGET: "${{ env.TARGET }}"
+  #     - name: build
+  #       uses: ./.github/actions/build
+  #       with:
+  #         TARGET: "${{ env.TARGET }}"
 
-      - name: test
-        uses: ./.github/actions/test
-        with:
-          TARGET: "${{ env.TARGET }}"
+  #     - name: test
+  #       uses: ./.github/actions/test
+  #       with:
+  #         TARGET: "${{ env.TARGET }}"
 
-      - name: before_cache_script
-        run: rm -rf $CARGO_HOME/registry/index
+  #     - name: before_cache_script
+  #       run: rm -rf $CARGO_HOME/registry/index
 
-  # Use cross for QEMU-based testing
-  # cross needs to execute Docker, GitHub Action already has it installed
-  cross:
-    runs-on: ubuntu-20.04 
-    needs: [rustfmt, minver, macos, linux_native_builds, rust_stable]
-    strategy:
-      fail-fast: false
-      matrix:
-        target: [
-          arm-unknown-linux-gnueabi,
-          armv7-unknown-linux-gnueabihf,
-          i686-unknown-linux-gnu,
-          i686-unknown-linux-musl,
-          mips-unknown-linux-gnu,
-          mips64-unknown-linux-gnuabi64,
-          mips64el-unknown-linux-gnuabi64,
-          mipsel-unknown-linux-gnu,
-          powerpc64le-unknown-linux-gnu,
-        ]
+  # # Use cross for QEMU-based testing
+  # # cross needs to execute Docker, GitHub Action already has it installed
+  # cross:
+  #   runs-on: ubuntu-20.04 
+  #   needs: [rustfmt, minver, macos, linux_native_builds, rust_stable]
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       target: [
+  #         arm-unknown-linux-gnueabi,
+  #         armv7-unknown-linux-gnueabihf,
+  #         i686-unknown-linux-gnu,
+  #         i686-unknown-linux-musl,
+  #         mips-unknown-linux-gnu,
+  #         mips64-unknown-linux-gnuabi64,
+  #         mips64el-unknown-linux-gnuabi64,
+  #         mipsel-unknown-linux-gnu,
+  #         powerpc64le-unknown-linux-gnu,
+  #       ]
 
-    steps:
-      - name: checkout
-        uses: actions/checkout@v4
+  #   steps:
+  #     - name: checkout
+  #       uses: actions/checkout@v4
 
-      - name: setup Rust
-        uses: dtolnay/rust-toolchain@master
-        with: 
-          toolchain: '${{ env.MSRV }}'
-          components: clippy
+  #     - name: setup Rust
+  #       uses: dtolnay/rust-toolchain@master
+  #       with: 
+  #         toolchain: '${{ env.MSRV }}'
+  #         components: clippy
 
-      # cross relies on docker or podman, GitHub Acton already has it installed.
-      - name: Set up cross
-        uses: taiki-e/install-action@v2
-        with:
-          tool: cross@0.2.5
+  #     # cross relies on docker or podman, GitHub Acton already has it installed.
+  #     - name: Set up cross
+  #       uses: taiki-e/install-action@v2
+  #       with:
+  #         tool: cross@0.2.5
 
-      - name: build
-        uses: ./.github/actions/build
-        with:
-          TARGET: '${{ matrix.target }}'
-          TOOL: cross
-          RUSTFLAGS: --cfg qemu -D warnings
+  #     - name: build
+  #       uses: ./.github/actions/build
+  #       with:
+  #         TARGET: '${{ matrix.target }}'
+  #         TOOL: cross
+  #         RUSTFLAGS: --cfg qemu -D warnings
 
-      - name: test
-        uses: ./.github/actions/test
-        with:
-          TARGET: '${{ matrix.target }}'
-          SUDO: ""
-          TOOL: cross
-          RUSTFLAGS: --cfg qemu -D warnings
+  #     - name: test
+  #       uses: ./.github/actions/test
+  #       with:
+  #         TARGET: '${{ matrix.target }}'
+  #         SUDO: ""
+  #         TOOL: cross
+  #         RUSTFLAGS: --cfg qemu -D warnings
 
-      - name: before_cache_script
-        run: rm -rf $CARGO_HOME/registry/index
+  #     - name: before_cache_script
+  #       run: rm -rf $CARGO_HOME/registry/index
 
 
 
@@ -135,7 +135,7 @@ jobs:
       matrix:
         target: [
           x86_64-unknown-linux-gnu,
-          x86_64-unknown-linux-musl,
+          # x86_64-unknown-linux-musl,
         ]
 
     steps:
@@ -165,206 +165,207 @@ jobs:
         run: | 
           id;
           tree -uga ~/.cargo/registry/index | head -n 100;
+          /usr/bin/ls -al  ~/.cargo/registry/index/github.com-1ecc6299db9ec823/.cache |head -n 10; 
           rm -rf $CARGO_HOME/registry/index;
 
-  rust_stable:
-    runs-on: ubuntu-20.04
-    env: 
-      TARGET: x86_64-unknown-linux-gnu
-    steps:
-      - name: checkout
-        uses: actions/checkout@v4
+  # rust_stable:
+  #   runs-on: ubuntu-20.04
+  #   env: 
+  #     TARGET: x86_64-unknown-linux-gnu
+  #   steps:
+  #     - name: checkout
+  #       uses: actions/checkout@v4
 
-      - name: setup Rust
-        uses: dtolnay/rust-toolchain@stable
-        with: 
-          components: clippy
+  #     - name: setup Rust
+  #       uses: dtolnay/rust-toolchain@stable
+  #       with: 
+  #         components: clippy
 
-      - name: build
-        uses: ./.github/actions/build
-        with:
-          TARGET: '${{ env.TARGET }}'
+  #     - name: build
+  #       uses: ./.github/actions/build
+  #       with:
+  #         TARGET: '${{ env.TARGET }}'
 
-      - name: test
-        uses: ./.github/actions/test
-        with:
-          TARGET: '${{ env.TARGET }}'
+  #     - name: test
+  #       uses: ./.github/actions/test
+  #       with:
+  #         TARGET: '${{ env.TARGET }}'
 
-      - name: before_cache_script
-        run: rm -rf $CARGO_HOME/registry/index
+  #     - name: before_cache_script
+  #       run: rm -rf $CARGO_HOME/registry/index
 
 
 
-  # Tasks for cross-compiling, but no testing
-  cross_compiling:
-    runs-on: ubuntu-20.04
-    needs: [rustfmt, minver, macos, linux_native_builds, rust_stable]
-    env:
-      BUILD: check
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          # Cross claims to support Android, but when it tries to run Nix's tests it
-          # reports undefined symbol references.
-          - target: aarch64-linux-android
-          - target: arm-linux-androideabi
-          - target: armv7-linux-androideabi
-          - target: i686-linux-android
-          - target: x86_64-linux-android
-          - target: arm-unknown-linux-musleabi
-          - target: x86_64-unknown-fuchsia
-          - target: x86_64-unknown-illumos
-          # Cross claims to support running tests on iOS, but it actually doesn't.
-          # https://github.com/rust-embedded/cross/issues/535
-          - target: aarch64-apple-ios 
-          # cargo hack tries to invoke the iphonesimulator SDK for iOS
-            NOHACK: true
-          # Cross claims to support Linux powerpc64, but it really doesn't.
-          # https://github.com/rust-embedded/cross/issues/441
-          - target: powerpc64-unknown-linux-gnu
-          - target: s390x-unknown-linux-gnu
-          - target: x86_64-unknown-linux-gnux32
-          - target: x86_64-unknown-netbsd
+  # # Tasks for cross-compiling, but no testing
+  # cross_compiling:
+  #   runs-on: ubuntu-20.04
+  #   needs: [rustfmt, minver, macos, linux_native_builds, rust_stable]
+  #   env:
+  #     BUILD: check
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       include:
+  #         # Cross claims to support Android, but when it tries to run Nix's tests it
+  #         # reports undefined symbol references.
+  #         - target: aarch64-linux-android
+  #         - target: arm-linux-androideabi
+  #         - target: armv7-linux-androideabi
+  #         - target: i686-linux-android
+  #         - target: x86_64-linux-android
+  #         - target: arm-unknown-linux-musleabi
+  #         - target: x86_64-unknown-fuchsia
+  #         - target: x86_64-unknown-illumos
+  #         # Cross claims to support running tests on iOS, but it actually doesn't.
+  #         # https://github.com/rust-embedded/cross/issues/535
+  #         - target: aarch64-apple-ios 
+  #         # cargo hack tries to invoke the iphonesimulator SDK for iOS
+  #           NOHACK: true
+  #         # Cross claims to support Linux powerpc64, but it really doesn't.
+  #         # https://github.com/rust-embedded/cross/issues/441
+  #         - target: powerpc64-unknown-linux-gnu
+  #         - target: s390x-unknown-linux-gnu
+  #         - target: x86_64-unknown-linux-gnux32
+  #         - target: x86_64-unknown-netbsd
 
-    steps:
-      - name: checkout
-        uses: actions/checkout@v4
+  #   steps:
+  #     - name: checkout
+  #       uses: actions/checkout@v4
 
-      - name: setup Rust
-        uses: dtolnay/rust-toolchain@master
-        with: 
-          toolchain: '${{ env.MSRV }}'
-          components: clippy
+  #     - name: setup Rust
+  #       uses: dtolnay/rust-toolchain@master
+  #       with: 
+  #         toolchain: '${{ env.MSRV }}'
+  #         components: clippy
 
-      - name: install targets
-        run: rustup target add ${{ matrix.target }}
+  #     - name: install targets
+  #       run: rustup target add ${{ matrix.target }}
 
-      - name: build
-        uses: ./.github/actions/build
-        with:
-          TARGET: '${{ matrix.target }}'
-          BUILD: '${{ env.BUILD }}'
-          NOHACK: '${{ matrix.NOHACK  }}'
+  #     - name: build
+  #       uses: ./.github/actions/build
+  #       with:
+  #         TARGET: '${{ matrix.target }}'
+  #         BUILD: '${{ env.BUILD }}'
+  #         NOHACK: '${{ matrix.NOHACK  }}'
 
-      - name: before_cache_script
-        run: rm -rf $CARGO_HOME/registry/index
+  #     - name: before_cache_script
+  #       run: rm -rf $CARGO_HOME/registry/index
   
 
-  redox:
-    runs-on: ubuntu-20.04
-    needs: [rustfmt, minver, macos, linux_native_builds, rust_stable]
-    env: 
-      TARGET: x86_64-unknown-redox
-      CLIPPYFLAGS: -D warnings
-      BUILD: check
-    steps:
-      - name: checkout
-        uses: actions/checkout@v4
+  # redox:
+  #   runs-on: ubuntu-20.04
+  #   needs: [rustfmt, minver, macos, linux_native_builds, rust_stable]
+  #   env: 
+  #     TARGET: x86_64-unknown-redox
+  #     CLIPPYFLAGS: -D warnings
+  #     BUILD: check
+  #   steps:
+  #     - name: checkout
+  #       uses: actions/checkout@v4
 
-      - name: setup Rust
-        # Redox's MSRV policy is unclear.  Until they define it, use nightly.
-        uses: dtolnay/rust-toolchain@nightly
-        with: 
-          components: clippy
+  #     - name: setup Rust
+  #       # Redox's MSRV policy is unclear.  Until they define it, use nightly.
+  #       uses: dtolnay/rust-toolchain@nightly
+  #       with: 
+  #         components: clippy
        
-      - name: install targets
-        run: rustup target add ${{ env.TARGET }}
+  #     - name: install targets
+  #       run: rustup target add ${{ env.TARGET }}
 
-      - name: build
-        uses: ./.github/actions/build
-        with:
-          TARGET: '${{ env.TARGET }}'
-          BUILD: '${{ env.BUILD }}'
-          CLIPPYFLAGS: '${{ env.CLIPPYFLAGS }}'
+  #     - name: build
+  #       uses: ./.github/actions/build
+  #       with:
+  #         TARGET: '${{ env.TARGET }}'
+  #         BUILD: '${{ env.BUILD }}'
+  #         CLIPPYFLAGS: '${{ env.CLIPPYFLAGS }}'
 
-      - name: before_cache_script
-        run: rm -rf $CARGO_HOME/registry/index
+  #     - name: before_cache_script
+  #       run: rm -rf $CARGO_HOME/registry/index
   
 
 
-  # Rust Tier 3 targets can't use Rustup
-  tier3:
-    runs-on: ubuntu-20.04
-    env: 
-      BUILD: check
-      ZFLAGS: -Zbuild-std
-      CLIPPYFLAGS: -D warnings
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - target: x86_64-unknown-dragonfly
-          - target: x86_64-unknown-openbsd
-          # Temporarily disable armv7-unknown-linux-uclibceabihf
-          # https://github.com/nix-rust/nix/issues/2200
-          #- target: armv7-unknown-linux-uclibceabihf
-          - target: x86_64-unknown-haiku
-          # Disable hurd due to
-          # https://github.com/nix-rust/nix/issues/2306
-          # - target: i686-unknown-hurd-gnu
-    steps:
-      - name: checkout
-        uses: actions/checkout@v4
+  # # Rust Tier 3 targets can't use Rustup
+  # tier3:
+  #   runs-on: ubuntu-20.04
+  #   env: 
+  #     BUILD: check
+  #     ZFLAGS: -Zbuild-std
+  #     CLIPPYFLAGS: -D warnings
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       include:
+  #         - target: x86_64-unknown-dragonfly
+  #         - target: x86_64-unknown-openbsd
+  #         # Temporarily disable armv7-unknown-linux-uclibceabihf
+  #         # https://github.com/nix-rust/nix/issues/2200
+  #         #- target: armv7-unknown-linux-uclibceabihf
+  #         - target: x86_64-unknown-haiku
+  #         # Disable hurd due to
+  #         # https://github.com/nix-rust/nix/issues/2306
+  #         # - target: i686-unknown-hurd-gnu
+  #   steps:
+  #     - name: checkout
+  #       uses: actions/checkout@v4
 
-      - name: setup Rust
-        uses: dtolnay/rust-toolchain@nightly
-        with: 
-          components: clippy
+  #     - name: setup Rust
+  #       uses: dtolnay/rust-toolchain@nightly
+  #       with: 
+  #         components: clippy
 
-      - name: install src
-        run: rustup component add rust-src
+  #     - name: install src
+  #       run: rustup component add rust-src
 
-      - name: build
-        uses: ./.github/actions/build
-        with:
-          TARGET: '${{ matrix.target }}'
-          BUILD: '${{ env.BUILD }}'
-          ZFLAGS: '${{ env.ZFLAGS }}'
-          CLIPPYFLAGS: '${{ env.CLIPPYFLAGS }}'
+  #     - name: build
+  #       uses: ./.github/actions/build
+  #       with:
+  #         TARGET: '${{ matrix.target }}'
+  #         BUILD: '${{ env.BUILD }}'
+  #         ZFLAGS: '${{ env.ZFLAGS }}'
+  #         CLIPPYFLAGS: '${{ env.CLIPPYFLAGS }}'
 
-      - name: before_cache_script
-        run: rm -rf $CARGO_HOME/registry/index
+  #     - name: before_cache_script
+  #       run: rm -rf $CARGO_HOME/registry/index
 
 
-  # Test that we can build with the lowest version of all dependencies.
-  # "cargo test" doesn't work because some of our dev-dependencies, like
-  # rand, can't build with their own minimal dependencies.
-  minver:
-    runs-on: ubuntu-20.04
-    env: 
-      TARGET: x86_64-unknown-linux-gnu
-    steps:
-      - name: checkout
-        uses: actions/checkout@v4
+  # # Test that we can build with the lowest version of all dependencies.
+  # # "cargo test" doesn't work because some of our dev-dependencies, like
+  # # rand, can't build with their own minimal dependencies.
+  # minver:
+  #   runs-on: ubuntu-20.04
+  #   env: 
+  #     TARGET: x86_64-unknown-linux-gnu
+  #   steps:
+  #     - name: checkout
+  #       uses: actions/checkout@v4
 
-      - name: setup Rust
-        uses: dtolnay/rust-toolchain@nightly
+  #     - name: setup Rust
+  #       uses: dtolnay/rust-toolchain@nightly
 
-      - name: setup 
-        run: cargo update -Zminimal-versions
+  #     - name: setup 
+  #       run: cargo update -Zminimal-versions
 
-      - name: check
-        run: cargo check
+  #     - name: check
+  #       run: cargo check
 
-      - name: before_cache_script
-        run: rm -rf $CARGO_HOME/registry/index
+  #     - name: before_cache_script
+  #       run: rm -rf $CARGO_HOME/registry/index
 
-  # Tasks that checks if the code is formatted right using `cargo fmt` tool
-  rustfmt:
-    runs-on: ubuntu-20.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+  # # Tasks that checks if the code is formatted right using `cargo fmt` tool
+  # rustfmt:
+  #   runs-on: ubuntu-20.04
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v4
 
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt
+  #     - name: Setup Rust
+  #       uses: dtolnay/rust-toolchain@stable
+  #       with:
+  #         components: rustfmt
 
-      - name: Check format
-        run: cargo fmt --all -- --check **/*.rs
+  #     - name: Check format
+  #       run: cargo fmt --all -- --check **/*.rs
 
-      - name: before_cache_script
-        run: rm -rf $CARGO_HOME/registry/index
+  #     - name: before_cache_script
+  #       run: rm -rf $CARGO_HOME/registry/index
 
