@@ -583,6 +583,24 @@ fn test_f_get_path() {
 
 #[cfg(apple_targets)]
 #[test]
+fn test_f_preallocate() {
+    use nix::fcntl::*;
+
+    let tmp = NamedTempFile::new().unwrap();
+    let mut st: libc::fstore_t = unsafe { std::mem::zeroed() };
+
+    st.fst_flags = libc::F_ALLOCATECONTIG as libc::c_uint;
+    st.fst_posmode = libc::F_PEOFPOSMODE;
+    st.fst_length = 1024;
+    let res = fcntl(tmp, FcntlArg::F_PREALLOCATE(&mut st))
+        .expect("preallocation failed");
+
+    assert_eq!(res, 0);
+    assert!(st.fst_bytesalloc > 0);
+}
+
+#[cfg(apple_targets)]
+#[test]
 fn test_f_get_path_nofirmlink() {
     use nix::fcntl::*;
     use std::path::PathBuf;

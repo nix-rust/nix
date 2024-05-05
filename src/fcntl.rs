@@ -802,7 +802,12 @@ pub enum FcntlArg<'a> {
     F_RDADVISE(libc::radvisory),
     /// Turn read ahead off/on
     #[cfg(apple_targets)]
-    F_RDAHEAD(bool)
+    F_RDAHEAD(bool),
+    /// Pre-allocate storage with different policies on fd.
+    /// Note that we want a mutable reference for the OUT
+    /// fstore_t field fst_bytesalloc.
+    #[cfg(apple_targets)]
+    F_PREALLOCATE(&'a mut libc::fstore_t),
     // TODO: Rest of flags
 }
 
@@ -919,7 +924,11 @@ pub fn fcntl<Fd: std::os::fd::AsFd>(fd: Fd, arg: FcntlArg) -> Result<c_int> {
             F_RDAHEAD(on) => {
                 let val = if on { 1 } else { 0 };
                 libc::fcntl(fd, libc::F_RDAHEAD, val)
-            }
+            },
+            #[cfg(apple_targets)]
+            F_PREALLOCATE(st) => {
+                libc::fcntl(fd, libc::F_PREALLOCATE, st)
+            },
         }
     };
 
