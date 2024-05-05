@@ -162,7 +162,10 @@ jobs:
           TARGET: '${{ matrix.TARGET }}'
 
       - name: before_cache_script
-        run: rm -rf $CARGO_HOME/registry/index
+        run: | 
+          id;
+          tree -uga ~/.cargo/registry/index | head -n 100;
+          rm -rf $CARGO_HOME/registry/index;
 
   rust_stable:
     runs-on: ubuntu-20.04
