@@ -1864,6 +1864,12 @@ mod datalink {
         }
     }
 
+    impl From<libc::sockaddr_ll> for LinkAddr {
+        fn from(sll: libc::sockaddr_ll) -> Self {
+            Self(sll)
+        }
+    }
+
     impl fmt::Display for LinkAddr {
         fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
             if let Some(addr) = self.addr() {
