@@ -236,7 +236,7 @@ pub mod regset {
 
     #[derive(Debug, Clone, Copy)]
     /// General-purpose registers.
-    pub struct NT_PRSTATUS;
+    pub enum NT_PRSTATUS {}
 
     unsafe impl RegisterSet for NT_PRSTATUS {
         const VALUE: RegisterSetValue = RegisterSetValue::NT_PRSTATUS;
@@ -245,7 +245,7 @@ pub mod regset {
 
     #[derive(Debug, Clone, Copy)]
     /// Floating-point registers.
-    pub struct NT_PRFPREG;
+    pub enum NT_PRFPREG {}
 
     unsafe impl RegisterSet for NT_PRFPREG {
         const VALUE: RegisterSetValue = RegisterSetValue::NT_PRFPREG;
