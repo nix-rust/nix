@@ -1047,7 +1047,7 @@ pub fn aio_cancel_all<F: AsFd>(fd: F) -> Result<AioCancelStat> {
 ///     SigevNotify::SigevNone));
 /// aiocb.as_mut().submit().unwrap();
 /// aio_suspend(&[&*aiocb], None).expect("aio_suspend failed");
-/// assert_eq!(aiocb.as_mut().aio_return().unwrap() as usize, WBUF.len());
+/// assert_eq!(aiocb.as_mut().aio_return().unwrap(), WBUF.len());
 /// ```
 /// # References
 ///
