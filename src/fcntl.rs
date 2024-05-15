@@ -114,7 +114,7 @@ libc_bitflags!(
         /// If the specified path isn't a directory, fail.
         O_DIRECTORY;
         /// Implicitly follow each `write()` with an `fdatasync()`.
-        #[cfg(any(linux_android, apple_targets, netbsdlike))]
+        #[cfg(any(linux_android, apple_targets, target_os = "freebsd", netbsdlike))]
         O_DSYNC;
         /// Error out if a file was not created.
         O_EXCL;
