@@ -773,7 +773,7 @@ pub enum ControlMessageOwned {
     #[cfg(target_os = "linux")]
     #[cfg(feature = "net")]
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
-    UdpGroSegments(u16),
+    UdpGroSegments(i32),
 
     /// SO_RXQ_OVFL indicates that an unsigned 32 bit value
     /// ancilliary msg (cmsg) should be attached to recieved
@@ -949,7 +949,7 @@ impl ControlMessageOwned {
             #[cfg(target_os = "linux")]
             #[cfg(feature = "net")]
             (libc::SOL_UDP, libc::UDP_GRO) => {
-                let gso_size: u16 = unsafe { ptr::read_unaligned(p as *const _) };
+                let gso_size: i32 = unsafe { ptr::read_unaligned(p as *const _) };
                 ControlMessageOwned::UdpGroSegments(gso_size)
             },
             #[cfg(any(linux_android, target_os = "fuchsia"))]
