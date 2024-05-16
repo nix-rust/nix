@@ -193,3 +193,6 @@ feature! {
     #![feature = "time"]
     pub mod timer;
 }
+
+#[cfg(all(target_os = "linux", feature = "signal", feature = "process"))]
+pub mod pidfd;
