@@ -686,7 +686,7 @@ mod test_flock {
 
     /// Verify that `Flock::lock()` correctly obtains a lock, and subsequently unlocks upon drop.
     #[test]
-    fn verify_lock_and_drop() {
+    fn lock_and_drop() {
         // Get 2 `File` handles to same underlying file.
         let file1 = NamedTempFile::new().unwrap();
         let file2 = file1.reopen().unwrap();
@@ -710,9 +710,32 @@ mod test_flock {
         }
     }
 
+    /// An exclusive lock can be downgraded
+    #[test]
+    fn downgrade() {
+        let file1 = NamedTempFile::new().unwrap();
+        let file2 = file1.reopen().unwrap();
+        let file1 = file1.into_file();
+
+        // Lock first handle
+        let lock1 = Flock::lock(file1, FlockArg::LockExclusive).unwrap();
+
+        // Attempt to lock second handle
+        let file2 = Flock::lock(file2, FlockArg::LockSharedNonblock)
+            .unwrap_err()
+            .0;
+
+        // Downgrade the lock
+        lock1.relock(FlockArg::LockShared).unwrap();
+
+        // Attempt to lock second handle again (but successfully)
+        Flock::lock(file2, FlockArg::LockSharedNonblock)
+            .expect("Expected locking to be successful.");
+    }
+
     /// Verify that `Flock::unlock()` correctly obtains unlocks.
     #[test]
-    fn verify_unlock() {
+    fn unlock() {
         // Get 2 `File` handles to same underlying file.
         let file1 = NamedTempFile::new().unwrap();
         let file2 = file1.reopen().unwrap();
@@ -728,5 +751,30 @@ mod test_flock {
         if Flock::lock(file2, FlockArg::LockExclusiveNonblock).is_err() {
             panic!("Expected locking to be successful.");
         }
+    }
+
+    /// A shared lock can be upgraded
+    #[test]
+    fn upgrade() {
+        let file1 = NamedTempFile::new().unwrap();
+        let file2 = file1.reopen().unwrap();
+        let file3 = file1.reopen().unwrap();
+        let file1 = file1.into_file();
+
+        // Lock first handle
+        let lock1 = Flock::lock(file1, FlockArg::LockShared).unwrap();
+
+        // Attempt to lock second handle
+        {
+            Flock::lock(file2, FlockArg::LockSharedNonblock)
+                .expect("Locking should've succeeded");
+        }
+
+        // Upgrade the lock
+        lock1.relock(FlockArg::LockExclusive).unwrap();
+
+        // Acquiring an additional shared lock should fail
+        Flock::lock(file3, FlockArg::LockSharedNonblock)
+            .expect_err("Should not have been able to lock the file");
     }
 }
