@@ -955,6 +955,30 @@ impl<T: Flockable> Flock<T> {
         std::mem::forget(self);
         Ok(inner)
     }
+
+    /// Relock the file.  This can upgrade or downgrade the lock type.
+    ///
+    /// # Example
+    /// ```
+    /// # use std::fs::File;
+    /// # use nix::fcntl::{Flock, FlockArg};
+    /// # use tempfile::tempfile;
+    /// let f: std::fs::File = tempfile().unwrap();
+    /// let locked_file = Flock::lock(f, FlockArg::LockExclusive).unwrap();
+    /// // Do stuff, then downgrade the lock
+    /// locked_file.relock(FlockArg::LockShared).unwrap();
+    /// ```
+    pub fn relock(&self, arg: FlockArg) -> Result<()> {
+         let flags = match arg {
+            FlockArg::LockShared => libc::LOCK_SH,
+            FlockArg::LockExclusive => libc::LOCK_EX,
+            FlockArg::LockSharedNonblock => libc::LOCK_SH | libc::LOCK_NB,
+            FlockArg::LockExclusiveNonblock => libc::LOCK_EX | libc::LOCK_NB,
+            #[allow(deprecated)]
+            FlockArg::Unlock | FlockArg::UnlockNonblock => return Err(Errno::EINVAL),
+        };
+        Errno::result(unsafe { libc::flock(self.as_raw_fd(), flags) }).map(drop)
+    }
 }
 
 // Safety: `File` is not [std::clone::Clone].
