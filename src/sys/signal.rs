@@ -759,13 +759,6 @@ pub struct SigAction {
     sigaction: libc::sigaction
 }
 
-impl From<libc::sigaction> for SigAction {
-    fn from(value: libc::sigaction) -> Self {
-        Self {
-            sigaction: value
-        }
-    }
-}
 impl From<SigAction> for libc::sigaction {
     fn from(value: SigAction) -> libc::sigaction {
         value.sigaction
