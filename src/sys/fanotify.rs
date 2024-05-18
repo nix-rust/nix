@@ -96,9 +96,22 @@ libc_bitflags! {
         /// final data.
         FAN_CLASS_PRE_CONTENT;
 
-        /// Remove the limit of 16384 events for the event queue.
+        /// Remove the limit on the number of events in the event queue.
+        ///
+        /// Prior to Linux kernel 5.13, this limit was hardcoded to 16384. After
+        /// 5.13, one can change it via file `/proc/sys/fs/fanotify/max_queued_events`.
+        ///
+        /// See `fanotify(7)` for details about this limit. Use of this flag
+        /// requires the `CAP_SYS_ADMIN` capability.
         FAN_UNLIMITED_QUEUE;
-        /// Remove the limit of 8192 marks.
+        /// Remove the limit on the number of fanotify marks per user.
+        ///
+        /// Prior to Linux kernel 5.13, this limit was hardcoded to 8192 (per
+        /// group, not per user). After 5.13, one can change it via file
+        /// `/proc/sys/fs/fanotify/max_user_marks`.
+        ///
+        /// See `fanotify(7)` for details about this limit. Use of this flag
+        /// requires the `CAP_SYS_ADMIN` capability.
         FAN_UNLIMITED_MARKS;
 
         /// Make `FanotifyEvent::pid` return pidfd. Since Linux 5.15.
