@@ -187,15 +187,14 @@ fn test_fanotify_overflow() {
         )
         .unwrap();
 
-    // perform 10 more events to demonstrate some will be dropped
-    for _ in 0..(max_events + 10) {
-        let tempfile = tempfile.clone();
-        thread::spawn(move || {
-            File::open(&tempfile).unwrap();
-        })
-        .join()
-        .unwrap();
-    }
+    thread::scope(|s| {
+        // perform 10 more events to demonstrate some will be dropped
+        for _ in 0..(max_events + 10) {
+            s.spawn(|| {
+                File::open(&tempfile).unwrap();
+            });
+        }
+    });
 
     // flush the queue until it's empty
     let mut n = 0;
