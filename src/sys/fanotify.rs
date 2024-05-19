@@ -249,6 +249,9 @@ impl FanotifyEvent {
 
 impl Drop for FanotifyEvent {
     fn drop(&mut self) {
+        if self.0.fd == libc::FAN_NOFD {
+            return;
+        }
         let e = close(self.0.fd);
         if !std::thread::panicking() && e == Err(Errno::EBADF) {
             panic!("Closing an invalid file descriptor!");
