@@ -13,6 +13,7 @@ use libc::{self, c_int, size_t, socklen_t};
 #[cfg(all(feature = "uio", not(target_os = "redox")))]
 use libc::{
     c_void, iovec, CMSG_DATA, CMSG_FIRSTHDR, CMSG_LEN, CMSG_NXTHDR, CMSG_SPACE,
+    MSG_CTRUNC,
 };
 #[cfg(not(target_os = "redox"))]
 use std::io::{IoSlice, IoSliceMut};
@@ -599,13 +600,19 @@ pub struct RecvMsg<'a, 's, S> {
 }
 
 impl<'a, S> RecvMsg<'a, '_, S> {
-    /// Iterate over the valid control messages pointed to by this
-    /// msghdr.
-    pub fn cmsgs(&self) -> CmsgIterator {
-        CmsgIterator {
+    /// Iterate over the valid control messages pointed to by this msghdr. If
+    /// allocated space for CMSGs was too small it is not safe to iterate,
+    /// instead return an `Error::ENOBUFS` error.
+    pub fn cmsgs(&self) -> Result<CmsgIterator> {
+
+        if self.mhdr.msg_flags & MSG_CTRUNC == MSG_CTRUNC {
+            return Err(Errno::ENOBUFS);
+        }
+
+        Ok(CmsgIterator {
             cmsghdr: self.cmsghdr,
             mhdr: &self.mhdr
-        }
+        })
     }
 }
 
@@ -700,7 +707,7 @@ pub enum ControlMessageOwned {
     /// let mut iov = [IoSliceMut::new(&mut buffer)];
     /// let r = recvmsg::<SockaddrIn>(in_socket.as_raw_fd(), &mut iov, Some(&mut cmsgspace), flags)
     ///     .unwrap();
-    /// let rtime = match r.cmsgs().next() {
+    /// let rtime = match r.cmsgs().unwrap().next() {
     ///     Some(ControlMessageOwned::ScmTimestamp(rtime)) => rtime,
     ///     Some(_) => panic!("Unexpected control message"),
     ///     None => panic!("No control message")
