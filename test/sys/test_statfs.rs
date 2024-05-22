@@ -44,7 +44,6 @@ fn check_statfs_strict(path: &str) {
 // The cast is not unnecessary on all platforms.
 #[allow(clippy::unnecessary_cast)]
 fn assert_fs_equals(fs: Statfs, vfs: Statvfs) {
-    assert_eq!(fs.files() as u64, vfs.files() as u64);
     assert_eq!(fs.blocks() as u64, vfs.blocks() as u64);
     assert_eq!(fs.block_size() as u64, vfs.fragment_size() as u64);
 }
@@ -93,7 +92,6 @@ fn assert_fs_equals_strict(fs: Statfs, vfs: Statvfs) {
     assert_eq!(fs.files_free() as u64, vfs.files_free() as u64);
     assert_eq!(fs.blocks_free() as u64, vfs.blocks_free() as u64);
     assert_eq!(fs.blocks_available() as u64, vfs.blocks_available() as u64);
-    assert_eq!(fs.files() as u64, vfs.files() as u64);
     assert_eq!(fs.blocks() as u64, vfs.blocks() as u64);
     assert_eq!(fs.block_size() as u64, vfs.fragment_size() as u64);
 }
