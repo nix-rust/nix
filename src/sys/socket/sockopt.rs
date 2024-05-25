@@ -5,8 +5,12 @@ use crate::sys::time::TimeVal;
 use crate::Result;
 use cfg_if::cfg_if;
 use libc::{self, c_int, c_void, socklen_t};
-use std::ffi::{CStr, CString, OsStr, OsString};
+#[cfg(apple_targets)]
+use std::ffi::{CStr, CString};
+#[cfg(any(target_os = "freebsd", linux_android))]
+use std::ffi::{OsStr, OsString};
 use std::mem::{self, MaybeUninit};
+#[cfg(any(target_os = "freebsd", linux_android))]
 use std::os::unix::ffi::OsStrExt;
 use std::os::unix::io::{AsFd, AsRawFd};
 
@@ -749,7 +753,12 @@ sockopt_impl!(
     libc::SO_TIMESTAMPING,
     super::TimestampingFlag
 );
-#[cfg(not(any(target_os = "aix", target_os = "haiku", target_os = "hurd", target_os = "redox")))]
+#[cfg(not(any(
+    target_os = "aix",
+    target_os = "haiku",
+    target_os = "hurd",
+    target_os = "redox"
+)))]
 sockopt_impl!(
     /// Enable or disable the receiving of the `SO_TIMESTAMP` control message.
     ReceiveTimestamp,
@@ -1300,7 +1309,6 @@ impl SetSockOpt for TcpTlsRx {
     }
 }
 
-
 /*
  *
  * ===== Accessor helpers =====
@@ -1438,11 +1446,13 @@ impl<'a> Set<'a, bool> for SetBool {
 }
 
 /// Getter for an `u8` value.
+#[cfg(feature = "net")]
 struct GetU8 {
     len: socklen_t,
     val: MaybeUninit<u8>,
 }
 
+#[cfg(feature = "net")]
 impl Get<u8> for GetU8 {
     fn uninit() -> Self {
         GetU8 {
@@ -1470,10 +1480,12 @@ impl Get<u8> for GetU8 {
 }
 
 /// Setter for an `u8` value.
+#[cfg(feature = "net")]
 struct SetU8 {
     val: u8,
 }
 
+#[cfg(feature = "net")]
 impl<'a> Set<'a, u8> for SetU8 {
     fn new(val: &'a u8) -> SetU8 {
         SetU8 { val: *val }
@@ -1540,11 +1552,13 @@ impl<'a> Set<'a, usize> for SetUsize {
 }
 
 /// Getter for a `OsString` value.
+#[cfg(any(target_os = "freebsd", linux_android))]
 struct GetOsString<T: AsMut<[u8]>> {
     len: socklen_t,
     val: MaybeUninit<T>,
 }
 
+#[cfg(any(target_os = "freebsd", linux_android))]
 impl<T: AsMut<[u8]>> Get<OsString> for GetOsString<T> {
     fn uninit() -> Self {
         GetOsString {
@@ -1569,10 +1583,12 @@ impl<T: AsMut<[u8]>> Get<OsString> for GetOsString<T> {
 }
 
 /// Setter for a `OsString` value.
+#[cfg(any(target_os = "freebsd", linux_android))]
 struct SetOsString<'a> {
     val: &'a OsStr,
 }
 
+#[cfg(any(target_os = "freebsd", linux_android))]
 impl<'a> Set<'a, OsString> for SetOsString<'a> {
     fn new(val: &'a OsString) -> SetOsString {
         SetOsString {
@@ -1590,11 +1606,13 @@ impl<'a> Set<'a, OsString> for SetOsString<'a> {
 }
 
 /// Getter for a `CString` value.
+#[cfg(apple_targets)]
 struct GetCString<T: AsMut<[u8]>> {
     len: socklen_t,
     val: MaybeUninit<T>,
 }
 
+#[cfg(apple_targets)]
 impl<T: AsMut<[u8]>> Get<CString> for GetCString<T> {
     fn uninit() -> Self {
         GetCString {
