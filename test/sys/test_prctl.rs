@@ -135,8 +135,8 @@ mod test_prctl {
             mman::mmap_anonymous(
                 None,
                 sz,
-                mman::ProtFlags::PROT_READ,
-                mman::MapFlags::MAP_SHARED,
+                mman::ProtFlags::PROT_READ | mman::ProtFlags::PROT_WRITE,
+                mman::MapFlags::MAP_PRIVATE,
             )
             .unwrap()
         };
