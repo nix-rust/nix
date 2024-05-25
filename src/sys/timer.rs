@@ -95,7 +95,7 @@ impl Timer {
     /// There are 3 types of alarms you can set:
     ///
     ///   - one shot: the alarm will trigger once after the specified amount of
-    /// time.
+    ///     time.
     ///     Example: I want an alarm to go off in 60s and then disable itself.
     ///
     ///   - interval: the alarm will trigger every specified interval of time.

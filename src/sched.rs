@@ -120,7 +120,10 @@ mod sched_linux_like {
             let ptr = stack.as_mut_ptr().add(stack.len());
             let ptr_aligned = ptr.sub(ptr as usize % 16);
             libc::clone(
-                mem::transmute(
+                mem::transmute::<
+                    extern "C" fn(*mut Box<dyn FnMut() -> isize>) -> i32,
+                    extern "C" fn(*mut libc::c_void) -> i32,
+                >(
                     callback
                         as extern "C" fn(*mut Box<dyn FnMut() -> isize>) -> i32,
                 ),

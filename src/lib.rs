@@ -205,7 +205,7 @@ pub type Result<T> = result::Result<T, Errno>;
 /// * `Eq`
 /// * Small size
 /// * Represents all of the system's errnos, instead of just the most common
-/// ones.
+///   ones.
 pub type Error = Errno;
 
 /// Common trait used to represent file system paths by many Nix functions.
