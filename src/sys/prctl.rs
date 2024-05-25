@@ -219,10 +219,10 @@ pub fn get_thp_disable() -> Result<bool> {
 /// Set an identifier (or reset it) to the address memory range.
 pub fn set_vma_anon_name(addr: NonNull<c_void>, length: NonZeroUsize, name: Option<&CStr>) -> Result<()> {
     let nameref = match name {
-        Some(n) => n.as_ptr(),
-        _ => std::ptr::null()
+        Some(n) => n.as_ptr() as u64,
+        _ => 0u64
     };
-    let res = unsafe { libc::prctl(libc::PR_SET_VMA, libc::PR_SET_VMA_ANON_NAME, addr.as_ptr(), length, nameref) };
+    let res = unsafe { libc::prctl(libc::PR_SET_VMA, libc::PR_SET_VMA_ANON_NAME, addr.as_ptr() as u64, length, nameref) };
 
     Errno::result(res).map(drop)
 }
