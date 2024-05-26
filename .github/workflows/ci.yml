@@ -73,7 +73,7 @@ jobs:
   # Use cross for QEMU-based testing
   # cross needs to execute Docker, GitHub Action already has it installed
   cross:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [rustfmt, minver, macos, linux_native_builds, rust_stable]
     strategy:
       fail-fast: false
