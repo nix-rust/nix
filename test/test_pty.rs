@@ -84,7 +84,8 @@ fn open_ptty_pair() -> (PtyMaster, File) {
     let _m = crate::PTSNAME_MTX.lock();
 
     // Open a new PTTY master
-    let master = posix_openpt(OFlag::O_RDWR).expect("posix_openpt failed");
+    let master = posix_openpt(OFlag::O_RDWR | OFlag::O_NOCTTY)
+        .expect("posix_openpt failed");
 
     // Allow a slave to be generated for it
     grantpt(&master).expect("grantpt failed");
@@ -94,9 +95,12 @@ fn open_ptty_pair() -> (PtyMaster, File) {
     let slave_name = unsafe { ptsname(&master) }.expect("ptsname failed");
 
     // Open the slave device
-    let slave_fd =
-        open(Path::new(&slave_name), OFlag::O_RDWR, stat::Mode::empty())
-            .unwrap();
+    let slave_fd = open(
+        Path::new(&slave_name),
+        OFlag::O_RDWR | OFlag::O_NOCTTY,
+        stat::Mode::empty(),
+    )
+    .unwrap();
 
     #[cfg(solarish)]
     // TODO: rewrite using ioctl!
@@ -122,6 +126,16 @@ fn open_ptty_pair() -> (PtyMaster, File) {
     }
 
     let slave = unsafe { File::from_raw_fd(slave_fd) };
+
+    #[cfg(solarish)]
+    {
+        let mut tty = tcgetattr(&slave).expect("tcgetattr failed");
+        tty.local_flags &= !(LocalFlags::ICANON | LocalFlags::ECHO);
+        tty.control_chars[SpecialCharacterIndices::VMIN as usize] = 1;
+        tty.control_chars[SpecialCharacterIndices::VTIME as usize] = 0;
+
+        tcsetattr(&slave, SetArg::TCSANOW, &tty).expect("tcsetattr failed");
+    }
 
     (master, slave)
 }
