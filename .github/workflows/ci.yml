@@ -44,7 +44,7 @@ jobs:
         run: sudo rm -rf $CARGO_HOME/registry/index
 
   macos-aarch64:
-    runs-on: macos-14
+    runs-on: macos-latest
     env:
       TARGET: aarch64-apple-darwin
     steps:
@@ -73,7 +73,10 @@ jobs:
   # Use cross for QEMU-based testing
   # cross needs to execute Docker, GitHub Action already has it installed
   cross:
-    runs-on: ubuntu-20.04 
+    # Still use 20.04 for this CI step as test `test_prctl::test_set_vma_anon_name`
+    # would fail on 22.04 and 24.04 (at least for now)
+    # https://github.com/nix-rust/nix/issues/2418
+    runs-on: ubuntu-20.04
     needs: [rustfmt, minver, macos, linux_native_builds, rust_stable]
     strategy:
       fail-fast: false
@@ -129,7 +132,7 @@ jobs:
   # Tasks for Linux native builds
   # Only test x86_64 targets on GitHub Action, leave aarch64 one in Cirrus CI.
   linux_native_builds:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -165,7 +168,7 @@ jobs:
         run: sudo rm -rf $CARGO_HOME/registry/index;
 
   rust_stable:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     env: 
       TARGET: x86_64-unknown-linux-gnu
     steps:
@@ -194,7 +197,7 @@ jobs:
 
   # Tasks for cross-compiling, but no testing
   cross_compiling:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     needs: [rustfmt, minver, macos, linux_native_builds, rust_stable]
     env:
       BUILD: check
@@ -249,7 +252,7 @@ jobs:
   
 
   redox:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     needs: [rustfmt, minver, macos, linux_native_builds, rust_stable]
     env: 
       TARGET: x86_64-unknown-redox
@@ -282,7 +285,7 @@ jobs:
 
   # Rust Tier 3 targets can't use Rustup
   tier3:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     env: 
       BUILD: check
       ZFLAGS: -Zbuild-std
@@ -328,7 +331,7 @@ jobs:
   # "cargo test" doesn't work because some of our dev-dependencies, like
   # rand, can't build with their own minimal dependencies.
   minver:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     env: 
       TARGET: x86_64-unknown-linux-gnu
     steps:
@@ -349,7 +352,7 @@ jobs:
 
   # Tasks that checks if the code is formatted right using `cargo fmt` tool
   rustfmt:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
