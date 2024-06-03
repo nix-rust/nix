@@ -966,7 +966,7 @@ fn test_ipv4_recv_tos_opts() {
 }
 
 #[test]
-#[cfg(linux_android)]
+#[cfg(target_os = "linux")]
 fn test_ipv6_recv_traffic_class_opts() {
     let fd = socket(
         AddressFamily::Inet6,
