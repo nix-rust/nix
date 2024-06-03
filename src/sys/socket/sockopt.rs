@@ -441,7 +441,7 @@ sockopt_impl!(
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     /// Receive the traffic class associated with incoming packets.
-    Ipv6TRecvTClass,
+    Ipv6RecvTClass,
     Both,
     libc::IPPROTO_IPV6,
     libc::IPV6_RECVTCLASS,

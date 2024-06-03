@@ -2634,7 +2634,7 @@ pub fn test_ipv6_tclass_udp() {
         None,
     )
     .unwrap();
-    setsockopt(&rsock, sockopt::Ipv6TRecvTClass, &true).unwrap();
+    setsockopt(&rsock, sockopt::Ipv6RecvTClass, &true).unwrap();
     bind(rsock.as_raw_fd(), &sock_addr).unwrap();
 
     let sbuf = [0u8; 2048];

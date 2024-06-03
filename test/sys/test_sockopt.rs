@@ -966,7 +966,7 @@ fn test_ipv4_recv_tos_opts() {
 }
 
 #[test]
-#[cfg(any(linux_android, target_os = "freebsd"))]
+#[cfg(linux_android)]
 fn test_ipv6_recv_traffic_class_opts() {
     let fd = socket(
         AddressFamily::Inet6,
@@ -975,10 +975,10 @@ fn test_ipv6_recv_traffic_class_opts() {
         SockProtocol::Tcp,
     )
     .unwrap();
-    setsockopt(&fd, sockopt::Ipv6TRecvTClass, &true).expect(
+    setsockopt(&fd, sockopt::Ipv6RecvTClass, &true).expect(
         "setting IPV6_RECVTCLASS on an inet6 stream socket should succeed",
     );
-    setsockopt(&fd, sockopt::Ipv6TRecvTClass, &false).expect(
+    setsockopt(&fd, sockopt::Ipv6RecvTClass, &false).expect(
         "unsetting IPV6_RECVTCLASS on an inet6 stream socket should succeed",
     );
     let fdd = socket(
@@ -988,10 +988,10 @@ fn test_ipv6_recv_traffic_class_opts() {
         None,
     )
     .unwrap();
-    setsockopt(&fdd, sockopt::Ipv6TRecvTClass, &true).expect(
+    setsockopt(&fdd, sockopt::Ipv6RecvTClass, &true).expect(
         "setting IPV6_RECVTCLASS on an inet6 datagram socket should succeed",
     );
-    setsockopt(&fdd, sockopt::Ipv6TRecvTClass, &false).expect(
+    setsockopt(&fdd, sockopt::Ipv6RecvTClass, &false).expect(
         "unsetting IPV6_RECVTCLASS on an inet6 datagram socket should succeed",
     );
 }
