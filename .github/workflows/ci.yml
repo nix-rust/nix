@@ -14,6 +14,7 @@ permissions:
 
 env: 
   MSRV: 1.69.0
+  RUSTFLAGS: -Dwarnings
 
 jobs:
   macos:
