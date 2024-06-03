@@ -406,7 +406,7 @@ sockopt_impl!(
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
-    /// Set or receive the Type-Of-Service (TOS) field that is
+    /// Set the Type-Of-Service (TOS) field that is
     /// sent with every IP packet originating from this socket
     IpTos,
     Both,
@@ -418,12 +418,34 @@ sockopt_impl!(
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
-    /// Traffic class associated with outgoing packets
+    /// Receive the Type-Of-Service (TOS) associated with incoming packets.
+    IpRecvTos,
+    Both,
+    libc::IPPROTO_IP,
+    libc::IP_RECVTOS,
+    bool
+);
+#[cfg(target_os = "linux")]
+#[cfg(feature = "net")]
+sockopt_impl!(
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
+    /// Set the traffic class associated with outgoing packets.
     Ipv6TClass,
     Both,
     libc::IPPROTO_IPV6,
     libc::IPV6_TCLASS,
     libc::c_int
+);
+#[cfg(target_os = "linux")]
+#[cfg(feature = "net")]
+sockopt_impl!(
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
+    /// Receive the traffic class associated with incoming packets.
+    Ipv6TRecvTClass,
+    Both,
+    libc::IPPROTO_IPV6,
+    libc::IPV6_RECVTCLASS,
+    bool
 );
 #[cfg(any(linux_android, target_os = "fuchsia"))]
 #[cfg(feature = "net")]
@@ -1045,7 +1067,19 @@ sockopt_impl!(
     libc::IP_TTL,
     libc::c_int
 );
-#[cfg(any(apple_targets, linux_android, target_os = "freebsd"))]
+#[cfg(any(linux_android, target_os = "freebsd"))]
+#[cfg(feature = "net")]
+sockopt_impl!(
+    /// Enables a receiving socket to retrieve the Time-to-Live (TTL) field 
+    /// from incoming IPv4 packets.
+    Ipv4RecvTtl,
+    Both,
+    libc::IPPROTO_IP,
+    libc::IP_RECVTTL,
+    bool
+);
+#[cfg(any(linux_android, target_os = "freebsd"))]
+#[cfg(feature = "net")]
 sockopt_impl!(
     /// Set the unicast hop limit for the socket.
     Ipv6Ttl,
@@ -1053,6 +1087,17 @@ sockopt_impl!(
     libc::IPPROTO_IPV6,
     libc::IPV6_UNICAST_HOPS,
     libc::c_int
+);
+#[cfg(any(linux_android, target_os = "freebsd"))]
+#[cfg(feature = "net")]
+sockopt_impl!(
+    /// Enables a receiving socket to retrieve the Hop Limit field 
+    /// (similar to TTL in IPv4) from incoming IPv6 packets.
+    Ipv6RecvHopLimit,
+    Both,
+    libc::IPPROTO_IPV6,
+    libc::IPV6_RECVHOPLIMIT,
+    bool
 );
 #[cfg(any(linux_android, target_os = "freebsd"))]
 #[cfg(feature = "net")]

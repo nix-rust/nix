@@ -877,3 +877,121 @@ fn test_reuseport_lb() {
     setsockopt(&fd, sockopt::ReusePortLb, &true).unwrap();
     assert!(getsockopt(&fd, sockopt::ReusePortLb).unwrap());
 }
+
+#[test]
+#[cfg(any(linux_android, target_os = "freebsd"))]
+fn test_ipv4_recv_ttl_opts() {
+    let fd = socket(
+        AddressFamily::Inet,
+        SockType::Stream,
+        SockFlag::empty(),
+        SockProtocol::Tcp,
+    )
+    .unwrap();
+    setsockopt(&fd, sockopt::Ipv4RecvTtl, &true)
+        .expect("setting IP_RECVTTL on an inet stream socket should succeed");
+    setsockopt(&fd, sockopt::Ipv4RecvTtl, &false)
+        .expect("unsetting IP_RECVTTL on an inet stream socket should succeed");
+    let fdd = socket(
+        AddressFamily::Inet,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )
+    .unwrap();
+    setsockopt(&fdd, sockopt::Ipv4RecvTtl, &true)
+        .expect("setting IP_RECVTTL on an inet datagram socket should succeed");
+    setsockopt(&fdd, sockopt::Ipv4RecvTtl, &false).expect(
+        "unsetting IP_RECVTTL on an inet datagram socket should succeed",
+    );
+}
+
+#[test]
+#[cfg(any(linux_android, target_os = "freebsd"))]
+fn test_ipv6_recv_hop_limit_opts() {
+    let fd = socket(
+        AddressFamily::Inet6,
+        SockType::Stream,
+        SockFlag::empty(),
+        SockProtocol::Tcp,
+    )
+    .unwrap();
+    setsockopt(&fd, sockopt::Ipv6RecvHopLimit, &true).expect(
+        "setting IPV6_RECVHOPLIMIT on an inet6 stream socket should succeed",
+    );
+    setsockopt(&fd, sockopt::Ipv6RecvHopLimit, &false).expect(
+        "unsetting IPV6_RECVHOPLIMIT on an inet6 stream socket should succeed",
+    );
+    let fdd = socket(
+        AddressFamily::Inet6,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )
+    .unwrap();
+    setsockopt(&fdd, sockopt::Ipv6RecvHopLimit, &true).expect(
+        "setting IPV6_RECVHOPLIMIT on an inet6 datagram socket should succeed",
+    );
+    setsockopt(&fdd, sockopt::Ipv6RecvHopLimit, &false).expect(
+        "unsetting IPV6_RECVHOPLIMIT on an inet6 datagram socket should succeed",
+    );
+}
+
+#[test]
+#[cfg(any(linux_android, target_os = "freebsd"))]
+fn test_ipv4_recv_tos_opts() {
+    let fd = socket(
+        AddressFamily::Inet,
+        SockType::Stream,
+        SockFlag::empty(),
+        SockProtocol::Tcp,
+    )
+    .unwrap();
+    setsockopt(&fd, sockopt::IpRecvTos, &true)
+        .expect("setting IP_RECVTOS on an inet stream socket should succeed");
+    setsockopt(&fd, sockopt::IpRecvTos, &false)
+        .expect("unsetting IP_RECVTOS on an inet stream socket should succeed");
+    let fdd = socket(
+        AddressFamily::Inet,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )
+    .unwrap();
+    setsockopt(&fdd, sockopt::IpRecvTos, &true)
+        .expect("setting IP_RECVTOS on an inet datagram socket should succeed");
+    setsockopt(&fdd, sockopt::IpRecvTos, &false).expect(
+        "unsetting IP_RECVTOS on an inet datagram socket should succeed",
+    );
+}
+
+#[test]
+#[cfg(any(linux_android, target_os = "freebsd"))]
+fn test_ipv6_recv_traffic_class_opts() {
+    let fd = socket(
+        AddressFamily::Inet6,
+        SockType::Stream,
+        SockFlag::empty(),
+        SockProtocol::Tcp,
+    )
+    .unwrap();
+    setsockopt(&fd, sockopt::Ipv6TRecvTClass, &true).expect(
+        "setting IPV6_RECVTCLASS on an inet6 stream socket should succeed",
+    );
+    setsockopt(&fd, sockopt::Ipv6TRecvTClass, &false).expect(
+        "unsetting IPV6_RECVTCLASS on an inet6 stream socket should succeed",
+    );
+    let fdd = socket(
+        AddressFamily::Inet6,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )
+    .unwrap();
+    setsockopt(&fdd, sockopt::Ipv6TRecvTClass, &true).expect(
+        "setting IPV6_RECVTCLASS on an inet6 datagram socket should succeed",
+    );
+    setsockopt(&fdd, sockopt::Ipv6TRecvTClass, &false).expect(
+        "unsetting IPV6_RECVTCLASS on an inet6 datagram socket should succeed",
+    );
+}

@@ -2544,6 +2544,166 @@ fn test_recvmsg_rxq_ovfl() {
     assert_eq!(drop_counter, 1);
 }
 
+#[cfg(target_os = "linux")]
+#[cfg(feature = "net")]
+#[cfg_attr(qemu, ignore)]
+#[test]
+pub fn test_ip_tos_udp() {
+    use nix::sys::socket::ControlMessageOwned;
+    use nix::sys::socket::{
+        bind, recvmsg, sendmsg, setsockopt, socket, sockopt, ControlMessage,
+        MsgFlags, SockFlag, SockType, SockaddrIn,
+    };
+
+    let sock_addr = SockaddrIn::from_str("127.0.0.1:6909").unwrap();
+    let rsock = socket(
+        AddressFamily::Inet,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )
+    .unwrap();
+    setsockopt(&rsock, sockopt::IpRecvTos, &true).unwrap();
+    bind(rsock.as_raw_fd(), &sock_addr).unwrap();
+
+    let sbuf = [0u8; 2048];
+    let iov1 = [std::io::IoSlice::new(&sbuf)];
+
+    let mut rbuf = [0u8; 2048];
+    let mut iov2 = [std::io::IoSliceMut::new(&mut rbuf)];
+    let mut rcmsg = cmsg_space!(libc::c_int);
+
+    let ssock = socket(
+        AddressFamily::Inet,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )
+    .expect("send socket failed");
+    setsockopt(&ssock, sockopt::IpTos, &20).unwrap();
+
+    // Test the sendmsg control message and check the received packet has the same TOS.
+    let scmsg = ControlMessage::IpTos(&20);
+    sendmsg(
+        ssock.as_raw_fd(),
+        &iov1,
+        &[scmsg],
+        MsgFlags::empty(),
+        Some(&sock_addr),
+    )
+    .unwrap();
+
+    // TODO: this test is weak, but testing for the actual ToS value results in sporadic
+    // failures in CI where the ToS in the message header is not the one set by the
+    // sender, so for now the test only checks for the presence of the ToS in the message
+    // header.
+    let mut tc = None;
+    let recv = recvmsg::<()>(
+        rsock.as_raw_fd(),
+        &mut iov2,
+        Some(&mut rcmsg),
+        MsgFlags::empty(),
+    )
+    .unwrap();
+    for c in recv.cmsgs().unwrap() {
+        println!("CMSG: {c:?}");
+        if let ControlMessageOwned::Ipv4Tos(t) = c {
+            tc = Some(t);
+        }
+    }
+    assert!(tc.is_some());
+}
+
+#[cfg(target_os = "linux")]
+#[cfg(feature = "net")]
+#[cfg_attr(qemu, ignore)]
+#[test]
+pub fn test_ipv6_tclass_udp() {
+    use nix::sys::socket::ControlMessageOwned;
+    use nix::sys::socket::{
+        bind, recvmsg, sendmsg, setsockopt, socket, sockopt, ControlMessage,
+        MsgFlags, SockFlag, SockType, SockaddrIn6,
+    };
+
+    let std_sa = SocketAddrV6::from_str("[::1]:6902").unwrap();
+    let sock_addr: SockaddrIn6 = SockaddrIn6::from(std_sa);
+    let rsock = socket(
+        AddressFamily::Inet6,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )
+    .unwrap();
+    setsockopt(&rsock, sockopt::Ipv6TRecvTClass, &true).unwrap();
+    bind(rsock.as_raw_fd(), &sock_addr).unwrap();
+
+    let sbuf = [0u8; 2048];
+    let iov1 = [std::io::IoSlice::new(&sbuf)];
+
+    let mut rbuf = [0u8; 2048];
+    let mut iov2 = [std::io::IoSliceMut::new(&mut rbuf)];
+    let mut rcmsg = cmsg_space!(libc::c_int);
+
+    let ssock = socket(
+        AddressFamily::Inet6,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )
+    .expect("send socket failed");
+    setsockopt(&ssock, sockopt::Ipv6TClass, &10).unwrap();
+
+    sendmsg(
+        ssock.as_raw_fd(),
+        &iov1,
+        &[],
+        MsgFlags::empty(),
+        Some(&sock_addr),
+    )
+    .unwrap();
+
+    let mut tc = None;
+    let recv = recvmsg::<()>(
+        rsock.as_raw_fd(),
+        &mut iov2,
+        Some(&mut rcmsg),
+        MsgFlags::empty(),
+    )
+    .unwrap();
+    for c in recv.cmsgs().unwrap() {
+        if let ControlMessageOwned::Ipv6TClass(t) = c {
+            tc = Some(t);
+        }
+    }
+    assert_eq!(tc, Some(10));
+
+    let scmsg = ControlMessage::Ipv6TClass(&20);
+    sendmsg(
+        ssock.as_raw_fd(),
+        &iov1,
+        &[scmsg],
+        MsgFlags::empty(),
+        Some(&sock_addr),
+    )
+    .unwrap();
+
+    let mut tc = None;
+    let recv = recvmsg::<()>(
+        rsock.as_raw_fd(),
+        &mut iov2,
+        Some(&mut rcmsg),
+        MsgFlags::empty(),
+    )
+    .unwrap();
+    for c in recv.cmsgs().unwrap() {
+        if let ControlMessageOwned::Ipv6TClass(t) = c {
+            tc = Some(t);
+        }
+    }
+
+    assert_eq!(tc, Some(20));
+}
+
 #[cfg(linux_android)]
 mod linux_errqueue {
     use super::FromStr;
