@@ -938,7 +938,7 @@ fn test_ipv6_recv_hop_limit_opts() {
 }
 
 #[test]
-#[cfg(any(linux_android, target_os = "freebsd"))]
+#[cfg(target_os = "linux")]
 fn test_ipv4_recv_tos_opts() {
     let fd = socket(
         AddressFamily::Inet,
