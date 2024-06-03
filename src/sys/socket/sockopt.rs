@@ -1067,7 +1067,7 @@ sockopt_impl!(
     libc::IP_TTL,
     libc::c_int
 );
-#[cfg(any(linux_android, target_os = "freebsd"))]
+#[cfg(linux_android)]
 #[cfg(feature = "net")]
 sockopt_impl!(
     /// Enables a receiving socket to retrieve the Time-to-Live (TTL) field 
@@ -1088,7 +1088,7 @@ sockopt_impl!(
     libc::IPV6_UNICAST_HOPS,
     libc::c_int
 );
-#[cfg(any(linux_android, target_os = "freebsd"))]
+#[cfg(linux_android)]
 #[cfg(feature = "net")]
 sockopt_impl!(
     /// Enables a receiving socket to retrieve the Hop Limit field 
