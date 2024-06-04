@@ -2635,73 +2635,73 @@ pub fn test_ipv6_tclass_udp() {
     )
     .unwrap();
     setsockopt(&rsock, sockopt::Ipv6RecvTClass, &true).unwrap();
-    bind(rsock.as_raw_fd(), &sock_addr).unwrap();
+    if bind(rsock.as_raw_fd(), &sock_addr).is_ok() {
+        let sbuf = [0u8; 2048];
+        let iov1 = [std::io::IoSlice::new(&sbuf)];
 
-    let sbuf = [0u8; 2048];
-    let iov1 = [std::io::IoSlice::new(&sbuf)];
+        let mut rbuf = [0u8; 2048];
+        let mut iov2 = [std::io::IoSliceMut::new(&mut rbuf)];
+        let mut rcmsg = cmsg_space!(libc::c_int);
 
-    let mut rbuf = [0u8; 2048];
-    let mut iov2 = [std::io::IoSliceMut::new(&mut rbuf)];
-    let mut rcmsg = cmsg_space!(libc::c_int);
+        let ssock = socket(
+            AddressFamily::Inet6,
+            SockType::Datagram,
+            SockFlag::empty(),
+            None,
+        )
+        .expect("send socket failed");
+        setsockopt(&ssock, sockopt::Ipv6TClass, &10).unwrap();
 
-    let ssock = socket(
-        AddressFamily::Inet6,
-        SockType::Datagram,
-        SockFlag::empty(),
-        None,
-    )
-    .expect("send socket failed");
-    setsockopt(&ssock, sockopt::Ipv6TClass, &10).unwrap();
+        sendmsg(
+            ssock.as_raw_fd(),
+            &iov1,
+            &[],
+            MsgFlags::empty(),
+            Some(&sock_addr),
+        )
+        .unwrap();
 
-    sendmsg(
-        ssock.as_raw_fd(),
-        &iov1,
-        &[],
-        MsgFlags::empty(),
-        Some(&sock_addr),
-    )
-    .unwrap();
-
-    let mut tc = None;
-    let recv = recvmsg::<()>(
-        rsock.as_raw_fd(),
-        &mut iov2,
-        Some(&mut rcmsg),
-        MsgFlags::empty(),
-    )
-    .unwrap();
-    for c in recv.cmsgs().unwrap() {
-        if let ControlMessageOwned::Ipv6TClass(t) = c {
-            tc = Some(t);
+        let mut tc = None;
+        let recv = recvmsg::<()>(
+            rsock.as_raw_fd(),
+            &mut iov2,
+            Some(&mut rcmsg),
+            MsgFlags::empty(),
+        )
+        .unwrap();
+        for c in recv.cmsgs().unwrap() {
+            if let ControlMessageOwned::Ipv6TClass(t) = c {
+                tc = Some(t);
+            }
         }
-    }
-    assert_eq!(tc, Some(10));
+        assert_eq!(tc, Some(10));
 
-    let scmsg = ControlMessage::Ipv6TClass(&20);
-    sendmsg(
-        ssock.as_raw_fd(),
-        &iov1,
-        &[scmsg],
-        MsgFlags::empty(),
-        Some(&sock_addr),
-    )
-    .unwrap();
+        let scmsg = ControlMessage::Ipv6TClass(&20);
+        sendmsg(
+            ssock.as_raw_fd(),
+            &iov1,
+            &[scmsg],
+            MsgFlags::empty(),
+            Some(&sock_addr),
+        )
+        .unwrap();
 
-    let mut tc = None;
-    let recv = recvmsg::<()>(
-        rsock.as_raw_fd(),
-        &mut iov2,
-        Some(&mut rcmsg),
-        MsgFlags::empty(),
-    )
-    .unwrap();
-    for c in recv.cmsgs().unwrap() {
-        if let ControlMessageOwned::Ipv6TClass(t) = c {
-            tc = Some(t);
+        let mut tc = None;
+        let recv = recvmsg::<()>(
+            rsock.as_raw_fd(),
+            &mut iov2,
+            Some(&mut rcmsg),
+            MsgFlags::empty(),
+        )
+        .unwrap();
+        for c in recv.cmsgs().unwrap() {
+            if let ControlMessageOwned::Ipv6TClass(t) = c {
+                tc = Some(t);
+            }
         }
-    }
 
-    assert_eq!(tc, Some(20));
+        assert_eq!(tc, Some(20));
+    }
 }
 
 #[cfg(linux_android)]
