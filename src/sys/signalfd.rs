@@ -18,6 +18,8 @@
 use crate::errno::Errno;
 pub use crate::sys::signal::{self, SigSet};
 use crate::Result;
+
+/// Information of a received signal, the return type of [`SignalFd::read_signal()`].
 pub use libc::signalfd_siginfo as siginfo;
 
 use std::mem;
