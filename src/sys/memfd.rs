@@ -4,8 +4,7 @@ use cfg_if::cfg_if;
 use std::os::unix::io::{FromRawFd, OwnedFd, RawFd};
 
 use crate::errno::Errno;
-use crate::Result;
-use std::ffi::CStr;
+use crate::{NixPath, Result};
 
 libc_bitflags!(
     /// Options that change the behavior of [`memfd_create`].
@@ -84,9 +83,13 @@ libc_bitflags!(
 ///
 /// [`memfd_create(2)`]: https://man7.org/linux/man-pages/man2/memfd_create.2.html
 #[inline] // Delays codegen, preventing linker errors with dylibs and --no-allow-shlib-undefined
-pub fn memfd_create(name: &CStr, flags: MemFdCreateFlag) -> Result<OwnedFd> {
-    let res = unsafe {
-        cfg_if! {
+pub fn memfd_create<P: NixPath + ?Sized>(
+    name: &P,
+    flags: MemFdCreateFlag,
+) -> Result<OwnedFd> {
+    let res = name.with_nix_path(|cstr| {
+        unsafe {
+            cfg_if! {
             if #[cfg(all(
                 // Android does not have a memfd_create symbol
                 not(target_os = "android"),
@@ -97,12 +100,13 @@ pub fn memfd_create(name: &CStr, flags: MemFdCreateFlag) -> Result<OwnedFd> {
                     target_env = "musl",
                 )))]
             {
-                libc::memfd_create(name.as_ptr(), flags.bits())
+                libc::memfd_create(cstr.as_ptr(), flags.bits())
             } else {
-                libc::syscall(libc::SYS_memfd_create, name.as_ptr(), flags.bits())
+                libc::syscall(libc::SYS_memfd_create, cstr.as_ptr(), flags.bits())
             }
         }
-    };
+        }
+    })?;
 
     Errno::result(res).map(|r| unsafe { OwnedFd::from_raw_fd(r as RawFd) })
 }
