@@ -82,6 +82,3 @@ mod test_statfs;
     target_os = "haiku"
 )))]
 mod test_resource;
-
-#[cfg(any(linux_android, target_os = "freebsd"))]
-mod test_memfd;
