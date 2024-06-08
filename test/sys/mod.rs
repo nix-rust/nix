@@ -82,3 +82,13 @@ mod test_statfs;
     target_os = "haiku"
 )))]
 mod test_resource;
+
+// This test module should be enabled for both linux_android and freebsd, but
+// the `memfd_create(2)` symbol is not available under Linux QEMU,
+//
+// https://github.com/nix-rust/nix/actions/runs/9427112650/job/25970870477
+//
+// and I haven't found a way to stop the linker from linking that symbol, so
+// only enable this for FreeBSD for now.
+#[cfg(target_os = "freebsd")]
+mod test_memfd;
