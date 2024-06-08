@@ -49,8 +49,6 @@ pub unsafe fn clearenv() -> std::result::Result<(), ClearEnvError> {
         } else {
             use std::env;
             for (name, _) in env::vars_os() {
-                // Ignore the lint due to Rust bug: https://github.com/rust-lang/rust/issues/125875
-                #[allow(unsafe_op_in_unsafe_fn)]
                 env::remove_var(name);
             }
             let ret = 0;
