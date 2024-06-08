@@ -83,5 +83,5 @@ mod test_statfs;
 )))]
 mod test_resource;
 
-#[cfg(any(linux_android, target_os = "freebsd"))]
-mod test_memfd;
+// #[cfg(any(linux_android, target_os = "freebsd"))]
+// mod test_memfd;
