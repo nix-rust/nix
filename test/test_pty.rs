@@ -121,7 +121,7 @@ fn open_ptty_pair() -> (PtyMaster, File) {
         }
     }
 
-    let slave = unsafe { File::from_raw_fd(slave_fd) };
+    let slave = File::from(slave_fd);
 
     (master, slave)
 }

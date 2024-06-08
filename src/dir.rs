@@ -3,7 +3,7 @@
 use crate::errno::Errno;
 use crate::fcntl::{self, OFlag};
 use crate::sys;
-use crate::{Error, NixPath, Result};
+use crate::{NixPath, Result};
 use cfg_if::cfg_if;
 use std::ffi;
 use std::os::unix::io::{AsRawFd, IntoRawFd, RawFd};
@@ -43,8 +43,8 @@ impl Dir {
     }
 
     /// Opens the given path as with `fcntl::openat`.
-    pub fn openat<P: ?Sized + NixPath>(
-        dirfd: Option<RawFd>,
+    pub fn openat<Fd: std::os::fd::AsFd, P: ?Sized + NixPath>(
+        dirfd: Fd,
         path: &P,
         oflag: OFlag,
         mode: sys::stat::Mode,
@@ -54,21 +54,29 @@ impl Dir {
     }
 
     /// Converts from a descriptor-based object, closing the descriptor on success or failure.
+    ///
+    /// # Safety
+    ///
+    /// It is only safe if `fd` is an owned file descriptor.
     #[inline]
-    pub fn from<F: IntoRawFd>(fd: F) -> Result<Self> {
-        Dir::from_fd(fd.into_raw_fd())
+    #[deprecated(since = "0.30.0", note = "Deprecate this since it is not I/O-safe, use from_fd instead.")]
+    pub unsafe fn from<F: IntoRawFd>(fd: F) -> Result<Self> {
+        use std::os::fd::FromRawFd;
+        use std::os::fd::OwnedFd;
+
+        // SAFETY:
+        //
+        // This is indeed unsafe is `fd` it not an owned fd.
+        let owned_fd = unsafe { OwnedFd::from_raw_fd(fd.into_raw_fd()) };
+        Dir::from_fd(owned_fd)
     }
 
     /// Converts from a file descriptor, closing it on failure.
     #[doc(alias("fdopendir"))]
-    pub fn from_fd(fd: RawFd) -> Result<Self> {
-        let d = ptr::NonNull::new(unsafe { libc::fdopendir(fd) }).ok_or_else(
-            || {
-                let e = Error::last();
-                unsafe { libc::close(fd) };
-                e
-            },
-        )?;
+    pub fn from_fd(fd: std::os::fd::OwnedFd) -> Result<Self> {
+        use std::os::fd::AsRawFd;
+
+        let d = ptr::NonNull::new(unsafe { libc::fdopendir(fd.as_raw_fd()) }).ok_or(Errno::last())?;
         Ok(Dir(d))
     }
 
@@ -85,6 +93,20 @@ impl Dir {
 //
 // `Dir` is safe to pass from one thread to another, as it's not reference-counted.
 unsafe impl Send for Dir {}
+
+impl std::os::fd::AsFd for Dir {
+    fn as_fd(&self) -> std::os::fd::BorrowedFd {
+        let raw_fd = self.as_raw_fd();
+
+        // SAFETY:
+        //
+        // `raw_fd` should be open and valid for the lifetime of the returned
+        // `BorrowedFd` as it is extracted from `&self`.
+        unsafe {
+            std::os::fd::BorrowedFd::borrow_raw(raw_fd)
+        }
+    }
+}
 
 impl AsRawFd for Dir {
     fn as_raw_fd(&self) -> RawFd {
