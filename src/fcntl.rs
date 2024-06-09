@@ -13,7 +13,6 @@ use std::ffi::CStr;
 use std::ffi::OsString;
 #[cfg(not(any(target_os = "redox", target_os = "solaris")))]
 use std::ops::{Deref, DerefMut};
-use std::os::fd::BorrowedFd;
 #[cfg(not(target_os = "redox"))]
 use std::os::raw;
 use std::os::unix::ffi::OsStringExt;
@@ -29,9 +28,6 @@ use std::os::unix::io::RawFd;
 use std::path::PathBuf;
 #[cfg(any(linux_android, target_os = "freebsd"))]
 use std::ptr;
-
-#[cfg(feature = "fs")]
-use std::os::fd::FromRawFd;
 
 #[cfg(feature = "fs")]
 use crate::{sys::stat::Mode, NixPath, Result};
@@ -54,8 +50,8 @@ pub use self::posix_fadvise::{posix_fadvise, PosixFadviseAdvice};
 // 2. It is not a valid file descriptor, but OS will handle it for us when passed
 //    to `xxat(2)` calls.
 #[cfg(not(target_os = "redox"))] // Redox does not have this
-pub const AT_FDCWD: BorrowedFd<'static> =
-    unsafe { BorrowedFd::borrow_raw(libc::AT_FDCWD) };
+pub const AT_FDCWD: std::os::fd::BorrowedFd<'static> =
+    unsafe { std::os::fd::BorrowedFd::borrow_raw(libc::AT_FDCWD) };
 
 #[cfg(not(target_os = "redox"))]
 #[cfg(any(feature = "fs", feature = "process", feature = "user"))]
@@ -235,7 +231,9 @@ pub fn open<P: ?Sized + NixPath>(
     path: &P,
     oflag: OFlag,
     mode: Mode,
-) -> Result<OwnedFd> {
+) -> Result<std::os::fd::OwnedFd> {
+    use std::os::fd::FromRawFd;
+
     let fd = path.with_nix_path(|cstr| unsafe {
         libc::open(cstr.as_ptr(), oflag.bits(), mode.bits() as c_uint)
     })?;
@@ -244,7 +242,7 @@ pub fn open<P: ?Sized + NixPath>(
     // SAFETY:
     //
     // `open(2)` should return a valid owned fd on success
-    Ok( unsafe { OwnedFd::from_raw_fd(fd)  } )
+    Ok( unsafe { std::os::fd::OwnedFd::from_raw_fd(fd)  } )
 }
 
 /// open or create a file for reading, writing or executing
@@ -265,6 +263,7 @@ pub fn openat<P: ?Sized + NixPath, Fd: std::os::fd::AsFd>(
     mode: Mode,
 ) -> Result<OwnedFd> {
     use std::os::fd::AsRawFd;
+    use std::os::fd::FromRawFd;
 
     let fd = path.with_nix_path(|cstr| unsafe {
         libc::openat(dirfd.as_fd().as_raw_fd(), cstr.as_ptr(), oflag.bits(), mode.bits() as c_uint)
@@ -1350,7 +1349,7 @@ impl SpacectlRange {
 /// f.write_all(INITIAL).unwrap();
 /// let mut range = SpacectlRange(3, 6);
 /// while (!range.is_empty()) {
-///     range = fspacectl(f.as_raw_fd(), range).unwrap();
+///     range = fspacectl(&f, range).unwrap();
 /// }
 /// let mut buf = vec![0; INITIAL.len()];
 /// f.read_exact_at(&mut buf, 0).unwrap();
@@ -1402,7 +1401,7 @@ pub fn fspacectl<Fd: std::os::fd::AsFd>(fd: Fd, range: SpacectlRange) -> Result<
 /// const INITIAL: &[u8] = b"0123456789abcdef";
 /// let mut f = tempfile().unwrap();
 /// f.write_all(INITIAL).unwrap();
-/// fspacectl_all(f.as_raw_fd(), 3, 6).unwrap();
+/// fspacectl_all(&f., 3, 6).unwrap();
 /// let mut buf = vec![0; INITIAL.len()];
 /// f.read_exact_at(&mut buf, 0).unwrap();
 /// assert_eq!(buf, b"012\0\0\0\0\0\09abcdef");

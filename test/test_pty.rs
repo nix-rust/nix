@@ -103,7 +103,6 @@ fn open_ptty_pair() -> (PtyMaster, File) {
     #[allow(clippy::comparison_chain)]
     {
         use libc::{ioctl, I_FIND, I_PUSH};
-        use std::os::fd::AsRawFd;
 
         // On illumos systems, as per pts(7D), one must push STREAMS modules
         // after opening a device path returned from ptsname().
