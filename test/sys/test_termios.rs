@@ -100,10 +100,10 @@ fn test_local_flags() {
     let pty = openpty(None, &termios).unwrap();
 
     // Set the master is in nonblocking mode or reading will never return.
-    let flags = fcntl::fcntl(pty.master.as_raw_fd(), fcntl::F_GETFL).unwrap();
+    let flags = fcntl::fcntl(pty.master.as_fd(), fcntl::F_GETFL).unwrap();
     let new_flags =
         fcntl::OFlag::from_bits_truncate(flags) | fcntl::OFlag::O_NONBLOCK;
-    fcntl::fcntl(pty.master.as_raw_fd(), fcntl::F_SETFL(new_flags)).unwrap();
+    fcntl::fcntl(pty.master.as_fd(), fcntl::F_SETFL(new_flags)).unwrap();
 
     // Write into the master
     let string = "foofoofoo\r";

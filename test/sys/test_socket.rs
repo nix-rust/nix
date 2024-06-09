@@ -1122,7 +1122,14 @@ pub fn test_af_alg_aead() {
     // authentication tag memory is only needed in the output buffer for encryption
     // and in the input buffer for decryption.
     // Do not block on read, as we may have fewer bytes than buffer size
-    fcntl(session_socket, FcntlArg::F_SETFL(OFlag::O_NONBLOCK))
+
+    // SAFETY:
+    //
+    // `session_socket` will be valid for the lifetime of this test
+    // TODO: remove this workaround when accept(2) becomes I/O-safe.
+    let borrowed_fd =
+        unsafe { std::os::fd::BorrowedFd::borrow_raw(session_socket) };
+    fcntl(borrowed_fd, FcntlArg::F_SETFL(OFlag::O_NONBLOCK))
         .expect("fcntl non_blocking");
     let num_bytes =
         read(session_socket.as_raw_fd(), &mut decrypted).expect("read decrypt");

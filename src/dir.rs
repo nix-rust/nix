@@ -3,7 +3,7 @@
 use crate::errno::Errno;
 use crate::fcntl::{self, OFlag};
 use crate::sys;
-use crate::{Error, NixPath, Result};
+use crate::{NixPath, Result};
 use cfg_if::cfg_if;
 use std::ffi;
 use std::os::unix::io::{AsRawFd, IntoRawFd, RawFd};
@@ -17,17 +17,38 @@ use libc::{dirent, readdir_r};
 
 /// An open directory.
 ///
-/// This is a lower-level interface than `std::fs::ReadDir`. Notable differences:
-///    * can be opened from a file descriptor (as returned by `openat`, perhaps before knowing
-///      if the path represents a file or directory).
-///    * implements `AsRawFd`, so it can be passed to `fstat`, `openat`, etc.
-///      The file descriptor continues to be owned by the `Dir`, so callers must not keep a `RawFd`
-///      after the `Dir` is dropped.
+/// This is a lower-level interface than [`std::fs::ReadDir`]. Notable differences:
+///    * can be opened from a file descriptor (as returned by [`openat`][openat],
+///      perhaps before knowing if the path represents a file or directory).
+///    * implements [`AsFd`][AsFd], so it can be passed to [`fstat`][fstat],
+///      [`openat`][openat], etc. The file descriptor continues to be owned by the
+///      `Dir`, so callers must not keep a `RawFd` after the `Dir` is dropped.
 ///    * can be iterated through multiple times without closing and reopening the file
 ///      descriptor. Each iteration rewinds when finished.
 ///    * returns entries for `.` (current directory) and `..` (parent directory).
-///    * returns entries' names as a `CStr` (no allocation or conversion beyond whatever libc
+///    * returns entries' names as a [`CStr`][cstr] (no allocation or conversion beyond whatever libc
 ///      does).
+///
+/// [AsFd]: std::os::fd::AsFd
+/// [fstat]: crate::sys::stat::fstat
+/// [openat]: crate::fcntl::openat
+/// [cstr]: std::ffi::CStr
+///
+/// # Examples
+///
+/// Traverse the current directory, and print entries' names:
+///
+/// ```
+/// use nix::dir::Dir;
+/// use nix::fcntl::OFlag;
+/// use nix::sys::stat::Mode;
+///
+/// let mut cwd = Dir::open(".", OFlag::O_RDONLY | OFlag::O_CLOEXEC, Mode::empty()).unwrap();
+/// for res_entry in cwd.iter() {
+///     let entry = res_entry.unwrap();
+///     println!("File name: {}", entry.file_name().to_str().unwrap());
+/// }
+/// ```
 #[derive(Debug, Eq, Hash, PartialEq)]
 pub struct Dir(ptr::NonNull<libc::DIR>);
 
@@ -43,8 +64,8 @@ impl Dir {
     }
 
     /// Opens the given path as with `fcntl::openat`.
-    pub fn openat<P: ?Sized + NixPath>(
-        dirfd: Option<RawFd>,
+    pub fn openat<Fd: std::os::fd::AsFd, P: ?Sized + NixPath>(
+        dirfd: Fd,
         path: &P,
         oflag: OFlag,
         mode: sys::stat::Mode,
@@ -54,21 +75,46 @@ impl Dir {
     }
 
     /// Converts from a descriptor-based object, closing the descriptor on success or failure.
+    ///
+    /// # Safety
+    ///
+    /// It is only safe if `fd` is an owned file descriptor.
     #[inline]
-    pub fn from<F: IntoRawFd>(fd: F) -> Result<Self> {
-        Dir::from_fd(fd.into_raw_fd())
+    #[deprecated(
+        since = "0.30.0",
+        note = "Deprecate this since it is not I/O-safe, use from_fd instead."
+    )]
+    pub unsafe fn from<F: IntoRawFd>(fd: F) -> Result<Self> {
+        use std::os::fd::FromRawFd;
+        use std::os::fd::OwnedFd;
+
+        // SAFETY:
+        //
+        // This is indeed unsafe is `fd` it not an owned fd.
+        let owned_fd = unsafe { OwnedFd::from_raw_fd(fd.into_raw_fd()) };
+        Dir::from_fd(owned_fd)
     }
 
     /// Converts from a file descriptor, closing it on failure.
+    ///
+    /// # Examples
+    ///
+    /// `ENOTDIR` would be returned if `fd` does not refer to a directory:
+    ///
+    /// ```should_panic
+    /// use std::os::fd::OwnedFd;
+    /// use nix::dir::Dir;
+    ///
+    /// let temp_file = tempfile::tempfile().unwrap();
+    /// let temp_file_fd: OwnedFd = temp_file.into();
+    /// let never = Dir::from_fd(temp_file_fd).unwrap();
+    /// ```
     #[doc(alias("fdopendir"))]
-    pub fn from_fd(fd: RawFd) -> Result<Self> {
-        let d = ptr::NonNull::new(unsafe { libc::fdopendir(fd) }).ok_or_else(
-            || {
-                let e = Error::last();
-                unsafe { libc::close(fd) };
-                e
-            },
-        )?;
+    pub fn from_fd(fd: std::os::fd::OwnedFd) -> Result<Self> {
+        // take the ownership as the constructed `Dir` is now the owner
+        let raw_fd = fd.into_raw_fd();
+        let d = ptr::NonNull::new(unsafe { libc::fdopendir(raw_fd) })
+            .ok_or(Errno::last())?;
         Ok(Dir(d))
     }
 
@@ -85,6 +131,18 @@ impl Dir {
 //
 // `Dir` is safe to pass from one thread to another, as it's not reference-counted.
 unsafe impl Send for Dir {}
+
+impl std::os::fd::AsFd for Dir {
+    fn as_fd(&self) -> std::os::fd::BorrowedFd {
+        let raw_fd = self.as_raw_fd();
+
+        // SAFETY:
+        //
+        // `raw_fd` should be open and valid for the lifetime of the returned
+        // `BorrowedFd` as it is extracted from `&self`.
+        unsafe { std::os::fd::BorrowedFd::borrow_raw(raw_fd) }
+    }
+}
 
 impl AsRawFd for Dir {
     fn as_raw_fd(&self) -> RawFd {
