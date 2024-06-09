@@ -44,6 +44,32 @@ use crate::{sys::stat::Mode, NixPath, Result};
 pub use self::posix_fadvise::{posix_fadvise, PosixFadviseAdvice};
 
 /// A file descriptor referring to the working directory of the current process.
+///
+/// # Examples
+///
+/// Use it in [`openat()`]:
+///
+/// ```no_run
+/// use nix::fcntl::AT_FDCWD;
+/// use nix::fcntl::openat;
+/// use nix::fcntl::OFlag;
+/// use nix::sys::stat::Mode;
+///
+/// let fd = openat(AT_FDCWD, "foo", OFlag::O_RDONLY | OFlag::O_CLOEXEC, Mode::empty()).unwrap();
+/// ```
+///
+/// # WARNING
+///
+/// Do NOT pass this symbol to non-`xxat()` functions, it won't work:
+///
+/// ```should_panic
+/// use nix::errno::Errno;
+/// use nix::fcntl::AT_FDCWD;
+/// use nix::sys::stat::fstat;
+/// use std::os::fd::AsRawFd;
+///
+/// let never = fstat(AT_FDCWD.as_raw_fd()).unwrap();
+/// ```
 //
 // SAFETY:
 // 1. `AT_FDCWD` is usable for the whole process life, so it is `'static`.

@@ -17,17 +17,38 @@ use libc::{dirent, readdir_r};
 
 /// An open directory.
 ///
-/// This is a lower-level interface than `std::fs::ReadDir`. Notable differences:
-///    * can be opened from a file descriptor (as returned by `openat`, perhaps before knowing
-///      if the path represents a file or directory).
-///    * implements `AsRawFd`, so it can be passed to `fstat`, `openat`, etc.
-///      The file descriptor continues to be owned by the `Dir`, so callers must not keep a `RawFd`
-///      after the `Dir` is dropped.
+/// This is a lower-level interface than [`std::fs::ReadDir`]. Notable differences:
+///    * can be opened from a file descriptor (as returned by [`openat`][openat],
+///      perhaps before knowing if the path represents a file or directory).
+///    * implements [`AsFd`][AsFd], so it can be passed to [`fstat`][fstat],
+///      [`openat`][openat], etc. The file descriptor continues to be owned by the
+///      `Dir`, so callers must not keep a `RawFd` after the `Dir` is dropped.
 ///    * can be iterated through multiple times without closing and reopening the file
 ///      descriptor. Each iteration rewinds when finished.
 ///    * returns entries for `.` (current directory) and `..` (parent directory).
-///    * returns entries' names as a `CStr` (no allocation or conversion beyond whatever libc
+///    * returns entries' names as a [`CStr`][cstr] (no allocation or conversion beyond whatever libc
 ///      does).
+///
+/// [AsFd]: std::os::fd::AsFd
+/// [fstat]: crate::sys::stat::fstat
+/// [openat]: crate::fcntl::openat
+/// [cstr]: std::ffi::CStr
+///
+/// # Examples
+///
+/// Traverse the current directory, and print entries' names:
+///
+/// ```
+/// use nix::dir::Dir;
+/// use nix::fcntl::OFlag;
+/// use nix::sys::stat::Mode;
+///
+/// let mut cwd = Dir::open(".", OFlag::O_RDONLY | OFlag::O_CLOEXEC, Mode::empty()).unwrap();
+/// for res_entry in cwd.iter() {
+///     let entry = res_entry.unwrap();
+///     println!("File name: {}", entry.file_name().to_str().unwrap());
+/// }
+/// ```
 #[derive(Debug, Eq, Hash, PartialEq)]
 pub struct Dir(ptr::NonNull<libc::DIR>);
 
@@ -75,6 +96,19 @@ impl Dir {
     }
 
     /// Converts from a file descriptor, closing it on failure.
+    ///
+    /// # Examples
+    ///
+    /// `ENOTDIR` would be returned if `fd` does not refer to a directory:
+    ///
+    /// ```should_panic
+    /// use std::os::fd::OwnedFd;
+    /// use nix::dir::Dir;
+    ///
+    /// let temp_file = tempfile::tempfile().unwrap();
+    /// let temp_file_fd: OwnedFd = temp_file.into();
+    /// let never = Dir::from_fd(temp_file_fd).unwrap();
+    /// ```
     #[doc(alias("fdopendir"))]
     pub fn from_fd(fd: std::os::fd::OwnedFd) -> Result<Self> {
         // take the ownership as the constructed `Dir` is now the owner
