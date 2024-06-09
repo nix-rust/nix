@@ -33,7 +33,6 @@ mod test_pty;
 mod test_sched;
 #[cfg(any(linux_android, freebsdlike, apple_targets, solarish))]
 mod test_sendfile;
-mod test_stat;
 mod test_time;
 mod test_unistd;
 
