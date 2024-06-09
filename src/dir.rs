@@ -59,7 +59,10 @@ impl Dir {
     ///
     /// It is only safe if `fd` is an owned file descriptor.
     #[inline]
-    #[deprecated(since = "0.30.0", note = "Deprecate this since it is not I/O-safe, use from_fd instead.")]
+    #[deprecated(
+        since = "0.30.0",
+        note = "Deprecate this since it is not I/O-safe, use from_fd instead."
+    )]
     pub unsafe fn from<F: IntoRawFd>(fd: F) -> Result<Self> {
         use std::os::fd::FromRawFd;
         use std::os::fd::OwnedFd;
@@ -76,7 +79,8 @@ impl Dir {
     pub fn from_fd(fd: std::os::fd::OwnedFd) -> Result<Self> {
         // take the ownership as the constructed `Dir` is now the owner
         let raw_fd = fd.into_raw_fd();
-        let d = ptr::NonNull::new(unsafe { libc::fdopendir(raw_fd) }).ok_or(Errno::last())?;
+        let d = ptr::NonNull::new(unsafe { libc::fdopendir(raw_fd) })
+            .ok_or(Errno::last())?;
         Ok(Dir(d))
     }
 
@@ -102,9 +106,7 @@ impl std::os::fd::AsFd for Dir {
         //
         // `raw_fd` should be open and valid for the lifetime of the returned
         // `BorrowedFd` as it is extracted from `&self`.
-        unsafe {
-            std::os::fd::BorrowedFd::borrow_raw(raw_fd)
-        }
+        unsafe { std::os::fd::BorrowedFd::borrow_raw(raw_fd) }
     }
 }
 

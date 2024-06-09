@@ -13,12 +13,13 @@ use std::ffi::CStr;
 use std::ffi::OsString;
 #[cfg(not(any(target_os = "redox", target_os = "solaris")))]
 use std::ops::{Deref, DerefMut};
+use std::os::fd::BorrowedFd;
 #[cfg(not(target_os = "redox"))]
 use std::os::raw;
 use std::os::unix::ffi::OsStringExt;
-use std::os::unix::io::RawFd;
 #[cfg(not(any(target_os = "redox", target_os = "solaris")))]
 use std::os::unix::io::OwnedFd;
+use std::os::unix::io::RawFd;
 #[cfg(any(
     target_os = "netbsd",
     apple_targets,
@@ -28,7 +29,6 @@ use std::os::unix::io::OwnedFd;
 use std::path::PathBuf;
 #[cfg(any(linux_android, target_os = "freebsd"))]
 use std::ptr;
-use std::os::fd::BorrowedFd;
 
 #[cfg(feature = "fs")]
 use std::os::fd::FromRawFd;
@@ -53,7 +53,8 @@ pub use self::posix_fadvise::{posix_fadvise, PosixFadviseAdvice};
 // 1. `AT_FDCWD` is usable for the whole process life, so it is `'static`.
 // 2. It is not a valid file descriptor, but OS will handle it for us when passed
 //    to `xxat(2)` calls.
-pub const AT_FDCWD: BorrowedFd<'static> = unsafe { BorrowedFd::borrow_raw(libc::AT_FDCWD) };
+pub const AT_FDCWD: BorrowedFd<'static> =
+    unsafe { BorrowedFd::borrow_raw(libc::AT_FDCWD) };
 
 #[cfg(not(target_os = "redox"))]
 #[cfg(any(feature = "fs", feature = "process", feature = "user"))]
