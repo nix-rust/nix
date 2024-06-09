@@ -632,7 +632,7 @@ fn test_f_get_path_nofirmlink() {
 #[test]
 fn test_f_kinfo() {
     use nix::fcntl::*;
-    use std::{os::unix::io::AsRawFd, path::PathBuf};
+    use std::path::PathBuf;
 
     let tmp = NamedTempFile::new().unwrap();
     // With TMPDIR set with UFS, the vnode name is not entered

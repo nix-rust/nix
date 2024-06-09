@@ -53,6 +53,7 @@ pub use self::posix_fadvise::{posix_fadvise, PosixFadviseAdvice};
 // 1. `AT_FDCWD` is usable for the whole process life, so it is `'static`.
 // 2. It is not a valid file descriptor, but OS will handle it for us when passed
 //    to `xxat(2)` calls.
+#[cfg(not(target_os = "redox"))] // Redox does not have this
 pub const AT_FDCWD: BorrowedFd<'static> =
     unsafe { BorrowedFd::borrow_raw(libc::AT_FDCWD) };
 
