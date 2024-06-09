@@ -74,9 +74,9 @@ impl Dir {
     /// Converts from a file descriptor, closing it on failure.
     #[doc(alias("fdopendir"))]
     pub fn from_fd(fd: std::os::fd::OwnedFd) -> Result<Self> {
-        use std::os::fd::AsRawFd;
-
-        let d = ptr::NonNull::new(unsafe { libc::fdopendir(fd.as_raw_fd()) }).ok_or(Errno::last())?;
+        // take the ownership as the constructed `Dir` is now the owner
+        let raw_fd = fd.into_raw_fd();
+        let d = ptr::NonNull::new(unsafe { libc::fdopendir(raw_fd) }).ok_or(Errno::last())?;
         Ok(Dir(d))
     }
 
