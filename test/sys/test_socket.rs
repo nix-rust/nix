@@ -1127,7 +1127,8 @@ pub fn test_af_alg_aead() {
     //
     // `session_socket` will be valid for the lifetime of this test
     // TODO: remove this workaround when accept(2) becomes I/O-safe.
-    let borrowed_fd = unsafe { std::os::fd::BorrowedFd::borrow_raw(session_socket) };
+    let borrowed_fd =
+        unsafe { std::os::fd::BorrowedFd::borrow_raw(session_socket) };
     fcntl(borrowed_fd, FcntlArg::F_SETFL(OFlag::O_NONBLOCK))
         .expect("fcntl non_blocking");
     let num_bytes =

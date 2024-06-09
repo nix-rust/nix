@@ -192,9 +192,12 @@ fn test_mkfifoat() {
 
     mkfifoat(Some(dirfd.as_raw_fd()), mkfifoat_name, Mode::S_IRUSR).unwrap();
 
-    let stats =
-        stat::fstatat(Some(dirfd.as_raw_fd()), mkfifoat_name, fcntl::AtFlags::empty())
-            .unwrap();
+    let stats = stat::fstatat(
+        Some(dirfd.as_raw_fd()),
+        mkfifoat_name,
+        fcntl::AtFlags::empty(),
+    )
+    .unwrap();
     let typ = stat::SFlag::from_bits_truncate(stats.st_mode);
     assert_eq!(typ, SFlag::S_IFIFO);
 }
@@ -228,7 +231,8 @@ fn test_mkfifoat_directory() {
     let tempdir = tempdir().unwrap();
     let dirfd = open(tempdir.path(), OFlag::empty(), Mode::empty()).unwrap();
     let mkfifoat_dir = "mkfifoat_dir";
-    stat::mkdirat(Some(dirfd.as_raw_fd()), mkfifoat_dir, Mode::S_IRUSR).unwrap();
+    stat::mkdirat(Some(dirfd.as_raw_fd()), mkfifoat_dir, Mode::S_IRUSR)
+        .unwrap();
 
     mkfifoat(Some(dirfd.as_raw_fd()), mkfifoat_dir, Mode::S_IRUSR)
         .expect_err("assertion failed");
@@ -573,7 +577,8 @@ fn test_fchownat() {
 
     let dirfd = open(tempdir.path(), OFlag::empty(), Mode::empty()).unwrap();
 
-    fchownat(Some(dirfd.as_raw_fd()), "file", uid, gid, AtFlags::empty()).unwrap();
+    fchownat(Some(dirfd.as_raw_fd()), "file", uid, gid, AtFlags::empty())
+        .unwrap();
 
     chdir(tempdir.path()).unwrap();
     fchownat(None, "file", uid, gid, AtFlags::empty()).unwrap();
@@ -762,13 +767,11 @@ fn test_pipe2() {
     use nix::fcntl::{fcntl, FcntlArg, FdFlag};
 
     let (fd0, fd1) = pipe2(OFlag::O_CLOEXEC).unwrap();
-    let f0 = FdFlag::from_bits_truncate(
-        fcntl(&fd0, FcntlArg::F_GETFD).unwrap(),
-    );
+    let f0 =
+        FdFlag::from_bits_truncate(fcntl(&fd0, FcntlArg::F_GETFD).unwrap());
     assert!(f0.contains(FdFlag::FD_CLOEXEC));
-    let f1 = FdFlag::from_bits_truncate(
-        fcntl(&fd1, FcntlArg::F_GETFD).unwrap(),
-    );
+    let f1 =
+        FdFlag::from_bits_truncate(fcntl(&fd1, FcntlArg::F_GETFD).unwrap());
     assert!(f1.contains(FdFlag::FD_CLOEXEC));
 }
 
@@ -877,7 +880,7 @@ fn test_canceling_alarm() {
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
 fn test_symlinkat() {
     use std::os::fd::AsRawFd;
-    
+
     let _m = crate::CWD_LOCK.read();
 
     let tempdir = tempdir().unwrap();
@@ -1117,7 +1120,7 @@ fn test_linkat_follow_symlink() {
 #[cfg(not(target_os = "redox"))]
 fn test_unlinkat_dir_noremovedir() {
     use std::os::fd::AsRawFd;
-    
+
     let tempdir = tempdir().unwrap();
     let dirname = "foo_dir";
     let dirpath = tempdir.path().join(dirname);
@@ -1132,7 +1135,8 @@ fn test_unlinkat_dir_noremovedir() {
 
     // Attempt unlink dir at relative path without proper flag
     let err_result =
-        unlinkat(Some(dirfd.as_raw_fd()), dirname, UnlinkatFlags::NoRemoveDir).unwrap_err();
+        unlinkat(Some(dirfd.as_raw_fd()), dirname, UnlinkatFlags::NoRemoveDir)
+            .unwrap_err();
     assert!(err_result == Errno::EISDIR || err_result == Errno::EPERM);
 }
 
@@ -1140,7 +1144,7 @@ fn test_unlinkat_dir_noremovedir() {
 #[cfg(not(target_os = "redox"))]
 fn test_unlinkat_dir_removedir() {
     use std::os::fd::AsRawFd;
-    
+
     let tempdir = tempdir().unwrap();
     let dirname = "foo_dir";
     let dirpath = tempdir.path().join(dirname);
@@ -1154,7 +1158,8 @@ fn test_unlinkat_dir_removedir() {
             .unwrap();
 
     // Attempt unlink dir at relative path with proper flag
-    unlinkat(Some(dirfd.as_raw_fd()), dirname, UnlinkatFlags::RemoveDir).unwrap();
+    unlinkat(Some(dirfd.as_raw_fd()), dirname, UnlinkatFlags::RemoveDir)
+        .unwrap();
     assert!(!dirpath.exists());
 }
 
@@ -1162,7 +1167,7 @@ fn test_unlinkat_dir_removedir() {
 #[cfg(not(target_os = "redox"))]
 fn test_unlinkat_file() {
     use std::os::fd::AsRawFd;
-    
+
     let tempdir = tempdir().unwrap();
     let filename = "foo.txt";
     let filepath = tempdir.path().join(filename);
@@ -1176,7 +1181,12 @@ fn test_unlinkat_file() {
             .unwrap();
 
     // Attempt unlink file at relative path
-    unlinkat(Some(dirfd.as_raw_fd()), filename, UnlinkatFlags::NoRemoveDir).unwrap();
+    unlinkat(
+        Some(dirfd.as_raw_fd()),
+        filename,
+        UnlinkatFlags::NoRemoveDir,
+    )
+    .unwrap();
     assert!(!filepath.exists());
 }
 
@@ -1322,7 +1332,7 @@ fn test_faccessat_none_not_existing() {
 fn test_faccessat_not_existing() {
     use nix::fcntl::AtFlags;
     use std::os::fd::AsRawFd;
-    
+
     let tempdir = tempfile::tempdir().unwrap();
     let dirfd = open(tempdir.path(), OFlag::empty(), Mode::empty()).unwrap();
     let not_exist_file = "does_not_exist.txt";
@@ -1360,7 +1370,7 @@ fn test_faccessat_none_file_exists() {
 fn test_faccessat_file_exists() {
     use nix::fcntl::AtFlags;
     use std::os::fd::AsRawFd;
-    
+
     let tempdir = tempfile::tempdir().unwrap();
     let dirfd = open(tempdir.path(), OFlag::empty(), Mode::empty()).unwrap();
     let exist_file = "does_exist.txt";

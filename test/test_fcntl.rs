@@ -154,23 +154,11 @@ fn test_renameat2_behaves_like_renameat_with_no_flags() {
     let new_dir = tempfile::tempdir().unwrap();
     let new_dirfd =
         open(new_dir.path(), OFlag::empty(), Mode::empty()).unwrap();
-    renameat2(
-        &old_dirfd,
-        "old",
-        &new_dirfd,
-        "new",
-        RenameFlags::empty(),
-    )
-    .unwrap();
+    renameat2(&old_dirfd, "old", &new_dirfd, "new", RenameFlags::empty())
+        .unwrap();
     assert_eq!(
-        renameat2(
-            &old_dirfd,
-            "old",
-            &new_dirfd,
-            "new",
-            RenameFlags::empty()
-        )
-        .unwrap_err(),
+        renameat2(&old_dirfd, "old", &new_dirfd, "new", RenameFlags::empty())
+            .unwrap_err(),
         Errno::ENOENT
     );
     assert!(new_dir.path().join("new").exists());
@@ -301,14 +289,7 @@ fn test_copy_file_range() {
     tmp1.flush().unwrap();
 
     let mut from_offset: i64 = 3;
-    copy_file_range(
-        &tmp1,
-        Some(&mut from_offset),
-        &tmp2,
-        None,
-        3,
-    )
-    .unwrap();
+    copy_file_range(&tmp1, Some(&mut from_offset), &tmp2, None, 3).unwrap();
 
     let mut res: String = String::new();
     tmp2.rewind().unwrap();
@@ -435,7 +416,8 @@ mod linux_android {
             // skip the test.
             skip!("/proc/locks does not work on overlayfs");
         }
-        let inode = fstat(tmp.as_raw_fd()).expect("fstat failed").st_ino as usize;
+        let inode =
+            fstat(tmp.as_raw_fd()).expect("fstat failed").st_ino as usize;
 
         let mut flock: libc::flock = unsafe {
             mem::zeroed() // required for Linux/mips
@@ -452,7 +434,8 @@ mod linux_android {
         );
 
         flock.l_type = libc::F_UNLCK as libc::c_short;
-        fcntl(&tmp, FcntlArg::F_OFD_SETLKW(&flock)).expect("write unlock failed");
+        fcntl(&tmp, FcntlArg::F_OFD_SETLKW(&flock))
+            .expect("write unlock failed");
         assert_eq!(None, lock_info(inode));
     }
 
@@ -473,7 +456,8 @@ mod linux_android {
             // skip the test.
             skip!("/proc/locks does not work on overlayfs");
         }
-        let inode = fstat(tmp.as_raw_fd()).expect("fstat failed").st_ino as usize;
+        let inode =
+            fstat(tmp.as_raw_fd()).expect("fstat failed").st_ino as usize;
 
         let mut flock: libc::flock = unsafe {
             mem::zeroed() // required for Linux/mips
@@ -490,7 +474,8 @@ mod linux_android {
         );
 
         flock.l_type = libc::F_UNLCK as libc::c_short;
-        fcntl(&tmp, FcntlArg::F_OFD_SETLKW(&flock)).expect("read unlock failed");
+        fcntl(&tmp, FcntlArg::F_OFD_SETLKW(&flock))
+            .expect("read unlock failed");
         assert_eq!(None, lock_info(inode));
     }
 
@@ -540,12 +525,8 @@ mod test_posix_fadvise {
     #[test]
     fn test_errno() {
         let (rd, _wr) = pipe().unwrap();
-        let res = posix_fadvise(
-            &rd,
-            0,
-            100,
-            PosixFadviseAdvice::POSIX_FADV_WILLNEED,
-        );
+        let res =
+            posix_fadvise(&rd, 0, 100, PosixFadviseAdvice::POSIX_FADV_WILLNEED);
         assert_eq!(res, Err(Errno::ESPIPE));
     }
 }
@@ -660,7 +641,8 @@ fn test_f_kinfo() {
     // to pass.
     let tmp2 = File::open(tmp.path()).unwrap();
     let mut path = PathBuf::new();
-    let res = fcntl(&tmp2, FcntlArg::F_KINFO(&mut path)).expect("get path failed");
+    let res =
+        fcntl(&tmp2, FcntlArg::F_KINFO(&mut path)).expect("get path failed");
     assert_ne!(res, -1);
     assert_eq!(path, tmp.path());
 }
