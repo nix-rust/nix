@@ -16,7 +16,6 @@ fn flags() -> OFlag {
 }
 
 #[test]
-#[allow(clippy::unnecessary_sort_by)] // False positive
 fn read() {
     let tmp = tempdir().unwrap();
     File::create(tmp.path().join("foo")).unwrap();
