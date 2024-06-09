@@ -429,7 +429,6 @@ feature! {
 /// * [`dup2()`]
 /// * [`dup2_raw()`]
 /// * [`dup3()`]
-/// * [`dup3_raw()`]
 #[inline]
 pub fn dup<Fd: std::os::fd::AsFd>(oldfd: Fd) -> Result<std::os::fd::OwnedFd> {
     use std::os::fd::AsRawFd;
@@ -445,6 +444,7 @@ pub fn dup<Fd: std::os::fd::AsFd>(oldfd: Fd) -> Result<std::os::fd::OwnedFd> {
 }
 
 /// Duplicate `fd` with stdin.
+#[inline]
 pub fn dup2_stdin<Fd: std::os::fd::AsFd>(fd: Fd) -> Result<()> {
     use std::os::fd::AsRawFd;
     use libc::STDIN_FILENO;
@@ -454,6 +454,7 @@ pub fn dup2_stdin<Fd: std::os::fd::AsFd>(fd: Fd) -> Result<()> {
 }
 
 /// Duplicate `fd` with stdout.
+#[inline]
 pub fn dup2_stdout<Fd: std::os::fd::AsFd>(fd: Fd) -> Result<()> {
     use std::os::fd::AsRawFd;
     use libc::STDOUT_FILENO;
@@ -463,6 +464,7 @@ pub fn dup2_stdout<Fd: std::os::fd::AsFd>(fd: Fd) -> Result<()> {
 }
 
 /// Duplicate `fd` with stderr.
+#[inline]
 pub fn dup2_stderr<Fd: std::os::fd::AsFd>(fd: Fd) -> Result<()> {
     use std::os::fd::AsRawFd;
     use libc::STDERR_FILENO;
@@ -478,7 +480,8 @@ pub fn dup2_stderr<Fd: std::os::fd::AsFd>(fd: Fd) -> Result<()> {
 /// more detail on the exact behavior of this function.
 ///
 /// This function does not allow you to duplicate `oldfd` with any file descriptor
-/// you want, to do that, use [`dup2_raw()`].
+/// you want, to do that, use [`dup2_raw()`]#[inline]
+.
 ///
 /// # Reference
 ///
