@@ -1401,7 +1401,7 @@ pub fn fspacectl<Fd: std::os::fd::AsFd>(fd: Fd, range: SpacectlRange) -> Result<
 /// const INITIAL: &[u8] = b"0123456789abcdef";
 /// let mut f = tempfile().unwrap();
 /// f.write_all(INITIAL).unwrap();
-/// fspacectl_all(&f., 3, 6).unwrap();
+/// fspacectl_all(&f, 3, 6).unwrap();
 /// let mut buf = vec![0; INITIAL.len()];
 /// f.read_exact_at(&mut buf, 0).unwrap();
 /// assert_eq!(buf, b"012\0\0\0\0\0\09abcdef");
