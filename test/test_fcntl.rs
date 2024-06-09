@@ -405,7 +405,6 @@ mod linux_android {
     fn test_ofd_write_lock() {
         use nix::sys::stat::fstat;
         use std::mem;
-        use std::os::fd::AsRawFd;
 
         let tmp = NamedTempFile::new().unwrap();
 
@@ -416,8 +415,7 @@ mod linux_android {
             // skip the test.
             skip!("/proc/locks does not work on overlayfs");
         }
-        let inode =
-            fstat(tmp.as_raw_fd()).expect("fstat failed").st_ino as usize;
+        let inode = fstat(&tmp).expect("fstat failed").st_ino as usize;
 
         let mut flock: libc::flock = unsafe {
             mem::zeroed() // required for Linux/mips
@@ -445,7 +443,6 @@ mod linux_android {
     fn test_ofd_read_lock() {
         use nix::sys::stat::fstat;
         use std::mem;
-        use std::os::fd::AsRawFd;
 
         let tmp = NamedTempFile::new().unwrap();
 
@@ -456,8 +453,7 @@ mod linux_android {
             // skip the test.
             skip!("/proc/locks does not work on overlayfs");
         }
-        let inode =
-            fstat(tmp.as_raw_fd()).expect("fstat failed").st_ino as usize;
+        let inode = fstat(&tmp).expect("fstat failed").st_ino as usize;
 
         let mut flock: libc::flock = unsafe {
             mem::zeroed() // required for Linux/mips

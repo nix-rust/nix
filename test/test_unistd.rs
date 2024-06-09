@@ -192,12 +192,8 @@ fn test_mkfifoat() {
 
     mkfifoat(Some(dirfd.as_raw_fd()), mkfifoat_name, Mode::S_IRUSR).unwrap();
 
-    let stats = stat::fstatat(
-        Some(dirfd.as_raw_fd()),
-        mkfifoat_name,
-        fcntl::AtFlags::empty(),
-    )
-    .unwrap();
+    let stats =
+        stat::fstatat(&dirfd, mkfifoat_name, fcntl::AtFlags::empty()).unwrap();
     let typ = stat::SFlag::from_bits_truncate(stats.st_mode);
     assert_eq!(typ, SFlag::S_IFIFO);
 }
@@ -231,8 +227,7 @@ fn test_mkfifoat_directory() {
     let tempdir = tempdir().unwrap();
     let dirfd = open(tempdir.path(), OFlag::empty(), Mode::empty()).unwrap();
     let mkfifoat_dir = "mkfifoat_dir";
-    stat::mkdirat(Some(dirfd.as_raw_fd()), mkfifoat_dir, Mode::S_IRUSR)
-        .unwrap();
+    stat::mkdirat(&dirfd, mkfifoat_dir, Mode::S_IRUSR).unwrap();
 
     mkfifoat(Some(dirfd.as_raw_fd()), mkfifoat_dir, Mode::S_IRUSR)
         .expect_err("assertion failed");
@@ -742,12 +737,12 @@ fn test_getresgid() {
 fn test_pipe() {
     let (fd0, fd1) = pipe().unwrap();
     let m0 = stat::SFlag::from_bits_truncate(
-        stat::fstat(fd0.as_raw_fd()).unwrap().st_mode as mode_t,
+        stat::fstat(&fd0).unwrap().st_mode as mode_t,
     );
     // S_IFIFO means it's a pipe
     assert_eq!(m0, SFlag::S_IFIFO);
     let m1 = stat::SFlag::from_bits_truncate(
-        stat::fstat(fd1.as_raw_fd()).unwrap().st_mode as mode_t,
+        stat::fstat(&fd1).unwrap().st_mode as mode_t,
     );
     assert_eq!(m1, SFlag::S_IFIFO);
 }

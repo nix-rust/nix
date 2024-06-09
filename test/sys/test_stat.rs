@@ -5,7 +5,6 @@ use std::fs::File;
 use std::os::unix::fs::symlink;
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
 use std::os::unix::fs::PermissionsExt;
-use std::os::unix::prelude::AsRawFd;
 #[cfg(not(target_os = "redox"))]
 use std::path::Path;
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
@@ -102,15 +101,13 @@ fn test_stat_and_fstat() {
     let stat_result = stat(&filename);
     assert_stat_results(stat_result);
 
-    let fstat_result = fstat(file.as_raw_fd());
+    let fstat_result = fstat(&file);
     assert_stat_results(fstat_result);
 }
 
 #[test]
 #[cfg(not(any(target_os = "netbsd", target_os = "redox")))]
 fn test_fstatat() {
-    use std::os::fd::AsRawFd;
-
     let tempdir = tempfile::tempdir().unwrap();
     let filename = tempdir.path().join("foo.txt");
     File::create(&filename).unwrap();
@@ -118,11 +115,7 @@ fn test_fstatat() {
         fcntl::open(tempdir.path(), fcntl::OFlag::empty(), stat::Mode::empty())
             .unwrap();
 
-    let result = stat::fstatat(
-        Some(dirfd.as_raw_fd()),
-        &filename,
-        fcntl::AtFlags::empty(),
-    );
+    let result = stat::fstatat(&dirfd, &filename, fcntl::AtFlags::empty());
     assert_stat_results(result);
 }
 
@@ -147,7 +140,7 @@ fn test_stat_fstat_lstat() {
     let lstat_result = lstat(&linkname);
     assert_lstat_results(lstat_result);
 
-    let fstat_result = fstat(link.as_raw_fd());
+    let fstat_result = fstat(&link);
     assert_stat_results(fstat_result);
 }
 
@@ -160,14 +153,14 @@ fn test_fchmod() {
     let mut mode1 = Mode::empty();
     mode1.insert(Mode::S_IRUSR);
     mode1.insert(Mode::S_IWUSR);
-    fchmod(file.as_raw_fd(), mode1).unwrap();
+    fchmod(&file, mode1).unwrap();
 
     let file_stat1 = stat(&filename).unwrap();
     assert_eq!(file_stat1.st_mode as mode_t & 0o7777, mode1.bits());
 
     let mut mode2 = Mode::empty();
     mode2.insert(Mode::S_IROTH);
-    fchmod(file.as_raw_fd(), mode2).unwrap();
+    fchmod(&file, mode2).unwrap();
 
     let file_stat2 = stat(&filename).unwrap();
     assert_eq!(file_stat2.st_mode as mode_t & 0o7777, mode2.bits());
@@ -176,8 +169,6 @@ fn test_fchmod() {
 #[test]
 #[cfg(not(target_os = "redox"))]
 fn test_fchmodat() {
-    use std::os::fd::AsRawFd;
-
     let _dr = crate::DirRestore::new();
     let tempdir = tempfile::tempdir().unwrap();
     let filename = "foo.txt";
@@ -191,13 +182,7 @@ fn test_fchmodat() {
     let mut mode1 = Mode::empty();
     mode1.insert(Mode::S_IRUSR);
     mode1.insert(Mode::S_IWUSR);
-    fchmodat(
-        Some(dirfd.as_raw_fd()),
-        filename,
-        mode1,
-        FchmodatFlags::FollowSymlink,
-    )
-    .unwrap();
+    fchmodat(&dirfd, filename, mode1, FchmodatFlags::FollowSymlink).unwrap();
 
     let file_stat1 = stat(&fullpath).unwrap();
     assert_eq!(file_stat1.st_mode as mode_t & 0o7777, mode1.bits());
@@ -206,7 +191,13 @@ fn test_fchmodat() {
 
     let mut mode2 = Mode::empty();
     mode2.insert(Mode::S_IROTH);
-    fchmodat(None, filename, mode2, FchmodatFlags::FollowSymlink).unwrap();
+    fchmodat(
+        fcntl::AT_FDCWD,
+        filename,
+        mode2,
+        FchmodatFlags::FollowSymlink,
+    )
+    .unwrap();
 
     let file_stat2 = stat(&fullpath).unwrap();
     assert_eq!(file_stat2.st_mode as mode_t & 0o7777, mode2.bits());
@@ -279,8 +270,6 @@ fn test_lutimes() {
 #[test]
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
 fn test_futimens() {
-    use std::os::fd::AsRawFd;
-
     let tempdir = tempfile::tempdir().unwrap();
     let fullpath = tempdir.path().join("file");
     drop(File::create(&fullpath).unwrap());
@@ -288,20 +277,13 @@ fn test_futimens() {
     let fd = fcntl::open(&fullpath, fcntl::OFlag::empty(), stat::Mode::empty())
         .unwrap();
 
-    futimens(
-        fd.as_raw_fd(),
-        &TimeSpec::seconds(10),
-        &TimeSpec::seconds(20),
-    )
-    .unwrap();
+    futimens(&fd, &TimeSpec::seconds(10), &TimeSpec::seconds(20)).unwrap();
     assert_times_eq(10, 20, &fs::metadata(&fullpath).unwrap());
 }
 
 #[test]
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
 fn test_utimensat() {
-    use std::os::fd::AsRawFd;
-
     let _dr = crate::DirRestore::new();
     let tempdir = tempfile::tempdir().unwrap();
     let filename = "foo.txt";
@@ -313,7 +295,7 @@ fn test_utimensat() {
             .unwrap();
 
     utimensat(
-        Some(dirfd.as_raw_fd()),
+        &dirfd,
         filename,
         &TimeSpec::seconds(12345),
         &TimeSpec::seconds(678),
@@ -325,7 +307,7 @@ fn test_utimensat() {
     chdir(tempdir.path()).unwrap();
 
     utimensat(
-        None,
+        fcntl::AT_FDCWD,
         filename,
         &TimeSpec::seconds(500),
         &TimeSpec::seconds(800),
@@ -343,16 +325,13 @@ fn test_mkdirat_success_path() {
     let dirfd =
         fcntl::open(tempdir.path(), fcntl::OFlag::empty(), stat::Mode::empty())
             .unwrap();
-    mkdirat(Some(dirfd.as_raw_fd()), filename, Mode::S_IRWXU)
-        .expect("mkdirat failed");
+    mkdirat(&dirfd, filename, Mode::S_IRWXU).expect("mkdirat failed");
     assert!(Path::exists(&tempdir.path().join(filename)));
 }
 
 #[test]
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
 fn test_mkdirat_success_mode() {
-    use std::os::fd::AsRawFd;
-
     let expected_bits =
         stat::SFlag::S_IFDIR.bits() | stat::Mode::S_IRWXU.bits();
     let tempdir = tempfile::tempdir().unwrap();
@@ -360,8 +339,7 @@ fn test_mkdirat_success_mode() {
     let dirfd =
         fcntl::open(tempdir.path(), fcntl::OFlag::empty(), stat::Mode::empty())
             .unwrap();
-    mkdirat(Some(dirfd.as_raw_fd()), filename, Mode::S_IRWXU)
-        .expect("mkdirat failed");
+    mkdirat(&dirfd, filename, Mode::S_IRWXU).expect("mkdirat failed");
     let permissions = fs::metadata(tempdir.path().join(filename))
         .unwrap()
         .permissions();
@@ -372,8 +350,6 @@ fn test_mkdirat_success_mode() {
 #[test]
 #[cfg(not(target_os = "redox"))]
 fn test_mkdirat_fail() {
-    use std::os::fd::AsRawFd;
-
     let tempdir = tempfile::tempdir().unwrap();
     let not_dir_filename = "example_not_dir";
     let filename = "example_subdir_dir";
@@ -383,8 +359,7 @@ fn test_mkdirat_fail() {
         stat::Mode::empty(),
     )
     .unwrap();
-    let result =
-        mkdirat(Some(dirfd.as_raw_fd()), filename, Mode::S_IRWXU).unwrap_err();
+    let result = mkdirat(dirfd, filename, Mode::S_IRWXU).unwrap_err();
     assert_eq!(result, Errno::ENOTDIR);
 }
 
@@ -424,21 +399,10 @@ fn test_mknodat() {
     let tempdir = tempfile::tempdir().unwrap();
     let target_dir =
         Dir::open(tempdir.path(), OFlag::O_DIRECTORY, Mode::S_IRWXU).unwrap();
-    mknodat(
-        Some(target_dir.as_raw_fd()),
-        file_name,
-        SFlag::S_IFREG,
-        Mode::S_IRWXU,
-        0,
-    )
-    .unwrap();
-    let mode = fstatat(
-        Some(target_dir.as_raw_fd()),
-        file_name,
-        AtFlags::AT_SYMLINK_NOFOLLOW,
-    )
-    .unwrap()
-    .st_mode as mode_t;
+    mknodat(&target_dir, file_name, SFlag::S_IFREG, Mode::S_IRWXU, 0).unwrap();
+    let mode = fstatat(&target_dir, file_name, AtFlags::AT_SYMLINK_NOFOLLOW)
+        .unwrap()
+        .st_mode as mode_t;
     assert_eq!(mode & libc::S_IFREG, libc::S_IFREG);
     assert_eq!(mode & libc::S_IRWXU, libc::S_IRWXU);
 }
@@ -446,8 +410,6 @@ fn test_mknodat() {
 #[test]
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
 fn test_futimens_unchanged() {
-    use std::os::fd::AsRawFd;
-
     let tempdir = tempfile::tempdir().unwrap();
     let fullpath = tempdir.path().join("file");
     drop(File::create(&fullpath).unwrap());
@@ -463,8 +425,7 @@ fn test_futimens_unchanged() {
         .modified()
         .unwrap();
 
-    futimens(fd.as_raw_fd(), &TimeSpec::UTIME_OMIT, &TimeSpec::UTIME_OMIT)
-        .unwrap();
+    futimens(&fd, &TimeSpec::UTIME_OMIT, &TimeSpec::UTIME_OMIT).unwrap();
 
     let new_atime = fs::metadata(fullpath.as_path())
         .unwrap()
@@ -481,8 +442,6 @@ fn test_futimens_unchanged() {
 #[test]
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
 fn test_utimensat_unchanged() {
-    use std::os::fd::AsRawFd;
-
     let _dr = crate::DirRestore::new();
     let tempdir = tempfile::tempdir().unwrap();
     let filename = "foo.txt";
@@ -501,7 +460,7 @@ fn test_utimensat_unchanged() {
         .modified()
         .unwrap();
     utimensat(
-        Some(dirfd.as_raw_fd()),
+        &dirfd,
         filename,
         &TimeSpec::UTIME_OMIT,
         &TimeSpec::UTIME_OMIT,
