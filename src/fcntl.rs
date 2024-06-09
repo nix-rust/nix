@@ -1358,6 +1358,8 @@ impl SpacectlRange {
 #[cfg(target_os = "freebsd")]
 #[inline] // Delays codegen, preventing linker errors with dylibs and --no-allow-shlib-undefined
 pub fn fspacectl<Fd: std::os::fd::AsFd>(fd: Fd, range: SpacectlRange) -> Result<SpacectlRange> {
+    use std::os::fd::AsRawFd;
+
     let mut rqsr = libc::spacectl_range {
         r_offset: range.0,
         r_len: range.1,

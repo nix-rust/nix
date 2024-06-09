@@ -584,7 +584,7 @@ mod test_posix_fallocate {
 #[test]
 fn test_f_get_path() {
     use nix::fcntl::*;
-    use std::{os::unix::io::AsRawFd, path::PathBuf};
+    use std::path::PathBuf;
 
     let tmp = NamedTempFile::new().unwrap();
     let mut path = PathBuf::new();
@@ -601,7 +601,7 @@ fn test_f_get_path() {
 #[test]
 fn test_f_get_path_nofirmlink() {
     use nix::fcntl::*;
-    use std::{os::unix::io::AsRawFd, path::PathBuf};
+    use std::path::PathBuf;
 
     let tmp = NamedTempFile::new().unwrap();
     let mut path = PathBuf::new();
