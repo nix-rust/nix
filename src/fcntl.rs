@@ -66,9 +66,8 @@ pub use self::posix_fadvise::{posix_fadvise, PosixFadviseAdvice};
 /// use nix::errno::Errno;
 /// use nix::fcntl::AT_FDCWD;
 /// use nix::sys::stat::fstat;
-/// use std::os::fd::AsRawFd;
 ///
-/// let never = fstat(AT_FDCWD.as_raw_fd()).unwrap();
+/// let never = fstat(AT_FDCWD).unwrap();
 /// ```
 //
 // SAFETY:
@@ -585,13 +584,20 @@ unsafe fn inner_readlink<P: ?Sized + NixPath>(
             Some(_) => unreachable!("redox does not have readlinkat(2)"),
             #[cfg(any(linux_android, target_os = "freebsd", target_os = "hurd"))]
             Some(dirfd) => {
+                // SAFETY:
+                //
+                // If this call of `borrow_raw()` is safe or not depends on the
+                // usage of `unsafe fn inner_readlink()`.
+                let dirfd = unsafe {
+                    std::os::fd::BorrowedFd::borrow_raw(dirfd)
+                };
                 let flags = if path.is_empty() {
                     AtFlags::AT_EMPTY_PATH
                 } else {
                     AtFlags::empty()
                 };
                 super::sys::stat::fstatat(
-                    Some(dirfd),
+                    dirfd,
                     path,
                     flags | AtFlags::AT_SYMLINK_NOFOLLOW,
                 )
@@ -602,11 +608,16 @@ unsafe fn inner_readlink<P: ?Sized + NixPath>(
                 target_os = "freebsd",
                 target_os = "hurd"
             )))]
-            Some(dirfd) => super::sys::stat::fstatat(
-                Some(dirfd),
-                path,
-                AtFlags::AT_SYMLINK_NOFOLLOW,
-            ),
+            Some(dirfd) => {
+                // SAFETY:
+                //
+                // If this call of `borrow_raw()` is safe or not depends on the
+                // usage of `unsafe fn inner_readlink()`.
+                let dirfd = unsafe {
+                    std::os::fd::BorrowedFd::borrow_raw(dirfd)
+                };
+                super::sys::stat::fstatat(dirfd, path, AtFlags::AT_SYMLINK_NOFOLLOW)
+            },
             None => super::sys::stat::lstat(path),
         }
         .map(|x| x.st_size)
