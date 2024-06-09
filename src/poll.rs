@@ -36,7 +36,7 @@ impl<'fd> PollFd<'fd> {
     /// let mut fds = [pfd];
     /// poll(&mut fds, PollTimeout::NONE).unwrap();
     /// let mut buf = [0u8; 80];
-    /// read(r.as_raw_fd(), &mut buf[..]);
+    /// read(&r, &mut buf[..]);
     /// ```
     // Unlike I/O functions, constructors like this must take `BorrowedFd`
     // instead of AsFd or &AsFd.  Otherwise, an `OwnedFd` argument would be

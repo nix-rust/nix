@@ -1,6 +1,6 @@
 use crate::errno::Errno;
-use crate::{Result,unistd};
-use std::os::unix::io::{FromRawFd, OwnedFd, AsRawFd, AsFd, RawFd, BorrowedFd};
+use crate::{unistd, Result};
+use std::os::unix::io::{AsFd, AsRawFd, BorrowedFd, FromRawFd, OwnedFd, RawFd};
 
 libc_bitflags! {
     pub struct EfdFlags: libc::c_int {
@@ -10,7 +10,10 @@ libc_bitflags! {
     }
 }
 
-#[deprecated(since = "0.28.0", note = "Use EventFd::from_value_and_flags() instead")]
+#[deprecated(
+    since = "0.28.0",
+    note = "Use EventFd::from_value_and_flags() instead"
+)]
 pub fn eventfd(initval: libc::c_uint, flags: EfdFlags) -> Result<OwnedFd> {
     let res = unsafe { libc::eventfd(initval, flags.bits()) };
 
@@ -26,9 +29,12 @@ impl EventFd {
         Self::from_value_and_flags(0, EfdFlags::empty())
     }
     /// Constructs [`EventFd`] with the given `init_val` and `flags`.
-    /// 
+    ///
     /// Wrapper around [`libc::eventfd`].
-    pub fn from_value_and_flags(init_val: u32, flags: EfdFlags) -> Result<Self> {
+    pub fn from_value_and_flags(
+        init_val: u32,
+        flags: EfdFlags,
+    ) -> Result<Self> {
         let res = unsafe { libc::eventfd(init_val, flags.bits()) };
         Errno::result(res).map(|r| Self(unsafe { OwnedFd::from_raw_fd(r) }))
     }
@@ -41,29 +47,29 @@ impl EventFd {
         Self::from_value_and_flags(init_val, EfdFlags::empty())
     }
     /// Arms `self`, a following call to `poll`, `select` or `epoll` will return immediately.
-    /// 
+    ///
     /// [`EventFd::write`] with `1`.
     pub fn arm(&self) -> Result<usize> {
         self.write(1)
     }
     /// Defuses `self`, a following call to `poll`, `select` or `epoll` will block.
-    /// 
+    ///
     /// [`EventFd::write`] with `0`.
     pub fn defuse(&self) -> Result<usize> {
         self.write(0)
     }
     /// Enqueues `value` triggers.
-    /// 
+    ///
     /// The next `value` calls to `poll`, `select` or `epoll` will return immediately.
-    /// 
+    ///
     /// [`EventFd::write`] with `value`.
-    pub fn write(&self, value: u64) -> Result<usize> { 
-        unistd::write(&self.0,&value.to_ne_bytes())
+    pub fn write(&self, value: u64) -> Result<usize> {
+        unistd::write(&self.0, &value.to_ne_bytes())
     }
     // Reads the value from the file descriptor.
     pub fn read(&self) -> Result<u64> {
         let mut arr = [0; std::mem::size_of::<u64>()];
-        unistd::read(self.0.as_raw_fd(),&mut arr)?;
+        unistd::read(&self.0, &mut arr)?;
         Ok(u64::from_ne_bytes(arr))
     }
 }

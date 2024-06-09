@@ -201,7 +201,7 @@ impl Inotify {
         let mut events = Vec::new();
         let mut offset = 0;
 
-        let nread = read(self.fd.as_raw_fd(), &mut buffer)?;
+        let nread = read(&self.fd, &mut buffer)?;
 
         while (nread - offset) >= header_size {
             let event = unsafe {

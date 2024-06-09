@@ -7,7 +7,6 @@ use tempfile::tempfile;
 cfg_if! {
     if #[cfg(linux_android)] {
         use nix::unistd::{pipe, read};
-        use std::os::unix::io::AsRawFd;
     } else if #[cfg(any(freebsdlike, apple_targets, solarish))] {
         use std::net::Shutdown;
         use std::os::unix::net::UnixStream;
@@ -28,7 +27,7 @@ fn test_sendfile_linux() {
     assert_eq!(2, res);
 
     let mut buf = [0u8; 1024];
-    assert_eq!(2, read(rd.as_raw_fd(), &mut buf).unwrap());
+    assert_eq!(2, read(&rd, &mut buf).unwrap());
     assert_eq!(b"f1", &buf[0..2]);
     assert_eq!(7, offset);
 }
@@ -47,7 +46,7 @@ fn test_sendfile64_linux() {
     assert_eq!(2, res);
 
     let mut buf = [0u8; 1024];
-    assert_eq!(2, read(rd.as_raw_fd(), &mut buf).unwrap());
+    assert_eq!(2, read(&rd, &mut buf).unwrap());
     assert_eq!(b"f1", &buf[0..2]);
     assert_eq!(7, offset);
 }
