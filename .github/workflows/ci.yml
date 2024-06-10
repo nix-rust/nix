@@ -300,7 +300,10 @@ jobs:
           # Temporarily disable armv7-unknown-linux-uclibceabihf
           # https://github.com/nix-rust/nix/issues/2200
           #- target: armv7-unknown-linux-uclibceabihf
-          - target: x86_64-unknown-haiku
+
+          # https://github.com/nix-rust/nix/issues/2441
+          # - target: x86_64-unknown-haiku
+
           # Disable hurd due to
           # https://github.com/nix-rust/nix/issues/2306
           # - target: i686-unknown-hurd-gnu
