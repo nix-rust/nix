@@ -1,5 +1,6 @@
 use crate::*;
 use nix::errno::Errno;
+use nix::fcntl::AT_FDCWD;
 use nix::sys::fanotify::{
     EventFFlags, Fanotify, FanotifyResponse, InitFlags, MarkFlags, MaskFlags,
     Response,
@@ -36,7 +37,7 @@ fn test_fanotify_notifications() {
         .mark(
             MarkFlags::FAN_MARK_ADD,
             MaskFlags::FAN_OPEN | MaskFlags::FAN_MODIFY | MaskFlags::FAN_CLOSE,
-            None,
+            AT_FDCWD,
             Some(&tempfile),
         )
         .unwrap();
@@ -99,7 +100,7 @@ fn test_fanotify_responses() {
         .mark(
             MarkFlags::FAN_MARK_ADD,
             MaskFlags::FAN_OPEN_PERM,
-            None,
+            AT_FDCWD,
             Some(&tempfile),
         )
         .unwrap();
@@ -182,7 +183,7 @@ fn test_fanotify_overflow() {
         .mark(
             MarkFlags::FAN_MARK_ADD,
             MaskFlags::FAN_OPEN,
-            None,
+            AT_FDCWD,
             Some(&tempfile),
         )
         .unwrap();
