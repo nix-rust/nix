@@ -41,7 +41,8 @@ use crate::{sys::stat::Mode, NixPath, Result};
 #[cfg(feature = "fs")]
 pub use self::posix_fadvise::{posix_fadvise, PosixFadviseAdvice};
 
-/// A file descriptor referring to the working directory of the current process.
+/// A file descriptor referring to the working directory of the current process
+/// **that should be ONLY passed to the `dirfd` argument of those `xxat()` functions**.
 ///
 /// # Examples
 ///
@@ -262,7 +263,7 @@ pub fn open<P: ?Sized + NixPath>(
 ///
 /// The `openat` function is equivalent to the [`open`] function except in the case where the path
 /// specifies a relative path.  In that case, the file to be opened is determined relative to the
-/// directory associated with the file descriptor `fd`.
+/// directory associated with the file descriptor `dirfd`.
 ///
 /// # See Also
 /// [`openat`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/openat.html)
@@ -324,9 +325,11 @@ cfg_if::cfg_if! {
             }
         }
 
-        /// Specifies how [openat2] should open a pathname.
+        /// Specifies how [`openat2()`] should open a pathname.
         ///
-        /// See <https://man7.org/linux/man-pages/man2/open_how.2type.html>
+        /// # Reference
+        ///
+        /// * [Linux](https://man7.org/linux/man-pages/man2/open_how.2type.html)
         #[repr(transparent)]
         #[derive(Clone, Copy, Debug)]
         pub struct OpenHow(libc::open_how);
@@ -666,8 +669,9 @@ pub fn readlink<P: ?Sized + NixPath>(path: &P) -> Result<OsString> {
 
 /// Read value of a symbolic link.
 ///
-/// Equivalent to [`readlink` ] except where `path` specifies a relative path.  In that case,
-/// interpret `path` relative to open file specified by `dirfd`.
+/// Equivalent to [`readlink` ] except for the case where `path` specifies a
+/// relative path, `path` will be interpreted relative to the path specified
+/// by `dirfd`. (Use [`AT_FDCWD`] to make it relative to the working directory).
 ///
 /// # See Also
 /// * [`readlink`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/readlink.html)
