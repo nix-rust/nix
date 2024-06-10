@@ -26,7 +26,6 @@ use std::ffi::CString;
 use std::fs::DirBuilder;
 use std::fs::{self, File};
 use std::io::Write;
-use std::os::unix::prelude::*;
 #[cfg(not(any(
     target_os = "fuchsia",
     target_os = "redox",
@@ -434,7 +433,7 @@ macro_rules! execve_test_factory (
 cfg_if! {
     if #[cfg(target_os = "android")] {
         execve_test_factory!(test_execve, execve, CString::new("/system/bin/sh").unwrap().as_c_str());
-        execve_test_factory!(test_fexecve, fexecve, File::open("/system/bin/sh").unwrap().into_raw_fd());
+        execve_test_factory!(test_fexecve, fexecve, &File::open("/system/bin/sh").unwrap());
     } else if #[cfg(any(freebsdlike, target_os = "linux", target_os = "hurd"))] {
         // These tests frequently fail on musl, probably due to
         // https://github.com/nix-rust/nix/issues/555
@@ -1246,6 +1245,8 @@ fn test_setfsuid() {
     target_os = "haiku"
 )))]
 fn test_ttyname() {
+    use std::os::fd::AsRawFd;
+
     let fd = posix_openpt(OFlag::O_RDWR).expect("posix_openpt failed");
     assert!(fd.as_raw_fd() > 0);
 
