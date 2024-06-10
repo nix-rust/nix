@@ -773,7 +773,7 @@ pub fn mkdir<P: ?Sized + NixPath>(path: &P, mode: crate::sys::stat::Mode) -> Res
     Errno::result(res).map(drop)
 }
 
-/// Creates new fifo special file (named pipe) with path `path` and access rights `mode`.
+/// Creates new FIFO special file (named pipe) with path `path` and access rights `mode`.
 ///
 /// # Errors
 ///
@@ -812,7 +812,8 @@ pub fn mkfifo<P: ?Sized + NixPath>(path: &P, mode: crate::sys::stat::Mode) -> Re
     Errno::result(res).map(drop)
 }
 
-/// Creates new fifo special file (named pipe) with path `path` and access rights `mode`.
+/// Creates new FIFO special file (named pipe) with access rights set to `mode`
+/// in the path specified by `dirfd` and `path`.
 ///
 /// # Examples
 ///
@@ -851,11 +852,12 @@ pub fn mkfifoat<Fd: std::os::fd::AsFd, P: ?Sized + NixPath>(
     Errno::result(res).map(drop)
 }
 
-/// Creates a symbolic link at `path2` which points to `path1`.
+/// Creates a symbolic link to `path1` in the path specified by `dirfd` and
+/// `path2`.
 ///
 /// # Examples
 ///
-/// Assume file foo exists in the current working directory, create a symlink
+/// Assume file `foo` exists in the current working directory, create a symlink
 /// to it:
 ///
 /// ```no_run
@@ -1585,9 +1587,10 @@ impl LinkatFlags {
 /// Creates a new hard link (directory entry) at `newpath` for the existing file
 /// at `oldpath`. In the case of a relative `oldpath`, the path is interpreted
 /// relative to the directory associated with file descriptor `olddirfd` instead
-/// of the current working directory and similarly for `newpath` and file
-/// descriptor `newdirfd`. If either `oldpath` or `newpath` is absolute, then
-/// `dirfd` is ignored.
+/// of the current working directory, use [`AT_FDCWD`](crate::fcntl::AT_FDCWD)
+/// if you want to make it relative to the current working directory. Similarly
+/// for `newpath` and file descriptor `newdirfd`. If either `oldpath` or `newpath`
+/// is absolute, then `dirfd` is ignored.
 ///
 /// In case `flag` is `AtFlags::AT_SYMLINK_FOLLOW` and `oldpath` names a symoblic
 /// link, a new link for the target of the symbolic link is created.
@@ -1639,10 +1642,12 @@ pub enum UnlinkatFlags {
 /// Remove a directory entry
 ///
 /// In the case of a relative path, the directory entry to be removed is determined
-/// relative to the directory associated with the file descriptor `dirfd`. In the
-/// case of an absolute `path` `dirfd` is ignored. If `flag` is
-/// `UnlinkatFlags::RemoveDir` then removal of the directory entry specified by
-/// `dirfd` and `path` is performed.
+/// relative to the directory associated with the file descriptor `dirfd` (Use
+/// [`AT_FDCWD`](crate::fcntl::AT_FDCWD) if you want to specify the current working
+/// directory in `dirfd`). In the case of an absolute path, `dirfd` is ignored.
+///
+/// If `flag` is `UnlinkatFlags::RemoveDir` then removal of the directory entry
+/// specified by `dirfd` and `path` is performed.
 ///
 /// # References
 /// See also [unlinkat(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/unlinkat.html)

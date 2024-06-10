@@ -292,12 +292,12 @@ pub enum FchmodatFlags {
 ///
 /// The file to be changed is determined relative to the directory associated
 /// with the file descriptor `dirfd` or the current working directory
-/// if `dirfd` is `None`.
+/// if `dirfd` is [`AT_FDCWD`](crate::fcntl::AT_FDCWD).
 ///
 /// If `flag` is `FchmodatFlags::NoFollowSymlink` and `path` names a symbolic link,
 /// then the mode of the symbolic link is changed.
 ///
-/// `fchmodat(None, path, mode, FchmodatFlags::FollowSymlink)` is identical to
+/// `fchmodat(AT_FDCWD, path, mode, FchmodatFlags::FollowSymlink)` is identical to
 /// a call `libc::chmod(path, mode)`. That's why `chmod` is unimplemented
 /// in the `nix` crate.
 ///
@@ -416,12 +416,12 @@ pub enum UtimensatFlags {
 ///
 /// The file to be changed is determined relative to the directory associated
 /// with the file descriptor `dirfd` or the current working directory
-/// if `dirfd` is `None`.
+/// if `dirfd` is [`AT_FDCWD`](crate::fcntl::AT_FDCWD).
 ///
 /// If `flag` is `UtimensatFlags::NoFollowSymlink` and `path` names a symbolic link,
 /// then the mode of the symbolic link is changed.
 ///
-/// `utimensat(None, path, times, UtimensatFlags::FollowSymlink)` is identical to
+/// `utimensat(AT_FDCWD, path, times, UtimensatFlags::FollowSymlink)` is identical to
 /// `utimes(path, times)`. The latter is a deprecated API so prefer using the
 /// former if the platforms you care about support it.
 ///
@@ -458,9 +458,17 @@ pub fn utimensat<Fd: std::os::fd::AsFd, P: ?Sized + NixPath>(
     Errno::result(res).map(drop)
 }
 
+/// Create a directory at the path specified by `dirfd` and `path`.
+///
+/// If `path` is a relative path, then it is interpreted relative to the directory
+/// referred to by the file descriptor `dirfd`. (One can use [`AT_FDCWD`][link] to
+/// specify the current working directory in `dirfd`). If `path` is absolute,
+/// then `dirfd` is ignored.
+///
+/// [link]: crate::fcntl::AT_FDCWD
 #[cfg(not(target_os = "redox"))]
 pub fn mkdirat<Fd: std::os::fd::AsFd, P: ?Sized + NixPath>(
-    fd: Fd,
+    dirfd: Fd,
     path: &P,
     mode: Mode,
 ) -> Result<()> {
@@ -468,7 +476,7 @@ pub fn mkdirat<Fd: std::os::fd::AsFd, P: ?Sized + NixPath>(
 
     let res = path.with_nix_path(|cstr| unsafe {
         libc::mkdirat(
-            fd.as_fd().as_raw_fd(),
+            dirfd.as_fd().as_raw_fd(),
             cstr.as_ptr(),
             mode.bits() as mode_t,
         )
