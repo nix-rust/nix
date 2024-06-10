@@ -321,7 +321,7 @@ pub fn test_socketpair() {
     .unwrap();
     write(&fd1, b"hello").unwrap();
     let mut buf = [0; 5];
-    read(fd2.as_raw_fd(), &mut buf).unwrap();
+    read(&fd2, &mut buf).unwrap();
 
     assert_eq!(&buf[..], b"hello");
 }
@@ -908,9 +908,15 @@ pub fn test_scm_rights() {
     // Ensure that the received file descriptor works
     write(&w, b"world").unwrap();
     let mut buf = [0u8; 5];
-    read(received_r.as_raw_fd(), &mut buf).unwrap();
+    // SAFETY:
+    // should be safe since we don't use it after close
+    let borrowed_received_r =
+        unsafe { std::os::fd::BorrowedFd::borrow_raw(received_r) };
+    read(borrowed_received_r, &mut buf).unwrap();
     assert_eq!(&buf[..], b"world");
-    close(received_r).unwrap();
+    // SAFETY:
+    // there shouldn't be double close
+    unsafe { close(received_r).unwrap() };
 }
 
 // Disable the test on emulated platforms due to not enabled support of AF_ALG in QEMU from rust cross
@@ -975,8 +981,12 @@ pub fn test_af_alg_cipher() {
 
     // allocate buffer for encrypted data
     let mut encrypted = vec![0u8; payload_len];
+    // SAFETY:
+    // should be safe since session_socket won't be closed before the use of this borrowed one
+    let borrowed_session_socket =
+        unsafe { std::os::fd::BorrowedFd::borrow_raw(session_socket) };
     let num_bytes =
-        read(session_socket.as_raw_fd(), &mut encrypted).expect("read encrypt");
+        read(borrowed_session_socket, &mut encrypted).expect("read encrypt");
     assert_eq!(num_bytes, payload_len);
 
     let iov = IoSlice::new(&encrypted);
@@ -998,8 +1008,12 @@ pub fn test_af_alg_cipher() {
 
     // allocate buffer for decrypted data
     let mut decrypted = vec![0u8; payload_len];
+    // SAFETY:
+    // should be safe since session_socket won't be closed before the use of this borrowed one
+    let borrowed_session_socket =
+        unsafe { std::os::fd::BorrowedFd::borrow_raw(session_socket) };
     let num_bytes =
-        read(session_socket.as_raw_fd(), &mut decrypted).expect("read decrypt");
+        read(borrowed_session_socket, &mut decrypted).expect("read decrypt");
 
     assert_eq!(num_bytes, payload_len);
     assert_eq!(decrypted, payload);
@@ -1087,8 +1101,12 @@ pub fn test_af_alg_aead() {
     // allocate buffer for encrypted data
     let mut encrypted =
         vec![0u8; (assoc_size as usize) + payload_len + auth_size];
+    // SAFETY:
+    // should be safe since session_socket won't be closed before the use of this borrowed one
+    let borrowed_session_socket =
+        unsafe { std::os::fd::BorrowedFd::borrow_raw(session_socket) };
     let num_bytes =
-        read(session_socket.as_raw_fd(), &mut encrypted).expect("read encrypt");
+        read(borrowed_session_socket, &mut encrypted).expect("read encrypt");
     assert_eq!(num_bytes, payload_len + auth_size + (assoc_size as usize));
 
     for i in 0..assoc_size {
@@ -1131,8 +1149,7 @@ pub fn test_af_alg_aead() {
         unsafe { std::os::fd::BorrowedFd::borrow_raw(session_socket) };
     fcntl(borrowed_fd, FcntlArg::F_SETFL(OFlag::O_NONBLOCK))
         .expect("fcntl non_blocking");
-    let num_bytes =
-        read(session_socket.as_raw_fd(), &mut decrypted).expect("read decrypt");
+    let num_bytes = read(borrowed_fd, &mut decrypted).expect("read decrypt");
 
     assert!(num_bytes >= payload_len + (assoc_size as usize));
     assert_eq!(
@@ -1622,9 +1639,15 @@ fn test_impl_scm_credentials_and_rights(
     // Ensure that the received file descriptor works
     write(&w, b"world").unwrap();
     let mut buf = [0u8; 5];
-    read(received_r.as_raw_fd(), &mut buf).unwrap();
+    // SAFETY:
+    // It should be safe if we don't use this BorrowedFd after close.
+    let received_r_borrowed =
+        unsafe { std::os::fd::BorrowedFd::borrow_raw(received_r) };
+    read(received_r_borrowed, &mut buf).unwrap();
     assert_eq!(&buf[..], b"world");
-    close(received_r).unwrap();
+    // SAFETY:
+    // double-close won't happen
+    unsafe { close(received_r).unwrap() };
 
     Ok(())
 }
@@ -1666,8 +1689,11 @@ pub fn test_named_unixdomain() {
 
     let s3 = accept(s1.as_raw_fd()).expect("accept failed");
 
+    // SAFETY:
+    // It should be safe considering that s3 will be open within this test
+    let s3 = unsafe { std::os::fd::BorrowedFd::borrow_raw(s3) };
     let mut buf = [0; 5];
-    read(s3.as_raw_fd(), &mut buf).unwrap();
+    read(s3, &mut buf).unwrap();
     thr.join().unwrap();
 
     assert_eq!(&buf[..], b"hello");

@@ -1,4 +1,4 @@
-use std::os::unix::io::{AsFd, AsRawFd};
+use std::os::unix::io::AsFd;
 use tempfile::tempfile;
 
 use nix::errno::Errno;
@@ -100,7 +100,7 @@ fn test_local_flags() {
     let pty = openpty(None, &termios).unwrap();
 
     // Set the master is in nonblocking mode or reading will never return.
-    let flags = fcntl::fcntl(pty.master.as_fd(), fcntl::F_GETFL).unwrap();
+    let flags = fcntl::fcntl(&pty.master, fcntl::F_GETFL).unwrap();
     let new_flags =
         fcntl::OFlag::from_bits_truncate(flags) | fcntl::OFlag::O_NONBLOCK;
     fcntl::fcntl(pty.master.as_fd(), fcntl::F_SETFL(new_flags)).unwrap();
@@ -111,6 +111,6 @@ fn test_local_flags() {
 
     // Try to read from the master, which should not have anything as echoing was disabled.
     let mut buf = [0u8; 10];
-    let read = read(pty.master.as_raw_fd(), &mut buf).unwrap_err();
+    let read = read(&pty.master, &mut buf).unwrap_err();
     assert_eq!(read, Errno::EAGAIN);
 }

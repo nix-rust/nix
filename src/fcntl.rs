@@ -13,8 +13,6 @@ use std::ffi::CStr;
 use std::ffi::OsString;
 #[cfg(not(any(target_os = "redox", target_os = "solaris")))]
 use std::ops::{Deref, DerefMut};
-#[cfg(not(target_os = "redox"))]
-use std::os::raw;
 use std::os::unix::ffi::OsStringExt;
 #[cfg(not(any(target_os = "redox", target_os = "solaris")))]
 use std::os::unix::io::OwnedFd;
@@ -234,12 +232,8 @@ libc_bitflags!(
 );
 
 /// Computes the raw fd consumed by a function of the form `*at`.
-#[cfg(any(
-    all(feature = "fs", not(target_os = "redox")),
-    all(feature = "process", linux_android),
-    all(feature = "fanotify", target_os = "linux")
-))]
-pub(crate) fn at_rawfd(fd: Option<RawFd>) -> raw::c_int {
+#[cfg(all(feature = "fanotify", target_os = "linux"))]
+pub(crate) fn at_rawfd(fd: Option<RawFd>) -> RawFd {
     fd.unwrap_or(libc::AT_FDCWD)
 }
 

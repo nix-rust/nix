@@ -4,7 +4,6 @@ use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
 use std::fs::OpenOptions;
 use std::io::IoSlice;
-use std::os::unix::io::AsRawFd;
 use std::{cmp, iter};
 
 #[cfg(not(target_os = "redox"))]
@@ -49,7 +48,7 @@ fn test_writev() {
     let written = write_res.expect("couldn't write");
     // Check whether we written all data
     assert_eq!(to_write.len(), written);
-    let read_res = read(reader.as_raw_fd(), &mut read_buf[..]);
+    let read_res = read(&reader, &mut read_buf[..]);
     let read = read_res.expect("couldn't read");
     // Check we have read as much as we written
     assert_eq!(read, written);
@@ -228,7 +227,6 @@ fn test_process_vm_readv() {
     use nix::sys::signal::*;
     use nix::sys::wait::*;
     use nix::unistd::ForkResult::*;
-    use std::os::unix::io::AsRawFd;
 
     require_capability!("test_process_vm_readv", CAP_SYS_PTRACE);
     let _m = crate::FORK_MTX.lock();
@@ -242,7 +240,7 @@ fn test_process_vm_readv() {
         Parent { child } => {
             drop(w);
             // wait for child
-            read(r.as_raw_fd(), &mut [0u8]).unwrap();
+            read(&r, &mut [0u8]).unwrap();
             drop(r);
 
             let ptr = vector.as_ptr() as usize;

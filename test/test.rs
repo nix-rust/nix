@@ -38,7 +38,7 @@ mod test_unistd;
 
 use nix::unistd::{chdir, getcwd, read};
 use parking_lot::{Mutex, RwLock, RwLockWriteGuard};
-use std::os::unix::io::{AsFd, AsRawFd};
+use std::os::unix::io::AsFd;
 use std::path::PathBuf;
 
 /// Helper function analogous to `std::io::Read::read_exact`, but for `Fd`s
@@ -47,7 +47,7 @@ fn read_exact<Fd: AsFd>(f: Fd, buf: &mut [u8]) {
     while len < buf.len() {
         // get_mut would be better than split_at_mut, but it requires nightly
         let (_, remaining) = buf.split_at_mut(len);
-        len += read(f.as_fd().as_raw_fd(), remaining).unwrap();
+        len += read(&f, remaining).unwrap();
     }
 }
 

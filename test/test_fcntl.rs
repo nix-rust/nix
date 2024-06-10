@@ -37,8 +37,6 @@ use tempfile::NamedTempFile;
 // https://gitlab.com/qemu-project/qemu/-/issues/829
 #[cfg_attr(qemu, ignore)]
 fn test_openat() {
-    use std::os::fd::AsRawFd;
-
     const CONTENTS: &[u8] = b"abcd";
     let mut tmp = NamedTempFile::new().unwrap();
     tmp.write_all(CONTENTS).unwrap();
@@ -55,7 +53,7 @@ fn test_openat() {
     .unwrap();
 
     let mut buf = [0u8; 1024];
-    assert_eq!(4, read(fd.as_raw_fd(), &mut buf).unwrap());
+    assert_eq!(4, read(&fd, &mut buf).unwrap());
     assert_eq!(CONTENTS, &buf[0..4]);
 }
 
@@ -65,8 +63,6 @@ fn test_openat() {
 // https://gitlab.com/qemu-project/qemu/-/issues/829
 #[cfg_attr(qemu, ignore)]
 fn test_openat2() {
-    use std::os::fd::AsRawFd;
-
     const CONTENTS: &[u8] = b"abcd";
     let mut tmp = NamedTempFile::new().unwrap();
     tmp.write_all(CONTENTS).unwrap();
@@ -86,7 +82,7 @@ fn test_openat2() {
     .unwrap();
 
     let mut buf = [0u8; 1024];
-    assert_eq!(4, read(fd.as_raw_fd(), &mut buf).unwrap());
+    assert_eq!(4, read(&fd, &mut buf).unwrap());
     assert_eq!(CONTENTS, &buf[0..4]);
 }
 
@@ -316,8 +312,6 @@ mod linux_android {
 
     #[test]
     fn test_splice() {
-        use std::os::fd::AsRawFd;
-
         const CONTENTS: &[u8] = b"abcdef123456";
         let mut tmp = tempfile().unwrap();
         tmp.write_all(CONTENTS).unwrap();
@@ -331,15 +325,13 @@ mod linux_android {
         assert_eq!(2, res);
 
         let mut buf = [0u8; 1024];
-        assert_eq!(2, read(rd.as_raw_fd(), &mut buf).unwrap());
+        assert_eq!(2, read(&rd, &mut buf).unwrap());
         assert_eq!(b"f1", &buf[0..2]);
         assert_eq!(7, offset);
     }
 
     #[test]
     fn test_tee() {
-        use std::os::fd::AsRawFd;
-
         let (rd1, wr1) = pipe().unwrap();
         let (rd2, wr2) = pipe().unwrap();
 
@@ -352,18 +344,16 @@ mod linux_android {
         let mut buf = [0u8; 1024];
 
         // Check the tee'd bytes are at rd2.
-        assert_eq!(2, read(rd2.as_raw_fd(), &mut buf).unwrap());
+        assert_eq!(2, read(&rd2, &mut buf).unwrap());
         assert_eq!(b"ab", &buf[0..2]);
 
         // Check all the bytes are still at rd1.
-        assert_eq!(3, read(rd1.as_raw_fd(), &mut buf).unwrap());
+        assert_eq!(3, read(&rd1, &mut buf).unwrap());
         assert_eq!(b"abc", &buf[0..3]);
     }
 
     #[test]
     fn test_vmsplice() {
-        use std::os::fd::AsRawFd;
-
         let (rd, wr) = pipe().unwrap();
 
         let buf1 = b"abcdef";
@@ -376,22 +366,20 @@ mod linux_android {
 
         // Check the bytes can be read at rd.
         let mut buf = [0u8; 32];
-        assert_eq!(6, read(rd.as_raw_fd(), &mut buf).unwrap());
+        assert_eq!(6, read(&rd, &mut buf).unwrap());
         assert_eq!(b"abcdef", &buf[0..6]);
     }
 
     #[cfg(target_os = "linux")]
     #[test]
     fn test_fallocate() {
-        use std::os::fd::AsRawFd;
-
         let tmp = NamedTempFile::new().unwrap();
 
         fallocate(&tmp, FallocateFlags::empty(), 0, 100).unwrap();
 
         // Check if we read exactly 100 bytes
         let mut buf = [0u8; 200];
-        assert_eq!(100, read(tmp.as_raw_fd(), &mut buf).unwrap());
+        assert_eq!(100, read(&tmp, &mut buf).unwrap());
     }
 
     // The tests below are disabled for the listed targets
