@@ -425,6 +425,7 @@ feature! {
 /// * [`dup2()`]
 /// * [`dup2_raw()`]
 /// * `dup3()`
+/// * `dup3_raw()`
 #[inline]
 pub fn dup<Fd: std::os::fd::AsFd>(oldfd: Fd) -> Result<std::os::fd::OwnedFd> {
     use std::os::fd::AsRawFd;
@@ -439,7 +440,7 @@ pub fn dup<Fd: std::os::fd::AsFd>(oldfd: Fd) -> Result<std::os::fd::OwnedFd> {
     Ok( unsafe { OwnedFd::from_raw_fd(res) })
 }
 
-/// Duplicate `fd` with stdin.
+/// Duplicate `fd` with Stdin, i.e., Stdin redirection.
 #[inline]
 pub fn dup2_stdin<Fd: std::os::fd::AsFd>(fd: Fd) -> Result<()> {
     use std::os::fd::AsRawFd;
@@ -449,7 +450,43 @@ pub fn dup2_stdin<Fd: std::os::fd::AsFd>(fd: Fd) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
-/// Duplicate `fd` with stdout.
+/// Duplicate `fd` with Stdout, i.e., Stdout redirection.
+///
+/// # Examples
+///
+/// Redirect the Stdout to file foo and restore it:
+///
+/// ```no_run
+/// use nix::fcntl::open;
+/// use nix::fcntl::OFlag;
+/// use nix::sys::stat::Mode;
+/// use nix::unistd::dup;
+/// use nix::unistd::dup2_stdout;
+/// use std::io::{stdout, Write};
+///
+/// let mut stdout = stdout();
+///
+/// // Save the previous Stdout so that we can restore it
+/// let saved_stdout = dup(&stdout).unwrap();
+/// let foo = open(
+///     "foo",
+///     OFlag::O_RDWR | OFlag::O_CLOEXEC | OFlag::O_CREAT | OFlag::O_EXCL,
+///     Mode::S_IRWXU,
+/// )
+/// .unwrap();
+/// // Now our Stdout has been redirected to file foo
+/// dup2_stdout(foo).unwrap();
+/// // Let's say hi to foo
+/// // NOTE: add a newline here to flush the buffer
+/// stdout.write(b"Hi, foo!\n").unwrap();
+///
+/// // Restore the Stdout
+/// dup2_stdout(saved_stdout).unwrap();
+///
+/// // Let's say hi to Stdout
+/// // NOTE: add a newline here to flush the buffer
+/// stdout.write(b"Hi, Stdout!\n").unwrap();
+/// ```
 #[inline]
 pub fn dup2_stdout<Fd: std::os::fd::AsFd>(fd: Fd) -> Result<()> {
     use std::os::fd::AsRawFd;
@@ -459,7 +496,11 @@ pub fn dup2_stdout<Fd: std::os::fd::AsFd>(fd: Fd) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
-/// Duplicate `fd` with stderr.
+/// Duplicate `fd` with Stderr, i.e., Stderr redirection.
+///
+/// # Examples
+///
+/// See the example of [`dup2_stdout()`](fn.dup2_stdout.html#examples)
 #[inline]
 pub fn dup2_stderr<Fd: std::os::fd::AsFd>(fd: Fd) -> Result<()> {
     use std::os::fd::AsRawFd;
@@ -477,6 +518,14 @@ pub fn dup2_stderr<Fd: std::os::fd::AsFd>(fd: Fd) -> Result<()> {
 ///
 /// This function does not allow you to duplicate `oldfd` with any file descriptor
 /// you want, to do that, use [`dup2_raw()`].
+///
+/// # Stdin/Stdout/Stderr redirection
+///
+/// To duplicate a fd with Stdin/Stdout/Stderr, see:
+///
+/// * [`dup2_stdin()`]
+/// * [`dup2_stdout()`]
+/// * [`dup2_stderr()`]
 ///
 /// # Reference
 ///
@@ -562,7 +611,7 @@ pub fn dup2<Fd: std::os::fd::AsFd>(oldfd: Fd, newfd: &mut std::os::fd::OwnedFd) 
 ///
 /// # See also
 ///
-/// * [nix::unistd::dup2()](dup2)
+/// * [`dup2()`]
 #[inline]
 pub unsafe fn dup2_raw<Fd1: std::os::fd::AsFd, Fd2: std::os::fd::IntoRawFd>(oldfd: Fd1, newfd: Fd2) -> Result<std::os::fd::OwnedFd> {
     use std::os::fd::AsRawFd;
@@ -581,13 +630,22 @@ pub unsafe fn dup2_raw<Fd1: std::os::fd::AsFd, Fd2: std::os::fd::IntoRawFd>(oldf
 }
 
 /// Create a new copy of the specified file descriptor using the specified fd
-/// and flags (see [`dup(2)`](https://man7.org/linux/man-pages/man2/dup.2.html)).
+/// and flags.
 ///
-/// This function behaves similar to `dup2()` but allows for flags to be
-/// specified.
+/// This function behaves similar to [`dup2()`] but allows flags to be specified
+/// for the new file descriptor. Currently, the only flag that is allowed is
+/// [`OFlag::O_CLOEXEC`], setting other flags will return `EINVAL`. Also, if
+/// `oldfd` and `newfd` have the same fd value, `EINVAL` will also be returned.
 ///
 /// This function does not allow you to duplicate `oldfd` with any file descriptor
 /// you want, to do that, use [`dup3_raw()`].
+///
+/// # References
+///
+/// * [FreeBSD](https://man.freebsd.org/cgi/man.cgi?query=dup3&sektion=3)
+/// * [Linux](https://man7.org/linux/man-pages/man2/dup.2.html)
+/// * [NetBSD](https://man.netbsd.org/dup3.2)
+/// * [OpenBSD](https://man.openbsd.org/dup3.2)
 #[cfg(any(
     netbsdlike,
     solarish,
@@ -604,10 +662,10 @@ pub fn dup3<Fd: std::os::fd::AsFd>(oldfd: Fd, newfd: &mut std::os::fd::OwnedFd, 
 }
 
 /// Create a new copy of the specified file descriptor using the specified fd
-/// and flags (see [`dup(2)`](https://man7.org/linux/man-pages/man2/dup.2.html)).
+/// and flags.
 ///
-/// This function behaves similar to `dup2()` but allows for flags to be
-/// specified.
+/// This function behaves similar to [`dup3()`] except for it allows you to specify
+/// arbitrary fd values.
 ///
 /// # Safety
 ///
@@ -617,13 +675,16 @@ pub fn dup3<Fd: std::os::fd::AsFd>(oldfd: Fd, newfd: &mut std::os::fd::OwnedFd, 
 ///
 /// For more information, see the documentation of [`dup2_raw()`].
 ///
-/// # Reference
+/// # References
 ///
-/// * [POSIX manual](https://pubs.opengroup.org/onlinepubs/9699919799/functions/dup.html)
+/// * [FreeBSD](https://man.freebsd.org/cgi/man.cgi?query=dup3&sektion=3)
+/// * [Linux](https://man7.org/linux/man-pages/man2/dup.2.html)
+/// * [NetBSD](https://man.netbsd.org/dup3.2)
+/// * [OpenBSD](https://man.openbsd.org/dup3.2)
 ///
 /// # See also
 ///
-/// * [nix::unistd::dup3()](dup3)
+/// * [`dup3()`]
 #[cfg(any(
     netbsdlike,
     solarish,
@@ -753,6 +814,18 @@ pub fn mkfifo<P: ?Sized + NixPath>(path: &P, mode: crate::sys::stat::Mode) -> Re
 
 /// Creates new fifo special file (named pipe) with path `path` and access rights `mode`.
 ///
+/// # Examples
+///
+/// Create a FIFO in the current working directory:
+///
+/// ```no_run
+/// use nix::fcntl::AT_FDCWD;
+/// use nix::unistd::mkfifoat;
+/// use nix::sys::stat::Mode;
+///
+/// mkfifoat(AT_FDCWD, "fifo", Mode::S_IRWXU).unwrap();
+/// ```
+///
 /// # References
 ///
 /// [mkfifoat(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/mkfifoat.html).
@@ -780,7 +853,21 @@ pub fn mkfifoat<Fd: std::os::fd::AsFd, P: ?Sized + NixPath>(
 
 /// Creates a symbolic link at `path2` which points to `path1`.
 ///
-/// See also [symlinkat(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/symlinkat.html).
+/// # Examples
+///
+/// Assume file foo exists in the current working directory, create a symlink
+/// to it:
+///
+/// ```no_run
+/// use nix::fcntl::AT_FDCWD;
+/// use nix::unistd::symlinkat;
+///
+/// symlinkat("foo", AT_FDCWD, "link_to_foo").unwrap();
+/// ```
+///
+/// # References
+///
+/// [POSIX](https://pubs.opengroup.org/onlinepubs/9699919799/functions/symlinkat.html)
 #[cfg(not(target_os = "redox"))]
 pub fn symlinkat<Fd: std::os::fd::AsFd, P1: ?Sized + NixPath, P2: ?Sized + NixPath>(
     path1: &P1,
@@ -1245,7 +1332,7 @@ pub fn gethostname() -> Result<OsString> {
 }
 }
 
-/// Close a raw file descriptor
+/// Close a file descriptor.
 ///
 /// # Safety
 ///
@@ -1264,6 +1351,9 @@ pub fn gethostname() -> Result<OsString> {
 /// ```
 ///
 /// We should pass `f` by value:
+///
+/// In the following case, it is generally preferred to call `drop(f)` rather
+/// than `close()`.
 ///
 /// ```rust
 /// use std::os::unix::io::IntoRawFd;
@@ -1492,18 +1582,19 @@ impl LinkatFlags {
 
 /// Link one file to another file
 ///
-/// Creates a new link (directory entry) at `newpath` for the existing file at `oldpath`. In the
-/// case of a relative `oldpath`, the path is interpreted relative to the directory associated
-/// with file descriptor `olddirfd` instead of the current working directory and similiarly for
-/// `newpath` and file descriptor `newdirfd`. In case `flag` is `AtFlags::AT_SYMLINK_FOLLOW` and
-/// `oldpath` names a symoblic link, a new link for the target of the symbolic link is created.
-/// If either `olddirfd` or `newdirfd` is `None`, `AT_FDCWD` is used respectively where `oldpath`
-/// and/or `newpath` is then interpreted relative to the current working directory of the calling
-/// process. If either `oldpath` or `newpath` is absolute, then `dirfd` is ignored.
+/// Creates a new hard link (directory entry) at `newpath` for the existing file
+/// at `oldpath`. In the case of a relative `oldpath`, the path is interpreted
+/// relative to the directory associated with file descriptor `olddirfd` instead
+/// of the current working directory and similarly for `newpath` and file
+/// descriptor `newdirfd`. If either `oldpath` or `newpath` is absolute, then
+/// `dirfd` is ignored.
+///
+/// In case `flag` is `AtFlags::AT_SYMLINK_FOLLOW` and `oldpath` names a symoblic
+/// link, a new link for the target of the symbolic link is created.
 ///
 /// # References
 /// See also [linkat(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/linkat.html)
-#[cfg(not(target_os = "redox"))] // RedoxFS does not support symlinks yet
+#[cfg(not(target_os = "redox"))] // Redox does not have this yet
 pub fn linkat<Fd1: std::os::fd::AsFd, Fd2: std::os::fd::AsFd, P: ?Sized + NixPath>(
     olddirfd: Fd1,
     oldpath: &P,
@@ -1547,11 +1638,11 @@ pub enum UnlinkatFlags {
 
 /// Remove a directory entry
 ///
-/// In the case of a relative path, the directory entry to be removed is determined relative to
-/// the directory associated with the file descriptor `dirfd` or the current working directory
-/// if `dirfd` is `None`. In the case of an absolute `path` `dirfd` is ignored. If `flag` is
-/// `UnlinkatFlags::RemoveDir` then removal of the directory entry specified by `dirfd` and `path`
-/// is performed.
+/// In the case of a relative path, the directory entry to be removed is determined
+/// relative to the directory associated with the file descriptor `dirfd`. In the
+/// case of an absolute `path` `dirfd` is ignored. If `flag` is
+/// `UnlinkatFlags::RemoveDir` then removal of the directory entry specified by
+/// `dirfd` and `path` is performed.
 ///
 /// # References
 /// See also [unlinkat(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/unlinkat.html)
@@ -3336,11 +3427,8 @@ pub fn access<P: ?Sized + NixPath>(path: &P, amode: AccessFlags) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
-/// Checks the file named by `path` for accessibility according to the flags given by `mode`
-///
-/// If `dirfd` has a value, then `path` is relative to directory associated with the file descriptor.
-///
-/// If `dirfd` is `None`, then `path` is relative to the current working directory.
+/// Checks the file named by `dirfd` and `path` for accessibility according to
+/// the flags given by `mode`
 ///
 /// # References
 ///
