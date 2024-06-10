@@ -1693,7 +1693,7 @@ pub fn test_named_unixdomain() {
     // It should be safe considering that s3 will be open within this test
     let s3 = unsafe { std::os::fd::BorrowedFd::borrow_raw(s3) };
     let mut buf = [0; 5];
-    read(&s3, &mut buf).unwrap();
+    read(s3, &mut buf).unwrap();
     thr.join().unwrap();
 
     assert_eq!(&buf[..], b"hello");

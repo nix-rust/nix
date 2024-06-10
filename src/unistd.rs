@@ -20,14 +20,10 @@ use crate::fcntl::AtFlags;
 use crate::fcntl::OFlag;
 #[cfg(all(feature = "fs", bsd))]
 use crate::sys::stat::FileFlag;
-#[cfg(feature = "fs")]
-use crate::sys::stat::Mode;
 use crate::{Error, NixPath, Result};
 #[cfg(not(target_os = "redox"))]
 use cfg_if::cfg_if;
-use libc::{
-    c_char, c_int, c_long, c_uint, gid_t, mode_t, off_t, pid_t, size_t, uid_t,
-};
+use libc::{c_char, c_int, c_long, c_uint, gid_t, off_t, pid_t, size_t, uid_t};
 use std::convert::Infallible;
 #[cfg(not(target_os = "redox"))]
 use std::ffi::CString;
@@ -428,7 +424,7 @@ feature! {
 ///
 /// * [`dup2()`]
 /// * [`dup2_raw()`]
-/// * [`dup3()`]
+/// * `dup3()`
 #[inline]
 pub fn dup<Fd: std::os::fd::AsFd>(oldfd: Fd) -> Result<std::os::fd::OwnedFd> {
     use std::os::fd::AsRawFd;
@@ -480,8 +476,7 @@ pub fn dup2_stderr<Fd: std::os::fd::AsFd>(fd: Fd) -> Result<()> {
 /// more detail on the exact behavior of this function.
 ///
 /// This function does not allow you to duplicate `oldfd` with any file descriptor
-/// you want, to do that, use [`dup2_raw()`]#[inline]
-.
+/// you want, to do that, use [`dup2_raw()`].
 ///
 /// # Reference
 ///
@@ -590,6 +585,9 @@ pub unsafe fn dup2_raw<Fd1: std::os::fd::AsFd, Fd2: std::os::fd::IntoRawFd>(oldf
 ///
 /// This function behaves similar to `dup2()` but allows for flags to be
 /// specified.
+///
+/// This function does not allow you to duplicate `oldfd` with any file descriptor
+/// you want, to do that, use [`dup3_raw()`].
 #[cfg(any(
     netbsdlike,
     solarish,
@@ -706,9 +704,9 @@ pub fn fchdir<Fd: std::os::fd::AsFd>(dirfd: Fd) -> Result<()> {
 /// }
 /// ```
 #[inline]
-pub fn mkdir<P: ?Sized + NixPath>(path: &P, mode: Mode) -> Result<()> {
+pub fn mkdir<P: ?Sized + NixPath>(path: &P, mode: crate::sys::stat::Mode) -> Result<()> {
     let res = path.with_nix_path(|cstr| unsafe {
-        libc::mkdir(cstr.as_ptr(), mode.bits() as mode_t)
+        libc::mkdir(cstr.as_ptr(), mode.bits() as libc::mode_t)
     })?;
 
     Errno::result(res).map(drop)
@@ -745,9 +743,9 @@ pub fn mkdir<P: ?Sized + NixPath>(path: &P, mode: Mode) -> Result<()> {
 /// ```
 #[inline]
 #[cfg(not(target_os = "redox"))] // RedoxFS does not support fifo yet
-pub fn mkfifo<P: ?Sized + NixPath>(path: &P, mode: Mode) -> Result<()> {
+pub fn mkfifo<P: ?Sized + NixPath>(path: &P, mode: crate::sys::stat::Mode) -> Result<()> {
     let res = path.with_nix_path(|cstr| unsafe {
-        libc::mkfifo(cstr.as_ptr(), mode.bits() as mode_t)
+        libc::mkfifo(cstr.as_ptr(), mode.bits() as libc::mode_t)
     })?;
 
     Errno::result(res).map(drop)
@@ -769,12 +767,12 @@ pub fn mkfifo<P: ?Sized + NixPath>(path: &P, mode: Mode) -> Result<()> {
 pub fn mkfifoat<Fd: std::os::fd::AsFd, P: ?Sized + NixPath>(
     dirfd: Fd,
     path: &P,
-    mode: Mode,
+    mode: crate::sys::stat::Mode,
 ) -> Result<()> {
     use std::os::fd::AsRawFd;
 
     let res = path.with_nix_path(|cstr| unsafe {
-        libc::mkfifoat(dirfd.as_fd().as_raw_fd(), cstr.as_ptr(), mode.bits() as mode_t)
+        libc::mkfifoat(dirfd.as_fd().as_raw_fd(), cstr.as_ptr(), mode.bits() as libc::mode_t)
     })?;
 
     Errno::result(res).map(drop)
