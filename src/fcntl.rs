@@ -231,12 +231,6 @@ libc_bitflags!(
     }
 );
 
-/// Computes the raw fd consumed by a function of the form `*at`.
-#[cfg(all(feature = "fanotify", target_os = "linux"))]
-pub(crate) fn at_rawfd(fd: Option<RawFd>) -> RawFd {
-    fd.unwrap_or(libc::AT_FDCWD)
-}
-
 feature! {
 #![feature = "fs"]
 
