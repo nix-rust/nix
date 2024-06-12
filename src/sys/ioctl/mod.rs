@@ -376,6 +376,42 @@ macro_rules! ioctl_read {
     )
 }
 
+/// Generates a wrapper function for an ioctl that reads data through a pointer to the kernel.
+///
+/// The arguments to this macro are:
+///
+/// * The function name
+/// * The ioctl identifier
+/// * The ioctl sequence number
+/// * The data type passed by this ioctl
+///
+/// The generated function has the following signature:
+///
+/// ```rust,ignore
+/// pub unsafe fn FUNCTION_NAME(fd: libc::c_int, data: *const DATA_TYPE) -> Result<libc::c_int>
+/// ```
+///
+/// For a more in-depth explanation of ioctls, see [`::sys::ioctl`](sys/ioctl/index.html).
+///
+/// # Example
+///
+/// ```
+/// # #[macro_use] extern crate nix;
+/// ioctl_write_ptr!(usbfs_claim_interface, b'U', 15, u16);
+/// # fn main() {}
+/// ```
+#[macro_export]
+macro_rules! ioctl_read_ptr {
+    ($(#[$attr:meta])* $name:ident, $ioty:expr, $nr:expr, $ty:ty) => (
+        $(#[$attr])*
+        pub unsafe fn $name(fd: $crate::libc::c_int,
+                            data: *const $ty)
+                            -> $crate::Result<$crate::libc::c_int> {
+            convert_ioctl_res!($crate::libc::ioctl(fd, request_code_read!($ioty, $nr, ::std::mem::size_of::<$ty>()) as $crate::sys::ioctl::ioctl_num_type, data))
+        }
+    )
+}
+
 /// Generates a wrapper function for a "bad" ioctl that reads data from the kernel.
 ///
 /// The arguments to this macro are:
@@ -449,6 +485,43 @@ macro_rules! ioctl_write_ptr {
             unsafe {
                 convert_ioctl_res!($crate::libc::ioctl(fd, request_code_write!($ioty, $nr, ::std::mem::size_of::<$ty>()) as $crate::sys::ioctl::ioctl_num_type, data))
             }
+        }
+    )
+}
+
+/// Generates a wrapper function for an ioctl that read and writes data through a pointer to the kernel.
+///
+/// The arguments to this macro are:
+///
+/// * The function name
+/// * The ioctl identifier
+/// * The ioctl sequence number
+/// * The data type passed by this ioctl
+///
+/// The generated function has the following signature:
+///
+/// ```rust,ignore
+/// pub unsafe fn FUNCTION_NAME(fd: libc::c_int, data: *mut DATA_TYPE) -> Result<libc::c_int>
+/// ```
+///
+/// For a more in-depth explanation of ioctls, see [`::sys::ioctl`](sys/ioctl/index.html).
+///
+/// # Example
+///
+/// ```
+/// # #[macro_use] extern crate nix;
+/// # pub struct usbfs_ioctl {}
+/// ioctl_readwrite_ptr!(usb_ioctl, b'U', 18, usbfs_ioctl);
+/// # fn main() {}
+/// ```
+#[macro_export]
+macro_rules! ioctl_readwrite_ptr {
+    ($(#[$attr:meta])* $name:ident, $ioty:expr, $nr:expr, $ty:ty) => (
+        $(#[$attr])*
+        pub unsafe fn $name(fd: $crate::libc::c_int,
+                            data: *const $ty)
+                            -> $crate::Result<$crate::libc::c_int> {
+            convert_ioctl_res!($crate::libc::ioctl(fd, request_code_readwrite!($ioty, $nr, ::std::mem::size_of::<$ty>()) as $crate::sys::ioctl::ioctl_num_type, data))
         }
     )
 }
