@@ -775,13 +775,13 @@ pub enum ControlMessageOwned {
     #[cfg(any(linux_android, target_os = "freebsd"))]
     #[cfg(feature = "net")]
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
-    Ipv4RecvTtl(u8),
+    Ipv4Ttl(u8),
 
     /// Hop Limit header field of the incoming IPv6 packet.
     #[cfg(any(linux_android, target_os = "freebsd"))]
     #[cfg(feature = "net")]
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
-    Ipv6RecvHopLimit(u8),
+    Ipv6HopLimit(u8),
 
     /// Retrieve the DSCP (ToS) header field of the incoming IPv4 packet. 
     #[cfg(any(linux_android, target_os = "freebsd"))]
@@ -1017,17 +1017,17 @@ impl ControlMessageOwned {
             #[cfg(feature = "net")]
             (libc::IPPROTO_IP, libc::IP_RECVTTL) => {
                 let ttl: u8 = unsafe { ptr::read_unaligned(p as *const u8) };
-                ControlMessageOwned::Ipv4RecvTtl(ttl)
+                ControlMessageOwned::Ipv4Ttl(ttl)
             },
             #[cfg(any(linux_android, target_os = "freebsd"))]
             #[cfg(feature = "net")]
             (libc::IPPROTO_IPV6, libc::IPV6_HOPLIMIT) => {
                 let ttl: u8 = unsafe { ptr::read_unaligned(p as *const u8) };
-                ControlMessageOwned::Ipv6RecvHopLimit(ttl)
+                ControlMessageOwned::Ipv6HopLimit(ttl)
             },
             #[cfg(any(linux_android, target_os = "freebsd"))]
             #[cfg(feature = "net")]
-            (libc::IPPROTO_IP, libc::IP_TOS) => {
+            (libc::IPPROTO_IP, libc::IP_RECVTOS) => {
                 let tos = unsafe { ptr::read_unaligned(p as *const i32) };
                 ControlMessageOwned::Ipv4Tos(tos)
             },
@@ -1174,6 +1174,12 @@ pub enum ControlMessage<'a> {
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv4SendSrcAddr(&'a libc::in_addr),
 
+    /// Configure the Time-to-Live for v4 traffic traffic.
+    #[cfg(any(linux_android, freebsdlike, apple_targets, target_os = "haiku"))]
+    #[cfg(feature = "net")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
+    Ipv4Ttl(&'a libc::c_int),
+
     /// Configure the hop limit for v6 multicast traffic.
     ///
     /// Set the IPv6 hop limit for this message. The argument is an integer
@@ -1187,7 +1193,7 @@ pub enum ControlMessage<'a> {
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv6HopLimit(&'a libc::c_int),
 
-    /// SO_RXQ_OVFL indicates that an unsigned 32 bit value
+        /// SO_RXQ_OVFL indicates that an unsigned 32 bit value
     /// ancilliary msg (cmsg) should be attached to recieved
     /// skbs indicating the number of packets dropped by the
     /// socket between the last recieved packet and this
@@ -1308,6 +1314,9 @@ impl<'a> ControlMessage<'a> {
             ControlMessage::Ipv4SendSrcAddr(addr) => addr as *const _ as *const u8,
             #[cfg(any(linux_android, freebsdlike, apple_targets, target_os = "haiku"))]
             #[cfg(feature = "net")]
+            ControlMessage::Ipv4Ttl(ttl) => ttl as *const _ as *const u8,
+            #[cfg(any(linux_android, freebsdlike, apple_targets, target_os = "haiku"))]
+            #[cfg(feature = "net")]
             ControlMessage::Ipv6HopLimit(limit) => limit as *const _ as *const u8,
             #[cfg(any(linux_android, target_os = "fuchsia"))]
             ControlMessage::RxqOvfl(drop_count) => {
@@ -1378,6 +1387,11 @@ impl<'a> ControlMessage<'a> {
             ControlMessage::Ipv4SendSrcAddr(addr) => mem::size_of_val(addr),
             #[cfg(any(linux_android, freebsdlike, apple_targets, target_os = "haiku"))]
             #[cfg(feature = "net")]
+            ControlMessage::Ipv4Ttl(ttl) => {
+                mem::size_of_val(ttl)
+            },
+            #[cfg(any(linux_android, freebsdlike, apple_targets, target_os = "haiku"))]
+            #[cfg(feature = "net")]
             ControlMessage::Ipv6HopLimit(limit) => {
                 mem::size_of_val(limit)
             },
@@ -1424,6 +1438,9 @@ impl<'a> ControlMessage<'a> {
             #[cfg(any(freebsdlike, netbsdlike))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv4SendSrcAddr(_) => libc::IPPROTO_IP,
+            #[cfg(any(linux_android, freebsdlike, apple_targets, target_os = "haiku"))]
+            #[cfg(feature = "net")]
+            ControlMessage::Ipv4Ttl(_) => libc::IPPROTO_IP,
             #[cfg(any(linux_android, freebsdlike, apple_targets, target_os = "haiku"))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv6HopLimit(_) => libc::IPPROTO_IPV6,
@@ -1473,6 +1490,9 @@ impl<'a> ControlMessage<'a> {
             #[cfg(any(freebsdlike, netbsdlike))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv4SendSrcAddr(_) => libc::IP_SENDSRCADDR,
+            #[cfg(any(linux_android, freebsdlike, apple_targets, target_os = "haiku"))]
+            #[cfg(feature = "net")]
+            ControlMessage::Ipv4Ttl(_) => libc::IP_TTL,
             #[cfg(any(linux_android, freebsdlike, apple_targets, target_os = "haiku"))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv6HopLimit(_) => libc::IPV6_HOPLIMIT,

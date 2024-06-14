@@ -2635,6 +2635,8 @@ pub fn test_ipv6_tclass_udp() {
     )
     .unwrap();
     setsockopt(&rsock, sockopt::Ipv6RecvTClass, &true).unwrap();
+    // This bind call with IPV6_RECVTCLASS fails on the Linux aarch64 target with EADDRNOTAVAIL, 
+    // so the test will only run if `bind` does not return an error..
     if bind(rsock.as_raw_fd(), &sock_addr).is_ok() {
         let sbuf = [0u8; 2048];
         let iov1 = [std::io::IoSlice::new(&sbuf)];

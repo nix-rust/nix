@@ -406,7 +406,7 @@ sockopt_impl!(
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
-    /// Set the Type-Of-Service (TOS) field that is
+    /// Set or receivethe Type-Of-Service (TOS) field that is
     /// sent with every IP packet originating from this socket
     IpTos,
     Both,
@@ -418,7 +418,7 @@ sockopt_impl!(
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
-    /// Receive the Type-Of-Service (TOS) associated with incoming packets.
+    /// If enabled, the IP_TOS ancillary message is passed with incoming packets.
     IpRecvTos,
     Both,
     libc::IPPROTO_IP,
@@ -440,7 +440,7 @@ sockopt_impl!(
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
-    /// Receive the traffic class associated with incoming packets.
+    /// If enabled, the IPV6_TCLASS ancillary message is passed with incoming packets.
     Ipv6RecvTClass,
     Both,
     libc::IPPROTO_IPV6,
