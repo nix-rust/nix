@@ -1078,8 +1078,7 @@ sockopt_impl!(
     libc::IP_RECVTTL,
     bool
 );
-#[cfg(any(linux_android, target_os = "freebsd"))]
-#[cfg(feature = "net")]
+#[cfg(any(apple_targets, linux_android, target_os = "freebsd"))]
 sockopt_impl!(
     /// Set the unicast hop limit for the socket.
     Ipv6Ttl,

@@ -1015,7 +1015,7 @@ impl ControlMessageOwned {
             },
             #[cfg(any(linux_android, target_os = "freebsd"))]
             #[cfg(feature = "net")]
-            (libc::IPPROTO_IP, libc::IP_TTL) => {
+            (libc::IPPROTO_IP, libc::IP_RECVTTL) => {
                 let ttl: u8 = unsafe { ptr::read_unaligned(p as *const u8) };
                 ControlMessageOwned::Ipv4RecvTtl(ttl)
             },
