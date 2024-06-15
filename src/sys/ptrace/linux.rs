@@ -349,7 +349,7 @@ pub fn getregs(pid: Pid) -> Result<user_regs_struct> {
 /// Get a particular set of user registers, as with `ptrace(PTRACE_GETREGSET, ...)`
 ///
 /// Currently, in x86_64 platform, if the tracer is 64bit and tracee is 32bit, this function
-/// will return an error.
+/// will return EIO error.
 #[cfg(all(
     target_os = "linux",
     target_env = "gnu",
