@@ -224,12 +224,16 @@ fn test_ptrace_syscall() {
                 .unwrap();
 
             #[cfg(target_arch = "x86_64")]
-            let get_syscall_id =
-                || ptrace::getregs(child).unwrap().orig_rax as libc::c_long;
+            let get_syscall_id = || {
+                unsafe { ptrace::getregs(child) }.unwrap().orig_rax
+                    as libc::c_long
+            };
 
             #[cfg(target_arch = "x86")]
-            let get_syscall_id =
-                || ptrace::getregs(child).unwrap().orig_eax as libc::c_long;
+            let get_syscall_id = || {
+                unsafe { ptrace::getregs(child) }.unwrap().orig_eax
+                    as libc::c_long
+            };
 
             #[cfg(target_arch = "aarch64")]
             let get_syscall_id =
