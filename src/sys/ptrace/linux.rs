@@ -304,7 +304,7 @@ fn ptrace_peek(
     }
 }
 
-/// Get user registers, as with `ptrace(PTRACE_GETREGS, ...)`. Call [`getregset`] for safe version
+/// Get user registers, as with `ptrace(PTRACE_GETREGS, ...)`. Call `getregset` for safe version
 ///
 /// Note that since `PTRACE_GETREGS` are not available on all platforms (as in [ptrace(2)]),
 /// `ptrace(PTRACE_GETREGSET, pid, NT_PRSTATUS, ...)` is used instead to achieve the same effect
