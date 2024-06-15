@@ -945,8 +945,8 @@ pub unsafe fn sigaction_noretrieve(signal: libc::c_int, sigaction: &SigAction) -
                               std::ptr::null_mut()) };
 
     match Errno::result(res) {
-       Ok(_) => { return Ok(()); }
-       Err(e) => { return Err(e); }
+       Ok(_) => { Ok(()) }
+       Err(e) => { Err(e) }
     }
     
 }
