@@ -948,7 +948,7 @@ pub unsafe fn sigaction_noretrieve(signal: libc::c_int, sigaction: &SigAction) -
        Ok(_) => { Ok(()) }
        Err(e) => { Err(e) }
     }
-    
+
 }
 
 /// Signal management (see [signal(3p)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/signal.html))
