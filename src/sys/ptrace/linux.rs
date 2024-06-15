@@ -310,6 +310,8 @@ fn ptrace_peek(
 /// `ptrace(PTRACE_GETREGSET, pid, NT_PRSTATUS, ...)` is used instead to achieve the same effect
 /// on aarch64 and riscv64.
 ///
+/// # Safety
+///
 /// Currently, in x86_64 platform, if the tracer is 64bit and tracee is 32bit, the return value is
 /// undefined.
 ///
