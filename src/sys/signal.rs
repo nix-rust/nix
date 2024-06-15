@@ -901,6 +901,56 @@ pub unsafe fn sigaction(signal: Signal, sigaction: &SigAction) -> Result<SigActi
     Errno::result(res).map(|_| SigAction { sigaction: unsafe { oldact.assume_init() } })
 }
 
+/// Changes the action taken by a process on receipt of a specific signal, which is specified by a signal number.
+///
+/// `signal` can be any signal except `SIGKILL` or `SIGSTOP`. On success, it returns the previous
+/// action for the given signal. If `sigaction` fails, no new signal handler is installed.
+///
+/// # Safety
+///
+/// * Signal handlers may be called at any point during execution, which limits
+///   what is safe to do in the body of the signal-catching function. Be certain
+///   to only make syscalls that are explicitly marked safe for signal handlers
+///   and only share global data using atomics.
+///
+/// * There is also no guarantee that the old signal handler was installed
+///   correctly.  If it was installed by this crate, it will be.  But if it was
+///   installed by, for example, C code, then there is no guarantee its function
+///   pointer is valid.  In that case, this function effectively dereferences a
+///   raw pointer of unknown provenance.
+pub unsafe fn sigaction_numeric(signal: libc::c_int, sigaction: &SigAction) -> Result<SigAction> {
+    let mut oldact = mem::MaybeUninit::<libc::sigaction>::uninit();
+
+    let res = unsafe { libc::sigaction(signal as libc::c_int,
+                              &sigaction.sigaction as *const libc::sigaction,
+                              oldact.as_mut_ptr()) };
+
+    Errno::result(res).map(|_| SigAction { sigaction: unsafe { oldact.assume_init() } })
+}
+
+/// Changes the action taken by a process on receipt of a specific signal, which is specified by a signal number. Old sigaction struct is not retrieved.
+///
+/// `signal` can be any signal except `SIGKILL` or `SIGSTOP`. On success, it returns the previous
+/// action for the given signal. If `sigaction` fails, no new signal handler is installed.
+///
+/// # Safety
+///
+/// * Signal handlers may be called at any point during execution, which limits
+///   what is safe to do in the body of the signal-catching function. Be certain
+///   to only make syscalls that are explicitly marked safe for signal handlers
+///   and only share global data using atomics.
+pub unsafe fn sigaction_noretrieve(signal: libc::c_int, sigaction: &SigAction) -> Result<()> {
+    let res = unsafe { libc::sigaction(signal as libc::c_int,
+                              &sigaction.sigaction as *const libc::sigaction,
+                              std::ptr::null_mut()) };
+
+    match Errno::result(res) {
+       Ok(_) => { return Ok(()); }
+       Err(e) => { return Err(e); }
+    }
+    
+}
+
 /// Signal management (see [signal(3p)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/signal.html))
 ///
 /// Installs `handler` for the given `signal`, returning the previous signal
