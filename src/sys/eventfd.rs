@@ -5,11 +5,12 @@ use std::os::unix::io::{AsFd, AsRawFd, BorrowedFd, FromRawFd, OwnedFd, RawFd};
 libc_bitflags! {
     /// Eventfd flags.
     pub struct EfdFlags: libc::c_int {
-        /// Set the close-on-exec (`FD_CLOEXEC`) flag on the new file descriptor.
+        /// Set the close-on-exec (`FD_CLOEXEC`) flag on the new event file descriptor.
         EFD_CLOEXEC; // Since Linux 2.6.27/FreeBSD 13.0
-        /// Set the `O_NONBLOCK`` file status flag on the open file description.
+        /// Set the `O_NONBLOCK` file status flag on the new event file description.
         EFD_NONBLOCK; // Since Linux 2.6.27/FreeBSD 13.0
-        /// Provide semaphore-like semantics for reads from the new file descriptor.
+        /// Provide semaphore-like semantics for reads from the new event file
+        /// descriptor.
         EFD_SEMAPHORE; // Since Linux 2.6.30/FreeBSD 13.0
     }
 }
@@ -25,7 +26,7 @@ pub fn eventfd(initval: libc::c_uint, flags: EfdFlags) -> Result<OwnedFd> {
     Errno::result(res).map(|r| unsafe { OwnedFd::from_raw_fd(r) })
 }
 
-/// A eventfd file descriptor.
+/// An eventfd file descriptor.
 #[derive(Debug)]
 #[repr(transparent)]
 pub struct EventFd(OwnedFd);
@@ -83,19 +84,20 @@ impl EventFd {
 
     /// Reads the value from the file descriptor.
     ///
-    /// * If [`EFD_SEMAPHORE`](EfdFlags::EFD_SEMAPHORE) was not specified and the eventfd counter has
-    ///   a nonzero value, then this function returns an `u64` containing that
-    ///   value, and the counter's value is reset to zero.
+    /// * If [`EFD_SEMAPHORE`](EfdFlags::EFD_SEMAPHORE) was not specified and
+    ///   the eventfd counter has a nonzero value, then this function returns
+    ///   an `u64` containing that value, and the counter's value is reset to
+    ///   zero.
     ///
     /// * If [`EFD_SEMAPHORE`](EfdFlags::EFD_SEMAPHORE) was specified and the
     ///   eventfd counter has a nonzero value, then this function returns an
     ///   `u64` containing the value 1, and the counter's value is decremented
     ///   by 1.
     ///
-    /// * If the eventfd counter is zero at the time of the this call, then the
+    /// * If the eventfd counter is zero at the time of this call, then the
     ///   call either blocks until the counter becomes nonzero (at which time,
     ///   this function proceeds as described above) or fails with the error
-    ///   `EAGAIN` if the file descriptor has been made nonblocking using
+    ///   `EAGAIN` if the file descriptor has been made nonblocking with
     ///   [`EFD_NONBLOCK`](EfdFlags::EFD_NONBLOCK).
     pub fn read(&self) -> Result<u64> {
         let mut arr = [0; std::mem::size_of::<u64>()];
