@@ -369,6 +369,7 @@ const SIGNALS: [Signal; 31] = [
 
 // Support for real-time signals
 /// Operating system signal value
+#[cfg(target_os = "linux")]
 #[cfg(any(feature = "signal"))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum SignalValue {
@@ -378,8 +379,19 @@ pub enum SignalValue {
     Realtime(libc::c_int),
 }
 
+// Support for real-time signals
+/// Operating system signal value
+#[cfg(not(target_os = "linux"))]
+#[cfg(any(feature = "signal"))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum SignalValue {
+    /// Standard signal (passed as a Signal enum value)
+    Standard(Signal),
+}
+
 #[cfg(feature = "signal")]
 impl SignalValue {
+    #[cfg(target_os = "linux")]
     unsafe fn convert_to_int_unchecked(self) -> libc::c_int {
         match self {
             SignalValue::Standard(s) => s as libc::c_int,
@@ -387,7 +399,15 @@ impl SignalValue {
         }
     }
 
+    #[cfg(not(target_os = "linux"))]
+    unsafe fn convert_to_int_unchecked(self) -> libc::c_int {
+        match self {
+            SignalValue::Standard(s) => s as libc::c_int,
+        }
+    }
+
     /// Check whether this enum contains a valid signal for this operating system
+    #[cfg(target_os = "linux")]
     pub fn is_valid(&self) -> bool {
         match self {
             SignalValue::Standard(_) => true,
@@ -397,9 +417,18 @@ impl SignalValue {
             }
         }
     }
+
+    /// Check whether this enum contains a valid signal for this operating system
+    #[cfg(not(target_os = "linux"))]
+    pub fn is_valid(&self) -> bool {
+        match self {
+            SignalValue::Standard(_) => true,
+        }
+    }
 }
 
 impl From<SignalValue> for String {
+    #[cfg(target_os = "linux")]
     fn from(x: SignalValue) -> Self {
         match x {
             SignalValue::Standard(s) => s.to_string(),
@@ -408,11 +437,19 @@ impl From<SignalValue> for String {
             }
         }
     }
+
+    #[cfg(not(target_os = "linux"))]
+    fn from(x: SignalValue) -> Self {
+        match x {
+            SignalValue::Standard(s) => s.to_string(),
+        }
+    }
 }
 
 impl TryFrom<i32> for SignalValue {
     type Error = Errno;
 
+    #[cfg(target_os = "linux")]
     fn try_from(x: i32) -> Result<Self> {
         if x < libc::SIGRTMIN() {
             match Signal::try_from(x) {
@@ -423,11 +460,20 @@ impl TryFrom<i32> for SignalValue {
             Ok(SignalValue::Realtime(x - libc::SIGRTMIN()))
         }
     }
+
+    #[cfg(not(target_os = "linux"))]
+    fn try_from(x: i32) -> Result<Self> {
+        match Signal::try_from(x) {
+            Ok(s) => Ok(SignalValue::Standard(s)),
+            Err(e) => Err(e),
+        }
+    }
 }
 
 impl TryFrom<SignalValue> for i32 {
     type Error = Errno;
 
+    #[cfg(target_os = "linux")]
     fn try_from(x: SignalValue) -> Result<Self> {
         match x {
             SignalValue::Standard(s) => Ok(s as i32),
@@ -439,6 +485,13 @@ impl TryFrom<SignalValue> for i32 {
                     Err(Errno::EINVAL)
                 }
             }
+        }
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    fn try_from(x: SignalValue) -> Result<Self> {
+        match x {
+            SignalValue::Standard(s) => Ok(s as i32),
         }
     }
 }
@@ -492,6 +545,7 @@ impl Iterator for SignalIterator {
 impl Iterator for SignalValueIterator {
     type Item = SignalValue;
 
+    #[cfg(target_os = "linux")]
     fn next(&mut self) -> Option<SignalValue> {
         let next_signal = match SignalValue::try_from(self.next) {
            Ok(s) => {
@@ -503,6 +557,20 @@ impl Iterator for SignalValueIterator {
                  self.next = libc::SIGRTMIN() + 1;
                  SignalValue::Realtime(0)
               } else { return None; }
+           },
+        };
+        if next_signal.is_valid() { Some(next_signal) } else { None }
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    fn next(&mut self) -> Option<SignalValue> {
+        let next_signal = match SignalValue::try_from(self.next) {
+           Ok(s) => {
+              self.next += 1;
+              s
+           }
+           Err(_) => {
+              return None;
            },
         };
         if next_signal.is_valid() { Some(next_signal) } else { None }
