@@ -412,8 +412,7 @@ impl SignalValue {
         match self {
             SignalValue::Standard(_) => true,
             SignalValue::Realtime(n) => {
-                n.clone() >= 0
-                    && n.clone() <= libc::SIGRTMAX() - libc::SIGRTMIN()
+                *n >= 0 && *n <= libc::SIGRTMAX() - libc::SIGRTMIN()
             }
         }
     }
