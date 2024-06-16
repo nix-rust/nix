@@ -1,5 +1,5 @@
 use nix::sys::signal::{
-    rt_sigaction, sigaction, SaFlags, SigAction, SigEvent, SigHandler, SigSet,
+    rt_sigaction, SaFlags, SigAction, SigEvent, SigHandler, SigSet,
     SigevNotify, Signal, SignalValue,
 };
 use nix::sys::timer::{Expiration, Timer, TimerSetTimeFlags};
