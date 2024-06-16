@@ -510,10 +510,18 @@ impl From<Signal> for SignalValue {
 impl TryFrom<SignalValue> for Signal {
     type Error = Errno;
 
+    #[cfg(target_os = "linux")]
     fn try_from(x: SignalValue) -> Result<Self> {
         match x {
             SignalValue::Standard(s) => Ok(s),
             SignalValue::Realtime(_) => Err(Errno::EINVAL),
+        }
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    fn try_from(x: SignalValue) -> Result<Self> {
+        match x {
+            SignalValue::Standard(s) => Ok(s),
         }
     }
 }
