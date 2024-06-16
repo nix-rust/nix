@@ -427,6 +427,7 @@ impl SignalValue {
     }
 }
 
+#[cfg(feature = "signal")]
 impl From<SignalValue> for String {
     #[cfg(target_os = "linux")]
     fn from(x: SignalValue) -> Self {
@@ -446,6 +447,7 @@ impl From<SignalValue> for String {
     }
 }
 
+#[cfg(feature = "signal")]
 impl TryFrom<i32> for SignalValue {
     type Error = Errno;
 
@@ -470,6 +472,7 @@ impl TryFrom<i32> for SignalValue {
     }
 }
 
+#[cfg(feature = "signal")]
 impl TryFrom<SignalValue> for i32 {
     type Error = Errno;
 
@@ -496,12 +499,14 @@ impl TryFrom<SignalValue> for i32 {
     }
 }
 
+#[cfg(feature = "signal")]
 impl From<Signal> for SignalValue {
     fn from(x: Signal) -> Self {
         SignalValue::Standard(x)
     }
 }
 
+#[cfg(feature = "signal")]
 impl TryFrom<SignalValue> for Signal {
     type Error = Errno;
 
