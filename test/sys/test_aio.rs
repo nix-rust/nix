@@ -14,7 +14,7 @@ use nix::{
         aio::*,
         signal::{
             sigaction, SaFlags, SigAction, SigHandler, SigSet, SigevNotify,
-            Signal,
+            Signal, SignalValue,
         },
         time::{TimeSpec, TimeValLike},
     },
@@ -51,7 +51,7 @@ mod aio_fsync {
             AioFsyncMode::O_SYNC,
             42,
             SigevNotify::SigevSignal {
-                signal: Signal::SIGUSR2,
+                signal: SignalValue::Standard(Signal::SIGUSR2),
                 si_value: 99,
             },
         );
@@ -114,7 +114,7 @@ mod aio_read {
             &mut rbuf,
             42, //priority
             SigevNotify::SigevSignal {
-                signal: Signal::SIGUSR2,
+                signal: SignalValue::Standard(Signal::SIGUSR2),
                 si_value: 99,
             },
         );
@@ -303,7 +303,7 @@ mod aio_write {
             &wbuf,
             42, //priority
             SigevNotify::SigevSignal {
-                signal: Signal::SIGUSR2,
+                signal: SignalValue::Standard(Signal::SIGUSR2),
                 si_value: 99,
             },
         );
@@ -536,7 +536,7 @@ fn sigev_signal() {
             WBUF,
             0, //priority
             SigevNotify::SigevSignal {
-                signal: Signal::SIGUSR2,
+                signal: SignalValue::Standard(Signal::SIGUSR2),
                 si_value: 0, //TODO: validate in sigfunc
             },
         ));

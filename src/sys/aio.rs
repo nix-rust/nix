@@ -1173,7 +1173,7 @@ pub fn aio_suspend(
 ///     0,      // priority
 ///     SigevNotify::SigevNone
 /// ));
-/// let sev = SigevNotify::SigevSignal { signal: Signal::SIGUSR2, si_value: 0 };
+/// let sev = SigevNotify::SigevSignal { signal: SignalValue::Standard(Signal::SIGUSR2), si_value: 0 };
 /// lio_listio(LioMode::LIO_NOWAIT, &mut[aiow.as_mut()], sev).unwrap();
 /// while !SIGNALED.load(Ordering::Relaxed) {
 ///     thread::sleep(time::Duration::from_millis(10));
