@@ -370,7 +370,7 @@ const SIGNALS: [Signal; 31] = [
 // Support for real-time signals
 /// Operating system signal value
 #[cfg(target_os = "linux")]
-#[cfg(any(feature = "signal"))]
+#[cfg(any(feature = "aio", feature = "signal"))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum SignalValue {
     /// Standard signal (passed as a Signal enum value)
@@ -389,7 +389,7 @@ pub enum SignalValue {
     Standard(Signal),
 }
 
-#[cfg(feature = "signal")]
+#[cfg(any(feature = "aio", feature = "signal"))]
 impl SignalValue {
     #[cfg(target_os = "linux")]
     unsafe fn convert_to_int_unchecked(self) -> libc::c_int {
