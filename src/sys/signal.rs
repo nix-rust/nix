@@ -382,7 +382,7 @@ pub enum SignalValue {
 // Support for real-time signals
 /// Operating system signal value
 #[cfg(not(target_os = "linux"))]
-#[cfg(any(feature = "signal"))]
+#[cfg(any(feature = "signal", feature = "aio"))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum SignalValue {
     /// Standard signal (passed as a Signal enum value)
