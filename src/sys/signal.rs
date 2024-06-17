@@ -1023,6 +1023,12 @@ pub struct SignalSetIter<'a> {
     inner: SignalValueIterator,
 }
 
+#[cfg(not(any(
+    target_os = "haiku",
+    target_os = "openbsd",
+    target_os = "dragonfly",
+    target_os = "redox"
+)))]
 impl Iterator for SigSetIter<'_> {
     type Item = Signal;
     fn next(&mut self) -> Option<Signal> {
