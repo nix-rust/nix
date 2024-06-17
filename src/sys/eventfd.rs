@@ -58,20 +58,6 @@ impl EventFd {
         Self::from_value_and_flags(init_val, EfdFlags::empty())
     }
 
-    /// Arms `self`, a following call to `poll`, `select` or `epoll` will return immediately.
-    ///
-    /// [`EventFd::write`] with `1`.
-    pub fn arm(&self) -> Result<usize> {
-        self.write(1)
-    }
-
-    /// Defuses `self`, a following call to `poll`, `select` or `epoll` will block.
-    ///
-    /// [`EventFd::write`] with `0`.
-    pub fn defuse(&self) -> Result<usize> {
-        self.write(0)
-    }
-
     /// Enqueues `value` triggers, i.e., adds the integer value supplied in `value`
     /// to the counter.
     ///
