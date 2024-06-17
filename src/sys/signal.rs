@@ -392,7 +392,9 @@ pub enum SignalValue {
 #[cfg(any(feature = "aio", feature = "signal"))]
 impl SignalValue {
     #[cfg(target_os = "linux")]
+    #[allow(dead_code)]
     unsafe fn convert_to_int_unchecked(self) -> libc::c_int {
+        // Note: dead code is allowed, since this is a private method that can remain unused on some platforms
         match self {
             SignalValue::Standard(s) => s as libc::c_int,
             SignalValue::Realtime(n) => libc::SIGRTMIN() + n,
@@ -400,7 +402,9 @@ impl SignalValue {
     }
 
     #[cfg(not(target_os = "linux"))]
+    #[allow(dead_code)]
     unsafe fn convert_to_int_unchecked(self) -> libc::c_int {
+        // Note: dead code is allowed, since this is a private method that can remain unused on some platforms
         match self {
             SignalValue::Standard(s) => s as libc::c_int,
         }
@@ -999,6 +1003,12 @@ impl Hash for SigSet {
 ///
 /// Call [`SigSet::iter`] to create an iterator.
 #[derive(Clone, Debug)]
+#[cfg(not(any(
+    target_os = "haiku",
+    target_os = "openbsd",
+    target_os = "dragonfly",
+    target_os = "redox"
+)))]
 pub struct SigSetIter<'a> {
     sigset: &'a SigSet,
     inner: SignalIterator,
