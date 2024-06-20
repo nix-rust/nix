@@ -119,3 +119,29 @@ fn test_mremap_shrink() {
     // The first KB should still be accessible and have the old data in it.
     assert_eq!(slice[ONE_K - 1], 0xFF);
 }
+
+#[test]
+#[cfg(target_os = "netbsd")]
+fn test_mmap_prot_mprotect() {
+    use nix::errno::Errno;
+    use nix::libc::size_t;
+    use nix::sys::mman::mprotect;
+    use std::num::NonZeroUsize;
+
+    const ONE_K: size_t = 1024;
+    let ten_one_k = NonZeroUsize::new(10 * ONE_K).unwrap();
+    let prot = ProtFlags::PROT_READ;
+    prot.PROT_MPROTECT(ProtFlags::PROT_READ);
+
+    unsafe {
+        let ptr = mmap_anonymous(None, ten_one_k, prot, MapFlags::MAP_PRIVATE)
+            .unwrap();
+
+        let chg = mprotect(
+            ptr,
+            ten_one_k.into(),
+            ProtFlags::PROT_READ | ProtFlags::PROT_WRITE,
+        );
+        assert_eq!(chg, Err(Errno::EACCES));
+    }
+}
