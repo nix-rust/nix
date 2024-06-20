@@ -203,6 +203,8 @@ pub enum SockProtocol {
     Icmp = libc::IPPROTO_ICMP,
     /// ICMPv6 protocol (ICMP over IPv6)
     IcmpV6 = libc::IPPROTO_ICMPV6,
+    /// Dummy protocol for TCP
+    IpProtoIp = libc::IPPROTO_IP,
 }
 
 impl SockProtocol {
