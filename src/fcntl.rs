@@ -1550,3 +1550,6 @@ pub fn posix_fallocate<Fd: std::os::fd::AsFd>(
     }
 }
 }
+
+#[cfg(all(feature="fs", any(target_os = "android", target_os = "linux")))]
+pub mod statx;
