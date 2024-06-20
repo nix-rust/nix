@@ -1606,7 +1606,7 @@ impl<S> MultiHeaders<S> {
                     Some(v) => (&mut v[ix * msg_controllen] as *mut u8, msg_controllen),
                     None => (std::ptr::null_mut(), 0),
                 };
-                let msg_hdr = unsafe { pack_mhdr_to_receive(std::ptr::null_mut(), 0, ptr, cap, address.as_mut_ptr()) };
+                let msg_hdr = unsafe { pack_mhdr_to_receive(std::ptr::null_mut(), 0, ptr, cap, address) };
                 libc::mmsghdr {
                     msg_hdr,
                     msg_len: 0,
@@ -1834,17 +1834,25 @@ unsafe fn pack_mhdr_to_receive<S>(
     iov_buffer_len: usize,
     cmsg_buffer: *mut u8,
     cmsg_capacity: usize,
-    address: *mut S,
+    address: &mut mem::MaybeUninit<S>,
 ) -> msghdr
     where
         S: SockaddrLike
 {
+    let addr_ptr = S::as_mut_ptr(address);
+
+    if !addr_ptr.is_null() {
+        unsafe {
+            std::ptr::addr_of_mut!((*addr_ptr).sa_family).write(libc::AF_UNSPEC as _);
+        }
+    }
+
     // Musl's msghdr has private fields, so this is the only way to
     // initialize it.
     let mut mhdr = mem::MaybeUninit::<msghdr>::zeroed();
     let p = mhdr.as_mut_ptr();
     unsafe {
-        (*p).msg_name = address as *mut c_void;
+        (*p).msg_name = addr_ptr.cast();
         (*p).msg_namelen = S::size();
         (*p).msg_iov = iov_buffer as *mut iovec;
         (*p).msg_iovlen = iov_buffer_len as _;
@@ -1934,7 +1942,7 @@ pub fn recvmsg<'a, 'outer, 'inner, S>(fd: RawFd, iov: &'outer mut [IoSliceMut<'i
         .map(|v| (v.as_mut_ptr(), v.capacity()))
         .unwrap_or((ptr::null_mut(), 0));
     let mut mhdr = unsafe {
-        pack_mhdr_to_receive(iov.as_mut().as_mut_ptr(), iov.len(), msg_control, msg_controllen, address.as_mut_ptr())
+        pack_mhdr_to_receive(iov.as_mut().as_mut_ptr(), iov.len(), msg_control, msg_controllen, &mut address)
     };
 
     let ret = unsafe { libc::recvmsg(fd, &mut mhdr, flags.bits()) };
