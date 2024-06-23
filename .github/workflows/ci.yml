@@ -345,7 +345,7 @@ jobs:
         uses: dtolnay/rust-toolchain@nightly
 
       - name: setup 
-        run: cargo update -Zminimal-versions
+        run: cargo update -Zdirect-minimal-versions
 
       - name: check
         run: cargo check
