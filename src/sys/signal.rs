@@ -67,6 +67,7 @@ libc_enum! {
                           target_arch = "mips32r6",
                           target_arch = "mips64",
                           target_arch = "mips64r6",
+                          target_arch = "sparc",
                           target_arch = "sparc64"))))]
         SIGSTKFLT,
         /// To parent on child stop or exit
@@ -147,6 +148,7 @@ impl FromStr for Signal {
                     target_arch = "mips32r6",
                     target_arch = "mips64",
                     target_arch = "mips64r6",
+                    target_arch = "sparc",
                     target_arch = "sparc64"
                 ))
             ))]
@@ -229,6 +231,7 @@ impl Signal {
                     target_arch = "mips32r6",
                     target_arch = "mips64",
                     target_arch = "mips64r6",
+                    target_arch = "sparc",
                     target_arch = "sparc64"
                 ))
             ))]
@@ -316,6 +319,7 @@ const SIGNALS: [Signal; 28] = [
         target_arch = "mips32r6",
         target_arch = "mips64",
         target_arch = "mips64r6",
+        target_arch = "sparc",
         target_arch = "sparc64"
     ))
 ))]
@@ -333,6 +337,7 @@ const SIGNALS: [Signal; 31] = [
         target_arch = "mips32r6",
         target_arch = "mips64",
         target_arch = "mips64r6",
+        target_arch = "sparc",
         target_arch = "sparc64"
     )
 ))]
