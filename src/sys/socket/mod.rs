@@ -1169,13 +1169,13 @@ impl<'a> ControlMessage<'a> {
     /// The value of CMSG_LEN on this message.
     /// Safe because CMSG_LEN is always safe
     #[cfg(any(target_os = "android",
-              all(target_os = "linux", not(target_env = "musl"))))]
+              all(target_os = "linux", not(any(target_env = "musl", target_env = "ohos")))))]
     fn cmsg_len(&self) -> usize {
         unsafe{CMSG_LEN(self.len() as libc::c_uint) as usize}
     }
 
     #[cfg(not(any(target_os = "android",
-                  all(target_os = "linux", not(target_env = "musl")))))]
+              all(target_os = "linux", not(any(target_env = "musl", target_env = "ohos"))))))]
     fn cmsg_len(&self) -> libc::c_uint {
         unsafe{CMSG_LEN(self.len() as libc::c_uint)}
     }
