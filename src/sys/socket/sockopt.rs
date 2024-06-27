@@ -909,7 +909,7 @@ sockopt_impl!(
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
-    /// Set delivery of the `IPV6_RECVPKTINFO` control message on incoming
+    /// Set delivery of the `IPV6_PKTINFO` control message on incoming
     /// datagrams.
     Ipv6RecvPacketInfo,
     Both,
