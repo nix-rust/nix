@@ -922,8 +922,8 @@ sockopt_impl!(
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
-    /// Set delivery of the `IPV6_PKTINFO` control message on incoming
-    /// datagrams.
+    /// Pass an `IPV6_PKTINFO` ancillary message that contains a in6_pktinfo
+    /// structure that supplies some information about the incoming packet.
     Ipv6PacketInfo,
     Both,
     libc::IPPROTO_IPV6,
