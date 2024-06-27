@@ -769,6 +769,32 @@ pub enum ControlMessageOwned {
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv6OrigDstAddr(libc::sockaddr_in6),
 
+    /// Time-to-Live (TTL) header field of the incoming IPv4 packet.
+    ///
+    /// [Further reading](https://www.man7.org/linux/man-pages/man7/ip.7.html)
+    #[cfg(any(linux_android, target_os = "freebsd"))]
+    #[cfg(feature = "net")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
+    Ipv4Ttl(u8),
+
+    /// Hop Limit header field of the incoming IPv6 packet.
+    #[cfg(any(linux_android, target_os = "freebsd"))]
+    #[cfg(feature = "net")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
+    Ipv6HopLimit(u8),
+
+    /// Retrieve the DSCP (ToS) header field of the incoming IPv4 packet. 
+    #[cfg(any(linux_android, target_os = "freebsd"))]
+    #[cfg(feature = "net")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
+    Ipv4Tos(i32),
+
+    /// Retrieve the DSCP (Traffic Class) header field of the incoming IPv6 packet. 
+    #[cfg(any(linux_android, target_os = "freebsd"))]
+    #[cfg(feature = "net")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
+    Ipv6TClass(i32), 
+
     /// UDP Generic Receive Offload (GRO) allows receiving multiple UDP
     /// packets from a single sender.
     /// Fixed-size payloads are following one by one in a receive buffer.
@@ -987,6 +1013,30 @@ impl ControlMessageOwned {
                 let content_type = unsafe { ptr::read_unaligned(p as *const u8) };
                 ControlMessageOwned::TlsGetRecordType(content_type.into())
             },
+            #[cfg(any(linux_android, target_os = "freebsd"))]
+            #[cfg(feature = "net")]
+            (libc::IPPROTO_IP, libc::IP_RECVTTL) => {
+                let ttl: u8 = unsafe { ptr::read_unaligned(p as *const u8) };
+                ControlMessageOwned::Ipv4Ttl(ttl)
+            },
+            #[cfg(any(linux_android, target_os = "freebsd"))]
+            #[cfg(feature = "net")]
+            (libc::IPPROTO_IPV6, libc::IPV6_HOPLIMIT) => {
+                let ttl: u8 = unsafe { ptr::read_unaligned(p as *const u8) };
+                ControlMessageOwned::Ipv6HopLimit(ttl)
+            },
+            #[cfg(any(linux_android, target_os = "freebsd"))]
+            #[cfg(feature = "net")]
+            (libc::IPPROTO_IP, libc::IP_RECVTOS) => {
+                let tos = unsafe { ptr::read_unaligned(p as *const i32) };
+                ControlMessageOwned::Ipv4Tos(tos)
+            },
+            #[cfg(any(linux_android, target_os = "freebsd"))]
+            #[cfg(feature = "net")]
+            (libc::IPPROTO_IPV6, libc::IPV6_TCLASS) => {
+                let tc = unsafe { ptr::read_unaligned(p as *const i32) };
+                ControlMessageOwned::Ipv6TClass(tc)
+            },
             (_, _) => {
                 let sl = unsafe { std::slice::from_raw_parts(p, len) };
                 let ucmsg = UnknownCmsg(*header, Vec::<u8>::from(sl));
@@ -1124,6 +1174,12 @@ pub enum ControlMessage<'a> {
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv4SendSrcAddr(&'a libc::in_addr),
 
+    /// Configure the Time-to-Live for v4 traffic traffic.
+    #[cfg(any(linux_android, freebsdlike, apple_targets, target_os = "haiku"))]
+    #[cfg(feature = "net")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
+    Ipv4Ttl(&'a libc::c_int),
+
     /// Configure the hop limit for v6 multicast traffic.
     ///
     /// Set the IPv6 hop limit for this message. The argument is an integer
@@ -1137,7 +1193,7 @@ pub enum ControlMessage<'a> {
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv6HopLimit(&'a libc::c_int),
 
-    /// SO_RXQ_OVFL indicates that an unsigned 32 bit value
+        /// SO_RXQ_OVFL indicates that an unsigned 32 bit value
     /// ancilliary msg (cmsg) should be attached to recieved
     /// skbs indicating the number of packets dropped by the
     /// socket between the last recieved packet and this
@@ -1152,6 +1208,17 @@ pub enum ControlMessage<'a> {
     /// page.
     #[cfg(target_os = "linux")]
     TxTime(&'a u64),
+
+    /// Configure DSCP / IP TOS for outgoing v4 packets.
+    ///
+    /// Further information can be found [here](https://en.wikipedia.org/wiki/Differentiated_services).
+    #[cfg(target_os = "linux")]
+    IpTos(&'a i32),
+    /// Configure DSCP / IP TOS for outgoing v6 packets.
+    ///
+    /// Further information can be found [here](https://en.wikipedia.org/wiki/Differentiated_services).
+    #[cfg(target_os = "linux")]
+    Ipv6TClass(&'a i32),
 }
 
 // An opaque structure used to prevent cmsghdr from being a public type
@@ -1247,6 +1314,9 @@ impl<'a> ControlMessage<'a> {
             ControlMessage::Ipv4SendSrcAddr(addr) => addr as *const _ as *const u8,
             #[cfg(any(linux_android, freebsdlike, apple_targets, target_os = "haiku"))]
             #[cfg(feature = "net")]
+            ControlMessage::Ipv4Ttl(ttl) => ttl as *const _ as *const u8,
+            #[cfg(any(linux_android, freebsdlike, apple_targets, target_os = "haiku"))]
+            #[cfg(feature = "net")]
             ControlMessage::Ipv6HopLimit(limit) => limit as *const _ as *const u8,
             #[cfg(any(linux_android, target_os = "fuchsia"))]
             ControlMessage::RxqOvfl(drop_count) => {
@@ -1255,6 +1325,14 @@ impl<'a> ControlMessage<'a> {
             #[cfg(target_os = "linux")]
             ControlMessage::TxTime(tx_time) => {
                 tx_time as *const _ as *const u8
+            },
+            #[cfg(target_os = "linux")]
+            ControlMessage::IpTos(tos) => {
+                tos as *const _ as *const u8
+            },
+            #[cfg(target_os = "linux")]
+            ControlMessage::Ipv6TClass(tclass) => {
+                tclass as *const _ as *const u8
             },
         };
         unsafe {
@@ -1309,6 +1387,11 @@ impl<'a> ControlMessage<'a> {
             ControlMessage::Ipv4SendSrcAddr(addr) => mem::size_of_val(addr),
             #[cfg(any(linux_android, freebsdlike, apple_targets, target_os = "haiku"))]
             #[cfg(feature = "net")]
+            ControlMessage::Ipv4Ttl(ttl) => {
+                mem::size_of_val(ttl)
+            },
+            #[cfg(any(linux_android, freebsdlike, apple_targets, target_os = "haiku"))]
+            #[cfg(feature = "net")]
             ControlMessage::Ipv6HopLimit(limit) => {
                 mem::size_of_val(limit)
             },
@@ -1319,6 +1402,14 @@ impl<'a> ControlMessage<'a> {
             #[cfg(target_os = "linux")]
             ControlMessage::TxTime(tx_time) => {
                 mem::size_of_val(tx_time)
+            },
+            #[cfg(target_os = "linux")]
+            ControlMessage::IpTos(tos) => {
+                mem::size_of_val(tos)
+            },
+            #[cfg(target_os = "linux")]
+            ControlMessage::Ipv6TClass(tclass) => {
+                mem::size_of_val(tclass)
             },
         }
     }
@@ -1349,11 +1440,18 @@ impl<'a> ControlMessage<'a> {
             ControlMessage::Ipv4SendSrcAddr(_) => libc::IPPROTO_IP,
             #[cfg(any(linux_android, freebsdlike, apple_targets, target_os = "haiku"))]
             #[cfg(feature = "net")]
+            ControlMessage::Ipv4Ttl(_) => libc::IPPROTO_IP,
+            #[cfg(any(linux_android, freebsdlike, apple_targets, target_os = "haiku"))]
+            #[cfg(feature = "net")]
             ControlMessage::Ipv6HopLimit(_) => libc::IPPROTO_IPV6,
             #[cfg(any(linux_android, target_os = "fuchsia"))]
             ControlMessage::RxqOvfl(_) => libc::SOL_SOCKET,
             #[cfg(target_os = "linux")]
             ControlMessage::TxTime(_) => libc::SOL_SOCKET,
+            #[cfg(target_os = "linux")]
+            ControlMessage::IpTos(_) => libc::IPPROTO_IP,
+            #[cfg(target_os = "linux")]
+            ControlMessage::Ipv6TClass(_) => libc::IPPROTO_IPV6,
         }
     }
 
@@ -1394,6 +1492,9 @@ impl<'a> ControlMessage<'a> {
             ControlMessage::Ipv4SendSrcAddr(_) => libc::IP_SENDSRCADDR,
             #[cfg(any(linux_android, freebsdlike, apple_targets, target_os = "haiku"))]
             #[cfg(feature = "net")]
+            ControlMessage::Ipv4Ttl(_) => libc::IP_TTL,
+            #[cfg(any(linux_android, freebsdlike, apple_targets, target_os = "haiku"))]
+            #[cfg(feature = "net")]
             ControlMessage::Ipv6HopLimit(_) => libc::IPV6_HOPLIMIT,
             #[cfg(any(linux_android, target_os = "fuchsia"))]
             ControlMessage::RxqOvfl(_) => {
@@ -1402,6 +1503,14 @@ impl<'a> ControlMessage<'a> {
             #[cfg(target_os = "linux")]
             ControlMessage::TxTime(_) => {
                 libc::SCM_TXTIME
+            },
+            #[cfg(target_os = "linux")]
+            ControlMessage::IpTos(_) => {
+                libc::IP_TOS
+            },
+            #[cfg(target_os = "linux")]
+            ControlMessage::Ipv6TClass(_) => {
+                libc::IPV6_TCLASS
             },
         }
     }
