@@ -2200,7 +2200,7 @@ mod tests {
                 sdl_slen: 0,
                 ..unsafe { mem::zeroed() }
             });
-            format!("{la}");
+            let _ = format!("{la}");
         }
 
         #[cfg(all(
