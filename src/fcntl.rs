@@ -797,6 +797,9 @@ pub enum FcntlArg<'a> {
     /// Return the full path without firmlinks of the fd.
     #[cfg(apple_targets)]
     F_GETPATH_NOFIRMLINK(&'a mut PathBuf),
+    /// Pre-allocate storage with different policies on fd.
+    #[cfg(apple_targets)]
+    F_PREALLOCATE(&'a libc::fstore_t),
     // TODO: Rest of flags
 }
 
@@ -904,6 +907,10 @@ pub fn fcntl<Fd: std::os::fd::AsFd>(fd: Fd, arg: FcntlArg) -> Result<c_int> {
                 let optr = CStr::from_bytes_until_nul(&buffer).unwrap();
                 *path = PathBuf::from(OsString::from(optr.to_str().unwrap()));
                 return Ok(ok_res)
+            },
+            #[cfg(apple_targets)]
+            F_PREALLOCATE(st) => {
+                libc::fcntl(fd, libc::F_PREALLOCATE, st)
             },
         }
     };
