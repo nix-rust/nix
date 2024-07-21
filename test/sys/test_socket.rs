@@ -2579,6 +2579,19 @@ fn test_recvmsg_rxq_ovfl() {
 
 #[cfg(target_os = "linux")]
 #[cfg(feature = "net")]
+// qemu doesn't seem to be emulating this correctly in these architectures
+#[cfg_attr(
+    all(
+        qemu,
+        any(
+            target_arch = "mips",
+            target_arch = "mips32r6",
+            target_arch = "mips64",
+            target_arch = "mips64r6",
+        )
+    ),
+    ignore
+)]
 #[test]
 pub fn test_ip_tos_udp() {
     use nix::sys::socket::ControlMessageOwned;
@@ -2647,6 +2660,19 @@ pub fn test_ip_tos_udp() {
 }
 
 #[cfg(target_os = "linux")]
+// qemu doesn't seem to be emulating this correctly in these architectures
+#[cfg_attr(
+    all(
+        qemu,
+        any(
+            target_arch = "mips",
+            target_arch = "mips32r6",
+            target_arch = "mips64",
+            target_arch = "mips64r6",
+        )
+    ),
+    ignore
+)]
 #[cfg(feature = "net")]
 #[test]
 pub fn test_ipv6_tclass_udp() {
