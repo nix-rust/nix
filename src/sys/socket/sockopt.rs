@@ -406,7 +406,7 @@ sockopt_impl!(
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
-    /// Set or receivethe Type-Of-Service (TOS) field that is
+    /// Set or receive the Type-Of-Service (TOS) field that is
     /// sent with every IP packet originating from this socket
     IpTos,
     Both,

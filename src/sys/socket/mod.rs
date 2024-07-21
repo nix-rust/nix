@@ -772,7 +772,15 @@ pub enum ControlMessageOwned {
     /// Time-to-Live (TTL) header field of the incoming IPv4 packet.
     ///
     /// [Further reading](https://www.man7.org/linux/man-pages/man7/ip.7.html)
-    #[cfg(any(linux_android, target_os = "freebsd"))]
+    #[cfg(linux_android)]
+    #[cfg(feature = "net")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
+    Ipv4Ttl(i32),
+
+    /// Time-to-Live (TTL) header field of the incoming IPv4 packet.
+    ///
+    /// [Further reading](https://datatracker.ietf.org/doc/html/rfc3542.html)
+    #[cfg(target_os = "freebsd")]
     #[cfg(feature = "net")]
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv4Ttl(u8),
@@ -781,13 +789,19 @@ pub enum ControlMessageOwned {
     #[cfg(any(linux_android, target_os = "freebsd"))]
     #[cfg(feature = "net")]
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
-    Ipv6HopLimit(u8),
+    Ipv6HopLimit(i32),
 
     /// Retrieve the DSCP (ToS) header field of the incoming IPv4 packet. 
-    #[cfg(any(linux_android, target_os = "freebsd"))]
+    #[cfg(linux_android)]
     #[cfg(feature = "net")]
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv4Tos(i32),
+
+    /// Retrieve the DSCP (ToS) header field of the incoming IPv4 packet. 
+    #[cfg(target_os = "freebsd")]
+    #[cfg(feature = "net")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
+    Ipv4Tos(u8),
 
     /// Retrieve the DSCP (Traffic Class) header field of the incoming IPv6 packet. 
     #[cfg(any(linux_android, target_os = "freebsd"))]
@@ -1013,7 +1027,13 @@ impl ControlMessageOwned {
                 let content_type = unsafe { ptr::read_unaligned(p as *const u8) };
                 ControlMessageOwned::TlsGetRecordType(content_type.into())
             },
-            #[cfg(any(linux_android, target_os = "freebsd"))]
+            #[cfg(linux_android)]
+            #[cfg(feature = "net")]
+            (libc::IPPROTO_IP, libc::IP_TTL) => {
+                let ttl = unsafe { ptr::read_unaligned(p as *const i32) };
+                ControlMessageOwned::Ipv4Ttl(ttl)
+            },
+            #[cfg(target_os = "freebsd")]
             #[cfg(feature = "net")]
             (libc::IPPROTO_IP, libc::IP_RECVTTL) => {
                 let ttl: u8 = unsafe { ptr::read_unaligned(p as *const u8) };
@@ -1022,13 +1042,19 @@ impl ControlMessageOwned {
             #[cfg(any(linux_android, target_os = "freebsd"))]
             #[cfg(feature = "net")]
             (libc::IPPROTO_IPV6, libc::IPV6_HOPLIMIT) => {
-                let ttl: u8 = unsafe { ptr::read_unaligned(p as *const u8) };
+                let ttl = unsafe { ptr::read_unaligned(p as *const i32) };
                 ControlMessageOwned::Ipv6HopLimit(ttl)
             },
-            #[cfg(any(linux_android, target_os = "freebsd"))]
+            #[cfg(linux_android)]
+            #[cfg(feature = "net")]
+            (libc::IPPROTO_IP, libc::IP_TOS) => {
+                let tos = unsafe { ptr::read_unaligned(p as *const i32) };
+                ControlMessageOwned::Ipv4Tos(tos)
+            },
+            #[cfg(target_os = "freebsd")]
             #[cfg(feature = "net")]
             (libc::IPPROTO_IP, libc::IP_RECVTOS) => {
-                let tos = unsafe { ptr::read_unaligned(p as *const i32) };
+                let tos = unsafe { ptr::read_unaligned(p as *const u8) };
                 ControlMessageOwned::Ipv4Tos(tos)
             },
             #[cfg(any(linux_android, target_os = "freebsd"))]
@@ -1193,10 +1219,10 @@ pub enum ControlMessage<'a> {
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv6HopLimit(&'a libc::c_int),
 
-        /// SO_RXQ_OVFL indicates that an unsigned 32 bit value
-    /// ancilliary msg (cmsg) should be attached to recieved
+    /// SO_RXQ_OVFL indicates that an unsigned 32 bit value
+    /// ancillary msg (cmsg) should be attached to received
     /// skbs indicating the number of packets dropped by the
-    /// socket between the last recieved packet and this
+    /// socket between the last received packet and this
     /// received packet.
     #[cfg(any(linux_android, target_os = "fuchsia"))]
     RxqOvfl(&'a u32),
@@ -1214,6 +1240,7 @@ pub enum ControlMessage<'a> {
     /// Further information can be found [here](https://en.wikipedia.org/wiki/Differentiated_services).
     #[cfg(target_os = "linux")]
     IpTos(&'a i32),
+
     /// Configure DSCP / IP TOS for outgoing v6 packets.
     ///
     /// Further information can be found [here](https://en.wikipedia.org/wiki/Differentiated_services).
