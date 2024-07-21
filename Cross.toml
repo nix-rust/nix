@@ -4,5 +4,5 @@ passthrough = [
 	"RUST_TEST_THREADS"
 ]
 [target.loongarch64-unknown-linux-gnu]
-image = "ghcr.io/loongarchlinux/archlinux:latest"
+image.name = "ghcr.io/loongarchlinux/archlinux:latest"
 image.toolchain = ["loongarch64-unknown-linux-gnu"]
