@@ -2579,7 +2579,6 @@ fn test_recvmsg_rxq_ovfl() {
 
 #[cfg(target_os = "linux")]
 #[cfg(feature = "net")]
-#[cfg_attr(qemu, ignore)]
 #[test]
 pub fn test_ip_tos_udp() {
     use nix::sys::socket::ControlMessageOwned;
@@ -2649,7 +2648,6 @@ pub fn test_ip_tos_udp() {
 
 #[cfg(target_os = "linux")]
 #[cfg(feature = "net")]
-#[cfg_attr(qemu, ignore)]
 #[test]
 pub fn test_ipv6_tclass_udp() {
     use nix::sys::socket::ControlMessageOwned;
