@@ -108,20 +108,23 @@ fn open_ptty_pair() -> (PtyMaster, File) {
         // after opening a device path returned from ptsname().
         let ptem = b"ptem\0";
         let ldterm = b"ldterm\0";
-        let r = unsafe { ioctl(slave_fd, I_FIND, ldterm.as_ptr()) };
+        let r = unsafe { ioctl(slave_fd.as_raw_fd(), I_FIND, ldterm.as_ptr()) };
         if r < 0 {
             panic!("I_FIND failure");
         } else if r == 0 {
-            if unsafe { ioctl(slave_fd, I_PUSH, ptem.as_ptr()) } < 0 {
+            if unsafe { ioctl(slave_fd.as_raw_fd(), I_PUSH, ptem.as_ptr()) } < 0
+            {
                 panic!("I_PUSH ptem failure");
             }
-            if unsafe { ioctl(slave_fd, I_PUSH, ldterm.as_ptr()) } < 0 {
+            if unsafe { ioctl(slave_fd.as_raw_fd(), I_PUSH, ldterm.as_ptr()) }
+                < 0
+            {
                 panic!("I_PUSH ldterm failure");
             }
         }
     }
 
-    let slave = unsafe { File::from_raw_fd(slave_fd) };
+    let slave = File::from(slave_fd);
 
     (master, slave)
 }

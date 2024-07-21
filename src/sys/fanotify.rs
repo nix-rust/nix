@@ -11,7 +11,7 @@
 //! [fanotify(7)](https://man7.org/linux/man-pages/man7/fanotify.7.html).
 
 use crate::errno::Errno;
-use crate::fcntl::{at_rawfd, OFlag};
+use crate::fcntl::OFlag;
 use crate::unistd::{close, read, write};
 use crate::{NixPath, Result};
 use std::marker::PhantomData;
@@ -252,7 +252,11 @@ impl Drop for FanotifyEvent {
         if self.0.fd == libc::FAN_NOFD {
             return;
         }
-        let e = close(self.0.fd);
+        // SAFETY:
+        //
+        // If this fd is not `FAN_NOFD`, then it should be a valid, owned file
+        // descriptor, which means we can safely close it.
+        let e = unsafe { close(self.0.fd) };
         if !std::thread::panicking() && e == Err(Errno::EBADF) {
             panic!("Closing an invalid file descriptor!");
         };
@@ -317,16 +321,15 @@ impl Fanotify {
     }
 
     /// Add, remove, or modify an fanotify mark on a filesystem object.
-    /// If `dirfd` is `None`, `AT_FDCWD` is used.
     ///
     /// Returns a Result containing either `()` on success or errno otherwise.
     ///
     /// For more information, see [fanotify_mark(2)](https://man7.org/linux/man-pages/man7/fanotify_mark.2.html).
-    pub fn mark<P: ?Sized + NixPath>(
+    pub fn mark<Fd: std::os::fd::AsFd, P: ?Sized + NixPath>(
         &self,
         flags: MarkFlags,
         mask: MaskFlags,
-        dirfd: Option<RawFd>,
+        dirfd: Fd,
         path: Option<&P>,
     ) -> Result<()> {
         let res = crate::with_opt_nix_path(path, |p| unsafe {
@@ -334,7 +337,7 @@ impl Fanotify {
                 self.fd.as_raw_fd(),
                 flags.bits(),
                 mask.bits(),
-                at_rawfd(dirfd),
+                dirfd.as_fd().as_raw_fd(),
                 p,
             )
         })?;
@@ -362,7 +365,7 @@ impl Fanotify {
         let mut events = Vec::new();
         let mut offset = 0;
 
-        let nread = read(self.fd.as_raw_fd(), &mut buffer)?;
+        let nread = read(&self.fd, &mut buffer)?;
 
         while (nread - offset) >= metadata_size {
             let metadata = unsafe {

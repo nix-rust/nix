@@ -14,6 +14,7 @@ permissions:
 
 env: 
   MSRV: 1.69.0
+  RUSTFLAGS: -Dwarnings
 
 jobs:
   macos:
@@ -296,10 +297,12 @@ jobs:
         include:
           - target: x86_64-unknown-dragonfly
           - target: x86_64-unknown-openbsd
+          - target: x86_64-unknown-haiku
+
           # Temporarily disable armv7-unknown-linux-uclibceabihf
           # https://github.com/nix-rust/nix/issues/2200
           #- target: armv7-unknown-linux-uclibceabihf
-          - target: x86_64-unknown-haiku
+
           # Disable hurd due to
           # https://github.com/nix-rust/nix/issues/2306
           # - target: i686-unknown-hurd-gnu
@@ -342,7 +345,7 @@ jobs:
         uses: dtolnay/rust-toolchain@nightly
 
       - name: setup 
-        run: cargo update -Zminimal-versions
+        run: cargo update -Zdirect-minimal-versions
 
       - name: check
         run: cargo check

@@ -2,9 +2,9 @@
 
 [![Cirrus Build Status](https://api.cirrus-ci.com/github/nix-rust/nix.svg)](https://cirrus-ci.com/github/nix-rust/nix)
 [![crates.io](https://img.shields.io/crates/v/nix.svg)](https://crates.io/crates/nix)
-[![maintenance-status](https://img.shields.io/badge/maintenance-looking--for--maintainer-orange.svg)](https://github.com/nix-rust/nix/issues/2132)
-
-[Documentation (Releases)](https://docs.rs/nix/)
+[![docs.rs](https://img.shields.io/badge/docs.rs-nix-blue?style=flat-square&logo=docs.rs)](https://docs.rs/nix)
+![maintenance-status](https://img.shields.io/badge/maintenance-actively--developed-brightgreen.svg)
+[![msrv](https://img.shields.io/badge/msrv-1.69-blue?style=flat-square&logo=rust)](https://www.rust-lang.org)
 
 Nix seeks to provide friendly bindings to various *nix platform APIs (Linux, Darwin,
 ...). The goal is to not provide a 100% unified interface, but to unify

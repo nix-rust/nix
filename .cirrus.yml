@@ -42,7 +42,7 @@ task:
   matrix:
     - name: FreeBSD 14 amd64 & i686
       freebsd_instance:
-        image_family: freebsd-14-0-snap
+        image: freebsd-14-1-release-amd64-ufs
         cpu: 1
       # Enable tests that would fail on FreeBSD 12
       RUSTFLAGS: --cfg fbsd14 -D warnings

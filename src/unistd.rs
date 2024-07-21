@@ -2,11 +2,6 @@
 
 use crate::errno::Errno;
 
-#[cfg(any(
-    all(feature = "fs", not(target_os = "redox")),
-    all(feature = "process", linux_android)
-))]
-use crate::fcntl::at_rawfd;
 #[cfg(not(target_os = "redox"))]
 #[cfg(feature = "fs")]
 use crate::fcntl::AtFlags;
@@ -25,20 +20,15 @@ use crate::fcntl::AtFlags;
 use crate::fcntl::OFlag;
 #[cfg(all(feature = "fs", bsd))]
 use crate::sys::stat::FileFlag;
-#[cfg(feature = "fs")]
-use crate::sys::stat::Mode;
 use crate::{Error, NixPath, Result};
 #[cfg(not(target_os = "redox"))]
 use cfg_if::cfg_if;
-use libc::{
-    c_char, c_int, c_long, c_uint, gid_t, mode_t, off_t, pid_t, size_t, uid_t,
-};
+use libc::{c_char, c_int, c_long, c_uint, gid_t, off_t, pid_t, size_t, uid_t};
 use std::convert::Infallible;
 #[cfg(not(target_os = "redox"))]
 use std::ffi::CString;
 use std::ffi::{CStr, OsStr, OsString};
 use std::os::unix::ffi::{OsStrExt, OsStringExt};
-use std::os::unix::io::{AsFd, AsRawFd, OwnedFd, RawFd};
 use std::path::PathBuf;
 use std::{fmt, mem, ptr};
 
@@ -365,7 +355,9 @@ feature! {
 /// Get the group process id (GPID) of the foreground process group on the
 /// terminal associated to file descriptor (FD).
 #[inline]
-pub fn tcgetpgrp<F: AsFd>(fd: F) -> Result<Pid> {
+pub fn tcgetpgrp<F: std::os::fd::AsFd>(fd: F) -> Result<Pid> {
+    use std::os::fd::AsRawFd;
+
     let res = unsafe { libc::tcgetpgrp(fd.as_fd().as_raw_fd()) };
     Errno::result(res).map(Pid)
 }
@@ -375,7 +367,9 @@ pub fn tcgetpgrp<F: AsFd>(fd: F) -> Result<Pid> {
 /// Get the group process id (PGID) to the foreground process group on the
 /// terminal associated to file descriptor (FD).
 #[inline]
-pub fn tcsetpgrp<F: AsFd>(fd: F, pgrp: Pid) -> Result<()> {
+pub fn tcsetpgrp<F: std::os::fd::AsFd>(fd: F, pgrp: Pid) -> Result<()> {
+    use std::os::fd::AsRawFd;
+
     let res = unsafe { libc::tcsetpgrp(fd.as_fd().as_raw_fd(), pgrp.into()) };
     Errno::result(res).map(drop)
 }
@@ -412,8 +406,7 @@ pub fn gettid() -> Pid {
 
 feature! {
 #![feature = "fs"]
-/// Create a copy of the specified file descriptor (see
-/// [dup(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/dup.html)).
+/// Create a copy of the specified file descriptor.
 ///
 /// The new file descriptor will have a new index but refer to the same
 /// resource as the old file descriptor and the old and new file descriptors may
@@ -422,31 +415,237 @@ feature! {
 /// for the file descriptor will be the lowest fd index that is available.
 ///
 /// The two file descriptors do not share file descriptor flags (e.g. `OFlag::FD_CLOEXEC`).
+///
+/// # Reference
+///
+/// * [POSIX manual](https://pubs.opengroup.org/onlinepubs/9699919799/functions/dup.html)
+///
+/// # See also
+///
+/// * [`dup2()`]
+/// * [`dup2_raw()`]
+/// * `dup3()`
+/// * `dup3_raw()`
 #[inline]
-pub fn dup(oldfd: RawFd) -> Result<RawFd> {
-    let res = unsafe { libc::dup(oldfd) };
+pub fn dup<Fd: std::os::fd::AsFd>(oldfd: Fd) -> Result<std::os::fd::OwnedFd> {
+    use std::os::fd::AsRawFd;
+    use std::os::fd::OwnedFd;
+    use std::os::fd::FromRawFd;
 
-    Errno::result(res)
+    let res = unsafe { libc::dup(oldfd.as_fd().as_raw_fd()) };
+    Errno::result(res)?;
+    // SAFETY:
+    //
+    // `dup(2)` would return a valid owned file descriptor on success
+    Ok( unsafe { OwnedFd::from_raw_fd(res) })
 }
 
-/// Create a copy of the specified file descriptor using the specified fd (see
-/// [dup(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/dup.html)).
+/// Duplicate `fd` with Stdin, i.e., Stdin redirection.
+#[inline]
+pub fn dup2_stdin<Fd: std::os::fd::AsFd>(fd: Fd) -> Result<()> {
+    use std::os::fd::AsRawFd;
+    use libc::STDIN_FILENO;
+
+    let res = unsafe { libc::dup2(fd.as_fd().as_raw_fd(), STDIN_FILENO) };
+    Errno::result(res).map(drop)
+}
+
+/// Duplicate `fd` with Stdout, i.e., Stdout redirection.
+///
+/// # Examples
+///
+/// Redirect the Stdout to file foo and restore it:
+///
+/// ```no_run
+/// use nix::fcntl::open;
+/// use nix::fcntl::OFlag;
+/// use nix::sys::stat::Mode;
+/// use nix::unistd::dup;
+/// use nix::unistd::dup2_stdout;
+/// use std::io::{stdout, Write};
+///
+/// let mut stdout = stdout();
+///
+/// // Save the previous Stdout so that we can restore it
+/// let saved_stdout = dup(&stdout).unwrap();
+/// let foo = open(
+///     "foo",
+///     OFlag::O_RDWR | OFlag::O_CLOEXEC | OFlag::O_CREAT | OFlag::O_EXCL,
+///     Mode::S_IRWXU,
+/// )
+/// .unwrap();
+/// // Now our Stdout has been redirected to file foo
+/// dup2_stdout(foo).unwrap();
+/// // Let's say hi to foo
+/// // NOTE: add a newline here to flush the buffer
+/// stdout.write(b"Hi, foo!\n").unwrap();
+///
+/// // Restore the Stdout
+/// dup2_stdout(saved_stdout).unwrap();
+///
+/// // Let's say hi to Stdout
+/// // NOTE: add a newline here to flush the buffer
+/// stdout.write(b"Hi, Stdout!\n").unwrap();
+/// ```
+#[inline]
+pub fn dup2_stdout<Fd: std::os::fd::AsFd>(fd: Fd) -> Result<()> {
+    use std::os::fd::AsRawFd;
+    use libc::STDOUT_FILENO;
+
+    let res = unsafe { libc::dup2(fd.as_fd().as_raw_fd(), STDOUT_FILENO) };
+    Errno::result(res).map(drop)
+}
+
+/// Duplicate `fd` with Stderr, i.e., Stderr redirection.
+///
+/// # Examples
+///
+/// See the example of [`dup2_stdout()`](fn.dup2_stdout.html#examples)
+#[inline]
+pub fn dup2_stderr<Fd: std::os::fd::AsFd>(fd: Fd) -> Result<()> {
+    use std::os::fd::AsRawFd;
+    use libc::STDERR_FILENO;
+
+    let res = unsafe { libc::dup2(fd.as_fd().as_raw_fd(), STDERR_FILENO) };
+    Errno::result(res).map(drop)
+}
+
+/// Create a copy of `oldfd` using `newfd`.
 ///
 /// This function behaves similar to `dup()` except that it will try to use the
-/// specified fd instead of allocating a new one.  See the man pages for more
-/// detail on the exact behavior of this function.
+/// specified fd `newfd` instead of allocating a new one. See the man pages for
+/// more detail on the exact behavior of this function.
+///
+/// This function does not allow you to duplicate `oldfd` with any file descriptor
+/// you want, to do that, use [`dup2_raw()`].
+///
+/// # Stdin/Stdout/Stderr redirection
+///
+/// To duplicate a fd with Stdin/Stdout/Stderr, see:
+///
+/// * [`dup2_stdin()`]
+/// * [`dup2_stdout()`]
+/// * [`dup2_stderr()`]
+///
+/// # Reference
+///
+/// [dup(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/dup.html)
 #[inline]
-pub fn dup2(oldfd: RawFd, newfd: RawFd) -> Result<RawFd> {
-    let res = unsafe { libc::dup2(oldfd, newfd) };
+pub fn dup2<Fd: std::os::fd::AsFd>(oldfd: Fd, newfd: &mut std::os::fd::OwnedFd) -> Result<()> {
+    use std::os::fd::AsRawFd;
 
-    Errno::result(res)
+    let res = unsafe { libc::dup2(oldfd.as_fd().as_raw_fd(), newfd.as_raw_fd()) };
+
+    Errno::result(res).map(drop)
+}
+
+/// Create a copy of `oldfd` with any fd value you want.
+///
+/// # Safety
+///
+/// Since this function returns an `OwnedFd`, you have to ensure that the returned
+/// `OwnedFd` is the ONLY owner of the file descriptor specified `newfd`. Otherwise,
+/// double close could happen.
+///
+/// ```no_run
+/// # use nix::{
+/// #     fcntl::{open, OFlag},
+/// #     sys::stat::Mode,
+/// #     unistd::dup2_raw,
+/// # };
+/// # use std::os::fd::OwnedFd;
+/// # use std::os::fd::AsRawFd;
+/// let oldfd: OwnedFd = open("foo", OFlag::O_RDONLY, Mode::empty()).unwrap();
+/// let newfd: OwnedFd = open("bar", OFlag::O_RDONLY, Mode::empty()).unwrap();
+///
+/// // SAFETY:
+/// // it is NOT safe.
+/// // NOTE that we are passing a RawFd to `newfd`
+/// let duplicated_fd: OwnedFd = unsafe { dup2_raw(&oldfd, newfd.as_raw_fd()) }.unwrap();
+///
+/// // `newfd` and `duplicated_fd` refer to the same file descriptor, and
+/// // they are both owned, double close will happen here.
+/// ```
+///
+/// # Examples
+///
+/// Duplicate a file descriptor with a descriptor that is still not open:
+///
+/// ```no_run
+/// # use nix::{
+/// #     fcntl::{open, OFlag},
+/// #     sys::stat::Mode,
+/// #     unistd::dup2_raw,
+/// # };
+/// let oldfd = open("foo", OFlag::O_RDONLY, Mode::empty()).unwrap();
+///
+/// // SAFETY:
+/// // It is safe given that we are sure that fd 100 is not open, and the returned
+/// // OwnedFd will be its only owner.
+/// let duplicated_fd = unsafe { dup2_raw(&oldfd, 100) }.unwrap();
+///
+/// // do something with `duplicated_fd`
+/// ```
+///
+/// The code demonstrating double close can be fixed by passing `newfd` by value:
+///
+/// ```no_run
+/// # use nix::{
+/// #     fcntl::{open, OFlag},
+/// #     sys::stat::Mode,
+/// #     unistd::dup2_raw,
+/// # };
+/// # use std::os::fd::OwnedFd;
+/// let oldfd: OwnedFd = open("foo", OFlag::O_RDONLY, Mode::empty()).unwrap();
+/// let newfd: OwnedFd = open("bar", OFlag::O_RDONLY, Mode::empty()).unwrap();
+///
+/// // SAFETY:
+/// // it is safe since `duplicated_fd` is the only owner of the fd it refers to.
+/// // NOTE that we are passing `newfd` by value, i.e., transfer the ownership
+/// let duplicated_fd: OwnedFd = unsafe { dup2_raw(&oldfd, newfd) }.unwrap();
+/// ```
+///
+/// # Reference
+///
+/// * [POSIX manual](https://pubs.opengroup.org/onlinepubs/9699919799/functions/dup.html)
+///
+/// # See also
+///
+/// * [`dup2()`]
+#[inline]
+pub unsafe fn dup2_raw<Fd1: std::os::fd::AsFd, Fd2: std::os::fd::IntoRawFd>(oldfd: Fd1, newfd: Fd2) -> Result<std::os::fd::OwnedFd> {
+    use std::os::fd::AsRawFd;
+    use std::os::fd::FromRawFd;
+    use std::os::fd::OwnedFd;
+
+    let duplicated_fd = unsafe {
+        libc::dup2(oldfd.as_fd().as_raw_fd(), newfd.into_raw_fd())
+    };
+    // SAFETY:
+    //
+    // This is unsafe if `newfd` is not a file descriptor that can be consumed
+    Ok(unsafe {
+        OwnedFd::from_raw_fd(duplicated_fd)
+    })
 }
 
 /// Create a new copy of the specified file descriptor using the specified fd
-/// and flags (see [`dup(2)`](https://man7.org/linux/man-pages/man2/dup.2.html)).
+/// and flags.
 ///
-/// This function behaves similar to `dup2()` but allows for flags to be
-/// specified.
+/// This function behaves similar to [`dup2()`] but allows flags to be specified
+/// for the new file descriptor. Currently, the only flag that is allowed is
+/// [`OFlag::O_CLOEXEC`], setting other flags will return `EINVAL`. Also, if
+/// `oldfd` and `newfd` have the same fd value, `EINVAL` will also be returned.
+///
+/// This function does not allow you to duplicate `oldfd` with any file descriptor
+/// you want, to do that, use [`dup3_raw()`].
+///
+/// # References
+///
+/// * [FreeBSD](https://man.freebsd.org/cgi/man.cgi?query=dup3&sektion=3)
+/// * [Linux](https://man7.org/linux/man-pages/man2/dup.2.html)
+/// * [NetBSD](https://man.netbsd.org/dup3.2)
+/// * [OpenBSD](https://man.openbsd.org/dup3.2)
 #[cfg(any(
     netbsdlike,
     solarish,
@@ -455,10 +654,59 @@ pub fn dup2(oldfd: RawFd, newfd: RawFd) -> Result<RawFd> {
     target_os = "hurd",
     target_os = "linux"
 ))]
-pub fn dup3(oldfd: RawFd, newfd: RawFd, flags: OFlag) -> Result<RawFd> {
-    let res = unsafe { libc::dup3(oldfd, newfd, flags.bits()) };
+pub fn dup3<Fd: std::os::fd::AsFd>(oldfd: Fd, newfd: &mut std::os::fd::OwnedFd, flags: OFlag) -> Result<()> {
+    use std::os::fd::AsRawFd;
 
-    Errno::result(res)
+    let res = unsafe { libc::dup3(oldfd.as_fd().as_raw_fd(), newfd.as_raw_fd(), flags.bits()) };
+    Errno::result(res).map(drop)
+}
+
+/// Create a new copy of the specified file descriptor using the specified fd
+/// and flags.
+///
+/// This function behaves similar to [`dup3()`] except for it allows you to specify
+/// arbitrary fd values.
+///
+/// # Safety
+///
+/// Since this function returns an `OwnedFd`, you have to ensure that the returned
+/// `OwnedFd` is the ONLY owner of the file descriptor specified `newfd`. Otherwise,
+/// double close could happen.
+///
+/// For more information, see the documentation of [`dup2_raw()`].
+///
+/// # References
+///
+/// * [FreeBSD](https://man.freebsd.org/cgi/man.cgi?query=dup3&sektion=3)
+/// * [Linux](https://man7.org/linux/man-pages/man2/dup.2.html)
+/// * [NetBSD](https://man.netbsd.org/dup3.2)
+/// * [OpenBSD](https://man.openbsd.org/dup3.2)
+///
+/// # See also
+///
+/// * [`dup3()`]
+#[cfg(any(
+    netbsdlike,
+    solarish,
+    target_os = "freebsd",
+    target_os = "fuchsia",
+    target_os = "hurd",
+    target_os = "linux"
+))]
+pub unsafe fn dup3_raw<Fd1: std::os::fd::AsFd, Fd2: std::os::fd::IntoRawFd>(oldfd: Fd1, newfd: Fd2, flags: OFlag) -> Result<std::os::fd::OwnedFd> {
+    use std::os::fd::AsRawFd;
+    use std::os::fd::OwnedFd;
+    use std::os::fd::FromRawFd;
+
+    let res = unsafe { libc::dup3(oldfd.as_fd().as_raw_fd(), newfd.into_raw_fd(), flags.bits()) };
+    Errno::result(res)?;
+
+    // SAFETY:
+    //
+    // This is unsafe if `newfd` is not a file descriptor that can be consumed
+    Ok(unsafe {
+        OwnedFd::from_raw_fd(res)
+    })
 }
 
 /// Change the current working directory of the calling process (see
@@ -482,8 +730,10 @@ pub fn chdir<P: ?Sized + NixPath>(path: &P) -> Result<()> {
 /// pages for additional details on possible failure cases.
 #[inline]
 #[cfg(not(target_os = "fuchsia"))]
-pub fn fchdir(dirfd: RawFd) -> Result<()> {
-    let res = unsafe { libc::fchdir(dirfd) };
+pub fn fchdir<Fd: std::os::fd::AsFd>(dirfd: Fd) -> Result<()> {
+    use std::os::fd::AsRawFd;
+
+    let res = unsafe { libc::fchdir(dirfd.as_fd().as_raw_fd()) };
 
     Errno::result(res).map(drop)
 }
@@ -515,15 +765,15 @@ pub fn fchdir(dirfd: RawFd) -> Result<()> {
 /// }
 /// ```
 #[inline]
-pub fn mkdir<P: ?Sized + NixPath>(path: &P, mode: Mode) -> Result<()> {
+pub fn mkdir<P: ?Sized + NixPath>(path: &P, mode: crate::sys::stat::Mode) -> Result<()> {
     let res = path.with_nix_path(|cstr| unsafe {
-        libc::mkdir(cstr.as_ptr(), mode.bits() as mode_t)
+        libc::mkdir(cstr.as_ptr(), mode.bits() as libc::mode_t)
     })?;
 
     Errno::result(res).map(drop)
 }
 
-/// Creates new fifo special file (named pipe) with path `path` and access rights `mode`.
+/// Creates new FIFO special file (named pipe) with path `path` and access rights `mode`.
 ///
 /// # Errors
 ///
@@ -554,19 +804,28 @@ pub fn mkdir<P: ?Sized + NixPath>(path: &P, mode: Mode) -> Result<()> {
 /// ```
 #[inline]
 #[cfg(not(target_os = "redox"))] // RedoxFS does not support fifo yet
-pub fn mkfifo<P: ?Sized + NixPath>(path: &P, mode: Mode) -> Result<()> {
+pub fn mkfifo<P: ?Sized + NixPath>(path: &P, mode: crate::sys::stat::Mode) -> Result<()> {
     let res = path.with_nix_path(|cstr| unsafe {
-        libc::mkfifo(cstr.as_ptr(), mode.bits() as mode_t)
+        libc::mkfifo(cstr.as_ptr(), mode.bits() as libc::mode_t)
     })?;
 
     Errno::result(res).map(drop)
 }
 
-/// Creates new fifo special file (named pipe) with path `path` and access rights `mode`.
+/// Creates new FIFO special file (named pipe) with access rights set to `mode`
+/// in the path specified by `dirfd` and `path`.
 ///
-/// If `dirfd` has a value, then `path` is relative to directory associated with the file descriptor.
+/// # Examples
 ///
-/// If `dirfd` is `None`, then `path` is relative to the current working directory.
+/// Create a FIFO in the current working directory:
+///
+/// ```no_run
+/// use nix::fcntl::AT_FDCWD;
+/// use nix::unistd::mkfifoat;
+/// use nix::sys::stat::Mode;
+///
+/// mkfifoat(AT_FDCWD, "fifo", Mode::S_IRWXU).unwrap();
+/// ```
 ///
 /// # References
 ///
@@ -579,38 +838,51 @@ pub fn mkfifo<P: ?Sized + NixPath>(path: &P, mode: Mode) -> Result<()> {
     target_os = "android",
     target_os = "redox"
 )))]
-pub fn mkfifoat<P: ?Sized + NixPath>(
-    dirfd: Option<RawFd>,
+pub fn mkfifoat<Fd: std::os::fd::AsFd, P: ?Sized + NixPath>(
+    dirfd: Fd,
     path: &P,
-    mode: Mode,
+    mode: crate::sys::stat::Mode,
 ) -> Result<()> {
+    use std::os::fd::AsRawFd;
+
     let res = path.with_nix_path(|cstr| unsafe {
-        libc::mkfifoat(at_rawfd(dirfd), cstr.as_ptr(), mode.bits() as mode_t)
+        libc::mkfifoat(dirfd.as_fd().as_raw_fd(), cstr.as_ptr(), mode.bits() as libc::mode_t)
     })?;
 
     Errno::result(res).map(drop)
 }
 
-/// Creates a symbolic link at `path2` which points to `path1`.
+/// Creates a symbolic link to `path1` in the path specified by `dirfd` and
+/// `path2`.
 ///
-/// If `dirfd` has a value, then `path2` is relative to directory associated
-/// with the file descriptor.
+/// # Examples
 ///
-/// If `dirfd` is `None`, then `path2` is relative to the current working
-/// directory. This is identical to `libc::symlink(path1, path2)`.
+/// Assume file `foo` exists in the current working directory, create a symlink
+/// to it:
 ///
-/// See also [symlinkat(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/symlinkat.html).
+/// ```no_run
+/// use nix::fcntl::AT_FDCWD;
+/// use nix::unistd::symlinkat;
+///
+/// symlinkat("foo", AT_FDCWD, "link_to_foo").unwrap();
+/// ```
+///
+/// # References
+///
+/// [POSIX](https://pubs.opengroup.org/onlinepubs/9699919799/functions/symlinkat.html)
 #[cfg(not(target_os = "redox"))]
-pub fn symlinkat<P1: ?Sized + NixPath, P2: ?Sized + NixPath>(
+pub fn symlinkat<Fd: std::os::fd::AsFd, P1: ?Sized + NixPath, P2: ?Sized + NixPath>(
     path1: &P1,
-    dirfd: Option<RawFd>,
+    dirfd: Fd,
     path2: &P2,
 ) -> Result<()> {
+    use std::os::fd::AsRawFd;
+
     let res = path1.with_nix_path(|path1| {
         path2.with_nix_path(|path2| unsafe {
             libc::symlinkat(
                 path1.as_ptr(),
-                dirfd.unwrap_or(libc::AT_FDCWD),
+                dirfd.as_fd().as_raw_fd(),
                 path2.as_ptr(),
             )
         })
@@ -738,9 +1010,11 @@ pub fn chown<P: ?Sized + NixPath>(
 /// provided for that argument.  Ownership change will be attempted for the path
 /// only if `Some` owner/group is provided.
 #[inline]
-pub fn fchown(fd: RawFd, owner: Option<Uid>, group: Option<Gid>) -> Result<()> {
+pub fn fchown<Fd: std::os::fd::AsFd>(fd: Fd, owner: Option<Uid>, group: Option<Gid>) -> Result<()> {
+    use std::os::fd::AsRawFd;
+
     let (uid, gid) = chown_raw_ids(owner, group);
-    let res = unsafe { libc::fchown(fd, uid, gid) };
+    let res = unsafe { libc::fchown(fd.as_fd().as_raw_fd(), uid, gid) };
     Errno::result(res).map(drop)
 }
 
@@ -766,14 +1040,10 @@ impl FchownatFlags {
 /// provided for that argument.  Ownership change will be attempted for the path
 /// only if `Some` owner/group is provided.
 ///
-/// The file to be changed is determined relative to the directory associated
-/// with the file descriptor `dirfd` or the current working directory
-/// if `dirfd` is `None`.
-///
 /// If `flag` is `AtFlags::AT_SYMLINK_NOFOLLOW` and `path` names a symbolic link,
 /// then the mode of the symbolic link is changed.
 ///
-/// `fchownat(None, path, owner, group, AtFlags::AT_SYMLINK_NOFOLLOW)` is identical to
+/// `fchownat(AT_FDCWD, path, owner, group, AtFlags::AT_SYMLINK_NOFOLLOW)` is identical to
 /// a call `libc::lchown(path, owner, group)`.  That's why `lchown` is unimplemented in
 /// the `nix` crate.
 ///
@@ -781,17 +1051,19 @@ impl FchownatFlags {
 ///
 /// [fchownat(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/fchownat.html).
 #[cfg(not(target_os = "redox"))]
-pub fn fchownat<P: ?Sized + NixPath>(
-    dirfd: Option<RawFd>,
+pub fn fchownat<Fd: std::os::fd::AsFd, P: ?Sized + NixPath>(
+    dirfd: Fd,
     path: &P,
     owner: Option<Uid>,
     group: Option<Gid>,
     flag: AtFlags,
 ) -> Result<()> {
+    use std::os::fd::AsRawFd;
+
     let res = path.with_nix_path(|cstr| unsafe {
         let (uid, gid) = chown_raw_ids(owner, group);
         libc::fchownat(
-            at_rawfd(dirfd),
+            dirfd.as_fd().as_raw_fd(),
             cstr.as_ptr(),
             uid,
             gid,
@@ -910,15 +1182,17 @@ pub fn execvpe<SA: AsRef<CStr>, SE: AsRef<CStr>>(
 /// is referenced as a file descriptor instead of a path.
 #[cfg(any(linux_android, freebsdlike, target_os = "hurd"))]
 #[inline]
-pub fn fexecve<SA: AsRef<CStr>, SE: AsRef<CStr>>(
-    fd: RawFd,
+pub fn fexecve<Fd: std::os::fd::AsFd, SA: AsRef<CStr>, SE: AsRef<CStr>>(
+    fd: Fd,
     args: &[SA],
     env: &[SE],
 ) -> Result<Infallible> {
+    use std::os::fd::AsRawFd;
+
     let args_p = to_exec_array(args);
     let env_p = to_exec_array(env);
 
-    unsafe { libc::fexecve(fd, args_p.as_ptr(), env_p.as_ptr()) };
+    unsafe { libc::fexecve(fd.as_fd().as_raw_fd(), args_p.as_ptr(), env_p.as_ptr()) };
 
     Err(Errno::last())
 }
@@ -935,21 +1209,22 @@ pub fn fexecve<SA: AsRef<CStr>, SE: AsRef<CStr>>(
 /// is referenced as a file descriptor to the base directory plus a path.
 #[cfg(linux_android)]
 #[inline]
-pub fn execveat<SA: AsRef<CStr>, SE: AsRef<CStr>>(
-    dirfd: Option<RawFd>,
+pub fn execveat<Fd: std::os::fd::AsFd, SA: AsRef<CStr>, SE: AsRef<CStr>>(
+    dirfd: Fd,
     pathname: &CStr,
     args: &[SA],
     env: &[SE],
     flags: super::fcntl::AtFlags,
 ) -> Result<Infallible> {
-    let dirfd = at_rawfd(dirfd);
+    use std::os::fd::AsRawFd;
+
     let args_p = to_exec_array(args);
     let env_p = to_exec_array(env);
 
     unsafe {
         libc::syscall(
             libc::SYS_execveat,
-            dirfd,
+            dirfd.as_fd().as_raw_fd(),
             pathname.as_ptr(),
             args_p.as_ptr(),
             env_p.as_ptr(),
@@ -1059,42 +1334,57 @@ pub fn gethostname() -> Result<OsString> {
 }
 }
 
-/// Close a raw file descriptor
+/// Close a file descriptor.
 ///
-/// Be aware that many Rust types implicitly close-on-drop, including
-/// `std::fs::File`.  Explicitly closing them with this method too can result in
-/// a double-close condition, which can cause confusing `EBADF` errors in
-/// seemingly unrelated code.  Caveat programmer.  See also
-/// [close(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/close.html).
+/// # Safety
 ///
-/// # Examples
+/// If you pass a `RawFd` to this function, ensure that this `close()` won't
+/// trigger a double close.
 ///
 /// ```no_run
 /// use std::os::unix::io::AsRawFd;
 /// use nix::unistd::close;
 ///
 /// let f = tempfile::tempfile().unwrap();
-/// close(f.as_raw_fd()).unwrap();   // Bad!  f will also close on drop!
+/// // SAFETY:
+/// //
+/// // NOT safe!  f will also close on drop!
+/// unsafe { close(f.as_raw_fd()).unwrap() };
 /// ```
+///
+/// We should pass `f` by value:
+///
+/// In the following case, it is generally preferred to call `drop(f)` rather
+/// than `close()`.
 ///
 /// ```rust
 /// use std::os::unix::io::IntoRawFd;
 /// use nix::unistd::close;
 ///
 /// let f = tempfile::tempfile().unwrap();
-/// close(f.into_raw_fd()).unwrap(); // Good.  into_raw_fd consumes f
+/// // SAFETY:
+/// //
+/// // We are safe!  `into_raw_fd()` consumes f
+/// unsafe { close(f).unwrap() };
 /// ```
-pub fn close(fd: RawFd) -> Result<()> {
-    let res = unsafe { libc::close(fd) };
+pub unsafe fn close<Fd: std::os::fd::IntoRawFd>(fd: Fd) -> Result<()> {
+    let res = unsafe { libc::close(fd.into_raw_fd()) };
     Errno::result(res).map(drop)
 }
 
 /// Read from a raw file descriptor.
 ///
 /// See also [read(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/read.html)
-pub fn read(fd: RawFd, buf: &mut [u8]) -> Result<usize> {
-    let res =
-        unsafe { libc::read(fd, buf.as_mut_ptr().cast(), buf.len() as size_t) };
+pub fn read<Fd: std::os::fd::AsFd>(fd: Fd, buf: &mut [u8]) -> Result<usize> {
+    use std::os::fd::AsRawFd;
+
+    let res = unsafe {
+        libc::read(
+            fd.as_fd().as_raw_fd(),
+            buf.as_mut_ptr().cast(),
+            buf.len() as size_t,
+        )
+    };
 
     Errno::result(res).map(|r| r as usize)
 }
@@ -1102,7 +1392,9 @@ pub fn read(fd: RawFd, buf: &mut [u8]) -> Result<usize> {
 /// Write to a raw file descriptor.
 ///
 /// See also [write(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/write.html)
-pub fn write<Fd: AsFd>(fd: Fd, buf: &[u8]) -> Result<usize> {
+pub fn write<Fd: std::os::fd::AsFd>(fd: Fd, buf: &[u8]) -> Result<usize> {
+    use std::os::fd::AsRawFd;
+
     let res = unsafe {
         libc::write(
             fd.as_fd().as_raw_fd(),
@@ -1155,8 +1447,10 @@ pub enum Whence {
 /// Move the read/write file offset.
 ///
 /// See also [lseek(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/lseek.html)
-pub fn lseek(fd: RawFd, offset: off_t, whence: Whence) -> Result<off_t> {
-    let res = unsafe { libc::lseek(fd, offset, whence as i32) };
+pub fn lseek<Fd: std::os::fd::AsFd>(fd: Fd, offset: off_t, whence: Whence) -> Result<off_t> {
+    use std::os::fd::AsRawFd;
+
+    let res = unsafe { libc::lseek(fd.as_fd().as_raw_fd(), offset, whence as i32) };
 
     Errno::result(res).map(|r| r as off_t)
 }
@@ -1166,12 +1460,14 @@ pub fn lseek(fd: RawFd, offset: off_t, whence: Whence) -> Result<off_t> {
 /// Unlike [`lseek`], it takes a 64-bit argument even on platforms where [`libc::off_t`] is
 /// 32 bits.
 #[cfg(linux_android)]
-pub fn lseek64(
-    fd: RawFd,
+pub fn lseek64<Fd: std::os::fd::AsFd>(
+    fd: Fd,
     offset: libc::off64_t,
     whence: Whence,
 ) -> Result<libc::off64_t> {
-    let res = unsafe { libc::lseek64(fd, offset, whence as i32) };
+    use std::os::fd::AsRawFd;
+
+    let res = unsafe { libc::lseek64(fd.as_fd().as_raw_fd(), offset, whence as i32) };
 
     Errno::result(res).map(|r| r as libc::off64_t)
 }
@@ -1180,8 +1476,9 @@ pub fn lseek64(
 /// Create an interprocess channel.
 ///
 /// See also [pipe(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/pipe.html)
-pub fn pipe() -> std::result::Result<(OwnedFd, OwnedFd), Error> {
-    let mut fds = mem::MaybeUninit::<[OwnedFd; 2]>::uninit();
+pub fn pipe(
+) -> std::result::Result<(std::os::fd::OwnedFd, std::os::fd::OwnedFd), Error> {
+    let mut fds = mem::MaybeUninit::<[std::os::fd::OwnedFd; 2]>::uninit();
 
     let res = unsafe { libc::pipe(fds.as_mut_ptr().cast()) };
 
@@ -1219,8 +1516,8 @@ feature! {
     target_os = "redox",
     netbsdlike,
 ))]
-pub fn pipe2(flags: OFlag) -> Result<(OwnedFd, OwnedFd)> {
-    let mut fds = mem::MaybeUninit::<[OwnedFd; 2]>::uninit();
+pub fn pipe2(flags: OFlag) -> Result<(std::os::fd::OwnedFd, std::os::fd::OwnedFd)> {
+    let mut fds = mem::MaybeUninit::<[std::os::fd::OwnedFd; 2]>::uninit();
 
     let res =
         unsafe { libc::pipe2(fds.as_mut_ptr().cast(), flags.bits()) };
@@ -1247,16 +1544,20 @@ pub fn truncate<P: ?Sized + NixPath>(path: &P, len: off_t) -> Result<()> {
 ///
 /// See also
 /// [ftruncate(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/ftruncate.html)
-pub fn ftruncate<Fd: AsFd>(fd: Fd, len: off_t) -> Result<()> {
+pub fn ftruncate<Fd: std::os::fd::AsFd>(fd: Fd, len: off_t) -> Result<()> {
+    use std::os::fd::AsRawFd;
+
     Errno::result(unsafe { libc::ftruncate(fd.as_fd().as_raw_fd(), len) }).map(drop)
 }
 
 /// Determines if the file descriptor refers to a valid terminal type device.
-pub fn isatty(fd: RawFd) -> Result<bool> {
+pub fn isatty<Fd: std::os::fd::AsFd>(fd: Fd) -> Result<bool> {
+    use std::os::fd::AsRawFd;
+
     unsafe {
         // ENOTTY means `fd` is a valid file descriptor, but not a TTY, so
         // we return `Ok(false)`
-        if libc::isatty(fd) == 1 {
+        if libc::isatty(fd.as_fd().as_raw_fd()) == 1 {
             Ok(true)
         } else {
             match Errno::last() {
@@ -1283,31 +1584,35 @@ impl LinkatFlags {
 
 /// Link one file to another file
 ///
-/// Creates a new link (directory entry) at `newpath` for the existing file at `oldpath`. In the
-/// case of a relative `oldpath`, the path is interpreted relative to the directory associated
-/// with file descriptor `olddirfd` instead of the current working directory and similiarly for
-/// `newpath` and file descriptor `newdirfd`. In case `flag` is `AtFlags::AT_SYMLINK_FOLLOW` and
-/// `oldpath` names a symoblic link, a new link for the target of the symbolic link is created.
-/// If either `olddirfd` or `newdirfd` is `None`, `AT_FDCWD` is used respectively where `oldpath`
-/// and/or `newpath` is then interpreted relative to the current working directory of the calling
-/// process. If either `oldpath` or `newpath` is absolute, then `dirfd` is ignored.
+/// Creates a new hard link (directory entry) at `newpath` for the existing file
+/// at `oldpath`. In the case of a relative `oldpath`, the path is interpreted
+/// relative to the directory associated with file descriptor `olddirfd` instead
+/// of the current working directory, use [`AT_FDCWD`](crate::fcntl::AT_FDCWD)
+/// if you want to make it relative to the current working directory. Similarly
+/// for `newpath` and file descriptor `newdirfd`. If either `oldpath` or `newpath`
+/// is absolute, then `dirfd` is ignored.
+///
+/// In case `flag` is `AtFlags::AT_SYMLINK_FOLLOW` and `oldpath` names a symoblic
+/// link, a new link for the target of the symbolic link is created.
 ///
 /// # References
 /// See also [linkat(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/linkat.html)
-#[cfg(not(target_os = "redox"))] // RedoxFS does not support symlinks yet
-pub fn linkat<P: ?Sized + NixPath>(
-    olddirfd: Option<RawFd>,
+#[cfg(not(target_os = "redox"))] // Redox does not have this yet
+pub fn linkat<Fd1: std::os::fd::AsFd, Fd2: std::os::fd::AsFd, P: ?Sized + NixPath>(
+    olddirfd: Fd1,
     oldpath: &P,
-    newdirfd: Option<RawFd>,
+    newdirfd: Fd2,
     newpath: &P,
     flag: AtFlags,
 ) -> Result<()> {
+    use std::os::fd::AsRawFd;
+
     let res = oldpath.with_nix_path(|oldcstr| {
         newpath.with_nix_path(|newcstr| unsafe {
             libc::linkat(
-                at_rawfd(olddirfd),
+                olddirfd.as_fd().as_raw_fd(),
                 oldcstr.as_ptr(),
-                at_rawfd(newdirfd),
+                newdirfd.as_fd().as_raw_fd(),
                 newcstr.as_ptr(),
                 flag.bits(),
             )
@@ -1336,27 +1641,31 @@ pub enum UnlinkatFlags {
 
 /// Remove a directory entry
 ///
-/// In the case of a relative path, the directory entry to be removed is determined relative to
-/// the directory associated with the file descriptor `dirfd` or the current working directory
-/// if `dirfd` is `None`. In the case of an absolute `path` `dirfd` is ignored. If `flag` is
-/// `UnlinkatFlags::RemoveDir` then removal of the directory entry specified by `dirfd` and `path`
-/// is performed.
+/// In the case of a relative path, the directory entry to be removed is determined
+/// relative to the directory associated with the file descriptor `dirfd` (Use
+/// [`AT_FDCWD`](crate::fcntl::AT_FDCWD) if you want to specify the current working
+/// directory in `dirfd`). In the case of an absolute path, `dirfd` is ignored.
+///
+/// If `flag` is `UnlinkatFlags::RemoveDir` then removal of the directory entry
+/// specified by `dirfd` and `path` is performed.
 ///
 /// # References
 /// See also [unlinkat(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/unlinkat.html)
 #[cfg(not(target_os = "redox"))]
-pub fn unlinkat<P: ?Sized + NixPath>(
-    dirfd: Option<RawFd>,
+pub fn unlinkat<Fd: std::os::fd::AsFd, P: ?Sized + NixPath>(
+    dirfd: Fd,
     path: &P,
     flag: UnlinkatFlags,
 ) -> Result<()> {
+    use std::os::fd::AsRawFd;
+
     let atflag = match flag {
         UnlinkatFlags::RemoveDir => AtFlags::AT_REMOVEDIR,
         UnlinkatFlags::NoRemoveDir => AtFlags::empty(),
     };
     let res = path.with_nix_path(|cstr| unsafe {
         libc::unlinkat(
-            at_rawfd(dirfd),
+            dirfd.as_fd().as_raw_fd(),
             cstr.as_ptr(),
             atflag.bits() as libc::c_int,
         )
@@ -1387,8 +1696,10 @@ pub fn sync() {
 ///
 /// See also [syncfs(2)](https://man7.org/linux/man-pages/man2/sync.2.html)
 #[cfg(any(linux_android, target_os = "hurd"))]
-pub fn syncfs(fd: RawFd) -> Result<()> {
-    let res = unsafe { libc::syncfs(fd) };
+pub fn syncfs<Fd: std::os::fd::AsFd>(fd: Fd) -> Result<()> {
+    use std::os::fd::AsRawFd;
+
+    let res = unsafe { libc::syncfs(fd.as_fd().as_raw_fd()) };
 
     Errno::result(res).map(drop)
 }
@@ -1397,8 +1708,10 @@ pub fn syncfs(fd: RawFd) -> Result<()> {
 ///
 /// See also [fsync(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/fsync.html)
 #[inline]
-pub fn fsync(fd: RawFd) -> Result<()> {
-    let res = unsafe { libc::fsync(fd) };
+pub fn fsync<Fd: std::os::fd::AsFd>(fd: Fd) -> Result<()> {
+    use std::os::fd::AsRawFd;
+
+    let res = unsafe { libc::fsync(fd.as_fd().as_raw_fd()) };
 
     Errno::result(res).map(drop)
 }
@@ -1419,7 +1732,9 @@ pub fn fsync(fd: RawFd) -> Result<()> {
     target_os = "hurd",
 ))]
 #[inline]
-pub fn fdatasync(fd: RawFd) -> Result<()> {
+pub fn fdatasync<Fd: std::os::fd::AsFd>(fd: Fd) -> Result<()> {
+    use std::os::fd::AsRawFd;
+
     cfg_if! {
         // apple libc supports fdatasync too, albeit not being present in its headers
         // [fdatasync](https://github.com/apple/darwin-xnu/blob/2ff845c2e033bd0ff64b5b6aa6063a1f8f65aa32/bsd/vfs/vfs_syscalls.c#L7728)
@@ -1431,7 +1746,7 @@ pub fn fdatasync(fd: RawFd) -> Result<()> {
             use libc::fdatasync as fdatasync;
         }
     }
-    let res = unsafe { fdatasync(fd) };
+    let res = unsafe { fdatasync(fd.as_fd().as_raw_fd()) };
 
     Errno::result(res).map(drop)
 }
@@ -1960,7 +2275,10 @@ feature! {
 /// // do something with fd
 /// ```
 #[inline]
-pub fn mkstemp<P: ?Sized + NixPath>(template: &P) -> Result<(RawFd, PathBuf)> {
+pub fn mkstemp<P: ?Sized + NixPath>(template: &P) -> Result<(std::os::fd::OwnedFd, PathBuf)> {
+    use std::os::fd::OwnedFd;
+    use std::os::fd::FromRawFd;
+
     let mut path =
         template.with_nix_path(|path| path.to_bytes_with_nul().to_owned())?;
     let p = path.as_mut_ptr().cast();
@@ -1969,6 +2287,10 @@ pub fn mkstemp<P: ?Sized + NixPath>(template: &P) -> Result<(RawFd, PathBuf)> {
     debug_assert!(last == Some(b'\0'));
     let pathname = OsString::from_vec(path);
     Errno::result(fd)?;
+    // SAFETY:
+    //
+    // `mkstemp(3)` should return a valid owned file descriptor on success.
+    let fd = unsafe { OwnedFd::from_raw_fd(fd) };
     Ok((fd, PathBuf::from(pathname)))
 }
 }
@@ -2189,7 +2511,9 @@ pub enum PathconfVar {
 /// - `Ok(None)`: the variable has no limit (for limit variables) or is
 ///     unsupported (for option variables)
 /// - `Err(x)`: an error occurred
-pub fn fpathconf<F: AsFd>(fd: F, var: PathconfVar) -> Result<Option<c_long>> {
+pub fn fpathconf<F: std::os::fd::AsFd>(fd: F, var: PathconfVar) -> Result<Option<c_long>> {
+    use std::os::fd::AsRawFd;
+
     let raw = unsafe {
         Errno::clear();
         libc::fpathconf(fd.as_fd().as_raw_fd(), var as c_int)
@@ -3108,26 +3432,25 @@ pub fn access<P: ?Sized + NixPath>(path: &P, amode: AccessFlags) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
-/// Checks the file named by `path` for accessibility according to the flags given by `mode`
-///
-/// If `dirfd` has a value, then `path` is relative to directory associated with the file descriptor.
-///
-/// If `dirfd` is `None`, then `path` is relative to the current working directory.
+/// Checks the file named by `dirfd` and `path` for accessibility according to
+/// the flags given by `mode`
 ///
 /// # References
 ///
 /// [faccessat(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/faccessat.html)
 // redox: does not appear to support the *at family of syscalls.
 #[cfg(not(target_os = "redox"))]
-pub fn faccessat<P: ?Sized + NixPath>(
-    dirfd: Option<RawFd>,
+pub fn faccessat<Fd: std::os::fd::AsFd, P: ?Sized + NixPath>(
+    dirfd: Fd,
     path: &P,
     mode: AccessFlags,
     flags: AtFlags,
 ) -> Result<()> {
+    use std::os::fd::AsRawFd;
+
     let res = path.with_nix_path(|cstr| unsafe {
         libc::faccessat(
-            at_rawfd(dirfd),
+            dirfd.as_fd().as_raw_fd(),
             cstr.as_ptr(),
             mode.bits(),
             flags.bits(),
@@ -3624,7 +3947,9 @@ feature! {
 /// Get the name of the terminal device that is open on file descriptor fd
 /// (see [`ttyname(3)`](https://man7.org/linux/man-pages/man3/ttyname.3.html)).
 #[cfg(not(target_os = "fuchsia"))]
-pub fn ttyname<F: AsFd>(fd: F) -> Result<PathBuf> {
+pub fn ttyname<F: std::os::fd::AsFd>(fd: F) -> Result<PathBuf> {
+    use std::os::fd::AsRawFd;
+
     #[cfg(not(target_os = "hurd"))]
     const PATH_MAX: usize = libc::PATH_MAX as usize;
     #[cfg(target_os = "hurd")]
@@ -3650,7 +3975,9 @@ feature! {
 ///
 /// See also [getpeereid(3)](https://www.freebsd.org/cgi/man.cgi?query=getpeereid)
 #[cfg(bsd)]
-pub fn getpeereid<F: AsFd>(fd: F) -> Result<(Uid, Gid)> {
+pub fn getpeereid<F: std::os::fd::AsFd>(fd: F) -> Result<(Uid, Gid)> {
+    use std::os::fd::AsRawFd;
+
     let mut uid = 1;
     let mut gid = 1;
 

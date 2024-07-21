@@ -73,7 +73,7 @@ impl IntoRawFd for PtyMaster {
 
 impl io::Read for PtyMaster {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        unistd::read(self.0.as_raw_fd(), buf).map_err(io::Error::from)
+        unistd::read(&self.0, buf).map_err(io::Error::from)
     }
 }
 
@@ -88,7 +88,7 @@ impl io::Write for PtyMaster {
 
 impl io::Read for &PtyMaster {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        unistd::read(self.0.as_raw_fd(), buf).map_err(io::Error::from)
+        unistd::read(&self.0, buf).map_err(io::Error::from)
     }
 }
 

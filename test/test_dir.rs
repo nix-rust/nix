@@ -16,7 +16,6 @@ fn flags() -> OFlag {
 }
 
 #[test]
-#[allow(clippy::unnecessary_sort_by)] // False positive
 fn read() {
     let tmp = tempdir().unwrap();
     File::create(tmp.path().join("foo")).unwrap();
@@ -56,10 +55,4 @@ fn rewind() {
         .collect();
     assert_eq!(entries1, entries2);
     assert_eq!(entries2, entries3);
-}
-
-#[cfg(not(target_os = "haiku"))]
-#[test]
-fn ebadf() {
-    assert_eq!(Dir::from_fd(-1).unwrap_err(), nix::Error::EBADF);
 }

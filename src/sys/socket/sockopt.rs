@@ -927,7 +927,7 @@ sockopt_impl!(
     libc::IP_PKTINFO,
     bool
 );
-#[cfg(any(linux_android, target_os = "freebsd", apple_targets, netbsdlike))]
+#[cfg(any(linux_android, bsd))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -937,6 +937,19 @@ sockopt_impl!(
     Both,
     libc::IPPROTO_IPV6,
     libc::IPV6_RECVPKTINFO,
+    bool
+);
+
+#[cfg(any(linux_android, bsd))]
+#[cfg(feature = "net")]
+sockopt_impl!(
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
+    /// Pass an `IPV6_PKTINFO` ancillary message that contains a in6_pktinfo
+    /// structure that supplies some information about the incoming packet.
+    Ipv6PacketInfo,
+    Both,
+    libc::IPPROTO_IPV6,
+    libc::IPV6_PKTINFO,
     bool
 );
 #[cfg(bsd)]
