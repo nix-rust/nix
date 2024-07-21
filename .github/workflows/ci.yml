@@ -228,8 +228,6 @@ jobs:
           - target: s390x-unknown-linux-gnu
           - target: x86_64-unknown-linux-gnux32
           - target: x86_64-unknown-netbsd
-          - target: loongarch64-unknown-linux-gnu
-
     steps:
       - name: checkout
         uses: actions/checkout@v4
