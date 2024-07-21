@@ -5,3 +5,4 @@ passthrough = [
 ]
 [target.loongarch64-unknown-linux-gnu]
 image = "ghcr.io/loongarchlinux/archlinux:latest"
+image.toolchain = ["loongarch64-unknown-linux-gnu"]
