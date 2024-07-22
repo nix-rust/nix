@@ -786,6 +786,9 @@ pub enum ControlMessageOwned {
     Ipv4Ttl(u8),
 
     /// Hop Limit header field of the incoming IPv6 packet.
+    ///
+    /// [Further reading for Linux](https://www.man7.org/linux/man-pages/man7/ip.7.html)
+    /// [Further reading for FreeBSD](https://datatracker.ietf.org/doc/html/rfc3542.html)
     #[cfg(any(linux_android, target_os = "freebsd"))]
     #[cfg(feature = "net")]
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -1201,10 +1204,16 @@ pub enum ControlMessage<'a> {
     Ipv4SendSrcAddr(&'a libc::in_addr),
 
     /// Configure the Time-to-Live for v4 traffic.
-    #[cfg(any(linux_android, target_os = "freebsd"))]
+    #[cfg(linux_android)]
     #[cfg(feature = "net")]
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv4Ttl(&'a libc::c_int),
+
+    /// Configure the Time-to-Live for v4 traffic.
+    #[cfg(target_os = "freebsd")]
+    #[cfg(feature = "net")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
+    Ipv4Ttl(&'a libc::c_uchar),
 
     /// Configure the hop limit for v6 multicast traffic.
     ///
@@ -1239,12 +1248,16 @@ pub enum ControlMessage<'a> {
     ///
     /// Further information can be found [here](https://en.wikipedia.org/wiki/Differentiated_services).
     #[cfg(any(linux_android, target_os = "freebsd"))]
-    IpTos(&'a u8),
+    #[cfg(feature = "net")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
+    Ipv4Tos(&'a u8),
 
     /// Configure DSCP / IP TOS for outgoing v6 packets.
     ///
     /// Further information can be found [here](https://en.wikipedia.org/wiki/Differentiated_services).
     #[cfg(any(linux_android, target_os = "freebsd"))]
+    #[cfg(feature = "net")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv6TClass(&'a i32),
 }
 
@@ -1354,8 +1367,8 @@ impl<'a> ControlMessage<'a> {
                 tx_time as *const _ as *const u8
             },
             #[cfg(any(linux_android, target_os = "freebsd"))]
-            ControlMessage::IpTos(tos) => {
-                tos as *const _ as *const u8
+            ControlMessage::Ipv4Tos(tos) => {
+                tos as *const _
             },
             #[cfg(any(linux_android, target_os = "freebsd"))]
             ControlMessage::Ipv6TClass(tclass) => {
@@ -1431,7 +1444,7 @@ impl<'a> ControlMessage<'a> {
                 mem::size_of_val(tx_time)
             },
             #[cfg(any(linux_android, target_os = "freebsd"))]
-            ControlMessage::IpTos(tos) => {
+            ControlMessage::Ipv4Tos(tos) => {
                 mem::size_of_val(tos)
             },
             #[cfg(any(linux_android, target_os = "freebsd"))]
@@ -1476,7 +1489,7 @@ impl<'a> ControlMessage<'a> {
             #[cfg(target_os = "linux")]
             ControlMessage::TxTime(_) => libc::SOL_SOCKET,
             #[cfg(any(linux_android, target_os = "freebsd"))]
-            ControlMessage::IpTos(_) => libc::IPPROTO_IP,
+            ControlMessage::Ipv4Tos(_) => libc::IPPROTO_IP,
             #[cfg(any(linux_android, target_os = "freebsd"))]
             ControlMessage::Ipv6TClass(_) => libc::IPPROTO_IPV6,
         }
@@ -1517,9 +1530,12 @@ impl<'a> ControlMessage<'a> {
             #[cfg(any(freebsdlike, netbsdlike))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv4SendSrcAddr(_) => libc::IP_SENDSRCADDR,
-            #[cfg(any(linux_android, target_os = "freebsd"))]
+            #[cfg(linux_android)]
             #[cfg(feature = "net")]
             ControlMessage::Ipv4Ttl(_) => libc::IP_TTL,
+            #[cfg(target_os = "freebsd")]
+            #[cfg(feature = "net")]
+            ControlMessage::Ipv4Ttl(_) => libc::IP_RECVTTL,
             #[cfg(any(linux_android, freebsdlike, apple_targets, target_os = "haiku"))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv6HopLimit(_) => libc::IPV6_HOPLIMIT,
@@ -1531,11 +1547,18 @@ impl<'a> ControlMessage<'a> {
             ControlMessage::TxTime(_) => {
                 libc::SCM_TXTIME
             },
-            #[cfg(target_os = "linux")]
-            ControlMessage::IpTos(_) => {
+            #[cfg(linux_android)]
+            #[cfg(feature = "net")]
+            ControlMessage::Ipv4Tos(_) => {
                 libc::IP_TOS
             },
+            #[cfg(target_os = "freebsd")]
+            #[cfg(feature = "net")]
+            ControlMessage::Ipv4Tos(_) => {
+                libc::IP_RECVTOS
+            },
             #[cfg(any(linux_android, target_os = "freebsd"))]
+            #[cfg(feature = "net")]
             ControlMessage::Ipv6TClass(_) => {
                 libc::IPV6_TCLASS
             },

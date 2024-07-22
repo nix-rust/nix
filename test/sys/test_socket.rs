@@ -2628,7 +2628,7 @@ pub fn test_ip_tos_udp() {
     setsockopt(&ssock, sockopt::IpTos, &20).unwrap();
 
     // Test the sendmsg control message and check the received packet has the same TOS.
-    let scmsg = ControlMessage::IpTos(&20);
+    let scmsg = ControlMessage::Ipv4Tos(&20);
     sendmsg(
         ssock.as_raw_fd(),
         &iov1,

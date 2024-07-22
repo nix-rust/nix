@@ -414,7 +414,7 @@ sockopt_impl!(
     libc::IP_TOS,
     libc::c_int
 );
-#[cfg(target_os = "linux")]
+#[cfg(any(linux_android, target_os = "freebsd"))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
