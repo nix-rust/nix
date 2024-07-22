@@ -1561,7 +1561,7 @@ impl<'a> ControlMessage<'a> {
             #[cfg(target_os = "freebsd")]
             #[cfg(feature = "net")]
             ControlMessage::Ipv4Tos(_) => {
-                libc::IP_RECVTOS
+                libc::IP_TOS
             },
             #[cfg(any(linux_android, target_os = "freebsd"))]
             #[cfg(feature = "net")]
