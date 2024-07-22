@@ -1042,9 +1042,15 @@ impl ControlMessageOwned {
                 let ttl = unsafe { ptr::read_unaligned(p as *const i32) };
                 ControlMessageOwned::Ipv6HopLimit(ttl)
             },
-            #[cfg(any(linux_android, target_os = "freebsd"))]
+            #[cfg(linux_android)]
             #[cfg(feature = "net")]
             (libc::IPPROTO_IP, libc::IP_TOS) => {
+                let tos = unsafe { ptr::read_unaligned(p as *const u8) };
+                ControlMessageOwned::Ipv4Tos(tos)
+            },
+            #[cfg(target_os = "freebsd")]
+            #[cfg(feature = "net")]
+            (libc::IPPROTO_IP, libc::IP_RECVTOS) => {
                 let tos = unsafe { ptr::read_unaligned(p as *const u8) };
                 ControlMessageOwned::Ipv4Tos(tos)
             },
