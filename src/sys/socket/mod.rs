@@ -795,13 +795,7 @@ pub enum ControlMessageOwned {
     Ipv6HopLimit(i32),
 
     /// Retrieve the DSCP (ToS) header field of the incoming IPv4 packet. 
-    #[cfg(linux_android)]
-    #[cfg(feature = "net")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
-    Ipv4Tos(u8),
-
-    /// Retrieve the DSCP (ToS) header field of the incoming IPv4 packet. 
-    #[cfg(target_os = "freebsd")]
+    #[cfg(any(linux_android, target_os = "freebsd"))]
     #[cfg(feature = "net")]
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv4Tos(u8),
@@ -1048,15 +1042,9 @@ impl ControlMessageOwned {
                 let ttl = unsafe { ptr::read_unaligned(p as *const i32) };
                 ControlMessageOwned::Ipv6HopLimit(ttl)
             },
-            #[cfg(linux_android)]
+            #[cfg(any(linux_android, target_os = "freebsd"))]
             #[cfg(feature = "net")]
             (libc::IPPROTO_IP, libc::IP_TOS) => {
-                let tos = unsafe { ptr::read_unaligned(p as *const u8) };
-                ControlMessageOwned::Ipv4Tos(tos)
-            },
-            #[cfg(target_os = "freebsd")]
-            #[cfg(feature = "net")]
-            (libc::IPPROTO_IP, libc::IP_RECVTOS) => {
                 let tos = unsafe { ptr::read_unaligned(p as *const u8) };
                 ControlMessageOwned::Ipv4Tos(tos)
             },
@@ -1553,12 +1541,7 @@ impl<'a> ControlMessage<'a> {
             ControlMessage::TxTime(_) => {
                 libc::SCM_TXTIME
             },
-            #[cfg(linux_android)]
-            #[cfg(feature = "net")]
-            ControlMessage::Ipv4Tos(_) => {
-                libc::IP_TOS
-            },
-            #[cfg(target_os = "freebsd")]
+            #[cfg(any(linux_android, target_os = "freebsd"))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv4Tos(_) => {
                 libc::IP_TOS
