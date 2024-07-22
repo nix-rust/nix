@@ -2625,7 +2625,7 @@ pub fn test_ip_tos_udp() {
         None,
     )
     .expect("send socket failed");
-    setsockopt(&ssock, sockopt::IpTos, &20).unwrap();
+    setsockopt(&ssock, sockopt::Ipv4Tos, &20).unwrap();
 
     // Test the sendmsg control message and check the received packet has the same TOS.
     let scmsg = ControlMessage::Ipv4Tos(&20);

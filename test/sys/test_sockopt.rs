@@ -479,8 +479,8 @@ fn test_ip_tos() {
     )
     .unwrap();
     let tos = 0x80; // CS4
-    setsockopt(&fd, sockopt::IpTos, &tos).unwrap();
-    assert_eq!(getsockopt(&fd, sockopt::IpTos).unwrap(), tos);
+    setsockopt(&fd, sockopt::Ipv4Tos, &tos).unwrap();
+    assert_eq!(getsockopt(&fd, sockopt::Ipv4Tos).unwrap(), tos);
 }
 
 #[test]

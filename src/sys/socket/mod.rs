@@ -1252,7 +1252,7 @@ pub enum ControlMessage<'a> {
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv4Tos(&'a u8),
 
-    /// Configure DSCP / IP TOS for outgoing v6 packets.
+    /// Configure DSCP / IPv6 TCLASS for outgoing v6 packets.
     ///
     /// Further information can be found [here](https://en.wikipedia.org/wiki/Differentiated_services).
     #[cfg(any(linux_android, target_os = "freebsd"))]
@@ -1367,10 +1367,12 @@ impl<'a> ControlMessage<'a> {
                 tx_time as *const _ as *const u8
             },
             #[cfg(any(linux_android, target_os = "freebsd"))]
+            #[cfg(feature = "net")]
             ControlMessage::Ipv4Tos(tos) => {
                 tos as *const _
             },
             #[cfg(any(linux_android, target_os = "freebsd"))]
+            #[cfg(feature = "net")]
             ControlMessage::Ipv6TClass(tclass) => {
                 tclass as *const _ as *const u8
             },
@@ -1444,10 +1446,12 @@ impl<'a> ControlMessage<'a> {
                 mem::size_of_val(tx_time)
             },
             #[cfg(any(linux_android, target_os = "freebsd"))]
+            #[cfg(feature = "net")]
             ControlMessage::Ipv4Tos(tos) => {
                 mem::size_of_val(tos)
             },
             #[cfg(any(linux_android, target_os = "freebsd"))]
+            #[cfg(feature = "net")]
             ControlMessage::Ipv6TClass(tclass) => {
                 mem::size_of_val(tclass)
             },
@@ -1489,8 +1493,10 @@ impl<'a> ControlMessage<'a> {
             #[cfg(target_os = "linux")]
             ControlMessage::TxTime(_) => libc::SOL_SOCKET,
             #[cfg(any(linux_android, target_os = "freebsd"))]
+            #[cfg(feature = "net")]
             ControlMessage::Ipv4Tos(_) => libc::IPPROTO_IP,
             #[cfg(any(linux_android, target_os = "freebsd"))]
+            #[cfg(feature = "net")]
             ControlMessage::Ipv6TClass(_) => libc::IPPROTO_IPV6,
         }
     }

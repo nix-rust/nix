@@ -402,13 +402,13 @@ sockopt_impl!(
     libc::SO_PRIORITY,
     libc::c_int
 );
-#[cfg(target_os = "linux")]
+#[cfg(any(linux_android, target_os = "freebsd"))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     /// Set or receive the Type-Of-Service (TOS) field that is
     /// sent with every IP packet originating from this socket
-    IpTos,
+    Ipv4Tos,
     Both,
     libc::IPPROTO_IP,
     libc::IP_TOS,
