@@ -2651,7 +2651,6 @@ pub fn test_ip_tos_udp() {
     )
     .unwrap();
     for c in recv.cmsgs().unwrap() {
-        println!("CMSG: {c:?}");
         if let ControlMessageOwned::Ipv4Tos(t) = c {
             tc = Some(t);
         }
