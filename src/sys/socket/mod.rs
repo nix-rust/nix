@@ -1530,12 +1530,9 @@ impl<'a> ControlMessage<'a> {
             #[cfg(any(freebsdlike, netbsdlike))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv4SendSrcAddr(_) => libc::IP_SENDSRCADDR,
-            #[cfg(linux_android)]
+            #[cfg(any(linux_android, target_os = "freebsd"))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv4Ttl(_) => libc::IP_TTL,
-            #[cfg(target_os = "freebsd")]
-            #[cfg(feature = "net")]
-            ControlMessage::Ipv4Ttl(_) => libc::IP_RECVTTL,
             #[cfg(any(linux_android, freebsdlike, apple_targets, target_os = "haiku"))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv6HopLimit(_) => libc::IPV6_HOPLIMIT,
