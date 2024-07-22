@@ -795,7 +795,7 @@ pub enum ControlMessageOwned {
     #[cfg(linux_android)]
     #[cfg(feature = "net")]
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
-    Ipv4Tos(i32),
+    Ipv4Tos(u8),
 
     /// Retrieve the DSCP (ToS) header field of the incoming IPv4 packet. 
     #[cfg(target_os = "freebsd")]
@@ -1048,7 +1048,7 @@ impl ControlMessageOwned {
             #[cfg(linux_android)]
             #[cfg(feature = "net")]
             (libc::IPPROTO_IP, libc::IP_TOS) => {
-                let tos = unsafe { ptr::read_unaligned(p as *const i32) };
+                let tos = unsafe { ptr::read_unaligned(p as *const u8) };
                 ControlMessageOwned::Ipv4Tos(tos)
             },
             #[cfg(target_os = "freebsd")]
@@ -1200,8 +1200,8 @@ pub enum ControlMessage<'a> {
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv4SendSrcAddr(&'a libc::in_addr),
 
-    /// Configure the Time-to-Live for v4 traffic traffic.
-    #[cfg(any(linux_android, freebsdlike, apple_targets, target_os = "haiku"))]
+    /// Configure the Time-to-Live for v4 traffic.
+    #[cfg(any(linux_android, target_os = "freebsd"))]
     #[cfg(feature = "net")]
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv4Ttl(&'a libc::c_int),
@@ -1238,13 +1238,13 @@ pub enum ControlMessage<'a> {
     /// Configure DSCP / IP TOS for outgoing v4 packets.
     ///
     /// Further information can be found [here](https://en.wikipedia.org/wiki/Differentiated_services).
-    #[cfg(target_os = "linux")]
-    IpTos(&'a i32),
+    #[cfg(any(linux_android, target_os = "freebsd"))]
+    IpTos(&'a u8),
 
     /// Configure DSCP / IP TOS for outgoing v6 packets.
     ///
     /// Further information can be found [here](https://en.wikipedia.org/wiki/Differentiated_services).
-    #[cfg(target_os = "linux")]
+    #[cfg(any(linux_android, target_os = "freebsd"))]
     Ipv6TClass(&'a i32),
 }
 
@@ -1339,7 +1339,7 @@ impl<'a> ControlMessage<'a> {
             #[cfg(any(freebsdlike, netbsdlike))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv4SendSrcAddr(addr) => addr as *const _ as *const u8,
-            #[cfg(any(linux_android, freebsdlike, apple_targets, target_os = "haiku"))]
+            #[cfg(any(linux_android, target_os = "freebsd"))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv4Ttl(ttl) => ttl as *const _ as *const u8,
             #[cfg(any(linux_android, freebsdlike, apple_targets, target_os = "haiku"))]
@@ -1353,11 +1353,11 @@ impl<'a> ControlMessage<'a> {
             ControlMessage::TxTime(tx_time) => {
                 tx_time as *const _ as *const u8
             },
-            #[cfg(target_os = "linux")]
+            #[cfg(any(linux_android, target_os = "freebsd"))]
             ControlMessage::IpTos(tos) => {
                 tos as *const _ as *const u8
             },
-            #[cfg(target_os = "linux")]
+            #[cfg(any(linux_android, target_os = "freebsd"))]
             ControlMessage::Ipv6TClass(tclass) => {
                 tclass as *const _ as *const u8
             },
@@ -1412,7 +1412,7 @@ impl<'a> ControlMessage<'a> {
             #[cfg(any(freebsdlike, netbsdlike))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv4SendSrcAddr(addr) => mem::size_of_val(addr),
-            #[cfg(any(linux_android, freebsdlike, apple_targets, target_os = "haiku"))]
+            #[cfg(any(linux_android, target_os = "freebsd"))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv4Ttl(ttl) => {
                 mem::size_of_val(ttl)
@@ -1430,11 +1430,11 @@ impl<'a> ControlMessage<'a> {
             ControlMessage::TxTime(tx_time) => {
                 mem::size_of_val(tx_time)
             },
-            #[cfg(target_os = "linux")]
+            #[cfg(any(linux_android, target_os = "freebsd"))]
             ControlMessage::IpTos(tos) => {
                 mem::size_of_val(tos)
             },
-            #[cfg(target_os = "linux")]
+            #[cfg(any(linux_android, target_os = "freebsd"))]
             ControlMessage::Ipv6TClass(tclass) => {
                 mem::size_of_val(tclass)
             },
@@ -1465,7 +1465,7 @@ impl<'a> ControlMessage<'a> {
             #[cfg(any(freebsdlike, netbsdlike))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv4SendSrcAddr(_) => libc::IPPROTO_IP,
-            #[cfg(any(linux_android, freebsdlike, apple_targets, target_os = "haiku"))]
+            #[cfg(any(linux_android, target_os = "freebsd"))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv4Ttl(_) => libc::IPPROTO_IP,
             #[cfg(any(linux_android, freebsdlike, apple_targets, target_os = "haiku"))]
@@ -1475,9 +1475,9 @@ impl<'a> ControlMessage<'a> {
             ControlMessage::RxqOvfl(_) => libc::SOL_SOCKET,
             #[cfg(target_os = "linux")]
             ControlMessage::TxTime(_) => libc::SOL_SOCKET,
-            #[cfg(target_os = "linux")]
+            #[cfg(any(linux_android, target_os = "freebsd"))]
             ControlMessage::IpTos(_) => libc::IPPROTO_IP,
-            #[cfg(target_os = "linux")]
+            #[cfg(any(linux_android, target_os = "freebsd"))]
             ControlMessage::Ipv6TClass(_) => libc::IPPROTO_IPV6,
         }
     }
@@ -1517,7 +1517,7 @@ impl<'a> ControlMessage<'a> {
             #[cfg(any(freebsdlike, netbsdlike))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv4SendSrcAddr(_) => libc::IP_SENDSRCADDR,
-            #[cfg(any(linux_android, freebsdlike, apple_targets, target_os = "haiku"))]
+            #[cfg(any(linux_android, target_os = "freebsd"))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv4Ttl(_) => libc::IP_TTL,
             #[cfg(any(linux_android, freebsdlike, apple_targets, target_os = "haiku"))]
@@ -1535,7 +1535,7 @@ impl<'a> ControlMessage<'a> {
             ControlMessage::IpTos(_) => {
                 libc::IP_TOS
             },
-            #[cfg(target_os = "linux")]
+            #[cfg(any(linux_android, target_os = "freebsd"))]
             ControlMessage::Ipv6TClass(_) => {
                 libc::IPV6_TCLASS
             },

@@ -879,7 +879,7 @@ fn test_reuseport_lb() {
 }
 
 #[test]
-#[cfg(target_os = "linux")]
+#[cfg(any(linux_android, target_os = "freebsd"))]
 fn test_ipv4_recv_ttl_opts() {
     let fd = socket(
         AddressFamily::Inet,
@@ -907,7 +907,7 @@ fn test_ipv4_recv_ttl_opts() {
 }
 
 #[test]
-#[cfg(target_os = "linux")]
+#[cfg(any(linux_android, target_os = "freebsd"))]
 fn test_ipv6_recv_hop_limit_opts() {
     let fd = socket(
         AddressFamily::Inet6,
@@ -938,7 +938,7 @@ fn test_ipv6_recv_hop_limit_opts() {
 }
 
 #[test]
-#[cfg(target_os = "linux")]
+#[cfg(any(linux_android, target_os = "freebsd"))]
 fn test_ipv4_recv_tos_opts() {
     let fd = socket(
         AddressFamily::Inet,
@@ -966,7 +966,7 @@ fn test_ipv4_recv_tos_opts() {
 }
 
 #[test]
-#[cfg(target_os = "linux")]
+#[cfg(any(linux_android, target_os = "freebsd"))]
 fn test_ipv6_recv_traffic_class_opts() {
     let fd = socket(
         AddressFamily::Inet6,

@@ -2577,7 +2577,7 @@ fn test_recvmsg_rxq_ovfl() {
     assert_eq!(drop_counter, 1);
 }
 
-#[cfg(target_os = "linux")]
+#[cfg(any(linux_android, target_os = "freebsd"))]
 #[cfg(feature = "net")]
 // qemu doesn't seem to be emulating this correctly in these architectures
 #[cfg_attr(
