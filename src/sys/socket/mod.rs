@@ -2456,4 +2456,3 @@ pub fn shutdown(df: RawFd, how: Shutdown) -> Result<()> {
         Errno::result(shutdown(df, how)).map(drop)
     }
 }
-
