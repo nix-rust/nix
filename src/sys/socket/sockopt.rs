@@ -409,6 +409,7 @@ sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     /// Set or receive the Type-Of-Service (TOS) field that is
     /// sent with every IP packet originating from this socket
+    #[allow(deprecated)]
     IpTos,
     Both,
     libc::IPPROTO_IP,
