@@ -404,12 +404,12 @@ sockopt_impl!(
 );
 #[cfg(any(linux_android, target_os = "freebsd"))]
 #[cfg(feature = "net")]
+#[allow(deprecated)]
 sockopt_impl!(
     #[deprecated(since = "0.30.0", note = "Use Ipv4Tos instead")]
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     /// Set or receive the Type-Of-Service (TOS) field that is
     /// sent with every IP packet originating from this socket
-    #[allow(deprecated)]
     IpTos,
     Both,
     libc::IPPROTO_IP,
