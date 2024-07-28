@@ -569,10 +569,21 @@ impl Iterator for SignalValueIterator {
               s
            }
            Err(_) => {
-              if self.next < libc::SIGRTMIN() {
-                 self.next = libc::SIGRTMIN() + 1;
-                 SignalValue::Realtime(0)
-              } else { return None; }
+              // Some standard signals seem to be missing on some architectures, to fix that, iterator must skip unrecognized standard signals instead of leaping to SIGRTMIN
+              while self.next < libc::SIGRTMIN()
+              {
+                 self.next += 1;
+                 match SignalValue::try_from(self.next)
+                 {
+                    Ok(s) => {
+                        self.next += 1;
+                        return if s.is_valid() { Some(s) } else { None };
+                    },
+                    Err(_) => { continue; },
+                 };
+              }
+              self.next = libc::SIGRTMIN() + 1;
+              SignalValue::Realtime(0)
            },
         };
         if next_signal.is_valid() { Some(next_signal) } else { None }
@@ -1002,6 +1013,7 @@ impl Hash for SigSet {
 /// Iterator for a [`SigSet`].
 ///
 /// Call [`SigSet::iter`] to create an iterator.
+#[allow(dead_code)]
 #[derive(Clone, Debug)]
 #[cfg(not(any(
     target_os = "haiku",

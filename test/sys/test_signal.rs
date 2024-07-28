@@ -203,8 +203,12 @@ fn test_extend() {
     two_signals.add(SIGUSR2);
     two_signals.extend(&one_signal);
 
-    assert!(two_signals.contains(SIGUSR1));
-    assert!(two_signals.contains(SIGUSR2));
+    assert!(one_signal
+        .rt_contains(nix::sys::signal::SignalValue::Standard(SIGUSR1)));
+    assert!(two_signals
+        .rt_contains(nix::sys::signal::SignalValue::Standard(SIGUSR2)));
+    assert!(two_signals
+        .rt_contains(nix::sys::signal::SignalValue::Standard(SIGUSR1)));
 }
 
 #[test]
@@ -213,11 +217,15 @@ fn test_extend_rt() {
     one_signal.rt_add(SignalValue::Standard(SIGUSR1)).unwrap();
 
     let mut two_signals = SigSet::empty();
-    one_signal.rt_add(SignalValue::Standard(SIGUSR2)).unwrap();
+    two_signals.rt_add(SignalValue::Standard(SIGUSR2)).unwrap();
     two_signals.extend(&one_signal);
 
-    assert!(two_signals.contains(SIGUSR1));
-    assert!(two_signals.contains(SIGUSR2));
+    assert!(one_signal
+        .rt_contains(nix::sys::signal::SignalValue::Standard(SIGUSR1)));
+    assert!(two_signals
+        .rt_contains(nix::sys::signal::SignalValue::Standard(SIGUSR2)));
+    assert!(two_signals
+        .rt_contains(nix::sys::signal::SignalValue::Standard(SIGUSR1)));
 }
 
 #[test]
@@ -305,6 +313,8 @@ fn test_from_and_into_iterator() {
         SignalValue::Standard(Signal::SIGUSR1),
         SignalValue::Standard(Signal::SIGUSR2),
     ]);
+    assert!(sigset.contains(SIGUSR1));
+    assert!(sigset.rt_contains(SignalValue::Standard(Signal::SIGUSR2)));
     let signals = sigset.into_iter().collect::<Vec<SignalValue>>();
     assert_eq!(
         signals,
