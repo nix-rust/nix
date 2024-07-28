@@ -369,7 +369,7 @@ const SIGNALS: [Signal; 31] = [
 
 // Support for real-time signals
 /// Operating system signal value
-#[cfg(all(target_os = "linux", not(target_arch = "mips")))]
+#[cfg(target_os = "linux")]
 #[cfg(any(feature = "aio", feature = "signal"))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum SignalValue {
@@ -381,7 +381,7 @@ pub enum SignalValue {
 
 // Support for real-time signals
 /// Operating system signal value
-#[cfg(any(not(target_os = "linux"), all(target_os = "linux", target_arch = "mips")))]
+#[cfg(not(target_os = "linux"))]
 #[cfg(any(feature = "signal", feature = "aio"))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum SignalValue {
@@ -391,7 +391,7 @@ pub enum SignalValue {
 
 #[cfg(any(feature = "aio", feature = "signal"))]
 impl SignalValue {
-    #[cfg(all(target_os = "linux", not(target_arch = "mips")))]
+    #[cfg(target_os = "linux")]
     #[allow(dead_code)]
     unsafe fn convert_to_int_unchecked(self) -> libc::c_int {
         // Note: dead code is allowed, since this is a private method that can remain unused on some platforms
@@ -401,7 +401,7 @@ impl SignalValue {
         }
     }
 
-    #[cfg(any(not(target_os = "linux"), all(target_os = "linux", target_arch = "mips")))]
+    #[cfg(not(target_os = "linux"))]
     #[allow(dead_code)]
     unsafe fn convert_to_int_unchecked(self) -> libc::c_int {
         // Note: dead code is allowed, since this is a private method that can remain unused on some platforms
@@ -411,7 +411,7 @@ impl SignalValue {
     }
 
     /// Check whether this enum contains a valid signal for this operating system
-    #[cfg(all(target_os = "linux", not(target_arch = "mips")))]
+    #[cfg(target_os = "linux")]
     pub fn is_valid(&self) -> bool {
         match self {
             SignalValue::Standard(_) => true,
@@ -422,7 +422,7 @@ impl SignalValue {
     }
 
     /// Check whether this enum contains a valid signal for this operating system
-    #[cfg(any(not(target_os = "linux"), all(target_os = "linux", target_arch = "mips")))]
+    #[cfg(not(target_os = "linux"))]
     pub fn is_valid(&self) -> bool {
         match self {
             SignalValue::Standard(_) => true,
@@ -432,7 +432,7 @@ impl SignalValue {
 
 #[cfg(feature = "signal")]
 impl From<SignalValue> for String {
-    #[cfg(all(target_os = "linux", not(target_arch = "mips")))]
+    #[cfg(target_os = "linux")]
     fn from(x: SignalValue) -> Self {
         match x {
             SignalValue::Standard(s) => s.to_string(),
@@ -442,7 +442,7 @@ impl From<SignalValue> for String {
         }
     }
 
-    #[cfg(any(not(target_os = "linux"), all(target_os = "linux", target_arch = "mips")))]
+    #[cfg(not(target_os = "linux"))]
     fn from(x: SignalValue) -> Self {
         match x {
             SignalValue::Standard(s) => s.to_string(),
@@ -454,7 +454,7 @@ impl From<SignalValue> for String {
 impl TryFrom<i32> for SignalValue {
     type Error = Errno;
 
-     #[cfg(all(target_os = "linux", not(target_arch = "mips")))]
+    #[cfg(target_os = "linux")]
     fn try_from(x: i32) -> Result<Self> {
         if x < libc::SIGRTMIN() {
             match Signal::try_from(x) {
@@ -466,7 +466,7 @@ impl TryFrom<i32> for SignalValue {
         }
     }
 
-    #[cfg(any(not(target_os = "linux"), all(target_os = "linux", target_arch = "mips")))]
+    #[cfg(not(target_os = "linux"))]
     fn try_from(x: i32) -> Result<Self> {
         match Signal::try_from(x) {
             Ok(s) => Ok(SignalValue::Standard(s)),
@@ -479,7 +479,7 @@ impl TryFrom<i32> for SignalValue {
 impl TryFrom<SignalValue> for i32 {
     type Error = Errno;
 
-     #[cfg(all(target_os = "linux", not(target_arch = "mips")))]
+    #[cfg(target_os = "linux")]
     fn try_from(x: SignalValue) -> Result<Self> {
         match x {
             SignalValue::Standard(s) => Ok(s as i32),
@@ -494,7 +494,7 @@ impl TryFrom<SignalValue> for i32 {
         }
     }
 
-    #[cfg(any(not(target_os = "linux"), all(target_os = "linux", target_arch = "mips")))]
+    #[cfg(not(target_os = "linux"))]
     fn try_from(x: SignalValue) -> Result<Self> {
         match x {
             SignalValue::Standard(s) => Ok(s as i32),
@@ -513,7 +513,7 @@ impl From<Signal> for SignalValue {
 impl TryFrom<SignalValue> for Signal {
     type Error = Errno;
 
-     #[cfg(all(target_os = "linux", not(target_arch = "mips")))]
+    #[cfg(target_os = "linux")]
     fn try_from(x: SignalValue) -> Result<Self> {
         match x {
             SignalValue::Standard(s) => Ok(s),
@@ -521,7 +521,7 @@ impl TryFrom<SignalValue> for Signal {
         }
     }
 
-    #[cfg(any(not(target_os = "linux"), all(target_os = "linux", target_arch = "mips")))]
+    #[cfg(not(target_os = "linux"))]
     fn try_from(x: SignalValue) -> Result<Self> {
         match x {
             SignalValue::Standard(s) => Ok(s),
@@ -561,7 +561,7 @@ impl Iterator for SignalIterator {
 impl Iterator for SignalValueIterator {
     type Item = SignalValue;
 
-     #[cfg(all(target_os = "linux", not(target_arch = "mips")))]
+    #[cfg(target_os = "linux")]
     fn next(&mut self) -> Option<SignalValue> {
         let next_signal = match SignalValue::try_from(self.next) {
            Ok(s) => {
@@ -578,7 +578,7 @@ impl Iterator for SignalValueIterator {
         if next_signal.is_valid() { Some(next_signal) } else { None }
     }
 
-    #[cfg(any(not(target_os = "linux"), all(target_os = "linux", target_arch = "mips")))]
+    #[cfg(not(target_os = "linux"))]
     fn next(&mut self) -> Option<SignalValue> {
         let next_signal = match SignalValue::try_from(self.next) {
            Ok(s) => {
