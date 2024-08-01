@@ -7,7 +7,7 @@ use crate::Result;
 #[cfg(not(target_os = "android"))]
 #[cfg(feature = "fs")]
 use crate::{fcntl::OFlag, sys::stat::Mode};
-use libc::{self, c_int, c_void, off_t, size_t};
+use libc::{self, c_int, c_void, size_t};
 use std::ptr::NonNull;
 use std::{
     num::NonZeroUsize,
@@ -392,19 +392,20 @@ pub fn munlockall() -> Result<()> {
 /// See the [`mmap(2)`] man page for detailed requirements.
 ///
 /// [`mmap(2)`]: https://man7.org/linux/man-pages/man2/mmap.2.html
-pub unsafe fn mmap<F: AsFd>(
+pub unsafe fn mmap<F: AsFd, Off: Into<i64>>(
     addr: Option<NonZeroUsize>,
     length: NonZeroUsize,
     prot: ProtFlags,
     flags: MapFlags,
     f: F,
-    offset: off_t,
+    offset: Off,
 ) -> Result<NonNull<c_void>> {
     let ptr = addr.map_or(std::ptr::null_mut(), |a| a.get() as *mut c_void);
 
     let fd = f.as_fd().as_raw_fd();
     let ret = unsafe {
-        libc::mmap(ptr, length.into(), prot.bits(), flags.bits(), fd, offset)
+        largefile_fn![mmap](
+            ptr, length.into(), prot.bits(), flags.bits(), fd, offset.into())
     };
 
     if ret == libc::MAP_FAILED {
