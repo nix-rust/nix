@@ -44,6 +44,7 @@ const TCP_CA_NAME_MAX: usize = 16;
 ///    `bool`, `SetUsize` for `usize`, etc.).
 macro_rules! setsockopt_impl {
     ($name:ident, $level:expr, $flag:path, $ty:ty, $setter:ty) => {
+        #[allow(deprecated)] // to allow we have deprecated socket option
         impl SetSockOpt for $name {
             type Val = $ty;
 
@@ -89,6 +90,7 @@ macro_rules! setsockopt_impl {
 ///    `bool`, `GetUsize` for `usize`, etc.).
 macro_rules! getsockopt_impl {
     ($name:ident, $level:expr, $flag:path, $ty:ty, $getter:ty) => {
+        #[allow(deprecated)] // to allow we have deprecated socket option
         impl GetSockOpt for $name {
             type Val = $ty;
 
@@ -400,6 +402,19 @@ sockopt_impl!(
     Both,
     libc::SOL_SOCKET,
     libc::SO_PRIORITY,
+    libc::c_int
+);
+#[cfg(any(linux_android, target_os = "freebsd"))]
+#[cfg(feature = "net")]
+sockopt_impl!(
+    #[deprecated(since = "0.30.0", note = "Use Ipv4Tos instead")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
+    /// Set or receive the Type-Of-Service (TOS) field that is
+    /// sent with every IP packet originating from this socket
+    IpTos,
+    Both,
+    libc::IPPROTO_IP,
+    libc::IP_TOS,
     libc::c_int
 );
 #[cfg(any(linux_android, target_os = "freebsd"))]
