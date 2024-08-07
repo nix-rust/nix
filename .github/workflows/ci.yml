@@ -13,7 +13,7 @@ permissions:
   contents: read 
 
 env: 
-  MSRV: 1.69.0
+  MSRV: 1.71.0
   RUSTFLAGS: -Dwarnings
 
 jobs:
@@ -92,6 +92,7 @@ jobs:
           mips64el-unknown-linux-gnuabi64,
           mipsel-unknown-linux-gnu,
           powerpc64le-unknown-linux-gnu,
+          loongarch64-unknown-linux-gnu,
         ]
 
     steps:
