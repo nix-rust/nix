@@ -30,6 +30,8 @@ pub struct InterfaceAddress {
     pub broadcast: Option<SockaddrStorage>,
     /// Point-to-point destination address
     pub destination: Option<SockaddrStorage>,
+    /// If interface is UP
+    pub up: bool,
 }
 
 cfg_if! {
@@ -101,6 +103,7 @@ impl InterfaceAddress {
             netmask,
             broadcast: None,
             destination: None,
+            up: false,
         };
 
         let ifu = get_ifu_from_sockaddr(info);
@@ -108,6 +111,10 @@ impl InterfaceAddress {
             addr.destination = unsafe { SockaddrStorage::from_raw(ifu, None) };
         } else if addr.flags.contains(InterfaceFlags::IFF_BROADCAST) {
             addr.broadcast = unsafe { SockaddrStorage::from_raw(ifu, None) };
+        }
+
+        if addr.flags.contains(InterfaceFlags::IFF_UP) {
+            addr.up = true
         }
 
         addr
