@@ -108,6 +108,20 @@ macro_rules! getsockopt_impl {
                     Errno::result(res)?;
 
                     match <$ty>::try_from(getter.assume_init()) {
+                        // In most `getsockopt_impl!` implementations, `assume_init()`
+                        // returns `$ty`, so calling `$ty`::try_from($ty) will always
+                        // succeed. which makes the following `Err(_)` branch
+                        // unreachable.
+                        //
+                        // However, there is indeed one exception, `sockopt::SockType`,
+                        // `assume_init()` returns an `i32`, but `$ty` is `super::SockType`,
+                        // this exception necessitates the use of that `try_from()`,
+                        // and we have to allow the unreachable pattern wraning.
+                        //
+                        // For the reason why we are using `i32` as the underlying
+                        // buffer type for this socket option, see issue:
+                        // https://github.com/nix-rust/nix/issues/1819
+                        #[allow(unreachable_patterns)]
                         Err(_) => Err(Errno::EINVAL),
                         Ok(r) => Ok(r),
                     }
