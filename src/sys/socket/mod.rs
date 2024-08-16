@@ -1346,9 +1346,12 @@ impl<'a> ControlMessage<'a> {
             #[cfg(any(freebsdlike, netbsdlike))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv4SendSrcAddr(addr) => addr as *const _ as *const u8,
-            #[cfg(any(linux_android, target_os = "freebsd"))]
+            #[cfg(linux_android)]
             #[cfg(feature = "net")]
-            ControlMessage::Ipv4Ttl(ttl) => ttl as *const _ as *const u8,
+            ControlMessage::Ipv4Ttl(ttl) => ttl as *const i32 as *const u8,
+            #[cfg(target_os = "freebsd")]
+            #[cfg(feature = "net")]
+            ControlMessage::Ipv4Ttl(ttl) => ttl as *const u8,
             #[cfg(any(linux_android, freebsdlike, apple_targets, target_os = "haiku"))]
             #[cfg(feature = "net")]
             ControlMessage::Ipv6HopLimit(limit) => limit as *const _ as *const u8,
