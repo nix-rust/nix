@@ -1426,8 +1426,10 @@ pub enum Whence {
     /// equal to offset that contains some data. If offset points to
     /// some data, then the file offset is set to offset.
     #[cfg(any(
+        apple_targets,
         freebsdlike,
         solarish,
+        target_os = "hurd",
         target_os = "linux",
     ))]
     SeekData = libc::SEEK_DATA,
@@ -1437,8 +1439,10 @@ pub enum Whence {
     /// then the file offset should be adjusted to the end of the file (i.e., there
     /// is an implicit hole at the end of any file).
     #[cfg(any(
+        apple_targets,
         freebsdlike,
         solarish,
+        target_os = "hurd",
         target_os = "linux",
     ))]
     SeekHole = libc::SEEK_HOLE,
