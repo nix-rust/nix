@@ -920,6 +920,13 @@ impl From<SockaddrIn> for net::SocketAddrV4 {
 }
 
 #[cfg(feature = "net")]
+impl From<SockaddrIn> for net::SocketAddr {
+    fn from(addr: SockaddrIn) -> Self {
+        net::SocketAddr::from(net::SocketAddrV4::from(addr))
+    }
+}
+
+#[cfg(feature = "net")]
 impl From<SockaddrIn> for libc::sockaddr_in {
     fn from(sin: SockaddrIn) -> libc::sockaddr_in {
         sin.0
@@ -1072,6 +1079,13 @@ impl From<SockaddrIn6> for net::SocketAddrV6 {
             addr.0.sin6_flowinfo,
             addr.0.sin6_scope_id,
         )
+    }
+}
+
+#[cfg(feature = "net")]
+impl From<SockaddrIn6> for net::SocketAddr {
+    fn from(addr: SockaddrIn6) -> Self {
+        net::SocketAddr::from(net::SocketAddrV6::from(addr))
     }
 }
 
