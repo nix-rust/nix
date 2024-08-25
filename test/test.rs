@@ -33,6 +33,15 @@ mod test_pty;
 mod test_sched;
 #[cfg(any(linux_android, freebsdlike, apple_targets, solarish))]
 mod test_sendfile;
+#[cfg(any(
+    target_os = "freebsd",
+    target_os = "haiku",
+    target_os = "linux",
+    target_os = "netbsd",
+    apple_targets
+))]
+mod test_spawn;
+
 mod test_time;
 mod test_unistd;
 

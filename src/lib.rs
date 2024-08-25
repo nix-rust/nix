@@ -184,6 +184,18 @@ pub mod unistd;
 #[cfg(any(feature = "poll", feature = "event"))]
 mod poll_timeout;
 
+#[cfg(any(
+    target_os = "freebsd",
+    target_os = "haiku",
+    target_os = "linux",
+    target_os = "netbsd",
+    apple_targets
+))]
+feature! {
+    #![feature = "process"]
+    pub mod spawn;
+}
+
 use std::ffi::{CStr, CString, OsStr};
 use std::mem::MaybeUninit;
 use std::os::unix::ffi::OsStrExt;
