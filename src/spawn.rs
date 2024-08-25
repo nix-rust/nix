@@ -29,9 +29,7 @@ impl PosixSpawnAttr {
         let mut attr = mem::MaybeUninit::uninit();
         let res = unsafe { libc::posix_spawnattr_init(attr.as_mut_ptr()) };
 
-        if res != 0 {
-            return Err(Errno::from_raw(res));
-        }
+        Errno::result(res)?;
 
         let attr = unsafe { attr.assume_init() };
         Ok(PosixSpawnAttr { attr })
@@ -49,18 +47,14 @@ impl PosixSpawnAttr {
                 &mut self.attr as *mut libc::posix_spawnattr_t,
             )
         };
-        if res != 0 {
-            return Err(Errno::from_raw(res));
-        }
+        Errno::result(res)?;
 
         let res = unsafe {
             libc::posix_spawnattr_init(
                 &mut self.attr as *mut libc::posix_spawnattr_t,
             )
         };
-        if res != 0 {
-            return Err(Errno::from_raw(res));
-        }
+        Errno::result(res)?;
 
         Ok(self)
     }
@@ -75,9 +69,7 @@ impl PosixSpawnAttr {
                 flags.bits() as libc::c_short,
             )
         };
-        if res != 0 {
-            return Err(Errno::from_raw(res));
-        }
+        Errno::result(res)?;
 
         Ok(())
     }
@@ -93,9 +85,7 @@ impl PosixSpawnAttr {
                 &mut flags,
             )
         };
-        if res != 0 {
-            return Err(Errno::from_raw(res));
-        }
+        Errno::result(res)?;
 
         Ok(PosixSpawnFlags::from_bits_truncate(flags.into()))
     }
@@ -110,9 +100,7 @@ impl PosixSpawnAttr {
                 pgroup.as_raw(),
             )
         };
-        if res != 0 {
-            return Err(Errno::from_raw(res));
-        }
+        Errno::result(res)?;
 
         Ok(())
     }
@@ -129,9 +117,7 @@ impl PosixSpawnAttr {
                 &mut pid,
             )
         };
-        if res != 0 {
-            return Err(Errno::from_raw(res));
-        }
+        Errno::result(res)?;
 
         Ok(Pid::from_raw(pid))
     }
@@ -148,9 +134,7 @@ impl PosixSpawnAttr {
                 sigdefault.as_ref(),
             )
         };
-        if res != 0 {
-            return Err(Errno::from_raw(res));
-        }
+        Errno::result(res)?;
 
         Ok(())
     }
@@ -167,9 +151,7 @@ impl PosixSpawnAttr {
                 sigset.as_mut_ptr(),
             )
         };
-        if res != 0 {
-            return Err(Errno::from_raw(res));
-        }
+        Errno::result(res)?;
 
         let sigdefault =
             unsafe { SigSet::from_sigset_t_unchecked(sigset.assume_init()) };
@@ -186,9 +168,7 @@ impl PosixSpawnAttr {
                 sigdefault.as_ref(),
             )
         };
-        if res != 0 {
-            return Err(Errno::from_raw(res));
-        }
+        Errno::result(res)?;
 
         Ok(())
     }
@@ -205,9 +185,7 @@ impl PosixSpawnAttr {
                 sigset.as_mut_ptr(),
             )
         };
-        if res != 0 {
-            return Err(Errno::from_raw(res));
-        }
+        Errno::result(res)?;
 
         let sigdefault =
             unsafe { SigSet::from_sigset_t_unchecked(sigset.assume_init()) };
@@ -268,16 +246,12 @@ impl PosixSpawnFileActions {
         let res = unsafe {
             libc::posix_spawn_file_actions_init(actions.as_mut_ptr())
         };
-
-        if res == 0 {
-            Ok(unsafe {
-                PosixSpawnFileActions {
-                    fa: actions.assume_init(),
-                }
-            })
-        } else {
-            Err(Errno::from_raw(res))
-        }
+        Errno::result(res)?;
+        Ok(unsafe {
+            PosixSpawnFileActions {
+                fa: actions.assume_init(),
+            }
+        })
     }
 
     /// Reinitialize the spawn file actions object.
@@ -292,18 +266,14 @@ impl PosixSpawnFileActions {
                 &mut self.fa as *mut libc::posix_spawn_file_actions_t,
             )
         };
-        if res != 0 {
-            return Err(Errno::from_raw(res));
-        }
+        Errno::result(res)?;
 
         let res = unsafe {
             libc::posix_spawn_file_actions_init(
                 &mut self.fa as *mut libc::posix_spawn_file_actions_t,
             )
         };
-        if res != 0 {
-            return Err(Errno::from_raw(res));
-        }
+        Errno::result(res)?;
 
         Ok(self)
     }
@@ -323,9 +293,7 @@ impl PosixSpawnFileActions {
                 newfd.as_fd().as_raw_fd(),
             )
         };
-        if res != 0 {
-            return Err(Errno::from_raw(res));
-        }
+        Errno::result(res)?;
 
         Ok(())
     }
@@ -351,9 +319,7 @@ impl PosixSpawnFileActions {
                 mode.bits(),
             )
         })?;
-        if res != 0 {
-            return Err(Errno::from_raw(res));
-        }
+        Errno::result(res)?;
 
         Ok(())
     }
@@ -369,9 +335,7 @@ impl PosixSpawnFileActions {
                 fd.as_fd().as_raw_fd(),
             )
         };
-        if res != 0 {
-            return Err(Errno::from_raw(res));
-        }
+        Errno::result(res)?;
 
         Ok(())
     }
@@ -428,11 +392,8 @@ pub fn posix_spawn<SA: AsRef<CStr>, SE: AsRef<CStr>>(
         )
     };
 
-    if res == 0 {
-        Ok(Pid::from_raw(pid))
-    } else {
-        Err(Errno::from_raw(res))
-    }
+    Errno::result(res)?;
+    Ok(Pid::from_raw(pid))
 }
 
 /// Create a new child process from the specified process image. See
@@ -460,9 +421,6 @@ pub fn posix_spawnp<SA: AsRef<CStr>, SE: AsRef<CStr>>(
         )
     };
 
-    if res == 0 {
-        Ok(Pid::from_raw(pid))
-    } else {
-        Err(Errno::from_raw(res))
-    }
+    Errno::result(res)?;
+    Ok(Pid::from_raw(pid))
 }
