@@ -1,5 +1,5 @@
 use libc::intptr_t;
-use nix::sys::event::{EventFilter, EventFlag, FilterFlag, KEvent};
+use nix::sys::event::{EvFlags, EventFilter, FilterFlag, KEvent};
 
 #[test]
 fn test_struct_kevent() {
@@ -11,7 +11,7 @@ fn test_struct_kevent() {
     let actual = KEvent::new(
         0xdead_beef,
         EventFilter::EVFILT_READ,
-        EventFlag::EV_ONESHOT | EventFlag::EV_ADD,
+        EvFlags::EV_ONESHOT | EvFlags::EV_ADD,
         FilterFlag::NOTE_CHILD | FilterFlag::NOTE_EXIT,
         data,
         udata,
@@ -32,7 +32,7 @@ fn test_kevent_filter() {
     let actual = KEvent::new(
         0xdead_beef,
         EventFilter::EVFILT_READ,
-        EventFlag::EV_ONESHOT | EventFlag::EV_ADD,
+        EvFlags::EV_ONESHOT | EvFlags::EV_ADD,
         FilterFlag::NOTE_CHILD | FilterFlag::NOTE_EXIT,
         0x1337,
         udata,
