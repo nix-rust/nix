@@ -260,9 +260,11 @@ pub fn mq_getattr(mqd: &MqdT) -> Result<MqAttr> {
     })
 }
 
-/// Set the attributes of the message queue. Only `O_NONBLOCK` can be set, everything else will be ignored
-/// Returns the old attributes
-/// It is recommend to use the `mq_set_nonblock()` and `mq_remove_nonblock()` convenience functions as they are easier to use
+/// Set the attributes of the message queue. Only `O_NONBLOCK` can be set,
+/// everything else will be ignored. Returns the old attributes.
+///
+/// It is recommend to use the `mq_set_nonblock()` and `mq_remove_nonblock()`
+/// convenience functions as they are easier to use.
 ///
 /// [Further reading](https://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_setattr.html)
 pub fn mq_setattr(mqd: &MqdT, newattr: &MqAttr) -> Result<MqAttr> {
