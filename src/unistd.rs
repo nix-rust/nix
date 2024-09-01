@@ -1002,13 +1002,14 @@ pub fn chown<P: ?Sized + NixPath>(
     Errno::result(res).map(drop)
 }
 
-/// Change the ownership of the file referred to by the open file descriptor `fd` to be owned by
-/// the specified `owner` (user) and `group` (see
-/// [fchown(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/fchown.html)).
+/// Change the ownership of the file referred to by the open file descriptor
+/// `fd` to be owned by the specified `owner` (user) and `group`.
 ///
 /// The owner/group for the provided file will not be modified if `None` is
 /// provided for that argument.  Ownership change will be attempted for the path
 /// only if `Some` owner/group is provided.
+///
+/// See also [`fchown(2)`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/fchown.html).
 #[inline]
 pub fn fchown<Fd: std::os::fd::AsFd>(fd: Fd, owner: Option<Uid>, group: Option<Gid>) -> Result<()> {
     use std::os::fd::AsRawFd;
@@ -1303,11 +1304,12 @@ pub fn sethostname<S: AsRef<OsStr>>(name: S) -> Result<()> {
 }
 
 /// Get the host name and store it in an internally allocated buffer, returning an
-/// `OsString` on success (see
-/// [gethostname(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/gethostname.html)).
+/// `OsString` on success.
 ///
 /// This function call attempts to get the host name for the running system and
 /// store it in an internal buffer, returning it as an `OsString` if successful.
+///
+/// # Examples
 ///
 /// ```no_run
 /// use nix::unistd;
@@ -1316,6 +1318,8 @@ pub fn sethostname<S: AsRef<OsStr>>(name: S) -> Result<()> {
 /// let hostname = hostname.into_string().expect("Hostname wasn't valid UTF-8");
 /// println!("Hostname: {}", hostname);
 /// ```
+///
+/// See also [gethostname(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/gethostname.html).
 pub fn gethostname() -> Result<OsString> {
     // The capacity is the max length of a hostname plus the NUL terminator.
     let mut buffer: Vec<u8> = Vec::with_capacity(256);

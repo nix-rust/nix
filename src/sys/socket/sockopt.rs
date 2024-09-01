@@ -303,13 +303,17 @@ sockopt_impl!(
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
+    /// Used to disable Nagle's algorithm.
+    /// 
+    /// Nagle's algorithm:
+    /// 
     /// Under most circumstances, TCP sends data when it is presented; when
     /// outstanding data has not yet been acknowledged, it gathers small amounts
     /// of output to be sent in a single packet once an acknowledgement is
     /// received.  For a small number of clients, such as window systems that
     /// send a stream of mouse events which receive no replies, this
-    /// packetization may cause significant delays.  The boolean option
-    /// TCP_NODELAY defeats this algorithm.
+    /// packetization may cause significant delays.  The boolean option, when
+    /// enabled, defeats this algorithm.
     TcpNoDelay,
     Both,
     libc::IPPROTO_TCP,
@@ -317,7 +321,7 @@ sockopt_impl!(
     bool
 );
 sockopt_impl!(
-    /// When enabled,  a close(2) or shutdown(2) will not return until all
+    /// When enabled, a close(2) or shutdown(2) will not return until all
     /// queued messages for the socket have been successfully sent or the
     /// linger timeout has been reached.
     Linger,
