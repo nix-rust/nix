@@ -1680,7 +1680,7 @@ struct SetOsString<'a> {
 
 #[cfg(any(target_os = "freebsd", linux_android))]
 impl<'a> Set<'a, OsString> for SetOsString<'a> {
-    fn new(val: &'a OsString) -> SetOsString {
+    fn new(val: &OsString) -> SetOsString {
         SetOsString {
             val: val.as_os_str(),
         }
