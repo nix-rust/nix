@@ -797,6 +797,9 @@ pub enum FcntlArg<'a> {
     /// Return the full path without firmlinks of the fd.
     #[cfg(apple_targets)]
     F_GETPATH_NOFIRMLINK(&'a mut PathBuf),
+    /// Issue an advisory read async with no copy to user
+    #[cfg(apple_targets)]
+    F_RDADVISE(libc::radvisory),
     // TODO: Rest of flags
 }
 
@@ -905,6 +908,10 @@ pub fn fcntl<Fd: std::os::fd::AsFd>(fd: Fd, arg: FcntlArg) -> Result<c_int> {
                 *path = PathBuf::from(OsString::from(optr.to_str().unwrap()));
                 return Ok(ok_res)
             },
+            #[cfg(apple_targets)]
+            F_RDADVISE(rad) => {
+                libc::fcntl(fd, libc::F_RDADVISE, &rad)
+            }
         }
     };
 
