@@ -2,8 +2,6 @@
 use crate::errno::Errno;
 #[cfg(all(target_os = "freebsd", target_arch = "x86_64"))]
 use core::slice;
-#[cfg(apple_targets)]
-use libc::off_t;
 use libc::{c_int, c_uint, size_t, ssize_t};
 #[cfg(any(
     target_os = "netbsd",
@@ -801,7 +799,7 @@ pub enum FcntlArg<'a> {
     F_GETPATH_NOFIRMLINK(&'a mut PathBuf),
     /// Issue an advisory read async with no copy to user
     #[cfg(apple_targets)]
-    F_RDADVISE(off_t, c_int),
+    F_RDADVISE(libc::radvisory),
     // TODO: Rest of flags
 }
 
@@ -911,11 +909,7 @@ pub fn fcntl<Fd: std::os::fd::AsFd>(fd: Fd, arg: FcntlArg) -> Result<c_int> {
                 return Ok(ok_res)
             },
             #[cfg(apple_targets)]
-            F_RDADVISE(offset, count) => {
-                let rad = libc::radvisory {
-                   ra_offset: offset,
-                   ra_count: count,
-                };
+            F_RDADVISE(rad) => {
                 libc::fcntl(fd, libc::F_RDADVISE, &rad)
             }
         }

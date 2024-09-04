@@ -732,3 +732,23 @@ mod test_flock {
             .expect_err("Should not have been able to lock the file");
     }
 }
+
+#[cfg(apple_targets)]
+#[test]
+fn test_f_rdadvise() {
+    use nix::fcntl::*;
+
+    let contents = vec![1; 1024];
+    let mut buf = [0; 1024];
+    let mut tmp = NamedTempFile::new().unwrap();
+    tmp.write_all(&contents).unwrap();
+    let fd = open(tmp.path(), OFlag::empty(), Mode::empty()).unwrap();
+    let rad = libc::radvisory {
+        ra_offset: 0,
+        ra_count: contents.len() as _,
+    };
+    let res = fcntl(&tmp, FcntlArg::F_RDADVISE(rad)).expect("rdadivse failed");
+    assert_ne!(res, -1);
+    assert_eq!(contents.len(), read(&fd, &mut buf).unwrap());
+    assert_eq!(contents, &buf[0..contents.len()]);
+}
