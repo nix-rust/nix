@@ -32,7 +32,8 @@ cfg_if! {
                         target_os = "redox",
                         target_os = "dragonfly",
                         target_os = "fuchsia",
-                        target_os = "hurd"))] {
+                        target_os = "hurd",
+                        target_os = "emscripten"))] {
         unsafe fn errno_location() -> *mut c_int {
             unsafe { libc::__errno_location() }
         }
@@ -277,7 +278,8 @@ fn desc(errno: Errno) -> &'static str {
             linux_android,
             solarish,
             target_os = "aix",
-            target_os = "fuchsia"
+            target_os = "fuchsia",
+            target_os = "emscripten",
         ))]
         ECHRNG => "Channel number out of range",
 
@@ -285,7 +287,8 @@ fn desc(errno: Errno) -> &'static str {
             linux_android,
             solarish,
             target_os = "aix",
-            target_os = "fuchsia"
+            target_os = "fuchsia",
+            target_os = "emscripten",
         ))]
         EL2NSYNC => "Level 2 not synchronized",
 
@@ -293,7 +296,8 @@ fn desc(errno: Errno) -> &'static str {
             linux_android,
             solarish,
             target_os = "aix",
-            target_os = "fuchsia"
+            target_os = "fuchsia",
+            target_os = "emscripten",
         ))]
         EL3HLT => "Level 3 halted",
 
@@ -301,7 +305,8 @@ fn desc(errno: Errno) -> &'static str {
             linux_android,
             solarish,
             target_os = "aix",
-            target_os = "fuchsia"
+            target_os = "fuchsia",
+            target_os = "emscripten",
         ))]
         EL3RST => "Level 3 reset",
 
@@ -309,7 +314,8 @@ fn desc(errno: Errno) -> &'static str {
             linux_android,
             solarish,
             target_os = "aix",
-            target_os = "fuchsia"
+            target_os = "fuchsia",
+            target_os = "emscripten",
         ))]
         ELNRNG => "Link number out of range",
 
@@ -317,7 +323,8 @@ fn desc(errno: Errno) -> &'static str {
             linux_android,
             solarish,
             target_os = "aix",
-            target_os = "fuchsia"
+            target_os = "fuchsia",
+            target_os = "emscripten",
         ))]
         EUNATCH => "Protocol driver not attached",
 
@@ -325,7 +332,8 @@ fn desc(errno: Errno) -> &'static str {
             linux_android,
             solarish,
             target_os = "aix",
-            target_os = "fuchsia"
+            target_os = "fuchsia",
+            target_os = "emscripten",
         ))]
         ENOCSI => "No CSI structure available",
 
@@ -333,36 +341,73 @@ fn desc(errno: Errno) -> &'static str {
             linux_android,
             solarish,
             target_os = "aix",
-            target_os = "fuchsia"
+            target_os = "fuchsia",
+            target_os = "emscripten",
         ))]
         EL2HLT => "Level 2 halted",
 
-        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
+        #[cfg(any(
+            linux_android,
+            solarish,
+            target_os = "fuchsia",
+            target_os = "emscripten",
+        ))]
         EBADE => "Invalid exchange",
 
-        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
+        #[cfg(any(
+            linux_android,
+            solarish,
+            target_os = "fuchsia",
+            target_os = "emscripten",
+        ))]
         EBADR => "Invalid request descriptor",
 
-        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
+        #[cfg(any(
+            linux_android,
+            solarish,
+            target_os = "fuchsia",
+            target_os = "emscripten",
+        ))]
         EXFULL => "Exchange full",
 
-        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
+        #[cfg(any(
+            linux_android,
+            solarish,
+            target_os = "fuchsia",
+            target_os = "emscripten",
+        ))]
         ENOANO => "No anode",
 
-        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
+        #[cfg(any(
+            linux_android,
+            solarish,
+            target_os = "fuchsia",
+            target_os = "emscripten",
+        ))]
         EBADRQC => "Invalid request code",
 
-        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
+        #[cfg(any(
+            linux_android,
+            solarish,
+            target_os = "fuchsia",
+            target_os = "emscripten",
+        ))]
         EBADSLT => "Invalid slot",
 
-        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
+        #[cfg(any(
+            linux_android,
+            solarish,
+            target_os = "fuchsia",
+            target_os = "emscripten",
+        ))]
         EBFONT => "Bad font file format",
 
         #[cfg(any(
             linux_android,
             solarish,
             target_os = "fuchsia",
-            target_os = "hurd"
+            target_os = "hurd",
+            target_os = "emscripten",
         ))]
         ENOSTR => "Device not a stream",
 
@@ -370,7 +415,8 @@ fn desc(errno: Errno) -> &'static str {
             linux_android,
             solarish,
             target_os = "fuchsia",
-            target_os = "hurd"
+            target_os = "hurd",
+            target_os = "emscripten",
         ))]
         ENODATA => "No data available",
 
@@ -378,7 +424,8 @@ fn desc(errno: Errno) -> &'static str {
             linux_android,
             solarish,
             target_os = "fuchsia",
-            target_os = "hurd"
+            target_os = "hurd",
+            target_os = "emscripten",
         ))]
         ETIME => "Timer expired",
 
@@ -386,21 +433,33 @@ fn desc(errno: Errno) -> &'static str {
             linux_android,
             solarish,
             target_os = "fuchsia",
-            target_os = "hurd"
+            target_os = "hurd",
+            target_os = "emscripten",
         ))]
         ENOSR => "Out of streams resources",
 
-        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
+        #[cfg(any(
+            linux_android,
+            solarish,
+            target_os = "fuchsia",
+            target_os = "emscripten",
+        ))]
         ENONET => "Machine is not on the network",
 
-        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
+        #[cfg(any(
+            linux_android,
+            solarish,
+            target_os = "fuchsia",
+            target_os = "emscripten",
+        ))]
         ENOPKG => "Package not installed",
 
         #[cfg(any(
             linux_android,
             solarish,
             target_os = "fuchsia",
-            target_os = "hurd"
+            target_os = "hurd",
+            target_os = "emscripten",
         ))]
         EREMOTE => "Object is remote",
 
@@ -408,17 +467,33 @@ fn desc(errno: Errno) -> &'static str {
             linux_android,
             solarish,
             target_os = "aix",
-            target_os = "fuchsia"
+            target_os = "fuchsia",
+            target_os = "emscripten",
         ))]
         ENOLINK => "Link has been severed",
 
-        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
+        #[cfg(any(
+            linux_android,
+            solarish,
+            target_os = "fuchsia",
+            target_os = "emscripten",
+        ))]
         EADV => "Advertise error",
 
-        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
+        #[cfg(any(
+            linux_android,
+            solarish,
+            target_os = "fuchsia",
+            target_os = "emscripten",
+        ))]
         ESRMNT => "Srmount error",
 
-        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
+        #[cfg(any(
+            linux_android,
+            solarish,
+            target_os = "fuchsia",
+            target_os = "emscripten",
+        ))]
         ECOMM => "Communication error on send",
 
         #[cfg(any(
@@ -426,6 +501,7 @@ fn desc(errno: Errno) -> &'static str {
             solarish,
             target_os = "aix",
             target_os = "fuchsia",
+            target_os = "emscripten",
         ))]
         EPROTO => "Protocol error",
 
@@ -433,14 +509,24 @@ fn desc(errno: Errno) -> &'static str {
             linux_android,
             solarish,
             target_os = "aix",
-            target_os = "fuchsia"
+            target_os = "fuchsia",
+            target_os = "emscripten",
         ))]
         EMULTIHOP => "Multihop attempted",
 
-        #[cfg(any(linux_android, target_os = "fuchsia"))]
+        #[cfg(any(
+            linux_android,
+            target_os = "fuchsia",
+            target_os = "emscripten",
+        ))]
         EDOTDOT => "RFS specific error",
 
-        #[cfg(any(linux_android, target_os = "aix", target_os = "fuchsia"))]
+        #[cfg(any(
+            linux_android,
+            target_os = "aix",
+            target_os = "fuchsia",
+            target_os = "emscripten",
+        ))]
         EBADMSG => "Not a data message",
 
         #[cfg(solarish)]
@@ -451,36 +537,73 @@ fn desc(errno: Errno) -> &'static str {
             target_os = "aix",
             target_os = "fuchsia",
             target_os = "haiku",
-            target_os = "hurd"
+            target_os = "hurd",
+            target_os = "emscripten",
         ))]
         EOVERFLOW => "Value too large for defined data type",
 
-        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
+        #[cfg(any(
+            linux_android,
+            solarish,
+            target_os = "fuchsia",
+            target_os = "emscripten",
+        ))]
         ENOTUNIQ => "Name not unique on network",
 
-        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
+        #[cfg(any(
+            linux_android,
+            solarish,
+            target_os = "fuchsia",
+            target_os = "emscripten",
+        ))]
         EBADFD => "File descriptor in bad state",
 
-        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
+        #[cfg(any(
+            linux_android,
+            solarish,
+            target_os = "fuchsia",
+            target_os = "emscripten",
+        ))]
         EREMCHG => "Remote address changed",
 
-        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
+        #[cfg(any(
+            linux_android,
+            solarish,
+            target_os = "fuchsia",
+            target_os = "emscripten",
+        ))]
         ELIBACC => "Can not access a needed shared library",
 
-        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
+        #[cfg(any(
+            linux_android,
+            solarish,
+            target_os = "fuchsia",
+            target_os = "emscripten",
+        ))]
         ELIBBAD => "Accessing a corrupted shared library",
 
-        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
+        #[cfg(any(
+            linux_android,
+            solarish,
+            target_os = "fuchsia",
+            target_os = "emscripten",
+        ))]
         ELIBSCN => ".lib section in a.out corrupted",
 
-        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
+        #[cfg(any(
+            linux_android,
+            solarish,
+            target_os = "fuchsia",
+            target_os = "emscripten",
+        ))]
         ELIBMAX => "Attempting to link in too many shared libraries",
 
         #[cfg(any(
             linux_android,
             solarish,
             target_os = "fuchsia",
-            target_os = "hurd"
+            target_os = "hurd",
+            target_os = "emscripten",
         ))]
         ELIBEXEC => "Cannot exec a shared library directly",
 
@@ -489,7 +612,8 @@ fn desc(errno: Errno) -> &'static str {
             solarish,
             target_os = "aix",
             target_os = "fuchsia",
-            target_os = "openbsd"
+            target_os = "openbsd",
+            target_os = "emscripten",
         ))]
         EILSEQ => "Illegal byte sequence",
 
@@ -497,57 +621,100 @@ fn desc(errno: Errno) -> &'static str {
             linux_android,
             solarish,
             target_os = "aix",
-            target_os = "fuchsia"
+            target_os = "fuchsia",
+            target_os = "emscripten",
         ))]
         ERESTART => "Interrupted system call should be restarted",
 
-        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
+        #[cfg(any(
+            linux_android,
+            solarish,
+            target_os = "fuchsia",
+            target_os = "emscripten",
+        ))]
         ESTRPIPE => "Streams pipe error",
 
-        #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
+        #[cfg(any(
+            linux_android,
+            solarish,
+            target_os = "fuchsia",
+            target_os = "emscripten",
+        ))]
         EUSERS => "Too many users",
 
         #[cfg(any(
             linux_android,
             target_os = "fuchsia",
             target_os = "netbsd",
-            target_os = "redox"
+            target_os = "redox",
+            target_os = "emscripten",
         ))]
         EOPNOTSUPP => "Operation not supported on transport endpoint",
 
-        #[cfg(any(linux_android, target_os = "fuchsia", target_os = "hurd"))]
+        #[cfg(any(
+            linux_android,
+            target_os = "fuchsia",
+            target_os = "hurd",
+            target_os = "emscripten",
+        ))]
         ESTALE => "Stale file handle",
 
-        #[cfg(any(linux_android, target_os = "fuchsia"))]
+        #[cfg(any(
+            linux_android,
+            target_os = "fuchsia",
+            target_os = "emscripten",
+        ))]
         EUCLEAN => "Structure needs cleaning",
 
-        #[cfg(any(linux_android, target_os = "fuchsia"))]
+        #[cfg(any(
+            linux_android,
+            target_os = "fuchsia",
+            target_os = "emscripten",
+        ))]
         ENOTNAM => "Not a XENIX named type file",
 
-        #[cfg(any(linux_android, target_os = "fuchsia"))]
+        #[cfg(any(
+            linux_android,
+            target_os = "fuchsia",
+            target_os = "emscripten",
+        ))]
         ENAVAIL => "No XENIX semaphores available",
 
-        #[cfg(any(linux_android, target_os = "fuchsia"))]
+        #[cfg(any(
+            linux_android,
+            target_os = "fuchsia",
+            target_os = "emscripten",
+        ))]
         EISNAM => "Is a named type file",
 
-        #[cfg(any(linux_android, target_os = "fuchsia"))]
+        #[cfg(any(
+            linux_android,
+            target_os = "fuchsia",
+            target_os = "emscripten",
+        ))]
         EREMOTEIO => "Remote I/O error",
 
-        #[cfg(any(linux_android, target_os = "fuchsia"))]
+        #[cfg(any(
+            linux_android,
+            target_os = "fuchsia",
+            target_os = "emscripten",
+        ))]
         EDQUOT => "Quota exceeded",
 
         #[cfg(any(
             linux_android,
             target_os = "fuchsia",
             target_os = "openbsd",
-            target_os = "dragonfly"
+            target_os = "dragonfly",
+            target_os = "emscripten",
         ))]
         ENOMEDIUM => "No medium found",
 
         #[cfg(any(
             linux_android,
             target_os = "fuchsia",
-            target_os = "openbsd"
+            target_os = "openbsd",
+            target_os = "emscripten",
         ))]
         EMEDIUMTYPE => "Wrong medium type",
 
@@ -555,34 +722,57 @@ fn desc(errno: Errno) -> &'static str {
             linux_android,
             solarish,
             target_os = "fuchsia",
-            target_os = "haiku"
+            target_os = "haiku",
+            target_os = "emscripten",
         ))]
         ECANCELED => "Operation canceled",
 
-        #[cfg(any(linux_android, target_os = "fuchsia"))]
+        #[cfg(any(
+            linux_android,
+            target_os = "fuchsia",
+            target_os = "emscripten",
+        ))]
         ENOKEY => "Required key not available",
 
-        #[cfg(any(linux_android, target_os = "fuchsia"))]
+        #[cfg(any(
+            linux_android,
+            target_os = "fuchsia",
+            target_os = "emscripten",
+        ))]
         EKEYEXPIRED => "Key has expired",
 
-        #[cfg(any(linux_android, target_os = "fuchsia"))]
+        #[cfg(any(
+            linux_android,
+            target_os = "fuchsia",
+            target_os = "emscripten",
+        ))]
         EKEYREVOKED => "Key has been revoked",
 
-        #[cfg(any(linux_android, target_os = "fuchsia"))]
+        #[cfg(any(
+            linux_android,
+            target_os = "fuchsia",
+            target_os = "emscripten",
+        ))]
         EKEYREJECTED => "Key was rejected by service",
 
         #[cfg(any(
             linux_android,
             target_os = "aix",
             target_os = "fuchsia",
-            target_os = "hurd"
+            target_os = "hurd",
+            target_os = "emscripten",
         ))]
         EOWNERDEAD => "Owner died",
 
         #[cfg(solarish)]
         EOWNERDEAD => "Process died with lock",
 
-        #[cfg(any(linux_android, target_os = "aix", target_os = "fuchsia"))]
+        #[cfg(any(
+            linux_android,
+            target_os = "aix",
+            target_os = "fuchsia",
+            target_os = "emscripten",
+        ))]
         ENOTRECOVERABLE => "State not recoverable",
 
         #[cfg(solarish)]
@@ -590,13 +780,15 @@ fn desc(errno: Errno) -> &'static str {
 
         #[cfg(any(
             all(target_os = "linux", not(target_arch = "mips")),
-            target_os = "fuchsia"
+            target_os = "fuchsia",
+            target_os = "emscripten",
         ))]
         ERFKILL => "Operation not possible due to RF-kill",
 
         #[cfg(any(
             all(target_os = "linux", not(target_arch = "mips")),
-            target_os = "fuchsia"
+            target_os = "fuchsia",
+            target_os = "emscripten",
         ))]
         EHWPOISON => "Memory page has hardware error",
 
@@ -832,7 +1024,7 @@ fn desc(errno: Errno) -> &'static str {
     }
 }
 
-#[cfg(any(linux_android, target_os = "fuchsia"))]
+#[cfg(any(linux_android, target_os = "fuchsia", target_os = "emscripten"))]
 mod consts {
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     #[repr(i32)]
