@@ -800,6 +800,9 @@ pub enum FcntlArg<'a> {
     /// Issue an advisory read async with no copy to user
     #[cfg(apple_targets)]
     F_RDADVISE(libc::radvisory),
+    /// Turn read ahead off/on
+    #[cfg(apple_targets)]
+    F_RDAHEAD(bool)
     // TODO: Rest of flags
 }
 
@@ -911,6 +914,11 @@ pub fn fcntl<Fd: std::os::fd::AsFd>(fd: Fd, arg: FcntlArg) -> Result<c_int> {
             #[cfg(apple_targets)]
             F_RDADVISE(rad) => {
                 libc::fcntl(fd, libc::F_RDADVISE, &rad)
+            }
+            #[cfg(apple_targets)]
+            F_RDAHEAD(on) => {
+                let val = if on { 1 } else { 0 };
+                libc::fcntl(fd, libc::F_RDAHEAD, val)
             }
         }
     };
