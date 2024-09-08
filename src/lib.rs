@@ -43,7 +43,7 @@
 #![crate_name = "nix"]
 #![cfg(unix)]
 #![allow(non_camel_case_types)]
-// A clear document is a good document no matter if it has a summary in its 
+// A clear document is a good document no matter if it has a summary in its
 // first paragraph or not.
 #![allow(clippy::too_long_first_doc_paragraph)]
 #![recursion_limit = "500"]
