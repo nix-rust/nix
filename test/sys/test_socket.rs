@@ -1554,9 +1554,8 @@ fn test_impl_scm_credentials_and_rights(
         recvmsg, sendmsg, setsockopt, socketpair, ControlMessage,
         ControlMessageOwned, MsgFlags, SockFlag, SockType,
     };
-    use nix::unistd::{close, getgid, getpid, getuid, pipe, write};
+    use nix::unistd::{getgid, getpid, getuid, pipe, write};
     use std::io::{IoSlice, IoSliceMut};
-    use std::os::fd::BorrowedFd;
 
     let (send, recv) = socketpair(
         AddressFamily::Unix,
@@ -1613,7 +1612,7 @@ fn test_impl_scm_credentials_and_rights(
         for cmsg in msg.cmsgs()? {
             match cmsg {
                 ControlMessageOwned::ScmRights(mut fds) => {
-                    assert_eq!(received_r, None, "already received fd");
+                    assert!(received_r.is_none(), "already received fd");
                     assert_eq!(fds.len(), 1);
                     received_r = Some(fds.pop().unwrap());
                 }
