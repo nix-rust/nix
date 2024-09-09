@@ -914,9 +914,7 @@ pub fn test_scm_rights() {
         unsafe { std::os::fd::BorrowedFd::borrow_raw(received_r) };
     read(borrowed_received_r, &mut buf).unwrap();
     assert_eq!(&buf[..], b"world");
-    // SAFETY:
-    // there shouldn't be double close
-    unsafe { close(received_r).unwrap() };
+    close(received_r).unwrap();
 }
 
 // Disable the test on emulated platforms due to not enabled support of AF_ALG in QEMU from rust cross
@@ -1645,9 +1643,7 @@ fn test_impl_scm_credentials_and_rights(
         unsafe { std::os::fd::BorrowedFd::borrow_raw(received_r) };
     read(received_r_borrowed, &mut buf).unwrap();
     assert_eq!(&buf[..], b"world");
-    // SAFETY:
-    // double-close won't happen
-    unsafe { close(received_r).unwrap() };
+    close(received_r).unwrap();
 
     Ok(())
 }

@@ -252,11 +252,7 @@ impl Drop for FanotifyEvent {
         if self.0.fd == libc::FAN_NOFD {
             return;
         }
-        // SAFETY:
-        //
-        // If this fd is not `FAN_NOFD`, then it should be a valid, owned file
-        // descriptor, which means we can safely close it.
-        let e = unsafe { close(self.0.fd) };
+        let e = close(self.0.fd);
         if !std::thread::panicking() && e == Err(Errno::EBADF) {
             panic!("Closing an invalid file descriptor!");
         };
