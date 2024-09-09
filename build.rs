@@ -27,14 +27,7 @@ fn main() {
         solarish: { any(illumos, solaris) },
     }
 
-    // Below are Nix's custom cfg values that we need to let the compiler know
-    println!("cargo:rustc-check-cfg=cfg(apple_targets)");
-    println!("cargo:rustc-check-cfg=cfg(bsd)");
-    println!("cargo:rustc-check-cfg=cfg(bsd_without_apple)");
-    println!("cargo:rustc-check-cfg=cfg(linux_android)");
-    println!("cargo:rustc-check-cfg=cfg(freebsdlike)");
-    println!("cargo:rustc-check-cfg=cfg(netbsdlike)");
-    println!("cargo:rustc-check-cfg=cfg(solarish)");
+    // Below are custom cfg values set during some CI steps.
     println!("cargo:rustc-check-cfg=cfg(fbsd14)");
     println!("cargo:rustc-check-cfg=cfg(qemu)");
 }
