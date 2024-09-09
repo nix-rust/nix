@@ -20,8 +20,8 @@ use std::os::unix::io::{AsFd, AsRawFd, BorrowedFd, FromRawFd, OwnedFd, RawFd};
 use std::ptr;
 
 libc_bitflags! {
-    /// Mask for defining which events shall be listened with
-    /// [`fanotify_mark`](fn.fanotify_mark.html) and for querying notifications.
+    /// Mask for defining which events shall be listened with [`Fanotify::mark()`]
+    /// and for querying notifications.
     pub struct MaskFlags: u64 {
         /// File was accessed.
         FAN_ACCESS;
@@ -80,7 +80,7 @@ libc_bitflags! {
 }
 
 libc_bitflags! {
-    /// Configuration options for [`fanotify_init`](fn.fanotify_init.html).
+    /// Configuration options for [`Fanotify::init()`].
     pub struct InitFlags: libc::c_uint {
         /// Close-on-exec flag set on the file descriptor.
         FAN_CLOEXEC;
@@ -162,7 +162,7 @@ impl From<EventFFlags> for OFlag {
 }
 
 libc_bitflags! {
-    /// Configuration options for [`fanotify_mark`](fn.fanotify_mark.html).
+    /// Configuration options for [`Fanotify::mark()`].
     pub struct MarkFlags: libc::c_uint {
         /// Add the events to the marks.
         FAN_MARK_ADD;
@@ -198,8 +198,8 @@ libc_bitflags! {
 /// Compile version number of fanotify API.
 pub const FANOTIFY_METADATA_VERSION: u8 = libc::FANOTIFY_METADATA_VERSION;
 
-/// Abstract over `libc::fanotify_event_metadata`, which represents an event
-/// received via `Fanotify::read_events`.
+/// Abstract over [`libc::fanotify_event_metadata`], which represents an event
+/// received via [`Fanotify::read_events`].
 // Is not Clone due to fd field, to avoid use-after-close scenarios.
 #[derive(Debug, Eq, Hash, PartialEq)]
 #[repr(transparent)]
@@ -285,7 +285,7 @@ impl<'a> FanotifyResponse<'a> {
 }
 
 libc_bitflags! {
-    /// Response to be wrapped in `FanotifyResponse` and sent to the `Fanotify`
+    /// Response to be wrapped in [`FanotifyResponse`] and sent to the [`Fanotify`]
     /// group to allow or deny an event.
     pub struct Response: u32 {
         /// Allow the event.
