@@ -48,6 +48,7 @@
 #![allow(clippy::too_long_first_doc_paragraph)]
 #![recursion_limit = "500"]
 #![deny(unused)]
+#![deny(unexpected_cfgs)]
 #![allow(unused_macros)]
 #![cfg_attr(
     not(all(
