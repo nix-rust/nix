@@ -1340,38 +1340,9 @@ pub fn gethostname() -> Result<OsString> {
 
 /// Close a file descriptor.
 ///
-/// # Safety
-///
-/// If you pass a `RawFd` to this function, ensure that this `close()` won't
-/// trigger a double close.
-///
-/// ```no_run
-/// use std::os::unix::io::AsRawFd;
-/// use nix::unistd::close;
-///
-/// let f = tempfile::tempfile().unwrap();
-/// // SAFETY:
-/// //
-/// // NOT safe!  f will also close on drop!
-/// unsafe { close(f.as_raw_fd()).unwrap() };
-/// ```
-///
-/// We should pass `f` by value:
-///
-/// In the following case, it is generally preferred to call `drop(f)` rather
-/// than `close()`.
-///
-/// ```rust
-/// use std::os::unix::io::IntoRawFd;
-/// use nix::unistd::close;
-///
-/// let f = tempfile::tempfile().unwrap();
-/// // SAFETY:
-/// //
-/// // We are safe!  `into_raw_fd()` consumes f
-/// unsafe { close(f).unwrap() };
-/// ```
-pub unsafe fn close<Fd: std::os::fd::IntoRawFd>(fd: Fd) -> Result<()> {
+/// If `fd` is an owned file descriptor, it is generally preferred to call
+/// `drop(fd)` rather than `close(fd)`.
+pub fn close<Fd: std::os::fd::IntoRawFd>(fd: Fd) -> Result<()> {
     let res = unsafe { libc::close(fd.into_raw_fd()) };
     Errno::result(res).map(drop)
 }
