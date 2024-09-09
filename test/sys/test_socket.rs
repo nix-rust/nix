@@ -1556,6 +1556,7 @@ fn test_impl_scm_credentials_and_rights(
     };
     use nix::unistd::{close, getgid, getpid, getuid, pipe, write};
     use std::io::{IoSlice, IoSliceMut};
+    use std::os::fd::BorrowedFd;
 
     let (send, recv) = socketpair(
         AddressFamily::Unix,
@@ -1567,7 +1568,7 @@ fn test_impl_scm_credentials_and_rights(
     setsockopt(&recv, PassCred, &true).unwrap();
 
     let (r, w) = pipe().unwrap();
-    let mut received_r: Option<RawFd> = None;
+    let mut received_r: Option<BorrowedFd> = None;
 
     {
         let iov = [IoSlice::new(b"hello")];
@@ -1577,7 +1578,7 @@ fn test_impl_scm_credentials_and_rights(
             gid: getgid().as_raw(),
         }
         .into();
-        let fds = [r.as_raw_fd()];
+        let fds = [r.as_fd()];
         let cmsgs = [
             ControlMessage::ScmCredentials(&cred),
             ControlMessage::ScmRights(&fds),
@@ -1611,10 +1612,10 @@ fn test_impl_scm_credentials_and_rights(
 
         for cmsg in msg.cmsgs()? {
             match cmsg {
-                ControlMessageOwned::ScmRights(fds) => {
+                ControlMessageOwned::ScmRights(mut fds) => {
                     assert_eq!(received_r, None, "already received fd");
                     assert_eq!(fds.len(), 1);
-                    received_r = Some(fds[0]);
+                    received_r = Some(fds.pop().unwrap());
                 }
                 ControlMessageOwned::ScmCredentials(cred) => {
                     assert!(received_cred.is_none());
@@ -1637,16 +1638,8 @@ fn test_impl_scm_credentials_and_rights(
     // Ensure that the received file descriptor works
     write(&w, b"world").unwrap();
     let mut buf = [0u8; 5];
-    // SAFETY:
-    // It should be safe if we don't use this BorrowedFd after close.
-    let received_r_borrowed =
-        unsafe { std::os::fd::BorrowedFd::borrow_raw(received_r) };
-    read(received_r_borrowed, &mut buf).unwrap();
+    read(&received_r, &mut buf).unwrap();
     assert_eq!(&buf[..], b"world");
-    // SAFETY:
-    // double-close won't happen
-    unsafe { close(received_r).unwrap() };
-
     Ok(())
 }
 
