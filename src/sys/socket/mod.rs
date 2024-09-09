@@ -19,7 +19,7 @@ use libc::{
 use std::io::{IoSlice, IoSliceMut};
 #[cfg(feature = "net")]
 use std::net;
-use std::os::unix::io::{AsFd, AsRawFd, FromRawFd, OwnedFd, RawFd};
+use std::os::unix::io::{AsFd, AsRawFd, FromRawFd, OwnedFd, RawFd, BorrowedFd};
 use std::{mem, ptr};
 
 #[deny(missing_docs)]
@@ -34,6 +34,9 @@ pub mod sockopt;
  */
 
 pub use self::addr::{SockaddrLike, SockaddrStorage};
+
+#[cfg(feature = "net")]
+use crate::sys::socket::addr::{ipv4addr_to_libc, ipv6addr_to_libc};
 
 #[cfg(solarish)]
 pub use self::addr::{AddressFamily, UnixAddr};
@@ -61,9 +64,6 @@ pub use libc::{cmsghdr, msghdr};
 pub use libc::{sa_family_t, sockaddr, sockaddr_storage, sockaddr_un};
 #[cfg(feature = "net")]
 pub use libc::{sockaddr_in, sockaddr_in6};
-
-#[cfg(feature = "net")]
-use crate::sys::socket::addr::{ipv4addr_to_libc, ipv6addr_to_libc};
 
 /// These constants are used to specify the communication semantics
 /// when creating a socket with [`socket()`](fn.socket.html)
@@ -556,16 +556,16 @@ feature! {
 /// ```
 /// # #[macro_use] extern crate nix;
 /// # use nix::sys::time::TimeVal;
-/// # use std::os::unix::io::RawFd;
+/// # use std::os::fd::OwnedFd;
 /// # fn main() {
 /// // Create a buffer for a `ControlMessageOwned::ScmTimestamp` message
 /// let _ = cmsg_space!(TimeVal);
 /// // Create a buffer big enough for a `ControlMessageOwned::ScmRights` message
 /// // with two file descriptors
-/// let _ = cmsg_space!([RawFd; 2]);
+/// let _ = cmsg_space!([OwnedFd; 2]);
 /// // Create a buffer big enough for a `ControlMessageOwned::ScmRights` message
 /// // and a `ControlMessageOwned::ScmTimestamp` message
-/// let _ = cmsg_space!(RawFd, TimeVal);
+/// let _ = cmsg_space!(OwnedFd, TimeVal);
 /// # }
 /// ```
 #[macro_export]
@@ -655,11 +655,11 @@ impl<'a> Iterator for CmsgIterator<'a> {
 //  alignment issues.
 //
 //  See https://github.com/nix-rust/nix/issues/999
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Debug)]
 #[non_exhaustive]
 pub enum ControlMessageOwned {
     /// Received version of [`ControlMessage::ScmRights`]
-    ScmRights(Vec<RawFd>),
+    ScmRights(Vec<OwnedFd>),
     /// Received version of [`ControlMessage::ScmCredentials`]
     #[cfg(linux_android)]
     ScmCredentials(UnixCredentials),
@@ -908,11 +908,11 @@ impl ControlMessageOwned {
             - p as usize;
         match (header.cmsg_level, header.cmsg_type) {
             (libc::SOL_SOCKET, libc::SCM_RIGHTS) => {
-                let n = len / mem::size_of::<RawFd>();
+                let n = len / mem::size_of::<OwnedFd>();
                 let mut fds = Vec::with_capacity(n);
                 for i in 0..n {
                     unsafe {
-                        let fdp = (p as *const RawFd).add(i);
+                        let fdp = (p as *const OwnedFd).add(i);
                         fds.push(ptr::read_unaligned(fdp));
                     }
                 }
@@ -1094,7 +1094,7 @@ impl ControlMessageOwned {
 /// pattern-match it.
 ///
 /// [Further reading](https://man7.org/linux/man-pages/man3/cmsg.3.html)
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug)]
 #[non_exhaustive]
 pub enum ControlMessage<'a> {
     /// A message of type `SCM_RIGHTS`, containing an array of file
@@ -1108,7 +1108,7 @@ pub enum ControlMessage<'a> {
     /// swallow all but the first `ScmRights` message or fail with `EINVAL`.
     /// Instead, you can put all fds to be passed into a single `ScmRights`
     /// message.
-    ScmRights(&'a [RawFd]),
+    ScmRights(&'a [BorrowedFd<'a>]),
     /// A message of type `SCM_CREDENTIALS`, containing the pid, uid and gid of
     /// a process connected to the socket.
     ///
@@ -1586,13 +1586,14 @@ impl<'a> ControlMessage<'a> {
 /// # use nix::unistd::pipe;
 /// # use std::io::IoSlice;
 /// # use std::os::unix::io::AsRawFd;
+/// # use std::os::unix::io::AsFd;
 /// let (fd1, fd2) = socketpair(AddressFamily::Unix, SockType::Stream, None,
 ///     SockFlag::empty())
 ///     .unwrap();
 /// let (r, w) = pipe().unwrap();
 ///
 /// let iov = [IoSlice::new(b"hello")];
-/// let fds = [r.as_raw_fd()];
+/// let fds = [r.as_fd()];
 /// let cmsg = ControlMessage::ScmRights(&fds);
 /// sendmsg::<()>(fd1.as_raw_fd(), &iov, &[cmsg], MsgFlags::empty(), None).unwrap();
 /// ```
@@ -1602,6 +1603,7 @@ impl<'a> ControlMessage<'a> {
 /// # use nix::unistd::pipe;
 /// # use std::io::IoSlice;
 /// # use std::str::FromStr;
+/// # use std::os::unix::io::AsFd;
 /// # use std::os::unix::io::AsRawFd;
 /// let localhost = SockaddrIn::from_str("1.2.3.4:8080").unwrap();
 /// let fd = socket(AddressFamily::Inet, SockType::Datagram, SockFlag::empty(),
@@ -1609,7 +1611,7 @@ impl<'a> ControlMessage<'a> {
 /// let (r, w) = pipe().unwrap();
 ///
 /// let iov = [IoSlice::new(b"hello")];
-/// let fds = [r.as_raw_fd()];
+/// let fds = [r.as_fd()];
 /// let cmsg = ControlMessage::ScmRights(&fds);
 /// sendmsg(fd.as_raw_fd(), &iov, &[cmsg], MsgFlags::empty(), Some(&localhost)).unwrap();
 /// ```
