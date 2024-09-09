@@ -1568,7 +1568,7 @@ fn test_impl_scm_credentials_and_rights(
     setsockopt(&recv, PassCred, &true).unwrap();
 
     let (r, w) = pipe().unwrap();
-    let mut received_r: Option<BorrowedFd> = None;
+    let mut received_r = None;
 
     {
         let iov = [IoSlice::new(b"hello")];
