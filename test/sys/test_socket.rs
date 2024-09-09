@@ -5,6 +5,7 @@ use nix::sys::socket::{getsockname, AddressFamily, UnixAddr};
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::net::{SocketAddrV4, SocketAddrV6};
+use std::os::fd::AsFd;
 use std::os::unix::io::{AsRawFd, RawFd};
 use std::path::Path;
 use std::slice;
@@ -846,8 +847,9 @@ pub fn test_scm_rights() {
         recvmsg, sendmsg, socketpair, AddressFamily, ControlMessage,
         ControlMessageOwned, MsgFlags, SockFlag, SockType,
     };
-    use nix::unistd::{close, pipe, read, write};
+    use nix::unistd::{pipe, read, write};
     use std::io::{IoSlice, IoSliceMut};
+    use std::os::fd::OwnedFd;
 
     let (fd1, fd2) = socketpair(
         AddressFamily::Unix,
@@ -857,11 +859,11 @@ pub fn test_scm_rights() {
     )
     .unwrap();
     let (r, w) = pipe().unwrap();
-    let mut received_r: Option<RawFd> = None;
+    let mut received_r: Option<OwnedFd> = None;
 
     {
         let iov = [IoSlice::new(b"hello")];
-        let fds = [r.as_raw_fd()];
+        let fds = [r.as_fd()];
         let cmsg = ControlMessage::ScmRights(&fds);
         assert_eq!(
             sendmsg::<()>(
@@ -890,10 +892,10 @@ pub fn test_scm_rights() {
         .unwrap();
 
         for cmsg in msg.cmsgs().unwrap() {
-            if let ControlMessageOwned::ScmRights(fd) = cmsg {
-                assert_eq!(received_r, None);
+            if let ControlMessageOwned::ScmRights(mut fd) = cmsg {
+                assert!(received_r.is_none());
                 assert_eq!(fd.len(), 1);
-                received_r = Some(fd[0]);
+                received_r = Some(fd.pop().unwrap());
             } else {
                 panic!("unexpected cmsg");
             }
@@ -908,15 +910,8 @@ pub fn test_scm_rights() {
     // Ensure that the received file descriptor works
     write(&w, b"world").unwrap();
     let mut buf = [0u8; 5];
-    // SAFETY:
-    // should be safe since we don't use it after close
-    let borrowed_received_r =
-        unsafe { std::os::fd::BorrowedFd::borrow_raw(received_r) };
-    read(borrowed_received_r, &mut buf).unwrap();
+    read(&received_r, &mut buf).unwrap();
     assert_eq!(&buf[..], b"world");
-    // SAFETY:
-    // there shouldn't be double close
-    unsafe { close(received_r).unwrap() };
 }
 
 // Disable the test on emulated platforms due to not enabled support of AF_ALG in QEMU from rust cross
@@ -1333,7 +1328,8 @@ fn test_scm_rights_single_cmsg_multiple_fds() {
         recvmsg, sendmsg, ControlMessage, ControlMessageOwned, MsgFlags,
     };
     use std::io::{IoSlice, IoSliceMut};
-    use std::os::unix::io::{AsRawFd, RawFd};
+    use std::os::fd::BorrowedFd;
+    use std::os::unix::io::AsRawFd;
     use std::os::unix::net::UnixDatagram;
     use std::thread;
 
@@ -1342,7 +1338,7 @@ fn test_scm_rights_single_cmsg_multiple_fds() {
         let mut buf = [0u8; 8];
         let mut iovec = [IoSliceMut::new(&mut buf)];
 
-        let mut space = cmsg_space!([RawFd; 2]);
+        let mut space = cmsg_space!([BorrowedFd; 2]);
         let msg = recvmsg::<()>(
             receive.as_raw_fd(),
             &mut iovec,
@@ -1374,7 +1370,9 @@ fn test_scm_rights_single_cmsg_multiple_fds() {
 
     let slice = [1u8, 2, 3, 4, 5, 6, 7, 8];
     let iov = [IoSlice::new(&slice)];
-    let fds = [libc::STDIN_FILENO, libc::STDOUT_FILENO]; // pass stdin and stdout
+    let stdin_owned = std::io::stdin();
+    let stdout_owned = std::io::stdout();
+    let fds = [stdin_owned.as_fd(), stdout_owned.as_fd()]; // pass stdin and stdout
     let cmsg = [ControlMessage::ScmRights(&fds)];
     sendmsg::<()>(send.as_raw_fd(), &iov, &cmsg, MsgFlags::empty(), None)
         .unwrap();
@@ -1556,7 +1554,7 @@ fn test_impl_scm_credentials_and_rights(
         recvmsg, sendmsg, setsockopt, socketpair, ControlMessage,
         ControlMessageOwned, MsgFlags, SockFlag, SockType,
     };
-    use nix::unistd::{close, getgid, getpid, getuid, pipe, write};
+    use nix::unistd::{getgid, getpid, getuid, pipe, write};
     use std::io::{IoSlice, IoSliceMut};
 
     let (send, recv) = socketpair(
@@ -1569,7 +1567,7 @@ fn test_impl_scm_credentials_and_rights(
     setsockopt(&recv, PassCred, &true).unwrap();
 
     let (r, w) = pipe().unwrap();
-    let mut received_r: Option<RawFd> = None;
+    let mut received_r = None;
 
     {
         let iov = [IoSlice::new(b"hello")];
@@ -1579,7 +1577,7 @@ fn test_impl_scm_credentials_and_rights(
             gid: getgid().as_raw(),
         }
         .into();
-        let fds = [r.as_raw_fd()];
+        let fds = [r.as_fd()];
         let cmsgs = [
             ControlMessage::ScmCredentials(&cred),
             ControlMessage::ScmRights(&fds),
@@ -1613,10 +1611,10 @@ fn test_impl_scm_credentials_and_rights(
 
         for cmsg in msg.cmsgs()? {
             match cmsg {
-                ControlMessageOwned::ScmRights(fds) => {
-                    assert_eq!(received_r, None, "already received fd");
+                ControlMessageOwned::ScmRights(mut fds) => {
+                    assert!(received_r.is_none(), "already received fd");
                     assert_eq!(fds.len(), 1);
-                    received_r = Some(fds[0]);
+                    received_r = Some(fds.pop().unwrap());
                 }
                 ControlMessageOwned::ScmCredentials(cred) => {
                     assert!(received_cred.is_none());
@@ -1639,16 +1637,8 @@ fn test_impl_scm_credentials_and_rights(
     // Ensure that the received file descriptor works
     write(&w, b"world").unwrap();
     let mut buf = [0u8; 5];
-    // SAFETY:
-    // It should be safe if we don't use this BorrowedFd after close.
-    let received_r_borrowed =
-        unsafe { std::os::fd::BorrowedFd::borrow_raw(received_r) };
-    read(received_r_borrowed, &mut buf).unwrap();
+    read(&received_r, &mut buf).unwrap();
     assert_eq!(&buf[..], b"world");
-    // SAFETY:
-    // double-close won't happen
-    unsafe { close(received_r).unwrap() };
-
     Ok(())
 }
 
