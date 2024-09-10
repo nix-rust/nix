@@ -1986,7 +1986,8 @@ pub fn setgroups(groups: &[Gid]) -> Result<()> {
     target_os = "aix",
     solarish,
     apple_targets,
-    target_os = "redox"
+    target_os = "redox",
+    target_os = "emscripten",
 )))]
 pub fn getgrouplist(user: &CStr, group: Gid) -> Result<Vec<Gid>> {
     let ngroups_max = match sysconf(SysconfVar::NGROUPS_MAX) {
@@ -2070,7 +2071,8 @@ pub fn getgrouplist(user: &CStr, group: Gid) -> Result<Vec<Gid>> {
 #[cfg(not(any(
     apple_targets,
     target_os = "redox",
-    target_os = "haiku"
+    target_os = "haiku",
+    target_os = "emscripten",
 )))]
 pub fn initgroups(user: &CStr, group: Gid) -> Result<()> {
     cfg_if! {
@@ -3492,6 +3494,7 @@ pub struct User {
         target_os = "fuchsia",
         target_os = "haiku",
         target_os = "hurd",
+        target_os = "emscripten",
     )))]
     pub class: CString,
     /// Last password change
@@ -3502,6 +3505,7 @@ pub struct User {
         target_os = "fuchsia",
         target_os = "haiku",
         target_os = "hurd",
+        target_os = "emscripten",
     )))]
     pub change: libc::time_t,
     /// Expiration time of account
@@ -3512,6 +3516,7 @@ pub struct User {
         target_os = "fuchsia",
         target_os = "haiku",
         target_os = "hurd",
+        target_os = "emscripten",
     )))]
     pub expire: libc::time_t,
 }
@@ -3565,6 +3570,7 @@ impl From<&libc::passwd> for User {
                     target_os = "fuchsia",
                     target_os = "haiku",
                     target_os = "hurd",
+                    target_os = "emscripten",
                 )))]
                 class: CString::new(CStr::from_ptr(pw.pw_class).to_bytes())
                     .unwrap(),
@@ -3575,6 +3581,7 @@ impl From<&libc::passwd> for User {
                     target_os = "fuchsia",
                     target_os = "haiku",
                     target_os = "hurd",
+                    target_os = "emscripten",
                 )))]
                 change: pw.pw_change,
                 #[cfg(not(any(
@@ -3584,6 +3591,7 @@ impl From<&libc::passwd> for User {
                     target_os = "fuchsia",
                     target_os = "haiku",
                     target_os = "hurd",
+                    target_os = "emscripten",
                 )))]
                 expire: pw.pw_expire,
             }
@@ -3625,6 +3633,7 @@ impl From<User> for libc::passwd {
                 target_os = "fuchsia",
                 target_os = "haiku",
                 target_os = "hurd",
+                target_os = "emscripten",
             )))]
             pw_class: u.class.into_raw(),
             #[cfg(not(any(
@@ -3634,6 +3643,7 @@ impl From<User> for libc::passwd {
                 target_os = "fuchsia",
                 target_os = "haiku",
                 target_os = "hurd",
+                target_os = "emscripten",
             )))]
             pw_change: u.change,
             #[cfg(not(any(
@@ -3643,6 +3653,7 @@ impl From<User> for libc::passwd {
                 target_os = "fuchsia",
                 target_os = "haiku",
                 target_os = "hurd",
+                target_os = "emscripten",
             )))]
             pw_expire: u.expire,
             #[cfg(solarish)]
