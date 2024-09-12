@@ -39,10 +39,20 @@ pub use self::addr::{SockaddrLike, SockaddrStorage};
 pub use self::addr::{AddressFamily, UnixAddr};
 #[cfg(not(solarish))]
 pub use self::addr::{AddressFamily, UnixAddr};
-#[cfg(not(any(solarish, target_os = "haiku", target_os = "hurd", target_os = "redox")))]
+#[cfg(not(any(
+    solarish,
+    target_os = "haiku",
+    target_os = "hurd",
+    target_os = "redox"
+)))]
 #[cfg(feature = "net")]
 pub use self::addr::{LinkAddr, SockaddrIn, SockaddrIn6};
-#[cfg(any(solarish, target_os = "haiku", target_os = "hurd", target_os = "redox"))]
+#[cfg(any(
+    solarish,
+    target_os = "haiku",
+    target_os = "hurd",
+    target_os = "redox"
+))]
 #[cfg(feature = "net")]
 pub use self::addr::{SockaddrIn, SockaddrIn6};
 
@@ -794,17 +804,17 @@ pub enum ControlMessageOwned {
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv6HopLimit(i32),
 
-    /// Retrieve the DSCP (ToS) header field of the incoming IPv4 packet. 
+    /// Retrieve the DSCP (ToS) header field of the incoming IPv4 packet.
     #[cfg(any(linux_android, target_os = "freebsd"))]
     #[cfg(feature = "net")]
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv4Tos(u8),
 
-    /// Retrieve the DSCP (Traffic Class) header field of the incoming IPv6 packet. 
+    /// Retrieve the DSCP (Traffic Class) header field of the incoming IPv6 packet.
     #[cfg(any(linux_android, target_os = "freebsd"))]
     #[cfg(feature = "net")]
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
-    Ipv6TClass(i32), 
+    Ipv6TClass(i32),
 
     /// UDP Generic Receive Offload (GRO) allows receiving multiple UDP
     /// packets from a single sender.
@@ -1577,7 +1587,7 @@ impl<'a> ControlMessage<'a> {
 /// by ancillary data. Optionally direct the message at the given address,
 /// as with sendto.
 ///
-/// Allocates if cmsgs is nonempty.
+/// Allocates if cmsgs is nonempty, use [`sendmsg_prealloc()`] if you want to use a pre-allocated buffer.
 ///
 /// # Examples
 /// When not directing to any specific address, use `()` for the generic type
@@ -1622,6 +1632,29 @@ pub fn sendmsg<S>(fd: RawFd, iov: &[IoSlice<'_>], cmsgs: &[ControlMessage],
     // First size the buffer needed to hold the cmsgs.  It must be zeroed,
     // because subsequent code will not clear the padding bytes.
     let mut cmsg_buffer = vec![0u8; capacity];
+
+    let mhdr = pack_mhdr_to_send(&mut cmsg_buffer[..], iov, cmsgs, addr);
+
+    let ret = unsafe { libc::sendmsg(fd, &mhdr, flags.bits()) };
+
+    Errno::result(ret).map(|r| r as usize)
+}
+
+
+/// `sendmsg_prealloc()` is the same as [`sendmsg()`] but it accepts a preallocated
+/// `cmsg` buffer vector.
+///
+/// Send data in scatter-gather vectors to a socket, possibly accompanied
+/// by ancillary data. Optionally direct the message at the given address,
+/// as with sendto.
+pub fn sendmsg_prealloc<S>(fd: RawFd, iov: &[IoSlice<'_>], cmsgs: &[ControlMessage],
+               flags: MsgFlags, addr: Option<&S>, cmsg_buffer: &mut Vec<u8>) -> Result<usize>
+    where S: SockaddrLike
+{
+
+    if cmsg_buffer.len() < cmsgs.len() {
+        return Err(Errno::ENOBUFS);
+    }
 
     let mhdr = pack_mhdr_to_send(&mut cmsg_buffer[..], iov, cmsgs, addr);
 
@@ -2456,4 +2489,3 @@ pub fn shutdown(df: RawFd, how: Shutdown) -> Result<()> {
         Errno::result(shutdown(df, how)).map(drop)
     }
 }
-
