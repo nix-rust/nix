@@ -41,6 +41,9 @@ libc_bitflags! {
         MAP_FILE;
         /// Share this mapping. Mutually exclusive with `MAP_PRIVATE`.
         MAP_SHARED;
+        /// Force mmap to check and fail on unknown flags. This also enables `MAP_SYNC`.
+        #[cfg(any(linux_android, target_os = "linux"))]
+        MAP_SHARED_VALIDATE;
         /// Create a private copy-on-write mapping. Mutually exclusive with `MAP_SHARED`.
         MAP_PRIVATE;
         /// Place the mapping at exactly the address specified in `addr`.
@@ -142,6 +145,9 @@ libc_bitflags! {
         /// Region grows down, like a stack.
         #[cfg(any(linux_android, freebsdlike, target_os = "openbsd"))]
         MAP_STACK;
+        /// Do not write through the page caches, write directly to the file. Used for Direct Access (DAX) enabled file systems. 
+        #[cfg(any(linux_android, target_os = "linux"))]
+        MAP_SYNC;
         /// Pages in this mapping are not retained in the kernel's memory cache.
         #[cfg(apple_targets)]
         MAP_NOCACHE;
