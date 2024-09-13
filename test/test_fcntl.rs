@@ -770,3 +770,25 @@ fn test_f_rdadvise() {
     assert_eq!(contents.len(), read(&fd, &mut buf).unwrap());
     assert_eq!(contents, &buf[0..contents.len()]);
 }
+
+#[cfg(apple_targets)]
+#[test]
+fn test_f_log2phys() {
+    use nix::fcntl::*;
+
+    const CONTENTS: &[u8] = b"abcd";
+    let mut tmp = NamedTempFile::new().unwrap();
+    tmp.write_all(CONTENTS).unwrap();
+    let mut offset: libc::off_t = 0;
+    let mut res = fcntl(&tmp, FcntlArg::F_LOG2PHYS(&mut offset))
+        .expect("log2phys failed");
+    assert_ne!(res, -1);
+    assert_ne!(offset, 0);
+    let mut info: libc::log2phys = unsafe { std::mem::zeroed() };
+    info.l2p_contigbytes = CONTENTS.len() as _;
+    info.l2p_devoffset = 3;
+    res = fcntl(&tmp, FcntlArg::F_LOG2PHYS_EXT(&mut info))
+        .expect("log2phys failed");
+    assert_ne!(res, -1);
+    assert_ne!({ info.l2p_devoffset }, 3);
+}

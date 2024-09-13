@@ -808,6 +808,17 @@ pub enum FcntlArg<'a> {
     /// fstore_t field fst_bytesalloc.
     #[cfg(apple_targets)]
     F_PREALLOCATE(&'a mut libc::fstore_t),
+    #[cfg(apple_targets)]
+    /// Get disk device information. In practice,
+    /// only the file offset data is set.
+    F_LOG2PHYS(&'a mut libc::off_t),
+    #[cfg(apple_targets)]
+    /// Get disk device information. In practice,
+    /// only the file offset data is set.
+    /// The difference with F_LOG2PHYS is the struct passed
+    /// is used as both IN/OUT as both its l2p_devoffset and
+    /// l2p_contigbytes can be used for more specific queries.
+    F_LOG2PHYS_EXT(&'a mut libc::log2phys),
     // TODO: Rest of flags
 }
 
@@ -919,6 +930,18 @@ pub fn fcntl<Fd: std::os::fd::AsFd>(fd: Fd, arg: FcntlArg) -> Result<c_int> {
             #[cfg(apple_targets)]
             F_RDADVISE(rad) => {
                 libc::fcntl(fd, libc::F_RDADVISE, &rad)
+            },
+            #[cfg(apple_targets)]
+            F_LOG2PHYS(offset) => {
+                let mut info: libc::log2phys = std::mem::zeroed();
+                let res = libc::fcntl(fd, libc::F_LOG2PHYS, &mut info);
+                let ok_res = Errno::result(res)?;
+                *offset = info.l2p_devoffset;
+                return Ok(ok_res)
+            }
+            #[cfg(apple_targets)]
+            F_LOG2PHYS_EXT(info) => {
+                libc::fcntl(fd, libc::F_LOG2PHYS_EXT, info)
             }
             #[cfg(apple_targets)]
             F_RDAHEAD(on) => {
