@@ -92,7 +92,7 @@ mod os {
     }
 
     #[test]
-    pub fn test_parsing_kernel_version() {
+    fn test_parsing_kernel_version() {
         assert!(kernel_version().unwrap() > 0);
     }
 }
