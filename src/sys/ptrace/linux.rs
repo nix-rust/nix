@@ -358,7 +358,7 @@ pub fn getregs(pid: Pid) -> Result<user_regs_struct> {
                 target_arch = "riscv64"
             )
         ),
-        all(target_env = "musl", any(target_arch = "aarch64"))
+        all(target_env = "musl", target_arch = "aarch64")
     )
 ))]
 pub fn getregset<S: RegisterSet>(pid: Pid) -> Result<S::Regs> {
