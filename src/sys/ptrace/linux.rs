@@ -14,11 +14,10 @@ pub type AddressType = *mut ::libc::c_void;
     target_os = "linux",
     any(
         all(
-            target_arch = "x86_64",
+            any(target_arch = "x86_64", target_arch = "aarch64"),
             any(target_env = "gnu", target_env = "musl")
         ),
         all(target_arch = "x86", target_env = "gnu"),
-        all(target_arch = "aarch64", target_env = "gnu"),
         all(target_arch = "riscv64", target_env = "gnu"),
     ),
 ))]
@@ -334,8 +333,13 @@ pub fn getregs(pid: Pid) -> Result<user_regs_struct> {
 /// [ptrace(2)]: https://www.man7.org/linux/man-pages/man2/ptrace.2.html
 #[cfg(all(
     target_os = "linux",
-    target_env = "gnu",
-    any(target_arch = "aarch64", target_arch = "riscv64")
+    any(
+        all(
+            target_arch = "aarch64",
+            any(target_env = "gnu", target_env = "musl")
+        ),
+        all(target_arch = "riscv64", target_env = "gnu")
+    )
 ))]
 pub fn getregs(pid: Pid) -> Result<user_regs_struct> {
     getregset::<regset::NT_PRSTATUS>(pid)
