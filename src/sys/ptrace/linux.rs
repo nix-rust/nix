@@ -14,11 +14,10 @@ pub type AddressType = *mut ::libc::c_void;
     target_os = "linux",
     any(
         all(
-            target_arch = "x86_64",
+            any(target_arch = "x86_64", target_arch = "aarch64"),
             any(target_env = "gnu", target_env = "musl")
         ),
         all(target_arch = "x86", target_env = "gnu"),
-        all(target_arch = "aarch64", target_env = "gnu"),
         all(target_arch = "riscv64", target_env = "gnu"),
     ),
 ))]
@@ -334,8 +333,13 @@ pub fn getregs(pid: Pid) -> Result<user_regs_struct> {
 /// [ptrace(2)]: https://www.man7.org/linux/man-pages/man2/ptrace.2.html
 #[cfg(all(
     target_os = "linux",
-    target_env = "gnu",
-    any(target_arch = "aarch64", target_arch = "riscv64")
+    any(
+        all(
+            target_arch = "aarch64",
+            any(target_env = "gnu", target_env = "musl")
+        ),
+        all(target_arch = "riscv64", target_env = "gnu")
+    )
 ))]
 pub fn getregs(pid: Pid) -> Result<user_regs_struct> {
     getregset::<regset::NT_PRSTATUS>(pid)
@@ -344,12 +348,17 @@ pub fn getregs(pid: Pid) -> Result<user_regs_struct> {
 /// Get a particular set of user registers, as with `ptrace(PTRACE_GETREGSET, ...)`
 #[cfg(all(
     target_os = "linux",
-    target_env = "gnu",
     any(
-        target_arch = "x86_64",
-        target_arch = "x86",
-        target_arch = "aarch64",
-        target_arch = "riscv64",
+        all(
+            target_env = "gnu",
+            any(
+                target_arch = "x86_64",
+                target_arch = "x86",
+                target_arch = "aarch64",
+                target_arch = "riscv64"
+            )
+        ),
+        all(target_env = "musl", target_arch = "aarch64")
     )
 ))]
 pub fn getregset<S: RegisterSet>(pid: Pid) -> Result<S::Regs> {
@@ -408,8 +417,13 @@ pub fn setregs(pid: Pid, regs: user_regs_struct) -> Result<()> {
 /// [ptrace(2)]: https://www.man7.org/linux/man-pages/man2/ptrace.2.html
 #[cfg(all(
     target_os = "linux",
-    target_env = "gnu",
-    any(target_arch = "aarch64", target_arch = "riscv64")
+    any(
+        all(
+            target_env = "gnu",
+            any(target_arch = "aarch64", target_arch = "riscv64")
+        ),
+        all(target_env = "musl", target_arch = "aarch64")
+    )
 ))]
 pub fn setregs(pid: Pid, regs: user_regs_struct) -> Result<()> {
     setregset::<regset::NT_PRSTATUS>(pid, regs)
@@ -418,12 +432,17 @@ pub fn setregs(pid: Pid, regs: user_regs_struct) -> Result<()> {
 /// Set a particular set of user registers, as with `ptrace(PTRACE_SETREGSET, ...)`
 #[cfg(all(
     target_os = "linux",
-    target_env = "gnu",
     any(
-        target_arch = "x86_64",
-        target_arch = "x86",
-        target_arch = "aarch64",
-        target_arch = "riscv64",
+        all(
+            target_env = "gnu",
+            any(
+                target_arch = "x86_64",
+                target_arch = "x86",
+                target_arch = "aarch64",
+                target_arch = "riscv64"
+            )
+        ),
+        all(target_env = "musl", target_arch = "aarch64")
     )
 ))]
 pub fn setregset<S: RegisterSet>(pid: Pid, mut regs: S::Regs) -> Result<()> {
