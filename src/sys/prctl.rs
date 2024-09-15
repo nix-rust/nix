@@ -166,7 +166,7 @@ pub fn get_name() -> Result<CString> {
 
 /// Sets the timer slack value for the calling thread. Timer slack is used by the kernel to group
 /// timer expirations and make them the supplied amount of nanoseconds late.
-pub fn set_timerslack(ns: u64) -> Result<()> {
+pub fn set_timerslack(ns: c_ulong) -> Result<()> {
     let res = unsafe { libc::prctl(libc::PR_SET_TIMERSLACK, ns, 0, 0, 0) };
 
     Errno::result(res).map(drop)
