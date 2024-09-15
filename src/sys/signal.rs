@@ -413,6 +413,8 @@ pub const SIGUNUSED : Signal = SIGSYS;
 cfg_if! {
     if #[cfg(target_os = "redox")] {
         type SaFlags_t = libc::c_ulong;
+    } else if #[cfg(all(target_env = "uclibc", target_arch = "mips"))] {
+        type SaFlags_t = libc::c_uint;
     } else if #[cfg(target_env = "uclibc")] {
         type SaFlags_t = libc::c_ulong;
     } else {
