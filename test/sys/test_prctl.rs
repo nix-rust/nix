@@ -89,14 +89,14 @@ mod test_prctl {
     #[cfg_attr(qemu, ignore)]
     #[test]
     fn test_get_set_timerslack() {
-        let original = prctl::get_timerslack().unwrap();
+        let original = prctl::get_timerslack().unwrap() as libc::c_ulong;
 
         let slack = 60_000;
         prctl::set_timerslack(slack).unwrap();
-        let res = prctl::get_timerslack().unwrap();
-        assert_eq!(slack, res as u64);
+        let res = prctl::get_timerslack().unwrap() as libc::c_ulong;
+        assert_eq!(slack, res);
 
-        prctl::set_timerslack(original as u64).unwrap();
+        prctl::set_timerslack(original).unwrap();
     }
 
     #[test]
