@@ -147,7 +147,7 @@ libc_bitflags! {
         MAP_STACK;
         /// Do not write through the page caches, write directly to the file. Used for Direct Access (DAX) enabled file systems.
         // Available on Linux glibc and musl, MIPS* target excluded.
-        #[cfg(all(target_os = "linux", not(any(target_arch = "mips", target_arch = "mips64", target_arch = "mipsel", target_arch = "mips64el")), not(target_env = "uclibc")))]
+        #[cfg(all(target_os = "linux", not(any(target_arch = "mips", target_arch = "mips64", target_arch = "mips32r6", target_arch = "mips64r6")), not(target_env = "uclibc")))]
         MAP_SYNC;
         /// Pages in this mapping are not retained in the kernel's memory cache.
         #[cfg(apple_targets)]
