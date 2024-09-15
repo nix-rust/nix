@@ -792,3 +792,16 @@ fn test_f_log2phys() {
     assert_ne!(res, -1);
     assert_ne!({ info.l2p_devoffset }, 3);
 }
+
+#[cfg(apple_targets)]
+#[test]
+fn test_f_transferextents() {
+    use nix::fcntl::*;
+    use std::os::fd::AsRawFd;
+
+    let tmp1 = NamedTempFile::new().unwrap();
+    let tmp2 = NamedTempFile::new().unwrap();
+    let res = fcntl(&tmp1, FcntlArg::F_TRANSFEREXTENTS(tmp2.as_raw_fd()))
+        .expect("transferextents failed");
+    assert_ne!(res, -1);
+}
