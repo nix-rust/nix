@@ -42,7 +42,7 @@ libc_bitflags! {
         /// Share this mapping. Mutually exclusive with `MAP_PRIVATE`.
         MAP_SHARED;
         /// Force mmap to check and fail on unknown flags. This also enables `MAP_SYNC`.
-        #[cfg(all(any(target_arch = "x86"), not(linux_android), not(target_os = "hurd"), not(target_env = "uclibc"), not(freebsdlike)))]
+        #[cfg(target_os = "linux")]
         MAP_SHARED_VALIDATE;
         /// Create a private copy-on-write mapping. Mutually exclusive with `MAP_SHARED`.
         MAP_PRIVATE;
@@ -146,7 +146,8 @@ libc_bitflags! {
         #[cfg(any(linux_android, freebsdlike, target_os = "openbsd"))]
         MAP_STACK;
         /// Do not write through the page caches, write directly to the file. Used for Direct Access (DAX) enabled file systems.
-        #[cfg(all(any(target_arch = "x86"), not(linux_android), not(target_os = "hurd"), not(target_env = "uclibc"), not(freebsdlike)))]
+        // Available on Linux glibc and musl, MIPS* target excluded.
+        #[cfg(all(target_os = "linux", not(any(target_arch = "mips", target_arch = "mips64", target_arch = "mipsel", target_arch = "mips64el")), not(target_env = "uclibc")))]
         MAP_SYNC;
         /// Pages in this mapping are not retained in the kernel's memory cache.
         #[cfg(apple_targets)]
