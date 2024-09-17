@@ -2190,7 +2190,7 @@ impl Backlog {
 
         let val = val.into();
 
-        if !(MIN..Self::MAXCONN.0).contains(&val) {
+        if !(MIN..=Self::MAXCONN.0).contains(&val) {
             return Err(Errno::EINVAL);
         }
 

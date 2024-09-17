@@ -1696,6 +1696,13 @@ pub fn test_named_unixdomain() {
 }
 
 #[test]
+pub fn test_listen_maxbacklog() {
+    use nix::sys::socket::Backlog;
+
+    assert!(Backlog::new(libc::SOMAXCONN).is_ok());
+}
+
+#[test]
 pub fn test_listen_wrongbacklog() {
     use nix::sys::socket::Backlog;
 
