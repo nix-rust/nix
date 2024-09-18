@@ -185,6 +185,7 @@ fn test_ptrace_interrupt() {
         target_arch = "x86",
         target_arch = "aarch64",
         target_arch = "riscv64",
+        target_arch = "loongarch64",
     )
 ))]
 #[test]
@@ -238,6 +239,10 @@ fn test_ptrace_syscall() {
             #[cfg(target_arch = "riscv64")]
             let get_syscall_id =
                 || ptrace::getregs(child).unwrap().a7 as libc::c_long;
+
+            #[cfg(target_arch = "loongarch64")]
+            let get_syscall_id =
+                || ptrace::getregs(child).unwrap().regs[11] as libc::c_long;
 
             // this duplicates `get_syscall_id` for the purpose of testing `ptrace::read_user`.
             #[cfg(target_arch = "x86_64")]
@@ -299,10 +304,14 @@ fn test_ptrace_syscall() {
                 target_arch = "x86_64",
                 target_arch = "x86",
                 target_arch = "aarch64",
+                target_arch = "loongarch64",
                 target_arch = "riscv64"
             )
         ),
-        all(target_env = "musl", target_arch = "aarch64")
+        all(
+            target_env = "musl",
+            any(target_arch = "aarch64", target_arch = "loongarch64")
+        )
     )
 ))]
 #[test]
@@ -348,6 +357,9 @@ fn test_ptrace_regsets() {
                 (&mut regstruct.regs[16], &mut fpregstruct.vregs[5]);
             #[cfg(target_arch = "riscv64")]
             let (reg, fpreg) = (&mut regstruct.t1, &mut fpregstruct.__f[5]);
+            #[cfg(target_arch = "loongarch64")]
+            let (reg, fpreg) =
+                (&mut regstruct.regs[12], &mut fpregstruct.fpr[5]);
 
             *reg = 0xdeadbeefu32 as _;
             *fpreg = 0xfeedfaceu32 as _;
@@ -364,6 +376,8 @@ fn test_ptrace_regsets() {
             let (reg, fpreg) = (regstruct.regs[16], fpregstruct.vregs[5]);
             #[cfg(target_arch = "riscv64")]
             let (reg, fpreg) = (regstruct.t1, fpregstruct.__f[5]);
+            #[cfg(target_arch = "loongarch64")]
+            let (reg, fpreg) = (regstruct.regs[12], fpregstruct.fpr[5]);
             assert_eq!(reg, 0xdeadbeefu32 as _);
             assert_eq!(fpreg, 0xfeedfaceu32 as _);
 
