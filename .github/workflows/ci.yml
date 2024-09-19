@@ -14,6 +14,8 @@ permissions:
 
 env: 
   MSRV: 1.69.0
+  # Rust's Loongarch support merged in 1.71.0
+  MSRV_LOONGARCH: 1.71.0
   RUSTFLAGS: -Dwarnings
 
 jobs:
@@ -92,6 +94,7 @@ jobs:
           mips64el-unknown-linux-gnuabi64,
           mipsel-unknown-linux-gnu,
           powerpc64le-unknown-linux-gnu,
+          loongarch64-unknown-linux-gnu,
         ]
 
     steps:
@@ -101,7 +104,8 @@ jobs:
       - name: setup Rust
         uses: dtolnay/rust-toolchain@master
         with: 
-          toolchain: '${{ env.MSRV }}'
+          # Use a newer version rustc if the target is Loongarch, remove this workaround after MSRV is newer than 1.71.0
+          toolchain: "${{ matrix.target == 'loongarch64-unknown-linux-gnu' && env.MSRV_LOONGARCH || env.MSRV }}"
           components: clippy
 
       # cross relies on docker or podman, GitHub Acton already has it installed.
