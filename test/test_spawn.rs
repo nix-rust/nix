@@ -63,3 +63,17 @@ fn spawn_sleep() {
         }
     };
 }
+
+#[test]
+fn spawn_fail() {
+    let bin = &CString::new("3f0ffc950ccd2fb8").unwrap();
+    let args = &[
+        CString::new("3f0ffc950ccd2fb8").unwrap(),
+    ];
+    let vars: &[CString] = &[];
+    let actions = PosixSpawnFileActions::init().unwrap();
+    let attr = PosixSpawnAttr::init().unwrap();
+
+    let result = spawn::posix_spawnp(bin, &actions, &attr, args, vars);
+    assert!(result.is_err());
+}
