@@ -99,6 +99,10 @@ mod test_prctl {
         prctl::set_timerslack(original).unwrap();
     }
 
+    // Loongarch need to use a newer QEMU that disabled these PRCTL subcodes/methods.
+    // https://github.com/qemu/qemu/commit/220717a6f46a99031a5b1af964bbf4dec1310440
+    // So we should ignore them when testing in QEMU environments.
+    #[cfg_attr(all(qemu, target_arch = "loongarch64"), ignore)]
     #[test]
     fn test_disable_enable_perf_events() {
         prctl::task_perf_events_disable().unwrap();
@@ -112,6 +116,10 @@ mod test_prctl {
         assert!(no_new_privs);
     }
 
+    // Loongarch need to use a newer QEMU that disabled these PRCTL subcodes/methods
+    // https://github.com/qemu/qemu/commit/220717a6f46a99031a5b1af964bbf4dec1310440
+    // So we should ignore them when testing in QEMU environments.
+    #[cfg_attr(all(qemu, target_arch = "loongarch64"), ignore)]
     #[test]
     fn test_get_set_thp_disable() {
         let original = prctl::get_thp_disable().unwrap();
