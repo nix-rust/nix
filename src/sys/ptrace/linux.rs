@@ -185,9 +185,7 @@ libc_enum! {
         ),
         all(
             target_env = "musl",
-            any(
-                target_arch = "aarch64",
-            )
+            target_arch = "aarch64",
         )
     ),
 ))]
@@ -218,9 +216,7 @@ libc_enum! {
         ),
         all(
             target_env = "musl",
-            any(
-                target_arch = "aarch64",
-            )
+            target_arch = "aarch64",
         )
     ),
 ))]
@@ -254,9 +250,7 @@ pub unsafe trait RegisterSet {
         ),
         all(
             target_env = "musl",
-            any(
-                target_arch = "aarch64",
-            )
+            target_arch = "aarch64",
         )
     ),
 ))]
