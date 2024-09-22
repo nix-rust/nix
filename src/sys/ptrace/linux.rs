@@ -182,7 +182,7 @@ libc_enum! {
                 target_arch = "aarch64",
                 target_arch = "riscv64",
             )
-        )
+        ),
         all(
             target_env = "musl",
             any(
@@ -251,7 +251,7 @@ pub unsafe trait RegisterSet {
                 target_arch = "aarch64",
                 target_arch = "riscv64",
             )
-        )
+        ),
         all(
             target_env = "musl",
             any(
