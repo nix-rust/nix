@@ -85,6 +85,7 @@ The following targets are supported by `nix`:
     <li>arm-unknown-linux-musleabi</li>
     <li>armv7-linux-androideabi</li>
     <li>i686-linux-android</li>
+    <li>loongarch64-unknown-linux-gnu</li>
     <li>s390x-unknown-linux-gnu</li>
     <li>x86_64-linux-android</li>
     <li>x86_64-unknown-illumos</li>

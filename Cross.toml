@@ -3,3 +3,6 @@ passthrough = [
 	"RUSTFLAGS",
 	"RUST_TEST_THREADS"
 ]
+
+[target.loongarch64-unknown-linux-gnu]
+image = "ghcr.io/cross-rs/loongarch64-unknown-linux-gnu:edge"
