@@ -179,12 +179,17 @@ fn test_ptrace_interrupt() {
 // ptrace::{setoptions, getregs} are only available in these platforms
 #[cfg(all(
     target_os = "linux",
-    target_env = "gnu",
     any(
-        target_arch = "x86_64",
-        target_arch = "x86",
-        target_arch = "aarch64",
-        target_arch = "riscv64",
+        all(
+            target_env = "gnu",
+            any(
+                target_arch = "x86_64",
+                target_arch = "x86",
+                target_arch = "aarch64",
+                target_arch = "riscv64"
+            )
+        ),
+        all(target_env = "musl", target_arch = "aarch64")
     )
 ))]
 #[test]
