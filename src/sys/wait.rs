@@ -340,7 +340,7 @@ pub enum Id<'fd> {
     /// If the PID is zero, the caller's process group is used since Linux 5.4.
     PGid(Pid),
     /// Wait for the child referred to by the given PID file descriptor
-    #[cfg(linux_android)]
+    #[cfg(any(linux_android, target_os = "linux"))]
     PIDFd(BorrowedFd<'fd>),
     /// A helper variant to resolve the unused parameter (`'fd`) problem on platforms
     /// other than Linux and Android.
@@ -362,7 +362,7 @@ pub fn waitid(id: Id, flags: WaitPidFlag) -> Result<WaitStatus> {
         Id::All => (libc::P_ALL, 0),
         Id::Pid(pid) => (libc::P_PID, pid.as_raw() as libc::id_t),
         Id::PGid(pid) => (libc::P_PGID, pid.as_raw() as libc::id_t),
-        #[cfg(linux_android)]
+        #[cfg(any(linux_android, target_os = "linux"))]
         Id::PIDFd(fd) => (libc::P_PIDFD, fd.as_raw_fd() as libc::id_t),
         Id::_Unreachable(_) => {
             unreachable!("This variant could never be constructed")
