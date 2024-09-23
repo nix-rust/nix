@@ -6,6 +6,7 @@ use nix::sys::wait::{waitpid, WaitPidFlag, WaitStatus};
 
 #[test]
 fn spawn_true() {
+    let _m = crate::FORK_MTX.lock();
     let bin = &CString::new("true").unwrap();
     let args = &[
         CString::new("true").unwrap(),
@@ -32,6 +33,8 @@ fn spawn_true() {
 
 #[test]
 fn spawn_sleep() {
+    let _m = crate::FORK_MTX.lock();
+
     let bin = &CString::new("sleep").unwrap();
     let args = &[CString::new("sleep").unwrap(), CString::new("30").unwrap()];
     let vars: &[CString] = &[];
@@ -66,6 +69,8 @@ fn spawn_sleep() {
 
 #[test]
 fn spawn_fail() {
+    let _m = crate::FORK_MTX.lock();
+
     let bin = &CString::new("3f0ffc950ccd2fb8").unwrap();
     let args = &[CString::new("3f0ffc950ccd2fb8").unwrap()];
     let vars: &[CString] = &[];
