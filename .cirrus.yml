@@ -18,9 +18,9 @@ build: &BUILD
     - . $HOME/.cargo/env || true
     - $TOOL -Vv
     - rustc -Vv
-    - $TOOL $BUILD $ZFLAGS --target $TARGET --all-targets --all-features
-    - $TOOL doc $ZFLAGS --no-deps --target $TARGET --all-features
-    - $TOOL clippy $ZFLAGS --target $TARGET --all-targets --all-features -- $CLIPPYFLAGS
+    - $TOOL $BUILD $ZFLAGS --target $TARGET --all-targets
+    - $TOOL doc $ZFLAGS --no-deps --target $TARGET
+    - $TOOL clippy $ZFLAGS --target $TARGET --all-targets -- $CLIPPYFLAGS
     - if [ -z "$NOHACK" ]; then mkdir -p $HOME/.cargo/bin; export PATH=$HOME/.cargo/bin:$PATH; fi
     - if [ -z "$NOHACK" ]; then curl -LsSf https://github.com/taiki-e/cargo-hack/releases/latest/download/cargo-hack-${HOST:-$TARGET}.tar.gz | tar xzf - -C ~/.cargo/bin; fi
     - if [ -z "$NOHACK" ]; then $TOOL hack $ZFLAGS check --target $TARGET --each-feature; fi
@@ -30,7 +30,7 @@ test: &TEST
   << : *BUILD
   test_script:
     - . $HOME/.cargo/env || true
-    - $TOOL test --target $TARGET --all-features
+    - $TOOL test --target $TARGET
 
 # Test FreeBSD in a full VM.  Test the i686 target too, in the
 # same VM.  The binary will be built in 32-bit mode, but will execute on a
@@ -57,9 +57,9 @@ task:
   << : *TEST
   i386_test_script:
     - . $HOME/.cargo/env
-    - cargo build --target i686-unknown-freebsd --all-features
-    - cargo doc --no-deps --target i686-unknown-freebsd --all-features
-    - cargo test --target i686-unknown-freebsd --all-features
+    - cargo build --target i686-unknown-freebsd
+    - cargo doc --no-deps --target i686-unknown-freebsd
+    - cargo test --target i686-unknown-freebsd
   i386_feature_script:
     - . $HOME/.cargo/env
     - if [ -z "$NOHACK" ]; then cargo hack check --each-feature --target i686-unknown-freebsd; fi
