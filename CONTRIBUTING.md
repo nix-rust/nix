@@ -91,7 +91,7 @@ And having multiple change logs for one PR is allowed.
 
 ## Testing
 
-nix has a test suite that you can run with `cargo test --all-features`. Ideally, we'd like pull
+nix has a test suite that you can run with `cargo test`. Ideally, we'd like pull
 requests to include tests where they make sense. For example, when fixing a bug,
 add a test that would have failed without the fix.
 
