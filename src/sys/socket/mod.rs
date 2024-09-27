@@ -1797,11 +1797,9 @@ impl<S> MultiHeaders<S> {
 /// call to recvmmsg(). In the current implementation, however, the error code can be
 /// overwritten in the meantime by an unrelated network event on a socket, for example an
 /// incoming ICMP packet.
-
 // On aarch64 linux using recvmmsg and trying to get hardware/kernel timestamps might not
 // always produce the desired results - see https://github.com/nix-rust/nix/pull/1744 for more
 // details
-
 #[cfg(any(linux_android, target_os = "freebsd", target_os = "netbsd"))]
 pub fn recvmmsg<'a, XS, S, I>(
     fd: RawFd,
