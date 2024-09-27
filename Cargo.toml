@@ -77,6 +77,11 @@ parking_lot = "0.12"
 rand = "0.8"
 tempfile = "3.7.1"
 semver = "1.0.7"
+nix = { path = ".", features = ["acct", "aio", "dir", "env", "event", "fanotify",
+    "feature", "fs", "hostname", "inotify", "ioctl", "kmod", "mman", "mount", "mqueue",
+    "net", "personality", "poll", "pthread", "ptrace", "quota", "process", "reboot",
+    "resource", "sched", "signal", "socket", "term", "time", "ucontext", "uio",
+    "user", "zerocopy"] }
 
 [target.'cfg(any(target_os = "android", target_os = "linux"))'.dev-dependencies]
 caps = "0.5.3"
