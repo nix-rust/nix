@@ -8,7 +8,7 @@ use crate::{NixPath, Result};
 
 libc_bitflags!(
     /// Options that change the behavior of [`memfd_create`].
-    pub struct MemFdCreateFlag: libc::c_uint {
+    pub struct MFdFlags: libc::c_uint {
         /// Set the close-on-exec ([`FD_CLOEXEC`]) flag on the new file descriptor.
         ///
         /// By default, the new file descriptor is set to remain open across an [`execve`]
@@ -74,6 +74,10 @@ libc_bitflags!(
     }
 );
 
+#[deprecated(since = "0.30.0", note = "Use `MFdFlags instead`")]
+/// The deprecated MemFdCreateFlag type alias
+pub type MemFdCreateFlag = MFdFlags;
+
 /// Creates an anonymous file that lives in memory, and return a file-descriptor to it.
 ///
 /// The file behaves like a regular file, and so can be modified, truncated, memory-mapped, and so on.
@@ -85,7 +89,7 @@ libc_bitflags!(
 #[inline] // Delays codegen, preventing linker errors with dylibs and --no-allow-shlib-undefined
 pub fn memfd_create<P: NixPath + ?Sized>(
     name: &P,
-    flags: MemFdCreateFlag,
+    flags: MFdFlags,
 ) -> Result<OwnedFd> {
     let res = name.with_nix_path(|cstr| {
         unsafe {
