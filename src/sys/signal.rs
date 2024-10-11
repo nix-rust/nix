@@ -1412,7 +1412,7 @@ mod sigevent {
         }
     }
 
-    impl<'a> From<&'a libc::sigevent> for SigEvent {
+    impl From<&'_ libc::sigevent> for SigEvent {
         #[cfg(target_os = "freebsd")]
         fn from(sigevent: &libc::sigevent) -> Self {
             // Safe because they're really the same structure.  See

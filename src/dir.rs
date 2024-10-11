@@ -190,7 +190,7 @@ fn next(dir: &mut Dir) -> Option<Result<Entry>> {
 #[derive(Debug, Eq, Hash, PartialEq)]
 pub struct Iter<'d>(&'d mut Dir);
 
-impl<'d> Iterator for Iter<'d> {
+impl Iterator for Iter<'_> {
     type Item = Result<Entry>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -198,7 +198,7 @@ impl<'d> Iterator for Iter<'d> {
     }
 }
 
-impl<'d> Drop for Iter<'d> {
+impl Drop for Iter<'_> {
     fn drop(&mut self) {
         unsafe { libc::rewinddir((self.0).0.as_ptr()) }
     }

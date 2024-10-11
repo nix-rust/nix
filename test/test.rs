@@ -85,7 +85,7 @@ struct DirRestore<'a> {
     _g: RwLockWriteGuard<'a, ()>,
 }
 
-impl<'a> DirRestore<'a> {
+impl DirRestore<'_> {
     fn new() -> Self {
         let guard = crate::CWD_LOCK.write();
         DirRestore {
@@ -95,7 +95,7 @@ impl<'a> DirRestore<'a> {
     }
 }
 
-impl<'a> Drop for DirRestore<'a> {
+impl Drop for DirRestore<'_> {
     fn drop(&mut self) {
         let r = chdir(&self.d);
         if std::thread::panicking() {
