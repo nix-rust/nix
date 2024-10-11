@@ -96,7 +96,7 @@ impl<'fd> PollFd<'fd> {
     }
 }
 
-impl<'fd> AsFd for PollFd<'fd> {
+impl AsFd for PollFd<'_> {
     fn as_fd(&self) -> BorrowedFd<'_> {
         // Safety:
         //

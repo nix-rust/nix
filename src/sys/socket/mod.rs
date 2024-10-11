@@ -599,7 +599,7 @@ pub struct RecvMsg<'a, 's, S> {
     mhdr: msghdr,
 }
 
-impl<'a, S> RecvMsg<'a, '_, S> {
+impl<S> RecvMsg<'_, '_, S> {
     /// Iterate over the valid control messages pointed to by this msghdr. If
     /// allocated space for CMSGs was too small it is not safe to iterate,
     /// instead return an `Error::ENOBUFS` error.
@@ -623,7 +623,7 @@ pub struct CmsgIterator<'a> {
     mhdr: &'a msghdr
 }
 
-impl<'a> Iterator for CmsgIterator<'a> {
+impl Iterator for CmsgIterator<'_> {
     type Item = ControlMessageOwned;
 
     fn next(&mut self) -> Option<ControlMessageOwned> {
@@ -1260,7 +1260,7 @@ pub enum ControlMessage<'a> {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct UnknownCmsg(cmsghdr, Vec<u8>);
 
-impl<'a> ControlMessage<'a> {
+impl ControlMessage<'_> {
     /// The value of CMSG_SPACE on this message.
     /// Safe because CMSG_SPACE is always safe
     fn space(&self) -> usize {
