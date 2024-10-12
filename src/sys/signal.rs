@@ -1144,7 +1144,7 @@ pub enum SigevNotify<'fd> {
         /// Will be contained in the kevent's `udata` field.
         udata: libc::intptr_t,
         /// Flags that will be set on the delivered event.  See `kevent(2)`.
-        flags: crate::sys::event::EventFlag
+        flags: crate::sys::event::EvFlags
     },
     /// Notify by delivering a signal to a thread.
     #[cfg(any(

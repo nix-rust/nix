@@ -1,14 +1,13 @@
 #[test]
 fn test_memfd_create() {
     use nix::sys::memfd::memfd_create;
-    use nix::sys::memfd::MemFdCreateFlag;
+    use nix::sys::memfd::MFdFlags;
     use nix::unistd::lseek;
     use nix::unistd::read;
     use nix::unistd::{write, Whence};
 
     let fd =
-        memfd_create("test_memfd_create_name", MemFdCreateFlag::MFD_CLOEXEC)
-            .unwrap();
+        memfd_create("test_memfd_create_name", MFdFlags::MFD_CLOEXEC).unwrap();
     let contents = b"hello";
     assert_eq!(write(&fd, contents).unwrap(), 5);
 
