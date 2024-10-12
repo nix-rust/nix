@@ -1,13 +1,17 @@
+#[cfg(not(target_os = "redox"))]
+use crate::require_largefile;
 use nix::sys::uio::*;
 use nix::unistd::*;
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
 use std::fs::OpenOptions;
-use std::io::IoSlice;
+use std::io::{IoSlice, Write};
+#[cfg(not(any(target_os = "haiku", target_os = "redox")))]
+use std::os::unix::fs::FileExt;
 use std::{cmp, iter};
 
 #[cfg(not(target_os = "redox"))]
-use std::io::IoSliceMut;
+use std::io::{IoSliceMut, Read, Seek, SeekFrom};
 
 use tempfile::tempdir;
 #[cfg(not(target_os = "redox"))]
@@ -103,8 +107,6 @@ fn test_readv() {
 #[test]
 #[cfg(not(target_os = "redox"))]
 fn test_pwrite() {
-    use std::io::Read;
-
     let mut file = tempfile().unwrap();
     let buf = [1u8; 8];
     assert_eq!(Ok(8), pwrite(&file, &buf, 8));
@@ -116,9 +118,23 @@ fn test_pwrite() {
 }
 
 #[test]
-fn test_pread() {
-    use std::io::Write;
+#[cfg(not(target_os = "redox"))]
+fn test_pwrite_largefile() {
+    require_largefile!("test_pwrite_largefile");
 
+    let mut file = tempfile().unwrap();
+    let buf = [255u8; 1];
+    let pos = 0x1_0000_0002i64;
+    assert_eq!(pwrite(&file, &buf, pos), Ok(1));
+    assert_eq!(file.metadata().unwrap().len(), 0x1_0000_0003);
+    file.seek(SeekFrom::End(-1)).unwrap();
+    let mut file_content = Vec::new();
+    file.read_to_end(&mut file_content).unwrap();
+    assert_eq!(file_content, [255u8; 1]);
+}
+
+#[test]
+fn test_pread() {
     let tempdir = tempdir().unwrap();
 
     let path = tempdir.path().join("pread_test_file");
@@ -144,9 +160,20 @@ fn test_pread() {
     target_os = "haiku",
     target_os = "solaris"
 )))]
-fn test_pwritev() {
-    use std::io::Read;
+fn test_pread_largefile() {
+    require_largefile!("test_pread_largefile");
 
+    let file = tempfile().unwrap();
+    file.write_all_at(b"The text", 0x1_0000_0005).unwrap();
+    let mut buf = [0u8; 4];
+    let pos = 0x1_0000_0009i64;
+    assert_eq!(pread(&file, &mut buf, pos), Ok(4));
+    assert_eq!(&buf, b"text");
+}
+
+#[test]
+#[cfg(not(any(target_os = "redox", target_os = "haiku")))]
+fn test_pwritev() {
     let to_write: Vec<u8> = (0..128).collect();
     let expected: Vec<u8> = [vec![0; 100], to_write.clone()].concat();
 
@@ -184,8 +211,6 @@ fn test_pwritev() {
     target_os = "solaris"
 )))]
 fn test_preadv() {
-    use std::io::Write;
-
     let to_write: Vec<u8> = (0..200).collect();
     let expected: Vec<u8> = (100..200).collect();
 

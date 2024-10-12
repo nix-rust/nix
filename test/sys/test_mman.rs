@@ -1,7 +1,11 @@
 #![allow(clippy::redundant_slicing)]
 
-use nix::sys::mman::{mmap_anonymous, MapFlags, ProtFlags};
+use nix::sys::mman::{mmap, mmap_anonymous, MapFlags, ProtFlags};
+use nix::unistd::{lseek, sysconf, write, SysconfVar, Whence};
 use std::num::NonZeroUsize;
+use tempfile::tempfile;
+
+use crate::{require_largefile, skip};
 
 #[test]
 fn test_mmap_anonymous() {
@@ -18,6 +22,41 @@ fn test_mmap_anonymous() {
         *ptr.as_mut() = 0xffu8;
         assert_eq!(*ptr.as_ref(), 0xffu8);
     }
+}
+
+#[test]
+fn test_mmap_largefile() {
+    require_largefile!("test_mmap_largefile");
+
+    // Calculate an offset that requires more than 32 bits to represent
+    // and is a multiple of the page size.
+    #[allow(clippy::unnecessary_cast)] // Some platforms need the cast.
+    let pagesize = match sysconf(SysconfVar::PAGE_SIZE) {
+        Ok(Some(x)) => x,
+        _ => {
+            skip!("test_mmap_largefile: Could not determine page size. Skipping test.");
+        }
+    } as i64;
+    let pages_in_32bits = 1_0000_0000i64 / pagesize;
+    let offset = (pages_in_32bits + 2) * pagesize;
+    // Create a file, seek to offset, and write some bytes.
+    let file = tempfile().unwrap();
+    lseek(&file, offset, Whence::SeekSet).unwrap();
+    write(&file, b"xyzzy").unwrap();
+    // Check that we can map it and see the bytes.
+    let slice = unsafe {
+        let res = mmap(
+            None,
+            NonZeroUsize::new(5).unwrap(),
+            ProtFlags::PROT_READ,
+            MapFlags::MAP_PRIVATE,
+            &file,
+            offset,
+        );
+        assert!(res.is_ok());
+        std::slice::from_raw_parts(res.unwrap().as_ptr() as *const u8, 5)
+    };
+    assert_eq!(slice, b"xyzzy");
 }
 
 #[test]
