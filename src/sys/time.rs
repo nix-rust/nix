@@ -209,15 +209,41 @@ impl From<timespec> for TimeSpec {
     }
 }
 
-impl From<Duration> for TimeSpec {
-    fn from(duration: Duration) -> Self {
-        Self::from_duration(duration)
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct TryFromDurationError;
+
+impl TryFrom<Duration> for TimeSpec {
+    type Error = TryFromDurationError;
+
+    fn try_from(duration: Duration) -> Result<Self, Self::Error> {
+        Self::try_from_duration(duration)
     }
 }
 
-impl From<TimeSpec> for Duration {
-    fn from(timespec: TimeSpec) -> Self {
-        Duration::new(timespec.0.tv_sec as u64, timespec.0.tv_nsec as u32)
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct TryFromTimeSpecError;
+
+impl TryFrom<TimeSpec> for Duration {
+    type Error = TryFromTimeSpecError;
+
+    fn try_from(timespec: TimeSpec) -> Result<Self, Self::Error> {
+        let secs = timespec
+            .0
+            .tv_sec
+            .try_into()
+            .map_err(|_| TryFromTimeSpecError)?;
+        let nanos = timespec
+            .0
+            .tv_nsec
+            .try_into()
+            .map_err(|_| TryFromTimeSpecError)?;
+
+        // Error out here rather than letting Duration::new panic.
+        if nanos > Duration::MAX.subsec_nanos() {
+            return Err(TryFromTimeSpecError);
+        }
+
+        Ok(Duration::new(secs, nanos))
     }
 }
 
@@ -365,13 +391,16 @@ impl TimeSpec {
         self.0.tv_nsec
     }
 
-    #[cfg_attr(target_env = "musl", allow(deprecated))]
-    // https://github.com/rust-lang/libc/issues/1848
-    pub const fn from_duration(duration: Duration) -> Self {
+    pub fn try_from_duration(
+        duration: Duration,
+    ) -> Result<Self, TryFromDurationError> {
         let mut ts = zero_init_timespec();
-        ts.tv_sec = duration.as_secs() as time_t;
-        ts.tv_nsec = duration.subsec_nanos() as timespec_tv_nsec_t;
-        TimeSpec(ts)
+        ts.tv_sec = duration
+            .as_secs()
+            .try_into()
+            .map_err(|_| TryFromDurationError)?;
+        ts.tv_nsec = duration.subsec_nanos().into();
+        Ok(TimeSpec(ts))
     }
 
     pub const fn from_timespec(timespec: timespec) -> Self {
