@@ -2303,8 +2303,7 @@ pub fn recvfrom<T: SockaddrLike>(
             0,
             addr.as_mut_ptr().cast(),
             &mut len as *mut socklen_t,
-        ))? as:q
- usize;
+        ))? as usize;
 
         Ok((ret, T::from_raw(addr.assume_init().as_ptr(), Some(len))))
     }
