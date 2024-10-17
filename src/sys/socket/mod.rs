@@ -1258,7 +1258,7 @@ pub enum ControlMessage<'a> {
 // An opaque structure used to prevent cmsghdr from being a public type
 #[doc(hidden)]
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct UnknownCmsg(cmsghdr, Vec<u8>);
+pub struct UnknownCmsg(pub cmsghdr, pub Vec<u8>);
 
 impl ControlMessage<'_> {
     /// The value of CMSG_SPACE on this message.
@@ -2454,4 +2454,3 @@ pub fn shutdown(df: RawFd, how: Shutdown) -> Result<()> {
         Errno::result(shutdown(df, how)).map(drop)
     }
 }
-
