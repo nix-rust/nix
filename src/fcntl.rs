@@ -1,4 +1,4 @@
-//! file control options
+//! File control options
 use crate::errno::Errno;
 #[cfg(all(target_os = "freebsd", target_arch = "x86_64"))]
 use core::slice;
