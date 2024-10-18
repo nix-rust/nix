@@ -846,7 +846,6 @@ pub enum ControlMessageOwned {
     TlsGetRecordType(TlsGetRecordType),
 
     /// Catch-all variant for unimplemented cmsg types.
-    #[doc(hidden)]
     Unknown(UnknownCmsg),
 }
 
@@ -1062,7 +1061,10 @@ impl ControlMessageOwned {
             },
             (_, _) => {
                 let sl = unsafe { std::slice::from_raw_parts(p, len) };
-                let ucmsg = UnknownCmsg(*header, Vec::<u8>::from(sl));
+                let ucmsg = UnknownCmsg {
+                    cmsg_header: *header, 
+                    data_bytes: Vec::<u8>::from(sl),
+                };
                 ControlMessageOwned::Unknown(ucmsg)
             }
         }
@@ -1255,10 +1257,14 @@ pub enum ControlMessage<'a> {
     Ipv6TClass(&'a i32),
 }
 
-// An opaque structure used to prevent cmsghdr from being a public type
-#[doc(hidden)]
+/// Control messages that are currently not supported by Nix.
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct UnknownCmsg(pub cmsghdr, pub Vec<u8>);
+pub struct UnknownCmsg {
+    /// Control message header.
+    pub cmsg_header: cmsghdr,
+    /// Bytes of the control message data.
+    pub data_bytes: Vec<u8>
+}
 
 impl ControlMessage<'_> {
     /// The value of CMSG_SPACE on this message.
@@ -2454,3 +2460,4 @@ pub fn shutdown(df: RawFd, how: Shutdown) -> Result<()> {
         Errno::result(shutdown(df, how)).map(drop)
     }
 }
+
