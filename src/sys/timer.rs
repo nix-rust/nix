@@ -38,7 +38,7 @@
 //!     });
 //!
 //!     let mut timer = Timer::new(clockid, sigevent).unwrap();
-//!     let expiration = Expiration::Interval(Duration::from_millis(250).into());
+//!     let expiration = Expiration::Interval(Duration::from_millis(250).try_into().unwrap());
 //!     let flags = TimerSetTimeFlags::empty();
 //!     timer.set(expiration, flags).expect("could not set timer");
 //!

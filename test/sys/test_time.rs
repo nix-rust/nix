@@ -15,12 +15,12 @@ pub fn test_timespec() {
 }
 
 #[test]
-pub fn test_timespec_from() {
+pub fn test_timespec_try_from() {
     let duration = Duration::new(123, 123_456_789);
     let timespec = TimeSpec::nanoseconds(123_123_456_789);
 
-    assert_eq!(TimeSpec::from(duration), timespec);
-    assert_eq!(Duration::from(timespec), duration);
+    assert_eq!(TimeSpec::try_from(duration).unwrap(), timespec);
+    assert_eq!(Duration::try_from(timespec).unwrap(), duration);
 }
 
 #[test]
