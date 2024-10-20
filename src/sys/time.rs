@@ -391,6 +391,7 @@ impl TimeSpec {
         self.0.tv_nsec
     }
 
+    #[allow(clippy::unnecessary_fallible_conversions)]
     pub fn try_from_duration(
         duration: Duration,
     ) -> Result<Self, TryFromDurationError> {
@@ -399,7 +400,12 @@ impl TimeSpec {
             .as_secs()
             .try_into()
             .map_err(|_| TryFromDurationError)?;
-        ts.tv_nsec = duration.subsec_nanos().into();
+        // There are targets with tv_nsec being i32. Use the fallible conversion for all targets as
+        // we are returning a Result due to the previous conversion anyway.
+        ts.tv_nsec = duration
+            .subsec_nanos()
+            .try_into()
+            .map_err(|_| TryFromDurationError)?;
         Ok(TimeSpec(ts))
     }
 
