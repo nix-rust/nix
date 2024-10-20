@@ -173,13 +173,21 @@ libc_enum! {
 
 #[cfg(all(
     target_os = "linux",
-    target_env = "gnu",
     any(
-        target_arch = "x86_64",
-        target_arch = "x86",
-        target_arch = "aarch64",
-        target_arch = "riscv64",
-    )
+        all(
+            target_env = "gnu",
+            any(
+                target_arch = "x86_64",
+                target_arch = "x86",
+                target_arch = "aarch64",
+                target_arch = "riscv64",
+            )
+        ),
+        all(
+            target_env = "musl",
+            target_arch = "aarch64",
+        )
+    ),
 ))]
 libc_enum! {
     #[repr(i32)]
@@ -196,13 +204,21 @@ libc_enum! {
 
 #[cfg(all(
     target_os = "linux",
-    target_env = "gnu",
     any(
-        target_arch = "x86_64",
-        target_arch = "x86",
-        target_arch = "aarch64",
-        target_arch = "riscv64",
-    )
+        all(
+            target_env = "gnu",
+            any(
+                target_arch = "x86_64",
+                target_arch = "x86",
+                target_arch = "aarch64",
+                target_arch = "riscv64",
+            )
+        ),
+        all(
+            target_env = "musl",
+            target_arch = "aarch64",
+        )
+    ),
 ))]
 /// Represents register set areas, such as general-purpose registers or
 /// floating-point registers.
@@ -219,15 +235,24 @@ pub unsafe trait RegisterSet {
     type Regs;
 }
 
+
 #[cfg(all(
     target_os = "linux",
-    target_env = "gnu",
     any(
-        target_arch = "x86_64",
-        target_arch = "x86",
-        target_arch = "aarch64",
-        target_arch = "riscv64",
-    )
+        all(
+            target_env = "gnu",
+            any(
+                target_arch = "x86_64",
+                target_arch = "x86",
+                target_arch = "aarch64",
+                target_arch = "riscv64",
+            )
+        ),
+        all(
+            target_env = "musl",
+            target_arch = "aarch64",
+        )
+    ),
 ))]
 /// Register sets used in [`getregset`] and [`setregset`]
 pub mod regset {
