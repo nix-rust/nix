@@ -50,7 +50,7 @@ fn alarm_fires() {
     });
     let mut timer =
         Timer::new(clockid, sigevent).expect("failed to create timer");
-    let expiration = Expiration::Interval(TIMER_PERIOD.into());
+    let expiration = Expiration::Interval(TIMER_PERIOD.try_into().unwrap());
     let flags = TimerSetTimeFlags::empty();
     timer.set(expiration, flags).expect("could not set timer");
 

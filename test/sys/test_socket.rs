@@ -69,7 +69,7 @@ pub fn test_timestamping() {
     } else {
         sys_time - ts
     };
-    assert!(std::time::Duration::from(diff).as_secs() < 60);
+    assert!(std::time::Duration::try_from(diff).unwrap().as_secs() < 60);
 }
 
 #[cfg(target_os = "freebsd")]
@@ -131,7 +131,7 @@ pub fn test_timestamping_realtime() {
     } else {
         sys_time - ts
     };
-    assert!(std::time::Duration::from(diff).as_secs() < 60);
+    assert!(std::time::Duration::try_from(diff).unwrap().as_secs() < 60);
 }
 
 #[cfg(target_os = "freebsd")]
@@ -189,7 +189,7 @@ pub fn test_timestamping_monotonic() {
         ::nix::time::clock_gettime(::nix::time::ClockId::CLOCK_MONOTONIC)
             .unwrap();
     let diff = sys_time - ts; // Monotonic clock sys_time must be greater
-    assert!(std::time::Duration::from(diff).as_secs() < 60);
+    assert!(std::time::Duration::try_from(diff).unwrap().as_secs() < 60);
 }
 
 #[test]
@@ -2985,7 +2985,7 @@ pub fn test_txtime() {
     let iov1 = [std::io::IoSlice::new(&sbuf)];
 
     let now = clock_gettime(ClockId::CLOCK_MONOTONIC).unwrap();
-    let delay = std::time::Duration::from_secs(1).into();
+    let delay = std::time::Duration::from_secs(1).try_into().unwrap();
     let txtime = (now + delay).num_nanoseconds() as u64;
 
     let cmsg = ControlMessage::TxTime(&txtime);
@@ -3099,7 +3099,8 @@ fn test_recvmm2() -> nix::Result<()> {
 
     let mut data = MultiHeaders::<()>::preallocate(recv_iovs.len(), Some(cmsg));
 
-    let t = TimeSpec::from_duration(std::time::Duration::from_secs(10));
+    let t = TimeSpec::try_from_duration(std::time::Duration::from_secs(10))
+        .unwrap();
 
     let recv = recvmmsg(
         rsock.as_raw_fd(),
@@ -3125,7 +3126,9 @@ fn test_recvmm2() -> nix::Result<()> {
                 } else {
                     sys_time - ts
                 };
-                assert!(std::time::Duration::from(diff).as_secs() < 60);
+                assert!(
+                    std::time::Duration::try_from(diff).unwrap().as_secs() < 60
+                );
                 #[cfg(not(any(qemu, target_arch = "aarch64")))]
                 {
                     saw_time = true;
