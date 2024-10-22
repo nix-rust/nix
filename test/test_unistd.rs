@@ -1397,6 +1397,7 @@ fn test_group_from() {
     all(target_os = "linux", target_env = "gnu"),
     target_os = "freebsd"
 ))]
+#[cfg_attr(qemu, ignore)]
 fn test_close_range() {
     use tempfile::NamedTempFile;
     const CONTENTS: &[u8] = b"abcdef123456";
