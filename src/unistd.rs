@@ -4024,7 +4024,14 @@ pub fn close_range<F: std::os::fd::AsFd>(fdbegin: F, fdlast: F, flags: CloseRang
 
     let raw = unsafe {
         Errno::clear();
-        libc::close_range(fdbegin.as_fd().as_raw_fd() as u32, fdlast.as_fd().as_raw_fd() as u32, flags.bits() as i32)
+
+        cfg_if! {
+            if #[cfg(all(target_os = "linux", target_env = "gnu"))] {
+                libc::syscall(libc::SYS_close_range, fdbegin.as_fd().as_raw_fd() as u32, fdlast.as_fd().as_raw_fd() as u32, flags.bits() as i32)
+            } else {
+                libc::close_range(fdbegin.as_fd().as_raw_fd() as u32, fdlast.as_fd().as_raw_fd() as u32, flags.bits() as i32)
+            }
+        }
     };
     if raw == -1 {
         if Errno::last_raw() == 0 {
@@ -4033,6 +4040,8 @@ pub fn close_range<F: std::os::fd::AsFd>(fdbegin: F, fdlast: F, flags: CloseRang
             Err(Errno::last())
         }
     } else {
+        #[cfg(all(target_os = "linux", target_env = "gnu", target_pointer_width = "64"))]
+        let raw = raw as i32;
         Ok(Some(raw))
     }
 
