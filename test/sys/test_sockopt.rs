@@ -1,5 +1,6 @@
 #[cfg(linux_android)]
 use crate::*;
+use cfg_if::cfg_if;
 use nix::sys::socket::{
     getsockopt, setsockopt, socket, sockopt, AddressFamily, SockFlag,
     SockProtocol, SockType,
