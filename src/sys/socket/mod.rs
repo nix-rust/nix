@@ -573,7 +573,7 @@ macro_rules! cmsg_space {
     ( $( $x:ty ),* ) => {
         {
             let space = 0 $(+ $crate::sys::socket::cmsg_space::<$x>())*;
-            Vec::<u8>::with_capacity(space)
+            vec![0u8; space]
         }
     }
 }
@@ -2081,7 +2081,7 @@ fn pack_mhdr_to_send<'a, I, C, S>(
 /// # References
 /// [recvmsg(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/recvmsg.html)
 pub fn recvmsg<'a, 'outer, 'inner, S>(fd: RawFd, iov: &'outer mut [IoSliceMut<'inner>],
-                   mut cmsg_buffer: Option<&'a mut Vec<u8>>,
+                   mut cmsg_buffer: Option<&'a mut [u8]>,
                    flags: MsgFlags) -> Result<RecvMsg<'a, 'outer, S>>
     where S: SockaddrLike + 'a,
     'inner: 'outer
@@ -2089,7 +2089,7 @@ pub fn recvmsg<'a, 'outer, 'inner, S>(fd: RawFd, iov: &'outer mut [IoSliceMut<'i
     let mut address = mem::MaybeUninit::uninit();
 
     let (msg_control, msg_controllen) = cmsg_buffer.as_mut()
-        .map(|v| (v.as_mut_ptr(), v.capacity()))
+        .map(|v| (v.as_mut_ptr(), v.len()))
         .unwrap_or((ptr::null_mut(), 0));
     let mut mhdr = unsafe {
         pack_mhdr_to_receive(iov.as_mut().as_mut_ptr(), iov.len(), msg_control, msg_controllen, address.as_mut_ptr())
