@@ -1391,3 +1391,18 @@ fn test_group_from() {
     assert_eq!(group.gid, group_id);
     assert_eq!(group.name, "wheel");
 }
+
+#[test]
+#[cfg(any(all(target_os = "linux", target_env = "gnu"), target_os = "freebsd"))]
+fn test_close_range() {
+    use tempfile::NamedTempFile;
+    const CONTENTS: &[u8] = b"abcdef123456";
+    let mut tempfile1 = NamedTempFile::new().unwrap();
+    let mut tempfile2 = NamedTempFile::new().unwrap();
+    let mut tempfile3 = NamedTempFile::new().unwrap();
+    tempfile3.write_all(CONTENTS).unwrap();
+    tempfile2.write_all(CONTENTS).unwrap();
+    tempfile1.write_all(CONTENTS).unwrap();
+    let areclosed = close_range(tempfile1, tempfile3, CloseRangeFlags::CLOSE_RANGE_CLOEXEC);
+    assert_eq!(areclosed.expect("close_range failed").expect("invalid flag"), 0);
+}
