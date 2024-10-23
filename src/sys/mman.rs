@@ -143,7 +143,7 @@ libc_bitflags! {
         #[cfg(any(freebsdlike, netbsdlike))]
         MAP_HASSEMAPHORE;
         /// Region grows down, like a stack.
-        #[cfg(any(linux_android, freebsdlike, target_os = "openbsd"))]
+        #[cfg(any(linux_android, freebsdlike, netbsdlike))]
         MAP_STACK;
         /// Do not write through the page caches, write directly to the file. Used for Direct Access (DAX) enabled file systems.
         // Available on Linux glibc and musl, MIPS* target excluded.
