@@ -3,9 +3,12 @@
 //! Uses Linux and/or POSIX functions to resolve interface names like "eth0"
 //! or "socan1" into device numbers.
 
-use std::{ffi::{CStr, CString}, fmt};
 use crate::{errno::Errno, Error, NixPath, Result};
 use libc::{c_uint, IF_NAMESIZE};
+use std::{
+    ffi::{CStr, CString},
+    fmt,
+};
 
 #[cfg(not(solarish))]
 /// type alias for InterfaceFlags
@@ -31,18 +34,19 @@ pub fn if_indextoname(index: c_uint) -> Result<CString> {
     // We need to allocate this anyway, so doing it directly is faster.
     let mut buf = vec![0u8; IF_NAMESIZE];
 
-    let return_buf = unsafe {
-        libc::if_indextoname(index, buf.as_mut_ptr().cast())
-    };
+    let return_buf =
+        unsafe { libc::if_indextoname(index, buf.as_mut_ptr().cast()) };
 
     Errno::result(return_buf.cast())?;
-    Ok(CStr::from_bytes_until_nul(buf.as_slice()).unwrap().to_owned())
+    Ok(CStr::from_bytes_until_nul(buf.as_slice())
+        .unwrap()
+        .to_owned())
 }
 
 libc_bitflags!(
     /// Standard interface flags, used by `getifaddrs`
     pub struct InterfaceFlags: IflagsType {
-    
+
         /// Interface is running. (see
         /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
         IFF_UP as IflagsType;
@@ -264,13 +268,7 @@ impl fmt::Display for InterfaceFlags {
     }
 }
 
-
-#[cfg(any(
-    bsd,
-    target_os = "fuchsia",
-    target_os = "linux",
-    solarish,
-))]
+#[cfg(any(bsd, target_os = "fuchsia", target_os = "linux", solarish,))]
 mod if_nameindex {
     use super::*;
 
@@ -392,10 +390,5 @@ mod if_nameindex {
         }
     }
 }
-#[cfg(any(
-    bsd,
-    target_os = "fuchsia",
-    target_os = "linux",
-    solarish,
-))]
+#[cfg(any(bsd, target_os = "fuchsia", target_os = "linux", solarish,))]
 pub use if_nameindex::*;
