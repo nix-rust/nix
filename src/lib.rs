@@ -92,7 +92,7 @@
 #![deny(missing_copy_implementations)]
 #![deny(missing_debug_implementations)]
 #![warn(missing_docs)]
-#![cfg_attr(docsrs, feature(doc_cfg))]
+#![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
 #![deny(clippy::cast_ptr_alignment)]
 #![deny(unsafe_op_in_unsafe_fn)]
 
@@ -105,68 +105,52 @@ mod macros;
 
 // Public crates
 #[cfg(not(target_os = "redox"))]
-feature! {
-    #![feature = "dir"]
-    pub mod dir;
-}
-feature! {
-    #![feature = "env"]
-    pub mod env;
-}
+#[cfg(feature = "dir")]
+pub mod dir;
+
+#[cfg(feature = "env")]
+pub mod env;
+
 #[allow(missing_docs)]
 pub mod errno;
-feature! {
-    #![feature = "feature"]
 
-    #[deny(missing_docs)]
-    pub mod features;
-}
+#[cfg(feature = "feature")]
+#[deny(missing_docs)]
+pub mod features;
+
 pub mod fcntl;
-feature! {
-    #![feature = "net"]
 
-    #[cfg(any(linux_android,
-              bsd,
-              solarish))]
-    #[deny(missing_docs)]
-    pub mod ifaddrs;
-    #[cfg(not(target_os = "redox"))]
-    #[deny(missing_docs)]
-    pub mod net;
-}
+#[cfg(feature = "net")]
+#[cfg(any(linux_android, bsd, solarish))]
+#[deny(missing_docs)]
+pub mod ifaddrs;
+
+#[cfg(feature = "net")]
+#[cfg(not(target_os = "redox"))]
+#[deny(missing_docs)]
+pub mod net;
+
 #[cfg(linux_android)]
-feature! {
-    #![feature = "kmod"]
-    pub mod kmod;
-}
-feature! {
-    #![feature = "mount"]
-    pub mod mount;
-}
+#[cfg(feature = "kmod")]
+pub mod kmod;
+
+#[cfg(feature = "mount")]
+pub mod mount;
+
 #[cfg(any(freebsdlike, target_os = "linux", target_os = "netbsd"))]
-feature! {
-    #![feature = "mqueue"]
-    pub mod mqueue;
-}
-feature! {
-    #![feature = "poll"]
-    pub mod poll;
-}
+#[cfg(feature = "mqueue")]
+pub mod mqueue;
+#[cfg(feature = "poll")]
+pub mod poll;
 #[cfg(not(any(target_os = "redox", target_os = "fuchsia")))]
-feature! {
-    #![feature = "term"]
-    #[deny(missing_docs)]
-    pub mod pty;
-}
-feature! {
-    #![feature = "sched"]
-    pub mod sched;
-}
+#[cfg(feature = "term")]
+#[deny(missing_docs)]
+pub mod pty;
+#[cfg(feature = "sched")]
+pub mod sched;
 pub mod sys;
-feature! {
-    #![feature = "time"]
-    pub mod time;
-}
+#[cfg(feature = "time")]
+pub mod time;
 // This can be implemented for other platforms as soon as libc
 // provides bindings for them.
 #[cfg(all(
@@ -178,11 +162,9 @@ feature! {
         target_arch = "x86_64"
     )
 ))]
-feature! {
-    #![feature = "ucontext"]
-    #[allow(missing_docs)]
-    pub mod ucontext;
-}
+#[cfg(feature = "ucontext")]
+#[allow(missing_docs)]
+pub mod ucontext;
 pub mod unistd;
 
 #[cfg(any(feature = "poll", feature = "event"))]
@@ -195,10 +177,8 @@ mod poll_timeout;
     target_os = "netbsd",
     apple_targets
 ))]
-feature! {
-    #![feature = "process"]
-    pub mod spawn;
-}
+#[cfg(feature = "process")]
+pub mod spawn;
 
 use std::ffi::{CStr, CString, OsStr};
 use std::mem::MaybeUninit;
