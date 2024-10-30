@@ -563,7 +563,7 @@ sockopt_impl!(
     libc::SO_KEEPALIVE,
     bool
 );
-#[cfg(any(freebsdlike, apple_targets))]
+#[cfg(freebsdlike)]
 sockopt_impl!(
     /// Get the credentials of the peer process of a connected unix domain
     /// socket.
@@ -575,10 +575,20 @@ sockopt_impl!(
 );
 #[cfg(apple_targets)]
 sockopt_impl!(
+    /// Get the credentials of the peer process of a connected unix domain
+    /// socket.
+    LocalPeerCred,
+    GetOnly,
+    libc::SOL_LOCAL,
+    libc::LOCAL_PEERCRED,
+    super::XuCred
+);
+#[cfg(apple_targets)]
+sockopt_impl!(
     /// Get the PID of the peer process of a connected unix domain socket.
     LocalPeerPid,
     GetOnly,
-    0,
+    libc::SOL_LOCAL,
     libc::LOCAL_PEERPID,
     libc::c_int
 );
