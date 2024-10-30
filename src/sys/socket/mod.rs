@@ -499,6 +499,63 @@ cfg_if! {
     }
 }
 
+cfg_if! {
+    if #[cfg(apple_targets)] {
+        use std::fmt;
+
+        /// Return type of [`LocalPeerToken`].
+        ///
+        /// The audit token is an opaque token which identifies Mach tasks and
+        /// senders of Mach messages as subjects to the BSM audit system. Only
+        /// the appropriate BSM library routines should be used to interpret
+        /// the contents of the audit token as the representation of the
+        /// subject identity within the token may change over time.
+        ///
+        /// Starting with macOS 11, almost all audit functions have been
+        /// deprecated (see the system header `bsm/libbsm.h`), do not use them
+        /// if your program target more recent versions of macOS.
+        ///
+        /// [`LocalPeerToken`]: crate::sys::socket::sockopt::LocalPeerToken
+        #[repr(C)]
+        #[derive(Default, Copy, Clone, PartialEq, Eq, Hash)]
+        pub struct audit_token_t {
+            /// Value of the token.
+            ///
+            /// This is considered an opaque value, do not rely on its format.
+            pub val: [libc::c_uint; 8],
+        }
+
+        // Make the debug representation a hex string to make it shorter and clearer.
+        impl fmt::Debug for audit_token_t {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                f.debug_tuple("audit_token_t")
+                    .field(&format!("0x{:08X}", self))
+                    .finish()
+            }
+        }
+
+        impl fmt::LowerHex for audit_token_t {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                for v in self.val {
+                    fmt::LowerHex::fmt(&v, f)?;
+                }
+
+                Ok(())
+            }
+        }
+
+        impl fmt::UpperHex for audit_token_t {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                for v in self.val {
+                    fmt::UpperHex::fmt(&v, f)?;
+                }
+
+                Ok(())
+            }
+        }
+    }
+}
+
 feature! {
 #![feature = "net"]
 /// Request for multicast socket operations
