@@ -592,6 +592,16 @@ sockopt_impl!(
     libc::LOCAL_PEERPID,
     libc::c_int
 );
+#[cfg(apple_targets)]
+sockopt_impl!(
+    /// Get the audit token of the peer process of a connected unix domain
+    /// socket.
+    LocalPeerToken,
+    GetOnly,
+    libc::SOL_LOCAL,
+    libc::LOCAL_PEERTOKEN,
+    super::audit_token_t
+);
 #[cfg(linux_android)]
 sockopt_impl!(
     /// Return the credentials of the foreign process connected to this socket.
