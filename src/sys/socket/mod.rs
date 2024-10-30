@@ -2059,7 +2059,10 @@ unsafe fn pack_mhdr_to_receive<S>(
     let mut mhdr = mem::MaybeUninit::<msghdr>::zeroed();
     let p = mhdr.as_mut_ptr();
     unsafe {
-        (*p).msg_name = address as *mut c_void;
+        // it is important to use as_mut_ptr() here since S can be
+        // a zero sized type representing by a dangling pointer.
+        // as_mut_ptr() handles this case and uses a null pointer instead
+        (*p).msg_name = (*address).as_mut_ptr() as *mut c_void;
         (*p).msg_namelen = S::size();
         (*p).msg_iov = iov_buffer as *mut iovec;
         (*p).msg_iovlen = iov_buffer_len as _;
