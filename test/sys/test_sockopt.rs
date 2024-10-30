@@ -66,6 +66,36 @@ pub fn test_local_peer_pid() {
     assert_eq!(pid, std::process::id() as _);
 }
 
+#[cfg(apple_targets)]
+#[test]
+pub fn test_local_peer_token() {
+    use nix::sys::socket::{audit_token_t, socketpair};
+
+    #[link(name = "bsm", kind = "dylib")]
+    extern "C" {
+        /// Extract the process ID from an `audit_token_t`, used to identify
+        /// Mach tasks and senders of Mach messages as subjects of the audit
+        /// system.
+        ///
+        /// - `atoken`: The Mach audit token.
+        /// - Returns: The process ID extracted from the Mach audit token.
+        fn audit_token_to_pid(atoken: audit_token_t) -> libc::pid_t;
+    }
+
+    let (fd1, _fd2) = socketpair(
+        AddressFamily::Unix,
+        SockType::Stream,
+        None,
+        SockFlag::empty(),
+    )
+    .unwrap();
+    let audit_token = getsockopt(&fd1, sockopt::LocalPeerToken).unwrap();
+    assert_eq!(
+        unsafe { audit_token_to_pid(audit_token) },
+        std::process::id() as _
+    );
+}
+
 #[cfg(target_os = "linux")]
 #[test]
 fn is_so_mark_functional() {
