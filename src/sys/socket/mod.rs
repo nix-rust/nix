@@ -39,10 +39,20 @@ pub use self::addr::{SockaddrLike, SockaddrStorage};
 pub use self::addr::{AddressFamily, UnixAddr};
 #[cfg(not(solarish))]
 pub use self::addr::{AddressFamily, UnixAddr};
-#[cfg(not(any(solarish, target_os = "haiku", target_os = "hurd", target_os = "redox")))]
+#[cfg(not(any(
+    solarish,
+    target_os = "haiku",
+    target_os = "hurd",
+    target_os = "redox"
+)))]
 #[cfg(feature = "net")]
 pub use self::addr::{LinkAddr, SockaddrIn, SockaddrIn6};
-#[cfg(any(solarish, target_os = "haiku", target_os = "hurd", target_os = "redox"))]
+#[cfg(any(
+    solarish,
+    target_os = "haiku",
+    target_os = "hurd",
+    target_os = "redox"
+))]
 #[cfg(feature = "net")]
 pub use self::addr::{SockaddrIn, SockaddrIn6};
 
@@ -851,17 +861,17 @@ pub enum ControlMessageOwned {
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv6HopLimit(i32),
 
-    /// Retrieve the DSCP (ToS) header field of the incoming IPv4 packet. 
+    /// Retrieve the DSCP (ToS) header field of the incoming IPv4 packet.
     #[cfg(any(linux_android, target_os = "freebsd"))]
     #[cfg(feature = "net")]
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv4Tos(u8),
 
-    /// Retrieve the DSCP (Traffic Class) header field of the incoming IPv6 packet. 
+    /// Retrieve the DSCP (Traffic Class) header field of the incoming IPv6 packet.
     #[cfg(any(linux_android, target_os = "freebsd"))]
     #[cfg(feature = "net")]
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
-    Ipv6TClass(i32), 
+    Ipv6TClass(i32),
 
     /// UDP Generic Receive Offload (GRO) allows receiving multiple UDP
     /// packets from a single sender.
@@ -1119,7 +1129,7 @@ impl ControlMessageOwned {
             (_, _) => {
                 let sl = unsafe { std::slice::from_raw_parts(p, len) };
                 let ucmsg = UnknownCmsg {
-                    cmsg_header: *header, 
+                    cmsg_header: *header,
                     data_bytes: Vec::<u8>::from(sl),
                 };
                 ControlMessageOwned::Unknown(ucmsg)
@@ -2520,4 +2530,3 @@ pub fn shutdown(df: RawFd, how: Shutdown) -> Result<()> {
         Errno::result(shutdown(df, how)).map(drop)
     }
 }
-
