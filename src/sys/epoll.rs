@@ -205,7 +205,10 @@ pub fn epoll_create1(flags: EpollCreateFlags) -> Result<RawFd> {
     Errno::result(res)
 }
 
-#[deprecated(since = "0.27.0", note = "Use Epoll::epoll_ctl() instead")]
+#[deprecated(
+    since = "0.27.0",
+    note = "Use corresponding Epoll methods instead"
+)]
 #[inline]
 pub fn epoll_ctl<'a, T>(
     epfd: RawFd,
