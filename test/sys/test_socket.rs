@@ -2914,7 +2914,7 @@ mod linux_errqueue {
         )
         .unwrap();
         // The sent message / destination associated with the error is returned:
-        assert_eq!(msg.bytes, MESSAGE_CONTENTS.as_bytes().len());
+        assert_eq!(msg.bytes, MESSAGE_CONTENTS.len());
         // recvmsg(2): "The original destination address of the datagram that caused the error is
         // supplied via msg_name;" however, this is not literally true.  E.g., an earlier version
         // of this test used 0.0.0.0 (::0) as the destination address, which was mutated into
