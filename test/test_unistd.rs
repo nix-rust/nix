@@ -1401,14 +1401,17 @@ fn test_group_from() {
 fn test_close_range() {
     use tempfile::NamedTempFile;
     const CONTENTS: &[u8] = b"abcdef123456";
-    let mut tempfile1 = NamedTempFile::new().unwrap();
-    let mut tempfile2 = NamedTempFile::new().unwrap();
-    let mut tempfile3 = NamedTempFile::new().unwrap();
-    tempfile3.write_all(CONTENTS).unwrap();
-    tempfile2.write_all(CONTENTS).unwrap();
-    tempfile1.write_all(CONTENTS).unwrap();
+    let mut tempfile: [NamedTempFile; 3] = [
+        NamedTempFile::new().unwrap(),
+        NamedTempFile::new().unwrap(),
+        NamedTempFile::new().unwrap(),
+    ];
+
+    for tf in &mut tempfile {
+        let _ = tf.write_all(CONTENTS);
+    }
     let areclosed =
-        close_range(tempfile1, tempfile3, CloseRangeFlags::CLOSE_RANGE_CLOEXEC);
+        unsafe { close_range(tempfile[0].as_file().as_fd(), tempfile[2].as_file().as_fd(), CloseRangeFlags::CLOSE_RANGE_CLOEXEC) };
     assert_eq!(
         areclosed
             .expect("close_range failed")

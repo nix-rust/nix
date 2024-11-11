@@ -4001,12 +4001,13 @@ pub fn chflags<P: ?Sized + NixPath>(path: &P, flags: FileFlag) -> Result<()> {
 libc_bitflags! {
     /// Options for close_range()
     #[cfg_attr(docsrs, doc(cfg(feature = "fs")))]
-    pub struct CloseRangeFlags : c_uint {
+    pub struct CloseRangeFlags : c_int {
         #[cfg(all(target_os = "linux", target_env = "gnu"))]
-        /// Unshare the file descriptors range before closing them
-        CLOSE_RANGE_UNSHARE;
-        /// Set the close-on-exec flag on the file descriptors range
-        CLOSE_RANGE_CLOEXEC;
+        /// Unshare the file descriptors table, then close the file descriptors specified in the
+        /// range
+        CLOSE_RANGE_UNSHARE as c_int;
+        /// Set the close-on-exec flag on the file descriptors range instead of closing them
+        CLOSE_RANGE_CLOEXEC as c_int;
     }
 }
 
@@ -4019,17 +4020,15 @@ feature! {
     all(target_os = "linux", target_env = "gnu"),
     target_os = "freebsd"
 ))]
-pub fn close_range<F: std::os::fd::AsFd>(fdbegin: F, fdlast: F, flags: CloseRangeFlags) -> Result<Option<c_int>> {
-    use std::os::fd::AsRawFd;
-
+pub unsafe fn close_range<F: std::os::fd::AsRawFd>(fdbegin: F, fdlast: F, flags: CloseRangeFlags) -> Result<Option<c_int>> {
     let raw = unsafe {
         Errno::clear();
 
         cfg_if! {
             if #[cfg(all(target_os = "linux", target_env = "gnu"))] {
-                libc::syscall(libc::SYS_close_range, fdbegin.as_fd().as_raw_fd() as u32, fdlast.as_fd().as_raw_fd() as u32, flags.bits() as i32)
+                libc::syscall(libc::SYS_close_range, fdbegin.as_raw_fd() as u32, fdlast.as_raw_fd() as u32, flags.bits())
             } else {
-                libc::close_range(fdbegin.as_fd().as_raw_fd() as u32, fdlast.as_fd().as_raw_fd() as u32, flags.bits() as i32)
+                libc::close_range(fdbegin.as_raw_fd() as u32, fdlast.as_raw_fd() as u32, flags.bits())
             }
         }
     };
