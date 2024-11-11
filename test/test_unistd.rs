@@ -1410,8 +1410,13 @@ fn test_close_range() {
     for tf in &mut tempfile {
         let _ = tf.write_all(CONTENTS);
     }
-    let areclosed =
-        unsafe { close_range(tempfile[0].as_file().as_fd(), tempfile[2].as_file().as_fd(), CloseRangeFlags::CLOSE_RANGE_CLOEXEC) };
+    let areclosed = unsafe {
+        close_range(
+            tempfile[0].as_file().as_fd(),
+            tempfile[2].as_file().as_fd(),
+            CloseRangeFlags::CLOSE_RANGE_CLOEXEC,
+        )
+    };
     assert_eq!(
         areclosed
             .expect("close_range failed")

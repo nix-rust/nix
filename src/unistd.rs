@@ -4016,6 +4016,10 @@ feature! {
 
 /// Close all the file descriptor from a given range.
 /// An optional flag can be applied to modify its behavior.
+///
+/// # Safety
+///
+/// This function as there are risks of double closes on the file descriptors.
 #[cfg(any(
     all(target_os = "linux", target_env = "gnu"),
     target_os = "freebsd"
