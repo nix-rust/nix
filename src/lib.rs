@@ -200,6 +200,14 @@ feature! {
     pub mod spawn;
 }
 
+#[cfg(any(
+    target_os = "macos",
+))]
+feature! {
+    #![feature = "syslog"]
+    pub mod syslog;
+}
+
 use std::ffi::{CStr, CString, OsStr};
 use std::mem::MaybeUninit;
 use std::os::unix::ffi::OsStrExt;
