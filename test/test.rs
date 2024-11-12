@@ -42,6 +42,9 @@ mod test_sendfile;
 ))]
 mod test_spawn;
 
+#[cfg(any(target_os = "macos"))]
+mod test_syslog;
+
 mod test_time;
 mod test_unistd;
 

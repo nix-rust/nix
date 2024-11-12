@@ -1,3 +1,5 @@
+use std::ffi::CString;
+
 #[cfg(target_os = "macos")]
 pub fn openlog(ident: &str, logopt: LogFlags, facility: Facility) {
     let ident = CString::new(ident).expect("TODO: handle error");
@@ -6,8 +8,14 @@ pub fn openlog(ident: &str, logopt: LogFlags, facility: Facility) {
     }
 }
 
+#[cfg(target_os = "macos")]
+pub fn syslog(priority: libc::c_int, message: &str) {
+    let formatter = CString::new("%s").expect("TODO: handle error");
+    let message = CString::new(message).expect("TODO: handle error");
+    unsafe { libc::syslog(priority, formatter.as_ptr(), message.as_ptr()) }
+}
+
 pub use self::consts::*;
-use std::ffi::CString;
 
 #[cfg(target_os = "macos")]
 mod consts {
@@ -26,6 +34,20 @@ mod consts {
             /// Write the message to standard error output as well to the system log.
             LOG_PERROR;
         }
+    }
+
+    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+    #[repr(i32)]
+    #[non_exhaustive]
+    pub enum Severity {
+        LOG_EMERG = libc::LOG_EMERG,
+        LOG_ALERT = libc::LOG_ALERT,
+        LOG_CRIT = libc::LOG_CRIT,
+        LOG_ERR = libc::LOG_ERR,
+        LOG_WARNING = libc::LOG_WARNING,
+        LOG_NOTICE = libc::LOG_NOTICE,
+        LOG_INFO = libc::LOG_INFO,
+        LOG_DEBUG = libc::LOG_DEBUG,
     }
 
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
