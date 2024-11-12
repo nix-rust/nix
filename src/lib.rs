@@ -304,7 +304,7 @@ impl NixPath for [u8] {
         F: FnOnce(&CStr) -> T,
     {
         // The real PATH_MAX is typically 4096, but it's statistically unlikely to have a path
-        // longer than ~300 bytes. See the the PR description to get stats for your own machine.
+        // longer than ~300 bytes. See the PR description to get stats for your own machine.
         // https://github.com/nix-rust/nix/pull/1656
         //
         // By being smaller than a memory page, we also avoid the compiler inserting a probe frame:
