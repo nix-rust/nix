@@ -282,6 +282,28 @@ fn test_tcp_congestion() {
 }
 
 #[test]
+#[cfg(target_os = "freebsd")]
+fn test_tcp_function_blk() {
+    use std::ffi::CStr;
+
+    let fd = socket(
+        AddressFamily::Inet,
+        SockType::Stream,
+        SockFlag::empty(),
+        None,
+    )
+    .unwrap();
+
+    let tfs = getsockopt(&fd, sockopt::TcpFunctionBlk).unwrap();
+    let name = unsafe { CStr::from_ptr(tfs.function_set_name.as_ptr()) };
+    assert!(!name.to_bytes().is_empty());
+
+    // We can't know at compile time what options are available.  So just test the setter by a
+    // no-op set.
+    setsockopt(&fd, sockopt::TcpFunctionBlk, &tfs).unwrap();
+}
+
+#[test]
 #[cfg(linux_android)]
 fn test_bindtodevice() {
     skip_if_not_root!("test_bindtodevice");

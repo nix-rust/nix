@@ -300,7 +300,18 @@ sockopt_impl!(
     libc::SO_REUSEPORT_LB,
     bool
 );
+#[cfg(target_os = "freebsd")]
 #[cfg(feature = "net")]
+sockopt_impl!(
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
+    /// Select or query the set of functions that TCP will use for this connection.  This allows a
+    /// user to select an alternate TCP stack.
+    TcpFunctionBlk,
+    Both,
+    libc::IPPROTO_TCP,
+    libc::TCP_FUNCTION_BLK,
+    libc::tcp_function_set
+);
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     /// Used to disable Nagle's algorithm.
