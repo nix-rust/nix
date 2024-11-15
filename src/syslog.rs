@@ -2,7 +2,6 @@
 
 use std::ffi::CString;
 
-#[cfg(target_os = "macos")]
 pub fn openlog(ident: &str, logopt: LogFlags, facility: Facility) {
     let ident = CString::new(ident).expect("TODO: handle error");
     unsafe {
@@ -10,11 +9,28 @@ pub fn openlog(ident: &str, logopt: LogFlags, facility: Facility) {
     }
 }
 
-#[cfg(target_os = "macos")]
-pub fn syslog(priority: libc::c_int, message: &str) {
+pub fn syslog(priority: Priority, message: &str) {
     let formatter = CString::new("%s").expect("TODO: handle error");
     let message = CString::new(message).expect("TODO: handle error");
-    unsafe { libc::syslog(priority, formatter.as_ptr(), message.as_ptr()) }
+    unsafe { libc::syslog(priority.0, formatter.as_ptr(), message.as_ptr()) }
+}
+
+/// The priority for a log message.
+#[derive(Debug, Clone, Copy)]
+pub struct Priority(libc::c_int);
+
+impl Priority {
+    /// Create a new priority from a severity level.
+    pub fn from_severity(severity: Severity) -> Self {
+        let priority = severity as libc::c_int;
+        Priority(priority)
+    }
+
+    /// Create a new priority from a facility and severity level.
+    pub fn from(severity: Severity, facility: Facility) -> Self {
+        let priority = (facility as libc::c_int) | (severity as libc::c_int);
+        Priority(priority)
+    }
 }
 
 libc_bitflags! {
