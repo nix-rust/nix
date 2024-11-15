@@ -23,10 +23,18 @@ pub fn openlog<P: NixPath + ?Sized>(
 ///
 /// The message is then written to the system console, log files, logged-in users, or forwarded
 /// to other machines as appropriate.
-pub fn syslog<S: AsRef<OsStr> + ?Sized>(priority: Priority, message: &S) {
+pub fn syslog<S: AsRef<OsStr> + ?Sized>(
+    priority: Priority,
+    message: &S,
+) -> Result<()> {
     let formatter = OsStr::new("%s");
     let message = OsStr::new(message);
-    unsafe { libc::syslog(priority.0, formatter.as_ptr(), message.as_ptr()) }
+    formatter.with_nix_path(|formatter| {
+        message.with_nix_path(|message| unsafe {
+            libc::syslog(priority.0, formatter.as_ptr(), message.as_ptr())
+        })
+    })??;
+    Ok(())
 }
 
 /// The priority for a log message.
@@ -48,6 +56,7 @@ impl Priority {
 }
 
 libc_bitflags! {
+    /// Options for system logging.
     pub struct LogFlags: libc::c_int {
         /// Log the process id with each message: useful for identifying instantiations of
         /// daemons.

@@ -200,7 +200,7 @@ feature! {
     pub mod spawn;
 }
 
-#[cfg(any(target_os = "macos"))]
+#[cfg(target_os = "macos")]
 feature! {
     #![feature = "syslog"]
     pub mod syslog;
