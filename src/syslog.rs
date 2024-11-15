@@ -1,17 +1,31 @@
 //! Interfaces for controlling system log.
 
-use std::ffi::CString;
+use crate::NixPath;
+use crate::Result;
+use std::ffi::OsStr;
 
-pub fn openlog(ident: &str, logopt: LogFlags, facility: Facility) {
-    let ident = CString::new(ident).expect("TODO: handle error");
-    unsafe {
-        libc::openlog(ident.as_ptr(), logopt.bits(), facility as libc::c_int)
-    }
+/// Logging options of subsequent [`syslog`] calls can be set by calling [`openlog`].
+///
+/// The parameter `ident` is a string that will be prepended to every message. The `logopt`
+/// argument specifies logging options. The `facility` parameter encodes a default facility to be
+/// assigned to all messages that do not have an explicit facility encoded.
+pub fn openlog<P: NixPath + ?Sized>(
+    ident: &P,
+    logopt: LogFlags,
+    facility: Facility,
+) -> Result<()> {
+    ident.with_nix_path(|ident| unsafe {
+        libc::openlog(ident.as_ptr(), logopt.bits(), facility as libc::c_int);
+    })
 }
 
-pub fn syslog(priority: Priority, message: &str) {
-    let formatter = CString::new("%s").expect("TODO: handle error");
-    let message = CString::new(message).expect("TODO: handle error");
+/// Writes message to the system message logger.
+///
+/// The message is then written to the system console, log files, logged-in users, or forwarded
+/// to other machines as appropriate.
+pub fn syslog<S: AsRef<OsStr> + ?Sized>(priority: Priority, message: &S) {
+    let formatter = OsStr::new("%s");
+    let message = OsStr::new(message);
     unsafe { libc::syslog(priority.0, formatter.as_ptr(), message.as_ptr()) }
 }
 
