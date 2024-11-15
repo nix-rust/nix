@@ -29,6 +29,25 @@ pub fn syslog<S: AsRef<OsStr> + ?Sized>(priority: Priority, message: &S) {
     unsafe { libc::syslog(priority.0, formatter.as_ptr(), message.as_ptr()) }
 }
 
+/// Closes the log file.
+pub fn closelog() {
+    unsafe { libc::closelog() }
+}
+
+/// Sets the log priority mask to `maskpri` and returns the previous mask.
+///
+/// A process has a log priority mask that determines which calls to [`syslog`] may be logged.
+/// All other calls will be ignored. Logging is enabled for the priorities that have the
+/// corresponding bit set in `maskpri`.  The initial mask is such that logging is enabled for all
+/// priorities.
+///
+/// The [`setlogmask`] function sets this mask for the calling process, and returns the previous
+/// mask. If `maskpri` is 0, the current log mask is not modified.
+pub fn setlogmask(maskpri: libc::c_int) -> libc::c_int {
+    let mask = unsafe { libc::setlogmask(maskpri) };
+    mask
+}
+
 /// The priority for a log message.
 #[derive(Debug, Clone, Copy)]
 pub struct Priority(libc::c_int);
