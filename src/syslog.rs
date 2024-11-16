@@ -100,7 +100,7 @@ libc_bitflags! {
         /// which file descriptors are allocated.
         LOG_NDELAY;
         /// Write the message to standard error output as well to the system log.
-        #[cfg(all(not(target_os = "redox"), not(target_os = "illumos")))]
+        #[cfg(not(any(target_os = "redox", target_os = "illumos")))]
         LOG_PERROR;
     }
 }
