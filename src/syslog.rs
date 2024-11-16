@@ -10,24 +10,46 @@ use std::ffi::OsStr;
 /// argument specifies logging options. The `facility` parameter encodes a default facility to be
 /// assigned to all messages that do not have an explicit facility encoded.
 pub fn openlog<S: AsRef<OsStr> + ?Sized>(
-    ident: &S,
+    ident: Option<&S>,
     logopt: LogFlags,
     facility: Facility,
 ) -> Result<()> {
-    let ident = OsStr::new(ident);
-    ident.with_nix_path(|ident| unsafe {
-        libc::openlog(ident.as_ptr(), logopt.bits(), facility as libc::c_int);
-    })
+    let logopt = logopt.bits();
+    let facility = facility as libc::c_int;
+    match ident.map(OsStr::new) {
+        None => unsafe {
+            libc::openlog(std::ptr::null(), logopt, facility);
+        },
+        Some(ident) => ident.with_nix_path(|ident| unsafe {
+            libc::openlog(ident.as_ptr(), logopt, facility);
+        })?,
+    }
+    Ok(())
 }
 
 /// Writes message to the system message logger.
 ///
 /// The message is then written to the system console, log files, logged-in users, or forwarded
 /// to other machines as appropriate.
-pub fn syslog<S: AsRef<OsStr> + ?Sized>(
-    priority: Priority,
-    message: &S,
-) -> Result<()> {
+///
+/// # Examples
+///
+/// ```rust
+/// use nix::syslog::{openlog, syslog, Facility, LogFlags, Severity};
+///
+/// openlog(None, LogFlags::LOG_PID, Facility::LOG_USER).unwrap();
+/// syslog(Severity::LOG_EMERG, "Hello, nix!").unwrap();
+///
+/// // use `format!` to format the message
+/// let name = "syslog";
+/// syslog(Severity::LOG_EMERG, &format!("Hello, {name}!")).unwrap();
+/// ```
+pub fn syslog<P, S>(priority: P, message: &S) -> Result<()>
+where
+    P: Into<Priority>,
+    S: AsRef<OsStr> + ?Sized,
+{
+    let priority = priority.into();
     let formatter = OsStr::new("%s");
     let message = OsStr::new(message);
     formatter.with_nix_path(|formatter| {
@@ -48,15 +70,16 @@ pub fn closelog() {
 pub struct Priority(libc::c_int);
 
 impl Priority {
-    /// Create a new priority from a severity level.
-    pub fn from_severity(severity: Severity) -> Self {
-        let priority = severity as libc::c_int;
+    /// Create a new priority from a facility and severity level.
+    pub fn new(severity: Severity, facility: Facility) -> Self {
+        let priority = (facility as libc::c_int) | (severity as libc::c_int);
         Priority(priority)
     }
+}
 
-    /// Create a new priority from a facility and severity level.
-    pub fn from(severity: Severity, facility: Facility) -> Self {
-        let priority = (facility as libc::c_int) | (severity as libc::c_int);
+impl From<Severity> for Priority {
+    fn from(severity: Severity) -> Self {
+        let priority = severity as libc::c_int;
         Priority(priority)
     }
 }
