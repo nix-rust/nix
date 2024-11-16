@@ -9,11 +9,14 @@ use std::ffi::OsStr;
 /// The parameter `ident` is a string that will be prepended to every message. The `logopt`
 /// argument specifies logging options. The `facility` parameter encodes a default facility to be
 /// assigned to all messages that do not have an explicit facility encoded.
-pub fn openlog<S: AsRef<OsStr> + ?Sized>(
+pub fn openlog<S>(
     ident: Option<&S>,
     logopt: LogFlags,
     facility: Facility,
-) -> Result<()> {
+) -> Result<()>
+where
+    S: AsRef<OsStr> + ?Sized,
+{
     let logopt = logopt.bits();
     let facility = facility as libc::c_int;
     match ident.map(OsStr::new) {
@@ -37,7 +40,7 @@ pub fn openlog<S: AsRef<OsStr> + ?Sized>(
 /// ```rust
 /// use nix::syslog::{openlog, syslog, Facility, LogFlags, Severity};
 ///
-/// openlog(None, LogFlags::LOG_PID, Facility::LOG_USER).unwrap();
+/// openlog(None::<&str>, LogFlags::LOG_PID, Facility::LOG_USER).unwrap();
 /// syslog(Severity::LOG_EMERG, "Hello, nix!").unwrap();
 ///
 /// // use `format!` to format the message
