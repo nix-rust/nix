@@ -34,6 +34,7 @@
 //! * `sched` - Manipulate process's scheduling
 //! * `socket` - Sockets, whether for networking or local use
 //! * `signal` - Send and receive signals to processes
+//! * `syslog` - System logging
 //! * `term` - Terminal control APIs
 //! * `time` - Query the operating system's clocks
 //! * `ucontext` - User thread context
@@ -79,6 +80,7 @@
         feature = "sched",
         feature = "socket",
         feature = "signal",
+        feature = "syslog",
         feature = "term",
         feature = "time",
         feature = "ucontext",
