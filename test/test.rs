@@ -42,7 +42,7 @@ mod test_sendfile;
 ))]
 mod test_spawn;
 
-#[cfg(target_os = "macos")]
+#[cfg(any(linux, macos))]
 mod test_syslog;
 
 mod test_time;
