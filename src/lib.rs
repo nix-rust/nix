@@ -202,7 +202,6 @@ feature! {
     pub mod spawn;
 }
 
-#[cfg(unix)]
 feature! {
     #![feature = "syslog"]
     pub mod syslog;
