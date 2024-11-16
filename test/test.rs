@@ -42,7 +42,7 @@ mod test_sendfile;
 ))]
 mod test_spawn;
 
-#[cfg(any(linux, macos))]
+#[cfg(unix)]
 mod test_syslog;
 
 mod test_time;

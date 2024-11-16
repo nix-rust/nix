@@ -92,20 +92,25 @@ libc_bitflags! {
     pub struct LogFlags: libc::c_int {
         /// Log the process id with each message: useful for identifying instantiations of
         /// daemons.
+        #[cfg(not(target_os = "haiku"))]
         LOG_PID;
         /// If syslog() cannot pass the message to syslogd(8) it will attempt to write the
         /// message to the console ("/dev/console").
+        #[cfg(not(target_os = "haiku"))]
         LOG_CONS;
         /// The converse of [`LOG_NDELAY`][LogFlags::LOG_NDELAY]; opening of the connection is
         /// delayed until `syslog` is called.
         ///
         /// This is the default, and need not be specified.
+        #[cfg(not(target_os = "haiku"))]
         LOG_ODELAY;
         /// Open the connection to syslogd(8) immediately. Normally the open is delayed until
         /// the first message is logged. Useful for programs that need to manage the order in
         /// which file descriptors are allocated.
+        #[cfg(not(target_os = "haiku"))]
         LOG_NDELAY;
         /// Write the message to standard error output as well to the system log.
+        #[cfg(not(target_os = "haiku"))]
         LOG_PERROR;
     }
 }
