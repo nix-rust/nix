@@ -37,6 +37,11 @@ pub fn syslog<S: AsRef<OsStr> + ?Sized>(
     Ok(())
 }
 
+/// Closes the log file.
+pub fn closelog() {
+    unsafe { libc::closelog() }
+}
+
 /// The priority for a log message.
 #[derive(Debug, Clone, Copy)]
 pub struct Priority(libc::c_int);
