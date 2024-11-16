@@ -1,31 +1,24 @@
 //! Interfaces for controlling system log.
 
-use crate::NixPath;
-use crate::Result;
-use std::ffi::OsStr;
+use crate::{NixPath, Result};
+use std::ffi::{CStr, OsStr};
+use std::ptr;
 
 /// Logging options of subsequent [`syslog`] calls can be set by calling [`openlog`].
 ///
 /// The parameter `ident` is a string that will be prepended to every message. The `logopt`
 /// argument specifies logging options. The `facility` parameter encodes a default facility to be
 /// assigned to all messages that do not have an explicit facility encoded.
-pub fn openlog<S>(
-    ident: Option<&S>,
+pub fn openlog(
+    ident: Option<&'static CStr>,
     logopt: LogFlags,
     facility: Facility,
-) -> Result<()>
-where
-    S: AsRef<OsStr> + ?Sized,
-{
+) -> Result<()> {
+    let ident = ident.map_or(ptr::null(), |ident| ident.as_ptr());
     let logopt = logopt.bits();
     let facility = facility as libc::c_int;
-    match ident.map(OsStr::new) {
-        None => unsafe {
-            libc::openlog(std::ptr::null(), logopt, facility);
-        },
-        Some(ident) => ident.with_nix_path(|ident| unsafe {
-            libc::openlog(ident.as_ptr(), logopt, facility);
-        })?,
+    unsafe {
+        libc::openlog(ident, logopt, facility);
     }
     Ok(())
 }
@@ -40,12 +33,8 @@ where
 /// ```rust
 /// use nix::syslog::{openlog, syslog, Facility, LogFlags, Severity};
 ///
-/// #[cfg(not(target_os = "haiku"))]
 /// let flags = LogFlags::LOG_PID;
-/// #[cfg(target_os = "haiku")]
-/// let flags = LogFlags::empty();
-///
-/// openlog(None::<&str>, flags, Facility::LOG_USER).unwrap();
+/// openlog(None, flags, Facility::LOG_USER).unwrap();
 /// syslog(Severity::LOG_EMERG, "Hello, nix!").unwrap();
 ///
 /// // use `format!` to format the message
@@ -97,25 +86,21 @@ libc_bitflags! {
     pub struct LogFlags: libc::c_int {
         /// Log the process id with each message: useful for identifying instantiations of
         /// daemons.
-        #[cfg(not(target_os = "haiku"))]
         LOG_PID;
         /// If syslog() cannot pass the message to syslogd(8) it will attempt to write the
         /// message to the console ("/dev/console").
-        #[cfg(not(target_os = "haiku"))]
         LOG_CONS;
         /// The converse of [`LOG_NDELAY`][LogFlags::LOG_NDELAY]; opening of the connection is
         /// delayed until `syslog` is called.
         ///
         /// This is the default, and need not be specified.
-        #[cfg(not(target_os = "haiku"))]
         LOG_ODELAY;
         /// Open the connection to syslogd(8) immediately. Normally the open is delayed until
         /// the first message is logged. Useful for programs that need to manage the order in
         /// which file descriptors are allocated.
-        #[cfg(not(target_os = "haiku"))]
         LOG_NDELAY;
         /// Write the message to standard error output as well to the system log.
-        #[cfg(not(target_os = "haiku"))]
+        #[cfg(all(not(target_os = "redox"), not(target_os = "illumos")))]
         LOG_PERROR;
     }
 }
