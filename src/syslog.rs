@@ -9,11 +9,12 @@ use std::ffi::OsStr;
 /// The parameter `ident` is a string that will be prepended to every message. The `logopt`
 /// argument specifies logging options. The `facility` parameter encodes a default facility to be
 /// assigned to all messages that do not have an explicit facility encoded.
-pub fn openlog<P: NixPath + ?Sized>(
-    ident: &P,
+pub fn openlog<S: AsRef<OsStr> + ?Sized>(
+    ident: &S,
     logopt: LogFlags,
     facility: Facility,
 ) -> Result<()> {
+    let ident = OsStr::new(ident);
     ident.with_nix_path(|ident| unsafe {
         libc::openlog(ident.as_ptr(), logopt.bits(), facility as libc::c_int);
     })
