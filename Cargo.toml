@@ -1,30 +1,30 @@
 [package]
-name = "nix"
+name        = "nix"
 description = "Rust friendly bindings to *nix APIs"
-edition = "2021"
-version = "0.29.0"
+edition     = "2021"
+version     = "0.29.0"
 rust-version = "1.69"
-authors = ["The nix-rust Project Developers"]
-repository = "https://github.com/nix-rust/nix"
-license = "MIT"
-categories = ["os::unix-apis"]
+authors     = ["The nix-rust Project Developers"]
+repository  = "https://github.com/nix-rust/nix"
+license     = "MIT"
+categories  = ["os::unix-apis"]
 include = ["build.rs", "src/**/*", "test/**/*", "LICENSE", "README.md", "CHANGELOG.md"]
 
 [package.metadata.docs.rs]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 targets = [
-    "x86_64-unknown-linux-gnu",
-    "aarch64-linux-android",
-    "x86_64-apple-darwin",
-    "aarch64-apple-ios",
-    "x86_64-unknown-freebsd",
-    "x86_64-unknown-openbsd",
-    "x86_64-unknown-netbsd",
-    "x86_64-unknown-dragonfly",
-    "x86_64-fuchsia",
-    "x86_64-unknown-redox",
-    "x86_64-unknown-illumos"
+  "x86_64-unknown-linux-gnu",
+  "aarch64-linux-android",
+  "x86_64-apple-darwin",
+  "aarch64-apple-ios",
+  "x86_64-unknown-freebsd",
+  "x86_64-unknown-openbsd",
+  "x86_64-unknown-netbsd",
+  "x86_64-unknown-dragonfly",
+  "x86_64-fuchsia",
+  "x86_64-unknown-redox",
+  "x86_64-unknown-illumos"
 ]
 
 [dependencies]
