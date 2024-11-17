@@ -10,12 +10,12 @@ use std::ptr;
 /// argument specifies logging options. The `facility` parameter encodes a default facility to be
 /// assigned to all messages that do not have an explicit facility encoded.
 //
-// On Linux, the `ident` argument needs to have static lifetime according to the 
+// On Linux, the `ident` argument needs to have static lifetime according to the
 // man page:
-// 
-// The argument ident in the call of openlog() is probably stored as-is. Thus, 
+//
+// The argument ident in the call of openlog() is probably stored as-is. Thus,
 // if the string it points to is changed, syslog() may start prepending the changed
-// string, and if the string it points to ceases to exist, the results are 
+// string, and if the string it points to ceases to exist, the results are
 // undefined.  Most portable is to use a string constant.
 #[cfg(target_os = "linux")]
 pub fn openlog(
@@ -33,7 +33,7 @@ pub fn openlog(
             libc::openlog(ident.as_ptr(), logopt, facility);
         })?,
     }
-    
+
     Ok(())
 }
 
@@ -58,7 +58,7 @@ pub fn openlog<S: AsRef<OsStr> + ?Sized>(
             libc::openlog(ident.as_ptr(), logopt, facility);
         })?,
     }
-    
+
     Ok(())
 }
 
