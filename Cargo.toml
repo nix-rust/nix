@@ -64,6 +64,7 @@ resource = []
 sched = ["process"]
 signal = ["process"]
 socket = ["memoffset"]
+syslog = []
 term = []
 time = []
 ucontext = ["signal"]
@@ -80,7 +81,7 @@ semver = "1.0.7"
 nix = { path = ".", features = ["acct", "aio", "dir", "env", "event", "fanotify",
     "feature", "fs", "hostname", "inotify", "ioctl", "kmod", "mman", "mount", "mqueue",
     "net", "personality", "poll", "pthread", "ptrace", "quota", "process", "reboot",
-    "resource", "sched", "signal", "socket", "term", "time", "ucontext", "uio",
+    "resource", "sched", "signal", "socket", "syslog", "term", "time", "ucontext", "uio",
     "user", "zerocopy"] }
 
 [target.'cfg(any(target_os = "android", target_os = "linux"))'.dev-dependencies]

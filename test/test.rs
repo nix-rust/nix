@@ -42,6 +42,8 @@ mod test_sendfile;
 ))]
 mod test_spawn;
 
+mod test_syslog;
+
 mod test_time;
 mod test_unistd;
 
