@@ -1,7 +1,7 @@
 //! Interfaces for controlling system log.
 
 use crate::{NixPath, Result};
-use std::ffi::{CStr, OsStr};
+use std::ffi::OsStr;
 use std::ptr;
 
 /// Logging options of subsequent [`syslog`] calls can be set by calling [`openlog`].
@@ -9,17 +9,56 @@ use std::ptr;
 /// The parameter `ident` is a string that will be prepended to every message. The `logopt`
 /// argument specifies logging options. The `facility` parameter encodes a default facility to be
 /// assigned to all messages that do not have an explicit facility encoded.
+//
+// On Linux, the `ident` argument needs to have static lifetime according to the 
+// man page:
+// 
+// The argument ident in the call of openlog() is probably stored as-is. Thus, 
+// if the string it points to is changed, syslog() may start prepending the changed
+// string, and if the string it points to ceases to exist, the results are 
+// undefined.  Most portable is to use a string constant.
+#[cfg(target_os = "linux")]
 pub fn openlog(
-    ident: Option<&'static CStr>,
+    ident: Option<&'static std::ffi::CStr>,
     logopt: LogFlags,
     facility: Facility,
 ) -> Result<()> {
-    let ident = ident.map_or(ptr::null(), |ident| ident.as_ptr());
     let logopt = logopt.bits();
     let facility = facility as libc::c_int;
-    unsafe {
-        libc::openlog(ident, logopt, facility);
+    match ident {
+        None => unsafe {
+            libc::openlog(ptr::null(), logopt, facility);
+        },
+        Some(ident) => ident.with_nix_path(|ident| unsafe {
+            libc::openlog(ident.as_ptr(), logopt, facility);
+        })?,
     }
+    
+    Ok(())
+}
+
+/// Logging options of subsequent [`syslog`] calls can be set by calling [`openlog`].
+///
+/// The parameter `ident` is a string that will be prepended to every message. The `logopt`
+/// argument specifies logging options. The `facility` parameter encodes a default facility to be
+/// assigned to all messages that do not have an explicit facility encoded.
+#[cfg(not(target_os = "linux"))]
+pub fn openlog<S: AsRef<OsStr> + ?Sized>(
+    ident: Option<&S>,
+    logopt: LogFlags,
+    facility: Facility,
+) -> Result<()> {
+    let logopt = logopt.bits();
+    let facility = facility as libc::c_int;
+    match ident.map(OsStr::new) {
+        None => unsafe {
+            libc::openlog(ptr::null(), logopt, facility);
+        },
+        Some(ident) => ident.with_nix_path(|ident| unsafe {
+            libc::openlog(ident.as_ptr(), logopt, facility);
+        })?,
+    }
+    
     Ok(())
 }
 
@@ -31,15 +70,14 @@ pub fn openlog(
 /// # Examples
 ///
 /// ```rust
-/// use nix::syslog::{openlog, syslog, Facility, LogFlags, Severity};
+/// use nix::syslog::{openlog, syslog, Facility, LogFlags, Severity, Priority};
 ///
-/// let flags = LogFlags::LOG_PID;
-/// openlog(None, flags, Facility::LOG_USER).unwrap();
-/// syslog(Severity::LOG_EMERG, "Hello, nix!").unwrap();
+/// let priority = Priority::new(Severity::LOG_EMERG, Facility::LOG_USER);
+/// syslog(priority, "Hello, nix!").unwrap();
 ///
 /// // use `format!` to format the message
 /// let name = "syslog";
-/// syslog(Severity::LOG_EMERG, &format!("Hello, {name}!")).unwrap();
+/// syslog(priority, &format!("Hello, {name}!")).unwrap();
 /// ```
 pub fn syslog<P, S>(priority: P, message: &S) -> Result<()>
 where
