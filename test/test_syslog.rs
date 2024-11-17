@@ -17,6 +17,8 @@ fn test_syslog_hello_world() {
 #[test]
 #[cfg(target_os = "linux")]
 fn test_openlog_with_ident() {
+    use std::ffi::CStr;
+
     const IDENT: &CStr = unsafe {
         CStr::from_bytes_with_nul_unchecked(b"test_openlog_with_ident\0")
     };
