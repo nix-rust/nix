@@ -819,6 +819,12 @@ pub enum FcntlArg<'a> {
     /// is used as both IN/OUT as both its l2p_devoffset and
     /// l2p_contigbytes can be used for more specific queries.
     F_LOG2PHYS_EXT(&'a mut libc::log2phys),
+    /// Transfer any extra space in the file past the logical EOF
+    /// (as previously allocated via F_PREALLOCATE) to another file.
+    /// The other file is specified via a file descriptor as the lone extra argument.
+    /// Both descriptors must reference regular files in the same volume.
+    #[cfg(apple_targets)]
+    F_TRANSFEREXTENTS(RawFd),
     // TODO: Rest of flags
 }
 
@@ -951,6 +957,10 @@ pub fn fcntl<Fd: std::os::fd::AsFd>(fd: Fd, arg: FcntlArg) -> Result<c_int> {
             #[cfg(apple_targets)]
             F_PREALLOCATE(st) => {
                 libc::fcntl(fd, libc::F_PREALLOCATE, st)
+            },
+            #[cfg(apple_targets)]
+            F_TRANSFEREXTENTS(rawfd) => {
+                libc::fcntl(fd, libc::F_TRANSFEREXTENTS, rawfd)
             },
         }
     };
