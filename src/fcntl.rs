@@ -141,7 +141,7 @@ libc_bitflags!(
         #[cfg(any(
             freebsdlike,
             linux_android,
-            solarish,
+            target_os = "illumos",
             target_os = "netbsd"
         ))]
         O_DIRECT;
