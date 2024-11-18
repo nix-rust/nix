@@ -2157,7 +2157,9 @@ pub mod alarm {
     //! sigset.add(Signal::SIGALRM);
     //! sigset.wait();
     //!
-    //! assert!(start.elapsed() >= Duration::from_secs(1));
+    //! // On Solaris, the signal can arrive before the full second.
+    //! const TOLERANCE: Duration = Duration::from_millis(10);
+    //! assert!(start.elapsed() + TOLERANCE >= Duration::from_secs(1));
     //! ```
     //!
     //! # References

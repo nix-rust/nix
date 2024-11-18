@@ -80,6 +80,7 @@ fn test_output_flags() {
 
 // Test modifying local flags
 #[test]
+#[cfg(not(target_os = "solaris"))]
 fn test_local_flags() {
     // openpty uses ptname(3) internally
     let _m = crate::PTSNAME_MTX.lock();
