@@ -14,7 +14,11 @@ pub type AddressType = *mut ::libc::c_void;
     target_os = "linux",
     any(
         all(
-            any(target_arch = "x86_64", target_arch = "aarch64"),
+            any(
+                target_arch = "x86_64",
+                target_arch = "aarch64",
+                target_arch = "loongarch64",
+            ),
             any(target_env = "gnu", target_env = "musl")
         ),
         all(target_arch = "x86", target_env = "gnu"),
@@ -179,6 +183,7 @@ libc_enum! {
         target_arch = "x86",
         target_arch = "aarch64",
         target_arch = "riscv64",
+        target_arch = "loongarch64",
     )
 ))]
 libc_enum! {
@@ -202,6 +207,7 @@ libc_enum! {
         target_arch = "x86",
         target_arch = "aarch64",
         target_arch = "riscv64",
+        target_arch = "loongarch64",
     )
 ))]
 /// Represents register set areas, such as general-purpose registers or
@@ -227,6 +233,7 @@ pub unsafe trait RegisterSet {
         target_arch = "x86",
         target_arch = "aarch64",
         target_arch = "riscv64",
+        target_arch = "loongarch64",
     )
 ))]
 /// Register sets used in [`getregset`] and [`setregset`]
@@ -254,6 +261,8 @@ pub mod regset {
         type Regs = libc::user_fpsimd_struct;
         #[cfg(target_arch = "riscv64")]
         type Regs = libc::__riscv_mc_d_ext_state;
+        #[cfg(target_arch = "loongarch64")]
+        type Regs = libc::user_fp_struct;
     }
 }
 
@@ -335,10 +344,20 @@ pub fn getregs(pid: Pid) -> Result<user_regs_struct> {
     target_os = "linux",
     any(
         all(
-            target_arch = "aarch64",
-            any(target_env = "gnu", target_env = "musl")
+            target_env = "musl",
+            any(
+                target_arch = "aarch64",
+                target_arch = "loongarch64",
+            )
         ),
-        all(target_arch = "riscv64", target_env = "gnu")
+        all(
+            target_env = "gnu",
+            any(
+                target_arch = "aarch64",
+                target_arch = "loongarch64",
+                target_arch = "riscv64",
+            )
+        )
     )
 ))]
 pub fn getregs(pid: Pid) -> Result<user_regs_struct> {
@@ -355,10 +374,18 @@ pub fn getregs(pid: Pid) -> Result<user_regs_struct> {
                 target_arch = "x86_64",
                 target_arch = "x86",
                 target_arch = "aarch64",
-                target_arch = "riscv64"
+                target_arch = "riscv64",
+                target_arch = "loongarch64",
+
             )
         ),
-        all(target_env = "musl", target_arch = "aarch64")
+        all(
+            target_env = "musl",
+            any(
+                target_arch = "aarch64",
+                target_arch = "loongarch64",
+            )
+        )
     )
 ))]
 pub fn getregset<S: RegisterSet>(pid: Pid) -> Result<S::Regs> {
@@ -420,9 +447,19 @@ pub fn setregs(pid: Pid, regs: user_regs_struct) -> Result<()> {
     any(
         all(
             target_env = "gnu",
-            any(target_arch = "aarch64", target_arch = "riscv64")
+            any(
+                target_arch = "aarch64",
+                target_arch = "riscv64",
+	        target_arch = "loongarch64",
+            )
         ),
-        all(target_env = "musl", target_arch = "aarch64")
+        all(
+            target_env = "musl",
+            any(
+                target_arch = "aarch64",
+	        target_arch = "loongarch64",
+            )
+        )
     )
 ))]
 pub fn setregs(pid: Pid, regs: user_regs_struct) -> Result<()> {
@@ -439,10 +476,17 @@ pub fn setregs(pid: Pid, regs: user_regs_struct) -> Result<()> {
                 target_arch = "x86_64",
                 target_arch = "x86",
                 target_arch = "aarch64",
-                target_arch = "riscv64"
+                target_arch = "riscv64",
+                target_arch = "loongarch64"
             )
         ),
-        all(target_env = "musl", target_arch = "aarch64")
+        all(
+            target_env = "musl",
+            any(
+                target_arch = "aarch64",
+	        target_arch = "loongarch64"
+            )
+        )
     )
 ))]
 pub fn setregset<S: RegisterSet>(pid: Pid, mut regs: S::Regs) -> Result<()> {
