@@ -68,12 +68,18 @@ task:
 # Tasks for Linux aarch64 native builds 
 task:
   matrix:
-    - name: Linux aarch64
+    - name: Linux aarch64 gnu
       arm_container:
         image: rust:1.69.0
         cpu: 1
       env:
         TARGET: aarch64-unknown-linux-gnu
+    - name: Linux aarch64 musl
+      arm_container:
+        image: rust:1.69.0
+        cpu: 1
+      env:
+        TARGET: aarch64-unknown-linux-musl
   setup_script:
     - rustup target add $TARGET
     - rustup component add clippy
