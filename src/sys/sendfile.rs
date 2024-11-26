@@ -4,7 +4,7 @@ use cfg_if::cfg_if;
 use std::os::unix::io::{AsFd, AsRawFd};
 use std::ptr;
 
-use libc::{self, off_t};
+use libc;
 
 use crate::errno::Errno;
 use crate::Result;
@@ -26,14 +26,14 @@ use crate::Result;
 pub fn sendfile<F1: AsFd, F2: AsFd>(
     out_fd: F1,
     in_fd: F2,
-    offset: Option<&mut off_t>,
+    offset: Option<&mut i64>,
     count: usize,
 ) -> Result<usize> {
     let offset = offset
         .map(|offset| offset as *mut _)
         .unwrap_or(ptr::null_mut());
     let ret = unsafe {
-        libc::sendfile(
+        largefile_fn![sendfile](
             out_fd.as_fd().as_raw_fd(),
             in_fd.as_fd().as_raw_fd(),
             offset,
@@ -133,20 +133,20 @@ cfg_if! {
         impl<'fd> SendfileVec<'fd> {
             /// initialises SendfileVec to send data directly from the process's address space
             /// same in C with sfv_fd set to SFV_FD_SELF.
-            pub fn newself(
-                off: off_t,
+            pub fn newself<Off: Into<i64>>(
+                off: Off,
                 len: usize
             ) -> Self {
-                Self{raw: libc::sendfilevec_t{sfv_fd: libc::SFV_FD_SELF, sfv_flag: 0, sfv_off: off, sfv_len: len}, phantom: PhantomData}
+                Self{raw: libc::sendfilevec_t{sfv_fd: libc::SFV_FD_SELF, sfv_flag: 0, sfv_off: off.into(), sfv_len: len}, phantom: PhantomData}
             }
 
             /// initialises SendfileVec to send data from `fd`.
-            pub fn new(
+            pub fn new<Off: Into<i64>>(
                 fd: BorrowedFd<'fd>,
-                off: off_t,
+                off: Off,
                 len: usize
             ) -> SendfileVec<'fd> {
-                Self{raw: libc::sendfilevec_t{sfv_fd: fd.as_raw_fd(), sfv_flag: 0, sfv_off:off, sfv_len: len}, phantom: PhantomData}
+                Self{raw: libc::sendfilevec_t{sfv_fd: fd.as_raw_fd(), sfv_flag: 0, sfv_off:off.into(), sfv_len: len}, phantom: PhantomData}
             }
         }
 
@@ -208,19 +208,19 @@ cfg_if! {
         pub fn sendfile<F1: AsFd, F2: AsFd>(
             in_fd: F1,
             out_sock: F2,
-            offset: off_t,
+            offset: i64,
             count: Option<usize>,
             headers: Option<&[&[u8]]>,
             trailers: Option<&[&[u8]]>,
             flags: SfFlags,
             readahead: u16
-        ) -> (Result<()>, off_t) {
+        ) -> (Result<()>, i64) {
             // Readahead goes in upper 16 bits
             // Flags goes in lower 16 bits
             // see `man 2 sendfile`
             let ra32 = u32::from(readahead);
             let flags: u32 = (ra32 << 16) | (flags.bits() as u32);
-            let mut bytes_sent: off_t = 0;
+            let mut bytes_sent: i64 = 0;
             let hdtr = headers.or(trailers).map(|_| SendfileHeaderTrailer::new(headers, trailers));
             let hdtr_ptr = hdtr.as_ref().map_or(ptr::null(), |s| &s.raw as *const libc::sf_hdtr);
             let return_code = unsafe {
@@ -229,7 +229,7 @@ cfg_if! {
                                offset,
                                count.unwrap_or(0),
                                hdtr_ptr as *mut libc::sf_hdtr,
-                               &mut bytes_sent as *mut off_t,
+                               &mut bytes_sent as *mut i64,
                                flags as c_int)
             };
             (Errno::result(return_code).and(Ok(())), bytes_sent)
@@ -258,12 +258,12 @@ cfg_if! {
         pub fn sendfile<F1: AsFd, F2: AsFd>(
             in_fd: F1,
             out_sock: F2,
-            offset: off_t,
+            offset: i64,
             count: Option<usize>,
             headers: Option<&[&[u8]]>,
             trailers: Option<&[&[u8]]>,
-        ) -> (Result<()>, off_t) {
-            let mut bytes_sent: off_t = 0;
+        ) -> (Result<()>, i64) {
+            let mut bytes_sent: i64 = 0;
             let hdtr = headers.or(trailers).map(|_| SendfileHeaderTrailer::new(headers, trailers));
             let hdtr_ptr = hdtr.as_ref().map_or(ptr::null(), |s| &s.raw as *const libc::sf_hdtr);
             let return_code = unsafe {
@@ -272,7 +272,7 @@ cfg_if! {
                                offset,
                                count.unwrap_or(0),
                                hdtr_ptr as *mut libc::sf_hdtr,
-                               &mut bytes_sent as *mut off_t,
+                               &mut bytes_sent as *mut i64,
                                0)
             };
             (Errno::result(return_code).and(Ok(())), bytes_sent)
@@ -304,11 +304,11 @@ cfg_if! {
         pub fn sendfile<F1: AsFd, F2: AsFd>(
             in_fd: F1,
             out_sock: F2,
-            offset: off_t,
-            count: Option<off_t>,
+            offset: i64,
+            count: Option<i64>,
             headers: Option<&[&[u8]]>,
             trailers: Option<&[&[u8]]>
-        ) -> (Result<()>, off_t) {
+        ) -> (Result<()>, i64) {
             let mut len = count.unwrap_or(0);
             let hdtr = headers.or(trailers).map(|_| SendfileHeaderTrailer::new(headers, trailers));
             let hdtr_ptr = hdtr.as_ref().map_or(ptr::null(), |s| &s.raw as *const libc::sf_hdtr);
@@ -316,7 +316,7 @@ cfg_if! {
                 libc::sendfile(in_fd.as_fd().as_raw_fd(),
                                out_sock.as_fd().as_raw_fd(),
                                offset,
-                               &mut len as *mut off_t,
+                               &mut len as *mut i64,
                                hdtr_ptr as *mut libc::sf_hdtr,
                                0)
             };

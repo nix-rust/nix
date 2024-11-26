@@ -1,6 +1,8 @@
+#[cfg(linux_android)]
+use crate::require_largefile;
+use cfg_if::cfg_if;
 use std::io::prelude::*;
 
-use libc::off_t;
 use nix::sys::sendfile::*;
 use tempfile::tempfile;
 
@@ -21,7 +23,7 @@ fn test_sendfile_linux() {
     tmp.write_all(CONTENTS).unwrap();
 
     let (rd, wr) = pipe().unwrap();
-    let mut offset: off_t = 5;
+    let mut offset: i64 = 5;
     let res = sendfile(&wr, &tmp, Some(&mut offset), 2).unwrap();
 
     assert_eq!(2, res);
@@ -30,6 +32,24 @@ fn test_sendfile_linux() {
     assert_eq!(2, read(&rd, &mut buf).unwrap());
     assert_eq!(b"f1", &buf[0..2]);
     assert_eq!(7, offset);
+}
+
+#[cfg(linux_android)]
+#[test]
+fn test_sendfile_largefile() {
+    require_largefile!("test_sendfile_largefile");
+
+    let mut offset = 0x100000000i64;
+    let start: u64 = (offset - 4).try_into().unwrap();
+    let mut src = tempfile().unwrap();
+    let mut dst = tempfile().unwrap();
+    src.seek(std::io::SeekFrom::Start(start)).unwrap();
+    src.write_all(b"The example text").unwrap();
+    assert_eq!(sendfile(&dst, &src, Some(&mut offset), 12), Ok(12));
+    dst.rewind().unwrap();
+    let mut buf = [0u8; 12];
+    assert_eq!(read(&dst, &mut buf), Ok(12));
+    assert_eq!(b"example text", &buf);
 }
 
 #[cfg(target_os = "linux")]
@@ -78,7 +98,7 @@ fn test_sendfile_freebsd() {
     let (res, bytes_written) = sendfile(
         &tmp,
         &wr,
-        body_offset as off_t,
+        body_offset as libc::off_t,
         None,
         Some(headers.as_slice()),
         Some(trailers.as_slice()),
@@ -129,7 +149,7 @@ fn test_sendfile_dragonfly() {
     let (res, bytes_written) = sendfile(
         &tmp,
         &wr,
-        body_offset as off_t,
+        body_offset as libc::off_t,
         None,
         Some(headers.as_slice()),
         Some(trailers.as_slice()),
@@ -178,7 +198,7 @@ fn test_sendfile_darwin() {
     let (res, bytes_written) = sendfile(
         &tmp,
         &wr,
-        body_offset as off_t,
+        body_offset as libc::off_t,
         None,
         Some(headers.as_slice()),
         Some(trailers.as_slice()),
@@ -231,7 +251,7 @@ fn test_sendfilev() {
         ),
         SendfileVec::new(
             body_data.as_fd(),
-            body_offset as off_t,
+            body_offset as libc::off_t,
             body.len() - body_offset,
         ),
         SendfileVec::new(

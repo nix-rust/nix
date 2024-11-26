@@ -23,7 +23,7 @@ use crate::sys::stat::FileFlag;
 use crate::{Error, NixPath, Result};
 #[cfg(not(target_os = "redox"))]
 use cfg_if::cfg_if;
-use libc::{c_char, c_int, c_long, c_uint, gid_t, off_t, pid_t, size_t, uid_t};
+use libc::{self, c_char, c_int, c_long, c_uint, gid_t, pid_t, size_t, uid_t};
 use std::convert::Infallible;
 #[cfg(not(target_os = "redox"))]
 use std::ffi::CString;
@@ -1426,18 +1426,28 @@ pub enum Whence {
 /// Move the read/write file offset.
 ///
 /// See also [lseek(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/lseek.html)
-pub fn lseek<Fd: std::os::fd::AsFd>(fd: Fd, offset: off_t, whence: Whence) -> Result<off_t> {
+pub fn lseek<Fd: std::os::fd::AsFd, Off: Into<i64>>(
+    fd: Fd,
+    offset: Off,
+    whence: Whence,
+) -> Result<i64> {
     use std::os::fd::AsRawFd;
 
-    let res = unsafe { libc::lseek(fd.as_fd().as_raw_fd(), offset, whence as i32) };
+    let res = unsafe {
+        largefile_fn![lseek](fd.as_fd().as_raw_fd(), offset.into(), whence as i32)
+    };
 
-    Errno::result(res).map(|r| r as off_t)
+    // r may or may not already be i64; suppress unnecessary_cast diagnostic.
+    #[allow(clippy::unnecessary_cast)]
+    Errno::result(res).map(|r| r as i64)
 }
 
 /// Move the read/write file offset.
 ///
-/// Unlike [`lseek`], it takes a 64-bit argument even on platforms where [`libc::off_t`] is
-/// 32 bits.
+/// This function exists because, historically, [`lseek`] only accepted a 32-bit
+/// offset on some platforms. These days, nix's [`lseek`] takes a 64-bit offset
+/// on all platforms, so explicitly using lseek64 is no longer necessary (and
+/// is less portable).
 #[cfg(linux_android)]
 pub fn lseek64<Fd: std::os::fd::AsFd>(
     fd: Fd,
@@ -1512,9 +1522,14 @@ pub fn pipe2(flags: OFlag) -> Result<(std::os::fd::OwnedFd, std::os::fd::OwnedFd
 /// See also
 /// [truncate(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/truncate.html)
 #[cfg(not(any(target_os = "redox", target_os = "fuchsia")))]
-pub fn truncate<P: ?Sized + NixPath>(path: &P, len: off_t) -> Result<()> {
+pub fn truncate<P: ?Sized + NixPath, Off: Into<i64>>(
+    path: &P,
+    len: Off,
+) -> Result<()> {
     let res = path
-        .with_nix_path(|cstr| unsafe { libc::truncate(cstr.as_ptr(), len) })?;
+        .with_nix_path(|cstr| unsafe {
+            largefile_fn![truncate](cstr.as_ptr(), len.into())
+        })?;
 
     Errno::result(res).map(drop)
 }
@@ -1523,10 +1538,15 @@ pub fn truncate<P: ?Sized + NixPath>(path: &P, len: off_t) -> Result<()> {
 ///
 /// See also
 /// [ftruncate(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/ftruncate.html)
-pub fn ftruncate<Fd: std::os::fd::AsFd>(fd: Fd, len: off_t) -> Result<()> {
+pub fn ftruncate<Fd: std::os::fd::AsFd, Off: Into<i64>>(
+    fd: Fd,
+    len: Off,
+) -> Result<()> {
     use std::os::fd::AsRawFd;
 
-    Errno::result(unsafe { libc::ftruncate(fd.as_fd().as_raw_fd(), len) }).map(drop)
+    Errno::result(unsafe {
+        largefile_fn![ftruncate](fd.as_fd().as_raw_fd(), len.into())
+    }).map(drop)
 }
 
 /// Determines if the file descriptor refers to a valid terminal type device.
