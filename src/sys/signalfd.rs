@@ -147,6 +147,12 @@ impl AsRawFd for SignalFd {
     }
 }
 
+impl From<SignalFd> for OwnedFd {
+    fn from(value: SignalFd) -> Self {
+        value.0 
+    }
+}
+
 impl Iterator for SignalFd {
     type Item = siginfo;
 

@@ -64,6 +64,12 @@ impl AsFd for PtyMaster {
     }
 }
 
+impl From<PtyMaster> for OwnedFd {
+    fn from(value: PtyMaster) -> Self {
+        value.0
+    }
+}
+
 impl IntoRawFd for PtyMaster {
     fn into_raw_fd(self) -> RawFd {
         let fd = self.0;

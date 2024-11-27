@@ -254,3 +254,9 @@ impl AsFd for Inotify {
         self.fd.as_fd()
     }
 }
+
+impl From<Inotify> for OwnedFd {
+    fn from(value: Inotify) -> Self {
+        value.fd
+    }
+}

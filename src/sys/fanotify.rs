@@ -418,3 +418,9 @@ impl AsFd for Fanotify {
         self.fd.as_fd()
     }
 }
+
+impl From<Fanotify> for OwnedFd {
+    fn from(value: Fanotify) -> Self {
+        value.fd
+    }
+}
