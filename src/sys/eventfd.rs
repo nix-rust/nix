@@ -101,8 +101,9 @@ impl AsRawFd for EventFd {
         self.0.as_raw_fd()
     }
 }
+
 impl From<EventFd> for OwnedFd {
-    fn from(x: EventFd) -> OwnedFd {
-        x.0
+    fn from(value: EventFd) -> Self {
+        value.0
     }
 }
