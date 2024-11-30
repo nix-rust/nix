@@ -38,6 +38,7 @@ libc_bitflags! {
     /// Additional parameters for [`mmap`].
     pub struct MapFlags: c_int {
         /// Compatibility flag. Ignored.
+        #[cfg(not(target_os = "solaris"))]
         MAP_FILE;
         /// Share this mapping. Mutually exclusive with `MAP_PRIVATE`.
         MAP_SHARED;

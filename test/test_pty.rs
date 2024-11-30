@@ -148,6 +148,7 @@ fn make_raw<Fd: AsFd>(fd: Fd) {
 
 /// Test `io::Read` on the PTTY master
 #[test]
+#[cfg(not(target_os = "solaris"))]
 fn test_read_ptty_pair() {
     let (mut master, mut slave) = open_ptty_pair();
     make_raw(&slave);

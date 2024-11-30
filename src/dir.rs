@@ -46,7 +46,7 @@ use libc::{dirent, readdir_r};
 /// let mut cwd = Dir::open(".", OFlag::O_RDONLY | OFlag::O_CLOEXEC, Mode::empty()).unwrap();
 /// for res_entry in cwd.iter() {
 ///     let entry = res_entry.unwrap();
-///     println!("File name: {}", entry.file_name().to_str().unwrap());
+///     println!("File name: {}", entry.file_name().to_string_lossy());
 /// }
 /// ```
 #[derive(Debug, Eq, Hash, PartialEq)]
