@@ -118,6 +118,46 @@ libc_bitflags! {
         FAN_REPORT_PIDFD;
         /// Make `FanotifyEvent::pid` return thread id. Since Linux 4.20.
         FAN_REPORT_TID;
+
+        /// Allows the receipt of events which contain additional information
+        /// about the underlying filesystem object correlated to an event.
+        ///
+        /// This will make `FanotifyEvent::fd` return `FAN_NOFD`.
+        /// This should be used with `Fanotify::read_events_with_info_records` to
+        /// recieve `FanotifyInfoRecord::Fid` info records.
+        /// Since Linux 5.1
+        FAN_REPORT_FID;
+
+        /// Allows the receipt of events which contain additional information
+        /// about the underlying filesystem object correlated to an event.
+        ///
+        /// This will make `FanotifyEvent::fd` return `FAN_NOFD`.
+        /// This should be used with `Fanotify::read_events_with_info_records` to
+        /// recieve `FanotifyInfoRecord::Fid` info records.
+        ///
+        /// An additional event of `FAN_EVENT_INFO_TYPE_DFID` will also be received,
+        /// encapsulating information about the target directory (or parent directory of a file)
+        /// Since Linux 5.9
+        FAN_REPORT_DIR_FID;
+
+        /// Events for fanotify groups initialized with this flag will contain additional
+        /// information about the child correlated with directory entry modification events.
+        /// This flag must be provided in conjunction with the flags `FAN_REPORT_FID`,
+        /// `FAN_REPORT_DIR_FID` and `FAN_REPORT_NAME`.
+        /// Since Linux 5.17
+        FAN_REPORT_TARGET_FID;
+
+        /// Events for fanotify groups initialized with this flag will contain additional
+        /// information about the name of the directory entry correlated to an event.  This
+        /// flag must be provided in conjunction with the flag `FAN_REPORT_DIR_FID`.
+        /// Since Linux 5.9
+        FAN_REPORT_NAME;
+
+        /// This is a synonym for `FAN_REPORT_DIR_FD | FAN_REPORT_NAME`.
+        FAN_REPORT_DFID_NAME;
+
+        /// This is a synonym for `FAN_REPORT_DIR_FD | FAN_REPORT_NAME | FAN_REPORT_TARGET_FID`.
+        FAN_REPORT_DFID_NAME_TARGET;
     }
 }
 
@@ -205,6 +245,33 @@ pub const FANOTIFY_METADATA_VERSION: u8 = libc::FANOTIFY_METADATA_VERSION;
 #[repr(transparent)]
 #[allow(missing_copy_implementations)]
 pub struct FanotifyEvent(libc::fanotify_event_metadata);
+
+/// After a [`libc::fanotify_event_metadata`], there can be 0 or more event_info
+/// structs depending on which InitFlags were used in [`Fanotify::init`].
+// Is not Clone due to pidfd in `libc::fanotify_event_info_pidfd`
+// Other fanotify_event_info records are not implemented as they don't exist in
+// the libc crate yet.
+#[derive(Debug, Eq, Hash, PartialEq)]
+#[allow(missing_copy_implementations)]
+pub enum FanotifyInfoRecord {
+    /// A [`libc::fanotify_event_info_fid`] event was recieved, usually as
+    /// a result of passing [`InitFlags::FAN_REPORT_FID`] or [`InitFlags::FAN_REPORT_DIR_FID`]
+    /// into [`Fanotify::init`]. The containing struct includes a `file_handle` for
+    /// use with `open_by_handle_at(2)`.
+    Fid(libc::fanotify_event_info_fid),
+
+    /// A [`libc::FAN_FS_ERROR`] event was received. This event occurs when
+    /// a filesystem event is detected. Only a single [`libc::FAN_FS_ERROR`] is
+    /// stored per filesystem at once, extra error messages are suppressed and
+    /// accounted for in the error_count field.
+    Error(libc::fanotify_event_info_error),
+
+    /// A [`libc::fanotify_event_info_pidfd`] event was recieved, usually as
+    /// a result of passing [`InitFlags::FAN_REPORT_PIDFD`] into [`Fanotify::init`].
+    /// The containing struct includes a `pidfd` for reliably determining
+    /// whether the process responsible for generating an event has been recycled or terminated
+    Pidfd(libc::fanotify_event_info_pidfd),
+}
 
 impl FanotifyEvent {
     /// Version number for the structure. It must be compared to
@@ -341,6 +408,21 @@ impl Fanotify {
         Errno::result(res).map(|_| ())
     }
 
+    fn get_struct<T>(&self, buffer: &[u8; 4096], offset: usize) -> T {
+        let struct_size = size_of::<T>();
+        let struct_obj = unsafe {
+            let mut struct_obj = MaybeUninit::<T>::uninit();
+            std::ptr::copy_nonoverlapping(
+                buffer.as_ptr().add(offset),
+                struct_obj.as_mut_ptr().cast(),
+                (4096 - offset).min(struct_size),
+            );
+            struct_obj.assume_init()
+        };
+
+        struct_obj
+    }
+
     /// Read incoming events from the fanotify group.
     ///
     /// Returns a Result containing either a `Vec` of events on success or errno
@@ -376,6 +458,99 @@ impl Fanotify {
             };
 
             events.push(FanotifyEvent(metadata));
+            offset += metadata.event_len as usize;
+        }
+
+        Ok(events)
+    }
+
+    /// Read incoming events and information records from the fanotify group.
+    ///
+    /// Returns a Result containing either a `Vec` of events and information records on success or errno
+    /// otherwise.
+    ///
+    /// # Errors
+    ///
+    /// Possible errors can be those that are explicitly listed in
+    /// [fanotify(2)](https://man7.org/linux/man-pages/man7/fanotify.2.html) in
+    /// addition to the possible errors caused by `read` call.
+    /// In particular, `EAGAIN` is returned when no event is available on a
+    /// group that has been initialized with the flag `InitFlags::FAN_NONBLOCK`,
+    /// thus making this method nonblocking.
+    pub fn read_events_with_info_records(
+        &self,
+    ) -> Result<Vec<(FanotifyEvent, Vec<FanotifyInfoRecord>)>> {
+        let metadata_size = size_of::<libc::fanotify_event_metadata>();
+        const BUFSIZ: usize = 4096;
+        let mut buffer = [0u8; BUFSIZ];
+        let mut events = Vec::new();
+        let mut offset = 0;
+
+        let nread = read(&self.fd, &mut buffer)?;
+
+        while (nread - offset) >= metadata_size {
+            let metadata = unsafe {
+                let mut metadata =
+                    MaybeUninit::<libc::fanotify_event_metadata>::uninit();
+                std::ptr::copy_nonoverlapping(
+                    buffer.as_ptr().add(offset),
+                    metadata.as_mut_ptr().cast(),
+                    (BUFSIZ - offset).min(metadata_size),
+                );
+                metadata.assume_init()
+            };
+
+            let mut remaining_len = metadata.event_len;
+            let mut info_records = Vec::new();
+            let mut current_event_offset = offset + metadata_size;
+
+            while remaining_len > 0 {
+                let header = self
+                    .get_struct::<libc::fanotify_event_info_header>(
+                        &buffer,
+                        current_event_offset,
+                    );
+
+                let info_record = match header.info_type {
+                    libc::FAN_EVENT_INFO_TYPE_FID => {
+                        let event_fid = self
+                            .get_struct::<libc::fanotify_event_info_fid>(
+                                &buffer,
+                                current_event_offset,
+                            );
+                        Some(FanotifyInfoRecord::Fid(event_fid))
+                    }
+                    libc::FAN_EVENT_INFO_TYPE_ERROR => {
+                        let error_fid = self
+                            .get_struct::<libc::fanotify_event_info_error>(
+                                &buffer,
+                                current_event_offset,
+                            );
+                        Some(FanotifyInfoRecord::Error(error_fid))
+                    }
+                    libc::FAN_EVENT_INFO_TYPE_PIDFD => {
+                        let error_fid = self
+                            .get_struct::<libc::fanotify_event_info_pidfd>(
+                                &buffer,
+                                current_event_offset,
+                            );
+                        Some(FanotifyInfoRecord::Pidfd(error_fid))
+                    }
+                    // Ignore unsupported events
+                    _ => None,
+                };
+
+                if let Some(record) = info_record {
+                    info_records.push(record);
+                }
+
+                remaining_len -= header.len as u32;
+                current_event_offset += header.len as usize;
+            }
+
+            // libc::fanotify_event_info_header
+
+            events.push((FanotifyEvent(metadata), info_records));
             offset += metadata.event_len as usize;
         }
 
