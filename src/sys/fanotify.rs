@@ -238,13 +238,89 @@ libc_bitflags! {
 /// Compile version number of fanotify API.
 pub const FANOTIFY_METADATA_VERSION: u8 = libc::FANOTIFY_METADATA_VERSION;
 
-/// Abstract over [`libc::fanotify_event_metadata`], which represents an event
-/// received via [`Fanotify::read_events`].
+/// Abstract over [`libc::fanotify_event_info_fid`], which represents an
+/// information record received via [`Fanotify::read_events_with_info_records`].
 // Is not Clone due to fd field, to avoid use-after-close scenarios.
 #[derive(Debug, Eq, Hash, PartialEq)]
 #[repr(transparent)]
 #[allow(missing_copy_implementations)]
-pub struct FanotifyEvent(libc::fanotify_event_metadata);
+pub struct FanotifyFidRecord(libc::fanotify_event_info_fid);
+
+impl FanotifyFidRecord {
+    /// The filesystem id where this event occurred. The value this method returns
+    /// differs depending on the host system. Please read the statfs(2) documentation
+    /// for more information:
+    /// https://man7.org/linux/man-pages/man2/statfs.2.html#VERSIONS
+    pub fn fsid(&self) -> libc::__kernel_fsid_t {
+        self.0.fsid
+    }
+
+    /// The file handle for the filesystem object where the event occurred. The handle is
+    /// represented as a 0-length u8 array, but it actually points to variable-length
+    /// file_handle struct.For more information:
+    /// https://man7.org/linux/man-pages/man2/open_by_handle_at.2.html
+    pub fn handle(&self) -> [u8; 0] {
+        self.0.handle
+    }
+}
+
+/// Abstract over [`libc::fanotify_event_info_error`], which represents an
+/// information record received via [`Fanotify::read_events_with_info_records`].
+// Is not Clone due to fd field, to avoid use-after-close scenarios.
+#[derive(Debug, Eq, Hash, PartialEq)]
+#[repr(transparent)]
+#[allow(missing_copy_implementations)]
+pub struct FanotifyErrorRecord(libc::fanotify_event_info_error);
+
+impl FanotifyErrorRecord {
+    /// Errno of the FAN_FS_ERROR that occurred.
+    pub fn err(&self) -> Errno {
+        Errno::from_raw(self.0.error)
+    }
+
+    /// Number of errors that occurred in the filesystem Fanotify in watching.
+    /// Only a single FAN_FS_ERROR is stored per filesystem at once. As such, Fanotify
+    /// suppresses subsequent error messages and only increments the `err_count` value.
+    pub fn err_count(&self) -> u32 {
+        self.0.error_count
+    }
+}
+
+/// Abstract over [`libc::fanotify_event_info_pidfd`], which represents an
+/// information record received via [`Fanotify::read_events_with_info_records`].
+// Is not Clone due to fd field, to avoid use-after-close scenarios.
+#[derive(Debug, Eq, Hash, PartialEq)]
+#[repr(transparent)]
+#[allow(missing_copy_implementations)]
+pub struct FanotifyPidfdRecord(libc::fanotify_event_info_pidfd);
+
+impl FanotifyPidfdRecord {
+    /// The process file descriptor that refers to the process responsible for
+    /// generating this event. If the underlying pidfd_create fails, `None` is returned.
+    pub fn pidfd(&self) -> Option<BorrowedFd> {
+        if self.0.pidfd == libc::FAN_NOPIDFD || self.0.pidfd == libc::FAN_EPIDFD
+        {
+            None
+        } else {
+            // SAFETY: self.0.pidfd will be opened for the lifetime of `Self`,
+            // which is longer than the lifetime of the returned BorrowedFd, so
+            // it is safe.
+            Some(unsafe { BorrowedFd::borrow_raw(self.0.pidfd) })
+        }
+    }
+}
+
+impl Drop for FanotifyPidfdRecord {
+    fn drop(&mut self) {
+        if self.0.pidfd == libc::FAN_NOFD {
+            return;
+        }
+        let e = close(self.0.pidfd);
+        if !std::thread::panicking() && e == Err(Errno::EBADF) {
+            panic!("Closing an invalid file descriptor!");
+        };
+    }
+}
 
 /// After a [`libc::fanotify_event_metadata`], there can be 0 or more event_info
 /// structs depending on which InitFlags were used in [`Fanotify::init`].
@@ -258,20 +334,27 @@ pub enum FanotifyInfoRecord {
     /// a result of passing [`InitFlags::FAN_REPORT_FID`] or [`InitFlags::FAN_REPORT_DIR_FID`]
     /// into [`Fanotify::init`]. The containing struct includes a `file_handle` for
     /// use with `open_by_handle_at(2)`.
-    Fid(libc::fanotify_event_info_fid),
+    Fid(FanotifyFidRecord),
 
-    /// A [`libc::FAN_FS_ERROR`] event was received. This event occurs when
-    /// a filesystem event is detected. Only a single [`libc::FAN_FS_ERROR`] is
-    /// stored per filesystem at once, extra error messages are suppressed and
-    /// accounted for in the error_count field.
-    Error(libc::fanotify_event_info_error),
+    /// A [`libc::fanotify_event_info_error`] event was recieved.
+    /// This occurs when a FAN_FS_ERROR occurs, indicating an error with
+    /// the watch filesystem object. (such as a bad file or bad link lookup)
+    Error(FanotifyErrorRecord),
 
     /// A [`libc::fanotify_event_info_pidfd`] event was recieved, usually as
     /// a result of passing [`InitFlags::FAN_REPORT_PIDFD`] into [`Fanotify::init`].
     /// The containing struct includes a `pidfd` for reliably determining
     /// whether the process responsible for generating an event has been recycled or terminated
-    Pidfd(libc::fanotify_event_info_pidfd),
+    Pidfd(FanotifyPidfdRecord),
 }
+
+/// Abstract over [`libc::fanotify_event_metadata`], which represents an event
+/// received via [`Fanotify::read_events`].
+// Is not Clone due to fd field, to avoid use-after-close scenarios.
+#[derive(Debug, Eq, Hash, PartialEq)]
+#[repr(transparent)]
+#[allow(missing_copy_implementations)]
+pub struct FanotifyEvent(libc::fanotify_event_metadata);
 
 impl FanotifyEvent {
     /// Version number for the structure. It must be compared to
@@ -513,28 +596,33 @@ impl Fanotify {
 
                 let info_record = match header.info_type {
                     libc::FAN_EVENT_INFO_TYPE_FID => {
-                        let event_fid = self
+                        let record = self
                             .get_struct::<libc::fanotify_event_info_fid>(
                                 &buffer,
                                 current_event_offset,
                             );
-                        Some(FanotifyInfoRecord::Fid(event_fid))
+                        Some(FanotifyInfoRecord::Fid(FanotifyFidRecord(record)))
                     }
                     libc::FAN_EVENT_INFO_TYPE_ERROR => {
-                        let error_fid = self
+                        let record = self
                             .get_struct::<libc::fanotify_event_info_error>(
                                 &buffer,
                                 current_event_offset,
                             );
-                        Some(FanotifyInfoRecord::Error(error_fid))
+
+                        Some(FanotifyInfoRecord::Error(FanotifyErrorRecord(
+                            record,
+                        )))
                     }
                     libc::FAN_EVENT_INFO_TYPE_PIDFD => {
-                        let error_fid = self
+                        let record = self
                             .get_struct::<libc::fanotify_event_info_pidfd>(
                                 &buffer,
                                 current_event_offset,
                             );
-                        Some(FanotifyInfoRecord::Pidfd(error_fid))
+                        Some(FanotifyInfoRecord::Pidfd(FanotifyPidfdRecord(
+                            record,
+                        )))
                     }
                     // Ignore unsupported events
                     _ => None,
