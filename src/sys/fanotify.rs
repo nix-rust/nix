@@ -500,7 +500,7 @@ impl Fanotify {
 
     fn get_struct<T>(&self, buffer: &[u8; 4096], offset: usize) -> T {
         let struct_size = size_of::<T>();
-        let struct_obj = unsafe {
+        unsafe {
             let mut struct_obj = MaybeUninit::<T>::uninit();
             std::ptr::copy_nonoverlapping(
                 buffer.as_ptr().add(offset),
@@ -508,9 +508,7 @@ impl Fanotify {
                 (4096 - offset).min(struct_size),
             );
             struct_obj.assume_init()
-        };
-
-        struct_obj
+        }
     }
 
     /// Read incoming events from the fanotify group.
