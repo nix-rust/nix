@@ -14,6 +14,8 @@ use tempfile::tempdir;
 use tempfile::tempfile;
 
 #[test]
+// On Solaris sometimes wrtitev() returns EINVAL.
+#[cfg(not(target_os = "solaris"))]
 fn test_writev() {
     let mut to_write = Vec::with_capacity(16 * 128);
     for _ in 0..16 {
