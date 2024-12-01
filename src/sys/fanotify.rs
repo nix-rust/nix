@@ -251,7 +251,7 @@ impl FanotifyFidRecord {
     /// differs depending on the host system. Please read the statfs(2) documentation
     /// for more information:
     /// https://man7.org/linux/man-pages/man2/statfs.2.html#VERSIONS
-    pub fn fsid(&self) -> libc::__kernel_fsid_t {
+    pub fn filesystem_id(&self) -> libc::__kernel_fsid_t {
         self.0.fsid
     }
 
@@ -595,7 +595,14 @@ impl Fanotify {
                     );
 
                 let info_record = match header.info_type {
-                    libc::FAN_EVENT_INFO_TYPE_FID => {
+                    // FanotifyFidRecord can be returned for any of the following info_type.
+                    // This isn't found in the fanotify(7) documentation, but the fanotify_init(2) documentation
+                    // https://man7.org/linux/man-pages/man2/fanotify_init.2.html
+                    libc::FAN_EVENT_INFO_TYPE_FID
+                    | libc::FAN_EVENT_INFO_TYPE_DFID
+                    | libc::FAN_EVENT_INFO_TYPE_DFID_NAME
+                    | libc::FAN_EVENT_INFO_TYPE_NEW_DFID_NAME
+                    | libc::FAN_EVENT_INFO_TYPE_OLD_DFID_NAME => {
                         let record = self
                             .get_struct::<libc::fanotify_event_info_fid>(
                                 &buffer,
