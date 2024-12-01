@@ -76,10 +76,7 @@ jobs:
   # Use cross for QEMU-based testing
   # cross needs to execute Docker, GitHub Action already has it installed
   cross:
-    # Still use 20.04 for this CI step as test `test_prctl::test_set_vma_anon_name`
-    # would fail on 22.04 and 24.04 (at least for now)
-    # https://github.com/nix-rust/nix/issues/2418
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     needs: [rustfmt, minver, macos, linux_native_builds, rust_stable]
     strategy:
       fail-fast: false
