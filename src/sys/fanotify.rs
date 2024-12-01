@@ -250,7 +250,7 @@ impl FanotifyFidRecord {
     /// The filesystem id where this event occurred. The value this method returns
     /// differs depending on the host system. Please read the statfs(2) documentation
     /// for more information:
-    /// https://man7.org/linux/man-pages/man2/statfs.2.html#VERSIONS
+    /// <https://man7.org/linux/man-pages/man2/statfs.2.html#VERSIONS>
     pub fn filesystem_id(&self) -> libc::__kernel_fsid_t {
         self.0.fsid
     }
@@ -258,7 +258,7 @@ impl FanotifyFidRecord {
     /// The file handle for the filesystem object where the event occurred. The handle is
     /// represented as a 0-length u8 array, but it actually points to variable-length
     /// file_handle struct.For more information:
-    /// https://man7.org/linux/man-pages/man2/open_by_handle_at.2.html
+    /// <https://man7.org/linux/man-pages/man2/open_by_handle_at.2.html>
     pub fn handle(&self) -> [u8; 0] {
         self.0.handle
     }
@@ -270,8 +270,10 @@ impl FanotifyFidRecord {
 #[derive(Debug, Eq, Hash, PartialEq)]
 #[repr(transparent)]
 #[allow(missing_copy_implementations)]
+#[cfg(target_env = "gnu")]
 pub struct FanotifyErrorRecord(libc::fanotify_event_info_error);
 
+#[cfg(target_env = "gnu")]
 impl FanotifyErrorRecord {
     /// Errno of the FAN_FS_ERROR that occurred.
     pub fn err(&self) -> Errno {
@@ -292,8 +294,10 @@ impl FanotifyErrorRecord {
 #[derive(Debug, Eq, Hash, PartialEq)]
 #[repr(transparent)]
 #[allow(missing_copy_implementations)]
+#[cfg(target_env = "gnu")]
 pub struct FanotifyPidfdRecord(libc::fanotify_event_info_pidfd);
 
+#[cfg(target_env = "gnu")]
 impl FanotifyPidfdRecord {
     /// The process file descriptor that refers to the process responsible for
     /// generating this event. If the underlying pidfd_create fails, `None` is returned.
@@ -310,6 +314,7 @@ impl FanotifyPidfdRecord {
     }
 }
 
+#[cfg(target_env = "gnu")]
 impl Drop for FanotifyPidfdRecord {
     fn drop(&mut self) {
         if self.0.pidfd == libc::FAN_NOFD {
@@ -339,12 +344,14 @@ pub enum FanotifyInfoRecord {
     /// A [`libc::fanotify_event_info_error`] event was recieved.
     /// This occurs when a FAN_FS_ERROR occurs, indicating an error with
     /// the watch filesystem object. (such as a bad file or bad link lookup)
+    #[cfg(target_env = "gnu")]
     Error(FanotifyErrorRecord),
 
     /// A [`libc::fanotify_event_info_pidfd`] event was recieved, usually as
     /// a result of passing [`InitFlags::FAN_REPORT_PIDFD`] into [`Fanotify::init`].
     /// The containing struct includes a `pidfd` for reliably determining
     /// whether the process responsible for generating an event has been recycled or terminated
+    #[cfg(target_env = "gnu")]
     Pidfd(FanotifyPidfdRecord),
 }
 
@@ -610,6 +617,7 @@ impl Fanotify {
                             );
                         Some(FanotifyInfoRecord::Fid(FanotifyFidRecord(record)))
                     }
+                    #[cfg(target_env = "gnu")]
                     libc::FAN_EVENT_INFO_TYPE_ERROR => {
                         let record = self
                             .get_struct::<libc::fanotify_event_info_error>(
@@ -621,6 +629,7 @@ impl Fanotify {
                             record,
                         )))
                     }
+                    #[cfg(target_env = "gnu")]
                     libc::FAN_EVENT_INFO_TYPE_PIDFD => {
                         let record = self
                             .get_struct::<libc::fanotify_event_info_pidfd>(

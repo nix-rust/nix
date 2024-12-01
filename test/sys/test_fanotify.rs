@@ -2,8 +2,8 @@ use crate::*;
 use nix::errno::Errno;
 use nix::fcntl::AT_FDCWD;
 use nix::sys::fanotify::{
-    EventFFlags, Fanotify, FanotifyResponse, InitFlags, MarkFlags, MaskFlags,
-    Response, FanotifyInfoRecord
+    EventFFlags, Fanotify, FanotifyInfoRecord, FanotifyResponse, InitFlags,
+    MarkFlags, MaskFlags, Response,
 };
 use std::fs::{read_link, read_to_string, File, OpenOptions};
 use std::io::ErrorKind;
@@ -86,9 +86,11 @@ fn test_fanotify_notifications() {
 }
 
 fn test_fanotify_notifications_with_info_records() {
-    let group =
-        Fanotify::init(InitFlags::FAN_CLASS_NOTIF | InitFlags::FAN_REPORT_FID, EventFFlags::O_RDONLY)
-            .unwrap();
+    let group = Fanotify::init(
+        InitFlags::FAN_CLASS_NOTIF | InitFlags::FAN_REPORT_FID,
+        EventFFlags::O_RDONLY,
+    )
+    .unwrap();
     let tempdir = tempfile::tempdir().unwrap();
     let tempfile = tempdir.path().join("test");
     OpenOptions::new()
@@ -115,7 +117,11 @@ fn test_fanotify_notifications_with_info_records() {
     let mut events = group.read_events_with_info_records().unwrap();
     assert_eq!(events.len(), 1, "should have read exactly one event");
     let (event, info_records) = events.pop().unwrap();
-    assert_eq!(info_records.len(), 1, "should have read exactly one info record");
+    assert_eq!(
+        info_records.len(),
+        1,
+        "should have read exactly one info record"
+    );
     assert!(event.check_version());
     assert_eq!(
         event.mask(),
@@ -124,7 +130,10 @@ fn test_fanotify_notifications_with_info_records() {
             | MaskFlags::FAN_CLOSE_WRITE
     );
 
-    assert!(matches!(info_records[0], FanotifyInfoRecord::Fid { .. }), "info record should be an fid record");
+    assert!(
+        matches!(info_records[0], FanotifyInfoRecord::Fid { .. }),
+        "info record should be an fid record"
+    );
 
     // read test file
     {
@@ -136,7 +145,11 @@ fn test_fanotify_notifications_with_info_records() {
     let mut events = group.read_events_with_info_records().unwrap();
     assert_eq!(events.len(), 1, "should have read exactly one event");
     let (event, info_records) = events.pop().unwrap();
-    assert_eq!(info_records.len(), 1, "should have read exactly one info record");
+    assert_eq!(
+        info_records.len(),
+        1,
+        "should have read exactly one info record"
+    );
     assert!(event.check_version());
     assert_eq!(
         event.mask(),
