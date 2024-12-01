@@ -588,7 +588,7 @@ impl Fanotify {
                 metadata.assume_init()
             };
 
-            let mut remaining_len = metadata.event_len;
+            let mut remaining_len = metadata.event_len - metadata_size as u32;
             let mut info_records = Vec::new();
             let mut current_event_offset = offset + metadata_size;
 
