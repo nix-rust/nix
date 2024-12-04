@@ -205,6 +205,10 @@ libc_bitflags! {
         /// Place the mapping at exactly the address specified in `new_address`.
         #[cfg(target_os = "linux")]
         MREMAP_FIXED;
+        /// Works in conjunction with `MREMAP_MAYMOVE` but does not unmap `old_address`.
+        /// Note that, in this case, `old_size` and `new_size` must be the same.
+        #[cfg(target_os = "linux")]
+        MREMAP_DONTUNMAP;
         /// Place the mapping at exactly the address specified in `new_address`.
         #[cfg(target_os = "netbsd")]
         MAP_FIXED;
