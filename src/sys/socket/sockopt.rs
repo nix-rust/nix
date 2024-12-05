@@ -6,6 +6,7 @@ use crate::sys::time::TimeVal;
 use crate::{errno::Errno, Result};
 use cfg_if::cfg_if;
 use libc::{self, c_int, c_void, socklen_t};
+#[cfg(apple_targets)]
 use std::ffi::{CStr, CString};
 use std::ffi::{OsStr, OsString};
 use std::mem::{self, MaybeUninit};
@@ -1774,14 +1775,13 @@ impl<'a> Set<'a, OsString> for SetOsString<'a> {
 }
 
 /// Getter for a `CString` value.
-// Hide the docs, because it's an implementation detail of `sockopt_impl!`
-#[doc(hidden)]
-#[derive(Debug)]
-pub struct GetCString<T: AsMut<[u8]>> {
+#[cfg(apple_targets)]
+struct GetCString<T: AsMut<[u8]>> {
     len: socklen_t,
     val: MaybeUninit<T>,
 }
 
+#[cfg(apple_targets)]
 impl<T: AsMut<[u8]>> Get<CString> for GetCString<T> {
     fn uninit() -> Self {
         GetCString {
