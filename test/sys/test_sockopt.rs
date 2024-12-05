@@ -1047,3 +1047,53 @@ fn test_ipv6_recv_traffic_class_opts() {
         "unsetting IPV6_RECVTCLASS on an inet6 datagram socket should succeed",
     );
 }
+
+/// Users should be able to define their own sockopts.
+mod sockopt_impl {
+    use nix::sys::socket::{
+        getsockopt, setsockopt, socket, AddressFamily, SockFlag, SockProtocol,
+        SockType,
+    };
+
+    sockopt_impl!(
+        Linger,
+        Both,
+        libc::SOL_SOCKET,
+        libc::SO_LINGER,
+        libc::linger
+    );
+    #[test]
+    fn test_linger() {
+        let fd = socket(
+            AddressFamily::Inet,
+            SockType::Stream,
+            SockFlag::empty(),
+            None,
+        )
+        .unwrap();
+
+        let set_linger = libc::linger {
+            l_onoff: 1,
+            l_linger: 42,
+        };
+        setsockopt(&fd, Linger, &set_linger).unwrap();
+
+        let get_linger = getsockopt(&fd, Linger).unwrap();
+        assert_eq!(get_linger.l_linger, set_linger.l_linger);
+    }
+
+    sockopt_impl!(KeepAlive, Both, libc::SOL_SOCKET, libc::SO_KEEPALIVE, bool);
+
+    #[test]
+    fn test_so_tcp_keepalive() {
+        let fd = socket(
+            AddressFamily::Inet,
+            SockType::Stream,
+            SockFlag::empty(),
+            SockProtocol::Tcp,
+        )
+        .unwrap();
+        setsockopt(&fd, KeepAlive, &true).unwrap();
+        assert!(getsockopt(&fd, KeepAlive).unwrap());
+    }
+}
