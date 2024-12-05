@@ -1054,7 +1054,6 @@ mod sockopt_impl {
         getsockopt, setsockopt, socket, AddressFamily, SockFlag, SockProtocol,
         SockType,
     };
-    use std::os::unix::io::AsRawFd;
 
     sockopt_impl!(
         Linger,

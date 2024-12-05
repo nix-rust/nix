@@ -11,8 +11,7 @@ use std::ffi::{OsStr, OsString};
 use std::mem::{self, MaybeUninit};
 use std::os::unix::ffi::OsStrExt;
 #[cfg(linux_android)]
-use std::os::unix::io::AsFd;
-use std::os::unix::io::AsRawFd;
+use std::os::unix::io::{AsFd, AsRawFd};
 
 // Constants
 // TCP_CA_NAME_MAX isn't defined in user space include files
@@ -54,9 +53,9 @@ macro_rules! setsockopt_impl {
                 fd: &F,
                 val: &$ty,
             ) -> $crate::Result<()> {
+                use std::os::fd::AsRawFd;
                 use $crate::sys::socket::sockopt::Set;
-                let setter: $setter =
-                    $crate::sys::socket::sockopt::Set::new(val);
+                let setter: $setter = Set::new(val);
                 let level = $level;
                 let flag = $flag;
                 let res = unsafe {
@@ -107,9 +106,9 @@ macro_rules! getsockopt_impl {
                 &self,
                 fd: &F,
             ) -> $crate::Result<$ty> {
+                use std::os::fd::AsRawFd;
                 use $crate::sys::socket::sockopt::Get;
-                let mut getter: $getter =
-                    $crate::sys::socket::sockopt::Get::uninit();
+                let mut getter: $getter = Get::uninit();
                 let level = $level;
                 let flag = $flag;
                 let res = unsafe {
