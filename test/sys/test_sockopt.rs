@@ -258,6 +258,7 @@ fn test_so_type_unknown() {
 #[cfg_attr(qemu, ignore)]
 fn test_tcp_congestion() {
     use std::ffi::OsString;
+    use std::os::unix::ffi::OsStrExt;
 
     let fd = socket(
         AddressFamily::Inet,
@@ -268,7 +269,7 @@ fn test_tcp_congestion() {
     .unwrap();
 
     let val = getsockopt(&fd, sockopt::TcpCongestion).unwrap();
-    let bytes = val.as_os_str().as_encoded_bytes();
+    let bytes = val.as_os_str().as_bytes();
     for b in bytes.iter() {
         assert_ne!(
             *b, 0,
