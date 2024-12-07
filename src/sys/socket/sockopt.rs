@@ -330,6 +330,19 @@ sockopt_impl!(
     libc::TCP_FUNCTION_BLK,
     libc::tcp_function_set
 );
+#[cfg(target_os = "freebsd")]
+#[cfg(feature = "net")]
+sockopt_impl!(
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
+    /// Query the alias name of the set of function of the socket's TCP stack.
+    /// Uses the same field for the main name when getting from TCP_FUNCTION_BLK.
+    /// Empty if no alias.
+    TcpFunctionAlias,
+    GetOnly,
+    libc::IPPROTO_TCP,
+    libc::TCP_FUNCTION_ALIAS,
+    libc::tcp_function_set
+);
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     /// Used to disable Nagle's algorithm.

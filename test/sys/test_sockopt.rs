@@ -283,7 +283,7 @@ fn test_tcp_congestion() {
 
 #[test]
 #[cfg(target_os = "freebsd")]
-fn test_tcp_function_blk() {
+fn test_tcp_function_blk_alias() {
     use std::ffi::CStr;
 
     let fd = socket(
@@ -298,8 +298,15 @@ fn test_tcp_function_blk() {
     let name = unsafe { CStr::from_ptr(tfs.function_set_name.as_ptr()) };
     assert!(!name.to_bytes().is_empty());
 
+    let aliastfs = getsockopt(&fd, sockopt::TcpFunctionAlias).unwrap();
+    let aliasname =
+        unsafe { CStr::from_ptr(aliastfs.function_set_name.as_ptr()) };
+    // freebsd default tcp stack has no alias.
+    assert!(aliasname.to_bytes().is_empty());
+
     // We can't know at compile time what options are available.  So just test the setter by a
     // no-op set.
+    // TODO: test if we can load for example BBR tcp stack kernel module.
     setsockopt(&fd, sockopt::TcpFunctionBlk, &tfs).unwrap();
 }
 
