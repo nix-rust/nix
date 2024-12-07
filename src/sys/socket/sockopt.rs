@@ -1746,9 +1746,11 @@ impl<T: AsMut<[u8]>> Get<OsString> for GetOsString<T> {
         let len = self.len as usize;
         let mut v = unsafe { self.val.assume_init() };
         if let Ok(cs) = CStr::from_bytes_until_nul(&v.as_mut()[0..len]) {
+            // It's legal for the kernel to return any number of NULs at the
+            // end of the string.  C applications don't care, after all.
             OsStr::from_bytes(cs.to_bytes())
         } else {
-            // The OS returned a non-NUL-terminated string
+            // Even zero NULs is possible.
             OsStr::from_bytes(&v.as_mut()[0..len])
         }
         .to_owned()
