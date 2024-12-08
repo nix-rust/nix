@@ -249,16 +249,16 @@ fn test_so_type_unknown() {
 }
 
 // The CI doesn't supported getsockopt and setsockopt on emulated processors.
-// It's believed that a QEMU issue, the tests run ok on a fully emulated system.
-// Current CI just run the binary with QEMU but the Kernel remains the same as the host.
+// It's believed to be a QEMU issue; the tests run ok on a fully emulated
+// system.  Current CI just runs the binary with QEMU but the kernel remains the
+// same as the host.
 // So the syscall doesn't work properly unless the kernel is also emulated.
 #[test]
-#[cfg(all(
-    any(target_arch = "x86", target_arch = "x86_64"),
-    any(target_os = "freebsd", target_os = "linux")
-))]
+#[cfg(any(target_os = "freebsd", target_os = "linux"))]
+#[cfg_attr(qemu, ignore)]
 fn test_tcp_congestion() {
     use std::ffi::OsString;
+    use std::os::unix::ffi::OsStrExt;
 
     let fd = socket(
         AddressFamily::Inet,
@@ -269,6 +269,14 @@ fn test_tcp_congestion() {
     .unwrap();
 
     let val = getsockopt(&fd, sockopt::TcpCongestion).unwrap();
+    let bytes = val.as_os_str().as_bytes();
+    for b in bytes.iter() {
+        assert_ne!(
+            *b, 0,
+            "OsString should contain no embedded NULs: {:?}",
+            val
+        );
+    }
     setsockopt(&fd, sockopt::TcpCongestion, &val).unwrap();
 
     setsockopt(

@@ -7,8 +7,8 @@ use crate::{errno::Errno, Result};
 use cfg_if::cfg_if;
 use libc::{self, c_int, c_void, socklen_t};
 #[cfg(apple_targets)]
-use std::ffi::{CStr, CString};
-use std::ffi::{OsStr, OsString};
+use std::ffi::CString;
+use std::ffi::{CStr, OsStr, OsString};
 use std::mem::{self, MaybeUninit};
 use std::os::unix::ffi::OsStrExt;
 #[cfg(linux_android)]
@@ -1745,7 +1745,15 @@ impl<T: AsMut<[u8]>> Get<OsString> for GetOsString<T> {
     unsafe fn assume_init(self) -> OsString {
         let len = self.len as usize;
         let mut v = unsafe { self.val.assume_init() };
-        OsStr::from_bytes(&v.as_mut()[0..len]).to_owned()
+        if let Ok(cs) = CStr::from_bytes_until_nul(&v.as_mut()[0..len]) {
+            // It's legal for the kernel to return any number of NULs at the
+            // end of the string.  C applications don't care, after all.
+            OsStr::from_bytes(cs.to_bytes())
+        } else {
+            // Even zero NULs is possible.
+            OsStr::from_bytes(&v.as_mut()[0..len])
+        }
+        .to_owned()
     }
 }
 
