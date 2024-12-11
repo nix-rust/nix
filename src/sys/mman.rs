@@ -316,6 +316,18 @@ libc_enum! {
         #[cfg(apple_targets)]
         #[allow(missing_docs)]
         MADV_CAN_REUSE,
+        /// Reclaim the address range when applicable.
+        #[cfg(linux_android)]
+        MADV_PAGEOUT,
+        /// Deactivate the address range when applicable.
+        #[cfg(linux_android)]
+        MADV_COLD,
+        /// After fork, the adress range is zero filled.
+        #[cfg(linux_android)]
+        MADV_WIPEONFORK,
+        /// Undo `MADV_WIPEONFORK` when it applied.
+        #[cfg(linux_android)]
+        MADV_KEEPONFORK,
     }
 }
 
