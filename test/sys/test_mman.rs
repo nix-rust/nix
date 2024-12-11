@@ -183,9 +183,18 @@ fn test_madv_wipeonfork() {
     let _m = crate::FORK_MTX.lock();
 
     unsafe {
-        if let ForkResult::Child = fork().expect("fork failed") {
-            // that s the while point of MADV_WIPEONFORK
-            assert_eq!(slice[ONE_K - 1], 0x00);
+        let res = fork().expect("fork failed");
+        match res {
+            ForkResult::Child => {
+                // that s the whole point of MADV_WIPEONFORK
+                assert_eq!(slice[ONE_K - 1], 0x00);
+                libc::_exit(0);
+            }
+            ForkResult::Parent { child } => {
+                nix::sys::signal::kill(child, nix::sys::signal::SIGTERM)
+                    .unwrap();
+                let _ = nix::sys::wait::wait().unwrap();
+            }
         }
     }
 }
