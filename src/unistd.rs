@@ -3732,6 +3732,7 @@ impl User {
     /// let res = User::from_uid(Uid::from_raw(0)).unwrap().unwrap();
     /// assert_eq!(res.name, "root");
     /// ```
+    #[doc(alias("getpwuid", "getpwuid_r"))]
     pub fn from_uid(uid: Uid) -> Result<Option<Self>> {
         // SAFETY: `getpwuid_r` will write to `res` if it initializes the value
         // at `pwd`.
@@ -3755,6 +3756,7 @@ impl User {
     /// let res = User::from_name("root").unwrap().unwrap();
     /// assert_eq!(res.name, "root");
     /// ```
+    #[doc(alias("getpwnam", "getpwnam_r"))]
     pub fn from_name(name: &str) -> Result<Option<Self>> {
         let name = match CString::new(name) {
             Ok(c_str) => c_str,
