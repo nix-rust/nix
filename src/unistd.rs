@@ -1262,6 +1262,7 @@ pub fn execveat<Fd: std::os::fd::AsFd, SA: AsRef<CStr>, SE: AsRef<CStr>>(
 /// * `noclose = false`: The process' stdin, stdout, and stderr will point to
 ///   `/dev/null` after daemonizing.
 #[cfg(any(
+        apple_targets,
         linux_android,
         freebsdlike,
         solarish,
