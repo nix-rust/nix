@@ -213,6 +213,14 @@ pub enum SockProtocol {
     Icmp = libc::IPPROTO_ICMP,
     /// ICMPv6 protocol (ICMP over IPv6)
     IcmpV6 = libc::IPPROTO_ICMPV6,
+    /// SCTP ([sctp(7)](https://man7.org/linux/man-pages/man7/sctp.7.html))
+    #[cfg(any(
+        apple_targets,
+        linux_android,
+        target_os = "freebsd",
+        target_os = "netbsd"
+    ))]
+    Sctp = libc::IPPROTO_SCTP,
 }
 
 impl SockProtocol {
@@ -356,6 +364,9 @@ libc_bitflags! {
                   target_os = "fuchsia",
                   target_os = "freebsd"))]
         MSG_WAITFORONE;
+        /// Indicates that this message is not a user message but an SCTP notification.
+        #[cfg(target_os = "linux")]
+        MSG_NOTIFICATION;
     }
 }
 
