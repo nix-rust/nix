@@ -58,6 +58,13 @@ impl EventFd {
         Self::from_value_and_flags(init_val, EfdFlags::empty())
     }
 
+    /// Constructs an `EventFd` wrapping an existing `OwnedFd`.
+    ///
+    /// Safety: `OwnedFd` is a valid eventfd.
+    pub unsafe fn from_owned_fd(fd: OwnedFd) -> Self {
+        Self(fd)
+    }
+
     /// Enqueues `value` triggers, i.e., adds the integer value supplied in `value`
     /// to the counter.
     ///
