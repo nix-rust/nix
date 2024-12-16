@@ -60,7 +60,9 @@ impl EventFd {
 
     /// Constructs an `EventFd` wrapping an existing `OwnedFd`.
     ///
-    /// Safety: `OwnedFd` is a valid eventfd.
+    /// # Safety
+    ///
+    /// `OwnedFd` is a valid eventfd.
     pub unsafe fn from_owned_fd(fd: OwnedFd) -> Self {
         Self(fd)
     }
