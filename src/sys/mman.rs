@@ -328,6 +328,13 @@ libc_enum! {
         /// Undo `MADV_WIPEONFORK` when it applied.
         #[cfg(linux_android)]
         MADV_KEEPONFORK,
+        /// Pre-load the address range for reading to reduce page-fault latency.
+        #[cfg(linux_android)]
+        MADV_POPULATE_READ,
+        /// Pre-fault the address range for writing to reduce page-fault
+        /// latency on subsequent writes.
+        #[cfg(linux_android)]
+        MADV_POPULATE_WRITE,
     }
 }
 
