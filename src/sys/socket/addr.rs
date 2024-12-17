@@ -1189,6 +1189,9 @@ impl SockaddrLike for SockaddrStorage {
                 libc::AF_ALG => unsafe {
                     AlgAddr::from_raw(addr, l).map(|alg| Self { alg })
                 },
+                libc::AF_UNIX => unsafe {
+                    UnixAddr::from_raw(addr, l).map(|su| Self { su })
+                },
                 #[cfg(feature = "net")]
                 libc::AF_INET => unsafe {
                     SockaddrIn::from_raw(addr, l).map(|sin| Self { sin })
