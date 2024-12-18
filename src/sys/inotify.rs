@@ -239,6 +239,17 @@ impl Inotify {
 
         Ok(events)
     }
+
+    /// Constructs an `Inotify` wrapping an existing `OwnedFd`.
+    ///
+    /// # Safety
+    ///
+    /// `OwnedFd` is a valid `Inotify`.
+    pub unsafe fn from_owned_fd(fd: OwnedFd) -> Self {
+        Self {
+            fd
+        }
+    }
 }
 
 impl FromRawFd for Inotify {

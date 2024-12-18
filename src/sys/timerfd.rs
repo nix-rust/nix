@@ -225,4 +225,16 @@ impl TimerFd {
 
         Ok(())
     }
+
+
+    /// Constructs a `TimerFd` wrapping an existing `OwnedFd`.
+    ///
+    /// # Safety
+    ///
+    /// `OwnedFd` is a valid `TimerFd`.
+    pub unsafe fn from_owned_fd(fd: OwnedFd) -> Self {
+        Self {
+            fd
+        }
+    }
 }
