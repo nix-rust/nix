@@ -424,3 +424,16 @@ impl From<Fanotify> for OwnedFd {
         value.fd
     }
 }
+
+impl Fanotify {
+    /// Constructs a `Fanotify` wrapping an existing `OwnedFd`.
+    ///
+    /// # Safety
+    ///
+    /// `OwnedFd` is a valid `Fanotify`.
+    pub unsafe fn from_owned_fd(fd: OwnedFd) -> Self {
+        Self {
+            fd
+        }
+    }
+}

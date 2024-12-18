@@ -127,6 +127,15 @@ impl SignalFd {
         }
     }
 
+    /// Constructs a `SignalFd` wrapping an existing `OwnedFd`.
+    ///
+    /// # Safety
+    ///
+    /// `OwnedFd` is a valid `SignalFd`.
+    pub unsafe fn from_owned_fd(fd: OwnedFd) -> Self {
+        Self(fd)
+    }
+
     fn update(&self, mask: &SigSet, flags: SfdFlags) -> Result<()> {
         let raw_fd = self.0.as_raw_fd();
         unsafe {

@@ -52,6 +52,17 @@ pub enum ForkptyResult {
 #[derive(Debug)]
 pub struct PtyMaster(OwnedFd);
 
+impl PtyMaster {
+    /// Constructs a `PytMaster` wrapping an existing `OwnedFd`.
+    ///
+    /// # Safety
+    ///
+    /// `OwnedFd` is a valid `PtyMaster`.
+    pub unsafe fn from_owned_fd(fd: OwnedFd) -> Self {
+        Self(fd)
+    }
+}
+
 impl AsRawFd for PtyMaster {
     fn as_raw_fd(&self) -> RawFd {
         self.0.as_raw_fd()
