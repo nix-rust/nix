@@ -1189,6 +1189,9 @@ impl SockaddrLike for SockaddrStorage {
                 libc::AF_ALG => unsafe {
                     AlgAddr::from_raw(addr, l).map(|alg| Self { alg })
                 },
+                libc::AF_UNIX => unsafe {
+                    UnixAddr::from_raw(addr, l).map(|su| Self { su })
+                },
                 #[cfg(feature = "net")]
                 libc::AF_INET => unsafe {
                     SockaddrIn::from_raw(addr, l).map(|sin| Self { sin })
@@ -2386,6 +2389,19 @@ mod tests {
             let ptr = ua.as_ptr().cast();
             let ss = unsafe { SockaddrStorage::from_raw(ptr, Some(ua.len())) }
                 .unwrap();
+            assert_eq!(ss.len(), ua.len());
+        }
+
+        #[test]
+        fn from_sockaddr_un_named_no_length() {
+            let ua = UnixAddr::new("/var/run/mysock").unwrap();
+            assert!(
+                UnixAddr::size()
+                    <= mem::size_of::<libc::sockaddr_storage>()
+                        as libc::socklen_t
+            );
+            let ptr = ua.as_ptr().cast();
+            let ss = unsafe { SockaddrStorage::from_raw(ptr, None) }.unwrap();
             assert_eq!(ss.len(), ua.len());
         }
 
