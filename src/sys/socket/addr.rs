@@ -2392,6 +2392,19 @@ mod tests {
             assert_eq!(ss.len(), ua.len());
         }
 
+        #[test]
+        fn from_sockaddr_un_named_no_length() {
+            let ua = UnixAddr::new("/var/run/mysock").unwrap();
+            assert!(
+                UnixAddr::size()
+                    <= mem::size_of::<libc::sockaddr_storage>()
+                        as libc::socklen_t
+            );
+            let ptr = ua.as_ptr().cast();
+            let ss = unsafe { SockaddrStorage::from_raw(ptr, None) }.unwrap();
+            assert_eq!(ss.len(), ua.len());
+        }
+
         #[cfg(linux_android)]
         #[test]
         fn from_sockaddr_un_abstract_named() {
