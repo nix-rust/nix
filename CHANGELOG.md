@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.26.5] - 2024-12-20
+
+### Fixed
+
+- Fixed the build issue of undefined import self::consts on the loongarch64.
+  ([#2568](https://github.com/nix-rust/nix/pull/2568))
+
 ## [0.26.4] - 2023-08-28
 
 ### Fixed
