@@ -19,7 +19,8 @@ pub const TYPEBITS: ioctl_num_type = 8;
     target_arch = "mips64",
     target_arch = "powerpc",
     target_arch = "powerpc64",
-    target_arch = "sparc64"
+    target_arch = "sparc64",
+    target_arch = "loongarch64"
 ))]
 mod consts {
     #[doc(hidden)]
