@@ -825,6 +825,11 @@ pub enum FcntlArg<'a> {
     /// Both descriptors must reference regular files in the same volume.
     #[cfg(apple_targets)]
     F_TRANSFEREXTENTS(RawFd),
+    /// Set or clear the read ahead (pre-fetch) amount for sequential access or
+    /// disable it with 0 or to system default for any value < 0.
+    /// It manages how the kernel caches file data.
+    #[cfg(target_os = "freebsd")]
+    F_READAHEAD(c_int),
     // TODO: Rest of flags
 }
 
@@ -961,6 +966,10 @@ pub fn fcntl<Fd: std::os::fd::AsFd>(fd: Fd, arg: FcntlArg) -> Result<c_int> {
             #[cfg(apple_targets)]
             F_TRANSFEREXTENTS(rawfd) => {
                 libc::fcntl(fd, libc::F_TRANSFEREXTENTS, rawfd)
+            },
+            #[cfg(target_os = "freebsd")]
+            F_READAHEAD(val) => {
+                libc::fcntl(fd, libc::F_READAHEAD, val)
             },
         }
     };

@@ -805,3 +805,16 @@ fn test_f_transferextents() {
         .expect("transferextents failed");
     assert_ne!(res, -1);
 }
+
+#[cfg(target_os = "freebsd")]
+#[test]
+fn test_f_readahead() {
+    use nix::fcntl::*;
+
+    let tmp = NamedTempFile::new().unwrap();
+    let mut res = fcntl(&tmp, FcntlArg::F_READAHEAD(1_000_000))
+        .expect("read ahead failed");
+    assert_ne!(res, -1);
+    res = fcntl(&tmp, FcntlArg::F_READAHEAD(-1024)).expect("read ahead failed");
+    assert_ne!(res, -1);
+}
