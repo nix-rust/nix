@@ -93,7 +93,7 @@ impl InterfaceAddress {
         let netmask =
             unsafe { SockaddrStorage::from_raw(info.ifa_netmask, None) };
         let mut addr = InterfaceAddress {
-            interface_name: ifname.to_string_lossy().to_string(),
+            interface_name: ifname.to_string_lossy().into_owned(),
             flags: InterfaceFlags::from_bits_truncate(
                 info.ifa_flags as IflagsType,
             ),
