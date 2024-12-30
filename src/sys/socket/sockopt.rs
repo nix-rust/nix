@@ -1257,6 +1257,18 @@ sockopt_impl!(
     GetCString<[u8; libc::IFNAMSIZ]>
 );
 
+#[cfg(solarish)]
+sockopt_impl!(
+    /// Enable/disable exclusive binding.
+    /// Prevent multiple sockets to bind to the same
+    /// address:port, neutralizing `SO_REUSEADDR` effect.
+    ExclBind,
+    Both,
+    libc::SOL_SOCKET,
+    libc::SO_EXCLBIND,
+    bool
+);
+
 #[allow(missing_docs)]
 // Not documented by Linux!
 #[cfg(linux_android)]

@@ -1133,3 +1133,38 @@ mod sockopt_impl {
         assert_eq!(get_linger.l_linger, set_linger.l_linger);
     }
 }
+
+#[cfg(solarish)]
+#[test]
+fn test_exclbind() {
+    use nix::errno::Errno;
+    use nix::sys::socket::{
+        bind, socket, AddressFamily, SockFlag, SockType, SockaddrIn,
+    };
+    use std::net::SocketAddrV4;
+    use std::str::FromStr;
+    let fd1 = socket(
+        AddressFamily::Inet,
+        SockType::Stream,
+        SockFlag::empty(),
+        None,
+    )
+    .unwrap();
+    let addr = SocketAddrV4::from_str("127.0.0.1:8081").unwrap();
+    let excl = true;
+
+    setsockopt(&fd1, sockopt::ExclBind, &excl).unwrap();
+    bind(fd1.as_raw_fd(), &SockaddrIn::from(addr)).unwrap();
+    assert_eq!(getsockopt(&fd1, sockopt::ExclBind), Ok(true));
+    let fd2 = socket(
+        AddressFamily::Inet,
+        SockType::Stream,
+        SockFlag::empty(),
+        None,
+    )
+    .unwrap();
+    assert_eq!(
+        bind(fd2.as_raw_fd(), &SockaddrIn::from(addr)),
+        Err(Errno::EADDRINUSE)
+    );
+}
