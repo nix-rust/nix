@@ -372,6 +372,15 @@ sockopt_impl!(
     libc::SO_LINGER,
     libc::linger
 );
+#[cfg(apple_targets)]
+sockopt_impl!(
+    /// Same as `SO_LINGER`, but the duration is in seconds rather than kernel ticks.
+    LingerSec,
+    Both,
+    libc::SOL_SOCKET,
+    libc::SO_LINGER_SEC,
+    libc::linger
+);
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
