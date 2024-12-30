@@ -16,6 +16,7 @@ use crate::fcntl::AtFlags;
     target_os = "fuchsia",
     target_os = "hurd",
     target_os = "redox",
+    target_os = "cygwin",
 ))]
 use crate::fcntl::OFlag;
 #[cfg(all(feature = "fs", bsd))]
@@ -1494,6 +1495,7 @@ feature! {
     target_os = "hurd",
     target_os = "redox",
     netbsdlike,
+    target_os = "cygwin",
 ))]
 pub fn pipe2(flags: OFlag) -> Result<(std::os::fd::OwnedFd, std::os::fd::OwnedFd)> {
     let mut fds = mem::MaybeUninit::<[std::os::fd::OwnedFd; 2]>::uninit();
