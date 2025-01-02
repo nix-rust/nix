@@ -1,0 +1,1 @@
+Exposed the ```std::os::fd::AsRawFd``` trait method for ```nix::sys::fanotify::Fanotify``` struct
