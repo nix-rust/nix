@@ -240,11 +240,22 @@ pub const FANOTIFY_METADATA_VERSION: u8 = libc::FANOTIFY_METADATA_VERSION;
 
 /// Abstract over [`libc::fanotify_event_info_fid`], which represents an
 /// information record received via [`Fanotify::read_events_with_info_records`].
-// Is not Clone due to fd field, to avoid use-after-close scenarios.
 #[derive(Debug, Eq, Hash, PartialEq)]
 #[repr(transparent)]
 #[allow(missing_copy_implementations)]
-pub struct FanotifyFidRecord(libc::fanotify_event_info_fid);
+pub struct LibcFanotifyFidRecord(libc::fanotify_event_info_fid);
+
+/// Extends LibcFanotifyFidRecord to include file_handle bytes.
+/// This allows Rust to move the record around in memory and not lose the file_handle
+/// as the libc::fanotify_event_info_fid does not include any of the file_handle bytes.
+// Is not Clone due to fd field, to avoid use-after-close scenarios.
+#[derive(Debug, Eq, Hash, PartialEq)]
+#[repr(C)]
+#[allow(missing_copy_implementations)]
+pub struct FanotifyFidRecord {
+    record: LibcFanotifyFidRecord,
+    handle_bytes: *const u8,
+}
 
 impl FanotifyFidRecord {
     /// The filesystem id where this event occurred. The value this method returns
@@ -252,15 +263,22 @@ impl FanotifyFidRecord {
     /// for more information:
     /// <https://man7.org/linux/man-pages/man2/statfs.2.html#VERSIONS>
     pub fn filesystem_id(&self) -> libc::__kernel_fsid_t {
-        self.0.fsid
+        self.record.0.fsid
     }
 
     /// The file handle for the filesystem object where the event occurred. The handle is
     /// represented as a 0-length u8 array, but it actually points to variable-length
     /// file_handle struct.For more information:
     /// <https://man7.org/linux/man-pages/man2/open_by_handle_at.2.html>
-    pub fn handle(&self) -> [u8; 0] {
-        self.0.handle
+    pub fn handle(&self) -> *const u8 {
+        self.handle_bytes
+    }
+
+    /// The specific info_type for this Fid Record. Fanotify can return an Fid Record
+    /// with many different possible info_types. The info_type is not always necessary
+    /// but can be useful for connecting similar events together (like a FAN_RENAME) 
+    pub fn info_type(&self) -> u8 {
+        self.record.0.hdr.info_type
     }
 }
 
@@ -613,7 +631,18 @@ impl Fanotify {
                                 &buffer,
                                 current_event_offset,
                             );
-                        Some(FanotifyInfoRecord::Fid(FanotifyFidRecord(record)))
+
+                        let record_ptr: *const libc::fanotify_event_info_fid = unsafe {
+                            buffer.as_ptr().add(current_event_offset)
+                                as *const libc::fanotify_event_info_fid
+                        };
+
+                        let file_handle_ptr = unsafe { record_ptr.add(1) as *const u8 };
+
+                        Some(FanotifyInfoRecord::Fid(FanotifyFidRecord {
+                            record: LibcFanotifyFidRecord(record),
+                            handle_bytes: file_handle_ptr,
+                        }))
                     }
                     #[cfg(target_env = "gnu")]
                     libc::FAN_EVENT_INFO_TYPE_ERROR => {
