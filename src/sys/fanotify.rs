@@ -583,6 +583,7 @@ impl Fanotify {
     /// In particular, `EAGAIN` is returned when no event is available on a
     /// group that has been initialized with the flag `InitFlags::FAN_NONBLOCK`,
     /// thus making this method nonblocking.
+    #[allow(clippy::cast_ptr_alignment)]    // False positive
     pub fn read_events_with_info_records(
         &self,
     ) -> Result<Vec<(FanotifyEvent, Vec<FanotifyInfoRecord>)>> {
