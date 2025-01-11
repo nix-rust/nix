@@ -209,6 +209,16 @@ pub enum SockProtocol {
     // The protocol number is fed into the socket syscall in network byte order.
     #[cfg(linux_android)]
     EthAll = (libc::ETH_P_ALL as u16).to_be() as i32,
+    #[cfg(linux_android)]
+    /// Packet filter on loopback traffic
+    EthLoop = (libc::ETH_P_LOOP as u16).to_be() as i32,
+    /// Packet filter on IPv4 traffic
+    #[cfg(linux_android)]
+    #[cfg(target_endian = "big")]
+    EthIp = libc::ETH_P_IP,
+    /// Packet filter on IPv6 traffic
+    #[cfg(linux_android)]
+    EthIpv6 = (libc::ETH_P_IPV6 as u16).to_be() as i32,
     /// ICMP protocol ([icmp(7)](https://man7.org/linux/man-pages/man7/icmp.7.html))
     Icmp = libc::IPPROTO_ICMP,
     /// ICMPv6 protocol (ICMP over IPv6)
@@ -241,6 +251,14 @@ impl SockProtocol {
     #[cfg(apple_targets)]
     #[allow(non_upper_case_globals)]
     pub const KextEvent: SockProtocol = SockProtocol::Icmp; // Matches libc::SYSPROTO_EVENT
+
+    /// Packet filter on IPv4 traffic
+    // NOTE: placed here due to conflict (little endian arch) with SockProtocol::NetLinkISCI
+    #[cfg(linux_android)]
+    #[allow(non_upper_case_globals)]
+    #[cfg(target_endian = "little")]
+    pub const EthIp: SockProtocol = unsafe { std::mem::transmute::<i32, SockProtocol>((libc::ETH_P_IP as u16).to_be() as i32) };
+
 }
 #[cfg(linux_android)]
 libc_bitflags! {
