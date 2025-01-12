@@ -95,9 +95,86 @@ where
     Ok(())
 }
 
+/// Set the process-wide priority mask to `mask` and return the previous mask
+/// value.
+///
+/// Calls to `syslog()` with a priority level not set in `mask` are ignored. The
+/// default is to log all priorities.
+///
+/// If the `mask` argument is `None`, the current logmask is not modified, this
+/// can be used to query the current log mask.
+pub fn setlogmask(mask: Option<LogMask>) -> LogMask {
+    let mask = match mask {
+        Some(mask) => mask.0,
+        None => 0,
+    };
+    let prev_mask = unsafe { libc::setlogmask(mask) };
+    LogMask(prev_mask)
+}
+
 /// Closes the log file.
 pub fn closelog() {
     unsafe { libc::closelog() }
+}
+
+/// System log priority mask.
+#[derive(Debug, Clone, Copy)]
+pub struct LogMask(libc::c_int);
+
+impl LogMask {
+    /// Creates a mask of all priorities up to and including `priority`.
+    #[doc(alias("LOG_UPTO"))]
+    pub fn up_to(priority: Severity) -> Self {
+        let pri = priority as libc::c_int;
+        Self((1 << (pri + 1)) - 1)
+    }
+
+    /// Creates a mask for the specified priority.
+    #[doc(alias("LOG_MASK"))]
+    pub fn of_priority(priority: Severity) -> Self {
+        let pri = priority as libc::c_int;
+        Self(1 << pri)
+    }
+
+    /// Returns if the mask for the specified `priority` is set.
+    pub fn contains(&self, priority: Severity) -> bool {
+        let priority = Self::of_priority(priority);
+        let and_result = *self & priority;
+        and_result.0 != 0
+    }
+}
+
+impl std::ops::BitOr for LogMask {
+    type Output = Self;
+    fn bitor(self, rhs: Self) -> Self::Output {
+        Self(self.0 | rhs.0)
+    }
+}
+
+impl std::ops::BitAnd for LogMask {
+    type Output = Self;
+    fn bitand(self, rhs: Self) -> Self::Output {
+        Self(self.0 & rhs.0)
+    }
+}
+
+impl std::ops::BitOrAssign for LogMask {
+    fn bitor_assign(&mut self, rhs: Self) {
+        self.0 |= rhs.0;
+    }
+}
+
+impl std::ops::BitAndAssign for LogMask {
+    fn bitand_assign(&mut self, rhs: Self) {
+        self.0 &= rhs.0;
+    }
+}
+
+impl std::ops::Not for LogMask {
+    type Output = Self;
+    fn not(self) -> Self::Output {
+        Self(!self.0)
+    }
 }
 
 /// The priority for a log message.
