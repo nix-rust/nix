@@ -1,10 +1,14 @@
 use cfg_if::cfg_if;
 
 /// The datatype used for the ioctl number
-#[cfg(any(target_os = "android", target_env = "musl"))]
+#[cfg(any(target_os = "android", target_os = "fuchsia", target_env = "musl"))]
 #[doc(hidden)]
 pub type ioctl_num_type = ::libc::c_int;
-#[cfg(not(any(target_os = "android", target_env = "musl")))]
+#[cfg(not(any(
+    target_os = "android",
+    target_os = "fuchsia",
+    target_env = "musl"
+)))]
 #[doc(hidden)]
 pub type ioctl_num_type = ::libc::c_ulong;
 /// The datatype used for the 3rd argument
