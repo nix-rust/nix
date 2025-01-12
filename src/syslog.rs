@@ -138,8 +138,9 @@ impl LogMask {
 
     /// Returns if the mask for the specified `priority` is set.
     pub fn contains(&self, priority: Severity) -> bool {
-        let pri = priority as libc::c_int;
-        (self.0 & (1 << pri)) != 0
+        let priority = Self::of_priority(priority);
+        let and_result = self & priority;
+        and_result != 0
     }
 }
 
