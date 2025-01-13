@@ -1577,11 +1577,11 @@ impl LinkatFlags {
 /// # References
 /// See also [linkat(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/linkat.html)
 #[cfg(not(target_os = "redox"))] // Redox does not have this yet
-pub fn linkat<Fd1: std::os::fd::AsFd, Fd2: std::os::fd::AsFd, P: ?Sized + NixPath>(
+pub fn linkat<Fd1: std::os::fd::AsFd, Fd2: std::os::fd::AsFd, P1: ?Sized + NixPath, P2: ?Sized + NixPath>(
     olddirfd: Fd1,
-    oldpath: &P,
+    oldpath: &P1,
     newdirfd: Fd2,
-    newpath: &P,
+    newpath: &P2,
     flag: AtFlags,
 ) -> Result<()> {
     use std::os::fd::AsRawFd;
