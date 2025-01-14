@@ -929,6 +929,40 @@ fn test_linkat_file() {
 
 #[test]
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
+/// This test is the same as [test_linkat_file], but ensures that two different types can be used
+/// as the path arguments.
+fn test_linkat_pathtypes() {
+    use nix::fcntl::AtFlags;
+
+    let tempdir = tempdir().unwrap();
+    let oldfilename = "foo.txt";
+    let oldfilepath = tempdir.path().join(oldfilename);
+
+    let newfilename = "bar.txt";
+    let newfilepath = tempdir.path().join(newfilename);
+
+    // Create file
+    File::create(oldfilepath).unwrap();
+
+    // Get file descriptor for base directory
+    let dirfd =
+        fcntl::open(tempdir.path(), fcntl::OFlag::empty(), stat::Mode::empty())
+            .unwrap();
+
+    // Attempt hard link file at relative path
+    linkat(
+        &dirfd,
+        PathBuf::from(oldfilename).as_path(),
+        &dirfd,
+        newfilename,
+        AtFlags::AT_SYMLINK_FOLLOW,
+    )
+    .unwrap();
+    assert!(newfilepath.exists());
+}
+
+#[test]
+#[cfg(not(any(target_os = "redox", target_os = "haiku")))]
 fn test_linkat_olddirfd_none() {
     use nix::fcntl::AtFlags;
     use nix::fcntl::AT_FDCWD;
