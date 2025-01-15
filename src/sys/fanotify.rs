@@ -114,15 +114,15 @@ libc_bitflags! {
         /// requires the `CAP_SYS_ADMIN` capability.
         FAN_UNLIMITED_MARKS;
 
-        /// Make `FanotifyEvent::pid` return pidfd. Since Linux 5.15.
+        /// Make [`FanotifyEvent::pid()`] return pidfd. Since Linux 5.15.
         FAN_REPORT_PIDFD;
-        /// Make `FanotifyEvent::pid` return thread id. Since Linux 4.20.
+        /// Make [`FanotifyEvent::pid()`] return thread id. Since Linux 4.20.
         FAN_REPORT_TID;
 
         /// Allows the receipt of events which contain additional information
         /// about the underlying filesystem object correlated to an event.
         ///
-        /// This will make `FanotifyEvent::fd` return `FAN_NOFD`.
+        /// This will make [`FanotifyEvent::fd()`] return `None`.
         /// This should be used with `Fanotify::read_events_with_info_records` to
         /// recieve `FanotifyInfoRecord::Fid` info records.
         /// Since Linux 5.1
@@ -131,7 +131,7 @@ libc_bitflags! {
         /// Allows the receipt of events which contain additional information
         /// about the underlying filesystem object correlated to an event.
         ///
-        /// This will make `FanotifyEvent::fd` return `FAN_NOFD`.
+        /// This will make [`FanotifyEvent::fd()`] return `None`.
         /// This should be used with `Fanotify::read_events_with_info_records` to
         /// recieve `FanotifyInfoRecord::Fid` info records.
         ///
@@ -235,8 +235,25 @@ libc_bitflags! {
     }
 }
 
+libc_enum! {
+    /// All possible Fanotify event types that result in a FanotifyFidRecord
+    #[repr(u8)]
+    #[non_exhaustive]
+    pub enum FanotifyFidEventInfoType {
+        FAN_EVENT_INFO_TYPE_FID,
+        FAN_EVENT_INFO_TYPE_DFID,
+        FAN_EVENT_INFO_TYPE_DFID_NAME,
+        FAN_EVENT_INFO_TYPE_OLD_DFID_NAME,
+        FAN_EVENT_INFO_TYPE_NEW_DFID_NAME,
+    }
+    impl TryFrom<u8>
+}
+
 /// Compile version number of fanotify API.
 pub const FANOTIFY_METADATA_VERSION: u8 = libc::FANOTIFY_METADATA_VERSION;
+
+/// Maximum file_handle size
+pub const MAX_HANDLE_SZ: usize = 128;
 
 /// Abstract over [`libc::fanotify_event_info_fid`], which represents an
 /// information record received via [`Fanotify::read_events_with_info_records`].
@@ -254,7 +271,7 @@ pub struct LibcFanotifyFidRecord(libc::fanotify_event_info_fid);
 #[allow(missing_copy_implementations)]
 pub struct FanotifyFidRecord {
     record: LibcFanotifyFidRecord,
-    handle_bytes: *const u8,
+    file_handle_bytes: [u8; MAX_HANDLE_SZ],
 }
 
 impl FanotifyFidRecord {
@@ -270,15 +287,15 @@ impl FanotifyFidRecord {
     /// represented as a 0-length u8 array, but it actually points to variable-length
     /// file_handle struct.For more information:
     /// <https://man7.org/linux/man-pages/man2/open_by_handle_at.2.html>
-    pub fn handle(&self) -> *const u8 {
-        self.handle_bytes
+    pub fn handle(&self) -> [u8; MAX_HANDLE_SZ] {
+        self.file_handle_bytes
     }
 
     /// The specific info_type for this Fid Record. Fanotify can return an Fid Record
     /// with many different possible info_types. The info_type is not always necessary
     /// but can be useful for connecting similar events together (like a FAN_RENAME) 
-    pub fn info_type(&self) -> u8 {
-        self.record.0.hdr.info_type
+    pub fn info_type(&self) -> FanotifyFidEventInfoType {
+        FanotifyFidEventInfoType::try_from(self.record.0.hdr.info_type).unwrap()
     }
 }
 
@@ -348,10 +365,9 @@ impl Drop for FanotifyPidfdRecord {
 /// After a [`libc::fanotify_event_metadata`], there can be 0 or more event_info
 /// structs depending on which InitFlags were used in [`Fanotify::init`].
 // Is not Clone due to pidfd in `libc::fanotify_event_info_pidfd`
-// Other fanotify_event_info records are not implemented as they don't exist in
-// the libc crate yet.
 #[derive(Debug, Eq, Hash, PartialEq)]
 #[allow(missing_copy_implementations)]
+#[non_exhaustive]
 pub enum FanotifyInfoRecord {
     /// A [`libc::fanotify_event_info_fid`] event was recieved, usually as
     /// a result of passing [`InitFlags::FAN_REPORT_FID`] or [`InitFlags::FAN_REPORT_DIR_FID`]
@@ -612,13 +628,11 @@ impl Fanotify {
             let mut current_event_offset = offset + metadata_size;
 
             while remaining_len > 0 {
-                let header = self
-                    .get_struct::<libc::fanotify_event_info_header>(
-                        &buffer,
-                        current_event_offset,
-                    );
+                let header_info_type = unsafe { buffer.as_ptr().add(current_event_offset).read() };
+                // The +2 here represents the offset between the info_type and the length (which is 2 u8s apart)
+                let info_type_length = unsafe { buffer.as_ptr().add(current_event_offset + 2).read() };
 
-                let info_record = match header.info_type {
+                let info_record = match header_info_type {
                     // FanotifyFidRecord can be returned for any of the following info_type.
                     // This isn't found in the fanotify(7) documentation, but the fanotify_init(2) documentation
                     // https://man7.org/linux/man-pages/man2/fanotify_init.2.html
@@ -638,11 +652,24 @@ impl Fanotify {
                                 as *const libc::fanotify_event_info_fid
                         };
 
-                        let file_handle_ptr = unsafe { record_ptr.add(1) as *const u8 };
+                        let file_handle = unsafe {
+                            let file_handle_ptr = record_ptr.add(1) as *const u8;
+                            let mut file_handle = MaybeUninit::<[u8; MAX_HANDLE_SZ]>::uninit();
+
+                            // Read the entire file_handle. The struct can be found here:
+                            // https://man7.org/linux/man-pages/man2/open_by_handle_at.2.html 
+                            let file_handle_length = size_of::<u32>() + size_of::<i32>() + file_handle_ptr.cast::<u32>().read() as usize;
+                            std::ptr::copy_nonoverlapping(
+                                file_handle_ptr,
+                                file_handle.as_mut_ptr().cast(),
+                                (file_handle_length).min(MAX_HANDLE_SZ),
+                            );
+                            file_handle.assume_init()
+                        };
 
                         Some(FanotifyInfoRecord::Fid(FanotifyFidRecord {
                             record: LibcFanotifyFidRecord(record),
-                            handle_bytes: file_handle_ptr,
+                            file_handle_bytes: file_handle,
                         }))
                     }
                     #[cfg(target_env = "gnu")]
@@ -676,11 +703,9 @@ impl Fanotify {
                     info_records.push(record);
                 }
 
-                remaining_len -= header.len as u32;
-                current_event_offset += header.len as usize;
+                remaining_len -= info_type_length as u32;
+                current_event_offset += info_type_length as usize;
             }
-
-            // libc::fanotify_event_info_header
 
             events.push((FanotifyEvent(metadata), info_records));
             offset += metadata.event_len as usize;
