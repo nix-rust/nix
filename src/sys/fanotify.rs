@@ -14,6 +14,7 @@ use crate::errno::Errno;
 use crate::fcntl::OFlag;
 use crate::unistd::{close, read, write};
 use crate::{NixPath, Result};
+use std::ffi::CStr;
 use std::marker::PhantomData;
 use std::mem::{size_of, MaybeUninit};
 use std::os::unix::io::{AsFd, AsRawFd, BorrowedFd, FromRawFd, OwnedFd, RawFd};
@@ -272,6 +273,7 @@ pub struct LibcFanotifyFidRecord(libc::fanotify_event_info_fid);
 pub struct FanotifyFidRecord {
     record: LibcFanotifyFidRecord,
     file_handle_bytes: [u8; MAX_HANDLE_SZ],
+    name: Option<String>,
 }
 
 impl FanotifyFidRecord {
@@ -293,9 +295,19 @@ impl FanotifyFidRecord {
 
     /// The specific info_type for this Fid Record. Fanotify can return an Fid Record
     /// with many different possible info_types. The info_type is not always necessary
-    /// but can be useful for connecting similar events together (like a FAN_RENAME) 
+    /// but can be useful for connecting similar events together (like a FAN_RENAME)
     pub fn info_type(&self) -> FanotifyFidEventInfoType {
         FanotifyFidEventInfoType::try_from(self.record.0.hdr.info_type).unwrap()
+    }
+
+    /// The name attached to the end of this Fid Record. This will only contain a value
+    /// if the info_type is expected to return a name (like `FanotifyFidEventInfoType::FAN_EVENT_INFO_TYPE_DFID_NAME`)
+    pub fn name(&self) -> Option<&str> {
+        if let Some(name) = self.name.as_ref() {
+            Some(name)
+        } else {
+            None
+        }
     }
 }
 
@@ -599,7 +611,7 @@ impl Fanotify {
     /// In particular, `EAGAIN` is returned when no event is available on a
     /// group that has been initialized with the flag `InitFlags::FAN_NONBLOCK`,
     /// thus making this method nonblocking.
-    #[allow(clippy::cast_ptr_alignment)]    // False positive
+    #[allow(clippy::cast_ptr_alignment)] // False positive
     pub fn read_events_with_info_records(
         &self,
     ) -> Result<Vec<(FanotifyEvent, Vec<FanotifyInfoRecord>)>> {
@@ -628,9 +640,12 @@ impl Fanotify {
             let mut current_event_offset = offset + metadata_size;
 
             while remaining_len > 0 {
-                let header_info_type = unsafe { buffer.as_ptr().add(current_event_offset).read() };
+                let header_info_type =
+                    unsafe { buffer.as_ptr().add(current_event_offset).read() };
                 // The +2 here represents the offset between the info_type and the length (which is 2 u8s apart)
-                let info_type_length = unsafe { buffer.as_ptr().add(current_event_offset + 2).read() };
+                let info_type_length = unsafe {
+                    buffer.as_ptr().add(current_event_offset + 2).read()
+                };
 
                 let info_record = match header_info_type {
                     // FanotifyFidRecord can be returned for any of the following info_type.
@@ -647,18 +662,24 @@ impl Fanotify {
                                 current_event_offset,
                             );
 
-                        let record_ptr: *const libc::fanotify_event_info_fid = unsafe {
-                            buffer.as_ptr().add(current_event_offset)
-                                as *const libc::fanotify_event_info_fid
+                        let file_handle_ptr = unsafe {
+                            (buffer.as_ptr().add(current_event_offset)
+                                as *const libc::fanotify_event_info_fid)
+                                .add(1) as *const u8
+                        };
+
+                        // Read the entire file_handle. The struct can be found here:
+                        // https://man7.org/linux/man-pages/man2/open_by_handle_at.2.html
+                        let file_handle_length = unsafe {
+                            size_of::<u32>()
+                                + size_of::<i32>()
+                                + file_handle_ptr.cast::<u32>().read() as usize
                         };
 
                         let file_handle = unsafe {
-                            let file_handle_ptr = record_ptr.add(1) as *const u8;
-                            let mut file_handle = MaybeUninit::<[u8; MAX_HANDLE_SZ]>::uninit();
+                            let mut file_handle =
+                                MaybeUninit::<[u8; MAX_HANDLE_SZ]>::uninit();
 
-                            // Read the entire file_handle. The struct can be found here:
-                            // https://man7.org/linux/man-pages/man2/open_by_handle_at.2.html 
-                            let file_handle_length = size_of::<u32>() + size_of::<i32>() + file_handle_ptr.cast::<u32>().read() as usize;
                             std::ptr::copy_nonoverlapping(
                                 file_handle_ptr,
                                 file_handle.as_mut_ptr().cast(),
@@ -667,9 +688,32 @@ impl Fanotify {
                             file_handle.assume_init()
                         };
 
+                        let name: Option<String> = match header_info_type {
+                            libc::FAN_EVENT_INFO_TYPE_DFID_NAME
+                            | libc::FAN_EVENT_INFO_TYPE_NEW_DFID_NAME
+                            | libc::FAN_EVENT_INFO_TYPE_OLD_DFID_NAME => unsafe {
+                                let name_ptr =
+                                    file_handle_ptr.add(file_handle_length);
+                                if !name_ptr.is_null() {
+                                    let name_as_c_str =
+                                        CStr::from_ptr(name_ptr.cast())
+                                            .to_str();
+                                    if let Ok(name) = name_as_c_str {
+                                        Some(name.to_owned())
+                                    } else {
+                                        None
+                                    }
+                                } else {
+                                    None
+                                }
+                            },
+                            _ => None,
+                        };
+
                         Some(FanotifyInfoRecord::Fid(FanotifyFidRecord {
                             record: LibcFanotifyFidRecord(record),
                             file_handle_bytes: file_handle,
+                            name,
                         }))
                     }
                     #[cfg(target_env = "gnu")]
@@ -752,8 +796,7 @@ impl AsFd for Fanotify {
 }
 
 impl AsRawFd for Fanotify {
-    fn as_raw_fd(&self) -> RawFd
-    {
+    fn as_raw_fd(&self) -> RawFd {
         self.fd.as_raw_fd()
     }
 }
@@ -771,8 +814,6 @@ impl Fanotify {
     ///
     /// `OwnedFd` is a valid `Fanotify`.
     pub unsafe fn from_owned_fd(fd: OwnedFd) -> Self {
-        Self {
-            fd
-        }
+        Self { fd }
     }
 }
