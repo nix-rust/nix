@@ -241,10 +241,23 @@ libc_enum! {
     #[repr(u8)]
     #[non_exhaustive]
     pub enum FanotifyFidEventInfoType {
+        /// This event occurs if FAN_REPORT_FID was passed into [`Fanotify::init()`]
         FAN_EVENT_INFO_TYPE_FID,
+        /// This event occurs if FAN_REPORT_DIR_FID was passed into [`Fanotify::init()`].
+        /// For events that occur on a non-directory object, this record includes a file handle
+        /// that identifies the parent directory filesystem object.
         FAN_EVENT_INFO_TYPE_DFID,
+        /// This event occurs if FAN_REPORT_DIR_FID and FAN_REPORT_NAME was passed into [`Fanotify::init()`].
+        /// This record is identical to FAN_EVENT_INFO_TYPE_DFID, except that [`FanotifyFidRecord::name()`]
+        /// will return the name of the target filesystem object.
         FAN_EVENT_INFO_TYPE_DFID_NAME,
+        /// This event occurs if a FAN_RENAME event occurs and FAN_REPORT_DIR_FID and FAN_REPORT_NAME was passed into [`Fanotify::init()`].
+        /// This record identifies the old parent directory of the renamed directory object.
+        /// [`FanotifyFidRecord::name()`] will return the name of the old parent directory.
         FAN_EVENT_INFO_TYPE_OLD_DFID_NAME,
+        /// This event occurs if a FAN_RENAME event occurs and FAN_REPORT_DIR_FID and FAN_REPORT_NAME was passed into [`Fanotify::init()`].
+        /// This record identifies the new parent directory of the renamed directory object.
+        /// [`FanotifyFidRecord::name()`] will return the name of the new parent directory.
         FAN_EVENT_INFO_TYPE_NEW_DFID_NAME,
     }
     impl TryFrom<u8>
