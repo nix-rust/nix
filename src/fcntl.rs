@@ -1355,7 +1355,7 @@ libc_bitflags!(
         FALLOC_FL_INSERT_RANGE;
         /// Shared file data extants are made private to the file.
         ///
-        /// Gaurantees that a subsequent write will not fail due to lack of space.
+        /// Guarantees that a subsequent write will not fail due to lack of space.
         FALLOC_FL_UNSHARE_RANGE;
     }
 );
