@@ -25,18 +25,18 @@ pub type fsid_t = libc::fsid_t;
 cfg_if! {
     if #[cfg(any(linux_android, target_os = "fuchsia"))] {
         type type_of_statfs = libc::statfs64;
-        const LIBC_FSTATFS: unsafe extern fn
+        const LIBC_FSTATFS: unsafe extern "C" fn
             (fd: libc::c_int, buf: *mut type_of_statfs) -> libc::c_int
             = libc::fstatfs64;
-        const LIBC_STATFS: unsafe extern fn
+        const LIBC_STATFS: unsafe extern "C" fn
             (path: *const libc::c_char, buf: *mut type_of_statfs) -> libc::c_int
             = libc::statfs64;
     } else {
         type type_of_statfs = libc::statfs;
-        const LIBC_FSTATFS: unsafe extern fn
+        const LIBC_FSTATFS: unsafe extern "C" fn
             (fd: libc::c_int, buf: *mut type_of_statfs) -> libc::c_int
             = libc::fstatfs;
-        const LIBC_STATFS: unsafe extern fn
+        const LIBC_STATFS: unsafe extern "C" fn
             (path: *const libc::c_char, buf: *mut type_of_statfs) -> libc::c_int
             = libc::statfs;
     }
