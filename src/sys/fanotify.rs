@@ -271,18 +271,15 @@ pub const MAX_HANDLE_SZ: usize = 128;
 
 /// Abstract over [`libc::fanotify_event_info_fid`], which represents an
 /// information record received via [`Fanotify::read_events_with_info_records`].
-#[derive(Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 #[repr(transparent)]
-#[allow(missing_copy_implementations)]
 pub struct LibcFanotifyFidRecord(libc::fanotify_event_info_fid);
 
 /// Extends LibcFanotifyFidRecord to include file_handle bytes.
 /// This allows Rust to move the record around in memory and not lose the file_handle
 /// as the libc::fanotify_event_info_fid does not include any of the file_handle bytes.
-// Is not Clone due to fd field, to avoid use-after-close scenarios.
-#[derive(Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 #[repr(C)]
-#[allow(missing_copy_implementations)]
 pub struct FanotifyFidRecord {
     record: LibcFanotifyFidRecord,
     file_handle_bytes: [u8; MAX_HANDLE_SZ],
@@ -326,10 +323,8 @@ impl FanotifyFidRecord {
 
 /// Abstract over [`libc::fanotify_event_info_error`], which represents an
 /// information record received via [`Fanotify::read_events_with_info_records`].
-// Is not Clone due to fd field, to avoid use-after-close scenarios.
-#[derive(Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 #[repr(transparent)]
-#[allow(missing_copy_implementations)]
 #[cfg(target_env = "gnu")]
 pub struct FanotifyErrorRecord(libc::fanotify_event_info_error);
 
@@ -350,7 +345,7 @@ impl FanotifyErrorRecord {
 
 /// Abstract over [`libc::fanotify_event_info_pidfd`], which represents an
 /// information record received via [`Fanotify::read_events_with_info_records`].
-// Is not Clone due to fd field, to avoid use-after-close scenarios.
+// Is not Clone due to pidfd field, to avoid use-after-close scenarios.
 #[derive(Debug, Eq, Hash, PartialEq)]
 #[repr(transparent)]
 #[allow(missing_copy_implementations)]
