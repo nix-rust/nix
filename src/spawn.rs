@@ -1,7 +1,5 @@
 //! Safe wrappers around posix_spawn* functions found in the libc "spawn.h" header.
 
-use std::{ffi::CStr, mem, os::fd::RawFd};
-
 #[cfg(any(feature = "fs", feature = "term"))]
 use crate::fcntl::OFlag;
 #[cfg(feature = "signal")]
@@ -9,6 +7,8 @@ use crate::sys::signal::SigSet;
 #[cfg(feature = "fs")]
 use crate::sys::stat::Mode;
 use crate::{errno::Errno, unistd::Pid, NixPath, Result};
+use std::os::fd::AsRawFd;
+use std::{ffi::CStr, mem};
 
 /// A spawn attributes object. See [posix_spawnattr_t](https://pubs.opengroup.org/onlinepubs/9699919799/functions/posix_spawnattr_init.html).
 #[repr(transparent)]
@@ -277,7 +277,14 @@ impl PosixSpawnFileActions {
     /// Add a [dup2](https://pubs.opengroup.org/onlinepubs/9699919799/functions/dup2.html) action. See
     /// [posix_spawn_file_actions_adddup2](https://pubs.opengroup.org/onlinepubs/9699919799/functions/posix_spawn_file_actions_adddup2.html).
     #[doc(alias("posix_spawn_file_actions_adddup2"))]
-    pub fn add_dup2(&mut self, fd: RawFd, newfd: RawFd) -> Result<()> {
+    pub fn add_dup2<Fd, NewFd>(&mut self, fd: Fd, newfd: NewFd) -> Result<()>
+    where
+        Fd: std::os::fd::AsFd,
+        NewFd: std::os::fd::AsFd,
+    {
+        let fd = fd.as_fd().as_raw_fd();
+        let newfd = newfd.as_fd().as_raw_fd();
+
         let res = unsafe {
             libc::posix_spawn_file_actions_adddup2(
                 &mut self.fa as *mut libc::posix_spawn_file_actions_t,
@@ -295,13 +302,14 @@ impl PosixSpawnFileActions {
     /// Add an open action. See
     /// [posix_spawn_file_actions_addopen](https://pubs.opengroup.org/onlinepubs/9699919799/functions/posix_spawn_file_actions_addopen.html).
     #[doc(alias("posix_spawn_file_actions_addopen"))]
-    pub fn add_open<P: ?Sized + NixPath>(
+    pub fn add_open<Fd: std::os::fd::AsFd, P: ?Sized + NixPath>(
         &mut self,
-        fd: RawFd,
+        fd: Fd,
         path: &P,
         oflag: OFlag,
         mode: Mode,
     ) -> Result<()> {
+        let fd = fd.as_fd().as_raw_fd();
         let res = path.with_nix_path(|cstr| unsafe {
             libc::posix_spawn_file_actions_addopen(
                 &mut self.fa as *mut libc::posix_spawn_file_actions_t,
@@ -320,7 +328,9 @@ impl PosixSpawnFileActions {
     /// Add a close action. See
     /// [posix_spawn_file_actions_addclose](https://pubs.opengroup.org/onlinepubs/9699919799/functions/posix_spawn_file_actions_addclose.html).
     #[doc(alias("posix_spawn_file_actions_addclose"))]
-    pub fn add_close(&mut self, fd: RawFd) -> Result<()> {
+    pub fn add_close<Fd: std::os::fd::AsFd>(&mut self, fd: Fd) -> Result<()> {
+        let fd = fd.as_fd().as_raw_fd();
+
         let res = unsafe {
             libc::posix_spawn_file_actions_addclose(
                 &mut self.fa as *mut libc::posix_spawn_file_actions_t,
