@@ -361,27 +361,34 @@ unsafe fn to_exec_array<S: AsRef<CStr>>(args: &[S]) -> Vec<*mut libc::c_char> {
 
 /// Create a new child process from the specified process image. See
 /// [posix_spawn](https://pubs.opengroup.org/onlinepubs/9699919799/functions/posix_spawn.html).
-pub fn posix_spawn<SA: AsRef<CStr>, SE: AsRef<CStr>>(
-    path: &CStr,
+pub fn posix_spawn<P, SA, SE>(
+    path: &P,
     file_actions: &PosixSpawnFileActions,
     attr: &PosixSpawnAttr,
     args: &[SA],
     envp: &[SE],
-) -> Result<Pid> {
+) -> Result<Pid>
+where
+    P: NixPath + ?Sized,
+    SA: AsRef<CStr>,
+    SE: AsRef<CStr>,
+{
     let mut pid = 0;
 
     let ret = unsafe {
         let args_p = to_exec_array(args);
         let env_p = to_exec_array(envp);
 
-        libc::posix_spawn(
-            &mut pid as *mut libc::pid_t,
-            path.as_ptr(),
-            &file_actions.fa as *const libc::posix_spawn_file_actions_t,
-            &attr.attr as *const libc::posix_spawnattr_t,
-            args_p.as_ptr(),
-            env_p.as_ptr(),
-        )
+        path.with_nix_path(|c_str| {
+            libc::posix_spawn(
+                &mut pid as *mut libc::pid_t,
+                c_str.as_ptr(),
+                &file_actions.fa as *const libc::posix_spawn_file_actions_t,
+                &attr.attr as *const libc::posix_spawnattr_t,
+                args_p.as_ptr(),
+                env_p.as_ptr(),
+            )
+        })?
     };
 
     if ret != 0 {
