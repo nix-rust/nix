@@ -80,7 +80,7 @@ fn spawn_cmd_does_not_exist() {
     let attr = PosixSpawnAttr::init().unwrap();
 
     let bin = "2b7433c4-523b-470c-abb5-d7ee9fd295d5-fdasf";
-    let pid = spawn::posix_spawn(bin, &actions, &attr, args, envs).unwrap();
+    let _pid = spawn::posix_spawn(bin, &actions, &attr, args, envs).unwrap();
 }
 
 #[test]
