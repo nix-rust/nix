@@ -2,6 +2,19 @@ use nix::sched::{sched_getaffinity, sched_getcpu, sched_setaffinity, CpuSet};
 use nix::unistd::Pid;
 
 #[test]
+fn tset_dynamic_cpu_set() {
+    let mut dyn_cpu_set = CpuSet::new_dynamic();
+
+    for i in 0..4096 {
+        assert!(!dyn_cpu_set.is_set(i).unwrap());
+        dyn_cpu_set.set(i).unwrap();
+        assert!(dyn_cpu_set.is_set(i).unwrap());
+        dyn_cpu_set.unset(i).unwrap();
+        assert!(!dyn_cpu_set.is_set(i).unwrap());
+    }
+}
+
+#[test]
 fn test_sched_affinity() {
     // If pid is zero, then the mask of the calling process is returned.
     let initial_affinity = sched_getaffinity(Pid::from_raw(0)).unwrap();
