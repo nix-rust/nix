@@ -655,8 +655,10 @@ macro_rules! ioctl_readwrite {
         pub unsafe fn $name(fd: $crate::libc::c_int,
                             data: *mut $ty)
                             -> $crate::Result<$crate::libc::c_int> {
+            let ioty = $ioty;
+            let nr = $nr;
             unsafe {
-                convert_ioctl_res!($crate::libc::ioctl(fd, request_code_readwrite!($ioty, $nr, ::std::mem::size_of::<$ty>()) as $crate::sys::ioctl::ioctl_num_type, data))
+                convert_ioctl_res!($crate::libc::ioctl(fd, request_code_readwrite!(ioty, nr, ::std::mem::size_of::<$ty>()) as $crate::sys::ioctl::ioctl_num_type, data))
             }
         }
     )

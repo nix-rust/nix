@@ -33,15 +33,15 @@ const TCP_CA_NAME_MAX: usize = 16;
 ///
 /// * `$name:ident`: name of the type you want to implement `SetSockOpt` for.
 /// * `$level:expr` : socket layer, or a `protocol level`: could be *raw sockets*
-///    (`libc::SOL_SOCKET`), *ip protocol* (libc::IPPROTO_IP), *tcp protocol* (`libc::IPPROTO_TCP`),
-///    and more. Please refer to your system manual for more options. Will be passed as the second
-///    argument (`level`) to the `setsockopt` call.
+///   (`libc::SOL_SOCKET`), *ip protocol* (libc::IPPROTO_IP), *tcp protocol* (`libc::IPPROTO_TCP`),
+///   and more. Please refer to your system manual for more options. Will be passed as the second
+///   argument (`level`) to the `setsockopt` call.
 /// * `$flag:path`: a flag name to set. Some examples: `libc::SO_REUSEADDR`, `libc::TCP_NODELAY`,
-///    `libc::IP_ADD_MEMBERSHIP` and others. Will be passed as the third argument (`option_name`)
-///    to the `setsockopt` call.
+///   `libc::IP_ADD_MEMBERSHIP` and others. Will be passed as the third argument (`option_name`)
+///   to the `setsockopt` call.
 /// * Type of the value that you are going to set.
-/// * Type that implements the `Set` trait for the type from the previous item (like `SetBool` for
-///    `bool`, `SetUsize` for `usize`, etc.).
+/// * Type that implements the `Set` trait for the type from the previous item 
+///   (like `SetBool` for `bool`, `SetUsize` for `usize`, etc.).
 #[macro_export]
 macro_rules! setsockopt_impl {
     ($name:ident, $level:expr, $flag:path, $ty:ty, $setter:ty) => {
@@ -87,15 +87,15 @@ macro_rules! setsockopt_impl {
 ///
 /// * Name of the type you want to implement `GetSockOpt` for.
 /// * Socket layer, or a `protocol level`: could be *raw sockets* (`lic::SOL_SOCKET`),  *ip
-///    protocol* (libc::IPPROTO_IP), *tcp protocol* (`libc::IPPROTO_TCP`),  and more. Please refer
-///    to your system manual for more options. Will be passed as the second argument (`level`) to
-///    the `getsockopt` call.
+///   protocol* (libc::IPPROTO_IP), *tcp protocol* (`libc::IPPROTO_TCP`),  and more. Please refer
+///   to your system manual for more options. Will be passed as the second argument (`level`) to
+///   the `getsockopt` call.
 /// * A flag to set. Some examples: `libc::SO_REUSEADDR`, `libc::TCP_NODELAY`,
-///    `libc::SO_ORIGINAL_DST` and others. Will be passed as the third argument (`option_name`) to
-///    the `getsockopt` call.
+///   `libc::SO_ORIGINAL_DST` and others. Will be passed as the third argument (`option_name`) to
+///   the `getsockopt` call.
 /// * Type of the value that you are going to get.
 /// * Type that implements the `Get` trait for the type from the previous item (`GetBool` for
-///    `bool`, `GetUsize` for `usize`, etc.).
+///   `bool`, `GetUsize` for `usize`, etc.).
 #[macro_export]
 macro_rules! getsockopt_impl {
     ($name:ident, $level:expr, $flag:path, $ty:ty, $getter:ty) => {
@@ -161,15 +161,15 @@ macro_rules! getsockopt_impl {
 /// # Arguments
 ///
 /// * `GetOnly`, `SetOnly` or `Both`: whether you want to implement only getter, only setter or
-///    both of them.
+///   both of them.
 /// * `$name:ident`: name of type `GetSockOpt`/`SetSockOpt` will be implemented for.
 /// * `$level:expr` : socket layer, or a `protocol level`: could be *raw sockets*
-///    (`libc::SOL_SOCKET`), *ip protocol* (libc::IPPROTO_IP), *tcp protocol* (`libc::IPPROTO_TCP`),
-///    and more. Please refer to your system manual for more options. Will be passed as the second
-///    argument (`level`) to the `getsockopt`/`setsockopt` call.
+///   (`libc::SOL_SOCKET`), *ip protocol* (libc::IPPROTO_IP), *tcp protocol* (`libc::IPPROTO_TCP`),
+///   and more. Please refer to your system manual for more options. Will be passed as the second
+///   argument (`level`) to the `getsockopt`/`setsockopt` call.
 /// * `$flag:path`: a flag name to set. Some examples: `libc::SO_REUSEADDR`, `libc::TCP_NODELAY`,
-///    `libc::IP_ADD_MEMBERSHIP` and others. Will be passed as the third argument (`option_name`)
-///    to the `setsockopt`/`getsockopt` call.
+///   `libc::IP_ADD_MEMBERSHIP` and others. Will be passed as the third argument (`option_name`)
+///   to the `setsockopt`/`getsockopt` call.
 /// * `$ty:ty`: type of the value that will be get/set.
 /// * `$getter:ty`: `Get` implementation; optional; only for `GetOnly` and `Both`.
 /// * `$setter:ty`: `Set` implementation; optional; only for `SetOnly` and `Both`.

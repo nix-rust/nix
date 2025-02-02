@@ -655,15 +655,13 @@ pub trait SockaddrLike: private::SockaddrLikePriv {
     ///
     /// # Arguments
     ///
-    /// - `addr`:   raw pointer to something that can be cast to a
-    ///             `libc::sockaddr`. For example, `libc::sockaddr_in`,
-    ///             `libc::sockaddr_in6`, etc.
-    /// - `len`:    For fixed-width types like `sockaddr_in`, it will be
-    ///             validated if present and ignored if not.  For variable-width
-    ///             types it is required and must be the total length of valid
-    ///             data.  For example, if `addr` points to a
-    ///             named `sockaddr_un`, then `len` must be the length of the
-    ///             structure up to but not including the trailing NUL.
+    /// - `addr`:   raw pointer to something that can be cast to a `libc::sockaddr`.
+    ///   For example, `libc::sockaddr_in`, `libc::sockaddr_in6`, etc.
+    /// - `len`:    For fixed-width types like `sockaddr_in`, it will be validated
+    ///   if present and ignored if not. For variable-width types it is required 
+    ///   and must be the total length of valid data. For example, if `addr` 
+    ///   points to a named `sockaddr_un`, then `len` must be the length of the
+    ///   structure up to but not including the trailing NUL.
     ///
     /// # Safety
     ///
