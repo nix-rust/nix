@@ -367,11 +367,11 @@ pub fn posix_spawn<P, SA, SE>(
     attr: &PosixSpawnAttr,
     args: &[SA],
     envp: &[SE],
-) -> Result<Pid> 
-where 
+) -> Result<Pid>
+where
     P: NixPath + ?Sized,
     SA: AsRef<CStr>,
-    SE: AsRef<CStr>
+    SE: AsRef<CStr>,
 {
     let mut pid = 0;
 
