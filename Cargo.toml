@@ -83,6 +83,7 @@ nix = { path = ".", features = ["acct", "aio", "dir", "env", "event", "fanotify"
     "net", "personality", "poll", "pthread", "ptrace", "quota", "process", "reboot",
     "resource", "sched", "signal", "socket", "syslog", "term", "time", "ucontext", "uio",
     "user", "zerocopy"] }
+which = "7.0.1"
 
 [target.'cfg(any(target_os = "android", target_os = "linux"))'.dev-dependencies]
 caps = "0.5.3"
