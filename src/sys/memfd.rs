@@ -98,9 +98,12 @@ pub fn memfd_create<P: NixPath + ?Sized>(
                 // Android does not have a memfd_create symbol
                 not(target_os = "android"),
                 any(
+                    // Note that memfd_create is available since release 13.0
+                    // See https://man.freebsd.org/cgi/man.cgi?query=memfd_create
                     target_os = "freebsd",
-                    // If the OS is Linux, gnu and musl expose a memfd_create symbol but not uclibc
-                    target_env = "gnu",
+                    // If the OS is Linux, gnu and musl expose a memfd_create symbol but not uclibc.
+                    // But in glibc it is availible since 2.27. The oldest one officially supported by Rust is 2.17.
+                    // So it is reasonable to keep compatibility with it.
                     target_env = "musl",
                 )))]
             {
