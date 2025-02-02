@@ -1,11 +1,13 @@
-use std::ffi::CString;
-
+use super::FORK_MTX;
 use nix::spawn::{self, PosixSpawnAttr, PosixSpawnFileActions};
 use nix::sys::signal;
 use nix::sys::wait::{waitpid, WaitPidFlag, WaitStatus};
+use std::ffi::CString;
 
 #[test]
 fn spawn_true() {
+    let _guard = FORK_MTX.lock();
+
     let bin = &CString::new("true").unwrap();
     let args = &[
         CString::new("true").unwrap(),
@@ -32,6 +34,8 @@ fn spawn_true() {
 
 #[test]
 fn spawn_sleep() {
+    let _guard = FORK_MTX.lock();
+
     let bin = &CString::new("sleep").unwrap();
     let args = &[CString::new("sleep").unwrap(), CString::new("30").unwrap()];
     let vars: &[CString] = &[];

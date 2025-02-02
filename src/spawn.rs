@@ -370,7 +370,7 @@ pub fn posix_spawn<SA: AsRef<CStr>, SE: AsRef<CStr>>(
 ) -> Result<Pid> {
     let mut pid = 0;
 
-    let res = unsafe {
+    let ret = unsafe {
         let args_p = to_exec_array(args);
         let env_p = to_exec_array(envp);
 
@@ -384,7 +384,10 @@ pub fn posix_spawn<SA: AsRef<CStr>, SE: AsRef<CStr>>(
         )
     };
 
-    Errno::result(res)?;
+    if ret != 0 {
+        return Err(Errno::from_raw(ret));
+    }
+
     Ok(Pid::from_raw(pid))
 }
 
@@ -399,7 +402,7 @@ pub fn posix_spawnp<SA: AsRef<CStr>, SE: AsRef<CStr>>(
 ) -> Result<Pid> {
     let mut pid = 0;
 
-    let res = unsafe {
+    let ret = unsafe {
         let args_p = to_exec_array(args);
         let env_p = to_exec_array(envp);
 
@@ -413,6 +416,9 @@ pub fn posix_spawnp<SA: AsRef<CStr>, SE: AsRef<CStr>>(
         )
     };
 
-    Errno::result(res)?;
+    if ret != 0 {
+        return Err(Errno::from_raw(ret));
+    }
+
     Ok(Pid::from_raw(pid))
 }
