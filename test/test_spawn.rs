@@ -4,11 +4,27 @@ use nix::sys::signal;
 use nix::sys::wait::{waitpid, WaitPidFlag, WaitStatus};
 use std::ffi::CString;
 
+/// Helper function to find a binary in the $PATH
+fn which(exe_name: &str) -> Option<std::path::PathBuf> {
+    std::env::var_os("PATH").and_then(|paths| {
+        std::env::split_paths(&paths)
+            .filter_map(|dir| {
+                let full_path = dir.join(&exe_name);
+                if full_path.is_file() {
+                    Some(full_path)
+                } else {
+                    None
+                }
+            })
+            .next()
+    })
+}
+
 #[test]
 fn spawn_true() {
     let _guard = FORK_MTX.lock();
 
-    let bin = which::which("true").unwrap();
+    let bin = which("true").unwrap();
     let args = &[
         CString::new("true").unwrap(),
         CString::new("story").unwrap(),
@@ -37,7 +53,7 @@ fn spawn_true() {
 fn spawn_sleep() {
     let _guard = FORK_MTX.lock();
 
-    let bin = which::which("sleep").unwrap();
+    let bin = which("sleep").unwrap();
     let args = &[CString::new("sleep").unwrap(), CString::new("30").unwrap()];
     let vars: &[CString] = &[];
     let actions = PosixSpawnFileActions::init().unwrap();
