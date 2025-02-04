@@ -1,4 +1,5 @@
 use super::FORK_MTX;
+use nix::errno::Errno;
 use nix::spawn::{self, PosixSpawnAttr, PosixSpawnFileActions};
 use nix::sys::signal;
 use nix::sys::wait::{waitpid, WaitPidFlag, WaitStatus};
@@ -96,7 +97,9 @@ fn spawn_cmd_does_not_exist() {
     let attr = PosixSpawnAttr::init().unwrap();
 
     let bin = "2b7433c4-523b-470c-abb5-d7ee9fd295d5-fdasf";
-    let _pid = spawn::posix_spawn(bin, &actions, &attr, args, envs).unwrap();
+    let errno =
+        spawn::posix_spawn(bin, &actions, &attr, args, envs).unwrap_err();
+    assert_eq!(errno, Errno::ENOENT);
 }
 
 #[test]
@@ -161,4 +164,19 @@ fn spawnp_sleep() {
             panic!("Invalid WaitStatus");
         }
     };
+}
+
+#[test]
+fn spawnp_cmd_does_not_exist() {
+    let _guard = FORK_MTX.lock();
+
+    let args = &[CString::new("buzz").unwrap()];
+    let envs: &[CString] = &[];
+    let actions = PosixSpawnFileActions::init().unwrap();
+    let attr = PosixSpawnAttr::init().unwrap();
+
+    let bin = c"2b7433c4-523b-470c-abb5-d7ee9fd295d5-fdasf";
+    let errno =
+        spawn::posix_spawnp(bin, &actions, &attr, args, envs).unwrap_err();
+    assert_eq!(errno, Errno::ENOENT);
 }
