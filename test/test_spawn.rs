@@ -88,6 +88,10 @@ fn spawn_sleep() {
 }
 
 #[test]
+// `posix_spawn(path_not_exist)` succeeds under QEMU, so ignore the test. No need
+// to investigate the root cause, this test still works in native environments, which
+// is sufficient to test the binding.
+#[cfg_attr(qemu, ignore)]
 fn spawn_cmd_does_not_exist() {
     let _guard = FORK_MTX.lock();
 
@@ -167,6 +171,10 @@ fn spawnp_sleep() {
 }
 
 #[test]
+// `posix_spawnp(bin_not_exist)` succeeds under QEMU, so ignore the test. No need
+// to investigate the root cause, this test still works in native environments, which
+// is sufficient to test the binding.
+#[cfg_attr(qemu, ignore)]
 fn spawnp_cmd_does_not_exist() {
     let _guard = FORK_MTX.lock();
 
