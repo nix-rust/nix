@@ -9,7 +9,7 @@ fn which(exe_name: &str) -> Option<std::path::PathBuf> {
     std::env::var_os("PATH").and_then(|paths| {
         std::env::split_paths(&paths)
             .filter_map(|dir| {
-                let full_path = dir.join(&exe_name);
+                let full_path = dir.join(exe_name);
                 if full_path.is_file() {
                     Some(full_path)
                 } else {
