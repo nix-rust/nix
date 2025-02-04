@@ -3,7 +3,7 @@ use nix::errno::Errno;
 use nix::spawn::{self, PosixSpawnAttr, PosixSpawnFileActions};
 use nix::sys::signal;
 use nix::sys::wait::{waitpid, WaitPidFlag, WaitStatus};
-use std::ffi::CString;
+use std::ffi::{CStr, CString};
 
 /// Helper function to find a binary in the $PATH
 fn which(exe_name: &str) -> Option<std::path::PathBuf> {
@@ -175,7 +175,10 @@ fn spawnp_cmd_does_not_exist() {
     let actions = PosixSpawnFileActions::init().unwrap();
     let attr = PosixSpawnAttr::init().unwrap();
 
-    let bin = c"2b7433c4-523b-470c-abb5-d7ee9fd295d5-fdasf";
+    let bin = CStr::from_bytes_with_nul(
+        "2b7433c4-523b-470c-abb5-d7ee9fd295d5-fdasf\0".as_bytes(),
+    )
+    .unwrap();
     let errno =
         spawn::posix_spawnp(bin, &actions, &attr, args, envs).unwrap_err();
     assert_eq!(errno, Errno::ENOENT);
