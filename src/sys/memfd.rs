@@ -37,6 +37,18 @@ libc_bitflags!(
         /// [`memfd_create(2)`]: https://man7.org/linux/man-pages/man2/memfd_create.2.html
         #[cfg(linux_android)]
         MFD_HUGETLB;
+        /// Shift to get the huge page size.
+        #[cfg(target_env = "ohos")]
+        MFD_HUGE_SHIFT;
+        /// Mask to get the huge page size.
+        #[cfg(target_env = "ohos")]
+        MFD_HUGE_MASK;
+        /// hugetlb size of 64KB.
+        #[cfg(target_env = "ohos")]
+        MFD_HUGE_64KB;
+        /// hugetlb size of 512KB.
+        #[cfg(target_env = "ohos")]
+        MFD_HUGE_512KB;
         /// Following are to be used with [`MFD_HUGETLB`], indicating the desired hugetlb size.
         ///
         /// See also the hugetlb filesystem in [`memfd_create(2)`].
@@ -99,9 +111,10 @@ pub fn memfd_create<P: NixPath + ?Sized>(
                 not(target_os = "android"),
                 any(
                     target_os = "freebsd",
-                    // If the OS is Linux, gnu and musl expose a memfd_create symbol but not uclibc
+                    // If the OS is Linux, gnu/musl/ohos expose a memfd_create symbol but not uclibc
                     target_env = "gnu",
                     target_env = "musl",
+                    target_env = "ohos"
                 )))]
             {
                 libc::memfd_create(cstr.as_ptr(), flags.bits())

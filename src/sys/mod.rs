@@ -1,7 +1,10 @@
 //! Mostly platform-specific functionality
 #[cfg(any(
     freebsdlike,
-    all(target_os = "linux", not(target_env = "uclibc")),
+    all(
+        target_os = "linux",
+        not(any(target_env = "uclibc", target_env = "ohos"))
+    ),
     apple_targets,
     target_os = "netbsd"
 ))]

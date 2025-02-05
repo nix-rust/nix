@@ -13,7 +13,11 @@ mod test_errno;
 mod test_fcntl;
 #[cfg(linux_android)]
 mod test_kmod;
-#[cfg(any(freebsdlike, target_os = "linux", target_os = "netbsd"))]
+#[cfg(any(
+    freebsdlike,
+    all(target_os = "linux", not(target_env = "ohos")),
+    target_os = "netbsd"
+))]
 mod test_mq;
 #[cfg(not(target_os = "redox"))]
 mod test_net;
