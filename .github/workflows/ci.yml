@@ -89,10 +89,15 @@ jobs:
           armv7-unknown-linux-gnueabihf,
           i686-unknown-linux-gnu,
           i686-unknown-linux-musl,
-          mips-unknown-linux-gnu,
-          mips64-unknown-linux-gnuabi64,
-          mips64el-unknown-linux-gnuabi64,
-          mipsel-unknown-linux-gnu,
+          
+          # Disable MIPS CIs, see https://github.com/nix-rust/nix/issues/2593
+          # for detailed info.
+          # 
+          # mips-unknown-linux-gnu,
+          # mips64-unknown-linux-gnuabi64,
+          # mips64el-unknown-linux-gnuabi64,
+          # mipsel-unknown-linux-gnu,
+
           powerpc64le-unknown-linux-gnu,
           loongarch64-unknown-linux-gnu,
         ]

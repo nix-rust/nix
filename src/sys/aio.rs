@@ -455,10 +455,9 @@ impl<'a> AioFsync<'a> {
     /// * `fd`:           File descriptor to sync.
     /// * `mode`:         Whether to sync file metadata too, or just data.
     /// * `prio`:         If POSIX Prioritized IO is supported, then the
-    ///                   operation will be prioritized at the process's
-    ///                   priority level minus `prio`.
-    /// * `sigev_notify`: Determines how you will be notified of event
-    ///                   completion.
+    ///   operation will be prioritized at the process's priority level minus 
+    ///   `prio`.
+    /// * `sigev_notify`: Determines how you will be notified of event completion.
     pub fn new(
         fd: BorrowedFd<'a>,
         mode: AioFsyncMode,
@@ -573,11 +572,9 @@ impl<'a> AioRead<'a> {
     /// * `fd`:           File descriptor to read from
     /// * `offs`:         File offset
     /// * `buf`:          A memory buffer.  It must outlive the `AioRead`.
-    /// * `prio`:         If POSIX Prioritized IO is supported, then the
-    ///                   operation will be prioritized at the process's
-    ///                   priority level minus `prio`
-    /// * `sigev_notify`: Determines how you will be notified of event
-    ///                   completion.
+    /// * `prio`:         If POSIX Prioritized IO is supported, then the operation
+    ///   will be prioritized at the process's priority level minus `prio`
+    /// * `sigev_notify`: Determines how you will be notified of event completion.
     pub fn new(
         fd: BorrowedFd<'a>,
         offs: off_t,
@@ -805,11 +802,9 @@ impl<'a> AioWrite<'a> {
     /// * `fd`:           File descriptor to write to
     /// * `offs`:         File offset
     /// * `buf`:          A memory buffer.  It must outlive the `AioWrite`.
-    /// * `prio`:         If POSIX Prioritized IO is supported, then the
-    ///                   operation will be prioritized at the process's
-    ///                   priority level minus `prio`
-    /// * `sigev_notify`: Determines how you will be notified of event
-    ///                   completion.
+    /// * `prio`:         If POSIX Prioritized IO is supported, then the operation
+    ///   will be prioritized at the process's priority level minus `prio`
+    /// * `sigev_notify`: Determines how you will be notified of event completion.
     pub fn new(
         fd: BorrowedFd<'a>,
         offs: off_t,
