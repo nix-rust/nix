@@ -8,7 +8,10 @@ mod test_signal;
 #[cfg(any(
     target_os = "freebsd",
     apple_targets,
-    all(target_os = "linux", not(target_env = "uclibc")),
+    all(
+        target_os = "linux",
+        not(any(target_env = "uclibc", target_env = "ohos"))
+    ),
     target_os = "netbsd"
 ))]
 mod test_aio;

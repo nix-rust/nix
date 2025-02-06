@@ -1,13 +1,17 @@
 use nix::sys::pthread::*;
 
-#[cfg(any(target_env = "musl", target_os = "redox"))]
+#[cfg(any(target_env = "musl", target_os = "redox", target_env = "ohos"))]
 #[test]
 fn test_pthread_self() {
     let tid = pthread_self();
     assert!(!tid.is_null());
 }
 
-#[cfg(not(any(target_env = "musl", target_os = "redox")))]
+#[cfg(not(any(
+    target_env = "musl",
+    target_os = "redox",
+    target_env = "ohos"
+)))]
 #[test]
 fn test_pthread_self() {
     let tid = pthread_self();

@@ -64,6 +64,7 @@ libc_bitflags! {
         #[cfg(any(all(linux_android,
                       any(target_arch = "x86", target_arch = "x86_64")),
                   all(target_os = "linux", target_env = "musl", any(target_arch = "x86", target_arch = "x86_64")),
+                  all(target_os = "linux", target_env = "ohos", target_arch = "x86_64"),
                   all(target_os = "freebsd", target_pointer_width = "64")))]
         MAP_32BIT;
         /// Used for stacks; indicates to the kernel that the mapping should extend downward in memory.
