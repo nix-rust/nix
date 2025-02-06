@@ -82,7 +82,7 @@ jobs:
     # would fail on 22.04 and 24.04 (at least for now)
     # https://github.com/nix-rust/nix/issues/2418
     runs-on: ubuntu-20.04
-    needs: [rustfmt, minver, macos, linux_native_builds, rust_stable]
+    needs: [rustfmt, minver, macos, x86_64_linux_native_builds, rust_stable]
     strategy:
       fail-fast: false
       matrix:
@@ -141,9 +141,8 @@ jobs:
 
 
 
-  # Tasks for Linux native builds
-  # Only test x86_64 targets on GitHub Action, leave aarch64 one in Cirrus CI.
-  linux_native_builds:
+  # Tasks for x86_64 Linux native builds
+  x86_64_linux_native_builds:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -151,6 +150,43 @@ jobs:
         target: [
           x86_64-unknown-linux-gnu,
           x86_64-unknown-linux-musl,
+        ]
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: setup Rust
+        uses: dtolnay/rust-toolchain@master
+        with: 
+          toolchain: '${{ env.MSRV }}'
+          components: clippy
+
+      - name: install targets
+        run: rustup target add ${{ matrix.target }}
+
+      - name: build
+        uses: ./.github/actions/build
+        with:
+          TARGET: '${{ matrix.TARGET }}'
+
+      - name: test
+        uses: ./.github/actions/test
+        with:
+          TARGET: '${{ matrix.TARGET }}'
+
+      - name: before_cache_script
+        run: sudo rm -rf $CARGO_HOME/registry/index;
+        
+  # Tasks for aarch64 Linux native builds
+  aarch64_linux_native_builds:
+    runs-on: ubuntu-24.04-arm
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [
+          aarch64-unknown-linux-gnu,
+          aarch64-unknown-linux-musl,
         ]
 
     steps:
@@ -210,7 +246,7 @@ jobs:
   # Tasks for cross-compiling, but no testing
   cross_compiling:
     runs-on: ubuntu-latest
-    needs: [rustfmt, minver, macos, linux_native_builds, rust_stable]
+    needs: [rustfmt, minver, macos, x86_64_linux_native_builds, rust_stable]
     env:
       BUILD: check
     strategy:
@@ -269,7 +305,7 @@ jobs:
 
   redox:
     runs-on: ubuntu-latest
-    needs: [rustfmt, minver, macos, linux_native_builds, rust_stable]
+    needs: [rustfmt, minver, macos, x86_64_linux_native_builds, rust_stable]
     env: 
       TARGET: x86_64-unknown-redox
       CLIPPYFLAGS: -D warnings

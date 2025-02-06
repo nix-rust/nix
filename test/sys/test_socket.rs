@@ -917,9 +917,15 @@ pub fn test_scm_rights() {
     close(received_r).unwrap();
 }
 
-// Disable the test on emulated platforms due to not enabled support of AF_ALG in QEMU from rust cross
+// 1. Disable the test on emulated platforms due to not enabled support of
+//    AF_ALG in QEMU from rust cross
+// 2. Disable the test on aarch64/Linux CI because bind() fails with ENOENT
+//    https://github.com/nix-rust/nix/issues/1352
 #[cfg(linux_android)]
-#[cfg_attr(qemu, ignore)]
+#[cfg_attr(
+    any(qemu, all(target_os = "linux", target_arch = "aarch64")),
+    ignore
+)]
 #[test]
 pub fn test_af_alg_cipher() {
     use nix::sys::socket::sockopt::AlgSetKey;
@@ -929,11 +935,6 @@ pub fn test_af_alg_cipher() {
     };
     use nix::unistd::read;
     use std::io::IoSlice;
-
-    skip_if_cirrus!("Fails for an unknown reason Cirrus CI.  Bug #1352");
-    // Travis's seccomp profile blocks AF_ALG
-    // https://docs.docker.com/engine/security/seccomp/
-    skip_if_seccomp!(test_af_alg_cipher);
 
     let alg_type = "skcipher";
     let alg_name = "ctr-aes-aesni";
