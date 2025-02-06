@@ -145,11 +145,11 @@ feature! {
     #![feature = "mount"]
     pub mod mount;
 }
-#[cfg(all(any(
+#[cfg(any(
     freebsdlike,
     all(target_os = "linux", not(target_env = "ohos")),
     target_os = "netbsd"
-)))]
+))]
 feature! {
     #![feature = "mqueue"]
     pub mod mqueue;
