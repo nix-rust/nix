@@ -16,6 +16,8 @@ env:
   MSRV: 1.69.0
   # Rust's Loongarch support merged in 1.71.0
   MSRV_LOONGARCH: 1.71.0
+  # Minimal Rust version to support all 3 official OpenHarmony targets as tier2
+  MSRV_OHOS: 1.78.0 
   RUSTFLAGS: -Dwarnings
 
 jobs:
@@ -247,7 +249,8 @@ jobs:
       - name: setup Rust
         uses: dtolnay/rust-toolchain@master
         with: 
-          toolchain: '${{ env.MSRV }}'
+           # Use a newer version rustc if it is OpenHarmony, remove this workaround after MSRV is newer than 1.78.0 
+          toolchain: "${{ contains(matrix.target, 'ohos')  && env.MSRV_OHOS || env.MSRV }}" 
           components: clippy
 
       - name: install targets
@@ -262,7 +265,7 @@ jobs:
 
       - name: before_cache_script
         run: rm -rf $CARGO_HOME/registry/index
-  
+
 
   redox:
     runs-on: ubuntu-latest
