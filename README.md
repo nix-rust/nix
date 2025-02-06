@@ -81,14 +81,17 @@ The following targets are supported by `nix`:
    <ul>
     <li>aarch64-apple-ios</li>
     <li>aarch64-linux-android</li>
+    <li>aarch64-unknown-linux-ohos</li>
     <li>arm-linux-androideabi</li>
     <li>arm-unknown-linux-musleabi</li>
     <li>armv7-linux-androideabi</li>
+    <li>armv7-unknown-linux-ohos</li>
     <li>i686-linux-android</li>
     <li>loongarch64-unknown-linux-gnu</li>
     <li>s390x-unknown-linux-gnu</li>
     <li>x86_64-linux-android</li>
     <li>x86_64-unknown-illumos</li>
+    <li>x86_64-unknown-linux-ohos</li>
     <li>x86_64-unknown-netbsd</li>
    </td>
    <td>
