@@ -236,6 +236,9 @@ jobs:
           - target: s390x-unknown-linux-gnu
           - target: x86_64-unknown-linux-gnux32
           - target: x86_64-unknown-netbsd
+          - target: aarch64-unknown-linux-ohos
+          - target: armv7-unknown-linux-ohos
+          - target: x86_64-unknown-linux-ohos
 
     steps:
       - name: checkout

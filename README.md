@@ -90,6 +90,9 @@ The following targets are supported by `nix`:
     <li>x86_64-linux-android</li>
     <li>x86_64-unknown-illumos</li>
     <li>x86_64-unknown-netbsd</li>
+    <li>aarch64-unknown-linux-ohos</li>
+    <li>armv7-unknown-linux-ohos</li>
+    <li>x86_64-unknown-linux-ohos</li>
    </td>
    <td>
     <li>armv7-unknown-linux-uclibceabihf</li>
