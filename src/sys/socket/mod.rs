@@ -257,8 +257,11 @@ impl SockProtocol {
     #[cfg(linux_android)]
     #[allow(non_upper_case_globals)]
     #[cfg(target_endian = "little")]
-    pub const EthIp: SockProtocol = unsafe { std::mem::transmute::<i32, SockProtocol>((libc::ETH_P_IP as u16).to_be() as i32) };
-
+    pub const EthIp: SockProtocol = unsafe {
+        std::mem::transmute::<i32, SockProtocol>(
+            (libc::ETH_P_IP as u16).to_be() as i32,
+        )
+    };
 }
 #[cfg(linux_android)]
 libc_bitflags! {
