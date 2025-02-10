@@ -1,5 +1,6 @@
 use crate::errno::Errno;
 pub use crate::poll_timeout::PollTimeout as EpollTimeout;
+pub use crate::poll_timeout::PollTimeoutTryFromError as EpollTimeoutTryFromError;
 use crate::Result;
 use libc::{self, c_int};
 use std::mem;
