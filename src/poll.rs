@@ -2,7 +2,7 @@
 use std::os::unix::io::{AsFd, AsRawFd, BorrowedFd};
 
 use crate::errno::Errno;
-pub use crate::poll_timeout::PollTimeout;
+pub use crate::poll_timeout::{PollTimeout, PollTimeoutTryFromError};
 use crate::Result;
 
 /// This is a wrapper around `libc::pollfd`.
