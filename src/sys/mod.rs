@@ -202,3 +202,9 @@ feature! {
     #![feature = "time"]
     pub mod timer;
 }
+
+#[cfg(any(target_os = "android", target_os = "linux"))]
+feature! {
+    #![feature = "futex"]
+    pub mod futex;
+}
