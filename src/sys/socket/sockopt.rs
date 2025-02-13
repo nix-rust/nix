@@ -698,7 +698,7 @@ sockopt_impl!(
     u32
 );
 cfg_if! {
-    if #[cfg(linux_android)] {
+    if #[cfg(any(linux_android, apple_targets))] {
         sockopt_impl!(
             /// The maximum segment size for outgoing TCP packets.
             TcpMaxSeg, Both, libc::IPPROTO_TCP, libc::TCP_MAXSEG, u32);
