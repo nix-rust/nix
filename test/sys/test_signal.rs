@@ -146,7 +146,7 @@ fn test_signal() {
 #[test]
 fn test_contains() {
     let mut mask = SigSet::empty();
-    mask.add(SIGUSR1);
+    mask.rt_add(SignalValue::Standard(SIGUSR1)).unwrap();
 
     assert!(mask.contains(SIGUSR1));
     assert!(!mask.contains(SIGUSR2));
@@ -154,6 +154,19 @@ fn test_contains() {
     let all = SigSet::all();
     assert!(all.contains(SIGUSR1));
     assert!(all.contains(SIGUSR2));
+}
+
+#[test]
+fn test_rt_contains() {
+    let mut mask = SigSet::empty();
+    mask.add(SIGUSR1);
+
+    assert!(mask.rt_contains(SignalValue::Standard(SIGUSR1)));
+    assert!(!mask.rt_contains(SignalValue::Standard(SIGUSR2)));
+
+    let all = SigSet::all();
+    assert!(mask.rt_contains(SignalValue::Standard(SIGUSR1)));
+    assert!(all.rt_contains(SignalValue::Standard(SIGUSR2)));
 }
 
 #[test]
@@ -190,8 +203,29 @@ fn test_extend() {
     two_signals.add(SIGUSR2);
     two_signals.extend(&one_signal);
 
-    assert!(two_signals.contains(SIGUSR1));
-    assert!(two_signals.contains(SIGUSR2));
+    assert!(one_signal
+        .rt_contains(nix::sys::signal::SignalValue::Standard(SIGUSR1)));
+    assert!(two_signals
+        .rt_contains(nix::sys::signal::SignalValue::Standard(SIGUSR2)));
+    assert!(two_signals
+        .rt_contains(nix::sys::signal::SignalValue::Standard(SIGUSR1)));
+}
+
+#[test]
+fn test_extend_rt() {
+    let mut one_signal = SigSet::empty();
+    one_signal.rt_add(SignalValue::Standard(SIGUSR1)).unwrap();
+
+    let mut two_signals = SigSet::empty();
+    two_signals.rt_add(SignalValue::Standard(SIGUSR2)).unwrap();
+    two_signals.extend(&one_signal);
+
+    assert!(one_signal
+        .rt_contains(nix::sys::signal::SignalValue::Standard(SIGUSR1)));
+    assert!(two_signals
+        .rt_contains(nix::sys::signal::SignalValue::Standard(SIGUSR2)));
+    assert!(two_signals
+        .rt_contains(nix::sys::signal::SignalValue::Standard(SIGUSR1)));
 }
 
 #[test]
@@ -275,9 +309,20 @@ fn test_thread_signal_swap() {
 
 #[test]
 fn test_from_and_into_iterator() {
-    let sigset = SigSet::from_iter(vec![Signal::SIGUSR1, Signal::SIGUSR2]);
-    let signals = sigset.into_iter().collect::<Vec<Signal>>();
-    assert_eq!(signals, [Signal::SIGUSR1, Signal::SIGUSR2]);
+    let sigset = SigSet::from_iter(vec![
+        SignalValue::Standard(Signal::SIGUSR1),
+        SignalValue::Standard(Signal::SIGUSR2),
+    ]);
+    assert!(sigset.contains(SIGUSR1));
+    assert!(sigset.rt_contains(SignalValue::Standard(Signal::SIGUSR2)));
+    let signals = sigset.into_iter().collect::<Vec<SignalValue>>();
+    assert_eq!(
+        signals,
+        [
+            SignalValue::Standard(Signal::SIGUSR1),
+            SignalValue::Standard(Signal::SIGUSR2)
+        ]
+    );
 }
 
 #[test]
@@ -338,6 +383,22 @@ fn test_sigwait() {
 
         raise(SIGUSR1).unwrap();
         assert_eq!(mask.wait().unwrap(), SIGUSR1);
+    })
+    .join()
+    .unwrap();
+}
+
+#[test]
+#[cfg(not(target_os = "redox"))]
+fn test_rt_sigwait() {
+    thread::spawn(|| {
+        let mut mask = SigSet::empty();
+        mask.rt_add(SignalValue::Standard(SIGUSR1)).unwrap();
+        mask.rt_add(SignalValue::Standard(SIGUSR2)).unwrap();
+        mask.thread_block().unwrap();
+
+        raise_signal(SignalValue::Standard(SIGUSR1)).unwrap();
+        assert_eq!(mask.rt_wait().unwrap(), SignalValue::Standard(SIGUSR1));
     })
     .join()
     .unwrap();
