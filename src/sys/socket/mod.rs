@@ -1679,7 +1679,7 @@ impl ControlMessage<'_> {
 /// by ancillary data. Optionally direct the message at the given address,
 /// as with sendto.
 ///
-/// Allocates if cmsgs is nonempty.
+/// Allocates if cmsgs is nonempty, use [`sendmsg_prealloc()`] if you want to use a pre-allocated buffer.
 ///
 /// # Examples
 /// When not directing to any specific address, use `()` for the generic type
@@ -1726,6 +1726,29 @@ pub fn sendmsg<S>(fd: RawFd, iov: &[IoSlice<'_>], cmsgs: &[ControlMessage],
     // First size the buffer needed to hold the cmsgs.  It must be zeroed,
     // because subsequent code will not clear the padding bytes.
     let mut cmsg_buffer = vec![0u8; capacity];
+
+    let mhdr = pack_mhdr_to_send(&mut cmsg_buffer[..], iov, cmsgs, addr);
+
+    let ret = unsafe { libc::sendmsg(fd, &mhdr, flags.bits()) };
+
+    Errno::result(ret).map(|r| r as usize)
+}
+
+
+/// `sendmsg_prealloc()` is the same as [`sendmsg()`] but it accepts a preallocated
+/// `cmsg` buffer vector.
+///
+/// Send data in scatter-gather vectors to a socket, possibly accompanied
+/// by ancillary data. Optionally direct the message at the given address,
+/// as with sendto.
+pub fn sendmsg_prealloc<S>(fd: RawFd, iov: &[IoSlice<'_>], cmsgs: &[ControlMessage],
+               flags: MsgFlags, addr: Option<&S>, cmsg_buffer: &mut Vec<u8>) -> Result<usize>
+    where S: SockaddrLike
+{
+
+    if cmsg_buffer.len() < cmsgs.len() {
+        return Err(Errno::ENOBUFS);
+    }
 
     let mhdr = pack_mhdr_to_send(&mut cmsg_buffer[..], iov, cmsgs, addr);
 

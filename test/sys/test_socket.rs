@@ -1205,7 +1205,6 @@ pub fn test_sendmsg_ipv4packetinfo() {
     }
 
     let cmsg = [ControlMessage::Ipv4PacketInfo(&pi)];
-
     sendmsg(
         sock.as_raw_fd(),
         &iov,
@@ -1214,6 +1213,59 @@ pub fn test_sendmsg_ipv4packetinfo() {
         Some(&sock_addr),
     )
     .expect("sendmsg");
+}
+
+#[cfg(any(target_os = "linux", apple_targets, target_os = "netbsd"))]
+#[test]
+pub fn test_sendmsg_prealloc_ipv4packetinfo() {
+    use cfg_if::cfg_if;
+    use nix::sys::socket::{
+        bind, sendmsg_prealloc, socket, AddressFamily, ControlMessage,
+        MsgFlags, SockFlag, SockType, SockaddrIn,
+    };
+    use std::io::IoSlice;
+
+    let sock = socket(
+        AddressFamily::Inet,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )
+    .expect("socket failed");
+
+    let sock_addr = SockaddrIn::new(127, 0, 0, 1, 4000);
+
+    bind(sock.as_raw_fd(), &sock_addr).expect("bind failed");
+
+    let slice = [1u8, 2, 3, 4, 5, 6, 7, 8];
+    let iov = [IoSlice::new(&slice)];
+
+    cfg_if! {
+        if #[cfg(target_os = "netbsd")] {
+            let pi = libc::in_pktinfo {
+                ipi_ifindex: 0, /* Unspecified interface */
+                ipi_addr: libc::in_addr { s_addr: 0 },
+            };
+        } else {
+            let pi = libc::in_pktinfo {
+                ipi_ifindex: 0, /* Unspecified interface */
+                ipi_addr: libc::in_addr { s_addr: 0 },
+                ipi_spec_dst: sock_addr.as_ref().sin_addr,
+            };
+        }
+    }
+
+    let cmsg = [ControlMessage::Ipv4PacketInfo(&pi)];
+    let mut cmsg_buffer = vec![0 as u8; 32]; // same size as sendmsg_ipv4packetinfo
+    sendmsg_prealloc(
+        sock.as_raw_fd(),
+        &iov,
+        &cmsg,
+        MsgFlags::empty(),
+        Some(&sock_addr),
+        &mut cmsg_buffer,
+    )
+    .expect("sendmsg_prealloc");
 }
 
 // Verify `ControlMessage::Ipv6PacketInfo` for `sendmsg`.
