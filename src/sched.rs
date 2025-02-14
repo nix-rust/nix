@@ -80,6 +80,14 @@ mod sched_linux_like {
             CLONE_NEWNET;
             /// The new process shares an I/O context with the calling process.
             CLONE_IO;
+            /// Unshare the time namespace, so that the calling process has a
+            /// new time namespace for its children which is not shared with
+            /// any previously existing process. The calling process is not
+            /// moved into the new namespace. Use of `CLONE_NEWTIME` requires
+            /// the `CAP_SYS_ADMIN` capability. For further information, see
+            /// [`time_namespaces(7)`](https://man7.org/linux/man-pages/man7/time_namespaces.7.html).
+            #[cfg(all(target_os = "linux", target_env = "gnu"))]
+            CLONE_NEWTIME;
         }
     }
 
