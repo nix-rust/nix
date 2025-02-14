@@ -191,6 +191,22 @@ pub fn mq_close(mqdes: MqdT) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
+feature! {
+    #![feature = "time"]
+    use crate::sys::signal::SigEvent;
+    use crate::sys::signal::libc_sigevent;
+    
+   /// Register the process for message queue notification
+   ///
+   /// See also [`mq_notify(2)`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_notify.html)
+   #[cfg(target_os = "linux")]
+   pub fn mq_notify(mqdes: &MqdT, notify: SigEvent) -> Result<()> {
+      let sig_event = notify.sigevent();
+      let res = unsafe { libc::syscall(libc::SYS_mq_notify, mqdes.0, &sig_event as *const libc_sigevent) };
+      Errno::result(res).map(drop)
+   }
+}
+
 /// Receive a message from a message queue
 ///
 /// See also [`mq_receive(2)`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_receive.html)
