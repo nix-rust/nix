@@ -281,8 +281,21 @@ libc_bitflags! {
         SOF_TIMESTAMPING_RX_SOFTWARE;
         /// Generate a unique identifier along with each transmitted packet
         SOF_TIMESTAMPING_OPT_ID;
+        /// Collect transmitting timestamps prior to entering the packet scheduler
+        SOF_TIMESTAMPING_TX_SCHED;
+        /// Collect transmitting timestamps when all data in the send buffer has been acknowledged
+        SOF_TIMESTAMPING_TX_ACK;
+        /// Support receive control messages for all timestamped packets
+        SOF_TIMESTAMPING_OPT_CMSG;
         /// Return transmit timestamps alongside an empty packet instead of the original packet
         SOF_TIMESTAMPING_OPT_TSONLY;
+        /// Collect optional stats that are obtained along with the transmit timestamps
+        SOF_TIMESTAMPING_OPT_STATS;
+        /// Enable the SCM_TIMESTAMPING_PKTINFO control message for incoming packets with hardware timestamps
+        SOF_TIMESTAMPING_OPT_PKTINFO;
+        /// Request both hardware and software timestamps for outgoing packets when SOF_TIMESTAMPING_TX_HARDWARE and
+        /// SOF_TIMESTAMPING_TX_SOFTWARE are enabled at the same time
+        SOF_TIMESTAMPING_OPT_TX_SWHW;
     }
 }
 
