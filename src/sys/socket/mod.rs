@@ -2364,6 +2364,41 @@ pub fn accept4(sockfd: RawFd, flags: SockFlag) -> Result<RawFd> {
     Errno::result(res)
 }
 
+/// Accept a connection on a socket, returning the remote address.
+///
+/// [Further reading](https://man7.org/linux/man-pages/man2/accept.2.html)
+#[cfg(any(
+    all(
+        target_os = "android",
+        any(
+            target_arch = "aarch64",
+            target_arch = "x86",
+            target_arch = "x86_64"
+        )
+    ),
+    freebsdlike,
+    netbsdlike,
+    target_os = "emscripten",
+    target_os = "fuchsia",
+    solarish,
+    target_os = "linux",
+))]
+pub fn accept_from<S: SockaddrLike>(sockfd: RawFd, flags: SockFlag) -> Result<(RawFd, Option<S>)> {
+    let mut storage = std::mem::MaybeUninit::<libc::sockaddr_storage>::uninit();
+    let mut socklen = std::mem::size_of::<libc::sockaddr_storage>() as libc::socklen_t;
+    let res = unsafe {
+        libc::accept4(sockfd, storage.as_mut_ptr().cast(), &mut socklen as *mut _, flags.bits())
+    };
+
+    let sock = Errno::result(res)?;
+    let addr = unsafe {
+        let storage = storage.assume_init();
+        S::from_raw((&storage as *const libc::sockaddr_storage).cast(), Some(socklen))
+    };
+
+    Ok((sock, addr))
+}
+
 /// Initiate a connection on a socket
 ///
 /// [Further reading](https://pubs.opengroup.org/onlinepubs/9699919799/functions/connect.html)
