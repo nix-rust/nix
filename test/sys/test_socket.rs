@@ -3161,3 +3161,56 @@ fn can_open_routing_socket() {
         socket(AddressFamily::Route, SockType::Raw, SockFlag::empty(), None)
             .expect("Failed to open routing socket");
 }
+
+#[cfg(any(
+    all(
+        target_os = "android",
+        any(
+            target_arch = "aarch64",
+            target_arch = "x86",
+            target_arch = "x86_64"
+        )
+    ),
+    freebsdlike,
+    netbsdlike,
+    target_os = "emscripten",
+    target_os = "fuchsia",
+    solarish,
+    target_os = "linux",
+))]
+#[test]
+fn test_accept_from() {
+    use nix::sys::socket::{accept_from, bind, connect, listen, socket};
+    use nix::sys::socket::{Backlog, SockFlag, SockType, SockaddrIn};
+    use std::net::Ipv4Addr;
+
+    let sock_addr = SockaddrIn::from_str("127.0.0.1:6780").unwrap();
+    let listener = socket(
+        AddressFamily::Inet,
+        SockType::Stream,
+        SockFlag::empty(),
+        None,
+    )
+    .expect("listener socket failed");
+    bind(listener.as_raw_fd(), &sock_addr).expect("bind failed");
+    listen(&listener, Backlog::MAXCONN).expect("listen failed");
+
+    let connector = socket(
+        AddressFamily::Inet,
+        SockType::Stream,
+        SockFlag::empty(),
+        None,
+    )
+    .expect("connector socket failed");
+
+    let send_thread =
+        std::thread::spawn(move || connect(connector.as_raw_fd(), &sock_addr));
+    let (_peer, address) =
+        accept_from::<SockaddrIn>(listener.as_raw_fd(), SockFlag::empty())
+            .unwrap();
+    let address = address.expect("no address");
+
+    assert_eq!(address.ip(), Ipv4Addr::LOCALHOST);
+
+    send_thread.join().unwrap().unwrap();
+}
