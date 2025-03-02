@@ -987,6 +987,25 @@ sockopt_impl!(
     libc::SO_ACCEPTFILTER,
     libc::accept_filter_arg
 );
+#[cfg(target_os = "illumos")]
+sockopt_impl!(
+    /// Attach a named filter to this socket to be able to
+    /// defer when anough byte had been buffered by the kernel
+    FilAttach,
+    SetOnly,
+    libc::SOL_FILTER,
+    libc::FIL_ATTACH,
+    SetOsString<'static>
+);
+#[cfg(target_os = "illumos")]
+sockopt_impl!(
+    /// Detach a socket filter previously attached with FIL_ATTACH
+    FilDetach,
+    SetOnly,
+    libc::SOL_FILTER,
+    libc::FIL_DETACH,
+    SetOsString<'static>
+);
 #[cfg(target_os = "linux")]
 sockopt_impl!(
     /// Set the mark for each packet sent through this socket (similar to the
@@ -1799,7 +1818,7 @@ pub struct SetOsString<'a> {
     val: &'a OsStr,
 }
 
-#[cfg(any(target_os = "freebsd", linux_android))]
+#[cfg(any(target_os = "freebsd", linux_android, target_os = "illumos"))]
 impl<'a> Set<'a, OsString> for SetOsString<'a> {
     fn new(val: &OsString) -> SetOsString {
         SetOsString {
