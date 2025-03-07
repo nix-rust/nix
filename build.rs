@@ -30,4 +30,6 @@ fn main() {
     // Below are custom cfg values set during some CI steps.
     println!("cargo:rustc-check-cfg=cfg(fbsd14)");
     println!("cargo:rustc-check-cfg=cfg(qemu)");
+    // Cygwin target, added in 1.86
+    println!("cargo:rustc-check-cfg=cfg(target_os, values(\"cygwin\"))");
 }
