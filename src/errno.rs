@@ -25,7 +25,6 @@ cfg_if! {
             unsafe { libc::__error() }
         }
     } else if #[cfg(any(target_os = "android", netbsdlike, target_os = "cygwin"))] {
-        #[cfg_attr(target_os = "cygwin", no_mangle)]
         unsafe fn errno_location() -> *mut c_int {
             unsafe { libc::__errno() }
         }
