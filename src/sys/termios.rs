@@ -667,7 +667,7 @@ libc_bitflags! {
         ECHOK;
         ECHO;
         ECHONL;
-        #[cfg(not(target_os = "redox"))]
+        #[cfg(not(any(target_os = "redox", target_os = "cygwin")))]
         ECHOPRT;
         #[cfg(not(target_os = "redox"))]
         ECHOCTL;
@@ -676,14 +676,14 @@ libc_bitflags! {
         #[cfg(bsd)]
         ALTWERASE;
         IEXTEN;
-        #[cfg(not(any(target_os = "redox", target_os = "haiku", target_os = "aix")))]
+        #[cfg(not(any(target_os = "redox", target_os = "haiku", target_os = "aix", target_os = "cygwin")))]
         EXTPROC;
         TOSTOP;
         #[cfg(not(target_os = "redox"))]
         FLUSHO;
         #[cfg(bsd)]
         NOKERNINFO;
-        #[cfg(not(target_os = "redox"))]
+        #[cfg(not(any(target_os = "redox", target_os = "cygwin")))]
         PENDIN;
         NOFLSH;
     }

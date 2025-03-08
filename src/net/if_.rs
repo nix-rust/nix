@@ -51,7 +51,7 @@ libc_bitflags!(
         IFF_BROADCAST as IflagsType;
         /// Internal debugging flag. (see
         /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
-        #[cfg(not(target_os = "haiku"))]
+        #[cfg(not(any(target_os = "haiku", target_os = "cygwin")))]
         IFF_DEBUG as IflagsType;
         /// Interface is a loopback interface. (see
         /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
@@ -66,7 +66,8 @@ libc_bitflags!(
                   solarish,
                   apple_targets,
                   target_os = "fuchsia",
-                  target_os = "netbsd"))]
+                  target_os = "netbsd",
+                  target_os = "cygwin"))]
         IFF_NOTRAILERS as IflagsType;
         /// Interface manages own routes.
         #[cfg(any(target_os = "dragonfly"))]
@@ -77,7 +78,8 @@ libc_bitflags!(
                   linux_android,
                   bsd,
                   solarish,
-                  target_os = "fuchsia"))]
+                  target_os = "fuchsia",
+                  target_os = "cygwin"))]
         IFF_RUNNING as IflagsType;
         /// No arp protocol, L2 destination address not set. (see
         /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
@@ -87,6 +89,7 @@ libc_bitflags!(
         IFF_PROMISC as IflagsType;
         /// Receive all multicast packets. (see
         /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
+        #[cfg(not(target_os = "cygwin"))]
         IFF_ALLMULTI as IflagsType;
         /// Master of a load balancing bundle. (see
         /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
@@ -145,7 +148,7 @@ libc_bitflags!(
         #[cfg(solarish)]
         IFF_PRIVATE as IflagsType;
         /// Driver signals L1 up. Volatile.
-        #[cfg(any(target_os = "fuchsia", target_os = "linux"))]
+        #[cfg(any(target_os = "fuchsia", target_os = "linux", target_os = "cygwin"))]
         IFF_LOWER_UP;
         /// Interface is in polling mode.
         #[cfg(any(target_os = "dragonfly"))]
@@ -157,7 +160,7 @@ libc_bitflags!(
         #[cfg(solarish)]
         IFF_NOXMIT as IflagsType;
         /// Driver signals dormant. Volatile.
-        #[cfg(any(target_os = "fuchsia", target_os = "linux"))]
+        #[cfg(any(target_os = "fuchsia", target_os = "linux", target_os = "cygwin"))]
         IFF_DORMANT;
         /// User-requested promisc mode.
         #[cfg(freebsdlike)]

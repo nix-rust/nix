@@ -281,7 +281,7 @@ libc_enum! {
         #[cfg(linux_android)]
         MADV_DODUMP,
         /// Specify that the application no longer needs the pages in the given range.
-        #[cfg(not(any(target_os = "aix", target_os = "hurd")))]
+        #[cfg(not(any(target_os = "aix", target_os = "hurd", target_os = "cygwin")))]
         MADV_FREE,
         /// Request that the system not flush the current range to disk unless it needs to.
         #[cfg(freebsdlike)]
@@ -357,7 +357,7 @@ libc_bitflags! {
     }
 }
 
-#[cfg(not(target_os = "haiku"))]
+#[cfg(not(any(target_os = "haiku", target_os = "cygwin")))]
 libc_bitflags! {
     /// Flags for [`mlockall`].
     pub struct MlockAllFlags: c_int {
@@ -400,7 +400,7 @@ pub unsafe fn munlock(addr: NonNull<c_void>, length: size_t) -> Result<()> {
 /// Locked pages never move to the swap area. For more information, see [`mlockall(2)`].
 ///
 /// [`mlockall(2)`]: https://man7.org/linux/man-pages/man2/mlockall.2.html
-#[cfg(not(target_os = "haiku"))]
+#[cfg(not(any(target_os = "haiku", target_os = "cygwin")))]
 pub fn mlockall(flags: MlockAllFlags) -> Result<()> {
     unsafe { Errno::result(libc::mlockall(flags.bits())) }.map(drop)
 }
@@ -410,7 +410,7 @@ pub fn mlockall(flags: MlockAllFlags) -> Result<()> {
 /// For more information, see [`munlockall(2)`].
 ///
 /// [`munlockall(2)`]: https://man7.org/linux/man-pages/man2/munlockall.2.html
-#[cfg(not(target_os = "haiku"))]
+#[cfg(not(any(target_os = "haiku", target_os = "cygwin")))]
 pub fn munlockall() -> Result<()> {
     unsafe { Errno::result(libc::munlockall()) }.map(drop)
 }

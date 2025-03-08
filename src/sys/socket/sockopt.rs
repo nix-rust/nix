@@ -298,7 +298,7 @@ sockopt_impl!(
     libc::SO_REUSEADDR,
     bool
 );
-#[cfg(not(solarish))]
+#[cfg(not(any(solarish, target_os = "cygwin")))]
 sockopt_impl!(
     /// Permits multiple AF_INET or AF_INET6 sockets to be bound to an
     /// identical socket address.
@@ -883,7 +883,8 @@ sockopt_impl!(
     target_os = "aix",
     target_os = "haiku",
     target_os = "hurd",
-    target_os = "redox"
+    target_os = "redox",
+    target_os = "cygwin"
 )))]
 sockopt_impl!(
     /// Enable or disable the receiving of the `SO_TIMESTAMP` control message.

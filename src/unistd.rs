@@ -1945,7 +1945,8 @@ pub fn setgroups(groups: &[Gid]) -> Result<()> {
     cfg_if! {
         if #[cfg(any(bsd,
                      solarish,
-                     target_os = "aix"))] {
+                     target_os = "aix",
+                     target_os = "cygwin"))] {
             type setgroups_ngroups_t = c_int;
         } else {
             type setgroups_ngroups_t = size_t;
@@ -2208,7 +2209,7 @@ feature! {
 #![feature = "acct"]
 
 /// Process accounting
-#[cfg(not(any(target_os = "redox", target_os = "haiku")))]
+#[cfg(not(any(target_os = "redox", target_os = "haiku", target_os = "cygwin")))]
 pub mod acct {
     use crate::errno::Errno;
     use crate::{NixPath, Result};
@@ -3499,6 +3500,7 @@ pub struct User {
         target_os = "haiku",
         target_os = "hurd",
         target_os = "emscripten",
+        target_os = "cygwin",
     )))]
     pub class: CString,
     /// Last password change
@@ -3510,6 +3512,7 @@ pub struct User {
         target_os = "haiku",
         target_os = "hurd",
         target_os = "emscripten",
+        target_os = "cygwin",
     )))]
     pub change: libc::time_t,
     /// Expiration time of account
@@ -3521,6 +3524,7 @@ pub struct User {
         target_os = "haiku",
         target_os = "hurd",
         target_os = "emscripten",
+        target_os = "cygwin",
     )))]
     pub expire: libc::time_t,
 }
@@ -3575,6 +3579,7 @@ impl From<&libc::passwd> for User {
                     target_os = "haiku",
                     target_os = "hurd",
                     target_os = "emscripten",
+                    target_os = "cygwin",
                 )))]
                 class: CString::new(CStr::from_ptr(pw.pw_class).to_bytes())
                     .unwrap(),
@@ -3586,6 +3591,7 @@ impl From<&libc::passwd> for User {
                     target_os = "haiku",
                     target_os = "hurd",
                     target_os = "emscripten",
+                    target_os = "cygwin",
                 )))]
                 change: pw.pw_change,
                 #[cfg(not(any(
@@ -3596,6 +3602,7 @@ impl From<&libc::passwd> for User {
                     target_os = "haiku",
                     target_os = "hurd",
                     target_os = "emscripten",
+                    target_os = "cygwin",
                 )))]
                 expire: pw.pw_expire,
             }
@@ -3638,6 +3645,7 @@ impl From<User> for libc::passwd {
                 target_os = "haiku",
                 target_os = "hurd",
                 target_os = "emscripten",
+                target_os = "cygwin",
             )))]
             pw_class: u.class.into_raw(),
             #[cfg(not(any(
@@ -3648,6 +3656,7 @@ impl From<User> for libc::passwd {
                 target_os = "haiku",
                 target_os = "hurd",
                 target_os = "emscripten",
+                target_os = "cygwin",
             )))]
             pw_change: u.change,
             #[cfg(not(any(
@@ -3658,11 +3667,12 @@ impl From<User> for libc::passwd {
                 target_os = "haiku",
                 target_os = "hurd",
                 target_os = "emscripten",
+                target_os = "cygwin",
             )))]
             pw_expire: u.expire,
             #[cfg(solarish)]
             pw_age: CString::new("").unwrap().into_raw(),
-            #[cfg(solarish)]
+            #[cfg(any(solarish, target_os = "cygwin"))]
             pw_comment: CString::new("").unwrap().into_raw(),
             #[cfg(freebsdlike)]
             pw_fields: 0,

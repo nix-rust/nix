@@ -66,7 +66,7 @@ pub enum AddressFamily {
     #[cfg(linux_android)]
     Netlink = libc::AF_NETLINK,
     /// Kernel interface for interacting with the routing table
-    #[cfg(not(any(linux_android, target_os = "redox")))]
+    #[cfg(not(any(linux_android, target_os = "redox", target_os = "cygwin")))]
     Route = libc::PF_ROUTE,
     /// Low level packet interface (see [`packet(7)`](https://man7.org/linux/man-pages/man7/packet.7.html))
     #[cfg(any(linux_android, solarish, target_os = "fuchsia"))]
@@ -78,7 +78,7 @@ pub enum AddressFamily {
     #[cfg(linux_android)]
     Ax25 = libc::AF_AX25,
     /// IPX - Novell protocols
-    #[cfg(not(any(target_os = "aix", target_os = "redox")))]
+    #[cfg(not(any(target_os = "aix", target_os = "redox", target_os = "cygwin")))]
     Ipx = libc::AF_IPX,
     /// AppleTalk
     #[cfg(not(target_os = "redox"))]
@@ -164,6 +164,7 @@ pub enum AddressFamily {
         apple_targets,
         target_os = "hurd",
         target_os = "redox",
+        target_os = "cygwin",
     )))]
     Bluetooth = libc::AF_BLUETOOTH,
     /// IUCV (inter-user communication vehicle) z/VM protocol for
@@ -180,6 +181,7 @@ pub enum AddressFamily {
         target_os = "haiku",
         target_os = "hurd",
         target_os = "redox",
+        target_os = "cygwin",
     )))]
     Isdn = libc::AF_ISDN,
     /// Nokia cellular modem IPC/RPC interface
@@ -263,7 +265,7 @@ impl AddressFamily {
             libc::AF_NETLINK => Some(AddressFamily::Netlink),
             #[cfg(apple_targets)]
             libc::AF_SYSTEM => Some(AddressFamily::System),
-            #[cfg(not(any(linux_android, target_os = "redox")))]
+            #[cfg(not(any(linux_android, target_os = "redox", target_os = "cygwin")))]
             libc::PF_ROUTE => Some(AddressFamily::Route),
             #[cfg(linux_android)]
             libc::AF_PACKET => Some(AddressFamily::Packet),
@@ -446,6 +448,7 @@ impl UnixAddr {
                      target_os = "fuchsia",
                      solarish,
                      target_os = "redox",
+                     target_os = "cygwin",
                 ))]
             {
                 UnixAddr { sun, sun_len }
@@ -510,6 +513,7 @@ impl UnixAddr {
                      target_os = "fuchsia",
                      solarish,
                      target_os = "redox",
+                     target_os = "cygwin",
                 ))]
             {
                 self.sun_len
@@ -556,6 +560,7 @@ impl SockaddrLike for UnixAddr {
                          target_os = "fuchsia",
                          solarish,
                          target_os = "redox",
+                         target_os = "cygwin",
                 ))] {
                 let su_len = len.unwrap_or(
                     mem::size_of::<libc::sockaddr_un>() as libc::socklen_t
@@ -1122,7 +1127,7 @@ pub union SockaddrStorage {
     alg: AlgAddr,
     #[cfg(all(
         feature = "net",
-        not(any(target_os = "hurd", target_os = "redox"))
+        not(any(target_os = "hurd", target_os = "redox", target_os = "cygwin"))
     ))]
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     dl: LinkAddr,
