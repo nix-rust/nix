@@ -137,7 +137,7 @@ feature! {
     pub mod stat;
 }
 
-#[cfg(any(linux_android, freebsdlike, apple_targets, target_os = "openbsd"))]
+#[cfg(any(linux_android, freebsdlike, apple_targets, target_os = "openbsd", target_os = "cygwin"))]
 feature! {
     #![feature = "fs"]
     pub mod statfs;
