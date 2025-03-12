@@ -10,6 +10,7 @@ use nix::sys::resource::{getrusage, UsageWho};
 /// to put the new soft limit in effect, and then getrlimit() once more to ensure the limits have
 /// been updated.
 #[test]
+#[cfg_attr(target_os = "cygwin", ignore)]
 pub fn test_resource_limits_nofile() {
     let (mut soft_limit, hard_limit) =
         getrlimit(Resource::RLIMIT_NOFILE).unwrap();

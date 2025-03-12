@@ -631,7 +631,8 @@ cfg_if! {
 #[cfg(not(any(
     target_os = "redox",
     target_os = "fuchsia",
-    target_os = "haiku"
+    target_os = "haiku",
+    target_os = "cygwin"
 )))]
 fn test_acct() {
     use std::process::Command;

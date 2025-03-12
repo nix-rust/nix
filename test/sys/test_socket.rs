@@ -1707,6 +1707,7 @@ pub fn test_listen_maxbacklog() {
 pub fn test_listen_wrongbacklog() {
     use nix::sys::socket::Backlog;
 
+    #[cfg(not(target_os = "cygwin"))]
     assert!(Backlog::new(libc::SOMAXCONN + 1).is_err());
     assert!(Backlog::new(-2).is_err());
 }
@@ -3152,7 +3153,7 @@ fn can_use_cmsg_space() {
     let _ = cmsg_space!(u8);
 }
 
-#[cfg(not(any(linux_android, target_os = "redox", target_os = "haiku")))]
+#[cfg(not(any(linux_android, target_os = "redox", target_os = "haiku", target_os = "cygwin")))]
 #[test]
 fn can_open_routing_socket() {
     use nix::sys::socket::{socket, AddressFamily, SockFlag, SockType};

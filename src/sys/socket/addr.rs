@@ -530,7 +530,8 @@ impl SockaddrLike for UnixAddr {
         linux_android,
         target_os = "fuchsia",
         solarish,
-        target_os = "redox"
+        target_os = "redox",
+        target_os = "cygwin",
     ))]
     fn len(&self) -> libc::socklen_t {
         self.sun_len.into()
@@ -1171,6 +1172,7 @@ impl SockaddrLike for SockaddrStorage {
                     linux_android,
                     target_os = "fuchsia",
                     solarish,
+                    target_os = "cygwin",
                 ))]
                 if i32::from(ss.ss_family) == libc::AF_UNIX {
                     // Safe because we UnixAddr is strictly smaller than
@@ -1227,7 +1229,7 @@ impl SockaddrLike for SockaddrStorage {
         }
     }
 
-    #[cfg(any(linux_android, target_os = "fuchsia", solarish))]
+    #[cfg(any(linux_android, target_os = "fuchsia", solarish, target_os = "cygwin"))]
     fn len(&self) -> libc::socklen_t {
         match self.as_unix_addr() {
             // The UnixAddr type knows its own length
@@ -1289,6 +1291,7 @@ impl SockaddrStorage {
             if #[cfg(any(linux_android,
                      target_os = "fuchsia",
                      solarish,
+                     target_os = "cygwin",
                 ))]
             {
                 let p = unsafe{ &self.ss as *const libc::sockaddr_storage };
@@ -1318,6 +1321,7 @@ impl SockaddrStorage {
             if #[cfg(any(linux_android,
                      target_os = "fuchsia",
                      solarish,
+                     target_os = "cygwin",
                 ))]
             {
                 let p = unsafe{ &self.ss as *const libc::sockaddr_storage };
@@ -2193,7 +2197,7 @@ mod tests {
         }
     }
 
-    #[cfg(not(any(target_os = "hurd", target_os = "redox")))]
+    #[cfg(not(any(target_os = "hurd", target_os = "redox", target_os = "cygwin")))]
     #[allow(clippy::cast_ptr_alignment)]
     mod link {
         #[cfg(any(apple_targets, solarish))]
