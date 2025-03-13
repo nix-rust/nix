@@ -516,6 +516,7 @@ fn test_getcwd() {
 }
 
 #[test]
+#[cfg_attr(target_os = "cygwin", ignore)]
 fn test_chown() {
     // Testing for anything other than our own UID/GID is hard.
     let uid = Some(getuid());
@@ -550,6 +551,7 @@ fn test_fchown() {
 
 #[test]
 #[cfg(not(target_os = "redox"))]
+#[cfg_attr(target_os = "cygwin", ignore)]
 fn test_fchownat() {
     use nix::fcntl::AtFlags;
     use nix::fcntl::AT_FDCWD;
@@ -868,6 +870,7 @@ fn test_canceling_alarm() {
 
 #[test]
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
+#[cfg_attr(target_os = "cygwin", ignore)]
 fn test_symlinkat() {
     use nix::fcntl::AT_FDCWD;
 
@@ -1221,6 +1224,7 @@ fn test_access_file_exists() {
 }
 
 #[cfg(not(target_os = "redox"))]
+#[cfg_attr(target_os = "cygwin", ignore)]
 #[test]
 fn test_user_into_passwd() {
     // get the UID of the "nobody" user

@@ -159,6 +159,7 @@ fn test_so_listen_q_limit() {
 }
 
 #[test]
+#[cfg_attr(target_os = "cygwin", ignore)]
 fn test_so_tcp_maxseg() {
     use nix::sys::socket::{
         accept, bind, connect, getsockname, listen, Backlog, SockaddrIn,

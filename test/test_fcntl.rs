@@ -243,6 +243,7 @@ fn test_renameat2_noreplace() {
 
 #[test]
 #[cfg(not(target_os = "redox"))]
+#[cfg_attr(target_os = "cygwin", ignore)]
 fn test_readlink() {
     let tempdir = tempfile::tempdir().unwrap();
     let src = tempdir.path().join("a");

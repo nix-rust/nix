@@ -327,6 +327,7 @@ pub fn test_socketpair() {
 }
 
 #[test]
+#[cfg_attr(target_os = "cygwin", ignore)]
 pub fn test_recvmsg_sockaddr_un() {
     use nix::sys::socket::{
         self, bind, socket, AddressFamily, MsgFlags, SockFlag, SockType,
@@ -841,6 +842,7 @@ pub fn test_recvmsg_ebadf() {
 // 2.12.0.  https://bugs.launchpad.net/qemu/+bug/1701808
 #[cfg_attr(qemu, ignore)]
 #[test]
+#[cfg_attr(target_os = "cygwin", ignore)]
 pub fn test_scm_rights() {
     use nix::sys::socket::{
         recvmsg, sendmsg, socketpair, AddressFamily, ControlMessage,
@@ -1327,6 +1329,7 @@ pub fn test_sendmsg_ipv4sendsrcaddr() {
 // 2.12.0.  https://bugs.launchpad.net/qemu/+bug/1701808
 #[cfg_attr(qemu, ignore)]
 #[test]
+#[cfg_attr(target_os = "cygwin", ignore)]
 fn test_scm_rights_single_cmsg_multiple_fds() {
     use nix::sys::socket::{
         recvmsg, sendmsg, ControlMessage, ControlMessageOwned, MsgFlags,
