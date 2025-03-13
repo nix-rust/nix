@@ -784,7 +784,6 @@ impl SigAction {
     /// is the `SigAction` variant). `mask` specifies other signals to block during execution of
     /// the signal-catching function.
     pub fn new(handler: SigHandler, flags: SaFlags, mask: SigSet) -> SigAction {
-        #[cfg(not(target_os = "aix"))]
         unsafe fn install_sig(p: *mut libc::sigaction, handler: SigHandler) {
             unsafe {
                  (*p).sa_sigaction = match handler {
@@ -793,18 +792,6 @@ impl SigAction {
                     SigHandler::Handler(f) => f as *const extern "C" fn(libc::c_int) as usize,
                     #[cfg(not(target_os = "redox"))]
                     SigHandler::SigAction(f) => f as *const extern "C" fn(libc::c_int, *mut libc::siginfo_t, *mut libc::c_void) as usize,
-                };
-            }
-        }
-
-        #[cfg(target_os = "aix")]
-        unsafe fn install_sig(p: *mut libc::sigaction, handler: SigHandler) {
-            unsafe {
-                (*p).sa_union.__su_sigaction = match handler {
-                    SigHandler::SigDfl => unsafe { mem::transmute::<usize, extern "C" fn(libc::c_int, *mut libc::siginfo_t, *mut libc::c_void)>(libc::SIG_DFL) },
-                    SigHandler::SigIgn => unsafe { mem::transmute::<usize, extern "C" fn(libc::c_int, *mut libc::siginfo_t, *mut libc::c_void)>(libc::SIG_IGN) },
-                    SigHandler::Handler(f) => unsafe { mem::transmute::<extern "C" fn(i32), extern "C" fn(i32, *mut libc::siginfo_t, *mut libc::c_void)>(f) },
-                    SigHandler::SigAction(f) => f,
                 };
             }
         }
@@ -836,7 +823,6 @@ impl SigAction {
     }
 
     /// Returns the action's handler.
-    #[cfg(not(target_os = "aix"))]
     pub fn handler(&self) -> SigHandler {
         match self.sigaction.sa_sigaction {
             libc::SIG_DFL => SigHandler::SigDfl,
@@ -867,26 +853,6 @@ impl SigAction {
                          as *const extern "C" fn(libc::c_int))
                 }
                 as extern "C" fn(libc::c_int)),
-        }
-    }
-
-    /// Returns the action's handler.
-    #[cfg(target_os = "aix")]
-    pub fn handler(&self) -> SigHandler {
-        unsafe {
-        match self.sigaction.sa_union.__su_sigaction as usize {
-            libc::SIG_DFL => SigHandler::SigDfl,
-            libc::SIG_IGN => SigHandler::SigIgn,
-            p if self.flags().contains(SaFlags::SA_SIGINFO) =>
-                SigHandler::SigAction(
-                    *(&p as *const usize
-                         as *const extern "C" fn(_, _, _))
-                as extern "C" fn(_, _, _)),
-            p => SigHandler::Handler(
-                    *(&p as *const usize
-                         as *const extern "C" fn(libc::c_int))
-                as extern "C" fn(libc::c_int)),
-        }
         }
     }
 }
