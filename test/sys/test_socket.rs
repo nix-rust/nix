@@ -3156,7 +3156,12 @@ fn can_use_cmsg_space() {
     let _ = cmsg_space!(u8);
 }
 
-#[cfg(not(any(linux_android, target_os = "redox", target_os = "haiku", target_os = "cygwin")))]
+#[cfg(not(any(
+    linux_android,
+    target_os = "redox",
+    target_os = "haiku",
+    target_os = "cygwin"
+)))]
 #[test]
 fn can_open_routing_socket() {
     use nix::sys::socket::{socket, AddressFamily, SockFlag, SockType};
