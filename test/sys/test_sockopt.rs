@@ -569,6 +569,23 @@ fn test_ipv6_tclass() {
 }
 
 #[test]
+#[cfg(target_os = "linux")]
+fn test_tcp_info() {
+    let fd = socket(
+        AddressFamily::Inet6,
+        SockType::Stream,
+        SockFlag::empty(),
+        SockProtocol::Tcp,
+    )
+    .unwrap();
+    let tcp_info = getsockopt(&fd, sockopt::TcpInfo).unwrap();
+    // Silly assert for the sake of having one in the test.
+    // There should be no retransmits because nothing is sent through the
+    // socket in the first place.
+    assert_eq!(tcp_info.tcpi_retransmits, 0);
+}
+
+#[test]
 #[cfg(target_os = "freebsd")]
 fn test_receive_timestamp() {
     let fd = socket(
