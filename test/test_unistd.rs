@@ -870,7 +870,6 @@ fn test_canceling_alarm() {
 
 #[test]
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
-#[cfg_attr(target_os = "cygwin", ignore)]
 fn test_symlinkat() {
     use nix::fcntl::AT_FDCWD;
 
