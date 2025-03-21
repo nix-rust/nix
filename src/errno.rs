@@ -3727,7 +3727,7 @@ mod consts {
         pub const EOPNOTSUPP: Errno = Errno::ENOTSUP;
     }
 
-    pub const fn from_i32(e: i32) -> Errno {
+    pub(crate) const fn from_i32(e: i32) -> Errno {
         use self::Errno::*;
 
         match e {
