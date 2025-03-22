@@ -145,7 +145,6 @@ fn test_stat_fstat_lstat() {
 }
 
 #[test]
-#[cfg_attr(target_os = "cygwin", ignore)]
 fn test_fchmod() {
     let tempdir = tempfile::tempdir().unwrap();
     let filename = tempdir.path().join("foo.txt");
@@ -169,7 +168,6 @@ fn test_fchmod() {
 
 #[test]
 #[cfg(not(target_os = "redox"))]
-#[cfg_attr(target_os = "cygwin", ignore)]
 fn test_fchmodat() {
     let _dr = crate::DirRestore::new();
     let tempdir = tempfile::tempdir().unwrap();
@@ -333,7 +331,6 @@ fn test_mkdirat_success_path() {
 
 #[test]
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
-#[cfg_attr(target_os = "cygwin", ignore)]
 fn test_mkdirat_success_mode() {
     let expected_bits =
         stat::SFlag::S_IFDIR.bits() | stat::Mode::S_IRWXU.bits();
@@ -374,7 +371,6 @@ fn test_mkdirat_fail() {
     target_os = "redox",
     target_os = "solaris"
 )))]
-#[cfg_attr(target_os = "cygwin", ignore)]
 fn test_mknod() {
     use stat::{lstat, mknod, SFlag};
 
@@ -395,7 +391,6 @@ fn test_mknod() {
     target_os = "haiku",
     target_os = "redox"
 )))]
-#[cfg_attr(target_os = "cygwin", ignore)]
 fn test_mknodat() {
     use fcntl::{AtFlags, OFlag};
     use nix::dir::Dir;
